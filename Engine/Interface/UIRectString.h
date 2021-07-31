@@ -1,7 +1,7 @@
 // ***************************************************************
 //  UIRectString   version:  1.0   ? date: 08/01/2008
 //  -------------------------------------------------------------
-//  ì˜ì—­ì„ ì§€ì •í•˜ì—¬ í…ìŠ¤íŠ¸ë¥¼ ì¶œë ¥í•˜ëŠ” ë£¨í‹´
+//  ¿µ¿ªÀ» ÁöÁ¤ÇÏ¿© ÅØ½ºÆ®¸¦ Ãâ·ÂÇÏ´Â ·çÆ¾
 //  -------------------------------------------------------------
 //  Copyright (C) 2008 - All Rights Reserved
 // ***************************************************************
@@ -15,10 +15,10 @@
 #endif
 
 
-#include <Engine/Interface/UIWindow.h>
-#include <vector>
+// #include <Engine/Interface/UIWindow.h>
+// #include <vector>
 //////////////////////////////////////////////////////////////////////////
-// ì‹ í˜• í…ìŠ¤íŠ¸ ì¶œë ¥ ì œì‘ì¤‘!!
+// ½ÅÇü ÅØ½ºÆ® Ãâ·Â Á¦ÀÛÁß!!
 
 enum eTextAlign
 {
@@ -76,8 +76,8 @@ class CUIRectString : public CUIWindow
 {
 private:
 	std::vector<CRectStringData>	m_vecRcStringData;
-	std::vector<CTString>			m_vecStringList;	//ì›ë³¸ í…ìŠ¤íŠ¸(ì‚¬ì´ì¦ˆ ë³€ê²½ì‹œ ë³€ë™ì‚¬í•­ì„ ìœ„í•´ ì €ì¥..)
-	std::vector<COLOR>				m_vecColor;         //ì›ë³¸ ì¹¼ë¼
+	std::vector<CTString>			m_vecStringList;	//¿øº» ÅØ½ºÆ®(»çÀÌÁî º¯°æ½Ã º¯µ¿»çÇ×À» À§ÇØ ÀúÀå..)
+	std::vector<COLOR>				m_vecColor;         //¿øº» Ä®¶ó
 	int						m_nAlign;
 
 	int CheckSplitPos(CTString& strInput, int nWidth);
@@ -116,6 +116,8 @@ public:
 	void ClearString();
 
 	void Render();
+	
+	BOOL IsEmpty() { return m_vecStringList.size() > 0 ? FALSE : TRUE; }
 
 };
 

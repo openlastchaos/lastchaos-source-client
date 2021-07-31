@@ -11,6 +11,11 @@ CUIListBoxEx::CUIListBoxEx()
 , m_iPopBtnSpaceY( 0 )
 , m_iPopBtnWidth( 0 )
 , m_iPopBtnHeight( 0 )
+, m_iLastCheckedIndex( -1 )
+, m_iCheckBtnWidth( 0 )
+, m_iCheckBtnHeight( 0 )
+, m_iCheckBtnSpaceX( 0 )
+, m_iCheckBtnSpaceY( 0 )
 {
 }
 
@@ -58,6 +63,26 @@ void CUIListBoxEx::ChangeCurrentState(ePopState state)
 				m_aPopLine.push_back(line);
 			}
 		} break;
+		// 2009. 06. 02 ±èÁ¤·¡
+		// checkbutton À» °¡Áö´Â Child Ã³¸®
+	case PS_CHECKCHILD:
+		{
+			for(int i=m_iLastChangeLine; i<currentLine; ++i)
+			{
+				CUICheckButton *pBtn = new CUICheckButton;
+				pBtn->Create(this, m_iCheckBtnSpaceX, (currentLine+1) * m_nLineHeight + m_iCheckBtnSpaceY, m_iCheckBtnWidth, m_iCheckBtnHeight, CTString());
+				for(int i=0; i<UCBS_TOTAL; ++i)
+				{
+					pBtn->SetUV((UICheckBtnState)i, m_rtCheckBtnUV[i]);
+				}
+				pBtn->SetCheck( FALSE );
+				pBtn->SetEnable(TRUE);
+				sPopLine line(state, pBtn);
+				m_aPopLine.push_back(line);
+
+			}
+		} break;
+
 	case PS_EXTEND:
 	case PS_CLOSE:
 		{
@@ -119,13 +144,14 @@ void CUIListBoxEx::Close(int iLine)
 	ChangeState(iLine, PS_CLOSE);
 }
 
-void CUIListBoxEx::SetImageBox(int row, CUIImageBox::eImageType type, int index)
+void CUIListBoxEx::SetImageBox(int row, CUIImageBox::eImageType type, int index, BOOL bShowPopup /* = FALSE */, CTString popupInfo/* = CTString("") */, int nSyndiType/* = 0*/)
 {
 	CUIImageBox *pImageBox;
 	pImageBox = new CUIImageBox;
 	pImageBox->Create(this, 0, 0, 32, 32);
-	pImageBox->SetImageByType(type, index);
+	pImageBox->SetImageByType(type, index, nSyndiType);
 	pImageBox->SetRenderRegion(0,0,32,16);
+	pImageBox->SetPopupInfo( popupInfo, bShowPopup );
 	std::map<int, CUIImageBox*>::value_type value1(row, pImageBox);
 	m_mapImageBox.insert(value1);
 }
@@ -133,9 +159,9 @@ void CUIListBoxEx::SetImageBox(int row, CUIImageBox::eImageType type, int index)
 // =====================================================================
 //  [6/2/2009 selo]
 // Name : GetCheckCount()
-// Desc : ì²´í¬ëœ child í•­ëª©ë“¤ì˜ ìˆ˜ ë°˜í™˜.
-//		  m_aPopLine ì—ì„œ PS_CHECKCHILD ì¸ ë…€ì„ì¤‘ì— ì²´í¬ëœ ê²ƒì´ ìˆìœ¼ë©´
-//		  Countë¥¼ ì˜¬ë ¤ ë°˜í™˜í•œë‹¤.
+// Desc : Ã¼Å©µÈ child Ç×¸ñµéÀÇ ¼ö ¹İÈ¯.
+//		  m_aPopLine ¿¡¼­ PS_CHECKCHILD ÀÎ ³à¼®Áß¿¡ Ã¼Å©µÈ °ÍÀÌ ÀÖÀ¸¸é
+//		  Count¸¦ ¿Ã·Á ¹İÈ¯ÇÑ´Ù.
 // =====================================================================
 int	CUIListBoxEx::GetCheckCount()
 {
@@ -156,9 +182,9 @@ int	CUIListBoxEx::GetCheckCount()
 // =====================================================================
 //  [6/2/2009 selo]
 // Name : SetCheckState()
-// Desc : í•´ë‹¹ ì¸ë±ìŠ¤ì˜ check ìƒíƒœë¥¼ ë³€ê²½.
-//		  m_aPopLine ì—ì„œ PS_CHECKCHILD ì¸ ë…€ì„ì¤‘ì— ì¸ë±ìŠ¤ê°€ ë§ìœ¼ë©´
-//		  Check ìƒíƒœë¥¼ ë³€ê²½í•œë‹¤.
+// Desc : ÇØ´ç ÀÎµ¦½ºÀÇ check »óÅÂ¸¦ º¯°æ.
+//		  m_aPopLine ¿¡¼­ PS_CHECKCHILD ÀÎ ³à¼®Áß¿¡ ÀÎµ¦½º°¡ ¸ÂÀ¸¸é
+//		  Check »óÅÂ¸¦ º¯°æÇÑ´Ù.
 // =====================================================================
 void CUIListBoxEx::SetCheckState(int index, BOOL bChecked)
 {	
@@ -171,9 +197,9 @@ void CUIListBoxEx::SetCheckState(int index, BOOL bChecked)
 // =====================================================================
 //  [6/2/2009 selo]
 // Name : GetCheckState()
-// Desc : í•´ë‹¹ ì¸ë±ìŠ¤ì˜ check ìƒíƒœë¥¼ ë°˜í™˜.
-//		  m_aPopLine ì—ì„œ PS_CHECKCHILD ì¸ ë…€ì„ì¤‘ì— ì¸ë±ìŠ¤ê°€ ë§ìœ¼ë©´
-//		  Check ìƒíƒœë¥¼ ë°˜í™˜í•œë‹¤.
+// Desc : ÇØ´ç ÀÎµ¦½ºÀÇ check »óÅÂ¸¦ ¹İÈ¯.
+//		  m_aPopLine ¿¡¼­ PS_CHECKCHILD ÀÎ ³à¼®Áß¿¡ ÀÎµ¦½º°¡ ¸ÂÀ¸¸é
+//		  Check »óÅÂ¸¦ ¹İÈ¯ÇÑ´Ù.
 // =====================================================================
 BOOL CUIListBoxEx::GetCheckState(int index)
 {
@@ -185,11 +211,14 @@ BOOL CUIListBoxEx::GetCheckState(int index)
 	return false;
 }
 
+
 void CUIListBoxEx::Render()
 {
 	// Get position
 	int	nX, nY;
 	GetAbsPos( nX, nY );
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// Add render regions
 	// Selection bar
@@ -203,7 +232,7 @@ void CUIListBoxEx::Render()
 			{
 			
 				int	nBarY = nY + m_nTextSY + nSelLine * m_nLineHeight;
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcSelectOver.Left, nBarY + m_rcSelectOver.Top,
+				pDrawPort->AddTexture( nX + m_rcSelectOver.Left, nBarY + m_rcSelectOver.Top,
 													nX + m_rcSelectOver.Right, nBarY + m_rcSelectOver.Bottom,
 													m_rtSelectOver.U0, m_rtSelectOver.V0,
 													m_rtSelectOver.U1, m_rtSelectOver.V1,
@@ -260,7 +289,7 @@ void CUIListBoxEx::Render()
 					else
 						bContinue = true;
 				} break;
-			case PS_CHECKCHILD:	// [090602: selo] checkbox ë¥¼ ê°€ì§€ëŠ” child ì²˜ë¦¬ 
+			case PS_CHECKCHILD:	// [090602: selo] checkbox ¸¦ °¡Áö´Â child Ã³¸® 
 				{
 					if(eParentState == PS_EXTEND)
 					{
@@ -296,22 +325,23 @@ void CUIListBoxEx::Render()
 			switch( m_vecAlign[nCol] )
 			{
 			case TEXT_LEFT:
-				_pUIMgr->GetDrawPort()->PutTextEx( m_vecString[nCol].vecString[nList], nTextX, nTextY, colText );
+				pDrawPort->PutTextEx( m_vecString[nCol].vecString[nList], nTextX, nTextY, colText );
 				break;
 			case TEXT_CENTER:
-				_pUIMgr->GetDrawPort()->PutTextExCX( m_vecString[nCol].vecString[nList], nTextX, nTextY, colText );
+				pDrawPort->PutTextExCX( m_vecString[nCol].vecString[nList], nTextX, nTextY, colText );
 				break;
 			case TEXT_RIGHT:
-				_pUIMgr->GetDrawPort()->PutTextExRX( m_vecString[nCol].vecString[nList], nTextX, nTextY, colText );
+				pDrawPort->PutTextExRX( m_vecString[nCol].vecString[nList], nTextX, nTextY, colText );
 				break;
 			}
 
 			nTextY += m_nLineHeight;
 		}
 	}
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-	//ì£¼ì˜ íŒì—…-ë‹¤ìš´ê³¼ ImageBoxëŠ” ê°™ì´ ì“¸ ìˆ˜ ì—†ìŒ.
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
+	
+	//ÁÖÀÇ ÆË¾÷-´Ù¿î°ú ImageBox´Â °°ÀÌ ¾µ ¼ö ¾øÀ½.
 	std::map<int, CUIImageBox*>::iterator iterBegin = m_mapImageBox.begin();
 	std::map<int, CUIImageBox*>::iterator iterEnd = m_mapImageBox.end();
 	std::map<int, CUIImageBox*>::iterator iter;
@@ -327,20 +357,20 @@ void CUIListBoxEx::Render()
 		int nUpper = 0;
 		int nLower = pIBox->GetHeight();
 
-		//ìœ—ë¶€ë¶„ì´ ì§¤ë¦¼. ì•„ë˜ ë¶€ë¶„ë§Œ ë³´ì„
+		//À­ºÎºĞÀÌ Â©¸². ¾Æ·¡ ºÎºĞ¸¸ º¸ÀÓ
 		if(myRowS < nRowS && myRowE > nRowS)
 		{
 			bRender = true;
 			nUpper = (nRowS - myRowS) * m_nLineHeight;
 		}
-		//ì•„ë˜ë¶€ë¶„ì´ ì§¤ë¦¼. ìœ„ ë¶€ë¶„ë§Œ ë³´ì„.
+		//¾Æ·¡ºÎºĞÀÌ Â©¸². À§ ºÎºĞ¸¸ º¸ÀÓ.
 		if(myRowS < nRowE && myRowE > nRowE)
 		{
 			bRender = true;
 			nLower = (nRowE - myRowS) * m_nLineHeight;
 			nLower = ClampUp(nLower, pIBox->GetHeight());
 		}
-		//ë‹¤ ë³´ì„.
+		//´Ù º¸ÀÓ.
 		if(myRowS >= nRowS && myRowE <= nRowE)
 		{
 			bRender = true;
@@ -373,6 +403,13 @@ WMSG_RESULT	CUIListBoxEx::MouseMessage( MSG *pMsg )
 		{
 			if( m_bSelectList )
 			{
+				std::map<int, CUIImageBox*>::const_iterator itr;
+				itr = m_mapImageBox.begin();
+				for ( ; itr != m_mapImageBox.end() ; ++itr )
+				{
+					CUIImageBox* pImageBox = (*itr).second;
+					pImageBox->MouseMessage( pMsg );
+				}
 				m_nOverList = -1;
 
 				if( IsInside( nX, nY ) )
@@ -435,7 +472,7 @@ WMSG_RESULT	CUIListBoxEx::MouseMessage( MSG *pMsg )
 								else
 									bContinue = true;
 							} break;
-						case PS_CHECKCHILD: // [090602: selo] checkbutton ìˆëŠ” child ì²˜ë¦¬
+						case PS_CHECKCHILD: // [090602: selo] checkbutton ÀÖ´Â child Ã³¸®
 							{
 								if(eParentState == PS_EXTEND)
 								{
@@ -469,7 +506,7 @@ WMSG_RESULT	CUIListBoxEx::MouseMessage( MSG *pMsg )
 							return WMSG_SUCCESS;
 						}
 
-						// [090602: selo] Checkbutton ê°€ì§€ëŠ” Childì¸ ê²½ìš°
+						// [090602: selo] Checkbutton °¡Áö´Â ChildÀÎ °æ¿ì
 						if(bCheckChildButton 
 							&& m_aPopLine[i].pChkButton
 							&& m_aPopLine[i].pChkButton->IsInside(nX, nY)

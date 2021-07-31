@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CRANDOMTABLE_H__
 #define __CRANDOMTABLE_H__
 
@@ -50,10 +50,10 @@ protected:
 
 public:
 protected:
-	FLOAT3D		m_vPosTable[RANDOM_COUNT]; // [-1,1], ë³€ì˜ ê¸¸ì´ê°€ 1ì¸ êµ¬ì•ˆì˜ ì 
-	FLOAT3D		m_vDirTable[RANDOM_COUNT]; // [-1,1], ë°˜ì§€ë¦„ì´ í•­ìƒ 1ì¸ êµ¬ ìœ„ì˜ ì .
-	FLOAT3D		m_vCylinderPosTable[RANDOM_COUNT];	//ë°˜ì§€ë¦„1, ë†’ì´ê°€ 0~1ì¸ cylinderì•ˆì˜ randomí•œ ì .
-	FLOAT3D		m_vCylinderDirTable[RANDOM_COUNT];	//ë°˜ì§€ë¦„1, ë†’ì´ê°€ 0~1ì¸ cylinderìœ„ì˜ randomí•œ ì .
+	FLOAT3D		m_vPosTable[RANDOM_COUNT]; // [-1,1], º¯ÀÇ ±æÀÌ°¡ 1ÀÎ ±¸¾ÈÀÇ Á¡
+	FLOAT3D		m_vDirTable[RANDOM_COUNT]; // [-1,1], ¹İÁö¸§ÀÌ Ç×»ó 1ÀÎ ±¸ À§ÀÇ Á¡.
+	FLOAT3D		m_vCylinderPosTable[RANDOM_COUNT];	//¹İÁö¸§1, ³ôÀÌ°¡ 0~1ÀÎ cylinder¾ÈÀÇ randomÇÑ Á¡.
+	FLOAT3D		m_vCylinderDirTable[RANDOM_COUNT];	//¹İÁö¸§1, ³ôÀÌ°¡ 0~1ÀÎ cylinderÀ§ÀÇ randomÇÑ Á¡.
 	FLOAT		m_fOffsetTable[RANDOM_COUNT]; // [-1,1]
 	FLOAT		m_fFactorTable[RANDOM_COUNT]; // [0,1]
 	INDEX		m_iPosIndex;
@@ -93,4 +93,4 @@ inline FLOAT RndFactor()
 }
 
 #endif //__CRANDOMTABLE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

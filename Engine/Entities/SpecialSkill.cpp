@@ -1,96 +1,79 @@
 #include "stdh.h"
+#include <string>
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Entities/SpecialSkill.h>
+#include <Engine/Interface/UIManager.h>
 
-CSpecialSkill::CSpecialSkill()
+//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+void CSpecialSkill::SetNoTranslate()
 {
-	memset(&SSkill_Data, 0, sizeof(_SSkillData));	
+	char buff[MAX_PATH];
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, transFlag ) )
+	{
+		memset(buff, 0, MAX_PATH);
+		sprintf( buff, "[%d] : special skill name", getindex() );
+		name = buff;
+	}
+	if( pUIManager->IsNotTranslated( TRANS_DESC, transFlag ) )
+	{
+		memset(buff, 0, MAX_PATH);
+		sprintf( buff, "[%d] : special skill desc", getindex() );
+		desc = buff;
+	}
 }
 
-CSpecialSkill::~CSpecialSkill()
+void CSpecialSkill::ClearNoTranslate()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, transFlag ) )
+		name = "";
+	if( pUIManager->IsNotTranslated( TRANS_DESC, transFlag ) )
+		desc = "";
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : &apSkillData - 
-//			FileName - 
-// Output : int
-//-----------------------------------------------------------------------------
-int CSpecialSkill::LoadSSkillDataFromFile(CStaticArray<CSpecialSkill> &apSkillData, const char* FileName)
-{
-	FILE *fp		= NULL;
-	if ((fp = fopen(FileName, "rb")) == NULL) 
+bool CSpecialSkill::loadEx(const char* str_path)
+{	
+	FILE*	fp = NULL;
+
+	fp = fopen(str_path, "rb");
+
+	if (fp == NULL)
+		return false;
+	
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
 	{
-		MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
-		return -1;
+		fclose(fp);
+		return false;
 	}
 
-	int iLastSkillIndex	= 0; //ìŠ¤í‚¬ ê°¯ìˆ˜.
-	int iLength		= -1;
-	int iReadBytes	= 0;
-
-	iReadBytes = fread(&iLastSkillIndex, sizeof(int), 1, fp);			
-	apSkillData.New(iLastSkillIndex);
-	ASSERT(apSkillData.Count() >= iLastSkillIndex && "Invalid Array Count");
-	ASSERT(iLastSkillIndex > 0 && "Invalid Skill Data");
-
-	//////////////////////////////////////////////////////////////////////////	
-	// MACRO DEFINITION
-	//////////////////////////////////////////////////////////////////////////	
-#define LOADINT(d)			iReadBytes = fread(&d, sizeof(int), 1, fp);
-#define LOADSHORT(d)		iReadBytes = fread(&d, sizeof(short), 1, fp);
-#define LOADCHAR(d)			iReadBytes = fread(&d, sizeof(char), 1, fp);
-#define LOADFLOAT(d)		iReadBytes = fread(&d, sizeof(float), 1, fp);
-#define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fp); }
-	//////////////////////////////////////////////////////////////////////////	
-
-	for(int i = 0; i < iLastSkillIndex; i++) //ìŠ¤í‚¬ ê°¯ìˆ˜ë§Œí¼.
-	{
-		int iIndex = 1; //ìŠ¤í‚¬ë²ˆí˜¸.	
-		LOADINT(iIndex);
-
-		if(iReadBytes <= 0)		break;										// EOF
-		ASSERT(iIndex != -1	&& "Invalid Skill Index");
-
-		CSpecialSkill& SkillData	= apSkillData[iIndex];	
-		_SSkillData& SD				= SkillData.SSkill_Data;		
-		SD.index					= iIndex;
-		
-		LOADSTR(SD.name);
-		LOADINT(SD.type);		
-		LOADINT(SD.maxLevel);
-		LOADINT(SD.preference);
-
-		for(int j = 0; j < SSKILL_MAX_LEVEL;++j)
-		{
-			LOADINT(SD.needLevel[j]);
-			LOADINT(SD.needSP[j]);
-		}
-
-		LOADINT(SD.needSSkill);
-		LOADINT(SD.needSSkillLevel);
-		
-		LOADINT(SD.textureID);
-		LOADINT(SD.textureRow);
-		LOADINT(SD.textureCol);
-
-		LOADSTR(SD.desc);
-/* // Date : 2005-01-15,   By Lee Ki-hwan : ëŒ€ë§Œ ë¡œì»¬ë¼ì´ì§•
-		if(iReadBytes <= 0)
-		{
-			fclose(fp);
-			return -1;
-		}		
-*/
-	}
+	stSpecailSkill* pdata = new stSpecailSkill[_nSize];
+	fread(pdata, sizeof(stSpecailSkill) * _nSize, 1, fp);
 	fclose(fp);
 
-//////////////////////////////////////////////////////////////////////////	
-#undef LOADINT
-#undef LOADCHAR
-#undef LOADFLOAT
-#undef LOADSTR
+	for (int i = 0; i < _nSize; i++)
+	{
+		CSpecialSkill* ptmp = new CSpecialSkill;
+		memcpy(ptmp, &pdata[i], sizeof(stSpecailSkill));
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+	}
 
-	return iLastSkillIndex;
+	m_dummy = new CSpecialSkill; // ´õ¹Ìµ¥ÀÌÅ¸ »ý¼º
+	memset(m_dummy, 0, sizeof(stSpecailSkill));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
 }

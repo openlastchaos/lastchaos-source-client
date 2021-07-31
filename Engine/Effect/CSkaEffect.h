@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CSKAEFFECT_H__
 #define __CSKAEFFECT_H__
 
@@ -24,10 +24,10 @@ public:
 
 	//NEW_DELETE_DEFINITION(CSkaEffect);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	virtual void Read(CTStream *istrFile);
 	virtual void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	
 	virtual void Start(FLOAT time, BOOL restart = FALSE);
 	virtual BOOL Process(FLOAT time);
@@ -69,20 +69,20 @@ protected:
 	
 protected:
 	//content variable
-	CTFileName			m_strModelFileName;		//Skaì˜ ì´ë¦„.
-	COLOR				m_colModel;				//Skaì˜ ìƒ‰ê¹”.
-	FLOAT3D				m_vStretch;				//Skaì˜ í¬ê¸°.
-	EFFECT_OF_TAG_TYPE	m_eRotation;			//tagì˜ íšŒì „ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
-	EFFECT_OF_TAG_TYPE	m_ePosition;			//tagì˜ ì´ë™ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
-	CEffectControl		*m_pEffectControl;		//effect control ì—†ì„ë•ŒëŠ” NULL
+	CTFileName			m_strModelFileName;		//SkaÀÇ ÀÌ¸§.
+	COLOR				m_colModel;				//SkaÀÇ »ö±ò.
+	FLOAT3D				m_vStretch;				//SkaÀÇ Å©±â.
+	EFFECT_OF_TAG_TYPE	m_eRotation;			//tagÀÇ È¸Àü¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
+	EFFECT_OF_TAG_TYPE	m_ePosition;			//tagÀÇ ÀÌµ¿¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
+	CEffectControl		*m_pEffectControl;		//effect control ¾øÀ»¶§´Â NULL
 	//instance variable
-	CModelInstance		*m_pCreatedModel;		//ì‹¤ì œ ë¡œë”©ëœ Ska
-	FLOAT3D				m_vStartPosition;		//ì‹œì‘ì‹œ ìœ„ì¹˜
-	FLOATmatrix3D		m_matStartRotation;		//ì‹œì‘ì‹œ ë°©í–¥
-	FLOAT3D				m_vPostion;				//dynamic posì‹œ ì‚¬ìš©
-	ANGLE3D				m_vAngle;				//dynamic angleì‹œ ì‚¬ìš©
-	ptr_tag				m_ptrPosTag;			//dynamic posì‹œ ë§ˆì§€ë§‰ì— ë”°ë¼ê°ˆ Tag, ì—†ìœ¼ë©´ ì œìë¦¬
+	CModelInstance		*m_pCreatedModel;		//½ÇÁ¦ ·ÎµùµÈ Ska
+	FLOAT3D				m_vStartPosition;		//½ÃÀÛ½Ã À§Ä¡
+	FLOATmatrix3D		m_matStartRotation;		//½ÃÀÛ½Ã ¹æÇâ
+	FLOAT3D				m_vPostion;				//dynamic pos½Ã »ç¿ë
+	ANGLE3D				m_vAngle;				//dynamic angle½Ã »ç¿ë
+	ptr_tag				m_ptrPosTag;			//dynamic pos½Ã ¸¶Áö¸·¿¡ µû¶ó°¥ Tag, ¾øÀ¸¸é Á¦ÀÚ¸®
 };
 
 #endif //__CSKAEFFECT_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

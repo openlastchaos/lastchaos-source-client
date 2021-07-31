@@ -43,6 +43,29 @@ functions:
 	}
 */
 procedures:
+	Main()
+	{
+		InitAsEditorModel();
+		SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+		SetCollisionFlags(ECF_IMMATERIAL);
+		
+		// set appearance
+		SetModel(MODEL_MARKER);
+		SetModelMainTexture(TEXTURE_MARKER);
+
+		//m_fRadiusSquare = m_rngAreaRadius * m_rngAreaRadius;
+		//m_bIsInArea = FALSE;
+		//set real string by string index
+		//TODO : m_strRealString = ...
+
+		autowait(0.01f);
+
+		//if(m_bShpere)	{jump MainSphereType();	}
+		//else			{jump MainMessageType();}
+		jump MainMessageType();
+		return;
+	}
+	
 /*
 	MainSphereType()
 	{
@@ -112,29 +135,6 @@ procedures:
 				}
 			}
 		}
-	}
-
-	Main()
-	{
-		InitAsEditorModel();
-		SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-		SetCollisionFlags(ECF_IMMATERIAL);
-		
-		// set appearance
-		SetModel(MODEL_MARKER);
-		SetModelMainTexture(TEXTURE_MARKER);
-
-		//m_fRadiusSquare = m_rngAreaRadius * m_rngAreaRadius;
-		//m_bIsInArea = FALSE;
-		//set real string by string index
-		//TODO : m_strRealString = ...
-
-		autowait(0.01f);
-
-		//if(m_bShpere)	{jump MainSphereType();	}
-		//else			{jump MainMessageType();}
-		jump MainMessageType();
-		return;
 	}
 };
 

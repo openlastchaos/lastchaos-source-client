@@ -102,9 +102,9 @@ inline Type &CStaticStackArray<Type>::Pop(void)
   --sa_UsedCount;
   return CStaticArray<Type>::operator[](sa_UsedCount);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 template<class Type>
-inline void CStaticStackArray<Type>::SwapAndPop(INDEX swapIndex)	//ìŠ¤íƒ ì¤‘ê°„ê³¼ topì„ ë°”ê¾¼ í›„ topì„ popí•œë‹¤.
+inline void CStaticStackArray<Type>::SwapAndPop(INDEX swapIndex)	//½ºÅÃ Áß°£°ú topÀ» ¹Ù²Û ÈÄ topÀ» popÇÑ´Ù.
 {
 	ASSERT(sa_UsedCount>swapIndex && swapIndex >= 0);
 	--sa_UsedCount;
@@ -112,7 +112,21 @@ inline void CStaticStackArray<Type>::SwapAndPop(INDEX swapIndex)	//ìŠ¤íƒ ì¤‘ê°„
 	sa_Array[swapIndex] = sa_Array[sa_UsedCount];
 	sa_Array[sa_UsedCount] = t;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
+// modified by rumist [12/10/2010 rumist]
+template<class Type>
+inline Type* CStaticStackArray<Type>::SwapAndPopEx(INDEX swapIndex)	//½ºÅÃ Áß°£°ú topÀ» ¹Ù²Û ÈÄ topÀ» popÇÑ´Ù.
+{
+	ASSERT(sa_UsedCount>swapIndex && swapIndex >= 0);
+	--sa_UsedCount;
+	Type t = sa_Array[swapIndex];
+	sa_Array[swapIndex] = sa_Array[sa_UsedCount];
+	sa_Array[sa_UsedCount] = t;
+	return &sa_Array[swapIndex];
+}
+//
+
+
 /*
  * Remove objects higher than the given index from stack, but keep stack space.
  */

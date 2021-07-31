@@ -1,14 +1,17 @@
 
 #include "stdh.h"
-#include <Engine/Interface/UISingleBattle.h>
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UISingleBattle.h>
+
 
 // Define text position
-#define	GB_TITLE_TEXT_OFFSETX		25		// íƒ€ì´í‹€ ë°” ìŠ¤íŠ¸ë§ 
+#define	GB_TITLE_TEXT_OFFSETX		25		// Å¸ÀÌÆ² ¹Ù ½ºÆ®¸µ 
 #define	GB_TITLE_TEXT_OFFSETY		5
 
-#define GB_TITLE_HEIGHT				26		// íƒ€ì´í‹€ ë°” ë†’ì´
-#define START_BOTTOM_BUTTON_Y		(GB_HEIGHT - 29)	// ë²„íŠ¼ì˜ ì‹œìž‘ ë†’ì´
+#define GB_TITLE_HEIGHT				26		// Å¸ÀÌÆ² ¹Ù ³ôÀÌ
+#define START_BOTTOM_BUTTON_Y		(GB_HEIGHT - 29)	// ¹öÆ°ÀÇ ½ÃÀÛ ³ôÀÌ
 
 #define SMALL_NUMBER_WIDTH			16
 #define SMALL_NUMBER_HEIGHT			20
@@ -59,7 +62,6 @@ CUISingleBattle::CUISingleBattle()
 CUISingleBattle::~CUISingleBattle()
 {
 	Clear ();
-	Destroy();
 }
 
 //------------------------------------------------------------------------------
@@ -77,11 +79,9 @@ void CUISingleBattle::Clear()
 void CUISingleBattle::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
 	Clear();
-	m_strTitle = _S( 1097, "ê¸¸ë“œì „íˆ¬" ); 
+	m_strTitle = _S( 1097, "±æµåÀüÅõ" ); 
 
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	// Create skill learn texture
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\GuildBattle.tex" ) );	
@@ -119,11 +119,11 @@ void CUISingleBattle::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 //------------------------------------------------------------------------------
 void CUISingleBattle::Close()
 {
-	if( IsVisible() )
-	{
-		_pUIMgr->RearrangeOrder( UI_SINGLE_BATTLE, FALSE );
-		Clear();
-	}
+	if( IsVisible() == FALSE )
+		return;
+
+	CUIManager::getSingleton()->RearrangeOrder( UI_SINGLE_BATTLE, FALSE );
+	Clear();
 }
 
 //------------------------------------------------------------------------------
@@ -150,49 +150,38 @@ void CUISingleBattle::Render()
 //------------------------------------------------------------------------------
 void CUISingleBattle::RenderGBStatus()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 	int nX;
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
 
-	// ë‚¨ì€ ì‹œê°„ í‘œì‹œ ( ImageFont );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-	int nOffsetX = _pUIMgr->GetDrawPort()->GetWidth() - RIGHT_SPACE - BOX_WIDTH;
+	// ³²Àº ½Ã°£ Ç¥½Ã ( ImageFont );
+
+	int nOffsetX = pDrawPort->GetWidth() - RIGHT_SPACE - BOX_WIDTH;
 
 	m_rcBox.Left = m_rcBlueBox.Left = m_rcRedBox.Left = nOffsetX;
 	m_rcBox.Right = m_rcBlueBox.Right = m_rcRedBox.Right = nOffsetX + BOX_WIDTH;
 
-	/*
-	// Ren, Blue Box í‘œì‹œ
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBox.Left, m_rcBox.Top, m_rcBox.Right, m_rcBox.Bottom,
-									m_rtBox.U0, m_rtBox.V0,
-									m_rtBox.U1, m_rtBox.V1,
-									0xFFFFFFFF );
-
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBlueBox.Left, m_rcBlueBox.Top, m_rcBlueBox.Right, m_rcBlueBox.Bottom,
-									m_rtBlueBox.U0, m_rtBlueBox.V0,
-									m_rtBlueBox.U1, m_rtBlueBox.V1,
-									0xFFFFFFFF );
-									*/
-	
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcRedBox.Left, m_rcRedBox.Top, m_rcRedBox.Right, m_rcRedBox.Bottom,
+	pDrawPort->AddTexture( m_rcRedBox.Left, m_rcRedBox.Top, m_rcRedBox.Right, m_rcRedBox.Bottom,
 									m_rtRedBox.U0, m_rtRedBox.V0,
 									m_rtRedBox.U1, m_rtRedBox.V1,
 									0xFFFFFFFF );
 
-	// Kill Point í‘œì‹œ ( ImageFont : Large);
+	// Kill Point Ç¥½Ã ( ImageFont : Large);
 	RenderKillPoint();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	//CTString strMessage;	
-	//strMessage.PrintF ( _S( 1099, "ì „íˆ¬ì§€ì—­ : %s" ), ZoneInfo().GetZoneName( m_nBattleZone ) ); 	
+	//strMessage.PrintF ( _S( 1099, "ÀüÅõÁö¿ª : %s" ), ZoneInfo().GetZoneName( m_nBattleZone ) ); 	
 	
 	nX = m_rcRedBox.Left + ( m_rcRedBox.Right - m_rcRedBox.Left ) / 2;
 	
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1740, "ì£½ì¸ ì ì˜ ìˆ˜" ), nX, SINGLE_NAME_Y, 0xA6C0FFE5 );		
+	pDrawPort->PutTextExCX( _S( 1740, "Á×ÀÎ ÀûÀÇ ¼ö" ), nX, SINGLE_NAME_Y, 0xA6C0FFE5 );		
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 
@@ -213,8 +202,9 @@ void CUISingleBattle::DrawNumber ( int x, int y, int nNumber, bool bLarge )
 		nWidth		= LARGE_NUMBER_WIDTH;	
 		nHeight		= LARGE_NUMBER_HEIGHT;
 	}
-	
-	_pUIMgr->GetDrawPort()->AddTexture( x, y, x + nWidth, y + nHeight,
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	pDrawPort->AddTexture( x, y, x + nWidth, y + nHeight,
 							rtNumber.U0, rtNumber.V0, rtNumber.U1, rtNumber.V1,
 							0xFFFFFFFF );
 
@@ -226,7 +216,9 @@ void CUISingleBattle::DrawNumber ( int x, int y, int nNumber, bool bLarge )
 //------------------------------------------------------------------------------
 void CUISingleBattle::RenderKillPoint()
 {
-	int nOffsetX			= _pUIMgr->GetDrawPort()->GetWidth() - RIGHT_SPACE - BOX_WIDTH/2;	
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	int nOffsetX			= pDrawPort->GetWidth() - RIGHT_SPACE - BOX_WIDTH/2;	
 	int nKillPoint			= _pNetwork->wo_dwKilledEnemyCount;
 	int nTargetKillPoint	= _pNetwork->wo_dwKilledEnemyCount;
 	int nHalfWidth			= LARGE_NUMBER_WIDTH / 2 ;
@@ -235,7 +227,7 @@ void CUISingleBattle::RenderKillPoint()
 	int nRenderNumber = 0;
 
 	// Red Kill Point
-	nOffsetX = _pUIMgr->GetDrawPort()->GetWidth() - RIGHT_SPACE - BOX_WIDTH/2;
+	nOffsetX = pDrawPort->GetWidth() - RIGHT_SPACE - BOX_WIDTH/2;
 
 	for( i = 1;  ; i *= 10 )
 	{
@@ -277,9 +269,10 @@ void CUISingleBattle::RenderKillPoint()
 //------------------------------------------------------------------------------
 void CUISingleBattle::OpenSingleBattle()
 {
-	if( IsVisible() )
+	if( IsVisible() == TRUE )
 		return;
-	_pUIMgr->RearrangeOrder( UI_SINGLE_BATTLE, TRUE );
+
+	CUIManager::getSingleton()->RearrangeOrder( UI_SINGLE_BATTLE, TRUE );
 }
 
 
@@ -289,7 +282,7 @@ void CUISingleBattle::OpenSingleBattle()
 //------------------------------------------------------------------------------
 void CUISingleBattle::DrawColon( int x, int y )
 {
-	_pUIMgr->GetDrawPort()->AddTexture( x, y, x + COLON_WIDTH, y + SMALL_NUMBER_HEIGHT,
+	CUIManager::getSingleton()->GetDrawPort()->AddTexture( x, y, x + COLON_WIDTH, y + SMALL_NUMBER_HEIGHT,
 							m_rtColon.U0, m_rtColon.V0, m_rtColon.U1, m_rtColon.V1,
 							0xFFFFFFFF );	
 }

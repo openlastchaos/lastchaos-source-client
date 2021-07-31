@@ -7,7 +7,6 @@
 #include <Engine/Base/Translation.h>
 #include <Engine/Base/ErrorReporting.h>
 #include <Engine/Base/Console.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Base/Synchronization.h>
 #include <Engine/Math/Functions.h>
 #include <Engine/Base/ListIterator.inl>
@@ -17,7 +16,7 @@
 #include <Engine/Templates/StaticStackArray.cpp>
 #include <Engine/Templates/DynamicStackArray.cpp>
 
-#include <Engine/zlib/zlib.h>
+#include <3rdparty/zlib-1.2.8/zlib.h>
 extern CTCriticalSection zip_csLock; // critical section for access to zlib functions
 extern INDEX fil_iReportStats;
 
@@ -981,7 +980,8 @@ INDEX UNZIPOpen_t(const CTFileName &fnm)
   TRACKMEM(Mem, "UnZip");
   CZipEntry *pze = NULL;
   // for each file
-  for(INDEX iFile=0; iFile<_azeFiles.Count(); iFile++) {
+  INDEX iFile;
+  for(iFile = 0; iFile < _azeFiles.Count(); iFile++) {
     // if it is that one
     if (_azeFiles[iFile].ze_fnm == fnm) {
       // stop searching
@@ -1002,7 +1002,8 @@ INDEX UNZIPOpen_t(const CTFileName &fnm)
 
   // for each existing handle
   BOOL bHandleFound = FALSE;
-  for (INDEX iHandle=1; iHandle<_azhHandles.Count(); iHandle++) {
+  INDEX iHandle;
+  for (iHandle = 1; iHandle < _azhHandles.Count(); iHandle++) {
     // if unused
     if (!_azhHandles[iHandle].zh_bOpen) {
       // use that one

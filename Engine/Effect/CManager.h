@@ -1,10 +1,10 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #ifndef TYPE
-#error "TYPEì´ ë°˜ë“œì‹œ ì •ì˜ë˜ì–´ ìˆì–´ì•¼ í•¨."
+#error "TYPEÀÌ ¹İµå½Ã Á¤ÀÇµÇ¾î ÀÖ¾î¾ß ÇÔ."
 #endif //TYPE
 #ifndef CTYPEManager
-#error "CTYPEManagerì´ ë°˜ë“œì‹œ ì •ì˜ë˜ì–´ ìˆì–´ì•¼ í•¨."
+#error "CTYPEManagerÀÌ ¹İµå½Ã Á¤ÀÇµÇ¾î ÀÖ¾î¾ß ÇÔ."
 #endif //TYPE
 
 #pragma warning(disable : 4786)
@@ -34,12 +34,12 @@ public:
 	TYPE *Create(const std::string name);
 	void Destroy(TYPE *obj);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef FINALVERSION
 	void Read(CTStream *istrFile);
 	void Write(CTStream *ostrFile);
 #endif //FINALVERSION
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 	my_list &GetCreatedList()	{ return m_listCreated; }
 	my_map &GetRegisteredMap()	{ return m_mapRegistered;	}
@@ -53,4 +53,4 @@ protected:
 	my_map		m_mapRegistered;
 };
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

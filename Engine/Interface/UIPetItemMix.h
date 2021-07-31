@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 // File : UIPetItemMix.h
-// Desc : í« ì•„ì´í…œ ì¡°í•©
+// Desc : Æê ¾ÆÀÌÅÛ Á¶ÇÕ
 // ---------------------------------------------------------------------
 #ifndef UIPETITEMMIX_H_
 #define UIPETITEMMIX_H_
@@ -8,82 +8,78 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIListBox.h>
 #include <Engine/Entities/Itemdata.h>
-#include <Engine/Interface/UIInventory.h>
-#include <Engine/Interface/UIProcess.h> // ì°½ì˜ í¬ê¸°ê°’ì€ UIProcessì˜ defineê°’ì„ ì‚¬ìš©
+#include <Engine/Interface/UIProcess.h> // Ã¢ÀÇ Å©±â°ªÀº UIProcessÀÇ define°ªÀ» »ç¿ë
 
 enum DRAGON_WEAPON_TYPE
 {
-	T_DRAGON_SWORD = 0,		// ë“œë˜ê³¤ ì†Œë“œ
-	T_DUAL_DRAGON_SWORD,	// ë“€ì–¼ ë“œë˜ê³¤ ì†Œë“œ
-	T_DRAGON_BLADE,		// ë“œë˜ê³¤ ë¸”ë ˆì´ë“œ
-	T_DRAGON_AXE,			// ë“œë˜ê³¤ ì•¡ìŠ¤
-	T_DRAGON_WAND,		// ë“œë˜ê³¤ ì™„ë“œ
-	T_DRAGON_BOW,			// ë“œë˜ê³¤ ë³´ìš°
-	T_DRAGON_STICK,		// ë“œë˜ê³¤ ìŠ¤í‹±
-	T_DRAGON_STAFF,		// ë“œë˜ê³¤ ìŠ¤í…Œí”„
-	T_DRAGON_DAGGER,		// ë“œë˜ê³¤ ëŒ€ê±°
-	T_DRAGON_ARMLETBOW,	// ë“œë˜ê³¤ ì•”ë¦¿ ë³´ìš°
-	T_DRAGON_SIDE,		// ë“œë˜ê³¤ ì‚¬ì´ë“œ
-	T_DRAGON_LOAD,		// ë“œë˜ê³¤ ë¡œë“œ
+	T_DRAGON_SWORD = 0,		// µå·¡°ï ¼Òµå
+	T_DUAL_DRAGON_SWORD,	// µà¾ó µå·¡°ï ¼Òµå
+	T_DRAGON_BLADE,		// µå·¡°ï ºí·¹ÀÌµå
+	T_DRAGON_AXE,			// µå·¡°ï ¾×½º
+	T_DRAGON_WAND,		// µå·¡°ï ¿Ïµå
+	T_DRAGON_BOW,			// µå·¡°ï º¸¿ì
+	T_DRAGON_STICK,		// µå·¡°ï ½ºÆ½
+	T_DRAGON_STAFF,		// µå·¡°ï ½ºÅ×ÇÁ
+	T_DRAGON_DAGGER,		// µå·¡°ï ´ë°Å
+	T_DRAGON_ARMLETBOW,	// µå·¡°ï ¾Ï¸´ º¸¿ì
+	T_DRAGON_SIDE,		// µå·¡°ï »çÀÌµå
+	T_DRAGON_LOAD,		// µå·¡°ï ·Îµå
 	T_DRAGON_MAX,
 };
 
 enum KNIGHT_AMOR_TYPE
 {
-	T_HELMET = 0,		// íˆ¬êµ¬
-	T_COAT,			// ìƒì˜
-	T_PANTS,			// í•˜ì˜
-	T_BOOTS,			// ë¶€ì¸ 
-	T_GLOVE,			// ì¥ê°‘
+	T_HELMET = 0,		// Åõ±¸
+	T_COAT,			// »óÀÇ
+	T_PANTS,			// ÇÏÀÇ
+	T_BOOTS,			// ºÎÃ÷
+	T_GLOVE,			// Àå°©
 	T_SHIELD,
 	T_KNIGHT_MAX,		
 };
 
-enum UNIQUE_INDEX				// ìœ ë‹ˆí¬ ì•„ì´í…œ ì¸ë±ìŠ¤
+enum UNIQUE_INDEX				// À¯´ÏÅ© ¾ÆÀÌÅÛ ÀÎµ¦½º
 {
-	UNI_DRAGON_SWORD = 887,		// ë“œë˜ê³¤ ì†Œë“œ
-	UNI_DUAL_DRAGON_SWORD = 907,	// ë“€ì–¼ ë“œë˜ê³¤ ì†Œë“œ
-	UNI_DRAGON_BLADE = 908,		// ë“œë˜ê³¤ ë¸”ë ˆì´ë“œ
-	UNI_DRAGON_AXE = 909,			// ë“œë˜ê³¤ ì•¡ìŠ¤
-	UNI_DRAGON_WAND = 910,		// ë“œë˜ê³¤ ì™„ë“œ
-	UNI_DRAGON_BOW = 911,			// ë“œë˜ê³¤ ë³´ìš°
-	UNI_DRAGON_STICK = 912,		// ë“œë˜ê³¤ ìŠ¤í‹±
-	UNI_DRAGON_STAFF = 913,		// ë“œë˜ê³¤ ìŠ¤í…Œí”„
-	UNI_DRAGON_DAGGER = 914,		// ë“œë˜ê³¤ ëŒ€ê±°
-	UNI_DRAGON_ARMLETBOW = 915,	// ë“œë˜ê³¤ ì•”ë¦¿ ë³´ìš°
-	UNI_DRAGON_SIDE = 916,		// ë“œë˜ê³¤ ì‚¬ì´ë“œ
-	UNI_DRAGON_LOAD = 917,		// ë“œë˜ê³¤ ë¡œë“œ
-	UNI_TITAN_HELMET = 918,		// íƒ€ì´íƒ„ 
+	UNI_DRAGON_SWORD = 887,		// µå·¡°ï ¼Òµå
+	UNI_DUAL_DRAGON_SWORD = 907,	// µà¾ó µå·¡°ï ¼Òµå
+	UNI_DRAGON_BLADE = 908,		// µå·¡°ï ºí·¹ÀÌµå
+	UNI_DRAGON_AXE = 909,			// µå·¡°ï ¾×½º
+	UNI_DRAGON_WAND = 910,		// µå·¡°ï ¿Ïµå
+	UNI_DRAGON_BOW = 911,			// µå·¡°ï º¸¿ì
+	UNI_DRAGON_STICK = 912,		// µå·¡°ï ½ºÆ½
+	UNI_DRAGON_STAFF = 913,		// µå·¡°ï ½ºÅ×ÇÁ
+	UNI_DRAGON_DAGGER = 914,		// µå·¡°ï ´ë°Å
+	UNI_DRAGON_ARMLETBOW = 915,	// µå·¡°ï ¾Ï¸´ º¸¿ì
+	UNI_DRAGON_SIDE = 916,		// µå·¡°ï »çÀÌµå
+	UNI_DRAGON_LOAD = 917,		// µå·¡°ï ·Îµå
+	UNI_TITAN_HELMET = 918,		// Å¸ÀÌÅº 
 	UNI_TITAN_COAT = 919,
 	UNI_TITAN_PANTS = 920,
 	UNI_TITAN_BOOTS = 921,
 	UNI_TITAN_GLOVE = 922,
-	UNI_KNIGHT_HELMET = 923,	// ê¸°ì‚¬
+	UNI_KNIGHT_HELMET = 923,	// ±â»ç
 	UNI_KNIGHT_COAT = 924,
 	UNI_KNIGHT_PANTS = 925,
 	UNI_KNIGHT_BOOTS = 926,
 	UNI_KNIGHT_GLOVE = 927,
 	UNI_KNIGHT_DEFENDSHIELD = 1280,
-	UNI_MAGE_CIRCLET = 928,		// ë©”ì´ì§€
+	UNI_MAGE_CIRCLET = 928,		// ¸ŞÀÌÁö
 	UNI_MAGE_COAT = 929,
 	UNI_MAGE_PANTS = 930,
 	UNI_MAGE_BOOTS = 931,
 	UNI_MAGE_GLOVE = 932,
-	UNI_LOG_HOOD = 933,			// ë¡œê·¸
+	UNI_LOG_HOOD = 933,			// ·Î±×
 	UNI_LOG_COAT = 934,
 	UNI_LOG_PANTS = 935,
 	UNI_LOG_BOOTS = 936,
 	UNI_LOG_GLOVE = 937,
-	UNI_HEALER_HEALCIRCLET = 938,		// íëŸ¬
+	UNI_HEALER_HEALCIRCLET = 938,		// Èú·¯
 	UNI_HEALER_COAT = 939,
 	UNI_HEALER_PANTS = 940,
 	UNI_HEALER_BOOTS = 941,
 	UNI_HEALER_GLOVE = 942,
-	UNI_SORCERER_CIRCLET = 943,			// ì†Œì„œëŸ¬
+	UNI_SORCERER_CIRCLET = 943,			// ¼Ò¼­·¯
 	UNI_SORCERER_COAT = 944,
 	UNI_SORCERER_PANTS = 945,
 	UNI_SORCERER_BOOTS = 946,
@@ -91,11 +87,11 @@ enum UNIQUE_INDEX				// ìœ ë‹ˆí¬ ì•„ì´í…œ ì¸ë±ìŠ¤
 };
 
 struct  CNeedStuff {
-	int		nNeedA[3];		// í•„ìš”ì¬ë£Œ 
+	int		nNeedA[3];		// ÇÊ¿äÀç·á 
 	int		nNeedB[3];
 };
 
-// ë„¤íŠ¸ì›Œí¬ ë©”ì„¸ì§€ë¥¼ ìœ„í•œ ë°ì´í„° êµ¬ì¡°ì²´ ( UIProcesì˜ CNeedItems ì´ìš© )
+// ³×Æ®¿öÅ© ¸Ş¼¼Áö¸¦ À§ÇÑ µ¥ÀÌÅÍ ±¸Á¶Ã¼ ( UIProcesÀÇ CNeedItems ÀÌ¿ë )
 
 class CUIPetItemMix : public CUIWindow
 {
@@ -104,37 +100,37 @@ protected:
 // Controls...
 	
 	// Button
-	CUIButton				m_btnClose;							// ë‹«ê¸° ë²„íŠ¼ 
-	CUIButton				m_btnOK[3];							// ì œì‘ ë²„íŠ¼( KNIGHT [1 -> A, 2 -> B] , 0 -> DRAGON ) 
-	CUIButton				m_btnCancel;						// ì·¨ì†Œ ë²„íŠ¼ 
+	CUIButton				m_btnClose;							// ´İ±â ¹öÆ° 
+	CUIButton				m_btnOK[3];							// Á¦ÀÛ ¹öÆ°( KNIGHT [1 -> A, 2 -> B] , 0 -> DRAGON ) 
+	CUIButton				m_btnCancel;						// Ãë¼Ò ¹öÆ° 
 	
 	// Skill buttons
-	std::vector<CUIButtonEx> m_btnProcessItems;					// ì¡°í•© ì•„ì´í…œ
+	std::vector< CUIIcon* > m_vecIcons;							// Á¶ÇÕ ¾ÆÀÌÅÛ
 
 
 	// Etc ...
-	CUIScrollBar			m_sbProcessItem;					// ì œì‘ ì•„ì´í…œ ì°½ ìŠ¤í¬ë¡¤ ë°”
-	CUIListBox				m_lbPreconditionDesc;				// í•„ìš” ì¡°ê±´ ì„¤ëª… ë¦¬ìŠ¤íŠ¸ ë°•ìŠ¤
+	CUIScrollBar			m_sbProcessItem;					// Á¦ÀÛ ¾ÆÀÌÅÛ Ã¢ ½ºÅ©·Ñ ¹Ù
+	CUIListBox				m_lbPreconditionDesc;				// ÇÊ¿ä Á¶°Ç ¼³¸í ¸®½ºÆ® ¹Ú½º
 	
 	
 //	Process Item Info
 
-//	int						m_nProcessText;						// ê°€ê³µ ë¬¸ì„œ ì•„ì´í…œ ì¸ë±ìŠ¤
+//	int						m_nProcessText;						// °¡°ø ¹®¼­ ¾ÆÀÌÅÛ ÀÎµ¦½º
 	SBYTE					m_nRow;
 	SBYTE					m_nCol;
 
-	int						m_nSelectProcessItem;				// í˜„ì¬ ì„ íƒëœ ê°€ê³µë¬¼
-	int						m_nProcessItemCount;				// ê°€ê³µë¬¸ì„œì— ë§ëŠ” ê°€ê³µí’ˆ ê°¯ìˆ˜
+	int						m_nSelectProcessItem;				// ÇöÀç ¼±ÅÃµÈ °¡°ø¹°
+	int						m_nProcessItemCount;				// °¡°ø¹®¼­¿¡ ¸Â´Â °¡°øÇ° °¹¼ö
 	
-	BOOL					m_bSatisfiedA;						// ì¡°ê±´ì´ ì¶©ë¶„í•œê°€?
-	BOOL					m_bSatisfiedB;						// ì¡°ê±´ì´ ì¶©ë¶„í•œê°€?
+	BOOL					m_bSatisfiedA;						// Á¶°ÇÀÌ ÃæºĞÇÑ°¡?
+	BOOL					m_bSatisfiedB;						// Á¶°ÇÀÌ ÃæºĞÇÑ°¡?
 	
-	CNeedItems				m_NeedItems[MAX_MAKE_ITEM_MATERIAL];// í•„ìš” ì•„ì´í…œ ì •ë³´
+	CNeedItems				m_NeedItems[MAX_MAKE_ITEM_MATERIAL];// ÇÊ¿ä ¾ÆÀÌÅÛ Á¤º¸
 
-	int						m_nNeedItemCount;					// í•„ìš”í•œ ì•„ì´í…œ ì¢…ë¥˜ì˜ ìˆ˜
-	int						m_nJobIndex[TOTAL_JOB];				// ì§ì—… ë³„ ìƒì‚° ìœ ë‹ˆí¬ ì•„ì´í…œ ì¸ë±ìŠ¤ ì‹œì‘ ê°’
+	int						m_nNeedItemCount;					// ÇÊ¿äÇÑ ¾ÆÀÌÅÛ Á¾·ùÀÇ ¼ö
+	int						m_nJobIndex[TOTAL_JOB];				// Á÷¾÷ º° »ı»ê À¯´ÏÅ© ¾ÆÀÌÅÛ ÀÎµ¦½º ½ÃÀÛ °ª
 
-	CNeedStuff				m_NStuffKnight[T_KNIGHT_MAX];		// ë‚˜ì´íŠ¸ ë©”ì–´ í•„ìš” ì¬ë£Œ ì •ë³´
+	CNeedStuff				m_NStuffKnight[T_KNIGHT_MAX];		// ³ªÀÌÆ® ¸Ş¾î ÇÊ¿ä Àç·á Á¤º¸
 
 // Region of each part
 	UIRect					m_rcTitle;							// Region of title bar
@@ -151,27 +147,13 @@ protected:
 // Network ...
 	BOOL					m_bWaitProcessResult;				// Wait Message
 	
-// ToolTip
-
-	UIRectUV				m_rtInfoUL;								// UV of upper left region of information
-	UIRectUV				m_rtInfoUM;								// UV of upper middle region of information
-	UIRectUV				m_rtInfoUR;								// UV of upper right region of information
-	UIRectUV				m_rtInfoML;								// UV of middle left region of information
-	UIRectUV				m_rtInfoMM;								// UV of middle middle region of information
-	UIRectUV				m_rtInfoMR;								// UV of middle right region of information
-	UIRectUV				m_rtInfoLL;								// UV of lower left region of information
-	UIRectUV				m_rtInfoLM;								// UV of lower middle region of information
-	UIRectUV				m_rtInfoLR;								// UV of lower right region of information
-
-	BOOL					m_bShowItemInfo;
-
-	UIRect					m_rcItemInfo;
-	int						m_nCurInfoLines;
 	int						m_nPetType;
 
 	CTString				m_strItemInfo[T_DRAGON_MAX];		// Item information string
 	COLOR					m_colItemInfo[T_DRAGON_MAX];		// Color of item information string
 	BOOL					m_bDetailItemInfo;
+
+	void	ClearProcessItems();
 
 public:
 	CUIPetItemMix();
@@ -204,11 +186,6 @@ public:
 // Send ...
 	void	SendPetItemMixReq( int nbtn, int nType );
 
-// RenderItemInfo ...
-	void	AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo = 0xF2F2F2FF );
-	BOOL	GetItemInfo( int nItemIndex, int &nInfoWidth, int &nInfoHeight );
-	void	ShowItemInfo( BOOL bShowInfo, int nItemIndex, BOOL bRenew = FALSE );
-	void	RenderItemInfo ();
 // etc ...
 	void	SelectItem ( int nIndex = -1 );
 	void	AddString ( CTString& strText, COLOR colText = 0xffffffff );

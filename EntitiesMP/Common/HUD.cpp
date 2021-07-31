@@ -10,6 +10,10 @@
 #include <EntitiesMP/EnemyBase.h>
 //#include <EntitiesMP/EnemyCounter.h>
 #include <EntitiesMP/CharacterBase.h>
+#include <Engine/Effect/CEffectManager.h>
+#include <Engine/Effect/CMdlEffect.h>
+#include <Engine/Effect/CSplinePathEffect.h>
+#include <Engine/Interface/UIManager.h>
 
 #define ENTITY_DEBUG
 
@@ -85,8 +89,8 @@ extern CPlayer *_apenPlayers[NET_MAXGAMEPLAYERS] = {0};
 //static CTextureObject _toHiScore;
 //static CTextureObject _toMessage;
 //static CTextureObject _toMana;
-//static CTextureObject _toFrags;
 //static CTextureObject _toDeaths;
+//static CTextureObject _toFrags;
 //static CTextureObject _toArmorSmall;
 //static CTextureObject _toArmorMedium;
 //static CTextureObject _toArmorLarge;
@@ -438,7 +442,7 @@ static void HUD_DrawBorder( FLOAT fCenterX, FLOAT fCenterY, FLOAT fSizeX, FLOAT 
 
   // put corners
   //_pDP->InitTexture( &_toTile, TRUE); // clamping on!
-//0105 9line ÏÇ≠Ï†ú. Î≥¥Îçî ÌÖåÎëêÎ¶¨ ÎÇòÏò§ÏßÄ ÏïäÍ≤å ÌïòÍ∏∞.
+//0105 9line ªË¡¶. ∫∏¥ı ≈◊µŒ∏Æ ≥™ø¿¡ˆ æ ∞‘ «œ±‚.
 
   _pDP->AddTexture( fLeft, fUp,   fLeftEnd, fUpEnd,   colTiles);
   _pDP->AddTexture( fRight,fUp,   fRightBeg,fUpEnd,   colTiles);
@@ -852,7 +856,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
   FLOAT fHalfUnit = fOneUnit * 0.5f;
 //  FLOAT fMoverX, fMoverY;
 //  COLOR colDefault;
-//0105 ÎßéÏù¥ ÏÇ≠Ï†ú.
+//0105 ∏π¿Ã ªË¡¶.
 /*  
   // prepare and draw health info
   fValue = ClampDn( _penPlayer->GetHealth(), 0.0f);  // never show negative health
@@ -1369,8 +1373,8 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
 */
 //0105
 
-//0102 Ïù∏ÌÑ∞ÌéòÏù¥Ïä§ Í∑∏Î¶¨ÏßÄ ÏïäÍ∏∞ ÏúÑÌï¥ HUD_DrawBorder,HUD_DrawTextÎ•º ÏßÄÏõ†Îã§.
-//0101 Ï≤¥Î†• ÌëúÏãú  
+//0102 ¿Œ≈Õ∆‰¿ÃΩ∫ ±◊∏Æ¡ˆ æ ±‚ ¿ß«ÿ HUD_DrawBorder,HUD_DrawText∏¶ ¡ˆø¸¥Ÿ.
+//0101 √º∑¬ «•Ω√  
   // prepare and draw health info
   fValue = ClampDn( _penPlayer->GetHealth(), 0.0f);  // never show negative health
   fNormValue = fValue/TOP_HEALTH;
@@ -1385,7 +1389,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
 //  HUD_DrawText( fCol, fRow, strValue, colDefault, fNormValue);
   fCol -= fAdvUnit+fChrUnit*3/2 -fHalfUnit;
 //  HUD_DrawIcon( fCol+fMoverX, fRow+fMoverY, _toHealth, C_WHITE , fNormValue, TRUE);
-//0101 ÏïÑÎ®∏ ÌëúÏãú
+//0101 æ∆∏” «•Ω√
   // prepare and draw armor info (eventually)
   fValue = _penPlayer->m_fArmor;
   if( fValue > 0.0f) {
@@ -1408,7 +1412,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
 //      HUD_DrawIcon( fCol+fMoverX, fRow+fMoverY, _toArmorLarge, C_WHITE , fNormValue, FALSE);
     }
   }
-//0101 Ï¥ùÏïåÍ≥º Î¨¥Í∏∞ ÌëúÏãú
+//0101 √—æÀ∞˙ π´±‚ «•Ω√
   // prepare and draw ammo and weapon info
   CTextureObject *ptoCurrentAmmo=NULL, *ptoCurrentWeapon=NULL, *ptoWantedWeapon=NULL;
   INDEX iCurrentWeapon = _penWeapons->m_iCurrentWeapon;
@@ -1478,7 +1482,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
   /*
   FLOAT fBombCount = penPlayerCurrent->m_iSeriousBombCount;
   BOOL  bBombFiring = FALSE;
-//0101 ÏãúÎ¶¨Ïñ¥Ïä§ Ìè≠ÌÉÑ Í∑∏Î¶¨Í∏∞
+//0101 Ω√∏ÆæÓΩ∫ ∆¯≈∫ ±◊∏Æ±‚
   // draw serious bomb
 #define BOMB_FIRE_TIME 1.5f
   if (penPlayerCurrent->m_tmSeriousBombFired+BOMB_FIRE_TIME>_pTimer->GetLerpedCurrentTick()) {
@@ -1526,7 +1530,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
       fCol -= fAdvUnitS;  
     }
   }  
-//0101 ÌååÏõåÏóÖ ÌëúÏãú
+//0101 ∆ƒøˆæ˜ «•Ω√
   // draw powerup(s) if needed
   PrepareColorTransitions( colMax, colTop, colMid, C_RED, 0.66f, 0.33f, FALSE);
   TIME *ptmPowerups = (TIME*)&_penPlayer->m_tmInvisibility;
@@ -1557,7 +1561,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
   }
   */
 
-//0101 Î¨¥Í∏∞Í∞Ä Î∞îÎÄåÏóàÏùÑÎïå..
+//0101 π´±‚∞° πŸ≤Óæ˙¿ª∂ß..
   // if weapon change is in progress
   _fCustomScaling = hud_fScaling;
   /*
@@ -1604,7 +1608,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
   }
   */
 
-//0101 ÏïÑÏù¥ÏΩò ÏÇ¨Ïù¥Ï¶àÎ•º Ï§ÑÏù∏Îã§.
+//0101 æ∆¿Ãƒ‹ ªÁ¿Ã¡Ó∏¶ ¡Ÿ¿Œ¥Ÿ.
   // reduce icon sizes a bit
   const FLOAT fUpperSize = ClampDn(_fCustomScaling*0.5f, 0.5f)/_fCustomScaling;
   _fCustomScaling*=fUpperSize;
@@ -1614,7 +1618,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
   fHalfUnit *= fUpperSize;
   fAdvUnit  *= fUpperSize;
   fNextUnit *= fUpperSize;
-//0101 ÏÇ∞ÏÜå ÌëúÏãú
+//0101 ªÍº“ «•Ω√
   // draw oxygen info if needed
   BOOL bOxygenOnScreen = FALSE;
   fValue = _penPlayer->en_tmMaxHoldBreath - (_penPlayer->en_tmEntityTime - _penPlayer->en_tmLastBreathed);
@@ -1632,7 +1636,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
 //    HUD_DrawIcon(   fCol,      fRow, _toOxygen, C_WHITE , fNormValue, TRUE);
     bOxygenOnScreen = TRUE;
   }
-//0101 Î≥¥Ïä§ ÏóêÎÑàÏßÄ ÌëúÏãú
+//0101 ∫∏Ω∫ ø°≥ ¡ˆ «•Ω√
   // draw boss energy if needed
   if( _penPlayer->m_penMainMusicHolder!=NULL) {
     CMusicHolder &mh = (CMusicHolder&)*_penPlayer->m_penMainMusicHolder;
@@ -1703,7 +1707,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
     if( bCooperative) eKey = (SortKeys)Clamp( (INDEX)eKey, 0L, 3L);
     //if( eKey==PSK_HEALTH && (bScoreMatch || bFragMatch)) { eKey = PSK_NAME; }; // prevent health snooping in deathmatch
     INDEX iPlayers = SetAllPlayersStats(eKey);
-/*	 //0322 kwon ÏÇ≠Ï†ú.
+/*	 //0322 kwon ªË¡¶.
     // loop thru players 
     for( INDEX i=0; i<iPlayers; i++)
     { // get player name and mana
@@ -1733,7 +1737,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
       if( iHealth>25) colHealth = _colHUD;
       if( iArmor >25) colArmor  = _colHUD;
       // eventually print it out
-	  //!ÎÑ§Ìä∏ÏõåÌÅ¨ Í≤åÏûÑÏóêÏÑú Ïù¥Î¶Ñ,Ï≤¥Î†• ÌëúÏãúÌïòÎäî Î∂ÄÎ∂Ñ
+	  //!≥◊∆Æøˆ≈© ∞‘¿”ø°º≠ ¿Ã∏ß,√º∑¬ «•Ω√«œ¥¬ ∫Œ∫–
       if( hud_iShowPlayers==1 || hud_iShowPlayers==-1 && !bSinglePlay) {
         // printout location and info aren't the same for deathmatch and coop play
         const FLOAT fCharWidth = (PIX)((_pfdDisplayFont->GetWidth()-2) *fTextScale);
@@ -1835,7 +1839,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
     iScore = iScoreSum;
   }
   */
-//0101 Ïä§ÏΩîÏñ¥ÎòêÎäî ÌîåÎûòÍ∑∏ ÌëúÏãú 
+//0101 Ω∫ƒ⁄æÓ∂«¥¬ «√∑°±◊ «•Ω√ 
   // prepare and draw score or frags info 
 //  strValue.PrintF( "%d", iScore);
   fRow = pixTopBound  +fHalfUnit;
@@ -1845,7 +1849,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
 //  HUD_DrawBorder( fCol+fAdv, fRow, fChrUnit*fWidthAdj, fOneUnit, colBorder);
 //  HUD_DrawText(   fCol+fAdv, fRow, strValue, colScore, 1.0f);
 //  HUD_DrawIcon(   fCol,      fRow, _toFrags, C_WHITE , 1.0f, FALSE);
-//0101 ÎßàÎÇò ÌëúÏãú
+//0101 ∏∂≥™ «•Ω√
   /*
   // eventually draw mana info 
   if( bScoreMatch || bFragMatch) 
@@ -1860,7 +1864,7 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
  //   HUD_DrawIcon(   fCol,      fRow, _toDeaths, C_WHITE , 1.0f, FALSE);
   }
   */
-//0101 Ïã±Í∏ÄÌîåÎ†àÏù¥Ïñ¥Ïù∏ÏßÄ cooperative modeÏù∏ÏßÄ...
+//0101 ΩÃ±€«√∑π¿ÃæÓ¿Œ¡ˆ cooperative mode¿Œ¡ˆ...
   /*
   // if single player or cooperative mode
   if( bSinglePlay || bCooperative)
@@ -1901,6 +1905,206 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
 
 }
 
+void HUD_ProcessEffects(HUD_MLData *hud_MLData, CAnyProjection3D& ppr)
+{
+	FLOAT fCurrentTime = _pTimer->GetLerpedCurrentTick();
+
+	CEffectGroupManager::my_list listDelete;
+	CEffectGroupManager::my_list::const_iterator iterBegin = CEffectGroupManager::Instance().GetCreatedList().begin();
+	CEffectGroupManager::my_list::const_iterator iterEnd = CEffectGroupManager::Instance().GetCreatedList().end();
+	CEffectGroupManager::my_list::const_iterator iter;
+	for(iter = iterBegin; iter != iterEnd; ++iter)
+	{
+		CEffectGroup *pEG = *iter;
+
+		if (pEG->GetgERType() != ER_IN_UI) { continue; }
+	
+		pEG->SetProjection(ppr);
+		if(pEG->Active() && !pEG->Process(fCurrentTime))
+		{
+			listDelete.push_back(pEG);
+		}
+	}
+	for(CEffectGroupManager::my_list::iterator it=listDelete.begin(); it!=listDelete.end(); ++it)
+	{
+		if ((*it)->GetgERType() != ER_IN_UI) { continue; }
+		CEffectGroupManager::Instance().Destroy(*it);
+	}
+	listDelete.clear();
+}
+
+class CRenderFunc
+{
+public:
+	EFFECT_TYPE EffectType;
+	BOOL bOverDraw;
+
+	inline void operator()(CEffect *pEffect)
+	{
+		if (pEffect->Playing() && EffectType == pEffect->GetType())
+		{
+			pEffect->Render();
+		}
+	}
+};
+
+/* Render effect */
+void HUD_RenderEffects(HUD_MLData *hud_MLData, CAnyProjection3D& ppr, CDrawPort* pdp)
+{
+	CRenderFunc renderFunc;
+	for(DWORD dwEffectType=0; dwEffectType<(DWORD)ET_COUNT; ++dwEffectType)
+	{
+		EFFECT_TYPE effectType = (EFFECT_TYPE)dwEffectType;
+		renderFunc.EffectType = effectType;
+		renderFunc.bOverDraw = FALSE;
+
+		CEffectManager::my_list &listCreated = CEffectManager::Instance().GetCreatedList(effectType);
+		if(listCreated.empty()) continue;
+		if(effectType != ET_MDL)
+		{
+			CEffectManager::my_list::const_iterator iter;
+			if((*listCreated.begin())->BeginRender(ppr, pdp))
+			{
+				for ( iter = listCreated.begin() ; iter != listCreated.end() ; ++iter)
+				{
+					if ( (*iter)->GetERSubType() == ERS_MAKETITLE)
+					{
+						CEffect* pEffect = (*iter);
+						renderFunc((*iter));
+					}
+				}
+				(*listCreated.begin())->EndRender(FALSE);
+			}
+		}
+		else
+		{
+			if((*listCreated.begin())->BeginRender(ppr, pdp))
+			{
+				CEffectManager::my_list::const_iterator iter;
+				for(iter=listCreated.begin(); iter!=listCreated.end(); ++iter)
+				{
+					if ((*iter)->GetERSubType() == ERS_MAKETITLE)
+					{
+						if((*iter)->Playing() && !((CMdlEffect*)(*iter))->GetOverDraw())
+							(*iter)->Render();
+					}
+				}
+				(*listCreated.begin())->EndRender(FALSE);
+			}
+		}
+	}
+
+	CEffectManager::my_list &listCreated = CEffectManager::Instance().GetCreatedList(ET_MDL);
+	renderFunc.EffectType = ET_MDL;
+	renderFunc.bOverDraw = TRUE;
+
+	if(listCreated.empty()) return;
+	if((*listCreated.begin())->BeginRender(ppr, pdp))
+	{
+		CEffectManager::my_list::const_iterator iter;
+		for(iter=listCreated.begin(); iter!=listCreated.end(); ++iter)
+		{
+			if ((*iter)->GetERSubType() == ERS_MAKETITLE)
+			{
+				if((*iter)->Playing() && ((CMdlEffect*)(*iter))->GetOverDraw())
+					(*iter)->Render();
+			}
+		}
+		(*listCreated.begin())->EndRender(FALSE);
+	}
+}
+
+void HUD_DrawSkaModel_Old(CDrawPort *pdpCurrent, HUD_MLData *hud_MLData,  FLOAT fMinX, FLOAT fMinY, FLOAT fMaxX, FLOAT fMaxY, FLOAT fDistance, FLOAT fHeight)
+{
+	CModelInstance* Draw_MI = hud_MLData->hud_MI.GetModelInstance();
+	CDrawPort * pdpChar = NULL;
+	pdpChar = new CDrawPort(pdpCurrent, 
+		PIXaabbox2D(PIX2D(fMinX, fMinY), PIX2D(fMaxX, fMaxY)));
+
+	FLOAT fDist = fDistance;
+
+	pdpChar->Lock();
+	//pdpChar->Fill(C_BLUE|128);
+	// prepare projection
+	CPerspectiveProjection3D pr;
+	pr.FOVL() = AngleDeg(30.0f);
+	pr.ScreenBBoxL() = FLOATaabbox2D(FLOAT2D(0.0f, 0.0f),
+		FLOAT2D((float)pdpChar->GetWidth(),
+		(float)pdpChar->GetHeight()));
+	pr.AspectRatioL() = 1.0f;
+	pr.FrontClipDistanceL() = 2.0f;
+	//pr.FarClipDistanceL() = 20.0f;
+	pr.ViewerPlacementL() = CPlacement3D(FLOAT3D(0,0,0.0f), ANGLE3D(0.0f, 0.0f, 0.0f));
+
+	// initialize remdering
+	CAnyProjection3D apr;
+	apr = pr;
+
+	// set model's position
+	CPlacement3D pl=CPlacement3D(FLOAT3D(0.0f,fHeight,fDist), ANGLE3D(180.0f,-10.0f,0));
+
+	RM_BeginRenderingView(apr, pdpChar);
+	RM_SetObjectPlacement(pl);
+	RM_SetFlags(RM_GetFlags()|RMF_INSIDE|RMF_OVERDRAW);
+	RM_SetLightColor(LerpColor(C_BLACK, C_WHITE, 0.4f)|CT_OPAQUE, LerpColor(C_BLACK, C_WHITE, 0.2f)|CT_OPAQUE);
+	RM_SetLightDirection(FLOAT3D( -0.2f, -0.4f, -0.6f));
+	RM_RenderSKA(*Draw_MI, TRUE);
+	RM_EndRenderingView();
+
+	HUD_ProcessEffects(hud_MLData, apr);
+	HUD_RenderEffects(hud_MLData, apr, pdpChar);
+	pdpChar->Unlock();
+
+	delete pdpChar;
+}
+
+void HUD_DrawSkaModel(CDrawPort *pdpCurrent, HUD_MLData *hud_MLData,  FLOAT fMinX, FLOAT fMinY, FLOAT fMaxX, FLOAT fMaxY, FLOAT fDistance, FLOAT fHeight)
+{
+	CModelInstance* Draw_MI = hud_MLData->hud_MI.GetModelInstance();
+	CModelInstance* Draw_BG = hud_MLData->hud_BG.GetModelInstance();
+
+	CDrawPort * pdpChar = NULL;
+	pdpChar = new CDrawPort(pdpCurrent, 
+		PIXaabbox2D(PIX2D(fMinX, fMinY), PIX2D(fMaxX, fMaxY)));
+
+	FLOAT fDist = fDistance;
+
+	pdpChar->Lock();
+	//pdpChar->Fill(C_BLUE|128);
+
+	// prepare projection
+	CPerspectiveProjection3D pr;
+	pr.FOVL() = AngleDeg(30.0f);
+	pr.ScreenBBoxL() = FLOATaabbox2D(FLOAT2D(0.0f, 0.0f),
+		FLOAT2D((float)pdpChar->GetWidth(),
+		(float)pdpChar->GetHeight()));
+	pr.AspectRatioL() = 1.0f;
+	pr.FrontClipDistanceL() = 1.0f;
+	pr.FarClipDistanceL() = 30.0f;
+	pr.ViewerPlacementL() = CPlacement3D(FLOAT3D(0.0f,fHeight,fDist), ANGLE3D(180.0f,-10.0f,0));;
+	pr.Prepare();
+	// initialize remdering
+	CAnyProjection3D apr;
+	apr = pr;
+
+	// set model's position
+	CPlacement3D pl = CPlacement3D(FLOAT3D(0.f, 0.0f, 0.0f), ANGLE3D(0.0f, -0.0f, 0.0f));
+
+	RM_BeginRenderingView(apr, pdpChar);
+	RM_SetObjectPlacement(pl);
+	RM_SetFlags(RM_GetFlags()|RMF_INSIDE|RMF_OVERDRAW);
+	RM_SetLightColor(LerpColor(C_BLACK, C_WHITE, 0.4f)|CT_OPAQUE, LerpColor(C_BLACK, C_WHITE, 0.2f)|CT_OPAQUE);
+	RM_SetLightDirection(FLOAT3D( -0.2f, -0.4f, -0.6f));
+	RM_RenderSKA(*Draw_BG, TRUE);
+	RM_RenderSKA(*Draw_MI, TRUE);
+	RM_EndRenderingView();
+
+	UIMGR()->RenderHUDObjectNamePopup(&hud_MLData->hud_MI, pdpChar, apr);
+	HUD_ProcessEffects(hud_MLData, apr);
+	HUD_RenderEffects(hud_MLData, apr, pdpChar);
+	pdpChar->Unlock();
+	delete pdpChar;
+}
 
 
 // initialize all that's needed for drawing the HUD

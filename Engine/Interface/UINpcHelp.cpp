@@ -1,8 +1,12 @@
-
-
 #include "stdh.h"
-#include <Engine/Interface/UINpcHelp.h>
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <vector>
+#include <Engine/Interface/UINpcHelp.h>
+#include <Engine/Interface/UIHelp.h>
+#include <Engine/Interface/UIMap.h>
+#include <Engine/Info/MyInfo.h>
 
 static int	_nMsgBoxLineHeight = 0;
 
@@ -15,14 +19,12 @@ CUINpcHelp::CUINpcHelp()
 
 CUINpcHelp::~CUINpcHelp()
 {
-	Destroy();
 }
 
 void CUINpcHelp::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+
 	_nMsgBoxLineHeight = _pUIFontTexMgr->GetFontHeight() + 4;
 		// Region of each part
 	m_rcTitle.SetRect( 0, 0, 216, 22 );	
@@ -61,13 +63,13 @@ void CUINpcHelp::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 		// List button
-	m_btnList.Create( this, _S( 313, "ëª©ë¡" ), 37, 316, 63, 21 );	
+	m_btnList.Create( this, _S( 313, "¸ñ·Ï" ), 37, 316, 63, 21 );	
 	m_btnList.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
 	m_btnList.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
 	m_btnList.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
 	m_btnList.CopyUV( UBS_IDLE, UBS_ON ); 
 
-	m_btnNpcHelp.Create( this, _S( 1748, "ì•ˆë‚´" ), 139, 316, 63, 21 );
+	m_btnNpcHelp.Create( this, _S( 1748, "¾È³»" ), 139, 316, 63, 21 );
 	m_btnNpcHelp.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
 	m_btnNpcHelp.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
 	m_btnNpcHelp.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight  );
@@ -103,13 +105,13 @@ void CUINpcHelp::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 
 void CUINpcHelp::OpenNpcHelp()
 {
-	_pUIMgr->RearrangeOrder(UI_NPCHELP,TRUE);
+	CUIManager::getSingleton()->RearrangeOrder(UI_NPCHELP,TRUE);
 }
 
 void CUINpcHelp::CloseNpcHelp()
 {
 	m_nRenType = NPC_LIST;
-	_pUIMgr->RearrangeOrder( UI_NPCHELP, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_NPCHELP, FALSE );
 	m_vectorNpclist.clear();
 }
 
@@ -133,9 +135,10 @@ void CUINpcHelp::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixM
 		ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
 }
 
-bool StingOfComp( const CNpcHelp& x, const CNpcHelp& y )
+
+bool StingOfComp( const INDEX x, const INDEX y )
 {
-	int nReturn = strcmp(x.m_NpcList.npc_name, y.m_NpcList.npc_name);
+	int nReturn = strcmp(CMobData::getData(x)->GetName(), CMobData::getData(y)->GetName());
 	
 	if ( nReturn > 0) 
 	{
@@ -150,65 +153,68 @@ void CUINpcHelp::SetViewList()
 	m_lbNpcDesc.ResetAllStrings();
 	CTString tempDesc;
 	BOOL bCityChack = FALSE;
-	if (_pNetwork->GetMobData(_pNetwork->_TargetInfo.dbIdx).GetType() & NPC_SUBCITY)
+	if (CMobData::getData(INFO()->GetTargetDBIdx(eTARGET))->GetType() & NPC_SUBCITY)
 	{
-		tempDesc.PrintF(_S(3538, "í•˜! ì´ê²Œ ëˆ„êµ¬ì•¼! ìžë„¤ê°€ ì—¬ê¸°ì— ìžˆë‹¤ëŠ” ê²ƒì€ ëˆ„êµ°ê°€ì—ê²Œ ?ê¸°ê³  ìžˆê±°ë‚˜, ì „íˆ¬ì— íŒ¨ë°°í–ˆë‹¤ëŠ” ê±´ë°, í•œë§ˆë””ë¡œ ë‹¹ì‹ ë„ íŒ¨ë°°ìžì´êµ°! í‚¤ë“! í‚¤ë“! ê·¸ëž˜ ë¬´ì—‡ì´ ê¶ê¸ˆí•œê°€?"));
+		tempDesc.PrintF(_S(3538, "ÇÏ! ÀÌ°Ô ´©±¸¾ß! ÀÚ³×°¡ ¿©±â¿¡ ÀÖ´Ù´Â °ÍÀº ´©±º°¡¿¡°Ô ¦i±â°í ÀÖ°Å³ª, ÀüÅõ¿¡ ÆÐ¹èÇß´Ù´Â °Çµ¥, ÇÑ¸¶µð·Î ´ç½Åµµ ÆÐ¹èÀÚÀÌ±º! Å°µæ! Å°µæ! ±×·¡ ¹«¾ùÀÌ ±Ã±ÝÇÑ°¡?"));
 		bCityChack = TRUE;
 	}else
 	{
-		tempDesc.PrintF(_S(2204,"ë‚´ê°€ ì´ ë§ˆì„ ì‚¬ëžŒë“¤ì€ ë‹¤ ì•Œê³  ìžˆì§€.. ê·¸ëž˜ ëˆ„êµ¬ë¥¼ ì°¾ìœ¼ì‹œì˜¤?"));
+		tempDesc.PrintF(_S(2204,"³»°¡ ÀÌ ¸¶À» »ç¶÷µéÀº ´Ù ¾Ë°í ÀÖÁö.. ±×·¡ ´©±¸¸¦ Ã£À¸½Ã¿À?"));
 	}
 	MultiLineString(tempDesc);
 
 	m_vectorNpclist.clear();
 	m_nCurZone = _pNetwork->MyCharacterInfo.zoneNo;
-	for(int i = 0; i < _pNetwork->wo_iNumofNpcList; i++)
-	{
-		CNpcHelp TempNpc = _pNetwork->wo_aNpcList[i];
-		
-		if(m_nCurZone == TempNpc.m_NpcList.zone_index)
-		{
-			if (bCityChack)		//070705_ttos: ì€ë‘”ìžì˜ ë§ˆì„ ì²´í¬
-			{
-				if (_pNetwork->GetMobData(TempNpc.m_NpcList.npc_index).GetType() & NPC_SUBCITY)
-				{
-					m_vectorNpclist.push_back(TempNpc);	
-				}
 
-			}else
+	CNpcHelp::_map::iterator	iter = CNpcHelp::_mapdata.begin();
+	CNpcHelp::_map::iterator	eiter = CNpcHelp::_mapdata.end();
+
+	for (;iter != eiter; ++iter)
+	{
+		CNpcHelp* pNpc = (*iter).second;
+
+		if (pNpc == NULL)
+			continue;
+
+		if (pNpc->zoneNum == m_nCurZone)
+		{
+			int nIdx = pNpc->getNpcIndex();
+			if (bCityChack)
 			{
-				if (!(_pNetwork->GetMobData(TempNpc.m_NpcList.npc_index).GetType() & NPC_SUBCITY))
-				{
-					m_vectorNpclist.push_back(TempNpc);
-				}
+				if (CMobData::getData(nIdx)->GetType() & NPC_SUBCITY)
+					m_vectorNpclist.push_back(nIdx);
+			}
+			else
+			{
+				if (!(CMobData::getData(nIdx)->GetType() & NPC_SUBCITY))
+					m_vectorNpclist.push_back(nIdx);
 			}			
 		}
 	}
 
 	std::sort(m_vectorNpclist.begin(),m_vectorNpclist.end(),StingOfComp);
-	
 }
 
 void CUINpcHelp::SetViewContent( int iIndex )
 {
 	m_lbNpcExplan.ResetAllStrings();
-	CNpcHelp NH = (CNpcHelp&)m_vectorNpclist[iIndex];
-	m_lbNpcExplan.AddString(0,(CTString)NH.m_NpcList.npc_name,0xFFF42BFF);
-	MultiLineString((CTString)NH.m_NpcList.npc_explan);
+	INDEX index = m_vectorNpclist[iIndex];
+	m_lbNpcExplan.AddString(0, (CTString)CMobData::getData(index)->GetName(),0xFFF42BFF);
+	MultiLineString( CTString(CMobData::getData(index)->GetDesc()));
 
-	_pUIMgr->m_nHelpNpc_Index = NH.m_NpcList.npc_index;
-
+	CUIManager::getSingleton()->m_nHelpNpc_Index = index;
 } 
 void CUINpcHelp::MultiLineString(CTString &strExplan)
 {
 	// If length of string is less than max char
 	int nLength = strExplan.Length();
 
+	int iPos;
 	// If length of string is less than max char
 	if( nLength <= READ_MAX_CHAR )
 	{
-		// Check line character
-		for( int iPos = 0; iPos < nLength; iPos++ )
+		// Check line character		
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
 			if( strExplan[iPos] == '\n' || strExplan[iPos] == '\r' )
 				break;	
@@ -254,7 +260,7 @@ void CUINpcHelp::MultiLineString(CTString &strExplan)
 		// Check splitting position for 2 byte characters
 		int		nSplitPos = READ_MAX_CHAR;
 		BOOL	b2ByteChar = FALSE;
-		for( int iPos = 0; iPos < nSplitPos; iPos++ )
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
 		{
 			if( strExplan[iPos] & 0x80 )
 				b2ByteChar = !b2ByteChar;
@@ -290,6 +296,7 @@ void CUINpcHelp::MultiLineString(CTString &strExplan)
 			if( strTemp[0] == ' ' )
 			{
 				int	nTempLength = strTemp.Length();
+				int iPos;
 				for( iPos = 1; iPos < nTempLength; iPos++ )
 				{
 					if( strTemp[iPos] != ' ' )
@@ -330,12 +337,12 @@ void CUINpcHelp::MultiLineString(CTString &strExplan)
 void CUINpcHelp::RefreshNpcList()
 {
 	m_lbNpcList.ResetAllStrings();
-	std::vector<CNpcHelp>::iterator it = m_vectorNpclist.begin();
-	std::vector<CNpcHelp>::iterator itend = m_vectorNpclist.end();
+	std::vector<int>::iterator it = m_vectorNpclist.begin();
+	std::vector<int>::iterator itend = m_vectorNpclist.end();
 	for( ; it != itend; ++it )
 	{
-		m_lbNpcList.AddString(0,(CTString)(*it).m_NpcList.npc_name,0xF2F2F2FF);
-	}	
+		m_lbNpcList.AddString(0, (CTString)CMobData::getData((*it))->GetName(), 0xF2F2F2FF);
+	}
 }
 void CUINpcHelp::Render()
 {
@@ -346,21 +353,22 @@ void CUINpcHelp::Render()
 
 	}
 	
-		// Set shop texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	
+	// Set shop texture
+	pUIManager->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
 	
 	// Add render regions
-	int	nX, nY, nX2, nY2;
 	// Background
 	// Upper left
-	nX = m_nPosX;
-	nY = m_nPosY;
-	nX2 = m_nPosX + m_nWidth;
-	nY2 = m_nPosY + 28;
+	int nX = m_nPosX;
+	int nY = m_nPosY;
+	int nX2 = m_nPosX + m_nWidth;
+	int nY2 = m_nPosY + 28;
 
 	m_bxTitle.Render(m_nPosX,m_nPosY);
 
-	if(m_nRenType == NPC_LIST)	//Npc ëª©ë¡ ì°ê¸°
+	if(m_nRenType == NPC_LIST)	//Npc ¸ñ·Ï Âï±â
 	{
 		m_bxBackup.Render(m_nPosX,m_nPosY);
 		m_bxBackDown.Render(m_nPosX,m_nPosY);
@@ -368,7 +376,7 @@ void CUINpcHelp::Render()
 		m_lbNpcDesc.Render();
 		m_lbNpcList.Render();
 	}
-	else						//Npc ì„¤ëª… ì°ê¸°
+	else						//Npc ¼³¸í Âï±â
 	{
 		m_bxBackup2.Render(m_nPosX,m_nPosY);
 		m_bxBackDown2.Render(m_nPosX,m_nPosY);
@@ -380,14 +388,14 @@ void CUINpcHelp::Render()
 		// Close button
 	m_btnClose.Render();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pUIManager->GetDrawPort()->FlushRenderingQueue();
 
 	// Text in web board
 	// Title
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1748, "ì•ˆë‚´" ), m_nPosX + HELP_TITLE_OFFSETX,		
+	pUIManager->GetDrawPort()->PutTextEx( _S( 1748, "¾È³»" ), m_nPosX + HELP_TITLE_OFFSETX,		
 										m_nPosY + HELP_TITLE_OFFSETY, 0xFFFFFFFF );	
-		// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();	
+	// Flush all render text queue
+	pUIManager->GetDrawPort()->EndTextEx();	
 
 }
 
@@ -409,7 +417,7 @@ WMSG_RESULT CUINpcHelp::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move web board
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -424,6 +432,10 @@ WMSG_RESULT CUINpcHelp::MouseMessage( MSG *pMsg )
 			}
 			// Close button
 			else if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
+				return WMSG_SUCCESS;
+			else if ( m_btnNpcHelp.MouseMessage(pMsg) != WMSG_FAIL)
+				return WMSG_SUCCESS;
+			else if ( m_btnList.MouseMessage(pMsg) != WMSG_FAIL)
 				return WMSG_SUCCESS;
 			// Top Scroll bar
 			else if( ( wmsgResult = m_lbNpcList.MouseMessage( pMsg ) ) != WMSG_FAIL )
@@ -444,6 +456,8 @@ WMSG_RESULT CUINpcHelp::MouseMessage( MSG *pMsg )
 				SetFocus ( TRUE );
 				nOldX = nX;		nOldY = nY;
 
+				m_btnNpcHelp.MouseMessage(pMsg);
+
 				// Close button
 				if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
@@ -454,18 +468,28 @@ WMSG_RESULT CUINpcHelp::MouseMessage( MSG *pMsg )
 				{
 					bTitleBarClick = TRUE;
 				}
-				// Top Scroll bar
-				else if( ( wmsgResult = m_lbNpcList.MouseMessage( pMsg ) ) != WMSG_SUCCESS )
+				else if (m_nRenType == NPC_EXPLAN)
 				{
-					int curnum = m_lbNpcList.GetCurSel(); 
-					if(curnum > -1  && m_nRenType == NPC_LIST)
+					if (m_btnList.MouseMessage(pMsg) != WMSG_FAIL && m_nRenType == NPC_EXPLAN)
 					{
-						m_nRenType = NPC_EXPLAN;
-						SetViewContent(curnum);
-						m_lbNpcList.SetCurSel(-1);		//ì„ íƒí•œ ë¦¬ìŠ¤íŠ¸ ì´ˆê¸°í™”
+						// Nothing
 					}
-					if( wmsgResult == WMSG_COMMAND)
-						m_nCurRow = m_lbNpcList.GetScrollBarPos(); 
+				}
+				else if (m_nRenType == NPC_LIST)
+				{
+					// Top Scroll bar
+					if( ( wmsgResult = m_lbNpcList.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					{
+						int curnum = m_lbNpcList.GetCurSel(); 
+						if(curnum > -1  && m_nRenType == NPC_LIST)
+						{
+							m_nRenType = NPC_EXPLAN;
+							SetViewContent(curnum);
+							m_lbNpcList.SetCurSel(-1);		//¼±ÅÃÇÑ ¸®½ºÆ® ÃÊ±âÈ­
+						}
+						if( wmsgResult == WMSG_COMMAND)
+							m_nCurRow = m_lbNpcList.GetScrollBarPos(); 
+					}
 				}
 
 				return WMSG_SUCCESS;
@@ -476,7 +500,7 @@ WMSG_RESULT CUINpcHelp::MouseMessage( MSG *pMsg )
 	case WM_LBUTTONUP:
 		{
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (UIMGR()->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -494,26 +518,44 @@ WMSG_RESULT CUINpcHelp::MouseMessage( MSG *pMsg )
 
 					return WMSG_SUCCESS;
 				}
-				else if( ( wmsgResult = m_btnNpcHelp.MouseMessage( pMsg ) ) != WMSG_FAIL )
+				else if (m_nRenType == NPC_EXPLAN)
 				{
-					CloseNpcHelp();
-					_pUIMgr->RearrangeOrder(UI_MAP,TRUE);
-		
-					// Nothing
-					return WMSG_SUCCESS;
-				} 
-				else if ((wmsgResult = m_btnList.MouseMessage(pMsg)) != WMSG_FAIL)
-				{
-					m_nRenType = NPC_LIST;
-					m_lbNpcList.SetCurSel(-1);		//ì„ íƒí•œ ë¦¬ìŠ¤íŠ¸ ì´ˆê¸°í™”
+					if( ( wmsgResult = m_btnNpcHelp.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					{
+						CloseNpcHelp();
+						// [100526: selo] ±×³É RearrangeOrder(UI_MAP,TRUE); ·Î µÇ¾î ÀÖ´ø°Í ¼öÁ¤
+						// Åä±Û·Î Ã³¸®ÇØ¾ß ºÎ¼öÀûÀÎ ±â´ÉÀ» ¾òÀ» ¼ö ÀÖ´Ù.
+						CUIManager::getSingleton()->RearrangeOrder(UI_MAP,FALSE);
+						CUIManager::getSingleton()->GetMap()->ToggleVisible();
+			
+						// Nothing
+						return WMSG_SUCCESS;
+					} 
+					else if ((wmsgResult = m_btnList.MouseMessage(pMsg)) != WMSG_FAIL)
+					{
+						if (wmsgResult == WMSG_COMMAND)
+						{
+							m_nRenType = NPC_LIST;
+							m_lbNpcList.SetCurSel(-1);		//¼±ÅÃÇÑ ¸®½ºÆ® ÃÊ±âÈ­
+						}
+					}
 				}
+				else if (m_nRenType == NPC_LIST)
+				{
+					if (( wmsgResult = m_lbNpcList.MouseMessage( pMsg ) ) != WMSG_FAIL)
+					{
+						// Nothing
+					}
+				}
+				
+				return WMSG_SUCCESS;
 			}
 			else
 			{
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					CUIManager::getSingleton()->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}

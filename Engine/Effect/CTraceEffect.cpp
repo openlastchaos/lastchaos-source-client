@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "StdH.h"
 
 #include "CTag.h"
@@ -52,7 +52,7 @@ BOOL CTraceEffect::SetTexture(const CTFileName &filename)
 	if(filename == m_strTextureFileName) return FALSE;
 	m_strTextureFileName = filename;
 
-	//í…ìŠ¤ì³ë¥¼ ìƒì„±í•˜ê³  ë¡œë“œí•œë‹¤.
+	//ÅØ½ºÃÄ¸¦ »ı¼ºÇÏ°í ·ÎµåÇÑ´Ù.
 	try
 	{
 		m_ptdTexture = _pTextureStock->Obtain_t(m_strTextureFileName);
@@ -68,9 +68,9 @@ CEffect *CTraceEffect::Copy()
 {
 	CTraceEffect *pRet = new CTraceEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CTraceEffectì˜ content
+	//CTraceEffectÀÇ content
 	pRet->m_colTraceBegin = m_colTraceBegin;
 	pRet->m_colTraceEnd = m_colTraceEnd;
 	pRet->m_fTraceTime = m_fTraceTime;
@@ -93,13 +93,13 @@ void CTraceEffect::Start(FLOAT time, BOOL restart)
 
 	if(m_iTagCount == 2)
 	{
-		//í•„ìš”í•œ ê²ƒë“¤ ìƒì„±.ì¸ë±ìŠ¤ëŠ” ê³ ì •
+		//ÇÊ¿äÇÑ °Íµé »ı¼º.ÀÎµ¦½º´Â °íÁ¤
 		m_iTraceCount = (INDEX)ceilf(m_fTraceTime / m_fTimeInterval);
 		m_vectorIndex.reserve((m_iTraceCount+2)*6);
 		for(UWORD i=0; i<m_iTraceCount+2; ++i)
 		{
 			UWORD idx = i * 2;
-			//ë°±í˜ì´ìŠ¤ ì»¬ë§ ì—†ìŒ.
+			//¹éÆäÀÌ½º ÄÃ¸µ ¾øÀ½.
 			m_vectorIndex.push_back( idx+0 );
 			m_vectorIndex.push_back( idx+1 );
 			m_vectorIndex.push_back( idx+2 );
@@ -107,7 +107,7 @@ void CTraceEffect::Start(FLOAT time, BOOL restart)
 			m_vectorIndex.push_back( idx+1 );
 			m_vectorIndex.push_back( idx+3 );
 		}
-		//ë©”ì‰¬ ì´ˆê¸°ìƒì„±
+		//¸Ş½¬ ÃÊ±â»ı¼º
 		m_vectorPos.reserve((m_iTraceCount+2)*2);
 		FLOAT3D pos1 = ((CGroupTag*)m_ptrAttachTag.GetNative())->GetTag(0)->CurrentTagInfo().m_vPos;
 		GFXVertex v1 = { pos1(1), pos1(2), pos1(3) };
@@ -121,13 +121,13 @@ void CTraceEffect::Start(FLOAT time, BOOL restart)
 	}
 	else if(m_iTagCount == 3)
 	{
-		//í•„ìš”í•œ ê²ƒë“¤ ìƒì„±.ì¸ë±ìŠ¤ëŠ” ê³ ì •
+		//ÇÊ¿äÇÑ °Íµé »ı¼º.ÀÎµ¦½º´Â °íÁ¤
 		m_iTraceCount = (INDEX)ceilf(m_fTraceTime / m_fTimeInterval);
 		m_vectorIndex.reserve((m_iTraceCount+9)*6*3);
 		for(UWORD i=0; i<m_iTraceCount+9; ++i)
 		{
 			UWORD idx = i * 3;
-			//ë°±í˜ì´ìŠ¤ ì»¬ë§ ì—†ìŒ.
+			//¹éÆäÀÌ½º ÄÃ¸µ ¾øÀ½.
 			m_vectorIndex.push_back( idx+0 );
 			m_vectorIndex.push_back( idx+1 );
 			m_vectorIndex.push_back( idx+3 );
@@ -149,7 +149,7 @@ void CTraceEffect::Start(FLOAT time, BOOL restart)
 			m_vectorIndex.push_back( idx+5 );
 			m_vectorIndex.push_back( idx+4 );
 		}
-		//ë©”ì‰¬ ì´ˆê¸°ìƒì„±
+		//¸Ş½¬ ÃÊ±â»ı¼º
 		m_vectorPos.reserve((m_iTraceCount+2)*3);
 		FLOAT3D pos1 = ((CGroupTag*)m_ptrAttachTag.GetNative())->GetTag(0)->CurrentTagInfo().m_vPos;
 		GFXVertex v1 = { pos1(1), pos1(2), pos1(3) };
@@ -184,7 +184,7 @@ BOOL CTraceEffect::Process(FLOAT time)
 		if(!bRender) SetNotRenderAtThisFrame();
 		return bRet;
 	}
-	//vertex ì¶”ê°€, ì‚­ì œ, Renderí•¨ìˆ˜ì•ˆì— ìˆì–´ë„ ë˜ëŠ”ë° Processê°€ ì‹¬ì‹¬í• ê¹Œë´...-_-;
+	//vertex Ãß°¡, »èÁ¦, RenderÇÔ¼ö¾È¿¡ ÀÖ¾îµµ µÇ´Âµ¥ Process°¡ ½É½ÉÇÒ±îºÁ...-_-;
 	if(fProcessedTime + m_fTraceTime > m_fLifeTime)
 	{
 		m_fTraceTime = m_fLifeTime - fProcessedTime;
@@ -210,7 +210,7 @@ BOOL CTraceEffect::Process(FLOAT time)
 			GFXVertex v2 = { pos2(1), pos2(2), pos2(3) };
 			m_vectorPos.push_back(v2);
 			m_vectorAddTime.push_back(m_fLastProcessTime);
-			//colorì™€ tex coordëŠ” ë‹¤ì‹œ ë§Œë“¤ì–´ì•¼ í•œë‹¤.
+			//color¿Í tex coord´Â ´Ù½Ã ¸¸µé¾î¾ß ÇÑ´Ù.
 			RemakeColorsAndTexCoords(m_vectorPos.size());
 		}
 		FLOAT firstAddTime = m_vectorAddTime[0];
@@ -218,7 +218,7 @@ BOOL CTraceEffect::Process(FLOAT time)
 		{
 			VectorPopFront(m_vectorPos, 2);
 			VectorPopFront(m_vectorAddTime, 1);
-			//colorì™€ tex coordëŠ” ë‹¤ì‹œ ë§Œë“¤ì–´ì•¼ í•œë‹¤.
+			//color¿Í tex coord´Â ´Ù½Ã ¸¸µé¾î¾ß ÇÑ´Ù.
 			RemakeColorsAndTexCoords(m_vectorPos.size());
 		}
 	}
@@ -236,7 +236,7 @@ BOOL CTraceEffect::Process(FLOAT time)
 			GFXVertex v3 = { pos3(1), pos3(2), pos3(3) };
 			m_vectorPos.push_back(v3);
 			m_vectorAddTime.push_back(m_fLastProcessTime);
-			//colorì™€ tex coordëŠ” ë‹¤ì‹œ ë§Œë“¤ì–´ì•¼ í•œë‹¤.
+			//color¿Í tex coord´Â ´Ù½Ã ¸¸µé¾î¾ß ÇÑ´Ù.
 			RemakeColorsAndTexCoords(m_vectorPos.size());
 		}
 		FLOAT firstAddTime = m_vectorAddTime[0];
@@ -244,7 +244,7 @@ BOOL CTraceEffect::Process(FLOAT time)
 		{
 			VectorPopFront(m_vectorPos, 3);
 			VectorPopFront(m_vectorAddTime, 1);
-			//colorì™€ tex coordëŠ” ë‹¤ì‹œ ë§Œë“¤ì–´ì•¼ í•œë‹¤.
+			//color¿Í tex coord´Â ´Ù½Ã ¸¸µé¾î¾ß ÇÑ´Ù.
 			RemakeColorsAndTexCoords(m_vectorPos.size());
 		}
 	}
@@ -256,7 +256,7 @@ BOOL CTraceEffect::Process(FLOAT time)
 static CDrawPort *s_pdp = NULL;
 BOOL CTraceEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 {
-	//í”„ë¡œì ì…˜ ì„¤ì •
+	//ÇÁ·ÎÁ§¼Ç ¼³Á¤
 	apr->ObjectPlacementL() = CPlacement3D(FLOAT3D(0,0,0), ANGLE3D(0,0,0));
 	apr->Prepare();
 	// in case of mirror projection, move mirror clip plane a bit father from the mirrored models,
@@ -270,7 +270,7 @@ BOOL CTraceEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 		apr->pr_ViewerRotationMatrix, 
 		-apr->pr_vViewerPosition*apr->pr_ViewerRotationMatrix);
 
-	//ë Œë”ë§ ìƒíƒœ ì„¤ì •
+	//·»´õ¸µ »óÅÂ ¼³Á¤
 	Matrix12 &mView12 = mAbsToViewer;
 	FLOAT mView16[16];
 	mView16[ 0] = mView12[ 0];  mView16[ 1] = mView12[ 4];  mView16[ 2] = mView12[ 8];  mView16[ 3] = 0;
@@ -299,7 +299,7 @@ BOOL CTraceEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 }
 void CTraceEffect::EndRender(BOOL bRestoreOrtho)
 {
-	//ë Œë”ë§ ìƒíƒœ ì„¤ì •
+	//·»´õ¸µ »óÅÂ ¼³Á¤
 	if(RM_AreHardwareShadersAvailable())
 	{
 		gfxDisableVertexProgram();
@@ -317,12 +317,12 @@ void CTraceEffect::EndRender(BOOL bRestoreOrtho)
 
 void CTraceEffect::InitializeShaders()
 {
-	//Redneringì— ì‚¬ìš©í•  Shaderë¥¼ ìƒì„±í•œë‹¤.
+	//Rednering¿¡ »ç¿ëÇÒ Shader¸¦ »ı¼ºÇÑ´Ù.
 	static char *strVPNoTex =	"vs.1.1"				"\n"
 								"m4x4 oPos, v0, c0"		"\n"
 								"mov oD0, v4"			"\n";
 	m_ulVertexProgramNoTex = gfxCreateVertexProgram(strVPNoTex, GFX_POSITION_STREAM | GFX_COLOR_STREAM);
-	static char *strPPNoTex =	"ps.1.1"				"\n"
+	static char *strPPNoTex =	"ps.1.4"				"\n"
 								"mov r0, v0"			"\n";
 	m_ulPixelProgramNoTex = gfxCreatePixelProgram(strPPNoTex);
 	static char *strVPTex =		"vs.1.1"				"\n"
@@ -330,15 +330,17 @@ void CTraceEffect::InitializeShaders()
 								"mov oT0, v5"			"\n"
 								"mov oD0, v4"			"\n";
 	m_ulVertexProgramTex = gfxCreateVertexProgram(strVPTex, GFX_POSITION_STREAM | GFX_COLOR_STREAM | GFX_TEXCOORD0);
-	static char *strPPTex =		"ps.1.1"				"\n"
-								"tex t0"				"\n"
-								"mul r0, v0, t0"		"\n";
+	static char *strPPTex =		"ps.1.4"				"\n"
+								//"tex t0"				"\n"
+								"texld r0,	t0"			"\n"
+								//"mul r0, v0, t0"		"\n";
+								"mul r0, r0, v0"		"\n";
 	m_ulPixelProgramTex = gfxCreatePixelProgram(strPPTex);
 }
 
 void CTraceEffect::FinalizeShaders()
 {
-	//Redneringì— ì‚¬ìš©í•œ Shaderë¥¼ ì§€ìš´ë‹¤.
+	//Rednering¿¡ »ç¿ëÇÑ Shader¸¦ Áö¿î´Ù.
 	if(m_ulVertexProgramNoTex) gfxDeleteVertexProgram(m_ulVertexProgramNoTex);
 	m_ulVertexProgramNoTex = 0;
 	if(m_ulPixelProgramNoTex) gfxDeletePixelProgram(m_ulPixelProgramNoTex);
@@ -349,12 +351,12 @@ void CTraceEffect::FinalizeShaders()
 	m_ulPixelProgramTex = 0;
 }
 
-//ì´ í•¨ìˆ˜ëŠ” ì†ë„ê°€ ëŠë¦° í¸ì¸ë° í˜¸ì¶œì´ ì—¬ê¸°ì €ê¸°ì„œ ë˜ì„œ ìµœì í™” ëª©í‘œ ì¤‘ í•˜ë‚˜ì´ë‹¤.
+//ÀÌ ÇÔ¼ö´Â ¼Óµµ°¡ ´À¸° ÆíÀÎµ¥ È£ÃâÀÌ ¿©±âÀú±â¼­ µÇ¼­ ÃÖÀûÈ­ ¸ñÇ¥ Áß ÇÏ³ªÀÌ´Ù.
 void CTraceEffect::RemakeColorsAndTexCoords(INDEX cntVtx)
 {
 	if(m_iTagCount == 2)
 	{
-		ASSERT((cntVtx & 0x00000001) == 0); //ì§ìˆ˜ë³´ì¥.
+		ASSERT((cntVtx & 0x00000001) == 0); //Â¦¼öº¸Àå.
 		INDEX cntVtxD2 = cntVtx >> 1;
 		m_vectorColor.clear();
 		m_vectorTexCoord.clear();
@@ -410,17 +412,17 @@ void CTraceEffect::Render()
 	}
 	
 	if (GetOwner() != NULL)
-	{ // HIDDEN ì†ì„±ì˜ NPCì˜ ì´í™íŠ¸ë¥¼ ë³´ê¸° ìœ„í•´ì„œëŠ” ìºë¦­í„°ê°€ ENF_SHOWHIDDENì„ ê°€ì§€ê³  ìˆì–´ì•¼ í•œë‹¤.
+	{ // HIDDEN ¼Ó¼ºÀÇ NPCÀÇ ÀÌÆåÆ®¸¦ º¸±â À§ÇØ¼­´Â Ä³¸¯ÅÍ°¡ ENF_SHOWHIDDENÀ» °¡Áö°í ÀÖ¾î¾ß ÇÑ´Ù.
 		if (GetOwner()->IsFlagOn(ENF_HIDDEN) && (CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npc effectëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc effect´Â º¼ ¼ö ÀÖ´Ù.
 			return;
 	}
 
-	//ë Œë”ë§ ì„¸íŒ… ë° ë Œë”ë§
+	//·»´õ¸µ ¼¼ÆÃ ¹× ·»´õ¸µ
 	if( (m_vectorPos.size() > 2 && m_iTagCount == 2) || (m_vectorPos.size() > 3 && m_iTagCount == 3) )
 	{
-		//ì´ë ‡ê²Œ í•´ì£¼ëŠ” ì´ìœ ëŠ” m_fTimeIntervalì´ frameë‹¹ ì‹œê°„ë³´ë‹¤ í´ ê²½ìš° Tagì— ë”±ë¶™ì§€ì•Šê³  ë–¨ì–´ì§€ëŠ”ë°
-		//ê·¸ëŸ¬ë©´ ëŒ€ëµ ë³´ê¸°ê°€ ì¢‹ì§€ ì•Šê³  Traceë¼ëŠ” ê²ƒì—ë„ ë§ì§€ ì•Šê¸° ë•Œë¬¸ì— í•­ìƒ ë¶™ì„ ìˆ˜ ìˆê²Œ ì²˜ë¦¬í•´ì¤€ë‹¤.
+		//ÀÌ·¸°Ô ÇØÁÖ´Â ÀÌÀ¯´Â m_fTimeIntervalÀÌ frame´ç ½Ã°£º¸´Ù Å¬ °æ¿ì Tag¿¡ µüºÙÁö¾Ê°í ¶³¾îÁö´Âµ¥
+		//±×·¯¸é ´ë·« º¸±â°¡ ÁÁÁö ¾Ê°í Trace¶ó´Â °Í¿¡µµ ¸ÂÁö ¾Ê±â ¶§¹®¿¡ Ç×»ó ºÙÀ» ¼ö ÀÖ°Ô Ã³¸®ÇØÁØ´Ù.
 		BOOL bAddSpare = FALSE;
 		FLOAT lastAddTime = *m_vectorAddTime.rbegin();
 		if(!FLOAT_SAME(lastAddTime, m_fLastProcessTime))
@@ -446,7 +448,7 @@ void CTraceEffect::Render()
 				GFXVertex v3 = { pos3(1), pos3(2), pos3(3) };
 				m_vectorPos.push_back(v3);
 			}
-			//colorì™€ tex coordëŠ” ë‹¤ì‹œ ë§Œë“¤ì–´ì•¼ í•œë‹¤.
+			//color¿Í tex coord´Â ´Ù½Ã ¸¸µé¾î¾ß ÇÑ´Ù.
 			RemakeColorsAndTexCoords(m_vectorPos.size());
 			bAddSpare = TRUE;
 		}
@@ -502,7 +504,7 @@ void CTraceEffect::Render()
 
 		gfxSetVertexArray( &m_vectorPos[0], m_vectorPos.size());
 		gfxSetColorArray( &m_vectorColor[0] );
-		if(m_ptdTexture != NULL) gfxSetTexCoordArray( &m_vectorTexCoord[0] );
+		if(m_ptdTexture != NULL) gfxSetTexCoordArray( &m_vectorTexCoord[0], FALSE );
 		if(m_iTagCount == 2)
 		{
 			gfxDrawElements( (m_vectorPos.size()-2)*3, &m_vectorIndex[0]);
@@ -512,7 +514,7 @@ void CTraceEffect::Render()
 			gfxDrawElements( (m_vectorPos.size()-3)*2*3, &m_vectorIndex[0]);
 		}
 
-		if(bAddSpare)	//ì—¬ë¶„ìœ¼ë¡œ ì¶”ê°€ë˜ì—ˆë˜ vertexì‚­ì œ.
+		if(bAddSpare)	//¿©ºĞÀ¸·Î Ãß°¡µÇ¾ú´ø vertex»èÁ¦.
 		{
 			if(m_iTagCount == 2)
 			{
@@ -615,4 +617,4 @@ void CTraceEffect::Write(CTStream *pOS)
 	os << m_bCapEnd;
 	os << m_eBlendType;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

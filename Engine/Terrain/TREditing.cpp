@@ -146,6 +146,10 @@ extern UWORD *TRE_GetBufferForEditing(CTerrain *ptrTerrain, CTRect rcRect, Buffe
 			}
 		}
 	}
+	else if( btType==BT_ATTRIBUTE_MAP)
+	{
+
+	}
 	else
 	{
 		ASSERTALWAYS("Ilegal buffer type");
@@ -221,7 +225,7 @@ extern UBYTE* TRE_Get1ByteBufferForEditing( CTerrain* ptrTerrain, CTRect rcRect,
 	const PIX	pixHeight = rcRect.GetHeight();
 
 	// Allocate memory for buffer
-	const SLONG	slMemRequired = pixWidth * pixHeight * sizeof(UBYTE);
+	const SLONG	slMemRequired = pixWidth * pixHeight * sizeof(UWORD);
 	UBYTE*	pubBuffer = (UBYTE*)AllocMemory( slMemRequired );
 	UBYTE*	pubBufferData = &pubBuffer[0];
 
@@ -229,7 +233,7 @@ extern UBYTE* TRE_Get1ByteBufferForEditing( CTerrain* ptrTerrain, CTRect rcRect,
 	const PIX	pixHeightMapHeight = ptr->tr_pixHeightMapHeight;
 	PIX			pixBufferWidth;
 	PIX			pixBufferHeight;
-	UBYTE		*pubFrames;
+	UWORD		*pubFrames;
 	if( btType == BT_ATTRIBUTE_MAP )
 	{
 		const SLONG	slSizeAspect = ptr->tr_slAttributeMapSizeAspect;
@@ -468,7 +472,7 @@ extern void TRE_Set1ByteBufferForEditing( CTerrain* ptrTerrain, UBYTE* pubBuffer
 	const PIX	pixHeight = rcRect.GetHeight();
 
 	// Validate buffer memory
-	const SLONG	slMemRequired = pixWidth * pixHeight * sizeof(UBYTE);
+	const SLONG	slMemRequired = pixWidth * pixHeight * sizeof(UWORD);
 	ASSERT( MEM_Size( pubBuffer ) == slMemRequired );
 	const UBYTE*	pubBufferData = &pubBuffer[0];
 
@@ -476,7 +480,7 @@ extern void TRE_Set1ByteBufferForEditing( CTerrain* ptrTerrain, UBYTE* pubBuffer
 	const PIX	pixHeightMapHeight = ptr->tr_pixHeightMapHeight;
 	PIX			pixBufferWidth;
 	PIX			pixBufferHeight;
-	UBYTE		*pubFrames;
+	UWORD		*pubFrames;
 	if( btType == BT_ATTRIBUTE_MAP )
 	{
 		const SLONG	slSizeAspect = ptr->tr_slAttributeMapSizeAspect;

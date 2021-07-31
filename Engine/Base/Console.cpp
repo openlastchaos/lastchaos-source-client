@@ -51,7 +51,7 @@ CConsole::~CConsole(void)
 // Create log for console if not allready created
 void CConsole::CreateLogFile(const CTFileName &fnmLog)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Block Log)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Block Log)(0.1)
   if(con_fLog!=NULL) {
     return;
   }
@@ -65,7 +65,7 @@ void CConsole::CreateLogFile(const CTFileName &fnmLog)
       FatalError("%s", strerror(errno));
     }
   }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Block Log)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Block Log)(0.1)
 }
 
 // Initialize the console.
@@ -94,9 +94,9 @@ void CConsole::Initialize(const CTFileName &fnmLog, INDEX ctCharsPerLine, INDEX 
   con_strLastLine = con_strBuffer+(ctCharsPerLine+1)*(ctLines-1);
   con_strCurrent = con_strLastLine;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Block Log)(0.1)
-//  CreateLogFile(fnmLog);	//nProtect ë¡œê·¸íŒŒì¼ ìƒì„±ì„ ë§‰ëŠ”ë‹¤.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Block Log)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Block Log)(0.1)
+  //CreateLogFile(fnmLog);	//·Î±×ÆÄÀÏ »ı¼ºÀ» ¸·´Â´Ù.
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Block Log)(0.1)
 
   // print one dummy line on start
   CPrintF("\n");
@@ -223,12 +223,12 @@ void CConsole::PutString(const char *strString)
   // if in debug version, report it to output window
   _RPT1(_CRT_WARN, "%s", strString);
   // first append that string to the console output file
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Block Log)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Block Log)(0.1)
   if (con_fLog!=NULL) {
     fprintf(con_fLog, "%s", strString);
     fflush(con_fLog);
   }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Block Log)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Block Log)(0.1)
   // if needed, append to capture string
   if (con_bCapture) {
     con_strCapture+=strString;

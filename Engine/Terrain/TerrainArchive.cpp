@@ -5,14 +5,13 @@
 #include <Engine/World/WorldEditingProfile.h>
 #include <Engine/World/World.h>
 #include <Engine/Math/Float.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Base/Stream.h>
 #include <Engine/Entities/Entity.h>
 #include <Engine/Base/ListIterator.inl>
 
 #include <Engine/Templates/DynamicArray.cpp>
 #include <Engine/Templates/StaticArray.cpp>
-
+#include <Engine/Loading.h>
 template CDynamicArray<CBrush3D>;
 
 /*
@@ -33,7 +32,7 @@ void CTerrainArchive::Read_t( CTStream *istrFile) // throw char *
     // for each of the new terrains
     for (INDEX iTerrain=0; iTerrain<ctTerrains; iTerrain++) {
       // read it from stream
-      CallProgressHook_t(FLOAT(iTerrain)/ctTerrains);
+		CallProgressHook_t(FLOAT(iTerrain)/ctTerrains);
       ta_atrTerrains[iTerrain].Read_t(istrFile);
     }
   }

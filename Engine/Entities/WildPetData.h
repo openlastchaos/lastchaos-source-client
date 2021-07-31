@@ -10,7 +10,11 @@
 
 #include <Engine/Entities/Entity.h>
 #include <vector>
+#include <Engine/Help/LoadLod.h>
+#include <common/header/def_apet.h>
 
+#define WILDPET_FLAG_ATTACK (1 << 0)	// ∞¯∞› ∞°¥…«— ∆Í ¿Øπ´
+#define WILDPET_FLAG_EXP	(1 << 1)	// ∞Ê«Ëƒ° √‡√¥ ∆Í ¿Øπ´
 
 enum eWildPetAni
 {
@@ -23,30 +27,15 @@ enum eWildPetAni
 	WILD_PET_ANIM_DIE,
 	WILD_PET_ANIM_WALK,
 	WILD_PET_ANIM_RUN,
-	WILD_PET_ANIM_HUNGRY, //WILD_PET_ANIM_LEVELUP ==> WILD_PET_ANIM_HUNGRY Î†àÎ≤®ÏóÖÏóêÏÑú Î∞∞Í≥†ÌîîÏúºÎ°ú
+	WILD_PET_ANIM_HUNGRY,
 	WILD_PET_ANIM_END = WILD_PET_ANIM_HUNGRY,
 	WILD_PET_ANIM_TOTAL,
 };
 
-class ENGINE_API CWildPetData
+class ENGINE_API CWildPetData : public stApet, public LodLoader<CWildPetData>
 {
-private:
-	typedef struct _tagWildPetData 
-	{
-		int	nIndex;
-		char strName[256];
-		INDEX	nType;
-		char strFileName[256];
-		char PetAni[WILD_PET_ANIM_TOTAL][50];
-
-	}TWildPetData;
-
 public:
-	CWildPetData(void);
-	~CWildPetData(void);
-	TWildPetData m_WildPetData;
-
-	static int	LoadWildPetDataFromFile(CStaticArray<CWildPetData> &apWildPetData, const char* FileName);
+	static bool	loadEx(const char* FileName);
 };
 
 #endif

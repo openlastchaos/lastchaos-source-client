@@ -16,13 +16,13 @@
  */
 void CBrush3D::AddMipBrushFromObject3D_t(CObject3D &ob, FLOAT fSwitchDistance) // throw char *
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.27
-//	ASSERT(GetFPUPrecision()==FPT_53BIT);		// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.27
+//	ASSERT(GetFPUPrecision()==FPT_53BIT);		// ¿øº».
 	if(GetFPUPrecision() != FPT_53BIT)
 	{
 		SetFPUPrecision(FPT_53BIT);
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.27
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.27
 	// create one brush mip
 	CBrushMip *pbmBrushMip = new CBrushMip;
 	// add it to the brush
@@ -39,13 +39,13 @@ void CBrush3D::AddMipBrushFromObject3D_t(CObject3D &ob, FLOAT fSwitchDistance) /
  */
 void CBrush3D::FromObject3D_t(CObject3D &ob) // throw char *
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.27
-//	ASSERT(GetFPUPrecision()==FPT_53BIT);		// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.27
+//	ASSERT(GetFPUPrecision()==FPT_53BIT);		// ¿øº».
 	if(GetFPUPrecision() != FPT_53BIT)
 	{
 		SetFPUPrecision(FPT_53BIT);
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.27
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.27
 	// clear this brush in case there is something in it
 	Clear();
 
@@ -214,10 +214,10 @@ void CBrushSector::FromObjectSector_t(CObjectSector &osc) // throw char *
 		if(!(bpo.bpo_ulFlags&BPOF_WASBRUSHPOLYGON)) {
 			// initialize its textures and properties properly
 			bpo.bpo_bppProperties.bpp_ubShadowBlend = 1;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Worldbase Overbright to NonOver)(0.1)
 			bpo.bpo_colShadow = C_WHITE|CT_OPAQUE;
 			//bpo.bpo_colShadow = C_GRAY|CT_OPAQUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Worldbase Overbright to NonOver)(0.1)
 
 			bpo.bpo_abptTextures[0].s.bpt_colColor = C_WHITE|CT_OPAQUE;
 			bpo.bpo_abptTextures[0].s.bpt_ubFlags = BPTF_DISCARDABLE;

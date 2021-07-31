@@ -1,12 +1,16 @@
 #include "stdh.h"
-#include <Engine/Interface/UIProcess.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/Items.h>
+#include <Engine/Interface/UIProcess.h>
 #include <Engine/Interface/UISkillLearn.h>
+#include <Engine/Help/ItemHelp.h>
 #include <Engine/Interface/UIInventory.h>
+#include <Engine/Interface/UIPlayerInfo.h>
+#include <Engine/Interface/UIProduct.h>
+#include <Engine/Contents/Base/UICharacterInfoNew.h>
 
-extern INDEX g_iCountry;
 // Date : 2005-03-07,   By Lee Ki-hwan
 static int	_iMaxMsgStringChar = 0;
 
@@ -25,7 +29,6 @@ CUIProcess::CUIProcess()
 // ----------------------------------------------------------------------------
 CUIProcess::~CUIProcess()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -49,7 +52,7 @@ void CUIProcess::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_rcItem.SetRect ( 13, 33, 218, 203 );
 	m_rcDesc.SetRect ( 13, 203, 218, 331 );
 
-	// Process Texture ÏÉùÏÑ± - SkillLearn Texture ÏÇ¨Ïö©
+	// Process Texture ª˝º∫ - SkillLearn Texture ªÁøÎ
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\SkillLearn.tex" ) );
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
@@ -60,18 +63,6 @@ void CUIProcess::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 
 	m_rtSelOutline.SetUV( 218, 80, 250, 112, fTexWidth, fTexHeight );
 
-// Item information region
-	m_rtInfoUL.SetUV( 218, 113, 225, 120, fTexWidth, fTexHeight );
-	m_rtInfoUM.SetUV( 228, 113, 230, 120, fTexWidth, fTexHeight );
-	m_rtInfoUR.SetUV( 233, 113, 240, 120, fTexWidth, fTexHeight );
-	m_rtInfoML.SetUV( 218, 123, 225, 125, fTexWidth, fTexHeight );
-	m_rtInfoMM.SetUV( 228, 123, 230, 125, fTexWidth, fTexHeight );
-	m_rtInfoMR.SetUV( 233, 123, 240, 125, fTexWidth, fTexHeight );
-	m_rtInfoLL.SetUV( 218, 128, 225, 135, fTexWidth, fTexHeight );
-	m_rtInfoLM.SetUV( 228, 128, 230, 135, fTexWidth, fTexHeight );
-	m_rtInfoLR.SetUV( 233, 128, 240, 135, fTexWidth, fTexHeight );
-
-
 	// Close button
 	m_btnClose.Create( this, CTString( "" ), 184, 4, 14, 14 );
 	m_btnClose.SetUV( UBS_IDLE, 219, 0, 233, 14, fTexWidth, fTexHeight );
@@ -80,14 +71,14 @@ void CUIProcess::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Process button
-	m_btnOK.Create( this, _S( 191, "ÌôïÏù∏" ), 70, 372-diff, 63, 21 );			
+	m_btnOK.Create( this, _S( 191, "»Æ¿Œ" ), 70, 372-diff, 63, 21 );			
 	m_btnOK.SetUV( UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 141, 372-diff, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 141, 372-diff, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -138,10 +129,6 @@ void CUIProcess::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_lbPreconditionDesc.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
 
 	m_bSatisfied = FALSE;
-
-	m_bShowItemInfo = false;
-	m_nCurInfoLines = 0;
-	m_bDetailItemInfo = TRUE;
 }
 
 // ----------------------------------------------------------------------------
@@ -174,11 +161,11 @@ void CUIProcess::Clear()
 	m_bWaitProcessResult	= TRUE;
 	m_bSatisfied			= FALSE;
 
-	m_btnProcessItems.size();
+	m_vecIcons.size();
 
 	m_nProcessText			= -1;				
-	m_nRow					= -1;
-	m_nCol					= -1;
+	m_nTab					= -1;
+	m_nInvenIdx				= -1;
 	
 	m_nNeedItemCount		= 0;
 
@@ -189,12 +176,7 @@ void CUIProcess::Clear()
 	m_bWaitProcessResult = FALSE;
 	m_lbPreconditionDesc.ResetAllStrings();
 
-	for(std::vector<CUIButtonEx>::iterator pos = m_btnProcessItems.begin(); pos != m_btnProcessItems.end(); ++pos)
-	{
-		(*pos).InitBtn();
-	}
-
-	m_btnProcessItems.clear ();
+	clearIcon();
 }
 
 // ----------------------------------------------------------------------------
@@ -203,48 +185,50 @@ void CUIProcess::Clear()
 // ----------------------------------------------------------------------------
 void CUIProcess::InitProcess()
 {	
-	m_btnProcessItems.clear ();
-	CItemData &TextItemData = _pNetwork->GetItemData ( m_nProcessText );
+	m_vecIcons.clear ();
+	CItemData* pTextItemData = _pNetwork->GetItemData ( m_nProcessText );
 	const char* szItemName	= _pNetwork->GetItemName( m_nProcessText );
 	
-	// ÏûÑÏãú Ï≤òÎ¶¨ 
-	int nProcessType = TextItemData.GetProcessType();
-	int nProcessSubType = TextItemData.GetProcessSubType();
+	// ¿”Ω√ √≥∏Æ 
+	int nProcessType = pTextItemData->GetProcessType();
+	int nProcessSubType = pTextItemData->GetProcessSubType();
 	
-	// Ï†úÏ°∞  Type ÏÑ§Ï†ï
+	// ¡¶¡∂  Type º≥¡§
 	m_StrProcessType = szItemName;
 
-	CUIButtonEx UIButtonEx;
-	int bit = 0x00000001;
+	
+	int bit = 0x00000001;	
+	CItemData::_map::iterator	iter = CItemData::_mapdata.begin();
+	CItemData::_map::iterator	eiter = CItemData::_mapdata.end();
 
-	//!! Ï†úÏ°∞ Î¨∏ÏÑúÎ°ú Ï†úÏ°∞ Ìï†Ïàò ÏûàÎäî ÏïÑÏù¥ÌÖú Í≤ÄÏÉâ 
-	for( int nIndex = 0; nIndex <= _pNetwork->wo_iNumOfItem; nIndex++ )
+	for (;iter != eiter; ++iter)
 	{
-		CItemData& ItemData = _pNetwork->GetItemData ( nIndex );
+		CItemData* pItemData = (*iter).second;
 
-		if( ItemData.GetItemIndex() == -1 ) continue;
-		
-		if ( ItemData.GetFlag() & ITEM_FLAG_MADE )
+		if (pItemData == NULL)
+			continue;
+
+		if ( pItemData->GetFlag() & ITEM_FLAG_MADE )
 		{
-			if ( ItemData.GetType () == CItemData::ITEM_ETC && 
-				ItemData.GetSubType () == CItemData::ITEM_ETC_PROCESS && // Í∞ÄÍ≥µÌíà Ïù¥ÎùºÎäî ÏñòÍ∏∞
-				ItemData.GetProcessType () == nProcessType 
-				&& ItemData.GetProcessSubType () == nProcessSubType 
+			if ( pItemData->GetType () == CItemData::ITEM_ETC && 
+				pItemData->GetSubType () == CItemData::ITEM_ETC_PROCESS && // ∞°∞¯«∞ ¿Ã∂Û¥¬ æÍ±‚
+				pItemData->GetProcessType () == nProcessType 
+				&& pItemData->GetProcessSubType () == nProcessSubType 
 				)			
 			{
-				UIButtonEx.Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PROCESS ); 
-				UIButtonEx.SetItemInfo ( 0, 0, 0, ItemData.GetItemIndex(), -1, -1 );
-				
-				m_btnProcessItems.push_back ( UIButtonEx );
-			
+				CUIIcon* pIcon;
+				pIcon = new CUIIcon;
+				pIcon->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PROCESS, UBET_ITEM);
+				pIcon->setData(UBET_ITEM, pItemData->GetItemIndex());
+				m_vecIcons.push_back ( pIcon );			
 			}
 		}
 	}		
 
-	AddString ( _S( 561, "Í∞ÄÍ≥µÌíàÏùÑ ÏÑ†ÌÉùÌï¥ Ï£ºÏã≠ÏãúÏò§." ), COLOR_TEXT  );		
+	AddString ( _S( 561, "∞°∞¯«∞¿ª º±≈√«ÿ ¡÷Ω Ω√ø¿." ), COLOR_TEXT  );		
 
 	m_sbProcessItem.SetScrollPos( 0 );
-	m_sbProcessItem.SetCurItemCount( m_btnProcessItems.size()  );
+	m_sbProcessItem.SetCurItemCount( m_vecIcons.size()  );
 
 	m_btnOK.SetEnable ( m_bSatisfied );
 }
@@ -253,33 +237,36 @@ void CUIProcess::InitProcess()
 // Name : OpenProcess()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIProcess::OpenProcess( int nItemIndex, int nRow, int nCol )
+void CUIProcess::OpenProcess( int nItemIndex, int nTab, int inven_idx )
 {
 	// If this is already exist
-	if( IsVisible() )	return;
+	if( IsVisible() == TRUE )
+		return;
 
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->GetInventory()->IsLocked() )
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
 	Clear ();
 
-	if( !_pUIMgr->GetInventory()->IsVisible() )
-		_pUIMgr->GetInventory()->ToggleVisible();
+	if( !pUIManager->GetInventory()->IsVisible() )
+		pUIManager->GetInventory()->ToggleVisible();
 
 	m_nProcessText	= nItemIndex;
-	m_nRow			= nRow;
-	m_nCol			= nCol;
-	
+	m_nTab			= nTab;
+	m_nInvenIdx		= inven_idx;	
 
-	_pUIMgr->RearrangeOrder( UI_PROCESS, TRUE );
+	pUIManager->RearrangeOrder( UI_PROCESS, TRUE );
 	
 	InitProcess ();
 
-	_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_PROCESS );
+	pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_PROCESS );
 }
 
 // ----------------------------------------------------------------------------
@@ -288,11 +275,13 @@ void CUIProcess::OpenProcess( int nItemIndex, int nRow, int nCol )
 // ----------------------------------------------------------------------------
 void CUIProcess::CloseProcess()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close refine
-	_pUIMgr->RearrangeOrder( UI_PROCESS, FALSE );
+	pUIManager->RearrangeOrder( UI_PROCESS, FALSE );
 
 	// Unlock inventory
-	_pUIMgr->GetInventory()->Lock( FALSE, FALSE, LOCK_PROCESS );
+	pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_PROCESS );
 
 	Clear();
 }
@@ -303,27 +292,28 @@ void CUIProcess::CloseProcess()
 // ----------------------------------------------------------------------------
 void CUIProcess::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
-// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	// Set skill learn texture
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-// Add render regions -----------------------------------------------------------------------------------------------
+	// Add render regions -----------------------------------------------------------------------------------------------
 	// Background up
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + PROCESS_TOP_HEIGHT,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + PROCESS_TOP_HEIGHT,
 										m_rtBackgroundTop.U0, m_rtBackgroundTop.V0, m_rtBackgroundTop.U1, m_rtBackgroundTop.V1,
 										0xFFFFFFFF );
 
 	// Background down 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY+PROCESS_TOP_HEIGHT, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY+PROCESS_TOP_HEIGHT, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackgroundBtm.U0, m_rtBackgroundBtm.V0, m_rtBackgroundBtm.U1, m_rtBackgroundBtm.V1,
 										0xFFFFFFFF );
 
 	// Render Title Text
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 560, "Í∞ÄÍ≥µ" ) , m_nPosX + PROCESS_TITLE_TEXT_OFFSETX,				
+	pDrawPort->PutTextEx( _S( 560, "∞°∞¯" ) , m_nPosX + PROCESS_TITLE_TEXT_OFFSETX,				
 										m_nPosY + PROCESS_TITLE_TEXT_OFFSETY );
 
 	// Render Process Type
-	_pUIMgr->GetDrawPort()->PutTextExCX( m_StrProcessType, m_nPosX + 106, m_nPosY + 35, COLOR_TITLE );
+	pDrawPort->PutTextExCX( m_StrProcessType, m_nPosX + 106, m_nPosY + 35, COLOR_TITLE );
 	
 
 	// Process Item Scroll bar
@@ -341,7 +331,7 @@ void CUIProcess::Render()
 	// Cancel button
 	m_btnCancel.Render();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
 	// Render Process Item
@@ -350,33 +340,32 @@ void CUIProcess::Render()
 	int	nY = SLEARN_SLOT_SY;
 
 	int	iEnd = m_sbProcessItem.GetScrollPos() + PRODUCT_SLOT_ROW;
-	if( iEnd > m_btnProcessItems.size() )
-		iEnd = m_btnProcessItems.size();
+	if( iEnd > m_vecIcons.size() )
+		iEnd = m_vecIcons.size();
 
 	for ( int i = m_sbProcessItem.GetScrollPos(); i < iEnd; i++ )
 	{
-		if( !m_btnProcessItems[i].IsEmpty() )
+		if( !m_vecIcons[i]->IsEmpty() )
 		{
 			// render Item
-			m_btnProcessItems[i].SetPos ( nX, nY );
-			m_btnProcessItems[i].Render();
+			m_vecIcons[i]->SetPos ( nX, nY );
+			m_vecIcons[i]->Render(pDrawPort);
 			
 			
 			// render Item desc 
-			CItemData& ItemData = _pNetwork->GetItemData ( m_btnProcessItems[i].GetIndex() );
-			const char* szItemName = _pNetwork->GetItemName ( m_btnProcessItems[i].GetIndex() );
+			CItemData* pItemData = _pNetwork->GetItemData ( m_vecIcons[i]->getIndex() );
+			const char* szItemName = _pNetwork->GetItemName ( m_vecIcons[i]->getIndex() );
 			
-			_pUIMgr->GetDrawPort()->PutTextExCX( CTString ( szItemName ), m_nPosX + 122, m_nPosY + nY + 8, 0xC3C3C3ff );
+			pDrawPort->PutTextExCX( CTString ( szItemName ), m_nPosX + 122, m_nPosY + nY + 8, 0xC3C3C3ff );
 												
 			nY += SLEARN_SLOT_OFFSETY;
 		}
 	}
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	nX = SLEARN_SLOT_SX;
 	nY = SLEARN_SLOT_SY;
@@ -394,85 +383,13 @@ void CUIProcess::Render()
 			BoxY = m_nPosY + nY + ( SLEARN_SLOT_OFFSETY *  nOffset ) -1;
 
 			
-			_pUIMgr->GetDrawPort()->AddTexture( BoxX, BoxY,	BoxX + 34, BoxY + 34,
+			pDrawPort->AddTexture( BoxX, BoxY,	BoxX + 34, BoxY + 34,
 											m_rtSelOutline.U0, m_rtSelOutline.V0, m_rtSelOutline.U1, m_rtSelOutline.V1,
 											0xffffffff );
 		}
 	}
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	
-	RenderItemInfo ();
+	pDrawPort->FlushRenderingQueue();
 }
-
-// ----------------------------------------------------------------------------
-// Name : RenderItemInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIProcess::RenderItemInfo ()
-{
-	// ----------------------------------------------------------------------------
-	// Item information ( name and property etc... )
-	if( m_bShowItemInfo )
-	{
-
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-		// Item information region
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
-											m_rcItemInfo.Right, m_rcItemInfo.Top + 7,
-											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Right, m_rcItemInfo.Bottom - 7,
-											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom,
-											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom,
-											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Right, m_rcItemInfo.Bottom,
-											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
-											0xFFFFFFFF );
-
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-		// Render item information
-		int	nInfoX = m_rcItemInfo.Left + 12;
-		int	nInfoY = m_rcItemInfo.Top + 8;
-		for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
-		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
-			nInfoY += _pUIFontTexMgr->GetLineHeight();
-		}
-
-		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
-	}
-}
-
-
 
 // ----------------------------------------------------------------------------
 // Name : MouseMessage()
@@ -497,14 +414,14 @@ WMSG_RESULT CUIProcess::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 				int	iRowS = m_sbProcessItem.GetScrollPos();
 				int	iRowE = iRowS + PROCESS_SLOT_ROW;
 
-				if ( m_btnProcessItems.size() < iRowE )
+				if ( m_vecIcons.size() < iRowE )
 				{
-					iRowE = m_btnProcessItems.size();
+					iRowE = m_vecIcons.size();
 				}
 				
 				if ( IsInsideRect ( nX, nY, m_rcItem ) )
@@ -512,18 +429,9 @@ WMSG_RESULT CUIProcess::MouseMessage( MSG *pMsg )
 					bool bShowItem = false;
 					for( int iRow = iRowS; iRow < iRowE; iRow++ )
 					{
-						if( m_btnProcessItems[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							bShowItem = true;
-							ShowItemInfo( true, iRow ) ;					
-						}
+						m_vecIcons[iRow]->MouseMessage( pMsg );
 					}
-
-					if ( !bShowItem ) 
-						ShowItemInfo( false, -1 );
 				}
-				else
-					ShowItemInfo( false, -1 );
 			}
 			
 		
@@ -587,7 +495,7 @@ WMSG_RESULT CUIProcess::MouseMessage( MSG *pMsg )
 						return WMSG_SUCCESS;
 				}
 
-				_pUIMgr->RearrangeOrder( UI_PROCESS, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_PROCESS, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -596,7 +504,7 @@ WMSG_RESULT CUIProcess::MouseMessage( MSG *pMsg )
 	case WM_LBUTTONUP:
 		{
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (UIMGR()->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -638,14 +546,14 @@ WMSG_RESULT CUIProcess::MouseMessage( MSG *pMsg )
 					int	iRowS = m_sbProcessItem.GetScrollPos();
 					int	iRowE = iRowS + PROCESS_SLOT_ROW;
 
-					if ( m_btnProcessItems.size() < iRowE )
+					if ( m_vecIcons.size() < iRowE )
 					{
-						iRowE = m_btnProcessItems.size();
+						iRowE = m_vecIcons.size();
 					}
 		
 					for( int iRow = iRowS; iRow < iRowE; iRow++ )
 					{
-						if( m_btnProcessItems[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
+						if( m_vecIcons[iRow]->MouseMessage( pMsg ) != WMSG_FAIL )
 						{
 							m_nSelectProcessItem = iRow;
 
@@ -690,239 +598,6 @@ WMSG_RESULT CUIProcess::MouseMessage( MSG *pMsg )
 }
 
 // ----------------------------------------------------------------------------
-// Name : AddItemInfoString()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIProcess::AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo )
-{
-	if( m_nCurInfoLines >= MAX_ITEMINFO_LINE )
-		return ;
-
-	// Get length of string
-	INDEX	nLength = strItemInfo.Length();
-	if( nLength <= 0 )
-		return;
-
-	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strItemInfo);
-		INDEX	nChatMax= (MAX_ITEMINFO_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strItemInfo,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; ++iPos )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= MAX_ITEMINFO_CHAR )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strItemInfo[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; iPos++ )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-		}
-	}
-}
-
-
-// ----------------------------------------------------------------------------
-// Name : ShowItemInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIProcess::ShowItemInfo( BOOL bShowInfo, int nItemIndex, BOOL bRenew )
-{
-	static int	nOldBtnID = -1;
-	int			nBtnID;
-
-	m_bShowItemInfo = FALSE;
-
-	// Hide item information
-	if( !bShowInfo )
-	{
-		nOldBtnID = -1;
-		return;
-	}
-
-	BOOL	bUpdateInfo = FALSE;
-	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
-
-	
-	if( nItemIndex >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nBtnID = m_btnProcessItems[nItemIndex].GetBtnID();
-
-		// Update item information
-		if( nOldBtnID != nBtnID || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldBtnID = nBtnID;
-			m_btnProcessItems[nItemIndex].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-		//	m_bDetailItemInfo = m_nSelectProcessItem == nItemIndex;
-			
-			if( !GetItemInfo(  nItemIndex, nInfoWidth, nInfoHeight ) )
-				m_bShowItemInfo = FALSE;
-		}
-	}
-
-	// Update item information box
-	if( m_bShowItemInfo && bUpdateInfo )
-	{
-		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
-
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
-
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
-		{
-			nInfoPosY += BTN_SIZE;
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
-		}
-		else
-		{
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
-		}
-	}
-
-	if( !m_bShowItemInfo )
-		nOldBtnID = -1;
-}
-
-
-// ----------------------------------------------------------------------------
-// Name : GetItemInfo()
-// Desc : 
-// ----------------------------------------------------------------------------
-BOOL CUIProcess::GetItemInfo( int nItemIndex, int &nInfoWidth, int &nInfoHeight )
-{
-	CTString	strTemp;
-	m_nCurInfoLines = 0;
-
-	int			nIndex = m_btnProcessItems[nItemIndex].GetItemIndex();
-
-	if( nIndex < 0 )
-		return FALSE;
-
-	CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-	const char* szItemName = _pNetwork->GetItemName( nIndex );
-
-	// Get item name
-	strTemp = szItemName;
-	AddItemInfoString( strTemp ); // Î¶¨Ïä§Ìä∏Ïóê Ï∂îÍ∞Ä 
-
-	// Get item information in detail
-	if( m_bDetailItemInfo )
-	{
-		// Weight
-		strTemp.PrintF( _S( 165, "Î¨¥Í≤å : %d" ), rItemData.GetWeight() );
-		AddItemInfoString( strTemp, 0xDEC05BFF );
-
-		// Description
-		const char	*pDesc = _pNetwork->GetItemDesc( nIndex );
-		if( pDesc[0] != NULL )
-		{
-			strTemp.PrintF( "%s", pDesc );
-			AddItemInfoString( strTemp, 0x9E9684FF );
-		}
-
-		nInfoWidth = 27 - _pUIFontTexMgr->GetFontSpacing() + MAX_ITEMINFO_CHAR *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	}
-	else 
-	{
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strItemInfo[0]);				
-		} else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strItemInfo[0].Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 30;
-	}
-
-	return TRUE;
-}
-
-
-// ----------------------------------------------------------------------------
 // Name : SelectItem()
 // Desc :
 // ----------------------------------------------------------------------------
@@ -934,6 +609,8 @@ void CUIProcess::SelectItem ( int _nIndex )
 		if ( _nIndex == -1 ) return;
 	}
 
+	CUIManager* pUIMgr = CUIManager::getSingleton();
+
 	BOOL bNeedItem			= FALSE;	
 	BOOL bNeedItemCount		= FALSE;
 	BOOL bNeedSSkill		= FALSE;
@@ -941,95 +618,82 @@ void CUIProcess::SelectItem ( int _nIndex )
 		
 	m_lbPreconditionDesc.ResetAllStrings();
 	
-	// ÏÉùÏÇ∞ ÌïòÍ≥†Ïûê ÌïòÎäî ÏïÑÏù¥ÌÖú Î™®Î°ù
-	if ( m_btnProcessItems[_nIndex].GetIndex() == -1 ) return;
-	CItemData&		ProcessItemData	= _pNetwork-> GetItemData ( m_btnProcessItems[_nIndex].GetIndex() );
+	// ª˝ªÍ «œ∞Ì¿⁄ «œ¥¬ æ∆¿Ã≈€ ∏Ò∑œ
+	if ( m_vecIcons[_nIndex]->getIndex() == -1 ) return;
+	CItemData*		pProcessItemData	= _pNetwork-> GetItemData ( m_vecIcons[_nIndex]->getIndex() );
 
-	if ( ProcessItemData.GetNeedSSkillIndex () == -1 ) return;
-	CItemData&		TextItemData	= _pNetwork->GetItemData ( m_nProcessText );
+	if ( pProcessItemData->GetNeedSSkillIndex () == -1 ) return;
+	CItemData*		pTextItemData	= _pNetwork->GetItemData ( m_nProcessText );
 	
-	CSpecialSkill	NeedSSkill		= _pNetwork->GetSSkillData ( ProcessItemData.GetNeedSSkillIndex () );
-	int				nSSkillLevel	= ProcessItemData.GetNeedSSkillCount ();
+	CSpecialSkill*	pNeedSSkill		= CSpecialSkill::getData(pProcessItemData->GetNeedSSkillIndex () );
+	int				nSSkillLevel	= pProcessItemData->GetNeedSSkillCount ();
 
-// Ï°∞Í±¥ Í≤ÄÏÉâ 
-	// ÌïÑÏöî Ïä§ÌÇ¨
-	if ( NeedSSkill.GetIndex() == -1 ) return;
+	if (pNeedSSkill == NULL)
+		return;
+// ¡∂∞« ∞Àªˆ 
+	// « ø‰ Ω∫≈≥
+	if ( pNeedSSkill->GetIndex() == -1 ) return;
 	if ( nSSkillLevel == -1 ) return;
 
-	bNeedSSkill = _pUIMgr->GetCharacterInfo()->CheckSSkillByIndex( NeedSSkill.GetIndex(), nSSkillLevel, &bNeedSSkillLevel );
+	bNeedSSkill = pUIMgr->GetCharacterInfo()->CheckSSkillByIndex( pNeedSSkill->GetIndex(), nSSkillLevel, &bNeedSSkillLevel );
 	
-// ÌïÑÏöî ÏïÑÏù¥ÌÖú 
+// « ø‰ æ∆¿Ã≈€ 
 	int nIndexTemp = 0;
-	CItemData InvenItem;
 
-	// ÌïÑÏöî ÏïÑÏù¥ÌÖú Ï¢ÖÎ•òÏôÄ Í∞ØÏàò ÏñªÍ∏∞ 
-	nIndexTemp = ProcessItemData.GetNeedItemIndex( 0 );
+	// « ø‰ æ∆¿Ã≈€ ¡æ∑˘øÕ ∞πºˆ æÚ±‚ 
+	nIndexTemp = pProcessItemData->GetNeedItemIndex( 0 );
 
 	if( nIndexTemp == -1 ) return;
 		
 	m_NeedItems[0].ItemData	= _pNetwork->GetItemData ( nIndexTemp );
-	m_NeedItems[0].llCount	= ProcessItemData.GetNeedItemCount( 0 ); 
+	m_NeedItems[0].llCount	= pProcessItemData->GetNeedItemCount( 0 ); 
 
 
-	// Ïù∏Î≤§ÏóêÏÑú ÌïÑÏöî ÏïÑÏù¥ÌÖú Í≤ÄÏÇ¨ ( nUniIndex Ï≤òÎ¶¨ ÏïàÌñàÏùå )
-	for ( int nTab = 0; nTab < INVEN_SLOT_TAB; nTab++ )
+	// ¿Œ∫•ø°º≠ « ø‰ æ∆¿Ã≈€ ∞ÀªÁ ( nUniIndex √≥∏Æ æ»«ﬂ¿Ω )
+	SWORD		nTab, nIndex;
+	if (ItemHelp::HaveItem(m_NeedItems[0].ItemData->GetItemIndex(), &nTab, &nIndex, m_NeedItems[0].llCount))
 	{
-		for ( int nRow = 0 ; nRow < INVEN_SLOT_ROW_TOTAL; nRow++ )
-		{
-			for ( int nCol = 0 ; nCol < INVEN_SLOT_COL; nCol++ )
-			{
-				InvenItem = _pNetwork->MySlotItem[nTab][nRow][nCol].ItemData;
-				
-				if ( InvenItem.GetItemIndex() == m_NeedItems[0].ItemData.GetItemIndex() )
-				{
-					bNeedItem = TRUE;
-					
-					if ( _pNetwork->MySlotItem[nTab][nRow][nCol].Item_Sum >= m_NeedItems[0].llCount )
-					{
-						bNeedItemCount = TRUE;
-					
-						m_NeedItems[0].sbMatTab = nTab;
-						m_NeedItems[0].sbMatRow = nRow;
-						m_NeedItems[0].sbMatCol = nCol;
-					}
-					
-				}
-		
-			}		
-		}
+		bNeedItem = TRUE;
+		bNeedItemCount = TRUE;
+
+		m_NeedItems[0].MatTab = nTab;
+		m_NeedItems[0].inven_idx = nIndex;
 	}
 
-
-// Ï°∞Í±¥ Ï∂úÎ†• 
+// ¡∂∞« √‚∑¬ 
 	CTString strTitle;
 	CTString strSpace = "";
 
-// ÌïÑÏöî Ïä§ÌÇ¨ Ï∂úÎ†• 
-	AddString ( _S( 562, "ÌïÑÏöî Ïä§ÌÇ¨" ), COLOR_SUB_TITLE ); 
-	AddString ( strSpace + NeedSSkill.GetName(), bNeedSSkill? COLOR_TEXT : COLOR_NONE );
+// « ø‰ Ω∫≈≥ √‚∑¬ 
+	AddString ( _S( 562, "« ø‰ Ω∫≈≥" ), COLOR_SUB_TITLE ); 
+	AddString ( strSpace + pNeedSSkill->GetName(), bNeedSSkill? COLOR_TEXT : COLOR_NONE );
 	m_bSatisfied = bNeedSSkill;
 
 	AddString ( CTString ( " " ) );
 
-// ÌïÑÏöî Î¨ºÌíà
-	switch ( TextItemData.GetProcessType () )
+// « ø‰ π∞«∞
+	switch ( pTextItemData->GetProcessType () )
 	{
 	case CItemData::PROCESS_DOC_STONE :
-		strTitle = _S( 563, "ÌïÑÏöî Ïä§ÌÜ§" );				
+		strTitle = _S( 563, "« ø‰ Ω∫≈Ê" );				
 		break;
 	case CItemData::PROCESS_DOC_PLANT :
-		strTitle = _S( 564, "ÌïÑÏöî ÌÅ¨ÎùΩ" );				
+		strTitle = _S( 564, "« ø‰ ≈©∂Ù" );				
 		break;
 	case CItemData::PROCESS_DOC_ELEMENT :
-		strTitle = _S( 565, "ÌïÑÏöî ÏõêÏÜå" );				
+		strTitle = _S( 565, "« ø‰ ø¯º“" );				
 		break;
 	}
 	AddString ( strTitle, COLOR_SUB_TITLE ); 
 
 	
 	bNeedItem &= bNeedItemCount;
-	const char* szItemName = _pNetwork->GetItemName( m_NeedItems[0].ItemData.GetItemIndex() );
-	strTitle.PrintF ( _S( 576, "%s : %dÍ∞ú " ), strSpace + szItemName, m_NeedItems[0].llCount );
+	const char* szItemName = NULL;
+	if (m_NeedItems[0].ItemData != NULL)
+	{
+		szItemName = _pNetwork->GetItemName( m_NeedItems[0].ItemData->GetItemIndex() );
+		strTitle.PrintF ( _S( 576, "%s : %d∞≥ " ), strSpace + szItemName, m_NeedItems[0].llCount );
+	}
 
 	AddString ( strTitle, bNeedItem? COLOR_TEXT : COLOR_NONE );
 	m_bSatisfied &= bNeedItem;
@@ -1090,24 +754,24 @@ void CUIProcess::AddString ( CTString& strText, COLOR colText )
 // ----------------------------------------------------------------------------
 void CUIProcess::SendProcessReq()
 {
-	if( m_bWaitProcessResult )
+	if( m_bWaitProcessResult == TRUE )
 		return;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
 	if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsSkilling() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage(  _S( 941, "Ïä§ÌÇ¨ ÏÇ¨Ïö©Ï§ëÏóêÎäî Í∞ÄÍ≥µÏùÑ Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ) , SYSMSG_ERROR );		
+		pUIManager->GetChattingUI()->AddSysMessage(  _S( 941, "Ω∫≈≥ ªÁøÎ¡ﬂø°¥¬ ∞°∞¯¿ª «“ ºˆ æ¯Ω¿¥œ¥Ÿ." ) , SYSMSG_ERROR );		
 		return;
 	}
 
-	if( _pUIMgr->IsCSFlagOn( CSF_TELEPORT ) )
+	if( pUIManager->IsCSFlagOn( CSF_TELEPORT ) )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage(  _S( 942, "ÏàúÍ∞Ñ Ïù¥ÎèôÏ§ëÏóêÎäî Í∞ÄÍ≥µÏùÑ Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ) , SYSMSG_ERROR );	
+		pUIManager->GetChattingUI()->AddSysMessage(  _S( 942, "º¯∞£ ¿Ãµø¡ﬂø°¥¬ ∞°∞¯¿ª «“ ºˆ æ¯Ω¿¥œ¥Ÿ." ) , SYSMSG_ERROR );	
 		return;
 	}
 
-	CItemData& ProcessItemData	= _pNetwork->GetItemData ( m_btnProcessItems[m_nSelectProcessItem].GetIndex() );
-
-	_pNetwork->ProcessReq ( m_nRow, m_nCol, m_btnProcessItems[m_nSelectProcessItem].GetIndex(), 1, 
+	_pNetwork->ProcessReq ( m_nTab, m_nInvenIdx, m_vecIcons[m_nSelectProcessItem]->getIndex(), 1, 
 						m_NeedItems );
 
 	m_bWaitProcessResult = TRUE;
@@ -1126,8 +790,10 @@ void CUIProcess::SendProcessReq()
 // ----------------------------------------------------------------------------
 void CUIProcess::ProcessRep( SBYTE sbResult )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close message box
-	_pUIMgr->CloseMessageBox( MSGCMD_PROCESS_REP );
+	pUIManager->CloseMessageBox( MSGCMD_PROCESS_REP );
 
 	// Show result
 	CTString	strMessage;
@@ -1135,28 +801,25 @@ void CUIProcess::ProcessRep( SBYTE sbResult )
 	switch( sbResult )
 	{
 
-	case MSG_PROCESS_FAIL_SYSTEM :			// ÏûàÏñ¥ÏÑúÎäî ÏïàÎêòÎäî Ïù¥Ïú†Î°ú Ïã§Ìå®
-		strMessage = _S( 566, "Í∞ÄÍ≥µÏóê Ïã§Ìå®ÌïòÏòÄÏäµÎãàÎã§." );						
+	case MSG_PROCESS_FAIL_SYSTEM :			// ¿÷æÓº≠¥¬ æ»µ«¥¬ ¿Ã¿Ø∑Œ Ω«∆–
+		strMessage = _S( 566, "∞°∞¯ø° Ω«∆–«œø¥Ω¿¥œ¥Ÿ." );						
 		break;
 
-	case MSG_PROCESS_FAIL_MATERIAL :		// Ïû¨Î£å Ï†ïÎ≥¥ Ïò§Î•ò
-		strMessage = _S( 567, "Í∞ÄÍ≥µÏóê ÌïÑÏöîÌïú Ïû¨Î£åÍ∞Ä Î∂ÄÏ°±Ìï©ÎãàÎã§." );			
+	case MSG_PROCESS_FAIL_MATERIAL :		// ¿Á∑· ¡§∫∏ ø¿∑˘
+		strMessage = _S( 567, "∞°∞¯ø° « ø‰«— ¿Á∑·∞° ∫Œ¡∑«’¥œ¥Ÿ." );			
 		break;
 
-	case MSG_PROCESS_FAIL_NO_SSKILL :		// Í∞ÄÍ≥µ Ïä§ÌÇ¨ ÏóÜÏùå
-		strMessage = _S( 568, "Í∞ÄÍ≥µÏóê ÌïÑÏöîÌïú Í∞ÄÍ≥µ Ïä§ÌÇ¨Ïù¥ ÏóÜÏäµÎãàÎã§." );				
+	case MSG_PROCESS_FAIL_NO_SSKILL :		// ∞°∞¯ Ω∫≈≥ æ¯¿Ω
+		strMessage = _S( 568, "∞°∞¯ø° « ø‰«— ∞°∞¯ Ω∫≈≥¿Ã æ¯Ω¿¥œ¥Ÿ." );				
 		break;
-	//case MSG_PROCESS_FAIL_SSKILL_LEVEL :	// Í∞ÄÍ≥µ Ïä§ÌÇ¨ Î†àÎ≤® Ïò§Î•ò
-	//	strMessage = _S( 569, "Í∞ÄÍ≥µÏóê ÌïÑÏöîÌïú Ïä§ÌÇ¨ Î†àÎ≤®Ïù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." );			
+	//case MSG_PROCESS_FAIL_SSKILL_LEVEL :	// ∞°∞¯ Ω∫≈≥ ∑π∫ß ø¿∑˘
+	//	strMessage = _S( 569, "∞°∞¯ø° « ø‰«— Ω∫≈≥ ∑π∫ß¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );			
 	//	break;
-	case MSG_PROCESS_FAIL_OVER_WEIGHT: // Î¨¥Í≤åÍ∞Ä Ï¥àÍ≥º
-		strMessage = _S( 705, "Î¨¥Í≤åÍ∞Ä Ï¥àÍ≥ºÌïòÏó¨ Í∞ÄÍ≥µÏùÑ Ìï† Ïàò ÏóÜÏäµÎãàÎã§." );
+	case MSG_PROCESS_FAIL_PROB :			// »Æ∑¸ Ω«∆–
+		strMessage = _S( 566, "∞°∞¯ø° Ω«∆–«œø¥Ω¿¥œ¥Ÿ." );							
 		break;
-	case MSG_PROCESS_FAIL_PROB :			// ÌôïÎ•† Ïã§Ìå®
-		strMessage = _S( 566, "Í∞ÄÍ≥µÏóê Ïã§Ìå®ÌïòÏòÄÏäµÎãàÎã§." );							
-		break;
-	case MSG_PROCESS_SUCCESS :				// Í∞ÄÍ≥µ ÏÑ±Í≥µ
-		strMessage = _S( 570, "Í∞ÄÍ≥µÏóê ÏÑ±Í≥µÌïòÏòÄÏäµÎãàÎã§." );							
+	case MSG_PROCESS_SUCCESS :				// ∞°∞¯ º∫∞¯
+		strMessage = _S( 570, "∞°∞¯ø° º∫∞¯«œø¥Ω¿¥œ¥Ÿ." );							
 		break;
 	
 	}
@@ -1164,9 +827,17 @@ void CUIProcess::ProcessRep( SBYTE sbResult )
 	CloseProcess();
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 560, "Í∞ÄÍ≥µ" ), UMBS_OK, UI_PROCESS, MSGCMD_PROCESS_REP );		
+	MsgBoxInfo.SetMsgBoxInfo( _S( 560, "∞°∞¯" ), UMBS_OK, UI_PROCESS, MSGCMD_PROCESS_REP );		
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 	m_bWaitProcessResult = FALSE;	
+}
+
+void CUIProcess::clearIcon()
+{
+	for (int i = 0; i < m_vecIcons.size(); ++i)
+		SAFE_DELETE(m_vecIcons[i]);
+
+	m_vecIcons.clear();
 }

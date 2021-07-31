@@ -11,7 +11,7 @@
 #include <Engine/Base/CTString.h>
 #include <Engine/Base/FileName.h>
 #include <Engine/Effect/CEffectGroupManager.h>
-#include <Engine/Effect/CEffectGroup.h>
+// #include <Engine/Effect/CEffectGroup.h>
 #include <map>
 enum eSlaveAnimation
 {
@@ -54,12 +54,12 @@ private:
 		{
 		};
 
-		CTString		strName;									// ì´ë¦„ ì •ë³´.
-		CTString		strFileName;								// íŒŒì¼ëª….
-		CTString		aStrAnimationName[SLAVE_ANIM_TOTAL];		// ì• ë‹ˆë©”ì´ì…˜ ì´ë¦„.
+		CTString		strName;									// ÀÌ¸§ Á¤º¸.
+		CTString		strFileName;								// ÆÄÀÏ¸í.
+		CTString		aStrAnimationName[SLAVE_ANIM_TOTAL];		// ¾Ö´Ï¸ŞÀÌ¼Ç ÀÌ¸§.
 		FLOAT			fWalkSpeed;
 		FLOAT			fRunSpeed;
-		INDEX			iSkillIndex;								// ì¸í„°í˜ì´ìŠ¤ì—ì„œ ì“°ì´ëŠ” ìŠ¤í‚¬ ì¸ë±ìŠ¤.
+		INDEX			iSkillIndex;								// ÀÎÅÍÆäÀÌ½º¿¡¼­ ¾²ÀÌ´Â ½ºÅ³ ÀÎµ¦½º.
 	}sSlaveInfo;	
 
 public:
@@ -70,7 +70,7 @@ public:
 		SLAVE_WIND,
 		SLAVE_LAND,
 		SLAVE_WATER,
-		SLAVE_GUARD,		// ê²½ë¹„ë³‘
+		SLAVE_GUARD,		// °æºñº´
 		SLAVE_TOTAL,
 	};
 
@@ -106,8 +106,8 @@ public:
 	INDEX		GetSkillIndex( int iSlave ) const;
 	void		InitSkillIndex();
 
-	// Date : 2005-12-15(ì˜¤ì „ 11:28:11), By Lee Ki-hwan
-	// ê¸°ë³¸ ì´í™íŠ¸ ê´€ë ¨ ì²˜ë¦¬	 
+	// Date : 2005-12-15(¿ÀÀü 11:28:11), By Lee Ki-hwan
+	// ±âº» ÀÌÆåÆ® °ü·Ã Ã³¸®	 
 	std::map<SLONG, CEffectGroup *>		m_mapEG;
 
 	void StartIdleEffect( SLONG slSlaveIndex, SBYTE sbElementalType, CEntity* penEntity );

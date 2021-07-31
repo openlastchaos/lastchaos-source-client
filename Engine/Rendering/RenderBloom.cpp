@@ -4,26 +4,26 @@
 
 #include <Engine/Graphics/DrawPort.h>
 #include <Engine/Graphics/GfxLibrary.h>
-
+#include <Engine/GlobalDefinition.h>
 // sehan
 #include <assert.h>
 
 #define FILTER_BLOOM_TEX			D3DTEXF_POINT
 #define FILTER_BLOOM_TEX_TO_SCREEN	D3DTEXF_LINEAR
 
-// FIXME : NULLÎ°ú Ï¥àÍ∏∞ÌôîÌïòÏßÄ ÏïäÍ≥† ÏÇ¨Ïö©ÌïòÍ≥† ÏûàÏùå.
+// FIXME : NULL∑Œ √ ±‚»≠«œ¡ˆ æ ∞Ì ªÁøÎ«œ∞Ì ¿÷¿Ω.
 CRenderTexture				*_prtFilterTarget[2];
 LPDIRECT3DVERTEXBUFFER8		_pFilterVertexBuffer = NULL;
-LPDIRECT3DVERTEXBUFFER8		_pBackVertexBuffer[MAX_BACKVERTEX_WIDTH][MAX_BACKVERTEX_HEIGHT]; // 1280 X 1024 ÍπåÏßÄÎßå ÏßÄÏõêÎêòÎäîÍ±∏Î°ú Í∞ÄÏ†ïÌïúÎã§.
+LPDIRECT3DVERTEXBUFFER8		_pBackVertexBuffer[MAX_BACKVERTEX_WIDTH][MAX_BACKVERTEX_HEIGHT]; // 1280 X 1024 ±Ó¡ˆ∏∏ ¡ˆø¯µ«¥¬∞…∑Œ ∞°¡§«—¥Ÿ.
 
 extern INDEX d3d_bDeviceChanged	= TRUE;
 extern BOOL _bFirst				= TRUE;
 
 extern INDEX	g_iUseBloom;
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë Î≤ÑÍ∑∏ ÏÇ¨ÎÉ• ÏûëÏóÖ	09.09
+//∞≠µøπŒ ºˆ¡§ Ω√¿€ πˆ±◊ ªÁ≥… ¿€æ˜	09.09
 static DWORD	_dwAddFourPixelShader			= NULL;
 static DWORD	_dwTexCoord4OffsetVertexShader	= NULL;
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù Î≤ÑÍ∑∏ ÏÇ¨ÎÉ• ÏûëÏóÖ		09.09
+//∞≠µøπŒ ºˆ¡§ ≥° πˆ±◊ ªÁ≥… ¿€æ˜		09.09
 
 extern void ReleaseBloomTexture()
 {
@@ -64,8 +64,8 @@ HRESULT CRenderer::InitBloom()
 	if (_bFirst) 
 	{
 		// Init Device
-		// Î∑∞, Ìà¨ÏòÅÎì±Ïùò ÌñâÎ†¨Í∞í Í≥ÑÏÇ∞ÌïòÎäî Î∂ÄÎ∂Ñ
-		CalcFullCoverageMatrix(); // Vertex ShaderÏóê ÎÑòÍ≤®Ï§Ñ Ïù∏ÏàòÎ•º ÎßåÎì†Îã§. ÌïúÎ≤àÎßå Ìï¥Ï£ºÎ©¥ ÎêúÎã§.
+		// ∫‰, ≈ıøµµÓ¿« «‡∑ƒ∞™ ∞ËªÍ«œ¥¬ ∫Œ∫–
+		CalcFullCoverageMatrix(); // Vertex Shaderø° ≥—∞‹¡Ÿ ¿Œºˆ∏¶ ∏∏µÁ¥Ÿ. «—π¯∏∏ «ÿ¡÷∏È µ»¥Ÿ.
 
 		HRESULT hr = SetFlareLook();
 		if (FAILED(hr)) 
@@ -228,6 +228,10 @@ HRESULT CRenderer::RenderBloom()
 
 	DoCreateFlareTexture_Separable();
 
+	int iFilterNum = (g_iUseBloom > 3) ? 1 : 0;
+	m_nGaussianSize[iFilterNum]	= g_iUseBloom*2;
+	CreateGaussianBlur(iFilterNum);
+
 	HRESULT hr = S_OK;
 
 	if (TRUE)
@@ -309,7 +313,7 @@ HRESULT CRenderer::DoCreateFlareTexture_Separable()
 
 	_pGfx->gl_pd3dDevice->SetPixelShader(0);
 
-	// ÌÅ∞ ÌÖçÏä§Ï∂∞Î•º ÏûëÏùÄ ÌÖçÏä§Ï∂∞Ïóê Îã§Ïãú Ïì¥Îã§.
+	// ≈´ ≈ÿΩ∫√Á∏¶ ¿€¿∫ ≈ÿΩ∫√Áø° ¥ŸΩ√ æ¥¥Ÿ.
 	if (TRUE) {
 		IDirect3DSurface8       *pBackbufferColor; 
 		_pGfx->gl_pd3dDevice->GetRenderTarget(        &pBackbufferColor );
@@ -468,7 +472,16 @@ HRESULT CRenderer::DoCreateFlareTexture_Separable()
 		//_pGfx->gl_pd3dDevice->SetRenderState( D3DRS_DESTBLEND,		D3DBLEND_SRCCOLOR );
 	}
 
-	int iFilterNum = (g_iUseBloom > 0) ? (g_iUseBloom - 1) : 0;
+	int iFilterNum;
+	iFilterNum = (g_iUseBloom > 3) ? 1 : 0;
+/*	if (g_iCountry == JAPAN) // ¿œ∫ª Ω≈ ¡÷≥Î∏  π‡±‚∂ßπÆø° ∫Ì∑“»ø∞˙ ¥‹∞Ë ¥√∏≤
+	{
+		iFilterNum = (g_iUseBloom > 3) ? 1 : 0;
+	}else
+	{
+		iFilterNum = (g_iUseBloom > 0) ? (g_iUseBloom - 1) : 0;
+	}*/
+	
 	for( i=0; i < m_vGaussian1D[iFilterNum].size(); i += 4 )
 	{
 		if( i == 4 )
@@ -636,9 +649,9 @@ void CRenderer::Restore_SRS_Bloom()
 	_pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,		m_dwAlphaop );
 	_pGfx->gl_pd3dDevice->SetTextureStageState( 1, D3DTSS_COLOROP,		m_dwColorop1 );
 	
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Bug Fix)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Bug Fix)(0.1)
 	d3dSetVertexShader(D3DFVF_CTVERTEX);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Bug Fix)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Bug Fix)(0.1)
 }
 
 HRESULT CRenderer::CreateTextureRenderTargets( int width, int height )
@@ -663,7 +676,7 @@ HRESULT CRenderer::CreateTextureRenderTargets( int width, int height )
 		_pGfx->gl_pd3dDevice->GetRenderTarget( &pBackbufferColor );
 		pBackbufferColor->GetDesc(&backDesc);
 
-		// Î†åÎçî ÌÖçÏä§Ï≥ê ÏÉùÏÑ± Î∞è Ï¥àÍ∏∞Ìôî
+		// ∑ª¥ı ≈ÿΩ∫√ƒ ª˝º∫ π◊ √ ±‚»≠
 		_prtFilterTarget[i] = new CRenderTexture();
 		if (!_prtFilterTarget[i] || !_prtFilterTarget[i]->Init(width, height, TEX_32BIT, backDesc.Format)) 
 		{ 
@@ -696,18 +709,34 @@ HRESULT	CRenderer::SetFlareLook()
 	
 	m_pGaussianProp[1].radius_scale		= 4.5f;
 	m_pGaussianProp[1].amp				= 0.11f;
-	
+/*	
 	//m_nGaussianSize	 = 8;//44;		// size of the Gaussian blur diameter in texels
-	// Loop 2Î≤à ÎèàÎã§.
+	// Loop 2π¯ µ∑¥Ÿ.
 	//m_nGaussianSize[0]	 = 10;//44;		// size of the Gaussian blur diameter in texels
 	//m_fColorAtten[0]	= 0.46f;//0.20f;
-	// Loop 3Î≤à ÎèàÎã§.
-	m_nGaussianSize[0]	= 12;//44;		// size of the Gaussian blur diameter in texels
+	// Loop 3π¯ µ∑¥Ÿ.
+	m_nGaussianSize[0]	= g_iUseBloom*2;//12;//44;		// size of the Gaussian blur diameter in texels
 	m_fColorAtten[0]	= 0.40f;//0.20f;
-	// Loop 4Î≤à ÎèàÎã§.
-	m_nGaussianSize[1]	= 15;//44;		// size of the Gaussian blur diameter in texels
+	// Loop 4π¯ µ∑¥Ÿ.
+	m_nGaussianSize[1]	= 12;//15;//44;		// size of the Gaussian blur diameter in texels
 	m_fColorAtten[1]	= 0.35f;//0.20f;
-	
+*/
+	//Bloom »ø∞˙ ¡∂¿˝
+/*	if(g_iCountry == JAPAN)
+	{
+		m_nGaussianSize[0]	= g_iUseBloom*2; // ø…º«¿« ∫Ì∑≥ ¥‹∞Ë∏¶ π›øµ // Ω≈ ¡÷≥Î∏ ¿« Bloom »ø∞˙ ¥‹∞Ë ¥√∏≤
+		m_nGaussianSize[1]	= 12;
+	}else
+	{
+		m_nGaussianSize[0]	= 12;
+		m_nGaussianSize[1]	= 15;
+	}*/
+	m_nGaussianSize[0]	= g_iUseBloom*2; // ø…º«¿« ∫Ì∑≥ ¥‹∞Ë∏¶ π›øµ // Ω≈ ¡÷≥Î∏ ¿« Bloom »ø∞˙ ¥‹∞Ë ¥√∏≤
+	m_nGaussianSize[1]	= 12;
+
+	m_fColorAtten[0] = 0.40f;
+	m_fColorAtten[1] = 0.35f;
+
 	m_nTexRes			= 512;
 	
 	HRESULT hr = CreateTextureRenderTargets( m_nTexRes, m_nTexRes );
@@ -877,7 +906,7 @@ HRESULT CRenderer::CreatePShAddFour( )
 	LPD3DXBUFFER pCode;
     HRESULT      hr;
 
-	char *PshAddFourPixelShaderCode =
+/*	char *PshAddFourPixelShaderCode =
 		"ps.1.1\n"
 		"tex t0 \n"
 		"tex t1 \n"
@@ -892,6 +921,23 @@ HRESULT CRenderer::CreatePShAddFour( )
 		//";mad t0 , c1 , t1 , r0 \n"
 		"mad t0 , c2 , t2 , t0 \n"
 		"mad r0 , c3 , t3 , t0 ";
+*/
+	char *PshAddFourPixelShaderCode =
+		"ps.1.4\n"
+		"texld r0, t0 \n"
+		"texld r1, t1 \n"
+		"texld r2, t2 \n"
+		"texld r3, t3 \n"
+		"mul r0.xyz , r0 , c0 \n"
+		//";+mul r1.w , c0.wwww , t0.wwww \n"
+		"mad r0.xyz , c1 , r1 , r0 \n"
+		//";+mad t0.w , c1.wwww , t1.wwww , r1 \n"
+		//";mov t0.w , c5\n"
+		//";mul r0 , c0 , t0 \n"
+		//";mad t0 , c1 , t1 , r0 \n"
+		"mad r0 , c2 , r2 , r0 \n"
+		"mad r0 , c3 , r3 , r0 ";
+
 
     // Get the path to the vertex shader file
     //DXUtil_FindMediaFile( strPath, strFilename );

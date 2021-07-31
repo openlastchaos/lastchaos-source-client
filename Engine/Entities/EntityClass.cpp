@@ -327,7 +327,7 @@ HINSTANCE LoadDLL_t(const char *strFileName) // throw char *
 
 		// report error
 		ThrowF_t(TRANS("Cannot load DLL file '%s':\n%s"), strFileName, strWinError);
-	}
+	}	
 	return hiDLL;
 }
 
@@ -343,15 +343,32 @@ void CEntityClass::Read_t( CTStream *istr) // throw char *
 	strClassName.ReadFromText_t(*istr, "Class: ");
 
 	// create name of dll
-	#ifndef NDEBUG
+#ifndef NDEBUG
+		//fnmDLL = fnmDLL.FileDir()+"Debug\\"+fnmDLL.FileName()+_strModExt+"D"+fnmDLL.FileExt();
+#	if		defined(_MSC_VER) && (_MSC_VER >= 1600)
+#		ifdef	WORLD_EDITOR
+			fnmDLL = fnmDLL.FileName() + _strModExt + "D" + fnmDLL.FileExt();
+#		else
+			fnmDLL = fnmDLL.FileDir()+"Debug2010\\"+fnmDLL.FileName()+_strModExt+"D"+fnmDLL.FileExt();
+#		endif
+#	else
 		fnmDLL = fnmDLL.FileDir()+"Debug\\"+fnmDLL.FileName()+_strModExt+"D"+fnmDLL.FileExt();
-	#else
+#	endif
+#else	// NDEBUG
+#	ifdef	WORLD_EDITOR
+		fnmDLL =  fnmDLL.FileName() + _strModExt+fnmDLL.FileExt();
+#	else	// WORLD_EDITOR
 		fnmDLL = fnmDLL.FileDir()+fnmDLL.FileName()+_strModExt+fnmDLL.FileExt();
-	#endif
+#	endif	// WORLD_EDITOR
+#endif
 
 	// load the DLL
 	CTFileName fnmExpanded;
+#ifndef	WORLD_EDITOR
 	ExpandFilePath(EFP_READ, fnmDLL, fnmExpanded);
+#else	// WORLD_EDITOR
+	fnmExpanded = _fnmApplicationPath + _fnmApplicationExe.FileDir() + fnmDLL;
+#endif // WORLD_EDITOR
 
 	ec_hiClassDLL = LoadDLL_t(fnmExpanded);
 	ec_fnmClassDLL = fnmDLL;
@@ -533,10 +550,10 @@ class CEntityProperty *CDLLEntityClass::PropertyForTypeAndID(
 
 			// if it also has same type
 			if (dec_aepProperties[iProperty].ep_eptType==eptType) {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.18
-		  // í”„ë¡œí¼í‹°ë¥¼ ì–»ëŠ” ë¶€ë¶„...
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.18
+		  // ÇÁ·ÎÆÛÆ¼¸¦ ¾ò´Â ºÎºĞ...
 		  //CPrintF("Class ID fixup\n");
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.18
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.18
 				// return it
 				return &dec_aepProperties[iProperty];
 

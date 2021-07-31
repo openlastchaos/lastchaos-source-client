@@ -17,9 +17,9 @@
 #include <Engine/Templates/DynamicContainer.cpp>
 #include <Engine/Templates/Stock_CTextureData.h>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include <Engine/Effect/EffectCommon.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 #undef new
 #include <D3dx8core.h>
@@ -268,15 +268,15 @@ extern void GetShaderDeclaration_D3D(ULONG *ulRetDecl, ULONG ulStreamFlags)
 		*(++ulRetDecl) = D3DVSD_REG( 2,  D3DVSDT_D3DCOLOR);
 		ulStreamFlags&=~GFX_WEIGHT_STREAM;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	// if using tangent
 	if(ulStreamFlags&GFX_TANGENT_STREAM) {
-		//*(++ulRetDecl) = D3DVSD_STREAM(8);	//ì›ë³¸
+		//*(++ulRetDecl) = D3DVSD_STREAM(8);	//¿øº»
 		*(++ulRetDecl) = D3DVSD_STREAM(3);
 		*(++ulRetDecl) = D3DVSD_REG( 9,  D3DVSDT_FLOAT4);
 		ulStreamFlags&=~GFX_TANGENT_STREAM;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	ASSERT(ulStreamFlags==0); // make sure stream flags were valid
 	*(++ulRetDecl) = D3DVSD_END();
 }
@@ -306,7 +306,7 @@ DWORD _adwDeclTemplateVP[] = {
 
 */
 // Compile vertex program from given vertex program source code
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(DevPartner Bug Fix)(2005-01-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-13)
 extern ULONG *CompileVertexProgram_D3D(const char *strVertexProgram, ID3DXBuffer **ppOut)
 {
 	ULONG ulFlags = 0;
@@ -332,7 +332,7 @@ extern ULONG *CompilePixelProgram_D3D(const char *strVertexProgram, ID3DXBuffer 
 {
 	return CompileVertexProgram_D3D(strVertexProgram, ppOut);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-13)
 
 // construct vertex shader out of streams' bit-mask
 extern DWORD SetupShader_D3D( ULONG ulStreamsMask)
@@ -441,9 +441,9 @@ static DWORD _dwColLockFlags[GFX_MAXLAYERS];  // for colors
 static DWORD _dwTexLockFlags[GFX_MAXLAYERS];  // for texture coords
 static LPDIRECT3DVERTEXBUFFER8 _pd3dLockedVtx = NULL;
 static LPDIRECT3DVERTEXBUFFER8 _pd3dLockedNor = NULL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 static LPDIRECT3DVERTEXBUFFER8 _pd3dLockedTan = NULL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 static LPDIRECT3DVERTEXBUFFER8 _pd3dLockedWgh = NULL;
 static LPDIRECT3DVERTEXBUFFER8 _pd3dLockedCol = NULL;
 static LPDIRECT3DVERTEXBUFFER8 _pd3dLockedTex = NULL;
@@ -709,6 +709,16 @@ BOOL CGfxLibrary::SetCurrentViewport_D3D(CViewPort *pvp)
 		hr = pvp->vp_pSwapChain->GetBackBuffer( 0, D3DBACKBUFFER_TYPE_MONO, &pColorSurface);
 		if( hr!=D3D_OK) return FALSE;
 	}
+
+	//////////////////////////////////////////////////////////////////////////////
+	// [070711: Su-won] WORLDEDITOR_BUGFIX							  |---------->
+	if(pvp->vp_pSurfDepth==NULL || pColorSurface ==NULL)
+	{
+		return FALSE;	
+	}
+	// [070711: Su-won] WORLDEDITOR_BUGFIX							  <----------|
+	//////////////////////////////////////////////////////////////////////////////
+
 	hr = gl_pd3dDevice->SetRenderTarget( pColorSurface, pvp->vp_pSurfDepth);
 	D3DRELEASE( pColorSurface, TRUE);
 	if( hr!=D3D_OK) return FALSE;
@@ -731,7 +741,7 @@ void CGfxLibrary::InitContext_D3D()
 	CDisplayAdapter &da = gl_gaAPI[GAT_D3D].ga_adaAdapter[gl_iCurrentAdapter];
 	CPrintF( "  (%s, %s, %s)\n\n", da.da_strVendor, da.da_strRenderer, da.da_strVersion);
 
-	// <-- ErrorLog.txtì— ë””ìŠ¤í”Œë ˆì´ ì •ë³´ë¥¼ ê¸°ë¡í•˜ê¸° ìœ„í•œ ë¶€ë¶„
+	// <-- ErrorLog.txt¿¡ µğ½ºÇÃ·¹ÀÌ Á¤º¸¸¦ ±â·ÏÇÏ±â À§ÇÑ ºÎºĞ
 	extern CTString _strDisplayDriver;
 	extern CTString _strDisplayDriverVersion;
 	_strDisplayDriver = da.da_strRenderer;
@@ -871,7 +881,7 @@ void CGfxLibrary::InitContext_D3D()
 	} else CPrintF( TRANS("  Vertical syncronization cannot be disabled.\n"));
 
 	// determine support for vertex shader (i.e. program)
-	// Date : 2006-05-16(ì˜¤í›„ 4:48:55), By eons
+	// Date : 2006-05-16(¿ÀÈÄ 4:48:55), By eons
 	gl_ulFlags &= ~GLF_VERTEXPROGRAM;
 	if( _pGfx->gl_pd3dCaps.MaxStreams>=8 && _pGfx->gl_pd3dCaps.VertexShaderVersion>=0x0101 && _pGfx->gl_pd3dCaps.MaxVertexShaderConst>=96 ) {
 		gl_ulFlags |= GLF_VERTEXPROGRAM;
@@ -881,6 +891,13 @@ void CGfxLibrary::InitContext_D3D()
 	gl_ulFlags &= ~GLF_PIXELPROGRAM;
 	if( d3dCaps.PixelShaderVersion>=0x0101 && d3dCaps.MaxPixelShaderValue>=1) {
 		gl_ulFlags |= GLF_PIXELPROGRAM;
+	}
+
+	BOOL bPS14 = TRUE;
+
+	if (d3dCaps.PixelShaderVersion < D3DPS_VERSION(1,4))
+	{ // ps 1.4°¡ Áö¿ø µÇÁö ¾Ê´Â´Ù.
+		bPS14 = FALSE;
 	}
 
 	// determine support for N-Patches
@@ -1007,9 +1024,9 @@ void CGfxLibrary::InitContext_D3D()
 	ReloadMeshes();
 	if( shd_bCacheAll) CacheShadows();
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
-	Initialize_EffectSystem();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
+//	Initialize_EffectSystem();
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 }
 
 
@@ -1051,9 +1068,9 @@ static D3DFORMAT FindDepthFormat_D3D( INDEX iAdapter, D3DFORMAT d3dfColor, INDEX
 	if( iDepthBits<21) pd3dfDepthTable = &ad3df16BitsTable[0];
 	else if( iDepthBits<28) pd3dfDepthTable = &ad3df24BitsTable[0];
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 	/*
-	// D3DFMT_D24S8ë¡œ ì„¤ì •í•¨.
+	// D3DFMT_D24S8·Î ¼³Á¤ÇÔ.
 	D3DFORMAT d3dfDepth = pd3dfDepthTable[2];
 	HRESULT hr;
 	hr = _pGfx->gl_pD3D->CheckDeviceFormat( iAdapter, d3dDevType, d3dfColor, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, d3dfDepth);
@@ -1064,7 +1081,7 @@ static D3DFORMAT FindDepthFormat_D3D( INDEX iAdapter, D3DFORMAT d3dfColor, INDEX
 		return d3dfDepth; // done if found
 		*/
 
-	// ì›ë³¸.
+	// ¿øº».
 	// loop thru table
 	for( INDEX i=0; i<ctTries; i++)
 	{ // fetch format from table
@@ -1075,7 +1092,7 @@ static D3DFORMAT FindDepthFormat_D3D( INDEX iAdapter, D3DFORMAT d3dfColor, INDEX
 		hr = _pGfx->gl_pD3D->CheckDepthStencilMatch( iAdapter, d3dDevType, d3dfColor, d3dfColor, d3dfDepth);
 		if( hr==D3D_OK) return d3dfDepth; // done if found
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 	// not found :(
 	iDepthBits = 0;
@@ -1113,14 +1130,14 @@ BOOL CGfxLibrary::InitDisplay_D3D( INDEX iAdapter, PIX pixSizeI, PIX pixSizeJ, e
 	d3dPresentParams.BackBufferCount = 1;
 	d3dPresentParams.MultiSampleType = D3DMULTISAMPLE_NONE; // !!!! TODO
 	d3dPresentParams.Flags = D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
-	d3dPresentParams.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	d3dPresentParams.SwapEffect = D3DSWAPEFFECT_COPY;
 	const BOOL bFullScreen = (pixSizeI>0 && pixSizeJ>0); 
 
 	// setup for full screen
 	if( bFullScreen) {
 		// determine color and depth format
-		if( eColorDepth==DD_16BIT) d3dColorFormat = D3DFMT_R5G6B5;
-		if( eColorDepth==DD_32BIT) d3dColorFormat = D3DFMT_X8R8G8B8;
+		if( eColorDepth==DISPD_16BIT) d3dColorFormat = D3DFMT_R5G6B5;
+		if( eColorDepth==DISPD_32BIT) d3dColorFormat = D3DFMT_X8R8G8B8;
 		d3dDepthFormat = FindDepthFormat_D3D( iAdapter, d3dColorFormat, iZDepth);
 		iZDepth = BitsFromDepthFormat_D3D(d3dDepthFormat);
 
@@ -1157,16 +1174,16 @@ BOOL CGfxLibrary::InitDisplay_D3D( INDEX iAdapter, PIX pixSizeI, PIX pixSizeJ, e
 		d3dPresentParams.BackBufferWidth  = 8;
 		d3dPresentParams.BackBufferHeight = 8;
 		d3dPresentParams.BackBufferFormat = d3dColorFormat;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 		/*
 		d3dPresentParams.EnableAutoDepthStencil = TRUE;
 		d3dDepthFormat = FindDepthFormat_D3D( iAdapter, d3dColorFormat, iZDepth);
 		d3dPresentParams.AutoDepthStencilFormat = d3dDepthFormat;
 		*/
-		// ì›ë³¸.
+		// ¿øº».
 		d3dPresentParams.EnableAutoDepthStencil = FALSE;		
 		d3dDepthFormat = FindDepthFormat_D3D( iAdapter, d3dColorFormat, iZDepth);		
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 		iZDepth = BitsFromDepthFormat_D3D(d3dDepthFormat);
 		gl_iSwapInterval = -1;
 	}
@@ -1193,26 +1210,26 @@ BOOL CGfxLibrary::InitDisplay_D3D( INDEX iAdapter, PIX pixSizeI, PIX pixSizeJ, e
 	extern HWND _hwndMain;
 	extern const D3DDEVTYPE d3dDevType;
 	hr = gl_pD3D->CreateDevice( iAdapter, d3dDevType, _hwndMain, dwVP, &d3dPresentParams, &gl_pd3dDevice);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	/*
 	IUnknown *pD3DDev = NULL;
 	if(S_OK == gl_pd3dDevice->QueryInterface(IID_IDirect3DDevice8, (void**)&pD3DDev))
 	{
 		if(pD3DDev != gl_pd3dDevice)
 		{
-			ASSERTALWAYS("D3D Device ìƒì„±ì‹œ ë¬¸ì œ ìƒê¹€.");
+			ASSERTALWAYS("D3D Device »ı¼º½Ã ¹®Á¦ »ı±è.");
 			ExitProcess(1);
 			return FALSE;
 		}
 	}
 	*/
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	if( hr!=D3D_OK) return FALSE;
 	gl_d3dColorFormat = d3dColorFormat;
 	gl_d3dDepthFormat = d3dDepthFormat;
 	gl_ctDepthBits = iZDepth & 0x7FFFFFF; // clamp stencil presence flag
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
-	// ì›ë³¸
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+	// ¿øº»
 	if( iZDepth & 0x8000000) 
 		gl_ulFlags |= GLF_STENCILBUFFER; 
 	else 
@@ -1220,7 +1237,7 @@ BOOL CGfxLibrary::InitDisplay_D3D( INDEX iAdapter, PIX pixSizeI, PIX pixSizeJ, e
 	/*
 	gl_ulFlags |= GLF_STENCILBUFFER; 
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 	// sehan
 	d3d_bDeviceChanged = TRUE;
@@ -1465,7 +1482,7 @@ extern inline void UnlockNormalArray_D3D(void)
  _pd3dLockedNor = NULL;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 extern inline void *LockTangentArray_D3D(void)
 {
   ASSERT( _bUsingDynamicBuffer);
@@ -1498,7 +1515,7 @@ extern inline void UnlockTangentArray_D3D(void)
   D3D_CHECKERROR(hr);
  _pd3dLockedTan = NULL;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 
 // prepare weight array for D3D
@@ -1711,9 +1728,9 @@ extern void ClearStreams(void)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 #include <Engine/Base/Statistics_Internal.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 // prepare and draw arrays
 extern void DrawElements_D3D( INDEX ctIndices, const UWORD *puwIndices)
 {
@@ -1853,9 +1870,9 @@ elemEnd:
 		gfxSetPixelProgram(NONE);
 	}
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	_sfStats.IncrementCounter(CStatForm::SCI_DPCOUNT);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 	// draw indices
 	ASSERT( ctVtxUsed>0);
 	hr = pd3dDev->DrawIndexedPrimitive( D3DPT_TRIANGLELIST, iVtxStart, ctVtxUsed, _iIdxOffset, ctIndices/3);

@@ -77,11 +77,11 @@ UINT APIENTRY FileOpenRequesterHook( HWND hdlg, UINT uiMsg, WPARAM wParam,	LPARA
       // remove application path
       fnSelectedFileFullPath.RemoveApplicationPath_t();
       CTFileName fnThumbnail = CTString("");
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use Ska Studio)(0.1)
       if( (fnSelectedFileFullPath.FileExt() == ".wld") ||
           (fnSelectedFileFullPath.FileExt() == ".mdl") ||
           (fnSelectedFileFullPath.FileExt() == ".smc") )
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use Ska Studio)(0.1)
       {
         fnThumbnail = fnSelectedFileFullPath.FileDir()+fnSelectedFileFullPath.FileName()+".tbn";
       }

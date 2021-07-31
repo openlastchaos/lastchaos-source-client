@@ -10,13 +10,13 @@ static const INDEX	iBaseVP = 0;
 
 SHADER_MAIN( TRShader_Shadow )
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	shaSetDefaultConstantRegisters();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	shaRender();
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC( TRShader_Shadow, ShaderDesc *&pshDesc )
 {
 	static bool bInit = false;
@@ -31,7 +31,7 @@ SHADER_DESC( TRShader_Shadow, ShaderDesc *&pshDesc )
 		shDescMe.sd_ulStreamFlags[0] = SHA_POSITION_STREAM | SHA_NAKED_CODE;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE( TRShader_Shadow, CTString &strVPCode, INDEX iVertexProgram )
@@ -61,15 +61,21 @@ SHADER_PCODE( TRShader_Shadow, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE
 	ASSERT( iPixelProgram == iBasePP );
 	ASSERT( eFogType == FT_NONE );
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Sun Moon Entity and etc)(0.2)
-	//c7 : ë‘ìž¥ì˜ shadow mapì„ blendí•˜ê¸° ìœ„í•œ ìƒìˆ˜
-	//c6 : ë¹„ ê°™ì€ ì¼ì‹œì ì¸ ê¸°ìƒë³€í™”ê°€ ìžˆì„ë•Œ ì§€í˜•ì˜ ë°ê¸° ì¡°ì ˆì„ ìœ„í•œ ìƒìˆ˜.
-	strPPCode = "tex    t0                      \n"
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.2)
+	//c7 : µÎÀåÀÇ shadow mapÀ» blendÇÏ±â À§ÇÑ »ó¼ö
+	//c6 : ºñ °°Àº ÀÏ½ÃÀûÀÎ ±â»óº¯È­°¡ ÀÖÀ»¶§ ÁöÇüÀÇ ¹à±â Á¶ÀýÀ» À§ÇÑ »ó¼ö.
+/*	strPPCode = "tex    t0                      \n"
 		        "tex    t1                      \n"
 				
 				"lrp    r0,   c7,   t0,   t1    \n"
-				"mul	r0,   r0,   c6          \n"//shader codeëŠ” ì—¬ê¸°ë§Œ ìˆ˜ì •, Ant
+				"mul	r0,   r0,   c6          \n"//shader code´Â ¿©±â¸¸ ¼öÁ¤, Ant
+              ;*/
+	strPPCode = "texld	r0,    t0                      \n"
+		        "texld	r1,    t1                      \n"
+				
+				"lrp    r0,   c7,   r0,   r1    \n"
+				"mul	r0,   r0,   c6          \n"//shader code´Â ¿©±â¸¸ ¼öÁ¤, Ant
               ;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.2)
 }
 // yjpark     -->|

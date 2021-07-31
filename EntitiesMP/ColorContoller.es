@@ -81,8 +81,8 @@ properties:
 
 components:
 
-	//1 editor model   MODEL_CONTROLLER          "Data\\Models\\Editor\\BlendController.mdl",
-	//2 editor texture TEXTURE_CONTROLLER        "Data\\Models\\Editor\\BlendController.tex",
+	1 editor model   MODEL_CONTROLLER          "Data\\Models\\Editor\\BlendController.mdl",
+	2 editor texture TEXTURE_CONTROLLER        "Data\\Models\\Editor\\BlendController.tex",
 
 functions:
 	BOOL IsTargetValid(SLONG slPropertyOffset, CEntity *penTarget)
@@ -245,6 +245,38 @@ functions:
 	}
 
 procedures:
+	Main()
+	{
+		// init model
+		//InitAsVoid();
+		InitAsEditorModel();
+
+		SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+		SetCollisionFlags(ECF_IMMATERIAL);
+
+		// set appearance
+		SetModel(MODEL_CONTROLLER);
+		SetModelMainTexture(TEXTURE_CONTROLLER);
+
+		m_fFadeInTime = ClampDn(m_fFadeInTime, 0.0f);
+		m_fFadeOutTime = ClampDn(m_fFadeOutTime, 0.0f);
+		if(m_fFadeInTime <= 0) {m_fFadeInTime = 0.000001f;}
+		if(m_fFadeOutTime <= 0) {m_fFadeOutTime = 0.000001f;}
+
+		m_bIsFadeIn = TRUE;
+		FillTargetOriginalColor();
+
+		if(m_cctType == CCT_DAYNIGHTCOLOR)
+		{
+			DayNightProcess();
+			jump DyaNightLoop();
+		}
+		else
+		{
+			jump MainLoop();
+		}
+	}
+
 	Fade()
 	{
 		m_fPrevGWTime = g_fGWTime;
@@ -315,36 +347,6 @@ procedures:
 		{
 			autowait(0.5f * FRnd() + 0.5f);
 			DayNightProcess();
-		}
-	}
-
-	Main()
-	{
-		// init model
-		InitAsVoid();
-		SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-		SetCollisionFlags(ECF_IMMATERIAL);
-
-		// set appearance
-		//SetModel(MODEL_CONTROLLER);
-		//SetModelMainTexture(TEXTURE_CONTROLLER);
-
-		m_fFadeInTime = ClampDn(m_fFadeInTime, 0.0f);
-		m_fFadeOutTime = ClampDn(m_fFadeOutTime, 0.0f);
-		if(m_fFadeInTime <= 0) {m_fFadeInTime = 0.000001f;}
-		if(m_fFadeOutTime <= 0) {m_fFadeOutTime = 0.000001f;}
-
-		m_bIsFadeIn = TRUE;
-		FillTargetOriginalColor();
-
-		if(m_cctType == CCT_DAYNIGHTCOLOR)
-		{
-			DayNightProcess();
-			jump DyaNightLoop();
-		}
-		else
-		{
-			jump MainLoop();
 		}
 	}
 };

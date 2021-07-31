@@ -1,11 +1,27 @@
 #include "stdh.h"
-#include <Engine/Interface/UIMap.h>
+#include <vector>
+#include <deque>
+
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIMap.h>
 #include <Engine/Interface/UISiegeWarfareDoc.h>
-#include <Engine/LocalDefine.h>
+#include <Engine/Contents/Base/UIPartyNew.h>
+#include <Engine/Contents/Base/Party.h>
+#include <Engine/Interface/UINpcScroll.h>
+#include <Engine/Interface/UIRadar.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Interface/UISiegeWarfareNew.h>
+#include <Engine/Base/KeyNames.h>
+#include <Engine/Help/DefineHelp.h>
+#include <Engine/Contents/Base/UIMapOption.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/function/gps.h>
+#include <Common/Packet/ptype_gps.h>
+#include <Engine/Entities/InternalClasses.h>
+#include <Engine/Help/Util_Help.h>
 
 // const value				
-#define MAX_SIGNAL					3	// ÌôîÎ©¥Ïóê ÌëúÏãúÎêòÎäî ÏµúÎåÄ Signal Ïàò 
+#define MAX_SIGNAL					3	// »≠∏Èø° «•Ω√µ«¥¬ √÷¥Î Signal ºˆ 
 
 // Position offset of controls
 #define	MAP_CLOSE_X					32
@@ -20,18 +36,35 @@
 #define MAP_SIGNAL_X				MAP_OPACITY_X - 20
 #define	MAP_SIGNAL_Y				26
 
+// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+#define ZONE_WORLD_MAP				99
+int	zoneNumList[] = {0, 4, 7, 15, 23, 32, 39, 40, 42, 0,};
+
+extern INDEX	g_iCountry;
+
 bool CompareZ( CastleData first, CastleData second )
 {
 	return ( first.fZ < second.fZ );
 }
 
+CTextureData*	ptdTopUITexture = NULL;
+CTextureData*	ptdButtonTexture = NULL;
 
-extern INDEX g_iCountry;
+//extern INDEX g_iCountry;
+
+extern INDEX g_iZoomInMap;
+extern INDEX g_iOpacityInMap;
+extern INDEX g_iXPosInMap;
+extern INDEX g_iYPosInMap;
+
 // ----------------------------------------------------------------------------
 // Name : CUIMap()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIMap::CUIMap()
+	: _bDetail(false)
+	, m_eMapState(eMS_NONE)
+	, m_penPlayerEntity(NULL)
 {
 	m_bShowWorldMap = TRUE;
 	m_bShowFrame = TRUE;
@@ -45,6 +78,7 @@ CUIMap::CUIMap()
 	m_llMapBlendTimeForDetail = 0;
 	m_llMapBlendTimeForLayer = 0;
 	m_llMapBlendElapsedTimeForLayer = 0;
+	m_llMapBlendTimeForCharPos = 0;
 
 	m_sbCurLayer = 0;
 	m_nCurMapData = -1;
@@ -67,6 +101,13 @@ CUIMap::CUIMap()
 
 	m_bSignalBtnOn = FALSE;
 	m_bInsideMouse = FALSE;
+	m_bDetailMapClick = FALSE;
+	// revision map size. [10/20/2009 rumist]
+	m_fMapSizeRevision = 1.0f;	// default size is 1.0f. if map size is default map size, it's current data used.
+	m_bHighlight = FALSE;
+	m_nNpcHighlightPosX = 0;
+	m_nNpcHighlightPosY = 0;
+	m_nNpcHighlightIdx = -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -84,9 +125,7 @@ CUIMap::~CUIMap()
 // ----------------------------------------------------------------------------
 void CUIMap::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 512, 22 );
@@ -95,16 +134,20 @@ void CUIMap::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHei
 	m_rcResizeBottomL.SetRect( 0, m_nHeight - 10, 10, m_nHeight );
 	m_rcResizeBottomM.SetRect( 10, m_nHeight - 10, m_nWidth - 10, m_nHeight );
 	m_rcResizeBottomR.SetRect( m_nWidth - 10, m_nHeight - 10, m_nWidth, m_nHeight );
-	m_rcPC.SetRect( -13, -13, 13, 13 );
-	m_rcNPC.SetRect( -6, -9, 6, 8 );
-#ifdef HELP_SYSTEM_1
+	m_rcPC.SetRect( -17, -21, 18, 21 );
+	m_rcNPC.SetRect( -11, -11, 11, 11 );
+
 	m_rcHelpNpc.SetRect( -6, -9, 6, 8);
-	m_rcQuestNpc.SetRect(-6, -6, 6, 6);
-	m_rcSuccessNpc.SetRect(-6, -6, 6, 6);
-#endif
-	m_rcParty.SetRect( -6, -6, 5, 5 );
+	// connie [2009/9/18] - NPC √£±‚
+	m_rcHelpMob.SetRect(-6, -9, 6, 8);
+
+	m_rcParty.SetRect( -5, -5, 6, 6 );
 	m_rcCompass.SetRect( 5, -97, 80, -5 );
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_rcSubZone[VILLAGE].SetRect( -17, -18, 17, 18 );
+#else
 	m_rcSubZone[VILLAGE].SetRect( -16, -18, 16, 18 );
+#endif
 	m_rcSubZone[DUNGEON].SetRect( -16, -18, 16, 18 );
 	m_rcSubZone[CHARGE_PRIVATE].SetRect( -13, -23, 13, 23 );
 	m_rcSubZone[CHARGE_PUBLIC].SetRect( -13, -23, 13, 23 );
@@ -114,7 +157,7 @@ void CUIMap::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHei
 	m_rcSubZone[GATHER_PUBLIC].SetRect( -17, -19, 17, 19 );
 	m_rcSubZone[CASTLE_GATE].SetRect( -9, -9, 9, 9 );//!!
 
-	// Í≥µÏÑ± Í¥ÄÎ†® Ï∂îÍ∞Ä +
+	// ∞¯º∫ ∞¸∑√ √ﬂ∞° +
 	m_rcCastle[CASTLE_LORD].SetRect( -9, -9, 9, 9 );//!!
 	m_rcCastle[CASTLE_REGEN].SetRect( -9, -9, 9, 9 );//!!
 	m_rcCastle[CASTLE_TOWER].SetRect( -9, -9, 9, 9 );//!!
@@ -140,24 +183,18 @@ void CUIMap::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHei
 	m_rtBackLM.SetUV( 37, 33, 48, 48, fTexWidth, fTexHeight );
 	m_rtBackLR.SetUV( 51, 33, 84, 48, fTexWidth, fTexHeight );
 	m_rtBackListBar.SetUV( 89, 2, 102, 16, fTexWidth, fTexHeight );
-	m_rtPC.SetUV( 81, 65, 107, 91, fTexWidth, fTexHeight );
-	m_rtNPC.SetUV( 68, 65, 80, 82, fTexWidth, fTexHeight );
-#ifdef HELP_SYSTEM_1
-	if ( g_iCountry == USA ) //Í≤åÏù¥Ìä∏Í∞Ä Ï∂îÍ∞ÄÎêòÎ©¥ÏÑú Map.texÌÖçÏä§Ï≤òÍ∞Ä Î∞îÎÄú
-	{ // Ïù¥Í≤ÉÏù¥ ÏµúÏã† ÌÖçÏä§Ï≤ò Ï¢åÌëú
-		m_rtHelpNpc.SetUV( 32, 130, 44, 148, fTexWidth, fTexHeight );
-		m_rtQuestNpc.SetUV( 6, 122, 20, 136, fTexWidth, fTexHeight );
-		m_rtSuccessNpc.SetUV( 6, 140, 20, 154, fTexWidth, fTexHeight);
-	}
-	else
-	{
-		m_rtHelpNpc.SetUV( 127, 64, 140, 82, fTexWidth, fTexHeight );
-		m_rtQuestNpc.SetUV( 190, 24, 206, 41, fTexWidth, fTexHeight );
-		m_rtSuccessNpc.SetUV( 172, 24, 189, 41, fTexWidth, fTexHeight);
-	}
-#endif
+	m_rtPC.SetUV( 231, 140, 272, 182, fTexWidth, fTexHeight );
+
+	m_rtHelpMob.SetUV( 127, 64, 140, 82, fTexWidth, fTexHeight );
+	m_rtHelpNpc.SetUV( 127, 64, 140, 82, fTexWidth, fTexHeight );
+
 	m_rtParty.SetUV( 108, 67, 119, 78, fTexWidth, fTexHeight );
+	m_rtCompass.SetUV( 179, 42, 254, 124, fTexWidth, fTexHeight );
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_rtSubZone[VILLAGE].SetUV( 217, 205, 251, 241, fTexWidth, fTexHeight );
+#else
 	m_rtSubZone[VILLAGE].SetUV( 67, 91, 99, 127, fTexWidth, fTexHeight );
+#endif
 	m_rtSubZone[DUNGEON].SetUV( 67, 91, 99, 127, fTexWidth, fTexHeight );
 	m_rtSubZone[CHARGE_PRIVATE].SetUV( 108, 82, 134, 128, fTexWidth, fTexHeight );
 	m_rtSubZone[CHARGE_PUBLIC].SetUV( 108, 82, 134, 128, fTexWidth, fTexHeight );
@@ -166,17 +203,10 @@ void CUIMap::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHei
 	m_rtSubZone[GATHER_PRIVATE].SetUV( 131, 6, 165, 44, fTexWidth, fTexHeight );
 	m_rtSubZone[GATHER_PUBLIC].SetUV( 131, 6, 165, 44, fTexWidth, fTexHeight );
 	m_rtSubZone[CASTLE_GATE].SetUV( 170, 10, 188, 28, fTexWidth, fTexHeight );//!!
-#ifdef HELP_SYSTEM_1
-	m_rtCompass.SetUV( 179, 42, 254, 124, fTexWidth, fTexHeight );
+
 	m_rtCastle[CASTLE_LORD].SetUV( 208, 4, 226, 24, fTexWidth, fTexHeight );//!!
 	m_rtCastle[CASTLE_REGEN].SetUV( 230, 4, 248, 24, fTexWidth, fTexHeight );//!!
 	m_rtCastle[CASTLE_TOWER].SetUV( 189, 4, 207, 24, fTexWidth, fTexHeight );//!!
-#else
-	m_rtCompass.SetUV( 179, 32, 254, 124, fTexWidth, fTexHeight );
-	m_rtCastle[CASTLE_LORD].SetUV( 208, 10, 226, 28, fTexWidth, fTexHeight );//!!
-	m_rtCastle[CASTLE_REGEN].SetUV( 230, 10, 248, 28, fTexWidth, fTexHeight );//!!
-	m_rtCastle[CASTLE_TOWER].SetUV( 189, 10, 207, 28, fTexWidth, fTexHeight );//!!
-#endif
 	m_rtCastle[CASTLE_SIGNAL].SetUV( 143, 46, 176, 79, fTexWidth, fTexHeight );//!!
 
 	// Tool tip
@@ -201,8 +231,11 @@ void CUIMap::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHei
 	m_cmbMap.Create( this, 373, 27, 120, 15, 126-20, 1, 13, 13,
 						8, _pUIFontTexMgr->GetFontHeight() + 4, 4, 4 );
 	m_cmbMap.SetBackUV( 0, 49, 140, 64, fTexWidth, fTexHeight );
-	m_cmbMap.SetDownBtnUV( 31, 112, 44, 125, fTexWidth, fTexHeight );
-	m_cmbMap.SetUpBtnUV( 45, 112, 58, 125, fTexWidth, fTexHeight );	
+	// updown texture position [8/31/2010 rumist]
+// 	m_cmbMap.SetDownBtnUV( 31, 112, 44, 125, fTexWidth, fTexHeight );
+// 	m_cmbMap.SetUpBtnUV( 45, 112, 58, 125, fTexWidth, fTexHeight );	
+	m_cmbMap.SetDownBtnUV( 45, 112, 58, 125, fTexWidth, fTexHeight );
+	m_cmbMap.SetUpBtnUV( 31, 112, 44, 125, fTexWidth, fTexHeight );	
 	m_cmbMap.SetDropListUV( 0, 49, 140, 64, fTexWidth, fTexHeight );
 	m_cmbMap.CreateScroll( TRUE, 9, 7, 0, 0, 10 );
 	// Up button
@@ -226,107 +259,60 @@ void CUIMap::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHei
 	m_slbOpacity.SetBarUV( 41, 84, 51, 94, fTexWidth, fTexHeight );
 
 	// Zooming world map slide bar
-	m_slbZoomWorld.Create( this, 291, 38, 76, 5, 10, 10, 12, 25, 0, 24 );
+	m_slbZoomWorld.Create( this, 291, 38, 76, 5, 10, 10, 12, 13, 0, 12 );
 	m_slbZoomWorld.SetBackgroundUV( 108, 0, 184, 5, fTexWidth, fTexHeight );
 	m_slbZoomWorld.SetBarUV( 41, 84, 51, 94, fTexWidth, fTexHeight );
 
 	// Zooming detail map slide bar
-	m_slbZoomDetail.Create( this, 291, 38, 76, 5, 10, 10, 12, 25, 0, 24 );
+	m_slbZoomDetail.Create( this, 291, 38, 76, 5, 10, 10, 12, 13, 0, 12 );
+	m_slbZoomDetail.Create( this, 291, 38, 76, 5, 10, 10, 12, 13, 0, 12 );
 	m_slbZoomDetail.SetBackgroundUV( 108, 0, 184, 5, fTexWidth, fTexHeight );
 	m_slbZoomDetail.SetBarUV( 41, 84, 51, 94, fTexWidth, fTexHeight );
 
-	// Zone name
-	CZoneInfo::Instance().SetZoneName( 0, _S( 342, "Ï•¨ÎÖ∏" ) );
-	CZoneInfo::Instance().SetZoneName( 1, _S( 343, "Î≤®ÌîºÏä§Ìä∏ Ïã†Ï†Ñ" ) );
-	CZoneInfo::Instance().SetZoneName( 2, _S( 344, "Ïä§Ìä∏Î†àÏù¥ÏïÑ" ) );
-	CZoneInfo::Instance().SetZoneName( 3, _S( 345, "ÌîÑÎ°úÌÇ§Ïò® Ïã†Ï†Ñ" ) );
-	CZoneInfo::Instance().SetZoneName( 4, _S( 346, "ÎìúÎùºÌÉÑ" ) );
-	CZoneInfo::Instance().SetZoneName( 5, _S( 423, "ÎØ∏ÎÖ∏ÌÅ¨ ÌÉÑÍ¥ë" ) );
-	CZoneInfo::Instance().SetZoneName( 6, _S( 928, "ÌäúÌÜ†Î¶¨Ïñº" ) );		
-	CZoneInfo::Instance().SetZoneName( 7, _S( 929, "Î©îÎùºÌÅ¨" ) );		
-	CZoneInfo::Instance().SetZoneName( 8, _S( 1200, "Í∏∏Îìú Ï†ÑÏö©Î∞©" ) );	
-	CZoneInfo::Instance().SetZoneName( 9, _S( 1201, "ÎßàÎ•¥Í∞ÄÎë†" ) );		
-	CZoneInfo::Instance().SetZoneName( 10, _S( 1201, "ÎßàÎ•¥Í∞ÄÎë†" ) );		// ÏÉàÎ°úÏö¥ Ïã±Í∏Ä ÎçòÏ†º.
-	CZoneInfo::Instance().SetZoneName( 12, _S( 2368,"ÎßùÍ∞ÅÏùò Ïã†Ï†Ñ" ) );		
-	CZoneInfo::Instance().SetZoneName( 13, _S( 1201, "ÎßàÎ•¥Í∞ÄÎë†)") );		// ÌÉúÍµ≠ PK ÎçòÏ†Ñ				
-	CZoneInfo::Instance().SetZoneName( 14, _S( 3049,"OXÏù¥Î≤§Ìä∏Î£∏") );		 			
-	CZoneInfo::Instance().SetZoneName( 15, _S(3050, "ÏóêÍ≤åÌïò") );
-	CZoneInfo::Instance().SetZoneName( 17, _S(3050, "ÏóêÍ≤åÌïò") ); // ÏóêÍ≤åÌïò ÎçòÏ†Ñ
-	CZoneInfo::Instance().SetZoneName( 23, _S(4136, "Ïä§Ìä∏Î†àÏù¥ÏïÑÎÇò") ); // Ïä§Ìä∏Î†àÏù¥ÏïÑÎÇò
-	CZoneInfo::Instance().SetZoneName( 24, _S(4199, "PVP ÏïÑÎ†àÎÇò Ï°¥") ); // PKÌÜ†ÎÑàÎ®ºÌä∏	
-	CZoneInfo::Instance().SetZoneName( 26, _S(4259, "ÏòÅÌòºÏùò ÎèôÍµ¥")); // Ïä§Ìä∏Î†àÏù¥ÏïÑÎÇò ÎçòÏ†Ñ
-	CZoneInfo::Instance().SetZoneName( 27, _S(4260, "ÏΩ∞ÎãàÏïà ÎèôÍµ¥"));
-	CZoneInfo::Instance().SetZoneName( 28, _S(4261, "Í≥®Î†òÏùò ÎèôÍµ¥"));	
-	CZoneInfo::Instance().SetZoneName( 29, _S(4319, "ÏóêÎ≥¥Îãà ÌÉÑÍ¥ë"));
-	CZoneInfo::Instance().SetZoneName( 30, _S(4317, "ÎØ∏Ïä§Ìã∞ ÌòëÍ≥°"));
-	CZoneInfo::Instance().SetZoneName( 31, _S(4395, "ÌîåÎ°úÎùºÏûÑ ÎèôÍµ¥"));
+	m_rcGPS.SetRect(-13, -13, 13, 13);
+	m_uvGPS.SetUV(210, 258, 236, 284, fTexWidth, fTexHeight);
 
-	CZoneInfo::Instance().SetExtraName( 0, 0, _S( 530, "ÎûÄÎèå" ) );						
-	CZoneInfo::Instance().SetExtraName( 0, 1, _S( 531, "Î≤®ÌîºÏä§Ìä∏ Ïã†Ï†Ñ ÏûÖÍµ¨" ) );		
-	CZoneInfo::Instance().SetExtraName( 0, 2, _S( 532, "Î≤ÑÎ±ÖÌÅ¨ Î∞©ÏïóÍ∞Ñ" ) );			
-	CZoneInfo::Instance().SetExtraName( 0, 3, _S( 533, "Í±∞Î™© ÏóîÎìúÎùºÏã§" ) );			
-	CZoneInfo::Instance().SetExtraName( 0, 4, _S( 534, "ÌÅ¨ÎùºÏö∞Îìú ÌíÄ" ) );				
-	//CZoneInfo::Instance().SetExtraName( 0, 5, _S( 535, "ÎØ∏ÎÑ§ÎûÑ Ìè¨Ìä∏" ) );				
-	//CZoneInfo::Instance().SetExtraName( 0, 6, _S( 536, "ÌÅ¨ÎùΩ Í∞ÄÎì†" ) );				
-	CZoneInfo::Instance().SetExtraName( 0, 5, _S( 4318, "ÏóêÎ≥¥Îãà ÌÉÑÍ¥ë ÏûÖÍµ¨" ) );
-	CZoneInfo::Instance().SetExtraName( 1, 0, _S( 531, "Î≤®ÌîºÏä§Ìä∏ Ïã†Ï†Ñ ÏûÖÍµ¨" ) );		
-	CZoneInfo::Instance().SetExtraName( 2, 0, _S( 537, "Ïä§Ìä∏Î†àÏù¥ÏïÑ ÏûÖÍµ¨" ) );			
-	CZoneInfo::Instance().SetExtraName( 3, 0, _S( 538, "ÌîÑÎ°úÌÇ§Ïò® Ïã†Ï†Ñ ÏûÖÍµ¨" ) );		
-	CZoneInfo::Instance().SetExtraName( 3, 1, _S( 538, "ÌîÑÎ°úÌÇ§Ïò® Ïã†Ï†Ñ ÏûÖÍµ¨" ) );		
-	CZoneInfo::Instance().SetExtraName( 4, 0, _S( 539, "ÎßàÏûêÎ•¥" ) );					
-	CZoneInfo::Instance().SetExtraName( 4, 1, _S( 538, "ÌîÑÎ°úÌÇ§Ïò® Ïã†Ï†Ñ ÏûÖÍµ¨" ) );		
-	CZoneInfo::Instance().SetExtraName( 4, 2, _S( 540, "ÌïòÏù¥Ïûò ÏóêÎÑàÏßÄ ÌÅ¥ÎùºÏä§ÌÑ∞" ) );	
-	CZoneInfo::Instance().SetExtraName( 4, 3, _S( 541, "ÏÜîÎ°úÏö∞ ÏóêÎÑàÏßÄ ÌÅ¥ÎùºÏä§ÌÑ∞" ) );	
-	CZoneInfo::Instance().SetExtraName( 4, 4, _S( 542, "ÎØÄÎîîÏπ¥ Í¥ëÏÇ∞" ) );				
-	CZoneInfo::Instance().SetExtraName( 4, 5, _S( 543, "ÏºàÏºÄÎã§ Í¥ëÏÇ∞" ) );				
-	CZoneInfo::Instance().SetExtraName( 4, 6, _S( 544, "ÏÑ∏Î†ê ÎÜçÏû•" ) );				
-	CZoneInfo::Instance().SetExtraName( 4, 7, _S( 545, "Í≥†ÎÇúÎã§ ÎÜçÏû•" ) );				
-	CZoneInfo::Instance().SetExtraName( 4, 8, _S( 546, "ÏïåÎπÑÌÉÄ Ïã†Ï†Ñ ÏûÖÍµ¨" ) );			
-	CZoneInfo::Instance().SetExtraName( 4, 9, _S( 547, "Î†àÍµ¥Î£®Ïä§ ÌÜ†ÌÖúÎ∞î" ) );
-	CZoneInfo::Instance().SetExtraName( 4, 10, _S(2369, "ÎßùÍ∞ÅÏùò Ïã†Ï†Ñ ÏûÖÍµ¨" ) );
-	CZoneInfo::Instance().SetExtraName( 4, 29, _S(3946, "ÌÖåÏò§Ïä§Ïùò Î¨¥Îç§ ÏûÖÍµ¨" ) );
-	CZoneInfo::Instance().SetExtraName( 5, 0, _S( 548, "ÎØ∏ÎÖ∏ÌÅ¨ ÌÉÑÍ¥ë ÏûÖÍµ¨" ) );	
+	m_rcRelic.SetRect( -25, -14, 25, 14);
+	m_uvRelic.SetUV( 196, 287, 246, 314, fTexWidth, fTexHeight );
 
-	// Date : 2005-02-04,   By Lee Ki-hwan
-	CZoneInfo::Instance().SetExtraName( 7, 0, _S( 930, "Î©îÎùºÌÅ¨ Ï∫êÎ°†" ) );		
-	CZoneInfo::Instance().SetExtraName( 7, 1, _S( 931, "ÎìúÎ†àÎìúÍ∞ÄÎì†" ) );		
-	CZoneInfo::Instance().SetExtraName( 7, 2, _S( 931, "ÎìúÎ†àÎìúÍ∞ÄÎì†" ) );		
-	CZoneInfo::Instance().SetExtraName( 7, 3, CTString( "" ) );					
-	CZoneInfo::Instance().SetExtraName( 7, 4, _S( 932, "ÎßàÍ∑∏ÎßàÎ¶¨Î≤Ñ" ) );		
-	CZoneInfo::Instance().SetExtraName( 7, 5, _S( 932, "ÎßàÍ∑∏ÎßàÎ¶¨Î≤Ñ" ) );		
-	CZoneInfo::Instance().SetExtraName( 7, 6, _S( 933, "ÎØ∏Ïä§Ìã± Ïä§ÏõúÌîÑ" ) );	
-	CZoneInfo::Instance().SetExtraName( 7, 7, _S( 934, "Ïò§Ïö∏ ÎπåÎ¶¨ÏßÄ" ) );		
-	CZoneInfo::Instance().SetExtraName( 7, 8, _S( 935, "Ïñ¥ÎπÑÏä§ ÎçòÏ†Ñ" ) );		
-	CZoneInfo::Instance().SetExtraName( 7, 9, _S( 936, "Îç¥Ïò§Î∏åÌîºÏñ¥" ) );		
-	CZoneInfo::Instance().SetExtraName( 7, 10, CTString( "" ) );
-	CZoneInfo::Instance().SetExtraName( 7, 19, _S(4316, "ÎØ∏Ïä§Ìã∞ ÌòëÍ≥° ÏûÖÍµ¨") );
+	ptdTopUITexture = CreateTexture( CTString( "Data\\Interface\\TopUI.tex" ) );
+	fTexWidth = ptdTopUITexture->GetPixWidth();
+	fTexHeight = ptdTopUITexture->GetPixHeight();
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM ø¯¡§¥Îø¯ «•Ω√
+//////////////////////////////////////////////////////////////////////////
+//	m_rcExpedition.SetRect( -6, -6, 5, 5 );
+	m_rcExpedition.SetRect( -5, -5, 6, 6 );
 
-	CZoneInfo::Instance().SetExtraName( 8, 0, _S( 1200, "Í∏∏Îìú Ï†ÑÏö©Î∞©" ) );			
+	int nPosX = 646;
+	for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+	{
+//		m_rtExpedition[i].SetUV( 108, 67, 119, 78, fTexWidth, fTexHeight );
+		m_rtExpedition[i].SetUV( nPosX, 347, nPosX + 11, 358, fTexWidth, fTexHeight );
+		nPosX += 15;
+	}
 
-	CZoneInfo::Instance().SetExtraName( 9, 0, _S( 1202, "ÎßàÎ•¥Í∞ÄÎë† ÏûÖÍµ¨" ) );				
-	CZoneInfo::Instance().SetExtraName( 12, 0, _S(2370, "ÎßùÍ∞ÅÏùò Ïã†Ï†Ñ ÎÇ¥Î∂Ä" ) );				
-	// wooss 051213 thai pk-zone
-	CZoneInfo::Instance().SetExtraName( 13, 0,CTString("Free PK Zone"));			// Î≤àÏó≠ 
-	CZoneInfo::Instance().SetExtraName( 13, 1,CTString("Free PK Zone"));			// Î≤àÏó≠ 
-	CZoneInfo::Instance().SetExtraName( 13, 2,CTString("Ranking PK Zone"));			// Î≤àÏó≠ 
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_cmbMap.SetEnable(FALSE);
+	m_slbZoomWorld.SetEnable(FALSE);
+	m_slbZoomDetail.SetEnable(FALSE);
 
-	CZoneInfo::Instance().SetExtraName( 15, 0, _S(3051, "ÏóêÍ≤åÌïò ÏïÑÎ°†" ) );
-	CZoneInfo::Instance().SetExtraName( 15, 1, _S(3182, "Ìà¨Ïä§Ìä∏ Ìä∏Î£∏ ÏûÖÍµ¨" ) );
-	CZoneInfo::Instance().SetExtraName( 15, 2, _S(4076, "ÏóêÍ≤åÌïò Í≤ÄÏùÄ Îä™ Í¥ÄÎ¨∏" ) );
-	CZoneInfo::Instance().SetExtraName( 15, 3, _S(4396, "ÌîåÎ°úÎùºÏûÑ ÎèôÍµ¥ ÏûÖÍµ¨" ) );
+	m_slbOpacity.SetPos(291, 32);
 
-	CZoneInfo::Instance().SetExtraName( 17, 0, _S(3174, "Î£®Ïä§Ìä∏ Ìà¨Î£∏ ÎÇ¥Î∂Ä" ) );
-	CZoneInfo::Instance().SetExtraName( 23, 0, _S(4137, "Í≤ÄÏùÄ ÏïàÍ∞ú ÎßàÏùÑ") );
-	CZoneInfo::Instance().SetExtraName( 23, 3, _S(4259, "ÏòÅÌòºÏùò ÎèôÍµ¥ ÏûÖÍµ¨"));
-	CZoneInfo::Instance().SetExtraName( 23, 4, _S(4260, "ÏΩ∞ÎãàÏïà ÎèôÍµ¥ ÏûÖÍµ¨"));
-	CZoneInfo::Instance().SetExtraName( 23, 5, _S(4261, "Í≥®Î†òÏùò ÎèôÍµ¥ ÏûÖÍµ¨"));
-	CZoneInfo::Instance().SetExtraName( 24, 0, _S(4200, "Î∂âÏùÄ Î™®ÎûòÎ∞îÎûå Ìà¨Í∏∞Ïû•") ); // PKÌÜ†ÎÑàÎ®ºÌä∏
-	CZoneInfo::Instance().SetExtraName( 26, 0, _S(4259, "ÏòÅÌòºÏùò ÎèôÍµ¥"));
-	CZoneInfo::Instance().SetExtraName( 27, 0, _S(4260, "ÏΩ∞ÎãàÏïà ÎèôÍµ¥"));
-	CZoneInfo::Instance().SetExtraName( 28, 0, _S(4261, "Í≥®Î†òÏùò ÎèôÍµ¥"));
-	CZoneInfo::Instance().SetExtraName( 29, 0, _S(4319, "ÏóêÎ≥¥Îãà ÌÉÑÍ¥ë"));
-	CZoneInfo::Instance().SetExtraName( 30, 0, _S(4317, "ÎØ∏Ïä§Ìã∞ ÌòëÍ≥°"));
-	CZoneInfo::Instance().SetExtraName( 31, 0, _S(4395, "ÌîåÎ°úÎùºÏûÑ ÎèôÍµ¥"));
+	ptdButtonTexture = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ));
+	fTexWidth = ptdButtonTexture->GetPixWidth();
+	fTexHeight = ptdButtonTexture->GetPixHeight();
+	m_btnGoTop.Create( this, _S( 5784, "ªÛ¿ß∑Œ ∞°±‚"), m_nWidth - 98, 26, 83, 23 );
+	m_btnGoTop.SetUV( UBS_IDLE, 112, 0, 112+71, 23, fTexWidth, fTexHeight );
+	m_btnGoTop.SetUV( UBS_CLICK, 185, 0, 185+71, 23, fTexWidth, fTexHeight );
+	m_btnGoTop.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnGoTop.CopyUV( UBS_IDLE, UBS_DISABLE );
+#endif
+
+
+#ifndef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	CZoneInfo::getSingleton()->SetZoneName( 17, _S(3050, "ø°∞‘«œ") ); // ø°∞‘«œ ¥¯¿¸
+#endif	// NEW_WORLD_MAP
 
 	// Read map data
 	ReadMapData();
@@ -340,23 +326,11 @@ void CUIMap::Destroy()
 {
 	CUIWindow::Destroy();
 
-	if( m_ptdWorldTex[0] )
-	{
-		_pTextureStock->Release( m_ptdWorldTex[0] );
-		m_ptdWorldTex[0] = NULL;
-	}
-
-	if( m_ptdWorldTex[1] )
-	{
-		_pTextureStock->Release( m_ptdWorldTex[1] );
-		m_ptdWorldTex[1] = NULL;
-	}
-
-	if( m_ptdDetailTex )
-	{
-		_pTextureStock->Release( m_ptdDetailTex );
-		m_ptdDetailTex = NULL;
-	}
+	STOCK_RELEASE( m_ptdWorldTex[0] );
+	STOCK_RELEASE( m_ptdWorldTex[1] );
+	STOCK_RELEASE( m_ptdDetailTex );
+	STOCK_RELEASE(ptdTopUITexture);
+	STOCK_RELEASE(ptdButtonTexture);
 }
 
 // ----------------------------------------------------------------------------
@@ -369,11 +343,23 @@ void CUIMap::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 	SetSize( MAP_FRAME_WIDTH, MAP_FRAME_HEIGHT );
 
 	m_btnClose.SetPosX( m_nWidth - MAP_CLOSE_X );
-	m_slbOpacity.SetPosX( m_nWidth - MAP_OPACITY_X );
-	m_slbZoomWorld.SetPosX( m_nWidth - MAP_OPACITY_X );
-	m_slbZoomDetail.SetPosX( m_nWidth - MAP_OPACITY_X );
-	m_cmbMap.SetPosX( m_nWidth - MAP_COMBO_X );
-	m_btnSignal.SetPosX( m_nWidth - MAP_SIGNAL_X );
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_btnGoTop.SetPosX( m_nWidth - 98 );
+	m_slbOpacity.SetPosX( 291 );
+#else
+	m_slbOpacity.SetPosX( 15 );
+#endif
+	m_slbZoomWorld.SetPosX( 15 );
+	m_slbZoomDetail.SetPosX( 15 );
+	m_cmbMap.SetPosX( 97 );
+	m_btnSignal.SetPosX( 103 );
+}
+
+void CUIMap::ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	ResetPosition(pixMinI, pixMinJ, pixMaxI, pixMaxJ);
+	g_iXPosInMap = GetPosX();
+	g_iYPosInMap = GetPosY();
 }
 
 // ----------------------------------------------------------------------------
@@ -410,13 +396,13 @@ void CUIMap::ReadMapData()
 
 	fsMapData >> nZoneCount;
 
-	for( int i = 0; i < nZoneCount; i++ )
+	int	i, j;
+	for( i = 0; i < nZoneCount; i++ )
 	{
 		MapData	tempMapData;
 		int		nIndex, nLeft, nTop, nRight, nBottom;
 		FLOAT	fRatio, fX, fZ;
 		SBYTE	sbLayer;
-
 		fsMapData >> nIndex;
 		fsMapData >> sbLayer;
 		fsMapData >> nLeft;
@@ -437,7 +423,7 @@ void CUIMap::ReadMapData()
 		SBYTE	sbDetailCount;
 		fsMapData >> sbDetailCount;
 
-		for( int j = 0; j < sbDetailCount; j++ )
+		for( j = 0; j < sbDetailCount; j++ )
 		{
 			DetailMapData	tempDetail;
 			int				nSelLeft, nSelTop, nSelRight, nSelBottom;
@@ -459,7 +445,6 @@ void CUIMap::ReadMapData()
 			tempDetail.fOffsetX = fX;
 			tempDetail.fOffsetZ = fZ;
 			tempDetail.fRatio = fRatio;
-
 			tempMapData.vecDetail.push_back( tempDetail );
 		}
 
@@ -506,22 +491,19 @@ void CUIMap::ReadMapData()
 			tempMapData.vecNpc.push_back( tempNpc );
 		}
 
-		if( ZoneInfo().GetZoneType( tempMapData.World.nZoneIndex ) == ZONE_DUNGEON )
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+		if( tempMapData.World.nZoneIndex != ZONE_WORLD_MAP )
 		{
-			strZoneName.PrintF( "%s %dF", ZoneInfo().GetZoneName( tempMapData.World.nZoneIndex ),
-											( tempMapData.World.sbLayer + 2 ) / 2);
+			strZoneName = GetZoneName(tempMapData.World.nZoneIndex, tempMapData.World.sbLayer);
 		}
 		else
 		{
-			if( tempMapData.World.sbLayer > 0 )
-			{
-				strZoneName.PrintF( _S( 3083, "%s Í≥µÏÑ±ÏßÄÏó≠" ), _pUISWDoc->GetCastleName( tempMapData.World.nZoneIndex ) );
-			}
-			else
-			{
-				strZoneName.PrintF( "%s", ZoneInfo().GetZoneName( tempMapData.World.nZoneIndex ) );
-			}
+			strZoneName = _S( 5797, "ø˘µÂ∏ ");
 		}
+
+#else
+		strZoneName = GetZoneName(tempMapData.World.nZoneIndex, tempMapData.World.sbLayer);
+#endif
 			
 		tempMapData.World.strName = strZoneName;
 
@@ -548,53 +530,73 @@ void CUIMap::ShowToolTip( BOOL bShow, CTString &strName, int nX, int nY )
 
 	m_bShowToolTip = TRUE;
 
-	if( !m_strToolTip.IsEqualCaseSensitive( strName ) )
+	if( m_strToolTip.IsEqualCaseSensitive( strName ) == TRUE )
+		return;
+
+	if( m_bShowWorldMap )
 	{
-		if( m_bShowWorldMap )
-		{
-			UIRect	rcTempWorld = m_rcMapWorld;
-			rcTempWorld.Scale( m_fZoomWorld );
-
-			nX *= m_fZoomWorld;
-			nY *= m_fZoomWorld;
-			nX += m_rcViewportWorld.Left - rcTempWorld.Left + m_nPosX + MAP_SX;
-			nY += m_rcViewportWorld.Top - rcTempWorld.Top + m_nPosY + MAP_SY;
-		}
-		else
-		{
-			UIRect	rcTempDetail = m_rcMapDetail;
-			rcTempDetail.Scale( m_fZoomDetail );
-
-			nX *= m_fZoomDetail;
-			nY *= m_fZoomDetail;
-			nX += m_rcViewportDetail.Left - rcTempDetail.Left + m_nPosX + MAP_SX;
-			nY += m_rcViewportDetail.Top - rcTempDetail.Top + m_nPosY + MAP_SY;
-		}
-
-		m_strToolTip.PrintF( "%s", strName );
-
-		int nInfoWidth;
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);				
-		} else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strToolTip.Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		int	nInfoHeight = 22;
-
-		nX -= nInfoWidth / 2;
-
-		if( nX < _pUIMgr->GetMinI() )
-			nX = _pUIMgr->GetMinI();
-		else if( nX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nX = _pUIMgr->GetMaxI() - nInfoWidth;
-
-		if( nY - nInfoHeight < _pUIMgr->GetMinJ() )
-			nY = _pUIMgr->GetMinJ() + nInfoHeight;
-		else if( nY > _pUIMgr->GetMaxJ() )
-			nY = _pUIMgr->GetMaxJ();
-
-		m_rcToolTip.SetRect( nX, nY - nInfoHeight, nX + nInfoWidth, nY );
+		UIRect	rcTempWorld = m_rcMapWorld;
+		rcTempWorld.Scale( m_fZoomWorld );
+		// revision map size. [10/20/2009 rumist]
+		// ¿ÃπÃ nX, nY¥¬ m_fMapSizeRevision∏¶ π›øµ«— ¿ßƒ°∞™¿Ãπ«∑Œ m_fMapSizeRevision∏¶ π›øµ«œ¡ˆ æ ¥¬¥Ÿ.
+		nX *= m_fZoomWorld;
+		nY *= m_fZoomWorld;
+		nX += m_rcViewportWorld.Left - rcTempWorld.Left + m_nPosX + MAP_SX;
+		nY += m_rcViewportWorld.Top - rcTempWorld.Top + m_nPosY + MAP_SY;
 	}
+	else
+	{
+		UIRect	rcTempDetail = m_rcMapDetail;
+		rcTempDetail.Scale( m_fZoomDetail );
+		
+		nX *= m_fZoomDetail;
+		nY *= m_fZoomDetail;
+		nX += m_rcViewportDetail.Left - rcTempDetail.Left + m_nPosX + MAP_SX;
+		nY += m_rcViewportDetail.Top - rcTempDetail.Top + m_nPosY + MAP_SY;
+	}
+	
+	m_strToolTip.PrintF( "%s", strName );
+	
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	int nInfoWidth;
+
+	//if(g_iCountry == THAILAND) 
+#if defined G_THAI
+	{
+		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);				
+	} 
+	//else
+#else
+	{
+		//if(g_iCountry == RUSSIA)
+#if defined G_RUSSIA
+		extern CFontData *_pfdDefaultFont;
+		nInfoWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, m_strToolTip.str_String) + 16;
+		//else
+#else
+		{
+			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strToolTip.Length() *
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+		}
+#endif
+		
+	}
+#endif
+	int	nInfoHeight = 22;
+	
+	nX -= nInfoWidth / 2;
+	
+	if( nX < pUIManager->GetMinI() )
+		nX = pUIManager->GetMinI();
+	else if( nX + nInfoWidth > pUIManager->GetMaxI() )
+		nX = pUIManager->GetMaxI() - nInfoWidth;
+	
+	if( nY - nInfoHeight < pUIManager->GetMinJ() )
+		nY = pUIManager->GetMinJ() + nInfoHeight;
+	else if( nY > pUIManager->GetMaxJ() )
+		nY = pUIManager->GetMaxJ();
+	
+	m_rcToolTip.SetRect( nX, nY - nInfoHeight, nX + nInfoWidth, nY );
 }
 
 // ----------------------------------------------------------------------------
@@ -646,6 +648,10 @@ void CUIMap::MakeBaseMapSize( BOOL bWorldMap )
 
 		if( m_nCurMapData != -1 && m_nCurDetail != -1 )
 		{
+			if ( m_vecMapData.size() <= m_nCurMapData || m_vecMapData[m_nCurMapData].vecDetail.size() <= m_nCurDetail )
+			{
+				return;
+			}
 			m_bCanScrollMapDetail = FALSE;
 			UIRect	rcTempDetail = m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].rcMapSize;
 			if( rcTempDetail.GetWidth() <= m_nMapDetailBaseWidth )
@@ -671,15 +677,16 @@ void CUIMap::SetCurrentWorldMap( int nWorld, SBYTE sbLayer )
 		return;
 
 	// ********************************************************* //
-	//                      ÏûÑÏãú Ï∂îÍ∞Ä                            //
+	//                      ¿”Ω√ √ﬂ∞°                            //
 	_pNetwork->MyCharacterInfo.fWaterHeight = -100.0f;
 	switch( nWorld )
 	{
 	case 0:
-		_pNetwork->MyCharacterInfo.fWaterHeight = 155.688f;	
+		// ¡÷≥Î ∏Æ∆˚¿∏∑Œ π∞ ¡ˆø™ √≥∏Æ∏¶ ¡¶∞≈«‘( ≥Ù¿Ã∞° ¿œ¡§«œ¡ˆ æ ¿Ω )
+		_pNetwork->MyCharacterInfo.fWaterHeight = -1.0f;
 		break;
 	case 4:
-		_pNetwork->MyCharacterInfo.fWaterHeight = -1.0f;	// WSS_DRATAN_SIEGEWARFARE 2007/10/16 Í≥µÏÑ±ÏßÄÏó≠ Ï†ÄÏßÄÎåÄÎ°ú Ïù∏Ìï¥ ÏàòÏ†ï 99.5f -> -1.0f
+		_pNetwork->MyCharacterInfo.fWaterHeight = -1.0f;	// WSS_DRATAN_SIEGEWARFARE 2007/10/16 ∞¯º∫¡ˆø™ ¿˙¡ˆ¥Î∑Œ ¿Œ«ÿ ºˆ¡§ 99.5f -> -1.0f
 		break;
 	}
 	// ********************************************************* //
@@ -693,7 +700,7 @@ void CUIMap::SetCurrentWorldMap( int nWorld, SBYTE sbLayer )
 	m_bShowWorldMap = TRUE;
 	m_sbCurLayer = sbLayer;
 	m_nCurMapData = nMapDataIndex;
-	//Í≥µÏÑ± ÎπÑÍ≥µÏÑ± ÏßÄÏó≠ ÌëúÏãú
+	//∞¯º∫ ∫Ò∞¯º∫ ¡ˆø™ «•Ω√
 	m_cmbMap.SetCurSel( (!IsPossibleCastleMap()&&m_nCurMapData>=4) ? m_nCurMapData-1:m_nCurMapData );
 	nWorld = m_vecMapData[m_nCurMapData].World.nZoneIndex;
 
@@ -702,7 +709,36 @@ void CUIMap::SetCurrentWorldMap( int nWorld, SBYTE sbLayer )
 	int	nCY = _pNetwork->MyCharacterInfo.z * m_vecMapData[m_nCurMapData].World.fRatio / m_fZoomWorld;
 	int	nHalfW = m_nMapWorldBaseWidth / m_fZoomWorld * 0.5f;
 	int	nHalfH = m_nMapWorldBaseHeight / m_fZoomWorld * 0.5f;
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_rcMapWorld.SetRect( 0, 0, 512, 512 );
+#else
 	m_rcMapWorld.SetRect( nCX - nHalfW, nCY - nHalfH, nCX + nHalfW, nCY + nHalfH );
+#endif
+	
+	// revision map size. [10/20/2009 rumist]
+	// decision of map scaling value.
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	if (m_vecMapData[m_nCurMapData].World.rcMapSize.GetWidth() == 1024 )
+	{
+		//m_fZoomWorld = 0.5f;
+		m_fMapSizeRevision = 0.5f;
+	}
+	else
+	{
+		
+		m_fMapSizeRevision = 1.0f;
+	}
+
+	m_fZoomWorld = 1.0f;
+#else
+	if (m_vecMapData[m_nCurMapData].World.rcMapSize.GetWidth() == 1024 )
+	{
+		m_fMapSizeRevision = 0.5f;
+	}
+	else
+		m_fMapSizeRevision = 1.0f;
+#endif
+
 	AdjustViewport( 6 );
 
 	m_fMoveElapsedErrXWorld = 0.0f;
@@ -729,14 +765,28 @@ void CUIMap::SetCurrentWorldMap( int nWorld, SBYTE sbLayer )
 
 	// Create map texture
 	CTString	strFileName;
-	strFileName.PrintF( "Data\\Interface\\Map_World%d%d.tex", nWorld, sbLayer );
+
+	if (nWorld == ZONE_WORLD_MAP)
+	{
+		strFileName.PrintF( "Local\\%s\\Map_World%d%d.tex", DefHelp::getNationPostfix(g_iCountry, true), nWorld, sbLayer );
+	}
+	else
+	{
+		strFileName.PrintF( "Data\\Interface\\Map_World%d%d.tex", nWorld, sbLayer );
+	}
 
 	m_nCurWorldTex = 0;
 	m_ptdWorldTex[0] = CreateTexture( strFileName );
 	m_fWorldTexWidth = m_ptdWorldTex[0]->GetPixWidth();
 	m_fWorldTexHeight = m_ptdWorldTex[0]->GetPixHeight();
 
-	m_rtWorld.SetUV( m_rcMapWorld.Left, m_rcMapWorld.Top, m_rcMapWorld.Right, m_rcMapWorld.Bottom,
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	if (m_vecMapData[m_nCurMapData].World.rcMapSize.GetWidth() == 1024 )
+		m_rtWorld.SetUV( 0, 0, 1024, 1024,
+						m_fWorldTexWidth, m_fWorldTexHeight );
+	else
+#endif
+		m_rtWorld.SetUV( m_rcMapWorld.Left, m_rcMapWorld.Top, m_rcMapWorld.Right, m_rcMapWorld.Bottom,
 						m_fWorldTexWidth, m_fWorldTexHeight );
 }
 
@@ -746,7 +796,7 @@ void CUIMap::SetCurrentWorldMap( int nWorld, SBYTE sbLayer )
 // ----------------------------------------------------------------------------
 void CUIMap::ChangeMap()
 {
-	// Í≥µÏÑ± Ïö© ÎßµÏùò Í≤ΩÏö∞ÏóêÎäî Í≥µÏÑ± Îßµ Ï†ïÎ≥¥ ÏöîÏ≤≠
+	// ∞¯º∫ øÎ ∏ ¿« ∞ÊøÏø°¥¬ ∞¯º∫ ∏  ¡§∫∏ ø‰√ª
 	if(m_nCurMapData!=-1){
 		if( IsPossibleCastleMap() && IsCastleMap( m_nCurMapData ) )
 		{
@@ -754,13 +804,13 @@ void CUIMap::ChangeMap()
 		}
 	}
 
-	if( m_cmbMap.GetCurSel() == -1 || m_nCurMapData == -1 ||m_nCurMapData == m_cmbMap.GetCurSel() )
+	if( m_cmbMap.GetCurSel() == -1 || m_nCurMapData == -1 ||m_nCurMapData == ((m_cmbMap.GetCurSel() >= 3) ? m_cmbMap.GetCurSel()+1:m_cmbMap.GetCurSel()) )
 		return;
-	
+
 	// Change 
 	m_qSignalData.clear();
-	// Ïã†Í∑úÌïÑÎìú Ï∂îÍ∞ÄÎ°ú 3(Î©îÎùºÌÅ¨ Í≥µÏÑ±ÏßÄÏó≠)Ïù¥ÌõÑ +1ÏùÑ ÎçîÌïúÎã§.
-	// m_vecMapData Î™®Îì† ÏßÄÏó≠ Îç∞Ïù¥ÌÑ∞ Ìè¨Ìï® Í≥µÏÑ±Ïù¥ ÏïÑÎãåÍ≤ΩÏö∞ Í≥µÏÑ± ÏßÄÏó≠ÏùÄ ÌëúÏãúÏóêÏÑú Ï†úÏô∏ÎêúÎã§.
+	// Ω≈±‘« µÂ √ﬂ∞°∑Œ 3(∏ﬁ∂Û≈© ∞¯º∫¡ˆø™)¿Ã»ƒ +1¿ª ¥ı«—¥Ÿ.
+	// m_vecMapData ∏µÁ ¡ˆø™ µ•¿Ã≈Õ ∆˜«‘ ∞¯º∫¿Ã æ∆¥—∞ÊøÏ ∞¯º∫ ¡ˆø™¿∫ «•Ω√ø°º≠ ¡¶ø‹µ»¥Ÿ.
 	m_nCurMapData	= m_cmbMap.GetCurSel();
 	m_nCurMapData	= (!IsPossibleCastleMap()&&m_nCurMapData>=3) ? m_nCurMapData+1:m_nCurMapData;
 	int	nZoneIndex	= m_vecMapData[m_nCurMapData].World.nZoneIndex;
@@ -818,9 +868,39 @@ void CUIMap::ChangeMap()
 	m_ptdWorldTex[0] = CreateTexture( strFileName );
 	m_fWorldTexWidth = m_ptdWorldTex[0]->GetPixWidth();
 	m_fWorldTexHeight = m_ptdWorldTex[0]->GetPixHeight();
+	
+
+	// revision map size. [10/20/2009 rumist]
+	// decision of map scaling value.
+	//if (m_vecMapData[m_nCurMapData].World.rcMapSize.GetWidth() == 1024 )
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	if (m_fWorldTexWidth == 1024 && !_pUISWDoc->IsWar())
+	{
+		//m_fZoomWorld = 0.5f;
+		m_fMapSizeRevision = 0.5f;
+	}
+	else
+	{
+		
+		m_fMapSizeRevision = 1.0f;
+	}
+
+	m_fZoomWorld = 1.0f;
+#else
+	if (m_fWorldTexWidth == 1024 && !_pUISWDoc->IsWar())
+	{
+		m_fMapSizeRevision = 0.5f;	}
+	else
+		m_fMapSizeRevision = 1.0f;
+#endif
+
 
 	m_rtWorld.SetUV( m_rcMapWorld.Left, m_rcMapWorld.Top, m_rcMapWorld.Right, m_rcMapWorld.Bottom,
-						m_fWorldTexWidth, m_fWorldTexHeight );
+						m_fWorldTexWidth * m_fMapSizeRevision, m_fWorldTexHeight * m_fMapSizeRevision );
+
+	AdjustViewport( 6 );
+
+	m_eMapState = eMS_ZONE;
 }
 
 // ----------------------------------------------------------------------------
@@ -832,10 +912,17 @@ void CUIMap::OpenDetailMap( int nIndex )
 	if( m_nCurMapData == -1 )
 		return;
 
-	if( nIndex >= m_vecMapData[m_nCurMapData].vecDetail.size() )
-		return;
+	_bDetail = true;
 
-	m_nCurDetail = nIndex;
+	if( nIndex >= m_vecMapData[m_nCurMapData].vecDetail.size() )
+	{
+		SetDetailMap( FALSE );
+		return;
+	}
+
+	//if( nIndex >= 0 )
+		m_nCurDetail = nIndex;
+
 	int		nZoneIndex = m_vecMapData[m_nCurMapData].World.nZoneIndex;
 	SBYTE	sbLayer = m_vecMapData[m_nCurMapData].World.sbLayer;
 
@@ -885,6 +972,13 @@ void CUIMap::OpenDetailMap( int nIndex )
 
 	m_bMapBlendingForDetail = TRUE;
 	m_llMapBlendTimeForDetail = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_fZoomWorld = 1.0f;
+	m_fMapSizeRevision = 1.0f;
+#endif
+
+	m_eMapState = eMS_VILLAGE;
 }
 
 // ----------------------------------------------------------------------------
@@ -893,11 +987,21 @@ void CUIMap::OpenDetailMap( int nIndex )
 // ----------------------------------------------------------------------------
 void CUIMap::CloseDetailMap()
 {
+	_bDetail = false;
+	m_eMapState = eMS_ZONE;
+
 	int	nZoneIndex = m_vecMapData[m_nCurMapData].World.nZoneIndex;
 	if( _pNetwork->MyCharacterInfo.zoneNo != nZoneIndex )
 	{
 		m_bMapBlendingForDetail = TRUE;
 		m_llMapBlendTimeForDetail = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+		// ∏ ªÁ¿Ã¡Ó ∫Ø∞Ê [11/6/2012 Ranma]
+		if (m_vecMapData[m_nCurMapData].World.rcMapSize.GetWidth() == 1024)
+		{
+			m_fMapSizeRevision = 0.5f;
+		}
+ 	
 		return;
 	}
 
@@ -918,6 +1022,19 @@ void CUIMap::CloseDetailMap()
 
 	m_bMapBlendingForDetail = TRUE;
 	m_llMapBlendTimeForDetail = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	if (m_vecMapData[m_nCurMapData].World.rcMapSize.GetWidth() == 1024 )
+	{
+		m_fMapSizeRevision = 0.5f;
+	}
+	else
+	{
+		m_fMapSizeRevision = 1.0f;
+	}
+	m_fZoomWorld = 1.0f;
+		
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -968,7 +1085,9 @@ void CUIMap::ScrollMapWorld( int ndX, int ndY )
 	if( bModified )
 	{
 		m_rtWorld.SetUV( m_rcMapWorld.Left, m_rcMapWorld.Top, m_rcMapWorld.Right, m_rcMapWorld.Bottom,
-							m_fWorldTexWidth, m_fWorldTexHeight );
+						 m_fWorldTexWidth * m_fMapSizeRevision,
+						 m_fWorldTexHeight * m_fMapSizeRevision
+							);
 	}
 }
 
@@ -984,6 +1103,10 @@ void CUIMap::ScrollMapDetail( int ndX, int ndY )
 	FLOAT	fdX = (FLOAT)ndX / m_fZoomDetail;
 	FLOAT	fdY = (FLOAT)ndY / m_fZoomDetail;
 
+	if ( m_vecMapData.size() <= m_nCurMapData || m_vecMapData[m_nCurMapData].vecDetail.size() <= m_nCurDetail )
+	{
+		return;
+	}
 	BOOL	bModified = FALSE;
 	UIRect	rcWhole = m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].rcMapSize;
 
@@ -1027,7 +1150,7 @@ void CUIMap::ScrollMapDetail( int ndX, int ndY )
 // ----------------------------------------------------------------------------
 // Name : AdjustViewport()
 // Desc : nSelRegion - 1: left, 2: right, 3: middle bottom, 4: left bottom
-//        5: right bottom, 6: center
+//        5: right bottom, 6: center, 7 : left top
 // ----------------------------------------------------------------------------
 void CUIMap::AdjustViewport( int nSelRegion )
 {
@@ -1062,6 +1185,16 @@ void CUIMap::AdjustViewport( int nSelRegion )
 		rcTempDetail.SetRect( nCX - nHalfWidth, nCY - nHalfHeight,
 								nCX + nHalfWidth, nCY + nHalfHeight );
 	}
+	else if ( nSelRegion == 7 )
+	{
+		rcTempWorld.SetRect( m_rcMapWorld.Left, m_rcMapWorld.Top, 
+								m_rcMapWorld.Left + m_nMapWorldBaseWidth * fRatioW / m_fZoomWorld,
+								m_rcMapWorld.Top + m_nMapWorldBaseHeight * fRatioH / m_fZoomWorld );
+
+		rcTempDetail.SetRect( m_rcMapDetail.Left, m_rcMapDetail.Top, 
+								m_rcMapDetail.Left + m_nMapDetailBaseWidth * fRatioW / m_fZoomDetail,
+								m_rcMapDetail.Top + m_nMapDetailBaseWidth * fRatioH / m_fZoomDetail );
+	}
 	else
 	{
 		rcTempWorld.SetRect( m_rcMapWorld.Left,
@@ -1078,6 +1211,18 @@ void CUIMap::AdjustViewport( int nSelRegion )
 	{
 		int	ndX = 0, ndY = 0;
 		UIRect	rcWholeWorld = m_vecMapData[m_nCurMapData].World.rcMapSize;
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+		m_rcMapWorld.SetRect(0,0,512, 512);
+		if(m_fWorldTexWidth == 1024)
+			m_rtWorld.SetUV( m_rcMapWorld.Left, m_rcMapWorld.Top, 1024, 1024,
+							m_fWorldTexWidth , m_fWorldTexHeight );
+		else
+			m_rtWorld.SetUV( m_rcMapWorld.Left, m_rcMapWorld.Top, m_rcMapWorld.Right, m_rcMapWorld.Bottom,
+							m_fWorldTexWidth * m_fMapSizeRevision, m_fWorldTexHeight * m_fMapSizeRevision );
+#else
+		// default map size is 512. but dratan & montsain zone map texture size is 1024. [10/20/2009 rumist]
+		// revision map size. [10/20/2009 rumist]
+		rcWholeWorld.Scale( m_fMapSizeRevision );
 		if( rcTempWorld.Left < rcWholeWorld.Left )
 			ndX = rcWholeWorld.Left - rcTempWorld.Left;
 		else if( rcTempWorld.Right > rcWholeWorld.Right )
@@ -1100,7 +1245,7 @@ void CUIMap::AdjustViewport( int nSelRegion )
 			m_rcMapWorld.Right = rcWholeWorld.Right;
 
 			int	nNewWidth = m_rcMapWorld.GetWidth() * m_fZoomWorld;
-			m_rcViewportWorld.Left = ( m_nWidth - MAP_FRAME_EDGE_HORZ - nNewWidth ) / 2;
+			m_rcViewportWorld.Left = 0;//m_rcViewportWorld.Left;//( m_nWidth - MAP_FRAME_EDGE_HORZ - nNewWidth ) / 2;	
 			m_rcViewportWorld.Right = m_rcViewportWorld.Left + nNewWidth;
 		}
 		else
@@ -1118,7 +1263,8 @@ void CUIMap::AdjustViewport( int nSelRegion )
 			m_rcMapWorld.Bottom = rcWholeWorld.Bottom;
 
 			int	nNewHeight = m_rcMapWorld.GetHeight() * m_fZoomWorld;
-			m_rcViewportWorld.Top = ( m_nHeight - MAP_FRAME_EDGE_VERT - nNewHeight ) / 2;
+
+			m_rcViewportWorld.Top = 0;//m_rcViewportWorld.Top;//( m_nHeight - MAP_FRAME_EDGE_VERT - nNewHeight ) / 2;
 			m_rcViewportWorld.Bottom = m_rcViewportWorld.Top + nNewHeight;
 		}
 		else
@@ -1130,14 +1276,29 @@ void CUIMap::AdjustViewport( int nSelRegion )
 			m_bCanScrollMapWorld = TRUE;
 		}
 
+		// revision map size. [10/20/2009 rumist]
 		m_rtWorld.SetUV( m_rcMapWorld.Left, m_rcMapWorld.Top, m_rcMapWorld.Right, m_rcMapWorld.Bottom,
-							m_fWorldTexWidth, m_fWorldTexHeight );
-	
+							m_fWorldTexWidth * m_fMapSizeRevision, m_fWorldTexHeight * m_fMapSizeRevision );
+#endif	
 		if( m_nCurDetail != -1 )
 		{
 			int	ndX = 0, ndY = 0;
+			if ( m_vecMapData.size() <= m_nCurMapData || m_vecMapData[m_nCurMapData].vecDetail.size() <= m_nCurDetail )
+			{
+				return;
+			}
 			UIRect	rcWholeDetail = m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].rcMapSize;
 
+//			rcWholeDetail.Scale( m_fMapSizeRevision );
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+			m_rcMapDetail.SetRect(0,0,512, 512);
+			if(m_fWorldTexWidth == 1024)
+				m_rtDetail.SetUV( m_rcMapDetail.Left, m_rcMapDetail.Top, m_rcMapDetail.Right * 2, m_rcMapDetail.Bottom * 2,
+								m_fWorldTexWidth * m_fMapSizeRevision, m_fWorldTexHeight * m_fMapSizeRevision );
+			else
+				m_rtDetail.SetUV( m_rcMapDetail.Left, m_rcMapDetail.Top, m_rcMapDetail.Right, m_rcMapDetail.Bottom,
+								m_fWorldTexWidth * m_fMapSizeRevision, m_fWorldTexHeight * m_fMapSizeRevision );
+#else
 			if( rcTempDetail.Left < rcWholeDetail.Left )
 				ndX = rcWholeDetail.Left - rcTempDetail.Left;
 			else if( rcTempDetail.Right > rcWholeDetail.Right )
@@ -1160,7 +1321,8 @@ void CUIMap::AdjustViewport( int nSelRegion )
 				m_rcMapDetail.Right = rcWholeDetail.Right;
 
 				int	nNewWidth = m_rcMapDetail.GetWidth() * m_fZoomDetail;
-				m_rcViewportDetail.Left = ( m_nWidth - MAP_FRAME_EDGE_HORZ - nNewWidth ) / 2;
+
+				m_rcViewportDetail.Left = 0;//m_rcViewportDetail.Left;//( m_nWidth - MAP_FRAME_EDGE_HORZ - nNewWidth ) / 2;
 				m_rcViewportDetail.Right = m_rcViewportDetail.Left + nNewWidth;
 			}
 			else
@@ -1178,7 +1340,8 @@ void CUIMap::AdjustViewport( int nSelRegion )
 				m_rcMapDetail.Bottom = rcWholeDetail.Bottom;
 
 				int	nNewHeight = m_rcMapDetail.GetHeight() * m_fZoomDetail;
-				m_rcViewportDetail.Top = ( m_nHeight - MAP_FRAME_EDGE_VERT - nNewHeight ) / 2;
+
+				m_rcViewportDetail.Top = 0;//m_rcViewportDetail.Top;//( m_nHeight - MAP_FRAME_EDGE_VERT - nNewHeight ) / 2;
 				m_rcViewportDetail.Bottom = m_rcViewportDetail.Top + nNewHeight;
 			}
 			else
@@ -1192,6 +1355,7 @@ void CUIMap::AdjustViewport( int nSelRegion )
 
 			m_rtDetail.SetUV( m_rcMapDetail.Left, m_rcMapDetail.Top, m_rcMapDetail.Right, m_rcMapDetail.Bottom,
 								m_fDetailTexWidth, m_fDetailTexHeight );
+#endif
 		}
 	}
 }
@@ -1206,8 +1370,9 @@ void CUIMap::ResizeMapFrame( int nSelRegion, int ndX, int ndY )
 	m_nResizeWidthOffset += ndX;
 	m_nResizeHeightOffset += ndY;
 
-	int	nX = m_nResizeWidthOffset;
-	int	nY = m_nResizeHeightOffset;
+	int	nX = ndY;//m_nResizeWidthOffset;
+	int	nY = ndX;//m_nResizeHeightOffset;
+
 	switch( nSelRegion )
 	{
 	case 1:
@@ -1215,21 +1380,18 @@ void CUIMap::ResizeMapFrame( int nSelRegion, int ndX, int ndY )
 			nX = m_nWidth - MAP_FRAME_WIDTH_MIN;
 		m_nPosX += nX;
 		m_nWidth -= nX;
-		m_nResizeWidthOffset -= nX;
 		break;
 
 	case 2:
 		if( m_nWidth + nX < MAP_FRAME_WIDTH_MIN )
 			nX = MAP_FRAME_WIDTH_MIN - m_nWidth;
 		m_nWidth += nX;
-		m_nResizeWidthOffset -= nX;
 		break;
 
 	case 3:
 		if( m_nHeight + nY < MAP_FRAME_HEIGHT_MIN )
 			nY = MAP_FRAME_HEIGHT_MIN - m_nHeight;
 		m_nHeight += nY;
-		m_nResizeHeightOffset -= nY;
 		break;
 
 	case 4:
@@ -1237,32 +1399,23 @@ void CUIMap::ResizeMapFrame( int nSelRegion, int ndX, int ndY )
 			nX = m_nWidth - MAP_FRAME_WIDTH_MIN;
 		m_nPosX += nX;
 		m_nWidth -= nX;
-		m_nResizeWidthOffset -= nX;
+		
 		if( m_nHeight + nY < MAP_FRAME_HEIGHT_MIN )
 			nY = MAP_FRAME_HEIGHT_MIN - m_nHeight;
 		m_nHeight += nY;
-		m_nResizeHeightOffset -= nY;
 		break;
 
 	case 5:
 		if( m_nWidth + nX < MAP_FRAME_WIDTH_MIN )
 			nX = MAP_FRAME_WIDTH_MIN - m_nWidth;
 		m_nWidth += nX;
-		m_nResizeWidthOffset -= nX;
 		if( m_nHeight + nY < MAP_FRAME_HEIGHT_MIN )
 			nY = MAP_FRAME_HEIGHT_MIN - m_nHeight;
 		m_nHeight += nY;
-		m_nResizeHeightOffset -= nY;
 		break;
 	}
 
 	m_btnClose.SetPosX( m_nWidth - MAP_CLOSE_X );
-	m_slbOpacity.SetPosX( m_nWidth - MAP_OPACITY_X );
-	m_slbZoomWorld.SetPosX( m_nWidth - MAP_OPACITY_X );
-	m_slbZoomDetail.SetPosX( m_nWidth - MAP_OPACITY_X );
-	m_cmbMap.SetPosX( m_nWidth - MAP_COMBO_X );
-	m_btnSignal.SetPosX( m_nWidth - MAP_SIGNAL_X );
-
 	m_rcTitle.Right = m_nWidth;
 	m_rcResizeLeft.SetRect( 0, 22, 10, m_nHeight - 10 );
 	m_rcResizeRight.SetRect( m_nWidth - 10, 22, m_nWidth, m_nHeight - 10 );
@@ -1270,7 +1423,11 @@ void CUIMap::ResizeMapFrame( int nSelRegion, int ndX, int ndY )
 	m_rcResizeBottomM.SetRect( 10, m_nHeight - 10, m_nWidth - 10, m_nHeight );
 	m_rcResizeBottomR.SetRect( m_nWidth - 10, m_nHeight - 10, m_nWidth, m_nHeight );
 
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	AdjustViewport( 6 );
+#else
 	AdjustViewport( nSelRegion );
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -1317,21 +1474,6 @@ void CUIMap::Render()
 		}
 	}
 
-	// Scroll map
-	/*static FLOAT	fOldX = _pNetwork->MyCharacterInfo.x;
-	static FLOAT	fOldZ = _pNetwork->MyCharacterInfo.z;
-	if( !m_bNowScrollMapWorld && !m_bNowScrollMapDetail )
-	{
-		if( m_bShowWorldMap )
-		{
-			ScrollMapWorld( 0, 0 );
-		}
-		else
-		{
-			ScrollMapDetail( 0, 0 );
-		}
-	}*/
-
 	// Frame blending
 	FLOAT	fBackRatio = 1.0f;
 	if( m_bFrameBlending )
@@ -1372,6 +1514,27 @@ void CUIMap::Render()
 		}
 	}
 
+	// Emphasis of Character position [9/14/2009 rumist]
+	// Map blending for char position.
+	m_fCharRatio = 1.0f;
+	{
+		__int64 llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+		
+		if( llCurTime - m_llMapBlendTimeForCharPos > MAP_CHAR_BLENDTIME )
+		{
+			m_llMapBlendTimeForCharPos = llCurTime;
+		}
+
+		if( llCurTime - m_llMapBlendTimeForCharPos < (MAP_CHAR_BLENDTIME / 2) )
+		{
+			m_fCharRatio = ( llCurTime - m_llMapBlendTimeForCharPos ) / ((FLOAT)MAP_CHAR_BLENDTIME / 2);
+		}
+		else if( llCurTime - m_llMapBlendTimeForCharPos <= MAP_CHAR_BLENDTIME )
+		{
+			m_fCharRatio = 2.0f - ( ( llCurTime - m_llMapBlendTimeForCharPos ) / ((FLOAT)MAP_CHAR_BLENDTIME / 2) );
+		}
+	}
+
 	// Map blending for layer
 	FLOAT	fLayerRatio = 1.0f;
 	if( m_bMapBlendingForLayer )
@@ -1393,22 +1556,25 @@ void CUIMap::Render()
 		}
 	}
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Background
 	if( m_bShowFrame || m_bFrameBlending )
 	{
 		COLOR	colBlend = 0xFFFFFF00 | UBYTE( 0xFF * fBackRatio * m_fMapOpacity );
 
 		// Set map frame texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 		// Add render regions
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 3, m_nPosY + 22,
+		pDrawPort->AddTexture( m_nPosX + 3, m_nPosY + 22,
 											m_nPosX + m_nWidth - 3, m_nPosY + m_nHeight - 3,
 											m_rtBackListBar.U0, m_rtBackListBar.V0, m_rtBackListBar.U1, m_rtBackListBar.V1,
 											colBlend );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 	}
 
 	nX = m_nPosX + MAP_SX;
@@ -1424,16 +1590,16 @@ void CUIMap::Render()
 			colBlend = 0xFFFFFF00 | UBYTE( 0xFF * fDetailRatio * m_fMapOpacity );
 
 		// Set detail texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdDetailTex );
+		pDrawPort->InitTextureData( m_ptdDetailTex );
 
 		// Add render regions
-		_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcViewportDetail.Left, nY + m_rcViewportDetail.Top,
+		pDrawPort->AddTexture( nX + m_rcViewportDetail.Left, nY + m_rcViewportDetail.Top,
 											nX + m_rcViewportDetail.Right, nY + m_rcViewportDetail.Bottom,
 											m_rtDetail.U0, m_rtDetail.V0, m_rtDetail.U1, m_rtDetail.V1,
 											colBlend );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 	}
 
 	// World map
@@ -1453,16 +1619,16 @@ void CUIMap::Render()
 			COLOR	colBlend = 0xFFFFFF00 | UBYTE( 0xFF * fDetailRatio * fLayerRatio * m_fMapOpacity );
 
 			// Set world texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdWorldTex[0] );
+			pDrawPort->InitTextureData( m_ptdWorldTex[0] );
 
 			// Add render regions
-			_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcViewportWorld.Left, nY + m_rcViewportWorld.Top,
+			pDrawPort->AddTexture( nX + m_rcViewportWorld.Left, nY + m_rcViewportWorld.Top,
 												nX + m_rcViewportWorld.Right, nY + m_rcViewportWorld.Bottom,
 												m_rtWorld.U0, m_rtWorld.V0, m_rtWorld.U1, m_rtWorld.V1,
 												colBlend );
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 		}
 
 		if( bShowTex1 && m_ptdWorldTex[1] )
@@ -1470,21 +1636,21 @@ void CUIMap::Render()
 			COLOR	colBlend = 0xFFFFFF00 | UBYTE( 0xFF * fDetailRatio * ( 1.0f - fLayerRatio ) * m_fMapOpacity );
 
 			// Set world texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdWorldTex[1] );
+			pDrawPort->InitTextureData( m_ptdWorldTex[1] );
 
 			// Add render regions
-			_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcViewportWorld.Left, nY + m_rcViewportWorld.Top,
+			pDrawPort->AddTexture( nX + m_rcViewportWorld.Left, nY + m_rcViewportWorld.Top,
 												nX + m_rcViewportWorld.Right, nY + m_rcViewportWorld.Bottom,
 												m_rtWorld.U0, m_rtWorld.V0, m_rtWorld.U1, m_rtWorld.V1,
 												colBlend );
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 		}
 	}
 
 	// Set map frame texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 
 	// Location of subzone
@@ -1500,12 +1666,27 @@ void CUIMap::Render()
 		for( i = 0; i < m_vecMapData[m_nCurMapData].vecSubZone.size(); i++ )
 		{
 			SBYTE	sbSubType = m_vecMapData[m_nCurMapData].vecSubZone[i].sbType;
-			fX = m_vecMapData[m_nCurMapData].vecSubZone[i].fX - m_vecMapData[m_nCurMapData].World.lOffsetX;
-			fZ = m_vecMapData[m_nCurMapData].vecSubZone[i].fZ - m_vecMapData[m_nCurMapData].World.lOffsetZ;
-			nX = fX * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
-			nY = fZ * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
-			nX += m_rcViewportWorld.Left - rcTempWorld.Left;
-			nY += m_rcViewportWorld.Top - rcTempWorld.Top;
+			if( m_vecMapData[m_nCurMapData].World.nZoneIndex != ZONE_WORLD_MAP )
+			{
+				if( sbSubType == VILLAGE )
+					continue;
+
+				// revision map size. [10/20/2009 rumist]
+				fX = (m_vecMapData[m_nCurMapData].vecSubZone[i].fX - m_vecMapData[m_nCurMapData].World.lOffsetX)*m_fMapSizeRevision;
+				fZ = (m_vecMapData[m_nCurMapData].vecSubZone[i].fZ - m_vecMapData[m_nCurMapData].World.lOffsetZ)*m_fMapSizeRevision;	
+				nX = fX * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
+				nY = fZ * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
+				nX += m_rcViewportWorld.Left - rcTempWorld.Left;
+				nY += m_rcViewportWorld.Top - rcTempWorld.Top;
+			}
+			else
+			{
+				nX = m_vecMapData[m_nCurMapData].vecSubZone[i].fX;
+				nY = m_vecMapData[m_nCurMapData].vecSubZone[i].fZ;	
+				nX += m_rcViewportWorld.Left - rcTempWorld.Left;
+				nY += m_rcViewportWorld.Top - rcTempWorld.Top;
+			}
+
 			if( nX + m_rcSubZone[sbSubType].Left >= m_rcViewportWorld.Left &&
 				nX + m_rcSubZone[sbSubType].Right <= m_rcViewportWorld.Right &&
 				nY + m_rcSubZone[sbSubType].Top >= m_rcViewportWorld.Top &&
@@ -1513,7 +1694,7 @@ void CUIMap::Render()
 			{
 				nX += m_nPosX + MAP_SX;
 				nY += m_nPosY + MAP_SY;
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcSubZone[sbSubType].Left, nY + m_rcSubZone[sbSubType].Top,
+				pDrawPort->AddTexture( nX + m_rcSubZone[sbSubType].Left, nY + m_rcSubZone[sbSubType].Top,
 													nX + m_rcSubZone[sbSubType].Right, nY + m_rcSubZone[sbSubType].Bottom,
 													m_rtSubZone[sbSubType].U0, m_rtSubZone[sbSubType].V0,
 													m_rtSubZone[sbSubType].U1, m_rtSubZone[sbSubType].V1,
@@ -1536,7 +1717,7 @@ void CUIMap::Render()
 			{
 				LONG	nType = m_vecMapData[m_nCurMapData].vecCastleData[i].nType;
 				
-				if( nType == CASTLE_TOWER ) // ÏàòÌò∏ÌÉëÏùò Í≤ΩÏö∞ÏóêÎäî hpÍ∞Ä 0Ïù¥Î©¥ Í∑∏Î¶¨ÏßÄ ÏïäÎäîÎã§.
+				if( nType == CASTLE_TOWER ) // ºˆ»£≈æ¿« ∞ÊøÏø°¥¬ hp∞° 0¿Ã∏È ±◊∏Æ¡ˆ æ ¥¬¥Ÿ.
 				{
 					if( m_vecMapData[m_nCurMapData].vecCastleData[i].nHP <= 0 )
 					{
@@ -1544,8 +1725,9 @@ void CUIMap::Render()
 					}
 				}
 				
-				fX = m_vecMapData[m_nCurMapData].vecCastleData[i].fX - m_vecMapData[m_nCurMapData].World.lOffsetX;
-				fZ = m_vecMapData[m_nCurMapData].vecCastleData[i].fZ - m_vecMapData[m_nCurMapData].World.lOffsetZ;
+				// revision map size. [10/20/2009 rumist]
+				fX = (m_vecMapData[m_nCurMapData].vecCastleData[i].fX - m_vecMapData[m_nCurMapData].World.lOffsetX)*m_fMapSizeRevision;
+				fZ = (m_vecMapData[m_nCurMapData].vecCastleData[i].fZ - m_vecMapData[m_nCurMapData].World.lOffsetZ)*m_fMapSizeRevision;
 
 				nX = fX * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
 				nY = fZ * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
@@ -1559,7 +1741,7 @@ void CUIMap::Render()
 				{
 					nX += m_nPosX + MAP_SX;
 					nY += m_nPosY + MAP_SY;
-					_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcCastle[nType].Left, nY + m_rcCastle[nType].Top,
+					pDrawPort->AddTexture( nX + m_rcCastle[nType].Left, nY + m_rcCastle[nType].Top,
 														nX + m_rcCastle[nType].Right, nY + m_rcCastle[nType].Bottom,
 														m_rtCastle[nType].U0, m_rtCastle[nType].V0,
 														m_rtCastle[nType].U1, m_rtCastle[nType].V1,
@@ -1570,16 +1752,74 @@ void CUIMap::Render()
 		}
 	}
 
+	// connie [2009/9/18] - NPC √£±‚ Render Mob Blinking 
+	COLOR	colBlend = 0x00FFFF00 | UBYTE( 0xFF * m_fMapOpacity );
+	
+	static BOOL		bHighlight = FALSE;
+	static DOUBLE	dElapsedTime = 0.0;
+	static DOUBLE	dOldTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	dElapsedTime += dCurTime - dOldTime;
+	dOldTime = dCurTime;
+	if( dElapsedTime > 0.5 )
+	{
+		bHighlight = !bHighlight;
+		do
+		{
+			dElapsedTime -= 0.5;
+		}
+		while( dElapsedTime > 0.5 );
+	}
+
+	// connie [2009/9/18] - NPC √£±‚
+	// BUG FIX : TO-KR-T20100223-010 [2/24/2010 rumist]
+	// [2011/04/28 : Sora] m_nCurMapData∞™¿∫ «ˆ¿Á ¡∏∞™¿Ã æ∆¥‘
+	if(pUIManager->m_IsHelpMob && m_bShowWorldMap && pUIManager->m_NPCScrollZoneNo == m_vecMapData[m_nCurMapData].World.nZoneIndex )
+	{
+		fX = pUIManager->m_fHelpMobX;
+		fZ = pUIManager->m_fHelpMobZ;
+
+// 		char temp[128];
+// 		sprintf(temp, "%f, %f", fX, fZ);
+// 		OutputDebugString(temp);
+
+		float fWorldRatio = m_vecMapData[m_nCurMapData].World.fRatio;
+
+		// revision map size. [10/20/2009 rumist]
+		nX = fX * fWorldRatio * m_fZoomWorld * m_fMapSizeRevision;
+		nY = fZ * fWorldRatio * m_fZoomWorld * m_fMapSizeRevision;
+		nX += m_rcViewportWorld.Left - rcTempWorld.Left;
+		nY += m_rcViewportWorld.Top - rcTempWorld.Top;
+
+		if( nX + m_rcNPC.Left >= m_rcViewportWorld.Left && nX + m_rcNPC.Right <= m_rcViewportWorld.Right &&
+				nY + m_rcNPC.Top >= m_rcViewportWorld.Top && nY + m_rcNPC.Bottom <= m_rcViewportWorld.Bottom )
+		{
+			nX += m_nPosX + MAP_SX;
+			nY += m_nPosY + MAP_SY;
+
+			if(bHighlight)
+			{
+				pDrawPort->AddTexture( nX + m_rcHelpMob.Left, nY + m_rcHelpMob.Top,
+					nX + m_rcHelpMob.Right, nY + m_rcHelpMob.Bottom,
+					m_rtHelpMob.U0, m_rtHelpMob.V0, m_rtHelpMob.U1, m_rtHelpMob.V1,
+					colBlend ); 
+			}
+		}
+		
+	}
+
+	m_nNpcHighlightIdx = -1;
+
 	// Location of NPC
 	for( i = 0; i < m_vecMapData[m_nCurMapData].vecNpc.size(); i++ )
 	{
-		COLOR	colBlend = 0xFFFFFF00 | UBYTE( 0xFF * m_fMapOpacity );
-#ifdef HELP_SYSTEM_1
-		/**** NPC ÏïàÎÇ¥ÏãúÏä§ÌÖú NPC ÎßàÌÅ¨ Î†åÎçîÎßÅ *****/	
+		/**** NPC æ»≥ªΩ√Ω∫≈€ NPC ∏∂≈© ∑ª¥ı∏µ *****/	
 		static BOOL		bHighlight = FALSE;
 		static DOUBLE	dElapsedTime = 0.0;
 		static DOUBLE	dOldTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
 		DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+		CMobData* pMobData = NULL;
+
 		dElapsedTime += dCurTime - dOldTime;
 		dOldTime = dCurTime;
 		if( dElapsedTime > 0.5 )
@@ -1592,19 +1832,43 @@ void CUIMap::Render()
 			while( dElapsedTime > 0.5 );
 		}
 		/*---------------------------------*/
-#endif
-		if( ZoneInfo().GetZoneType( m_vecMapData[m_nCurMapData].World.nZoneIndex ) == ZONE_DUNGEON )
+
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+		if( m_vecMapData[m_nCurMapData].World.nZoneIndex != ZONE_WORLD_MAP )
 		{
-			if( m_vecMapData[m_nCurMapData].World.sbLayer != m_vecMapData[m_nCurMapData].vecNpc[i].nYLayer )
+			if( CZoneInfo::getSingleton()->GetZoneType( m_vecMapData[m_nCurMapData].World.nZoneIndex ) == ZONE_DUNGEON )
 			{
-				continue;
+				if( m_vecMapData[m_nCurMapData].World.sbLayer != m_vecMapData[m_nCurMapData].vecNpc[i].nYLayer )
+				{
+					continue;
+				}
 			}
 		}
+#endif
 
-		fX = m_vecMapData[m_nCurMapData].vecNpc[i].fX;
-		fZ = m_vecMapData[m_nCurMapData].vecNpc[i].fZ;
+		pMobData = CMobData::getData(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex);
+
+		if (pMobData != NULL)
+		{
+			if (pMobData->IsChannelFlag(_pNetwork->m_iServerCh) == false)
+				continue;
+		}
+
+		if (IS_EVENT_ON(A_EVENT_HOLLOWEEN) == 0)
+		{
+			if (m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == 454 ||
+				m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == 455)
+				continue;
+		}
+
+		fX = (m_vecMapData[m_nCurMapData].vecNpc[i].fX);
+		fZ = (m_vecMapData[m_nCurMapData].vecNpc[i].fZ);
+
 		if( m_bShowWorldMap )
 		{
+			// revision map size. [10/20/2009 rumist]
+			fX *= m_fMapSizeRevision;
+			fZ *= m_fMapSizeRevision;
 			fX -= m_vecMapData[m_nCurMapData].World.lOffsetX;
 			fZ -= m_vecMapData[m_nCurMapData].World.lOffsetZ;
 			nX = fX * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
@@ -1616,146 +1880,23 @@ void CUIMap::Render()
 			{
 				nX += m_nPosX + MAP_SX;
 				nY += m_nPosY + MAP_SY;
-#ifdef HELP_SYSTEM_1
-				//NPC ÏïàÎÇ¥ÏãúÏä§ÌÖú -> ÏïàÎÇ¥Îêú NPCÏùò ÎØ∏ÎãàÎßµ ÌëúÏãúÎ•º ÌãÄÎ¶¨Í≤å Ìï®
-				if(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == _pUIMgr->m_nHelpNpc_Index)
-				{
-					if(bHighlight)
-					{_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcHelpNpc.Left, nY + m_rcHelpNpc.Top,
-													nX + m_rcHelpNpc.Right, nY + m_rcHelpNpc.Bottom,
-													m_rtHelpNpc.U0, m_rtHelpNpc.V0, m_rtHelpNpc.U1, m_rtHelpNpc.V1,
-													colBlend ); }
-				}else if(CQuestSystem::Instance().TestNPCForQuest(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex) == CQuestSystem::NQT_HAVE_QUEST)
-				{
-					
-					_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcQuestNpc.Left, nY + m_rcQuestNpc.Top,
-														nX + m_rcQuestNpc.Right, nY + m_rcQuestNpc.Bottom,
-														m_rtQuestNpc.U0, m_rtQuestNpc.V0, m_rtQuestNpc.U1, m_rtQuestNpc.V1,
-														colBlend );
-					
 
-				}else if(CQuestSystem::Instance().TestNPCForQuest(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex) == CQuestSystem::NQT_CAN_PRIZE)
+				// ≈æ ∑£¥ı∏¶ ¿ß«ÿ µ˚∑Œ √≥∏Æ.
+				if(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == UIMGR()->m_nHelpNpc_Index)
 				{
-					if(bHighlight)// Î≥¥ÏÉÅ Î∞õÎäî NPC ÍπúÎ∞ïÍ±∞Î¶º
-					{
-						_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcSuccessNpc.Left, nY + m_rcSuccessNpc.Top,
-														nX + m_rcSuccessNpc.Right, nY + m_rcSuccessNpc.Bottom,
-														m_rtSuccessNpc.U0, m_rtSuccessNpc.V0, m_rtSuccessNpc.U1, m_rtSuccessNpc.V1,
-														colBlend );
-					}
-				}else
-				{
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcNPC.Left, nY + m_rcNPC.Top,
-													nX + m_rcNPC.Right, nY + m_rcNPC.Bottom,
-													m_rtNPC.U0, m_rtNPC.V0, m_rtNPC.U1, m_rtNPC.V1,
-													colBlend );
-			}
-#else
-					_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcNPC.Left, nY + m_rcNPC.Top,
-														nX + m_rcNPC.Right, nY + m_rcNPC.Bottom,
-														m_rtNPC.U0, m_rtNPC.V0, m_rtNPC.U1, m_rtNPC.V1,
-														colBlend );
-#endif
-				
+					m_nNpcHighlightPosX = nX;
+					m_nNpcHighlightPosY = nY;
+					m_bHighlight = bHighlight;
+					m_nNpcHighlightIdx = m_vecMapData[m_nCurMapData].vecNpc[i].nIndex;
+					continue;
+				}
+
+				RenderNpc(pDrawPort, m_vecMapData[m_nCurMapData].vecNpc[i].nIndex, nX, nY, bHighlight);
 			}
 		}
 		else
 		{
-			fX -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
-			fZ -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
-			nX = fX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
-			nY = fZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
-			nX += m_rcViewportDetail.Left - rcTempDetail.Left;
-			nY += m_rcViewportDetail.Top - rcTempDetail.Top;
-			if( nX + m_rcNPC.Left >= m_rcViewportDetail.Left && nX + m_rcNPC.Right <= m_rcViewportDetail.Right &&
-				nY + m_rcNPC.Top >= m_rcViewportDetail.Top && nY + m_rcNPC.Bottom <= m_rcViewportDetail.Bottom )
-			{
-				nX += m_nPosX + MAP_SX;
-				nY += m_nPosY + MAP_SY;
-#ifdef HELP_SYSTEM_1
-				//NPC ÏïàÎÇ¥ÏãúÏä§ÌÖú -> ÏïàÎÇ¥Îêú NPCÏùò ÎØ∏ÎãàÎßµ ÌëúÏãúÎ•º ÌãÄÎ¶¨Í≤å Ìï®
-				if(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == _pUIMgr->m_nHelpNpc_Index)
-				{
-					if(bHighlight)
-					{
-						_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcHelpNpc.Left, nY + m_rcHelpNpc.Top,
-													nX + m_rcHelpNpc.Right, nY + m_rcHelpNpc.Bottom,
-													m_rtHelpNpc.U0, m_rtHelpNpc.V0, m_rtHelpNpc.U1, m_rtHelpNpc.V1,
-													colBlend ); 
-					}
-				}else if(CQuestSystem::Instance().TestNPCForQuest(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex) == CQuestSystem::NQT_HAVE_QUEST)
-				{
-			
-					_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcQuestNpc.Left, nY + m_rcQuestNpc.Top,
-														nX + m_rcQuestNpc.Right, nY + m_rcQuestNpc.Bottom,
-														m_rtQuestNpc.U0, m_rtQuestNpc.V0, m_rtQuestNpc.U1, m_rtQuestNpc.V1,
-														colBlend );
-					
-
-				}else if(CQuestSystem::Instance().TestNPCForQuest(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex) == CQuestSystem::NQT_CAN_PRIZE)
-				{
-					if(bHighlight)// Î≥¥ÏÉÅ Î∞õÎäî NPC ÍπúÎ∞ïÍ±∞Î¶º
-					{
-						_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcSuccessNpc.Left, nY + m_rcSuccessNpc.Top,
-														nX + m_rcSuccessNpc.Right, nY + m_rcSuccessNpc.Bottom,
-														m_rtSuccessNpc.U0, m_rtSuccessNpc.V0, m_rtSuccessNpc.U1, m_rtSuccessNpc.V1,
-														colBlend );
-					}
-
-				}else
-				{
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcNPC.Left, nY + m_rcNPC.Top,
-													nX + m_rcNPC.Right, nY + m_rcNPC.Bottom,
-													m_rtNPC.U0, m_rtNPC.V0, m_rtNPC.U1, m_rtNPC.V1,
-													colBlend );
-				}
-#else
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcNPC.Left, nY + m_rcNPC.Top,
-													nX + m_rcNPC.Right, nY + m_rcNPC.Bottom,
-													m_rtNPC.U0, m_rtNPC.V0, m_rtNPC.U1, m_rtNPC.V1,
-													colBlend );
-#endif
-				
-			}
-		}
-	}
-
-	if( _pNetwork->MyCharacterInfo.zoneNo == m_vecMapData[m_nCurMapData].World.nZoneIndex )
-	{
-		int	nLayerDiff;
-		// Location of Party
-		for( i = 0; i < _pUIMgr->GetParty()->GetMemberCount(); i++ )
-		{
-			nLayerDiff = _pUIMgr->GetParty()->GetLayer( i ) - m_sbCurLayer;
-			if( nLayerDiff < -1 || nLayerDiff > 1 )
-				continue;
-			
-			// ÌååÌã∞Ïõê Î©§Î≤ÑÍ∞Ä Í∞ôÏùÄ ÎßµÏóê ÏóÜÎã§Î©¥ ÌëúÏãú ÏïäÌï®
-			if( m_vecMapData[m_nCurMapData].World.nZoneIndex != _pUIMgr->GetParty()->GetMemberZone( i ) )
-				continue;
-
-			fX = _pUIMgr->GetParty()->GetPosX( i );
-			fZ = _pUIMgr->GetParty()->GetPosZ( i );
-			if( m_bShowWorldMap )
-			{
-				fX -= m_vecMapData[m_nCurMapData].World.lOffsetX;
-				fZ -= m_vecMapData[m_nCurMapData].World.lOffsetZ;
-				nX = fX * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
-				nY = fZ * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
-				nX += m_rcViewportWorld.Left - rcTempWorld.Left;
-				nY += m_rcViewportWorld.Top - rcTempWorld.Top;
-				if( nX + m_rcParty.Left >= m_rcViewportWorld.Left && nX + m_rcParty.Right <= m_rcViewportWorld.Right &&
-					nY + m_rcParty.Top >= m_rcViewportWorld.Top && nY + m_rcParty.Bottom <= m_rcViewportWorld.Bottom )
-				{
-					nX += m_nPosX + MAP_SX;
-					nY += m_nPosY + MAP_SY;
-					_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcParty.Left, nY + m_rcParty.Top,
-														nX + m_rcParty.Right, nY + m_rcParty.Bottom,
-														m_rtParty.U0, m_rtParty.V0, m_rtParty.U1, m_rtParty.V1,
-														0xFFFFFFFF );
-				}
-			}
-			else
+			if (m_nCurDetail >= 0)
 			{
 				fX -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
 				fZ -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
@@ -1763,18 +1904,195 @@ void CUIMap::Render()
 				nY = fZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
 				nX += m_rcViewportDetail.Left - rcTempDetail.Left;
 				nY += m_rcViewportDetail.Top - rcTempDetail.Top;
-				if( nX + m_rcParty.Left >= m_rcViewportDetail.Left && nX + m_rcParty.Right <= m_rcViewportDetail.Right &&
-					nY + m_rcParty.Top >= m_rcViewportDetail.Top && nY + m_rcParty.Bottom <= m_rcViewportDetail.Bottom )
+
+				if( nX + m_rcNPC.Left >= m_rcViewportDetail.Left && nX + m_rcNPC.Right <= m_rcViewportDetail.Right &&
+					nY + m_rcNPC.Top >= m_rcViewportDetail.Top && nY + m_rcNPC.Bottom <= m_rcViewportDetail.Bottom )
 				{
 					nX += m_nPosX + MAP_SX;
 					nY += m_nPosY + MAP_SY;
-					_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcParty.Left, nY + m_rcParty.Top,
-														nX + m_rcParty.Right, nY + m_rcParty.Bottom,
-														m_rtParty.U0, m_rtParty.V0, m_rtParty.U1, m_rtParty.V1,
-														0xFFFFFFFF );
+
+					// ≈æ ∑£¥ı∏¶ ¿ß«ÿ µ˚∑Œ √≥∏Æ.
+					if(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == UIMGR()->m_nHelpNpc_Index)
+					{
+						m_nNpcHighlightPosX = nX;
+						m_nNpcHighlightPosY = nY;
+						m_bHighlight = bHighlight;
+						m_nNpcHighlightIdx = m_vecMapData[m_nCurMapData].vecNpc[i].nIndex;
+						continue;
+					}
+
+					RenderNpc(pDrawPort, m_vecMapData[m_nCurMapData].vecNpc[i].nIndex, nX, nY, bHighlight);
 				}
 			}
 		}
+	}
+
+	if (m_nNpcHighlightIdx > 0 )
+	{
+		RenderNpc(pDrawPort, m_nNpcHighlightIdx, m_nNpcHighlightPosX, m_nNpcHighlightPosY, m_bHighlight);
+	}
+
+	pDrawPort->FlushRenderingQueue();
+
+	CUIMapOption* pOption = UIMGR()->GetRadar()->GetMapOption();
+	Party* pParty = GAMEDATAMGR()->GetPartyInfo();
+
+	if( _pNetwork->MyCharacterInfo.zoneNo == m_vecMapData[m_nCurMapData].World.nZoneIndex )
+	{
+		int	nLayerDiff;
+		COLOR	colBlend;
+
+		colBlend = 0xFFFFFF00 | UBYTE( 0xFF * m_fCharRatio );
+		// Location of Party
+
+		if (pOption->IsCheck(eNT_PARTY) == true)
+		{
+			if (pParty == NULL)
+				return;
+
+			for( i = 0; i < pParty->GetMemberCount(); i++ )
+			{
+
+				if(pParty->GetLevel( i ) == 0)	// [sora] ∑π∫ß¿Ã 0¿Œ ∏‚πˆ¥¬ ø¿«¡∂Û¿Œ ªÛ≈¬¿Ãπ«∑Œ ±◊∏Æ¡ˆ æ ¥¬¥Ÿ.
+					continue;
+
+				nLayerDiff = pParty->GetLayer( i ) - m_sbCurLayer;
+				if( nLayerDiff < -1 || nLayerDiff > 1 )
+					continue;
+				
+				// ∆ƒ∆ºø¯ ∏‚πˆ∞° ∞∞¿∫ ∏ ø° æ¯¥Ÿ∏È «•Ω√ æ «‘
+				if( m_vecMapData[m_nCurMapData].World.nZoneIndex != pParty->GetMemberZone( i ) )
+					continue;
+
+				fX = pParty->GetPosX( i );
+				fZ = pParty->GetPosZ( i );
+				if( m_bShowWorldMap )
+				{
+					// revision map size. [10/20/2009 rumist]
+					fX *= m_fMapSizeRevision;
+					fZ *= m_fMapSizeRevision;
+					fX -= m_vecMapData[m_nCurMapData].World.lOffsetX;
+					fZ -= m_vecMapData[m_nCurMapData].World.lOffsetZ;
+					nX = fX * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
+					nY = fZ * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
+					nX += m_rcViewportWorld.Left - rcTempWorld.Left;
+					nY += m_rcViewportWorld.Top - rcTempWorld.Top;
+					if( nX + m_rcParty.Left >= m_rcViewportWorld.Left && nX + m_rcParty.Right <= m_rcViewportWorld.Right &&
+						nY + m_rcParty.Top >= m_rcViewportWorld.Top && nY + m_rcParty.Bottom <= m_rcViewportWorld.Bottom )
+					{
+						nX += m_nPosX + MAP_SX;
+						nY += m_nPosY + MAP_SY;
+						pDrawPort->AddTexture( nX + m_rcParty.Left, nY + m_rcParty.Top,
+															nX + m_rcParty.Right, nY + m_rcParty.Bottom,
+															m_rtParty.U0, m_rtParty.V0, m_rtParty.U1, m_rtParty.V1,
+															0xFFFFFFFF );
+					}
+				}
+				else
+				{
+					if (m_nCurDetail >= 0)
+					{
+						fX -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
+						fZ -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
+						nX = fX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+						nY = fZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+						nX += m_rcViewportDetail.Left - rcTempDetail.Left;
+						nY += m_rcViewportDetail.Top - rcTempDetail.Top;
+						if( nX + m_rcParty.Left >= m_rcViewportDetail.Left && nX + m_rcParty.Right <= m_rcViewportDetail.Right &&
+							nY + m_rcParty.Top >= m_rcViewportDetail.Top && nY + m_rcParty.Bottom <= m_rcViewportDetail.Bottom )
+						{
+							nX += m_nPosX + MAP_SX;
+							nY += m_nPosY + MAP_SY;
+							pDrawPort->AddTexture( nX + m_rcParty.Left, nY + m_rcParty.Top,
+																nX + m_rcParty.Right, nY + m_rcParty.Bottom,
+																m_rtParty.U0, m_rtParty.V0, m_rtParty.U1, m_rtParty.V1,
+																0xFFFFFFFF );
+						}
+					}
+				}
+			}
+		}
+
+		pDrawPort->FlushRenderingQueue();
+
+		if(pUIManager->IsCSFlagOn(CSF_EXPEDITION) && pOption->IsCheck(eNT_FELLOWSHIP) == true) // [sora] ø¯¡§¥Îø¯ ∏ «•Ω√
+		{
+			pDrawPort->InitTextureData(ptdTopUITexture);
+
+			if (pParty == NULL)
+				return;
+
+			for(i=0; i<EXPEDITION_GROUP_MAX; i++)
+			{
+				for(int j = 0; j < EXPEDITION_MEMBER_PER_GROUP; j++ )
+				{
+					if(!pParty->IsExpedetionDataExist(i,j))
+						continue;
+
+					if(!pParty->GetExpeditionMemberOnline(i,j)) // ø¬∂Û¿Œ ªÛ≈¬∞° æ∆¥œ∏È ±◊∏Æ¡ˆ æ ¿Ω
+						continue;
+
+					nLayerDiff = pParty->GetExpeditionMemberLayer(i,j) - m_sbCurLayer;
+					if( nLayerDiff < -1 || nLayerDiff > 1 )
+						continue;
+					
+					// ∆ƒ∆ºø¯ ∏‚πˆ∞° ∞∞¿∫ ∏ ø° æ¯¥Ÿ∏È «•Ω√ æ «‘
+					if( m_vecMapData[m_nCurMapData].World.nZoneIndex != pParty->GetExpeditionMemberZone(i,j) )
+						continue;
+
+					fX = pParty->GetExpeditionMemberPosX(i,j);
+					fZ = pParty->GetExpeditionMemberPosZ(i,j);
+					if( m_bShowWorldMap )
+					{
+						// revision map size. [10/20/2009 rumist]
+						fX *= m_fMapSizeRevision;
+						fZ *= m_fMapSizeRevision;
+						fX -= m_vecMapData[m_nCurMapData].World.lOffsetX;
+						fZ -= m_vecMapData[m_nCurMapData].World.lOffsetZ;
+						nX = fX * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
+						nY = fZ * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
+						nX += m_rcViewportWorld.Left - rcTempWorld.Left;
+						nY += m_rcViewportWorld.Top - rcTempWorld.Top;
+						if( nX + m_rcParty.Left >= m_rcViewportWorld.Left && nX + m_rcParty.Right <= m_rcViewportWorld.Right &&
+							nY + m_rcParty.Top >= m_rcViewportWorld.Top && nY + m_rcParty.Bottom <= m_rcViewportWorld.Bottom )
+						{
+							nX += m_nPosX + MAP_SX;
+							nY += m_nPosY + MAP_SY;
+							pDrawPort->AddTexture( nX + m_rcExpedition.Left, nY + m_rcExpedition.Top,
+																nX + m_rcExpedition.Right, nY + m_rcExpedition.Bottom,
+																m_rtExpedition[i].U0, m_rtExpedition[i].V0, m_rtExpedition[i].U1, m_rtExpedition[i].V1,
+																0xFFFFFFFF );
+						}
+					}
+					else
+					{
+						if (m_nCurDetail >= 0)
+						{
+							fX -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
+							fZ -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
+							nX = fX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+							nY = fZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+							nX += m_rcViewportDetail.Left - rcTempDetail.Left;
+							nY += m_rcViewportDetail.Top - rcTempDetail.Top;
+							if( nX + m_rcParty.Left >= m_rcViewportDetail.Left && nX + m_rcParty.Right <= m_rcViewportDetail.Right &&
+								nY + m_rcParty.Top >= m_rcViewportDetail.Top && nY + m_rcParty.Bottom <= m_rcViewportDetail.Bottom )
+							{
+								nX += m_nPosX + MAP_SX;
+								nY += m_nPosY + MAP_SY;
+								pDrawPort->AddTexture( nX + m_rcExpedition.Left, nY + m_rcExpedition.Top,
+																	nX + m_rcExpedition.Right, nY + m_rcExpedition.Bottom,
+																	m_rtExpedition[i].U0, m_rtExpedition[i].V0, m_rtExpedition[i].U1, m_rtExpedition[i].V1,
+																	0xFFFFFFFF );
+							}
+						}
+					}
+				}
+			}
+
+			pDrawPort->FlushRenderingQueue();
+		}
+
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 		// Position & direction of character
 		nLayerDiff = _pNetwork->MyCharacterInfo.yLayer - m_sbCurLayer;
@@ -1802,8 +2120,9 @@ void CUIMap::Render()
 
 			if( m_bShowWorldMap )
 			{
-				nX = ( _pNetwork->MyCharacterInfo.x - m_vecMapData[m_nCurMapData].World.lOffsetX ) * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
-				nY = ( _pNetwork->MyCharacterInfo.z - m_vecMapData[m_nCurMapData].World.lOffsetZ ) * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
+				// revision map size. [10/20/2009 rumist]
+				nX = ( _pNetwork->MyCharacterInfo.x - m_vecMapData[m_nCurMapData].World.lOffsetX ) * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld * m_fMapSizeRevision;
+				nY = ( _pNetwork->MyCharacterInfo.z - m_vecMapData[m_nCurMapData].World.lOffsetZ ) * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld * m_fMapSizeRevision;
 				nX += m_rcViewportWorld.Left - rcTempWorld.Left;
 				nY += m_rcViewportWorld.Top - rcTempWorld.Top;
 				if( nX + m_rcPC.Left >= m_rcViewportWorld.Left && nX + m_rcPC.Right <= m_rcViewportWorld.Right &&
@@ -1811,29 +2130,32 @@ void CUIMap::Render()
 				{
 					nX += m_nPosX + MAP_SX;
 					nY += m_nPosY + MAP_SY;
-					_pUIMgr->GetDrawPort()->AddTexture( nX + fX1, nY + fY1, m_rtPC.U0, m_rtPC.V0, 0xFFFFFFFF,
-														nX + fX2, nY + fY2, m_rtPC.U0, m_rtPC.V1, 0xFFFFFFFF,
-														nX + fX3, nY + fY3, m_rtPC.U1, m_rtPC.V1, 0xFFFFFFFF,
-														nX + fX4, nY + fY4, m_rtPC.U1, m_rtPC.V0, 0xFFFFFFFF );
+					pDrawPort->AddTexture( nX + fX1, nY + fY1, m_rtPC.U0, m_rtPC.V0, colBlend,
+						nX + fX2, nY + fY2, m_rtPC.U0, m_rtPC.V1, colBlend,
+						nX + fX3, nY + fY3, m_rtPC.U1, m_rtPC.V1, colBlend,
+						nX + fX4, nY + fY4, m_rtPC.U1, m_rtPC.V0, colBlend );
 				}
 			}
 			else
 			{
-				fX = _pNetwork->MyCharacterInfo.x - m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
-				fZ = _pNetwork->MyCharacterInfo.z - m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
-				nX = fX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
-				nY = fZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
-				nX += m_rcViewportDetail.Left - rcTempDetail.Left;
-				nY += m_rcViewportDetail.Top - rcTempDetail.Top;
-				if( nX + m_rcPC.Left >= m_rcViewportDetail.Left && nX + m_rcPC.Right <= m_rcViewportDetail.Right &&
-					nY + m_rcPC.Top >= m_rcViewportDetail.Top && nY + m_rcPC.Bottom <= m_rcViewportDetail.Bottom )
+				if (m_nCurDetail >= 0)
 				{
-					nX += m_nPosX + MAP_SX;
-					nY += m_nPosY + MAP_SY;
-					_pUIMgr->GetDrawPort()->AddTexture( nX + fX1, nY + fY1, m_rtPC.U0, m_rtPC.V0, 0xFFFFFFFF,
-														nX + fX2, nY + fY2, m_rtPC.U0, m_rtPC.V1, 0xFFFFFFFF,
-														nX + fX3, nY + fY3, m_rtPC.U1, m_rtPC.V1, 0xFFFFFFFF,
-														nX + fX4, nY + fY4, m_rtPC.U1, m_rtPC.V0, 0xFFFFFFFF );
+					fX = _pNetwork->MyCharacterInfo.x - m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
+					fZ = _pNetwork->MyCharacterInfo.z - m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
+					nX = fX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+					nY = fZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+					nX += m_rcViewportDetail.Left - rcTempDetail.Left;
+					nY += m_rcViewportDetail.Top - rcTempDetail.Top;
+					if( nX + m_rcPC.Left >= m_rcViewportDetail.Left && nX + m_rcPC.Right <= m_rcViewportDetail.Right &&
+						nY + m_rcPC.Top >= m_rcViewportDetail.Top && nY + m_rcPC.Bottom <= m_rcViewportDetail.Bottom )
+					{
+						nX += m_nPosX + MAP_SX;
+						nY += m_nPosY + MAP_SY;
+						pDrawPort->AddTexture( nX + fX1, nY + fY1, m_rtPC.U0, m_rtPC.V0, colBlend,
+							nX + fX2, nY + fY2, m_rtPC.U0, m_rtPC.V1, colBlend,
+							nX + fX3, nY + fY3, m_rtPC.U1, m_rtPC.V1, colBlend,
+							nX + fX4, nY + fY4, m_rtPC.U1, m_rtPC.V0, colBlend );
+					}
 				}
 			}
 		}
@@ -1842,7 +2164,11 @@ void CUIMap::Render()
 	RenderSignal();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
+
+	RenderGPS(pDrawPort);
+
+	RenderRelic(pDrawPort);
 
 	// Background
 	if( m_bShowFrame || m_bFrameBlending )
@@ -1850,63 +2176,67 @@ void CUIMap::Render()
 		COLOR	colBlend = 0xFFFFFF00 | UBYTE( 0xFF * fBackRatio );
 
 		// Add render regions
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY,
+		pDrawPort->AddTexture( m_nPosX, m_nPosY,
 											m_nPosX + 34, m_nPosY + 22,
 											m_rtBackUL.U0, m_rtBackUL.V0, m_rtBackUL.U1, m_rtBackUL.V1,
 											colBlend );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 34, m_nPosY,
+		pDrawPort->AddTexture( m_nPosX + 34, m_nPosY,
 											m_nPosX + m_nWidth - 34, m_nPosY + 22,
 											m_rtBackUM.U0, m_rtBackUM.V0, m_rtBackUM.U1, m_rtBackUM.V1,
 											colBlend );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_nWidth - 34,
+		pDrawPort->AddTexture( m_nPosX + m_nWidth - 34,
 											m_nPosY, m_nPosX + m_nWidth, m_nPosY + 22,
 											m_rtBackUR.U0, m_rtBackUR.V0, m_rtBackUR.U1, m_rtBackUR.V1,
 											colBlend );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + 22,
+		pDrawPort->AddTexture( m_nPosX, m_nPosY + 22,
 											m_nPosX + 34, m_nPosY + m_nHeight - 15,
 											m_rtBackML.U0, m_rtBackML.V0, m_rtBackML.U1, m_rtBackML.V1,
 											colBlend );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 34, m_nPosY + 22,
+		pDrawPort->AddTexture( m_nPosX + 34, m_nPosY + 22,
 											m_nPosX + m_nWidth - 34, m_nPosY + m_nHeight - 15,
 											m_rtBackMM.U0, m_rtBackMM.V0, m_rtBackMM.U1, m_rtBackMM.V1,
 											colBlend );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_nWidth - 34, m_nPosY + 22,
+		pDrawPort->AddTexture( m_nPosX + m_nWidth - 34, m_nPosY + 22,
 											m_nPosX + m_nWidth, m_nPosY + m_nHeight - 15,
 											m_rtBackMR.U0, m_rtBackMR.V0, m_rtBackMR.U1, m_rtBackMR.V1,
 											colBlend );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + m_nHeight - 15,
+		pDrawPort->AddTexture( m_nPosX, m_nPosY + m_nHeight - 15,
 											m_nPosX + 34, m_nPosY + m_nHeight,
 											m_rtBackLL.U0, m_rtBackLL.V0, m_rtBackLL.U1, m_rtBackLL.V1,
 											colBlend );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 34, m_nPosY + m_nHeight - 15,
+		pDrawPort->AddTexture( m_nPosX + 34, m_nPosY + m_nHeight - 15,
 											m_nPosX + m_nWidth - 34, m_nPosY + m_nHeight,
 											m_rtBackLM.U0, m_rtBackLM.V0, m_rtBackLM.U1, m_rtBackLM.V1,
 											colBlend );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_nWidth - 34, m_nPosY + m_nHeight - 15,
+		pDrawPort->AddTexture( m_nPosX + m_nWidth - 34, m_nPosY + m_nHeight - 15,
 											m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 											m_rtBackLR.U0, m_rtBackLR.V0, m_rtBackLR.U1, m_rtBackLR.V1,
 											colBlend );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 3, m_nPosY + 22,
+		pDrawPort->AddTexture( m_nPosX + 3, m_nPosY + 22,
 											m_nPosX + m_nWidth - 3, m_nPosY + 47,
 											m_rtBackListBar.U0, m_rtBackListBar.V0, m_rtBackListBar.U1, m_rtBackListBar.V1,
 											colBlend );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcCompass.Left, m_nPosY + m_nHeight + m_rcCompass.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcCompass.Left, m_nPosY + m_nHeight + m_rcCompass.Top,
 											m_nPosX + m_rcCompass.Right, m_nPosY + m_nHeight + m_rcCompass.Bottom,
 											m_rtCompass.U0, m_rtCompass.V0, m_rtCompass.U1, m_rtCompass.V1,
 											colBlend );
 
 		// Text in map
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 190, "ÏßÄÎèÑ" ), m_nPosX + MAP_TITLE_TEXT_OFFSETX,
+		pDrawPort->PutTextEx( _S( 190, "¡ˆµµ" ), m_nPosX + MAP_TITLE_TEXT_OFFSETX,
 											m_nPosY + MAP_TITLE_TEXT_OFFSETY, colBlend );
 		if( m_bShowOpacitySlideInfo )
 		{
 			if( m_nWidth - MAP_SLIDEINFO_X - m_nOpacityStringWidth > 0 )
 			{
 				colBlend = ( colBlend & 0x000000FF ) | 0xDDDDDDFF;
-				_pUIMgr->GetDrawPort()->PutTextExRX( m_strOpacitySlideInfo, m_nPosX + m_nWidth - MAP_SLIDEINFO_X,
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+				pDrawPort->PutTextEx( m_strOpacitySlideInfo, m_slbOpacity.GetAbsPosX() + m_slbOpacity.GetWidth() + 10, m_nPosY + MAP_SLIDEINFO_Y, colBlend);
+#else
+				pDrawPort->PutTextExRX( m_strOpacitySlideInfo, m_nPosX + m_nWidth - 20/*MAP_SLIDEINFO_X*/,
 														m_nPosY + MAP_SLIDEINFO_Y, colBlend );
+#endif
 			}
 		}
 		else if( m_bShowZoomSlideInfo )
@@ -1914,7 +2244,7 @@ void CUIMap::Render()
 			if( m_nWidth - MAP_SLIDEINFO_X - m_nZoomStringWidth > 0 )
 			{
 				colBlend = ( colBlend & 0x000000FF ) | 0xDDDDDDFF;
-				_pUIMgr->GetDrawPort()->PutTextExRX( m_strZoomSlideInfo, m_nPosX + m_nWidth - MAP_SLIDEINFO_X,
+				pDrawPort->PutTextExRX( m_strZoomSlideInfo, m_nPosX + m_nWidth - 20/*MAP_SLIDEINFO_X*/,
 														m_nPosY + MAP_SLIDEINFO_Y, colBlend );
 			}
 		}
@@ -1929,6 +2259,7 @@ void CUIMap::Render()
 				m_btnSignal.Render();
 			}
 
+#ifndef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
 			// Map combo box
 			m_cmbMap.Render();
 
@@ -1937,44 +2268,57 @@ void CUIMap::Render()
 				m_slbZoomWorld.Render();
 			else
 				m_slbZoomDetail.Render();
+#else
+			pDrawPort->PutTextEx( m_vecMapData[m_nCurMapData].World.strName, m_nPosX + 15, m_nPosY + MAP_SLIDEINFO_Y);
+			pDrawPort->PutTextEx( _S( 5798, "≈ı∏Ìµµ"), m_slbOpacity.GetAbsPosX() - 10 - (CTString(_S( 5798, "≈ı∏Ìµµ")).Length() * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing())), m_nPosY + MAP_SLIDEINFO_Y);
+#endif
 
 			// Opacity slide bar
 			m_slbOpacity.Render();
 		}
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+		if( fBackRatio >= 1.0f )
+		{
+			pDrawPort->InitTextureData( ptdButtonTexture );
+			m_btnGoTop.Render();
+			pDrawPort->FlushRenderingQueue();
+			pDrawPort->EndTextEx();
+		}
+#endif
 		// Tool tip
 		if( m_bShowToolTip )
 		{
 			// Set texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
+			pDrawPort->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
 												m_rcToolTip.Left + 7, m_rcToolTip.Bottom,
 												m_rtToolTipL.U0, m_rtToolTipL.V0, m_rtToolTipL.U1, m_rtToolTipL.V1,
 												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
+			pDrawPort->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
 												m_rcToolTip.Right - 7, m_rcToolTip.Bottom,
 												m_rtToolTipM.U0, m_rtToolTipM.V0, m_rtToolTipM.U1, m_rtToolTipM.V1,
 												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
+			pDrawPort->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
 												m_rcToolTip.Right, m_rcToolTip.Bottom,
 												m_rtToolTipR.U0, m_rtToolTipR.V0, m_rtToolTipR.U1, m_rtToolTipR.V1,
 												0xFFFFFFFF );
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 
 			// Text in tool tip
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 3 );
+			pDrawPort->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 3 );
 
 			// Flush all render text queue
-			_pUIMgr->GetDrawPort()->EndTextEx();
+			pDrawPort->EndTextEx();
 		}
 	}
 }
@@ -1985,34 +2329,146 @@ void CUIMap::Render()
 // ----------------------------------------------------------------------------
 void CUIMap::ToggleVisible()
 {
+	UpdateMap(false);
+}
+
+// ----------------------------------------------------------------------------
+// Name : ManipulateNpcScroll()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIMap::ManipulateNpcScroll(BOOL IsNpcScrollVisible)
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
 	extern SLONG	g_slZone;
 	
-	// ÌòÑÏû¨ ÎçòÏ†ÑÏùò Í≤ΩÏö∞ÏóêÎäî ÏßÄÎèÑÎ•º ÌëúÏãúÌïòÏßÄ ÏïäÎäîÎã§.
-	if( ZoneInfo().GetZoneType( g_slZone ) == ZONE_SDUNGEON )
+	// «ˆ¿Á ¥¯¿¸¿« ∞ÊøÏø°¥¬ ¡ˆµµ∏¶ «•Ω√«œ¡ˆ æ ¥¬¥Ÿ.
+	if( CZoneInfo::getSingleton()->GetZoneType( g_slZone ) == ZONE_SDUNGEON )
 	{
 		if( IsVisible() )
-			_pUIMgr->RearrangeOrder( UI_MAP, FALSE );
+			pUIManager->RearrangeOrder( UI_MAP, FALSE );
 
 		return;
 	}
 
-	
-
-	// Toggle map
-	BOOL	bVisible = !IsVisible();
-	_pUIMgr->RearrangeOrder( UI_MAP, bVisible );
-
-	// !! Í≥µÏÑ±Ï†Ñ MapÌëúÏãú Ï°∞Í±¥Ïóê ÎßûÎã§Î©¥ ÏÑúÎ≤ÑÎ°ú Ï†ïÎ≥¥ ÏöîÏ≤≠ 
-	//
-	if( bVisible )
+	if( IsVisible() || pUIManager->GetNpcScroll()->IsOpened())
 	{
-		ReSetData();
-		_pNetwork->SendCastleMapRecent();
+		g_iOpacityInMap = m_slbOpacity.GetCurPos();
+		if( m_bShowWorldMap )
+			g_iZoomInMap = m_slbZoomWorld.GetCurPos();
+		else
+			g_iZoomInMap = m_slbZoomDetail.GetCurPos();
+
+		g_iXPosInMap = GetPosX();
+		g_iYPosInMap = GetPosY();
+	}
+
+	m_bShowWorldMap = FALSE;
+	// !! ∞¯º∫¿¸ Map«•Ω√ ¡∂∞«ø° ∏¬¥Ÿ∏È º≠πˆ∑Œ ¡§∫∏ ø‰√ª 
+	//
+	if( IsNpcScrollVisible )
+	{
+		pUIManager->RearrangeOrder( UI_MAP, IsNpcScrollVisible);
+		IsDetailMap(TRUE);
+		m_btnGoTop.SetEnable(TRUE);
+		if (m_nCurMapData > -1)
+		{
+			if (IsPossibleCastleMap() && IsCastleMap( m_nCurMapData ))
+			{
+				ReSetData();
+				_pNetwork->SendCastleMapRecent();
+			}
+		}
 	}
 	else
 	{
+		if (IsEnabled() == TRUE)
+			UpdateMap(false);
+
 		m_qSignalData.clear();
 	}
+
+	ClearPlayerEntity();
+}
+
+
+// ----------------------------------------------------------------------------
+// Name : MakeCenterForZoom()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIMap::ResizeMapFrame( BOOL bSign )
+{
+	if( m_bShowWorldMap )
+	{
+		if( bSign )
+			m_slbZoomWorld.SetCurPos( m_slbZoomWorld.GetCurPos() + 1 );
+		else
+			m_slbZoomWorld.SetCurPos( m_slbZoomWorld.GetCurPos() - 1 );
+		
+		UpdateZoomSlideInfo( TRUE );
+		UpdateZoomRatio( TRUE );
+			
+		m_nWidth = (m_nMapWorldBaseWidth * (m_fZoomWorld > 1.0f ? 1.0f : m_fZoomWorld));
+		m_nHeight = (m_nMapWorldBaseHeight * (m_fZoomWorld > 1.0f ? 1.0f : m_fZoomWorld));
+	}
+	else
+	{
+		if( bSign )
+			m_slbZoomDetail.SetCurPos( m_slbZoomDetail.GetCurPos() + 1 );
+		else
+			m_slbZoomDetail.SetCurPos( m_slbZoomDetail.GetCurPos() - 1 );
+		
+		UpdateZoomSlideInfo( FALSE );
+		UpdateZoomRatio( FALSE );
+		
+		m_nWidth = (m_nMapDetailBaseWidth * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+		m_nHeight = (m_nMapDetailBaseHeight * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+	}
+
+	ResizeMapFrame( 5, 0, 0 );
+}
+
+// ----------------------------------------------------------------------------
+// Name : SetMapData()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIMap::SetMapData()
+{
+
+	SetPos( g_iXPosInMap, g_iYPosInMap );
+
+	m_nWidth = m_nMapWorldBaseWidth;
+	m_nHeight = m_nMapWorldBaseHeight;
+	m_fZoomWorld = m_fZoomDetail = 1.0f;
+	m_btnClose.SetPos( 486, 5 );
+
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_slbOpacity.SetCurPos( 75 );
+	m_slbZoomDetail.SetCurPos( 12 );
+	m_slbZoomWorld.SetCurPos( 12 );
+#else
+	m_slbOpacity.SetCurPos( g_iOpacityInMap );
+	m_slbZoomDetail.SetCurPos( g_iZoomInMap );
+	m_slbZoomWorld.SetCurPos( g_iZoomInMap );
+#endif
+
+	if( !m_bShowWorldMap )
+	{
+		UpdateZoomSlideInfo( TRUE );
+		UpdateZoomRatio( TRUE );
+		m_nWidth = (m_nMapWorldBaseWidth * (m_fZoomWorld > 1.0f ? 1.0f : m_fZoomWorld));
+		m_nHeight = (m_nMapWorldBaseHeight * (m_fZoomWorld > 1.0f ? 1.0f : m_fZoomWorld));
+	}
+	else
+	{	
+		UpdateZoomSlideInfo( FALSE );
+		UpdateZoomRatio( FALSE );
+		m_nWidth = (m_nMapDetailBaseWidth * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+		m_nHeight = (m_nMapDetailBaseHeight * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+	}
+
+	ResizeMapFrame( 5, 0, 0 );
+	UpdateOpacitySlideInfo();
+	UpdateOpacityRatio();
 }
 
 // ----------------------------------------------------------------------------
@@ -2023,13 +2479,15 @@ void CUIMap::MakeCenterForZoom( BOOL bWorldMap )
 {
 	if( bWorldMap )
 	{
-		m_nZoomCenterX = m_rcMapWorld.Left + m_rcMapWorld.GetWidth() / 2;
-		m_nZoomCenterY = m_rcMapWorld.Top + m_rcMapWorld.GetHeight() / 2;
+		m_nZoomCenterX = m_rcMapWorld.Left;// + m_rcMapWorld.GetWidth() / 2;
+		m_nZoomCenterY = m_rcMapWorld.Top;// + m_rcMapWorld.GetHeight() / 2;
+
 	}
 	else
 	{
-		m_nZoomCenterX = m_rcMapDetail.Left + m_rcMapDetail.GetWidth() / 2;
-		m_nZoomCenterY = m_rcMapDetail.Top + m_rcMapDetail.GetHeight() / 2;
+		m_nZoomCenterX = m_rcMapDetail.Left;// + m_rcMapDetail.GetWidth() / 2;
+		m_nZoomCenterY = m_rcMapDetail.Top;// + m_rcMapDetail.GetHeight() / 2;
+
 	}
 }
 
@@ -2039,20 +2497,37 @@ void CUIMap::MakeCenterForZoom( BOOL bWorldMap )
 // ----------------------------------------------------------------------------
 void CUIMap::ZoomMap( BOOL bWorldMap )
 {
+// 	if( bWorldMap )
+// 	{
+// 		int	nHalfW = m_nMapWorldBaseWidth / m_fZoomWorld * 0.5f;
+// 		int	nHalfH = m_nMapWorldBaseHeight / m_fZoomWorld * 0.5f;
+// 		m_rcMapWorld.SetRect( m_nZoomCenterX - nHalfW, m_nZoomCenterY - nHalfH,
+// 								m_nZoomCenterX + nHalfW, m_nZoomCenterY + nHalfH );
+// 		AdjustViewport( 6 );
+// 	}
+// 	else
+// 	{
+// 		int	nHalfW = m_nMapDetailBaseWidth / m_fZoomDetail * 0.5f;
+// 		int	nHalfH = m_nMapDetailBaseHeight / m_fZoomDetail * 0.5f;
+// 		m_rcMapDetail.SetRect( m_nZoomCenterX - nHalfW, m_nZoomCenterY - nHalfH,
+// 								m_nZoomCenterX + nHalfW, m_nZoomCenterY + nHalfH );
+// 		AdjustViewport( 6 );
+// 	}
+
 	if( bWorldMap )
 	{
-		int	nHalfW = m_nMapWorldBaseWidth / m_fZoomWorld * 0.5f;
-		int	nHalfH = m_nMapWorldBaseHeight / m_fZoomWorld * 0.5f;
-		m_rcMapWorld.SetRect( m_nZoomCenterX - nHalfW, m_nZoomCenterY - nHalfH,
-								m_nZoomCenterX + nHalfW, m_nZoomCenterY + nHalfH );
+		int	nfW = m_nMapWorldBaseWidth / m_fZoomWorld;
+		int	nfH = m_nMapWorldBaseHeight / m_fZoomWorld;
+		m_rcMapWorld.SetRect( m_nZoomCenterX, m_nZoomCenterY,
+								m_nZoomCenterX + nfW, m_nZoomCenterY + nfH );
 		AdjustViewport( 6 );
 	}
 	else
 	{
-		int	nHalfW = m_nMapDetailBaseWidth / m_fZoomDetail * 0.5f;
-		int	nHalfH = m_nMapDetailBaseHeight / m_fZoomDetail * 0.5f;
-		m_rcMapDetail.SetRect( m_nZoomCenterX - nHalfW, m_nZoomCenterY - nHalfH,
-								m_nZoomCenterX + nHalfW, m_nZoomCenterY + nHalfH );
+		int	nfW = m_nMapDetailBaseWidth / m_fZoomDetail;
+		int	nfH = m_nMapDetailBaseHeight / m_fZoomDetail;
+		m_rcMapDetail.SetRect( m_nZoomCenterX, m_nZoomCenterY,
+								m_nZoomCenterX + nfW, m_nZoomCenterY + nfH );
 		AdjustViewport( 6 );
 	}
 }
@@ -2063,6 +2538,8 @@ void CUIMap::ZoomMap( BOOL bWorldMap )
 // ----------------------------------------------------------------------------
 BOOL CUIMap::IsInsideMap( BOOL bWinPos, BOOL bWorldMap, int nX, int nY, BOOL bZoomRect, UIRect &rcRect )
 {
+	UIRect rcTemp = rcRect;	
+	
 	if( bWinPos )
 	{
 		nX -= m_nPosX + MAP_SX;
@@ -2084,19 +2561,19 @@ BOOL CUIMap::IsInsideMap( BOOL bWinPos, BOOL bWorldMap, int nX, int nY, BOOL bZo
 
 		if( bZoomRect )
 		{
-			int	nWidth = rcRect.GetWidth() / m_fZoomWorld;
-			int	nHeight = rcRect.GetHeight() / m_fZoomWorld;
-			int	nCX = rcRect.GetCenterX();
-			int	nCY = rcRect.GetCenterY();
+			int	nWidth = rcTemp.GetWidth() / m_fZoomWorld;
+			int	nHeight = rcTemp.GetHeight() / m_fZoomWorld;
+			int	nCX = rcTemp.GetCenterX();
+			int	nCY = rcTemp.GetCenterY();
 
-			rcRect.Left = nCX - nWidth / 2;
-			rcRect.Right = rcRect.Left + nWidth;
-			rcRect.Top = nCY - nHeight / 2;
-			rcRect.Bottom = rcRect.Top + nHeight;
+			rcTemp.Left = nCX - nWidth / 2;
+			rcTemp.Right = rcTemp.Left + nWidth;
+			rcTemp.Top = nCY - nHeight / 2;
+			rcTemp.Bottom = rcTemp.Top + nHeight;
 		}
 
-		if( nX < rcRect.Left || nX > rcRect.Right ||
-			nY < rcRect.Top || nY > rcRect.Bottom )
+		if( nX < rcTemp.Left || nX > rcTemp.Right ||
+			nY < rcTemp.Top || nY > rcTemp.Bottom )
 			return FALSE;
 	}
 	else
@@ -2114,19 +2591,19 @@ BOOL CUIMap::IsInsideMap( BOOL bWinPos, BOOL bWorldMap, int nX, int nY, BOOL bZo
 
 		if( bZoomRect )
 		{
-			int	nWidth = rcRect.GetWidth() / m_fZoomDetail;
-			int	nHeight = rcRect.GetHeight() / m_fZoomDetail;
-			int	nCX = rcRect.GetCenterX();
-			int	nCY = rcRect.GetCenterY();
+			int	nWidth = rcTemp.GetWidth() / m_fZoomDetail;
+			int	nHeight = rcTemp.GetHeight() / m_fZoomDetail;
+			int	nCX = rcTemp.GetCenterX();
+			int	nCY = rcTemp.GetCenterY();
 
-			rcRect.Left = nCX - nWidth / 2;
-			rcRect.Right = rcRect.Left + nWidth;
-			rcRect.Top = nCY - nHeight / 2;
-			rcRect.Bottom = rcRect.Top + nHeight;
+			rcTemp.Left = nCX - nWidth / 2;
+			rcTemp.Right = rcTemp.Left + nWidth;
+			rcTemp.Top = nCY - nHeight / 2;
+			rcTemp.Bottom = rcTemp.Top + nHeight;
 		}
 
-		if( nX < rcRect.Left || nX > rcRect.Right ||
-			nY < rcRect.Top || nY > rcRect.Bottom )
+		if( nX < rcTemp.Left || nX > rcTemp.Right ||
+			nY < rcTemp.Top || nY > rcTemp.Bottom )
 			return FALSE;
 	}
 
@@ -2150,9 +2627,12 @@ void CUIMap::UpdateOpacitySlideInfo()
 {
 	m_bShowOpacitySlideInfo = TRUE;
 	m_bShowZoomSlideInfo = FALSE;
-	m_strOpacitySlideInfo.PrintF( _S( 1035, "Ìà¨Î™Ö %d%%" ), ( 25 + m_slbOpacity.GetCurPos() ) );
-
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_strOpacitySlideInfo.PrintF("%d%%", 25 + m_slbOpacity.GetCurPos());
+#else
+	m_strOpacitySlideInfo.PrintF( _S( 1035, "≈ı∏Ì %d%%" ), ( 25 + m_slbOpacity.GetCurPos() ) );
 	m_nOpacityStringWidth = m_strOpacitySlideInfo.Length() * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -2167,16 +2647,16 @@ void CUIMap::UpdateZoomSlideInfo( BOOL bWorldMap )
 	if( bWorldMap )
 	{
 		if( m_slbZoomWorld.GetCurPos() < MAP_ZOOM_SLIDE_ORIGIN )
-			m_strZoomSlideInfo.PrintF( _S( 1036, "ÌÅ¨Í∏∞ %d%%" ), 100 - ( MAP_ZOOM_SLIDE_ORIGIN - m_slbZoomWorld.GetCurPos() ) * 5 );
+			m_strZoomSlideInfo.PrintF( _S( 1036, "≈©±‚ %d%%" ), 100 - ( MAP_ZOOM_SLIDE_ORIGIN - m_slbZoomWorld.GetCurPos() ) * 5 );
 		else
-			m_strZoomSlideInfo.PrintF( _S( 1036, "ÌÅ¨Í∏∞ %d%%" ), 100 + ( m_slbZoomWorld.GetCurPos() - MAP_ZOOM_SLIDE_ORIGIN ) * 25 );
+			m_strZoomSlideInfo.PrintF( _S( 1036, "≈©±‚ %d%%" ), 100 + ( m_slbZoomWorld.GetCurPos() - MAP_ZOOM_SLIDE_ORIGIN ) * 25 );
 	}
 	else
 	{
 		if( m_slbZoomDetail.GetCurPos() < MAP_ZOOM_SLIDE_ORIGIN )
-			m_strZoomSlideInfo.PrintF( _S( 1036, "ÌÅ¨Í∏∞ %d%%" ), 100 - ( MAP_ZOOM_SLIDE_ORIGIN - m_slbZoomDetail.GetCurPos() ) * 5 );
+			m_strZoomSlideInfo.PrintF( _S( 1036, "≈©±‚ %d%%" ), 100 - ( MAP_ZOOM_SLIDE_ORIGIN - m_slbZoomDetail.GetCurPos() ) * 5 );
 		else
-			m_strZoomSlideInfo.PrintF( _S( 1036, "ÌÅ¨Í∏∞ %d%%" ), 100 + ( m_slbZoomDetail.GetCurPos() - MAP_ZOOM_SLIDE_ORIGIN ) * 25 );
+			m_strZoomSlideInfo.PrintF( _S( 1036, "≈©±‚ %d%%" ), 100 + ( m_slbZoomDetail.GetCurPos() - MAP_ZOOM_SLIDE_ORIGIN ) * 25 );
 	}
 
 	m_nZoomStringWidth = m_strZoomSlideInfo.Length() * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
@@ -2226,6 +2706,9 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 	// Detail map click
 	static BOOL	bDetailMapClick = FALSE;
 
+	// ignore detail map click event.
+	BOOL	bIgnoreDetailMapClick = FALSE;
+
 	// Mouse point
 	static int	nOldX, nOldY;
 	int	nX = LOWORD( pMsg->lParam );
@@ -2264,7 +2747,7 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 			}
 			else
 			{
-				// Ïª®Ìä∏Î°§ Î∞ñÏúºÎ°ú ÎÇòÍ∞ÄÎ©¥ Î¨¥Ï°∞Í±¥ Ï∑®ÏÜå
+				// ƒ¡∆Æ∑— π€¿∏∑Œ ≥™∞°∏È π´¡∂∞« √Îº“
 				SetSignalOn( false );
 				m_bInsideMouse = false;
 				if( nResizeBarClick == 0 && !bTitleBarClick && !bScrollWorldMap && !bScrollDetailMap )
@@ -2289,62 +2772,35 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 
 			if( m_bShowFrame )
 			{
-				// ÏãúÍ∑∏ÎÑêÏù¥ Ïò®Ïù∏ Í≤ΩÏö∞ÎÑ§Îäî Îã§Î•∏ Î™®Îì† ÎßàÏö∞Ïä§ Ïª§ÏÑú Ïª®Ìä∏Î°§ Î¨¥Ïãú
+				// Ω√±◊≥Œ¿Ã ø¬¿Œ ∞ÊøÏ≥◊¥¬ ¥Ÿ∏• ∏µÁ ∏∂øÏΩ∫ ƒøº≠ ƒ¡∆Æ∑— π´Ω√
 				if( m_bSignalBtnOn ) 
 				{
 					SetSignalOn( true );
 					return WMSG_SUCCESS;
 				}
 
-				// Scroll world map
-				if( bScrollWorldMap && ( pMsg->wParam & MK_LBUTTON ) )
-				{
-					_pUIMgr->SetMouseCursorInsideUIs( UMCT_PICK );
+				CUIManager* pUIManager = CUIManager::getSingleton();
 
-					int	ndX = nOldX - nX;
-					int	ndY = nOldY - nY;
-					nOldX = nX;	nOldY = nY;
-
-					if( IsInsideRect( nX - MAP_SX, nY - MAP_SY, m_rcViewportWorld ) )
-						ScrollMapWorld( ndX, ndY );
-
-					return WMSG_SUCCESS;
-				}
-
-				// Scroll detail map
-				if( bScrollDetailMap && ( pMsg->wParam & MK_LBUTTON ) )
-				{
-					_pUIMgr->SetMouseCursorInsideUIs( UMCT_PICK );
-
-					int	ndX = nOldX - nX;
-					int	ndY = nOldY - nY;
-					nOldX = nX;	nOldY = nY;
-
-					if( IsInsideRect( nX - MAP_SX, nY - MAP_SY, m_rcViewportDetail ) )
-					{
-						ScrollMapDetail( ndX, ndY );
-						bScrolledDetailMap = TRUE;
-					}
-
-					return WMSG_SUCCESS;
-				}
-				
+#ifndef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
 				// Resize map
 				if( nResizeBarClick != 0 && ( pMsg->wParam & MK_LBUTTON ) )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
+					pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
 
 					int	ndX = nX - nOldX;
 					int	ndY = nY - nOldY;
 					nOldX = nX;	nOldY = nY;
 
-					ResizeMapFrame( nResizeBarClick, ndX, ndY );
+					if( ndX > 5 || ndY > 5 )
+						ResizeMapFrame( TRUE );
+					else if( ndX < -5 || ndX < -5 )
+						ResizeMapFrame( FALSE );
 
 					return WMSG_SUCCESS;
 				}
 
-				
-				_pUIMgr->SetMouseCursorInsideUIs();
+				pUIManager->SetMouseCursorInsideUIs();
+#endif
 
 				// Move map
 				if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -2376,7 +2832,12 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 				{
 					UpdateZoomSlideInfo( TRUE );
 					if( wmsgResult == WMSG_COMMAND )
+					{
 						UpdateZoomRatio( TRUE );
+						m_nWidth = (m_nMapWorldBaseWidth * ( m_fZoomWorld > 1.0f ? 1.0f : m_fZoomWorld ) );
+						m_nHeight = (m_nMapWorldBaseHeight * ( m_fZoomWorld > 1.0f ? 1.0f : m_fZoomWorld ) );
+						ResizeMapFrame( 5, 0, 0 );
+					}
 
 					return WMSG_SUCCESS;
 				}
@@ -2385,7 +2846,12 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 				{
 					UpdateZoomSlideInfo( FALSE );
 					if( wmsgResult == WMSG_COMMAND )
+					{
 						UpdateZoomRatio( FALSE );
+						m_nWidth = (m_nMapDetailBaseWidth * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+						m_nHeight = (m_nMapDetailBaseHeight * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+ 						ResizeMapFrame( 5, 0, 0 );
+					}
 
 					return WMSG_SUCCESS;
 				}
@@ -2393,58 +2859,118 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 				if( m_cmbMap.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
 
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+				if( m_btnGoTop.MouseMessage( pMsg ) != WMSG_FAIL )
+					return WMSG_SUCCESS;
+#else
 				// Resize region
 				if( ( IsInsideRect( nX, nY, m_rcResizeLeft ) || IsInsideRect( nX, nY, m_rcResizeRight ) ||
 					IsInsideRect( nX, nY, m_rcResizeBottomM ) || IsInsideRect( nX, nY, m_rcResizeBottomL ) ||
-					IsInsideRect( nX, nY, m_rcResizeBottomR ) ) && !_pUIMgr->IsInsideUpperUIs( UI_MAP, nX, nY ) )
+					IsInsideRect( nX, nY, m_rcResizeBottomR ) ) && !pUIManager->IsInsideUpperUIs( UI_MAP, nX, nY ) )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
+					pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
 					return WMSG_SUCCESS;
 				}
+#endif
 
-				if( !_pUIMgr->IsInsideUpperUIs( UI_MAP, nX, nY ) )
+				if( !pUIManager->IsInsideUpperUIs( UI_MAP, nX, nY ) )
 				{
 					// Tool tip
 					UIRect	rcTip;
-					int		nTipX, nTipZ;
+					int		nTipX = 0, nTipZ = 0;
 					FLOAT	fTipX, fTipZ;
 					BOOL	bShowToolTip = FALSE;
+					CMobData* pMobData = NULL;
+
+					if (m_nCurMapData < 0 && m_vecMapData.size() >= m_nCurMapData)
+						return WMSG_FAIL;
+
 					for( int i = 0; i < m_vecMapData[m_nCurMapData].vecNpc.size(); i++ )
 					{
-						
-						if( ZoneInfo().GetZoneType( m_vecMapData[m_nCurMapData].World.nZoneIndex ) == ZONE_DUNGEON )
+						pMobData = CMobData::getData(m_vecMapData[m_nCurMapData].vecNpc[i].nIndex);
+
+						if (pMobData != NULL)
+						{
+							if (pMobData->IsChannelFlag(_pNetwork->m_iServerCh) == false)
+								continue;
+						}
+
+						if( CZoneInfo::getSingleton()->GetZoneType( m_vecMapData[m_nCurMapData].World.nZoneIndex ) == ZONE_DUNGEON )
 						{
 							if( m_vecMapData[m_nCurMapData].World.sbLayer != m_vecMapData[m_nCurMapData].vecNpc[i].nYLayer )
 							{
 								continue;
 							}
 						}
+
+						if (IS_EVENT_ON(A_EVENT_HOLLOWEEN) == 0)
+						{
+							if (m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == 454 ||
+								m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == 455)
+								continue;
+						}
 							
 						fTipX = m_vecMapData[m_nCurMapData].vecNpc[i].fX;
 						fTipZ = m_vecMapData[m_nCurMapData].vecNpc[i].fZ;
 						if( m_bShowWorldMap )
 						{
+							// revision map size. [10/20/2009 rumist]							
 							fTipX -= m_vecMapData[m_nCurMapData].World.lOffsetX;
 							fTipZ -= m_vecMapData[m_nCurMapData].World.lOffsetZ;
+							
+							fTipX *= m_fMapSizeRevision;
+							fTipZ *= m_fMapSizeRevision;
 
 							nTipX = fTipX * m_vecMapData[m_nCurMapData].World.fRatio;
 							nTipZ = fTipZ * m_vecMapData[m_nCurMapData].World.fRatio;
 						}
 						else
 						{
-							fTipX -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
-							fTipZ -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
-							nTipX = fTipX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio;
-							nTipZ = fTipZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio;
+							if (m_nCurDetail >= 0 && m_nCurDetail < m_vecMapData[m_nCurMapData].vecDetail.size() )	// πÊæÓƒ⁄µÂ √ﬂ∞°.
+							{
+								fTipX -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
+								fTipZ -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
+								nTipX = fTipX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio;
+								nTipZ = fTipZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio;
+							}
 						}
 
 						rcTip = m_rcNPC;
 						rcTip.Offset( nTipX, nTipZ );
 					
-						if( IsInsideMap( TRUE, m_bShowWorldMap, nX, nY, TRUE, rcTip ) )
+						CUIMapOption* pOption = UIMGR()->GetRadar()->GetMapOption();
+						bool bShow = false;
+						int nIndex = m_vecMapData[m_nCurMapData].vecNpc[i].nIndex;
+
+						if (pOption->IsCheck(eNT_QUEST_Q) &&
+							CQuestSystem::Instance().TestNPCForQuest(nIndex) == CQuestSystem::NQT_HAVE_QUEST)
+						{
+							bShow = true;
+						}
+						else if (pOption->IsCheck(eNT_QUEST_A) &&
+							CQuestSystem::Instance().TestNPCForQuest(nIndex) == CQuestSystem::NQT_CAN_PRIZE)
+						{
+							bShow = true;
+						}
+						else
+						{
+							for (int j = eNT_SHOP; j < eNT_MONSTER; ++j)
+							{
+								if (pOption->IsCheck((eNPC_TYPE)j) == false)
+									continue;
+
+								if (pOption->IsFlag(j, nIndex) != FALSE)
+								{
+									bShow = true;
+									break;
+								}
+							}
+						}
+
+						if (bShow == true && IsInsideMap( TRUE, m_bShowWorldMap, nX, nY, TRUE, rcTip ))
 						{
 							bShowToolTip = TRUE;
-							CTString	strNpcName = _pNetwork->GetMobName( m_vecMapData[m_nCurMapData].vecNpc[i].nIndex );
+							CTString	strNpcName = CMobData::getData(nIndex)->GetName();
 							ShowToolTip( TRUE, strNpcName, rcTip.GetCenterX(), rcTip.GetCenterY() );
 							break;
 						}
@@ -2455,18 +2981,33 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						{
 							SBYTE	sbType = m_vecMapData[m_nCurMapData].vecSubZone[i].sbType;
 							fTipX = m_vecMapData[m_nCurMapData].vecSubZone[i].fX;
-							fTipZ = m_vecMapData[m_nCurMapData].vecSubZone[i].fZ;
+							fTipZ = m_vecMapData[m_nCurMapData].vecSubZone[i].fZ;	
 							if( m_bShowWorldMap )
 							{
-								nTipX = fTipX * m_vecMapData[m_nCurMapData].World.fRatio;
-								nTipZ = fTipZ * m_vecMapData[m_nCurMapData].World.fRatio;
+								if( m_vecMapData[m_nCurMapData].World.nZoneIndex != ZONE_WORLD_MAP )
+								{
+									// revision map size. [10/20/2009 rumist]
+									fTipX *= m_fMapSizeRevision;
+									fTipZ *= m_fMapSizeRevision;
+									nTipX = fTipX * m_vecMapData[m_nCurMapData].World.fRatio;
+									nTipZ = fTipZ * m_vecMapData[m_nCurMapData].World.fRatio;
+								}
+								else
+								{
+									nTipX = fTipX;
+									nTipZ = fTipZ;
+								}
+
 							}
 							else
 							{
-								fTipX -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
-								fTipZ -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
-								nTipX = fTipX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio;
-								nTipZ = fTipZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio;
+								if (m_nCurDetail >= 0 && m_nCurDetail < m_vecMapData[m_nCurMapData].vecDetail.size() )	// πÊæÓƒ⁄µÂ √ﬂ∞°.
+								{
+									fTipX -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
+									fTipZ -= m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
+									nTipX = fTipX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio;
+									nTipZ = fTipZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio;
+								}
 							}
 
 							rcTip = m_rcSubZone[sbType];
@@ -2474,16 +3015,24 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 							if( IsInsideMap( TRUE, m_bShowWorldMap, nX, nY, TRUE, rcTip ) )
 							{
 								CTString	strTemp;
-								if( sbType == CHARGE_PRIVATE || sbType == MINE_PRIVATE || sbType == GATHER_PRIVATE )
+								if( m_vecMapData[m_nCurMapData].World.nZoneIndex != ZONE_WORLD_MAP )
 								{
-									strTemp.PrintF( _S( 549, "%s(ÏÇ¨Ïú†ÏßÄ)" ),			
-													ZoneInfo().GetExtraName( m_vecMapData[m_nCurMapData].World.nZoneIndex,
-																				m_vecMapData[m_nCurMapData].vecSubZone[i].nSubZoneIndex ) );
+									if( sbType == CHARGE_PRIVATE || sbType == MINE_PRIVATE || sbType == GATHER_PRIVATE )
+									{
+										strTemp.PrintF( _S( 549, "%s(ªÁ¿Ø¡ˆ)" ),			
+														CZoneInfo::getSingleton()->GetExtraName( m_vecMapData[m_nCurMapData].World.nZoneIndex,
+																					m_vecMapData[m_nCurMapData].vecSubZone[i].nSubZoneIndex ) );
+									}
+									else
+									{
+										strTemp = CZoneInfo::getSingleton()->GetExtraName( m_vecMapData[m_nCurMapData].World.nZoneIndex,
+																			m_vecMapData[m_nCurMapData].vecSubZone[i].nSubZoneIndex );
+									}
+
 								}
 								else
 								{
-									strTemp = ZoneInfo().GetExtraName( m_vecMapData[m_nCurMapData].World.nZoneIndex,
-																		m_vecMapData[m_nCurMapData].vecSubZone[i].nSubZoneIndex );
+									strTemp = CZoneInfo::getSingleton()->GetZoneName( m_vecMapData[m_nCurMapData].vecSubZone[i].nSubZoneIndex );
 								}
 
 								bShowToolTip = TRUE;
@@ -2496,14 +3045,15 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						ShowToolTip( FALSE, CTString( "" ) );
 
 					// Detail map region
-					if( m_bShowWorldMap )
+					if( m_bShowWorldMap /*&& _pNetwork->MyCharacterInfo.sbAttributePos != ATTC_PEACE*/ )
 					{
-						for( i = 0; i < m_vecMapData[m_nCurMapData].vecDetail.size(); i++ )
+						for( int i = 0; i < m_vecMapData[m_nCurMapData].vecDetail.size(); i++ )
 						{
-							if( IsInsideMap( TRUE, TRUE, nX, nY, FALSE,
-												m_vecMapData[m_nCurMapData].vecDetail[i].rcSelRegion ) )
+							UIRect	rcTemp = m_vecMapData[m_nCurMapData].vecDetail[i].rcSelRegion;
+							rcTemp.Scale( m_fMapSizeRevision );
+							if( IsInsideMap( TRUE, TRUE, nX, nY, FALSE, rcTemp ) )
 							{
-								_pUIMgr->SetMouseCursorInsideUIs( UMCT_ZOOMIN );
+								pUIManager->SetMouseCursorInsideUIs( UMCT_ZOOMIN );
 								return WMSG_SUCCESS;
 							}
 						}
@@ -2515,9 +3065,12 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDOWN:
 		{
+#ifndef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
 			if( m_bShowFrame )
 			{
-				if( !m_bSignalBtnOn ) // ÏãúÍ∑∏ÎÑêÏù¥ ÏïÑÎãåÍ≤ΩÏö∞ÏóêÎßå Í∞ÄÎä• 
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
+				if( !m_bSignalBtnOn ) // Ω√±◊≥Œ¿Ã æ∆¥—∞ÊøÏø°∏∏ ∞°¥… 
 				{
 					// Resize region - left
 					if( IsInsideRect( nX, nY, m_rcResizeLeft ) )
@@ -2527,8 +3080,8 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						m_nResizeWidthOffset = 0;
 						m_nResizeHeightOffset = 0;
 					
-						_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
-						_pUIMgr->RearrangeOrder( UI_MAP, TRUE );
+						pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
+						pUIManager->RearrangeOrder( UI_MAP, TRUE );
 						return WMSG_SUCCESS;
 					}
 
@@ -2540,8 +3093,8 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						m_nResizeWidthOffset = 0;
 						m_nResizeHeightOffset = 0;
 
-						_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
-						_pUIMgr->RearrangeOrder( UI_MAP, TRUE );
+						pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
+						pUIManager->RearrangeOrder( UI_MAP, TRUE );
 						return WMSG_SUCCESS;
 					}
 
@@ -2553,8 +3106,8 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						m_nResizeWidthOffset = 0;
 						m_nResizeHeightOffset = 0;
 
-						_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
-						_pUIMgr->RearrangeOrder( UI_MAP, TRUE );
+						pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
+						pUIManager->RearrangeOrder( UI_MAP, TRUE );
 						return WMSG_SUCCESS;
 					}
 
@@ -2566,8 +3119,8 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						m_nResizeWidthOffset = 0;
 						m_nResizeHeightOffset = 0;
 
-						_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
-						_pUIMgr->RearrangeOrder( UI_MAP, TRUE );
+						pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
+						pUIManager->RearrangeOrder( UI_MAP, TRUE );
 						return WMSG_SUCCESS;
 					}
 				}
@@ -2580,9 +3133,22 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 					m_nResizeWidthOffset = 0;
 					m_nResizeHeightOffset = 0;
 
-					_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
-					_pUIMgr->RearrangeOrder( UI_MAP, TRUE );
+					pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
+					pUIManager->RearrangeOrder( UI_MAP, TRUE );
 					return WMSG_SUCCESS;
+				}
+			}
+#endif
+			// πŸ∑Œ ∞°±‚ ±‚¥…
+			if (_pNetwork->m_ubGMLevel > 1)
+			{
+				if( IsInside( nX, nY ) )
+				{
+					if (pMsg->wParam & MK_CONTROL)
+					{
+						if (Goto(nX - m_nPosX, nY - m_nPosY) == true)
+							return WMSG_SUCCESS;
+					}
 				}
 			}
 
@@ -2590,6 +3156,8 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 			{
 				bDetailMapClick = FALSE;
 				nOldX = nX;		nOldY = nY;
+
+				CUIManager* pUIManager = CUIManager::getSingleton();
 
 				if( m_bShowFrame )
 				{
@@ -2617,7 +3185,14 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						UpdateZoomSlideInfo( TRUE );
 						MakeCenterForZoom( TRUE );
 						if( wmsgResult == WMSG_COMMAND )
+						{
 							UpdateZoomRatio( TRUE );
+							m_nResizeWidthOffset = 0;
+							m_nResizeHeightOffset = 0;
+							m_nWidth = (m_nMapWorldBaseWidth * ( m_fZoomWorld > 1.0f ? 1.0f : m_fZoomWorld ) );
+							m_nHeight = (m_nMapWorldBaseHeight * ( m_fZoomWorld > 1.0f ? 1.0f : m_fZoomWorld ) );
+							ResizeMapFrame( 5, 0, 0 );
+						}
 
 						return WMSG_SUCCESS;
 					}
@@ -2627,7 +3202,14 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						UpdateZoomSlideInfo( FALSE );
 						MakeCenterForZoom( FALSE );
 						if( wmsgResult == WMSG_COMMAND )
+						{
 							UpdateZoomRatio( FALSE );
+							m_nResizeWidthOffset = 0;
+							m_nResizeHeightOffset = 0;
+							m_nWidth = (m_nMapDetailBaseWidth * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+							m_nHeight = (m_nMapDetailBaseHeight * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+							ResizeMapFrame( 5, 0, 0 );
+						}
 
 						return WMSG_SUCCESS;
 					}
@@ -2643,6 +3225,12 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 					{
 						bTitleBarClick = TRUE;
 					}
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+					else if( m_btnGoTop.MouseMessage( pMsg ) != WMSG_FAIL )
+					{
+
+					}
+#endif
 					else
 					{
 						int	nNewX = nX - MAP_SX;
@@ -2673,12 +3261,14 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 								// Open detail map
 								for( int i = 0; i < m_vecMapData[m_nCurMapData].vecDetail.size(); i++ )
 								{
-									if( IsInsideMap( TRUE, TRUE, nX, nY, FALSE,
-														m_vecMapData[m_nCurMapData].vecDetail[i].rcSelRegion ) )
+									UIRect rcTemp = m_vecMapData[m_nCurMapData].vecDetail[i].rcSelRegion;
+									rcTemp.Scale( m_fMapSizeRevision );
+									if( IsInsideMap( TRUE, TRUE, nX, nY, FALSE, rcTemp ) )
 									{
 										bDetailMapClick = TRUE;
-										
-										_pUIMgr->RearrangeOrder( UI_MAP, TRUE );
+										pUIManager->RearrangeOrder( UI_MAP, TRUE );
+								
+									
 										return WMSG_SUCCESS;
 									}
 								}
@@ -2687,34 +3277,46 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 								if( m_bCanScrollMapWorld )
 								{
 									bScrollWorldMap = TRUE;
-									_pUIMgr->SetMouseCursorInsideUIs( UMCT_PICK );
+									pUIManager->SetMouseCursorInsideUIs( UMCT_PICK );
 								}
 							}
 						}
 						else
 						{
-							if( IsInsideRect( nNewX, nNewY, m_rcViewportDetail ) )
+							// connie [2009/10/19] - 
+							if( !(_pNetwork->MyCharacterInfo.sbAttributePos & MATT_PEACE) && !IsPlayerInPeaceArea())
 							{
-								// Scroll detail map
-								bScrolledDetailMap = FALSE;
-								if( m_bCanScrollMapDetail )
+								if( IsInsideRect( nNewX, nNewY, m_rcViewportDetail ) )
 								{
-									_pUIMgr->SetMouseCursorInsideUIs( UMCT_PICK );
-									bScrollDetailMap = TRUE;
+									// Scroll detail map
+									bScrolledDetailMap = FALSE;
+									if( m_bCanScrollMapDetail )
+									{
+										pUIManager->SetMouseCursorInsideUIs( UMCT_PICK );
+										bScrollDetailMap = TRUE;
+									}
 								}
+							}
+							else
+							{
+								bIgnoreDetailMapClick = TRUE;
 							}
 						}
 					}
 					
-
-					//keyÍ∞Ä ÎàåÎ¶∞ ÌõÑ ControlÏù¥ ÏïÑÎãåÍ≤ΩÏö∞ Î™®Îëê Ï∑®ÏÜå 
-					if( pMsg->wParam != MK_CONTROL )
+					if( !bIgnoreDetailMapClick )
 					{
-						SetSignalOn( false );
+						//key∞° ¥≠∏∞ »ƒ Control¿Ã æ∆¥—∞ÊøÏ ∏µŒ √Îº“ 
+						if( pMsg->wParam != MK_CONTROL )
+						{
+							SetSignalOn( false );
+						}
+						pUIManager->RearrangeOrder( UI_MAP, TRUE );
+						return WMSG_SUCCESS;
 					}
-					_pUIMgr->RearrangeOrder( UI_MAP, TRUE );
-					return WMSG_SUCCESS;
 				}
+				pUIManager->RearrangeOrder( UI_MAP, TRUE );
+				return WMSG_SUCCESS;
 			}
 			else 
 			{
@@ -2725,8 +3327,10 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -2736,7 +3340,7 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 
 				// Reset cursor
 				if( bScrollWorldMap || bScrollDetailMap )
-					_pUIMgr->SetMouseCursorInsideUIs();
+					pUIManager->SetMouseCursorInsideUIs();
 
 				// Scroll world map
 				bScrollWorldMap = FALSE;
@@ -2758,7 +3362,9 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 					if( ( wmsgResult = m_btnClose.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
 						if( wmsgResult == WMSG_COMMAND )
-							_pUIMgr->RearrangeOrder( UI_MAP, FALSE );
+							ToggleVisible();
+							//pUIManager->RearrangeOrder( UI_MAP, FALSE );
+							
 
 						return WMSG_SUCCESS;
 					}
@@ -2767,7 +3373,7 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						if( wmsgResult == WMSG_COMMAND && IsPossibleSignal() )
 						{
 							SetSignalOn( true );
-							_pUIMgr->RearrangeOrder( UI_MAP, TRUE );
+							pUIManager->RearrangeOrder( UI_MAP, TRUE );
 						}
 
 						return WMSG_SUCCESS;
@@ -2784,6 +3390,16 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 					// Map combo box
 					else if( ( wmsgResult = m_cmbMap.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+					else if( ( wmsgResult = m_btnGoTop.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					{
+						if( wmsgResult == WMSG_COMMAND )
+						{
+							GoTopMap();
+						}
+						return WMSG_SUCCESS;
+					}
+#endif
 					else
 					{
 						int	nNewX = nX - MAP_SX;
@@ -2791,16 +3407,40 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						// Open detail map
 						if( m_bShowWorldMap )
 						{
-							if( bDetailMapClick && IsInsideRect( nNewX, nNewY, m_rcViewportWorld ) )
+							if( ( bDetailMapClick || m_bDetailMapClick ) && IsInsideRect( nNewX, nNewY, m_rcViewportWorld ) )
 							{
 								for( int i = 0; i < m_vecMapData[m_nCurMapData].vecDetail.size(); i++ )
 								{
-									if( IsInsideMap( TRUE, TRUE, nX, nY, FALSE,
-														m_vecMapData[m_nCurMapData].vecDetail[i].rcSelRegion ) )
+									UIRect rcTemp = m_vecMapData[m_nCurMapData].vecDetail[i].rcSelRegion;
+									rcTemp.Scale( m_fMapSizeRevision );
+									if( IsInsideMap( TRUE, TRUE, nX, nY, FALSE, rcTemp ) )
 									{
-										bDetailMapClick = FALSE;
-										OpenDetailMap( i );
+										if( m_vecMapData[m_nCurMapData].World.nZoneIndex == ZONE_WORLD_MAP )
+										{
+											m_btnGoTop.SetEnable(TRUE);
+											SetCurrentWorldMap( zoneNumList[i], 0 );
+										}
+										else
+										{
+											bDetailMapClick = FALSE;
+											m_bDetailMapClick = FALSE;
+											//UpdateZoomRatio(FALSE);
+											//UpdateZoomSlideInfo(FALSE);
+											//SetMapData();
 
+											int zoom = m_slbZoomWorld.GetCurPos();
+											OpenDetailMap( i );
+										
+											// FIX BUG : change to detail map. [10/6/2009 rumist]
+											m_slbZoomDetail.SetCurPos( zoom );
+											UpdateZoomSlideInfo( FALSE );
+											UpdateZoomRatio( FALSE );
+											m_nResizeWidthOffset = 0;
+											m_nResizeHeightOffset = 0;
+											m_nWidth = (m_nMapDetailBaseWidth * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+											m_nHeight = (m_nMapDetailBaseHeight * (m_fZoomDetail > 1.0f ? 1.0f : m_fZoomDetail));
+											ResizeMapFrame( 5, 0, 0 );
+										}
 										return WMSG_SUCCESS;
 									}
 								}
@@ -2809,13 +3449,16 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 						// Close detail map
 						else
 						{
-							if( !bScrolledDetailMap &&
-								!IsInsideRect( nX, nY, m_rcTitle ) &&
-								IsInsideRect( nNewX, nNewY, m_rcViewportDetail ) )
+							// connie [2009/10/19] - 
+							if( !(_pNetwork->MyCharacterInfo.sbAttributePos & MATT_PEACE) && !IsPlayerInPeaceArea())
 							{
-								CloseDetailMap();
-								
-								return WMSG_SUCCESS;
+								if( !bScrolledDetailMap &&
+									!IsInsideRect( nX, nY, m_rcTitle ) &&
+									IsInsideRect( nNewX, nNewY, m_rcViewportDetail ) )
+								{
+									CloseDetailMap();
+									return WMSG_SUCCESS;
+								}
 							}
 						}
 					}
@@ -2827,7 +3470,7 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -2848,9 +3491,9 @@ WMSG_RESULT CUIMap::MouseMessage( MSG *pMsg )
 
 //------------------------------------------------------------------------------
 //  CUIMap::KeyMessage
-// Explain: CtrlÌÇ§Î•º ÎàåÎ†ÄÏùÑ Îïå ÏãúÍ∑∏ÎÑêÏùÑ Î≥¥ÎÇº Ïàò ÏûàÎèÑÎ°ù KeyMessageÎ•º Î∞õÎäîÎã§ 
-// * ÏùºÎ∞òÏ†ÅÏù∏ UIWindowÎäî KEYUP Î©îÏÑ∏ÏßÄÎ•º Î∞õÏßÄ ÏïäÎäîÎã§. ( Ï°∞Ìï©ÌÇ§Î•º ÏÇ¨Ïö©ÌïòÎäî Í≥≥Ïù¥ ÏóÜÏùå)
-// *  UIMgrÏóêÏÑú MAPÍ≥º RarÎßå ÏòàÏô∏ Ï≤òÎ¶¨Ìï¥ÏÑú KEYUPÎ©îÏÑ∏ÏßÄÎ•º Î∞õÎèÑÎ°ù ÌïòÏòÄÏùå
+// Explain: Ctrl≈∞∏¶ ¥≠∑∂¿ª ∂ß Ω√±◊≥Œ¿ª ∫∏≥æ ºˆ ¿÷µµ∑œ KeyMessage∏¶ πﬁ¥¬¥Ÿ 
+// * ¿œπ›¿˚¿Œ UIWindow¥¬ KEYUP ∏ﬁºº¡ˆ∏¶ πﬁ¡ˆ æ ¥¬¥Ÿ. ( ¡∂«’≈∞∏¶ ªÁøÎ«œ¥¬ ∞˜¿Ã æ¯¿Ω)
+// *  UIMgrø°º≠ MAP∞˙ Rar∏∏ øπø‹ √≥∏Æ«ÿº≠ KEYUP∏ﬁºº¡ˆ∏¶ πﬁµµ∑œ «œø¥¿Ω
 // Date : 2005-10-24,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 WMSG_RESULT CUIMap::KeyMessage( MSG *pMsg )
@@ -2858,13 +3501,13 @@ WMSG_RESULT CUIMap::KeyMessage( MSG *pMsg )
 	if( !IsFocused() )
 		return WMSG_FAIL;
 	
-	// ÎßàÏö∞Ïä§Í∞Ä ÏßÄÎèÑÏïàÏóê ÏûàÏùÑ ÎïåÎßå Ï≤òÎ¶¨ÌïúÎã§.
+	// ∏∂øÏΩ∫∞° ¡ˆµµæ»ø° ¿÷¿ª ∂ß∏∏ √≥∏Æ«—¥Ÿ.
 	if( !m_bInsideMouse ) 
 	{
 		return WMSG_FAIL;
 	}
 
-	/* UPÌÇ§Î•º ÏòàÏô∏ Ï≤òÎ¶¨ÌïòÏßÄ ÏïäÍ≥† F1ÌÇ§ ÎàåÎØºÎ©¥ Í∑∏ÎÉ• Í∞ÄÎäîÎ∞©Ïãù
+	/* UP≈∞∏¶ øπø‹ √≥∏Æ«œ¡ˆ æ ∞Ì F1≈∞ ¥≠πŒ∏È ±◊≥… ∞°¥¬πÊΩƒ
 	if( pMsg->wParam == VK_F1 )
 	{
 		SetSignalOn( true );
@@ -2872,7 +3515,7 @@ WMSG_RESULT CUIMap::KeyMessage( MSG *pMsg )
 	}
 	*/
 	
-	// ÏãúÍ∑∏ÎÑêÏùÑ ÏÇ¨Ïö©Ìï† Ïàò ÏûàÎäîÏßÄ Ï≤¥ÌÅ¨ 
+	// Ω√±◊≥Œ¿ª ªÁøÎ«“ ºˆ ¿÷¥¬¡ˆ √º≈© 
 	if( !IsPossibleSignal() ) 
 	{
 		return WMSG_FAIL;
@@ -2901,7 +3544,7 @@ WMSG_RESULT CUIMap::KeyMessage( MSG *pMsg )
 
 //------------------------------------------------------------------------------
 // CUIMap::MapToWorld
-// Explain:  ÏßÄÎèÑÏÉÅÏùò Ï¢åÌëúÎ•º ÏõîÎìú Ï¢åÌëúÎ°ú Î≥ÄÌôò( Detail MapÏùÄ ÏßÄÏõêÌïòÏßÄ ÏïäÏùå )
+// Explain:  ¡ˆµµªÛ¿« ¡¬«•∏¶ ø˘µÂ ¡¬«•∑Œ ∫Ø»Ø( Detail Map¿∫ ¡ˆø¯«œ¡ˆ æ ¿Ω )
 // Date : 2005-10-20,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::MapToWorld( float& fX, float& fY )
@@ -2909,15 +3552,15 @@ void CUIMap::MapToWorld( float& fX, float& fY )
 	UIRect	rcTempWorld = m_rcMapWorld;
 	rcTempWorld.Scale( m_fZoomWorld );
 	
-	// ViewportÏóê ÏùòÌïú ÏúÑÏπò Ïù¥Îèô 
+	// Viewportø° ¿««— ¿ßƒ° ¿Ãµø 
 	fX = fX - m_rcViewportWorld.Left + rcTempWorld.Left;	
 	fY = fY - m_rcViewportWorld.Top + rcTempWorld.Top;
 
-	// ÏßÄÎèÑÏóê ÎåÄÌïú Ï∂ïÏ≤ôÍ≥º ÏßÄÎèÑ ZoomÎπÑÏú®
+	// ¡ˆµµø° ¥Î«— √‡√¥∞˙ ¡ˆµµ Zoom∫Ò¿≤
 	fX = fX / m_vecMapData[m_nCurMapData].World.fRatio / m_fZoomWorld;	
 	fY = fY / m_vecMapData[m_nCurMapData].World.fRatio / m_fZoomWorld;
 
-	// ÏßÄÎèÑÏùò Offset~
+	// ¡ˆµµ¿« Offset~
 	fX += m_vecMapData[m_nCurMapData].World.lOffsetX;	
 	fY += m_vecMapData[m_nCurMapData].World.lOffsetZ;
 }
@@ -2925,7 +3568,7 @@ void CUIMap::MapToWorld( float& fX, float& fY )
 
 //------------------------------------------------------------------------------
 // CUIMap::WorldToMap
-// Explain:  ÏßÄÎèÑÏÉÅÏùò Ï¢åÌëúÎ•º ÏõîÎìú Ï¢åÌëúÎ°ú Î≥ÄÌôò( Detail MapÏùÄ ÏßÄÏõêÌïòÏßÄ ÏïäÏùå )
+// Explain:  ¡ˆµµªÛ¿« ¡¬«•∏¶ ø˘µÂ ¡¬«•∑Œ ∫Ø»Ø( Detail Map¿∫ ¡ˆø¯«œ¡ˆ æ ¿Ω )
 // Date : 2005-10-20,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::WorldToMap( float& fX, float& fY )
@@ -2933,15 +3576,15 @@ void CUIMap::WorldToMap( float& fX, float& fY )
 	UIRect	rcTempWorld = m_rcMapWorld;
 	rcTempWorld.Scale( m_fZoomWorld );
 
-	// ÏßÄÎèÑÏùò Offset~
+	// ¡ˆµµ¿« Offset~
 	fX -= m_vecMapData[m_nCurMapData].World.lOffsetX;	
 	fY -= m_vecMapData[m_nCurMapData].World.lOffsetZ;
 
-	// ÏßÄÎèÑÏóê ÎåÄÌïú Ï∂ïÏ≤ôÍ≥º ÏßÄÎèÑ ZoomÎπÑÏú®
+	// ¡ˆµµø° ¥Î«— √‡√¥∞˙ ¡ˆµµ Zoom∫Ò¿≤
 	fX = fX * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;	
 	fY = fY * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld;
 	
-	// ViewportÏóê ÏùòÌïú ÏúÑÏπò Ïù¥Îèô 
+	// Viewportø° ¿««— ¿ßƒ° ¿Ãµø 
 	fX = fX + m_rcViewportWorld.Left - rcTempWorld.Left;	
 	fY = fY + m_rcViewportWorld.Top - rcTempWorld.Top;
 
@@ -2949,8 +3592,8 @@ void CUIMap::WorldToMap( float& fX, float& fY )
 
 //------------------------------------------------------------------------------
 // CUIMap::InitCastleData
-// Explain: ÏßÄÎèÑÏÉÅÏóê ÌëúÏãúÎêòÎäî Í≥µÏÑ± Í¥ÄÎ†® Îç∞Ïù¥ÌÑ∞ Ï¥àÍ∏∞Ìôî 
-// * ÏÑúÎ≤ÑÏóêÏÑú Í≥µÏÑ± Îç∞Ïù¥ÌÑ∞ Ïò¨Îïå ÎßàÎã§ Ï¥àÍ∏∞Ìôî ÌïúÌõÑÏóê Îã§Ïãú ÏÖãÌåÖÌïúÎã§.
+// Explain: ¡ˆµµªÛø° «•Ω√µ«¥¬ ∞¯º∫ ∞¸∑√ µ•¿Ã≈Õ √ ±‚»≠ 
+// * º≠πˆø°º≠ ∞¯º∫ µ•¿Ã≈Õ ø√∂ß ∏∂¥Ÿ √ ±‚»≠ «—»ƒø° ¥ŸΩ√ º¬∆√«—¥Ÿ.
 // Date : 2005-10-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::InitCastleData()
@@ -2962,8 +3605,8 @@ void CUIMap::InitCastleData()
 
 //------------------------------------------------------------------------------
 // CUIMap::AddCastleData
-// Explain: ÏÑúÎ≤ÑÏóêÏÑú Î≥¥ÎÇ¥Ï£ºÎäî Í≥µÏÑ± Í¥ÄÎ†® Îç∞Ïù¥ÌÑ∞ ÏÖãÌåÖ
-// * ÌòÑÏû¨Îäî HPÎäî Ï≤òÎ¶¨ÌïòÏßÄ ÏïäÎäîÎã§.
+// Explain: º≠πˆø°º≠ ∫∏≥ª¡÷¥¬ ∞¯º∫ ∞¸∑√ µ•¿Ã≈Õ º¬∆√
+// * «ˆ¿Á¥¬ HP¥¬ √≥∏Æ«œ¡ˆ æ ¥¬¥Ÿ.
 // Date : 2005-10-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::AddCastleData( LONG nType, FLOAT fX, FLOAT fY, LONG nIndex, LONG nHP, LONG nMaxHP )
@@ -2983,8 +3626,8 @@ void CUIMap::AddCastleData( LONG nType, FLOAT fX, FLOAT fY, LONG nIndex, LONG nH
 
 //------------------------------------------------------------------------------
 // CUIMap::SendSignal
-// Explain: ÏÑúÎ≤ÑÏóê ÏãúÍ∑∏ÎÑê Ï¢åÌëúÎ•º Ï†ÑÏÜ°ÌïúÎã§. ( ÏõîÎìú Ï¢åÌëú )
-// * Radar Signal ÎèÑ Ïù¥Í≥≥ÏùÑ ÌÜµÌï¥ÏÑú Ï†ÑÏÜ°Îê®.
+// Explain: º≠πˆø° Ω√±◊≥Œ ¡¬«•∏¶ ¿¸º€«—¥Ÿ. ( ø˘µÂ ¡¬«• )
+// * Radar Signal µµ ¿Ã∞˜¿ª ≈Î«ÿº≠ ¿¸º€µ .
 // Date : 2005-10-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::SendSignal( FLOAT fX, FLOAT fY )
@@ -2995,8 +3638,8 @@ void CUIMap::SendSignal( FLOAT fX, FLOAT fY )
 
 //------------------------------------------------------------------------------
 // CUIMap::AddSignal
-// Explain: ÏÑúÎ≤ÑÏóêÏÑú ÏãúÍ∑∏ÎÑê Î©îÏÑ∏ÏßÄÎ•º Î∞õÏùå
-// * RadarÏóêÎèÑ ÏãúÍ∑∏ÎÑê Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÇ¥Ï§ÄÎã§.
+// Explain: º≠πˆø°º≠ Ω√±◊≥Œ ∏ﬁºº¡ˆ∏¶ πﬁ¿Ω
+// * Radarø°µµ Ω√±◊≥Œ ∏ﬁºº¡ˆ∏¶ ∫∏≥ª¡ÿ¥Ÿ.
 // Date : 2005-10-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::AddSignal( FLOAT fX, FLOAT fY, LONG lSenderFlag, LONG lSenderIndex )
@@ -3011,18 +3654,18 @@ void CUIMap::AddSignal( FLOAT fX, FLOAT fY, LONG lSenderFlag, LONG lSenderIndex 
 	
 	m_qSignalData.push_back( TempCastleData );
 
-	// Date : 2005-11-10(Ïò§ÌõÑ 1:30:55), By Lee Ki-hwan 
-	// ÏãúÍ∑∏ÎÑê ÏÇ¨Ïö¥Îìú Ï∂îÍ∞Ä 
+	// Date : 2005-11-10(ø¿»ƒ 1:30:55), By Lee Ki-hwan 
+	// Ω√±◊≥Œ ªÁøÓµÂ √ﬂ∞° 
 	PCStartEffectGroup( "snd_signal", _pNetwork->MyCharacterInfo.index );
 
-	_pUIMgr->GetRadar()->SetSignal( fX, fY );
+	CUIManager::getSingleton()->GetRadar()->SetSignal( fX, fY );
 }
 
 //------------------------------------------------------------------------------
 // CUIMap::ClearAllSignal
-// Explain: ÏßÄÎèÑÎ•º Îã´ÏùÑ ÎïåÎäî Î™®Îì† ÏãúÍ∑∏ÎÑê Î©îÏÑ∏ÏßÄÎ•º ÏÇ≠Ï†úÌïúÎã§.
-// * Îã§Ïãú ÏßÄÎèÑÎ•º ÎùÑÏõ†ÏùÑ Îïå ÏµúÏ¢Ö ÏãúÍ∑∏ÎÑê Î©îÏÑ∏ÏßÄÎ•º ÌëúÏãú ÌïòÍ∏∞ ÎïåÎ¨∏Ïóê 
-//   Ï§ëÎ≥µ ÌëúÏãú ÎêòÎäî Í±∏ ÎßâÍ∏∞ ÏúÑÌï¥ÏÑú  
+// Explain: ¡ˆµµ∏¶ ¥›¿ª ∂ß¥¬ ∏µÁ Ω√±◊≥Œ ∏ﬁºº¡ˆ∏¶ ªË¡¶«—¥Ÿ.
+// * ¥ŸΩ√ ¡ˆµµ∏¶ ∂Áø¸¿ª ∂ß √÷¡æ Ω√±◊≥Œ ∏ﬁºº¡ˆ∏¶ «•Ω√ «œ±‚ ∂ßπÆø° 
+//   ¡ﬂ∫π «•Ω√ µ«¥¬ ∞… ∏∑±‚ ¿ß«ÿº≠  
 // Date : 2005-10-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::ClearAllSignal()
@@ -3032,16 +3675,20 @@ void CUIMap::ClearAllSignal()
 
 //------------------------------------------------------------------------------
 // CUIMap::IsCastleMap
-// Explain: Ìï¥Îãπ MAPÏù¥ Í≥µÏÑ±ÎßµÏù∏ÏßÄ Ï≤¥ÌÅ¨ÌïúÎã§.
-// * Í≥µÏÑ± ÎßµÏùò Ï°∞Í±¥ 
-//   1. ÎçòÏ†Ñ ÎßµÏù¥ ÏïÑÎãàÎã§.
-//   2. Î†àÏù¥Ïñ¥Í∞Ä 1Ïù¥ÏÉÅÏù¥Îã§. 
-//   * ÎçòÏ†ÑÏùò Í≤ΩÏö∞ÏóêÎäî Ï∏µÏàòÏóê Îî∞ÎùºÏÑú Î†àÏù¥Ïñ¥Í∞Ä Ï°¥Ïû¨ Ìï® ( ÌòÑÏû¨Îäî Íµ¨ÌòÑÎêòÏñ¥ ÏûàÏßÄ ÏïäÏùå) 
+// Explain: «ÿ¥Á MAP¿Ã ∞¯º∫∏ ¿Œ¡ˆ √º≈©«—¥Ÿ.
+// * ∞¯º∫ ∏ ¿« ¡∂∞« 
+//   1. ¥¯¿¸ ∏ ¿Ã æ∆¥œ¥Ÿ.
+//   2. ∑π¿ÃæÓ∞° 1¿ÃªÛ¿Ã¥Ÿ. 
+//   * ¥¯¿¸¿« ∞ÊøÏø°¥¬ √˛ºˆø° µ˚∂Ûº≠ ∑π¿ÃæÓ∞° ¡∏¿Á «‘ ( «ˆ¿Á¥¬ ±∏«ˆµ«æÓ ¿÷¡ˆ æ ¿Ω) 
 // Date : 2005-10-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 BOOL CUIMap::IsCastleMap( LONG nMapIndex )
 {
-	if( ZoneInfo().GetZoneType( m_vecMapData[nMapIndex].World.nZoneIndex ) == ZONE_DUNGEON ) 
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	if( m_vecMapData[nMapIndex].World.nZoneIndex == ZONE_WORLD_MAP )
+		return FALSE;
+#endif
+	if( CZoneInfo::getSingleton()->GetZoneType( m_vecMapData[nMapIndex].World.nZoneIndex ) == ZONE_DUNGEON ) 
 	{
 		return FALSE;	
 	}
@@ -3055,20 +3702,22 @@ BOOL CUIMap::IsCastleMap( LONG nMapIndex )
 
 }
 
-// ÏãúÍ∑∏ÎÑê ÌëúÏãú Ï†ïÎ≥¥
-#define SIGNAL_SHOWTIME		5.0f							// 5Ï¥à ÎèôÏïà
-#define SIGNAL_COUNT		5.0f							// 5Î≤à 
-#define SIGNAL_UNITTIME		(SIGNAL_SHOWTIME/SIGNAL_COUNT)  // 1Î≤à ÌëúÏãúÌï†Îïå Í±∏Î¶¨Îäî ÏãúÍ∞Ñ.
+// Ω√±◊≥Œ «•Ω√ ¡§∫∏
+#define SIGNAL_SHOWTIME		5.0f							// 5√  µøæ»
+#define SIGNAL_COUNT		5.0f							// 5π¯ 
+#define SIGNAL_UNITTIME		(SIGNAL_SHOWTIME/SIGNAL_COUNT)  // 1π¯ «•Ω√«“∂ß ∞…∏Æ¥¬ Ω√∞£.
 #define SIGNAL_UNITTIME_HALF (SIGNAL_UNITTIME/2)
 #define SIGNAL_ALPHA		0xFF
 
 //------------------------------------------------------------------------------
 // CUIMap::RenderSignal
-// Explain: 2D Ïù¥ÌéôÌä∏Î•º ÏúÑÌïú ÌïòÎìú ÏΩîÎî©~~~~Ï¶ê~ 
+// Explain: 2D ¿Ã∆Â∆Æ∏¶ ¿ß«— «œµÂ ƒ⁄µ˘~~~~¡Ò~ 
 // Date : 2005-10-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::RenderSignal()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	
 	static FLOAT fOpacity	= 0.0f;
 
 	for( int i = 0; i < m_qSignalData.size(); i++ )
@@ -3076,7 +3725,7 @@ void CUIMap::RenderSignal()
 		DOUBLE dElapsedTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
 		DOUBLE dDealy = dElapsedTime - m_qSignalData[i].dStartTime;
 		
-		if( dDealy > SIGNAL_SHOWTIME ) // Îã§ÎÅùÎÇ¨ÏúºÎ©¥ ÏÇ≠Ï†ú 
+		if( dDealy > SIGNAL_SHOWTIME ) // ¥Ÿ≥°≥µ¿∏∏È ªË¡¶ 
 		{
 			std::deque<CastleData>::iterator iter = m_qSignalData.begin() + i;
 			m_qSignalData.erase( iter );
@@ -3090,7 +3739,7 @@ void CUIMap::RenderSignal()
 		COLOR	colOriBlend = 0xFFFFFFFF;
 		int		nCount = SIGNAL_COUNT-1;
 				
-		// signalÏùò Alpha & Size Ï°∞Ï†ï 
+		// signal¿« Alpha & Size ¡∂¡§ 
 		while( dDealy  > SIGNAL_UNITTIME )
 		{
 			nCount--;
@@ -3139,26 +3788,26 @@ void CUIMap::RenderSignal()
 			FLOAT fOriWidth = fWidth;
 			FLOAT fOriHeight = fHeight;
 
-			if( bFirst ) // Îß® Ï≤òÏùåÏóêÎäî ÌÅ¨Í≤å ~
+			if( bFirst ) // ∏« √≥¿Ωø°¥¬ ≈©∞‘ ~
 			{
 				fWidth = fWidth + (fWidth + fWidth) * dDealy;
 				fHeight = fHeight + (fHeight + fHeight) * dDealy;
 			}
-			else // Í∏∞Î≥∏ ÌÅ¨Í∏∞Î°ú 
+			else // ±‚∫ª ≈©±‚∑Œ 
 			{
 				fWidth = fWidth + fWidth * dDealy;
 				fHeight = fHeight + fHeight * dDealy;
 			}
 		
-			// ÏûîÏÉÅ Signal
-			_pUIMgr->GetDrawPort()->AddTexture( fX - fWidth, fY - fHeight,
+			// ¿‹ªÛ Signal
+			pDrawPort->AddTexture( fX - fWidth, fY - fHeight,
 												fX + fWidth, fY + fHeight,
 												m_rtCastle[CASTLE_SIGNAL].U0, m_rtCastle[CASTLE_SIGNAL].V0,
 												m_rtCastle[CASTLE_SIGNAL].U1, m_rtCastle[CASTLE_SIGNAL].V1,
 												colBlend );
 			
-			// Í∏∞Î≥∏ Signal 
-			_pUIMgr->GetDrawPort()->AddTexture( fX - fOriWidth, fY - fOriHeight,
+			// ±‚∫ª Signal 
+			pDrawPort->AddTexture( fX - fOriWidth, fY - fOriHeight,
 												fX + fOriWidth, fY + fOriHeight,
 												m_rtCastle[CASTLE_SIGNAL].U0, m_rtCastle[CASTLE_SIGNAL].V0,
 												m_rtCastle[CASTLE_SIGNAL].U1, m_rtCastle[CASTLE_SIGNAL].V1,
@@ -3170,7 +3819,7 @@ void CUIMap::RenderSignal()
 
 //------------------------------------------------------------------------------
 // CUIMap::SetSignalOn
-// Explain:  ÏãúÍ∑∏ÎÑê Î≥ÄÏàòÎ•º ÏÖãÌåÖÌïòÍ≥† ÎßàÏö∞Ïä§ Ïª§ÏÑúÎ•º Î≥ÄÍ≤Ω Ìï©ÎãàÎã§.
+// Explain:  Ω√±◊≥Œ ∫Øºˆ∏¶ º¬∆√«œ∞Ì ∏∂øÏΩ∫ ƒøº≠∏¶ ∫Ø∞Ê «’¥œ¥Ÿ.
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::SetSignalOn( bool bOn ) 
@@ -3180,26 +3829,26 @@ void CUIMap::SetSignalOn( bool bOn )
 		if( m_bSignalBtnOn ) 
 		{
 			m_bSignalBtnOn = false; 
-			_pUIMgr->SetMouseCursorInsideUIs();
+			CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 		}	
 	}
 	else
 	{
 		m_bSignalBtnOn = true;
-		_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIGNAL );
+		CUIManager::getSingleton()->SetMouseCursorInsideUIs( UMCT_SIGNAL );
 	}
 
 }
 
 //------------------------------------------------------------------------------
 // CUIMap::IsPossibleSignal
-// Explain:  ÏãúÍ∑∏ÎÑêÏùÑ ÏÇ¨Ïö©Ìï† Ïàò ÏûàÎäî ÏßÄ Ï≤¥ÌÅ¨ 
+// Explain:  Ω√±◊≥Œ¿ª ªÁøÎ«“ ºˆ ¿÷¥¬ ¡ˆ √º≈© 
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 bool CUIMap::IsPossibleSignal()
 {
-	// Í∏∏ÎìúÏû•, Î∂ÄÏû•Ïù∏Í≤ΩÏö∞ 
-	// Í≥µÏÑ± ÎßµÏù∏ Í≤ΩÏö∞ 
+	// ±ÊµÂ¿Â, ∫Œ¿Â¿Œ∞ÊøÏ 
+	// ∞¯º∫ ∏ ¿Œ ∞ÊøÏ 
 	LONG nRanking = _pNetwork->MyCharacterInfo.lGuildPosition;
 
 	if( nRanking != GUILD_MEMBER_BOSS && nRanking != GUILD_MEMBER_VICE_BOSS )
@@ -3219,13 +3868,13 @@ bool CUIMap::IsPossibleSignal()
 
 //------------------------------------------------------------------------------
 // CUIMap::IsPossibleCastleMap
-// Explain: Í≥µÏÑ±Ï†Ñ ÏßÄÎèÑÎ•º ÏÇ¨Ïö©Ìï† Ïàò ÏûàÎäîÏßÄ Ï≤¥ÌÅ¨ 
-// * 1. Í≥µÏÑ±Ï†Ñ Ï§ëÏù¥Í≥†, 2. ÎÇ¥Í∞Ä Í≥µÏÑ±Ï†ÑÏóê Ï∞∏Ïó¨ Ï§ëÏù¥Í≥†, Í≥µÏÑ±Ï†ÑÏù¥ ÏûàÎäî Ï°¥Ïù¥Ïó¨ÏïºÌï®
+// Explain: ∞¯º∫¿¸ ¡ˆµµ∏¶ ªÁøÎ«“ ºˆ ¿÷¥¬¡ˆ √º≈© 
+// * 1. ∞¯º∫¿¸ ¡ﬂ¿Ã∞Ì, 2. ≥ª∞° ∞¯º∫¿¸ø° ¬¸ø© ¡ﬂ¿Ã∞Ì, ∞¯º∫¿¸¿Ã ¿÷¥¬ ¡∏¿Ãø©æﬂ«‘
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 bool CUIMap::IsPossibleCastleMap()
 {	
-	// Í≥µÏÑ±Ï†ÑÏù¥ ÏßÑÌñâ ÎêòÍ≥† ÏûàÏñ¥ÏïºÌï® 
+	// ∞¯º∫¿¸¿Ã ¡¯«‡ µ«∞Ì ¿÷æÓæﬂ«‘ 
 	if( !_pUISWDoc->IsWar() || _pNetwork->MyCharacterInfo.sbJoinFlagMerac == WCJF_NONE )
 		return false;
 	if( _pNetwork->MyCharacterInfo.zoneNo != 7 )
@@ -3236,7 +3885,7 @@ bool CUIMap::IsPossibleCastleMap()
 
 //------------------------------------------------------------------------------
 // CUIMap::ReSetData
-// Explain: Îßµ ÏÑ†ÌÉù ÏΩ§Î≥¥ÏÉÅÏûêÏóê Í≥µÏÑ±Ï†Ñ MapÎ•º Î≥¥Ïù¥Í±∞ÎÇò Í∑∏Î†áÏßÄ ÏïäÍ±∞ÎÇò ÌïòÎèÑÎ°ù Ìï®.
+// Explain: ∏  º±≈√ ƒﬁ∫∏ªÛ¿⁄ø° ∞¯º∫¿¸ Map∏¶ ∫∏¿Ã∞≈≥™ ±◊∑∏¡ˆ æ ∞≈≥™ «œµµ∑œ «‘.
 // Date : 2005-10-25,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMap::ReSetData()
@@ -3246,18 +3895,706 @@ void CUIMap::ReSetData()
 	
 	for( int i = 0; i < m_vecMapData.size(); i++ )
 	{
-		if( IsCastleMap( i ) ) // Í≥µÏÑ±Ï†Ñ Î©•Ïù¥ÎùºÎ©¥ 
+		if( IsCastleMap( i ) ) // ∞¯º∫¿¸ ∏„¿Ã∂Û∏È 
 		{
-			if( IsPossibleCastleMap() ) // Í≥µÏÑ±Ï†ÑÏù¥ Í∞ÄÎä•Ìïú ÏÉÅÌô©Ïù∏ÏßÄ ÌååÏïÖÌï¥ÏÑú Ï∂îÍ∞Ä
+			if( IsPossibleCastleMap() ) // ∞¯º∫¿¸¿Ã ∞°¥…«— ªÛ»≤¿Œ¡ˆ ∆ƒæ««ÿº≠ √ﬂ∞°
 			{
 				m_cmbMap.AddString( m_vecMapData[i].World.strName );	
 			}
 		}
-		else // Í≥µÏÑ± ÎßµÏù¥ ÏïÑÎãàÎùºÎ©¥ Í∑∏ÎÉ• Ï∂îÍ∞Ä 
+		else // ∞¯º∫ ∏ ¿Ã æ∆¥œ∂Û∏È ±◊≥… √ﬂ∞° 
 		{
 			m_cmbMap.AddString( m_vecMapData[i].World.strName );	
 		}
 	}
 
 	m_cmbMap.SetCurSel( (!IsPossibleCastleMap()&&m_nCurMapData>=4) ? m_nCurMapData-1:m_nCurMapData );
+}
+
+//------------------------------------------------------------------------------
+// CUIMap::IsDetailMap(BOOL IsNpcScrollDefined)
+// Explain: 
+// Date : 
+//------------------------------------------------------------------------------
+
+BOOL CUIMap::IsDetailMap(BOOL IsNpcScrollDefined)
+{
+	if(IsNpcScrollDefined)
+	{
+		if(!CUIManager::getSingleton()->m_IsInField )
+		{
+			// TO-KR-T20091204-008 [12/4/2009 rumist]
+			// ø©±‰ ¥Ÿ∏• √º≈© ∫Œ∫–. ±◊∑Ø≥™ ∞∞¿∫ ¡°∞À¿Ã « ø‰«œπ«∑Œ æ∆∑°øÕ ∫ÒΩ¡«— ∑Á∆æ¿ª ≥÷±‚ ¿ß«ÿ
+			// IsPlayerInPeaceArea() ∏¶ »£√‚«ÿ ¡ÿ¥Ÿ.
+			IsPlayerInPeaceArea();
+			SetDetailMap( TRUE );
+		}
+		else
+		{
+			CloseDetailMap();
+		}
+	}
+
+	else
+	{
+		// TO-KR-T20091204-008 [12/4/2009 rumist]
+		// µ—¥Ÿ ∞ÀªÁ∏¶ «ÿæﬂ «œπ«∑Œ æ∆∑°øÕ ∞∞¿Ã ∫Ø∞Ê«‘.
+		// if( ( _pNetwork->MyCharacterInfo.sbAttributePos == ATTC_PEACE ) || IsPlayerInPeaceArea() )
+		// LC-KR-P20100219-005 [100429 selo]
+		// µ≈◊¿œ ∏ ¿« 0π¯∏∏ ∏∂¿ª ∏ ¿∏∑Œ ø¨¥Ÿ
+		// bug fix [1/5/2012 rumist]
+		CUIManager* pUIManager = CUIManager::getSingleton();
+		
+		int nSub = -1;
+
+		if( (GetPlayerInArea(nSub) == eMS_VILLAGE) && pUIManager->m_nHelpNpc_Index == -1)
+		{	
+			SetDetailMap( TRUE, nSub );
+		}
+		// [2011/08/16 : Sora] µÂ∂Û≈∫ ∞¯º∫¡ﬂ ∞¯º∫¡ˆø™ø° ¿÷¿∏∏È ºº∫Œ∏ ¿ª »£√‚«œµµ∑œ ºˆ¡§ 
+		else if( pUIManager->GetSiegeWarfareNew()->GetWarState() && 
+			_pNetwork->MyCharacterInfo.sbJoinFlagDratan != WCJF_NONE && 
+			pUIManager->MyCheckDratanWarInside() )
+		{
+			SetDetailMap( TRUE, 2 );
+		}
+		else
+		{
+			SetDetailMap( FALSE );
+		}
+	}
+	m_llMapBlendTimeForDetail = _pTimer->GetHighPrecisionTimer().GetMilliseconds() - MAP_DETAIL_BLENDTIME;
+
+	return FALSE;
+}
+
+//------------------------------------------------------------------------------
+// CUIMap::IsNpcInField(INDEX nZoneNum, INDEX nNpcIndex)
+// Explain: 
+// Date : 
+//------------------------------------------------------------------------------
+BOOL CUIMap::IsNpcInField(INDEX nZoneNum, INDEX nNpcIndex)
+{
+	FLOAT	fX = 0.0f;
+	FLOAT	fZ = 0.0f;
+	INT		nX = 0;
+	INT		nY = 0;
+	int		i;
+
+	m_nCurMapData = -1;
+
+	// nZoneNum¿∏∑Œ ≥—æÓø¬ Ω«¡¶ ¡∏ ¿Œµ¶Ω∫∑Œ πÈ≈Õø° ¿˙¿Âµ» 
+	for( i = 0; i < m_vecMapData.size(); i++ )
+	{
+		if (m_vecMapData[i].World.nZoneIndex == nZoneNum)
+		{
+			m_nCurMapData = i;
+			break;
+		}
+	}
+
+	if (m_nCurMapData < 0)
+		return TRUE;
+
+	for( i = 0; i < m_vecMapData[m_nCurMapData].vecNpc.size(); i++ )
+ 	{
+		if (IS_EVENT_ON(A_EVENT_HOLLOWEEN) == 0)
+		{
+			if (m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == 454 ||
+				m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == 455)
+				continue;
+		}
+
+ 		if (m_vecMapData[m_nCurMapData].vecNpc[i].nIndex == nNpcIndex)
+ 		{
+ 			fX = m_vecMapData[m_nCurMapData].vecNpc[i].fX;
+ 			fZ = m_vecMapData[m_nCurMapData].vecNpc[i].fZ;
+ 		}
+ 	}
+
+	FLOAT fWorldX = 0.0f;
+	FLOAT fWorldZ = 0.0f;
+
+	for( i = 0; i < m_vecMapData[m_nCurMapData].vecDetail.size(); i++)
+ 	{
+		if( i == 0) //¡÷≥Î ∏∂¿ª (ø˘µÂ ∏  ø¿∏•¬  æ∆∑° )
+		{
+			fWorldX = m_vecMapData[m_nCurMapData].vecDetail[i].fOffsetX;
+			fWorldZ = m_vecMapData[m_nCurMapData].vecDetail[i].fOffsetZ;
+		}
+ 	}
+
+	if( fX < fWorldX || (fZ < fWorldZ && fX > fWorldX))
+		return TRUE;
+
+	FLOAT fWorldRatio = m_vecMapData[m_nCurMapData].World.fRatio;
+
+	nX = fX * fWorldRatio;
+	nY = fZ * fWorldRatio;
+
+	if( nX < 0 || nY < 0 )
+		return TRUE;
+
+	UIRect temp(m_vecMapData[m_nCurMapData].vecDetail[0].rcSelRegion); 
+
+	FLOAT fOffset = (temp.Right - temp.Left) * 0.2f;
+	temp.Left -= fOffset; 
+	temp.Right += fOffset;
+	temp.Top -= fOffset;
+	temp.Bottom += fOffset;
+
+	CPrintF("fWorldRatio : %f \n", fWorldRatio );
+	CPrintF("fX : %f , fY : %f \n", fX, fZ );
+	CPrintF("X : %d , Y : %d \n", nX, nY );
+	CPrintF("Region Value(LTRB): %d %d %d %d \n", temp.Left, temp.Top, temp.Right, temp.Bottom );
+
+	if( nX >= temp.Left && nY >= temp.Top && nX < temp.Right && nY < temp.Bottom )	
+	{	
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+//------------------------------------------------------------------------------
+// CUIMap::IsPlayerInPeaceArea()
+// Explain: 
+// Date : 
+//------------------------------------------------------------------------------
+BOOL CUIMap::IsPlayerInPeaceArea()
+{
+	FLOAT fX = 0.0f;
+	FLOAT fZ = 0.0f;
+	INT   nX = 0;
+	INT   nY = 0;
+
+	fX = _pNetwork->MyCharacterInfo.x;
+	fZ = _pNetwork->MyCharacterInfo.z;
+
+// 	FLOAT fWorldX = 0.0f;
+// 	FLOAT fWorldZ = 0.0f;
+// 
+// 	for(int i = 0; i < m_vecMapData[m_nCurMapData].vecDetail.size(); i++)
+//  	{	
+// 		fWorldX = m_vecMapData[m_nCurMapData].vecDetail[i].fOffsetX;
+// 		fWorldZ = m_vecMapData[m_nCurMapData].vecDetail[i].fOffsetZ;
+//  	}
+// 
+// 	if( fX < fWorldX || (fZ < fWorldZ && fX > fWorldX))
+// 		return FALSE;
+
+	FLOAT fWorldRatio = m_vecMapData[m_nCurMapData].World.fRatio;
+
+	nX = fX * fWorldRatio;
+	nY = fZ * fWorldRatio;
+
+	// TO-KR-T20091204-008 [12/4/2009 rumist]
+	// ±‚∫ª¿˚¿Œ »£√‚Ω√ detail ¡§∫∏¥¬ «◊ªÛ 0¿∏∑Œ √ ±‚»≠ «—¥Ÿ.
+	// ¿Ã¿Ø¥¬ ±‚∫ª¿˚¿∏∑Œ ø≠∏Æ¥¬ ∏  π¯»£¥¬ «◊ªÛ 0π¯¿Ã±‚ ∂ßπÆ¿Ã¥Ÿ.
+	m_nCurDetail = 0;
+
+	if( nX < 0 || nY < 0 )
+		return FALSE;
+
+	for(int i = 0; i < m_vecMapData[m_nCurMapData].vecDetail.size(); i++)
+	{
+		UIRect temp(m_vecMapData[m_nCurMapData].vecDetail[i].rcSelRegion); 
+		FLOAT fOffset = (temp.Right - temp.Left) * 0.2f;
+		temp.Left -= fOffset; 
+		temp.Right += fOffset;
+		temp.Top -= fOffset;
+		temp.Bottom += fOffset;
+		if( nX >= temp.Left && nY >= temp.Top && nX < temp.Right && nY < temp.Bottom )	
+		{	
+			// TO-KR-T20091204-008 [12/4/2009 rumist]
+			// ∏∏æ‡ ø≠∑»¥Ÿ∏È «ˆ¿Á ¿Œµ¶Ω∫ π¯»£∏¶ πﬁ¥¬¥Ÿ.
+			m_nCurDetail = i;
+			return TRUE;
+		}
+	}
+	//UIRect temp(m_vecMapData[m_nCurMapData].vecDetail[0].rcSelRegion); 
+
+
+// 	CPrintF("fWorldRatio : %f \n", fWorldRatio );
+// 	CPrintF("fX : %f , fY : %f \n", fX, fZ );
+// 	CPrintF("X : %d , Y : %d \n", nX, nY );
+// 	CPrintF("Region Value(LTRB): %d %d %d %d \n", temp.Left, temp.Top, temp.Right, temp.Bottom );
+
+	return FALSE;
+}
+
+BOOL	CUIMap::GetWorldToMapPos(INDEX nZoneNum, float& fX, float& fY, float fZoomRatio)
+{
+	int	nMapDataIndex = FindMapData( nZoneNum, 0 );	
+
+	if (nMapDataIndex == -1)
+	{
+		return FALSE;
+	}
+	// ¡ˆµµ¿« Offset~
+	fX -= m_vecMapData[nMapDataIndex].World.lOffsetX;	
+	fY -= m_vecMapData[nMapDataIndex].World.lOffsetZ;
+
+	// ¡ˆµµø° ¥Î«— √‡√¥∞˙ ¡ˆµµ Zoom∫Ò¿≤
+	fX = fX * m_vecMapData[nMapDataIndex].World.fRatio * fZoomRatio;	
+	fY = fY * m_vecMapData[nMapDataIndex].World.fRatio * fZoomRatio;
+
+	return TRUE;
+}
+
+void CUIMap::SetDetailMap( BOOL bOpen, int mapIndex /* = 0  */ )
+{
+	m_bDetailMapClick = bOpen;
+	m_bShowWorldMap = bOpen;
+	
+	if( bOpen )
+	{
+		OpenDetailMap( mapIndex );
+	}
+	else
+	{
+		CloseDetailMap();
+	}
+}
+
+// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+// ∏  ¿Ã∏ß º≥¡§
+CTString CUIMap::GetZoneName( int zone, int layer )
+{
+	CTString strReturn;
+	if( CZoneInfo::getSingleton()->GetZoneType( zone ) == ZONE_DUNGEON )
+	{
+		strReturn.PrintF( "%s %dF", CZoneInfo::getSingleton()->GetZoneName( zone ), ( layer + 2 ) / 2);
+	}
+	else
+	{
+		if( layer > 0 )
+		{
+			strReturn.PrintF( _S( 3083, "%s ∞¯º∫¡ˆø™" ), _pUISWDoc->GetCastleName( zone ) );
+		}
+		else
+		{
+			strReturn.PrintF( "%s", CZoneInfo::getSingleton()->GetZoneName( zone ) );
+		}
+	}
+
+	return strReturn;
+}
+
+// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+// ªÛ¿ß ∏ ¿∏∑Œ ¿Ãµø
+void CUIMap::GoTopMap()
+{
+	if( m_bShowWorldMap )
+	{
+		m_btnGoTop.SetEnable(FALSE);
+		SetCurrentWorldMap( ZONE_WORLD_MAP, 0 );
+
+		m_eMapState = eMS_WORLD;
+	}
+	else
+	{
+		CloseDetailMap();
+		ChangeMap();
+	}
+}
+
+BOOL CUIMap::IsMapExist( int nZoneIndex, SBYTE sbLayer )
+{
+	return (FindMapData(nZoneIndex, sbLayer) != -1 ? TRUE : FALSE);
+}
+
+MapData* CUIMap::GetCurMapData( int nZoneIndex )
+{
+	int mapIndex = FindMapData( nZoneIndex, 0 );	
+
+	if( mapIndex != -1 )
+	{
+		return &m_vecMapData[mapIndex];
+	}
+
+	return &m_vecMapData[0];
+}
+
+bool CUIMap::Goto(int x, int y)
+{
+	extern SLONG g_slZone;
+
+	if (m_nCurMapData < 0)
+		return false;
+
+	if (m_vecMapData[m_nCurMapData].World.nZoneIndex != g_slZone)
+		return false;
+
+	int nMX, nMY;
+
+	if (_bDetail == false || m_vecMapData[m_nCurMapData].vecDetail.size() == 0)
+	{
+		nMX = x * m_fZoomDetail / m_vecMapData[m_nCurMapData].World.fRatio 
+			+ m_vecMapData[m_nCurMapData].World.lOffsetX;
+
+		nMY = y * m_fZoomDetail / m_vecMapData[m_nCurMapData].World.fRatio 
+			+ m_vecMapData[m_nCurMapData].World.lOffsetZ;
+	}
+	else
+	{
+		if (m_nCurDetail >= 0)
+		{
+			nMX = x * m_fZoomDetail / m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio 
+				+ m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
+
+			nMY = y * m_fZoomDetail / m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio 
+				+ m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
+		}
+	}
+
+	CTString	strGOTO;
+	strGOTO.PrintF("goto %d %d 0", nMX, nMY);
+
+	_pNetwork->SendGMCommand(strGOTO);
+
+	return true;
+}
+
+void CUIMap::RenderNpc(CDrawPort* pDraw, int nIndex, int nX, int nY, BOOL bHighlight )
+{
+	COLOR	colBlend = 0xFFFFFF00 | UBYTE( 0xFF * m_fMapOpacity );
+
+	//NPC æ»≥ªΩ√Ω∫≈€ -> æ»≥ªµ» NPC¿« πÃ¥œ∏  «•Ω√∏¶ ∆≤∏Æ∞‘ «‘
+	if(nIndex == UIMGR()->m_nHelpNpc_Index)
+	{
+		if(bHighlight)
+		{
+			pDraw->AddTexture( nX + m_rcHelpNpc.Left, nY + m_rcHelpNpc.Top,
+				nX + m_rcHelpNpc.Right, nY + m_rcHelpNpc.Bottom,
+				m_rtHelpNpc.U0, m_rtHelpNpc.V0, m_rtHelpNpc.U1, m_rtHelpNpc.V1,
+				colBlend); 
+		}
+	}
+	else
+	{
+		CUIMapOption* pOption = UIMGR()->GetRadar()->GetMapOption();
+
+		if (pOption == NULL)
+			return;
+
+		int nShowIcon = -1;
+		if (pOption->IsCheck(eNT_QUEST_Q) &&
+			CQuestSystem::Instance().TestNPCForQuest(nIndex) == CQuestSystem::NQT_HAVE_QUEST)
+		{
+			nShowIcon = eNT_QUEST_Q;
+		}
+		else if (pOption->IsCheck(eNT_QUEST_A) &&
+			CQuestSystem::Instance().TestNPCForQuest(nIndex) == CQuestSystem::NQT_CAN_PRIZE)
+		{
+			nShowIcon = eNT_QUEST_A;
+		}
+		else
+		{
+			for (int j = eNT_SHOP; j < eNT_MONSTER; ++j)
+			{
+				if (pOption->IsCheck((eNPC_TYPE)j) == false)
+					continue;
+
+				if (pOption->IsFlag(j, nIndex) != FALSE)
+				{
+					nShowIcon = j;
+					break;
+				}
+			}
+		}
+
+		if (nShowIcon >= 0)
+		{
+			if (bHighlight == TRUE && nShowIcon == eNT_QUEST_A)
+				return;
+
+			UIRectUV uv = pOption->GetUV((eNPC_TYPE)nShowIcon);
+
+			pDraw->AddTexture(nX + m_rcNPC.Left, nY + m_rcNPC.Top,
+				nX + m_rcNPC.Right, nY + m_rcNPC.Bottom,
+				uv.U0, uv.V0, uv.U1, uv.V1, colBlend);
+		}
+	}
+}
+
+void CUIMap::RenderGPS(CDrawPort* pDraw )
+{
+	// ¿¸√º ¡ˆµµ ∫∏±‚ø°º≠¥¬ ∑ª¥ı∏µ «œ¡ˆ æ ¥¬¥Ÿ.
+	if (m_vecMapData[m_nCurMapData].World.nZoneIndex == ZONE_WORLD_MAP)
+		return;
+
+	float	fX, fZ;
+	int		nX, nY;
+
+	UIRect	rcTempDetail = m_rcMapDetail;
+	UIRect	rcTempWorld = m_rcMapWorld;
+	rcTempWorld.Scale( m_fZoomWorld );
+	rcTempDetail.Scale( m_fZoomDetail );	
+
+	if (GAMEDATAMGR()->GetGPS()->IsPosition() == false)
+		return;
+
+	UpdateClient::GPSTargetMoveInfo* pInfo = GAMEDATAMGR()->GetGPS()->getInfo();
+
+	if (m_bShowWorldMap)
+	{
+		nX = ( pInfo->x - m_vecMapData[m_nCurMapData].World.lOffsetX ) * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld * m_fMapSizeRevision;
+		nY = ( pInfo->z - m_vecMapData[m_nCurMapData].World.lOffsetZ ) * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld * m_fMapSizeRevision;
+
+		nX += m_rcViewportWorld.Left - rcTempWorld.Left;
+		nY += m_rcViewportWorld.Top - rcTempWorld.Top;
+	}
+	else
+	{
+		if (m_nCurDetail >= 0)
+		{
+			fX = pInfo->x - m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
+			fZ = pInfo->z - m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
+
+			nX = fX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+			nY = fZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+
+			nX += m_rcViewportDetail.Left - rcTempDetail.Left;
+			nY += m_rcViewportDetail.Top - rcTempDetail.Top;
+		}
+	}
+
+
+	if (nX + m_rcGPS.Left >= m_rcViewportDetail.Left && nX + m_rcGPS.Right <= m_rcViewportDetail.Right &&
+		nY + m_rcGPS.Top >= m_rcViewportDetail.Top && nY + m_rcGPS.Bottom <= m_rcViewportDetail.Bottom)
+	{
+		COLOR	colBlend;
+		colBlend = 0xFFFFFF00 | UBYTE( 0xFF * m_fCharRatio );
+
+		nX += m_nPosX + MAP_SX;
+		nY += m_nPosY + MAP_SY;
+
+		pDraw->InitTextureData(m_ptdBaseTexture);
+
+		pDraw->AddTexture(m_rcGPS.Left + nX, m_rcGPS.Top + nY, m_rcGPS.Right + nX, m_rcGPS.Bottom + nY, m_uvGPS, colBlend);
+
+		pDraw->FlushRenderingQueue();
+	}	
+}
+
+void CUIMap::RenderRelic( CDrawPort* pDraw)
+{
+	// ¿¸√º ¡ˆµµ ∫∏±‚ø°º≠¥¬ ∑ª¥ı∏µ «œ¡ˆ æ ¥¬¥Ÿ.
+	if (m_vecMapData[m_nCurMapData].World.nZoneIndex == ZONE_WORLD_MAP)
+		return;
+
+	if (m_vecMapData[m_nCurMapData].World.nZoneIndex != _pNetwork->MyCharacterInfo.zoneNo)
+		return;
+	
+	GPS* pInfo = GAMEDATAMGR()->GetGPS();
+
+	if (pInfo == NULL)
+		return;
+
+	float	fX, fZ;
+	int		nX, nY;
+
+	UIRect	rcTempDetail = m_rcMapDetail;
+	UIRect	rcTempWorld = m_rcMapWorld;
+	rcTempWorld.Scale( m_fZoomWorld );
+	rcTempDetail.Scale( m_fZoomDetail );
+
+	float fposX = 0.f, fposZ = 0.f;
+
+	if (pInfo->GetRelicPosCount() <= 0)
+		return;
+
+	GPS::mapRelicPos::iterator it = pInfo->GetMapRelicPos()->begin();
+	GPS::mapRelicPos::iterator it_end = pInfo->GetMapRelicPos()->end();
+
+	for (; it != it_end; ++it)
+	{
+		if ((*it).second.nCharIdx <= 0)
+			continue;
+
+		fposX = (*it).second.fX;
+		fposZ = (*it).second.fZ;
+
+		if (m_bShowWorldMap)
+		{
+			nX = ( fposX - m_vecMapData[m_nCurMapData].World.lOffsetX ) * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld * m_fMapSizeRevision;
+			nY = ( fposZ - m_vecMapData[m_nCurMapData].World.lOffsetZ ) * m_vecMapData[m_nCurMapData].World.fRatio * m_fZoomWorld * m_fMapSizeRevision;
+
+			nX += m_rcViewportWorld.Left - rcTempWorld.Left;
+			nY += m_rcViewportWorld.Top - rcTempWorld.Top;
+		}
+		else
+		{
+			if (m_nCurDetail >= 0)
+			{
+				fX = fposX - m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetX;
+				fZ = fposZ - m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fOffsetZ;
+
+				nX = fX * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+				nY = fZ * m_vecMapData[m_nCurMapData].vecDetail[m_nCurDetail].fRatio * m_fZoomDetail;
+
+				nX += m_rcViewportDetail.Left - rcTempDetail.Left;
+				nY += m_rcViewportDetail.Top - rcTempDetail.Top;
+			}
+		}
+
+		if (nX >= m_rcViewportDetail.Left && nX <= m_rcViewportDetail.Right &&
+			nY >= m_rcViewportDetail.Top && nY <= m_rcViewportDetail.Bottom)
+		{
+			COLOR	colBlend;
+			colBlend = 0xFFFFFF00 | UBYTE( 0xFF * m_fCharRatio );
+
+			nX += m_nPosX + MAP_SX;
+			nY += m_nPosY + MAP_SY;
+
+			pDraw->InitTextureData(m_ptdBaseTexture);
+			pDraw->AddTexture(m_rcRelic.Left + nX, m_rcRelic.Top + nY, m_rcRelic.Right + nX, m_rcRelic.Bottom + nY, m_uvRelic, colBlend);
+			pDraw->FlushRenderingQueue();
+		}	
+	}
+}
+
+void CUIMap::UpdateMap( bool bUpdate /*= false*/ )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	extern SLONG	g_slZone;
+
+	// «ˆ¿Á ¥¯¿¸¿« ∞ÊøÏø°¥¬ ¡ˆµµ∏¶ «•Ω√«œ¡ˆ æ ¥¬¥Ÿ.
+	// [100204: selo] ¿œπ› ¥¯¿¸µµ ¡ˆµµ∏¶ «•Ω√«œ¡ˆ æ ¥¬¥Ÿ.
+	if( CZoneInfo::getSingleton()->GetZoneType( g_slZone ) == ZONE_SDUNGEON ||
+		CZoneInfo::getSingleton()->GetZoneType( g_slZone ) == ZONE_DUNGEON )
+	{
+		if( IsVisible() )
+			pUIManager->RearrangeOrder( UI_MAP, FALSE );
+
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 5785, "«ˆ¿Á ¡ˆø™ø°º≠¥¬ ø˘µÂ∏ ¿ª √‚∑¬ «“ ºˆ æ¯Ω¿¥œ¥Ÿ.." ), SYSMSG_ERROR );
+		m_eMapState = eMS_NONE;
+		return;
+	}
+
+	if( IsVisible() && bUpdate == false)
+	{
+		g_iOpacityInMap = m_slbOpacity.GetCurPos();
+		if( m_bShowWorldMap )
+			g_iZoomInMap = m_slbZoomWorld.GetCurPos();
+		else
+			g_iZoomInMap = m_slbZoomDetail.GetCurPos();
+
+		g_iXPosInMap = GetPosX();
+		g_iYPosInMap = GetPosY();
+		pUIManager->m_nHelpNpc_Index = -1;
+	}
+
+	// Toggle map
+	if (bUpdate == false)
+	{
+		BOOL	bVisible = !IsVisible();
+		pUIManager->RearrangeOrder( UI_MAP, bVisible );
+	}
+
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	if(_pUISWDoc->IsWar())
+	{
+		pUIManager->GetMap()->SetCurrentWorldMap( _pNetwork->MyCharacterInfo.zoneNo, 1 );		// yjpark
+	}
+	else
+	{
+		pUIManager->GetMap()->SetCurrentWorldMap( _pNetwork->MyCharacterInfo.zoneNo, _pNetwork->MyCharacterInfo.yLayer );		// yjpark
+	}
+#endif
+
+	
+	IsDetailMap();
+	
+	if (bUpdate == false)
+		SetMapData();
+
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	if( IsVisible() )
+	{
+		if (m_nCurMapData > -1)
+		{
+			m_btnGoTop.SetEnable(m_vecMapData[m_nCurMapData].World.nZoneIndex != ZONE_WORLD_MAP);
+		}
+
+	}
+#endif
+
+	// !! ∞¯º∫¿¸ Map«•Ω√ ¡∂∞«ø° ∏¬¥Ÿ∏È º≠πˆ∑Œ ¡§∫∏ ø‰√ª 
+	//
+	if( IsVisible() )
+	{
+		if (m_nCurMapData > -1)
+		{
+			if (IsPossibleCastleMap() && IsCastleMap( m_nCurMapData ))
+			{
+				ReSetData();
+				_pNetwork->SendCastleMapRecent();
+			}
+		}
+	}
+	else
+	{
+		m_qSignalData.clear();
+	}
+
+	if (m_penPlayerEntity != CEntity::GetPlayerEntity(0))
+	{
+		CEntity* penPlEntity;
+		penPlEntity = CEntity::GetPlayerEntity(0); //ƒ≥∏Ø≈Õ ¿⁄±‚ ¿⁄Ω≈
+		m_penPlayerEntity = (CPlayerEntity*)penPlEntity;
+	}
+}
+
+void CUIMap::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
+{
+	if (IsVisible() && m_nCurMapData >= 0)
+	{
+		if (m_penPlayerEntity == NULL)
+			return;
+
+		if ((m_lastPos - m_penPlayerEntity->en_plLastPlacement.pl_PositionVector).Length() < 1.f)
+			return;
+
+		m_lastPos = m_penPlayerEntity->en_plLastPlacement.pl_PositionVector;
+
+		extern SLONG g_slZone;
+
+		if (m_eMapState == eMS_WORLD)
+			return;
+
+		int nSub = -1;
+		if (m_eMapState != GetPlayerInArea(nSub))
+			UpdateMap(true);
+	}
+}
+
+eMAP_STATE CUIMap::GetPlayerInArea(int &nSubIndex)
+{
+	nSubIndex = -1;
+
+	if (m_vecMapData[m_nCurMapData].World.nZoneIndex == ZONE_WORLD_MAP)
+		return eMS_WORLD;
+
+	float fX = _pNetwork->MyCharacterInfo.x;
+	float fZ = _pNetwork->MyCharacterInfo.z;
+
+	GetWorldToMapPos(m_vecMapData[m_nCurMapData].World.nZoneIndex, fX, fZ, m_fMapSizeRevision);
+
+	int i;
+
+	for(i = 0; i < m_vecMapData[m_nCurMapData].vecDetail.size(); i++ )
+	{
+		UIRect rcTemp = m_vecMapData[m_nCurMapData].vecDetail[i].rcSelRegion;
+		rcTemp.Scale( m_fMapSizeRevision );
+
+		if( fX > rcTemp.Left && fZ > rcTemp.Top && fX < rcTemp.Right && fZ < rcTemp.Bottom )
+		{
+			nSubIndex = i;
+			return eMS_VILLAGE;
+		}
+	}
+
+	return eMS_ZONE;
 }

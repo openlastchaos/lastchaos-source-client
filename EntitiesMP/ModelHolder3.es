@@ -18,6 +18,8 @@ event EModel3Activate {
 };
 event EModel3Deactivate {
 };
+event EModel3Action {
+};
 
 %{
 // #define MIPRATIO 0.003125f //(2*tan(90/2))/640
@@ -26,9 +28,14 @@ event EModel3Deactivate {
 class CModelHolder3 : CRationalEntity {
 	name      "ModelHolder3";
 	thumbnail "Thumbnails\\ModelHolder3.tbn";
-	features "HasName", "HasDescription";
+	features "HasName", "HasDescription", "HasRaidObject", "RaidEvent", "AlignBackground";
 	
 properties:
+/*** Export Data***/
+	200 BOOL	m_bRaidObject	"This entity is RaidObject" = FALSE,		// 레이드 오브젝트 설정
+	201 INDEX	m_RaidEventType		"Raid Event Type" = 0,			// 레이드 이벤트 타입
+	202 BOOL	m_bObjectClick	"Object Click" = TRUE,	
+/******************/
 	1 CTFileName m_fnModel      "Model file (.smc)" 'M' = CTFILENAME("Data\\Models\\Editor\\Ska\\Axis.smc"), //("Data\\Models\\Editor\\Axis.mdl"),
 	2 CTFileName m_fnTexture    "Texture" 'T' =CTFILENAME("Data\\Models\\Editor\\Vector.tex"),
 	// 22 CTFileName m_fnReflection "Reflection" =CTString(""),
@@ -67,7 +74,7 @@ properties:
 	// 34 FLOAT m_fMipFadeLen  = 0.0f,
 	35 RANGE m_rMipFadeDistMetric "Mip Fade Dist (Metric)" = -1.0f,
 	36 FLOAT m_fMipFadeLenMetric  "Mip Fade Len (Metric)" = -1.0f,
-	
+		
 	// random values variables
 	50 BOOL m_bRandomStretch   "Apply RND stretch"   = FALSE, // apply random stretch
 	52 ANGLE3D m_fStretchRndXYZ    "Stretch RND XYZ (%)"   =  FLOAT3D(0.2f, 0.2f, 0.2f), // random stretch width
@@ -98,14 +105,21 @@ properties:
 	110 BOOL m_bDoNotLoopAnimation "Animation looping OFF" = FALSE,
 	//115 BOOL m_bEnemy "Is Enemy?" = FALSE,
 	116 BOOL	m_bRenderReflection	"Render reflection?"	= FALSE,
-117 BOOL		m_bTerrainShadow "Terrain Shadow?"		= FALSE,
-118 CTString	m_strEffectGroupNameEvent "Model Effect Name(Event)" = "",
-119 BOOL		m_bDecorationObject "Decoration Object" = FALSE,
-120 BOOL		m_bHasRootTag	"Has __ROOT & __TOP tag" = FALSE,
-121 CTString	m_strEffectGroupName "Model Effect Name" = "",
+	117 BOOL		m_bTerrainShadow "Terrain Shadow?"		= FALSE,
+	118 CTString	m_strEffectGroupNameEvent "Model Effect Name(Event)" = "",
+	119 BOOL		m_bDecorationObject "Decoration Object" = FALSE,
+	120 BOOL		m_bHasRootTag	"Has __ROOT & __TOP tag" = FALSE,
+	121 CTString	m_strEffectGroupName "Model Effect Name" = "",
+	122 BOOL		m_AlignBackground "Object align background" = FALSE,
+	123 BOOL		m_bChangeAnimActive	"change animation event" = FALSE, // 시작할때 애니메이션이 바로 동작하는것을 스킵한다.(changeanim event사용)
+	124 CTString	m_strActionAnim  "Action animation name" = "",
+	125 BOOL		m_bFadeOut = FALSE,
 	{
 		CEffectGroup *m_pModelEffectGroupEvent;
 		CEffectGroup *m_pModelEffectGroup;
+		FLOAT m_fFadeStartTime;
+		FLOAT m_fFadeTime;
+		FLOAT m_fSpiritStartTime; // time when spirit effect has started
 	}
 	
 /*{
@@ -140,7 +154,7 @@ functions:
 			tag.SetOffsetPos(0, aabb.Size()(2), 0);
 			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
 		}
-		if( m_strModelAnimation != "")
+		if( m_strModelAnimation != "" && !m_bChangeAnimActive)
 		{
 			INDEX iAnim = ska_GetIDFromStringTable(m_strModelAnimation);
 			INDEX iDummy1, iDummy2;
@@ -171,7 +185,36 @@ functions:
 		{
 			m_pModelEffectGroup = NULL;
 		}
+
+		if (m_bRaidObject && m_bObjectClick) // 레이드, 클릭 오브젝트는 타겟이 가능하다.(살려야 가능하게 된다.)
+		{
+			SetFlagOn(ENF_ALIVE);
+			SetFirstExtraFlagOn(ENF_EX1_CLICK_OBJECT);
+		}
+		else
+		{
+			SetFlagOff(ENF_ALIVE);
+			SetFirstExtraFlagOff(ENF_EX1_CLICK_OBJECT);
+		}
 	};
+
+	// render particles
+	void RenderParticles(void) 
+	{
+		// no particles when not existing
+		if (GetRenderType()!=CEntity::RT_MODEL && GetRenderType()!=CEntity::RT_SKAMODEL) 
+		{
+			return;
+		}
+		// if is dead
+		if ( m_fSpiritStartTime > 0.0f && m_bFadeOut)
+		{
+			// 죽었을때 파티클 렌더링...
+			 const FLOAT tmNow = _pTimer->CurrentTick();
+			// Particles_ModelGlow(this, tmNow + 20,PT_STAR08, 0.15f, 2, 0.03f, 0xff00ff00);
+			Particles_Death(this, m_fSpiritStartTime);
+		}
+	}
 /*
 	void Read_t(CTStream *istr, BOOL bNetwork)
 	{
@@ -453,6 +496,25 @@ functions:
 	/* Adjust model shading parameters if needed. */
 	BOOL AdjustShadingParameters(FLOAT3D &vLightDirection, COLOR &colLight, COLOR &colAmbient)
 	{
+		if (m_bFadeOut) 
+		{
+			FLOAT fTimeRemain = m_fFadeStartTime + m_fFadeTime - _pTimer->CurrentTick();
+			if( fTimeRemain < 0.0f) { fTimeRemain = 0.0f; }
+			COLOR colAlpha;
+			if(en_RenderType == RT_SKAMODEL || en_RenderType == RT_SKAEDITORMODEL) 
+			{
+				colAlpha = GetModelInstance()->GetModelColor();
+				colAlpha = (colAlpha&0xFFFFFF00) + (COLOR(fTimeRemain/m_fFadeTime*0xFF)&0xFF);
+				GetModelInstance()->SetModelColor(colAlpha);
+			}
+			else 
+			{
+				colAlpha = GetModelObject()->mo_colBlendColor;
+				colAlpha = (colAlpha&0xFFFFFF00) + (COLOR(fTimeRemain/m_fFadeTime*0xFF)&0xFF);
+				GetModelObject()->mo_colBlendColor = colAlpha;
+			}
+		}
+
 		switch(m_cstCustomShading)
 		{
 		case CST_FULL_CUSTOMIZED:
@@ -639,7 +701,7 @@ functions:
 			SetFlags(GetFlags()|ENF_BACKGROUND);
 		} else {
 			SetFlags(GetFlags()&~ENF_BACKGROUND);
-		}      
+		}
 		
 		if (m_penDestruction==NULL) {
 			m_strDescription.PrintF("%s undestroyable", (CTString&)m_fnModel.FileName());
@@ -662,6 +724,384 @@ functions:
 //안태훈 수정 끝	//(Effect Add & Modify for Close Beta)(0.1)
 	
 procedures:
+	Main()
+	{
+//강동민 수정 시작 접속 시퀀스 작업	05.20
+/*
+		if(m_bEnemy)
+		{
+			SetFlagOn(ENF_ENEMY);
+			m_bActive = FALSE;	
+		}
+		*/
+//강동민 수정 끝 접속 시퀀스 작업	05.20
+		SetFlagOn(ENF_MARKDESTROY);
+		SetFlagOn(ENF_NONETCONNECT);
+		SetFlagOff(ENF_PROPSCHANGED);
+//강동민 수정 시작 테스트 클라이언트 작업	06.30
+		SetFlagOff(ENF_RENDERREFLECTION);
+//강동민 수정 끝 테스트 클라이언트 작업		06.30
+//강동민 수정 시작 로그인 처리 작업	07.20
+		SetFirstExtraFlagOff(ENF_EX1_TERRAINSHADOW);
+//강동민 수정 끝 로그인 처리 작업		07.20
+
+		m_fFadeStartTime = 0.0f;
+		m_fFadeTime = 0.0f;
+		m_bFadeOut = FALSE;
+		m_fSpiritStartTime = 0.0f; // time when spirit effect has started
+
+		// initialize the model
+		InitModelHolder();
+
+//안태훈 수정 시작	//(For Performance)(0.1)
+		SetFirstExtraFlagOff(ENF_EX1_DECORATION);
+		if(m_bDecorationObject) { SetFirstExtraFlagOn(ENF_EX1_DECORATION); }
+//안태훈 수정 끝	//(For Performance)(0.1)
+
+//강동민 수정 시작 테스트 클라이언트 작업	06.30
+		if(m_bRenderReflection)
+		{
+			SetFlagOn(ENF_RENDERREFLECTION);			
+		}
+//강동민 수정 끝 테스트 클라이언트 작업		06.30
+		
+//강동민 수정 시작 로그인 처리 작업	07.20
+		if(m_bTerrainShadow)
+		{
+			SetFirstExtraFlagOn(ENF_EX1_TERRAINSHADOW);
+		}
+//강동민 수정 끝 로그인 처리 작업		07.20
+		
+		if (m_bRaidObject && m_bObjectClick) // 레이드, 클릭 오브젝트는 타겟이 가능하다.(살려야 가능하게 된다.)
+		{
+			SetFlagOn(ENF_ALIVE);
+			SetFirstExtraFlagOn(ENF_EX1_CLICK_OBJECT);
+		}
+		
+//안태훈 수정 시작	//(Add Sun Moon Entity and etc)(0.2)
+		GetModelInstance()->SetModelColor(m_colModelColor);
+//안태훈 수정 끝	//(Add Sun Moon Entity and etc)(0.2)
+
+//안태훈 수정 시작	//(Open beta)(2004-12-13)
+		if(m_bHasRootTag && GetModelInstance())
+		{
+			CSkaTag tag;
+			tag.SetName("__ROOT");
+			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+			tag.SetName("__TOP");
+			FLOATaabbox3D aabb;
+			GetModelInstance()->GetAllFramesBBox(aabb);
+			tag.SetOffsetPos(0, aabb.Size()(2), 0);
+			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+		}
+//안태훈 수정 끝	//(Open beta)(2004-12-13)
+
+		// check your destruction pointer
+		if( m_penDestruction!=NULL && !IsOfClass( m_penDestruction, &CModelDestruction_DLLClass)) {
+			WarningMessage("Destruction '%s' is wrong class!", m_penDestruction->GetName());
+			m_penDestruction=NULL;
+		}
+		
+		// warning! because of this auto wait domino effect destruction with chainsaw didn't work
+		//autowait(0.05f);
+		
+		// start ska animations if needed
+		if( m_strModelAnimation != "")
+		{
+			INDEX iAnim = ska_GetIDFromStringTable(m_strModelAnimation);
+			INDEX iDummy1, iDummy2;
+			if (GetModelInstance()->FindAnimationByID(iAnim, &iDummy1, &iDummy2)) { 
+				NewClearState(0.05f);
+				ULONG ulFlags = AN_LOOPING;
+				if (m_bDoNotLoopAnimation) {
+					ulFlags = 0;
+				}
+				AddAnimation(iAnim, ulFlags, 1, 1);            
+				OffSetAnimationQueue(FRnd()*10.0f);        
+			} else {
+				CPrintF("WARNING! Animation '%s' not found in SKA entity '%s'!\n",
+					m_strModelAnimation, GetName());
+			}
+		}
+		
+		// [080201: Su-won] 다른 이펙트가 존재하면 새로운 이펙트를 적용하기 전에 없앰.
+		if( m_pModelEffectGroup )
+		{
+			DestroyEffectGroup(m_pModelEffectGroup);
+		}
+
+		if(GetModelInstance() && m_strEffectGroupName != "")
+		{
+			if(CEffectGroupManager::Instance().IsValidCreated(m_pModelEffectGroup))
+			{
+				m_pModelEffectGroup->Stop(0);
+			}
+			m_pModelEffectGroup = StartEffectGroup(m_strEffectGroupName
+												, &GetModelInstance()->m_tmSkaTagManager
+												, _pTimer->GetLerpedCurrentTick() + rand() / RAND_MAX);
+		}
+		else
+		{
+			m_pModelEffectGroup = NULL;
+		}
+
+		// wait forever
+		wait() {
+			// on the beginning
+			on(EBegin): {
+				// set your health
+				if (m_penDestruction!=NULL) {
+					SetHealth(GetDestruction()->m_fHealth);
+				}
+				resume;
+			}
+//안태훈 수정 시작	//(Effect Add & Modify for Close Beta)(0.1)
+			on(EStart):
+			{
+				if(m_strEffectGroupNameEvent != "" && en_pmiModelInstance != NULL)
+				{
+					DestroyEffectGroup(m_pModelEffectGroupEvent);
+					m_pModelEffectGroupEvent = StartEffectGroup(m_strEffectGroupNameEvent, &en_pmiModelInstance->m_tmSkaTagManager, _pTimer->GetLerpedCurrentTick());
+				}
+				resume;
+			}
+			on(EStop):
+			{
+				if(m_strEffectGroupNameEvent != "" && en_pmiModelInstance != NULL)
+				{
+					if(CEffectGroupManager::Instance().IsValidCreated(m_pModelEffectGroupEvent))
+					{
+						m_pModelEffectGroupEvent->Stop(0); // WSS_DRATAN_SEIGEWARFARE 2007/08/30 바로 사라지게 처리 10 -> 0
+						m_pModelEffectGroupEvent = NULL;
+					}
+				}
+
+				if (m_strEffectGroupName != "" && en_pmiModelInstance != NULL)
+				{
+					if(CEffectGroupManager::Instance().IsValidCreated(m_pModelEffectGroup))
+					{
+						m_pModelEffectGroup->Stop(0);
+						m_pModelEffectGroup = NULL;
+					}
+				}
+
+				resume;
+			}
+//안태훈 수정 끝	//(Effect Add & Modify for Close Beta)(0.1)
+			// activate/deactivate shows/hides model
+			on (EActivate): {
+				if (_pNetwork->IsServer()) {
+					SendEvent(EModel3Activate(),TRUE);
+				}
+				resume;
+			}
+			on (EModel3Activate): {       
+				SetFlagOn(ENF_PROPSCHANGED);
+				SwitchToModel();
+				m_bActive = TRUE;
+				if (m_bColliding) {
+					SetPhysicsFlags(EPF_MODEL_FIXED);
+					SetCollisionFlags(ECF_MODEL_HOLDER);
+				}
+				resume;
+			}
+			on (EDeactivate): {
+				if (_pNetwork->IsServer()) {
+					SendEvent(EModel3Deactivate(),TRUE);
+				}
+				resume;
+			}
+			on (EModel3Deactivate): {
+				SetFlagOn(ENF_PROPSCHANGED);
+				SwitchToEditorModel();
+				SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+				SetCollisionFlags(ECF_IMMATERIAL);
+				m_bActive = FALSE;
+				resume;
+			}
+			// when your parent is destroyed
+			on(ERangeModelDestruction): {
+				// for each child of this entity
+				{FOREACHINLIST(CEntity, en_lnInParent, en_lhChildren, itenChild) {
+					// send it destruction event
+					itenChild->SendEvent(ERangeModelDestruction(),TRUE);
+				}}
+				// destroy yourself
+				Destroy(FALSE);
+				resume;
+			}
+			// when dead
+			on(EDeath): {
+				SendEvent(EModelDeath(),TRUE);
+				if (_pNetwork->IsServer()) {
+					if (m_penDestruction!=NULL) {
+						jump Die();
+					}
+				}
+				resume;
+			}
+			on(EModelDeath): {
+				SendEvent(EModelDeath(),TRUE);
+				if (!_pNetwork->IsServer()) {
+					if (m_penDestruction!=NULL) {
+						jump Die();
+					}
+				}
+				resume;
+			}
+			// when animation should be changed
+			on(EChangeAnim eChange): {
+
+				if (eChange.AnimType == ACTION_NONE)
+				{
+					m_strModelAnimation = eChange.strAnimation;
+					if( m_strModelAnimation != "")
+					{
+						INDEX iAnim = ska_GetIDFromStringTable(m_strModelAnimation);
+						INDEX iDummy1, iDummy2;
+						if (GetModelInstance()->FindAnimationByID(iAnim, &iDummy1, &iDummy2)) { 
+							NewClearState(eChange.fBlendTime);
+							ULONG ulFlags = 0;
+							if (eChange.bModelLoop) {
+								ulFlags = AN_LOOPING;
+							}
+							AddAnimation(iAnim, ulFlags, 1, 1);            
+						} else {
+							CPrintF("WARNING! Animation '%s' not found in SKA entity '%s'!\n",
+								m_strModelAnimation, GetName());
+						}
+					} 
+				}
+				else if (eChange.AnimType == ACTION_SKILL)
+				{
+					m_strActionAnim = eChange.strAnimation;
+					call ModelAction();
+				}
+				else if (eChange.AnimType == ACTION_DISAPPEAR)
+				{
+					m_strActionAnim = eChange.strAnimation;
+					m_fSpiritStartTime = _pTimer->CurrentTick();
+					m_fFadeStartTime = _pTimer->CurrentTick();
+					m_fFadeTime = 4.0f;
+					m_bFadeOut = TRUE;
+					SetFlagOff(ENF_NOPARTICLES);
+					call ModelAction();
+				}
+				else if (eChange.AnimType == ACTION_APPEAR)
+				{
+					if (m_bFadeOut)
+					{
+						m_bFadeOut = FALSE;
+						SetFlagOn(ENF_NOPARTICLES);
+						COLOR colAlpha;
+						if(en_RenderType == RT_SKAMODEL || en_RenderType == RT_SKAEDITORMODEL) 
+						{
+							colAlpha = GetModelInstance()->GetModelColor();
+							colAlpha = (colAlpha|0x000000FF);
+							GetModelInstance()->SetModelColor(colAlpha);
+						}
+						else 
+						{
+							colAlpha = GetModelObject()->mo_colBlendColor;
+							colAlpha = (colAlpha|0x000000FF);
+							GetModelObject()->mo_colBlendColor = colAlpha;
+						}
+					}
+				}
+
+				resume;
+			}
+			// received trigger event message from server
+			on (ETrigger): {
+				if (m_strActionAnim != "")
+				{
+					// toggle 처리
+					if (m_bFadeOut)
+					{
+						m_bFadeOut = FALSE;
+						SetFlagOn(ENF_NOPARTICLES);
+						COLOR colAlpha;
+						if(en_RenderType == RT_SKAMODEL || en_RenderType == RT_SKAEDITORMODEL) 
+						{
+							colAlpha = GetModelInstance()->GetModelColor();
+							colAlpha = (colAlpha|0x000000FF);
+							GetModelInstance()->SetModelColor(colAlpha);
+						}
+						else 
+						{
+							colAlpha = GetModelObject()->mo_colBlendColor;
+							colAlpha = (colAlpha|0x000000FF);
+							GetModelObject()->mo_colBlendColor = colAlpha;
+						}
+					}
+					else if (m_strActionAnim != "")
+					{
+						SendEvent(EModel3Action());
+					}
+				}
+				else if (m_bChangeAnimActive)
+				{ // 애니메이션을 동작하여 활성화 되는 모습을 연출한다. (이펙트는 모델애니메이션정보에 넣고, 애니메이션에서 이펙트를 활성화 한다.)
+
+					if (m_strModelAnimation != "")
+					{
+						INDEX iAnim = ska_GetIDFromStringTable(m_strModelAnimation);
+						INDEX iDummy1, iDummy2;
+						if (GetModelInstance()->FindAnimationByID(iAnim, &iDummy1, &iDummy2)) { 
+							NewClearState(0.05f);
+							ULONG ulFlags = AN_LOOPING;
+							if (m_bDoNotLoopAnimation) {
+								ulFlags = 0;
+							}
+							AddAnimation(iAnim, ulFlags, 1, 1);            
+							OffSetAnimationQueue(FRnd()*10.0f);        
+						} else {
+							CPrintF("WARNING! Animation '%s' not found in SKA entity '%s'!\n",
+								m_strModelAnimation, GetName());
+						}
+					}
+
+					SetFlagOff(ENF_ALIVE); // 비활성화
+
+/*					if(m_strEffectGroupNameEvent != "" && en_pmiModelInstance != NULL)
+					{
+						DestroyEffectGroup(m_pModelEffectGroupEvent);
+						m_pModelEffectGroupEvent = StartEffectGroup(m_strEffectGroupNameEvent, &en_pmiModelInstance->m_tmSkaTagManager, _pTimer->GetLerpedCurrentTick());
+					}*/
+					SendEvent(EStart()); // 이펙트 활성화
+				}
+				else
+				{ // 활성화된 애니메이션 동작에서 비활성화되는 오브젝트로 연출한다.( 충돌처리 비활성화 및 이펙트 소거)
+					if (m_bObjectClick)
+					{
+						SetFlagOff(ENF_ALIVE); // 총돌처리 비활성화
+					}
+
+					SendEvent(EStop()); // 이펙트 소거
+				}
+
+				resume;
+			}
+			on (EModel3Action): {
+				/* test ///////////////////////////////////
+				m_fSpiritStartTime = _pTimer->CurrentTick();
+				m_fFadeStartTime = _pTimer->CurrentTick();
+				m_fFadeTime = 4.0f;
+				m_bFadeOut = TRUE;
+				SetFlagOff(ENF_NOPARTICLES);
+				/////////////////////////////////////////*/
+				call ModelAction();
+				resume;
+			}
+			/*on (EReturn): {
+				SendEvent(EModel3Action());
+				resume;
+			}*/
+			otherwise(): {
+				resume;
+			}
+		};
+	}
+
 	Die()
 	{
 		// for each child of this entity
@@ -760,234 +1200,31 @@ procedures:
 		Destroy(FALSE);
 		return;
 	}
-	Main()
+
+	ModelAction(EVoid)
 	{
-//강동민 수정 시작 접속 시퀀스 작업	05.20
-/*
-		if(m_bEnemy)
+		if (m_strActionAnim != "")
 		{
-			SetFlagOn(ENF_ENEMY);
-			m_bActive = FALSE;	
-		}
-		*/
-//강동민 수정 끝 접속 시퀀스 작업	05.20
-		SetFlagOn(ENF_MARKDESTROY);
-		SetFlagOn(ENF_NONETCONNECT);
-		SetFlagOff(ENF_PROPSCHANGED);
-//강동민 수정 시작 테스트 클라이언트 작업	06.30
-		SetFlagOff(ENF_RENDERREFLECTION);
-//강동민 수정 끝 테스트 클라이언트 작업		06.30
-//강동민 수정 시작 로그인 처리 작업	07.20
-		SetFirstExtraFlagOff(ENF_EX1_TERRAINSHADOW);
-//강동민 수정 끝 로그인 처리 작업		07.20
-
-		// initialize the model
-		InitModelHolder();
-
-//안태훈 수정 시작	//(For Performance)(0.1)
-		SetFirstExtraFlagOff(ENF_EX1_DECORATION);
-		if(m_bDecorationObject) { SetFirstExtraFlagOn(ENF_EX1_DECORATION); }
-//안태훈 수정 끝	//(For Performance)(0.1)
-
-//강동민 수정 시작 테스트 클라이언트 작업	06.30
-		if(m_bRenderReflection)
-		{
-			SetFlagOn(ENF_RENDERREFLECTION);			
-		}
-//강동민 수정 끝 테스트 클라이언트 작업		06.30
-		
-//강동민 수정 시작 로그인 처리 작업	07.20
-		if(m_bTerrainShadow)
-		{
-			SetFirstExtraFlagOn(ENF_EX1_TERRAINSHADOW);
-		}
-//강동민 수정 끝 로그인 처리 작업		07.20
-		
-//안태훈 수정 시작	//(Add Sun Moon Entity and etc)(0.2)
-		GetModelInstance()->SetModelColor(m_colModelColor);
-//안태훈 수정 끝	//(Add Sun Moon Entity and etc)(0.2)
-
-//안태훈 수정 시작	//(Open beta)(2004-12-13)
-		if(m_bHasRootTag && GetModelInstance())
-		{
-			CSkaTag tag;
-			tag.SetName("__ROOT");
-			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-			tag.SetName("__TOP");
-			FLOATaabbox3D aabb;
-			GetModelInstance()->GetAllFramesBBox(aabb);
-			tag.SetOffsetPos(0, aabb.Size()(2), 0);
-			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-		}
-//안태훈 수정 끝	//(Open beta)(2004-12-13)
-
-		// check your destruction pointer
-		if( m_penDestruction!=NULL && !IsOfClass( m_penDestruction, &CModelDestruction_DLLClass)) {
-			WarningMessage("Destruction '%s' is wrong class!", m_penDestruction->GetName());
-			m_penDestruction=NULL;
-		}
-		
-		// warning! because of this auto wait domino effect destruction with chainsaw didn't work
-		//autowait(0.05f);
-		
-		// start ska animations if needed
-		if( m_strModelAnimation != "")
-		{
-			INDEX iAnim = ska_GetIDFromStringTable(m_strModelAnimation);
-			INDEX iDummy1, iDummy2;
-			if (GetModelInstance()->FindAnimationByID(iAnim, &iDummy1, &iDummy2)) { 
-				NewClearState(0.05f);
-				ULONG ulFlags = AN_LOOPING;
-				if (m_bDoNotLoopAnimation) {
-					ulFlags = 0;
-				}
-				AddAnimation(iAnim, ulFlags, 1, 1);            
-				OffSetAnimationQueue(FRnd()*10.0f);        
-			} else {
-				CPrintF("WARNING! Animation '%s' not found in SKA entity '%s'!\n",
-					m_strModelAnimation, GetName());
-			}
-		}
-		
-		// [080201: Su-won] 다른 이펙트가 존재하면 새로운 이펙트를 적용하기 전에 없앰.
-		if( m_pModelEffectGroup )
-		{
-			DestroyEffectGroup(m_pModelEffectGroup);
+			NewClearState(CLEAR_STATE_LENGTH);
+			AddAnimation(ska_GetIDFromStringTable(m_strActionAnim), AN_NORESTART, 1, 1);
+			autowait(GetModelInstance()->GetAnimLength(ska_GetIDFromStringTable(m_strActionAnim)));
 		}
 
-		if(GetModelInstance() && m_strEffectGroupName != "")
-		{
-			if(CEffectGroupManager::Instance().IsValidCreated(m_pModelEffectGroup))
-			{
-				m_pModelEffectGroup->Stop(0);
+		INDEX iAnim = ska_GetIDFromStringTable(m_strModelAnimation);
+		INDEX iDummy1, iDummy2;
+		if (GetModelInstance()->FindAnimationByID(iAnim, &iDummy1, &iDummy2)) { 
+			NewClearState(0.05f);
+			ULONG ulFlags = AN_LOOPING;
+			if (m_bDoNotLoopAnimation) {
+				ulFlags = 0;
 			}
-			m_pModelEffectGroup = StartEffectGroup(m_strEffectGroupName
-												, &GetModelInstance()->m_tmSkaTagManager
-												, _pTimer->GetLerpedCurrentTick() + rand() / RAND_MAX);
+			AddAnimation(iAnim, ulFlags, 1, 1);            
+			OffSetAnimationQueue(FRnd()*10.0f);        
+		} else {
+			CPrintF("WARNING! Animation '%s' not found in SKA entity '%s'!\n",
+				m_strModelAnimation, GetName());
 		}
-		else
-		{
-			m_pModelEffectGroup = NULL;
-		}
-		
-		// wait forever
-		wait() {
-			// on the beginning
-			on(EBegin): {
-				// set your health
-				if (m_penDestruction!=NULL) {
-					SetHealth(GetDestruction()->m_fHealth);
-				}
-				resume;
-			}
-//안태훈 수정 시작	//(Effect Add & Modify for Close Beta)(0.1)
-			on(EStart):
-			{
-				if(m_strEffectGroupNameEvent != "" && en_pmiModelInstance != NULL)
-				{
-					DestroyEffectGroup(m_pModelEffectGroupEvent);
-					m_pModelEffectGroupEvent = StartEffectGroup(m_strEffectGroupNameEvent, &en_pmiModelInstance->m_tmSkaTagManager, _pTimer->GetLerpedCurrentTick());
-				}
-				resume;
-			}
-			on(EStop):
-			{
-				if(m_strEffectGroupNameEvent != "" && en_pmiModelInstance != NULL)
-				{
-					if(CEffectGroupManager::Instance().IsValidCreated(m_pModelEffectGroupEvent))
-					{
-						m_pModelEffectGroupEvent->Stop(0); // WSS_DRATAN_SEIGEWARFARE 2007/08/30 바로 사라지게 처리 10 -> 0
-						m_pModelEffectGroupEvent = NULL;
-					}
-				}
-				resume;
-			}
-//안태훈 수정 끝	//(Effect Add & Modify for Close Beta)(0.1)
-			// activate/deactivate shows/hides model
-			on (EActivate): {
-				if (_pNetwork->IsServer()) {
-					SendEvent(EModel3Activate(),TRUE);
-				}
-				resume;
-			}
-			on (EModel3Activate): {       
-				SetFlagOn(ENF_PROPSCHANGED);
-				SwitchToModel();
-				m_bActive = TRUE;
-				if (m_bColliding) {
-					SetPhysicsFlags(EPF_MODEL_FIXED);
-					SetCollisionFlags(ECF_MODEL_HOLDER);
-				}
-				resume;
-			}
-			on (EDeactivate): {
-				if (_pNetwork->IsServer()) {
-					SendEvent(EModel3Deactivate(),TRUE);
-				}
-				resume;
-			}
-			on (EModel3Deactivate): {
-				SetFlagOn(ENF_PROPSCHANGED);
-				SwitchToEditorModel();
-				SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-				SetCollisionFlags(ECF_IMMATERIAL);
-				m_bActive = FALSE;
-				resume;
-			}
-			// when your parent is destroyed
-			on(ERangeModelDestruction): {
-				// for each child of this entity
-				{FOREACHINLIST(CEntity, en_lnInParent, en_lhChildren, itenChild) {
-					// send it destruction event
-					itenChild->SendEvent(ERangeModelDestruction(),TRUE);
-				}}
-				// destroy yourself
-				Destroy(FALSE);
-				resume;
-			}
-			// when dead
-			on(EDeath): {
-				SendEvent(EModelDeath(),TRUE);
-				if (_pNetwork->IsServer()) {
-					if (m_penDestruction!=NULL) {
-						jump Die();
-					}
-				}
-				resume;
-			}
-			on(EModelDeath): {
-				SendEvent(EModelDeath(),TRUE);
-				if (!_pNetwork->IsServer()) {
-					if (m_penDestruction!=NULL) {
-						jump Die();
-					}
-				}
-				resume;
-			}
-			// when animation should be changed
-			on(EChangeAnim eChange): {    
-				m_strModelAnimation = eChange.strAnimation;
-				if( m_strModelAnimation != "")
-				{
-					INDEX iAnim = ska_GetIDFromStringTable(m_strModelAnimation);
-					INDEX iDummy1, iDummy2;
-					if (GetModelInstance()->FindAnimationByID(iAnim, &iDummy1, &iDummy2)) { 
-						NewClearState(eChange.fBlendTime);
-						ULONG ulFlags = 0;
-						if (eChange.bModelLoop) {
-							ulFlags = AN_LOOPING;
-						}
-						AddAnimation(iAnim, ulFlags, 1, 1);            
-					} else {
-						CPrintF("WARNING! Animation '%s' not found in SKA entity '%s'!\n",
-							m_strModelAnimation, GetName());
-					}
-				} 
-				resume;
-			}
-			otherwise(): {
-				resume;
-			}
-		};
+
+		return EReturn();
 	}
 };

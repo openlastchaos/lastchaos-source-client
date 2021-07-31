@@ -15,24 +15,24 @@
 #include <Engine/Brushes/Brush.h>
 #include <Engine/Brushes/BrushTransformed.h>
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 #include <Engine/Math/Matrix12.h>
 #include <Engine/Base/Rect.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
-// NOTE : RenderOneSkaModelToTexture()ë¥¼ ìœ„í•´ì„œ í•„ìš”í•œ ë¶€ë¶„.  ë‚˜ì¤‘ì— ì œê±°í• ê²ƒ.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+// NOTE : RenderOneSkaModelToTexture()¸¦ À§ÇØ¼­ ÇÊ¿äÇÑ ºÎºĞ.  ³ªÁß¿¡ Á¦°ÅÇÒ°Í.
 #include <d3dx8.h>
 #define SHADOWTEXTURESIZE (256)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 // sehan
 #include <vector>
 // sehan end
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
 #include <Engine/Effect/CNiceWater.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22
 
 #undef ALIGNED_NEW_AND_DELETE
 #ifdef NDEBUG
@@ -209,9 +209,9 @@ inline void Clear(Vector<float,2> &dummy) {};
 #define DMF_INSIDE   (1UL<<5)  // completely inside frustum (not clipped)
 #define DMF_INMIRROR (1UL<<6)  // completely inside mirror (not clipped)
 #define DMF_VERYNEAR (1UL<<7)  // for signaling when to skip occlusion test
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-13)
 #define DMF_HASACTIVETAG	(1UL<<8)	//model has active tags
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-13)
 
 class CDelayedModel {
 public:
@@ -277,7 +277,7 @@ public:
 	void FinishAdding(void);
 };
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 class CWaterEntity
 {
 public:
@@ -285,7 +285,7 @@ public:
 	CEntity*		m_pWaterEntity;
 	void Clear(void) {};	
 };
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 
 // sehan
 struct GaussianProp			// width and amplitude of a Gaussian 
@@ -387,18 +387,19 @@ public:
 	// structures needed to render the scanned scene (separated for each renderer)
 	CDynamicStackArray<CScreenPolygon> re_aspoScreenPolygons;
 	CDynamicStackArray<CDelayedModel> re_admDelayedModels; // model entities to be renderer later
+	CStaticStackArray<CDelayedModel> re_admDelayedModels_AddWater; // 
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.07
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.07
 	void RenderSkaModelShadowToTerrain(CTerrain* ptrTerrain, const CPlacement3D& plEye);
 	void RenderShadowToBrushPolygon(const CPlacement3D &plEye);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.07
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.07
 
 	CDynamicContainer<CEntity> re_cenDrawn; // all drawn entities (for drawing target lines etc.)
 	CStaticStackArray<CLensFlareInfo> re_alfiLensFlares;  // active lens flares
 	CDynamicStackArray<CMirror> re_amiMirrors;    // mirrors/portals for recursion
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.16
 	CDynamicStackArray<CWaterEntity> re_amiWaters;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.16
 	CStaticStackArray<CViewVertex> re_avvxViewVertices;   // transformed vertices
 	CStaticStackArray<INDEX> re_aiEdgeVxMain;
 
@@ -525,14 +526,14 @@ public:
 
 	/* Add a mirror/portal. */
 	void AddMirror(CScreenPolygon &spo);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.16
 	void AddWater(CEntity &ent);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.16
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 	void PrepareTerrainLights();
 	std::vector<CLightSource *> m_vectorLights;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 
 	/* Add a polygon to surface stack. */
 	inline BOOL AddPolygonToSurfaceStack(CScreenPolygon &spo);
@@ -554,12 +555,12 @@ public:
 	inline CScreenPolygon *ScanOneLine(void);
 	/* Rasterize edges into spans. */
 	void ScanEdges(void);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.14
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.14
 	BOOL ScanWaterEntity();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.14
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ 2ì°¨ ì‘ì—…			05.19
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.14
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ 2Â÷ ÀÛ¾÷			05.19
 	BOOL ScanEnemyEntity();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë 2ì°¨ ì‘ì—…			05.19
+//°­µ¿¹Î ¼öÁ¤ ³¡ 2Â÷ ÀÛ¾÷			05.19
 
 	/* Render wireframe brushes. */
 	void RenderWireFrameBrushes(void);
@@ -569,34 +570,34 @@ public:
 	/* Render a model. */
 	void RenderOneModel( CEntity &en, CModelObject &moModel, const CPlacement3D &plModel,
 											 const FLOAT fDistanceFactor, BOOL bRenderShadow, ULONG ulDMFlags);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 	/* Render a ska model. */
-	// SKA ëª¨ë¸ì„ ë Œë”ë§í•©ë‹ˆë‹¤.
-	//void CRenderer::RenderOneSkaModel( CEntity &en, const CPlacement3D &plModel,	// ì›ë³¸.
+	// SKA ¸ğµ¨À» ·»´õ¸µÇÕ´Ï´Ù.
+	//void CRenderer::RenderOneSkaModel( CEntity &en, const CPlacement3D &plModel,	// ¿øº».
 	void RenderOneSkaModel( CEntity &en, const CPlacement3D &plModel, 
 		BOOL bRenderShadow, FLOAT fDMDistance, ULONG ulDMFlags);
 	
-	// NOTE : ì¶”í›„ ìºë¦­í„°ë‚˜ ëª¬ìŠ¤í„°ì˜ ëª¨ìŠµì„ ìœˆë„ìš° ë“±ì— ë³´ì—¬ì£¼ëŠ” ì‹ìœ¼ë¡œ ì‚¬ìš©í• ìˆ˜ ìˆì„ë“¯...
+	// NOTE : ÃßÈÄ Ä³¸¯ÅÍ³ª ¸ó½ºÅÍÀÇ ¸ğ½ÀÀ» À©µµ¿ì µî¿¡ º¸¿©ÁÖ´Â ½ÄÀ¸·Î »ç¿ëÇÒ¼ö ÀÖÀ»µí...
 	void RenderOneSkaModelToTexture(CEntity &en, const CPlacement3D &plModel, const CPlacement3D &plLight,
 		BOOL bRenderShadow, FLOAT fDMDistance, ULONG ulDMFlags, BOOL bIsDirectional = TRUE);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 	/* Render models that were kept for delayed rendering. */
 	void RenderModels(BOOL bBackground);
 	/* Render active terrains */
 	void RenderTerrains(void);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 	void RenderNiceWaterModels();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
 	/* Render active terrains in wireframe mode */
 	void RenderWireFrameTerrains(void);
 	/* Render particles for models that were kept for delayed rendering. */
 	void RenderParticles(BOOL bBackground);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	/* Process effect */
-	void ProcessEffects(BOOL bBackground);
+	void ProcessEffects(BOOL bBackground, EFF_RENDER_TYPE erType = ER_NORMAL, CAnyProjection3D* ppr = NULL);
 	/* Render effect */
-	void RenderEffects(BOOL bBackground);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+	void RenderEffects(BOOL bBackground, EFF_RENDER_TYPE erType = ER_NORMAL, CAnyProjection3D* ppr = NULL, CDrawPort* pdp = NULL);
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	// render one arrow given its 3d coordinates in world
 	void ProjectClipAndDrawArrow(
 		const FLOAT3D &v0, const FLOAT3D &v1, COLOR colColor);
@@ -645,9 +646,9 @@ public:
 	void InitClippingRectangle(PIX pixMinI, PIX pixMinJ, PIX pixSizeI, PIX pixSizeJ);
 	// do the rendering
 	void Render(void);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
 	void RenderReflection();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 
 	// initialize all rendering structures
 	void Initialize(void);
@@ -671,31 +672,34 @@ public:
 	GaussianProp	* m_pGaussianProp;
 	float		m_fPerTexelWidth;
 	float		m_fPerTexelHeight;
-	float					m_fColorAtten[2];
+	float					m_fColorAtten[3];
 
 	// Three sets of texture coord offsets
 	// See CreateUVOffsets() for a description
 	FourTextureStage_TexCoordOffsets	m_Offsets[3];
 
-	std::vector< FilterKernelElement >	m_vGaussian1D[2];
+	std::vector< FilterKernelElement >	m_vGaussian1D[3];
 
 	int			m_nNumGaussiansInSingleBlur;	// the blur profile may be made of
 												//  several Gaussians added together
-	int			m_nGaussianSize[2];		// size of Flare array from each element, in texels
+	//¿ø·¡ ¹è¿­ÀÇ °³¼ö°¡ 3ÀÌ¿´À½ ÀÎµ¦½º 2¿¡´Â °ªÀÌ ¾ø´Âµ¥ Âü°íÇØ¼­ ¿¡·¯°¡ ³ª´Â µí ÇØ¼­ 2·¡ ¼öÁ¤ 
+	//Â÷ÈÄ ±¹³»°Í°ú ¸ÓÁö ÇÊ¿ä ÇÒ µí ÀÌÆåÆ®µµ °°ÀÌ ¼öÁ¤µÇ¾ß ÇÒ °Í °°À½ 
+	//modified by sam 10/11/18
+	int			m_nGaussianSize[2];		// size of Flare array from each element, in texels  
 										//  of the render target size
 	int			m_nTexRes;				// resolution of texture render targets
 	float		m_fTemp;
 	bool		m_bElimSmallContributors;		// eliminate Gaussian blur elements
 												// if their coef is too low.
 	//LPDIRECT3DVERTEXBUFFER8  m_pVertexBuffer;
-	//LPDIRECT3DVERTEXBUFFER8  m_pBackVertexBuffer[MAX_BACKVERTEX_WIDTH][MAX_BACKVERTEX_HEIGHT]; // 1280 X 1024 ê¹Œì§€ë§Œ ì§€ì›ë˜ëŠ”ê±¸ë¡œ ê°€ì •í•œë‹¤.
+	//LPDIRECT3DVERTEXBUFFER8  m_pBackVertexBuffer[MAX_BACKVERTEX_WIDTH][MAX_BACKVERTEX_HEIGHT]; // 1280 X 1024 ±îÁö¸¸ Áö¿øµÇ´Â°É·Î °¡Á¤ÇÑ´Ù.
 
 	D3DXMATRIX		m_matFullCoverage_WVP;
 	LPD3DXBUFFER            m_pD3DXBufShader;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë²„ê·¸ ì‚¬ëƒ¥ ì‘ì—…	09.09
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ¹ö±× »ç³É ÀÛ¾÷	09.09
 //	DWORD                   m_dwAddFourPixelShader;
 //	DWORD                   m_dwTexCoord4OffsetVertexShader;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë²„ê·¸ ì‚¬ëƒ¥ ì‘ì—…		09.09
+//°­µ¿¹Î ¼öÁ¤ ³¡ ¹ö±× »ç³É ÀÛ¾÷		09.09
 
 	HRESULT		DoCreateFlareTexture_Separable();
 	HRESULT	SetFlareLook();

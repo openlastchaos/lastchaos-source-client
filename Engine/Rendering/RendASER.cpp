@@ -759,7 +759,7 @@ void CRenderer::ScanEdges(void)
 	re_bCoherentScanLine = 0;
 
 	// for each scan line, top to bottom
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	for (re_iCurrentScan = 0; re_iCurrentScan<re_ctScanLines; ++re_iCurrentScan) {
 		re_pixCurrentScanJ = re_iCurrentScan + re_pixTopScanLineJ;
 		re_fCurrentScanJ = re_pixCurrentScanJ;
@@ -768,7 +768,7 @@ void CRenderer::ScanEdges(void)
 		re_pixCurrentScanJ = re_iCurrentScan + re_pixTopScanLineJ;
 		re_fCurrentScanJ = FLOAT(re_pixCurrentScanJ);
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 
 		CScreenPolygon *pspoPortal;     // pointer to portal encountered while scanning
 
@@ -803,10 +803,10 @@ void CRenderer::ScanEdges(void)
 		}
 
 		// set scan-line coherence marker
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 		++re_bCoherentScanLine;
 		//re_bCoherentScanLine++;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 
 		// surface stack must contain only background
 		ASSERT(&re_spoFarSentinel == LIST_HEAD(re_lhSurfaceStack, CScreenPolygon, spo_lnInStack)

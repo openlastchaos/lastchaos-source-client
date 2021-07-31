@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "StdH.h"
 
 #include <Engine/Ska/Render.h>
@@ -55,9 +55,9 @@ void CSkaEffect::EraseEffectControl()
 CEffect *CSkaEffect::Copy()
 {
 	CSkaEffect *pRet = new CSkaEffect;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CSkaEffectì˜ content
+	//CSkaEffectÀÇ content
 	if(m_strModelFileName!="") pRet->SetModelInstance(m_strModelFileName);
 	pRet->SetColor(this->GetColor());
 	pRet->SetStretch(this->GetStretch());
@@ -74,12 +74,12 @@ void CSkaEffect::Start(FLOAT time, BOOL restart)
 	if(m_pCreatedModel == NULL) m_eState = ES_PLAY_END;
 	if(m_eState != ES_NOT_STARTED) return;
 	
-	//ë¶€ëª¨ì˜ ì• ë‹ˆë¥¼ ì‹œì‘í•œë‹¤.
+	//ºÎ¸ğÀÇ ¾Ö´Ï¸¦ ½ÃÀÛÇÑ´Ù.
 	INDEX effectAni = m_pCreatedModel->FindFirstAnimationID();
 	if(effectAni != -1) m_pCreatedModel->AddAnimation(effectAni, AN_LOOPING|AN_CLEAR, 1, 0);
-	m_pCreatedModel->StretchModel(m_vStretch);	//ìì‹ì€ ìë™ì ìš©
+	m_pCreatedModel->StretchModel(m_vStretch);	//ÀÚ½ÄÀº ÀÚµ¿Àû¿ë
 
-	//ìì‹ë“¤ì˜ ì• ë‹ˆë¥¼ ì‹œì‘í•œë‹¤.
+	//ÀÚ½ÄµéÀÇ ¾Ö´Ï¸¦ ½ÃÀÛÇÑ´Ù.
 	INDEX ctmi = m_pCreatedModel->mi_cmiChildren.Count();
 	for(INDEX i=0; i<ctmi; i++)
 	{
@@ -115,9 +115,9 @@ BOOL CSkaEffect::Process(FLOAT time)
 	m_vAngle = GetEulerAngleFromQuaternion(m_ptrAttachTag->CurrentTagInfo().m_qRot);
 	if(m_pEffectControl == NULL)
 	{
-		//Alphaì˜ ë³€í™”ë¥¼ ì²˜ë¦¬
+		//AlphaÀÇ º¯È­¸¦ Ã³¸®
 		COLOR colModel = m_colModel & C_WHITE;
-		colModel |= ((m_colModel & 0x000000FF) * NormFloatToByte( GetFadeValue(fProcessedTime) )) >> 8; //model instanceì˜ color
+		colModel |= ((m_colModel & 0x000000FF) * NormFloatToByte( GetFadeValue(fProcessedTime) )) >> 8; //model instanceÀÇ color
 		//color setting
 		m_pCreatedModel->SetModelColor(colModel);
 		INDEX ctmi = m_pCreatedModel->mi_cmiChildren.Count();
@@ -131,6 +131,11 @@ BOOL CSkaEffect::Process(FLOAT time)
 	{
 		m_pEffectControl->Process(&m_colModel, &m_vStretch, &m_vPostion, &m_vAngle
 								, fProcessedTime, m_fLifeTime, fDeltaTime);
+		
+		if (m_penOwner != NULL && m_eRotation == EOTT_NONE)
+		{// ska effect¸ğµ¨ÀÇ ¹æÇâÀÌ ½Ã¼± ¹æÇâÀÌ µÇµµ·Ï ÇÏ±â À§ÇØ Ã³¸®
+			m_vAngle(1) = m_penOwner.ep_pen->GetPlacement().pl_OrientationAngle(1);
+		}
 
 		m_pCreatedModel->SetModelColor(m_colModel);
 		INDEX ctmi = m_pCreatedModel->mi_cmiChildren.Count();
@@ -186,9 +191,9 @@ void CSkaEffect::Render()
 	}
 	
 	if (GetOwner() != NULL)
-	{ // HIDDEN ì†ì„±ì˜ NPCì˜ ì´í™íŠ¸ë¥¼ ë³´ê¸° ìœ„í•´ì„œëŠ” ìºë¦­í„°ê°€ ENF_SHOWHIDDENì„ ê°€ì§€ê³  ìˆì–´ì•¼ í•œë‹¤.
+	{ // HIDDEN ¼Ó¼ºÀÇ NPCÀÇ ÀÌÆåÆ®¸¦ º¸±â À§ÇØ¼­´Â Ä³¸¯ÅÍ°¡ ENF_SHOWHIDDENÀ» °¡Áö°í ÀÖ¾î¾ß ÇÑ´Ù.
 		if (GetOwner()->IsFlagOn(ENF_HIDDEN) && (CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npc effectëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc effect´Â º¼ ¼ö ÀÖ´Ù.
 			return;
 	}
 
@@ -295,4 +300,4 @@ void CSkaEffect::Write(CTStream *pOS)
 	if(m_pEffectControl != NULL) m_pEffectControl->Write(&os);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

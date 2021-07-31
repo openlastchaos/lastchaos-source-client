@@ -148,7 +148,7 @@ properties:
 200 FLOAT m_tmStopJumpAnim = 0.0f,
 
 201 BOOL  m_bMoving = FALSE,
-
+202 BOOL  m_bPolymoph = FALSE, // 변신
 205 FLOAT m_fAttackStartTime = 0.0f,
 206 FLOAT m_fAttackFrequency = 0.0f,
 207 BOOL m_bStop = FALSE,
@@ -156,6 +156,7 @@ properties:
 213 BOOL  m_bNpc = FALSE,
 214 INDEX	m_nAttackCnt = 0,
 215 CEntityPointer	m_penKillEnemy,        //죽어야할 에너미
+216 BOOL m_bAction = FALSE,
 
 components:
 
@@ -190,6 +191,31 @@ functions:
 
 	void CEnemyBase(void)
 	{
+	}
+
+	void ~CEnemyBase(void)
+	{
+		ReleaseChche(ECT_MODEL, MODEL_FLESH);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_APPLE);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_BANANA);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_BURGER);
+		ReleaseChche(ECT_MODEL, MODEL_MACHINE);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_MACHINE);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_RED);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_GREEN);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_APPLE); 
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_BANANA);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_BURGER);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_LOLLY); 
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_ORANGE); 
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_DEBRIS);
+		ReleaseChche(ECT_CLASS, CLASS_WATCHER);
 	}
 
 	// describe how this enemy killed player
@@ -1463,7 +1489,9 @@ functions:
 	{		
 		m_bStop = FALSE;
 		m_bAttack = FALSE;
-		m_bMoving = FALSE;		
+		m_bMoving = FALSE;
+		m_bPolymoph = FALSE;
+
 		if(GetFlags()&ENF_ALIVE)
 		{
 			SendEvent(EDeath());
@@ -1474,7 +1502,9 @@ functions:
 	{		
 		m_bStop = FALSE;
 		m_bAttack = FALSE;
-		m_bMoving = TRUE;		
+		m_bMoving = TRUE;
+		m_bPolymoph = FALSE;
+
 		SendEvent(EReconsiderBehavior());
 	}
 	void AttackNow()
@@ -1490,6 +1520,7 @@ functions:
 		m_bAttack = TRUE;
 		m_bMoving = FALSE;
 		m_bSkilling = FALSE;
+		m_bPolymoph = FALSE;
 
 		m_nAttackCnt++;
 
@@ -1502,6 +1533,7 @@ functions:
 		m_bAttack = FALSE;
 		m_bMoving = FALSE;
 		m_bSkilling = FALSE;
+		m_bPolymoph = FALSE;
 
 		SendEvent(EReconsiderBehavior());
 	}
@@ -1511,8 +1543,21 @@ functions:
 		m_bStop = FALSE;
 		m_bAttack = FALSE;
 		m_bMoving = FALSE;	
-		m_bSkilling = TRUE;	
+		m_bSkilling = TRUE;
+		m_bPolymoph = FALSE;
 	
+		SendEvent(EReconsiderBehavior());
+	}
+	
+	void PolymophNow() // 변신한다.
+	{
+		m_bStop = FALSE;
+		m_bAttack = FALSE;
+		m_bMoving = FALSE;	
+		m_bSkilling = FALSE;
+		m_bPolymoph = TRUE;
+		ForceFullStop();
+
 		SendEvent(EReconsiderBehavior());
 	}
 
@@ -1544,7 +1589,11 @@ functions:
 
 
 procedures:
-
+	// dummy main - never called
+	Main(EVoid) 
+	{
+		return;
+	};
 //**********************************************************
 //                 ATTACK PROCEDURES
 //**********************************************************
@@ -1834,7 +1883,9 @@ procedures:
 				on (EDeath) : { pass; }
 				on (EEnemyBaseDeath) : {pass; }
 
-				on (ESound) : { resume; }     // ignore all sounds
+				on (ESound) : {
+					resume;
+				}     // ignore all sounds
 				on (EWatch) : { resume; }     // ignore watch
 				on (EReturn) : { stop; }  // returned from subprocedure
 			}
@@ -1899,6 +1950,17 @@ procedures:
 	Fire(EVoid) 
 	{ 
 		return EReturn(); 
+	}
+
+	Polymoph()
+	{
+		StopMoving(); 
+		return EReturn();
+	};
+
+	Action(EVoid)
+	{
+		return EReturn();
 	}
 
 //**********************************************************
@@ -2190,6 +2252,8 @@ procedures:
 		// wait for the stardust effect
 		autowait(fEffectWait);
 
+		en_pMobTarget->Clear();
+
 		return EEnd();
 	}
 //**********************************************************
@@ -2227,15 +2291,28 @@ procedures:
 						m_bSkilling = FALSE;
 						call SkillingTarget();
 					}
+					else if (m_bPolymoph)
+					{
+						m_bPolymoph = FALSE;
+						call Polymoph();
+					}
 					else if(m_bAttack)
 					{
 						m_bAttack = FALSE;
 						call AttackTarget();
-					}					
-					else
+					}
+					else if(m_bStop) //리젠 되었을때 또는 이동을 멈출때
 					{
-						SetNoTargetEntity();
-					}											
+						call StopMovement();
+					}
+					else if(m_bMoving)
+					{
+						call MovetoPoint();						
+					}
+// 					else
+// 					{
+// 						SetNoTargetEntity();
+// 					}											
 				}
 				else if(m_penEnemy==NULL) //0628 타겟이 없다.
 				{
@@ -2243,10 +2320,19 @@ procedures:
 					{
 						call StopMovement();
 					}
+					else if (m_bPolymoph)
+					{
+						m_bPolymoph = FALSE;
+						call Polymoph();
+					}
 					else if(m_bMoving)
 					{
 						call MovetoPoint();						
-					}					
+					}
+					else if(m_bAction)
+					{
+						call Action();
+					}
 				}
 				resume;
 			}
@@ -2446,8 +2532,11 @@ procedures:
 	Inactive(EVoid) 
 	{
 		// stop moving
-		StopMoving();                 
-		StandingAnim();
+		StopMoving();
+		if (!m_bAction)
+		{
+			StandingAnim();
+		}
 
 		// wait forever
 		wait() 
@@ -2648,8 +2737,11 @@ procedures:
 		// IMPORTANT: 
 		// this wait amount has to be lower than the one in music holder, so that the enemies are initialized before
 		// they get counted
-		SetFlagOn(ENF_CLIENTHANDLING);
-		autowait(_pTimer->TickQuantum);		// 1/20초 기다림.
+
+		//SetFlagOn(ENF_CLIENTHANDLING);
+		// wait time에 걸려 있는동안 DeathNow()함수가 호출 될 경우 Death루틴을 타지 않음.
+		// autowait 주석처리후 테스트 진행.
+		//autowait(_pTimer->TickQuantum);		// 1/20초 기다림.
 		SetFlagOff(ENF_CLIENTHANDLING);
 		
 		if(_pNetwork->m_bSingleMode)
@@ -2833,12 +2925,6 @@ procedures:
 		}
 	};
 
-	// dummy main - never called
-	Main(EVoid) 
-	{
-		return;
-	};
-
 	//--------------------------------------------------------------------------------
 	//0628 kwon
 	AttackTarget() // 이 프로시저를 call하기전에 SetTargetEntity()가 선행되어야 한다.
@@ -2876,7 +2962,7 @@ procedures:
 
 //		CPrintF("Start SetDesiredMovement () %f\n",_pTimer->CurrentTick());
 	
-		while (CalcDistanceInPlaneToDestination() > 0.0f)
+		while (CalcDistanceInPlaneToDestination() > 0.5f)
 		{	 
 			wait (m_fMoveFrequency) {
 				on (EBegin) : { 

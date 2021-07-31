@@ -30,10 +30,17 @@
 #include <Engine/Templates/DynamicContainer.cpp>
 #include <Engine/Templates/Stock_CTextureData.h>
 #include <Engine/Templates/Stock_CMesh.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include <Engine/Effect/EffectCommon.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
+#include <Engine/Network/Web.h>
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Interface/UIOption.h>
 
+extern cWeb g_web;
+extern HWND	_hwndMain;
+//	±è¿µÈ¯ Àü¿ª ¼³Á¤ °ª °¡Á®¿À±â
+extern BOOL _bClientApp;
 
 // control for partial usage of compiled vertex arrays
 extern BOOL CVA_b2D     = FALSE;
@@ -135,7 +142,7 @@ extern INDEX tex_bCompressGrayscale     = TRUE;   // compress grayscale textures
 extern INDEX tex_bCompressAlphaChannel  = FALSE;  // use interpolated alpha channel for compressed translucent textures
 extern INDEX tex_bAlternateCompression  = FALSE;  // compress opaque texture as translucent (this is a fix for GF1/2/3)
 extern INDEX tex_bAggressiveCompression = TRUE;   // compress "constant" textures
-extern INDEX ter_bShowCharacterShadow = TRUE;	// ì§€í˜•ì— ìºë¦­í„° ê·¸ë¦¼ìë¥¼ ê·¸ë¦´ê²ƒì¸ê°€?
+extern INDEX ter_bShowCharacterShadow = TRUE;	// ÁöÇü¿¡ Ä³¸¯ÅÍ ±×¸²ÀÚ¸¦ ±×¸±°ÍÀÎ°¡?
 
 extern INDEX shd_iStaticSize  = 8;    
 extern INDEX shd_iDynamicSize = 8;    
@@ -198,9 +205,9 @@ extern INDEX gap_iDepthBits = 0;        // 0 (as color depth), 16, 24 or 32
 extern INDEX mdl_bRenderDetail     = TRUE;
 extern INDEX mdl_bRenderSpecular   = TRUE;
 extern INDEX mdl_bRenderReflection = TRUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Worldbase Overbright to NonOver)(0.1)
 extern INDEX mdl_bAllowOverbright  = TRUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Worldbase Overbright to NonOver)(0.1)
 extern INDEX mdl_iShadowQuality = 1;
 extern FLOAT mdl_fLODMul = 1.0f;
 extern FLOAT mdl_fLODAdd = 0.0f;
@@ -227,7 +234,7 @@ extern INDEX ska_iMaxWeightsPerVertex  = 4;
 extern INDEX ska_bUseHardwareShaders   = TRUE;
 extern INDEX ska_bAllowBonesAdjustment = TRUE;
 extern INDEX ska_bReplaceSmcWithBmc    = FALSE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
 extern INDEX ska_bShowTriangles		   = FALSE;
 extern INDEX g_bShowTerrain            = TRUE;
 extern INDEX g_bShowBSP                = TRUE;
@@ -235,11 +242,11 @@ extern INDEX g_bShowModel              = TRUE;
 extern INDEX g_bShowWater              = TRUE;
 extern INDEX g_iShowReflectionMap		   = 0;
 extern INDEX g_bReflection			   = TRUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 extern INDEX ska_bShowSkaTag		   = FALSE;
 extern INDEX ska_bShowAttachedTag      = FALSE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 extern INDEX login_bSkipSelect		   = FALSE;
 
 // shader controls 
@@ -263,7 +270,7 @@ extern INDEX ter_bShowLerpTargets    = FALSE; // for debuging
 extern INDEX ter_bDisableViewer      = FALSE; // for debuging
 extern INDEX ter_bShowTriangles      = FALSE; // for debuging
 extern INDEX ter_iRecordRayCasting   = FALSE; // for debuging
-extern INDEX ter_iAttributeRange	 = 40;		//Terrainì— ê·¸ë ¤ì§ˆ Attributeë§µì˜ í¬ê¸°ë¥¼ ì„¤ì • :Su-won
+extern INDEX ter_iAttributeRange	 = 40;		//Terrain¿¡ ±×·ÁÁú Attribute¸ÊÀÇ Å©±â¸¦ ¼³Á¤ :Su-won
 
 
 
@@ -344,12 +351,14 @@ extern INDEX sys_bUsingDirect3D = 0;
  */
 #define WH_KEYBOARD_LL 13
 
+#if	!defined(WINDOW_SDK_70A)
 #define LLKHF_EXTENDED 0x00000001
 #define LLKHF_INJECTED 0x00000010
 #define LLKHF_ALTDOWN  0x00000020
 #define LLKHF_UP       0x00000080
 
 #define LLMHF_INJECTED 0x00000001
+
 
 /*
  * Structure used by WH_KEYBOARD_LL
@@ -361,6 +370,8 @@ typedef struct tagKBDLLHOOKSTRUCT {
 		DWORD   time;
 		DWORD   dwExtraInfo;
 } KBDLLHOOKSTRUCT, FAR *LPKBDLLHOOKSTRUCT, *PKBDLLHOOKSTRUCT;
+
+#endif	// !defined(WINDOW_SDK_70A)
 
 static HHOOK _hLLKeyHook = NULL;
 
@@ -465,8 +476,8 @@ static void TexturesInfo(void)
 	}}
 
 	// report
-	const PIX pixNormDim = sqrt(TS.ts_pixNormSize);
-	const PIX pixAnimDim = sqrt(TS.ts_pixAnimSize);
+	const PIX pixNormDim = sqrt((double)TS.ts_pixNormSize);
+	const PIX pixAnimDim = sqrt((double)TS.ts_pixAnimSize);
 	const PIX pixEffDim  = 1L<<tex_iEffectSize;
 	CTString strTmp;
 	strTmp = tex_bFineEffect ? "32-bit" : "16-bit";
@@ -1148,7 +1159,7 @@ void CGfxLibrary::Init(void)
 	_pShell->DeclareSymbol("persistent user INDEX ska_iMaxWeightsPerVertex;", &ska_iMaxWeightsPerVertex);
 	_pShell->DeclareSymbol("persistent user INDEX ska_bAllowBonesAdjustment;", &ska_bAllowBonesAdjustment);
 	_pShell->DeclareSymbol("                INDEX ska_bReplaceSmcWithBmc;",&ska_bReplaceSmcWithBmc);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
 	_pShell->DeclareSymbol("           user INDEX ska_bShowTriangles;",&ska_bShowTriangles);
 	_pShell->DeclareSymbol("           user INDEX g_bShowTerrain;",&g_bShowTerrain);
 	_pShell->DeclareSymbol("           user INDEX g_bShowBSP;",&g_bShowBSP);
@@ -1156,12 +1167,12 @@ void CGfxLibrary::Init(void)
 	_pShell->DeclareSymbol("           user INDEX g_bShowWater;",&g_bShowWater);
 	_pShell->DeclareSymbol("           user INDEX g_iShowReflectionMap;",&g_iShowReflectionMap);
 	_pShell->DeclareSymbol("           user INDEX g_bReflection;",&g_bReflection);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
 	_pShell->DeclareSymbol("persistent user INDEX login_bSkipSelect;",&login_bSkipSelect);	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	_pShell->DeclareSymbol("           user INDEX ska_bShowSkaTag;", &ska_bShowSkaTag);
 	_pShell->DeclareSymbol("           user INDEX ska_bShowAttachedTag;", &ska_bShowAttachedTag);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 	
 	_pShell->DeclareSymbol("           user INDEX sha_bColorizeShaders;", &sha_bColorizeShaders);
@@ -1329,14 +1340,14 @@ BOOL CGfxLibrary::ResetDisplayMode( enum GfxAPIType eAPI/*=GAT_CURRENT*/)
 
 	// shutdown old and startup new API, and mode and ... stuff, you know!
 	StopDisplayMode();
-	BOOL bRet = StartDisplayMode( eNewAPI, 0, 0, 0, DD_DEFAULT);
+	BOOL bRet = StartDisplayMode( eNewAPI, 0, 0, 0, DISPD_DEFAULT);
 	if( !bRet) return FALSE; // didn't make it?
 
 	// update some info
 	gl_iCurrentAdapter = 0;
 	gl_dmCurrentDisplayMode.dm_pixSizeI = 0;
 	gl_dmCurrentDisplayMode.dm_pixSizeJ = 0;
-	gl_dmCurrentDisplayMode.dm_ddDepth  = DD_DEFAULT;
+	gl_dmCurrentDisplayMode.dm_ddDepth  = DISPD_DEFAULT;
 
 	// prepare texture formats for this display mode
 	extern void DetermineSupportedTextureFormats( GfxAPIType eAPI);
@@ -1511,9 +1522,9 @@ void CGfxLibrary::StopDisplayMode(void)
 	}
 	else if( gl_eCurrentAPI==GAT_D3D)
 	{ // Direct3D
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
-		Finalize_EffectSystem();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
+//		Finalize_EffectSystem();
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 		EndDriver_D3D();
 		MonitorsOn();
 	}
@@ -1666,7 +1677,7 @@ static BOOL _bClassRegistered = FALSE;
 /* Create a work canvas. */
 void CGfxLibrary::CreateWorkCanvas(PIX pixWidth, PIX pixHeight, CDrawPort **ppdpNew)
 {
-
+	// ±è¿µÈ¯ : Å¬¶óÀÌ¾ğÆ®¿¡¼­ »ç¿ë¾ÈÇÔ ¾Æ¸¶ Åø¿¡¼­ ÇÏ¿ëÇÒ µí.
 	// must have dimensions
 	ASSERT (pixWidth>0 || pixHeight>0);
 
@@ -1713,6 +1724,9 @@ void CGfxLibrary::DestroyWorkCanvas(CDrawPort *pdpOld)
 	CViewPort *pvp = pdpOld->dp_Raster->ra_pvpViewPort;
 	HWND hwnd = pvp->vp_hWndParent;
 	DestroyWindowCanvas(pvp);
+	//	±è¿µÈ¯ Å¬¶óÀÌ¾ğÆ®¿¡¼­ »ç¿ë¾ÈÇÏ´Â ÇÔ¼ö Åø¿¡¼­ »ç¿ëÇÒ µí
+	if(_bClientApp)
+		return; 
 	::DestroyWindow(hwnd);
 }
 
@@ -1729,7 +1743,7 @@ static void AdjustGammaRamp( CViewPort *pvp);
 static FLOAT _fMinAvailPhys = UpperLimit(1.0f);
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Win98)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Win98)(0.1)
 //////////////////////////////////////////////////////////
 //  Function Name  
 //      GetOSVersionType
@@ -1737,7 +1751,7 @@ static FLOAT _fMinAvailPhys = UpperLimit(1.0f);
 //  Parameters 
 //
 //  Return Values
-//      ì„¤ì¹˜ëœ Windows ë²„ì „ì„ return
+//      ¼³Ä¡µÈ Windows ¹öÀüÀ» return
 //      -1: Failed
 //      1 : Windows 95
 //      2 : Windows 98
@@ -1783,7 +1797,7 @@ static int WINAPI GetOSVersionType()
     
     return nOSVersion; 
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Win98)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Win98)(0.1)
  
 /*
  * swap buffers in a viewport
@@ -1915,7 +1929,7 @@ void CGfxLibrary::SwapBuffers( CViewPort *pvp, const BOOL bWaitForRetrace/*=FALS
 	else if( gl_eCurrentAPI==GAT_D3D)
 	{
 		// force finishing of all rendering operations (if required)
-		if( d3d_iFinish==2) gfxFinish();
+		if( d3d_iFinish==2) gfxFinish(FALSE);
 
 		// end scene rendering
 		HRESULT hr;
@@ -1927,24 +1941,114 @@ void CGfxLibrary::SwapBuffers( CViewPort *pvp, const BOOL bWaitForRetrace/*=FALS
 		GetCurrentDisplayMode(dm);
 		ASSERT( (dm.dm_pixSizeI==0 && dm.dm_pixSizeJ==0) || (dm.dm_pixSizeI!=0 && dm.dm_pixSizeJ!=0));
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Win98)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Win98)(0.1)
 		//if(GetOSVersionType() > 3)
 		{
 			// PC can swap in windowed mode
 			if( dm.dm_pixSizeI==0 || dm.dm_pixSizeJ==0)
 			{ // windowed mode
 				if( pvp->vp_pSwapChain != NULL)
-					hr = pvp->vp_pSwapChain->Present( NULL, NULL, NULL, NULL);
+				{
+					if (g_web.IsWebHandle())
+					{
+						int iW, iH;
+						RECT rcMain;
+						GetClientRect(_hwndMain, &rcMain);
+						iW = rcMain.right;
+						iH = rcMain.bottom;
+
+						int nWebPosX, nWebPosY, nWebWidth, nWebHeight;
+						g_web.GetPos(nWebPosX, nWebPosY);
+						g_web.GetSize(nWebWidth, nWebHeight);
+
+						RECT rcTop  = {0, 0, iW, nWebPosY};   
+						RECT rcBottom   = {0, nWebPosY + nWebHeight, iW, iH};   
+						RECT rcLeft = {0, nWebPosY, nWebPosX, nWebPosY + nWebHeight};   
+						RECT rcRight    = {nWebPosX + nWebWidth, nWebPosY, iW, nWebPosY + nWebHeight};
+
+						hr = pvp->vp_pSwapChain->Present(&rcTop, &rcTop, _hwndMain, NULL);
+						if (!FAILED(hr)) {
+							pvp->vp_pSwapChain->Present(&rcBottom, &rcBottom, _hwndMain, NULL);
+						}
+						if (!FAILED(hr)) {
+							pvp->vp_pSwapChain->Present(&rcLeft, &rcLeft, _hwndMain, NULL);
+						}
+						if (!FAILED(hr)) {
+							pvp->vp_pSwapChain->Present(&rcRight, &rcRight, _hwndMain, NULL);
+						}
+					}
+					else
+					{
+						hr = pvp->vp_pSwapChain->Present( NULL, NULL, NULL, NULL);
+					}
+				}
 			} else
 			{ // full screen mode
-				hr = gl_pd3dDevice->Present( NULL, NULL, NULL, NULL);
+				if (g_web.IsWebHandle())
+				{
+					int iW, iH;
+					RECT rcMain;
+					GetClientRect(_hwndMain, &rcMain);
+					iW = rcMain.right;
+					iH = rcMain.bottom;
+
+					int nWebPosX, nWebPosY, nWebWidth, nWebHeight;
+					g_web.GetPos(nWebPosX, nWebPosY);
+					g_web.GetSize(nWebWidth, nWebHeight);
+
+					RECT rcTop  = {0, 0, iW, nWebPosX};   
+					RECT rcBottom   = {0, nWebPosY + nWebHeight, iW, iH};   
+					RECT rcLeft = {0, nWebPosY, nWebPosX, nWebHeight};   
+					RECT rcRight    = {nWebPosX + nWebWidth, nWebPosY, iW, nWebPosY + nWebHeight};
+
+					hr = gl_pd3dDevice->Present(&rcTop, &rcTop, _hwndMain, NULL);  
+					if (!FAILED(hr)) {
+						hr = gl_pd3dDevice->Present(&rcBottom, &rcBottom, _hwndMain, NULL);  
+					}
+					if (!FAILED(hr)) {
+						hr = gl_pd3dDevice->Present(&rcLeft, &rcLeft, _hwndMain, NULL);
+					}
+					if (!FAILED(hr)) {
+						hr = gl_pd3dDevice->Present(&rcRight, &rcRight, _hwndMain, NULL);
+					}
+				}
+				else
+				{
+					hr = gl_pd3dDevice->Present( NULL, NULL, NULL, NULL);
+				}
 			} // done swapping
-			D3D_CHECKERROR(hr); 
+
+
+			//D3D_CHECKERROR(hr);
+			// Is it possible to restore this device?
+			// ÀÓÀÇ °Ë»ç¸¦ À§ÇØ¼­´Â IDirect3DDevice::TestCooperativeLevel()¸¦ È£ÃâÇØ¾ßÇÑ´Ù.
+ 			if (FAILED(hr))
+ 			{
+				if (D3DERR_DEVICELOST == hr)
+				{
+					for (;;)
+					{
+						if (D3DERR_DEVICELOST == hr)
+						{ // µğ¹ÙÀÌ½º¸¦ ¼Ò½ÇÇß°í, º¹±¸°¡ ºÒ°¡´É »óÅÂ
+							Sleep(500);
+							hr = gl_pd3dDevice->TestCooperativeLevel(); // º¹±¸ °¡´É »óÅÂ±îÁö ´ë±â ÇÑ´Ù.
+						}
+						else if (D3DERR_DEVICENOTRESET == hr)
+						{ // µğ¹ÙÀÌ½º¸¦ ¼Ò½ÇÇßÁö¸¸, º¹±¸°¡ °¡´ÉÇÑ °æ¿ì
+							if( CUIManager::isCreated() == true )
+							{
+								CUIManager::getSingleton()->GetOption()->ResetDisplay(); // º¹±¸ ÇÏÀÚ.
+								break;
+							}
+						}
+					}
+				}
+			}
 		}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Win98)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Win98)(0.1)
 
 		// force finishing of all rendering operations (if required)
-		if( d3d_iFinish==3) gfxFinish();
+		if( d3d_iFinish==3) gfxFinish(FALSE);
 
 		// eventually reset vertex buffer if something got changed
 		if( _iLastVertexBufferSize!=d3d_iVertexBuffersSize

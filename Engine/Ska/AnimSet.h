@@ -20,7 +20,7 @@
 #define AN_REMOVE_ON_END        (1UL<<7) // when animation is over disable it in queue
 #define AN_FADEOUT              (1UL<<8) // flag is set after anim with AN_REMOVE_ON_END is finished (internal)
 
-#define CLEAR_STATE_LENGTH   0.2f // default clear state length 
+#define CLEAR_STATE_LENGTH   0.1f // default clear state length 
 #define CLONED_STATE_LENGTH  0.2f // default clone state length
 
 struct AnimPos
@@ -76,6 +76,9 @@ struct Animation
 
 class ENGINE_API CAnimSet : public CSerial
 {
+#ifdef KALYDO
+  static CTString strDefaultAnimSetPath;
+#endif
 public:
   // Constructor
   CAnimSet(void);
@@ -94,6 +97,10 @@ public:
   void Write_t( CTStream *ostrFile); // throw char*
   // Clear animset
   void Clear(void);
+#ifdef KALYDO
+  void Load_t(const CTFileName &fnFileName);
+  void Load_Delay_t(const CTFileName &fnFileName);
+#endif
   // Get memory used by animset
   SLONG GetUsedMemory(void);
   // Get the description of this object.

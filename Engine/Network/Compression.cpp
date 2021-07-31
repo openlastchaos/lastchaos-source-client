@@ -5,7 +5,7 @@
 #include <Engine/Math/Vector.h>
 #include <Engine/Network/Compression.h>
 #include <Engine/Base/Synchronization.h>
-#include <Engine/zlib/zlib.h>
+#include <3rdparty/zlib-1.2.8/zlib.h>
 
 extern CTCriticalSection zip_csLock; // critical section for access to zlib functions
 

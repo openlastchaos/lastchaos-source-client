@@ -8,19 +8,20 @@
 #define MAX_STR_LENGTH          64
 
 // Date : 2005-01-28,   By Lee Ki-hwan
-#include <string>
-#include <vector>
-#include <Engine/Interface/UIButton.h>
+// #include <string>
+// #include <vector>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
 #include <Engine/Interface/UIListBox.h>
-
 using namespace std;
+
 
 //------------------------------------------------------------------------------
 // _tagFILTER 
 // Explain:  
 // Date : 2005-01-12,Author: Lee Ki-hwan
-// History: ì†ë„ë¥¼ ìœ„í•´ ë¬¸ìì—´ì˜ ê¸¸ì´ë„ í•¨ê»˜ ì €ì¥
-//			050128 : ìŠ¤íŠ¸ë§ ì‚¬ìš©ì„ std::string ë¡œ ë³€ê²½
+// History: ¼Óµµ¸¦ À§ÇØ ¹®ÀÚ¿­ÀÇ ±æÀÌµµ ÇÔ²² ÀúÀå
+//			050128 : ½ºÆ®¸µ »ç¿ëÀ» std::string ·Î º¯°æ
 //------------------------------------------------------------------------------
 typedef struct _tagFILTER 
 {
@@ -32,8 +33,8 @@ typedef struct _tagFILTER
 
 	//------------------------------------------------------------------------------
 	// SFILTER
-	// Explain: ìƒì„±ì~
-	// Date : 2005-01-28(ì˜¤í›„ 7:31:52) Lee Ki-hwan
+	// Explain: »ı¼ºÀÚ~
+	// Date : 2005-01-28(¿ÀÈÄ 7:31:52) Lee Ki-hwan
 	//------------------------------------------------------------------------------
 	_tagFILTER ( const char* _szString = NULL, const char* _szReword = NULL )
 	{
@@ -53,7 +54,7 @@ typedef vector<FILTER> FILTER_VECTOR;
 // Explain:  
 // Date : 2004-12-01,Author: Lee Ki-hwan
 // History: 
-//		Date : 2005-01-12,   By Lee Ki-hwan : c í˜•íƒœì˜ ì†ŒìŠ¤ë¥¼ C++í˜•íƒœë¡œ ë°”ê¿ˆ
+//		Date : 2005-01-12,   By Lee Ki-hwan : c ÇüÅÂÀÇ ¼Ò½º¸¦ C++ÇüÅÂ·Î ¹Ù²Ş
 //------------------------------------------------------------------------------
 class CUIFiltering
 {
@@ -62,13 +63,14 @@ class CUIFiltering
 	char	m_strRefineWord[MAX_STR_LENGTH];
 	int		m_nListCount;
 	char	m_strFileName[1024];
+	bool	m_bCharacterfilter;
 
 public :
 	CUIFiltering()		{ Clear();		}	
 	~CUIFiltering()		{ Destroy();	}
 
 	void Clear();
-	BOOL Create( char* file_name );
+	BOOL Create( char* file_name , bool charfilter = false);
 	void Destroy();
 	
 	BOOL Filtering( char* syntax );
@@ -88,13 +90,13 @@ public :
 };
 
 extern CUIFiltering _UIFiltering;
-extern CUIFiltering _UIFilteringCharacter;	// Date : 2005-02-16,   By Lee Ki-hwan : ìºë¦­í„° ìƒì„±ì‹œ ìºë¦­ëª… í•„í„°ë§
+extern CUIFiltering _UIFilteringCharacter;	// Date : 2005-02-16,   By Lee Ki-hwan : Ä³¸¯ÅÍ »ı¼º½Ã Ä³¸¯¸í ÇÊÅÍ¸µ
 
-//[ttos_2009_7_17]: CHARATER_CHAT_FILTER ìºë¦­í„° ì±„íŒ… í•„í„°
+//[ttos_2009_7_17]: CHARATER_CHAT_FILTER Ä³¸¯ÅÍ Ã¤ÆÃ ÇÊÅÍ
 //******************************************************
 extern CUIFiltering _UICharacterChatFilter;	
 
-//[ttos_2009_7_15]:ì¼€ë¦­í„° ì±„íŒ… ì°¨ë‹¨
+//[ttos_2009_7_15]:ÄÉ¸¯ÅÍ Ã¤ÆÃ Â÷´Ü
 class CUIChatFilter : public CUIWindow
 {
 protected:
@@ -118,6 +120,8 @@ public:
 	~CUIChatFilter();
 	
 	void Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void OpenChatFilter();
 	void CloseChatFilter();
 	void Render();
@@ -128,6 +132,8 @@ public:
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 	void Message( int nCommandCode, CTString strTitle, CTString strMessage, DWORD dwStyle );
 	void MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
+	
+	void CharacterFilterInSimplePopup( CTString strCharName );
 };
 //*********************************************************
 #endif

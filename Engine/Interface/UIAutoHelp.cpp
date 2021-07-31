@@ -1,15 +1,24 @@
-
-
 #include "stdh.h"
-#include <Engine/Interface/UIAutoHelp.h>
-#include <Engine/Network/CNetwork.h>
+
+// header ¡§∏Æ. [12/1/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIAutoHelp.h>
+#include <Engine/GameStageManager/StageMgr.h>
+#include <Engine/Entities/LevelupGuide.h>
+#include <Engine/Entities/SkillTree.h>
+#include <Engine/Entities/Skill.h>
+#include <Engine/Help/Util_Help.h>
+
+#ifdef	IMPROV1107_NOTICESYSTEM
+#define	CHATMSG_NOTICE_MOVEPITCHTIME	300
+#define	CHATMSG_NOTICE_VIEWCOUNT		3
+#endif
 
 CUIAutoHelp*	_UIAutoHelp = NULL;
 extern INDEX g_iCountry;
 bool _SAutoHelpInfo::CheckInfo()
 {
-	// ÌïúÎ≤àÎßå ÌïòÎäî Í±∞Ïó¨ .. ~
+	// «—π¯∏∏ «œ¥¬ ∞≈ø© .. ~
 	if ( m_bJustOnce ) 
 	{
 		if ( m_bActive )
@@ -24,16 +33,16 @@ bool _SAutoHelpInfo::CheckInfo()
 	}
 	else
 	{
-		// FIXME : Ìó§Îçî ÎÇ¥ÏóêÏÑú ÎÑ§Ìä∏ÏõåÌÅ¨Î•º ÏÇ¨Ïö©ÌïòÍ≥† ÏûàÏùå.
+		// FIXME : «Ï¥ı ≥ªø°º≠ ≥◊∆Æøˆ≈©∏¶ ªÁøÎ«œ∞Ì ¿÷¿Ω.
 		SWORD Level = _pNetwork->MyCharacterInfo.level;
 					
-		// Î†àÎ≤® Ï≤¥ÌÅ¨ 
+		// ∑π∫ß √º≈© 
 		if ( Level < m_iStartLevel || Level > m_iEndLevel )
 		{
 			return false;
 		}
 	}
-	// Ï¢ÖÏ°± Ï≤¥ÌÅ¨ ( ÏÉùÎûµ Ï¶ê )
+	// ¡æ¡∑ √º≈© ( ª˝∑´ ¡Ò )
 
 	
 	m_bActive = true; 
@@ -47,6 +56,8 @@ bool _SAutoHelpInfo::CheckInfo()
 CUIAutoHelp::CUIAutoHelp()
 {
 	m_ptdBaseTexture = NULL;
+	m_ptdClassification = NULL;
+	m_nUpStat = 0;
 	Clear ();
 }
 
@@ -56,12 +67,6 @@ CUIAutoHelp::CUIAutoHelp()
 // ----------------------------------------------------------------------------
 CUIAutoHelp::~CUIAutoHelp()
 {
-	if( m_ptdBaseTexture )
-	{
-		_pTextureStock->Release( m_ptdBaseTexture );
-		m_ptdBaseTexture = NULL;
-	}
-
 	Clear ();
 }
 
@@ -71,13 +76,14 @@ CUIAutoHelp::~CUIAutoHelp()
 // ----------------------------------------------------------------------------
 void CUIAutoHelp::Clear()
 {
-
-	m_bStop				= FALSE;		// Ï†ïÏßÄ ÏÉÅÌÉúÏù∏Í∞ê?
-	m_fShowTime			= AUTOHELO_SHOW_TIME;	// Î≥¥Ïó¨ ÏßÄÍ≥† ÏûàÎäî ÏãúÍ∞Ñ
-	m_tmStartTime		= 0;			// Î≥¥Ïù¥Í∏∞ ÏãúÏûë Ìïú ÏãúÍ∞Ñ
-	m_bVisible			= FALSE;		// ÌôîÎ©¥Ïóê Î≥¥Ïó¨ Ï£ºÍ≥† ÏûàÎäîÍ∞Ä?
-	m_nActiveIndex		= -1;			// ÌòÑÏ†ú Î≥¥Ïó¨ Ï£ºÍ≥† ÏûàÎäî ÎèÑÏõÄÎßê Index
+	m_bStop				= FALSE;		// ¡§¡ˆ ªÛ≈¬¿Œ∞®?
+	m_fShowTime			= AUTOHELO_SHOW_TIME;	// ∫∏ø© ¡ˆ∞Ì ¿÷¥¬ Ω√∞£
+	m_tmStartTime		= 0;			// ∫∏¿Ã±‚ Ω√¿€ «— Ω√∞£
+	m_bVisible			= FALSE;		// »≠∏Èø° ∫∏ø© ¡÷∞Ì ¿÷¥¬∞°?
+	m_nActiveIndex		= -1;			// «ˆ¡¶ ∫∏ø© ¡÷∞Ì ¿÷¥¬ µµøÚ∏ª Index
 	m_tmEndTime			= 0;
+	m_tmClassification  = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	m_tmCurTime			= 0;
 	m_nKillMobIndex		= -1;
 	m_RndHelp			= FALSE;
 
@@ -87,6 +93,13 @@ void CUIAutoHelp::Clear()
 	}
 		
 	memset ( m_bCondition, FALSE, sizeof ( BOOL ) * AUTOHELP_COUNT );
+#if	defined(IMPROV1107_NOTICESYSTEM)
+	m_vGMNotice.clear();
+	m_bmovGMNotice		= FALSE;
+#endif
+
+	STOCK_RELEASE(m_ptdBaseTexture);
+	STOCK_RELEASE(m_ptdClassification);
 }
 
 // ----------------------------------------------------------------------------
@@ -106,11 +119,18 @@ void CUIAutoHelp::Create()
 	// Create refine texture
 	m_ptdBaseTexture = _pTextureStock->Obtain_t ( CTString( "Data\\Interface\\Notice.tex" ) );
 
-	FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();
-	FLOAT	fTexHeight	= m_ptdBaseTexture->GetPixHeight();
-	
-	m_rcGMNotice.SetRect( 0, 75, 0, 94 );
-	m_rcNotice.SetRect( 0, 100, 0, 119 );
+#if defined(G_KOR) 
+		m_ptdClassification = _pTextureStock->Obtain_t (CTString ( "Data\\Interface\\Loading\\Classification_15_kor.tex" ) );
+		m_rcClassification.SetRect(0,0,112,131);
+		m_rtClassification.SetUV(7,53,120,184,m_ptdClassification->GetWidth(),m_ptdClassification->GetHeight());
+#endif
+
+
+		FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();
+		FLOAT	fTexHeight	= m_ptdBaseTexture->GetPixHeight();
+
+	m_rcNotice.SetRect( 0, 119, 0, 138 );
+	m_rcGMNotice.SetRect( 0, 140, 0, 159 );
 	
 	
 	// Notice
@@ -119,142 +139,148 @@ void CUIAutoHelp::Create()
 	m_rtNoticeR.SetUV( 419, 131, 451, 150, fTexWidth, fTexHeight );
 
 	
-	m_AutoHelpInfo[0].SetInfo ( _S( 467, "ÏïâÏïÑ ÏûàÏúºÎ©¥ Ï≤¥Î†•Ïù¥ Îçî Îπ®Î¶¨ ÌöåÎ≥µ Îê©ÎãàÎã§." ), 
+	m_AutoHelpInfo[0].SetInfo ( _S( 467, "æ…æ∆ ¿÷¿∏∏È √º∑¬¿Ã ¥ı ª°∏Æ »∏∫π µÀ¥œ¥Ÿ." ), 
 								1, 2 );
 
-	m_AutoHelpInfo[1].SetInfo ( _S( 468,  "Î∞îÎã•Ïóê Îñ®Ïñ¥ÏßÑ ÏïÑÏù¥ÌÖúÏùÑ ÎßàÏö∞Ïä§Î°ú ÌÅ¥Î¶≠ÌïòÎ©¥ ÏßëÏùÑ Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[1].SetInfo ( _S( 468,  "πŸ¥⁄ø° ∂≥æÓ¡¯ æ∆¿Ã≈€¿ª ∏∂øÏΩ∫∑Œ ≈¨∏Ø«œ∏È ¡˝¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								1, 2, -1, TRUE );
 
-	m_AutoHelpInfo[2].SetInfo (  _S( 469, "Ï§çÍ∏∞ Î≤ÑÌäºÏùÑ Ïù¥Ïö©ÌïòÎ©¥ Îçî Ìé∏Î¶¨ÌïòÍ≤å ÏïÑÏù¥ÌÖúÏùÑ ÏßëÏùÑ Ïàò ÏûàÏäµÎãàÎã§." ),
+	m_AutoHelpInfo[2].SetInfo (  _S( 469, "¡›±‚ πˆ∆∞¿ª ¿ÃøÎ«œ∏È ¥ı ∆Ì∏Æ«œ∞‘ æ∆¿Ã≈€¿ª ¡˝¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ),
 								1, 2, -1, TRUE );
 
-	m_AutoHelpInfo[3].SetInfo (  _S( 470, "Ïä§ÌÇ¨ÎßàÏä§ÌÑ∞Î•º Ï∞æÏïÑÍ∞ÄÎ©¥, ÌòÑÏû¨Ïùò Ïä§ÌÇ¨Î†àÎ≤®ÏùÑ Ïò¨Î¶¨Í±∞ÎÇò ÏÉàÎ°úÏö¥ Ïä§ÌÇ¨ÏùÑ Î∞∞Ïö∏ Ïàò ÏûàÏäµÎãàÎã§." ) ,
+	m_AutoHelpInfo[3].SetInfo (  _S( 470, "Ω∫≈≥∏∂Ω∫≈Õ∏¶ √£æ∆∞°∏È, «ˆ¿Á¿« Ω∫≈≥∑π∫ß¿ª ø√∏Æ∞≈≥™ ªı∑ŒøÓ Ω∫≈≥¿ª πËøÔ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) ,
 								1, 3 );
 
-	m_AutoHelpInfo[4].SetInfo (  _S( 471, "ÎìúÎùºÌÉÑÏóêÎäî ÏÉùÏÇ∞ÏßÄÏó≠Ïù¥ ÏûàÏäµÎãàÎã§. ÏßÄÎèÑÎ•º Ïó¥Ïñ¥ Î≥¥ÏÑ∏Ïöî." ),
+	m_AutoHelpInfo[4].SetInfo (  _S( 471, "µÂ∂Û≈∫ø°¥¬ ª˝ªÍ¡ˆø™¿Ã ¿÷Ω¿¥œ¥Ÿ. ¡ˆµµ∏¶ ø≠æÓ ∫∏ººø‰." ),
 								1, 4, -1, TRUE );
 
-	m_AutoHelpInfo[5].SetInfo ( _S( 472, "5Î†àÎ≤®Ïù¥ ÎêòÏãúÎ©¥, ÌçºÏä§ÎÑê ÎçòÏ†ÑÏóê Í∞à Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[5].SetInfo ( _S( 472, "5∑π∫ß¿Ã µ«Ω√∏È, ∆€Ω∫≥Œ ¥¯¿¸ø° ∞• ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								2, 4 );
 	// Quest ...			
-	m_AutoHelpInfo[6].SetInfo ( _S( 473, "ÌòÑÏû¨ Î†àÎ≤®ÏóêÏÑú [ÏïΩÏ†úÏÇ¨ ÏóêÎÖ∏Î¶∞]ÏóêÍ≤å Í∞ÄÎ©¥ ÌÄòÏä§Ìä∏Î•º ÏàòÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[6].SetInfo ( _S( 473, "«ˆ¿Á ∑π∫ßø°º≠ [æ‡¡¶ªÁ ø°≥Î∏∞]ø°∞‘ ∞°∏È ƒ˘Ω∫∆Æ∏¶ ºˆ«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								1, 1, -1, TRUE );
-	m_AutoHelpInfo[7].SetInfo ( _S( 474, "ÌòÑÏû¨ Î†àÎ≤®ÏóêÏÑú [Í≤ΩÎπÑÎåÄÏû• Î†àÏò®]ÏóêÍ≤å Í∞ÄÎ©¥ ÏÉùÏÇ∞ Ïä§ÌÇ¨ ÌÄòÏä§Ìä∏Î•º ÏàòÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[7].SetInfo ( _S( 474, "«ˆ¿Á ∑π∫ßø°º≠ [∞Ê∫Ò¥Î¿Â ∑πø¬]ø°∞‘ ∞°∏È ª˝ªÍ Ω∫≈≥ ƒ˘Ω∫∆Æ∏¶ ºˆ«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								7, 7,-1, TRUE );
-	m_AutoHelpInfo[8].SetInfo ( _S( 475, "ÌòÑÏû¨ Î†àÎ≤®ÏóêÏÑú Ìä∏ÎùºÌÉÑÏùò [ÎßàÏùÑ Í¥ÄÎ¶¨Ïù∏ Î†å]ÏóêÍ≤å Í∞ÄÎ©¥ ÏÉùÏÇ∞ Ïä§ÌÇ¨ ÌÄòÏä§Ìä∏Î•º ÏàòÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[8].SetInfo ( _S( 475, "«ˆ¿Á ∑π∫ßø°º≠ ∆Æ∂Û≈∫¿« [∏∂¿ª ∞¸∏Æ¿Œ ∑ª]ø°∞‘ ∞°∏È ª˝ªÍ Ω∫≈≥ ƒ˘Ω∫∆Æ∏¶ ºˆ«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								8, 8, -1,TRUE );
-	m_AutoHelpInfo[9].SetInfo ( _S( 476, "ÌòÑÏû¨ Î†àÎ≤®ÏóêÏÑú [Ïû°ÌôîÏÉÅÏù∏ Í≤åÎ†àÏä§]ÏóêÍ≤å Í∞ÄÎ©¥ ÌÄòÏä§Ìä∏Î•º ÏàòÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[9].SetInfo ( _S( 476, "«ˆ¿Á ∑π∫ßø°º≠ [¿‚»≠ªÛ¿Œ ∞‘∑πΩ∫]ø°∞‘ ∞°∏È ƒ˘Ω∫∆Æ∏¶ ºˆ«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								9, 9, -1,TRUE );
-	m_AutoHelpInfo[10].SetInfo ( _S( 477, "ÌòÑÏû¨ Î†àÎ≤®ÏóêÏÑú [Í≤ΩÎπÑÎåÄÏû• Î†àÏò®]ÏóêÍ≤å Í∞ÄÎ©¥ ÌÄòÏä§Ìä∏Î•º ÏàòÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[10].SetInfo ( _S( 477, "«ˆ¿Á ∑π∫ßø°º≠ [∞Ê∫Ò¥Î¿Â ∑πø¬]ø°∞‘ ∞°∏È ƒ˘Ω∫∆Æ∏¶ ºˆ«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								15, 15, -1, TRUE );
-	m_AutoHelpInfo[11].SetInfo ( _S( 478, "ÌòÑÏû¨ Î†àÎ≤®ÏóêÏÑú [Î∞©Ïñ¥Íµ¨ÏÉÅÏù∏ Î°úÏóò]ÏóêÍ≤å Í∞ÄÎ©¥ ÌÄòÏä§Ìä∏Î•º ÏàòÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[11].SetInfo ( _S( 478, "«ˆ¿Á ∑π∫ßø°º≠ [πÊæÓ±∏ªÛ¿Œ ∑Œø§]ø°∞‘ ∞°∏È ƒ˘Ω∫∆Æ∏¶ ºˆ«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								23, 23, -1,TRUE );
-	
-	m_AutoHelpInfo[12].SetInfo ( _S( 479, "ÌûòÏù¥ ÏÉÅÏäπÌïòÎ©¥ Ïù∏Î≤§ÌÜ†Î¶¨Ïóê ÏÜåÏßÄÌï† Ïàò ÏûàÎäî Î¨ºÌíàÏùò Î¨¥Í≤åÍ∞Ä Ï¶ùÍ∞ÄÌï©ÎãàÎã§." ), 
+	m_AutoHelpInfo[12].SetInfo ( _s( "" ), 
 								1, 9, -1 );
-
 	// Random Help ...
-	m_AutoHelpInfo[13].SetInfo ( _S( 480, "ÏÇ¨Ïö©ÌïòÏßÄ ÏïäÎäî Î¨¥Í∏∞ÏôÄ Î∞©Ïñ¥Íµ¨Î•º ÏïåÏºÄÎØ∏Ïä§Ìä∏ÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÏãúÎ©¥ Ï†úÎ†®ÏÑùÏúºÎ°ú ÍµêÌôòÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[13].SetInfo ( _S( 480, "ªÁøÎ«œ¡ˆ æ ¥¬ π´±‚øÕ πÊæÓ±∏∏¶ æÀƒ…πÃΩ∫∆Æø°∞‘ ∞°¡Æ∞°Ω√∏È ¡¶∑√ºÆ¿∏∑Œ ±≥»Ø«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[14].SetInfo ( _S( 481, "ALT+B, BÌÇ§Î•º ÎàÑÎ•¥Î©¥ Í≥µÏßÄÏÇ¨Ìï≠ Î∞è Í≤åÏãúÌåêÏùÑ ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[14].SetInfo ( _S( 481, "ALT+B, B≈∞∏¶ ¥©∏£∏È ∞¯¡ˆªÁ«◊ π◊ ∞‘Ω√∆«¿ª »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[15].SetInfo ( _S( 482, "ALT+W, WÌÇ§Î•º ÎàÑÎ•¥Î©¥ ÏßÄÎèÑÎ•º ÌÜµÌï¥ÏÑú Í≤åÏûÑ ÎÇ¥ NPC ÏúÑÏπòÎ•º ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[15].SetInfo ( _S( 482, "ALT+W, W≈∞∏¶ ¥©∏£∏È ¡ˆµµ∏¶ ≈Î«ÿº≠ ∞‘¿” ≥ª NPC ¿ßƒ°∏¶ »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[16].SetInfo ( _S( 483, "ALT+T, TÌÇ§Î•º ÎàÑÎ•¥Î©¥ Í≥µÍ≤©Î†• Î∞©Ïñ¥Î†• Îì±Ïùò Ï∫êÎ¶≠ÌÑ∞ Ï†ïÎ≥¥Î•º ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[16].SetInfo ( _S( 483, "ALT+T, T≈∞∏¶ ¥©∏£∏È ∞¯∞›∑¬ πÊæÓ∑¬ µÓ¿« ƒ≥∏Ø≈Õ ¡§∫∏∏¶ »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[17].SetInfo ( _S( 484, "ALT+A, AÌÇ§Î•º ÎàÑÎ•¥Î©¥ Í≥µÍ≤©/ÏïâÍ∏∞/Ï§çÍ∏∞/ÍµêÌôò ÏïÑÏù¥ÏΩòÏùÑ ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[17].SetInfo ( _S( 484, "ALT+A, A≈∞∏¶ ¥©∏£∏È ∞¯∞›/æ…±‚/¡›±‚/±≥»Ø æ∆¿Ãƒ‹¿ª »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 	
-	m_AutoHelpInfo[18].SetInfo ( _S( 485, "ALT+S, SÌÇ§Î•º ÎàÑÎ•¥Î©¥ ÏùºÎ∞ò, Í∞ïÌôî, ÌäπÏàòÏä§ÌÇ¨ÏùÑ ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[18].SetInfo ( _S( 485, "ALT+S, S≈∞∏¶ ¥©∏£∏È ¿œπ›, ∞≠»≠, ∆ØºˆΩ∫≈≥¿ª »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[19].SetInfo ( _S( 486, "ALT+Q, QÌÇ§Î•º ÎàÑÎ•¥Î©¥ ÏßÑÌñâÏ§ëÏù∏ ÌÄòÏä§Ìä∏Î•º ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[19].SetInfo ( _S( 486, "ALT+Q, Q≈∞∏¶ ¥©∏£∏È ¡¯«‡¡ﬂ¿Œ ƒ˘Ω∫∆Æ∏¶ »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 	
-	m_AutoHelpInfo[20].SetInfo ( _S( 487, "ALT+C, CÌÇ§Î•º ÎàÑÎ•¥Î©¥ ÏÜåÏÖúÏ∞ΩÏùÑ ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[20].SetInfo ( _S( 487, "ALT+C, C≈∞∏¶ ¥©∏£∏È º“º»√¢¿ª »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[21].SetInfo ( _S( 488, "ALT+Z, ZÌÇ§Î•º ÎàÑÎ•¥Î©¥ ÏòµÏÖòÏÑ§Ï†ïÏùò ÏãúÏä§ÌÖúÏ∞ΩÏùÑ ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[21].SetInfo ( _S( 488, "ALT+Z, Z≈∞∏¶ ¥©∏£∏È ø…º«º≥¡§¿« Ω√Ω∫≈€√¢¿ª »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[22].SetInfo ( _S( 489, "TAB, ALT+E, EÌÇ§Î•º Ïù¥Ïö©ÌïòÏó¨ Ï∫êÎ¶≠ÌÑ∞ Ïù∏Î≤§ÌÜ†Î¶¨Ï∞ΩÏùÑ Ïó¥ Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[22].SetInfo ( _S( 489, "TAB, ALT+E, E≈∞∏¶ ¿ÃøÎ«œø© ƒ≥∏Ø≈Õ ¿Œ∫•≈‰∏Æ√¢¿ª ø≠ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[23].SetInfo ( _S( 490, "Í∑ìÏÜçÎßêÏùÄ !Ï∫êÎ¶≠ÌÑ∞Î™Ö ÌïòÍ≥†Ïã∂ÏùÄ ÎßêÏùÑ ÌÜµÌï¥ÏÑú Ïù¥Ïö©Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[23].SetInfo ( _S( 490, "±”º”∏ª¿∫ !ƒ≥∏Ø≈Õ∏Ì «œ∞ÌΩÕ¿∫ ∏ª¿ª ≈Î«ÿº≠ ¿ÃøÎ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[24].SetInfo ( _S( 491, "ÏÇ¨ÎÉ•Ï§ë ÏïâÍ∏∞Î•º ÌïòÎ©¥ ÏÑúÏûàÏùÑ ÎïåÎ≥¥Îã§ Îπ†Î•¥Í≤å HPÏôÄ MPÍ∞Ä ÌöåÎ≥µÎê©ÎãàÎã§." ), 
+	m_AutoHelpInfo[24].SetInfo ( _S( 491, "ªÁ≥…¡ﬂ æ…±‚∏¶ «œ∏È º≠¿÷¿ª ∂ß∫∏¥Ÿ ∫¸∏£∞‘ HPøÕ MP∞° »∏∫πµÀ¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[25].SetInfo ( _S( 492, "Ïù∏Î≤§ÌÜ†Î¶¨Ï∞ΩÏùÑ Ïó∞ÌõÑ ÏïÑÏù¥ÌÖúÏùÑ ÎçîÎ∏î ÌÅ¥Î¶≠ÌïòÎ©¥ Ïû•Ï∞© Î∞è ÌÉàÏ∞©ÏùÑ Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[25].SetInfo ( _S( 492, "¿Œ∫•≈‰∏Æ√¢¿ª ø¨»ƒ æ∆¿Ã≈€¿ª ¥ı∫Ì ≈¨∏Ø«œ∏È ¿Â¬¯ π◊ ≈ª¬¯¿ª «“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 	
-	m_AutoHelpInfo[26].SetInfo ( _S( 493, "ÏïÑÏù¥ÌÖú ÏóÖÍ∑∏Î†àÏù¥ÎìúÎäî Ï†úÎ†®ÏÑùÏùÑ Ïù¥Ïö©ÌïòÏó¨ ÏóÖÍ∑∏Î†àÏù¥ÎìúÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[26].SetInfo ( _S( 493, "æ∆¿Ã≈€ æ˜±◊∑π¿ÃµÂ¥¬ ¡¶∑√ºÆ¿ª ¿ÃøÎ«œø© æ˜±◊∑π¿ÃµÂ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[27].SetInfo ( _S( 494, "Ï†úÎ†®ÏÑùÏùÄ ÏÇ¨ÎÉ•ÏùÑ ÌÜµÌï¥ÏÑú ÌöçÎìùÌïòÍ±∞ÎÇò ÎûÄÎèåÏÑ±Ïùò ÏïåÏºÄÎØ∏Ïä§Ìä∏Î•º ÌÜµÌï¥ÏÑú ÍµêÌôòÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[27].SetInfo ( _S( 494, "¡¶∑√ºÆ¿∫ ªÁ≥…¿ª ≈Î«ÿº≠ »πµÊ«œ∞≈≥™ ∂ıµπº∫¿« æÀƒ…πÃΩ∫∆Æ∏¶ ≈Î«ÿº≠ ±≥»Ø«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[28].SetInfo ( _S( 495, "Î∞©Ìñ•ÌÇ§(ÌôîÏÇ¥ÌëúÎ•º Ïù¥Ïö©ÌïòÎ©¥ ÌôîÎ©¥Ïù¥Îèô Î∞è ÏãúÏ†êÎ≥ÄÌôòÏùÑ Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[28].SetInfo ( _S( 495, "πÊ«‚≈∞(»≠ªÏ«•∏¶ ¿ÃøÎ«œ∏È »≠∏È¿Ãµø π◊ Ω√¡°∫Ø»Ø¿ª «“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[29].SetInfo ( _S( 496, "Îã§Î•∏ Ï°¥ÏúºÎ°ú Ïù¥ÎèôÌïòÍ∏∞ ÏúÑÌï¥ÏÑúÎäî Í≥µÍ∞ÑÏà†ÏÇ¨ NPCÎ•º ÌÜµÌï¥ÏÑú Ïù¥ÎèôÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[29].SetInfo ( _S( 496, "¥Ÿ∏• ¡∏¿∏∑Œ ¿Ãµø«œ±‚ ¿ß«ÿº≠¥¬ ∞¯∞£º˙ªÁ NPC∏¶ ≈Î«ÿº≠ ¿Ãµø«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[30].SetInfo ( _S( 497, "ÏßÄÎèÑÏùò Í∞ÄÏû•ÏûêÎ¶¨Î•º ÎßàÏö∞Ïä§Î°ú ÏõÄÏßÅÏù¥Î©¥, ÏßÄÎèÑÏùò ÌÅ¨Í∏∞Î•º ÌôïÎåÄ Ï∂ïÏÜåÌï† Ïàò ÏûàÏäµÎãàÎã§." ), 
+	m_AutoHelpInfo[30].SetInfo ( _S( 497, "¡ˆµµ¿« ∞°¿Â¿⁄∏Æ∏¶ ∏∂øÏΩ∫∑Œ øÚ¡˜¿Ã∏È, ¡ˆµµ¿« ≈©±‚∏¶ »Æ¥Î √‡º“«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-	m_AutoHelpInfo[31].SetInfo ( _S( 498, "ÏßÄÎèÑÎ•º Ïó∞ ÏÉÅÌÉúÏóêÏÑú ÎßàÏùÑÏùÑ ÌÅ¥Î¶≠ÌïòÎ©¥ ÎßàÏùÑ ÏÉÅÏÑ∏ÏßÄÎèÑÍ∞Ä ÎÇòÏòµÎãàÎã§." ), 
+	m_AutoHelpInfo[31].SetInfo ( _S( 498, "¡ˆµµ∏¶ ø¨ ªÛ≈¬ø°º≠ ∏∂¿ª¿ª ≈¨∏Ø«œ∏È ∏∂¿ª ªÛºº¡ˆµµ∞° ≥™ø…¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
+
+
+#if defined(G_JAPAN)
+		m_AutoHelpInfo[32].SetInfo ( _S( 3042, "¿œ∫ª 2º≠πˆ ∆Ø¬°" ), RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
+		m_AutoHelpInfo[33].SetInfo ( _S( 3043, "¿œ∫ª 3º≠πˆ ∆Ø¬°" ), RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
+		m_AutoHelpInfo[34].SetInfo ( _S( 3044, "¿œ∫ª 4º≠πˆ ∆Ø¬°" ), RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
+#endif
+
 	
-	// 070820_ttos: Î∏åÎùºÏßàÏùò Í≤ΩÍ≥†Î¨∏Íµ¨, Î†àÎ≤® Ï†úÌïú ÏóÜÏù¥ Ï∂úÎ†• 
-	if( g_iCountry == BRAZIL)
-	{
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S].SetInfo ( _S( 2547,"Ïû•ÏãúÍ∞ÑÏùò Í≤åÏûÑÏùÄ Î™∏Í≥º ÎßàÏùåÏùÑ Î≥ëÎì§Í≤å Ìï©ÎãàÎã§." ), 
+// 070820_ttos: ∫Í∂Û¡˙¿« ∞Ê∞ÌπÆ±∏, ∑π∫ß ¡¶«— æ¯¿Ã √‚∑¬ 
+
+#if defined(G_BRAZIL)
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_S].SetInfo ( _S( 2547,"¿ÂΩ√∞£¿« ∞‘¿”¿∫ ∏ˆ∞˙ ∏∂¿Ω¿ª ∫¥µÈ∞‘ «’¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+1].SetInfo ( _S( 2548,"Ïû•ÏãúÍ∞ÑÏùò Í≤åÏûÑÏùÄ Î™∏Í≥º ÎßàÏùåÏùÑ Î≥ëÎì§Í≤å Ìï©ÎãàÎã§." ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+1].SetInfo ( _S( 2548,"¿ÂΩ√∞£¿« ∞‘¿”¿∫ ∏ˆ∞˙ ∏∂¿Ω¿ª ∫¥µÈ∞‘ «’¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+2].SetInfo ( _S( 2549,"Ïû•ÏãúÍ∞ÑÏùò Í≤åÏûÑÏùÄ Î™∏Í≥º ÎßàÏùåÏùÑ Î≥ëÎì§Í≤å Ìï©ÎãàÎã§." ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+2].SetInfo ( _S( 2549,"¿ÂΩ√∞£¿« ∞‘¿”¿∫ ∏ˆ∞˙ ∏∂¿Ω¿ª ∫¥µÈ∞‘ «’¥œ¥Ÿ." ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+3].SetInfo ( _S( 2550,"Ïû•ÏãúÍ∞ÑÏùò Í≤åÏûÑÏùÄ Î™∏Í≥º ÎßàÏùåÏùÑ Î≥ëÎì§Í≤å Ìï©ÎãàÎã§." ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+3].SetInfo ( _S( 2550,"¿ÂΩ√∞£¿« ∞‘¿”¿∫ ∏ˆ∞˙ ∏∂¿Ω¿ª ∫¥µÈ∞‘ «’¥œ¥Ÿ." ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
 		
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S].SetInfo ( _S( 2551,"Î∞©Ìïô...ÏùòÏô∏Î°ú ÏßßÎãµÎãàÎã§...^^;" ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S].SetInfo ( _S( 2551,"πÊ«–...¿«ø‹∑Œ ¬™¥‰¥œ¥Ÿ...^^;" ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+1].SetInfo ( _S( 2552,"Î∞©Ìïô...ÏùòÏô∏Î°ú ÏßßÎãµÎãàÎã§...^^;" ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+1].SetInfo ( _S( 2552,"πÊ«–...¿«ø‹∑Œ ¬™¥‰¥œ¥Ÿ...^^;" ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+2].SetInfo ( _S( 2553,"Î∞©Ìïô...ÏùòÏô∏Î°ú ÏßßÎãµÎãàÎã§...^^;" ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+2].SetInfo ( _S( 2553,"πÊ«–...¿«ø‹∑Œ ¬™¥‰¥œ¥Ÿ...^^;" ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+3].SetInfo ( _S( 2554,"Î∞©Ìïô...ÏùòÏô∏Î°ú ÏßßÎãµÎãàÎã§...^^;" ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+3].SetInfo ( _S( 2554,"πÊ«–...¿«ø‹∑Œ ¬™¥‰¥œ¥Ÿ...^^;" ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
 	
 
-	}else
-	{
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S].SetInfo ( _S( 2547,"Ïû•ÏãúÍ∞ÑÏùò Í≤åÏûÑÏùÄ Î™∏Í≥º ÎßàÏùåÏùÑ Î≥ëÎì§Í≤å Ìï©ÎãàÎã§." ), 
+#else
+
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_S].SetInfo ( _S( 2547,"¿ÂΩ√∞£¿« ∞‘¿”¿∫ ∏ˆ∞˙ ∏∂¿Ω¿ª ∫¥µÈ∞‘ «’¥œ¥Ÿ." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+1].SetInfo ( _S( 2548,"Ïû•ÏãúÍ∞ÑÏùò Í≤åÏûÑÏùÄ Î™∏Í≥º ÎßàÏùåÏùÑ Î≥ëÎì§Í≤å Ìï©ÎãàÎã§." ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+1].SetInfo ( _S( 2548,"¿ÂΩ√∞£¿« ∞‘¿”¿∫ ∏ˆ∞˙ ∏∂¿Ω¿ª ∫¥µÈ∞‘ «’¥œ¥Ÿ." ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+2].SetInfo ( _S( 2549,"Ïû•ÏãúÍ∞ÑÏùò Í≤åÏûÑÏùÄ Î™∏Í≥º ÎßàÏùåÏùÑ Î≥ëÎì§Í≤å Ìï©ÎãàÎã§." ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+2].SetInfo ( _S( 2549,"¿ÂΩ√∞£¿« ∞‘¿”¿∫ ∏ˆ∞˙ ∏∂¿Ω¿ª ∫¥µÈ∞‘ «’¥œ¥Ÿ." ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+3].SetInfo ( _S( 2550,"Ïû•ÏãúÍ∞ÑÏùò Í≤åÏûÑÏùÄ Î™∏Í≥º ÎßàÏùåÏùÑ Î≥ëÎì§Í≤å Ìï©ÎãàÎã§." ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+3].SetInfo ( _S( 2550,"¿ÂΩ√∞£¿« ∞‘¿”¿∫ ∏ˆ∞˙ ∏∂¿Ω¿ª ∫¥µÈ∞‘ «’¥œ¥Ÿ." ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 		
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S].SetInfo ( _S( 2551,"Î∞©Ìïô...ÏùòÏô∏Î°ú ÏßßÎãµÎãàÎã§...^^;" ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S].SetInfo ( _S( 2551,"πÊ«–...¿«ø‹∑Œ ¬™¥‰¥œ¥Ÿ...^^;" ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+1].SetInfo ( _S( 2552,"Î∞©Ìïô...ÏùòÏô∏Î°ú ÏßßÎãµÎãàÎã§...^^;" ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+1].SetInfo ( _S( 2552,"πÊ«–...¿«ø‹∑Œ ¬™¥‰¥œ¥Ÿ...^^;" ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+2].SetInfo ( _S( 2553,"Î∞©Ìïô...ÏùòÏô∏Î°ú ÏßßÎãµÎãàÎã§...^^;" ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+2].SetInfo ( _S( 2553,"πÊ«–...¿«ø‹∑Œ ¬™¥‰¥œ¥Ÿ...^^;" ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+3].SetInfo ( _S( 2554,"Î∞©Ìïô...ÏùòÏô∏Î°ú ÏßßÎãµÎãàÎã§...^^;" ), 
+		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+3].SetInfo ( _S( 2554,"πÊ«–...¿«ø‹∑Œ ¬™¥‰¥œ¥Ÿ...^^;" ), 
 									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 		
 
-	}
+#endif
 	
 	
 	m_tmEndTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
@@ -302,7 +328,7 @@ void CUIAutoHelp::SetInfo ( DWORD dwAutoHelpInfo )
 
 			float hp = ( CharHp / CharMaxHp ) * 100.0f;
 
-			if ( hp <= 40 ) // Ï≤¥Î†•Ïù¥ 40% Ïù¥ÌïòÏù¥Î©¥...
+			if ( hp <= 40 ) // √º∑¬¿Ã 40% ¿Ã«œ¿Ã∏È...
 			{
 				if ( m_AutoHelpInfo[dwAutoHelpInfo].CheckInfo() )
 				{
@@ -320,7 +346,7 @@ void CUIAutoHelp::SetInfo ( DWORD dwAutoHelpInfo )
 				if ( m_nActiveIndex != AU_GET_SKILL_POINT )
 					return;
 	
-				// Ï¥àÍ∏∞Ìôî
+				// √ ±‚»≠
 				m_bVisible			= FALSE;
 				m_nActiveIndex		= -1;
 		
@@ -335,6 +361,7 @@ void CUIAutoHelp::SetInfo ( DWORD dwAutoHelpInfo )
 
 
 		}
+		break;
 	case AU_GET_SKILL_POINT :
 		{
 			if ( m_bVisible ) return;
@@ -344,10 +371,8 @@ void CUIAutoHelp::SetInfo ( DWORD dwAutoHelpInfo )
 				return ;
 			}
 		}
-
-
-	
-	// Í∑∏ Î∞ñÏóê ÏÉÅÌô© Ï°∞Í±¥Ïù¥ Ïïà Í≤πÏπòÎäî Í≤ÉÎì§ ...
+		break;	
+	// ±◊ π€ø° ªÛ»≤ ¡∂∞«¿Ã æ» ∞„ƒ°¥¬ ∞ÕµÈ ...
 	default :
 		{
 			if ( m_bVisible && !m_RndHelp )
@@ -376,23 +401,25 @@ void CUIAutoHelp::ShowAutoHelp ( int nIndex )
 		return;
 	}
 
-	// Îç∞Ïù¥ÌÑ∞ Ï¥àÍ∏∞Ìôî
+	// µ•¿Ã≈Õ √ ±‚»≠
 	m_bVisible		= TRUE;
 	m_nActiveIndex	= nIndex;
 	m_fShowTime		= AUTOHELO_SHOW_TIME;
 
 	int			nWidth = ( m_AutoHelpInfo[m_nActiveIndex].m_strMessage.Length() + 6 ) *
 							( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) - 1;
-	
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
-	int			nCX = pdp->dp_MinI + ( pdp->dp_MaxI - pdp->dp_MinI ) / 2;
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	int			nCX = pDrawPort->dp_MinI + ( pDrawPort->dp_MaxI - pDrawPort->dp_MinI ) / 2;
 
 	// wooss 051019
 	// for Thai
 	int tv_num = 0;
-	if(g_iCountry == THAILAND){
+
+#if defined(G_THAI)
 		nWidth=FindThaiLen(m_AutoHelpInfo[m_nActiveIndex].m_strMessage);
-	}
+#endif
+
 	m_rcNotice.Left = nCX - nWidth / 2;
 	m_rcNotice.Right = m_rcNotice.Left + nWidth;
 
@@ -408,9 +435,11 @@ void CUIAutoHelp::ShowAutoHelp ( int nIndex )
 // ----------------------------------------------------------------------------
 void CUIAutoHelp::Render ()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
 	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
 
-	if( _pUIMgr->GetUIGameState() != UGS_GAMEON ) return;
+	if( STAGEMGR()->GetCurStage() != eSTAGE_GAMEPLAY ) return;
 
 
 	if ( !m_bVisible )
@@ -421,13 +450,14 @@ void CUIAutoHelp::Render ()
 
 		TIME NowTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
 
-/*		
-		if(g_iCountry == THAILAND ){
+		
+#if defined(G_THAI)
+			
 			int tv_rnd;
 			__int64 tv_time = llCurTime - m_tmCheckTime;
 			INDEX tv_tmp ;
-			time(&tv_tmp);
-			tm* tv_tm = localtime(&tv_tmp);
+			time((time_t*)&tv_tmp);
+			tm* tv_tm = localtime((time_t*)&tv_tmp);
 			if(tv_tm->tm_hour == 3 && tv_tm->tm_min == 55 && tv_tm->tm_sec == 0) {
 				tv_rnd = ( rand()% (AU_NO_TOXICOSIS_VACATION_E - AU_NO_TOXICOSIS_VACATION_S + 1) ) + AU_NO_TOXICOSIS_VACATION_S;
 				SetInfo ( tv_rnd );
@@ -440,15 +470,15 @@ void CUIAutoHelp::Render ()
 					}
 				}
 			}
-		} 
-		*/
-		if(g_iCountry == BRAZIL)
+		 
+#endif
+#if defined(G_BRAZIL)
 		{
 			int tv_rnd;
 			tv_rnd = (rand()%(AU_NO_TOXICOSIS_VACATION_E - AU_NO_TOXICOSIS_S + 1) ) + AU_NO_TOXICOSIS_S;
 			SetInfo ( tv_rnd );
 		}
-
+#endif
 		if ( NowTime - m_tmEndTime > interval )
 		{
 			if ( bFirst == false )
@@ -460,10 +490,18 @@ void CUIAutoHelp::Render ()
 
 
 			m_RndHelp = TRUE;
-		
-			int rnd = ( rand()% (AU_RANDOM_HELP_END - AU_RANDOM_HELP_START ) ) + AU_RANDOM_HELP_START;
-
-			SetInfo ( rnd ); // 1Í∞ú Ïù¥ÏÉÅ ÏùºÎïå ÏàòÏ†ïÌï¥Ï£ºÏÑ∏Ïöî..^^
+			int rnd;
+			
+#if defined(G_JAPAN)
+			{
+				rnd = ( rand()% (AU_RANDOM_HELP_END - AU_RANDOM_HELP_START ) ) + AU_RANDOM_HELP_START;
+			}
+#else
+			{
+				rnd = ( rand()% (AU_RANDOM_HELP_END - AU_RANDOM_HELP_START - 3 ) ) + AU_RANDOM_HELP_START;
+			}
+#endif
+			SetInfo ( rnd ); // 1∞≥ ¿ÃªÛ ¿œ∂ß ºˆ¡§«ÿ¡÷ººø‰..^^
 			
 			m_tmEndTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
 			m_RndHelp = FALSE;
@@ -478,9 +516,10 @@ void CUIAutoHelp::Render ()
 
 	if( llCurDelay < AUTOHELO_SHOW_TIME )
 	{
-		COLOR	colBackground = 0xFFFFFFFF;
-		COLOR	colText = 0x5F71E2FF;
-
+		COLOR	colBackground = 0x000000FF;
+		// tutorial renewal : «Ô«¡ Ω√Ω∫≈€ ƒ√∑Ø ∫Ø∞Ê. [8/3/2010 rumist]
+		COLOR	colText = 0xFFFF00FF;
+		
 		if( llCurDelay > CHATMSG_NOTICE_FADEOUT )
 		{
 			FLOAT	fFadeRatio = (FLOAT)( CHATMSG_NOTICE_DELAY - llCurDelay ) / (FLOAT)CHATMSG_NOTICE_FADETIME;
@@ -494,94 +533,45 @@ void CUIAutoHelp::Render ()
 	
 	
 		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 		// Add render regions
 		// Background
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice.Left - 32, m_rcNotice.Top,
+		pDrawPort->AddTexture( m_rcNotice.Left - 32, m_rcNotice.Top,
 											m_rcNotice.Left, m_rcNotice.Bottom,
 											m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
 											colBackground );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice.Left, m_rcNotice.Top,
+		pDrawPort->AddTexture( m_rcNotice.Left, m_rcNotice.Top,
 											m_rcNotice.Right, m_rcNotice.Bottom,
 											m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
 											colBackground );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice.Right, m_rcNotice.Top,
+		pDrawPort->AddTexture( m_rcNotice.Right, m_rcNotice.Top,
 											m_rcNotice.Right + 32, m_rcNotice.Bottom,
 											m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
 											colBackground );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
-		// ÎèÑÏõÄÎßê ÏïûÎí§Î°ú ÌëúÏãúÌïòÎäî Ïû•ÏãùÏùÑ Íµ≠Í∞Ä Î≥ÑÎ°ú Îã§Î•¥Í≤å ÏÑ§Ï†ï Ìï©ÏãúÎã§~
-		extern INDEX	g_iCountry;
-		CTString	strDecoration;
+		// µµøÚ∏ª æ’µ⁄∑Œ «•Ω√«œ¥¬ ¿ÂΩƒ¿ª ±π∞° ∫∞∑Œ ¥Ÿ∏£∞‘ º≥¡§ «’Ω√¥Ÿ~
 
-		switch( g_iCountry )
-		{
-		case KOREA:
-			strDecoration = "‚ô£";
-			break;
-		
-		case TAIWAN:
-		case TAIWAN2: // wooss 050929
-			strDecoration = "";
-			break;
-		
-		case CHINA: 
-			strDecoration = "";
-			break;
-			
-		case THAILAND:
-			strDecoration ="";
-			break;
-			
-		case JAPAN:
-			strDecoration ="";
-			break;
-		case MALAYSIA:
-			strDecoration ="";
-			break;
+		CTString	strDecoration = "";
 
-		case USA:
-			strDecoration ="";
-			break;
-
-		case BRAZIL:
-			strDecoration ="";
-			break;
-		case HONGKONG:
-			strDecoration ="";
-			break;
-		case GERMANY:
-			strDecoration ="";
-			break;
-		case SPAIN://FRANCE_SPAIN_CLOSEBETA_NA_20081124
-			strDecoration = "";
-			break;
-		case FRANCE:
-			strDecoration = "";
-			break;
-		case POLAND:
-			strDecoration = "";
-			break;
-		case TURKEY:
-			strDecoration = "";
-			break;
-		}
+#if defined(G_KOR)
+			strDecoration = "¢¿";
+#endif
 		
 		CTString strTemp = strDecoration + " ";
 		strTemp += m_AutoHelpInfo[m_nActiveIndex].m_strMessage + " ";
 		strTemp += strDecoration;
 		
 		// Text in notice region
-		_pUIMgr->GetDrawPort()->PutTextEx( strTemp, m_rcNotice.Left, m_rcNotice.Top + 4, colText );
+		pDrawPort->PutTextEx( strTemp, m_rcNotice.Left, m_rcNotice.Top + 4, colText );
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 	else
 	{
@@ -602,85 +592,393 @@ void CUIAutoHelp::SetGMNotice ( CTString strGMNotice, COLOR colText )
 	m_strGMNotice = strGMNotice;
 	m_colGMTextColor = colText;
 
-	// Îç∞Ïù¥ÌÑ∞ Ï¥àÍ∏∞Ìôî
+	// µ•¿Ã≈Õ √ ±‚»≠
 	m_bShowGMNotice	= TRUE;
 	
 	int			nWidth;
 	
-	if(g_iCountry == THAILAND ){
-		nWidth = FindThaiLen(m_strGMNotice);
+#if defined(G_THAI)
+	
+	nWidth = FindThaiLen(m_strGMNotice);
 
-	} else {
+#else
 
-		nWidth = m_strGMNotice.Length() *
-							( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) - 1;
-	}
+	nWidth = m_strGMNotice.Length() *
+			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) - 1;	
+#endif
 
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
-	int			nCX = pdp->dp_MinI + ( pdp->dp_MaxI - pdp->dp_MinI ) / 2;
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	int			nCX = pDrawPort->dp_MinI + ( pDrawPort->dp_MaxI - pDrawPort->dp_MinI ) / 2;
 
 	m_rcGMNotice.Left = nCX - nWidth / 2;
 	m_rcGMNotice.Right = m_rcGMNotice.Left + nWidth;
 
 	m_tmGMNoticeTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds ();
 
+#ifdef	IMPROV1107_NOTICESYSTEM
+	SGMNotice		sNotice;
+
+	sNotice.strGMNotice			= strGMNotice;
+	sNotice.colGMTextColor		= colText;
+	sNotice.i64GMFadeTime = sNotice.i64GMNoticeTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	sNotice.bCompleteVisible	= FALSE;
+	sNotice.rcBackground.Left	= m_rcGMNotice.Left;
+	sNotice.rcBackground.Right	= m_rcGMNotice.Right;
+
+	m_vGMNotice.push_back(sNotice);
+
+	if(m_vGMNotice.size() > 1)
+	{
+		m_bmovGMNotice		= TRUE;
+		m_i64movGMNotice	= _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
 // Name : RenderGMNotice()
-// Desc : Ïö¥ÏòÅÏûê Í≥µÏßÄ
+// Desc : øÓøµ¿⁄ ∞¯¡ˆ «•Ω√ ¡¶∞≈
+// ----------------------------------------------------------------------------
+void CUIAutoHelp::ClearGMNNotice()
+{
+#ifdef	IMPROV1107_NOTICESYSTEM
+	m_vGMNotice.clear();
+	m_bmovGMNotice		= FALSE;
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// Name : RenderGMNotice()
+// Desc : øÓøµ¿⁄ ∞¯¡ˆ
 // ----------------------------------------------------------------------------
 void CUIAutoHelp::RenderGMNotice ()
 {
-	if( m_bShowGMNotice )
-	{
-		__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-		__int64	llCurDelay = llCurTime - m_tmGMNoticeTime;
-		if( llCurDelay < CHATMSG_NOTICE_DELAY )
-		{
-			COLOR	colBackground = 0xFFFFFFFF;
-			COLOR	colText = m_colGMTextColor;
-			if( llCurDelay > CHATMSG_NOTICE_FADEOUT )
-			{
-				FLOAT	fFadeRatio = (FLOAT)( CHATMSG_NOTICE_DELAY - llCurDelay ) / (FLOAT)CHATMSG_NOTICE_FADETIME;
-				COLOR	colBlend = 0xFF * fFadeRatio;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	UtilHelp* pUtil = UtilHelp::getSingleton();
 
-				colBackground &= 0xFFFFFF00;
-				colBackground |= colBlend;
-				colText &= 0xFFFFFF00;
-				colText |= colBlend;
+	if( m_bShowGMNotice == FALSE )
+		return;
+
+	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	__int64	llCurDelay = llCurTime - m_tmGMNoticeTime;
+#ifdef	IMPROV1107_NOTICESYSTEM
+
+	if(m_vGMNotice.size() > 0)
+	{
+		float	fposYPitchNotice	= 0.0f;
+
+		if(m_bmovGMNotice)
+		{
+			__int64 llCurMoveDelady	= llCurTime - m_i64movGMNotice;
+
+			if(llCurMoveDelady >= CHATMSG_NOTICE_MOVEPITCHTIME)
+			{
+				m_bmovGMNotice	= FALSE;
 			}
 
-			// Set texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-			// Add render regions
-			// Background
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcGMNotice.Left - 32, m_rcGMNotice.Top,
-												m_rcGMNotice.Left, m_rcGMNotice.Bottom,
-												m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
-												colBackground );
-
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcGMNotice.Left, m_rcGMNotice.Top,
-												m_rcGMNotice.Right, m_rcGMNotice.Bottom,
-												m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
-												colBackground );
-
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcGMNotice.Right, m_rcGMNotice.Top,
-												m_rcGMNotice.Right + 32, m_rcGMNotice.Bottom,
-												m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
-												colBackground );
-
-			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-			// Text in notice region
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strGMNotice, m_rcGMNotice.Left, m_rcGMNotice.Top + 4, colText );
-
-			// Flush all render text queue
-			_pUIMgr->GetDrawPort()->EndTextEx();
+			float	fMoveRatio	= 1.0f - ((float)llCurMoveDelady / (float)CHATMSG_NOTICE_MOVEPITCHTIME);
+			if(fMoveRatio < 0.0f)
+				fMoveRatio		= 0.0f;
+			fposYPitchNotice	= (float)(m_rcGMNotice.Bottom - m_rcGMNotice.Top) * fMoveRatio;
 		}
-		else
-			m_bShowGMNotice = FALSE;
+
+		// ∞¯¡ˆ ±◊∏Æ±‚
+		int		iNoticeSize	= m_vGMNotice.size();
+		std::vector<SGMNotice>::iterator	itNotice	= m_vGMNotice.end() - 1;
+		for(int i = 0; i < iNoticeSize; i++)
+		{
+			SGMNotice&	sNotice			= (*itNotice);
+			int			iFadeType		= 0;		// -1 : FadeIN(≥™≈∏≥≤) 0 : ∆‰¿ÃµÂæ¯¿Ω 1 : FadeOUT(ªÁ∂Û¡¸)
+			float		fAlphaRatio		= 1.0f;		// 1 = ALPHA 100%, 0 = 0% (FADE)
+			COLOR		colBackground	= 0xFFFFFFFF;
+			COLOR		colText			= sNotice.colGMTextColor;
+			int			iNoticeHeight	= m_rcGMNotice.Bottom - m_rcGMNotice.Top;
+			float		fYNotice		= m_rcGMNotice.Top;
+
+			if(i > CHATMSG_NOTICE_VIEWCOUNT)
+			{
+				if(m_vGMNotice.end() != itNotice)
+					itNotice = m_vGMNotice.erase(itNotice);
+
+				continue;
+			}
+			else if(i == CHATMSG_NOTICE_VIEWCOUNT)
+			{	// «„øÎ ∂Û¿Œ¿ª ≥—æ˙¿∏π«∑Œ ∞≠¡¶ FADEOUTΩ√≈∞∞Ì ¡¶∞≈
+				sNotice.i64GMNoticeTime		-= CHATMSG_NOTICE_DELAY;
+			}
+
+			if(i > 0)
+			{	// √ππ¯¬∞ ∂Û¿Œ (¡¶¿œ «œ¥‹) ¿Ã æ∆¥“ ∞ÊøÏ fposYPitchNotice ∞™¿ª øµ«‚πﬁ¥¬¥Ÿ. (¿ß∑Œ ¿Ãµø«—¥Ÿ)
+				fYNotice	= m_rcGMNotice.Top - (i * iNoticeHeight);
+				fYNotice	+= fposYPitchNotice;
+			}
+			
+			if(llCurTime - sNotice.i64GMNoticeTime > CHATMSG_NOTICE_DELAY)
+			{	// ªÁ∂Û¡˙ Ω√∞£¿Ã ¥Ÿµ«æ˙¥Ÿ.
+				if(sNotice.bCompleteVisible)
+				{
+					sNotice.i64GMFadeTime		= llCurTime;		// FadeTime ¿Áº≥¡§
+					sNotice.bCompleteVisible	= FALSE;
+				}
+
+				iFadeType		= 1;
+			}
+			else
+			{
+				if(!sNotice.bCompleteVisible)		// æ∆¡˜ ∫∏ø©¡÷¡ˆ æ ¿∫ ªÛ≈¬¥¬ π´¡∂∞« FadeIN ªÛ≈¬
+				{
+					iFadeType		= -1;
+				}
+			}
+
+			if(iFadeType == -1)
+			{	// FadeIN (≥™≈∏≥™¥¬ »ø∞˙)
+				fAlphaRatio			= (float)(llCurTime - sNotice.i64GMFadeTime) / (float)CHATMSG_NOTICE_FADETIME;
+				if(fAlphaRatio >= 1.0f)
+				{
+					fAlphaRatio					= 1.0f;
+					sNotice.bCompleteVisible	= TRUE;
+				}
+			}
+			else if(iFadeType == 1)
+			{
+				//FadeOUT (ªÁ∂Û¡ˆ¥¬ »ø∞˙)
+				fAlphaRatio			-= (float)(llCurTime - sNotice.i64GMFadeTime) / (float)CHATMSG_NOTICE_FADETIME;
+				if(fAlphaRatio <= 0.0f)
+				{
+					fAlphaRatio		= 0.0f;
+					itNotice = m_vGMNotice.erase(itNotice);
+
+					if(itNotice == m_vGMNotice.begin())
+						break;
+				}
+			}
+
+			if(fAlphaRatio > 0.0f)
+			{
+				// TEXT (æÀ∆ƒ∞° ∏‘¡ˆ∏¶ æ æ∆ ªˆ√§∏¶ ª≠, ¿œ¡§ æÀ∆ƒ∞™¿Ã ∂≥æÓ¡ˆ∏È ≈ÿΩ∫∆Æ∏¶ æÀæ∆º≠ ∞®√„.)
+				if (pUtil != NULL)
+				{
+					colText			= pUtil->GetColorAlpha(fAlphaRatio, colText);
+					colText			= pUtil->GetColorContrast(fAlphaRatio, colText);
+					// BACKGROUND
+					colBackground	= pUtil->GetColorAlpha(fAlphaRatio, colBackground);
+				}
+				// Set texture
+				pUIManager->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+				// Background
+				pUIManager->GetDrawPort()->AddTexture( sNotice.rcBackground.Left - 32, fYNotice,
+													sNotice.rcBackground.Left, fYNotice + iNoticeHeight,
+													m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
+													colBackground );
+
+				pUIManager->GetDrawPort()->AddTexture( sNotice.rcBackground.Left, fYNotice,
+													sNotice.rcBackground.Right, fYNotice + iNoticeHeight,
+													m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
+													colBackground );
+
+				pUIManager->GetDrawPort()->AddTexture( sNotice.rcBackground.Right, fYNotice,
+													sNotice.rcBackground.Right + 32, fYNotice + iNoticeHeight,
+													m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
+													colBackground );
+
+				// Render all elements
+				pUIManager->GetDrawPort()->FlushRenderingQueue();
+
+				// Text in notice region
+				pUIManager->GetDrawPort()->PutTextEx( sNotice.strGMNotice, sNotice.rcBackground.Left, fYNotice + 4, colText );
+
+				// Flush all render text queue
+				pUIManager->GetDrawPort()->EndTextEx();
+			}
+
+			if(itNotice == m_vGMNotice.begin())
+				break;
+
+			itNotice--;
+		}
 	}
+	else if(m_vGMNotice.size() <= 0)
+		m_bShowGMNotice = FALSE;
+
+#else	// #ifdef	IMPROV1107_NOTICESYSTEM
+	if( llCurDelay < CHATMSG_NOTICE_DELAY )
+	{
+		COLOR	colBackground = 0xFFFFFFFF;
+		COLOR	colText = m_colGMTextColor;
+		if( llCurDelay > CHATMSG_NOTICE_FADEOUT )
+		{
+			FLOAT	fFadeRatio = (FLOAT)( CHATMSG_NOTICE_DELAY - llCurDelay ) / (FLOAT)CHATMSG_NOTICE_FADETIME;
+			COLOR	colBlend = 0xFF * fFadeRatio;
+
+			colBackground &= 0xFFFFFF00;
+			colBackground |= colBlend;
+			colText &= 0xFFFFFF00;
+			colText |= colBlend;
+		}
+
+		// Set texture
+		pUIManager->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+
+		// Add render regions
+		// Background
+		pUIManager->GetDrawPort()->AddTexture( m_rcGMNotice.Left - 32, m_rcGMNotice.Top,
+											m_rcGMNotice.Left, m_rcGMNotice.Bottom,
+											m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
+											colBackground );
+
+		pUIManager->GetDrawPort()->AddTexture( m_rcGMNotice.Left, m_rcGMNotice.Top,
+											m_rcGMNotice.Right, m_rcGMNotice.Bottom,
+											m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
+											colBackground );
+
+		pUIManager->GetDrawPort()->AddTexture( m_rcGMNotice.Right, m_rcGMNotice.Top,
+											m_rcGMNotice.Right + 32, m_rcGMNotice.Bottom,
+											m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
+											colBackground );
+
+		// Render all elements
+		pUIManager->GetDrawPort()->FlushRenderingQueue();
+
+		// Text in notice region
+		pUIManager->GetDrawPort()->PutTextEx( m_strGMNotice, m_rcGMNotice.Left, m_rcGMNotice.Top + 4, colText );
+
+		// Flush all render text queue
+		pUIManager->GetDrawPort()->EndTextEx();
+	}
+	else
+		m_bShowGMNotice = FALSE;
+#endif	// #ifdef	IMPROV1107_NOTICESYSTEM
+
+}
+
+void CUIAutoHelp::ClassificationShowRender()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+	if( STAGEMGR()->GetCurStage() != eSTAGE_GAMEPLAY ) 
+		return;
+
+	if( (llCurTime - m_tmClassification) > CLASSIFICATION_TIME && !m_bShowClassification )
+	{ // «— Ω√∞£ø° «—π¯ ∫∏ø©¡÷¿⁄.(15ºº ¿ÃøÎ∞°)
+		m_tmCurTime = llCurTime;
+		m_bShowClassification = TRUE;
+	}
+
+	if( m_bShowClassification == FALSE )
+		return;
+
+	// ∫∏ø©¡÷¿⁄
+	if( llCurTime - m_tmCurTime < 3000 )	// 3√  ∞°∑Æ∏∏
+	{
+		CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+		pDrawPort->InitTextureData( m_ptdClassification );
+
+		PIX pixdpw = pDrawPort->GetWidth()*0.15;
+		FLOAT fPersent		= 1.0f;
+		fPersent = (FLOAT)pixdpw / m_rcClassification.GetWidth();
+
+		INDEX fWidth = m_rcClassification.GetWidth();//*fPersent;
+		INDEX fHeigth = m_rcClassification.GetHeight();//*fPersent;
+		INDEX fPosX = pDrawPort->GetWidth() - ( fWidth+150 ) ; // 150¿∫ ∑π¿Ã¥ı ≈©±‚
+		INDEX fPosY = ( fHeigth / 4 );
+
+		pDrawPort->AddTexture( fPosX, fPosY,
+												fPosX + fWidth, fPosY + fHeigth, 
+												m_rtClassification.U0, m_rtClassification.V0, m_rtClassification.U1, m_rtClassification.V1,
+												0xFFFFFFFF );
+
+		pDrawPort->FlushRenderingQueue();
+	}
+	else
+	{ // 3√  ¿ÃªÛ¿∫ æ»µ≈
+		m_tmClassification = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+		m_bShowClassification = FALSE;
+	}
+}
+
+
+void CUIAutoHelp::initialize()
+{
+// 	int			i;
+// 	CUIImage*	pImg = NULL;
+// 
+// 	const char* str_notice[] = {
+// 		"notice_l",
+// 		"notice_c",
+// 		"notice_r",
+// 	};
+// 
+// 	for( i = 0; i < 3; ++i )
+// 	{
+// 		pImg = (CUIImage*)findUI( str_notice[i] );
+// 
+// 		if( pImg )
+// 		{
+// 			addChild( pImg );
+// 		}
+// 	}
+
+}
+
+void CUIAutoHelp::GetLvGuidString( int lv )
+{
+	if (CLevelUpGuide::getData(lv) == NULL)
+		return;
+
+	CTString strTmp = CUIBase::getText(CLevelUpGuide::getData(lv)->strIndex);
+
+	if (strTmp.IsEmpty() == TRUE)
+		return;
+
+	CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( strTmp, SYSMSG_USER);
+}
+
+void CUIAutoHelp::LearnTheSkill( int lv )
+{
+	int nCnt = 0;
+	
+	int nJob = _pNetwork->MyCharacterInfo.job;
+	int _2ndJob = _pNetwork->MyCharacterInfo.job2;
+	int _tmp2ndJob = 0;
+	int nIndex = 0;
+
+	nCnt = CSkillTree::m_nSkillCount[nJob][0];
+
+	if (_2ndJob > 0)
+		nCnt += CSkillTree::m_nSkillCount[nJob][_2ndJob];
+
+	for (int i = 0; i < nCnt; ++i)
+	{
+		if (i > CSkillTree::m_nSkillCount[nJob][0])
+			_tmp2ndJob = _2ndJob;
+
+		nIndex = CSkillTree::m_SkillTree[nJob][_tmp2ndJob][i/8].index[i%8];
+
+		CSkill& rSkill = _pNetwork->GetSkillData(nIndex);
+
+		for (int j = 0; j < rSkill.GetMaxLevel(); ++j)
+		{
+			if (rSkill.GetLearnLevel(j) == lv)
+			{
+				CTString strTmp;
+				strTmp.PrintF(_S(6213, "ªı∑ŒøÓ Ω∫≈≥ [%s]¿« %d∑π∫ß¿ª πËøÔ ºˆ ¿÷Ω¿¥œ¥Ÿ."), rSkill.GetName(), j + 1);
+
+				CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( strTmp, SYSMSG_USER);
+				break;
+			}
+		}
+	}
+}
+
+void CUIAutoHelp::SetStatpoint( int old, int cur )
+{
+	m_nUpStat = 0;
+
+	if (old >= cur)
+		return;
+
+	m_nUpStat = cur - old;
 }

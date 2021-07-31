@@ -951,7 +951,8 @@ extern void TRS_DeleteShadowMap( CTerrain* ptrTerrain, INDEX iShadowMap )
 		const PIX	pixShadowMapSize = pixShadowMapWidth * pixShadowMapHeight * sizeof(ULONG);
 
 	INDEX	iNewShadowMapsIndex = 0;
-	for( INDEX itrs = 0; itrs < ctShadowMaps; itrs++ )
+	INDEX	itrs;
+	for( itrs = 0; itrs < ctShadowMaps; itrs++ )
 	{
 		if( itrs != iShadowMap )
 		{
@@ -1020,13 +1021,14 @@ extern void TRS_AddShadowMap( CTerrain* ptrTerrain )
 	ptr->tr_acolObjShadowColor.New( ctShadowMaps + 1 );
 
 	const SLONG	slShadowMapAspect = ptr->tr_slShadowMapSizeAspect;
-		const PIX	pixHeightMapWidth = ptr->tr_pixHeightMapWidth;
-		const PIX	pixHeightMapHeight = ptr->tr_pixHeightMapHeight;
-		const PIX	pixShadowMapWidth = GetShadowMapWidth( pixHeightMapWidth, slShadowMapAspect );
-		const PIX	pixShadowMapHeight = GetShadowMapHeight( pixHeightMapHeight, slShadowMapAspect );
-		const PIX	pixShadowMapSize = pixShadowMapWidth * pixShadowMapHeight * sizeof(ULONG);
+	const PIX	pixHeightMapWidth = ptr->tr_pixHeightMapWidth;
+	const PIX	pixHeightMapHeight = ptr->tr_pixHeightMapHeight;
+	const PIX	pixShadowMapWidth = GetShadowMapWidth( pixHeightMapWidth, slShadowMapAspect );
+	const PIX	pixShadowMapHeight = GetShadowMapHeight( pixHeightMapHeight, slShadowMapAspect );
+	const PIX	pixShadowMapSize = pixShadowMapWidth * pixShadowMapHeight * sizeof(ULONG);
 
-	for( INDEX itrs = 0; itrs < ctShadowMaps; itrs++ )
+	INDEX itrs;
+	for( itrs = 0; itrs < ctShadowMaps; itrs++ )
 	{
 		ptr->tr_aptdShadowMaps[itrs] = TR_CreateTexture();
 		CTextureData*	ptdSrc = atsOldShadowMaps[itrs];

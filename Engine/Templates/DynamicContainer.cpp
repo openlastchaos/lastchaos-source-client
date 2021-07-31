@@ -75,6 +75,9 @@ void CDynamicContainer<Type>::Remove(Type *ptOldObject)
   // find its index
   INDEX iMember=GetIndex(ptOldObject);
   // move last pointer here
+  if( iMember > Count()-1 )
+	  return;
+
   sa_Array[iMember]=sa_Array[Count()-1];
   sa_Array[Count()-1] = NULL;
   Pop();
@@ -172,7 +175,7 @@ INDEX CDynamicContainer<Type>::GetIndex(Type *ptMember) {
       return iMember;
     }
   }
-  ASSERTALWAYS("CDynamicContainer<Type><>::Index(): Not a member of this container!");
+ ASSERTALWAYS("CDynamicContainer<Type><>::Index(): Not a member of this container!");
   return 0;
 }
 
@@ -280,8 +283,8 @@ inline BOOL CDynamicContainerIterator<Type>::IsPastEnd(void) {
 /* NOTE: The iterator defined by this macro must be destroyed before adding/removing
  * elements in the container. To do so, embed the for loop in additional curly braces.
  */
-#define FOREACHINDYNAMICCONTAINER(container, type, iter) \
-  for(CDynamicContainerIterator<type> iter(container); !iter.IsPastEnd(); iter.MoveToNext() )
+#define FOREACHINDYNAMICCONTAINER(container, flag, iter) \
+  for(CDynamicContainerIterator<flag> iter(container); !iter.IsPastEnd(); iter.MoveToNext() )
 
 
 #endif  /* include-once check. */

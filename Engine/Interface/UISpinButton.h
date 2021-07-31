@@ -5,30 +5,34 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIWindow.h>
-#include <vector>
-#include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIWindow.h>
+// #include <vector>
+// #include <Engine/Interface/UIButton.h>
 //------------------------------------------------------------------------------
 // CUISpinButton
 // Explain:  
 // Date : 2005-06-23,Author: Lee Ki-hwan
 // History: 
 //------------------------------------------------------------------------------
-class CUISpinButton : public CUIWindow
+enum eBTN_STATE{ eBTN_UP,
+				 eBTN_DOWN, 
+				 eBTN_MAX	
+				};
+class ENGINE_API CUISpinButton : public CUIWindow
 {
 protected:
-	std::vector<CTString>	m_vecData;			// ì €ì¥ë˜ëŠ” ë°ì´í„° 
-	BOOL					m_bDataBack;		// ë°ì´í„°ì˜ ë°°ê²½ì´ ì¶œë ¥ë˜ëŠ”ê°€?
-	int						m_nDataBackWidth;	// ë°ì´í„°ì˜ ë°°ê²½ì˜ ë„ˆë¹„(ë†’ì´ëŠ” UIì˜ ë†’ì´ë¥¼ ë”°ë¼ê°)
-	UIRectUV3				m_rt3Data;			// ë°ì´í„° ë°°ê²½ì˜ UV
+	std::vector<CTString>	m_vecData;			// ÀúÀåµÇ´Â µ¥ÀÌÅÍ 
+	BOOL					m_bDataBack;		// µ¥ÀÌÅÍÀÇ ¹è°æÀÌ Ãâ·ÂµÇ´Â°¡?
+	int						m_nDataBackWidth;	// µ¥ÀÌÅÍÀÇ ¹è°æÀÇ ³Êºñ(³ôÀÌ´Â UIÀÇ ³ôÀÌ¸¦ µû¶ó°¨)
+	UIRectUV3				m_rt3Data;			// µ¥ÀÌÅÍ ¹è°æÀÇ UV
 
-	CTString				m_strTitle;			// ì œëª©
-	CUIButton				m_btnUp;			// ìœ„ìª½ ë²„íŠ¼ 
-	CUIButton				m_btnDown;			// ì•„ë˜ìª½ ë²„íŠ¼ 
+	CTString				m_strTitle;			// Á¦¸ñ
+	CUIButton				m_btnUp;			// À§ÂÊ ¹öÆ° 
+	CUIButton				m_btnDown;			// ¾Æ·¡ÂÊ ¹öÆ° 
 	
-	int						m_nSelectIndex;		// í˜„ì¬ ì„ íƒëœ Data Index ( AddDataí•˜ë©´ 0ìœ¼ë¡œ ì…‹íŒ…ë¨ )
-	int						m_nStrWidth;		// Title ì˜ ê¸¸ì´
-	BOOL					m_bVertical;		// SpinButtonì´ ì„¸ë¡œì¸ì§€ ê°€ë¡œì¸ì§€
+	int						m_nSelectIndex;		// ÇöÀç ¼±ÅÃµÈ Data Index ( AddDataÇÏ¸é 0À¸·Î ¼ÂÆÃµÊ )
+	int						m_nStrWidth;		// Title ÀÇ ±æÀÌ
+	BOOL					m_bVertical;		// SpinButtonÀÌ ¼¼·ÎÀÎÁö °¡·ÎÀÎÁö
 	UIRect					m_rcWheel;
 	
 
@@ -36,6 +40,8 @@ public:
 
 	CUISpinButton();
 	
+	CUIBase* Clone();
+
 	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight, CTString strTitle, int nDataBackWidth );
 	void	CreateButtons( int nBtnWidth, int nBtnHeight, int nButtonGap = 0,  BOOL bVertical = TRUE );
@@ -45,17 +51,17 @@ public:
 	// Message
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
-	void		AddData( CTString strData );		// ìŠ¤íŠ¸ë§ í˜•íƒœë¡œ ì €ì •í•˜ì§€ë§Œ ìˆ«ìê°€ ë ìˆ˜ë„ ìˆë‹¤.
-	int			GetDataToNumber( int nIndex = -1 );		// ë°ì´í„°ë¥¼ ìˆ«ìí˜•íƒœ ì–»ëŠ”ë‹¤.
-	CTString	GetDataToString( int nIndex = -1 );		// ë°ì´í„°ë¥¼ ìŠ¤íŠ¸ë§ í˜•íƒœë¡œ ì–»ëŠ”ë‹¤		
-	inline int	GetSelectPos()	{return m_nSelectIndex;} // ì„ íƒí•œ ìœ„ì¹˜ // WSS_DRATAN_SEIGEWARFARE 2007/08/06
-	inline void SetSelectPos(int tPos)	{ m_nSelectIndex = tPos;} // ì„ íƒí•œ ìœ„ì¹˜ // WSS_DRATAN_SEIGEWARFARE 2007/08/06
+	void		AddData( CTString strData );		// ½ºÆ®¸µ ÇüÅÂ·Î ÀúÁ¤ÇÏÁö¸¸ ¼ıÀÚ°¡ µÉ¼öµµ ÀÖ´Ù.
+	int			GetDataToNumber( int nIndex = -1 );		// µ¥ÀÌÅÍ¸¦ ¼ıÀÚÇüÅÂ ¾ò´Â´Ù.
+	CTString	GetDataToString( int nIndex = -1 );		// µ¥ÀÌÅÍ¸¦ ½ºÆ®¸µ ÇüÅÂ·Î ¾ò´Â´Ù		
+	inline int	GetSelectPos()	{return m_nSelectIndex;} // ¼±ÅÃÇÑ À§Ä¡ // WSS_DRATAN_SEIGEWARFARE 2007/08/06
+	inline void SetSelectPos(int tPos)	{ m_nSelectIndex = tPos;} // ¼±ÅÃÇÑ À§Ä¡ // WSS_DRATAN_SEIGEWARFARE 2007/08/06
 	void		MoveDataIndex( int nIndexDelta );
 	void		ResetAllDatas()
 	{
 		m_vecData.clear();
 	}
-	// í˜„ì¬ UIì˜ PosX, PosYì„ ê¸°ì¡´ìœ¼ë¡œ nLeft, nTopì„ ì¡ì•„ì•¼í•¨.
+	// ÇöÀç UIÀÇ PosX, PosYÀ» ±âÁ¸À¸·Î nLeft, nTopÀ» Àâ¾Æ¾ßÇÔ.
 	void	SetWheelRect( int nLeft, int nTop, int nWidth, int nHeight )
 	{
 		m_rcWheel.SetRect( nLeft, nTop, nLeft + nWidth, nTop + nHeight );
@@ -92,8 +98,52 @@ public:
 	void RenderRectUV3( int nUnitSize, int nX, int nY, int nWidth, int nHeight, UIRectUV3 rtRectUV3 );	
 
 	void SetTitle( CTString strTitle );
-};
 
+public:
+	WMSG_RESULT	OnMouseWheel(UINT16 x, UINT16 y, int wheel);
+
+	void		setUVDataBack( UIRectUV uv );
+	void		setDataBackWidth(int nWidth)	{ m_nDataBackWidth = nWidth;	}
+	void		setSpinButton( int nW, int nH, int nGap )
+	{ 
+		m_nSpinBtnWidth = nW; m_nSpinBtnHeight = nH; m_nSpinBtnGap = nGap;
+#ifdef UI_TOOL
+		setBtnAutoInfo(m_bBtnAutoInfo);
+#endif // UI_TOOL
+	}
+
+	int			getDataBackWidth()				{ return m_nDataBackWidth;		}
+	const char* getTitleText()					{ return m_strTitle.str_String; }
+	void		getSpinButton( int& nW, int& nH, int& nGap )
+	{
+		nW = m_nSpinBtnWidth; nH = m_nSpinBtnHeight; nGap = m_nSpinBtnGap;
+	}
+	int			getAdjust()						{ return m_nAdjust;				}
+
+#ifdef UI_TOOL
+	UIRectUV	getUVDataBack()					{ return m_uvDataBack;			}
+	bool		getBtnAutoInfo()				{ return m_bBtnAutoInfo;		}
+	UIRect		getWheelRect()					{ return m_rcWheel;				}
+	// Åø¿¡¼­ ¸¸µé¾îÁø ¹öÆ°À» Å¬·¹½º ¸É¹ö·Î ¿¬°á½ÃÄÑ ÁÖ±â À§ÇØ »ç¿ë.
+	void		SetSpinButton( int type, CUIButton* pButton );
+	void		setBtnAutoInfo(bool bAuto);
+
+private :
+	UIRectUV	m_uvDataBack;
+	bool		m_bBtnAutoInfo;
+#endif // UI_TOOL
+
+protected:
+	void		initialize();
+	void		OnRender(CDrawPort* pDraw);
+
+private:
+	CUIButton*	m_pSpinBtn[eBTN_MAX];
+	int			m_nSpinBtnWidth;
+	int			m_nSpinBtnHeight;
+	int			m_nSpinBtnGap;
+	int			m_nAdjust;
+};
 
 #endif	// UISPINBUTTON_H_
 

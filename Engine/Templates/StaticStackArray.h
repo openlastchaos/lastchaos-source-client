@@ -37,9 +37,11 @@ public:
   inline Type &Pop(void);
   /* Remove objects with higher than the given index from stack, but keep stack space. */
   inline void PopUntil(INDEX iNewTop);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
-  inline void SwapAndPop(INDEX swapIndex);	//ìŠ¤íƒ ì¤‘ê°„ê³¼ topì„ ë°”ê¾¼ í›„ topì„ popí•œë‹¤.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+  inline void SwapAndPop(INDEX swapIndex);	//½ºÅÃ Áß°£°ú topÀ» ¹Ù²Û ÈÄ topÀ» popÇÑ´Ù.
+// swap and pop and return poping data pointer [12/10/2010 rumist]
+  inline Type*	SwapAndPopEx( INDEX swapIndex );
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
   /* Remove all objects from stack, but keep stack space. */
   inline void PopAll(void);
 

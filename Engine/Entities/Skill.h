@@ -5,130 +5,166 @@
 #endif
 
 ///////////
-// íš¨ê³¼ìƒìˆ˜
+// È¿°ú»ó¼ö
 
-// íš¨ê³¼ ì„œë¸Œíƒ€ì… - ìŠ¤íƒ¯
-#define EST_STAT_ATTACK			0			// ê³µê²©
-#define EST_STAT_DEFENSE		1			// ë°©ì–´
-#define EST_STAT_MAGIC			2			// ë§ˆë²•
-#define EST_STAT_RESIST			3			// ì €í•­
-#define EST_STAT_HITRATE		4			// ëª…ì¤‘
-#define EST_STAT_AVOID			5			// íšŒí”¼
-#define EST_STAT_CRITICAL		6			// í¬ë¦¬
-#define EST_STAT_ATTACKSPD		7			// ê³µì†
-#define EST_STAT_MAGICSPD		8			// ë§ˆì†
-#define EST_STAT_MOVESPD		9			// ì´ì†
-#define EST_STAT_RECOVERHP		10			// HPíšŒë³µ
-#define EST_STAT_RECOVERMP		11			// MPíšŒë³µ
-#define EST_STAT_MAXHP			12			// ìµœëŒ€HP ì¦ê°€
-#define EST_STAT_MAXMP			13			// ìµœëŒ€MP ì¦ê°€
+// È¿°ú ¼­ºêÅ¸ÀÔ - ½ºÅÈ
+#define EST_STAT_ATTACK			0			// °ø°İ
+#define EST_STAT_DEFENSE		1			// ¹æ¾î
+#define EST_STAT_MAGIC			2			// ¸¶¹ı
+#define EST_STAT_RESIST			3			// ÀúÇ×
+#define EST_STAT_HITRATE		4			// ¸íÁß
+#define EST_STAT_AVOID			5			// È¸ÇÇ
+#define EST_STAT_CRITICAL		6			// Å©¸®
+#define EST_STAT_ATTACKSPD		7			// °ø¼Ó
+#define EST_STAT_MAGICSPD		8			// ¸¶¼Ó
+#define EST_STAT_MOVESPD		9			// ÀÌ¼Ó
+#define EST_STAT_RECOVERHP		10			// HPÈ¸º¹
+#define EST_STAT_RECOVERMP		11			// MPÈ¸º¹
+#define EST_STAT_MAXHP			12			// ÃÖ´ëHP Áõ°¡
+#define EST_STAT_MAXMP			13			// ÃÖ´ëMP Áõ°¡
 
-// íš¨ê³¼ ì„œë¸Œíƒ€ì… - ìƒíƒœì´ìƒ
-#define EST_ASSIST_POISON		0			// ë…
-#define EST_ASSIST_HOLD			1			// í™€ë“œ
-#define EST_ASSIST_CONFUSION	2			// í˜¼ë€
-#define EST_ASSIST_STONE		3			// ì„í™”
-#define EST_ASSIST_SILENT		4			// ë´‰ì¸
-#define EST_ASSIST_BLOOD		5			// ì¶œí˜ˆ
-#define EST_ASSIST_BLIND		6			// ë¸”ë¼ì¸ë“œ
-#define EST_ASSIST_STURN		7			// ìŠ¤í„´
-#define EST_ASSIST_SLEEP		8			// ìŠ¬ë¦½
-#define EST_ASSIST_HP			9			// HPíšŒë³µ
-#define EST_ASSIST_MP			10			// MPíšŒë³µ
-#define EST_ASSIST_MOVESPD		11			// ì´ì† í–¥ìƒ
-#define EST_ASSIST_HP_CANCEL	12			// HPë³€í™”(0, MAXì—ì„œ ì·¨ì†Œ)
-#define EST_ASSIST_MP_CANCEL	13			// MPë³€í™”(0, MAXì—ì„œ ì·¨ì†Œ)
-#define EST_ASSIST_DIZZY		14			// í˜„ê¸°ì¦
-#define EST_ASSIST_INVISIBLE	15			// ì¸ë¹„ì €ë¸”
-#define EST_ASSIST_SLOTH		16			// ìŠ¬ë¡œìŠ¤ : ê³µì†í•˜ë½
-#define EST_ASSIST_FEAR			17			// ê³µí¬ : í•´ë‹¹ NPCê°€ ë„ë§
-#define EST_ASSIST_FAKEDEATH	18			// ì£½ì€ì²™
-#define EST_ASSIST_PERFECTBODY	19			// íƒ€ì´íƒ„ í¼í™ ë°”ë””
-#define EST_ASSIST_FRENZY		20			// íƒ€ì´íƒ„ í”„ë Œì§€
-#define EST_ASSIST_DAMAGELINK	21			// ë°ë¯¸ì§€ë§í¬
-#define EST_ASSIST_BERSERK		22			// ê·¸ëœë“œ ëª¬ìŠ¤í„°ì˜ ë¶„ë…¸- ê³µì†
-#define EST_ASSIST_DESPAIR		23			// íëŸ¬ ë””ì„¸ì´ì–´ ë§ˆí¬
-#define EST_ASSIST_MANA_SCREEN	24			// ì†Œì„œëŸ¬ ë§ˆë‚˜ ìŠ¤í¬ë¦°
-#define EST_ASSIST_BLESS		25			// ì†Œì„œëŸ¬ ìœˆì¦ˆ ë¸”ë ˆì‹±
-#define EST_ASSIST_SAFEGUARD	26			// ë³´í˜¸ë§(ì „íˆ¬ë¶ˆê°€ëŠ¥)
-#define EST_ASSIST_MANTLE		27			// ë§í† 
-#define EST_ASSIST_GUARD		28			// ê²½ë¹„ë³‘ ì†Œí™˜
-#define EST_ASSIST_CRACKER		29			// ì¹¨ì…ì ì´í™íŠ¸ ê´€ë ¨(ìƒíƒœ ì´ìƒê³¼ëŠ” ë¬´ê´€:ì„œë²„ì™€ ìƒê´€ì—†ì´ ê°•ì œ ì ìš©)
-#define EST_ASSIST_COUNT		30	
+// È¿°ú ¼­ºêÅ¸ÀÔ - »óÅÂÀÌ»ó
+#define EST_ASSIST_POISON		0			// µ¶
+#define EST_ASSIST_HOLD			1			// È¦µå
+#define EST_ASSIST_CONFUSION	2			// È¥¶õ
+#define EST_ASSIST_STONE		3			// ¼®È­
+#define EST_ASSIST_SILENT		4			// ºÀÀÎ
+#define EST_ASSIST_BLOOD		5			// ÃâÇ÷
+#define EST_ASSIST_BLIND		6			// ºí¶óÀÎµå
+#define EST_ASSIST_STURN		7			// ½ºÅÏ
+#define EST_ASSIST_SLEEP		8			// ½½¸³
+#define EST_ASSIST_HP			9			// HPÈ¸º¹
+#define EST_ASSIST_MP			10			// MPÈ¸º¹
+#define EST_ASSIST_MOVESPD		11			// ÀÌ¼Ó Çâ»ó
+#define EST_ASSIST_HP_CANCEL	12			// HPº¯È­(0, MAX¿¡¼­ Ãë¼Ò)
+#define EST_ASSIST_MP_CANCEL	13			// MPº¯È­(0, MAX¿¡¼­ Ãë¼Ò)
+#define EST_ASSIST_DIZZY		14			// Çö±âÁõ
+#define EST_ASSIST_INVISIBLE	15			// ÀÎºñÀúºí
+#define EST_ASSIST_SLOTH		16			// ½½·Î½º : °ø¼ÓÇÏ¶ô
+#define EST_ASSIST_FEAR			17			// °øÆ÷ : ÇØ´ç NPC°¡ µµ¸Á
+#define EST_ASSIST_FAKEDEATH	18			// Á×ÀºÃ´
+#define EST_ASSIST_PERFECTBODY	19			// Å¸ÀÌÅº ÆÛÆå ¹Ùµğ
+#define EST_ASSIST_FRENZY		20			// Å¸ÀÌÅº ÇÁ·»Áö
+#define EST_ASSIST_DAMAGELINK	21			// µ¥¹ÌÁö¸µÅ©
+#define EST_ASSIST_BERSERK		22			// ±×·£µå ¸ó½ºÅÍÀÇ ºĞ³ë- °ø¼Ó
+#define EST_ASSIST_DESPAIR		23			// Èú·¯ µğ¼¼ÀÌ¾î ¸¶Å©
+#define EST_ASSIST_MANA_SCREEN	24			// ¼Ò¼­·¯ ¸¶³ª ½ºÅ©¸°
+#define EST_ASSIST_BLESS		25			// ¼Ò¼­·¯ À©Áî ºí·¹½Ì
+#define EST_ASSIST_SAFEGUARD	26			// º¸È£¸Á(ÀüÅõºÒ°¡´É)
+#define EST_ASSIST_MANTLE		27			// ¸ÁÅä
+#define EST_ASSIST_GUARD		28			// °æºñº´ ¼ÒÈ¯
+#define EST_ASSIST_CHARGEATC	29			// ÀåÅº(attack)
+#define EST_ASSIST_CHARGEMGC	30			// ÀåÅº(magic)
+#define EST_ASSIST_DISEASE		31			// Áúº´
+#define EST_ASSIST_CURSE		32			// ÀúÁÖ
+#define EST_ASSIST_CONFUSED		33			// ¸ó½ºÅÍ¸¸ È¥µ·¿¡ °É¸®°Ô ÇÔ
+#define EST_ASSIST_TAMING		34			// ¸ó½ºÅÍ¸¦ ÀÏÁ¤½Ã°£ ¾Æ±ºÀ¸·Î ¸¸µë
+#define EST_ASSIST_FREEZE		35			// °á°è(¼­·Î °ø°İ ¸øÇÔ, °É¸° °ÍÀº ÀÌµ¿ ¸øÇÔ)
+#define EST_ASSIST_INVERSE_DAMAGE	36		// ÇÇ°İ ´çÇÏ¸é µ¥¹ÌÁö ¸¸Å­ HP È¸º¹
+#define EST_ASSIST_HP_DOT		37			// Áö¼Ó µ¥¹ÌÁö ÀÔÀ½
+#define EST_ASSIST_REBIRTH		38			// ºÎÈ°
+#define EST_ASSIST_DARKNESS_MODE	39		// ´ÙÅ©´Ï½º ¸ğµå
+#define EST_ASSIST_AURA_DARKNESS	40		// ¿À¿À¶ó - ´ÙÅ©´Ï½º
+#define EST_ASSIST_AURA_WEAKNESS	41		// ¿À¿À¶ó - À§Å©´Ï½º
+#define EST_ASSIST_AURA_ILLUSION	42		// ¿À¿À¶ó - ÀÏ·çÁ¯
+#define EST_ASSIST_MERCENARY		43		// ¸ó½ºÅÍ ¿ëº´
+#define EST_ASSIST_SOUL_TOTEM_BUFF	44		// ¹öÇÁÇü ÅäÅÛ
+#define EST_ASSIST_SOUL_TOTEM_ATTK	45		// °ø°İÇü ÅäÅÛ
+#define EST_ASSIST_TRAP				46		// Æ®·¦
+#define EST_ASSIST_PARASITE			47		// ±â»ıÃæ °¨¿° »óÅÂ
+#define EST_ASSIST_SUICIDE			48		// ÀÚ»ì »óÅÂ
+#define EST_ASSIST_INVINCIBILITY	49		// ¹«Àû ¸ğµå
+#define EST_ASSIST_GPS				50		// GPS
+#define EST_ASSIST_COUNT			51
 
-// íš¨ê³¼ ì„œë¸Œíƒ€ì… - ê³µê²©
-#define EST_ATTACK_NORMAL		0			// ì¼ë°˜ ê³µê²©
+// È¿°ú ¼­ºêÅ¸ÀÔ - °ø°İ
+#define EST_ATTACK_NORMAL		0			// ÀÏ¹İ °ø°İ
 
-// íš¨ê³¼ ì„œë¸Œíƒ€ì… - íšŒë³µ
-#define EST_RECOVER_HP			0			// HPíšŒë³µ
-#define EST_RECOVER_MP			1			// MPíšŒë³µ
+// È¿°ú ¼­ºêÅ¸ÀÔ - È¸º¹
+#define EST_RECOVER_HP			0			// HPÈ¸º¹
+#define EST_RECOVER_MP			1			// MPÈ¸º¹
 
-// íš¨ê³¼ ì„œë¸Œíƒ€ì… - ì¹˜ìœ 
-#define EST_CURE_POISON			0			// ë…
-#define EST_CURE_HOLD			1			// í™€ë“œ
-#define EST_CURE_CONFUSION		2			// í˜¼ë€
-#define EST_CURE_HURT			3			// ë¶€ìƒ
-#define EST_CURE_SEAL			4			// ë´‰ì¸
-#define EST_CURE_BLOOD			5			// ì¶œí˜ˆ
-#define EST_CURE_REBIRTH		6			// ë¶€í™œ
-#define EST_CURE_INVISIBLE		7			// ì¸ë¹„ì €ë¸” ìƒíƒœë¥¼ í•´ì œ
-#define EST_CURE_STURN			8			// ìŠ¤í„´ í•´ì œ
-#define EST_CURE_SLOTH			9			// ìŠ¬ë¡œìŠ¤ í•´ì œ
+// È¿°ú ¼­ºêÅ¸ÀÔ - Ä¡À¯
+#define EST_CURE_POISON			0			// µ¶
+#define EST_CURE_HOLD			1			// È¦µå
+#define EST_CURE_CONFUSION		2			// È¥¶õ
+#define EST_CURE_HURT			3			// ºÎ»ó
+#define EST_CURE_SEAL			4			// ºÀÀÎ
+#define EST_CURE_BLOOD			5			// ÃâÇ÷
+#define EST_CURE_REBIRTH		6			// ºÎÈ°
+#define EST_CURE_INVISIBLE		7			// ÀÎºñÀúºí »óÅÂ¸¦ ÇØÁ¦
+#define EST_CURE_STURN			8			// ½ºÅÏ ÇØÁ¦
+#define EST_CURE_SLOTH			9			// ½½·Î½º ÇØÁ¦
 
-// íš¨ê³¼ ì„œë¸Œíƒ€ì… - ê·¸ì™¸
-#define EST_OTHER_INSTANTDEATH	0			// ì¦‰ì‚¬
-#define EST_OTHER_SKILLCANCEL	1			// ìŠ¤í‚¬ ì‹œì „ ì·¨ì†Œ
-#define EST_OTHER_TACKLE		2			// íƒœí´
-#define EST_OTHER_TACKLE2		3			// íƒœí´2
-#define EST_OTHER_REFLEX		4			// ë°˜ì‚¬ ëŒ€ë¯¸ì§€ (ì¼ë°˜ ê³µê²©, 25më‚´)
+// È¿°ú ¼­ºêÅ¸ÀÔ - ±×¿Ü
+#define EST_OTHER_INSTANTDEATH	0			// Áï»ç
+#define EST_OTHER_SKILLCANCEL	1			// ½ºÅ³ ½ÃÀü Ãë¼Ò
+#define EST_OTHER_TACKLE		2			// ÅÂÅ¬
+#define EST_OTHER_TACKLE2		3			// ÅÂÅ¬2
+#define EST_OTHER_REFLEX		4			// ¹İ»ç ´ë¹ÌÁö (ÀÏ¹İ °ø°İ, 25m³»)
 
-// ëŒ€ë¯¸ì§€ íƒ€ì…
-#define EDT_ONLYPOWER			0			// ìŠ¤í‚¬ ìœ„ë ¥ë§Œ
-#define EDT_ADDITION			1			// ìŠ¤íƒ¯ì— ë§ì…ˆ
-#define EDT_RATE				2			// ìŠ¤íƒ¯ì— ë¹„ìœ¨ë¡œ ê³±ì…ˆ
+// ´ë¹ÌÁö Å¸ÀÔ
+#define EDT_ONLYPOWER			0			// ½ºÅ³ À§·Â¸¸
+#define EDT_ADDITION			1			// ½ºÅÈ¿¡ µ¡¼À
+#define EDT_RATE				2			// ½ºÅÈ¿¡ ºñÀ²·Î °ö¼À
 
-// ëª…ì¤‘ íƒ€ì…
-#define EHT_CONSTANT			0			// ê³ ì •
-#define EHT_VARIABLE			1			// ìˆ˜ì‹
+// ¸íÁß Å¸ÀÔ
+#define EHT_CONSTANT			0			// °íÁ¤
+#define EHT_VARIABLE			1			// ¼ö½Ä
 
-// ì§€ì† íƒ€ì…
-#define ETT_IMMEDIATE			0			// ì¼ì‹œ
-#define ETT_DURABLE				1			// ì§€ì†
+// Áö¼Ó Å¸ÀÔ
+#define ETT_IMMEDIATE			0			// ÀÏ½Ã
+#define ETT_DURABLE				1			// Áö¼Ó
 
 ////////////
-// ìŠ¤í‚¬ ìƒìˆ˜
+// ½ºÅ³ »ó¼ö
 
-// ì‚¬ìš©/ì ìš© ì¡°ê±´
-#define SCT_DEATH				(1 << 0)	// ì‚¬ë§
-#define SCT_WEAPON				(1 << 1)	// ë¬´ê¸°ì¥ë¹„
-#define SCT_SITDOWN				(1 << 2)	// ì•‰ê¸°
-#define SCT_PEACEZONE			(1 << 3)	// í‰í™”ì§€ì—­
-#define SCT_SHIELD				(1 << 4)	// ì‹¤ë“œì¥ë¹„
-#define SCT_STAND				(1 << 5)	// ì„œê¸°
+// »ç¿ë/Àû¿ë Á¶°Ç
+#define SCT_DEATH				(1 << 0)	// »ç¸Á
+#define SCT_WEAPON				(1 << 1)	// ¹«±âÀåºñ
+#define SCT_SITDOWN				(1 << 2)	// ¾É±â
+#define SCT_PEACEZONE			(1 << 3)	// ÆòÈ­Áö¿ª
+#define SCT_SHIELD				(1 << 4)	// ½ÇµåÀåºñ
+#define SCT_STAND				(1 << 5)	// ¼­±â
+#define SCT_DARKNESS			(1 << 6)	// »çµµ¸ğµå
+#define SCT_NOCOOLTIME			(1 << 7)	// [2012/11/20 : Sora] ÄğÅ¸ÀÓ °¨¼Ò ¿µÇ× ¹ŞÁö ¾ÊÀ½
 
-// í”Œë˜ê·¸
-#define	SF_SINGLEMODE			(1 << 0)	// ì‹±ê¸€ëª¨ë“œ
-#define	SF_FORHELP				(1 << 1)	// ë„ì›€ì„ ì£¼ëŠ” ìŠ¤í‚¬
-#define	SF_NOTHELP				(1 << 2)	// í•´ê¼¬ì§€ ìŠ¤í‚¬
+// ÇÃ·¡±×
+#define	SF_SINGLEMODE			(1 << 0)	// ½Ì±Û¸ğµå
+#define	SF_FORHELP				(1 << 1)	// µµ¿òÀ» ÁÖ´Â ½ºÅ³
+#define	SF_NOTHELP				(1 << 2)	// ÇØ²¿Áö ½ºÅ³
+#define SF_ABSTIME				(1 << 3) // 060227 : bs : Àı´ë½Ã°£ »ç¿ë
+#define SF_NOTDUPLICATE			(1 << 4) // 060227 : bs : Áßº¹ »ç¿ë ºÒ°¡ : Áßº¹µÇ´Â ½ºÅ³ÀÌ ÀÖÀ¸¸é ·¹º§¿¡ °ü°è¾øÀÌ »ç¿ëÀÌ ¾ÈµÊ
+#define SF_NOCANCEL				(1 << 5) // ´Ù¸¥ ½ºÅ³/»ç¸Á¿¡ ÀÇÇØ Ãë¼Ò ¾ÈµÊ
+#define SF_COMBO				(1 << 6) // ½Ã°£»ó°ü¾øÀÌ Àû¿ëµÊ(Á¢¼ÓÁ¾·á, °ø°£ÀÌµ¿, Á×¾úÀ» ¶§ »ç¶óÁü)
+#define SF_LOGOUT				(1 << 7) // Á¢¼ÓÁ¾·á ½Ã »ç¶óÁü
+#define SF_NS_DARKNESS			(1 << 8)    // ³ªÀÌÆ® ½¦µµ¿ì »çµµ ¸ğµå¿¡¼­¸¸ »ç¿ëÇÏ´Â ½ºÅ³ÀÎÁö È®ÀÎ
+#define SF_GUILD				(1 << 9)	// ½ºÅ³ÀÌ ±æµå½ºÅ³ÀÎÁö Ã¼Å© ÇÏ´Â flag
+#define SF_INFINITE				(1 << 10)	// ¹«ÇÑ½ºÅ³ - ½ºÅ³ ½Ã°£ÀÌ ¸¸·áµÇ¸é ´Ù½Ã ½ºÅ³ÀÌ Àû¿ëµÊ
+#define SF_ZONE					(1 << 11)	// Á¸ÀÌµ¿½Ã ¹öÇÁ »èÁ¦
+#define SF_SUMMON_NPC			(1 << 12)	// Ä³¸¯ÅÍ°¡ ¼ÒÈ¯ÇÑ ÅäÅÛ, Æ®·¦ÀÌ »ç¿ëÇÏ´Â ½ºÅ³
+#define SF_ITEM_SPECIAL_SKILL	(1 << 14)	// ¾ÆÀÌÅÛ¿¡ ¿É¼ÇÀ¸·Î ºÙ¾î ÀÖ´Â ½ºÅ³.
+#define SF_NOT_SINGLE			(1 << 16)	// ½Ì±Û ´øÀü »ç¿ë ºÒ°¡ ½ºÅ³.
+#define SF_TOGGLE				(1 << 17)	// Åä±ÛÇü ½ºÅ³.
 
-#define AST_SLOTH				(1 << MST_ASSIST_SLOTH)			// ìŠ¬ë¡œìŠ¤(ê³µì†í•˜ë½)
+#define AST_SLOTH				(1 << MST_ASSIST_SLOTH)			// ½½·Î½º(°ø¼ÓÇÏ¶ô)
 
-// ì†Œì„œëŸ¬ í”Œë˜ê·¸.
-#define SSF_APP_CHARACTER		(1 << 0)	// ìºë¦­í„°
-#define SSF_APP_FIRE			(1 << 1)	// ë¶ˆì˜ì •ë ¹
-#define SSF_APP_WIND			(1 << 2)	// ë°”ëŒì˜ì •ë ¹
-#define SSF_APP_EARTH			(1 << 3)	// ëŒ€ì§€ì˜ì •ë ¹
-#define SSF_APP_WATER			(1 << 4)	// ë¬¼ì˜ì •ë ¹
-#define SSF_APP_HELLOUND		(1 << 5)	// í—¬ìš´ë“œ
-#define SSF_APP_ELENEN			(1 << 6)	// ì—˜ë ˆë„¨
+// ¼Ò¼­·¯ ÇÃ·¡±×.
+#define SSF_APP_CHARACTER		(1 << 0)	// Ä³¸¯ÅÍ
+#define SSF_APP_FIRE			(1 << 1)	// ºÒÀÇÁ¤·É
+#define SSF_APP_WIND			(1 << 2)	// ¹Ù¶÷ÀÇÁ¤·É
+#define SSF_APP_EARTH			(1 << 3)	// ´ëÁöÀÇÁ¤·É
+#define SSF_APP_WATER			(1 << 4)	// ¹°ÀÇÁ¤·É
+#define SSF_APP_HELLOUND		(1 << 5)	// Çï¿îµå
+#define SSF_APP_ELENEN			(1 << 6)	// ¿¤·¹³Ù
 #define SSF_APP_ALL				(SSF_APP_CHARACTER | SSF_APP_FIRE | SSF_APP_WIND | SSF_APP_EARTH | SSF_APP_WATER | SSF_APP_HELLOUND | SSF_APP_ELENEN)
-#define SSF_USE_CHARACTER		(1 << 16)	// ìºë¦­í„°
-#define SSF_USE_FIRE			(1 << 17)	// ë¶ˆì˜ì •ë ¹
-#define SSF_USE_WIND			(1 << 18)	// ë°”ëŒì˜ì •ë ¹
-#define SSF_USE_EARTH			(1 << 19)	// ëŒ€ì§€ì˜ì •ë ¹
-#define SSF_USE_WATER			(1 << 20)	// ë¬¼ì˜ì •ë ¹
-#define SSF_USE_HELLOUND		(1 << 21)	// í—¬ìš´ë“œ
-#define SSF_USE_ELENEN			(1 << 22)	// ì—˜ë ˆë„¨
+#define SSF_USE_CHARACTER		(1 << 16)	// Ä³¸¯ÅÍ
+#define SSF_USE_FIRE			(1 << 17)	// ºÒÀÇÁ¤·É
+#define SSF_USE_WIND			(1 << 18)	// ¹Ù¶÷ÀÇÁ¤·É
+#define SSF_USE_EARTH			(1 << 19)	// ´ëÁöÀÇÁ¤·É
+#define SSF_USE_WATER			(1 << 20)	// ¹°ÀÇÁ¤·É
+#define SSF_USE_HELLOUND		(1 << 21)	// Çï¿îµå
+#define SSF_USE_ELENEN			(1 << 22)	// ¿¤·¹³Ù
 #define SSF_USE_ALL				(SSF_USE_CHARACTER | SSF_USE_FIRE | SSF_USE_WIND | SSF_USE_EARTH | SSF_USE_WATER | SSF_USE_HELLOUND | SSF_USE_ELENEN)
 
 #define WEAPON_COUNT 2
@@ -139,63 +175,67 @@ class  CSkill
 public:
 	struct _SkillData
 	{
-		// ì¼ë°˜
-		int		index;							// ìŠ¤í‚¬ ë²ˆí˜¸
-		int		job;							// ì§ì—… í”Œë˜ê·¸
-		int		job2;							// ì „ì§ ì§ì—…
-		int		petindex;						// ê³µê²© í« ì¸ë±ìŠ¤
-		char	name[51];						// ì´ë¦„
-		char	type;							// ì¢…ë¥˜
-		int		flag;							// í”Œë˜ê·¸
-		int		sorcerer;						// ì†Œì„œëŸ¬ ì „ìš© í”Œë˜ê·¸
+		std::string	name;						// ÀÌ¸§
+		std::string	client_description;
+		std::string client_tooltip;
+
+		int		index;							// ½ºÅ³ ¹øÈ£
+		int		job;							// Á÷¾÷ ÇÃ·¡±×
+		int		job2;							// ÀüÁ÷ Á÷¾÷
+		int		petindex;						// °ø°İ Æê ÀÎµ¦½º		
+		char	type;							// Á¾·ù
+		int		flag;							// ÇÃ·¡±×
+		int		sorcerer;						// ¼Ò¼­·¯ Àü¿ë ÇÃ·¡±×
 		char	curLevel;						// WSS_NEW_GUILD_SYSTEM 070716
-		char	maxLevel;						// ìµœëŒ€ ë ˆë²¨
+		char	maxLevel;						// ÃÖ´ë ·¹º§
 
-		// ê±°ë¦¬
-		float	appRange;						// ë²”ìœ„ ì ìš© ë°˜ê²½
-		float	fireRange;						// ì‚¬ì •ê±°ë¦¬
-		float	fireRange2;						// ì‚¬ì •ê±°ë¦¬ 2
+		// °Å¸®
+		float	appRange;						// ¹üÀ§ Àû¿ë ¹İ°æ
+		float	fireRange;						// »çÁ¤°Å¸®
+		float	fireRange2;						// »çÁ¤°Å¸® 2
 
-		// íƒ€ê²Ÿ
-		char	targetType;						// íƒ€ê²ŸíŒ… ì¢…ë¥˜
-		char	targetNum;						// íƒ€ê²Ÿìˆ˜
+		// Å¸°Ù
+		char	targetType;						// Å¸°ÙÆÃ Á¾·ù
 
-		// ì‚¬ìš©ì¡°ê±´
-		int		useState;						// ì‚¬ìš©ì¡°ê±´1
-		int		useWeaponType0;					// ì‚¬ìš©ë¬´ê¸°ì„œë¸Œíƒ€ì… 1
-		int		useWeaponType1;					// ì‚¬ìš©ë¬´ê¸°ì„œë¸Œíƒ€ì… 2
-		int		useMagicIndex1;					// ì‚¬ìš©ì¡°ê±´2 - ë²„í”„ë²ˆí˜¸1
-		char	useMagicLevel1;					// ì‚¬ìš©ì¡°ê±´2 - ë²„í”„ë ˆë²¨1
-		int		useMagicIndex2;					// ì‚¬ìš©ì¡°ê±´2 - ë²„í”„ë²ˆí˜¸2
-		char	useMagicLevel2;					// ì‚¬ìš©ì¡°ê±´2 - ë²„í”„ë ˆë²¨2
-		int		useMagicIndex3;					// ì‚¬ìš©ì¡°ê±´2 - ë²„í”„ë²ˆí˜¸3
-		char	useMagicLevel3;					// ì‚¬ìš©ì¡°ê±´2 - ë²„í”„ë ˆë²¨3
+		// »ç¿ëÁ¶°Ç
+		int		useState;						// »ç¿ëÁ¶°Ç1
+		int		useWeaponType0;					// »ç¿ë¹«±â¼­ºêÅ¸ÀÔ 1
+		int		useWeaponType1;					// »ç¿ë¹«±â¼­ºêÅ¸ÀÔ 2
+		int		useMagicIndex1;					// »ç¿ëÁ¶°Ç2 - ¹öÇÁ¹øÈ£1
+		char	useMagicLevel1;					// »ç¿ëÁ¶°Ç2 - ¹öÇÁ·¹º§1
+		int		useMagicIndex2;					// »ç¿ëÁ¶°Ç2 - ¹öÇÁ¹øÈ£2
+		char	useMagicLevel2;					// »ç¿ëÁ¶°Ç2 - ¹öÇÁ·¹º§2
+		int		useMagicIndex3;					// »ç¿ëÁ¶°Ç2 - ¹öÇÁ¹øÈ£3
+		char	useMagicLevel3;					// »ç¿ëÁ¶°Ç2 - ¹öÇÁ·¹º§3
+		int		useSoulCount;					// »ç¿ëÁ¶°Ç (¿µÈ¥ÀÇ °¹¼ö Á¶°Ç)
 
-		// ì ìš©ì¡°ê±´
-		int		appState;						// ì ìš©ì¡°ê±´1 - ìºë¦­í„° ìƒíƒœ
+		// Àû¿ëÁ¶°Ç
+		int		appState;						// Àû¿ëÁ¶°Ç1 - Ä³¸¯ÅÍ »óÅÂ
 
-		// ì‹œê°„
-		int		readyTime;						// ì‹œì „ì‹œê°„
-		int		waitTime;						// ì‹œì „ì‹œê°„
-		int		fireTime;						// ë°œì‚¬ì‹œê°„
-		int		reuseTime;						// ì¬ì‚¬ìš©ì‹œê°„
+		// ½Ã°£
+		int		readyTime;						// ½ÃÀü½Ã°£
+		int		waitTime;						// ½ÃÀü½Ã°£
+		int		fireTime;						// ¹ß»ç½Ã°£
+		int		reuseTime;						// Àç»ç¿ë½Ã°£
+
+		bool	bToggle;						// Åä±Û½ºÅ³ È°¼ºÈ­ ¿©ºÎ.
 		
 		struct sClientSkillData
 		{
-			// ì‹œì „
+			// ½ÃÀü
 			char	readyAni[256];
 			char	readyEffect1[256];
 
-			// ì •ì§€
+			// Á¤Áö
 			char	stillAni[256];
 
-			// ë°œì‚¬
+			// ¹ß»ç
 			char	fireAni[256];
 			char	fireEffect1[256];
 			char	fireEffect2[256];
 			char	fireEffect3[256];
 
-			// ë°œì‚¬ì²´
+			// ¹ß»çÃ¼
 			char	fireobjType;
 			float	fireobjSpeed;
 			float	fireobjX;
@@ -208,60 +248,71 @@ public:
 		};
 		sClientSkillData client[WEAPON_COUNT];
 
-		// ì„¤ëª…
-		char	client_description[256];
-		char	client_tooltip[256];
+		char	After_AttachEffect[256];		
 
-		// ì•„ì´ì½˜
+		// ¾ÆÀÌÄÜ
 		int		client_icon_texid;
 		int		client_icon_row;
 		int		client_icon_col;
 
 		DOUBLE	Skill_StartTime;
+
+		int		transFlag;	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã		
 	};
+
+	_SkillData				Skill_Data;
 
 	struct _SkillLevel
 	{
-		// ì‹œì „ í•„ìš” ì¡°ê±´
-		int needHP;						// ì†Œëª¨HP
-		int needMP;						// ì†Œëª¨ MP
-		int	  durtime;						// ì§€ì†ì‹œê°„
-		int dummyPower;					// ì¶œë ¥ìš© ìœ„ë ¥
-		int needItemIndex1;					// ì†Œëª¨ì•„ì´í…œ ë²ˆí˜¸1
-		int needItemCount1;					// ì†Œëª¨ì•„ì´í…œ ê°œìˆ˜1
-		int needItemIndex2;					// ì†Œëª¨ì•„ì´í…œ ë²ˆí˜¸2
-		int needItemCount2;					// ì†Œëª¨ì•„ì´í…œ ê°œìˆ˜2
+		// ½ÃÀü ÇÊ¿ä Á¶°Ç
+		int needHP;						// ¼Ò¸ğHP
+		int needMP;						// ¼Ò¸ğ MP
+		int needGP;						// ¼Ò¸ğ GP
 
-		// ìŠµë“ ì¡°ê±´
-		int learnLevel;						// ìŠµë“ì¡°ê±´ - ë ˆë²¨
-		int learnSP;						// ìŠµë“ì¡°ê±´ - SP
-		int learnGP;						// ìŠµë“ì¡°ê±´ - GP //WSS_NEW_GUILD_SYSTEM 070716
-		int learnSkillIndex[3];				// ìŠµë“ì¡°ê±´ - ìŠ¤í‚¬ë²ˆí˜¸
-		char learnSkillLevel[3];			// ìŠµë“ì¡°ê±´ - ìŠ¤í‚¬ë ˆë²¨
+		int	durtime;					// Áö¼Ó½Ã°£
+		int dummyPower;					// Ãâ·Â¿ë À§·Â
+		int needItemIndex1;					// ¼Ò¸ğ¾ÆÀÌÅÛ ¹øÈ£1
+		int needItemCount1;					// ¼Ò¸ğ¾ÆÀÌÅÛ °³¼ö1
+		int needItemIndex2;					// ¼Ò¸ğ¾ÆÀÌÅÛ ¹øÈ£2
+		int needItemCount2;					// ¼Ò¸ğ¾ÆÀÌÅÛ °³¼ö2
+
+		// ½Àµæ Á¶°Ç
+		int learnLevel;						// ½ÀµæÁ¶°Ç - ·¹º§
+		int learnSP;						// ½ÀµæÁ¶°Ç - SP
+		int learnGP;						// ½ÀµæÁ¶°Ç - GP //WSS_NEW_GUILD_SYSTEM 070716
+		int learnSkillIndex[3];				// ½ÀµæÁ¶°Ç - ½ºÅ³¹øÈ£
+		char learnSkillLevel[3];			// ½ÀµæÁ¶°Ç - ½ºÅ³·¹º§
 		int learnItemIndex[3];
 		int learnItemCount[3];
-		int learnStr;						// ìŠµë“ì¡°ê±´ - í˜
-		int learnDex;						// ìŠµë“ì¡°ê±´ - ë¯¼ì²© 
-		int learnInt;						// ìŠµë“ì¡°ê±´ - ì§€í˜œ	
-		int learnCon;						// ìŠµë“ì¡°ê±´ - ì²´ì§ˆ
+		int learnStr;						// ½ÀµæÁ¶°Ç - Èû
+		int learnDex;						// ½ÀµæÁ¶°Ç - ¹ÎÃ¸ 
+		int learnInt;						// ½ÀµæÁ¶°Ç - ÁöÇı	
+		int learnCon;						// ½ÀµæÁ¶°Ç - Ã¼Áú
 
-		// ì ìš© ì¡°ê±´
-		int appMagicIndex1;		// ì ìš©ì¡°ê±´2 - íš¨ê³¼ë²ˆí˜¸1
-		char appMagicLevel1;	// ì ìš©ì¡°ê±´2 - íš¨ê³¼ë ˆë²¨1
-		int appMagicIndex2;		// ì ìš©ì¡°ê±´2 - íš¨ê³¼ë²ˆí˜¸2
-		char appMagicLevel2;	// ì ìš©ì¡°ê±´2 - íš¨ê³¼ë ˆë²¨2
-		int appMagicIndex3;		// ì ìš©ì¡°ê±´2 - íš¨ê³¼ë²ˆí˜¸3
-		char appMagicLevel3;	// ì ìš©ì¡°ê±´2 - íš¨ê³¼ë ˆë²¨3
+		// Àû¿ë Á¶°Ç
+		int appMagicIndex1;		// Àû¿ëÁ¶°Ç2 - È¿°ú¹øÈ£1
+		char appMagicLevel1;	// Àû¿ëÁ¶°Ç2 - È¿°ú·¹º§1
+		int appMagicIndex2;		// Àû¿ëÁ¶°Ç2 - È¿°ú¹øÈ£2
+		char appMagicLevel2;	// Àû¿ëÁ¶°Ç2 - È¿°ú·¹º§2
+		int appMagicIndex3;		// Àû¿ëÁ¶°Ç2 - È¿°ú¹øÈ£3
+		char appMagicLevel3;	// Àû¿ëÁ¶°Ç2 - È¿°ú·¹º§3
 
-		// ìŠ¤í‚¬ íš¨ê³¼
-		int magicIndex1;		// ìŠ¤í‚¬íš¨ê³¼ ë²ˆí˜¸
-		char magicLevel1;		// ìŠ¤í‚¬íš¨ê³¼ ë ˆë²¨
-		int magicIndex2;		// ìŠ¤í‚¬íš¨ê³¼ ë²ˆí˜¸
-		char magicLevel2;		// ìŠ¤í‚¬íš¨ê³¼ ë ˆë²¨
-		int magicIndex3;		// ìŠ¤í‚¬íš¨ê³¼ ë²ˆí˜¸
-		char magicLevel3;		// ìŠ¤í‚¬íš¨ê³¼ ë ˆë²¨
+		// ½ºÅ³ È¿°ú
+		int magicIndex1;		// ½ºÅ³È¿°ú ¹øÈ£
+		char magicLevel1;		// ½ºÅ³È¿°ú ·¹º§
+		int magicIndex2;		// ½ºÅ³È¿°ú ¹øÈ£
+		char magicLevel2;		// ½ºÅ³È¿°ú ·¹º§
+		int magicIndex3;		// ½ºÅ³È¿°ú ¹øÈ£
+		char magicLevel3;		// ½ºÅ³È¿°ú ·¹º§
+
+		// ¼Ó¼º ½Ã½ºÅÛ ½ºÅ³ LOD¿¡ ¼Ó¼ºÁ¤º¸ Ãß°¡ [1/21/2013 Ranma]
+		char attratt;
+		char attrattLv;
+		char attrdef;
+		char attrdefLv;
+		int  targetmax;
 	};
-	_SkillData							Skill_Data;
+	
 	std::vector<_SkillLevel>			m_vectorSkillLevels;
 	BOOL								bCanCancel;
 	BOOL								bNeedTarget;
@@ -270,47 +321,52 @@ public:
 
 	enum	SKILLTYPE
 	{
-		ST_MELEE				= 0,			// ê·¼ì ‘
-		ST_RANGE				= 1,			// ì›ê±°ë¦¬
-		ST_MAGIC				= 2,			// ë§ˆë²•
-		ST_PASSIVE				= 3,			// íŒ¨ì‹œë¸Œ
-		ST_PET_COMMAND			= 4,			// íŒ» ì•¡ì…˜
-		ST_PET_SKILL_PASSIVE	= 5,			// íŒ» ìŠ¤í‚¬ 
-		ST_PET_SKILL_ACTIVE		= 6,			// íŒ»
-		ST_GUILD_SKILL_PASSIVE	= 7,			// ê¸¸ë“œ ìŠ¤í‚¬ íŒ¨ì‹œë¸Œ // WSS_NEW_GUILD_SYSTEM 070716
+		ST_MELEE				= 0,			// ±ÙÁ¢
+		ST_RANGE				= 1,			// ¿ø°Å¸®
+		ST_MAGIC				= 2,			// ¸¶¹ı
+		ST_PASSIVE				= 3,			// ÆĞ½Ãºê
+		ST_PET_COMMAND			= 4,			// ÆÖ ¾×¼Ç
+		ST_PET_SKILL_PASSIVE	= 5,			// ÆÖ ½ºÅ³ 
+		ST_PET_SKILL_ACTIVE		= 6,			// ÆÖ
+		ST_GUILD_SKILL_PASSIVE	= 7,			// ±æµå ½ºÅ³ ÆĞ½Ãºê // WSS_NEW_GUILD_SYSTEM 070716
+		ST_SEAL					= 8,
+		ST_SUMMON_TOTEM_SKILL	= 9,			// ÅäÅÛ ¼ÒÈ¯ ½ºÅ³
 	};
 
 	enum	SKILLPROPERTY
 	{		
-		// ì†ì„± ìƒìˆ˜
-		AT_NONE		= 0,			// ë¬´
-		AT_FIRE		= 1,			// í™”
-		AT_WATER	= 2,			// ìˆ˜
-		AT_EARTH	= 3,			// ì§€
-		AT_WIND		= 4,			// í’
-		AT_DARK		= 5,			// ì•”
-		AT_LIGHT	= 6,			// ê´‘
+		// ¼Ó¼º »ó¼ö
+		AT_NONE		= 0,			// ¹«
+		AT_FIRE		= 1,			// È­
+		AT_WATER	= 2,			// ¼ö
+		AT_EARTH	= 3,			// Áö
+		AT_WIND		= 4,			// Ç³
+		AT_DARK		= 5,			// ¾Ï
+		AT_LIGHT	= 6,			// ±¤
 	};
 
 	enum	SKILLTARGET	//Skill_TargetType
 	{		
-		STT_SELF_ONE			= 0,			// ì…€í”„
-		STT_SELF_RANGE			= 1,			// ì…€í”„ ë²”ìœ„
-		STT_TARGET_ONE			= 2,			// íƒ€ê²Ÿ
-		STT_TARGET_RANGE		= 3,			// íƒ€ê²Ÿ ë²”ìœ„
-		STT_PARTY_ONE			= 4,			// íŒŒí‹° 1ì¸
-		STT_PARTY_ALL			= 5,			// íŒŒí‹° ì „ì²´
-		STT_TARGET_D120			= 6,			// íƒ€ê²Ÿ 120ë„
-		STT_TARGET_RECT			= 7,			// íƒ€ê²Ÿ ì§ì‚¬ê°
-		
+		STT_SELF_ONE			= 0,			// ¼¿ÇÁ
+		STT_SELF_RANGE			= 1,			// ¼¿ÇÁ ¹üÀ§
+		STT_TARGET_ONE			= 2,			// Å¸°Ù
+		STT_TARGET_RANGE		= 3,			// Å¸°Ù ¹üÀ§
+		STT_PARTY_ONE			= 4,			// ÆÄÆ¼ 1ÀÎ
+		STT_PARTY_ALL			= 5,			// ÆÄÆ¼ ÀüÃ¼
+		STT_TARGET_D120			= 6,			// Å¸°Ù 120µµ
+		STT_TARGET_RECT			= 7,			// Å¸°Ù Á÷»ç°¢
+		STT_GUILD_ALL			= 9,			// ±æµåÀüÃ¼¿¡°Ô ÁÖ´Â ½ºÅ³
+		STT_GUILD_ONE			= 10,			// ±æµåÇÑ¸í¿¡°Ô ÁÖ´Â ½ºÅ³
+		STT_GUILD_SELF_RANGE	= 11,			// ½ÃÀüÀÚ ÁÖÀ§ ±æµå¿ø¿¡°Ô ÁÖ´Â ½ºÅ³
+		STT_GUILD_MEMBER_SELF	= 12,			// ±æµå¿ø ÀüÃ¼ »ç¿ë °¡´É ½ºÅ³
 		/*
-		STT_SELF				= 0,			// ì…€í”„
-		STT_SELFRANGE_ENEMY		= 1,			// ì…€í”„ ë²”ìœ„(ì )
-		STT_TARGET_FRIEND		= 3,			// ëŒ€ìƒ(ì•„êµ°)
-		STT_TARGET_ENEMY		= 4,			// ëŒ€ìƒ(ì )
-		STT_TARGET_ENEMY_LOW	= 5,			// ëŒ€ìƒ(ì  & ì €ë ™)
-		STT_TARGETRANGE_ENEMY	= 6,			// ëŒ€ìƒë²”ìœ„(ì )
-		STT_PARTY				= 7,			// íŒŒí‹°
+		STT_SELF				= 0,			// ¼¿ÇÁ
+		STT_SELFRANGE_ENEMY		= 1,			// ¼¿ÇÁ ¹üÀ§(Àû)
+		STT_TARGET_FRIEND		= 3,			// ´ë»ó(¾Æ±º)
+		STT_TARGET_ENEMY		= 4,			// ´ë»ó(Àû)
+		STT_TARGET_ENEMY_LOW	= 5,			// ´ë»ó(Àû & Àú·¾)
+		STT_TARGETRANGE_ENEMY	= 6,			// ´ë»ó¹üÀ§(Àû)
+		STT_PARTY				= 7,			// ÆÄÆ¼
 		*/
 	};
 
@@ -339,27 +395,27 @@ public:
 		IN_WATER	= 9,
 	};
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-03)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-03)
 	//for client only
 	enum MISSILE_TYPE
 	{
-		MT_NONE			= 0,//ê·¼ì ‘ê³µê²©.
-		MT_ARROW		= 1,//ì¼ë°˜ í™”ì‚´ì´ ìˆê³  ì¶”ê°€ë¡œ Effectê°€ ë¶™ëŠ” í˜•ì‹.
-		MT_DIRECT		= 2,//ë°œì‚¬ì²´ê°€ ì—†ëŠ” ë§ˆë²•. ë°ë¯¸ì§€ë¥¼ ì£¼ì§€ ì•ŠëŠ”ë‹¤.
-		MT_CONTINUE		= 3,//ì•ˆë³´ì´ëŠ” ë°œì‚¬ì²´ì— Effectë§Œ ë¶™ëŠ” í˜•ì‹. ë‹¨, ì „ì˜ ì´í™íŠ¸ì—ì„œ ë°œì‚¬ì²´ì˜ ì´í™íŠ¸ê°€ ì´ì–´ì§.
-		MT_INVISIBLE	= 4,//ì•ˆë³´ì´ëŠ” ë°œì‚¬ì²´ì— Effectë§Œ ë¶™ëŠ” í˜•ì‹, ì´ì–´ì§€ì§€ ì•ŠìŒ.
-		MT_MAGIC		= 5,//ë°œì‚¬ì²´ê°€ ìˆëŠ”ë° ì‹œì „ìì—ì„œ ì‹œì‘ë˜ì§€ ì•ŠìŒ.(ex:ë¯¸í‹°ì–´ ìŠ¤íŠ¸ë¼ì´í¬)
-		MT_INVERT		= 6,//ì—­ìœ¼ë¡œ ì‹œì „ììª½ìœ¼ë¡œ ë­”ê°€ ë‚ ë¼ì˜´. Only Effect.
-		MT_MAGECUTTER	= 7,//ë©”ì´ì§€ ìŠ¤í‚¬ ì¤‘ ì»¤í„° ë‚ ë¼ê°€ëŠ”ê²ƒ.
-		MT_DIRECTDAMAGE	= 8,//ë°œì‚¬ì²´ê°€ ì—†ëŠ” ë§ˆë²•. ë°ë¯¸ì§€ë¥¼ ì¤€ë‹¤.
-		MT_NOTHING		= 9,//ë§ˆì§€ë§‰ ì´í™íŠ¸ ì—†ìŒ. Networkì—ì„œ ë°›ì•„ì„œë§Œ ì²˜ë¦¬í•˜ëŠ” ìŠ¤í‚¬ì„. ex>íŒŒí‹°íê°™ì€ ê²½ìš°.
-		MT_GOWAITBACK	= 10,//ë°œì‚¬ì²´ ì•ˆë³´ì„. ëª©í‘œë¡œ ê°”ë‹¤ê°€ ì¼ì •ì‹œê°„ í›„ ë‹¤ì‹œ ëŒì•„ì˜´.
-							 //íƒ€ê²© ì´í™íŠ¸ëŠ” ëª©í‘œì— ë„ë‹¬ì‹œ ë‚˜ì˜´. íƒ€ê²©ì´í™íŠ¸ì— '(ë‹¤ì‹œ)ë¥¼ ë¶™ì¸ ì´í™íŠ¸ëŠ” ëŒì•„ì™”ì„ë•Œ ë‚˜ì˜´.
-		MT_CONNECT		= 11,//ë°œì‚¬ì²´ ì•ˆë³´ì„. ëª©í‘œì™€ ì‹œì „ìë¥¼ mdlì´í™íŠ¸ë¡œ ì—°ê²°í•¨.(ë°ë¯¸ì§€ ë§í¬)
-		MT_FALLDOWN		= 12,//ë°œì‚¬ì²´ ì•ˆë³´ì„. í•˜ëŠ˜ì—ì„œ ë–¨ì–´ì§. ë•…ì— ë ˆì´ë¥¼ ì´ì„œ ê·¸ í¬ì§€ì…˜ì— ë„ë‹¬ì‹œ íƒ€ê²©ì´í™íŠ¸ ë‚˜ì˜´.
-		MT_DASH			= 13,//ì•ˆë³´ì´ëŠ” ë°œì‚¬ì²´ì— Effectë§Œ ë¶™ëŠ” í˜•ì‹. ìºë¦­í„°ê°€ ì‚¬ë¼ì§€ê³ , HITì‹œ ë‹¤ì‹œ ë‚˜íƒ€ ë‚¨(Worp) :: ë‚˜ì´íŠ¸( ìŠ¤í‚¬:ëŒ€ì‰¬ )
+		MT_NONE			= 0,//±ÙÁ¢°ø°İ.
+		MT_ARROW		= 1,//ÀÏ¹İ È­»ìÀÌ ÀÖ°í Ãß°¡·Î Effect°¡ ºÙ´Â Çü½Ä.
+		MT_DIRECT		= 2,//¹ß»çÃ¼°¡ ¾ø´Â ¸¶¹ı. µ¥¹ÌÁö¸¦ ÁÖÁö ¾Ê´Â´Ù.
+		MT_CONTINUE		= 3,//¾Èº¸ÀÌ´Â ¹ß»çÃ¼¿¡ Effect¸¸ ºÙ´Â Çü½Ä. ´Ü, ÀüÀÇ ÀÌÆåÆ®¿¡¼­ ¹ß»çÃ¼ÀÇ ÀÌÆåÆ®°¡ ÀÌ¾îÁü.
+		MT_INVISIBLE	= 4,//¾Èº¸ÀÌ´Â ¹ß»çÃ¼¿¡ Effect¸¸ ºÙ´Â Çü½Ä, ÀÌ¾îÁöÁö ¾ÊÀ½.
+		MT_MAGIC		= 5,//¹ß»çÃ¼°¡ ÀÖ´Âµ¥ ½ÃÀüÀÚ¿¡¼­ ½ÃÀÛµÇÁö ¾ÊÀ½.(ex:¹ÌÆ¼¾î ½ºÆ®¶óÀÌÅ©)
+		MT_INVERT		= 6,//¿ªÀ¸·Î ½ÃÀüÀÚÂÊÀ¸·Î ¹º°¡ ³¯¶ó¿È. Only Effect.
+		MT_MAGECUTTER	= 7,//¸ŞÀÌÁö ½ºÅ³ Áß Ä¿ÅÍ ³¯¶ó°¡´Â°Í.
+		MT_DIRECTDAMAGE	= 8,//¹ß»çÃ¼°¡ ¾ø´Â ¸¶¹ı. µ¥¹ÌÁö¸¦ ÁØ´Ù.
+		MT_NOTHING		= 9,//¸¶Áö¸· ÀÌÆåÆ® ¾øÀ½. Network¿¡¼­ ¹Ş¾Æ¼­¸¸ Ã³¸®ÇÏ´Â ½ºÅ³ÀÓ. ex>ÆÄÆ¼Èú°°Àº °æ¿ì.
+		MT_GOWAITBACK	= 10,//¹ß»çÃ¼ ¾Èº¸ÀÓ. ¸ñÇ¥·Î °¬´Ù°¡ ÀÏÁ¤½Ã°£ ÈÄ ´Ù½Ã µ¹¾Æ¿È.
+							 //Å¸°İ ÀÌÆåÆ®´Â ¸ñÇ¥¿¡ µµ´Ş½Ã ³ª¿È. Å¸°İÀÌÆåÆ®¿¡ '(´Ù½Ã)¸¦ ºÙÀÎ ÀÌÆåÆ®´Â µ¹¾Æ¿ÔÀ»¶§ ³ª¿È.
+		MT_CONNECT		= 11,//¹ß»çÃ¼ ¾Èº¸ÀÓ. ¸ñÇ¥¿Í ½ÃÀüÀÚ¸¦ mdlÀÌÆåÆ®·Î ¿¬°áÇÔ.(µ¥¹ÌÁö ¸µÅ©)
+		MT_FALLDOWN		= 12,//¹ß»çÃ¼ ¾Èº¸ÀÓ. ÇÏ´Ã¿¡¼­ ¶³¾îÁü. ¶¥¿¡ ·¹ÀÌ¸¦ ½÷¼­ ±× Æ÷Áö¼Ç¿¡ µµ´Ş½Ã Å¸°İÀÌÆåÆ® ³ª¿È.
+		MT_DASH			= 13,//¾Èº¸ÀÌ´Â ¹ß»çÃ¼¿¡ Effect¸¸ ºÙ´Â Çü½Ä. Ä³¸¯ÅÍ°¡ »ç¶óÁö°í, HIT½Ã ´Ù½Ã ³ªÅ¸ ³²(Worp) :: ³ªÀÌÆ®( ½ºÅ³:´ë½¬ )
 	};
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-03)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-03)
 
 public:
 	/* Default constructor. */
@@ -382,7 +438,7 @@ public:
 	{	return Skill_Data.petindex;	}
 
 	inline const char* GetName()		const
-	{	return Skill_Data.name;	}
+	{	return Skill_Data.name.c_str();	}
 
 	inline int GetType()			const
 	{	return Skill_Data.type;	}
@@ -402,25 +458,29 @@ public:
 	inline char GetTargetType()		const
 	{	return Skill_Data.targetType;	}
 
-	// ì‚¬ìš©ë¬´ê¸°ì„œë¸Œíƒ€ì… 1
+	// »ç¿ë¹«±â¼­ºêÅ¸ÀÔ 1
 	inline int GetUseWeaponType0()	const			
 	{	return Skill_Data.useWeaponType0;	}
 
-	// ì‚¬ìš©ë¬´ê¸°ì„œë¸Œíƒ€ì… 2
+	// »ç¿ë¹«±â¼­ºêÅ¸ÀÔ 2
 	inline int GetUseWeaponType1()	const
 	{	return Skill_Data.useWeaponType1;	}
 
-	// ìµœëŒ€ íƒ€ê²Ÿ ìˆ˜
-	inline char GetTargetNum()	const
-	{	return Skill_Data.targetNum;	}
-	// í˜„ì¬ë ˆë²¨
+	// ÃÖ´ë Å¸°Ù ¼ö
+	inline int GetTargetNum(int CurLv)	const
+	{	
+		if (CurLv - 1 < 0 || CurLv - 1 >= m_vectorSkillLevels.size())
+			return 0;
+		return m_vectorSkillLevels[CurLv-1].targetmax;
+	}
+	// ÇöÀç·¹º§
 	inline int GetCurLevel()	const
 	{	return Skill_Data.curLevel;	}
-	// ìµœëŒ€ë ˆë²¨
+	// ÃÖ´ë·¹º§
 	inline int GetMaxLevel()	const
 	{	return Skill_Data.maxLevel;	}
 
-	inline int GetAppRange()		const
+	inline float GetAppRange()		const
 	{	return Skill_Data.appRange;	}
 
 	inline float GetFireRange()		const
@@ -488,11 +548,16 @@ public:
 		return Skill_Data.client[iWeapon].fireEffect3;
 	}
 
+	inline const char* GetAfter_AttachEffect() const
+	{
+		return Skill_Data.After_AttachEffect;
+	}
+
 	inline const char* GetDescription()		const
-	{	return Skill_Data.client_description;	}
+	{	return Skill_Data.client_description.c_str();	}
 
 	inline const char* GetToolTip()		const
-	{	return Skill_Data.client_tooltip;	}
+	{	return Skill_Data.client_tooltip.c_str();	}
 
 	inline int GetNeedMP(int iLevel)	const
 	{	return m_vectorSkillLevels[iLevel].needMP;	}
@@ -554,12 +619,72 @@ public:
 	inline int	GetIconTexRow() const	{ return Skill_Data.client_icon_row; }
 	inline int	GetIconTexCol() const	{ return Skill_Data.client_icon_col; }
 
-	ENGINE_API void	SetStartTime();			// yjpark
+	ENGINE_API void	SetStartTime( int nRemainTime = 0 );			// yjpark
+	ENGINE_API void ResetStartTime();
+	
+	void SetStartSkillDelay(int nSkillIndex);
+
 	// WSS_NEW_GUILD_SYSTEM 070716 ------------------->>
 	inline void SetCurLevel(int iLevel)	
 	{ Skill_Data.curLevel = iLevel;	}
 	// -----------------------------------------------<<
 
+	inline int GetNeedGP(int iLevel)	const
+	{	return m_vectorSkillLevels[iLevel].needGP;	}
+	inline int GetNeedItemCount1(int iLevel) const
+	{
+		return m_vectorSkillLevels[iLevel].needItemCount1;
+	}
+	inline int GetNeedItemCount2(int iLevel) const
+	{
+		return m_vectorSkillLevels[iLevel].needItemCount2;
+	}
+
+
+	// ¼Ó¼º ½Ã½ºÅÛ ½ºÅ³ ¼Ó¼º Á¤º¸ ¾ò±â [1/21/2013 Ranma]
+	inline char GetAttrAtt(int iLevel)	const
+	{
+		if (iLevel < 0)
+			return 0;
+
+		return m_vectorSkillLevels[iLevel].attratt;	
+	}
+
+	inline char GetAttrAttLv(int iLevel)	const
+	{
+		if (iLevel < 0)
+			return 0;
+
+		return m_vectorSkillLevels[iLevel].attrattLv;
+	}
+
+	inline char GetAttrDef(int iLevel)	const
+	{
+		if (iLevel < 0)
+			return 0;
+
+		return m_vectorSkillLevels[iLevel].attrdef;	
+	}
+
+	inline char GetAttrDefLv(int iLevel)	const
+	{
+		if (iLevel < 0)
+			return 0;
+
+		return m_vectorSkillLevels[iLevel].attrdefLv;	
+	}
+
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslate();
+	void ClearNoTranslate();
+
+	void SetName(const char* str)			{ Skill_Data.name = str; }
+	void SetDescription(const char* str)	{ Skill_Data.client_description = str; }
+	void SetTooltip(const char* str)		{ Skill_Data.client_tooltip = str; }
+
+	int& GetTransFlag()						{ return Skill_Data.transFlag; }
+	void SetToggle(bool bToggle)			{ Skill_Data.bToggle = bToggle;	}
+	bool GetToggle()						{ return Skill_Data.bToggle;	}
 
 	static int LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char* FileName);
 };

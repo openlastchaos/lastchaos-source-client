@@ -7,9 +7,9 @@
  * Class responsible for describing game session
  */
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…	07.07
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷	07.07
 #include <Engine/Network/CNetwork.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…		07.07
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷		07.07
 class CSessionProperties {
 public:
   enum GameMode {

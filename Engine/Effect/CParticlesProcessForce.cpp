@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #include "stdH.h"
 
 #include "CParticlesProcessForce.h"
@@ -34,7 +34,7 @@ void CParticlesProcessForce::Process(CParticles &particles, const FLOAT fDeltaTi
 			CForce &force = m_vectorForce[iForce];
 			vForce += force.GetForce( ptc.GetPosition() - m_vCenter );
 		}
-		//ê°€ì†ë„ëŠ” ëˆ„ì í•˜ì§€ ì•ŠëŠ”ë‹¤.
+		//°¡¼Óµµ´Â ´©ÀûÇÏÁö ¾Ê´Â´Ù.
 		ptc.SetAcceleration( vForce / ptc.GetMass() );
 	}
 }
@@ -97,4 +97,4 @@ void CParticlesProcessForce::Write(CTStream *pOS)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

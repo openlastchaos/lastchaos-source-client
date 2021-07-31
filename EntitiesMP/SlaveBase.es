@@ -193,6 +193,31 @@ functions:
 	{
 	}
 
+	void ~CSlaveBase(void)
+	{
+		ReleaseChche(ECT_MODEL, MODEL_FLESH);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_APPLE);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_BANANA);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_BURGER);
+		ReleaseChche(ECT_MODEL, MODEL_MACHINE);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_MACHINE);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_RED);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_GREEN);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_APPLE); 
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_BANANA);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_BURGER);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_LOLLY); 
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_ORANGE); 
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_DEBRIS);
+		ReleaseChche(ECT_CLASS, CLASS_WATCHER);
+	}
+
 	// describe how this enemy killed player
 	virtual CTString GetPlayerKillDescription(const CTString &strPlayerName, const EDeath &eDeath)
 	{
@@ -397,7 +422,7 @@ functions:
 			// 인터페이스에 설정함...
 			for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 			{
-				CUISummon* pUISummon = (CUISummon*)_pUIMgr->GetUI(i);
+				CUISummon* pUISummon = (CUISummon*)SE_Get_UIManagerPtr()->GetUI(i);
 				if( pUISummon->GetSummonEntity() == this )
 				{
 					pUISummon->GetCommand() = m_iCurrentCommand;
@@ -1653,6 +1678,11 @@ functions:
 //안태훈 수정 끝	//(5th Closed beta)(0.2)
 
 procedures:
+	// dummy main - never called
+	Main(EVoid) 
+	{
+		return;
+	};
 
 //**********************************************************
 //                 ATTACK PROCEDURES
@@ -2910,12 +2940,6 @@ procedures:
 			}
 		}
 	};
-
-	// dummy main - never called
-	Main(EVoid) 
-	{
-		return;
-	};	
 
 	//--------------------------------------------------------------------------------
 	//0628 kwon

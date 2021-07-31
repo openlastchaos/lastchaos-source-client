@@ -6,11 +6,11 @@
 HKL			_hKL		= NULL;
 BOOL		_bIMEProc	= false;
 
-// êµ­ê°€ ì„¤ì • ( í•˜ë“œ ì½”ë”© )
-DWORD _dwLocalLanguage	 =   LANG_KOREAN;		// í•œêµ­ 
-							// LANG_CHT;		// ëŒ€ë§Œ 
-							// LANG_CHS;		// ì¤‘êµ­ (PRC)
-							// LANG_JAPANESE;	// ì¼ë³¸
+// ±¹°¡ ¼³Á¤ ( ÇÏµå ÄÚµù )
+DWORD _dwLocalLanguage	 =   LANG_KOREAN;		// ÇÑ±¹ 
+							// LANG_CHT;		// ´ë¸¸ 
+							// LANG_CHS;		// Áß±¹ (PRC)
+							// LANG_JAPANESE;	// ÀÏº»
 
 // ----------------------------------------------------------------------------
 // Name : GetNationName()
@@ -24,83 +24,26 @@ char* GetNationName ( DWORD dwNations )
 		switch ( SUBLANGID ( dwNations ) )
 		{
 		case SUBLANG_CHINESE_SIMPLIFIED :
-			return "ì¤‘êµ­(PRC)";
+			return "Áß±¹(PRC)";
 							
 		case SUBLANG_CHINESE_TRADITIONAL :
-			return "ëŒ€ë§Œ";
+			return "´ë¸¸";
 		}
-		return "ì¤‘êµ­";
+		return "Áß±¹";
 
 	case LANG_KOREAN :
-		return "í•œêµ­";
+		return "ÇÑ±¹";
 
 	case LANG_JAPANESE :
-		return "ì¼ë³¸";
+		return "ÀÏº»";
 	}
 	return "Unknow";
 }
-	
-// ----------------------------------------------------------------------------
-// Name : CheckInputLocal()
-// Desc :
-// ----------------------------------------------------------------------------
-bool CheckInputLocal ()
-{
-	_hKL = GetKeyboardLayout ( 0 );
-
-	if ( _dwLocalLanguage != GetPrimaryLang ()  )
-	{
-		_pUIMgr->CloseMessageBox( MSGCMD_LOGIN_ERROR );
-
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( CTString( "Language setting" ), UMBS_OK, UI_LOGIN, MSGCMD_LOGIN_ERROR );
-
-		CTString strMessage = CTString( "Setting country is wrong.\n\n" );
-				
-		strMessage += "Current version : ";
-		strMessage += GetNationName ( _dwLocalLanguage );
-		strMessage += "\nCurrent input local : ";
-		strMessage += GetNationName ( GetLanguage () );
-
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo, 350, 300 ); // ì„ì˜ ì„¤ì • 
-
-	}
-
-	// ë‚˜ë¼ë³„ Cand ì¶œë ¥ í˜•íƒœ ì§€ì • ( ê°€ë¡œ, ì„¸ë¡œ )
-	bool bVerticalCand = false;
-/*
-	switch ( _dwLocalLanguage )
-	{
-	case LANG_CHINESE :
-		switch ( GetSubLang () )
-		{
-		case SUBLANG_CHINESE_SIMPLIFIED :
-			bVerticalCand = true;
-		
-		case SUBLANG_CHINESE_TRADITIONAL :
-			bVerticalCand = true;
-		}
-		break;	
-
-	case LANG_KOREAN :
-		bVerticalCand = false;
-		break;
-		
-	case LANG_JAPANESE :
-		bVerticalCand = true;
-		break;
-	}
-*/
-
-	return bVerticalCand;
-}
-
 
 
 //------------------------------------------------------------------------------
 // SetEngMode
-// Explain: í‚¤ë³´ë“œ ì…ë ¥ì„ ì˜ì–´ë¡œ ì „í™˜ í•˜ëŠ” í•¨ìˆ˜
+// Explain: Å°º¸µå ÀÔ·ÂÀ» ¿µ¾î·Î ÀüÈ¯ ÇÏ´Â ÇÔ¼ö
 // Date : 2005-01-17,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void SetEngMode ( HWND hWnd )

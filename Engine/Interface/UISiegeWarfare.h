@@ -2,24 +2,25 @@
 #ifndef _UISIEGE_WARFARE_H
 #define _UISIEGE_WARFARE_H
 
+#include <vector>
 #include <Engine/Interface/UIWindow.h>
 #include <Engine/Interface/UISpinButton.h>
 
 class CUISiegeWarfare : public CUIWindow
 {
 // Control
-	// íƒ€ì´í‹€ 
+	// Å¸ÀÌÆ² 
 	CTString				m_strTitle;
 	UIRect					m_rcTitle;
 
-	// ê³µì„± ì‹œê°„ ì„¤ì •ì‹œ ì‚¬ìš©
+	// °ø¼º ½Ã°£ ¼³Á¤½Ã »ç¿ë
 	CUIButton				m_btnOK;				
 	CUIButton				m_btnClose;
 	CUIButton				m_btnCancel;
-	CUICheckButton			m_cbtnSaturday;				// ê³µì„± ì¼ ì„¤ì •
+	CUICheckButton			m_cbtnSaturday;				// °ø¼º ÀÏ ¼³Á¤
 	CUICheckButton			m_cbtnSunday;
-	CUISpinButton			m_sbtnSWTime;				// ê³µì„± ì‹œê°„ ì„¤ì •
-	CUIListBox				m_lbDesc;					// ê³µì„± ê°€ëŠ¥ ì‹œê°„
+	CUISpinButton			m_sbtnSWTime;				// °ø¼º ½Ã°£ ¼³Á¤
+	CUIListBox				m_lbDesc;					// °ø¼º °¡´É ½Ã°£
 		
 	// Back UV
 	UIRectUV3				m_rt3BackT;								
@@ -37,19 +38,20 @@ class CUISiegeWarfare : public CUIWindow
 	UIRectUV				m_rtColon;
 	
 	// Notice 
-	UIRect					m_rcNotice1;				// Region of notice1 (ìœ„ ìª½)
-	UIRect					m_rcNotice2;				// Region of notice2 (ì•„ë« ìª½)
+	UIRect					m_rcNotice1;				// Region of notice1 (À§ ÂÊ)
+	UIRect					m_rcNotice2;				// Region of notice2 (¾Æ·§ ÂÊ)
 	
 	UIRectUV				m_rtNoticeL;				// UV of notice left region
 	UIRectUV				m_rtNoticeC;				// UV of notice center region
 	UIRectUV				m_rtNoticeR;				// UV of notice right region
 	
 	//Notice Info
-	TIME					m_tmNoticeTime;				// ê³µì§€ ì‚¬í•­ í‘œì‹œ ì‹œê°„
-	BOOL					m_bShowNotice;				// ê³µì§€ ì‚¬í•­ì„ ë³´ì—¬ì£¼ê³  ìˆëŠ” ê°€
-	CTString				m_strNoticeMessage;			// ê³µì ì‚¬í•­ 1 ìŠ¤íŠ¸ë§ (ìœ„)
-	CTString				m_strNoticeMessage2;		// ê³µì§€ ì‚¬í•­ 2 ìŠ¤íŠ¸ë§ (ì•„ë˜)
+	TIME					m_tmNoticeTime;				// °øÁö »çÇ× Ç¥½Ã ½Ã°£
+	BOOL					m_bShowNotice;				// °øÁö »çÇ×À» º¸¿©ÁÖ°í ÀÖ´Â °¡
+	CTString				m_strNoticeMessage;			// °øÀÚ »çÇ× 1 ½ºÆ®¸µ (À§)
+	CTString				m_strNoticeMessage2;		// °øÁö »çÇ× 2 ½ºÆ®¸µ (¾Æ·¡)
 
+	CUISpinButton			m_sbtnSWZone;				// [2010/11/01 : Sora] °ø¼º °³Æí
 public:	
 	CUISiegeWarfare();
 	virtual ~CUISiegeWarfare();
@@ -93,8 +95,8 @@ public:
 	void	CloseAllMsgBox();
 	void	MsgBoxLCommand( int nCommandCode, int nResult );
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
-	void	ErrorMessage( CTString strErrorMessage );					// ì—ëŸ¬ ì—ë””íŠ¸ ë°•ìŠ¤
-	void	Message( int nCommandCode, CTString strMessage, DWORD dwStyle );	// ë©”ì„¸ì§€ ë°•ìŠ¤
+	void	ErrorMessage( CTString strErrorMessage );					// ¿¡·¯ ¿¡µğÆ® ¹Ú½º
+	void	Message( int nCommandCode, CTString strMessage, DWORD dwStyle );	// ¸Ş¼¼Áö ¹Ú½º
 	
 	// Etc
 	void	SetNotice( CTString strNoticeMessage, CTString strNoticeMessage2 = " " );
@@ -102,9 +104,114 @@ public:
 
 	void	SetDayOfWeek( int eDayOfWeek );
 
+	void	OpenCostumeReq();
+
+	// [2010/11/01 : Sora] °ø¼º °³Æí
+	struct stSiegeWarfareTimeInfo
+	{
+		UBYTE zone;
+		UBYTE wday;
+		UBYTE hour;
+
+		stSiegeWarfareTimeInfo()
+		{
+			Init();
+		}
+
+		void Init()
+		{
+			zone = 0;
+			wday = 0;
+			hour = 0;
+		}
+	};
+
+	std::vector<stSiegeWarfareTimeInfo> m_vecSWInfo;
+	
+	void	InitSiegeWarfareTimeInfo() { m_vecSWInfo.clear(); }
+	void	SetSiegeWarfareTimeInfo( stSiegeWarfareTimeInfo swInfo );
+	void	OpenSWInfoRenew();
 };
 
+// [2010/11/01 : Sora] °ø¼º °³Æí
+class CUISiegeWarfareInfo : public CUIWindow
+{
+protected:
+	UIRect			m_rcTitle;
+	CUIDrawBox		m_bxBackground[4];
+	CUIButton		m_btnOK;
+	
+	CUIRectString	m_rsMyGuildName;
+	CUIRectString	m_rsMyGuildBossName;
+public:
+	struct stSiegeWarfareDefGuildInfo // ¼ö¼º±æµå Á¤º¸
+	{
+		char zone;
+		char month;
+		char day;
+		char hour;
+		CTString guildName;
 
+		stSiegeWarfareDefGuildInfo()
+		{
+			Init();
+		}
+
+		void Init()
+		{
+			zone = 0;
+			month = 0;
+			day = 0;
+			hour = 0;
+			guildName = "";
+		}
+	};
+
+	struct stMySiegeWarfareInfo	// ³» °ø¼º Á¤º¸
+	{
+		std::vector<char> vecZone;
+		std::vector<char> vecJoinFlag;
+		CTString guildName;
+		CTString guildBossName;
+
+		stMySiegeWarfareInfo()
+		{
+			Init();
+		}
+
+		void Init()
+		{
+			vecZone.clear();
+			vecJoinFlag.clear();
+			guildName = "";
+			guildBossName = "";
+		}
+	};
+
+	stMySiegeWarfareInfo m_MySiegeWarfareInfo;
+	std::vector<stSiegeWarfareDefGuildInfo> m_vecDefGuildInfo;
+
+	CUISiegeWarfareInfo();
+	~CUISiegeWarfareInfo();
+
+	// Create
+	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+	
+	// Render
+	void	Render();
+	
+	// Adjust position
+	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	WMSG_RESULT MouseMessage( MSG *pMsg );
+
+	void	InitSiegeWarfareInfo();
+	void	SetSiegeWarfareDefGuildInfo( stSiegeWarfareDefGuildInfo defGuildInfo );
+	void	SetMySiegeWarfareGuildInfo( CTString guildName, CTString guildBossName );
+	void	SetMySiegeWarfareJoinInfo(  char zone, char joinFlag );
+	void	ToggleSiegeWarfareInfo( BOOL bShown );
+	CTString	GetJoinStatusString( char joinFlag );
+};
 
 
 #endif // _UISIEGE_WARFARE_H

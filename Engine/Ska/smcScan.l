@@ -107,6 +107,7 @@ EXP_FLT (({DIGIT}+("."({DIGIT}*)?)?)("E"|"e")("+"|"-")?{DIGIT}+)
 "COLOR"                 { return(k_COLOR);}
 "ALLFRAMESBBOX"         { return(k_ALLFRAMESBBOX);}
 "ANIMEFFECT"			{ return(k_ANIMEFFECT);}
+"RIDING"				{ return(k_RIDING);}
 
 <INCLUDE>[ \t]*"TFNM"?[ \t]*"\""      /* eat the whitespace and optional TFNM*/
 <INCLUDE>[^"\""]*"\""   { /* got the include file name */

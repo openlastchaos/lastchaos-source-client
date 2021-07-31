@@ -6,7 +6,7 @@
  *  (C) 2000 ATI Research, Inc.  All rights reserved.
  ******************************************************************************/
 
-//ì•ˆíƒœí›ˆì´ ì¶”ê°€í•œ íŒŒì¼, ìœ—ë¶€ë¶„ì˜ Copyrightê´€ë ¨ ì£¼ì„ ì œê±° ë§ê²ƒ.
+//¾ÈÅÂÈÆÀÌ Ãß°¡ÇÑ ÆÄÀÏ, À­ºÎºÐÀÇ Copyright°ü·Ã ÁÖ¼® Á¦°Å ¸»°Í.
 
 #ifndef __NMFILEIO__H
 #define __NMFILEIO__H

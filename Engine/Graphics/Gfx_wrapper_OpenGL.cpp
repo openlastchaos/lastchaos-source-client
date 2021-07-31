@@ -1477,7 +1477,6 @@ static void ogl_SetSubBuffer( const INDEX iID, const INDEX iUnit/*=-1*/)
 // force finish of API rendering queue
 static void ogl_Finish( BOOL bReadBack)
 {
-  CDisableAsyncProgress dap;
   ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
   _sfStats.StartTimer(CStatForm::STI_GFXAPI);
 

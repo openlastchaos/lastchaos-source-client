@@ -1,17 +1,16 @@
 #include "stdh.h"
 
 #define MESH_VERSION  16
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘
-//ì´ ë²„ì „ì˜ ë©”ì‰¬ëŠ” Tangent ì •ë³´ì™€ SkaTag ì •ë³´ë¥¼ ê°–ê³  ìˆë‹¤.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ
+//ÀÌ ¹öÀüÀÇ ¸Ş½¬´Â Tangent Á¤º¸¿Í SkaTag Á¤º¸¸¦ °®°í ÀÖ´Ù.
 #define MESH_NEW_VER  17
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡
 #define MESH_ID       "MESH"
 
 #include <Engine/Ska/StringTable.h>
 #include <Engine/Ska/Mesh.h>
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Console.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Math/Projection.h>
 #include <Engine/Graphics/DrawPort.h>
 #include <Engine/Graphics/Shader.h>
@@ -19,13 +18,19 @@
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Templates/Stock_CShader.h>
 
+#ifdef KALYDO
+#include <Engine/Base/Console.h>
+#include <Kalydo/KRFReadLib/Include/KRFReadLib.h>
+CTString CMesh::strDefaultMeshPath = "data\\Defaults\\Axis.bm";
+#endif
+
 static INDEX AreVerticesDiferent(INDEX iCurrentIndex, INDEX iLastIndex);
 static void FillVertexWeightInfos(MeshLOD &mlod);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 static void CalcVertexTangent(MeshLOD &mlod, int texCoordForTangent);
 static void FillWeightMapInfo(MeshLOD &mlod);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 static void UnbindMeshLOD(MeshLOD &mlod)
 {
@@ -38,9 +43,9 @@ static void UnbindMeshLOD(MeshLOD &mlod)
 	mlod.mlod_iBufferBindID   = -1;
 	mlod.mlod_iVertexBufferID = -1;
 	mlod.mlod_iNormalBufferID = -1;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	mlod.mlod_iTangentBufferID = -1;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	mlod.mlod_iWeightBufferID = -1;
 	
 	// for each uvmap
@@ -87,12 +92,12 @@ static void ClearMeshLOD(MeshLOD &mlod)
 	mlod.mlod_aVertices.Clear();
 	// clear the normals array
 	mlod.mlod_aNormals.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	mlod.mlod_aTangents.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	mlod.mlod_aSkaTags.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 }
 
 // MeshLOD Constuctor / Destructor
@@ -103,9 +108,9 @@ MeshLOD::MeshLOD()
 	mlod_iBufferBindID   = -1;
 	mlod_iVertexBufferID = -1;
 	mlod_iNormalBufferID = -1;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	mlod_iTangentBufferID = -1;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	mlod_iWeightBufferID = -1;
 }
 
@@ -117,9 +122,9 @@ MeshLOD::~MeshLOD()
 	ASSERT(mlod_iBufferBindID   == (-1));
 	ASSERT(mlod_iVertexBufferID == (-1));
 	ASSERT(mlod_iNormalBufferID == (-1));
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	ASSERT(mlod_iTangentBufferID == (-1));
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	ASSERT(mlod_iWeightBufferID == (-1));
 	const INDEX ctmuvm = mlod_aUVMaps.Count();
 	for(INDEX imuvm=0;imuvm<ctmuvm;imuvm++) 
@@ -140,21 +145,21 @@ void MeshLOD::operator=(const MeshLOD &mlodOther)
 	mlod_fnSourceFile   = mlodOther.mlod_fnSourceFile;
 	mlod_aVertices      = mlodOther.mlod_aVertices;
 	mlod_aNormals       = mlodOther.mlod_aNormals;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	mlod_aTangents      = mlodOther.mlod_aTangents;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	mlod_aSurfaces      = mlodOther.mlod_aSurfaces;
 	mlod_aWeightMaps    = mlodOther.mlod_aWeightMaps;
 	mlod_aMorphMaps     = mlodOther.mlod_aMorphMaps;
 	mlod_aVertexWeights = mlodOther.mlod_aVertexWeights;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	mlod_aSkaTags		= mlodOther.mlod_aSkaTags;
-	//deep copy í•´ì•¼í•¨.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+	//deep copy ÇØ¾ßÇÔ.
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	BOOL bHasTangent = mlod_aTangents.Count()>0 ? TRUE : FALSE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 	if(ctmuvm>0) 
 	{
@@ -172,7 +177,7 @@ void MeshLOD::operator=(const MeshLOD &mlodOther)
 	// Copy vertex buffers
 	if(bHasContext && mlodOther.mlod_iBufferBindID!=(-1)) 
 	{
-		INDEX ctUVMaps;
+		INDEX ctUVMaps, imuvm;
 		const INDEX ctmvx = gfxGetVertexBufferSize(mlodOther.mlod_iBufferBindID);
 		const ULONG ulBufferFlags = gfxGetVertexBufferMask(mlodOther.mlod_iBufferBindID,ctUVMaps);
 		const BOOL  bHasWeights = ulBufferFlags&GFX_VBM_WGH;
@@ -186,20 +191,20 @@ void MeshLOD::operator=(const MeshLOD &mlodOther)
 		mlod_iNormalBufferID = gfxGetVertexSubBufferID(mlod_iBufferBindID,GFX_VBA_NOR);
 		ASSERT(mlod_iVertexBufferID>=0);
 		ASSERT(mlod_iNormalBufferID>=0);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		if(bHasTangent)
 		{
 			mlod_iTangentBufferID = gfxGetVertexSubBufferID(mlod_iBufferBindID, GFX_VBA_TAN);
 			ASSERT(mlod_iTangentBufferID>=0);
 		}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		// Get weight buffer id if weight buffer exists
 		if(bHasWeights) 
 		{
 			mlod_iWeightBufferID = gfxGetVertexSubBufferID(mlod_iBufferBindID,GFX_VBA_WGH);
 			ASSERT(mlod_iWeightBufferID>=0);
 		}
-		for(INDEX imuvm=0;imuvm<ctmuvm;imuvm++) 
+		for( imuvm = 0; imuvm < ctmuvm; imuvm++ )
 		{
 			MeshUVMap &muvm = mlod_aUVMaps[imuvm];
 			muvm.muvm_iTexCoordBufferID = gfxGetVertexSubBufferID(mlod_iBufferBindID,GFX_VBA_TEX+imuvm);
@@ -210,26 +215,26 @@ void MeshLOD::operator=(const MeshLOD &mlodOther)
 		GFXVertex *pavVerticesSrc = (GFXVertex*)gfxLockVertexSubBuffer(mlodOther.mlod_iVertexBufferID,0,ctmvx,GFX_READ);
 		GFXVertex *pavVerticesDst = (GFXVertex*)gfxLockVertexSubBuffer(mlod_iVertexBufferID,0,ctmvx,GFX_WRITE);
 		memcpy(pavVerticesDst,pavVerticesSrc,sizeof(GFXVertex)*ctmvx);
-		gfxUnlockVertexSubBuffer(mlodOther.mlod_iVertexBufferID);
-		gfxUnlockVertexSubBuffer(mlod_iVertexBufferID);
+		gfxUnlockVertexSubBuffer(mlodOther.mlod_iVertexBufferID, 0);
+		gfxUnlockVertexSubBuffer(mlod_iVertexBufferID, 0);
 		
 		// Duplicate normals
 		GFXNormal *panNormalsSrc  = (GFXNormal*)gfxLockNormalSubBuffer(mlodOther.mlod_iNormalBufferID,0,ctmvx,GFX_READ);
 		GFXNormal *panNormalsDst  = (GFXNormal*)gfxLockNormalSubBuffer(mlod_iNormalBufferID,0,ctmvx,GFX_WRITE);
 		memcpy(panNormalsDst,panNormalsSrc,sizeof(GFXNormal)*ctmvx);
-		gfxUnlockNormalSubBuffer(mlodOther.mlod_iNormalBufferID);
-		gfxUnlockNormalSubBuffer(mlod_iNormalBufferID);
+		gfxUnlockNormalSubBuffer(mlodOther.mlod_iNormalBufferID, 0);
+		gfxUnlockNormalSubBuffer(mlod_iNormalBufferID, 0);
 		
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		if(bHasTangent)
 		{
 			GFXTangent *panNormalsSrc  = (GFXTangent*)gfxLockTangentSubBuffer(mlodOther.mlod_iTangentBufferID,0,ctmvx,GFX_READ);
 			GFXTangent *panNormalsDst  = (GFXTangent*)gfxLockTangentSubBuffer(mlod_iTangentBufferID,0,ctmvx,GFX_WRITE);
 			memcpy(panNormalsDst,panNormalsSrc,sizeof(GFXTangent)*ctmvx);
-			gfxUnlockNormalSubBuffer(mlodOther.mlod_iTangentBufferID);
-			gfxUnlockNormalSubBuffer(mlod_iTangentBufferID);
+			gfxUnlockNormalSubBuffer(mlodOther.mlod_iTangentBufferID, 0);
+			gfxUnlockNormalSubBuffer(mlod_iTangentBufferID, 0);
 		}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		
 		// If weights exists
 		if(bHasWeights) 
@@ -238,12 +243,12 @@ void MeshLOD::operator=(const MeshLOD &mlodOther)
 			GFXWeight *pawWeightsSrc = (GFXWeight*)gfxLockWeightSubBuffer(mlodOther.mlod_iWeightBufferID,0,ctmvx,GFX_READ);
 			GFXWeight *pawWeightsDst = (GFXWeight*)gfxLockWeightSubBuffer(mlod_iWeightBufferID,0,ctmvx,GFX_WRITE);
 			memcpy(pawWeightsDst,pawWeightsSrc,sizeof(GFXWeight)*ctmvx);
-			gfxUnlockWeightSubBuffer(mlodOther.mlod_iWeightBufferID);
-			gfxUnlockWeightSubBuffer(mlod_iWeightBufferID);
+			gfxUnlockWeightSubBuffer(mlodOther.mlod_iWeightBufferID, 0);
+			gfxUnlockWeightSubBuffer(mlod_iWeightBufferID, 0);
 		}
 		
 		// Duplicate each uvmap texcoord buffer
-		for(imuvm=0;imuvm<ctmuvm;imuvm++) 
+		for( imuvm = 0; imuvm < ctmuvm; imuvm++)
 		{
 			const MeshUVMap &muvm = mlod_aUVMaps[imuvm];
 			const MeshUVMap &muvmOther = mlodOther.mlod_aUVMaps[imuvm];
@@ -251,8 +256,8 @@ void MeshLOD::operator=(const MeshLOD &mlodOther)
 			GFXTexCoord *patcTexCoordsSrc = (GFXTexCoord*)gfxLockTexCoordSubBuffer(muvmOther.muvm_iTexCoordBufferID,0,ctmvx,GFX_READ);
 			GFXTexCoord *patcTexCoordsDst = (GFXTexCoord*)gfxLockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID,0,ctmvx,GFX_WRITE);
 			memcpy(patcTexCoordsDst,patcTexCoordsSrc,sizeof(GFXTexCoord)*ctmvx);
-			gfxUnlockTexCoordSubBuffer(muvmOther.muvm_iTexCoordBufferID);
-			gfxUnlockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID);
+			gfxUnlockTexCoordSubBuffer(muvmOther.muvm_iTexCoordBufferID, 0);
+			gfxUnlockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID, 0);
 		}
 	}
 }
@@ -363,11 +368,11 @@ extern void ChangeSurfaceShader_t(MeshSurface &msrf,CTString fnNewShader)
 	}
 	msrf.msrf_pShader = pShaderNew;
 	// get new shader description
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 	ShaderDesc *pshDesc;
 	msrf.msrf_pShader->GetShaderDesc(pshDesc);
 	ShaderDesc &shDesc = *pshDesc;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 	// if needed expand size of arrays for new shader
 	// reset new values!!!!
 	INDEX ctOldTextureIDs = msrf.msrf_ShadingParams.sp_aiTextureIDs.Count();
@@ -472,8 +477,8 @@ extern void RemapMeshVertices(MeshLOD &mlod, const INDEX *paiRemapTable, const I
 		avwiRemapedVertexWeights.New(ctvwi);
 	}
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
-	//Tangent ê´€ë ¨ ì²˜ë¦¬
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+	//Tangent °ü·Ã Ã³¸®
 	CStaticArray<MeshTangent> anxRemapedTangents;
 	const BOOL bHasTangent = (mlod.mlod_aTangents.Count() > 0);
 	if(bHasTangent)
@@ -481,20 +486,21 @@ extern void RemapMeshVertices(MeshLOD &mlod, const INDEX *paiRemapTable, const I
 		ASSERT(mlod.mlod_aTangents.Count() == mlod.mlod_aVertices.Count());
 		anxRemapedTangents.New(mlod.mlod_aVertices.Count());
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 	// remap vertices and normals
-	for(INDEX iVtxOld=0;iVtxOld<ctVertices;iVtxOld++) 
+	INDEX	iVtxOld;
+	for( iVtxOld = 0; iVtxOld < ctVertices; iVtxOld++ )
 	{
 		INDEX iVtxNew = paiRemapTable[iVtxOld];
 		avxRemapedVertices[iVtxNew] = mlod.mlod_aVertices[iVtxOld];
 		anxRemapedNormals[iVtxNew] = mlod.mlod_aNormals[iVtxOld];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		if(bHasTangent) anxRemapedTangents[iVtxNew] = mlod.mlod_aTangents[iVtxOld];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	}
 	
-	for(iVtxOld=0;iVtxOld<ctvwi;iVtxOld++) 
+	for( iVtxOld = 0; iVtxOld < ctvwi; iVtxOld++ )
 	{
 		INDEX iVtxNew = paiRemapTable[iVtxOld];
 		avwiRemapedVertexWeights[iVtxNew] = mlod.mlod_aVertexWeights[iVtxOld];
@@ -503,9 +509,9 @@ extern void RemapMeshVertices(MeshLOD &mlod, const INDEX *paiRemapTable, const I
 	// copy remaped vertices and normals back to mesh
 	mlod.mlod_aVertices.CopyArray(avxRemapedVertices);
 	mlod.mlod_aNormals.CopyArray(anxRemapedNormals);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	if(bHasTangent) mlod.mlod_aTangents.CopyArray(anxRemapedTangents);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	mlod.mlod_aVertexWeights.CopyArray(avwiRemapedVertexWeights);
 	
 	// for each uvmap in mesh lod
@@ -558,9 +564,9 @@ extern void RemapMeshVertices(MeshLOD &mlod, const INDEX *paiRemapTable, const I
 	// clear temp arrays
 	avxRemapedVertices.Clear();
 	anxRemapedNormals.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	if(bHasTangent) anxRemapedTangents.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	atxRemapedTexCoords.Clear();
 	avwiRemapedVertexWeights.Clear();
 }
@@ -602,7 +608,7 @@ void CMesh::Optimize(void)
 }
 
 // returns surface relative weight map index if it exists, or adds new one to surface msrf_aubRelIndexTable array
-//ë‹¨ í•œêµ°ë°ì„œ í˜¸ì¶œë˜ëŠ” í•¨ìˆ˜ì„.
+//´Ü ÇÑ±ºµ¥¼­ È£ÃâµÇ´Â ÇÔ¼öÀÓ.
 static INDEX GetRelativeWeightIndex(MeshLOD &mlod, MeshSurface &msrf, INDEX iAbsWeightIndex)
 {
 	// search all weight maps maped as relative indices in given surface
@@ -764,10 +770,11 @@ static void SortSurfacesByMorphs(MeshLOD &mlod)
 	
 	CStaticArray<struct MeshSurface> aSurfaces;
 	INDEX iMeshSurface = 0;
+	INDEX imsrf;
 	aSurfaces.New(ctmsrf);
 	
 	// First copy dynamic surfaces
-	for(INDEX imsrf=0;imsrf<ctmsrf;imsrf++) 
+	for( imsrf = 0; imsrf < ctmsrf; imsrf++ )
 	{
 		MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
 		if(msrf.msrf_ulFlags&MS_DYNAMIC_SURFACE) 
@@ -778,7 +785,7 @@ static void SortSurfacesByMorphs(MeshLOD &mlod)
 	}
 	
 	// Then copy other surfaces
-	for(imsrf=0;imsrf<ctmsrf;imsrf++) 
+	for( imsrf = 0; imsrf < ctmsrf; imsrf++ )
 	{
 		MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
 		if(!(msrf.msrf_ulFlags&MS_DYNAMIC_SURFACE)) 
@@ -818,8 +825,9 @@ void CMesh::SplitSurfaces(MeshLOD &mlod)
 	// Count new vertices
 	INDEX ctnvx = 0;
 	INDEX invx = 0;
+	INDEX imsrf;
 	const INDEX ctmsrf = mlod.mlod_aSurfaces.Count();
-	for(INDEX imsrf=0;imsrf<ctmsrf;imsrf++) 
+	for( imsrf = 0; imsrf < ctmsrf; imsrf++ )
 	{
 		const MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
 		const INDEX its = msrf.msrf_auwTriangles.Count();
@@ -857,7 +865,7 @@ void CMesh::SplitSurfaces(MeshLOD &mlod)
 	}
 	
 	// for each surface in mesh
-	for(imsrf=0;imsrf<ctmsrf;imsrf++) 
+	for( imsrf = 0; imsrf < ctmsrf; imsrf++ )
 	{
 		// Get reference to mesh surface
 		MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
@@ -1330,7 +1338,7 @@ void CMesh::SplitSurfaces(MeshLOD &mlod)
 	INDEX ctnmsrf = aNewSurfaces.Count();
 	mlod.mlod_aSurfaces.Clear();
 	mlod.mlod_aSurfaces.New(ctnmsrf);
-	for(imsrf=0;imsrf<ctnmsrf;imsrf++) 
+	for( imsrf = 0; imsrf < ctnmsrf; imsrf++ )
 	{
 		MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
 		msrf = aNewSurfaces[imsrf];
@@ -1390,9 +1398,9 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	INDEX ctWeightMaps = mlod.mlod_aWeightMaps.Count();
 	INDEX ctMorphMaps  = mlod.mlod_aMorphMaps.Count();
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	const BOOL bHasTangent = mlod.mlod_aTangents.Count()>0 ? TRUE : FALSE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	
 	if(ctVertices<=0) return;
 	
@@ -1414,7 +1422,8 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	}
 	
 	// loop each surface and remember surface indices per vertex
-	for(INDEX imsrf=0;imsrf<ctSurfaces;imsrf++) 
+	INDEX	imsrf;
+	for( imsrf = 0; imsrf < ctSurfaces; imsrf++ )
 	{
 		const MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
 		INDEX ctts=msrf.msrf_auwTriangles.Count();
@@ -1504,9 +1513,9 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	_mshOptimized.mlod_aVertices.New(ctNewVertices);
 	_mshOptimized.mlod_aNormals.New(ctNewVertices);
 	_mshOptimized.mlod_aUVMaps.New(ctUVMaps);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	if(bHasTangent) _mshOptimized.mlod_aTangents.New(ctNewVertices);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 	for(INDEX imuvm=0;imuvm<ctUVMaps;imuvm++) 
 	{
@@ -1518,9 +1527,9 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	{
 		_mshOptimized.mlod_aVertices[iNewVx] = mlod.mlod_aVertices[_aiOptimizedIndex[iNewVx]];
 		_mshOptimized.mlod_aNormals[iNewVx] = mlod.mlod_aNormals[_aiOptimizedIndex[iNewVx]];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		if(bHasTangent) _mshOptimized.mlod_aTangents[iNewVx] = mlod.mlod_aTangents[_aiOptimizedIndex[iNewVx]];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 		for(INDEX imuvm=0;imuvm<ctUVMaps;imuvm++) 
 		{
@@ -1531,14 +1540,15 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	}
 	
 	// remap surface triangles
-	for(imsrf=0;imsrf<ctSurfaces;imsrf++) 
+	for( imsrf = 0; imsrf < ctSurfaces; imsrf++ )
 	{
 		MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
 		INDEX iMinIndex = ctNewVertices+1;
 		INDEX iMaxIndex = -1;
 		INDEX ctts = msrf.msrf_auwTriangles.Count();
+		INDEX its;
 		// for each triangle in this surface
-		for(INDEX its=0;its<ctts;its++) 
+		for( its = 0; its < ctts; its++ ) 
 		{
 			MeshTriangle &mtTriangle = msrf.msrf_auwTriangles[its];
 			// for each vertex in triangle
@@ -1557,7 +1567,7 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 		msrf.msrf_ctVertices = iMaxIndex-iMinIndex+1;
 		
 		// for each triangle in surface
-		for(its=0;its<ctts;its++) 
+		for( its = 0; its < ctts; its++ )
 		{
 			MeshTriangle &mtTriangle = msrf.msrf_auwTriangles[its];
 			// for each vertex in triangle
@@ -1573,7 +1583,8 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	// remap weightmaps
 	_mshOptimized.mlod_aWeightMaps.New(ctWeightMaps);
 	// expand wertex veights array for each vertex
-	for(INDEX ivx=0;ivx<ctNewVertices;ivx++) 
+	INDEX	ivx;
+	for( ivx = 0; ivx < ctNewVertices; ivx++ )
 	{
 		INDEX ioptVx = _aiOptimizedIndex[ivx];
 		for(INDEX iwl=0;iwl<_aSortArray[ioptVx].sa_aWeightMapList.Count();iwl++) 
@@ -1595,7 +1606,7 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	// remap morphmaps
 	_mshOptimized.mlod_aMorphMaps.New(ctMorphMaps);
 	// expand morph maps array for each vertex
-	for(ivx=0;ivx<ctNewVertices;ivx++) 
+	for( ivx = 0; ivx < ctNewVertices; ivx++)
 	{
 		INDEX ioptVx = _aiOptimizedIndex[ivx];
 		for(INDEX iml=0;iml<_aSortArray[ioptVx].sa_aMorphMapList.Count();iml++) 
@@ -1624,9 +1635,9 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	// Copy arrays
 	mlod.mlod_aVertices.CopyArray(_mshOptimized.mlod_aVertices);
 	mlod.mlod_aNormals.CopyArray(_mshOptimized.mlod_aNormals);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	if(bHasTangent) mlod.mlod_aTangents.CopyArray(_mshOptimized.mlod_aTangents);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	mlod.mlod_aMorphMaps.CopyArray(_mshOptimized.mlod_aMorphMaps);
 	mlod.mlod_aWeightMaps.CopyArray(_mshOptimized.mlod_aWeightMaps);
 	mlod.mlod_aUVMaps.CopyArray(_mshOptimized.mlod_aUVMaps);
@@ -1635,9 +1646,9 @@ void CMesh::OptimizeLod(MeshLOD &mlod)
 	ClearSortArray(ctVertices);
 	_mshOptimized.mlod_aVertices.Clear();
 	_mshOptimized.mlod_aNormals.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	if(bHasTangent) _mshOptimized.mlod_aTangents.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	_mshOptimized.mlod_aWeightMaps.Clear();
 	_mshOptimized.mlod_aMorphMaps.Clear();
 	_mshOptimized.mlod_aUVMaps.Clear();
@@ -1670,7 +1681,7 @@ static INDEX AreVerticesDiferent(INDEX iCurrentIndex, INDEX iLastIndex)
 	CHECKF(pMeshLOD->mlod_aNormals[iCurrentIndex].ny,pMeshLOD->mlod_aNormals[iLastIndex].ny);
 	CHECKF(pMeshLOD->mlod_aNormals[iCurrentIndex].nx,pMeshLOD->mlod_aNormals[iLastIndex].nx);
 	CHECKF(pMeshLOD->mlod_aNormals[iCurrentIndex].nz,pMeshLOD->mlod_aNormals[iLastIndex].nz);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	// check tangent
 	if(pMeshLOD->mlod_aTangents.Count() > 0)
 	{
@@ -1679,7 +1690,7 @@ static INDEX AreVerticesDiferent(INDEX iCurrentIndex, INDEX iLastIndex)
 		CHECKF(pMeshLOD->mlod_aTangents[iCurrentIndex].bz,pMeshLOD->mlod_aTangents[iLastIndex].bz);
 		CHECKF(pMeshLOD->mlod_aTangents[iCurrentIndex].tdir,pMeshLOD->mlod_aTangents[iLastIndex].tdir);
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	
 	// check uvmaps
 	INDEX ctUVMaps = pMeshLOD->mlod_aUVMaps.Count();
@@ -1879,7 +1890,8 @@ static void FillVertexWeightInfos(MeshLOD &mlod)
 	
 	// for each surface in mesh lod
 	INDEX ctmsrf = mlod.mlod_aSurfaces.Count();
-	for(INDEX imsrf=0;imsrf<ctmsrf;imsrf++) 
+	INDEX imsrf;
+	for( imsrf = 0; imsrf < ctmsrf; imsrf++ )
 	{
 		MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
 		msrf.msrf_aubRelIndexTable.Clear();
@@ -1896,12 +1908,13 @@ static void FillVertexWeightInfos(MeshLOD &mlod)
 			ASSERT(ctwpv<=4);
 			
 			FLOAT fTotalWeights = 0;
-			for(INDEX iwpv=0;iwpv<ctwpv;iwpv++) 
+			INDEX	iwpv;
+			for( iwpv = 0; iwpv < ctwpv; iwpv++ )
 			{
 				fTotalWeights+=vw.vw_afWeights[iwpv];
 			}
 			
-			for(iwpv=0;iwpv<ctwpv;iwpv++) 
+			for( iwpv = 0; iwpv < ctwpv; iwpv++)
 			{
 				ASSERT(vw.vw_aiIndices[iwpv]>0 || vw.vw_afWeights[iwpv]>0.0f);
 				const INDEX iAbsWMapIndex = vw.vw_aiIndices[iwpv];
@@ -1919,7 +1932,7 @@ static void FillVertexWeightInfos(MeshLOD &mlod)
 #if _DEBUG
 			UBYTE ubLast = 255;
 			SLONG slTotal = 0;
-			for(iwpv=0;iwpv<ctwpv;iwpv++) 
+			for( iwpv = 0; iwpv < ctwpv; iwpv++ )
 			{
 				if(mvwi.mvwi_aubWeights[iwpv]>0) 
 				{
@@ -1937,7 +1950,7 @@ static void FillVertexWeightInfos(MeshLOD &mlod)
 		else
 		{
 			//CPrintF("Bone count per surface is %d, this must be less or equal 25.", msrf.msrf_aubRelIndexTable.Count());
-			CPrintF("í‘œë©´ë‹¹ ë³¸ì˜ ê°œìˆ˜ê°€ %dê°œì…ë‹ˆë‹¤. í‘œë©´ë‹¹ ë¼ˆê°œìˆ˜ëŠ” 25ê°œ ì´í•˜ì—¬ì•¼ í•©ë‹ˆë‹¤.", msrf.msrf_aubRelIndexTable.Count());
+			CPrintF("Ç¥¸é´ç º»ÀÇ °³¼ö°¡ %d°³ÀÔ´Ï´Ù. Ç¥¸é´ç »À°³¼ö´Â 25°³ ÀÌÇÏ¿©¾ß ÇÕ´Ï´Ù.", msrf.msrf_aubRelIndexTable.Count());
 		}
 	}
 	
@@ -1994,7 +2007,7 @@ static ShaderParams _shpDummyShaderParams;// dummy shader params if shader is no
 extern BOOL _bSkaStudioApp;
 
 // Read mesh from stream
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Encode Data)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Encode Data)(0.1)
 #define CODE_MESH_1 13
 #define CODE_MESH_2 23
 #define CODE_MESH_3 19
@@ -2158,7 +2171,8 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 		// Create array of uvmaps
 		mlod.mlod_aUVMaps.New(ctmuvm);
 		// read uvmaps
-		for(INDEX imuvm=0;imuvm<ctmuvm;imuvm++) 
+		INDEX	imuvm;
+		for( imuvm = 0; imuvm < ctmuvm; imuvm++ )
 		{
 			MeshUVMap &muvm = mlod.mlod_aUVMaps[imuvm];
 			// Read uvmap name
@@ -2248,11 +2262,11 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 				if(msrf.msrf_pShader!=NULL) 
 				{
 					// get shader description
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 					ShaderDesc *pshDesc;
 					msrf.msrf_pShader->GetShaderDesc(pshDesc);
 					ShaderDesc &shDesc = *pshDesc;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 					BOOL bParamsFailed = FALSE;
 					if(shDesc.sd_astrTextureNames.Count() != cttx) 
 					{
@@ -2282,10 +2296,10 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 						msrf.msrf_pShader = NULL;
 						// Use dummy shader for futher loading
 						pshMeshShader = &_shDummyShader;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 						pshMeshShader->GetShaderDesc(pshDesc);
 						ShaderDesc &shDesc = *pshDesc;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 						pshpShaderParams = &_shpDummyShaderParams;
 					}
 					for(INDEX i=0; i<shDesc.sd_ulStreamFlags.Count(); ++i)
@@ -2418,8 +2432,8 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 			continue;
 		}
 		
-		//bmì„ ë¡œë”©í• ë•Œ ê·¸ ì´ë¦„ì„ í™•ì¸í•˜ì—¬ _TAG_ê°€ ì ‘ë‘ë¡œ ë“¤ì–´ê°€ ìˆìœ¼ë©´
-		//ê·¸ ëª¨ë“  vertexë¥¼ Ska Tagë¡œ ì¶”ê°€í•œë‹¤.
+		//bmÀ» ·ÎµùÇÒ¶§ ±× ÀÌ¸§À» È®ÀÎÇÏ¿© _TAG_°¡ Á¢µÎ·Î µé¾î°¡ ÀÖÀ¸¸é
+		//±× ¸ğµç vertex¸¦ Ska Tag·Î Ãß°¡ÇÑ´Ù.
 		mlod.mlod_aSkaTags.Clear();
 		INDEX iSkaTag = 0;
 		for(INDEX iSurface=0; iSurface<mlod.mlod_aSurfaces.Count(); ++iSurface) 
@@ -2435,7 +2449,7 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 			if( strName.RemovePrefix(strTagVtxIndicator) ) vtct = VTCT_VERTEX;
 			else if( strName.RemovePrefix(strTagTriIndicator) ) vtct = VTCT_TRIANGLE;
 			else if( strName.RemovePrefix(strTagGrpIndicator) ) vtct = VTCT_GROUP;
-			else if( !strName.RemovePrefix(strTagIndicator) ) continue;	//ê¸°ë³¸ê°’ì´ VTCT_VERTEXì¼ë•Œ
+			else if( !strName.RemovePrefix(strTagIndicator) ) continue;	//±âº»°ªÀÌ VTCT_VERTEXÀÏ¶§
 
 			if(vtct == VTCT_GROUP)
 			{
@@ -2452,11 +2466,11 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 
 			if(vtct == VTCT_VERTEX)
 				mlod.mlod_aSkaTags.Expand( mlod.mlod_aSkaTags.Count() + surface.msrf_ctVertices );
-			else if(vtct == VTCT_TRIANGLE || vtct == VTCT_GROUP)	//í•­ìƒ í•˜ë‚˜ì˜ Tagë§Œ ì¶”ê°€.
+			else if(vtct == VTCT_TRIANGLE || vtct == VTCT_GROUP)	//Ç×»ó ÇÏ³ªÀÇ Tag¸¸ Ãß°¡.
 				mlod.mlod_aSkaTags.Expand( mlod.mlod_aSkaTags.Count() + 1 );
 				//mlod.mlod_aSkaTags.Expand( mlod.mlod_aSkaTags.Count() + INDEX(floorf(surface.msrf_ctVertices/3.0f)) );
 
-			INDEX checkTri = 1;	//í•˜ë‚˜ë§Œ ë§Œë“¤ê²Œë” ë³´ì¥.
+			INDEX checkTri = 1;	//ÇÏ³ª¸¸ ¸¸µé°Ô²û º¸Àå.
 			for(INDEX iVertex=surface.msrf_iFirstVertex; iVertex < surface.msrf_iFirstVertex+surface.msrf_ctVertices; ++iVertex)
 			{
 				if( (vtct == VTCT_TRIANGLE || vtct == VTCT_GROUP) && checkTri == 0) break;
@@ -2470,7 +2484,8 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 				if(mlod.mlod_aVertexWeights.Count() > 0)
 				{
 					MeshVertexWeightInfo &mvwi = mlod.mlod_aVertexWeights[ iVertex ];
-					for(INDEX index=0; index < 4 && mvwi.mvwi_aubWeights[index] > 0; ++index) NULL;
+					INDEX index;
+					for(index = 0; index < 4 && mvwi.mvwi_aubWeights[index] > 0; ++index) NULL;
 					ptrTag->SetBoneBlendValue(&mlod, index
 						, surface.msrf_aubRelIndexTable[ ( mlod.mlod_aVertexWeights[iVertex].mvwi_aubIndices[0] ) ]
 						, NormByteToFloat(mlod.mlod_aVertexWeights[ iVertex ].mvwi_aubWeights[0])
@@ -2517,7 +2532,7 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 				}
 			}
 		}
-		//Tagentë¥¼ ìƒì„±í•œë‹¤.
+		//Tagent¸¦ »ı¼ºÇÑ´Ù.
 		BOOL bHasTangent = FALSE;
 		if(mlod.mlod_aUVMaps.Count() > 0 && (bHaveTangentStream || _bSkaStudioApp))
 		{
@@ -2528,7 +2543,7 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 			}
 			else
 			{
-				ASSERT(FALSE && "Tagent ê³„ì‚°ì„ ìœ„í•´ì„œëŠ” Vertex ìœ„ì¹˜ì™€ ë…¸ë§, í…ìŠ¤ì³ ì¢Œí‘œ[0]ì˜ ìˆ˜ëŠ” ì¼ì¹˜í•´ì•¼ í•œë‹¤.");
+				ASSERT(FALSE && "Tagent °è»êÀ» À§ÇØ¼­´Â Vertex À§Ä¡¿Í ³ë¸», ÅØ½ºÃÄ ÁÂÇ¥[0]ÀÇ ¼ö´Â ÀÏÄ¡ÇØ¾ß ÇÑ´Ù.");
 			}
 		}
 
@@ -2538,9 +2553,8 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 			ctmvx = mlod.mlod_aVertices.Count();
 		}
 		
-		//-------------------- Loadingì€ ë, Vertex Buffer ìƒì„±ì€ ì‹œì‘ ---------------//
+		//-------------------- LoadingÀº ³¡, Vertex Buffer »ı¼ºÀº ½ÃÀÛ ---------------//
 		// Disable d3d access in second thread
-		CDisableAsyncProgress dap;
 		
 		// Create vertex buffers for meshlod
 		INDEX &iBufferID = mlod.mlod_iBufferBindID;
@@ -2562,7 +2576,7 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 		}
 		
 		// Get texcoord buffer ids
-		for(imuvm=0;imuvm<ctmuvm;imuvm++) 
+		for( imuvm = 0; imuvm < ctmuvm; imuvm++)
 		{
 			MeshUVMap &muvm = mlod.mlod_aUVMaps[imuvm];
 			muvm.muvm_iTexCoordBufferID = gfxGetVertexSubBufferID(iBufferID,GFX_VBA_TEX+imuvm);
@@ -2583,32 +2597,32 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 		// TEMP: Fill vertex buffers
 		GFXVertex *pavVertices = (GFXVertex*)gfxLockVertexSubBuffer(mlod.mlod_iVertexBufferID,0,ctmvx,GFX_WRITE);
 		memcpy(pavVertices,&mlod.mlod_aVertices[0],sizeof(GFXVertex)*ctmvx);
-		gfxUnlockVertexSubBuffer(mlod.mlod_iVertexBufferID);
+		gfxUnlockVertexSubBuffer(mlod.mlod_iVertexBufferID, 0);
 		
 		GFXNormal *panNormals  = (GFXNormal*)gfxLockNormalSubBuffer(mlod.mlod_iNormalBufferID,0,ctmvx,GFX_WRITE);
 		memcpy(panNormals,&mlod.mlod_aNormals[0],sizeof(GFXNormal)*ctmvx);
-		gfxUnlockNormalSubBuffer(mlod.mlod_iNormalBufferID);
+		gfxUnlockNormalSubBuffer(mlod.mlod_iNormalBufferID, 0);
 		
 		if(bHasWeights) 
 		{
 			GFXWeight *pawWeights = (GFXWeight*)gfxLockWeightSubBuffer(mlod.mlod_iWeightBufferID,0,ctmvx,GFX_WRITE);
 			memcpy(pawWeights,&mlod.mlod_aVertexWeights[0],sizeof(GFXWeight)*ctmvx);
-			gfxUnlockWeightSubBuffer(mlod.mlod_iWeightBufferID);
+			gfxUnlockWeightSubBuffer(mlod.mlod_iWeightBufferID, 0);
 		}
 		
-		for(imuvm=0;imuvm<ctmuvm;imuvm++) 
+		for( imuvm = 0; imuvm < ctmuvm; imuvm++)
 		{
 			const MeshUVMap &muvm = mlod.mlod_aUVMaps[imuvm];
 			GFXTexCoord *patcTexCoords = (GFXTexCoord*)gfxLockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID,0,ctmvx,GFX_WRITE);
 			memcpy(patcTexCoords,&muvm.muv_aTexCoords[0],sizeof(GFXTexCoord)*ctmvx);
-			gfxUnlockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID);
+			gfxUnlockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID, 0);
 		}
 		
 		if(bHasTangent)
 		{
 			GFXTangent *panTangents  = (GFXTangent*)gfxLockTangentSubBuffer(mlod.mlod_iTangentBufferID, 0, ctmvx, GFX_WRITE);
 			memcpy(panTangents, &mlod.mlod_aTangents[0], sizeof(GFXTangent)*ctmvx);
-			gfxUnlockTangentSubBuffer(mlod.mlod_iTangentBufferID);
+			gfxUnlockTangentSubBuffer(mlod.mlod_iTangentBufferID, 0);
 		}
 
 		extern BOOL _bKeepVertexArrays;
@@ -2632,7 +2646,7 @@ void CMesh::Read_t_new(CTStream *istrFile, BOOL bHasContext)
 
 void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Encode Data)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Encode Data)(0.1)
 	// Read size of mesh
 	SLONG slMeshSize = 0;
 	(*istrFile)>>slMeshSize;
@@ -2656,9 +2670,9 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 	// for each LOD in mesh
 	for(INDEX imlod=0;imlod<ctmlod;imlod++) 
 	{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		BOOL bHaveTangentStream = FALSE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		// expand mlod count for one 
 		MeshLOD &mlod = msh_aMeshLODs[imlod];
 		INDEX ctmvx;
@@ -2709,7 +2723,8 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 		// Create array of uvmaps
 		mlod.mlod_aUVMaps.New(ctmuvm);
 		// read uvmaps
-		for(INDEX imuvm=0;imuvm<ctmuvm;imuvm++) 
+		INDEX imuvm;
+		for( imuvm = 0; imuvm < ctmuvm; imuvm++ )
 		{
 			MeshUVMap &muvm = mlod.mlod_aUVMaps[imuvm];
 			// Read uvmap name
@@ -2798,11 +2813,11 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 				if(msrf.msrf_pShader!=NULL) 
 				{
 					// get shader description
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 					ShaderDesc *pshDesc;
 					msrf.msrf_pShader->GetShaderDesc(pshDesc);
 					ShaderDesc &shDesc = *pshDesc;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 					BOOL bParamsFailed = FALSE;
 					if(shDesc.sd_astrTextureNames.Count() != cttx) 
 					{
@@ -2825,7 +2840,7 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 						bParamsFailed = TRUE;
 					}
 					// if saved shader params do not match current shader params
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 					if(bParamsFailed) 
 					{
 						// Discard shader
@@ -2839,7 +2854,7 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 					{
 						if(!bParamsFailed) bHaveTangentStream = bHaveTangentStream || (shDesc.sd_ulStreamFlags[i] & GFX_TANGENT_STREAM);
 					}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 					/* check if saved params count match shader params count
 					if(shDesc.sd_astrTextureNames.Count() != cttx) ThrowF_t("File '%s'\nWrong texture count %d",(const char*)GetName(),cttx);
 					if(shDesc.sd_astrTexCoordNames.Count() != cttc) ThrowF_t("File '%s'\nWrong uvmaps count %d",(const char*)GetName(),cttc);
@@ -2967,9 +2982,9 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 			continue;
 		}
 		
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
-		//bmì„ ë¡œë”©í• ë•Œ ê·¸ ì´ë¦„ì„ í™•ì¸í•˜ì—¬ _TAG_ê°€ ì ‘ë‘ë¡œ ë“¤ì–´ê°€ ìˆìœ¼ë©´
-		//ê·¸ ëª¨ë“  vertexë¥¼ Ska Tagë¡œ ì¶”ê°€í•œë‹¤.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
+		//bmÀ» ·ÎµùÇÒ¶§ ±× ÀÌ¸§À» È®ÀÎÇÏ¿© _TAG_°¡ Á¢µÎ·Î µé¾î°¡ ÀÖÀ¸¸é
+		//±× ¸ğµç vertex¸¦ Ska Tag·Î Ãß°¡ÇÑ´Ù.
 		mlod.mlod_aSkaTags.Clear();
 		INDEX iSkaTag = 0;
 		for(INDEX iSurface=0; iSurface<mlod.mlod_aSurfaces.Count(); ++iSurface) 
@@ -2977,7 +2992,7 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 			MeshSurface &surface = mlod.mlod_aSurfaces[iSurface];
 			CTString strName = ska_IDToString(surface.msrf_iSurfaceID);
 			VERTEX_TAG_CONVERT_TYPE vtct = VTCT_VERTEX;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 			static CTString strTagIndicator(TAG_INDICATOR_STRING);
 			static CTString strTagVtxIndicator(TAG_V_INDICATOR_STRING);
 			static CTString strTagTriIndicator(TAG_T_INDICATOR_STRING);
@@ -2986,7 +3001,7 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 			if( strName.RemovePrefix(strTagVtxIndicator) ) vtct = VTCT_VERTEX;
 			else if( strName.RemovePrefix(strTagTriIndicator) ) vtct = VTCT_TRIANGLE;
 			else if( strName.RemovePrefix(strTagGrpIndicator) ) vtct = VTCT_GROUP;
-			else if( !strName.RemovePrefix(strTagIndicator) ) continue;	//ê¸°ë³¸ê°’ì´ VTCT_VERTEXì¼ë•Œ
+			else if( !strName.RemovePrefix(strTagIndicator) ) continue;	//±âº»°ªÀÌ VTCT_VERTEXÀÏ¶§
 
 			if(vtct == VTCT_GROUP)
 			{
@@ -3003,16 +3018,16 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 
 			if(vtct == VTCT_VERTEX)
 				mlod.mlod_aSkaTags.Expand( mlod.mlod_aSkaTags.Count() + surface.msrf_ctVertices );
-			else if(vtct == VTCT_TRIANGLE || vtct == VTCT_GROUP)	//í•­ìƒ í•˜ë‚˜ì˜ Tagë§Œ ì¶”ê°€.
+			else if(vtct == VTCT_TRIANGLE || vtct == VTCT_GROUP)	//Ç×»ó ÇÏ³ªÀÇ Tag¸¸ Ãß°¡.
 				mlod.mlod_aSkaTags.Expand( mlod.mlod_aSkaTags.Count() + 1 );
 				//mlod.mlod_aSkaTags.Expand( mlod.mlod_aSkaTags.Count() + INDEX(floorf(surface.msrf_ctVertices/3.0f)) );
 
-			INDEX checkTri = 1;	//í•˜ë‚˜ë§Œ ë§Œë“¤ê²Œë” ë³´ì¥.
+			INDEX checkTri = 1;	//ÇÏ³ª¸¸ ¸¸µé°Ô²û º¸Àå.
 			for(INDEX iVertex=surface.msrf_iFirstVertex; iVertex < surface.msrf_iFirstVertex+surface.msrf_ctVertices; ++iVertex)
 			{
 				if( (vtct == VTCT_TRIANGLE || vtct == VTCT_GROUP) && checkTri == 0) break;
 				--checkTri;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 				FLOAT3D		vTagPos;
 				FLOATquat3D	qTagRot;
 				MeshVertex &mv = mlod.mlod_aVertices[ iVertex ];
@@ -3022,7 +3037,8 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 				if(mlod.mlod_aVertexWeights.Count() > 0)
 				{
 					MeshVertexWeightInfo &mvwi = mlod.mlod_aVertexWeights[ iVertex ];
-					for(INDEX index=0; index < 4 && mvwi.mvwi_aubWeights[index] > 0; ++index) NULL;
+					INDEX index;
+					for(index = 0; index < 4 && mvwi.mvwi_aubWeights[index] > 0; ++index) NULL;
 					ptrTag->SetBoneBlendValue(&mlod, index
 						, surface.msrf_aubRelIndexTable[ ( mlod.mlod_aVertexWeights[iVertex].mvwi_aubIndices[0] ) ]
 						, NormByteToFloat(mlod.mlod_aVertexWeights[ iVertex ].mvwi_aubWeights[0])
@@ -3069,9 +3085,9 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 				}
 			}
 		}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
-		//Tagentë¥¼ ìƒì„±í•œë‹¤.
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+		//Tagent¸¦ »ı¼ºÇÑ´Ù.
 		BOOL bHasTangent = FALSE;
 		if(mlod.mlod_aUVMaps.Count() > 0 && (bHaveTangentStream || _bSkaStudioApp))
 		{
@@ -3082,7 +3098,7 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 			}
 			else
 			{
-				ASSERT(FALSE && "Tagent ê³„ì‚°ì„ ìœ„í•´ì„œëŠ” Vertex ìœ„ì¹˜ì™€ ë…¸ë§, í…ìŠ¤ì³ ì¢Œí‘œ[0]ì˜ ìˆ˜ëŠ” ì¼ì¹˜í•´ì•¼ í•œë‹¤.");
+				ASSERT(FALSE && "Tagent °è»êÀ» À§ÇØ¼­´Â Vertex À§Ä¡¿Í ³ë¸», ÅØ½ºÃÄ ÁÂÇ¥[0]ÀÇ ¼ö´Â ÀÏÄ¡ÇØ¾ß ÇÑ´Ù.");
 			}
 		}
 
@@ -3091,17 +3107,14 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 			CalcVertexTangent(mlod, 0);
 			ctmvx = mlod.mlod_aVertices.Count();
 		}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		
-		//-------------------- Loadingì€ ë, Vertex Buffer ìƒì„±ì€ ì‹œì‘ ---------------//
-		// Disable d3d access in second thread
-		CDisableAsyncProgress dap;
+		//-------------------- LoadingÀº ³¡, Vertex Buffer »ı¼ºÀº ½ÃÀÛ ---------------//
 		
-		// Create vertex buffers for meshlod
 		INDEX &iBufferID = mlod.mlod_iBufferBindID;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		if(bHasTangent) ulBufferFlags |= GFX_VBM_TAN;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		iBufferID = gfxCreateVertexBuffer(ctmvx,ulBufferFlags,ctmuvm,GFX_READWRITE);
 		ASSERT(iBufferID>=0);
 		
@@ -3119,60 +3132,60 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 		}
 		
 		// Get texcoord buffer ids
-		for(imuvm=0;imuvm<ctmuvm;imuvm++) 
+		for( imuvm = 0; imuvm < ctmuvm; imuvm++)
 		{
 			MeshUVMap &muvm = mlod.mlod_aUVMaps[imuvm];
 			muvm.muvm_iTexCoordBufferID = gfxGetVertexSubBufferID(iBufferID,GFX_VBA_TEX+imuvm);
 			ASSERT(muvm.muvm_iTexCoordBufferID>=0);
 		}
 		
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		if(bHasTangent)
 		{
 			mlod.mlod_iTangentBufferID = gfxGetVertexSubBufferID(iBufferID, GFX_VBA_TAN);
 			ASSERT(mlod.mlod_iTangentBufferID>=0);
 		}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 		ASSERT(sizeof(MeshVertex)==sizeof(GFXVertex));
 		ASSERT(sizeof(MeshNormal)==sizeof(GFXNormal));
 		ASSERT(sizeof(MeshTexCoord)==sizeof(GFXTexCoord));
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		ASSERT(sizeof(MeshTangent)==sizeof(GFXTangent));
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		
 		// TEMP: Fill vertex buffers
 		GFXVertex *pavVertices = (GFXVertex*)gfxLockVertexSubBuffer(mlod.mlod_iVertexBufferID,0,ctmvx,GFX_WRITE);
 		memcpy(pavVertices,&mlod.mlod_aVertices[0],sizeof(GFXVertex)*ctmvx);
-		gfxUnlockVertexSubBuffer(mlod.mlod_iVertexBufferID);
+		gfxUnlockVertexSubBuffer(mlod.mlod_iVertexBufferID, 0);
 		
 		GFXNormal *panNormals  = (GFXNormal*)gfxLockNormalSubBuffer(mlod.mlod_iNormalBufferID,0,ctmvx,GFX_WRITE);
 		memcpy(panNormals,&mlod.mlod_aNormals[0],sizeof(GFXNormal)*ctmvx);
-		gfxUnlockNormalSubBuffer(mlod.mlod_iNormalBufferID);
+		gfxUnlockNormalSubBuffer(mlod.mlod_iNormalBufferID, 0);
 		
 		if(bHasWeights) 
 		{
 			GFXWeight *pawWeights = (GFXWeight*)gfxLockWeightSubBuffer(mlod.mlod_iWeightBufferID,0,ctmvx,GFX_WRITE);
 			memcpy(pawWeights,&mlod.mlod_aVertexWeights[0],sizeof(GFXWeight)*ctmvx);
-			gfxUnlockWeightSubBuffer(mlod.mlod_iWeightBufferID);
+			gfxUnlockWeightSubBuffer(mlod.mlod_iWeightBufferID, 0);
 		}
 		
-		for(imuvm=0;imuvm<ctmuvm;imuvm++) 
+		for( imuvm = 0; imuvm < ctmuvm; imuvm++)
 		{
 			const MeshUVMap &muvm = mlod.mlod_aUVMaps[imuvm];
 			GFXTexCoord *patcTexCoords = (GFXTexCoord*)gfxLockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID,0,ctmvx,GFX_WRITE);
 			memcpy(patcTexCoords,&muvm.muv_aTexCoords[0],sizeof(GFXTexCoord)*ctmvx);
-			gfxUnlockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID);
+			gfxUnlockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID, 0);
 		}
 		
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		if(bHasTangent)
 		{
 			GFXTangent *panTangents  = (GFXTangent*)gfxLockTangentSubBuffer(mlod.mlod_iTangentBufferID, 0, ctmvx, GFX_WRITE);
 			memcpy(panTangents, &mlod.mlod_aTangents[0], sizeof(GFXTangent)*ctmvx);
-			gfxUnlockTangentSubBuffer(mlod.mlod_iTangentBufferID);
+			gfxUnlockTangentSubBuffer(mlod.mlod_iTangentBufferID, 0);
 		}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 		extern BOOL _bKeepVertexArrays;
 		// free vertex arrays if alowed
@@ -3180,9 +3193,9 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 		{
 			mlod.mlod_aVertices.Clear();
 			mlod.mlod_aNormals.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 			mlod.mlod_aTangents.Clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 			mlod.mlod_aVertexWeights.Clear();
 			const INDEX ctmuvm = mlod.mlod_aUVMaps.Count();
 			for(INDEX imuvm=0;imuvm<ctmuvm;imuvm++) 
@@ -3195,7 +3208,7 @@ void CMesh::Read_t_old(CTStream *istrFile, BOOL bHasContext)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Encode Data)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Encode Data)(0.1)
 // Write mesh to stream
 void CMesh::Write_t(CTStream *ostrFile)
 {
@@ -3291,11 +3304,11 @@ void CMesh::Write_t(CTStream *ostrFile)
 			if(bShaderExists) 
 			{
 				// get shader decription
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 				ShaderDesc *pshDesc;
 				msrf.msrf_pShader->GetShaderDesc(pshDesc);
 				ShaderDesc &shDesc = *pshDesc;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 				INDEX cttx=shDesc.sd_astrTextureNames.Count();
 				INDEX cttc=shDesc.sd_astrTexCoordNames.Count();
 				INDEX ctcol=shDesc.sd_astrColorNames.Count();
@@ -3405,7 +3418,7 @@ void CMesh::Write_t(CTStream *ostrFile)
 }
 
 void CMesh::Write_t_old(CTStream *ostrFile)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Encode Data)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Encode Data)(0.1)
 {
 	// write id
 	ostrFile->WriteID_t(CChunkID(MESH_ID));
@@ -3495,11 +3508,11 @@ void CMesh::Write_t_old(CTStream *ostrFile)
 			if(bShaderExists) 
 			{
 				// get shader decription
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 				ShaderDesc *pshDesc;
 				msrf.msrf_pShader->GetShaderDesc(pshDesc);
 				ShaderDesc &shDesc = *pshDesc;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 				INDEX cttx=shDesc.sd_astrTextureNames.Count();
 				INDEX cttc=shDesc.sd_astrTexCoordNames.Count();
 				INDEX ctcol=shDesc.sd_astrColorNames.Count();
@@ -3633,6 +3646,95 @@ void CMesh::Clear(void)
 	msh_aMeshLODs.Clear();
 }
 
+#ifdef KALYDO
+static void KCPMeshDownloaded(const char* fileName, TKResult result, void* id)
+{
+	switch (result)
+	{
+	case KR_OK:
+		{
+			SLS* pSLS = new SLS();
+			pSLS->pTarget = reinterpret_cast<CSerial*>(id);
+			pSLS->pTargetFilePath = fileName;
+			g_deqLoadData.push_back( pSLS );
+		}
+		break;
+	case KR_DOWNLOAD_FAILED:
+	case KR_FILE_CORRUPT:
+		krfRequestKCPFile(fileName, &KCPMeshDownloaded, id);
+	//default:
+		// unknown error!
+	}
+}
+
+void CMesh::Load_t(const CTFileName &fnFileName)
+{
+  ASSERT(!IsUsed());
+  // mark that you have changed
+  MarkChanged();
+  // ±Ùµ¥ ÀÌ°Ô È®½ÇÇÑ°¡?? È£Ãâ ¸ÅÄ¿´ÏÁòÀÇ Á¤È®ÇÑ ÇØ¸íÀÌ ÇÊ¿äÇÒ °Å °°´Ù.
+
+  TKResult tkResult = krfRequestKCPFile( fnFileName, NULL, NULL );
+  if( KR_OK == tkResult )
+  {
+	// open a stream
+	CTFileStream istrFile;
+	istrFile.Open_t(fnFileName);
+	// read object from stream
+	Read_t(&istrFile);
+	// if still here (no exceptions raised)
+	// remember filename
+	ser_FileName = fnFileName;
+  }
+  else
+  {
+	CPrintF("Request file to kcp : %s\n", fnFileName );
+	//?????????????
+	CTFileStream istrFile;
+	istrFile.Open_t( strDefaultMeshPath );
+	Read_t(&istrFile);
+	ser_FileName = fnFileName;
+	if( KR_FILE_NOT_AVAILABLE == tkResult )
+	{
+		MarkUsed();
+	}
+
+	tkResult = krfRequestKCPFile(fnFileName, &KCPMeshDownloaded, this);
+	if( KR_FILE_NOT_FOUND == tkResult )
+	{
+		CPrintF("[Load_t] Mesh File Not Found in kalydo...\n" );
+	}
+	else if( KR_IO_PENDING == tkResult )
+	{
+		CPrintF("[Load_t] Mesh File already request...\n" );
+	}
+	else
+	{
+		;
+	}
+  }  
+}
+
+
+
+void CMesh::Load_Delay_t(const CTFileName &fnFileName)
+{
+  // mark that you have changed
+  MarkChanged();
+  // ±Ùµ¥ ÀÌ°Ô È®½ÇÇÑ°¡?? È£Ãâ ¸ÅÄ¿´ÏÁòÀÇ Á¤È®ÇÑ ÇØ¸íÀÌ ÇÊ¿äÇÒ °Å °°´Ù.
+
+  //if( kfileExists( fnFileName ) )
+	// open a stream
+	CTFileStream istrFile;
+	istrFile.Open_t(fnFileName);
+	// read object from stream
+	Read_t(&istrFile);
+	// if still here (no exceptions raised)
+	// remember filename
+	ser_FileName = fnFileName;
+	MarkUnused();
+}
+#endif
 
 // Count used memory
 SLONG CMesh::GetUsedMemory(void)
@@ -3658,7 +3760,8 @@ SLONG CMesh::GetUsedMemory(void)
 		
 		// for each surface
 		INDEX ctmsrf = mlod.mlod_aSurfaces.Count();
-		for(INDEX imsrf=0;imsrf<ctmsrf;imsrf++) 
+		INDEX imsrf;
+		for( imsrf = 0; imsrf < ctmsrf; imsrf++ ) 
 		{
 			MeshSurface &msrf = mlod.mlod_aSurfaces[imsrf];
 			slMemoryUsed += sizeof(msrf);
@@ -3699,7 +3802,7 @@ CTString CMesh::GetDescription(void)
 }
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 
 static void FillWeightMapInfo(MeshLOD &mlod)
 {
@@ -3708,7 +3811,7 @@ static void FillWeightMapInfo(MeshLOD &mlod)
 	int surfaceCount = mlod.mlod_aSurfaces.Count();
 	for(int iBone=0; iBone<mlod.mlod_aWeightMaps.Count(); ++iBone)
 	{
-		mlod.mlod_aWeightMaps[iBone].mwm_aVertexWeight.Clear();	//ì¼ë‹¨ WeightMapì˜ ì •ë³´ë¥¼ ì§€ìš´ë‹¤.
+		mlod.mlod_aWeightMaps[iBone].mwm_aVertexWeight.Clear();	//ÀÏ´Ü WeightMapÀÇ Á¤º¸¸¦ Áö¿î´Ù.
 	}
 
 	for(int iSurface=0; iSurface<surfaceCount; ++iSurface)
@@ -3718,17 +3821,17 @@ static void FillWeightMapInfo(MeshLOD &mlod)
 		{
 			for(int iBPV=0; iBPV<MAX_BPV; ++iBPV)
 			{
-				if(mlod.mlod_aVertexWeights[iVertex].mvwi_aubWeights[iBPV] < 1) continue;					//weightê°€ 0ì¸ boneì€ ì˜ë¯¸ê°€ ì—†ë‹¤.
+				if(mlod.mlod_aVertexWeights[iVertex].mvwi_aubWeights[iBPV] < 1) continue;					//weight°¡ 0ÀÎ boneÀº ÀÇ¹Ì°¡ ¾ø´Ù.
 				
-				MeshVertexWeight insertVal;	//WeightMapì— ì¶”ê°€í•  ì •ë³´
+				MeshVertexWeight insertVal;	//WeightMap¿¡ Ãß°¡ÇÒ Á¤º¸
 				insertVal.mww_iVertex = iVertex;
 				insertVal.mww_fWeight = mlod.mlod_aVertexWeights[iVertex].mvwi_aubWeights[iBPV] / 255.0f;
 
-				int relIndex = mlod.mlod_aVertexWeights[iVertex].mvwi_aubIndices[iBPV];				//vertex weightì—ì„œ ì“°ì´ëŠ” ë³¸ì˜ ìƒëŒ€ì ì¸ ì¸ë±ìŠ¤
-				int absIndex = mlod.mlod_aSurfaces[iSurface].msrf_aubRelIndexTable[relIndex];		//surfaceì˜ index tableì— ì ˆëŒ€ ì¸ë±ìŠ¤ê°€ ë“¤ì–´ìˆë‹¤.GetRelativeWeightIndex()ì°¸ê³ 
+				int relIndex = mlod.mlod_aVertexWeights[iVertex].mvwi_aubIndices[iBPV];				//vertex weight¿¡¼­ ¾²ÀÌ´Â º»ÀÇ »ó´ëÀûÀÎ ÀÎµ¦½º
+				int absIndex = mlod.mlod_aSurfaces[iSurface].msrf_aubRelIndexTable[relIndex];		//surfaceÀÇ index table¿¡ Àı´ë ÀÎµ¦½º°¡ µé¾îÀÖ´Ù.GetRelativeWeightIndex()Âü°í
 
 				int vertexWeightCount = mlod.mlod_aWeightMaps[absIndex].mwm_aVertexWeight.Count();
-				mlod.mlod_aWeightMaps[absIndex].mwm_aVertexWeight.Expand( vertexWeightCount+1 );	//ëŠ˜ë¦¬ê³  ì¶”ê°€.
+				mlod.mlod_aWeightMaps[absIndex].mwm_aVertexWeight.Expand( vertexWeightCount+1 );	//´Ã¸®°í Ãß°¡.
 				mlod.mlod_aWeightMaps[absIndex].mwm_aVertexWeight[ vertexWeightCount ] = insertVal;
 			}
 		}
@@ -3739,7 +3842,7 @@ static MeshTangent MakeMeshTangent(double *normal, double *tangent, double *bino
 {
 	DcVecNormalizeD(tangent);
 	DcVecNormalizeD(binormal);
-	//transform for tangent spaceì˜ í–‰ë ¬ì‹ì˜ determinentë¥¼ ì´ìš©í•´ì•¼ í•œë‹¤.
+	//transform for tangent spaceÀÇ Çà·Ä½ÄÀÇ determinent¸¦ ÀÌ¿ëÇØ¾ß ÇÑ´Ù.
 /*
 	double det =  tangent[0] * binormal[1] * normal[2]
 				+ tangent[1] * binormal[2] * normal[0]
@@ -3749,9 +3852,9 @@ static MeshTangent MakeMeshTangent(double *normal, double *tangent, double *bino
 				- tangent[1] * binormal[0] * normal[2];
 	det = (float)(det >= 0 ? +1 : -1);
 	MeshTangent result( (float)tangent[0], (float)tangent[1], (float)tangent[2], det );
-*///tangent ì‚¬ìš©ì‹œ
+*///tangent »ç¿ë½Ã
 
-	//binormal ì‚¬ìš©ì‹œ
+	//binormal »ç¿ë½Ã
 	MeshTangent result;
 	result.bx = (float)binormal[0];
 	result.by = (float)binormal[1];
@@ -3763,18 +3866,19 @@ static MeshTangent MakeMeshTangent(double *normal, double *tangent, double *bino
 }
 
 #include <Engine/Ska/NmFileIO.h>
-//ì ì–´ë„ í•œê°œì˜ ì‚¼ê°í˜•ì´ ì¡´ì¬í•˜ê³  position, normal, í•œê°œì´ìƒì˜ texcoordë¥¼ ê°€ì ¸ì•¼ í•œë‹¤.
-//texCoordForTangentì˜ ê°’ì€ NormalMapì„ ì–´ë–¤ ì¢Œí‘œì— ë§ê²Œ ë½‘ì•˜ëŠ”ì§€ì— ë”°ë¼ ë‹¬ë¼ì§ˆê²ƒì´ë‹¤.
-//í˜„ì¬ 0ìœ¼ë¡œ fixí•´ë†“ê³  ì“°ë‚˜ ë‹¤ë¥¸ ê°’ì„ ë„£ì–´ë„ ë¬´ë°©í•˜ë‹¤.(í˜„ì¬ëŠ” í•˜ë“œì½”ë”©ìœ¼ë¡œ í•´ì•¼í•¨.
+//Àû¾îµµ ÇÑ°³ÀÇ »ï°¢ÇüÀÌ Á¸ÀçÇÏ°í position, normal, ÇÑ°³ÀÌ»óÀÇ texcoord¸¦ °¡Á®¾ß ÇÑ´Ù.
+//texCoordForTangentÀÇ °ªÀº NormalMapÀ» ¾î¶² ÁÂÇ¥¿¡ ¸Â°Ô »Ì¾Ò´ÂÁö¿¡ µû¶ó ´Ş¶óÁú°ÍÀÌ´Ù.
+//ÇöÀç 0À¸·Î fixÇØ³õ°í ¾²³ª ´Ù¸¥ °ªÀ» ³Ö¾îµµ ¹«¹æÇÏ´Ù.(ÇöÀç´Â ÇÏµåÄÚµùÀ¸·Î ÇØ¾ßÇÔ.
 static void CalcVertexTangent(MeshLOD &mlod, int texCoordForTangent)
 {
 	if(mlod.mlod_aVertices.Count() < 3 || mlod.mlod_aNormals.Count() < 3 || mlod.mlod_aUVMaps.Count() < 1)
 	{
-		ASSERTALWAYS("ì£¼ì–´ì§„ MeshLODë¡œëŠ” TANGENTë¥¼ ë§Œë“¤ ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ì…ë ¥ì¸ìê°€ ë¶€ì¡±í•©ë‹ˆë‹¤.");
+		ASSERTALWAYS("ÁÖ¾îÁø MeshLOD·Î´Â TANGENT¸¦ ¸¸µé ¼ö ¾ø½À´Ï´Ù. ÀÔ·ÂÀÎÀÚ°¡ ºÎÁ·ÇÕ´Ï´Ù.");
 	}
 	
 	int iSurf = 0;
 	int cntVertInLOD = 0;
+	int iUV;
 	MeshLOD mlodNew;
 	mlodNew.mlod_aUVMaps.New(mlod.mlod_aUVMaps.Count());
 	mlodNew.mlod_aSurfaces.New(mlod.mlod_aSurfaces.Count());
@@ -3787,12 +3891,12 @@ static void CalcVertexTangent(MeshLOD &mlod, int texCoordForTangent)
 	mlodNew.mlod_aNormals.New(0);
 	mlodNew.mlod_aTangents.New(0);
 	mlodNew.mlod_aVertexWeights.New(0);
-	for(int iUV=0; iUV<mlod.mlod_aUVMaps.Count(); ++iUV)
+	for( iUV = 0; iUV < mlod.mlod_aUVMaps.Count(); ++iUV )
 	{
 		mlodNew.mlod_aUVMaps[iUV].muv_aTexCoords.New(0);
 	}
 
-	//Tagent Space ê³„ì‚°ì„ ìœ„í•´ ë°ì´í„°ë¥¼ ì •ë¦¬í•œë‹¤.
+	//Tagent Space °è»êÀ» À§ÇØ µ¥ÀÌÅÍ¸¦ Á¤¸®ÇÑ´Ù.
 	for(iSurf=0; iSurf<mlod.mlod_aSurfaces.Count(); ++iSurf)
 	{
 		int cntTri = mlod.mlod_aSurfaces[iSurf].msrf_auwTriangles.Count();
@@ -3845,17 +3949,17 @@ static void CalcVertexTangent(MeshLOD &mlod, int texCoordForTangent)
 				}
 			}
 		}
-		//Tangent Spaceë¥¼ ê³„ì‚°í•œë‹¤.
+		//Tangent Space¸¦ °è»êÇÑ´Ù.
 		NmCreateVertexBuffers(cntTri, trisData
 			, &numVertsRet, &vertsRet, &indicesRet
 			, mlod.mlod_aUVMaps.Count(), texCoordForTangent);
 
-		//ë‹¤ì‹œ MeshLODìª½ìœ¼ë¡œ ê³„ì‚°ëœ ê²°ê³¼ë¥¼ ì €ì¥í•œë‹¤.
+		//´Ù½Ã MeshLODÂÊÀ¸·Î °è»êµÈ °á°ú¸¦ ÀúÀåÇÑ´Ù.
 		mlodNew.mlod_aVertices.Expand(cntVertInLOD + numVertsRet);
 		mlodNew.mlod_aNormals.Expand(cntVertInLOD + numVertsRet);
 		mlodNew.mlod_aTangents.Expand(cntVertInLOD + numVertsRet);
 		mlodNew.mlod_aVertexWeights.Expand(cntVertInLOD + numVertsRet);
-		for(int iUV=0; iUV<mlod.mlod_aUVMaps.Count(); ++iUV)
+		for( iUV = 0; iUV < mlod.mlod_aUVMaps.Count(); ++iUV )
 		{
 			mlodNew.mlod_aUVMaps[iUV].muv_aTexCoords.Expand(cntVertInLOD + numVertsRet);
 		}
@@ -3869,7 +3973,7 @@ static void CalcVertexTangent(MeshLOD &mlod, int texCoordForTangent)
 			mlodNew.mlod_aNormals[cntVertInLOD+k].ny = (float)vertsRet[k].normal[1];
 			mlodNew.mlod_aNormals[cntVertInLOD+k].nz = (float)vertsRet[k].normal[2];
 			mlodNew.mlod_aTangents[cntVertInLOD+k] = MakeMeshTangent(vertsRet[k].normal, vertsRet[k].tangent, vertsRet[k].binormal);
-			for(int iUV=0; iUV<mlod.mlod_aUVMaps.Count(); ++iUV)
+			for( iUV = 0; iUV < mlod.mlod_aUVMaps.Count(); ++iUV )
 			{
 				mlodNew.mlod_aUVMaps[iUV].muv_aTexCoords[cntVertInLOD+k].u = (float)vertsRet[k].u[iUV];
 				mlodNew.mlod_aUVMaps[iUV].muv_aTexCoords[cntVertInLOD+k].v = (float)vertsRet[k].v[iUV];
@@ -3886,7 +3990,7 @@ static void CalcVertexTangent(MeshLOD &mlod, int texCoordForTangent)
 				mlodNew.mlod_aVertexWeights[cntVertInLOD+k].mvwi_aubWeights[3] = vertsRet[k].weights[3];
 			}
 		}
-		//ì‚¼ê°í˜• ì¸ë±ìŠ¤ ì €ì¥
+		//»ï°¢Çü ÀÎµ¦½º ÀúÀå
 		mlodNew.mlod_aSurfaces[iSurf].msrf_iFirstVertex = cntVertInLOD;
 		mlodNew.mlod_aSurfaces[iSurf].msrf_ctVertices = numVertsRet;
 		for(int j=0; j<mlodNew.mlod_aSurfaces[iSurf].msrf_auwTriangles.Count(); ++j)
@@ -3904,7 +4008,7 @@ static void CalcVertexTangent(MeshLOD &mlod, int texCoordForTangent)
 	mlod.mlod_aVertices = mlodNew.mlod_aVertices;
 	mlod.mlod_aNormals = mlodNew.mlod_aNormals;
 	mlod.mlod_aTangents = mlodNew.mlod_aTangents;
-	for(iUV=0; iUV<mlod.mlod_aUVMaps.Count(); ++iUV)
+	for( iUV = 0; iUV < mlod.mlod_aUVMaps.Count(); ++iUV )
 	{
 		mlod.mlod_aUVMaps[iUV].muv_aTexCoords = mlodNew.mlod_aUVMaps[iUV].muv_aTexCoords;
 	}
@@ -3916,11 +4020,11 @@ static void CalcVertexTangent(MeshLOD &mlod, int texCoordForTangent)
 		mlod.mlod_aSurfaces[iSurf].msrf_auwTriangles = mlodNew.mlod_aSurfaces[iSurf].msrf_auwTriangles;
 	}
 	
-	//ìŠ¤í‚¤ë‹ ê´€ë ¨ ì •ë³´ì˜ ì €ì¥
+	//½ºÅ°´× °ü·Ã Á¤º¸ÀÇ ÀúÀå
 	if(mlod.mlod_aVertexWeights.Count() > 0 && mlod.mlod_aWeightMaps.Count() > 0)
 	{
 		FillWeightMapInfo(mlod);
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 

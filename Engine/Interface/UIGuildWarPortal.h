@@ -10,12 +10,12 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UIListBox.h>
-#include <map>
-#include <Engine/Effect/CEffectGroupManager.h>
-#include <Engine/Effect/CEffectGroup.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <map>
+// #include <Engine/Effect/CEffectGroupManager.h>
+// #include <Engine/Effect/CEffectGroup.h>
 
 // Define text position
 #define	GUILDWARPORTAL_TITLE_TEXT_OFFSETX		25
@@ -48,17 +48,17 @@ protected:
 	int						m_iClientNPCIndex;
 	
 	std::vector<CUIButton>	m_vectorResourceList;
-	int						m_bPrePortal;					// ì´ë™ì „ì¸ ìƒíƒœ 
+	int						m_bPrePortal;					// ÀÌµ¿ÀüÀÎ »óÅÂ 
 	int						m_nPortal;						// 
 
-	LONG					m_lLeftTime;				// ê³µì„± ì§„í–‰ ì‹œê°„ 
-	TIME					m_tmLeftTime;				// ê³µì„± ë‚¨ì€ ì‹œê°„ 
+	LONG					m_lLeftTime;				// °ø¼º ÁøÇà ½Ã°£ 
+	TIME					m_tmLeftTime;				// °ø¼º ³²Àº ½Ã°£ 
 
 	int m_nNpcType;
 	std::map<SLONG, CEffectGroup *> m_mapEG;
 
 	// WSS_DRATAN_SEIGEWARFARE 2007/08/07
-	int						m_btNpcAvailable;			// ë“œë¼íƒ„ ê³µì„± ì‚¬ìš© ê°€ëŠ¥ íƒ€ì›Œ(bit flag)
+	int						m_btNpcAvailable;			// µå¶óÅº °ø¼º »ç¿ë °¡´É Å¸¿ö(bit flag)
 	int						m_nSelPotalIdx;
 		
 public:
@@ -75,7 +75,7 @@ public:
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
-	void	PortalCancel(  BOOL bMessage = TRUE );	// ì›Œí”„ ì¤‘ì¸ ìƒíƒœë¥¼ ì·¨ì†Œí•œë‹¤.
+	void	PortalCancel(  BOOL bMessage = TRUE );	// ¿öÇÁ ÁßÀÎ »óÅÂ¸¦ Ãë¼ÒÇÑ´Ù.
 	void	PrePortal( int nPotal );
 	void	ResetGuildWarPortal();
 	

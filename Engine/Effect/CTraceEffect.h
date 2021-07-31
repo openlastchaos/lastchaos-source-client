@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CTRACEEFFECT_H__
 #define __CTRACEEFFECT_H__
 
@@ -30,10 +30,10 @@ public:
 
 	//NEW_DELETE_DEFINITION(CTraceEffect);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	virtual void Read(CTStream *istrFile);
 	virtual void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	
 	virtual void Start(FLOAT time, BOOL restart = FALSE);
 	virtual BOOL Process(FLOAT time);
@@ -76,29 +76,29 @@ protected:
 	
 protected:
 	//content variable
-	CTFileName			m_strTextureFileName;	//textureì˜ íŒŒì¼ ì´ë¦„
-	COLOR				m_colTraceBegin;		//traceê°€ ì‹œì‘ë˜ëŠ” ë¶€ë¶„ì˜ ìƒ‰ê¹”
-	COLOR				m_colTraceEnd;			//traceê°€ ëë‚˜ëŠ” ë¶€ë¶„ì˜ ìƒ‰ê¹”
-	FLOAT				m_fTraceTime;			//traceë˜ëŠ” ì‹œê°„
-	FLOAT				m_fTimeInterval;		//traceë˜ëŠ” ê°„ê²©, ì‹œì‘ë¶€ë¶„ì€ í•­ìƒ ë¨.
-	FLOAT				m_fTwinklePeriod;		//ì „ì²´ì˜ ì•ŒíŒŒë¥¼ ì¼ì •ê°„ê²©ìœ¼ë¡œ ì¡°ì •.
-	BOOL				m_bCapEnd;				//ëë¶€ë¶„ì„ ë´‰í•©í•œë‹¤.
+	CTFileName			m_strTextureFileName;	//textureÀÇ ÆÄÀÏ ÀÌ¸§
+	COLOR				m_colTraceBegin;		//trace°¡ ½ÃÀÛµÇ´Â ºÎºĞÀÇ »ö±ò
+	COLOR				m_colTraceEnd;			//trace°¡ ³¡³ª´Â ºÎºĞÀÇ »ö±ò
+	FLOAT				m_fTraceTime;			//traceµÇ´Â ½Ã°£
+	FLOAT				m_fTimeInterval;		//traceµÇ´Â °£°İ, ½ÃÀÛºÎºĞÀº Ç×»ó µÊ.
+	FLOAT				m_fTwinklePeriod;		//ÀüÃ¼ÀÇ ¾ËÆÄ¸¦ ÀÏÁ¤°£°İÀ¸·Î Á¶Á¤.
+	BOOL				m_bCapEnd;				//³¡ºÎºĞÀ» ºÀÇÕÇÑ´Ù.
 	PredefinedBlendType	m_eBlendType;
 	//instance variable
 	static ULONG		m_ulVertexProgramNoTex;
 	static ULONG		m_ulPixelProgramNoTex;
 	static ULONG		m_ulVertexProgramTex;
 	static ULONG		m_ulPixelProgramTex;
-	INDEX				m_iTraceCount;			//traceë˜ëŠ” ì‹œê°„ê³¼ ê°„ê²©ì„ ê³ ë ¤í•œ ê°’
-	CTextureData		*m_ptdTexture;			//ì‹¤ì œ ë¡œë”©ëœ texture
-	vector_index		m_vectorIndex;			//ê·¸ë ¤ì§ˆ triì˜ indexë“¤
-	vector_pos			m_vectorPos;			//ê·¸ë ¤ì§ˆ vertexì˜ pos
-	vector_color		m_vectorColor;			//ê·¸ë ¤ì§ˆ vertexì˜ color
-	vector_texcoord		m_vectorTexCoord;		//ê·¸ë ¤ì§ˆ vertexì˜ texure ì¢Œí‘œ, ë‹¨ textureê°€ ì„¸íŒ…ëœ ê²½ìš°ë§Œ ì¡´ì¬.
-	vector_time			m_vectorAddTime;		//vertexê°€ ì¶”ê°€ëœ ì‹œê°„ì„ í‘œì‹œí•œë‹¤.
-	FLOAT				m_fTwinkleValue;		//ë°˜ì§ë°˜ì§ê°’, ë§¤í”„ë ˆì„ë§ˆë‹¤ ê³„ì‚°ë¨.
+	INDEX				m_iTraceCount;			//traceµÇ´Â ½Ã°£°ú °£°İÀ» °í·ÁÇÑ °ª
+	CTextureData		*m_ptdTexture;			//½ÇÁ¦ ·ÎµùµÈ texture
+	vector_index		m_vectorIndex;			//±×·ÁÁú triÀÇ indexµé
+	vector_pos			m_vectorPos;			//±×·ÁÁú vertexÀÇ pos
+	vector_color		m_vectorColor;			//±×·ÁÁú vertexÀÇ color
+	vector_texcoord		m_vectorTexCoord;		//±×·ÁÁú vertexÀÇ texure ÁÂÇ¥, ´Ü texture°¡ ¼¼ÆÃµÈ °æ¿ì¸¸ Á¸Àç.
+	vector_time			m_vectorAddTime;		//vertex°¡ Ãß°¡µÈ ½Ã°£À» Ç¥½ÃÇÑ´Ù.
+	FLOAT				m_fTwinkleValue;		//¹İÂ¦¹İÂ¦°ª, ¸ÅÇÁ·¹ÀÓ¸¶´Ù °è»êµÊ.
 	INDEX				m_iTagCount;
 };
 
 #endif //__CTRACEEFFECT_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

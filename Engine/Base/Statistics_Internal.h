@@ -77,15 +77,15 @@ public:
     STI_MODELRENDERING,
     STI_PARTICLERENDERING,
     STI_FLARESRENDERING,
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘			03.04
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ			03.04
 	STI_SHADOWRENDERING,
-//ê°•ë™ë¯¼ ìˆ˜ì • ë			03.04
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ Water êµ¬í˜„		04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡			03.04
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
 	STI_WATERRENDERING,
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add & Modify SSSE Effect)(0.1)
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
     STI_EFFECT,			//Effect Process and Render
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
     STI_EFFECTRENDER,	//Effect Texture Render
     STI_SOUNDUPDATE,
     STI_SOUNDMIXING,
@@ -111,9 +111,9 @@ public:
     SCI_POLYGONEDGES,
     SCI_EDGETRANSITIONS,
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷	06.29
 	SCI_REFLECTION_TRI,
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷		06.29
 
     SCI_SOUNDSPLAYING,
     SCI_SOUNDSPENDING,
@@ -145,14 +145,14 @@ public:
     SCI_SKATRIANGLES_USEDMIP,
     SCI_SKATRIANGLES_FIRSTMIP,
     SCI_GFXVERTICES,
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷	06.29
 	SCI_REFLECTION_VERTICE,
 	SCI_REFLECTION_SKATRI,
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷		06.29
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	SCI_DPCOUNT,
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
     SCI_COUNT
   };
 

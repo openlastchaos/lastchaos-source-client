@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 // CSkaTag.cpp
 //
 
@@ -98,7 +98,7 @@ void CSkaTag::AddNewTagInfo(FLOAT time, const Matrix12 &matBlend1, const Matrix1
 	ASSERT(BONE_BLEND_TWO == m_iParentBoneCount);
 	ASSERT( FLOAT_SAME(m_fParentBoneWeights[0] + m_fParentBoneWeights[1], 1.0f) );
 
-	//CTagì˜ ì½”ë“œì— ê¸°ë°˜í•˜ì—¬ ê° ë³¸ë³„ ê³„ì‚°
+	//CTagÀÇ ÄÚµå¿¡ ±â¹İÇÏ¿© °¢ º»º° °è»ê
 	CTag::AddNewTagInfo(time, matBlend1, matStrBlend1);
 	TagInfo tiBlend1 = CTag::CurrentTagInfo();
 	CTag::AddNewTagInfo(time, matBlend2, matStrBlend2);
@@ -121,7 +121,7 @@ void CSkaTag::AddNewTagInfo(FLOAT time, const Matrix12 &matBlend1, const Matrix1
 	ASSERT(BONE_BLEND_THREE == m_iParentBoneCount);
 	ASSERT( FLOAT_SAME(m_fParentBoneWeights[0] + m_fParentBoneWeights[1] + m_fParentBoneWeights[2], 1.0f) );
 
-	//CTagì˜ ì½”ë“œì— ê¸°ë°˜í•˜ì—¬ ê° ë³¸ë³„ ê³„ì‚°
+	//CTagÀÇ ÄÚµå¿¡ ±â¹İÇÏ¿© °¢ º»º° °è»ê
 	CTag::AddNewTagInfo(time, matBlend1, matStrBlend1);
 	TagInfo tiBlend1 = CTag::CurrentTagInfo();
 	CTag::AddNewTagInfo(time, matBlend2, matStrBlend2);
@@ -157,7 +157,7 @@ void CSkaTag::AddNewTagInfo(FLOAT time, const Matrix12 &matBlend1, const Matrix1
 	ASSERT(BONE_BLEND_FOUR == m_iParentBoneCount);
 	ASSERT( FLOAT_SAME(m_fParentBoneWeights[0] + m_fParentBoneWeights[1] + m_fParentBoneWeights[2] + m_fParentBoneWeights[3], 1.0f) );
 
-	//CTagì˜ ì½”ë“œì— ê¸°ë°˜í•˜ì—¬ ê° ë³¸ë³„ ê³„ì‚°
+	//CTagÀÇ ÄÚµå¿¡ ±â¹İÇÏ¿© °¢ º»º° °è»ê
 	CTag::AddNewTagInfo(time, matBlend1, matStrBlend1);
 	TagInfo tiBlend1 = CTag::CurrentTagInfo();
 	CTag::AddNewTagInfo(time, matBlend2, matStrBlend2);
@@ -194,4 +194,4 @@ void CSkaTag::AddNewTagInfo(FLOAT time, const Matrix12 &matBlend1, const Matrix1
 
 	CTag::AddNewTagInfo(tiBlend1);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

@@ -11,6 +11,12 @@
 #include <Engine/Sound/SoundObject.h>
 
 #include <Engine/Templates/Stock_CSoundData.h>
+#include <Engine/Base/MemoryTracking.h>
+
+#ifdef KALYDO
+#include <Kalydo/KRFReadLib/Include/KRFReadLib.h>
+CTString CSoundData::strDefaultSoundPath = "data\\defaults\\default.wav";
+#endif
 
 #define SD_ENCHEADERSIZE 16*1024 // header size for sound decoder
 
@@ -172,6 +178,141 @@ void CSoundData::Clear(void)
   ClearBuffer();
 }
 
+#ifdef KALYDO
+static void KCPSoundDownloaded(const char* fileName, TKResult result, void* id)
+{
+	switch (result)
+	{
+	case KR_OK:
+		{
+	// 		((CSerial*)id)->Clear();
+	// 		((CSerial*)id)->Load_t( CTFileName( fileName ) );
+			SLS* pSLS = new SLS();
+			pSLS->pTarget = reinterpret_cast<CSerial*>(id);
+			pSLS->pTargetFilePath = fileName;
+			g_deqLoadData.push_back( pSLS );
+		}
+		break;
+	case KR_DOWNLOAD_FAILED:
+	case KR_FILE_CORRUPT:
+		krfRequestKCPFile(fileName, &KCPSoundDownloaded, id);
+	//default:
+		// unknown error!
+	}
+}
+
+void CSoundData::Load_t(const CTFileName &fnFileName)
+{
+  ASSERT(!IsUsed());
+  // mark that you have changed
+  MarkChanged();
+  // ±Ùµ¥ ÀÌ°Ô È®½ÇÇÑ°¡?? È£Ãâ ¸ÅÄ¿´ÏÁòÀÇ Á¤È®ÇÑ ÇØ¸íÀÌ ÇÊ¿äÇÒ °Å °°´Ù.
+
+  TKResult tkResult = krfRequestKCPFile( fnFileName, NULL, NULL );
+  if( KR_OK == tkResult )
+  {
+	// open a stream
+	CTFileStream istrFile;
+	istrFile.Open_t(fnFileName);
+	// read object from stream
+	Read_t(&istrFile);
+	// if still here (no exceptions raised)
+	// remember filename
+	ser_FileName = fnFileName;
+  }
+  else
+  {
+	CPrintF("Request file to kcp : %s\n", fnFileName );
+	//?????????????
+	CTFileStream istrFile;
+	istrFile.Open_t( strDefaultSoundPath );
+	Read_t(&istrFile);
+	ser_FileName = fnFileName;
+	// À§ÂÊ¿¡¼­ ¿äÃ»ÇÏ¸é¼­ ÀÌ¹Ì Ã³¸®µÊ.
+	if( KR_FILE_NOT_AVAILABLE == tkResult )
+	{
+		MarkUsed();
+	}
+	tkResult = krfRequestKCPFile(fnFileName, &KCPSoundDownloaded, this);
+	if( KR_FILE_NOT_FOUND == tkResult )
+	{
+		CPrintF("[Load_t] Sound File Not Found in kalydo...\n" );
+	}
+	else if( KR_IO_PENDING == tkResult )
+	{
+		CPrintF("[Load_t] Sound File already request...\n" );
+	}
+	else
+	{
+		;
+	}
+  }  
+}
+
+void CSoundData::Load_Delay_t(const CTFileName &fnFileName)
+{
+  // mark that you have changed
+  MarkChanged();
+  // ±Ùµ¥ ÀÌ°Ô È®½ÇÇÑ°¡?? È£Ãâ ¸ÅÄ¿´ÏÁòÀÇ Á¤È®ÇÑ ÇØ¸íÀÌ ÇÊ¿äÇÒ °Å °°´Ù.
+
+  //if( kfileExists( fnFileName ) )
+	// open a stream
+	CTFileStream istrFile;
+	istrFile.Open_t(fnFileName);
+	// read object from stream
+	Read_t(&istrFile);
+	// if still here (no exceptions raised)
+	// remember filename
+	ser_FileName = fnFileName;
+	MarkUnused();
+}
+
+void CSoundData::Reload(void)
+{
+	/* if not found, */
+	TRACKMEM(Mem, strrchr((const char*)ser_FileName, '.'));
+
+	// mark that you have changed
+	MarkChanged();
+
+	CTFileName fnmOldName = ser_FileName;
+	Clear();
+
+	TKResult tkResult = krfRequestKCPFile( fnmOldName, NULL, NULL );
+	if( KR_OK == tkResult )
+	{
+		// try to
+		try {
+		  // open a stream
+		  CTFileStream istrFile;
+		  istrFile.Open_t(fnmOldName);
+		  // read object from stream
+		  Read_t(&istrFile);
+
+		// if there is some error while reloading
+		} catch (char *strError) {
+		  // quit the application with error explanation
+		  FatalError(TRANS("Cannot reload file '%s':\n%s"), (CTString&)fnmOldName, strError);
+		}
+
+		// if still here (no exceptions raised)
+		// remember filename
+		ser_FileName = fnmOldName;
+	}
+	else
+	{
+		// it is already request in load_t()
+		CPrintF("Request file to kcp : %s\n", fnmOldName );
+		//?????????????
+		CTFileStream istrFile;
+		istrFile.Open_t( strDefaultSoundPath );
+		Read_t(&istrFile);
+		ser_FileName = fnmOldName;
+	}
+}
+
+#endif
+
 
 // check if this kind of objects is auto-freed
 BOOL CSoundData::IsAutoFreed(void)
@@ -251,7 +392,7 @@ void CSoundData::LoadWAV_t( CTStream *inFile, SLONG slMaxSampleRate)
     inFile->Seek_t( slSkipSize, CTStream::SD_CUR);
     cID = inFile->GetID_t();
   }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For New Snd Format)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For New Snd Format)(0.1)
   if(cID == CChunkID("cue "))
   {
 	  SLONG slSkipSize;
@@ -259,7 +400,7 @@ void CSoundData::LoadWAV_t( CTStream *inFile, SLONG slMaxSampleRate)
 		inFile->Seek_t(slSkipSize, CTStream::SD_CUR);
 		cID = inFile->GetID_t();
   }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For New Snd Format)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For New Snd Format)(0.1)
 
   // read data length (in bytes)
   ULONG ulDataLength;

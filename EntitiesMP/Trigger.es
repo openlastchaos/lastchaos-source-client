@@ -7,22 +7,24 @@ extern INDEX ent_bReportBrokenChains;
 class CTrigger: CRationalEntity {
 name      "Trigger";
 thumbnail "Thumbnails\\Trigger.tbn";
-features  "HasName", "IsTargetable";
+features  "HasName", "IsTargetable", "HasRaidObject", "RaidEvent";
 
 properties:
-
-  1 CTString m_strName              "Name" 'N' = "Trigger",         // class name
-
-  3 CEntityPointer m_penTarget1     "Target 01" 'T' COLOR(C_RED|0xFF),                 // send event to entity
-  4 CEntityPointer m_penTarget2     "Target 02" 'Y' COLOR(C_RED|0xFF),
-  5 CEntityPointer m_penTarget3     "Target 03" 'U' COLOR(C_RED|0xFF),
-  6 CEntityPointer m_penTarget4     "Target 04" 'I' COLOR(C_RED|0xFF),
-  7 CEntityPointer m_penTarget5     "Target 05" 'O' COLOR(C_RED|0xFF),
- 20 CEntityPointer m_penTarget6     "Target 06" COLOR(C_RED|0xFF),
- 21 CEntityPointer m_penTarget7     "Target 07" COLOR(C_RED|0xFF),
- 22 CEntityPointer m_penTarget8     "Target 08" COLOR(C_RED|0xFF),
- 23 CEntityPointer m_penTarget9     "Target 09" COLOR(C_RED|0xFF),
- 24 CEntityPointer m_penTarget10    "Target 10" COLOR(C_RED|0xFF),
+/*** Export Data***/
+	1 CTString m_strName              "Name" 'N' = "Trigger",         // class name
+	200 BOOL m_bRaidObject			"Raid system object" = FALSE,		// 레이드 오브젝트 설정
+	201 INDEX m_RaidEventType		"Raid Event Type" = 0,			// 레이드 이벤트 타입
+/******************/
+	3 CEntityPointer m_penTarget1     "Target 01" 'T' COLOR(C_RED|0xFF),                 // send event to entity
+	4 CEntityPointer m_penTarget2     "Target 02" 'Y' COLOR(C_RED|0xFF),
+	5 CEntityPointer m_penTarget3     "Target 03" 'U' COLOR(C_RED|0xFF),
+	6 CEntityPointer m_penTarget4     "Target 04" 'I' COLOR(C_RED|0xFF),
+	7 CEntityPointer m_penTarget5     "Target 05" 'O' COLOR(C_RED|0xFF),
+	20 CEntityPointer m_penTarget6     "Target 06" COLOR(C_RED|0xFF),
+	21 CEntityPointer m_penTarget7     "Target 07" COLOR(C_RED|0xFF),
+	22 CEntityPointer m_penTarget8     "Target 08" COLOR(C_RED|0xFF),
+	23 CEntityPointer m_penTarget9     "Target 09" COLOR(C_RED|0xFF),
+	24 CEntityPointer m_penTarget10    "Target 10" COLOR(C_RED|0xFF),
   8 enum EventEType m_eetEvent1     "Event type Target 01" 'G' = EET_TRIGGER,  // type of event to send
   9 enum EventEType m_eetEvent2     "Event type Target 02" 'H' = EET_TRIGGER,
  10 enum EventEType m_eetEvent3     "Event type Target 03" 'J' = EET_TRIGGER,
@@ -83,6 +85,36 @@ functions:
 
 
 procedures:
+  Main() {
+    InitAsEditorModel();
+    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+    SetCollisionFlags(ECF_IMMATERIAL);
+
+    SetFlagOff(ENF_PROPSCHANGED);
+    SetFlagOn(ENF_NONETCONNECT);
+    SetFlagOn(ENF_MARKDESTROY);
+
+    // set appearance
+    SetModel(MODEL_MARKER);
+    SetModelMainTexture(TEXTURE_MARKER);
+
+    m_fSendRange = ClampDn(m_fSendRange, 0.01f);
+
+    // spawn in world editor
+    autowait(0.1f);
+
+    // go into active or inactive state
+    if (m_bActive) {
+      jump Active();
+    } else {
+      jump Inactive();
+    }
+
+    // cease to exist
+    Destroy();
+
+    return;
+  };
 
   SendEventToTargets() {
     // if needed wait some time before event is send
@@ -232,35 +264,4 @@ procedures:
       autowait(0.1f);
     }
   }
-
-  Main() {
-    InitAsEditorModel();
-    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-    SetCollisionFlags(ECF_IMMATERIAL);
-
-    SetFlagOff(ENF_PROPSCHANGED);
-    SetFlagOn(ENF_NONETCONNECT);
-    SetFlagOn(ENF_MARKDESTROY);
-
-    // set appearance
-    SetModel(MODEL_MARKER);
-    SetModelMainTexture(TEXTURE_MARKER);
-
-    m_fSendRange = ClampDn(m_fSendRange, 0.01f);
-
-    // spawn in world editor
-    autowait(0.1f);
-
-    // go into active or inactive state
-    if (m_bActive) {
-      jump Active();
-    } else {
-      jump Inactive();
-    }
-
-    // cease to exist
-    Destroy();
-
-    return;
-  };
 };

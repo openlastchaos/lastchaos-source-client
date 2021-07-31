@@ -9,13 +9,13 @@ static const INDEX iBaseVP = 0;
 
 SHADER_MAIN(TRShader_2TRL)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	shaSetDefaultConstantRegisters();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	shaRender();
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(TRShader_2TRL,ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -30,7 +30,7 @@ SHADER_DESC(TRShader_2TRL,ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = SHA_POSITION_STREAM|SHA_NAKED_CODE;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(TRShader_2TRL, CTString &strVPCode, INDEX iVertexProgram)
@@ -66,7 +66,7 @@ SHADER_PCODE(TRShader_2TRL, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eF
 {
 	ASSERT(iPixelProgram==iBasePP);
 	ASSERT(eFogType==FT_NONE);
-	strPPCode = "tex    t0                              \n" // load layer 0 texture
+/*	strPPCode = "tex    t0                              \n" // load layer 0 texture
 				"tex    t1                              \n" // load layer 0 mask
 				"tex    t2                              \n" // load layer 1 texture
 				"tex    t3                              \n" // load layer 1 mask
@@ -76,6 +76,19 @@ SHADER_PCODE(TRShader_2TRL, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eF
 
 				"+mul   r1.a,    t2.a,   t3.a           \n" // multiply layer 1 texture with its alpha
 				"lrp    r0.rgb,  1-r1.a, r1,    t2      \n" //  and alpha of layer 1 mask texture
+
+				"+mul   r0.a,    1-r0.a, 1-r1.a         \n" // output layer alpha
+				;*/
+	strPPCode = "texld    r0,    t0                     \n" // load layer 0 texture
+				"texld    r1,    t1                     \n" // load layer 0 mask
+				"texld    r2,    t2                     \n" // load layer 1 texture
+				"texld    r3,    t3                     \n" // load layer 1 mask
+				
+				"mul    r0.a,    r0.a,   r1.a           \n" // multiply layer 0 texture with its alpha
+				"mul    r1.rgb,  r0,     r0.a           \n" //  and alpha of layer 0 mask texture
+
+				"+mul   r1.a,    r2.a,   r3.a           \n" // multiply layer 1 texture with its alpha
+				"lrp    r0.rgb,  1-r1.a, r1,    r2      \n" //  and alpha of layer 1 mask texture
 
 				"+mul   r0.a,    1-r0.a, 1-r1.a         \n" // output layer alpha
 				;

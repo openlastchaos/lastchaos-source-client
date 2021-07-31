@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CLIGHTEFFECT_H__
 #define __CLIGHTEFFECT_H__
 
@@ -24,10 +24,10 @@ public:
 
 	//NEW_DELETE_DEFINITION(CLightEffect);
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	virtual void Read(CTStream *istrFile);
 	virtual void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	
 	virtual void Start(FLOAT time, BOOL restart = FALSE);
 	virtual BOOL Process(FLOAT time);
@@ -55,16 +55,16 @@ protected:
 
 protected:
 	//content variable
-	FLOAT				m_fMaxFallOff;	//ë¹›ì˜ ë²”ìœ„
-	COLOR				m_colLight;		//ë¹›ì˜ ìƒ‰ê¹”, í˜„ì¬ëŠ” Terrainì—ì„œëŠ” ë¬´ì‹œë¨. BSPì—ì„œëŠ” ë¨¹ëŠ”ë“¯.
+	FLOAT				m_fMaxFallOff;	//ºûÀÇ ¹üÀ§
+	COLOR				m_colLight;		//ºûÀÇ »ö±ò, ÇöÀç´Â Terrain¿¡¼­´Â ¹«½ÃµÊ. BSP¿¡¼­´Â ¸Ô´Âµí.
 	BOOL				m_bAmbientMode;
 	//instance variable
-	CEntity				*m_penDummy;	//CLightSourceê°€ ìœ„ì¹˜ê°’ì„ ì•ˆê°–ê³  ìˆì–´ì„œ CEntityê°€ í•„ìš”í•˜ë‹¤.
-	CLightSource		*m_plsLight;	//ì„¤ì •ëœ CLightSourceë¡œ Pointë¼ì´íŠ¸ì„.
-	static CWorld		*m_pWorld;		//CEntityë¥¼ ìƒì„±í•˜ëŠ”ë° í•„ìš”í•˜ë‹¤. Startì—ì„œë§Œ ì“°ì„.
-	static CTerrain		*m_pTerrain;	//Rendering í•˜ëŠ”ë° í•„ìš”í•˜ë‹¤. EndRenderì—ì„œë§Œ ì“°ì„.
-	static CTextureData	*m_ptdLightMap;	//CEntityë¥¼ ìƒì„±í•˜ëŠ”ë° í•„ìš”í•˜ë‹¤. EndRenderì—ì„œë§Œ ì“°ì„.
+	CEntity				*m_penDummy;	//CLightSource°¡ À§Ä¡°ªÀ» ¾È°®°í ÀÖ¾î¼­ CEntity°¡ ÇÊ¿äÇÏ´Ù.
+	CLightSource		*m_plsLight;	//¼³Á¤µÈ CLightSource·Î Point¶óÀÌÆ®ÀÓ.
+	static CWorld		*m_pWorld;		//CEntity¸¦ »ı¼ºÇÏ´Âµ¥ ÇÊ¿äÇÏ´Ù. Start¿¡¼­¸¸ ¾²ÀÓ.
+	static CTerrain		*m_pTerrain;	//Rendering ÇÏ´Âµ¥ ÇÊ¿äÇÏ´Ù. EndRender¿¡¼­¸¸ ¾²ÀÓ.
+	static CTextureData	*m_ptdLightMap;	//CEntity¸¦ »ı¼ºÇÏ´Âµ¥ ÇÊ¿äÇÏ´Ù. EndRender¿¡¼­¸¸ ¾²ÀÓ.
 };
 
 #endif //__CLIGHTEFFECT_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

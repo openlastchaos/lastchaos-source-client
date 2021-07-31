@@ -9,9 +9,9 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <Engine/Interface/UIListBox.h>
 
 // Define text position
 #define	SELECTRESOURCE_TITLE_TEXT_OFFSETX		25
@@ -47,6 +47,9 @@ protected:
 	int						m_iProduceItemDBIndex;
 	bool					m_bSelectType;
 
+	// 키보드 이동 해야 되는지 말아야 되는지 [3/26/2013 Ranma]
+	bool					m_bKeyMove;
+
 	std::vector<CUIButton>	m_vectorResourceList;
 
 public:
@@ -72,6 +75,9 @@ public:
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );	
 	void StartProduct( int nSelectResource = -1 );
+
+	void SetKeyMove(bool bKeyMove) { m_bKeyMove = bKeyMove; }
+	bool GetKeyMove() { return m_bKeyMove; }
 };
 
 

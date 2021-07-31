@@ -210,7 +210,7 @@ void LerpColor( COLOR col0, COLOR col1, FLOAT fRatio, UBYTE &ubR, UBYTE &ubG, UB
 
 COLOR LerpColor( COLOR col0, COLOR col1, FLOAT fRatio)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-15)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-15)
 	UBYTE ubR0, ubG0, ubB0, ubA0;
 	UBYTE ubR1, ubG1, ubB1, ubA1;
 	ColorToRGBA( col0, ubR0, ubG0, ubB0, ubA0);
@@ -233,7 +233,7 @@ COLOR LerpColor( COLOR col0, COLOR col1, FLOAT fRatio)
 		punpckhwd	mm2, mm0
 		cvtpi2ps	xmm1, mm1
 		cvtpi2ps	xmm2, mm2
-		movlhps		xmm1, xmm2	//col0ë¥¼ 4ê°œì˜ floatìœ¼ë¡œ ë³€í™˜
+		movlhps		xmm1, xmm2	//col0¸¦ 4°³ÀÇ floatÀ¸·Î º¯È¯
 		
 		movd		mm1, col1
 		punpcklbw	mm1, mm0
@@ -242,12 +242,12 @@ COLOR LerpColor( COLOR col0, COLOR col1, FLOAT fRatio)
 		punpckhwd	mm2, mm0
 		cvtpi2ps	xmm3, mm1
 		cvtpi2ps	xmm4, mm2
-		movlhps		xmm3, xmm4	//col1ë¥¼ 4ê°œì˜ floatìœ¼ë¡œ ë³€í™˜
+		movlhps		xmm3, xmm4	//col1¸¦ 4°³ÀÇ floatÀ¸·Î º¯È¯
 
 		xorps		xmm2, xmm2
 		movss		xmm2, fRatio
 		movaps		xmm4, xmm2
-		shufps		xmm2, xmm4, 0x00	//fRatioë¥¼ 4ê°œì˜ floatì— ë³µì‚¬í•œë‹¤.
+		shufps		xmm2, xmm4, 0x00	//fRatio¸¦ 4°³ÀÇ float¿¡ º¹»çÇÑ´Ù.
 
 		subps		xmm3, xmm1	//col1 - col0
 		mulps		xmm3, xmm2	//(col1 - col0) * fRatio
@@ -260,14 +260,14 @@ COLOR LerpColor( COLOR col0, COLOR col1, FLOAT fRatio)
 		packssdw	mm0, mm2
 		por			mm1, mm0
 		pxor		mm0, mm0
-		packuswb	mm1, mm0	//resultë¥¼ 4ê°œì˜ unsigned byteë¡œ ë³€í™˜
+		packuswb	mm1, mm0	//result¸¦ 4°³ÀÇ unsigned byte·Î º¯È¯
 		movd		colRet, mm1
 		emms
 	}
 	return colRet;
 */
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-15)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-15)
 
 
 
@@ -278,7 +278,7 @@ COLOR MulColors( COLOR col1, COLOR col2)
   if( col2==0xFFFFFFFF)   return col1;
   if( col1==0 || col2==0) return 0;
   COLOR colRet;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-15)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-15)
 /*
   __asm {
     xor     ebx,ebx
@@ -367,7 +367,7 @@ COLOR MulColors( COLOR col1, COLOR col2)
 		movd		colRet, mm0
 		emms
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-15)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-15)
 	return colRet;
 }
 
@@ -379,7 +379,7 @@ COLOR AddColors( COLOR col1, COLOR col2)
   if( col2==0) return col1;
   if( col1==0xFFFFFFFF || col2==0xFFFFFFFF) return 0xFFFFFFFF;
   COLOR colRet;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-15)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-15)
 /*
   __asm {
     xor     ebx,ebx
@@ -456,7 +456,7 @@ COLOR AddColors( COLOR col1, COLOR col2)
 		movd		colRet, mm0
 		emms
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-15)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-15)
 	return colRet;
 }
 
@@ -473,7 +473,7 @@ extern void abgr2argb( ULONG *pulSrc, ULONG *pulDst, INDEX ct)
     jz    colSkip4
 colLoop4:
     push  ecx
-//    prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov   eax,dword ptr [esi+ 0]
     mov   ebx,dword ptr [esi+ 4]
     mov   ecx,dword ptr [esi+ 8]
@@ -543,7 +543,7 @@ extern void ColorAPI( COLOR *pcolSrc, ULONG *pulDst, INDEX ct)
     jz    skipOGL4
 loopOGL4:
     push  ecx
-//    prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov   eax,dword ptr [esi+ 0]
     mov   ebx,dword ptr [esi+ 4]
     mov   ecx,dword ptr [esi+ 8]
@@ -585,7 +585,7 @@ convD3D:
     jz    skipD3D4
 loopD3D4:
     push  ecx
-//    prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov   eax,dword ptr [esi+ 0]
     mov   ebx,dword ptr [esi+ 4]
     mov   ecx,dword ptr [esi+ 8]

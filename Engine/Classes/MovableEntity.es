@@ -338,6 +338,7 @@ functions:
 		return; 
 	  }
 
+
 		extern TIME _tmLocalTick;
 		TIME tmLerpTime;
 
@@ -1222,7 +1223,7 @@ functions:
 			return FALSE;
 		}
 
-		// if polygon's steepness is too high
+		// if polygon's steepness is too high(높고 가파른)
 		CSurfaceType &stReference = en_pwoWorld->wo_astSurfaceTypes[pbpo->bpo_bppProperties.bpp_ubSurfaceType];
 		if (fCos>=-stReference.st_fClimbSlopeCos&&fCos<0
 			||stReference.st_ulFlags&STF_SLIDEDOWNSLOPE) {
@@ -2208,18 +2209,19 @@ out:;
 		// initially not floating
 		en_ulPhysicsFlags&=~EPF_FLOATING;
 
-
-	if(!(GetFlags() & ENF_ALIVE) || (_pNetwork->m_bSingleMode && IsEnemy()))	
-	{
-		en_fAcceleration = 200.0f; 
-		en_fDeceleration = 40.0f;
-		
-	}
-	else
-	{
 		en_fAcceleration = 10000.0f; 
 		en_fDeceleration = 10000.0f;
-	}
+
+		if (en_pMobTarget != NULL)
+		{
+			CMobData* MD = CMobData::getData(en_pMobTarget->m_nType);
+
+			if((!(GetFlags() & ENF_ALIVE) && MD->IsMovable()) || (_pNetwork->m_bSingleMode && IsEnemy()))
+			{
+				en_fAcceleration = 200.0f; 
+				en_fDeceleration = 40.0f;
+			}
+		}
 
 		FLOAT ACC=en_fAcceleration*fTickQuantum*fTickQuantum;
 		FLOAT DEC=en_fDeceleration*fTickQuantum*fTickQuantum;
@@ -2616,9 +2618,18 @@ out:;
 			// rotate
 			en_mMoveRotation = en_mIntendedRotation*!en_mAppliedRotation;
 			if (
-					en_mMoveRotation(1,1)!=1 || en_mMoveRotation(1,2)!=0 || en_mMoveRotation(1,3)!=0 ||
-					en_mMoveRotation(2,1)!=0 || en_mMoveRotation(2,2)!=1 || en_mMoveRotation(2,3)!=0 ||
-					en_mMoveRotation(3,1)!=0 || en_mMoveRotation(3,2)!=0 || en_mMoveRotation(3,3)!=1) {
+					(en_mMoveRotation(1,1)>1.0001f || en_mMoveRotation(1,1)<0.9999f) ||
+					(en_mMoveRotation(1,2)>0.0f || en_mMoveRotation(1,2)<0.0f) ||
+					(en_mMoveRotation(1,3)>0.0f || en_mMoveRotation(1,3)<0.0f) ||
+					(en_mMoveRotation(2,1)>0.0f || en_mMoveRotation(2,1)<0.0f) ||
+					(en_mMoveRotation(2,2)>1.0001f || en_mMoveRotation(2,2)<0.9999f) ||
+					(en_mMoveRotation(2,3)>0.0f || en_mMoveRotation(2,3)<0.0f) ||
+					(en_mMoveRotation(3,1)>0.0f || en_mMoveRotation(3,1)<0.0f) ||
+					(en_mMoveRotation(3,2)>0.0f || en_mMoveRotation(3,2)<0.0f) ||
+					(en_mMoveRotation(3,3)>1.0001f || en_mMoveRotation(3,3)<0.9999f) )
+			{
+				CTString tStr;
+				tStr.PrintF("%f",en_mMoveRotation(3,3));
 				InitTryToMove();
 				TryToMove(NULL, FALSE, TRUE);
 			}

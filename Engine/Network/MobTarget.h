@@ -2,31 +2,43 @@
 #define __MOBTARGET_H__
 
 
-//#include <Engine/Network/NetworkMessage.h>
+#include <Engine/Object/ObjectBase.h>
 #include <Engine/Base/CTString.h>
 #include <Engine/Interface/UIBuff.h>
 #include <Engine/Entities/StatusEffect.h>
 #include <Engine/Effect/CEffectGroup.h>
+#include <Engine/Network/ChatMsgBuffer.h>
 
-// FIXME : ë§ì€ ì •ë¦¬ í•„ìš”...ã…¡.ã…¡
-class ENGINE_API CMobTarget 
+// FIXME : ¸¹Àº Á¤¸® ÇÊ¿ä...¤Ñ.¤Ñ
+class ENGINE_API CMobTarget : public ObjectBase
 {
 public:
-	INDEX			mob_Index;
-	INDEX			mob_iType;
-	INDEX			mob_iClientIndex;
+	enum eMobSubType
+	{
+		MST_NONE			= 0,		// None
+		MST_MERCENARY		= 1,		// ¸ó½ºÅÍ ¿ëº´
+		MST_BUFF_TOTEM		= 2,		// ¹öÇÁÇü ÅäÅÛ
+		MST_ATTACK_TOTEM	= 3,		// °ø°İÇü ÅäÅÛ
+		MST_TRAP			= 4,		// Æ®·¦
+		MST_SUICIDE			= 5,		// ±â»ıÃæ(ÆĞ·¯»çÀÌÆ®)
+	};
+	
 	INDEX			mob_iLevel;
 	BOOL			mob_bNPC;
-	CEntity			*mob_pEntity;	
-	CTString		mob_Name;	
 	SBYTE			mob_sbNameLength;
-	SBYTE			mob_yLayer;
 	SBYTE			mob_BuffCount;
 	BuffInfo		mob_Buff[20];
 	CStatusEffect	mob_statusEffect;
 	CEffectGroup	*mob_pNormalEffect;
-	UBYTE			mob_sbAttributePos;
-
+	UWORD			mob_sbAttributePos;
+	SLONG			mob_Label;				// [sora] ¿øÁ¤´ë ½Ã½ºÅÛ ´ë»ó Ç¥½Ä index
+	INDEX			mob_iOwnerIndex;		// [2010/10/20 : Sora] ¸ó½ºÅÍ ¿ëº´ Ä«µå
+	INDEX			mob_iSubType;			//	Mob SubType ()
+	
+	ChatMsgBuffer	ChatMsg;
+	INDEX			mob_iSyndicateType;		// °á»ç´ë ½Ã½ºÅÛ ¼Ò¼Ó.
+	INDEX			mob_iSyndicateGrade;
+	
 public:
 	/* Default constructor. */
 	CMobTarget(void);
@@ -36,20 +48,20 @@ public:
 	CMobTarget(const CMobTarget &other);
 	CMobTarget &operator=(const CMobTarget &other);
 	
-	//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹±ê¸€ ë˜ì ¼ ì‘ì—…	07.27
+	//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ì±Û ´øÁ¯ ÀÛ¾÷	07.27
 	void	Init(void);
-	//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ ë˜ì ¼ ì‘ì—…		07.27
+	void	Clear();
+	//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û ´øÁ¯ ÀÛ¾÷		07.27
 	void	SetData( INDEX index, INDEX type, CTString& strName, INDEX level, CEntity *pEntity,
 						BOOL bNPC, SBYTE sbyLayer );
 	void	SetClientMobId( INDEX index );
 	BOOL	IsNPC() const { return mob_bNPC; }
-	void	SetyLayer( SBYTE sbyLayer ) { mob_yLayer = sbyLayer; }
 	void	AddBuff( BuffInfo &rBuffInfo )
 	{
 		mob_Buff[mob_BuffCount++] = rBuffInfo;
 	}
 	void	RemoveBuff( SLONG slItemIndex, SLONG slSkillIndex );
-	void	ChangeStatus(CTagManager* pTM, SLONG status)
+	void	ChangeStatus(CTagManager* pTM, SQUAD status)
 	{
 		if(mob_statusEffect.IsStatusChanged(status))
 			mob_statusEffect.ChangeStatus(pTM, status, CStatusEffect::R_ENEMY);
@@ -58,6 +70,16 @@ public:
 	{
 		mob_statusEffect.Reset();
 	}
+	
+	void	BuffsStartGroupEffect(void);
+	BOOL	IsTotem() { return ( mob_iSubType == MST_BUFF_TOTEM || mob_iSubType == MST_ATTACK_TOTEM ); }
+	BOOL	IsMercenary() { return ( mob_iSubType == MST_MERCENARY ); }
+	BOOL	IsTrap() { return ( mob_iSubType == MST_TRAP ); }
+	BOOL	IsParasite() { return ( mob_iSubType == MST_SUICIDE ); }
+	void	SetSubType( eMobSubType SubType )	{ mob_iSubType = SubType; }
+	void	SetSyndicateData(INDEX type, INDEX grade);
+	int		GetSyndiType() { return mob_iSyndicateType; }
+	int		GetSyndiGrade() { return mob_iSyndicateGrade; }
 };
 
 #endif //__MOBTARGET_H__

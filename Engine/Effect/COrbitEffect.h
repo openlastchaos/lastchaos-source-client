@@ -33,7 +33,7 @@ public:
 	{
 		//contents
 		// P = r * sin(pm * t + 2*PI*po)
-		// P:ì¢Œí‘œê°’, r:ë°˜ì§€ë¦„, pm:PhaseMul, po:PhaseOffset, t:ì‹œê°„
+		// P:ÁÂÇ¥°ª, r:¹İÁö¸§, pm:PhaseMul, po:PhaseOffset, t:½Ã°£
 		FLOAT fRadiusX;
 		FLOAT fPhaseMulX;
 		FLOAT fPhaseOffsetX;
@@ -113,8 +113,8 @@ protected:
 	FLOAT			m_fFadeOutDestRadiusMul;
 	FLOAT			m_fFadeOutDestPhaseMul;
 	std::string		m_strGoalTagName;
-	EFFECT_OF_TAG_TYPE		m_eRotation;			//tagì˜ íšŒì „ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
-	EFFECT_OF_TAG_TYPE		m_ePosition;			//tagì˜ ì´ë™ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
+	EFFECT_OF_TAG_TYPE		m_eRotation;			//tagÀÇ È¸Àü¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
+	EFFECT_OF_TAG_TYPE		m_ePosition;			//tagÀÇ ÀÌµ¿¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
 	//instance
 	effect_vector	m_vectorEffect;
 	tag_vector		m_vectorTag;

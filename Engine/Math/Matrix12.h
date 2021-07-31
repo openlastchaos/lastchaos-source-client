@@ -96,8 +96,8 @@ inline void MatrixTranspose(Matrix12 &r, const Matrix12 &m)
 	r[11] = -r[ 8]*m[ 3] - r[ 9]*m[ 7] - r[10]*m[11];
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
-// NOTE : Matrix12ì˜ í—¤ë”ì— ì¶”ê°€í–ˆìŒ.  ë‹¤ë¥¸ ê³³ì— ì„ ì–¸í•˜ëŠ”ê²Œ ë” ì¢‹ì„ê±° ê°™ìŒ.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+// NOTE : Matrix12ÀÇ Çì´õ¿¡ Ãß°¡ÇßÀ½.  ´Ù¸¥ °÷¿¡ ¼±¾ğÇÏ´Â°Ô ´õ ÁÁÀ»°Å °°À½.
 inline void MatrixMultiply(Matrix16 &c, const Matrix16 &m, const Matrix16 &n)
 {
 	for(int j = 0; j < 4; ++j)
@@ -108,7 +108,7 @@ inline void MatrixMultiply(Matrix16 &c, const Matrix16 &m, const Matrix16 &n)
 		}
 	}	
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 #define ASMOPT 1
 inline void MatrixMultiply(Matrix12 &c,const Matrix12 &m, const Matrix12 &n)

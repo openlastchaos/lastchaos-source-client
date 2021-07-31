@@ -3,25 +3,29 @@
 
 #include <Engine/Interface/UIMessenger.h>
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UITalk.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/function/PremiumChar.h>
+#include <Engine/Help/Util_Help.h>
 
 // Define position
 #define	MESSENGER_TITLE_SX					25
 #define	MESSENGER_TITLE_SY					6
 
-#define RESIZE_RANGE						10		// Windowí¬ê¸° ì¬ ì¡°ì • ì˜ì—­
+#define RESIZE_RANGE						10		// WindowÅ©±â Àç Á¶Á¤ ¿µ¿ª
 
 #define MAX_MEMBER_COUNT					30
 
 
-// ì¢Œìš° í¬ê¸° ëŠ˜ë¦´ ë•Œ ì‚¬ìš©í•œ í•œê°œì˜ ë„ˆë¹„
+// ÁÂ¿ì Å©±â ´Ã¸± ¶§ »ç¿ëÇÑ ÇÑ°³ÀÇ ³Êºñ
 #define UNIT_SIZE_DEFAULT					40
 #define UNIT_SIZE_GUIDLINE					40
 #define UNIT_SIZE_RESIZE_BOTTOM				28
 
-#define	TOP_HEIGHT							25		// íƒ€ì´í‹€ ë°”ì˜ ë†’ì´
-#define MY_INFO_HEIGHT						19		// ìì‹ ì˜ ì •ë³´ê°€ í‘œì‹œ ë˜ëŠ” ì°½ì˜ ë†’ì´ 
-#define BACK_MIDDLE_SCROLL_BOTTOM_HEIGHT	5+5		// ìŠ¤í¬ë¡¤ë°”ê°€ í¬í•¨ë˜ì–´ ìˆëŠ” ì¤‘ê°„ ì°½ì˜ ë†’ì´ 
-#define BACK_BOTTOM_HEIGHT					13		// ì•„ë«ìª½ ì°½ì˜ ë†’ì´
+#define	TOP_HEIGHT							25		// Å¸ÀÌÆ² ¹ÙÀÇ ³ôÀÌ
+#define MY_INFO_HEIGHT						19		// ÀÚ½ÅÀÇ Á¤º¸°¡ Ç¥½Ã µÇ´Â Ã¢ÀÇ ³ôÀÌ 
+#define BACK_MIDDLE_SCROLL_BOTTOM_HEIGHT	5+5		// ½ºÅ©·Ñ¹Ù°¡ Æ÷ÇÔµÇ¾î ÀÖ´Â Áß°£ Ã¢ÀÇ ³ôÀÌ 
+#define BACK_BOTTOM_HEIGHT					13		// ¾Æ·§ÂÊ Ã¢ÀÇ ³ôÀÌ
 
 #define MYINFO_ICON_X						10		
 #define MYINFO_NAME_X						30
@@ -46,31 +50,37 @@
 
 #define COLOR_MYNAME						0xe1b300ff	
 
-#define MAX_TALK							10		//ìµœëŒ€ë¡œ ë„ìš¸ ìˆ˜ ìˆëŠ” ì±„íŒ…ì°½ìˆ˜
+#define MAX_TALK							10		//ÃÖ´ë·Î ¶ç¿ï ¼ö ÀÖ´Â Ã¤ÆÃÃ¢¼ö
 
 #define MESSENGER_LEVEL						0
 
 #define BLOCK_GROUP_INDEX					-1
 
 static CTString s_strReqCharName;
-static bool	g_bUseChat[MAX_TALK];							//ì±„íŒ…ì°½ ì‚¬ìš© í™•ì¸
-static int	g_nMakeCharIndex[MAX_TALK];						//ì±„íŒ…ì°½ ìƒì„± ìºë¦­ ì¸ë±ìŠ¤
-static int	g_nChatIndex[MAX_TALK];							//ì±„íŒ…ì°½ ì¸ë±ìŠ¤
+static bool	g_bUseChat[MAX_TALK];							//Ã¤ÆÃÃ¢ »ç¿ë È®ÀÎ
+static int	g_nMakeCharIndex[MAX_TALK];						//Ã¤ÆÃÃ¢ »ı¼º Ä³¸¯ ÀÎµ¦½º
+static int	g_nChatIndex[MAX_TALK];							//Ã¤ÆÃÃ¢ ÀÎµ¦½º
+
+//extern INDEX g_iCountry;
+
+// UI Renewal [9/16/2009 rumist] NHN service.
+extern INDEX g_iXPosInMessanger;
+extern INDEX g_iYPosInMessanger;
 
 
-//ì±„íŒ… ê¸€ì ìƒ‰
+//Ã¤ÆÃ ±ÛÀÚ »ö
 #define MAX_COLOR							9
 COLOR ChatColor[MAX_COLOR] =
 {
-	0xFFFFFFFF,		// í°ìƒ‰
-	0x8B8C8AFF,		// íšŒìƒ‰
-	0x38EBFFFF,		// íŒŒë‘
-	0xA53FBFFF,		// ë³´ë¼
-	0x3936E2FF,		// ì§„í•œíŒŒë‘
-	0x16844BFF,		// ë…¹ìƒ‰
-	0x7F0E20FF,		// ë¹¨ê°•
-	0xF78142FF,		// ì£¼í™©
-	0xCCBD1CFF,		// ë…¸ë‘
+	0xFFFFFFFF,		// Èò»ö
+	0x8B8C8AFF,		// È¸»ö
+	0x38EBFFFF,		// ÆÄ¶û
+	0xA53FBFFF,		// º¸¶ó
+	0x3936E2FF,		// ÁøÇÑÆÄ¶û
+	0x16844BFF,		// ³ì»ö
+	0x7F0E20FF,		// »¡°­
+	0xF78142FF,		// ÁÖÈ²
+	0xCCBD1CFF,		// ³ë¶û
 };
 
 //------------------------------------------------------------------------------
@@ -79,8 +89,11 @@ COLOR ChatColor[MAX_COLOR] =
 // Date : 2005-05-18,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 CUIMessenger::CUIMessenger()
+	: m_nTarIndex(0)
+	, m_bPremiumChar(false)
 {
 	Reset();
+	m_ptdMenuTexture = NULL;
 }
 
 
@@ -91,8 +104,8 @@ CUIMessenger::CUIMessenger()
 //------------------------------------------------------------------------------
 CUIMessenger::~CUIMessenger()
 {
-
-
+	Reset();
+	STOCK_RELEASE(m_ptdMenuTexture);
 }
 
 
@@ -106,6 +119,13 @@ void CUIMessenger::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 	SetPos( ( pixMaxI + pixMinI - GetWidth() ) / 2, ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
 }
 
+void CUIMessenger::ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
+
+	g_iXPosInMessanger = GetPosX();
+	g_iYPosInMessanger = GetPosY();
+}
 
 //------------------------------------------------------------------------------
 // CUIMessenger::AdjustPosition
@@ -127,12 +147,10 @@ void CUIMessenger::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pi
 //------------------------------------------------------------------------------
 void CUIMessenger::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	//m_strTitle = _S( 1611, "ë©”ì‹ ì €" ); 
-	m_strTitle = _S( 2981, "ë¼ìŠ¤íŠ¸ ì¹´ì˜¤ìŠ¤ ë©”ì‹ ì €"); 
+	//m_strTitle = _S( 1611, "¸Ş½ÅÀú" ); 
+	m_strTitle = _S( 2981, "¶ó½ºÆ® Ä«¿À½º ¸Ş½ÅÀú"); 
 
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Set Rect
 	m_rcTitle.SetRect( 0, 0, 512, 22 );
@@ -190,30 +208,30 @@ void CUIMessenger::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE ); 
 
-	//m_btnGroup.Create( this, _S( 1612,  "ê·¸ë£¹"  ), BUTTON_GROUP_X, BUTTON_Y, 52, 21 );   ==>
-	m_btnGroup.Create( this, _S(2982, "ê·¸ë£¹ê´€ë¦¬"  ), BUTTON_GROUP_X, BUTTON_Y, 78, 21 ); 
+	//m_btnGroup.Create( this, _S( 1612,  "±×·ì"  ), BUTTON_GROUP_X, BUTTON_Y, 52, 21 );   ==>
+	m_btnGroup.Create( this, _S(2982, "±×·ì°ü¸®"  ), BUTTON_GROUP_X, BUTTON_Y, 78, 21 ); 
 	m_btnGroup.SetUV( UBS_IDLE, 0, 173, 53, 194, fTexWidth, fTexHeight );
 	m_btnGroup.SetUV( UBS_CLICK, 0, 195, 53, 216, fTexWidth, fTexHeight );
 	m_btnGroup.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnGroup.CopyUV( UBS_IDLE, UBS_DISABLE ); 
 
 
-	m_btnBlock.Create( this, _S(2983, "ì°¨ë‹¨ê¸°ëŠ¥"  ), BUTTON_BLOCK_X, BUTTON_Y, 78, 21 ); 
+	m_btnBlock.Create( this, _S(2983, "Â÷´Ü±â´É"  ), BUTTON_BLOCK_X, BUTTON_Y, 78, 21 ); 
 	m_btnBlock.SetUV( UBS_IDLE, 0, 173, 53, 194, fTexWidth, fTexHeight );
 	m_btnBlock.SetUV( UBS_CLICK, 0, 195, 53, 216, fTexWidth, fTexHeight );
 	m_btnBlock.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnBlock.CopyUV( UBS_IDLE, UBS_DISABLE );
 	
 
-	//m_btnMember.Create( this, _S( 1613,  "ì¹œêµ¬"  ), BUTTON_MEMBER_X, BUTTON_Y, 52, 21 ); 
-	m_btnInsert.Create( this, _S(550, "ì¶”ê°€"  ), BUTTON_INSERT_X, BUTTON_Y, 52, 21 ); 
+	//m_btnMember.Create( this, _S( 1613,  "Ä£±¸"  ), BUTTON_MEMBER_X, BUTTON_Y, 52, 21 ); 
+	m_btnInsert.Create( this, _S(550, "Ãß°¡"  ), BUTTON_INSERT_X, BUTTON_Y, 52, 21 ); 
 	m_btnInsert.SetUV( UBS_IDLE, 0, 173, 53, 194, fTexWidth, fTexHeight );
 	m_btnInsert.SetUV( UBS_CLICK, 0, 195, 53, 216, fTexWidth, fTexHeight );
 	m_btnInsert.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnInsert.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 
-	m_btnDelete.Create( this, _S( 1614,  "ì‚­ì œ"  ), BUTTON_DELETE_X, BUTTON_Y, 52, 21 ); 
+	m_btnDelete.Create( this, _S( 1614,  "»èÁ¦"  ), BUTTON_DELETE_X, BUTTON_Y, 52, 21 ); 
 	m_btnDelete.SetUV( UBS_IDLE, 0, 173, 53, 194, fTexWidth, fTexHeight );
 	m_btnDelete.SetUV( UBS_CLICK, 0, 195, 53, 216, fTexWidth, fTexHeight );
 	m_btnDelete.CopyUV( UBS_IDLE, UBS_ON );
@@ -251,19 +269,19 @@ void CUIMessenger::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	CreateGroup( fTexWidth, fTexHeight );
 
 
-	//ì„œë¸Œ ë©”ë‰´ íˆ´íŒì— ì‚¬ìš©ë  í™”ì‚´í‘œ í…ìŠ¤ì³ ì¶”ê°€
+	//¼­ºê ¸Ş´º ÅøÆÁ¿¡ »ç¿ëµÉ È­»ìÇ¥ ÅØ½ºÃÄ Ãß°¡
 	m_ptdMenuTexture = CreateTexture( CTString( "Data\\Interface\\WebBoard.tex" ) );
 	fTexWidth = m_ptdMenuTexture->GetPixWidth();
 	fTexHeight = m_ptdMenuTexture->GetPixHeight();
 
-	m_rtArrow.SetUV(34, 117, 42, 125, fTexWidth, fTexHeight);		//ë…¸ë€ í™”ì‚´í‘œ
-	//m_rtArrow.SetUV(11, 117, 19, 125, fTexWidth, fTexHeight);		//íŒŒë€ í™”ì‚´í‘œ
+	m_rtArrow.SetUV(34, 117, 42, 125, fTexWidth, fTexHeight);		//³ë¶õ È­»ìÇ¥
+	//m_rtArrow.SetUV(11, 117, 19, 125, fTexWidth, fTexHeight);		//ÆÄ¶õ È­»ìÇ¥
 }
 
 
 //------------------------------------------------------------------------------
 // CUIMessenger::CreateGroup
-// Explain:  ê·¸ë£¹ ìƒì„± ( ë„ˆë¬´ ë³µì¡í•´ì„œ ëºë‹¹)
+// Explain:  ±×·ì »ı¼º ( ³Ê¹« º¹ÀâÇØ¼­ »°´ç)
 // Date : 2005-05-22,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMessenger::CreateGroup( float fTexWidth, float fTexHeight )
@@ -295,10 +313,25 @@ void CUIMessenger::CreateGroup( float fTexWidth, float fTexHeight )
 	m_rcIcon[SORCERER][OFFLINE].SetUV( 93, 227, 111, 242,fTexWidth, fTexHeight );
 	m_rcIcon[SORCERER][ONLINE].SetUV( 74, 227, 92, 242,fTexWidth, fTexHeight );
 	m_rcIcon[SORCERER][LEFT_POSITION].SetUV( 55, 227, 73, 242, fTexWidth, fTexHeight );
+	
+	// TO-KR-T20091127-012 : add night shadow job icon to messenger. [12/1/2009 rumist]
+	m_rcIcon[NIGHTSHADOW][OFFLINE].SetUV( 475, 159, 493, 174, fTexWidth, fTexHeight );
+	m_rcIcon[NIGHTSHADOW][ONLINE].SetUV( 456, 159, 474, 174, fTexWidth, fTexHeight );
+	m_rcIcon[NIGHTSHADOW][LEFT_POSITION].SetUV( 437, 159, 455, 174, fTexWidth, fTexHeight );
 
+#ifdef CHAR_EX_ROGUE	// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+	m_rcIcon[EX_ROGUE][OFFLINE].SetUV( 131, 211, 149, 226, fTexWidth, fTexHeight );
+	m_rcIcon[EX_ROGUE][ONLINE].SetUV( 131, 195, 149, 210, fTexWidth, fTexHeight );
+	m_rcIcon[EX_ROGUE][LEFT_POSITION].SetUV( 131, 179, 149, 194,fTexWidth, fTexHeight );
+#endif
+#ifdef CHAR_EX_MAGE		// 2013/01/08 jeil EX¸ŞÀÌÁö Ãß°¡ 
+	m_rcIcon[EX_MAGE][OFFLINE].SetUV( 93, 211, 111, 226, fTexWidth, fTexHeight );
+	m_rcIcon[EX_MAGE][ONLINE].SetUV( 93, 195, 111, 210, fTexWidth, fTexHeight );
+	m_rcIcon[EX_MAGE][LEFT_POSITION].SetUV( 93, 179, 111, 194, fTexWidth, fTexHeight );
+#endif
 
 	m_mgBlock.Create( this, GROUP_X, GROUP_Y, GROUP_WIDTH, 15 );
-	m_mgBlock.SetGroupName( _S(2985, "ì°¨ë‹¨ëœ ìœ ì €" ) ); 
+	m_mgBlock.SetGroupName( _S(2985, "Â÷´ÜµÈ À¯Àú" ) ); 
 	m_mgBlock.SetIndex( BLOCK_GROUP_INDEX );
 
 	m_mgBlock.m_rtSelectBar.SetUV(187, 46, 204, 61, fTexWidth, fTexHeight);
@@ -317,13 +350,13 @@ void CUIMessenger::CreateGroup( float fTexWidth, float fTexHeight )
 			
 	
 	/*****
-	// í…ŒìŠ¤íŠ¸ë¡œ ë§´ë²„ë“¤ì˜ ë¦¬ìŠ¤íŠ¸ ë°›ì•„ì„œ ì…ë ¥ í•œë‹¤.
+	// Å×½ºÆ®·Î ¸É¹öµéÀÇ ¸®½ºÆ® ¹Ş¾Æ¼­ ÀÔ·Â ÇÑ´Ù.
 	int nCreateMemberCount = 20;
 
 	for( int i =0; i < nCreateMemberCount; ++i )
 	{
 		CTString strName;
-		strName.PrintF( "%c%s%d", rand()%25+65, "ì¼ì¼ì¼ì¼ì¼ì¼ì¼", i );
+		strName.PrintF( "%c%s%d", rand()%25+65, "ÀÏÀÏÀÏÀÏÀÏÀÏÀÏ", i );
 		m_vecGroup[0]->AddMember(CMemberInfo( i, 0, strName, (rand()%(TOTAL_JOB)), (rand()%(TOTAL_CONDITION)) ) );
 		//m_vecGroup[1]->AddMember(CMemberInfo( i, 16, strName, (rand()%(TOTAL_JOB)), (rand()%(TOTAL_CONDITION)) ) );
 
@@ -331,7 +364,7 @@ void CUIMessenger::CreateGroup( float fTexWidth, float fTexHeight )
 	for(i =0; i <15; ++i )
 	{
 		CTString strName;
-		strName.PrintF( "%c%s-%d", rand()%25+65, "ì´ì´ì´ì´ì´ì´ì´", i );
+		strName.PrintF( "%c%s-%d", rand()%25+65, "ÀÌÀÌÀÌÀÌÀÌÀÌÀÌ", i );
 		m_mgBlock.AddMember(CMemberInfo( i, 0, strName, (rand()%(TOTAL_JOB)), (rand()%(TOTAL_CONDITION)) ) );
 	}
 	
@@ -345,12 +378,12 @@ void CUIMessenger::CreateGroup( float fTexWidth, float fTexHeight )
 
 //------------------------------------------------------------------------------
 // CUIMessenger::CreateTrackPopup
-// Explain:  ì´ê²ƒë„ ë§ˆì°¬ê°€ì§€ë„ Createì—ì„œ ë³µì¡í•´ì„œ ë•Œì–´ ëƒˆë‹¹
+// Explain:  ÀÌ°Íµµ ¸¶Âù°¡Áöµµ Create¿¡¼­ º¹ÀâÇØ¼­ ¶§¾î ³Â´ç
 // Date : 2005-05-22,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMessenger::CreateTrackPopup( float fTexWidth, float fTexHeight )
 {
-	// ë‚´ ìƒíƒœ ì„¤ì • ë©”ë‰´
+	// ³» »óÅÂ ¼³Á¤ ¸Ş´º
 	m_tpSetMyState.m_rtBackUL.SetUV( 164, 45, 171, 63, fTexWidth, fTexHeight );
 	m_tpSetMyState.m_rtBackUM.SetUV( 174, 45, 176, 63, fTexWidth, fTexHeight );
 	m_tpSetMyState.m_rtBackUR.SetUV( 179, 45, 186, 63, fTexWidth, fTexHeight );
@@ -367,11 +400,11 @@ void CUIMessenger::CreateTrackPopup( float fTexWidth, float fTexHeight )
 	m_tpSetMyState.SetOverColor( 0xF8E1B5FF );
 	m_tpSetMyState.SetSelectColor( 0xF8E1B5FF );
 
-	m_tpSetMyState.AddMenuList( _S( 1615,  "ì˜¤í”„ë¼ì¸"  ) ); 
-	m_tpSetMyState.AddMenuList( _S( 1616,  "ì˜¨ë¼ì¸"  ) );	
-	m_tpSetMyState.AddMenuList( _S( 1617,  "ìë¦¬ë¹„ì›€"  ) );
+	m_tpSetMyState.AddMenuList( _S( 1615,  "¿ÀÇÁ¶óÀÎ"  ) ); 
+	m_tpSetMyState.AddMenuList( _S( 1616,  "¿Â¶óÀÎ"  ) );	
+	m_tpSetMyState.AddMenuList( _S( 1617,  "ÀÚ¸®ºñ¿ò"  ) );
 	
-	// ê·¸ë£¹ ê´€ë ¨ ë©”ë‰´ ì„¤ì • 
+	// ±×·ì °ü·Ã ¸Ş´º ¼³Á¤ 
 	m_tpGroup.m_rtBackUL.CopyUV( m_tpSetMyState.m_rtBackUL );
 	m_tpGroup.m_rtBackUM.CopyUV( m_tpSetMyState.m_rtBackUM );
 	m_tpGroup.m_rtBackUR.CopyUV( m_tpSetMyState.m_rtBackUR );
@@ -388,11 +421,11 @@ void CUIMessenger::CreateTrackPopup( float fTexWidth, float fTexHeight )
 	m_tpGroup.SetOverColor( 0xF8E1B5FF );
 	m_tpGroup.SetSelectColor( 0xF8E1B5FF );
 
-	m_tpGroup.AddMenuList( _S(2987, "ìƒˆê·¸ë£¹ ì¶”ê°€") +_s("     "));
-	m_tpGroup.AddMenuList( _S(2988, "ê·¸ë£¹ ì‚­ì œ") +_s("     "));
-	m_tpGroup.AddMenuList( _S(2989, "ê·¸ë£¹ ì´ë¦„ ë³€ê²½" ) +_s("     "));
+	m_tpGroup.AddMenuList( _S(2987, "»õ±×·ì Ãß°¡") +CTString("     "));
+	m_tpGroup.AddMenuList( _S(2988, "±×·ì »èÁ¦") +CTString("     "));
+	m_tpGroup.AddMenuList( _S(2989, "±×·ì ÀÌ¸§ º¯°æ" ) +CTString("     "));
 	
-	//ë©¤ë²„ ê´€ë ¨ ë©”ë‰´ ì„¤ì •
+	//¸â¹ö °ü·Ã ¸Ş´º ¼³Á¤
 	m_tpMemberMenu.m_rtBackUL.CopyUV( m_tpSetMyState.m_rtBackUL );
 	m_tpMemberMenu.m_rtBackUM.CopyUV( m_tpSetMyState.m_rtBackUM );
 	m_tpMemberMenu.m_rtBackUR.CopyUV( m_tpSetMyState.m_rtBackUR );
@@ -409,13 +442,13 @@ void CUIMessenger::CreateTrackPopup( float fTexWidth, float fTexHeight )
 	m_tpMemberMenu.SetOverColor( 0xF8E1B5FF );
 	m_tpMemberMenu.SetSelectColor( 0xF8E1B5FF );
 
-	m_tpMemberMenu.AddMenuList( _S(2990, "ê·¸ë£¹ì´ë™") +_s("     ") );
-	m_tpMemberMenu.AddMenuList( _S(2991, "ëŒ€í™”í•˜ê¸°") );
-	m_tpMemberMenu.AddMenuList( _S(338, "ì‚­ì œ" ) );
-	m_tpMemberMenu.AddMenuList( _S(2992, "ì°¨ë‹¨" ) );
+	m_tpMemberMenu.AddMenuList( _S(2990, "±×·ìÀÌµ¿") +CTString("     ") );
+	m_tpMemberMenu.AddMenuList( _S(2991, "´ëÈ­ÇÏ±â") );
+	m_tpMemberMenu.AddMenuList( _S(338, "»èÁ¦" ) );
+	m_tpMemberMenu.AddMenuList( _S(2992, "Â÷´Ü" ) );
 
 	
-	//ê·¸ë£¹ ê´€ë ¨ ë©”ë‰´
+	//±×·ì °ü·Ã ¸Ş´º
 	m_tpGroupMenu.m_rtBackUL.CopyUV( m_tpSetMyState.m_rtBackUL );
 	m_tpGroupMenu.m_rtBackUM.CopyUV( m_tpSetMyState.m_rtBackUM );
 	m_tpGroupMenu.m_rtBackUR.CopyUV( m_tpSetMyState.m_rtBackUR );
@@ -432,11 +465,11 @@ void CUIMessenger::CreateTrackPopup( float fTexWidth, float fTexHeight )
 	m_tpGroupMenu.SetOverColor( 0xF8E1B5FF );
 	m_tpGroupMenu.SetSelectColor( 0xF8E1B5FF );
 
-	m_tpGroupMenu.AddMenuList( _S(2987, "ìƒˆê·¸ë£¹ ì¶”ê°€") );
-	m_tpGroupMenu.AddMenuList( _S(2988, "ê·¸ë£¹ ì‚­ì œ") );
-	m_tpGroupMenu.AddMenuList( _S(2989, "ê·¸ë£¹ ì´ë¦„ ë³€ê²½") );
+	m_tpGroupMenu.AddMenuList( _S(2987, "»õ±×·ì Ãß°¡") );
+	m_tpGroupMenu.AddMenuList( _S(2988, "±×·ì »èÁ¦") );
+	m_tpGroupMenu.AddMenuList( _S(2989, "±×·ì ÀÌ¸§ º¯°æ") );
 
-	//ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸ ì„œë¸Œë©”ë‰´
+	//±×·ì ¸®½ºÆ® ¼­ºê¸Ş´º
 	m_tpGroupList.m_rtBackUL.CopyUV( m_tpSetMyState.m_rtBackUL );
 	m_tpGroupList.m_rtBackUM.CopyUV( m_tpSetMyState.m_rtBackUM );
 	m_tpGroupList.m_rtBackUR.CopyUV( m_tpSetMyState.m_rtBackUR );
@@ -454,7 +487,7 @@ void CUIMessenger::CreateTrackPopup( float fTexWidth, float fTexHeight )
 	m_tpGroupList.SetSelectColor( 0xF8E1B5FF );
 
 
-	//ì°¨ë‹¨ ë©¤ë²„ ê´€ë ¨ ë©”ë‰´ ì„¤ì •
+	//Â÷´Ü ¸â¹ö °ü·Ã ¸Ş´º ¼³Á¤
 	m_tpBlock.m_rtBackUL.CopyUV( m_tpSetMyState.m_rtBackUL );
 	m_tpBlock.m_rtBackUM.CopyUV( m_tpSetMyState.m_rtBackUM );
 	m_tpBlock.m_rtBackUR.CopyUV( m_tpSetMyState.m_rtBackUR );
@@ -471,17 +504,17 @@ void CUIMessenger::CreateTrackPopup( float fTexWidth, float fTexHeight )
 	m_tpBlock.SetOverColor( 0xF8E1B5FF );
 	m_tpBlock.SetSelectColor( 0xF8E1B5FF );
 	
-	m_tpBlock.AddMenuList( _S(3013, "ì°¨ë‹¨í•´ì œ"));
-	m_tpBlock.AddMenuList( _S(338, "ì‚­ì œ"));
+	m_tpBlock.AddMenuList( _S(3013, "Â÷´ÜÇØÁ¦"));
+	m_tpBlock.AddMenuList( _S(338, "»èÁ¦"));
 }
 
 
 //------------------------------------------------------------------------------
 // CUIMessenger::ReSizing
-// Explain:  í¬ê¸° ì¬ì¡°ì •ì‹œ ì˜ì—­ì— ëŒ€í•œ ì •ë³´ ê°±ì‹ 
+// Explain:  Å©±â ÀçÁ¶Á¤½Ã ¿µ¿ª¿¡ ´ëÇÑ Á¤º¸ °»½Å
 //			nResizeRange, nWidth, nHeight
 // Date : 2005-05-18,Author: Lee Ki-hwan
-// - 050522 : í¬ê¸°ê°€ ë³€í•˜ì§€ ì•Šê¸° ë•Œë¬¸ì— ì ìš©ë˜ì§€ ì•ŠìŒ
+// - 050522 : Å©±â°¡ º¯ÇÏÁö ¾Ê±â ¶§¹®¿¡ Àû¿ëµÇÁö ¾ÊÀ½
 //------------------------------------------------------------------------------
 void CUIMessenger::ReSizing( int nResizeRange, int nWidth, int nHeight )
 {
@@ -501,9 +534,13 @@ void CUIMessenger::ReSizing( int nResizeRange, int nWidth, int nHeight )
 //------------------------------------------------------------------------------
 void CUIMessenger::Render()
 {
-	if( !IsVisible() ) return;
+	if( IsVisible() == false )
+		return;
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX2;
@@ -516,10 +553,10 @@ void CUIMessenger::Render()
 	RenderGroup( m_nPosX, m_nPosY );
 	RenderTab( m_nPosX, m_nPosY );
 	
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	m_btnClose.Render();
 	m_btnGroup.Render();
@@ -528,15 +565,15 @@ void CUIMessenger::Render()
 	m_btnDelete.Render();
 	m_sbMemberList.Render();
 	
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Title
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strTitle, m_nPosX + MESSENGER_TITLE_SX,
+	pDrawPort->PutTextEx( m_strTitle, m_nPosX + MESSENGER_TITLE_SX,
 										m_nPosY + MESSENGER_TITLE_SY );
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 	m_tpSetMyState.Render();
 	m_tpGroup.Render();
@@ -545,12 +582,12 @@ void CUIMessenger::Render()
 	m_tpGroupList.Render();
 	m_tpBlock.Render();
 	
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 
 
-	//ì„œë¸Œ ë©”ë‰´ í™”ì‚´í‘œ ë Œë”ë§
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdMenuTexture );
+	//¼­ºê ¸Ş´º È­»ìÇ¥ ·»´õ¸µ
+	pDrawPort->InitTextureData( m_ptdMenuTexture );
 	if( m_tpGroup.IsVisible() )
 	{
 		RenderMenuArrow( m_tpGroup.GetAbsPosX() +105, m_tpGroup.GetAbsPosY(), 7, 7, 1);
@@ -561,10 +598,10 @@ void CUIMessenger::Render()
 	{
 		RenderMenuArrow( m_tpMemberMenu.GetAbsPosX() +70, m_tpMemberMenu.GetAbsPosY(), 7, 7, 0);
 	}
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	
-	//ë“œë˜ê·¸ ì¤‘ì¸ ë©¤ë²„ ë Œë”ë§
+	//µå·¡±× ÁßÀÎ ¸â¹ö ·»´õ¸µ
 	if( m_bDragging )
 		RenderSelectMember(m_nX, m_nY);
 }
@@ -580,13 +617,15 @@ void CUIMessenger::RenderRectUV3( int nUnitSize, int nX, int nY, int nWidth, int
 	int nX2 = nX + nWidth;
 	int nY2 = nY + nHeight;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + nUnitSize, nY2,
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->AddTexture( nX, nY, nX + nUnitSize, nY2,
 										rtRectUV3.rtL.U0, rtRectUV3.rtL.V0, rtRectUV3.rtL.U1, rtRectUV3.rtL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX + nUnitSize, nY, nX2 - nUnitSize, nY2,
+	pDrawPort->AddTexture( nX + nUnitSize, nY, nX2 - nUnitSize, nY2,
 										rtRectUV3.rtM.U0, rtRectUV3.rtM.V0, rtRectUV3.rtM.U1, rtRectUV3.rtM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - nUnitSize, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - nUnitSize, nY, nX2, nY2,
 										rtRectUV3.rtR.U0, rtRectUV3.rtR.V0, rtRectUV3.rtR.U1, rtRectUV3.rtR.V1,
 										0xFFFFFFFF );
 }
@@ -594,7 +633,7 @@ void CUIMessenger::RenderRectUV3( int nUnitSize, int nX, int nY, int nWidth, int
 
 //------------------------------------------------------------------------------
 // CUIMessenger::RenderBack
-// Explain: ì°½ì˜ ë°°ê²½  
+// Explain: Ã¢ÀÇ ¹è°æ  
 // Date : 2005-05-18,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMessenger::RenderBackground( int nX, int nY ) 
@@ -638,22 +677,21 @@ void CUIMessenger::RenderMyInfo( int nX, int nY )
 {
 	nY += MYINFO_Y;
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Draw Icon
-	_pUIMgr->GetDrawPort()->AddTexture( nX + MYINFO_ICON_X, nY, nX + MYINFO_ICON_X + ICON_WIDTH, nY + ICON_HEIGHT,
+	pDrawPort->AddTexture( nX + MYINFO_ICON_X, nY, nX + MYINFO_ICON_X + ICON_WIDTH, nY + ICON_HEIGHT,
 										m_rcIcon[m_MyInfo.m_eJob][m_MyInfo.m_eCondition].U0, m_rcIcon[m_MyInfo.m_eJob][m_MyInfo.m_eCondition].V0,
 										m_rcIcon[m_MyInfo.m_eJob][m_MyInfo.m_eCondition].U1, m_rcIcon[m_MyInfo.m_eJob][m_MyInfo.m_eCondition].V1,
 										0Xffffffff );
 	// Button
 	m_btmSetState.Render();
 	
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Name 
-	_pUIMgr->GetDrawPort()->PutTextEx( m_MyInfo.m_strName, nX + MYINFO_NAME_X,
+	pDrawPort->PutTextEx( m_MyInfo.m_strName, nX + MYINFO_NAME_X,
 										nY, COLOR_MYNAME );
-	// Flush all render text queue
-	//_pUIMgr->GetDrawPort()->EndTextEx();
-
 }
 
 
@@ -664,13 +702,13 @@ void CUIMessenger::RenderMyInfo( int nX, int nY )
 //------------------------------------------------------------------------------
 void CUIMessenger::RenderGroup( int nX, int nY )
 {
-	// ì¶œë ¥ ì‹œí‚¬ ìœ„ì¹˜ ì¡°ì • Offset~
+	// Ãâ·Â ½ÃÅ³ À§Ä¡ Á¶Á¤ Offset~
 	nY = GROUP_Y;
 
-	ResizeScrollBar(); //Groupì˜ ì •ë³´ì— ì˜í•´ ìŠ¤í¬ë¡¤ ë°” í¬ê¸° ì¡°ì ˆ
+	ResizeScrollBar(); //GroupÀÇ Á¤º¸¿¡ ÀÇÇØ ½ºÅ©·Ñ ¹Ù Å©±â Á¶Àı
 		
-	int nBoardHeight = m_nBoardHeight; // ì¶œë ¥ ê°€ëŠ¥ ì˜ì—­
-	int nPos		 = m_sbMemberList.GetScrollPos(); // ìŠ¤í¬ë¡¤ ë°” Pos
+	int nBoardHeight = m_nBoardHeight; // Ãâ·Â °¡´É ¿µ¿ª
+	int nPos		 = m_sbMemberList.GetScrollPos(); // ½ºÅ©·Ñ ¹Ù Pos
 
 	int nLineY = -m_sbMemberList.GetScrollPos();
 	if( m_bFriendTab )
@@ -733,8 +771,19 @@ void CUIMessenger::Reset()
 void CUIMessenger::ToggleVisible()
 {
 	if( !IsUseLevel() ) return;
+
+	if( IsVisible() )
+	{
+		g_iXPosInMessanger = GetPosX();
+		g_iYPosInMessanger = GetPosY();
+	}
+	else
+	{
+		SetPos( g_iXPosInMessanger, g_iYPosInMessanger );
+	}
+
 	BOOL	bVisible = !IsVisible();
-	_pUIMgr->RearrangeOrder( UI_MESSENGER, bVisible );
+	CUIManager::getSingleton()->RearrangeOrder( UI_MESSENGER, bVisible );
 
 }
 
@@ -771,7 +820,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 			}
 		
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -795,10 +844,10 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 				}
 			}
 
-			//ê·¸ë£¹ ë©”ë‰´ ì²˜ë¦¬
+			//±×·ì ¸Ş´º Ã³¸®
 			if( m_tpGroup.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				//"ê·¸ë£¹ ì‚­ì œ" ë©”ë‰´ë¥¼ ê°€ë¥´í‚¤ë©´ ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸ í‘œì‹œ
+				//"±×·ì »èÁ¦" ¸Ş´º¸¦ °¡¸£Å°¸é ±×·ì ¸®½ºÆ® Ç¥½Ã
 				if( m_tpGroup.GetCurSel() ==GROUP_DELETE )
 				{
 					int PosX =m_tpGroup.GetPosX() +m_tpGroup.GetWidth();
@@ -806,7 +855,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 					m_tpGroupList.SetPos( PosX, PosY );
 					m_tpGroupList.Show();
 				}
-				//"ê·¸ë£¹ëª… ë³€ê²½" ë©”ë‰´ë¥¼ ê°€ë¥´í‚¤ë©´ ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸ í‘œì‹œ
+				//"±×·ì¸í º¯°æ" ¸Ş´º¸¦ °¡¸£Å°¸é ±×·ì ¸®½ºÆ® Ç¥½Ã
 				else if( m_tpGroup.GetCurSel() ==GROUP_RENAME)
 				{
 					int PosX =m_tpGroup.GetPosX() +m_tpGroup.GetWidth();
@@ -821,10 +870,10 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 				return WMSG_SUCCESS;
 			}
 			
-			//ë©¤ë²„ ë©”ë‰´ ì²˜ë¦¬
+			//¸â¹ö ¸Ş´º Ã³¸®
 			if( m_tpMemberMenu.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				//"ê·¸ë£¹ì´ë™" ë©”ë‰´ë¥¼ ê°€ë¥´í‚¤ë©´ ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸ í‘œì‹œ
+				//"±×·ìÀÌµ¿" ¸Ş´º¸¦ °¡¸£Å°¸é ±×·ì ¸®½ºÆ® Ç¥½Ã
 				if( m_tpMemberMenu.GetCurSel() ==0 )
 				{
 					int PosX =m_tpMemberMenu.GetPosX() +m_tpMemberMenu.GetWidth();
@@ -833,14 +882,14 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 					m_tpGroupList.Show();
 					m_nActiveMenu =0;
 				}
-				//ë‹¤ë¥¸ ë©”ë‰´ë¥¼ ê°€ë¥´í‚¤ë©´ ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸ ìˆ¨ê¹€
+				//´Ù¸¥ ¸Ş´º¸¦ °¡¸£Å°¸é ±×·ì ¸®½ºÆ® ¼û±è
 				else
 					m_tpGroupList.Hide();
 
 				return WMSG_SUCCESS;
 			}
 						
-			//ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸ë¥¼ ê°€ë¥´í‚¬ë•Œ...
+			//±×·ì ¸®½ºÆ®¸¦ °¡¸£Å³¶§...
 			if( m_tpGroupList.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
 			else
@@ -858,7 +907,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 				}
 			}
 
-			//ê·¸ë£¹ ë©”ë‰´ ì²˜ë¦¬
+			//±×·ì ¸Ş´º Ã³¸®
 			if( m_tpGroupMenu.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
 			else
@@ -920,7 +969,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 
 			if( IsInside( nX, nY ) )
 			{
-				_pUIMgr->RearrangeOrder( UI_MESSENGER, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_MESSENGER, TRUE );
 
 				nOldX = nX;		nOldY = nY;
 			
@@ -1055,19 +1104,19 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 								int x = nX -GetAbsPosX() +3;
 								int y = nY -GetAbsPosY();
 
-								//ê·¸ë£¹ ì„ íƒ
+								//±×·ì ¼±ÅÃ
 								if( m_vecGroup[i]->GetSelectLine() ==-1)
 								{
 									m_nSelectGroup =i;
-									//ë§ˆìš°ìŠ¤ í¬ì¸í„° ìœ„ì¹˜ë¡œ ìœ„ì¹˜ ì§€ì •
+									//¸¶¿ì½º Æ÷ÀÎÅÍ À§Ä¡·Î À§Ä¡ ÁöÁ¤
 									m_tpGroupMenu.SetPos(x, y);
 									m_tpGroupMenu.Show();
 								}
-								//ë©¤ë²„ ì„ íƒ
+								//¸â¹ö ¼±ÅÃ
 								else
 								{
 									m_miSelectMember =m_vecGroup[i]->GetSelectMember();
-									//ë§ˆìš°ìŠ¤ í¬ì¸í„° ìœ„ì¹˜ë¡œ ìœ„ì¹˜ ì§€ì •
+									//¸¶¿ì½º Æ÷ÀÎÅÍ À§Ä¡·Î À§Ä¡ ÁöÁ¤
 									m_tpMemberMenu.SetPos(x, y);
 									m_tpMemberMenu.Show();
 								}
@@ -1086,7 +1135,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 							//m_nSelectGroup = BLOCK_GROUP_INDEX;
 							m_miSelectMember =m_mgBlock.GetSelectMember();
 
-							//ë§ˆìš°ìŠ¤ í¬ì¸í„° ìœ„ì¹˜ë¡œ ìœ„ì¹˜ ì§€ì •
+							//¸¶¿ì½º Æ÷ÀÎÅÍ À§Ä¡·Î À§Ä¡ ÁöÁ¤
 							int x = nX -GetAbsPosX() +3;
 							int y = nY -GetAbsPosY();
 							m_tpBlock.SetPos(x, y);
@@ -1114,10 +1163,10 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 			if( bDragging )
 				m_bDrop =TRUE;
 
-			//ìƒíƒœ ë©”ë‰´ ì²˜ë¦¬
+			//»óÅÂ ¸Ş´º Ã³¸®
 			if( m_tpSetMyState.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				// ë‚´ ìƒíƒœ ë³€ê²½ 
+				// ³» »óÅÂ º¯°æ 
 				SetMyState( (eCondition)m_tpSetMyState.GetCurSel() );
 
 				m_tpSetMyState.Hide();
@@ -1126,7 +1175,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 			else
 				m_tpSetMyState.Hide();
 
-			// ë©¤ë²„ ë©”ë‰´ ì²˜ë¦¬
+			// ¸â¹ö ¸Ş´º Ã³¸®
 			if( m_tpMemberMenu.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
 				eMemberMenu nSelectLine =(eMemberMenu)m_tpMemberMenu.GetCurSel();
@@ -1138,14 +1187,14 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 				}
 
 				return WMSG_SUCCESS;
-				}
+			}
 			else
 				m_tpMemberMenu.Hide();
 
-			//ê·¸ë£¹ ê¸°ëŠ¥ ì²˜ë¦¬
+			//±×·ì ±â´É Ã³¸®
 			if( m_tpGroup.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				//ìƒˆê·¸ë£¹ ì¶”ê°€í•  ë•Œ
+				//»õ±×·ì Ãß°¡ÇÒ ¶§
 				eGroup nSelectLine =(eGroup)m_tpGroup.GetCurSel();
 				if( nSelectLine ==GROUP_INSERT)
 				{
@@ -1186,7 +1235,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 			}
 
 
-			// ê·¸ë£¹ ë©”ë‰´ ì²˜ë¦¬
+			// ±×·ì ¸Ş´º Ã³¸®
 			if( m_tpGroupMenu.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
 				eGroup nSelectLine =(eGroup)m_tpGroupMenu.GetCurSel();
@@ -1200,7 +1249,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 				m_tpGroupMenu.Hide();
 
 
-			//ì°¨ë‹¨ ë©”ë‰´ ì²˜ë¦¬
+			//Â÷´Ü ¸Ş´º Ã³¸®
 			if( m_tpBlock.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
 				/*****
@@ -1220,11 +1269,11 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 				if( m_tpBlock.GetCurSel() ==0)
 				{
 					CTString strMessage;
-					strMessage.PrintF(_S(3014, "%së‹˜ì„ ì°¨ë‹¨í•´ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?"), m_miSelectMember.m_strName );
-					Message( MSGCMD_MESSENGER_UNBLOCK, _S(3004, "ìºë¦­í„° ì°¨ë‹¨"), strMessage, UMBS_YESNO );
+					strMessage.PrintF(_S(3014, "%s´ÔÀ» Â÷´ÜÇØÁ¦ÇÏ½Ã°Ú½À´Ï±î?"), m_miSelectMember.m_strName );
+					Message( MSGCMD_MESSENGER_UNBLOCK, _S(3004, "Ä³¸¯ÅÍ Â÷´Ü"), strMessage, UMBS_YESNO );
 				}
 				else  if( m_tpBlock.GetCurSel() ==1)
-					MsgBoxCommand(MSGCMD_MESSENGER_DEL_REQ, true, m_miSelectMember.m_strName);
+					MsgBoxCommand(MSGCMD_MESSENGER_BLOCK_DEL_REQ, true, m_miSelectMember.m_strName);
 
 				m_tpBlock.Hide();
 				return WMSG_SUCCESS;
@@ -1244,7 +1293,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 				}
 				else if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
-					_pUIMgr->RearrangeOrder( UI_MESSENGER, FALSE );
+					ToggleVisible();
 					return WMSG_SUCCESS;
 				}
 				else if( m_btnGroup.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -1254,18 +1303,18 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 				}
 				else if( m_btnBlock.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
-					Message( MSGCMD_MESSENGER_BLOCK_REQ, _S(3004, "ìºë¦­í„° ì°¨ë‹¨"), _S(3007, "ì°¨ë‹¨í•  ìºë¦­ëª…ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
+					Message( MSGCMD_MESSENGER_BLOCK_REQ, _S(3004, "Ä³¸¯ÅÍ Â÷´Ü"), _S(3007, "Â÷´ÜÇÒ Ä³¸¯¸íÀ» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
 					return WMSG_SUCCESS;
 				}
 				else if( m_btnInsert.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
-					Message( MSGCMD_MESSENGER_ADD_REQ, _S(2993, "ì¹œêµ¬ì¶”ê°€"), _S( 1620, "ë“±ë¡í•  ì¹œêµ¬ì˜ ì´ë¦„ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
+					Message( MSGCMD_MESSENGER_ADD_REQ, _S(2993, "Ä£±¸Ãß°¡"), _S( 1620, "µî·ÏÇÒ Ä£±¸ÀÇ ÀÌ¸§À» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
 
 					return WMSG_SUCCESS;
 				}
 				else if( m_btnDelete.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
-					Message( MSGCMD_MESSENGER_DEL_REQ, _S(2999, "ìºë¦­í„° ì‚­ì œ"), _S(3040, "ì‚­ì œí•  ìºë¦­í„°ëª…ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
+					Message( MSGCMD_MESSENGER_DEL_REQ, _S(2999, "Ä³¸¯ÅÍ »èÁ¦"), _S(3040, "»èÁ¦ÇÒ Ä³¸¯ÅÍ¸íÀ» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
 					return WMSG_SUCCESS;
 				}
 				else if( m_sbMemberList.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -1277,7 +1326,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 					{
 						if( m_vecGroup[i]->MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							//ë©¤ë²„ë¥¼ ë“œë˜ê·¸í•´ì„œ ë‹¤ë¥¸ ê·¸ë£¹ìœ¼ë¡œ ê°€ì ¸ì™”ì„ ë•Œ -> í•´ë‹¹ ê·¸ë£¹ìœ¼ë¡œ ì´ë™
+							//¸â¹ö¸¦ µå·¡±×ÇØ¼­ ´Ù¸¥ ±×·ìÀ¸·Î °¡Á®¿ÔÀ» ¶§ -> ÇØ´ç ±×·ìÀ¸·Î ÀÌµ¿
 							if( m_bDrop )
 							{
 								ChangeGroup(i);
@@ -1321,7 +1370,7 @@ WMSG_RESULT	CUIMessenger::MouseMessage( MSG *pMsg )
 							{
 								if( ReadyOpenTalk( m_vecGroup[i]->GetSelectMember() ) )
 								{
-									// UITalkë¥¼ ìŠ¤ìŠ¤ë¡œ ìƒì„±ë§Œ
+									// UITalk¸¦ ½º½º·Î »ı¼º¸¸
 									OpenTalk( m_MyInfo.m_nCharIndex , m_vecGroup[i]->GetSelectMember() );
 								}
 
@@ -1373,13 +1422,16 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 				CMemberInfo mi =FindBlockMember(strInput);
 				if( mi.m_nCharIndex >=0 && mi.m_nGroupIndex<0)
 				{
-					Message( MSGCMD_MESSENGER_ERROR, _S(2997, "ì¹œêµ¬ ì¶”ê°€ ì—ëŸ¬"), _S(2995, "ì°¨ë‹¨ëœ ìºë¦­ì…ë‹ˆë‹¤. ë¨¼ì € ì°¨ë‹¨í•´ì œ í›„ ì¹œêµ¬ë¥¼ ì¶”ê°€í•˜ì‹œê¸°ë°”ëë‹ˆë‹¤." ), UMBS_OK );		
+					Message( MSGCMD_MESSENGER_ERROR, _S(2997, "Ä£±¸ Ãß°¡ ¿¡·¯"), _S(2995, "Â÷´ÜµÈ Ä³¸¯ÀÔ´Ï´Ù. ¸ÕÀú Â÷´ÜÇØÁ¦ ÈÄ Ä£±¸¸¦ Ãß°¡ÇÏ½Ã±â¹Ù¶ø´Ï´Ù." ), UMBS_OK );		
 					
 				}
 				else
 				{
+					if (UIMGR()->checkName(strInput, 0) == FALSE)
+						return;
+
 					s_strReqCharName =strInput;
-					// ì¹œêµ¬ ë“±ë¡ ìš”ì²­
+					// Ä£±¸ µî·Ï ¿äÃ»
 					RegistMemberReq( strInput );
 				}
 			}
@@ -1387,38 +1439,47 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 		}		
 		break;
 
-	case MSGCMD_MESSENGER_DEL_REQ :
+	case MSGCMD_MESSENGER_DEL_REQ:
+	case MSGCMD_MESSENGER_BLOCK_DEL_REQ:
 		{
 			if( bOK )
 			{
-				if( (miDelMember=FindMember(strInput)).m_nCharIndex !=-1 ||
-					(miDelMember=FindBlockMember(strInput)).m_nCharIndex !=-1 )
+				if (UIMGR()->checkName(strInput, 0) == FALSE)
+					return;
+
+				if ((miDelMember = FindMember(strInput)).m_nCharIndex != -1 ||
+					(miDelMember = FindBlockMember(strInput)).m_nCharIndex != -1)
 				{
 					m_miSelectMember =miDelMember;
 
 					CTString strMessage;
 					if( miDelMember.m_nGroupIndex >=0 )
 					{
-						strMessage.PrintF(_S(3000,"%së‹˜ì„ ì‚­ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?"), miDelMember.m_strName);
-						Message( MSGCMD_MESSENGER_DEL, _S(2999, "ìºë¦­í„° ì‚­ì œ"), strMessage, UMBS_YESNO );
+						strMessage.PrintF(_S(3000,"%s´ÔÀ» »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?"), miDelMember.m_strName);
+
+						if (nCommandCode == MSGCMD_MESSENGER_DEL_REQ)
+							Message( MSGCMD_MESSENGER_DEL, _S(2999, "Ä³¸¯ÅÍ »èÁ¦"), strMessage, UMBS_YESNO );
+						else
+							Message( MSGCMD_MESSENGER_BLOCK_DEL, _S(2999, "Ä³¸¯ÅÍ »èÁ¦"), strMessage, UMBS_YESNO );
 					}
 					else
 					{
-						strMessage.PrintF(_S(3014, "%së‹˜ì„ ì°¨ë‹¨í•´ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?"), miDelMember.m_strName);
-						Message( MSGCMD_MESSENGER_UNBLOCK, _S(3013, "ì°¨ë‹¨ í•´ì œ"), strMessage, UMBS_YESNO );						
+						strMessage.PrintF(_S(3014, "%s´ÔÀ» Â÷´ÜÇØÁ¦ÇÏ½Ã°Ú½À´Ï±î?"), miDelMember.m_strName);
+						Message( MSGCMD_MESSENGER_UNBLOCK, _S(3013, "Â÷´Ü ÇØÁ¦"), strMessage, UMBS_YESNO );						
 					}
 				}
 				else
 				{
-					// (í•œê¸€ 4~8ì, ì˜ë¬¸ 2~16ì)
+					// (ÇÑ±Û 4~8ÀÚ, ¿µ¹® 2~16ÀÚ)
 					if( strInput.Length() < 2 || strInput.Length() > 16 )
-						Message( MSGCMD_MESSENGER_ERROR, _S(3003, "ì¹œêµ¬ ì‚­ì œ ì—ëŸ¬"), _S(3002, "ì‚­ì œí•˜ê³ ì í•˜ëŠ” ì¹œêµ¬ ì´ë¦„ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤." ), UMBS_OK );		
+						Message( MSGCMD_MESSENGER_ERROR, _S(3003, "Ä£±¸ »èÁ¦ ¿¡·¯"), _S(3002, "»èÁ¦ÇÏ°íÀÚ ÇÏ´Â Ä£±¸ ÀÌ¸§ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù." ), UMBS_OK );		
 					else
-						Message( MSGCMD_MESSENGER_ERROR, _S(3003, "ì¹œêµ¬ ì‚­ì œ ì—ëŸ¬"), _S(781, "ëŒ€ìƒ ìºë¦­í„°ê°€ ì¡´ì¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤."), UMBS_OK);
+						Message( MSGCMD_MESSENGER_ERROR, _S(3003, "Ä£±¸ »èÁ¦ ¿¡·¯"), _S(781, "´ë»ó Ä³¸¯ÅÍ°¡ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù."), UMBS_OK);
 				}
 			}
 		}		
 		break;
+
 	case MSGCMD_MESSENGER_DEL :
 		{
 			if( bOK )
@@ -1430,9 +1491,19 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 			}
 		}
 		break;
+	case MSGCMD_MESSENGER_BLOCK_DEL:
+		{
+			if (bOK)
+			{
+				_pNetwork->MgrFriendDeleteBlock(miDelMember.m_nCharIndex);
+				m_miSelectMember =miDelMember;
+				DeleteMember();
+			}
+		}
+		break;
 	case MSGCMD_MESSENGER_ADD_WAIT:
 		{
-			_pNetwork->MgrRegistCancel(0, s_strReqCharName);
+			_pNetwork->MgrRegistCancel(m_nTarIndex, s_strReqCharName);
 		}
 		break;
 	case MSGCMD_MESSENGER_ADD_REP:
@@ -1443,7 +1514,7 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 				return;
 				
 			}
-			_pNetwork->MgrRegistCancel( 0, s_strReqCharName);
+			_pNetwork->MgrRegistCancel(m_nTarIndex, s_strReqCharName);
 
 		}
 		break;
@@ -1455,27 +1526,33 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 				strBlockMember =strInput;
 				if( strInput.Length() < 2 || strInput.Length() > 16  || strInput==m_MyInfo.m_strName)
 				{
-					Message( MSGCMD_MESSENGER_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(3009, "ì°¨ë‹¨í•˜ê³ ì í•˜ëŠ” ì´ë¦„ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤"), UMBS_OK);		
+					Message( MSGCMD_MESSENGER_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3009, "Â÷´ÜÇÏ°íÀÚ ÇÏ´Â ÀÌ¸§ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù"), UMBS_OK);		
 					return;
 				}
 				if( FindBlockMember(strInput).m_nCharIndex >=0 )
 				{
-					Message( MSGCMD_MESSENGER_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(3011, "ì´ë¯¸ ì°¨ë‹¨ëœ ìºë¦­ì…ë‹ˆë‹¤."), UMBS_OK);
+					Message( MSGCMD_MESSENGER_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3011, "ÀÌ¹Ì Â÷´ÜµÈ Ä³¸¯ÀÔ´Ï´Ù."), UMBS_OK);
 					return;
 				}
+
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
 				for(int i=0; i<10; ++i)
 				{
 					if( g_bUseChat[i] &&
-						_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->IsExistTarget(strInput) )
+						pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->IsExistTarget(strInput) )
 					{
-						Message( MSGCMD_MESSENGER_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(3012, "ëŒ€í™”ì¤‘ì¸ ìƒëŒ€ëŠ” ì°¨ë‹¨í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤."), UMBS_OK);
+						Message( MSGCMD_MESSENGER_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3012, "´ëÈ­ÁßÀÎ »ó´ë´Â Â÷´ÜÇÒ ¼ö ¾ø½À´Ï´Ù."), UMBS_OK);
 						return;
 					}
 				}
 	
+				if (UIMGR()->checkName(strInput, 0) == FALSE)
+					return;
+
 				CTString strMessage;
-				strMessage.PrintF(_S(3005, "%së‹˜ì„ ì°¨ë‹¨í•˜ì‹œê² ìŠµë‹ˆê¹Œ?"), strInput);
-				Message( MSGCMD_MESSENGER_BLOCK, _S(3004, "ìºë¦­í„° ì°¨ë‹¨"), strMessage, UMBS_YESNO );		
+				strMessage.PrintF(_S(3005, "%s´ÔÀ» Â÷´ÜÇÏ½Ã°Ú½À´Ï±î?"), strInput);
+				Message( MSGCMD_MESSENGER_BLOCK, _S(3004, "Ä³¸¯ÅÍ Â÷´Ü"), strMessage, UMBS_YESNO );		
 			}
 		}
 		break;
@@ -1511,10 +1588,13 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 			if( bOK )
 			{
 				if( FindGroup(strInput) >=0 )
-					Message( MSGCMD_MESSENGER_ERROR, _S(3020, "ê·¸ë£¹ì¶”ê°€ ì—ëŸ¬"), _S(3021, "ê°™ì€ ì´ë¦„ì„ ê°€ì§„ ê·¸ë£¹ì´ ì¡´ì¬í•˜ê³  ìˆìŠµë‹ˆë‹¤."), UMBS_OK);
-				else if( strInput.Length() < 1 )
+					Message( MSGCMD_MESSENGER_ERROR, _S(3020, "±×·ìÃß°¡ ¿¡·¯"), _S(3021, "°°Àº ÀÌ¸§À» °¡Áø ±×·ìÀÌ Á¸ÀçÇÏ°í ÀÖ½À´Ï´Ù."), UMBS_OK);
+				else if( UTIL_HELP()->IsSpecialChar(strInput.str_String) == true )
 				{
-					//Message( MSGCMD_MESSENGER_ERROR, _S(3020, "ê·¸ë£¹ì¶”ê°€ ì—ëŸ¬"), _S("ì´ë¦„ì„ ì…ë ¥í•´ì£¼ì„¸ìš”."), UMBS_OK);					
+					CUIMsgBox_Info MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo(_S(191,"È®ÀÎ"), UMBS_OK,UI_NONE, MSGCMD_NULL);
+					MsgBoxInfo.AddString(_S( 437, "¹®Àå¿¡ ±İÁöµÈ ´Ü¾î°¡ Æ÷ÇÔµÇ¾î ÀÖ½À´Ï´Ù.")); 
+					UIMGR()->CreateMessageBox( MsgBoxInfo );					
 				}
 				else
 					_pNetwork->MgrGroupAdd(strInput);
@@ -1527,13 +1607,16 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 		{
 			if( bOK )
 			{
+				if (m_vecGroup.size() <= m_nSelectGroup)
+					return;
+
 				if( m_vecGroup[m_nSelectGroup]->m_vecMember.empty() )
 				{
 					_pNetwork->MgrGroupDel(m_vecGroup[m_nSelectGroup]->m_nIndex);
 					DeleteGroup();
 				}
 				else
-					Message( MSGCMD_MESSENGER_ERROR, _S(3025, "ê·¸ë£¹ ì‚­ì œ ì—ëŸ¬"), _S(3027, "ê·¸ë£¹ì— ëŒ€í™” ìƒëŒ€ê°€ ìˆì„ë•ŒëŠ” ì‚­ì œê°€ ë¶ˆê°€ëŠ¥í•©ë‹ˆë‹¤.\nê·¸ë£¹ì„ ì‚­ì œí•˜ë ¤ë©´ ëŒ€í™”ìƒëŒ€ë¥¼ ë‹¤ë¥¸ ê·¸ë£¹ìœ¼ë¡œ ì˜®ê¸°ì…”ì•¼ ê°€ëŠ¥í•©ë‹ˆë‹¤."), UMBS_OK);
+					Message( MSGCMD_MESSENGER_ERROR, _S(3025, "±×·ì »èÁ¦ ¿¡·¯"), _S(3027, "±×·ì¿¡ ´ëÈ­ »ó´ë°¡ ÀÖÀ»¶§´Â »èÁ¦°¡ ºÒ°¡´ÉÇÕ´Ï´Ù.\n±×·ìÀ» »èÁ¦ÇÏ·Á¸é ´ëÈ­»ó´ë¸¦ ´Ù¸¥ ±×·ìÀ¸·Î ¿Å±â¼Å¾ß °¡´ÉÇÕ´Ï´Ù."), UMBS_OK);
 			}
 		}
 		break;
@@ -1542,11 +1625,17 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 		{
 			if( bOK )
 			{
+				if (m_vecGroup.size() <= m_nSelectGroup)
+					return;
+
 				if( FindGroup(strInput) >=0 )
-					Message( MSGCMD_MESSENGER_ERROR, _S(3030, "ê·¸ë£¹ëª… ë³€ê²½ ì—ëŸ¬"), _S(3021, "ê°™ì€ ì´ë¦„ì„ ê°€ì§„ ê·¸ë£¹ì´ ì¡´ì¬í•˜ê³  ìˆìŠµë‹ˆë‹¤."), UMBS_OK);
-				else if( strInput.Length() < 1 )
+					Message( MSGCMD_MESSENGER_ERROR, _S(3030, "±×·ì¸í º¯°æ ¿¡·¯"), _S(3021, "°°Àº ÀÌ¸§À» °¡Áø ±×·ìÀÌ Á¸ÀçÇÏ°í ÀÖ½À´Ï´Ù."), UMBS_OK);
+				else if( UTIL_HELP()->IsSpecialChar(strInput.str_String) == true )
 				{
-					//Message( MSGCMD_MESSENGER_ERROR, _S(3030, "ê·¸ë£¹ëª… ë³€ê²½ ì—ëŸ¬"), _s("ì´ë¦„ì„ ì…ë ¥í•´ì£¼ì„¸ìš”."), UMBS_OK);
+					CUIMsgBox_Info MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo(_S(191,"È®ÀÎ"), UMBS_OK,UI_NONE, MSGCMD_NULL);
+					MsgBoxInfo.AddString(_S( 437, "¹®Àå¿¡ ±İÁöµÈ ´Ü¾î°¡ Æ÷ÇÔµÇ¾î ÀÖ½À´Ï´Ù.")); 
+					UIMGR()->CreateMessageBox( MsgBoxInfo );					
 				}
 				else
 					_pNetwork->MgrGroupRename(m_vecGroup[m_nSelectGroup]->m_nIndex, strInput);
@@ -1568,7 +1657,7 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 
 //------------------------------------------------------------------------------
 // CUIMessenger::SetMyInfo
-// Explain:  ì´ˆê¸° ì •ë³´ ì…‹íŒ… (ê±°ì˜ í•„ìš” ì—†ì„ ë“¯... í•œë°... )
+// Explain:  ÃÊ±â Á¤º¸ ¼ÂÆÃ (°ÅÀÇ ÇÊ¿ä ¾øÀ» µí... ÇÑµ¥... )
 // Date : 2005-05-19,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMessenger::SetMyInfo( int nCharIndex, CTString strName, eJob nJob, eCondition eState )
@@ -1592,7 +1681,7 @@ void CUIMessenger::SetMyState( eCondition eState )
 	
 	m_MyInfo.m_eCondition = eState;
 
-	//! ë‚´ìƒíƒœë¥¼ ë³€ê²½í•œ í›„ì—ëŠ” ì„œë²„ì— ì•Œë ¤ ì¤˜ì•¼í•¨
+	//! ³»»óÅÂ¸¦ º¯°æÇÑ ÈÄ¿¡´Â ¼­¹ö¿¡ ¾Ë·Á Áà¾ßÇÔ
 	_pNetwork->MgrSetCondition( m_MyInfo.m_nCharIndex, m_MyInfo.m_eCondition );
 }
 
@@ -1604,23 +1693,41 @@ void CUIMessenger::SetMyState( eCondition eState )
 //------------------------------------------------------------------------------
 void CUIMessenger::RegistMemberReq( CTString strName )
 {
-	// (í•œê¸€ 4~8ì, ì˜ë¬¸ 2~16ì)
+	// (ÇÑ±Û 4~8ÀÚ, ¿µ¹® 2~16ÀÚ)
 	if( strName.Length() < 2 || strName.Length() > 16 )
 	{
-		Message( MSGCMD_MESSENGER_ERROR, _S(2997, "ì¹œêµ¬ ì¶”ê°€ ì—ëŸ¬"), _S( 1937, "ë“±ë¡í•˜ê³ ì í•˜ëŠ” ì¹œêµ¬ ì´ë¦„ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤." ), UMBS_OK );		
+		Message( MSGCMD_MESSENGER_ERROR, _S(2997, "Ä£±¸ Ãß°¡ ¿¡·¯"), _S( 1937, "µî·ÏÇÏ°íÀÚ ÇÏ´Â Ä£±¸ ÀÌ¸§ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù." ), UMBS_OK );		
 		return;
 	}
 
-	if( strName == m_MyInfo.m_strName )	
+	// Edited : CTStringÀÇ == Àº ´ë¼Ò¹®ÀÚ¸¦ °¡¸®Áö ¾Ê¾Æ¼­ ÀÏº»¿äÃ»À¸·Î ¼öÁ¤
+/*	if(g_iCountry == JAPAN)
 	{
-		Message( MSGCMD_MESSENGER_ERROR, _S(2997, "ì¹œêµ¬ ì¶”ê°€ ì—ëŸ¬"), _S( 1938, "ìì‹  ìì‹ ì€ ë“±ë¡í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), UMBS_OK );	
+		if( strcmp(strName,  m_MyInfo.m_strName) == 0 )	
+		{
+			Message( MSGCMD_MESSENGER_ERROR, _S(2997, "Ä£±¸ Ãß°¡ ¿¡·¯"), _S( 1938, "ÀÚ½Å ÀÚ½ÅÀº µî·ÏÇÒ ¼ö ¾ø½À´Ï´Ù." ), UMBS_OK );	
+			return;
+		}
+	}
+	else
+	{
+		if( strName == m_MyInfo.m_strName )	
+		{
+			Message( MSGCMD_MESSENGER_ERROR, _S(2997, "Ä£±¸ Ãß°¡ ¿¡·¯"), _S( 1938, "ÀÚ½Å ÀÚ½ÅÀº µî·ÏÇÒ ¼ö ¾ø½À´Ï´Ù." ), UMBS_OK );	
+			return;
+		}
+	}*/
+
+	if( strcmp(strName,  m_MyInfo.m_strName) == 0 )	
+	{
+		Message( MSGCMD_MESSENGER_ERROR, _S(2997, "Ä£±¸ Ãß°¡ ¿¡·¯"), _S( 1938, "ÀÚ½Å ÀÚ½ÅÀº µî·ÏÇÒ ¼ö ¾ø½À´Ï´Ù." ), UMBS_OK );	
 		return;
 	}
 
-	//ì´ë¯¸ ì¹œêµ¬ë¡œ ë“±ë¡ëœ ìƒíƒœ
+	//ÀÌ¹Ì Ä£±¸·Î µî·ÏµÈ »óÅÂ
 	if( (FindMember(strName).m_nCharIndex != -1) || (FindBlockMember(strName).m_nCharIndex != -1) )
 	{
-		Message( MSGCMD_MESSENGER_ERROR, _S(2997, "ì¹œêµ¬ ì¶”ê°€ ì—ëŸ¬"), _S(2998, "ì´ë¯¸ ë“±ë¡ë˜ì–´ ìˆëŠ” ìºë¦­ì…ë‹ˆë‹¤." ), UMBS_OK );	
+		Message( MSGCMD_MESSENGER_ERROR, _S(2997, "Ä£±¸ Ãß°¡ ¿¡·¯"), _S(2998, "ÀÌ¹Ì µî·ÏµÇ¾î ÀÖ´Â Ä³¸¯ÀÔ´Ï´Ù." ), UMBS_OK );	
 		return;
 	}
 
@@ -1635,7 +1742,7 @@ void CUIMessenger::RegistMemberReq( CTString strName )
 //------------------------------------------------------------------------------
 void CUIMessenger::RegistAllow()
 {
-	_pNetwork->MgrRegistAllow( m_MyInfo.m_nCharIndex, s_strReqCharName );
+	_pNetwork->MgrRegistAllow( m_nTarIndex, s_strReqCharName );
 }
 
 
@@ -1646,11 +1753,12 @@ void CUIMessenger::RegistAllow()
 //------------------------------------------------------------------------------
 void CUIMessenger::RegistMemberReq( int nCharIndex, CTString strName )
 {
+	m_nTarIndex = nCharIndex;
 	s_strReqCharName = strName;
 
 	CTString strMessage;
-	strMessage.PrintF( _S( 1623, "%së‹˜ì´ ì¹œêµ¬ë“±ë¡ ìš”ì²­ì„ í•˜ì…¨ìŠµë‹ˆë‹¤. ìˆ˜ë½ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), strName );
-	Message( MSGCMD_MESSENGER_ADD_REP, _S(2996, "ì¹œêµ¬ë“±ë¡ ìš”ì²­"), strMessage, UMBS_YESNO );
+	strMessage.PrintF( _S( 1623, "%s´ÔÀÌ Ä£±¸µî·Ï ¿äÃ»À» ÇÏ¼Ì½À´Ï´Ù. ¼ö¶ô ÇÏ½Ã°Ú½À´Ï±î?" ), strName );
+	Message( MSGCMD_MESSENGER_ADD_REP, _S(2996, "Ä£±¸µî·Ï ¿äÃ»"), strMessage, UMBS_YESNO );
 }
 
 
@@ -1662,12 +1770,12 @@ void CUIMessenger::RegistMemberReq( int nCharIndex, CTString strName )
 void CUIMessenger::DeleteMember()
 {
 	/********
-	// Date : 2005-06-08(ì˜¤í›„ 1:57:15), By Lee Ki-hwan : ì•„ë¬´ëŸ° ì„ íƒë„ ì•ˆëœ ìƒíƒœì—ì„œ ì‚­ì œì‹œ 
+	// Date : 2005-06-08(¿ÀÈÄ 1:57:15), By Lee Ki-hwan : ¾Æ¹«·± ¼±ÅÃµµ ¾ÈµÈ »óÅÂ¿¡¼­ »èÁ¦½Ã 
 	if ( m_miTarget.m_nCharIndex == -1 ) return; 
 
 	CTString strMessage;
-	strMessage.PrintF( _S( 1624, "ì •ë§ë¡œ %së‹˜ì„ ëŒ€í™”ìƒëŒ€ì—ì„œ ì‚­ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), m_miTarget.m_strName );
-	Message( MSGCMD_MESSENGER_DEL, _s("ì¹œêµ¬ ì‚­ì œ"), strMessage, UMBS_OKCANCEL );
+	strMessage.PrintF( _S( 1624, "Á¤¸»·Î %s´ÔÀ» ´ëÈ­»ó´ë¿¡¼­ »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?" ), m_miTarget.m_strName );
+	Message( MSGCMD_MESSENGER_DEL, _s("Ä£±¸ »èÁ¦"), strMessage, UMBS_OKCANCEL );
 	*********/
 
 	CTString strName =m_miSelectMember.m_strName;
@@ -1688,8 +1796,8 @@ void CUIMessenger::DeleteMember()
 	ResizeScrollBar();
 
 	CTString strMessage;
-	strMessage.PrintF(_S(3001, "%së‹˜ì„ ì‚­ì œí–ˆìŠµë‹ˆë‹¤."), strName);
-	Message( MSGCMD_MESSENGER_ERROR, _S(2999, "ìºë¦­í„° ì‚­ì œ"), strMessage, UMBS_OK );		
+	strMessage.PrintF(_S(3001, "%s´ÔÀ» »èÁ¦Çß½À´Ï´Ù."), strName);
+	Message( MSGCMD_MESSENGER_ERROR, _S(2999, "Ä³¸¯ÅÍ »èÁ¦"), strMessage, UMBS_OK );		
 }
 
 
@@ -1700,6 +1808,46 @@ void CUIMessenger::DeleteMember()
 //------------------------------------------------------------------------------
 void CUIMessenger::DeleteMember( int nCharIndex )
 {
+	// Ä£±¸ ÀÌ¸§ÀÌ ¹Ù²î¸é ´ëÈ­ÁßÀÌ Ã¢Àº Ã£¾Æ¼­ ´İ´Â´Ù.
+	{
+		int		max_group = m_vecGroup.size();
+		int		i, j;
+		std::string strFriend;
+
+		for (i = 0; i < max_group; ++i)
+		{
+			for (j = 0; j < m_vecGroup[i]->m_vecMember.size(); ++j)
+			{
+				if (m_vecGroup[i]->m_vecMember[j].m_nCharIndex == nCharIndex)
+				{
+					strFriend = m_vecGroup[i]->m_vecMember[j].m_strName.str_String;
+
+					i = max_group;
+					break;
+				}
+			}
+		}
+
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		if (strFriend.empty() == false)
+		{
+			// ÀÌ¹Ì ´ëÈ­ÁßÀÌ´Ù.
+			for( i =0; i < MAX_TALK; ++i )
+			{
+				CUITalk* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);			
+
+				if (g_bUseChat[i] && g_nChatIndex[i] < 0 && 
+					UITalk->IsExistTarget(strFriend.c_str()))
+				{
+					UITalk->Close();
+					break;
+				}
+			}
+
+		}
+	}
+
 	for(int i=0; i<m_vecGroup.size(); ++i)
 	{
 		if ( m_vecGroup[i]->DeleteMember( nCharIndex ) )
@@ -1727,8 +1875,40 @@ void CUIMessenger::SetMemberCondition( int nCharIndex, eCondition eState )
 	}
 
 	m_mgBlock.SetMemberCondition(nCharIndex, eState);
+
+	if (nCharIndex == _pNetwork->MyCharacterInfo.index && eState == OFFLINE)
+	{
+		for( int i =0; i < MAX_TALK; ++i )
+		{
+			if( g_bUseChat[i] )
+			{
+				g_bUseChat[i] = false;
+				g_nChatIndex[i] = 0;
+
+				CUIManager::getSingleton()->GetTalk(i+UI_MESSENGER_TALK_START)->Close();
+			}
+		} 
+	}
 }
 
+eCondition CUIMessenger::GetMemberCondition( int nCharIndex )
+{
+	eCondition eCon = OFFLINE;
+	CMemberInfo kInfo;
+
+	for(int i=0; i<m_vecGroup.size(); ++i)
+	{
+		kInfo = m_vecGroup[i]->GetMemberInfo(nCharIndex);
+
+		if (kInfo.m_nCharIndex == nCharIndex)
+		{
+			eCon = kInfo.m_eCondition;
+			break;
+		}
+	}
+
+	return eCon;
+}
 
 //------------------------------------------------------------------------------
 // CUIMessenger::AddFriendList
@@ -1760,10 +1940,10 @@ void CUIMessenger::AddFriendList( int nCharIndex, int nGroupIndex, CTString strN
 		}
 	}
 
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_MESSENGER_ADD_WAIT ) )
+	if( CUIManager::getSingleton()->DoesMessageBoxExist( MSGCMD_MESSENGER_ADD_WAIT ) )
 	{
 		CTString strMessage;
-		strMessage.PrintF( _S( 1626, "%së‹˜ì„ ì¹œêµ¬ ëª©ë¡ì— ì¶”ê°€ì˜€ìŠµë‹ˆë‹¤." ), strName  );
+		strMessage.PrintF( _S( 1626, "%s´ÔÀ» Ä£±¸ ¸ñ·Ï¿¡ Ãß°¡¿´½À´Ï´Ù." ), strName  );
 
 		ErrorMessage( strMessage );		
 	}
@@ -1790,10 +1970,10 @@ void CUIMessenger::AddFriendList( CMemberInfo miMember,  bool bBlock )
 		}
 	}
 
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_MESSENGER_ADD_WAIT ) )
+	if( CUIManager::getSingleton()->DoesMessageBoxExist( MSGCMD_MESSENGER_ADD_WAIT ) )
 	{
 		CTString strMessage;
-		strMessage.PrintF( _S( 1626, "%së‹˜ì„ ì¹œêµ¬ ëª©ë¡ì— ì¶”ê°€ì˜€ìŠµë‹ˆë‹¤." ), miMember.m_strName  );
+		strMessage.PrintF( _S( 1626, "%s´ÔÀ» Ä£±¸ ¸ñ·Ï¿¡ Ãß°¡¿´½À´Ï´Ù." ), miMember.m_strName  );
 
 		ErrorMessage( strMessage );		
 	}
@@ -1843,47 +2023,47 @@ void CUIMessenger::ErrorMsg( int nError )
 
 		case MSG_FRIEND_ERROR_PACKET:    
 			{
-				ErrorMessage( _S( 1627, "ì•Œìˆ˜ ì—†ëŠ” ë°ì´í„° ì…ë‹ˆë‹¤." ) );
+				ErrorMessage( _S( 1627, "¾Ë¼ö ¾ø´Â µ¥ÀÌÅÍ ÀÔ´Ï´Ù." ) );
 			}
 			break;
-		case MSG_FRIEND_ERROR_NOT_EXIST: //ì¡´ì¬í•˜ì§€ ì•ŠëŠ”ë‹¤.
+		case MSG_FRIEND_ERROR_NOT_EXIST: //Á¸ÀçÇÏÁö ¾Ê´Â´Ù.
 			{
-				ErrorMessage( _S( 1628, "í•´ë‹¹ ì¼€ë¦­í„°ê°€ ì¡´ì¬ í•˜ì§€ ì•Šê±°ë‚˜ [ì˜¤í”„ë¼ì¸] ìƒíƒœì…ë‹ˆë‹¤." ) );
+				ErrorMessage( _S( 1628, "ÇØ´ç ÄÉ¸¯ÅÍ°¡ Á¸Àç ÇÏÁö ¾Ê°Å³ª [¿ÀÇÁ¶óÀÎ] »óÅÂÀÔ´Ï´Ù." ) );
 			}
 			break;
-		case 	MSG_FRIEND_ERROR_FULLMEMBER: //ì¹œêµ¬ ì •ì› ì´ˆê³¼.
+		case 	MSG_FRIEND_ERROR_FULLMEMBER: //Ä£±¸ Á¤¿ø ÃÊ°ú.
 			{
-				ErrorMessage( _S( 1629, "ë” ì´ìƒ ë“±ë¡í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) );
+				ErrorMessage( _S( 1629, "´õ ÀÌ»ó µî·ÏÇÒ ¼ö ¾ø½À´Ï´Ù." ) );
 			}
 			break;
-		case MSG_FRIEND_ERROR_ALREADY_EXIST: //ì´ë¯¸ ì¹œêµ¬ë¦¬ìŠ¤íŠ¸ì— ì¡´ì¬.
+		case MSG_FRIEND_ERROR_ALREADY_EXIST: //ÀÌ¹Ì Ä£±¸¸®½ºÆ®¿¡ Á¸Àç.
 			{
-				ErrorMessage( _S( 1630, "ì´ë¯¸ ë“±ë¡ ë˜ì–´ ìˆìŠµë‹ˆë‹¤." ) );
+				ErrorMessage( _S( 1630, "ÀÌ¹Ì µî·Ï µÇ¾î ÀÖ½À´Ï´Ù." ) );
 			}
 			break;
-		case MSG_FRIEND_ERROR_WAIT_OTHER: //ë‹¤ë¥¸ ì‚¬ëŒìœ¼ë¡œë¶€í„° ì¹œêµ¬ë“±ë¡ì„ ìš”ì²­ë°›ì€ ìƒíƒœ..
+		case MSG_FRIEND_ERROR_WAIT_OTHER: //´Ù¸¥ »ç¶÷À¸·ÎºÎÅÍ Ä£±¸µî·ÏÀ» ¿äÃ»¹ŞÀº »óÅÂ..
 			{
-				ErrorMessage( _S( 1631, "ì´ë¯¸ ë“±ë¡ ìš”ì²­ì„ ë°›ì„ ìƒíƒœì…ë‹ˆë‹¤." ) );
+				ErrorMessage( _S( 1631, "ÀÌ¹Ì µî·Ï ¿äÃ»À» ¹ŞÀ» »óÅÂÀÔ´Ï´Ù." ) );
 			}
 			break;
-		case MSG_FRIEND_ERROR_NOT_MATCH_INDEX: //ì„œë¡œê°„ ì¹œêµ¬ ìš”ì²­:ìŠ¹ì¸ ì•„ì´ë””ê°€ ì¼ì¹˜í•˜ì§€ ì•ŠëŠ”ë‹¤.
+		case MSG_FRIEND_ERROR_NOT_MATCH_INDEX: //¼­·Î°£ Ä£±¸ ¿äÃ»:½ÂÀÎ ¾ÆÀÌµğ°¡ ÀÏÄ¡ÇÏÁö ¾Ê´Â´Ù.
 			{
-				ErrorMessage( _S( 1632, "ì•„ì´ë””ê°€ ì¼ì¹˜í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤." ) );
+				ErrorMessage( _S( 1632, "¾ÆÀÌµğ°¡ ÀÏÄ¡ÇÏÁö ¾Ê½À´Ï´Ù." ) );
 			}
 			break;
-		case MSG_FRIEND_ERROR_HELPER_SERVER: //í—¬í¼ì„œë²„ì™€ì˜ ì ‘ì†ì˜¤ë¥˜.
+		case MSG_FRIEND_ERROR_HELPER_SERVER: //ÇïÆÛ¼­¹ö¿ÍÀÇ Á¢¼Ó¿À·ù.
 			{
-				ErrorMessage( _S( 1633, "ì•Œìˆ˜ ì—†ëŠ” ë°ì´í„° ì…ë‹ˆë‹¤." ) );
+				ErrorMessage( _S( 1633, "¾Ë¼ö ¾ø´Â µ¥ÀÌÅÍ ÀÔ´Ï´Ù." ) );
 			}
 			break;
 		case MSG_FRIEND_ERROR_GAMESERVER:
 			{
-				ErrorMessage( _S( 1634, "ì•Œìˆ˜ ì—†ëŠ” ë°ì´í„° ì…ë‹ˆë‹¤." ) );
+				ErrorMessage( _S( 1634, "¾Ë¼ö ¾ø´Â µ¥ÀÌÅÍ ÀÔ´Ï´Ù." ) );
 			}
 			break;
 		case MSG_FRIEND_ERROR_REGIST_REFUSE_PVP:
 			{
-				ErrorMessage( _S( 3070, "PVPì¤‘ì¸ ìºë¦­í„°ëŠ” ì¹œêµ¬ë“±ë¡í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.") );
+				ErrorMessage( _S( 3070, "PVPÁßÀÎ Ä³¸¯ÅÍ´Â Ä£±¸µî·ÏÇÒ ¼ö ¾ø½À´Ï´Ù.") );
 			}
 			break;
 	}
@@ -1892,7 +2072,7 @@ void CUIMessenger::ErrorMsg( int nError )
 
 //------------------------------------------------------------------------------
 // CUIMessenger::ResizeScrollBar
-// Explain:  Groupì˜ ìƒíƒœì— ë”°ë¼ ìŠ¤í¬ë¡¤ ë°”ì˜ í¬ê¸° ì¡°ì ˆ
+// Explain:  GroupÀÇ »óÅÂ¿¡ µû¶ó ½ºÅ©·Ñ ¹ÙÀÇ Å©±â Á¶Àı
 //			1. Extension
 //			2. Member Count
 // Date : 2005-05-22,Author: Lee Ki-hwan
@@ -1913,7 +2093,7 @@ void CUIMessenger::ResizeScrollBar()
 		nSize = 1;
 	}
 	
-	// Posì„ ì´ë™ì‹œì¼œì•¼ í• ê¹Œìš”?
+	// PosÀ» ÀÌµ¿½ÃÄÑ¾ß ÇÒ±î¿ä?
 	m_sbMemberList.SetCurItemCount( nSize );
 	
 	if( OnLineExt != m_mgFriend.IsExtension() )
@@ -1967,20 +2147,14 @@ void CUIMessenger::DeleteMemberRep()
 {
 	CTString strMessage;
 	
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_MESSENGER_ADD_WAIT ) ) // ì¶”ê°€ ìš”ì²­ì¤‘ì´ë¼ë©´ 
+	if( CUIManager::getSingleton()->DoesMessageBoxExist( MSGCMD_MESSENGER_ADD_WAIT ) ) // Ãß°¡ ¿äÃ»ÁßÀÌ¶ó¸é 
 	{
-		strMessage.PrintF( _S( 1635, "ì¹œêµ¬ê°€ ìƒˆë¡œ ì¶”ê°€ë˜ì—ˆìŠµë‹ˆë‹¤." ) );
+		strMessage.PrintF( _S( 1635, "Ä£±¸°¡ »õ·Î Ãß°¡µÇ¾ú½À´Ï´Ù." ) );
 	}
 	else
 	{	
-		strMessage.PrintF( _S( 1636, "ì¹œêµ¬ê°€ ì‚­ì œ ë˜ì—ˆìŠµë‹ˆë‹¤." ) );
+		strMessage.PrintF( _S( 1636, "Ä£±¸°¡ »èÁ¦ µÇ¾ú½À´Ï´Ù." ) );
 	}
-
-	
-	//_pUIMgr->GetChatting()->AddSysMessage( strMessage );			
-
-	//MessageBox();
-
 }
 
 
@@ -1991,22 +2165,24 @@ void CUIMessenger::DeleteMemberRep()
 //------------------------------------------------------------------------------
 void CUIMessenger::Message( int nCommandCode, CTString strTitle, CTString strMessage, DWORD dwStyle )
 {
-	if( _pUIMgr->DoesMessageBoxExist( nCommandCode ) )
-	return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( nCommandCode ) == TRUE )
+		return;
 
 	CUIMsgBox_Info	MsgBoxInfo;
 	//MsgBoxInfo.SetMsgBoxInfo( m_strTitle, dwStyle, UI_MESSENGER, nCommandCode );   ==>
 	MsgBoxInfo.SetMsgBoxInfo( strTitle, dwStyle, UI_MESSENGER, nCommandCode ); 
 	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBErrorMessage
-// Explain: ì—ëŸ¬ ë©”ì„¸ì§€ ì¶œë ¥ ì‹œ ì‚¬ìš©í•˜ëŠ” ë©”ì„¸ì§€ ë°•ìŠ¤
-// Date : 2005-03-19(ì˜¤í›„ 12:28:10) Lee Ki-hwan
+// Explain: ¿¡·¯ ¸Ş¼¼Áö Ãâ·Â ½Ã »ç¿ëÇÏ´Â ¸Ş¼¼Áö ¹Ú½º
+// Date : 2005-03-19(¿ÀÈÄ 12:28:10) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIMessenger::ErrorMessage( CTString strErrorMessage )
 {
@@ -2014,14 +2190,16 @@ void CUIMessenger::ErrorMessage( CTString strErrorMessage )
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( m_strTitle, UMBS_OK, UI_MESSENGER, MSGCMD_MESSENGER_ERROR );
 	MsgBoxInfo.AddString( strErrorMessage );	
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );		
 }
 
 
 void CUIMessenger::CloseAllMessageBox()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	for( int i = MSGCMD_MESSENGER_START; i <= MSGCMD_MESSENGER_END; i++ )
-	_pUIMgr->CloseMessageBox( i );
+		pUIManager->CloseMessageBox( i );
 }
 
 
@@ -2032,33 +2210,36 @@ void CUIMessenger::CloseAllMessageBox()
 //------------------------------------------------------------------------------
 bool CUIMessenger::ReadyOpenTalk( CMemberInfo miMemberInfo, bool bFocus )
 {
-	if ( miMemberInfo.m_nCharIndex == -1 ) return false;
+	if ( miMemberInfo.m_nCharIndex == -1 )
+		return false;
 
-	// í˜„ì¬ ëŒ€í™”ìƒëŒ€ì™€ ëŒ€í™”ì¤‘ì¸ì§€
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// ÇöÀç ´ëÈ­»ó´ë¿Í ´ëÈ­ÁßÀÎÁö
 	for( int i =0; i < MAX_TALK; ++i )
 	{
 		//if( nUseTalbe[i] != -1 )
 		if( g_bUseChat[i] )
 		{
-			CUITalk* UITalk =_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START);
+			CUITalk* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
 			if( UITalk->IsExistTarget(miMemberInfo.m_strName) )
 			{
 				if( miMemberInfo.m_eCondition == OFFLINE )
 				{
-					TalkErrorMessage( _S( 1637, "ëŒ€í™”ìƒëŒ€ê°€ [ì˜¤í”„ë¼ì¸] ìƒíƒœì…ë‹ˆë‹¤." ) );
+					TalkErrorMessage( _S( 1637, "´ëÈ­»ó´ë°¡ [¿ÀÇÁ¶óÀÎ] »óÅÂÀÔ´Ï´Ù." ) );
 					return false;
 				}
 				else
 				{
 					if ( bFocus )
-					{	// í˜„ì¬ ëŒ€í™” ì¤‘ì¸ ~
-						_pUIMgr->RearrangeOrder( i + UI_MESSENGER_TALK_START, TRUE );
+					{	// ÇöÀç ´ëÈ­ ÁßÀÎ ~
+						pUIManager->RearrangeOrder( i + UI_MESSENGER_TALK_START, TRUE );
 					}
-					// 1:1 ëŒ€í™”ì¤‘ì´ë©´ ìƒˆë¡œìš´ ì°½ì„ ë§Œë“¤ì§€ ì•ŠìŒ...
+					// 1:1 ´ëÈ­ÁßÀÌ¸é »õ·Î¿î Ã¢À» ¸¸µéÁö ¾ÊÀ½...
 					if( UITalk->m_vecTarget.size() ==2)
 					{
-						//Messageê°€ ë– ì„œ ë¶ˆí¸í•˜ë‹¤ (ê°œì¸ì  ìƒê°) [12/8/2006 KwonYongDae]
-						//Message( MSGCMD_MESSENGER_ERROR, _S(3033, "ëŒ€í™”í•˜ê¸° ì—ëŸ¬"), _S(3038, "ì´ë¯¸ ëŒ€í™”ì¤‘ì¸ ìƒëŒ€ì…ë‹ˆë‹¤."), UMBS_OK);
+						//Message°¡ ¶°¼­ ºÒÆíÇÏ´Ù (°³ÀÎÀû »ı°¢) [12/8/2006 KwonYongDae]
+						//Message( MSGCMD_MESSENGER_ERROR, _S(3033, "´ëÈ­ÇÏ±â ¿¡·¯"), _S(3038, "ÀÌ¹Ì ´ëÈ­ÁßÀÎ »ó´ëÀÔ´Ï´Ù."), UMBS_OK);
 						return false;
 					}
 				}
@@ -2068,17 +2249,17 @@ bool CUIMessenger::ReadyOpenTalk( CMemberInfo miMemberInfo, bool bFocus )
 
 	if( miMemberInfo.m_eCondition == OFFLINE )
 	{	
-		//!ì˜¤í”„ë¼ì¸ ëŒ€í™”ìƒëŒ€ì™€ëŠ” ëŒ€í™”ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.
-		ErrorMessage( _S( 1638,  "[ì˜¤í”„ë¼ì¸] ìƒíƒœì¸ ëŒ€ìƒê³¼ëŠ” ëŒ€í™”ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤."  ) );
+		//!¿ÀÇÁ¶óÀÎ ´ëÈ­»ó´ë¿Í´Â ´ëÈ­¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù.
+		ErrorMessage( _S( 1638,  "[¿ÀÇÁ¶óÀÎ] »óÅÂÀÎ ´ë»ó°ú´Â ´ëÈ­¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù."  ) );
 		return false;
 	}
 
 
-	// ë‚¨ì€ê²Œ ì—†ë‹¤ë©´ ë©”ì„¸ì§€ ë¿Œë ¤ì£¼ê³  ã…¡ã…¡;~
+	// ³²Àº°Ô ¾ø´Ù¸é ¸Ş¼¼Áö »Ñ·ÁÁÖ°í ¤Ñ¤Ñ;~
 	if( m_nTalkCount >= MAX_TALK )
 	{
-		//!ë”ì´ìƒ ëŒ€í™”ì°½ì„ ì—´ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.
-		ErrorMessage( _S( 1639,  "ë” ì´ìƒ ëŒ€í™”ì°½ì„ ì—´ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."  ) );
+		//!´õÀÌ»ó ´ëÈ­Ã¢À» ¿­ ¼ö ¾ø½À´Ï´Ù.
+		ErrorMessage( _S( 1639,  "´õ ÀÌ»ó ´ëÈ­Ã¢À» ¿­ ¼ö ¾ø½À´Ï´Ù."  ) );
 		return false;
 	} 
 	else
@@ -2112,7 +2293,7 @@ void CUIMessenger::RevOneVsOneTalk( int nSenderIndex, int nResiverIndex, CTStrin
 	int  i = 0;
 	CMemberInfo Sender, Resiver;
 
-	// ë³´ë‚¸ì‚¬ëŒì˜ ì •ë³´ë¥¼ ì°¾ëŠ”ë‹¤
+	// º¸³½»ç¶÷ÀÇ Á¤º¸¸¦ Ã£´Â´Ù
 	for( i=0; i<m_vecGroup.size(); ++i)
 	{
 		Sender	= m_vecGroup[i]->GetMemberInfo( nSenderIndex );
@@ -2122,11 +2303,11 @@ void CUIMessenger::RevOneVsOneTalk( int nSenderIndex, int nResiverIndex, CTStrin
 		}
 	}
 
-	// ë³´ë‚´ëŠ”ì‚¬ëŒì´ ë‚˜ ìì‹ ì´ë¼ë©´
+	// º¸³»´Â»ç¶÷ÀÌ ³ª ÀÚ½ÅÀÌ¶ó¸é
 	if( Sender.m_nCharIndex == -1 && GetMyInfo().m_nCharIndex == nSenderIndex )	
 		Sender = GetMyInfo();
 	
-	// ë°›ëŠ”ì‚¬ëŒì˜ ì •ë³´ë¥¼ ì°¾ëŠ”ë‹¤.
+	// ¹Ş´Â»ç¶÷ÀÇ Á¤º¸¸¦ Ã£´Â´Ù.
 	for( i=0; i<m_vecGroup.size(); ++i)
 	{
 		Resiver	= m_vecGroup[i]->GetMemberInfo( nResiverIndex );
@@ -2136,17 +2317,19 @@ void CUIMessenger::RevOneVsOneTalk( int nSenderIndex, int nResiverIndex, CTStrin
 			break;
 		}
 	}
-	// ë°›ëŠ”ì‚¬ëŒì´ ë‚˜ ìì‹ ì´ë¼ë©´
+	// ¹Ş´Â»ç¶÷ÀÌ ³ª ÀÚ½ÅÀÌ¶ó¸é
 	if( Resiver.m_nCharIndex == -1 && GetMyInfo().m_nCharIndex == nResiverIndex )	
 		Resiver = GetMyInfo();
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	for( i =0; i < MAX_TALK; ++i )
 	{
-		CUITalk* UITalk =_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START);
+		CUITalk* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
 		if( g_bUseChat[i] && 
 			g_nChatIndex[i] < 0 /*UITalk->GetClientIndex()*/
 			&& UITalk->IsExistTarget( Resiver.m_strName )
-			&& UITalk->IsExistTarget( Sender.m_strName ) )// ì‚¬ìš©ì¤‘ì¸ì°½, ì—°ê²°ì´ ë˜ì§€ ì•Šì€ì°½ ë³´ë‚¸ì‚¬ëŒì´ ìˆëŠ” ì°½
+			&& UITalk->IsExistTarget( Sender.m_strName ) )// »ç¿ëÁßÀÎÃ¢, ¿¬°áÀÌ µÇÁö ¾ÊÀºÃ¢ º¸³½»ç¶÷ÀÌ ÀÖ´Â Ã¢
 		{
 			UITalk->AddTalkListString( strSendName, strChat, false, ChatColor[nColIndex] );
 			bExistTarget =true;
@@ -2154,14 +2337,14 @@ void CUIMessenger::RevOneVsOneTalk( int nSenderIndex, int nResiverIndex, CTStrin
 		}
 	}
 
-	//ëŒ€í™”ì¤‘ì¸ ìƒëŒ€ê°€ ì•„ë‹Œ ì‚¬ëŒì—ê²Œì„œ ë©”ì‹œì§€ê°€ ì˜¤ë©´ ìƒˆì°½ì„ ë„ì›€...
+	//´ëÈ­ÁßÀÎ »ó´ë°¡ ¾Æ´Ñ »ç¶÷¿¡°Ô¼­ ¸Ş½ÃÁö°¡ ¿À¸é »õÃ¢À» ¶ç¿ò...
 	if( !bExistTarget )
 	{			
-		//ìƒˆë¡œ ì°½ì„ ë„ì›Œì•¼ í•©ë‹ˆë‹¤
+		//»õ·Î Ã¢À» ¶ç¿ö¾ß ÇÕ´Ï´Ù
 		if( ReadyOpenTalk( Sender ) )
 		{
 			int nUIIndex = OpenTalk( m_MyInfo.m_nCharIndex , Sender );
-			_pUIMgr->GetTalk(nUIIndex)->AddTalkListString( strSendName, strChat, false, ChatColor[nColIndex]);
+			pUIManager->GetTalk(nUIIndex)->AddTalkListString( strSendName, strChat, false, ChatColor[nColIndex]);
 		}
 	}	
 }
@@ -2175,10 +2358,12 @@ void CUIMessenger::RevOneVsOneTalk( int nSenderIndex, int nResiverIndex, CTStrin
 void CUIMessenger::RevTalk( int nMakeCharIndex, int nChatIndex, CTString strSendName, CTString strChat, int nColIndex )
 {
 	bool bExistTarget =false;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	for( int i =0; i < MAX_TALK; ++i )
 	{
-		CUITalk* UITalk =_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START);
-		if( g_bUseChat[i] && g_nChatIndex[i]==nChatIndex)// í˜„ì¬ ëŒ€í™”ì¤‘ì¸ ìƒëŒ€ê°€ ë§ì„ ê±¸ì–´ ì™”ë„¤ì—¬~
+		CUITalk* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
+		if( g_bUseChat[i] && g_nChatIndex[i]==nChatIndex)// ÇöÀç ´ëÈ­ÁßÀÎ »ó´ë°¡ ¸»À» °É¾î ¿Ô³×¿©~
 		{
 			
 			UITalk->AddTalkListString( strSendName, strChat, false, ChatColor[nColIndex] );
@@ -2186,31 +2371,6 @@ void CUIMessenger::RevTalk( int nMakeCharIndex, int nChatIndex, CTString strSend
 			break;
 		}
 	}
-
-	//ëŒ€í™”ì¤‘ì¸ ìƒëŒ€ê°€ ì•„ë‹Œ ì‚¬ëŒì—ê²Œì„œ ë©”ì‹œì§€ê°€ ì˜¤ë©´ ìƒˆì°½ì„ ë„ì›€...
-	/*******
-	if( bExistTarget )
-		return;
-	else
-	{
-		CMemberInfo Member;
-
-		for(int i=0; i<m_vecGroup.size(); ++i)
-		{
-			Member =m_vecGroup[i]->GetMemberInfo(strSendName);
-			if( Member.m_nCharIndex !=-1)
-				break;
-		}
-			
-		//ìƒˆë¡œ ì°½ì„ ë„ì›Œì•¼ í•©ë‹ˆë‹¤.
-		bool bNewChat = ReadyOpenTalk( Member );
-		if( bNewChat )
-		{
-			int nUIIndex =OpenTalk(nMakeCharIndex, nChatIndex, strSendName);
-			_pUIMgr->GetTalk(nUIIndex)->AddTalkListString( strSendName, strChat, false, ChatColor[nColIndex]);
-		}
-	}	
-	*******/
 }
 
 //------------------------------------------------------------------------------
@@ -2220,14 +2380,18 @@ void CUIMessenger::RevTalk( int nMakeCharIndex, int nChatIndex, CTString strSend
 //------------------------------------------------------------------------------
 void CUIMessenger::TalkErrorMessage( CTString strMessage )
 {
-	for( int iUI = UI_MESSENGER_TALK_START; iUI < UI_MESSENGER_TALK_END; iUI++ )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	int iUI;
+	for( iUI = UI_MESSENGER_TALK_START; iUI < UI_MESSENGER_TALK_END; iUI++ )
 	{
-		if( _pUIMgr->GetTalk(iUI)->IsFocused() )
+		if( pUIManager->GetTalk(iUI)->IsFocused() )
 		{
-			_pUIMgr->GetTalk(iUI)->AddErrorTalk( strMessage );
+			pUIManager->GetTalk(iUI)->AddErrorTalk( strMessage );
 			break;
 		}
 	}
+
 	if( iUI == UI_MESSENGER_TALK_END )
 	{
 		ErrorMessage ( strMessage );
@@ -2249,11 +2413,13 @@ void CUIMessenger::RenderTab(int nX, int nY)
 	int nY_Friend =nY + Tab_Y;
 	int nY_Block =nY + Tab_Y;
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	if( m_bFriendTab )
 	{
 		//RenderRectUV3( UNIT_SIZE_GUIDLINE, nX, nY_Friend -3, m_nWidth/2, 20, m_rt3BackFTab0 );
 		//RenderRectUV3( UNIT_SIZE_GUIDLINE, nX +m_nWidth/2, nY_Block -3, m_nWidth/2, 20, m_rt3BackBTab1 ); 
-		_pUIMgr->GetDrawPort()->AddTexture( nX +m_nWidth/2 , nY_Friend-3, nX +m_nWidth -8, nY_Friend-3 +20,
+		pDrawPort->AddTexture( nX +m_nWidth/2 , nY_Friend-3, nX +m_nWidth -8, nY_Friend-3 +20,
 										m_rtTab.U0, m_rtTab.V0,	m_rtTab.U1, m_rtTab.V1,
 										0Xffffffff );
 
@@ -2263,7 +2429,7 @@ void CUIMessenger::RenderTab(int nX, int nY)
 	{
 		//RenderRectUV3( UNIT_SIZE_GUIDLINE, nX, nY_Friend -3, m_nWidth/2, 20, m_rt3BackFTab1 );
 		//RenderRectUV3( UNIT_SIZE_GUIDLINE, nX +m_nWidth/2, nY_Block -3, m_nWidth/2, 20, m_rt3BackBTab0 ); 
-		_pUIMgr->GetDrawPort()->AddTexture( nX +8, nY_Friend-3, nX +8 +m_nWidth/2 -8, nY_Friend-3 +20,
+		pDrawPort->AddTexture( nX +8, nY_Friend-3, nX +8 +m_nWidth/2 -8, nY_Friend-3 +20,
 										m_rtTab.U0, m_rtTab.V0,	m_rtTab.U1, m_rtTab.V1,
 										0Xffffffff );
 
@@ -2271,16 +2437,21 @@ void CUIMessenger::RenderTab(int nX, int nY)
 	}
 
 	/*
-	_pUIMgr->GetDrawPort()->AddTexture( nX +8, nY + Tab_Y-3 +20, nX +m_nWidth -8, nY + Tab_Y-3 +20 +m_nBoardHeight + 6,
+	pDrawPort->AddTexture( nX +8, nY + Tab_Y-3 +20, nX +m_nWidth -8, nY + Tab_Y-3 +20 +m_nBoardHeight + 6,
 										m_rtTab.U0, m_rtTab.V0,	m_rtTab.U1, m_rtTab.V1,
 										0Xffffffff );
 	*/
 	
-
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(2984, "ë“±ë¡ëœ ì¹œêµ¬ë“¤"), nX + Tab_MEMBER_X,
+	// [091110: selo] ÅØ½ºÆ® À§Ä¡ Àâ±â
+//	extern INDEX g_iCountry;
+	int nBlock_ExtraX = 0;
+//	if( USA_SPAIN == g_iCountry )
+//		nBlock_ExtraX = -20;
+	
+	pDrawPort->PutTextEx( _S(2984, "µî·ÏµÈ Ä£±¸µé"), nX + Tab_MEMBER_X,
 										nY_Friend, m_bFriendTab ? 0xE1B300FF :  0xA2A2A2FF);
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(2985, "ì°¨ë‹¨ëœ ìºë¦­í„°"), nX + Tab_BLOCK_X,
+	pDrawPort->PutTextEx( _S(2985, "Â÷´ÜµÈ Ä³¸¯ÅÍ"), nX + Tab_BLOCK_X + nBlock_ExtraX,
 										nY_Block, !m_bFriendTab ? 0xE1B300FF :  0xA2A2A2FF );
 
 }
@@ -2290,27 +2461,41 @@ void CUIMessenger::SetGroup(enum eGroup eState, int nSubMenu)
 	switch(eState)
 	{
 	case GROUP_INSERT:
-		Message( MSGCMD_MESSENGER_GROUP_ADD, _S(3018, "ìƒˆê·¸ë£¹ ì¶”ê°€"), _S(3019, "ìƒˆë¡œìš´ ê·¸ë£¹ëª…ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
+		Message( MSGCMD_MESSENGER_GROUP_ADD, _S(3018, "»õ±×·ì Ãß°¡"), _S(3019, "»õ·Î¿î ±×·ì¸íÀ» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
 		break;
 	case GROUP_DELETE:
 		{
 			m_nSelectGroup =nSubMenu;
 			if( m_nSelectGroup !=0 )
 			{
+				if (m_vecGroup.size() <= nSubMenu)
+				{
+					return;
+				}
+
 				CTString strMessage;
-				strMessage.PrintF( _S(3024, "%s ê·¸ë£¹ì„ ì‚­ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), m_vecGroup[nSubMenu]->m_strGroupName );
-				Message( MSGCMD_MESSENGER_GROUP_DEL, _S(3023, "ê·¸ë£¹ ì‚­ì œ"), strMessage, UMBS_OKCANCEL );
+				strMessage.PrintF( _S(3024, "%s ±×·ìÀ» »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?" ), m_vecGroup[nSubMenu]->m_strGroupName );
+				Message( MSGCMD_MESSENGER_GROUP_DEL, _S(3023, "±×·ì »èÁ¦"), strMessage, UMBS_OKCANCEL );
 			}
 			else
-				Message( MSGCMD_MESSENGER_ERROR, _S(3025, "ê·¸ë£¹ì‚­ì œ ì—ëŸ¬"), _S(3026, "ê¸°ë³¸ ê·¸ë£¹ì€ ì‚­ì œí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤."), UMBS_OK);
+				Message( MSGCMD_MESSENGER_ERROR, _S(3025, "±×·ì»èÁ¦ ¿¡·¯"), _S(3026, "±âº» ±×·ìÀº »èÁ¦ÇÒ ¼ö ¾ø½À´Ï´Ù."), UMBS_OK);
 			break;
 		}
 	case GROUP_RENAME:
 		m_nSelectGroup =nSubMenu;
 		if( m_nSelectGroup !=0 )
-			Message( MSGCMD_MESSENGER_GROUP_RENAME, _S(3028, "ê·¸ë£¹ëª… ë³€ê²½"), _S(3029, "ë³€ê²½í•  ê·¸ë£¹ëª…ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
+		{
+			if (m_vecGroup.size() <= nSubMenu)
+			{
+				return;
+			}
+
+			Message( MSGCMD_MESSENGER_GROUP_RENAME, _S(3028, "±×·ì¸í º¯°æ"), _S(3029, "º¯°æÇÒ ±×·ì¸íÀ» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
+		}
 		else
-			Message( MSGCMD_MESSENGER_ERROR, _S(3030, "ê·¸ë£¹ëª… ë³€ê²½ ì—ëŸ¬"), _S(3031, "ê¸°ë³¸ ê·¸ë£¹ì€ ì´ë¦„ì„ ë³€ê²½í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤."), UMBS_OK);
+		{
+			Message( MSGCMD_MESSENGER_ERROR, _S(3030, "±×·ì¸í º¯°æ ¿¡·¯"), _S(3031, "±âº» ±×·ìÀº ÀÌ¸§À» º¯°æÇÒ ¼ö ¾ø½À´Ï´Ù."), UMBS_OK);
+		}
 			
 		break;
 	}
@@ -2318,36 +2503,38 @@ void CUIMessenger::SetGroup(enum eGroup eState, int nSubMenu)
 
 void CUIMessenger::RenderSelectMember(int nX, int nY)
 {
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );	
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
-	_pUIMgr->GetDrawPort()->PutTextEx( m_miSelectMember.m_strName, nX +(GROUP_MEMBER_NAME_OFFSET_X -GROUP_MEMBER_ICON_OFFSET_X), nY, 0xf2f2f2ff);
+	pDrawPort->InitTextureData( m_ptdBaseTexture );	
+
+	pDrawPort->PutTextEx( m_miSelectMember.m_strName, nX +(GROUP_MEMBER_NAME_OFFSET_X -GROUP_MEMBER_ICON_OFFSET_X), nY, 0xf2f2f2ff);
 
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,	nX+ ICON_WIDTH, nY +ICON_HEIGHT,
+	pDrawPort->AddTexture( nX, nY,	nX+ ICON_WIDTH, nY +ICON_HEIGHT,
 										m_rcIcon[m_miSelectMember.m_eJob][m_miSelectMember.m_eCondition].U0, m_rcIcon[m_miSelectMember.m_eJob][m_miSelectMember.m_eCondition].V0,
 										m_rcIcon[m_miSelectMember.m_eJob][m_miSelectMember.m_eCondition].U1, m_rcIcon[m_miSelectMember.m_eJob][m_miSelectMember.m_eCondition].V1,
 										0Xffffffff );
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 }
 
 void CUIMessenger::AddGroup(int nGroupIndex, CTString strName)
 {
 	if( m_vecGroup.size() ==10)
 	{
-		Message( MSGCMD_MESSENGER_ERROR, _S(3020, "ê·¸ë£¹ì¶”ê°€ ì—ëŸ¬"), _S(3022, "ë”ì´ìƒ ê·¸ë£¹ì„ ìƒì„±í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤."), UMBS_OK);		
+		Message( MSGCMD_MESSENGER_ERROR, _S(3020, "±×·ìÃß°¡ ¿¡·¯"), _S(3022, "´õÀÌ»ó ±×·ìÀ» »ı¼ºÇÒ ¼ö ¾ø½À´Ï´Ù."), UMBS_OK);		
 		return;
 	}
 
 	if( nGroupIndex ==-1)
 	{
-		Message( MSGCMD_MESSENGER_ERROR, _S(3020, "ê·¸ë£¹ì¶”ê°€ ì—ëŸ¬"), _S(3, "ì˜ëª»ëœ ë¬¸ìê°€ í¬í•¨ë˜ì–´ìˆìŠµë‹ˆë‹¤."), UMBS_OK);		
+		Message( MSGCMD_MESSENGER_ERROR, _S(3020, "±×·ìÃß°¡ ¿¡·¯"), _S(3, "Àß¸øµÈ ¹®ÀÚ°¡ Æ÷ÇÔµÇ¾îÀÖ½À´Ï´Ù."), UMBS_OK);		
 		return;
 	}
 
 	if( nGroupIndex ==0)
-		strName =_S(2986, "ë¼ìŠ¤íŠ¸ì¹´ì˜¤ìŠ¤ì¹œêµ¬");
+		strName =_S(2986, "¶ó½ºÆ®Ä«¿À½ºÄ£±¸");
 
 	CUIGroup* mgTemp = new CUIGroup;
 		
@@ -2377,6 +2564,9 @@ void CUIMessenger::AddGroup(int nGroupIndex, CTString strName)
 
 void CUIMessenger::DeleteGroup()
 {
+	if (m_vecGroup.size() <= m_nSelectGroup)
+		return;
+
 	delete m_vecGroup[m_nSelectGroup];
 	m_vecGroup.erase( m_vecGroup.begin() +m_nSelectGroup);
 	
@@ -2406,11 +2596,14 @@ void CUIMessenger::SetMemberMenu(enum eMemberMenu eMenu, int nSubMenu)
 
 		break;
 	case MM_DELETE:
-			MsgBoxCommand( MSGCMD_MESSENGER_DEL_REQ, true, m_miSelectMember.m_strName);
-			break;
+		MsgBoxCommand( MSGCMD_MESSENGER_DEL_REQ, true, m_miSelectMember.m_strName);
+		break;
 	case MM_BLOCK:
-			MsgBoxCommand(MSGCMD_MESSENGER_BLOCK_REQ, true, m_miSelectMember.m_strName );
-			break;
+		MsgBoxCommand(MSGCMD_MESSENGER_BLOCK_REQ, true, m_miSelectMember.m_strName );
+		break;
+	case MM_TELEPORT:
+		_pNetwork->SendPremiumCharJumpReq(m_miSelectMember.m_strName);
+		break;
 	}
 }
 
@@ -2419,6 +2612,13 @@ void CUIMessenger::ChangeGroup(int nGroup)
 	int nPrevGroup =FindGroup(m_miSelectMember.m_nGroupIndex);
 
 	if( nPrevGroup == nGroup )
+		return;
+
+	if (nPrevGroup < 0 || nPrevGroup >= m_vecGroup.size())
+		return;
+
+	// Â÷´Ü ½Ã nGroup ÀÌ -1 ·Î µé¾î¿Â´Ù.
+	if (nGroup >= 0 && m_vecGroup.size() <= nGroup)
 		return;
 
 	m_vecGroup[nPrevGroup]->DeleteMember(m_miSelectMember.m_strName);
@@ -2444,7 +2644,7 @@ void CUIMessenger::ChangeGroup(int nGroup)
 
 //------------------------------------------------------------------------------
 // CUIMessenger::FindGroup
-// Explain: ê·¸ë£¹ ë°±í„°ì—ì„œ ê·¸ë£¹ì˜ ìœ„ì¹˜ë¥¼ ì°¾ì•„ ë°˜í™˜
+// Explain: ±×·ì ¹éÅÍ¿¡¼­ ±×·ìÀÇ À§Ä¡¸¦ Ã£¾Æ ¹İÈ¯
 // Date : 2006-5-29, Author: Lee Su-won
 //------------------------------------------------------------------------------
 int CUIMessenger::FindGroup(int nGroupIndex)
@@ -2475,8 +2675,21 @@ CMemberInfo CUIMessenger::FindMember(CTString strName)
 	{
 		for(int j=0; j<m_vecGroup[i]->m_vecMember.size(); ++j)
 		{
-			if( m_vecGroup[i]->m_vecMember[j].m_strName == strName )
-				return m_vecGroup[i]->m_vecMember[j];
+			// Edited : CTStringÀÇ == Àº ´ë¼Ò¹®ÀÚ¸¦ °¡¸®Áö ¾Ê¾Æ¼­ ÀÏº»¿äÃ»À¸·Î ¼öÁ¤
+		/*	if(g_iCountry == JAPAN)
+			{
+				if( strcmp(m_vecGroup[i]->m_vecMember[j].m_strName, strName) == 0 )
+					return m_vecGroup[i]->m_vecMember[j];
+			}
+			else
+			{
+				if( m_vecGroup[i]->m_vecMember[j].m_strName == strName)
+					return m_vecGroup[i]->m_vecMember[j];
+			}*/
+			//[ttos_2010_4_26]: Ä³¸¯¸íÀº ´ë¼Ò¹®ÀÚ ±¸ºĞÇØ¾ßÇÑ´Ù.
+			if( strcmp(m_vecGroup[i]->m_vecMember[j].m_strName, strName) == 0 )
+					return m_vecGroup[i]->m_vecMember[j];
+
 		}
 	}
 
@@ -2499,7 +2712,7 @@ void CUIMessenger::RenameGroup(int nGroupIndex, CTString strNewName)
 {
 	if( nGroupIndex ==-1 )
 	{
-		Message( MSGCMD_MESSENGER_ERROR, _S(3030, "ê·¸ë£¹ëª… ë³€ê²½ ì—ëŸ¬"), _S(3, "ì˜ëª»ëœ ë¬¸ìê°€ í¬í•¨ë˜ì–´ìˆìŠµë‹ˆë‹¤."), UMBS_OK);
+		Message( MSGCMD_MESSENGER_ERROR, _S(3030, "±×·ì¸í º¯°æ ¿¡·¯"), _S(3, "Àß¸øµÈ ¹®ÀÚ°¡ Æ÷ÇÔµÇ¾îÀÖ½À´Ï´Ù."), UMBS_OK);
 		return;
 	}
 
@@ -2524,13 +2737,15 @@ void CUIMessenger::SetChat(int nMakeCharIndex, int nChatIndex, CTString strName)
 		}
 	}
 
-	if( bNewChat )		// ìƒˆì°½ìœ¼ë¡œ ìƒì„±í•˜ê¸° ì „ì— 1:1 ëŒ€í™”ì—ì„œ ìƒëŒ€ê°€ ì´ˆëŒ€ëœ ìƒëŒ€ê°€ ìˆëŠ” ìª½ì„ ê²€ìƒ‰í•œë‹¤.
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( bNewChat )		// »õÃ¢À¸·Î »ı¼ºÇÏ±â Àü¿¡ 1:1 ´ëÈ­¿¡¼­ »ó´ë°¡ ÃÊ´ëµÈ »ó´ë°¡ ÀÖ´Â ÂÊÀ» °Ë»öÇÑ´Ù.
 	{
 		for( i =0; i < MAX_TALK; ++i )
 		{
-			// ë“œë˜ê·¸ëœ ì°½ê³¼ ê°™ì€ ì°½ì„ ì°¾ì•„ë¼
+			// µå·¡±×µÈ Ã¢°ú °°Àº Ã¢À» Ã£¾Æ¶ó
 			if( g_nChatIndex[i] < 0 &&
-				_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->IsExistTarget( strName ) ) 
+				pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->IsExistTarget( strName ) ) 
 			{
 				bNewChat =false;
 				break;
@@ -2541,20 +2756,20 @@ void CUIMessenger::SetChat(int nMakeCharIndex, int nChatIndex, CTString strName)
 
 	
 
-	//ìƒˆë¡œìš´ ì°½ ìƒì„±
+	//»õ·Î¿î Ã¢ »ı¼º
 	if( bNewChat )
 		OpenTalk(nMakeCharIndex, nChatIndex, strName);
-	//ê¸°ì¡´ ì°½ì— ëŒ€í™” ìƒëŒ€ ì´ˆëŒ€
+	//±âÁ¸ Ã¢¿¡ ´ëÈ­ »ó´ë ÃÊ´ë
 	else
 	{
-		if( g_nChatIndex[i] < 0 ) //ì²˜ìŒ ë‹¤ë¥¸ì‚¬ëŒì„ ì´ˆëŒ€
+		if( g_nChatIndex[i] < 0 ) //Ã³À½ ´Ù¸¥»ç¶÷À» ÃÊ´ë
 		{
 			g_nChatIndex[i] = nChatIndex;
-			_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->SetIndex( nMakeCharIndex, nChatIndex);
-			if( m_MyInfo.m_nCharIndex == nMakeCharIndex )	// ì´ˆëŒ€í•˜ëŠ” ì‚¬ëŒì¼ë•Œ
-				_pNetwork->MgrFriendInvite(nMakeCharIndex, nChatIndex, _pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->GetTargetIndex() );
+			pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->SetIndex( nMakeCharIndex, nChatIndex);
+			if( m_MyInfo.m_nCharIndex == nMakeCharIndex )	// ÃÊ´ëÇÏ´Â »ç¶÷ÀÏ¶§
+				_pNetwork->MgrFriendInvite(nMakeCharIndex, nChatIndex, pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->GetTargetIndex() );
 		}
-		_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->AddTalkTarget(strName);
+		pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->AddTalkTarget(strName);
 	}
 
 
@@ -2562,6 +2777,14 @@ void CUIMessenger::SetChat(int nMakeCharIndex, int nChatIndex, CTString strName)
 
 int CUIMessenger::OpenTalk(int nMakeCharIndex, int nChatIndex, CTString strName)
 {
+	if (m_MyInfo.m_eCondition == OFFLINE)
+	{
+		TalkErrorMessage( _S( 1646, "[¿ÀÇÁ¶óÀÎ] »óÅÂ¿¡¼­´Â ´ëÈ­¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù." ) );
+		return -1;
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	for( int i =0; i < MAX_TALK; ++i )
 	{
 		if( !g_bUseChat[i] )
@@ -2572,9 +2795,9 @@ int CUIMessenger::OpenTalk(int nMakeCharIndex, int nChatIndex, CTString strName)
 
 			++m_nTalkCount;
 
-			//_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->AddTalkTarget(m_MyInfo.m_strName);
-			_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->Open( strName );
-			_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->SetIndex(nMakeCharIndex, nChatIndex);
+			//pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->AddTalkTarget(m_MyInfo.m_strName);
+			pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->Open( strName );
+			pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->SetIndex(nMakeCharIndex, nChatIndex);
 	
 			//_pNetwork->MgrFriendInvite( m_MyInfo.m_nCharIndex, -1, miMemberInfo.m_strName);
 			return ( i+UI_MESSENGER_TALK_START );
@@ -2586,11 +2809,19 @@ int CUIMessenger::OpenTalk(int nMakeCharIndex, int nChatIndex, CTString strName)
 
 //------------------------------------------------------------------------------
 // CUIMessenger::OpenTalk
-// Explain: ì„œë²„ ì¸ë±ìŠ¤ê°€ ì¡´ì¬í•˜ì§€ ì•ŠëŠ” ì°½ì„ ë§Œë“ ë‹¤.
+// Explain: ¼­¹ö ÀÎµ¦½º°¡ Á¸ÀçÇÏÁö ¾Ê´Â Ã¢À» ¸¸µç´Ù.
 // Date : 2006-12-8,Author: KwonYongDae
 //------------------------------------------------------------------------------
 int CUIMessenger::OpenTalk(int nMakerIndex, const CMemberInfo targetInfo )
 {
+	if (m_MyInfo.m_eCondition == OFFLINE)
+	{
+		TalkErrorMessage( _S( 1646, "[¿ÀÇÁ¶óÀÎ] »óÅÂ¿¡¼­´Â ´ëÈ­¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù." ) );
+		return -1;
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	for( int i =0; i < MAX_TALK; ++i )
 	{
 		if( !g_bUseChat[i] )
@@ -2600,8 +2831,8 @@ int CUIMessenger::OpenTalk(int nMakerIndex, const CMemberInfo targetInfo )
 
 			++m_nTalkCount;
 
-			_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->Open( g_nChatIndex[i] , targetInfo );
-			_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->SetIndex( nMakerIndex, g_nChatIndex[i] );
+			pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->Open( g_nChatIndex[i] , targetInfo );
+			pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->SetIndex( nMakerIndex, g_nChatIndex[i] );
 			return ( i+UI_MESSENGER_TALK_START );
 		}
 	} 
@@ -2610,12 +2841,14 @@ int CUIMessenger::OpenTalk(int nMakerIndex, const CMemberInfo targetInfo )
 
 void CUIMessenger::AddChatMember(int nMakeCharIndex, int nChatIndex, CTString strName)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	for(int i=0; i<MAX_TALK; ++i)
 	{
 		if( g_nChatIndex[i] ==nChatIndex )
 		{
 			//if( m_MyInfo.m_strName != strName)
-			_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->AddTalkTarget(strName);
+			pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->AddTalkTarget(strName);
 			break;
 		}
 	}
@@ -2623,11 +2856,13 @@ void CUIMessenger::AddChatMember(int nMakeCharIndex, int nChatIndex, CTString st
 
 void CUIMessenger::DeleteChatMember(int nMakeCharIndex, int nChatIndex, CTString strName)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	for(int i=0; i<MAX_TALK; ++i)
 	{
 		if( g_bUseChat[i] && g_nChatIndex[i] ==nChatIndex )
 		{
-			_pUIMgr->GetTalk(i+UI_MESSENGER_TALK_START)->DeleteTalkTarget(strName);
+			pUIManager->GetTalk(i+UI_MESSENGER_TALK_START)->DeleteTalkTarget(strName);
 			break;
 		}
 	}
@@ -2647,10 +2882,10 @@ void CUIMessenger::UnBlock(BYTE cError, int nCharIndex, CTString strName)
 	switch(cError)
 	{
 	case MSG_EX_MESSENGER_BLOCK_NOTCHAR:
-		Message( MSGCMD_MESSENGER_ERROR, _S(3016, "ì°¨ë‹¨í•´ì œ ì—ëŸ¬"), _S(11, "ì¡´ì¬í•˜ì§€ ì•ŠëŠ” ìºë¦­í„°ì…ë‹ˆë‹¤."), UMBS_OK);		
+		Message( MSGCMD_MESSENGER_ERROR, _S(3016, "Â÷´ÜÇØÁ¦ ¿¡·¯"), _S(11, "Á¸ÀçÇÏÁö ¾Ê´Â Ä³¸¯ÅÍÀÔ´Ï´Ù."), UMBS_OK);		
 		return;
 	case MSG_EX_MESSENGER_BLOCK_INVALIDNAME:
-		Message( MSGCMD_MESSENGER_ERROR, _S(3016, "ì°¨ë‹¨í•´ì œ ì—ëŸ¬"), _S(3017, "ì°¨ë‹¨í•´ì œí•˜ê³ ì í•˜ëŠ” ì´ë¦„ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤"), UMBS_OK);		
+		Message( MSGCMD_MESSENGER_ERROR, _S(3016, "Â÷´ÜÇØÁ¦ ¿¡·¯"), _S(3017, "Â÷´ÜÇØÁ¦ÇÏ°íÀÚ ÇÏ´Â ÀÌ¸§ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù"), UMBS_OK);		
 		return;
 	}
 
@@ -2662,8 +2897,8 @@ void CUIMessenger::UnBlock(BYTE cError, int nCharIndex, CTString strName)
 	m_mgBlock.DeleteMember(nCharIndex);
 
 	CTString strMessage;
-	strMessage.PrintF( _S( 3015, "%së‹˜ì´ ì°¨ë‹¨í•´ì œë˜ì—ˆìŠµë‹ˆë‹¤." ), strName );
-	Message( MSGCMD_MESSENGER_ERROR, _S(3013, "ì°¨ë‹¨ í•´ì œ"), strMessage, UMBS_OK );
+	strMessage.PrintF( _S( 3015, "%s´ÔÀÌ Â÷´ÜÇØÁ¦µÇ¾ú½À´Ï´Ù." ), strName );
+	Message( MSGCMD_MESSENGER_ERROR, _S(3013, "Â÷´Ü ÇØÁ¦"), strMessage, UMBS_OK );
 }
 
 void CUIMessenger::Block(BYTE cError, int nCharIndex, CTString strName)
@@ -2671,16 +2906,16 @@ void CUIMessenger::Block(BYTE cError, int nCharIndex, CTString strName)
 	switch(cError)
 	{
 	case MSG_EX_MESSENGER_BLOCK_NOTCHAR:
-		Message( MSGCMD_MESSENGER_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(11, "ì¡´ì¬í•˜ì§€ ì•ŠëŠ” ìºë¦­í„°ì…ë‹ˆë‹¤."), UMBS_OK);		
+		Message( MSGCMD_MESSENGER_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(11, "Á¸ÀçÇÏÁö ¾Ê´Â Ä³¸¯ÅÍÀÔ´Ï´Ù."), UMBS_OK);		
 		return;
 	case MSG_EX_MESSENGER_BLOCK_INVALIDNAME:
-		Message( MSGCMD_MESSENGER_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(3009, "ì°¨ë‹¨í•˜ê³ ì í•˜ëŠ” ì´ë¦„ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤"), UMBS_OK);		
+		Message( MSGCMD_MESSENGER_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3009, "Â÷´ÜÇÏ°íÀÚ ÇÏ´Â ÀÌ¸§ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù"), UMBS_OK);		
 		return;
 	case MSG_EX_MESSENGER_NOMORE_BLOCK:
-		Message( MSGCMD_MESSENGER_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(3010, "ë”ì´ìƒ ì°¨ë‹¨í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤."), UMBS_OK);		
+		Message( MSGCMD_MESSENGER_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3010, "´õÀÌ»ó Â÷´ÜÇÒ ¼ö ¾ø½À´Ï´Ù."), UMBS_OK);		
 		return;
 	case MSG_EX_MESSENGER_ALREADY_BLOCK:
-		Message( MSGCMD_MESSENGER_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(3011, "ì´ë¯¸ ì°¨ë‹¨ëœ ìºë¦­ì…ë‹ˆë‹¤."), UMBS_OK);
+		Message( MSGCMD_MESSENGER_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3011, "ÀÌ¹Ì Â÷´ÜµÈ Ä³¸¯ÀÔ´Ï´Ù."), UMBS_OK);
 		return;
 	}
 
@@ -2699,8 +2934,8 @@ void CUIMessenger::Block(BYTE cError, int nCharIndex, CTString strName)
 		m_mgBlock.AddMember( CMemberInfo(nCharIndex, strName) );
 
 	CTString strMessage;
-	strMessage.PrintF(_S(3006, "%së‹˜ì´ ì°¨ë‹¨ë˜ì—ˆìŠµë‹ˆë‹¤."), strName);
-	Message( MSGCMD_MESSENGER_ERROR, _S(3004, "ìºë¦­í„° ì°¨ë‹¨"), strMessage, UMBS_OK );
+	strMessage.PrintF(_S(3006, "%s´ÔÀÌ Â÷´ÜµÇ¾ú½À´Ï´Ù."), strName);
+	Message( MSGCMD_MESSENGER_ERROR, _S(3004, "Ä³¸¯ÅÍ Â÷´Ü"), strMessage, UMBS_OK );
 }
 
 void CUIMessenger::SetDefaultGroupName(CTString strName)
@@ -2712,10 +2947,11 @@ void CUIMessenger::SetDefaultGroupName(CTString strName)
 
 void CUIMessenger::RenderMenuArrow(int nX, int nY, int nWidth, int nHeight, int nLine)
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	int nYSpace =((_pUIFontTexMgr->GetLineHeight()+2) -nHeight)/2 +2;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY +nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine,
+	pDrawPort->AddTexture( nX, nY +nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine,
 										nX+nWidth, nY +nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine+nHeight,
 										m_rtArrow.U0, m_rtArrow.V0, m_rtArrow.U1, m_rtArrow.V1,
 										0xFFFFFFFF );
@@ -2753,4 +2989,41 @@ void CUIMessenger::SetBlock( int nCharIndex, CTString strName, bool bBlock)
 	else
 		m_mgBlock.DeleteMember( strName );
 		***/
+}
+
+void CUIMessenger::UpdateMemberMenu()
+{
+	m_tpMemberMenu.ResetAllStrings();
+
+	m_tpMemberMenu.AddMenuList( _S(2990, "±×·ìÀÌµ¿") +CTString("     ") );
+	m_tpMemberMenu.AddMenuList( _S(2991, "´ëÈ­ÇÏ±â") );
+	m_tpMemberMenu.AddMenuList( _S(338, "»èÁ¦" ) );
+	m_tpMemberMenu.AddMenuList( _S(2992, "Â÷´Ü" ) );
+
+#ifdef PREMIUM_CHAR
+	if (m_bPremiumChar == true)
+	{
+		CTString strMenu, strCount;
+		int Count = 0;
+		CPremiumChar* pChar = GAMEDATAMGR()->GetPremiumChar();
+
+		if (pChar != NULL)
+			Count = pChar->getTeleportCount();
+		
+		strMenu.PrintF( _S(6344, "ÅÚ·¹Æ÷Æ®" ) );
+		strCount.PrintF( _S(6343, "(%d/%d)"), Count, PREMIUM_CHAR_JUMP_COUNT_MAX );
+		strMenu = strMenu + strCount;
+
+		if (Count >= PREMIUM_CHAR_JUMP_COUNT_MAX)
+			m_tpMemberMenu.AddMenuList( strMenu, 0xF20000FF);
+		else
+			m_tpMemberMenu.AddMenuList( strMenu, 0xD67FFFFF);
+	}
+#endif	//	PREMIUM_CHAR
+}
+
+void CUIMessenger::SetPremiumBenefit( bool bUse )
+{
+	m_bPremiumChar = bUse; 
+	UpdateMemberMenu();
 }

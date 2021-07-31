@@ -1,13 +1,11 @@
 #include "stdh.h"
-#include <Engine/Interface/UIGamble.h>
-#include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Entities/Items.h>
-#include <Engine/Interface/UIInventory.h>
 
-#include <Engine/Entities/Entity.h>
-#include <Engine/Entities/EntityClass.h>
-#include <Engine/Entities/EntityProperties.h>
-#include <Engine/LocalDefine.h>
+// «Ï¥ı ¡§∏Æ. [12/1/2009 rumist]
+#include <Engine/Interface/UIInternalClasses.h>
+#include <vector>
+#include <Engine/Interface/UIGamble.h>
+#include <Engine/Entities/InternalClasses.h>
+#include <Engine/Interface/UIInventory.h>
 
 #define GAMBLE_NUMBER_WIDTH					10
 #define GAMBLE_NUMBER_HEIGHT				15
@@ -36,6 +34,10 @@ CUIGamble::CUIGamble()
 	m_iUsedMoonStone =0;
 	m_rtNewMark = NULL;
 	m_iTexID = NULL;
+
+#ifdef MOONSTONE_COUNT_ADD	// [2010/11/23 : Sora] πÆΩ∫≈Ê ∞≥ºˆ √ﬂ∞°
+	MOONSTONEINDEX[5]  = 6092;
+#endif
 }
 
 
@@ -46,8 +48,6 @@ CUIGamble::CUIGamble()
 // ----------------------------------------------------------------------------
 CUIGamble::~CUIGamble()
 {
-	Destroy();
-
 	if (m_iTexID)
 	{
 		delete [] m_iTexID;
@@ -59,6 +59,9 @@ CUIGamble::~CUIGamble()
 		delete [] m_rtNewMark;
 		m_rtNewMark = NULL;
 	}
+
+	for(int i = 0; i < 5; ++i)
+		SAFE_DELETE(m_pIconsMoonStone[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -67,9 +70,9 @@ CUIGamble::~CUIGamble()
 // ----------------------------------------------------------------------------
 void CUIGamble::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );	
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+
+	int		i;
 
 	m_rcMainTitle.SetRect( 0, 0, GAMBLE_MAIN_WIDTH, 150 );
 	m_rcSlot[0].SetRect( 7, 103, 52, 148 );
@@ -79,35 +82,24 @@ void CUIGamble::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_rcSlot[4].SetRect( 204, 103, 249, 148 );	
 
 	// Create shop texture
-	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\MoonStone.tex" ) );
+	// russia texture. [9/7/2010 rumist]
+#if defined (G_RUSSIA)
+		m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\MoonStone_rus.tex" ) );
+#else
+		m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\MoonStone.tex" ) );
+#endif
 	FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight	= m_ptdBaseTexture->GetPixHeight();
 	
 	// UV Coordinate of each part
 	// Background
 	// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
 	m_rtBackTop.SetUV( 0, 0, GAMBLE_MAIN_WIDTH, 148, fTexWidth, fTexHeight );
 	m_rtBackMiddle.SetUV( 0, 149, GAMBLE_MAIN_WIDTH, 166, fTexWidth, fTexHeight );		// 
 	m_rtBackBottom.SetUV( 0, 167, GAMBLE_MAIN_WIDTH, GAMBLE_MAIN_HEIGHT, fTexWidth, fTexHeight );
-#else
-	m_rtBackTop.SetUV( 0, 0, GAMBLE_MAIN_WIDTH, 44, fTexWidth, fTexHeight );
-	m_rtBackMiddle.SetUV( 0, 45, GAMBLE_MAIN_WIDTH, 161, fTexWidth, fTexHeight );		// 
-	m_rtBackBottom.SetUV( 0, 162, GAMBLE_MAIN_WIDTH, GAMBLE_MAIN_HEIGHT, fTexWidth, fTexHeight );
-#endif
-
-	m_btnStart.Create( this, CTString(""), 8, 167, 113, 29 );
-	m_btnStart.SetUV( UBS_IDLE, 0, 374, 112, 402, fTexWidth, fTexHeight ); // 330 -> 374 , 44
-	m_btnStart.SetUV( UBS_CLICK, 114, 374, 226, 402, fTexWidth, fTexHeight );
-	m_btnStart.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnStart.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
 	m_btnStop.Create( this, CTString(""), 8, 167+26, 113, 29 );
-#else
-	m_btnStop.Create( this, CTString(""), 8, 167, 113, 29 );
-#endif
 	m_btnStop.SetUV( UBS_IDLE, 0, 404, 112, 432, fTexWidth, fTexHeight );
 	m_btnStop.SetUV( UBS_CLICK, 114, 404, 226, 432, fTexWidth, fTexHeight );
 	m_btnStop.CopyUV( UBS_IDLE, UBS_ON );
@@ -115,25 +107,13 @@ void CUIGamble::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 
 	// Cancel button of shop
 	// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
 	m_btnCancel.Create( this, CTString(""), 135, 167+26, 113, 29 );
-#else
-	m_btnCancel.Create( this, CTString(""), 135, 167, 113, 29 );
-#endif
 	m_btnCancel.SetUV( UBS_IDLE, 0, 434, 112, 462, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 114, 434, 226, 462, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	// Button Ready
-	m_btnReady.Create( this, CTString(""), 8, 167, 113, 29 );
-	m_btnReady.SetUV( UBS_IDLE, 0, 464, 112, 492, fTexWidth, fTexHeight );
-	m_btnReady.SetUV( UBS_CLICK, 114, 464, 226, 492, fTexWidth, fTexHeight );
-	m_btnReady.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnReady.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-
-	for( int i = 0 ; i < GAMBLE_TOTAL_NUMBER; ++i )
+	for( i = 0 ; i < GAMBLE_TOTAL_NUMBER; ++i )
 	{
 		m_rtSmallNumber[i].SetUV( i * GAMBLE_NUMBER_WIDTH, 358, 
 								i * GAMBLE_NUMBER_WIDTH + GAMBLE_NUMBER_WIDTH, 368, fTexWidth, fTexHeight );
@@ -142,15 +122,13 @@ void CUIGamble::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_rtSelect.SetUV( 92, 262, 137, 307, fTexWidth, fTexHeight );	
 
 // [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
-	for(i=0; i<5; ++i)
+	for( i = 0; i < 5; ++i)
 	{
-		m_btnMoonStone[i].Create( this, 17+i*49, 158, 25, 25 );
+		m_pIconsMoonStone[i] = new CUIIcon;
+		m_pIconsMoonStone[i]->Create(this, 17 + i * 49, 158, 25, 25, UI_GAMBLE, UBET_ITEM);
 	}
 
 	ReadMoonStoneLOD();
-#endif
-
 }
 
 // ----------------------------------------------------------------------------
@@ -215,22 +193,24 @@ void CUIGamble::OpenGamble( CEntity *pNpcEntity , BOOL bIsCashMoonStone)
 		m_rtMark[4].SetUV( 92, 308, 137, 352, fTexWidth, fTexHeight );
 		m_rtMark[5].SetUV( 138, 308, 183, 352, fTexWidth, fTexHeight );
 		m_rtMark[6].SetUV( 184, 308, 229, 352, fTexWidth, fTexHeight );
-		_pUIMgr->GetGamble()->SetAccumulate( 0 );
-		_pUIMgr->GetGamble()->ShowGamble();
-		_pUIMgr->SetCSFlagOn( CSF_MOONSTONE );
+
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		pUIManager->GetGamble()->SetAccumulate( 0 );
+		pUIManager->GetGamble()->ShowGamble();
+		pUIManager->SetCSFlagOn( CSF_MOONSTONE );
 	}
 
 // [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
 	for(int i=0; i<5; ++i)
 	{
-		m_btnMoonStone[i].SetItemInfo( 0, 0, 0, MOONSTONEINDEX[i], -1, -1);
+		m_pIconsMoonStone[i]->setData(UBET_ITEM, MOONSTONEINDEX[i]);
 		
-		CItemData	&rItemData = _pNetwork->GetItemData( MOONSTONEINDEX[2] );
+		CItemData*	pItemData = _pNetwork->GetItemData( MOONSTONEINDEX[2] );
 
-		int nTextureID = rItemData.GetIconTexID();
-		int	nTexRow = rItemData.GetIconTexRow();
-		int	nTexCol = rItemData.GetIconTexCol();
+		int nTextureID = pItemData->GetIconTexID();
+		int	nTexRow = pItemData->GetIconTexRow();
+		int	nTexCol = pItemData->GetIconTexCol();
 		int nUVSX = BTN_SIZE *nTexCol;
 		int nUVSY = BTN_SIZE *nTexRow;
 
@@ -241,144 +221,7 @@ void CUIGamble::OpenGamble( CEntity *pNpcEntity , BOOL bIsCashMoonStone)
 
 		m_iTexID[i] =nTextureID;
 	}
-#endif
 }
-
-//////////////////////////////////////////////////////////////////////////
-// Name : OpenReady()
-// Desc : 
-// Date : [6/20/2006] , Wooss
-//////////////////////////////////////////////////////////////////////////
-
-void CUIGamble::OpenReady()
-{
-	if(_pUIMgr->DoesMessageBoxExist(MSGCMD_GAMBLE_READY)) return;
-	// Set MessageBox
-	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S(2909, "Ï∫êÏãú Î¨∏Ïä§ÌÜ§ ÎØ∏ÎãàÍ≤åÏûÑ Ï§ÄÎπÑ"), UMBS_YESNO|UMBS_BUTTONEX, UI_GAMBLE, MSGCMD_GAMBLE_READY );
-	MsgBoxInfo.SetBtnType( UBET_ITEM, -1, -1 );
-	
-	MsgBoxInfo.AddString( _S(2910,"Í≤åÏûÑÏóê ÏÇ¨Ïö©Ìï† Ï∫êÏãúÏïÑÏù¥ÌÖúÏùÑ ÎÑ£Ïñ¥ Ï£ºÏã≠ÏãúÏò§. ÎØ∏Îãà Í≤åÏûÑÏùò Í≤∞Í≥ºÏóê Îî∞Îùº Îã§Î•∏ Ï∫êÏãú ÏïÑÏù¥ÌÖúÏúºÎ°ú ÍµêÌôò Îê©ÎãàÎã§.") );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
-	_pUIMgr->GetMessageBox(MSGCMD_GAMBLE_READY)->SetPosY(_pUIMgr->GetInventory()->GetPosY());
-	// Open Inventory
-	_pUIMgr->RearrangeOrder(UI_INVENTORY,TRUE);
-	_pUIMgr->GetInventory()->SetPosX(
-		_pUIMgr->GetMessageBox(MSGCMD_GAMBLE_READY)->GetAbsPosX()+
-		_pUIMgr->GetMessageBox(MSGCMD_GAMBLE_READY)->GetWidth());
-
-	// Invisible CashMoonStone UI
-	this->SetVisible(FALSE);
-
-}
-
-//////////////////////////////////////////////////////////////////////////
-// Name : OpenReady()
-// Desc : 
-// Date : [6/20/2006] , Wooss
-//////////////////////////////////////////////////////////////////////////
-
-void CUIGamble::OpenReadySelect()
-{
-	if(_pUIMgr->DoesMessageBoxExist(MSGCMD_GAMBLE_READYSEL)) {
-		_pUIMgr->CloseMessageBox(MSGCMD_GAMBLE_READYSEL);
-		return;
-	}
-	// Set MessageBox
-	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S(2911,"Î¨∂Ïùå Í∞úÏàò ÏÑ†ÌÉùÏ∞Ω"), UMBS_SELECTBOX, UI_GAMBLE, MSGCMD_GAMBLE_READYSEL );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
-	int tv_posY=_pUIMgr->GetMessageBox(MSGCMD_GAMBLE_READY)->GetAbsPosY()
-		+_pUIMgr->GetMessageBox(MSGCMD_GAMBLE_READY)->GetHeight();
-	_pUIMgr->GetMessageBox(MSGCMD_GAMBLE_READYSEL)->SetPosY(tv_posY);
-
-}
-//---------------------------------------------------------------------->>
-// Name : CheckCashItem()
-// Desc :
-// Date : [6/25/2006] , Wooss
-//----------------------------------------------------------------------<<
-BOOL CUIGamble::CheckCashItem(int itemIdx)
-{
-	BOOL tv_chk = FALSE;
-
-	// ÏòàÏô∏ Ï≤òÎ¶¨....Í∞êÏ†ïÎêú ÌîåÎûòÌã∞ÎäÑ Ï†úÎ†®ÏÑùÏùò Í≤ΩÏö∞ Í∞êÏ†ÑÏ†Ñ ÌîåÎûòÌã∞ÎäÑÏúºÎ°ú ÎåÄÏ≤¥ 
-	// ÌîåÎûòÌã∞ÎäÑ Ï†úÎ†®ÏÑù ÌïòÎìú ÏΩîÎî©....
-	if(itemIdx == 1419) itemIdx = 1418;
-
-	OpenReadySelect();
-	m_cashItemList.clear();
-
-	for(int i=0 ; i< CASH_SHOP_TOTAL ; i++)
-	{
-		// exclude set items
-		if(i == SET_ITEM ) continue;
-
-		CCashShopData& CD_CHK = _pNetwork->GetCashShopData(i);
-		std::vector<CCashShopData::CASH_SHOP_DATA>::iterator tv_begin,tv_end;
-		tv_begin = CD_CHK.m_vShopItemArray.begin();
-		tv_end = CD_CHK.m_vShopItemArray.end();
-		while(tv_begin != tv_end){
-			// Î¶¨Ïä§Ìä∏Í∞Ä ÌïòÎÇòÏù∏Í≤É (Ïù¥ÎØ∏ ÏÑ∏Ìä∏ ÏïÑÏù¥ÌÖúÏùÑ Ï†úÏô∏ ÌñàÏßÄÎßåÏÑúÎèÑ...ÌïúÎ≤à Îçî
-			if( tv_begin->m_itemListCnt == 1 )
-			{
-				if( tv_begin->m_vItemDataArray[0].m_itemIndex == itemIdx) {
-					CASHITEMS tv_item;
-					tv_item.cashIdx		=	tv_begin->m_shopItemIndex;
-					tv_item.cashName	=	tv_begin->m_itemName;
-					tv_item.cashCnt		=	tv_begin->m_vItemDataArray[0].m_itemCnt;
-					m_cashItemList.push_back(tv_item);
-					tv_chk = TRUE;
-
-					// Add context
-					CTString tv_str;
-					tv_str.PrintF("%s(%d)",tv_item.cashName,tv_item.cashCnt);
-					_pUIMgr->GetMessageBox(MSGCMD_GAMBLE_READYSEL)->addSelectContext(tv_str); 
-				}
-			}
-			tv_begin++;
-		}
-	}
-	if(!tv_chk){
-		_pUIMgr->CloseMessageBox(MSGCMD_GAMBLE_READYSEL);
-	}
-	return tv_chk;
-
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// Name : MsgBoxCommand()
-// Desc :
-// Date : [6/20/2006] , Wooss
-//////////////////////////////////////////////////////////////////////////
-void CUIGamble::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput)
-{
-	// Select Yes/OK
-	switch(nCommandCode)
-	{
-		case MSGCMD_GAMBLE_READY :
-		{
-			if(bOK)
-			{
-				if(!m_slotBtn.IsEmpty())
-				{
-					m_bIsReady = TRUE;
-					m_btnStart.SetEnable(TRUE);
-				}
-			}
-			
-			_pUIMgr->CloseMessageBox(MSGCMD_GAMBLE_READY);
-			_pUIMgr->CloseMessageBox(MSGCMD_GAMBLE_READYSEL);
-			
-		}
-		break;
-	}
-
-	// after Click 
-	_pUIMgr->RearrangeOrder(UI_GAMBLE,TRUE);
-}
-
 
 // ----------------------------------------------------------------------------
 // Name : ShowGamble()
@@ -386,7 +229,7 @@ void CUIGamble::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput)
 // ----------------------------------------------------------------------------
 void CUIGamble::ShowGamble()
 {	
-	_pUIMgr->RearrangeOrder( UI_GAMBLE, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_GAMBLE, TRUE );
 }
 
 //-----------------------------------------------------------------------------
@@ -414,25 +257,36 @@ void CUIGamble::Init()
 //-----------------------------------------------------------------------------
 void CUIGamble::ResetGamble()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if(m_bIsCashMoonStone)
 	{
-		_pUIMgr->CloseMessageBox(MSGCMD_GAMBLE_READY);
-		_pUIMgr->CloseMessageBox(MSGCMD_GAMBLE_READYSEL);
-		_pUIMgr->RearrangeOrder( UI_INVENTORY, FALSE );	
+		pUIManager->CloseMessageBox(MSGCMD_GAMBLE_READY);
+		pUIManager->CloseMessageBox(MSGCMD_GAMBLE_READYSEL);
+		pUIManager->RearrangeOrder( UI_INVENTORY, FALSE );	
 	}
 
-	if( _pUIMgr->IsCSFlagOn( CSF_MOONSTONE ) )
+	if( pUIManager->IsCSFlagOn( CSF_MOONSTONE ) )
 	{
-		_pUIMgr->SetCSFlagOff( CSF_MOONSTONE );
+		pUIManager->SetCSFlagOff( CSF_MOONSTONE );
 	}
+
 	m_pNpcEntity			= NULL;
 	m_bSendedStart			= FALSE;
 	m_bIsReady				= FALSE;
 	m_bStart				= FALSE;
 	m_bIsCashMoonStone		= FALSE;
-	_pUIMgr->RearrangeOrder( UI_GAMBLE, FALSE );
+	pUIManager->RearrangeOrder( UI_GAMBLE, FALSE );
 	m_cashItemList.clear();
 	m_selCashItemIdx	= -1;
+
+	for( int i = 0; i < GAMBLE_TOTAL_SLOT; ++i)
+	{
+		if (m_pIconsMoonStone[i] == NULL)
+			continue;
+
+		m_pIconsMoonStone[i]->CloseProc();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -444,15 +298,14 @@ void CUIGamble::Start()
 	m_bSendedStart	= FALSE;
 
 // [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
 	for(int i=0; i<m_saReward[m_iUsedMoonStone].Count(); ++i)
 	{
 		INDEX iItem =m_saReward[m_iUsedMoonStone][i];
-		CItemData	&rItemData = _pNetwork->GetItemData( iItem );
+		CItemData*	pItemData = _pNetwork->GetItemData( iItem );
 
-		int nTextureID = rItemData.GetIconTexID();
-		int	nTexRow = rItemData.GetIconTexRow();
-		int	nTexCol = rItemData.GetIconTexCol();
+		int nTextureID = pItemData->GetIconTexID();
+		int	nTexRow = pItemData->GetIconTexRow();
+		int	nTexCol = pItemData->GetIconTexCol();
 		int nUVSX = BTN_SIZE *nTexCol;
 		int nUVSY = BTN_SIZE *nTexRow;
 
@@ -463,7 +316,6 @@ void CUIGamble::Start()
 
 		m_iTexID[i] =nTextureID;
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -473,6 +325,7 @@ void CUIGamble::Stop()
 {
 	m_bStart	= FALSE;
 	m_bBegin	= FALSE;
+	CUIManager::getSingleton()->ResetHoldBtn();
 }
 
 //-----------------------------------------------------------------------------
@@ -491,7 +344,7 @@ void CUIGamble::SetSelectedMarker( int iSlot, int iCount )
 
 	if( iCount != GAMBLE_TOTAL_SLOT )
 	{		
-		// ÎÇòÎ®∏ÏßÄ Ïä¨Î°ØÏùÑ Í≤∞Ï†ïÌï®.
+		// ≥™∏”¡ˆ ΩΩ∑‘¿ª ∞·¡§«‘.
 		for( int i = iCount; i < GAMBLE_TOTAL_SLOT ; ++i )
 		{
 			int iNewNumber	= 0;
@@ -499,15 +352,15 @@ void CUIGamble::SetSelectedMarker( int iSlot, int iCount )
 			{
 				iNewNumber = rand() % GAMBLE_TOTAL_MARK;
 				
-				// ÎûúÎç§ÏúºÎ°ú ÎèåÎ†§Ïïº ÎêòÎäî Ïä¨Î°ØÏù¥ 2Í∞ú Ïù¥ÏÉÅÏûàÏúºÎ©∞...
+				// ∑£¥˝¿∏∑Œ µπ∑¡æﬂ µ«¥¬ ΩΩ∑‘¿Ã 2∞≥ ¿ÃªÛ¿÷¿∏∏Á...
 				if( GAMBLE_TOTAL_SLOT - iCount > 1 )
 				{
-					// ÏñªÏùÄ ÎûúÎç§Í∞íÍ≥º Í∞ôÏùÄ Ïä¨Î°ØÏù¥ ÏûàÎäîÏßÄ ÌôïÏù∏Ìï®...
+					// æÚ¿∫ ∑£¥˝∞™∞˙ ∞∞¿∫ ΩΩ∑‘¿Ã ¿÷¥¬¡ˆ »Æ¿Œ«‘...
 					for( int j = iCount; j < i; ++j )
 					{
 						if( m_iSelectedMarker[j] == iNewNumber )
 						{
-							// whileÎ¨∏ÏóêÏÑú Í±∏Î¶¨ÎèÑÎ°ù ÌïòÍ∏∞ ÏúÑÌï¥ÏÑú...
+							// whileπÆø°º≠ ∞…∏Æµµ∑œ «œ±‚ ¿ß«ÿº≠...
 							iNewNumber	= iSelectedNumber;
 							break;
 						}
@@ -518,10 +371,10 @@ void CUIGamble::SetSelectedMarker( int iSlot, int iCount )
 			m_iSelectedMarker[i] = iNewNumber;
 		}
 
-		// Îí§ÏÑûÍ∏∞~!!!
-		// NOTE : 1Í∞úÏùºÎïåÎäî Ï†úÏô∏!!!
-		// NOTE : 1Í∞úÏùº ÎïåÎäî Î¨¥Ï°∞Í±¥ Ï≤´Î≤àÏß∏Í∞íÏù¥ ÌëúÏãúÍ∞Ä ÎêòÏñ¥Ïïº ÌïòÍ∏∞ ÎïåÎ¨∏Ïóê...
-		// NOTE : 4Í∞úÏùò ÎûúÎç§Í∞íÏùÑ ÏñªÏùÄ Ïù¥ÌõÑ, 2Í∞úÏî© ÍµêÌôòÏùÑ Ìï©ÎãàÎã§.
+		// µ⁄ºØ±‚~!!!
+		// NOTE : 1∞≥¿œ∂ß¥¬ ¡¶ø‹!!!
+		// NOTE : 1∞≥¿œ ∂ß¥¬ π´¡∂∞« √ππ¯¬∞∞™¿Ã «•Ω√∞° µ«æÓæﬂ «œ±‚ ∂ßπÆø°...
+		// NOTE : 4∞≥¿« ∑£¥˝∞™¿ª æÚ¿∫ ¿Ã»ƒ, 2∞≥æø ±≥»Ø¿ª «’¥œ¥Ÿ.
 		if( iCount != 1 )
 		{
 			int iRand[4];
@@ -548,7 +401,7 @@ void CUIGamble::SetSelectedMarker( int iSlot, int iCount )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÎàÑÏ†ÅÏàòÏπòÎ•º ÏÖãÌåÖÌï©ÎãàÎã§.
+// Purpose: ¥©¿˚ºˆƒ°∏¶ º¬∆√«’¥œ¥Ÿ.
 //-----------------------------------------------------------------------------
 void CUIGamble::SetAccumulate(int iAccumulate)
 {
@@ -564,14 +417,14 @@ void CUIGamble::ShowPrizeEffect()
 	ASSERT( m_pNpcEntity != NULL && "Invalid Npc Entity!" );
 	if( m_pNpcEntity )
 	{
-		// Ïù¥ÌéôÌä∏ ÌëúÏãú...
+		// ¿Ã∆Â∆Æ «•Ω√...
 		StartEffectGroup("npcGamblingWin", &m_pNpcEntity->GetModelInstance()->m_tmSkaTagManager, _pTimer->GetLerpedCurrentTick());
 	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : DrawNumber()
-// Desc : Ïò§Î•∏Ï™Ω Ï†ïÎ†¨ ÌòïÌÉúÎ°ú Ï∂úÎ†•...
+// Desc : ø¿∏•¬  ¡§∑ƒ «¸≈¬∑Œ √‚∑¬...
 // ----------------------------------------------------------------------------
 void CUIGamble::DrawNumber( int x, int y, CTString &strNumber )
 {
@@ -603,7 +456,7 @@ void CUIGamble::DrawNumber( int x, int y, int nNumber )
 	int nWidth			= GAMBLE_NUMBER_WIDTH;
 	int nHeight			= GAMBLE_NUMBER_HEIGHT;
 	
-	_pUIMgr->GetDrawPort()->AddTexture( x, y, x + nWidth, y + nHeight,
+	CUIManager::getSingleton()->GetDrawPort()->AddTexture( x, y, x + nWidth, y + nHeight,
 							rtNumber.U0, rtNumber.V0, rtNumber.U1, rtNumber.V1,
 							0xFFFFFFFF );
 }
@@ -614,8 +467,21 @@ void CUIGamble::DrawNumber( int x, int y, int nNumber )
 // ----------------------------------------------------------------------------
 void CUIGamble::Render()
 {
+	// moonstone ui auto closing [8/31/2010 rumist]
+	FLOAT3D vNPCPos = m_pNpcEntity->GetPlacement().pl_PositionVector;
+	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - vNPCPos(1);
+	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - vNPCPos(3);
+	
+	if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
+	{	
+		ResetGamble();
+		return;
+	}
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set shop texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	int	nX, nY, nX2, nY2;
 
@@ -623,11 +489,10 @@ void CUIGamble::Render()
 	nX2		= nX + m_nWidth;
 
 // [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
 	nY		= m_nPosY;	
 	nY2		= nY + 148;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX, nY, nX2, nY2,
 		m_rtBackTop.U0, m_rtBackTop.V0,
 		m_rtBackTop.U1, m_rtBackTop.V1,
 		0xFFFFFFFF );
@@ -635,7 +500,7 @@ void CUIGamble::Render()
 	nY		= nY2;
 	nY2		= nY +45;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX, nY, nX2, nY2,
 		m_rtBackMiddle.U0, m_rtBackMiddle.V0,
 		m_rtBackMiddle.U1, m_rtBackMiddle.V1,
 		0xFFFFFFFF );
@@ -643,81 +508,25 @@ void CUIGamble::Render()
 	//nY		= nY2;
 	//nY2		= nY +19;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX, nY, nX2, nY2,
 		m_rtBackMiddle.U0, m_rtBackMiddle.V0,
 		m_rtBackMiddle.U1, m_rtBackMiddle.V1,
 		0xFFFFFFFF );
 
 	nY		= nY2;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, m_nPosY + m_nHeight+19,
+	pDrawPort->AddTexture( nX, nY, nX2, m_nPosY + m_nHeight+19,
 		m_rtBackBottom.U0, m_rtBackBottom.V0,
 		m_rtBackBottom.U1, m_rtBackBottom.V1,
 		0xFFFFFFFF );
-		
-#else
-	nY		= m_nPosY;	
-	nY2		= nY + 44;
-
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
-		m_rtBackTop.U0, m_rtBackTop.V0,
-		m_rtBackTop.U1, m_rtBackTop.V1,
-		0xFFFFFFFF );
 	
-	nY		= nY2;
-	nY2		= m_nPosY + m_nHeight - 51;
-
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
-		m_rtBackMiddle.U0, m_rtBackMiddle.V0,
-		m_rtBackMiddle.U1, m_rtBackMiddle.V1,
-		0xFFFFFFFF );
-
-	nY		= nY2;
-
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, m_nPosY + m_nHeight,
-		m_rtBackBottom.U0, m_rtBackBottom.V0,
-		m_rtBackBottom.U1, m_rtBackBottom.V1,
-		0xFFFFFFFF );
-#endif
-	
-	if(m_bIsCashMoonStone)
-	{
-		if(!m_bStart)
-		{
-			if( !m_bIsReady )
-			{
-				m_btnStart.SetEnable(FALSE);
-				m_btnReady.SetEnable(TRUE);
-				m_btnReady.Render();
-			}
-			else
-			{	
-				m_btnReady.SetEnable(FALSE);
-				m_btnStart.SetEnable(TRUE);
-				m_btnStart.Render();
-			}
-		}
-		else
-			m_btnStop.Render();
-
-	}
-	else if( !m_bStart ){
-// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
-		m_btnStart.SetEnable(FALSE);
-		m_btnStop.Render();
-#else
-		m_btnStart.SetEnable(TRUE);
-		m_btnStart.Render();
-#endif
-	}
-	else
-		m_btnStop.Render();
+	m_btnStop.Render();
 	
 	// Cancel button of shop
 	m_btnCancel.Render();	
 
-	for( int i = 0; i < GAMBLE_TOTAL_SLOT; ++i )
+	int		i;
+	for (i = 0; i < GAMBLE_TOTAL_SLOT; ++i)
 	{
 		if( m_bStart )
 		{		
@@ -729,12 +538,8 @@ void CUIGamble::Render()
 			{
 				m_iCurMarker[i]++;
 
-// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
+				// [071122: Su-won] NEW_MOONSTONE
 				m_iCurMarker[i] = m_iCurMarker[i] % m_saReward[m_iUsedMoonStone].Count();
-#else
-				m_iCurMarker[i] = m_iCurMarker[i] % GAMBLE_TOTAL_MARK;
-#endif
 				do
 				{
 					m_dSlotElapsed[i] -= GAMBLE_TIME_SPAN;
@@ -746,12 +551,8 @@ void CUIGamble::Render()
 					if( m_bBegin && m_iCurMarker[i] == m_iSelectedMarker[i] )
 					{
 						m_iStoppedMarker[i]	= TRUE;
-// [071122: Su-won] NEW_MOONSTONE
-#ifndef NEW_MOONSTONE
-						m_iMarkerScore[m_iSelectedMarker[i]]++;
-#endif
 
-						// ÎßàÏßÄÎßâ Ïä¨Î°ØÍπåÏßÄ Îã§ Ï†ïÏßÄÌñàÎã§Î©¥...
+						// ∏∂¡ˆ∏∑ ΩΩ∑‘±Ó¡ˆ ¥Ÿ ¡§¡ˆ«ﬂ¥Ÿ∏È...
 						if( m_iStopSlot == GAMBLE_TOTAL_SLOT - 1 )
 						{
 							Stop();
@@ -801,7 +602,7 @@ void CUIGamble::Render()
 			tv_str=CTString("Press Start Button!");
 		else
 			tv_str=CTString("Insert Item...");
-		_pUIMgr->GetDrawPort()->PutTextExCX(tv_str,m_nPosX+129,m_nPosY+80);
+		pDrawPort->PutTextExCX(tv_str,m_nPosX+129,m_nPosY+80);
 
 	}
 	else
@@ -810,25 +611,20 @@ void CUIGamble::Render()
 	}
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
-	m_btnMoonStone[0].Render();
-	m_btnMoonStone[1].Render();
-	m_btnMoonStone[2].Render();
-	m_btnMoonStone[3].Render();
-	m_btnMoonStone[4].Render();
 
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM, PBT_OPAQUE );
+	for (i = 0; i < 5; ++i)
+		m_pIconsMoonStone[i]->Render(pDrawPort);
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->FlushBtnRenderingQueue( UBET_ITEM, PBT_OPAQUE );
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	RenderSelectedSlot();
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-#endif
+	pDrawPort->FlushRenderingQueue();
 
 	// Render Text
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -847,20 +643,12 @@ void CUIGamble::RenderSlot( int iSlot, int iMarker )
 	int iCurMarker	= iMarker % GAMBLE_TOTAL_MARK;
 
 // [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
 	iCurMarker	= iMarker % m_saReward[m_iUsedMoonStone].Count();
 
-	_pUIMgr->GetDrawPort()->AddBtnTexture( m_iTexID[iCurMarker],
+	CUIManager::getSingleton()->GetDrawPort()->AddBtnTexture( m_iTexID[iCurMarker],
 								m_nPosX + m_rcSlot[iCurSlot].Left, m_nPosY + m_rcSlot[iCurSlot].Top, m_nPosX + m_rcSlot[iCurSlot].Right, m_nPosY + m_rcSlot[iCurSlot].Bottom, 
 								m_rtNewMark[iCurMarker].U0, m_rtNewMark[iCurMarker].V0, m_rtNewMark[iCurMarker].U1, m_rtNewMark[iCurMarker].V1, 
 								0xFFFFFFFF );
-#else
-	_pUIMgr->GetDrawPort()->AddTexture( 
-		m_nPosX + m_rcSlot[iCurSlot].Left, m_nPosY + m_rcSlot[iCurSlot].Top, m_nPosX + m_rcSlot[iCurSlot].Right, m_nPosY + m_rcSlot[iCurSlot].Bottom, 
-		m_rtMark[iCurMarker].U0, m_rtMark[iCurMarker].V0, m_rtMark[iCurMarker].U1, m_rtMark[iCurMarker].V1, 
-		0xFFFFFFFF );
-#endif
-
 }
 
 // ----------------------------------------------------------------------------
@@ -872,36 +660,11 @@ void CUIGamble::RenderSelectedSlot( )
 	if( m_iMaxMarker == -1 )
 		return;
 
-// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
-	_pUIMgr->GetDrawPort()->AddTexture( 
+	// [071122: Su-won] NEW_MOONSTONE
+	CUIManager::getSingleton()->GetDrawPort()->AddTexture( 
 			m_nPosX + m_rcSlot[2].Left, m_nPosY + m_rcSlot[2].Top, m_nPosX + m_rcSlot[2].Right, m_nPosY + m_rcSlot[2].Bottom, 
 			m_rtSelect.U0, m_rtSelect.V0, m_rtSelect.U1, m_rtSelect.V1, 
-			0xFFFFFFFF );
-
-#else
-	if( m_bSelectedFixed )
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( 
-			m_nPosX + m_rcSlot[0].Left, m_nPosY + m_rcSlot[0].Top, m_nPosX + m_rcSlot[0].Right, m_nPosY + m_rcSlot[0].Bottom, 
-			m_rtSelect.U0, m_rtSelect.V0, m_rtSelect.U1, m_rtSelect.V1, 
 			0xFFFFFFFF );	
-	}
-	else
-	{
-		for( int i = 0; i < GAMBLE_TOTAL_SLOT; ++i )
-		{
-			if( m_iSelectedMarker[i] == m_iMaxMarker )
-			{
-				_pUIMgr->GetDrawPort()->AddTexture( 
-					m_nPosX + m_rcSlot[i].Left, m_nPosY + m_rcSlot[i].Top, m_nPosX + m_rcSlot[i].Right, m_nPosY + m_rcSlot[i].Bottom, 
-					m_rtSelect.U0, m_rtSelect.V0, m_rtSelect.U1, m_rtSelect.V1, 
-					0xFFFFFFFF );	
-			}
-		}
-	}
-#endif
-	
 }
 
 // ----------------------------------------------------------------------------
@@ -926,7 +689,7 @@ WMSG_RESULT CUIGamble::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -942,25 +705,19 @@ WMSG_RESULT CUIGamble::MouseMessage( MSG *pMsg )
 			}
 			
 			// Sell button
-			if( !m_bStart && m_btnStart.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
 			else if( m_bStart && m_btnStop.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
 			// Cancel button
 			else if( !m_bStart && m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
-			// Ready Button
-			else if( !m_bIsReady && m_btnReady.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
 
-// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
-			for(int i=0; i<5; ++i)
+			// [071122: Su-won] NEW_MOONSTONE
+			for (int i = 0; i < 5; ++i)
 			{
-				if( !m_bStart && m_btnMoonStone[i].MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
+				m_pIconsMoonStone[i]->MouseMessage( pMsg );
 			}
-#endif
+
+			return WMSG_SUCCESS;
 		}
 		break;
 
@@ -975,10 +732,6 @@ WMSG_RESULT CUIGamble::MouseMessage( MSG *pMsg )
 				{
 					bTitleBarClick = TRUE;
 				}
-				else if( !m_bStart && m_btnStart.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
 				else if( m_bStart && m_btnStop.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
 					// Nothing
@@ -988,24 +741,18 @@ WMSG_RESULT CUIGamble::MouseMessage( MSG *pMsg )
 				{
 					// Nothing
 				}
-				else if( !m_bIsReady && m_btnReady.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
 
-// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
+				// [071122: Su-won] NEW_MOONSTONE
 				for(int i=0; i<5; ++i)
 				{
-					if( !m_bStart && m_btnMoonStone[i].MouseMessage( pMsg ) != WMSG_FAIL )
+					if( !m_bStart && m_pIconsMoonStone[i]->MouseMessage( pMsg ) != WMSG_FAIL )
 					{
 						// Nothing
 					}
 				}
-#endif
 
 				if(this->IsVisible())
-					_pUIMgr->RearrangeOrder( UI_GAMBLE, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_GAMBLE, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -1026,26 +773,6 @@ WMSG_RESULT CUIGamble::MouseMessage( MSG *pMsg )
 				
 				return WMSG_SUCCESS;
 			}
-			else if( !m_bStart && ( wmsgResult = m_btnStart.MouseMessage( pMsg ) ) != WMSG_FAIL )
-			{
-				if( !m_bSendedStart )
-				{
-					if(m_bIsCashMoonStone)
-					{								
-						m_bIsReady = FALSE;
-						_pNetwork->SendCashMoonStoneReq(m_slotBtn);
-				
-					}
-					else
-					{
-						_pNetwork->SendMoonStoneTryReq();
-					}
-					
-					Init();
-					m_bSendedStart	= TRUE;						
-				}
-				return WMSG_SUCCESS;
-			}
 			else if( m_bStart && ( wmsgResult = m_btnStop.MouseMessage( pMsg ) ) != WMSG_FAIL )
 			{
 				if( wmsgResult == WMSG_COMMAND )
@@ -1055,17 +782,11 @@ WMSG_RESULT CUIGamble::MouseMessage( MSG *pMsg )
 				}
 				return WMSG_SUCCESS;
 			}
-			else if( m_bIsCashMoonStone && !m_bIsReady && ( wmsgResult = m_btnReady.MouseMessage( pMsg ) ) != WMSG_FAIL )
-			{
-				Init();
-				OpenReady();
-			}
 
-// [071122: Su-won] NEW_MOONSTONE
-#ifdef NEW_MOONSTONE
+			// [071122: Su-won] NEW_MOONSTONE
 			for(int i=0; i<5; ++i)
 			{
-				if( !m_bStart && m_btnMoonStone[i].MouseMessage( pMsg ) != WMSG_FAIL )
+				if( !m_bStart && m_pIconsMoonStone[i]->MouseMessage( pMsg ) != WMSG_FAIL )
 				{
 					if( !m_bSendedStart )
 					{
@@ -1079,7 +800,6 @@ WMSG_RESULT CUIGamble::MouseMessage( MSG *pMsg )
 					return WMSG_SUCCESS;					
 				}
 			}
-#endif
 		}
 		break;
 
@@ -1109,14 +829,14 @@ void CUIGamble::ReadMoonStoneLOD()
 
 	if( fMoonStone = fopen(tPath.str_String ,"rb") )
 	{
-		for( int i=0; i<5; ++i)
+		for( int i=0; i<MOONSTONE_COUNT; ++i)
 		{
 			int nCount;
 			fread(&nCount,sizeof(int),1,fMoonStone);
 
 			m_saReward[i].New(nCount);
 
-			if (nCount > iMax) iMax = nCount; // ÏµúÎåÄ Í∞ØÏàò
+			if (nCount > iMax) iMax = nCount; // √÷¥Î ∞πºˆ
 
 			for(int j=0; j<nCount; ++j)
 				fread(&m_saReward[i][j],sizeof(int),1,fMoonStone);
@@ -1130,6 +850,8 @@ void CUIGamble::ReadMoonStoneLOD()
 		m_iTexID = new INDEX[iMax];
 		m_rtNewMark = new UIRectUV[iMax];
 	}
+
+	fclose(fMoonStone);
 }
 
 void CUIGamble::SetSelectedItem( INDEX iRewardItem )
@@ -1168,7 +890,19 @@ void CUIGamble::SetSelectedItem( INDEX iRewardItem )
 
 INDEX CUIGamble::GetUsedMoonStoneIndex()
 { 
+#ifdef MOONSTONE_COUNT_ADD	// [2010/11/23 : Sora] πÆΩ∫≈Ê ∞≥ºˆ √ﬂ∞°
+	if( m_iUsedMoonStone == 2 ) //πÆΩ∫≈Ê(723) πˆ∆∞ø°º≠ ªÁøÎ
+	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		// πÆΩ∫≈Ê(723)¿ª øÏº±¿˚¿∏∑Œ ªÁøÎ»ƒ ¿Ø∑· πÆΩ∫≈Ê(6092) ªÁøÎ
+		if( pUIManager->GetInventory()->GetItemCount( MOONSTONEINDEX[2] ) == 0 && pUIManager->GetInventory()->GetItemCount( MOONSTONEINDEX[5] ) > 0 )
+			m_iUsedMoonStone = 5;
+	}
+#endif
+
 	return MOONSTONEINDEX[m_iUsedMoonStone]; 
 }
+
 // [071122: Su-won] NEW_MOONSTONE
 /////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,5 @@
-//ì•ˆíƒœí›ˆì´ ìƒˆë¡œ ì¶”ê°€í•œ íŒŒì¼ìž„.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Shadow Util)(0.1)
+//¾ÈÅÂÈÆÀÌ »õ·Î Ãß°¡ÇÑ ÆÄÀÏÀÓ.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Shadow Util)(0.1)
 
 #include "StdH.h"
 #include <Shaders/Common.h>
@@ -39,23 +39,23 @@ static void VertexShaderProcess()
 
 static void PixelShaderProcess(COLOR colShadowColor)
 {
-	//ì‚¬ìš©í•  Textureì§€ì •
+	//»ç¿ëÇÒ TextureÁöÁ¤
 	shaSetTexture(iTransTexture, 0);
-	//ì‚¬ìš©í•  UVì¢Œí‘œì…‹
+	//»ç¿ëÇÒ UVÁÂÇ¥¼Â
 	shaSetUVMap(iBaseUVMap);
 	//Shadow color setting
 	GFXColor colShadow = colShadowColor;
 	ShaderRegister srShadowColor(colShadow);
 	shaSetPixelProgramConst( 0, &srShadowColor, 1);	// c0
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘		03.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.22
 	/*
 	GFXColor colPlane = 0xFFFFFF80;
 	ShaderRegister srPlaneColor(colPlane);
 	shaSetPixelProgramConst( 1, &srPlaneColor, 1);	// c1
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.22
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.22
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘		03.27
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.27
 	GFXColor colPlane = 0xFFFFFF00;
 	ShaderRegister srPlaneColor(colPlane);
 	shaSetPixelProgramConst( 1, &srPlaneColor, 1);	// c1
@@ -63,7 +63,7 @@ static void PixelShaderProcess(COLOR colShadowColor)
 	GFXColor colSub = 0x0a0a0a75;
 	ShaderRegister srSubColor(colSub);
 	shaSetPixelProgramConst( 2, &srSubColor, 1);	// c2
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.27
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.27
 	//set pixel shader
 	shaSetPixelProgram(iShadowPP);
 }
@@ -76,16 +76,16 @@ static void Render()
 	shaRender();
 }
 
-//Textureë¡œ ê·¸ë ¤ì§€ëŠ” ê·¸ë¦¼ìžë¥¼ ìœ„í•´ ì‚¬ìš©ë˜ëŠ” Shaderìž„.
+//Texture·Î ±×·ÁÁö´Â ±×¸²ÀÚ¸¦ À§ÇØ »ç¿ëµÇ´Â ShaderÀÓ.
 SHADER_MAIN(Shadow)
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
-	const COLOR colShadowColor = shaGetColor(iShadowColor); // ì›ë³¸		
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘		03.30	
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+	const COLOR colShadowColor = shaGetColor(iShadowColor); // ¿øº»		
+//°­µ¿¹Î ¼öÁ¤ ³¡
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.30	
 	if(((shaGetModelColor()&CT_AMASK)>>CT_ASHIFT) >= 64)
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.30
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.30
 		const BOOL bHardwareShader = shaUseHWShaders();
 		if(bHardwareShader)
 		{
@@ -96,13 +96,13 @@ SHADER_MAIN(Shadow)
 		}
 		else	//USE VS(SOFT or HARD), NON-PS
 		{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ ì ‘ì† ì‹œí€€ìŠ¤ ìž‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 			COLOR crModel = 0x00000000f;
 			shaSetModelColor(crModel);
 			shaSetLightColor(crModel, crModel);
 			SetRenderingState();
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…	06.27
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷	06.27
 			DWORD dwAlphaArg, dwColorArg;
 			DWORD dwAlphaOP, dwColorOp;
 			HRESULT hr;
@@ -118,24 +118,24 @@ SHADER_MAIN(Shadow)
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1 );
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TFACTOR);
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…		06.27
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷		06.27
 
 			Render();
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…	06.27
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷	06.27
 			// Restore Stage State
 			hr = _pGfx->gl_pd3dDevice->SetRenderState( D3DRS_TEXTUREFACTOR, 0xFFFFFFFF);
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, dwAlphaArg);
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP,	dwAlphaOP);
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, dwColorArg);
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP,	dwColorOp);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…		06.27
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ìž‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷		06.27
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 		}
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(Shadow, ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -160,17 +160,17 @@ SHADER_DESC(Shadow, ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM | GFX_TEXCOORD0;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(Shadow, CTString &strVPCode, INDEX iVertexProgram)
 {
-	//ìƒìˆ˜ë“±ë¡ c0 ~ c20 ì‚¬ìš©ê°€ëŠ¥, c0 ~ c7ì€ ì™¸ë¶€ì—ì„œ ìž…ë ¥ë¨.
+	//»ó¼öµî·Ï c0 ~ c20 »ç¿ë°¡´É, c0 ~ c7Àº ¿ÜºÎ¿¡¼­ ÀÔ·ÂµÊ.
 	//--------------- Input ---------------------//
 	//--- v5     - tex coord                  ---//
 	//--- r0     - vertex position            ---//
 	//--- c0     - mProjection*mView          ---//
-	//--- c7     - (0.0f, 1.0f, 2.0f, 0.5f)   ---//ì—¬ê¸°ê¹Œì§€ê°€ ì™¸ë¶€ì—ì„œ ì„¸íŒ…
+	//--- c7     - (0.0f, 1.0f, 2.0f, 0.5f)   ---//¿©±â±îÁö°¡ ¿ÜºÎ¿¡¼­ ¼¼ÆÃ
 	//--- c4.w   - 765.01f                    ---//
 	//-------------- Output ---------------------//
 	//--- oPos   - Position Output            ---//
@@ -187,7 +187,7 @@ SHADER_VCODE(Shadow, CTString &strVPCode, INDEX iVertexProgram)
 
 SHADER_PCODE(Shadow, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 {
-	//ìƒìˆ˜ë“±ë¡ c0ë§Œ ê°€ëŠ¥(PSê°€ ì—†ëŠ” ì¹´ë“œì™€ì˜ í˜¸í™˜ì„±ì„ ê³ ë ¤í•  ê²½ìš°)
+	//»ó¼öµî·Ï c0¸¸ °¡´É(PS°¡ ¾ø´Â Ä«µå¿ÍÀÇ È£È¯¼ºÀ» °í·ÁÇÒ °æ¿ì)
 	//--------------- Input ---------------------//
 	//--- v0     - diffuse color              ---//
 	//--- t0     - trans. tex use only alpha  ---//
@@ -196,22 +196,34 @@ SHADER_PCODE(Shadow, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 	//--- r0     - Output Pixel COLOR & ALPHA ---//
 
 	ASSERT(iPixelProgram == iShadowPP);
-	//ì•ˆê°œ ê³ ë ¤í•˜ì§€ ì•ŠìŒ.
+	//¾È°³ °í·ÁÇÏÁö ¾ÊÀ½.
 	if(iPixelProgram == iShadowPP)
 	{
-		strPPCode = "tex		t0									\n" 
+/*		strPPCode = "tex		t0									\n" 
 					"mov        r0.rgb,  c0                         \n"	//paint shadow color
 					"+mov       r0.a,    t0.a						\n"	//alpha output
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘		03.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.22
 //					"mul		r0, r0,  c1							\n"
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.22
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘		03.27
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.27
 					"add		r0.a,	r0.a, c2.a					\n"
-					// r0.aê°€ 0.5ë³´ë‹¤ í´ ë•Œì™€ ìž‘ì„ë•Œ c0.a, c1.aë¥¼ ì„ íƒí•¨.
+					// r0.a°¡ 0.5º¸´Ù Å¬ ¶§¿Í ÀÛÀ»¶§ c0.a, c1.a¸¦ ¼±ÅÃÇÔ.
 					"cnd		r0.a, r0.a, c0.a, c1.a				\n"
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.27
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.27
+					;*/
+		strPPCode = "texld		r0,		t0							\n" 
+					"mov        r0.rgb,  c0                         \n"	//paint shadow color
+//					"+mov       r0.a,    t0.a						\n"	//alpha output
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.22
+//					"mul		r0, r0,  c1							\n"
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.27
+					"add		r0.a,	r0.a, c2.a					\n"
+					// r0.a°¡ 0.5º¸´Ù Å¬ ¶§¿Í ÀÛÀ»¶§ c0.a, c1.a¸¦ ¼±ÅÃÇÔ.
+					"cnd		r0.a, r0.a, c0.a, c1.a				\n"
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.27
 					;
 	}
 	return;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Shadow Util)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Shadow Util)(0.1)

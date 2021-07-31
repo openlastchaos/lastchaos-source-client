@@ -1,94 +1,97 @@
 
 #include "stdh.h"
-#include <Engine/Interface/UIBilling.h>
+
 #include <Engine/Interface/UIInternalClasses.h>
+#include <vector>
+#include <Engine/Interface/UIBilling.h>
+
 
 static int	_iMaxMsgStringChar = 0;
 
 // Define Coordinate
-#define BILLING_TITLE_HEIGHT			26		// íƒ€ì´í‹€ ë°” ë†’ì´
-#define	BILLING_TITLE_TEXT_OFFSETX		25		// íƒ€ì´í‹€ ë°” ì œëª© X ìœ„ì¹˜
-#define	BILLING_TITLE_TEXT_OFFSETY		5		// íƒ€ì´í‹€ ë°” ì œëª© Y ìœ„ì¹˜
+#define BILLING_TITLE_HEIGHT			26		// Å¸ÀÌÆ² ¹Ù ³ôÀÌ
+#define	BILLING_TITLE_TEXT_OFFSETX		25		// Å¸ÀÌÆ² ¹Ù Á¦¸ñ X À§Ä¡
+#define	BILLING_TITLE_TEXT_OFFSETY		5		// Å¸ÀÌÆ² ¹Ù Á¦¸ñ Y À§Ä¡
 #define BILLING_BOTTOM_HEIGHT			7
 
-#define BILLING_DESC_CHAR_WIDTH			290		// ê¸€ìê°€ ë“¤ì–´ê°€ ê°ˆìˆ˜ ìˆëŠ” ë„“ì´
+#define BILLING_DESC_CHAR_WIDTH			290		// ±ÛÀÚ°¡ µé¾î°¡ °¥¼ö ÀÖ´Â ³ĞÀÌ
 #define BILLING_HEIGHT2					107
 #define BILLING_WIDTH2					216
 
 
 // Button
-#define START_BOTTOM_BUTTON_Y			BILLING_HEIGHT - 29		// ë²„íŠ¼ì´ ì¶œë ¥ë˜ëŠ” ì•„ë˜ì—ì„œ ë¶€í„°ì˜ - ìœ„ì¹˜
-#define START_BOTTOM_BUTTON_Y2			BILLING_HEIGHT - 62		// Large ë²„íŠ¼ì´ ì¶œë ¥ë˜ëŠ” ì•„ë˜ì—ì„œ ë¶€í„°ì˜ - ìœ„ì¹˜
-#define BILLING_BUTTON_OK_X				176						// í™•ì¸ ë²„íŠ¼ X ìœ„ì¹˜
-#define BILLING_BUTTON_OK_X2			78						// í™•ì¸ ë²„íŠ¼ X ìœ„ì¹˜ ( Use ë©”ì„¸ì§€ ë°•ìŠ¤ )
+#define START_BOTTOM_BUTTON_Y			BILLING_HEIGHT - 29		// ¹öÆ°ÀÌ Ãâ·ÂµÇ´Â ¾Æ·¡¿¡¼­ ºÎÅÍÀÇ - À§Ä¡
+#define START_BOTTOM_BUTTON_Y2			BILLING_HEIGHT - 62		// Large ¹öÆ°ÀÌ Ãâ·ÂµÇ´Â ¾Æ·¡¿¡¼­ ºÎÅÍÀÇ - À§Ä¡
+#define BILLING_BUTTON_OK_X				176						// È®ÀÎ ¹öÆ° X À§Ä¡
+#define BILLING_BUTTON_OK_X2			78						// È®ÀÎ ¹öÆ° X À§Ä¡ ( Use ¸Ş¼¼Áö ¹Ú½º )
 #define BILLING_BUTTON_OK_Y				BILLING_HEIGHT2 - 29
 
 
-#define BILLING_BUTTON_CANCEL_X			242		// ì·¨ì†Œ ë²„íŠ¼ X ìœ„ì¹˜				
-#define BILLING_BUTTON_BIILLING_X		56		// ê²°ì¬ì°½ ë²„íŠ¼ X ìœ„ì¹˜				
-#define BILLING_BUTTON_CHARGE_X			164		// ì¶œì „ ë²„íŠ¼ X ìœ„ì¹˜				
+#define BILLING_BUTTON_CANCEL_X			242		// Ãë¼Ò ¹öÆ° X À§Ä¡				
+#define BILLING_BUTTON_BIILLING_X		56		// °áÀçÃ¢ ¹öÆ° X À§Ä¡				
+#define BILLING_BUTTON_CHARGE_X			164		// ÃâÀü ¹öÆ° X À§Ä¡				
 
 // Info ListBox 
-#define INFO_LIST_BOX_X					7		// ì •ë³´ í‘œì‹œ ListBox ë†’ì´
-#define INFO_LIST_BOX_Y					84		// ì •ë³´ í‘œì‹œ ListBox ë†’ì´
-#define INFO_LIST_BOX_HEIGHT			84		// ì •ë³´ í‘œì‹œ ListBox ë†’ì´
-#define INFO_LIST_BOX_HEIGHT2			184		// ì •ë³´ í‘œì‹œ ListBox ë†’ì´
+#define INFO_LIST_BOX_X					7		// Á¤º¸ Ç¥½Ã ListBox ³ôÀÌ
+#define INFO_LIST_BOX_Y					84		// Á¤º¸ Ç¥½Ã ListBox ³ôÀÌ
+#define INFO_LIST_BOX_HEIGHT			84		// Á¤º¸ Ç¥½Ã ListBox ³ôÀÌ
+#define INFO_LIST_BOX_HEIGHT2			184		// Á¤º¸ Ç¥½Ã ListBox ³ôÀÌ
 
 // Bill List ListBox
-#define BILL_LIST_BOX_HEIGHT			96		// ê²°ì¬ ë°©ì‹ í‘œì‹œ ListBox ë†’ì´
+#define BILL_LIST_BOX_HEIGHT			96		// °áÀç ¹æ½Ä Ç¥½Ã ListBox ³ôÀÌ
 
 
 // Define String
-#define ST_TITLE2				_S( 1416,  "ê²°ì¬"  )
-#define ST_TITLE				_S( 1432,  "ê²°ì¬ ì¬ì‹œ"  )
-#define ST_OK					_S( 1417,  "í™•ì¸"  )
-#define ST_BILLING				_S( 1418,  "ê²°ì¬"  )
-#define ST_CANCEL				_S( 1419,  "ì·¨ì†Œ"  )
+#define ST_TITLE2				_S( 1416,  "°áÀç"  )
+#define ST_TITLE				_S( 1432,  "°áÀç Àç½Ã"  )
+#define ST_OK					_S( 1417,  "È®ÀÎ"  )
+#define ST_BILLING				_S( 1418,  "°áÀç"  )
+#define ST_CANCEL				_S( 1419,  "Ãë¼Ò"  )
 
-#define ST_CLOSE				_S( 1420,  "ë‹«ê¸°"  )
-#define ST_BIILLING				_S( 1421,  "ê²°ì œì°½"  )
-#define ST_CHARGE				_S( 1422,  "ì¶©ì „"  )
+#define ST_CLOSE				_S( 1420,  "´İ±â"  )
+#define ST_BIILLING				_S( 1421,  "°áÁ¦Ã¢"  )
+#define ST_CHARGE				_S( 1422,  "ÃæÀü"  )
 
-// ë¹Œë§ ì •ë³´ ì¶œë ¥
+// ºô¸µ Á¤º¸ Ãâ·Â
 #define ST_NOW_YOU				CTString( "" )	
 	
-//CTString( "í˜„ì¬ ë‹¹ì‹ ì€!!")
-#define ST_USED_BILL			_S( 1423,  "ì‚¬ìš©ì¤‘ì¸ ê²°ì¬ë°©ë²•: %s"  )
-#define ST_END_TIME_LIMIT		_S( 1424,  "ê²Œì„ ì¢…ë£Œê¸°í•œ: %s"  )
-#define ST_LEFT_TIME			_S( 1425,  "ë‚¨ì€ì‹œê°„: %s"  )
-#define ST_TIME					_S( 1428,  "%dì‹œ %dë¶„ %dì´ˆ"  )
-#define ST_MONEY_LEFT_OVER		_S( 1405,  "ì‚¬ìš©ê°€ëŠ¥ ì”ì•¡: %d ì "  )
+//CTString( "ÇöÀç ´ç½ÅÀº!!")
+#define ST_USED_BILL			_S( 1423,  "»ç¿ëÁßÀÎ °áÀç¹æ¹ı: %s"  )
+#define ST_END_TIME_LIMIT		_S( 1424,  "°ÔÀÓ Á¾·á±âÇÑ: %s"  )
+#define ST_LEFT_TIME			_S( 1425,  "³²Àº½Ã°£: %s"  )
+#define ST_TIME					_S( 1428,  "%d½Ã %dºĞ %dÃÊ"  )
+#define ST_MONEY_LEFT_OVER		_S( 1405,  "»ç¿ë°¡´É ÀÜ¾×: %d Á¡"  )
 #define ST_CHARGE_URL			_S( 1406,  "http://www.LastChaos.com"  )
-#define ST_DESC_BYE				_S( 1407,  "ë‹¤ìŒì— ì‚¬ìš©í•˜ì‹¤ ê²°ì¬ë°©ì‹ì€(ë³€ê²½ê°€ëŠ¥)"  )
-#define ST_DESC_WANT			_S( 1408,  "ì•„ë˜ì˜ ì›í•˜ëŠ” í•­ëª© ì¤‘ íƒ 1í›„ í™•ì¸"  )
+#define ST_DESC_BYE				_S( 1407,  "´ÙÀ½¿¡ »ç¿ëÇÏ½Ç °áÀç¹æ½ÄÀº(º¯°æ°¡´É)"  )
+#define ST_DESC_WANT			_S( 1408,  "¾Æ·¡ÀÇ ¿øÇÏ´Â Ç×¸ñ Áß ÅÃ 1ÈÄ È®ÀÎ"  )
 
-#define ST_NOT_ALLOW			_S( 1409,  "ì‚¬ìš©ê¶Œí•œì´ ì—†ìŠµë‹ˆë‹¤. ê²°ì¬í›„ ì‚¬ìš©í•˜ì‹œê¸° ë°”ëë‹ˆë‹¤."  )
-#define ST_CONFIRM				_S( 1410,  "ì„ íƒí•˜ì‹  %së¥¼ ê²°ì¬ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?"  )
-#define ST_CHARGE_CONFIRM		_S( 1411,  "ì¶©ì „ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?"  )
+#define ST_NOT_ALLOW			_S( 1409,  "»ç¿ë±ÇÇÑÀÌ ¾ø½À´Ï´Ù. °áÀçÈÄ »ç¿ëÇÏ½Ã±â ¹Ù¶ø´Ï´Ù."  )
+#define ST_CONFIRM				_S( 1410,  "¼±ÅÃÇÏ½Å %s¸¦ °áÀç ÇÏ½Ã°Ú½À´Ï±î?"  )
+#define ST_CHARGE_CONFIRM		_S( 1411,  "ÃæÀü ÇÏ½Ã°Ú½À´Ï±î?"  )
 
 
-#define ST_LEFT_TIME_DESC		_S( 1412,  "ë‹¹ì‹ ì˜ ê²Œì„ ì‚¬ìš© ì‹œê°„ì´ %s ë‚¨ì•˜ìŠµë‹ˆë‹¤."  )
-#define	ST_USED_BILL_DESC		_S( 1413,  "ìë™ìœ¼ë¡œ %sê°€ ê²°ì¬ë©ë‹ˆë‹¤."  )
-#define	ST_MONEY_LEFT_OVER_DESC _S( 1414,  "ì‚¬ìš© ê°€ëŠ¥ ì”ì•¡ì€ %dì  ì…ë‹ˆë‹¤."  )
-#define ST_LOGOUT_DESC			_S( 1415,  "ì›ì¹˜ ì•Šìœ¼ë©´ ë¡œê·¸ì•„ì›ƒì„ í•˜ì‹­ì‹œì˜¤."  )
+#define ST_LEFT_TIME_DESC		_S( 1412,  "´ç½ÅÀÇ °ÔÀÓ »ç¿ë ½Ã°£ÀÌ %s ³²¾Ò½À´Ï´Ù."  )
+#define	ST_USED_BILL_DESC		_S( 1413,  "ÀÚµ¿À¸·Î %s°¡ °áÀçµË´Ï´Ù."  )
+#define	ST_MONEY_LEFT_OVER_DESC _S( 1414,  "»ç¿ë °¡´É ÀÜ¾×Àº %dÁ¡ ÀÔ´Ï´Ù."  )
+#define ST_LOGOUT_DESC			_S( 1415,  "¿øÄ¡ ¾ÊÀ¸¸é ·Î±×¾Æ¿ôÀ» ÇÏ½Ê½Ã¿À."  )
 
-#define	CT_ERROR_NOTFOUND_PAY	_S( 1426,  "ê²°ì¬ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."  )
-#define CT_ERROR_NOPOINT_PAY	_S( 1427,  "ì”ì•¡ì´ ë¶€ì¡±í•©ë‹ˆë‹¤."  )
+#define	CT_ERROR_NOTFOUND_PAY	_S( 1426,  "°áÀç Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."  )
+#define CT_ERROR_NOPOINT_PAY	_S( 1427,  "ÀÜ¾×ÀÌ ºÎÁ·ÇÕ´Ï´Ù."  )
 
-#define ST_WARRING_FREE			_S( 1429,  "í˜„ì¬ ë¬´ë£Œ ì‚¬ìš©ê¸°ê°„ ì¤‘ì…ë‹ˆë‹¤. í˜„ì¬ ê²°ì¬ í•˜ê²Œë˜ë©´ ë¬´ë£Œ ê¸°ê°„ì´ ì¢…ë£Œë˜ê²Œ ë©ë‹ˆë‹¤." )
-#define ST_STILL_USE			_S( 1430,  "ê³„ì†í•´ì„œ ì´ ë°©ë²•ì„ ì‚¬ìš©í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" )
-#define ST_UNLIMITED			_S( 1431,  "ì œí•œì—†ìŒ" )
+#define ST_WARRING_FREE			_S( 1429,  "ÇöÀç ¹«·á »ç¿ë±â°£ ÁßÀÔ´Ï´Ù. ÇöÀç °áÀç ÇÏ°ÔµÇ¸é ¹«·á ±â°£ÀÌ Á¾·áµÇ°Ô µË´Ï´Ù." )
+#define ST_STILL_USE			_S( 1430,  "°è¼ÓÇØ¼­ ÀÌ ¹æ¹ıÀ» »ç¿ëÇÏ½Ã°Ú½À´Ï±î?" )
+#define ST_UNLIMITED			_S( 1431,  "Á¦ÇÑ¾øÀ½" )
 
 // ETC 
-#define ST_YOU_USER_BILL		_S( 1433, "ë‹¹ì‹ ì´ ì‚¬ìš©í•œ ê²°ì¬ ë°©ì‹:" )
-#define ST_YOU_WANT_BILL		_S( 1434, "ë‹¹ì‹ ì´ ì›í•˜ëŠ” ê²°ì¬ ë°©ì‹ì„ ì„ íƒí•˜ì‹­ì‹œì˜¤." )
-#define ST_BILL_DESC			_S( 1435, "êµ¬ë§¤ë‚´ìš© ì•ˆë‚´ë¬¸" )
-#define ST_BILL_CONFIRM			_S( 1436, "ì´ë²ˆ ê²°ì¬ ë°©ì‹ì„ í™•ì‹¤íˆ í•˜ì‹œë ¤ë©´ í™•ì¸ì„ ëˆ„ë¥´ì‹­ì‹œì˜¤." )
+#define ST_YOU_USER_BILL		_S( 1433, "´ç½ÅÀÌ »ç¿ëÇÑ °áÀç ¹æ½Ä:" )
+#define ST_YOU_WANT_BILL		_S( 1434, "´ç½ÅÀÌ ¿øÇÏ´Â °áÀç ¹æ½ÄÀ» ¼±ÅÃÇÏ½Ê½Ã¿À." )
+#define ST_BILL_DESC			_S( 1435, "±¸¸Å³»¿ë ¾È³»¹®" )
+#define ST_BILL_CONFIRM			_S( 1436, "ÀÌ¹ø °áÀç ¹æ½ÄÀ» È®½ÇÈ÷ ÇÏ½Ã·Á¸é È®ÀÎÀ» ´©¸£½Ê½Ã¿À." )
 
-#define ST_ITEMLIST				_S( 1839, "ì•„ì´í…œ ì§€ê¸‰" )
+#define ST_ITEMLIST				_S( 1839, "¾ÆÀÌÅÛ Áö±Ş" )
 #define BILLING_BUTTON_ITEM_X	20
 
-#define SHOW_TIME				10000 // í™”ë©´ì„¤ëª… 3ì´ í™”ë©´ì— í‘œì‹œë˜ëŠ” ì‹œê°„  
+#define SHOW_TIME				10000 // È­¸é¼³¸í 3ÀÌ È­¸é¿¡ Ç¥½ÃµÇ´Â ½Ã°£  
 
 __int64 m_tmStartTime = 0;
 
@@ -102,7 +105,7 @@ __int64 m_tmStartTime = 0;
 CUIBilling::CUIBilling()
 {
 	Clear();
-	m_bLock = FALSE; // m_bLockëŠ” ì°½ì´ ë‹«í˜€ë„ ì´ˆê¸°í™” ë˜ì§€ ì•ŠëŠ”ë‹¤.
+	m_bLock = FALSE; // m_bLock´Â Ã¢ÀÌ ´İÇôµµ ÃÊ±âÈ­ µÇÁö ¾Ê´Â´Ù.
 }
 
 
@@ -113,7 +116,6 @@ CUIBilling::CUIBilling()
 //------------------------------------------------------------------------------
 CUIBilling::~CUIBilling()
 {
-
 }
 
 
@@ -176,7 +178,7 @@ void CUIBilling::Clear()
 
 //------------------------------------------------------------------------------
 // CUIBilling::OpenInfo
-// Explain:  s1 ë¬´ë£Œ ì‚¬ìš©ì ê³„ì • í‘œì‹œ ìœ¼ë¡œ ...
+// Explain:  s1 ¹«·á »ç¿ëÀÚ °èÁ¤ Ç¥½Ã À¸·Î ...
 // Date : 2005-04-30,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::OpenInfo()
@@ -187,23 +189,23 @@ void CUIBilling::OpenInfo()
 	
 	CTString strDesc;
 
-	// 0. í˜„ì¬ ë‹¹ì‹ ì€!!
+	// 0. ÇöÀç ´ç½ÅÀº!!
 	AddInfoDescString( ST_NOW_YOU );
 	
-	// 1.ì‚¬ìš©ì¤‘ì¸ ê²°ì¬ ë°©ì‹ 
+	// 1.»ç¿ëÁßÀÎ °áÀç ¹æ½Ä 
 	//strDesc.PrintF( ST_USED_BILL, m_biUsedBilling.m_strViewName );
 	//AddInfoDescString( strDesc );
-	// 2.ì¢…ë£Œì‹œê°„
-	strDesc.PrintF( ST_END_TIME_LIMIT, ST_UNLIMITED ); // ì œí•œ ì—†ìŒ
+	// 2.Á¾·á½Ã°£
+	strDesc.PrintF( ST_END_TIME_LIMIT, ST_UNLIMITED ); // Á¦ÇÑ ¾øÀ½
 	AddInfoDescString( strDesc );
-	// 3.ë‚¨ì€ì‹œê°„
-	strDesc.PrintF( ST_LEFT_TIME, ST_UNLIMITED ); // ì œí•œ ì—†ìŒ
+	// 3.³²Àº½Ã°£
+	strDesc.PrintF( ST_LEFT_TIME, ST_UNLIMITED ); // Á¦ÇÑ ¾øÀ½
 	AddInfoDescString( strDesc );
-	// 4.ì”ì•¡
+	// 4.ÀÜ¾×
 	//strDesc.PrintF( ST_MONEY_LEFT_OVER, m_nMoneyLeftOver );
 	//AddInfoDescString( strDesc );
 	
-	// m_lbBillListëŠ” ë‚˜íƒ€ë‚´ì§€ ì•Šê³  m_lbInfoë¥¼ ëŠ˜ë ¤ì„œ ëŒ€ì‹ í•¨
+	// m_lbBillList´Â ³ªÅ¸³»Áö ¾Ê°í m_lbInfo¸¦ ´Ã·Á¼­ ´ë½ÅÇÔ
 	m_lbInfo.SetHeight ( INFO_LIST_BOX_HEIGHT2 );
 	
 	m_lbBillList.SetEnable ( FALSE );	
@@ -212,7 +214,7 @@ void CUIBilling::OpenInfo()
 	m_eBillType = BILLING_INFO;
 	ResetPositon();
 
-	_pUIMgr->RearrangeOrder( UI_BILLING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, TRUE );
 	m_bExVisible = TRUE;
 }
 
@@ -230,16 +232,16 @@ void CUIBilling::OpenDefault()
 
 	CTString strDesc;
 
-	// 1.íƒ€ì´í‹€
+	// 1.Å¸ÀÌÆ²
 	AddInfoDescString( ST_NOW_YOU );
 	
 	AddInfoDescString( ST_YOU_WANT_BILL );
 
-	// 2.ì”ì•¡ 
+	// 2.ÀÜ¾× 
 	strDesc.PrintF( ST_MONEY_LEFT_OVER, m_nMoneyLeftOver );
 	AddInfoDescString( strDesc );
 
-	// 3.ì„¤ëª… 
+	// 3.¼³¸í 
 	AddInfoDescString( ST_BILL_DESC );
 	
 	BILLINFO_VEC::iterator iterBegin = m_vecBillList.begin();
@@ -253,7 +255,7 @@ void CUIBilling::OpenDefault()
 		
 	m_lbInfo.SetHeight ( INFO_LIST_BOX_HEIGHT );
 	m_lbBillList.SetEnable ( TRUE );		
-	m_lbBillList.SetCurSel( 0 );			// ê¸°ë³¸ì ìœ¼ë¡œ ì²« ë²ˆì§¸ ê²°ì¬ ë°©ì‹ Selection
+	m_lbBillList.SetCurSel( 0 );			// ±âº»ÀûÀ¸·Î Ã¹ ¹øÂ° °áÀç ¹æ½Ä Selection
 	
 	if( BILLTIEM_ENABLE )
 		m_btnItemList.SetEnable( TRUE );
@@ -268,7 +270,7 @@ void CUIBilling::OpenDefault()
 	
 	ResetPositon();
 
-	_pUIMgr->RearrangeOrder( UI_BILLING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, TRUE );
 	m_bExVisible = TRUE;
 
 }
@@ -287,21 +289,21 @@ void CUIBilling::OpenBeforeUse()
 
 	CTString strDesc;
 
-	// 1.íƒ€ì´í‹€
+	// 1.Å¸ÀÌÆ²
 	AddInfoDescString( ST_NOW_YOU );
 
-	// 1.ì‚¬ìš©ì¤‘ì¸ ê¸°ê¸° ëª…ì¹­
+	// 1.»ç¿ëÁßÀÎ ±â±â ¸íÄª
 	strDesc.PrintF( ST_USED_BILL, m_biUsedBilling.m_strViewName );
 	AddInfoDescString( strDesc );
 
-	// 2.ì”ì•¡ 
+	// 2.ÀÜ¾× 
 	strDesc.PrintF( ST_MONEY_LEFT_OVER, m_nMoneyLeftOver );
 	AddInfoDescString( strDesc );
 
-	// 3.ì„¤ëª…
+	// 3.¼³¸í
 	AddInfoDescString( ST_DESC_BYE );
 
-	// 4.í™•ì¸
+	// 4.È®ÀÎ
 	AddInfoDescString( ST_BILL_CONFIRM );
 
 	if( !m_vecBillList.empty() )
@@ -314,7 +316,7 @@ void CUIBilling::OpenBeforeUse()
 		{
 			AddBillListString( iter->m_strViewName );
 		}
-		m_lbBillList.SetCurSel( 0 );			// ê¸°ë³¸ì ìœ¼ë¡œ ì²« ë²ˆì§¸ ê²°ì¬ ë°©ì‹ Selection
+		m_lbBillList.SetCurSel( 0 );			// ±âº»ÀûÀ¸·Î Ã¹ ¹øÂ° °áÀç ¹æ½Ä Selection
 	}
 	m_lbInfo.SetHeight ( INFO_LIST_BOX_HEIGHT );
 	m_lbBillList.SetEnable ( TRUE );		
@@ -330,7 +332,7 @@ void CUIBilling::OpenBeforeUse()
 	
 	ResetPositon();
 
-	_pUIMgr->RearrangeOrder( UI_BILLING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, TRUE );
 	m_bExVisible = TRUE;
 
 }
@@ -338,14 +340,14 @@ void CUIBilling::OpenBeforeUse()
 
 //------------------------------------------------------------------------------
 // CUIBilling::OpenTime
-// Explain:  s2 ë‹¤ë¥¸ ê²ƒë³´ë‹¤ ìš°ì„  í•˜ì—¬ ì§„í–‰ .. 
+// Explain:  s2 ´Ù¸¥ °Íº¸´Ù ¿ì¼± ÇÏ¿© ÁøÇà .. 
 // Date : 2005-04-30,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::OpenTime()
 {
 	if( IsVisible() )
 	{
-		Close(); // í˜„ì¬ í™œì„±í™” ë˜ì–´ ìˆëŠ” ì°½ì„ ë‹«ê³  ì§„í–‰
+		Close(); // ÇöÀç È°¼ºÈ­ µÇ¾î ÀÖ´Â Ã¢À» ´İ°í ÁøÇà
 	}
 
 	CloseAllMsgBox();
@@ -353,22 +355,22 @@ void CUIBilling::OpenTime()
 
 	CTString strDesc;
 
-	// 0.íƒ€ì´í‹€
+	// 0.Å¸ÀÌÆ²
 	AddInfoDescString( ST_NOW_YOU );
-	// 1.ì‚¬ìš©ì¤‘ì¸ ê²°ì¬ ë°©ì‹ 
+	// 1.»ç¿ëÁßÀÎ °áÀç ¹æ½Ä 
 	strDesc.PrintF( ST_USED_BILL, m_biUsedBilling.m_strViewName );
 	AddInfoDescString( strDesc );
-	// 2.ì¢…ë£Œì‹œê°„
+	// 2.Á¾·á½Ã°£
 	strDesc.PrintF( ST_END_TIME_LIMIT, m_dateEndTimeLimit.GetDataString() );
 	AddInfoDescString( strDesc );
-	// 3.ë‚¨ì€ì‹œê°„
+	// 3.³²Àº½Ã°£
 	strDesc.PrintF( ST_LEFT_TIME, GetTimeString( m_nLeftTime ) );
 	AddInfoDescString( strDesc );
-	// 4.ì”ì•¡
+	// 4.ÀÜ¾×
 	strDesc.PrintF( ST_MONEY_LEFT_OVER, m_nMoneyLeftOver );
 	AddInfoDescString( strDesc );
 
-	// 5.ì„¤ëª…
+	// 5.¼³¸í
 	AddInfoDescString( ST_DESC_BYE );
 	
 	if( !m_vecBillList.empty() )
@@ -382,7 +384,7 @@ void CUIBilling::OpenTime()
 			AddBillListString( iter->m_strViewName );
 		}	
 
-		m_lbBillList.SetCurSel( 0 );			// ê¸°ë³¸ì ìœ¼ë¡œ ì²« ë²ˆì§¸ ê²°ì¬ ë°©ì‹ Selection
+		m_lbBillList.SetCurSel( 0 );			// ±âº»ÀûÀ¸·Î Ã¹ ¹øÂ° °áÀç ¹æ½Ä Selection
 	}
 	
 	m_btnOK.SetEnable( FALSE );
@@ -396,7 +398,7 @@ void CUIBilling::OpenTime()
 	
 	m_eBillType = BILLING_TIME;
 	ResetPositon();
-	_pUIMgr->RearrangeOrder( UI_BILLING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, TRUE );
 	m_bExVisible = TRUE;
 }
 
@@ -415,32 +417,32 @@ void CUIBilling::OpenTimeNow()
 
 	CTString strDesc;
 	
-	// 0.íƒ€ì´í‹€
+	// 0.Å¸ÀÌÆ²
 	AddInfoDescString( ST_NOW_YOU );
-	// 1.ì‚¬ìš©ì¤‘ì¸ ê¸°ê¸° ëª…ì¹­
+	// 1.»ç¿ëÁßÀÎ ±â±â ¸íÄª
 	strDesc.PrintF( ST_USED_BILL, m_biUsedBilling.m_strViewName );
 	AddInfoDescString( strDesc );
-	// 2.ë‚¨ì€ì‹œê°„ 
+	// 2.³²Àº½Ã°£ 
 	strDesc.PrintF( ST_LEFT_TIME, GetTimeString( m_nLeftTime ) );
 	AddInfoDescString( strDesc );
-	// 3.ì”ì•¡ 
+	// 3.ÀÜ¾× 
 	strDesc.PrintF( ST_MONEY_LEFT_OVER, m_nMoneyLeftOver );
 	AddInfoDescString( strDesc );
-	// 4.ì„¤ëª… 
+	// 4.¼³¸í 
 	//strDesc.PrintF( ST_STILL_USE );
 	//AddInfoDescString( strDesc );
 		
-	// m_lbBillListëŠ” ë‚˜íƒ€ë‚´ì§€ ì•Šê³  m_lbInfoë¥¼ ëŠ˜ë ¤ì„œ ëŒ€ì‹ í•¨
+	// m_lbBillList´Â ³ªÅ¸³»Áö ¾Ê°í m_lbInfo¸¦ ´Ã·Á¼­ ´ë½ÅÇÔ
 	m_lbInfo.SetHeight ( INFO_LIST_BOX_HEIGHT2 );
 	m_lbBillList.SetEnable ( FALSE );	
 	
-	// í™•ì¸ë²„íŠ¼ì€ ë³´ì—¬ ì£¼ì§€ ì•ŠìŒ
+	// È®ÀÎ¹öÆ°Àº º¸¿© ÁÖÁö ¾ÊÀ½
 	m_btnOK.SetEnable( FALSE );
 	
 	ResetPositon();
 
 	m_eBillType = BILLING_TIME_NOW;
-	_pUIMgr->RearrangeOrder( UI_BILLING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, TRUE );
 	m_bExVisible = TRUE;
 
 }
@@ -449,7 +451,7 @@ void CUIBilling::OpenTimeNow()
 
 //------------------------------------------------------------------------------
 // CUIBilling::OpenAutoChargeInfo
-// Explain:  s3!! : ë‹«íˆì§€ ì•Šê³  ìë™ìœ¼ë¡œ ì¢…ë£Œ ë˜ë„ë¡ ì„¤ì •
+// Explain:  s3!! : ´İÈ÷Áö ¾Ê°í ÀÚµ¿À¸·Î Á¾·á µÇµµ·Ï ¼³Á¤
 // Date : 2005-05-04,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::OpenAutoChargeInfo()
@@ -464,18 +466,18 @@ void CUIBilling::OpenAutoChargeInfo()
 
 	CTString strDesc;
 	
-	// 0.íƒ€ì´í‹€
+	// 0.Å¸ÀÌÆ²
 	AddInfoDescString( ST_NOW_YOU );
 
-	// 1.ë‚¨ì€ì‹œê°„ 
+	// 1.³²Àº½Ã°£ 
 	strDesc.PrintF( ST_LEFT_TIME_DESC, GetTimeString( m_nLeftTime ) );
 	AddInfoDescString( strDesc );
 	
-	// 2.ì‚¬ìš©ì¤‘ì¸ ê¸°ê¸° ëª…ì¹­
+	// 2.»ç¿ëÁßÀÎ ±â±â ¸íÄª
 	strDesc.PrintF( ST_USED_BILL_DESC, m_biUsedBilling.m_strViewName );
 	AddInfoDescString( strDesc );
 	
-	// 3.ì”ì•¡ 
+	// 3.ÀÜ¾× 
 	strDesc.PrintF( ST_MONEY_LEFT_OVER_DESC, m_nMoneyLeftOver );
 	AddInfoDescString( strDesc );
 	
@@ -483,21 +485,21 @@ void CUIBilling::OpenAutoChargeInfo()
 	//AddInfoDescString( strDesc );
 
 
-	// m_lbBillListëŠ” ë‚˜íƒ€ë‚´ì§€ ì•Šê³  m_lbInfoë¥¼ ëŠ˜ë ¤ì„œ ëŒ€ì‹ í•¨
+	// m_lbBillList´Â ³ªÅ¸³»Áö ¾Ê°í m_lbInfo¸¦ ´Ã·Á¼­ ´ë½ÅÇÔ
 	m_lbInfo.SetHeight ( INFO_LIST_BOX_HEIGHT2 );
 	m_lbBillList.SetEnable ( FALSE );	
 	
 	m_eBillType = BILLING_AUTO_CHARGE_INFO;
 		
-	// í™•ì¸ë²„íŠ¼ì€ ë³´ì—¬ ì£¼ì§€ ì•ŠìŒ
+	// È®ÀÎ¹öÆ°Àº º¸¿© ÁÖÁö ¾ÊÀ½
 	m_btnOK.SetEnable( FALSE );
 	m_btnCancel.SetEnable( FALSE );
 
 	ResetPositon();
-	_pUIMgr->RearrangeOrder( UI_BILLING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, TRUE );
 	m_bExVisible = TRUE;
 	
-	if( m_nLeftTime > 120 ) // ë‚¨ì€ ì‹œê°„ì´ 60ì´ˆ(1ë¶„ì´ˆë‹¤ í¬ë©´ 10ì´ˆë™ì•ˆ ì›ë„ìš° í‘œì‹œ )-í‘¸í•˜í•˜
+	if( m_nLeftTime > 120 ) // ³²Àº ½Ã°£ÀÌ 60ÃÊ(1ºĞÃÊ´Ù Å©¸é 10ÃÊµ¿¾È ¿øµµ¿ì Ç¥½Ã )-ÇªÇÏÇÏ
 	{
 		m_tmStartTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
 	}
@@ -518,22 +520,22 @@ void CUIBilling::OpenBeforeUseNow()
 
 	CTString strDesc;
 	
-	// 1.íƒ€ì´í‹€
+	// 1.Å¸ÀÌÆ²
 	AddInfoDescString( ST_NOW_YOU );
 	
-	// 2.ì‚¬ìš©ì¤‘ì¸ ê¸°ê¸° ëª…ì¹­
+	// 2.»ç¿ëÁßÀÎ ±â±â ¸íÄª
 	strDesc = ST_YOU_USER_BILL;
 	strDesc += m_biUsedBilling.m_strViewName;
 	AddInfoDescString( strDesc );
 
-	// 3.ì”ì•¡ 
+	// 3.ÀÜ¾× 
 	strDesc.PrintF( ST_MONEY_LEFT_OVER, m_nMoneyLeftOver );
 	AddInfoDescString( strDesc );
-	// 4.ì„¤ëª… 
+	// 4.¼³¸í 
 	strDesc.PrintF( ST_STILL_USE );
 	AddInfoDescString( strDesc );
 	
-	// m_lbBillListëŠ” ë‚˜íƒ€ë‚´ì§€ ì•Šê³  m_lbInfoë¥¼ ëŠ˜ë ¤ì„œ ëŒ€ì‹ í•¨
+	// m_lbBillList´Â ³ªÅ¸³»Áö ¾Ê°í m_lbInfo¸¦ ´Ã·Á¼­ ´ë½ÅÇÔ
 	m_lbInfo.SetHeight ( INFO_LIST_BOX_HEIGHT2 );
 		
 	m_lbBillList.SetEnable ( FALSE );	
@@ -545,7 +547,7 @@ void CUIBilling::OpenBeforeUseNow()
 		
 	m_eBillType = BILLING_BEFORE_USE_NOW;
 	ResetPositon();
-	_pUIMgr->RearrangeOrder( UI_BILLING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, TRUE );
 	m_bExVisible = TRUE;
 }
 
@@ -560,7 +562,7 @@ void CUIBilling::OpenBeforeUseNow()
 void CUIBilling::Close()
 {
 	CloseAllMsgBox();
-	_pUIMgr->RearrangeOrder( UI_BILLING, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, FALSE );
 
 	Clear();
 }
@@ -575,9 +577,7 @@ void CUIBilling::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 {
 	Clear();
 	
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	_iMaxMsgStringChar = BILLING_DESC_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 	
@@ -638,14 +638,14 @@ void CUIBilling::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-// ê²°ì¬ ë²„íŠ¼
+// °áÀç ¹öÆ°
 	m_btnBill.Create( this, ST_BIILLING, BILLING_BUTTON_BIILLING_X, START_BOTTOM_BUTTON_Y2, 95, 21 );
 	m_btnBill.SetUV( UBS_IDLE, 134, 117, 229, 138, fTexWidth, fTexHeight );
 	m_btnBill.SetUV( UBS_CLICK, 134, 139, 229, 160, fTexWidth, fTexHeight );
 	m_btnBill.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnBill.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-// ì¶©ì „ë²„íŠ¼
+// ÃæÀü¹öÆ°
 	m_btnCharge.Create( this, ST_CHARGE, BILLING_BUTTON_CHARGE_X, START_BOTTOM_BUTTON_Y2, 95, 21 );
 	m_btnCharge.SetUV( UBS_IDLE, 134, 117, 229, 138, fTexWidth, fTexHeight );
 	m_btnCharge.SetUV( UBS_CLICK, 134, 139, 229, 160, fTexWidth, fTexHeight );
@@ -659,10 +659,10 @@ void CUIBilling::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_btnItemList.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnItemList.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-// ì •ë³´ê°€ í‘œì‹œë˜ëŠ” ListBox
+// Á¤º¸°¡ Ç¥½ÃµÇ´Â ListBox
 	m_lbInfo.Create( this, 7, 26, 288, INFO_LIST_BOX_HEIGHT, _pUIFontTexMgr->GetLineHeight()+2, 6, 3, 1, FALSE );
 
-// ê²°ì¬ë°©ì‹ì´ í‘œí˜„ë˜ëŠ” ListBox
+// °áÀç¹æ½ÄÀÌ Ç¥ÇöµÇ´Â ListBox
 	m_lbBillList.Create( this, 7, 114, 288, BILL_LIST_BOX_HEIGHT, _pUIFontTexMgr->GetLineHeight()+2, 6, 3, 1, TRUE );
 	m_lbBillList.CreateScroll( TRUE, 0, 0, 9, BILL_LIST_BOX_HEIGHT, 9, 7, 0, 0, 10 );
 	m_lbBillList.SetSelBar( 288-7, _pUIFontTexMgr->GetLineHeight()+2, 187, 46, 204, 61, fTexWidth, fTexHeight );
@@ -700,8 +700,11 @@ void CUIBilling::Render()
 		RenderMessageBox();		
 		return;
 	}
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY, nX2, nY2;
@@ -712,28 +715,28 @@ void CUIBilling::Render()
 
 	// Top
 	nY = m_nPosY + BILLING_TITLE_HEIGHT;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + 40, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + 40, nY,
 										m_rtTopL.U0, m_rtTopL.V0, m_rtTopL.U1, m_rtTopL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 40, m_nPosY, nX2 - 40, nY,
+	pDrawPort->AddTexture( m_nPosX + 40, m_nPosY, nX2 - 40, nY,
 										m_rtTopM.U0, m_rtTopM.V0, m_rtTopM.U1, m_rtTopM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 40, m_nPosY, nX2, nY,
+	pDrawPort->AddTexture( nX2 - 40, m_nPosY, nX2, nY,
 										m_rtTopR.U0, m_rtTopR.V0, m_rtTopR.U1, m_rtTopR.V1,
 										0xFFFFFFFF );
 
 	nY2 = nY + m_lbInfo.GetHeight();
 
 	// Middle 1 ( ListBox 1 )
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
+	pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
 										m_rtMiddleL.U0, m_rtMiddleL.V0,
 										m_rtMiddleL.U1, m_rtMiddleL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
+	pDrawPort->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
 										m_rtMiddleM.U0, m_rtMiddleM.V0,
 										m_rtMiddleM.U1, m_rtMiddleM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 40, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 40, nY, nX2, nY2,
 										m_rtMiddleR.U0, m_rtMiddleR.V0,
 										m_rtMiddleR.U1, m_rtMiddleR.V1,
 										0xFFFFFFFF );
@@ -744,13 +747,13 @@ void CUIBilling::Render()
 	if ( m_eBillType == BILLING_DEFAULT || m_eBillType == BILLING_BEFORE_USE || m_eBillType == BILLING_TIME )
 	{
 		nY2 += 4;
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
+		pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
 											m_rtMiddleGapL.U0, m_rtMiddleGapL.V0, m_rtMiddleGapL.U1, m_rtMiddleGapL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
+		pDrawPort->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
 											m_rtMiddleGapM.U0, m_rtMiddleGapM.V0, m_rtMiddleGapM.U1, m_rtMiddleGapM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX2 - 40, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX2 - 40, nY, nX2, nY2,
 											m_rtMiddleGapR.U0, m_rtMiddleGapR.V0, m_rtMiddleGapR.U1, m_rtMiddleGapR.V1,
 											0xFFFFFFFF );
 
@@ -770,15 +773,15 @@ void CUIBilling::Render()
 			m_rtR = m_rtMiddleR;
 		}
 		// Desc middle
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
+		pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
 											m_rtL.U0, m_rtL.V0,
 											m_rtL.U1, m_rtL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
+		pDrawPort->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
 											m_rtM.U0, m_rtM.V0,
 											m_rtM.U1, m_rtM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX2 - 40, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX2 - 40, nY, nX2, nY2,
 											m_rtR.U0, m_rtR.V0,
 											m_rtR.U1, m_rtR.V1,
 											0xFFFFFFFF );
@@ -788,26 +791,26 @@ void CUIBilling::Render()
 
 	// Middle 2 
 	nY2 = m_nPosY + m_nHeight - BILLING_BOTTOM_HEIGHT;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
+	pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
 										m_rtMiddleGapL.U0, m_rtMiddleGapL.V0, m_rtMiddleGapL.U1, m_rtMiddleGapL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
+	pDrawPort->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
 										m_rtMiddleGapM.U0, m_rtMiddleGapM.V0, m_rtMiddleGapM.U1, m_rtMiddleGapM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 40, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 40, nY, nX2, nY2,
 										m_rtMiddleGapR.U0, m_rtMiddleGapR.V0, m_rtMiddleGapR.U1, m_rtMiddleGapR.V1,
 										0xFFFFFFFF );
 
 	// Bottom
 	nY = nY2;
 	nY2 = m_nPosY + m_nHeight;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
+	pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + 40, nY2,
 										m_rtBottomL.U0, m_rtBottomL.V0, m_rtBottomL.U1, m_rtBottomL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
+	pDrawPort->AddTexture( m_nPosX + 40, nY, nX2 - 40, nY2,
 										m_rtBottomM.U0, m_rtBottomM.V0, m_rtBottomM.U1, m_rtBottomM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 40, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 40, nY, nX2, nY2,
 										m_rtBottomR.U0, m_rtBottomR.V0, m_rtBottomR.U1, m_rtBottomR.V1,
 										0xFFFFFFFF );
 	
@@ -815,7 +818,7 @@ void CUIBilling::Render()
 // Render Content
 	m_btnClose.Render();
 
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strTitle, m_nPosX + BILLING_TITLE_TEXT_OFFSETX,		
+	pDrawPort->PutTextEx( m_strTitle, m_nPosX + BILLING_TITLE_TEXT_OFFSETX,		
 										m_nPosY + BILLING_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
 	m_lbInfo.Render();
@@ -840,13 +843,13 @@ void CUIBilling::Render()
 	
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 
-	// ì‹œê°„ ì²´í¬í›„ ìë™ ì¢…ë£Œ 
+	// ½Ã°£ Ã¼Å©ÈÄ ÀÚµ¿ Á¾·á 
 	if( m_eBillType == BILLING_AUTO_CHARGE_INFO && m_tmStartTime > 0 )
 	{
-		__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds(); //í˜„ì¬ ì‹œê°„ 
+		__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds(); //ÇöÀç ½Ã°£ 
 		
 		
 		
@@ -861,7 +864,7 @@ void CUIBilling::Render()
 
 //------------------------------------------------------------------------------
 // CUIBilling::OKProcess
-// Explain: Openëœ UIíƒ€ì…ì— ë”°ë¼ ë‹¤ë¥¸ ì²˜ë¦¬ë˜ëŠ” OKë²„íŠ¼
+// Explain: OpenµÈ UIÅ¸ÀÔ¿¡ µû¶ó ´Ù¸¥ Ã³¸®µÇ´Â OK¹öÆ°
 // Date : 2005-05-03,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 WMSG_RESULT CUIBilling::OKProcess( int nBillingIndex )
@@ -923,7 +926,7 @@ WMSG_RESULT	CUIBilling::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -1069,10 +1072,12 @@ WMSG_RESULT	CUIBilling::MouseMessage( MSG *pMsg )
 //------------------------------------------------------------------------------
 void CUIBilling::CloseAllMsgBox()
 {
-	_pUIMgr->CloseMessageBox( MSGCMD_BILLING_NOT_ALLOW	);
-	_pUIMgr->CloseMessageBox( MSGCMD_BILLING_CONFIRM );
-	_pUIMgr->CloseMessageBox( MSGCMD_BILLING_CHARGE_CONFIRM );
-	_pUIMgr->CloseMessageBox( MSGCMD_BILLING_ERROR );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_BILLING_NOT_ALLOW	);
+	pUIManager->CloseMessageBox( MSGCMD_BILLING_CONFIRM );
+	pUIManager->CloseMessageBox( MSGCMD_BILLING_CHARGE_CONFIRM );
+	pUIManager->CloseMessageBox( MSGCMD_BILLING_ERROR );
 }
 
 
@@ -1127,8 +1132,8 @@ void CUIBilling::MsgBoxLCommand( int nCommandCode, int nResult )
 
 //------------------------------------------------------------------------------
 // CUIBilling::OpenBilling
-// Explain: ê²°ì¬ì°½ì„ í˜¸ì¶œì„ ìœ„í•´ ì„œë²„ì— ë©”ì„¸ì§€ ì „ì†¡ í•˜ëŠ” í•¨ìˆ˜
-//			ê²°ê³¼ê°€ ì œëŒ€ë¡œ ì˜¤ë©´ ê¸°ë³¸ ê²°ì¬ì°½(s8)ì´ í˜¸ì¶œëœë‹¤. 
+// Explain: °áÀçÃ¢À» È£ÃâÀ» À§ÇØ ¼­¹ö¿¡ ¸Ş¼¼Áö Àü¼Û ÇÏ´Â ÇÔ¼ö
+//			°á°ú°¡ Á¦´ë·Î ¿À¸é ±âº» °áÀçÃ¢(s8)ÀÌ È£ÃâµÈ´Ù. 
 // Date : 2005-05-03,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::OpenBilling()
@@ -1141,7 +1146,7 @@ void CUIBilling::OpenBilling()
 
 //------------------------------------------------------------------------------
 // CUIBilling::OpenCharge
-// Explain: ì¶©ì „ ì°½(url)ë¥¼ í˜¸ì¶œí•˜ëŠ” í•¨ìˆ˜
+// Explain: ÃæÀü Ã¢(url)¸¦ È£ÃâÇÏ´Â ÇÔ¼ö
 // Date : 2005-04-30,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::OpenCharge()
@@ -1155,7 +1160,7 @@ void CUIBilling::OpenCharge()
 //------------------------------------------------------------------------------
 // CUIGuildBattle::AddInfoDescString
 // Explain:  
-// Date : 2005-03-17(ì˜¤í›„ 5:03:57) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÈÄ 5:03:57) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::AddInfoDescString( CTString &strDesc, COLOR colDesc )
 {
@@ -1168,7 +1173,8 @@ void CUIBilling::AddInfoDescString( CTString &strDesc, COLOR colDesc )
 	if( nLength <= _iMaxMsgStringChar )
 	{
 		// Check line character
-		for( int iPos = 0; iPos < nLength; iPos++ )
+		int iPos;
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
 			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
 				break;
@@ -1201,7 +1207,8 @@ void CUIBilling::AddInfoDescString( CTString &strDesc, COLOR colDesc )
 		// Check splitting position for 2 byte characters
 		int		nSplitPos = _iMaxMsgStringChar;
 		BOOL	b2ByteChar = FALSE;
-		for( int iPos = 0; iPos < nSplitPos; iPos++ )
+		int iPos;
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
 		{
 			if( strDesc[iPos] & 0x80 )
 				b2ByteChar = !b2ByteChar;
@@ -1212,7 +1219,7 @@ void CUIBilling::AddInfoDescString( CTString &strDesc, COLOR colDesc )
 		if( b2ByteChar )
 			nSplitPos--;
 
-		// Check line character
+		// Check line character		
 		for( iPos = 0; iPos < nSplitPos; iPos++ )
 		{
 			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
@@ -1273,11 +1280,12 @@ void CUIBilling::AddBillListString( CTString &strDesc, COLOR colDesc )
 	if( nLength == 0 )
 		return;
 
+	int iPos;
 	// If length of string is less than max char
 	if( nLength <= _iMaxMsgStringChar )
 	{
-		// Check line character
-		for( int iPos = 0; iPos < nLength; iPos++ )
+		// Check line character		
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
 			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
 				break;
@@ -1310,7 +1318,7 @@ void CUIBilling::AddBillListString( CTString &strDesc, COLOR colDesc )
 		// Check splitting position for 2 byte characters
 		int		nSplitPos = _iMaxMsgStringChar;
 		BOOL	b2ByteChar = FALSE;
-		for( int iPos = 0; iPos < nSplitPos; iPos++ )
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
 		{
 			if( strDesc[iPos] & 0x80 )
 				b2ByteChar = !b2ByteChar;
@@ -1393,27 +1401,29 @@ void CUIBilling::ErrorProcess( int nErrorCode )
 
 //------------------------------------------------------------------------------
 // CUIBilling::Message
-// Explain:  ì¼ë°˜ ë©”ì„¸ì§€ ë°•ìŠ¤ ì¶œë ¥ ì‹œ ì‚¬ìš©... (ì•ˆí•œë‹¤.)
+// Explain:  ÀÏ¹İ ¸Ş¼¼Áö ¹Ú½º Ãâ·Â ½Ã »ç¿ë... (¾ÈÇÑ´Ù.)
 // Date : 2005-05-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::Message( int nCommandCode, CTString strMessage, DWORD dwStyle )
 {
-	if( _pUIMgr->DoesMessageBoxExist( nCommandCode ) )
-	return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( nCommandCode ) )
+		return;
 
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( m_strTitle, dwStyle, UI_BILLING, nCommandCode );
 	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 
 //------------------------------------------------------------------------------
 // CUIBilling::MessageNotAllowUse
-// Explain:  s7 - ì‚¬ìš©ê¶Œí•œì´ ì—†ë‹¤ëŠ” ë©”ì„¸ì§€ ë°•ìŠ¤ ì¶œë ¥ 
-//				ì‹œì‘í• ë•Œ ë°”ë¡œ ë‚˜ì˜¤ëŠ” ë©”ì„¸ì§€ì´ê¸° ë•Œë¬¸ì— ì¼ë°˜ ë©”ì„¸ì§€ ë°•ìŠ¤ê°€ ì•„ë‹Œ 
-//				ìì²´ì ìœ¼ë¡œ ë©”ì„¸ì§€ ë°•ìŠ¤ ì œì‘í•´ì„œ ì‚¬ìš©í–ˆìŒ ( ë¬´ì§€ ë§˜ì— ì•ˆë“¬ )
+// Explain:  s7 - »ç¿ë±ÇÇÑÀÌ ¾ø´Ù´Â ¸Ş¼¼Áö ¹Ú½º Ãâ·Â 
+//				½ÃÀÛÇÒ¶§ ¹Ù·Î ³ª¿À´Â ¸Ş¼¼ÁöÀÌ±â ¶§¹®¿¡ ÀÏ¹İ ¸Ş¼¼Áö ¹Ú½º°¡ ¾Æ´Ñ 
+//				ÀÚÃ¼ÀûÀ¸·Î ¸Ş¼¼Áö ¹Ú½º Á¦ÀÛÇØ¼­ »ç¿ëÇßÀ½ ( ¹«Áö ¸¾¿¡ ¾Èµë )
 // Date : 2005-05-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::MessageNotAllowUse()
@@ -1435,7 +1445,7 @@ void CUIBilling::MessageNotAllowUse()
 
 	ResetPositon();
 
-	_pUIMgr->RearrangeOrder( UI_BILLING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_BILLING, TRUE );
 	
 	m_bExVisible = TRUE;
 
@@ -1448,7 +1458,9 @@ void CUIBilling::MessageNotAllowUse()
 //------------------------------------------------------------------------------
 void CUIBilling::OpenConfirm()
 {
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_BILLING_CONFIRM ) )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_BILLING_CONFIRM ) )
 		return;
 
 	CTString strMessage;
@@ -1460,21 +1472,13 @@ void CUIBilling::OpenConfirm()
 	
 	MsgBoxInfo.AddString( strMessage );
 
-	// ì‚¬ìš©ìê°€ í˜„ì¬ ë¬´ë£Œ 3ì‹œê°„ì„ ì‚¬ìš©í•˜ê³  ìˆë‹¤ë©´ ê´€ë ¨ ì„¤ëª…ì„ ì¶”ê°€í•œë‹¤.
-	/*if( m_biUsedBilling.m_eSection == CHARGE_FREE && m_nLeftTime > 0 )
-	{
-		strMessage.PrintF( ST_WARRING_FREE );
-		MsgBoxInfo.AddString( strMessage );
-	}
-	*/
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
-
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 
 //------------------------------------------------------------------------------
 // CUIBilling::SendCharge
-// Explain: ì„œë²„ì— ê²°ì¬ ë©”ì„¸ì§€ ë‚ ë¦¬ê¸°
+// Explain: ¼­¹ö¿¡ °áÀç ¸Ş¼¼Áö ³¯¸®±â
 // Date : 2005-05-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::SendCharge( int nBillIndex )
@@ -1491,8 +1495,10 @@ void CUIBilling::SendCharge( int nBillIndex )
 //------------------------------------------------------------------------------
 void CUIBilling::OpenChargeConfirm()
 {	
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_BILLING_CHARGE_CONFIRM ) )
-	return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_BILLING_CHARGE_CONFIRM ) )
+		return;
 
 	CTString strMessage;
 	strMessage.PrintF( ST_CHARGE_CONFIRM );
@@ -1502,7 +1508,7 @@ void CUIBilling::OpenChargeConfirm()
 	MsgBoxInfo.SetMsgBoxInfo( ST_TITLE, UMBS_USER_12, UI_BILLING, MSGCMD_BILLING_CHARGE_CONFIRM );
 	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 	m_bExVisible = TRUE;
 }
@@ -1510,31 +1516,34 @@ void CUIBilling::OpenChargeConfirm()
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBErrorMessage
-// Explain: ì—ëŸ¬ ë©”ì„¸ì§€ ì¶œë ¥ ì‹œ ì‚¬ìš©í•˜ëŠ” ë©”ì„¸ì§€ ë°•ìŠ¤
-// Date : 2005-03-19(ì˜¤í›„ 12:28:10) Lee Ki-hwan
+// Explain: ¿¡·¯ ¸Ş¼¼Áö Ãâ·Â ½Ã »ç¿ëÇÏ´Â ¸Ş¼¼Áö ¹Ú½º
+// Date : 2005-03-19(¿ÀÈÄ 12:28:10) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::ErrorMessage( CTString strErrorMessage )
 {
-	_pUIMgr->CloseMessageBox( MSGCMD_BILLING_ERROR );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_BILLING_ERROR );
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( m_strTitle, UMBS_OK, UI_BILLING, MSGCMD_BILLING_ERROR );
 	MsgBoxInfo.AddString( strErrorMessage );	
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+	pUIManager->CreateMessageBox( MsgBoxInfo );		
 }
 
 
 //------------------------------------------------------------------------------
 // CUIBilling::RenderMessageBox
-// Explain:  UIë¥¼ ë©”ì„¸ì§€ ë°•ìŠ¤ í˜•íƒœë¡œ ì¶œë ¥ 
-//			ë‚´ê°€ ì´ëˆ„ë¬´ ë©”ì„¸ì§€ ë°•ìŠ¤ ë•œì‹œ..
+// Explain:  UI¸¦ ¸Ş¼¼Áö ¹Ú½º ÇüÅÂ·Î Ãâ·Â 
+//			³»°¡ ÀÌ´©¹« ¸Ş¼¼Áö ¹Ú½º ¶«½Ã..
 // Date : 2005-05-09,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::RenderMessageBox()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 	static int m_nTextRegionHeight = 43;
 
 	// Set texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY;
@@ -1542,27 +1551,27 @@ void CUIBilling::RenderMessageBox()
 	// Top
 	nX = m_nPosX + m_nWidth;
 	nY = m_nPosY + 26;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
 										m_rtBackTop.U0, m_rtBackTop.V0,
 										m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
 
 	// Middle 1
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + m_nTextRegionHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + m_nTextRegionHeight,
 										m_rtBackMiddle1.U0, m_rtBackMiddle1.V0,
 										m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 										0xFFFFFFFF );
 
 	// Middle 2
 	nY += m_nTextRegionHeight;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
 										m_rtBackMiddle2.U0, m_rtBackMiddle2.V0,
 										m_rtBackMiddle2.U1, m_rtBackMiddle2.V1,
 										0xFFFFFFFF );
 
 	// Bottom
 	nY = m_nPosY + m_nHeight - 7;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
 										m_rtBackBottom.U0, m_rtBackBottom.V0,
 										m_rtBackBottom.U1, m_rtBackBottom.V1,
 										0xFFFFFFFF );
@@ -1570,39 +1579,39 @@ void CUIBilling::RenderMessageBox()
 	m_btnOK.Render();
 		
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strTitle, m_nPosX + BILLING_TITLE_TEXT_OFFSETX,		
+	pDrawPort->PutTextEx( m_strTitle, m_nPosX + BILLING_TITLE_TEXT_OFFSETX,		
 										m_nPosY + BILLING_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
 	// Message strings
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strMessage, m_nPosX + 20,
+	pDrawPort->PutTextEx( m_strMessage, m_nPosX + 20,
 											m_nPosY + 36, 0xc2bac5FF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-
-
+	pDrawPort->EndTextEx();
 }
 
 
 //------------------------------------------------------------------------------
 // CUIBilling::ResetPositon
-// Explain:  ë©”ì„¸ì§€ ë°•ìŠ¤ ìŠ¤íƒ€ì¼ ì¶”ê°€ë¡œ ì¸í•œ ìœ„ì¹˜ ì¡°ì • í•¨ìˆ˜
+// Explain:  ¸Ş¼¼Áö ¹Ú½º ½ºÅ¸ÀÏ Ãß°¡·Î ÀÎÇÑ À§Ä¡ Á¶Á¤ ÇÔ¼ö
 // Date : 2005-05-09,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIBilling::ResetPositon()
 {
-	SetPos( ( _pUIMgr->GetMaxI() + _pUIMgr->GetMinI() - GetWidth() ) / 2, 
-		( _pUIMgr->GetMaxJ() + _pUIMgr->GetMinJ() - GetHeight() ) / 2 );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	SetPos( ( pUIManager->GetMaxI() + pUIManager->GetMinI() - GetWidth() ) / 2, 
+		( pUIManager->GetMaxJ() + pUIManager->GetMinJ() - GetHeight() ) / 2 );
 }
 
 
 
 //------------------------------------------------------------------------------
 // GetTimeString
-// Explain:  ì´ˆë‹¨ìœ„ì˜ ì‹œê°„ì„ ì…ë ¥í•˜ë©´ ì‹œ, ë¶„, ì´ˆë¡œ ë³€í™˜ëœ ìŠ¤íŠ¸ë§ì„ ë¦¬í„´
+// Explain:  ÃÊ´ÜÀ§ÀÇ ½Ã°£À» ÀÔ·ÂÇÏ¸é ½Ã, ºĞ, ÃÊ·Î º¯È¯µÈ ½ºÆ®¸µÀ» ¸®ÅÏ
 // Date : 2005-05-09,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 CTString GetTimeString( LONG lTime )

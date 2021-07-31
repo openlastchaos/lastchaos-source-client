@@ -1,7 +1,56 @@
 #ifndef __CRYPT_NET_MSG_H__
 #define __CRYPT_NET_MSG_H__
 
-// 4ë°”ì´íŠ¸ ë³€ìˆ˜ì—ì„œ ê° ë°”ì´íŠ¸ ê°’ì„ unsigned charë¡œ ì–»ìŒ, í•˜ìœ„ ë°”ì´íŠ¸ 0 ~ ìµœìƒìœ„ ë°”ì´íŠ¸ 3
+// ************************************************************************************
+#ifdef	CRYPT_NET_MSG_LEVEL2
+
+
+#define CRYPT_INIT_CHAR				128
+
+static unsigned char	g_ubKey[]	= { 0x77, 0x6C, 0x71, 0x64, 0x70, 0x72, 0x6B, 0x72, 0x68, 0x74, 0x6C, 0x76, 0x65, 0x6B };
+
+/*
+#if defined (LC_KOR) || defined (LC_CHN)
+#define CRYPT_XOR_STRING			"dkwk"
+#else
+#define CRYPT_XOR_STRING			"nako"
+#endif*/
+
+#define CRYPT_XOR_STRING_LENGTH		4
+
+inline unsigned char* CryptMem(unsigned char* buf, int size, unsigned char arrKeyToken[], int nKeyToken)
+{
+	char ch = (char)CRYPT_INIT_CHAR;
+//	const char* strxor = CRYPT_XOR_STRING;
+	const unsigned char* strxor = arrKeyToken;
+	int i;
+	for (i = 0; i < size; i++)
+	{
+		buf[i] += ch;
+		ch = buf[i];
+		buf[i] ^= strxor[i % nKeyToken];
+	}
+	return buf;
+}
+
+inline unsigned char* DecryptMem(unsigned char* buf, int size, unsigned char arrKeyToken[], int nKeyToken)
+{
+	char ch = (char)CRYPT_INIT_CHAR;
+	const unsigned char* strxor = arrKeyToken;
+	int i;
+	for (i = 0; i < size; i++)
+	{
+		buf[i] ^= strxor[i % nKeyToken];
+		buf[i] -= ch;
+		ch = buf[i] + ch;
+	}
+	return buf;
+}
+
+#else	// CRYPT_NET_MSG_LEVEL2
+// ************************************************************************************
+
+// 4¹ÙÀÌÆ® º¯¼ö¿¡¼­ °¢ ¹ÙÀÌÆ® °ªÀ» unsigned char·Î ¾òÀ½, ÇÏÀ§ ¹ÙÀÌÆ® 0 ~ ÃÖ»óÀ§ ¹ÙÀÌÆ® 3
 #define CNM_BYTE_0(n)		((unsigned char)((n      ) & 0x000000ff))
 #define CNM_BYTE_1(n)		((unsigned char)((n >>  8) & 0x000000ff))
 #define CNM_BYTE_2(n)		((unsigned char)((n >> 16) & 0x000000ff))
@@ -13,25 +62,25 @@
 #define CNM_ROTATE_RIGHT(n)	((unsigned char)((((n << 7) & 0x80) | ((n >> 1) & 0x7f)) & 0xff))
 #define CNM_ROTATE_LEFT(n)	((unsigned char)(((n >> 7) & 0x01) | ((n << 1) & 0xfe) & 0xff))
 
-#define CNM_INIT_KEY		((unsigned int)(1852535664))	// ì´ˆê¸° í‚¤ ê°’ : nksp
+#define CNM_INIT_KEY		((unsigned int)(1852535664))	// ÃÊ±â Å° °ª : nksp
 
-#define CNM_DUMMY_SIZE		(1)								// ë”ë¯¸ ì‚¬ì´ì¦ˆ : ë”ë¯¸ëŠ” ë©”ì‹œì§€ íƒ€ì… ëŒ€ì‹ ì— CNetMsgì—ì„œ ì‚¬ìš©
-#define CNM_BEGIN_SIZE		(1)								// ì‹œì‘ ë§ˆí¬ í¬ê¸°
-#define CNM_END_SIZE		(1)								// ë ë§ˆí¬ í¬ê¸°
-#define CNM_CHECKSUM_SIZE	(2)								// ì²´í¬ì„¬ í¬ê¸°
-#define CNM_DUMMY_TYPE		((unsigned char)1)				// ë”ë¯¸
-#define CNM_BEGIN_MARK		((unsigned char)('l'))			// ì‹œì‘ ë§ˆí¬ : l
-#define CNM_END_MARK		((unsigned char)('c'))			// ì‹œì‘ ë§ˆí¬ : c
+#define CNM_DUMMY_SIZE		(1)								// ´õ¹Ì »çÀÌÁî : ´õ¹Ì´Â ¸Ş½ÃÁö Å¸ÀÔ ´ë½Å¿¡ CNetMsg¿¡¼­ »ç¿ë
+#define CNM_BEGIN_SIZE		(1)								// ½ÃÀÛ ¸¶Å© Å©±â
+#define CNM_END_SIZE		(1)								// ³¡ ¸¶Å© Å©±â
+#define CNM_CHECKSUM_SIZE	(2)								// Ã¼Å©¼¶ Å©±â
+#define CNM_DUMMY_TYPE		((unsigned char)1)				// ´õ¹Ì
+#define CNM_BEGIN_MARK		((unsigned char)('l'))			// ½ÃÀÛ ¸¶Å© : l
+#define CNM_END_MARK		((unsigned char)('c'))			// ½ÃÀÛ ¸¶Å© : c
 
 #define CNM_CRC				(0x8003)						// CRC-16
 
-// í‚¤ ëœë¤ ìƒì„±
+// Å° ·£´ı »ı¼º
 inline unsigned int CNM_KeyGen()
 {
 	return CNM_MAKELONG((unsigned char)rand(), (unsigned char)rand(), (unsigned char)rand(), (unsigned char)rand());
 }
 
-// 16ë¹„íŠ¸ CRC ìƒì„±
+// 16ºñÆ® CRC »ı¼º
 inline unsigned short CNM_CalcCRC(unsigned char* pData, int nLen)
 {
 	unsigned short crc = 0;
@@ -56,28 +105,28 @@ inline unsigned short CNM_CalcCRC(unsigned char* pData, int nLen)
 
 ////////////////////
 // Function name	: CNM_Crypt
-// Description	    : ë©”ì‹œì§€ ì•”í˜¸í™”
+// Description	    : ¸Ş½ÃÁö ¾ÏÈ£È­
 // Return type		: int 
-//                  : ì•”í˜¸í™”ëœ ê¸¸ì´, ì˜¤ë¥˜ì‹œ -1
+//                  : ¾ÏÈ£È­µÈ ±æÀÌ, ¿À·ù½Ã -1
 // Argument         : const unsigned char* pSrc
-//                  : ì›ë³¸ ë°ì´í„° ë²„í¼
+//                  : ¿øº» µ¥ÀÌÅÍ ¹öÆÛ
 // Argument         : int nLenSrc
-//                  : ì›ë³¸ ê¸¸ì´
+//                  : ¿øº» ±æÀÌ
 // Argument         : unsigned int nKey
-//                  : ì‚¬ìš©ë˜ëŠ” í‚¤ê°’
+//                  : »ç¿ëµÇ´Â Å°°ª
 // Argument         : unsigned char** pDest
-//                  : ë³µí˜¸ ë°ì´í„° ë²„í¼, newë¡œ í• ë‹¹í•¨, í˜¸ì¶œí•œ ê³³ì—ì„œ delete [] í•„ìš”
+//                  : º¹È£ µ¥ÀÌÅÍ ¹öÆÛ, new·Î ÇÒ´çÇÔ, È£ÃâÇÑ °÷¿¡¼­ delete [] ÇÊ¿ä
 inline int CNM_Crypt(const unsigned char* pSrc, int nLenSrc, unsigned int nKey, unsigned char** pDest)
 {
-	// ë³€í™˜ í…Œì´ë¸”
+	// º¯È¯ Å×ÀÌºí
 	#include "CryptNetMsg_TransTable"
 
 	int nLenDest = nLenSrc + (CNM_BEGIN_SIZE + CNM_END_SIZE + CNM_CHECKSUM_SIZE + CNM_DUMMY_SIZE);
-	unsigned short nCheckSum = 0;	// ì²´í¬ì„¬
-	int nIndexSrc = 0;				// pSrc ë²„í¼ ì¸ë±ìŠ¤
-	int nIndexDest = 0;				// pDest ë²„í¼ ì¸ë±ìŠ¤
-	unsigned char btTrans;			// ë³€í™˜ í…Œì´ë¸”ìš©
-	unsigned char btKey[4];			// í‚¤ë¥¼ ë°”ì´íŠ¸ë¡œ ë¶„ë¦¬
+	unsigned short nCheckSum = 0;	// Ã¼Å©¼¶
+	int nIndexSrc = 0;				// pSrc ¹öÆÛ ÀÎµ¦½º
+	int nIndexDest = 0;				// pDest ¹öÆÛ ÀÎµ¦½º
+	unsigned char btTrans;			// º¯È¯ Å×ÀÌºí¿ë
+	unsigned char btKey[4];			// Å°¸¦ ¹ÙÀÌÆ®·Î ºĞ¸®
 
 	(*pDest) = NULL;
 
@@ -92,15 +141,15 @@ inline int CNM_Crypt(const unsigned char* pSrc, int nLenSrc, unsigned int nKey, 
 	(*pDest) = new unsigned char[nLenDest];
 	memset((*pDest), 0, sizeof(unsigned char) * nLenDest);
 
-	// ë”ë¯¸ ì‚½ì…
+	// ´õ¹Ì »ğÀÔ
 	(*pDest)[nIndexDest] = CNM_DUMMY_TYPE;
 	nIndexDest++;
 
-	// ì‹œì‘ë§ˆí¬ ì‚½ì…
+	// ½ÃÀÛ¸¶Å© »ğÀÔ
 	(*pDest)[nIndexDest] = CNM_BEGIN_MARK;
 	nIndexDest++;
 
-	// ë°ì´í„° ë³µì‚¬
+	// µ¥ÀÌÅÍ º¹»ç
 	while (nIndexSrc < nLenSrc)
 	{
 		(*pDest)[nIndexDest] = pSrc[nIndexSrc];
@@ -108,36 +157,36 @@ inline int CNM_Crypt(const unsigned char* pSrc, int nLenSrc, unsigned int nKey, 
 		nIndexSrc++;
 	}
 
-	// ë ë§ˆí¬ ì‚½ì…
+	// ³¡ ¸¶Å© »ğÀÔ
 	(*pDest)[nIndexDest] = CNM_END_MARK;
 	nIndexDest++;
 
-	// ì²´í¬ì„¬ ìƒì„± : ë”ë¯¸ ì œì™¸
+	// Ã¼Å©¼¶ »ı¼º : ´õ¹Ì Á¦¿Ü
 	nCheckSum = CNM_CalcCRC((*pDest) + CNM_DUMMY_SIZE, nIndexDest - CNM_DUMMY_SIZE);
 
-	// ì²´í¬ì„¬ ì‚½ì…
+	// Ã¼Å©¼¶ »ğÀÔ
 	(*pDest)[nIndexDest] = CNM_BYTE_1(nCheckSum);
 	nIndexDest++;
 	(*pDest)[nIndexDest] = CNM_BYTE_0(nCheckSum);;
 	nIndexDest++;
 
-	// ë°ì´í„° ì•”í˜¸í™” : ë”ë¯¸ ì œì™¸
+	// µ¥ÀÌÅÍ ¾ÏÈ£È­ : ´õ¹Ì Á¦¿Ü
 	nIndexDest = CNM_DUMMY_SIZE;
 	while (nIndexDest < nLenDest)
 	{
-		// ì¹˜í™˜
+		// Ä¡È¯
 		btTrans = CNM_TransTable[(*pDest)[nIndexDest]];
 
-		// í‚¤ì™€ XOR
+		// Å°¿Í XOR
 		btTrans ^= btKey[nIndexDest % 4];
 
-		// ì˜¤ë¥¸ìª½ìœ¼ë¡œ Rotate
+		// ¿À¸¥ÂÊÀ¸·Î Rotate
 		btTrans = CNM_ROTATE_RIGHT(btTrans);
 
-		// í‚¤ ë³€ê²½
+		// Å° º¯°æ
 		btKey[nIndexDest % 4] = btTrans;
 
-		// ê°’ ì €ì¥
+		// °ª ÀúÀå
 		(*pDest)[nIndexDest] = btTrans;
 
 		nIndexDest++;
@@ -149,29 +198,29 @@ inline int CNM_Crypt(const unsigned char* pSrc, int nLenSrc, unsigned int nKey, 
 
 ////////////////////
 // Function name	: CNM_Decrypt
-// Description	    : ë©”ì‹œì§€ ë³µí˜¸í™”
+// Description	    : ¸Ş½ÃÁö º¹È£È­
 // Return type		: int 
-//                  : ë³µí˜¸í™”ëœ ê¸¸ì´, ì˜¤ë¥˜ì‹œ -1
+//                  : º¹È£È­µÈ ±æÀÌ, ¿À·ù½Ã -1
 // Argument         : const unsigned char* pSrc
-//                  : ì•”í˜¸ ë°ì´í„° ë²„í¼
+//                  : ¾ÏÈ£ µ¥ÀÌÅÍ ¹öÆÛ
 // Argument         : int nLenSrc
-//                  : ì•”í˜¸ ë°ì´í„° ê¸¸ì´
+//                  : ¾ÏÈ£ µ¥ÀÌÅÍ ±æÀÌ
 // Argument         : unsigned int nKey
-//                  : ì‚¬ìš©ë˜ëŠ” í‚¤ê°’
+//                  : »ç¿ëµÇ´Â Å°°ª
 // Argument         : unsigned char** pDest
-//                  : ë³µí˜¸ ë°ì´í„° ë²„í¼, newë¡œ í• ë‹¹í•¨, í˜¸ì¶œí•œ ê³³ì—ì„œ delete [] í•„ìš”
+//                  : º¹È£ µ¥ÀÌÅÍ ¹öÆÛ, new·Î ÇÒ´çÇÔ, È£ÃâÇÑ °÷¿¡¼­ delete [] ÇÊ¿ä
 inline int CNM_Decrypt(const unsigned char* pSrc, int nLenSrc, unsigned int nKey, unsigned char** pDest)
 {
-	// ë³€í™˜ í…Œì´ë¸”
+	// º¯È¯ Å×ÀÌºí
 	#include "CryptNetMsg_TransTable"
 
 	int nLenDest = nLenSrc - (CNM_BEGIN_SIZE + CNM_END_SIZE + CNM_CHECKSUM_SIZE + CNM_DUMMY_SIZE);
-	unsigned short nCheckSum = 0;	// ì²´í¬ì„¬
-	unsigned char btKey[4];			// í‚¤ë¥¼ ë°”ì´íŠ¸ë¡œ ë¶„ë¦¬
-	int nIndexSrc = 0;				// pSrc ë²„í¼ ì¸ë±ìŠ¤
-	int nIndexDest = 0;				// pDest ë²„í¼ ì¸ë±ìŠ¤
-	unsigned char btTrans;			// ë³€í™˜ í…Œì´ë¸”ìš©
-	unsigned char* pTmpBuf;			// ì„ì‹œìš©
+	unsigned short nCheckSum = 0;	// Ã¼Å©¼¶
+	unsigned char btKey[4];			// Å°¸¦ ¹ÙÀÌÆ®·Î ºĞ¸®
+	int nIndexSrc = 0;				// pSrc ¹öÆÛ ÀÎµ¦½º
+	int nIndexDest = 0;				// pDest ¹öÆÛ ÀÎµ¦½º
+	unsigned char btTrans;			// º¯È¯ Å×ÀÌºí¿ë
+	unsigned char* pTmpBuf;			// ÀÓ½Ã¿ë
 
 	(*pDest) = NULL;
 
@@ -185,32 +234,32 @@ inline int CNM_Decrypt(const unsigned char* pSrc, int nLenSrc, unsigned int nKey
 
 	pTmpBuf = new unsigned char[nLenSrc];
 
-	// ë°ì´í„° ë³µí˜¸í™” : ë”ë¯¸ ì œì™¸
+	// µ¥ÀÌÅÍ º¹È£È­ : ´õ¹Ì Á¦¿Ü
 	nIndexSrc = CNM_DUMMY_SIZE;
 	while (nIndexSrc < nLenSrc)
 	{
-		// í˜„ì¬ ë³µí˜¸ê°’ì„ ì €ì¥
+		// ÇöÀç º¹È£°ªÀ» ÀúÀå
 		btTrans = pSrc[nIndexSrc];
 
-		// ì™¼ìª½ìœ¼ë¡œ Rotate
+		// ¿ŞÂÊÀ¸·Î Rotate
 		btTrans = CNM_ROTATE_LEFT(btTrans);
 
-		// í‚¤ì™€ XOR
+		// Å°¿Í XOR
 		btTrans ^= btKey[nIndexSrc % 4];
 
-		// ì¹˜í™˜
+		// Ä¡È¯
 		btTrans = CNM_RTransTable[btTrans];
 
-		// í‚¤ë³€ê²½
+		// Å°º¯°æ
 		btKey[nIndexSrc % 4] = pSrc[nIndexSrc];
 
-		// ê°’ ì €ì¥
+		// °ª ÀúÀå
 		pTmpBuf[nIndexSrc] = btTrans;
 
 		nIndexSrc++;
 	}
 
-	// ì²´í¬ì„¬ ê²€ì‚¬ : ë”ë¯¸ ì œì™¸
+	// Ã¼Å©¼¶ °Ë»ç : ´õ¹Ì Á¦¿Ü
 	nCheckSum = CNM_MAKEWORD(pTmpBuf[nLenSrc - 1], pTmpBuf[nLenSrc - 2]);
 	if (nCheckSum != CNM_CalcCRC(pTmpBuf + CNM_DUMMY_SIZE, nLenSrc - CNM_CHECKSUM_SIZE - CNM_DUMMY_SIZE))
 	{
@@ -218,14 +267,14 @@ inline int CNM_Decrypt(const unsigned char* pSrc, int nLenSrc, unsigned int nKey
 		return -1;
 	}
 
-	// ì‹œì‘ë§ˆí¬ ê²€ì‚¬
+	// ½ÃÀÛ¸¶Å© °Ë»ç
 	if (pTmpBuf[CNM_DUMMY_SIZE] != CNM_BEGIN_MARK)
 	{
 		delete [] pTmpBuf;
 		return -1;
 	}
 
-	// ëë§ˆí¬ ê²€ì‚¬
+	// ³¡¸¶Å© °Ë»ç
 	if (pTmpBuf[nLenSrc - CNM_CHECKSUM_SIZE - 1] != CNM_END_MARK)
 	{
 		delete [] pTmpBuf;
@@ -239,5 +288,7 @@ inline int CNM_Decrypt(const unsigned char* pSrc, int nLenSrc, unsigned int nKey
 
 	return nLenDest;
 }
+
+#endif	// CRYPT_NET_MSG_LEVEL2
 
 #endif // __CRYPT_NET_MSG_H__

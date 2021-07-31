@@ -1,17 +1,14 @@
 #include "stdh.h"
 
-#include <Engine/Base/Anim.h>
-
 #include <Engine/Base/Memory.h>
 #include <Engine/Base/MemoryTracking.h>
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Timer.h>
 #include <Engine/Math/Functions.h>
-
 #include <Engine/Templates/Stock_CAnimData.h>
-
 #include <Engine/Base/ListIterator.inl>
 #include <Engine/Templates/DynamicArray.cpp>
+#include <Engine/Base/Anim.h>
 
 /*
  * One animation of an animateable object
@@ -347,11 +344,11 @@ void CAnimData::LoadFromScript_t( CTStream *File, CListHead *pFrameFileList) // 
 				sscanf( ld_line, "%s", key_word);
 				if( key_word == CTString( "ANIM"))
 				{
-				  // read file name from line and add it at the end of last path string loaded
-				  sscanf( ld_line, "%s %s", error_str, anim_name);
+					// read file name from line and add it at the end of last path string loaded
+					sscanf( ld_line, "%s %s", error_str, anim_name);
 					// search trough all allready readed animations for macro one
-	        FOREACHINLIST(COneAnimNode, coan_Node, TempAnimationList, itOAN)
-	        {
+					FOREACHINLIST(COneAnimNode, coan_Node, TempAnimationList, itOAN)
+					{
 						if( itOAN->coan_OneAnim->oa_Name == CTString( anim_name))
 						{
 							CTString *pstrMacroFrames = astrFrames.New( itOAN->coan_OneAnim->oa_NumberOfFrames);
@@ -511,12 +508,12 @@ void CAnimData::SetSpeed( INDEX iAnimation, TIME tmSpeed)
 	ad_Anims[iAnimation].oa_SecsPerFrame = tmSpeed;
 };
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.1)
 TIME CAnimData::GetSpeed( INDEX iAnimation)
 {
 	return ad_Anims[iAnimation].oa_SecsPerFrame;
 };
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.1)
 
 // obtains frame index for given place in array representing given animation
 INDEX CAnimData::GetFrame( INDEX iAnimation, INDEX iFramePlace) {
@@ -641,7 +638,7 @@ FLOAT CAnimObject::GetCurrentAnimLength(void) const
 /*
  * Calculate frame that coresponds to given time.
  */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Defense Code)(2005-01-18)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Defense Code)(2005-01-18)
 INDEX CAnimObject::FrameInTime(TIME time) const
 {
 	ASSERT( ao_AnimData != NULL);
@@ -665,7 +662,7 @@ INDEX CAnimObject::FrameInTime(TIME time) const
 	}
 	return pCOA->oa_FrameIndices[iFrameInAnim];
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Defense Code)(2005-01-18)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Defense Code)(2005-01-18)
 
 
 /*

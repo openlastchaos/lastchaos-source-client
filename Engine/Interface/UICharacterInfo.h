@@ -9,13 +9,7 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIButtonEx.h>
 #include <Engine/Interface/UISkillLearn.h>
-//#include <Engine/Entities/QuestSystem.h>
-
- 
 // Character information page
 enum CharInfoPage
 {
@@ -82,12 +76,12 @@ enum CharInfoPage
 // Skill tab
 enum SkillTab
 {
-	SKILL_ACTIVE	= 0,
-	SKILL_PASSIVE,
+	SKILL_ITEM	= 0,
+	SKILL_SPECIAL,
+	SKILL_VOUCHER,			// ÁõÇ¥
 #ifdef ADJUST_MEMORIZE_SKILL
 	SKILL_MEMORIZE,
 #endif
-	SKILL_SPECIAL,
 	SKILL_TOTAL,
 };
 
@@ -118,9 +112,9 @@ enum ActionType
 
 // Define action slot
 #define	ACTION_SLOT_ROW					8
-#define	ACTION_NORAML_SLOT_ROW_TOTAL	20
+#define	ACTION_NORAML_SLOT_ROW_TOTAL	30
 #define	ACTION_SOCIAL_SLOT_ROW_TOTAL	20
-#define	ACTION_PARTY_SLOT_ROW_TOTAL		20
+#define	ACTION_PARTY_SLOT_ROW_TOTAL		10
 #define	ACTION_GUILD_SLOT_ROW_TOTAL		20
 
 
@@ -161,7 +155,7 @@ enum ActionType
 #define	CHARINFO_HEIGHT					385
 
 
-// í…ìŠ¤ì³ë§Œ ë°”ê¿”ì£¼ëŠ” ëŠë‚Œìœ¼ë¡œ ë‚´ë¶€ ë³€ìˆ˜ë“¤ì€ ê·¸ëŒ€ë¡œ ìœ ì§€
+// ÅØ½ºÃÄ¸¸ ¹Ù²ãÁÖ´Â ´À³¦À¸·Î ³»ºÎ º¯¼öµéÀº ±×´ë·Î À¯Áö
 //////////////////////////////////////////////////////////////////////////
 // NEW_USER_INTERFACE
 #define CHARINFO_NEW_WIDTH				512
@@ -267,21 +261,25 @@ protected:
 	// Controls
 	int						m_nCurrentSkillTab;						// Current skill tab
 	CUIScrollBar			m_sbActiveSkillScrollBar;				// Scroll bar of active skill
-	CUIScrollBar			m_sbPassiveSkillScrollBar;				// Scroll bar of passive skill
+	//CUIScrollBar			m_sbPassiveSkillScrollBar;				// Scroll bar of passive skill
 	CUIScrollBar			m_sbMemorizeSkillScrollBar;				// Scroll bar of Memorize skill
 	CUIScrollBar			m_sbSpecialSkillScrollBar;				// Scroll bar of special skill
+	CUIScrollBar			m_sbVoucherSkillScrollBar;				// Scroll bar of Voucher skill
 
 	// Skill buttons
 	CUIButtonEx				m_btnActiveSkill[SKILL_ACTIVE_SLOT_ROW_TOTAL];		// Buttons of active skill
 	CUIButtonEx				m_btnPassiveSkill[SKILL_PASSIVE_SLOT_ROW_TOTAL];	// Buttons of passive skill
 	CUIButtonEx				m_btnMemorizeSkill[SKILL_MEMORIZE_SLOT_ROW_TOTAL];	// Buttons of Memorize skill
 	CUIButtonEx				m_btnSpecialSkill[SKILL_SPECIAL_SLOT_ROW_TOTAL];	// Buttons of special skill
+	CUIButtonEx				m_btnVoucherSkill[SKILL_SPECIAL_SLOT_ROW_TOTAL];	// Buttons of voucher skill
+	CUIButtonEx				m_btnItemSpecialSkill[SKILL_SPECIAL_SLOT_ROW_TOTAL];
 
 	// Skill information
 	int						m_nSelActiveSkillID;					// Selected skill ID of active skill
 	int						m_nSelPassiveSkillID;					// Selected skill ID of passive skill
 	int						m_nSelMemorizeSkillID;					// Selected skill ID of memorize skill
 	int						m_nSelSpecialSkillID;					// Selected skill ID of special skill
+	int						m_nSelVoucherSkillID;					// Selected skill ID of Voucher skill
 	BOOL					m_bShowSkillInfo;						// If skill tool tip is shown or not
 	int						m_nCurSkillInfoLines;					// Count of current skill information lines
 	CTString				m_strSkillInfo[MAX_SKILLINFO_LINE];		// Skill information string
@@ -296,6 +294,7 @@ protected:
 	CUIScrollBar			m_sbSocialActionScrollBar;				// Scroll bar of social action
 	CUIScrollBar			m_sbPartyActionScrollBar;				// Scroll bar of party action
 	CUIScrollBar			m_sbGuildActionScrollBar;				// Scroll bar of guild action
+	CUIScrollBar			m_sbItemSkillSpecialScrollBar;
 
 	// Action buttons
 	CUIButtonEx				m_btnNormalAction[ACTION_NORAML_SLOT_ROW_TOTAL];	// Buttons of normal action
@@ -335,7 +334,7 @@ protected:
 	int						m_nSelEventID;							// Selected event ID
 */
 
-	// FIXME : ì—¬ê¸°ì— ë“¤ì–´ê°ˆ ë¶€ë¶„ì´ ì•„ë‹Œê±° ê°™ìŒ.
+	// FIXME : ¿©±â¿¡ µé¾î°¥ ºÎºĞÀÌ ¾Æ´Ñ°Å °°À½.
 	int						m_nTargetIndex;
 	SBYTE					m_nTargetUIType;
 	//BOOL					m_bLockCharacterInfo;
@@ -346,28 +345,56 @@ protected:
 // NEW_USER_INTERFACE
 	enum eStatusTab
 	{
-		STATUS_TAB_PKINFO_N_ATTRIBUTE = 0, //PK & ì†ì„±íƒ­
-		STATUS_TAB_PHYSICAL_N_MAGICAL,     // ë¬¼ë¦¬&ë§ˆë²• ê³µê²©ë ¥
+		STATUS_TAB_PKINFO_N_ATTRIBUTE = 0, //PK & ¼Ó¼ºÅÇ
+		STATUS_TAB_PHYSICAL_N_MAGICAL,     // ¹°¸®&¸¶¹ı °ø°İ·Â
 		STATUS_TAB_MAX,					
+	};
+
+	enum eAttributeATTInfo
+	{
+		ATTRIBUTE_NONE_ATT = 0,
+		ATTRIBUTE_FIRE_ATT = 1,
+		ATTRIBUTE_WATER_ATT = 2,
+		ATTRIBUTE_EARTH_ATT = 3,
+		ATTRIBUTE_WIND_ATT = 4,
+		ATTRIBUTE_DARK_ATT = 5,
+		ATTRIBUTE_LIGHT_ATT = 6,
+		ATTRIBUTE_END_ATT,
+	};
+
+	enum eAttributeDEFInfo
+	{
+		ATTRIBUTE_NONE_DEF = 0,
+		ATTRIBUTE_FIRE_DEF = 1,
+		ATTRIBUTE_WATER_DEF = 2,
+		ATTRIBUTE_EARTH_DEF = 3,
+		ATTRIBUTE_WIND_DEF = 4,
+		ATTRIBUTE_DARK_DEF = 5,
+		ATTRIBUTE_LIGHT_DEF = 6,
+		ATTRIBUTE_END_DEF,
 	};
 
 	CTString				m_strTitleName;
 
 	UIRectUV				m_rtBackground;
 	UIRectUV				m_rtSkillInfo;
-	UIRectUV				m_rtAttributeInfo;	// ì†ì„± ë¶€ë¶„ì˜ í‘œì‹œ í™”ë©´
+	UIRectUV				m_rtAttributeInfo;	// ¼Ó¼º ºÎºĞÀÇ Ç¥½Ã È­¸é
+
+	// ¼Ó¼º ½Ã½ºÅÛ [1/17/2013 Ranma]
+	UIRectUV				m_rtAttributeIconAtt[ATTRIBUTE_END_ATT];
+	UIRectUV				m_rtAttributeIconDef[ATTRIBUTE_END_DEF];
 	UIRectUV				m_rtTabIcon[8];
-	UIRectUV				m_rtSelectedTab;	//ì¢Œì¸¡ ì„¸ë¡œíƒ­
+	UIRectUV				m_rtSelectedTab;	//ÁÂÃø ¼¼·ÎÅÇ
 	UIRectUV				m_rtSelectedTabMiddle;				
 	UIRectUV				m_rtSelectedTabLow;
-	UIRectUV				m_rtUnSelectedTab; //ì„ íƒë˜ì§€ ì•Šì€ ì„¸ë¡œ íƒ­
+	UIRectUV				m_rtUnSelectedTab; //¼±ÅÃµÇÁö ¾ÊÀº ¼¼·Î ÅÇ
 	UIRectUV				m_rtUnSelectedTabMiddle;				
 	UIRectUV				m_rtUnSelectedTabLow;
-	UIRectUV				m_rtSelectedStatusTab; //ì„ íƒëœ ê°€ë¡œíƒ­ 
+	UIRectUV				m_rtSelectedStatusTab; //¼±ÅÃµÈ °¡·ÎÅÇ 
 	UIRectUV				m_rtSelectedStatusTabMiddle;
 	UIRectUV				m_rtSelectedStatusTabRight;
-	UIRectUV				m_rtSelectedStatusTabDeco; //íƒ­ ì¥ì‹
-	UIRectUV				m_rtUnSelectedStatusTab; //ì•ˆ ì„ íƒëœ ê°€ë¡œíƒ­
+	UIRectUV				m_rtSelectedStatusTabDeco; //ÅÇ Àå½Ä
+	UIRectUV				m_rtUnSelectedStatusTab; //¾È ¼±ÅÃµÈ °¡·ÎÅÇ
 	UIRectUV				m_rtUnSelectedStatusTabMiddle;
 	UIRectUV				m_rtUnSelectedStatusTabRight;
  	UIRectUV				m_rtUnSelectedStatusTabDeco;
@@ -382,7 +409,7 @@ protected:
 	UIRectUV				m_rtCharInfoDescLM;								
 	UIRectUV				m_rtCharInfoDescLR;								
 
-	UIRectUV				m_rtSelOutlineTopL;	//ì„ íƒëœ ìŠ¤í‚¬ í‘œì‹œ ë¼ì¸
+	UIRectUV				m_rtSelOutlineTopL;	//¼±ÅÃµÈ ½ºÅ³ Ç¥½Ã ¶óÀÎ
 	UIRectUV				m_rtSelOutlineTopM;
 	UIRectUV				m_rtSelOutlineTopR;
 	UIRectUV				m_rtSelOutlineMiddleL;
@@ -393,7 +420,7 @@ protected:
 	UIRectUV				m_rtSelOutlineBottomR;
 
 
-	// ìŠ¤í‚¬ ì„¤ëª…ì°½
+	// ½ºÅ³ ¼³¸íÃ¢
 	UIRectUV				m_rtSkillDescUL;								
 	UIRectUV				m_rtSkillDescUM;								
 	UIRectUV				m_rtSkillDescUR;								
@@ -404,34 +431,34 @@ protected:
 	UIRectUV				m_rtSkillDescLM;								
 	UIRectUV				m_rtSkillDescLR;								
 
-	UIRect					m_rcTabLayer; //ì˜†ì— íƒ­ ê·¸ë¦¬ëŠ” ë„ˆë¹„
+	UIRect					m_rcTabLayer; //¿·¿¡ ÅÇ ±×¸®´Â ³Êºñ
 	UIRect					m_rcSkillActionTab;
 	UIRect					m_rcInfoRegion;
-	UIRect					m_rcStatusTab[STATUS_TAB_MAX]; // ìºë¦­í„° ìŠ¤í…Œí„°ìŠ¤ ë‚´ë¶€ì˜ íƒ­ì˜ì—­
+	UIRect					m_rcStatusTab[STATUS_TAB_MAX]; // Ä³¸¯ÅÍ ½ºÅ×ÅÍ½º ³»ºÎÀÇ ÅÇ¿µ¿ª
 	UIRect					m_rcCharInfoDesc;
-	UIRect					m_rcButtonArea;	//ë²„íŠ¼ì˜ì—­ì„ ë” ë„“ê²Œ ì²´í¬
-	UIRect					m_rcSkillDesc; //ìŠ¤í‚¬ ì„¤ëª…ì°½ì˜ì—­
+	UIRect					m_rcButtonArea;	//¹öÆ°¿µ¿ªÀ» ´õ ³Ğ°Ô Ã¼Å©
+	UIRect					m_rcSkillDesc; //½ºÅ³ ¼³¸íÃ¢¿µ¿ª
 
 
 	BOOL					m_bCharDescVisible;
-	BOOL					m_bSkillDescVisible;
 
-	int						m_bStatusTabOpen[STATUS_TAB_MAX]; //ê° ìŠ¤í…Œí„°ìŠ¤ ë‚´ë¶€ íƒ­ì´ ì—´ë ¤ìˆëŠ”ì§€ ì—¬ë¶€
+	int						m_bStatusTabOpen[STATUS_TAB_MAX]; //°¢ ½ºÅ×ÅÍ½º ³»ºÎ ÅÇÀÌ ¿­·ÁÀÖ´ÂÁö ¿©ºÎ
 	int						m_nSkillActionUpperTab[3];
 	int						m_nSelectedSkillID;
 	int						m_nCurrentSkillType;
 	int						m_nBtnTotal;
 	int						m_pSelectedSkillSatisfied[SKILL_ACTIVE_SLOT_ROW_TOTAL];
+	int						m_nSkillDescRow;
 	
-	CTString				m_strHitRate;	//ë¬¼ë¦¬ ëª…ì¤‘ë„
-	CTString				m_strDodgeRate;	//ë¬¼ë¦¬ íšŒí”¼ë„
-	CTString				m_strCritical;	//í¬ë¦¬í‹°ì»¬
-	CTString				m_strSpeed;		//ì´ë™ì†ë„
-	CTString				m_strMagicHitRate;	//ë§ˆë²• ëª…ì¤‘ë„
-	CTString				m_strMagicDodgeRate;		//ë§ˆë²• íšŒí”¼ë„
-	CTString				m_strDeadly;		//ë°ë“¤ë¦¬
-	CTString				m_strAttackSpeed;			//ê³µê²©ì†ë„
-	CTString				m_strAttributeFire;	//ì†ì„±
+	CTString				m_strHitRate;	//¹°¸® ¸íÁßµµ
+	CTString				m_strDodgeRate;	//¹°¸® È¸ÇÇµµ
+	CTString				m_strCritical;	//Å©¸®Æ¼ÄÃ
+	CTString				m_strSpeed;		//ÀÌµ¿¼Óµµ
+	CTString				m_strMagicHitRate;	//¸¶¹ı ¸íÁßµµ
+	CTString				m_strMagicDodgeRate;		//¸¶¹ı È¸ÇÇµµ
+	CTString				m_strDeadly;		//µ¥µé¸®
+	CTString				m_strAttackSpeed;			//°ø°İ¼Óµµ
+	CTString				m_strAttributeFire;	//¼Ó¼º
 	CTString				m_strAttributeWater;
 	CTString				m_strAttributeEarth;
 	CTString				m_strAttributeWind;
@@ -442,7 +469,7 @@ protected:
 	CTString				m_strDesc;
 
 	CUIScrollBar			m_sbScrollBar;
-	CUIButtonEx*			m_btnSelectedSkill;	//í˜„ì¬ ìŠ¤í‚¬
+	CUIButtonEx*			m_btnSelectedSkill;	//ÇöÀç ½ºÅ³
 
 	CUIRectString			m_rsSkillName;
 	CUIRectString			m_rsSkillDesc;
@@ -485,14 +512,14 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////
 //NEW_USER_INTERFACE
-	void	RenderNewCharacterInfoStatus();						// ìºë¦­í„° ì •ë¡œ ë Œë”ë§
-	void	RenderNewCharacterInfoSkill();						// ìŠ¤í‚¬, ì•¡ì…˜ë“±ì˜ ë Œë”ë§
-	void	SetCurrentPageNewCharacterInfo(int nTabNum);		// ì¢Œì¸¡ íƒ­ ì„¤ì •
-	void	SetCurrentSkillInfo(int nSideTab, int nUpperTab);	// ìŠ¤í‚¬ì°½ íƒ­ ì„¤ì •
-	void	ShowCharInfoDesc(int nTabID = -1);					// ì´¤ì¸¡ íƒ­ ì„¤ëª… ì°½
-	COLOR	    GetStrColor(int nAdded);						// ëŠ¥ë ¥ì¹˜ ë³´ì • ìƒ‰ì¡°ì‚¬
-	void	RenderCharInfoDesc();								// ì¢Œì¸¡ íƒ­ ì„¤ëª… ë Œë”
-	void	ShowSkillDesc(int nRow = -1);						// ìŠ¤í‚¬ ì„¤ëª… ì°½ ì„¸íŒ…
+	void	RenderNewCharacterInfoStatus();						// Ä³¸¯ÅÍ Á¤·Î ·»´õ¸µ
+	void	RenderNewCharacterInfoSkill();						// ½ºÅ³, ¾×¼ÇµîÀÇ ·»´õ¸µ
+	void	SetCurrentPageNewCharacterInfo(int nTabNum);		// ÁÂÃø ÅÇ ¼³Á¤
+	void	SetCurrentSkillInfo(int nSideTab, int nUpperTab);	// ½ºÅ³Ã¢ ÅÇ ¼³Á¤
+	void	ShowCharInfoDesc(int nTabID = -1);					// ÃÒÃø ÅÇ ¼³¸í Ã¢
+	COLOR	GetStrColor(int nAdded);						// ´É·ÂÄ¡ º¸Á¤ »öÁ¶»ç
+	void	RenderCharInfoDesc();								// ÁÂÃø ÅÇ ¼³¸í ·»´õ
+	void	ShowSkillDesc(int nRow = -1);						// ½ºÅ³ ¼³¸í Ã¢ ¼¼ÆÃ
 	void	RenderSkillDesc();									
 	void	AddSkillDescString(int nSkillInfoList, CTString strSkillInfo, COLOR strColor = 0xF2F2F2FF);
 	void	ResetSkillDescString();
@@ -501,6 +528,7 @@ protected:
 	int 	GetSkillDescHeight();
 
 	void	UpdateSkillInfo(int nType, int nTotal);
+	void	updateStatusPt(int type, int value);
 													//NEW_USER_INTERFACE///
 //////////////////////////////////////////////////////////////////////////
 public:
@@ -522,6 +550,7 @@ public:
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Update status
@@ -574,17 +603,30 @@ public:
 	void	StatPointError( SBYTE sbError );
 	void	AddSkill( int nSkillIndex, SBYTE sbSkillLevel, BOOL bSpecial = FALSE );
 	void	RemoveSkill( int nSkillIndex, BOOL bSpecial = FALSE );
+	void	AddSeal( int nSkillIndex, SQUAD nSealExp );
+	void	UpdateSealExp(int nSealIndex, SQUAD lSealExp );
 
-	// ì†Œì„œëŸ¬ê°€ ì‚¬ìš©í•˜ëŠ” ëª¨ë“  ì†Œí™˜ ìŠ¤í‚¬ì„ ì œê±°í•©ë‹ˆë‹¤.
+	// ¼Ò¼­·¯°¡ »ç¿ëÇÏ´Â ¸ğµç ¼ÒÈ¯ ½ºÅ³À» Á¦°ÅÇÕ´Ï´Ù.
 	void	RemoveSummonSkill();
 
-	// nSSkillTypeì€ 0 = ì±„êµ´, 1 = ì±„ì§‘, 2 = ì°¨ì§€
+	// nSSkillTypeÀº 0 = Ã¤±¼, 1 = Ã¤Áı, 2 = Â÷Áö
 	int	CheckSSkill( int nSSkillType );
 
-	// ì¸ë±ìŠ¤ì— í•´ë‹¹í•˜ëŠ” ìŠ¤í‚¬ì„ ê°–ê³  ìˆëŠ”ì§€ í™•ì¸.
+	// ÀÎµ¦½º¿¡ ÇØ´çÇÏ´Â ½ºÅ³À» °®°í ÀÖ´ÂÁö È®ÀÎ.
 	BOOL CheckSSkillByIndex( int iIndex, int nNeedLevel = -1, BOOL* bNeedLevel = FALSE );
+	UQUAD GetSealExp(int nIndex);
 
-	// FIXME : UIQuestì™€ UICharacterInfoì— ë“¤ì–´ê°€ì•¼ í•  ë¶€ë¶„ì´ êµ¬ë¶„ì´ ì œëŒ€ë¡œ ì•ˆë¨.
+	CUIButtonEx*	GetSkillBtn(int idx);
+	void			UpdateSkillCoolTime()
+	{
+		int i;
+		for( i = 0; i < SKILL_ACTIVE_SLOT_ROW_TOTAL; ++i )
+		{
+			m_btnActiveSkill[i].UpdateCoolTime();
+		}
+	}
+
+	// FIXME : UIQuest¿Í UICharacterInfo¿¡ µé¾î°¡¾ß ÇÒ ºÎºĞÀÌ ±¸ºĞÀÌ Á¦´ë·Î ¾ÈµÊ.
 /*
 	void	OpenQuestIntro( CQuestDynamicData *pQuestDD );
 	void	CancelQuestRequest();
@@ -594,10 +636,15 @@ public:
 	void	CompleteQuest( int nQuestIndex );
 */
 
-	void	OpenWindow( BOOL bHasQuestList );
-
 	inline	int GetMobIndex() const { return m_nTargetIndex; }
 	//inline	void UnlockCharacterInfo()	{ m_bLockCharacterInfo = FALSE; }
+
+public :
+
+protected:
+	void initialize();
+	void OnUpdate( float fElapsedTime );
+	void OnRender( CDrawPort* pDraw );
 };
 
 

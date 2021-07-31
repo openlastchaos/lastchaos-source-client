@@ -88,7 +88,7 @@ static UWORD *StringDuplicateW(const UWORD *strwOriginal)
 {
   STRING_CHECKMEMORYW();
   // get the len
-  INDEX ctLen = wcslen(strwOriginal);
+  INDEX ctLen = wcslen((const wchar_t *)strwOriginal);
   // allocate that much memory
   UWORD *strwCopy = StringAllocW(ctLen);
   // copy it there
@@ -125,7 +125,7 @@ static UWORD *StringDuplicateW(const char *strOriginal)
 /* Default constructor. */
 CTWString::CTWString(void)
 {
-  strw_String = StringDuplicateW(L"");
+  strw_String = StringDuplicateW("");
 }
 
 /* Copy constructor. */
@@ -165,7 +165,7 @@ CTWString::~CTWString()
 /* Clear the object. */
 void CTWString::Clear(void)
 {
-  operator=(L"");
+  operator=("");
 }
 
 /* Assignment. */
@@ -227,12 +227,12 @@ CTWString &CTWString::operator=(const char *strCharString)
 BOOL CTWString::operator==(const CTWString &strwOther) const
 {
   ASSERT(IsValid() && strwOther.IsValid());
-  return wcsicmp( strw_String, strwOther.strw_String) == 0;
+  return wcsicmp( (const wchar_t *)strw_String, (const wchar_t *)strwOther.strw_String) == 0;
 }
 BOOL CTWString::operator==(const UWORD *strwOther) const
 {
   ASSERT(IsValid() && strwOther!=NULL);
-  return wcsicmp( strw_String, strwOther) == 0;
+  return wcsicmp( (const wchar_t *)strw_String, (const wchar_t *)strwOther) == 0;
 }
 
 /*
@@ -267,9 +267,12 @@ CTWString &CTWString::operator+=(const CTWString &strwSecond)
 {
   ASSERT(IsValid() && strwSecond.IsValid());
 
-  INDEX ctLen = wcslen(strw_String);
-  StringResizeW( &strw_String,  ctLen, ctLen + wcslen(strwSecond) );
-  wcscat(strw_String, strwSecond.strw_String);
+  INDEX ctLen = wcslen((const wchar_t *)strw_String);
+#pragma message(">> >> >> ???")
+  /* ocarina */
+  // StringResizeW( &strw_String,  ctLen, ctLen + wcslen((const wchar_t *)strwSecond) );
+  StringResizeW( &strw_String,  ctLen, ctLen + strwSecond.Length() );
+  wcscat((wchar_t *)strw_String, (const wchar_t *)strwSecond.strw_String);
   STRING_CHECKMEMORYW();
   return *this;
 }

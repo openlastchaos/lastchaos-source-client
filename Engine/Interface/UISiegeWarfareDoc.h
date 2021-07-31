@@ -2,11 +2,11 @@
 #ifndef _UISIEGE_WARFARE_DOC_H
 #define _UISIEGE_WARFARE_DOC_H
 
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Network/CharacterTarget.h>
-#include <Engine/Interface/UISiegeWarfare.h>
-#include <Engine/Interface/UISiegeWarfareNew.h> // WSS_NEW_GUILD_SYSTEM 070725
-#include <map>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Network/CharacterTarget.h>
+// #include <Engine/Interface/UISiegeWarfare.h>
+// #include <Engine/Interface/UISiegeWarfareNew.h> // WSS_NEW_GUILD_SYSTEM 070725
+// #include <map>
 
 #define SWS_NONE					0
 #define SWS_SW_REQ					1
@@ -24,10 +24,10 @@
 #define	SWS_WAIT_REBIRTH			12
 
 
-// ê³µì„± ìƒíƒœ
-#define WCSF_NORMAL					0  // ì¼ë°˜
-#define WCSF_WAR_FIELD				1  // ì•¼ì „
-#define WCSF_WAR_CASTLE				2  // ê³µì„±
+// °ø¼º »óÅÂ
+#define WCSF_NORMAL					0  // ÀÏ¹İ
+#define WCSF_WAR_FIELD				1  // ¾ßÀü
+#define WCSF_WAR_CASTLE				2  // °ø¼º
 
 class SGuild
 {
@@ -62,24 +62,24 @@ public:
 //------------------------------------------------------------------------------
 class CUISiegeWarfareDoc
 {
-	int						m_nUIState;					// UIìƒíƒœ ì €ì¥
-	int						m_nSWTime;					// ê³µì„± ì‹œê°„
-	LONG					m_lLeftTime;				// ê³µì„± ì§„í–‰ ì‹œê°„ 
-	TIME					m_tmLeftTime;				// ê³µì„± ë‚¨ì€ ì‹œê°„ 
+	int						m_nUIState;					// UI»óÅÂ ÀúÀå
+	int						m_nSWTime;					// °ø¼º ½Ã°£
+	LONG					m_lLeftTime;				// °ø¼º ÁøÇà ½Ã°£ 
+	TIME					m_tmLeftTime;				// °ø¼º ³²Àº ½Ã°£ 
 
-	SGuild					m_gdGuild[3];				// ìƒìœ„ 3ê°œì˜ ê¸¸ë“œ ì •ë³´
-	SGuild					m_gdDefGuild;				// ìˆ˜ì„±ê¸¸ë“œ
+	SGuild					m_gdGuild[3];				// »óÀ§ 3°³ÀÇ ±æµå Á¤º¸
+	SGuild					m_gdDefGuild;				// ¼ö¼º±æµå
 
 	int						m_nGuildPoint;
 	int						m_nZoneIndex;
 	
-	// ê³µì„± ì •ë³´ 
+	// °ø¼º Á¤º¸ 
 	int						m_nMonth, m_nDay, m_nHour, m_nMin;
 	int						m_nGateState;
 	
 	std::map<SLONG, CEffectGroup *>		m_mapEG;
 	std::map<SLONG, CEffectGroup *>		m_mapEGGuildMaster;
-	std::map<SLONG, CEffectGroup *>		m_mapEGConsensus;   // WSS_DRATAN_SIEGEWARFARE 2007/10/14 êµê°ì´í™íŠ¸
+	std::map<SLONG, CEffectGroup *>		m_mapEGConsensus;   // WSS_DRATAN_SIEGEWARFARE 2007/10/14 ±³°¨ÀÌÆåÆ®
 		
 public:	
 
@@ -91,30 +91,30 @@ public:
 
 	void Clear();
 
-//ë°›ëŠ” ë©”ì„¸ì§€ 
-	// ê³µì„± ì‹œê°„ í™•ì¸
+//¹Ş´Â ¸Ş¼¼Áö 
+	// °ø¼º ½Ã°£ È®ÀÎ
 	void GetTime( int nGuildIndex, CTString strGuildName, int nMonth, int nDay, int nHour, int nMin );
 	
-	// ê³µì„± ì‹œì‘ ì•Œë¦¼(ê³µì§€)
+	// °ø¼º ½ÃÀÛ ¾Ë¸²(°øÁö)
 	void GuildWarStart( int nZoneIndex, int nRemainSec );	
 
-	// ì•¼ì „ë ê³µì„± ì‹œì‘ ì•Œë¦¼(ê³µì§€)
+	// ¾ßÀü³¡ °ø¼º ½ÃÀÛ ¾Ë¸²(°øÁö)
 	void StartCastle( int nZoneIndex, int nRemainSec, int GuildIndex1, CTString GuildName1, int GuildIndex2, CTString GuildName2, int GuildIndex3, CTString GuildName3 );
 
-	// ì•¼ì „ê³¼ ê³µì„±ì—ì„œ ë°›ëŠ” ë©”ì„¸ì§€
+	// ¾ßÀü°ú °ø¼º¿¡¼­ ¹Ş´Â ¸Ş¼¼Áö
 	void UpdatePoint( int nRemainSec, SGuild Guild1, SGuild Guild2, SGuild Guild3, int nMyPoint, int nDefensPoint );
 		
-	// ì•¼ì „ ì¢…ë£Œ 5ë¶„ì „ë¶€í„° 1ë¶„ê°„ê²©ìœ¼ë¡œ ê°±ì‹ (ê³µì§€)
+	// ¾ßÀü Á¾·á 5ºĞÀüºÎÅÍ 1ºĞ°£°İÀ¸·Î °»½Å(°øÁö)
 	void RemainFiledTime( int nZoneIndex, int nRemainSec );
 
-// ê²Œì„ ì ‘ì†ì‹œ ë°›ëŠ” ë©”ì„¸ì§€
-	// ê³µì„± ì‹œê°„ í™•ì • ì•Œë¦¼(ê³µì§€)
+// °ÔÀÓ Á¢¼Ó½Ã ¹Ş´Â ¸Ş¼¼Áö
+	// °ø¼º ½Ã°£ È®Á¤ ¾Ë¸²(°øÁö)
 	void TimeConfirm( int nZoneIndex, int nMonth, int nDay, int nHour, int nMin );
 	
-	// ê³µì„± ì‹œì‘ê¹Œì§€ ë‚¨ì€ ì‹œê°„ ì•Œë¦¼(ê³µì§€) - ì‹œì‘ 10ë¶„ì „ ë¶€í„° 1ë¶„ê°„ê²©ìœ¼ë¡œ ê°±ì‹ 
+	// °ø¼º ½ÃÀÛ±îÁö ³²Àº ½Ã°£ ¾Ë¸²(°øÁö) - ½ÃÀÛ 10ºĞÀü ºÎÅÍ 1ºĞ°£°İÀ¸·Î °»½Å
 	void RemainStartTime( int nZoneIndex, int nMin );
 	
-	// ê³µì„± ìƒí™© ì•Œë¦¼(ê³µì§€) - ì „íˆ¬ ìƒí™© ì…‹íŒ…
+	// °ø¼º »óÈ² ¾Ë¸²(°øÁö) - ÀüÅõ »óÈ² ¼ÂÆÃ
 	void CastleState( int nZoneIndex, int nState, int nGateState, int nRemainSec, SGuild Guild1, SGuild Guild2, SGuild Guild3, int nMyPoint, int nDefensPoint );
 	// WSS_DRATAN_SIEGEWARFARE 070725
 	void CastleState( int nZoneIndex, int nState, int nGateState, int nRemainSec);
@@ -124,7 +124,7 @@ public:
 	
 	void InvalidCommand( int nReqMsgType );
 
-	// ì—ëŸ¬ ì²˜ë¦¬ ì½”ë“œ
+	// ¿¡·¯ Ã³¸® ÄÚµå
 	void ErrorProc( int nErrorCode, UBYTE ubMsgType = -1 );
 
 	
@@ -142,10 +142,10 @@ public:
 	void StopConsensusEffect( SLONG slCharIndex,  bool bAllStop = FALSE );
 
 // Etc
-	// ë‚¨ì€ ì‹œê°„ ì„¤ì • í•¨ìˆ˜
+	// ³²Àº ½Ã°£ ¼³Á¤ ÇÔ¼ö
 	void SetLeftTime ( int nRemainSec );
 
-// UIìƒíƒœ ê´€ë ¨
+// UI»óÅÂ °ü·Ã
 	ENGINE_API void SetUIState( int nUIState );
 
 	// WSS_DRATAN_SIEGEWARFARE 070727
@@ -156,18 +156,18 @@ public:
 		return ( m_nUIState == nUIState )?TRUE:FALSE;
 	}
 
-	BOOL IsWar() // ê³µì„±ì „ ì „ì²´ ì§„í–‰ì¤‘
+	BOOL IsWar() // °ø¼ºÀü ÀüÃ¼ ÁøÇàÁß
 	{
 		if( IsBattle() || IsSelectBattle() ) return TRUE;
 		return FALSE;
 	}
 
-	BOOL IsBattle() // ìˆ˜ì„±ì „
+	BOOL IsBattle() // ¼ö¼ºÀü
 	{
 		return ( IsUIState( SWS_BATTLE ) )?TRUE:FALSE;
 	}
 
-	BOOL IsSelectBattle() // ì„ ë°œì „
+	BOOL IsSelectBattle() // ¼±¹ßÀü
 	{
 		return ( IsUIState( SWS_SELECT_BATTLE ) )?TRUE:FALSE;
 	}
@@ -181,7 +181,7 @@ public:
 	
 	CTString GetCastleName( int nZoneIndex );
 
-// Dealyì™€ ê´€ë ¨ 
+// Dealy¿Í °ü·Ã 
 	void SetDealy( BOOL bStart = TRUE );
 	void RunDalyTime();
 	

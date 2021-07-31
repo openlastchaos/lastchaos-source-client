@@ -11,7 +11,7 @@ CDisplayMode::CDisplayMode(void)
   // clear all members
   dm_pixSizeI = 0;
   dm_pixSizeJ = 0;
-  dm_ddDepth  = DD_DEFAULT;
+  dm_ddDepth  = DISPD_DEFAULT;
 }
 
 
@@ -19,10 +19,10 @@ CDisplayMode::CDisplayMode(void)
 CTString CDisplayMode::DepthString(void) const
 {
   switch (dm_ddDepth) {
-  case DD_NONE:    return "none"; break;
-  case DD_16BIT:   return "16"; break;
-  case DD_32BIT:   return "32"; break;
-  case DD_DEFAULT: return TRANS("desktop"); break;
+  case DISPD_NONE:    return "none"; break;
+  case DISPD_16BIT:   return "16"; break;
+  case DISPD_32BIT:   return "32"; break;
+  case DISPD_DEFAULT: return TRANS("desktop"); break;
   default: ASSERT(FALSE); return TRANS("unknown"); break;
   }
 }
@@ -50,8 +50,4 @@ BOOL CDisplayMode::IsWideScreen(void)
   // only this one supported as widescreen
   return dm_pixSizeI==856 && dm_pixSizeJ==480;
 }
-// check if mode is fullscreen
-BOOL CDisplayMode::IsFullScreen(void)
-{
-  return dm_pixSizeI!=0 && dm_pixSizeJ!=0;
-}
+

@@ -3,6 +3,8 @@
 #include "StdH.h"
 #include "EntitiesMP/Player.h"
 #include "EntitiesMP/PlayerWeapons.h"
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Interface/UIInitJob.h>
 %}
 
 
@@ -22,6 +24,8 @@ event EViewInit {
 };
 
 %{
+extern ENGINE_API INDEX g_iCountry;
+#include <Engine/GlobalDefinition.h>
 #include <Engine/Effect/CCameraEffect.h>
 extern ENGINE_API CCameraEffect::CCameraValue g_cvCameraShake;
 FLOAT3D g_vOldCameraShake;
@@ -34,12 +38,18 @@ void CPlayerView_Precache(void)
 	pdec->PrecacheTexture(TEXTURE_MARKER);
 }
 
+extern ENGINE_API CViewPort	*_pvpViewPortMain;
+
 static FLOAT m_fLastTime;
 static BOOL m_bLockRotate = FALSE;
 
 // FIXME : 임시적으로 만든 변수.
 // 추적 모드를 쓸 것인지 기존 방식을 쓸것인지...
 static BOOL m_bUseTraceMode	= FALSE;
+
+static ANGLE3D _aAbs;
+static CPlacement3D _plNew;
+static CPlacement3D _plOld;
 
 void CameraEffect(const CPlacement3D &plPlr, CPlacement3D &plCam)
 {
@@ -91,6 +101,7 @@ properties:
 	4 FLOAT3D m_vZLast = FLOAT3D(0,0,0), 
 	5 FLOAT3D m_vTargetLast = FLOAT3D(0,0,0), 
 	6 BOOL m_bFixed = FALSE,  // fixed view (player falling in abyss)
+	7 FLOAT m_fCameraHeight = 0.0f,
 
 //강동민 수정 시작 싱글 던젼 작업	08.05
 	10 BOOL m_bInit			= FALSE,
@@ -99,7 +110,11 @@ properties:
 	17 ANGLE m_aVelocity	= 0.0f,			// 속도
 	18 COLOR m_PrevModelColor = 0.0f,		// 모델의 컬러 저장
 	19 BOOL m_bPrevModelColor = FALSE,		// 모델의 컬러 변경 유무
+	20 FLOAT m_fFaceChangeDistance = 0.0f,	// Camera Distance for Face Change Mode
 //강동민 수정 끝 싱글 던젼 작업		08.05	
+	{
+		CPlacement3D m_FreePosition;
+	}
 
 components:
 	1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\Axis.mdl",
@@ -122,7 +137,18 @@ functions:
 		// 기존 방식.
 		else
 		{
-			SetCameraPositionEx();
+			if (_pInput->inp_bFreeMode)
+			{
+				SetCameraFreeMode();
+			}
+			else if ( SE_Get_UIManagerPtr()->GetInitJob()->IsFaceDecoMode() )
+			{
+				SetCameraDecoMode();
+			}
+			else
+			{
+				SetCameraPositionEx();
+			}
 		}
 	}
 	CPlacement3D GetLerpedPlacement(void) const
@@ -138,7 +164,7 @@ functions:
 	void RenderParticles(void)
 	{
 		if (Particle_GetViewer()==this) {
-			Particles_ViewerLocal(this);
+			Particles_ViewerLocal(m_penOwner);
 		}
 	}
 
@@ -165,7 +191,14 @@ functions:
 //		{
 			//fDistanceLimit = 6.5f;
 			//fDistanceLimit = 9.5f;
-
+			if (_pNetwork->MyCharacterInfo.m_ModelColor > 0)
+			{
+				fDistanceLimit = 24.5f;
+			}
+/*			else
+			{
+				fDistanceLimit = 9.5f;
+			}*/
 	/*		
 			// 애완동물을 타고 있을때 카메라의 처리.
 			if( ((CPlayer&) *m_penOwner).m_bRide)
@@ -185,6 +218,7 @@ functions:
 		// -------wooss 060521 Camera Zoom fix -------------->>
 		static BOOL bLimitIn	= FALSE;
 		static FLOAT fSmooth	= 0.0f;
+		//FLOAT zoomMin = -10.0f;
 		FLOAT zoomMin = -2.0f;
 		
 		// 애완동물을 타고 있을때 카메라의 처리.
@@ -206,8 +240,9 @@ functions:
 		
 		if (m_iViewType == VT_3RDPERSONVIEW || m_iViewType == VT_PLAYERDEATH) 
 		{
-		
-			fDistance = 5.0f;//5.75f;			
+			// ui 개편 작업중 카메라 뷰 포트 늘리기. [9/15/2009 rumist]
+			//fDistance = 15.0f;//5.0f;//5.75f;			
+			fDistance = 5.0f;			
 
 			int WheelDelta = abs(_pInput->m_WheelPos)/120;
 			if(_pInput->m_WheelPos > 0 || _pInput->GetInputDevice(1)->id_aicControls[KID_PAGEUP].ic_fValue==1.0f)
@@ -221,6 +256,7 @@ functions:
 				{
 					if(fDistanceTmp <= -1.6)
 					{
+						//fDistanceTmp -= 2.0f*WheelDelta;
 						fDistanceTmp -= 0.2f*WheelDelta;
 					}
 					else
@@ -279,10 +315,12 @@ functions:
 				{
 					if(fDistanceTmp <= -1.6)
 					{
+						//fDistanceTmp += 2.0f*WheelDelta;
 						fDistanceTmp += 0.2f*WheelDelta;
 					}
 					else
 					{
+						//fDistanceTmp += 2.0f*WheelDelta;
 						fDistanceTmp += 0.4f*WheelDelta;
 					}
 
@@ -312,7 +350,7 @@ functions:
 		// 회전 앵글을 변환함.
 		// 상대적 좌표인 pl을 캐릭터의 위치를 바탕으로 변환시킴.
 		CPlacement3D plTmp;
-		plTmp = m_penOwner->GetPlacement();
+		plTmp = m_penOwner->GetLerpedPlacement();
 		plTmp.pl_OrientationAngle(1) = pl.pl_OrientationAngle(1);
 
 		pl.RelativeToAbsolute(plTmp);
@@ -422,6 +460,10 @@ functions:
 
 		vBase += vFront*m_fDistance;
 		pl.pl_PositionVector = vBase;//0610 kwon 추가
+		if (_pNetwork->MyCharacterInfo.m_ModelColor > 0 && g_iCountry != JAPAN)
+		{
+			pl.pl_PositionVector(2) += m_fCameraHeight;
+		}
 
 		// wooss 060803 수정
 		// 캐릭터 절단면이 보이지 않게 카메라는 기존대로 줌인되지만 
@@ -477,7 +519,110 @@ functions:
 		// en_plPlacement값을 설정함.
 		SetPlacement_special(pl, m, SPIF_NEAR); // TRUE = try to optimize for small movements
 	};
+	
+	void SetCameraFreeMode()
+	{
+		CPlacement3D pl = GetPlacement();
+		_plNew = pl;
 
+		FLOAT fFB = 0.0f; // forward/backward movement
+		FLOAT fLR = 0.0f; // left/right movement
+		FLOAT fUD = 0.0f; // up/down movement
+		FLOAT fRLR = 0.0f; // rotate left/right
+		FLOAT fRUD = 0.0f; // rotate up/down
+
+		_pInput->GetInput(FALSE);
+
+		if (_pInput->m_WheelPos > 0) // Up
+		{
+			_pInput->inp_fSpeedMultiplier += 0.1f;
+
+			if (_pInput->inp_fSpeedMultiplier > 3.0f)
+			{
+				_pInput->inp_fSpeedMultiplier = 3.0f;
+			}
+
+			_pInput->m_WheelPos = 0;
+		}
+		else if (_pInput->m_WheelPos < 0) // Down
+		{
+			_pInput->inp_fSpeedMultiplier -= 0.1f;
+
+			if (_pInput->inp_fSpeedMultiplier < 0.0f)
+			{
+				_pInput->inp_fSpeedMultiplier = 0.0f;
+			}
+
+			_pInput->m_WheelPos = 0;
+		}
+
+		if (BOOL(_pInput->GetControlValue(GetControlGID(DT_MOUSE,CID_MOUSE_BUTTON2))))
+		{
+			fFB = -1.0f * _pInput->inp_fSpeedMultiplier;
+		}
+		else if (BOOL(_pInput->GetControlValue(GetControlGID(DT_MOUSE,CID_MOUSE_BUTTON1))))
+		{
+			fFB = +1.0f * _pInput->inp_fSpeedMultiplier;
+		}
+
+		_pInput->GetInput(TRUE);
+		
+		// get current rotation
+		//fRLR = _pInput->GetControlValue(GetControlGID(DT_MOUSE,CID_MOUSE_AXIS_XP));//*0.75f;
+		//fRLR-= _pInput->GetControlValue(GetControlGID(DT_MOUSE,CID_MOUSE_AXIS_XN));//*0.75f;
+
+		//fRUD = _pInput->GetControlValue(GetControlGID(DT_MOUSE,CID_MOUSE_AXIS_YP));//*0.75f;
+		//fRUD-= _pInput->GetControlValue(GetControlGID(DT_MOUSE,CID_MOUSE_AXIS_YN));//*0.75f;
+		//fRUD = -fRUD;
+		pl.pl_OrientationAngle = m_FreePosition.pl_OrientationAngle;
+		pl.Translate_OwnSystem( FLOAT3D(fLR, fUD, fFB));
+
+		// create a set of rays to test
+		FLOATmatrix3D m;
+		// 회전 행렬 만들기...
+		MakeRotationMatrixFast(m, pl.pl_OrientationAngle);
+		SetPlacement_special(pl, m, SPIF_NEAR); // TRUE = try to optimize for small movements
+		// apply rotation
+		//pl.pl_OrientationAngle = _aAbs;//.Rotate_HPB( ANGLE3D(-fRLR, -fRUD, 0));
+		//_aAbs+=ANGLE3D(-fRLR, -fRUD, 0);
+
+		//pl.pl_OrientationAngle = _aAbs;
+		//pl.Lerp(_plOld, _plNew, _pTimer->GetLerpFactor2());
+
+		//FLOATmatrix3D m;
+		// 회전 행렬 만들기...
+		//MakeRotationMatrixFast(m, pl.pl_OrientationAngle);
+		
+		//SetPlacement_special(pl, m, SPIF_NEAR); // TRUE = try to optimize for small movements
+	}
+
+	void SetCameraDecoMode()
+	{
+		FLOAT fDistance = m_fFaceChangeDistance;
+		CPlacement3D pl = ((CPlayerEntity&) *m_penOwner).en_plViewpoint;
+
+		// View Point를 캐릭터 기준으로 변환
+		CPlacement3D plTmp = m_penOwner->GetLerpedPlacement();
+		plTmp.pl_OrientationAngle(1) = pl.pl_OrientationAngle(1);
+		pl.RelativeToAbsolute(plTmp);
+		
+		// 회전 행렬 만들기
+		FLOATmatrix3D m;
+		MakeRotationMatrixFast(m, pl.pl_OrientationAngle);
+
+		// Distance
+		FLOAT3D vBase = m_penOwner->GetPlacement().pl_PositionVector;
+		FLOAT3D vFront = m.GetColumn(3);
+		vBase += vFront*fDistance;
+
+		pl.pl_PositionVector = vBase;
+
+		// Camera Height
+		pl.pl_PositionVector(2) += m_fCameraHeight;
+
+		SetPlacement_special(pl, m, SPIF_NEAR);
+
+	}
 //0408 kwon
 	void SetCameraPosition() 
 	{
@@ -570,7 +715,7 @@ functions:
 		//plTmp.pl_OrientationAngle(1) = pl.pl_OrientationAngle(1);
 
 		pl.RelativeToAbsolute(plTmp);
-		//pl.RelativeToAbsolute(m_penOwner->GetPlacement());
+		pl.RelativeToAbsolute(m_penOwner->GetPlacement());
 		// make base placement to back out from
 		FLOAT3D vBase;
 		EntityInfo *pei= (EntityInfo*) (m_penOwner->GetEntityInfo());
@@ -614,7 +759,7 @@ functions:
 		//계단을 올라갈때 캐릭터가 통통튀는 효과 막기.
 		//GetLerpedPlacement는 한프레임전의 placement를 리턴하는 듯함.
 		//GetEntityInfoPosition(m_penOwner, pei->vTargetCenter, vBase);	//원본
-		vBase = m_penOwner->GetPlacement().pl_PositionVector;
+		vBase = m_penOwner->GetLerpedPlacement().pl_PositionVector;
 
 		FLOATmatrix3D mRotation;
 		// 캐릭터의 Angle을 회전 행렬로 변환.
@@ -812,6 +957,21 @@ procedures:
 				resume;
 			};
 			on (EEnd) : { stop; }
+			on (ETrigger) : 
+			{
+				_pInput->inp_bFreeMode = !_pInput->inp_bFreeMode;
+				if (_pInput->inp_bFreeMode)
+				{
+					m_FreePosition = GetPlacement();
+					while (ShowCursor(FALSE)>=0){};
+				}
+				else
+				{
+					while (ShowCursor(TRUE)<0){};
+				}
+				
+				resume;
+			}
 			otherwise() : { resume; }
 		}
 		// cease to exist

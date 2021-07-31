@@ -2,11 +2,11 @@
 
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Entities/ShopData.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.09
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.09
 #include <Engine/Entities/EntityClass.h>
 #include <Engine/Entities/EntityProperties.h>
 #include <Engine/Ska/StringTable.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.09
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.09
 
 /*
  *  Constructor.
@@ -60,8 +60,8 @@ int CShopData::LoadShopDataFromFile(CStaticArray<CShopData> &apShopData, const c
 	int	iReadBytes	= 0;
 	int iLastIndex	= 0;
 
-	//iReadBytes = fread(&iNumOfShop, sizeof(int), 1, fp);		// SHOP ë°ì´í„°ì˜ ê°¯ìˆ˜.
-	iReadBytes = fread(&iLastIndex, sizeof(int), 1, fp);		// SHOPì˜ ë§ˆì§€ë§‰ ì¸ë±ìŠ¤.
+	//iReadBytes = fread(&iNumOfShop, sizeof(int), 1, fp);		// SHOP µ¥ÀÌÅÍÀÇ °¹¼ö.
+	iReadBytes = fread(&iLastIndex, sizeof(int), 1, fp);		// SHOPÀÇ ¸¶Áö¸· ÀÎµ¦½º.
 	apShopData.New(iLastIndex);
 	ASSERT(apShopData.Count() > 0 && "Invalid SHOP Data");		
 	ASSERT(iLastIndex > 0 && "Invalid SHOP Data");
@@ -96,11 +96,11 @@ int CShopData::LoadShopDataFromFile(CStaticArray<CShopData> &apShopData, const c
 		ASSERT(iItemCount > 0 && "Invalid Item Count!!!");
 		SD.m_vectorSellItems.resize(iItemCount);
 
-		iReadBytes = fread(&SD.m_vectorSellItems[0],	sizeof(int), iItemCount, fp);	// SHOPì´ íŒë§¤í•˜ëŠ” ì•„ì´í…œì˜ ê°¯ìˆ˜.
+		iReadBytes = fread(&SD.m_vectorSellItems[0],	sizeof(int), iItemCount, fp);	// SHOPÀÌ ÆÇ¸ÅÇÏ´Â ¾ÆÀÌÅÛÀÇ °¹¼ö.
 
 		if(iReadBytes < 0)
 		{
-			MessageBox(NULL, "SHOP ë°ì´í„° í™”ì¼ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.", "Error!", MB_OK);
+			MessageBox(NULL, "SHOP µ¥ÀÌÅÍ È­ÀÏÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.", "Error!", MB_OK);
 			fclose(fp);
 			return -1;
 		}

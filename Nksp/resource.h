@@ -2,7 +2,7 @@
 // Microsoft Developer Studio generated include file.
 // Used by Nksp.rc
 //
-#define MANIFEST_RESOURCE_ID			1
+#define MANIFEST_RESOURCE_ID            1
 #define IDB_SPLASH                      102
 #define IDB_SPLASHMASK                  104
 #define IDC_NOCURSOR                    106
@@ -17,6 +17,9 @@
 #define IDC_SIZE_CURSOR                 117
 #define IDC_ZOOMIN_CURSOR               118
 #define IDC_SIGNAL_CURSOR               119
+#define IDR_ICON_BLUE                   123
+#define IDI_FUNMILY                     124
+#define IDD_WEBPAGE                     125
 #define IDR_MAINFRAME                   128
 #define IDI_GUNSOFT                     129
 

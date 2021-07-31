@@ -2,87 +2,55 @@
 
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Entities/OptionData.h>
-
-/*
- *  Constructor.
- */
-COptionData::COptionData(void)
-{
-	memset(&Option_Data, 0, sizeof(_tOptionStat));	
-}
-
-/*
- *  Destructor.
- */
-COptionData::~COptionData(void) 
-{
-}
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Help/LoadLod.h>
 
 //-----------------------------------------------------------------------------
-// Purpose: ì•„ì´í…œ ë°ì´í„°ë¥¼ íŒŒì¼ë¡œë¶€í„° ì½ì–´ë“¤ì…ë‹ˆë‹¤.
-// Input  : &apOptionData - ì•„ì´í…œ ëª©ë¡ì´ ì €ì¥ë  ë°°ì—´.
-//			FileName - íŒŒì¼ëª….
+// Purpose: ¾ÆÀÌÅÛ µ¥ÀÌÅÍ¸¦ ÆÄÀÏ·ÎºÎÅÍ ÀĞ¾îµéÀÔ´Ï´Ù.
+// Input  : &apOptionData - ¾ÆÀÌÅÛ ¸ñ·ÏÀÌ ÀúÀåµÉ ¹è¿­.
+//			FileName - ÆÄÀÏ¸í.
 // Output : 	static int
 //-----------------------------------------------------------------------------
-int COptionData::LoadOptionDataFromFile(CStaticArray<COptionData> &apOptionData, const char* FileName)
+bool COptionData::loadEx(const char* FileName)
 {	
-	FILE *fp		= NULL;
-	if ((fp = fopen(FileName, "rb")) == NULL) 
+	FILE*	fp = NULL;
+
+	fp = fopen(FileName, "rb");
+
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
 	{
-		MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
-		return -1;
+		fclose(fp);
+		return false;
 	}
 
-	int iLastOptionIndex	= 0;
-	int iLength				= -1;
-	int iReadBytes			= 0;
+	stOption* pdata = new stOption[_nSize];
+	fread(pdata, sizeof(stOption) * _nSize, 1, fp);
+	fclose(fp);
 
-	iReadBytes = fread(&iLastOptionIndex, sizeof(int), 1, fp);				// ITEM ë°ì´í„°ì˜ ë§ˆì§€ë§‰ ì¸ë±ìŠ¤.
-	apOptionData.New(iLastOptionIndex);
-	ASSERT(apOptionData.Count() >= iLastOptionIndex && "Invalid Array Count");
-	ASSERT(iLastOptionIndex > 0 && "Invalid Option Data");
-
-	//////////////////////////////////////////////////////////////////////////	
-	// MACRO DEFINITION
-	//////////////////////////////////////////////////////////////////////////	
-#define LOADINT(d)			iReadBytes = fread(&d, sizeof(int), 1, fp);
-#define LOADSHORT(d)		iReadBytes = fread(&d, sizeof(short), 1, fp);
-#define LOADCHAR(d)			iReadBytes = fread(&d, sizeof(char), 1, fp);
-#define LOADFLOAT(d)		iReadBytes = fread(&d, sizeof(float), 1, fp);
-#define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fp); }
-	//////////////////////////////////////////////////////////////////////////	
-
-	int	nType;
-
-	apOptionData.New(iLastOptionIndex);
-	
-	for(int i = 0; i < iLastOptionIndex; ++i)
+	for (int i = 0; i < _nSize; i++)
 	{
-		int iIndex = -1;
-		LOADINT(iIndex);
-		if(iReadBytes <= 0)		break;										// EOF
-		ASSERT(iIndex != -1	&& "Invalid Option Index");
-
-		LOADINT(nType);
-
-		COptionData& OD			= apOptionData[nType];
-		_tOptionStat& OptionStat= OD.Option_Data;
-
-		LOADSTR(OptionStat.name);
-		iReadBytes = fread(&OptionStat.value,		sizeof(int), OPTION_MAX_LEVEL, fp);
-
-		if(iReadBytes <= 0)
+		COptionData* ptmp = new COptionData;
+		memcpy(ptmp, &pdata[i], sizeof(stOption));
+		if (_mapdata.insert(std::make_pair(ptmp->type, ptmp)).second == false)
 		{
-			MessageBox(NULL, "ì˜µì…˜ í™”ì¼ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.", "Error!", MB_OK);
-			fclose(fp);
-			return -1;
+			delete ptmp;
+			ptmp = NULL;
 		}
 	}
-	fclose(fp);
-//////////////////////////////////////////////////////////////////////////	
-#undef LOADINT
-#undef LOADCHAR
-#undef LOADFLOAT
-#undef LOADSTR
-	return iLastOptionIndex;
+
+	m_dummy = new COptionData; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	memset(m_dummy, 0, sizeof(stOption));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
 }

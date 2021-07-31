@@ -339,12 +339,12 @@ void Particle_RenderLine( const FLOAT3D &vPos0, const FLOAT3D &vPos1, FLOAT fWid
 	pvtx[2].x = fI1-fDJ;  pvtx[2].y = fJ1+fDI;  pvtx[2].z = fOoK1;
 	pvtx[3].x = fI0-fDJ;  pvtx[3].y = fJ0+fDI;  pvtx[3].z = fOoK0;
 	// prepare texture coords 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	ptex[0] = _atex[1];
 	ptex[1] = _atex[0];
 	ptex[2] = _atex[3];
 	ptex[3] = _atex[2];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	// prepare colors
 	const GFXColor glcol0(col0);
 	const GFXColor glcol1(col1);
@@ -457,12 +457,12 @@ void Particle_RenderQuad3D( const FLOAT3D &vPos0, const FLOAT3D &vPos1, const FL
 	pvtx[2].x = vProjected2(1);  pvtx[2].y = vProjected2(2);  pvtx[2].z = vProjected2(3);
 	pvtx[3].x = vProjected3(1);  pvtx[3].y = vProjected3(2);  pvtx[3].z = vProjected3(3);
 	// prepare texture coords 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	ptex[0] = _atex[1];
 	ptex[1] = _atex[0];
 	ptex[2] = _atex[3];
 	ptex[3] = _atex[2];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	// prepare colors
 	const GFXColor glcol0(col0);
 	const GFXColor glcol1(col1);

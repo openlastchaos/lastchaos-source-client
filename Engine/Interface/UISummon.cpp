@@ -1,10 +1,13 @@
 #include "stdh.h"
+
+// Çì´õ Á¤¸®. [12/3/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Interface/UIPetTarget.h>
 #include <Engine/Interface/UISummon.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Interface/UIQuickSlot.h>
 #include <Engine/SlaveInfo.h>
+#include <Engine/Interface/UIPlayerInfo.h>
+#include <Engine/Info/MyInfo.h>
+
 
 #define COMMAND_BUTTON_SIZE 18
 
@@ -14,6 +17,7 @@
 // ----------------------------------------------------------------------------
 CUISummon::CUISummon( int nUIIndex )
 : m_nUIIndex(nUIIndex)
+, m_pIconSkill(NULL)
 {
 	m_penEntity			= NULL;	
 	m_nSummonType		= CSlaveInfo::SLAVE_FIRE;
@@ -33,7 +37,7 @@ CUISummon::CUISummon( int nUIIndex )
 // ----------------------------------------------------------------------------
 CUISummon::~CUISummon()
 {
-	Destroy();
+	SAFE_DELETE(m_pIconSkill);
 }
 
 // ----------------------------------------------------------------------------
@@ -42,16 +46,14 @@ CUISummon::~CUISummon()
 // ----------------------------------------------------------------------------
 void CUISummon::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	// Set Slave Name 
-	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_FIRE,_S(2526,"ë¶ˆì˜ ì •ë ¹"));
-	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_WIND,_S(2527,"ë°”ëžŒì˜ ì •ë ¹"));
-	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_WATER,_S(2528,"ë¬¼ì˜ ì •ë ¹"));
-	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_LAND,_S(2529,"ë•…ì˜ ì •ë ¹"));
-	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_GUARD,_S(3981, "ê²½ë¹„ë³‘"));
+	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_FIRE,_S(2526,"ºÒÀÇ Á¤·É"));
+	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_WIND,_S(2527,"¹Ù¶÷ÀÇ Á¤·É"));
+	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_WATER,_S(2528,"¹°ÀÇ Á¤·É"));
+	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_LAND,_S(2529,"¶¥ÀÇ Á¤·É"));
+	CSlaveInfo::Instance().SetName(CSlaveInfo::SLAVE_GUARD,_S(3981, "°æºñº´"));
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 12, 43 );
@@ -121,7 +123,8 @@ void CUISummon::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_btnCommand[CSlaveInfo::COMMAND_PROTECTION].CopyUV( UBS_IDLE, UBS_ON );
 	m_btnCommand[CSlaveInfo::COMMAND_PROTECTION].CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	m_btnSkill.Create( this, 153, 20, COMMAND_BUTTON_SIZE, COMMAND_BUTTON_SIZE, m_nUIIndex, UBET_SKILL );
+	m_pIconSkill = new CUIIcon;
+	m_pIconSkill->Create(this, 153, 20, COMMAND_BUTTON_SIZE, COMMAND_BUTTON_SIZE, m_nUIIndex, UBET_SKILL);
 }
 
 // ----------------------------------------------------------------------------
@@ -130,8 +133,10 @@ void CUISummon::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 // ----------------------------------------------------------------------------
 void CUISummon::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
-	int iCol = m_nUIIndex - UI_SUMMON_START;
-	SetPos( pixMinI + _pUIMgr->GetQuickSlot()->GetPosX() + iCol * GetWidth(), pixMaxJ - _pUIMgr->GetQuickSlot()->GetHeight() - GetHeight() );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	int iRow = m_nUIIndex - UI_SUMMON_START;
+
+	SetPos( pixMinI + pUIManager->GetPlayerInfo()->GetPosX() + SUMMON_START_X_GAP, pUIManager->GetPlayerInfo()->GetHeight() + (GetHeight() * iRow));
 }
 
 // ----------------------------------------------------------------------------
@@ -149,9 +154,11 @@ void CUISummon::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMa
 // ----------------------------------------------------------------------------
 void CUISummon::UpdateHPInfo()
 {	
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+	CSlaveTargetInfom* pSlaveInfo = pInfo->GetMySlaveInfo(m_nUIIndex - UI_SUMMON_START);
 	// HP	
-	float fHP = _pNetwork->_SlaveTargetInfo[m_nUIIndex - UI_SUMMON_START].fHealth;
-	float fMaxHP = _pNetwork->_SlaveTargetInfo[m_nUIIndex - UI_SUMMON_START].fMaxHealth;
+	float fHP = pSlaveInfo->fHealth;
+	float fMaxHP = pSlaveInfo->fMaxHealth;
 	FLOAT	fHPRatio = Clamp( fHP / fMaxHP, 0.0f, 1.0f );	
 	m_rcHP.Right = m_rcHP.Left + SUMMON_BAR_WIDTH * fHPRatio;
 }
@@ -162,10 +169,10 @@ void CUISummon::UpdateHPInfo()
 // ----------------------------------------------------------------------------
 void CUISummon::UpdateTimeInfo()
 {	
-	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds(); // í˜„ìž¬ ì‹œê°„ ì–»ê¸°
+	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds(); // ÇöÀç ½Ã°£ ¾ò±â
 	__int64	llCurDelay = llCurTime - m_tmLeftTime;
 
-	int lLeftTime = m_nLeftTime - (llCurDelay/100);
+	int lLeftTime = m_nLeftTime - (llCurDelay/1000);
 
 	if ( lLeftTime < 0 ) lLeftTime = 0;
 
@@ -254,24 +261,26 @@ void CUISummon::Render()
 		while( dElapsedTime > 0.5 );
 	}	
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set target information texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 	// Add render regions
 	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + SUMMON_HEIGHT,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + SUMMON_HEIGHT,
 		m_rtBackground1.U0, m_rtBackground1.V0, m_rtBackground1.U1, m_rtBackground1.V1,
 		0xFFFFFFFF );	
 	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 	
 	
 	// Update info of target
 	UpdateHPInfo();
 	UpdateTimeInfo();
 	
-	// ì»¤ë§¨ë“œê°€ ë³€í™”ë˜ì—ˆë‹¤ë©´...
+	// Ä¿¸Çµå°¡ º¯È­µÇ¾ú´Ù¸é...
 	if( m_nCurrentCommand != m_nOldCommand && m_nCurrentCommand != CSlaveInfo::COMMAND_NONE )
 	{
 		m_nOldCommand = m_nCurrentCommand;
@@ -282,31 +291,31 @@ void CUISummon::Render()
 	}
 	
 	// Background of HP
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcHPBack.Left, m_nPosY + m_rcHPBack.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcHPBack.Left, m_nPosY + m_rcHPBack.Top,
 		m_nPosX + m_rcHPBack.Right, m_nPosY + m_rcHPBack.Bottom,
 		m_rtHPBack.U0, m_rtHPBack.V0, m_rtHPBack.U1, m_rtHPBack.V1,
 		0xFFFFFFFF );
 
 	// Background of Time
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTimeBack.Left, m_nPosY + m_rcTimeBack.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcTimeBack.Left, m_nPosY + m_rcTimeBack.Top,
 		m_nPosX + m_rcTimeBack.Right, m_nPosY + m_rcTimeBack.Bottom,
 		m_rtTimeBack.U0, m_rtTimeBack.V0, m_rtTimeBack.U1, m_rtTimeBack.V1,
 		0xFFFFFFFF );
 	
 	// HP
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcHP.Left, m_nPosY + m_rcHP.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcHP.Left, m_nPosY + m_rcHP.Top,
 		m_nPosX + m_rcHP.Right, m_nPosY + m_rcHP.Bottom,
 		m_rtHP.U0, m_rtHP.V0, m_rtHP.U1, m_rtHP.V1,
 		0xFFFFFFFF );
 
 	// Time
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTime.Left, m_nPosY + m_rcTime.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcTime.Left, m_nPosY + m_rcTime.Top,
 		m_nPosX + m_rcTime.Right, m_nPosY + m_rcTime.Bottom,
 		m_rtTime.U0, m_rtTime.V0, m_rtTime.U1, m_rtTime.V1,
 		0xFFFFFFFF );
 
 	// Summon Image
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSummonImage.Left, m_nPosY + m_rcSummonImage.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcSummonImage.Left, m_nPosY + m_rcSummonImage.Top,
 		m_nPosX + m_rcSummonImage.Right, m_nPosY + m_rcSummonImage.Bottom,
 		m_rtSummon[m_nSummonType].U0, m_rtSummon[m_nSummonType].V0, 
 		m_rtSummon[m_nSummonType].U1, m_rtSummon[m_nSummonType].V1,
@@ -318,19 +327,19 @@ void CUISummon::Render()
 	}	
 	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	if( !m_btnSkill.IsEmpty() )
+	if (m_pIconSkill->IsEmpty() == false)
 	{
-		m_btnSkill.Render();
+		m_pIconSkill->Render(pDrawPort);
 	}
 
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_SKILL );
+	pDrawPort->FlushBtnRenderingQueue( UBET_SKILL );
 	
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture, FALSE, PBT_ADD );
+	pDrawPort->InitTextureData( m_ptdBaseTexture, FALSE, PBT_ADD );
 
 	if( bHighlight )
 	{	
@@ -341,35 +350,35 @@ void CUISummon::Render()
 	}
 	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Tool tip
 	if( m_bShowToolTip )
 	{
 		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
 											m_rcToolTip.Left + 7, m_rcToolTip.Bottom,
 											m_rtInfoL.U0, m_rtInfoL.V0, m_rtInfoL.U1, m_rtInfoL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
 											m_rcToolTip.Right - 7, m_rcToolTip.Bottom,
 											m_rtInfoM.U0, m_rtInfoM.V0, m_rtInfoM.U1, m_rtInfoM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
 											m_rcToolTip.Right, m_rcToolTip.Bottom,
 											m_rtInfoR.U0, m_rtInfoR.V0, m_rtInfoR.U1, m_rtInfoR.V1,
 											0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Text in tool tip
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 3 );
+		pDrawPort->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 3 );
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 }
 
@@ -395,14 +404,14 @@ void CUISummon::ShowToolTip( BOOL bShow, int nToolTipID )
 		int	nInfoX, nInfoY, nWidth, nHeight;
 
 		nOldToolTipID	= nToolTipID;
-		BOOL bFirstSlot	= (m_nUIIndex == UI_SUMMON_START);		// ì²«ë²ˆì§¸ ìŠ¬ë¡¯ì¸ ê²½ìš°.
+		BOOL bFirstSlot	= (m_nUIIndex == UI_SUMMON_START);		// Ã¹¹øÂ° ½½·ÔÀÎ °æ¿ì.
 		switch( nToolTipID )
 		{
 		case CSlaveInfo::COMMAND_ATTACK:
 			if( bFirstSlot )
-				m_strToolTip.PrintF( "%s %s", _S(2354, "ì„ ê³µ" ), CTString( "(Ctrl + 1)" ) );
+				m_strToolTip.PrintF( "%s %s", _S(2354, "¼±°ø" ), CTString( "(Shift + 1)" ) );
 			else
-				m_strToolTip.PrintF( "%s %s", _S(2354, "ì„ ê³µ" ), CTString( "(Ctrl + Q)" ) );
+				m_strToolTip.PrintF( "%s %s", _S(2354, "¼±°ø" ), CTString( "(Shift + Z)" ) );
 			m_btnCommand[nToolTipID].GetAbsPos( nInfoX, nInfoY );
 			nWidth = m_btnCommand[nToolTipID].GetWidth();
 			nHeight = m_btnCommand[nToolTipID].GetHeight();
@@ -410,9 +419,9 @@ void CUISummon::ShowToolTip( BOOL bShow, int nToolTipID )
 			
 		case CSlaveInfo::COMMAND_PINCER:
 			if( bFirstSlot )
-				m_strToolTip.PrintF( "%s %s", _S(2355, "í˜‘ê³µ" ), CTString( "(Ctrl + 2)" ) );
+				m_strToolTip.PrintF( "%s %s", _S(2355, "Çù°ø" ), CTString( "(Shift + 2)" ) );
 			else
-				m_strToolTip.PrintF( "%s %s", _S(2355, "í˜‘ê³µ" ), CTString( "(Ctrl + W)" ) );
+				m_strToolTip.PrintF( "%s %s", _S(2355, "Çù°ø" ), CTString( "(Shift + X)" ) );
 			m_btnCommand[nToolTipID].GetAbsPos( nInfoX, nInfoY );
 			nWidth = m_btnCommand[nToolTipID].GetWidth();
 			nHeight = m_btnCommand[nToolTipID].GetHeight();
@@ -420,9 +429,9 @@ void CUISummon::ShowToolTip( BOOL bShow, int nToolTipID )
 			
 		case CSlaveInfo::COMMAND_HOLD:
 			if( bFirstSlot )
-				m_strToolTip.PrintF( "%s %s", _S(2356, "í™€ë“œ" ), CTString( "(Ctrl + 3)" ) );
+				m_strToolTip.PrintF( "%s %s", _S(2356, "È¦µå" ), CTString( "(Shift + 3)" ) );
 			else
-				m_strToolTip.PrintF( "%s %s", _S(2356, "í™€ë“œ" ), CTString( "(Ctrl + E)" ) );
+				m_strToolTip.PrintF( "%s %s", _S(2356, "È¦µå" ), CTString( "(Shift + C)" ) );
 			m_btnCommand[nToolTipID].GetAbsPos( nInfoX, nInfoY );
 			nWidth = m_btnCommand[nToolTipID].GetWidth();
 			nHeight = m_btnCommand[nToolTipID].GetHeight();			
@@ -430,9 +439,9 @@ void CUISummon::ShowToolTip( BOOL bShow, int nToolTipID )
 			
 		case CSlaveInfo::COMMAND_PROTECTION:
 			if( bFirstSlot )
-				m_strToolTip.PrintF( "%s %s", _S(2357, "ìˆ˜í˜¸" ), CTString( "(Ctrl + 4)" ) );
+				m_strToolTip.PrintF( "%s %s", _S(2357, "¼öÈ£" ), CTString( "(Shift + 4)" ) );
 			else
-				m_strToolTip.PrintF( "%s %s", _S(2357, "ìˆ˜í˜¸" ), CTString( "(Ctrl + R)" ) );
+				m_strToolTip.PrintF( "%s %s", _S(2357, "¼öÈ£" ), CTString( "(Shift + V)" ) );
 			m_btnCommand[nToolTipID].GetAbsPos( nInfoX, nInfoY );
 			nWidth = m_btnCommand[nToolTipID].GetWidth();
 			nHeight = m_btnCommand[nToolTipID].GetHeight();			
@@ -440,16 +449,16 @@ void CUISummon::ShowToolTip( BOOL bShow, int nToolTipID )
 
 		case 5:
 			{
-				int		nSkillIndex = m_btnSkill.GetSkillIndex();
+				int		nSkillIndex = m_pIconSkill->getIndex();
 				CSkill	&rSkill = _pNetwork->GetSkillData( nSkillIndex );
 				
 				if( bFirstSlot )
-					m_strToolTip.PrintF( "%s %s", rSkill.GetName(), CTString( "(Ctrl + 5)" ) );
+					m_strToolTip.PrintF( "%s %s", rSkill.GetName(), CTString( "(Shift + 5)" ) );
 				else
-					m_strToolTip.PrintF( "%s %s", rSkill.GetName(), CTString( "(Ctrl + T)" ) );
-				m_btnSkill.GetAbsPos( nInfoX, nInfoY );
-				nWidth = m_btnSkill.GetWidth();
-				nHeight = m_btnSkill.GetHeight();
+					m_strToolTip.PrintF( "%s %s", rSkill.GetName(), CTString( "(Shift + B)" ) );
+				m_pIconSkill->GetAbsPos( nInfoX, nInfoY );
+				nWidth = m_pIconSkill->GetWidth();
+				nHeight = m_pIconSkill->GetHeight();
 				break;
 			}
 		}
@@ -461,8 +470,10 @@ void CUISummon::ShowToolTip( BOOL bShow, int nToolTipID )
 		nInfoX += ( nWidth - nInfoWidth ) / 2;
 		nInfoY -= nHeight ;
 
-		if( nInfoX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoX += _pUIMgr->GetMaxI() - ( nInfoX + nInfoWidth );
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		if( nInfoX + nInfoWidth > pUIManager->GetMaxI() )
+			nInfoX += pUIManager->GetMaxI() - ( nInfoX + nInfoWidth );
 
 		m_rcToolTip.SetRect( nInfoX, nInfoY, nInfoX + nInfoWidth, nInfoY + nInfoHeight );
 	}
@@ -477,7 +488,7 @@ void CUISummon::AddSkill( int iSkillIndex )
 	// Empty slot
 	if( iSkillIndex == -1 )
 	{
-		m_btnSkill.InitBtn();
+		m_pIconSkill->clearIconData();
 	}
 	else
 	{
@@ -485,8 +496,16 @@ void CUISummon::AddSkill( int iSkillIndex )
 		
 		if( rSkillData.GetUsingSorcererFlag() & (1 << (m_nSummonType + 1) ) )
 		{
-			m_btnSkill.SetSkillInfo( iSkillIndex, 0, FALSE );
+			m_pIconSkill->setSkill(iSkillIndex);
 			SlaveInfo().SetSkillIndex( m_nSummonType, iSkillIndex );
+
+			// ºÒÀÇ Á¤·É ½ºÅ³ÀÇ °æ¿ì ½ºÅ³ »ç¿ë ½Ã UI°¡ ´ÝÈ÷°Ô µÇ¸é¼­ °»½ÅÀÌ ¾ÈµÊ
+			// ÄðÅ¸ÀÓ °è»ê ÇÒ ¼ö ÀÖµµ·Ï °­Á¦·Î ¼¼ÆÃÇØÁÜ
+			// ³ªÁß¿¡ MyInfo ¿¡¼­ ½ºÅ³ »ç¿ë ½Ã°£ ¾÷µ¥ÀÌÆ® ÇÒ ¼ö ÀÖµµ·Ï ÇÒ °Í.
+			if (iSkillIndex == 324)
+			{
+				m_pIconSkill->setCooltime(true);
+			}
 		}
 	}
 }
@@ -497,8 +516,8 @@ void CUISummon::AddSkill( int iSkillIndex )
 //------------------------------------------------------------------------------
 void CUISummon::UseSkill()
 {
-	const int iSkillIndex = m_btnSkill.GetSkillIndex();
-	if( iSkillIndex != -1 && !m_btnSkill.GetSkillDelay() )
+	const int iSkillIndex = m_pIconSkill->getIndex();
+	if (iSkillIndex != -1 && MY_INFO()->GetSkillDelay(iSkillIndex) == false)
 	{
 		UseSkill( iSkillIndex );
 	}
@@ -520,17 +539,11 @@ void CUISummon::UseSkill( int nIndex )
 BOOL CUISummon::StartSkillDelay( int nIndex )
 {
 	BOOL bResult = FALSE;	
-	if( m_btnSkill.GetBtnType() == UBET_SKILL &&
-		m_btnSkill.GetSkillIndex() == nIndex )
+	if (m_pIconSkill->getBtnType() == UBET_SKILL &&
+		m_pIconSkill->getIndex() == nIndex)
 	{
-		if( m_btnSkill.GetSkillDelay() )
-		{
-		}
-		else
-		{
-			m_btnSkill.SetSkillDelay( TRUE );
-			bResult = TRUE;
-		}
+		m_pIconSkill->setCooltime(true);
+		bResult = TRUE;
 	}
 	return bResult;
 }
@@ -556,13 +569,14 @@ void CUISummon::ResetSummon()
 	{
 		m_btnCommand[i].SetBtnState( UBS_IDLE );
 	}	
-	m_btnSkill.InitBtn();
+	
+	m_pIconSkill->clearIconData();
 }
 
 // ----------------------------------------------------------------------------
 // Name : WarpOfResetSummon()
-// Date : 2006-07-11(ì˜¤ì „ 10:08:24), By eons
-// Desc : í…”ë ˆí¬íŠ¸ ì‹œì— ì†Œí™˜ìˆ˜ ë¦¬ì…‹( ì£¼ì–´ì§„ ëª…ë ¹ ë° ì—”í‹°í‹°ë§Œ ì´ˆê¸°í™” )
+// Date : 2006-07-11(¿ÀÀü 10:08:24), By eons
+// Desc : ÅÚ·¹Æ÷Æ® ½Ã¿¡ ¼ÒÈ¯¼ö ¸®¼Â( ÁÖ¾îÁø ¸í·É ¹× ¿£Æ¼Æ¼¸¸ ÃÊ±âÈ­ )
 // ----------------------------------------------------------------------------
 void CUISummon::WarpOfResetSummon()
 {
@@ -578,7 +592,8 @@ void CUISummon::WarpOfResetSummon()
 	{
 		m_btnCommand[i].SetBtnState( UBS_IDLE );
 	}	
-	m_btnSkill.InitBtn();
+	
+	m_pIconSkill->clearIconData();
 }
 
 // ----------------------------------------------------------------------------
@@ -607,7 +622,7 @@ WMSG_RESULT CUISummon::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 			
 			// Move target information
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -625,7 +640,7 @@ WMSG_RESULT CUISummon::MouseMessage( MSG *pMsg )
 				return WMSG_SUCCESS;
 			}
 			// Option button
-			else if( m_btnSkill.MouseMessage( pMsg ) != WMSG_FAIL )
+			else if (m_pIconSkill->MouseMessage(pMsg) != WMSG_FAIL)
 			{
 				ShowToolTip( TRUE, 5 );
 				return WMSG_SUCCESS;
@@ -661,7 +676,7 @@ WMSG_RESULT CUISummon::MouseMessage( MSG *pMsg )
 				{
 					BOOL bIsButtonClick = FALSE;
 
-					if( m_btnSkill.MouseMessage( pMsg ) != WMSG_FAIL )
+					if (m_pIconSkill->MouseMessage(pMsg) != WMSG_FAIL)
 					{
 						bIsButtonClick = TRUE;
 					}
@@ -686,7 +701,7 @@ WMSG_RESULT CUISummon::MouseMessage( MSG *pMsg )
 					}
 				}
 
-				_pUIMgr->RearrangeOrder( m_nUIIndex, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( m_nUIIndex, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -701,8 +716,10 @@ WMSG_RESULT CUISummon::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -725,12 +742,9 @@ WMSG_RESULT CUISummon::MouseMessage( MSG *pMsg )
 						}
 					}
 
-					if( ( wmsgResult = m_btnSkill.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					if ((wmsgResult = m_pIconSkill->MouseMessage(pMsg)) != WMSG_FAIL)
 					{
-						if( wmsgResult == WMSG_COMMAND )
-						{
-							UseSkill();							
-						}
+						UseSkill();							
 						return WMSG_SUCCESS;
 					}
 				}
@@ -739,20 +753,19 @@ WMSG_RESULT CUISummon::MouseMessage( MSG *pMsg )
 			{
 				if( IsInside( nX, nY ) )
 				{
-					if( (_pUIMgr->GetHoldBtn().GetBtnType() == UBET_SKILL && 
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_CHARACTERINFO ) || 
-						( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_SKILL &&  
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_QUICKSLOT ) )
+					if ((pUIManager->GetDragIcon()->getBtnType() == UBET_SKILL && 
+						 pUIManager->GetDragIcon()->GetWhichUI() == UI_SKILL_NEW) || 
+						(pUIManager->GetDragIcon()->getBtnType() == UBET_SKILL &&  
+						 pUIManager->GetDragIcon()->GetWhichUI() == UI_QUICKSLOT))
 					{
 						if( IsInsideRect( nX, nY, m_rcSkill ) )
 						{							
-							int	nIndex = _pUIMgr->GetHoldBtn().GetSkillIndex();								
-							AddSkill( nIndex );								
-							break;						
+							int	nIndex = pUIManager->GetDragIcon()->getIndex();
+							AddSkill( nIndex );			
 						}
 					}
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 					return WMSG_SUCCESS;
 				}
 			}

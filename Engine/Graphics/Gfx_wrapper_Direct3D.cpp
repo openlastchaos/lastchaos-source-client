@@ -453,7 +453,7 @@ static void d3d_DeletePixelProgram(ULONG ulHandle)
 }
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(DevPartner Bug Fix)(2005-01-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-13)
 static ULONG d3d_CreateVertexProgram(const char *strVertexProgram, ULONG ulStreamFlags)
 {
 	extern void GetShaderDeclaration_D3D(ULONG *ulRetDecl, ULONG ulStreamFlags);
@@ -501,7 +501,7 @@ static ULONG d3d_CreatePixelProgram(const char *strPixelProgram)
 	D3D_CHECKERROR(hr);
 	return ulProgramHandle;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-13)
 
 
 // Set value of constant register for vertex shader
@@ -534,11 +534,11 @@ static void d3d_SetPixelProgramConst(INDEX iRegister, const void *pData, INDEX c
 	ASSERT(pData!=NULL);
 	ASSERT(ctRegisters>0 && iRegister<=8);
 	ASSERT(GFX_bUsePixelProgram==TRUE);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
-	//ì›ëž˜ ì´ê²ƒì´ ìžˆì–´ì„œ ì´ í•¨ìˆ˜ í˜¸ì¶œì „ì— SetPixelProgramí˜¸ì¶œì´ ì„ í–‰ë˜ì•¼ í–ˆë‹¤.
-	//ê·¸ëŸ¬ë‚˜ ê·¸ëŸ´ í•„ìš”ê°€ ì—†ì–´ì„œ ëºë‹¤. -_- ì™  ì´ìƒí•œ ê·œì¹™ì¸ê°€.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+	//¿ø·¡ ÀÌ°ÍÀÌ ÀÖ¾î¼­ ÀÌ ÇÔ¼ö È£ÃâÀü¿¡ SetPixelProgramÈ£ÃâÀÌ ¼±ÇàµÇ¾ß Çß´Ù.
+	//±×·¯³ª ±×·² ÇÊ¿ä°¡ ¾ø¾î¼­ »°´Ù. -_- ¿Ø ÀÌ»óÇÑ ±ÔÄ¢ÀÎ°¡.
 //	ASSERT(_pGfx->gl_dwPixelShader!=NONE);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	HRESULT hr = _pGfx->gl_pd3dDevice->SetPixelShaderConstant(iRegister, pData, ctRegisters);
 	D3D_CHECKERROR(hr); 
 }
@@ -1014,10 +1014,10 @@ static void d3d_DepthRange( FLOAT fMin, FLOAT fMax)
 	HRESULT hr;
 	D3DVIEWPORT8 d3dViewport;
 #ifndef NDEBUG
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ ì ‘ì† ì‹œí€€ìŠ¤ ìž‘ì—…	05.31
-//	hr = _pGfx->gl_pd3dDevice->GetViewport( &d3dViewport);										// ì›ë³¸.
-//	ASSERT( d3dViewport.MinZ==GFX_fMinDepthRange && d3dViewport.MaxZ==GFX_fMaxDepthRange);		// ì›ë³¸.
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ìž‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
+//	hr = _pGfx->gl_pd3dDevice->GetViewport( &d3dViewport);										// ¿øº».
+//	ASSERT( d3dViewport.MinZ==GFX_fMinDepthRange && d3dViewport.MaxZ==GFX_fMaxDepthRange);		// ¿øº».
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 #endif
 
 	// cached?
@@ -1511,17 +1511,17 @@ static void d3d_DeleteTexture( ULONG &ulTexObject)
 
 extern void *LockVertexArray_D3D( const INDEX ctVertices);
 extern void *LockNormalArray_D3D(void);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 extern void *LockTangentArray_D3D(void);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 extern void *LockWeightArray_D3D(void);
 extern void *LockColorArray_D3D(void);
 extern void *LockTexCoordArray_D3D( const BOOL bProjectiveMapping=FALSE);
 extern void UnlockVertexArray_D3D(void);
 extern void UnlockNormalArray_D3D(void);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 extern void UnlockTangentArray_D3D(void);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 extern void UnlockWeightArray_D3D(void);
 extern void UnlockColorArray_D3D(void);
 extern void UnlockTexCoordArray_D3D(void);
@@ -1551,9 +1551,9 @@ static void *d3d_LockSubBuffer( const INDEX iID, const INDEX i1stVertex, const I
 		switch( iType) {
 		case GFX_VBA_POS:  pRet=LockVertexArray_D3D(ctVertices);  break;
 		case GFX_VBA_NOR:  pRet=LockNormalArray_D3D();            break;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		case GFX_VBA_TAN:  pRet=LockTangentArray_D3D();            break;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		case GFX_VBA_WGH:  pRet=LockWeightArray_D3D();            break;
 		case GFX_VBA_TEX:  pRet=LockTexCoordArray_D3D();          break;
 		case GFX_VBA_COL: 
@@ -1626,9 +1626,9 @@ static void d3d_UnlockSubBuffer( const INDEX iID, const INDEX ctVertices/*=0*/)
 		switch( iType) {
 		case GFX_VBA_POS:  UnlockVertexArray_D3D();   break;
 		case GFX_VBA_NOR:  UnlockNormalArray_D3D();   break;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		case GFX_VBA_TAN:  UnlockTangentArray_D3D();  break;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		case GFX_VBA_WGH:  UnlockWeightArray_D3D();   break;
 		case GFX_VBA_TEX:  UnlockTexCoordArray_D3D(); break;
 		case GFX_VBA_COL:  UnlockColorArray_D3D();    break;
@@ -1668,7 +1668,7 @@ static void d3d_UnlockSubBuffer( const INDEX iID, const INDEX ctVertices/*=0*/)
 
 
 // Array of stream indices for each vertex buffer type
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 static INDEX _aiStreamFromType[] = {
   GFX_POSIDX,
   GFX_NORIDX,
@@ -1684,7 +1684,7 @@ static INDEX _aiStreamFromType[] = {
   -1,
   GFX_REAL_TANIDX,
 };
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 
 // set vertex sub-buffer (i.e. array) to be the current one for rendering
@@ -1877,13 +1877,13 @@ static void d3d_DrawElements( const INDEX ctIndices, const UWORD *puwIndices)
 #endif
 
 	_sfStats.IncrementCounter( CStatForm::SCI_GFXVERTICES, ctIndices);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷	06.29
 	extern INDEX gfx_bRenderReflection;
 	if(gfx_bRenderReflection)
 	{
 		_sfStats.IncrementCounter( CStatForm::SCI_REFLECTION_VERTICE, ctIndices);
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ìž‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ðÆ® ÀÛ¾÷		06.29
 	_sfStats.StartTimer(CStatForm::STI_GFXAPI);
 	_pGfx->gl_ctTotalElements += ctIndices;  // for profiling
 
@@ -1900,7 +1900,6 @@ static void d3d_DrawElements( const INDEX ctIndices, const UWORD *puwIndices)
 // force finish of API rendering queue
 static void d3d_Finish( BOOL bReadBack)
 {
-	CDisableAsyncProgress dap;
 	ASSERT( _pGfx->gl_eCurrentAPI==GAT_D3D);
 	_sfStats.StartTimer(CStatForm::STI_GFXAPI);
 

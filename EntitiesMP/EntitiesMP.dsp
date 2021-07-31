@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
-CFG=EntitiesMP - Win32 FinalDebug
+CFG=EntitiesMP - Win32 DebugKalydo
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,64 +13,34 @@ CFG=EntitiesMP - Win32 FinalDebug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "EntitiesMP.mak" CFG="EntitiesMP - Win32 FinalDebug"
+!MESSAGE NMAKE /f "EntitiesMP.mak" CFG="EntitiesMP - Win32 DebugKalydo"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "EntitiesMP - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "EntitiesMP - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "EntitiesMP - Win32 FinalRelease" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "EntitiesMP - Win32 FinalDebug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 USALIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 GERLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 RUSLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 BRZLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 MAXLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 KORTEST" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 THAILIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 WORLDEDITOR" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 DebugKalydo" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 ReleaseKalydo" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 GERLIVEKalydo" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "EntitiesMP - Win32 CHNLIVE" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""$/aboard_WildPet_UI_USA/All/EntitiesMP", VCOBAAAA"
-# PROP Scc_LocalPath "."
+# PROP Scc_ProjName ""
+# PROP Scc_LocalPath ""
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# PROP BASE Use_MFC 2
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir ".\Release"
-# PROP BASE Intermediate_Dir ".\Release"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 2
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release"
-# PROP Intermediate_Dir "Release"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /YX /c
-# ADD CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
-# SUBTRACT CPP /Oa /Ow /Gf /Fr
-# ADD BASE MTL /nologo /D "NDEBUG" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
-# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
-# Begin Custom Build - Copying $(InputName) binaries to $(a60911_dir)\Bin
-InputPath=.\Release\EntitiesMP.dll
-InputName=EntitiesMP
-SOURCE="$(InputPath)"
-
-"$(a60911_dir)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy Release\$(InputName).dll $(a60911_dir)\Bin >nul 
-	copy Release\$(InputName).map $(a60911_dir)\Bin >nul 
-	copy Release\$(InputName).lib $(a60911_dir)\Bin >nul 
-	copy Release\$(InputName).pdb $(a60911_dir)\Bin >nul 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # PROP BASE Use_MFC 2
 # PROP BASE Use_Debug_Libraries 1
@@ -79,12 +49,12 @@ SOURCE="$(InputPath)"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 2
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "Debug"
-# PROP Intermediate_Dir "Debug"
+# PROP Output_Dir "_Debug"
+# PROP Intermediate_Dir "_Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /YX /c
-# ADD CPP /nologo /G5 /MDd /W3 /Gm /GX /Zi /Od /I "..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /Yu"StdH.h" /FD /c
+# ADD CPP /nologo /G5 /MDd /W3 /Gm /GR /GX /Zi /Od /I "..\\" /I ".\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "G_KOR" /D "VER_TEST" /Yu"StdH.h" /FD /c
 # SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -95,38 +65,42 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /dll /debug /machine:I386
-# ADD LINK32 user32.lib winmm.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /out:"Debug/EntitiesMPD.dll" /pdbtype:sept
-# SUBTRACT LINK32 /profile /incremental:no
-# Begin Custom Build - Copying $(InputName) binaries to $(a60911_dir)\Bin\Debug
-InputPath=.\Debug\EntitiesMPD.dll
+# ADD LINK32 user32.lib winmm.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /out:"_Debug/EntitiesMPD.dll" /pdbtype:sept
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin\Debug
+InputPath=.\_Debug\EntitiesMPD.dll
 InputName=EntitiesMPD
 SOURCE="$(InputPath)"
 
-"$(a60911_dir)\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy Debug\$(InputName).dll $(a60911_dir)\Bin\Debug >nul 
-	copy Debug\$(InputName).map $(a60911_dir)\Bin\Debug >nul 
-	copy Debug\$(InputName).lib $(a60911_dir)\Bin\Debug >nul 
-	copy Debug\$(InputName).pdb $(a60911_dir)\Bin\Debug >nul 
+"$(ENGINE_DIR)\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _Debug\$(InputName).dll $(ENGINE_DIR)\Bin\Debug >nul 
+	copy _Debug\$(InputName).map $(ENGINE_DIR)\Bin\Debug >nul 
+	copy _Debug\$(InputName).lib $(ENGINE_DIR)\Bin\Debug >nul 
+	copy _Debug\$(InputName).pdb $(ENGINE_DIR)\Bin\Debug >nul 
 	
 # End Custom Build
+# Begin Special Build Tool
+OutDir=.\_Debug
+SOURCE="$(InputPath)"
+PostBuild_Cmds=mkdir                     $(OutDir)\..\..\DebugFilesForCopy                    	copy                     $(OutDir)\EntitiesMPD.dll                     $(OutDir)\..\..\DebugFilesForCopy\                    	copy                     $(OutDir)\EntitiesMPD.lib                     $(OutDir)\..\..\DebugFilesForCopy\                    	copy                     $(OutDir)\EntitiesMPD.map                     $(OutDir)\..\..\DebugFilesForCopy\                    	copy                     $(OutDir)\EntitiesMPD.pdb                     $(OutDir)\..\..\DebugFilesForCopy\ 
+# End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # PROP BASE Use_MFC 2
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "EntitiesMP___Win32_FinalRelease"
-# PROP BASE Intermediate_Dir "EntitiesMP___Win32_FinalRelease"
+# PROP BASE Output_Dir "EntitiesMP___Win32_USALIVE"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_USALIVE"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 2
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "FinalRelease"
-# PROP Intermediate_Dir "FinalRelease"
+# PROP Output_Dir "_USALIVE"
+# PROP Intermediate_Dir "_USALIVE"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
 # SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
-# ADD CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "FINALVERSION" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_USA" /Yu"StdH.h" /FD /c
 # SUBTRACT CPP /Oa /Ow /Gf /Fr
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -136,38 +110,325 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 user32.lib ws2_32.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 user32.lib ws2_32.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /pdbtype:sept
-# Begin Custom Build - Copying $(InputName) binaries to $(a60911_dir)\Bin
-InputPath=.\FinalRelease\EntitiesMP.dll
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(USA_LIVE)\Bin
+InputPath=.\_USALIVE\EntitiesMP.dll
 InputName=EntitiesMP
 SOURCE="$(InputPath)"
 
-"$(a60911_dir)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy FinalRelease\$(InputName).dll $(a60911_dir)\Bin >nul 
-	copy FinalRelease\$(InputName).map $(a60911_dir)\Bin >nul 
-	copy FinalRelease\$(InputName).lib $(a60911_dir)\Bin >nul 
-	copy FinalRelease\$(InputName).pdb $(a60911_dir)\Bin >nul 
+"$(USA_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _USALIVE\$(InputName).dll $(USA_LIVE)\Bin >nul 
+	copy _USALIVE\$(InputName).map $(USA_LIVE)\Bin >nul 
+	copy _USALIVE\$(InputName).lib $(USA_LIVE)\Bin >nul 
+	copy _USALIVE\$(InputName).pdb $(USA_LIVE)\Bin >nul 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_GERLIVE"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_GERLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_GERLIVE"
+# PROP Intermediate_Dir "_GERLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_GERMAN" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(GER_LIVE)\Bin
+InputPath=.\_GERLIVE\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(GER_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _GERLIVE\$(InputName).dll $(GER_LIVE)\Bin >nul 
+	copy _GERLIVE\$(InputName).map $(GER_LIVE)\Bin >nul 
+	copy _GERLIVE\$(InputName).lib $(GER_LIVE)\Bin >nul 
+	copy _GERLIVE\$(InputName).pdb $(GER_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_RUSLIVE"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_RUSLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_RUSLIVE"
+# PROP Intermediate_Dir "_RUSLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_RUSSIA" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(RUS_LIVE)\Bin
+InputPath=.\_RUSLIVE\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(RUS_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _RUSLIVE\$(InputName).dll $(RUS_LIVE)\Bin >nul 
+	copy _RUSLIVE\$(InputName).map $(RUS_LIVE)\Bin >nul 
+	copy _RUSLIVE\$(InputName).lib $(RUS_LIVE)\Bin >nul 
+	copy _RUSLIVE\$(InputName).pdb $(RUS_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_BRZLIVE"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_BRZLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_BRZLIVE"
+# PROP Intermediate_Dir "_BRZLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_BRAZIL" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(BRZ_LIVE)\Bin
+InputPath=.\_BRZLIVE\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(BRZ_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _BRZLIVE\$(InputName).dll $(BRZ_LIVE)\Bin >nul 
+	copy _BRZLIVE\$(InputName).map $(BRZ_LIVE)\Bin >nul 
+	copy _BRZLIVE\$(InputName).lib $(BRZ_LIVE)\Bin >nul 
+	copy _BRZLIVE\$(InputName).pdb $(BRZ_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_MAXLIVE"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_MAXLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_MAXLIVE"
+# PROP Intermediate_Dir "_MAXLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_MAXICO" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(MAX_LIVE)\Bin
+InputPath=.\_MAXLIVE\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(MAX_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _MAXLIVE\$(InputName).dll $(MAX_LIVE)\Bin >nul 
+	copy _MAXLIVE\$(InputName).map $(MAX_LIVE)\Bin >nul 
+	copy _MAXLIVE\$(InputName).lib $(MAX_LIVE)\Bin >nul 
+	copy _MAXLIVE\$(InputName).pdb $(MAX_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_KORTEST"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_KORTEST"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_KORTEST"
+# PROP Intermediate_Dir "_KORTEST"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /I ".\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_KOR" /D "VER_TEST" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(KOR_TEST)\Bin
+InputPath=.\_KORTEST\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(KOR_TEST)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _KORTEST\$(InputName).dll $(KOR_TEST)\Bin >nul 
+	copy _KORTEST\$(InputName).map $(KOR_TEST)\Bin >nul 
+	copy _KORTEST\$(InputName).lib $(KOR_TEST)\Bin >nul 
+	copy _KORTEST\$(InputName).pdb $(KOR_TEST)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_THAILIVE"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_THAILIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_THAILIVE"
+# PROP Intermediate_Dir "_THAILIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /D "G_KOR" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_THAI" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(THAI_LIVE)\Bin
+InputPath=.\_THAILIVE\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(THAI_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _THAILIVE\$(InputName).dll $(THAI_LIVE)\Bin >nul 
+	copy _THAILIVE\$(InputName).map $(THAI_LIVE)\Bin >nul 
+	copy _THAILIVE\$(InputName).lib $(THAI_LIVE)\Bin >nul 
+	copy _THAILIVE\$(InputName).pdb $(THAI_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_WORLDEDITOR"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_WORLDEDITOR"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "WORLDEDITOR"
+# PROP Intermediate_Dir "WORLDEDITOR"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /D "G_KOR" /D "VER_TEST" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /D "G_KOR" /D "VER_TEST" /D "_CLIENT_" /D "WORLD_EDITOR" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /O<none> /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin
+InputPath=.\WORLDEDITOR\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(ENGINE_DIR)\Bin\WorldEditor\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy WORLDEDITOR\$(InputName).dll $(ENGINE_DIR)\Bin\WorldEditor >nul 
+	copy WORLDEDITOR\$(InputName).map $(ENGINE_DIR)\Bin\WorldEditor >nul 
+	copy WORLDEDITOR\$(InputName).lib $(ENGINE_DIR)\Bin\WorldEditor >nul 
+	copy WORLDEDITOR\$(InputName).pdb $(ENGINE_DIR)\Bin\WorldEditor >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
 
 # PROP BASE Use_MFC 2
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "EntitiesMP___Win32_FinalDebug"
-# PROP BASE Intermediate_Dir "EntitiesMP___Win32_FinalDebug"
+# PROP BASE Output_Dir "EntitiesMP___Win32_DebugKalydo"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_DebugKalydo"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 2
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "FinalDebug"
-# PROP Intermediate_Dir "FinalDebug"
+# PROP Output_Dir "DebugKalydo"
+# PROP Intermediate_Dir "DebugKalydo"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /G5 /MDd /W3 /Gm /GX /Zi /Od /I "..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /Yu"StdH.h" /FD /c
+# ADD BASE CPP /nologo /G5 /MDd /W3 /Gm /GX /Zi /Od /I "..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "G_KOR" /D "VER_TEST" /Yu"StdH.h" /FD /c
 # SUBTRACT BASE CPP /Fr
-# ADD CPP /nologo /G5 /MDd /W3 /Gm /GX /Zi /Od /I "..\\" /D "FINALVERSION" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /Yu"StdH.h" /FD /c
+# ADD CPP /nologo /G5 /MDd /W3 /Gm /GR /GX /Zi /Od /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "G_KOR" /D "KALYDO" /Yu"StdH.h" /FD /c
 # SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -177,18 +438,142 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 user32.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /out:"Debug/EntitiesMPD.dll" /pdbtype:sept
-# ADD LINK32 user32.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /out:"FinalDebug/EntitiesMPD.dll" /pdbtype:sept
-# Begin Custom Build - Copying $(InputName) binaries to $(a60911_dir)\Bin\Debug
-InputPath=.\FinalDebug\EntitiesMPD.dll
+# ADD BASE LINK32 user32.lib winmm.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /out:"Debug/EntitiesMPD.dll" /pdbtype:sept
+# ADD LINK32 user32.lib winmm.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /out:"DebugKalydo/EntitiesMPD.dll" /pdbtype:sept
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin\Debug
+InputPath=.\DebugKalydo\EntitiesMPD.dll
 InputName=EntitiesMPD
 SOURCE="$(InputPath)"
 
-"$(a60911_dir)\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy FinalDebug\$(InputName).dll $(a60911_dir)\Bin\Debug >nul 
-	copy FinalDebug\$(InputName).map $(a60911_dir)\Bin\Debug >nul 
-	copy FinalDebug\$(InputName).lib $(a60911_dir)\Bin\Debug >nul 
-	copy FinalDebug\$(InputName).pdb $(a60911_dir)\Bin\Debug >nul 
+"$(ENGINE_DIR)\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy DebugKalydo\$(InputName).dll $(ENGINE_DIR)\Bin\Debug >nul 
+	copy DebugKalydo\$(InputName).dll $(ENGINE_DIR)\Bin >nul 
+	copy DebugKalydo\$(InputName).map $(ENGINE_DIR)\Bin\Debug >nul 
+	copy DebugKalydo\$(InputName).lib $(ENGINE_DIR)\Bin\Debug >nul 
+	copy DebugKalydo\$(InputName).pdb $(ENGINE_DIR)\Bin\Debug >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_ReleaseKalydo"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_ReleaseKalydo"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "ReleaseKalydo"
+# PROP Intermediate_Dir "ReleaseKalydo"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /D "G_GERMAN" /D "KALYDO" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin
+InputPath=.\ReleaseKalydo\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(ENGINE_DIR)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy ReleaseKalydo\$(InputName).dll $(ENGINE_DIR)\Bin >nul 
+	copy ReleaseKalydo\$(InputName).map $(ENGINE_DIR)\Bin >nul 
+	copy ReleaseKalydo\$(InputName).lib $(ENGINE_DIR)\Bin >nul 
+	copy ReleaseKalydo\$(InputName).pdb $(ENGINE_DIR)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_GERLIVEKalydo"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_GERLIVEKalydo"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_GERLIVEKalydo"
+# PROP Intermediate_Dir "_GERLIVEKalydo"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /D "G_GERMAN" /D "KALYDO" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "_WIN32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_GERMAN" /D "KALYDO" /D "_WINDLL" /D "_AFXDLL" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin
+InputPath=.\_GERLIVEKalydo\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(ENGINE_DIR)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _GERLIVEKalydo\$(InputName).dll $(ENGINE_DIR)\Bin >nul 
+	copy _GERLIVEKalydo\$(InputName).map $(ENGINE_DIR)\Bin >nul 
+	copy _GERLIVEKalydo\$(InputName).lib $(ENGINE_DIR)\Bin >nul 
+	copy _GERLIVEKalydo\$(InputName).pdb $(ENGINE_DIR)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# PROP BASE Use_MFC 2
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "EntitiesMP___Win32_CHNLIVE"
+# PROP BASE Intermediate_Dir "EntitiesMP___Win32_CHNLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 2
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_CHNLIVE"
+# PROP Intermediate_Dir "_CHNLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_USA" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Oa /Ow /Gf /Fr
+# ADD CPP /nologo /G5 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_USA" /D "G_CHINA" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Oa /Ow /Gf /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# ADD LINK32 user32.lib ws2_32.lib winmm.lib /nologo /subsystem:windows /dll /profile /map /debug /machine:I386
+# Begin Custom Build - Copying $(InputName) binaries to $(CHN_LIVE)\Bin
+InputPath=.\_CHNLIVE\EntitiesMP.dll
+InputName=EntitiesMP
+SOURCE="$(InputPath)"
+
+"$(CHN_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _CHNLIVE\$(InputName).dll $(CHN_LIVE)\Bin >nul 
+	copy _CHNLIVE\$(InputName).map $(CHN_LIVE)\Bin >nul 
+	copy _CHNLIVE\$(InputName).lib $(CHN_LIVE)\Bin >nul 
+	copy _CHNLIVE\$(InputName).pdb $(CHN_LIVE)\Bin >nul 
 	
 # End Custom Build
 
@@ -196,10 +581,19 @@ SOURCE="$(InputPath)"
 
 # Begin Target
 
-# Name "EntitiesMP - Win32 Release"
 # Name "EntitiesMP - Win32 Debug"
-# Name "EntitiesMP - Win32 FinalRelease"
-# Name "EntitiesMP - Win32 FinalDebug"
+# Name "EntitiesMP - Win32 USALIVE"
+# Name "EntitiesMP - Win32 GERLIVE"
+# Name "EntitiesMP - Win32 RUSLIVE"
+# Name "EntitiesMP - Win32 BRZLIVE"
+# Name "EntitiesMP - Win32 MAXLIVE"
+# Name "EntitiesMP - Win32 KORTEST"
+# Name "EntitiesMP - Win32 THAILIVE"
+# Name "EntitiesMP - Win32 WORLDEDITOR"
+# Name "EntitiesMP - Win32 DebugKalydo"
+# Name "EntitiesMP - Win32 ReleaseKalydo"
+# Name "EntitiesMP - Win32 GERLIVEKalydo"
+# Name "EntitiesMP - Win32 CHNLIVE"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"
@@ -411,6 +805,10 @@ SOURCE=.\HudPicHolder.cpp
 # Begin Source File
 
 SOURCE=.\Item.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\itemObjects.cpp
 # End Source File
 # Begin Source File
 
@@ -1043,6 +1441,14 @@ SOURCE=.\Item_tables.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\itemObjects.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\itemObjects_tables.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\items.h
 # End Source File
 # Begin Source File
@@ -1524,50 +1930,158 @@ SOURCE=.\WorldSettingsController_tables.h
 
 SOURCE=.\NavigationMarker.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\NavigationMarker.es
 InputName=NavigationMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                           ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\NavigationMarker.es
 InputName=NavigationMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                           ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\NavigationMarker.es
 InputName=NavigationMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                           ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\NavigationMarker.es
 InputName=NavigationMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                           ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\NavigationMarker.es
+InputName=NavigationMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -1579,50 +2093,158 @@ InputName=NavigationMarker
 
 SOURCE=.\Reminder.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Reminder.es
 InputName=Reminder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                           ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Reminder.es
 InputName=Reminder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                           ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Reminder.es
 InputName=Reminder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                           ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Reminder.es
 InputName=Reminder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                           ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Reminder.es
+InputName=Reminder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -1634,50 +2256,158 @@ InputName=Reminder
 
 SOURCE=.\TacticsChanger.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TacticsChanger.es
 InputName=TacticsChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TacticsChanger.es
 InputName=TacticsChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TacticsChanger.es
 InputName=TacticsChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TacticsChanger.es
 InputName=TacticsChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsChanger.es
+InputName=TacticsChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -1689,50 +2419,158 @@ InputName=TacticsChanger
 
 SOURCE=.\TacticsHolder.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TacticsHolder.es
 InputName=TacticsHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TacticsHolder.es
 InputName=TacticsHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TacticsHolder.es
 InputName=TacticsHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TacticsHolder.es
 InputName=TacticsHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TacticsHolder.es
+InputName=TacticsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -1744,50 +2582,158 @@ InputName=TacticsHolder
 
 SOURCE=.\Watcher.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Watcher.es
 InputName=Watcher
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Watcher.es
 InputName=Watcher
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Watcher.es
 InputName=Watcher
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Watcher.es
 InputName=Watcher
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Watcher.es
+InputName=Watcher
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -1799,50 +2745,158 @@ InputName=Watcher
 
 SOURCE=.\WatchPlayers.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WatchPlayers.es
 InputName=WatchPlayers
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WatchPlayers.es
 InputName=WatchPlayers
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WatchPlayers.es
 InputName=WatchPlayers
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WatchPlayers.es
 InputName=WatchPlayers
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WatchPlayers.es
+InputName=WatchPlayers
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -1858,50 +2912,158 @@ InputName=WatchPlayers
 
 SOURCE=.\DestroyableArchitecture.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\DestroyableArchitecture.es
 InputName=DestroyableArchitecture
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\DestroyableArchitecture.es
 InputName=DestroyableArchitecture
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\DestroyableArchitecture.es
 InputName=DestroyableArchitecture
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\DestroyableArchitecture.es
 InputName=DestroyableArchitecture
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DestroyableArchitecture.es
+InputName=DestroyableArchitecture
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -1913,50 +3075,158 @@ InputName=DestroyableArchitecture
 
 SOURCE=.\MovingBrush.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\MovingBrush.es
 InputName=MovingBrush
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\MovingBrush.es
 InputName=MovingBrush
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\MovingBrush.es
 InputName=MovingBrush
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\MovingBrush.es
 InputName=MovingBrush
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrush.es
+InputName=MovingBrush
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -1968,50 +3238,158 @@ InputName=MovingBrush
 
 SOURCE=.\MovingBrushMarker.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\MovingBrushMarker.es
 InputName=MovingBrushMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\MovingBrushMarker.es
 InputName=MovingBrushMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\MovingBrushMarker.es
 InputName=MovingBrushMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\MovingBrushMarker.es
 InputName=MovingBrushMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MovingBrushMarker.es
+InputName=MovingBrushMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2023,50 +3401,158 @@ InputName=MovingBrushMarker
 
 SOURCE=.\Pendulum.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Pendulum.es
 InputName=Pendulum
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Pendulum.es
 InputName=Pendulum
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Pendulum.es
 InputName=Pendulum
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Pendulum.es
 InputName=Pendulum
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Pendulum.es
+InputName=Pendulum
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2078,50 +3564,158 @@ InputName=Pendulum
 
 SOURCE=.\Terrain.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Terrain.es
 InputName=Terrain
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Terrain.es
 InputName=Terrain
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Terrain.es
 InputName=Terrain
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Terrain.es
 InputName=Terrain
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Terrain.es
+InputName=Terrain
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2133,50 +3727,158 @@ InputName=Terrain
 
 SOURCE=.\WorldBase.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WorldBase.es
 InputName=WorldBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WorldBase.es
 InputName=WorldBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WorldBase.es
 InputName=WorldBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WorldBase.es
 InputName=WorldBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldBase.es
+InputName=WorldBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2192,50 +3894,158 @@ InputName=WorldBase
 
 SOURCE=.\BasicEffects.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BasicEffects.es
 InputName=BasicEffects
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BasicEffects.es
 InputName=BasicEffects
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BasicEffects.es
 InputName=BasicEffects
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BasicEffects.es
 InputName=BasicEffects
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BasicEffects.es
+InputName=BasicEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2247,50 +4057,158 @@ InputName=BasicEffects
 
 SOURCE=.\BlendController.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BlendController.es
 InputName=BlendController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BlendController.es
 InputName=BlendController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BlendController.es
 InputName=BlendController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BlendController.es
 InputName=BlendController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BlendController.es
+InputName=BlendController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2302,50 +4220,158 @@ InputName=BlendController
 
 SOURCE=.\BloodSpray.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BloodSpray.es
 InputName=BloodSpray
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BloodSpray.es
 InputName=BloodSpray
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BloodSpray.es
 InputName=BloodSpray
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\BloodSpray.es
 InputName=BloodSpray
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BloodSpray.es
+InputName=BloodSpray
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2357,50 +4383,158 @@ InputName=BloodSpray
 
 SOURCE=.\Debris.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Debris.es
 InputName=Debris
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Debris.es
 InputName=Debris
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Debris.es
 InputName=Debris
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Debris.es
 InputName=Debris
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Debris.es
+InputName=Debris
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2412,50 +4546,158 @@ InputName=Debris
 
 SOURCE=.\DebrisSka.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\DebrisSka.es
 InputName=DebrisSka
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\DebrisSka.es
 InputName=DebrisSka
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\DebrisSka.es
 InputName=DebrisSka
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\DebrisSka.es
 InputName=DebrisSka
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebrisSka.es
+InputName=DebrisSka
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2467,50 +4709,158 @@ InputName=DebrisSka
 
 SOURCE=.\EffectMarker.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EffectMarker.es
 InputName=EffectMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EffectMarker.es
 InputName=EffectMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EffectMarker.es
 InputName=EffectMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EffectMarker.es
 InputName=EffectMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EffectMarker.es
+InputName=EffectMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2522,50 +4872,158 @@ InputName=EffectMarker
 
 SOURCE=.\Effector.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Effector.es
 InputName=Effector
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Effector.es
 InputName=Effector
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Effector.es
 InputName=Effector
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Effector.es
 InputName=Effector
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Effector.es
+InputName=Effector
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2577,50 +5035,158 @@ InputName=Effector
 
 SOURCE=.\Lightning.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Lightning.es
 InputName=Lightning
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Lightning.es
 InputName=Lightning
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Lightning.es
 InputName=Lightning
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Lightning.es
 InputName=Lightning
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                            ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Lightning.es
+InputName=Lightning
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2632,50 +5198,158 @@ InputName=Lightning
 
 SOURCE=.\RollingStone.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\RollingStone.es
 InputName=RollingStone
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\RollingStone.es
 InputName=RollingStone
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\RollingStone.es
 InputName=RollingStone
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\RollingStone.es
 InputName=RollingStone
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\RollingStone.es
+InputName=RollingStone
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2687,50 +5361,158 @@ InputName=RollingStone
 
 SOURCE=.\StormController.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\StormController.es
 InputName=StormController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\StormController.es
 InputName=StormController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\StormController.es
 InputName=StormController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\StormController.es
 InputName=StormController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\StormController.es
+InputName=StormController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2742,50 +5524,158 @@ InputName=StormController
 
 SOURCE=.\TimeController.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TimeController.es
 InputName=TimeController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TimeController.es
 InputName=TimeController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TimeController.es
 InputName=TimeController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\TimeController.es
 InputName=TimeController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TimeController.es
+InputName=TimeController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2797,3395 +5687,158 @@ InputName=TimeController
 
 SOURCE=.\WorldSettingsController.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WorldSettingsController.es
 InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WorldSettingsController.es
-InputName=WorldSettingsController
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WorldSettingsController.es
 InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\WorldSettingsController.es
 InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ENDIF 
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
-# End Source File
-# End Group
-# Begin Group "Environment"
-
-# PROP Default_Filter "es"
-# Begin Source File
-
-SOURCE=.\EnvironmentBase.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentBase.es
-InputName=EnvironmentBase
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentBase.es
-InputName=EnvironmentBase
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentBase.es
-InputName=EnvironmentBase
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentBase.es
-InputName=EnvironmentBase
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\EnvironmentMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentMarker.es
-InputName=EnvironmentMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentMarker.es
-InputName=EnvironmentMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentMarker.es
-InputName=EnvironmentMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentMarker.es
-InputName=EnvironmentMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\EnvironmentParticlesHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentParticlesHolder.es
-InputName=EnvironmentParticlesHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentParticlesHolder.es
-InputName=EnvironmentParticlesHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentParticlesHolder.es
-InputName=EnvironmentParticlesHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\EnvironmentParticlesHolder.es
-InputName=EnvironmentParticlesHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# End Group
-# Begin Group "Items"
-
-# PROP Default_Filter "es"
-# Begin Source File
-
-SOURCE=.\Item.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build
-InputPath=.\Item.es
-InputName=Item
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build
-InputPath=.\Item.es
-InputName=Item
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\items.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\items.es
-InputName=items
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\items.es
-InputName=items
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-!ENDIF 
-
-# End Source File
-# End Group
-# Begin Group "Players"
-
-# PROP Default_Filter "es"
-# Begin Source File
-
-SOURCE=.\Player.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Player.es
-InputName=Player
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Player.es
-InputName=Player
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Player.es
-InputName=Player
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Player.es
-InputName=Player
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\PlayerActionMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerActionMarker.es
-InputName=PlayerActionMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerActionMarker.es
-InputName=PlayerActionMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerActionMarker.es
-InputName=PlayerActionMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerActionMarker.es
-InputName=PlayerActionMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\PlayerAnimator.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerAnimator.es
-InputName=PlayerAnimator
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerAnimator.es
-InputName=PlayerAnimator
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerAnimator.es
-InputName=PlayerAnimator
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerAnimator.es
-InputName=PlayerAnimator
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\PlayerMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerMarker.es
-InputName=PlayerMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerMarker.es
-InputName=PlayerMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerMarker.es
-InputName=PlayerMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerMarker.es
-InputName=PlayerMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\PlayerView.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerView.es
-InputName=PlayerView
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerView.es
-InputName=PlayerView
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerView.es
-InputName=PlayerView
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerView.es
-InputName=PlayerView
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\PlayerWeapons.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerWeapons.es
-InputName=PlayerWeapons
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerWeapons.es
-InputName=PlayerWeapons
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerWeapons.es
-InputName=PlayerWeapons
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerWeapons.es
-InputName=PlayerWeapons
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\PlayerWeaponsEffects.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerWeaponsEffects.es
-InputName=PlayerWeaponsEffects
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerWeaponsEffects.es
-InputName=PlayerWeaponsEffects
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerWeaponsEffects.es
-InputName=PlayerWeaponsEffects
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\PlayerWeaponsEffects.es
-InputName=PlayerWeaponsEffects
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# End Group
-# Begin Group "Tools"
-
-# PROP Default_Filter "es"
-# Begin Source File
-
-SOURCE=.\AnimationChanger.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AnimationChanger.es
-InputName=AnimationChanger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AnimationChanger.es
-InputName=AnimationChanger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AnimationChanger.es
-InputName=AnimationChanger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AnimationChanger.es
-InputName=AnimationChanger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\AnimationHub.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AnimationHub.es
-InputName=AnimationHub
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AnimationHub.es
-InputName=AnimationHub
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AnimationHub.es
-InputName=AnimationHub
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AnimationHub.es
-InputName=AnimationHub
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\AreaMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AreaMarker.es
-InputName=AreaMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AreaMarker.es
-InputName=AreaMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AreaMarker.es
-InputName=AreaMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\AreaMarker.es
-InputName=AreaMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\BackgroundViewer.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\BackgroundViewer.es
-InputName=BackgroundViewer
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\BackgroundViewer.es
-InputName=BackgroundViewer
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\BackgroundViewer.es
-InputName=BackgroundViewer
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\BackgroundViewer.es
-InputName=BackgroundViewer
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Camera.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Camera.es
-InputName=Camera
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Camera.es
-InputName=Camera
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Camera.es
-InputName=Camera
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Camera.es
-InputName=Camera
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\CameraMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\CameraMarker.es
-InputName=CameraMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\CameraMarker.es
-InputName=CameraMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\CameraMarker.es
-InputName=CameraMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\CameraMarker.es
-InputName=CameraMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\ColorContoller.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ColorContoller.es
-InputName=ColorContoller
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ColorContoller.es
-InputName=ColorContoller
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ColorContoller.es
-InputName=ColorContoller
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ColorContoller.es
-InputName=ColorContoller
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Copier.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Copier.es
-InputName=Copier
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Copier.es
-InputName=Copier
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Copier.es
-InputName=Copier
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Copier.es
-InputName=Copier
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Counter.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Counter.es
-InputName=Counter
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Counter.es
-InputName=Counter
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Counter.es
-InputName=Counter
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Counter.es
-InputName=Counter
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Damager.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Damager.es
-InputName=Damager
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Damager.es
-InputName=Damager
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Damager.es
-InputName=Damager
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Damager.es
-InputName=Damager
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\DebugEntityStatesDisplay.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\DebugEntityStatesDisplay.es
-InputName=DebugEntityStatesDisplay
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\DebugEntityStatesDisplay.es
-InputName=DebugEntityStatesDisplay
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\DebugEntityStatesDisplay.es
-InputName=DebugEntityStatesDisplay
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\DebugEntityStatesDisplay.es
-InputName=DebugEntityStatesDisplay
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\DoorController.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\DoorController.es
-InputName=DoorController
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\DoorController.es
-InputName=DoorController
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\DoorController.es
-InputName=DoorController
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\DoorController.es
-InputName=DoorController
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Dummy.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Dummy.es
-InputName=Dummy
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Dummy.es
-InputName=Dummy
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Dummy.es
-InputName=Dummy
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Dummy.es
-InputName=Dummy
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Eruptor.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Eruptor.es
-InputName=Eruptor
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Eruptor.es
-InputName=Eruptor
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Eruptor.es
-InputName=Eruptor
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Eruptor.es
-InputName=Eruptor
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\FixedCameraField.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\FixedCameraField.es
-InputName=FixedCameraField
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\FixedCameraField.es
-InputName=FixedCameraField
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\FogMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\FogMarker.es
-InputName=FogMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\FogMarker.es
-InputName=FogMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\FogMarker.es
-InputName=FogMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\FogMarker.es
-InputName=FogMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\GradientMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GradientMarker.es
-InputName=GradientMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GradientMarker.es
-InputName=GradientMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GradientMarker.es
-InputName=GradientMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GradientMarker.es
-InputName=GradientMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\GravityMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GravityMarker.es
-InputName=GravityMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GravityMarker.es
-InputName=GravityMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GravityMarker.es
-InputName=GravityMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GravityMarker.es
-InputName=GravityMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\GravityRouter.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GravityRouter.es
-InputName=GravityRouter
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GravityRouter.es
-InputName=GravityRouter
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GravityRouter.es
-InputName=GravityRouter
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\GravityRouter.es
-InputName=GravityRouter
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\HazeMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\HazeMarker.es
-InputName=HazeMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\HazeMarker.es
-InputName=HazeMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\HazeMarker.es
-InputName=HazeMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\HazeMarker.es
-InputName=HazeMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\HudPicHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\HudPicHolder.es
-InputName=HudPicHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\HudPicHolder.es
-InputName=HudPicHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\HudPicHolder.es
-InputName=HudPicHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\HudPicHolder.es
-InputName=HudPicHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Light.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Light.es
-InputName=Light
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Light.es
-InputName=Light
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Light.es
-InputName=Light
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Light.es
-InputName=Light
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Marker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Marker.es
-InputName=Marker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Marker.es
-InputName=Marker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Marker.es
-InputName=Marker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Marker.es
-InputName=Marker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\MessageHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MessageHolder.es
-InputName=MessageHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MessageHolder.es
-InputName=MessageHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MessageHolder.es
-InputName=MessageHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MessageHolder.es
-InputName=MessageHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\MessageView.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MessageView.es
-InputName=MessageView
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MessageView.es
-InputName=MessageView
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\MirrorMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MirrorMarker.es
-InputName=MirrorMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MirrorMarker.es
-InputName=MirrorMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MirrorMarker.es
-InputName=MirrorMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MirrorMarker.es
-InputName=MirrorMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Missile.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Missile.es
-InputName=Missile
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Missile.es
-InputName=Missile
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Missile.es
-InputName=Missile
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Missile.es
-InputName=Missile
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\ModelDestruction.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelDestruction.es
-InputName=ModelDestruction
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelDestruction.es
-InputName=ModelDestruction
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelDestruction.es
-InputName=ModelDestruction
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelDestruction.es
-InputName=ModelDestruction
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\ModelHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder.es
-InputName=ModelHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder.es
-InputName=ModelHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder.es
-InputName=ModelHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder.es
-InputName=ModelHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\ModelHolder2.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder2.es
-InputName=ModelHolder2
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder2.es
-InputName=ModelHolder2
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder2.es
-InputName=ModelHolder2
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder2.es
-InputName=ModelHolder2
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\ModelHolder3.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder3.es
-InputName=ModelHolder3
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder3.es
-InputName=ModelHolder3
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder3.es
-InputName=ModelHolder3
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ModelHolder3.es
-InputName=ModelHolder3
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\MusicChanger.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MusicChanger.es
-InputName=MusicChanger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MusicChanger.es
-InputName=MusicChanger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MusicChanger.es
-InputName=MusicChanger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MusicChanger.es
-InputName=MusicChanger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\MusicHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MusicHolder.es
-InputName=MusicHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MusicHolder.es
-InputName=MusicHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MusicHolder.es
-InputName=MusicHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\MusicHolder.es
-InputName=MusicHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\ParticleCloudsHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticleCloudsHolder.es
-InputName=ParticleCloudsHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticleCloudsHolder.es
-InputName=ParticleCloudsHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticleCloudsHolder.es
-InputName=ParticleCloudsHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticleCloudsHolder.es
-InputName=ParticleCloudsHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\ParticleCloudsMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticleCloudsMarker.es
-InputName=ParticleCloudsMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticleCloudsMarker.es
-InputName=ParticleCloudsMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticleCloudsMarker.es
-InputName=ParticleCloudsMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticleCloudsMarker.es
-InputName=ParticleCloudsMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\ParticlesHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticlesHolder.es
-InputName=ParticlesHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticlesHolder.es
-InputName=ParticlesHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticlesHolder.es
-InputName=ParticlesHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\ParticlesHolder.es
-InputName=ParticlesHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\RestrictedField.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build
-InputPath=.\RestrictedField.es
-InputName=RestrictedField
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build
-InputPath=.\RestrictedField.es
-InputName=RestrictedField
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\SoundHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\SoundHolder.es
-InputName=SoundHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\SoundHolder.es
-InputName=SoundHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\SoundHolder.es
-InputName=SoundHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\SoundHolder.es
-InputName=SoundHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\SunMoon.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\SunMoon.es
-InputName=SunMoon
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\SunMoon.es
-InputName=SunMoon
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\SunMoon.es
-InputName=SunMoon
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\SunMoon.es
-InputName=SunMoon
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Switch.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Switch.es
-InputName=Switch
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Switch.es
-InputName=Switch
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Switch.es
-InputName=Switch
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Switch.es
-InputName=Switch
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Teleport.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Teleport.es
-InputName=Teleport
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Teleport.es
-InputName=Teleport
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Teleport.es
-InputName=Teleport
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Teleport.es
-InputName=Teleport
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\TextFXHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\TextFXHolder.es
-InputName=TextFXHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\TextFXHolder.es
-InputName=TextFXHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\TextFXHolder.es
-InputName=TextFXHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\TextFXHolder.es
-InputName=TextFXHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\TouchField.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\TouchField.es
-InputName=TouchField
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\TouchField.es
-InputName=TouchField
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\TouchField.es
-InputName=TouchField
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\TouchField.es
-InputName=TouchField
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Trigger.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Trigger.es
-InputName=Trigger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Trigger.es
-InputName=Trigger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Trigger.es
-InputName=Trigger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Trigger.es
-InputName=Trigger
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\VoiceHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\VoiceHolder.es
-InputName=VoiceHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\VoiceHolder.es
-InputName=VoiceHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\VoiceHolder.es
-InputName=VoiceHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\VoiceHolder.es
-InputName=VoiceHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\WaterHolder.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WaterHolder.es
-InputName=WaterHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WaterHolder.es
-InputName=WaterHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WaterHolder.es
-InputName=WaterHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WaterHolder.es
-InputName=WaterHolder
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\WaterHolderMarker.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WaterHolderMarker.es
-InputName=WaterHolderMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WaterHolderMarker.es
-InputName=WaterHolderMarker
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\WorldLink.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WorldLink.es
-InputName=WorldLink
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WorldLink.es
-InputName=WorldLink
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WorldLink.es
-InputName=WorldLink
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-# Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\WorldLink.es
-InputName=WorldLink
-
-"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
-	ecc EntitiesMP/$(InputName).es 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# End Group
-# Begin Group "Weapons"
-
-# PROP Default_Filter "es"
-# Begin Source File
-
-SOURCE=.\Bullet.es
-
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
-
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Bullet.es
-InputName=Bullet
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Bullet.es
-InputName=Bullet
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Bullet.es
-InputName=Bullet
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Bullet.es
-InputName=Bullet
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                         ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Flame.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Flame.es
-InputName=Flame
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Flame.es
-InputName=Flame
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Projectile.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Projectile.es
-InputName=Projectile
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Projectile.es
-InputName=Projectile
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Projectile.es
-InputName=Projectile
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-InputPath=.\Projectile.es
-InputName=Projectile
+InputPath=.\WorldSettingsController.es
+InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6201,33 +5854,161 @@ InputName=Projectile
 
 SOURCE=.\Character.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Character.es
 InputName=Character
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Character.es
 InputName=Character
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Character.es
+InputName=Character
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
 
 !ENDIF 
 
@@ -6236,50 +6017,158 @@ InputName=Character
 
 SOURCE=.\CharacterBase.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\CharacterBase.es
 InputName=CharacterBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\CharacterBase.es
 InputName=CharacterBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\CharacterBase.es
 InputName=CharacterBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\CharacterBase.es
 InputName=CharacterBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CharacterBase.es
+InputName=CharacterBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6291,40 +6180,158 @@ InputName=CharacterBase
 
 SOURCE=.\Enemy.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Enemy.es
 InputName=Enemy
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Enemy.es
 InputName=Enemy
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Enemy.es
 InputName=Enemy
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Enemy.es
+InputName=Enemy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6336,50 +6343,158 @@ InputName=Enemy
 
 SOURCE=.\EnemyBase.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemyBase.es
 InputName=EnemyBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemyBase.es
 InputName=EnemyBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemyBase.es
 InputName=EnemyBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemyBase.es
 InputName=EnemyBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyBase.es
+InputName=EnemyBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6391,50 +6506,158 @@ InputName=EnemyBase
 
 SOURCE=.\EnemyMarker.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemyMarker.es
 InputName=EnemyMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemyMarker.es
 InputName=EnemyMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemyMarker.es
 InputName=EnemyMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemyMarker.es
 InputName=EnemyMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemyMarker.es
+InputName=EnemyMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6446,50 +6669,158 @@ InputName=EnemyMarker
 
 SOURCE=.\EnemySpawner.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemySpawner.es
 InputName=EnemySpawner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemySpawner.es
 InputName=EnemySpawner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemySpawner.es
 InputName=EnemySpawner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\EnemySpawner.es
 InputName=EnemySpawner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnemySpawner.es
+InputName=EnemySpawner
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6501,33 +6832,161 @@ InputName=EnemySpawner
 
 SOURCE=.\Pet.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build
 InputPath=.\Pet.es
 InputName=Pet
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build
 InputPath=.\Pet.es
 InputName=Pet
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\Pet.es
+InputName=Pet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
 
 !ENDIF 
 
@@ -6536,33 +6995,161 @@ InputName=Pet
 
 SOURCE=.\PetBase.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build
 InputPath=.\PetBase.es
 InputName=PetBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build
 InputPath=.\PetBase.es
 InputName=PetBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\PetBase.es
+InputName=PetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
 
 !ENDIF 
 
@@ -6571,50 +7158,158 @@ InputName=PetBase
 
 SOURCE=.\PointMarker.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\PointMarker.es
 InputName=PointMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\PointMarker.es
 InputName=PointMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\PointMarker.es
 InputName=PointMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\PointMarker.es
 InputName=PointMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PointMarker.es
+InputName=PointMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6626,33 +7321,161 @@ InputName=PointMarker
 
 SOURCE=.\Slave.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build
 InputPath=.\Slave.es
 InputName=Slave
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build
 InputPath=.\Slave.es
 InputName=Slave
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\Slave.es
+InputName=Slave
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
 
 !ENDIF 
 
@@ -6661,33 +7484,161 @@ InputName=Slave
 
 SOURCE=.\SlaveBase.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build
 InputPath=.\SlaveBase.es
 InputName=SlaveBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build
 InputPath=.\SlaveBase.es
 InputName=SlaveBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\SlaveBase.es
+InputName=SlaveBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
 
 !ENDIF 
 
@@ -6696,33 +7647,161 @@ InputName=SlaveBase
 
 SOURCE=.\Unit.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build
 InputPath=.\Unit.es
 InputName=Unit
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build
 InputPath=.\Unit.es
 InputName=Unit
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\Unit.es
+InputName=Unit
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
 
 !ENDIF 
 
@@ -6731,33 +7810,161 @@ InputName=Unit
 
 SOURCE=.\WildPet.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build
 InputPath=.\WildPet.es
 InputName=WildPet
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build
 InputPath=.\WildPet.es
 InputName=WildPet
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\WildPet.es
+InputName=WildPet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
 
 !ENDIF 
 
@@ -6766,33 +7973,10613 @@ InputName=WildPet
 
 SOURCE=.\WildPetBase.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build
 InputPath=.\WildPetBase.es
 InputName=WildPetBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build
 InputPath=.\WildPetBase.es
 InputName=WildPetBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                          .. 
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\WildPetBase.es
+InputName=WildPetBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
+# Begin Group "Environment"
+
+# PROP Default_Filter "es"
+# Begin Source File
+
+SOURCE=.\EnvironmentBase.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentBase.es
+InputName=EnvironmentBase
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\EnvironmentMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentMarker.es
+InputName=EnvironmentMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\EnvironmentParticlesHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\EnvironmentParticlesHolder.es
+InputName=EnvironmentParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
+# Begin Group "Items"
+
+# PROP Default_Filter "es"
+# Begin Source File
+
+SOURCE=.\Item.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\Item.es
+InputName=Item
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\itemObjects.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\itemObjects.es
+InputName=itemObjects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\items.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\items.es
+InputName=items
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
+# Begin Group "Players"
+
+# PROP Default_Filter "es"
+# Begin Source File
+
+SOURCE=.\Player.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Player.es
+InputName=Player
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\PlayerActionMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerActionMarker.es
+InputName=PlayerActionMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\PlayerAnimator.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerAnimator.es
+InputName=PlayerAnimator
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\PlayerMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerMarker.es
+InputName=PlayerMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\PlayerView.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerView.es
+InputName=PlayerView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\PlayerWeapons.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeapons.es
+InputName=PlayerWeapons
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\PlayerWeaponsEffects.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\PlayerWeaponsEffects.es
+InputName=PlayerWeaponsEffects
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
+# Begin Group "Tools"
+
+# PROP Default_Filter "es"
+# Begin Source File
+
+SOURCE=.\AnimationChanger.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationChanger.es
+InputName=AnimationChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\AnimationHub.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AnimationHub.es
+InputName=AnimationHub
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\AreaMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\AreaMarker.es
+InputName=AreaMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\BackgroundViewer.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\BackgroundViewer.es
+InputName=BackgroundViewer
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Camera.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Camera.es
+InputName=Camera
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\CameraMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\CameraMarker.es
+InputName=CameraMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\ColorContoller.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ColorContoller.es
+InputName=ColorContoller
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Copier.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Copier.es
+InputName=Copier
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Counter.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Counter.es
+InputName=Counter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Damager.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Damager.es
+InputName=Damager
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\DebugEntityStatesDisplay.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DebugEntityStatesDisplay.es
+InputName=DebugEntityStatesDisplay
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\DoorController.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\DoorController.es
+InputName=DoorController
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Dummy.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Dummy.es
+InputName=Dummy
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Eruptor.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Eruptor.es
+InputName=Eruptor
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\FixedCameraField.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FixedCameraField.es
+InputName=FixedCameraField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\FogMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\FogMarker.es
+InputName=FogMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\GradientMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GradientMarker.es
+InputName=GradientMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\GravityMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityMarker.es
+InputName=GravityMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\GravityRouter.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\GravityRouter.es
+InputName=GravityRouter
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\HazeMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HazeMarker.es
+InputName=HazeMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\HudPicHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\HudPicHolder.es
+InputName=HudPicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Light.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Light.es
+InputName=Light
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Marker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Marker.es
+InputName=Marker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\MessageHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageHolder.es
+InputName=MessageHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\MessageView.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MessageView.es
+InputName=MessageView
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\MirrorMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MirrorMarker.es
+InputName=MirrorMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Missile.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Missile.es
+InputName=Missile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\ModelDestruction.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelDestruction.es
+InputName=ModelDestruction
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\ModelHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder.es
+InputName=ModelHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\ModelHolder2.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder2.es
+InputName=ModelHolder2
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\ModelHolder3.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ModelHolder3.es
+InputName=ModelHolder3
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\MusicChanger.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicChanger.es
+InputName=MusicChanger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\MusicHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\MusicHolder.es
+InputName=MusicHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\ParticleCloudsHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsHolder.es
+InputName=ParticleCloudsHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\ParticleCloudsMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticleCloudsMarker.es
+InputName=ParticleCloudsMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\ParticlesHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\ParticlesHolder.es
+InputName=ParticlesHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\RestrictedField.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\RestrictedField.es
+InputName=RestrictedField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\SoundHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SoundHolder.es
+InputName=SoundHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\SunMoon.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\SunMoon.es
+InputName=SunMoon
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Switch.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Switch.es
+InputName=Switch
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Teleport.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Teleport.es
+InputName=Teleport
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\TextFXHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TextFXHolder.es
+InputName=TextFXHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\TouchField.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\TouchField.es
+InputName=TouchField
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Trigger.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Trigger.es
+InputName=Trigger
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\VoiceHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\VoiceHolder.es
+InputName=VoiceHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\WaterHolder.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolder.es
+InputName=WaterHolder
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\WaterHolderMarker.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build
+InputPath=.\WaterHolderMarker.es
+InputName=WaterHolderMarker
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\WorldLink.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\WorldLink.es
+InputName=WorldLink
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
+# Begin Group "Weapons"
+
+# PROP Default_Filter "es"
+# Begin Source File
+
+SOURCE=.\Bullet.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Bullet.es
+InputName=Bullet
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Flame.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Flame.es
+InputName=Flame
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Projectile.es
+
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Projectile.es
+InputName=Projectile
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
 
 !ENDIF 
 
@@ -6802,50 +18589,158 @@ InputName=WildPetBase
 
 SOURCE=.\Global.es
 
-!IF  "$(CFG)" == "EntitiesMP - Win32 Release"
+!IF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Global.es
 InputName=Global
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 USALIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Global.es
 InputName=Global
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Global.es
 InputName=Global
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                        ..\  
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 RUSLIVE"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\Global.es
 InputName=Global
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                              ..\  
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 BRZLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 MAXLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 KORTEST"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 THAILIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 WORLDEDITOR"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 DebugKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 ReleaseKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc EntitiesMP/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "EntitiesMP - Win32 CHNLIVE"
+
+# Begin Custom Build - EntitiesMP/$(InputName).es
+InputPath=.\Global.es
+InputName=Global
+
+"$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build

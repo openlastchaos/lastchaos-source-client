@@ -1,7 +1,9 @@
 #include "stdh.h"
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <vector>
-#include <Engine/Interface/UISelectList.h>
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UISelectList.h>
 #include <Engine/Entities/EntityProperties.h>
 
 
@@ -24,7 +26,7 @@
 // ----------------------------------------------------------------------------
 CUISelectList::CUISelectList()
 {	
-	m_strTitle = _S(169,"ì´ë²¤íŠ¸");
+	m_strTitle = _S(169,"ÀÌº¥Æ®");
 	m_dwStyle = 0;
 	m_nWidth		= -1;
 	m_nHeight		= -1;
@@ -33,11 +35,11 @@ CUISelectList::CUISelectList()
 	m_nPageAll		= 0;
 	m_nTextRegionHeight = TEXT_REGION_H;
 	m_pstrState		= new CTString[LS_END];
-	m_pstrState[0]	= _S( 2488, "ëŒ€ê¸°ì¤‘");
-	m_pstrState[1]	= _S( 2489,"ë“±ë¡");
-	m_pstrState[2]	= _S( 2490, "ë³´ìƒ ê°€ëŠ¥");
-	m_pstrState[3]	= _S( 2491, "ë³´ìƒ ë¶ˆê°€ëŠ¥");
-	m_pstrState[4]	= _S( 2492, "ë³´ìƒ ì™„ë£Œ");
+	m_pstrState[0]	= _S( 2488, "´ë±âÁß");
+	m_pstrState[1]	= _S( 2489,"µî·Ï");
+	m_pstrState[2]	= _S( 2490, "º¸»ó °¡´É");
+	m_pstrState[3]	= _S( 2491, "º¸»ó ºÒ°¡´É");
+	m_pstrState[4]	= _S( 2492, "º¸»ó ¿Ï·á");
 	m_selColor		= 0xFFFFFFFF; 		
 }
 
@@ -48,6 +50,8 @@ CUISelectList::CUISelectList()
 CUISelectList::~CUISelectList()
 {
 	Destroy();
+
+	SAFE_ARRAY_DELETE(m_pstrState);
 }
 
 // ----------------------------------------------------------------------------
@@ -56,10 +60,7 @@ CUISelectList::~CUISelectList()
 // ----------------------------------------------------------------------------
 void CUISelectList::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight)
 {
-
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, SELECTLIST_WIDTH, 22 );
@@ -152,18 +153,18 @@ void CUISelectList::CreateSelectList(int nStyle ,int nLine,CTString strTitle)
 	if(strTitle != "") SetTitle(strTitle);
 
 	m_rcList.SetRect( 8, 25, m_nWidth-8, nLine*TEXT_GAP +25);
-	// ë²„íŠ¼ ìœ„ì¹˜ ì¡°ì • 
+	// ¹öÆ° À§Ä¡ Á¶Á¤ 
 	if( m_dwStyle & SLS_REGIST )
 	{
 		m_btnRegist.SetEnable( TRUE );
-		m_btnRegist.SetText( _S( 2484, "ì¹œêµ¬ë“±ë¡" ) );
+		m_btnRegist.SetText( _S( 2484, "Ä£±¸µî·Ï" ) );
 		m_btnRegist.SetPos( tv_Width, tv_Height );
 		
 		if( m_dwStyle & SLS_CANCEL )
 		{
 			tv_Width = m_nWidth/2  + BTN_GAP;
 			m_btnCancel.SetEnable( TRUE );
-			m_btnCancel.SetText( _S( 139, "ì·¨ì†Œ" ) );
+			m_btnCancel.SetText( _S( 139, "Ãë¼Ò" ) );
 			m_btnCancel.SetPos( tv_Width  , tv_Height );
 		
 		} else {
@@ -173,13 +174,13 @@ void CUISelectList::CreateSelectList(int nStyle ,int nLine,CTString strTitle)
 
 	} else if( m_dwStyle & SLS_REWARD){
 		m_btnReward.SetEnable( TRUE );
-		m_btnReward.SetText( _S( 2494, "ë³´ìƒì§€ê¸‰") );
+		m_btnReward.SetText( _S( 2494, "º¸»óÁö±Þ") );
 		m_btnReward.SetPos( tv_Width, tv_Height );
 		if( m_dwStyle & SLS_CANCEL )
 		{
 			tv_Width = m_nWidth/2  + BTN_GAP;
 			m_btnCancel.SetEnable( TRUE );
-			m_btnCancel.SetText( _S( 139, "ì·¨ì†Œ" ) );
+			m_btnCancel.SetText( _S( 139, "Ãë¼Ò" ) );
 			m_btnCancel.SetPos( tv_Width  , tv_Height );
 		
 		} else {
@@ -189,7 +190,7 @@ void CUISelectList::CreateSelectList(int nStyle ,int nLine,CTString strTitle)
 	} else if( m_dwStyle & SLS_CANCEL )	{
 			tv_Width += SL_BTN_OFFSETX/2;
 			m_btnCancel.SetEnable( TRUE );
-			m_btnCancel.SetText( _S( 139, "ì·¨ì†Œ" ) );
+			m_btnCancel.SetText( _S( 139, "Ãë¼Ò" ) );
 			m_btnCancel.SetPos( tv_Width  , tv_Height );
 		
 	}
@@ -227,7 +228,7 @@ void CUISelectList::CreateSelectList(int nStyle ,int nLine,CTString strTitle)
 	int tv_left = m_vSelList.size()%m_nMaxLine;
 	m_nPageAll = tv_left > 0 ? tv_size+1 : tv_size;
 
-	_pUIMgr->RearrangeOrder( UI_SELECTLIST, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SELECTLIST, TRUE );
 }
 
 // ----------------------------------------------------------------------------
@@ -245,7 +246,7 @@ void CUISelectList::ResetSelectList()
 	m_btnRegist.SetEnable(FALSE);
 	m_btnReward.SetEnable(FALSE);
 
-	_pUIMgr->RearrangeOrder( UI_SELECTLIST, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SELECTLIST, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -254,9 +255,10 @@ void CUISelectList::ResetSelectList()
 // ----------------------------------------------------------------------------
 void CUISelectList::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// Set texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY;
@@ -265,27 +267,27 @@ void CUISelectList::Render()
 	nX = m_nPosX + m_nWidth;
 	nY = m_nPosY + 26;
 	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
 										m_rtBackTop.U0, m_rtBackTop.V0,
 										m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
 
 	// Middle 1
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + m_nTextRegionHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + m_nTextRegionHeight,
 										m_rtBackMiddle1.U0, m_rtBackMiddle1.V0,
 										m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 										0xFFFFFFFF );
 
 	// Middle 2
 	nY += m_nTextRegionHeight;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
 										m_rtBackMiddle2.U0, m_rtBackMiddle2.V0,
 										m_rtBackMiddle2.U1, m_rtBackMiddle2.V1,
 										0xFFFFFFFF );
 
 	// Bottom
 	nY = m_nPosY + m_nHeight - 7;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
 										m_rtBackBottom.U0, m_rtBackBottom.V0,
 										m_rtBackBottom.U1, m_rtBackBottom.V1,
 										0xFFFFFFFF );
@@ -315,10 +317,10 @@ void CUISelectList::Render()
 
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Title
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strTitle, m_nPosX + SELECTLIST_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( m_strTitle, m_nPosX + SELECTLIST_TITLE_TEXT_OFFSETX,
 										m_nPosY + SELECTLIST_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
 	// List strings
@@ -337,16 +339,16 @@ void CUISelectList::Render()
 	
 		if( m_nSelLine == i ) m_selColor = 0x49A1FFFF;
 		else m_selColor = 0xF2F2F2FF;
-		_pUIMgr->GetDrawPort()->PutTextEx( tIdx, nX +15,	nY ,m_selColor);
+		pDrawPort->PutTextEx( tIdx, nX +15,	nY ,m_selColor);
 		if(m_vSelList[i].m_nIndex == _pNetwork->MyCharacterInfo.index)  sName+=CTString("(Me)");
-		_pUIMgr->GetDrawPort()->PutTextEx( sName, nX + 35,  nY ,m_selColor);
-		_pUIMgr->GetDrawPort()->PutTextEx( m_pstrState[m_vSelList[i].m_nState], nX + 160, nY,m_selColor);
+		pDrawPort->PutTextEx( sName, nX + 35,  nY ,m_selColor);
+		pDrawPort->PutTextEx( m_pstrState[m_vSelList[i].m_nState], nX + 160, nY,m_selColor);
 		nY += TEXT_GAP;
 
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 }
 
@@ -379,7 +381,7 @@ WMSG_RESULT	CUISelectList::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 			
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -425,7 +427,7 @@ WMSG_RESULT	CUISelectList::MouseMessage( MSG *pMsg )
 				else if( m_btnNext.MouseMessage( pMsg ) != WMSG_FAIL ){}
 					
 							
-				_pUIMgr->RearrangeOrder( UI_SELECTLIST, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_SELECTLIST, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -499,7 +501,7 @@ WMSG_RESULT	CUISelectList::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					CUIManager::getSingleton()->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}

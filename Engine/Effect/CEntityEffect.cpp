@@ -154,9 +154,9 @@ CEffect *CEntityEffect::Copy()
 {
 	CEntityEffect *pRet = new CEntityEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectÅ”Ã‡ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CEntityEffectÅ”Ã‡ content
+	//CEntityEffectÀÇ content
 	if(m_pEffectControl) pRet->SetEffectControl(*m_pEffectControl);
 	return pRet;
 }

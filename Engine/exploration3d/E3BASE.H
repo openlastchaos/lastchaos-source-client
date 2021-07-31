@@ -71,7 +71,7 @@ _E3_METHOD(BOOL,    CanDeleteThis())
 
 typedef BOOL(WINAPI*E3ENUMOBJECTS)(e3_NODE*,DWORD);
 // Nodes enumaration function prototype
-typedef DWORD(WINAPI*E3ANIMATE3D)(e3_SCENE*,DWORD command,DWORD data,DWORD data2=0,float*f=NULL); //
+typedef DWORD(WINAPI*E3ANIMATE3D)(e3_SCENE*,DWORD command,DWORD data,DWORD data2 /*=0*/,float*f /*=NULL*/); //
 // Animate function prototype
 typedef DWORD(WINAPI*E3IMPORT3D)(e3_STREAM*,e3_SCENE*,DWORD data,DWORD command);
 // Import function prototype
@@ -358,18 +358,18 @@ e3_PICTURE*picture;
 e3_SAVEPIC*next;
 };
 
-const PIC_REPLACEDIALOG =1; // show dialog if files alredy exist
-const PIC_ALWAYSDIALOG  =2; // show dialog if textures exist
-const PIC_BMPONLY       =4; // export all files to BMP only
-const PIC_SAVEALL       =8; // save all files
-const PIC_FILE          =16;// path is a main file name
-const PIC_DONOTSAVE     =32;// do not perform saving
-const PIC_SETTOEXPORTDATA =64;// set e3_SAVEPIC to material->GetPicture()->exportdata
-const PIC_POW2SIZE      = 128;// rescale images to 2^n
-const PIC_UNIQUENAME    = 256;// create new file ,if file with such name alredy exist
-const PIC_ORIGINALNAME  = 512;// use file name of original texture file, instead of mask (but mask will use for internal textures)
+const int PIC_REPLACEDIALOG =1; // show dialog if files alredy exist
+const int PIC_ALWAYSDIALOG  =2; // show dialog if textures exist
+const int PIC_BMPONLY       =4; // export all files to BMP only
+const int PIC_SAVEALL       =8; // save all files
+const int PIC_FILE          =16;// path is a main file name
+const int PIC_DONOTSAVE     =32;// do not perform saving
+const int PIC_SETTOEXPORTDATA =64;// set e3_SAVEPIC to material->GetPicture()->exportdata
+const int PIC_POW2SIZE      = 128;// rescale images to 2^n
+const int PIC_UNIQUENAME    = 256;// create new file ,if file with such name alredy exist
+const int PIC_ORIGINALNAME  = 512;// use file name of original texture file, instead of mask (but mask will use for internal textures)
 
-const PIC_DEFAULT=PIC_ORIGINALNAME|PIC_UNIQUENAME;
+const int PIC_DEFAULT=PIC_ORIGINALNAME|PIC_UNIQUENAME;
 
 struct e3_SAVE_PICTURES{
 e3_COLLECTION*pictures;   // list of pictures to save
@@ -677,8 +677,8 @@ E3_ACCESS
  inline void          SetRenderMode(RENDER_MODE mode){SetParam(E3P_RENDERMODE,mode);}
  inline RENDER_MODE   GetRenderMode(){return (RENDER_MODE)GetParam(E3P_RENDERMODE);}
 
- inline               IsVNormalsOk(){return GetParam(E3P_VNORMAL_OK);}
- inline               IsSmoothGroupsOk(){return GetParam(E3P_SMOOTHGROUP_OK);}
+ inline int           IsVNormalsOk(){return GetParam(E3P_VNORMAL_OK);}
+ inline int           IsSmoothGroupsOk(){return GetParam(E3P_SMOOTHGROUP_OK);}
  inline void          MarkDoubleFlags(BOOL _double){SetParam(E3P_DOUBLESIDED,_double);}
 
 
@@ -971,9 +971,12 @@ E3_ACCESS
 #define COLOR_BACKGROUND3D 0 //"Scene background"
 #define COLOR_BOUNDRECT  1 //"Scene bounded rect"
 #define COLOR_WIREFRAME  2 //"Lines in wireframe render mode"
-#define COLOR_OBJBOUND   3 // Обрамляющий прямоугольник для объекта
-#define COLOR_SOBJBOUND  4 // Обрамляющий прямоугольник для объекта
-#define COLOR_VERTEX     5 // Цвет точек для отображения только точек
+#define COLOR_OBJBOUND   3 // Обрамляющий прямоугольник для объект
+
+#define COLOR_SOBJBOUND  4 // Обрамляющий прямоугольник для объект
+
+#define COLOR_VERTEX     5 // Цвет точе?для отображения только точе
+
 #define COLOR_GRID1L     6
 #define COLOR_GRID1D     7
 #define COLOR_GRID2L     8
@@ -982,11 +985,16 @@ E3_ACCESS
 #define COLOR_MDIFFUSE  11 //"Default material diffuse color"
 #define COLOR_MAMBIENT  12 //"Default material ambient color"
 #define COLOR_MSPECULAR 13 // Default material specular color
-#define COLOR_AXISX     14 //Мировые оси
-#define COLOR_AXISY     15 //Мировые оси
-#define COLOR_AXISZ     16 //Мировые оси
-#define COLOR_WIREDGRID 17 //Мировые оси
-#define COLOR_TRBOUNDED 18 //Прозрачный куб
+#define COLOR_AXISX     14 //Мировы?ос
+
+#define COLOR_AXISY     15 //Мировы?ос
+
+#define COLOR_AXISZ     16 //Мировы?ос
+
+#define COLOR_WIREDGRID 17 //Мировы?ос
+
+#define COLOR_TRBOUNDED 18 //Прозрачный ку
+
 #define COLOR_CROSS     19 //"Vertex cross color"
 #define COLOR_FOG       20 //"FOG color"
 #define COLOR_MEMISSIVE 21 // Default material emissive color
@@ -1076,7 +1084,8 @@ I  NODE_3DS
  E3_METHOD(BOOL           ,Animatable())                                       // return parent KEYNODE
  E3_METHOD(e3_KEYNODE*    ,GetParent())                                        //
  E3_METHOD(BOOL           ,GetTransform(float time,MATRIX3D*mlocal,MATRIX3D*mchilds))
- // возвращает матрицы трансформации, для заданного времени
+ // возвращает матриц?трансформаци? для заданног?времен
+
 
  //----------------------------------------//
  E3_METHOD(void           ,SetPostMatrix(MATRIX3D*))

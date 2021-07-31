@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #include "stdH.h"
 
 #include "CParticlesProcessPointGoal.h"
@@ -68,7 +68,7 @@ const char *CParticlesProcessPointGoal::GetWantTagName(INDEX index)
 
 void CParticlesProcessPointGoal::SetWantTag(INDEX index, ptr_tag tag)
 {
-	if(index < 0 && index >= WANT_TAG_COUNT) return;
+	if(index < 0 || index >= WANT_TAG_COUNT) return;
 	m_ptrGoalTag = tag;
 }
 
@@ -131,4 +131,4 @@ void CParticlesProcessPointGoal::Write(CTStream *pOS)
 	os << strTagName;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

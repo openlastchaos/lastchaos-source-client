@@ -103,21 +103,21 @@ void CPerspectiveProjection3D::Prepare(void)
 		// invert inversion
 		pr_bInverted = !pr_bInverted;
 	} 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		04.05
-	// NOTE : BrushPolygonì„ ë’¤ì§‘ê¸° ìœ„í•œ ë¶€ë¶„...
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		04.05
+	// NOTE : BrushPolygonÀ» µÚÁı±â À§ÇÑ ºÎºĞ...
 	else if (pr_bNiceWater )	
 	{
 		extern FLOATplane3D		_plReflect;		
 		ReflectPositionVectorByPlane(_plReflect, pr_vViewerPosition);
 		ReflectRotationMatrixByPlane_rows(_plReflect, pr_ViewerRotationMatrix);
 
-		// ë°˜ì‚¬ í‰ë©´...
+		// ¹İ»ç Æò¸é...
 		pr_plNiceWaterView = _plReflect;
 		pr_plNiceWaterView -= pr_vViewerPosition;
 		pr_plNiceWaterView *= pr_ViewerRotationMatrix;
 		pr_bInverted = !pr_bInverted;
 	}	
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		04.05
+//°­µ¿¹Î ¼öÁ¤ ³¡		04.05
 	else if (pr_bWarp) {
 		// get mirror plane in view space
 		pr_plMirrorView = pr_plMirror;
@@ -374,7 +374,7 @@ INDEX CPerspectiveProjection3D::TestSphereToFrustum( const FLOAT3D &vViewPoint, 
 		}
 	}
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.29
 	extern INDEX gfx_bRenderReflection;
 	if(gfx_bRenderReflection)
 	{	
@@ -389,7 +389,7 @@ INDEX CPerspectiveProjection3D::TestSphereToFrustum( const FLOAT3D &vViewPoint, 
 		iPass = 0;
 		}
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.29
 
 	// all done
 	return iPass;
@@ -448,7 +448,7 @@ INDEX CPerspectiveProjection3D::TestBoxToFrustum(const FLOATobbox3D &box) const
 		iPass = 0;
 	}
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.29
 	extern INDEX gfx_bRenderReflection;
 	if(gfx_bRenderReflection)
 	{	
@@ -462,7 +462,7 @@ INDEX CPerspectiveProjection3D::TestBoxToFrustum(const FLOATobbox3D &box) const
 			iPass = 0;
 		}
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.29
 	// all done
 	return iPass;
 }

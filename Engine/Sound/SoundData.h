@@ -11,6 +11,9 @@
 #define SDF_ENCODED (1UL<<0) // this is ogg, mpX or wma compressed file
 
 class ENGINE_API CSoundData : public CSerial {
+#ifdef KALYDO
+  static CTString strDefaultSoundPath;
+#endif
 public:
   struct {
     WAVEFORMATEX sd_wfeFormat;   // wave format info
@@ -46,6 +49,11 @@ public:
   void Read_t( CTStream *inFile);
   // write sound to file (not implemented)
   void Write_t( CTStream *outFile);
+ #ifdef KALYDO
+  void Load_t(const CTFileName &fnFileName);
+  void Load_Delay_t(const CTFileName &fnFileName);
+  void Reload();
+#endif
 
   // get sound length in seconds
   double GetSecondsLength(void);

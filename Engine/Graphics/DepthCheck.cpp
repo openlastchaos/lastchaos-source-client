@@ -210,9 +210,9 @@ static void UpdateDepthPointsVisibility( const CDrawPort *pdp, const INDEX iMirr
       // fetch pixel
       const RECT rectToLock = { di.di_pixI, di.di_pixJ, di.di_pixI+1, di.di_pixJ+1 };
       hr = pBackBuffer->LockRect( &rectLocked, &rectToLock, D3DLOCK_READONLY);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Open beta)(2005-01-04)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2005-01-04)
       if( hr!=D3D_OK || rectLocked.pBits == NULL) continue; // skip if lock didn't make it
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2005-01-04)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2005-01-04)
       // read new color
       const COLOR colNew = UnpackColor_D3D( (UBYTE*)rectLocked.pBits, d3dfBack, slColSize) | CT_OPAQUE;
       pBackBuffer->UnlockRect();

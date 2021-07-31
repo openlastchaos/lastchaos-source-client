@@ -9,8 +9,8 @@
 	#pragma once
 #endif
 
-
 #include <Engine/Interface/UIWindow.h>
+#include <Engine/Interface/UIDrawFigure.h>
 #include <Engine/Entities/ItemData.h>
 #include <Engine/Entities/OptionData.h>
 
@@ -23,34 +23,55 @@ enum UIBtnExState
 	UBES_TOTAL		= 2,
 };
 
-
-// UI expansion button type
-enum UIBtnExType
-{
-	UBET_SKILL		= 0,
-	UBET_ACTION		= 1,
-	UBET_ITEM		= 2,
-	UBET_QUEST		= 3,
-	UBET_EVENT		= 4,
-	UBET_REMISSION	= 5,
-	UBET_COMBO		= 6,	//ttos: Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥
-	UBET_AUCTION	= 7,
-	UBET_TYPE_TOTAL	= 8
-};
-
-//[2/9/2009 Sora]Î≤ÑÌäºÏóê Íµ¨Îß§ÎåÄÌñâ Í¥ÄÎ†®Ï∫êÎ¶≠ÌÑ∞ Ïù¥Î¶Ñ ÌëúÏãú
+//[2/9/2009 Sora]πˆ∆∞ø° ±∏∏≈¥Î«‡ ∞¸∑√ƒ≥∏Ø≈Õ ¿Ã∏ß «•Ω√
 enum eUIBtnCharNameType
 {
 	CHAR_NAME_NONE = 0,
+	CHAR_NAME_EXPEDITION = CHAR_NAME_NONE,	// ø¯¡§¥Î ƒ≥∏Ø≈Õ¿Ã∏ß, ¡§∫∏ √‚∑¬
 	CHAR_NAME_BUYER = 1,
 	CHAR_NAME_SELLER = 2,
 	CHAR_NAME_OWNER = 3,
 };
 
-// Define button size
-#define	BTN_SIZE	32
+enum eSocketIconInfo
+{
+	SOCKET_CHAOS_NONE = 0,
+	SOCKET_CHAOS_EQUIP,
+	SOCKET_GENERAL_NONE,
+	SOCKET_GENERAL_EQUIP,
+	SOCKET_MAX_ICON,
+};
 
-#define	MAX_ITEMINFO_LINE			20
+#define JEWEL_GRADE_GROW_Y		21 // Y ∂Û¿Œ ∞£¿« ¡ı∞° ∆¯
+#define JEWEL_GRADE_START_Y		131
+#define JEWEL_GRADE_BTN_SIZE	16
+#define JEWEL_GRADE_ICON_SIZE	16
+#define NAS_INDEX				60000
+#define NAS_TEX_ID				0		
+#define NAS_TEX_ROW				0
+#define NAS_TEX_COL				0
+
+class CUIImageFont;
+class CItems;
+class CUISpriteAni;
+class CUIImage;
+
+
+// [sora] RAID_SYSTEM ø¯¡§¥Î πˆ∆∞ √≥∏Æ 
+#define EXP_BTN_WIDTH 148					// ø¯¡§¥Î πˆ∆∞ ≈©±‚
+#define EXP_BTN_HEIGHT 15					// 
+
+#ifdef G_RUSSIA
+#define	MAX_ITEMINFO_LINE			40
+#else
+#define	MAX_ITEMINFO_LINE			30
+#endif
+
+#define		DEF_MAXSTRINGCHAR		26
+#if	defined(G_BRAZIL) | defined(G_RUSSIA) 		// ∫Ù∂Û ø‰√ª æ∆¿Ã≈€ ¡§∫∏ ≈¯∆¡ ∆¯ 50% ≈©±‚ ¡ı∞°
+#define		DEF_MAXSTRINGCHAREXTEND	38
+#endif
+
 // ----------------------------------------------------------------------------
 // Name : CUIButton
 // Desc : Expansion version for item, skill and action
@@ -58,7 +79,8 @@ enum eUIBtnCharNameType
 class CUIButtonEx : public CUIWindow
 {
 protected:
-	CTextureData	*m_ptdAddTexture;
+	CTextureData		*m_ptdAddTexture;
+	CTextureData		*m_pExpeditionTexture;
 	UWORD				m_uwBtnID;							// ID of button
 	int					m_nIndex;							// Index of item, skill, action or quest
 	int					m_nUniIndex;						// Unique index of item
@@ -87,22 +109,23 @@ protected:
 	union
 	{
 		ULONG			m_ulFlag;							// Flag of item
-		BOOL			m_bSpecial;							// ÌäπÏàò Ïä§ÌÇ¨Ïù∏Í∞Ä?
-		SBYTE			m_sbRemissionType;					// Î©¥Ï£ÑÎ∂Ä Ï¢ÖÎ•ò.
+		BOOL			m_bSpecial;							// ∆Øºˆ Ω∫≈≥¿Œ∞°?
+		SBYTE			m_sbRemissionType;					// ∏È¡À∫Œ ¡æ∑˘.
 	};
 
-	LONG				m_ulUsed;							// ÎÇ¥Íµ¨ÎèÑ
+	LONG				m_ulUsed;							// ≥ª±∏µµ
 	LONG				m_ulUsed2;							
 
-	SQUAD				m_llCount;							// Count of item
+	SQUAD				m_llCount;							// Item Type : ∞πºˆ Skill Seal Type : º˜∑√µµ 
 	SQUAD				m_llPrice;							// Price of Item
 	SQUAD				m_llTime;							// Use Item Start Time
-	SBYTE				m_sbOptionType[MAX_ITEM_OPTION];	// Option type of item
-	SBYTE				m_sbOptionLevel[MAX_ITEM_OPTION];	// Option level of item
-	SBYTE				m_nTab;								// Tab of item
-	SBYTE				m_nRow;								// Row of item
-	SBYTE				m_nCol;								// Column of item
-	UWORD				m_uwRareIndex;						// Î†àÏñ¥ ÏòµÏÖò Ïù∏Îç±Ïä§
+	SBYTE				m_sbOptionType[MAX_OPTION_INC_ORIGIN];	// Option type of item
+	LONG				m_lOptionLevel[MAX_OPTION_INC_ORIGIN];	// Option level of item
+	LONG				m_lOriginOptionVar[MAX_OPTION_INC_ORIGIN];
+	SWORD				m_nTab;								// Tab of item
+	SWORD				m_InvenIndex;
+	SWORD				m_nServerIdx;						// º≠πˆ ¿Œµ¶Ω∫
+	UWORD				m_uwRareIndex;						// ∑πæÓ ø…º« ¿Œµ¶Ω∫
 
 	SBYTE				m_nTextureID;						// Texture ID for rendering this button
 	SBYTE				m_nWhichUI;							// From which UI
@@ -114,16 +137,90 @@ protected:
 	BOOL				m_bLButtonDown;						// Left Mouse Button Click
 	CTString			m_strButtonInfo[MAX_ITEMINFO_LINE];		// Item information string
 	COLOR				m_colButtonInfo[MAX_ITEMINFO_LINE];		// Color of item information string
+	CTString			m_strSetItemInfo[MAX_ITEMINFO_LINE];		// Set Item information string
+	COLOR				m_colSetItemInfo[MAX_ITEMINFO_LINE];		// Color of Set item information string
 	INDEX				m_nCurInfoLines;
-	UIRectUV			m_rtPopupInfo;
+	INDEX				m_nCurSetItemInfoLines;
+	//UIRectUV			m_rtPopupInfo;
+	CUIDrawBox			m_bxPopupInfo;
 	UIRectUV			m_rtPopupName;
 	BOOL				m_bShow;
-	BOOL				m_bSetPopUp;						// Popup Enable;
-	sPetItem_Info		m_petData;
+	BOOL				m_bSetItem;
+	BOOL				m_bWidthExtend;						// ∫Ù∂Ûø‰√ª ∞°∑Œ ∆¯ ¡ı∞° ø©∫Œ
 
-	//[2/9/2009 Sora]Î≤ÑÌäºÏóê Íµ¨Îß§ÎåÄÌñâ Í¥ÄÎ†®Ï∫êÎ¶≠ÌÑ∞ Ïù¥Î¶Ñ ÌëúÏãú
+	SBYTE				Item_Belong;
+	LONG				Item_SkillIndex[MAX_ITEM_SKILL];
+	SBYTE				Item_SkillLevel[MAX_ITEM_SKILL];
+	LONG				m_lState_plus;
+
+	// socket system [5/10/2010 rumist]
+	SBYTE				Item_SocketCount;
+	LONG				Item_SocketJewelIndex[MAX_SOCKET_OPTION];
+
+	//[2/9/2009 Sora]πˆ∆∞ø° ±∏∏≈¥Î«‡ ∞¸∑√ƒ≥∏Ø≈Õ ¿Ã∏ß «•Ω√
 	eUIBtnCharNameType	m_eCharType;
 	CTString			m_strCharName;
+	
+	// [sora] ø¯¡§¥Î ¡§∫∏
+	SBYTE m_sbJob; 
+	SLONG m_slPosition;				// ¡˜√•
+	UIRectUV m_rtPositionUV[2];		// ¡˜√• «•Ω√
+	UIRectUV m_rtHPUV;
+	SLONG	m_slBarWidth;
+	SLONG	m_slLevel;
+	BOOL	m_bOnline;
+	
+	// Equip suit
+	INDEX	m_iSuitIndex; // «—π˙ ¿«ªÛ ¿Œµ¶Ω∫
+	INDEX	m_iColor;
+
+// º”º∫ Ω√Ω∫≈€ Ω∫≈≥ æ∆¿Ãƒ‹ ¿ßø° º”º∫ «•Ω√ [1/22/2013 Ranma]
+	BOOL		m_bAttribute;
+	int			m_nAtt;
+	int			m_nDef;
+	UIRectUV	m_rtAttributeIconAtt[eICON_ATTR_MAX];
+	UIRectUV	m_rtAttributeIconDef[eICON_ATTR_MAX];
+	CTextureData	*m_ptdAttrTexture;			// Texture of window
+
+#ifdef DURABILITY
+	CUIImage*	m_imgDurabilityZero;
+	bool		m_bDuraZero;
+#endif	//	DURABILITY
+
+	BOOL			m_bSocketCreatedItem;
+	int				m_nSocketInfoShowLine[MAX_SOCKET_OPTION];
+	CTextureData	*m_ptdSocketTexture;
+	UIRectUV		m_rtSocketIcon[SOCKET_MAX_ICON];
+	CTextureData	*m_ptdJewelGradeTexture;
+	UIRectUV		m_rtGradeIcon[JEWEL_GRADE_MAX];
+	// Fortune Info
+	BOOL m_bHasFortuneInfo;
+	int m_nFortuneSkillIndex;
+	int m_nFortuneSkillLevel;
+	CTString m_strFortuneInfoTitle;
+	CTString m_strFortuneSkillName;
+	std::vector<CTString> m_vecFortuneSkillDesc;
+	std::vector<CTString> m_vecFortuneSkillComment;
+	int m_nFortuneSkillIconTexID;
+	UIRectUV m_rtFotuneSkillIconUV;
+	int m_nFortuneInfoWidth;
+	int m_nFortuneInfoHeight;
+
+	bool	m_bShowStack;
+	CUIImageFont* m_pImageFont;
+
+	bool	m_bSkillBlend;
+
+	bool	m_bWearTab;
+
+	// ≥ª±∏µµ
+	int	m_nDurNow;
+	int	m_nDurMax;
+
+	// toggle ani
+	CUISpriteAni*	m_paniToggle;
+	bool			m_bToggleState;
+
 protected:
 	// UV
 	void	SetUV( FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT fTy1, FLOAT fTexWidth, FLOAT fTexHeight )
@@ -132,13 +229,6 @@ protected:
 	}
 	UIRectUV	&GetUV() { return m_rtUV; }
 
-	// Copy & swap
-	void	CopyItemInfo( CUIButtonEx &btnSrc );
-	void	CopySkillInfo( CUIButtonEx &btnSrc );
-	void	CopyActionInfo( CUIButtonEx &btnSrc );
-	void	CopyComboInfo( CUIButtonEx &btnSrc );
-	void	SwapItemInfo( CUIButtonEx &btnSrc );
-
 public:
 	CUIButtonEx();
 	~CUIButtonEx();
@@ -146,18 +236,29 @@ public:
 	// Create buton
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight,
 					SBYTE nWhichUI = -1, UIBtnExType betType = UBET_ITEM,
-					SBYTE nTab = -1, SBYTE nRow = -1, SBYTE nCol = -1 );
+					SBYTE nTab = -1, LONG inven_idx = -1 );
 
 	// Initialize button
 	void	InitBtn();
 
+	void	Destroy();
+
+	// Copy & swap
+	void	CopyItemInfo( CUIButtonEx &btnSrc );
+	void	CopySkillInfo( CUIButtonEx &btnSrc );
+	void	CopyActionInfo( CUIButtonEx &btnSrc );
+	void	CopyComboInfo( CUIButtonEx &btnSrc );
+	void	SwapItemInfo( CUIButtonEx &btnSrc );
+
 	// Render
 	void	Render();
 	void	RenderInfoPopup();
+	void	RenderFixInfoPopup(bool bUpDown = false/*true ¿ß∑Œ, false æ∆∑°∑Œ*/); // ∞Ì¡§µ«¥¬ ∆Àæ˜√¢ ∑£¥ı √ﬂ∞° [9/12/2012 Ranma]
 	void	RenderDefaultButton();
 	void	RenderHighlight( const COLOR colHighlight, const ULONG ulPBT = PBT_ADD );
 
 	// Common information
+	void	SetBaseInfo(UIBtnExType type, SBYTE cTexID, int texRow, int texCol);
 	void	SetTextureID( SBYTE nTexID ) { m_nTextureID = nTexID; }
 	void	SetBtnType( UIBtnExType betType ) { m_betType = betType; }
 	void	SetEmpty( BOOL bEmpty ) { m_bEmpty = bEmpty; }
@@ -166,32 +267,34 @@ public:
 	int		GetIndex() const { return m_nIndex; }
 	SBYTE	GetTextureID() const { return m_nTextureID; }
 	SBYTE	GetWhichUI() const { return m_nWhichUI; }
+	void	SetWhichUI( SBYTE WhichUI )	{ m_nWhichUI = WhichUI; }
 	UIBtnExType		GetBtnType() const { return m_betType; }
 	BOOL	IsEmpty() const { return m_bEmpty; }
 	UIBtnExState	GetBtnState() const { return m_bsState; }
 
 	// Item information
-	void	SetItemInfo( SBYTE nTab, SBYTE nRow, SBYTE nCol, int nIndex, int nUniIndex, SBYTE nWearingType ,
+	void	SetItemInfo( SBYTE nTab, LONG inven_idx, int nIndex, int nUniIndex, SBYTE nWearingType ,
 		int nCashIndex = -1, int nCashSection = -1, CTString nName ="", CTString nDesc ="", int nListCount = -1, int nTypeIndex = -1);
 	void	SetItemIndex( int nIndex ) { m_nIndex = nIndex; }
 	void	SetItemUniIndex( int nUniIndex ) { m_nUniIndex = nUniIndex; }
 	void	SetItemWearType( SBYTE nWearType ) { m_nWearType = nWearType; }
-	void	SetItemPlus( ULONG ulPlus ) { m_ulPlus = ulPlus; }
+	void	SetItemPlus(ULONG ulPlus);
 	void	SetItemFlag( ULONG ulFlag ) { m_ulFlag = ulFlag; }
 	void	SetItemUsed( LONG ulUsed )	{ m_ulUsed = ulUsed; }
 	void	SetItemUsed2( LONG ulUsed2 ) { m_ulUsed2 = ulUsed2; }
-	void	SetItemOptionData( SBYTE sbOption, SBYTE sbOptionType, SBYTE sbOptionLevel )
+	void	SetItemOptionData( SBYTE sbOption, SBYTE sbOptionType, LONG lOptionLevel, LONG lOriginOptionVar )
 	{
 		m_sbOptionType[sbOption] = sbOptionType;
-		m_sbOptionLevel[sbOption] = sbOptionLevel;
+		m_lOptionLevel[sbOption] = lOptionLevel;
+		m_lOriginOptionVar[sbOption] = lOriginOptionVar;
 	}
 	void	SetItemCount( SQUAD llCount ) { m_llCount = llCount; }
 	void	SetItemPrice( SQUAD llPrice ) { m_llPrice = llPrice; }
 	void	SetUseItemStartTime( SQUAD llTime ) { m_llTime = llTime; }
 	void	SetItemTab( SBYTE nTab ) { m_nTab = nTab; }
-	void	SetItemRow( SBYTE nRow ) { m_nRow = nRow; }
-	void	SetItemCol( SBYTE nCol ) { m_nCol = nCol; }
-	void	SetItemLocation( SBYTE nTab, SBYTE nRow, SBYTE nCol ) { m_nTab = nTab; m_nRow = nRow; m_nCol = nCol; }
+	void	SetInvenIndex( LONG Index) { m_InvenIndex = Index; }
+	void	SetServerIndex(SWORD Index) { m_nServerIdx = Index; }
+	void	SetItemLocation( SBYTE nTab, LONG inven_idx ) { m_nTab = nTab; m_InvenIndex = inven_idx; }
 	void	SetItemRareIndex( UWORD uwIndex ) { m_uwRareIndex =uwIndex; }
 	void	SetCashName(CTString strName) { m_nCashName = strName;}
 
@@ -206,8 +309,8 @@ public:
 	int		GetCashListCount() const { return m_nCashListCount; }
 	int		GetCashTypeIndex() const { return m_nCashTypeIndex; }
 	
-	CUIWindow* GetWindow() { return m_pParentWnd ;}
-	void	  SetWindow(CUIWindow* pParentWnd) { m_pParentWnd = pParentWnd ;}	
+	//CUIWindow* GetWindow() { return m_pParentWnd ;}
+	//void	  SetWindow(CUIWindow* pParentWnd) { m_pParentWnd = pParentWnd ;}	
 
 	// <-------------------------------
 	ULONG	GetItemPlus() const { return m_ulPlus; }
@@ -215,27 +318,62 @@ public:
 	LONG	GetItemUsed2() const { return m_ulUsed2; }
 	ULONG	GetItemFlag() const { return m_ulFlag; }
 	SBYTE	GetItemOptionType( int nOption ) const { return m_sbOptionType[nOption]; }
-	SBYTE	GetItemOptionLevel( int nOption ) const { return m_sbOptionLevel[nOption]; }
+	LONG	GetItemOptionLevel( int nOption ) const { return m_lOptionLevel[nOption]; }
+	LONG	GetItemOriginOptionVar( int nOption ) const { return m_lOriginOptionVar[nOption]; }
 	SQUAD	GetItemCount() const { return m_llCount; }
 	SQUAD	GetItemPrice() const { return m_llPrice; }
 	SQUAD	GetUseItemStartTime() const { return m_llTime; }
 	SBYTE	GetItemTab() const { return m_nTab; }
-	SBYTE	GetItemRow() const { return m_nRow; }
-	SBYTE	GetItemCol() const { return m_nCol; }
+	SWORD	GetInvenIndex() const { return m_InvenIndex; }
+	SWORD	GetServerIndex() const { return m_nServerIdx; }
 	UWORD	GetItemRareIndex() const {return m_uwRareIndex; }
 
 	// Skill information
 	void	SetSkillInfo( int nIndex, SBYTE sbSkillLevel, BOOL bSpecial = FALSE );
 	void	SetSkillLevel( SBYTE sbSkillLevel ) { m_nSkillLevel = sbSkillLevel; }
 	void	SetSkillDelay( BOOL bSkillDelay ) { m_bSkillDelay = bSkillDelay; }
+	void	SetSkillSealExp(SQUAD llCount ) { m_llCount = llCount; }
 	int		GetSkillIndex() const { return m_nIndex; }
 	SBYTE	GetSkillLevel() const { return m_nSkillLevel; }
 	BOOL	GetSkillDelay() const { return m_bSkillDelay; }
 	BOOL	GetSkillSpecial() const { return m_bSpecial; }
+	SQUAD	GetSkillSealExp() const { return m_llCount; }
 
+	// º”º∫ Ω√Ω∫≈€ [1/23/2013 Ranma]
+
+	int		GetAttrAtt() const 
+	{ 
+		return m_nAtt; 
+	}
+
+	int		GetAttrDef() const 
+	{ 
+		return m_nDef; 
+	}
+
+
+			void	SetSkillAffinityInfo( int _nIndex );
+	inline	void	SetSkillAffinityIndex( int _nIndex )				{ m_nIndex = _nIndex;			}
+	inline	void	SetSkillAffinityMaxPt( SQUAD _maxPoint )			{ m_llPrice = _maxPoint;		}
+	inline	void	SetSkillAffinityCurrentPt( SQUAD _currentPoint )	{ m_llCount = _currentPoint;	}
+	inline	void	SetSkillExpertCurrentPt( SQUAD _currentPoint )		{ m_llCount	= _currentPoint;	}
+	inline	int		GetSkillAffinityIndex()		const					{ return m_nIndex;	}
+	inline	SQUAD	GetSkillAffinityMaxPt()		const					{ return m_llPrice;	}
+	inline	SQUAD	GetSkillAffinityCurrentPt() const					{ return m_llCount;	}
+	inline	SQUAD	GetSkillExpertCurrentPt()	const					{ return m_llCount;	}
+	
 	// Action information
 	void	SetActionInfo( int nIndex );
 	int		GetActionIndex() const { return m_nIndex; }
+
+	// ø¯¡§¥Î
+	void	SetExpeditionInfo( SBYTE sbJob, SLONG slPosition, CTString strText , SLONG slBarWidth, SLONG slLevel);
+	void	CopyExpeditionInfo(CUIButtonEx &btnSrc);
+	void	SetBarWidth(SLONG slBarWidth) { m_slBarWidth = slBarWidth; }
+	void	SetExpeditionPosition(SLONG slPosition) { m_slPosition = slPosition; }
+	void	SetOnline(BOOL bOnline) { m_bOnline = bOnline; }
+	void	SetExpeditionCharName(CTString strName) { m_strCharName = strName; }
+	void	SetExpeditionCharLevel(SLONG slLevel) { m_slLevel = slLevel; }
 	
 	// Quest information
 	void	SetQuestInfo( int nIndex, SBYTE sbType, SBYTE sbQuestFlag );
@@ -249,34 +387,153 @@ public:
 	int		GetEventIndex() const { return m_nIndex; }
 
 	// Remission information
-	void	SetRemissionInfo( SBYTE iRemissionType, SBYTE nTab = -1, SBYTE nRow = -1, SBYTE nCol = -1, int nIndex = -1, int nUniIndex = -1, SBYTE nWearingType = -1 );
+	void	SetRemissionInfo( SBYTE iRemissionType, SWORD nTab = -1, SWORD inven_idx = -1, int nIndex = -1, int nUniIndex = -1, SBYTE nWearingType = -1 );
 	SBYTE	GetRemissionType() const { return m_sbRemissionType; }
 
-	// Aution information
-	void	SetAuctionNotice( int nIndex );
-	int		GetAuctionIndex() const { return m_nIndex; }
+	void	SetShowInfo(BOOL bshow) { m_bShow = bshow; }
 	BOOL	GetShowInfo() const { return m_bShow; }
+	BOOL	GetSetItemChack() const { return m_bSetItem; }
 
-	//[2/9/2009 Sora]Î≤ÑÌäºÏóê Íµ¨Îß§ÎåÄÌñâ Í¥ÄÎ†®Ï∫êÎ¶≠ÌÑ∞ Ïù¥Î¶Ñ ÌëúÏãú
+	//[2/9/2009 Sora]πˆ∆∞ø° ±∏∏≈¥Î«‡ ∞¸∑√ƒ≥∏Ø≈Õ ¿Ã∏ß «•Ω√
 	eUIBtnCharNameType GetCharType() { return m_eCharType; }
 	CTString GetCharName() { return m_strCharName; }
 	void	SetCharName(eUIBtnCharNameType eCharType, CTString strCharName);
 
+	// [sora] ø¯¡§¥Î ∞¸∑√
+	SBYTE GetCharJob() { return m_sbJob; }
+	SLONG GetCharPosition() { return m_slPosition; }
+	UIRectUV GetHPUV() { return m_rtHPUV; };
+	SLONG GetBarWidth() { return m_slBarWidth; }
+	BOOL GetOnline() { return m_bOnline; }
+	SLONG GetCharLevel() { return m_slLevel; }
+
+	// Equip Suit
+	void SetSuitIndex(INDEX iSuit) { m_iSuitIndex = iSuit; }
+	INDEX GetSuitIndex(void) { return m_iSuitIndex; }
+	
+	// Item blending color setting
+	void	SetItemColor(INDEX color) { m_iColor = color; }
+	INDEX	GetItemColor() { return m_iColor; }
+
+
 	// MissionCase information
 	void	SetComboInfo( SBYTE nTab = -1, SBYTE nRow = -1, SBYTE nCol = -1);
-
-	void	SetPetDataInfo(sPetItem_Info petinfo) { m_petData = petinfo;}
 
 	// Copy & swap
 	void	Copy( CUIButtonEx &btnSrc );
 	void	Swap( CUIButtonEx &btnSrc );
 
-	void	AddInfoString( CTString &strInfo, COLOR colInfo = 0xF2F2F2FF );
-	void	GetButtonInfo(/*CTString *strInfo, COLOR *colInfo, */int &nInfoWidth, int &nInfoHeight);
+	void	CopyItems( CItems* pItem);
+
+	void	AddInfoString( CTString &strInfo, COLOR colInfo = 0xF2F2F2FF,BOOL bSetIteminfo = FALSE );
+
+/////////////// πˆ∆∞ Ω∫∆Æ∏µ ////////////////////////////////
+	void	GetButtonInfo(int &nInfoWidth, int &nInfoHeight);
+/////////////// Item  /////////////////////////////////////
+	//void	ItemInfo(CTString &strTemp);
+	//void	noCountItem( CItemData &rItemData, CTString &strTemp );
+/////////////// Item End //////////////////////////////////
+
+/////////////// Skill  ////////////////////////////////////
+	//void	SkillInfo(CTString &strTem);
+/////////////// Skill End /////////////////////////////////
+
+/////////////// Action  ////////////////////////////////////
+	//void	ActionInfo(CTString &strTem);
+/////////////// Action End /////////////////////////////////	
+	CTString GetOptionPaciveInfo(CItemData& rItem);
+	CTString GetJewelOptionInfo(CItemData& rItem);
+	CTString GetOptionAciveSkillInfo(CItemData& rItem);
+	CTString GetJewelOptionSkillInfo(CItemData& rItem);
+
 	int		GetWearLevelReduction();
+	int		GetJewelLevelReduction();
+
+	void	GetSetItemInfo(int &nInfoWidth, int &nInfoHeight);
+	
+	DOUBLE	GetCoolTime(DOUBLE reUseTime, DOUBLE startTime);	// [091009 sora] ƒ≈∏¿” ∞ËªÍ
+	DOUBLE	GetReuseTime();
+	BOOL	HasReuseTimeItem();	// [2010/08/04 : Sora] ƒ≈∏¿”¿ª ∞°¡ˆ∞Ì ¿÷¥¬ æ∆¿Ã≈€ √º≈©
+
+	inline void	SetItemBelong(SBYTE sbBelong)	{ Item_Belong = sbBelong; }
+	inline SBYTE GetItemBelong()	{ return Item_Belong; }
+
+	inline void	SetItemSkill(SBYTE sbIndex, LONG lSkillIndex, SBYTE sbSkillLevel)
+	{
+		Item_SkillIndex[sbIndex] = lSkillIndex;
+		Item_SkillLevel[sbIndex] = sbSkillLevel;
+	}
+	// socket system [5/10/2010 rumist]
+	inline void	InitItemSocketInfo()
+	{
+		Item_SocketCount = 0;
+		memset( &Item_SocketJewelIndex[0], -1, sizeof(LONG) * MAX_SOCKET_OPTION );
+	}
+
+	inline void SetItemSocketCount( SBYTE sbCount )			{ Item_SocketCount = sbCount;	}
+	inline void	SetItemSocket( SBYTE sbIndex, LONG lJewelIndex )
+	{
+		Item_SocketJewelIndex[sbIndex] = lJewelIndex;
+	}
+
+	inline LONG GetItemSkillIndex(SBYTE sbPos)
+	{
+		return Item_SkillIndex[sbPos];
+	}
+	
+	inline SBYTE GetItemSkillLevel(SBYTE sbPos)
+	{
+		return Item_SkillLevel[sbPos];
+	}
+
+	// socket system [5/10/2010 rumist]
+	inline const SBYTE	GetItemSocketCount() const			{ return Item_SocketCount;		}
+	inline LONG GetItemSocketJewelIndex( SBYTE sbPos )
+	{
+		return Item_SocketJewelIndex[sbPos];
+	}
+
+	inline BOOL GetItemSocketExist()	const				{ return (Item_SocketCount > 0);	}
+
+	inline void SetItemPlus2(LONG lplus)
+	{
+		m_lState_plus = lplus;
+	}
+
+	inline LONG GetItemPlus2()
+	{
+		return m_lState_plus;
+	}
+
+	// toggle Ani State
+	void SetToggleState(bool bToggle) { m_bToggleState = bToggle; }
+	bool IsToggleState()			  { return m_bToggleState; }
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
+
+	bool	GetStack() { return m_bShowStack; }
+	void	SetStack(bool bStack) { m_bShowStack = bStack; }
+
+	void	SetSkillBlend(bool bBlend, int idx);
+	bool	GetSkillBlend()				{ return m_bSkillBlend; }
+
+	void	UpdateCoolTime();
+
+	bool	IsWearTab()				{ return m_bWearTab; }
+	void	setWearTab(bool bVal)	{ m_bWearTab = bVal; }
+
+	// ≥ª±∏µµ
+	void	SetItemDurNow(int nowDur);
+	void	SetItemDurMax(int maxDur) { m_nDurMax = maxDur; }
+	int	GetItemDurMax()			{ return m_nDurMax; }
+	int	GetItemDurNow()			{ return m_nDurNow; }
+
+protected:
+
+	void	RenderStack(int nX, int nY, CDrawPort* pDrawPort);
+	void	RenderDurZero(int nX, int nY, CDrawPort* pDraw);
+	void	RenderToggleAni(int nX, int nY, CDrawPort* pDrawPort);
 };
 
 

@@ -28,9 +28,9 @@ CProjection3D::CProjection3D(void) {
 	pr_bMirror = FALSE;
 	pr_bWarp = FALSE;
 	pr_fViewStretch = 1.0f;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 	pr_bNiceWater = FALSE;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
 }
 
 CPlacement3D _plOrigin(FLOAT3D(0,0,0), ANGLE3D(0,0,0));

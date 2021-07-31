@@ -1,8 +1,15 @@
+
 #include <afxcmn.h>			// MFC support for Windows Common Controls
 #include <commdlg.h>
 
 #define ENGINE_INTERNAL 1
 #define ENGINEGUI_EXPORTS 1
+
+#if		!defined(WORLD_EDITOR)
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#endif	// WORLD_EDITOR
+
 #include <EngineGUI/EngineGUI.h>
 
 #include "Resource.h"

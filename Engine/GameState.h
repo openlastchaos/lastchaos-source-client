@@ -13,24 +13,19 @@
 #include <Engine/GlobalDefinition.h>
 #include <Engine/Entities/ItemEffect.h>
 #include <Engine/LocalDefine.h>
+#include <Engine/Ska/AnimSet.h>
 
+#define MAX_SLOT		(8)
+#define	MAX_ERROR_MSG	(57)
 
-#define MAX_SLOT		(4)	//wooss 050819
-#define	MAX_ERROR_MSG	(50)
+#define WEAR_COUNT 8
+static int wearTypeTable[WEAR_COUNT] = {WEAR_HELMET, WEAR_JACKET, WEAR_WEAPON, WEAR_PANTS, WEAR_SHIELD, WEAR_GLOVES, WEAR_BOOTS, 7};
 
-#ifdef HEAD_CHANGE
-	#define WEAR_COUNT 7
-#else
-	#define WEAR_COUNT 6
-#endif
-
-
-
-#ifdef HEAD_CHANGE
-	static int wearTypeTable[WEAR_COUNT] = {WEAR_HELMET, WEAR_JACKET, WEAR_WEAPON, WEAR_PANTS, WEAR_SHIELD, WEAR_GLOVES, WEAR_BOOTS };
-#else
-	static int wearTypeTable[WEAR_COUNT] = {WEAR_JACKET, WEAR_WEAPON, WEAR_PANTS, WEAR_SHIELD, WEAR_GLOVES, WEAR_BOOTS };
-#endif
+enum eModelUIType
+{
+	LOGIN_MODEL_TYPE_SELECTUI = 0,
+	LOGIN_MODEL_TYPE_CREATEUI,
+};
 
 class ENGINE_API CGameState
 {
@@ -38,24 +33,26 @@ public:
 	struct SLOT_INFO
 	{
 		BOOL		bActive;		
-		SLONG		index;	//ì¸ë±ìŠ¤
-		char		name[50]; //ìºë¦­ ì´ë¦„
-		SBYTE		job;		//ì§ì—…
-		SBYTE		job2;		//ì§ì—…
-		SBYTE		hairstyle;//í—¤ì–´ ìŠ¤íƒ€ì¼ //1013
-		SBYTE		facestyle;//ì–¼êµ´ ìŠ¤íƒ€ì¼
-		SLONG		level;	//ë ˆë²¨
-		SQUAD		curExp, needExp; //ê²½í—˜ì¹˜
-		SLONG		hp; //í˜„ì¬ì²´ë ¥
-		SLONG		maxHP; //ìµœëŒ€ì²´ë ¥
-		SLONG		mp; //í˜„ì¬ë§ˆë‚˜
-		SLONG		maxMP; //ìµœëŒ€ë§ˆë‚˜
+		SLONG		index;	//ÀÎµ¦½º
+		char		name[50]; //Ä³¸¯ ÀÌ¸§
+		SBYTE		job;		//Á÷¾÷
+		SBYTE		job2;		//Á÷¾÷
+		SBYTE		hairstyle;//Çì¾î ½ºÅ¸ÀÏ //1013
+		SBYTE		facestyle;//¾ó±¼ ½ºÅ¸ÀÏ
+		SLONG		level;	//·¹º§
+		SQUAD		curExp, needExp; //°æÇèÄ¡
+		SLONG		hp; //ÇöÀçÃ¼·Â
+		SLONG		maxHP; //ÃÖ´ëÃ¼·Â
+		SLONG		mp; //ÇöÀç¸¶³ª
+		SLONG		maxMP; //ÃÖ´ë¸¶³ª
 		SLONG		wear[WEAR_COUNT];		
 		SLONG		itemPlus[WEAR_COUNT];
 		SLONG		m_time;
-		SLONG		sp; //ìŠ¤í‚¬ í¬ì¸íŠ¸
+		SBYTE		sbMoveState;		// Ä³¸¯ÅÍ ÀÌµ¿ °ü·Ã [7/19/2012 rumist]
+		SLONG		sp; //½ºÅ³ Æ÷ÀÎÆ®
 		CItemEffect itemEffect;
 		BOOL		bExtension;
+		CTString	strGuildName;
 	};
 
 	enum GameMode 
@@ -64,6 +61,7 @@ public:
 		GM_NETWORK,
 		GM_INTRO,
 		GM_LOGIN,
+		GM_RESTART,
 	};
 
 public:
@@ -75,12 +73,28 @@ public:
 		m_ulExistChaNum		= 0;
 		m_iSelectedSlot		= 0;
 		
-		for(int i = 0 ; i<MAX_SLOT ;i++)
+		int i;
+		for(i = 0; i < MAX_SLOT; i++)
 		{
 			m_pEntModels[i]		= NULL;
+			m_pSelectUIModels[i] = NULL;
 		}
-		
-	};	
+
+		for (i = 0; i < TOTAL_JOB; i++)
+		{
+			m_pCharCreateUIModels[i] = NULL;
+		}
+
+		for (i = 0; i < WEAR_COUNT; i++)
+		{
+			m_nCharCreateModelWearingItems[i] = -1;
+		}
+
+		m_bCreatableNS		= FALSE;
+		m_bRestartGame		= FALSE;
+	};
+
+	~CGameState();
 
 	inline INDEX&	GetGameMode()
 	{ return	m_RunningGameMode; };
@@ -100,15 +114,15 @@ public:
 	void				ClearCharacterSlot();
 	void				ReceiveCharSlot(CNetworkMessage &nmMessage);
 
-	// ìºë¦­í„° ìƒì„ í™”ë©´ì—ì„œ ìºë¦­í„° ì˜· ì…íˆê¸°.  
-	// FIXME : player.esì™€ ë™ì¼í•œ ë¶€ë¶„ì„.
+	// Ä³¸¯ÅÍ »ı¼±È­¸é¿¡¼­ Ä³¸¯ÅÍ ¿Ê ÀÔÈ÷±â.  
+	// FIXME : player.es¿Í µ¿ÀÏÇÑ ºÎºĞÀÓ.
 	void				DeleteDefaultArmor( CModelInstance *pMI, int type, int iJob );
 	void				TakeOffArmor( CModelInstance *pMI, CItemData& ID );
 	void				WearingArmor( CModelInstance *pMI, CItemData& ID );
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	// [070810: Su-won] EVENT_ADULT_OPEN
-	// í—Œí„°&ì¹´ì˜¤ ë¨¸ë¦¬ë  ì°©ìš©ê´€ë ¨
+	// ÇåÅÍ&Ä«¿À ¸Ó¸®¶ì Âø¿ë°ü·Ã
 	void				GetHairBandFilePath( INDEX iIndex, int iJob, CTString* strBMPath, CTString* strTexPath );
 	void				WearingHairBand( CModelInstance *pMI, INDEX iIndex );
 	void				TakeOffHairBand( CModelInstance *pMI, INDEX iIndex );
@@ -116,26 +130,63 @@ public:
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//////////////////////////////////////////////////////////////////////////
-	// X-MAS ë£¨ëŒí”„ ì½”
+	// X-MAS ·çµ¹ÇÁ ÄÚ
 	void				GetRudolphNoseFilePath(INDEX iIndex, int iJob, CTString& strBMPath, CTString& strTexPath);
 	void				WearingRudolphNose(CModelInstance *pMI, INDEX iIndex);
 	void				TakeOffRudolphNose(CModelInstance *pMI, INDEX iIndex);
 
-	// ì—ëŸ¬ ë©”ì‹œì§€ ì¶œë ¥.
+	// ¿¡·¯ ¸Ş½ÃÁö Ãâ·Â.
 	void				DisplayErrorMessage(unsigned char failtype, int nWhichUI, int nCommandCode, int nPosX = -1, int nPosY = -1);	
 	
-	// ë¡œê·¸ì¸ í”„ë¡œì„¸ìŠ¤ ê³¼ì •ìƒì—ì„œì˜ ì¹´ë©”ë¼...
-	void				BackToLogin();
+	// ·Î±×ÀÎ ÇÁ·Î¼¼½º °úÁ¤»ó¿¡¼­ÀÇ Ä«¸Ş¶ó...
 	void				BackToSelChar();
 	void				SetCameraByJob(int iJob = -1);
+
+	// ·Î±×ÀÎ ÇÁ·Î¼¼½º °úÁ¤»ó¿¡¼­ÀÇ ¸ğµ¨¼ÂÆÃ
+	CEntity*			CopyModel(CEntity* pModel, CEntity* pCopyModel);
+	void				InitSelectModel(int nSlotPos);
+	void				SetCreateUIModelSlot(int nSlotPos, int iJob, INDEX iHairStyle = 1, INDEX iFaceStyle = 1);
+	void				SetSelectUIModelSlot(int nSlotPos, int iJob, INDEX iHairStyle = 1, INDEX iFaceStyle = 1);
 	
-	// í…ŒìŠ¤íŠ¸ìš©
+	void				SelectSlot(int nSlotPos, int nAnimID);
+	void				ClearModelEffect(int nSlotPos, eModelUIType eUiType);
+
+	void				DeleteSelectModel();
+	// µğÆúÆ® ¾Æ¸Ó ÀÔÈ÷±â
+	void				DefaultArmorWearing(CModelInstance *pMI, int nWearPos, int iJob);
+	// Ä³¸¯ÅÍ »ı¼ºÃ¢ ¸ğµ¨ ¼ÂÆÃ
+	void				CreateUIModelWearing(int nWearPos, int iJob, int nWearItemIdx);
+	void				SelectUIModelwearing(int nSlotPos, int nWearPos, int iJob, int nWearItemIdx);
+	void				CreateUIModelDefaultWearing(int iJob);
+	void				SetItemEffect(CEntity* pModel, int iJob, int nItemIdx, int nPlus, int nWearPos);
+	// ¸ğµ¨ Çì¾î, ¾ó±¼ ¼ÂÆÃ
+	void				ModelChangeFace(CEntity* pModel, int nJob, INDEX iFaceStyle);
+	void				ModelChangeHair(CEntity* pModel, int nJob, INDEX iHairStyle);
+	// ¿¡´Ï ¼ÂÆÃ
+	void				ModelPlayAnimation(CEntity* pModel, int nJob, INDEX AnimID, ULONG ulFlag = AN_REMOVE_ON_END);
+
+	// Å×½ºÆ®¿ë
 	void				WearingArmorTest(CModelInstance *pMI, INDEX iIndex);
 	void				TakeOffArmorTest(CModelInstance *pMI, INDEX iIndex);
 
+	// ³ªÀÌÆ® ½¦µµ¿ì »ı¼º Ä«µå °ü·Ã ÇÔ¼ö. [11/6/2009 rumist]
+	inline const BOOL	IsCreatableNightShadow() const				{ return m_bCreatableNS;	}
+	void				SetCreatableNightShadow( BOOL bCreatable )	{ m_bCreatableNS = bCreatable;	}
+
+	FLOAT				GetAnimPlayTime(CEntity* pModel, INDEX AnimID); // ¿¡´Ï¸ŞÀÌ¼ÇÀÇ ÇÁ·¹ÀÓ ±æÀÌ
+	FLOAT				GetAnimStartTime(CEntity* pModel, INDEX AnimID); // ¿¡´Ï¸ŞÀÌ¼Ç ÇÃ·¹ÀÌµÈ ½Ã°£
+	bool				IsPlayAnim(BOOL bCreate, int nSlot, int nJob, INDEX AnimID);
+	CEntity*			GetModelEntity(BOOL bCreate, int nSlot);
+
+	void				SetRestartGameValue(BOOL bSet)		{ m_bRestartGame = bSet; }
+	BOOL				GetRestartGameValue()				{ return m_bRestartGame; }
+	BOOL				IsRestartGame()						{ return (m_bRestartGame ? TRUE : FALSE); }
 public:
 	CEntity*			m_pEntModels[MAX_SLOT];
+	CEntity*			m_pSelectUIModels[MAX_SLOT];
+	CEntity*			m_pCharCreateUIModels[TOTAL_JOB];
 	SLOT_INFO			m_SlotInfo[MAX_SLOT];
+	int					m_nCharCreateModelWearingItems[WEAR_COUNT];
 
 	CTString			m_astrErrorMsg[MAX_ERROR_MSG];
 
@@ -145,6 +196,8 @@ private:
 	BOOL				m_bQuitScreen;		
 	ULONG				m_ulExistChaNum;
 	INDEX				m_iSelectedSlot;
+	BOOL				m_bCreatableNS;			// Creatable Night shadow. [11/6/2009 rumist]
+	BOOL				m_bRestartGame;			// Game restart reserve value
 };
 
 ENGINE_API extern CGameState *_pGameState;

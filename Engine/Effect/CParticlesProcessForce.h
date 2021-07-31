@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLESPROCESSFORCE_H__
 #define __CPARTICLESPROCESSFORCE_H__
 
@@ -32,4 +32,4 @@ protected:
 };
 
 #endif //__CPARTICLESPROCESSFORCE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

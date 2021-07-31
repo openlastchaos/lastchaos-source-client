@@ -61,15 +61,18 @@ functions:
   /* Adjust model mip factor if needed. */
   void AdjustMipFactor(FLOAT &fMipFactor)
   {
-    // adjust flare glow, to decrease power with how you get closer
-    CAttachmentModelObject *pamo = GetModelObject()->GetAttachmentModel(ITEMHOLDER_ATTACHMENT_FLARE);
-    if( pamo != NULL)
-    {
-      FLOAT fRatio = (Clamp( fMipFactor, 5.0f, 7.0f)-5.0f)/2.0f;
-      UBYTE ubRatio = UBYTE(255*fRatio);
-      COLOR colMutiply = RGBToColor(ubRatio,ubRatio,ubRatio)|CT_OPAQUE;
-      pamo->amo_moModelObject.mo_colBlendColor = colMutiply;
-    }
+	  if (en_RenderType == CEntity::RT_MODEL)
+	  {
+			// adjust flare glow, to decrease power with how you get closer
+			CAttachmentModelObject *pamo = GetModelObject()->GetAttachmentModel(ITEMHOLDER_ATTACHMENT_FLARE);
+			if( pamo != NULL)
+			{
+			  FLOAT fRatio = (Clamp( fMipFactor, 5.0f, 7.0f)-5.0f)/2.0f;
+			  UBYTE ubRatio = UBYTE(255*fRatio);
+			  COLOR colMutiply = RGBToColor(ubRatio,ubRatio,ubRatio)|CT_OPAQUE;
+			  pamo->amo_moModelObject.mo_colBlendColor = colMutiply;
+			}
+	  }
 
     // if never picked
     if (m_ulPickedMask==0) {
@@ -290,8 +293,6 @@ procedures:
  ************************************************************/
   ItemCollected(EPass epass) { return; };
 
-
-
 /************************************************************
  *                I  T  E  M    L  O  O  P                  *
  ************************************************************/
@@ -322,6 +323,7 @@ procedures:
           SendToTarget(m_penTarget, EET_TRIGGER, epass.penOther);
           m_penTarget = NULL;
         }
+
         call ItemCollected(epass); 
         resume;
       }
@@ -339,6 +341,14 @@ procedures:
         SetItemType(eSetType.iType);
         resume;
       }
+	  on (EDeactivate eDeactivate) : {
+		  call ItemDeActivate(eDeactivate);
+		resume;
+	  }
+	  on (EActivate eActivate) : {
+		  call ItemActivate(eActivate);
+		resume;
+	  }
       on (EEnd) : { stop; }
     }
     // wait for sound to end
@@ -380,5 +390,10 @@ procedures:
     }
     return;
   };
-};
 
+/************************************************************
+ *          VIRTUAL PROCEDURES THAT NEED OVERRIDE           *
+ ************************************************************/
+  ItemActivate(EActivate eAct) { return; };
+  ItemDeActivate(EDeactivate eDeAct) { return; };
+};

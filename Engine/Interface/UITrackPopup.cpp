@@ -2,10 +2,11 @@
 #include <Engine/Interface/UITrackPopup.h>
 #include <Engine/Interface/UITextureManager.h>
 
-// ë¦¬ìŠ¤íŠ¸ ë°•ìŠ¤ í¬ê¸°ì— ë§ê²Œ ë°•ìŠ¤ë¥¼ ê·¸ë¦´ë•Œ ìœ„,ì•„ë˜/ ì¢Œ,ìš° ì—¬ë°± 
+// ¸®½ºÆ® ¹Ú½º Å©±â¿¡ ¸Â°Ô ¹Ú½º¸¦ ±×¸±¶§ À§,¾Æ·¡/ ÁÂ,¿ì ¿©¹é 
 #define SPACE_UPDONW	14//27		
 #define SPACE_LEFTRIGT	10//19
 
+// russia support. [8/31/2010 rumist]
 
 //------------------------------------------------------------------------------
 // CUITrackPopup::CUITrackPopup
@@ -14,7 +15,8 @@
 //------------------------------------------------------------------------------
 CUITrackPopup::CUITrackPopup()
 {
-	m_nMaxCharCount = 0;	// ìµœëŒ€ ê¸€ì ìˆ˜ 
+	m_nMaxCharCount = 0;	// ÃÖ´ë ±ÛÀÚ ¼ö 
+	m_strLongestStringInMenu = "";
 	
 }
 
@@ -26,7 +28,7 @@ CUITrackPopup::CUITrackPopup()
 //------------------------------------------------------------------------------
 CUITrackPopup::~CUITrackPopup()
 {
-
+	m_vecCommandList.clear(); // [sora] command »èÁ¦
 }
 
 
@@ -35,7 +37,17 @@ void CUITrackPopup::Render()
 	if( !IsVisible() ) return;
 	if( m_vecString.size() <= 0 ) return;
 
-	// ë°°ê²½ ë Œë”
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+#if defined G_RUSSIA
+	// [2011/05/17 : Sora] ÆË¾÷Ã¢¿¡¼­ ½ºÆ®¸µÀ» ¾²Áö ¾ÊÀ» °æ¿ì ±ÛÀÚ ±æÀÌ°¡ 0ÀÌµÇ¾î ÆË¾÷Ã¢ »çÀÌÁî°¡ ÁÙ¾îµç´Ù
+	if( m_strLongestStringInMenu.Length() > 0 )
+	{
+		Resize( pDrawPort->GetTextWidth( m_strLongestStringInMenu ) );		
+	}
+#endif
+
+	// ¹è°æ ·»´õ
 	int	nX, nY;
 	UIRect m_rcBack;
 
@@ -43,66 +55,78 @@ void CUITrackPopup::Render()
 	m_rcBack.SetRect( nX, nY, nX + m_nWidth, nY + m_nHeight );
 
 	// Item Back region
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Left, m_rcBack.Top,
+	pDrawPort->AddTexture( m_rcBack.Left, m_rcBack.Top,
 										m_rcBack.Left + 7, m_rcBack.Top + 7,
 										m_rtBackUL.U0, m_rtBackUL.V0, m_rtBackUL.U1, m_rtBackUL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Left + 7, m_rcBack.Top,
+	pDrawPort->AddTexture( m_rcBack.Left + 7, m_rcBack.Top,
 										m_rcBack.Right - 7, m_rcBack.Top + 7,
 										m_rtBackUM.U0, m_rtBackUM.V0, m_rtBackUM.U1, m_rtBackUM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Right - 7, m_rcBack.Top,
+	pDrawPort->AddTexture( m_rcBack.Right - 7, m_rcBack.Top,
 										m_rcBack.Right, m_rcBack.Top + 7,
 										m_rtBackUR.U0, m_rtBackUR.V0, m_rtBackUR.U1, m_rtBackUR.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Left, m_rcBack.Top + 7,
+	pDrawPort->AddTexture( m_rcBack.Left, m_rcBack.Top + 7,
 										m_rcBack.Left + 7, m_rcBack.Bottom - 7,
 										m_rtBackML.U0, m_rtBackML.V0, m_rtBackML.U1, m_rtBackML.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Left + 7, m_rcBack.Top + 7,
+	pDrawPort->AddTexture( m_rcBack.Left + 7, m_rcBack.Top + 7,
 										m_rcBack.Right - 7, m_rcBack.Bottom - 7,
 										m_rtBackMM.U0, m_rtBackMM.V0, m_rtBackMM.U1, m_rtBackMM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Right - 7, m_rcBack.Top + 7,
+	pDrawPort->AddTexture( m_rcBack.Right - 7, m_rcBack.Top + 7,
 										m_rcBack.Right, m_rcBack.Bottom - 7,
 										m_rtBackMR.U0, m_rtBackMR.V0, m_rtBackMR.U1, m_rtBackMR.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Left, m_rcBack.Bottom - 7,
+	pDrawPort->AddTexture( m_rcBack.Left, m_rcBack.Bottom - 7,
 										m_rcBack.Left + 7, m_rcBack.Bottom,
 										m_rtBackLL.U0, m_rtBackLL.V0, m_rtBackLL.U1, m_rtBackLL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Left + 7, m_rcBack.Bottom - 7,
+	pDrawPort->AddTexture( m_rcBack.Left + 7, m_rcBack.Bottom - 7,
 										m_rcBack.Right - 7, m_rcBack.Bottom,
 										m_rtBackLM.U0, m_rtBackLM.V0, m_rtBackLM.U1, m_rtBackLM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBack.Right - 7, m_rcBack.Bottom - 7,
+	pDrawPort->AddTexture( m_rcBack.Right - 7, m_rcBack.Bottom - 7,
 										m_rcBack.Right, m_rcBack.Bottom,
 										m_rtBackLR.U0, m_rtBackLR.V0, m_rtBackLR.U1, m_rtBackLR.V1,
 										0xFFFFFFFF );
 
-	// ì›ë˜ ë¦¬ìŠ¤íŠ¸ ë°•ìŠ¤ì— ëŒ€í•œ ë‚´ìš© ëœë”
+	// ¿ø·¡ ¸®½ºÆ® ¹Ú½º¿¡ ´ëÇÑ ³»¿ë ·£´õ
 	CUIListBox::Render();
 	
 }
 
 //------------------------------------------------------------------------------
 // UITrackPopup::AddMenuList
-// Explain:  ë©”ë¥˜ í•­ëª© ì¶”ê°€ 
-//			ìƒˆë¡œìš´ í•­ëª©ì´ ì¶”ê°€ ë  ë•Œë§Œ ListBoxì˜ í¬ê¸°ê°€ ì¡°ì ˆëœë‹¤.
+// Explain:  ¸Ş·ù Ç×¸ñ Ãß°¡ 
+//			»õ·Î¿î Ç×¸ñÀÌ Ãß°¡ µÉ ¶§¸¸ ListBoxÀÇ Å©±â°¡ Á¶ÀıµÈ´Ù.
 // Date : 2005-05-17,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
-void CUITrackPopup::AddMenuList( CTString strText, COLOR colText )
+void CUITrackPopup::AddMenuList( CTString strText, COLOR colText, int nCommandNum)
 {
 	AddString( 0, strText, colText );
+
+	m_vecCommandList.push_back(nCommandNum); // [sora] command°ª ÀúÀå
+
+	if (CUIListBox::GetScrollBar() == FALSE)
+		CUIListBox::ChangeLineCount(m_vecString[0].vecString.size());
 		
-	if( m_nMaxCharCount < strText.Length() ) // ìµœëŒ€ ê¸€ììˆ˜ë¥¼ ì €ì¥í•´ ë†“ëŠ”ë‹¤~
+	if( m_nMaxCharCount < strText.Length() ) // ÃÖ´ë ±ÛÀÚ¼ö¸¦ ÀúÀåÇØ ³õ´Â´Ù~
 	{
 		m_nMaxCharCount = strText.Length();
 	}
 	
-	Resize();
+#if defined G_RUSSIA
+	if( strText.Length() > m_strLongestStringInMenu.Length() )	
+	{
+		m_strLongestStringInMenu = strText;
+	}
+#else
+		Resize();
+#endif
 
-	// ì¼ë‹¨ì€ ìˆ¨ê²¨ ë†“êµ¬ 
+	// ÀÏ´ÜÀº ¼û°Ü ³õ±¸ 
 	Hide();
 }
 
@@ -114,18 +138,19 @@ void CUITrackPopup::AddMenuList( CTString strText, COLOR colText )
 //------------------------------------------------------------------------------
 void CUITrackPopup::ResetAllStrings()
 {
-	m_nMaxCharCount = 0;	// ìµœëŒ€ ê¸€ì ìˆ˜ 
+	m_nMaxCharCount = 0;	// ÃÖ´ë ±ÛÀÚ ¼ö 
 	SetCurSel( -1 );
 
 	CUIListBox::ResetAllStrings();
+	m_vecCommandList.clear(); // [sora] command »èÁ¦
 }
 
 
 //------------------------------------------------------------------------------
 // CUITrackPopup::MouseMessage
-// Explain:  ë³€ê²½ ì‚¬í•­ 
-//			1. ì…€ë ‰ì…˜ ì²˜ë¦¬ 
-//			2. LButton Up ì²˜ë¦¬
+// Explain:  º¯°æ »çÇ× 
+//			1. ¼¿·º¼Ç Ã³¸® 
+//			2. LButton Up Ã³¸®
 // Date : 2005-05-16,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 WMSG_RESULT CUITrackPopup::MouseMessage( MSG *pMsg )
@@ -150,7 +175,7 @@ WMSG_RESULT CUITrackPopup::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					int	nAbsY = GetAbsPosY();
-					// Over ì‹œ Selection ë˜ê²Œ ìˆ˜ì •
+					// Over ½Ã Selection µÇ°Ô ¼öÁ¤
 					m_nOverList = ( nY - nAbsY - m_nTextSY + m_nSelectOffsetY ) / m_nLineHeight;
 
 					int	nRealSel = m_nOverList + m_sbScrollBar.GetScrollPos();
@@ -177,7 +202,7 @@ WMSG_RESULT CUITrackPopup::MouseMessage( MSG *pMsg )
 		{
 			if( m_bSelectList )
 			{
-				// UPì‹œì— ì„ íƒ 
+				// UP½Ã¿¡ ¼±ÅÃ 
 				if( IsInside( nX, nY ) )
 				{
 					return WMSG_SUCCESS;
@@ -197,7 +222,7 @@ WMSG_RESULT CUITrackPopup::MouseMessage( MSG *pMsg )
 		{
 			if( m_bSelectList )
 			{
-				// UPì‹œì— ì„ íƒ 
+				// UP½Ã¿¡ ¼±ÅÃ 
 				if( IsInside( nX, nY ) )
 				{
 					int	nAbsY = GetAbsPosY();
@@ -206,6 +231,9 @@ WMSG_RESULT CUITrackPopup::MouseMessage( MSG *pMsg )
 					int	nRealSel = m_nOverList + m_sbScrollBar.GetScrollPos();
 					if( nRealSel >= 0 )//&& nRealSel < m_sbScrollBar.GetCurItemCount() )
 					{
+						if (nRealSel >= m_vecCommandList.size())
+							return WMSG_FAIL;
+
 						m_nSelectList = nRealSel;
 						return WMSG_COMMAND;
 					}
@@ -246,21 +274,34 @@ WMSG_RESULT CUITrackPopup::MouseMessage( MSG *pMsg )
 	return WMSG_FAIL;
 }
 
-void CUITrackPopup::Resize()
+void CUITrackPopup::Resize(int nStrLength /* = 0  */)
 {
-	// í˜„ì¬ ì…ë ¥ëœ ìŠ¤íŠ¸ë§ì— ë”°ë¥¸ ListBoxì˜ í¬ê¸° ì„¤ì • 
-	// Width = ê°€ì¥ ê¸´ ìŠ¤íŠ¸ë§ ê¸¸ì´ ê¸°ì¤€
-	m_nWidth = SPACE_UPDONW - _pUIFontTexMgr->GetFontSpacing() + m_nMaxCharCount *
-					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+	int nWidth = 0;
+	int nHeight = 0;
+	// ÇöÀç ÀÔ·ÂµÈ ½ºÆ®¸µ¿¡ µû¸¥ ListBoxÀÇ Å©±â ¼³Á¤ 
+	// Width = °¡Àå ±ä ½ºÆ®¸µ ±æÀÌ ±âÁØ
+#if defined G_RUSSIA
+	m_nWidth = SPACE_UPDONW - 10 + nStrLength + 10;
 
-	// Height = ë©”ë‰´ ìˆ˜ 
+	// Height = ¸Ş´º ¼ö 
 	//m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * _pUIFontTexMgr->GetLineHeight();
 	m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * m_nLineHeight;
 
-	// Selection Barì— ëŒ€í•œ í¬ê¸° ì¡°ì ˆ 
-	int nWidth = m_nWidth - 5;
-	int nHeight = _pUIFontTexMgr->GetLineHeight()+2;
+	// Selection Bar¿¡ ´ëÇÑ Å©±â Á¶Àı 
+	nWidth = m_nWidth - 5;
+	nHeight = _pUIFontTexMgr->GetLineHeight()+2;
+#else
+	m_nWidth = SPACE_UPDONW - _pUIFontTexMgr->GetFontSpacing() + m_nMaxCharCount *
+					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
+	// Height = ¸Ş´º ¼ö 
+	//m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * _pUIFontTexMgr->GetLineHeight();
+	m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * m_nLineHeight;
+
+	// Selection Bar¿¡ ´ëÇÑ Å©±â Á¶Àı 
+	nWidth = m_nWidth - 5;
+	nHeight = _pUIFontTexMgr->GetLineHeight()+2;
+#endif
 	// Selection Width 
 	if( nWidth > m_nWidth || nWidth == -1 )
 		nWidth = m_nWidth;
@@ -270,7 +311,7 @@ void CUITrackPopup::Resize()
 	if( nHeight < m_nLineHeight || nHeight == -1 )
 		nHeight = m_nLineHeight;
 
-	nLeft+=1;  // ì¢Œìš° ì•½ê°„ì˜ ì—¬ë°± ì¡°ì •
+	nLeft+=1;  // ÁÂ¿ì ¾à°£ÀÇ ¿©¹é Á¶Á¤
 	nWidth-=4;
 
 	m_rcSelectOver.SetRect( nLeft, -m_nSelectOffsetY, nLeft + nWidth, nHeight - m_nSelectOffsetY );
@@ -282,15 +323,40 @@ void CUITrackPopup::DeleteMenuList( int nCol, int nIndex )
 
 	RemoveString(nIndex, nCol);	
 
+	// ÇØ´ç ¶óÀÎÀÇ command »èÁ¦
+	std::vector<int>::iterator iter = m_vecCommandList.begin();
+	iter += nIndex;
+	m_vecCommandList.erase(iter);
+
+	int nMaxLengthIdx = 0;
+
 	if( strMenu.Length() == m_nMaxCharCount )
 	{
 		m_nMaxCharCount =0;
 		for(int i=0; i<m_vecString[nCol].vecString.size(); ++i)
 		{
 			if( m_vecString[nCol].vecString[i].Length() > m_nMaxCharCount )
+			{
 				m_nMaxCharCount =m_vecString[nCol].vecString[i].Length();
+				nMaxLengthIdx = i;
+			}
 		}
 	}
 
+#if defined G_RUSSIA
+	m_strLongestStringInMenu = m_vecString[nCol].vecString[nMaxLengthIdx];
+#else
 	Resize();
+#endif
+}
+
+// [sora] ÁöÁ¤ÇÑ ¸Ş´ºÀÇ commandnum°ªÀ» ¹İÈ¯
+int CUITrackPopup::GetCommandNum(int nIndex)
+{
+	if(nIndex > m_vecCommandList.size() || nIndex < 0)
+	{
+		return -1;
+	}
+
+	return m_vecCommandList[nIndex];
 }

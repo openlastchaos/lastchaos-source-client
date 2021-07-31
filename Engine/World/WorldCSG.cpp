@@ -1420,10 +1420,10 @@ void CWorld::CreatePolygon(CBrushVertexSelection &selVtx)
 	bpoNew.bpo_pbscSector=pbsc;
 	
 	bpoNew.bpo_colColor=C_GRAY|CT_OPAQUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Worldbase Overbright to NonOver)(0.1)
 	bpoNew.bpo_colShadow=C_WHITE|CT_OPAQUE;
 	//bpoNew.bpo_colShadow=C_GRAY|CT_OPAQUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Worldbase Overbright to NonOver)(0.1)
 	
 	pbsc->bsc_pbmBrushMip->bm_pbrBrush->CalculateBoundingBoxes();
 	

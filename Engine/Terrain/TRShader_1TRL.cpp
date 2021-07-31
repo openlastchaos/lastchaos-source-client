@@ -9,13 +9,13 @@ static const INDEX iBaseVP = 0;
 
 SHADER_MAIN(TRShader_1TRL)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	shaSetDefaultConstantRegisters();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	shaRender();
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(TRShader_1TRL,ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -30,7 +30,7 @@ SHADER_DESC(TRShader_1TRL,ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = SHA_POSITION_STREAM|SHA_NAKED_CODE;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(TRShader_1TRL, CTString &strVPCode, INDEX iVertexProgram)
@@ -70,13 +70,21 @@ SHADER_PCODE(TRShader_1TRL, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eF
 	ASSERT(iPixelProgram==iBasePP);
 	ASSERT(eFogType==FT_NONE);
 
-	strPPCode = "tex    t0                     \n" // load layer 0 texture
+/*	strPPCode = "tex    t0                     \n" // load layer 0 texture
 				"tex    t1                     \n" // load layer 0 mask
 				
 				"mul    t1.a,    t0.a,   t1.a  \n" // multiply layer 0 texture with its alpha
 				"mul    r0.rgb,  t0,     t1.a  \n" //  and alpha of layer 0 mask texture
 
 				"+mov   r0.a,    1-t1.a        \n" // output layer alpha
+				;*/
+	strPPCode = "texld	r0,    t0                     \n" // load layer 0 texture
+				"texld	r1,    t1                     \n" // load layer 0 mask
+				
+				"mul    r1.a,    r0.a,   r1.a  \n" // multiply layer 0 texture with its alpha
+				"mul    r0.rgb,  r0,     r1.a  \n" //  and alpha of layer 0 mask texture
+
+				"+mov   r0.a,    1-r1.a        \n" // output layer alpha
 				;
 }
 

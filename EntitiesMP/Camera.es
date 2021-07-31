@@ -68,7 +68,9 @@ properties:
  72 FLOAT3D m_vRelTargetOffset = FLOAT3D(0,0,0),
 
  82 BOOL m_bStopLerp = FALSE,
- 83 BOOL bPlayedCamera = FALSE, 
+ 83 BOOL bPlayedCamera = FALSE,
+ 84 CEntityPointer m_penActionTarget "Action Target" 'C' COLOR(C_lBLUE|0xFF),
+ 85 BOOL m_bActive "Active Camera" = TRUE,
 
 components:
 
@@ -512,18 +514,134 @@ functions:
 
 
 procedures:
+  Main()
+  {
+    // init as model
+    InitAsEditorModel();
+    SetPhysicsFlags(EPF_MOVABLE);
+    SetCollisionFlags(ECF_CAMERA);
+    SetSpawnFlags(GetSpawnFlags()&~SPF_COOPERATIVE);
+
+    // set appearance
+    FLOAT fSize = 5.0f;
+    GetModelObject()->mo_Stretch = FLOAT3D(fSize, fSize, fSize);
+    SetModel(MODEL_CAMERA);
+    SetModelMainTexture(TEXTURE_CAMERA);
+    m_fLastFOV = m_fFOV;
+
+		if( m_penTarget!=NULL && !IsOfClass( m_penTarget, &CCameraMarker_DLLClass)) 
+		{
+      WarningMessage( "Entity '%s' is not of Camera Marker class!", m_penTarget);
+      m_penTarget = NULL;
+    }
+
+    if( m_bAutoRotation || m_penTarget!=NULL)
+    {
+      autowait(0.1f);
+    }
+
+    m_vRelTargetOffset=FLOAT3D(0,0,0);
+    if( m_penTarget!=NULL)
+    {
+      CCameraMarker *pcm = &(CCameraMarker&)*m_penTarget;
+      if( pcm->m_penViewTarget!=NULL)
+      {
+        FLOAT3D vAbsTarget=FLOAT3D(0,0,0);
+        pcm->m_penViewTarget->GetEntityPointRatio(pcm->m_vPosRatio, vAbsTarget, FALSE);
+        m_vRelTargetOffset=vAbsTarget-pcm->m_penViewTarget->GetPlacement().pl_PositionVector;
+      }
+      if (pcm->m_bTargetCaller && m_penPlayer!=NULL)
+      {
+        FLOAT3D vAbsTarget=FLOAT3D(0,0,0);
+        m_penPlayer->GetEntityPointRatio(pcm->m_vPosRatio, vAbsTarget, FALSE);
+        m_vRelTargetOffset=vAbsTarget-m_penPlayer->GetPlacement().pl_PositionVector;
+      }
+    }
+
+    while(TRUE)
+    {
+			wait() 
+			{
+				on (ETrigger eTrigger) : 
+				{
+//강동민 수정 시작 다중 공격 작업	08.27
+					// 싱글모드에서는 카메라 플레이는 단 한번만 되도록 한다.
+					if(_pNetwork->m_bSingleMode && bPlayedCamera)
+					{
+						resume;
+					}
+//강동민 수정 끝 다중 공격 작업		08.27
+
+			        CEntity *penCaused;
+					penCaused = FixupCausedToPlayer(this, eTrigger.penCaused, FALSE);
+					if( IsDerivedFromClass( penCaused, &CPlayer_DLLClass)) 
+					{
+						m_penPlayer = penCaused;
+
+//강동민 수정 시작 다중 공격 작업	08.27
+						if(_pNetwork->m_bSingleMode)
+						{
+							bPlayedCamera = TRUE;
+						}
+//강동민 수정 끝 다중 공격 작업		08.27
+						if (m_bActive)
+						{
+							call PlayCamera();
+						}
+					}
+					resume;
+				}
+//강동민 수정 시작 클로즈 준비 작업	08.10
+				on(EStopLerp eStop) :
+				{
+					m_bStopLerp = eStop.bActive;
+					resume;
+				}
+//강동민 수정 끝 클로즈 준비 작업		08.10
+				on (EActivate): {
+					m_bActive = TRUE;
+					resume;
+				}
+
+				on (EDeactivate): {
+					m_bActive = FALSE;
+					resume;
+				}
+      }
+    };
+
+    // cease to exist
+    Destroy();
+    return;
+  };
 
   // routine for playing static camera
   PlayStaticCamera()
   {
+	if (m_penActionTarget != NULL)
+	{
+		SendToTarget(m_penActionTarget, EET_START, this);
+	}
+
     m_bMoving = FALSE;
     ECameraStart eStart;
     eStart.penCamera = this;
     m_penPlayer->SendEvent(eStart);
-    autowait(m_tmTime);
+    //autowait(m_tmTime);
+	wait(m_tmTime)
+	{
+		on (ETimer) : {stop;}
+		on (ETrigger) : {stop;}
+	}
+
+	m_bActive = FALSE;
     ECameraStop eStop;
     eStop.penCamera=this;
     m_penPlayer->SendEvent(eStop);
+	if (m_penActionTarget != NULL)
+	{
+		SendToTarget(m_penActionTarget, EET_STOP, this);
+	}
     return;
   }
 
@@ -715,93 +833,4 @@ procedures:
       jump PlayStaticCamera();
     }
   }
-
-  Main()
-  {
-    // init as model
-    InitAsEditorModel();
-    SetPhysicsFlags(EPF_MOVABLE);
-    SetCollisionFlags(ECF_CAMERA);
-    SetSpawnFlags(GetSpawnFlags()&~SPF_COOPERATIVE);
-
-    // set appearance
-    FLOAT fSize = 5.0f;
-    GetModelObject()->mo_Stretch = FLOAT3D(fSize, fSize, fSize);
-    SetModel(MODEL_CAMERA);
-    SetModelMainTexture(TEXTURE_CAMERA);
-    m_fLastFOV = m_fFOV;
-
-		if( m_penTarget!=NULL && !IsOfClass( m_penTarget, &CCameraMarker_DLLClass)) 
-		{
-      WarningMessage( "Entity '%s' is not of Camera Marker class!", m_penTarget);
-      m_penTarget = NULL;
-    }
-
-    if( m_bAutoRotation || m_penTarget!=NULL)
-    {
-      autowait(0.1f);
-    }
-
-    m_vRelTargetOffset=FLOAT3D(0,0,0);
-    if( m_penTarget!=NULL)
-    {
-      CCameraMarker *pcm = &(CCameraMarker&)*m_penTarget;
-      if( pcm->m_penViewTarget!=NULL)
-      {
-        FLOAT3D vAbsTarget=FLOAT3D(0,0,0);
-        pcm->m_penViewTarget->GetEntityPointRatio(pcm->m_vPosRatio, vAbsTarget, FALSE);
-        m_vRelTargetOffset=vAbsTarget-pcm->m_penViewTarget->GetPlacement().pl_PositionVector;
-      }
-      if (pcm->m_bTargetCaller && m_penPlayer!=NULL)
-      {
-        FLOAT3D vAbsTarget=FLOAT3D(0,0,0);
-        m_penPlayer->GetEntityPointRatio(pcm->m_vPosRatio, vAbsTarget, FALSE);
-        m_vRelTargetOffset=vAbsTarget-m_penPlayer->GetPlacement().pl_PositionVector;
-      }
-    }
-
-    while(TRUE)
-    {
-			wait() 
-			{
-				on (ETrigger eTrigger) : 
-				{
-//강동민 수정 시작 다중 공격 작업	08.27
-					// 싱글모드에서는 카메라 플레이는 단 한번만 되도록 한다.
-					if(_pNetwork->m_bSingleMode && bPlayedCamera)
-					{
-						resume;
-					}
-//강동민 수정 끝 다중 공격 작업		08.27
-
-			        CEntity *penCaused;
-					penCaused = FixupCausedToPlayer(this, eTrigger.penCaused, FALSE);
-					if( IsDerivedFromClass( penCaused, &CPlayer_DLLClass)) 
-					{
-						m_penPlayer = penCaused;
-
-//강동민 수정 시작 다중 공격 작업	08.27
-						if(_pNetwork->m_bSingleMode)
-						{
-							bPlayedCamera = TRUE;
-						}
-//강동민 수정 끝 다중 공격 작업		08.27
-						call PlayCamera();
-					}
-					resume;
-				}
-//강동민 수정 시작 클로즈 준비 작업	08.10
-				on(EStopLerp eStop) :
-				{
-					m_bStopLerp = eStop.bActive;
-					resume;
-				}
-//강동민 수정 끝 클로즈 준비 작업		08.10
-      }
-    };
-
-    // cease to exist
-    Destroy();
-    return;
-  };
 };

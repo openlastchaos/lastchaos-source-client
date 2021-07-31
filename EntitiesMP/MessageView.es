@@ -1,8 +1,10 @@
 897
 %{
 #include "StdH.h"
+#include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UIManager.h>
-#include <Engine/Interface/UIPortal.h>
+#include <Engine/Contents/function/UIPortalNew.h>
+#include <Engine/Interface/UIAutoHelp.h>
 %}
 
 // Message View Type
@@ -11,6 +13,7 @@ enum MessageViewType
 	0 MSGVIEW_PORTAL	"Open Portal",
 	1 MSGVIEW_CUSTOM	"Custom MessageBox By StringID",
 	2 MSGVIEW_STRING	"String Message",
+	3 MSGVIEW_NOTICE	"notice message"
 };
 
 class CMessageView : CRationalEntity 
@@ -69,74 +72,76 @@ components:
 functions:
   void OpenMessageView()
   {
+		CUIManager* pUIManager = SE_Get_UIManagerPtr();
+
 		if(eViewType == MSGVIEW_CUSTOM)
 		{
-			if(!_pUIMgr->DoesMessageBoxLExist(MSGLCMD_STORY_INTRO))
+			if(!pUIManager->DoesMessageBoxLExist(MSGLCMD_STORY_INTRO))
 			{
 				// 타이틀 표시하기.
 				if(m_iStringTitleID != -1)
 				{
 					// Create skill learn message box
-					_pUIMgr->CreateMessageBoxL( _S( m_iStringTitleID, "" ), UI_NONE, MSGLCMD_STORY_INTRO );
+					pUIManager->CreateMessageBoxL( _S( m_iStringTitleID, "" ), UI_NONE, MSGLCMD_STORY_INTRO );
 	
 					// 내용 표시하기.		
 					if(m_iStringIDContent1 != -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent1, "") );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent1, "") );
 					}
 	
 					if(m_iStringIDContent2 != -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent2, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent2, "" ) );
 					}
 	
 					if(m_iStringIDContent3 != -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent3, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent3, "" ) );
 					}
 	
 					if(m_iStringIDContent4!= -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent4, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent4, "" ) );
 					}
 	
 					if(m_iStringIDContent5!= -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent5, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE, _S( m_iStringIDContent5, "" ) );
 					}
 					//--------------------------------------------------------------------------------------------------------
 					// 선택지 표시하기.
 					if(m_iStringIDChoice1 != -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice1, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice1, "" ) );
 					}
 	
 					if(m_iStringIDChoice2 != -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice2, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice2, "" ) );
 					}
 	
 					if(m_iStringIDChoice3 != -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice3, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice3, "" ) );
 					}
 	
 					if(m_iStringIDChoice4!= -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice4, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice4, "" ) );
 					}
 	
 					if(m_iStringIDChoice5!= -1)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice5, "" ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, _S( m_iStringIDChoice5, "" ) );
 					}
 
 					if(m_bShowOnce)
 					{
-					// Active되어있을때...
-					if(m_bActive)
-					{
-						m_bActive	= FALSE;
+						// Active되어있을때...
+						if(m_bActive)
+						{
+							m_bActive	= FALSE;
 						}
 					}
 				}				
@@ -144,75 +149,86 @@ functions:
 	  }
 	  else if (eViewType == MSGVIEW_STRING)
 	  {
-	  		if(!_pUIMgr->DoesMessageBoxLExist(MSGLCMD_STORY_INTRO))
+	  		if(!pUIManager->DoesMessageBoxLExist(MSGLCMD_STORY_INTRO))
 			{
 				// 타이틀 표시하기.
 				if(m_strStringTitle.Length() > 0)
 				{
 					// Create skill learn message box
-					_pUIMgr->CreateMessageBoxL( m_strStringTitle, UI_NONE, MSGLCMD_STORY_INTRO );
+					pUIManager->CreateMessageBoxL( m_strStringTitle, UI_NONE, MSGLCMD_STORY_INTRO );
 	
 					// 내용 표시하기.		
 					if(m_strStringIDContent1.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent1 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent1 );
 					}
 	
 					if(m_strStringIDContent2.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent2 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent2 );
 					}
 	
 					if(m_strStringIDContent3.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent3 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent3 );
 					}
 	
 					if(m_strStringIDContent4.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent4 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent4 );
 					}
 	
 					if(m_strStringIDContent5.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent5 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, TRUE,  m_strStringIDContent5 );
 					}
 					//--------------------------------------------------------------------------------------------------------
 					// 선택지 표시하기.
 					if(m_strStringIDChoice1.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice1 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice1 );
 					}
 	
 					if(m_strStringIDChoice2.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice2 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice2 );
 					}
 	
 					if(m_strStringIDChoice3.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice3 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice3 );
 					}
 	
 					if(m_strStringIDChoice4.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice4 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice4 );
 					}
 	
 					if(m_strStringIDChoice5.Length() > 0)
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice5 );
+						pUIManager->AddMessageBoxLString( MSGLCMD_STORY_INTRO, FALSE, m_strStringIDChoice5 );
 					}
 
 					if(m_bShowOnce)
 					{
-					// Active되어있을때...
-					if(m_bActive)
-					{
-						m_bActive	= FALSE;
+						// Active되어있을때...
+						if(m_bActive)
+						{
+							m_bActive	= FALSE;
 						}
 					}
-				}				
+				}
+			}
+	  }
+	  else if (eViewType == MSGVIEW_NOTICE)
+	  {
+			if (m_strStringIDContent1.Length() > 0)
+			{
+				_UIAutoHelp->SetGMNotice(_S( m_iStringIDContent1, ""));
+				if (m_bShowOnce)
+				{
+					m_bActive = FALSE;
+				}
 			}
 	  }
   };

@@ -1,31 +1,39 @@
 #include "stdh.h"
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <vector>
+#include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UISkillLearn.h>
 #include <Engine/Interface/UISummon.h>
-#include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Entities/InternalClasses.h>
+#include <Engine/Contents/Base/UISkillNew.h>
+#include <Engine/Contents/Base/UICharacterInfoNew.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Contents/Base/UIQuestNew.h>
+#include <Engine/Contents/Base/UIQuestBookNew.h>
+#include <Engine/Interface/UIHelp.h>
 #include <Engine/Interface/UIQuickSlot.h>
+#include <Engine/Contents/Base/UIDurability.h>
+#include <Engine/Info/MyInfo.h>
+#include <Engine/Contents/function/ItemComposeUI.h>
 
-
-#ifdef ADJUST_MEMORIZE_SKILL
-#define	SLEARN_TAB_WIDTH				64
-#define	SLEARN_ACTIVE_TAB_CX			45
-#define	SLEARN_PASSIVE_TAB_CX			109
-#define SLEARN_MEMORIZE_TAB_CX			173
-#else
 #define	SLEARN_TAB_WIDTH				96
 #define	SLEARN_ACTIVE_TAB_CX			60
 #define	SLEARN_PASSIVE_TAB_CX			156
-#endif
 
 #define	SLEARN_TAB_SY					34
 #define	SLEARN_SPECIAL_TAB_CX			108
+
+#define SKILL_LEARNED_COLOR				0xF2F2F2FF
+#define NOT_SATISFACTION_COL			0xFF0000FF
+#define SATISFACTION_COL				0xFFFF00FF
+
 /*
 typedef struct tagChangeJobCondition
 {
-	int		iLevel;					// ÌïÑÏöî Î†àÎ≤®
-	int		iNeedSkill;				// ÌïÑÏöî Ïä§ÌÇ¨
-	int		iNeedSkillLevel;		// ÌïÑÏöî Ïä§ÌÇ¨ Î†àÎ≤®
+	int		iLevel;					// « ø‰ ∑π∫ß
+	int		iNeedSkill;				// « ø‰ Ω∫≈≥
+	int		iNeedSkillLevel;		// « ø‰ Ω∫≈≥ ∑π∫ß
 
 }sJobCondition;
 
@@ -44,27 +52,51 @@ enum eSelection
 	SKILL_LEARN,
 	SKILL_TALK,
 	SKILL_EVENT,
-	SKILL_JOB_1,			// Ï†ÑÏßÅÌïòÍ∏∞ 1Î≤à
-	SKILL_JOB_2,			// Ï†ÑÏßÅÌïòÍ∏∞ 2Î≤à
-#ifdef HELP_SYSTEM_1
+	SKILL_JOB_1,			// ¿¸¡˜«œ±‚ 1π¯
+	SKILL_JOB_2,			// ¿¸¡˜«œ±‚ 2π¯
 	SKILL_NPC_HELP,
-#endif
 	SKILL_TITAN,
 	SKILL_KNIGHT,
 	SKILL_HEALER,
 	SKILL_MAGE,
 	SKILL_ROGUE,
 	SKILL_SORCERER,
-
+	SKILL_NIGHTSHADOW,
+#ifdef CHAR_EX_ROGUE
+	SKILL_EX_ROGUE,	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+#endif
+#ifdef CHAR_EX_MAGE
+	SKILL_EX_MAGE,	// 2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° 
+#endif
 	SKILL_QUEST,
+#ifdef DURABILITY
+	ITEM_DURABILITY,
+	ITEM_RECOVERY,
+#endif	//	DURABILITY
+	ITEM_COMPOSE
+};
+
+enum eSatisfactionType
+{
+	SKILL_CONDITION_LEVEL = 0,
+	SKILL_CONDITION_SP,
+	SKILL_CONDITION_STR,
+	SKILL_CONDITION_DEX,
+	SKILL_CONDITION_INT,
+	SKILL_CONDITION_CON,
+	SKILL_CONDITION_SKILL_0,
+	SKILL_CONDITION_SKILL_1,
+	SKILL_CONDITION_SKILL_2,
+	SKILL_CONDITION_ITEM_0,
+	SKILL_CONDITION_ITEM_1,
+	SKILL_CONDITION_ITEM_2,
 };
 
 extern int _aSummonSkill[5];
 
 #define EXTENSION_LEVEL		(31)
-extern INDEX g_iCountry;
 
-// [KH_07044] 3Ï∞® ÎèÑÏõÄÎßê Í¥ÄÎ†® Ï∂îÍ∞Ä
+// [KH_07044] 3¬˜ µµøÚ∏ª ∞¸∑√ √ﬂ∞°
 extern INDEX g_iShowHelp1Icon;
 
 
@@ -95,8 +127,6 @@ static int	_iMaxMsgStringChar = 0;
 #define SKILLINFO_LINE_MAX				20
 
 
-extern CTextureData* m_ptdButtonTexture;
-
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
@@ -104,24 +134,22 @@ extern CTextureData* m_ptdButtonTexture;
 
 void CUISkillLearn::CreateNewSkillLearn(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight)
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
-	//ÌÉÄÏù¥ÌãÄ ÎßàÏö∞Ïä§ ÎìúÎûòÍ∑∏ ÏòÅÏó≠
+	//≈∏¿Ã∆≤ ∏∂øÏΩ∫ µÂ∑°±◊ øµø™
 	m_rcTitle.SetRect( 0, 0, SKILLLEARN_NEW_WIDTH, 36 );
 
-	//ÏïÑÏù¥ÏΩò ÌëúÏãú ÏòÅÏó≠
+	//æ∆¿Ãƒ‹ «•Ω√ øµø™
 	m_rcIcons.SetRect( 11, 65, 231, 285 );
 
-	//ÌÉ≠ÏòÅÏó≠
+	//≈«øµø™
 	m_rcTab.SetRect( 6, 37 , 251, 57 );
 
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\NewCharacterInfo.tex" ) );
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
-	//Î∞∞Í≤Ω
+	//πË∞Ê
 	m_rtBackground.SetUV(0, 649, 256, 990, fTexWidth, fTexHeight );
 
 	m_ptdButtonTexture = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
@@ -129,7 +157,7 @@ void CUISkillLearn::CreateNewSkillLearn(CUIWindow *pParentWnd, int nX, int nY, i
 	fTexHeight = m_ptdButtonTexture->GetPixHeight();
 
 
-	//ÏÑ†ÌÉùÎêúÌÖåÎëêÎ¶¨
+	//º±≈√µ»≈◊µŒ∏Æ
 	m_rtSelOutlineTopL.SetUV( 145, 138, 157, 150, fTexWidth, fTexHeight );;
 	m_rtSelOutlineTopM.SetUV( 157, 138, 226, 150, fTexWidth, fTexHeight );;
 	m_rtSelOutlineTopR.SetUV( 226, 138, 239, 150, fTexWidth, fTexHeight );;
@@ -151,14 +179,14 @@ void CUISkillLearn::CreateNewSkillLearn(CUIWindow *pParentWnd, int nX, int nY, i
 	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
 
 	// Learn button
-	m_btnLearn.Create( this, _S( 269, "ÏäµÎìù" ), 11, 313, 89, 22 );
+	m_btnLearn.Create( this, _S( 269, "Ω¿µÊ" ), 11, 313, 89, 22 );
 	m_btnLearn.SetUV( UBS_IDLE, 113, 0, 182, 21, fTexWidth, fTexHeight );
 	m_btnLearn.SetUV( UBS_CLICK, 186, 0, 255, 21, fTexWidth, fTexHeight );
 	m_btnLearn.SetUV( UBS_DISABLE, 145, 178, 214, 199, fTexWidth, fTexHeight );
 	m_btnLearn.CopyUV( UBS_IDLE, UBS_ON );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 156, 313, 89, 22 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 156, 313, 89, 22 );
 	m_btnCancel.SetUV( UBS_IDLE, 113, 0, 182, 21, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 186, 0, 255, 21, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_DISABLE, 145, 178, 214, 199, fTexWidth, fTexHeight );
@@ -188,193 +216,19 @@ void CUISkillLearn::CreateNewSkillLearn(CUIWindow *pParentWnd, int nX, int nY, i
 	// Wheel region
 	m_sbScrollBar.SetWheelRect( -180, 0, 179, 322 );
 
-	m_rtInfoUL.SetUV( 0, 137, 20, 157, fTexWidth, fTexHeight );
-	m_rtInfoUM.SetUV( 20, 137, 120, 157, fTexWidth, fTexHeight );
-	m_rtInfoUR.SetUV( 120, 137, 140, 157, fTexWidth, fTexHeight );
-	m_rtInfoML.SetUV( 0, 157, 20, 177, fTexWidth, fTexHeight );
-	m_rtInfoMM.SetUV( 20, 157, 120, 177, fTexWidth, fTexHeight );
-	m_rtInfoMR.SetUV( 120, 157, 140, 177, fTexWidth, fTexHeight );
-	m_rtInfoLL.SetUV( 0, 206, 20, 226, fTexWidth, fTexHeight );
-	m_rtInfoLM.SetUV( 20, 206, 120, 226, fTexWidth, fTexHeight );
-	m_rtInfoLR.SetUV( 120, 206, 140, 226, fTexWidth, fTexHeight );
-
-
-	m_rsSkillName.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 50);
-	m_rsSkillDesc.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 50);
-
-	m_rsCurrentSkillInfo.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 200);
-	m_rsNextSkillInfo.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 200);
-
-	m_rcSkillInfo.SetRect(0, 0, SKILLINFO_MIN_WIDTH, 50);
-
-
 	// Active skill
-	for( int iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL ; iRow++ )
-	{
-		m_btnActiveSkills[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_SKILLLEARN,
-										UBET_SKILL, 0, iRow );
-
-	}
+	int		iRow;
 	// Passive skill
 	for( iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL ; iRow++ )
 	{
-		m_btnPassiveSkills[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_SKILLLEARN,
-										UBET_SKILL, 0, iRow );
+		m_pIconsSpecialSkill[iRow] = new CUIIcon;
+		m_pIconsSpecialSkill[iRow]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_SKILLLEARN, UBET_SKILL);
 
 	}
 
-	// Passive skill
-	for( iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL ; iRow++ )
-	{
-		m_btnSpecialSkills[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_SKILLLEARN,
-										UBET_SKILL, 0, iRow );
-
-	}
-
-	// Í∏ÄÎ∂ÄÎ∂ÑÏùÑ ÌÅ¥Î¶≠Ìï¥ÎèÑ ÏÑ†ÌÉùÎêòÍ≤å Ìï®
+	// ±€∫Œ∫–¿ª ≈¨∏Ø«ÿµµ º±≈√µ«∞‘ «‘
 	m_rcButtonArea.SetRect(0, 0, 212, 34);
 
-}
-
-void CUISkillLearn::RenderSkillInfoDesc()
-{
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
-
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top,
-										m_rcSkillInfo.Left + 20, m_rcSkillInfo.Top + 20,
-										m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
-										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Top,
-										m_rcSkillInfo.Right - 20, m_rcSkillInfo.Top + 20,
-										m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
-										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Top,
-										m_rcSkillInfo.Right, m_rcSkillInfo.Top + 20,
-										m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
-										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top + 20,
-										m_rcSkillInfo.Left + 20, m_rcSkillInfo.Bottom - 20,
-										m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
-										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Top + 20,
-										m_rcSkillInfo.Right - 20, m_rcSkillInfo.Bottom - 20,
-										m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
-										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Top + 20,
-										m_rcSkillInfo.Right, m_rcSkillInfo.Bottom - 20,
-										m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
-										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Bottom - 20,
-										m_rcSkillInfo.Left + 20, m_rcSkillInfo.Bottom,
-										m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
-										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Bottom - 20,
-										m_rcSkillInfo.Right - 20, m_rcSkillInfo.Bottom,
-										m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
-										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Bottom - 20,
-										m_rcSkillInfo.Right, m_rcSkillInfo.Bottom,
-										m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
-										0xFFFFFFBB );
-
-
-	m_rsSkillName.Render();
-	m_rsSkillDesc.Render();
-
-	m_rsCurrentSkillInfo.Render();
-	m_rsNextSkillInfo.Render();
-
-	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-}
-
-void CUISkillLearn::AddSkillInfoString(int nSkillInfoList, CTString strSkillInfo, COLOR strColor)
-{
-	if(nSkillInfoList == SKILLINFO_CURRENT)
-	{
-		m_rsCurrentSkillInfo.AddString(strSkillInfo, strColor);
-	}
-	else if(nSkillInfoList == SKILLINFO_NEXT)
-	{
-		m_rsNextSkillInfo.AddString(strSkillInfo, strColor);
-	}
-
-	int nHeight = 0;
-	int nWidth =  0;
-
-	if(m_rsNextSkillInfo.GetMaxStrWidth() == 0)
-	{
-
-		m_rsSkillName.SetWidth(SKILLINFO_MIN_WIDTH);
-		nHeight = m_rsSkillName.GetMaxStrHeight();
-		m_rsSkillName.SetHeight(nHeight);
-		
-		m_rsSkillDesc.SetWidth(SKILLINFO_MIN_WIDTH);
-		nHeight = m_rsSkillDesc.GetMaxStrHeight();
-		m_rsSkillDesc.SetHeight(nHeight);
-
-		nWidth  = SKILLINFO_MIN_WIDTH;
-	}
-	else
-	{
-
-		m_rsSkillName.SetWidth(SKILLINFO_MAX_WIDTH);
-		nHeight = m_rsSkillName.GetMaxStrHeight();
-		m_rsSkillName.SetHeight(nHeight);
-		
-		m_rsSkillDesc.SetWidth(SKILLINFO_MAX_WIDTH);
-		nHeight = m_rsSkillDesc.GetMaxStrHeight();
-		m_rsSkillDesc.SetHeight(nHeight);
-
-		nWidth  = SKILLINFO_MAX_WIDTH;
-	}
-
-	nHeight = m_rsSkillName.GetMaxStrHeight() + m_rsSkillDesc.GetMaxStrHeight();
-	if( m_rsCurrentSkillInfo.GetMaxStrHeight() > m_rsNextSkillInfo.GetMaxStrHeight() )
-	{
-		nHeight += m_rsCurrentSkillInfo.GetMaxStrHeight();
-	}
-	else
-	{
-		nHeight += m_rsNextSkillInfo.GetMaxStrHeight();
-	}
-
-
-	m_rcSkillInfo.SetRect(m_rcSkillInfo.Left, m_rcSkillInfo.Top, m_rcSkillInfo.Left + nWidth + 20, m_rcSkillInfo.Top + nHeight + 20);
-}
-
-void CUISkillLearn::ResetSkillInfoString()
-{
-	m_rsSkillName.ClearString();
-	m_rsSkillDesc.ClearString();
-
-	m_rsCurrentSkillInfo.ClearString();
-	m_rsNextSkillInfo.ClearString();
-}
-
-void CUISkillLearn::SetSkillInfoPos(int nPosX, int nPosY)
-{
-	int nNextPosy;
-
-	m_rsSkillName.SetPos(nPosX + 10, nPosY + 10);
-	nNextPosy = nPosY + m_rsSkillName.GetHeight() + 10;
-	m_rsSkillDesc.SetPos(nPosX + 10, nNextPosy);
-
-	nNextPosy += m_rsSkillDesc.GetHeight();
-	m_rsCurrentSkillInfo.SetPos(nPosX + 10, nNextPosy);
-
-	m_rsNextSkillInfo.SetPos(nPosX + m_rsCurrentSkillInfo.GetWidth() + 10, nNextPosy);
-
-	m_rcSkillInfo.SetRect(nPosX, nPosY, nPosX+m_rcSkillInfo.GetWidth(), nPosY+m_rcSkillInfo.GetHeight());
-}
-
-int	CUISkillLearn::GetSkillInfoWidth()
-{
-	return m_rcSkillInfo.GetWidth();
-}
-int CUISkillLearn::GetSkillInfoHeight()
-{
-	return m_rcSkillInfo.GetHeight();
 }
 
 void CUISkillLearn::RenderNewSkillLearn()
@@ -388,55 +242,57 @@ void CUISkillLearn::RenderNewSkillLearn()
 
 	GetAbsPos(nPosX, nPosY);
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
-	_pUIMgr->GetDrawPort()->AddTexture( nPosX, nPosY, nPosX + SKILLLEARN_NEW_WIDTH, nPosY + SKILLLEARN_NEW_HEIGHT,
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	pDrawPort->AddTexture( nPosX, nPosY, nPosX + SKILLLEARN_NEW_WIDTH, nPosY + SKILLLEARN_NEW_HEIGHT,
 										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
 										0xFFFFFFFF );
 	
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
  
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 	nPosX = m_nPosX + m_rcTab.Left;
 	nPosY = m_nPosY + m_rcTab.Top;
 	
 
-	// Ïä§ÌÇ¨ ÌÉ≠ ÌëúÏãú
+	// Ω∫≈≥ ≈« «•Ω√
 	if(m_nCurrentSkillType == SKILL_ACTIVE)
 	{
-		_pUIMgr->GetDrawPort()->AddTexture( nPosX , nPosY, nPosX + (m_rcTab.GetWidth()/2)-1, nPosY + m_rcTab.GetHeight(),
+		pDrawPort->AddTexture( nPosX , nPosY, nPosX + (m_rcTab.GetWidth()/2)-1, nPosY + m_rcTab.GetHeight(),
 						m_rtSelectedTab.U0, m_rtSelectedTab.V0, m_rtSelectedTab.U1, m_rtSelectedTab.V1,
 						0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( nPosX + (m_rcTab.GetWidth()/2)+1, nPosY, nPosX + m_rcTab.GetWidth(), nPosY + m_rcTab.GetHeight(),
+		pDrawPort->AddTexture( nPosX + (m_rcTab.GetWidth()/2)+1, nPosY, nPosX + m_rcTab.GetWidth(), nPosY + m_rcTab.GetHeight(),
 					m_rtUnSelectedTab.U0, m_rtUnSelectedTab.V0, m_rtUnSelectedTab.U1, m_rtUnSelectedTab.V1,
 					0xFFFFFFFF );
 	}
 	else if(m_nCurrentSkillType == SKILL_PASSIVE)
 	{
-		_pUIMgr->GetDrawPort()->AddTexture( nPosX , nPosY, nPosX + (m_rcTab.GetWidth()/2)-1, nPosY + m_rcTab.GetHeight(),
+		pDrawPort->AddTexture( nPosX , nPosY, nPosX + (m_rcTab.GetWidth()/2)-1, nPosY + m_rcTab.GetHeight(),
 						m_rtUnSelectedTab.U0, m_rtUnSelectedTab.V0, m_rtUnSelectedTab.U1, m_rtUnSelectedTab.V1,
 						0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( nPosX + (m_rcTab.GetWidth()/2)+1, nPosY, nPosX + m_rcTab.GetWidth(), nPosY + m_rcTab.GetHeight(),
+		pDrawPort->AddTexture( nPosX + (m_rcTab.GetWidth()/2)+1, nPosY, nPosX + m_rcTab.GetWidth(), nPosY + m_rcTab.GetHeight(),
 					m_rtSelectedTab.U0, m_rtSelectedTab.V0, m_rtSelectedTab.U1, m_rtSelectedTab.V1,
 					0xFFFFFFFF );
 	}
 	else
 	{
-		_pUIMgr->GetDrawPort()->AddTexture( nPosX , nPosY, nPosX + (m_rcTab.GetWidth()/2)-1, nPosY + m_rcTab.GetHeight(),
+		pDrawPort->AddTexture( nPosX , nPosY, nPosX + (m_rcTab.GetWidth()/2)-1, nPosY + m_rcTab.GetHeight(),
 						m_rtUnSelectedTab.U0, m_rtUnSelectedTab.V0, m_rtUnSelectedTab.U1, m_rtUnSelectedTab.V1,
 						0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( nPosX + (m_rcTab.GetWidth()/2)+1, nPosY, nPosX + m_rcTab.GetWidth(), nPosY + m_rcTab.GetHeight(),
+		pDrawPort->AddTexture( nPosX + (m_rcTab.GetWidth()/2)+1, nPosY, nPosX + m_rcTab.GetWidth(), nPosY + m_rcTab.GetHeight(),
 					m_rtUnSelectedTab.U0, m_rtUnSelectedTab.V0, m_rtUnSelectedTab.U1, m_rtUnSelectedTab.V1,
 					0xFFFFFFFF );
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 //	int iRow;
 	int iRowS = m_sbScrollBar.GetScrollPos();
@@ -452,49 +308,49 @@ void CUISkillLearn::RenderNewSkillLearn()
 
 	m_sbScrollBar.Render();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	RenderNewSkillLearnBtns();
 
 
 
-	// ÏÑ†ÌÉù ÎùºÏù∏ ÌëúÏãú
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	// º±≈√ ∂Û¿Œ «•Ω√
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 	iRowS = m_sbScrollBar.GetScrollPos();
 	iRowE = iRowS + SKILLLEARN_NEW_SLOT_ROW;
 	if( m_nSelectedSkillID >= 0 && iRowS <= m_nSelectedSkillID && m_nSelectedSkillID < iRowE )
 	{
 
-		m_btnSelectedSkill[m_nSelectedSkillID].GetAbsPos( nX, nY );
+		m_ppIconsSelectedSkill[m_nSelectedSkillID]->GetAbsPos( nX, nY );
 
 
-		_pUIMgr->GetDrawPort()->AddTexture( nX - 1, nY - 1, nX + 12, nY + 12,
+		pDrawPort->AddTexture( nX - 1, nY - 1, nX + 12, nY + 12,
 											m_rtSelOutlineTopL.U0, m_rtSelOutlineTopL.V0, m_rtSelOutlineTopL.U1, m_rtSelOutlineTopL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 12, nY - 1, nX + 198, nY + 12,
+		pDrawPort->AddTexture( nX + 12, nY - 1, nX + 198, nY + 12,
 											m_rtSelOutlineTopM.U0, m_rtSelOutlineTopM.V0, m_rtSelOutlineTopM.U1, m_rtSelOutlineTopM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 198, nY - 1, nX + 211, nY + 12,
+		pDrawPort->AddTexture( nX + 198, nY - 1, nX + 211, nY + 12,
 											m_rtSelOutlineTopR.U0, m_rtSelOutlineTopR.V0, m_rtSelOutlineTopR.U1, m_rtSelOutlineTopR.V1,
 											0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( nX - 1, nY + 12, nX + 12, nY + 20,
+		pDrawPort->AddTexture( nX - 1, nY + 12, nX + 12, nY + 20,
 											m_rtSelOutlineMiddleL.U0, m_rtSelOutlineMiddleL.V0, m_rtSelOutlineMiddleL.U1, m_rtSelOutlineMiddleL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 12, nY + 12, nX + 198, nY + 20,
+		pDrawPort->AddTexture( nX + 12, nY + 12, nX + 198, nY + 20,
 											m_rtSelOutlineMiddleM.U0, m_rtSelOutlineMiddleM.V0, m_rtSelOutlineMiddleM.U1, m_rtSelOutlineMiddleM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 198, nY + 12, nX + 211, nY + 20,
+		pDrawPort->AddTexture( nX + 198, nY + 12, nX + 211, nY + 20,
 											m_rtSelOutlineMiddleR.U0, m_rtSelOutlineMiddleR.V0, m_rtSelOutlineMiddleR.U1, m_rtSelOutlineMiddleR.V1,
 											0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( nX - 1, nY + 20, nX + 12, nY + 33,
+		pDrawPort->AddTexture( nX - 1, nY + 20, nX + 12, nY + 33,
 											m_rtSelOutlineBottomL.U0, m_rtSelOutlineBottomL.V0, m_rtSelOutlineBottomL.U1, m_rtSelOutlineBottomL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 12, nY + 20, nX + 198, nY + 33,
+		pDrawPort->AddTexture( nX + 12, nY + 20, nX + 198, nY + 33,
 											m_rtSelOutlineBottomM.U0, m_rtSelOutlineBottomM.V0, m_rtSelOutlineBottomM.U1, m_rtSelOutlineBottomM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 198, nY + 20, nX + 211, nY + 33,
+		pDrawPort->AddTexture( nX + 198, nY + 20, nX + 211, nY + 33,
 											m_rtSelOutlineBottomR.U0, m_rtSelOutlineBottomR.V0, m_rtSelOutlineBottomR.U1, m_rtSelOutlineBottomR.V1,
 											0xFFFFFFFF );
 
@@ -525,149 +381,140 @@ void CUISkillLearn::RenderNewSkillLearn()
 		}
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	if(m_bSkillInfoVisible)
-	{
-		RenderSkillInfoDesc();
-	}
-
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(91, "Ïä§ÌÇ¨") , m_nPosX + (SKILLLEARN_NEW_WIDTH / 2),			
+	pDrawPort->PutTextExCX( _S(91, "Ω∫≈≥") , m_nPosX + (SKILLLEARN_NEW_WIDTH / 2),			
 										m_nPosY + 15 );
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 void CUISkillLearn::RenderNewSkillLearnBtns()
 {
+	if( m_nCurrentSkillType != SKILL_SPECIAL )
+		return;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	int	nX = SKILLLEARN_NEW_SLOT_SX, nY = SKILLLEARN_NEW_SLOT_SY;
 	int	iRow, iRowS, iRowE;
 
-	///Î≤ÑÌäº Î†åÎçîÎßÅ
+	///πˆ∆∞ ∑ª¥ı∏µ
 	iRowS = m_sbScrollBar.GetScrollPos();		
 	iRowE = iRowS + SKILLLEARN_NEW_SLOT_ROW;
+
 	for( iRow = iRowS; iRow < iRowE; iRow++, nY += SKILLLEARN_NEW_SLOT_OFFSETY )
 	{      
-		if( m_btnSelectedSkill[iRow].IsEmpty() )		
+		if( m_ppIconsSelectedSkill[iRow]->IsEmpty() )		
 			continue;
-		
-		m_btnSelectedSkill[iRow].SetPos( nX, nY );
+
+		m_ppIconsSelectedSkill[iRow]->SetPos( nX, nY );
 
 		if(m_pSelectedSkillSatisfied[iRow] == ALL_SATISFIED)
-			m_btnSelectedSkill[iRow].Render();
+			m_ppIconsSelectedSkill[iRow]->Render(pDrawPort);
 		else
 		{
-			m_btnSelectedSkill[iRow].Render();
+			m_ppIconsSelectedSkill[iRow]->Render(pDrawPort);
 		}
-
-
 	}
 
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_SKILL );
-	
+	pDrawPort->FlushBtnRenderingQueue( UBET_SKILL );
 
-	//Ïù¥Î¶Ñ Ï∂úÎ†•
+	//¿Ã∏ß √‚∑¬
 	nY = SKILLLEARN_NEW_NAME_SY;
 	int	nCharLevel	= _pNetwork->MyCharacterInfo.level;
-	int nCharSP		= _pNetwork->MyCharacterInfo.sp;
+	SQUAD nCharSP		= _pNetwork->MyCharacterInfo.sp;
 	iRowS = m_sbScrollBar.GetScrollPos();
 	iRowE = iRowS + SKILLLEARN_NEW_SLOT_ROW;
-	for( iRow = iRowS; iRow < iRowE; iRow++, nY += SKILLLEARN_NEW_SLOT_OFFSETY )
-	{
-		if( m_btnSelectedSkill[iRow].IsEmpty() )
+ 	for( iRow = iRowS; iRow < iRowE; iRow++, nY += SKILLLEARN_NEW_SLOT_OFFSETY )
+ 	{
+		if( m_ppIconsSelectedSkill[iRow]->IsEmpty() )
 			continue;
 
-		if(m_nCurrentSkillType != SKILL_SPECIAL)
-		{
-			CSkill	&rSkill= _pNetwork->GetSkillData( m_btnSelectedSkill[iRow].GetSkillIndex() );
+		CSpecialSkill* pSSkill = CSpecialSkill::getData( m_ppIconsSelectedSkill[iRow]->getIndex() );
 
-			SBYTE	sbLevel = m_btnSelectedSkill[iRow].GetSkillLevel();
-			int		nNeedLevel = rSkill.GetLearnLevel( sbLevel - 1 );
+		if (pSSkill == NULL)
+			return;
 
-			m_strDesc.PrintF( "%s", rSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strDesc, m_nPosX + SKILLLEARN_NEW_NAME_CX, m_nPosY + nY,
-													m_pSelectedSkillSatisfied[iRow] == ALL_SATISFIED ? 0xFFC672FF : 0xBCBCBCFF );
+		SBYTE	sbLevel = MY_INFO()->GetSkillLevel(pSSkill->GetIndex(), true);
+		int		nNeedLevel = pSSkill->GetLearnLevel( sbLevel );
+		int		nlearnSp = pSSkill->GetLearnSP( sbLevel );
 
-			m_strDesc.PrintF( "Lv %2d   SP %2d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strDesc, m_nPosX + SKILLLEARN_NEW_NEED_RX,
-													m_nPosY + nY + 17, 0xBDA99FFF );
-		}
-		else
-		{
-			CSpecialSkill &rSSkill = _pNetwork->GetSSkillData( m_btnSelectedSkill[iRow].GetSkillIndex() );
+		sbLevel += 1;
 
-			SBYTE	sbLevel = m_btnSelectedSkill[iRow].GetSkillLevel();
-			int		nNeedLevel = rSSkill.GetLearnLevel( sbLevel - 1 );
+		m_strDesc.PrintF( "%s", pSSkill->GetName() );
+		pDrawPort->PutTextExCX( m_strDesc, m_nPosX + SKILLLEARN_NEW_NAME_CX, m_nPosY + nY,
+												nCharLevel >= nNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
 
-			m_strDesc.PrintF( "%s", rSSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strDesc, m_nPosX + SKILLLEARN_NEW_NAME_CX, m_nPosY + nY,
-													nCharLevel >= nNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+		m_strDesc.PrintF( "Lv %2d   %s %2d", sbLevel, _S( 90, "º˜∑√µµ" ), nlearnSp );
+#else	// else about japan, german, europe3, europe2, netherlands.
+		// [2/28/2013 Ranma] support russia string
+#if defined (G_RUSSIA)
+		m_strDesc.PrintF( "%s %2d   %s %2d",_S( 4414, "LV" ), sbLevel, _S( 4415, "SP" ), nlearnSp );
+#else	// else about russia
+		m_strDesc.PrintF( "Lv %2d   SP %2d", sbLevel, nlearnSp );
+#endif	// end russia
+#endif	//end japan, german, europe3, europe2, netherlands.
+		pDrawPort->PutTextExRX( m_strDesc, m_nPosX + SKILLLEARN_NEW_NEED_RX,
+												m_nPosY + nY + 17, 0xBDA99FFF );
+ 	}
 
-			m_strDesc.PrintF( "Lv %2d   SP %2d", sbLevel, rSSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strDesc, m_nPosX + SKILLLEARN_NEW_NEED_RX,
-													m_nPosY + nY + 17, 0xBDA99FFF );
-		}
-
-
-	}
-
-	if(m_nCurrentSkillType != SKILL_SPECIAL)
-	{
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 275, "ÏùºÎ∞ò" ), m_nPosX + SKILLLEARN_NEW_ACTIVE_TAB_CX,
-												m_nPosY + SKILLLEARN_NEW_TAB_SY,
-												m_nCurrentSkillType == SKILL_ACTIVE ? 0xFFCB00FF : 0x6B6B6BFF );
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 276, "Í∞ïÌôî" ), m_nPosX + SKILLLEARN_NEW_PASSIVE_TAB_CX,
-												m_nPosY + SKILLLEARN_NEW_TAB_SY,
-												m_nCurrentSkillType == SKILL_PASSIVE ? 0xFFCB00FF : 0x6B6B6BFF );
-	}
-	else
+	if( m_nCurrentSkillType == SKILL_SPECIAL )
 	{
 		CTString	strSubTitle;
 		switch( m_nSSkillType )
 		{
-		case SSKILL_MINING:		// Ï±ÑÍµ¥
-			strSubTitle = _S( 630, "Ï±ÑÍµ¥ Ïä§ÌÇ¨" );		
+		case SSKILL_MINING:		// √§±º
+			strSubTitle = _S( 630, "√§±º Ω∫≈≥" );		
 			break;
 
-		case SSKILL_GATHERING:	// Ï±ÑÏßë
-			strSubTitle = _S( 633, "Ï±ÑÏßë Ïä§ÌÇ¨" );		
+		case SSKILL_GATHERING:	// √§¡˝
+			strSubTitle = _S( 633, "√§¡˝ Ω∫≈≥" );		
 			break;
 
-		case SSKILL_CHARGE:		// Ï∞®ÏßÄ
-			strSubTitle = _S( 636, "Ï∞®ÏßÄ Ïä§ÌÇ¨" );		
+		case SSKILL_CHARGE:		// ¬˜¡ˆ
+			strSubTitle = _S( 636, "¬˜¡ˆ Ω∫≈≥" );		
 			break;
 
-		case SSKILL_STONE:		// Í¥ëÏÑùÏ†ïÎ†®
-			strSubTitle = _S( 639, "Ïä§ÌÜ§Ï†ïÎ†® Ïä§ÌÇ¨" );	
+		case SSKILL_STONE:		// ±§ºÆ¡§∑√
+			strSubTitle = _S( 639, "Ω∫≈Ê¡§∑√ Ω∫≈≥" );	
 			break;
 
-		case SSKILL_PLANT:		// ÏãùÎ¨ºÍ∞ÄÍ≥µ
-			strSubTitle = _S( 642, "ÏãùÎ¨ºÍ∞ÄÍ≥µ Ïä§ÌÇ¨" );	
+		case SSKILL_PLANT:		// Ωƒπ∞∞°∞¯
+			strSubTitle = _S( 642, "Ωƒπ∞∞°∞¯ Ω∫≈≥" );	
 			break;
 
-		case SSKILL_ELEMENT:	// ÏõêÏÜåÏ†ïÏ†ú
-			strSubTitle = _S( 645, "ÏõêÏÜåÏ†ïÏ†ú Ïä§ÌÇ¨" );	
+		case SSKILL_ELEMENT:	// ø¯º“¡§¡¶
+			strSubTitle = _S( 645, "ø¯º“¡§¡¶ Ω∫≈≥" );	
 			break;
 
-		case SSKILL_MAKE_WEAPON:	// Î¨¥Í∏∞Ï†úÏûë
-			strSubTitle = _S( 648, "Î¨¥Í∏∞Ï†úÏûë Ïä§ÌÇ¨" );	
+		case SSKILL_MAKE_WEAPON:	// π´±‚¡¶¿€
+			strSubTitle = _S( 648, "π´±‚¡¶¿€ Ω∫≈≥" );	
 			break;
-		case SSKILL_MAKE_WEAR:	// Î∞©Ïñ¥Íµ¨Ï†úÏûë
+		case SSKILL_MAKE_WEAR:	// πÊæÓ±∏¡¶¿€
 		case SSKILL_MAKE_G_B:
 		case SSKILL_MAKE_ARMOR:
 		case SSKILL_MAKE_H_S:
-			strSubTitle = _S( 651, "Î∞©Ïñ¥Íµ¨Ï†úÏûë Ïä§ÌÇ¨" );	
+			strSubTitle = _S( 651, "πÊæÓ±∏¡¶¿€ Ω∫≈≥" );	
+			break;
+			// π∞æ‡ ¡¶¡∂ ∞¸∑√ ≈« ≥◊¿” √ﬂ∞°. [8/26/2010 rumist]
+		case SSKILL_MAKE_POTINO:
+			strSubTitle = _S( 767, "π∞æ‡ ¡¶¿€ Ω∫≈≥" );	
 			break;
 		}
-		_pUIMgr->GetDrawPort()->PutTextExCX( strSubTitle, m_nPosX + SKILLLEARN_NEW_ACTIVE_TAB_CX, m_nPosY + SKILLLEARN_NEW_TAB_SY, 0xFFCB00FF);
+		pDrawPort->PutTextExCX( strSubTitle, m_nPosX + SKILLLEARN_NEW_ACTIVE_TAB_CX, m_nPosY + SKILLLEARN_NEW_TAB_SY, 0xFFCB00FF);
 	}
 
-	_pUIMgr->GetDrawPort()->PutTextEx(  _S( 90, "ÏàôÎ†®ÎèÑ" ) , m_nPosX + SKILLLEARN_NEW_CURSP_SX,			
+	pDrawPort->PutTextEx(  _S( 90, "º˜∑√µµ" ) , m_nPosX + SKILLLEARN_NEW_CURSP_SX,			
 										m_nPosY + SKILLLEARN_NEW_CURSP_SY,  0xDED9A0FF);
-	_pUIMgr->GetDrawPort()->PutTextExRX( _pUIMgr->GetCharacterInfo()->GetStringOfSP(),
-											m_nPosX + SKILLLEARN_NEW_CURSP_RX, m_nPosY + SKILLLEARN_NEW_CURSP_SY-2, 0xBDA99FFF );
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	CTString strString;
+	strString.PrintF( "%d", _pNetwork->MyCharacterInfo.sp / 10000 );
+	pDrawPort->PutTextExRX( strString, m_nPosX + SKILLLEARN_NEW_CURSP_RX, m_nPosY + SKILLLEARN_NEW_CURSP_SY-2, 0xBDA99FFF );
+
+	pDrawPort->EndTextEx();
 }
 
 
@@ -688,7 +535,7 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 		case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 
 			int	ndX = nX - nOldX;
@@ -718,10 +565,10 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 				int	iRowS = m_sbScrollBar.GetScrollPos();
 				int	iRowE = iRowS + SKILLLEARN_NEW_SLOT_ROW;
 				int	nWhichRow = -1;
-			
+//				### skill new			
 				for( iRow = iRowS; iRow < iRowE; iRow++ )
 				{
-					if( m_btnSelectedSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
+					if( m_ppIconsSelectedSkill[iRow]->MouseMessage( pMsg ) != WMSG_FAIL )
 						nWhichRow = iRow;
 				}
 
@@ -729,7 +576,7 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 				if( nWhichRow != -1 )
 				{
 					m_bSkillInfoVisible = TRUE;
-					ShowSkillLearnInfo(nWhichRow);
+//					ShowSkillLearnInfo(nWhichRow);
 				}
 				else
 					m_bSkillInfoVisible = FALSE;
@@ -743,7 +590,6 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 
 			if( bLButtonDownInBtn && m_nSelectedSkillID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
 			{
-				m_btnSelectedSkill[m_nSelectedSkillID].SetBtnState( UBES_IDLE );
 				bLButtonDownInBtn = FALSE;
 			}
 			// Active icon scroll bar
@@ -756,6 +602,7 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 		{
 			if( IsInside( nX, nY ))
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
 				nOldX = nX;		nOldY = nY;
 
 				// Close button
@@ -798,23 +645,26 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 					int nHeight = m_rcButtonArea.GetHeight();
 
 					iRowE = iRowS + SKILLLEARN_NEW_SLOT_ROW;
-
+//					### skill new
 					for( iRow = iRowS; iRow < iRowE; iRow++ )
 					{
-						if( m_btnSelectedSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
+						if (m_ppIconsSelectedSkill[iRow]->IsEmpty() == true)
+							continue;
+
+						if( m_ppIconsSelectedSkill[iRow]->MouseMessage( pMsg ) != WMSG_FAIL )
 						{
 							// Update selected skill
 							m_nSelectedSkillID = iRow;
 
 							bLButtonDownInBtn = TRUE;
-							_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
+							pUIManager->RearrangeOrder( UI_SKILLLEARN, TRUE );
 							return WMSG_SUCCESS;
 						}
 
-						if(!m_btnSelectedSkill[iRow].IsEmpty())
+						if(!m_ppIconsSelectedSkill[iRow]->IsEmpty())
 						{
-							nPosX =  m_btnSelectedSkill[iRow].GetPosX();
-							nPosY =  m_btnSelectedSkill[iRow].GetPosY();
+							nPosX =  m_ppIconsSelectedSkill[iRow]->GetPosX();
+							nPosY =  m_ppIconsSelectedSkill[iRow]->GetPosY();
 							m_rcButtonArea.SetRect(nPosX, nPosY, nPosX + nWidth, nPosY + nHeight);
 							if(IsInsideRect(nX, nY, m_rcButtonArea))
 							{
@@ -822,7 +672,7 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 								{
 									m_nSelectedSkillID = iRow;
 								}
-								_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
+								pUIManager->RearrangeOrder( UI_SKILLLEARN, TRUE );
 								return WMSG_SUCCESS;
 							}
 						}
@@ -839,7 +689,7 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 					}
 				}
 
-				_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
+				pUIManager->RearrangeOrder( UI_SKILLLEARN, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -847,9 +697,10 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 
 		case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 			bLButtonDownInBtn = FALSE;
 
-			 if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			 {
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -900,7 +751,7 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 
 					for( iRow = iRowS; iRow < iRowE; iRow++ )
 					{
-						if( ( wmsgResult =  m_btnSelectedSkill[iRow].MouseMessage( pMsg ) ) != WMSG_FAIL )
+						if( ( wmsgResult =  m_ppIconsSelectedSkill[iRow]->MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
 						}
 							return WMSG_SUCCESS;
@@ -912,7 +763,7 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -947,564 +798,30 @@ WMSG_RESULT CUISkillLearn::SKillLearnNewMouseMessage(MSG *pMsg )
 	return WMSG_FAIL;
 }
 
-
 //////////////////////////////////////////////////////////////////////////
 //
-// Ïä§ÌÇ¨ Ï†ïÎ≥¥Î•º ÌëúÏãú Ìï©ÎãàÎã§.(Ïä§ÌÇ¨ ÏäµÎìùÏóêÏÑúÎßå ÏÇ¨Ïö©)
-//
-//////////////////////////////////////////////////////////////////////////
-void CUISkillLearn::ShowSkillLearnInfo(int nRow /* = -1 */)
-{
-	CTString strTemp;
-	COLOR	strColor;
-
-	ResetSkillInfoString();
-
-//	m_bSkillInfoVisible = FALSE;
-
-	int nIndex = m_btnSelectedSkill[nRow].GetSkillIndex();
-
-	if(m_nCurrentSkillType != SKILL_SPECIAL)
-	{
-		CSkill		&rSkill = _pNetwork->GetSkillData( nIndex );
-		int nLevel = _pUIMgr->GetCharacterInfo()->GetSkillLevel(nIndex, FALSE);
-		
-		strColor =  0x0077FFFF;
-		strTemp.PrintF("%s(%d/%d)",rSkill.GetName(), nLevel, rSkill.GetMaxLevel());
-		m_rsSkillName.AddString(strTemp, strColor);
-
-		strColor =  0x72D02EFF;
-		strTemp = rSkill.GetDescription();
-		m_rsSkillDesc.AddString(strTemp, strColor);
-
-		if( rSkill.GetFlag() & SF_SINGLEMODE )
-		{
-			strTemp.PrintF(_S(499, "ÌçºÏä§ÎÑêÎçòÏ†Ñ Ï†ÑÏö© Ïä§ÌÇ¨"));
-			m_rsSkillName.AddString(strTemp, strColor);
-		}
-					
-		
-		int nLoopCnt = 0;
-		if(nLevel == 0) // Î∞∞Ïö∞ÏßÄ ÏïäÏùÄ Ïä§ÌÇ¨(Îã§Ïùå Ï†ïÎ≥¥Îßå ÌëúÏãú)
-		{
-			nLoopCnt = 1;
-		}
-		else //Î∞∞Ïö¥ Ïä§ÌÇ¨ (ÌòÑÏû¨, Îã§Ïùå ÌëúÏãú)
-		{
-			nLoopCnt = 2;
-			nLevel--; 
-		}
-
-		for(int n = 0; n < nLoopCnt; n++, nLevel++)
-		{
-			int		nLearnSkillIndex[3];
-			SBYTE	sbLearnSkillLevel[3];
-			int		nLearnItemIndex[3];
-			SQUAD	nLearnItemCount[3];
-			BOOL	bLearnSkill = FALSE;
-			BOOL	bLearnItem = FALSE;
-
-			strColor = 0xF2F2F2FF;
-
-			for( int i = 0; i < 3; i++ )
-			{
-				nLearnSkillIndex[i] = rSkill.GetLearnSkillIndex( nLevel, i );
-				sbLearnSkillLevel[i] = rSkill.GetLearnSkillLevel( nLevel, i );
-				nLearnItemIndex[i] = rSkill.GetLearnItemIndex( nLevel, i );
-				nLearnItemCount[i] = rSkill.GetLearnItemCount( nLevel, i );
-				
-				if( nLearnSkillIndex[i] != -1 )
-					bLearnSkill = TRUE;
-				if( nLearnItemIndex[i] != -1 )
-					bLearnItem = TRUE;
-			}
-			switch( rSkill.GetType() )
-			{
-			case CSkill::ST_MELEE:					// Active
-			case CSkill::ST_RANGE:					// Active
-			case CSkill::ST_MAGIC:					// Active
-				{
-					strTemp.PrintF( _S( 256, "ÌïÑÏöî Î†àÎ≤® : %d" ), rSkill.GetLearnLevel( nLevel ) );
-					if(n == 1 || nLoopCnt == 1)
-					{
-						strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_LEVEL ? 0xFF0000FF : 0xFFFF00FF;
-					}
-					else
-					{
-						strColor = 0xF2F2F2FF;
-					}
-					
-					AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					strTemp.PrintF( _S( 257, "ÌïÑÏöî SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // ÏàôÎ†®ÎèÑ
-					if(n == 1 || nLoopCnt == 1)
-					{
-						strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_SP ? 0xFF0000FF : 0xFFFF00FF;
-					}
-					else
-					{
-						strColor = 0xF2F2F2FF;
-					}
-					AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);				
-
-					const int iLearnStr = rSkill.GetLearnStr( nLevel );
-					const int iLearnDex = rSkill.GetLearnDex( nLevel );
-					const int iLearnInt = rSkill.GetLearnInt( nLevel );
-					const int iLearnCon = rSkill.GetLearnCon( nLevel );
-
-					if( iLearnStr > 0 ) 
-					{
-						strTemp.PrintF( _S( 1391, "ÌïÑÏöî Ìûò : %d" ), iLearnStr );		// ÌïÑÏöî Ìûò 
-						if(n == 1 || nLoopCnt == 1)
-						{
-							strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_STR ? 0xFF0000FF : 0xFFFF00FF;
-						}
-						else
-						{
-							strColor = 0xF2F2F2FF;
-						}
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-
-					if( iLearnDex > 0 ) 
-					{
-						strTemp.PrintF( _S( 1392, "ÌïÑÏöî ÎØºÏ≤© : %d" ), iLearnDex );	// ÌïÑÏöî ÎØºÏ≤©
-						if(n == 1 || nLoopCnt == 1)
-						{
-							strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_DEX ? 0xFF0000FF : 0xFFFF00FF;
-						}
-						else
-						{
-							strColor = 0xF2F2F2FF;
-						}
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-					
-					if( iLearnInt > 0 ) 
-					{
-						strTemp.PrintF( _S( 1393, "ÌïÑÏöî ÏßÄÌòú : %d" ), iLearnInt );	// ÌïÑÏöî ÏßÄÌòú
-						if(n == 1 || nLoopCnt == 1)
-						{
-							strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_INT ? 0xFF0000FF : 0xFFFF00FF;
-						}
-						else
-						{
-							strColor = 0xF2F2F2FF;
-						}
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-
-					if( iLearnCon > 0 )
-					{
-						strTemp.PrintF( _S( 1394, "ÌïÑÏöî Ï≤¥Ïßà : %d" ), iLearnCon );	// ÌïÑÏöî Ï≤¥Ïßà
-						if(n == 1 || nLoopCnt == 1)
-						{
-							strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_CON ? 0xFF0000FF : 0xFFFF00FF;
-						}
-						else
-						{
-							strColor = 0xF2F2F2FF;
-						}
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-					
-					// Need skill
-					if( bLearnSkill )
-					{
-						for( i = 0; i < 3; i++ )
-						{
-							if( nLearnSkillIndex[i] != -1 )
-							{
-								CSkill	&rNeedSkill = _pNetwork->GetSkillData( nLearnSkillIndex[i] );
-								strTemp.PrintF( " : %s Lv.%d", rNeedSkill.GetName(), sbLearnSkillLevel[i] );
-								strTemp = _S( 258, "ÌïÑÏöî Ïä§ÌÇ¨" ) + strTemp;
-								if(n == 1 || nLoopCnt == 1)
-								{
-									strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_SKILL ? 0xFF0000FF : 0xFFFF00FF;
-								}
-								else
-								{
-									strColor = 0xF2F2F2FF;
-								}
-								AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-							}
-						}
-					}
-					
-					// Need item
-					if( bLearnItem )
-					{
-						for( i = 0; i < 3; i++ )
-						{
-							if( nLearnItemIndex[i] != -1 )
-							{
-								CItemData	&rNeedItem = _pNetwork->GetItemData( nLearnItemIndex[i] );
-								strTemp.PrintF( _S( 260, "  %s %dÍ∞ú" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
-								strTemp = _S( 259, "ÌïÑÏöî ÏïÑÏù¥ÌÖú" ) + strTemp;
-								if(n == 1 || nLoopCnt == 1)
-								{
-									strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_ITEM ? 0xFF0000FF : 0xFFFF00FF;
-								}
-								else
-								{
-									strColor = 0xF2F2F2FF;
-								}
-								AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-							}
-						}
-					}
-					
-					if(n == 1 || nLoopCnt == 1)
-					{
-						strColor = 0xFFFF00FF;
-					}
-					else
-					{
-						strColor = 0xF2F2F2FF;
-					}
-
-					int	nNeedMP = rSkill.GetNeedMP( nLevel );
-					int	nNeedHP = rSkill.GetNeedHP( nLevel );
-					if( nNeedHP == 0 )
-					{
-						if( nNeedMP != 0 )
-						{
-							strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
-
-								AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-						}
-					}
-					else
-					{
-						if( nNeedMP == 0 )
-						{
-							strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );	
-							AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-						}
-						else
-						{
-							strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
-							AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-							strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );
-							AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-						}
-					}
-
-					if( rSkill.GetPower( nLevel ) > 0 )
-					{
-						strTemp.PrintF( _S( 65, "ÏúÑÎ†• : %d" ), rSkill.GetPower( nLevel ) );
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-
-					strTemp.PrintF( _S( 66, "Ïú†Ìö® Í±∞Î¶¨ : %.1f" ), rSkill.GetFireRange() );
-					AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					if(rSkill.GetDurTime(nLevel) > 0)
-					{
-						strTemp.PrintF( _S( 4172, "ÏßÄÏÜçÏãúÍ∞Ñ : %dÏ¥à " ), rSkill.GetDurTime(nLevel) / 10);
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-					
-					if(rSkill.GetReUseTime() > 0)
-					{
-						strTemp.PrintF( _S( 4173, "Ïû¨ÏÇ¨Ïö© ÏãúÍ∞Ñ : %dÏ¥à " ), rSkill.GetReUseTime() );
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-
-				}
-				break;
-
-			case CSkill::ST_PASSIVE:				// Passive
-			{
-				strTemp.PrintF( _S( 256, "ÌïÑÏöî Î†àÎ≤® : %d" ), rSkill.GetLearnLevel( nLevel ) );
-				if(n == 1 || nLoopCnt == 1)
-				{
-					strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_LEVEL ? 0xFF0000FF : 0xFFFF00FF;
-				}
-				else
-				{
-					strColor = 0xF2F2F2FF;
-				}
-				AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-				strTemp.PrintF( _S( 257, "ÌïÑÏöî SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // ÏàôÎ†®ÎèÑ
-				if(n == 1 || nLoopCnt == 1)
-				{
-					strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_SP ? 0xFF0000FF : 0xFFFF00FF;
-				}
-				else
-				{
-					strColor = 0xF2F2F2FF;
-				}
-				AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-
-				const int iLearnStr = rSkill.GetLearnStr( nLevel );
-				const int iLearnDex = rSkill.GetLearnDex( nLevel );
-				const int iLearnInt = rSkill.GetLearnInt( nLevel );
-				const int iLearnCon = rSkill.GetLearnCon( nLevel );
-				
-					if( iLearnStr > 0 ) 
-					{
-						strTemp.PrintF( _S( 1391, "ÌïÑÏöî Ìûò : %d" ), iLearnStr );		// ÌïÑÏöî Ìûò 
-						if(n == 1 || nLoopCnt == 1)
-						{
-							strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_STR ? 0xFF0000FF : 0xFFFF00FF;
-						}
-						else
-						{
-							strColor = 0xF2F2F2FF;
-						}
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-
-					if( iLearnDex > 0 ) 
-					{
-						strTemp.PrintF( _S( 1392, "ÌïÑÏöî ÎØºÏ≤© : %d" ), iLearnDex );	// ÌïÑÏöî ÎØºÏ≤©
-						if(n == 1 || nLoopCnt == 1)
-						{
-							strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_DEX ? 0xFF0000FF : 0xFFFF00FF;
-						}
-						else
-						{
-							strColor = 0xF2F2F2FF;
-						}
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-					
-					if( iLearnInt > 0 ) 
-					{
-						strTemp.PrintF( _S( 1393, "ÌïÑÏöî ÏßÄÌòú : %d" ), iLearnInt );	// ÌïÑÏöî ÏßÄÌòú
-						if(n == 1 || nLoopCnt == 1)
-						{
-							strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_INT ? 0xFF0000FF : 0xFFFF00FF;
-						}
-						else
-						{
-							strColor = 0xF2F2F2FF;
-						}
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-
-					if( iLearnCon > 0 )
-					{
-						strTemp.PrintF( _S( 1394, "ÌïÑÏöî Ï≤¥Ïßà : %d" ), iLearnCon );	// ÌïÑÏöî Ï≤¥Ïßà
-						if(n == 1 || nLoopCnt == 1)
-						{
-							strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_CON ? 0xFF0000FF : 0xFFFF00FF;
-						}
-						else
-						{
-							strColor = 0xF2F2F2FF;
-						}
-						AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-					}
-
-				// Need skill
-				if( bLearnSkill )
-				{
-					for( i = 0; i < 3; i++ )
-					{
-						if( nLearnSkillIndex[i] != -1 )
-						{
-							CSkill	&rNeedSkill = _pNetwork->GetSkillData( nLearnSkillIndex[i] );
-							strTemp.PrintF( " : %s Lv.%d", rNeedSkill.GetName(), sbLearnSkillLevel[i] );
-							strTemp = _S( 258, "ÌïÑÏöî Ïä§ÌÇ¨" ) + strTemp;
-							if(n == 1 || nLoopCnt == 1)
-							{
-								strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_SKILL ? 0xFF0000FF : 0xFFFF00FF;
-							}
-							else
-							{
-								strColor = 0xF2F2F2FF;
-							}
-							AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-						}
-					}
-				}
-
-				// Need item
-				if( bLearnItem )
-				{
-					for( i = 0; i < 3; i++ )
-					{
-						if( nLearnItemIndex[i] != -1 )
-						{
-							CItemData	&rNeedItem = _pNetwork->GetItemData( nLearnItemIndex[i] );
-							strTemp.PrintF( _S( 260, "  %s %dÍ∞ú" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
-							strTemp = _S( 259, "ÌïÑÏöî ÏïÑÏù¥ÌÖú" ) + strTemp;
-							if(n == 1 || nLoopCnt == 1)
-							{
-								strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_ITEM ? 0xFF0000FF : 0xFFFF00FF;
-							}
-							else
-							{
-								strColor = 0xF2F2F2FF;
-							}
-							AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-						}
-					}
-				}
-
-				
-				if(n == 1 || nLoopCnt == 1)
-				{
-					strColor = 0xFFFF00FF;
-				}
-				else
-				{
-					strColor = 0xF2F2F2FF;
-				}
-
-				if(rSkill.GetDurTime(nLevel) > 0)
-				{
-					strTemp.PrintF( _S( 4172, "ÏßÄÏÜçÏãúÍ∞Ñ : %dÏ¥à " ), rSkill.GetDurTime(nLevel) / 10);
-					AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-				}
-				
-				if(rSkill.GetReUseTime() > 0)
-				{
-					strTemp.PrintF( _S( 4173, "Ïû¨ÏÇ¨Ïö© ÏãúÍ∞Ñ : %dÏ¥à " ), rSkill.GetReUseTime() );
-					AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor);
-				}
-			}
-			break;
-			}
-		}
-
-	}
-	else // m_nCurrentSkillType == SKILL_SPECIAL
-	{
-
-		CSpecialSkill &rSkill = _pNetwork->GetSSkillData( nIndex );
-
-		int nLevel = _pUIMgr->GetCharacterInfo()->GetSkillLevel(nIndex, TRUE);
-		
-		strTemp.PrintF("%s(%d/%d)",rSkill.GetName(), nLevel, rSkill.GetMaxLevel());
-		m_rsSkillName.AddString(strTemp, 0xFFC672FF);
-
-		strTemp = rSkill.GetDescription();
-		m_rsSkillDesc.AddString(strTemp, 0xC5C5C5FF);
-		
-		int nLoopCnt = 0;
-		if(nLevel == 0)
-		{
-			nLoopCnt = 1;
-		}
-		else
-		{
-			nLoopCnt = 2;
-			nLevel--;
-		}
-		
-		for(int n = 0; n < nLoopCnt; n++, nLevel++)
-		{
-			// Get learning condition
-			int		nLearnSkillIndex;
-			SBYTE	sbLearnSkillLevel;
-			BOOL	bLearnSkill	= FALSE;
-			BOOL	bLearnItem	= FALSE;		
-			
-			nLearnSkillIndex	= rSkill.GetLearnSkillIndex();
-			sbLearnSkillLevel	= rSkill.GetLearnSkillLevel();
-			
-			if( nLearnSkillIndex != -1 )
-				bLearnSkill = TRUE;
-			
-			strTemp.PrintF( _S( 256, "ÌïÑÏöî Î†àÎ≤® : %d" ), rSkill.GetLearnLevel( nLevel ) );
-			if(n == 1 || nLoopCnt == 1)
-			{
-				strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_LEVEL ? 0xFF0000FF : 0xFFFF00FF;
-			}
-			else
-			{
-				strColor = 0xF2F2F2FF;
-			}
-			AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor );
-			strTemp.PrintF( _S( 257, "ÌïÑÏöî SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // ÏàôÎ†®ÎèÑ
-			if(n == 1 || nLoopCnt == 1)
-			{
-				strColor = m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_SP ? 0xFF0000FF : 0xFFFF00FF;
-			}
-			else
-			{
-				strColor = 0xF2F2F2FF;
-			}
-			AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor );
-			
-			// Need skill
-			if( bLearnSkill )
-			{
-				AddSkillInfoString(SKILLINFO_CURRENT, _S( 258, "ÌïÑÏöî Ïä§ÌÇ¨" ), 0xBDA99FFF );
-				if( nLearnSkillIndex != -1 )
-				{
-					CSpecialSkill	&rNeedSkill = _pNetwork->GetSSkillData( nLearnSkillIndex );
-					strTemp.PrintF( " : %s Lv.%d", rNeedSkill.GetName(), sbLearnSkillLevel );
-					if(n == 1 || nLoopCnt == 1)
-					{
-						if(m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_SKILL)
-						{
-							strColor  = 0xFF0000FF;
-						}
-						else if(m_pSelectedSkillSatisfied[nRow] & NOT_SATISFIED_SKILL_LEVEL)
-						{
-							strColor  = 0xFF0000FF;
-						}
-						else
-						{
-							strColor =  0xFFFF00FF;
-						}
-						
-					}
-					else
-					{
-						strColor = 0xF2F2F2FF;
-					}
-					AddSkillInfoString(SKILLINFO_CURRENT + n, strTemp, strColor );
-				}
-			}
-		}
-	}
-
-	int nNewPosX;
-	int nNewPosY;
-
-	m_btnSelectedSkill[nRow].GetAbsPos(nNewPosX, nNewPosY);
-
-	if(nNewPosX + GetSkillInfoWidth() > _pUIMgr->GetDrawPort()->GetWidth())
-	{
-		nNewPosX -= GetSkillInfoWidth();
-	}
-	if(nNewPosY + GetSkillInfoHeight() + 34 > _pUIMgr->GetDrawPort()->GetHeight())
-	{
-		nNewPosY -= GetSkillInfoHeight();
-	}
-	else
-	{
-		nNewPosY += 34;
-	}
-
-	SetSkillInfoPos(nNewPosX, nNewPosY);
-
-//	if(!m_skillInfoString.m_bVisible)
-//	{
-//		m_bSkillInfoVisible = FALSE;
-//	}
-}
-
-//////////////////////////////////////////////////////////////////////////
-//
-// ÌòÑÏû¨ Ïä§ÌÇ¨Ïù¥ Ï°∞Í±¥ÏùÑ ÎßåÏ°±ÌïòÎäîÏßÄÎ•º Ï≤¥ÌÅ¨Ìï©ÎãàÎã§.
+// «ˆ¿Á Ω∫≈≥¿Ã ¡∂∞«¿ª ∏∏¡∑«œ¥¬¡ˆ∏¶ √º≈©«’¥œ¥Ÿ.
 //
 //////////////////////////////////////////////////////////////////////////
 int CUISkillLearn::IsSatisfiedSkill(int nSkillIndex, int nLevel, BOOL bSpecial )
 {
 	int nSatisfied = 0;
 
-	if( nSkillIndex == SKILL_NOT_EXIST )
+	if( nSkillIndex <= 0 )
 		return SKILL_NOT_EXIST;
-	
+
+	if (nLevel > 0)
+		--nLevel; // µ•¿Ã≈Õ ∑π∫ß¿∫ 1∫Œ≈Õ, Ω∫≈≥µ•¿Ã≈Õ ¡¢±Ÿ πËø≠¿∫ 0 ∫Œ≈Õ
+
+	if (nLevel < 0)
+	{
+		LOG_DEBUG("Ω∫≈≥ ∑π∫ß¿Ã %d ¿‘¥œ¥Ÿ.", nLevel);
+		return SKILL_NOT_EXIST;
+	}
+
 	if( !bSpecial )
 	{
 		CSkill		&rSkill = _pNetwork->GetSkillData( nSkillIndex );
-
-		--nLevel;
 
 		int		nLearnSkillIndex[3];
 		SBYTE	sbLearnSkillLevel[3];
@@ -1526,13 +843,13 @@ int CUISkillLearn::IsSatisfiedSkill(int nSkillIndex, int nLevel, BOOL bSpecial )
 				bLearnItem = TRUE;
 		}
 
-		// ÌïÑÏöî Î†àÎ≤® Ï≤¥ÌÅ¨
-		if(rSkill.GetLearnLevel( nLevel ) > _pNetwork->MyCharacterInfo.level)
-			nSatisfied += NOT_SATISFIED_LEVEL;
-		// ÌïÑÏöî ÏàôÎ†®ÎèÑ Ï≤¥ÌÅ¨
-		if(rSkill.GetLearnSP( nLevel ) > (_pNetwork->MyCharacterInfo.sp / 10000))
-			nSatisfied += NOT_SATISFIED_SP;
-		// ÌïÑÏöî Îä•Î†•Ïπò Ï≤¥ÌÅ¨
+		// « ø‰ ∑π∫ß √º≈©
+		if(_pNetwork->MyCharacterInfo.level < rSkill.GetLearnLevel( nLevel ))
+			nSatisfied |= NOT_SATISFIED_LEVEL;
+		// « ø‰ º˜∑√µµ √º≈©
+		if((_pNetwork->MyCharacterInfo.sp / 10000) < rSkill.GetLearnSP( nLevel ))
+			nSatisfied |= NOT_SATISFIED_SP;
+		// « ø‰ ¥…∑¬ƒ° √º≈©
 
 		const int iLearnStr = rSkill.GetLearnStr( nLevel );
 		const int iLearnDex = rSkill.GetLearnDex( nLevel );
@@ -1541,119 +858,107 @@ int CUISkillLearn::IsSatisfiedSkill(int nSkillIndex, int nLevel, BOOL bSpecial )
 
 		if( iLearnStr > 0 ) 
 		{
-			if( iLearnStr > _pNetwork->MyCharacterInfo.str )
-				nSatisfied += NOT_SATISFIED_STR;
+			if( _pNetwork->MyCharacterInfo.str - _pNetwork->MyCharacterInfo.opt_str  < iLearnStr )
+				nSatisfied |= NOT_SATISFIED_STR;
 		}
 
 		if( iLearnDex > 0 ) 
 		{
-			if( iLearnDex > _pNetwork->MyCharacterInfo.dex )
-				nSatisfied += NOT_SATISFIED_DEX;
+			if( _pNetwork->MyCharacterInfo.dex - _pNetwork->MyCharacterInfo.opt_dex < iLearnDex )
+				nSatisfied |= NOT_SATISFIED_DEX;
 		}
 
 		if( iLearnInt > 0 ) 
 		{
-			if( iLearnInt > _pNetwork->MyCharacterInfo.intel )
-				nSatisfied += NOT_SATISFIED_INT;
+			if( _pNetwork->MyCharacterInfo.intel - _pNetwork->MyCharacterInfo.opt_intel < iLearnInt )
+				nSatisfied |= NOT_SATISFIED_INT;
 		}
 
 		if( iLearnCon > 0 ) 
 		{
-			if( iLearnCon > _pNetwork->MyCharacterInfo.con )
-				nSatisfied += NOT_SATISFIED_CON;
+			if( _pNetwork->MyCharacterInfo.con - _pNetwork->MyCharacterInfo.opt_con < iLearnCon )
+				nSatisfied |= NOT_SATISFIED_CON;
 		}
 
-		// ÌïÑÏöî Ïä§ÌÇ¨ Ï≤¥ÌÅ¨
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		// « ø‰ Ω∫≈≥ √º≈©
 		if( bLearnSkill )
 		{
-			for( i = 0; i < 3; i++ )
+			for( int i = 0; i < 3; i++ )
 			{
-				if( nLearnSkillIndex[i] != -1 )
+				if (nLearnSkillIndex[i] != -1)
 				{
-					//ÎÇ¥ Ïä§ÌÇ¨ Í∞ÄÏ†∏Ïò§Îäî Î∞©Î≤ïÏùÑ Ï∞æÏûê.
-					// Ï∫êÎ¶≠ÌÑ∞ Ïù∏Ìè¨Ï™ΩÏù∏Í∞Ä?
-					int nCurrentSkillLevel = _pUIMgr->GetCharacterInfo()->GetSkillLevel(nLearnSkillIndex[i], FALSE);
-					if(sbLearnSkillLevel[i] > nCurrentSkillLevel)
+					//≥ª Ω∫≈≥ ∞°¡Æø¿¥¬ πÊπ˝¿ª √£¿⁄.
+					// ƒ≥∏Ø≈Õ ¿Œ∆˜¬ ¿Œ∞°?
+					int nCurrentSkillLevel = MY_INFO()->GetSkillLevel(nLearnSkillIndex[i]);
+					if(nCurrentSkillLevel < sbLearnSkillLevel[i])
 					{
-						nSatisfied += NOT_SATISFIED_SKILL;
-						break;
+						nSatisfied |= (NOT_SATISFIED_SKILL_0 << i);
 					}
-					
 				}
 			}
 		}
 
-		// ÌïÑÏöî ÏïÑÏù¥ÌÖú Ï≤¥ÌÅ¨
+		// « ø‰ æ∆¿Ã≈€ √º≈©
 		if( bLearnItem )
 		{
-			for( i = 0; i < 3; i++ )
+			for( int i = 0; i < 3; i++ )
 			{
+				//2013/04/10 jeil
 				if( nLearnItemIndex[i] != -1 )
 				{
-					SQUAD nCurrentItemCount = _pUIMgr->GetInventory()->GetItemCount(nLearnItemIndex[i]);
-					if(nLearnItemCount[i] > nCurrentItemCount)
+					if(nLearnItemIndex[i] == 19)
 					{
-						nSatisfied += NOT_SATISFIED_ITEM;
-						break;
+						if(_pNetwork->MyCharacterInfo.money < nLearnItemCount[i])
+						{
+							nSatisfied |= (NOT_SATISFIED_ITEM_0 << i);
+						}
 					}
-					
+					else
+					{
+						SQUAD nCurrentItemCount = pUIManager->GetInventory()->GetItemCount(nLearnItemIndex[i]);
+						if(nCurrentItemCount < nLearnItemCount[i])
+						{
+							nSatisfied |= (NOT_SATISFIED_ITEM_0 << i);
+						}
+					}
 				}
 			}
 		}
-
 	}
 	else
 	{
-		CSpecialSkill &rSkill = _pNetwork->GetSSkillData( nSkillIndex );
+		CSpecialSkill* pSSkill = CSpecialSkill::getData( nSkillIndex );
 
-		--nLevel;
+		if (pSSkill == NULL)
+			return SKILL_NOT_EXIST;
 
 		// Get learning condition
 		int		nLearnSkillIndex;
 		SBYTE	sbLearnSkillLevel;
-		BOOL	bLearnSkill	= FALSE;
-		BOOL	bLearnItem	= FALSE;		
 		
-		nLearnSkillIndex	= rSkill.GetLearnSkillIndex();
-		sbLearnSkillLevel	= rSkill.GetLearnSkillLevel();
+		nLearnSkillIndex	= pSSkill->GetLearnSkillIndex();
+		sbLearnSkillLevel	= pSSkill->GetLearnSkillLevel();
 		
+		// « ø‰ ∑π∫ß √º≈©
+		if(_pNetwork->MyCharacterInfo.level < pSSkill->GetLearnLevel( nLevel ))
+			nSatisfied |= NOT_SATISFIED_LEVEL;
+		// « ø‰ º˜∑√µµ √º≈©
+		if((_pNetwork->MyCharacterInfo.sp / 10000) < pSSkill->GetLearnSP( nLevel ))
+			nSatisfied |= NOT_SATISFIED_SP;
+
 		if( nLearnSkillIndex != -1 )
-			bLearnSkill = TRUE;
-		
-		// ÌïÑÏöî Î†àÎ≤® Ï≤¥ÌÅ¨
-		if(rSkill.GetLearnLevel( nLevel ) > _pNetwork->MyCharacterInfo.level)
-			nSatisfied += NOT_SATISFIED_LEVEL;
-		// ÌïÑÏöî ÏàôÎ†®ÎèÑ Ï≤¥ÌÅ¨
-		if(rSkill.GetLearnSP( nLevel ) > (_pNetwork->MyCharacterInfo.sp / 10000))
-			nSatisfied += NOT_SATISFIED_SP;
-
-		// ÌïÑÏöî Ïä§ÌÇ¨ Ï≤¥ÌÅ¨
-		if( bLearnSkill )
 		{
-			if( nLearnSkillIndex != -1 )
+			int nCurrentSkillLevel = MY_INFO()->GetSkillLevel(nLearnSkillIndex, true);
+			if(nCurrentSkillLevel < sbLearnSkillLevel)
 			{
-				int nCurrentSkillLevel = _pUIMgr->GetCharacterInfo()->GetSkillLevel(nLearnSkillIndex, TRUE);
-				if(sbLearnSkillLevel > nCurrentSkillLevel)
-				{
-					if(nCurrentSkillLevel == 0)
-					{
-						nSatisfied += NOT_SATISFIED_SKILL;
-					}
-					else
-					{
-						nSatisfied += NOT_SATISFIED_SKILL_LEVEL;
-					}
-				}
-
+				nSatisfied |= NOT_SATISFIED_SKILL_0;
 			}
 		}
-
 	}
 
-
-
 	return nSatisfied;
-
 }
 
 
@@ -1661,7 +966,8 @@ void CUISkillLearn::UpdateSkillLearn()
 {
 	m_strDesc.Clear();
 
-	for( int iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++ )
+	int		iRow;
+	for( iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++ )
 	{
 
 		m_nActiveSkillSatisfied[iRow] = 0;
@@ -1669,30 +975,18 @@ void CUISkillLearn::UpdateSkillLearn()
 		m_nSpecialSkillSatisfied[iRow] = 0;
 	}
 
-	for(iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++)
+	for( iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++)
 	{
-		if(m_btnActiveSkills[iRow].IsEmpty())
+		if (m_pIconsSpecialSkill[iRow]->IsEmpty() == true)
 			break;
-		m_nActiveSkillSatisfied[iRow] = IsSatisfiedSkill( m_btnActiveSkills[iRow].GetSkillIndex(), m_btnActiveSkills[iRow].GetSkillLevel(), FALSE  );
-	}
-
-	for(iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++)
-	{
-		if(m_btnPassiveSkills[iRow].IsEmpty())
-			break;
-		m_nPassiveSkillSatisfied[iRow] = IsSatisfiedSkill( m_btnPassiveSkills[iRow].GetSkillIndex(), m_btnPassiveSkills[iRow].GetSkillLevel(), FALSE  );
-	}
-
-	for(iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++)
-	{
-		if(m_btnSpecialSkills[iRow].IsEmpty())
-			break;
-		m_nSpecialSkillSatisfied[iRow] = IsSatisfiedSkill( m_btnSpecialSkills[iRow].GetSkillIndex(), m_btnSpecialSkills[iRow].GetSkillLevel(), TRUE  );
+		
+		m_nSpecialSkillSatisfied[iRow] = IsSatisfiedSkill(m_pIconsSpecialSkill[iRow]->getIndex(), 
+			MY_INFO()->GetSkillLevel(m_pIconsSpecialSkill[iRow]->getIndex(), true), TRUE);
 	}
 }
 
 //
-// Ïä§ÌÇ¨ ÏäµÎìùÏóêÏÑúÎßå ÏÇ¨Ïö© ÌòÑÏû¨ Ïä§ÌÇ¨ Î≤ÑÌäºÏùÑ ÏßÄÏ†ï
+// Ω∫≈≥ Ω¿µÊø°º≠∏∏ ªÁøÎ «ˆ¿Á Ω∫≈≥ πˆ∆∞¿ª ¡ˆ¡§
 //
 void CUISkillLearn::SetCurrentSkill(int skill)
 {
@@ -1702,31 +996,19 @@ void CUISkillLearn::SetCurrentSkill(int skill)
 
 	switch(skill)
 	{
-		case SKILL_ACTIVE:
-			m_btnSelectedSkill = m_btnActiveSkills;
-			m_pSelectedSkillSatisfied = m_nActiveSkillSatisfied;
-			m_sbScrollBar.SetCurItemCount( m_nNumOfActiveSkill );
-			break;
-		case SKILL_PASSIVE:
-			m_btnSelectedSkill = m_btnPassiveSkills;
-			m_pSelectedSkillSatisfied = m_nPassiveSkillSatisfied;
-			m_sbScrollBar.SetCurItemCount( m_nNumOfPassiveSkill );
-			break;
 		case SKILL_SPECIAL:
-			m_btnSelectedSkill = m_btnSpecialSkills;
+			m_ppIconsSelectedSkill = m_pIconsSpecialSkill;
 			m_pSelectedSkillSatisfied = m_nSpecialSkillSatisfied;
 			m_sbScrollBar.SetCurItemCount( m_nNumOfSpecialSkill );
 			break;
 	}
+	
+	// [090821 sora] ≈« ∫Ø∞ÊΩ√ Ω∫≈©∑—πŸ ¿ßƒ° √ ±‚»≠ Ω√ƒ—¡‹
+	m_sbScrollBar.SetScrollPos(0);
 }
 
-#define EXTENSION_LEVEL		(31)
-extern INDEX g_iCountry;
+//////////////////////////////////////////////////////////////////////////
 
-#ifdef HELP_SYSTEM_1
-// [KH_07044] 3Ï∞® ÎèÑÏõÄÎßê Í¥ÄÎ†® Ï∂îÍ∞Ä
-extern INDEX g_iShowHelp1Icon;
-#endif
 
 //////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------------
@@ -1744,7 +1026,7 @@ CUISkillLearn::CUISkillLearn()
 	m_nSSkillType			= -1;
 	m_iSelChangeJob			= -1;
 	m_bUseCard				= FALSE;
-#ifdef NEW_USER_INTERFACE
+
 	m_nSelectedSkillID = -1;
 	m_nNumOfActiveSkill = 0;
 	m_nNumOfPassiveSkill = 0;
@@ -1754,7 +1036,10 @@ CUISkillLearn::CUISkillLearn()
 	m_nSSkillType = -1;
 	m_bSkillInfoVisible = FALSE;
 	m_ptdButtonTexture = NULL;
-#endif
+
+	m_iMobIdx = -1;
+	m_iMobVirIdx = -1;
+	m_bQuest = FALSE;
 }
 
 // ----------------------------------------------------------------------------
@@ -1763,11 +1048,12 @@ CUISkillLearn::CUISkillLearn()
 // ----------------------------------------------------------------------------
 CUISkillLearn::~CUISkillLearn()
 {
-	if (m_ptdButtonTexture)
-	{
-		_pTextureStock->Release(m_ptdButtonTexture);
-	}
 	Destroy();
+
+	STOCK_RELEASE(m_ptdButtonTexture);
+
+	for (int i = 0; i < SKILLLEARN_NEW_SLOT_TOTAL ; ++i)
+		SAFE_DELETE(m_pIconsSpecialSkill[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1827,254 +1113,77 @@ BOOL CheckSummonSkill( INDEX iSkillIndex )
 void CUISkillLearn::InitSkillLearn( BOOL bSpecial )
 {
 	// Reset description
-	m_lbSkillDesc.ResetAllStrings();
-
-#ifdef NEW_USER_INTERFACE
 	m_strDesc.Clear();
-#endif
 	
 	// Reset buttons
-	for( int iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++ )
+	for( int iRow = 0; iRow < SKILLLEARN_NEW_SLOT_ROW_TOTAL; iRow++ )
 	{
-		m_btnActiveSkills[iRow].InitBtn();
-		m_btnPassiveSkills[iRow].InitBtn();
-#ifdef ADJUST_MEMORIZE_SKILL
-		m_btnMemorizeSkills[iRow].InitBtn();
-#endif
-		m_btnSpecialSkills[iRow].InitBtn();
+		m_pIconsSpecialSkill[iRow]->clearIconData();
 	}
 	
 	// Collect skills
 	INDEX	ctPosActive = 0, ctPosPassive = 0, ctPosSpecial = 0, ctPosMemorize = 0;				// Possible
 	INDEX	ctImposActive = 0, ctImposPassive = 0, ctImposSpecial = 0, ctImposMemorize = 0;		// Impossible
-	
-	if( !bSpecial )
-	{
-		std::vector<sCollectSkill>		vectorPosActiveSkill;
-		std::vector<sCollectSkill>		vectorImposActiveSkill;
-		std::vector<sCollectSkill>		vectorPosPassiveSkill;
-		std::vector<sCollectSkill>		vectorImposPassiveSkill;
-		std::vector<sCollectSkill>		vectorPosMemorizeSkill;
-		std::vector<sCollectSkill>		vectorImposMemorizeSkill;
-		
-		vectorPosActiveSkill.resize(SKILLLEARN_NEW_SLOT_TOTAL);
-		vectorImposActiveSkill.resize(SKILLLEARN_NEW_SLOT_TOTAL);
-		vectorPosPassiveSkill.resize(SKILLLEARN_NEW_SLOT_TOTAL);
-		vectorImposPassiveSkill.resize(SKILLLEARN_NEW_SLOT_TOTAL);
-		vectorPosMemorizeSkill.resize(SKILLLEARN_NEW_SLOT_TOTAL);
-		vectorImposMemorizeSkill.resize(SKILLLEARN_NEW_SLOT_TOTAL);
-		
-		for( int iSkill = 1; iSkill <= _pNetwork->wo_iNumOfSkill; iSkill++ )
-		{
-			CSkill	&rSkill = _pNetwork->GetSkillData( iSkill );
-			
-			// If job is different
-			if( ( rSkill.GetJob() != _pNetwork->MyCharacterInfo.job ) )
-				continue;
-			
-			if( rSkill.GetJob2() > 0 && ( rSkill.GetJob2() != _pNetwork->MyCharacterInfo.job2 ) )
-				continue;
 
-			// ÏÜåÌôòÏä§ÌÇ¨ Ïù∏Îç±Ïä§ Ï∞æÍµ¨,
-			// ÏÜåÌôòÏàò ÏÇ¨Ïö© Ïä§ÌÇ¨.
-			if( _pNetwork->MyCharacterInfo.job == SORCERER && 
-				_pNetwork->MyCharacterInfo.job2 == 2 && 
-				rSkill.GetType() != CSkill::ST_PASSIVE )
-			{
-				if( CheckSummonSkill( iSkill ) )
-					continue;				
-			}
-			
-			int		nSkillIndex = rSkill.GetIndex();
-			SBYTE	sbSkillLevel = _pUIMgr->GetCharacterInfo()->GetSkillLevel( nSkillIndex, FALSE );
-			
-			// If this skill is already max level
-			if( sbSkillLevel >= rSkill.GetMaxLevel() )
-				continue;
-			
-			if( sbSkillLevel < 1 )
-				sbSkillLevel = 0;
-			ULONG	ulNeedCharLevel = rSkill.GetLearnLevel( sbSkillLevel );
-			sbSkillLevel++;
-			
-			switch( rSkill.GetType() )
-			{
-			case CSkill::ST_MELEE:				// Active skill
-			case CSkill::ST_RANGE:
-			case CSkill::ST_MAGIC:
-				{
-					if( ulNeedCharLevel <= _pNetwork->MyCharacterInfo.level )
-					{
-						vectorPosActiveSkill[ctPosActive++].SetData(nSkillIndex, sbSkillLevel, ulNeedCharLevel);				
-					}
-					else
-					{
-						vectorImposActiveSkill[ctImposActive++].SetData(nSkillIndex, sbSkillLevel, ulNeedCharLevel);					
-					}
-				}
-				break;
-				
-			case CSkill::ST_PASSIVE:			// Passive skill
-				{
-					if( ulNeedCharLevel <= _pNetwork->MyCharacterInfo.level )
-					{
-						vectorPosPassiveSkill[ctPosPassive++].SetData(nSkillIndex, sbSkillLevel, ulNeedCharLevel);		
-					}
-					else
-					{
-						vectorImposPassiveSkill[ctImposPassive++].SetData(nSkillIndex, sbSkillLevel, ulNeedCharLevel);					
-					}
-				}
-				break;
-			}
-		}
-		
-		std::sort(vectorPosActiveSkill.begin(), vectorPosActiveSkill.end());
-		std::sort(vectorImposActiveSkill.begin(), vectorImposActiveSkill.end());
-		std::sort(vectorPosPassiveSkill.begin(), vectorPosPassiveSkill.end());
-		std::sort(vectorImposPassiveSkill.begin(), vectorImposPassiveSkill.end());
-#ifdef ADJUST_MEMORIZE_SKILL
-		std::sort(vectorPosMemorizeSkill.begin(), vectorPosMemorizeSkill.end());
-		std::sort(vectorImposMemorizeSkill.begin(), vectorImposMemorizeSkill.end());
-#endif
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-#ifdef NEW_USER_INTERFACE
-		iSkill = 0;
-		// Possible active skill
-		for( iRow = 0; iRow < ctPosActive; iRow++ )
-		{
-			m_btnActiveSkills[iSkill].SetSkillInfo( vectorPosActiveSkill[iRow].lSkillIndex, vectorPosActiveSkill[iRow].sbSkillLevel );
-			m_nActiveSkillSatisfied[iSkill] = IsSatisfiedSkill( vectorPosActiveSkill[iRow].lSkillIndex, vectorPosActiveSkill[iRow].sbSkillLevel, FALSE );
-			iSkill++;
-		}
-		// Impossible active skill
-		for( iRow = 0; iRow < ctImposActive; iRow++ )
-		{
-			m_btnActiveSkills[iSkill].SetSkillInfo( vectorImposActiveSkill[iRow].lSkillIndex, vectorImposActiveSkill[iRow].sbSkillLevel );
-			m_nActiveSkillSatisfied[iSkill] = IsSatisfiedSkill( vectorImposActiveSkill[iRow].lSkillIndex, vectorImposActiveSkill[iRow].sbSkillLevel, FALSE  );
-			iSkill++;
-		}
+	int iSkill;
 
-		m_nNumOfActiveSkill = iSkill;
-
-		// Add passive skill buttons
-		iSkill = 0;
-		// Possible passive skill
-		for( iRow = 0; iRow < ctPosPassive; iRow++ )
-		{
-			m_btnPassiveSkills[iSkill].SetSkillInfo( vectorPosPassiveSkill[iRow].lSkillIndex, vectorPosPassiveSkill[iRow].sbSkillLevel );
-			m_nPassiveSkillSatisfied[iSkill] = IsSatisfiedSkill( vectorPosPassiveSkill[iRow].lSkillIndex, vectorPosPassiveSkill[iRow].sbSkillLevel, FALSE  );
-			iSkill++;
-		}
-		// Impossible passive skill
-		for( iRow = 0; iRow < ctImposPassive; iRow++ )
-		{
-			m_btnPassiveSkills[iSkill].SetSkillInfo( vectorImposPassiveSkill[iRow].lSkillIndex, vectorImposPassiveSkill[iRow].sbSkillLevel );
-			m_nPassiveSkillSatisfied[iSkill] = IsSatisfiedSkill( vectorImposPassiveSkill[iRow].lSkillIndex, vectorImposPassiveSkill[iRow].sbSkillLevel, FALSE  );
-			iSkill++;
-		}
-
-		m_nNumOfPassiveSkill = iSkill;
-		// Set scroll bar
-
-		m_sbScrollBar.SetScrollPos( 0 );
-		SetCurrentSkill(m_nCurrentSkillType);
-#else
-		// Add active skill buttons
-		iSkill = 0;
-		// Possible active skill
-		for( iRow = 0; iRow < ctPosActive; iRow++ )
-			m_btnActiveSkills[iSkill++].SetSkillInfo( vectorPosActiveSkill[iRow].lSkillIndex, vectorPosActiveSkill[iRow].sbSkillLevel );
-		// Impossible active skill
-		for( iRow = 0; iRow < ctImposActive; iRow++ )
-			m_btnActiveSkills[iSkill++].SetSkillInfo( vectorImposActiveSkill[iRow].lSkillIndex, vectorImposActiveSkill[iRow].sbSkillLevel );
-		// Set active scroll bar
-		m_sbActiveSkillIcon.SetScrollPos( 0 );
-		m_sbActiveSkillIcon.SetCurItemCount( iSkill );
-		
-		// Add passive skill buttons
-		iSkill = 0;
-		// Possible passive skill
-		for( iRow = 0; iRow < ctPosPassive; iRow++ )
-			m_btnPassiveSkills[iSkill++].SetSkillInfo( vectorPosPassiveSkill[iRow].lSkillIndex, vectorPosPassiveSkill[iRow].sbSkillLevel );
-		// Impossible passive skill
-		for( iRow = 0; iRow < ctImposPassive; iRow++ )
-			m_btnPassiveSkills[iSkill++].SetSkillInfo( vectorImposPassiveSkill[iRow].lSkillIndex, vectorImposPassiveSkill[iRow].sbSkillLevel );
-		// Set passive scroll bar
-		m_sbPassiveSkillIcon.SetScrollPos( 0 );
-		m_sbPassiveSkillIcon.SetCurItemCount( iSkill );
-
-	#ifdef ADJUST_MEMORIZE_SKILL
-		// Add memorize skill buttons
-		iSkill = 0;
-		// Possible memorize skill
-		for( iRow = 0; iRow < ctPosMemorize; iRow++ )
-			m_btnMemorizeSkills[iSkill++].SetSkillInfo( vectorPosMemorizeSkill[iRow].lSkillIndex, vectorPosMemorizeSkill[iRow].sbSkillLevel );
-		// Impossible memorize skill
-		for( iRow = 0; iRow < ctImposMemorize; iRow++ )
-			m_btnMemorizeSkills[iSkill++].SetSkillInfo( vectorImposMemorizeSkill[iRow].lSkillIndex, vectorImposMemorizeSkill[iRow].sbSkillLevel );
-		// Set memorize scroll bar
-		m_sbMemorizeSkillIcon.SetScrollPos( 0 );
-		m_sbMemorizeSkillIcon.SetCurItemCount( iSkill );
-	#endif
-#endif
-	}
-	// Special Skill
-	else
+	if (bSpecial == TRUE)
 	{
 		std::vector<sCollectSkill>		vectorPosSpecialSkill;
 		std::vector<sCollectSkill>		vectorImposSpecialSkill;
 		
-		vectorPosSpecialSkill.resize(SKILLLEARN_NEW_SLOT_TOTAL);		
-		vectorImposSpecialSkill.resize(SKILLLEARN_NEW_SLOT_TOTAL);
-		
-		// Special Skill
-		for( int iSkill = 1; iSkill <= _pNetwork->wo_iNumOfSSkill; iSkill++ )
+		vectorPosSpecialSkill.resize(SKILLLEARN_NEW_SLOT_ROW_TOTAL);		
+		vectorImposSpecialSkill.resize(SKILLLEARN_NEW_SLOT_ROW_TOTAL);
+
+		CSpecialSkill::_map::iterator	iter = CSpecialSkill::_mapdata.begin();
+		CSpecialSkill::_map::iterator	eiter = CSpecialSkill::_mapdata.end();
+
+		for (;iter != eiter; ++iter)
 		{
-			CSpecialSkill	&rSkill = _pNetwork->GetSSkillData( iSkill );
+			CSpecialSkill* pSSkill = (*iter).second;
+
+			if (pSSkill == NULL)
+				continue;
 			
-			// Î∞©Ïñ¥Íµ¨Ï†úÏûë
-			if(m_nSSkillType == SSKILL_MAKE_WEAR 
-				//||
-				//m_nSSkillType == SSKILL_MAKE_G_B || 
-				//m_nSSkillType == SSKILL_MAKE_ARMOR || 
-				//m_nSSkillType == SSKILL_MAKE_H_S
-				)
+			// πÊæÓ±∏¡¶¿€
+			if(m_nSSkillType == SSKILL_MAKE_WEAR)
 			{
-				if( rSkill.GetType() != SSKILL_MAKE_WEAR 
-					//&&
-					//rSkill.GetType() != SSKILL_MAKE_G_B &&
-					//rSkill.GetType() != SSKILL_MAKE_ARMOR &&
-					//rSkill.GetType() != SSKILL_MAKE_H_S
-					)
+				if(pSSkill->GetType() != SSKILL_MAKE_WEAR)
 					continue;
 			}
 			// If skill is different
-			else if( rSkill.GetType() != m_nSSkillType)
+			else if( pSSkill->GetType() != m_nSSkillType)
 				continue;
 			
-			// ÏàúÏúÑ Ï≤¥ÌÅ¨...
-			const int iPreference = rSkill.GetPreference();
+			// º¯¿ß √º≈©...
+			const int iPreference = pSSkill->GetPreference();
 			if(iPreference != -1)
 			{
-				int iIndex = _pUIMgr->GetCharacterInfo()->CheckSSkill( rSkill.GetType() );
+				int iIndex = pUIManager->GetCharacterInfo()->CheckSSkill( pSSkill->GetType() );
 				if(iIndex != -1)
 				{
-					if( iPreference < _pNetwork->GetSSkillData(iIndex).GetPreference() )
+					CSpecialSkill* pPrefer = CSpecialSkill::getData(iIndex);
+
+					if (pPrefer == NULL)
+						continue;
+
+					if( iPreference < pPrefer->GetPreference() )
 						continue;
 				}
 			}
 			
-			int		nSkillIndex		= rSkill.GetIndex();
-			SBYTE	sbSkillLevel	= _pUIMgr->GetCharacterInfo()->GetSkillLevel( nSkillIndex, TRUE );
+			int		nSkillIndex		= pSSkill->GetIndex();
+			SBYTE	sbSkillLevel	= MY_INFO()->GetSkillLevel(nSkillIndex, true);
 			
 			// If this skill is already max level
-			if( sbSkillLevel >= rSkill.GetMaxLevel() )
+			if( sbSkillLevel >= pSSkill->GetMaxLevel() )
 				continue;
 			
 			if( sbSkillLevel < 1 )
 				sbSkillLevel = 0;
-			ULONG	ulNeedCharLevel = rSkill.GetLearnLevel( sbSkillLevel );
+			ULONG	ulNeedCharLevel = pSSkill->GetLearnLevel( sbSkillLevel );
 			sbSkillLevel++;
 			
 			// Special Skill
@@ -2090,17 +1199,18 @@ void CUISkillLearn::InitSkillLearn( BOOL bSpecial )
 		
 		std::sort(vectorPosSpecialSkill.begin(), vectorPosSpecialSkill.end());
 		std::sort(vectorImposSpecialSkill.begin(), vectorImposSpecialSkill.end());
-#ifdef NEW_USER_INTERFACE
+
 		iSkill = 0;
+		int		iRow;
 		for( iRow = 0; iRow < ctPosSpecial; iRow++ )
 		{
-			m_btnSpecialSkills[iSkill].SetSkillInfo( vectorPosSpecialSkill[iRow].lSkillIndex, vectorPosSpecialSkill[iRow].sbSkillLevel, TRUE );
+			m_pIconsSpecialSkill[iSkill]->setSkill(vectorPosSpecialSkill[iRow].lSkillIndex, true);
 			m_nSpecialSkillSatisfied[iSkill] = IsSatisfiedSkill( vectorPosSpecialSkill[iRow].lSkillIndex, vectorPosSpecialSkill[iRow].sbSkillLevel, TRUE  );
 			iSkill++;
 		}
 		for( iRow = 0; iRow < ctImposSpecial; iRow++ )
 		{
-			m_btnSpecialSkills[iSkill].SetSkillInfo( vectorImposSpecialSkill[iRow].lSkillIndex, vectorImposSpecialSkill[iRow].sbSkillLevel, TRUE );
+			m_pIconsSpecialSkill[iSkill]->setSkill(vectorImposSpecialSkill[iRow].lSkillIndex, true);
 			m_nSpecialSkillSatisfied[iSkill] = IsSatisfiedSkill( vectorImposSpecialSkill[iRow].lSkillIndex, vectorImposSpecialSkill[iRow].sbSkillLevel, TRUE  );
 			iSkill++;
 		}
@@ -2110,37 +1220,25 @@ void CUISkillLearn::InitSkillLearn( BOOL bSpecial )
 
 		m_sbScrollBar.SetScrollPos( 0 );
 		SetCurrentSkill(SKILL_SPECIAL);
-#else
-		// Add special skill buttons
-		iSkill = 0;
-		// Possible special skill
-		for( iRow = 0; iRow < ctPosSpecial; iRow++ )
-			m_btnSpecialSkills[iSkill++].SetSkillInfo( vectorPosSpecialSkill[iRow].lSkillIndex, vectorPosSpecialSkill[iRow].sbSkillLevel, TRUE );
-		// Impossible special skill
-		for( iRow = 0; iRow < ctImposSpecial; iRow++ )
-			m_btnSpecialSkills[iSkill++].SetSkillInfo( vectorImposSpecialSkill[iRow].lSkillIndex, vectorImposSpecialSkill[iRow].sbSkillLevel, TRUE );
-		// Set special scroll bar
-		m_sbSpecialSkillIcon.SetScrollPos( 0 );
-		m_sbSpecialSkillIcon.SetCurItemCount( iSkill );
-#endif
 	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : OpenSkillLearn()
-// Desc : nMasterTypeÏùÄ ÏùºÎ∞ò Ïä§ÌÇ¨ÏùºÎïåÎäî ÏßÅÏóÖ, ÌäπÏàò Ïä§ÌÇ¨ÏùºÎïåÎäî ÌäπÏàò Ïä§ÌÇ¨ÌÉÄÏûÖÏù¥ Îê©ÎãàÎã§.
+// Desc : nMasterType¿∫ ¿œπ› Ω∫≈≥¿œ∂ß¥¬ ¡˜æ˜, ∆Øºˆ Ω∫≈≥¿œ∂ß¥¬ ∆Øºˆ Ω∫≈≥≈∏¿‘¿Ã µÀ¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
-void CUISkillLearn::OpenSkillLearn( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
+void CUISkillLearn::OpenSkillLearn( int iMobIndex, int iMobVirIdx, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If this is already exist
-	if( _pUIMgr->DoesMessageBoxLExist( MSGLCMD_SKILLLEARN_REQ ) || IsVisible() )
+	if( pUIManager->DoesMessageBoxLExist( MSGLCMD_SKILLLEARN_REQ ) || IsVisible() )
 		return;
 	
 	// Special Skill
-	if( _pUIMgr->DoesMessageBoxLExist( MSGLCMD_SSKILLLEARN_REQ ) || IsVisible() )
+	if( pUIManager->DoesMessageBoxLExist( MSGLCMD_SSKILLLEARN_REQ ) || IsVisible() )
 		return;
 
-#ifdef NEW_USER_INTERFACE
 	m_rcIcons.SetRect( 7, 53, 203, SKILLLEARN_NEW_HEIGHT - 70 );
 	m_sbScrollBar.SetPos(232, 67);
 	m_sbScrollBar.SetHeight(213);
@@ -2156,102 +1254,120 @@ void CUISkillLearn::OpenSkillLearn( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLO
 	m_nNumOfActiveSkill = 0;
 	m_nNumOfPassiveSkill = 0;
 	m_nCurrentSkillType = 0;
-#endif
 
 	// Set position of target npc
 	m_fNpcX = fX;
 	m_fNpcZ = fZ;
+	m_iMobIdx = iMobIndex;
+	m_bQuest = bHasQuest;
 
-	CMobData& MD	= _pNetwork->GetMobData(iMobIndex);
-	m_nSSkillType	= MD.GetSpecialSkillMaster();
-	CTString	strNpcName = _pNetwork->GetMobName(iMobIndex);
-	m_bSpecial		= MD.IsSSkillMaster() ? TRUE : FALSE;
+	m_iMobVirIdx = iMobVirIdx;
 
-	if( MD.IsSSkillMaster() )		// ÌäπÏàò Ïä§ÌÇ¨ ÎßàÏä§ÌÑ∞ÏùºÎïå...
+	CMobData* MD	= CMobData::getData(iMobIndex);
+	m_nSSkillType	= MD->GetSpecialSkillMaster();
+	CTString	strNpcName = CMobData::getData(iMobIndex)->GetName();
+	m_bSpecial		= MD->IsSSkillMaster() ? TRUE : FALSE;
+
+	if( MD->IsSSkillMaster() )		// ∆Øºˆ Ω∫≈≥ ∏∂Ω∫≈Õ¿œ∂ß...
 	{
-		// FIXME : ÏïÑÎûòÏôÄ Í∞ôÏù¥ Î©îÏÑ∏ÏßÄÍ∞Ä Í∑∏Îïå Í∑∏Îïå Îã§Î•¥Î©¥ ÎåÄÎûµ ÎÇ≠Ìå®.
+		// FIXME : æ∆∑°øÕ ∞∞¿Ã ∏ﬁºº¡ˆ∞° ±◊∂ß ±◊∂ß ¥Ÿ∏£∏È ¥Î∑´ ≥∂∆–.
 		switch( m_nSSkillType )
 		{
-		case SSKILL_MINING:			// Ï±ÑÍµ¥
+		case SSKILL_MINING:			// √§±º
 			{
 				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 630, "Ï±ÑÍµ¥ Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
+				pUIManager->CreateMessageBoxL( _S( 630, "√§±º Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 631, "Í¥ëÏÑùÏùÑ Ï±ÑÍµ¥ÌïòÎäîÍ±∞Îäî Í∑∏Î¶¨ Ïñ¥Î†µÏßÄ ÏïäÏïÑ." ), -1, 0xA3A1A3FF );		
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 632, "ÌïòÏßÄÎßå ÏñºÎßàÎßåÌÅº Îπ†Î•∏ ÏãúÍ∞ÑÏóê ÎßéÏùÄ ÏñëÏùÑ Ï∫êÎÇ¥ÎäêÎÉêÍ∞Ä Ïã§Î†•ÏùÑ Ï¢åÏö∞ ÌïòÏßÄ." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 631, "±§ºÆ¿ª √§±º«œ¥¬∞≈¥¬ ±◊∏Æ æÓ∑∆¡ˆ æ æ∆." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 632, "«œ¡ˆ∏∏ æÛ∏∂∏∏≈≠ ∫¸∏• Ω√∞£ø° ∏π¿∫ æÁ¿ª ƒ≥≥ª¥¿≥ƒ∞° Ω«∑¬¿ª ¡¬øÏ «œ¡ˆ." ), -1, 0xA3A1A3FF );		
 			}
 			break;
-		case SSKILL_GATHERING:		// Ï±ÑÏßë
+		case SSKILL_GATHERING:		// √§¡˝
 			{
 				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 633, "Ï±ÑÏßë Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
+				pUIManager->CreateMessageBoxL( _S( 633, "√§¡˝ Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 634, "ÌÅ¨ÎùΩÏùÑ Ï±ÑÏßëÌï† ÎïåÎèÑ ÎßéÏùÄ Í∏∞Ïà†Ïù¥ ÌïÑÏöîÌïòÏßÄ." ), -1, 0xA3A1A3FF );		
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 635, "Í∏∞Ïà†Ïù¥ Ï¢ãÏúºÎ©¥ Ï¢ãÏùÑÏàòÎ°ù Îçî ÎßéÏùÄ ÏñëÏùÑ Ï±ÑÏßëÌïòÍ≥† ÏûòÎßå ÌïòÎ©¥ Î≥¥Í∏∞ ÌûòÎì§Îã§Îäî ÌÅ¨ÎùΩÏùò ÍΩÉÎèÑ ÏñªÏùÑ Ïàò ÏûàÎã§ÎÑ§." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 634, "≈©∂Ù¿ª √§¡˝«“ ∂ßµµ ∏π¿∫ ±‚º˙¿Ã « ø‰«œ¡ˆ." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 635, "±‚º˙¿Ã ¡¡¿∏∏È ¡¡¿ªºˆ∑œ ¥ı ∏π¿∫ æÁ¿ª √§¡˝«œ∞Ì ¿ﬂ∏∏ «œ∏È ∫∏±‚ »˚µÈ¥Ÿ¥¬ ≈©∂Ù¿« ≤…µµ æÚ¿ª ºˆ ¿÷¥Ÿ≥◊." ), -1, 0xA3A1A3FF );		
 			}
 			break;
-		case SSKILL_CHARGE:			// Ï∞®ÏßÄ
+		case SSKILL_CHARGE:			// ¬˜¡ˆ
 			{
 				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 636, "Ï∞®ÏßÄ Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
+				pUIManager->CreateMessageBoxL( _S( 636, "¬˜¡ˆ Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 637, "Ï∞®ÏßÄ Í∏∞Ïà†Ïóê ÎåÄÌï¥ Ï¢ÄÎçî ÏïåÍ≥† Ïã∂ÏäµÎãàÍπå?" ), -1, 0xA3A1A3FF );		
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 638, "Ï¢Ä Îçî Í≥†Í∏âÏùò Ï∞®ÏßÄ Í∏∞Ïà†ÏùÑ Î∞∞Ïö¥Îã§Î©¥ ÎßéÏùÄÏñëÏùò ÏõêÏÜåÎ•º ÏñªÏùÑ Ïàò ÏûàÏùÑ Í≤ÉÏûÖÎãàÎã§.  Î∞∞Ïõå Î≥¥ÏãúÍ≤†ÏäµÎãàÍπå?" ), -1, 0xA3A1A3FF );	
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 637, "¬˜¡ˆ ±‚º˙ø° ¥Î«ÿ ¡ª¥ı æÀ∞Ì ΩÕΩ¿¥œ±Ó?" ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 638, "¡ª ¥ı ∞Ì±ﬁ¿« ¬˜¡ˆ ±‚º˙¿ª πËøÓ¥Ÿ∏È ∏π¿∫æÁ¿« ø¯º“∏¶ æÚ¿ª ºˆ ¿÷¿ª ∞Õ¿‘¥œ¥Ÿ.  πËøˆ ∫∏Ω√∞⁄Ω¿¥œ±Ó?" ), -1, 0xA3A1A3FF );	
 			}
 			break;
-		case SSKILL_STONE:			// Í¥ëÏÑùÏ†ïÎ†®Ïà†
+		case SSKILL_STONE:			// ±§ºÆ¡§∑√º˙
 			{
 				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 639, "Ïä§ÌÜ§Ï†ïÎ†® Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
+				pUIManager->CreateMessageBoxL( _S( 639, "Ω∫≈Ê¡§∑√ Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 640, "Ïä§ÌÜ§ÏùÑ Ï†ïÎ†® ÌïòÎäî Í≤ÉÏùÄ ÏïÑÎ¨¥ÎÇò ÌïòÎäî Í≤ÉÏù¥ ÏïÑÎÉê! ÏûêÎÑ§Í∞Ä Î∞∞Ïõå Î≥¥Í≤†Îã§Í≥†?" ), -1, 0xA3A1A3FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 641, "ÏöîÏ¶ò Ï†äÏùÄÏù¥Îì§ÏùÄ Ïä§ÌÜ§ Ï†ïÎ†® ÌïòÎäî Í≤ÉÏùÑ ÎÑàÎ¨¥ ÏâΩÍ≤å Î≥¥Îäî Í≤ΩÌñ•Ïù¥ ÏûàÏñ¥." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+#ifdef DURABILITY
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 6194, "¡¡¿∫ ¿Â∫Ò∏¶ æ≤¥¬∞Õµµ ¡ﬂø‰ «œ¡ˆ∏∏, ¿Â∫Ò∏¶ ºˆ∏Æ«œ¡ˆ æ ¿∏∏È æ∆π´ æµ∏¿€ø°µµ æ¯¡ˆ." ), -1, 0xA3A1A3FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 6195, "¿⁄≥◊ ¿Â∫Ò∏¶ ºˆ∏Æ«“ ª˝∞¢ æ¯¥¬∞°? ªı ¿Â∫Ò∏¶ ¿‘¿∫ ±‚∫–¿Ã ≥Ø≤¨ºº" ), -1, 0xA3A1A3FF );
+
+				CTString strTemp;
+				strTemp.PrintF( _S( 6429, "«’º∫«—¥Ÿ." ) );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strTemp, ITEM_COMPOSE );
+				strTemp.PrintF( _S( 6192, "≥ª±∏µµ∏¶ ºˆ∏Æ«—¥Ÿ." ) );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strTemp, ITEM_DURABILITY );
+				strTemp.PrintF( _S( 6193, "√÷¥Î ≥ª±∏µµ∏¶ ∫π±∏«—¥Ÿ." ) );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strTemp, ITEM_RECOVERY );
+#else	//	DURABILITY
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 640, "Ω∫≈Ê¿ª ¡§∑√ «œ¥¬ ∞Õ¿∫ æ∆π´≥™ «œ¥¬ ∞Õ¿Ã æ∆≥ƒ! ¿⁄≥◊∞° πËøˆ ∫∏∞⁄¥Ÿ∞Ì?" ), -1, 0xA3A1A3FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 641, "ø‰¡Ú ¿˛¿∫¿ÃµÈ¿∫ Ω∫≈Ê ¡§∑√ «œ¥¬ ∞Õ¿ª ≥ π´ Ω±∞‘ ∫∏¥¬ ∞Ê«‚¿Ã ¿÷æÓ." ), -1, 0xA3A1A3FF );
+
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, _S( 6429, "«’º∫«—¥Ÿ." ), ITEM_COMPOSE );
+#endif	//	DURABILITY
 			}
 			break;
-		case SSKILL_PLANT:			// ÏãùÎ¨ºÍ∞ÄÍ≥µÏà†
+		case SSKILL_PLANT:			// Ωƒπ∞∞°∞¯º˙
 			{
 				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 642, "ÏãùÎ¨ºÍ∞ÄÍ≥µ Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
+				pUIManager->CreateMessageBoxL( _S( 642, "Ωƒπ∞∞°∞¯ Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 643, "ÌÅ¨ÎÇôÏùÑ Ïù¥Ïö©Ìï¥ Ïò∑ÏùÑ ÎßåÎì§Í≥† Ïã∂Îã§Í≥†? Ï†ïÏã†Ïù¥ ÎÇòÍ∞îÍµ∞." ), -1, 0xA3A1A3FF );		
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 644, "ÌÅ¨ÎÇôÏúºÎ°ú Ïò∑ÍπåÏßÄ ÎßåÎìúÎ†§Î©¥ ÏóÑÏ≤≠ÎÇòÍ≤å Ïò§Îûú ÏãúÍ∞ÑÏù¥ Í±∏Î†§! Í≥ºÏó∞ ÎãπÏã†Ïù¥ Ìï† Ïàò ÏûàÏùÑÍπå?" ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 643, "≈©≥´¿ª ¿ÃøÎ«ÿ ø ¿ª ∏∏µÈ∞Ì ΩÕ¥Ÿ∞Ì? ¡§Ω≈¿Ã ≥™∞¨±∫." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 644, "≈©≥´¿∏∑Œ ø ±Ó¡ˆ ∏∏µÂ∑¡∏È æˆ√ª≥™∞‘ ø¿∑£ Ω√∞£¿Ã ∞…∑¡! ∞˙ø¨ ¥ÁΩ≈¿Ã «“ ºˆ ¿÷¿ª±Ó?" ), -1, 0xA3A1A3FF );		
 			}
 			break;
-		case SSKILL_ELEMENT:		// ÏõêÏÜåÏ†ïÏ†úÏà†
+		case SSKILL_ELEMENT:		// ø¯º“¡§¡¶º˙
 			{
 				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 645, "ÏõêÏÜåÏ†ïÏ†ú Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
+				pUIManager->CreateMessageBoxL( _S( 645, "ø¯º“¡§¡¶ Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 646, "ÏõêÏÜåÎ•º Ï†ïÏ†ú ÌïòÎ†§Î©¥ Í≤ΩÍ±¥Ìïú ÎßàÏùåÍ≥º ÎßéÏùÄ Ïù∏ÎÇ¥Í∞Ä ÌïÑÏöî Ìï©ÎãàÎã§." ), -1, 0xA3A1A3FF );		
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 647, "ÌïòÏßÄÎßå Ï†ïÏ†úÏà†ÏùÑ Î∞∞Ïö∞Í∏∞Îßå ÌïúÎã§Î©¥ Í∑∏Ïóê ÏÉÅÏùëÌïòÎäî Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÏùÑ Í≤ÉÏûÖÎãàÎã§. ÏûêÏó∞ÏùÄ Í±∞ÏßìÎßêÏùÑ ÌïòÏßÄ ÏïäÏúºÎãàÍπåÏöî." ), -1, 0xA3A1A3FF );		
-			}
-			break;
-
-		case SSKILL_MAKE_WEAPON:	// Î¨¥Í∏∞Ï†úÏûë
-			{
-				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 648, "Î¨¥Í∏∞Ï†úÏûë Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
-
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 649, "Ïù¥Îü∞! Îòê Î¨¥Í∏∞ Ï†úÏûëÏùÑ Î∞∞Ïö∞Í≥† Ïã∂Ïñ¥ÏÑú Ïò® ÏπúÍµ¨Íµ∞." ), -1, 0xA3A1A3FF );		
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 650, "ÎÇú Îçî Ïù¥ÏÉÅ Î¨¥Í∏∞Î•º ÎßåÎì§ÏßÄ ÏïäÏïÑ ! Îçî Ïù¥ÏÉÅ ÏòàÏ†ÑÏùò ÎÇ¥Í∞Ä ÏïÑÎãàÎùºÍ≥†! ÎßêÎ°ú Ìï¥ÎèÑ ÏÜåÏö© ÏóÜÍµ∞." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 646, "ø¯º“∏¶ ¡§¡¶ «œ∑¡∏È ∞Ê∞««— ∏∂¿Ω∞˙ ∏π¿∫ ¿Œ≥ª∞° « ø‰ «’¥œ¥Ÿ." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 647, "«œ¡ˆ∏∏ ¡§¡¶º˙¿ª πËøÏ±‚∏∏ «—¥Ÿ∏È ±◊ø° ªÛ¿¿«œ¥¬ ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷¿ª ∞Õ¿‘¥œ¥Ÿ. ¿⁄ø¨¿∫ ∞≈¡˛∏ª¿ª «œ¡ˆ æ ¿∏¥œ±Óø‰." ), -1, 0xA3A1A3FF );		
 			}
 			break;
 
-		case SSKILL_MAKE_POTINO: // Î¨ºÏïΩ Ï†úÏûë
+		case SSKILL_MAKE_WEAPON:	// π´±‚¡¶¿€
 			{
 				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 767, "Î¨ºÏïΩ Ï†úÏûë Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );
+				pUIManager->CreateMessageBoxL( _S( 648, "π´±‚¡¶¿€ Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 768, "Î¨ºÏïΩ Ï†úÏ°∞Îäî Ï°∞Ïã¨Ïä§ÎüΩÍ≥†ÎèÑ Ïñ¥Î†§Ïö¥ ÏûëÏóÖÏûÖÎãàÎã§." ), -1, 0xA3A1A3FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 769, "Î¨ºÏïΩÏùÑ Ï∞æÎäî ÏÇ¨ÎûåÏùÄ ÎßéÏùÄÎç∞ ÎßåÎì§ ÏÇ¨ÎûåÏù¥ ÏóÜÎäî Ïã§Ï†ïÏù¥Í∏∞ÎèÑ Ìï©ÎãàÎã§. ÌûòÎì§ÏßÄÎßå Î¨ºÏïΩ Ï†úÏûëÍ∏∞Ïà†ÏùÑ Î∞∞Ïõå Î≥¥ÏãúÍ≤†ÎÇòÏöî?" ), -1, 0xA3A1A3FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 649, "¿Ã∑±! ∂« π´±‚ ¡¶¿€¿ª πËøÏ∞Ì ΩÕæÓº≠ ø¬ ƒ£±∏±∫." ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 650, "≥≠ ¥ı ¿ÃªÛ π´±‚∏¶ ∏∏µÈ¡ˆ æ æ∆ ! ¥ı ¿ÃªÛ øπ¿¸¿« ≥ª∞° æ∆¥œ∂Û∞Ì! ∏ª∑Œ «ÿµµ º“øÎ æ¯±∫." ), -1, 0xA3A1A3FF );		
+			}
+			break;
+
+		case SSKILL_MAKE_POTINO: // π∞æ‡ ¡¶¿€
+			{
+				// Create skill learn message box
+				pUIManager->CreateMessageBoxL( _S( 767, "π∞æ‡ ¡¶¿€ Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );
+
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 768, "π∞æ‡ ¡¶¡∂¥¬ ¡∂Ω…Ω∫∑¥∞Ìµµ æÓ∑¡øÓ ¿€æ˜¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 769, "π∞æ‡¿ª √£¥¬ ªÁ∂˜¿∫ ∏π¿∫µ• ∏∏µÈ ªÁ∂˜¿Ã æ¯¥¬ Ω«¡§¿Ã±‚µµ «’¥œ¥Ÿ. »˚µÈ¡ˆ∏∏ π∞æ‡ ¡¶¿€±‚º˙¿ª πËøˆ ∫∏Ω√∞⁄≥™ø‰?" ), -1, 0xA3A1A3FF );
 			}
 			break;
 		case SSKILL_MAKE_WEAR:
@@ -2260,98 +1376,89 @@ void CUISkillLearn::OpenSkillLearn( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLO
 		case SSKILL_MAKE_H_S:
 			{
 				// Create skill learn message box
-				_pUIMgr->CreateMessageBoxL( _S( 651, "Î∞©Ïñ¥Íµ¨Ï†úÏûë Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
+				pUIManager->CreateMessageBoxL( _S( 651, "πÊæÓ±∏¡¶¿€ Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SSKILLLEARN_REQ );		
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 652, "Ï°∞Í∏àÏù¥ÎÇòÎßà Ìé∏Ïù¥ ÏÇ¥Í≥† Ïã∂Îã§Î©¥ Î∞©Ïñ¥Íµ¨ Ï†úÏûë Í∏∞Ïà†ÏùÑ Î∞∞Ïõå Î≥¥ÎùºÍµ¨!" ), -1, 0xA3A1A3FF );		
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 653, "ÏöîÏ¶òÏùÄ ÏàòÏöîÍ∞Ä ÎßéÏïÑÏÑú ÏïÑÏ£º Ìï†Îßå ÌïòÎã§Íµ¨!" ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 652, "¡∂±›¿Ã≥™∏∂ ∆Ì¿Ã ªÏ∞Ì ΩÕ¥Ÿ∏È πÊæÓ±∏ ¡¶¿€ ±‚º˙¿ª πËøˆ ∫∏∂Û±∏!" ), -1, 0xA3A1A3FF );		
+				pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, TRUE, _S( 653, "ø‰¡Ú¿∫ ºˆø‰∞° ∏πæ∆º≠ æ∆¡÷ «“∏∏ «œ¥Ÿ±∏!" ), -1, 0xA3A1A3FF );		
 			}
 			break;
 		}
 		
 		CTString strMessage;		
-		strMessage.PrintF( _S( 1218, "Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§." ) );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strMessage, SKILL_LEARN );
+		strMessage.PrintF( _S( 1218, "Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ." ) );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strMessage, SKILL_LEARN );
 
 		if( bHasQuest )
 		{
-#ifdef	NEW_QUESTBOOK
-			// 2009. 05. 27 ÍπÄÏ†ïÎûò
-			// Ïù¥ÏïºÍ∏∞ÌïúÎã§ Î≥ÄÍ≤Ω Ï≤òÎ¶¨
+			// 2009. 05. 27 ±Ë¡§∑°
+			// ¿Ãæﬂ±‚«—¥Ÿ ∫Ø∞Ê √≥∏Æ
 			CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_SSKILLLEARN_REQ);				
-#else
-			strMessage.PrintF( _S( 1053, "Ïù¥ÏïºÍ∏∞ÌïúÎã§." ) );		
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strMessage, SKILL_TALK );
-#endif
-
 		}
+			
+		strMessage.PrintF(_S( 1748, "NPC æ»≥ª" ));
+		pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strMessage, SKILL_NPC_HELP );
 
-#ifdef HELP_SYSTEM_1			
-		strMessage.PrintF(_S( 1748, "NPC ÏïàÎÇ¥" ));
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strMessage, SKILL_NPC_HELP );
-#endif
-
-		strMessage.PrintF( _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strMessage );
+		strMessage.PrintF( _S( 1220, "√Îº“«—¥Ÿ." ) );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_SSKILLLEARN_REQ, FALSE, strMessage );
 	}
-	else						// ÏùºÎ∞ò Ïä§ÌÇ¨ ÎßàÏä§ÌÑ∞ÏùºÎïå...
+	// ITS# 4252 : BUG-FIXED  [9/26/2011 rumist]
+	else if( iMobIndex == 1200 || iMobIndex == 1198 )	// ≈∏∏Ææ» NPC - Ω∫≈≥ ∏∂Ω∫≈Õ «™ƒ°æ∆
+	{	// æÓµ“¿« Ω∫≈≥ ∏∂Ω∫≈Õ UI∏¶ ∫∏ø©¡ÿ¥Ÿ
+		PriorityOpen(iMobIndex, bHasQuest, FALSE);
+	}
+	else						// ¿œπ› Ω∫≈≥ ∏∂Ω∫≈Õ¿œ∂ß...
 	{
-
 		const int iJob = _pNetwork->MyCharacterInfo.job;
 		// If job is different
-		if( MD.GetSkillMaster() != iJob )
+		if( MD->GetSkillMaster() != iJob )
 		{
 			// WSS_BUG_FIX 070802 ------>><<
-			if( _pUIMgr->DoesMessageBoxExist( MSGCMD_SKILLLEARN_NOTIFY ) ) { return;}
+			if( pUIManager->DoesMessageBoxExist( MSGCMD_SKILLLEARN_NOTIFY ) ) { return;}
 
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK,
+			MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ω∫≈≥" ), UMBS_OK,
 				UI_SKILLLEARN, MSGCMD_SKILLLEARN_NOTIFY );
-			MsgBoxInfo.AddString( _S(3589,"Ìï¥Îãπ ÏßÅÏóÖÏùò Ïä§ÌÇ¨ÏùÄ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§.") );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			MsgBoxInfo.AddString( _S(3589,"«ÿ¥Á ¡˜æ˜¿« Ω∫≈≥¿∫ Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 			return;
 		}
 		
 		// Create skill learn message box
-		_pUIMgr->CreateMessageBoxL( _S( 270, "Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_SKILLLEARN_REQ );
+		pUIManager->CreateMessageBoxL( _S( 270, "Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_SKILLLEARN_REQ );
 
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, TRUE, _S( 271, "ÎÅäÏûÑÏóÜÏù¥ ÎÖ∏Î†•ÌïòÎäî ÏûêÎßåÏù¥ ÏßÑÏ†ïÌïú Í∞ïÌï®ÏùÑ ÏÜêÏóê ÎÑ£ÏùÑ Ïàò ÏûàÎäî Î≤ï!\n\nÍ∑∏Îü∞ Í∞ïÏù∏Ìïú ÏùòÏßÄÍ∞Ä ÏûàÎäî ÏûêÎ•º Ïù∏ÎèÑÌïòÎäî Í≤ÉÏù¥ ÎÇ¥Í∞Ä ÌïòÎäî ÏùºÏù¥ÏßÄ.\n" ), -1, 0xA3A1A3FF );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, TRUE, _S( 272, "ÌòÑÏû¨Ïùò ÏûêÎÑ§ ÏàòÏ§ÄÏóê ÎßûÎäî Ïä§ÌÇ¨ÏùÑ ÏÑ†ÌÉùÌïòÏó¨ ÏùµÌûàÎèÑÎ°ù ÌïòÍ≤åÎÇò." ), -1, 0xA3A1A3FF );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, TRUE, _S( 271, "≤˜¿”æ¯¿Ã ≥Î∑¬«œ¥¬ ¿⁄∏∏¿Ã ¡¯¡§«— ∞≠«‘¿ª º’ø° ≥÷¿ª ºˆ ¿÷¥¬ π˝!\n\n±◊∑± ∞≠¿Œ«— ¿«¡ˆ∞° ¿÷¥¬ ¿⁄∏¶ ¿Œµµ«œ¥¬ ∞Õ¿Ã ≥ª∞° «œ¥¬ ¿œ¿Ã¡ˆ.\n" ), -1, 0xA3A1A3FF );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, TRUE, _S( 272, "«ˆ¿Á¿« ¿⁄≥◊ ºˆ¡ÿø° ∏¬¥¬ Ω∫≈≥¿ª º±≈√«œø© ¿Õ»˜µµ∑œ «œ∞‘≥™." ), -1, 0xA3A1A3FF );
 
 		CTString strMessage;
-		strMessage.PrintF( _S( 1218, "Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§." ) );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_LEARN );
+		strMessage.PrintF( _S( 1218, "Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ." ) );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_LEARN );
 
 		if( bHasQuest )
 		{
-#ifdef	NEW_QUESTBOOK
-			// 2009. 05. 27 ÍπÄÏ†ïÎûò
-			// Ïù¥ÏïºÍ∏∞ÌïúÎã§ Î≥ÄÍ≤Ω Ï≤òÎ¶¨
+			// 2009. 05. 27 ±Ë¡§∑°
+			// ¿Ãæﬂ±‚«—¥Ÿ ∫Ø∞Ê √≥∏Æ
 			CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_SKILLLEARN_REQ);				
-#else
-			strMessage.PrintF( _S( 1053, "Ïù¥ÏïºÍ∏∞ÌïúÎã§." ) );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_TALK );
-#endif
 		}
 
-		// Ï†ÑÏßÅ Í∞ÄÎä• Î†àÎ≤®Ïù¥Í≥† Ï†ÑÏßÅÌïú ÏÉÅÌÉúÍ∞Ä ÏïÑÎãêÎïå...
-		if( _pNetwork->MyCharacterInfo.level >= EXTENSION_LEVEL && _pNetwork->MyCharacterInfo.job2 == 0 )
+		// ¿¸¡˜ ∞°¥… ∑π∫ß¿Ã∞Ì ¿¸¡˜«— ªÛ≈¬∞° æ∆¥“∂ß...
+		// ≥™¿Ã∆Æ Ω¶µµøÏ¥¬ ¿¸¡˜¿Ã æ¯¿∏π«∑Œ. [8/6/2010 rumist]
+		if( _pNetwork->MyCharacterInfo.level >= EXTENSION_LEVEL && _pNetwork->MyCharacterInfo.job2 == 0 &&
+			_pNetwork->MyCharacterInfo.job != NIGHTSHADOW )
 		{
-			strMessage.PrintF( _S( 1223, "[%s]Î°ú Ï†ÑÏßÅ" ), JobInfo().GetExtensionName( iJob, 0 ) );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_JOB_1 );
+			strMessage.PrintF( _S( 1223, "[%s]∑Œ ¿¸¡˜" ), CJobInfo::getSingleton()->GetExtensionName( iJob, 0 ) );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_JOB_1 );
 
-			strMessage.PrintF( _S( 1223, "[%s]Î°ú Ï†ÑÏßÅ" ), JobInfo().GetExtensionName( iJob, 1 ) );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_JOB_2 );
+			strMessage.PrintF( _S( 1223, "[%s]∑Œ ¿¸¡˜" ), CJobInfo::getSingleton()->GetExtensionName( iJob, 1 ) );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_JOB_2 );
 		}
 
-#ifdef HELP_SYSTEM_1
-		strMessage.PrintF(_S( 1748, "NPC ÏïàÎÇ¥" ));
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_NPC_HELP );
-#endif 
+		strMessage.PrintF(_S( 1748, "NPC æ»≥ª" ));
+		pUIManager->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage, SKILL_NPC_HELP );
 
-		strMessage.PrintF( _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage );
+		strMessage.PrintF( _S( 1220, "√Îº“«—¥Ÿ." ) );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_SKILLLEARN_REQ, FALSE, strMessage );
 
 		
 	}
@@ -2368,11 +1475,11 @@ void CUISkillLearn::OpenSkillLearn( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLO
 // ----------------------------------------------------------------------------
 void CUISkillLearn::CloseSkillLearn()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close message box of skill learn
-
-	_pUIMgr->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
-
-	_pUIMgr->RearrangeOrder( UI_SKILLLEARN, FALSE );
+	pUIManager->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
+	pUIManager->RearrangeOrder( UI_SKILLLEARN, FALSE );
 	
 	m_bUseCard = FALSE;
 }
@@ -2383,643 +1490,7 @@ void CUISkillLearn::CloseSkillLearn()
 // ----------------------------------------------------------------------------
 void CUISkillLearn::Render()
 {
-#ifdef NEW_USER_INTERFACE
 	RenderNewSkillLearn();
-	return;
-#endif
-	// Check distance
-	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcX;
-	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcZ;
-	if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST && !m_bUseCard)
-		CloseSkillLearn();
-
-	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-	// Add render regions
-	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
-										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
-										0xFFFFFFFF );
-
-#ifdef ADJUST_MEMORIZE_SKILL
-	// Tab
-	if( m_nCurrentTab != SLEARN_TAB_SPECIAL )
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab.Left + SLEARN_TAB_WIDTH, m_nPosY + m_rcTab.Top,
-											m_nPosX + m_rcTab.Left + SLEARN_TAB_WIDTH + 1, m_nPosY + m_rcTab.Bottom,
-											m_rtTabLine.U0, m_rtTabLine.V0, m_rtTabLine.U1, m_rtTabLine.V1,
-											0xFFFFFFFF );
-	
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab.Left + (SLEARN_TAB_WIDTH * 2), m_nPosY + m_rcTab.Top,
-											m_nPosX + m_rcTab.Left + (SLEARN_TAB_WIDTH * 2) + 1, m_nPosY + m_rcTab.Bottom,
-											m_rtTabLine.U0, m_rtTabLine.V0, m_rtTabLine.U1, m_rtTabLine.V1,
-											0xFFFFFFFF );
-	}
-#else
-	// Tab
-	if( m_nCurrentTab != SLEARN_TAB_SPECIAL )
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab.Left + SLEARN_TAB_WIDTH, m_nPosY + m_rcTab.Top,
-											m_nPosX + m_rcTab.Left + SLEARN_TAB_WIDTH + 1, m_nPosY + m_rcTab.Bottom,
-											m_rtTabLine.U0, m_rtTabLine.V0, m_rtTabLine.U1, m_rtTabLine.V1,
-											0xFFFFFFFF );
-	}
-#endif
-
-	// Close button
-	m_btnClose.Render();
-
-	// Learn button
-	m_btnLearn.Render();
-
-	// Cancel button
-	m_btnCancel.Render();
-
-	// Scroll bar of skill icon
-	if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-		m_sbActiveSkillIcon.Render();
-	else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-		m_sbPassiveSkillIcon.Render();
-#ifdef ADJUST_MEMORIZE_SKILL
-	else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-		m_sbMemorizeSkillIcon.Render();
-#endif
-	else
-		m_sbSpecialSkillIcon.Render();
-
-	// List box of skill desc
-	m_lbSkillDesc.Render();
-
-	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-	// Skill buttons
-	RenderSkillBtns();
-
-	// Text in skill learn
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 270, "Ïä§ÌÇ¨" ), m_nPosX + SLEARN_TITLE_TEXT_OFFSETX,
-										m_nPosY + SLEARN_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-
-	if( m_nCurrentTab != SLEARN_TAB_SPECIAL )
-	{
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 275, "ÏùºÎ∞ò" ), m_nPosX + SLEARN_ACTIVE_TAB_CX,
-												m_nPosY + SLEARN_TAB_SY,
-												m_nCurrentTab == SLEARN_TAB_ACTIVE ? 0xFFCB00FF : 0x6B6B6BFF );
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 276, "Í∞ïÌôî" ), m_nPosX + SLEARN_PASSIVE_TAB_CX,
-												m_nPosY + SLEARN_TAB_SY,
-												m_nCurrentTab == SLEARN_TAB_PASSIVE ? 0xFFCB00FF : 0x6B6B6BFF );
-#ifdef ADJUST_MEMORIZE_SKILL
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1084, "Í∏∞Ïñµ" ), m_nPosX + SLEARN_MEMORIZE_TAB_CX,			
-												m_nPosY + SLEARN_TAB_SY,
-												m_nCurrentTab == SLERAN_TAB_MEMORIZE ? 0xFFCB00FF : 0x6B6B6BFF );
-#endif
-	}
-	else
-	{
-		CTString	strSubTitle;
-		switch( m_nSSkillType )
-		{
-		case SSKILL_MINING:		// Ï±ÑÍµ¥
-			strSubTitle = _S( 630, "Ï±ÑÍµ¥ Ïä§ÌÇ¨" );		
-			break;
-
-		case SSKILL_GATHERING:	// Ï±ÑÏßë
-			strSubTitle = _S( 633, "Ï±ÑÏßë Ïä§ÌÇ¨" );		
-			break;
-
-		case SSKILL_CHARGE:		// Ï∞®ÏßÄ
-			strSubTitle = _S( 636, "Ï∞®ÏßÄ Ïä§ÌÇ¨" );		
-			break;
-
-		case SSKILL_STONE:		// Í¥ëÏÑùÏ†ïÎ†®
-			strSubTitle = _S( 639, "Ïä§ÌÜ§Ï†ïÎ†® Ïä§ÌÇ¨" );	
-			break;
-
-		case SSKILL_PLANT:		// ÏãùÎ¨ºÍ∞ÄÍ≥µ
-			strSubTitle = _S( 642, "ÏãùÎ¨ºÍ∞ÄÍ≥µ Ïä§ÌÇ¨" );	
-			break;
-
-		case SSKILL_ELEMENT:	// ÏõêÏÜåÏ†ïÏ†ú
-			strSubTitle = _S( 645, "ÏõêÏÜåÏ†ïÏ†ú Ïä§ÌÇ¨" );	
-			break;
-
-		case SSKILL_MAKE_WEAPON:	// Î¨¥Í∏∞Ï†úÏûë
-			strSubTitle = _S( 648, "Î¨¥Í∏∞Ï†úÏûë Ïä§ÌÇ¨" );	
-			break;
-		case SSKILL_MAKE_WEAR:	// Î∞©Ïñ¥Íµ¨Ï†úÏûë
-		case SSKILL_MAKE_G_B:
-		case SSKILL_MAKE_ARMOR:
-		case SSKILL_MAKE_H_S:
-			strSubTitle = _S( 651, "Î∞©Ïñ¥Íµ¨Ï†úÏûë Ïä§ÌÇ¨" );	
-			break;
-		}
-
-		_pUIMgr->GetDrawPort()->PutTextExCX( strSubTitle, m_nPosX + SLEARN_SPECIAL_TAB_CX, m_nPosY + SLEARN_TAB_SY,
-												m_nCurrentTab == SLEARN_TAB_SPECIAL ? 0xFFCB00FF : 0x6B6B6BFF );
-	}
-
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï(05.01.03) : SP->ÏàôÎ†®ÎèÑ Î°ú ÏàòÏ†ï
-	_pUIMgr->GetDrawPort()->PutTextEx(  _S( 90, "ÏàôÎ†®ÎèÑ" ) , m_nPosX + SLEARN_CURSP_SX,			
-										m_nPosY + SLEARN_CURSP_SY );
-	_pUIMgr->GetDrawPort()->PutTextExRX( _pUIMgr->GetCharacterInfo()->GetStringOfSP(),
-											m_nPosX + SLEARN_CURSP_RX, m_nPosY + SLEARN_CURSP_SY, 0xBDA99FFF );
-
-	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-}
-
-// ----------------------------------------------------------------------------
-// Name : AddSkillDescString()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUISkillLearn::AddSkillDescString( CTString &strDesc, COLOR colDesc )
-{
-	// Get length of string
-	INDEX	nLength = strDesc.Length();
-	if( nLength == 0 )
-		return;
-
-	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strDesc);
-		INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
-		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbSkillDesc.AddString( 0, strDesc, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbSkillDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddSkillDescString( strTemp, colDesc );
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strDesc,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbSkillDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddSkillDescString( strTemp, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbSkillDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddSkillDescString( strTemp, colDesc );
-			}
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= _iMaxMsgStringChar )
-		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbSkillDesc.AddString( 0, strDesc, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbSkillDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddSkillDescString( strTemp, colDesc );
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbSkillDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddSkillDescString( strTemp, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbSkillDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddSkillDescString( strTemp, colDesc );
-			}
-		}
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : GetSkillDesc()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUISkillLearn::GetSkillDesc( int nIndex, int nLevel, BOOL bSpecial )
-{
-	m_lbSkillDesc.ResetAllStrings();
-
-	// If skill is not exist
-	if( nIndex == -1 )
-		return;
-
-	// Make description of skill
-	CTString	strTemp;
-	
-	if( !bSpecial )
-	{
-		CSkill		&rSkill = _pNetwork->GetSkillData( nIndex );
-		
-		strTemp.PrintF( "%s", rSkill.GetName() );
-		AddSkillDescString( strTemp, 0xFFC672FF );
-
-		if( rSkill.GetFlag() & SF_SINGLEMODE )
-			AddSkillDescString( _S( 499, "ÌçºÏä§ÎÑêÎçòÏ†Ñ Ï†ÑÏö© Ïä§ÌÇ¨" ), 0xCACACAFF );		
-
-		AddSkillDescString( CTString( " " ) );
-
-		const char	*pDesc = rSkill.GetDescription();
-		if( pDesc != NULL )
-		{
-			strTemp.PrintF( "%s\n\n", pDesc );
-			AddSkillDescString( strTemp, 0xC5C5C5FF );
-		}
-		
-		--nLevel;
-		
-		// Get learning condition
-		int		nLearnSkillIndex[3];
-		SBYTE	sbLearnSkillLevel[3];
-		int		nLearnItemIndex[3];
-		SQUAD	nLearnItemCount[3];
-		BOOL	bLearnSkill = FALSE;
-		BOOL	bLearnItem = FALSE;
-		
-		for( int i = 0; i < 3; i++ )
-		{
-			nLearnSkillIndex[i] = rSkill.GetLearnSkillIndex( nLevel, i );
-			sbLearnSkillLevel[i] = rSkill.GetLearnSkillLevel( nLevel, i );
-			nLearnItemIndex[i] = rSkill.GetLearnItemIndex( nLevel, i );
-			nLearnItemCount[i] = rSkill.GetLearnItemCount( nLevel, i );
-			
-			if( nLearnSkillIndex[i] != -1 )
-				bLearnSkill = TRUE;
-			if( nLearnItemIndex[i] != -1 )
-				bLearnItem = TRUE;
-		}
-		
-		switch( rSkill.GetType() )
-		{
-		case CSkill::ST_MELEE:					// Active
-		case CSkill::ST_RANGE:					// Active
-		case CSkill::ST_MAGIC:					// Active
-			{
-				strTemp.PrintF( _S( 256, "ÌïÑÏöî Î†àÎ≤® : %d" ), rSkill.GetLearnLevel( nLevel ) );
-				AddSkillDescString( strTemp, 0xBDA99FFF );
-				strTemp.PrintF( _S( 257, "ÌïÑÏöî SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // ÏàôÎ†®ÎèÑ
-				AddSkillDescString( strTemp, 0xBDA99FFF );				
-
-				const int iLearnStr = rSkill.GetLearnStr( nLevel );
-				const int iLearnDex = rSkill.GetLearnDex( nLevel );
-				const int iLearnInt = rSkill.GetLearnInt( nLevel );
-				const int iLearnCon = rSkill.GetLearnCon( nLevel );
-
-				if( iLearnStr > 0 ) 
-				{
-					strTemp.PrintF( _S( 1391, "ÌïÑÏöî Ìûò : %d" ), iLearnStr );		// ÌïÑÏöî Ìûò 
-					AddSkillDescString( strTemp, 0xBDA99FFF );
-				}
-
-				if( iLearnDex > 0 ) 
-				{
-					strTemp.PrintF( _S( 1392, "ÌïÑÏöî ÎØºÏ≤© : %d" ), iLearnDex );	// ÌïÑÏöî ÎØºÏ≤©
-					AddSkillDescString( strTemp, 0xBDA99FFF );
-				}
-				
-				if( iLearnInt > 0 ) 
-				{
-					strTemp.PrintF( _S( 1393, "ÌïÑÏöî ÏßÄÌòú : %d" ), iLearnInt );	// ÌïÑÏöî ÏßÄÌòú
-					AddSkillDescString( strTemp, 0xBDA99FFF );
-				}
-
-				if( iLearnCon > 0 )
-				{
-					strTemp.PrintF( _S( 1394, "ÌïÑÏöî Ï≤¥Ïßà : %d" ), iLearnCon );	// ÌïÑÏöî Ï≤¥Ïßà
-					AddSkillDescString( strTemp, 0xBDA99FFF );
-				}
-				
-				// Need skill
-				if( bLearnSkill )
-				{
-					AddSkillDescString( _S( 258, "ÌïÑÏöî Ïä§ÌÇ¨" ), 0xBDA99FFF );
-					for( i = 0; i < 3; i++ )
-					{
-						if( nLearnSkillIndex[i] != -1 )
-						{
-							CSkill	&rNeedSkill = _pNetwork->GetSkillData( nLearnSkillIndex[i] );
-							strTemp.PrintF( "  %s Lv.%d", rNeedSkill.GetName(), sbLearnSkillLevel[i] );
-							AddSkillDescString( strTemp, 0xBDA99FFF );
-						}
-					}
-				}
-				
-				// Need item
-				if( bLearnItem )
-				{
-					AddSkillDescString( _S( 259, "ÌïÑÏöî ÏïÑÏù¥ÌÖú" ), 0xBDA99FFF );
-					for( i = 0; i < 3; i++ )
-					{
-						if( nLearnItemIndex[i] != -1 )
-						{
-							CItemData	&rNeedItem = _pNetwork->GetItemData( nLearnItemIndex[i] );
-							strTemp.PrintF( _S( 260, "  %s %dÍ∞ú" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
-							AddSkillDescString( strTemp, 0xBDA99FFF );
-						}
-					}
-				}
-
-				int	nNeedMP = rSkill.GetNeedMP( nLevel );
-				int	nNeedHP = rSkill.GetNeedHP( nLevel );
-				if( nNeedHP == 0 )
-				{
-					if( nNeedMP != 0 )
-					{
-						strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
-						AddSkillDescString( strTemp, 0xBDA99FFF );
-					}
-				}
-				else
-				{
-					if( nNeedMP == 0 )
-					{
-						strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );		
-						AddSkillDescString( strTemp, 0xBDA99FFF );
-					}
-					else
-					{
-						strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
-						AddSkillDescString( strTemp, 0xBDA99FFF );
-						strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );		
-						AddSkillDescString( strTemp, 0xBDA99FFF );
-					}
-				}
-
-				if( rSkill.GetPower( nLevel ) > 0 )
-				{
-					strTemp.PrintF( _S( 65, "ÏúÑÎ†• : %d" ), rSkill.GetPower( nLevel ) );
-					AddSkillDescString( strTemp, 0xBDA99FFF );
-				}
-
-				strTemp.PrintF( _S( 66, "Ïú†Ìö® Í±∞Î¶¨ : %.1f" ), rSkill.GetFireRange() );
-				AddSkillDescString( strTemp, 0xBDA99FFF );
-				strTemp.PrintF( _S( 261, "ÏµúÎåÄÏä§ÌÇ¨ Î†àÎ≤® : %d" ), rSkill.GetMaxLevel() );
-				AddSkillDescString( strTemp, 0xBDA99FFF );
-			}
-			break;
-
-		case CSkill::ST_PASSIVE:				// Passive
-		{
-			strTemp.PrintF( _S( 256, "ÌïÑÏöî Î†àÎ≤® : %d" ), rSkill.GetLearnLevel( nLevel ) );
-			AddSkillDescString( strTemp, 0xBDA99FFF );
-			strTemp.PrintF( _S( 257, "ÌïÑÏöî SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // ÏàôÎ†®ÎèÑ
-			AddSkillDescString( strTemp, 0xBDA99FFF );
-
-			const int iLearnStr = rSkill.GetLearnStr( nLevel );
-			const int iLearnDex = rSkill.GetLearnDex( nLevel );
-			const int iLearnInt = rSkill.GetLearnInt( nLevel );
-			const int iLearnCon = rSkill.GetLearnCon( nLevel );
-			
-			if( iLearnStr > 0 ) 
-			{
-				strTemp.PrintF( _S( 1391, "ÌïÑÏöî Ìûò : %d" ), iLearnStr );		// ÌïÑÏöî Ìûò
-				AddSkillDescString( strTemp, 0xBDA99FFF );
-			}
-			
-			if( iLearnDex > 0 ) 
-			{
-				strTemp.PrintF( _S( 1392, "ÌïÑÏöî ÎØºÏ≤© : %d" ), iLearnDex );	// ÌïÑÏöî ÎØºÏ≤©
-				AddSkillDescString( strTemp, 0xBDA99FFF );
-			}
-			
-			if( iLearnInt > 0 ) 
-			{
-				strTemp.PrintF( _S( 1393, "ÌïÑÏöî ÏßÄÌòú : %d" ), iLearnInt );	// ÌïÑÏöî ÏßÄÌòú
-				AddSkillDescString( strTemp, 0xBDA99FFF );
-			}
-			
-			if( iLearnCon > 0 )
-			{
-				strTemp.PrintF( _S( 1394, "ÌïÑÏöî Ï≤¥Ïßà : %d" ), iLearnCon );	// ÌïÑÏöî Ï≤¥Ïßà
-				AddSkillDescString( strTemp, 0xBDA99FFF );
-			}
-
-			// Need skill
-			if( bLearnSkill )
-			{
-				AddSkillDescString( _S( 258, "ÌïÑÏöî Ïä§ÌÇ¨" ), 0xBDA99FFF );
-				for( i = 0; i < 3; i++ )
-				{
-					if( nLearnSkillIndex[i] != -1 )
-					{
-						CSkill	&rNeedSkill = _pNetwork->GetSkillData( nLearnSkillIndex[i] );
-						strTemp.PrintF( "  %s Lv.%d", rNeedSkill.GetName(), sbLearnSkillLevel[i] );
-						AddSkillDescString( strTemp, 0xBDA99FFF );
-					}
-				}
-			}
-
-			// Need item
-			if( bLearnItem )
-			{
-				AddSkillDescString( _S( 259, "ÌïÑÏöî ÏïÑÏù¥ÌÖú" ), 0xBDA99FFF );
-				for( i = 0; i < 3; i++ )
-				{
-					if( nLearnItemIndex[i] != -1 )
-					{
-						CItemData	&rNeedItem = _pNetwork->GetItemData( nLearnItemIndex[i] );
-						strTemp.PrintF( _S( 260, "  %s %dÍ∞ú" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
-						AddSkillDescString( strTemp, 0xBDA99FFF );
-					}
-				}
-			}
-
-			strTemp.PrintF( _S( 261, "ÏµúÎåÄÏä§ÌÇ¨ Î†àÎ≤® : %d" ), rSkill.GetMaxLevel() );
-			AddSkillDescString( strTemp, 0xBDA99FFF );
-		}
-		break;
-		}
-	}
-	else
-	{
-		CSpecialSkill &rSkill = _pNetwork->GetSSkillData( nIndex );
-		
-		strTemp.PrintF( "%s\n\n", rSkill.GetName() );
-		AddSkillDescString( strTemp, 0xFFC672FF );
-
-		const char *pDesc = rSkill.GetDescription();
-		if( pDesc != NULL )
-		{
-			strTemp.PrintF( "%s\n\n", pDesc );
-			AddSkillDescString( strTemp, 0xC5C5C5FF );
-		}
-		
-		--nLevel;
-		
-		// Get learning condition
-		int		nLearnSkillIndex;
-		SBYTE	sbLearnSkillLevel;
-		BOOL	bLearnSkill	= FALSE;
-		BOOL	bLearnItem	= FALSE;		
-		
-		nLearnSkillIndex	= rSkill.GetLearnSkillIndex();
-		sbLearnSkillLevel	= rSkill.GetLearnSkillLevel();
-		
-		if( nLearnSkillIndex != -1 )
-			bLearnSkill = TRUE;
-		
-		strTemp.PrintF( _S( 256, "ÌïÑÏöî Î†àÎ≤® : %d" ), rSkill.GetLearnLevel( nLevel ) );
-		AddSkillDescString( strTemp, 0xBDA99FFF );
-		strTemp.PrintF( _S( 257, "ÌïÑÏöî SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // ÏàôÎ†®ÎèÑ
-		AddSkillDescString( strTemp, 0xBDA99FFF );
-		
-		// Need skill
-		if( bLearnSkill )
-		{
-			AddSkillDescString( _S( 258, "ÌïÑÏöî Ïä§ÌÇ¨" ), 0xBDA99FFF );
-			if( nLearnSkillIndex != -1 )
-			{
-				CSpecialSkill	&rNeedSkill = _pNetwork->GetSSkillData( nLearnSkillIndex );
-				strTemp.PrintF( "  %s Lv.%d", rNeedSkill.GetName(), sbLearnSkillLevel );
-				AddSkillDescString( strTemp, 0xBDA99FFF );
-			}
-		}
-	}
 }
 
 // ----------------------------------------------------------------------------
@@ -3028,141 +1499,31 @@ void CUISkillLearn::GetSkillDesc( int nIndex, int nLevel, BOOL bSpecial )
 // ----------------------------------------------------------------------------
 void CUISkillLearn::RenderSkillBtns()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	int	nX = SLEARN_SLOT_SX, nY = SLEARN_SLOT_SY;
 	int	iRow, iRowS, iRowE;
-	// Active skill tab
-	if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-	{
-		// Active skill button
-		iRowS = m_sbActiveSkillIcon.GetScrollPos();
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-	    for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
-		{      
-			m_btnActiveSkills[iRow].SetPos( nX, nY );
-			if( m_btnActiveSkills[iRow].IsEmpty() )		
-				continue;
-			
-			m_btnActiveSkills[iRow].Render();
-		}
-	}
-	// Passive skill tab
-	else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-	{
-		// Passive skill button
-		iRowS = m_sbPassiveSkillIcon.GetScrollPos();		
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-	    for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
-		{
-			m_btnPassiveSkills[iRow].SetPos( nX, nY );
-			if( m_btnPassiveSkills[iRow].IsEmpty() )		
-				continue;
-			
-			m_btnPassiveSkills[iRow].Render();
-		}
-	}
-#ifdef ADJUST_MEMORIZE_SKILL
-	// Memorize skill tab
-	else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-	{
-		// Memorize skill button
-		iRowS = m_sbMemorizeSkillIcon.GetScrollPos();		
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-	    for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
-		{
-			m_btnMemorizeSkills[iRow].SetPos( nX, nY );
-			if( m_btnMemorizeSkills[iRow].IsEmpty() )		
-				continue;
-			
-			m_btnMemorizeSkills[iRow].Render();
-		}
-	}
-#endif
-	// Special skill tab
-	else
+
+	if (m_nCurrentTab == SLEARN_TAB_SPECIAL)
 	{
 		// Special skill button
 		iRowS = m_sbSpecialSkillIcon.GetScrollPos();		
 		iRowE = iRowS + SLEARN_SLOT_ROW;
 	    for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
 		{
-			m_btnSpecialSkills[iRow].SetPos( nX, nY );
-			if( m_btnSpecialSkills[iRow].IsEmpty() )		
+			m_pIconsSpecialSkill[iRow]->SetPos( nX, nY );
+			if( m_pIconsSpecialSkill[iRow]->IsEmpty() )		
 				continue;
 			
-			m_btnSpecialSkills[iRow].Render();
+			m_pIconsSpecialSkill[iRow]->Render(pDrawPort);
 		}
 	}
 
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_SKILL );
+	pDrawPort->FlushBtnRenderingQueue( UBET_SKILL );
 
 	// Outline of selected button
-	// Active skill tab
-	if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-	{
-		iRowS = m_sbActiveSkillIcon.GetScrollPos();
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-		if( m_nSelActiveSkillID >= 0 && iRowS <= m_nSelActiveSkillID && m_nSelActiveSkillID < iRowE )
-		{
-			// Set skill learn texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-			m_btnActiveSkills[m_nSelActiveSkillID].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtSelOutline.U0, m_rtSelOutline.V0,
-												m_rtSelOutline.U1, m_rtSelOutline.V1,
-												0xFFFFFFFF );
-
-			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-		}
-	}
-	// Passive skill tab
-	else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-	{
-		// Passive skill button
-		iRowS = m_sbPassiveSkillIcon.GetScrollPos();		
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-		if( m_nSelPassiveSkillID >= 0 && iRowS <= m_nSelPassiveSkillID && m_nSelPassiveSkillID < iRowE )
-		{
-			// Set skill learn texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-			m_btnPassiveSkills[m_nSelPassiveSkillID].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtSelOutline.U0, m_rtSelOutline.V0,
-												m_rtSelOutline.U1, m_rtSelOutline.V1,
-												0xFFFFFFFF );
-
-			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-		}
-	}
-#ifdef ADJUST_MEMORIZE_SKILL
-	// Memorize skill tab
-	else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-	{
-		// Memorize skill button
-		iRowS = m_sbMemorizeSkillIcon.GetScrollPos();		
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-		if( m_nSelMemorizeSkillID >= 0 && iRowS <= m_nSelMemorizeSkillID && m_nSelMemorizeSkillID < iRowE )
-		{
-			// Set skill learn texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-			m_btnPassiveSkills[m_nSelMemorizeSkillID].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtSelOutline.U0, m_rtSelOutline.V0,
-												m_rtSelOutline.U1, m_rtSelOutline.V1,
-												0xFFFFFFFF );
-
-			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-		}
-	}
-#endif
-	// Special skill tab
-	else
+	if (m_nCurrentTab == SLEARN_TAB_SPECIAL)
 	{
 		// Special skill button
 		iRowS = m_sbSpecialSkillIcon.GetScrollPos();		
@@ -3170,123 +1531,67 @@ void CUISkillLearn::RenderSkillBtns()
 		if( m_nSelSpecialSkillID >= 0 && iRowS <= m_nSelSpecialSkillID && m_nSelSpecialSkillID < iRowE )
 		{
 			// Set skill learn texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-			m_btnSpecialSkills[m_nSelSpecialSkillID].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+			m_pIconsSpecialSkill[m_nSelSpecialSkillID]->GetAbsPos( nX, nY );
+			pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 												m_rtSelOutline.U0, m_rtSelOutline.V0,
 												m_rtSelOutline.U1, m_rtSelOutline.V1,
 												0xFFFFFFFF );
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 		}
 	}
 
 	nY = SLEARN_NAME_SY;
 	// Active skill tab
 	int	nCharLevel	= _pNetwork->MyCharacterInfo.level;
-	int nCharSP		= _pNetwork->MyCharacterInfo.sp;
-	if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-	{
-		iRowS = m_sbActiveSkillIcon.GetScrollPos();
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
-		{
-			if( m_btnActiveSkills[iRow].IsEmpty() )
-				continue;
-  
-			CSkill	&rSkill = _pNetwork->GetSkillData( m_btnActiveSkills[iRow].GetSkillIndex() );
-			SBYTE	sbLevel = m_btnActiveSkills[iRow].GetSkillLevel();
-			int		nNeedLevel = rSkill.GetLearnLevel( sbLevel - 1 );
+	SQUAD nCharSP		= _pNetwork->MyCharacterInfo.sp / 10000;
 
-			m_strShortDesc.PrintF( "%s", rSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + SLEARN_NAME_CX, m_nPosY + nY,
-													nCharLevel >= nNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
-
-			m_strShortDesc.PrintF( "Lv %2d   SP %2d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strShortDesc, m_nPosX + SLEARN_NEED_RX,
-													m_nPosY + nY + 17, 0xBDA99FFF );
-		}
-	}
-	// Passive skill tab
-	else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-	{
-		iRowS = m_sbPassiveSkillIcon.GetScrollPos();
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
-		{
-			if( m_btnPassiveSkills[iRow].IsEmpty() )
-				continue;
-  
-			CSkill	&rSkill = _pNetwork->GetSkillData( m_btnPassiveSkills[iRow].GetSkillIndex() );
-			SBYTE	sbLevel = m_btnPassiveSkills[iRow].GetSkillLevel();
-			int		nNeedLevel = rSkill.GetLearnLevel( sbLevel - 1 );
-
-			m_strShortDesc.PrintF( "%s", rSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + SLEARN_NAME_CX, m_nPosY + nY,
-													nCharLevel >= nNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
-
-			m_strShortDesc.PrintF( "Lv %2d  SP %4d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strShortDesc, m_nPosX + SLEARN_NEED_RX,
-													m_nPosY + nY + 17, 0xBDA99FFF );
-		}
-	}
-#ifdef ADJUST_MEMORIZE_SKILL
-	// Memorize skill tab
-	else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-	{
-		iRowS = m_sbMemorizeSkillIcon.GetScrollPos();
-		iRowE = iRowS + SLEARN_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
-		{
-			if( m_btnMemorizeSkills[iRow].IsEmpty() )
-				continue;
-  
-			CSkill	&rSkill = _pNetwork->GetSkillData( m_btnMemorizeSkills[iRow].GetSkillIndex() );
-			SBYTE	sbLevel = m_btnMemorizeSkills[iRow].GetSkillLevel();
-			int		nNeedLevel = rSkill.GetLearnLevel( sbLevel - 1 );
-
-			m_strShortDesc.PrintF( "%s", rSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + SLEARN_NAME_CX, m_nPosY + nY,
-													nCharLevel >= nNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
-
-			m_strShortDesc.PrintF( "Lv %2d  SP %4d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strShortDesc, m_nPosX + SLEARN_NEED_RX,
-													m_nPosY + nY + 17, 0xBDA99FFF );
-		}
-	}
-#endif
-	// Special skill tab
-	else
+	if (m_nCurrentTab == SLEARN_TAB_SPECIAL)
 	{
 		iRowS = m_sbSpecialSkillIcon.GetScrollPos();
 		iRowE = iRowS + SLEARN_SLOT_ROW;
 		for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
 		{
-			if( m_btnSpecialSkills[iRow].IsEmpty() )
+			if( m_pIconsSpecialSkill[iRow]->IsEmpty() )
 				continue;
   
-			CSpecialSkill &rSkill = _pNetwork->GetSSkillData( m_btnSpecialSkills[iRow].GetSkillIndex() );
-			SBYTE	sbLevel = m_btnSpecialSkills[iRow].GetSkillLevel();
-			int		nNeedLevel = rSkill.GetLearnLevel( sbLevel - 1 );
-			int		nNeedSP	= rSkill.GetLearnSP( sbLevel - 1 );
+			CSpecialSkill* pSSkill = CSpecialSkill::getData( m_pIconsSpecialSkill[iRow]->getIndex() );
 
-			m_strShortDesc.PrintF( "%s", rSkill.GetName() );
+			if (pSSkill == NULL)
+				continue;
+
+			SBYTE	sbLevel = MY_INFO()->GetSkillLevel(pSSkill->GetIndex());
+			int		nNeedLevel = pSSkill->GetLearnLevel( sbLevel - 1 );
+			int	nNeedSP	= pSSkill->GetLearnSP( sbLevel - 1 );
+
+			m_strShortDesc.PrintF( "%s", pSSkill->GetName() );
 
 			if(nCharLevel > nNeedLevel && nCharSP > nNeedSP)
 			{
-				_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + SLEARN_NAME_CX, m_nPosY + nY,
+				pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + SLEARN_NAME_CX, m_nPosY + nY,
 														0xFFC672FF );
 			}
 			else
 			{
-				_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + SLEARN_NAME_CX, m_nPosY + nY,
+				pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + SLEARN_NAME_CX, m_nPosY + nY,
 														0xBCBCBCFF );
 			}
 
-			m_strShortDesc.PrintF( "Lv %2d  SP %4d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strShortDesc, m_nPosX + SLEARN_NEED_RX,
+
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+			m_strShortDesc.PrintF( "Lv %2d   %s %2d", sbLevel, _S( 90, "º˜∑√µµ" ), pSSkill->GetLearnSP( sbLevel - 1 ) );
+#else	// else about japan, german, europe3, europe2, netherlands.
+			// [2/28/2013 Ranma] support russia string
+#if defined (G_RUSSIA)
+			m_strShortDesc.PrintF( "%s %2d   %s %2d",_S( 4414, "LV" ), sbLevel, _S( 4415, "SP" ), pSSkill->GetLearnSP( sbLevel - 1 ) );
+#else	// else about russia
+			m_strShortDesc.PrintF( "Lv %2d   SP %2d", sbLevel, pSSkill->GetLearnSP( sbLevel - 1 ) );
+#endif	// end russia
+#endif	//end japan, german, europe3, europe2, netherlands.
+			pDrawPort->PutTextExRX( m_strShortDesc, m_nPosX + SLEARN_NEED_RX,
 													m_nPosY + nY + 17, 0xBDA99FFF );
 		}
 	}
@@ -3298,569 +1603,7 @@ void CUISkillLearn::RenderSkillBtns()
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUISkillLearn::MouseMessage( MSG *pMsg )
 {
-#ifdef NEW_USER_INTERFACE
 	return SKillLearnNewMouseMessage(pMsg);
-#endif
-
-	WMSG_RESULT	wmsgResult;
-
-	// Title bar
-	static BOOL bTitleBarClick = FALSE;
-
-	// Extended button clicked
-	static BOOL	bLButtonDownInBtn = FALSE;
-
-	// Mouse point
-	static int	nOldX, nOldY;
-	int	nX = LOWORD( pMsg->lParam );
-	int	nY = HIWORD( pMsg->lParam );
-
-	// Mouse message
-	switch( pMsg->message )
-	{
-	case WM_MOUSEMOVE:
-		{
-			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
-
-			// Move skill learn
-			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
-			{
-				int	ndX = nX - nOldX;
-				int	ndY = nY - nOldY;
-				nOldX = nX;	nOldY = nY;
-
-				Move( ndX, ndY );
-
-				return WMSG_SUCCESS;
-			}
-			// Close button
-			else if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
-			// Learn button
-			else if( m_btnLearn.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
-			// Cancel button
-			else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
-			// List box of skill desc
-			else if( m_lbSkillDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
-			// Active skill tab
-			else if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-			{
-				// Reset state of selected button
-				if( bLButtonDownInBtn && m_nSelActiveSkillID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
-				{
-					m_btnActiveSkills[m_nSelActiveSkillID].SetBtnState( UBES_IDLE );
-					bLButtonDownInBtn = FALSE;
-				}
-				// Active icon scroll bar
-				else if( m_sbActiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-			}
-			// Passive skill tab
-			else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-			{
-				// Reset state of selected button
-				if( bLButtonDownInBtn && m_nSelPassiveSkillID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
-				{
-					m_btnPassiveSkills[m_nSelPassiveSkillID].SetBtnState( UBES_IDLE );
-					bLButtonDownInBtn = FALSE;
-				}
-				// Passive icon scroll bar
-				else if( m_sbPassiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-			}
-#ifdef ADJUST_MEMORIZE_SKILL
-			// Memorize skill tab
-			else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-			{
-				// Reset state of selected button
-				if( bLButtonDownInBtn && m_nSelMemorizeSkillID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
-				{
-					m_btnMemorizeSkills[m_nSelMemorizeSkillID].SetBtnState( UBES_IDLE );
-					bLButtonDownInBtn = FALSE;
-				}
-				// Memorize icon scroll bar
-				else if( m_sbMemorizeSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-			}
-#endif
-			// Special skill tab
-			else
-			{
-				// Reset state of selected button
-				if( bLButtonDownInBtn && m_nSelSpecialSkillID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
-				{
-					m_btnSpecialSkills[m_nSelSpecialSkillID].SetBtnState( UBES_IDLE );
-					bLButtonDownInBtn = FALSE;
-				}
-				// Special icon scroll bar
-				else if( m_sbSpecialSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-			}
-		}
-		break;
-
-	case WM_LBUTTONDOWN:
-		{
-			if( IsInside( nX, nY ) )
-			{
-				nOldX = nX;		nOldY = nY;
-
-				// Close button
-				if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Title bar
-				else if( IsInsideRect( nX, nY, m_rcTitle ) )
-				{
-					bTitleBarClick = TRUE;
-				}
-				// Skill tab
-				else if( m_nCurrentTab != SLEARN_TAB_SPECIAL && IsInsideRect( nX, nY, m_rcTab ) )
-				{
-					int	nOldTab = m_nCurrentTab;
-					m_nCurrentTab = ( nX - m_nPosX - m_rcTab.Left ) / SLEARN_TAB_WIDTH;
-#ifdef ADJUST_MEMORIZE_SKILL
-					if( m_nCurrentTab < 0 || m_nCurrentTab > SLERAN_TAB_MEMORIZE )
-#else
-					if( m_nCurrentTab < 0 || m_nCurrentTab > SLEARN_TAB_PASSIVE )
-#endif
-						m_nCurrentTab = nOldTab;
-
-					if( nOldTab != m_nCurrentTab )
-					{
-						if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-						{
-							if( m_nSelActiveSkillID >= 0)
-							{
-								GetSkillDesc( m_btnActiveSkills[m_nSelActiveSkillID].GetSkillIndex(),
-												m_btnActiveSkills[m_nSelActiveSkillID].GetSkillLevel() );
-							}
-							else
-								GetSkillDesc( -1 );
-						}
-						else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-						{
-							if( m_nSelPassiveSkillID >= 0)
-							{
-								GetSkillDesc( m_btnPassiveSkills[m_nSelPassiveSkillID].GetSkillIndex(),
-												m_btnPassiveSkills[m_nSelPassiveSkillID].GetSkillLevel() );
-							}
-							else
-								GetSkillDesc( -1 );
-						}
-#ifdef ADJUST_MEMORIZE_SKILL
-						else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-						{
-							if( m_nSelMemorizeSkillID >= 0)
-							{
-								GetSkillDesc( m_btnMemorizeSkills[m_nSelMemorizeSkillID].GetSkillIndex(),
-												m_btnMemorizeSkills[m_nSelMemorizeSkillID].GetSkillLevel() );
-							}
-							else
-								GetSkillDesc( -1 );
-						}
-#endif
-					}
-				}
-				// Learn button
-				else if( m_btnLearn.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Cancel button
-				else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// List box of skill desc
-				else if( m_lbSkillDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Active skill tab
-				else if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-				{
-					// Active icon scroll bar
-					if( m_sbActiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	nOldSelSkillID = m_nSelActiveSkillID;
-						m_nSelActiveSkillID = -1;
-        
-						int	iRowS = m_sbActiveSkillIcon.GetScrollPos();
-						int	iRowE = iRowS + SLEARN_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnActiveSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected skill
-								m_nSelActiveSkillID = iRow;
-								if( nOldSelSkillID != m_nSelActiveSkillID )
-								{
-									GetSkillDesc( m_btnActiveSkills[iRow].GetSkillIndex(),
-													m_btnActiveSkills[iRow].GetSkillLevel() );
-								}
-
-								bLButtonDownInBtn = TRUE;
-
-								_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
-								return WMSG_SUCCESS;
-							}
-						}
-
-						GetSkillDesc( -1 );
-					}
-				}
-				// Passive skill tab
-				else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-				{
-					// Passive icon scroll bar
-					if( m_sbPassiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	nOldSelSkillID = m_nSelPassiveSkillID;
-						m_nSelPassiveSkillID = -1;
-        
-						int	iRowS = m_sbPassiveSkillIcon.GetScrollPos();
-						int	iRowE = iRowS + SLEARN_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnPassiveSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected skill
-								m_nSelPassiveSkillID = iRow;
-								if( nOldSelSkillID != m_nSelPassiveSkillID )
-								{
-									GetSkillDesc( m_btnPassiveSkills[iRow].GetSkillIndex(),
-													m_btnPassiveSkills[iRow].GetSkillLevel() );
-								}
-
-								bLButtonDownInBtn = TRUE;
-
-								_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
-								return WMSG_SUCCESS;
-							}
-						}
-
-						GetSkillDesc( -1 );
-					}
-				}
-#ifdef ADJUST_MEMORIZE_SKILL
-				// Memorize skill tab
-				else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-				{
-					// Memorize icon scroll bar
-					if( m_sbMemorizeSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	nOldSelSkillID = m_nSelMemorizeSkillID;
-						m_nSelMemorizeSkillID = -1;
-        
-						int	iRowS = m_sbMemorizeSkillIcon.GetScrollPos();
-						int	iRowE = iRowS + SLEARN_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnMemorizeSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected skill
-								m_nSelMemorizeSkillID = iRow;
-								if( nOldSelSkillID != m_nSelMemorizeSkillID )
-								{
-									GetSkillDesc( m_btnMemorizeSkills[iRow].GetSkillIndex(),
-													m_btnMemorizeSkills[iRow].GetSkillLevel() );
-								}
-
-								bLButtonDownInBtn = TRUE;
-
-								_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
-								return WMSG_SUCCESS;
-							}
-						}
-
-						GetSkillDesc( -1 );
-					}
-				}
-#endif
-				// Special skill tab
-				else
-				{
-					// Special icon scroll bar
-					if( m_sbSpecialSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	nOldSelSkillID = m_nSelSpecialSkillID;
-						m_nSelSpecialSkillID = -1;
-        
-						int	iRowS = m_sbSpecialSkillIcon.GetScrollPos();
-						int	iRowE = iRowS + SLEARN_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnSpecialSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected skill
-								m_nSelSpecialSkillID = iRow;
-								if( nOldSelSkillID != m_nSelSpecialSkillID )
-								{
-									GetSkillDesc( m_btnSpecialSkills[iRow].GetSkillIndex(),
-													m_btnSpecialSkills[iRow].GetSkillLevel(), TRUE );
-								}
-
-								bLButtonDownInBtn = TRUE;
-
-								_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
-								return WMSG_SUCCESS;
-							}
-						}
-
-						GetSkillDesc( -1 );
-					}
-				}
-
-				_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
-				return WMSG_SUCCESS;
-			}
-		}
-		break;
-
-	case WM_LBUTTONUP:
-		{
-			bLButtonDownInBtn = FALSE;
-
-			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
-			{
-				// Title bar
-				bTitleBarClick = FALSE;
-
-				// If skill learn isn't focused
-				if( !IsFocused() )
-					return WMSG_FAIL;
-
-				// Close button
-				if( ( wmsgResult = m_btnClose.MouseMessage( pMsg ) ) != WMSG_FAIL )
-				{
-					if( wmsgResult == WMSG_COMMAND )
-						CloseSkillLearn();
-
-					return WMSG_SUCCESS;
-				}
-				// Learn button
-				else if( ( wmsgResult = m_btnLearn.MouseMessage( pMsg ) ) != WMSG_FAIL )
-				{
-					if( wmsgResult == WMSG_COMMAND )
-						SendLearnSkill();
-
-					return WMSG_SUCCESS;
-				}
-				// Cancel button
-				else if( ( wmsgResult = m_btnCancel.MouseMessage( pMsg ) ) != WMSG_FAIL )
-				{
-					if( wmsgResult == WMSG_COMMAND )
-						CloseSkillLearn();
-
-					return WMSG_SUCCESS;
-				}
-				// List box of skill desc
-				else if( m_lbSkillDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-				// Active skill tab
-				else if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-				{
-					// Active icon scroll bar
-					if( m_sbActiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRowS = m_sbActiveSkillIcon.GetScrollPos();
-						int	iRowE = iRowS + SLEARN_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnActiveSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								return WMSG_SUCCESS;
-						}
-					}
-				}
-				// Passive skill tab
-				else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-				{
-					// Passive icon scroll bar
-					if( m_sbPassiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRowS = m_sbPassiveSkillIcon.GetScrollPos();
-						int	iRowE = iRowS + SLEARN_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnPassiveSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								return WMSG_SUCCESS;
-						}
-					}
-				}
-#ifdef ADJUST_MEMORIZE_SKILL
-				// Memorize skill tab
-				else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-				{
-					// Memorize icon scroll bar
-					if( m_sbMemorizeSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRowS = m_sbMemorizeSkillIcon.GetScrollPos();
-						int	iRowE = iRowS + SLEARN_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnMemorizeSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								return WMSG_SUCCESS;
-						}
-					}
-				}
-#endif
-				// Special skill tab
-				else
-				{
-					// Special icon scroll bar
-					if( m_sbSpecialSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRowS = m_sbSpecialSkillIcon.GetScrollPos();
-						int	iRowE = iRowS + SLEARN_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnSpecialSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								return WMSG_SUCCESS;
-						}
-					}
-				}
-			}
-			// If holding button exists
-			else
-			{
-				if( IsInside( nX, nY ) )
-				{
-					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
-
-					return WMSG_SUCCESS;
-				}
-			}
-		}
-		break;
-
-	case WM_LBUTTONDBLCLK:
-		{
-			if( IsInside( nX, nY ) )
-			{
-				// List box of skill desc
-				if( m_lbSkillDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Active skill tab
-				else if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-				{
-					// Active icon scroll bar
-					if( m_sbActiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-				}
-				// Passive skill tab
-				else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-				{
-					// Passive icon scroll bar
-					if( m_sbPassiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-				}
-#ifdef ADJUST_MEMORIZE_SKILL
-				// Memorize skill tab
-				else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-				{
-					// Memorize icon scroll bar
-					if( m_sbMemorizeSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-				}
-#endif
-				// Special skill tab
-				else
-				{
-					// Special icon scroll bar
-					if( m_sbSpecialSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-				}
-
-				return WMSG_SUCCESS;
-			}
-		}
-		break;
-
-	case WM_MOUSEWHEEL:
-		{
-			if( IsInside( nX, nY ) )
-			{
-				// List box of skill desc
-				if( m_lbSkillDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-				// Active skill tab
-				else if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-				{
-					// Active icon scroll bar
-					if( m_sbActiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-				}
-				// Passive skill tab
-				else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-				{
-					// Passive icon scroll bar
-					if( m_sbPassiveSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-				}
-#ifdef ADJUST_MEMORIZE_SKILL
-				// Memorize skill tab
-				else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-				{
-					// Memorize icon scroll bar
-					if( m_sbMemorizeSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-				}
-#endif
-				// Special skill tab
-				else
-				{
-					// Special icon scroll bar
-					if( m_sbSpecialSkillIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-				}
-			}
-		}
-		break;
-	}
-
-	return WMSG_FAIL;
 }
 
 
@@ -3878,15 +1621,15 @@ void CUISkillLearn::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInpu
 	{
 	case MSGCMD_SKILLLEARN_NOTIFY:
 		{
-			_pUIMgr->CloseMessageBox(MSGCMD_SKILLLEARN_NOTIFY);
+			CUIManager::getSingleton()->CloseMessageBox(MSGCMD_SKILLLEARN_NOTIFY);
 		}
 		break;
 
-	case MSGCMD_CHANGEJOB:			// Ï†ÑÏßÅ Ìï†Í∫ºÏóêÏöî?
+	case MSGCMD_CHANGEJOB:			// ¿¸¡˜ «“≤®ø°ø‰?
 		if( bOK )
 		{
-			// ÏÑúÎ≤ÑÏóê Î©îÏÑ∏ÏßÄ Î≥¥ÎÇ¥Í∏∞.
-			_pNetwork->ChangeJobReq( m_iSelChangeJob );
+			// º≠πˆø° ∏ﬁºº¡ˆ ∫∏≥ª±‚.
+			_pNetwork->ChangeJobReq( m_iSelChangeJob, m_iMobVirIdx );
 		}
 		break;
 	}
@@ -3898,344 +1641,444 @@ void CUISkillLearn::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInpu
 // ----------------------------------------------------------------------------
 void CUISkillLearn::MsgBoxLCommand( int nCommandCode, int nResult )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CJobInfo* pInfo = CJobInfo::getSingleton();
+
 	CTString strMessage;
+
 	switch( nCommandCode )
 	{
 	case MSGLCMD_SKILLLEARN_REQ:
-		if( nResult == SKILL_LEARN )					// Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§.
+		if( nResult == SKILL_LEARN )					// Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ.
 		{
-			_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
+			//pUIManager->RearrangeOrder( UI_SKILLLEARN, TRUE );
 
-#ifdef HELP_SYSTEM_1
-// [KH_07044] 3Ï∞® ÎèÑÏõÄÎßê Í¥ÄÎ†® Ï∂îÍ∞Ä
+// [KH_07044] 3¬˜ µµøÚ∏ª ∞¸∑√ √ﬂ∞°
 			if(g_iShowHelp1Icon)
 			{
-				_pUIMgr->GetHelp3()->ClearHelpString();
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3308, "Ï∫êÎ¶≠ÌÑ∞Í∞Ä Î∞∞Ïö∏ Ïàò ÏûàÎäî Ïä§ÌÇ¨Ïùò Î™©Î°ùÏù¥ Î≥¥Ïó¨ÏßëÎãàÎã§."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3309, "Î™©Î°ùÏùò Ïä§ÌÇ¨ ÏïÑÏù¥ÏΩòÏùÑ ÌÅ¥Î¶≠ÌïòÎ©¥ Ìï¥Îãπ Ïä§ÌÇ¨Ïùò ÏÑ§Î™ÖÍ≥º ÌïÑÏöîÏ°∞Í±¥Ïù¥ ÌëúÏãúÎêòÎ©∞ Î∞∞Ïö∞Í≥† Ïã∂ÏùÄ Ïä§ÌÇ¨ÏùÑ Í≤∞Ï†ïÌñàÎã§Î©¥ Ïä§ÌÇ¨ ÏïÑÏù¥ÏΩòÏùÑ ÌÅ¥Î¶≠ Ìïú Îí§ ÏäµÎìù Î≤ÑÌäºÏùÑ ÎàÑÎ¶ÖÎãàÎã§."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3310, "‚Äª Ïä§ÌÇ¨ÏùÑ Î∞∞Ïö∞ÎäîÎç∞ ÌïÑÏöîÌïú Ï°∞Í±¥Ïóê ÎßåÏ°±Îêú Í≤ΩÏö∞ÏóêÎßå Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏûàÏäµÎãàÎã§."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3311, "‚Äª Ïä§ÌÇ¨ÏùÑ Î∞∞Ïö∏ ÎïåÎäî Ïä§ÌÇ¨ Ï¢ÖÎ•ò Î∞è Î†àÎ≤®Ïóê Îî∞Îùº ÌïÑÏöîÌïú ÏàôÎ†®ÎèÑÍ∞Ä ÏûêÎèô ÏÇ≠Í∞êÎê©ÎãàÎã§."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3312, "‚Äª ÏäµÎìùÌïú Ïä§ÌÇ¨ÏùÄ Ï∫êÎ¶≠ÌÑ∞Ïùò Ïä§ÌÇ¨ Ï∞Ω(ALT+S)ÏóêÏÑú ÌôïÏù∏Ìï† Ïàò ÏûàÏäµÎãàÎã§."));
-				_pUIMgr->GetHelp3()->OpenHelp(this);
+				pUIManager->GetHelp3()->ClearHelpString();
+				pUIManager->GetHelp3()->AddHelpString(_S(3308, "ƒ≥∏Ø≈Õ∞° πËøÔ ºˆ ¿÷¥¬ Ω∫≈≥¿« ∏Ò∑œ¿Ã ∫∏ø©¡˝¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3309, "∏Ò∑œ¿« Ω∫≈≥ æ∆¿Ãƒ‹¿ª ≈¨∏Ø«œ∏È «ÿ¥Á Ω∫≈≥¿« º≥∏Ì∞˙ « ø‰¡∂∞«¿Ã «•Ω√µ«∏Á πËøÏ∞Ì ΩÕ¿∫ Ω∫≈≥¿ª ∞·¡§«ﬂ¥Ÿ∏È Ω∫≈≥ æ∆¿Ãƒ‹¿ª ≈¨∏Ø «— µ⁄ Ω¿µÊ πˆ∆∞¿ª ¥©∏®¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3310, "°ÿ Ω∫≈≥¿ª πËøÏ¥¬µ• « ø‰«— ¡∂∞«ø° ∏∏¡∑µ» ∞ÊøÏø°∏∏ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3311, "°ÿ Ω∫≈≥¿ª πËøÔ ∂ß¥¬ Ω∫≈≥ ¡æ∑˘ π◊ ∑π∫ßø° µ˚∂Û « ø‰«— º˜∑√µµ∞° ¿⁄µø ªË∞®µÀ¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3312, "°ÿ Ω¿µÊ«— Ω∫≈≥¿∫ ƒ≥∏Ø≈Õ¿« Ω∫≈≥ √¢(ALT+S)ø°º≠ »Æ¿Œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->OpenHelp(this);
 			}
-#endif
 
-			InitSkillLearn( FALSE );
-			m_nCurrentTab = SLEARN_TAB_ACTIVE;
+// 			InitSkillLearn( FALSE );
+// 			m_nCurrentTab = SLEARN_TAB_ACTIVE;
+
+			m_nCurrentTab = -1;	// Ω∫≈≥ ∏Æ¥∫æÛ
+			pUIManager->GetSkillNew()->OpenUI(m_iMobIdx, m_iMobVirIdx, m_bQuest, m_fNpcX, m_fNpcZ);
+
 		}
-		else if( nResult == SKILL_TALK )				// Ïù¥ÏïºÍ∏∞ ÌïúÎã§.
+		else if( nResult == SKILL_TALK )				// ¿Ãæﬂ±‚ «—¥Ÿ.
 		{
 			//TODO : NewQuestSystem
-			// ÌÄòÏä§Ìä∏ Ï∞Ω ÎùÑÏö∞Í∏∞
+			// ƒ˘Ω∫∆Æ √¢ ∂ÁøÏ±‚
 			CUIQuestBook::TalkWithNPC();
 		}
-		else if( nResult == SKILL_JOB_1 )				// Ï†ÑÏßÅ ÌÅ¥ÎûòÏä§ 1
+		else if( nResult == SKILL_JOB_1 )				// ¿¸¡˜ ≈¨∑°Ω∫ 1
 		{
-			_pUIMgr->CreateMessageBoxL( _S( 1224, "Ï†ÑÏßÅ Ï†ïÎ≥¥" ), UI_SKILLLEARN, MSGLCMD_CHANGEJOB_REQ );		
+			pUIManager->CreateMessageBoxL( _S( 1224, "¿¸¡˜ ¡§∫∏" ), UI_SKILLLEARN, MSGLCMD_CHANGEJOB_REQ );		
 			const int iNeedLevel	= EXTENSION_LEVEL;
 			const SQUAD	llNeedNas	= 50000;
 			const int iJob			= _pNetwork->MyCharacterInfo.job;
 
-			// FiXME : ÏïÑÎûò Î∂ÄÎ∂ÑÏùÄ Ï†ïÎ¶¨Í∞Ä ÌïÑÏöîÌïú Î∂ÄÎ∂Ñ.
+			// FiXME : æ∆∑° ∫Œ∫–¿∫ ¡§∏Æ∞° « ø‰«— ∫Œ∫–.
 
 			switch( iJob )
 			{
 			case TITAN:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_HIGHLANDER ), -1, 0xFFC672FF );				
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1225, "Ï†Ñ ÌÅ¥ÎûòÏä§ Í∞ÄÏö¥Îç∞ÏÑú Í≥µÍ≤©Î†•Ïù¥ ÏúºÎú∏Ïù∏ ÌÅ¥ÎûòÏä§Î°úÏÑú Ï†ÅÏóêÍ≤å ÎßπÍ≥µÏùÑ ÌçºÎ∂ìÎäî Í≥µÍ≤©ÏàòÎ°úÏÑúÏùò Î™´ÏùÑ ÌÜ°ÌÜ°Ìûà Ìï¥ ÎÇ¥Îäî ÌÅ¥ÎûòÏä§ÏûÖÎãàÎã§.\n" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1226, "ÏÇ¨Ïö© Î¨¥Í∏∞ : ÎèÑÎÅº" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_HIGHLANDER ), -1, 0xFFC672FF );				
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1225, "¿¸ ≈¨∑°Ω∫ ∞°øÓµ•º≠ ∞¯∞›∑¬¿Ã ¿∏∂‰¿Œ ≈¨∑°Ω∫∑Œº≠ ¿˚ø°∞‘ ∏Õ∞¯¿ª ∆€∫◊¥¬ ∞¯∞›ºˆ∑Œº≠¿« ∏Ú¿ª ≈Â≈Â»˜ «ÿ ≥ª¥¬ ≈¨∑°Ω∫¿‘¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1226, "ªÁøÎ π´±‚ : µµ≥¢" ), -1, 0xA3A1A3FF );							
 
-					strMessage.PrintF( _S( 1227, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, Î≥¥Îîî ÌÅ¨ÎûòÏÖî lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );					
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1229, "Ìûò : Í≥µÍ≤©ÏÉÅÏäπ, Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä." ), -1, 0xA3A1A3FF );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1230, "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ" ), -1, 0xA3A1A3FF );								
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1231, "ÏßÄÌòú : ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå" ), -1, 0xA3A1A3FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1232, "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ" ), -1, 0xA3A1A3FF );				
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1233, "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : Ìûò" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1227, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ∫∏µ ≈©∑°º≈ lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );					
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1229, "»˚ : ∞¯∞›ªÛΩ¬, π∞∏ÆπÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1230, "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬" ), -1, 0xA3A1A3FF );								
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1231, "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“" ), -1, 0xA3A1A3FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1232, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î" ), -1, 0xA3A1A3FF );				
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1233, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : »˚" ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "ÌÉÄÍ≥†ÎÇú Í∞ïÏù∏Ìïú Ïú°Ï≤¥ÏóêÏÑú ÌÑ∞Ï†∏ ÎÇòÏò§Îäî Ìà¨ÌòºÏùÄ ÌÉÄÏù¥ÌÉÑ Ï§ëÏóêÏÑúÎèÑ ÏúºÎú∏ÏúºÎ°ú Ïù∏Ï†ïÎ∞õÎäî ÏûêÎì§Ïù¥ Î∞îÎ°ú ÌïòÏù¥ÎûúÎçî ÏûÖÎãàÎã§." ), -1, 0xA3A1A3FF );							
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "Ïù¥Îì§ÏùÄ Ï†ÑÏû•ÏóêÏÑú Ìïú Í±∏ÏùåÏùò Î¨ºÎü¨ÏÑ¨ÏóÜÏù¥ Ï†ÑÏû•ÏùÑ ÏûêÏú†Î°≠Í≤å Ï¢ÖÌö°Î¨¥ÏßÑÌïòÎ©∞ Í±∞ÎåÄÌïú ÎèÑÎÅºÎ•º ÏûêÏã†Ïùò Ïú°Ï≤¥Ï≤òÎüº ÏûêÏú†Î°≠Í≤å ÏÇ¨Ïö©Ìï©ÎãàÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "≈∏∞Ì≥≠ ∞≠¿Œ«— ¿∞√ºø°º≠ ≈Õ¡Æ ≥™ø¿¥¬ ≈ı»•¿∫ ≈∏¿Ã≈∫ ¡ﬂø°º≠µµ ¿∏∂‰¿∏∑Œ ¿Œ¡§πﬁ¥¬ ¿⁄µÈ¿Ã πŸ∑Œ «œ¿Ã∑£¥ı ¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¿ÃµÈ¿∫ ¿¸¿Âø°º≠ «— ∞…¿Ω¿« π∞∑Øº∂æ¯¿Ã ¿¸¿Â¿ª ¿⁄¿Ø∑”∞‘ ¡æ»æπ´¡¯«œ∏Á ∞≈¥Î«— µµ≥¢∏¶ ¿⁄Ω≈¿« ¿∞√º√≥∑≥ ¿⁄¿Ø∑”∞‘ ªÁøÎ«’¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 				}
 				break;
-			case KNIGHT:		//  Î°úÏó¥ ÎÇòÏù¥Ìä∏
+			case KNIGHT:		//  ∑Œø≠ ≥™¿Ã∆Æ
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_ROYALKNIGHT ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1234, "Í∏∞Î≥∏Ï†ÅÏúºÎ°ú Îã®Î†®Îêú Îã®Îã®Ìïú Î∞©Ïñ¥Î†•Í≥º ÎÜíÏïÑÏßÑ Í≥µÍ≤©Î†•ÏùÑ ÎπÑÎ°ØÌïú Îπ†Î•∏ Í≥µÍ≤©ÏúºÎ°ú Ï†ÅÏùÑ Ï†úÏïïÌïòÎ©∞ Í∞úÏù∏Í∞Ñ Ï†ÑÌà¨ÏóêÏÑú ÏïàÏ†ïÏ†ÅÏù∏ Ï†ÑÌà¨Î•º Î≥¥Ïó¨Ï£ºÎäî ÌÅ¥ÎûòÏä§ÏûÖÎãàÎã§." ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1235, "ÏÇ¨Ïö© Î¨¥Í∏∞ : Ïù¥ÎèÑÎ•ò" ), -1, 0xA3A1A3FF );							
-					strMessage.PrintF( _S( 1236, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, ÎßàÎÇò Î∏åÎ†àÏù¥ÌÅ¨ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1238, "Ìûò : Í≥µÍ≤©ÏÉÅÏäπ, Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, Ïù∏Î≤§Î¨¥Í≤å Ï¶ùÍ∞Ä" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1239, "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1240, "ÏßÄÌòú : ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1241, "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1242, "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : ÏßÄÌòú" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_ROYALKNIGHT ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1234, "±‚∫ª¿˚¿∏∑Œ ¥‹∑√µ» ¥‹¥‹«— πÊæÓ∑¬∞˙ ≥Ùæ∆¡¯ ∞¯∞›∑¬¿ª ∫Ò∑‘«— ∫¸∏• ∞¯∞›¿∏∑Œ ¿˚¿ª ¡¶æ–«œ∏Á ∞≥¿Œ∞£ ¿¸≈ıø°º≠ æ»¡§¿˚¿Œ ¿¸≈ı∏¶ ∫∏ø©¡÷¥¬ ≈¨∑°Ω∫¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1235, "ªÁøÎ π´±‚ : ¿Ãµµ∑˘" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1236, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ∏∂≥™ ∫Í∑π¿Ã≈© lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1238, "»˚ : ∞¯∞›ªÛΩ¬, π∞∏ÆπÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1239, "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1240, "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1241, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1242, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : ¡ˆ«˝" ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "Ï†ïÏùòÎ•º Ïã§Ï≤úÌïòÎäî Î∞©Î≤ïÏúºÎ°úÏÑú ÏïÖÏúºÎ°úÎ∂ÄÌÑ∞ ÏÜåÏ§ëÌïú Ï°¥Ïû¨Î•º Î≥¥Ìò∏ÌïòÎäî Í≤ÉÏóêÏÑú, ÏïÖÏùÑ ÏùëÏßïÌïòÎäî Í≤ÉÏúºÎ°ú ÏÑ†ÌöåÌïú ÏûêÎì§Ïù¥ Î∞îÎ°ú Î°úÏó¥ ÎÇòÏù¥Ìä∏ÏûÖÎãàÎã§. " ), -1, 0xA3A1A3FF );							
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "Î°úÏó¥ ÎÇòÏù¥Ìä∏Îäî Í∑∏Îì§ÏùÑ ÏßÄÏºúÏ£ºÎçò Íµ≥Í±¥Ìïú Î∞©Ìå®Îäî Îí§Î°ú ÌïòÍ≥† ÎåÄÏã† ÏòàÎ¶¨ÌïòÍ≤å ÎÇ†Ïù¥ ÏÑ† Îëê ÏûêÎ£®Ïùò Í≤ÄÏùÑ ÌÉùÌïòÏó¨ Í∑∏Îì§Ïù¥ Í∞ÄÏßÑ Îä•Î†• Ïù¥ÏÉÅÏúºÎ°ú Í≥µÍ≤©Î†•ÏùÑ ÎÅåÏñ¥ Ïò¨Î†∏ÏäµÎãàÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¡§¿«∏¶ Ω«√µ«œ¥¬ πÊπ˝¿∏∑Œº≠ æ«¿∏∑Œ∫Œ≈Õ º“¡ﬂ«— ¡∏¿Á∏¶ ∫∏»£«œ¥¬ ∞Õø°º≠, æ«¿ª ¿¿¬°«œ¥¬ ∞Õ¿∏∑Œ º±»∏«— ¿⁄µÈ¿Ã πŸ∑Œ ∑Œø≠ ≥™¿Ã∆Æ¿‘¥œ¥Ÿ. " ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "∑Œø≠ ≥™¿Ã∆Æ¥¬ ±◊µÈ¿ª ¡ˆƒ—¡÷¥¯ ±ª∞««— πÊ∆–¥¬ µ⁄∑Œ «œ∞Ì ¥ÎΩ≈ øπ∏Æ«œ∞‘ ≥Ø¿Ã º± µŒ ¿⁄∑Á¿« ∞À¿ª ≈√«œø© ±◊µÈ¿Ã ∞°¡¯ ¥…∑¬ ¿ÃªÛ¿∏∑Œ ∞¯∞›∑¬¿ª ≤¯æÓ ø√∑»Ω¿¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 					
 					
 				}
 				break;
 			case HEALER:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_ARCHER ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1243, "ÌïòÏù¥ÏóòÌîÑ ÏïÑÏ≤òÎì§ÏùÄ ÌôîÏÇ¥ ÌïúÎ∞úÎßåÏúºÎ°úÎèÑ Îã§ÏàòÏùò Ï†ÅÏùÑ Í≥µÍ≤©ÌïòÍ±∞ÎÇò, Îπ†Î•∏ Ïù¥ÎèôÏÜçÎèÑ, ÌôúÏùÑ Ïù¥Ïö©Ìïú Ïû•Í±∞Î¶¨ Í≥µÍ≤©ÏúºÎ°ú ÌûàÌä∏ Ïï§ Îü∞ Î∞©ÏãùÏùò Í≥µÍ≤©Ïóê ÌäπÌôîÎêú Îä•Î†•ÏùÑ Í∞ÄÏßÄÍ≥† ÏûàÏäµÎãàÎã§." ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1244, "ÏÇ¨Ïö© Î¨¥Í∏∞ : Ìôú" ), -1, 0xA3A1A3FF );							
-					strMessage.PrintF( _S( 1245, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, ÎçîÎ∏î Ïä§ÌåÖÏÉ∑ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1246, "Ìûò :  Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1247, "ÎØºÏ≤© : Í≥µÍ≤© ÏÉÅÏäπ, Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1248, "ÏßÄÌòú : ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1249, "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1250, "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : Ìûò" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_ARCHER ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1243, "«œ¿Ãø§«¡ æ∆√≥µÈ¿∫ »≠ªÏ «—πﬂ∏∏¿∏∑Œµµ ¥Ÿºˆ¿« ¿˚¿ª ∞¯∞›«œ∞≈≥™, ∫¸∏• ¿Ãµøº”µµ, »∞¿ª ¿ÃøÎ«— ¿Â∞≈∏Æ ∞¯∞›¿∏∑Œ »˜∆Æ æÿ ∑± πÊΩƒ¿« ∞¯∞›ø° ∆Ø»≠µ» ¥…∑¬¿ª ∞°¡ˆ∞Ì ¿÷Ω¿¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1244, "ªÁøÎ π´±‚ : »∞" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1245, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ¥ı∫Ì Ω∫∆√º¶ lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1246, "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1247, "πŒ√∏ : ∞¯∞› ªÛΩ¬, ∏Ì¡ﬂ, »∏««ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1248, "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1249, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1250, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : »˚" ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "ÎßéÏùÄ ÌïòÏù¥ÏóòÌîÑÎì§Ïù¥ Í∑∏Îì§Ïù¥ ÏÑ†Ï≤úÏ†ÅÏúºÎ°ú ÌÉÄÍ≥†ÎÇú ÌûòÏù∏ ÎßàÎ≤ïÏùÑ Ïù¥Ïö©Ìï¥ ÎèôÎ£åÎì§Ïùò ÏÉùÎ™ÖÏùÑ Íµ¨ÌïòÎ©∞ ÏπòÏú†ÏôÄ Ïû¨ÏÉùÏóê Ìûò Ïì∞ÏßÄÎßå ÎïåÎ°† ÎßàÎ≤ïÏ†ÅÏù∏ ÌûòÎ≥¥Îã§, Î¨ºÎ¶¨Ï†ÅÏù∏ ÌûòÏóê Í¥ÄÏã¨ÏùÑ Í∞ñÍ≥† Ïù¥Ïóê ÏßëÏ§ëÌïòÎäî ÏûêÎì§Ïù¥ ÌïòÏù¥ÏóòÌîÑ ÏïÑÏ≤òÏûÖÎãàÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "∏π¿∫ «œ¿Ãø§«¡µÈ¿Ã ±◊µÈ¿Ã º±√µ¿˚¿∏∑Œ ≈∏∞Ì≥≠ »˚¿Œ ∏∂π˝¿ª ¿ÃøÎ«ÿ µø∑·µÈ¿« ª˝∏Ì¿ª ±∏«œ∏Á ƒ°¿ØøÕ ¿Áª˝ø° »˚ æ≤¡ˆ∏∏ ∂ß∑– ∏∂π˝¿˚¿Œ »˚∫∏¥Ÿ, π∞∏Æ¿˚¿Œ »˚ø° ∞¸Ω…¿ª ∞Æ∞Ì ¿Ãø° ¡˝¡ﬂ«œ¥¬ ¿⁄µÈ¿Ã «œ¿Ãø§«¡ æ∆√≥¿‘¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 				}
 				break;
 			case MAGE:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_WIZARD ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1251, "ÎÜíÏùÄ Í≥µÍ≤©Î†•ÏúºÎ°ú ÌååÍ¥¥Ï†ÅÏù¥Í≥† ÎÑìÏùÄ Í≥µÍ∞ÑÏùÑ ÏùºÏàúÍ∞ÑÏóê Î∂àÎ∞îÎã§Î°ú ÎßåÎì§Ïñ¥ Î≤ÑÎ¶¨Îäî Í¥ëÏó≠ÎßàÎ≤ïÏóê ÌäπÌôî Îêú ÏûêÎì§Î°ú ÎßàÎ≤ïÏóê ÌôúÏö©Ïóê ÏûàÏñ¥ ÏúºÎú∏Ïù∏ ÌÅ¥ÎûòÏä§ÏûÖÎãàÎã§." ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1252, "ÏÇ¨Ïö© Î¨¥Í∏∞ : Ïä§ÌÉúÌîÑ" ), -1, 0xA3A1A3FF );							
-					strMessage.PrintF( _S( 1253, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, ÎÖ∏Î∞î Î∏åÎ†àÏù¥ÌÅ¨ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_WIZARD ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1251, "≥Ù¿∫ ∞¯∞›∑¬¿∏∑Œ ∆ƒ±´¿˚¿Ã∞Ì ≥–¿∫ ∞¯∞£¿ª ¿œº¯∞£ø° ∫“πŸ¥Ÿ∑Œ ∏∏µÈæÓ πˆ∏Æ¥¬ ±§ø™∏∂π˝ø° ∆Ø»≠ µ» ¿⁄µÈ∑Œ ∏∂π˝ø° »∞øÎø° ¿÷æÓ ¿∏∂‰¿Œ ≈¨∑°Ω∫¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1252, "ªÁøÎ π´±‚ : Ω∫≈¬«¡" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1253, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ≥ÎπŸ ∫Í∑π¿Ã≈© lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
 
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1254, "Ìûò :  Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1255, "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1256, "ÏßÄÌòú : ÎßàÎ≤ï Í≥µÍ≤©ÏÉÅÏäπ, ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1257, "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1258, "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : ÏßÄÌòú" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1254, "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1255, "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1256, "¡ˆ«˝ : ∏∂π˝ ∞¯∞›ªÛΩ¬, ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1257, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1258, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : ¡ˆ«˝" ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "ÏúÑÏûêÎìúÎäî ÎßàÎ≤ï Í∑∏ ÏûêÏ≤¥Î•º Í¥ëÎ≤îÏúÑÌïòÍ≤å Ïó∞Íµ¨ÌïòÎäî Î©îÏù¥ÏßÄÎì§ Ï§ëÏóê ÎßàÎ≤ïÏùò ÏõêÏ¥àÏ†ÅÏù∏ Ï†ïÏàòÎßåÏùÑ ÎΩëÏïÑ Í±∞ÎåÄÌïú ÌûòÏùÑ Íµ¨ÏÑ±ÌïòÎäî ÏûêÎì§ÏûÖÎãàÎã§." ), -1, 0xA3A1A3FF );							
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "ÏúÑÏûêÎìúÍ∞Ä ÌóàÍ≥µÏùÑ Ìñ•Ìï¥ ÏÑ±Ìò∏Î•º Í∑∏ÏùÑ ÎïåÎßàÎã§ Í∞ïÎ†•Ìïú Íµ∞ÏÑ∏ ÏûêÏ≤¥Í∞Ä ÏÜåÎ©∏ Îê† Ï†ïÎèÑÏùò ÏúÑÎ†•ÏùÑ ÏßÄÎãàÍ∏∞Ïóê Í∑∏ Ìïú Î™Ö Ìïú Î™ÖÏù¥ ÌïòÎÇòÏùò Íµ∞Îã®Í∏âÏúºÎ°ú ÌèâÍ∞ÄÎêúÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¿ß¿⁄µÂ¥¬ ∏∂π˝ ±◊ ¿⁄√º∏¶ ±§π¸¿ß«œ∞‘ ø¨±∏«œ¥¬ ∏ﬁ¿Ã¡ˆµÈ ¡ﬂø° ∏∂π˝¿« ø¯√ ¿˚¿Œ ¡§ºˆ∏∏¿ª ªÃæ∆ ∞≈¥Î«— »˚¿ª ±∏º∫«œ¥¬ ¿⁄µÈ¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¿ß¿⁄µÂ∞° «„∞¯¿ª «‚«ÿ º∫»£∏¶ ±◊¿ª ∂ß∏∂¥Ÿ ∞≠∑¬«— ±∫ºº ¿⁄√º∞° º“∏Í µ… ¡§µµ¿« ¿ß∑¬¿ª ¡ˆ¥œ±‚ø° ±◊ «— ∏Ì «— ∏Ì¿Ã «œ≥™¿« ±∫¥‹±ﬁ¿∏∑Œ ∆Ú∞°µ»¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 				}
 				break;
 			case ROGUE:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_ASSASSIN ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1378, "ÏïàÏ†ïÏ†ÅÏù∏ Í≥µÍ≤©, Î∞©Ïñ¥ Îä•Î†•Í≥º Îπ†Î•∏ Ïä§ÌÇ¨ ÏÜçÎèÑÎ•º Í≤∏ÎπÑÌïú ÌÅ¥ÎûòÏä§Î°úÏÑú 1:1Ïùò Ï†ÑÌà¨ÏóêÏÑú Îßπ ÌôúÏïΩÏùÑ ÌéºÏπòÎäî Í∏∞ÏäµÌòï ÌÅ¥ÎûòÏä§ÏûÖÎãàÎã§." ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1379, "ÏÇ¨Ïö© Î¨¥Í∏∞ : Îã®Í≤Ä" ), -1, 0xA3A1A3FF );							
-					strMessage.PrintF( _S( 1380, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, Ïù∏ÎπÑÏ†ÄÎπåÎ¶¨Ìã∞ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_ASSASSIN ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1378, "æ»¡§¿˚¿Œ ∞¯∞›, πÊæÓ ¥…∑¬∞˙ ∫¸∏• Ω∫≈≥ º”µµ∏¶ ∞‚∫Ò«— ≈¨∑°Ω∫∑Œº≠ 1:1¿« ¿¸≈ıø°º≠ ∏Õ »∞æ‡¿ª ∆Óƒ°¥¬ ±‚Ω¿«¸ ≈¨∑°Ω∫¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1379, "ªÁøÎ π´±‚ : ¥‹∞À" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1380, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ¿Œ∫Ò¿˙∫Ù∏Æ∆º lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
 
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1381, "Ìûò :  Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1382, "ÎØºÏ≤© : Í≥µÍ≤© ÏÉÅÏäπ Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1383, "ÏßÄÌòú : ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1384, "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1385, "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : ÎØºÏ≤©" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1381, "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1382, "πŒ√∏ : ∞¯∞› ªÛΩ¬ ∏Ì¡ﬂ, »∏««ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1383, "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1384, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1385, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : πŒ√∏" ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "Ïñ¥ÏÑ∏Ïã†ÏùÄ ÏßßÏùÄ Îã®Í≤ÄÍ≥º ÎÇ†Î†µÌïú Î™∏ÎÜÄÎ¶ºÏùÑ Ïù¥Ïö©Ìïú Ï¥à Ï†ëÍ∑ºÏ†ÑÏùÑ ÌéºÏπòÎäî Í≤ÉÏù¥ Ï£ºÎêú Ï†ÑÌà¨Î≤ïÏù¥Î©∞, ÏÉÅÎåÄÍ∞Ä ÎØ∏Ï≥ê Îã®Î†®ÌïòÏßÄ Î™ªÏùÄ Î∂ÄÎ∂ÑÏù¥ÎÇò Í∞ëÏò∑ÏúºÎ°ú Í∞êÏã∏ÏßÄ Î™ªÌïú ÎØ∏ÏÑ∏Ìïú ÌãàÏùÑ ÎÖ∏Î†§ Í≥µÍ≤©ÌïòÎ©∞ Ï°∞Í∏àÏù¥ÎùºÎèÑ ÎπàÌãàÏùÑ Î≥¥Ïù¥Î©¥ Í≥ßÏû• Í∏âÏÜåÎ•º Í≥µÍ≤©ÌïòÏó¨ ÏàúÏãùÍ∞ÑÏóê ÏÉÅÎåÄÏùò Î™©Ïà®ÏùÑ ÎÅäÎäî Í≤ÉÏù¥ Ïñ¥ÏÑ∏Ïã†Ïùò ÌäπÍ∏∞ÏûÖÎãàÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "æÓººΩ≈¿∫ ¬™¿∫ ¥‹∞À∞˙ ≥Ø∑∆«— ∏ˆ≥Ó∏≤¿ª ¿ÃøÎ«— √  ¡¢±Ÿ¿¸¿ª ∆Óƒ°¥¬ ∞Õ¿Ã ¡÷µ» ¿¸≈ıπ˝¿Ã∏Á, ªÛ¥Î∞° πÃ√ƒ ¥‹∑√«œ¡ˆ ∏¯¿∫ ∫Œ∫–¿Ã≥™ ∞©ø ¿∏∑Œ ∞®ΩŒ¡ˆ ∏¯«— πÃºº«— ∆¥¿ª ≥Î∑¡ ∞¯∞›«œ∏Á ¡∂±›¿Ã∂Ûµµ ∫Û∆¥¿ª ∫∏¿Ã∏È ∞¿Â ±ﬁº“∏¶ ∞¯∞›«œø© º¯Ωƒ∞£ø° ªÛ¥Î¿« ∏Òº˚¿ª ≤˜¥¬ ∞Õ¿Ã æÓººΩ≈¿« ∆Ø±‚¿‘¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 				}
 				break;
 			case SORCERER:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, 1 ), -1, 0xFFC672FF );									
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 2342,"ÏóòÎ¶¨Î©òÌÉà Î¶¨Ïä§Ìä∏Îäî Ï†ïÎ†π ÏÜåÌôòÏùÑ ÎßàÏä§ÌÑ∞ÌïòÏó¨ Î∂à, Î¨º, Î∞îÎûå, ÎåÄÏßÄÎ°ú Íµ¨Î∂ÑÎêòÎäî 4ÎåÄ Ï†ïÎ†πÎì§ÏùÑ Í∞ïÌôî ÏãúÌÇ§Í≥† Í∑∏Îì§ÏùÑ ÏÜåÌôòÌïòÏó¨ Ìï®Íªò Ï†ÑÌà¨Ïóê ÏûÑÌïòÎäî ÌÅ¥ÎûòÏä§ÏûÖÎãàÎã§."  ), -1, 0xA3A1A3FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 2343,"ÏÇ¨Ïö© Î¨¥Í∏∞ : Ìè¥Ïïî"  ), -1, 0xA3A1A3FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, 1 ), -1, 0xFFC672FF );									
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 2342,"ø§∏Æ∏‡≈ª ∏ÆΩ∫∆Æ¥¬ ¡§∑… º“»Ø¿ª ∏∂Ω∫≈Õ«œø© ∫“, π∞, πŸ∂˜, ¥Î¡ˆ∑Œ ±∏∫–µ«¥¬ 4¥Î ¡§∑…µÈ¿ª ∞≠»≠ Ω√≈∞∞Ì ±◊µÈ¿ª º“»Ø«œø© «‘≤≤ ¿¸≈ıø° ¿”«œ¥¬ ≈¨∑°Ω∫¿‘¥œ¥Ÿ."  ), -1, 0xA3A1A3FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 2343,"ªÁøÎ π´±‚ : ∆˙æœ"  ), -1, 0xA3A1A3FF );
 
-					strMessage.PrintF( _S(2344, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, ÏïÑÏù¥Ïä§ Ïä§ÌååÏù¥ÌÅ¨ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S(2344, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, æ∆¿ÃΩ∫ Ω∫∆ƒ¿Ã≈© lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
 
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2345, "Ìûò : Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä"  ), -1, 0xA3A1A3FF );	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2346, "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2347, "ÏßÄÌòú : ÎßàÎ≤ï Í≥µÍ≤© ÏÉÅÏäπ, ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå"  ), -1, 0xA3A1A3FF );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2348, "Ï≤¥Ïßà : ÏÉùÎ™Ö, ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ"  ), -1, 0xA3A1A3FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2349, "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : ÏßÄÌòú"  ), -1, 0xA3A1A3FF );											
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2345, "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2346, "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2347, "¡ˆ«˝ : ∏∂π˝ ∞¯∞› ªÛΩ¬, ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“"  ), -1, 0xA3A1A3FF );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2348, "√º¡˙ : ª˝∏Ì, ∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î"  ), -1, 0xA3A1A3FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2349, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : ¡ˆ«˝"  ), -1, 0xA3A1A3FF );											
 					
 				}
 				break;
+#ifdef CHAR_EX_ROGUE
+			case EX_ROGUE:	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+				{
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_EX_ASSASSIN ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5739, "æ»¡§¿˚¿Œ ∞¯∞›, πÊæÓ ¥…∑¬∞˙ ∫¸∏• Ω∫≈≥ º”µµ∏¶ ∞‚∫Ò«— ≈¨∑°Ω∫∑Œº≠ 1:1¿« ¿¸≈ıø°º≠ ∏Õ »∞æ‡¿ª ∆Óƒ°¥¬ ±‚Ω¿«¸ ≈¨∑°Ω∫¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5740, "ªÁøÎ π´±‚ : ¥‹∞À" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 5741, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ¿Œ∫Ò¿˙∫Ù∏Æ∆º lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5742, "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5743, "πŒ√∏ : ∞¯∞› ªÛΩ¬ ∏Ì¡ﬂ, »∏««ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5744, "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5745, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5746, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : πŒ√∏" ), -1, 0xA3A1A3FF );							
+					
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "æÓººΩ≈¿∫ ¬™¿∫ ¥‹∞À∞˙ ≥Ø∑∆«— ∏ˆ≥Ó∏≤¿ª ¿ÃøÎ«— √  ¡¢±Ÿ¿¸¿ª ∆Óƒ°¥¬ ∞Õ¿Ã ¡÷µ» ¿¸≈ıπ˝¿Ã∏Á, ªÛ¥Î∞° πÃ√ƒ ¥‹∑√«œ¡ˆ ∏¯¿∫ ∫Œ∫–¿Ã≥™ ∞©ø ¿∏∑Œ ∞®ΩŒ¡ˆ ∏¯«— πÃºº«— ∆¥¿ª ≥Î∑¡ ∞¯∞›«œ∏Á ¡∂±›¿Ã∂Ûµµ ∫Û∆¥¿ª ∫∏¿Ã∏È ∞¿Â ±ﬁº“∏¶ ∞¯∞›«œø© º¯Ωƒ∞£ø° ªÛ¥Î¿« ∏Òº˚¿ª ≤˜¥¬ ∞Õ¿Ã æÓººΩ≈¿« ∆Ø±‚¿‘¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
+				}
+				break;
+#endif
+#ifdef CHAR_EX_MAGE
+			case EX_MAGE: //2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° Ω∫∆Æ∏µ ≥™ø¿∏È √ﬂ∞° ºˆ¡§ « ø‰ 
+				{
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_EX_WIZARD ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5827, "≥Ù¿∫ ∞¯∞›∑¬¿∏∑Œ ∆ƒ±´¿˚¿Ã∞Ì ≥–¿∫ ∞¯∞£¿ª ¿œº¯∞£ø° ∫“πŸ¥Ÿ∑Œ ∏∏µÈæÓ πˆ∏Æ¥¬ ±§ø™∏∂π˝ø° ∆Ø»≠ µ» ¿⁄µÈ∑Œ ∏∂π˝ø° »∞øÎø° ¿÷æÓ ¿∏∂‰¿Œ ≈¨∑°Ω∫¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5828, "ªÁøÎ π´±‚ : Ω∫≈¬«¡" ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 5829, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ∞ÒµÁ ≥ÎπŸ ∫Í∑π¿Ã≈© lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5830, "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5831, "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5832, "¡ˆ«˝ : ∏∂π˝ ∞¯∞›ªÛΩ¬, ∏∂π˝ πÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5833, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5834, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : ¡ˆ«˝" ), -1, 0xA3A1A3FF );							
+					
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¿ß¿⁄µÂ¥¬ ∏∂π˝ ±◊ ¿⁄√º∏¶ ±§π¸¿ß«œ∞‘ ø¨±∏«œ¥¬ ∏ﬁ¿Ã¡ˆµÈ ¡ﬂø° ∏∂π˝¿« ø¯√ ¿˚¿Œ ¡§ºˆ∏∏¿ª ªÃæ∆ ∞≈¥Î«— »˚¿ª ±∏º∫«œ¥¬ ¿⁄µÈ¿‘¥œ¥Ÿ." ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¿ß¿⁄µÂ∞° «„∞¯¿ª «‚«ÿ º∫»£∏¶ ±◊¿ª ∂ß∏∂¥Ÿ ∞≠∑¬«— ±∫ºº ¿⁄√º∞° º“∏Í µ… ¡§µµ¿« ¿ß∑¬¿ª ¡ˆ¥œ±‚ø° ±◊ «— ∏Ì «— ∏Ì¿Ã «œ≥™¿« ±∫¥‹±ﬁ¿∏∑Œ ∆Ú∞°µ»¥Ÿ.\n" ), -1, 0xA3A1A3FF );			
+				}
+				break;
+#endif
 			}
 
 			CTString strMessage;
-			strMessage.PrintF( _S( 1267, "[%s]Î°ú Ï†ÑÏßÅÌïúÎã§." ), JobInfo().GetExtensionName( _pNetwork->MyCharacterInfo.job, 0 ) );		
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, FALSE, strMessage, 0 );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, FALSE, _S( 1268, "Ï∑®ÏÜåÌïòÍ∏∞") );			
+			strMessage.PrintF( _S( 1267, "[%s]∑Œ ¿¸¡˜«—¥Ÿ." ), pInfo->GetExtensionName( _pNetwork->MyCharacterInfo.job, 0 ) );		
+			pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, FALSE, strMessage, 0 );
+			pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, FALSE, _S( 1268, "√Îº“«œ±‚") );			
 
 			m_iSelChangeJob = 1;
 		}
-		else if( nResult == SKILL_JOB_2 )				// Ï†ÑÏßÅ ÌÅ¥ÎûòÏä§ 2
+		else if( nResult == SKILL_JOB_2 )				// ¿¸¡˜ ≈¨∑°Ω∫ 2
 		{
-			_pUIMgr->CreateMessageBoxL( _S( 1224, "Ï†ÑÏßÅ Ï†ïÎ≥¥" ), UI_SKILLLEARN, MSGLCMD_CHANGEJOB_REQ );		
+			pUIManager->CreateMessageBoxL( _S( 1224, "¿¸¡˜ ¡§∫∏" ), UI_SKILLLEARN, MSGLCMD_CHANGEJOB_REQ );		
 			const int	iNeedLevel	= EXTENSION_LEVEL;
 			const SQUAD	llNeedNas	= 50000;
 			const int	iJob		= _pNetwork->MyCharacterInfo.job;
 
-			// FiXME : ÏïÑÎûò Î∂ÄÎ∂ÑÏùÄ Ï†ïÎ¶¨Í∞Ä ÌïÑÏöîÌïú Î∂ÄÎ∂Ñ.
+			// FiXME : æ∆∑° ∫Œ∫–¿∫ ¡§∏Æ∞° « ø‰«— ∫Œ∫–.
 			switch( iJob )
 			{
 			case TITAN:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_WARMASTER ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1269,  "ÎåÄÍ∑úÎ™® Ï†ÑÌà¨ÏóêÏÑú Îã®Ïó∞ ÎààÏóê Îõ∞Îäî ÌôúÏïΩÏùÑ Î≥¥Ïó¨Ï£ºÎ©∞ ÌïòÏù¥ÎûúÎçîÎ•º ÏÉÅÌöåÌïòÎäî Í≥µÍ≤©Î†•Í≥º Ï†Ñ ÌÅ¥ÎûòÏä§Î•º ÌÜµÌãÄÏñ¥ Í∞ÄÏû• ÎÜíÏùÄ Ï≤¥Î†•ÏùÑ Í∞ÄÏßÄÍ≥† ÏûàÏäµÎãàÎã§."  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1270,  "ÏÇ¨Ïö© Î¨¥Í∏∞ : ÎåÄÍ≤Ä"  ), -1, 0xA3A1A3FF );							
-					strMessage.PrintF( _S( 1271, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, Î≥¥Îîî ÌÅ¨ÎûòÏÖî lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1272,  "Ìûò : Í≥µÍ≤©ÏÉÅÏäπ, Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1273,  "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1274,  "ÏßÄÌòú : ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1275,  "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1276,  "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : Ï≤¥Ïßà"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_WARMASTER ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1269,  "¥Î±‘∏ ¿¸≈ıø°º≠ ¥‹ø¨ ¥´ø° ∂Ÿ¥¬ »∞æ‡¿ª ∫∏ø©¡÷∏Á «œ¿Ã∑£¥ı∏¶ ªÛ»∏«œ¥¬ ∞¯∞›∑¬∞˙ ¿¸ ≈¨∑°Ω∫∏¶ ≈Î∆≤æÓ ∞°¿Â ≥Ù¿∫ √º∑¬¿ª ∞°¡ˆ∞Ì ¿÷Ω¿¥œ¥Ÿ."  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1270,  "ªÁøÎ π´±‚ : ¥Î∞À"  ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1271, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ∫∏µ ≈©∑°º≈ lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1272,  "»˚ : ∞¯∞›ªÛΩ¬, π∞∏ÆπÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1273,  "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1274,  "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1275,  "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1276,  "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : √º¡˙"  ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "Ìò∏Ï†ÑÏ†ÅÏù∏ ÏÑ±Í≤©ÏúºÎ°ú Ïò§Îûú ÏãúÍ∞Ñ Ï†ÑÌà¨Í∞Ä Î™∏Ïóê Î≤†Ïù∏ ÌÉÄÏù¥ÌÉÑ Ï§ëÏóê ÌÉÅÏõîÌïú Í∞êÍ∞ÅÏúºÎ°ú Ï†ÑÏû•Ïùò ÏÑ∏Î•º ÏùΩÍ≥† ÏàúÎ∞úÎ†•ÏûàÍ≤å ÎåÄÏ≤òÌïòÍ±∞ÎÇò ÏïÑÍµ∞Ïùò ÏÇ¨Í∏∞Î•º ÎÜíÏùÄ Ìï®ÏÑ±ÏúºÎ°ú Î∂áÎèãÏïÑ Ï£ºÎäî ÌÅ¥ÎûòÏä§Í∞Ä Ïù¥Îì§ Ïõå ÎßàÏä§ÌÑ∞ÏûÖÎãàÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "»£¿¸¿˚¿Œ º∫∞›¿∏∑Œ ø¿∑£ Ω√∞£ ¿¸≈ı∞° ∏ˆø° ∫£¿Œ ≈∏¿Ã≈∫ ¡ﬂø° ≈πø˘«— ∞®∞¢¿∏∑Œ ¿¸¿Â¿« ºº∏¶ ¿–∞Ì º¯πﬂ∑¬¿÷∞‘ ¥Î√≥«œ∞≈≥™ æ∆±∫¿« ªÁ±‚∏¶ ≥Ù¿∫ «‘º∫¿∏∑Œ ∫—µ∏æ∆ ¡÷¥¬ ≈¨∑°Ω∫∞° ¿ÃµÈ øˆ ∏∂Ω∫≈Õ¿‘¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 					
 					
 				}
 				break;
-			case KNIGHT:		// ÌÖúÌîå ÎÇòÏù¥Ìä∏
+			case KNIGHT:		// ≈€«√ ≥™¿Ã∆Æ
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_TEMPLEKNIGHT ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1277,  "ÌååÌã∞ÏõêÏùÑ ÏúÑÌóòÌï¥ÏÑú Íµ¨ÌïòÍ±∞ÎÇò, Î™¨Ïä§ÌÑ∞Î•º Ï°∞Î°±ÌïòÏó¨ ÏûêÏã†ÏóêÍ≤å Îç§Î≤ºÎì§Í≤å ÌïòÎäî Îì±Ïùò ÌååÌã∞ÏóêÏÑú Îì†Îì†Ìïú Î≤ΩÏù¥ ÎêòÏñ¥ Ï£ºÎ©∞, ÎåÄÍ∑úÎ™® Ï†ÑÌà¨ÏóêÏÑúÎèÑ ÏÑ†Î¥âÏû•Ïùò Ïó≠Ìï†ÏùÑ ÏàòÌñâÌïòÍ≤å Îê©ÎãàÎã§."  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1278,  "ÏÇ¨Ïö© Î¨¥Í∏∞ : Í≤ÄÍ≥º Î∞©Ìå®"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_TEMPLEKNIGHT ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1277,  "∆ƒ∆ºø¯¿ª ¿ß«Ë«ÿº≠ ±∏«œ∞≈≥™, ∏ÛΩ∫≈Õ∏¶ ¡∂∑’«œø© ¿⁄Ω≈ø°∞‘ ¥˝∫≠µÈ∞‘ «œ¥¬ µÓ¿« ∆ƒ∆ºø°º≠ µÁµÁ«— ∫Æ¿Ã µ«æÓ ¡÷∏Á, ¥Î±‘∏ ¿¸≈ıø°º≠µµ º±∫¿¿Â¿« ø™«“¿ª ºˆ«‡«œ∞‘ µÀ¥œ¥Ÿ."  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1278,  "ªÁøÎ π´±‚ : ∞À∞˙ πÊ∆–"  ), -1, 0xA3A1A3FF );							
 
-					strMessage.PrintF( _S( 1279, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, ÎßàÎÇò Î∏åÎ†àÏù¥ÌÅ¨ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S( 1279, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ∏∂≥™ ∫Í∑π¿Ã≈© lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
 
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1280,  "Ìûò : Í≥µÍ≤©ÏÉÅÏäπ, Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1281,  "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1282,  "ÏßÄÌòú : ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1283,  "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1284,  "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : Ï≤¥Ïßà"  ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1280,  "»˚ : ∞¯∞›ªÛΩ¬, π∞∏ÆπÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1281,  "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1282,  "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1283,  "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1284,  "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : √º¡˙"  ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "Ìù¨ÏÉùÏùÑ ÏûêÏã†Îì§Ïù¥ Í∞ÄÏßÑ ÏµúÍ≥†Ïùò ÎØ∏ÎçïÏúºÎ°ú Ïó¨Í∏∞Í≥† ÏûàÎäî ÌÖúÌîåÎÇòÏù¥Ìä∏Îäî ÌååÌã∞ÏõêÏùÑ ÏúÑÌóòÏóêÏÑú Î≥¥Ìò∏ÌïòÎ©∞ Í∑∏Îì§ÏùÑ ÏßÄÏõêÌïòÏó¨, ÌåÄ ÌîåÎ†àÏù¥Î•º ÏõêÌôúÌïòÍ≤å Ìï¥ Ï£ºÎäî Ïú§ÌôúÏú† Í∞ôÏùÄ Ïó≠Ìï†ÏùÑ Ìï¥ Ï£ºÎäî Ï°¥Ïû¨ÏûÖÎãàÎã§. " ), -1, 0xA3A1A3FF );							
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "ÎïåÎ¨∏Ïóê Ïù¥Îì§Ïùò Í≥µÍ≤©Î†•ÏùÄ Î°úÏó¥ ÎÇòÏù¥Ìä∏Ïóê ÎπÑÌï¥ ÎπÑÎ°ù Îí§Ï≥êÏßÄÏßÄÎßå, ÎÜíÏùÄ Î∞©Ïñ¥Î†•Í≥º ÌäºÌäºÌïú Ï≤¥Î†•ÏùÄ Ïù¥Îì§Ïù¥ Í∞ÄÏßÑ ÌÅ∞ Ïû•Ï†êÏûÖÎãàÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "»Òª˝¿ª ¿⁄Ω≈µÈ¿Ã ∞°¡¯ √÷∞Ì¿« πÃ¥ˆ¿∏∑Œ ø©±‚∞Ì ¿÷¥¬ ≈€«√≥™¿Ã∆Æ¥¬ ∆ƒ∆ºø¯¿ª ¿ß«Ëø°º≠ ∫∏»£«œ∏Á ±◊µÈ¿ª ¡ˆø¯«œø©, ∆¿ «√∑π¿Ã∏¶ ø¯»∞«œ∞‘ «ÿ ¡÷¥¬ ¿±»∞¿Ø ∞∞¿∫ ø™«“¿ª «ÿ ¡÷¥¬ ¡∏¿Á¿‘¥œ¥Ÿ. " ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "∂ßπÆø° ¿ÃµÈ¿« ∞¯∞›∑¬¿∫ ∑Œø≠ ≥™¿Ã∆Æø° ∫Ò«ÿ ∫Ò∑œ µ⁄√ƒ¡ˆ¡ˆ∏∏, ≥Ù¿∫ πÊæÓ∑¬∞˙ ∆∞∆∞«— √º∑¬¿∫ ¿ÃµÈ¿Ã ∞°¡¯ ≈´ ¿Â¡°¿‘¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 					
 					
 				}
 				break;
 			case HEALER:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_CLERIC ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1285, "ÎÜíÏùÄ ÌöåÎ≥µÎ†•ÏúºÎ°ú Ï†ÅÏùÑ ÏπòÏú†ÌïòÎ©∞, ÎèôÎ£åÏùò Îä•Î†•ÏùÑ ÏµúÎåÄÏπòÎ°ú ÎÅåÏñ¥Ïò¨Î†§Ï£ºÎäî Î≥¥Ï°∞ÎßàÎ≤ï Îì±ÏùÑ ÏÇ¨Ïö©ÌïòÎäî Îì± ÌååÌã∞ ÌîåÎ†àÏù¥Ïùò Îì†Îì†Ìïú ÏßÄÏõêÏûê Ïó≠Ìï†ÏùÑ ÏàòÌñâÌïòÎäî ÌÅ¥ÎûòÏä§ ÏûÖÎãàÎã§."  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1286, "ÏÇ¨Ïö© Î¨¥Í∏∞ : ÏôÑÎìú"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_CLERIC ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1285, "≥Ù¿∫ »∏∫π∑¬¿∏∑Œ ¿˚¿ª ƒ°¿Ø«œ∏Á, µø∑·¿« ¥…∑¬¿ª √÷¥Îƒ°∑Œ ≤¯æÓø√∑¡¡÷¥¬ ∫∏¡∂∏∂π˝ µÓ¿ª ªÁøÎ«œ¥¬ µÓ ∆ƒ∆º «√∑π¿Ã¿« µÁµÁ«— ¡ˆø¯¿⁄ ø™«“¿ª ºˆ«‡«œ¥¬ ≈¨∑°Ω∫ ¿‘¥œ¥Ÿ."  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1286, "ªÁøÎ π´±‚ : øœµÂ"  ), -1, 0xA3A1A3FF );							
 
-					strMessage.PrintF( _S( 1287, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, ÎçîÎ∏î Ïä§ÌåÖÏÉ∑ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S( 1287, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ¥ı∫Ì Ω∫∆√º¶ lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
 
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1288, "Ìûò :  Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1289, "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1290, "ÏßÄÌòú : ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1291, "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1292, "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : ÏßÄÌòú"  ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1288, "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1289, "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1290, "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1291, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1292, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : ¡ˆ«˝"  ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "ÌïòÏù¥ÏóòÌîÑÎì§ Í∞ÄÏö¥Îç∞ ÌååÍ¥¥Î•º Ï¶ùÏò§ÌïòÍ≥†, Ï∞ΩÏ°∞ÏôÄ Ïû¨ÏÉùÏóê Í¥ÄÌï¥ Î™∞ÎëêÌïòÎäî ÌïòÏù¥ÏóòÌîÑ ÌÅ¥Î†àÎ¶≠ÏùÄ ÎÜíÏùÄ ÎßàÎ≤ïÎ†•ÏúºÎ°ú ÎèôÎ£åÎì§ÏóêÍ≤å ÏÉùÎ™ÖÎ†•ÏùÑ Î∂àÏñ¥ ÎÑ£Ïñ¥ Ï£ºÎ©∞, ÎèÖ, Í≤∞Îπô, ÏÉÅÌÉúÏù¥ÏÉÅÏùò ÎßàÎ≤ïÏóêÏÑú Ïú°Ï≤¥Î•º ÏûêÏú†Î°úÏö∏ Ïàò ÏûàÎèÑÎ°ù ÎèÑÏôÄÏ§çÎãàÎã§.\n" ), -1, 0xA3A1A3FF );				
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "«œ¿Ãø§«¡µÈ ∞°øÓµ• ∆ƒ±´∏¶ ¡ıø¿«œ∞Ì, √¢¡∂øÕ ¿Áª˝ø° ∞¸«ÿ ∏ÙµŒ«œ¥¬ «œ¿Ãø§«¡ ≈¨∑π∏Ø¿∫ ≥Ù¿∫ ∏∂π˝∑¬¿∏∑Œ µø∑·µÈø°∞‘ ª˝∏Ì∑¬¿ª ∫“æÓ ≥÷æÓ ¡÷∏Á, µ∂, ∞·∫˘, ªÛ≈¬¿ÃªÛ¿« ∏∂π˝ø°º≠ ¿∞√º∏¶ ¿⁄¿Ø∑ŒøÔ ºˆ ¿÷µµ∑œ µµøÕ¡›¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );				
 					
 					
 				}
 				break;
 			case MAGE:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_WITCH ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1293, "ÏÉÅÌÉúÏù¥ÏÉÅ ÎßàÎ≤ï Î∞è Ï†ÄÏ£º ÎßàÎ≤ïÏùÑ ÏÇ¨Ïö©ÌïòÎäî ÌÅ¥ÎûòÏä§Î°úÏÑú Ï†ÅÏù¥ Í∞ÄÍ≥µÌï† ÌûòÏùÑ Í∞ÄÏ°åÎã§ ÌïòÎçîÎùºÎèÑ Í∑∏ ÌûòÏùÑ ÏõêÏ≤úÏ†ÅÏúºÎ°ú Î¥âÏáÑÌïòÎäîÎì±Ïùò ÏßÄÎä•Ï†ÅÏù∏ ÎßàÎ≤ïÏÇ¨ ÏûÖÎãàÎã§."  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1294, "ÏÇ¨Ïö© Î¨¥Í∏∞ : ÏôÑÎìú"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_WITCH ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1293, "ªÛ≈¬¿ÃªÛ ∏∂π˝ π◊ ¿˙¡÷ ∏∂π˝¿ª ªÁøÎ«œ¥¬ ≈¨∑°Ω∫∑Œº≠ ¿˚¿Ã ∞°∞¯«“ »˚¿ª ∞°¡≥¥Ÿ «œ¥ı∂Ûµµ ±◊ »˚¿ª ø¯√µ¿˚¿∏∑Œ ∫¿º‚«œ¥¬µÓ¿« ¡ˆ¥…¿˚¿Œ ∏∂π˝ªÁ ¿‘¥œ¥Ÿ."  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1294, "ªÁøÎ π´±‚ : øœµÂ"  ), -1, 0xA3A1A3FF );							
 
-					strMessage.PrintF( _S( 1295, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, ÎÖ∏Î∞î Î∏åÎ†àÏù¥ÌÅ¨ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S( 1295, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ≥ÎπŸ ∫Í∑π¿Ã≈© lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
 
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1296,  "Ìûò :  Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1297,  "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1298,  "ÏßÄÌòú : ÎßàÎ≤ï Í≥µÍ≤©ÏÉÅÏäπ, ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1299,  "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1300,  "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : ÎØºÏ≤©"  ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1296,  "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1297,  "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1298,  "¡ˆ«˝ : ∏∂π˝ ∞¯∞›ªÛΩ¬, ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1299,  "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1300,  "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : πŒ√∏"  ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "ÏúÑÏπòÎäî ÏúÑÌóòÏä§ÎüΩÍ≥†, ÏπòÎ™ÖÏ†ÅÏù¥Î©∞ ÏùÄÎ∞ÄÌïú ÎßàÎ≤ïÏùÑ Ïó∞Íµ¨ÌïòÎäî ÏûêÎì§ÏûÖÎãàÎã§. Ïù¥Îì§Ïù¥ ÌñâÌïòÎäî ÎßàÎ≤ïÏùò Ïó∞Íµ¨ÎåÄÏÉÅÏùÄ Îã§Î¶ÑÏïÑÎãå Ïù∏Í∞ÑÏùò Ïú°Ï≤¥Ïù¥Î©∞, ÏûëÏùÄ ÎßàÎ≤ïÏùò ÌùêÎ¶ÑÏúºÎ°ú Ï†ÅÏùÑ ÌòºÎûÄÏóê Îπ†Îú®Î¶¨Í±∞ÎÇò, Ïû†Ïû¨Ïö∞Í≥†, Ïã†Ï≤¥Ï°∞ÏßÅÏùÑ Î≥ÄÏù¥ ÏãúÌÇ§Îäî Îì±Ïùò ÎßàÎ≤ïÏùÑ ÏÇ¨Ïö©Ìï¥ Ï†ÅÏùÑ Î¨¥Í∏∞Î†•ÌïòÍ≤å ÎßåÎì≠ÎãàÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¿ßƒ°¥¬ ¿ß«ËΩ∫∑¥∞Ì, ƒ°∏Ì¿˚¿Ã∏Á ¿∫π–«— ∏∂π˝¿ª ø¨±∏«œ¥¬ ¿⁄µÈ¿‘¥œ¥Ÿ. ¿ÃµÈ¿Ã «‡«œ¥¬ ∏∂π˝¿« ø¨±∏¥ÎªÛ¿∫ ¥Ÿ∏ßæ∆¥— ¿Œ∞£¿« ¿∞√º¿Ã∏Á, ¿€¿∫ ∏∂π˝¿« »Â∏ß¿∏∑Œ ¿˚¿ª »•∂ıø° ∫¸∂ﬂ∏Æ∞≈≥™, ¿·¿ÁøÏ∞Ì, Ω≈√º¡∂¡˜¿ª ∫Ø¿Ã Ω√≈∞¥¬ µÓ¿« ∏∂π˝¿ª ªÁøÎ«ÿ ¿˚¿ª π´±‚∑¬«œ∞‘ ∏∏µÏ¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 					
 					
 				}
 				break;
-			case ROGUE:
+			case ROGUE:	
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, JOB_2ND_RANGER ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1301,  "Î†àÏù∏Ï†ÄÎäî Ï£ºÎ≥ÄÏùò ÏûêÏó∞ÏßÄÎ¨ºÏùÑ Ïù¥Ïö©Ìïú Ìï®Ï†ïÍ≥º ÏÑùÍ∂ÅÏùÑ Ïù¥Ïö©Ìïú Ïû•Í±∞Î¶¨ Í≥µÍ≤©ÏùÑ ÌïòÎ©∞, ÏÜçÏÇ¨Ïùò Î™ÖÏàòÏûÖÎãàÎã§."  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1302,  "ÏÇ¨Ïö© Î¨¥Í∏∞ : ÏÑùÍ∂Å"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_RANGER ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1301,  "∑π¿Œ¿˙¥¬ ¡÷∫Ø¿« ¿⁄ø¨¡ˆπ∞¿ª ¿ÃøÎ«— «‘¡§∞˙ ºÆ±√¿ª ¿ÃøÎ«— ¿Â∞≈∏Æ ∞¯∞›¿ª «œ∏Á, º”ªÁ¿« ∏Ìºˆ¿‘¥œ¥Ÿ."  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1302,  "ªÁøÎ π´±‚ : ºÆ±√"  ), -1, 0xA3A1A3FF );							
 
-					strMessage.PrintF( _S( 1303, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, Ïù∏ÎπÑÏ†ÄÎπåÎ¶¨Ìã∞ lv5 ÏäµÎìù" ), iNeedLevel );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S( 1303, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ¿Œ∫Ò¿˙∫Ù∏Æ∆º lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
 
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1304,  "Ìûò :  Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1305,  "ÎØºÏ≤© : Í≥µÍ≤© ÏÉÅÏäπ Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1306,  "ÏßÄÌòú : ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1307,  "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ"  ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1308,  "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ : Ìûò"  ), -1, 0xA3A1A3FF );							
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1304,  "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1305,  "πŒ√∏ : ∞¯∞› ªÛΩ¬ ∏Ì¡ﬂ, »∏««ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1306,  "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1307,  "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 1308,  "¿¸¡˜ ∫∏≥ Ω∫ : »˚"  ), -1, 0xA3A1A3FF );							
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "Î†àÏù∏Ï†ÄÏùò ÎëêÎ†§ÏõÄÏùÄ Í∑ºÍ±∞Î¶¨Í∞Ä ÏïÑÎãå Ï§ë, ÏõêÍ±∞Î¶¨ÏóêÏÑúÏùò Ï†ÑÌà¨ÏôÄ Îã§ÏñëÌïú Ìï®Ï†ïÍ≥º ÎèÑÍµ¨Ïùò ÌôúÏö©ÏóêÏÑú ÎÇòÌÉÄÎÇúÎã§." ), -1, 0xA3A1A3FF );							
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "ÏßßÏùÄ ÏãúÍ∞Ñ ÎÇ¥ÏóêÎèÑ Í∑∏ Í≥≥Ïùò ÌôòÍ≤ΩÏùÑ ÌôúÏö©Ìïú Îã§ÏñëÌïú Ìä∏Îû©ÏùÑ ÏÑ§ÏπòÌïòÎäî Í≤ÉÏùÄ Î¨ºÎ°† Ïñ¥Îñ§ ÏÉÅÌô©ÏóêÏÑúÎèÑ Ïñ¥ÍπÄÏóÜÏù¥ Í∏âÏÜåÎ•º Ìñ•Ìï¥ Ï†ïÌôïÌïú Í≥µÍ≤©Ïù¥ Í∞ÄÎä•Ìïú Î†àÏù∏Ï†ÄÎäî ÏûêÏã†Ïùò Î™∏ÎÜÄÎ¶ºÏùÑ ÌôúÏö©ÌïòÏó¨ ÏÇ¨Î∞©ÌåîÎ∞©ÏùÑ Ï†ÑÏû•ÏùÑ ÌôúÎ≥¥ÌïúÎã§.\n" ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "∑π¿Œ¿˙¿« µŒ∑¡øÚ¿∫ ±Ÿ∞≈∏Æ∞° æ∆¥— ¡ﬂ, ø¯∞≈∏Æø°º≠¿« ¿¸≈ıøÕ ¥ŸæÁ«— «‘¡§∞˙ µµ±∏¿« »∞øÎø°º≠ ≥™≈∏≥≠¥Ÿ." ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¬™¿∫ Ω√∞£ ≥ªø°µµ ±◊ ∞˜¿« »Ø∞Ê¿ª »∞øÎ«— ¥ŸæÁ«— ∆Æ∑¶¿ª º≥ƒ°«œ¥¬ ∞Õ¿∫ π∞∑– æÓ∂≤ ªÛ»≤ø°º≠µµ æÓ±Ëæ¯¿Ã ±ﬁº“∏¶ «‚«ÿ ¡§»Æ«— ∞¯∞›¿Ã ∞°¥…«— ∑π¿Œ¿˙¥¬ ¿⁄Ω≈¿« ∏ˆ≥Ó∏≤¿ª »∞øÎ«œø© ªÁπÊ∆»πÊ¿ª ¿¸¿Â¿ª »∞∫∏«—¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
 					
 					
 				}
 				break;
 			case SORCERER:
 				{
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, JobInfo().GetName( iJob, 2 ), -1, 0xFFC672FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2350,"Ïä§ÌéòÏÖúÎ¶¨Ïä§Ìä∏Îäî Ï†ïÎ†πÏùò ÌûòÏùÑ ÎπåÏñ¥ Î∂à, Î∞îÎûåÏùò Ï†ïÎ†π Í∞ïÏã†Í≥º Î¨º, ÎïÖÏùò Ï†ïÎ†π Í∞ïÏã†ÏùÑ ÌÜµÌï¥ ÏûêÏã†Ïùò Ïã†Ï≤¥Î•º Í∞ïÌôîÏãúÏºú ÏßÅÏ†ë Ï†ÑÌà¨Ïóê ÏûÑÌïòÎäî Ï†ÑÌà¨ Ïä§ÌÉÄÏùºÏùÑ Í∞ñÎäî ÌÅ¥ÎûòÏä§ ÏûÖÎãàÎã§. "), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2351, "ÏÇ¨Ïö© Î¨¥Í∏∞ : ÏÇ¨Ïù¥Îìú" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, 2 ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2350,"Ω∫∆‰º»∏ÆΩ∫∆Æ¥¬ ¡§∑…¿« »˚¿ª ∫ÙæÓ ∫“, πŸ∂˜¿« ¡§∑… ∞≠Ω≈∞˙ π∞, ∂•¿« ¡§∑… ∞≠Ω≈¿ª ≈Î«ÿ ¿⁄Ω≈¿« Ω≈√º∏¶ ∞≠»≠Ω√ƒ— ¡˜¡¢ ¿¸≈ıø° ¿”«œ¥¬ ¿¸≈ı Ω∫≈∏¿œ¿ª ∞Æ¥¬ ≈¨∑°Ω∫ ¿‘¥œ¥Ÿ. "), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2351, "ªÁøÎ π´±‚ : ªÁ¿ÃµÂ" ), -1, 0xA3A1A3FF );							
 
-					strMessage.PrintF( _S(2344, "ÏÑ†Í≤∞ Ï°∞Í±¥ : %dlvÎã¨ÏÑ±, ÏïÑÏù¥Ïä§ Ïä§ÌååÏù¥ÌÅ¨ lv5 ÏäµÎìù" ), iNeedLevel );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					strMessage.PrintF( _S(2344, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, æ∆¿ÃΩ∫ Ω∫∆ƒ¿Ã≈© lv5 Ω¿µÊ" ), iNeedLevel );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
 
-					strMessage.PrintF( _S( 1228, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), llNeedNas );		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2345, "Ìûò : Î¨ºÎ¶¨Î∞©Ïñ¥ ÏÉÅÏäπ, ÏÇ¨Ïö©Î¨¥Í≤å Ï¶ùÍ∞Ä" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2346, "ÎØºÏ≤© : Î™ÖÏ§ë, ÌöåÌîºÏÉÅÏäπ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2347, "ÏßÄÌòú : ÎßàÎ≤ï Í≥µÍ≤©ÏÉÅÏäπ, ÎßàÎ≤ï Î∞©Ïñ¥ ÏÉÅÏäπ, Î™¨Ïä§ÌÑ∞ ÏÑ†Í≥µÏú® Í∞êÏÜå" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2348, "Ï≤¥Ïßà : ÏÉùÎ™Ö,ÎßàÎÇò ÏÉÅÏäπ, Ìè¨ÏÖò Ìö®Ïú® Ï¶ùÎåÄ" ), -1, 0xA3A1A3FF );							
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2349, "Ï†ÑÏßÅ Î≥¥ÎÑàÏä§ Ïä§ÌÉØ : ÏßÄÌòú" ), -1, 0xA3A1A3FF );												
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2345, "»˚ : π∞∏ÆπÊæÓ ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2346, "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2347, "¡ˆ«˝ : ∏∂π˝ ∞¯∞›ªÛΩ¬, ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2348, "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î" ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S(2349, "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : ¡ˆ«˝" ), -1, 0xA3A1A3FF );												
 				}
 				break;
+#ifdef CHAR_EX_ROGUE
+			case EX_ROGUE:	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+				{
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_EX_RANGER ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5747,  "∑π¿Œ¿˙¥¬ ¡÷∫Ø¿« ¿⁄ø¨¡ˆπ∞¿ª ¿ÃøÎ«— «‘¡§∞˙ ºÆ±√¿ª ¿ÃøÎ«— ¿Â∞≈∏Æ ∞¯∞›¿ª «œ∏Á, º”ªÁ¿« ∏Ìºˆ¿‘¥œ¥Ÿ."  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5748,  "ªÁøÎ π´±‚ : ºÆ±√"  ), -1, 0xA3A1A3FF );							
+
+					strMessage.PrintF( _S( 5749, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ¿Œ∫Ò¿˙∫Ù∏Æ∆º lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5750,  "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5751,  "πŒ√∏ : ∞¯∞› ªÛΩ¬ ∏Ì¡ﬂ, »∏««ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5752,  "¡ˆ«˝ : ∏∂π˝ πÊæÓ ªÛΩ¬, ∏ÛΩ∫≈Õ º±∞¯¿≤ ∞®º“"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5753,  "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬, ∆˜º« »ø¿≤ ¡ı¥Î"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5754,  "¿¸¡˜ ∫∏≥ Ω∫ : »˚"  ), -1, 0xA3A1A3FF );							
+					
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "∑π¿Œ¿˙¿« µŒ∑¡øÚ¿∫ ±Ÿ∞≈∏Æ∞° æ∆¥— ¡ﬂ, ø¯∞≈∏Æø°º≠¿« ¿¸≈ıøÕ ¥ŸæÁ«— «‘¡§∞˙ µµ±∏¿« »∞øÎø°º≠ ≥™≈∏≥≠¥Ÿ." ), -1, 0xA3A1A3FF );							
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¬™¿∫ Ω√∞£ ≥ªø°µµ ±◊ ∞˜¿« »Ø∞Ê¿ª »∞øÎ«— ¥ŸæÁ«— ∆Æ∑¶¿ª º≥ƒ°«œ¥¬ ∞Õ¿∫ π∞∑– æÓ∂≤ ªÛ»≤ø°º≠µµ æÓ±Ëæ¯¿Ã ±ﬁº“∏¶ «‚«ÿ ¡§»Æ«— ∞¯∞›¿Ã ∞°¥…«— ∑π¿Œ¿˙¥¬ ¿⁄Ω≈¿« ∏ˆ≥Ó∏≤¿ª »∞øÎ«œø© ªÁπÊ∆»πÊ¿ª ¿¸¿Â¿ª »∞∫∏«—¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
+					
+					
+				}
+				break;
+#endif
+#ifdef CHAR_EX_MAGE		//2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° Ω∫∆Æ∏µ ≥™ø¿∏È √ﬂ∞° ºˆ¡§ « ø‰ 
+			case EX_MAGE:
+				{
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, pInfo->GetName( iJob, JOB_2ND_EX_WITCH ), -1, 0xFFC672FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5835, "ªÛ≈¬¿ÃªÛ ∏∂π˝ π◊ ¿˙¡÷ ∏∂π˝¿ª ªÁøÎ«œ¥¬ ≈¨∑°Ω∫∑Œº≠ ¿˚¿Ã ∞°∞¯«“ »˚¿ª ∞°¡≥¥Ÿ «œ¥ı∂Ûµµ ±◊ »˚¿ª ø¯√µ¿˚¿∏∑Œ ∫¿º‚«œ¥¬µÓ¿« ¡ˆ¥…¿˚¿Œ ∏∂π˝ªÁ ¿‘¥œ¥Ÿ."  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "  " ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5836, "ªÁøÎ π´±‚ : øœµÂ"  ), -1, 0xA3A1A3FF );							
+					
+					strMessage.PrintF( _S( 5837, "º±∞· ¡∂∞« : %dlv¥ﬁº∫, ∞ÒµÁ ≥ÎπŸ ∫Í∑π¿Ã≈© lv5 Ω¿µÊ" ), iNeedLevel );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );							
+					
+					strMessage.PrintF( _S( 1228, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), llNeedNas );		
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5838,  "»˚ :  π∞∏ÆπÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5839,  "πŒ√∏ : ∏Ì¡ﬂ, »∏««ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5840,  "¡ˆ«˝ : ∏∂π˝ ∞¯∞›ªÛΩ¬, ∏∂π˝ πÊæÓ ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5841,  "√º¡˙ : ª˝∏Ì,∏∂≥™ ªÛΩ¬"  ), -1, 0xA3A1A3FF );							
+					pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, _S( 5842,  "¿¸¡˜ ∫∏≥ Ω∫ Ω∫≈» : πŒ√∏"  ), -1, 0xA3A1A3FF );							
+					
+					//pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, TRUE, CTString( "¿ßƒ°¥¬ ¿ß«ËΩ∫∑¥∞Ì, ƒ°∏Ì¿˚¿Ã∏Á ¿∫π–«— ∏∂π˝¿ª ø¨±∏«œ¥¬ ¿⁄µÈ¿‘¥œ¥Ÿ. ¿ÃµÈ¿Ã «‡«œ¥¬ ∏∂π˝¿« ø¨±∏¥ÎªÛ¿∫ ¥Ÿ∏ßæ∆¥— ¿Œ∞£¿« ¿∞√º¿Ã∏Á, ¿€¿∫ ∏∂π˝¿« »Â∏ß¿∏∑Œ ¿˚¿ª »•∂ıø° ∫¸∂ﬂ∏Æ∞≈≥™, ¿·¿ÁøÏ∞Ì, Ω≈√º¡∂¡˜¿ª ∫Ø¿Ã Ω√≈∞¥¬ µÓ¿« ∏∂π˝¿ª ªÁøÎ«ÿ ¿˚¿ª π´±‚∑¬«œ∞‘ ∏∏µÏ¥œ¥Ÿ.\n" ), -1, 0xA3A1A3FF );							
+					
+					
+				}
+				break;
+#endif
 			}
 			
 			
 			CTString strMessage;
-			strMessage.PrintF( _S( 1267, "[%s]Î°ú Ï†ÑÏßÅÌïúÎã§." ), JobInfo().GetExtensionName( _pNetwork->MyCharacterInfo.job, 1 ) );		
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, FALSE, strMessage, 0 );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, FALSE, _S( 1268, "Ï∑®ÏÜåÌïòÍ∏∞" ) );			
+			strMessage.PrintF( _S( 1267, "[%s]∑Œ ¿¸¡˜«—¥Ÿ." ), pInfo->GetExtensionName( _pNetwork->MyCharacterInfo.job, 1 ) );		
+			pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, FALSE, strMessage, 0 );
+			pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEJOB_REQ, FALSE, _S( 1268, "√Îº“«œ±‚" ) );			
 
 			m_iSelChangeJob = 2;
 		}
-#ifdef HELP_SYSTEM_1
-		else if(nResult == SKILL_NPC_HELP)											// Ï∑®ÏÜåÌïúÎã§.
+		else if(nResult == SKILL_NPC_HELP)											// √Îº“«—¥Ÿ.
 		{
-			_pUIMgr->RearrangeOrder( UI_NPCHELP, TRUE );
+			pUIManager->RearrangeOrder( UI_NPCHELP, TRUE );
 		}
-#endif
-		// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ ÏàòÏ†ï
+		// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ºˆ¡§
 		else if( ciQuestClassifier < nResult )	
 		{
-			// ÏÑ†ÌÉùÌïú ÌÄòÏä§Ìä∏Ïóê ÎåÄÌï¥ ÏàòÎùΩ ÎòêÎäî Î≥¥ÏÉÅ Ï∞ΩÏùÑ Ïó∞Îã§.
+			// º±≈√«— ƒ˘Ω∫∆Æø° ¥Î«ÿ ºˆ∂Ù ∂«¥¬ ∫∏ªÛ √¢¿ª ø¨¥Ÿ.
 			CUIQuestBook::SelectQuestFromMessageBox( nResult );
 		}
 
@@ -4245,18 +2088,18 @@ void CUISkillLearn::MsgBoxLCommand( int nCommandCode, int nResult )
 		}
 		break;
 
-	case MSGLCMD_CHANGEJOB_REQ:							// Ï†ÑÏßÅ Ï†ïÎ≥¥Ï∞Ω.
+	case MSGLCMD_CHANGEJOB_REQ:							// ¿¸¡˜ ¡§∫∏√¢.
 		{
 			if( nResult == 0 )
 			{				
-				_pUIMgr->CloseMessageBox( MSGCMD_CHANGEJOB );				
+				pUIManager->CloseMessageBox( MSGCMD_CHANGEJOB );				
 				
 				CTString	strMessage;
 				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 1317, "Ï†ÑÏßÅ" ), UMBS_OKCANCEL, UI_SKILLLEARN, MSGCMD_CHANGEJOB );		
-				strMessage.PrintF( _S( 1318, "%sÎ°ú Ï†ÑÏßÅ ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), JobInfo().GetExtensionName( _pNetwork->MyCharacterInfo.job, m_iSelChangeJob - 1 ) );	
+				MsgBoxInfo.SetMsgBoxInfo( _S( 1317, "¿¸¡˜" ), UMBS_OKCANCEL, UI_SKILLLEARN, MSGCMD_CHANGEJOB );		
+				strMessage.PrintF( _S( 1318, "%s∑Œ ¿¸¡˜ «œΩ√∞⁄Ω¿¥œ±Ó?" ), pInfo->GetExtensionName( _pNetwork->MyCharacterInfo.job, m_iSelChangeJob - 1 ) );	
 				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 			}
 			else
 			{
@@ -4266,93 +2109,125 @@ void CUISkillLearn::MsgBoxLCommand( int nCommandCode, int nResult )
 
 		// Special Skill
 	case MSGLCMD_SSKILLLEARN_REQ:
-		if( nResult == SKILL_LEARN )					// Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§.
+		if( nResult == SKILL_LEARN )					// Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ.
 		{
-			_pUIMgr->RearrangeOrder( UI_SKILLLEARN, TRUE );
+			pUIManager->RearrangeOrder( UI_SKILLLEARN, TRUE );
 
 			InitSkillLearn( TRUE );
 			m_nCurrentTab = SLEARN_TAB_SPECIAL;
 		}
-		else if( nResult == SKILL_TALK )				// Ïù¥ÏïºÍ∏∞ ÌïúÎã§.
+		else if( nResult == SKILL_TALK )				// ¿Ãæﬂ±‚ «—¥Ÿ.
 		{
 			//TODO : NewQuestSystem
-			// ÌÄòÏä§Ìä∏ Ï∞Ω ÎùÑÏö∞Í∏∞
+			// ƒ˘Ω∫∆Æ √¢ ∂ÁøÏ±‚
 			CUIQuestBook::TalkWithNPC();
 		}
-#ifdef HELP_SYSTEM_1
 		else if( nResult == SKILL_NPC_HELP)								
 		{
-			_pUIMgr->RearrangeOrder( UI_NPCHELP, TRUE );
+			pUIManager->RearrangeOrder( UI_NPCHELP, TRUE );
 		}
-#endif
-		// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ ÏàòÏ†ï
+#ifdef DURABILITY
+		else if (nResult == ITEM_DURABILITY)
+		{
+			pUIManager->GetDurability()->Open(CUIDurability::eDURABILITY);
+		}
+		else if (nResult == ITEM_RECOVERY)
+		{
+			pUIManager->GetDurability()->Open(CUIDurability::eRECOVERY);
+		}
+#endif	//	DURABILITY
+		else if (nResult == ITEM_COMPOSE)
+		{
+			pUIManager->GetItemCompose()->openUI();
+		}
+		// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ºˆ¡§
 		else if( ciQuestClassifier < nResult )	
 		{
-			// ÏÑ†ÌÉùÌïú ÌÄòÏä§Ìä∏Ïóê ÎåÄÌï¥ ÏàòÎùΩ ÎòêÎäî Î≥¥ÏÉÅ Ï∞ΩÏùÑ Ïó∞Îã§.
+			// º±≈√«— ƒ˘Ω∫∆Æø° ¥Î«ÿ ºˆ∂Ù ∂«¥¬ ∫∏ªÛ √¢¿ª ø¨¥Ÿ.
 			CUIQuestBook::SelectQuestFromMessageBox( nResult );
 		}
 
-		else								// Ï∑®ÏÜåÌïúÎã§.
+		else// √Îº“«—¥Ÿ.
 		{
 			CloseSkillLearn();
 		}
 		break;
 	case MSGLCMD_RESERVE_REQ:
 		{
-			// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ Ïù¥ÏïºÍ∏∞ ÌïúÎã§ Ï≤òÎ¶¨ ÏàòÏ†ïÏùÑ ÏúÑÌïú Î£®Ìã¥
+			// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ¿Ãæﬂ±‚ «—¥Ÿ √≥∏Æ ºˆ¡§¿ª ¿ß«— ∑Á∆æ
 			int iQuestIndex = -1;
 			if( ciQuestClassifier < nResult )	
 			{
 				iQuestIndex = nResult;
 				nResult = ciQuestClassifier;
 			}
-
+			
 			switch(nResult)
 			{
-			_pUIMgr->SetCSFlagOff( CSF_SHOP );
+			pUIManager->SetCSFlagOff( CSF_SHOP );
 
 			case SKILL_TITAN:
 				{
-					OpenSkillLearn(75,FALSE,m_fNpcX,m_fNpcZ);
+					OpenSkillLearn(75, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
 				}
 				break;
 			case SKILL_KNIGHT:
 				{
-					OpenSkillLearn(76,FALSE,m_fNpcX,m_fNpcZ);
+					OpenSkillLearn(76, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
 				}
 				break;
 			case SKILL_HEALER:
 				{
-					OpenSkillLearn(77,FALSE,m_fNpcX,m_fNpcZ);
+					OpenSkillLearn(77, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
 				}
 				break;
 			case SKILL_MAGE:
 				{
-					OpenSkillLearn(123,FALSE,m_fNpcX,m_fNpcZ);
+					OpenSkillLearn(123, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
 				}
 				break;
 			case SKILL_ROGUE:
 				{
-					OpenSkillLearn(176,FALSE,m_fNpcX,m_fNpcZ);
+					OpenSkillLearn(176, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
 				}
 				break;
 			case SKILL_SORCERER:
 				{
-					OpenSkillLearn(255,FALSE,m_fNpcX,m_fNpcZ);
+					OpenSkillLearn(255, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
 				}
 				break;
+			case SKILL_NIGHTSHADOW:
+				{
+					OpenSkillLearn(894, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
+				}
+				break;
+#ifdef CHAR_EX_ROGUE
+			case SKILL_EX_ROGUE:	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+				{
+					OpenSkillLearn(1504, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
+				}
+				break;
+#endif
+#ifdef CHAR_EX_MAGE
+			case SKILL_EX_MAGE:		//2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° ¿«πÃ∏¶ ∏Ù∂Ûº≠ ≥™¡ﬂø° π∞æÓ∫∏∞Ì √ﬂ∞° ºˆ¡§ « ø‰ NPC ¿Œ≈ÿΩ∫∑Œ ºˆ¡§ 
+				{
+					OpenSkillLearn(1521, m_iMobVirIdx, FALSE, m_fNpcX, m_fNpcZ);
+				}
+				break;
+#endif
 			case SKILL_QUEST:
 				{
 					CUIQuestBook::TalkWithNPC();
 				}
-				break;
-			// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ ÏàòÏ†ï
+				
+				// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ºˆ¡§
 			case ciQuestClassifier:
 				{
-					// ÏÑ†ÌÉùÌïú ÌÄòÏä§Ìä∏Ïóê ÎåÄÌï¥ ÏàòÎùΩ ÎòêÎäî Î≥¥ÏÉÅ Ï∞ΩÏùÑ Ïó∞Îã§.
+					// º±≈√«— ƒ˘Ω∫∆Æø° ¥Î«ÿ ºˆ∂Ù ∂«¥¬ ∫∏ªÛ √¢¿ª ø¨¥Ÿ.
 					CUIQuestBook::SelectQuestFromMessageBox( iQuestIndex );					
 				}
 				break;
+
 			default:
 				{
 					m_bUseCard = FALSE;
@@ -4374,105 +2249,55 @@ void CUISkillLearn::MsgBoxLCommand( int nCommandCode, int nResult )
 // ----------------------------------------------------------------------------
 void CUISkillLearn::SendLearnSkill()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close message box of skill learn
-	_pUIMgr->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
+	pUIManager->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
 	
 	if( _pNetwork->MyCharacterInfo.job == SORCERER )
 	{
-		// Í∞ïÏã†ÏÉÅÌÉúÏôÄ ÏÜåÌôòÏÉÅÌÉúÏóêÏÑúÎäî Ïä§ÌÇ¨ÏùÑ Î∞∞Ïö∏Ïàò ÏóÜÏäµÎãàÎã§.
-		if( _pNetwork->MyCharacterInfo.sbEvocationType != -1 )
+		// ∞≠Ω≈ªÛ≈¬øÕ º“»ØªÛ≈¬ø°º≠¥¬ Ω∫≈≥¿ª πËøÔºˆ æ¯Ω¿¥œ¥Ÿ.
+		if( _pNetwork->MyCharacterInfo.nEvocationIndex > 0 )
 		{
-			// Í∞ïÏã†ÏÉÅÌÉúÏù¥ÎØÄÎ°ú, Î∞∞Ïö∏Ïàò ÏóÜÏùå.
+			// ∞≠Ω≈ªÛ≈¬¿Ãπ«∑Œ, πËøÔºˆ æ¯¿Ω.
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK,
+			MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ω∫≈≥" ), UMBS_OK,
 				UI_SKILLLEARN, MSGCMD_SKILLLEARN_NOTIFY );
-			MsgBoxInfo.AddString( _S(2352,"Í∞ïÏã† ÏÉÅÌÉúÏóêÏÑúÎäî Ïä§ÌÇ¨ÏùÑ Î∞∞Ïö∏Ïàò ÏóÜÏäµÎãàÎã§.") );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			MsgBoxInfo.AddString( _S(2352,"∞≠Ω≈ ªÛ≈¬ø°º≠¥¬ Ω∫≈≥¿ª πËøÔºˆ æ¯Ω¿¥œ¥Ÿ.") );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 			return;
 		}	
 		
-		// ÏÜåÌôòÏÉÅÌÉúÏóêÏÑúÎäî Ïä§ÌÇ¨ÏùÑ Î∞∞Ïö∏Ïàò ÏóÜÏùå.
+		// º“»ØªÛ≈¬ø°º≠¥¬ Ω∫≈≥¿ª πËøÔºˆ æ¯¿Ω.
 		for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 		{
-			CUISummon* pUISummon = (CUISummon*)_pUIMgr->GetUI(i);
+			CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
 			if( pUISummon->GetSummonEntity() )
 			{
 				// Create message box of skill learn
 				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK,
+				MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ω∫≈≥" ), UMBS_OK,
 					UI_SKILLLEARN, MSGCMD_SKILLLEARN_NOTIFY );
-				MsgBoxInfo.AddString( _S(2353,"ÏÜåÌôò ÏÉÅÌÉúÏóêÏÑúÎäî Ïä§ÌÇ¨ÏùÑ Î∞∞Ïö∏Ïàò ÏóÜÏäµÎãàÎã§.") );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
+				MsgBoxInfo.AddString( _S(2353,"º“»Ø ªÛ≈¬ø°º≠¥¬ Ω∫≈≥¿ª πËøÔºˆ æ¯Ω¿¥œ¥Ÿ.") );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 				return;
 			}
 		}
 	}
 
 	SLONG	slIndex;
-#ifdef NEW_USER_INTERFACE
+
 	if( m_nSelectedSkillID < 0 )
 		return;
 
-	if( m_btnSelectedSkill[m_nSelectedSkillID].IsEmpty() )
+	if( m_ppIconsSelectedSkill[m_nSelectedSkillID]->IsEmpty() )
 		return;
 
-	slIndex = m_btnSelectedSkill[m_nSelectedSkillID].GetSkillIndex();
-	if(m_nCurrentSkillType != SKILL_SPECIAL)
-	{	
-		_pNetwork->SendSkillLearn( slIndex );
-	}
-	else
+	slIndex = m_ppIconsSelectedSkill[m_nSelectedSkillID]->getIndex();
+	if(m_nCurrentSkillType == SKILL_SPECIAL)
 	{
-		_pNetwork->SendSSkillLearn( slIndex );
+		_pNetwork->SendSSkillLearn( slIndex, m_iMobVirIdx );
 	}
-#else
-	if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-	{
-		if( m_nSelActiveSkillID < 0 )
-			return;
-
-		if( m_btnActiveSkills[m_nSelActiveSkillID].IsEmpty() )
-			return;
-
-		slIndex = m_btnActiveSkills[m_nSelActiveSkillID].GetSkillIndex();
-		_pNetwork->SendSkillLearn( slIndex );
-	}
-	else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-	{
-		if( m_nSelPassiveSkillID < 0 )
-			return;
-
-		if( m_btnPassiveSkills[m_nSelPassiveSkillID].IsEmpty() )
-			return;
-
-		slIndex = m_btnPassiveSkills[m_nSelPassiveSkillID].GetSkillIndex();
-		_pNetwork->SendSkillLearn( slIndex );
-	}
-	#ifdef ADJUST_MEMORIZE_SKILL
-	else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-	{
-		if( m_nSelMemorizeSkillID < 0 )
-			return;
-
-		if( m_btnMemorizeSkills[m_nSelMemorizeSkillID].IsEmpty() )
-			return;
-
-		slIndex = m_btnMemorizeSkills[m_nSelMemorizeSkillID].GetSkillIndex();
-		_pNetwork->SendSkillLearn( slIndex );
-	}
-	#endif
-	else
-	{
-		if( m_nSelSpecialSkillID < 0 )
-			return;
-
-		if( m_btnSpecialSkills[m_nSelSpecialSkillID].IsEmpty() )
-			return;
-
-		slIndex = m_btnSpecialSkills[m_nSelSpecialSkillID].GetSkillIndex();
-		_pNetwork->SendSSkillLearn( slIndex );
-	}
-#endif
 }
 
 
@@ -4486,150 +2311,52 @@ void CUISkillLearn::SendLearnSkill()
 // ----------------------------------------------------------------------------
 void CUISkillLearn::LearnSkill( SLONG slIndex, SBYTE sbIsNew, SBYTE sbLevel, BOOL bSpecial )
 {
-	if( !bSpecial )
+ 	CUIManager* pUIManager = CUIManager::getSingleton();
+ 
+ 	if( !bSpecial )
+		return;
+
+	CSpecialSkill* pSSkill = CSpecialSkill::getData( slIndex );
+
+	if (pSSkill == NULL)
+		return;
+	
+	// Close message box of skill learn
+	pUIManager->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
+	
+	// Create message box of skill learn
+	CTString	strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ω∫≈≥" ), UMBS_OK, UI_SKILLLEARN, MSGCMD_SKILLLEARN_NOTIFY );
+	strMessage.PrintF( _S( 277, "%s Ω∫≈≥¿ª Ω¿µÊ«œø¥Ω¿¥œ¥Ÿ" ), pSSkill->GetName() );
+	MsgBoxInfo.AddString( strMessage );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+
+	MY_INFO()->SetSkill(slIndex, (int)sbLevel, bSpecial > 0);
+	
+	if( sbIsNew == 0 )
 	{
-		CSkill		&rSkill = _pNetwork->GetSkillData( slIndex );
-		
-		// Close message box of skill learn
-		_pUIMgr->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
-		
-		// Create message box of skill learn
-		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK, UI_SKILLLEARN, MSGCMD_SKILLLEARN_NOTIFY );
-		strMessage.PrintF( _S( 277, "%s Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïòÏòÄÏäµÎãàÎã§" ), rSkill.GetName() );
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-		
-		if( sbIsNew == 0 )
-		{
-			_pUIMgr->GetCharacterInfo()->UpdateSkillLevel( slIndex, sbLevel, bSpecial );
-			_pUIMgr->GetQuickSlot()->UpdateSkillLevel( slIndex, sbLevel );
-		}
-		else
-			_pUIMgr->GetCharacterInfo()->AddSkill( slIndex, sbLevel, bSpecial );
-		
-		BOOL	bUpdate = FALSE;
-
-#ifdef NEW_USER_INTERFACE
-		for( int iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++ )
-		{
-			if( m_btnSelectedSkill[iRow].GetSkillIndex() == slIndex )
-			{
-				m_btnSelectedSkill[iRow].SetSkillLevel( sbLevel + 1 );
-				bUpdate = TRUE;
-				break;
-			}
-		}
-		
-
-		if( sbLevel >= rSkill.GetMaxLevel() )
-		{
-
-			m_nSelectedSkillID = -1;
-			
-			InitSkillLearn( bSpecial );
-			
-			return;
-		}
-#else
-		// Not Special Skill
-		for( int iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++ )
-		{
-			if( m_btnActiveSkills[iRow].GetSkillIndex() == slIndex )
-			{
-				m_btnActiveSkills[iRow].SetSkillLevel( sbLevel + 1 );
-				bUpdate = TRUE;
-				break;
-			}
-		}
-		
-		if( !bUpdate )
-		{
-			for( iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++ )
-			{
-				if( m_btnPassiveSkills[iRow].GetSkillIndex() == slIndex )
-				{
-					m_btnPassiveSkills[iRow].SetSkillLevel( sbLevel + 1 );
-					break;
-				}
-			}
-		}
-
-#ifdef ADJUST_MEMORIZE_SKILL
-		/*
-		for( iRow = 0; iRow < SLEARN_SLOT_ROW_TOTAL; iRow++ )
-		{
-			if( m_btnMemorizeSkills[iRow].GetSkillIndex() == slIndex )
-			{
-				m_btnMemorizeSkills[iRow].SetSkillLevel( sbLevel + 1 );
-				break;
-			}
-		}
-		*/
-#endif
-		
-		if( sbLevel >= rSkill.GetMaxLevel() )
-		{
-			if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-				m_nSelActiveSkillID = -1;
-			else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-				m_nSelPassiveSkillID = -1;
-#ifdef ADJUST_MEMORIZE_SKILL
-			else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-				m_nSelMemorizeSkillID = -1;
-#endif
-			else
-				m_nSelSpecialSkillID = -1;
-			
-			GetSkillDesc( -1 );
-			
-			InitSkillLearn( bSpecial );
-			
-			return;
-		}
-#endif
+		//pUIManager->GetQuickSlot()->UpdateSkillLevel( slIndex, sbLevel );
 	}
 	else
+		pUIManager->GetCharacterInfo()->AddSkill( slIndex, sbLevel, bSpecial );
+	
+	BOOL	bUpdate = FALSE;		
+	if( !bUpdate )
 	{
-		CSpecialSkill	&rSkill = _pNetwork->GetSSkillData( slIndex );
-		
-		// Close message box of skill learn
-		_pUIMgr->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
-		
-		// Create message box of skill learn
-		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK, UI_SKILLLEARN, MSGCMD_SKILLLEARN_NOTIFY );
-		strMessage.PrintF( _S( 277, "%s Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïòÏòÄÏäµÎãàÎã§" ), rSkill.GetName() );
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-		
-		if( sbIsNew == 0 )
-		{
-			_pUIMgr->GetCharacterInfo()->UpdateSkillLevel( slIndex, sbLevel, bSpecial );
-			_pUIMgr->GetQuickSlot()->UpdateSkillLevel( slIndex, sbLevel );
-		}
-		else
-			_pUIMgr->GetCharacterInfo()->AddSkill( slIndex, sbLevel, bSpecial );
-		
-		BOOL	bUpdate = FALSE;		
-		if( !bUpdate )
-		{
-			for( int iRow = 0; iRow < SKILLLEARN_NEW_SLOT_TOTAL; iRow++ )
-			{
-				if( m_btnSpecialSkills[iRow].GetSkillIndex() == slIndex )
-				{
-					m_btnSpecialSkills[iRow].SetSkillLevel( sbLevel + 1 );
-					break;
-				}
-			}
-		}
-		
-		if( sbLevel >= rSkill.GetMaxLevel() )
-		{
-#ifdef NEW_USER_INTERFACE
-		if( sbLevel >= rSkill.GetMaxLevel() )
+// 		for( int iRow = 0; iRow < SKILLLEARN_NEW_SLOT_ROW_TOTAL; iRow++ )
+// 		{
+// 			if( m_pIconsSpecialSkill[iRow]->getIndex() == slIndex )
+// 			{
+// 				m_pIconsSpecialSkill[iRow].SetSkillLevel( sbLevel + 1 );
+// 				break;
+// 			}
+// 		}
+	}
+	
+	if( sbLevel >= pSSkill->GetMaxLevel() )
+	{
+		if( sbLevel >= pSSkill->GetMaxLevel() )
 		{
 			m_nSelectedSkillID = -1;
 			
@@ -4637,30 +2364,7 @@ void CUISkillLearn::LearnSkill( SLONG slIndex, SBYTE sbIsNew, SBYTE sbLevel, BOO
 			
 			return;
 		}
-#else
-			if( m_nCurrentTab == SLEARN_TAB_ACTIVE )
-				m_nSelActiveSkillID = -1;
-			else if( m_nCurrentTab == SLEARN_TAB_PASSIVE )
-				m_nSelPassiveSkillID = -1;
-#ifdef ADJUST_MEMORIZE_SKILL
-			else if( m_nCurrentTab == SLERAN_TAB_MEMORIZE )
-				m_nSelMemorizeSkillID = -1;
-#endif
-			else
-				m_nSelSpecialSkillID = -1;
-			
-			GetSkillDesc( -1 );
-			
-			InitSkillLearn( bSpecial );
-			
-			return;
-#endif
-		}
 	}
-	
-#ifndef NEW_USER_INTERFACE
-	GetSkillDesc( slIndex, sbLevel + 1, bSpecial );
-#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -4674,51 +2378,53 @@ void CUISkillLearn::LearnSkillError( UBYTE ubError )
 	switch( ubError )
 	{
 	case MSG_SKILL_LEARN_ERROR_LEVEL:
-		strMessage = _S( 278, "Î†àÎ≤®Ïù¥ Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 278, "∑π∫ß¿Ã ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 
 	case MSG_SKILL_LEARN_ERROR_SP:
-		strMessage = _S( 279, "ÏàôÎ†®ÎèÑÍ∞Ä Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 279, "º˜∑√µµ∞° ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 
 	case MSG_SKILL_LEARN_ERROR_ITEM:
-		strMessage = _S( 280, "ÏïÑÏù¥ÌÖúÏù¥ Ï°¥Ïû¨ÌïòÏßÄ ÏïäÏïÑ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 280, "æ∆¿Ã≈€¿Ã ¡∏¿Á«œ¡ˆ æ æ∆ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 
 	case MSG_SKILL_LEARN_ERROR_SKILL:
-		strMessage = _S( 281, "Ïä§ÌÇ¨ Ï°∞Í±¥Ïù¥ ÎßûÏßÄ ÏïäÏïÑ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 281, "Ω∫≈≥ ¡∂∞«¿Ã ∏¬¡ˆ æ æ∆ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 
 	case MSG_SKILL_LEARN_ERROR_SYSTEM:
-		strMessage = _S( 282, "Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 282, "Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 
-	case MSG_SKILL_LEARN_ERROR_STR:			// Ìûò Î∂ÄÏ°±
-		strMessage = _S( 1319, "ÌûòÏù¥ Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );		
+	case MSG_SKILL_LEARN_ERROR_STR:			// »˚ ∫Œ¡∑
+		strMessage = _S( 1319, "»˚¿Ã ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );		
 		break;
 
-	case MSG_SKILL_LEARN_ERROR_DEX:			// Îç±Ïä§ Î∂ÄÏ°±
-		strMessage = _S( 1320, "ÎØºÏ≤©Ïù¥ Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );		
+	case MSG_SKILL_LEARN_ERROR_DEX:			// µ¶Ω∫ ∫Œ¡∑
+		strMessage = _S( 1320, "πŒ√∏¿Ã ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );		
 		break;
 
-	case MSG_SKILL_LEARN_ERROR_INT:			// ÏßÄÌòú Î∂ÄÏ°±
-		strMessage = _S( 1321, "ÏßÄÌòúÍ∞Ä Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );		
+	case MSG_SKILL_LEARN_ERROR_INT:			// ¡ˆ«˝ ∫Œ¡∑
+		strMessage = _S( 1321, "¡ˆ«˝∞° ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );		
 		break;
 
-	case MSG_SKILL_LEARN_ERROR_CON:			// Ï≤¥Ïßà Î∂ÄÏ°±
-		strMessage = _S( 1322, "Ï≤¥ÏßàÏù¥ Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );		
+	case MSG_SKILL_LEARN_ERROR_CON:			// √º¡˙ ∫Œ¡∑
+		strMessage = _S( 1322, "√º¡˙¿Ã ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );		
 		break;
 	}
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close message box of skill learn
-	_pUIMgr->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
+	pUIManager->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
 
 	// Create message box of skill learn
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK,
+	MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ω∫≈≥" ), UMBS_OK,
 								UI_SKILLLEARN, MSGCMD_SKILLLEARN_NOTIFY );
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
@@ -4732,66 +2438,75 @@ void CUISkillLearn::LearnSSkillError( UBYTE ubError )
 	switch(ubError)
 	{
 	case MSG_SSKILL_LEARN_ERROR_LEVEL:
-		strMessage = _S( 278, "Î†àÎ≤®Ïù¥ Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 278, "∑π∫ß¿Ã ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 	case MSG_SSKILL_LEARN_ERROR_SP:
-		strMessage = _S( 279, "ÏàôÎ†®ÎèÑÍ∞Ä Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 279, "º˜∑√µµ∞° ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 	case MSG_SSKILL_LEARN_ERROR_SSKILL:
-		strMessage = _S( 654, "Ìï¥Îãπ Í∏∞Ïà†ÏùÑ Î∞∞Ïö∞ÎäîÎç∞ ÌïÑÏöîÌïú Í∏∞Ïà†ÏùÑ Î∞∞Ïö∞ÏßÄ ÏïäÏïòÏäµÎãàÎã§." );			
+		strMessage = _S( 654, "«ÿ¥Á ±‚º˙¿ª πËøÏ¥¬µ• « ø‰«— ±‚º˙¿ª πËøÏ¡ˆ æ æ“Ω¿¥œ¥Ÿ." );			
 		break;
 	case MSG_SSKILL_LEARN_ERROR_SSKILL_LEVEL:
-		strMessage = _S( 655, "Ïä§ÌÇ¨ Î†àÎ≤®Ïù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." );	
+		strMessage = _S( 655, "Ω∫≈≥ ∑π∫ß¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );	
 		break;
 	case MSG_SSKILL_LEARN_ERROR_SYSTEM:
-		strMessage = _S( 282, "Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 282, "Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 	}
-	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close message box of skill learn
-	_pUIMgr->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
+	pUIManager->CloseMessageBox( MSGCMD_SKILLLEARN_NOTIFY );
 
 	// Create message box of skill learn
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 656, "ÏÉùÏÇ∞Ïä§ÌÇ¨" ), UMBS_OK,			
+	MsgBoxInfo.SetMsgBoxInfo( _S( 656, "ª˝ªÍΩ∫≈≥" ), UMBS_OK,			
 								UI_SKILLLEARN, MSGCMD_SKILLLEARN_NOTIFY );
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 // ----------------------------------------------------------------------------
 // Name : PriorityOpen()
-// Desc : Ïñ¥Îë†Ïùò Ïä§ÌÇ¨ ÎßàÏä§ÌÑ∞Ïùò UI Ï∞Ω
-//			Ïä§ÌÇ¨ ÏäµÎìù UI Ï∞ΩÎ≥¥Îã§ Î®ºÏ†Ä Ïã§Ìñâ
+// Desc : æÓµ“¿« Ω∫≈≥ ∏∂Ω∫≈Õ¿« UI √¢
+//			Ω∫≈≥ Ω¿µÊ UI √¢∫∏¥Ÿ ∏’¿˙ Ω««‡
 // ----------------------------------------------------------------------------	
-void CUISkillLearn::PriorityOpen(int iIndex, BOOL bUseCard)
+// BUF FIX : ITS# 4472 [10/13/2011 rumist]
+void CUISkillLearn::PriorityOpen(int iIndex, BOOL bHasQuest, BOOL bUseCard/* =FALSE */ )
 {
-	if (_pUIMgr->DoesMessageBoxLExist(MSGLCMD_RESERVE_REQ)) return;
-	
-	m_bUseCard = bUseCard; // Ïπ¥Îìú ÏÇ¨Ïö© Ïú†Î¨¥
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	CTString	strNpcName = _pNetwork->GetMobName(iIndex);
+	if (pUIManager->DoesMessageBoxLExist(MSGLCMD_RESERVE_REQ)) return;
+	
+	m_bUseCard = bUseCard; // ƒ´µÂ ªÁøÎ ¿Øπ´
+
+	CTString	strNpcName = CMobData::getData(iIndex)->GetName();
 	// Create skill learn message box
-	_pUIMgr->CreateMessageBoxL( _S( 270, "Ïä§ÌÇ¨" ), UI_SKILLLEARN, MSGLCMD_RESERVE_REQ );
+	pUIManager->CreateMessageBoxL( _S( 270, "Ω∫≈≥" ), UI_SKILLLEARN, MSGLCMD_RESERVE_REQ );
 
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, TRUE, _S( 271, "ÎÅäÏûÑÏóÜÏù¥ ÎÖ∏Î†•ÌïòÎäî ÏûêÎßåÏù¥ ÏßÑÏ†ïÌïú Í∞ïÌï®ÏùÑ ÏÜêÏóê ÎÑ£ÏùÑ Ïàò ÏûàÎäî Î≤ï!\n\nÍ∑∏Îü∞ Í∞ïÏù∏Ìïú ÏùòÏßÄÍ∞Ä ÏûàÎäî ÏûêÎ•º Ïù∏ÎèÑÌïòÎäî Í≤ÉÏù¥ ÎÇ¥Í∞Ä ÌïòÎäî ÏùºÏù¥ÏßÄ.\n" ), -1, 0xA3A1A3FF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, TRUE, _S( 3541,"Í∑∏ÎåÄ ÎòêÌïú Í∞ïÌï®ÏùÑ Ï´ìÎäî ÏûêÏù∏Í∞Ä? Í∑∏Îü∞ Í∞ïÏù∏Ìïú ÏùòÏßÄÍ∞Ä ÏûàÎäî ÏûêÎ•º Ïù∏ÎèÑ ÌïòÎäî Í≤ÉÏù¥ ÎÇ¥ ÏùºÏù¥ÏßÄ! Í∞ÅÏò§Îäî ÎêòÏñ¥ ÏûàÍ≤†ÏßÄ?"), -1, 0xA3A1A3FF);
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, TRUE, _S( 271, "≤˜¿”æ¯¿Ã ≥Î∑¬«œ¥¬ ¿⁄∏∏¿Ã ¡¯¡§«— ∞≠«‘¿ª º’ø° ≥÷¿ª ºˆ ¿÷¥¬ π˝!\n\n±◊∑± ∞≠¿Œ«— ¿«¡ˆ∞° ¿÷¥¬ ¿⁄∏¶ ¿Œµµ«œ¥¬ ∞Õ¿Ã ≥ª∞° «œ¥¬ ¿œ¿Ã¡ˆ.\n" ), -1, 0xA3A1A3FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, TRUE, _S( 3541,"±◊¥Î ∂««— ∞≠«‘¿ª ¬—¥¬ ¿⁄¿Œ∞°? ±◊∑± ∞≠¿Œ«— ¿«¡ˆ∞° ¿÷¥¬ ¿⁄∏¶ ¿Œµµ «œ¥¬ ∞Õ¿Ã ≥ª ¿œ¿Ã¡ˆ! ∞¢ø¿¥¬ µ«æÓ ¿÷∞⁄¡ˆ?"), -1, 0xA3A1A3FF);
 
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3555, "ÌÉÄÏù¥ÌÉÑ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§."),SKILL_TITAN);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3556, "ÎÇòÏù¥Ìä∏ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§."),SKILL_KNIGHT);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3557, "ÌûêÎü¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§."),SKILL_HEALER);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3558, "Î©îÏù¥ÏßÄ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§."),SKILL_MAGE);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3559, "Î°úÍ∑∏ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§."),SKILL_ROGUE);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3560, "ÏÜåÏÑúÎü¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïúÎã§."),SKILL_SORCERER);
-	
-#ifdef	NEW_QUESTBOOK
-	// 2009. 05. 27 ÍπÄÏ†ïÎûò
-	// Ïù¥ÏïºÍ∏∞ÌïúÎã§ Î≥ÄÍ≤Ω Ï≤òÎ¶¨
-	CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_RESERVE_REQ);				
-#else
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S(1053, "Ïù¥ÏïºÍ∏∞ÌïúÎã§."), SKILL_QUEST);
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3555, "≈∏¿Ã≈∫ Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_TITAN);
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3556, "≥™¿Ã∆Æ Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_KNIGHT);
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3557, "»˙∑Ø Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_HEALER);
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3558, "∏ﬁ¿Ã¡ˆ Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_MAGE);
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3559, "∑Œ±◊ Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_ROGUE);
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 3560, "º“º≠∑Ø Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_SORCERER);
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 4797, "≥™¿Ã∆Æ Ω¶µµøÏ Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_NIGHTSHADOW);
+#ifdef CHAR_EX_ROGUE
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 5755, "EX∑Œ±◊ Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_EX_ROGUE);	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
 #endif
+#ifdef CHAR_EX_MAGE
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 5843, "æ∆≈©∏ﬁ¿Ã¡ˆ Ω∫≈≥¿ª Ω¿µÊ«—¥Ÿ."),SKILL_EX_MAGE);	// 2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° Ω∫∆Æ∏µ ≥™ø¿∏È √ﬂ∞° ºˆ¡§ « ø‰ 
+#endif
+	
+	// 2009. 05. 27 ±Ë¡§∑°
+	// ¿Ãæﬂ±‚«—¥Ÿ ∫Ø∞Ê √≥∏Æ
+	// quest bug FIX : ITS#4472  [10/13/2011 rumist]
+	if( bHasQuest )
+		CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_RESERVE_REQ);				
 			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );
-
+	pUIManager->AddMessageBoxLString( MSGLCMD_RESERVE_REQ, FALSE, _S( 1220, "√Îº“«—¥Ÿ." ) );
 }

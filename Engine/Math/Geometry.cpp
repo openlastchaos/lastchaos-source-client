@@ -128,7 +128,7 @@ void DecomposeRotationMatrixNoSnap(ANGLE3D &a3dAngles, const FLOATmatrix3D &t3dR
     // we choose to have banking of 0
     b = 0;
     // and calculate heading for that
-//0507 kwon Â»ÄÃÂ¦.
+//0507 kwon »èÁ¦.
 //    ASSERT(Abs(t3dRotation(2,3))>0.5); // must be around 1, what is far from 0
     h = ATan2(t3dRotation(1,2)/(-t3dRotation(2,3)), t3dRotation(1,1));  // no division by 0
   // otherwise

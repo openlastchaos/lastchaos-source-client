@@ -6,7 +6,6 @@
 #include <Engine/Base/Memory.h>
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/MemoryTracking.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Math/Functions.h>
 #include <Engine/Graphics/GfxLibrary.h>
 #include <Engine/Graphics/Color.h>
@@ -257,7 +256,6 @@ SLONG CShadowMap::Uncache(void)
 {
   SLONG slFreed = 0;
   _bRecountShadowMaps = TRUE;
-  CDisableAsyncProgress dap; // don't allow other threads to jump in
 
   // discard uploaded portion
   if( sm_ulObject!=NONE) {
@@ -361,7 +359,7 @@ void CShadowMap::Read_old_t(CTStream *pstrm) // throw char *
   *pstrm >> (INDEX&)bAnimatingImagePresent;
 
   // skip mip-map offsets
-  pstrm->Seek_t( MAX_MEX_LOG2*4, CTStream::SD_CUR);
+  pstrm->Seek_t( (MAX_MEX_LOG2-2)*4, CTStream::SD_CUR);
 
   // skip the shadow map data
   if( bStaticImagePresent) {
@@ -617,7 +615,6 @@ void CShadowMap::SetAsCurrent(void)
     }
 
     {TRACKSHD_HW();
-     CDisableAsyncProgress dap;
 
     // upload probe (if needed)
     if( bUseProbe) {

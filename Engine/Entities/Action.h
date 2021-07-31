@@ -4,20 +4,15 @@
 	#pragma once
 #endif
 
+#include <Engine/Help/LoadLod.h>
+#include <common/header/def_action.h>
 
-class  CAction
+class  CAction : public stAction, public LodLoader<CAction>
 {
 protected:
-	LONG		Action_Index;
-	LONG		Action_Job;
-	SBYTE		Action_Type;
-	SBYTE		Action_TexID;
-	SBYTE		Action_TexRow;
-	SBYTE		Action_TexCol;
-	char		Action_strName[32];
-	char		Action_strDesc[256];
-	char		Action_strAnimName[6][32];
-
+	CTString	Action_strName;
+	CTString	Action_strDesc;
+	
 	enum	ACTIONTYPE
 	{
 		GENERAL		= 0,
@@ -26,21 +21,25 @@ protected:
 		GUILD		= 3,
 	};
 
+	int		transFlag;	//[sora] 미번역 스트링 index 표시
+
 public:
-	CAction(void);
-	~CAction(void);
+	inline CTString		GetName() { return Action_strName; }
+	inline CTString		GetDesc() { return Action_strDesc; }
+	void				SetName(CTString string)	{Action_strName = string; }
+	void				SetDesc(CTString string)	{Action_strDesc = string; }
+	inline LONG			GetIndex() const { return index; }
+	inline LONG			GetJob() const { return job; }
+	inline SBYTE		GetType() const { return type; }
+	inline SBYTE		GetTexID() const { return iconid; }
+	inline SBYTE		GetTexRow() const { return iconrow; }
+	inline SBYTE		GetTexCol() const { return iconcol; }
 
-	inline char *		GetName() { return Action_strName; }
-	inline char *		GetDesc() { return Action_strDesc; }
-	inline char *		GetAnimName( int nJob ) { return Action_strAnimName[nJob]; }
-	inline LONG			GetIndex() const { return Action_Index; }
-	inline LONG			GetJob() const { return Action_Job; }
-	inline SBYTE		GetType() const { return Action_Type; }
-	inline SBYTE		GetTexID() const { return Action_TexID; }
-	inline SBYTE		GetTexRow() const { return Action_TexRow; }
-	inline SBYTE		GetTexCol() const { return Action_TexCol; }
+	static bool	loadEx(const char* FileName);
 
-	static int	LoadActionDataFromFile( CStaticArray<CAction> &apActionData, const CTFileName &fnm );
+	//[sora] 미번역 스트링 index 표시
+	void SetNoTranslate();
+	void ClearNoTranslate();
 };
 
 

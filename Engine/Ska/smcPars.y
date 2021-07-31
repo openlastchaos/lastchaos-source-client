@@ -59,6 +59,7 @@ void yyerror(char *str)
 %token k_ANIMSPEED
 %token k_COLOR
 %token k_ANIMEFFECT
+%token k_RIDING
 
 %start parent_model
 
@@ -106,6 +107,7 @@ component
 | all_frames_bbox_opt
 | mdl_color_opt
 | anim_effect_opt
+| riding_header
 ;
 
 anim_effect_opt
@@ -208,6 +210,25 @@ offset
     // mark it as set now
     bOffsetAllreadySet = TRUE;
   }
+}
+;
+
+riding_header
+: k_RIDING '{' c_string float_const ',' float_const ',' float_const ',' float_const ',' float_const ',' float_const ';' '}'
+{
+	int iRideParentID;
+	if (CTString($3)!="")
+	{
+		iRideParentID = ska_FindID($3);
+	}
+	else
+	{
+		iRideParentID = -1;
+	}
+
+	_yy_mi->mi_iRideParentBoneID = iRideParentID;
+	_yy_mi->SetRideOffsetPos(FLOAT3D($4,$6,$8));
+	_yy_mi->SetRideOffsetRot(ANGLE3D($10,$12,$14));
 }
 ;
 

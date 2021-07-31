@@ -1,12 +1,14 @@
 #include "stdh.h"
-#include <Engine/Interface/UIHelper.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Interface/UIFiltering.h>
+#include <vector>
+#include <Engine/Interface/UIHelper.h>
 #include <algorithm>
 
 #define MAX_HELPER_LEVEL				(5)
 #define BUTTON_SIZE						(140)
-
+#define NEW_BUTTON_SIZE					(160)
 enum eSelection
 {
 	SEL_HELPER_TEACHER,
@@ -45,6 +47,21 @@ enum eSelection
 #define TAB4_POS3 (TAB4_SIZE0 + TAB4_SIZE1 + TAB4_SIZE2)
 #define TAB4_POS4 (TAB4_SIZE0 + TAB4_SIZE1 + TAB4_SIZE2 + TAB4_SIZE3)
 
+#define STUDENT_BACK_WIDTH	287
+#define STUDENT_BACK_HEIGHT	34
+
+enum ETeach_Surface
+{
+	BG_UL		= 0,
+	BG_UM		= 1,
+	BG_UR		= 2,
+	BG_ML		= 3,
+	BG_MM		= 4,
+	BG_MR		= 5,
+	BG_BL		= 6,
+	BG_BM		= 7,
+	BG_BR		= 8,
+};
 // ----------------------------------------------------------------------------
 // Name : CUIHelper()
 // Desc : 
@@ -53,6 +70,11 @@ CUIHelper::CUIHelper()
 {
 	m_eHelperMenuState		= HELPER_MENU_REQ;
 	m_bRegistredTeacher		= FALSE;
+
+	m_nMyCurTeachCnt		= 0;
+	m_nMyCompleteTeachCnt	= 0;
+	m_nMyFailTeachCnt		= 0;
+	m_strClassName			= CTString("");
 }
 
 // ----------------------------------------------------------------------------
@@ -61,12 +83,26 @@ CUIHelper::CUIHelper()
 // ----------------------------------------------------------------------------
 CUIHelper::~CUIHelper()
 {
-	if(!m_vectorHelperList.empty())
+	if( !m_vectorHelperList.empty() )
 	{
 		m_vectorHelperList.clear();
 	}
+	if ( !m_vectorTeacherInfoList.empty() )
+	{
+		m_vectorTeacherInfoList.clear();
+	}
+	if ( !m_vectorStudentInfoList.empty() )
+	{
+		m_vectorStudentInfoList.clear();
+	}
+	m_nMyCurTeachCnt		= 0;
+	m_nMyCompleteTeachCnt	= 0;
+	m_nMyFailTeachCnt		= 0;
+	m_strClassName			= CTString("");
 
 	Destroy();
+	STOCK_RELEASE(m_ptdSubTexture);
+	STOCK_RELEASE(m_ptdBtnTexture);
 }
 
 // ----------------------------------------------------------------------------
@@ -75,92 +111,208 @@ CUIHelper::~CUIHelper()
 // ----------------------------------------------------------------------------
 void CUIHelper::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
-
-	// Region of each part
-	m_rcTitle.SetRect( 0, 0, HELPER_WIDTH, 22 );
-	m_rcTab.SetRect( 6, 26, HELPER_WIDTH - 6, 42 );
-
-	// Create skill learn texture
+	int		i;
+	m_pParent = (CUIBase*)pParentWnd;
+	SetSize( NEW_HELPER_WIDTH, 335 );
+	m_rcTitle.SetRect( 0, 0, NEW_HELPER_WIDTH, 22 );
+	// Texture Data
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\MessageBox.tex" ) );
-	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
-	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
+	m_ptdSubTexture = CreateTexture( CTString( "Data\\Interface\\New_Interface.tex" ) );
+	m_ptdBtnTexture	 = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
+	
+	//------------------------------------------------------------------
+	// New_Interface.tex
+	FLOAT	fTexWidth = m_ptdSubTexture->GetPixWidth();
+	FLOAT	fTexHeight = m_ptdSubTexture->GetPixHeight();	
+	// BackGround
+	m_NewBack.AddRectSurface(UIRect(0,0,0,0), UIRectUV(0,98,8,137,fTexWidth,fTexHeight));
+	m_NewBack.AddRectSurface(UIRect(0,0,0,0), UIRectUV(8,98,265,137,fTexWidth,fTexHeight));
+	m_NewBack.AddRectSurface(UIRect(0,0,0,0), UIRectUV(265,98,273,137,fTexWidth,fTexHeight));
+	m_NewBack.AddRectSurface(UIRect(0,0,0,0), UIRectUV(0,137,8,245,fTexWidth,fTexHeight));
+	m_NewBack.AddRectSurface(UIRect(0,0,0,0), UIRectUV(8,137,265,245,fTexWidth,fTexHeight));
+	m_NewBack.AddRectSurface(UIRect(0,0,8,0), UIRectUV(265,137,273,245,fTexWidth,fTexHeight));
+	m_NewBack.AddRectSurface(UIRect(0,0,0,0), UIRectUV(0,246,8,254,fTexWidth,fTexHeight));
+	m_NewBack.AddRectSurface(UIRect(0,0,0,0), UIRectUV(8,246,265,254,fTexWidth,fTexHeight));
+	m_NewBack.AddRectSurface(UIRect(0,0,0,0), UIRectUV(265,246,273,254,fTexWidth,fTexHeight));
+	
+	m_rtNewBack[BG_UL].SetRect(0,0,8,39);
+	m_rtNewBack[BG_UM].SetRect(8,0,NEW_HELPER_WIDTH-8,39);
+	m_rtNewBack[BG_UR].SetRect(NEW_HELPER_WIDTH-8,0,NEW_HELPER_WIDTH,39);
+	m_rtNewBack[BG_ML].SetRect(0,39,8,327);
+	m_rtNewBack[BG_MM].SetRect(8,39,NEW_HELPER_WIDTH-8,327);
+	m_rtNewBack[BG_MR].SetRect(NEW_HELPER_WIDTH-8,39,NEW_HELPER_WIDTH,327);
+	m_rtNewBack[BG_BL].SetRect(0,327,8,335);
+	m_rtNewBack[BG_BM].SetRect(8,327,NEW_HELPER_WIDTH-8,335);
+	m_rtNewBack[BG_BR].SetRect(NEW_HELPER_WIDTH-8,327,NEW_HELPER_WIDTH,335);
+	
+	// New Sub BackGround
+	m_NewSubBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(446,239,618,273,fTexWidth,fTexHeight));
+	m_NewSubBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(446,239,618,273,fTexWidth,fTexHeight));
+	m_NewSubBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(446,239,618,273,fTexWidth,fTexHeight));
+	m_NewSubBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(446,239,618,273,fTexWidth,fTexHeight));
+	m_NewSubBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(446,239,618,273,fTexWidth,fTexHeight));
+	m_NewSubBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(446,239,618,273,fTexWidth,fTexHeight));
 
-	// UV Coordinate of each part
-	// Background
-	m_rtBackTop.SetUV( 0, 0, 216, 26, fTexWidth, fTexHeight );
-	m_rtBackMiddle2.SetUV( 0, 35, 216, 37, fTexWidth, fTexHeight );
-	m_rtBackManagerTop.SetUV( 36, 69, 252, 87, fTexWidth, fTexHeight );
-	m_rtBackManagerMiddle.SetUV( 36, 106, 252, 112, fTexWidth, fTexHeight );
-	m_rtBackManagerBottom.SetUV( 36, 112, 252, 116, fTexWidth, fTexHeight );
-	m_rtBackBottom.SetUV( 0, 38, 216, 45, fTexWidth, fTexHeight );
+	int nPosY1 = 45;
+	int nPosY2 = 54;
+	for( i = 0; i < 6; ++i )
+	{
+		m_rtStudentBack[i].SetRect(6, nPosY1, 6+STUDENT_BACK_WIDTH, nPosY1+STUDENT_BACK_HEIGHT);
+		m_rtTeacherBack[i].SetRect(261, nPosY2, 261+163, nPosY2+STUDENT_BACK_HEIGHT);
+		nPosY1 += 33;
+		nPosY2 += 33;
+	}
 
-	m_rtTab.SetUV( 43, 69, 44, 86, fTexWidth, fTexHeight );
+	// New Info BackGround
+	m_NewInfoBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(0,473,96,489,fTexWidth,fTexHeight));
+	m_NewInfoBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(0,473,96,489,fTexWidth,fTexHeight));
+	m_NewInfoBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(0,473,96,489,fTexWidth,fTexHeight));
+	m_NewInfoBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(0,473,96,489,fTexWidth,fTexHeight));
+	m_NewInfoBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(0,473,96,489,fTexWidth,fTexHeight));
+	m_NewInfoBack.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(0,473,96,489,fTexWidth,fTexHeight));
 
-	// Close button
-	m_btnClose.Create( this, CTString( "" ), 220, 4, 14, 14 );
-	m_btnClose.SetUV( UBS_IDLE, 219, 0, 233, 14, fTexWidth, fTexHeight );
-	m_btnClose.SetUV( UBS_CLICK, 234, 0, 248, 14, fTexWidth, fTexHeight );
+	nPosY1 = 51;
+	nPosY2 = 60;
+	for( i = 0; i < 6; ++i )
+	{
+		m_rtStudentInfo[i].SetRect(124, nPosY1, 284, nPosY1+21);
+		m_rtTeacherInfo[i].SetRect(384, nPosY2, 419, nPosY2+21);
+		nPosY1 += 33;
+		nPosY2 += 33;
+	}
+	m_rcTabLineUV.SetUV(340, 463, 349, 464, fTexWidth, fTexHeight);
+	m_rtTabLine.SetRect(21, 54, 400, 55);
+	//tool-tip
+	m_rtInfoUL.SetUV( 446, 239, 456, 249, fTexWidth, fTexHeight );
+	m_rtInfoUM.SetUV( 456, 239, 608, 249, fTexWidth, fTexHeight );
+	m_rtInfoUR.SetUV( 608, 239, 618, 249, fTexWidth, fTexHeight );
+	m_rtInfoML.SetUV( 446, 249, 456, 263, fTexWidth, fTexHeight );
+	m_rtInfoMM.SetUV( 456, 249, 608, 263, fTexWidth, fTexHeight );
+	m_rtInfoMR.SetUV( 608, 249, 618, 263, fTexWidth, fTexHeight );	
+	m_rtInfoLL.SetUV( 446, 263, 456, 273, fTexWidth, fTexHeight );
+	m_rtInfoLM.SetUV( 456, 263, 608, 273, fTexWidth, fTexHeight );
+	m_rtInfoLR.SetUV( 608, 263, 618, 273, fTexWidth, fTexHeight );
+
+	//------------------------------------------------------------------
+	// CommonBtn.tex
+	fTexWidth  = m_ptdBtnTexture->GetPixWidth();
+	fTexHeight = m_ptdBtnTexture->GetPixHeight();	
+	
+	int nButtonY = HELPER_BUTTON_START_Y + 10 ;
+	// Button : »ƒ∞ﬂ¿Œ ∏Ò∑œ ∞ªΩ≈
+	m_btnRefreshTeacher.Create( this, _S( 1135, "»ƒ∞ﬂ¿Œ ∏Ò∑œ ∞ªΩ≈" ), 38, nButtonY, NEW_BUTTON_SIZE, 21 );
+	m_btnRefreshTeacher.SetRTSurface( UBS_IDLE, UIRect(0,0,16,22), UIRectUV(113,0,129,22, fTexWidth, fTexHeight) );
+	m_btnRefreshTeacher.SetRTSurface( UBS_IDLE, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(129,0,167,22, fTexWidth, fTexHeight) );
+	m_btnRefreshTeacher.SetRTSurface( UBS_IDLE, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(167,0,183,22, fTexWidth, fTexHeight) );
+	m_btnRefreshTeacher.SetRTSurface( UBS_CLICK, UIRect(0,0,16,22), UIRectUV(186,0,202,22, fTexWidth, fTexHeight) );
+	m_btnRefreshTeacher.SetRTSurface( UBS_CLICK, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(202,0,240,22, fTexWidth, fTexHeight) );
+	m_btnRefreshTeacher.SetRTSurface( UBS_CLICK, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(240,0,256,22, fTexWidth, fTexHeight) );
+	m_btnRefreshTeacher.CopyRTSurface( UBS_IDLE, UBS_ON );
+	m_btnRefreshTeacher.CopyRTSurface( UBS_IDLE, UBS_DISABLE );
+	m_btnRefreshTeacher.SetNewType(TRUE);
+	// Button : »ƒ∞ﬂ¿Œ µÓ∑œ
+	m_btnRegisterTeacher.Create( this, _S( 1136, "»ƒ∞ﬂ¿Œ µÓ∑œ" ), 38, nButtonY, NEW_BUTTON_SIZE, 21 );		
+	m_btnRegisterTeacher.SetRTSurface( UBS_IDLE, UIRect(0,0,16,22), UIRectUV(113,0,129,22, fTexWidth, fTexHeight) );
+	m_btnRegisterTeacher.SetRTSurface( UBS_IDLE, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(129,0,167,22, fTexWidth, fTexHeight) );
+	m_btnRegisterTeacher.SetRTSurface( UBS_IDLE, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(167,0,183,22, fTexWidth, fTexHeight) );
+	m_btnRegisterTeacher.SetRTSurface( UBS_CLICK, UIRect(0,0,16,22), UIRectUV(186,0,202,22, fTexWidth, fTexHeight) );
+	m_btnRegisterTeacher.SetRTSurface( UBS_CLICK, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(202,0,240,22, fTexWidth, fTexHeight) );
+	m_btnRegisterTeacher.SetRTSurface( UBS_CLICK, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(240,0,256,22, fTexWidth, fTexHeight) );
+	m_btnRegisterTeacher.CopyRTSurface( UBS_IDLE, UBS_ON );
+	m_btnRegisterTeacher.CopyRTSurface( UBS_IDLE, UBS_DISABLE );
+	m_btnRegisterTeacher.SetNewType(TRUE);
+	// Button : »ƒ∞ﬂ¿Œ µÓ∑œ √Îº“
+	m_btnCancelRegister.Create( this, _S( 1137, "»ƒ∞ﬂ¿Œ µÓ∑œ √Îº“" ), 38, nButtonY, NEW_BUTTON_SIZE, 21 );	
+	m_btnCancelRegister.SetRTSurface( UBS_IDLE, UIRect(0,0,16,22), UIRectUV(113,0,129,22, fTexWidth, fTexHeight) );
+	m_btnCancelRegister.SetRTSurface( UBS_IDLE, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(129,0,167,22, fTexWidth, fTexHeight) );
+	m_btnCancelRegister.SetRTSurface( UBS_IDLE, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(167,0,183,22, fTexWidth, fTexHeight) );
+	m_btnCancelRegister.SetRTSurface( UBS_CLICK, UIRect(0,0,16,22), UIRectUV(186,0,202,22, fTexWidth, fTexHeight) );
+	m_btnCancelRegister.SetRTSurface( UBS_CLICK, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(202,0,240,22, fTexWidth, fTexHeight) );
+	m_btnCancelRegister.SetRTSurface( UBS_CLICK, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(240,0,256,22, fTexWidth, fTexHeight) );
+	m_btnCancelRegister.CopyRTSurface( UBS_IDLE, UBS_ON );
+	m_btnCancelRegister.CopyRTSurface( UBS_IDLE, UBS_DISABLE );
+	m_btnCancelRegister.SetNewType(TRUE);
+	// Button : ∞ﬂΩ¿ª˝ Ω≈√ª
+	m_btnBeMyTeacher.Create( this, _S( 1138, "∞ﬂΩ¿ª˝ Ω≈√ª" ), 38 + NEW_BUTTON_SIZE + 38, nButtonY, NEW_BUTTON_SIZE, 21 );
+	m_btnBeMyTeacher.SetRTSurface( UBS_IDLE, UIRect(0,0,16,22), UIRectUV(113,0,129,22, fTexWidth, fTexHeight) );
+	m_btnBeMyTeacher.SetRTSurface( UBS_IDLE, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(129,0,167,22, fTexWidth, fTexHeight) );
+	m_btnBeMyTeacher.SetRTSurface( UBS_IDLE, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(167,0,183,22, fTexWidth, fTexHeight) );
+	m_btnBeMyTeacher.SetRTSurface( UBS_CLICK, UIRect(0,0,16,22), UIRectUV(186,0,202,22, fTexWidth, fTexHeight) );
+	m_btnBeMyTeacher.SetRTSurface( UBS_CLICK, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(202,0,240,22, fTexWidth, fTexHeight) );
+	m_btnBeMyTeacher.SetRTSurface( UBS_CLICK, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(240,0,256,22, fTexWidth, fTexHeight) );
+	m_btnBeMyTeacher.CopyRTSurface( UBS_IDLE, UBS_ON );
+	m_btnBeMyTeacher.CopyRTSurface( UBS_IDLE, UBS_DISABLE );
+	m_btnBeMyTeacher.SetNewType(TRUE);
+	// Button : ∫∏ªÛ ∫∏±‚
+	m_btnGift.Create( this, _S( 1695, "∫∏ªÛ" ), 38 + NEW_BUTTON_SIZE + 38, nButtonY, NEW_BUTTON_SIZE, 21 );
+	m_btnGift.SetRTSurface( UBS_IDLE, UIRect(0,0,16,22), UIRectUV(113,0,129,22, fTexWidth, fTexHeight) );
+	m_btnGift.SetRTSurface( UBS_IDLE, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(129,0,167,22, fTexWidth, fTexHeight) );
+	m_btnGift.SetRTSurface( UBS_IDLE, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(167,0,183,22, fTexWidth, fTexHeight) );
+	m_btnGift.SetRTSurface( UBS_CLICK, UIRect(0,0,16,22), UIRectUV(186,0,202,22, fTexWidth, fTexHeight) );
+	m_btnGift.SetRTSurface( UBS_CLICK, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(202,0,240,22, fTexWidth, fTexHeight) );
+	m_btnGift.SetRTSurface( UBS_CLICK, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(240,0,256,22, fTexWidth, fTexHeight) );
+	m_btnGift.CopyRTSurface( UBS_IDLE, UBS_ON );
+	m_btnGift.CopyRTSurface( UBS_IDLE, UBS_DISABLE );
+	m_btnGift.SetNewType(TRUE);	
+
+	nButtonY += 30;
+	
+	// Button : ∞ﬂΩ¿ª˝ ∆˜±‚
+	m_btnFireMyTeacher.Create( this, _S( 1139, "∞ﬂΩ¿ª˝ ∆˜±‚"), 38, nButtonY, NEW_BUTTON_SIZE, 21 );	
+	m_btnFireMyTeacher.SetRTSurface( UBS_IDLE, UIRect(0,0,16,22), UIRectUV(113,0,129,22, fTexWidth, fTexHeight) );
+	m_btnFireMyTeacher.SetRTSurface( UBS_IDLE, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(129,0,167,22, fTexWidth, fTexHeight) );
+	m_btnFireMyTeacher.SetRTSurface( UBS_IDLE, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(167,0,183,22, fTexWidth, fTexHeight) );
+	m_btnFireMyTeacher.SetRTSurface( UBS_CLICK, UIRect(0,0,16,22), UIRectUV(186,0,202,22, fTexWidth, fTexHeight) );
+	m_btnFireMyTeacher.SetRTSurface( UBS_CLICK, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(202,0,240,22, fTexWidth, fTexHeight) );
+	m_btnFireMyTeacher.SetRTSurface( UBS_CLICK, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(240,0,256,22, fTexWidth, fTexHeight) );
+	m_btnFireMyTeacher.CopyRTSurface( UBS_IDLE, UBS_ON );
+	m_btnFireMyTeacher.CopyRTSurface( UBS_IDLE, UBS_DISABLE );
+	m_btnFireMyTeacher.SetNewType(TRUE);
+	// Button : »ƒ∞ﬂ¿Œ ∆˜±‚
+	m_btnFireMyStudent.Create( this, _S( 5068, "»ƒ∞ﬂ¿Œ ∆˜±‚"), 38, nButtonY, NEW_BUTTON_SIZE, 21 );	
+	m_btnFireMyStudent.SetRTSurface( UBS_IDLE, UIRect(0,0,16,22), UIRectUV(113,0,129,22, fTexWidth, fTexHeight) );
+	m_btnFireMyStudent.SetRTSurface( UBS_IDLE, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(129,0,167,22, fTexWidth, fTexHeight) );
+	m_btnFireMyStudent.SetRTSurface( UBS_IDLE, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(167,0,183,22, fTexWidth, fTexHeight) );
+	m_btnFireMyStudent.SetRTSurface( UBS_CLICK, UIRect(0,0,16,22), UIRectUV(186,0,202,22, fTexWidth, fTexHeight) );
+	m_btnFireMyStudent.SetRTSurface( UBS_CLICK, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(202,0,240,22, fTexWidth, fTexHeight) );
+	m_btnFireMyStudent.SetRTSurface( UBS_CLICK, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(240,0,256,22, fTexWidth, fTexHeight) );
+	m_btnFireMyStudent.CopyRTSurface( UBS_IDLE, UBS_ON );
+	m_btnFireMyStudent.CopyRTSurface( UBS_IDLE, UBS_DISABLE );
+	m_btnFireMyStudent.SetNewType(TRUE);
+	// Button : ¥›±‚
+	m_btnExit.Create( this, _S( 870, "¥›±‚" ), 38 + NEW_BUTTON_SIZE + 38, nButtonY, NEW_BUTTON_SIZE, 21 );	
+	m_btnExit.SetRTSurface( UBS_IDLE, UIRect(0,0,16,22), UIRectUV(113,0,129,22, fTexWidth, fTexHeight) );
+	m_btnExit.SetRTSurface( UBS_IDLE, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(129,0,167,22, fTexWidth, fTexHeight) );
+	m_btnExit.SetRTSurface( UBS_IDLE, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(167,0,183,22, fTexWidth, fTexHeight) );
+	m_btnExit.SetRTSurface( UBS_CLICK, UIRect(0,0,16,22), UIRectUV(186,0,202,22, fTexWidth, fTexHeight) );
+	m_btnExit.SetRTSurface( UBS_CLICK, UIRect(16,0,NEW_BUTTON_SIZE-16,22), UIRectUV(202,0,240,22, fTexWidth, fTexHeight) );
+	m_btnExit.SetRTSurface( UBS_CLICK, UIRect(NEW_BUTTON_SIZE-16,0,NEW_BUTTON_SIZE,22), UIRectUV(240,0,256,22, fTexWidth, fTexHeight) );
+	m_btnExit.CopyRTSurface( UBS_IDLE, UBS_ON );
+	m_btnExit.CopyRTSurface( UBS_IDLE, UBS_DISABLE );
+	m_btnExit.SetNewType(TRUE);
+	// Button : X (Close)
+	m_btnClose.Create( this, CTString( "" ), 410, 4, 14, 14 );
+	m_btnClose.SetUV( UBS_IDLE, 211, 33, 227, 49, fTexWidth, fTexHeight );
+	m_btnClose.SetUV( UBS_CLICK, 229, 33, 245, 49, fTexWidth, fTexHeight );
 	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	int nButtonY = HELPER_BUTTON_START_Y;
-
-	// MemberQuit button
-	m_btnRefreshTeacher.Create( this, _S( 1135, "ÌõÑÍ≤¨Ïù∏ Î™©Î°ù Í∞±Ïã†" ), 80, nButtonY, BUTTON_SIZE, 21 );			
-	m_btnRefreshTeacher.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
-	m_btnRefreshTeacher.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
-	m_btnRefreshTeacher.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnRefreshTeacher.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	nButtonY += 23;
-
-	// MemberQuit button
-	m_btnRegisterTeacher.Create( this, _S( 1136, "ÌõÑÍ≤¨Ïù∏ Îì±Î°ù" ), 80, nButtonY, BUTTON_SIZE, 21 );		
-	m_btnRegisterTeacher.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
-	m_btnRegisterTeacher.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
-	m_btnRegisterTeacher.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnRegisterTeacher.CopyUV( UBS_IDLE, UBS_DISABLE );	
-
-	// MemberQuit button
-	m_btnCancelRegister.Create( this, _S( 1137, "ÌõÑÍ≤¨Ïù∏ Îì±Î°ù Ï∑®ÏÜå" ), 80, nButtonY, BUTTON_SIZE, 21 );	
-	m_btnCancelRegister.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
-	m_btnCancelRegister.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
-	m_btnCancelRegister.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnCancelRegister.CopyUV( UBS_IDLE, UBS_DISABLE );
 	
-	// MemberQuit button
-	m_btnBeMyTeacher.Create( this, _S( 1138, "Í≤¨ÏäµÏÉù Ïã†Ï≤≠" ), 80, nButtonY, BUTTON_SIZE, 21 );	
-	m_btnBeMyTeacher.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
-	m_btnBeMyTeacher.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
-	m_btnBeMyTeacher.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnBeMyTeacher.CopyUV( UBS_IDLE, UBS_DISABLE );	
+	//------------------------------------------------------------------
+	// MessageBox.tex
+	fTexWidth  = m_ptdBaseTexture->GetPixWidth();
+	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
-	// MemberQuit button
-	m_btnFireMyTeacher.Create( this, _S( 1139, "Í≤¨ÏäµÏÉù Ìè¨Í∏∞"), 80, nButtonY, BUTTON_SIZE, 21 );	
-	m_btnFireMyTeacher.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
-	m_btnFireMyTeacher.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
-	m_btnFireMyTeacher.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnFireMyTeacher.CopyUV( UBS_IDLE, UBS_DISABLE );	
-
-	nButtonY += 23;
-	// Exit button
-	m_btnExit.Create( this, _S( 870, "Îã´Í∏∞" ), 80, nButtonY, BUTTON_SIZE, 21 );
-	m_btnExit.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
-	m_btnExit.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
-	m_btnExit.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnExit.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	// List box of guild description
-	m_lbTeacherList.Create( this, 8, 44, HELPER_LIST_BOX_WIDTH, HELPER_LIST_BOX_HEIGHT, _pUIFontTexMgr->GetLineHeight()+5, 13, 3, 3, TRUE );
+	// ListBox : »ƒ∞ﬂ¿Œ ∏Ò∑œ
+	m_lbTeacherList.Create( this, 8, 55, NEW_TAB_CLASS+NEW_TAB_NAME+NEW_TAB_TIME+NEW_TAB_COUNT+NEW_TAB_INFO, HELPER_LIST_BOX_HEIGHT, _pUIFontTexMgr->GetLineHeight()+5, 13, 3, 5, TRUE );
+	m_lbTeacherList.SetSelBar( NEW_TAB_CLASS+NEW_TAB_NAME+NEW_TAB_TIME+NEW_TAB_COUNT+NEW_TAB_INFO, _pUIFontTexMgr->GetLineHeight()+5, 187, 46, 204, 61, fTexWidth, fTexHeight );
+	m_lbTeacherList.SetColumnPosX( 0, 0 );
+	m_lbTeacherList.SetColumnPosX( 1, NEW_TAB_CLASS );
+	m_lbTeacherList.SetColumnPosX( 2, NEW_TAB_CLASS+NEW_TAB_NAME );
+	m_lbTeacherList.SetColumnPosX( 3, NEW_TAB_CLASS+NEW_TAB_NAME+NEW_TAB_TIME);
+	m_lbTeacherList.SetColumnPosX( 4, NEW_TAB_CLASS+NEW_TAB_NAME+NEW_TAB_TIME+NEW_TAB_COUNT );
 	m_lbTeacherList.CreateScroll( TRUE, 0, 0, 9, HELPER_LIST_BOX_HEIGHT, 9, 7, 0, 0, 10 );
-	m_lbTeacherList.SetSelBar( HELPER_LIST_BOX_WIDTH, _pUIFontTexMgr->GetLineHeight()+5, 187, 46, 204, 61, fTexWidth, fTexHeight );
 	m_lbTeacherList.SetOverColor( 0xF8E1B5FF );
 	m_lbTeacherList.SetSelectColor( 0xF8E1B5FF );
-	m_lbTeacherList.SetColumnPosX( 1, TAB3_POS1);
-	m_lbTeacherList.SetColumnPosX( 2, TAB3_POS2);
 	// Up button
 	m_lbTeacherList.SetScrollUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
 	m_lbTeacherList.SetScrollUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
@@ -175,16 +327,16 @@ void CUIHelper::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_lbTeacherList.SetScrollBarTopUV( 219, 16, 228, 26, fTexWidth, fTexHeight );
 	m_lbTeacherList.SetScrollBarMiddleUV( 219, 27, 228, 29, fTexWidth, fTexHeight );
 	m_lbTeacherList.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );	
-
-	// List box of guild description
-	m_lbStudentList.Create( this, 8, 44, HELPER_LIST_BOX_WIDTH, HELPER_LIST_BOX_HEIGHT, _pUIFontTexMgr->GetLineHeight()+5, 13, 3, 4, TRUE );
+	
+	// ListBox : ∞ﬂΩ¿ª˝ ∏Ò∑œ
+	m_lbStudentList.Create( this, 8, 55, 236, HELPER_LIST_BOX_HEIGHT, _pUIFontTexMgr->GetLineHeight()+5, 13, 3, 3, TRUE );
+	m_lbStudentList.SetSelBar( 236, _pUIFontTexMgr->GetLineHeight()+5, 187, 46, 204, 61, fTexWidth, fTexHeight );
+	m_lbStudentList.SetColumnPosX( 0, 0 );
+	m_lbStudentList.SetColumnPosX( 1, NEW_TAB_CLASS );
+	m_lbStudentList.SetColumnPosX( 2, 215, TEXT_RIGHT );
 	m_lbStudentList.CreateScroll( TRUE, 0, 0, 9, HELPER_LIST_BOX_HEIGHT, 9, 7, 0, 0, 10 );
-	m_lbStudentList.SetSelBar( HELPER_LIST_BOX_WIDTH, _pUIFontTexMgr->GetLineHeight()+5, 187, 46, 204, 61, fTexWidth, fTexHeight );
 	m_lbStudentList.SetOverColor( 0xF8E1B5FF );
 	m_lbStudentList.SetSelectColor( 0xF8E1B5FF );
-	m_lbStudentList.SetColumnPosX( 1, TAB4_POS1 );
-	m_lbStudentList.SetColumnPosX( 2, TAB4_POS2 );
-	m_lbStudentList.SetColumnPosX( 3, TAB4_POS3 );
 	// Up button
 	m_lbStudentList.SetScrollUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
 	m_lbStudentList.SetScrollUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
@@ -202,28 +354,36 @@ void CUIHelper::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 
 	//info mark
 	m_rtInfoMarkUV.SetUV(159, 162, 175, 178, fTexWidth, fTexHeight);
-	for(int i=0; i<m_lbStudentList.GetScrollBarItemsPerPage(); ++i)
+	for( i = 0; i < m_lbStudentList.GetScrollBarItemsPerPage(); ++i )
 	{
 		m_rcInfoMark[i].SetRect(
-			TAB_POS_LEFT + TAB3_POS2 + (INFOMARK_TAB_SIZE - INFOMARK_SIZE) / 2
-			, INFOMARK_Y_POS + i * m_lbTeacherList.GetLineHeight()
-			, TAB_POS_LEFT + TAB3_POS2 + (INFOMARK_TAB_SIZE - INFOMARK_SIZE) / 2 + INFOMARK_SIZE
-			, INFOMARK_Y_POS + i * m_lbTeacherList.GetLineHeight() + INFOMARK_SIZE);
+			TAB_POS_LEFT + NEW_TAB_CLASS+NEW_TAB_NAME+NEW_TAB_TIME+NEW_TAB_COUNT + (NEW_TAB_INFO - INFOMARK_SIZE) / 2
+			, 57 + i * m_lbTeacherList.GetLineHeight()
+			, TAB_POS_LEFT + NEW_TAB_CLASS+NEW_TAB_NAME+NEW_TAB_TIME+NEW_TAB_COUNT + (NEW_TAB_INFO - INFOMARK_SIZE) / 2 + INFOMARK_SIZE
+			, 57 + i * m_lbTeacherList.GetLineHeight() + INFOMARK_SIZE);
+
+		m_rcClass[i].SetRect(
+			TAB_POS_LEFT + (NEW_TAB_INFO - INFOMARK_SIZE) / 2 + 7
+			, 57 + i * m_lbTeacherList.GetLineHeight()
+			, TAB_POS_LEFT + (NEW_TAB_INFO - INFOMARK_SIZE) / 2 + INFOMARK_SIZE + 7
+			, 57 + i * m_lbTeacherList.GetLineHeight() + INFOMARK_SIZE);
 	}
-
-	//tool-tip
-	m_rtInfoUL.SetUV( 164, 45, 171, 63, fTexWidth, fTexHeight );
-	m_rtInfoUM.SetUV( 174, 45, 176, 63, fTexWidth, fTexHeight );
-	m_rtInfoUR.SetUV( 179, 45, 186, 63, fTexWidth, fTexHeight );
-	m_rtInfoML.SetUV( 164, 55, 171, 58, fTexWidth, fTexHeight );
-	m_rtInfoMM.SetUV( 174, 55, 176, 58, fTexWidth, fTexHeight );
-	m_rtInfoMR.SetUV( 179, 55, 186, 58, fTexWidth, fTexHeight );	
-	m_rtInfoLL.SetUV( 164, 60, 171, 68, fTexWidth, fTexHeight );
-	m_rtInfoLM.SetUV( 174, 60, 176, 68, fTexWidth, fTexHeight );
-	m_rtInfoLR.SetUV( 179, 60, 186, 68, fTexWidth, fTexHeight );
-
+	m_rtClass[TITAN].SetUV( 255, 179, 275, 199, fTexWidth, fTexHeight );
+	m_rtClass[KNIGHT].SetUV( 280, 179, 300, 199, fTexWidth, fTexHeight );
+	m_rtClass[HEALER].SetUV( 305, 179, 325, 199, fTexWidth, fTexHeight );
+	m_rtClass[MAGE].SetUV( 255, 204, 275, 224, fTexWidth, fTexHeight );
+	m_rtClass[ROGUE].SetUV( 280, 204, 300, 224, fTexWidth, fTexHeight );
+	m_rtClass[SORCERER].SetUV( 305, 204, 325, 224, fTexWidth, fTexHeight );
+	m_rtClass[NIGHTSHADOW].SetUV( 472, 132, 492, 152, fTexWidth, fTexHeight );
+#ifdef CHAR_EX_ROGUE
+	m_rtClass[EX_ROGUE].SetUV( 280, 204, 300, 224, fTexWidth, fTexHeight );	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+#endif
+#ifdef CHAR_EX_MAGE
+	m_rtClass[EX_MAGE].SetUV( 255, 204, 275, 224, fTexWidth, fTexHeight );	//2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° 
+#endif
 	m_bShowInfo = FALSE;
 	m_nCurInfoLines = 0;
+	m_bShowClass = FALSE;
 }
 
 // ----------------------------------------------------------------------------
@@ -252,69 +412,63 @@ void CUIHelper::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMa
 // ----------------------------------------------------------------------------
 void CUIHelper::OpenHelper( )
 {
-	if(_pUIMgr->DoesMessageBoxLExist( MSGLCMD_HELPER_REQ ) || IsVisible())
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->DoesMessageBoxLExist( MSGLCMD_HELPER_REQ ) || IsVisible())
 		return;	
 
 	ResetHelper();
 
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_REGISTER );
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_CANCEL_REGISTER );
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_BEMYTEACHER );
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_NOTIFY );
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_FIRE_MYTEACHER );
-	
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_REGISTER );
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_CANCEL_REGISTER );
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_BEMYTEACHER );
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_NOTIFY );
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_FIRE_MYTEACHER );
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_FIRE_MYSTUDENT );
+
 	CTString strTitle;
 	CTString strMessage;
 
 	const int iLevel	= _pNetwork->MyCharacterInfo.level;
-	
-	if( iLevel >= 20 )
-	{
-		strTitle = _S( 1140, "Í≤¨ÏäµÏÉù Í¥ÄÎ¶¨" );			
-		// Create message box
-		_pUIMgr->CreateMessageBoxL( strTitle, UI_HELPER, MSGLCMD_HELPER_REQ );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strTitle, -1, 0xE18600FF );
 
-		strMessage.PrintF( _S( 1141, "Í≤åÏûÑÏùÑ ÏãúÏûëÌïòÎäî Ïú†Ï†ÄÎì§ÏùÑ ÎèÑÏôÄÏ£ºÍ∏∞ ÏúÑÌï¥ÏÑú ÌõÑÍ≤¨Ïù∏ÏùÑ Îì±Î°ùÌï† Ïàò ÏûàÏäµÎãàÎã§. ÌõÑÍ≤¨Ïù∏ Îì±Î°ùÏùÑ ÌïòÎ©¥, Ïã†Í∑ú Ïú†Ï†ÄÍ∞Ä ÌõÑÍ≤¨Ïù∏ Î¶¨Ïä§Ìä∏Î•º Î≥º Îïå [%s]ÎãòÏùò Ïù¥Î¶ÑÏù¥ Î≥¥Ïù¥Í≤å Îê©ÎãàÎã§." ), _pNetwork->MyCharacterInfo.name );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );			
+	if( iLevel >=  50 )
+	{
+		strTitle = _S( 1140, "∞ﬂΩ¿ª˝ ∞¸∏Æ" );			
+		// Create message box
+		pUIManager->CreateMessageBoxL( strTitle, UI_HELPER, MSGLCMD_HELPER_REQ );
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strTitle, -1, 0xE18600FF );
 		
-		strMessage.PrintF( _S( 1142, "ÎèåÎ¥êÏ£ºÎäî Ïú†Ï†ÄÍ∞Ä %dÎ†àÎ≤®Ïù¥ ÎêòÎ©¥, Î™ÖÏÑ±ÏπòÎ•º ÏñªÏùÑ Ïàò ÏûàÏúºÎ©∞, Î™ÖÏÑ±ÏπòÍ∞Ä Ïò¨ÎùºÍ∞êÏóê Îî∞Îùº Î≥¥ÏÉÅÏù¥ Ï£ºÏñ¥ÏßëÎãàÎã§." ), GetLimitLevel() );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );		
+		strMessage.PrintF( _S( 1141, "∞‘¿”¿ª Ω√¿€«œ¥¬ ¿Ø¿˙µÈ¿ª µµøÕ¡÷±‚ ¿ß«ÿº≠ »ƒ∞ﬂ¿Œ¿ª µÓ∑œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ. »ƒ∞ﬂ¿Œ µÓ∑œ¿ª «œ∏È, Ω≈±‘ ¿Ø¿˙∞° »ƒ∞ﬂ¿Œ ∏ÆΩ∫∆Æ∏¶ ∫º ∂ß [%s]¥‘¿« ¿Ã∏ß¿Ã ∫∏¿Ã∞‘ µÀ¥œ¥Ÿ." ), _pNetwork->MyCharacterInfo.name );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );			
+		
+		strMessage.PrintF( _S( 5045, "∞ﬂΩ¿ª˝¿Ã 50∑π∫ß¿Ã µ«¥¬ µøæ», ¥ŸæÁ«— ∫∏ªÛ¿ª æÚ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ), GetLimitLevel() );
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );		
 		
 		strMessage.PrintF( "" );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );
-
-		strMessage.PrintF( _S( 1143, "Î≥¥ÏÉÅÎÇ¥Ïö©" ) );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );
-
-		strMessage.PrintF( _S( 1144, "Î™ÖÏÑ±ÏπòÍ∞Ä 100Ïù¥ ÎêòÎ©¥ Í∞Å ÎßàÏùÑÏùò Î∞©Ïñ¥Íµ¨ ÏÉÅÏ†êÏóêÏÑú, Î™ÖÏÑ± ÏïÑÏù¥ÌÖúÏùÑ Íµ¨Îß§Ìï† Ïàò ÏûàÎäî Í∂åÌïúÏù¥ Ï£ºÏñ¥ÏßëÎãàÎã§." ) );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );
-
-		strMessage.PrintF( _S( 1145, "Î™ÖÏÑ± ÏïÑÏù¥ÌÖúÏùÄ Î™ÖÏÑ±ÏπòÍ∞Ä 100Ïù¥ÌïòÏù∏ Ïú†Ï†ÄÎäî Íµ¨Îß§ Î∞è Ï∞©Ïö©ÏùÑ Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ) );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );
-
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, FALSE,  _S( 1146, "ÌôïÏù∏ÌïòÍ∏∞." ), SEL_HELPER_TEACHER );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );
+		
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, FALSE,  _S( 1146, "»Æ¿Œ«œ±‚." ), SEL_HELPER_TEACHER );		
 	}
 	else
 	{
-		strTitle = _S( 1147, "ÌõÑÍ≤¨Ïù∏ Í¥ÄÎ¶¨" );			
+		strTitle = _S( 1147, "»ƒ∞ﬂ¿Œ ∞¸∏Æ" );			
 		// Create message box
-		_pUIMgr->CreateMessageBoxL( strTitle, UI_HELPER, MSGLCMD_HELPER_REQ );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strTitle, -1, 0xE18600FF );
-
-		strMessage.PrintF( _S( 1148, "ÌõÑÍ≤¨Ïù∏ÏùÄ [%s]ÎãòÏùÑ %dÎ†àÎ≤®ÍπåÏßÄ ÏÑ±Ïû•ÌïòÎäîÎç∞ ÎèÑÏõÄÏùÑ Ï£ºÎäî ÏÇ¨ÎûåÏùÑ Ïù¥ÏïºÍ∏∞Ìï©ÎãàÎã§. ÌõÑÍ≤¨Ïù∏ Î¶¨Ïä§Ìä∏ÏóêÏÑú [%s]ÎãòÍªò ÎèÑÏõÄÏùÑ Ï§Ñ Ïàò ÏûàÎäî ÏÇ¨ÎûåÏùÑ Ï∞æÏïÑÎ≥¥ÏÑ∏Ïöî." ), _pNetwork->MyCharacterInfo.name, GetLimitLevel(), _pNetwork->MyCharacterInfo.name );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );			
-
-		strMessage.PrintF( _S( 1149, "[%s]ÎãòÍªòÏÑúÎäî ÌõÑÍ≤¨Ïù∏ÏùÑ Îã® ÌïúÎ∂ÑÎßå ÏÑ†Ï†ïÌï† Ïàò ÏûàÏúºÎ©∞, ÏÑ†Ï†ïÌõÑÏóêÎäî ÌõÑÍ≤¨Ïù∏ÏùÑ Î≥ÄÍ≤ΩÌï† Ïàò ÏóÜÏäµÎãàÎã§." ), _pNetwork->MyCharacterInfo.name );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );			
-
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, FALSE,  _S( 1146, "ÌôïÏù∏ÌïòÍ∏∞." ), SEL_HELPER_STUDENT );		
+		pUIManager->CreateMessageBoxL( strTitle, UI_HELPER, MSGLCMD_HELPER_REQ );
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strTitle, -1, 0xE18600FF );
+		
+		strMessage.PrintF( _S( 1148, "»ƒ∞ﬂ¿Œ¿∫ [%s]¥‘¿ª %d∑π∫ß±Ó¡ˆ º∫¿Â«œ¥¬µ• µµøÚ¿ª ¡÷¥¬ ªÁ∂˜¿ª ¿Ãæﬂ±‚«’¥œ¥Ÿ. »ƒ∞ﬂ¿Œ ∏ÆΩ∫∆Æø°º≠ [%s]¥‘≤≤ µµøÚ¿ª ¡Ÿ ºˆ ¿÷¥¬ ªÁ∂˜¿ª √£æ∆∫∏ººø‰." ), _pNetwork->MyCharacterInfo.name, GetLimitLevel(), _pNetwork->MyCharacterInfo.name );
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );			
+		
+		strMessage.PrintF( _S( 5044, "√÷√  º±¡§±Ó¡ˆ √— 3π¯¿ª º±¡§«“ ºˆ∞° ¿÷¿∏∏Á, 30∑π∫ß¿Ã ≥—¿∏∏È »ƒ∞ﬂ¿Œ¿ª º±¡§ «“ºˆ∞° æ¯¿∏¥œ ¬¸∞Ì«œΩ√±‚ πŸ∂¯¥œ¥Ÿ." ), _pNetwork->MyCharacterInfo.name );
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, TRUE, strMessage, -1, 0xA3A1A3FF );			
+		
+		pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, FALSE,  _S( 1146, "»Æ¿Œ«œ±‚." ), SEL_HELPER_STUDENT );		
 	}
 	
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_HELPER_REQ, FALSE, _S( 880, "Ï∑®ÏÜåÌïòÍ∏∞." ) );				
+	pUIManager->AddMessageBoxLString( MSGLCMD_HELPER_REQ, FALSE, _S( 880, "√Îº“«œ±‚." ) );				
 }
 
-static LONG g_lChaIndex				= -1;		// Í∞ÄÏûÖ Ïã†Ï≤≠Í≥º Í¥ÄÎ†®Îêú Î∂ÄÎ∂ÑÏóêÎßå Ïì∞ÏûÑ.
+static LONG g_lChaIndex				= -1;		// ∞°¿‘ Ω≈√ª∞˙ ∞¸∑√µ» ∫Œ∫–ø°∏∏ æ≤¿”.
 static CTString g_strTeacherName	= CTString("");
 
 // ----------------------------------------------------------------------------
@@ -330,24 +484,26 @@ void CUIHelper::ResetHelper()
 	g_lChaIndex				= -1;
 	g_strTeacherName.Clear();
 
-	// NOTE : Í∏∏ÎìúÎ•º ÌÉàÌá¥ÌïòÍ±∞ÎÇò Ìï¥Ï≤¥ ÌïòÏßÄ ÏïäÎäî Ïù¥ÏÉÅ, ÌÅ¥Î¶¨Ïñ¥ ÌïòÎ©¥ ÏïàÎê†Í±∞ Í∞ôÏùå.
+	// NOTE : ±ÊµÂ∏¶ ≈ª≈«œ∞≈≥™ «ÿ√º «œ¡ˆ æ ¥¬ ¿ÃªÛ, ≈¨∏ÆæÓ «œ∏È æ»µ…∞≈ ∞∞¿Ω.
 	//ClearHelperList();
 
-	_pUIMgr->RearrangeOrder( UI_HELPER, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_HELPER, FALSE );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ClearHelperList()
-// Desc : Î©§Î≤Ñ Î™©Î°ùÏùÑ ÌÅ¥Î¶¨Ïñ¥Ìï©ÎãàÎã§.
+// Desc : ∏‚πˆ ∏Ò∑œ¿ª ≈¨∏ÆæÓ«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 void CUIHelper::ClearHelperList()
 {
-	// NOTE : Í∏∏ÎìúÎ•º ÌÉàÌá¥ÌïòÍ±∞ÎÇò Ìï¥Ï≤¥ ÌïòÏßÄ ÏïäÎäî Ïù¥ÏÉÅ, ÌÅ¥Î¶¨Ïñ¥ ÌïòÎ©¥ ÏïàÎê†Í±∞ Í∞ôÏùå.
+	// NOTE : ±ÊµÂ∏¶ ≈ª≈«œ∞≈≥™ «ÿ√º «œ¡ˆ æ ¥¬ ¿ÃªÛ, ≈¨∏ÆæÓ «œ∏È æ»µ…∞≈ ∞∞¿Ω.
 	if( !m_vectorHelperList.empty() )
 	{
 		m_vectorHelperList.clear();
 		m_vectorTeacherInfoList.clear();
 		m_vectorStudentInfoList.clear();
+		m_lbTeacherList.ResetAllStrings();
+		m_lbStudentList.ResetAllStrings();
 	}
 }
 
@@ -355,29 +511,31 @@ void CUIHelper::ClearHelperList()
 
 // ----------------------------------------------------------------------------
 // Name : BeMyTeacher()
-// Desc : Í≤¨ÏäµÏÉùÏù¥ ÌõÑÍ≤¨Ïù∏Ïù¥ ÎêòÏñ¥Îã¨ÎùºÍ≥† ÏöîÏ≤≠Ìï®.
+// Desc : ∞ﬂΩ¿ª˝¿Ã »ƒ∞ﬂ¿Œ¿Ã µ«æÓ¥ﬁ∂Û∞Ì ø‰√ª«‘.
 // ----------------------------------------------------------------------------
 void CUIHelper::BeMyTeacher( )
 {
 	int	iSelMember = m_lbTeacherList.GetCurSel();
-	if( iSelMember != -1 )
-	{
-		sHelperMember &TempMember = m_vectorHelperList[iSelMember];
+	if( iSelMember == -1 )
+		return;
 
-		g_lChaIndex		= TempMember.lIndex;
-		g_strTeacherName= TempMember.strName;
-		
-		_pUIMgr->CloseMessageBox( MSGCMD_HELPER_NOTIFY );
-		_pUIMgr->CloseMessageBox( MSGCMD_HELPER_BEMYTEACHER );
-		_pUIMgr->CloseMessageBox( MSGCMD_HELPER_BEMYTEACHER_REQ );
+	sHelperMember &TempMember = m_vectorHelperList[iSelMember];
 
-		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 1150, "ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_BEMYTEACHER );	
-		strMessage.PrintF( _S( 1151, "[%s]ÎãòÏùÑ ÌõÑÍ≤¨Ïù∏ÏúºÎ°ú Ïã†Ï≤≠ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), TempMember.strName );			
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-	}
+	g_lChaIndex		= TempMember.lIndex;
+	g_strTeacherName= TempMember.strName;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_NOTIFY );
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_BEMYTEACHER );
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_BEMYTEACHER_REQ );
+
+	CTString	strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 1150, "»ƒ∞ﬂ¿Œ Ω≈√ª" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_BEMYTEACHER );	
+	strMessage.PrintF( _S( 1151, "[%s]¥‘¿ª »ƒ∞ﬂ¿Œ¿∏∑Œ Ω≈√ª«œΩ√∞⁄Ω¿¥œ±Ó?" ), TempMember.strName );			
+	MsgBoxInfo.AddString( strMessage );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
@@ -391,60 +549,64 @@ void CUIHelper::SetRegistredTeacher( BOOL bRegistered )
 
 // ----------------------------------------------------------------------------
 // Name : FireMyTeacher()
-// Desc : ÎÇò Îãà ÌïôÏÉù ÏïàÌï†ÎûÄÎã§...
+// Desc : ≥™ ¥œ «–ª˝ æ»«“∂ı¥Ÿ...
 // ----------------------------------------------------------------------------
 void CUIHelper::FireMyTeacher( )
 {
 	ASSERT( _pNetwork->MyCharacterInfo.lTeacherIndex != -1 );
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_NOTIFY );
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_FIRE_MYTEACHER );
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_NOTIFY );
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_FIRE_MYTEACHER );
 	
 	// Create message box of guild destroy
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 1152, "Í≤¨ÏäµÏÉù Ìè¨Í∏∞" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_FIRE_MYTEACHER );		
-	strMessage.PrintF( _S( 1153, "[%s]ÎãòÏùò Í≤¨ÏäµÏÉùÏùÑ Í∑∏Îßå ÎëêÏãúÍ≤†ÏäµÎãàÍπå? ÌïúÎ≤à Í∑∏Îßå ÎëêÍ≤åÎêòÎ©¥ Îã§ÏãúÎäî ÌõÑÍ≤¨Ïù∏ÏùÑ ÏÑ†Ï†ïÌï† Ïàò ÏóÜÏäµÎãàÎã§." ), _pNetwork->MyCharacterInfo.strTeacherName );	
+	MsgBoxInfo.SetMsgBoxInfo( _S( 1152, "∞ﬂΩ¿ª˝ ∆˜±‚" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_FIRE_MYTEACHER );		
+	strMessage.PrintF( _S( 1153, "[%s]¥‘¿« ∞ﬂΩ¿ª˝¿ª ±◊∏∏ µŒΩ√∞⁄Ω¿¥œ±Ó? «—π¯ ±◊∏∏ µŒ∞‘µ«∏È ¥ŸΩ√¥¬ »ƒ∞ﬂ¿Œ¿ª º±¡§«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), _pNetwork->MyCharacterInfo.strTeacherName );	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	strMessage.PrintF( "" );
+	MsgBoxInfo.AddString( strMessage );
+	strMessage.PrintF( _S( 5067, "≥≤¿∫»Ωºˆ : %d»∏" ), 2 - _pNetwork->MyCharacterInfo.iStudentGiveUpCnt );
+	MsgBoxInfo.AddString( strMessage, 0x00ffffff );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
 // Name : TeacherAccept()
-// Desc : ÌõÑÍ≤¨Ïù∏Ïù¥ ÎêòÏñ¥Ï£ºÍ≤†ÎäîÏßÄ Î¨ºÏñ¥Î¥Ñ.
+// Desc : »ƒ∞ﬂ¿Œ¿Ã µ«æÓ¡÷∞⁄¥¬¡ˆ π∞æÓ∫Ω.
 // ----------------------------------------------------------------------------
 void CUIHelper::TeacherAccept( LONG lIndex, const CTString& strStudentName )
 {
 	g_lChaIndex			= lIndex;
 	g_strTeacherName	= strStudentName;
 
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_STUDENT_ACCEPT );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_STUDENT_ACCEPT );
 	
 	// Create message box of guild destroy
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 1154, "ÌõÑÍ≤¨Ïù∏ Îì±Î°ù" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_STUDENT_ACCEPT );	
-	strMessage.PrintF( _S( 1155,  "[%s] ÎãòÏù¥ ÌõÑÍ≤¨Ïù∏Ïù¥ ÎêòÏñ¥Îã¨ÎùºÎäî Î∂ÄÌÉÅÏùÑ Ìï©ÎãàÎã§. ÏàòÎùΩÌïòÏãúÍ≤†ÏäµÎãàÍπå?"  ),  strStudentName );	
+	MsgBoxInfo.SetMsgBoxInfo( _S( 1154, "»ƒ∞ﬂ¿Œ µÓ∑œ" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_STUDENT_ACCEPT );	
+	strMessage.PrintF( _S( 1155,  "[%s] ¥‘¿Ã »ƒ∞ﬂ¿Œ¿Ã µ«æÓ¥ﬁ∂Û¥¬ ∫Œ≈π¿ª «’¥œ¥Ÿ. ºˆ∂Ù«œΩ√∞⁄Ω¿¥œ±Ó?"  ),  strStudentName );	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
 // Name : GetLimitLevel()
-// Desc : Í≤¨ÏäµÏÉùÍ≥º ÌõÑÍ≤¨Ïù∏Ïùò Ï†úÌïú Î†àÎ≤®ÏùÑ ÏñªÏäµÎãàÎã§.
+// Desc : ∞ﬂΩ¿ª˝∞˙ »ƒ∞ﬂ¿Œ¿« ¡¶«— ∑π∫ß¿ª æÚΩ¿¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 int CUIHelper::GetLimitLevel()
 {
-	extern UINT g_uiEngineVersion;
-	if( g_uiEngineVersion >= 10000 )	
-		m_iLimitLevel	= 5;
-	else
-		m_iLimitLevel	= 20;
-	return m_iLimitLevel;
+	return 50;
 }
 
 // ----------------------------------------------------------------------------
 // Name : AddToHelperList()
-// Desc : Î©§Î≤Ñ Î™©Î°ùÏóê Ï∂îÍ∞Ä
+// Desc : ∏‚πˆ ∏Ò∑œø° √ﬂ∞°
 // ----------------------------------------------------------------------------
 void CUIHelper::AddToHelperList( LONG lIndex, const CTString& strName, int iLevel, int iJob, int iJob2 )
 {
@@ -473,7 +635,7 @@ void CUIHelper::AddToHelperList( LONG lIndex, const CTString& strName, int iLeve
 // Name : AddToTeacherInfoList()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CUIHelper::AddToTeacherInfoList(LONG index, SLONG fame, SLONG cntTeaching, SLONG cntComplete, SLONG cntFail)
+void CUIHelper::AddToTeacherInfoList(LONG index, SLONG fame, SLONG cntTeaching, SLONG cntComplete, SLONG cntFail, SBYTE StartPlayTime, SBYTE EndPlayTime)
 {
 	if(m_vectorHelperList.size() == m_vectorTeacherInfoList.size() + 1)
 	{
@@ -483,6 +645,8 @@ void CUIHelper::AddToTeacherInfoList(LONG index, SLONG fame, SLONG cntTeaching, 
 		info.nCntTeachingStudent = cntTeaching;
 		info.nCntCompleteStudent = cntComplete;
 		info.nCntFailStudent = cntFail;
+		info.sbStartPlayTime= StartPlayTime;
+		info.sbEndPlayTime	= EndPlayTime;
 		m_vectorTeacherInfoList.push_back(info);
 	}
 	ASSERT(m_vectorHelperList.size() == m_vectorTeacherInfoList.size());
@@ -507,7 +671,7 @@ void CUIHelper::AddToStudentInfoList(LONG index, const char *szFirstDate, const 
 
 // ----------------------------------------------------------------------------
 // Name : DelFromHelperList()
-// Desc : Î©§Î≤Ñ Î™©Î°ùÏóêÏÑú Ï†úÍ±∞
+// Desc : ∏‚πˆ ∏Ò∑œø°º≠ ¡¶∞≈
 // ----------------------------------------------------------------------------
 void CUIHelper::DelFromHelperList( LONG lIndex )
 {
@@ -533,7 +697,7 @@ void CUIHelper::DelFromHelperList( LONG lIndex )
 
 // ----------------------------------------------------------------------------
 // Name : ChangeHelperLevel()
-// Desc : Î©§Î≤ÑÏùò Î†àÎ≤®ÏùÑ Î≥ÄÍ≤ΩÌï®.
+// Desc : ∏‚πˆ¿« ∑π∫ß¿ª ∫Ø∞Ê«‘.
 // ----------------------------------------------------------------------------
 void CUIHelper::ChangeHelperLevel( LONG lIndex, int iLevel )
 {
@@ -550,7 +714,7 @@ void CUIHelper::ChangeHelperLevel( LONG lIndex, int iLevel )
 
 // ----------------------------------------------------------------------------
 // Name : RefreshTeacherList()
-// Desc : Î™©Î°ùÏùÑ Í∞±Ïã†Ìï©ÎãàÎã§.
+// Desc : ∏Ò∑œ¿ª ∞ªΩ≈«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 void CUIHelper::RefreshTeacherList( BOOL bInit )
 {
@@ -559,24 +723,31 @@ void CUIHelper::RefreshTeacherList( BOOL bInit )
 
 	m_lbTeacherList.ResetAllStrings();
 	std::sort(m_vectorHelperList.begin(), m_vectorHelperList.end());
-
+	std::sort(m_vectorTeacherInfoList.begin(), m_vectorTeacherInfoList.end());
 	COLOR		crLevel = 0xAAAAAAFF;	
-	
-	std::vector<sHelperMember>::const_iterator member_end = m_vectorHelperList.end();
-	std::vector<sHelperMember>::iterator it = m_vectorHelperList.begin();
-	for(it = m_vectorHelperList.begin(); it != member_end; ++it)
-	{		
-		const int iJob		= (*it).iJob;
-		const int iJob2		= (*it).iJob2;
-		m_lbTeacherList.AddString( 0, (*it).strName, 0xFFFFFFFF );	// Ïù¥Î¶Ñ
-		m_lbTeacherList.AddString( 1, JobInfo().GetName( iJob,  iJob2 ), 0xFFFFFFFF );					// ÌÅ¥ÎûòÏä§
-		m_lbTeacherList.AddString( 2, CTString(" "), 0xFFFFFFFF );					// info markÏö© Í≥µÍ∞Ñ
+
+	CTString strMessage;
+	for ( int i=0; i<m_vectorHelperList.size(); ++i)
+	{
+		// ≈¨∑°Ω∫ Mark ∞¯∞£
+		m_lbTeacherList.AddString( 0, CTString(" ") );
+		// ¿Ã∏ß
+		m_lbTeacherList.AddString( 1, m_vectorHelperList[i].strName, 0x00ffffff );
+		// ¡÷¡¢º” Ω√∞£
+		strMessage.PrintF(_S( 5069, "%dΩ√ ~ %dΩ√"), m_vectorTeacherInfoList[i].sbStartPlayTime, m_vectorTeacherInfoList[i].sbEndPlayTime );
+		m_lbTeacherList.AddString( 2, strMessage, 0x99ff33ff);
+		// æÁº∫ ºˆ
+		strMessage.PrintF(_S(5070, "%d∏Ì"), m_vectorTeacherInfoList[i].nCntCompleteStudent);
+		m_lbTeacherList.AddString( 3, strMessage, 0x99ff33ff);
+		// info markøÎ ∞¯∞£
+		m_lbTeacherList.AddString( 4, CTString(" ") );		
 	}
+	PrepareOpen();
 }
 
 // ----------------------------------------------------------------------------
 // Name : RefreshStudentList()
-// Desc : Î™©Î°ùÏùÑ Í∞±Ïã†Ìï©ÎãàÎã§.
+// Desc : ∏Ò∑œ¿ª ∞ªΩ≈«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 void CUIHelper::RefreshStudentList( BOOL bInit )
 {
@@ -593,17 +764,21 @@ void CUIHelper::RefreshStudentList( BOOL bInit )
 	std::vector<sHelperMember>::iterator it = m_vectorHelperList.begin();
 	for(it = m_vectorHelperList.begin(); it != member_end; ++it)
 	{		
-		if((*it).iJob>=0 && (*it).iJob<TOTAL_JOB){
+		if((*it).iJob>=0 && (*it).iJob<TOTAL_JOB)
+		{
 			const int iJob		= (*it).iJob;
 			const int iJob2		= (*it).iJob2;
 			const int iLevel	= (*it).iLevel;
 			strLevel.PrintF( "%d", iLevel );
-			m_lbStudentList.AddString( 0, (*it).strName, 0xFFFFFFFF );	// Ïù¥Î¶Ñ
-			m_lbStudentList.AddString( 1, strLevel, 0xFFFFFFFF );									// Î†àÎ≤®
-			m_lbStudentList.AddString( 2, JobInfo().GetName( iJob, iJob2 ), 0xFFFFFFFF );					// ÌÅ¥ÎûòÏä§
-			m_lbStudentList.AddString( 3, CTString(" "), 0xFFFFFFFF );					// info markÏö© Í≥µÍ∞Ñ
-		} else ASSERTALWAYS("JOB NUMBER must have this range [iJob>=0 && iJob<TOTAL_JOB]!!");
+			m_lbStudentList.AddString( 0, CTString(" "), 0xffcc66FF );						// info markøÎ ∞¯∞£
+			m_lbStudentList.AddString( 1, (*it).strName, 0xffcc66FF );						// ¿Ã∏ß
+			m_lbStudentList.AddString( 2, strLevel, 0xffcc66FF );							// ∑π∫ß
+		} 
+		else 
+			ASSERTALWAYS("JOB NUMBER must have this range [iJob>=0 && iJob<TOTAL_JOB]!!");
 	}
+
+	PrepareOpen();
 }
 
 // ----------------------------------------------------------------------------
@@ -612,204 +787,7 @@ void CUIHelper::RefreshStudentList( BOOL bInit )
 // ----------------------------------------------------------------------------
 void CUIHelper::Render()
 {
-	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-	// Add render regions
-	int	nX, nY, nX2, nY2;
-
-	// Background
-	// Top
-	nX = m_nPosX + m_nWidth;
-	nY = m_nPosY + 26;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
-		m_rtBackTop.U0, m_rtBackTop.V0,
-		m_rtBackTop.U1, m_rtBackTop.V1,
-		0xFFFFFFFF );	
-
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 18,
-		m_rtBackManagerTop.U0, m_rtBackManagerTop.V0,
-		m_rtBackManagerTop.U1, m_rtBackManagerTop.V1,
-		0xFFFFFFFF );
-	
-	nY += 18;
-	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + HELPER_LIST_BOX_HEIGHT + 2,
-		m_rtBackManagerMiddle.U0, m_rtBackManagerMiddle.V0,
-		m_rtBackManagerMiddle.U1, m_rtBackManagerMiddle.V1,
-		0xFFFFFFFF );
-	
-	nY += HELPER_LIST_BOX_HEIGHT + 2;		
-	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 4,
-		m_rtBackManagerBottom.U0, m_rtBackManagerBottom.V0,
-		m_rtBackManagerBottom.U1, m_rtBackManagerBottom.V1,
-		0xFFFFFFFF );
-	
-	nY += 4;	
-
-	// Middle 2
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
-										m_rtBackMiddle2.U0, m_rtBackMiddle2.V0,
-										m_rtBackMiddle2.U1, m_rtBackMiddle2.V1,
-										0xFFFFFFFF );
-
-	// Bottom
-	nY = m_nPosY + m_nHeight - 7;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
-										m_rtBackBottom.U0, m_rtBackBottom.V0,
-										m_rtBackBottom.U1, m_rtBackBottom.V1,
-										0xFFFFFFFF );
-
-	// ----------------------------------------------------------------------------		
-
-	if(m_eHelperMenuState == HELPER_MENU_STUDENT)
-	{
-		nX = m_nPosX + TAB_POS_LEFT + TAB3_POS1;
-		nY = m_nPosY + m_rcTab.Top;
-		nX2 = nX + 1;
-		nY2 = nY + 16;
-		// ÌÉ≠ Í≤ΩÍ≥Ñ Í∑∏Î¶¨Í∏∞
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
-			m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
-			0xFFFFFFFF );
-
-		nX = m_nPosX + TAB_POS_LEFT + TAB3_POS2;
-		nY = m_nPosY + m_rcTab.Top;
-		nX2 = nX + 1;
-		nY2 = nY + 16;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
-			m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
-			0xFFFFFFFF );
-
-		m_lbTeacherList.Render();
-
-		if( _pNetwork->MyCharacterInfo.lTeacherIndex == -1 )
-		{
-			m_btnRefreshTeacher.Render();			// ÌõÑÍ≤¨Ïù∏ Î™©Î°ù Í∞±Ïã†		
-			m_btnBeMyTeacher.Render();				// Í≤¨ÏäµÏÉù
-		}
-		else
-		{
-			m_btnFireMyTeacher.Render();
-		}		
-	}
-	else
-	{
-		nX = m_nPosX + TAB_POS_LEFT + TAB4_POS1;
-		nY = m_nPosY + m_rcTab.Top;
-		nX2 = nX + 1;
-		nY2 = nY + 16;
-		// ÌÉ≠ Í≤ΩÍ≥Ñ Í∑∏Î¶¨Í∏∞
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
-			m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
-			0xFFFFFFFF );
-
-		nX = m_nPosX + TAB_POS_LEFT + TAB4_POS2;
-		nY = m_nPosY + m_rcTab.Top;
-		nX2 = nX + 1;
-		nY2 = nY + 16;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
-			m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
-			0xFFFFFFFF );
-		
-		nX = m_nPosX + TAB_POS_LEFT + TAB4_POS3;
-		nY = m_nPosY + m_rcTab.Top;
-		nX2 = nX + 1;
-		nY2 = nY + 16;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
-			m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
-			0xFFFFFFFF );
-
-		if( !m_bRegistredTeacher )
-			m_btnRegisterTeacher.Render();			// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù
-		else
-			m_btnCancelRegister.Render();			// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù Ï∑®ÏÜå	
-
-		m_lbStudentList.Render();
-	}
-
-	m_btnExit.Render();							// Îã´Í∏∞
-
-	// Close button
-	m_btnClose.Render();
-
-	//Info Mark
-	int listCount = 0;
-	if(m_eHelperMenuState == HELPER_MENU_STUDENT)
-		listCount = m_vectorHelperList.size() - m_lbStudentList.GetScrollBarPos();
-	else if(m_eHelperMenuState == HELPER_MENU_TEACHER)
-		listCount = m_vectorHelperList.size() - m_lbTeacherList.GetScrollBarPos();
-	for(int i=0; i<listCount; ++i)
-	{
-		int nX0 = m_rcInfoMark[i].Left + m_nPosX;
-		int nX1 = m_rcInfoMark[i].Right + m_nPosX;
-		int nY0 = m_rcInfoMark[i].Top + m_nPosY;
-		int nY1 = m_rcInfoMark[i].Bottom + m_nPosY;
-		_pUIMgr->GetDrawPort()->AddTexture(
-			nX0, nY0, nX1, nY1
-			, m_rtInfoMarkUV.U0, m_rtInfoMarkUV.V0, m_rtInfoMarkUV.U1, m_rtInfoMarkUV.V1
-			, 0xFFFFFFFF );
-	}
-
-
-	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-	CTString strTitle = "";
-	switch( m_eHelperMenuState )
-	{
-	case HELPER_MENU_TEACHER :
-		strTitle = _S( 1156, "Í≤¨ÏäµÏÉù Î¶¨Ïä§Ìä∏" );		
-		break;	
-	case HELPER_MENU_STUDENT:
-		if( _pNetwork->MyCharacterInfo.lTeacherIndex != -1 )
-		{
-			strTitle.PrintF(_S( 1157, "ÌõÑÍ≤¨Ïù∏ - [%s]" ), _pNetwork->MyCharacterInfo.strTeacherName );
-		}
-		else
-		{
-			strTitle = CTString(_S( 1158, "ÌõÑÍ≤¨Ïù∏ Î¶¨Ïä§Ìä∏" ));		
-		}
-		break;
-	}
-	
-	// Text in guild
-	_pUIMgr->GetDrawPort()->PutTextEx( strTitle, m_nPosX + HELPER_TITLE_TEXT_OFFSETX,
-										m_nPosY + HELPER_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-	
-	if( m_eHelperMenuState == HELPER_MENU_STUDENT )
-	{
-		nY = m_nPosY + 29;
-		nX = m_nPosX + TAB_POS_LEFT + TAB3_POS0 + TAB3_SIZE0 / 2;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1159, "Ïù¥ Î¶Ñ" ), nX, nY, 0x6B6B6BFF );		
-	
-		nX = m_nPosX + TAB_POS_LEFT + TAB3_POS1 + TAB3_SIZE1 / 2;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1160, "ÌÅ¥ÎûòÏä§" ), nX, nY, 0x6B6B6BFF );		
-
-		nX = m_nPosX + TAB_POS_LEFT + TAB3_POS2 + TAB3_SIZE2 / 2;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1661, "Ï†ïÎ≥¥" ), nX, nY, 0x6B6B6BFF );
-	}
-	else
-	{
-		nY = m_nPosY + 29;
-		nX = m_nPosX + TAB_POS_LEFT + TAB4_POS0 + TAB4_SIZE0 / 2;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1159, "Ïù¥ Î¶Ñ" ), nX, nY, 0x6B6B6BFF );		
-
-		nX = m_nPosX + TAB_POS_LEFT + TAB4_POS1 + TAB4_SIZE1 / 2;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1161, "Î†àÎ≤®" ), nX, nY, 0x6B6B6BFF );		
-	
-		nX = m_nPosX + TAB_POS_LEFT + TAB4_POS2 + TAB4_SIZE2 / 2;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1160, "ÌÅ¥ÎûòÏä§" ), nX, nY, 0x6B6B6BFF );		
-
-		nX = m_nPosX + TAB_POS_LEFT + TAB4_POS3 + TAB4_SIZE3 / 2;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1661, "Ï†ïÎ≥¥" ), nX, nY, 0x6B6B6BFF );
-	}
-
-	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-
-	RenderInfo();
+	RenderNew();
 }
 
 // ----------------------------------------------------------------------------
@@ -837,28 +815,35 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
 
 			//on info mark?
 			m_bShowInfo = FALSE;
+			m_bShowClass = FALSE;
 			int listCount = 0;
 			if(m_eHelperMenuState == HELPER_MENU_STUDENT)
 				listCount = m_vectorHelperList.size() - m_lbStudentList.GetScrollBarPos();
 			else if(m_eHelperMenuState == HELPER_MENU_TEACHER)
 				listCount = m_vectorHelperList.size() - m_lbTeacherList.GetScrollBarPos();
+	
 			for(int i=0; i<listCount; ++i)
 			{
-				if(IsInsideRect(nX, nY, m_rcInfoMark[i]))
+				if(IsInsideRect(nX, nY, m_rcInfoMark[i]) && (m_eHelperMenuState == HELPER_MENU_STUDENT && _pNetwork->MyCharacterInfo.lTeacherIndex == -1) )
 				{
 					m_bShowInfo = TRUE;
 					ShowInfo(i, FALSE);
 					break;
 				}
+				if ( IsInsideRect(nX, nY, m_rcClass[i]) )
+				{
+					m_bShowClass = TRUE;
+					ShowClass(i);
+					break;
+				}
 			}
-
 			// Move shop
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
 			{
@@ -875,11 +860,11 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 				return WMSG_SUCCESS;
 			else if( m_eHelperMenuState == HELPER_MENU_STUDENT )
 			{
-				if( _pNetwork->MyCharacterInfo.lTeacherIndex == -1 && m_btnRefreshTeacher.MouseMessage( pMsg ) != WMSG_FAIL )			// ÌõÑÍ≤¨Ïù∏ Î™©Î°ù Í∞±Ïã†
+				if( _pNetwork->MyCharacterInfo.lTeacherIndex == -1 && m_btnRefreshTeacher.MouseMessage( pMsg ) != WMSG_FAIL )			// »ƒ∞ﬂ¿Œ ∏Ò∑œ ∞ªΩ≈
 					return WMSG_SUCCESS;						
-				else if(  _pNetwork->MyCharacterInfo.lTeacherIndex == -1 && m_btnBeMyTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// Í≤¨ÏäµÏÉù
+				else if(  _pNetwork->MyCharacterInfo.lTeacherIndex == -1 && m_btnBeMyTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// ∞ﬂΩ¿ª˝
 					return WMSG_SUCCESS;
-				else if(  _pNetwork->MyCharacterInfo.lTeacherIndex != -1 && m_btnFireMyTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// Í≤¨ÏäµÏÉù
+				else if(  _pNetwork->MyCharacterInfo.lTeacherIndex != -1 && m_btnFireMyTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// ∞ﬂΩ¿ª˝
 					return WMSG_SUCCESS;
 				else if( m_lbTeacherList.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
@@ -889,9 +874,13 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 				// List box
 				if( m_lbStudentList.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
-				else if( !m_bRegistredTeacher && m_btnRegisterTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù
+				else if( !m_bRegistredTeacher && m_btnRegisterTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// »ƒ∞ﬂ¿Œ µÓ∑œ
 					return WMSG_SUCCESS;
-				else if( m_bRegistredTeacher && m_btnCancelRegister.MouseMessage( pMsg ) != WMSG_FAIL )	// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù Ï∑®ÏÜå
+				else if( m_bRegistredTeacher && m_btnCancelRegister.MouseMessage( pMsg ) != WMSG_FAIL )	// »ƒ∞ﬂ¿Œ µÓ∑œ √Îº“
+					return WMSG_SUCCESS;
+				else if ( m_btnGift.MouseMessage( pMsg ) != WMSG_FAIL )
+					return WMSG_SUCCESS;
+				else if ( m_vectorHelperList.size()>0 && m_btnFireMyStudent.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
 			}
 		}
@@ -916,11 +905,11 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 				}				
 				else if( m_eHelperMenuState == HELPER_MENU_STUDENT )
 				{
-					if(  _pNetwork->MyCharacterInfo.lTeacherIndex == -1 && m_btnRefreshTeacher.MouseMessage( pMsg ) != WMSG_FAIL )			// ÌõÑÍ≤¨Ïù∏ Î™©Î°ù Í∞±Ïã†
+					if(  _pNetwork->MyCharacterInfo.lTeacherIndex == -1 && m_btnRefreshTeacher.MouseMessage( pMsg ) != WMSG_FAIL )			// »ƒ∞ﬂ¿Œ ∏Ò∑œ ∞ªΩ≈
 						return WMSG_SUCCESS;						
-					else if(  _pNetwork->MyCharacterInfo.lTeacherIndex == -1 && m_btnBeMyTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// Í≤¨ÏäµÏÉù
+					else if(  _pNetwork->MyCharacterInfo.lTeacherIndex == -1 && m_btnBeMyTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// ∞ﬂΩ¿ª˝
 						return WMSG_SUCCESS;
-					else if(  _pNetwork->MyCharacterInfo.lTeacherIndex != -1 && m_btnFireMyTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// Í≤¨ÏäµÏÉù
+					else if(  _pNetwork->MyCharacterInfo.lTeacherIndex != -1 && m_btnFireMyTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// ∞ﬂΩ¿ª˝
 						return WMSG_SUCCESS;
 					else if( m_lbTeacherList.MouseMessage( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
@@ -930,13 +919,17 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 					// List box
 					if( m_lbStudentList.MouseMessage( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
-					else if( !m_bRegistredTeacher && m_btnRegisterTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù
+					else if( !m_bRegistredTeacher && m_btnRegisterTeacher.MouseMessage( pMsg ) != WMSG_FAIL )	// »ƒ∞ﬂ¿Œ µÓ∑œ
 						return WMSG_SUCCESS;
-					else if( m_bRegistredTeacher && m_btnCancelRegister.MouseMessage( pMsg ) != WMSG_FAIL )	// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù Ï∑®ÏÜå
+					else if( m_bRegistredTeacher && m_btnCancelRegister.MouseMessage( pMsg ) != WMSG_FAIL )	// »ƒ∞ﬂ¿Œ µÓ∑œ √Îº“
+						return WMSG_SUCCESS;
+					else if ( m_btnGift.MouseMessage( pMsg ) != WMSG_FAIL )
+						return WMSG_SUCCESS;
+					else if ( m_vectorHelperList.size()>0 && m_btnFireMyStudent.MouseMessage( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
 				}
 
-				_pUIMgr->RearrangeOrder( UI_HELPER, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_HELPER, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -961,7 +954,7 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 				{
 					if(wmsgResult == WMSG_COMMAND)
 					{
-						// ÏÑúÎ≤ÑÏóê Î™©Î°ù Í∞±Ïã† Î©îÏÑ∏ÏßÄ Î≥¥ÎÇ¥Í∏∞.
+						// º≠πˆø° ∏Ò∑œ ∞ªΩ≈ ∏ﬁºº¡ˆ ∫∏≥ª±‚.
 						_pNetwork->TeachRefreshTeacherList();
 					}
 					return WMSG_SUCCESS;
@@ -970,7 +963,7 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 				{
 					if(wmsgResult == WMSG_COMMAND)
 					{
-						// ÌõÑÍ≤¨Ïù∏ÏóêÍ≤å Í≤¨ÏäµÏÉùÏúºÎ°ú Ïã†Ï≤≠Ìï©ÎãàÎã§.
+						// »ƒ∞ﬂ¿Œø°∞‘ ∞ﬂΩ¿ª˝¿∏∑Œ Ω≈√ª«’¥œ¥Ÿ.
 						BeMyTeacher();
 					}
 					return WMSG_SUCCESS;
@@ -998,7 +991,7 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 				}
 				else if( !m_bRegistredTeacher && ((wmsgResult = m_btnRegisterTeacher.MouseMessage( pMsg ) ) != WMSG_FAIL ))
 				{
-					// ÏÑ†ÏÉù Î™©Î°ùÏóê Ï∂îÍ∞ÄÌï®.
+					// º±ª˝ ∏Ò∑œø° √ﬂ∞°«‘.
 					if(wmsgResult == WMSG_COMMAND)
 					{
 						RegisterTeacher();
@@ -1007,11 +1000,22 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 				}
 				else if( m_bRegistredTeacher && ((wmsgResult = m_btnCancelRegister.MouseMessage( pMsg ) ) != WMSG_FAIL ))
 				{
-					// ÎÇò ÏÑ†ÏÉù ÏïàÌï¥~!!!
+					// ≥™ º±ª˝ æ»«ÿ~!!!
 					if(wmsgResult == WMSG_COMMAND)
 					{
 						CancelRegisterTeacher();
 					}
+					return WMSG_SUCCESS;
+				}
+				else if ( m_btnGift.MouseMessage( pMsg ) != WMSG_FAIL )
+				{	// ∫∏ªÛ ø‰√ª
+					_pNetwork->TeachGiftReq();
+					return WMSG_SUCCESS;
+				
+				}
+				else if ( m_btnFireMyStudent.MouseMessage( pMsg ) != WMSG_FAIL )
+				{
+					FireMyStudent();
 					return WMSG_SUCCESS;
 				}
 			}
@@ -1025,13 +1029,13 @@ WMSG_RESULT	CUIHelper::MouseMessage( MSG *pMsg )
 				if( m_eHelperMenuState == HELPER_MENU_STUDENT )
 				{
 					// List box of member list
-					if( m_lbTeacherList.MouseMessage( pMsg ) != WMSG_FAIL )		// ÌõÑÍ≤¨Ïù∏ Î™©Î°ù
+					if( m_lbTeacherList.MouseMessage( pMsg ) != WMSG_FAIL )		// »ƒ∞ﬂ¿Œ ∏Ò∑œ
 						return WMSG_SUCCESS;
 				}
 				else if( m_eHelperMenuState == HELPER_MENU_TEACHER )
 				{
 					// List box of member list
-					if( m_lbStudentList.MouseMessage( pMsg ) != WMSG_FAIL )		// Í≤¨ÏäµÏÉù Î™©Î°ù
+					if( m_lbStudentList.MouseMessage( pMsg ) != WMSG_FAIL )		// ∞ﬂΩ¿ª˝ ∏Ò∑œ
 						return WMSG_SUCCESS;
 				}
 			}
@@ -1049,77 +1053,102 @@ void CUIHelper::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 {	
 	switch( nCommandCode )
 	{
-	case MSGCMD_HELPER_NOTIFY:		// ÏóêÎü¨ Î∞úÏÉù
+	case MSGCMD_HELPER_NOTIFY:		// ø°∑Ø πﬂª˝
 		{			
 		}
 		break;
-	case MSGCMD_HELPER_BEMYTEACHER:	// ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠ Ï§ë...
+	case MSGCMD_HELPER_BEMYTEACHER:	// »ƒ∞ﬂ¿Œ Ω≈√ª ¡ﬂ...
 		{
-			if( !bOK )
+			if( bOK == FALSE )
 				return;
-			
-			_pUIMgr->CloseMessageBox( MSGCMD_HELPER_BEMYTEACHER_REQ );
+
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
+			pUIManager->CloseMessageBox( MSGCMD_HELPER_BEMYTEACHER_REQ );
 			CTString	strMessage;
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 1162, "ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠" ), UMBS_CANCEL, UI_HELPER, MSGCMD_HELPER_BEMYTEACHER_REQ );	
-			strMessage.PrintF( _S( 1163, "%s ÎãòÍªò ÌõÑÍ≤¨Ïù∏Ïù¥ ÎêòÏñ¥Îã¨ÎùºÎäî Î©îÏãúÏßÄÎ•º Î≥¥ÎÇ¥Í≥†, ÏàòÎùΩÏùÑ Í∏∞Îã§Î¶¨Îäî Ï§ëÏûÖÎãàÎã§."  ), g_strTeacherName );	
+			MsgBoxInfo.SetMsgBoxInfo( _S( 1162, "»ƒ∞ﬂ¿Œ Ω≈√ª" ), UMBS_CANCEL, UI_HELPER, MSGCMD_HELPER_BEMYTEACHER_REQ );	
+			strMessage.PrintF( _S( 1163, "%s ¥‘≤≤ »ƒ∞ﬂ¿Œ¿Ã µ«æÓ¥ﬁ∂Û¥¬ ∏ﬁΩ√¡ˆ∏¶ ∫∏≥ª∞Ì, ºˆ∂Ù¿ª ±‚¥Ÿ∏Æ¥¬ ¡ﬂ¿‘¥œ¥Ÿ."  ), g_strTeacherName );	
 			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 			_pNetwork->TeachTeacherRequest( g_lChaIndex, g_strTeacherName );
 		}
 		break;
 		
 	case MSGCMD_HELPER_BEMYTEACHER_REQ:
-		// ÌïôÏÉùÏù¥ ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠ÏùÑ Ï∑®ÏÜåÌïú Í≤ΩÏö∞.
+		// «–ª˝¿Ã »ƒ∞ﬂ¿Œ Ω≈√ª¿ª √Îº“«— ∞ÊøÏ.
 		{	
 			_pNetwork->TeachTeacherReject( TRUE, g_lChaIndex, g_strTeacherName );
 		}
 		break;
 
-	case MSGCMD_HELPER_FIRE_MYTEACHER:		// ÌïôÏÉùÏù¥ ÏÑ†ÏÉùÏùÑ ÎïåÎ†§Ïπ®(ÎÇ¥Í∞Ä ÌïôÏÉùÏùº ÎïåÏßÄ...)
+	case MSGCMD_HELPER_FIRE_MYTEACHER:		// «–ª˝¿Ã º±ª˝¿ª ∂ß∑¡ƒß(≥ª∞° «–ª˝¿œ ∂ß¡ˆ...)
 		{
 			if( !bOK )
 				return;
 
-			// ÏÑúÎ≤ÑÏóê Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÉÑ.
+			// º≠πˆø° ∏ﬁºº¡ˆ∏¶ ∫∏≥ø.
 			_pNetwork->TeachTeacherGiveUp( _pNetwork->MyCharacterInfo.lTeacherIndex, _pNetwork->MyCharacterInfo.strTeacherName, 
 				g_lChaIndex, g_strTeacherName );
 		}
 		break;
 
-	case MSGCMD_HELPER_REGISTER:			// ÏÑ†ÏÉù Î™©Î°ùÏóê Ï∂îÍ∞ÄÌï©ÎãàÎã§.
+	case MSGCMD_HELPER_REGISTER:			// º±ª˝ ∏Ò∑œø° √ﬂ∞°«’¥œ¥Ÿ.
 		{
 			if( !bOK )
 				return;
-			// ÏÑúÎ≤ÑÏóê Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÉÑ.
-			_pNetwork->TeachTeacherRegister();
+
+			CUIMsgBox_Info MsgBoxInfo;
+			CTString strTemp;
+			MsgBoxInfo.SetMsgBoxInfo( _S( 5071, "»ƒ∞ﬂ¿Œ Ω√Ω∫≈€"), UMBS_OKCANCEL | UMBS_INPUTBOX | UMBS_SECOND_INPUTBOX, UI_HELPER, MSGCMD_HELPER_PLAYTIME, 250);	
+			MsgBoxInfo.AddString( _S( 5073, "¡÷∑Œ ¡¢º”«œ¥¬ Ω√∞£¿ª ¿‘∑¬«ÿ¡÷ººø‰.") );
+			MsgBoxInfo.AddString( _S( 5074, "(∞ﬂΩ¿ª˝¿Ã »ƒ∞ﬂ¿Œ º±¡§ø° ¿÷æÓ ¬¸∞Ì∞° µÀ¥œ¥Ÿ.)") );
+			MsgBoxInfo.AddString( _s(" ") );
+			MsgBoxInfo.AddString( _s(" ") );
+			MsgBoxInfo.AddString( _s(" ") );
+			MsgBoxInfo.AddStringEx( _s("h ~ "), 5, 15 );
+			MsgBoxInfo.AddStringEx( _s("h"), 5, 30 );
+			MsgBoxInfo.SetInputBox( 5, 5, 2, 50 );
+			MsgBoxInfo.SetSEInputBox( 5 , 20, 2, 50 );
+			MsgBoxInfo.m_nInputPosY += 4;
+			MsgBoxInfo.m_nSEInputPosY += 4;
+			CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 		}
 		break;
 
-	case MSGCMD_HELPER_CANCEL_REGISTER:		// ÏÑ†ÏÉù Î™©Î°ùÏóêÏÑú ÎÇ¥Î¶º
+	case MSGCMD_HELPER_CANCEL_REGISTER:		// º±ª˝ ∏Ò∑œø°º≠ ≥ª∏≤
 		{
 			if( !bOK )
 				return;
-			// ÏÑúÎ≤ÑÏóê Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÉÑ.
+			// º≠πˆø° ∏ﬁºº¡ˆ∏¶ ∫∏≥ø.
 			_pNetwork->TeachTeacherCancelRegister();
 		}
 		break;	
 
 	case MSGCMD_HELPER_STUDENT_ACCEPT:
-		// ÌïôÏÉùÏù¥ ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠ÏùÑ ÏöîÏ≤≠Ìïú ÏÉÅÌÉúÏóêÏÑú...(ÌòÑÏû¨ ÏÑ†ÏÉùÏùò ÏûÖÏû•Ïù¥ÏßÄ...)
-		// ÌóàÍ∞ÄÎÉê? Ï∑®ÏÜåÎÉê?
+		// «–ª˝¿Ã »ƒ∞ﬂ¿Œ Ω≈√ª¿ª ø‰√ª«— ªÛ≈¬ø°º≠...(«ˆ¿Á º±ª˝¿« ¿‘¿Â¿Ã¡ˆ...)
+		// «„∞°≥ƒ? √Îº“≥ƒ?
 		{
-			if( !bOK )		// ÌïôÏÉùÏùÑ ÏïàÎ∞õÏïÑ Îì§ÏûÑ
+			if( !bOK )		// «–ª˝¿ª æ»πﬁæ∆ µÈ¿”
 			{
 				_pNetwork->TeachTeacherReject( FALSE, g_lChaIndex, g_strTeacherName );
 			}
-			else			// ÌïôÏÉù Î∞õÏñ¥~!!!
+			else			// «–ª˝ πﬁæÓ~!!!
 			{
 				_pNetwork->TeachTeacherAccept( _pNetwork->MyCharacterInfo.index, _pNetwork->MyCharacterInfo.name, 
 					g_lChaIndex, g_strTeacherName );
 			}			
 		}
 		break;
+	case MSGCMD_HELPER_FIRE_MYSTUDENT:
+		{	// º±ª˝¿Ã «–ª˝ ∆˜±‚
+			if ( !bOK )
+				return;
+			int nPos = m_lbStudentList.GetCurSel() + m_lbStudentList.GetScrollBarPos();
+			int nIndex = m_vectorHelperList[nPos].lIndex;
+			CTString strStudentName = m_vectorHelperList[nPos].strName;
+			_pNetwork->TeachTeacherGiveUp(nIndex, strStudentName, _pNetwork->MyCharacterInfo.index, _pNetwork->MyCharacterInfo.name);
+		}
 	}
 }
 
@@ -1133,32 +1162,37 @@ void CUIHelper::MsgBoxLCommand( int nCommandCode, int nResult )
 	{
 	case MSGLCMD_HELPER_REQ:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			switch ( nResult ) 
 			{
-			case SEL_HELPER_TEACHER:		// Í≤¨ÏäµÏÉù Í¥ÄÎ¶¨
+			case SEL_HELPER_TEACHER:		// ∞ﬂΩ¿ª˝ ∞¸∏Æ
 				{
 					m_eHelperMenuState = HELPER_MENU_TEACHER; 					
 					RefreshStudentList( TRUE );
-					_pUIMgr->RearrangeOrder( UI_HELPER, TRUE );
+					PrepareOpen();
+					pUIManager->RearrangeOrder( UI_HELPER, TRUE );
 				}
 				break;
 				
-			case SEL_HELPER_STUDENT:		// ÌõÑÍ≤¨Ïù∏ Í¥ÄÎ¶¨
+			case SEL_HELPER_STUDENT:		// »ƒ∞ﬂ¿Œ ∞¸∏Æ
 				{
 					m_eHelperMenuState = HELPER_MENU_STUDENT; 
 					RefreshTeacherList( TRUE );
-					_pUIMgr->RearrangeOrder( UI_HELPER, TRUE );										
+					PrepareOpen();
+					pUIManager->RearrangeOrder( UI_HELPER, TRUE );										
 				}
 				break;
 
-			default:		// Ï∑®ÏÜå
+			default:		// √Îº“
 				{
 					m_eHelperMenuState = HELPER_MENU_REQ;
-					_pUIMgr->RearrangeOrder( UI_HELPER, FALSE );
+					pUIManager->RearrangeOrder( UI_HELPER, FALSE );
 				}
 				break;
 			}
 		}
+		break;
 	}
 }
 
@@ -1175,30 +1209,34 @@ void CUIHelper::SetFocus( BOOL bVisible )
 // Name : RegisterTeacher()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIHelper::RegisterTeacher( )					// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù
+void CUIHelper::RegisterTeacher( )					// »ƒ∞ﬂ¿Œ µÓ∑œ
 {
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_REGISTER );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_REGISTER );
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 1164, "ÌõÑÍ≤¨Ïù∏ Îì±Î°ù" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_REGISTER );	
-	strMessage.PrintF( _S( 1165, "ÌõÑÍ≤¨Ïù∏ Î™©Î°ùÏóê Îì±Î°ùÌïòÏãúÍ≤†ÏäµÎãàÍπå?"  ) );	
+	MsgBoxInfo.SetMsgBoxInfo( _S( 1164, "»ƒ∞ﬂ¿Œ µÓ∑œ" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_REGISTER );	
+	strMessage.PrintF( _S( 1165, "»ƒ∞ﬂ¿Œ ∏Ò∑œø° µÓ∑œ«œΩ√∞⁄Ω¿¥œ±Ó?"  ) );	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
 // Name : CancelRegisterTeacher()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIHelper::CancelRegisterTeacher( )			// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù Ï∑®ÏÜå
+void CUIHelper::CancelRegisterTeacher( )			// »ƒ∞ﬂ¿Œ µÓ∑œ √Îº“
 {
-	_pUIMgr->CloseMessageBox( MSGCMD_HELPER_CANCEL_REGISTER );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_HELPER_CANCEL_REGISTER );
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 1166, "ÌõÑÍ≤¨Ïù∏ Îì±Î°ù Ï∑®ÏÜå" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_CANCEL_REGISTER );	
-	strMessage.PrintF( _S( 1167, "ÌõÑÍ≤¨Ïù∏ Î™©Î°ùÏóêÏÑú ÏÇ≠Ï†úÌïòÏãúÍ≤†ÏäµÎãàÍπå?"  ) );	
+	MsgBoxInfo.SetMsgBoxInfo( _S( 1166, "»ƒ∞ﬂ¿Œ µÓ∑œ √Îº“" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_CANCEL_REGISTER );	
+	strMessage.PrintF( _S( 1167, "»ƒ∞ﬂ¿Œ ∏Ò∑œø°º≠ ªË¡¶«œΩ√∞⁄Ω¿¥œ±Ó?"  ) );	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
@@ -1207,62 +1245,76 @@ void CUIHelper::CancelRegisterTeacher( )			// ÌõÑÍ≤¨Ïù∏ Îì±Î°ù Ï∑®ÏÜå
 // ----------------------------------------------------------------------------
 void CUIHelper::RenderInfo()
 {
-	if( !m_bShowInfo ) return;
+	if( m_bShowInfo == FALSE && m_bShowClass == FALSE )
+		return;
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdSubTexture );
 
 	// information region
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Left, m_rcInfo.Top,
+	pDrawPort->AddTexture( m_rcInfo.Left, m_rcInfo.Top,
 										m_rcInfo.Left + 7, m_rcInfo.Top + 7,
 										m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Left + 7, m_rcInfo.Top,
+	pDrawPort->AddTexture( m_rcInfo.Left + 7, m_rcInfo.Top,
 										m_rcInfo.Right - 7, m_rcInfo.Top + 7,
 										m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Right - 7, m_rcInfo.Top,
+	pDrawPort->AddTexture( m_rcInfo.Right - 7, m_rcInfo.Top,
 										m_rcInfo.Right, m_rcInfo.Top + 7,
 										m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Left, m_rcInfo.Top + 7,
+	pDrawPort->AddTexture( m_rcInfo.Left, m_rcInfo.Top + 7,
 										m_rcInfo.Left + 7, m_rcInfo.Bottom - 7,
 										m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Left + 7, m_rcInfo.Top + 7,
+	pDrawPort->AddTexture( m_rcInfo.Left + 7, m_rcInfo.Top + 7,
 										m_rcInfo.Right - 7, m_rcInfo.Bottom - 7,
 										m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Right - 7, m_rcInfo.Top + 7,
+	pDrawPort->AddTexture( m_rcInfo.Right - 7, m_rcInfo.Top + 7,
 										m_rcInfo.Right, m_rcInfo.Bottom - 7,
 										m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Left, m_rcInfo.Bottom - 7,
+	pDrawPort->AddTexture( m_rcInfo.Left, m_rcInfo.Bottom - 7,
 										m_rcInfo.Left + 7, m_rcInfo.Bottom,
 										m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Left + 7, m_rcInfo.Bottom - 7,
+	pDrawPort->AddTexture( m_rcInfo.Left + 7, m_rcInfo.Bottom - 7,
 										m_rcInfo.Right - 7, m_rcInfo.Bottom,
 										m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcInfo.Right - 7, m_rcInfo.Bottom - 7,
+	pDrawPort->AddTexture( m_rcInfo.Right - 7, m_rcInfo.Bottom - 7,
 										m_rcInfo.Right, m_rcInfo.Bottom,
 										m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
 										0xFFFFFFFF );
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render information
-	int	nInfoX = m_rcInfo.Left + 12;
-	int	nInfoY = m_rcInfo.Top + 8;
-	for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
+
+	int	nInfoX, nInfoY= m_rcInfo.Top + 8;
+	if ( m_bShowInfo )
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strInfo[iInfo], nInfoX, nInfoY, m_colInfo[iInfo] );
-		nInfoY += _pUIFontTexMgr->GetLineHeight();
+		nInfoX = m_rcInfo.Left + 12;
+
+		for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
+		{
+			pDrawPort->PutTextEx( m_strInfo[iInfo], nInfoX, nInfoY, m_colInfo[iInfo] );
+			nInfoY += _pUIFontTexMgr->GetLineHeight();
+		}
+	}
+	else if ( m_bShowClass )
+	{
+		nInfoX = m_rcInfo.Left + 15;
+		nInfoY = m_rcInfo.Top + 5;
+		pDrawPort->PutTextEx( m_strClassName, nInfoX, nInfoY);
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -1274,18 +1326,19 @@ void CUIHelper::ShowInfo(int line, BOOL bRenew)
 	if(!m_bShowInfo) return;
 	int absLine = line;
 
-	if(m_eHelperMenuState == HELPER_MENU_STUDENT)//Í≤¨ÏäµÏÉùÏù¥ Ï∞ΩÏùÑ ÎùÑÏõÄ.
+	if(m_eHelperMenuState == HELPER_MENU_STUDENT)//∞ﬂΩ¿ª˝¿Ã √¢¿ª ∂ÁøÚ.
 	{
-		absLine += m_lbTeacherList.GetScrollBarPos();
-		if(absLine < m_lbTeacherList.GetScrollBarPos()
+		absLine += m_lbStudentList.GetScrollBarPos();
+		if(absLine < m_lbStudentList.GetScrollBarPos()
 		|| absLine >= m_vectorHelperList.size())
 		{
 			m_bShowInfo = FALSE;
 			return;
 		}
 		sHelperMember &helpMem = m_vectorHelperList[absLine];
-		//TEMP : Ï¥àÍ≥†Í∏â Ï†úÎ†®ÏÑù Í¥ÄÎ†®
-		for(LONG i=0; i<m_vectorTeacherInfoList.size(); ++i)
+		//TEMP : √ ∞Ì±ﬁ ¡¶∑√ºÆ ∞¸∑√
+		LONG i;
+		for(i = 0; i < m_vectorTeacherInfoList.size(); ++i)
 		{
 			if(helpMem.lIndex == m_vectorTeacherInfoList[i].index)
 			{
@@ -1299,30 +1352,31 @@ void CUIHelper::ShowInfo(int line, BOOL bRenew)
 		}
 		sTeacherInfo &info = m_vectorTeacherInfoList[i];
 		m_nCurInfoLines = 5;
-		m_strInfo[0].PrintF(_S( 1662, "Î™ÖÏÑ± ÏàòÏπò : %d" ), info.nFame);
+		m_strInfo[0].PrintF(_S( 1662, "∏Ìº∫ ºˆƒ° : %d" ), info.nFame);
 		m_colInfo[0] = 0xE0FF40FF;
-		m_strInfo[1].PrintF(_S( 1663, "ÏñëÏÑ±Ï§ëÏù∏ Ï¥àÎ≥¥Ïûê : %d" ), info.nCntTeachingStudent);
+		m_strInfo[1].PrintF(_S( 1663, "æÁº∫¡ﬂ¿Œ √ ∫∏¿⁄ : %d" ), info.nCntTeachingStudent);
 		m_colInfo[1] = 0xFFFFFFFF;
-		m_strInfo[2].PrintF(_S( 1664, "ÏñëÏÑ± ÏôÑÎ£å Ïù∏Ïõê : %d" ), info.nCntCompleteStudent);
+		m_strInfo[2].PrintF(_S( 1664, "æÁº∫ øœ∑· ¿Œø¯ : %d" ), info.nCntCompleteStudent);
 		m_colInfo[2] = 0xFFFFFFFF;
-		m_strInfo[3].PrintF(_S( 1665, "ÏñëÏÑ± Ïã§Ìå® Ïù∏Ïõê : %d" ), info.nCntFailStudent);
+		m_strInfo[3].PrintF(_S( 1665, "æÁº∫ Ω«∆– ¿Œø¯ : %d" ), info.nCntFailStudent);
 		m_colInfo[3] = 0xFFFFFFFF;
-		int percent = int(info.nCntCompleteStudent / float(info.nCntCompleteStudent + info.nCntFailStudent) * 100 + 0.5f);//Î∞òÏò¨Î¶º
-		m_strInfo[4].PrintF(_S( 1666, "ÏñëÏÑ± ÏÑ±Í≥µÎ•† : %d %%" ), percent); 
+		int percent = int(info.nCntCompleteStudent / float(info.nCntCompleteStudent + info.nCntFailStudent) * 100 + 0.5f);//π›ø√∏≤
+		m_strInfo[4].PrintF(_S( 1666, "æÁº∫ º∫∞¯∑¸ : %d %%" ), percent); 
 		m_colInfo[4] = 0xFFFFFFFF;
 	}
-	else if(m_eHelperMenuState == HELPER_MENU_TEACHER)//ÏÑ†ÏÉùÏù¥ Ï∞ΩÏùÑ ÎùÑÏõÄ.
+	else if(m_eHelperMenuState == HELPER_MENU_TEACHER)//º±ª˝¿Ã √¢¿ª ∂ÁøÚ.
 	{
-		absLine += m_lbStudentList.GetScrollBarPos();
-		if(absLine < m_lbStudentList.GetScrollBarPos()
+		absLine += m_lbTeacherList.GetScrollBarPos();
+		if(absLine < m_lbTeacherList.GetScrollBarPos()
 		|| absLine >= m_vectorHelperList.size())
 		{
 			m_bShowInfo = FALSE;
 			return;
 		}
 		sHelperMember &helpMem = m_vectorHelperList[absLine];
-		//TEMP : Ï¥àÍ≥†Í∏â Ï†úÎ†®ÏÑù Í¥ÄÎ†®
-		for(LONG i=0; i<m_vectorStudentInfoList.size(); ++i)
+		//TEMP : √ ∞Ì±ﬁ ¡¶∑√ºÆ ∞¸∑√
+		LONG i;
+		for(i = 0; i < m_vectorStudentInfoList.size(); ++i)
 		{
 			if(helpMem.lIndex == m_vectorStudentInfoList[i].index)
 			{
@@ -1336,12 +1390,12 @@ void CUIHelper::ShowInfo(int line, BOOL bRenew)
 		}
 		sStudentInfo &info = m_vectorStudentInfoList[i];
 		m_nCurInfoLines = 4;
-		m_strInfo[0].PrintF(_S( 1667, "ÌõÑÍ≤¨Ïù∏ Í≤∞ÏÑ±Ïùº" )); 
+		m_strInfo[0].PrintF(_S( 1667, "»ƒ∞ﬂ¿Œ ∞·º∫¿œ" )); 
 		m_colInfo[0] = 0xFFFFFFFF;
 		m_strInfo[1].PrintF("%s", info.szFirstDate);
 		m_colInfo[1] = 0xFFFFFFFF;
 
-		m_strInfo[2].PrintF(_S( 1668, "Ï¢ÖÎ£å ÏãúÍ∞Ñ" )); 
+		m_strInfo[2].PrintF(_S( 1668, "¡æ∑· Ω√∞£" )); 
 		m_colInfo[2] = 0xFFFFFFFF;
 		m_strInfo[3].PrintF("%s", info.szFinalDate);
 		m_colInfo[3] = 0xFFFFFFFF;
@@ -1366,12 +1420,14 @@ void CUIHelper::ShowInfo(int line, BOOL bRenew)
 	// Update item information box
 	nInfoPosX += INFOMARK_SIZE / 2 - nInfoWidth / 2;
 
-	if( nInfoPosX < _pUIMgr->GetMinI() )
-		nInfoPosX = _pUIMgr->GetMinI();
-	else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-		nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
+	if( nInfoPosX < pUIManager->GetMinI() )
+		nInfoPosX = pUIManager->GetMinI();
+	else if( nInfoPosX + nInfoWidth > pUIManager->GetMaxI() )
+		nInfoPosX = pUIManager->GetMaxI() - nInfoWidth;
+
+	if( nInfoPosY - nInfoHeight < pUIManager->GetMinJ() )
 	{
 		nInfoPosY += INFOMARK_SIZE;
 		m_rcInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
@@ -1380,4 +1436,531 @@ void CUIHelper::ShowInfo(int line, BOOL bRenew)
 	{
 		m_rcInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
 	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : RenderNew()
+// Desc : »ƒ∞ﬂ¿Œ Ω√Ω∫≈€ »Æ¿Â Render
+// ----------------------------------------------------------------------------
+void CUIHelper::RenderNew()
+{
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	//------------------------------------------------------------------
+	// BackGround
+	pDrawPort->InitTextureData( m_ptdSubTexture );
+
+	for ( int i = 0; i < 9; ++i )
+	{
+		m_NewBack.m_RectSurfaceArray[i].m_RT = UIRect(m_rtNewBack[i].Left+m_nPosX,m_rtNewBack[i].Top+m_nPosY, m_rtNewBack[i].Right+m_nPosX, m_rtNewBack[i].Bottom+m_nPosY);
+	}
+	m_NewBack.RenderRectSurface(pDrawPort,0xFFFFFFFF);
+
+	pDrawPort->FlushRenderingQueue();
+	
+	//------------------------------------------------------------------
+	if ( m_eHelperMenuState == HELPER_MENU_STUDENT )
+	{	// ∞ﬂΩ¿ª˝¿œ∂ß,
+		RenderStudent();
+	}
+	else
+	{	// »ƒ∞ﬂ¿Œ¿œ∂ß,
+		RenderTeacher();
+	}
+	//------------------------------------------------------------------	
+}
+
+// ----------------------------------------------------------------------------
+// Name : RenderStudent()
+// Desc : ∞ﬂΩ¿ª˝ UI
+// ----------------------------------------------------------------------------
+void CUIHelper::RenderStudent()
+{
+	int	nX, nY, i;
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	if ( _pNetwork->MyCharacterInfo.lTeacherIndex == -1 )
+	{	// »ƒ∞ﬂ¿Œ¿Ã æ¯¥Ÿ∏È
+		//------------------------------------------------------------------
+		// New_Interface.tex : Sub BackGround(Line)
+		pDrawPort->InitTextureData( m_ptdSubTexture );
+
+		nY = 0;
+		
+		for( i = 0; i < 11; ++i)
+		{
+			pDrawPort->AddTexture(m_rtTabLine.Left + m_nPosX, m_rtTabLine.Top + m_nPosY + nY, m_rtTabLine.Right + m_nPosX, m_rtTabLine.Bottom + m_nPosY + nY, 
+				m_rcTabLineUV.U0, m_rcTabLineUV.V0, m_rcTabLineUV.U1, m_rcTabLineUV.V1, 0xFFFFFFFF);
+			nY += _pUIFontTexMgr->GetLineHeight()+5;
+		}
+
+		// Render all elements
+		pDrawPort->FlushRenderingQueue();
+
+		//------------------------------------------------------------------
+		// MessageBox.tex : List, Info Mark
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+		m_lbTeacherList.Render();
+		
+		//Info Mark
+		int listCount = 0;
+		if(m_eHelperMenuState == HELPER_MENU_STUDENT)
+			listCount = m_vectorHelperList.size() - m_lbStudentList.GetScrollBarPos();
+		else if(m_eHelperMenuState == HELPER_MENU_TEACHER)
+			listCount = m_vectorHelperList.size() - m_lbTeacherList.GetScrollBarPos();
+		for( i = 0; i < listCount; ++i)
+		{
+			int nX0 = m_rcInfoMark[i].Left + m_nPosX;
+			int nX1 = m_rcInfoMark[i].Right + m_nPosX;
+			int nY0 = m_rcInfoMark[i].Top + m_nPosY;
+			int nY1 = m_rcInfoMark[i].Bottom + m_nPosY;
+			pDrawPort->AddTexture(
+				nX0, nY0, nX1, nY1
+				, m_rtInfoMarkUV.U0, m_rtInfoMarkUV.V0, m_rtInfoMarkUV.U1, m_rtInfoMarkUV.V1
+				, 0xFFFFFFFF );
+			
+			nX0 = m_rcClass[i].Left + m_nPosX;
+			nX1 = m_rcClass[i].Right + m_nPosX;
+			nY0 = m_rcClass[i].Top + m_nPosY;
+			nY1 = m_rcClass[i].Bottom + m_nPosY;
+			pDrawPort->AddTexture(
+				nX0, nY0, nX1, nY1
+				, m_rtClass[m_vectorHelperList[i].iJob].U0, m_rtClass[m_vectorHelperList[i].iJob].V0, m_rtClass[m_vectorHelperList[i].iJob].U1, m_rtClass[m_vectorHelperList[i].iJob].V1
+				, 0xFFFFFFFF );
+		}
+
+		//------------------------------------------------------------------
+		// Text
+		pDrawPort->PutTextExCX( _S(5071, "»ƒ∞ﬂ¿Œ Ω√Ω∫≈€"), GetWidth()/2+m_nPosX, 19+m_nPosY);
+
+		nY = m_nPosY + 40;
+		nX = m_nPosX + TAB_POS_LEFT + 14;
+		pDrawPort->PutTextEx( _S( 1160, "≈¨∑°Ω∫" ), nX, nY, 0x6B6B6BFF );		
+		
+		nX = m_nPosX + TAB_POS_LEFT + NEW_TAB_CLASS + 14;
+		pDrawPort->PutTextEx( _S( 1159, "¿Ã ∏ß" ), nX, nY, 0x6B6B6BFF );		
+		
+		nX = m_nPosX + TAB_POS_LEFT + NEW_TAB_CLASS + NEW_TAB_NAME + 14;
+		pDrawPort->PutTextEx( _S( 5075, "¡÷¡¢º” Ω√∞£" ), nX, nY, 0x6B6B6BFF );
+		
+		nX = m_nPosX + TAB_POS_LEFT + NEW_TAB_CLASS + NEW_TAB_NAME + NEW_TAB_TIME + 14;
+		pDrawPort->PutTextEx( _S( 5076, "æÁº∫ºˆ" ), nX, nY, 0x6B6B6BFF );
+		
+		nX = m_nPosX + TAB_POS_LEFT + NEW_TAB_CLASS+NEW_TAB_NAME+NEW_TAB_TIME+NEW_TAB_COUNT + NEW_TAB_INFO / 2;
+		pDrawPort->PutTextExCX( _S( 1661, "¡§∫∏" ), nX, nY, 0x6B6B6BFF );
+				
+		// Render all elements
+		pDrawPort->FlushRenderingQueue();
+
+		//------------------------------------------------------------------
+		// CommonBtn.tex : Button
+		pDrawPort->InitTextureData( m_ptdBtnTexture );
+		m_btnExit.Render();						// Button : Exit
+		m_btnClose.Render();					// Button : Close
+		m_btnRefreshTeacher.Render();			// Button : ∏Ò∑œ ∞ªΩ≈
+		m_btnBeMyTeacher.Render();				// Button : ∞ﬂΩ¿ª˝ Ω≈√ª
+		m_btnFireMyTeacher.Render();			// Button : ∞ﬂΩ¿ª˝ ∆˜±‚
+		//------------------------------------------------------------------
+	}
+	else
+	{	// »ƒ∞ﬂ¿Œ¿Ã ¿÷¥Ÿ∏È
+		//------------------------------------------------------------------
+		// New_Interface.tex : Sub BackGround
+		pDrawPort->InitTextureData( m_ptdSubTexture );
+		
+		for ( i = 0; i < 6; ++i )
+		{
+			m_NewSubBack.m_RectSurfaceArray[i].m_RT = UIRect(m_rtStudentBack[i].Left+m_nPosX,m_rtStudentBack[i].Top+m_nPosY, m_rtStudentBack[i].Right+m_nPosX, m_rtStudentBack[i].Bottom+m_nPosY);
+			m_NewInfoBack.m_RectSurfaceArray[i].m_RT = UIRect(m_rtStudentInfo[i].Left+m_nPosX,m_rtStudentInfo[i].Top+m_nPosY, m_rtStudentInfo[i].Right+m_nPosX, m_rtStudentInfo[i].Bottom+m_nPosY);
+		}
+		m_NewSubBack.RenderRectSurface(pDrawPort, 0xFFFFFFFF);
+		m_NewInfoBack.RenderRectSurface(pDrawPort, 0xFFFFFFFF);
+
+		// Render all elements
+		pDrawPort->FlushRenderingQueue();
+
+		//------------------------------------------------------------------
+		// Text : »ƒ∞ﬂ¿Œ ¡§∫∏
+		pDrawPort->PutTextExCX( _S(5072, "»ƒ∞ﬂ¿Œ ªÛºº ¡§∫∏"), GetWidth()/2+m_nPosX, 19+m_nPosY);
+		
+		nY = m_nPosY + 55;
+		nX = m_nPosX + 22;
+
+		pDrawPort->PutTextEx( _S( 71, "¿Ã∏ß" ), nX, nY, 0xffff99FF );
+		nY += 33;
+		pDrawPort->PutTextEx( _S( 1160, "≈¨∑°Ω∫" ), nX, nY, 0xffff99FF );
+		nY += 33;
+		pDrawPort->PutTextEx( _S( 5077, "æÁº∫¡ﬂ¿Œ ¿Œø¯" ), nX, nY, 0xffff99FF );
+		nY += 33;
+		pDrawPort->PutTextEx( _S( 5078, "æÁº∫ øœ∑· ¿Œø¯" ), nX, nY, 0xffff99FF );
+		nY += 33;
+		pDrawPort->PutTextEx( _S( 5079, "æÁº∫ º∫∞¯∑¸" ), nX, nY, 0xffff99FF );
+
+		nY = m_nPosY + 55;
+		nX = m_nPosX + 278;
+
+		CTString strText = _pNetwork->MyCharacterInfo.strTeacherName;
+		pDrawPort->PutTextCharExRX( strText, strText.Length(), nX, nY );
+		nY += 33;
+		strText = CJobInfo::getSingleton()->GetName( m_vectorHelperList[0].iJob,  m_vectorHelperList[0].iJob2 );
+		pDrawPort->PutTextCharExRX( strText, strText.Length(), nX, nY );
+		pDrawPort->PutTextCharExRX( strText, strText.Length(), nX, nY );
+		nY += 33;
+		strText.PrintF( _S( 5070, "%d∏Ì"), m_vectorTeacherInfoList[0].nCntTeachingStudent);
+		pDrawPort->PutTextCharExRX( strText, strText.Length(), nX, nY );
+		nY += 33;
+		strText.PrintF( _S( 5070, "%d∏Ì"), m_vectorTeacherInfoList[0].nCntCompleteStudent);
+		pDrawPort->PutTextCharExRX( strText, strText.Length(), nX, nY );
+		nY += 33;
+		int percent = 0;
+		int nTry = m_vectorTeacherInfoList[0].nCntCompleteStudent + m_vectorTeacherInfoList[0].nCntFailStudent;
+		if (nTry > 0)
+			percent = int(m_vectorTeacherInfoList[0].nCntCompleteStudent / float(nTry) * 100.f + 0.5f);//π›ø√∏≤
+		strText.PrintF("%d%%", percent);
+		pDrawPort->PutTextCharExRX( strText, strText.Length(), nX, nY );
+		
+		//------------------------------------------------------------------
+		// CommonBtn.tex : Button
+		pDrawPort->InitTextureData( m_ptdBtnTexture );
+		m_btnExit.Render();							// Button : Exit
+		m_btnClose.Render();						// Button : Close
+		m_btnFireMyTeacher.Render();				// Button : ∞ﬂΩ¿ª˝ ∆˜±‚
+		//------------------------------------------------------------------
+	}
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
+
+	RenderInfo();
+}
+
+// ----------------------------------------------------------------------------
+// Name : RenderTeacher()
+// Desc : »ƒ∞ﬂ¿Œ UI
+// ----------------------------------------------------------------------------
+void CUIHelper::RenderTeacher()
+{
+	int		i;
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	//------------------------------------------------------------------
+	// New_Interface.tex : Sub BackGround
+	pDrawPort->InitTextureData( m_ptdSubTexture );
+	
+	for ( i = 0; i < 6; ++i )
+	{
+		m_NewSubBack.m_RectSurfaceArray[i].m_RT = UIRect(m_rtTeacherBack[i].Left+m_nPosX,m_rtTeacherBack[i].Top+m_nPosY, m_rtTeacherBack[i].Right+m_nPosX, m_rtTeacherBack[i].Bottom+m_nPosY);
+		m_NewInfoBack.m_RectSurfaceArray[i].m_RT = UIRect(m_rtTeacherInfo[i].Left+m_nPosX,m_rtTeacherInfo[i].Top+m_nPosY, m_rtTeacherInfo[i].Right+m_nPosX, m_rtTeacherInfo[i].Bottom+m_nPosY);
+	}
+	m_NewSubBack.RenderRectSurface(pDrawPort, 0xFFFFFFFF);
+	m_NewInfoBack.RenderRectSurface(pDrawPort, 0xFFFFFFFF);
+	
+	int nY = 0;
+	for ( i = 0; i < 11; ++i)
+	{
+		pDrawPort->AddTexture(m_rtTabLine.Left + m_nPosX, m_rtTabLine.Top + m_nPosY + nY, m_rtTabLine.Right + m_nPosX, m_rtTabLine.Bottom + m_nPosY + nY, 
+			m_rcTabLineUV.U0, m_rcTabLineUV.V0, m_rcTabLineUV.U1, m_rcTabLineUV.V1, 0xFFFFFFFF);
+		nY += _pUIFontTexMgr->GetLineHeight()+5;
+	}
+
+	pDrawPort->FlushRenderingQueue();
+
+	//------------------------------------------------------------------
+	// MessageBox.tex : List
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	m_lbStudentList.Render();
+
+	//Info Mark
+	int listCount = 0;
+	if(m_eHelperMenuState == HELPER_MENU_STUDENT)
+		listCount = m_vectorHelperList.size() - m_lbStudentList.GetScrollBarPos();
+	else if(m_eHelperMenuState == HELPER_MENU_TEACHER)
+		listCount = m_vectorHelperList.size() - m_lbTeacherList.GetScrollBarPos();
+	for( i = 0; i < listCount; ++i )
+	{
+		int nX0 = m_rcClass[i].Left + m_nPosX;
+		int nX1 = m_rcClass[i].Right + m_nPosX;
+		int nY0 = m_rcClass[i].Top + m_nPosY;
+		int nY1 = m_rcClass[i].Bottom + m_nPosY;
+		pDrawPort->AddTexture(
+			nX0, nY0, nX1, nY1
+			, m_rtClass[m_vectorHelperList[i].iJob].U0, m_rtClass[m_vectorHelperList[i].iJob].V0, m_rtClass[m_vectorHelperList[i].iJob].U1, m_rtClass[m_vectorHelperList[i].iJob].V1
+			, 0xFFFFFFFF );
+	}
+	pDrawPort->FlushRenderingQueue();
+
+	//------------------------------------------------------------------
+	// CommonBtn.tex : Button
+	pDrawPort->InitTextureData( m_ptdBtnTexture );
+
+	if( !m_bRegistredTeacher )
+		m_btnRegisterTeacher.Render();			// Button : »ƒ∞ﬂ¿Œ µÓ∑œ
+	else
+		m_btnCancelRegister.Render();			// Button : »ƒ∞ﬂ¿Œ µÓ∑œ √Îº“
+
+	m_btnGift.Render();							// Button : ∫∏ªÛ ø‰√ª
+	m_btnFireMyStudent.Render();				// Button : »ƒ∞ﬂ¿Œ ∆˜±‚
+	m_btnClose.Render();						// Button : Close
+	m_btnExit.Render();							// Button : Exit
+
+	pDrawPort->FlushRenderingQueue();
+
+	//------------------------------------------------------------------
+	// Text
+	pDrawPort->PutTextExCX( _S(5071, "»ƒ∞ﬂ¿Œ Ω√Ω∫≈€"), GetWidth()/2+m_nPosX, 19+m_nPosY);
+
+	nY = m_nPosY + 40;
+	int nX = m_nPosX + 21;
+
+	pDrawPort->PutTextEx( _S( 1160, "≈¨∑°Ω∫" ), nX, nY, 0x6B6B6BFF );		
+	
+	nX = m_nPosX + 71;
+	pDrawPort->PutTextEx( _S( 1159, "¿Ã ∏ß" ), nX, nY, 0x6B6B6BFF );		
+	
+	nX = m_nPosX + 216;
+	pDrawPort->PutTextEx( _S( 73, "∑π∫ß" ), nX, nY, 0x6B6B6BFF );
+
+	nX = m_nPosX + 262;
+	pDrawPort->PutTextEx( _S( 5072, "»ƒ∞ﬂ¿Œ ªÛºº ¡§∫∏" ), nX, nY, 0x6B6B6BFF );
+
+	nX = m_nPosX + 265;
+	nY = m_nPosY + 63;
+
+	pDrawPort->PutTextEx( _S( 5077, "æÁº∫¡ﬂ¿Œ ¿Œø¯" ), nX, nY, 0xffff99FF );
+	
+	nY += 33;
+	pDrawPort->PutTextEx( _S( 5078, "æÁº∫ øœ∑· ¿Œø¯" ), nX, nY, 0xffff99FF );
+
+	nY += 33;
+	pDrawPort->PutTextEx( _S( 5082, "æÁº∫ Ω«∆– ¿Œø¯" ), nX, nY, 0xffff99FF );
+
+	nY += 33;
+	pDrawPort->PutTextEx( _S( 5079, "æÁº∫ º∫∞¯∑¸" ), nX, nY, 0xffff99FF );
+
+	nX = m_nPosX + 415;
+	nY = m_nPosY + 63;	
+
+	CTString strMessage;
+	strMessage.PrintF("%d", m_nMyCurTeachCnt);
+	pDrawPort->PutTextExRX( strMessage, nX, nY );
+
+	nY += 33;
+	strMessage.PrintF("%d", m_nMyCompleteTeachCnt);
+	pDrawPort->PutTextExRX( strMessage, nX, nY );
+
+	nY += 33;
+	strMessage.PrintF("%d", m_nMyFailTeachCnt);
+	pDrawPort->PutTextExRX( strMessage, nX, nY );
+
+	nY += 33;
+	int nCnt = 0;
+	if (m_nMyCompleteTeachCnt + m_nMyFailTeachCnt > 0)
+		nCnt = int(m_nMyCompleteTeachCnt / float(m_nMyCompleteTeachCnt + m_nMyFailTeachCnt) * 100 + 0.5f);
+	strMessage.PrintF("%d%%", nCnt);
+	pDrawPort->PutTextExRX( strMessage, nX, nY );
+
+	pDrawPort->EndTextEx();
+
+	RenderInfo();
+}
+
+// ----------------------------------------------------------------------------
+// Name : PrepareOpen()
+// Desc : UI Setting
+// ----------------------------------------------------------------------------
+void CUIHelper::PrepareOpen()
+{
+	if ( m_eHelperMenuState == HELPER_MENU_STUDENT )
+	{	// ∞ﬂΩ¿ª˝¿œ∂ß,
+		if( _pNetwork->MyCharacterInfo.lTeacherIndex == -1 )
+		{
+			SetSize( NEW_HELPER_WIDTH, 335 );
+			m_rtTabLine.SetRect(21, 54, 400, 55);
+			m_btnRefreshTeacher.SetEnable(TRUE);			// »ƒ∞ﬂ¿Œ ∏Ò∑œ ∞ªΩ≈		
+			m_btnBeMyTeacher.SetEnable(TRUE);				// ∞ﬂΩ¿ª˝
+			m_btnFireMyTeacher.SetEnable(FALSE);
+			m_btnFireMyTeacher.SetPos( 38, HELPER_BUTTON_START_Y + 40 );
+			m_btnClose.SetPos( 410, 4 );
+			m_btnExit.SetPos( 38 + NEW_BUTTON_SIZE + 38, HELPER_BUTTON_START_Y + 40 );
+			m_rtNewBack[BG_UL].SetRect(0,0,8,39);
+			m_rtNewBack[BG_UM].SetRect(8,0,NEW_HELPER_WIDTH-8,39);
+			m_rtNewBack[BG_UR].SetRect(NEW_HELPER_WIDTH-8,0,NEW_HELPER_WIDTH,39);
+			m_rtNewBack[BG_ML].SetRect(0,39,8,327);
+			m_rtNewBack[BG_MM].SetRect(8,39,NEW_HELPER_WIDTH-8,327);
+			m_rtNewBack[BG_MR].SetRect(NEW_HELPER_WIDTH-8,39,NEW_HELPER_WIDTH,327);
+			m_rtNewBack[BG_BL].SetRect(0,327,8,335);
+			m_rtNewBack[BG_BM].SetRect(8,327,NEW_HELPER_WIDTH-8,335);
+			m_rtNewBack[BG_BR].SetRect(NEW_HELPER_WIDTH-8,327,NEW_HELPER_WIDTH,335);
+		}
+		else
+		{
+			SetSize( 300, 335 );
+			m_btnFireMyTeacher.SetPos( 70, HELPER_BUTTON_START_Y+10 );
+			m_btnExit.SetPos( 70, HELPER_BUTTON_START_Y+40 );
+			m_btnClose.SetPos( 275, 4 );
+			m_btnRefreshTeacher.SetEnable(FALSE);			// »ƒ∞ﬂ¿Œ ∏Ò∑œ ∞ªΩ≈		
+			m_btnBeMyTeacher.SetEnable(FALSE);				// ∞ﬂΩ¿ª˝
+			m_btnFireMyTeacher.SetEnable(TRUE);
+
+			m_rtNewBack[BG_UL].SetRect(0,0,8,39);
+			m_rtNewBack[BG_UM].SetRect(8,0,300-8,39);
+			m_rtNewBack[BG_UR].SetRect(300-8,0,300,39);
+			m_rtNewBack[BG_ML].SetRect(0,39,8,327);
+			m_rtNewBack[BG_MM].SetRect(8,39,300-8,327);
+			m_rtNewBack[BG_MR].SetRect(300-8,39,300,327);
+			m_rtNewBack[BG_BL].SetRect(0,327,8,335);
+			m_rtNewBack[BG_BM].SetRect(8,327,300-8,335);
+			m_rtNewBack[BG_BR].SetRect(300-8,327,300,335);
+		}
+	}
+	else
+	{	// »ƒ∞ﬂ¿Œ¿œ∂ß,
+		SetSize( NEW_HELPER_WIDTH, 335 );
+		m_rtTabLine.SetRect(22,53,243,54);
+		m_btnClose.SetPos( 410, 4 );
+		m_btnExit.SetPos( 38 + NEW_BUTTON_SIZE + 38, HELPER_BUTTON_START_Y + 40 );
+		m_rtNewBack[BG_UL].SetRect(0,0,8,39);
+		m_rtNewBack[BG_UM].SetRect(8,0,NEW_HELPER_WIDTH-8,39);
+		m_rtNewBack[BG_UR].SetRect(NEW_HELPER_WIDTH-8,0,NEW_HELPER_WIDTH,39);
+		m_rtNewBack[BG_ML].SetRect(0,39,8,327);
+		m_rtNewBack[BG_MM].SetRect(8,39,NEW_HELPER_WIDTH-8,327);
+		m_rtNewBack[BG_MR].SetRect(NEW_HELPER_WIDTH-8,39,NEW_HELPER_WIDTH,327);
+		m_rtNewBack[BG_BL].SetRect(0,327,8,335);
+		m_rtNewBack[BG_BM].SetRect(8,327,NEW_HELPER_WIDTH-8,335);
+		m_rtNewBack[BG_BR].SetRect(NEW_HELPER_WIDTH-8,327,NEW_HELPER_WIDTH,335);
+		if ( m_vectorHelperList.size() > 0 )
+		{	// ∞ﬂΩ¿ª˝¿Ã ¿÷¿ª ∂ß,
+			m_btnFireMyStudent.SetEnable( TRUE );
+		}
+		else
+		{	// ∞ﬂΩ¿ª˝¿Ã æ¯¿ª ∂ß,
+			m_btnFireMyStudent.SetEnable( FALSE );
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : MsgBoxCommand()
+// Desc : Edit Box 2∞≥¿œ ∂ß,
+// ----------------------------------------------------------------------------
+void CUIHelper::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput, CTString &strSEInput )
+{
+	switch( nCommandCode )
+	{
+	case MSGCMD_HELPER_PLAYTIME:
+		{
+			if ( bOK )
+			{
+				// »ƒ∞ﬂ¿Œ Ω≈√ª ∏ﬁΩ√¡ˆ ∫∏≥ª±‚ : Client -> Server
+				CTString strMessage = CTString("");
+				CUIMsgBox_Info MsgBoxInfo;
+				int sbStartPlayTime;
+				int sbEndPlayTime;
+				
+				if ( strInput.IsInteger() && strSEInput.IsInteger() )
+				{
+					sbStartPlayTime = atoi(strInput);
+					sbEndPlayTime = atoi(strSEInput);
+					
+					if ( sbStartPlayTime > 24 || sbEndPlayTime > 24 )
+					{
+						strMessage = _S( 5080, "24 ¿Ã«œ¿« º˝¿⁄∏¶ ¿‘∑¬«ÿ¡÷ººø‰.");
+					}
+					else if ( sbStartPlayTime < 0 || sbEndPlayTime < 0 )
+					{
+						strMessage = _S( 4348, "0 ¿ÃªÛ¿« º˝¿⁄∏¶ ¿‘∑¬«ÿ ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
+					}
+				}
+				else
+				{
+					strMessage = _S(4351, "º˝¿⁄∏¶ ¿‘∑¬«ÿ ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
+				}
+
+				if (strMessage.Length() > 0)
+				{
+					MsgBoxInfo.SetMsgBoxInfo( _S( 5071, "»ƒ∞ﬂ¿Œ Ω√Ω∫≈€"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+					MsgBoxInfo.AddString( strMessage );
+					CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+					return;
+				}
+
+				_pNetwork->TeachTeacherRegister( sbStartPlayTime, sbEndPlayTime );
+			}
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : ShowClass()
+// Desc : ≈¨∑°Ω∫ ¿Ã∏ß ∆Àæ˜
+// ----------------------------------------------------------------------------
+void CUIHelper::ShowClass(int line)
+{
+	if (!m_bShowClass)	
+	{	
+		return;	
+	}
+
+	m_strClassName = CJobInfo::getSingleton()->GetName( m_vectorHelperList[line].iJob,  m_vectorHelperList[line].iJob2 );
+	int		nInfoWidth, nInfoHeight;
+	int		nInfoPosX, nInfoPosY;
+	
+	GetAbsPos(nInfoPosX, nInfoPosY);
+	nInfoPosX += m_rcClass[line].Left;
+	nInfoPosY += m_rcClass[line].Top;
+	
+	nInfoWidth = 30 + m_strClassName.Length() * _pUIFontTexMgr->GetFontWidth();
+	nInfoHeight = 10 + _pUIFontTexMgr->GetFontHeight();
+	
+	if ( nInfoPosX - nInfoWidth > 0 )
+	{
+		nInfoPosX -= nInfoWidth;
+		m_rcInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
+	}
+	else
+	{
+		nInfoPosX = CUIManager::getSingleton()->GetMinI();
+		m_rcInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
+	}
+	m_nCurInfoLines = 1;
+}
+
+// ----------------------------------------------------------------------------
+// Name : FireMyStudent()
+// Desc : »ƒ∞ﬂ¿Œ¿Ã ∞ﬂΩ¿ª˝ ∆˜±‚
+// ----------------------------------------------------------------------------
+void CUIHelper::FireMyStudent()
+{
+	int nPos = m_lbStudentList.GetCurSel() + m_lbStudentList.GetScrollBarPos();
+	if ( nPos >= 0 )
+	{
+		CTString	strStudentName = m_vectorHelperList[nPos].strName;
+		CTString	strMessage;
+		CUIMsgBox_Info	MsgBoxInfo;
+		MsgBoxInfo.SetMsgBoxInfo( _S( 5068, "»ƒ∞ﬂ¿Œ ∆˜±‚" ), UMBS_OKCANCEL, UI_HELPER, MSGCMD_HELPER_FIRE_MYSTUDENT );		
+		strMessage.PrintF( _S( 5081, "[%s]¥‘¿« »ƒ∞ﬂ¿Œ¿ª ±◊∏∏ µŒΩ√∞⁄Ω¿¥œ±Ó? ±◊∏∏ µŒ∞‘µ«∏È ∏Ìº∫ƒ° 5∏¶ ¿“∞‘ µÀ¥œ¥Ÿ." ), strStudentName );	
+		MsgBoxInfo.AddString( strMessage );
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );	
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : SetMyTeachInfo()
+// Desc : ≥ª ¡§∫∏ º≥¡§
+// ----------------------------------------------------------------------------
+void CUIHelper::SetMyTeachInfo( SLONG CurTeachCnt, SLONG CompleteTeachCnt, SLONG FailTeachCnt )
+{
+	m_nMyCurTeachCnt		= CurTeachCnt;
+	m_nMyCompleteTeachCnt	= CompleteTeachCnt;
+	m_nMyFailTeachCnt		= FailTeachCnt;
+}
+
+void CUIHelper::Clear()
+{
+	m_nMyCurTeachCnt		= 0;
+	m_nMyCompleteTeachCnt	= 0;
+	m_nMyFailTeachCnt		= 0;
+	m_strClassName			= CTString("");
 }

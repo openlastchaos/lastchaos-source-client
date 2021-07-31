@@ -141,95 +141,6 @@ functions:
 
 
 procedures:
-  Storm()
-  {
-    // wait before first lightning
-    autowait( 10.0f);
-    m_fNextLightningStrike = m_tmStormAppearTime+m_fFirstLightningDelay;
-    jump StormInternal();
-  }
-
-  StormInternal()
-  {
-    if (m_penwsc == NULL) {
-      if (!SetUpWorldSettingsController()) {
-        return EReturn();
-      }
-    }
-    while(m_bStormOn &&
-          _pTimer->CurrentTick()<((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd+m_tmStormDisappearTime)
-    {
-      while( _pTimer->CurrentTick()<m_fNextLightningStrike &&
-             _pTimer->CurrentTick()<((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd+m_tmStormDisappearTime &&
-             m_bStormOn)
-      {
-        // wait until next lightning
-        wait(_pTimer->TickQuantum)
-        {
-          on (EBegin) :
-          {
-            resume;
-          }
-          on (EEnvironmentStop) :
-          {
-            m_fNextLightningStrike+=1.0f;
-            resume;
-          }
-          on (ETimer) : { stop; }
-        }
-        if (m_penwsc == NULL) {
-          if (!SetUpWorldSettingsController()) {
-            return EReturn();
-          }
-        }
-      }
-      autowait(_pTimer->TickQuantum);
-      if (m_penwsc == NULL) {
-        if (!SetUpWorldSettingsController()) {
-          return EReturn();
-        }
-      }
-
-      // calculate next lightning strike time
-      FLOAT fLightningStart=((CWorldSettingsController *)&*m_penwsc)->m_tmStormStart+m_fFirstLightningDelay;
-      FLOAT fLightningMax=fLightningStart+m_fMaxStormPowerTime;
-      FLOAT fRatio;
-      // if storm is finished
-      if(_pTimer->CurrentTick()>((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd-m_tmStormDisappearTime)
-      {
-        m_bStormOn = FALSE;
-      }
-      else
-      {
-        // fade in
-        if (_pTimer->CurrentTick()<fLightningMax)
-        {
-          fRatio=CalculateRatio(_pTimer->CurrentTick(), fLightningStart, fLightningMax, 1.0f, 0.0f);
-        }
-        // max storm power
-        else
-        {
-          fRatio=1;
-        }
-        FLOAT tmPeriod=(m_fMaxLightningPeriod-m_fMinLightningPeriod)*(1.0f-fRatio);
-        FLOAT fNextLighting=m_fMinLightningPeriod+tmPeriod*(1.0f+(FRnd()-0.5f)*0.25f);
-        m_fNextLightningStrike = _pTimer->CurrentTick()+fNextLighting;
-
-        // choose random lightning
-        INDEX ctLightnings = GetLightningsCount();
-        // if there are some lightnings
-        if (ctLightnings!=0)
-        {
-          // choose by random
-          CLightning *penLightning = (CLightning *) &*(&m_penLightning00)[IRnd()%ctLightnings];
-          SendToTarget(penLightning, EET_TRIGGER);
-        }
-      }
-    }
-    m_bStormOn = FALSE;
-    return EReturn();
-  }
-
   Main(EVoid)
   {
     // check lightning targets
@@ -350,5 +261,94 @@ procedures:
         };
       };
     }
+  }
+
+  Storm()
+  {
+    // wait before first lightning
+    autowait( 10.0f);
+    m_fNextLightningStrike = m_tmStormAppearTime+m_fFirstLightningDelay;
+    jump StormInternal();
+  }
+
+  StormInternal()
+  {
+    if (m_penwsc == NULL) {
+      if (!SetUpWorldSettingsController()) {
+        return EReturn();
+      }
+    }
+    while(m_bStormOn &&
+          _pTimer->CurrentTick()<((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd+m_tmStormDisappearTime)
+    {
+      while( _pTimer->CurrentTick()<m_fNextLightningStrike &&
+             _pTimer->CurrentTick()<((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd+m_tmStormDisappearTime &&
+             m_bStormOn)
+      {
+        // wait until next lightning
+        wait(_pTimer->TickQuantum)
+        {
+          on (EBegin) :
+          {
+            resume;
+          }
+          on (EEnvironmentStop) :
+          {
+            m_fNextLightningStrike+=1.0f;
+            resume;
+          }
+          on (ETimer) : { stop; }
+        }
+        if (m_penwsc == NULL) {
+          if (!SetUpWorldSettingsController()) {
+            return EReturn();
+          }
+        }
+      }
+      autowait(_pTimer->TickQuantum);
+      if (m_penwsc == NULL) {
+        if (!SetUpWorldSettingsController()) {
+          return EReturn();
+        }
+      }
+
+      // calculate next lightning strike time
+      FLOAT fLightningStart=((CWorldSettingsController *)&*m_penwsc)->m_tmStormStart+m_fFirstLightningDelay;
+      FLOAT fLightningMax=fLightningStart+m_fMaxStormPowerTime;
+      FLOAT fRatio;
+      // if storm is finished
+      if(_pTimer->CurrentTick()>((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd-m_tmStormDisappearTime)
+      {
+        m_bStormOn = FALSE;
+      }
+      else
+      {
+        // fade in
+        if (_pTimer->CurrentTick()<fLightningMax)
+        {
+          fRatio=CalculateRatio(_pTimer->CurrentTick(), fLightningStart, fLightningMax, 1.0f, 0.0f);
+        }
+        // max storm power
+        else
+        {
+          fRatio=1;
+        }
+        FLOAT tmPeriod=(m_fMaxLightningPeriod-m_fMinLightningPeriod)*(1.0f-fRatio);
+        FLOAT fNextLighting=m_fMinLightningPeriod+tmPeriod*(1.0f+(FRnd()-0.5f)*0.25f);
+        m_fNextLightningStrike = _pTimer->CurrentTick()+fNextLighting;
+
+        // choose random lightning
+        INDEX ctLightnings = GetLightningsCount();
+        // if there are some lightnings
+        if (ctLightnings!=0)
+        {
+          // choose by random
+          CLightning *penLightning = (CLightning *) &*(&m_penLightning00)[IRnd()%ctLightnings];
+          SendToTarget(penLightning, EET_TRIGGER);
+        }
+      }
+    }
+    m_bStormOn = FALSE;
+    return EReturn();
   }
 };

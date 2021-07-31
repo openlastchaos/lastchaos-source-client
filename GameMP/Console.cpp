@@ -71,6 +71,8 @@ BOOL GetLineCountBackward(const char *pchrStringStart, const char *pchrStringEnd
 
 void CGame::ConsoleRender(CDrawPort *pdp)
 {
+#if		defined(VER_TEST)
+
   if( _pGame->gm_csConsoleState==CS_OFF) {
     con_iFirstLine = 1;
     tvConsoleLast  = _pTimer->GetHighPrecisionTimer();
@@ -149,7 +151,7 @@ void CGame::ConsoleRender(CDrawPort *pdp)
   //LCDRenderGrid();
   LCDRenderClouds2();
   dpConsole.DrawLine( 0, pixSizeJ-1, pixSizeI, pixSizeJ-1, LCDFadedColor(SE_COL_BLUE_NEUTRAL|255));
-  const colFill = (colDark & ~CT_AMASK) | 0x2F;
+  const COLOR colFill = (colDark & ~CT_AMASK) | 0x2F;
   dpConsole.Fill( 0, pixSizeJ-pixLineSpacing*1.6f, pixSizeI, pixLineSpacing*1.6f, colFill);
 
   // setup font
@@ -188,6 +190,7 @@ void CGame::ConsoleRender(CDrawPort *pdp)
     iBackwardLine++;
     pixYLine -= pixLineSpacing;
   }
+#endif		// VER_TEST
 }
 
 
@@ -533,6 +536,8 @@ void CGame::ConsoleKeyDown( MSG msg)
 
 void CGame::ConsoleChar( MSG msg)
 {
+#if		defined(VER_TEST)
+
   // if console is off, do nothing
   if (_pGame->gm_csConsoleState==CS_OFF) return;
 
@@ -548,5 +553,6 @@ void CGame::ConsoleChar( MSG msg)
     // reset history line
     iHistoryLine = 0;
   }
+#endif
 }
 

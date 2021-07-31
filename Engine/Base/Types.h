@@ -151,18 +151,20 @@ typedef ULONG  COLOR;  // color is always in 32 bit true-color format
 
 // some mexels constants
 // [070626: Su-won]
-// Attribute ë§µ í…ìŠ¤ì³ì˜ ê²½ìš° ë•Œ í…ìŠ¤ì³ì˜ í¬ê¸°ê°€ 2^10ì„ ë„˜ì–´ê°€ì„œ
-// ì—ë””í„° ìƒì—ì„œ í…ìŠ¤ì³ë¥¼ ë‚˜íƒ€ë‚¼ ìˆ˜ ì—†ì–´ì„œ í¬ê¸°ë¥¼ 12ë¡œ ëŠ˜ë¦¼...
+// Attribute ¸Ê ÅØ½ºÃÄÀÇ °æ¿ì ¶§ ÅØ½ºÃÄÀÇ Å©±â°¡ 2^10À» ³Ñ¾î°¡¼­
+// ¿¡µğÅÍ »ó¿¡¼­ ÅØ½ºÃÄ¸¦ ³ªÅ¸³¾ ¼ö ¾ø¾î¼­ Å©±â¸¦ 12·Î ´Ã¸²...
 //#define MAX_MEX_LOG2 10
 #define MAX_MEX_LOG2 12
 
 #define MIN_MEX_LOG2  0
 #define MAX_MEX     (1L<<MAX_MEX_LOG2)
 #define MIN_MEX     (1L<<MIN_MEX_LOG2)
+#define MAX_MEX_EX	(1L<<10)	// 1024»çÀÌÁî
 
 // macro for converting mexels to meters
 #define METERS_MEX(mex)    ((FLOAT)(((FLOAT)mex)/MAX_MEX))
 #define MEX_METERS(meters) ((MEX)(meters*MAX_MEX))
+#define MEX_METERS_EX(meters) ((MEX)(meters*MAX_MEX_EX))
 
 #define ARRAYCOUNT(array) (sizeof(array)/sizeof((array)[0]))
 

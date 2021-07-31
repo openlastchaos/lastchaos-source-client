@@ -43,7 +43,7 @@ void CIsometricProjection3D::Prepare(void)
 		// invert inversion
 		pr_bInverted = !pr_bInverted;
 	}	
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		04.05		
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		04.05		
 	else if (pr_bNiceWater )	
 	{
 		extern FLOATplane3D		_plReflect;
@@ -51,7 +51,7 @@ void CIsometricProjection3D::Prepare(void)
 		ReflectRotationMatrixByPlane_rows(_plReflect, pr_ViewerRotationMatrix);
 		pr_bInverted = !pr_bInverted;
 	}	
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		04.05
+//°­µ¿¹Î ¼öÁ¤ ³¡		04.05
 
 	// calculate screen center
 	pr_ScreenCenter = pr_ScreenBBox.Center();

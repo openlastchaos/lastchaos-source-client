@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "LCDDrawing.h"
 #include <locale.h>
-
+#include <Engine/Loading.h>
 #define USECUSTOMTEXT 0
 
 extern CGame *_pGame;
@@ -131,8 +131,8 @@ static void LoadingHook_t(CProgressHookInfo *pphi)
 
   // map hook
   // by seo
-    extern void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi);
-    RenderLoading(&dpHook, ulLevelMask, pphi);
+//     extern void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi);
+//     RenderLoading(&dpHook, ulLevelMask, pphi);
 
     // finish rendering
     dpHook.dp_Raster->ra_pvpViewPort->SwapBuffers();

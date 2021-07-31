@@ -1,21 +1,33 @@
 #include "stdh.h"
+
+
+#include <map>
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UISiegeWarfareDoc.h>
+#include <Engine/Ska/Render.h>
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Interface/UISignboard.h>
+#include <Engine/Interface/UIAutoHelp.h>
+#include <Engine/Interface/UISiegeWarfare.h>
+#include <Engine/Interface/UISiegeWarfareNew.h>
+#include <Engine/Interface/UIMap.h>
+#include <Engine/Interface/UISelectResource.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Object/ActorMgr.h>
+
 
 #define MUSIC_CASTLE_BATTLE		CTFILENAME("Data\\Sounds\\Game\\BGM\\GB_battletheme.ogg")
 #define MUSIC_MERAC_FIELD		CTFILENAME("Data\\Sounds\\Game\\BGM\\GB_meracpease.ogg")
 
-// ì „ì²´ ê³µì„± ì‹œê°„ ì¤‘ì— ì•¼ì „ ì¢…ë£Œí›„ ì§„í–‰ë˜ëŠ” ê³µì„± ì‹œê°„ 
-// ì›ë˜ëŠ” ì „ì²´ ê³µì„± ì‹œê°„ 60ë¶„ ì—ì„œ ì•¼ì „ ì‹œê°„ 15 + ê³µì„± ì‹œê°„ 45ë¶„ìœ¼ë¡œ ë˜ì–´ìˆê¸° ë•Œë¬¸ì— 
-// CASTLETIMEì€ 45ë¡œ ì„¤ì • ë˜ì–´ì•¼ í•˜ì§€ë§Œ í˜„ì¬ í…ŒìŠ¤íŠ¸ë¥¼ ìœ„í•´ì„œ 
-// ì „ì²´ ê³µì„± ì‹œê°„ 20 = ì•¼ì „ 10 + ê³µì„± 10ìœ¼ë¡œ ì„¤ì •ë˜ì–´ ìˆê²Œ ë•Œë¬¸ì— 10ìœ¼ë¡œ ì„¤ì • í•˜ì—¬ ë†“ì•˜ìŒ. 
-// ì„œë²„ì™€ ì‹œê°„ ì¡°ì •ì‹œ ì¡°ì • ë°”ëŒ.
-#define	CASTLETIME			45 // ë¶„ 
+// ÀüÃ¼ °ø¼º ½Ã°£ Áß¿¡ ¾ßÀü Á¾·áÈÄ ÁøÇàµÇ´Â °ø¼º ½Ã°£ 
+// ¿ø·¡´Â ÀüÃ¼ °ø¼º ½Ã°£ 60ºĞ ¿¡¼­ ¾ßÀü ½Ã°£ 15 + °ø¼º ½Ã°£ 45ºĞÀ¸·Î µÇ¾îÀÖ±â ¶§¹®¿¡ 
+// CASTLETIMEÀº 45·Î ¼³Á¤ µÇ¾î¾ß ÇÏÁö¸¸ ÇöÀç Å×½ºÆ®¸¦ À§ÇØ¼­ 
+// ÀüÃ¼ °ø¼º ½Ã°£ 20 = ¾ßÀü 10 + °ø¼º 10À¸·Î ¼³Á¤µÇ¾î ÀÖ°Ô ¶§¹®¿¡ 10À¸·Î ¼³Á¤ ÇÏ¿© ³õ¾ÒÀ½. 
+// ¼­¹ö¿Í ½Ã°£ Á¶Á¤½Ã Á¶Á¤ ¹Ù¶÷.
+#define	CASTLETIME			45 // ºĞ 
 
-// ê³µì„± ì‹œì‘ê³¼ ì•¼ì „ ì‹œì‘ì‹œ Dealy ì‹œê°„
-#define	DEALY_TIME			3500 //ì´ˆ	 
+// °ø¼º ½ÃÀÛ°ú ¾ßÀü ½ÃÀÛ½Ã Dealy ½Ã°£
+#define	DEALY_TIME			3500 //ÃÊ	 
 
 CUISiegeWarfareDoc* _pUISWDoc = NULL;
 
@@ -67,8 +79,8 @@ void CUISiegeWarfareDoc::Clear()
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::SetUIState
-// Explain:  UI ìƒíƒœë¥¼ ì§€ì •í•©ë‹ˆë‹¤.
-// ì „íˆ¬ì¤‘ì¸ ê²½ìš°ì—ëŠ” CNetworkì˜ ga_bGuildWarí”Œë ˆê·¸ë¥¼ ì¡°ì •í•©ë‹ˆë‹¤.
+// Explain:  UI »óÅÂ¸¦ ÁöÁ¤ÇÕ´Ï´Ù.
+// ÀüÅõÁßÀÎ °æ¿ì¿¡´Â CNetworkÀÇ ga_bGuildWarÇÃ·¹±×¸¦ Á¶Á¤ÇÕ´Ï´Ù.
 // Date : 2005-07-14,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::SetUIState( int nUIState ) 
@@ -85,7 +97,7 @@ void CUISiegeWarfareDoc::SetUIState( int nUIState )
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::GetTime
-// Explain:  ê³µì„±ì •ë³´ ìš”ì²­í›„ UIë¥¼ í†µí•´ ì •ë³´ ì¶œë ¥
+// Explain:  °ø¼ºÁ¤º¸ ¿äÃ»ÈÄ UI¸¦ ÅëÇØ Á¤º¸ Ãâ·Â
 // Date : 2005-07-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::GetTime( int nGuildIndex, CTString strGuildName, int nMonth, int nDay, int nHour, int nMin )
@@ -97,7 +109,7 @@ void CUISiegeWarfareDoc::GetTime( int nGuildIndex, CTString strGuildName, int nM
 	m_nHour				= nHour;
 	m_nMin				= nMin;
 	
-	_pUIMgr->GetSiegeWarfare()->OpenSWInfo();
+	CUIManager::getSingleton()->GetSiegeWarfare()->OpenSWInfo();
 }
 
 
@@ -108,9 +120,11 @@ void CUISiegeWarfareDoc::GetTime( int nGuildIndex, CTString strGuildName, int nM
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::GuildWarStart( int nZoneIndex,  int nRemainSec )	
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if(nZoneIndex == 7)
 	{
-		// FIXME : ë¬¸ ë‹«ì•„ì£¼ê¸°.	
+		// FIXME : ¹® ´İ¾ÆÁÖ±â.	
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 0, FALSE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 1, FALSE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 2, FALSE );	
@@ -129,29 +143,37 @@ void CUISiegeWarfareDoc::GuildWarStart( int nZoneIndex,  int nRemainSec )
 			
 		CTString strMessage,  strMessage2;
 		
-		strMessage.PrintF( _S( 2012, "[%s]ì§€ì—­ [%s]ê³µì„±ì´ ì‹œì‘ë©ë‹ˆë‹¤." ), ZoneInfo().GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ) );	
-		strMessage2.PrintF(_S( 2013,  "[%s]ì§€ì—­ ë‚´ì— ìˆëŠ” ê³µì„± ì°¸ì—¬ ìœ ì €ë“¤ì€ ê³µì„± ì‹œì‘ ì§€ì ìœ¼ë¡œ ì´ë™í•©ë‹ˆë‹¤." ) );	
-		
-		_pUIMgr->GetSiegeWarfare()->SetNotice( strMessage );
-		
-		_pUIMgr->GetSiegeWarfare()->OpenSelectBattle();
+		strMessage.PrintF(_S(2012, "[%s]Áö¿ª [%s]°ø¼ºÀÌ ½ÃÀÛµË´Ï´Ù." ), CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ));	
+		strMessage2.PrintF(_S(2013,  "[%s]Áö¿ª ³»¿¡ ÀÖ´Â °ø¼º Âü¿© À¯ÀúµéÀº °ø¼º ½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ÇÕ´Ï´Ù."), CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ));	
+
+		// [2012/06/04 : Sora] ITS 8986 °ø¼º½ÃÀÛÀü °ø¼º½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ ½Ã Ä³¸¯ÅÍ ÀÌµ¿ºÒ°¡ »óÅÂ ¹ß»ı ¼öÁ¤
+		// °ø¼º ¸Ş½ÃÁö Ãâ·ÂÇÏ¸é¼­ ÇØ´ç UI¸¦ È°¼ºÈ­ ½ÃÄÑÁÖ¾îÇá ÇÑ´Ù. °ø¼º ¸Ş½ÃÁö Ãâ·Â ¹æ½Ä º¯°æ
+		pUIManager->GetSiegeWarfare()->SetNotice( strMessage, strMessage2 );
+		pUIManager->GetSiegeWarfare()->OpenSelectBattle();
 		
 		RestartEffect(nZoneIndex);
 		RestartGuildMasterEffect();
 		SetLeftTime( nRemainSec );
 
 		m_tmLeftTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+
+		//SetDealy();	
 	}
 	else if( nZoneIndex == 4)
 	{
 		// WSS_DRATAN_SIEGEWARFARE 0070725
-		// TODO :: ë“œë¼íƒ„ ê³µì„± ì‹œì‘ ë£¨í‹´
+		// TODO :: µå¶óÅº °ø¼º ½ÃÀÛ ·çÆ¾
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 3, FALSE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 4, FALSE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 5, FALSE );	
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 6, FALSE );
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 7, FALSE );
 		CTString strMessage;
-		strMessage.PrintF( _S( 2012, "[%s]ì§€ì—­ ê³µì„±ì´ ì‹œì‘ë©ë‹ˆë‹¤." ), ZoneInfo().GetZoneName( nZoneIndex ));			
-		_pUIMgr->GetSiegeWarfare()->SetNotice( strMessage );
+		strMessage.PrintF( _S( 2012, "[%s]Áö¿ª °ø¼ºÀÌ ½ÃÀÛµË´Ï´Ù." ), CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ));	
+		// [2012/06/04 : Sora] ITS 8986 °ø¼º½ÃÀÛÀü °ø¼º½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ ½Ã Ä³¸¯ÅÍ ÀÌµ¿ºÒ°¡ »óÅÂ ¹ß»ı ¼öÁ¤
+		// °ø¼º ¸Ş½ÃÁö Ãâ·ÂÇÏ¸é¼­ ÇØ´ç UI¸¦ È°¼ºÈ­ ½ÃÄÑÁÖ¾îÇá ÇÑ´Ù. °ø¼º ¸Ş½ÃÁö Ãâ·Â ¹æ½Ä º¯°æ
+		pUIManager->GetSiegeWarfare()->SetNotice( strMessage );
 
 		m_nZoneIndex = nZoneIndex;
 		RestartEffect(nZoneIndex);
@@ -160,15 +182,17 @@ void CUISiegeWarfareDoc::GuildWarStart( int nZoneIndex,  int nRemainSec )
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::StartCastle
-// Explain: ì•¼ì „ë ê³µì„± ì‹œì‘ ì•Œë¦¼(ê³µì§€) 
+// Explain: ¾ßÀü³¡ °ø¼º ½ÃÀÛ ¾Ë¸²(°øÁö) 
 // Date : !2005-07-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::StartCastle( int nZoneIndex, int nRemainSec, int GuildIndex1, CTString GuildName1, int GuildIndex2, CTString GuildName2, int GuildIndex3, CTString GuildName3 )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if(nZoneIndex == 7)
 	{	
-		// ê³µì„±ì´ ì‹œì‘ë˜ë©´ ëª¨ë“  ë¬¸ì„ ë‹«ì•„ ë‘”ë‹¤.
-		// FIXME : ë¬¸ ë‹«ì•„ì£¼ê¸°.	
+		// °ø¼ºÀÌ ½ÃÀÛµÇ¸é ¸ğµç ¹®À» ´İ¾Æ µĞ´Ù.
+		// FIXME : ¹® ´İ¾ÆÁÖ±â.	
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 0, FALSE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 1, FALSE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 2, FALSE );	
@@ -197,16 +221,18 @@ void CUISiegeWarfareDoc::StartCastle( int nZoneIndex, int nRemainSec, int GuildI
 					strMessage1 += ", ";
 				}
 				strMessage1 += m_gdGuild[i].m_strGuildName;
-				strMessage1 += _S(75 , "ê¸¸ë“œ" );	
+				strMessage1 += CTString(" ");
+				strMessage1 += _S(75 , "±æµå" );	
 			}
 		}
 		
-		strMessage1 += _S( 2014, "ê°€ ê³µì„±ì¸¡ ê¸¸ë“œë¡œ ì„ ì • ë˜ì—ˆìŠµë‹ˆë‹¤." );	
-		strMessage2.PrintF(_S( 2015,  "ì„±ì£¼ì˜ ê¶Œì¢Œê°€ ì–¼ë§ˆ ë‚¨ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤. ì§„ê²©í•˜ì‹­ì‹œì˜¤." ) );		
+		strMessage1 += _S( 2014, "°¡ °ø¼ºÃø ±æµå·Î ¼±Á¤ µÇ¾ú½À´Ï´Ù." );	
+		strMessage2.PrintF(_S( 2015,  "¼ºÁÖÀÇ ±ÇÁÂ°¡ ¾ó¸¶ ³²Áö ¾Ê¾Ò½À´Ï´Ù. Áø°İÇÏ½Ê½Ã¿À." ) );		
+		// [2012/06/04 : Sora] ITS 8986 °ø¼º½ÃÀÛÀü °ø¼º½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ ½Ã Ä³¸¯ÅÍ ÀÌµ¿ºÒ°¡ »óÅÂ ¹ß»ı ¼öÁ¤
+		// °ø¼º ¸Ş½ÃÁö Ãâ·ÂÇÏ¸é¼­ ÇØ´ç UI¸¦ È°¼ºÈ­ ½ÃÄÑÁÖ¾îÇá ÇÑ´Ù. °ø¼º ¸Ş½ÃÁö Ãâ·Â ¹æ½Ä º¯°æ
+		pUIManager->GetSiegeWarfare()->SetNotice( strMessage1, strMessage2 );
 		
-		_pUIMgr->GetSiegeWarfare()->SetNotice( strMessage1, strMessage2 );
-		
-		_pUIMgr->GetSiegeWarfare()->OpenBattle();
+		pUIManager->GetSiegeWarfare()->OpenBattle();
 		
 		RestartEffect(nZoneIndex);
 		RestartGuildMasterEffect();
@@ -217,16 +243,19 @@ void CUISiegeWarfareDoc::StartCastle( int nZoneIndex, int nRemainSec, int GuildI
 	else if(nZoneIndex ==4 )
 	{
 		// WSS_DRATAN_SIEGEWARFARE 0070725
-		// TODO :: ë“œë¼íƒ„ ê³µì„± ì‹œì‘ ë£¨í‹´
-		// ê³µì„±ì´ ì‹œì‘ë˜ë©´ ëª¨ë“  ë¬¸ì„ ë‹«ì•„ ë‘”ë‹¤.
+		// TODO :: µå¶óÅº °ø¼º ½ÃÀÛ ·çÆ¾
+		// °ø¼ºÀÌ ½ÃÀÛµÇ¸é ¸ğµç ¹®À» ´İ¾Æ µĞ´Ù.
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 3, FALSE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 4, FALSE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 5, FALSE );
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 6, FALSE );
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 7, FALSE );
 
-		CTString strMessage =_S( 3684,"ê³µì„±ì´ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤." );		
-		_pUIMgr->GetSiegeWarfare()->SetNotice( strMessage );
-
-		_pUIMgr->GetSiegeWarfareNew()->SetWarState(TRUE);
+		CTString strMessage =_S( 3684,"°ø¼ºÀÌ ½ÃÀÛµÇ¾ú½À´Ï´Ù." );		
+		// [2012/06/04 : Sora] ITS 8986 °ø¼º½ÃÀÛÀü °ø¼º½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ ½Ã Ä³¸¯ÅÍ ÀÌµ¿ºÒ°¡ »óÅÂ ¹ß»ı ¼öÁ¤
+		// °ø¼º ¸Ş½ÃÁö Ãâ·ÂÇÏ¸é¼­ ÇØ´ç UI¸¦ È°¼ºÈ­ ½ÃÄÑÁÖ¾îÇá ÇÑ´Ù. °ø¼º ¸Ş½ÃÁö Ãâ·Â ¹æ½Ä º¯°æ
+		CUIManager::getSingleton()->GetSiegeWarfare()->SetNotice( strMessage );
+		pUIManager->GetSiegeWarfareNew()->SetWarState(TRUE);
 
 		m_nZoneIndex = nZoneIndex;
 		RestartEffect(nZoneIndex);
@@ -235,7 +264,7 @@ void CUISiegeWarfareDoc::StartCastle( int nZoneIndex, int nRemainSec, int GuildI
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::UpdatePoint
-// Explain:  ì „íˆ¬ ì¤‘ ê°±ì‹ ë˜ëŠ” ì ìˆ˜
+// Explain:  ÀüÅõ Áß °»½ÅµÇ´Â Á¡¼ö
 // Date : 2005-07-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::UpdatePoint( int nRemainSec, SGuild Guild1, SGuild Guild2, SGuild Guild3, int nMyPoint, int nDefensPoint )
@@ -264,7 +293,7 @@ void CUISiegeWarfareDoc::SetLeftTime ( int nRemainSec )
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::RemainFiledTime
-// Explain: ì•¼ì „ì „íˆ¬ê°€ ì¢…ë£Œë˜ê¸° 5ë¶„ì „ë¶€í„° 1ë¶„ ê°„ê²©ìœ¼ë¡œ ê³µì„±ì— ì°¸ì—¬í•œ ìœ ì €ì—ê²Œ ì „ì²´ê³µì§€ 
+// Explain: ¾ßÀüÀüÅõ°¡ Á¾·áµÇ±â 5ºĞÀüºÎÅÍ 1ºĞ °£°İÀ¸·Î °ø¼º¿¡ Âü¿©ÇÑ À¯Àú¿¡°Ô ÀüÃ¼°øÁö 
 // Date : 2005-07-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::RemainFiledTime( int nZoneIndex, int nRemainSec )
@@ -273,16 +302,15 @@ void CUISiegeWarfareDoc::RemainFiledTime( int nZoneIndex, int nRemainSec )
 	SetLeftTime( nRemainSec );
 	
 	CTString strMessage;
-	strMessage.PrintF(_S( 2016,  "[%s]ì§€ì—­ [ì•¼ì „ì „íˆ¬]ê°€ %dë¶„ ë‚¨ì•˜ìŠµë‹ˆë‹¤." ), ZoneInfo().GetZoneName( nZoneIndex ), (m_lLeftTime) / 60);	
-	
-	_pUIMgr->GetSiegeWarfare()->SetNotice( strMessage );
-
-	
+	strMessage.PrintF(_S( 2016,  "[%s]Áö¿ª [¾ßÀüÀüÅõ]°¡ %dºĞ ³²¾Ò½À´Ï´Ù." ), CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ), (m_lLeftTime) / 60);	
+	// [2012/06/04 : Sora] ITS 8986 °ø¼º½ÃÀÛÀü °ø¼º½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ ½Ã Ä³¸¯ÅÍ ÀÌµ¿ºÒ°¡ »óÅÂ ¹ß»ı ¼öÁ¤
+	// °ø¼º ¸Ş½ÃÁö Ãâ·ÂÇÏ¸é¼­ ÇØ´ç UI¸¦ È°¼ºÈ­ ½ÃÄÑÁÖ¾îÇá ÇÑ´Ù. °ø¼º ¸Ş½ÃÁö Ãâ·Â ¹æ½Ä º¯°æ
+	CUIManager::getSingleton()->GetSiegeWarfare()->SetNotice( strMessage );	
 }
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::TimeConfirm
-// Explain:  ê³µì„± ì‹œê°„ í™•ì • ì•Œë¦¼(ê³µì§€)
+// Explain:  °ø¼º ½Ã°£ È®Á¤ ¾Ë¸²(°øÁö)
 // Date : 2005-07-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::TimeConfirm( int nZoneIndex, int nMonth, int nDay, int nHour, int nMin )
@@ -290,15 +318,16 @@ void CUISiegeWarfareDoc::TimeConfirm( int nZoneIndex, int nMonth, int nDay, int 
 	m_nZoneIndex = nZoneIndex;
 	
 	CTString strMessage;
-	strMessage.PrintF( _S( 2017, "[%s]ì§€ì—­ [%s]ê³µì„±ì´ %dì›” %dì¼ %dì‹œë¡œ ì˜ˆì •ë˜ì—ˆìŠµë‹ˆë‹¤." ),	
-		ZoneInfo().GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ), nMonth, nDay, nHour );	
-	
-	_pUIMgr->GetSiegeWarfare()->SetNotice( strMessage );
+	strMessage.PrintF( _S( 2017, "[%s]Áö¿ª [%s]°ø¼ºÀÌ %d¿ù %dÀÏ %d½Ã·Î ¿¹Á¤µÇ¾ú½À´Ï´Ù." ),	
+		CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ), nMonth, nDay, nHour );	
+	// [2012/06/04 : Sora] ITS 8986 °ø¼º½ÃÀÛÀü °ø¼º½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ ½Ã Ä³¸¯ÅÍ ÀÌµ¿ºÒ°¡ »óÅÂ ¹ß»ı ¼öÁ¤
+	// °ø¼º ¸Ş½ÃÁö Ãâ·ÂÇÏ¸é¼­ ÇØ´ç UI¸¦ È°¼ºÈ­ ½ÃÄÑÁÖ¾îÇá ÇÑ´Ù. °ø¼º ¸Ş½ÃÁö Ãâ·Â ¹æ½Ä º¯°æ
+	CUIManager::getSingleton()->GetSiegeWarfare()->SetNotice( strMessage );
 }
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::RemainStartTime
-// Explain: ê³µì„± ì‹œì‘ ê¹Œì§€ ë‚¨ì€ ì‹œê°„ì„ ì‹œì‘ 10ë¶„ì „ë¶€í„° 1ë¶„ê°„ê²©ìœ¼ë¡œ ê³µì§€
+// Explain: °ø¼º ½ÃÀÛ ±îÁö ³²Àº ½Ã°£À» ½ÃÀÛ 10ºĞÀüºÎÅÍ 1ºĞ°£°İÀ¸·Î °øÁö
 // Date : 2005-07-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::RemainStartTime( int nZoneIndex, int nMin )
@@ -307,21 +336,21 @@ void CUISiegeWarfareDoc::RemainStartTime( int nZoneIndex, int nMin )
 	
 	CTString strMessage;
 	
-	strMessage.PrintF( _S( 2018, "[%s]ì§€ì—­ [%s]ê³µì„±ì´ %dë¶„ ë‚¨ì•˜ìŠµë‹ˆë‹¤." ), ZoneInfo().GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ), nMin );	
-	
-	_pUIMgr->GetSiegeWarfare()->SetNotice( strMessage );
-	
+	strMessage.PrintF( _S( 2018, "[%s]Áö¿ª [%s]°ø¼ºÀÌ %dºĞ ³²¾Ò½À´Ï´Ù." ), CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ), nMin );	
+	// [2012/06/04 : Sora] ITS 8986 °ø¼º½ÃÀÛÀü °ø¼º½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ ½Ã Ä³¸¯ÅÍ ÀÌµ¿ºÒ°¡ »óÅÂ ¹ß»ı ¼öÁ¤
+	// °ø¼º ¸Ş½ÃÁö Ãâ·ÂÇÏ¸é¼­ ÇØ´ç UI¸¦ È°¼ºÈ­ ½ÃÄÑÁÖ¾îÇá ÇÑ´Ù. °ø¼º ¸Ş½ÃÁö Ãâ·Â ¹æ½Ä º¯°æ
+	CUIManager::getSingleton()->GetSiegeWarfare()->SetNotice( strMessage );	
 }
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::CastleState
-// Explain:  ê³µì„± ìƒí™© ì•Œë¦¼(ê³µì§€) ë° ì „íˆ¬ìƒí™© ì…‹íŒ…
+// Explain:  °ø¼º »óÈ² ¾Ë¸²(°øÁö) ¹× ÀüÅõ»óÈ² ¼ÂÆÃ
 // Date : 2005-07-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::CastleState( int nZoneIndex, int nState, int nGateState, int nRemainSec, SGuild Guild1, SGuild Guild2, SGuild Guild3, int nMyPoint, int nDefensPoint )
 {
-	// Date : 2005-07-22(ì˜¤ì „ 10:00:32), By Lee Ki-hwan 
-	// ë¹„ ì°¸ê°€ìì¸ ê²½ìš°ì—ëŠ” 
+	// Date : 2005-07-22(¿ÀÀü 10:00:32), By Lee Ki-hwan 
+	// ºñ Âü°¡ÀÚÀÎ °æ¿ì¿¡´Â 
 	SetGateState( 0, nGateState ); 
 	
 	if( _pNetwork->MyCharacterInfo.sbJoinFlagMerac == WCJF_NONE )
@@ -335,17 +364,21 @@ void CUISiegeWarfareDoc::CastleState( int nZoneIndex, int nState, int nGateState
 	
 	m_nGuildPoint	= nMyPoint;
 	m_gdDefGuild.m_nPoint = nDefensPoint;
-	
-	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if( nState == WCSF_WAR_FIELD )
 	{
-		_pUIMgr->GetSiegeWarfare()->OpenSelectBattle();
+		pUIManager->GetSiegeWarfare()->OpenSelectBattle();
 	}
 	else if( nState == WCSF_WAR_CASTLE )
 	{
-		_pUIMgr->GetSiegeWarfare()->OpenBattle();
+		pUIManager->GetSiegeWarfare()->OpenBattle();
 	}
-	else return;
+	else
+	{
+		return;
+	}
 	
 	SetLeftTime( nRemainSec );
 	RestartEffect(nZoneIndex);
@@ -355,7 +388,7 @@ void CUISiegeWarfareDoc::CastleState( int nZoneIndex, int nState, int nGateState
 
 //------------------------------------------------------------------------------
 // WSS_DRATAN_SIEGEWARFARE 070725
-// Explain:  ê³µì„± ìƒí™© ì•Œë¦¼(ê³µì§€) ë° ì „íˆ¬ìƒí™© ì…‹íŒ… for Dratan
+// Explain:  °ø¼º »óÈ² ¾Ë¸²(°øÁö) ¹× ÀüÅõ»óÈ² ¼ÂÆÃ for Dratan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::CastleState( int nZoneIndex, int nState, int nGateState, int nRemainSec)
 {
@@ -366,15 +399,10 @@ void CUISiegeWarfareDoc::CastleState( int nZoneIndex, int nState, int nGateState
 	
 	m_nZoneIndex	= nZoneIndex;
 		
-	if( nState == WCSF_WAR_FIELD )
+	if( nState == WCSF_WAR_CASTLE )
 	{
-//		_pUIMgr->GetSiegeWarfare()->OpenSelectBattle();
-	}
-	else if( nState == WCSF_WAR_CASTLE )
-	{
-		// ê³µì„±ì¤‘ ì„¸íŒ…
-		_pUIMgr->GetSiegeWarfareNew()->SetWarState(TRUE);
-//		_pUIMgr->GetSiegeWarfare()->OpenBattle();
+		// °ø¼ºÁß ¼¼ÆÃ
+		CUIManager::getSingleton()->GetSiegeWarfareNew()->SetWarState(TRUE);
 	}
 	else return;
 	
@@ -385,16 +413,19 @@ void CUISiegeWarfareDoc::CastleState( int nZoneIndex, int nState, int nGateState
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::EndWar
-// Explain:  ë©”ì„¸ì§€ í‘œì‹œí›„ ê³µì„± ì¢…ë£Œ
+// Explain:  ¸Ş¼¼Áö Ç¥½ÃÈÄ °ø¼º Á¾·á
 // Date : 2005-07-07,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::EndWar( int nZoneIndex, int nWinDefense, int nOwnerGuildIndex, CTString strOwnerGuildName, int nOwnerIndex, CTString strOwnerName, int nNextMonth, int nNextDay, int nNextWeek, int nNextHour )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	INDEX	i;
 	if( nZoneIndex == 7 )
 	{
 		SetUIState( SWS_END );	
-		// ê³µì„±ì´ ëë‚˜ë©´ ëª¨ë“  ë¬¸ì„ ì—´ì–´ ë‘”ë‹¤.
-		// FIXME : ë¬¸ ì—´ì–´ì£¼ê¸°.	
+		// °ø¼ºÀÌ ³¡³ª¸é ¸ğµç ¹®À» ¿­¾î µĞ´Ù.
+		// FIXME : ¹® ¿­¾îÁÖ±â.	
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 0, TRUE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 1, TRUE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 2, TRUE );
@@ -405,7 +436,7 @@ void CUISiegeWarfareDoc::EndWar( int nZoneIndex, int nWinDefense, int nOwnerGuil
 		if( g_slZone == 7 )
 			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->PlayBGM( MUSIC_MERAC_FIELD );	
 
-		// ì´ë¯¸ì§€ ì¶œë ¥ ì¶”ê°€ 
+		// ÀÌ¹ÌÁö Ãâ·Â Ãß°¡ 
 		_UISignBoard->ShowSingBoard ( 12, 7 );
 			
 		m_tmLeftTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
@@ -413,17 +444,12 @@ void CUISiegeWarfareDoc::EndWar( int nZoneIndex, int nWinDefense, int nOwnerGuil
 		_pNetwork->MyCharacterInfo.sbJoinFlagMerac = WCJF_NONE;
 		
 		// Start My Guild, Enemy Guild Effect Start
-		INDEX cnt = _pNetwork->ga_srvServer.srv_actCha.Count();
-		
-		for( INDEX i = 0; i < cnt; ++i )
-		{
-			_pNetwork->ga_srvServer.srv_actCha[i].cha_sbJoinFlagMerac = WCJF_NONE;
-		}
+		ACTORMGR()->SetJoinFlagMerac(WCJF_NONE);
 	}
 	else if( nZoneIndex == 4)
 	{		
 		// WSS_DRATAN_SEIGEWARFARE 2007/10/1 -------------------------------->>
-		// ê³µì„± ì¢…ë£Œ ê´€ë ¨ ìˆ˜ì •...
+		// °ø¼º Á¾·á °ü·Ã ¼öÁ¤...
 		SetUIState( SWS_END ); // WSS_DRATAN_SEIGEWARFARE 2007/10/11 
 		
 		if( _pNetwork->MyCharacterInfo.sbJoinFlagDratan == WCJF_NONE )
@@ -432,59 +458,57 @@ void CUISiegeWarfareDoc::EndWar( int nZoneIndex, int nWinDefense, int nOwnerGuil
 		//_pNetwork->MyCharacterInfo.sbJoinFlagDratan = WCJF_NONE;
 		
 		// Start My Guild, Enemy Guild Effect Start
-		INDEX cnt = _pNetwork->ga_srvServer.srv_actCha.Count();
-		
-		for( INDEX i = 0; i < cnt; ++i )
-		{
-			_pNetwork->ga_srvServer.srv_actCha[i].cha_sbJoinFlagMerac = WCJF_NONE;
-		}
+		ACTORMGR()->SetJoinFlagMerac(WCJF_NONE);
+
 		// -------------------------------------------------------------------<<
 
 		// WSS_DRATAN_SIEGEWARFARE 0070725
-		// TODO :: ë“œë¼íƒ„ ê³µì„± ì¢…ë£Œ ë£¨í‹´
+		// TODO :: µå¶óÅº °ø¼º Á¾·á ·çÆ¾
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 3, TRUE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 4, TRUE );
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 5, TRUE );	
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 6, TRUE );	
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 7, TRUE );	
 
-		_pUIMgr->GetSiegeWarfareNew()->SetWarState(FALSE);
+		pUIManager->GetSiegeWarfareNew()->SetWarState(FALSE);
 
 		// WSS_DRATAN_SEIGEWARFARE 2007/08/14 -------------------------------->>
-		// 390 ~ 399 ê³µì„± ë¶€í™œì§„ì§€ ì´ˆê¸°í™”
+		// 390 ~ 399 °ø¼º ºÎÈ°ÁøÁö ÃÊ±âÈ­
 		CTString tStr;
-		for( i=0;i<10;i++)
+		for( i = 0; i < 10; i++)
 		{	
 			INDEX tNpcIdx = 390+i;
 			_pNetwork->MyCharacterInfo.mQuarter[tNpcIdx] = -1;
 			_pNetwork->MyCharacterInfo.mQuarterName[tNpcIdx] = CTString("");
 
-			// Hard Cording ^^;; ì–´ì©”ìˆ˜ ì—†ì´....
-			// ëª¹ ì´ë¦„ ë³€ê²½
-			CMobData& MD = _pNetwork->GetMobData(tNpcIdx);
-			if(MD.GetMobIndex()>0)
+			// Hard Cording ^^;; ¾îÂ¿¼ö ¾øÀÌ....
+			// ¸÷ ÀÌ¸§ º¯°æ
+			CMobData* MD = CMobData::getData(tNpcIdx);
+			if(MD->GetMobIndex()>0)
 			{
-				tStr.PrintF(_S( 3685,"ê³µì„± ë¶€í™œì§„ì§€%d"),tNpcIdx-389);
-				MD.SetMobName(tStr);
+				tStr.PrintF(_S( 3685,"°ø¼º ºÎÈ°ÁøÁö%d"),tNpcIdx-389);
+				MD->SetName(tStr);
 			}		
 		}	
 		// -------------------------------------------------------------------<<
 
-		if( _pUIMgr->GetSiegeWarfareNew()->IsEnabled()&&
-			_pUIMgr->GetSiegeWarfareNew()->IsVisible() )
+		if( pUIManager->GetSiegeWarfareNew()->IsEnabled()&&
+			pUIManager->GetSiegeWarfareNew()->IsVisible() )
 		{
-			_pUIMgr->RearrangeOrder(UI_SIEGE_WARFARE_NEW,FALSE);
+			pUIManager->RearrangeOrder(UI_SIEGE_WARFARE_NEW,FALSE);
 		}
 		
 		// WSS_DRATAN_SIEGEWARFARE 2007/10/17
-		// êµê°ì¤‘ ê³µì„± ì¢…ë£Œ ì²˜ë¦¬
+		// ±³°¨Áß °ø¼º Á¾·á Ã³¸®
 		if( _pNetwork->MyCharacterInfo.bConsensus )
 		{
-			_pUIMgr->GetSiegeWarfareNew()->StopConsensus(_pNetwork->MyCharacterInfo.index);
+			pUIManager->GetSiegeWarfareNew()->StopConsensus(_pNetwork->MyCharacterInfo.index);
 		}			
 		StopConsensusEffect(0,TRUE);
 		
 		// WSS_DRATAN_SIEGEWARFARE 2007/10/18
-		// ìƒíƒœ ì´ˆê¸°í™”
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->DeathInit();
+		// »óÅÂ ÃÊ±âÈ­
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->PlayerInit(false);
 
 	}
 
@@ -493,43 +517,44 @@ void CUISiegeWarfareDoc::EndWar( int nZoneIndex, int nWinDefense, int nOwnerGuil
 	CTString strMessage1;
 	CTString strMessage2;
 	
-	// ê³µì„± ëë‚¬ë©´ ì§€ë„ëŠ” ì´ˆê¸°í™” 
-	_pUIMgr->GetMap()->SetCurrentWorldMap( _pNetwork->MyCharacterInfo.zoneNo, 0 );
-	_pUIMgr->GetMap()->ReSetData();
+	// °ø¼º ³¡³µ¸é Áöµµ´Â ÃÊ±âÈ­ 
+	pUIManager->GetMap()->SetCurrentWorldMap( _pNetwork->MyCharacterInfo.zoneNo, 0 );
+	pUIManager->GetMap()->ReSetData();
 
 	if( nWinDefense )
 	{
 		if( strOwnerGuildName.Length() <= 0 )
 		{
-			strMessage1.PrintF( _S( 2019, "[%s]ì§€ì—­ [%s]ê³µì„±ì— ì‹¤íŒ¨ í•˜ì˜€ìŠµë‹ˆë‹¤." ), 
-			ZoneInfo().GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ) );	
+			strMessage1.PrintF( _S( 2019, "[%s]Áö¿ª [%s]°ø¼º¿¡ ½ÇÆĞ ÇÏ¿´½À´Ï´Ù." ), 
+			CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ) );	
 		}
 		else
 		{
-			strMessage1.PrintF( _S(2020 , "[%s]ì§€ì—­ [%s]ê³µì„±ì´ ì¢…ë£Œë˜ì—ˆìŠµë‹ˆë‹¤. [%s]ê¸¸ë“œê°€ ìˆ˜ì„±ì— ì„±ê³µí•˜ì˜€ìŠµë‹ˆë‹¤." ),
-			ZoneInfo().GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ), strOwnerGuildName );		
+			strMessage1.PrintF( _S(2020 , "[%s]Áö¿ª [%s]°ø¼ºÀÌ Á¾·áµÇ¾ú½À´Ï´Ù. [%s]±æµå°¡ ¼ö¼º¿¡ ¼º°øÇÏ¿´½À´Ï´Ù." ),
+			CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ), strOwnerGuildName );		
 		}
 		
 	}
 	else
 	{
-		strMessage1.PrintF( _S(2021 , "[%s]ì§€ì—­ [%s]ê³µì„±ì´ ì¢…ë£Œë˜ì—ˆìŠµë‹ˆë‹¤. ìƒˆë¡œìš´ ì„±ì£¼ë¡œ [%s]ê¸¸ë“œì˜ [%s]ê¸¸ë“œì¥ì´ ì„ ì¶œ ë˜ì—ˆìŠµë‹ˆë‹¤." ), 
-			ZoneInfo().GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ), strOwnerGuildName, strOwnerName );	
+		strMessage1.PrintF( _S(2021 , "[%s]Áö¿ª [%s]°ø¼ºÀÌ Á¾·áµÇ¾ú½À´Ï´Ù. »õ·Î¿î ¼ºÁÖ·Î [%s]±æµåÀÇ [%s]±æµåÀåÀÌ ¼±Ãâ µÇ¾ú½À´Ï´Ù." ), 
+			CZoneInfo::getSingleton()->GetZoneName( nZoneIndex ), GetCastleName( nZoneIndex ), strOwnerGuildName, strOwnerName );	
 	}
 	
-	strMessage2.PrintF(_S( 2022, "ë‹¤ìŒ ê³µì„±ì „ ì‹ ì²­ì€ %dì›” %dì¼ %sìš”ì¼ ì˜¤í›„ %dì‹œë¶€í„° ì‹ ì²­ì´ ê°€ëŠ¥í•©ë‹ˆë‹¤." ), 
-		nNextMonth, nNextDay, _pUIMgr->GetWeekToString( nNextWeek ), nNextHour );	
+	strMessage2.PrintF(_S( 2022, "´ÙÀ½ °ø¼ºÀü ½ÅÃ»Àº %d¿ù %dÀÏ %s¿äÀÏ ¿ÀÈÄ %d½ÃºÎÅÍ ½ÅÃ»ÀÌ °¡´ÉÇÕ´Ï´Ù." ), 
+		nNextMonth, nNextDay, pUIManager->GetWeekToString( nNextWeek ), nNextHour );	
+	// [2012/06/04 : Sora] ITS 8986 °ø¼º½ÃÀÛÀü °ø¼º½ÃÀÛ ÁöÁ¡À¸·Î ÀÌµ¿ ½Ã Ä³¸¯ÅÍ ÀÌµ¿ºÒ°¡ »óÅÂ ¹ß»ı ¼öÁ¤
+	// °ø¼º ¸Ş½ÃÁö Ãâ·ÂÇÏ¸é¼­ ÇØ´ç UI¸¦ È°¼ºÈ­ ½ÃÄÑÁÖ¾îÇá ÇÑ´Ù. °ø¼º ¸Ş½ÃÁö Ãâ·Â ¹æ½Ä º¯°æ
+	pUIManager->GetSiegeWarfare()->SetNotice( strMessage1, strMessage2 );
 	
-	_pUIMgr->GetSiegeWarfare()->SetNotice( strMessage1, strMessage2 );
-	
-	// Date : 2005-11-18(ì˜¤í›„ 4:27:13), By Lee Ki-hwan
-	// ë©”ì„¸ì§€ ë°•ìŠ¤ í‘œì‹œ ì¶”ê°€ 
-	_pUIMgr->CloseMessageBox( MSGCMD_NULL );
+	// Date : 2005-11-18(¿ÀÈÄ 4:27:13), By Lee Ki-hwan
+	// ¸Ş¼¼Áö ¹Ú½º Ç¥½Ã Ãß°¡ 
+	pUIManager->CloseMessageBox( MSGCMD_NULL );
 	
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S(2341, "ê³µì„± ì¢…ë£Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+	MsgBoxInfo.SetMsgBoxInfo( _S(2341, "°ø¼º Á¾·á" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
 	MsgBoxInfo.AddString( strMessage1 );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 		
 }
 
@@ -541,8 +566,8 @@ void CUISiegeWarfareDoc::EndWar( int nZoneIndex, int nWinDefense, int nOwnerGuil
 void CUISiegeWarfareDoc::SetTimeRep( int nMonth, int nDay, int nHour, int nMin )
 {
 	CTString strMessage;
-	strMessage.PrintF(_S(2147 ,  "ê³µì„± ì‹œê°„ì´ %dì›” %dì¼ %dì‹œë¡œ ì„¤ì •ë˜ì—ˆìŠµë‹ˆë‹¤." ), nMonth, nDay, nHour );  
-	_pUIMgr->GetSiegeWarfare()->Message( MSGCMD_SIEGE_WARFARE_INFO, strMessage, UMBS_OK  );
+	strMessage.PrintF(_S(2147 ,  "°ø¼º ½Ã°£ÀÌ %d¿ù %dÀÏ %d½Ã·Î ¼³Á¤µÇ¾ú½À´Ï´Ù." ), nMonth, nDay, nHour );  
+	CUIManager::getSingleton()->GetSiegeWarfare()->Message( MSGCMD_SIEGE_WARFARE_INFO, strMessage, UMBS_OK  );
 	
 }
 
@@ -588,27 +613,27 @@ void CUISiegeWarfareDoc::InvalidCommand( int nReqMsgType )
 	
 	
 	static CTString strReqMsgType[] = {
-	_S( 2023, 	"ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œë¥¼ ìƒì„±í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),					// MSG_GUILD_CREATE			
-		_S( 2024, 	"ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œë¥¼ ë ˆë²¨ì—…í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),				// MSG_GUILD_LEVELUP	
-		_S(2025 , 	"ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“¤ë¥¼ í•´ì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),					// MSG_GUILD_BREAKUP	
-			_S( 2026, "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œ ë“±ë¡ ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),			// MSG_GUILD_REGIST_REQ	
-			_S(2027 , "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œ ë“±ë¡ ìˆ˜ë½ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),			// MSG_GUILD_REGIST_ALLOW	
-		_S( 2028, 	"ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œ ë“±ë¡ ì·¨ì†Œë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),			// MSG_GUILD_REGIST_CANCEL	
-			_S( 2029, "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œ íƒˆí‡´ ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),			// MSG_GUILD_OUT_REQ	
-			_S( 2030, "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œ í‡´ì¶œì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),				// MSG_GUILD_KICK	
-			_S( 2031, "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œì¥ì„ ë³€ê²½í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),				// MSG_GUILD_CHANGE_BOSS	
-		_S(2032 , 	"ê³µì„±ì „ ì¤‘ì—ëŠ” ë¶€ë‹¨ì¥ì„ ì„ëª…í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),				// MSG_GUILD_APPOINT_OFFICER	
-		_S( 2033, 	"ê³µì„±ì „ ì¤‘ì—ëŠ” ë¶€ë‹¨ì¥ì„ í•´ì„í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),				// MSG_GUILD_FIRE_OFFICER	
-			_S( 2034, "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œì „íˆ¬ ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),			// MSG_GUILD_BATTLE_REQ_REQ	
-			_S( 2035, "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œì „íˆ¬ ì‹ ì²­ì„ ê±°ì ˆí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),		// MSG_GUILD_BATTLE_REQ_REJECT	
-			_S( 2036, "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œì „íˆ¬ ì‹ ì²­ì„ ìˆ˜ë½í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),		// MSG_GUILD_BATTLE_REQ_ACCEPT	
-		_S( 2037, 	"ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œì „íˆ¬ ì¤‘ë‹¨ ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),		// MSG_GUILD_BATTLE_STOP_REQ	
-			_S( 2038, "ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œì „íˆ¬ ì¤‘ë‹¨ ì‹ ì²­ì„ ê±°ì ˆí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	// MSG_GUILD_BATTLE_STOP_REJECT	
-		_S( 2039, 	"ê³µì„±ì „ ì¤‘ì—ëŠ” ê¸¸ë“œì „íˆ¬ ì¤‘ë‹¨ ì‹ ì²­ì„ ìˆ˜ë½í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	// MSG_GUILD_BATTLE_STOP_ACCEPT	
+	_S( 2023, 	"°ø¼ºÀü Áß¿¡´Â ±æµå¸¦ »ı¼ºÇÒ ¼ö ¾ø½À´Ï´Ù." ),					// MSG_GUILD_CREATE			
+		_S( 2024, 	"°ø¼ºÀü Áß¿¡´Â ±æµå¸¦ ·¹º§¾÷ÇÒ ¼ö ¾ø½À´Ï´Ù." ),				// MSG_GUILD_LEVELUP	
+		_S(2025 , 	"°ø¼ºÀü Áß¿¡´Â ±æµé¸¦ ÇØÃ¼ÇÒ ¼ö ¾ø½À´Ï´Ù." ),					// MSG_GUILD_BREAKUP	
+			_S( 2026, "°ø¼ºÀü Áß¿¡´Â ±æµå µî·Ï ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),			// MSG_GUILD_REGIST_REQ	
+			_S(2027 , "°ø¼ºÀü Áß¿¡´Â ±æµå µî·Ï ¼ö¶ôÀ» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),			// MSG_GUILD_REGIST_ALLOW	
+		_S( 2028, 	"°ø¼ºÀü Áß¿¡´Â ±æµå µî·Ï Ãë¼Ò¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù." ),			// MSG_GUILD_REGIST_CANCEL	
+			_S( 2029, "°ø¼ºÀü Áß¿¡´Â ±æµå Å»Åğ ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),			// MSG_GUILD_OUT_REQ	
+			_S( 2030, "°ø¼ºÀü Áß¿¡´Â ±æµå ÅğÃâÀ» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),				// MSG_GUILD_KICK	
+			_S( 2031, "°ø¼ºÀü Áß¿¡´Â ±æµåÀåÀ» º¯°æÇÒ ¼ö ¾ø½À´Ï´Ù." ),				// MSG_GUILD_CHANGE_BOSS	
+		_S(2032 , 	"°ø¼ºÀü Áß¿¡´Â ºÎ´ÜÀåÀ» ÀÓ¸íÇÒ ¼ö ¾ø½À´Ï´Ù." ),				// MSG_GUILD_APPOINT_OFFICER	
+		_S( 2033, 	"°ø¼ºÀü Áß¿¡´Â ºÎ´ÜÀåÀ» ÇØÀÓÇÒ ¼ö ¾ø½À´Ï´Ù." ),				// MSG_GUILD_FIRE_OFFICER	
+			_S( 2034, "°ø¼ºÀü Áß¿¡´Â ±æµåÀüÅõ ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),			// MSG_GUILD_BATTLE_REQ_REQ	
+			_S( 2035, "°ø¼ºÀü Áß¿¡´Â ±æµåÀüÅõ ½ÅÃ»À» °ÅÀıÇÒ ¼ö ¾ø½À´Ï´Ù." ),		// MSG_GUILD_BATTLE_REQ_REJECT	
+			_S( 2036, "°ø¼ºÀü Áß¿¡´Â ±æµåÀüÅõ ½ÅÃ»À» ¼ö¶ôÇÒ ¼ö ¾ø½À´Ï´Ù." ),		// MSG_GUILD_BATTLE_REQ_ACCEPT	
+		_S( 2037, 	"°ø¼ºÀü Áß¿¡´Â ±æµåÀüÅõ Áß´Ü ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),		// MSG_GUILD_BATTLE_STOP_REQ	
+			_S( 2038, "°ø¼ºÀü Áß¿¡´Â ±æµåÀüÅõ Áß´Ü ½ÅÃ»À» °ÅÀıÇÒ ¼ö ¾ø½À´Ï´Ù." ),	// MSG_GUILD_BATTLE_STOP_REJECT	
+		_S( 2039, 	"°ø¼ºÀü Áß¿¡´Â ±æµåÀüÅõ Áß´Ü ½ÅÃ»À» ¼ö¶ôÇÒ ¼ö ¾ø½À´Ï´Ù." ),	// MSG_GUILD_BATTLE_STOP_ACCEPT	
 			"UnKnow Message"
 	};
 	
-	_pUIMgr->GetSiegeWarfare()->ErrorMessage( strReqMsgType[nReqMsg-1] );
+	CUIManager::getSingleton()->GetSiegeWarfare()->ErrorMessage( strReqMsgType[nReqMsg-1] );
 	
 }
 
@@ -619,106 +644,142 @@ void CUISiegeWarfareDoc::InvalidCommand( int nReqMsgType )
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::SetGateState( int nOldGatesate, int nGateState )
 {
-	// 0, 1 ì™¼ìª½ë¬¸
-	if( (nGateState & ( 1 << 0 )) && (nGateState & ( 1 << 1 )))
-	{		
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 0, TRUE );
-	}
-	else
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 0, FALSE );
-	}
-	
-	// 2, 3 ì˜¤ë¥¸ìª½ë¬¸
-	if( (nGateState & ( 1 << 2 )) && (nGateState & ( 1 << 3 )))
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 1, TRUE );
-	}
-	else
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 1, FALSE );
-	}
-	
-	// 4, 5 ì¤‘ì•™ë¬¸.
-	if( (nGateState & ( 1 << 4 )) && (nGateState & ( 1 << 5 )))
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 2, TRUE );
-		
-		// ë‚´ ì„±ë¬¸ ì—´ë¦¼
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 2040, "ê³µì„±ì¸¡ì´ ë‚´ì„±ë¬¸ê¹Œì§€ ì§„ê²©í•˜ì˜€ìŠµë‹ˆë‹¤. ìˆ˜ì„±ì¸¡ì€ ê¶Œì¢Œë¥¼ ë³´í˜¸í•˜ì‹­ì‹œì˜¤." ) ); 
-		
-	}
-	else
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 2, FALSE );
-	}
-// WSS_DRATAN_SIEGEWARFARE 070723
-#ifdef DRATAN_SIEGEWARFARE
-	// ë“œë¼íƒ„ ì™¸ë¬¸ 1
-	if( (nGateState & ( 1 << 6 )) )
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 3, TRUE );
-		// ì™¸ ì„±ë¬¸ ì—´ë¦¼
-		if(_pUIMgr->GetSelectResource()->GetWndState()) // WSS_DRATAN_SIEGEWARFARE 071008 ê³µì„±ì¤‘ì´ë©´...
-		{
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 3811,"ì™¸ì„±ë¬¸ì´ íŒŒê´´ë˜ì—ˆìŠµë‹ˆë‹¤." ) ); 
-		}
-	}
-	else
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 3, FALSE );
-	}
-	// ë“œë¼íƒ„ ë‚´ë¬¸ 2
-	if( (nGateState & ( 1 << 7 )) )
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 4, TRUE );
-		
-		// ë‚´ ì„±ë¬¸ ì—´ë¦¼
-		if(_pUIMgr->GetSelectResource()->GetWndState()) // WSS_DRATAN_SIEGEWARFARE 071008 ê³µì„±ì¤‘ì´ë©´...
-		{
-			_pUIMgr->GetChatting()->AddSysMessage( _S(  3686,"ê³µì„±ì¸¡ì´ ë‚´ì„±ë¬¸ê¹Œì§€ ì§„ê²©í•˜ì˜€ìŠµë‹ˆë‹¤. ìˆ˜ì„±ì¸¡ì€ í¬ë¦¬ìŠ¤íƒˆì„ ë³´í˜¸í•˜ì‹­ì‹œì˜¤." ) ); 
-		}
-		
-	}
-	else
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 4, FALSE );
-	}
-	// ë“œë¼íƒ„ ë‚´ë¬¸ 3
-	if( (nGateState & ( 1 << 8 )) )
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 5, TRUE );
-		
-		// ë‚´ ì„±ë¬¸ ì—´ë¦¼
-		if(_pUIMgr->GetSelectResource()->GetWndState()) // WSS_DRATAN_SIEGEWARFARE 071008 ê³µì„±ì¤‘ì´ë©´...
-		{
-			_pUIMgr->GetChatting()->AddSysMessage( _S(  3686,"ê³µì„±ì¸¡ì´ ë‚´ì„±ë¬¸ê¹Œì§€ ì§„ê²©í•˜ì˜€ìŠµë‹ˆë‹¤. ìˆ˜ì„±ì¸¡ì€ í¬ë¦¬ìŠ¤íƒˆì„ ë³´í˜¸í•˜ì‹­ì‹œì˜¤." ) ); 
-		}
-		
-	}
-	else
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 5, FALSE );
-	}
-#endif
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
+	// 0, 1 ¿ŞÂÊ¹®
+	if (g_slZone == 7) //  ¸Ş¶óÅ©
+	{
+		if( (nGateState & ( 1 << 0 )) && (nGateState & ( 1 << 1 )))
+		{		
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 0, TRUE );
+		}
+		else
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 0, FALSE );
+		}
+		
+		// 2, 3 ¿À¸¥ÂÊ¹®
+		if( (nGateState & ( 1 << 2 )) && (nGateState & ( 1 << 3 )))
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 1, TRUE );
+		}
+		else
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 1, FALSE );
+		}
+		
+		// 4, 5 Áß¾Ó¹®.
+		if( (nGateState & ( 1 << 4 )) && (nGateState & ( 1 << 5 )))
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 2, TRUE );
+			
+			// ³» ¼º¹® ¿­¸²
+			if (nOldGatesate != nGateState)
+			{
+				pUIManager->GetChattingUI()->AddSysMessage( _S( 2040, "°ø¼ºÃøÀÌ ³»¼º¹®±îÁö Áø°İÇÏ¿´½À´Ï´Ù. ¼ö¼ºÃøÀº ±ÇÁÂ¸¦ º¸È£ÇÏ½Ê½Ã¿À." ) ); 
+			}
+		}
+		else
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 2, FALSE );
+		}
+	}
+
+// WSS_DRATAN_SIEGEWARFARE 070723
+	// µå¶óÅº ¿Ü¹® ¿À¸¥Æí
+	if (g_slZone == 4)	// µå¶óÅº
+	{
+		if( (nGateState & ( 1 << 6 )) )
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 3, TRUE );
+			// ¿Ü ¼º¹® ¿­¸²
+			if(pUIManager->GetSelectResource()->GetWndState() && nOldGatesate != nGateState) // WSS_DRATAN_SIEGEWARFARE 071008 °ø¼ºÁßÀÌ¸é...
+			{
+				pUIManager->GetChattingUI()->AddSysMessage( _S( 3811,"¿Ü¼º¹®ÀÌ ÆÄ±«µÇ¾ú½À´Ï´Ù." ) ); 
+			}
+		}
+		else
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 3, FALSE );
+		}
+		// µå¶óÅº ³»¹® 2
+		if( (nGateState & ( 1 << 7 )) )
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 6, TRUE );
+			
+			// ³» ¼º¹® ¿­¸²
+			if(pUIManager->GetSelectResource()->GetWndState() && nOldGatesate != nGateState) // WSS_DRATAN_SIEGEWARFARE 071008 °ø¼ºÁßÀÌ¸é...
+			{
+				pUIManager->GetChattingUI()->AddSysMessage( _S(  3686,"°ø¼ºÃøÀÌ ³»¼º¹®±îÁö Áø°İÇÏ¿´½À´Ï´Ù. ¼ö¼ºÃøÀº Å©¸®½ºÅ»À» º¸È£ÇÏ½Ê½Ã¿À." ) ); 
+			}
+			
+		}
+		else
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 6, FALSE );
+		}
+		// µå¶óÅº ³»¹® 3
+		if( (nGateState & ( 1 << 8 )) )
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 7, TRUE );
+			
+			// ³» ¼º¹® ¿­¸²
+			if(pUIManager->GetSelectResource()->GetWndState() && nOldGatesate != nGateState) // WSS_DRATAN_SIEGEWARFARE 071008 °ø¼ºÁßÀÌ¸é...
+			{
+				pUIManager->GetChattingUI()->AddSysMessage( _S(  3686,"°ø¼ºÃøÀÌ ³»¼º¹®±îÁö Áø°İÇÏ¿´½À´Ï´Ù. ¼ö¼ºÃøÀº Å©¸®½ºÅ»À» º¸È£ÇÏ½Ê½Ã¿À." ) ); 
+			}
+			
+		}
+		else
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 7, FALSE );
+		}
+		// µå¶óÅº ¿Ü¼º¹® ¿ŞÆí
+		if( (nGateState & ( 1 << 9 )) )
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 4, TRUE );
+			// ¿Ü ¼º¹® ¿­¸²
+			if(pUIManager->GetSelectResource()->GetWndState() && nOldGatesate != nGateState) // WSS_DRATAN_SIEGEWARFARE 071008 °ø¼ºÁßÀÌ¸é...
+			{
+				pUIManager->GetChattingUI()->AddSysMessage( _S( 3811,"¿Ü¼º¹®ÀÌ ÆÄ±«µÇ¾ú½À´Ï´Ù." ) ); 
+			}
+		}
+		else
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 4, FALSE );
+		}
+		// µå¶óÅº ¿Ü¼º¹® °¡¿îµ¥
+		if( (nGateState & ( 1 << 10 )) )
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 5, TRUE );
+			// ¿Ü ¼º¹® ¿­¸²
+			if(pUIManager->GetSelectResource()->GetWndState() && nOldGatesate != nGateState) // WSS_DRATAN_SIEGEWARFARE 071008 °ø¼ºÁßÀÌ¸é...
+			{
+				pUIManager->GetChattingUI()->AddSysMessage( _S( 3811,"¿Ü¼º¹®ÀÌ ÆÄ±«µÇ¾ú½À´Ï´Ù." ) ); 
+			}
+		}
+		else
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->OpenGate( 5, FALSE );
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::
-// Explain:  ì§€ì—­ì— ë”°ë¥¸ ì„±ì´ë¦„ ... í•˜ë“œì½”ë”©
+// Explain:  Áö¿ª¿¡ µû¸¥ ¼ºÀÌ¸§ ... ÇÏµåÄÚµù
 // Date : 2005-07-07,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 CTString CUISiegeWarfareDoc::GetCastleName( int nZoneIndex )
 {	
-	CTString strCastleName = _S( 2041, "ê³µì„±ì—†ìŒ" );	
+	CTString strCastleName = _S( 2041, "°ø¼º¾øÀ½" );	
 	switch( nZoneIndex )
 	{
-	case 4://ë“œë¼íƒ„ // WSS_DRATAN_SIEGEWARFARE 070723
-		strCastleName = _S(  3687, "ì¹´ì˜¤ìŠ¤" ); 
+	case 4://µå¶óÅº // WSS_DRATAN_SIEGEWARFARE 070723
+		strCastleName = _S(  3687, "Ä«¿À½º" ); 
 		break;
-	case 7://ë©”ë¼í¬
-		strCastleName = _S( 2042, "ì¹¸ë‹¨íŠ¸" ); // ë¯¸ë¦¬ ê³µê°„ í™•ë³´ í•´ ë†“ê¸°(20)ê°œ ì •ë„
+	case 7://¸Ş¶óÅ©
+		strCastleName = _S( 2042, "Ä­´ÜÆ®" ); // ¹Ì¸® °ø°£ È®º¸ ÇØ ³õ±â(20)°³ Á¤µµ
 		break;
 	}
 	
@@ -734,60 +795,62 @@ void CUISiegeWarfareDoc::ErrorProc( int nErrorCode, UBYTE ubMsgType )
 {
 	static CTString strErrorMessage[MSG_GUILD_WAR_ERROR_TOTAL]	= 
 	{
-	_S( 2043, 	"ë‹¤ ì˜ ëë„¤ì—¬" ),	
-		_S( 2044, 	"ì´ë¯¸ ê³µì„±ì´ ì§„í–‰ì¤‘ ì…ë‹ˆë‹¤." ),		
-		_S( 2045, 	"ìˆ˜ì„±ì¸¡ ê¸¸ë“œëŠ” ê³µì„± ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2046, "ê¸¸ë“œì— ê°€ì…ë˜ì–´ ìˆì§€ ì•Šìœ¼ë©´ ê³µì„± ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2047, "ì´ë¯¸ ê³µì„±/ìˆ˜ì„± ì‹ ì²­ì„ ë˜ì–´ìˆìŠµë‹ˆë‹¤." ),	
-			_S( 2048, "ê³µì„± ê°€ëŠ¥ ì‹œê°„ì´ ì•„ë‹™ë‹ˆë‹¤." ),	
-			_S( 2049, "ê¸¸ë“œ ë ˆë²¨ ë¶€ì¡±í•˜ì—¬ ê³µì„± ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2050, "ê¸¸ë“œ ì¸ì›ì´ ë¶€ì¡±í•˜ì—¬ ê³µì„± ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2051, "ì˜ì›…ì˜ ì¦í‘œê°€ ì—†ìœ¼ë©´ ê³µì„± ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2052, "ë‚˜ìŠ¤ê°€ ë¶€ì¡±í•˜ì—¬ ê³µì„± ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2053, "ì„±ì£¼ê°€ ì—†ëŠ” ì„±ì—ëŠ” ìˆ˜ì„± ìš©ë³‘ ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2054, "ê¸¸ë“œì˜ ë°©ì¹¨ì— ë”°ë¼ ê°œì¸ ìš©ë³‘ ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2055, "ë ˆë²¨ì´ ë¶€ì¡±í•˜ì—¬ ê°œì¸ ìš©ë³‘ ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ),	
-			_S( 2056, "ì„±ì£¼ê°€ ì•„ë‹ˆë©´ ê³µì„± ì„¤ì •ì„ ë³€ê²½í•  ìˆ˜ ì—‡ìŠµë‹ˆë‹¤." ),	
-			_S( 2057, "ê³µì„± ê°€ëŠ¥ ì‹œê°„ì´ ì•„ë‹™ë‹ˆë‹¤." ),	
-			_S( 2057, "ê³µì„± ê°€ëŠ¥ ì‹œê°„ì´ ì•„ë‹™ë‹ˆë‹¤." ),
-			_S( 1688, "ì¡°ê±´ì´ ë§ì§€ ì•ŠìŠµë‹ˆë‹¤."),		
+	_S( 2043, 	"´Ù Àß µÆ³×¿©" ),	
+		_S( 2044, 	"ÀÌ¹Ì °ø¼ºÀÌ ÁøÇàÁß ÀÔ´Ï´Ù." ),		
+		_S( 2045, 	"¼ö¼ºÃø ±æµå´Â °ø¼º ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2046, "±æµå¿¡ °¡ÀÔµÇ¾î ÀÖÁö ¾ÊÀ¸¸é °ø¼º ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2047, "ÀÌ¹Ì °ø¼º/¼ö¼º ½ÅÃ»À» µÇ¾îÀÖ½À´Ï´Ù." ),	
+			_S( 2048, "°ø¼º °¡´É ½Ã°£ÀÌ ¾Æ´Õ´Ï´Ù." ),	
+			_S( 2049, "±æµå ·¹º§ ºÎÁ·ÇÏ¿© °ø¼º ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2050, "±æµå ÀÎ¿øÀÌ ºÎÁ·ÇÏ¿© °ø¼º ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2051, "¿µ¿õÀÇ ÁõÇ¥°¡ ¾øÀ¸¸é °ø¼º ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2052, "³ª½º°¡ ºÎÁ·ÇÏ¿© °ø¼º ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2053, "¼ºÁÖ°¡ ¾ø´Â ¼º¿¡´Â ¼ö¼º ¿ëº´ ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2054, "±æµåÀÇ ¹æÄ§¿¡ µû¶ó °³ÀÎ ¿ëº´ ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2055, "·¹º§ÀÌ ºÎÁ·ÇÏ¿© °³ÀÎ ¿ëº´ ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ),	
+			_S( 2056, "¼ºÁÖ°¡ ¾Æ´Ï¸é °ø¼º ¼³Á¤À» º¯°æÇÒ ¼ö ¾ù½À´Ï´Ù." ),	
+			_S( 2057, "°ø¼º °¡´É ½Ã°£ÀÌ ¾Æ´Õ´Ï´Ù." ),	
+			_S( 2057, "°ø¼º °¡´É ½Ã°£ÀÌ ¾Æ´Õ´Ï´Ù." ),
+			_S( 1688, "Á¶°ÇÀÌ ¸ÂÁö ¾Ê½À´Ï´Ù."),		
 	};
-	
-	// ì„±ê³µ ì²˜ë¦¬
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// ¼º°ø Ã³¸®
 	if( nErrorCode == MSG_GUILD_ERROR_OK && ubMsgType != -1 )
 	{
 		CTString strMessage;
 		switch ( ubMsgType )
 		{
-		case MSG_GUILD_WAR_JOIN_ATTACK_GUILD: // ê³µì„±ì‹ ì²­ ì™„ë£Œ
+		case MSG_GUILD_WAR_JOIN_ATTACK_GUILD: // °ø¼º½ÅÃ» ¿Ï·á
 			{
-				strMessage = _S(2058 , "ê³µì„± ì‹ ì²­ì´ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤." );		
+				strMessage = _S(2058 , "°ø¼º ½ÅÃ»ÀÌ ¿Ï·áµÇ¾ú½À´Ï´Ù." );		
 			}
 			break;
-		case MSG_GUILD_WAR_JOIN_DEFENSE_GUILD: // ìˆ˜ì„± ê¸¸ë“œ ì‹ ì²­ì™„ë£Œ 
+		case MSG_GUILD_WAR_JOIN_DEFENSE_GUILD: // ¼ö¼º ±æµå ½ÅÃ»¿Ï·á 
 			{
-				strMessage = _S( 2059, "ìˆ˜ì„±ì¸¡ ìš©ë³‘ ê¸¸ë“œ ì‹ ì²­ì´ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤." );	
+				strMessage = _S( 2059, "¼ö¼ºÃø ¿ëº´ ±æµå ½ÅÃ»ÀÌ ¿Ï·áµÇ¾ú½À´Ï´Ù." );	
 			}
 			break;
-		case MSG_GUILD_WAR_JOIN_ATTACK_CHAR: // ê³µì„± ìš©ë³‘ ì‹ ì²­ ì™„ë£Œ 
+		case MSG_GUILD_WAR_JOIN_ATTACK_CHAR: // °ø¼º ¿ëº´ ½ÅÃ» ¿Ï·á 
 			{
-				strMessage = _S( 2060, "ê³µì„±ì¸¡ ìš©ë³‘ ì‹ ì²­ì´ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤." );	
+				strMessage = _S( 2060, "°ø¼ºÃø ¿ëº´ ½ÅÃ»ÀÌ ¿Ï·áµÇ¾ú½À´Ï´Ù." );	
 			}
 			break;
-		case MSG_GUILD_WAR_JOIN_DEFENSE_CHAR: // ìˆ˜ì„± ìš©ë³‘ì‹ ì²­ ì™„ë£Œ 
+		case MSG_GUILD_WAR_JOIN_DEFENSE_CHAR: // ¼ö¼º ¿ëº´½ÅÃ» ¿Ï·á 
 			{
-				strMessage =_S(2061 ,  "ìˆ˜ì„±ì¸¡ ìš©ë³‘ì‹ ì²­ì´ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤." );	
+				strMessage =_S(2061 ,  "¼ö¼ºÃø ¿ëº´½ÅÃ»ÀÌ ¿Ï·áµÇ¾ú½À´Ï´Ù." );	
 			}
 			break;
 			
 		default : return;
 		}
 		
-		_pUIMgr->GetSiegeWarfare()->Message( MSGCMD_SIEGE_WARFARE_INFO, strMessage, UMBS_OK );
+		pUIManager->GetSiegeWarfare()->Message( MSGCMD_SIEGE_WARFARE_INFO, strMessage, UMBS_OK );
 	}
 	else 
 	{
-		_pUIMgr->GetSiegeWarfare()->ErrorMessage( strErrorMessage[nErrorCode] );
+		pUIManager->GetSiegeWarfare()->ErrorMessage( strErrorMessage[nErrorCode] );
 	}
 }
 //------------------------------------------------------------------------------
@@ -799,31 +862,31 @@ void CUISiegeWarfareDoc::StartEffect( SLONG slCharIndex, CEntity* penEntity, SBY
 {
 	CTString strEffectName;
 	
-	// ë©”ë¼í¬
+	// ¸Ş¶óÅ©
 	if( IsWar() )
 	{	
-		if( m_mapEG.find( slCharIndex ) != m_mapEG.end() ) return; // ì´ë¯¸ ì¡´ì¬ í•˜ëŠ”ê°€?
+		if( m_mapEG.find( slCharIndex ) != m_mapEG.end() ) return; // ÀÌ¹Ì Á¸Àç ÇÏ´Â°¡?
 		if( sbJoinFlag == WCJF_NONE || sbJoinFlag <= -1 ) return;
 		if( slCharIndex == -1 ) return;
 		if( penEntity == NULL ) return;
 		
-		// ìš©ë³‘ì¸ ê²½ìš°ì—ëŠ”... ê¸¸ë“œ Indexê°€ -1ë¡œ ì˜µë‹ˆë‹¤. ê·¸ë˜ì„œ ì—ëŸ¬ ì²´í¬ ì œê±°~
+		// ¿ëº´ÀÎ °æ¿ì¿¡´Â... ±æµå Index°¡ -1·Î ¿É´Ï´Ù. ±×·¡¼­ ¿¡·¯ Ã¼Å© Á¦°Å~
 		//if( nGuildIndex == -1 ) return;
 		
 		switch( sbJoinFlag )
 		{
-			// ìˆ˜ì„±ê¸¸ë“œ
+			// ¼ö¼º±æµå
 		case WCJF_OWNER:
 			strEffectName = "cpp_gb_defens";
 			break;
 			
-			// ìˆ˜ì„±ì¸¡ê¸¸ë“œ
+			// ¼ö¼ºÃø±æµå
 		case WCJF_DEFENSE_GUILD:
 		case WCJF_DEFENSE_CHAR:
 			strEffectName = "cpp_gb_blue";
 			break;
 			
-			// ê³µì„±ì¸¡ ê¸¸ë“œ
+			// °ø¼ºÃø ±æµå
 		case WCJF_ATTACK_GUILD:
 		case WCJF_ATTACK_CHAR:
 			{
@@ -834,7 +897,7 @@ void CUISiegeWarfareDoc::StartEffect( SLONG slCharIndex, CEntity* penEntity, SBY
 					break;
 				}
 
-				if( IsBattle() ) // ìˆ˜ì„±ì „
+				if( IsBattle() ) // ¼ö¼ºÀü
 				{
 					for( int i =0 ; i < 3; i++ )
 					{
@@ -853,17 +916,17 @@ void CUISiegeWarfareDoc::StartEffect( SLONG slCharIndex, CEntity* penEntity, SBY
 		}
 	}
 	// WSS_DRATAN_SEIGEWARFARE 2007/08/30 --------------------------->>
-	// ë“œë¼íƒ„
-	else if( _pUIMgr->GetSiegeWarfareNew()->GetWarState())
+	// µå¶óÅº
+	else if( CUIManager::getSingleton()->GetSiegeWarfareNew()->GetWarState())
 	{
-		if( m_mapEG.find( slCharIndex ) != m_mapEG.end() ) return; // ì´ë¯¸ ì¡´ì¬ í•˜ëŠ”ê°€?
+		if( m_mapEG.find( slCharIndex ) != m_mapEG.end() ) return; // ÀÌ¹Ì Á¸Àç ÇÏ´Â°¡?
 		if( sbJoinFlag == WCJF_NONE || sbJoinFlag <= -1 ) return;
 		if( slCharIndex == -1 ) return;
 		if( penEntity == NULL ) return;
 		
 		switch( sbJoinFlag )
 		{
-			// ìˆ˜ì„± ê¸¸ë“œ
+			// ¼ö¼º ±æµå
 		case WCJF_OWNER:
 		case WCJF_DEFENSE_GUILD: // WSS_DRATAN_SIEGEWARFARE 2007/10/1
 		case WCJF_DEFENSE_CHAR:
@@ -873,7 +936,7 @@ void CUISiegeWarfareDoc::StartEffect( SLONG slCharIndex, CEntity* penEntity, SBY
 			}
 			break;		
 			
-			// ê³µì„± ê¸¸ë“œ
+			// °ø¼º ±æµå
 		case WCJF_ATTACK_GUILD:
 			{
 				if(_pNetwork->MyCharacterInfo.lGuildIndex == nGuildIndex) strEffectName = "ATTACK_FORCE_OUR";
@@ -886,7 +949,7 @@ void CUISiegeWarfareDoc::StartEffect( SLONG slCharIndex, CEntity* penEntity, SBY
 		}
 
 	}
-	// ê¸°íƒ€
+	// ±âÅ¸
 	else return;
 	// --------------------------------------------------------------<<
 
@@ -922,7 +985,7 @@ void CUISiegeWarfareDoc::StopEffect( SLONG slCharIndex, bool bAllStop )
 	}
 	else
 	{
-		// ì´í™í„°ê°€ í™œì„±í™” ë˜ì–´ ìˆì§€ ì•Šë‹¤ë©´ ëë‚´ë¼..
+		// ÀÌÆåÅÍ°¡ È°¼ºÈ­ µÇ¾î ÀÖÁö ¾Ê´Ù¸é ³¡³»¶ó..
 		if( m_mapEG.find( slCharIndex ) == m_mapEG.end() ) return;
 		
 		if( m_mapEG[slCharIndex] != NULL && CEffectGroupManager::Instance().IsValidCreated( m_mapEG[slCharIndex] ) )
@@ -942,49 +1005,34 @@ void CUISiegeWarfareDoc::RestartEffect(int nZoneIndex)
 {
 	StopEffect( -1, TRUE );
 
-	BOOL bJoinFlag = FALSE;
+	bool bJoinFlag = false;
 	SBYTE sbJoinFlag = _pNetwork->MyCharacterInfo.sbJoinFlagMerac;
 
 	if (nZoneIndex == 4)
 	{
-		bJoinFlag = TRUE;
+		bJoinFlag = true;
 		sbJoinFlag = _pNetwork->MyCharacterInfo.sbJoinFlagDratan;
 	}
 
 	// Start Effect My Character
 	StartEffect ( _pNetwork->MyCharacterInfo.index, CEntity::GetPlayerEntity(0), sbJoinFlag, _pNetwork->MyCharacterInfo.lGuildIndex );
-
-	// Start My Guild, Enemy Guild Effect Start
-	INDEX cnt = _pNetwork->ga_srvServer.srv_actCha.Count();
 	
-	for( INDEX i = 0; i < cnt; ++i )
-	{
-		CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[i];
-		
-		if( ct.cha_pEntity != NULL
-			&& ct.cha_pEntity->en_pmiModelInstance != NULL
-			&& ct.cha_pEntity->en_pmiModelInstance->GetName() != "")
-		{
-			if (bJoinFlag)
-				StartEffect( ct.cha_Index, ct.cha_pEntity, ct.cha_sbJoinFlagDratan, ct.cha_lGuildIndex );
-			else
-				StartEffect( ct.cha_Index, ct.cha_pEntity, ct.cha_sbJoinFlagMerac, ct.cha_lGuildIndex );
-		}
-	}
+	// Start My Guild, Enemy Guild Effect Start
+	ACTORMGR()->RefreshSiegeWarfareEffect(bJoinFlag);
 }
 
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::StartEffect
 // Explain:  
-// Date : 2005-11-18(ì˜¤í›„ 3:49:15), By Lee Ki-hwan
+// Date : 2005-11-18(¿ÀÈÄ 3:49:15), By Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::StartGuildMasterEffect( SLONG slCharIndex, CEntity* penEntity, SBYTE sbJoinFlagMerac, int nGuildIndex, LONG lGuildPosition )
 {
 	CTString strEffectName = "GuildMaster";
 	
-	if( !IsWar() ) return; // ì „íˆ¬ì¤‘ì´ ì•„ë‹ˆë¼ë©´ ì”¹ì~
-	if( m_mapEGGuildMaster.find( slCharIndex ) != m_mapEGGuildMaster.end() ) return; // ì´ë¯¸ ì¡´ì¬ í•˜ëŠ”ê°€?
+	if( !IsWar() ) return; // ÀüÅõÁßÀÌ ¾Æ´Ï¶ó¸é ¾ÃÀÚ~
+	if( m_mapEGGuildMaster.find( slCharIndex ) != m_mapEGGuildMaster.end() ) return; // ÀÌ¹Ì Á¸Àç ÇÏ´Â°¡?
 	
 	if( sbJoinFlagMerac == WCJF_NONE || 
 		sbJoinFlagMerac <= -1 || 
@@ -1008,7 +1056,7 @@ void CUISiegeWarfareDoc::StartGuildMasterEffect( SLONG slCharIndex, CEntity* pen
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::StopEffect
 // Explain:  
-// Date : 2005-11-18(ì˜¤í›„ 3:49:12), By Lee Ki-hwan
+// Date : 2005-11-18(¿ÀÈÄ 3:49:12), By Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::StopGuildMasterEffect( SLONG slCharIndex, bool bAllStop )
 {
@@ -1027,7 +1075,7 @@ void CUISiegeWarfareDoc::StopGuildMasterEffect( SLONG slCharIndex, bool bAllStop
 	}
 	else
 	{
-		// ì´í™í„°ê°€ í™œì„±í™” ë˜ì–´ ìˆì§€ ì•Šë‹¤ë©´ ëë‚´ë¼..
+		// ÀÌÆåÅÍ°¡ È°¼ºÈ­ µÇ¾î ÀÖÁö ¾Ê´Ù¸é ³¡³»¶ó..
 		if( m_mapEGGuildMaster.find( slCharIndex ) == m_mapEGGuildMaster.end() ) return;
 		
 		if( m_mapEGGuildMaster[slCharIndex] != NULL && CEffectGroupManager::Instance().IsValidCreated( m_mapEGGuildMaster[slCharIndex] ) )
@@ -1041,7 +1089,7 @@ void CUISiegeWarfareDoc::StopGuildMasterEffect( SLONG slCharIndex, bool bAllStop
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::
 // Explain:  
-// Date : 2005-11-18(ì˜¤í›„ 3:49:10), By Lee Ki-hwan
+// Date : 2005-11-18(¿ÀÈÄ 3:49:10), By Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::RestartGuildMasterEffect()
 {
@@ -1053,20 +1101,7 @@ void CUISiegeWarfareDoc::RestartGuildMasterEffect()
 							_pNetwork->MyCharacterInfo.lGuildPosition );
 		
 	// Start My Guild, Enemy Guild Effect Start
-	INDEX cnt = _pNetwork->ga_srvServer.srv_actCha.Count();
-	
-	for( INDEX i = 0; i < cnt; ++i )
-	{
-		CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[i];
-		
-		if( ct.cha_pEntity != NULL
-			&& ct.cha_pEntity->en_pmiModelInstance != NULL
-			&& ct.cha_pEntity->en_pmiModelInstance->GetName() != "" )
-			
-		{
-			StartGuildMasterEffect( ct.cha_Index, ct.cha_pEntity, ct.cha_sbJoinFlagMerac, ct.cha_lGuildPosition, ct.cha_lGuildPosition );
-		}		
-	}
+	ACTORMGR()->RefreshGuildMasterEffect();
 }
 
 
@@ -1078,7 +1113,7 @@ void CUISiegeWarfareDoc::StartConsensusEffect( SLONG slCharIndex, CEntity* penEn
 {
 	CTString strEffectName = "JEWEL";	
 	
-	if( m_mapEGConsensus.find( slCharIndex ) != m_mapEGConsensus.end() ) return; // ì´ë¯¸ ì¡´ì¬ í•˜ëŠ”ê°€?
+	if( m_mapEGConsensus.find( slCharIndex ) != m_mapEGConsensus.end() ) return; // ÀÌ¹Ì Á¸Àç ÇÏ´Â°¡?
 
 	if( slCharIndex == -1 ) return;
 	if( penEntity == NULL ) return;
@@ -1113,7 +1148,7 @@ void CUISiegeWarfareDoc::StopConsensusEffect( SLONG slCharIndex, bool bAllStop )
 	}
 	else
 	{
-		// ì´í™í„°ê°€ í™œì„±í™” ë˜ì–´ ìˆì§€ ì•Šë‹¤ë©´ ëë‚´ë¼..
+		// ÀÌÆåÅÍ°¡ È°¼ºÈ­ µÇ¾î ÀÖÁö ¾Ê´Ù¸é ³¡³»¶ó..
 		if( m_mapEGConsensus.find( slCharIndex ) == m_mapEGConsensus.end() ) return;
 		
 		if( m_mapEGConsensus[slCharIndex] != NULL && CEffectGroupManager::Instance().IsValidCreated( m_mapEGConsensus[slCharIndex] ) )
@@ -1133,18 +1168,20 @@ void CUISiegeWarfareDoc::SetDealy( BOOL bStart )
 {
 	CTString strMessage;
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if( bStart ) // Start
 	{
 		m_bDelay = true;
 		m_tmNoticeTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();	
 
 		// Set Stop Move
-		_pUIMgr->SetCSFlagOn( CSF_CASTLE_WAR_READY );
+		pUIManager->SetCSFlagOn( CSF_CASTLE_WAR_READY );
 				
 		if( _pNetwork->m_ubGMLevel > 1 )
 		{
 			strMessage.PrintF( "INFO-START-Dealy (%d)", m_tmNoticeTime );
-			_pUIMgr->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+			pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_ERROR );
 		}
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->StopPlayer();
 	}
@@ -1153,12 +1190,12 @@ void CUISiegeWarfareDoc::SetDealy( BOOL bStart )
 		m_bDelay = false;
 		
 		// ReSet Stop Move
-		_pUIMgr->SetCSFlagOff( CSF_CASTLE_WAR_READY );
+		pUIManager->SetCSFlagOff( CSF_CASTLE_WAR_READY );
 		
 		if( _pNetwork->m_ubGMLevel > 1 )
 		{
 			strMessage.PrintF( "INFO-STOP-Dealy" );
-			_pUIMgr->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+			pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_ERROR );
 		}
 		
 	}
@@ -1166,7 +1203,7 @@ void CUISiegeWarfareDoc::SetDealy( BOOL bStart )
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareDoc::RunDalyTime
-// Explain:  CUISiegeWarfareì˜ Renderì—ì„œ ê³„ì† Time ì²´í¬ 
+// Explain:  CUISiegeWarfareÀÇ Render¿¡¼­ °è¼Ó Time Ã¼Å© 
 // Date : 2005-08-08,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfareDoc::RunDalyTime()

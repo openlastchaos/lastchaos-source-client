@@ -1,11 +1,13 @@
 #include "stdh.h"
-#include <Engine/Interface/UIPetFree.h>
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
+#include <vector>
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/ItemData.h>
+#include <Engine/Interface/UIPetFree.h>
 #include <algorithm>
-
-extern INDEX g_iCountry;
+#include <Engine/Contents/function/WildPetInfoUI.h>
+#include <Engine/Interface/UIInventory.h>
 
 static int	_iMaxMsgStringChar = 0;
 
@@ -14,12 +16,19 @@ static int	_iMaxMsgStringChar = 0;
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIPetFree::CUIPetFree()
+	: m_pSelItem(NULL)
+	, m_pIconSlotItem(NULL)
+	, m_bPremiumChar(false)
 {
 	m_nStringCount			= 0;
 	m_strPetFreeMoney	= CTString( "" );
 	m_llPetFreeMoney	= 0;
 
 	m_slLevel				= -1;
+
+	m_fNpcPosX = 0.0f;
+	m_fNpcPosZ = 0.0f;
+	m_nNpcIndex = -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -28,7 +37,7 @@ CUIPetFree::CUIPetFree()
 // ----------------------------------------------------------------------------
 CUIPetFree::~CUIPetFree()
 {
-	Destroy();
+	SAFE_DELETE(m_pIconSlotItem);
 }
 
 // ----------------------------------------------------------------------------
@@ -37,9 +46,7 @@ CUIPetFree::~CUIPetFree()
 // ----------------------------------------------------------------------------
 void CUIPetFree::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	_iMaxMsgStringChar = 190 / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
@@ -58,8 +65,8 @@ void CUIPetFree::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_rtTop.SetUV( 0, 0, 216, 26, fTexWidth, fTexHeight );
 	m_rtMiddle1.SetUV( 0, 31, 216, 33, fTexWidth, fTexHeight );
 	m_rtMiddle2.SetUV( 0, 35, 216, 37, fTexWidth, fTexHeight );
-	m_rtMiddle3.SetUV( 36, 86, 252, 104, fTexWidth, fTexHeight );
-	m_rtBottom.SetUV( 0, 38, 216, 45, fTexWidth, fTexHeight );
+	m_rtMiddle3.SetUV( 36, 87, 252, 103, fTexWidth, fTexHeight );
+	m_rtBottom.SetUV( 0, 22, 216, 45, fTexWidth, fTexHeight );
 	m_rtItemSlot.SetUV( 0, 68, 34, 102, fTexWidth, fTexHeight );
 
 	// Input box
@@ -75,14 +82,14 @@ void CUIPetFree::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// OK button
-	m_btnOK.Create( this, _S( 2440, "ë´‰ì¸í•´ì œ" ), 78, 244, 63, 21 );
+	m_btnOK.Create( this, _S( 2440, "ºÀÀÎÇØÁ¦" ), 78, 244, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), 146, 244, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), 146, 244, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -95,13 +102,13 @@ void CUIPetFree::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_rcInsertItem.Bottom	= m_rcItemSlot.Bottom + 33;
 
 	// Slot item button
-	if( g_iCountry == TAIWAN || g_iCountry == TAIWAN2 || g_iCountry == JAPAN || g_iCountry == HONGKONG ) // ëŒ€ë§Œ ì¼ë•Œ
-	{
-		m_rcItemSlot.Left += 15;
-		m_rcItemSlot.Right += 15;
-	}
+#if ( defined(G_JAPAN) || defined(G_HONGKONG) )
+	m_rcItemSlot.Left += 15;
+	m_rcItemSlot.Right += 15;
+#endif
 
-	m_btnSlotItem.Create( this, m_rcItemSlot.Left + 1, m_rcItemSlot.Top + 1, BTN_SIZE, BTN_SIZE, UI_CHANGEWEAPON, UBET_ITEM );
+	m_pIconSlotItem = new CUIIcon;
+	m_pIconSlotItem->Create(this, m_rcItemSlot.Left + 1, m_rcItemSlot.Top + 1, BTN_SIZE, BTN_SIZE, UI_CHANGEWEAPON, UBET_ITEM);
 }
 
 // ----------------------------------------------------------------------------
@@ -128,17 +135,29 @@ void CUIPetFree::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixM
 // Name : OpenPetFree()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIPetFree::OpenPetFree()
+void CUIPetFree::OpenPetFree(float fX, float fZ, int nIdex)
 {
 	// If this is already exist
-	if( IsVisible() )
+	if( IsVisible() == TRUE )
 		return;
+
+	if( UIMGR()->GetInventory()->IsLocked() == TRUE ||
+		UIMGR()->GetInventory()->IsLockedArrange() == TRUE)
+	{
+		UIMGR()->GetInventory()->ShowLockErrorMessage();
+		return;
+	}
 
 	m_btnOK.SetEnable( FALSE );
 
-	// Set position of target npc
-	_pUIMgr->RearrangeOrder( UI_PETFREE, TRUE );
+	m_fNpcPosX = fX;
+	m_fNpcPosZ = fZ;
+	m_nNpcIndex = nIdex;
 
+	// Set position of target npc
+	CUIManager::getSingleton()->RearrangeOrder( UI_PETFREE, TRUE );
+
+	UIMGR()->GetInventory()->Lock(TRUE, TRUE, LOCK_PET_FREE);
 }
 
 // ----------------------------------------------------------------------------
@@ -148,14 +167,20 @@ void CUIPetFree::OpenPetFree()
 void CUIPetFree::ClosePetFree()
 {
 	// Reset slot item
-	m_btnSlotItem.InitBtn();
+	m_pIconSlotItem->clearIconData();
 	m_slLevel				= -1;
 
 	// Close refine
-	_pUIMgr->RearrangeOrder( UI_PETFREE, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_PETFREE, FALSE );
 
 	m_strPetFreeMoney.Clear();
 	m_btnOK.SetEnable( FALSE );
+
+	m_fNpcPosX = 0.0f;
+	m_fNpcPosZ = 0.0f;
+	m_nNpcIndex = -1;
+
+	UIMGR()->GetInventory()->Lock(FALSE, FALSE, LOCK_PET_FREE);
 }
 
 // ----------------------------------------------------------------------------
@@ -164,8 +189,19 @@ void CUIPetFree::ClosePetFree()
 // ----------------------------------------------------------------------------
 void CUIPetFree::Render()
 {
+	if (m_bPremiumChar == false)
+	{
+		FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcPosX;
+		FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcPosZ;
+
+ 		if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
+ 			ClosePetFree();
+	}
+	
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set refine texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY, nX2, nY2;
@@ -174,53 +210,53 @@ void CUIPetFree::Render()
 	// Top
 	nX = m_nPosX + m_nWidth;
 	nY = m_nPosY + 26;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
 		m_rtTop.U0, m_rtTop.V0,
 		m_rtTop.U1, m_rtTop.V1,
 		0xFFFFFFFF );
 	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 113,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 113,
 		m_rtMiddle1.U0, m_rtMiddle1.V0,
 		m_rtMiddle1.U1, m_rtMiddle1.V1,
 		0xFFFFFFFF );
 
 	nY += 113;
 	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 11,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 11,
 		m_rtMiddle2.U0, m_rtMiddle2.V0,
 		m_rtMiddle2.U1, m_rtMiddle2.V1,
 		0xFFFFFFFF );
 
 	nY += 11;
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 90,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 90,
 		m_rtMiddle3.U0, m_rtMiddle3.V0,
 		m_rtMiddle3.U1, m_rtMiddle3.V1,
 		0xFFFFFFFF );
 
 	nY += 90;
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 4,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 4,
 		m_rtMiddle2.U0, m_rtMiddle2.V0,
 		m_rtMiddle2.U1, m_rtMiddle2.V1,
 		0xFFFFFFFF );
 	
 	nY += 4;
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 10,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 10,
 		m_rtMiddle2.U0, m_rtMiddle2.V0,
 		m_rtMiddle2.U1, m_rtMiddle2.V1,
 		0xFFFFFFFF );
 	
 	nY += 10;
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 30,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 30,
 		m_rtBottom.U0, m_rtBottom.V0,
 		m_rtBottom.U1, m_rtBottom.V1,
 		0xFFFFFFFF );
 
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcItemSlot.Left, m_nPosY + m_rcItemSlot.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcItemSlot.Left, m_nPosY + m_rcItemSlot.Top,
 										m_nPosX + m_rcItemSlot.Right, m_nPosY + m_rcItemSlot.Bottom,
 										m_rtItemSlot.U0, m_rtItemSlot.V0, m_rtItemSlot.U1, m_rtItemSlot.V1,
 										0xFFFFFFFF );
@@ -231,16 +267,16 @@ void CUIPetFree::Render()
 	nY	= m_nPosY + 102;
 	nY2 = nY + 13;
 
-	// Point    ê¸ˆì•¡ ë°•ìŠ¤ wooss 051011
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 4, nY2,
+	// Point    ±İ¾× ¹Ú½º wooss 051011
+	pDrawPort->AddTexture( nX, nY, nX + 4, nY2,
 		m_rtInputBoxL.U0, m_rtInputBoxL.V0, m_rtInputBoxL.U1, m_rtInputBoxL.V1,
 		0xFFFFFFFF );
 	//Lower middle
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 4, nY, nX2 - 4, nY2,
+		pDrawPort->AddTexture( nX + 4, nY, nX2 - 4, nY2,
 			m_rtInputBoxM.U0, m_rtInputBoxM.V0, m_rtInputBoxM.U1, m_rtInputBoxM.V1,
 			0xFFFFFFFF );
 	// Lower right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 4, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 4, nY, nX2, nY2,
 		m_rtInputBoxR.U0, m_rtInputBoxR.V0, m_rtInputBoxR.U1, m_rtInputBoxR.V1,
 		0xFFFFFFFF );
 	// Close button
@@ -253,37 +289,41 @@ void CUIPetFree::Render()
 	m_btnCancel.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Item
-	if( !m_btnSlotItem.IsEmpty() )
+	if (m_pIconSlotItem->IsEmpty() == false)
 	{
-		m_btnSlotItem.Render();
-		_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+		m_pIconSlotItem->Render(pDrawPort);
 	}
 
-	CTString szItemName = CTString(	_S( 2441, "ë´‰ì¸ëœ í«ì„ ë¶€í™œì‹œí‚µë‹ˆë‹¤." ) );
-	_pUIMgr->GetDrawPort()->PutTextEx( szItemName, m_nPosX+15, m_nPosY+162, 0xFFFFFFFF );
-	szItemName = CTString( _S( 2442, "ë ˆë²¨ì— ë”°ë¼ ë¶€í™œë¹„ìš©ì„ ì§€ë¶ˆí•´ì•¼" ) );
-	_pUIMgr->GetDrawPort()->PutTextEx( szItemName, m_nPosX+15, m_nPosY+182, 0xFFFFFFFF );
-	szItemName = CTString( _S( 2443, "í•©ë‹ˆë‹¤." ) );
-	_pUIMgr->GetDrawPort()->PutTextEx( szItemName, m_nPosX+15, m_nPosY+202, 0xFFFFFFFF );
+	CTString szItemName = CTString(	_S( 2441, "ºÀÀÎµÈ ÆêÀ» ºÎÈ°½ÃÅµ´Ï´Ù." ) );
+	pDrawPort->PutTextEx( szItemName, m_nPosX+15, m_nPosY+162, 0xFFFFFFFF );
+	szItemName = CTString( _S( 2442, "·¹º§¿¡ µû¶ó ºÎÈ°ºñ¿ëÀ» ÁöºÒÇØ¾ß" ) );
+	pDrawPort->PutTextEx( szItemName, m_nPosX+15, m_nPosY+182, 0xFFFFFFFF );
+	szItemName = CTString( _S( 2443, "ÇÕ´Ï´Ù." ) );
+	pDrawPort->PutTextEx( szItemName, m_nPosX+15, m_nPosY+202, 0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 2444, "í« ë´‰ì¸í•´ì œ" ), m_nPosX + UI_PETFREE_TITLE_TEXT_OFFSETX,		
+	pDrawPort->PutTextEx( _S( 2444, "Æê ºÀÀÎÇØÁ¦" ), m_nPosX + UI_PETFREE_TITLE_TEXT_OFFSETX,		
 										m_nPosY + UI_PETFREE_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 2444, "í« ë´‰ì¸í•´ì œ" ), m_nPosX + 20,		
-										m_nPosY + 60, 0xFFFFFFFF );
+	pDrawPort->PutTextExCX( _S( 2444, "Æê ºÀÀÎÇØÁ¦" ), m_nPosX + UI_PETFREE_WIDTH/2,		
+										m_nPosY + m_pIconSlotItem->GetPosY() - 25, 0xFFFFFFFF );
+	
 
 	// cash item check wooss 051011
 	nY = m_nPosY + 104;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1058, "í•„ìš”ë‚˜ìŠ¤" ), m_nPosX + 40,		
+#if defined(G_BRAZIL)
+	pDrawPort->PutTextEx( _S( 1058, "ÇÊ¿ä³ª½º" ), m_nPosX + 20,		
 									nY, 0xFFFFFFFF );
+#else
+	pDrawPort->PutTextEx( _S( 1058, "ÇÊ¿ä³ª½º" ), m_nPosX + 40,		
+									nY, 0xFFFFFFFF );
+#endif
 
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strPetFreeMoney,	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );				
+	pDrawPort->PutTextEx( m_strPetFreeMoney,	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );				
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -308,7 +348,7 @@ WMSG_RESULT CUIPetFree::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move refine
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -335,41 +375,43 @@ WMSG_RESULT CUIPetFree::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDOWN:
 		{
-			if( IsInside( nX, nY ) )
+			if( IsInside( nX, nY ) == FALSE )
+				break;
+
+			nOldX = nX;		nOldY = nY;
+
+			// Close button
+			if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				nOldX = nX;		nOldY = nY;
-
-				// Close button
-				if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Title bar
-				else if( IsInsideRect( nX, nY, m_rcTitle ) )
-				{
-					bTitleBarClick = TRUE;
-				}
-				// OK button
-				else if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Cancel button
-				else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-
-				_pUIMgr->RearrangeOrder( UI_PETFREE, TRUE );
-				return WMSG_SUCCESS;
+				// Nothing
 			}
+			// Title bar
+			else if( IsInsideRect( nX, nY, m_rcTitle ) )
+			{
+				bTitleBarClick = TRUE;
+			}
+			// OK button
+			else if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				// Nothing
+			}
+			// Cancel button
+			else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				// Nothing
+			}
+
+			CUIManager::getSingleton()->RearrangeOrder( UI_PETFREE, TRUE );
+			return WMSG_SUCCESS;
 		}
 		break;
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -413,15 +455,15 @@ WMSG_RESULT CUIPetFree::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// If holding button is item and comes from inventory
-					if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_INVENTORY )
+					if (pUIManager->GetDragIcon()->getBtnType() == UBET_ITEM &&
+						pUIManager->GetDragIcon()->GetWhichUI() == UI_INVENTORY)
 					{
 						if( IsInsideRect( nX, nY, m_rcInsertItem ) )
 							SetFreePetItem();  // 
 					}
 
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -435,7 +477,7 @@ WMSG_RESULT CUIPetFree::MouseMessage( MSG *pMsg )
 			{
 				if( IsInsideRect( nX, nY, m_rcItemSlot ) )
 				{
-					m_btnSlotItem.InitBtn();
+					m_pIconSlotItem->clearIconData();
 					m_strPetFreeMoney.Clear();
 					m_btnOK.SetEnable( FALSE );
 				}
@@ -463,27 +505,35 @@ WMSG_RESULT CUIPetFree::MouseMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 void CUIPetFree::SetFreePetItem()
 {
-	int	nTab = _pUIMgr->GetHoldBtn().GetItemTab();
-	int	nRow = _pUIMgr->GetHoldBtn().GetItemRow();
-	int	nCol = _pUIMgr->GetHoldBtn().GetItemCol();
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	CItems		&m_selItem = _pNetwork->MySlotItem[nTab][nRow][nCol];
-	CItemData	&rItemData = m_selItem.ItemData;
-	if( !(rItemData.GetSubType() == CItemData::ACCESSORY_PET || rItemData.GetSubType() == CItemData::ACCESSORY_WILDPET))
+	CUIIcon* pDrag = pUIManager->GetDragIcon();
+
+	if (pDrag == NULL)
+		return;
+
+	CItems* pItems = pDrag->getItems();
+
+	if (pItems == NULL)
+		return;
+
+	m_pSelItem = pItems;
+	CItemData*	pItemData = m_pSelItem->ItemData;
+	if( !(pItemData->GetSubType() == CItemData::ACCESSORY_PET || pItemData->GetSubType() == CItemData::ACCESSORY_WILDPET))
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 2445, "í« ì•„ì´í…œë§Œ ê°€ëŠ¥í•©ë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 2445, "Æê ¾ÆÀÌÅÛ¸¸ °¡´ÉÇÕ´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 
-	if(rItemData.GetSubType() == CItemData::ACCESSORY_PET )
+	if(pItemData->GetSubType() == CItemData::ACCESSORY_PET )
 	{
 		m_nPettype = CItemData::ACCESSORY_PET;
 		CNetworkLibrary::sPetInfo	TempPet;
-		TempPet.lIndex				= _pNetwork->MySlotItem[nTab][nRow][nCol].Item_Plus; // í« ì‹ë³„ì¸ë±ìŠ¤
-		m_slPetIndex = TempPet.lIndex; // í« ì‹ë³„ ì¸ë±ìŠ¤ ì €ì¥
+		TempPet.lIndex				= pItems->Item_Plus;	// Æê ½Äº°ÀÎµ¦½º
+		m_slPetIndex = TempPet.lIndex; // Æê ½Äº° ÀÎµ¦½º ÀúÀå
 		std::vector<CNetworkLibrary::sPetInfo>::iterator iter = 
 			std::find_if(_pNetwork->m_vectorPetList.begin(), _pNetwork->m_vectorPetList.end(), CNetworkLibrary::FindPet(TempPet) );
-		if( iter != _pNetwork->m_vectorPetList.end() )	// í«ì„ ì°¾ì•˜ë‹¤.
+		if( iter != _pNetwork->m_vectorPetList.end() )	// ÆêÀ» Ã£¾Ò´Ù.
 		{
 			m_slLevel = (*iter).lLevel;
 			m_llPetFreeMoney = CalculateNeedNas( m_slLevel );
@@ -493,20 +543,20 @@ void CUIPetFree::SetFreePetItem()
 			return;
 
 
-	}else if(rItemData.GetSubType() == CItemData::ACCESSORY_WILDPET )
+	}else if(pItemData->GetSubType() == CItemData::ACCESSORY_WILDPET )
 	{
 		m_nPettype = CItemData::ACCESSORY_WILDPET;
 		sPetItem_Info temPet;
-		_pUIMgr->GetWildPetInfo()->GetWildPetInfo(_pNetwork->MySlotItem[nTab][nRow][nCol].Item_Plus,temPet);
+		pUIManager->GetWildPetInfoUI()->GetWildPetInfo(pItems->Item_Plus, temPet);
 		m_slLevel = temPet.pet_level;
 		m_llPetFreeMoney = (m_slLevel-1)*((m_slLevel*m_slLevel*8)+20000);
 	}
 /*	CNetworkLibrary::sPetInfo	TempPet;
-	TempPet.lIndex				= _pNetwork->MySlotItem[nTab][nRow][nCol].Item_Plus; // í« ì‹ë³„ì¸ë±ìŠ¤
-	m_slPetIndex = TempPet.lIndex; // í« ì‹ë³„ ì¸ë±ìŠ¤ ì €ì¥
+	TempPet.lIndex				= _pNetwork->MySlotItem[nTab][nRow][nCol].Item_Plus; // Æê ½Äº°ÀÎµ¦½º
+	m_slPetIndex = TempPet.lIndex; // Æê ½Äº° ÀÎµ¦½º ÀúÀå
 	std::vector<CNetworkLibrary::sPetInfo>::iterator iter = 
 		std::find_if(_pNetwork->m_vectorPetList.begin(), _pNetwork->m_vectorPetList.end(), CNetworkLibrary::FindPet(TempPet) );
-	if( iter != _pNetwork->m_vectorPetList.end() )	// í«ì„ ì°¾ì•˜ë‹¤.
+	if( iter != _pNetwork->m_vectorPetList.end() )	// ÆêÀ» Ã£¾Ò´Ù.
 	{
 		m_slLevel = (*iter).lLevel;
 	}
@@ -514,8 +564,7 @@ void CUIPetFree::SetFreePetItem()
 		return;*/
 
 	// Insert upgrade slot
-	m_btnSlotItem.Copy( _pUIMgr->GetHoldBtn() );
-	
+	m_pIconSlotItem->copyItem(pDrag);	
 	
 	m_strPetFreeMoney.PrintF( "%I64d", m_llPetFreeMoney );
 	m_btnOK.SetEnable( TRUE );
@@ -523,7 +572,7 @@ void CUIPetFree::SetFreePetItem()
 
 // ----------------------------------------------------------------------------
 // Name : CalculateNeedNas()
-// Desc : ë´‰ì¸ í•´ì œë¥¼ ìœ„í•œ ë‚˜ìŠ¤ ê³„ì‚°
+// Desc : ºÀÀÎ ÇØÁ¦¸¦ À§ÇÑ ³ª½º °è»ê
 // ----------------------------------------------------------------------------
 SQUAD CUIPetFree::CalculateNeedNas( int iPetLevel )
 {
@@ -542,32 +591,49 @@ SQUAD CUIPetFree::CalculateNeedNas( int iPetLevel )
 // ----------------------------------------------------------------------------
 void CUIPetFree::SendPetFreeReq()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsSkilling() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 2446, "ìŠ¤í‚¬ ì‚¬ìš©ì¤‘ì—ëŠ” í«ì˜ ë´‰ì¸ì„ í•´ì œ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );	
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 2446, "½ºÅ³ »ç¿ëÁß¿¡´Â ÆêÀÇ ºÀÀÎÀ» ÇØÁ¦ ÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );	
 		return;
 	}
 	
-	if( _pUIMgr->IsCSFlagOn( CSF_TELEPORT ) )
+	if( pUIManager->IsCSFlagOn( CSF_TELEPORT ) )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 2447, "ìˆœê°„ ì´ë™ì¤‘ì—ëŠ” ë´‰ì¸ì„ í•´ì œ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );	
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 2447, "¼ø°£ ÀÌµ¿Áß¿¡´Â ºÀÀÎÀ» ÇØÁ¦ ÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );	
 		return;
 	}
 	
-	if( m_btnSlotItem.IsEmpty() )
+	if (m_pIconSlotItem->IsEmpty() == true)
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 2448, "ë´‰ì¸ í•´ì œ í•  í«ì´ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 2448, "ºÀÀÎ ÇØÁ¦ ÇÒ ÆêÀÌ ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	if(m_nPettype == CItemData::ACCESSORY_PET)
-	{// ë„¤íŠ¸ ì›Œí¬ ë©”ì„¸ì§€ ~~
+	{// ³×Æ® ¿öÅ© ¸Ş¼¼Áö ~~
 		_pNetwork->SendPetRebirth( m_slPetIndex );
-	}else if(m_nPettype == CItemData::ACCESSORY_WILDPET)
+	}
+	else if(m_nPettype == CItemData::ACCESSORY_WILDPET)
 	{
-		int	nRow = _pUIMgr->GetHoldBtn().GetItemRow();
-		int	nCol = _pUIMgr->GetHoldBtn().GetItemCol();
-		_pNetwork->SendWildPetRebirth( nRow, nCol);
+		if (m_pIconSlotItem->IsEmpty() == true)
+			return;
+		
+		CItems* pItems = m_pIconSlotItem->getItems();
+
+		if (pItems == NULL)
+			return;
+				
+		if (pItems->Item_Wearing >= 0)
+		{
+			pUIManager->GetChattingUI()->AddSysMessage( _S( 4765, "Âø¿ëÀ» ÇØÁ¦ÇÏ¿©¾ß ºÎÈ°ÀÌ °¡´ÉÇÕ´Ï´Ù." ), SYSMSG_ERROR );		
+			return;
+		}
+
+		int nTab = pItems->Item_Tab;
+		int	nIdx = pItems->InvenIndex;
+		_pNetwork->SendWildPetRebirth( nTab, nIdx, m_nNpcIndex);
 	}
 }
 
@@ -577,39 +643,41 @@ void CUIPetFree::SendPetFreeReq()
 // ----------------------------------------------------------------------------
 void CUIPetFree::PetFreeError( SLONG PetIndex, SBYTE sbResult )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
 
 	if( PetIndex != m_slPetIndex )
 	{
-		MsgBoxInfo.SetMsgBoxInfo( _S(191,"í™•ì¸"), UMBS_OK, UI_PETFREE, UI_NONE );
-		strMessage.PrintF( _S( 2449, "ë´‰ì¸í•´ì œë¥¼ ìš”ì²­í•˜ì‹  í«ê³¼ ìŠ¬ë¡¯ì˜ í«ì´ ë‹¤ë¦…ë‹ˆë‹¤.") );
+		MsgBoxInfo.SetMsgBoxInfo( _S(191,"È®ÀÎ"), UMBS_OK, UI_PETFREE, UI_NONE );
+		strMessage.PrintF( _S( 2449, "ºÀÀÎÇØÁ¦¸¦ ¿äÃ»ÇÏ½Å Æê°ú ½½·ÔÀÇ ÆêÀÌ ´Ù¸¨´Ï´Ù.") );
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 		return;
 	}
 
 	switch( sbResult )
 	{
-	case MSG_EX_PET_REBIRTH_ERROR_OK:			// ì„±ê³µ
-		MsgBoxInfo.SetMsgBoxInfo( _S(191,"í™•ì¸"), UMBS_OK, UI_PETFREE, UI_NONE );
-		strMessage.PrintF( _S( 2450, "í«ì˜ ë´‰ì¸ì„ í•´ì œí•˜ëŠ”ë° ì„±ê³µí•˜ì˜€ìŠµë‹ˆë‹¤.") );
+	case MSG_EX_PET_REBIRTH_ERROR_OK:			// ¼º°ø
+		MsgBoxInfo.SetMsgBoxInfo( _S(191,"È®ÀÎ"), UMBS_OK, UI_PETFREE, UI_NONE );
+		strMessage.PrintF( _S( 2450, "ÆêÀÇ ºÀÀÎÀ» ÇØÁ¦ÇÏ´Âµ¥ ¼º°øÇÏ¿´½À´Ï´Ù.") );
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 
 		ClosePetFree();
 		break;
-	case MSG_EX_PET_REBIRTH_ERROR_NOMONEY:		// ë‚˜ìŠ¤ ë¶€ì¡±
-		_pUIMgr->GetChatting()->AddSysMessage( 
-						_S( 2451, "í«ì˜ ë´‰ì¸ì„ í•´ì œí•˜ê¸° ìœ„í•œ ë¹„ìš©ì´ ë¶€ì¡±í•©ë‹ˆë‹¤." ), SYSMSG_ERROR );		
+	case MSG_EX_PET_REBIRTH_ERROR_NOMONEY:		// ³ª½º ºÎÁ·
+		pUIManager->GetChattingUI()->AddSysMessage( 
+						_S( 2451, "ÆêÀÇ ºÀÀÎÀ» ÇØÁ¦ÇÏ±â À§ÇÑ ºñ¿ëÀÌ ºÎÁ·ÇÕ´Ï´Ù." ), SYSMSG_ERROR );		
 		break;
-	case MSG_EX_PET_REBIRTH_ERROR_NOPET:		// í« ì¡´ì¬ ì•ˆí•¨
-		_pUIMgr->GetChatting()->AddSysMessage( 
-						_S( 2452, "ë´‰ì¸ì„ í•´ì œí•  í«ì´ ì¡´ì¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );				
+	case MSG_EX_PET_REBIRTH_ERROR_NOPET:		// Æê Á¸Àç ¾ÈÇÔ
+		pUIManager->GetChattingUI()->AddSysMessage( 
+						_S( 2452, "ºÀÀÎÀ» ÇØÁ¦ÇÒ ÆêÀÌ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù." ), SYSMSG_ERROR );				
 		break;
-	case MSG_EX_PET_REBIRTH_ERROR_NODEAD:		// í« ì‚´ì•„ìˆìŒ
-		_pUIMgr->GetChatting()->AddSysMessage( 
-						_S( 2453, "í«ì´ ë´‰ì¸ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );
+	case MSG_EX_PET_REBIRTH_ERROR_NODEAD:		// Æê »ì¾ÆÀÖÀ½
+		pUIManager->GetChattingUI()->AddSysMessage( 
+						_S( 2453, "ÆêÀÌ ºÀÀÎµÇÁö ¾Ê¾Ò½À´Ï´Ù." ), SYSMSG_ERROR );
 		break;
 	}
 }

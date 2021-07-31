@@ -1,8 +1,14 @@
 #include "stdh.h"
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
+#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Effect/CEffectGroupManager.h>
+#include <map>
 #include <vector>
 #include <Engine/Interface/UIGuildWarPortal.h>
-#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Ska/Render.h>
 #include <Engine/Entities/EntityProperties.h>
+#include <Engine/Interface/UISelectResource.h>
 
 #define BUTTON_HEIGHT	21
 #define BUTTON_WIDTH	131
@@ -27,7 +33,7 @@ int		m_nGateIndexDratan[5][4] = {	14,15,16,17,
 
 enum Type{ A_TYPE, B_TYPE, C_TYPE, D_TYPE, E_TYPE};
 
-#define	DEALY_TIME			3500 //ì´ˆ	 
+#define	DEALY_TIME			3500 //ÃÊ	 
 
 // ----------------------------------------------------------------------------
 // Name : CUIGuildWarPortal()
@@ -52,7 +58,6 @@ CUIGuildWarPortal::CUIGuildWarPortal()
 // ----------------------------------------------------------------------------
 CUIGuildWarPortal::~CUIGuildWarPortal()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -61,9 +66,7 @@ CUIGuildWarPortal::~CUIGuildWarPortal()
 // ----------------------------------------------------------------------------
 void CUIGuildWarPortal::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 236, 22 );
@@ -87,12 +90,12 @@ void CUIGuildWarPortal::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidt
 	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );	
 	
-	m_strType[0] =_S( 1922, "Aì§€ì ìœ¼ë¡œ ì´ë™" );
-	m_strType[1] =_S( 1923, "Bì§€ì ìœ¼ë¡œ ì´ë™" );
-	m_strType[2] =_S( 1924, "Cì§€ì ìœ¼ë¡œ ì´ë™" );
-	m_strType[3] =_S( 1925, "Dì§€ì ìœ¼ë¡œ ì´ë™" ); 
+	m_strType[0] =_S( 1922, "AÁöÁ¡À¸·Î ÀÌµ¿" );
+	m_strType[1] =_S( 1923, "BÁöÁ¡À¸·Î ÀÌµ¿" );
+	m_strType[2] =_S( 1924, "CÁöÁ¡À¸·Î ÀÌµ¿" );
+	m_strType[3] =_S( 1925, "DÁöÁ¡À¸·Î ÀÌµ¿" ); 
 // WSS_DRATAN_SEIGEWARFARE 2007/08/07
-	m_strType[4] =_S( 3670, "Eì§€ì ìœ¼ë¡œ ì´ë™" ); 
+	m_strType[4] =_S( 3670, "EÁöÁ¡À¸·Î ÀÌµ¿" ); 
 }
 
 // ----------------------------------------------------------------------------
@@ -124,7 +127,7 @@ void CUIGuildWarPortal::OpenGuildWarPortal( int npcIndex  )
 	PortalCancel();
 	switch( _pNetwork->MyCharacterInfo.sbJoinFlagMerac )
 	{
-	// ìˆ˜ì„±ê¸¸ë“œ : ìˆ˜ì„±ì¸¡ë§Œ ì‚¬ìš©ê°€ëŠ¥ 
+	// ¼ö¼º±æµå : ¼ö¼ºÃø¸¸ »ç¿ë°¡´É 
 	case WCJF_OWNER:
 	case WCJF_DEFENSE_GUILD:
 	case WCJF_DEFENSE_CHAR:
@@ -159,7 +162,7 @@ void CUIGuildWarPortal::OpenGuildWarPortal( int npcIndex  )
 		
 	switch( npcIndex )
 	{
-	case 240 : // í•˜ë“œ ì½”ë”© ë˜ëŠ” NPC Index
+	case 240 : // ÇÏµå ÄÚµù µÇ´Â NPC Index
 		m_nNpcType = A_TYPE;
 		break;
 	case 241 :
@@ -183,7 +186,7 @@ void CUIGuildWarPortal::OpenGuildWarPortal( int npcIndex  )
 	}
 	int nHeight = m_vectorResourceList.size() * (BUTTON_HEIGHT + BUTTON_SPAN) + TITLEBAR_HEIGHT + 10;
 	SetSize( m_nWidth, nHeight );
-	_pUIMgr->RearrangeOrder( UI_GUILDWARPORTAL, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_GUILDWARPORTAL, TRUE );
 	return;
 }
 
@@ -198,7 +201,7 @@ void CUIGuildWarPortal::OpenGuildWarPortalDratan()
 	PortalCancel();
 	switch( _pNetwork->MyCharacterInfo.sbJoinFlagDratan )
 	{
-	// ìˆ˜ì„±ê¸¸ë“œ : ìˆ˜ì„±ì¸¡ë§Œ ì‚¬ìš©ê°€ëŠ¥ 
+	// ¼ö¼º±æµå : ¼ö¼ºÃø¸¸ »ç¿ë°¡´É 
 	case WCJF_OWNER:
 	case WCJF_DEFENSE_GUILD:
 	case WCJF_DEFENSE_CHAR:
@@ -210,7 +213,7 @@ void CUIGuildWarPortal::OpenGuildWarPortalDratan()
 	if( IsVisible() )
 	{
 		// WSS_DRATAN_SIEGEWARFARE 2007/10/15
-		// ë”ë¸” í´ë¦­ì‹œ ë¬¸ì œê°€ ìžˆì–´ì„œ ìˆ˜ì •...
+		// ´õºí Å¬¸¯½Ã ¹®Á¦°¡ ÀÖ¾î¼­ ¼öÁ¤...
 	//	ResetGuildWarPortal();
 	//	OpenGuildWarPortalDratan();
 		return;
@@ -247,18 +250,20 @@ void CUIGuildWarPortal::OpenGuildWarPortalDratan()
 		m_vectorResourceList.push_back(TempUIButton);
 		iCurPosY += BUTTON_HEIGHT + BUTTON_SPAN;
 	}
-	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// WSS_DRATAN_SIEGEWARFARE 2007/10/15
 	if( tLoop == 0 )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage(_S( 3810,"ì´ë™ ê°€ëŠ¥í•œ ì›Œí”„íƒ€ì›Œê°€ ì¡´ìž¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤."));
+		pUIManager->GetChattingUI()->AddSysMessage(_S( 3810,"ÀÌµ¿ °¡´ÉÇÑ ¿öÇÁÅ¸¿ö°¡ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù."));
 
 	}
 	else 
 	{
 		int nHeight = m_vectorResourceList.size() * (BUTTON_HEIGHT + BUTTON_SPAN) + TITLEBAR_HEIGHT + 10;
 		SetSize( m_nWidth, nHeight );
-		_pUIMgr->RearrangeOrder( UI_GUILDWARPORTAL, TRUE );
+		pUIManager->RearrangeOrder( UI_GUILDWARPORTAL, TRUE );
 	}
 	
 }
@@ -287,28 +292,30 @@ void CUIGuildWarPortal::Render()
 		}
 		return;
 	}
-	
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 	// Add render regions
 	// Background
 	int nX = m_nPosX;
 	int nY = m_nPosY;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, m_nPosY, nX + m_nWidth, nY + TITLEBAR_HEIGHT,
+	pDrawPort->AddTexture( nX, m_nPosY, nX + m_nWidth, nY + TITLEBAR_HEIGHT,
 		m_rtBackTop.U0, m_rtBackTop.V0, 
 		m_rtBackTop.U1, m_rtBackTop.V1,
 		0xFFFFFFFF );
 	
 	nY += TITLEBAR_HEIGHT;	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight - 7,
 		m_rtBackMiddle1.U0, m_rtBackMiddle1.V0, 
 		m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 		0xFFFFFFFF );
 	
 	nY = m_nPosY + m_nHeight - 7;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight,
 		m_rtBackBottom.U0, m_rtBackBottom.V0, 
 		m_rtBackBottom.U1, m_rtBackBottom.V1,
 		0xFFFFFFFF );	
@@ -324,14 +331,14 @@ void CUIGuildWarPortal::Render()
 	}
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();	
+	pDrawPort->FlushRenderingQueue();	
 	
 	// Text in skill learn	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1926, "ì›Œí”„ ê²Œì´íŠ¸" ), m_nPosX + SELECTRESOURCE_TITLE_TEXT_OFFSETX, 
+	pDrawPort->PutTextEx( _S( 1926, "¿öÇÁ °ÔÀÌÆ®" ), m_nPosX + SELECTRESOURCE_TITLE_TEXT_OFFSETX, 
 		m_nPosY + SELECTRESOURCE_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 	
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -359,7 +366,7 @@ WMSG_RESULT	CUIGuildWarPortal::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 			
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -377,6 +384,11 @@ WMSG_RESULT	CUIGuildWarPortal::MouseMessage( MSG *pMsg )
 			// Close Button
 			if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
+
+			for(int i = 0; i < m_vectorResourceList.size(); ++i)
+			{
+				m_vectorResourceList[i].MouseMessage(pMsg);
+			}
 		}
 		break;
 	case WM_LBUTTONDOWN:
@@ -405,7 +417,7 @@ WMSG_RESULT	CUIGuildWarPortal::MouseMessage( MSG *pMsg )
 					}
 				}	
 							
-				_pUIMgr->RearrangeOrder( UI_GUILDWARPORTAL, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_GUILDWARPORTAL, TRUE );
 				return WMSG_SUCCESS;
 			}
 			else
@@ -463,11 +475,12 @@ void CUIGuildWarPortal::ResetGuildWarPortal()
 	m_nPortal			= -1;
 	m_tmLeftTime		= 0;
 	
-	_pUIMgr->RearrangeOrder( UI_GUILDWARPORTAL, FALSE );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	pUIManager->RearrangeOrder( UI_GUILDWARPORTAL, FALSE );
 
-	const CDrawPort	*pdp = _pUIMgr->GetDrawPort();
-	ResetPosition( pdp->dp_MinI, pdp->dp_MinJ, pdp->dp_MaxI, pdp->dp_MaxJ );
-	// WSS_DRATAN_SEIGEWARFARE 2007/08/07
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+	ResetPosition( pDrawPort->dp_MinI, pDrawPort->dp_MinJ, pDrawPort->dp_MaxI, pDrawPort->dp_MaxJ );
+
 	m_btNpcAvailable	= 0;
 	m_nSelPotalIdx		= 0;
 }
@@ -477,12 +490,14 @@ void CUIGuildWarPortal::ResetGuildWarPortal()
 // Explain:  
 // Date : 2005-08-25,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
-void CUIGuildWarPortal::PortalCancel( BOOL bMessage )	// ì›Œí”„ ì¤‘ì¸ ìƒíƒœë¥¼ ì·¨ì†Œí•œë‹¤.
+void CUIGuildWarPortal::PortalCancel( BOOL bMessage )	// ¿öÇÁ ÁßÀÎ »óÅÂ¸¦ Ãë¼ÒÇÑ´Ù.
 {
-	if( !m_bPrePortal ) return;
-	if( bMessage )
+	if( m_bPrePortal == FALSE )
+		return;
+
+	if( bMessage == TRUE )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1927, "ì›Œí”„ê°€ ì·¨ì†Œë˜ì—ˆìŠµë‹ˆë‹¤." ) );  
+		CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 1927, "¿öÇÁ°¡ Ãë¼ÒµÇ¾ú½À´Ï´Ù." ) );  
 	}
 
 	std::map<SLONG, CEffectGroup *>::iterator it = m_mapEG.find( _pNetwork->MyCharacterInfo.index );

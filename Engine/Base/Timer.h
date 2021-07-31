@@ -11,11 +11,13 @@
 #include <Engine/Base/Lists.h>
 #include <Engine/Base/Synchronization.h>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.2)
+#define TARGET_RESOLUTION 1 // 1 - millisecond target resolution
+
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.2)
 #define RWTOneSec2GWTSec (60.0f)
 #define GWTOneSec2RWTSec (1.0f / RWTOneSec2GWTSec)
 
-//valueëŠ” game world timeì„.
+//value´Â game world timeÀÓ.
 #define GAMETIME_ONEMINUTE_SECOND	(60)
 #define GAMETIME_ONEHOUR_MINUTE		(60)
 #define GAMETIME_ONEHOUR_SECOND		(GAMETIME_ONEHOUR_MINUTE*GAMETIME_ONEMINUTE_SECOND)
@@ -31,7 +33,7 @@
 #define GAMETIME_MORNING_HOUR		(5)
 #define GAMETIME_MORNING_MINUTE		(GAMETIME_MORNING_HOUR*GAMETIME_ONEHOUR_MINUTE)
 #define GAMETIME_MORNING_SECOND		(GAMETIME_MORNING_HOUR*GAMETIME_ONEHOUR_SECOND)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.2)
 
 // current game time 
 ENGINE_API extern TIME _CurrentTickTimer;
@@ -87,10 +89,10 @@ public:
 
   CTimerValue tm_tvLastTimeOnTime;  // last time when timer was on time
   TIME        tm_tmLastTickOnTime;  // last tick when timer was on time
-  //! tickì˜ í•©.ì‹¤ì œ ê²½ê³¼í•œ ì‹œê°„.
+  //! tickÀÇ ÇÕ.½ÇÁ¦ °æ°úÇÑ ½Ã°£.
   TIME tm_RealTimeTimer;  // this really ticks at 1/TickQuantum frequency
   TIME tmTimeDelay;			// calculate how long has passed since we have last been on time
-  TIME tmTickDelay;	  
+  TIME tmTickDelay;	
   FLOAT tm_fLerpFactor;   // factor used for lerping between frames
   FLOAT tm_fLerpFactor2;  // secondary lerp-factor used for unpredicted movement
 
@@ -99,11 +101,13 @@ public:
   CTCriticalSection tm_csHooks;   // access to timer hooks
   CListHead         tm_lhHooks;   // a list head for timer hooks
   BOOL tm_bInterrupt;       // set if interrupt is added
+
+  UINT uPeriod;
   
   //0216
   CTimerValue tm_tvStartTime;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.1)
 	void StartTimer()
 	{
 		//0216
@@ -113,7 +117,7 @@ public:
 	{
 		return GetHighPrecisionTimer() - tm_tvStartTime;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.1)
 
 // interface:
 public:
@@ -170,10 +174,10 @@ public:
 // pointer to global timer object
 ENGINE_API extern CTimer *_pTimer;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.2)
 ENGINE_API extern float g_fGWTime;			// Game world time
 ENGINE_API extern float g_fGWTimeMul;			// Game world time's speed
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.2)
 
 // convert a time value to a printable string (hh:mm:ss)
 ENGINE_API CTString TimeToString(FLOAT fTime);

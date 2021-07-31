@@ -521,6 +521,15 @@ extern void WriteModelInstance_t(CTStream &strm, CModelInstance &mi, BOOL bFromS
     strm.WriteID_t("MISF");
     strm<<mi.mi_pmisSerial->ser_FileName;
   }
+
+  // RideOffset
+  if (mi.mi_iRideParentBoneID > 0)
+  {
+	  strm.WriteID_t("MIPB");
+	  strm<<mi.mi_iRideParentBoneID;
+	  strm.Write_t(&mi.mi_qvRideOffset,sizeof(QVect));
+  }
+
   // write model instance name
   strm<<mi.GetName();
   // write index of current colision box
@@ -851,6 +860,13 @@ static void ReadModelInstanceVer3_t(CTStream &strm, CModelInstance &mi, BOOL bMa
       mi.mi_pmisSerial = _pModelInstanceStock->Obtain_t(fnmSource);
       ASSERT(mi.mi_pmisSerial!=NULL);
     }
+  }
+/// Read RideOffset
+  if (strm.PeekID_t() == CChunkID("MIPB"))
+  {
+	 strm.ExpectID_t("MIPB");
+	 strm>>mi.mi_iRideParentBoneID;
+	 strm.Read_t(&mi.mi_qvRideOffset,sizeof(QVect));
   }
 
   // Read model instance name

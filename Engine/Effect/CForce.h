@@ -1,14 +1,14 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CFORCE_H__
 #define __CFORCE_H__
 
 #include <Engine/Base/Memory.h>
 enum ForceType
 {
-	FT_ZERO			= 0,	//zero íž˜.
-	FT_DIRECTION	= 1,	//ì¼ì •í•œ íž˜, íŠ¹ì • ë°©í–¥
-	FT_POINT		= 2,	//ì¼ì •í•œ íž˜, íŠ¹ì • ì§€ì ì—ì„œ ë°œìƒ,
-	FT_GRAVITY_POINT= 3,	//ê±°ë¦¬ì— ë”°ë¥¸ íž˜. íŠ¹ì • ì§€ì .
+	FT_ZERO			= 0,	//zero Èû.
+	FT_DIRECTION	= 1,	//ÀÏÁ¤ÇÑ Èû, Æ¯Á¤ ¹æÇâ
+	FT_POINT		= 2,	//ÀÏÁ¤ÇÑ Èû, Æ¯Á¤ ÁöÁ¡¿¡¼­ ¹ß»ý,
+	FT_GRAVITY_POINT= 3,	//°Å¸®¿¡ µû¸¥ Èû. Æ¯Á¤ ÁöÁ¡.
 	FT_INVERSE_GRAVITY_POINT	=4,
 };
 
@@ -95,9 +95,9 @@ public:
 protected:
 	ForceType	m_ftType;
 	FLOAT		m_fPower;
-	FLOAT3D		m_vPostion;		//pointì¸ ê²½ìš° ë°©ì¶œì´ powerê°€ ì–‘ì¼ë•Œì˜ ë°©í–¥ì´ ëœë‹¤.
+	FLOAT3D		m_vPostion;		//pointÀÎ °æ¿ì ¹æÃâÀÌ power°¡ ¾çÀÏ¶§ÀÇ ¹æÇâÀÌ µÈ´Ù.
 	FLOAT3D		m_vDirection;
 };
 
 #endif //__CFORCE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

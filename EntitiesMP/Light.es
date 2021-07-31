@@ -100,7 +100,7 @@ functions:
 	{
 		if (bNetwork) {
 			m_bdfInitialized.bdf_bValue = FALSE;
-		}
+		} 
 //안태훈 수정 시작	//(For Performance)(0.2)
 		m_bdfInitialized.bdf_bValue = FALSE;
 		m_plsLight = GetLightSource();

@@ -21,7 +21,7 @@
 #define FILTER_ALL            "All files (*.*)\0*.*\0"
 #define FILTER_END            "\0"
 
-#define PROPERTY(offset, type) ENTITYPROPERTY(this, offset, type)
+#define PROPERTY(offset, flag) ENTITYPROPERTY(this, offset, flag)
 
 extern BOOL _bWorldEditorApp;
 
@@ -127,6 +127,7 @@ void CEntity::ReadProperties_t(CTStream &istrm,BOOL bNetwork) // throw char *
       case CEntityProperty::EPT_INDEX:
       case CEntityProperty::EPT_ENUM:
       case CEntityProperty::EPT_FLAGS:
+	  case CEntityProperty::EPT_ZONEFLAGS:
       case CEntityProperty::EPT_ANIMATION:
       case CEntityProperty::EPT_ILLUMINATIONTYPE:
       case CEntityProperty::EPT_COLOR:
@@ -136,6 +137,11 @@ void CEntity::ReadProperties_t(CTStream &istrm,BOOL bNetwork) // throw char *
         istrm>>iDummy;
 
       } break;
+	  case CEntityProperty::EPT_ZONEFLAGS_EX:
+	  {
+		SQUAD n64Dummy;
+		istrm>>n64Dummy;
+	  }
       // if it is FLOAT
       case CEntityProperty::EPT_FLOAT:
       case CEntityProperty::EPT_RANGE: {
@@ -266,12 +272,16 @@ void CEntity::ReadProperties_t(CTStream &istrm,BOOL bNetwork) // throw char *
       case CEntityProperty::EPT_INDEX:
       case CEntityProperty::EPT_ENUM:
       case CEntityProperty::EPT_FLAGS:
+	  case CEntityProperty::EPT_ZONEFLAGS:
       case CEntityProperty::EPT_ANIMATION:
       case CEntityProperty::EPT_ILLUMINATIONTYPE:
       case CEntityProperty::EPT_COLOR:
       case CEntityProperty::EPT_ANGLE:
         // read INDEX
         istrm>>PROPERTY(pepProperty->ep_slOffset, INDEX);
+        break;
+	  case CEntityProperty::EPT_ZONEFLAGS_EX:
+	    istrm>>PROPERTY(pepProperty->ep_slOffset, SQUAD);
         break;
       // if it is FLOAT
       case CEntityProperty::EPT_FLOAT:
@@ -460,12 +470,17 @@ void CEntity::WriteProperties_t(CTStream &ostrm,BOOL bNetwork) // throw char *
       case CEntityProperty::EPT_INDEX:
       case CEntityProperty::EPT_ENUM:
       case CEntityProperty::EPT_FLAGS:
+	  case CEntityProperty::EPT_ZONEFLAGS:
       case CEntityProperty::EPT_ANIMATION:
       case CEntityProperty::EPT_ILLUMINATIONTYPE:
       case CEntityProperty::EPT_COLOR:
       case CEntityProperty::EPT_ANGLE:
         // write INDEX
         ostrm<<PROPERTY(epProperty.ep_slOffset, INDEX);
+        break;
+	  case CEntityProperty::EPT_ZONEFLAGS_EX:
+	    // write INDEX
+        ostrm<<PROPERTY(epProperty.ep_slOffset, SQUAD);
         break;
       // if it is FLOAT
       case CEntityProperty::EPT_FLOAT:
@@ -729,3 +744,10 @@ void CEntityComponent::Release(void)
 ENTITY_CLASSDEFINITION_BASE(CEntity, 32000);
 ENTITY_CLASSDEFINITION_BASE(CLiveEntity, 32001);
 ENTITY_CLASSDEFINITION_BASE(CRationalEntity, 32002);
+
+void CDLLEntityClass::ReleaseCache( EntityComponentType eType, SLONG slID )
+{
+	CEntityComponent* peCompo = ComponentForTypeAndID(eType, slID);
+	ASSERT(peCompo!=NULL);
+	peCompo->Release();
+}

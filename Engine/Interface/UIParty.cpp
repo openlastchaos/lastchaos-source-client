@@ -1,11 +1,34 @@
 #include "stdh.h"
-#include <Engine/Interface/UIParty.h>
-#include <Engine/Interface/UIBuff.h>
+
+// Çì´õÁ¤¸®. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIParty.h>
 #include <Engine/Entities/InternalClasses.h>
+#include <Engine/Interface/UIPlayerInfo.h>
+#include <Engine/Interface/UIPersonalShop.h>
+#include <Engine/Object/ActorMgr.h>
 
 // [7/13/2009 rumist] reject invite party.
-extern INDEX g_iRejectParty; 
+extern INDEX g_iRejectParty;
+// [sora] RAID_SYSTEM
+CTString m_strExpeditionType[4];
+CTString m_strDivisionType[3];
+// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+const COLOR jobStringCol[TOTAL_JOB] = { 
+										/*Å¸ÀÌÅº*/0xFFFFCCFF,
+										 /*±â»ç*/0x00B0F0FF, 
+										 /*Èú·¯*/0xFFFFFFFF, 
+										 /*¸ŞÀÌÁö*/0xFFC000FF, 
+										 /*·Î±×*/0x00B050FF, 
+										 /*¼Ò¼­·¯*/0xFF66FFFF, 
+										 /*³ªÀÌÆ®½¦µµ¿ì*/0xD8D8D8FF,
+#ifdef CHAR_EX_ROGUE
+										 /*EX·Î±×*/0x00B050FF,
+#endif
+#ifdef CHAR_EX_MAGE	//2013/01/08 jeil EX¸ŞÀÌÁö Ãß°¡ 
+										 /*EX¸ŞÀÌÁö*/0xFFC000FF, 
+#endif
+										};
 // ----------------------------------------------------------------------------
 // Name : CUIParty()
 // Desc : Constructor
@@ -13,6 +36,17 @@ extern INDEX g_iRejectParty;
 CUIParty::CUIParty()
 {
 	Init();
+	InitExpedition();
+
+	m_strDivisionType[MSG_DIVITYPE_EXP] = _S(4514, "°æÇèÄ¡");
+	m_strDivisionType[MSG_DIVITYPE_ITEM] = _S(4515, "ÀÏ¹İ ¾ÆÀÌÅÛ");
+	m_strDivisionType[MSG_DIVITYPE_SPECIAL] = _S(4516, "½ºÆä¼È ¾ÆÀÌÅÛ");
+
+	m_strExpeditionType[MSG_EXPED_TYPE_RANDOM] = _S(4517, "·£´ıÈ¹µæ");
+	m_strExpeditionType[MSG_EXPED_TYPE_FIRSTGET] = _S(4518, "ÀÔ¼ö¿ì¼±");
+	m_strExpeditionType[MSG_EXPED_TYPE_BATTLE] = _S(4519, "ÀüÅõÇü");
+	m_strExpeditionType[MSG_EXPED_TYPE_OPENBOX] = _S(4520, "»óÀÚ¿­±â");
+	m_ptdExpeditionTexture = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -22,6 +56,12 @@ CUIParty::CUIParty()
 CUIParty::~CUIParty()
 {
 	Destroy();
+
+	if (m_ptdExpeditionTexture)
+	{
+		_pTextureStock->Release(m_ptdExpeditionTexture);
+		m_ptdExpeditionTexture = NULL;
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -30,9 +70,7 @@ CUIParty::~CUIParty()
 // ----------------------------------------------------------------------------
 void CUIParty::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	//m_rcTitle.SetRect( 0, 0, 140, 22 );
@@ -95,13 +133,29 @@ void CUIParty::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	// UI_REFORM :Su-won
 	m_rcBuff.SetRect( 126, 3, 136, 13 );
 
-	m_btnOption.Create( this, CTString( "" ), 113, 3, 10, 10 );
-	m_btnOption.SetUV( UBS_IDLE, 508, 256, 526, 275, fTexWidth, fTexHeight );
-	m_btnOption.SetUV( UBS_CLICK, 530, 256, 548, 275, fTexWidth, fTexHeight );
-	//m_btnOption.SetUV( UBS_IDLE, 141, 0, 151, 10, fTexWidth, fTexHeight );
-	//m_btnOption.SetUV( UBS_CLICK, 152, 0, 162, 10, fTexWidth, fTexHeight );
-	m_btnOption.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnOption.CopyUV( UBS_IDLE, UBS_DISABLE );
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM
+//////////////////////////////////////////////////////////////////////////
+	m_ptdExpeditionTexture = CreateTexture( CTString( "Data\\Interface\\Expedition.tex" ) );
+	fTexWidth = m_ptdExpeditionTexture->GetPixWidth();
+	fTexHeight = m_ptdExpeditionTexture->GetPixHeight();
+
+	m_rtExpPosition[0].SetUV(405, 166, 418, 179, fTexWidth, fTexHeight);
+	m_rtExpPosition[1].SetUV(388, 166, 401, 179, fTexWidth, fTexHeight);
+
+
+	for(int j=0; j<EXPEDITION_GROUP_MAX; j++)
+	{
+		m_UIExpGroup[j].Create(NULL, 0, 0, EXPEDITION_GROUP_WINDOW_WIDTH, EXPEDITION_GROUP_WINDOW_HEIGHT);
+		m_UIExpGroup[j].SetVisible(FALSE);
+		m_UIExpGroup[j].SetGroupNum(j+1);
+	}
+
+	m_UIExpManage.Create(NULL, 100, 100, EXPEDITION_MANAGE_WINDOW_WIDTH, EXPEDITION_MANAGE_WINDOW_HEIGHT);
+	m_UIExpManage.SetVisible(FALSE);
+
+	m_UIViewDetail.Create(NULL, 200, 200, VIEW_DETAIL_WINDOW_WIDTH, VIEW_DETAIL_WINDOW_HEIGHT);
+	m_UIViewDetail.SetVisible(FALSE);
 }
 
 // ----------------------------------------------------------------------------
@@ -132,47 +186,109 @@ void CUIParty::Init()
 		m_asbLayer[i] = 0;
 		m_aslZone[i] = 0;
 		m_aubBuff[i] = 0;
+		m_bOnline[i] = false;
 
 		m_ultargetID[i] =0;
 		m_sbtargetType[i] =0;
 	}
 	m_strMandateCharName = CTString("");
+
+	// [sora] RAID_SYSTEM
+	m_sbDivisionTypeEXP = 0;
+	m_sbDivisionTypeITEM = 0;
+	m_sbDivisionTypeSPITEM = 0;
+
+	// [091119: selo] ÇöÀç ÆÄÆ¼ ÁßÀÎÁö È®ÀÎ ÇÏ´Â ÇÃ·¡±×
+	m_bIsPartyPlay = FALSE;
 }
 
 // ----------------------------------------------------------------------------
 // Name : TargetMember()
-// Desc :
+// Desc : 
 // ----------------------------------------------------------------------------
 void CUIParty::TargetMember( int nIndex )
 {
-	if( m_aslIndices[nIndex] == -1 )
-		return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
-	for( INDEX iObj = 0; iObj < ctCha; iObj++ )
+	// [sora] ¿øÁ¤´ëµµ Ã³¸®ÇÒ ¼ö ÀÖ°Ô º¯°æ(ÀÚ±â ±×·ì ¸â¹ö¸¸ °¡´É)
+
+	INDEX	nCharIndex = 0;
+	INDEX   nIndexReal = 0;
+	if(pUIManager->IsCSFlagOn(CSF_PARTY))
 	{
-		// Get target character
-		CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[iObj];
-		if( ct.cha_Index == m_aslIndices[nIndex] )
-		{
-			CEntity			*penTargetEntity;
-			penTargetEntity = ct.cha_pEntity;
-
-			CEntity			*penPlEntity;
-			CPlayerEntity	*penPlayerEntity;
-			penPlEntity = CEntity::GetPlayerEntity( 0 );
-			penPlayerEntity = static_cast<CPlayerEntity *>(penPlEntity);
-			penPlayerEntity->SetTarget( penTargetEntity );
+		nCharIndex = m_aslIndices[nIndex];
+		if( nCharIndex == -1 || nCharIndex == 0)
 			return;
-		}
 	}
-// ê°€ê¹Œì´ì— ì—†ë‹¤ë©´ 
-	_pNetwork->_TargetInfo.Init();
-	_pNetwork->_TargetInfo.fMaxHealth = m_aswMaxHPs[nIndex];
-	_pNetwork->_TargetInfo.fHealth = m_aswHPs[nIndex];
+	else if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		// ³» ±×·ì ¿øÁ¤´ëÃ¢¿¡¼­ ³»Á¤º¸, ºó½½·ÔÀ» Ç¥½ÃÇÏÁö ¾ÊÀ¸¹Ç·Î Å¬¸¯ÇÑ ´ë¿øÀÇ ¼ø¼­¿Í ¿øÁ¤´ë ¼ø¼­°¡ ÀÏÄ¡ÇÏÁö ¾ÊÀ¸¹Ç·Î °è»êÇÑ´Ù
+		int nCount = 0;
+		for(int i=0; i<EXPEDITION_MEMBER_PER_GROUP; i++)
+		{
+			if(m_ExpeditionGroup[m_nMyGroupNum][i].IsEmpty())
+			{
+				continue;
+			}
+			if(m_nGroupPos == i)
+			{
+				continue;
+			}
+			if(nCount == nIndex)
+			{
+				nIndexReal = i;
+				break;
+			}
+
+			nCount++;
+		}
+		nCharIndex = GetExpeditionMemberIndex(m_nMyGroupNum, nIndexReal);
+		
+		if(nCharIndex == -1)
+			return;		
+	}
+
+	ObjectBase* pObject = ACTORMGR()->GetObject(nCharIndex);
+
+	if (pObject != NULL && pObject->m_eType == eOBJ_CHARACTER)
+	{
+		CEntity			*penPlEntity;
+		CPlayerEntity	*penPlayerEntity;
+		penPlEntity = CEntity::GetPlayerEntity( 0 );
+		penPlayerEntity = static_cast<CPlayerEntity *>(penPlEntity);
+		penPlayerEntity->SetTarget( pObject->GetEntity() );
+		return;
+	}
+
+	// °¡±îÀÌ¿¡ ¾ø´Ù¸é 
+	int nMaxHP = 0;
+	int nHP = 0;
+	int nLevel = 0;
+	CTString strName = "";
+	if(pUIManager->IsCSFlagOn(CSF_PARTY))
+	{
+		nMaxHP = m_aswMaxHPs[nIndex];
+		nHP = m_aswHPs[nIndex];
+		nLevel = m_aswLevels[nIndex];
+		strName = m_astrNames[nIndex];
+	}
+	else if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		nMaxHP = m_ExpeditionGroup[m_nMyGroupNum][nIndexReal].m_nMaxHP;
+		nHP = m_ExpeditionGroup[m_nMyGroupNum][nIndexReal].m_nHP;
+		nLevel = m_ExpeditionGroup[m_nMyGroupNum][nIndexReal].m_nLevel;
+		strName = m_ExpeditionGroup[m_nMyGroupNum][nIndexReal].m_strName; 
+	}
+
+	// Å¸°ÙÁ¤º¸ Å¬¸®¾î
+	_pUIBuff->ResetTargetBuff();
+	( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->ClearTargetInfo(_pNetwork->_TargetInfo.pen_pEntity);
+	
+	_pNetwork->_TargetInfo.fMaxHealth = nMaxHP;
+	_pNetwork->_TargetInfo.fHealth = nHP;
 	_pNetwork->_TargetInfo.bIsActive = TRUE;
-	_pNetwork->_TargetInfo.iLevel = m_aswLevels[nIndex];
-	strcpy(_pNetwork->_TargetInfo.TargetName, m_astrNames[nIndex] );
+	_pNetwork->_TargetInfo.iLevel = nLevel;
+	strcpy(_pNetwork->_TargetInfo.TargetName, strName );
 	_pNetwork->_TargetInfo.TargetType = CHARACTER;
 }
 
@@ -201,11 +317,12 @@ void CUIParty::AddPartyMember( SBYTE sbLeader, SLONG slIndex, CTString &strName,
 	m_asbLayer[m_nMemberCount] = sbLayer;
 	m_aubBuff[m_nMemberCount] = 0;
 	m_aslZone[m_nMemberCount] = slZone;
+	m_bOnline[m_nMemberCount] = true;
 
 	UpdateMemberInfo( m_nMemberCount );
 	m_nMemberCount++;
 
-	_pUIMgr->RearrangeOrder( UI_PARTY, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_PARTY, TRUE );
 
 	m_nHeight = m_rcTitle.GetHeight() + m_nMemberCount * PARTY_STRETCH_HEIGHT;
 }
@@ -216,7 +333,8 @@ void CUIParty::AddPartyMember( SBYTE sbLeader, SLONG slIndex, CTString &strName,
 // ----------------------------------------------------------------------------
 void CUIParty::RemoveMember( SLONG slIndex )
 {
-	for( int iMem = 0; iMem < m_nMemberCount; iMem++ )
+	int iMem;
+	for( iMem = 0; iMem < m_nMemberCount; iMem++ )
 	{
 		if( m_aslIndices[iMem] == slIndex )
 			break;
@@ -226,11 +344,12 @@ void CUIParty::RemoveMember( SLONG slIndex )
 		return;
 
 	CTString	strSysMessage;
-	strSysMessage.PrintF( _S2( 421, m_astrNames[iMem], "%s<ê°€> íŒŒí‹°ì—ì„œ íƒˆí‡´í•˜ì…¨ìŠµë‹ˆë‹¤." ), m_astrNames[iMem] );
-	_pUIMgr->GetChatting()->AddSysMessage(strSysMessage );
+	strSysMessage.PrintF( _S2( 421, m_astrNames[iMem], "%s<°¡> ÆÄÆ¼¿¡¼­ Å»ÅğÇÏ¼Ì½À´Ï´Ù." ), m_astrNames[iMem] );
+	CUIManager::getSingleton()->GetChatting()->AddSysMessage(strSysMessage );
 
 	m_nMemberCount--;
-	for( int iPos = iMem; iPos < m_nMemberCount; iPos++ )
+	int iPos;
+	for( iPos = iMem; iPos < m_nMemberCount; iPos++ )
 	{
 		m_aslIndices[iPos] = m_aslIndices[iPos + 1];
 		m_astrNames[iPos] = m_astrNames[iPos + 1];
@@ -259,6 +378,7 @@ void CUIParty::RemoveMember( SLONG slIndex )
 	m_afPosZ[iPos] = 0.0f;
 	m_asbLayer[iPos] = 0;
 	m_aubBuff[iPos] = 0;
+	m_bOnline[iPos] = false;
 
 	m_nHeight = m_rcTitle.GetHeight() + m_nMemberCount * PARTY_STRETCH_HEIGHT;
 }
@@ -270,11 +390,33 @@ void CUIParty::RemoveMember( SLONG slIndex )
 void CUIParty::BreakUpParty()
 {
 	Init();
+	InitExpedition();	// [sora] RAID_SYSTEM
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOff( CSF_PARTY );
+	pUIManager->SetCSFlagOff( CSF_PARTY );
+	pUIManager->SetCSFlagOff( CSF_EXPEDITION );	// [sora] RAID_SYSTEM
 
-	_pUIMgr->RearrangeOrder( UI_PARTY, FALSE );
+	pUIManager->RearrangeOrder( UI_PARTY, FALSE );
+
+	// [sora] ºĞ¹è Á¤º¸Ã¢ÀÌ ÀÖ¾ú´Ù¸é ´İ¾ÆÁØ´Ù
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_DIVISION_INFO))
+	{
+		pUIManager->CloseMessageBox(MSGCMD_DIVISION_INFO);
+	}
+
+	ObjectBase* pObject = ACTORMGR()->GetObject(_pNetwork->MyCharacterInfo.index);
+
+	if (pObject != NULL)
+	{
+		if (CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject))
+		{
+			// ÆÄÆ¼ ÇÃ·¡±× ÇØÁ¦. ¼¼¼Ç ½ºÅ×ÀÌÆ® cpp¿¡ µğÆÄÀÎÀ¸·Î Á¤ÀÇ µÇ¾î ÀÖ¾î¼­ ÇÏµåÄÚµùÇÔ..
+			if (pTarget->m_pEntity != NULL)
+				pTarget->m_pEntity->SetSecondExtraFlagOff(1L<<2);
+		}
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -288,7 +430,11 @@ void CUIParty::UpdateMemberInfo( int nMemIndex )
 	m_arcHPs[nMemIndex].Right = m_arcHPs[nMemIndex].Left + PARTY_BAR_WIDTH * fHPRatio;
 
 	FLOAT	fMPRatio = (FLOAT)m_aswMPs[nMemIndex] / (FLOAT)m_aswMaxMPs[nMemIndex];
-	if( fMPRatio > 1.0f ) fMPRatio = 1.0f;
+	if( fMPRatio > 1.0f ) 
+	{
+		fMPRatio = 1.0f;
+	}
+	
 	m_arcMPs[nMemIndex].Right = m_arcMPs[nMemIndex].Left + PARTY_BAR_WIDTH * fMPRatio;
 }
 
@@ -331,19 +477,39 @@ bool CUIParty::IsPartyMember( CEntity *pEntity )
 // ----------------------------------------------------------------------------
 bool CUIParty::IsPartyMember( INDEX iChaIndex )
 {
-	const int iPartyMemberCount	= GetMemberCount();
-	if( iPartyMemberCount > 0 )
+	// [sora] ¿øÁ¤´ëµµ »ç¿ëÇÒ ¼ö ÀÖ°Ô º¯°æ (¿øÁ¤´ëÀÇ °æ¿ì ÀÚ±â ±×·ìÀÏ °æ¿ì true)
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsCSFlagOn(CSF_PARTY) )
 	{
-		for( int i = 0; i < iPartyMemberCount; ++i )
+		const int iPartyMemberCount	= GetMemberCount();
+		if( iPartyMemberCount > 0 )
 		{
-			LONG lMemberIndex = GetMemberIndex( i );
-			if( lMemberIndex == iChaIndex )
+			for( int i = 0; i < iPartyMemberCount; ++i )
 			{
-				return true;
+				LONG lMemberIndex = GetMemberIndex( i );
+				if( lMemberIndex == iChaIndex )
+				{
+					return true;
+				}
 			}
 		}
+		return false;
 	}
+	else if( pUIManager->IsCSFlagOn(CSF_EXPEDITION) )
+	{
+		int nGroup = 0;
+		int nPos = 0;
+
+		if(SearchExpeditionMember(iChaIndex, nGroup, nPos))
+		{
+			return nGroup == m_nMyGroupNum;
+		}
+	}
+
 	return false;
+
 }
 
 // ----------------------------------------------------------------------------
@@ -353,24 +519,50 @@ bool CUIParty::IsPartyMember( INDEX iChaIndex )
 void CUIParty::UpdateMemberStatus( SLONG slIndex, int iHP, int iMaxHP,
 									int iMP, int iMaxMP )
 {
-	// Find party member
-	for( int iMem = 0; iMem < m_nMemberCount; iMem++ )
+	// [sora] ¿øÁ¤´ëµµ »ç¿ë °¡´ÉÇÏµµ·Ï ¼öÁ¤
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->IsCSFlagOn(CSF_PARTY))
 	{
-		if( m_aslIndices[iMem] == slIndex )
-			break;
+		// Find party member
+		int iMem;
+		for( iMem = 0; iMem < m_nMemberCount; iMem++ )
+		{
+			if( m_aslIndices[iMem] == slIndex )
+				break;
+		}
+
+		// Not found
+		if( iMem == m_nMemberCount )
+			return;
+
+		// Update infos
+		m_aswHPs[iMem] = iHP;
+		m_aswMaxHPs[iMem] = iMaxHP;
+		m_aswMPs[iMem] = iMP;
+		m_aswMaxMPs[iMem] = iMaxMP;
+
+		UpdateMemberInfo( iMem );
 	}
+	else if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		int nGroup = 0;
+		int nPos = 0;
 
-	// Not found
-	if( iMem == m_nMemberCount )
-		return;
+		if(SearchExpeditionMember(slIndex, nGroup, nPos))
+		{
+			m_ExpeditionGroup[nGroup][nPos].m_nHP = iHP;
+			m_ExpeditionGroup[nGroup][nPos].m_nMaxHP = iMaxHP;
+			m_ExpeditionGroup[nGroup][nPos].m_nMP = iMP;
+			m_ExpeditionGroup[nGroup][nPos].m_nMaxMP = iMaxMP;
+			m_ExpeditionGroup[nGroup][nPos].UpdateBarRate();
 
-	// Update infos
-	m_aswHPs[iMem] = iHP;
-	m_aswMaxHPs[iMem] = iMaxHP;
-	m_aswMPs[iMem] = iMP;
-	m_aswMaxMPs[iMem] = iMaxMP;
-
-	UpdateMemberInfo( iMem );
+			int nHpBarWidth = m_ExpeditionGroup[nGroup][nPos].CalcHPBarWidth(EXPEDITION_GROUP_BARWIDTH);
+			m_UIExpGroup[nGroup].GetMemberBtn(nPos).SetBarWidth(nHpBarWidth);
+			m_UIExpManage.GetMemberBtn(nGroup, nPos).SetBarWidth(nHpBarWidth);
+		}
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -379,8 +571,18 @@ void CUIParty::UpdateMemberStatus( SLONG slIndex, int iHP, int iMaxHP,
 // ----------------------------------------------------------------------------
 void CUIParty::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
-	//SetPos( pixMinI, pixMinJ + _pUIMgr->GetPlayerInfo()->GetHeight() );
-	SetPos( pixMinI, pixMinJ + _pUIMgr->GetPlayerInfo()->GetHeight() +10);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	//SetPos( pixMinI, pixMinJ + pUIManager->GetPlayerInfo()->GetHeight() );
+	SetPos( pixMinI, pixMinJ + pUIManager->GetPlayerInfo()->GetHeight() +10);
+
+	int nPosX, nPosY;
+	pUIManager->GetChatting()->GetChatWindowEndPos(nPosX, nPosY);
+
+	for(int j=0; j<EXPEDITION_GROUP_MAX; j++)
+	{
+		m_UIExpGroup[j].SetPos(nPosX + (j*152), nPosY);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -389,8 +591,24 @@ void CUIParty::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ
 // ----------------------------------------------------------------------------
 void CUIParty::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
+
+	int nPosX, nPosY;
+	BOOL bResetPosition = FALSE;
+	for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+	{
+		nPosX = m_UIExpGroup[i].GetAbsPosX();
+		nPosY = m_UIExpGroup[i].GetAbsPosY();
+		
+		if( nPosX < pixMinI || nPosX + EXPEDITION_GROUP_WINDOW_WIDTH > pixMaxI ||
+			nPosY < pixMinJ || nPosY + EXPEDITION_GROUP_WINDOW_HEIGHT > pixMaxJ )
+		{
+			bResetPosition = TRUE;
+			break;
+		}
+	}
+
 	if( m_nPosX < pixMinI || m_nPosX + GetWidth() > pixMaxI ||
-		m_nPosY < pixMinJ || m_nPosY + GetHeight() > pixMaxJ )
+		m_nPosY < pixMinJ || m_nPosY + GetHeight() > pixMaxJ || bResetPosition)
 		ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
 }
 
@@ -400,12 +618,22 @@ void CUIParty::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMax
 // ----------------------------------------------------------------------------
 void CUIParty::Render()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+	// [sora] ¿øÁ¤´ë ·»´õ¸µ
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		RenderExpedition();
+		return;
+	}
+
 	// If party is not exist
 	if( m_nMemberCount == 0 )
 		return;
 
 	// Set party texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
@@ -415,19 +643,19 @@ void CUIParty::Render()
 	// Top
 	
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, nY,
 										m_rtTop.U0, m_rtTop.V0, m_rtTop.U1, m_rtTop.V1,
 										0xFFFFFFFF );
 
 	for( int iMem = 0; iMem < m_nMemberCount; iMem++ )
 	{
 		// Middle
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY + PARTY_STRETCH_HEIGHT,
+		pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY + PARTY_STRETCH_HEIGHT,
 											m_rtMiddle.U0, m_rtMiddle.V0, m_rtMiddle.U1, m_rtMiddle.V1,
 											0xFFFFFFFF );
 
 		// Buff toggling icon
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcBuff.Left, nY + m_rcBuff.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcBuff.Left, nY + m_rcBuff.Top,
 											m_nPosX + m_rcBuff.Right, nY + m_rcBuff.Bottom,
 											m_rtBuff[m_aubBuff[iMem]].U0, m_rtBuff[m_aubBuff[iMem]].V0,
 											m_rtBuff[m_aubBuff[iMem]].U1, m_rtBuff[m_aubBuff[iMem]].V1,
@@ -436,57 +664,73 @@ void CUIParty::Render()
 		nY += PARTY_STRETCH_HEIGHT;
 
 		// Gague of HP & MP
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_arcHPs[iMem].Left, m_nPosY + m_arcHPs[iMem].Top,
+		pDrawPort->AddTexture( m_nPosX + m_arcHPs[iMem].Left, m_nPosY + m_arcHPs[iMem].Top,
 											m_nPosX + m_arcHPs[iMem].Right, m_nPosY + m_arcHPs[iMem].Bottom,
 											m_rtHP.U0, m_rtHP.V0, m_rtHP.U1, m_rtHP.V1,
 											0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_arcMPs[iMem].Left, m_nPosY + m_arcMPs[iMem].Top,
+		pDrawPort->AddTexture( m_nPosX + m_arcMPs[iMem].Left, m_nPosY + m_arcMPs[iMem].Top,
 											m_nPosX + m_arcMPs[iMem].Right, m_nPosY + m_arcMPs[iMem].Bottom,
 											m_rtMP.U0, m_rtMP.V0, m_rtMP.U1, m_rtMP.V1,
 											0xFFFFFFFF );
 	}
 
 	// Bottom
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY + 2,
+	pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY + 2,
 										m_rtBottom.U0, m_rtBottom.V0, m_rtBottom.U1, m_rtBottom.V1,
 										0xFFFFFFFF );
 	********************************/
 	
-	for( int iMem = 0; iMem < m_nMemberCount; iMem++ )
+	int nHPWidth = 0;
+	int nMPWidth = 0;
+	int	iMem;
+
+	for( iMem = 0; iMem < m_nMemberCount; iMem++ )
 	{
 		nY = m_nPosY +PARTY_STRETCH_HEIGHT *iMem;
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY +15,
+		pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY +15,
 										m_rtTop.U0, m_rtTop.V0, m_rtTop.U1, m_rtTop.V1,
 										0xFFFFFFFF );
 
 		// Middle
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY +15, m_nPosX + m_nWidth, nY +PARTY_HEIGHT -15,
+		pDrawPort->AddTexture( m_nPosX, nY +15, m_nPosX + m_nWidth, nY +PARTY_HEIGHT -15,
 											m_rtMiddle.U0, m_rtMiddle.V0, m_rtMiddle.U1, m_rtMiddle.V1,
 											0xFFFFFFFF );
 
 		// Bottom
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY +PARTY_HEIGHT -15, m_nPosX + m_nWidth, nY +PARTY_HEIGHT,
+		pDrawPort->AddTexture( m_nPosX, nY +PARTY_HEIGHT -15, m_nPosX + m_nWidth, nY +PARTY_HEIGHT,
 										m_rtBottom.U0, m_rtBottom.V0, m_rtBottom.U1, m_rtBottom.V1,
 										0xFFFFFFFF );
 
 		// Buff toggling icon
 		
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcBuff.Left, nY + m_rcBuff.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcBuff.Left, nY + m_rcBuff.Top,
 											m_nPosX + m_rcBuff.Right, nY + m_rcBuff.Bottom,
 											m_rtBuff[m_aubBuff[iMem]].U0, m_rtBuff[m_aubBuff[iMem]].V0,
 											m_rtBuff[m_aubBuff[iMem]].U1, m_rtBuff[m_aubBuff[iMem]].V1,
 											0xFFFFFFFF );
 
+		// [sora] ÆÄÆ¼¿ø ¿ÀÇÁ¶óÀÎ Ã³¸®
+		if(m_bOnline[iMem] == true)
+		{
+			nHPWidth = m_arcHPs[iMem].GetWidth();
+			nMPWidth = m_arcMPs[iMem].GetWidth();
+		}
+		else //¿ÀÇÁ¶óÀÎ ¸â¹ö
+		{
+			nHPWidth = 1;
+			nMPWidth = 1;
+		}
+
 		// Gague of HP & MP
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_arcHPs[iMem].Left, m_nPosY + m_arcHPs[iMem].Top,
-											m_nPosX + m_arcHPs[iMem].Right, m_nPosY + m_arcHPs[iMem].Bottom,
+		pDrawPort->AddTexture( m_nPosX + m_arcHPs[iMem].Left, m_nPosY + m_arcHPs[iMem].Top,
+											m_nPosX + m_arcHPs[iMem].Left + nHPWidth, m_nPosY + m_arcHPs[iMem].Bottom,
 											m_rtHP.U0, m_rtHP.V0, m_rtHP.U1, m_rtHP.V1,
 											0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_arcMPs[iMem].Left, m_nPosY + m_arcMPs[iMem].Top,
-											m_nPosX + m_arcMPs[iMem].Right, m_nPosY + m_arcMPs[iMem].Bottom,
+		pDrawPort->AddTexture( m_nPosX + m_arcMPs[iMem].Left, m_nPosY + m_arcMPs[iMem].Top,
+											m_nPosX + m_arcMPs[iMem].Left + nMPWidth, m_nPosY + m_arcMPs[iMem].Bottom,
 											m_rtMP.U0, m_rtMP.V0, m_rtMP.U1, m_rtMP.V1,
 											0xFFFFFFFF );
 	}
@@ -496,14 +740,11 @@ void CUIParty::Render()
 	// Close button
 	//m_btnClose.Render();
 
-	// UI_REFORM :Su-won
-	m_btnOption.Render();
-
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in party
-	//_pUIMgr->GetDrawPort()->PutTextEx( _S( 215, "íŒŒí‹°" ), m_nPosX + PARTY_TITLE_TEXT_OFFSETX,
+	//pDrawPort->PutTextEx( _S( 215, "ÆÄÆ¼" ), m_nPosX + PARTY_TITLE_TEXT_OFFSETX,
 	//									m_nPosY + PARTY_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
 	nY = m_nPosY + PARTY_NAME_SY;
@@ -513,25 +754,244 @@ void CUIParty::Render()
 		COLOR	clrPartyLeader = 0xFFFFFFFF;
 		
 		CTString strLevel;
-		strLevel.PrintF(CTString("%d"), m_aswLevels[iMem]);
-		//_pUIMgr->GetDrawPort()->PutTextExCX(strLevel, m_nPosX + 13, nY, clrPartyLeader);
-		_pUIMgr->GetDrawPort()->PutTextExCX(strLevel, m_nPosX + 12, nY -PARTY_NAME_SY +18, clrPartyLeader);
+	// [sora] ÆÄÆ¼¿ø ¿ÀÇÁ¶óÀÎ Ã³¸®
+		if(m_bOnline[iMem] == true)
+		{
+			strLevel.PrintF(CTString("%d"), m_aswLevels[iMem]);
+		}
+		else
+		{
+			strLevel.PrintF(CTString("X"));	
+		}
+		//pDrawPort->PutTextExCX(strLevel, m_nPosX + 13, nY, clrPartyLeader);
+
+		pDrawPort->PutTextExCX(strLevel, m_nPosX + 12, nY -PARTY_NAME_SY +18, clrPartyLeader);
 
 		if( m_abLeaders[iMem] )
-		{// íŒŒí‹°ì¥ êµ¬ë¶„ ìƒ‰
+		{// ÆÄÆ¼Àå ±¸ºĞ »ö
 			clrPartyLeader = 0x72D02EFF;
 		}
 
-		_pUIMgr->GetDrawPort()->PutTextEx( m_astrNames[iMem], m_nPosX + PARTY_NAME_SX+13, nY, clrPartyLeader );
+		if(m_bOnline[iMem] == false) //·¹º§ÀÌ 0ÀÎ ¸â¹ö´Â ¿ÀÇÁ¶óÀÎ¸â¹ö
+		{
+			clrPartyLeader = 0x777777FF;
+		}
+
+		pDrawPort->PutTextEx( m_astrNames[iMem], m_nPosX + PARTY_NAME_SX+13, nY, clrPartyLeader );
 		nY += PARTY_STRETCH_HEIGHT;
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Render party buff
 	if( m_bShowBuff )
 		_pUIBuff->RenderPartyBuff();
+}
+
+
+// ----------------------------------------------------------------------------
+// Name : RenderExpedition()
+// Desc : [sora] ¿øÁ¤´ë Render
+// ----------------------------------------------------------------------------
+void CUIParty::RenderExpedition()
+{
+	// ³»°¡ ¼Ò¼ÓµÈ ±×·ìÀÌ ¾ø´Ù¸é ±×¸± ÇÊ¿ä¾øÀ½
+	if(m_nMyGroupNum < 0)
+		return;
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	// Set texture
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	int	nY;
+	int	nPosX = 32, nPosY = 27;
+	int nHPWidth;
+	int nMPWidth;
+	SLONG slPosition = 0;
+	int	iMem;
+
+
+	nY = m_nPosY;
+	// ³»°¡ ¼ÓÇÑ ±×·ì ¿øÁ¤´ë UI
+	for( iMem = 0; iMem < EXPEDITION_MEMBER_PER_GROUP; iMem++ )
+	{
+
+		// ³»Á¤º¸, ºó ½½·ÔÀº ³Ñ¾î°¨
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].m_slIndex == _pNetwork->MyCharacterInfo.index)
+			continue;
+
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].IsEmpty())
+			continue;
+		
+
+		pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY +15,
+										m_rtTop.U0, m_rtTop.V0, m_rtTop.U1, m_rtTop.V1,
+										0xFFFFFFFF );
+
+		// Middle
+		pDrawPort->AddTexture( m_nPosX, nY +15, m_nPosX + m_nWidth, nY +PARTY_HEIGHT -15,
+											m_rtMiddle.U0, m_rtMiddle.V0, m_rtMiddle.U1, m_rtMiddle.V1,
+											0xFFFFFFFF );
+
+		// Bottom
+		pDrawPort->AddTexture( m_nPosX, nY +PARTY_HEIGHT -15, m_nPosX + m_nWidth, nY +PARTY_HEIGHT,
+										m_rtBottom.U0, m_rtBottom.V0, m_rtBottom.U1, m_rtBottom.V1,
+										0xFFFFFFFF );
+
+		// Buff toggling icon
+		
+		pDrawPort->AddTexture( m_nPosX + m_rcBuff.Left, nY + m_rcBuff.Top,
+											m_nPosX + m_rcBuff.Right, nY + m_rcBuff.Bottom,
+											m_rtBuff[m_aubBuff[iMem]].U0, m_rtBuff[m_aubBuff[iMem]].V0,
+											m_rtBuff[m_aubBuff[iMem]].U1, m_rtBuff[m_aubBuff[iMem]].V1,
+											0xFFFFFFFF );
+
+
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].m_bOnline)
+		{
+			nHPWidth = m_ExpeditionGroup[m_nMyGroupNum][iMem].CalcHPBarWidth(PARTY_BAR_WIDTH);
+			nMPWidth = m_ExpeditionGroup[m_nMyGroupNum][iMem].CalcMPBarWIdth(PARTY_BAR_WIDTH);
+		}
+		else //¿ÀÇÁ¶óÀÎ ¸â¹ö
+		{
+			nHPWidth = 1;
+			nMPWidth = 1;
+		}
+
+
+
+		pDrawPort->AddTexture( m_nPosX + nPosX, m_nPosY + nPosY,
+											m_nPosX + nPosX + nHPWidth, m_nPosY + nPosY + 6,
+											m_rtHP.U0, m_rtHP.V0, m_rtHP.U1, m_rtHP.V1,
+											0xFFFFFFFF );
+
+		pDrawPort->AddTexture( m_nPosX + nPosX, m_nPosY + nPosY + 10,
+											m_nPosX + nPosX + nMPWidth, m_nPosY + nPosY + 16,
+											m_rtMP.U0, m_rtMP.V0, m_rtMP.U1, m_rtMP.V1,
+											0xFFFFFFFF );
+
+
+		nY += PARTY_STRETCH_HEIGHT;
+		nPosY += PARTY_STRETCH_HEIGHT;
+	}
+
+	// Render all elements
+	pDrawPort->FlushRenderingQueue();
+
+
+	pDrawPort->InitTextureData(m_ptdExpeditionTexture);
+
+	// ³» ±×·ì ¿øÁ¤´ë Á÷Ã¥ ¾ÆÀÌÄÜÇ¥½Ã
+	nY = m_nPosY;
+	nPosY = 27;
+	for( iMem = 0; iMem < EXPEDITION_MEMBER_PER_GROUP; iMem++)
+	{
+		// ³»Á¤º¸, ºó ½½·ÔÀº ³Ñ¾î°¨
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].m_slIndex == _pNetwork->MyCharacterInfo.index)
+			continue;
+
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].IsEmpty())
+			continue;
+
+		
+		slPosition = m_ExpeditionGroup[m_nMyGroupNum][iMem].m_nPosition;
+		if(slPosition >= 0 && slPosition < MSG_EXPED_MEMBERTYPE_NORMAL)
+		{
+			pDrawPort->AddTexture( m_nPosX + PARTY_NAME_SX+13, nY + PARTY_NAME_SY + 1,
+												m_nPosX + PARTY_NAME_SX+26, nY + PARTY_NAME_SY + 14,
+												m_rtExpPosition[slPosition].U0, m_rtExpPosition[slPosition].V0, 
+												m_rtExpPosition[slPosition].U1, m_rtExpPosition[slPosition].V1,
+												0xFFFFFFFF );
+
+		}
+
+		nY += PARTY_STRETCH_HEIGHT;
+		nPosY += PARTY_STRETCH_HEIGHT;
+	}
+	
+	pDrawPort->FlushRenderingQueue();
+
+
+	// ³»°¡ ¼ÓÇÑ ±×·ì ¿øÁ¤´ë Text
+	nY = m_nPosY + PARTY_NAME_SY;
+	CTString strLevel;
+	COLOR strColor;
+	int nNamePosPlus = 0;
+	for( iMem = 0; iMem < EXPEDITION_MEMBER_PER_GROUP; iMem++ )
+	{
+
+		// ³»Á¤º¸, ºó ½½·ÔÀº ³Ñ¾î°¨
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].m_slIndex == _pNetwork->MyCharacterInfo.index)
+			continue;
+
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].IsEmpty())
+			continue;
+		
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].m_bOnline)
+		{
+			// ¿Â¶óÀÎÀÌ¸é
+			strColor = 0xFFFFFFFF;
+			strLevel.PrintF(CTString("%d"), m_ExpeditionGroup[m_nMyGroupNum][iMem].m_nLevel);
+		}
+		else
+		{
+			strColor = 0xFFFFFFFF;
+			strLevel.PrintF(_s("X"), m_ExpeditionGroup[m_nMyGroupNum][iMem].m_nLevel);
+		}
+
+		pDrawPort->PutTextExCX(strLevel, m_nPosX + 12, nY -PARTY_NAME_SY +18, strColor);
+
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].m_bOnline)
+		{
+			strColor = GetJobStringColor(m_ExpeditionGroup[m_nMyGroupNum][iMem].m_sbJob);
+		}
+		else
+		{
+			strColor = 0x777777FF;
+		}
+
+		if(m_ExpeditionGroup[m_nMyGroupNum][iMem].m_nPosition == MSG_EXPED_MEMBERTYPE_NORMAL)
+		{
+			nNamePosPlus = 13;
+		}
+		else
+		{
+			// Á÷Ã¥ÀÌ ÀÖÀ¸¸é ¾ÆÀÌÄÜ Ç¥½ÃµÈ ±æÀÌ¸¸Å­ µÚ¿¡ Ç¥½Ã
+			nNamePosPlus = 27;
+		}
+		pDrawPort->PutTextEx( m_ExpeditionGroup[m_nMyGroupNum][iMem].m_strName, m_nPosX + PARTY_NAME_SX+nNamePosPlus, nY, strColor );
+		
+		nY += PARTY_STRETCH_HEIGHT;
+	}
+
+	// Flush all render text queue
+	pDrawPort->EndTextEx();
+
+	// Render party buff
+	if( m_bShowBuff )
+		_pUIBuff->RenderPartyBuff();
+
+	// ¿øÁ¤´ë ¸â¹ö
+	for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+	{
+		if(i != m_nMyGroupNum)
+		{
+			if(m_UIExpGroup[i].IsVisible())
+			{
+				m_UIExpGroup[i].Render();
+			}
+		}
+	}
+
+	// ¿øÁ¤´ë °ü¸®
+	if(m_UIExpManage.IsVisible())
+		m_UIExpManage.Render();
+
+	// »ìÆìº¸±â
+	if(m_UIViewDetail.IsVisible())
+		m_UIViewDetail.Render();
 }
 
 // ----------------------------------------------------------------------------
@@ -544,7 +1004,7 @@ void CUIParty::ToggleVisible()
 		return;
 
 	BOOL	bVisible = !IsVisible();
-	_pUIMgr->RearrangeOrder( UI_PARTY, bVisible );
+	CUIManager::getSingleton()->RearrangeOrder( UI_PARTY, bVisible );
 }
 
 // ----------------------------------------------------------------------------
@@ -553,27 +1013,96 @@ void CUIParty::ToggleVisible()
 // ----------------------------------------------------------------------------
 void CUIParty::UpdatePartyBuff( int nMemIndex, int nX, int nY )
 {
-	if( m_aslIndices[nMemIndex] == _pUIBuff->GetPartyIndex() )
-		return;
+	// [sora] ¿øÁ¤´ëµµ »ç¿ëÇÒ ¼ö ÀÖµµ·Ï ¼öÁ¤(¿øÁ¤´ë´Â ÀÚ½ÅÀÇ ±×·ì¸¸ Ã³¸®)
 
-	m_bShowBuff = FALSE;
-	_pUIBuff->ResetPartyBuff();
-	_pUIBuff->SetPartyBuffPos( m_aslIndices[nMemIndex], nX, nY );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
-	for( INDEX iCha = 0; iCha < ctCha; iCha++ )
+	if(pUIManager->IsCSFlagOn(CSF_PARTY))
 	{
-		CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[iCha];
-		if( m_aslIndices[nMemIndex] == ct.cha_Index )
+		if( m_aslIndices[nMemIndex] == _pUIBuff->GetPartyIndex() )
+			return;
+
+		m_bShowBuff = FALSE;
+		_pUIBuff->ResetPartyBuff();
+		_pUIBuff->SetPartyBuffPos( m_aslIndices[nMemIndex], nX, nY );
+
+		ObjectBase* pObject = ACTORMGR()->GetObject(m_aslIndices[nMemIndex]);
+
+		if (pObject != NULL && pObject->m_eType == eOBJ_CHARACTER)
 		{
-			if( ct.cha_BuffCount <= 0 )
+			CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+			if (pTarget->cha_BuffCount <= 0)
 			{
 				_pUIBuff->ResetPartyBuff();
 				return;
 			}
 
-			for( SBYTE sbBuff = 0; sbBuff < ct.cha_BuffCount; sbBuff++ )
-				_pUIBuff->AddPartyBuff( m_aslIndices[nMemIndex], ct.cha_Buff[sbBuff] );
+			for (SBYTE sbBuff = 0; sbBuff < pTarget->cha_BuffCount; sbBuff++)
+				_pUIBuff->AddPartyBuff( m_aslIndices[nMemIndex], pTarget->cha_Buff[sbBuff] );
+
+			m_bShowBuff = TRUE;
+			return;
+		}
+	}
+	else if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		// ³» ±×·ì ¿øÁ¤´ëÃ¢¿¡¼­ ³»Á¤º¸, ºó½½·ÔÀ» Ç¥½ÃÇÏÁö ¾ÊÀ¸¹Ç·Î Å¬¸¯ÇÑ ´ë¿øÀÇ ¼ø¼­¿Í ¿øÁ¤´ë ¼ø¼­°¡ ÀÏÄ¡ÇÏÁö ¾ÊÀ¸¹Ç·Î °è»êÇÑ´Ù
+		int nCount = 0;
+		int nIndexReal;
+		for(int i=0; i<EXPEDITION_MEMBER_PER_GROUP; i++)
+		{
+			if(m_ExpeditionGroup[m_nMyGroupNum][i].IsEmpty())
+			{
+				continue;
+			}
+			if(m_nGroupPos == i)
+			{
+				continue;
+			}
+			if(nCount == nMemIndex)
+			{
+				nIndexReal = i;
+				break;
+			}
+
+			nCount++;
+		}
+
+		SLONG slIndex = m_ExpeditionGroup[m_nMyGroupNum][nIndexReal].m_slIndex;
+
+		if( slIndex == _pUIBuff->GetPartyIndex() )
+			return;
+
+		m_bShowBuff = FALSE;
+		_pUIBuff->ResetPartyBuff();
+		_pUIBuff->SetPartyBuffPos( slIndex, nX, nY );
+
+		if(slIndex == _pNetwork->MyCharacterInfo.index)
+		{
+			for( SBYTE sbBuff = 0; sbBuff < 2; sbBuff++ )
+			{
+				_pUIBuff->AddPartyBuff( slIndex, _pUIBuff->GetBuffArray()[sbBuff] );
+			}
+
+			m_bShowBuff = TRUE;
+			return;
+		}
+
+		ObjectBase* pObject = ACTORMGR()->GetObject(slIndex);
+
+		if (pObject != NULL && pObject->m_eType == eOBJ_CHARACTER)
+		{
+			CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+			if( pTarget->cha_BuffCount <= 0 )
+			{
+				_pUIBuff->ResetPartyBuff();
+				return;
+			}
+
+			for( SBYTE sbBuff = 0; sbBuff < pTarget->cha_BuffCount; sbBuff++ )
+				_pUIBuff->AddPartyBuff( slIndex, pTarget->cha_Buff[sbBuff] );
 
 			m_bShowBuff = TRUE;
 			return;
@@ -594,7 +1123,7 @@ WMSG_RESULT CUIParty::MouseMessage( MSG *pMsg )
 	if( m_bShowBuff && ( wmsgResult = _pUIBuff->MouseMessagePartyBuff( pMsg ) ) != WMSG_FAIL )
 	{
 		if( wmsgResult == WMSG_COMMAND )
-			_pUIMgr->RearrangeOrder( UI_PARTY, TRUE );
+			CUIManager::getSingleton()->RearrangeOrder( UI_PARTY, TRUE );
 
 		return wmsgResult;
 	}
@@ -607,13 +1136,44 @@ WMSG_RESULT CUIParty::MouseMessage( MSG *pMsg )
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		
+		if(m_UIViewDetail.IsVisible())
+		{
+			if(m_UIViewDetail.MouseMessage(pMsg) != WMSG_FAIL)
+			{
+				return WMSG_SUCCESS;
+			}
+		}
+	
+		if(m_UIExpManage.IsVisible())
+		{
+			if(m_UIExpManage.MouseMessage(pMsg) != WMSG_FAIL)
+			{
+				return WMSG_SUCCESS;
+			}
+		}
+	
+		for(int i=EXPEDITION_GROUP_MAX-1; i>=0; i--)
+		{
+			if(m_UIExpGroup[i].IsVisible() && (m_nMyGroupNum != i)) // ÀÚ±â ±×·ìÀº »«´Ù
+			{
+				if(m_UIExpGroup[i].MouseMessage(pMsg) != WMSG_FAIL)
+					return WMSG_SUCCESS;
+				
+			}
+		}
+	}
 	// Mouse message
 	switch( pMsg->message )
 	{
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move party
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -630,9 +1190,6 @@ WMSG_RESULT CUIParty::MouseMessage( MSG *pMsg )
 			else if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
 			// UI_REFORM :Su-won
-			// Option Button
-			else if( m_btnOption.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
 			// Buff toggle
 			else
 			{
@@ -645,7 +1202,7 @@ WMSG_RESULT CUIParty::MouseMessage( MSG *pMsg )
 					//int	nBuffY = m_nPosY + m_rcTitle.Bottom;
 					int	nBuffY = m_nPosY;
 
-					for( iMem = 0; iMem < m_nMemberCount; iMem++ )
+					for( int iMem = 0; iMem < m_nMemberCount; iMem++ )
 					{
 						if( nY >= nBuffY + m_rcBuff.Top && nY <= nBuffY + m_rcBuff.Bottom )
 						{
@@ -664,44 +1221,40 @@ WMSG_RESULT CUIParty::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDOWN:
 		{
-			if( IsInside( nX, nY ) )
+			if( IsInside( nX, nY ) == FALSE )
+				break;
+
+			nOldX = nX;		nOldY = nY;
+
+			// Close button
+			if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				nOldX = nX;		nOldY = nY;
-
-				// Close button
-				if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// UI_REFORM :Su-won
-				// Option Button
-				if( m_btnOption.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Title bar
-				else if( IsInsideRect( nX, nY, m_rcTitle ) )
-				{
-					bTitleBarClick = TRUE;
-				}
-				// Targetting party member
-				else
-				{
-					int	iMem = ( nY - m_nPosY) / (PARTY_HEIGHT);
-					if( iMem >= 0 && iMem < m_nMemberCount )
-						TargetMember( iMem );
-				}
-
-				_pUIMgr->RearrangeOrder( UI_PARTY, TRUE );
-				return WMSG_SUCCESS;
+				// Nothing
 			}
+			// Title bar
+			else if( IsInsideRect( nX, nY, m_rcTitle ) )
+			{
+				bTitleBarClick = TRUE;
+			}
+			// Targetting party member
+			else
+			{
+				int	iMem = ( nY - m_nPosY) / (PARTY_HEIGHT);
+				if( iMem >= 0 && iMem < m_nMemberCount )
+					TargetMember( iMem );
+			}
+
+			CUIManager::getSingleton()->RearrangeOrder( UI_PARTY, TRUE );
+			return WMSG_SUCCESS;
 		}
 		break;
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if( pUIManager->GetHoldBtn().IsEmpty() )
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -714,63 +1267,7 @@ WMSG_RESULT CUIParty::MouseMessage( MSG *pMsg )
 				if( ( wmsgResult = m_btnClose.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
 					if( wmsgResult == WMSG_COMMAND )
-						_pUIMgr->RearrangeOrder( UI_PARTY, FALSE );
-
-					return WMSG_SUCCESS;
-				}
-
-				// UI_REFORM :Su-won
-				// Option Button
-				if( ( wmsgResult = m_btnOption.MouseMessage( pMsg ) ) != WMSG_FAIL )
-				{
-					if( _pUIMgr->DoesMessageBoxExist(MSGCMD_PARTY_OPTION) )
-						return WMSG_SUCCESS;
-
-					CUIMsgBox_Info MsgBoxInfo;
-
-					CTString strParty =_S(2679, "íŒŒí‹° ì¢…ë¥˜") +_s(":  ");
-
-					switch(m_nType)
-					{
-					case PT_PEACEEVER:
-						strParty += _S(2660, "ê· ë“±ë¶„ë°° íŒŒí‹°");
-						break;
-					case PT_SURVIVAL:
-						strParty += _S(2661, "ì…ìˆ˜ìš°ì„  íŒŒí‹°");
-						break;
-					case PT_ATTACK:
-						strParty += _S(2662, "ì „íˆ¬í˜• íŒŒí‹°");
-						break;
-					}
-				
-					MsgBoxInfo.AddString( _s("   ") );
-					MsgBoxInfo.AddString( strParty, 0xF2F2F2FF, TEXT_CENTER );
-					
-					if( AmILeader() )
-					{
-						MsgBoxInfo.SetMsgBoxInfo(_S(4166, "íŒŒí‹° ì˜µì…˜"), UMBS_OKCANCEL | UMBS_COMBOBOX ,UI_PARTY, MSGCMD_PARTY_OPTION);
-
-						MsgBoxInfo.AddString( _s("   ") );
-						MsgBoxInfo.AddString( _s("   ") );
-						MsgBoxInfo.AddString(_S(4170, "íŒŒí‹° ì¢…ë¥˜ ë³€ê²½"));
-
-						_pUIMgr->CreateMessageBox(MsgBoxInfo);
-
-						_pUIMgr->GetMessageBox(MSGCMD_PARTY_OPTION)->GetComboBox().ResetStrings();
-						_pUIMgr->GetMessageBox(MSGCMD_PARTY_OPTION)->GetComboBox().AddString(_S(2660, "ê· ë“±ë¶„ë°° íŒŒí‹°"));
-						_pUIMgr->GetMessageBox(MSGCMD_PARTY_OPTION)->GetComboBox().AddString(_S(2661, "ì…ìˆ˜ìš°ì„  íŒŒí‹°"));
-						_pUIMgr->GetMessageBox(MSGCMD_PARTY_OPTION)->GetComboBox().AddString(_S(2662, "ì „íˆ¬í˜• íŒŒí‹°"));
-
-						_pUIMgr->GetMessageBox(MSGCMD_PARTY_OPTION)->GetComboBox().SetPosY(110);
-					}
-					else
-					{
-						MsgBoxInfo.SetMsgBoxInfo(_S(4166, "íŒŒí‹° ì˜µì…˜"), UMBS_OK, UI_PARTY, MSGCMD_NULL);
-
-						_pUIMgr->CreateMessageBox(MsgBoxInfo);
-					}
-
-					
+						pUIManager->RearrangeOrder( UI_PARTY, FALSE );
 
 					return WMSG_SUCCESS;
 				}
@@ -781,7 +1278,7 @@ WMSG_RESULT CUIParty::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -789,17 +1286,47 @@ WMSG_RESULT CUIParty::MouseMessage( MSG *pMsg )
 		}
 		break;
 
-	case WM_RBUTTONDOWN:
+	case WM_RBUTTONDOWN: // [sora] ¿øÁ¤´ë Å¸°ÙÁöÁ¤ Ãß°¡
 		{
-			if( IsInside( nX, nY ) )
-			{
-				int	iMem = (nY - m_nPosY) / (PARTY_HEIGHT);
-				if( iMem >= 0 && iMem < m_nMemberCount )
-					((CPlayerEntity*)(CEntity::GetPlayerEntity(0)))->SetTarget(m_ultargetID[iMem], m_sbtargetType[iMem]);
+			if( IsInside( nX, nY ) == FALSE )
+				break;
 
-				_pUIMgr->RearrangeOrder( UI_PARTY, TRUE );
-				return WMSG_SUCCESS;
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
+			int	iMem = (nY - m_nPosY) / (PARTY_HEIGHT);
+			if( iMem >= 0 && iMem < m_nMemberCount )
+			{
+				if(pUIManager->IsCSFlagOn(CSF_PARTY))
+				{
+					((CPlayerEntity*)(CEntity::GetPlayerEntity(0)))->SetTarget(m_ultargetID[iMem], m_sbtargetType[iMem]);
+				}
+				else if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+				{
+					int nCount = 0;
+					int i;
+					for(i = 0; i < EXPEDITION_MEMBER_PER_GROUP; i++)
+					{
+						if(m_ExpeditionGroup[m_nMyGroupNum][i].IsEmpty())
+						{
+							continue;
+						}
+						if(m_nGroupPos == i)
+						{
+							continue;
+						}
+						if(nCount == iMem)
+						{
+							break;
+						}
+						
+						nCount++;
+					}
+					((CPlayerEntity*)(CEntity::GetPlayerEntity(0)))->SetTarget(m_ultargetID[i], m_sbtargetType[i]);
+				}
 			}
+
+			pUIManager->RearrangeOrder( UI_PARTY, TRUE );
+			return WMSG_SUCCESS;
 		}
 		break;
 
@@ -850,9 +1377,6 @@ void CUIParty::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 
 				if( ( nCharPos = IsOurPartyPos( m_strMandateCharName ) ) != -1 )
 				{
-					m_abLeaders[nCharPos] = TRUE;
-					m_bAmILeader = FALSE;
-
 					_pNetwork->MandateBossReq( m_strMandateCharName );
 				}
 			}
@@ -865,12 +1389,152 @@ void CUIParty::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 			{
 				CNetworkMessage	nmMessage( MSG_PARTY );
 				nmMessage << (SBYTE)MSG_PARTY_CHANGETYPE;
-				nmMessage << (SBYTE) _pUIMgr->GetMessageBox(MSGCMD_PARTY_OPTION)->GetComboBox().GetCurSel();;
+				nmMessage << (SBYTE) CUIManager::getSingleton()->GetMessageBox(MSGCMD_PARTY_OPTION)->GetComboBox().GetCurSel();;
 					
 				_pNetwork->SendToServerNew( nmMessage );				
 			}
 		}
 		break;
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM ¿øÁ¤´ë ¸Ş½ÃÁö ¹Ú½º Ã³¸® Ãß°¡
+//////////////////////////////////////////////////////////////////////////
+	case MSGCMD_EXPEDITION_INVITE:
+		{
+			if(!bOK)
+			{
+				SendExpeditionReject();
+			}
+		}
+		break;
+
+	case MSGCMD_EXPEDITION_ALLOW:
+		{
+			if(bOK)
+			{
+				SendExpeditionAllow();
+			}
+			else
+			{
+				SendExpeditionReject();
+			}
+		}
+		break;
+
+	case MSGCMD_EXPEDITION_INVITE_BY_NAME:	// ¿øÁ¤´ë °ü¸®Ã¢¿¡¼­ ÀÌ¸§À¸·Î ÃÊ´ëÇÏ±â
+		{
+			if( bOK == FALSE )
+				break;
+
+			CUIManager* pUIManager = CUIManager::getSingleton();
+			CTString	strMessage;
+
+			if(pUIManager->IsCSFlagOn(CSF_EXPEDITION_REQ))
+			{
+				strMessage.PrintF( _S( 4521, "ÀÌ¹Ì %s¿¡°Ô ¿øÁ¤´ë¸¦ ½ÅÃ»ÁßÀÔ´Ï´Ù." ), m_strDestName );
+				pUIManager->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+				return;
+			}
+
+			// Find index of character
+			SLONG	slIndex = -1;
+			ObjectBase* pObject = ACTORMGR()->GetObjectByName(strInput.str_String, eOBJ_CHARACTER);
+
+			if (pObject != NULL)
+			{
+				CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+				if (pTarget->cha_sbShopType != PST_NOSHOP)
+				{
+					pUIManager->GetChatting()->AddSysMessage( _S(4522, "°³ÀÎ »óÁ¡ÁßÀÎ Ä³¸¯ÅÍ´Â ¿øÁ¤´ë¿¡ Âü¿©ÇÒ ¼ö ¾ø½À´Ï´Ù." ) , SYSMSG_ERROR );	
+					return;
+				}
+
+				slIndex = pTarget->GetSIndex();
+			}
+
+			if( slIndex == -1 )
+			{
+				pUIManager->GetChatting()->AddSysMessage( _S(4523, "´ë»óÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );
+				return ;
+			}
+
+			if(IsExpedetionMember(slIndex))
+			{
+				strMessage.PrintF( _S( 4524, "ÀÌ¹Ì %s¿Í ¿øÁ¤´ë »óÅÂÀÔ´Ï´Ù." ), strInput );
+				pUIManager->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+				return;
+			}
+			m_strDestName = strInput;
+
+			_pNetwork->ExpeditionAddCharReq(strInput);
+		}
+		break;
+
+	case MSGCMD_EXPEDITION_SET_BOSS:	// ¿øÁ¤´ëÀå º¯°æ
+		{
+			if(bOK)
+			{
+				_pNetwork->ExpeditionChangeLeaderReq(m_UIExpManage.m_slDestIndex);
+			}
+		}
+		break;
+
+	case MSGCMD_EXPEDITION_SET_MBOSS:	// ¿øÁ¤ºÎ´ëÀåÀÓ¸í
+		{
+			if(bOK)
+			{
+				CUIManager::getSingleton()->GetParty()->SendChangeSubLeader(m_UIExpManage.m_slDestIndex);
+			}
+		}
+		break;	
+
+	case MSGCMD_EXPEDITION_RESET_MBOSS:	// ¿øÁ¤ºÎ´ëÀå ÇØÀÓ
+		{
+			if(bOK)
+			{
+				_pNetwork->ExpeditionChangeSubLeaderReq(FALSE, m_UIExpManage.m_slDestIndex);
+			}
+		}
+		break;	
+
+	case MSGCMD_EXPEDITION_KICK:	// ¿øÁ¤´ë¿ø °­Åğ
+		{
+			if(bOK)
+			{
+				CUIManager::getSingleton()->GetParty()->SendExpeditionKick(m_UIExpManage.m_slDestIndex);
+			}
+		}
+		break;	
+
+	case MSGCMD_EXPEDITION_GO_STARTPLACE:	// ºÎÈ°ÁöÁ¡À¸·Î ÀÌµ¿
+		{
+			if(bOK)
+			{
+				//ºÎÈ°ÁöÁ¡ ÀÌµ¿
+				_pNetwork->RaidInzoneQuitReq();
+			}
+		}
+		break;
+
+	case MSGCMD_EXPEDITION_ERROR:	//¿øÁ¤´ë ¿¡·¯ ¸Ş½ÃÁö, ¿øÁ¤´ë ÀÏ¹İ ¸Ş½ÃÁö¿¡ »ç¿ë
+		{
+			if(bOK)
+			{
+				CUIManager::getSingleton()->CloseMessageBox(MSGCMD_EXPEDITION_ERROR);
+			}
+		}
+		break;
+
+	case MSGCMD_DIVISION_INFO:	//ºĞ¹è¹æ½Ä Á¤º¸
+		{
+			if(bOK)
+			{
+				CUIManager::getSingleton()->CloseMessageBox(MSGCMD_DIVISION_INFO);
+			}
+		}
+		break;
+//////////////////////////////////////////////////////////////////////////
+
 	}
 }
 
@@ -885,10 +1549,37 @@ void CUIParty::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 // ----------------------------------------------------------------------------
 void CUIParty::SendPartyInvite( SBYTE sbType, CTString &strDestName )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	SLONG	slIndex = -1;	
+	SBYTE	sbShopType = PST_NOSHOP;
+	INDEX	iSyndicateType;
+
+	// Find index of character
+	if (_pNetwork->_TargetInfo.pen_pEntity != NULL)
+	{
+		ObjectBase* pObject = ACTORMGR()->GetObject(_pNetwork->_TargetInfo.pen_pEntity->GetNetworkID());
+
+		if (pObject != NULL && pObject->m_eType == eOBJ_CHARACTER)
+		{
+			CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+			sbShopType = pTarget->cha_sbShopType;
+			slIndex = pTarget->m_nIdxServer;
+			iSyndicateType = pTarget->cha_iSyndicateType;
+		}
+	}
+
+// 	if (_pNetwork->IsRvrZone() && _pNetwork->MyCharacterInfo.iSyndicateType != iSyndicateType)
+// 	{	// RVRÁ¸ÀÌ ¾Æ´Ï°Å³ª °á»ç´ë Å¸ÀÔÀÌ ´Ù¸¦ °æ¿ì.
+// 		pUIManager->GetChatting()->AddSysMessage( _S( 6090, "ºĞÀï Áö¿ª¿¡¼­ Àû´ë °ü°èÀÎ °æ¿ì »ç¿ëÇÒ ¼ö ¾ø´Â ±â´ÉÀÔ´Ï´Ù."), SYSMSG_ERROR);
+// 		return;
+// 	}
+
 	// If I'm not a leader
 	if( m_nMemberCount > 0 && !m_bAmILeader )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 364, "íŒŒí‹° ì‹ ì²­ ê¶Œí•œì´ ì—†ìŠµë‹ˆë‹¤" ), SYSMSG_ERROR );
+		pUIManager->GetChatting()->AddSysMessage( _S( 364, "ÆÄÆ¼ ½ÅÃ» ±ÇÇÑÀÌ ¾ø½À´Ï´Ù" ), SYSMSG_ERROR );
 		return;
 	}
 
@@ -896,45 +1587,33 @@ void CUIParty::SendPartyInvite( SBYTE sbType, CTString &strDestName )
 	CTString	strMessage;
 	if( m_bIsPartyRequested )
 	{
-		strMessage.PrintF( _S( 361, "ì´ë¯¸ %sì—ê²Œ íŒŒí‹°ë¥¼ ì‹ ì²­ì¤‘ì…ë‹ˆë‹¤." ), m_strDestName );
-		_pUIMgr->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+		strMessage.PrintF( _S( 361, "ÀÌ¹Ì %s¿¡°Ô ÆÄÆ¼¸¦ ½ÅÃ»ÁßÀÔ´Ï´Ù." ), m_strDestName );
+		pUIManager->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
 		return;
 	}
 
-	// If party type is different
 	if( m_nMemberCount > 0 && sbType != m_nType )
 	{
+		// If party type is different
 		switch( m_nType )
 		{
 		case PT_PEACEEVER:
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 362, "ì´ë¯¸ ê· ë“± ë¶„ë°° íŒŒí‹°ì¤‘ì…ë‹ˆë‹¤." ), SYSMSG_ERROR );
+			pUIManager->GetChatting()->AddSysMessage( _S( 362, "ÀÌ¹Ì ±Õµî ºĞ¹è ÆÄÆ¼ÁßÀÔ´Ï´Ù." ), SYSMSG_ERROR );
 			break;
 		case PT_SURVIVAL:
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 363, "ì´ë¯¸ ì…ìˆ˜ ìš°ì„  íŒŒí‹°ì¤‘ì…ë‹ˆë‹¤." ), SYSMSG_ERROR );
+			pUIManager->GetChatting()->AddSysMessage( _S( 363, "ÀÌ¹Ì ÀÔ¼ö ¿ì¼± ÆÄÆ¼ÁßÀÔ´Ï´Ù." ), SYSMSG_ERROR );
 			break;
 		case PT_ATTACK:
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 1651,  "ì´ë¯¸ ì „íˆ¬í˜• íŒŒí‹°ì¤‘ì…ë‹ˆë‹¤."  ), SYSMSG_ERROR ); 
+			pUIManager->GetChatting()->AddSysMessage( _S( 1651,  "ÀÌ¹Ì ÀüÅõÇü ÆÄÆ¼ÁßÀÔ´Ï´Ù."  ), SYSMSG_ERROR ); 
 			break;
 		}
 		return;
 	}
 
-	// Find index of character
-	SLONG	slIndex = -1;
-	INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
-	for( INDEX iPlyaer = 0; iPlyaer < ctCha; iPlyaer++ ) 
+	if( sbShopType != PST_NOSHOP )
 	{
-		CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[iPlyaer];
-		if( ct.cha_strName == strDestName )
-		{
-			if( ct.cha_sbShopType != PST_NOSHOP )
-			{
-				_pUIMgr->GetChatting()->AddSysMessage( _S( 940, "ê°œì¸ ìƒì ê³¼ëŠ” íŒŒí‹°ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) , SYSMSG_ERROR );	
-				return;
-			}
-			slIndex = ct.cha_Index;
-			break;
-		}
+		pUIManager->GetChatting()->AddSysMessage( _S( 940, "°³ÀÎ »óÁ¡°ú´Â ÆÄÆ¼¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù." ) , SYSMSG_ERROR );	
+		return;
 	}
 
 	// If target is already my party member
@@ -942,21 +1621,25 @@ void CUIParty::SendPartyInvite( SBYTE sbType, CTString &strDestName )
 	{
 		if( slIndex == m_aslIndices[iMem] )
 		{
-			strMessage.PrintF( _S2( 420, m_strDestName, "ì´ë¯¸ %s<ê³¼> íŒŒí‹°ì¤‘ì…ë‹ˆë‹¤." ), m_strDestName );
-			_pUIMgr->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+			strMessage.PrintF( _S2( 420, m_strDestName, "ÀÌ¹Ì %s<°ú> ÆÄÆ¼ÁßÀÔ´Ï´Ù." ), m_strDestName );
+			pUIManager->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
 
 			return;
 		}
 	}
 
+	// TO-KR-T20090903-005 ÆÄÆ¼ ½ÅÃ» º¯°æ. [11/27/2009 rumist]
+	/*************
 	// If character doesn't exist
 	if( slIndex == -1 )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 310, "íŒŒí‹° ìƒëŒ€ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );
+		pUIManager->GetChatting()->AddSysMessage( _S( 310, "ÆÄÆ¼ »ó´ë¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );
 		return ;
 	}
 
 	_pNetwork->PartyInvite( sbType, slIndex );
+	*************/
+	_pNetwork->PartyInvite( sbType, slIndex, strDestName );
 	m_strDestName = strDestName;
 }
 
@@ -996,7 +1679,7 @@ void CUIParty::SendPartyKick( CTString &strDestName )
 {
 	if( !m_bAmILeader )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 365, "íŒŒí‹°ì› ê°•í‡´ ê¶Œí•œì´ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );
+		CUIManager::getSingleton()->GetChatting()->AddSysMessage( _S( 365, "ÆÄÆ¼¿ø °­Åğ ±ÇÇÑÀÌ ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );
 		return;
 	}
 
@@ -1018,7 +1701,7 @@ void CUIParty::SendPartyKick( CTString &strDestName )
 	// If character doesn't exist
 	if( nIndex == -1 )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 366, "ê°•í‡´ ìƒëŒ€ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );
+		CUIManager::getSingleton()->GetChatting()->AddSysMessage( _S( 366, "°­Åğ »ó´ë¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );
 		return ;
 	}
 
@@ -1034,54 +1717,63 @@ void CUIParty::SendPartyKick( CTString &strDestName )
 // Name : PartyInvite()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIParty::PartyInvite( SBYTE sbType, SLONG slSrcIndex, CTString &strSrcName )
+void CUIParty::PartyInvite(SBYTE sbType, SLONG slSrcIndex, CTString &strSrcName, SBYTE sbPartyTypeItem /* = -1 */, SBYTE sbPartyTypeSPItem /* = -1 */)
 {
 	m_bAmILeader = slSrcIndex == _pNetwork->MyCharacterInfo.index;
 	m_nType = sbType;
+ 	m_sbDivisionTypeITEM = sbPartyTypeItem;
+	m_sbDivisionTypeSPITEM = sbPartyTypeSPItem;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
 	CTString	strMessage;
 	if( m_bAmILeader )
 	{
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 215, "íŒŒí‹°" ), UMBS_CANCEL, UI_PARTY, MSGCMD_PARTY_INVITE );
-		strMessage.PrintF( _S( 216, "%sì—ê²Œ íŒŒí‹°ë¥¼ ì‹ ì²­ì¤‘ì…ë‹ˆë‹¤. ì·¨ì†Œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), m_strDestName );
+		MsgBoxInfo.SetMsgBoxInfo( _S( 215, "ÆÄÆ¼" ), UMBS_CANCEL, UI_PARTY, MSGCMD_PARTY_INVITE );
+		strMessage.PrintF( _S( 216, "%s¿¡°Ô ÆÄÆ¼¸¦ ½ÅÃ»ÁßÀÔ´Ï´Ù. Ãë¼ÒÇÏ½Ã°Ú½À´Ï±î?" ), m_strDestName );
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 
 		m_bIsPartyRequested = TRUE;
 	}
 	else
 	{
+	// rejection bug fix [8/5/2010 rumist]
 		if( !g_iRejectParty )
 		{
-			switch( m_nType )
+			CTString strPartyType[3]; 
+			strPartyType[PT_PEACEEVER] = _S(4525, "±ÕµîºĞ¹è");
+			strPartyType[PT_SURVIVAL] = m_strExpeditionType[MSG_EXPED_TYPE_FIRSTGET]; //_s("ÀÔ¼ö¿ì¼±")
+			strPartyType[PT_ATTACK] = m_strExpeditionType[MSG_EXPED_TYPE_BATTLE] ; // _s("ÀüÅõÇü");
+
+
+			// ¼¼ºÎ ÆÄÆ¼ Å¸ÀÔÀÌ ÀÖ´Ù¸é
+			if(sbPartyTypeItem >= 0 && sbPartyTypeSPItem >= 0)
 			{
-			case PT_PEACEEVER:
-				strMessage.PrintF( _S2( 217, strSrcName, "%s<ê°€> íŒŒí‹°(ê· ë“± ë¶„ë°°) ì‹ ì²­ì„ í–ˆìŠµë‹ˆë‹¤. ìˆ˜ë½í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), strSrcName );
-				break;
-			case PT_SURVIVAL:
-				strMessage.PrintF( _S2( 218, strSrcName, "%s<ê°€> íŒŒí‹°(ì…ìˆ˜ ìš°ì„ ) ì‹ ì²­ì„ í–ˆìŠµë‹ˆë‹¤. ìˆ˜ë½í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), strSrcName );
-				break;
-			case PT_ATTACK:
-				strMessage.PrintF( _S2( 1652, strSrcName, "%s<ê°€> íŒŒí‹°(ì „íˆ¬í˜•) ì‹ ì²­ì„ í–ˆìŠµë‹ˆë‹¤. ìˆ˜ë½í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), strSrcName );
-				break;
+				strMessage.PrintF( _S(4526, "%s°¡ ÆÄÆ¼(%s)(¾ÆÀÌÅÛºĞ¹è:%s, ½ºÆä¼È¾ÆÀÌÅÛ ºĞ¹è:%s)½ÅÃ»À» Çß½À´Ï´Ù. ¼ö¶ôÇÏ½Ã°Ú½À´Ï±î?" ), strSrcName, 
+									strPartyType[sbType], m_strExpeditionType[sbPartyTypeItem], m_strExpeditionType[sbPartyTypeSPItem]);
 			}
-			
+			else // ¼¼ºÎ ÁöÁ¤ÀÌ ¾ø´Ù¸é
+			{
+				strMessage.PrintF( _S(4527, "%s°¡ ÆÄÆ¼(%s)½ÅÃ»À» Çß½À´Ï´Ù. ¼ö¶ôÇÏ½Ã°Ú½À´Ï±î?" ), strSrcName, strPartyType[sbType]);
+			}
+
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 215, "íŒŒí‹°" ), UMBS_YESNO, UI_PARTY, MSGCMD_PARTY_ALLOW );
+			MsgBoxInfo.SetMsgBoxInfo( _S( 215, "ÆÄÆ¼" ), UMBS_YESNO, UI_PARTY, MSGCMD_PARTY_ALLOW );
 			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 		}
-		// [7/13/2009 rumist] reject invite message.
-		else
+		else// [7/13/2009 rumist] reject invite message.
 		{
 			SendPartyReject();
 			return;
 		}
 	}
 
+
 	// Character state flags
-	_pUIMgr->SetCSFlagOn( CSF_PARTY_REQ );
+	pUIManager->SetCSFlagOn( CSF_PARTY_REQ );
 }
 
 // ----------------------------------------------------------------------------
@@ -1090,27 +1782,29 @@ void CUIParty::PartyInvite( SBYTE sbType, SLONG slSrcIndex, CTString &strSrcName
 // ----------------------------------------------------------------------------
 void CUIParty::PartyReject( BOOL bLeader )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	m_bIsPartyRequested = FALSE;
 
 	if( m_bAmILeader && !bLeader )
 	{
-		_pUIMgr->CloseMessageBox( MSGCMD_PARTY_INVITE );
+		pUIManager->CloseMessageBox( MSGCMD_PARTY_INVITE );
 
 	}
 	else if( !m_bAmILeader && bLeader )
 	{
-		_pUIMgr->CloseMessageBox( MSGCMD_PARTY_ALLOW );
+		pUIManager->CloseMessageBox( MSGCMD_PARTY_ALLOW );
 	}
-	// íŒŒí‹° ë§¤ì¹­ ìŠ¹ë‚™ì‹œì— ë©”ì„¸ì§€ ì°½ ì œê±°
-	_pUIMgr->CloseMessageBox( MSGCMD_PARTYAUTO_JOIN_ALLOW );
+	// ÆÄÆ¼ ¸ÅÄª ½Â³«½Ã¿¡ ¸Ş¼¼Áö Ã¢ Á¦°Å
+	pUIManager->CloseMessageBox( MSGCMD_PARTYAUTO_JOIN_ALLOW );
 
-	_pUIMgr->GetChatting()->AddSysMessage( _S( 219, "íŒŒí‹° ì‹ ì²­ì´ ì·¨ì†Œë˜ì—ˆìŠµë‹ˆë‹¤." ) );
+	pUIManager->GetChatting()->AddSysMessage( _S( 219, "ÆÄÆ¼ ½ÅÃ»ÀÌ Ãë¼ÒµÇ¾ú½À´Ï´Ù." ) );
 
 	if( m_bAmILeader && m_nMemberCount <= 0 )
 		m_bAmILeader = FALSE;
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOff( CSF_PARTY_REQ );
+	pUIManager->SetCSFlagOff( CSF_PARTY_REQ );
 }
 
 // ----------------------------------------------------------------------------
@@ -1121,18 +1815,20 @@ void CUIParty::PartyAddMember( SBYTE sbLeader, SLONG slIndex, CTString &strName,
 								int iLevel, int iHP, int iMaxHP, int iMP, int iMaxMP,
 								FLOAT fX, FLOAT fZ, SBYTE sbLayer, SLONG slZone )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	int nIsCharPos;
 	m_bIsPartyRequested = FALSE;
 
 	if( m_bAmILeader )
-	{ _pUIMgr->CloseMessageBox( MSGCMD_PARTY_INVITE ); }
-	else// íŒŒí‹° ë§¤ì¹­ìœ¼ë¡œ ë“¤ì–´ì˜¨ ë©”ì„¸ì§€ ì°½ì„ ë‹«ëŠ”ë‹¤.
+	{ pUIManager->CloseMessageBox( MSGCMD_PARTY_INVITE ); }
+	else// ÆÄÆ¼ ¸ÅÄªÀ¸·Î µé¾î¿Â ¸Ş¼¼Áö Ã¢À» ´İ´Â´Ù.
 	{ 
-		_pUIMgr->CloseMessageBox( MSGCMD_PARTY_INVITE );
-		_pUIMgr->CloseMessageBox( MSGCMD_PARTYAUTO_JOIN_ALLOW );
+		pUIManager->CloseMessageBox( MSGCMD_PARTY_INVITE );
+		pUIManager->CloseMessageBox( MSGCMD_PARTYAUTO_JOIN_ALLOW );
 	}
 
-	if( ( nIsCharPos = IsOurParty( slIndex ) ) != -1 )// ì´ë¯¸ íŒŒí‹°ì— ë“¤ì–´ ìˆëŠ” ìœ ì €(ê°±ì‹ )
+	if( ( nIsCharPos = IsOurParty( slIndex ) ) != -1 )// ÀÌ¹Ì ÆÄÆ¼¿¡ µé¾î ÀÖ´Â À¯Àú(°»½Å)
 	{
 		m_aslIndices[nIsCharPos] = slIndex;
 		m_astrNames[nIsCharPos] = strName;
@@ -1151,16 +1847,16 @@ void CUIParty::PartyAddMember( SBYTE sbLeader, SLONG slIndex, CTString &strName,
 
 		UpdateMemberInfo( nIsCharPos );
 	}
-	else	// íŒŒí‹°ì— ì—†ëŠ” ìœ ì €
+	else	// ÆÄÆ¼¿¡ ¾ø´Â À¯Àú
 	{
 		AddPartyMember( sbLeader, slIndex, strName, sbJob, sbJob2, iLevel, iHP, iMaxHP, iMP, iMaxMP, fX, fZ, sbLayer, slZone );
 	}
-	// í˜„ì¬ ê°€ì§„ íŒŒí‹°ì› ì •ë³´ë¥¼ í† ëŒ€ë¡œ ë¦¬ë”ë¥¼ ì„¤ì • í•œë‹¤.
+	// ÇöÀç °¡Áø ÆÄÆ¼¿ø Á¤º¸¸¦ Åä´ë·Î ¸®´õ¸¦ ¼³Á¤ ÇÑ´Ù.
 	SetPartyLeader();
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOff( CSF_PARTY_REQ );
-	_pUIMgr->SetCSFlagOn( CSF_PARTY );
+	pUIManager->SetCSFlagOff( CSF_PARTY_REQ );
+	pUIManager->SetCSFlagOn( CSF_PARTY );
 }
 
 // ----------------------------------------------------------------------------
@@ -1173,11 +1869,20 @@ void CUIParty::PartyQuit( SLONG slIndex )
 
 	if( slIndex == _pNetwork->MyCharacterInfo.index )
 	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
 		BreakUpParty();
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 367, "íŒŒí‹°ì—ì„œ íƒˆí‡´í•˜ì…¨ìŠµë‹ˆë‹¤." ) );
+		pUIManager->GetChatting()->AddSysMessage( _S( 367, "ÆÄÆ¼¿¡¼­ Å»ÅğÇÏ¼Ì½À´Ï´Ù." ) );
+		// [sora] ÀÎ½ºÅÏÆ®Á¸ ÇÃ·¹ÀÌÁßÀÌ¾ú´Ù¸é ºÎÈ°ÁöÁ¡À¸·Î ÀÌµ¿
+		if(pUIManager->IsPlayInZone())
+		{
+			_pNetwork->RaidInzoneQuitReq();
+		}
 	}
 	else
+	{
 		RemoveMember( slIndex );
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -1190,11 +1895,20 @@ void CUIParty::PartyKick( SLONG slIndex )
 
 	if( slIndex == _pNetwork->MyCharacterInfo.index )
 	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
 		BreakUpParty();
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 368, "íŒŒí‹°ì—ì„œ ê°•í‡´ ë˜ì…¨ìŠµë‹ˆë‹¤." ) );
+		pUIManager->GetChatting()->AddSysMessage( _S( 368, "ÆÄÆ¼¿¡¼­ °­Åğ µÇ¼Ì½À´Ï´Ù." ) );
+		// [sora] ÀÎ½ºÅÏÆ®Á¸ ÇÃ·¹ÀÌÁßÀÌ¾ú´Ù¸é ºÎÈ°ÁöÁ¡À¸·Î ÀÌµ¿
+		if(pUIManager->IsPlayInZone())
+		{
+			_pNetwork->RaidInzoneQuitReq();
+		}
 	}
 	else
+	{
 		RemoveMember( slIndex );
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -1203,10 +1917,18 @@ void CUIParty::PartyKick( SLONG slIndex )
 // ----------------------------------------------------------------------------
 void CUIParty::PartyEnd()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	m_bIsPartyRequested = FALSE;
 
 	BreakUpParty();
-	_pUIMgr->GetChatting()->AddSysMessage( _S( 220, "íŒŒí‹°ê°€ í•´ì²´ë˜ì—ˆìŠµë‹ˆë‹¤." ) );
+
+	pUIManager->GetChatting()->AddSysMessage( _S( 220, "ÆÄÆ¼°¡ ÇØÃ¼µÇ¾ú½À´Ï´Ù." ) );
+
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_DIVISION_INFO) == TRUE )
+	{
+		pUIManager->CloseMessageBox(MSGCMD_DIVISION_INFO);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -1214,10 +1936,11 @@ void CUIParty::PartyEnd()
 // Desc :
 // ----------------------------------------------------------------------------
 void CUIParty::PartyMemberInfo( SLONG slIndex, int iLevel, int iHP, int iMaxHP,
-								int iMP, int iMaxMP, FLOAT fX, FLOAT fZ, SBYTE sbLayer, SLONG slZone )
+								int iMP, int iMaxMP, FLOAT fX, FLOAT fZ, SBYTE sbLayer, SLONG slZone, bool bOnline )
 {
 	// Find party member
-	for( int iMem = 0; iMem < m_nMemberCount; iMem++ )
+	int iMem;
+	for( iMem = 0; iMem < m_nMemberCount; iMem++ )
 	{
 		if( m_aslIndices[iMem] == slIndex )
 			break;
@@ -1237,6 +1960,7 @@ void CUIParty::PartyMemberInfo( SLONG slIndex, int iLevel, int iHP, int iMaxHP,
 	m_afPosZ[iMem] = fZ;
 	m_asbLayer[iMem] = sbLayer;
 	m_aslZone[iMem] = slZone;
+	m_bOnline[iMem] = bOnline;
 
 	UpdateMemberInfo( iMem );
 }
@@ -1251,57 +1975,73 @@ void CUIParty::PartyError( SBYTE sbError )
 	switch( sbError )
 	{
 	case MSG_PARTY_ERROR_NOTFOUND:
-		strSysMessage = _S( 397, "íŒŒí‹° ëŒ€ìƒì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤." );
+		strSysMessage = _S( 397, "ÆÄÆ¼ ´ë»óÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù." );
 		break;
 
 	case MSG_PARTY_ERROR_ALREADY_ME:
-		strSysMessage = _S( 311, "ì´ë¯¸ íŒŒí‹° ì¤‘ì…ë‹ˆë‹¤." );
+		strSysMessage = _S( 311, "ÀÌ¹Ì ÆÄÆ¼ ÁßÀÔ´Ï´Ù." );
 		break;
 
 	case MSG_PARTY_ERROR_FULL:
-		strSysMessage = _S( 312, "íŒŒí‹°ì›ì´ ê°€ë“ ì°¼ìŠµë‹ˆë‹¤." );
+		strSysMessage = _S( 312, "ÆÄÆ¼¿øÀÌ °¡µæ Ã¡½À´Ï´Ù." );
 		break;
 
 	case MSG_PARTY_ERROR_ALREADY_TARGET:
-		strSysMessage = _S( 396, "ëŒ€ìƒì´ ì´ë¯¸ íŒŒí‹°ì¤‘ì…ë‹ˆë‹¤." );
+		strSysMessage = _S( 396, "´ë»óÀÌ ÀÌ¹Ì ÆÄÆ¼ÁßÀÔ´Ï´Ù." );
 		break;
 
 	case MSG_PARTY_ERROR_ALREADY_REQUEST:
-		strSysMessage = _S( 324, "ëŒ€ìƒì´ ì´ë¯¸ íŒŒí‹° ì‹ ì²­ì¤‘ì…ë‹ˆë‹¤." );
+		strSysMessage = _S( 324, "´ë»óÀÌ ÀÌ¹Ì ÆÄÆ¼ ½ÅÃ»ÁßÀÔ´Ï´Ù." );
 		break;
 
 	case MSG_PARTY_ERROR_DIFF_TYPE:
-		strSysMessage = _S( 325, "íŒŒí‹° í˜•ì‹ì´ ë‹¤ë¦…ë‹ˆë‹¤." );
+		strSysMessage = _S( 325, "ÆÄÆ¼ Çü½ÄÀÌ ´Ù¸¨´Ï´Ù." );
 		break;
 
 	case MSG_PARTY_ERROR_NOT_BOSS:
-		strSysMessage = _S( 326, "íŒŒí‹°ì¥ì´ ì•„ë‹ˆë¼ ê¶Œí•œì´ ì—†ìŠµë‹ˆë‹¤." );
+		strSysMessage = _S( 326, "ÆÄÆ¼ÀåÀÌ ¾Æ´Ï¶ó ±ÇÇÑÀÌ ¾ø½À´Ï´Ù." );
 		break;
 
 	case MSG_PARTY_ERROR_INVALID_LEVEL:
-		strSysMessage = _S( 1653, "ë ˆë²¨ì´ ë§ì§€ì•Šì•„ íŒŒí‹° ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ); 
+		strSysMessage = _S( 1653, "·¹º§ÀÌ ¸ÂÁö¾Ê¾Æ ÆÄÆ¼ ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ); 
 		break;
 	
 	case MSG_PARTY_ERROR_NOT_PARTY:
-		strSysMessage = _S(2167, "ëŒ€ìƒì´ íŒŒí‹°ì¤‘ì´ ì•„ë‹™ë‹ˆë‹¤." ); 
+		strSysMessage = _S(2167, "´ë»óÀÌ ÆÄÆ¼ÁßÀÌ ¾Æ´Õ´Ï´Ù." ); 
 		break;
 
 	case MSG_PARTY_ERROR_NOT_PARTY_MEMBER:
-		strSysMessage = _S(2168, "ëŒ€ìƒì´ íŒŒí‹°ì›ì´ ì•„ë‹™ë‹ˆë‹¤." ); 
+		strSysMessage = _S(2168, "´ë»óÀÌ ÆÄÆ¼¿øÀÌ ¾Æ´Õ´Ï´Ù." ); 
 		break;
+
 	case MSG_PARTY_ERROR_PVP:
-		strSysMessage = _S(3073, "PvPì¤‘ì¸ ìºë¦­í„°ì™€ëŠ” íŒŒí‹°ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤" );
+		strSysMessage = _S(3073, "PvPÁßÀÎ Ä³¸¯ÅÍ¿Í´Â ÆÄÆ¼¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù" );
 		break;
-	// [090728: selo] ëª¬ìŠ¤í„° ì½¤ë³´ì¤‘ íŒŒí‹°ì¥ì„ ë³€ê²½ í•  ìˆ˜ ì—†ìŒ.
+
+	// [sora] RAID_SYSTEM
+	case MSG_PARTY_ERROR_INZONECLEAR_FAIL:
+		strSysMessage = _S(4528, "ÀÎ½ºÅÏÆ®Á¸ ÃÊ±âÈ­¿¡ ½ÇÆĞÇÏ¿´½À´Ï´Ù.");
+		break;
+	
+	// [090728: selo] ¸ó½ºÅÍ ÄŞº¸Áß ÆÄÆ¼ÀåÀ» º¯°æ ÇÒ ¼ö ¾øÀ½.
 	case MSG_PARTY_ERROR_DO_NOT_CHANGE_BOSS:
-		strSysMessage = _S(4695, "ëª¬ìŠ¤í„° ì½¤ë³´ ì¤‘ì—ëŠ” íŒŒí‹°ì¥ì„ ë³€ê²½ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+		strSysMessage = _S(4695, "¸ó½ºÅÍ ÄŞº¸ Áß¿¡´Â ÆÄÆ¼ÀåÀ» º¯°æ ÇÒ ¼ö ¾ø½À´Ï´Ù.");
+		break;
+	case MSG_PARTY_ERROR_LEVEL_CHANGE_BOSS:
+		strSysMessage = _S(4823, "·¹º§ÀÌ ¸ÂÁö ¾Ê¾Æ ÆÄÆ¼Àå À§ÀÓÀ» ÇÒ ¼ö ¾ø½À´Ï´Ù.");
+		break;
+	default:
+		strSysMessage = _S(4529, "ÆÄÆ¼°ü·Ã ¿¡·¯ÀÔ´Ï´Ù.");
 		break;
 	}
-	_pUIMgr->GetChatting()->AddSysMessage( strSysMessage, SYSMSG_ERROR );
 
-	if (_pUIMgr->DoesMessageBoxExist(MSGCMD_PARTY_INVITE))
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->GetChatting()->AddSysMessage( strSysMessage, SYSMSG_ERROR );
+
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_PARTY_INVITE) == TRUE )
 	{
-		_pUIMgr->CloseMessageBox( MSGCMD_PARTY_INVITE );
+		pUIManager->CloseMessageBox( MSGCMD_PARTY_INVITE );
 	}
 }
 
@@ -1315,26 +2055,25 @@ void CUIParty::MandateBossReq( CTString strManadateChaName )
 	m_strMandateCharName = strManadateChaName;
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S(97, "íŒŒí‹°" ), UMBS_YESNO, UI_PARTY, MSGCMD_PARTY_MANDATE_REQ );
+	MsgBoxInfo.SetMsgBoxInfo( _S(97, "ÆÄÆ¼" ), UMBS_YESNO, UI_PARTY, MSGCMD_PARTY_MANDATE_REQ );
 
-	CTString strNewBossName;
 	CTString strMessage;
 
-	strMessage.PrintF( _S(2170, "ì •ë§ë¡œ %së‹˜ê»˜ íŒŒí‹°ì¥ì„ ìœ„ì„í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), strManadateChaName );
+	strMessage.PrintF( _S(2170, "Á¤¸»·Î %s´Ô²² ÆÄÆ¼ÀåÀ» À§ÀÓÇÏ½Ã°Ú½À´Ï±î?" ), strManadateChaName );
 		
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 }
 
 //------------------------------------------------------------------------------
 // CUIParty::MandateBoss
-// Explain:  íŒŒí‹°ì¥ ìœ„ì„ ë©”ì‹œì§€ 
+// Explain:  ÆÄÆ¼Àå À§ÀÓ ¸Ş½ÃÁö 
 // Date : 2005-10-11,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIParty::MandateBoss( CTString strBossName, SLONG nManadateChaIndex, CTString strManadateChaName, SBYTE sbMandate )
 {
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S(97, "íŒŒí‹°" ), UMBS_OK, UI_PARTY, MSGCMD_PARTY_MANDATE );
+	MsgBoxInfo.SetMsgBoxInfo( _S(97, "ÆÄÆ¼" ), UMBS_OK, UI_PARTY, MSGCMD_PARTY_MANDATE );
 	CTString strMessage;
 	
 	if( strManadateChaName == _pNetwork->MyCharacterInfo.name ) 
@@ -1367,21 +2106,21 @@ void CUIParty::MandateBoss( CTString strBossName, SLONG nManadateChaIndex, CTStr
 
 	if( sbMandate )
 	{
-		strMessage.PrintF( _S(2171, "%së‹˜ì´ íŒŒí‹°ì¥ì„ ìœ„ì„í•˜ì—¬ %së‹˜ì´ ìƒˆë¡œìš´ íŒŒí‹°ì¥ìœ¼ë¡œ ì„ëª…ë˜ì—ˆìŠµë‹ˆë‹¤." ), strBossName, strManadateChaName );
+		strMessage.PrintF( _S(2171, "%s´ÔÀÌ ÆÄÆ¼ÀåÀ» À§ÀÓÇÏ¿© %s´ÔÀÌ »õ·Î¿î ÆÄÆ¼ÀåÀ¸·Î ÀÓ¸íµÇ¾ú½À´Ï´Ù." ), strBossName, strManadateChaName );
 	}
 	else
 	{
-		strMessage.PrintF( _S(2172, "%së‹˜ì´ ìƒˆë¡œìš´ íŒŒí‹°ì¥ìœ¼ë¡œ ì„ëª…ë˜ì—ˆìŠµë‹ˆë‹¤." ), strManadateChaName );
+		strMessage.PrintF( _S(2172, "%s´ÔÀÌ »õ·Î¿î ÆÄÆ¼ÀåÀ¸·Î ÀÓ¸íµÇ¾ú½À´Ï´Ù." ), strManadateChaName );
 	}
 	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 
 }
 
 //------------------------------------------------------------------------------
 // CUIParty::IsOurParty
-// Explain:  í•´ë‹¹ íŒŒí‹°ì›ì´ ìš°ë¦¬ íŒŒí‹°ì›ì¸ì§€ ì•„ë‹Œì§€ í™•ì¸ 
+// Explain:  ÇØ´ç ÆÄÆ¼¿øÀÌ ¿ì¸® ÆÄÆ¼¿øÀÎÁö ¾Æ´ÑÁö È®ÀÎ 
 // Date : 2005-10-19,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 bool CUIParty::IsOurParty( CTString strName )
@@ -1397,8 +2136,8 @@ bool CUIParty::IsOurParty( CTString strName )
 }
 //------------------------------------------------------------------------------
 // CUIParty::IsOurParty
-// Explain:  ì‹ë³„ìë¡œ í•´ë‹¹ íŒŒí‹°ì›ì´ ìš°ë¦¬ íŒŒí‹°ì›ì¸ì§€ ì•„ë‹Œì§€ í™•ì¸ ( ìœ ì €ê°€ ì—†ìœ¼ë©´ -1 ë¦¬í„´ )
-// Date : 2006-05-19(ì˜¤ì „ 9:54:23), By eons
+// Explain:  ½Äº°ÀÚ·Î ÇØ´ç ÆÄÆ¼¿øÀÌ ¿ì¸® ÆÄÆ¼¿øÀÎÁö ¾Æ´ÑÁö È®ÀÎ ( À¯Àú°¡ ¾øÀ¸¸é -1 ¸®ÅÏ )
+// Date : 2006-05-19(¿ÀÀü 9:54:23), By eons
 //------------------------------------------------------------------------------
 int CUIParty::IsOurParty( SLONG slCharIndex )
 {
@@ -1412,8 +2151,8 @@ int CUIParty::IsOurParty( SLONG slCharIndex )
 }
 //------------------------------------------------------------------------------
 // CUIParty::IsOurParty
-// Explain:  ì´ë¦„ìœ¼ë¡œ í•´ë‹¹ íŒŒí‹°ì›ì´ ìš°ë¦¬ íŒŒí‹°ì›ì¸ì§€ ì•„ë‹Œì§€ í™•ì¸ ( ìœ ì €ê°€ ì—†ìœ¼ë©´ -1 ë¦¬í„´ )
-// Date : 2006-05-19(ì˜¤ì „ 9:54:23), By eons
+// Explain:  ÀÌ¸§À¸·Î ÇØ´ç ÆÄÆ¼¿øÀÌ ¿ì¸® ÆÄÆ¼¿øÀÎÁö ¾Æ´ÑÁö È®ÀÎ ( À¯Àú°¡ ¾øÀ¸¸é -1 ¸®ÅÏ )
+// Date : 2006-05-19(¿ÀÀü 9:54:23), By eons
 //------------------------------------------------------------------------------
 int	CUIParty::IsOurPartyPos( CTString strName )
 {
@@ -1428,8 +2167,8 @@ int	CUIParty::IsOurPartyPos( CTString strName )
 
 //------------------------------------------------------------------------------
 // CUIParty::IsOurParty
-// Explain:  í˜„ì¬ ê°€ì§„ íŒŒí‹° ì •ë³´ ì¤‘ ë¦¬ë”ê°€ ì—†ìœ¼ë©´ ìì‹ ì´ ë¦¬ë”ê°€ ëœë‹¤.
-// Date : 2006-05-19(ì˜¤ì „ 10:11:07), By eons
+// Explain:  ÇöÀç °¡Áø ÆÄÆ¼ Á¤º¸ Áß ¸®´õ°¡ ¾øÀ¸¸é ÀÚ½ÅÀÌ ¸®´õ°¡ µÈ´Ù.
+// Date : 2006-05-19(¿ÀÀü 10:11:07), By eons
 //------------------------------------------------------------------------------
 void CUIParty::SetPartyLeader()
 {
@@ -1447,13 +2186,2035 @@ void CUIParty::SetPartyLeader()
 
 void CUIParty::SetPartyTarget(ULONG partyID, ULONG targetID, SBYTE sbtargetType)
 {
-	for(int i=0; i<PARTY_MAX_MEMBER; ++i)
+	// [sora] ¿øÁ¤´ëµµ »ç¿ëÇÒ ¼ö ÀÖµµ·Ï ¼öÁ¤
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->IsCSFlagOn(CSF_PARTY))
 	{
-		if( m_aslIndices[i] ==partyID)
+		for(int i=0; i<PARTY_MAX_MEMBER; ++i)
 		{
-			m_ultargetID[i] =targetID;
-			m_sbtargetType[i] =sbtargetType;
+			if( m_aslIndices[i] ==partyID)
+			{
+				m_ultargetID[i] =targetID;
+				m_sbtargetType[i] =sbtargetType;
+				return;
+			}
+		}
+	}
+	else if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		for(int i=0; i<EXPEDITION_MEMBER_PER_GROUP; ++i)
+		{
+			if( m_ExpeditionGroup[m_nMyGroupNum][i].m_slIndex == partyID )
+			{
+				m_ultargetID[i] =targetID;
+				m_sbtargetType[i] =sbtargetType;
+				return;
+			}
+		}
+	}
+
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// RAID_SYSTEM 
+//////////////////////////////////////////////////////////////////////////
+
+//------------------------------------------------------------------------------
+// CUIParty::SendChangeExpedition()
+// Explain: [sora] ¿øÁ¤´ë·Î ÀüÈ¯ ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------									
+void CUIParty::SendChangeExpedition()
+{
+	// [100311 sora : ¸ó½ºÅÍ ÄŞº¸Á¸¿¡¼­ ¿øÁ¤´ë ÀüÈ¯ ºÒ°¡]
+	const int comboZone = 22;
+	BOOL partyIsComboZone = FALSE;
+	
+
+	// ÆÄÆ¼ÀåÀÌ ÄŞº¸Á¸¿¡ ÀÖÀ»°æ¿ì
+	if( comboZone == _pNetwork->MyCharacterInfo.zoneNo )
+	{
+		partyIsComboZone = TRUE;
+	}
+
+	// ÆÄÆ¼¿øÀÌ ÄŞº¸Á¸¿¡ ÀÖÀ» °æ¿ì
+	for( int iMem = 0; iMem < m_nMemberCount; iMem++ )
+	{
+		if( comboZone == m_aslZone[iMem] )
+		{	
+			partyIsComboZone = TRUE;
+			break;
+		}
+	}
+
+	if( partyIsComboZone )
+	{
+		CUIMsgBox_Info MsgBoxInfo;
+		
+		MsgBoxInfo.SetMsgBoxInfo( _S( 191, "È®ÀÎ" ), UMBS_OK, UI_NONE, MSGCMD_EXPEDITION_ERROR );
+		MsgBoxInfo.AddString(_S( 4825, "¸ó½ºÅÍ ÄŞº¸ Áß¿¡´Â ¿øÁ¤´ë ÀüÈ¯À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ));
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+		return;
+	}
+
+	_pNetwork->ExpeditionCreateReq();
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::ChangeExpedition()
+// Explain: [sora] ¿øÁ¤´ë·Î ÀüÈ¯ ¸Ş½ÃÁö ¼ö½Å
+//------------------------------------------------------------------------------									
+void CUIParty::ChangeExpedition( CNetworkMessage *istr )
+{
+
+	SBYTE sbDivisionTypeEXP;												
+ 	SBYTE sbDivisionTypeITEM;	
+	SBYTE sbDivisionTypeSPITEM;
+	SLONG slLeaderIndex;
+	CTString strLeaderName;
+	SLONG	 nMemberCount;
+
+	SLONG slIndex;
+	CTString strName;
+	SLONG	nGroupType;
+	SLONG nMemberType;
+
+	(*istr) >> sbDivisionTypeEXP  >> sbDivisionTypeITEM >> sbDivisionTypeSPITEM;
+	(*istr) >> slLeaderIndex;
+	(*istr) >> strLeaderName;
+	(*istr) >> nMemberCount;
+
+	m_nMyGroupNum = 0;	//ÆÄÆ¼->¿øÁ¤´ë·Î ÀüÈ¯½Ã¿¡´Â Ç×»ó 1¹ø ±×·ì
+
+	PartyData2Expedition(slLeaderIndex, 0);
+
+	for(int i=0; i<nMemberCount; i++)
+	{
+		(*istr) >> slIndex;
+		(*istr) >> strName;
+		(*istr) >> nGroupType;
+		(*istr) >> nMemberType;
+		PartyData2Expedition(slIndex, i+1);
+	}
+
+	
+	Init();
+	
+	// ¿øÁ¤´ë ÀüÃ¼ ¸Ø¹ö¼ö - 1°ªÀÌ m_nMemberCount°ªÀÌ´Ù. (nMemberCount´Â ¿øÁ¤´ëÀåÀ» Á¦¿ÜÇÑ ÀüÃ¼ ¸â¹ö¼öÀÌ¹Ç·Î °ªÀÌ °°´Ù)
+	m_nMemberCount = nMemberCount;
+	
+	SetDivisionType(sbDivisionTypeEXP, sbDivisionTypeITEM, sbDivisionTypeSPITEM);
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->SetCSFlagOff(CSF_PARTY);
+	pUIManager->SetCSFlagOn(CSF_EXPEDITION);
+
+	pUIManager->GetChatting()->AddSysMessage( _S( 4530, "ÆÄÆ¼°¡ ¿øÁ¤´ë·Î ÀüÈ¯µÇ¾ú½À´Ï´Ù." ) );
+
+	// Á¤º¸Ã¢Àº ¾÷µ¥ÀÌÆ®µÇÁö ¾ÊÀ¸¹Ç·Î ´İ¾ÆÁØ´Ù.
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_DIVISION_INFO))
+	{
+		pUIManager->CloseMessageBox(MSGCMD_DIVISION_INFO);
+	}
+	
+	// ÇÃ·¹ÀÌ¾î ¸Ş´º ÆË¾÷Ã¢ÀÌ ¿­·ÁÀÖ´Ù¸é ´İÀ½
+	pUIManager->GetPlayerInfo()->HideCommandPopUp();
+}
+
+
+
+//------------------------------------------------------------------------------
+// CUIParty::SendExpeditionInvite()
+// Explain: [sora] ¿øÁ¤´ë ÃÊ´ë ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------
+void CUIParty::SendExpeditionInvite( CTString &strDestName )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// ¿øÁ¤´ë¿øÀº ÃÊ´ë ºÒ°¡
+	if( GetExpeditionMyPosition() == MSG_EXPED_MEMBERTYPE_NORMAL)
+	{
+		pUIManager->GetChatting()->AddSysMessage( _S( 4531, "¿øÁ¤´ë ½ÅÃ» ±ÇÇÑÀÌ ¾ø½À´Ï´Ù" ), SYSMSG_ERROR );
+		return;
+	}
+
+	CTString	strMessage;
+
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION_REQ))
+	{
+		strMessage.PrintF( _S( 4521, "ÀÌ¹Ì %s¿¡°Ô ¿øÁ¤´ë¸¦ ½ÅÃ»ÁßÀÔ´Ï´Ù." ), m_strDestName );
+		pUIManager->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+		return;
+	}
+	
+	// Find index of character
+	SLONG	slIndex = -1;
+
+	if (_pNetwork->_TargetInfo.pen_pEntity != NULL)
+	{
+		ObjectBase* pObject = ACTORMGR()->GetObject(_pNetwork->_TargetInfo.pen_pEntity->GetNetworkID());
+
+		if (pObject != NULL && pObject->m_eType == eOBJ_CHARACTER)
+		{
+			CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+			if ( pTarget->cha_sbShopType != PST_NOSHOP )
+			{
+				pUIManager->GetChatting()->AddSysMessage( _S(4522, "°³ÀÎ »óÁ¡ÁßÀÎ Ä³¸¯ÅÍ´Â ¿øÁ¤´ë¿¡ Âü¿©ÇÒ ¼ö ¾ø½À´Ï´Ù." ) , SYSMSG_ERROR );	
+				return;
+			}
+			
+			slIndex = pTarget->m_nIdxServer;
+		}
+	}
+
+	if( slIndex == -1 )
+	{
+		pUIManager->GetChatting()->AddSysMessage( _S(4523, "´ë»óÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );
+		return;
+	}
+
+	if(IsExpedetionMember(slIndex))
+	{
+		strMessage.PrintF( _S( 4524, "ÀÌ¹Ì %s¿Í ¿øÁ¤´ë »óÅÂÀÔ´Ï´Ù." ), strDestName );
+		pUIManager->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+		return;
+	}
+
+	_pNetwork->ExpeditionInviteReq(slIndex);
+	m_strDestName = strDestName;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendExpeditionReject()
+// Explain: [sora] ¿øÁ¤´ë °ÅÀı ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------
+void CUIParty::SendExpeditionReject()
+{
+	_pNetwork->ExpeditionRejectReq();
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendExpeditionAllow()
+// Explain: [sora] ¿øÁ¤´ë ¼ö¶ô ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------
+void CUIParty::SendExpeditionAllow()
+{
+	_pNetwork->ExpeditionAllowReq();
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::SendExpeditionQuit()
+// Explain: [sora] ¿øÁ¤´ë Å»Åğ ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------									
+void CUIParty::SendExpeditionQuit()
+{
+	_pNetwork->ExpeditionQuitReq();
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendExpeditionKick()
+// Explain: [sora] ¿øÁ¤´ë °­Åğ ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------															
+void CUIParty::SendExpeditionKick( SLONG slIndex )
+{
+	if(!IsExpedetionMember(slIndex))
+		return;
+
+	_pNetwork->ExpeditionKickReq(slIndex);
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendExpeditionEnd()
+// Explain: [sora] ¿øÁ¤´ë Á¾·á ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------											
+void CUIParty::SendExpeditionEnd()
+{
+	_pNetwork->ExpeditionEndReq();
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendDivisionType()
+// Explain: [sora] ºĞ¹è¹æ½Ä º¯°æ ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------														
+void CUIParty::SendDivisionType(SBYTE sbDivisionType, SBYTE sbType)
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsCSFlagOn( CSF_PARTY_REQ ) || pUIManager->IsCSFlagOn( CSF_EXPEDITION_REQ ) )
+	{
+		pUIManager->GetChatting()->AddSysMessage( _S( 4798, "ÆÄÆ¼³ª ¿øÁ¤´ë ½ÅÃ»Áß¿¡´Â º¯°æÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );
+		return;
+	}
+	else if(IsExistOfflineMember())
+	{
+		pUIManager->GetChatting()->AddSysMessage( _S( 4799,"¿ÀÇÁ¶óÀÎ ¸â¹ö°¡ ÀÖ¾î¼­ º¯°æÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );
+		return;
+	}
+
+	UBYTE msgType = 0;
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		msgType = MSG_EXPEDITION;
+
+		_pNetwork->ExpeditionChangeDivisionTypeReq(msgType, sbType, sbDivisionType);
+	}
+	else if(pUIManager->IsCSFlagOn(CSF_PARTY))
+	{
+		CNetworkMessage	nmMessage( MSG_PARTY );
+		nmMessage << (SBYTE)MSG_PARTY_CHANGETYPE;
+		nmMessage << sbType;
+		nmMessage << sbDivisionType;
+		nmMessage << (sbDivisionType >= 0 ? (SBYTE)MSG_PARTY_SETALLONE_ONE : (SBYTE)MSG_PARTY_SETALLONE_ALL);
+		// ºĞ¹è¹æ½ÄÀÌ -1ÀÌ¸é ÀüÃ¼ ÁöÁ¤ ±×¿Ü´Â ¼¼ºÎÇ×¸ñÁöÁ¤
+			
+		_pNetwork->SendToServerNew( nmMessage );
+	}
+	else
+	{
+		return;
+	}
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendChangeGroup()
+// Explain: [sora] ¿øÁ¤´ë ±×·ì º¯°æ ¸Ş½ÃÁö Àü¼Û
+//------------------------------------------------------------------------------																
+void CUIParty::SendChangeGroup(int nSrcGroupNum, int nSrcPosNum, int nDestGroupNum, int nDestPosNum)
+{
+	SLONG slIndex = m_ExpeditionGroup[nSrcGroupNum][nSrcPosNum].m_slIndex;
+
+	if(m_ExpeditionGroup[nSrcGroupNum][nSrcPosNum].m_nPosition == MSG_EXPED_MEMBERTYPE_BOSS || m_ExpeditionGroup[nSrcGroupNum][nSrcPosNum].m_nPosition == MSG_EXPED_MEMBERTYPE_MBOSS)
+	{
+		CUIManager::getSingleton()->GetChatting()->AddSysMessage( _S( 4532,"¿øÁ¤´ëÀå°ú ¿øÁ¤ºÎ´ëÀåÀº ±×·ìÀ» ÀÌµ¿ÇÒ ¼ö ¾ø½À´Ï´Ù.") );
+		m_UIExpManage.m_bCanUseBtn = TRUE;	// ¹öÆ° »ç¿ë ºÒ°¡ ÇØÁ¦
+		return;
+	}
+
+	_pNetwork->ExpeditionChangeGroupReq(nSrcGroupNum, slIndex, nDestGroupNum, nDestPosNum);
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::InitExpedition()
+// Explain: [sora] ¿øÁ¤´ë Á¤º¸ ÃÊ±âÈ­
+//------------------------------------------------------------------------------
+void CUIParty::InitExpedition()
+{
+	int		i;
+	m_nType = 0;
+	m_nMemberCount = 0;
+	m_nMyGroupNum = -1;		
+	m_sbDivisionTypeEXP = 0;
+	m_sbDivisionTypeITEM = 0;
+	m_sbDivisionTypeSPITEM = 0;
+
+	for(i=0; i<EXPEDITION_GROUP_MAX; i++)
+	{
+		for(int j=0; j<EXPEDITION_MEMBER_PER_GROUP; j++)
+			m_ExpeditionGroup[i][j].Init();
+	}
+	
+	for( i = 0; i < PARTY_MAX_MEMBER; i++ )
+	{
+		m_aubBuff[i] = 0;
+	}
+
+	for( i = 0; i < EXPEDITION_GROUP_MAX; i++)
+	{
+		m_UIExpGroup[i].ClearExpeditionGroup();
+		m_UIExpGroup[i].SetVisible(FALSE);
+	}
+	m_UIExpManage.ClearExpManage();
+	m_UIViewDetail.ClearViewDetail();
+	ClearTargetMark();
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::PartyData2Expedition
+// Explain: [sora] ÆÄÆ¼->¿øÁ¤´ë º¯È¯½Ã ÆÄÆ¼¿¡ ÀÖ´ø °ªÀ» 0¹ø ±×·ì ÇØ´ç À§Ä¡·Î ¿Å±ä´Ù
+//------------------------------------------------------------------------------
+void CUIParty::PartyData2Expedition(SLONG slIndex, int nPos)
+{
+
+	stExpeditionMember expMember;
+
+	if(slIndex == _pNetwork->MyCharacterInfo.index) // ÀÚ½ÅÀÏ °æ¿ì
+	{
+		m_nGroupPos = nPos;		
+		expMember.m_slZone = _pNetwork->MyCharacterInfo.zoneNo;															
+		expMember.m_nLevel = _pNetwork->MyCharacterInfo.level;				
+		expMember.m_nHP = _pNetwork->MyCharacterInfo.hp;					
+		expMember.m_nMaxHP = _pNetwork->MyCharacterInfo.maxHP;				
+		expMember.m_nMP = _pNetwork->MyCharacterInfo.mp;					
+		expMember.m_nMaxMP = _pNetwork->MyCharacterInfo.maxMP;				
+		expMember.m_fPosX = _pNetwork->MyCharacterInfo.x;				
+		expMember.m_fPosZ = _pNetwork->MyCharacterInfo.z;				
+		expMember.m_sbLayer = _pNetwork->MyCharacterInfo.yLayer;	
+		expMember.m_slIndex = _pNetwork->MyCharacterInfo.index;			
+		expMember.m_strName = _pNetwork->MyCharacterInfo.name;	
+		expMember.m_nPosition = m_bAmILeader ? MSG_EXPED_MEMBERTYPE_BOSS : MSG_EXPED_MEMBERTYPE_NORMAL;
+		expMember.m_sbJob = _pNetwork->MyCharacterInfo.job;	
+
+	}
+	else	// ´Ù¸¥ Ä³¸¯ÀÏ°æ¿ì
+	{
+		int nPartyPos = -1;
+		
+		for( SLONG i=0; i<PARTY_MAX_MEMBER; i++ )
+		{
+			if( m_aslIndices[i] == slIndex )
+				nPartyPos = i;
+		}
+
+		if(nPartyPos >= 0)
+		{
+			expMember.m_slZone = m_aslZone[nPartyPos];															
+			expMember.m_nLevel = m_aswLevels[nPartyPos];				
+			expMember.m_nHP = m_aswHPs[nPartyPos];					
+			expMember.m_nMaxHP = m_aswMaxHPs[nPartyPos];				
+			expMember.m_nMP = m_aswMPs[nPartyPos];					
+			expMember.m_nMaxMP = m_aswMaxMPs[nPartyPos];				
+			expMember.m_fPosX = m_afPosX[nPartyPos];				
+			expMember.m_fPosZ = m_afPosZ[nPartyPos];				
+			expMember.m_sbLayer = m_asbLayer[nPartyPos];	
+			expMember.m_slIndex = m_aslIndices[nPartyPos];			
+			expMember.m_strName = m_astrNames[nPartyPos];	
+			expMember.m_nPosition = m_abLeaders[nPartyPos] ? MSG_EXPED_MEMBERTYPE_BOSS : MSG_EXPED_MEMBERTYPE_NORMAL;;
+			expMember.m_sbJob = m_asbJobs[nPartyPos];	
+		}
+		else
+		{
 			return;
 		}
 	}
+
+	expMember.m_bOnline = TRUE;
+	expMember.UpdateBarRate();
+	
+	AddExpeditionMember(0, nPos, expMember);
 }
+
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionInvite
+// Explain: [sora] ¿øÁ¤´ë Âü¿© ¿äÃ» ¼ö½Å
+//------------------------------------------------------------------------------																
+void CUIParty::ExpeditionInvite( CNetworkMessage *istr )
+{
+
+	SBYTE sbDivisionTypeEXP;												
+ 	SBYTE sbDivisionTypeITEM;						
+	SBYTE sbDivisionTypeSPITEM;
+	SLONG slIndex;
+	CTString strName;
+
+	CUIMsgBox_Info	MsgBoxInfo;
+	CTString	strMessage;
+
+	(*istr) >> sbDivisionTypeEXP >> sbDivisionTypeITEM >> sbDivisionTypeSPITEM;
+	(*istr) >> slIndex;
+	(*istr) >> strName;
+
+	SetDivisionType(sbDivisionTypeEXP, sbDivisionTypeITEM, sbDivisionTypeSPITEM);
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// ½ÅÃ»ÇÑ »ç¶÷ÀÇ °æ¿ì
+	if(slIndex == _pNetwork->MyCharacterInfo.index)
+	{
+		MsgBoxInfo.SetMsgBoxInfo( _S( 4493, "¿øÁ¤´ë" ), UMBS_CANCEL, UI_PARTY, MSGCMD_EXPEDITION_INVITE );
+		strMessage.PrintF( _S( 4533, "%s¿¡°Ô ¿øÁ¤´ë¸¦ ½ÅÃ»ÁßÀÔ´Ï´Ù. Ãë¼ÒÇÏ½Ã°Ú½À´Ï±î?" ), m_strDestName );
+		MsgBoxInfo.AddString( strMessage );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+	}
+	else // ½ÅÃ»¹Ş´Â »ç¶÷ÀÇ °æ¿ì
+	{
+		// BUGFIX : ITS(#2544) ¿øÁ¤´ë ¼Ó¼º º¯°æÈÄ ´Ù¸¥ ÀÎ¿ø ÃÊ´ë½Ã ¼Ó¼º°ª Ç¥½Ã ¿À·ù  [6/10/2011 rumist]
+		strMessage.PrintF(_S(4534, "%s°¡ ¿øÁ¤´ë(°æÇèÄ¡:%s, ÀÏ¹İ¾ÆÀÌÅÛ:%s, ½ºÆä¼È¾ÆÀÌÅÛ:%s) ½ÅÃ»À» Çß½À´Ï´Ù. ¼ö¶ôÇÏ½Ã°Ú½À´Ï±î?"),
+						   strName, m_strExpeditionType[sbDivisionTypeEXP], m_strExpeditionType[sbDivisionTypeITEM],
+						   m_strExpeditionType[sbDivisionTypeSPITEM]);
+
+		MsgBoxInfo.SetMsgBoxInfo( _S( 4493, "¿øÁ¤´ë" ), UMBS_YESNO, UI_PARTY, MSGCMD_EXPEDITION_ALLOW );
+		MsgBoxInfo.AddString( strMessage );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+	}
+
+	pUIManager->SetCSFlagOn(CSF_EXPEDITION_REQ);
+
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionError
+// Explain: [sora] ¿øÁ¤´ë ¿¡·¯ ¸Ş½ÃÁö ¼ö½Å
+//------------------------------------------------------------------------------
+void CUIParty::ExpeditionError(CNetworkMessage *istr )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	SBYTE	sbType;
+	CTString strError;
+	BOOL	bShowMsgBox = TRUE;	// ¸Ş½ÃÁö ¹Ú½º Ãâ·Â ¿©ºÎ
+
+	(*istr) >> sbType;
+
+	switch(sbType)
+	{
+		 case MSG_EXPED_ERROR_NORMAL:     // ÀÏ¹İ
+		 {
+			strError = _S(4535, "¿øÁ¤´ë ¿¡·¯");
+		 }
+			break;
+
+		 case MSG_EXPED_ERROR_ALREADY_REQUEST:  // ´Ù¸¥ »ç¶÷¿¡°Ô ÀÌ¹Ì ¿äÃ» Áß
+		 {
+			strError.PrintF(_S( 4536, "ÀÌ¹Ì %s¿¡°Ô ¿øÁ¤´ë¸¦ ½ÅÃ»ÁßÀÔ´Ï´Ù." ), m_strDestName);
+		 }
+			break;
+
+		 case MSG_EXPED_ERROR_INVITE_PVP:    // ¿äÃ»ÀÚ³ª ´ë»óÀÚ°¡ PVP Áß
+		 {
+			strError = _S(4537, "¿øÁ¤´ë¿¡ Âü¿©ÇÒ ¼ö ¾ø´Â »óÅÂÀÔ´Ï´Ù.");
+		 }
+			break;		 
+		 
+		 case MSG_EXPED_ERROR_NOT_PARTY:    // ÆÄÆ¼¿¡ ¼Ò¼ÓµÇÁö ¾ÊÀ½(ÆÄÆ¼ ÀüÈ¯ ºÒ°¡)
+		 {
+			strError = _S(4538, "ÆÄÆ¼¿¡ Âü¿©ÇÏ°í ÀÖÁö ¾Ê½À´Ï´Ù.");
+		 }
+			break;		 
+		 
+		 case MSG_EXPED_ERROR_NOT_EXPED:    // ¿øÁ¤´ë ¼Ò¼ÓµÇÁö ¾ÊÀ½
+		 {
+			strError = _S(4539, "¿øÁ¤´ë¿¡ Âü¿©ÇÏ°í ÀÖÁö ¾Ê½À´Ï´Ù.");
+		 }
+			break;		 
+		 
+		 case MSG_EXPED_ERROR_NOT_PARTYBOSS:   // ÆÄÆ¼ÀåÀÌ ¾Æ´Ï´Ù. (ÆÄÆ¼ÀüÈ¯ ºÒ°¡) 
+		 {
+			strError = _S(4540, "ÆÄÆ¼Àå¸¸ ¿øÁ¤´ë·Î ÀüÈ¯ÀÌ °¡´ÉÇÕ´Ï´Ù.");
+		 }
+			break;		 
+		 
+		 case MSG_EXPED_ERROR_NOT_EXPEDBOSS:   // ¿øÁ¤´ëÀåÀÌ ¾Æ´Ï´Ù.
+		 {
+			strError = _S(4541, "¿øÁ¤´ëÀåÀÌ ¾Æ´Õ´Ï´Ù.");
+		 }
+			break;
+			
+		 case MSG_EXPED_ERROR_ALREADY_JOIN_ME:  // ÀÌ¹Ì ¿øÁ¤´ë¿¡ ¼Ò¼ÓµÇ¾î ÀÖÀ½
+		 {
+			strError = _S(4542, "ÀÌ¹Ì ¿øÁ¤´ë¿¡ Âü¿©ÁßÀÔ´Ï´Ù.");
+		 }
+			break;		 
+		 
+		 case MSG_EXPED_ERROR_ALREADY_JOIN_OTHER:  // ´Ù¸¥ ¿øÁ¤´ë¿¡ ¼Ò¼ÓµÇ¾î ÀÖÀ½
+		 {
+			strError = _S(4543, "´Ù¸¥ ±×·ì¿¡ Âü¿©ÁßÀÔ´Ï´Ù.");
+		 }
+			break;		 
+		 
+		 case MSG_EXPED_ERROR_NOT_BE_CHAR:   // ¾ø´Â Ä³¸¯ÅÍ 
+		 {
+			strError = _S(4544, "Á¸ÀçÇÏÁö ¾Ê´Â Ä³¸¯ÅÍÀÔ´Ï´Ù.");
+		 }
+			break;		 
+		 
+		 case MSG_EXPED_ERROR_FULL_EXPED:    // ´õ ÀÌ»ó ¿øÁ¤´ë¿ø Ãß°¡ÇÒ ¼ö ¾øÀ½) 
+		 {
+			strError = _S(4545, "¿øÁ¤´ë¿øÀÌ °¡µæ Ã¡½À´Ï´Ù.");
+		 }
+			break;		 	 
+		 
+		 case MSG_EXPED_ERROR_INVALID_LEVEL:   // ·¹º§ÀÌ ¸ÂÁö ¾ÊÀ½
+		 {
+			strError = _S(4546, "·¹º§ÀÌ ¸ÂÁö ¾Ê½À´Ï´Ù.");
+		 }
+			break;
+
+		 case MSG_EXPED_ERROR_CREATE_INVALIDZONE:
+		 {
+			strError = _S(4547, "¿øÁ¤´ë·Î ÀüÈ¯ÇÒ ¼ö ¾ø´Â Áö¿ªÀÔ´Ï´Ù.");
+		 }
+			break;
+
+		 case MSG_EXPED_ERROR_SETLABEL_NOTINZONE:
+		 {
+			strError = _S(4548, "Ç¥½ÄÀº ÀÎ½ºÅÏÆ® ´øÀü ³»ºÎ¿¡¼­¸¸ ÁöÁ¤ÇÒ ¼ö ÀÖ½À´Ï´Ù.");
+		 }
+			break;
+			
+		 case MSG_EXPED_ERROR_EXIST_LOGOUT_MEMBER:
+		 {
+			strError = _S( 4799,"¿ÀÇÁ¶óÀÎ ¸â¹ö°¡ ÀÖ¾î¼­ º¯°æÇÒ ¼ö ¾ø½À´Ï´Ù." );
+		 }
+			break;
+
+		 default:
+		 {
+			bShowMsgBox = FALSE;	// ¸Ş½ÃÁö ¹Ú½º¸¦ ¶ç¿ìÁö ¾Ê´Â´Ù
+			pUIManager->GetChatting()->AddSysMessage( _S( 4535, "¿øÁ¤´ë ¿¡·¯" ) );
+		 }
+			 break;
+
+	}
+
+	if(bShowMsgBox)
+	{
+		CUIMsgBox_Info MsgBoxInfo;
+		
+		MsgBoxInfo.SetMsgBoxInfo(_S(4493, "¿øÁ¤´ë"), UMBS_OK, UI_NONE, MSGCMD_EXPEDITION_ERROR);
+		MsgBoxInfo.AddString(strError);
+		pUIManager->CreateMessageBox(MsgBoxInfo);
+	}
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::RaidError
+// Explain: [sora] ÀÎ´ø ¿¡·¯ ¸Ş½ÃÁö
+//------------------------------------------------------------------------------
+void CUIParty::RaidError( CNetworkMessage *istr )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->SetCSFlagOff(CSF_TELEPORT);
+
+	ULONG	ulType;
+	CTString strMessage;
+	BOOL	bShowMsgBox = TRUE;	// ¸Ş½ÃÁö ¹Ú½º Ãâ·Â ¿©ºÎ
+
+	(*istr) >> ulType;
+
+	switch(ulType)
+	{
+		case MSG_RAID_ERROR_INZONE_JOIN_CLEAR_COMPLETE: // ÀÎÁ¸ ÀÔÀå ºÒ°¡(ÀÎÁ¸ Å¬¸®¾î ¿Ï·á) - %ÀÏ %½Ã µÚ¿¡ ÀÔÀå°¡´É
+			{
+				SLONG slDay, slHour;
+
+				(*istr) >> slDay;
+				(*istr) >> slHour;
+
+				strMessage = _S(4549, "ÀÎ½ºÅÏÆ® Á¸¿¡ ÀÔÀåÀÌ ºÒ°¡´ÉÇÕ´Ï´Ù.");
+				CTString strTemp;
+				if(slDay >= 0 && slHour >= 0)
+				{
+					strTemp.PrintF(_S(4550, "%dÀÏ %d½Ã°£ µÚ¿¡ ÀÔÀåÀÌ °¡´ÉÇÕ´Ï´Ù."), slDay, slHour);
+				}
+				else // ¹«Á¦ÇÑ ÀÎ½ºÅÏÆ® Á¸ÀÇ ÃÊ±âÈ­°¡ µÇ¾îÀÖÁö ¾ÊÀ½
+				{
+					strTemp.PrintF(_S(4551, "ÀÎ½ºÅÏÆ® Á¸À» ÃÊ±âÈ­ ÈÄ ´Ù½Ã ½ÃµµÇÏ¿© ÁÖ½Ã±â ¹Ù¶ø´Ï´Ù."));
+				}
+
+				strMessage = strMessage + CTString(" ") + strTemp;
+
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_JOIN_ROOMCOUNT_FULL:
+			{
+				strMessage = _S(4552, "ÇöÀç »ı¼ºµÈ ÀÎ½ºÅÏÆ® Á¸ÀÌ ³Ê¹« ¸¹¾Æ ´õ ÀÌ»ó »ı¼ºÇÒ ¼ö ¾ø½À´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇØÁÖ½Ã±â ¹Ù¶ø´Ï´Ù.");
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_JOIN_MEMBER_FULL:
+			{
+				strMessage = _S(4553, "ÀÎ½ºÅÏÆ® Á¸¿¡ ÀÔÀå °¡´ÉÇÑ ÃÖ´ë ÀÎ¿ø¼ö¸¦ ÃÊ°úÇÏ¿© ÀÔÀåÇÒ ¼ö ¾ø½À´Ï´Ù.");
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_JOIN_THISZONE_PARTYZONE:
+			{
+				strMessage = _S(4554, "ÆÄÆ¼ »óÅÂ¿¡¼­¸¸ ÀÔÀåÀÌ °¡´ÉÇÕ´Ï´Ù. ÆÄÆ¼·Î ÀüÈ¯ ÈÄ ´Ù½Ã ½ÃµµÇØ ÁÖ½Ã±â ¹Ù¶ø´Ï´Ù.");
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_JOIN_THISZONE_EXPEDZONE:
+			{
+				strMessage = _S(4555, "¿øÁ¤´ë »óÅÂ¿¡¼­¸¸ ÀÔÀåÀÌ °¡´ÉÇÕ´Ï´Ù. ¿øÁ¤´ë·Î ÀüÈ¯ ÈÄ ´Ù½Ã ½ÃµµÇØ ÁÖ½Ã±â ¹Ù¶ø´Ï´Ù.");
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_JOIN_ALREADY:
+			{
+				strMessage = _S(4556, "ÀÌ¹Ì ÀÎ½ºÅÏÆ® Á¸¿¡ ÀÔÀåÇÑ »óÅÂÀÔ´Ï´Ù.");
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_JOIN_ALREADY_OTHERTEAM: // ÇØ´ç Á¸¿¡ ´Ù¸¥ ÆÄÆ¼,¿øÁ¤´ë°¡ ÀÖ½À´Ï´Ù.
+			{
+				if(pUIManager->IsCSFlagOn(CSF_PARTY))
+				{
+					strMessage = _S(4557, "ÀÌ¹Ì ´Ù¸¥ ÆÄÆ¼°¡ ÀÎ½ºÅÏÆ® Á¸¿¡ ÀÔÀåÇØ ÀÖ½À´Ï´Ù.");
+				}
+				else if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+				{
+					strMessage = _S(4558, "ÀÌ¹Ì ´Ù¸¥ ¿øÁ¤´ë°¡ ÀÎ½ºÅÏÆ® Á¸¿¡ ÀÔÀåÇØ ÀÖ½À´Ï´Ù.");
+				}
+			}
+			break;
+
+		case MSG_RAID_ERROR_SUCESS:
+			{
+				strMessage = _S(4559, "ÀÎ½ºÅÏÆ® Á¸ ¿¡·¯");
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_JOIN_NOTJOIN_PARTYOREXPED:
+			{
+				strMessage = _S(4560, "ÆÄÆ¼³ª ¿øÁ¤´ë¿¡ °¡ÀÔµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_QUIT_NOTINZONEJOINED:	// ÀÎÁ¸¿¡ µé¾î°¡ÀÖÁö ¾ÊÀº »óÅÂ¿¡¼­ ÀÎÁ¸ ³ª°¡±â ¿äÃ»À» ÇÒ°æ¿ì..
+			{
+				strMessage = _S(4561, "ÀÎ½ºÅÏÆ®Á¸¿¡ ÀÔÀåÇÑ »óÅÂ°¡ ¾Æ´Õ´Ï´Ù.");	
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_NOT_5MIN_GETBOX:  // ´õ ÀÌ»ó »óÀÚ ÁÖ¿ï ¼ö ¾øÀ½ 
+			{
+				strMessage = _S(4562, "´õÀÌ»ó »óÀÚ¸¦ ÁÖ¿ï ¼ö ¾ø½À´Ï´Ù.");
+			}
+			break;		 
+		 
+		case MSG_RAID_ERROR_INZONE_ALREADY_GETBOX:         // ÀÌÀü¿¡ ¹ŞÀº »óÀÚ ¿ÀÇÂ ÇÏ°í ´Ù½Ã ½Ãµµ
+			{
+				strMessage = _S(4563, "ÀÌÀü¿¡ ¹ŞÀº »óÀÚ¸¦ ¿­°í ´Ù½Ã ½ÃµµÇØ ÁÖ½Ê½Ã¿À.");
+			}
+			break;
+		case MSG_RAID_ERROR_INZONE_JOIN_INVALIDELEVEL:         // [090729 sora] ·¹º§Á¦ÇÑÀ¸·Î ÀÔÀåÇÒ ¼ö ¾øÀ½
+			{
+				strMessage = _S(4546, "·¹º§ÀÌ ¸ÂÁö ¾Ê½À´Ï´Ù.");
+			}
+			break;	
+			
+		case MSG_RAID_ERROR_INZONE_JOIN_NOTSAMEBOSSROOMNO:		// [090813: selo] ±Í¼ÓµÈ ÀÎÁ¸ Á¤º¸°¡ ¿øÁ¤´ëÀå ´Ş¶ó Á¢¼Ó ºÒ°¡
+			{
+				strMessage = _S(4697, "¿øÁ¤´ëÀåÀÇ ÀÎ½ºÅÏÆ®·ë°ú ¹æ Á¤º¸°¡ ´Ş¶ó ÀÔÀåÀÌ ºÒ°¡´ÉÇÕ´Ï´Ù. Á¤»óÀûÀ¸·Î ÀÔÀåÇÏ±â À§ÇØ¼± ¿øÁ¤´ëÀåÀÌ µÇ¾î ÀÔÀåÀ» ½ÃµµÇÏ°Å³ª, ±Í¼Ó ´ç½Ã ¿øÁ¤´ë¿Í ÇÔ²² ÀÔÀåÀ» ½ÃµµÇØ¾ß ÇÕ´Ï´Ù.");
+			}
+			break;
+			
+		case MSG_RAID_ERROR_INZONE_NOT_EXPED_RAID_SUBNUMBER:
+			{
+				strMessage = _S(4760,"ÀÎ½ºÅÏÆ® Á¸¿¡ ÀÔÀå°¡´ÉÇÑ Ã¤³ÎÀÌ ¾Æ´Õ´Ï´Ù.");
+			}
+			break;
+			
+		case MSG_RAID_ERROR_INZONE_NOT_JOIN_BOSS:
+			{
+				strMessage = _S(4822,"¿øÁ¤´ëÀåÀÌ ÀÎ½ºÅÏÆ® Á¸¿¡ ÀÔÀåÇÏÁö ¾Ê¾Ò½À´Ï´Ù.");
+			}
+			break;
+		case MSG_RAID_ERROR_INZONE_INVALID_DIFFICULTY:
+			{
+				strMessage = _S(5319, "ÀÔÀåÀÌ ºÒ°¡´ÉÇÕ´Ï´Ù. ÇöÀç ¿øÁ¤´ë°¡ ÀÔÀåÇÑ ´øÀüÀÇ ³­ÀÌµµ¸¦ È®ÀÎÇÏ½Ê½Ã¿À.");
+			}
+			break;
+		case MSG_RAID_ERROR_INZONE_INIT_TIME:
+			{
+				strMessage = _S( 5371, "·¹ÀÌµå ´øÀü ÃÊ±âÈ­ ÁßÀÔ´Ï´Ù." ) + CTString(" ") +
+							 _S( 5372, "Àá½ÃÈÄ ´Ù½Ã ½ÃµµÇÏ¿© ÁÖ½Ê½Ã¿À.");
+			}
+			break;
+
+		case MSG_RAID_ERROR_INZONE_NOT_QUEST:
+			{
+				strMessage = _S(4549, "ÀÎ½ºÅÏÆ® Á¸¿¡ ÀÔÀåÀÌ ºÒ°¡´ÉÇÕ´Ï´Ù.");
+			}
+			break;
+
+		default:
+			{
+				bShowMsgBox = FALSE;	// ¸Ş½ÃÁö ¹Ú½º¸¦ ¶ç¿ìÁö ¾Ê´Â´Ù
+				pUIManager->GetChatting()->AddSysMessage( _S( 4559, "ÀÎ½ºÅÏÆ® Á¸ ¿¡·¯" ) );
+			}
+			break;
+	}
+
+	if(bShowMsgBox)
+	{
+		if(pUIManager->DoesMessageBoxExist(MSGCMD_EXPEDITION_ERROR))
+			pUIManager->CloseMessageBox(MSGCMD_EXPEDITION_ERROR);
+
+		CUIMsgBox_Info MsgBoxInfo;
+		
+		MsgBoxInfo.SetMsgBoxInfo( _S( 191, "È®ÀÎ" ), UMBS_OK, UI_NONE, MSGCMD_EXPEDITION_ERROR );
+		MsgBoxInfo.AddString(strMessage);
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+	}
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionReject
+// Explain: [sora] ¿øÁ¤´ë Âü¿© °ÅÀı ¼ö½Å
+//------------------------------------------------------------------------------	
+void CUIParty::ExpeditionReject( BOOL bIsSrc )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(bIsSrc)
+	{
+		pUIManager->CloseMessageBox(MSGCMD_EXPEDITION_ALLOW);
+	}
+	else
+	{
+		pUIManager->CloseMessageBox(MSGCMD_EXPEDITION_INVITE);
+	}
+
+	pUIManager->GetChatting()->AddSysMessage( _S( 4564, "¿øÁ¤´ë ½ÅÃ»ÀÌ Ãë¼ÒµÇ¾ú½À´Ï´Ù." ) );
+
+	pUIManager->SetCSFlagOff(CSF_EXPEDITION_REQ);
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionQuit
+// Explain: [sora] ¿øÁ¤´ë Å»Åğ ¼ö½Å
+//------------------------------------------------------------------------------											
+void CUIParty::ExpeditionQuit( SLONG slType, SLONG slIndex )
+{
+	if(slType == MSG_EXPED_QUITMODE_NORMAL)	// Á¤»óÀûÀÎ Å»ÅğÀÇ °æ¿ì
+	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		if(slIndex == _pNetwork->MyCharacterInfo.index)
+		{
+			ExpeditionEnd();
+			pUIManager->GetChatting()->AddSysMessage( _S( 4565, "¿øÁ¤´ë¿¡¼­ Å»ÅğÇÏ¼Ì½À´Ï´Ù." ) );
+			// [sora] ÀÎ½ºÅÏÆ®Á¸ ÇÃ·¹ÀÌÁßÀÌ¾ú´Ù¸é ºÎÈ°ÁöÁ¡À¸·Î ÀÌµ¿
+			if(pUIManager->IsPlayInZone())
+			{
+				_pNetwork->RaidInzoneQuitReq();
+			}
+		}
+		else
+		{
+			int nGroup = 0;
+			int nPos = 0;
+
+			SearchExpeditionMember(slIndex, nGroup, nPos);
+			
+			CTString	strSysMessage;
+			strSysMessage.PrintF( _S( 4566, "%s°¡ ¿øÁ¤´ë¿¡¼­ Å»ÅğÇÏ¼Ì½À´Ï´Ù." ), m_ExpeditionGroup[nGroup][nPos].m_strName);
+			pUIManager->GetChatting()->AddSysMessage(strSysMessage );
+			
+			RemoveExpeditionMember(nGroup, nPos);
+		}
+	}
+	else if(slType == MSG_EXPED_QUITMODE_UNUSUAL)	// ºñÁ¤»óÀûÀÎ Å»ÅğÀÇ °æ¿ì
+	{
+		ExpeditionMemberOnline(slIndex, FALSE);
+	}
+
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionKick
+// Explain: [sora] ¿øÁ¤´ë °­Åğ
+//------------------------------------------------------------------------------																
+void CUIParty::ExpeditionKick( SLONG slIndex )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(slIndex == _pNetwork->MyCharacterInfo.index)
+	{
+		pUIManager->GetChatting()->AddSysMessage( _S( 4687, "¿øÁ¤´ë¿¡¼­ °­ÅğµÇ¼Ì½À´Ï´Ù." ) );
+		ExpeditionEnd();
+		// [sora] ÀÎ½ºÅÏÆ®Á¸ ÇÃ·¹ÀÌÁßÀÌ¾ú´Ù¸é ºÎÈ°ÁöÁ¡À¸·Î ÀÌµ¿
+		if(pUIManager->IsPlayInZone())
+		{
+			_pNetwork->RaidInzoneQuitReq();
+		}
+	}
+	else
+	{
+		int nGroup = 0;
+		int nPos = 0;
+
+		SearchExpeditionMember(slIndex, nGroup, nPos);
+
+		CTString	strSysMessage;
+		strSysMessage.PrintF( _S( 4566, "%s°¡ ¿øÁ¤´ë¿¡¼­ Å»ÅğÇÏ¼Ì½À´Ï´Ù." ), m_ExpeditionGroup[nGroup][nPos].m_strName);
+		pUIManager->GetChatting()->AddSysMessage(strSysMessage );
+
+		RemoveExpeditionMember(nGroup, nPos);
+	}
+
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionEnd
+// Explain: [sora] ¿øÁ¤´ë Á¾·á
+//------------------------------------------------------------------------------												
+void CUIParty::ExpeditionEnd()
+{
+	InitExpedition();
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->SetCSFlagOff( CSF_EXPEDITION );
+	pUIManager->SetCSFlagOff( CSF_PARTY );
+
+	pUIManager->RearrangeOrder( UI_PARTY, FALSE );
+
+	// ºĞ¹è Á¤º¸Ã¢ÀÌ ÀÖ¾ú´Ù¸é ´İ¾ÆÁØ´Ù
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_DIVISION_INFO))
+	{
+		pUIManager->CloseMessageBox(MSGCMD_DIVISION_INFO);
+	}
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::ChangeGroup
+// Explain: [sora] ÁöÁ¤Ä³¸¯ÅÍ ¿øÁ¤´ë ±×·ì º¯°æ
+//------------------------------------------------------------------------------																
+void CUIParty::ChangeGroup(SLONG slIndex, int nGroupNum, int nPosNum) // Ä³¸¯ÅÍ ÀÎµ¦½º, ÀÌµ¿ÇÒ ±×·ì, À§Ä¡
+{
+
+	int nGroup = 0;	// ÇöÀç ±×·ì
+	int nPos = 0;	// ÇöÀç À§Ä¡
+
+	if(SearchExpeditionMember(slIndex, nGroup, nPos))
+	{
+		stExpeditionMember expMember = m_ExpeditionGroup[nGroup][nPos];
+		RemoveExpeditionMember(nGroup, nPos);
+		AddExpeditionMember(nGroupNum, nPosNum, expMember);
+
+		m_UIExpManage.GetMemberBtn(nGroup, nPos).InitBtn();
+		m_UIExpManage.GetMemberBtn(nGroup, nPos).SetBtnType(UBET_EXPEDITION);
+
+		CTString strMessage;
+		if(nGroup != nGroupNum)
+		{
+			strMessage.PrintF(_S( 4567, "%s°¡ %d±×·ì %d¹ø¿¡¼­ %d±×·ì %d¹øÀ¸·Î ÀÌµ¿ÇÏ¿´½À´Ï´Ù." ), m_ExpeditionGroup[nGroupNum][nPosNum].m_strName, nGroup+1, nPos+1, nGroupNum+1, nPosNum+1);	//±×·ì¸í Ç¥½ÃÇÒ¶§´Â +1(0~3) -> (1~4)
+		}
+		else
+		{
+			strMessage.PrintF(_S( 4568, "%s°¡ %d±×·ì %d¹ø¿¡¼­ %d¹øÀ¸·Î ÀÌµ¿ÇÏ¿´½À´Ï´Ù." ), m_ExpeditionGroup[nGroupNum][nPosNum].m_strName, nGroupNum+1, nPos+1, nPosNum+1);	//±×·ì¸í Ç¥½ÃÇÒ¶§´Â +1(0~3) -> (1~4)
+		}
+		
+		CUIManager::getSingleton()->GetChatting()->AddSysMessage( strMessage );
+	}
+
+	m_UIExpManage.m_bCanUseBtn = TRUE;	// ¹öÆ° Drag&Drop Çã¿ë
+
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SetDivisionType
+// Explain: [sora] ºĞ¹è¹æ½Ä º¯°æ (bFirst -> Àç Á¢¼Ó½Ã ÆÄÆ¼Á¤º¸¼³Á¤)
+//------------------------------------------------------------------------------										
+void CUIParty::SetDivisionType(SBYTE sbDivisionType, SBYTE sbType, BOOL bFirst /* = FALSE */)
+{
+	switch(sbType)
+	{
+		case MSG_DIVITYPE_EXP:
+			m_sbDivisionTypeEXP = sbDivisionType;
+			break;
+		case MSG_DIVITYPE_ITEM:
+			m_sbDivisionTypeITEM = sbDivisionType;
+			break;
+		case MSG_DIVITYPE_SPECIAL:
+			m_sbDivisionTypeSPITEM = sbDivisionType;
+			break;
+	}
+
+	CTString strTemp, strTemp2;
+
+	strTemp2 = m_strExpeditionType[sbDivisionType];
+	if(sbType == MSG_DIVITYPE_EXP)
+	{
+		if(sbDivisionType == MSG_EXPED_TYPE_RANDOM)
+		{
+			strTemp2 = _S(4525, "±ÕµîºĞ¹è");
+		}
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(!bFirst)
+	{
+		strTemp.PrintF(_S(4569, "%s ºĞ¹è ¹æ½ÄÀÌ %s(À¸)·Î º¯°æµÇ¾ú½À´Ï´Ù."), strDivisionType[sbType], strTemp2);
+		pUIManager->GetChatting()->AddSysMessage( strTemp );
+	}
+
+
+	// Á¤º¸Ã¢Àº ¾÷µ¥ÀÌÆ®µÇÁö ¾ÊÀ¸¹Ç·Î ´İ¾ÆÁØ´Ù.
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_DIVISION_INFO))
+	{
+		pUIManager->CloseMessageBox(MSGCMD_DIVISION_INFO);
+	}
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SetDivisionType
+// Explain: [sora] ºĞ¹è¹æ½Ä º¯°æ
+//------------------------------------------------------------------------------
+void CUIParty::SetDivisionType(SBYTE sbDivisionTypeEXP, SBYTE sbDivisionTypeITEM, SBYTE sbDivisionTypeSPITEM)
+{
+	m_sbDivisionTypeEXP = sbDivisionTypeEXP;
+
+	m_sbDivisionTypeITEM = sbDivisionTypeITEM;
+
+	m_sbDivisionTypeSPITEM = sbDivisionTypeSPITEM;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::AddExpeditionMember
+// Explain: [sora] ¿øÁ¤´ë¿ø Ãß°¡
+//------------------------------------------------------------------------------								
+void CUIParty::AddExpeditionMember( int nGroupNum, int nPos, int nPosition, SLONG slIndex, CTString &strName, SBYTE sbJob, SBYTE sbJob2, int iLevel, int iHP, int iMaxHP, int iMP, int iMaxMP, FLOAT fX, FLOAT fZ, SBYTE sbLayer, SLONG slZone )
+{
+	stExpeditionMember expMember;
+	expMember.m_slZone = slZone;															
+	expMember.m_nLevel = iLevel;				
+	expMember.m_nHP = iHP;					
+	expMember.m_nMaxHP = iMaxHP;				
+	expMember.m_nMP = iMP;					
+	expMember.m_nMaxMP = iMaxMP;				
+	expMember.m_fPosX = fX;				
+	expMember.m_fPosZ = fZ;				
+	expMember.m_sbLayer = sbLayer;	
+	expMember.m_slIndex = slIndex;			
+	expMember.m_strName = strName;	
+	expMember.m_nPosition = nPosition;
+	expMember.m_sbJob = sbJob;	
+	expMember.m_bOnline = TRUE;
+	expMember.UpdateBarRate();
+
+	AddExpeditionMember(nGroupNum, nPos, expMember);
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::AddExpeditionMember
+// Explain: [sora] ¿øÁ¤´ë¿ø Ãß°¡
+//------------------------------------------------------------------------------
+void CUIParty::AddExpeditionMember(int nGroupNum, int nPos, stExpeditionMember expMember)
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_EXPEDITION_INVITE))
+		pUIManager->CloseMessageBox(MSGCMD_EXPEDITION_INVITE);
+
+	// ·¹º§ÀÌ 0ÀÌ¸é ¿ÀÇÁ¶óÀÎ ¸â¹ö
+	if(expMember.m_nLevel == 0)
+	{
+		expMember.m_bOnline = FALSE;
+	}
+
+
+	if(m_UIExpGroup[nGroupNum].GetMemberCount() == 0)
+		m_UIExpGroup[nGroupNum].SetVisible(TRUE);
+
+	m_ExpeditionGroup[nGroupNum][nPos] = expMember;
+
+	int nHPBarWidth = m_ExpeditionGroup[nGroupNum][nPos].CalcHPBarWidth(EXPEDITION_GROUP_BARWIDTH);
+
+	if(expMember.m_slIndex == _pNetwork->MyCharacterInfo.index)
+	{
+		m_nMyGroupNum = nGroupNum;
+		m_nGroupPos = nPos;
+
+		int nPosX, nPosY;
+		pUIManager->GetChatting()->GetChatWindowEndPos(nPosX, nPosY);
+
+		int nCnt = 0;
+		for(int j=0; j<EXPEDITION_GROUP_MAX; j++)
+		{
+			if(j > m_nMyGroupNum)
+				nCnt = j - 1;
+			else
+				nCnt = j;
+			m_UIExpGroup[j].SetPos(nPosX + (nCnt*152), nPosY);
+		}
+	}
+
+	m_UIExpGroup[nGroupNum].GetMemberBtn(nPos).SetExpeditionInfo(expMember.m_sbJob, expMember.m_nPosition, expMember.m_strName, nHPBarWidth, expMember.m_nLevel);
+	m_UIExpGroup[nGroupNum].GetMemberBtn(nPos).SetOnline(expMember.m_bOnline);
+
+
+	m_UIExpManage.GetMemberBtn(nGroupNum, nPos).SetExpeditionInfo(expMember.m_sbJob, expMember.m_nPosition, expMember.m_strName, nHPBarWidth, expMember.m_nLevel);
+	m_UIExpManage.GetMemberBtn(nGroupNum, nPos).SetOnline(expMember.m_bOnline);
+
+	if(m_nMyGroupNum >= 0)
+	{
+		if(nGroupNum == m_nMyGroupNum)
+		{
+			m_nMemberCount = m_UIExpGroup[m_nMyGroupNum].GetMemberCount() - 1; //ÀÚ±â´Â »«´Ù
+			m_nHeight = m_rcTitle.GetHeight() + m_nMemberCount * PARTY_STRETCH_HEIGHT;	// ÆÄÆ¼Ã¢ ³ôÀÌ °è»ê
+		}
+
+	}
+
+	m_aubBuff[nPos] = 0;
+
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION_REQ))
+		pUIManager->SetCSFlagOff( CSF_EXPEDITION_REQ );
+
+	if(pUIManager->IsCSFlagOn(CSF_PARTY))
+		pUIManager->SetCSFlagOff( CSF_PARTY );
+
+	pUIManager->SetCSFlagOn(CSF_EXPEDITION);
+
+	// »õ·Î¿î ´ë¿øÀÌ µé¾î¿À¸é ÆÄÆ¼Ã¢À» ¿­¾îÁØ´Ù.
+	if(!pUIManager->IsUIVisible(UI_PARTY))
+		pUIManager->RearrangeOrder( UI_PARTY, TRUE );
+
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::RemoveExpeditionMember
+// Explain: [sora] ¿øÁ¤´ë¿ø Á¦°Å
+//------------------------------------------------------------------------------	
+void CUIParty::RemoveExpeditionMember( int nGroup, int nPos )
+{
+
+	m_ExpeditionGroup[nGroup][nPos].Init();	
+
+
+	m_UIExpGroup[nGroup].GetMemberBtn(nPos).InitBtn();
+	m_UIExpGroup[nGroup].GetMemberBtn(nPos).SetBtnType(UBET_EXPEDITION);
+
+	if(m_UIExpGroup[nGroup].GetMemberCount() == 0)
+	{
+		m_UIExpGroup[nGroup].SetVisible(FALSE);
+	}
+
+
+	m_UIExpManage.GetMemberBtn(nGroup, nPos).InitBtn();
+	m_UIExpManage.GetMemberBtn(nGroup, nPos).SetBtnType(UBET_EXPEDITION);
+
+	if(nGroup == m_nMyGroupNum)
+	{
+		m_nMemberCount--;
+		m_nHeight = m_rcTitle.GetHeight() + m_nMemberCount * PARTY_STRETCH_HEIGHT;	// ÆÄÆ¼Ã¢ ³ôÀÌ °è»ê
+		m_aubBuff[nPos] = 0;
+	}
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionMemberInfo
+// Explain: [sora] ÇØ´ç ±×·ì ¿øÁ¤´ë ¸â¹öÀÇ Á¤º¸ ¼³Á¤ ÇÔ¼ö.
+//------------------------------------------------------------------------------									
+void CUIParty::ExpeditionMemberInfo(SLONG slIndex, SLONG slGroup, int iLevel, int iHP, int iMaxHP, int iMP,
+									int iMaxMP, FLOAT fX, FLOAT fZ, SBYTE sbLayer, SLONG slZone, bool bOnline )
+{
+
+	for(int i=0; i<EXPEDITION_MEMBER_PER_GROUP; i++)
+	{
+		if(GetExpeditionMemberIndex(slGroup, i) == slIndex)
+		{
+			if(bOnline == true)
+			{
+				if(m_ExpeditionGroup[slGroup][i].m_bOnline == FALSE)
+				{
+					m_ExpeditionGroup[slGroup][i].m_bOnline = TRUE;
+
+					m_UIExpGroup[slGroup].GetMemberBtn(i).SetOnline(TRUE);
+					m_UIExpManage.GetMemberBtn(slGroup, i).SetOnline(TRUE);
+				}
+
+				BOOL bIsLevelChanged = FALSE;
+				m_ExpeditionGroup[slGroup][i].m_slZone = slZone;		
+				if(m_ExpeditionGroup[slGroup][i].m_nLevel != iLevel)
+					bIsLevelChanged = TRUE;
+
+				m_ExpeditionGroup[slGroup][i].m_nLevel = iLevel;				
+				m_ExpeditionGroup[slGroup][i].m_nHP = iHP;					
+				m_ExpeditionGroup[slGroup][i].m_nMaxHP = iMaxHP;				
+				m_ExpeditionGroup[slGroup][i].m_nMP = iMP;					
+				m_ExpeditionGroup[slGroup][i].m_nMaxMP = iMaxMP;				
+				m_ExpeditionGroup[slGroup][i].m_fPosX = fX;				
+				m_ExpeditionGroup[slGroup][i].m_fPosZ = fZ;				
+				m_ExpeditionGroup[slGroup][i].m_sbLayer = sbLayer;		
+				m_ExpeditionGroup[slGroup][i].UpdateBarRate();
+
+				int nHPBarWidth = m_ExpeditionGroup[slGroup][i].CalcHPBarWidth(EXPEDITION_GROUP_BARWIDTH);
+
+				if(bIsLevelChanged)
+				{
+					// ·¹º§ÀÌ ¿Ã¶ú´Ù¸é ¸â¹ö, °ü¸®Ã¢ÀÇ ·¹º§µµ ¾÷µ¥ÀÌÆ®ÇÏ¿© ÁØ´Ù
+					m_UIExpGroup[slGroup].GetMemberBtn(i).SetExpeditionCharLevel(m_ExpeditionGroup[slGroup][i].m_nLevel);
+					m_UIExpManage.GetMemberBtn(slGroup, i).SetExpeditionCharLevel(m_ExpeditionGroup[slGroup][i].m_nLevel);
+				}
+
+				m_UIExpGroup[slGroup].GetMemberBtn(i).SetBarWidth(nHPBarWidth);
+
+				m_UIExpManage.GetMemberBtn(slGroup, i).SetBarWidth(nHPBarWidth);
+			}
+			else // ¿ÀÇÁ¶óÀÎ
+			{
+				m_ExpeditionGroup[slGroup][i].m_bOnline = FALSE;
+
+				m_UIExpGroup[slGroup].GetMemberBtn(i).SetOnline(FALSE);
+				m_UIExpManage.GetMemberBtn(slGroup, i).SetOnline(FALSE);
+			}
+
+			break;
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::GetExpeditionMyPosition
+// Explain: [sora] ³» Á÷Ã¥¹İÈ¯
+//------------------------------------------------------------------------------	
+int CUIParty::GetExpeditionMyPosition()
+{
+	if( CUIManager::getSingleton()->IsCSFlagOn(CSF_EXPEDITION) == 0 )
+		return -1;
+
+	if(m_nMyGroupNum < 0 )
+		return -1;
+
+	if(m_nGroupPos < 0 || m_nGroupPos >= EXPEDITION_MEMBER_PER_GROUP)
+		return -1;
+	
+	return m_ExpeditionGroup[m_nMyGroupNum][m_nGroupPos].m_nPosition;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::GetExpeditionMemberIndex
+// Explain: [sora] ÇØ´ç ±×·ì ¿øÁ¤´ë ¸â¹öÀÇ index°ªÀ» ¹İÈ¯ÇÑ´Ù.
+//------------------------------------------------------------------------------	
+SLONG CUIParty::GetExpeditionMemberIndex(int nGroup, int nPos)
+{
+	return m_ExpeditionGroup[nGroup][nPos].m_slIndex;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::GetExpeditionMemberIndex
+// Explain: [sora] ÇØ´ç ±×·ì ¿øÁ¤´ë ¸â¹öÀÇ index°ªÀ» ¹İÈ¯ÇÑ´Ù.
+//------------------------------------------------------------------------------	
+SLONG CUIParty::GetExpeditionMemberIndex(CTString strName)
+{
+	for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+	{
+		for(int j=0; j<EXPEDITION_MEMBER_PER_GROUP; j++)
+		{
+			if(m_ExpeditionGroup[i][j].m_strName == strName)
+				return m_ExpeditionGroup[i][j].m_slIndex;
+		}
+	}
+
+	return -1;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::GetExpeditionMemberZone
+// Explain: [sora] ÇØ´ç ±×·ì ¿øÁ¤´ë ¸â¹öÀÇ Zone°ªÀ» ¹İÈ¯ÇÑ´Ù.
+//------------------------------------------------------------------------------								
+SLONG CUIParty::GetExpeditionMemberZone(int nGroup, int nPos)
+{
+	return m_ExpeditionGroup[nGroup][nPos].m_slZone;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::GetExpeditionMemberPosX
+// Explain: [sora] ÇØ´ç ±×·ì ¿øÁ¤´ë ¸â¹öÀÇ X°ªÀ» ¹İÈ¯ÇÑ´Ù.
+//------------------------------------------------------------------------------								
+FLOAT CUIParty::GetExpeditionMemberPosX(int nGroup, int nPos)
+{
+	return m_ExpeditionGroup[nGroup][nPos].m_fPosX;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::GetExpeditionMemberPosZ
+// Explain: [sora] ÇØ´ç ±×·ì ¿øÁ¤´ë ¸â¹öÀÇ Z°ªÀ» ¹İÈ¯ÇÑ´Ù.
+//------------------------------------------------------------------------------									
+FLOAT CUIParty::GetExpeditionMemberPosZ(int nGroup, int nPos)
+{
+	return m_ExpeditionGroup[nGroup][nPos].m_fPosZ;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::GetExpeditionMemberLayer
+// Explain: [sora] ÇØ´ç ±×·ì ¿øÁ¤´ë ¸â¹öÀÇ Layer°ªÀ» ¹İÈ¯ÇÑ´Ù.
+//------------------------------------------------------------------------------								
+SBYTE CUIParty::GetExpeditionMemberLayer(int nGroup, int nPos)
+{
+	return m_ExpeditionGroup[nGroup][nPos].m_sbLayer;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::GetExpeditionMemberOnline
+// Explain: [sora] ÇØ´ç ±×·ì ¿øÁ¤´ë ¸â¹öÀÇ ¿Â¶óÀÎ ¿©ºÎÈ®ÀÎ
+//------------------------------------------------------------------------------
+BOOL CUIParty::GetExpeditionMemberOnline(int nGroup, int nPos)
+{
+	return m_ExpeditionGroup[nGroup][nPos].m_bOnline;
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SearchExpeditionMember
+// Explain: [sora] ÀÎµ¦½º¸¦ ÀÌ¿ëÇØ¼­ ÇØ´ç ¸â¹öÀÇ ±×·ì°ú À§Ä¡¸¦ Ã£´Â´Ù. 
+//------------------------------------------------------------------------------								
+bool CUIParty::SearchExpeditionMember(SLONG slIndex, int &nGroup, int &nPos)
+{
+
+	for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+	{
+		for(int j=0; j<EXPEDITION_MEMBER_PER_GROUP; j++)
+		{
+			if(GetExpeditionMemberIndex(i, j) == slIndex)
+			{
+				nGroup = i;
+				nPos = j;
+				return true;
+			}
+		}
+	}
+
+	nGroup = -1;
+	nPos = -1;
+	return false;
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetJobStringColor()
+// Desc : [sora] Á÷¾÷º° ÅØ½ºÆ® »ö»óÀ» ¹İÈ¯
+// ----------------------------------------------------------------------------
+COLOR CUIParty::GetJobStringColor(SBYTE sbJob)
+{
+	if(sbJob < 0 || sbJob >= TOTAL_JOB)
+		return 0xFFFFFFFF;
+	
+	return jobStringCol[sbJob];
+}
+
+
+// ----------------------------------------------------------------------------
+// Name : GetDivisionType()
+// Desc : [sora] ÁöÁ¤ÇÑ ºĞ¹èÅ¸ÀÔÀÇ °ªÀ» ¹İÈ¯
+// ----------------------------------------------------------------------------
+SBYTE CUIParty::GetDivisionType(int nType)
+{
+	switch(nType)
+	{
+		case MSG_DIVITYPE_EXP:
+			return m_sbDivisionTypeEXP;
+
+		case MSG_DIVITYPE_ITEM:
+			return m_sbDivisionTypeITEM;
+
+		case MSG_DIVITYPE_SPECIAL:
+			return m_sbDivisionTypeSPITEM;
+	}
+
+	return -1;
+}
+
+// ----------------------------------------------------------------------------
+// Name : OpenDivisionInfoWindow()
+// Desc : [sora] ÆÄÆ¼, ¿øÁ¤´ëÀÇ ºĞ¹è Á¤º¸Ã¢À» ¶ç¿î´Ù
+// ----------------------------------------------------------------------------
+void CUIParty::OpenDivisionInfoWindow()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// ±âÁ¸Ã¢ÀÌ ¶°ÀÖÀ» °æ¿ì¿¡´Â Ã³¸®ÇÏÁö ¾Ê´Â´Ù.
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_DIVISION_INFO) == TRUE )
+	{
+		return;
+	}
+	
+	CUIMsgBox_Info MsgBoxInfo;
+	CTString strTemp;
+
+	MsgBoxInfo.SetMsgBoxInfo(_S(4570, "ºĞ¹è¹æ½Ä Á¤º¸"), UMBS_OK, UI_PARTY, MSGCMD_DIVISION_INFO);
+
+	CTString strTemp2;
+	strTemp2 = m_strExpeditionType[m_sbDivisionTypeEXP];
+
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		if(m_sbDivisionTypeEXP == MSG_EXPED_TYPE_RANDOM)
+		{
+			strTemp2 = _S(4525, "±ÕµîºĞ¹è");
+		}
+
+		strTemp.PrintF(_s("%s : %s"),m_strDivisionType[MSG_DIVITYPE_EXP], strTemp2);
+	}
+	else if(pUIManager->IsCSFlagOn(CSF_PARTY))
+	{
+		CTString strPartyType[3]; 
+		strPartyType[PT_PEACEEVER] = _S(4525, "±ÕµîºĞ¹è");
+		strPartyType[PT_SURVIVAL] = m_strExpeditionType[MSG_EXPED_TYPE_FIRSTGET]; //_s("ÀÔ¼ö¿ì¼±")
+		strPartyType[PT_ATTACK] = m_strExpeditionType[MSG_EXPED_TYPE_BATTLE] ; // _s("ÀüÅõÇü");
+
+		strTemp.PrintF(_S(4571, "ÆÄÆ¼ Á¾·ù: %s"), strPartyType[m_nType]);
+	}
+	// °æÇèÄ¡ ºĞ¹è Å¸ÀÔ (ÆÄÆ¼¿¡¼­´Â ÆÄÆ¼ Å¸ÀÔ)
+	MsgBoxInfo.AddString(strTemp);
+
+	// ¾ÆÀÌÅÛ ºĞ¹è Å¸ÀÔ
+	strTemp.PrintF(_s("%s : %s"), m_strDivisionType[MSG_DIVITYPE_ITEM], m_strExpeditionType[m_sbDivisionTypeITEM]);
+	MsgBoxInfo.AddString(strTemp);
+
+	// ½ºÆä¼È ¾ÆÀÌÅÛ ºĞ¹è Å¸ÀÔ
+	strTemp.PrintF(_s("%s : %s"), m_strDivisionType[MSG_DIVITYPE_SPECIAL], m_strExpeditionType[m_sbDivisionTypeSPITEM]);
+	MsgBoxInfo.AddString(strTemp);
+
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::IsExpedetionMember
+// Explain: [sora] ÇØ´ç ÀÎµ¦½º°¡ ¿øÁ¤´ë ¸â¹öÀÎÁö Ã¼Å©ÇÑ´Ù. 
+//------------------------------------------------------------------------------	
+bool CUIParty::IsExpedetionMember( INDEX iChaIndex )
+{
+	for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+	{
+		for(int j=0; j<EXPEDITION_MEMBER_PER_GROUP; j++)
+		{
+			if(GetExpeditionMemberIndex(i, j) == iChaIndex)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::IsExpedetionDataExist
+// Explain: [sora] ¿øÁ¤´ë¿ø Á¸Àç ¿©ºÎ Ã¼Å©
+//------------------------------------------------------------------------------	
+bool CUIParty::IsExpedetionDataExist(int nGroup, int nPos)
+{
+	return (m_ExpeditionGroup[nGroup][nPos].IsEmpty() ? FALSE : TRUE);
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionMemberOnline
+// Explain: [sora] ¿øÁ¤´ë¿ø online¼³Á¤
+//------------------------------------------------------------------------------	
+void CUIParty::ExpeditionMemberOnline( SLONG slIndex, BOOL bOnline )
+{
+	int nGroup = 0; 
+	int nPos = 0;
+
+	if(slIndex == _pNetwork->MyCharacterInfo.index)
+	{
+		ExpeditionEnd();
+	}
+
+	if(SearchExpeditionMember(slIndex, nGroup, nPos))
+	{
+		m_ExpeditionGroup[nGroup][nPos].m_bOnline = bOnline;
+
+		m_UIExpGroup[nGroup].GetMemberBtn(nPos).SetOnline(bOnline);
+		m_UIExpManage.GetMemberBtn(nGroup, nPos).SetOnline(bOnline);
+	}
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::SetExpeditionPosition
+// Explain:  [sora]
+//------------------------------------------------------------------------------
+void CUIParty::SetExpeditionPosition(SLONG slIndex, SLONG slPosition)
+{
+	int nGroup = 0; 
+	int nPos = 0;
+
+	if(SearchExpeditionMember(slIndex, nGroup, nPos))
+	{
+		m_ExpeditionGroup[nGroup][nPos].m_nPosition = slPosition;
+
+		m_UIExpGroup[nGroup].GetMemberBtn(nPos).SetExpeditionPosition(slPosition);
+		m_UIExpManage.GetMemberBtn(nGroup, nPos).SetExpeditionPosition(slPosition);
+
+		if(slPosition == MSG_EXPED_MEMBERTYPE_MBOSS)
+		{
+			CUIMsgBox_Info	MsgBoxInfo;
+			MsgBoxInfo.SetMsgBoxInfo( _S( 4493, "¿øÁ¤´ë" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+
+			CTString strMessage;
+
+			strMessage.PrintF(_S( 4572, "%s´ÔÀÌ ¿øÁ¤ºÎ´ëÀåÀÌ µÇ¾ú½À´Ï´Ù." ), m_ExpeditionGroup[nGroup][nPos].m_strName);
+				
+			MsgBoxInfo.AddString( strMessage );
+			CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+		}
+		else if(slPosition == MSG_EXPED_MEMBERTYPE_NORMAL)
+		{	// ÀÏ¹İ´ë¿øÀ¸·Î ÀüÈ¯ º¯°æµÊ
+			// ³»Á¤º¸ È¹µæ
+			int slMyPosition = CUIManager::getSingleton()->GetParty()->GetExpeditionMyPosition();
+			int slMyGroup, slMyPos;
+			SearchExpeditionMember(_pNetwork->MyCharacterInfo.index ,slMyGroup, slMyPos);
+
+			if(slMyGroup == nGroup && slMyPos == nPos)
+			{
+				if(m_UIExpManage.IsVisible()) // ³» ÀÚ½ÅÀº ÀÏ¹İ´ë¿øÀ¸·Î º¯°æµÇ¾ú±â ¶§¹®¿¡ °ü¸®Ã¢ÀÌ ¿­·ÁÀÖ´Ù¸é ´İ¾ÆÁÜ
+				{
+					m_UIExpManage.SetVisible(FALSE);
+				}
+			}
+		}
+	}
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::ChangeExpeditionLeader
+// Explain: [sora] ¿øÁ¤´ëÀå ¼³Á¤
+//------------------------------------------------------------------------------
+void CUIParty::ChangeExpeditionLeader(SLONG slIndexSrc, SLONG slIndexDesc, SLONG slChangeMode )
+{
+	int nGroup = 0; 
+	int nPos = 0;
+
+	if( SearchExpeditionMember(slIndexDesc, nGroup, nPos) == false)
+		return;
+
+	SetExpeditionPosition(slIndexSrc, MSG_EXPED_MEMBERTYPE_NORMAL);
+	SetExpeditionPosition(slIndexDesc, MSG_EXPED_MEMBERTYPE_BOSS);
+
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 4493, "¿øÁ¤´ë" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+
+	CTString strMessage;
+
+	strMessage.PrintF(_S( 4573, "%s´ÔÀÌ ¿øÁ¤´ëÀåÀÌ µÇ¾ú½À´Ï´Ù." ), m_ExpeditionGroup[nGroup][nPos].m_strName);
+
+	MsgBoxInfo.AddString( strMessage );
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+
+	if(m_UIExpManage.IsVisible()) // ÀÚ±â°¡ ¿øÁ¤´ëÀåÀ» À§ÀÓÇÏ¿´´Ù¸é °ü¸®Ã¢À» ´İ¾ÆÁØ´Ù.
+	{
+		m_UIExpManage.SetVisible(FALSE);
+	}
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendExpeditionViewDetail
+// Explain: [sora] »ìÆìº¸±â ¿äÃ»
+//------------------------------------------------------------------------------
+void CUIParty::SendExpeditionViewDetail(SLONG slIndex, CTString strCharName)
+{
+	int nGroup = 0; 
+	int nPos = 0;
+
+	if(SearchExpeditionMember(slIndex, nGroup, nPos))
+	{
+		m_UIViewDetail.ClearViewDetail();
+		m_UIViewDetail.SetCharInfo(strCharName);
+		_pNetwork->ExpeditionViewDetailReq(nGroup, slIndex);
+	}
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::SendChangeSubLeader
+// Explain: [sora] ¿øÁ¤ ºÎ´ëÀå ÀÓ¸í
+//------------------------------------------------------------------------------
+void CUIParty::SendChangeSubLeader(SLONG slIndex)
+{
+	int nGroup = 0; 
+	int nPos = 0;
+
+	if(SearchExpeditionMember(slIndex, nGroup, nPos))
+	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		for(int i=0; i<EXPEDITION_MEMBER_PER_GROUP; i++)
+		{
+			if(m_ExpeditionGroup[nGroup][i].m_nPosition == MSG_EXPED_MEMBERTYPE_MBOSS)
+			{
+				// ÇÑ ±×·ì¿¡ ¿øÁ¤ºÎ´ëÀåÀº 1¸í
+				pUIManager->GetChatting()->AddSysMessage( _S( 4574, "±×·ì¿¡ ÀÌ¹Ì ¿øÁ¤ºÎ´ëÀåÀÌ ÀÖ½À´Ï´Ù. ºÎ´ëÀåÀÓ¸íÀ» ÇØÀÓÇÏ°í ´Ù½Ã ½ÃµµÇØ ÁÖ½Ê½Ã¿À." ) );
+				return;
+			}
+		}
+
+		if(m_ExpeditionGroup[nGroup][nPos].m_nPosition == MSG_EXPED_MEMBERTYPE_BOSS)
+		{
+			// ¿øÁ¤´ëÀåÀº ºÎ´ëÀåÀÌ µÉ ¼ö ¾ø´Ù
+			pUIManager->GetChatting()->AddSysMessage( _S( 4575, "¿øÁ¤´ëÀåÀº ºÎ´ëÀåÀÌ µÉ ¼ö ¾ø½À´Ï´Ù." ) );
+			return;
+		}
+	}
+
+	_pNetwork->ExpeditionChangeSubLeaderReq(TRUE, slIndex);
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendTargetLabelSet
+// Explain: [sora] Ç¥½Ä set ¿äÃ»
+//------------------------------------------------------------------------------
+void CUIParty::SendTargetLabelSet(SBYTE sbTargetType, SLONG slIndex, SLONG slLabelIndex)
+{
+	_pNetwork->ExpeditionSetLabelReq( sbTargetType, MSG_EXPED_SETLABEL_MODE_SET, slLabelIndex, slIndex);
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendTargetLabelReSet
+// Explain: [sora] Ç¥½Ä Reset ¿äÃ»
+//------------------------------------------------------------------------------
+void CUIParty::SendTargetLabelReSet(SBYTE sbTargetType, SLONG slIndex)
+{
+	SLONG slLabel = -1;
+
+	if( sbTargetType == CHARACTER )
+	{
+		if(slIndex == _pNetwork->MyCharacterInfo.index)
+		{
+			slLabel = _pNetwork->MyCharacterInfo.slLabel;
+		}
+		else
+		{
+			ObjectBase* pObject = ACTORMGR()->GetObject(slIndex);
+
+			if (pObject != NULL && pObject->m_eType == eOBJ_CHARACTER)
+			{
+				CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+				slLabel = pTarget->cha_Label;
+			}
+		}
+		
+	}
+	else //sbTargetType == MOB
+	{
+		ObjectBase* pObject = ACTORMGR()->GetObject(slIndex);
+
+		if (pObject != NULL)
+		{
+			CMobTarget* pMT = static_cast< CMobTarget* >(pObject);
+
+			slLabel = pMT->mob_Label;
+		}
+	}
+
+	if(slLabel >= 0)
+	{
+		_pNetwork->ExpeditionSetLabelReq( sbTargetType, MSG_EXPED_SETLABEL_MODE_RESET, slLabel, slIndex);	
+	}
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SetTargetLabel
+// Explain: [sora] Ç¥½Ä ¼³Á¤(ÇöÀç appearµÇ¾îÀÖ´Â ´ë»ó¿¡ Ç¥½Ä ¼³Á¤( appearµÇÁö ¾ÊÀº ´ë»óÀº appear½Ã Ç¥½Ä°ªÀÌ µé¾î¿È ) )
+//------------------------------------------------------------------------------
+void CUIParty::SetTargetLabel(SLONG slType, SLONG slMode, SLONG slLabel, SLONG slIndex)
+{
+
+	if(slType == MSG_EXPED_SETLABEL_TYPE_PC)
+	{
+		if(_pNetwork->MyCharacterInfo.index == slIndex)
+		{
+			if(slMode == MSG_EXPED_SETLABEL_MODE_SET) // Ç¥½Ä ¼³Á¤
+			{
+				_pNetwork->MyCharacterInfo.slLabel = slLabel;
+			}
+			else //Ç¥½Ä ÇØÁ¦
+			{
+				_pNetwork->MyCharacterInfo.slLabel = -1;
+			}
+		}
+
+		ObjectBase* pObject = ACTORMGR()->GetObject(slIndex);
+
+		if (pObject != NULL && pObject->m_eType == eOBJ_CHARACTER)
+		{
+			CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+			if(slMode == MSG_EXPED_SETLABEL_MODE_SET) // Ç¥½Ä ¼³Á¤
+			{
+				pTarget->cha_Label = slLabel;
+			}
+			else //Ç¥½Ä ÇØÁ¦
+			{
+				pTarget->cha_Label = -1;
+			}
+		}
+	}
+	else	// mobÀÇ °æ¿ì
+	{
+		ObjectBase* pObject = ACTORMGR()->GetObject(slIndex);
+
+		if (pObject != NULL)
+		{
+			CMobTarget* pMT = static_cast< CMobTarget* >(pObject);
+
+			if(slMode == MSG_EXPED_SETLABEL_MODE_SET)
+				pMT->mob_Label = slLabel;
+			else
+				pMT->mob_Label = -1;
+		}
+	}
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::SetViewDetail
+// Explain: [sora] »ìÆìº¸±â ¸Ş½ÃÁö ¼ö½Å (Ä³¸¯ÅÍ ÀåºñÁ¤º¸°¡ ¸¶Áö¸·À¸·Î µé¾î¿À¸ç, Àåºñ±îÁö µé¾î¿À¸é À©µµ¿ì¸¦ ¶ç¿ò)
+//------------------------------------------------------------------------------
+void CUIParty::SetViewDetail(SBYTE sbType, CNetworkMessage *istr)
+{
+	switch(sbType)
+	{
+		case MSG_VIEWDETAIL_PET:
+		{
+
+			// ÆêÁ¤º¸
+			CNetworkLibrary::sPetInfo petinfo;
+
+			(*istr) >> petinfo.lIndex;
+			(*istr) >> petinfo.sbPetTypeGrade;
+			(*istr) >> petinfo.lLevel;
+			(*istr) >> petinfo.llExp;
+			(*istr) >> petinfo.llNeedExp;
+			(*istr) >> petinfo.lHP;
+			(*istr) >> petinfo.lMaxHP;
+			(*istr) >> petinfo.lAbility;
+			(*istr) >> petinfo.lHungry;
+			(*istr) >> petinfo.lMaxHungry;
+			(*istr) >> petinfo.lSympathy;
+			(*istr) >> petinfo.lMaxSympathy;
+#ifdef PET_SEAL_TIME
+			(*istr) >> petinfo.lRemainRebirth;
+#endif
+			(*istr) >> petinfo.strNameCard;
+
+			m_UIViewDetail.SetPetInfo(petinfo);
+		}
+			break;
+		case MSG_VIEWDETAIL_APET:
+		{
+
+			// ¿ëº´Æê Á¤º¸
+			sPetItem_Info wildPetInfo;
+			INDEX   pet_type, pet_str_plus ,pet_con_plus, pet_dex_plus, pet_int_plus;
+				
+			(*istr) >> wildPetInfo.pet_index;
+			(*istr) >> wildPetInfo.pet_name;
+			(*istr) >> wildPetInfo.pet_level;
+			(*istr) >> pet_type;
+			(*istr)	>> wildPetInfo.pet_str >> pet_str_plus;
+			(*istr)	>> wildPetInfo.pet_con >> pet_con_plus;
+			(*istr)	>> wildPetInfo.pet_dex >> pet_dex_plus;
+			(*istr)	>> wildPetInfo.pet_int >> pet_int_plus;
+			
+			m_UIViewDetail.SetWildPetInfo(wildPetInfo);
+		}
+			break;
+		case MSG_VIEWDETAIL_INVEN:
+		{
+			// Àåºñ
+			SLONG	slWearingTotal;
+			ULONG	uniIndex,index, plus, flag, used, used2;
+			SBYTE	Wearing, sbOptionCount, sbOptionType;
+			LONG	lOptionLevel;
+			SQUAD	count;
+
+			(*istr) >> slWearingTotal;
+			
+			for(int i = 0; i < slWearingTotal; i++)
+			{
+				(*istr) >> uniIndex;
+				(*istr) >> index;
+				(*istr) >> Wearing;
+				(*istr) >> plus;
+				(*istr) >> flag;
+				(*istr) >> used;
+				(*istr) >> used2;
+				(*istr) >> count;
+				(*istr) >> sbOptionCount;
+
+				CItemData* pItemData	= _pNetwork->GetItemData(index);
+
+				m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemInfo(-1, -1, index, uniIndex, Wearing);
+				m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemPlus(plus);
+				m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemFlag(flag);
+				m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemUsed(used);
+				m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemUsed2(used2);
+				m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemCount(count);
+
+
+				//·¹¾î ¾ÆÀÌÅÛÀÏ¶§...
+				if( pItemData->GetFlag() & ITEM_FLAG_RARE )
+				{
+					//¿É¼Ç °³¼ö°¡ 0ÀÌ¸é ¹Ì°¨Á¤ ·¹¾î¾ÆÀÌÅÛ
+					if( sbOptionCount ==0)
+						m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemRareIndex(0);
+					//°¨Á¤µÈ ·¹¾î¾ÆÀÌÅÛÀÌ¸é...
+					else
+					{
+						//·¹¾î ¿É¼Ç ÀÎµ¦½º
+						(*istr) >> sbOptionType;
+						(*istr) >> lOptionLevel;
+						
+						LONG iRareIndex = lOptionLevel;
+
+						m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemRareIndex(iRareIndex);
+
+						//·¹¾î ¿É¼Ç Á¾·ù
+						(*istr) >> sbOptionType;
+						(*istr) >> lOptionLevel;
+						
+						WORD iRareOption = lOptionLevel;
+						WORD wCBit =1;
+						SBYTE sbOption =-1;
+						for(int iBit=0; iBit<10; ++iBit)
+						{
+							if(iRareOption & wCBit)
+							{
+								CItemRareOption* pItem = CItemRareOption::getData(iRareIndex);
+
+								if (pItem == NULL)
+									continue;
+
+								if (pItem->GetIndex() < 0)
+									continue;
+
+								int OptionType = pItem->rareOption[iBit].OptionIdx;
+								int OptionLevel = pItem->rareOption[iBit].OptionLevel;
+								m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemOptionData(++sbOption, OptionType, OptionLevel, ORIGIN_VAR_DEFAULT );
+							}
+							wCBit <<=1;
+						}						
+					}
+				}
+				//·¹¾î ¾ÆÀÌÅÛÀÌ ¾Æ´Ï¸é.....
+				else
+				{
+					LONG lOriginOptionVar = ORIGIN_VAR_DEFAULT;
+
+					for( SBYTE sbOption = 0; sbOption < sbOptionCount; sbOption++ )
+					{
+						(*istr) >> sbOptionType;
+						(*istr) >> lOptionLevel;
+
+						if ( pItemData->GetFlag() & ITEM_FLAG_ORIGIN )
+						{
+							(*istr) >> lOriginOptionVar;
+						}
+
+						m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemOptionData( sbOption, sbOptionType, lOptionLevel, lOriginOptionVar );
+					}
+				}
+/*
+				for(int j = 0; j < sbOptionCount; j++)
+				{
+					(*istr) >> sbOptionType;
+					(*istr) >> lOptionLevel;
+					
+					m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemOptionData(j, sbOptionType, lOptionLevel);
+				}
+*/
+				
+				if ( pItemData->GetFlag() & ITEM_FLAG_ORIGIN)
+				{
+					SBYTE sbBelong, sbSkillcont;
+					LONG lSkillIndex;
+					SBYTE sbSkillLevel;
+
+					(*istr) >> sbBelong;
+					(*istr) >> sbSkillcont;
+
+					m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemBelong(sbBelong);
+
+					for (SBYTE sbSkillpos = 0; sbSkillpos < sbSkillcont; sbSkillpos++)
+					{
+						(*istr) >> lSkillIndex;
+						(*istr) >> sbSkillLevel;
+
+						m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemSkill(sbSkillpos, lSkillIndex, sbSkillLevel);
+					}
+				}
+
+				ULONG	plus2;
+				(*istr) >> plus2;
+				m_UIViewDetail.GetViewDetailBtn(Wearing).SetItemPlus2(plus2);
+				
+			}
+
+			m_UIViewDetail.SetVisible(TRUE);
+		}
+			break;
+	}
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::IsLabeled
+// Explain: [sora] ÇØ´ç Å¸ÀÔÀÇ ÀÎµ¦½º¿¡ Ç¥½ÄÀÌ ÀÖ³ª Ã¼Å©(ÀÖÀ¸¸é ÇØ´ç ¶óº§ ¹øÈ£ ¾øÀ¸¸é -1)
+//------------------------------------------------------------------------------
+int CUIParty::IsLabeled(SLONG slTargetType, SLONG slIndex)
+{
+	if( CUIManager::getSingleton()->IsCSFlagOn(CSF_EXPEDITION) == FALSE )
+		return -1;
+
+	if(slTargetType == MSG_EXPED_SETLABEL_TYPE_PC)
+	{
+		if(_pNetwork->MyCharacterInfo.index == slIndex)
+		{
+			return _pNetwork->MyCharacterInfo.slLabel;
+		}
+
+		ObjectBase* pObject = ACTORMGR()->GetObject(slIndex);
+
+		if (pObject != NULL && pObject->m_eType == eOBJ_CHARACTER)
+		{
+			CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+			return pTarget->cha_Label;
+		}
+	}
+	else // mob
+	{
+		ObjectBase* pObject = ACTORMGR()->GetObject(slIndex);
+
+		if (pObject != NULL && pObject->m_eType == eOBJ_MOB)
+		{
+			CMobTarget* pMT = static_cast< CMobTarget* >(pObject);
+
+			return pMT->mob_Label;
+		}
+	}
+
+	return -1;
+
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::ClearTargetMark
+// Explain: [sora] ÁöÁ¤µÇ¾ú´ø Ç¥½Ä ¸ğµÎ »èÁ¦
+//------------------------------------------------------------------------------
+void CUIParty::ClearTargetMark()
+{
+	// Ä³¸¯ÅÍ Á¤º¸ Ç¥½Ä »èÁ¦
+	_pNetwork->MyCharacterInfo.slLabel = -1;
+	
+	ACTORMGR()->ClearLabel();
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::SendPartyEnd
+// Explain: [sora] ÆÄÆ¼ Á¾·á ¼Û½Å
+//------------------------------------------------------------------------------
+void CUIParty::SendPartyEnd()
+{
+	if( CUIManager::getSingleton()->IsCSFlagOn(CSF_PARTY) == FALSE )
+		return;
+
+	_pNetwork->PartyEndReq();
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::SendInitInZone
+// Explain: [sora] ÀÎ´ø ÃÊ±âÈ­ Àü¼Û
+//------------------------------------------------------------------------------
+void CUIParty::SendInitInZone()
+{
+	if( CUIManager::getSingleton()->IsCSFlagOn(CSF_PARTY) == FALSE)
+		return;
+
+	_pNetwork->InitInZoneReq();
+}
+
+//------------------------------------------------------------------------------
+// CUIParty::OpenExpeditionMemberWindow
+// Explain: [sora] ¿øÁ¤´ë ¸â¹öÃ¢ OPEN & CLOSE
+//------------------------------------------------------------------------------
+void CUIParty::OpenExpeditionMemberWindow()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// º¸ÀÌ¸é ´İ±â
+	if( IsVisible() == TRUE)
+	{
+		pUIManager->RearrangeOrder(UI_PARTY, FALSE);
+		return;
+	}
+
+	for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+	{
+		if(m_UIExpGroup[i].GetMemberCount() > 0)
+			m_UIExpGroup[i].SetVisible(TRUE);
+	}
+	
+	pUIManager->RearrangeOrder(UI_PARTY, TRUE);
+}
+
+
+//------------------------------------------------------------------------------
+// CUIParty::OpenExpeditionManageWindow
+// Explain: [sora] ¿øÁ¤´ë °ü¸®Ã¢ OPEN
+//------------------------------------------------------------------------------
+void CUIParty::OpenExpeditionManageWindow()
+{
+	m_UIExpManage.SetVisible(TRUE);
+
+	CUIManager::getSingleton()->RearrangeOrder(UI_PARTY, TRUE);
+}
+
+BOOL CUIParty::IsExistOfflineMember()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->IsCSFlagOn(CSF_PARTY))
+	{
+		for( int iMem = 0; iMem < m_nMemberCount; iMem++ )
+		{
+			if(m_bOnline[iMem] == false)
+			{
+				return TRUE;
+			}
+		}
+
+		return FALSE;
+	}
+	else if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+		{
+			for(int j=0; j<EXPEDITION_MEMBER_PER_GROUP; j++)
+			{
+				if( IsExpedetionDataExist(i,j) && (!GetExpeditionMemberOnline(i,j)) )
+				{
+					return TRUE;
+				}
+			}
+
+		}
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void CUIParty::ClearPartyTarget(SLONG slTargetIndex )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->IsCSFlagOn(CSF_PARTY) ||  pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		for(int i=0; i<PARTY_MAX_MEMBER; ++i)
+		{
+			if( m_ultargetID[i] == slTargetIndex )
+			{
+				m_ultargetID[i] = 0;
+				m_sbtargetType[i] =0;
+			}
+		}
+	}
+}
+
+CTString CUIParty::GetExpeditionMemberName(int nGroup, int nPos)
+{
+	return m_ExpeditionGroup[nGroup][nPos].m_strName;
+}
+//////////////////////////////////////////////////////////////////////////

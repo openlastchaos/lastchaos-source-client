@@ -1,86 +1,135 @@
 #include "stdh.h"
-#include <Engine/Interface/UICreateChar.h>
-#include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Rendering/Render.h>
-#include <Engine/GlobalDefinition.h>
-#include <Engine/World/World.h>
+
+// Çì´õ Á¤¸®. [12/1/2009 rumist]
 #include <Engine/GameState.h>
+#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UICreateChar.h>
+#include <Engine/Ska/Render.h>
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Sound/SoundLibrary.h>
-#include <Engine/Entities/EntityClass.h>
-#include <Engine/Entities/EntityProperties.h>
-#include <Engine/Interface/UIFiltering.h>
-#include <Engine/JobInfo.h>
-#include <Engine/Math/Placement.h>
-#include <Engine/Interface/UIManager.h>
+#include <Engine/Base/KeyNames.h>
+
+
+// connie [2009/7/21] - login2
+#ifdef CHAR_EX_ROGUE	//2012/01/08 jeil EX¸ÞÀÌÁö Ãß°¡ °ü·Ã ¼öÁ¤ 
+
+	#ifdef CHAR_EX_MAGE
+		#define MAXJOB			(9)
+	#else
+		#define MAXJOB			(8)
+	#endif
+	
+#else
+
+	#ifdef CHAR_EX_MAGE
+		#define MAXJOB			(8)
+	#else
+		#define MAXJOB			(7)
+	#endif
+	
+#endif
 
 extern INDEX g_iCountry;
 
+FLOAT g_CharacterAngle[MAXJOB];
 
-#define MAXJOB	(6)
-//#define MAXJOB ((g_iCountry == GERMANY) ? 5 : 6 ) 
-
-// Character Position Marker List
 static int _aiMarkerEntities[TOTAL_JOB] =
 {
-	3381,		// Titan
-	3383,		// Knight
-	3411,		// Healer
-	3382,		// Mage	
-	3952,		// Rogue	
-	3954,		// Sorcerer
+
+	43773,		// Titan
+	43774,		// Knight
+	43775,		// Healer
+	43776,		// Mage	
+	43777,		// Rogue	
+	43778,		// Sorcerer
+	43779,		// KnightShadow
+
+#ifdef CHAR_EX_ROGUE
+	43835,		// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+#endif
+#ifdef CHAR_EX_MAGE
+	43841,			// 2012/01/08 jeil EX¸ÞÀÌÁö °ü·Ã Ãß°¡ ¹«¾ùÀ» ÀÇ¹ÌÇÏ´ÂÁö Àß¸ô¶ó¼­ ³ªÁß¿¡ Ãß°¡ ¼öÁ¤ -> ¿ùµåÆÄÀÏÀÇ µ¥ÀÌÅÍ°ªÀ» º¸°í ¼öÁ¤ ¿¹Á¤ 
+#endif
 };
 
 static int _aiBasicWearing[TOTAL_JOB][6] =
 {
 	{			// TITAN
-		2,		// ìƒì˜
-		12,		// ì¹¼
-		3,		// í•˜ì˜
-		-1,		// ë°©íŒ¨
-		4,		// ìž¥ê°‘
-		8,		// ë¶€ì¸ 		
+		2,		// »óÀÇ
+		12,		// Ä®
+		3,		// ÇÏÀÇ
+		-1,		// ¹æÆÐ
+		4,		// Àå°©
+		8,		// ºÎÃ÷		
 	},
 	{			// KNIGHT
-		34,		// ìƒì˜
-		48,		// ì¹¼
-		38,		// í•˜ì˜
-		49,		// ë°©íŒ¨
-		39,		// ìž¥ê°‘
-		41,		// ë¶€ì¸ 
+		34,		// »óÀÇ
+		48,		// Ä®
+		38,		// ÇÏÀÇ
+		49,		// ¹æÆÐ
+		39,		// Àå°©
+		41,		// ºÎÃ÷
 	},
 	{			// HEALER
-		26,		// ìƒì˜
-		50,		// í™œ
-		28,		// í•˜ì˜
-		-1,		// ë°©íŒ¨
-		30,		// ìž¥ê°‘
-		32,		// ë¶€ì¸ 		
+		26,		// »óÀÇ
+		50,		// È°
+		28,		// ÇÏÀÇ
+		-1,		// ¹æÆÐ
+		30,		// Àå°©
+		32,		// ºÎÃ÷		
 	},
 	{			// MAGE
-		266,	// ìƒì˜
-		356,	// ì¹¼
-		18,		// í•˜ì˜
-		-1,		// ë°©íŒ¨
-		22,		// ìž¥ê°‘
-		20,		// ë¶€ì¸ 				
+		266,	// »óÀÇ
+		356,	// Ä®
+		18,		// ÇÏÀÇ
+		-1,		// ¹æÆÐ
+		22,		// Àå°©
+		20,		// ºÎÃ÷				
 	},
 	{			// ROGUE
-		524,	// ìƒì˜
-		528,	// ì¹¼
-		525,	// í•˜ì˜
-		-1,		// ë°©íŒ¨
-		527,	// ìž¥ê°‘
-		526,	// ë¶€ì¸ 
+		524,	// »óÀÇ
+		528,	// Ä®
+		525,	// ÇÏÀÇ
+		-1,		// ¹æÆÐ
+		527,	// Àå°©
+		526,	// ºÎÃ÷
 	},
 	{			// SORCERER
-		1000,	// ìƒì˜
-		976,	// ì¹¼
-		1010,	// í•˜ì˜
-		-1,		// ë°©íŒ¨
-		1020,	// ìž¥ê°‘
-		1030,	// ë¶€ì¸ 
+		1000,	// »óÀÇ
+		976,	// Ä®
+		1010,	// ÇÏÀÇ
+		-1,	// ¹æÆÐ
+		1020,	// Àå°©
+		1030,	// ºÎÃ÷
 	},
+	{			//KnightShadow
+		4487,	//»óÀÇ
+		4474,	//Ä® 
+		4500,	//ÇÏÀÇ
+		-1,		//¹æÆÐ
+		4513,	//Àå°© 
+		4526,	//ºÎÃ÷		
+	},
+#ifdef CHAR_EX_ROGUE
+	{			// EX_ROGUE	// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+		9209,	// »óÀÇ
+		528,	// Ä®
+		9210,	// ÇÏÀÇ
+		-1,		// ¹æÆÐ
+		9211,	// Àå°©
+		9212,	// ºÎÃ÷
+	},
+#endif
+#ifdef CHAR_EX_MAGE	//2013/01/08 jeil EX¸ÞÀÌÁö Ãß°¡ ¹«¾ùÀ» ÀÇ¹ÌÇÏ´ÂÁö ¸ô¶ó¼­ ³ªÁß¿¡ Ãß°¡ ¼öÁ¤ ÇÊ¿ä -> ±âÈ¹¼­¿¡´Â Åõ±¸±îÁö ÀÖ´Â´ë ÅõÄí´Â ¾îµð¿¡ Ãß°¡? -> ÄÉ¸¯ÅÍ »ý¼ºÃ¢¿¡ ÄÉ¸¯ÅÍ°¡ ÀÔ°í ÀÖ´Â Àåºñ¸¦ º¸¿©ÁÖ´Â °÷  
+	{
+		9343,	// »óÀÇ
+		356,	// Ä®
+		9344,	// ÇÏÀÇ
+		-1,		// ¹æÆÐ
+		9345,	// Àå°©
+		9346,	// ºÎÃ÷
+	},
+#endif
 };
 
 
@@ -104,7 +153,9 @@ m_sbSelectedFace(0),
 m_iSelectedColor(0),
 m_nCurInfoLines(0),
 m_bAutoRotate(FALSE),
-m_pWorld(NULL)
+m_pWorld(NULL),
+m_bIsShowMessageInfo(FALSE),
+m_ptdMsgTexture(NULL)
 {
 }
 
@@ -114,7 +165,7 @@ m_pWorld(NULL)
 // ----------------------------------------------------------------------------
 CUICreateChar::~CUICreateChar()
 {
-	Destroy();
+	STOCK_RELEASE(m_ptdMsgTexture);
 }
 
 // ----------------------------------------------------------------------------
@@ -123,9 +174,7 @@ CUICreateChar::~CUICreateChar()
 // ----------------------------------------------------------------------------
 void CUICreateChar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	_iMaxCharInfoChar = MAX_CHARINFO_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
@@ -139,14 +188,14 @@ void CUICreateChar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	m_rtCharInfoBottom.SetUV( 0, 390, 255, 393, fTexWidth, fTexHeight );
 
 	// OK Button(Create character)
-	m_btnOK.Create( this, _S( 138, "ê²°ì •" ), 0, 0, 63, 21 );
+	m_btnOK.Create( this, _S( 138, "°áÁ¤" ), 0, 0, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 397, 63, 418, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 397, 129, 418, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON ); 
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Back Button
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), 0, 0, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), 0, 0, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 397, 63, 418, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 397, 129, 418, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -241,20 +290,41 @@ void CUICreateChar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	m_ebCharName.SetReadingWindowUV( 34, 423, 51, 439, fTexWidth, fTexHeight );
 	m_ebCharName.SetCandidateUV( 34, 423, 51, 439, fTexWidth, fTexHeight );
 	m_ebCharName.SetFocus( TRUE );
+	// [2011/11/02 : Sora] Ä¿¼­ ÀÌµ¿ ºÒ°¡ÇÃ·¡±×
+	m_ebCharName.SetCursorMove( FALSE );
 
 	// Description of character
-	m_astrDescription[0] = _S( 129, " ê²‰ë³´ê¸°ì—ëŠ” ë‹¤ì†Œ ë©ì¹˜ í° ì‚¬ëžŒì²˜ëŸ¼ ë³´ì¼ ìˆ˜ ìžˆìœ¼ë‚˜, ê²‰ëª¨ìŠµìœ¼ë¡œëŠ” ìƒìƒí•  ìˆ˜ ì—†ì„ ì •ë„ì˜ ì—„ì²­ë‚œ ê´´ë ¥, ì²´ë ¥ê³¼ í•¨ê»˜ ì „íˆ¬ ìƒí™©ì— ëŒ€í•œ ê¸°ë¯¼í•œ íŒë‹¨ë ¥ê¹Œì§€ ì§€ë‹ˆê³  ìžˆëŠ” íƒ€ê³ ë‚œ ì „ì‚¬." );
-	m_astrDescription[1] = _S( 130, "ìžì‹ ì˜ íž˜ì„ ê¸°ë¥´ê³  ìœ¡ì²´ë¥¼ ë‹¨ë ¨í•˜ëŠ” ê²ƒì„ ì‚¶ì˜ ëª©í‘œë¡œ ì—¬ê¸°ê³  ìžˆìœ¼ë©° ëª©ìˆ¨ì´ ì™”ë‹¤ê°”ë‹¤ ê±°ë¦¬ëŠ” ì „ìž¥ì„ ìµœê³ ì˜ ë‹¨ë ¨ìž¥ì†Œë¼ ì—¬ê¸°ê³  ëŠìž„ì—†ëŠ” ì „íˆ¬ë¥¼ ì¦ê¸°ë©° ì‚´ì•„ê°€ëŠ” ì‚¶ì„ ë³´ë‚¸ë‹¤." );
-	m_astrDescription[2] = _S( 131, " ë¹›ì˜ ì‹ ì„ ëª¨ì‹œëŠ” ì„±ìŠ¤ëŸ¬ìš´ ê¸°ì‚¬ë¡œ ë‹¨ìˆœížˆ ë¬´ì—‡ë³´ë‹¤ ì•…ìœ¼ë¡œ ë¬¼ë“¤ì–´ê°€ëŠ” í˜¼ëˆì˜ ì‹œëŒ€ë¥¼ ì‚´ì•„ê°€ê¸° ìœ„í•´ì„œë§Œì´ ì•„ë‹Œ ìžì‹ ì˜ ëª…ì˜ˆì™€ ì†Œì¤‘ížˆ ì—¬ê¸°ëŠ” ê²ƒì„ ì§€í‚¤ê¸° ìœ„í•´ ê³„ì† ë‹¨ë ¨í•˜ëŠ” ì¡´ìž¬." );
-	m_astrDescription[3] = _S( 132, "ìžì‹ ì„ í¬í•¨í•œ ì£¼ë³€ì˜ ë™ë£Œë“¤ì˜ ìƒí™©ì„ ì–¸ì œë‚˜ ë³´í˜¸í•˜ë©´ì„œ ì‹¸ìš°ëŠ” ì „ë²•ì„ ì‚¬ìš©í•˜ê¸°ì— ê³µê²© ê¸°ìˆ  ì´ìƒê°€ëŠ” ë‹¤ì–‘í•œ ë°©ì–´ê¸°ìˆ ì„ ì§€ë‹ˆê³  ìžˆìœ¼ë©° ì´ë¥¼ í™œìš©í•˜ì—¬ ì „íˆ¬ë¥¼ í•­ìƒ ìŠ¹ë¦¬ë¡œ ì´ëˆë‹¤." );
-	m_astrDescription[4] = _S( 133, " ì •ë ¹ì˜ íž˜ì„ ì´ìš©í•˜ì—¬ ë‹¤ì–‘í•œ íšŒë³µ, ì¹˜ìœ ì— ê´€ë ¨ëœ ì˜¨í™”í•œ ë§ˆë²•ì„ ì‚¬ìš©í•˜ëŠ” ê²ƒì´ íŠ¹ê¸°ì¸ í•˜ì´ì—˜í”„ ížëŸ¬ëŠ” ì „íˆ¬ ì¤‘ ìƒì²˜ë¥¼ ìž…ì€ ë™ë£Œì™€ ìžì—°ì„ ì¹˜ìœ í•˜ëŠ” ë‚˜ë‚ ì„ ë³´ë‚´ê³  ìžˆë‹¤." );
-	m_astrDescription[5] = _S( 134, "ì ‘ê·¼ì „ì„ ì¢‹ì•„í•˜ì§€ ì•ŠëŠ” ê·¸ë“¤ì€ ì£¼ë¡œ í™œì„ ì‚¬ìš©í•˜ì—¬ ì›ê±°ë¦¬ë¡œë¶€í„° ì „íˆ¬ë¥¼ ì§€ì›í•˜ëŠ”ë° ë°”ëžŒì˜ ì •ë ¹ì—ê²Œ ë„ì›€ì„ ë°›ê¸° ë•Œë¬¸ì¸ì§€ ì—¬ëŠ ìˆ™ë ¨ëœ ê¶ìˆ˜ì— ëª»ì§€ ì•ŠëŠ” ê°•ë ¥í•¨ì„ ì§€ë‹Œë‹¤." );
-	m_astrDescription[6] = _S( 449, "ì •ë ¹ì˜ ê°€í˜¸ë¥¼ ë°›ê³  ìžˆëŠ” ì—˜í”„ë“¤ê³¼ ë‹¬ë¦¬ ìžì‹  ìŠ¤ìŠ¤ë¡œì˜ ë…¸ë ¥ì— ì˜í•´ ìŠµë“í•œ ì§€ì‹ì— ì˜í•´ ë§ˆë‚˜ì˜ íë¦„ì„ í†µì œí•˜ê³  ì´ë¥¼ ì‘ìš©í•˜ì—¬ ìžìœ ë¡­ê²Œ ì‚¬ìš©í•˜ëŠ” ìžë“¤ì´ ì´ë“¤ ë©”ì´ì§€ì´ë‹¤. " );
-	m_astrDescription[7] = _S( 450, "í­ë°œì ì¸ ìœ„ë ¥ì„ ìžëž‘í•˜ëŠ” ê³µê²© ë§ˆë²•ê³¼ ìƒëŒ€ë¥¼ í˜¼ëž€ì‹œí‚¤ëŠ” ì €ì£¼ ë§ˆë²•ì„ ì£¼ íŠ¹ê¸°ë¡œ ì‚¬ìš©í•˜ëŠ” ë©”ì´ì§€ëŠ” ê·¸ì—ê²Œ ì ëŒ€í•˜ëŠ” ìƒëŒ€ë¥¼ ì „ë©¸, ì œê±°í•˜ëŠ”ë° ê·¸ íž˜ì„ ì•„ë¼ì§€ ì•Šê³  ì‚¬ìš©í•œë‹¤. " );
-	m_astrDescription[8] = _S( 1025, "ë¬´ì—‡ì—ë„ ì–½ë§¤ì´ì§€ ì•Šê³  ë°”ëžŒë³´ë‹¤ë„ ìžìœ ë¡­ê²Œ ì‚´ì•„ê°€ëŠ” ì¡´ìž¬. ì •ë ¹ ì‹¤í”„ì˜ ì¶•ë³µì„ ë°›ì•„ íƒœì–´ë‚œ ì´ë“¤ì€ ë§¤ìš° ë¹ ë¥¸ ëª¸ë†€ë¦¼ê³¼ ë›°ì–´ë‚œ ì‹œì•¼ë¥¼ ì§€ë‹ˆë©° ê·¸ì™€ í•¨ê»˜ ìžìœ ë¶„ë°©í•œ ì‚¬ê³ ë°©ì‹ê³¼ ì—¬í–‰ì„ ì¢‹ì•„í•˜ëŠ” ì„±ê²©ì„ íƒ€ê³ ë‚¬ë‹¤ê³  ì „í•´ì§„ë‹¤." );		
-	m_astrDescription[9] = _S( 1026, "ë¹ ë¥¸ ëª¸ë†€ë¦¼ê³¼ ì‹œì•¼ë¥¼ í™œìš©í•  ìˆ˜ ìžˆëŠ” ë‹¨ê²€ê³¼ ì„ê¶ì„ ì£¼ë¡œ ì‚¬ìš©í•˜ëŠ” ë¡œê·¸ëŠ” ë‚®ì€ ì²´ë ¥ì„ ì»¤ë²„í•˜ê¸° ìœ„í•´ ê³µê²© í•˜ë‚˜í•˜ë‚˜ë¥¼ ì ì˜ ì•½ì ì„ ë…¸ë ¤ ì¹˜ëª…ìƒì„ ìž…ížˆê±°ë‚˜ ì›ê±°ë¦¬ì—ì„œ ì ì— ëŒ€í•´ ì•„êµ°ì„ ì„œí¬íŠ¸í•˜ëŠ” ê²ƒì— ì£¼ë ¥í•œë‹¤." );	
-	m_astrDescription[10] = _S( 1027, "ì¹˜ìœ ë¥¼ ë‹´ë‹¹í•˜ëŠ” í•˜ì´ì—˜í”„ ížëŸ¬ì™€ ë‹¬ë¦¬ í•˜ì´ì—˜í”„ ì†Œì„œëŸ¬ëŠ” ìžì—°ì„ ìƒì²˜ ìž…ížˆê±°ë‚˜ ê·¸ë“¤ì˜ ê³„ìœ¨ì„ ì–´ê¸°ëŠ” ìžì— ëŒ€í•´ ê°•ë ¥í•œ ë§ˆë²•ìœ¼ë¡œ ì œìž¬ë¥¼ ê°€í•˜ëŠ” ì—­í• ì„ ë§¡ê³  ìžˆë‹¤." );	
-	m_astrDescription[11] = _S( 1028, "ìžì—° ìƒì˜ ë§ˆë‚˜ë¥¼ ì—ë„ˆì§€ì˜ í˜•íƒœë¡œ ë³€í™˜ì‹œì¼œ ì‚¬ìš©í•˜ëŠ” ë©”ì´ì§€ì™€ ë‹¬ë¦¬ ì†Œì„œëŸ¬ëŠ” 4ëŒ€ ì •ë ¹ì˜ íž˜ì„ ë¹Œì€ ê°•ë ¥í•œ 4ëŒ€ ì†ì„±ì˜ ë§ˆë²•ì„ ì‚¬ìš©í•œë‹¤." );	
+	m_astrDescription[0] = _S( 129, " °Ñº¸±â¿¡´Â ´Ù¼Ò µ¢Ä¡ Å« »ç¶÷Ã³·³ º¸ÀÏ ¼ö ÀÖÀ¸³ª, °Ñ¸ð½ÀÀ¸·Î´Â »ó»óÇÒ ¼ö ¾øÀ» Á¤µµÀÇ ¾öÃ»³­ ±«·Â, Ã¼·Â°ú ÇÔ²² ÀüÅõ »óÈ²¿¡ ´ëÇÑ ±â¹ÎÇÑ ÆÇ´Ü·Â±îÁö Áö´Ï°í ÀÖ´Â Å¸°í³­ Àü»ç." );
+	m_astrDescription[1] = _S( 130, "ÀÚ½ÅÀÇ ÈûÀ» ±â¸£°í À°Ã¼¸¦ ´Ü·ÃÇÏ´Â °ÍÀ» »îÀÇ ¸ñÇ¥·Î ¿©±â°í ÀÖÀ¸¸ç ¸ñ¼ûÀÌ ¿Ô´Ù°¬´Ù °Å¸®´Â ÀüÀåÀ» ÃÖ°íÀÇ ´Ü·ÃÀå¼Ò¶ó ¿©±â°í ²÷ÀÓ¾ø´Â ÀüÅõ¸¦ Áñ±â¸ç »ì¾Æ°¡´Â »îÀ» º¸³½´Ù." );
+	m_astrDescription[2] = _S( 131, " ºûÀÇ ½ÅÀ» ¸ð½Ã´Â ¼º½º·¯¿î ±â»ç·Î ´Ü¼øÈ÷ ¹«¾ùº¸´Ù ¾ÇÀ¸·Î ¹°µé¾î°¡´Â È¥µ·ÀÇ ½Ã´ë¸¦ »ì¾Æ°¡±â À§ÇØ¼­¸¸ÀÌ ¾Æ´Ñ ÀÚ½ÅÀÇ ¸í¿¹¿Í ¼ÒÁßÈ÷ ¿©±â´Â °ÍÀ» ÁöÅ°±â À§ÇØ °è¼Ó ´Ü·ÃÇÏ´Â Á¸Àç." );
+	m_astrDescription[3] = _S( 132, "ÀÚ½ÅÀ» Æ÷ÇÔÇÑ ÁÖº¯ÀÇ µ¿·áµéÀÇ »óÈ²À» ¾ðÁ¦³ª º¸È£ÇÏ¸é¼­ ½Î¿ì´Â Àü¹ýÀ» »ç¿ëÇÏ±â¿¡ °ø°Ý ±â¼ú ÀÌ»ó°¡´Â ´Ù¾çÇÑ ¹æ¾î±â¼úÀ» Áö´Ï°í ÀÖÀ¸¸ç ÀÌ¸¦ È°¿ëÇÏ¿© ÀüÅõ¸¦ Ç×»ó ½Â¸®·Î ÀÌ²ö´Ù." );
+	m_astrDescription[4] = _S( 133, " Á¤·ÉÀÇ ÈûÀ» ÀÌ¿ëÇÏ¿© ´Ù¾çÇÑ È¸º¹, Ä¡À¯¿¡ °ü·ÃµÈ ¿ÂÈ­ÇÑ ¸¶¹ýÀ» »ç¿ëÇÏ´Â °ÍÀÌ Æ¯±âÀÎ ÇÏÀÌ¿¤ÇÁ Èú·¯´Â ÀüÅõ Áß »óÃ³¸¦ ÀÔÀº µ¿·á¿Í ÀÚ¿¬À» Ä¡À¯ÇÏ´Â ³ª³¯À» º¸³»°í ÀÖ´Ù." );
+	m_astrDescription[5] = _S( 134, "Á¢±ÙÀüÀ» ÁÁ¾ÆÇÏÁö ¾Ê´Â ±×µéÀº ÁÖ·Î È°À» »ç¿ëÇÏ¿© ¿ø°Å¸®·ÎºÎÅÍ ÀüÅõ¸¦ Áö¿øÇÏ´Âµ¥ ¹Ù¶÷ÀÇ Á¤·É¿¡°Ô µµ¿òÀ» ¹Þ±â ¶§¹®ÀÎÁö ¿©´À ¼÷·ÃµÈ ±Ã¼ö¿¡ ¸øÁö ¾Ê´Â °­·ÂÇÔÀ» Áö´Ñ´Ù." );
+	m_astrDescription[6] = _S( 449, "Á¤·ÉÀÇ °¡È£¸¦ ¹Þ°í ÀÖ´Â ¿¤ÇÁµé°ú ´Þ¸® ÀÚ½Å ½º½º·ÎÀÇ ³ë·Â¿¡ ÀÇÇØ ½ÀµæÇÑ Áö½Ä¿¡ ÀÇÇØ ¸¶³ªÀÇ Èå¸§À» ÅëÁ¦ÇÏ°í ÀÌ¸¦ ÀÀ¿ëÇÏ¿© ÀÚÀ¯·Ó°Ô »ç¿ëÇÏ´Â ÀÚµéÀÌ ÀÌµé ¸ÞÀÌÁöÀÌ´Ù. " );
+	m_astrDescription[7] = _S( 450, "Æø¹ßÀûÀÎ À§·ÂÀ» ÀÚ¶ûÇÏ´Â °ø°Ý ¸¶¹ý°ú »ó´ë¸¦ È¥¶õ½ÃÅ°´Â ÀúÁÖ ¸¶¹ýÀ» ÁÖ Æ¯±â·Î »ç¿ëÇÏ´Â ¸ÞÀÌÁö´Â ±×¿¡°Ô Àû´ëÇÏ´Â »ó´ë¸¦ Àü¸ê, Á¦°ÅÇÏ´Âµ¥ ±× ÈûÀ» ¾Æ³¢Áö ¾Ê°í »ç¿ëÇÑ´Ù. " );
+	m_astrDescription[8] = _S( 1025, "¹«¾ù¿¡µµ ¾ô¸ÅÀÌÁö ¾Ê°í ¹Ù¶÷º¸´Ùµµ ÀÚÀ¯·Ó°Ô »ì¾Æ°¡´Â Á¸Àç. Á¤·É ½ÇÇÁÀÇ Ãàº¹À» ¹Þ¾Æ ÅÂ¾î³­ ÀÌµéÀº ¸Å¿ì ºü¸¥ ¸ö³î¸²°ú ¶Ù¾î³­ ½Ã¾ß¸¦ Áö´Ï¸ç ±×¿Í ÇÔ²² ÀÚÀ¯ºÐ¹æÇÑ »ç°í¹æ½Ä°ú ¿©ÇàÀ» ÁÁ¾ÆÇÏ´Â ¼º°ÝÀ» Å¸°í³µ´Ù°í ÀüÇØÁø´Ù." );		
+	m_astrDescription[9] = _S( 1026, "ºü¸¥ ¸ö³î¸²°ú ½Ã¾ß¸¦ È°¿ëÇÒ ¼ö ÀÖ´Â ´Ü°Ë°ú ¼®±ÃÀ» ÁÖ·Î »ç¿ëÇÏ´Â ·Î±×´Â ³·Àº Ã¼·ÂÀ» Ä¿¹öÇÏ±â À§ÇØ °ø°Ý ÇÏ³ªÇÏ³ª¸¦ ÀûÀÇ ¾àÁ¡À» ³ë·Á Ä¡¸í»óÀ» ÀÔÈ÷°Å³ª ¿ø°Å¸®¿¡¼­ Àû¿¡ ´ëÇØ ¾Æ±ºÀ» ¼­Æ÷Æ®ÇÏ´Â °Í¿¡ ÁÖ·ÂÇÑ´Ù." );	
+	m_astrDescription[10] = _S( 1027, "Ä¡À¯¸¦ ´ã´çÇÏ´Â ÇÏÀÌ¿¤ÇÁ Èú·¯¿Í ´Þ¸® ÇÏÀÌ¿¤ÇÁ ¼Ò¼­·¯´Â ÀÚ¿¬À» »óÃ³ ÀÔÈ÷°Å³ª ±×µéÀÇ °èÀ²À» ¾î±â´Â ÀÚ¿¡ ´ëÇØ °­·ÂÇÑ ¸¶¹ýÀ¸·Î Á¦Àç¸¦ °¡ÇÏ´Â ¿ªÇÒÀ» ¸Ã°í ÀÖ´Ù." );	
+	m_astrDescription[11] = _S( 1028, "ÀÚ¿¬ »óÀÇ ¸¶³ª¸¦ ¿¡³ÊÁöÀÇ ÇüÅÂ·Î º¯È¯½ÃÄÑ »ç¿ëÇÏ´Â ¸ÞÀÌÁö¿Í ´Þ¸® ¼Ò¼­·¯´Â 4´ë Á¤·ÉÀÇ ÈûÀ» ºôÀº °­·ÂÇÑ 4´ë ¼Ó¼ºÀÇ ¸¶¹ýÀ» »ç¿ëÇÑ´Ù." );
+	m_astrDescription[12] = _S( 4698, "Àû¿¡°Ô °­·ÂÇÑ ¾ÏÈæ °ø°Ý¸¶¹ýÀ¸·Î Á÷Á¢ ÇÇÇØ¸¦ ÀÔÇô Á¦¾ÐÇÏ´Â ÀüÅõÇü ¸¶¹ý»çÀÌ´Ù. ±âÁ¸ ¸¶¹ý»ç °è¿­º¸´Ù ºü¸¥ ¿¬»ç·ÂÀ» Áö´Ï°í ÀÖÀ¸¸ç, °ø°Ý ¸¶¹ý°ú ÇÔ²² Àû¿¡°Ô ÀúÁÖ¸¦ °°ÀÌ °É¾î¹ö¸®±âµµ ÇÑ´Ù.");
+	m_astrDescription[13] = _S( 4699, "¹«¾ùº¸´Ù ³ªÀÌÆ®½¦µµ¿ì´Â ÀûÀÇ ¿µÈ¥À» Èí¼öÇÏ°í Èí¼öÇÑ ¿µÈ¥À» ÀÌ¿ëÇØ °­·ÂÇÑ ¿¬°è ¸¶¹ýÀ» »ç¿ëÇÑ´Ù. ¶ó½ºÆ®Ä«¿À½ºÀÇ Ã¹¹øÂ° ¿µ¿õ Å¬·¡½º·Î 90·¹º§ ÀÌ»ó Ä³¸¯ÅÍ¸¦ ¼ÒÀ¯ÇÑ °èÁ¤¿¡ ÇÑÇØ¼­ »ý¼ºÀÌ °¡´ÉÇÏ´Ù.");
+#ifdef CHAR_EX_ROGUE
+	m_astrDescription[14] = _S( 1025, "¹«¾ù¿¡µµ ¾ô¸ÅÀÌÁö ¾Ê°í ¹Ù¶÷º¸´Ùµµ ÀÚÀ¯·Ó°Ô »ì¾Æ°¡´Â Á¸Àç. Á¤·É ½ÇÇÁÀÇ Ãàº¹À» ¹Þ¾Æ ÅÂ¾î³­ ÀÌµéÀº ¸Å¿ì ºü¸¥ ¸ö³î¸²°ú ¶Ù¾î³­ ½Ã¾ß¸¦ Áö´Ï¸ç ±×¿Í ÇÔ²² ÀÚÀ¯ºÐ¹æÇÑ »ç°í¹æ½Ä°ú ¿©ÇàÀ» ÁÁ¾ÆÇÏ´Â ¼º°ÝÀ» Å¸°í³µ´Ù°í ÀüÇØÁø´Ù." );		// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+	m_astrDescription[15] = _S( 5733, "·Î±× Áß¿¡¼­ ¾îµÒÀÇ ±â¿îÀ» ¾ò°ÔµÈ Æ¯¼öÇÑ ·Î±×µéÀº »ç¾ÇÇÑ ÈûÀ» ÀÌ¿ëÇÏ¿© Àû¿¡°Ô ÇÇÇØ¸¦ ÀÔÈ÷°Å³ª ¾Æ±ºÀ» º¸È£ÇÒ ¼ö ÀÖÀ¸¸ç, ´Ù¾çÇÑ ÇÔÁ¤À» ¼³Ä¡ÇÏ¿© ÀûÀ» ±³¶õ½ÃÅ°´Â µîÀÇ ÀüÅõ¸¦ ÆîÄ£´Ù." );	// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+#endif
+#ifdef CHAR_EX_MAGE
+		//2013/01/08 jeil EX¸ÞÀÌÁö Ãß°¡ ½ºÆ®¸µ ³ª¿À¸é Ãß°¡ ¼öÁ¤ ÇÊ¿ä 
+	m_astrDescription[16] = _S( 449, "Á¤·ÉÀÇ °¡È£¸¦ ¹Þ°í ÀÖ´Â ¿¤ÇÁµé°ú ´Þ¸® ÀÚ½Å ½º½º·ÎÀÇ ³ë·Â¿¡ ÀÇÇØ ½ÀµæÇÑ Áö½Ä¿¡ ÀÇÇØ ¸¶³ªÀÇ Èå¸§À» ÅëÁ¦ÇÏ°í ÀÌ¸¦ ÀÀ¿ëÇÏ¿© ÀÚÀ¯·Ó°Ô »ç¿ëÇÏ´Â ÀÚµéÀÌ ÀÌµé ¸ÞÀÌÁöÀÌ´Ù. " );
+	m_astrDescription[17] = _S( 5821, "¾ÆÅ©¸ÞÀÌÁö´Â ¸ÞÀÌÁö¿Í ´Ù¸£°Ô ¼ø¼öÇÑ ¸¶¹ýÀ» »ç¿ëÇÏ´Â ¹é¸¶¹ý»ç·Î, ÇÐ¹®ÀûÀÎ °üÁ¡¿¡¼­ÀÇ ¸¶¹ýÀ» ¿¬±¸ÇÑ´Ù. °¡Àå ±âº»ÀûÀÌ¸é¼­µµ °ø°ÝÀûÀÎ ¼Ó¼º ¸¶¹ýÀ» ÀÚÀ¯·Ó°Ô ´Ù·ê ¼ö ÀÖÀ¸¸ç Àû´ëÇÏ´Â »ó´ë¸¦ Àü¸ê, Á¦°ÅÇÏ´Âµ¥´Â °áÄÚ ÁÖÀúÇÔÀÌ ¾ø´Ù." );
+
+#endif
+
+	m_ptdMsgTexture = CreateTexture( CTString( "Data\\Interface\\TopUI.tex" ) );
+	m_rcMessageInfo.SetRect( 20, 40, 215, 102 );
+	m_bxNoticeMsg.SetBoxUV(m_ptdMsgTexture,7,WRect(239,253,335,269));
+
+	m_msgNCText.SetRenderRect( 20, 45, 187, 62 );
+	m_msgNCText.AddString( _S(4794, "³ªÀÌÆ®½¦µµ¿ì Ä³¸¯ÅÍ¸¦ »ý¼ºÇÒ ¼ö ÀÖ´Â Á¶°ÇÀ» ¸¸Á·ÇÏ¿´½À´Ï´Ù. ³ªÀÌÆ®½¦µµ¿ì Ä³¸¯ÅÍ¸¦ »ý¼ºÇÏ¿© À°¼ºÇÏ½Ê½Ã¿À." ) );
 }
 
 // ----------------------------------------------------------------------------
@@ -326,55 +396,28 @@ void CUICreateChar::Reset()
 
 	m_ebCharName.ResetString();
 
-	// ì¹´ë©”ë¼ ì„¤ì •, ìºë¦­í„° ìœ„ì¹˜ ì„¤ì •.	
+	// Ä«¸Þ¶ó ¼³Á¤, Ä³¸¯ÅÍ À§Ä¡ ¼³Á¤.	
 	for(int i = 0; i < MAXJOB; ++i)
 	{
 		const int iMarker			= _aiMarkerEntities[i];
 		CEntity *penMarker			= m_pWorld->EntityFromID(iMarker);	
 		penMarker->SetSkaModel(JobInfo().GetFileName(i));
+		g_CharacterAngle[i] = penMarker->GetPlacement().pl_OrientationAngle(1);
 		
 		CModelInstance* pMI	= penMarker->GetModelInstance();
 		if(pMI)
 		{		
-			INDEX idAttackIdle		= ska_GetIDFromStringTable( JobInfo().GetAnimationName( i, ANIM_IDLE ) );
+			INDEX idAttackIdle = ska_GetIDFromStringTable( JobInfo().GetAnimationName( i, ANIM_IDLE ) );
 			pMI->AddAnimation(idAttackIdle, AN_LOOPING|AN_NORESTART|AN_CLEAR, 1, 0);
 		}
 	}
 	
-	if(g_iCountry == BRAZIL) 
+#if defined(G_BRAZIL) 
 		CharWearing();
-
+#endif
 	ChangeSelJob();
-}
 
-// ë¸Œë¼ì§ˆ ìºë¦­ìƒì„±ì‹œ ì˜·ìž…ížˆê¸°
-void CUICreateChar::CharWearing()
-{
-	for(int i = 0 ; i < MAXJOB; ++i)
-	{
-		// ì¹´ë©”ë¼ ì„¤ì •, ìºë¦­í„° ìœ„ì¹˜ ì„¤ì •.	
-		const int iMarker			= _aiMarkerEntities[i];
-		CEntity *penMarker			= m_pWorld->EntityFromID(iMarker);	
-		
-		CModelInstance* pMI	= penMarker->GetModelInstance();
-		
-		// ìŠ¬ë¡¯ì˜ ìºë¦­í„°ì— ìž¥ë¹„ë¥¼ ìž¥ì°©í•œ ëª¨ìŠµì„ ë³´ì—¬ì¤˜ì•¼ í•˜ëŠ” ë¶€ë¶„...
-		// ìƒì˜ ë¬´ê¸° í•˜ì˜ ë°©íŒ¨ ìž¥ê°‘ ì‹ ë°œ
-		if(pMI)
-		{
-			
-			for(int j = 0; j < 6; ++j)
-			{
-				const SLONG lWear = _aiBasicWearing[i][j];
-				if(lWear > 0)
-				{
-					CItemData &ID = _pNetwork->GetItemData(lWear);
-					_pGameState->DeleteDefaultArmor(pMI, ID.GetWearingPosition(), i);
-					_pGameState->WearingArmor(pMI, ID);					
-				}
-			}
-		}
-	}
+	m_bIsShowMessageInfo = _pGameState->IsCreatableNightShadow();
 }
 
 // ----------------------------------------------------------------------------
@@ -384,38 +427,20 @@ void CUICreateChar::CharWearing()
 void CUICreateChar::Render()
 {	
 	extern INDEX	sam_bWideScreen;
-	CDrawPort		*pdp = _pUIMgr->GetDrawPort();
-
-	// ìºë¦­í„°ì˜ ìœ„ì¹˜ ì„¤ì •.
-	//if(m_pCurChar)
-	//{
-		//CPlacement3D plCharacter = m_plChar;
-		/*
-		// ëª¨ë¸ì„ ë Œë”ë§í•¨.	
-		CTimerValue tvNow   = _pTimer->GetHighPrecisionTimer();
-		extern FLOAT sam_fPlayerOffset;	
-		//pl.pl_OrientationAngle	= ANGLE3D(6.0f * tvNow.GetSeconds(), 0.0f, 0.0f);
-		//pl.pl_PositionVector	= FLOAT3D(-1.0f, -1.0f, 0.0f);
-		*/
-		//if(m_bAutoRotate)
-		//{
-			//plCharacter.pl_OrientationAngle(1) += m_fRotDelta;
-		//}
-		//m_pCurChar->SetPlacement(plCharacter);
-		//}
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// Set create character textire
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 	// Character information
 	// Top
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfo.Left, m_rcCharInfo.Top,
+	pDrawPort->AddTexture( m_rcCharInfo.Left, m_rcCharInfo.Top,
 										m_rcCharInfo.Right, m_rcCharInfo.Top + CREATECHAR_INFO_HEIGHT,
 										m_rtCharInfoTop.U0, m_rtCharInfoTop.V0,
 										m_rtCharInfoTop.U1, m_rtCharInfoTop.V1,
 										0xFFFFFFFF );
 	// Bottom
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfo.Left, m_rcCharInfo.Top + CREATECHAR_INFO_HEIGHT,
+	pDrawPort->AddTexture( m_rcCharInfo.Left, m_rcCharInfo.Top + CREATECHAR_INFO_HEIGHT,
 										m_rcCharInfo.Right, m_rcCharInfo.Bottom,
 										m_rtCharInfoBottom.U0, m_rtCharInfoBottom.V0,
 										m_rtCharInfoBottom.U1, m_rtCharInfoBottom.V1,
@@ -462,68 +487,82 @@ void CUICreateChar::Render()
 	*/
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render character information
 	int	nX = m_rcCharInfo.Left + CREATECHAR_DESC_SX;
 	int	nY = m_rcCharInfo.Top + CREATECHAR_DESC_SY;
 	for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strCharInfo[iInfo], nX, nY, m_colCharInfo[iInfo] );
+		pDrawPort->PutTextEx( m_strCharInfo[iInfo], nX, nY, m_colCharInfo[iInfo] );
 		nY += _pUIFontTexMgr->GetLineHeight();
-	}	
+	}
 	
 	// Prepare Rendering Text
 	nX = m_rcCharInfo.Left;
 	nY = m_rcCharInfo.Top;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 140, "ìºë¦­í„° ìƒì„±" ),
+	pDrawPort->PutTextEx( _S( 140, "Ä³¸¯ÅÍ »ý¼º" ),
 										nX + CREATECHAR_TITLE_OFFSETX, nY + CREATECHAR_TITLE_OFFSETY );
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S( 71, "ì•„ì´í…œ ë ˆë²¨ì´ ë§žì§€ ì•ŠìŠµë‹ˆë‹¤." ),
+	pDrawPort->PutTextExRX( _S( 71, "ÀÌ¸§" ),
 											nX + CREATECHAR_NAME_RX, nY + CREATECHAR_NAME_SY );
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S( 141, "ì§ì—…" ),
+	pDrawPort->PutTextExRX( _S( 141, "Á÷¾÷" ),
 											nX + CREATECHAR_NAME_RX, nY + CREATECHAR_JOB_SY );
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S( 144, "ì–¼êµ´" ),		// ì–¼êµ´
+	pDrawPort->PutTextExRX( _S( 144, "¾ó±¼" ),		// ¾ó±¼
 											nX + CREATECHAR_NAME_RX, nY + CREATECHAR_FACE_SY );
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S( 143, "í—¤ì–´" ),		// í—¤ì–´
+	pDrawPort->PutTextExRX( _S( 143, "Çì¾î" ),		// Çì¾î
 											nX + CREATECHAR_NAME_RX, nY + CREATECHAR_HAIR_SY );
-	//_pUIMgr->GetDrawPort()->PutTextExRX( _S( 142, "ë¨¸ë¦¬" ),		// ë¨¸ë¦¬
+	//pDrawPort->PutTextExRX( _S( 142, "¸Ó¸®" ),		// ¸Ó¸®
 	//										nX + CREATECHAR_NAME_RX, nY + CREATECHAR_HEAD_SY );
 
 	// Print Job
-	_pUIMgr->GetDrawPort()->PutTextExCX( JobInfo().GetName(m_iSelectedJob),
+	pDrawPort->PutTextExCX( JobInfo().GetName(m_iSelectedJob),
 											nX + CREATECHAR_JOB_MAIN_CY, nY + CREATECHAR_JOB_SY );
 	// Print Face
 	CTString strTemp;
 	strTemp.PrintF("%d", m_sbSelectedFace + 1);
-	_pUIMgr->GetDrawPort()->PutTextExCX( strTemp,
+	pDrawPort->PutTextExCX( strTemp,
 											nX + CREATECHAR_JOB_MAIN_CY, nY + CREATECHAR_FACE_SY );
 
 	strTemp.PrintF("%d", m_sbSelectedHair + 1);
 	// Print Hair
-	_pUIMgr->GetDrawPort()->PutTextExCX( strTemp,
+	pDrawPort->PutTextExCX( strTemp,
 											nX + CREATECHAR_JOB_MAIN_CY, nY + CREATECHAR_HAIR_SY );
 
 	// Print Head
-	//_pUIMgr->GetDrawPort()->PutTextExCX( CTString( "1" ),
+	//pDrawPort->PutTextExCX( CTString( "1" ),
 	//										nX + CREATECHAR_JOB_MAIN_CY, nY + CREATECHAR_FACE_SY );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Reading window
 	if( m_ebCharName.DoesShowReadingWindow() )
 	{
 		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 		// Reading window
 		m_ebCharName.RenderReadingWindow();
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
+	}
+
+	// show night shadow message [11/6/2009 rumist]
+	if( m_bIsShowMessageInfo )
+	{
+		pDrawPort->InitTextureData( m_ptdMsgTexture );
+		m_bxNoticeMsg.SetBoxPos(m_rcMessageInfo);
+		m_bxNoticeMsg.Render();
+		
+		// Render all elements
+		pDrawPort->FlushRenderingQueue();
+		
+		m_msgNCText.SetRenderPos( m_rcMessageInfo.Left, m_rcMessageInfo.Top );
+		m_msgNCText.Render();
 	}
 }
 
@@ -532,43 +571,71 @@ void CUICreateChar::Render()
 //
 //-----------------------------------------------------------------------------
 void CUICreateChar::PressOKBtn()
-{	
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Get input string
 	if( m_ebCharName.GetString() )
 	{
 		m_strCharName = m_ebCharName.GetString();	
 		
-		// ê³µë°± ì²´í¬.		
+		// °ø¹é Ã¼Å©.		
 		for(const char *chr = m_strCharName.str_String; *chr != 0; chr++)
 		{
 			if( (*chr) == ' ' || (*chr) == '\t' || (*chr) == '\n' || (*chr) == '\r' || 
 				(*chr) == '%' || (*chr) == '#' || (*chr) == '&' || (*chr) == '?' || (*chr) == '+' || (*chr) == '=' ||
-				(g_iCountry == HONGKONG && !CheckCharacterHK(chr))) // í™ì½© íŠ¹ìˆ˜ë¬¸ìžëŠ” ìž…ë ¥ ë¶ˆê°€ì²˜ë¦¬
+				(g_iCountry == HONGKONG && !CheckCharacterHK(chr))) // È«Äá Æ¯¼ö¹®ÀÚ´Â ÀÔ·Â ºÒ°¡Ã³¸®
 			{
-				_pUIMgr->CloseMessageBox(MSGCMD_CREATE_ERROR);
+				pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
 				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 145, "ìºë¦­í„° ìƒì„± ì˜¤ë¥˜" ), UMBS_OK,
+				MsgBoxInfo.SetMsgBoxInfo( _S( 145, "Ä³¸¯ÅÍ »ý¼º ¿À·ù" ), UMBS_OK,
 					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S( 146, "ìºë¦­í„°ëª…ì— ê³µë°±ì´ ë“¤ì–´ê°ˆ ìˆ˜ ì—†ìŠµë‹ˆë‹¤." );
+				CTString	strMessage = _S( 146, "Ä³¸¯ÅÍ¸í¿¡ °ø¹éÀÌ µé¾î°¥ ¼ö ¾ø½À´Ï´Ù." );
 				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 				
 				m_ebCharName.ResetString();
 				return;
 			}
-			if(((*chr) < 48 || (*chr) > 122) && (g_iCountry == MALAYSIA || g_iCountry == USA))
+#if defined(G_RUSSIA)
+				// [100510: selo] LC-RU-P20100504-006
+				// http://en.wikipedia.org/wiki/Windows-1251 Âü°íÇÏ¿© º¯°æ
+				if( !((*chr) >= 48 && (*chr) <= 57 )
+					&& !((*chr) >= -64 && (*chr) <= -1)
+					&& !((*chr) == -88)
+					&& !((*chr) == -72)	)
+				{
+					pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
+					CUIMsgBox_Info	MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo( _S( 145, "Ä³¸¯ÅÍ »ý¼º ¿À·ù" ), UMBS_OK,
+						UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+					CTString	strMessage = _S(2980, "¾ÆÀÌµð´Â ¿µ¹®°ú ¼ýÀÚ¸¸ Çã¿ëµË´Ï´Ù." );
+					MsgBoxInfo.AddString( strMessage );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
+					
+					m_ebCharName.ResetString();
+					return;
+				}
+
+#elif !defined(G_HONGKONG) && !defined(G_EUROPE2) && !defined(G_KOR) && !defined(G_JAPAN) && !defined(G_THAI)
+			if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
+				&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
+				&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
+				)
 			{
-				_pUIMgr->CloseMessageBox(MSGCMD_CREATE_ERROR);
+				pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
 				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 145, "ìºë¦­í„° ìƒì„± ì˜¤ë¥˜" ), UMBS_OK,
+				MsgBoxInfo.SetMsgBoxInfo( _S( 145, "Ä³¸¯ÅÍ »ý¼º ¿À·ù" ), UMBS_OK,
 					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S(2980, "ì•„ì´ë””ëŠ” ì˜ë¬¸ê³¼ ìˆ«ìžë§Œ í—ˆìš©ë©ë‹ˆë‹¤." );
+				CTString	strMessage = _S(2980, "¾ÆÀÌµð´Â ¿µ¹®°ú ¼ýÀÚ¸¸ Çã¿ëµË´Ï´Ù." );
 				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 				
 				m_ebCharName.ResetString();
 				return;
 			}
+#endif
+
 		}
 	}
 //#define RESTRICT_SOUND 	
@@ -604,7 +671,38 @@ WMSG_RESULT CUICreateChar::KeyMessage( MSG *pMsg )
 	{
 		return WMSG_SUCCESS;
 	}
+	
+/*	switch(pMsg->wParam)
+	{
+	case VK_LEFT:
+		{
+			CEntity *Character = m_pWorld->EntityFromID(_aiMarkerEntities[m_iSelectedJob]);
+			FLOAT tmp = Character->GetPlacement().pl_OrientationAngle(1);
+			Character->en_plPlacement.pl_OrientationAngle(1) += 6.0f;
+			return WMSG_SUCCESS;
+		}
+		break;
+	case VK_RIGHT:
+		{
+			CEntity *Character = m_pWorld->EntityFromID(_aiMarkerEntities[m_iSelectedJob]);
+			FLOAT tmp = Character->GetPlacement().pl_OrientationAngle(1);
+			Character->en_plPlacement.pl_OrientationAngle(1) -= 6.0f;
+			return WMSG_SUCCESS;
+		}
+		break;
+	}
+*/
 	return WMSG_FAIL;
+}
+
+void CUICreateChar::SetCharaterAngle(FLOAT f_inL, FLOAT f_inR)
+{
+	if (CUIManager::getSingleton()->GetUIGameState() == UGS_CREATECHAR)
+	{
+		CEntity *Character = m_pWorld->EntityFromID(_aiMarkerEntities[m_iSelectedJob]);
+		Character->en_plPlacement.pl_OrientationAngle(1) -= f_inL;
+		Character->en_plPlacement.pl_OrientationAngle(1) += f_inR;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -615,9 +713,9 @@ WMSG_RESULT CUICreateChar::KeyMessage( MSG *pMsg )
 WMSG_RESULT CUICreateChar::IMEMessage( MSG *pMsg )
 {
 
-	// ì´ê¸°í™˜ ìˆ˜ì • ì‹œìž‘ (11.20) : IME ë£¨í‹´ ì¡°ì •
+	// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11.20) : IME ·çÆ¾ Á¶Á¤
 	return m_ebCharName.IMEMessage( pMsg );
-	// ì´ê¸°í™˜ ìˆ˜ì • ë
+	// ÀÌ±âÈ¯ ¼öÁ¤ ³¡
 	
 }
 
@@ -628,6 +726,14 @@ WMSG_RESULT CUICreateChar::IMEMessage( MSG *pMsg )
 //-----------------------------------------------------------------------------
 WMSG_RESULT CUICreateChar::CharMessage( MSG *pMsg )
 {
+	// [2012/06/08 : Sora] ITS 9144 ÅÂ±¹ ¿äÃ»À¸·Î ctrl key ºñÈ°¼ºÈ­
+#ifdef G_THAI
+	extern UBYTE	_abKeysPressed[256];
+	if( _abKeysPressed[KID_LCONTROL] || _abKeysPressed[KID_RCONTROL] )
+	{
+		return WMSG_FAIL;
+	}
+#endif
 	if( m_ebCharName.CharMessage( pMsg ) != WMSG_FAIL )
 	{
 		return WMSG_SUCCESS;
@@ -683,7 +789,6 @@ WMSG_RESULT CUICreateChar::MouseMessage( MSG *pMsg )
 				return WMSG_SUCCESS;*/
 		}
 		break;
-
 	case WM_LBUTTONDOWN:
 		{
 			if( IsInsideRect( nX, nY, m_rcCharInfo ) )
@@ -733,34 +838,11 @@ WMSG_RESULT CUICreateChar::MouseMessage( MSG *pMsg )
 					// Nothing
 				}
 
-				_pUIMgr->RearrangeOrder( UI_CREATE_CHAR, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_CREATE_CHAR, TRUE );
 				return WMSG_SUCCESS;
 			}
-			/*else if( IsInsideRect( nX, nY, m_rcCharControl )
-			{
-				else if( m_btnZoomIn.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				else if( m_btnZoomOut.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				else if( m_btnRotateToLeft.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				else if( m_btnRotateToRight.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-
-				_pUIMgr->RearrangeOrder( UI_CREATE_CHAR, TRUE );
-				return WMSG_SUCCESS;
-			}*/
 		}
 		break;
-
 	case WM_LBUTTONUP:
 		{
 			if( IsInsideRect( nX, nY, m_rcCharInfo ) )
@@ -777,7 +859,7 @@ WMSG_RESULT CUICreateChar::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
-						_pUIMgr->SetUIGameState(UGS_SELCHAR);
+						CUIManager::getSingleton()->SetUIGameState(UGS_SELCHAR);
 						_pGameState->BackToSelChar();
 					}
 				}			
@@ -785,6 +867,8 @@ WMSG_RESULT CUICreateChar::MouseMessage( MSG *pMsg )
 				{	
 					if( wmsgResult == WMSG_COMMAND )
 					{
+						CEntity *penMarker = m_pWorld->EntityFromID(_aiMarkerEntities[m_iSelectedJob]);
+						penMarker->en_plPlacement.pl_OrientationAngle(1) = g_CharacterAngle[m_iSelectedJob];
 						m_iSelectedJob--;
 						//_pSound->Mute();						
 						ChangeSelJob();
@@ -796,6 +880,8 @@ WMSG_RESULT CUICreateChar::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
+						CEntity *penMarker = m_pWorld->EntityFromID(_aiMarkerEntities[m_iSelectedJob]);
+						penMarker->en_plPlacement.pl_OrientationAngle(1) = g_CharacterAngle[m_iSelectedJob];
 						m_iSelectedJob++;
 						//_pSound->Mute();
 						ChangeSelJob();
@@ -936,17 +1022,48 @@ void CUICreateChar::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInpu
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Prev ë‚˜ Nextë¥¼ ëˆŒëŸ¬ì„œ ì„ íƒëœ ìºë¦­í„°ê°€ ë³€ê²½ëœ ê²½ìš°.
+// Purpose: ¸ðµç »ý¼º Ä³¸¯ÅÍÀÇ ±âº» Àåºñ Âø¿ë
+//-----------------------------------------------------------------------------
+void CUICreateChar::CharWearing()
+{
+	for(int i = 0 ; i < MAXJOB; ++i)
+	{
+		// Ä«¸Þ¶ó ¼³Á¤, Ä³¸¯ÅÍ À§Ä¡ ¼³Á¤.	
+		const int iMarker			= _aiMarkerEntities[i];
+		CEntity *penMarker			= m_pWorld->EntityFromID(iMarker);	
+		
+		CModelInstance* pMI	= penMarker->GetModelInstance();
+		
+		// ½½·ÔÀÇ Ä³¸¯ÅÍ¿¡ Àåºñ¸¦ ÀåÂøÇÑ ¸ð½ÀÀ» º¸¿©Áà¾ß ÇÏ´Â ºÎºÐ...
+		// »óÀÇ ¹«±â ÇÏÀÇ ¹æÆÐ Àå°© ½Å¹ß
+		if(pMI)
+		{
+			for(int j = 0; j < 6; ++j)
+			{
+				const SLONG lWear = _aiBasicWearing[i][j];
+				if(lWear > 0)
+				{
+					CItemData* pID = _pNetwork->GetItemData(lWear);
+					_pGameState->DeleteDefaultArmor(pMI, pID->GetWearingPosition(), i);
+					_pGameState->WearingArmor(pMI, *pID);					
+				}
+			}
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Prev ³ª Next¸¦ ´­·¯¼­ ¼±ÅÃµÈ Ä³¸¯ÅÍ°¡ º¯°æµÈ °æ¿ì.
 //-----------------------------------------------------------------------------
 void CUICreateChar::ChangeSelJob()
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ í´ë¡œì¦ˆ 2ì°¨ ìž‘ì—…	08.18
-	// FIXME : ëª¨ë“  ìºë¦­í„°ê°€ ë‹¤ ë‚˜ì˜¤ë©´ ì£¼ì„ì„ í’€ê²ƒ.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî 2Â÷ ÀÛ¾÷	08.18
+	// FIXME : ¸ðµç Ä³¸¯ÅÍ°¡ ´Ù ³ª¿À¸é ÁÖ¼®À» Ç®°Í.
 	//if(m_iSelectedJob < 0) 
 	//	m_iSelectedJob = TOTAL_JOB - 1;
 	//m_iSelectedJob	= m_iSelectedJob % TOTAL_JOB;
 
-	// FIXME : í´ë¡œì¦ˆ 2ì°¨ë•Œ ë‚˜ì´íŠ¸ì™€ ížëŸ¬ë¥¼ ë³´ì—¬ì£¼ê¸° ìœ„í•œ ë¶€ë¶„.
+	// FIXME : Å¬·ÎÁî 2Â÷¶§ ³ªÀÌÆ®¿Í Èú·¯¸¦ º¸¿©ÁÖ±â À§ÇÑ ºÎºÐ.
 	if(m_iSelectedJob < 0) 
 		m_iSelectedJob = MAXJOB - 1;
 
@@ -957,15 +1074,15 @@ void CUICreateChar::ChangeSelJob()
 	m_sbSelectedFace= 0;
 	m_iSelectedColor= 0;
 	
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ 2ì°¨ ìž‘ì—…		08.18
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî 2Â÷ ÀÛ¾÷		08.18
 
 	m_fRotDelta		= 0.0f;
 	m_fZDelta		= 0.0f;
 	if(!m_pWorld)			return;
 	
-	// ì¹´ë©”ë¼ ì„¤ì •, ìºë¦­í„° ìœ„ì¹˜ ì„¤ì •.	
+	// Ä«¸Þ¶ó ¼³Á¤, Ä³¸¯ÅÍ À§Ä¡ ¼³Á¤.	
 	const int iMarker			= _aiMarkerEntities[m_iSelectedJob];
-	CEntity *penMarker			= m_pWorld->EntityFromID(iMarker);	
+	CEntity *penMarker			= m_pWorld->EntityFromID(iMarker);
 	//penMarker->SetSkaModel(_aJobFileName[m_iSelectedJob]);
 
 	CModelInstance* pMI	= penMarker->GetModelInstance();
@@ -984,46 +1101,127 @@ void CUICreateChar::ChangeSelJob()
 
 		if(_pNetwork->wo_iNumOfItem > 0)
 		{
-			// ìŠ¬ë¡¯ì˜ ìºë¦­í„°ì— ìž¥ë¹„ë¥¼ ìž¥ì°©í•œ ëª¨ìŠµì„ ë³´ì—¬ì¤˜ì•¼ í•˜ëŠ” ë¶€ë¶„...
-			// ìƒì˜ ë¬´ê¸° í•˜ì˜ ë°©íŒ¨ ìž¥ê°‘ ì‹ ë°œ
+			// ½½·ÔÀÇ Ä³¸¯ÅÍ¿¡ Àåºñ¸¦ ÀåÂøÇÑ ¸ð½ÀÀ» º¸¿©Áà¾ß ÇÏ´Â ºÎºÐ...
+			// »óÀÇ ¹«±â ÇÏÀÇ ¹æÆÐ Àå°© ½Å¹ß
 			for(int i = 0; i < 6; ++i)
 			{
 				const SLONG lWear = _aiBasicWearing[m_iSelectedJob][i];
 				if(lWear > 0)
 				{
-					CItemData &ID = _pNetwork->GetItemData(lWear);
-					_pGameState->DeleteDefaultArmor(pMI, ID.GetWearingPosition(), m_iSelectedJob);
-					_pGameState->WearingArmor(pMI, ID);					
+					CItemData* pID = _pNetwork->GetItemData(lWear);
+					_pGameState->DeleteDefaultArmor(pMI, pID->GetWearingPosition(), m_iSelectedJob);
+					_pGameState->WearingArmor(pMI, *pID);					
 				}
 			}
 		}
 
 		//INDEX idWalk		= ska_GetIDFromStringTable(_afnIdleAnim[m_iSelectedJob]);
 		//pMI->AddAnimation(idWalk,AN_LOOPING|AN_NORESTART|AN_CLEAR,1,0);
-		// ì„ íƒí•œ ìºë¦­í„°ì— ëŒ€í•œ ì„¤ëª…ì„ ë³´ì—¬ì¤ë‹ˆë‹¤.
+		// ¼±ÅÃÇÑ Ä³¸¯ÅÍ¿¡ ´ëÇÑ ¼³¸íÀ» º¸¿©ÁÝ´Ï´Ù.
 		GetCharInfo();
 	}	
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ìºë¦­í„°ë¥¼ ìƒì„±í•©ë‹ˆë‹¤.
+// Purpose: Ä³¸¯ÅÍ¸¦ »ý¼ºÇÕ´Ï´Ù.
 //-----------------------------------------------------------------------------
 void CUICreateChar::CreateCharacter()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
 	CTString strMessage;
-	//strcpy ( strMessage.str_String, m_strCharName.str_String );
-	strMessage = m_strCharName;
-	if(!_pUIMgr->checkName(strMessage,0)) return;
+
+#if defined(G_MAXICO) || defined(G_BRAZIL) || defined(G_KOR)
+	{
+	// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ ( 11.29 ) : Ä³·¢ÅÍ¸í ¿À·ù  ¸Þ¼¼Áö Ã³¸®
+		
+		char szBuffer[MAX_STR_LENGTH];
+		strcpy ( szBuffer, m_strCharName.str_String );
 	
+		if( m_strCharName.Length() <= 0 )
+		{
+			pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
+			CUIMsgBox_Info	MsgBoxInfo;
+					
+			MsgBoxInfo.SetMsgBoxInfo( _S( 145, "Ä³¸¯ÅÍ »ý¼º ¿À·ù" ), UMBS_OK,
+										UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+			MsgBoxInfo.AddString( _S( 432, "Ä³¸¯ÅÍ ÀÌ¸§À» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À.\n(ÇÑ±Û 4~8ÀÚ, ¿µ¹® 2~16ÀÚ)" ) );
+	
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+	
+			m_ebCharName.ResetString();
+	
+			return;
+		}
+		else if(m_strCharName.Length() < MIN_NAME_LEN )
+		{
+			pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
+			CUIMsgBox_Info	MsgBoxInfo;
+					
+			MsgBoxInfo.SetMsgBoxInfo( _S( 145, "Ä³¸¯ÅÍ »ý¼º ¿À·ù" ), UMBS_OK,
+										UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+			MsgBoxInfo.AddString( _S( 433, "Ä³¸¯ÅÍ ÀÌ¸§ÀÌ ³Ê¹« Âª½À´Ï´Ù.\n(ÇÑ±Û 4~8ÀÚ, ¿µ¹® 2~16ÀÚ)" ) );
+	
+	
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+	
+			m_ebCharName.ResetString();
+		
+			return;
+		}
+		else if ( m_strCharName.Length() > MAX_NAME_LEN  )
+		{
+			pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
+			CUIMsgBox_Info	MsgBoxInfo;
+					
+			MsgBoxInfo.SetMsgBoxInfo( _S( 145, "Ä³¸¯ÅÍ »ý¼º ¿À·ù" ), UMBS_OK,
+										UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+			MsgBoxInfo.AddString( _S( 434, "Ä³¸¯ÅÍ ÀÌ¸§ÀÌ ³Ê¹« ±é´Ï´Ù.\n(ÇÑ±Û 4~8ÀÚ, ¿µ¹® 2~16ÀÚ)" ) );
+	
+	
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+	
+			m_ebCharName.ResetString();
+		
+			return;
+		}
+		else if( _UIFilteringCharacter.Filtering ( szBuffer ) == TRUE ) // find ...
+		{
+			pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
+			CUIMsgBox_Info	MsgBoxInfo;
+					
+			MsgBoxInfo.SetMsgBoxInfo( _S( 145, "Ä³¸¯ÅÍ »ý¼º ¿À·ù" ), UMBS_OK,
+										UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+			
+			CTString	strMessage = _S( 435, "Àß¸øµÈ ¹®ÀÚ[" );	
+			strMessage += m_strCharName.str_String;
+			strMessage += _S( 436, "]°¡ Æ÷ÇÔµÇ¾î ÀÖ½À´Ï´Ù." );
+			
+			MsgBoxInfo.AddString( strMessage );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+	
+			m_ebCharName.ResetString();
+		
+			return;
+		}
+		
+	// ÀÌ±âÈ¯ ¼öÁ¤ ³¡	
+	}
+#else
+
+		strMessage = m_strCharName;
+		if(!pUIManager->checkName(strMessage,0)) return;
+
+#endif
+
 	if(_pNetwork->m_bSendMessage)
 		return;
 
 	_pNetwork->SendCreateCharacter( m_strCharName, m_iSelectedJob, m_sbSelectedHair + 1, m_sbSelectedFace + 1 );
-	_pUIMgr->Lock(TRUE);
+	pUIManager->Lock(TRUE);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ìºë¦­í„°ì˜ ì„¤ëª…ì„ ì„¤ì •í•¨.
+// Purpose: Ä³¸¯ÅÍÀÇ ¼³¸íÀ» ¼³Á¤ÇÔ.
 // Input  : &strItemInfo - 
 //			colItemInfo - 
 //-----------------------------------------------------------------------------
@@ -1038,7 +1236,9 @@ void CUICreateChar::AddCharInfoString( CTString &strCharInfo, COLOR colCharInfo 
 		return;
 
 	// wooss 051002
-	if(g_iCountry == THAILAND){
+#if defined(G_THAI)
+	{
+		int		iPos;
 		// Get length of string
 		INDEX	nThaiLen = FindThaiLen(strCharInfo);
 		INDEX	nChatMax= (_iMaxCharInfoChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
@@ -1048,7 +1248,7 @@ void CUICreateChar::AddCharInfoString( CTString &strCharInfo, COLOR colCharInfo 
 		if( nThaiLen <= nChatMax )
 		{
 			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if( strCharInfo[iPos] == '\n' || strCharInfo[iPos] == '\r' )
 					break;	
@@ -1082,7 +1282,7 @@ void CUICreateChar::AddCharInfoString( CTString &strCharInfo, COLOR colCharInfo 
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = _iMaxCharInfoChar;
 			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if(nChatMax < FindThaiLen(strCharInfo,0,iPos))
 					break;
@@ -1137,12 +1337,15 @@ void CUICreateChar::AddCharInfoString( CTString &strCharInfo, COLOR colCharInfo 
 
 		}
 		
-	} else {
+	} 
+#else
+ {
 		// If length of string is less than max char
 		if( nLength < _iMaxCharInfoChar )
 		{
 			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			int iPos;
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if( strCharInfo[iPos] == '\n' || strCharInfo[iPos] == '\r' )
 					break;	
@@ -1176,7 +1379,8 @@ void CUICreateChar::AddCharInfoString( CTString &strCharInfo, COLOR colCharInfo 
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = _iMaxCharInfoChar;
 			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
+			int		iPos;
+			for( iPos = 0; iPos < nSplitPos; iPos++ )
 			{
 				if( strCharInfo[iPos] & 0x80 )
 					b2ByteChar = !b2ByteChar;
@@ -1187,7 +1391,7 @@ void CUICreateChar::AddCharInfoString( CTString &strCharInfo, COLOR colCharInfo 
 			if( b2ByteChar )
 				nSplitPos--;
 
-			// Check line character
+			// Check line character			
 			for( iPos = 0; iPos < nSplitPos; iPos++ )
 			{
 				if( strCharInfo[iPos] == '\n' || strCharInfo[iPos] == '\r' )
@@ -1234,6 +1438,7 @@ void CUICreateChar::AddCharInfoString( CTString &strCharInfo, COLOR colCharInfo 
 			}
 		}
 	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1279,8 +1484,12 @@ BOOL CUICreateChar::CheckCharacterHK(const char* chHK)
 {
 	unsigned char chTemp1 = (*chHK);
 	unsigned char chTemp2;
-
-	if ( ((chTemp1) >= 0x80 && (chTemp1) <= 0xA0) || (chTemp1) == 0xC7 || (chTemp1) == 0xC8 || ((chTemp1) >= 0xFA && (chTemp1) <= 0xFF) )
+	
+	// È«Äá ¾ÆÀÌµð ÀÔ·Â½Ã ÎÃÀÚÀÇ °æ¿ì 0xF5FA·Î ºñÆ®°¡ ¿Ï¼ºµÊ. [7/27/2010 rumist]
+	// ±×Áß FA°¡ 250À¸·Î ÀÎÁöµÇ¾î Æ¯¼ö¹®ÀÚ·Î ÀÎ½ÄµÊ.
+	// ¶§¹®¿¡ 0xFAÀÇ ÇÊÅÍ¸¦ 0xFB·Î º¯°æ.
+	// È«Äá IME¿¡¼­ ÀÔ·Â Á¦ÇÑÀÌ °É¸®¹Ç·Î 0xC8Àº Á¦°ÅÇÔ. [9/8/2010 rumist]
+	if ( ((chTemp1) >= 0x80 && (chTemp1) <= 0xA0) || (chTemp1) == 0xC7/* || (chTemp1) == 0xC8*/ || ((chTemp1) >= 0xFB && (chTemp1) <= 0xFF) )
 	{
 		return FALSE;
 	}

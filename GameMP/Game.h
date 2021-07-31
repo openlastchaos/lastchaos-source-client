@@ -10,6 +10,7 @@
 #include <GameMP/PlayerSettings.h>
 #include <GameMP/SessionProperties.h>
 #include <Engine/Entities/PlayerCharacter.h>
+#include <Engine/Network/ThreadWrapper.h>
 
 #define GAME_SHELL_VER "V012"
 
@@ -122,6 +123,8 @@ public:
 class CGame
 {
 public:
+	CGame();
+	~CGame();
 	enum ConsoleState	gm_csConsoleState;
 	enum ConsoleState	gm_csComputerState;
 
@@ -135,12 +138,12 @@ public:
 	//CHighScoreEntry		gm_ahseHighScores[HIGHSCORE_COUNT];
 	//INDEX				gm_iLastSetHighScore;
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 	//CPlayerCharacter	gm_apcPlayers[8];
 	//CControls			gm_actrlControls[8];
 	CPlayerCharacter	gm_apcPlayers[1];
 	CControls			gm_actrlControls[1];
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10	
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10	
 	CControls			gm_ctrlControlsExtra;
 	INDEX				gm_iSinglePlayer;
 	INDEX				gm_iWEDSinglePlayer;
@@ -150,11 +153,11 @@ public:
 		SSC_DEDICATED = -2,
 		SSC_OBSERVER = -1,
 		SSC_PLAY1 = 0,
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 		//SSC_PLAY2 = 1,
 		//SSC_PLAY3 = 2,
 		//SSC_PLAY4 = 3,
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 	};
 	//enum SplitScreenCfg	gm_MenuSplitScreenCfg;
 	enum SplitScreenCfg	gm_StartSplitScreenCfg;
@@ -176,20 +179,20 @@ public:
 
 	// index of local player
 	// (-1) if not active
-	// ë¡œì»¬ í”Œë ˆì´ì–´ì˜ ì¸ë±ìŠ¤.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…	08.10
+	// ·ÎÄÃ ÇÃ·¹ÀÌ¾îÀÇ ÀÎµ¦½º.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ º¯°æ ÀÛ¾÷	08.10
 	INDEX	gm_aiMenuLocalPlayers[1];
 	//INDEX	gm_aiStartLocalPlayers[4];
 	//INDEX	gm_aiMenuLocalPlayers[1];
 	INDEX	gm_aiStartLocalPlayers[1];
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…		08.10
 
 	// players that are currently playing on local machine (up to 4)
-	// ë¡œì»¬ì—ì„œ í˜„ì¬ ì‹¤í–‰ë˜ëŠ” í”Œë ˆì´ì–´...
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…	08.10
-	// NOTE : Save_tì™€ Load_tì—ì„œ ì½ì–´ë“¤ì´ëŠ” ë¶€ë¶„ì´ ìˆì–´ì„œ ì œê±°í•˜ì§€ ëª»í–ˆìŒ.
+	// ·ÎÄÃ¿¡¼­ ÇöÀç ½ÇÇàµÇ´Â ÇÃ·¹ÀÌ¾î...
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ º¯°æ ÀÛ¾÷	08.10
+	// NOTE : Save_t¿Í Load_t¿¡¼­ ÀĞ¾îµéÀÌ´Â ºÎºĞÀÌ ÀÖ¾î¼­ Á¦°ÅÇÏÁö ¸øÇßÀ½.
 	CLocalPlayer	gm_lpLocalPlayers[1];
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…		08.10
+
+	ULONG			m_oldTime;
 
 	// Operations
 	void InitInternal(void);
@@ -203,6 +206,8 @@ public:
 	void SaveThumbnail( const CTFileName &fnm );
 	//CTFileName GetQuickSaveName( BOOL bSave );
 	void GameHandleTimer(void);
+
+	HANDLE GetUpdateHandle() { return gmUpdateHandle; }
 	virtual void LoadPlayersAndControls(void);
 	virtual void SavePlayersAndControls(void);
 	virtual void Load_t(void);
@@ -217,9 +222,9 @@ public:
 
 	// game loop functions
 #define GRV_SHOWEXTRAS  (1L<<0)		// add extra stuff like console, weapon, pause
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 	virtual void GameRedrawView( CDrawPort *pdpDrawport, ULONG ulFlags, CEntity* pViewer = NULL );
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 	virtual void GameMainLoop(void);
 
 	// console functions
@@ -228,18 +233,14 @@ public:
 	virtual void ConsoleRender( CDrawPort *pdpDrawport );
 	virtual void ConsolePrintLastLines( CDrawPort *pdpDrawport );
 
-	// loading hook functions
-	virtual void EnableLoadingHook( CDrawPort *pdpDrawport );
-	virtual void DisableLoadingHook(void);
-
 	// get default description for a game (for save games/demos)
 	virtual CTString GetDefaultGameDescription( BOOL bWithInfo );
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	08.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	08.22
 	virtual void CaptureScreen();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		08.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ ´ÙÁß °ø°İ ÀÛ¾÷		08.22
 
 	// game start/end functions
-	virtual PreNewGame();	//0524 kwon
+	virtual BOOL PreNewGame();	//0524 kwon
 	virtual BOOL NewGame( const CTString &strSessionName, const CTFileName &fnWorld,
 							class CSessionProperties &sp );
 //	virtual BOOL JoinGame( CNetworkSession &session );
@@ -257,12 +258,12 @@ public:
 	virtual CTString DemoReportAnalyzedProfile(void);
 
 	// functions called from world editor
-	virtual void Initialize( const CTFileName &fnGameSettings );
+	virtual void Initialize( const CTFileName &fnGameSettings, BOOL bDummy );
 	virtual void End(void);
 	virtual void QuickTest( const CTFileName &fnMapName, CDrawPort *pdpDrawport, CViewPort *pvpViewport );
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 	virtual void LoginGame( const CTFileName &fnMapName);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 
 	// interface rendering functions
 	virtual void LCDInit(void);
@@ -288,6 +289,14 @@ public:
 	virtual void MenuPostRenderMenu( const char *strMenuName );
 
 	virtual void GameRedrawCursor(CDrawPort *pdpDrawPort, ULONG ulFlags);
+
+	virtual void SetHud_Stats(INDEX stats);
+
+private:
+	cThreadWrapper*	gmUpdateInputState; // ÇÁ·Î¼¼½º °Ë»ç¸¦ À§ÇÑ ½º·¹µå ·¦ÆÛ Å¬·¡½º
+	HANDLE			gmUpdateHandle;		// ÇÁ·Î¼¼½º °Ë»ç ÀÌº¥Æ® ÇÚµé
+
+	static UINT WINAPI UpdateThreadFunction(void *parameter);
 };
 
 #endif

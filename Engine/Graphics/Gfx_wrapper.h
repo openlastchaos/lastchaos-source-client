@@ -66,9 +66,9 @@ enum GfxPolyMode
 #define GFX_TEXCOORD3        (1UL<<5)
 #define GFX_NORMAL_STREAM    (1UL<<6)
 #define GFX_WEIGHT_STREAM    (1UL<<7)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define GFX_TANGENT_STREAM   (1UL<<8)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 
 
@@ -90,10 +90,10 @@ enum GfxLockType
 #define GFX_TEXIDX (2)
 #define GFX_NORIDX (6)
 #define GFX_WGHIDX (7)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define GFX_TANIDX (8)
 #define GFX_REAL_TANIDX (3)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 // vertex array index and mask
 #define GFX_VBA_POS 0
@@ -101,24 +101,24 @@ enum GfxLockType
 #define GFX_VBA_WGH 2
 #define GFX_VBA_COL 3
 #define GFX_VBA_TEX 4
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define GFX_VBA_TAN 12
 #define GFX_MAX_VBA 13  // 8 texture coords
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 #define GFX_VBM_POS (1L<<GFX_VBA_POS)
 #define GFX_VBM_NOR (1L<<GFX_VBA_NOR)
 #define GFX_VBM_WGH (1L<<GFX_VBA_WGH)
 #define GFX_VBM_COL (1L<<GFX_VBA_COL)
 #define GFX_VBM_TEX (1L<<GFX_VBA_TEX)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define GFX_VBM_TAN (1L<<GFX_VBA_TAN)
 #define GFX_MAX_VBM (1L<<6)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define GFX_ALL_VBM ((GFX_MAX_VBM-1)|GFX_VBM_TAN)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 
 // sizes
@@ -129,9 +129,9 @@ enum GfxLockType
 #define GFX_COLSIZE (4*sizeof(UBYTE))
 #define GFX_WGHSIZE (4*sizeof(UBYTE)*2)
 #define GFX_IDXSIZE (1*sizeof(UWORD))
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define GFX_TANSIZE (4*sizeof(FLOAT))
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 // functions initialization for OGL, D3D or NONE (dummy)
 extern void GFX_SetFunctionPointers( INDEX iAPI);
@@ -187,14 +187,14 @@ extern void (*gfxFrontFace)( GfxFace eFace);
 extern void (*gfxClipPlane)( const DOUBLE *pdPlane);
 
 // set view matrix 
-extern void (*gfxSetViewMatrix)( const FLOAT *pfMatrix);
+extern void (*gfxSetViewMatrix)( const FLOAT *pfMatrix/*=NULL*/);
 // set texture matrix
-extern void (*gfxSetTextureMatrix)( const FLOAT *pfMatrix);
+extern void (*gfxSetTextureMatrix)( const FLOAT *pfMatrix/*=NULL*/);
 // set frustrum matrix
 extern void (*gfxSetFrustum)( FLOAT fLeft, FLOAT fRight, FLOAT fTop, FLOAT fBottom, FLOAT fNear, FLOAT fFar);
 // set orthographic matrix
 extern void (*gfxSetOrtho)( FLOAT fLeft, FLOAT fRight, FLOAT fTop, FLOAT fBottom, FLOAT fNear, FLOAT fFar,
-														const BOOL bSubPixelAdjust);
+														const BOOL bSubPixelAdjust/*=FALSE*/);
 
 // polygon mode (point, line or fill)
 extern void (*gfxPolygonMode)( GfxPolyMode ePolyMode);
@@ -209,7 +209,7 @@ extern void (*gfxEnableLight)(  INDEX iLight);
 extern void (*gfxDisableLight)( INDEX iLight);
 
 // set color components of a light
-extern void (*gfxSetLightColor)( INDEX iLight, COLOR colLight, COLOR colAmbient, COLOR colSpecular);
+extern void (*gfxSetLightColor)( INDEX iLight, COLOR colLight, COLOR colAmbient, COLOR colSpecular/*=0*/);
 
 // set light direction (only directional light are supported for now - they're the fastest!)
 extern void (*gfxSetLightDirection)( INDEX iLight, const FLOAT3D &vLightDir);
@@ -273,7 +273,7 @@ public:
 	inline BOOL IsEqual( CTexParams tp) { return tp_iFilter==tp.tp_iFilter && tp_iAnisotropy==tp_iAnisotropy && 
 																							 tp_eWrapU==tp.tp_eWrapU && tp_eWrapV==tp.tp_eWrapV; };
 };
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 enum GFX_TEXTURE_ARG
 {
 	GFX_TA_DIFFUSE	= D3DTA_DIFFUSE,
@@ -286,9 +286,9 @@ enum GFX_TEXTURE_ARG
 	//GFX_TA_ALPHAREPLICATE = D3DTA_ALPHAREPLICATE,
 };
 
-//d3dì˜ SetTextureStageStateë¥¼ wrappingí•œ ê²ƒìž„. íƒœí›ˆ
+//d3dÀÇ SetTextureStageState¸¦ wrappingÇÑ °ÍÀÓ. ÅÂÈÆ
 extern void gfxSetTextureSelectArg(INDEX iStage, GFX_TEXTURE_ARG argColor, GFX_TEXTURE_ARG argAlpha);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 // get current texture filtering mode
 extern void gfxGetTextureFiltering( INDEX &iFilterType, INDEX &iAnisotropyDegree);
@@ -356,7 +356,7 @@ extern ULONG (*gfxCreatePixelProgram)(  const char *strPixelProgram);
 extern void (*gfxSetVertexArray)( GFXVertex *pvtx, INDEX ctVtx);
 extern void (*gfxSetNormalArray)( GFXNormal *pnor);
 extern void (*gfxSetWeightArray)( GFXWeight *pwgh);
-extern void (*gfxSetTexCoordArray)( GFXTexCoord *ptex, BOOL bProjectiveMapping);
+extern void (*gfxSetTexCoordArray)( GFXTexCoord *ptex, BOOL bProjectiveMapping/*=FALSE*/);
 extern void (*gfxSetColorArray)( GFXColor *pcol);
 
 // draw prepared arrays
@@ -408,37 +408,34 @@ extern ULONG gfxGetVertexBufferMask( const INDEX iBindNo, INDEX &ctTexCoordArray
 // lock/unlock one vertex buffer for reading or writing (if iID<16, lock dynamic vertex buffer)
 #define gfxLockVertexSubBuffer   gfxLockSubBuffer
 #define gfxLockNormalSubBuffer   gfxLockSubBuffer
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define gfxLockTangentSubBuffer   gfxLockSubBuffer
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 #define gfxLockWeightSubBuffer   gfxLockSubBuffer
-#define gfxLockColorSubBuffer    gfxLockSubBuffer
 #define gfxLockTexCoordSubBuffer gfxLockSubBuffer
 extern void* (*gfxLockSubBuffer)( const INDEX iID, const INDEX i1stVertex, const INDEX ctVertices,
-																	const enum GfxLockType eLockType);
+																	const enum GfxLockType eLockType/*=GFX_WRITE*/);
 #define gfxUnlockVertexSubBuffer   gfxUnlockSubBuffer
 #define gfxUnlockNormalSubBuffer   gfxUnlockSubBuffer
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define gfxUnlockTangentSubBuffer   gfxUnlockSubBuffer
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 #define gfxUnlockWeightSubBuffer   gfxUnlockSubBuffer
-#define gfxUnlockColorSubBuffer    gfxUnlockSubBuffer
 #define gfxUnlockTexCoordSubBuffer gfxUnlockSubBuffer
-extern void (*gfxUnlockSubBuffer)( const INDEX iID, const INDEX ctVertices);
+extern void (*gfxUnlockSubBuffer)( const INDEX iID, const INDEX ctVertices/*=0*/);
 
 // set position sub-buffer to be the current one for rendering (if ctVertices==0 use all vertices)
-extern void (*gfxSetVertexSubBuffer)( const INDEX iID, const INDEX i1stVertex,
-																			const INDEX ctVertices);
+extern void (*gfxSetVertexSubBuffer)( const INDEX iID, const INDEX i1stVertex/*=0*/,
+																			const INDEX ctVertices/*=0*/);
 // set normal, weight and color sub-buffers
 // (when setting texture coord sub-buffer, iUnit = to which texture unit set this array; -1 = current unit)
 #define gfxSetNormalSubBuffer   gfxSetSubBuffer
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define gfxSetTangentSubBuffer   gfxSetSubBuffer
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 #define gfxSetWeightSubBuffer   gfxSetSubBuffer
-#define gfxSetColorSubBuffer    gfxSetSubBuffer
 #define gfxSetTexCoordSubBuffer gfxSetSubBuffer
-extern void (*gfxSetSubBuffer)( const INDEX iID, const INDEX iUnit);
+extern void (*gfxSetSubBuffer)( const INDEX iID, const INDEX iUnit/*=-1*/);
 
 
 
@@ -446,7 +443,7 @@ extern void (*gfxSetSubBuffer)( const INDEX iID, const INDEX iUnit);
 
 
 // force finish of rendering queue
-extern void (*gfxFinish)( BOOL bReadBack);
+extern void (*gfxFinish)( BOOL bReadBack/*=FALSE*/);
 
 // compiled vertex array control (for OpenGL only)
 extern void (*gfxLockArrays)(void);

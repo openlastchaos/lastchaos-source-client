@@ -25,7 +25,7 @@ public:
 	{
 		R_NONE = 0,
 		R_PARTY,
-		//R_GUILD,//Í∏∏ÎìúÎ•º ÎÑ£ÏúºÎ†§Î©¥ flagÎ∞©ÏãùÏúºÎ°ú Í∞ÄÏïºÌï®.
+		//R_GUILD,//±ÊµÂ∏¶ ≥÷¿∏∑¡∏È flagπÊΩƒ¿∏∑Œ ∞°æﬂ«‘.
 		R_ENEMY,
 		R_COUNT,
 	};
@@ -36,12 +36,12 @@ public:
 	inline void SetType(eType type)	{ m_eType = type;	}
 	inline eType GetType()			{ return m_eType;	}
 
-	void ChangeStatus(CTagManager *pTM, SLONG newStatus, eRelation relation);
+	void ChangeStatus(CTagManager *pTM, SQUAD newStatus, eRelation relation);
 	void Reset();
 	void Refresh(CTagManager *pTM, eRelation relation);
 
-	inline BOOL		IsStatusChanged(SLONG newStatus)	{ return (m_slCurrentStatus != newStatus);	}
-	inline SLONG	GetStatus()							{ return m_slCurrentStatus;					}
+	inline BOOL		IsStatusChanged(SQUAD newStatus)	{ return (m_slCurrentStatus != newStatus);	}
+	inline SQUAD	GetStatus()							{ return m_slCurrentStatus;					}
 
 	BOOL IsSturn();
 	BOOL IsConfuse();
@@ -49,17 +49,17 @@ public:
 
 	BOOL IsState(INDEX state);
 	
-	//Quest mark Í¥ÄÎ†®(ÎÅºÏõåÎÑ£Í∏∞)
+	//Quest mark ∞¸∑√(≥¢øˆ≥÷±‚)
 	void ChangeNPCQuestMark(CTagManager *pTM, CQuestSystem::eNpcQuestType newStatus);
 
 	CStatusEffect(const CStatusEffect &);
 	CStatusEffect &operator=(const CStatusEffect &);
 protected:
-	SLONG				m_slCurrentStatus;
+	SQUAD				m_slCurrentStatus;
 	eType				m_eType;
 	CEffectGroup		*m_pStatusEffectArray[EST_ASSIST_COUNT];
 	CQuestSystem::eNpcQuestType m_eCurrentNPCQuestType;
-	CEffectGroup		*m_pNPCQuestMark;
+	CEffectGroup		*m_pNPCQuestMark[CQuestSystem::NQT_COUNT];
 	static const char	*m_szStatusEffectName[EST_ASSIST_COUNT][T_COUNT];
 	static const char	*m_szNPCQuestMark[CQuestSystem::NQT_COUNT];
 };

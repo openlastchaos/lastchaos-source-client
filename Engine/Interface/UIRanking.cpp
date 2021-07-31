@@ -1,7 +1,9 @@
 #include "stdh.h"
-#include <Engine/Interface/UIRanking.h>
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
+#include <vector>
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Interface/UIFiltering.h>
+#include <Engine/Interface/UIRanking.h>
 #include <algorithm>
 
 #define RANKING_LIST_BOX_WIDTH			(280)
@@ -32,8 +34,6 @@ CUIRanking::~CUIRanking()
 	{
 		m_vectorPrizeList.clear();
 	}
-
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -42,9 +42,7 @@ CUIRanking::~CUIRanking()
 // ----------------------------------------------------------------------------
 void CUIRanking::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 311, 22 );	
@@ -137,9 +135,9 @@ void CUIRanking::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_lbChoiceList.SetScrollBarMiddleUV( 219, 27, 228, 29, fTexWidth, fTexHeight );
 	m_lbChoiceList.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );	
 
-//	AddToRankingList( 0, 0, CTString("í…ŒìŠ¤íŠ¸ë‹·"), TRUE, 100, 40);
-//	AddToRankingList( 1, 1, CTString("í…ŒìŠ¤íŠ¸2"), FALSE, 300, 80);
-//	AddToRankingList( 2, 2, CTString("í…ŒìŠ¤íŠ¸3"), TRUE, 100, 90);
+//	AddToRankingList( 0, 0, CTString("Å×½ºÆ®´å"), TRUE, 100, 40);
+//	AddToRankingList( 1, 1, CTString("Å×½ºÆ®2"), FALSE, 300, 80);
+//	AddToRankingList( 2, 2, CTString("Å×½ºÆ®3"), TRUE, 100, 90);
 
 	//RefreshRankingList();
 }
@@ -167,7 +165,7 @@ void CUIRanking::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixM
 //------------------------------------------------------------------------------
 // CUIRanking::SetFocus
 // Explain:  
-// Date : 2005-03-10(ì˜¤í›„ 1:02:39) Lee Ki-hwan
+// Date : 2005-03-10(¿ÀÈÄ 1:02:39) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIRanking::SetFocus( BOOL bVisible )
 {
@@ -198,15 +196,15 @@ void CUIRanking::OpenRankingList( )
 	
 	CTString strJobName;
 	int i = 0; 
-	for( ; i < TOTAL_JOB ; ++i )
+	for( ; i < (TOTAL_JOB) ; ++i )
 	{
-		strJobName.PrintF( "%s", JobInfo().GetName(i, 0) );
+		strJobName.PrintF( "%s", CJobInfo::getSingleton()->GetName(i, 0) );
 		m_lbChoiceList.AddString( 0, strJobName );
 	}	
-	strJobName.PrintF( _S( 1220, "ì·¨ì†Œí•œë‹¤." ) );		
+	strJobName.PrintF( _S( 1220, "Ãë¼ÒÇÑ´Ù." ) );		
 	m_lbChoiceList.AddString( 0, strJobName );
 
-	_pUIMgr->RearrangeOrder( UI_RANKING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_RANKING, TRUE );
 }
 
 // ----------------------------------------------------------------------------
@@ -233,14 +231,14 @@ void CUIRanking::OpenRankingPrize( )
 
 	CTString strChoice;		
 	
-	// NOTE : ë³´ìƒì„ ë°›ìœ¼ë ¤ë©´, ëž­í‚¹ì— í•´ë‹¹ìœ ì €ì˜ ì•„ì´ë””ê°€ ìžˆì–´ì•¼ë§Œ ê°€ëŠ¥í•˜ë‹¤.
-	strChoice.PrintF( _S( 1712, "ë³´ìƒì„ ë°›ëŠ”ë‹¤." ) );			
+	// NOTE : º¸»óÀ» ¹ÞÀ¸·Á¸é, ·©Å·¿¡ ÇØ´çÀ¯ÀúÀÇ ¾ÆÀÌµð°¡ ÀÖ¾î¾ß¸¸ °¡´ÉÇÏ´Ù.
+	strChoice.PrintF( _S( 1712, "º¸»óÀ» ¹Þ´Â´Ù." ) );			
 	m_lbChoiceList.AddString( 0, strChoice );
 	
-	strChoice.PrintF( _S( 1220, "ì·¨ì†Œí•œë‹¤." ) );		
+	strChoice.PrintF( _S( 1220, "Ãë¼ÒÇÑ´Ù." ) );		
 	m_lbChoiceList.AddString( 0, strChoice );	
 
-	_pUIMgr->RearrangeOrder( UI_RANKING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_RANKING, TRUE );
 }
 
 // ----------------------------------------------------------------------------
@@ -253,18 +251,18 @@ void CUIRanking::ResetRanking()
 	m_lbPrizeList.ResetAllStrings();
 	m_lbChoiceList.ResetAllStrings();
 
-	// NOTE : ê¸¸ë“œë¥¼ íƒˆí‡´í•˜ê±°ë‚˜ í•´ì²´ í•˜ì§€ ì•ŠëŠ” ì´ìƒ, í´ë¦¬ì–´ í•˜ë©´ ì•ˆë ê±° ê°™ìŒ.
+	// NOTE : ±æµå¸¦ Å»ÅðÇÏ°Å³ª ÇØÃ¼ ÇÏÁö ¾Ê´Â ÀÌ»ó, Å¬¸®¾î ÇÏ¸é ¾ÈµÉ°Å °°À½.
 	//ClearRankingList();
 
 	ClearRankingList();
 	ClearPrizeList();
 
-	_pUIMgr->RearrangeOrder( UI_RANKING, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_RANKING, FALSE );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ClearRankingList()
-// Desc : ë©¤ë²„ ëª©ë¡ì„ í´ë¦¬ì–´í•©ë‹ˆë‹¤.
+// Desc : ¸â¹ö ¸ñ·ÏÀ» Å¬¸®¾îÇÕ´Ï´Ù.
 // ----------------------------------------------------------------------------
 void CUIRanking::ClearRankingList()
 {
@@ -276,7 +274,7 @@ void CUIRanking::ClearRankingList()
 
 // ----------------------------------------------------------------------------
 // Name : ClearPrizeList()
-// Desc : ë©¤ë²„ ëª©ë¡ì„ í´ë¦¬ì–´í•©ë‹ˆë‹¤.
+// Desc : ¸â¹ö ¸ñ·ÏÀ» Å¬¸®¾îÇÕ´Ï´Ù.
 // ----------------------------------------------------------------------------
 void CUIRanking::ClearPrizeList()
 {
@@ -288,19 +286,19 @@ void CUIRanking::ClearPrizeList()
 
 // ----------------------------------------------------------------------------
 // Name : PressOKBtn()
-// Desc : í™•ì¸ ë²„íŠ¼ì„ ëˆŒë €ì„ ë•Œì˜ ì²˜ë¦¬.
+// Desc : È®ÀÎ ¹öÆ°À» ´­·¶À» ¶§ÀÇ Ã³¸®.
 // ----------------------------------------------------------------------------
 void CUIRanking::PressOKBtn()
 {	
 }
 
-static LONG g_lChaIndex		= -1;		// ê°€ìž… ì‹ ì²­ê³¼ ê´€ë ¨ëœ ë¶€ë¶„ì—ë§Œ ì“°ìž„.
+static LONG g_lChaIndex		= -1;		// °¡ÀÔ ½ÅÃ»°ú °ü·ÃµÈ ºÎºÐ¿¡¸¸ ¾²ÀÓ.
 static LONG g_lRankingIndex	= -1;
-static LONG g_lMemberIndex	= -1;		// ë©¤ë²„ì— ê´€ë ¨ëœ ë¶€ë¶„ì—ë§Œ ì“°ìž„.
+static LONG g_lMemberIndex	= -1;		// ¸â¹ö¿¡ °ü·ÃµÈ ºÎºÐ¿¡¸¸ ¾²ÀÓ.
 
 // ----------------------------------------------------------------------------
 // Name : AddToRankingList()
-// Desc : ë©¤ë²„ ëª©ë¡ì— ì¶”ê°€
+// Desc : ¸â¹ö ¸ñ·Ï¿¡ Ãß°¡
 // ----------------------------------------------------------------------------
 void CUIRanking::AddToRankingList( const CTString& strName, BOOL bSuccess, LONG lPoint, __int64 llTime )
 {	
@@ -319,16 +317,16 @@ void CUIRanking::AddToRankingList( const CTString& strName, BOOL bSuccess, LONG 
 void CUIRanking::AddToPrizeList( const CTString& strName, INDEX iItemIndex, INDEX iItemCount, BOOL bReward )
 {
 	sUserPrize	TempPrize;
-	TempPrize.strName		= strName;			// ì´ë¦„
-	TempPrize.iItemIndex	= iItemIndex;		// ì•„ì´í…œ ì¸ë±ìŠ¤
-	TempPrize.iNumOfItem	= iItemCount;		// ì•„ì´í…œ ê°¯ìˆ˜.		
-	TempPrize.bReward		= bReward;			// ë³´ìƒë¬¼í’ˆ ê°€ëŠ¥
+	TempPrize.strName		= strName;			// ÀÌ¸§
+	TempPrize.iItemIndex	= iItemIndex;		// ¾ÆÀÌÅÛ ÀÎµ¦½º
+	TempPrize.iNumOfItem	= iItemCount;		// ¾ÆÀÌÅÛ °¹¼ö.		
+	TempPrize.bReward		= bReward;			// º¸»ó¹°Ç° °¡´É
 	m_vectorPrizeList.push_back(TempPrize);
 }
 
 // ----------------------------------------------------------------------------
 // Name : RefreshRankingList()
-// Desc : ëª©ë¡ì„ ê°±ì‹ í•©ë‹ˆë‹¤.
+// Desc : ¸ñ·ÏÀ» °»½ÅÇÕ´Ï´Ù.
 // ----------------------------------------------------------------------------
 void CUIRanking::RefreshRankingList( BOOL bInit )
 {
@@ -346,20 +344,20 @@ void CUIRanking::RefreshRankingList( BOOL bInit )
 	for(it = m_vectorRankingList.begin(); it != member_end; ++it, ++iNo )
 	{
 		strTemp.PrintF( "%d.", iNo );
-		m_lbRankingList.AddString( 0, strTemp, 0xFFFFFFFF );	// ìˆœìœ„
-		m_lbRankingList.AddString( 1, (*it).strName, 0xFFFFFFFF );	// ì•„ì´ë””
+		m_lbRankingList.AddString( 0, strTemp, 0xFFFFFFFF );	// ¼øÀ§
+		m_lbRankingList.AddString( 1, (*it).strName, 0xFFFFFFFF );	// ¾ÆÀÌµð
 
-		strTemp = (*it).bSuccess ? _S( 1970, "ì„±ê³µ" ) : _S( 1971, "ì‹¤íŒ¨" );		
-		m_lbRankingList.AddString( 2, strTemp, 0xFFFFFFFF );	// ì¡°ê±´
+		strTemp = (*it).bSuccess ? _S( 1970, "¼º°ø" ) : _S( 1971, "½ÇÆÐ" );		
+		m_lbRankingList.AddString( 2, strTemp, 0xFFFFFFFF );	// Á¶°Ç
 
 		strTemp.PrintF( "%ld", (*it).lPoint );
-		m_lbRankingList.AddString( 3, strTemp, 0xFFFFFFFF );	// ì ìˆ˜
+		m_lbRankingList.AddString( 3, strTemp, 0xFFFFFFFF );	// Á¡¼ö
 
 		int iMin	= (*it).llTime / 60;
 		int	iSecond	= (*it).llTime % 60;
 		//strTemp.PrintF( "%I64d", (*it).llTime );
-		strTemp.PrintF( _S( 1713, "%dë¶„ %dì´ˆ" ), iMin, iSecond );			
-		m_lbRankingList.AddString( 4, strTemp, 0xFFFFFFFF );	// ì‹œê°„
+		strTemp.PrintF( _S( 1713, "%dºÐ %dÃÊ" ), iMin, iSecond );			
+		m_lbRankingList.AddString( 4, strTemp, 0xFFFFFFFF );	// ½Ã°£
 	}
 }
 
@@ -385,11 +383,11 @@ void CUIRanking::RefreshPrizeList( BOOL bInit )
 	for(it = m_vectorPrizeList.begin(); it != prize_end; ++it, ++iNo )
 	{
 		strTemp.PrintF( "%d.", iNo );
-		m_lbPrizeList.AddString( 0, strTemp, 0xFFFFFFFF );	// ìˆœìœ„
-		m_lbPrizeList.AddString( 1, (*it).strName, 0xFFFFFFFF );	// ì•„ì´ë””
+		m_lbPrizeList.AddString( 0, strTemp, 0xFFFFFFFF );	// ¼øÀ§
+		m_lbPrizeList.AddString( 1, (*it).strName, 0xFFFFFFFF );	// ¾ÆÀÌµð
 		
 		CTString strItemName = _pNetwork->GetItemName( (*it).iItemIndex );
-		strTemp.PrintF( _S( 61, "%s %dê°œ" ), strItemName, (*it).iNumOfItem );
+		strTemp.PrintF( _S( 61, "%s %d°³" ), strItemName, (*it).iNumOfItem );
 		m_lbPrizeList.AddString( 2, strTemp, 0xFFFFFFFF );
 		
 		if( (*it).bReward == FALSE && 
@@ -410,8 +408,10 @@ void CUIRanking::RefreshPrizeList( BOOL bInit )
 // ----------------------------------------------------------------------------
 void CUIRanking::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY;
@@ -420,28 +420,28 @@ void CUIRanking::Render()
 	// Top
 	nX = m_nPosX + m_nWidth;
 	nY = m_nPosY + 26;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
 										m_rtBackTop.U0, m_rtBackTop.V0,
 										m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
 	
 	{
 		// Manager
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 20,
+		pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 20,
 											m_rtBackManagerTop.U0, m_rtBackManagerTop.V0,
 											m_rtBackManagerTop.U1, m_rtBackManagerTop.V1,
 											0xFFFFFFFF );
 
 		nY += 20;
 		
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + RANKING_LIST_BOX_HEIGHT + 2,
+		pDrawPort->AddTexture( m_nPosX, nY, nX, nY + RANKING_LIST_BOX_HEIGHT + 2,
 			m_rtBackManagerMiddle.U0, m_rtBackManagerMiddle.V0,
 			m_rtBackManagerMiddle.U1, m_rtBackManagerMiddle.V1,
 			0xFFFFFFFF );
 		
 		nY += RANKING_LIST_BOX_HEIGHT + 2;		
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 4,
+		pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 4,
 											m_rtBackManagerBottom.U0, m_rtBackManagerBottom.V0,
 											m_rtBackManagerBottom.U1, m_rtBackManagerBottom.V1,
 											0xFFFFFFFF );
@@ -450,14 +450,14 @@ void CUIRanking::Render()
 	}
 
 	// Middle 2
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY + 26, nX, m_nPosY + m_nHeight - 7 ,
 										m_rtBackMiddle2.U0, m_rtBackMiddle2.V0,
 										m_rtBackMiddle2.U1, m_rtBackMiddle2.V1,
 										0xFFFFFFFF );
 
 	// Bottom
 	nY = m_nPosY + m_nHeight - 7;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
 										m_rtBackBottom.U0, m_rtBackBottom.V0,
 										m_rtBackBottom.U1, m_rtBackBottom.V1,
 										0xFFFFFFFF );
@@ -467,7 +467,7 @@ void CUIRanking::Render()
 	nY = m_nPosY + 26;
 	int nX2 = nX + 1;
 	int nY2 = nY + 16;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX, nY, nX2, nY2,
 												m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 												0xFFFFFFFF );	
 
@@ -476,19 +476,19 @@ void CUIRanking::Render()
 	{
 		nX = m_nPosX + 132;	
 		nX2 = nX + 1;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX, nY, nX2, nY2,
 												m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 												0xFFFFFFFF );
 
 		nX = m_nPosX + 174;
 		nX2 = nX + 1;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX, nY, nX2, nY2,
 												m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 												0xFFFFFFFF );
 		
 		nX = m_nPosX + 225;
 		nX2 = nX + 1;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX, nY, nX2, nY2,
 												m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 												0xFFFFFFFF );
 	}
@@ -496,7 +496,7 @@ void CUIRanking::Render()
 	{
 		nX = m_nPosX + 145;	
 		nX2 = nX + 1;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX, nY, nX2, nY2,
 												m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 												0xFFFFFFFF );
 	}
@@ -515,43 +515,43 @@ void CUIRanking::Render()
 	m_lbChoiceList.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1714, "ìˆœìœ„" ), m_nPosX + 20,		
+	pDrawPort->PutTextEx( _S( 1714, "¼øÀ§" ), m_nPosX + 20,		
 										m_nPosY + 29, 0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1715, "ì•„ì´ë””" ), m_nPosX + 80,	
+	pDrawPort->PutTextEx( _S( 1715, "¾ÆÀÌµð" ), m_nPosX + 80,	
 										m_nPosY + 29, 0xFFFFFFFF );
 
 	if( m_eRankingState == RANKING_LIST )
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1716, "ì¡°ê±´" ), m_nPosX + 142,		
+		pDrawPort->PutTextEx( _S( 1716, "Á¶°Ç" ), m_nPosX + 142,		
 			m_nPosY + 29, 0xFFFFFFFF );
 		
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1717, "ì ìˆ˜" ), m_nPosX + 190,		
+		pDrawPort->PutTextEx( _S( 1717, "Á¡¼ö" ), m_nPosX + 190,		
 			m_nPosY + 29, 0xFFFFFFFF );
 		
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1718, "ì‹œê°„" ), m_nPosX + 238,		
+		pDrawPort->PutTextEx( _S( 1718, "½Ã°£" ), m_nPosX + 238,		
 			m_nPosY + 29, 0xFFFFFFFF );
 	}
 	else
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1719, "ë³´ìƒë¬¼í’ˆ" ), m_nPosX + 190,		
+		pDrawPort->PutTextEx( _S( 1719, "º¸»ó¹°Ç°" ), m_nPosX + 190,		
 			m_nPosY + 29, 0xFFFFFFFF );
 	}
 
 	CTString strTitle;
 	if( m_eRankingState == RANKING_LIST )
-		strTitle = _S( 1720, "ìˆœìœ„ í™•ì¸" );		
+		strTitle = _S( 1720, "¼øÀ§ È®ÀÎ" );		
 	else
-		strTitle = _S( 1721, "ë³´ìƒ ë°›ê¸°" );		
+		strTitle = _S( 1721, "º¸»ó ¹Þ±â" );		
 
 	// Text in guild
-	_pUIMgr->GetDrawPort()->PutTextEx( strTitle, m_nPosX + RANKING_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( strTitle, m_nPosX + RANKING_TITLE_TEXT_OFFSETX,
 										m_nPosY + RANKING_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 	
 }
 
@@ -580,7 +580,7 @@ WMSG_RESULT	CUIRanking::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -634,10 +634,10 @@ WMSG_RESULT	CUIRanking::MouseMessage( MSG *pMsg )
 					int	iSelChoice = m_lbChoiceList.GetCurSel();
 					if( iSelChoice != -1 )
 					{
-						// ì§ì—… ì„ íƒ ë©”ë‰´...
+						// Á÷¾÷ ¼±ÅÃ ¸Þ´º...
 						if( m_eRankingState == RANKING_LIST )
 						{
-							// ì·¨ì†Œí•˜ê¸° ì„ íƒì‹œ...
+							// Ãë¼ÒÇÏ±â ¼±ÅÃ½Ã...
 							if( iSelChoice == TOTAL_JOB )
 							{
 								ResetRanking();
@@ -647,10 +647,10 @@ WMSG_RESULT	CUIRanking::MouseMessage( MSG *pMsg )
 								_pNetwork->Ranking_RequestList( iSelChoice );								
 							}
 						}
-						// ë³´ìƒ ë°›ê¸° ë©”ë‰´...
+						// º¸»ó ¹Þ±â ¸Þ´º...
 						else
 						{
-							// ì·¨ì†Œí•˜ê¸° ì„ íƒì‹œ.
+							// Ãë¼ÒÇÏ±â ¼±ÅÃ½Ã.
 							if( iSelChoice == 1 )
 							{
 								ResetRanking();
@@ -664,7 +664,7 @@ WMSG_RESULT	CUIRanking::MouseMessage( MSG *pMsg )
 								else
 								{
 									CTString strMessage;
-									strMessage = _S( 1722, "ë³´ìƒì„ ë°›ìœ¼ì‹¤ ìˆ˜ ìžˆëŠ” ì¡°ê±´ì´ ì•„ë‹™ë‹ˆë‹¤." );		
+									strMessage = _S( 1722, "º¸»óÀ» ¹ÞÀ¸½Ç ¼ö ÀÖ´Â Á¶°ÇÀÌ ¾Æ´Õ´Ï´Ù." );		
 									_pNetwork->ClientSystemMessage( strMessage, SYSMSG_ERROR );
 									ResetRanking();
 								}
@@ -674,7 +674,7 @@ WMSG_RESULT	CUIRanking::MouseMessage( MSG *pMsg )
 					return WMSG_SUCCESS;
 				}
 
-				_pUIMgr->RearrangeOrder( UI_RANKING, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_RANKING, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -724,4 +724,291 @@ WMSG_RESULT	CUIRanking::MouseMessage( MSG *pMsg )
 		break;
 	}
 	return WMSG_FAIL;
+}
+
+//[ttos_2010_8_9]: Å¥ºê ·©Å© UI
+//------------------------------------------------------------//
+// CUICubeRank
+//------------------------------------------------------------//
+CUICubeRank::CUICubeRank()
+{
+	m_lMypoint = 0;
+	m_bGuild = FALSE;
+}
+CUICubeRank::~CUICubeRank()
+{
+
+}
+// ----------------------------------------------------------------------------
+// Name : CubeRankInit()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUICubeRank::CubeRankInit()
+{
+	m_lMypoint = 0;
+	m_bGuild = FALSE;
+
+	for (int i = 0; i < 2; i++ )
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			m_stCubeRank[i][j].Init();
+		}
+	}
+}
+// ----------------------------------------------------------------------------
+// Name : Create()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUICubeRank::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
+{
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+
+	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\new_Interface.tex" ) );
+	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
+	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
+
+	m_bxBackground[0].SetBoxUV(m_ptdBaseTexture, 120, 36, WRect(0,98,272,253));
+	m_bxBackground[0].SetBoxPos(WRect(0,0,nWidth,nHeight));
+
+	m_bxBackground[1].SetBoxUV(m_ptdBaseTexture, 20, WRect(0,304,221,346));
+	m_bxBackground[1].SetBoxPos(WRect(20, 100, 380, 195));
+
+	m_bxBackground[2].SetBoxUV(m_ptdBaseTexture, 20, WRect(0,304,221,346));
+	m_bxBackground[2].SetBoxPos(WRect(20, 220, 380, 315));
+
+	m_bxBackground[3].SetBoxUV(m_ptdBaseTexture, 3, WRect(339,464,368,466));
+	m_bxBackground[3].SetBoxPos(WRect(20, 70, 380, 73));
+
+
+	m_btnOK.Create(this, CTString(_S(191, "È®ÀÎ")), 150, 320, 100, 20);
+	m_btnOK.SetUV(UBS_IDLE,282,244,351,265, fTexWidth, fTexHeight );
+	m_btnOK.SetUV(UBS_CLICK, 364,244,433,265, fTexWidth, fTexHeight);
+	m_btnOK.CopyUV(UBS_IDLE, UBS_ON);
+	m_btnOK.CopyUV(UBS_IDLE, UBS_DISABLE);
+
+	m_rcTitle.SetRect(0, 0, nWidth, 30);
+
+
+}
+
+// ----------------------------------------------------------------------------
+// Name : ResetPosition()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUICubeRank::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	SetPos( ( pixMaxI + pixMinI - GetWidth() ) / 2, ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
+}
+
+// ----------------------------------------------------------------------------
+// Name : AdjustPosition()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUICubeRank::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	if( m_nPosX < pixMinI || m_nPosX + GetWidth() > pixMaxI ||
+		m_nPosY < pixMinJ || m_nPosY + GetHeight() > pixMaxJ )
+		ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
+}
+// ----------------------------------------------------------------------------
+// Name : Render()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUICubeRank::Render()
+{
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	int		i;
+	for( i = 0; i < 4; i++ )
+	{
+		m_bxBackground[i].Render(m_nPosX,m_nPosY);
+	}
+	m_btnOK.Render();
+
+	CTString strMsg,strMsgEx;
+	CTString strGuildName, strChaName; // ±æµå ÀÌ¸§, ±æµå ¸¶½ºÅÍ ¹× Ä³¸¯ÅÍ ÀÌ¸§
+
+	if (m_bGuild)
+	{
+		strMsg = _S(4388, "±æµå Å¥ºê Æ÷ÀÎÆ® ÇöÈ²");
+		strMsgEx = _S(4389, "ÀÚ½ÅÀÌ ¼Ò¼ÓµÈ ±æµå Å¥ºê Æ÷ÀÎÆ® : %d");
+		strGuildName = _S(3451,"±æµå¸í");
+		strChaName = _S(4344, "±æµå ¸¶½ºÅÍ");
+	}
+	else
+	{
+		strMsg = _S(4390, "°³ÀÎ Å¥ºê Æ÷ÀÎÆ® ÇöÈ²");
+		strMsgEx = _S(4391, "ÀÚ½ÅÀÇ °³ÀÎ Å¥ºê Æ÷ÀÎÆ® : %d");
+		strGuildName = _S(4392, "¼Ò¼Ó ±æµå");
+		strChaName = _S(4393, "Ä³¸¯ÅÍ ÀÌ¸§");
+	}
+
+	pDrawPort->PutTextExCX(strMsg, m_nPosX+200, m_nPosY+18);
+	strMsg.PrintF(strMsgEx, m_lMypoint);
+	pDrawPort->PutTextEx(strMsg, m_nPosX + 20, m_nPosY + 50);
+	
+	CTString strtem;
+
+	for( i = 0; i < 2; i++)
+	{		
+		if (i == 0)
+		{
+			strtem = _S(5097, "ÇöÀç Å¥ºê Æ÷ÀÎÆ® ¼øÀ§ ÇöÈ²");
+		}
+		else
+		{
+			strtem = _S(5098, "Áö³­ÁÖ Å¥ºê Æ÷ÀÎÆ® ¼øÀ§ ÇöÈ²");
+		}
+		pDrawPort->PutTextEx(strtem, m_nPosX + 25, m_nPosY + 80+(i*120));
+		pDrawPort->PutTextEx(_S(1714, "¼øÀ§"), m_nPosX + 25, m_nPosY + 105+(i*120));
+		pDrawPort->PutTextExCX(strGuildName, m_nPosX + 100, m_nPosY + 105+(i*120));
+		pDrawPort->PutTextExCX(strChaName, m_nPosX + 210, m_nPosY + 105+(i*120));
+		pDrawPort->PutTextExCX( _S(4345, "Å¥ºêÆ÷ÀÎÆ®"), m_nPosX + 330, m_nPosY + 105+(i*120));
+
+		for (int nList = 0; nList < (m_bGuild?5:3); nList++)
+		{
+			strtem.PrintF("%d",m_stCubeRank[i][nList].nRank);
+			pDrawPort->PutTextEx(strtem, m_nPosX + 30, m_nPosY + 120+(nList*14)+(i*120));
+			pDrawPort->PutTextExCX(m_stCubeRank[i][nList].strGuildName, m_nPosX + 100, m_nPosY + 120+(nList*14)+(i*120));
+			pDrawPort->PutTextExCX(m_stCubeRank[i][nList].strChaName, m_nPosX + 210, m_nPosY + 120+(nList*14)+(i*120));
+			strtem.PrintF("%d",m_stCubeRank[i][nList].lPoint);
+			pDrawPort->PutTextExCX(strtem , m_nPosX + 330, m_nPosY + 120+(nList*14)+(i*120));
+		}
+	}
+
+	pDrawPort->FlushRenderingQueue();
+	
+	pDrawPort->EndTextEx();
+
+}
+// ----------------------------------------------------------------------------
+// Name : CubeRankClose()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUICubeRank::CubeRankClose()
+{
+	CubeRankInit();
+	CUIManager::getSingleton()->RearrangeOrder( UI_CUBERANK, FALSE );
+}
+// ----------------------------------------------------------------------------
+// Name : MouseMessage()
+// Desc :
+// ----------------------------------------------------------------------------
+WMSG_RESULT CUICubeRank::MouseMessage( MSG *pMsg )
+{
+	WMSG_RESULT	wmsgResult;
+	
+	// Title bar
+	static BOOL	bTitleBarClick = FALSE;
+	
+	// Item clicked
+	static BOOL	bLButtonDownInItem = FALSE;
+	
+	// Mouse point
+	static int	nOldX, nOldY;
+	int	nX = LOWORD( pMsg->lParam );
+	int	nY = HIWORD( pMsg->lParam );
+
+	// Mouse message
+	switch( pMsg->message )
+	{
+	case WM_MOUSEMOVE:
+		{
+			if( IsInside( nX, nY ) )
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
+			
+			int	ndX = nX - nOldX;
+			int	ndY = nY - nOldY;
+
+			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
+			{
+				nOldX = nX;	nOldY = nY;
+				
+				Move( ndX, ndY );
+				
+				return WMSG_SUCCESS;
+			}
+
+			else if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
+				return WMSG_SUCCESS;
+		}break;
+	case WM_LBUTTONDOWN:
+		{
+			if( IsInside( nX, nY ) )
+			{
+				nOldX = nX;		nOldY = nY;
+
+				
+				if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
+				{
+					// Nothing
+				}// Title bar
+				else if( IsInsideRect( nX, nY, m_rcTitle ) )
+				{
+					bTitleBarClick = TRUE;
+				}
+				return WMSG_SUCCESS;
+			}
+
+		}break;
+	case WM_LBUTTONUP:
+		{
+			bTitleBarClick = FALSE;
+			
+			// Close button
+			if( (wmsgResult = m_btnOK.MouseMessage( pMsg ) ) != WMSG_FAIL )
+			{
+				if(wmsgResult == WMSG_COMMAND)
+				{
+					CubeRankClose();
+					return WMSG_SUCCESS;
+				}				
+			}
+
+		}break;
+	}
+		
+
+	return WMSG_FAIL;
+}
+
+void CUICubeRank::CreateCubeState(CNetworkMessage *istr, BOOL bGuild)
+{
+	LONG lMyPoint = 0, lInfoCubePoint = 0; // ÀÚ½ÅÀÌ ¼Ò¼ÓµÈ ±æµå ¹× °³ÀÎ Æ÷ÀÎÆ® , °¢ ¸®½ºÆ®ÀÇ Å¥ºê Æ÷ÀÎÆ®
+	BYTE InfoCount = 0, InfoRank = 0; // ¸®½ºÆ® °¹¼ö, ·©Å© Á¤º¸
+	CTString strGuildName, strChaName; // ±æµå ÀÌ¸§, ±æµå ¸¶½ºÅÍ ¹× Ä³¸¯ÅÍ ÀÌ¸§
+	int		i;
+
+	(*istr) >> lMyPoint;
+	(*istr) >> InfoCount;
+
+	m_lMypoint = lMyPoint;
+	m_bGuild = bGuild;
+	// ÀÌ¹øÁÖ ·©Å·
+	for( i = 0; i<InfoCount; ++i )
+	{
+		(*istr) >> InfoRank >> strGuildName >> strChaName >> lInfoCubePoint;
+
+		m_stCubeRank[0][i].nRank = InfoRank;
+		m_stCubeRank[0][i].strGuildName = strGuildName;
+		m_stCubeRank[0][i].strChaName = strChaName;
+		m_stCubeRank[0][i].lPoint = lInfoCubePoint;
+	}
+
+	(*istr) >> InfoCount;
+	// Áö³­ÁÖ ·©Å·
+	for( i = 0; i < InfoCount; ++i )
+	{		
+		(*istr) >> InfoRank >> strGuildName >> strChaName >> lInfoCubePoint;
+		
+		m_stCubeRank[1][i].nRank = InfoRank;
+		m_stCubeRank[1][i].strGuildName = strGuildName;
+		m_stCubeRank[1][i].strChaName = strChaName;
+		m_stCubeRank[1][i].lPoint = lInfoCubePoint;
+	}
+
+	CUIManager::getSingleton()->RearrangeOrder( UI_CUBERANK, TRUE );
 }

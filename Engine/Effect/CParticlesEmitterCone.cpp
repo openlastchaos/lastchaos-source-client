@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #include "stdH.h"
 
@@ -45,15 +45,15 @@ void CParticlesEmitterCone::Process(CParticles &particles, const FLOAT fDeltaTim
 	for(UINT i=cntOld; i<cntOld+cntAdd; ++i)
 	{
 		CParticle &particle = particles[i];
-		//íŒŒí‹°í´ ìƒì„±.
+		//ÆÄÆ¼Å¬ »ı¼º.
 		m_particlePrototype.CreateTo( particle );
 		particle.SetAge((i-cntOld) * fDeltaTime / (FLOAT)cntAdd);
 		particle.SetPosition( m_vCenter + vSpaceCenter );
 //		particle.SetDirection( FLOATquat3D(1,0,0,0) );
-		//íŒŒí‹°í´ ìœ„ì¹˜ ê²°ì •
+		//ÆÄÆ¼Å¬ À§Ä¡ °áÁ¤
 		FLOAT3D pos = VectorRotate(m_cdsShape.GetPointInThis() - m_cdsShape.GetCenter(), m_quatDir);
 		if(m_bUseShapePosition) particle.SetPosition( pos + particle.GetPosition() );
-		//íŒŒí‹°í´ ì†ë„, ê°€ì†ë„ ê²°ì •
+		//ÆÄÆ¼Å¬ ¼Óµµ, °¡¼Óµµ °áÁ¤
 		if(m_buseShapeSpeed)
 		{
 			FLOAT3D nrmPos = pos.SafeNormalize();
@@ -114,4 +114,4 @@ void CParticlesEmitterCone::Write(CTStream *pOS)
 	os << m_buseShapeSpeed;
 	m_cdsShape.Write(&os);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

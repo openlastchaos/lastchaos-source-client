@@ -1,16 +1,20 @@
 #include "stdh.h"
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <vector>
-#include <Engine/Interface/UISelectResource.h>
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UISelectResource.h>
 #include <Engine/Entities/EntityProperties.h>
+#include <Engine/Entities/InternalClasses.h>
+#include <Engine/Ska/Render.h>
 
 #define BUTTON_HEIGHT	21
 #define BUTTON_WIDTH	131
 #define BUTTON_SPAN		4
 #define TITLEBAR_HEIGHT 26
 
-#define PRODUCT_TYPE_RANDOM		0	// Î¨¥ÏûëÏúÑ ÏÉùÏÇ∞
-#define PRODUCT_TYPE_SELECT		1	// ÏÑ†ÌÉù ÏÉùÏÇ∞
+#define PRODUCT_TYPE_RANDOM		0	// π´¿€¿ß ª˝ªÍ
+#define PRODUCT_TYPE_SELECT		1	// º±≈√ ª˝ªÍ
 
 
 int g_iProductItemDBIndex[3][5] = {
@@ -33,7 +37,6 @@ CUISelectResource::CUISelectResource()
 // ----------------------------------------------------------------------------
 CUISelectResource::~CUISelectResource()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -42,9 +45,7 @@ CUISelectResource::~CUISelectResource()
 // ----------------------------------------------------------------------------
 void CUISelectResource::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 236, 22 );
@@ -66,7 +67,10 @@ void CUISelectResource::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidt
 	m_btnClose.SetUV( UBS_IDLE, 219, 0, 233, 14, fTexWidth, fTexHeight );
 	m_btnClose.SetUV( UBS_CLICK, 234, 0, 248, 14, fTexWidth, fTexHeight );
 	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );	
+	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
+
+	// ºˆ¡˝ √§±º √§¡˝ ¿œ ∞ÊøÏ ≈∞∫∏µÂ ¿Ãµø¿ª ∏∑±‚ ¿ß«— «√∑°±◊ [3/26/2013 Ranma]
+	m_bKeyMove = true;
 }
 
 // ----------------------------------------------------------------------------
@@ -90,7 +94,7 @@ void CUISelectResource::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, P
 
 // ----------------------------------------------------------------------------
 // Name : OpenSelectResource()
-// Desc : iType = 1 Ï±ÑÍµ¥, iType = 2 Ï±ÑÏßë, iType = 3 Ï∞®ÏßÄ
+// Desc : iType = 1 √§±º, iType = 2 √§¡˝, iType = 3 ¬˜¡ˆ
 // ----------------------------------------------------------------------------
 void CUISelectResource::OpenSelectResource( int npcIndex, int iType )
 {	
@@ -118,7 +122,7 @@ void CUISelectResource::OpenSelectResource( int npcIndex, int iType )
 	m_iResourceType = iType;
 	m_iClientNPCIndex = npcIndex;
 
-	if(iType == 4 ) //ÏàòÏßëÏù¥Î©¥ Ìå®Ïä§
+	if(iType == 4 ) //ºˆ¡˝¿Ã∏È ∆–Ω∫
 	{
 		StartProduct();
 		ResetSelectResource();
@@ -142,15 +146,18 @@ void CUISelectResource::OpenSelectResource( int npcIndex, int iType )
 		CTString strName;
 		for(INDEX i=0; i<2; ++i)
 		{
-			strName = i?_S( 1972, "ÏÑ†ÌÉù ÏÉùÏÇ∞" ):_S( 1973, "Î¨¥ÏûëÏúÑ ÏÉùÏÇ∞" );
+			strName = i?_S( 1972, "º±≈√ ª˝ªÍ" ):_S( 1973, "π´¿€¿ß ª˝ªÍ" );
 			TempUIButton.Create(this, strName, iCurPosX, iCurPosY, BUTTON_WIDTH, BUTTON_HEIGHT );
 			m_vectorResourceList.push_back(TempUIButton);
 			iCurPosY += BUTTON_HEIGHT + BUTTON_SPAN;
 		}
 		int nHeight = m_vectorResourceList.size() * (BUTTON_HEIGHT + BUTTON_SPAN) + TITLEBAR_HEIGHT + 10;
 		SetSize( m_nWidth, nHeight );
-		_pUIMgr->RearrangeOrder( UI_SELECTRESOURCE, TRUE );
+		CUIManager::getSingleton()->RearrangeOrder( UI_SELECTRESOURCE, TRUE );
 	}
+
+	// Ω√¿€ µ«∏È ≈∞∫∏µÂ ¿Ãµø ∏∑±‚ [3/26/2013 Ranma]
+	m_bKeyMove = false;
 	return;
 }
 
@@ -166,7 +173,7 @@ void CUISelectResource::ResetSelectResource()
 
 	if(!m_vectorResourceList.empty())
 		m_vectorResourceList.clear();
-	_pUIMgr->RearrangeOrder( UI_SELECTRESOURCE, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SELECTRESOURCE, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -175,27 +182,29 @@ void CUISelectResource::ResetSelectResource()
 // ----------------------------------------------------------------------------
 void CUISelectResource::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 	// Add render regions
 	// Background
 	int nX = m_nPosX;
 	int nY = m_nPosY;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, m_nPosY, nX + m_nWidth, nY + TITLEBAR_HEIGHT,
+	pDrawPort->AddTexture( nX, m_nPosY, nX + m_nWidth, nY + TITLEBAR_HEIGHT,
 		m_rtBackTop.U0, m_rtBackTop.V0, 
 		m_rtBackTop.U1, m_rtBackTop.V1,
 		0xFFFFFFFF );
 	
 	nY += TITLEBAR_HEIGHT;	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight - 7,
 		m_rtBackMiddle1.U0, m_rtBackMiddle1.V0, 
 		m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 		0xFFFFFFFF );
 	
 	nY = m_nPosY + m_nHeight - 7;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight,
 		m_rtBackBottom.U0, m_rtBackBottom.V0, 
 		m_rtBackBottom.U1, m_rtBackBottom.V1,
 		0xFFFFFFFF );	
@@ -211,21 +220,21 @@ void CUISelectResource::Render()
 	}
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();	
+	pDrawPort->FlushRenderingQueue();	
 	
-	CTString strTitle = _S( 1823, "ÎØ∏ÎÑ§ÎûÑ ÏÑ†ÌÉù" );
+	CTString strTitle = _S( 1823, "πÃ≥◊∂ˆ º±≈√" );
 	
 	// Text in skill learn	
 	if( m_bSelectType )
 	{
-		strTitle =_S( 1974,  "ÏÉùÏÇ∞Î∞©Î≤ï ÏÑ†ÌÉù" );
+		strTitle =_S( 1974,  "ª˝ªÍπÊπ˝ º±≈√" );
 	}
 		
-	_pUIMgr->GetDrawPort()->PutTextEx( strTitle, m_nPosX + SELECTRESOURCE_TITLE_TEXT_OFFSETX,	
+	pDrawPort->PutTextEx( strTitle, m_nPosX + SELECTRESOURCE_TITLE_TEXT_OFFSETX,	
 		m_nPosY + SELECTRESOURCE_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 	
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -253,7 +262,7 @@ WMSG_RESULT	CUISelectResource::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 			
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -271,25 +280,21 @@ WMSG_RESULT	CUISelectResource::MouseMessage( MSG *pMsg )
 			// Close Button
 			if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
-/*
-			else
-			{
-				std::vector<CUIButton>::iterator end = m_vectorResourceList.end();
-				std::vector<CUIButton>::iterator it = m_vectorResourceList.begin();
 
-				for(; it != end; ++it)
+			for(int i = 0; i < m_vectorResourceList.size(); ++i)
+			{
+				if( (wmsgResult = m_vectorResourceList[i].MouseMessage( pMsg ) )!= WMSG_FAIL )
 				{
-					if( (*it).MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
+					return WMSG_SUCCESS;
 				}
 			}
-*/
 		}
 		break;
 	case WM_LBUTTONDOWN:
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
 				nOldX = nX;		nOldY = nY;
 				
 				// Close button
@@ -309,7 +314,7 @@ WMSG_RESULT	CUISelectResource::MouseMessage( MSG *pMsg )
 					
 					for(; it != end; ++it)
 					{
-						if( (*it).MouseMessage( pMsg ) != WMSG_FAIL )//button ÎàÑÎ¶Ñ
+						if( (*it).MouseMessage( pMsg ) != WMSG_FAIL )//button ¥©∏ß
 						{
 							int dist = std::distance(m_vectorResourceList.begin(), it);
 
@@ -337,14 +342,14 @@ WMSG_RESULT	CUISelectResource::MouseMessage( MSG *pMsg )
 									for(INDEX i=0; i<3; ++i)
 									{
 	
-										strName = _pNetwork->GetItemData( g_iProductItemDBIndex[m_iResourceType-1][i] ).GetName();
+										strName = _pNetwork->GetItemData( g_iProductItemDBIndex[m_iResourceType-1][i] )->GetName();
 										TempUIButton.Create(this, strName, 20, iCurPosY, BUTTON_WIDTH, BUTTON_HEIGHT );
 										m_vectorResourceList.push_back(TempUIButton);
 										iCurPosY += BUTTON_HEIGHT + BUTTON_SPAN;
 									}
 									int nHeight = m_vectorResourceList.size() * (BUTTON_HEIGHT + BUTTON_SPAN) + TITLEBAR_HEIGHT + 10;
 									SetSize( m_nWidth, nHeight );
-									_pUIMgr->RearrangeOrder( UI_SELECTRESOURCE, TRUE );
+									pUIManager->RearrangeOrder( UI_SELECTRESOURCE, TRUE );
 								}
 							}
 							else
@@ -358,12 +363,13 @@ WMSG_RESULT	CUISelectResource::MouseMessage( MSG *pMsg )
 					}
 				}
 				
-				_pUIMgr->RearrangeOrder( UI_SELECTRESOURCE, TRUE );
+				pUIManager->RearrangeOrder( UI_SELECTRESOURCE, TRUE );
 				return WMSG_SUCCESS;
 			}
 			else
 			{
 				ResetSelectResource();
+				m_bKeyMove = true;
 			}
 		}
 		break;
@@ -377,6 +383,7 @@ WMSG_RESULT	CUISelectResource::MouseMessage( MSG *pMsg )
 				if(wmsgResult == WMSG_COMMAND)
 				{
 					ResetSelectResource();
+					m_bKeyMove = true;
 				}
 				return WMSG_SUCCESS;
 			}
@@ -402,16 +409,43 @@ WMSG_RESULT	CUISelectResource::MouseMessage( MSG *pMsg )
 
 //------------------------------------------------------------------------------
 // CUISelectResource::StartProduct
-// Explain: nSelectResourceÏù¥ -1Ïùº Í≤ΩÏö∞ÏóêÎäî RandomÏúºÎ°ú Ï≤òÎ¶¨ÌïúÎã§. 
+// Explain: nSelectResource¿Ã -1¿œ ∞ÊøÏø°¥¬ Random¿∏∑Œ √≥∏Æ«—¥Ÿ. 
 // Date : 2005-08-30,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISelectResource::StartProduct( int nSelectResource )
 {
-	// ÏÑ†ÌÉù Ìïú ÏÉùÏÇ∞ Ï¢ÖÎ•òÏóê Îî∞ÎùºÏÑú ÏóêÎãàÎ©îÏù¥ÏÖò ÏãúÏûë 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// ª˝ªÍΩ√ ∫∏≥ª¥¬ ∏ﬁºº¡ˆø° ¥„¿ª µ•¿Ã≈Õ ¿˙¿Â 
+	CTString strTemp;
+	// BUG-FIX : ITS(#1727) ∆Íø° ≈æΩ¬Ω√ø°¥¬ ºˆ¡˝/ª˝ªÍ¿ª «“ ºˆ æ¯¥Ÿ. [5/20/2011 rumist]
+	if( _pNetwork->MyCharacterInfo.bWildPetRide || _pNetwork->MyCharacterInfo.bPetRide )
+	{
+		if( m_iResourceType == 4 )
+			strTemp = _S( 5490, "∆Íø° ≈æΩ¬«— ªÛ≈¬ø°º≠¥¬ ƒ˘Ω∫∆Æ æ∆¿Ã≈€¿ª ºˆ¡˝«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
+		else
+			strTemp = _S( 5491, "∆Íø° ≈æΩ¬«— ªÛ≈¬ø°º≠¥¬ ª˝ªÍ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
+		
+		pUIManager->GetChattingUI()->AddSysMessage( strTemp, SYSMSG_ERROR );
+		return;
+	}
+
+	// BUG-FIX : ∞≠Ω≈ªÛ≈¬ø°º≠¥¬ ºˆ¡˝ / √§¡˝ ∫“∞°. [6/3/2011 rumist]
+	CPlayerEntity* pPlayerEntity = (static_cast<CPlayerEntity*>(CEntity::GetPlayerEntity(0)));
+
+	if( pPlayerEntity->IsTransforming())
+	{
+		strTemp = _S( 5494, "∞≠Ω≈ ªÛ≈¬ø°º≠¥¬ ºˆ¡˝/√§¡˝/ª˝ªÍ¿ª «“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
+		
+		pUIManager->GetChattingUI()->AddSysMessage( strTemp, SYSMSG_ERROR );
+		return;
+	}
+
+	// º±≈√ «— ª˝ªÍ ¡æ∑˘ø° µ˚∂Ûº≠ ø°¥œ∏ﬁ¿Ãº« Ω√¿€ 
 	extern INDEX idPlayerWhole_Animation[ANIM_TOTAL];
 	switch(m_iResourceType)
 	{
-	case 1://Ï±ÑÍµ¥
+	case 1://√§±º
 		{
 			INDEX ani = idPlayerWhole_Animation[ANIM_MINE];
 			//INDEX ani = ska_StringToID(JobInfo().GetAnimationName( _pNetwork->MyCharacterInfo.job, ANIM_MINE ));
@@ -419,7 +453,7 @@ void CUISelectResource::StartProduct( int nSelectResource )
 					ESKA_MASTER_MODEL_INSTANCE, 1.0f);
 		}
 		break;
-	case 2://Ï±ÑÏßë
+	case 2://√§¡˝
 		{
 			INDEX ani = idPlayerWhole_Animation[ANIM_COLLECT];
 			//INDEX ani = ska_StringToID(JobInfo().GetAnimationName( _pNetwork->MyCharacterInfo.job, ANIM_GATHER ));
@@ -427,7 +461,7 @@ void CUISelectResource::StartProduct( int nSelectResource )
 					ESKA_MASTER_MODEL_INSTANCE, 1.0f);
 		}
 		break;
-	case 3://Ï∞®ÏßÄ
+	case 3://¬˜¡ˆ
 		{
 			INDEX ani = idPlayerWhole_Animation[ANIM_GATHER];
 			//INDEX ani = ska_StringToID(JobInfo().GetAnimationName( _pNetwork->MyCharacterInfo.job, ANIM_COLLECT ));
@@ -435,7 +469,7 @@ void CUISelectResource::StartProduct( int nSelectResource )
 					ESKA_MASTER_MODEL_INSTANCE, 1.0f);
 		}
 		break;
-	case 4://ÏàòÏßë
+	case 4://ºˆ¡˝
 		{
 			INDEX ani = idPlayerWhole_Animation[ANIM_COLLECT];
 			//INDEX ani = ska_StringToID(JobInfo().GetAnimationName( _pNetwork->MyCharacterInfo.job, ANIM_GATHER ));
@@ -445,13 +479,10 @@ void CUISelectResource::StartProduct( int nSelectResource )
 		break;
 	}
 
-	// ÏÉùÏÇ∞Ïãú Î≥¥ÎÇ¥Îäî Î©îÏÑ∏ÏßÄÏóê Îã¥ÏùÑ Îç∞Ïù¥ÌÑ∞ Ï†ÄÏû• 
-	CTString strTemp;
-
 	if( nSelectResource >= 0 ) 
 	{
 		m_iProduceItemDBIndex = g_iProductItemDBIndex[m_iResourceType-1][nSelectResource];
-		strTemp = _pNetwork->GetItemData( g_iProductItemDBIndex[m_iResourceType-1][nSelectResource] ).GetName();
+		strTemp = _pNetwork->GetItemData( g_iProductItemDBIndex[m_iResourceType-1][nSelectResource] )->GetName();
 	}
 	else 
 	{
@@ -476,12 +507,12 @@ void CUISelectResource::StartProduct( int nSelectResource )
 		ENTITYPROPERTY( &*CEntity::GetPlayerEntity(0), pEP->ep_slOffset, INDEX) = m_iResourceType;
 	}
 	
-	// ÌòÑÏû¨ ÏÉùÏÇ∞ Ï§ëÏù¥ ÏïÑÏù¥ÌÖúÏùÑ ÌôîÎ©¥Ïóê ÌëúÏãú 
-	// ÏàòÏßëÏùºÍ≤ΩÏö∞ 
+	// «ˆ¿Á ª˝ªÍ ¡ﬂ¿Ã æ∆¿Ã≈€¿ª »≠∏Èø° «•Ω√ 
+	// ºˆ¡˝¿œ∞ÊøÏ 
 	if(m_iResourceType == 4)
-		strTemp += _S(3053, "ÌÄòÏä§Ìä∏ ÏïÑÏù¥ÌÖú ÏàòÏßëÏùÑ ÏãúÏûëÌï©ÎãàÎã§." );
-		else strTemp += _S( 1824, "ÏÉùÏÇ∞ÏùÑ ÏãúÏûëÌï©ÎãàÎã§." );
+		strTemp += _S(3053, "ƒ˘Ω∫∆Æ æ∆¿Ã≈€ ºˆ¡˝¿ª Ω√¿€«’¥œ¥Ÿ." );
+	else strTemp += _S( 1824, "ª˝ªÍ¿ª Ω√¿€«’¥œ¥Ÿ." );
 
-	_pUIMgr->GetChatting()->AddSysMessage(strTemp, SYSMSG_NORMAL);
+	pUIManager->GetChattingUI()->AddSysMessage(strTemp, SYSMSG_NORMAL);
 
 }

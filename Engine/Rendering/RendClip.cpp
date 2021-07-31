@@ -150,9 +150,12 @@ void CRenderer::MakeNonDetailScreenPolygons(void)
 	{
 		CBrushPolygon &bpo = *itpo;
 
+		extern BOOL _bShowPortalPolygon;
+
 		// if polygon does not contribute to the visibility determination
 		if ( (bpo.bpo_ulFlags&ulDetailMask)
-			&&!(bpo.bpo_ulFlags&BPOF_RENDERASPORTAL)) {
+			&&!(bpo.bpo_ulFlags&BPOF_RENDERASPORTAL) &&!_bShowPortalPolygon) 
+		{
 			// skip it
 			continue;
 		}
@@ -160,7 +163,7 @@ void CRenderer::MakeNonDetailScreenPolygons(void)
 		// no screen polygon by default
 		bpo.bpo_pspoScreenPolygon = NULL;
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¬¼ í¼í¬ë¨¼ìŠ¤ ì‘ì—…		
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷		
 		extern INDEX g_iReflectionDetail;
 		extern BOOL _bWorldEditorApp;
 		ULONG	ulOldFlag = 0;
@@ -168,12 +171,12 @@ void CRenderer::MakeNonDetailScreenPolygons(void)
 		if((bpo.bpo_ulFlags & BPOF_WATER) && !_bWorldEditorApp)
 		{
 			// Hardcording zone 15 except refection
-			if(g_iReflectionDetail != REFLECTION_NONE && g_slZone != 15 && g_slZone != 18)
+			if(g_iReflectionDetail != REFLECTION_NONE && g_slZone != 15)
 			{
 				continue;
 			}
 		}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¬¼ í¼í¬ë¨¼ìŠ¤ ì‘ì—…
+//°­µ¿¹Î ¼öÁ¤ ³¡ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
 
 		// skip if the polygon is not visible
 		//ASSERT( !IsPolygonCulled(bpo));  // cannot be culled yet!		// yjpark - must recover
@@ -208,17 +211,21 @@ void CRenderer::MakeDetailScreenPolygons(void)
 	FOREACHINSTATICARRAY(re_pbscCurrent->bsc_abpoPolygons, CBrushPolygon, itpo) {
 		CBrushPolygon &bpo = *itpo;
 
+		extern BOOL _bShowPortalPolygon;
+
 		// if polygon is not detail
 		if (!(bpo.bpo_ulFlags&BPOF_DETAILPOLYGON)
-			|| (bpo.bpo_ulFlags&BPOF_RENDERASPORTAL)) {
+			|| (bpo. bpo_ulFlags&BPOF_RENDERASPORTAL)) 
+		{
 			// skip it
-			continue;
+			if( !_bShowPortalPolygon )
+				continue;
 		}
 
 		// no screen polygon by default
 		bpo.bpo_pspoScreenPolygon = NULL;
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¬¼ í¼í¬ë¨¼ìŠ¤ ì‘ì—…
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
 		extern INDEX g_iReflectionDetail;
 		extern BOOL _bWorldEditorApp;
 		//extern INDEX gfx_bRenderReflection;
@@ -226,7 +233,7 @@ void CRenderer::MakeDetailScreenPolygons(void)
 		{
 			if(g_iReflectionDetail == REFLECTION_NONE)
 			{
-				// ë°˜ì‚¬ ì•ˆë˜ëŠ” ê²½ìš°.
+				// ¹İ»ç ¾ÈµÇ´Â °æ¿ì.
 				bpo.bpo_ulFlags |= BPOF_TRANSLUCENT;
 				bpo.bpo_ulFlags &= (~BPOF_INVISIBLE);
 				bpo.bpo_ulFlags |= BPOF_PORTAL;
@@ -238,7 +245,7 @@ void CRenderer::MakeDetailScreenPolygons(void)
 				bpo.bpo_ulFlags |= BPOF_INVISIBLE;
 			}
 		}	
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¬¼ í¼í¬ë¨¼ìŠ¤ ì‘ì—…
+//°­µ¿¹Î ¼öÁ¤ ³¡ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
 
 		// skip if the polygon is not visible
 		if( GetPolygonVisibility(bpo)==0) continue;
@@ -251,7 +258,8 @@ void CRenderer::MakeDetailScreenPolygons(void)
 		CScreenPolygon &spo = *MakeScreenPolygon(bpo);
 
 		// if it is portal
-		if (spo.IsPortal()) {
+		if( spo.IsPortal() && !_bShowPortalPolygon )
+		{
 			// pass it immediately
 			PassPortal(spo);
 		} else {
@@ -381,14 +389,14 @@ void CRenderer::ClipToAllPlanes(CAnyProjection3D &pr)
 		ClipToOnePlane(pr->pr_plMirrorView);
 	}
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
-	// ë°˜ì‚¬ í‰ë©´ê³¼ì˜ í…ŒìŠ¤íŠ¸...
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
+	// ¹İ»ç Æò¸é°úÀÇ Å×½ºÆ®...
 	if (pr->pr_bNiceWater) 
 	{
 		// clip to mirror plane
 		ClipToOnePlane(pr->pr_plNiceWaterView);
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 }
 
 // make outcodes for current clip plane for all active vertices

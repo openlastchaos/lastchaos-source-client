@@ -42,7 +42,7 @@ public:
 	// multiplication/division by a scalar
 	inline Quaternion<Type> operator*(Type t) const;
 	inline Quaternion<Type> &operator*=(Type t);
-	friend Quaternion<Type> operator*(Type t, Quaternion<Type> q);
+	//friend Quaternion<Type> operator*(Type t, Quaternion<Type> q);
 	inline Quaternion<Type> operator/(Type t) const;
 	inline Quaternion<Type> &operator/=(Type t);
 	
@@ -61,21 +61,21 @@ public:
 	inline Type Norm(void) const;
 
 	// transcendental functions
-	friend Quaternion<Type> Exp(const Quaternion<Type> &q);
-	friend Quaternion<Type> Log(const Quaternion<Type> &q);
+	inline Quaternion<Type> Exp(const Quaternion<Type> &q);
+	inline Quaternion<Type> Log(const Quaternion<Type> &q);
 
 	// spherical linear interpolation
-	friend __forceinline Quaternion<Type> Slerp( const Type tT,
+	inline Quaternion<Type> Slerp( const Type tT,
 		const Quaternion<Type> &q1, const Quaternion<Type> &q2);
 	// (less precise version - using tables)
 	//friend __forceinline Quaternion<Type> FastSlerp( const Type tT, 
 	//  const Quaternion<Type> &q1, const Quaternion<Type> &q2);
 	// spherical quadratic interpolation
-	friend Quaternion<Type> Squad(Type tT,
+	inline Quaternion<Type> Squad(Type tT,
 		const Quaternion<Type> &q1, const Quaternion<Type> &q2,
 		const Quaternion<Type> &qa, const Quaternion<Type> &qb);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	/* Stream operations */
 	friend __forceinline CTStream &operator>>(CTStream &strm, Quaternion<Type> &quat) {
 		strm.Read_t(&quat, sizeof(quat));
@@ -85,7 +85,7 @@ public:
 		strm.Write_t(&quat, sizeof(quat));
 		return strm;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 };
 
 // inline functions implementation

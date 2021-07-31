@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 #ifndef __CSPLINEEFFECT_H__
 #define __CSPLINEEFFECT_H__
 
@@ -75,22 +75,22 @@ protected:
 
 protected:
 	//content variablen
-	CTFileName			m_strTextureFileName;	//textureì˜ íŒŒì¼ ì´ë¦„
-	COLOR				m_colTraceBegin;		//traceê°€ ì‹œì‘ë˜ëŠ” ë¶€ë¶„ì˜ ìƒ‰ê¹”
-	COLOR				m_colTraceEnd;			//traceê°€ ëë‚˜ëŠ” ë¶€ë¶„ì˜ ìƒ‰ê¹”
-	FLOAT				m_fTraceTime;			//traceë˜ëŠ” ì‹œê°„
-	FLOAT				m_fTimeInterval;		//traceë˜ëŠ” ê°„ê²©, ì‹œì‘ë¶€ë¶„ì€ í•­ìƒ ë¨.
-	FLOAT				m_fTwinklePeriod;		//ì „ì²´ì˜ ì•ŒíŒŒë¥¼ ì¼ì •ê°„ê²©ìœ¼ë¡œ ì¡°ì •.
-	FLOAT				m_fWidth;				//ë‘ê»˜.
-	FLOAT				m_fVelocity;			//ì†ë„.
+	CTFileName			m_strTextureFileName;	//textureÀÇ ÆÄÀÏ ÀÌ¸§
+	COLOR				m_colTraceBegin;		//trace°¡ ½ÃÀÛµÇ´Â ºÎºĞÀÇ »ö±ò
+	COLOR				m_colTraceEnd;			//trace°¡ ³¡³ª´Â ºÎºĞÀÇ »ö±ò
+	FLOAT				m_fTraceTime;			//traceµÇ´Â ½Ã°£
+	FLOAT				m_fTimeInterval;		//traceµÇ´Â °£°İ, ½ÃÀÛºÎºĞÀº Ç×»ó µÊ.
+	FLOAT				m_fTwinklePeriod;		//ÀüÃ¼ÀÇ ¾ËÆÄ¸¦ ÀÏÁ¤°£°İÀ¸·Î Á¶Á¤.
+	FLOAT				m_fWidth;				//µÎ²².
+	FLOAT				m_fVelocity;			//¼Óµµ.
 	PredefinedBlendType	m_eBlendType;
 	//instance variable
 	static ULONG		m_ulVertexProgramNoTex;
 	static ULONG		m_ulPixelProgramNoTex;
 	static ULONG		m_ulVertexProgramTex;
 	static ULONG		m_ulPixelProgramTex;
-	CTextureData		*m_ptdTexture;			//ì‹¤ì œ ë¡œë”©ëœ texture
-	FLOAT				m_fTwinkleValue;		//ë°˜ì§ë°˜ì§ê°’, ë§¤í”„ë ˆì„ë§ˆë‹¤ ê³„ì‚°ë¨.
+	CTextureData		*m_ptdTexture;			//½ÇÁ¦ ·ÎµùµÈ texture
+	FLOAT				m_fTwinkleValue;		//¹İÂ¦¹İÂ¦°ª, ¸ÅÇÁ·¹ÀÓ¸¶´Ù °è»êµÊ.
 	ss_float3d			m_ssSplinePoint;
 	vector_index		m_vectorIndex;
 	GFXColor			m_colTraceBeginInstance;
@@ -103,4 +103,4 @@ protected:
 };
 
 #endif //__CSPLINEEFFECT_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)

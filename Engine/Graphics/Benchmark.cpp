@@ -76,12 +76,12 @@ static DOUBLE FillRatePass(INDEX ct)
 
   if(_iTexture) {
     gfxEnableTexture();
-    gfxSetTexCoordArray( &_atex[0]);
+    gfxSetTexCoordArray( &_atex[0], FALSE);
     for( INDEX iTex=2; iTex<=_iTexture; iTex++) {
       gfxSetTextureUnit(iTex-1);
       gfxEnableTexture();
       gfxSetTexture( _ulTexObject, _tpLocal);
-      gfxSetTexCoordArray( &atex[0]);
+      gfxSetTexCoordArray( &atex[0], FALSE);
     } // set 0 tex unit as default
     if(_iTexture>1) gfxSetTextureUnit(0);
   } else {
@@ -230,7 +230,7 @@ static DOUBLE TrisTroughputPass(INDEX ct)
   StartTimer();
 
   gfxSetFrustum( -0.5f, +0.5f, -0.5f, +0.5f, 0.5f, 2.0f);
-  gfxSetViewMatrix();
+  gfxSetViewMatrix(NULL);
   gfxCullFace(GFX_NONE);
 
   _pdp->Fill(C_GRAY|255);
@@ -258,12 +258,12 @@ static DOUBLE TrisTroughputPass(INDEX ct)
 
   if(_iTexture) {
     gfxEnableTexture();
-    gfxSetTexCoordArray( &_atex[0]);
+    gfxSetTexCoordArray( &_atex[0], FALSE);
     for( INDEX iTex=2; iTex<=_iTexture; iTex++) {
       gfxSetTextureUnit(iTex-1);
       gfxEnableTexture();
       gfxSetTexture( _ulTexObject, _tpLocal);
-      gfxSetTexCoordArray( &_atex[0]);
+      gfxSetTexCoordArray( &_atex[0], FALSE);
     } // set 0 tex unit as default
     if(_iTexture>1) gfxSetTextureUnit(0);
   } else {

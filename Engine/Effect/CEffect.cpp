@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "StdH.h"
 
 #include "CTag.h"
@@ -19,6 +19,8 @@ CEffect::CEffect()
 , m_fBoundingSphereRadius( 1 )
 , m_fSpeedMul( 1 )
 , m_penOwner( NULL )
+, m_ERType(ER_NORMAL)
+, m_ERSubType(ERS_NORMAL)
 {
 }
 
@@ -61,13 +63,13 @@ BOOL CEffect::PreProcess(FLOAT time, BOOL &bRetValue, BOOL &bRenderInThisFrame
 	bRenderInThisFrame = FALSE;
 	bRetValue = FALSE;
 	if(m_eState == ES_PLAY_END) return FALSE;
-	//í™œì„±í™”ëœ ìƒíƒœê°€ ì•„ë‹ˆê±°ë‚˜ Tagì— ë¶™ì–´ìžˆì§€ ì•Šë‹¤ë©´
-	//ì›ì¹™ì ìœ¼ë¡œ ì´ ë£¨í‹´ì„ íƒ€ë©´ ì•ˆë¨, í•¨ìˆ˜ì™¸ë¶€ì—ì„œ ì²˜ë¦¬.
+	//È°¼ºÈ­µÈ »óÅÂ°¡ ¾Æ´Ï°Å³ª Tag¿¡ ºÙ¾îÀÖÁö ¾Ê´Ù¸é
+	//¿øÄ¢ÀûÀ¸·Î ÀÌ ·çÆ¾À» Å¸¸é ¾ÈµÊ, ÇÔ¼ö¿ÜºÎ¿¡¼­ Ã³¸®.
 	if(!Playing() || m_ptrAttachTag.IsNull()) return FALSE;
 	if(!m_ptrAttachTag->Active()) return FALSE;
 	bRenderInThisFrame = TRUE;
 
-	//ì‹œê°„ ê²½ê³¼ ë° ê·¸ì— ë”°ë¥¸ ì• ë‹ˆë©”ì´ì…˜, ìƒíƒœì˜ ì²˜ë¦¬
+	//½Ã°£ °æ°ú ¹× ±×¿¡ µû¸¥ ¾Ö´Ï¸ÞÀÌ¼Ç, »óÅÂÀÇ Ã³¸®
 	FLOAT fDeltaTime = (time - m_fLastProcessTime) / m_fSpeedMul;
 	FLOAT fProcessedTime = (time - m_fStartTime) / m_fSpeedMul;
 	m_fLastProcessTime = time;
@@ -109,7 +111,7 @@ BOOL CEffect::PreRender()
 		m_bNotRenderAtThisFrame = FALSE;
 		return FALSE;
 	}
-	//tagë¥¼ ê·¸ë¦°ë‹¤.
+	//tag¸¦ ±×¸°´Ù.
 	//extern INDEX ska_bShowAttachedTag;
 	//if(ska_bShowAttachedTag) m_ptrAttachTag->Render();
 	return TRUE;
@@ -129,7 +131,7 @@ void CEffect::Stop(FLOAT leftTime)
 {
 	m_slRepeat = 0;
 	
-	if(m_fLeftTime > leftTime)	//leftTimeì´ m_fLeftTimeë³´ë‹¤ í´ê²½ìš° í• ì¼ ì—†ìŒ.
+	if(m_fLeftTime > leftTime)	//leftTimeÀÌ m_fLeftTimeº¸´Ù Å¬°æ¿ì ÇÒÀÏ ¾øÀ½.
 	{
 		if(m_fLeftTime > m_fFadeOutTime)	//no fade
 		{
@@ -142,7 +144,7 @@ void CEffect::Stop(FLOAT leftTime)
 				m_fLeftTime = leftTime;
 			}
 		}
-		else //m_fLeftTime <= m_fFadeOutTime //fade ì¤‘
+		else //m_fLeftTime <= m_fFadeOutTime //fade Áß
 		{
 			if(m_fFadeOutTime > leftTime)
 			{
@@ -222,4 +224,4 @@ void CEffect::Write(CTStream *pOS)
 	os << m_fBoundingSphereRadius;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

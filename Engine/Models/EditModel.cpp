@@ -883,7 +883,8 @@ void CEditModel::CreateScriptFile_t(CTFileName &fnO3D) // throw char *
 	File.Create_t( fnScriptName, CTStream::CM_TEXT);
 	File.PutLine_t( ";******* Creation settings");
 	File.PutLine_t( "TEXTURE_DIM 2.0 2.0");
-	File.PutLine_t( "SIZE 1.0");
+	//File.PutLine_t( "SIZE 1.0");
+	File.PutLine_t( "SIZE 0.01"); // 3ds모델의 기본 사이즈가 안 맞아서 맞춤
 	File.PutLine_t( "MAX_SHADOW 0");
 	File.PutLine_t( "HI_QUALITY YES");
 	File.PutLine_t( "FLAT NO");
@@ -921,7 +922,8 @@ void CEditModel::CreateScriptFile_t(CTFileName &fnO3D) // throw char *
 
 void CEditModel::LoadFromScript_t(CTFileName &fnScriptName) // throw char *
 {
-	try {
+	try 
+	{
 		CObject3D::BatchLoading_t(TRUE);
 		
 		INDEX i;
@@ -935,7 +937,6 @@ void CEditModel::LoadFromScript_t(CTFileName &fnScriptName) // throw char *
 		char mapping_file_name[ PATH_MAX] = "";
 		char full_path[ PATH_MAX];
 		FLOATmatrix3D mStretch;
-		mStretch.Diagonal(1.0f);
 		BOOL bMappingDimFound ;
 		BOOL bAnimationsFound;
 		BOOL bLoadInitialMapping;
@@ -947,6 +948,7 @@ void CEditModel::LoadFromScript_t(CTFileName &fnScriptName) // throw char *
 		bMappingDimFound = FALSE;
 		bAnimationsFound = FALSE;
 		bLoadInitialMapping = FALSE;
+		mStretch.Diagonal(1.0f); //3ds 기본 사이즈가 엄청 크다 (스크립트에서 0.01f)
 		
 		// to hold number of line's chars
 		int iLineChars;
@@ -975,6 +977,7 @@ void CEditModel::LoadFromScript_t(CTFileName &fnScriptName) // throw char *
 				FLOAT fStretch = 1.0f;
 				sscanf( ld_line, "SIZE %g", &fStretch);
 				mStretch *= fStretch;
+				//edm_md.md_Stretch = mStretch;
 			}
 			else if( EQUAL_SUB_STR( "TRANSFORM")) 
 			{
@@ -1067,6 +1070,7 @@ void CEditModel::LoadFromScript_t(CTFileName &fnScriptName) // throw char *
 						fnImportMapping = CTString( full_path);
 					}
 					O3D.Clear();                            // clear possible existing O3D's data
+
 					O3D.LoadAny3DFormat_t( CTString(full_path), mStretch);
 					if( edm_md.md_VerticesCt == 0)					// If there are no vertices in model, call New Model
 					{
@@ -1129,10 +1133,12 @@ void CEditModel::LoadFromScript_t(CTFileName &fnScriptName) // throw char *
 			else if( EQUAL_SUB_STR( "TEXTURE_DIM"))
 			{
 				_strupr( ld_line);
-				FLOAT fWidth, fHeight;
+				FLOAT fWidth, fHeight; 
 				sscanf( ld_line, "TEXTURE_DIM %f %f", &fWidth, &fHeight);	// read given texture dimensions
-				edm_md.md_Width = MEX_METERS( fWidth);
-				edm_md.md_Height = MEX_METERS( fHeight);
+				/*edm_md.md_Width = MEX_METERS( fWidth);
+				edm_md.md_Height = MEX_METERS( fHeight);*/
+				edm_md.md_Width = MEX_METERS_EX(fWidth); // 1024사이즈
+				edm_md.md_Height = MEX_METERS_EX(fHeight);
 				bMappingDimFound = TRUE;
 			}
 			// Key-word "ANIM_START" starts loading of Animation Data object
@@ -1165,127 +1171,130 @@ void CEditModel::LoadFromScript_t(CTFileName &fnScriptName) // throw char *
 			{
 				ThrowF_t("Unrecognizible key-word found in line: \"%s\".", ld_line);
 			}
-	}
-	/*
-	* At the end we check if we found animations in script file and if initial mapping was done
-	* during loading of script file what means that key-word 'TEXTURE_DIM' was found
-	*/
-	if( bAnimationsFound != TRUE)
-		throw( "There are no animations defined for this model, and that can't be. Probable cause: script missing key-word \"ANIM_START\".");
-	
-	if( bMappingDimFound != TRUE)
-		throw( "Initial mapping not done, and that can't be. Probable cause: script missing key-word \"TEXTURE_DIM\".");
-	
-	edm_md.LinkDataForSurfaces(TRUE);
-	
-	// try to
-	try
-	{
-		// load mapping
-		LoadMapping_t( CTString(fnScriptName.NoExt()+".map"));
-	}
-	// if not successful
-	catch (char *strError)
-	{
-		// ignore error message
-		(void)strError;
-	}
-	
-	// import mapping
-	if( (fnImportMapping != "") ||
-		((fnClosed != "") && (fnOpened != "") && (fnUnwrapped != "")) )
-	{
-		CObject3D o3dClosed, o3dOpened, o3dUnwrapped;
-		
-		o3dClosed.Clear();
-		o3dOpened.Clear();
-		o3dUnwrapped.Clear();
-		
-		// if mapping is defined using three files
-		if( (fnClosed != "") && (fnOpened != "") && (fnUnwrapped != "") )
-		{
-			o3dClosed.LoadAny3DFormat_t( fnOpened, mStretch);
-			o3dOpened.LoadAny3DFormat_t( fnClosed, mStretch);
-			o3dUnwrapped.LoadAny3DFormat_t( fnUnwrapped, mStretch);
 		}
-		// if mapping is defined using one file
+		/*
+		* At the end we check if we found animations in script file and if initial mapping was done
+		* during loading of script file what means that key-word 'TEXTURE_DIM' was found
+		*/
+		if( bAnimationsFound != TRUE)
+			throw( "There are no animations defined for this model, and that can't be. Probable cause: script missing key-word \"ANIM_START\".");
+		
+		if( bMappingDimFound != TRUE)
+			throw( "Initial mapping not done, and that can't be. Probable cause: script missing key-word \"TEXTURE_DIM\".");
+		
+		edm_md.LinkDataForSurfaces(TRUE);
+		
+		// try to
+		try
+		{
+			// load mapping
+			LoadMapping_t( CTString(fnScriptName.NoExt()+".map"));
+		}
+		// if not successful
+		catch (char *strError)
+		{
+			// ignore error message
+			(void)strError;
+		}
+	
+		// import mapping
+		if( (fnImportMapping != "") ||
+			((fnClosed != "") && (fnOpened != "") && (fnUnwrapped != "")) )
+		{
+			CObject3D o3dClosed, o3dOpened, o3dUnwrapped;
+			
+			o3dClosed.Clear();
+			o3dOpened.Clear();
+			o3dUnwrapped.Clear();
+			
+			// if mapping is defined using three files
+			if( (fnClosed != "") && (fnOpened != "") && (fnUnwrapped != "") )
+			{
+				o3dClosed.LoadAny3DFormat_t( fnOpened, mStretch);
+				o3dOpened.LoadAny3DFormat_t( fnClosed, mStretch);
+				o3dUnwrapped.LoadAny3DFormat_t( fnUnwrapped, mStretch);
+			}
+			// if mapping is defined using one file
+			else
+			{
+				o3dClosed.LoadAny3DFormat_t( fnImportMapping, mStretch, CObject3D::LT_NORMAL);
+				o3dOpened.LoadAny3DFormat_t( fnImportMapping, mStretch, CObject3D::LT_OPENED);
+				o3dUnwrapped.LoadAny3DFormat_t( fnImportMapping, mStretch, CObject3D::LT_UNWRAPPED);
+				
+				// multiply coordinates with size of texture
+				o3dUnwrapped.ob_aoscSectors.Lock();
+				o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Lock();
+				INDEX ctVertices = o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Count();
+				for(INDEX ivtx=0; ivtx<ctVertices; ivtx++)
+				{
+					o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices[ivtx](1) *= edm_md.md_Width/1024.0f;
+					o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices[ivtx](2) *= edm_md.md_Height/1024.0f;
+					// MAX_MEX 가 2^10에서 2^12으로 확장되었으므로 // MAX 1024가 적당하다
+					/*o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices[ivtx](1) *= edm_md.md_Width/MAX_MEX;
+					o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices[ivtx](2) *= edm_md.md_Height/MAX_MEX;*/
+				}
+				o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Unlock();
+				o3dUnwrapped.ob_aoscSectors.Unlock();
+			}
+			
+			o3dClosed.ob_aoscSectors.Lock();
+			o3dOpened.ob_aoscSectors.Lock();
+			o3dUnwrapped.ob_aoscSectors.Lock();
+			
+			INDEX ctModelVertices = edm_md.md_VerticesCt;
+			INDEX ctModelPolygons = edm_md.md_MipInfos[0].mmpi_PolygonsCt;
+			
+			o3dClosed.ob_aoscSectors[0].osc_aovxVertices.Lock();
+			INDEX ctClosedVertices = o3dClosed.ob_aoscSectors[0].osc_aovxVertices.Count();
+			INDEX ctClosedPolygons = o3dClosed.ob_aoscSectors[0].osc_aopoPolygons.Count();
+			o3dClosed.ob_aoscSectors[0].osc_aovxVertices.Unlock();
+			
+			o3dOpened.ob_aoscSectors[0].osc_aovxVertices.Lock();
+			INDEX ctOpenedVertices = o3dOpened.ob_aoscSectors[0].osc_aovxVertices.Count();
+			INDEX ctOpenedPolygons = o3dOpened.ob_aoscSectors[0].osc_aopoPolygons.Count();
+			o3dOpened.ob_aoscSectors[0].osc_aovxVertices.Unlock();
+			
+			o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Lock();
+			INDEX ctUnwrappedVertices = o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Count();
+			INDEX ctUnwrappedPolygons = o3dUnwrapped.ob_aoscSectors[0].osc_aopoPolygons.Count();
+			o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Unlock();
+			
+			if((ctModelPolygons != ctClosedPolygons) ||
+				(ctModelPolygons != ctOpenedPolygons) ||
+				(ctModelPolygons != ctUnwrappedPolygons) )
+			{
+				ThrowF_t("ERROR: Object used to create model and some of objects used to define mapping don't have same number of polygons!");
+			}
+			
+			if( ctModelVertices != ctClosedVertices)
+			{
+				ThrowF_t("ERROR: Object used to create model and object that defines closed mapping don't have same number of vertices!");
+			}
+			
+			if( ctUnwrappedVertices != ctOpenedVertices)
+			{
+				ThrowF_t("ERROR: Objects that define opened and unwrapped mapping don't have same number of vertices!");
+			}
+			
+			o3dClosed.ob_aoscSectors.Unlock();
+			o3dOpened.ob_aoscSectors.Unlock();
+			o3dUnwrapped.ob_aoscSectors.Unlock();
+			
+			CalculateUnwrappedMapping( o3dClosed, o3dOpened, o3dUnwrapped);
+			CalculateMappingForMips();
+		}
 		else
 		{
-			o3dClosed.LoadAny3DFormat_t( fnImportMapping, mStretch, CObject3D::LT_NORMAL);
-			o3dOpened.LoadAny3DFormat_t( fnImportMapping, mStretch, CObject3D::LT_OPENED);
-			o3dUnwrapped.LoadAny3DFormat_t( fnImportMapping, mStretch, CObject3D::LT_UNWRAPPED);
-			
-			// multiply coordinates with size of texture
-			o3dUnwrapped.ob_aoscSectors.Lock();
-			o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Lock();
-			INDEX ctVertices = o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Count();
-			for(INDEX ivtx=0; ivtx<ctVertices; ivtx++)
-			{
-				o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices[ivtx](1) *= edm_md.md_Width/1024.0f;
-				o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices[ivtx](2) *= edm_md.md_Height/1024.0f;
-			}
-			o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Unlock();
-			o3dUnwrapped.ob_aoscSectors.Unlock();
+			ThrowF_t("ERROR: Mapping not defined!");    
 		}
 		
-		o3dClosed.ob_aoscSectors.Lock();
-		o3dOpened.ob_aoscSectors.Lock();
-		o3dUnwrapped.ob_aoscSectors.Lock();
+		O3D.ob_aoscSectors.Unlock();
+		File.Close();
 		
-		INDEX ctModelVertices = edm_md.md_VerticesCt;
-		INDEX ctModelPolygons = edm_md.md_MipInfos[0].mmpi_PolygonsCt;
+		if( edm_aasAttachedSounds.Count() == 0)
+			CreateEmptyAttachingSounds();
 		
-		o3dClosed.ob_aoscSectors[0].osc_aovxVertices.Lock();
-		INDEX ctClosedVertices = o3dClosed.ob_aoscSectors[0].osc_aovxVertices.Count();
-		INDEX ctClosedPolygons = o3dClosed.ob_aoscSectors[0].osc_aopoPolygons.Count();
-		o3dClosed.ob_aoscSectors[0].osc_aovxVertices.Unlock();
-		
-		o3dOpened.ob_aoscSectors[0].osc_aovxVertices.Lock();
-		INDEX ctOpenedVertices = o3dOpened.ob_aoscSectors[0].osc_aovxVertices.Count();
-		INDEX ctOpenedPolygons = o3dOpened.ob_aoscSectors[0].osc_aopoPolygons.Count();
-		o3dOpened.ob_aoscSectors[0].osc_aovxVertices.Unlock();
-		
-		o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Lock();
-		INDEX ctUnwrappedVertices = o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Count();
-		INDEX ctUnwrappedPolygons = o3dUnwrapped.ob_aoscSectors[0].osc_aopoPolygons.Count();
-		o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Unlock();
-		
-		if((ctModelPolygons != ctClosedPolygons) ||
-			(ctModelPolygons != ctOpenedPolygons) ||
-			(ctModelPolygons != ctUnwrappedPolygons) )
-		{
-			ThrowF_t("ERROR: Object used to create model and some of objects used to define mapping don't have same number of polygons!");
-		}
-		
-		if( ctModelVertices != ctClosedVertices)
-		{
-			ThrowF_t("ERROR: Object used to create model and object that defines closed mapping don't have same number of vertices!");
-		}
-		
-		if( ctUnwrappedVertices != ctOpenedVertices)
-		{
-			ThrowF_t("ERROR: Objects that define opened and unwrapped mapping don't have same number of vertices!");
-		}
-		
-		o3dClosed.ob_aoscSectors.Unlock();
-		o3dOpened.ob_aoscSectors.Unlock();
-		o3dUnwrapped.ob_aoscSectors.Unlock();
-		
-		CalculateUnwrappedMapping( o3dClosed, o3dOpened, o3dUnwrapped);
-		CalculateMappingForMips();
-	}
-	else
-	{
-		ThrowF_t("ERROR: Mapping not defined!");    
-	}
-	
-	O3D.ob_aoscSectors.Unlock();
-	File.Close();
-	
-	if( edm_aasAttachedSounds.Count() == 0)
-		CreateEmptyAttachingSounds();
-	
-	CObject3D::BatchLoading_t(FALSE);
+		CObject3D::BatchLoading_t(FALSE);
   } catch (char*) {
 	  CObject3D::BatchLoading_t(FALSE);
 	  throw;
@@ -1589,8 +1598,12 @@ void CEditModel::CalculateUnwrappedMapping( CObject3D &o3dClosed, CObject3D &o3d
 						pmtvTextureVertex->mtv_UVW = DOUBLEtoFLOAT( vMappingCoordinate);
 						pmtvTextureVertex->mtv_UVW(2) = -pmtvTextureVertex->mtv_UVW(2);
 						MEX2D mexUV;
+						/*
 						mexUV(1) = MEX_METERS(pmtvTextureVertex->mtv_UVW(1));
 						mexUV(2) = MEX_METERS(pmtvTextureVertex->mtv_UVW(2));
+						*/
+						mexUV(1) = MEX_METERS_EX(pmtvTextureVertex->mtv_UVW(1));
+						mexUV(2) = MEX_METERS_EX(pmtvTextureVertex->mtv_UVW(2));
 						pmtvTextureVertex->mtv_UV = mexUV;
 						o3dClosed.ob_aoscSectors[0].osc_aovxVertices.Unlock();
 						o3dUnwrapped.ob_aoscSectors[0].osc_aovxVertices.Unlock();
@@ -1748,7 +1761,8 @@ void CEditModel::CreateMipModels_t(CObject3D &objRestFrame, CObject3D &objMipSou
 								   INDEX iVertexRemoveRate, INDEX iSurfacePreservingFactor)
 {
 	// free possible mip-models except main mip model
-	for( INDEX iMipModel=1; iMipModel<edm_md.md_MipCt; iMipModel++)
+	INDEX	iMipModel;
+	for( iMipModel=1; iMipModel<edm_md.md_MipCt; iMipModel++)
 	{
 		edm_md.md_MipInfos[ iMipModel].Clear();
 	}
@@ -1764,7 +1778,7 @@ void CEditModel::CreateMipModels_t(CObject3D &objRestFrame, CObject3D &objMipSou
 	if( ProgresRoutines.SetProgressRange != NULL)
 		ProgresRoutines.SetProgressRange(ctVerticesInRestFrame);
 	// create maximum 32 mip models
-	for( iMipModel=0; iMipModel<31; iMipModel++)
+	for( iMipModel = 0; iMipModel < 31; iMipModel++)
 	{
 		// if unable to create mip models
 		if( !mmMipModel.CreateMipModel_t( iVertexRemoveRate, iSurfacePreservingFactor))
@@ -1861,7 +1875,7 @@ void CEditModel::UpdateMipModels_t(CTFileName &fnScriptName) // throw char *
 				// Jump over first mip model file name
 				File.GetLine_t(ld_line, 128);
 				
-				for( i=0; i<no_of_mip_models-1; i++)
+				for(INDEX i = 0; i < no_of_mip_models - 1; i++)
 				{
 					File.GetLine_t(ld_line, 128);
 					_strupr( ld_line);

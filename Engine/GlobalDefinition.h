@@ -5,30 +5,29 @@
 
 #ifndef	GLOBALDEFINITION_H_
 #define	GLOBALDEFINITION_H_
-#ifdef	PRAGMA_ONCE
-	#pragma once
-#endif
 
 #include <Engine/Base/FileName.h>
-
+#include <Engine/LocalDefine.h>
 //0707
 #define COMPRESSION_MESSAGE
 #define SECRET_KEY
 
-// EDIT : BS : 070413 : ì‹ ê·œ íŒ¨í‚· ì•”í˜¸í™”
-// EDIT : BS : íŒ¨í‚· ì•”í˜¸í™”
+// EDIT : BS : 070413 : ½Å±Ô ÆĞÅ¶ ¾ÏÈ£È­
+// EDIT : BS : ÆĞÅ¶ ¾ÏÈ£È­
 #define CRYPT_NET_MSG
-//#define CRYPT_NET_MSG_MANUAL	// íŒ¨í‚· ì•”í˜¸í™” í‚¤ ë³€ê²½ì„ ìˆ˜ë™ìœ¼ë¡œ í•¨ì— ë”°ë¼ ì´ì „ í‚¤ë¡œ ë³µí˜¸ë¥¼ ì‹œë„í•  ì§€ ì—¬ë¶€, DES3 ì´í›„ëŠ” ë¬´ì¡°ê±´ ìë™ì´ë¯€ë¡œ ì£¼ì„ì²˜ë¦¬ í•´ì•¼í•¨
-// ì•”í˜¸í™” lib ë§í¬
+//#define CRYPT_NET_MSG_MANUAL	// ÆĞÅ¶ ¾ÏÈ£È­ Å° º¯°æÀ» ¼öµ¿À¸·Î ÇÔ¿¡ µû¶ó ÀÌÀü Å°·Î º¹È£¸¦ ½ÃµµÇÒ Áö ¿©ºÎ, DES3 ÀÌÈÄ´Â ¹«Á¶°Ç ÀÚµ¿ÀÌ¹Ç·Î ÁÖ¼®Ã³¸® ÇØ¾ßÇÔ
+// ¾ÏÈ£È­ lib ¸µÅ©
 #ifdef NDEBUG
-#pragma comment(lib, "LCCrypt.lib")
+#pragma comment(lib, "LCCrypt_mt.lib")
 #else
 #pragma comment(lib, "LCCrypt_mtd.lib")
 #endif
 
 
 #define START_WORLD		("Data\\world\\StartZone\\startzone.wld")  
-#define LOGIN_WORLD		("Data\\World\\LoginWorld\\LoginWorld.wld")
+
+// connie [2009/7/21] - login2
+#define LOGIN_WORLD		("Data\\World\\LoginWorld3_bg_only\\LoginWorld3_bg_only.wld")
 
 //---------------------------------------------------------------------
 #define CLASS_ENEMY		("Classes\\enemy.ecl")
@@ -38,88 +37,126 @@
 #define CLASS_WILDPET	("Classes\\WildPet.ecl")
 
 #define LORD_SYMBOL_INDEX			225
-#define DRATAN_LORD_SYMBOL_INDEX	401			// WSS_DRATAN_SEIGEWARFARE 2007/07/30 êµê° í¬ë¦¬ìŠ¤íƒˆ
-#define DRATAN_MASTER_TOWER_INDEX	351			// WSS_DRATAN_SEIGEWARFARE 2007/07/30 ë§ˆìŠ¤í„° íƒ€ì›Œ
+#define DRATAN_LORD_SYMBOL_INDEX	401			// WSS_DRATAN_SEIGEWARFARE 2007/07/30 ±³°¨ Å©¸®½ºÅ»
+#define DRATAN_MASTER_TOWER_INDEX	351			// WSS_DRATAN_SEIGEWARFARE 2007/07/30 ¸¶½ºÅÍ Å¸¿ö
 #define MOB_FLOWERTREE_INDEX		342
-#define MOB_XMAS_TREE_DECO			486			// í¬ë¦¬ìŠ¤ë§ˆìŠ¤ ì¥ì‹ìš©
-#define MOB_XMAS_TREE_CENTER		484			// í¬ë¦¬ìŠ¤ë§ˆìŠ¤ ê´‘ì¥ìš©
+#define MOB_XMAS_TREE_DECO			486			// Å©¸®½º¸¶½º Àå½Ä¿ë
+#define MOB_XMAS_TREE_CENTER		484			// Å©¸®½º¸¶½º ±¤Àå¿ë
+#define GAMIGO_10TH_CAKE			1304		// [ldy1978220 2011/5/31] °¡¹Ì°í 10ÁÖ³â ÀÌº¥Æ® ÄÉÀÍ 
 
+// Check Attack Flag
+#define ENF_EX2_PVP				(1L<<0)
+#define ENF_EX2_LEGIT			(1L<<1)
+#define ENF_EX2_MYPARTY			(1L<<2)
+#define ENF_EX2_MYGUILD			(1L<<3)
+#define ENF_EX2_ENEMYGUILD		(1L<<4)
+#define ENF_EX2_WAR_OURFORCE		(1L<<5)
+#define ENF_EX2_WAR_ENEMY		(1L<<6)
+#define ENF_EX2_SAFEGUARD		(1L<<7)
 
 //---------------------------------------------------------------------
-// ì„œë²„ì—ì„œ ì˜¤ëŠ” ë©”ì„¸ì§€ ì²˜ë¦¬ì—ì„œë§Œ ì‚¬ìš©
-#define		PLAYER_STATE_SUPPORTER		(1 << 9)	// ê²Œì„ ì„œí¬í„° í”Œë˜ê·¸ (íŠ¹ì • ì•„ì´í…œ ì°©ìš©ì‹œ ì´í™íŠ¸)
-#define		PLAYER_STATE_OTHERZONE		(1 << 10)	// ë‹¤ë¥¸ ì†ì„±ì˜ ë§ˆì„ì— ìˆì„ë•Œ
-#define		PLAYER_STATE_CRISTAL_RESPOND	(1 << 11)	// ë“œë¼íƒ„ ê³µì„± í¬ë¦¬ìŠ¤íƒˆ êµê°ì¤‘ // WSS_DRATAN_SEIGEWARFARE 2007/07/31
-#define		HAIR_RED_CAP				10 // ë¹¨ê°„ ì‚°íƒ€ ëª¨ì
-#define		HAIR_GREEN_CAP				20 // ë…¹ìƒ‰ ì‚°íƒ€ ëª¨ì 
+// ¼­¹ö¿¡¼­ ¿À´Â ¸Ş¼¼Áö Ã³¸®¿¡¼­¸¸ »ç¿ë
+#define		PLAYER_STATE_SUPPORTER		(1 << 9)	// °ÔÀÓ ¼­Æ÷ÅÍ ÇÃ·¡±× (Æ¯Á¤ ¾ÆÀÌÅÛ Âø¿ë½Ã ÀÌÆåÆ®)
+#define		PLAYER_STATE_OTHERZONE		(1 << 10)	// ´Ù¸¥ ¼Ó¼ºÀÇ ¸¶À»¿¡ ÀÖÀ»¶§
+#define		PLAYER_STATE_CRISTAL_RESPOND	(1 << 11)	// µå¶óÅº °ø¼º Å©¸®½ºÅ» ±³°¨Áß // WSS_DRATAN_SEIGEWARFARE 2007/07/31
+#define		PLAYER_STATE_FLYING			(1 << 12) // ºñÇà¸ğµå(³ªÀÌÆ®½¦µµ¿ì)
+#define		PLAYER_STATE_DARKNESS		(1 << 13) // »çµµ¸ğµå(³ªÀÌÆ®½¦µµ¿ì)
+#define		PLAYER_STATE_SKILL			(1 << 14) // ½ºÅ³¹ßµ¿¸ğµå(³ªÀÌÆ®½¦µµ¿ì)
+#define		HAIR_RED_CAP				10 // »¡°£ »êÅ¸ ¸ğÀÚ
+#define		HAIR_GREEN_CAP				20 // ³ì»ö »êÅ¸ ¸ğÀÚ 
 //--------------------enum zone name begin()--------------------
-// zone no  = // ë§ˆì„ ì´ë¦„
+// zone no  = // ¸¶À» ÀÌ¸§
 enum eZoneName
 {
-	F_JUNO,		// 0 ì¥¬ë…¸ë§ˆì„
-	D_BELFIST,	// 1 ë²¨í”¼ìŠ¤íŠ¸ ì‹ ì „
-	PD_STRAIA,	// 2 ìŠ¤íŠ¸ë ˆì´ì•„ ì‹ ì „( í¼ìŠ¤ë„ )
-	P_PROCYON,	// 3 í”„ë¡œí‚¤ì˜¨ ì‹ ì „
-	F_DRATAN,	// 4 ë“œë¼íƒ„ í•„ë“œ
-	PD_MINOC,	// 5 ë¯¸ë…¸í¬ íƒ„ê´‘( í¼ìŠ¤ë„ )
-	T_STRAIA,	// 6 ìŠ¤íŠ¸ë ˆì´ì•„ ì‹ ì „ ( íŠœí† ë¦¬ì–¼ )
-	F_MERAC,	// 7 ë©”ë¼í¬ í•„ë“œ
-	GUILD_ROOM,	// 8 ê¸¸ë“œ ì „ìš©ë°©
-	P_MARGADUM,	// 9 ë§ˆë¥´ê°€ë“ ì§€í•˜ ê°ì˜¥
-	PD_AJAKA,	// 10 ì•„ìì¹´ í˜‘ê³¡( í¼ìŠ¤ë„ )
-	PD_GATEofDIMENSION,	// 11 ì°¨ì›ì˜ ë¬¸ ( í¼ìŠ¤ë„ )
-	P_TEMPLEofFORGETFULNESS, // 12 ë§ê°ì˜ ì‹ ì „
-	PKZONE_MARGADUM,	// 13 ë§ˆë¥´ê°€ë“ PKì¡´( íƒœêµ­ )
-	OXEVENT_ROOM,		// 14 OX ì´ë²¤íŠ¸ í™€
-	F_EGEHA				// 15 ì—ê²Œí•˜ í•„ë“œ
+	F_JUNO,		// 0 Áê³ë¸¶À»
+	D_BELFIST,	// 1 º§ÇÇ½ºÆ® ½ÅÀü
+	PD_STRAIA,	// 2 ½ºÆ®·¹ÀÌ¾Æ ½ÅÀü( ÆÛ½º³Î )
+	P_PROCYON,	// 3 ÇÁ·ÎÅ°¿Â ½ÅÀü
+	F_DRATAN,	// 4 µå¶óÅº ÇÊµå
+	PD_MINOC,	// 5 ¹Ì³ëÅ© Åº±¤( ÆÛ½º³Î )
+	T_STRAIA,	// 6 ½ºÆ®·¹ÀÌ¾Æ ½ÅÀü ( Æ©Åä¸®¾ó )
+	F_MERAC,	// 7 ¸Ş¶óÅ© ÇÊµå
+	GUILD_ROOM,	// 8 ±æµå Àü¿ë¹æ
+	P_MARGADUM,	// 9 ¸¶¸£°¡µã ÁöÇÏ °¨¿Á
+	PD_AJAKA,	// 10 ¾ÆÀÚÄ« Çù°î( ÆÛ½º³Î )
+	PD_GATEofDIMENSION,	// 11 Â÷¿øÀÇ ¹® ( ÆÛ½º³Î )
+	P_TEMPLEofFORGETFULNESS, // 12 ¸Á°¢ÀÇ ½ÅÀü
+	PKZONE_MARGADUM,	// 13 ¸¶¸£°¡µã PKÁ¸( ÅÂ±¹ )
+	OXEVENT_ROOM,		// 14 OX ÀÌº¥Æ® È¦
+	F_EGEHA				// 15 ¿¡°ÔÇÏ ÇÊµå
 };
 //--------------------enum zone name end()----------------------
 
-// Date : 2005-05-26(ì˜¤ì „ 10:40:39), By Lee Ki-hwan
-// ì ‘ì† ìƒíƒœ (ë©”ì‹ ì €ì—ì„œ ì‚¬ìš©)
+// Date : 2005-05-26(¿ÀÀü 10:40:39), By Lee Ki-hwan
+// Á¢¼Ó »óÅÂ (¸Ş½ÅÀú¿¡¼­ »ç¿ë)
 enum eCondition
 {
-	OFFLINE,		// ì ‘ì†ì•ˆí•¨		
-	ONLINE,			// ì ‘ì†ì¤‘
-	LEFT_POSITION,	// ìë¦¬ë¹„ì›€
+	OFFLINE,		// Á¢¼Ó¾ÈÇÔ		
+	ONLINE,			// Á¢¼ÓÁß
+	LEFT_POSITION,	// ÀÚ¸®ºñ¿ò
 	TOTAL_CONDITION,
 };
 
 //---------------------------------------------------------------------
-// ì§ì—… ëª©ë¡.
+// Á÷¾÷ ¸ñ·Ï.
 enum eJob
 {
-	TITAN		= 0,	// íƒ€ì´íƒ„
-	KNIGHT		= 1,	// ê¸°ì‚¬		
-	HEALER		= 2,	// íëŸ¬
-	MAGE		= 3,	// ë©”ì´ì§€
-	ROGUE		= 4,	// ë¡œê·¸
-	SORCERER	= 5,	// ì†Œì„œëŸ¬
-	TOTAL_JOB	= 6,	// ì´ ì§ì—…ì˜ ê°¯ìˆ˜.
+	TITAN		= 0,	// Å¸ÀÌÅº
+	KNIGHT		= 1,	// ±â»ç		
+	HEALER		= 2,	// Èú·¯
+	MAGE		= 3,	// ¸ŞÀÌÁö
+	ROGUE		= 4,	// ·Î±×
+	SORCERER	= 5,	// ¼Ò¼­·¯
+	NIGHTSHADOW	= 6,	// ³ªÀÌÆ® ½¦µµ¿ì
+#ifdef CHAR_EX_ROGUE
+	EX_ROGUE,			// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+#endif
+#ifdef CHAR_EX_MAGE		//2013/01/08 jeil EX ¸ŞÀÌÁö Ãß°¡ 
+	EX_MAGE,
+#endif
+	TOTAL_JOB,			// ÃÑ Á÷¾÷ÀÇ °¹¼ö.
 };
 
-// Date : 2005-09-23(ì˜¤í›„ 5:24:56), By Lee Ki-hwan
-// ì• ì™„ë™ë¬¼ì€ ì§ì—…ì€ ì•„ë‹Œë° ìŠ¤í‚¬ ì§ì—…ì¤‘ì—ì„œ ê³¨ë¼ì•¼í•œë‹¤...
-#define PET_JOB				6
-#define WILDPET_JOB			7
+// [2010/08/27 : Sora] ADD_SUBJOB
+enum eSubJob
+{
+	SUBJOB_MERCHANT = (1 << 0),	// »óÀÎ
+	TOTAL_SUBJOB = 1,
+};
 
-// FIXME : ì•„ì§ í•„ìš” ì—†ìŒ...
-// ì „ì§ í›„ ì§ì—…
+// Date : 2005-09-23(¿ÀÈÄ 5:24:56), By Lee Ki-hwan
+// ¾Ö¿Ïµ¿¹°Àº Á÷¾÷Àº ¾Æ´Ñµ¥ ½ºÅ³ Á÷¾÷Áß¿¡¼­ °ñ¶ó¾ßÇÑ´Ù...
+#define PET_JOB				10
+#define WILDPET_JOB			11
+
+// FIXME : ¾ÆÁ÷ ÇÊ¿ä ¾øÀ½...
+// ÀüÁ÷ ÈÄ Á÷¾÷
 enum eJob2
 {
-	JOB_2ND_HIGHLANDER		= 1,		// í•˜ì´ëœë”
-	JOB_2ND_WARMASTER		= 2,		// ì›Œë§ˆìŠ¤í„°
-	JOB_2ND_ROYALKNIGHT		= 1,		// ë¡œì—´ë‚˜ì´íŠ¸
-	JOB_2ND_TEMPLEKNIGHT	= 2,		// í…œí”Œë‚˜ì´íŠ¸
-	JOB_2ND_ARCHER			= 1,		// ì•„ì²˜
-	JOB_2ND_CLERIC			= 2,		// í´ë ˆë¦­
-	JOB_2ND_WIZARD			= 1,		// ìœ„ìë“œ
-	JOB_2ND_WITCH			= 2,		// ìœ„ì¹˜
-	JOB_2ND_ASSASSIN		= 1,		// ë¨¸ì„ì”¬
-	JOB_2ND_RANGER			= 2,		// ë ˆì¸ì €
+	JOB_2ND_HIGHLANDER		= 1,		// ÇÏÀÌ·£´õ
+	JOB_2ND_WARMASTER		= 2,		// ¿ö¸¶½ºÅÍ
+	JOB_2ND_ROYALKNIGHT		= 1,		// ·Î¿­³ªÀÌÆ®
+	JOB_2ND_TEMPLEKNIGHT	= 2,		// ÅÛÇÃ³ªÀÌÆ®
+	JOB_2ND_ARCHER			= 1,		// ¾ÆÃ³
+	JOB_2ND_CLERIC			= 2,		// Å¬·¹¸¯
+	JOB_2ND_WIZARD			= 1,		// À§ÀÚµå
+	JOB_2ND_WITCH			= 2,		// À§Ä¡
+	JOB_2ND_ASSASSIN		= 1,		// ¸Ó½ê¾À
+	JOB_2ND_RANGER			= 2,		// ·¹ÀÎÀú
 
-	JOB_2ND_WILDPET_HUMAN	= 1,		// ê³µê²© í« íœ´ë¨¼
-	JOB_2ND_WILDPET_BEAST	= 2,		// ê³µê²© í« ì•¼ìˆ˜
+	JOB_2ND_ELEMENTALIST		= 1,		// °ø°İ Æê ÈŞ¸Õ
+	JOB_2ND_SPECIALIST		= 2,		// °ø°İ Æê ¾ß¼ö
+
+	JOB_2ND_NIGHTSHADOW		= 1,		// ³ªÀÌÆ®¼¨µµ¿ì
+
+#ifdef CHAR_EX_ROGUE
+	JOB_2ND_EX_ASSASSIN		= 1,		// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+	JOB_2ND_EX_RANGER		= 2,		// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+#endif
+#ifdef CHAR_EX_MAGE
+	JOB_2ND_EX_WIZARD		= 1,		//2013/01/08 jeil EX ¸ŞÀÌÁö Ãß°¡ 
+	JOB_2ND_EX_WITCH		= 2,		//2013/01/08 jeil EX ¸ŞÀÌÁö Ãß°¡ 
+#endif
 	/*
 	JOB_2ND_HORSE			= 1,
 	JOB_2ND_DRAGON			= 2,
@@ -128,8 +165,8 @@ enum eJob2
 	*/
 };
 
-#define TOTAL_HEAD	(3)
-#define TOTAL_HAIR	(3)
+#define TOTAL_HEAD	(5)
+#define TOTAL_HAIR	(5)
 
 // Job Bit Mask
 #define MASK_TITAN		(1 << TITAN)
@@ -138,11 +175,19 @@ enum eJob2
 #define MASK_KNIGHT		(1 << KNIGHT)
 #define MASK_ROGUE		(1 << ROGUE)
 #define MASK_SOCERER	(1 << SORCERER)
+#define MASK_NIGHTSHADOW (1 << NIGHTSHADOW)
+#ifdef CHAR_EX_ROGUE	// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+	#define MASK_EX_ROGUE	(1 << EX_ROGUE)
+#endif
+#ifdef CHAR_EX_MAGE		//2013/01/08 jeil EX ¸ŞÀÌÁö Ãß°¡ 
+	#define MASK_EX_MAGE	(1 << EX_MAGE)
+#endif
 
 //---------------------------------------------------------------------
 // Equipment
 enum eEquipment
 {
+	WEAR_NONE					= -1,
 	WEAR_HELMET					= 0,
 	WEAR_JACKET					= 1,
 	WEAR_WEAPON					= 2,
@@ -155,8 +200,9 @@ enum eEquipment
 	WEAR_ACCESSORY3				= 9,
 	WEAR_ACCESSORY4				= 10,
 	WEAR_PET					= WEAR_ACCESSORY4,
-	WEAR_ACCESSORY_ANYWHERE		= 11,	// ì•…ì„¸ì„œë¦¬ ê´€ë ¨ ê¸°íšì´ ë³€ê²½ë˜ì–´ ì¶”ê°€ë¨. ì•…ì„¸ì„œë¦¬ì˜ ê²½ìš° WearTypeì— ì´ ê°’ì„
-	WEAR_TOTAL					= 11,	// ë³´ë‚´ë©´ ì„œë²„ì—ì„œëŠ” ë¹ˆ ì•…ì„¸ì„œë¦¬ ìŠ¬ë¡¯ì— ì•…ì„¸ì„œë¦¬ë¥¼ ì°©ìš©í•œë‹¤.
+	WEAR_BACKWING				= 11,	// ³¯°³
+	WEAR_ACCESSORY_ANYWHERE		= 12,	// ¾Ç¼¼¼­¸® °ü·Ã ±âÈ¹ÀÌ º¯°æµÇ¾î Ãß°¡µÊ. ¾Ç¼¼¼­¸®ÀÇ °æ¿ì WearType¿¡ ÀÌ °ªÀ»
+	WEAR_TOTAL					= 12,	// º¸³»¸é ¼­¹ö¿¡¼­´Â ºó ¾Ç¼¼¼­¸® ½½·Ô¿¡ ¾Ç¼¼¼­¸®¸¦ Âø¿ëÇÑ´Ù.
 };
 
 enum eWildPetWear
@@ -168,17 +214,41 @@ enum eWildPetWear
 	WILDPET_WEAR_TOTAL	= 4,
 };
 
+enum eCostumeEquipment
+{
+	WEAR_COSTUME_HELMET					= 0,
+	WEAR_COSTUME_JACKET					= 1,
+	WEAR_COSTUME_WEAPON					= 2,
+	WEAR_COSTUME_PANTS					= 3,
+	WEAR_COSTUME_SHIELD					= 4,
+	WEAR_COSTUME_GLOVES					= 5,
+	WEAR_COSTUME_BOOTS					= 6,
+	WEAR_COSTUME_BACKWING				= 7,
+	WEAR_COSTUME_TOTAL					= 8,
+};
+
+enum eAccessoryWear
+{
+	WEAR_ACCESSORY_1 = 0,
+	WEAR_ACCESSORY_2 = 1,
+	WEAR_ACCESSORY_3 = 2,
+	WEAR_ACCESSORY_MAX,
+};
+
 #define	INVEN_SLOT_TAB				3
 #define	INVEN_SLOT_COL				5
 #define	INVEN_SLOT_ROW				5
 #define	INVEN_SLOT_ROW_TOTAL		20
 
-#define PET_TYPE_HORSE		(0x10)		// ë§
-#define PET_TYPE_DRAGON		(0x20)		// ìš©
+#define	INVEN_ONE_BAG				25
+#define ONE_SUIT_MAX				5
 
-#define PET_GRADE_CHILD		(0X01)		// ìœ ë…„ê¸°
-#define PET_GRADE_ADULT		(0X02)		// ì„±ìˆ™ê¸°
-#define PET_GRADE_MOUNT		(0X03)		// íƒˆê²ƒ
+#define PET_TYPE_HORSE		(0x10)		// ¸»
+#define PET_TYPE_DRAGON		(0x20)		// ¿ë
+
+#define PET_GRADE_CHILD		(0X01)		// À¯³â±â
+#define PET_GRADE_ADULT		(0X02)		// ¼º¼÷±â
+#define PET_GRADE_MOUNT		(0X03)		// Å»°Í
 
 //---------------------------------------------------------------------
 // Zone Bit Mask
@@ -194,36 +264,69 @@ enum eWildPetWear
 #define	ZONE9		(1 << 9)
 #define ZONEALL		(0x3FF)
  
-#define	PC_STATE_STANDING		0		// PC ìƒíƒœ : ì„œìˆìŒ
-#define	PC_STATE_MOVING			1		// PC ìƒíƒœ : ì´ë™ì¤‘
-#define	PC_STATE_SITDOWN		2		// PC ìƒíƒœ : ì•‰ìŒ
-#define	PC_STATE_WARP			3		// PC ìƒíƒœ : ê·€í™˜ì¤‘
+#define	PC_STATE_STANDING		0		// PC »óÅÂ : ¼­ÀÖÀ½
+#define	PC_STATE_MOVING			1		// PC »óÅÂ : ÀÌµ¿Áß
+#define	PC_STATE_SITDOWN		2		// PC »óÅÂ : ¾ÉÀ½
+#define	PC_STATE_WARP			3		// PC »óÅÂ : ±ÍÈ¯Áß
+
+/*
+¼­¹ö ±¹°¡ ¼³Á¤
+# LC_KOR 0
+# LC_TWN 1
+# LC_CHN 3
+# LC_TLD 4
+# LC_JPN 6
+# LC_JPNEP 6
+# LC_MAL 7
+# LC_USA 9
+# LC_BRZ 10
+# LC_HBK 11
+# LC_GER 13
+# LC_SPN 14
+# LC_FRC 15
+# LC_PLD 16
+# LC_RUS 17
+# LC_TUR 18
+# LC_ITA 19
+# LC_MEX 20
+# LC_ESP_USA 21
+# LC_FRA_USA 22
+# LC_NLD 23
+# LC_UK 24
+*/
 
 // Define country
-#define	KOREA					0		// í•œêµ­
-#define	TAIWAN					1		// ëŒ€ë§Œ
-#define	CHINA					2		// ì¤‘êµ­
-#define THAILAND				3		// íƒœêµ­
-#define TAIWAN2					4		// ëŒ€ë§Œ ì²œí•˜ëŒ€ë€ wooss 050929
-#define JAPAN					5		// ì¼ë³¸ wooss 051123
+#define	KOREA					0		// ÇÑ±¹
+#define	TAIWAN					1		// ´ë¸¸
+#define	CHINA					2		// Áß±¹
+#define THAILAND				3		// ÅÂ±¹
+#define TAIWAN2					4		// ´ë¸¸ ÃµÇÏ´ë¶õ wooss 050929
+#define JAPAN					5		// ÀÏº» wooss 051123
 #define MALAYSIA    			6
-#define USA						7		// ë¯¸êµ­
-#define BRAZIL					8		// ë¸Œë¼ì§ˆ
-#define HONGKONG				9		// í™ì½©
-#define GERMANY					10		// ë…ì¼
-#define SPAIN					11		// ìŠ¤í˜ì¸
-#define FRANCE					12		// í”„ë‘ìŠ¤		FRANCE_SPAIN_CLOSEBETA_NA_20081124
-#define POLAND					13		// í´ë€ë“œ
-#define RUSSIA					14		// ëŸ¬ì‹œì•„
-#define TURKEY					15		// í„°í‚¤
+#define USA						7		// ¹Ì±¹
+#define BRAZIL					8		// ºê¶óÁú
+#define HONGKONG				9		// È«Äá
+#define GERMANY					10		// µ¶ÀÏ
+#define SPAIN					11		// ½ºÆäÀÎ
+#define FRANCE					12		// ÇÁ¶û½º		FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#define POLAND					13		// Æú¶õµå
+#define RUSSIA					14		// ·¯½Ã¾Æ
+#define TURKEY					15		// ÅÍÅ°
+#define MEXICO					16		// ¸ß½ÃÄÚ
+#define ITALY					17		// ÀÌÅ»¸®¾Æ
+#define USA_FRANCE				18		// ¿¡ÀÌ¸®¾Æ ÇÁ¶û½º
+#define USA_SPAIN				19		// ¿¡ÀÌ¸®¾Æ ½ºÆäÀÎ 
+#define NETHERLANDS				20		// ³×´ú¶õµå
+#define ENGLAND					24
 
-// ì „ì²´ í™”ë©´ ëª¨ë“œ êµ¬ë¶„
+// ÀüÃ¼ È­¸é ¸ğµå ±¸ºĞ
 #define OLD_WINDOW_MODE		0
 #define FULLSCREEN_MODE		1
 #define TAIWAN_WINDOW_MODE	2
 
 #define IsFullScreen(X)	( (X==FULLSCREEN_MODE)?TRUE:FALSE )
-
+#define IsGamigo(X) ( (X==GERMANY||X==SPAIN||X==FRANCE||X==POLAND||X==TURKEY||X==ITALY||X==ENGLAND)?TRUE:FALSE )
+#define IsBila(X)	( (X==MEXICO||X==BRAZIL)?TRUE:FALSE )
 // Add LC time 060421 wooss
 #define _LC_DAY_IN_MONTH		(30L)
 #define _LC_DAY_SEC				(24L * 60L * 60L)    /* secs in a day */
@@ -237,9 +340,17 @@ enum eWildPetWear
 #define LEASE_MIN_LEVEL 37
 #define LEASE_MAX_LEVEL 65
 
-#define HEAD_CHANGE	//ì¼ë³¸ í—¬ë©§ ì°©ìš© ì‹œìŠ¤í…œ
-
 // WSS_WALLMOVE_BUGFIX 070531---->><<
 #define MAX_MOVE_SLOPE_GRADE	45.0f
+
+// ÆĞÅ°Áö 4
+// ÀÎÃ¾Æ® ·¹º§ [11/28/2011 ldy1978220]
+// #if defined (G_THAI)
+// 	#define ITEM_MEX_LEVEL	16
+// #else
+#define ITEM_MEX_LEVEL	25
+//#endif
+
+#define DEF_INIT_CAMERA_FOV	(45.0f)
 
 #endif

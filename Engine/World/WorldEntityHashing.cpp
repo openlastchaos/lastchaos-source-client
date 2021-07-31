@@ -78,9 +78,9 @@ void CWorldEntityHash::ReportEfficiency()
 
 void CWorldEntityHash::Clear()
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(DevPartner Bug Fix)(2005-01-10)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-10)
 	this->RemoveAll();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-10)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-10)
 	wh_whtHashTable.Clear();
 };
 

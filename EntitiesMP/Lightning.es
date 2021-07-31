@@ -95,75 +95,6 @@ functions:
   }
 
 procedures:
-  LightningStike()
-  {
-    // choose random sound
-    m_iSoundPlaying = 1+IRnd()%( ARRAYCOUNT(_atiThunderSounds)-1);
-    if( m_fSoundDelay != 0)
-    {
-      m_iSoundPlaying=0;
-    }
-    m_soThunder.SetVolume( m_fLightningPower);
-    m_soThunder.SetPitch(Lerp(0.9f, 1.2f, FRnd()));
-    
-    if( m_fSoundDelay == 0.0f)
-    {
-      // play thunder !
-      PlaySound(m_soThunder, _atiThunderSounds[ m_iSoundPlaying].ti_iSound, 0);
-    }
-
-    // wait for sound to progress to lightning strike
-    if (_atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay>0.0f) {
-    autowait( _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay);
-    }
-
-    // remember current time as lightning start time
-    TIME tmNow = _pTimer->CurrentTick();
-    m_tmLightningStart = tmNow;
-    // also in world settings controller
-    ((CWorldSettingsController *)&*m_penwsc)->m_tmLightningStart = tmNow;
-    // set power of lightning
-    ((CWorldSettingsController *)&*m_penwsc)->m_fLightningPower = m_fLightningPower;
-
-    // trigger light animation
-    if( m_penLight != NULL)
-    {
-      EChangeAnim eChange;
-      eChange.iLightAnim  = m_iLightAnim;
-      eChange.bLightLoop  = FALSE;
-      m_penLight->SendEvent(eChange);
-    }
-
-    if( m_fSoundDelay != 0.0f)
-    {
-      // wait given delay time
-      autowait( m_fSoundDelay);
-      // play thunder !
-      PlaySound(m_soThunder, _atiThunderSounds[ m_iSoundPlaying].ti_iSound, 0);
-    }
-    
-    TIME tmDelay = GetSoundLength(_atiThunderSounds[ m_iSoundPlaying].ti_iSound)-
-                    _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay;
-
-    if (tmDelay>0.0f) {
-      // wait until end of sound
-      wait( GetSoundLength(_atiThunderSounds[ m_iSoundPlaying].ti_iSound)-
-        _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay)
-      {
-        on (ETimer) :
-        {
-          stop;
-        }
-        otherwise() :
-        {
-          resume;
-        };
-      }
-    }
-
-    return EBegin();
-  }
-
   Main(EVoid)
   {
     // set appearance
@@ -265,5 +196,74 @@ procedures:
         };
       };
     }
+  }
+
+  LightningStike()
+  {
+    // choose random sound
+    m_iSoundPlaying = 1+IRnd()%( ARRAYCOUNT(_atiThunderSounds)-1);
+    if( m_fSoundDelay != 0)
+    {
+      m_iSoundPlaying=0;
+    }
+    m_soThunder.SetVolume( m_fLightningPower);
+    m_soThunder.SetPitch(Lerp(0.9f, 1.2f, FRnd()));
+    
+    if( m_fSoundDelay == 0.0f)
+    {
+      // play thunder !
+      PlaySound(m_soThunder, _atiThunderSounds[ m_iSoundPlaying].ti_iSound, 0);
+    }
+
+    // wait for sound to progress to lightning strike
+    if (_atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay>0.0f) {
+    autowait( _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay);
+    }
+
+    // remember current time as lightning start time
+    TIME tmNow = _pTimer->CurrentTick();
+    m_tmLightningStart = tmNow;
+    // also in world settings controller
+    ((CWorldSettingsController *)&*m_penwsc)->m_tmLightningStart = tmNow;
+    // set power of lightning
+    ((CWorldSettingsController *)&*m_penwsc)->m_fLightningPower = m_fLightningPower;
+
+    // trigger light animation
+    if( m_penLight != NULL)
+    {
+      EChangeAnim eChange;
+      eChange.iLightAnim  = m_iLightAnim;
+      eChange.bLightLoop  = FALSE;
+      m_penLight->SendEvent(eChange);
+    }
+
+    if( m_fSoundDelay != 0.0f)
+    {
+      // wait given delay time
+      autowait( m_fSoundDelay);
+      // play thunder !
+      PlaySound(m_soThunder, _atiThunderSounds[ m_iSoundPlaying].ti_iSound, 0);
+    }
+    
+    TIME tmDelay = GetSoundLength(_atiThunderSounds[ m_iSoundPlaying].ti_iSound)-
+                    _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay;
+
+    if (tmDelay>0.0f) {
+      // wait until end of sound
+      wait( GetSoundLength(_atiThunderSounds[ m_iSoundPlaying].ti_iSound)-
+        _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay)
+      {
+        on (ETimer) :
+        {
+          stop;
+        }
+        otherwise() :
+        {
+          resume;
+        };
+      }
+    }
+
+    return EBegin();
   }
 };

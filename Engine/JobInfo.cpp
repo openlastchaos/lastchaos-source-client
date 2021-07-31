@@ -3,15 +3,19 @@
 #include <Engine/GlobalDefinition.h>
 #include <Engine/Entities/ItemData.h>
 
-CJobInfo CJobInfo::m_instance;
-
 #define PLAYER_TITAN	("Data\\character\\TITAN\\ti.smc")
 #define PLAYER_MAGE		("Data\\character\\mage\\ma.smc")
 #define PLAYER_HEALER	("Data\\character\\HEALER\\hw.smc")
 #define PLAYER_KNIGHT	("Data\\character\\KNIGHT\\ni.smc")
 #define PLAYER_ROGUE	("Data\\character\\ROGUE\\ro.smc")
 #define PLAYER_SORCERER	("Data\\character\\Sorcerer\\so.smc")
-
+#define PLAYER_NIGHTSHADOW ("Data\\character\\NightShadow\\ns.smc")
+#ifdef CHAR_EX_ROGUE
+	#define PLAYER_EX_ROGUE	("Data\\character\\ROGUE\\ro.smc")	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+#endif
+#ifdef CHAR_EX_MAGE
+	#define PLAYER_EX_MAGE ("Data\\character\\mage\\ma.smc") // 2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° 
+#endif
 // ----------------------------------------------------------------------------
 // Name : CJobInfo()
 // Desc :
@@ -21,11 +25,11 @@ m_pJobInfo( NULL )
 {
 	m_pJobInfo					= new sJobInfo[TOTAL_JOB];
 	//-------------------------------------------------------
-	m_pJobInfo[TITAN].strName					= "ÌÉÄÏù¥ÌÉÑ";
+	m_pJobInfo[TITAN].strName					= "≈∏¿Ã≈∫";
 	m_pJobInfo[TITAN].strFileName				= PLAYER_TITAN;
 
-	// FIXME : Ïï†ÎãàÎ©îÏù¥ÏÖò Ïù¥Î¶ÑÏùÄ Í≥µÏãùÏù¥ ÏóÜÎÇò???
-	// FIXME : Î™ÖÎ™Ö Í∑úÏπôÏùÑ Ï†àÎåÄ Ïïà ÏßÄÏºúÏ£ºÍ∏∞ ÎïåÎ¨∏Ïóê Ïù¥Î¶ÑÏù¥ Îã§ ÏóâÎßùÏûÑ~-_-;;;
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_WALK_1]		= "ti_walk_01";
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_WALK_2]		= "ti_walk_02";
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_IDLE]			= "ti_idle_01";	
@@ -36,9 +40,9 @@ m_pJobInfo( NULL )
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_ATTACK_2]		= "ti_att_02";
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_ATTACK_3]		= "ti_att_03";
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_ATTACK_4]		= "ti_att_04";
-	m_pJobInfo[TITAN].aStrAnimationName[ANIM_SIT]			= "ti_sit_01";	// ÏïâÍ∏∞.
-	m_pJobInfo[TITAN].aStrAnimationName[ANIM_SIT_CONTINUE]	= "ti_sit_02";	// ÏïâÏïÑ ÏûàÎäî ÏÉÅÌÉú.
-	m_pJobInfo[TITAN].aStrAnimationName[ANIM_STANDUP]		= "ti_sit_03";	// ÏùºÏñ¥ÏÑúÍ∏∞.
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_SIT]			= "ti_sit_01";	// æ…±‚.
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_SIT_CONTINUE]	= "ti_sit_02";	// æ…æ∆ ¿÷¥¬ ªÛ≈¬.
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_STANDUP]		= "ti_sit_03";	// ¿œæÓº≠±‚.
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_MINE]			= "ti_mine";
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_COLLECT]		= "ti_collect";
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_GATHER]		= "ti_gather";
@@ -101,6 +105,29 @@ m_pJobInfo( NULL )
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";
 	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]	= "pet_dragon03_skill01_2";
 
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_WALK_1]	= "pet_demonbat_walk";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_1]	= "pet_demonbat_idle01";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_2]	= "pet_demonbat_idle02";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_RUN_1]		= "pet_demonbat_run";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_PICK]		= "pet_demonbat_idle01";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_DAMAGE]	= "pet_demonbat_dam";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_DIE]		= "pet_demonbat_die";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_LEVELUP]	= "pet_demonbat_hungry";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT_CONTINUE]	= "pet_demonbat_idle01";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_1]	= "pet_demonbat_skill01";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_2]	= "pet_demonbat_skill02";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_3]	= "pet_demonbat_skill03";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_4]	= "pet_demonbat_idle01";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT]	= "pet_demonbat_idle01";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_RIDE_DEMONBAT_STANDUP]	= "pet_demonbat_idle01";
+
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_FLYING_READY]	= "";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_FLYING_MOVE]	= "";
+
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_LOGIN_GAMESTART]	= "ti_Login_01";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_LOGIN_IDLE01]		= "ti_Login_02";
+	m_pJobInfo[TITAN].aStrAnimationName[ANIM_LOGIN_IDLE02]		= "ti_Login_03";
+
 	m_pJobInfo[TITAN].afImpactTimeTable[ATTACK1] = 0.67f;
 	m_pJobInfo[TITAN].afImpactTimeTable[ATTACK2] = 0.68f;
 	m_pJobInfo[TITAN].afImpactTimeTable[ATTACK3] = 0.71f;
@@ -110,7 +137,7 @@ m_pJobInfo( NULL )
 	m_pJobInfo[TITAN].afImpactTimeTable[EXT_ATTACK3] = 0.74f;
 	m_pJobInfo[TITAN].afImpactTimeTable[EXT_ATTACK4] = 0.60f;
 
-	m_pJobInfo[TITAN].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_BIGSWORD;		// Ïä§ÌÇ¨ ÏÇ¨Ïö© Í∞ÄÎä• Î¨¥Í∏∞ ÌÉÄÏûÖ
+	m_pJobInfo[TITAN].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_BIGSWORD;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
 	m_pJobInfo[TITAN].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_AXE;
 
 	// Mesh Name
@@ -134,11 +161,11 @@ m_pJobInfo( NULL )
 	m_pJobInfo[TITAN].aStrTexNormalName[HAND]		= CTFileName("Data\\Character\\Titan\\ti_hn_N_000.tex");		// HAND
 	m_pJobInfo[TITAN].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
 	//-------------------------------------------------------
-	m_pJobInfo[KNIGHT].strName					= "ÎÇòÏù¥Ìä∏";
+	m_pJobInfo[KNIGHT].strName					= "≥™¿Ã∆Æ";
 	m_pJobInfo[KNIGHT].strFileName				= PLAYER_KNIGHT;
 
-	// FIXME : Ïï†ÎãàÎ©îÏù¥ÏÖò Ïù¥Î¶ÑÏùÄ Í≥µÏãùÏù¥ ÏóÜÎÇò???
-	// FIXME : Î™ÖÎ™Ö Í∑úÏπôÏùÑ Ï†àÎåÄ Ïïà ÏßÄÏºúÏ£ºÍ∏∞ ÎïåÎ¨∏Ïóê Ïù¥Î¶ÑÏù¥ Îã§ ÏóâÎßùÏûÑ~-_-;;;
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
 	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_WALK_1]		= "ni_walk_01";
 	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_WALK_2]		= "ni_walk_02";
 	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_IDLE]			= "ni_idle_01";	
@@ -214,6 +241,29 @@ m_pJobInfo( NULL )
 	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";
 	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]	= "pet_dragon03_skill01_2";
 
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_WALK_1]	= "pet_demonbat_walk";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_1]	= "pet_demonbat_idle01";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_2]	= "pet_demonbat_idle02";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_RUN_1]		= "pet_demonbat_run";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_PICK]		= "pet_demonbat_idle01";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_DAMAGE]	= "pet_demonbat_dam";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_DIE]		= "pet_demonbat_die";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_LEVELUP]	= "pet_demonbat_hungry";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT_CONTINUE]	= "pet_demonbat_idle01";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_1]	= "pet_demonbat_skill01";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_2]	= "pet_demonbat_skill02";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_3]	= "pet_demonbat_skill03";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_4]	= "pet_demonbat_idle01";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT]	= "pet_demonbat_idle01";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_RIDE_DEMONBAT_STANDUP]	= "pet_demonbat_idle01";
+
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_FLYING_READY] = "";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_FLYING_MOVE] = "";
+
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_LOGIN_GAMESTART]	= "ni_Login_01";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_LOGIN_IDLE01]		= "ni_Login_02";
+	m_pJobInfo[KNIGHT].aStrAnimationName[ANIM_LOGIN_IDLE02]		= "ni_Login_03";
+
 	m_pJobInfo[KNIGHT].afImpactTimeTable[ATTACK1] = 0.46f;
 	m_pJobInfo[KNIGHT].afImpactTimeTable[ATTACK2] = 0.58f;
 	m_pJobInfo[KNIGHT].afImpactTimeTable[ATTACK3] = 0.47f;
@@ -244,14 +294,14 @@ m_pJobInfo( NULL )
 	m_pJobInfo[KNIGHT].aStrTexNormalName[HAND]		= CTFileName("Data\\Character\\Knight\\ni_hn_N_000.tex");		// HAND
 	m_pJobInfo[KNIGHT].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
 
-	m_pJobInfo[KNIGHT].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_KNIFE;		// Ïä§ÌÇ¨ ÏÇ¨Ïö© Í∞ÄÎä• Î¨¥Í∏∞ ÌÉÄÏûÖ
+	m_pJobInfo[KNIGHT].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_KNIFE;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
 	m_pJobInfo[KNIGHT].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_TWOSWORD;
 	//-------------------------------------------------------
-	m_pJobInfo[HEALER].strName					= "ÌûêÎü¨";
+	m_pJobInfo[HEALER].strName					= "»˙∑Ø";
 	m_pJobInfo[HEALER].strFileName				= PLAYER_HEALER;
 
-	// FIXME : Ïï†ÎãàÎ©îÏù¥ÏÖò Ïù¥Î¶ÑÏùÄ Í≥µÏãùÏù¥ ÏóÜÎÇò???
-	// FIXME : Î™ÖÎ™Ö Í∑úÏπôÏùÑ Ï†àÎåÄ Ïïà ÏßÄÏºúÏ£ºÍ∏∞ ÎïåÎ¨∏Ïóê Ïù¥Î¶ÑÏù¥ Îã§ ÏóâÎßùÏûÑ~-_-;;;
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_WALK_1]		= "hw_walk_01";
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_WALK_2]		= "hw_walk_02";
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_IDLE]			= "hw_idle_01";	
@@ -262,6 +312,7 @@ m_pJobInfo( NULL )
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_ATTACK_2]		= "hw_att_02";
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_ATTACK_3]		= "hw_att_01";
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_ATTACK_4]		= "hw_att_02";
+
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_SIT]			= "hw_sit_01";
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_SIT_CONTINUE]	= "hw_sit_02";
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_STANDUP]		= "hw_sit_03";
@@ -327,6 +378,29 @@ m_pJobInfo( NULL )
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";
 	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]	= "pet_dragon03_skill01_2";
 
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_WALK_1]	= "pet_demonbat_walk";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_1]	= "pet_demonbat_idle01";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_2]	= "pet_demonbat_idle02";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_RUN_1]		= "pet_demonbat_run";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_PICK]		= "pet_demonbat_idle01";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_DAMAGE]	= "pet_demonbat_dam";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_DIE]		= "pet_demonbat_die";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_LEVELUP]	= "pet_demonbat_hungry";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT_CONTINUE]	= "pet_demonbat_idle01";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_1]	= "pet_demonbat_skill01";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_2]	= "pet_demonbat_skill02";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_3]	= "pet_demonbat_skill03";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_4]	= "pet_demonbat_idle01";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT]	= "pet_demonbat_idle01";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_RIDE_DEMONBAT_STANDUP]	= "pet_demonbat_idle01";
+
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_FLYING_READY] = "";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_FLYING_MOVE] = "";
+
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_LOGIN_GAMESTART]	= "hw_Login_01";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_LOGIN_IDLE01]		= "hw_Login_02";
+	m_pJobInfo[HEALER].aStrAnimationName[ANIM_LOGIN_IDLE02]		= "hw_Login_03";
+
 	m_pJobInfo[HEALER].afImpactTimeTable[ATTACK1] = 0.44f;
 	m_pJobInfo[HEALER].afImpactTimeTable[ATTACK2] = 0.44f;
 	m_pJobInfo[HEALER].afImpactTimeTable[ATTACK3] = 0.44f;
@@ -357,14 +431,14 @@ m_pJobInfo( NULL )
 	m_pJobInfo[HEALER].aStrTexNormalName[HAND]		= CTFileName("");												// HAND
 	m_pJobInfo[HEALER].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
 
-	m_pJobInfo[HEALER].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_BOW;		// Ïä§ÌÇ¨ ÏÇ¨Ïö© Í∞ÄÎä• Î¨¥Í∏∞ ÌÉÄÏûÖ
+	m_pJobInfo[HEALER].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_BOW;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
 	m_pJobInfo[HEALER].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_WAND;
 	//-------------------------------------------------------
-	m_pJobInfo[MAGE].strName					= "Î©îÏù¥ÏßÄ";
+	m_pJobInfo[MAGE].strName					= "∏ﬁ¿Ã¡ˆ";
 	m_pJobInfo[MAGE].strFileName				= PLAYER_MAGE;
 
-	// FIXME : Ïï†ÎãàÎ©îÏù¥ÏÖò Ïù¥Î¶ÑÏùÄ Í≥µÏãùÏù¥ ÏóÜÎÇò???
-	// FIXME : Î™ÖÎ™Ö Í∑úÏπôÏùÑ Ï†àÎåÄ Ïïà ÏßÄÏºúÏ£ºÍ∏∞ ÎïåÎ¨∏Ïóê Ïù¥Î¶ÑÏù¥ Îã§ ÏóâÎßùÏûÑ~-_-;;;
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_WALK_1]			= "ma_walk_01";
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_WALK_2]			= "ma_walk_02";
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_IDLE]			= "ma_idle_01";	
@@ -424,7 +498,7 @@ m_pJobInfo( NULL )
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_HORSE_SIT]	= "pet_horse3_skill01_1";
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_HORSE_STANDUP]	= "pet_horse3_skill01_2";
 
-		m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_WALK_1]	= "pet_dragon03_walk";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_WALK_1]	= "pet_dragon03_walk";
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_IDLE_1]	= "pet_dragon03_idle01";
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_IDLE_2]	= "pet_dragon03_idle02";
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_RUN_1]	= "pet_dragon03_run";
@@ -439,6 +513,29 @@ m_pJobInfo( NULL )
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_4]	= "pet_dragon03_skill04";
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";
 	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]	= "pet_dragon03_skill01_2";
+
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_WALK_1]	= "pet_demonbat_walk";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_1]	= "pet_demonbat_idle01";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_2]	= "pet_demonbat_idle02";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_RUN_1]		= "pet_demonbat_run";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_PICK]		= "pet_demonbat_idle01";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_DAMAGE]	= "pet_demonbat_dam";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_DIE]		= "pet_demonbat_die";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_LEVELUP]	= "pet_demonbat_hungry";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT_CONTINUE]	= "pet_demonbat_idle01";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_1]	= "pet_demonbat_skill01";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_2]	= "pet_demonbat_skill02";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_3]	= "pet_demonbat_skill03";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_4]	= "pet_demonbat_idle01";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT]	= "pet_demonbat_idle01";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_STANDUP]	= "pet_demonbat_idle01";
+
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_FLYING_READY] = "";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_FLYING_MOVE] = "";
+
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_LOGIN_GAMESTART]	= "ma_Login_01";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_LOGIN_IDLE01]		= "ma_Login_02";
+	m_pJobInfo[MAGE].aStrAnimationName[ANIM_LOGIN_IDLE02]		= "ma_Login_03";
 
 	m_pJobInfo[MAGE].afImpactTimeTable[ATTACK1] = 0.38f;
 	m_pJobInfo[MAGE].afImpactTimeTable[ATTACK2] = 0.46f;
@@ -470,14 +567,14 @@ m_pJobInfo( NULL )
 	m_pJobInfo[MAGE].aStrTexNormalName[HAND]		= CTFileName("");												// HAND
 	m_pJobInfo[MAGE].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
 
-	m_pJobInfo[MAGE].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_SSTAFF;		// Ïä§ÌÇ¨ ÏÇ¨Ïö© Í∞ÄÎä• Î¨¥Í∏∞ ÌÉÄÏûÖ
+	m_pJobInfo[MAGE].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_SSTAFF;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
 	m_pJobInfo[MAGE].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_STAFF;
 	//-------------------------------------------------------
-	m_pJobInfo[ROGUE].strName					= "Î°úÍ∑∏";
+	m_pJobInfo[ROGUE].strName					= "∑Œ±◊";
 	m_pJobInfo[ROGUE].strFileName				= PLAYER_ROGUE;
 
-	// FIXME : Ïï†ÎãàÎ©îÏù¥ÏÖò Ïù¥Î¶ÑÏùÄ Í≥µÏãùÏù¥ ÏóÜÎÇò???
-	// FIXME : Î™ÖÎ™Ö Í∑úÏπôÏùÑ Ï†àÎåÄ Ïïà ÏßÄÏºúÏ£ºÍ∏∞ ÎïåÎ¨∏Ïóê Ïù¥Î¶ÑÏù¥ Îã§ ÏóâÎßùÏûÑ~-_-;;;
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_WALK_1]		= "ro_walk_01";
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_WALK_2]		= "ro_walk_02";
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_IDLE]			= "ro_idle_01";	
@@ -545,13 +642,36 @@ m_pJobInfo( NULL )
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_DAMAGE]	= "pet_dragon03_dam";
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_DIE]		= "pet_dragon03_die";
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_LEVELUP]	= "pet_dragon03_lvup";
-	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT_CONTINUE]	= "pet_dragon03_skill01";			// Í≥ÑÏÜç ÏïâÏïÑ ÏûàÍ∏∞.
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT_CONTINUE]	= "pet_dragon03_skill01";			// ∞Ëº” æ…æ∆ ¿÷±‚.
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_1]	= "pet_dragon03_skill02";
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_2]	= "pet_dragon03_skill03";
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_3]	= "pet_dragon03_skill03";
 	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_4]	= "pet_dragon03_skill04";
-	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";		// ÏïâÏúºÎ†§Í≥† ÌïòÍ∏∞
-	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]	= "pet_dragon03_skill01_2";		// ÏÑúÏûàÏúºÎ†§Í≥† ÌïòÍ∏∞
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";		// æ…¿∏∑¡∞Ì «œ±‚
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]	= "pet_dragon03_skill01_2";		// º≠¿÷¿∏∑¡∞Ì «œ±‚
+
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_WALK_1]	= "pet_demonbat_walk";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_1]	= "pet_demonbat_idle01";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_2]	= "pet_demonbat_idle02";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_RUN_1]		= "pet_demonbat_run";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_PICK]		= "pet_demonbat_idle01";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_DAMAGE]	= "pet_demonbat_dam";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_DIE]		= "pet_demonbat_die";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_LEVELUP]	= "pet_demonbat_hungry";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT_CONTINUE]	= "pet_demonbat_idle01";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_1]	= "pet_demonbat_skill01";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_2]	= "pet_demonbat_skill02";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_3]	= "pet_demonbat_skill03";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_4]	= "pet_demonbat_idle01";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT]	= "pet_demonbat_idle01";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_STANDUP]	= "pet_demonbat_idle01";
+
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_FLYING_READY] = "";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_FLYING_MOVE] = "";
+
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_LOGIN_GAMESTART]	= "ro_Login_01";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_LOGIN_IDLE01]		= "ro_Login_02";
+	m_pJobInfo[ROGUE].aStrAnimationName[ANIM_LOGIN_IDLE02]		= "ro_Login_03";
 
 	m_pJobInfo[ROGUE].afImpactTimeTable[ATTACK1] = 0.59f;
 	m_pJobInfo[ROGUE].afImpactTimeTable[ATTACK2] = 0.58f;
@@ -583,15 +703,15 @@ m_pJobInfo( NULL )
 	m_pJobInfo[ROGUE].aStrTexNormalName[HAND]		= CTFileName("");												// HAND
 	m_pJobInfo[ROGUE].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
 
-	m_pJobInfo[ROGUE].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_DAGGER;		// Ïä§ÌÇ¨ ÏÇ¨Ïö© Í∞ÄÎä• Î¨¥Í∏∞ ÌÉÄÏûÖ
+	m_pJobInfo[ROGUE].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_DAGGER;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
 	m_pJobInfo[ROGUE].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_CROSSBOW;
 	//-------------------------------------------------------		
-	m_pJobInfo[SORCERER].strName					= "ÏÜåÏÑúÎü¨";
+	m_pJobInfo[SORCERER].strName					= "º“º≠∑Ø";
 	m_pJobInfo[SORCERER].strFileName				= PLAYER_SORCERER;
 
-	// FIXME : Ïï†ÎãàÎ©îÏù¥ÏÖò Ïù¥Î¶ÑÏùÄ Í≥µÏãùÏù¥ ÏóÜÎÇò???
-	// FIXME : Î™ÖÎ™Ö Í∑úÏπôÏùÑ Ï†àÎåÄ Ïïà ÏßÄÏºúÏ£ºÍ∏∞ ÎïåÎ¨∏Ïóê Ïù¥Î¶ÑÏù¥ Îã§ ÏóâÎßùÏûÑ~-_-;;;
-	// FIXME : ÏÜåÌôòÏàòÍ∞Ä Ï†úÏùº ÏóâÎßùÏûÑ!!! Î∞òÎìúÏãú SkaStudioÏóêÏÑú ÌôïÏù∏ÌïòÍ≥†, Í≤åÏûÑÏóêÏÑú ÌïúÎ≤à Îçî ÌôïÏù∏Ìï†Í≤É-_-;;;
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
+	// FIXME : º“»Øºˆ∞° ¡¶¿œ æ˚∏¡¿”!!! π›µÂΩ√ SkaStudioø°º≠ »Æ¿Œ«œ∞Ì, ∞‘¿”ø°º≠ «—π¯ ¥ı »Æ¿Œ«“∞Õ-_-;;;
 	//m_pJobInfo[SORCERER].aStrAnimationName[ANIM_WALK_1]			= "so_walk_01";
 	//m_pJobInfo[SORCERER].aStrAnimationName[ANIM_WALK_2]			= "so_walk_02";
 	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_WALK_1]			= "so_a_walk_002";
@@ -669,6 +789,29 @@ m_pJobInfo( NULL )
 	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";
 	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]= "pet_dragon03_skill01_2";
 
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_WALK_1]	= "pet_demonbat_walk";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_1]	= "pet_demonbat_idle01";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_2]	= "pet_demonbat_idle02";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_RUN_1]		= "pet_demonbat_run";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_PICK]		= "pet_demonbat_idle01";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_DAMAGE]	= "pet_demonbat_dam";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_DIE]		= "pet_demonbat_die";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_LEVELUP]	= "pet_demonbat_hungry";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT_CONTINUE]	= "pet_demonbat_idle01";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_1]	= "pet_demonbat_skill01";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_2]	= "pet_demonbat_skill02";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_3]	= "pet_demonbat_skill03";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_4]	= "pet_demonbat_idle01";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT]	= "pet_demonbat_idle01";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_RIDE_DEMONBAT_STANDUP]	= "pet_demonbat_idle01";
+
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_FLYING_READY] = "";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_FLYING_MOVE] = "";
+
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_LOGIN_GAMESTART]	= "so_Login_01";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_LOGIN_IDLE01]		= "so_Login_02";
+	m_pJobInfo[SORCERER].aStrAnimationName[ANIM_LOGIN_IDLE02]		= "so_Login_03";
+
 	m_pJobInfo[SORCERER].afImpactTimeTable[ATTACK1] = 0.57f;
 	m_pJobInfo[SORCERER].afImpactTimeTable[ATTACK2] = 0.63f;
 	m_pJobInfo[SORCERER].afImpactTimeTable[ATTACK3] = 0.52f;
@@ -699,8 +842,408 @@ m_pJobInfo( NULL )
 	m_pJobInfo[SORCERER].aStrTexNormalName[HAND]		= CTFileName("");												// HAND
 	m_pJobInfo[SORCERER].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
 	
-	m_pJobInfo[SORCERER].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_POLEARM;		// Ïä§ÌÇ¨ ÏÇ¨Ïö© Í∞ÄÎä• Î¨¥Í∏∞ ÌÉÄÏûÖ
+	m_pJobInfo[SORCERER].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_POLEARM;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
 	m_pJobInfo[SORCERER].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_SCYTHE;
+
+	m_pJobInfo[NIGHTSHADOW].strName					= "≥™¿Ã∆Æ Ω¶µµøÏ";
+	m_pJobInfo[NIGHTSHADOW].strFileName				= PLAYER_NIGHTSHADOW;
+
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
+	// FIXME : º“»Øºˆ∞° ¡¶¿œ æ˚∏¡¿”!!! π›µÂΩ√ SkaStudioø°º≠ »Æ¿Œ«œ∞Ì, ∞‘¿”ø°º≠ «—π¯ ¥ı »Æ¿Œ«“∞Õ-_-;;;
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_WALK_1]			= "ns_walk_00";	// π´±‚∞° æ¯¿ª∂ß
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_WALK_2]			= "ns_walk_01";	// π´±‚∞° ¿÷¿ª∂ß
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_IDLE]			= "ns_ready_00";	
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RUN_1]			= "ns_run_00";	// π´±‚∞° æ¯¿ª∂ß
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RUN_2]			= "ns_run_01";		// π´±‚∞° ¿÷¿ª∂ß
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_ATTACK_IDLE]		= "ns_ready_01";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_ATTACK_1]		= "ns_att_01";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_ATTACK_2]		= "ns_att_03";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_ATTACK_3]		= "ns_att_02";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_ATTACK_4]		= "ns_att_04";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SIT]				= "ns_sit_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SIT_CONTINUE]	= "ns_sit_01";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_STANDUP]			= "ns_stand_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_MINE]			= "ns_mine_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_COLLECT]			= "ns_collect_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_GATHER]			= "ns_gather_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_PICK]			= "ns_pickup_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_DAMAGE]			= "ns_dam_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_DIE]				= "ns_die_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_0]		= "ns_so01_00";	// ¿ŒªÁ
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_1]		= "ns_so02_00";	// øÙ¿Ω
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_2]		= "ns_so03_00";	// ΩΩ«ƒ
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_3]		= "ns_so04_00";	// √÷∞Ì
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_4]		= "ns_so05_00";	// π⁄ºˆ
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_5]		= "ns_so06_00";	// ∞≈¿˝
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_6]		= "ns_so07_00";	// »˚¿⁄∂˚
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_7]		= "ns_so08_00";	// æﬂ¿Ø
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_8]		= "ns_so09_00";	// »Ø»£
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_9]		= "ns_so10_00";	// µµ¿¸
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_10]		= "ns_so11_00";	// ∫π¡æ
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_SOCIAL_11]		= "ns_water"; // ππ¥œ ¿Ã∞«?
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_IDLE_1]		= "ns_ready_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_RUN_2]		= "ns_run_01";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_WALK_2]		= "ns_walk_01";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_ATTACK_IDLE]	= "ns_ready_01";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_ATTACK_1]	= "ns_att_01";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_ATTACK_2]	= "ns_att_03";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_ATTACK_3]	= "ns_att_02";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_ATTACK_4]	= "ns_att_04";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_PICK]		= "ns_pickup_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_DAMAGE]		= "ns_dam_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_EXT_DIE]			= "ns_die_00";
+
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_WALK_1]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_IDLE_1]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_IDLE_2]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_RUN_1]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_PICK]		= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_DAMAGE]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_DIE]		= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_LEVELUP]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_SIT_CONTINUE]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_1]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_2]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_3]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_4]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_SIT]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_HORSE_STANDUP]	= "";
+
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_WALK_1]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_IDLE_1]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_IDLE_2]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_RUN_1]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_PICK]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_DAMAGE]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_DIE]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_LEVELUP]= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_SIT_CONTINUE]= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_1]= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_2]= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_3]= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_4]= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]= "";
+
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_FLYING_READY] = "ns_fly_stay_00";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_FLYING_MOVE] = "ns_fly_move_00";
+
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_LOGIN_GAMESTART]	= "ns_Login_01";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_LOGIN_IDLE01]	= "ns_Login_02";
+	m_pJobInfo[NIGHTSHADOW].aStrAnimationName[ANIM_LOGIN_IDLE02]		= "ns_Login_03";
+ 
+	m_pJobInfo[NIGHTSHADOW].afImpactTimeTable[ATTACK1] = 0.25f;	// 0.6f
+	m_pJobInfo[NIGHTSHADOW].afImpactTimeTable[ATTACK2] = 0.5f;	// 0.2f
+	m_pJobInfo[NIGHTSHADOW].afImpactTimeTable[ATTACK3] = 0.35f;
+	m_pJobInfo[NIGHTSHADOW].afImpactTimeTable[ATTACK4] = 0.35f;
+	m_pJobInfo[NIGHTSHADOW].afImpactTimeTable[EXT_ATTACK1] = 0.25f;
+	m_pJobInfo[NIGHTSHADOW].afImpactTimeTable[EXT_ATTACK2] = 0.5f;
+	m_pJobInfo[NIGHTSHADOW].afImpactTimeTable[EXT_ATTACK3] = 0.35f;
+	m_pJobInfo[NIGHTSHADOW].afImpactTimeTable[EXT_ATTACK4] = 0.35f;
+
+	// Mesh Name
+	m_pJobInfo[NIGHTSHADOW].aStrMeshName[BODYDOWN]			= CTFileName("Data\\Character\\NightShadow\\ns_bd_000.bm");			// BODYDOWN
+	m_pJobInfo[NIGHTSHADOW].aStrMeshName[BODYUP]			= CTFileName("Data\\Character\\NightShadow\\ns_bu_000.bm");			// BODYUP
+	m_pJobInfo[NIGHTSHADOW].aStrMeshName[FOOT]				= CTFileName("Data\\Character\\NightShadow\\ns_ft_000.bm");			// FOOT
+	m_pJobInfo[NIGHTSHADOW].aStrMeshName[HAND]				= CTFileName("Data\\Character\\NightShadow\\ns_hn_000.bm");			// HAND
+	m_pJobInfo[NIGHTSHADOW].aStrMeshName[SKIRT]			= CTFileName("");			// SKIRT
+
+	// Texture Name
+	m_pJobInfo[NIGHTSHADOW].aStrTextureName[BODYDOWN]		= CTFileName("Data\\Character\\NightShadow\\Texture\\ns_bd_000.tex");			// BODYDOWN
+	m_pJobInfo[NIGHTSHADOW].aStrTextureName[BODYUP]		= CTFileName("Data\\Character\\NightShadow\\Texture\\ns_bu_000.tex");			// BODYUP
+	m_pJobInfo[NIGHTSHADOW].aStrTextureName[FOOT]			= CTFileName("Data\\Character\\NightShadow\\Texture\\ns_ft_000.tex");			// FOOT
+	m_pJobInfo[NIGHTSHADOW].aStrTextureName[HAND]			= CTFileName("Data\\Character\\NightShadow\\Texture\\ns_hn_000.tex");			// HAND
+	m_pJobInfo[NIGHTSHADOW].aStrTextureName[SKIRT]			= CTFileName("");			// SKIRT
+
+	// Normal Texture Name
+	m_pJobInfo[NIGHTSHADOW].aStrTexNormalName[BODYDOWN]	= CTFileName("Data\\Character\\NightShadow\\Texture\\ns_ft_000.tex");												// BODYDOWN
+	m_pJobInfo[NIGHTSHADOW].aStrTexNormalName[BODYUP]		= CTFileName("");												// BODYUP
+	m_pJobInfo[NIGHTSHADOW].aStrTexNormalName[FOOT]		= CTFileName("");												// FOOT
+	m_pJobInfo[NIGHTSHADOW].aStrTexNormalName[HAND]		= CTFileName("");												// HAND
+	m_pJobInfo[NIGHTSHADOW].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
+	
+	m_pJobInfo[NIGHTSHADOW].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_SOUL;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
+	m_pJobInfo[NIGHTSHADOW].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_SOUL;
+
+	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+#ifdef CHAR_EX_ROGUE
+	//-------------------------------------------------------
+	m_pJobInfo[EX_ROGUE].strName				= "";
+	m_pJobInfo[EX_ROGUE].strFileName				= PLAYER_EX_ROGUE;
+
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_WALK_1]		= "ro_walk_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_WALK_2]		= "ro_walk_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_IDLE]			= "ro_idle_01";	
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RUN_1]			= "ro_run_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RUN_2]			= "ro_run_02";	
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_ATTACK_IDLE]	= "ro_idle_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_ATTACK_1]		= "exro_att_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_ATTACK_2]		= "exro_att_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_ATTACK_3]		= "exro_att_03";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_ATTACK_4]		= "exro_att_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SIT]			= "ro_sit_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SIT_CONTINUE]	= "ro_sit_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_STANDUP]		= "ro_sit_03";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_MINE]			= "ro_mine";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_COLLECT]		= "ro_collect";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_GATHER]		= "ro_gather";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_PICK]			= "ro_pu";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_DAMAGE]		= "ro_dam";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_DIE]			= "ro_die_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_0]		= "ro_so_00";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_1]		= "ro_so_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_2]		= "ro_so_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_3]		= "ro_so_03";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_4]		= "ro_so_04";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_5]		= "ro_so_05";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_6]		= "ro_so_06";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_7]		= "ro_so_07";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_8]		= "ro_so_08";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_9]		= "ro_so_09";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_10]		= "ro_so_10";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_SOCIAL_11]		= "ro_water";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_IDLE_1]	= "ro_idle_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_RUN_2]		= "ro_a_run_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_WALK_2]	= "ro_a_walk_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_ATTACK_IDLE]	= "ro_a_idle_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_ATTACK_1]	= "exro_a_att_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_ATTACK_2]	= "exro_a_att_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_ATTACK_3]	= "exro_a_att_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_ATTACK_4]	= "exro_a_att_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_PICK]		= "ro_a_pu";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_DAMAGE]	= "ro_a_dam";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_EXT_DIE]		= "ro_a_die_01";
+
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_WALK_1]	= "pet_horse3_walk";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_IDLE_1]	= "pet_horse3_idle_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_IDLE_2]	= "pet_horse3_idle_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_RUN_1]	= "pet_horse3_run";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_PICK]		= "pet_horse3_idle_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_DAMAGE]	= "pet_horse3_dam";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_DIE]		= "pet_horse3_die";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_LEVELUP]	= "pet_horse3_lvup";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_SIT_CONTINUE]	= "pet_horse3_skill01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_1]	= "pet_horse3_skill02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_2]	= "pet_horse3_skill03";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_3]	= "pet_horse3_skill03";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_4]	= "pet_horse3_skill04";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_SIT]	= "pet_horse3_skill01_1";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_HORSE_STANDUP]	= "pet_horse3_skill01_2";
+
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_WALK_1]	= "pet_dragon03_walk";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_IDLE_1]	= "pet_dragon03_idle01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_IDLE_2]	= "pet_dragon03_idle02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_RUN_1]		= "pet_dragon03_run";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_PICK]		= "pet_dragon03_idle01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_DAMAGE]	= "pet_dragon03_dam";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_DIE]		= "pet_dragon03_die";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_LEVELUP]	= "pet_dragon03_lvup";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT_CONTINUE]	= "pet_dragon03_skill01";			// ∞Ëº” æ…æ∆ ¿÷±‚.
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_1]	= "pet_dragon03_skill02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_2]	= "pet_dragon03_skill03";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_3]	= "pet_dragon03_skill03";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_4]	= "pet_dragon03_skill04";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";		// æ…¿∏∑¡∞Ì «œ±‚
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]	= "pet_dragon03_skill01_2";		// º≠¿÷¿∏∑¡∞Ì «œ±‚
+
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_WALK_1]	= "pet_demonbat_walk";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_1]	= "pet_demonbat_idle01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_2]	= "pet_demonbat_idle02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_RUN_1]		= "pet_demonbat_run";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_PICK]		= "pet_demonbat_idle01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_DAMAGE]	= "pet_demonbat_dam";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_DIE]		= "pet_demonbat_die";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_LEVELUP]	= "pet_demonbat_hungry";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT_CONTINUE]	= "pet_demonbat_idle01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_1]	= "pet_demonbat_skill01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_2]	= "pet_demonbat_skill02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_3]	= "pet_demonbat_skill03";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_4]	= "pet_demonbat_idle01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT]	= "pet_demonbat_idle01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_RIDE_DEMONBAT_STANDUP]	= "pet_demonbat_idle01";
+
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_FLYING_READY] = "";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_FLYING_MOVE] = "";
+
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_LOGIN_GAMESTART]	= "ro_ex_Login_01";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_LOGIN_IDLE01]		= "ro_ex_Login_02";
+	m_pJobInfo[EX_ROGUE].aStrAnimationName[ANIM_LOGIN_IDLE02]		= "ro_ex_Login_03";	
+
+	m_pJobInfo[EX_ROGUE].afImpactTimeTable[ATTACK1] = 0.59f;
+	m_pJobInfo[EX_ROGUE].afImpactTimeTable[ATTACK2] = 0.58f;
+	m_pJobInfo[EX_ROGUE].afImpactTimeTable[ATTACK3] = 0.65f;
+	m_pJobInfo[EX_ROGUE].afImpactTimeTable[ATTACK4] = 0.59f;
+	m_pJobInfo[EX_ROGUE].afImpactTimeTable[EXT_ATTACK1] = 0.28f;
+	m_pJobInfo[EX_ROGUE].afImpactTimeTable[EXT_ATTACK2] = 0.29f;
+	m_pJobInfo[EX_ROGUE].afImpactTimeTable[EXT_ATTACK3] = 0.28f;
+	m_pJobInfo[EX_ROGUE].afImpactTimeTable[EXT_ATTACK4] = 0.29f;
+
+	// Mesh Name
+	m_pJobInfo[EX_ROGUE].aStrMeshName[BODYDOWN]		= CTFileName("Data\\Character\\Rogue\\ro_bd_000.bm");			// BODYDOWN
+	m_pJobInfo[EX_ROGUE].aStrMeshName[BODYUP]			= CTFileName("Data\\Character\\Rogue\\ro_bu_000.bm");			// BODYUP
+	m_pJobInfo[EX_ROGUE].aStrMeshName[FOOT]			= CTFileName("Data\\Character\\Rogue\\ro_ft_000.bm");			// FOOT
+	m_pJobInfo[EX_ROGUE].aStrMeshName[HAND]			= CTFileName("Data\\Character\\Rogue\\ro_hn_000.bm");			// HAND
+	m_pJobInfo[EX_ROGUE].aStrMeshName[SKIRT]			= CTFileName("");			// SKIRT
+
+	// Texture Name
+	m_pJobInfo[EX_ROGUE].aStrTextureName[BODYDOWN]		= CTFileName("Data\\Character\\Rogue\\ro_bd_000.tex");			// BODYDOWN
+	m_pJobInfo[EX_ROGUE].aStrTextureName[BODYUP]		= CTFileName("Data\\Character\\Rogue\\ro_bu_000.tex");			// BODYUP
+	m_pJobInfo[EX_ROGUE].aStrTextureName[FOOT]			= CTFileName("Data\\Character\\Rogue\\ro_ft_000.tex");			// FOOT
+	m_pJobInfo[EX_ROGUE].aStrTextureName[HAND]			= CTFileName("Data\\Character\\Rogue\\ro_hn_000.tex");			// HAND
+	m_pJobInfo[EX_ROGUE].aStrTextureName[SKIRT]		= CTFileName("");			// SKIRT
+
+	// Normal Texture Name
+	m_pJobInfo[EX_ROGUE].aStrTexNormalName[BODYDOWN]	= CTFileName("");												// BODYDOWN
+	m_pJobInfo[EX_ROGUE].aStrTexNormalName[BODYUP]		= CTFileName("");												// BODYUP
+	m_pJobInfo[EX_ROGUE].aStrTexNormalName[FOOT]		= CTFileName("");												// FOOT
+	m_pJobInfo[EX_ROGUE].aStrTexNormalName[HAND]		= CTFileName("");												// HAND
+	m_pJobInfo[EX_ROGUE].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
+
+	m_pJobInfo[EX_ROGUE].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_DAGGER;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
+	m_pJobInfo[EX_ROGUE].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_CROSSBOW;
+	//-------------------------------------------------------		
+#endif
+#ifdef CHAR_EX_MAGE	//2013/01/08 jeil ¿”Ω√∑Œ ¿œ¥‹ ∏ﬁ¿Ã¡ˆ∞Õ ∫πªÁ«ÿº≠ √ﬂ∞° ≥™¡ﬂø° ∏Æº“Ω∫ ≥™ø¿∏È ºˆ¡§ « ø‰
+					//2013/01/10 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° √ﬂ∞°µ» æ÷¥œ∏ﬁ¿Ãº« ∏Ì¿∏∑Œ ∫Ø∞Ê ≥™∏”¡¯ ±‚¡∏ ∏ﬁ¿Ã¡ˆøÕ µø¿œ 
+	m_pJobInfo[EX_MAGE].strName					= "";
+	m_pJobInfo[EX_MAGE].strFileName				= PLAYER_EX_MAGE;
+
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
+	// FIXME : ∏Ì∏Ì ±‘ƒ¢¿ª ¿˝¥Î æ» ¡ˆƒ—¡÷±‚ ∂ßπÆø° ¿Ã∏ß¿Ã ¥Ÿ æ˚∏¡¿”~-_-;;;
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_WALK_1]			= "ma_walk_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_WALK_2]			= "ma_walk_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_IDLE]			= "ma_idle_01";	
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RUN_1]			= "ma_run_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RUN_2]			= "ma_run_02";	
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_ATTACK_IDLE]	= "ma_idle_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_ATTACK_1]		= "exma_att_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_ATTACK_2]		= "exma_att_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_ATTACK_3]		= "exma_att_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_ATTACK_4]		= "exma_att_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SIT]			= "ma_sit_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SIT_CONTINUE]	= "ma_sit_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_STANDUP]		= "ma_sit_03";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_MINE]			= "ma_mine";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_COLLECT]		= "ma_collect";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_GATHER]			= "ma_gather";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_PICK]			= "ma_pu";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_DAMAGE]			= "ma_dam";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_DIE]			= "ma_die_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_0]		= "ma_so_00";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_1]		= "ma_so_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_2]		= "ma_so_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_3]		= "ma_so_03";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_4]		= "ma_so_04";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_5]		= "ma_so_05";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_6]		= "ma_so_06";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_7]		= "ma_so_07";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_8]		= "ma_so_08";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_9]		= "ma_so_09";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_10]		= "ma_so_10";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_SOCIAL_11]		= "ma_water";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_IDLE_1]		= "ma_idle_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_RUN_2]		= "ma_a_run_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_WALK_2]		= "ma_a_walk_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_ATTACK_IDLE]	= "ma_a_idle_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_ATTACK_1]	= "exma_a_att_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_ATTACK_2]	= "exma_a_att_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_ATTACK_3]	= "exma_a_att_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_ATTACK_4]	= "exma_a_att_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_PICK]		= "ma_a_pu";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_DAMAGE]		= "ma_a_dam";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_EXT_DIE]		= "ma_a_die_01";
+
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_WALK_1]	= "pet_horse3_walk";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_IDLE_1]	= "pet_horse3_idle_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_IDLE_2]	= "pet_horse3_idle_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_RUN_1]	= "pet_horse3_run";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_PICK]		= "pet_horse3_idle_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_DAMAGE]	= "pet_horse3_dam";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_DIE]		= "pet_horse3_die";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_LEVELUP]	= "pet_horse3_lvup";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_SIT_CONTINUE]	= "pet_horse3_skill01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_1]	= "pet_horse3_skill02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_2]	= "pet_horse3_skill03";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_3]	= "pet_horse3_skill03";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_SKILL_4]	= "pet_horse3_skill04";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_SIT]	= "pet_horse3_skill01_1";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_HORSE_STANDUP]	= "pet_horse3_skill01_2";
+
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_WALK_1]	= "pet_dragon03_walk";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_IDLE_1]	= "pet_dragon03_idle01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_IDLE_2]	= "pet_dragon03_idle02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_RUN_1]	= "pet_dragon03_run";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_PICK]		= "pet_dragon03_idle01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_DAMAGE]	= "pet_dragon03_dam";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_DIE]		= "pet_dragon03_die";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_LEVELUP]	= "pet_dragon03_lvup";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT_CONTINUE]	= "pet_dragon03_skill01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_1]	= "pet_dragon03_skill02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_2]	= "pet_dragon03_skill03";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_3]	= "pet_dragon03_skill03";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_SKILL_4]	= "pet_dragon03_skill04";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_SIT]	= "pet_dragon03_skill01_1";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DRAGON_STANDUP]	= "pet_dragon03_skill01_2";
+
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_WALK_1]	= "pet_demonbat_walk";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_1]	= "pet_demonbat_idle01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_IDLE_2]	= "pet_demonbat_idle02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_RUN_1]		= "pet_demonbat_run";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_PICK]		= "pet_demonbat_idle01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_DAMAGE]	= "pet_demonbat_dam";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_DIE]		= "pet_demonbat_die";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_LEVELUP]	= "pet_demonbat_hungry";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT_CONTINUE]	= "pet_demonbat_idle01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_1]	= "pet_demonbat_skill01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_2]	= "pet_demonbat_skill02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_3]	= "pet_demonbat_skill03";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SKILL_4]	= "pet_demonbat_idle01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_SIT]	= "pet_demonbat_idle01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_RIDE_DEMONBAT_STANDUP]	= "pet_demonbat_idle01";
+
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_FLYING_READY] = "";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_FLYING_MOVE] = "";
+
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_LOGIN_GAMESTART]		= "ma_arc_login_01";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_LOGIN_IDLE01]		= "ma_arc_login_02";
+	m_pJobInfo[EX_MAGE].aStrAnimationName[ANIM_LOGIN_IDLE02]			= "ma_arc_login_03";	
+
+	m_pJobInfo[EX_MAGE].afImpactTimeTable[ATTACK1] = 0.38f;
+	m_pJobInfo[EX_MAGE].afImpactTimeTable[ATTACK2] = 0.46f;
+	m_pJobInfo[EX_MAGE].afImpactTimeTable[ATTACK3] = 0.38f;
+	m_pJobInfo[EX_MAGE].afImpactTimeTable[ATTACK4] = 0.46f;
+	m_pJobInfo[EX_MAGE].afImpactTimeTable[EXT_ATTACK1] = 0.30f;
+	m_pJobInfo[EX_MAGE].afImpactTimeTable[EXT_ATTACK2] = 0.35f;
+	m_pJobInfo[EX_MAGE].afImpactTimeTable[EXT_ATTACK3] = 0.30f;
+	m_pJobInfo[EX_MAGE].afImpactTimeTable[EXT_ATTACK4] = 0.35f;
+
+	// Mesh Name
+	m_pJobInfo[EX_MAGE].aStrMeshName[BODYDOWN]			= CTFileName("Data\\Character\\MAGE\\ma_bd_000.bm");			// BODYDOWN
+	m_pJobInfo[EX_MAGE].aStrMeshName[BODYUP]			= CTFileName("Data\\Character\\MAGE\\ma_bu_000.bm");			// BODYUP
+	m_pJobInfo[EX_MAGE].aStrMeshName[FOOT]				= CTFileName("Data\\Character\\MAGE\\ma_ft_000.bm");			// FOOT
+	m_pJobInfo[EX_MAGE].aStrMeshName[HAND]				= CTFileName("Data\\Character\\MAGE\\ma_hn_000.bm");			// HAND
+	m_pJobInfo[EX_MAGE].aStrMeshName[SKIRT]			= CTFileName("Data\\Character\\MAGE\\ma_bs_000.bm");			// SKIRT
+
+	// Texture Name
+	m_pJobInfo[EX_MAGE].aStrTextureName[BODYDOWN]		= CTFileName("Data\\Character\\Mage\\ma_bd_000.tex");			// BODYDOWN
+	m_pJobInfo[EX_MAGE].aStrTextureName[BODYUP]		= CTFileName("Data\\Character\\Mage\\ma_bu_000.tex");			// BODYUP
+	m_pJobInfo[EX_MAGE].aStrTextureName[FOOT]			= CTFileName("Data\\Character\\Mage\\ma_ft_000.tex");			// FOOT
+	m_pJobInfo[EX_MAGE].aStrTextureName[HAND]			= CTFileName("Data\\Character\\Mage\\ma_hn_000.tex");			// HAND
+	m_pJobInfo[EX_MAGE].aStrTextureName[SKIRT]			= CTFileName("Data\\Character\\Mage\\ma_bs_000.tex");			// SKIRT
+
+	// Normal Texture Name
+	m_pJobInfo[EX_MAGE].aStrTexNormalName[BODYDOWN]	= CTFileName("");												// BODYDOWN
+	m_pJobInfo[EX_MAGE].aStrTexNormalName[BODYUP]		= CTFileName("");												// BODYUP
+	m_pJobInfo[EX_MAGE].aStrTexNormalName[FOOT]		= CTFileName("");												// FOOT
+	m_pJobInfo[EX_MAGE].aStrTexNormalName[HAND]		= CTFileName("");												// HAND
+	m_pJobInfo[EX_MAGE].aStrTexNormalName[SKIRT]		= CTFileName("");												// SKIRT
+
+	m_pJobInfo[EX_MAGE].iSkillWeaponType[0]			= CItemData::ITEM_WEAPON_SSTAFF;		// Ω∫≈≥ ªÁøÎ ∞°¥… π´±‚ ≈∏¿‘
+	m_pJobInfo[EX_MAGE].iSkillWeaponType[1]			= CItemData::ITEM_WEAPON_STAFF;
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -737,6 +1280,9 @@ void CJobInfo::SetExtensionName( int iJob, int iType, const CTString& strName )
 // ----------------------------------------------------------------------------
 CTString CJobInfo::GetName( int iJob, int iJob2 )
 {
+	if (iJob < 0 || iJob >= TOTAL_JOB)
+		return CTString("");
+
 	if( iJob2 > 0 )
 	{
 		return GetExtensionName( iJob, iJob2 - 1 );
@@ -750,7 +1296,9 @@ CTString CJobInfo::GetName( int iJob, int iJob2 )
 // ----------------------------------------------------------------------------
 CTString CJobInfo::GetExtensionName( int iJob, int iType )
 {
-	ASSERT( iType <= 1 && "Invalid Extension Index!!" );
+	if (iType < 0 || iType >= 2)
+		return CTString("");
+
 	return m_pJobInfo[iJob].strExtensionName[iType];
 }
 

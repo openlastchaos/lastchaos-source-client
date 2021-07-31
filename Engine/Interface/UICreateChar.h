@@ -9,13 +9,9 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UIButton.h>
-
-
 // Define length of description
-#define	MAX_CHARINFO_CHAR_WIDTH			222	// Date : 2005-03-24,   By Lee Ki-hwan
+// 3¿ù ¹ö±× ¼öÁ¤ [2/28/2013 Ranma]
+#define	MAX_CHARINFO_CHAR_WIDTH			220	// Date : 2005-03-24,   By Lee Ki-hwan
 #define	MAX_CHARINFO_LINE				13
 
 
@@ -64,9 +60,6 @@ public:
 	// Reset
 	void	Reset();
 
-	// ë¸Œë¼ì§ˆ ëª¨ë“  ì¼€ë¦­í„° ì˜· ì…íˆê¸°
-	void	CharWearing();
-	
 	// Set focus
 	void	SetFocus( BOOL bVisible )
 	{
@@ -93,19 +86,23 @@ public:
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 
 	void	Lock(BOOL bLock);
+	void	CharWearing(void);
+	ENGINE_API void	SetCharaterAngle(FLOAT f_inL, FLOAT f_inR);
 	
-	BOOL	CheckCharacterHK(const char* chHK); // í™ì½© íŠ¹ìˆ˜ë¬¸ì ì²´í¬
+	BOOL	CheckCharacterHK(const char* chHK); // È«Äá Æ¯¼ö¹®ÀÚ Ã¼Å©
 
 protected:
 	void	PressOKBtn();
-	void	ChangeSelJob();			// ë‹¤ë¥¸ ì§ì—…ìœ¼ë¡œ ë°”ë€ê²½ìš°.
-	void	CreateCharacter();		// ìºë¦­í„° ìƒì„±
+	void	ChangeSelJob();			// ´Ù¸¥ Á÷¾÷À¸·Î ¹Ù²ï°æ¿ì.
+	void	CreateCharacter();		// Ä³¸¯ÅÍ »ı¼º
 
 	// Information
 	void	AddCharInfoString( CTString &strCharInfo, COLOR colCharInfo );
 	void	GetCharInfo();
 
 private:
+	// texture container.
+	CTextureData*		m_ptdMsgTexture;
 	// Controls
 	CUIEditBox			m_ebCharName;							// Input Box for Character Name
 	CUIButton			m_btnZoomIn;							// Button for Zoom-In
@@ -122,21 +119,28 @@ private:
 	CUIButton			m_btnHairNext;							// Next Character (Hair)
 	CUIButton			m_btnFacePrev;							// Prev Character (Face)
 	CUIButton			m_btnFaceNext;							// Next Character (Face)
-	CUIButton			m_btnRandom;							// Random Button(ì¶”í›„ì— ì‚¬ìš©ë¨)
+	CUIButton			m_btnRandom;							// Random Button(ÃßÈÄ¿¡ »ç¿ëµÊ)
 
 	// Description
 	int					m_nCurInfoLines;						// Count of current Char information lines
 	CTString			m_strCharInfo[MAX_CHARINFO_LINE];		// Char information string
 	COLOR				m_colCharInfo[MAX_CHARINFO_LINE];		// Color of item information string
-	CTString			m_astrDescription[12];
+
+	CTString			m_astrDescription[18];	//2013/01/11 jeil EX¸ŞÀÌÁö Ãß°¡ ¼öÁ¤ ¿øº»°ª 16 -> ¼öÁ¤°ª 18
 
 	// Region of each part
 	UIRect				m_rcCharInfo;							// Region of character information
 	UIRect				m_rcCharControl;						// Region of character control
+	// night shadow cards. [11/6/2009 rumist]
+	UIRect				m_rcMessageInfo;
 
 	// UV of each part
 	UIRectUV			m_rtCharInfoTop;						// UV of Char information region
 	UIRectUV			m_rtCharInfoBottom;						// UV of Char information region
+	// UV of message part. [11/6/2009 rumist]
+	CUIDrawBox			m_bxNoticeMsg;
+	BOOL				m_bIsShowMessageInfo;
+	CUIMultiLineText	m_msgNCText;
 
 	//
 	CTString			m_strCharName;							// Character Name
@@ -146,11 +150,11 @@ private:
 	SBYTE				m_sbSelectedHair;						// Selected Hair
 	int					m_iSelectedColor;						// Selected Color
 	BOOL				m_bAutoRotate;							// Auto Rotate
-	FLOAT				m_fZDelta;								// ì¹´ë©”ë¼ Zê°’ì˜ ë¸íƒ€ê°’...
-	FLOAT				m_fRotDelta;							// ìºë¦­í„° íšŒì „ ë¸íƒ€ê°’...
+	FLOAT				m_fZDelta;								// Ä«¸Ş¶ó Z°ªÀÇ µ¨Å¸°ª...
+	FLOAT				m_fRotDelta;							// Ä³¸¯ÅÍ È¸Àü µ¨Å¸°ª...
 
-	//CEntity*			m_pCurChar;				// í˜„ì¬ ì„ íƒëœ ìºë¦­í„°ì˜ ì—”í‹°í‹°.
-	//CPlacement3D		m_plChar;				// ìºë¦­í„°ì˜ ìœ„ì¹˜
+	//CEntity*			m_pCurChar;				// ÇöÀç ¼±ÅÃµÈ Ä³¸¯ÅÍÀÇ ¿£Æ¼Æ¼.
+	//CPlacement3D		m_plChar;				// Ä³¸¯ÅÍÀÇ À§Ä¡
 };
 
 #endif // UISELCHAR_H_

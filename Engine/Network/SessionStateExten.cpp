@@ -1,73 +1,76 @@
 #include "stdh.h"
-
-#include <Engine/Build.h>
+#include <Engine/Entities/InternalClasses.h>
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Network/Server.h>
-#include <Engine/Network/NetworkMessage.h>
-#include <Engine/Network/Diff.h>
-#include <Engine/Base/ErrorTable.h>
-#include <Engine/Base/MemoryTracking.h>
-#include <Engine/Base/Translation.h>
-#include <Engine/Base/ProgressHook.h>
-#include <Engine/Base/CRCTable.h>
-#include <Engine/Base/Shell.h>
-#include <Engine/Entities/EntityClass.h>
-#include <Engine/Math/Float.h>
-#include <Engine/Network/PlayerTarget.h>
-#include <Engine/Network/NetworkProfile.h>
-#include <Engine/Network/ClientInterface.h>
-#include <Engine/Network/CommunicationInterface.h>
-#include <Engine/Network/Compression.h>
+#include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Network/SessionState.h>
-#include <Engine/Network/PlayerSource.h>
-#include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/LastPositions.h>
-#include <Engine/Base/Console.h>
-#include <Engine/Light/LightSource.h>
-#include <Engine/Entities/EntityProperties.h>
-#include <Engine/Network/LevelChange.h>
-#include <Engine/World/WorldCollision.h>
-#include <Engine/Sound/SoundObject.h>
-#include <Engine/Ska/StringTable.h>
 #include <Engine/Network/MessageDefine.h>
-
-#include <Engine/Templates/Stock_CEntityClass.h>
-#include <Engine/Templates/DynamicContainer.cpp>
-#include <Engine/Templates/StaticArray.cpp>
-#include <Engine/Base/ListIterator.inl>
-#include <Engine/Base/CRC.h>
-#include <Engine/Base/CRCTable.h>
-//0105
-#include <Engine//Network/tcpipconnection.h>
-#include <Engine//Network/TxtQueue.h>
-#include <Engine/Entities/Items.h>
-#include <Engine/Interface/UIManager.h>
-#include <Engine/Interface/UIChatting.h>
-#include <Engine/World/World.h>
-#include <Engine/Effect/CEffectGroupManager.h>
-#include <Engine/Entities/QuestSystem.h>
-#include <Engine/Interface/UIBuff.h>
-#include <Engine/Interface/UIAutoHelp.h>
-#include <Engine/Interface/UIHelper.h>
-#include <Engine/Interface/UISiegeWarfareDoc.h>
-#include <Engine/Interface/UIGWMix.h>
-
 #include <Engine/GlobalDefinition.h>
 #include <Engine/GameState.h>
-#include <Engine/Sound/SoundLibrary.h>
+#include <Engine/SlaveInfo.h>
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Interface/UIAutoHelp.h>
+#include <Engine/Interface/UISiegeWarfareDoc.h>
 #include <Engine/Interface/UIPetTraining.h>
-#include <Engine/Interface/UIPetTarget.h>
 #include <Engine/Interface/UIPetInfo.h>
-#include <Engine/Interface/UIMessageBox.h>
 #include <Engine/Interface/UISummon.h>
 #include <Engine/Interface/UIShop.h>
-#include <Engine/Petinfo.h>
+#include <Engine/Contents/Base/UINoticeNew.h>
+#include <Engine/Templates/DynamicContainer.cpp>
+#include <Engine/Contents/Base/UIPetStash.h>
+#include <Engine/Interface/UICashShopEX.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Interface/UIRadar.h>
+#include <Engine/Interface/UIGamble.h>
+#include <Engine/Interface/UIMessenger.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Contents/Base/UIPartyNew.h>
+#include <Engine/Interface/UIMap.h>
+#include <Engine/Interface/UIPartyAuto.h>
+#include <Engine/Contents/Base/PartyAutoUIInviteList.h>
+#include <Engine/Contents/Base/PartyAutoUIPartyList.h>
+#include <Engine/Interface/UISiegeWarfareNew.h>
+#include <Engine/Interface/UIPlayerInfo.h>
+#include <Engine/Interface/UIGuildWarPortal.h>
+#include <Engine/Interface/UIMonsterCombo.h>
+#include <Engine/Contents/function/UIPortalNew.h>
+#include <Engine/Interface/UIHelp.h>
+#include <Engine/Interface/UIRanking.h>
+#include <Engine/Interface/UIOption.h>
+#include <Engine/Contents/function/WildPetInfoUI.h>
+#include <Engine/Interface/UIReformSystem.h>
+#include <Engine/Interface/UINickName.h>
+#include <Engine/Interface/UINpcScroll.h>
+#include <Engine/Interface/UIPetFree.h>
+#include <Engine/Interface/UISocketSystem.h>
+#include <Engine/Interface/UIPetItemMix.h>
+#include <Engine/Contents/function/AffinityUI.h>
+#include <Engine/Contents/function/AffinityInfoUI.h>
+#include <Engine/Interface/UIMonsterMercenary.h>
+#include <Engine/Interface/UIInitJob.h>
+#include <Engine/Interface/UIQuickSlot.h>
+#include <Engine/Contents/Base/UIRankingSystem.h>
+#include <Engine/Interface/UIMixNew.h>
+#include <Engine/LoginJobInfo.h>
+#include <Engine/Contents/Login/BackImageManager.h>
+#include <Engine/Object/ActorMgr.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/Base/Notice.h>
+#include <Engine/Contents/Base/Quest.h>
+#include <Engine/Info/MyInfo.h>
+#include <Engine/Contents/Base/Party.h>
+#include <Engine/Contents/function/SimplePlayerInfoUI.h>
+#include <Engine/Info/ServerInfo.h>
+#include <Engine/Contents/Base/ChattingUI.h>
+#include <Common/Packet/ptype_old_do_item.h>
+#include <Engine/Contents/Login/LoginNew.h>
 
-//051226 wooss
-#include <Engine/SlaveInfo.h>
-#include <Engine/LocalDefine.h>
-#include <Engine/Entities/MobData.h> // WSS_DRATAN_SEIGEWARFARE 2007/08/23
-
+// socket system. [5/11/2010 rumist]
+//#include <Engine/Interface/UISocketSystem.h>
+#define MODEL_TREASURE	("Data\\Item\\Common\\ITEM_treasure02.smc")
+// #include <map>
+// #include <algorithm>
+//#define XTRAP_LOG_ENABLE
 // ----------------------------------------------------------------------------
 // Name : CheckDratanSiegewarfareError()
 // Desc : 
@@ -77,74 +80,76 @@ void CheckDratanSiegewarfareError(UBYTE errcode)
 	CTString tStr;
 	switch(errcode)
 	{
-		case MSG_EX_CASTLE_ERROR_NOT_JOIN:    // Í≥µÏÑ± Ï∞∏Í∞ÄÏ£ºÏù¥ ÏïÑÎãò
-				tStr = _S( 3739,"Í≥µÏÑ± Ï∞∏Í∞ÄÏ§ëÏù¥ ÏïÑÎãôÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_NOT_JOIN:    // ∞¯º∫ ¬¸∞°¡÷¿Ã æ∆¥‘
+				tStr = _S( 3739,"∞¯º∫ ¬¸∞°¡ﬂ¿Ã æ∆¥’¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_NOT_WAR:    // Í≥µÏÑ±Ï†Ñ Ï§ëÏù¥ ÏïÑÎãò
-				tStr = _S( 3740,"Í≥µÏÑ±Ï§ëÏù¥ ÏïÑÎãôÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_NOT_WAR:    // ∞¯º∫¿¸ ¡ﬂ¿Ã æ∆¥‘
+				tStr = _S( 3740,"∞¯º∫¡ﬂ¿Ã æ∆¥’¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_POS_FAIL:    // ÏúÑÏπò Ïù¥ÏÉÅ
-				tStr = _S( 3741,"Í≥µÏÑ± ÏßÄÏó≠Ïù¥ ÏïÑÎãôÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_POS_FAIL:    // ¿ßƒ° ¿ÃªÛ
+				tStr = _S( 3741,"∞¯º∫ ¡ˆø™¿Ã æ∆¥’¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_MEM_5_FAIL:    // ÍµêÍ∞ê Ïù∏Ïõê ÏûêÎ¶¨ ÏóÜÏùå
-				tStr = _S( 3742,"ÍµêÍ∞ê Ïù∏ÏõêÏù¥ Ï¥àÍ≥ºÎêòÏóàÏäµÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_MEM_5_FAIL:    // ±≥∞® ¿Œø¯ ¿⁄∏Æ æ¯¿Ω
+				tStr = _S( 3742,"±≥∞® ¿Œø¯¿Ã √ ∞˙µ«æ˙Ω¿¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_NOT_OWNER:    // ÏÑ±Ï£º Í∏∏Îìú ÏïÑÎãò
-				tStr = _S( 3743,"ÏÑ±Ï£º Í∏∏ÎìúÍ∞Ä ÏïÑÎãôÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_NOT_OWNER:    // º∫¡÷ ±ÊµÂ æ∆¥‘
+				tStr = _S( 3743,"º∫¡÷ ±ÊµÂ∞° æ∆¥’¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_NOT_RESPOND:   // ÍµêÍ∞ê Ï§ëÏù¥ ÏïÑÎãò
-				tStr = _S( 3744,"ÍµêÍ∞êÏ§ëÏù¥ ÏïÑÎãôÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_NOT_RESPOND:   // ±≥∞® ¡ﬂ¿Ã æ∆¥‘
+				tStr = _S( 3744,"±≥∞®¡ﬂ¿Ã æ∆¥’¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_NOT_RESPOND_TIME:  // ÍµêÍ∞ê ÏãúÍ∞Ñ Î∂ÄÏ°±
-				tStr = _S( 3745,"ÍµêÍ∞ê ÏãúÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_NOT_RESPOND_TIME:  // ±≥∞® Ω√∞£ ∫Œ¡∑
+				tStr = _S( 3745,"±≥∞® Ω√∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_NO_MONEY:    // Îèà Î∂ÄÏ°±
-				tStr = _S(306,"ÎÇòÏä§Í∞Ä Î∂ÄÏ°±Ìï©ÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_NO_MONEY:    // µ∑ ∫Œ¡∑
+				tStr = _S(306,"≥™Ω∫∞° ∫Œ¡∑«’¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_NOT_ATTACK:    // Í≥µÏÑ± Í∏∏Îìú ÏïÑÎãò
-				tStr = _S( 3746,"Í≥µÏÑ± Í∏∏ÎìúÍ∞Ä ÏïÑÎãôÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_NOT_ATTACK:    // ∞¯º∫ ±ÊµÂ æ∆¥‘
+				tStr = _S( 3746,"∞¯º∫ ±ÊµÂ∞° æ∆¥’¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_NO_DATA:    // Îç∞Ïù¥ÌÑ∞ Ïù¥ÏÉÅ
+		case MSG_EX_CASTLE_ERROR_NO_DATA:    // µ•¿Ã≈Õ ¿ÃªÛ
 				tStr.PrintF("Error %d",errcode);
 				break;
-		case MSG_EX_CASTLE_ERROR_NO_DIFFER:    // Ïù¥Ï†Ñ Îç∞Ïù¥ÌÑ∞ÏôÄ ÎèôÏùº				
-				_S( 3747,"Ïù¥ÎØ∏ Í∞ïÌôîÎêú Îã®Í≥ÑÏûÖÎãàÎã§.");				
+		case MSG_EX_CASTLE_ERROR_NO_DIFFER:    // ¿Ã¿¸ µ•¿Ã≈ÕøÕ µø¿œ				
+				tStr = _S( 3747,"¿ÃπÃ ∞≠»≠µ» ¥‹∞Ë¿‘¥œ¥Ÿ.");				
 				break;
-		case MSG_EX_CASTLE_ERROR_NOT_BUY:    // Íµ¨Îß§ÌïòÏßÄ ÏïäÏïòÏùå				
+		case MSG_EX_CASTLE_ERROR_NOT_BUY:    // ±∏∏≈«œ¡ˆ æ æ“¿Ω				
 				tStr.PrintF("Error %d",errcode);
 				break;
-		case MSG_EX_CASTLE_ERROR_NO_NPC:     // ÏóÜÎäî ÌÉÄÏõå
+		case MSG_EX_CASTLE_ERROR_NO_NPC:     // æ¯¥¬ ≈∏øˆ
 				tStr.PrintF("Error %d",errcode);
 				break;
-		case MSG_EX_CASTLE_ERROR_DEAD_NPC:    // Ï£ΩÏùÄ ÌÉÄÏõå 
+		case MSG_EX_CASTLE_ERROR_DEAD_NPC:    // ¡◊¿∫ ≈∏øˆ 
 				tStr.PrintF("Error %d",errcode);
 				break;
-		case MSG_EX_CASTLE_ERROR_HAVE_NO_GUILD:   // Í∏∏Îìú ÏõêÏù¥ ÏïÑÎãò
-				tStr = _S(985,"Ìï¥Îãπ Í∏∏ÎìúÏõêÏùÑ Ï∞æÏùÑ Ïàò ÏóÜÏäµÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_HAVE_NO_GUILD:   // ±ÊµÂ ø¯¿Ã æ∆¥‘
+				tStr = _S(985,"«ÿ¥Á ±ÊµÂø¯¿ª √£¿ª ºˆ æ¯Ω¿¥œ¥Ÿ.");
 				break;				
-		case MSG_EX_CASTLE_ERROR_USE_NPC:    // ÏÇ¨Ïö©Ï§ë Î∂ÄÌôú ÏßÑÏßÄ
-				tStr = _S(3749,"ÏÇ¨Ïö©Ï§ëÏù∏ Î∂ÄÌôúÏßÑÏßÄÏûÖÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_USE_NPC:    // ªÁøÎ¡ﬂ ∫Œ»∞ ¡¯¡ˆ
+				tStr = _S(3749,"ªÁøÎ¡ﬂ¿Œ ∫Œ»∞¡¯¡ˆ¿‘¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_USE_NPC_OTHER:   // Ïù¥ÎØ∏ Îã§Î•∏ Î∂ÄÌôúÏßÑÏßÄ ÏÇ¨Ïö©Ï§ë
-				tStr = _S(3750,"Îã§Î•∏ Î∂ÄÌôúÏßÑÏßÄÎ•º ÏÇ¨Ïö©Ï§ëÏûÖÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_USE_NPC_OTHER:   // ¿ÃπÃ ¥Ÿ∏• ∫Œ»∞¡¯¡ˆ ªÁøÎ¡ﬂ
+				tStr = _S(3750,"¥Ÿ∏• ∫Œ»∞¡¯¡ˆ∏¶ ªÁøÎ¡ﬂ¿‘¥œ¥Ÿ.");
 				break;
-		case MSG_EX_CASTLE_ERROR_NO_NPC2:     // ÏóÜÎäî Î∂ÄÌôú ÏßÑÏßÄ
+		case MSG_EX_CASTLE_ERROR_NO_NPC2:     // æ¯¥¬ ∫Œ»∞ ¡¯¡ˆ
 				tStr.PrintF("Error %d",errcode);
 				break;
-		case MSG_EX_CASTLE_ERROR_DEAD_NPC2:    // Ï£ΩÏùÄ Î∂ÄÌôúÏßÑÏßÄ
+		case MSG_EX_CASTLE_ERROR_DEAD_NPC2:    // ¡◊¿∫ ∫Œ»∞¡¯¡ˆ
 				tStr.PrintF("Error %d",errcode);
 				break;				
-		case MSG_EX_CASTLE_ERROR_SAME_DATA:	   // Í∞ôÏùÄ Îç∞Ïù¥ÌÑ∞ - ÌÉÄÏûÖÍ≥º Îã®Í≥ÑÍ∞Ä ÏïàÎßûÏùÑÎïå...
+		case MSG_EX_CASTLE_ERROR_SAME_DATA:	   // ∞∞¿∫ µ•¿Ã≈Õ - ≈∏¿‘∞˙ ¥‹∞Ë∞° æ»∏¬¿ª∂ß...
 				tStr.PrintF("Error %d",errcode);
 				break;
-		case MSG_EX_CASTLE_ERROR_NOT_BUY_NPC:  // ÎçîÏù¥ÏÉÅ NPCÎ•º Íµ¨Îß§ Ìï†Ïàò ÏóÜÏäµÎãàÎã§,
-				tStr = _S(3812, "ÎçîÏù¥ÏÉÅ Íµ¨ÏûÖÌï† Ïàò ÏóÜÏäµÎãàÎã§.");
+		case MSG_EX_CASTLE_ERROR_NOT_BUY_NPC:  // ¥ı¿ÃªÛ NPC∏¶ ±∏∏≈ «“ºˆ æ¯Ω¿¥œ¥Ÿ,
+				tStr = _S(3812, "¥ı¿ÃªÛ ±∏¿‘«“ ºˆ æ¯Ω¿¥œ¥Ÿ.");
 				break;
-
+		case MSG_EX_CASTLE_ERROR_PERMISSION_DENIED: // ±««—¿Ã æ¯Ω¿¥œ¥Ÿ.
+				tStr = _S( 973, "±««—¿Ã æ¯Ω¿¥œ¥Ÿ.");
+				break;
 	}
 	
 	if(tStr.Length()>0 )
-		_pUIMgr->GetChatting()->AddSysMessage( tStr , SYSMSG_ERROR );	
+		CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( tStr , SYSMSG_ERROR );	
 	
 }
 
@@ -154,22 +159,24 @@ void CheckDratanSiegewarfareError(UBYTE errcode)
 // ----------------------------------------------------------------------------
 BOOL CheckCashMoonStone(UBYTE errcode)
 {
+	if( errcode == MSG_EX_CASHITEM_MOONSTONE_ERROR_SUCCESS )	// º∫∞¯
+		return TRUE;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch(errcode)
 	{
-		case MSG_EX_CASHITEM_MOONSTONE_ERROR_SUCCESS:				// ÏÑ±Í≥µ
-
-			return TRUE;
-			
 		case MSG_EX_CASHITEM_MOONSTONE_ERROR_NOITEM:		
-			_pUIMgr->GetChatting()->AddSysMessage( _S(2908, "ÍµêÌôòÌï† ÏïÑÏù¥ÌÖúÏù¥ ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+			pUIManager->GetChattingUI()->AddSysMessage( _S(2908, "±≥»Ø«“ æ∆¿Ã≈€¿Ã æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
 			break;
 		case MSG_EX_CASHITEM_MOONSTONE_ERROR_INVEN:		
-			_pUIMgr->GetChatting()->AddSysMessage( _S(265, "Ïù∏Î≤§ÌÜ†Î¶¨Í∞Ä Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
+			pUIManager->GetChattingUI()->AddSysMessage( _S(265, "¿Œ∫•≈‰∏Æ∞° ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR );	
 			break;
 		case MSG_EX_CASHITEM_MOONSTONE_ERROR_CANTUSE_CASHMOON:			
-			_pUIMgr->GetChatting()->AddSysMessage( _S(2907, "Ïù¥Ïö© Í∞ÄÎä•Ìïú ÏïÑÏù¥ÌÖúÏù¥ ÏïÑÎãôÎãàÎã§." ), SYSMSG_ERROR );	
+			pUIManager->GetChattingUI()->AddSysMessage( _S(2907, "¿ÃøÎ ∞°¥…«— æ∆¿Ã≈€¿Ã æ∆¥’¥œ¥Ÿ." ), SYSMSG_ERROR );	
 			break;
 	}
+
 	return FALSE;
 
 }
@@ -180,65 +187,134 @@ BOOL CheckCashMoonStone(UBYTE errcode)
 // ----------------------------------------------------------------------------
 BOOL CheckCashItemMessage(UBYTE errcode)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch(errcode)
 	{
-		case MSG_EX_CASHITEM_ERROR_SUCCESS:				// ÏÑ±Í≥µ
-	//		_pUIMgr->GetChatting()->AddSysMessage( _S(2408,  "ÏöîÏ≤≠Ìïú ÏûëÏóÖÏù¥ ÏÑ±Í≥µÌïòÏòÄÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_SUCCESS:				// º∫∞¯
+			pUIManager->GetChattingUI()->AddSysMessage( _S(2408,  "ø‰√ª«— ¿€æ˜¿Ã º∫∞¯«œø¥Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
 			return TRUE;
 			
-		case MSG_EX_CASHITEM_ERROR_LACKCASH:			// Î≥¥Ïú†Ï∫êÏâ¨ Î∂ÄÏ°±
-			_pUIMgr->GetChatting()->AddSysMessage( _S(2409,  "Î≥¥Ïú† Ï∫êÏâ¨Í∞Ä Î∂ÄÏ°± Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_LACKCASH:			// ∫∏¿Øƒ≥Ω¨ ∫Œ¡∑
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(2409, "∫∏¿Ø ƒ≥Ω¨∞° ∫Œ¡∑ «’¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_NOTUSER:				// Ìï¥ÎãπÏú†Ï†Ä ÏóÜÏùå
-			_pUIMgr->GetChatting()->AddSysMessage( _S(2410,  "Ìï¥Îãπ Ïú†Ï†ÄÍ∞Ä Ï°¥Ïû¨ÌïòÏßÄ ÏïäÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_NOTUSER:				// «ÿ¥Á¿Ø¿˙ æ¯¿Ω
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(2410, "«ÿ¥Á ¿Ø¿˙∞° ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_NOTITEM:				// Ï°¥Ïû¨ÌïòÏßÄ ÏïäÎäî ÏÉÅÌíàÏûÖÎãàÎã§
-			_pUIMgr->GetChatting()->AddSysMessage( _S(2411,   "Ï°¥Ïû¨ÌïòÏßÄ ÏïäÎäî ÏÉÅÌíàÏûÖÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_NOTITEM:				// ¡∏¿Á«œ¡ˆ æ ¥¬ ªÛ«∞¿‘¥œ¥Ÿ
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(2411, "¡∏¿Á«œ¡ˆ æ ¥¬ ªÛ«∞¿‘¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_DB:					// DBÏò§Î•ò
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 1843, "ÏÑúÎ≤ÑÏóê Ïó∞Í≤∞Ìï† Ïàò ÏóÜÏäµÎãàÎã§.(B)" ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_DB:					// DBø¿∑˘
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(1843, "º≠πˆø° ø¨∞·«“ ºˆ æ¯Ω¿¥œ¥Ÿ.(B)"), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_PACKET:				// Ìå®ÌÇ∑ Ïò§Î•ò
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 854 ,  "Ìå®ÌÇ∑ Ïò§Î•òÍ∞Ä Î∞úÏÉùÌïòÏòÄÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_PACKET:				// ∆–≈∂ ø¿∑˘
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(854, "∆–≈∂ ø¿∑˘∞° πﬂª˝«œø¥Ω¿¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_ETC:					// Í∏∞ÌÉÄ Ïò§Î•ò
-			_pUIMgr->GetChatting()->AddSysMessage( _S(1094,   "Ïïå Ïàò ÏóÜÎäî Ïò§Î•òÍ∞Ä Î∞úÏÉùÌïòÏòÄÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_ETC:					// ±‚≈∏ ø¿∑˘
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(1094, "æÀ ºˆ æ¯¥¬ ø¿∑˘∞° πﬂª˝«œø¥Ω¿¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_OVERITEM:				// Íµ¨ÏûÖ ÏÉÅÌíà Í∞úÏàò Ï¥àÍ≥º(10Í∞ú)
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 2413,   "Íµ¨ÏûÖ ÏÉÅÌíàÏù¥ 10Í∞úÎ•º Ï¥àÍ≥ºÌïòÏòÄÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_OVERITEM:				// ±∏¿‘ ªÛ«∞ ∞≥ºˆ √ ∞˙(10∞≥)
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(2413, "±∏¿‘ ªÛ«∞¿Ã 10∞≥∏¶ √ ∞˙«œø¥Ω¿¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_NOSPACE:				// Íµ¨Îß§Î¨ºÌíà Î≥¥Í¥ÄÏÜåÏùò Í≥µÍ∞Ñ Î∂ÄÏ°±
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 2414,  "Íµ¨Îß§Î¨ºÌíà Î≥¥Í¥ÄÏÜåÏùò Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_NOSPACE:				// ±∏∏≈π∞«∞ ∫∏∞¸º“¿« ∞¯∞£ ∫Œ¡∑
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(2414, "±∏∏≈π∞«∞ ∫∏∞¸º“¿« ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_LACKINVEN:			// ÏºÄÎ¶≠ÌÑ∞ Ïù∏Î≤§ Î∂ÄÏ°±
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 265,  "Ï∫êÎ¶≠ÌÑ∞ Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_LACKINVEN:			// ƒ…∏Ø≈Õ ¿Œ∫• ∫Œ¡∑
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(265, "ƒ≥∏Ø≈Õ ¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_CONN:					// Ïª§ÎÑ•ÌÑ∞ ÏÑúÎ≤Ñ ÏóêÎü¨
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 2415,  "Ïª§ÎÑ•ÌÑ∞ ÏÑúÎ≤Ñ ÏóêÎü¨ÏûÖÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_CONN:					// ƒø≥ÿ≈Õ º≠πˆ ø°∑Ø
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(2415, "ƒø≥ÿ≈Õ º≠πˆ ø°∑Ø¿‘¥œ¥Ÿ."), UMBS_OK);
 			break;
-		case MSG_EX_CASHITEM_ERROR_BILL:					// ÎπåÎßÅ ÏÑúÎ≤Ñ ÏóêÎü¨
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 2416,  "ÎπåÎßÅ ÏÑúÎ≤Ñ ÏóêÎü¨ÏûÖÎãàÎã§." ), SYSMSG_ERROR );	
+		case MSG_EX_CASHITEM_ERROR_BILL:					// ∫Ù∏µ º≠πˆ ø°∑Ø
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(2416, "∫Ù∏µ º≠πˆ ø°∑Ø¿‘¥œ¥Ÿ."), UMBS_OK);
 			break;
 		case MSG_EX_CASHITEM_ERROR_NOTHAVECT :
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 2769, "ÌíàÏ†àÎêú ÏÉÅÌíà ÏûÖÎãàÎã§." ), SYSMSG_ERROR );	
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(191, "»Æ¿Œ"), _S(2769, "«∞¿˝µ» ªÛ«∞ ¿‘¥œ¥Ÿ."), UMBS_OK);
 			break;
 
 
-		// ÏÑ†Î¨º Í¥ÄÎ†® :Su-won	|---------->
+		// º±π∞ ∞¸∑√ :Su-won	|---------->
 		case MSG_EX_CASHITEM_ERROR_GIFT_SUCCESS:
-			_pUIMgr->GetCashShop()->Message(MSGCMD_GIFT_ERROR, _S(3102, "ÏÑ†Î¨º Î≥¥ÎÇ¥Í∏∞"), _S(3106, "ÏÑ†Î¨º Î≥¥ÎÇ¥Í∏∞Í∞Ä ÏôÑÎ£åÎêòÏóàÏäµÎãàÎã§."), UMBS_OK);
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(3102, "º±π∞ ∫∏≥ª±‚"), _S(3106, "º±π∞ ∫∏≥ª±‚∞° øœ∑·µ«æ˙Ω¿¥œ¥Ÿ."), UMBS_OK);
 			return TRUE;
 		case MSG_EX_CASHITEM_ERROR_GIFT_WRONGCHAR:
-			_pUIMgr->GetCashShop()->Message(MSGCMD_GIFT_ERROR, _S(3107, "ÏÑ†Î¨º Î≥¥ÎÇ¥Í∏∞ ÏóêÎü¨"), _S(3108, "Ìï¥Îãπ Ï∫êÎ¶≠ÌÑ∞ÏóêÍ≤åÎ°ú ÏÑ†Î¨ºÏùÑ Î≥¥ÎÇº Ïàò ÏóÜÏäµÎãàÎã§. Ï∫êÎ¶≠ÌÑ∞ Î™ÖÏùÑ Ï†ïÌôïÌïòÍ≤å ÏûÖÎ†•Ìï¥ Ï£ºÏÑ∏Ïöî."), UMBS_OK);
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(3107, "º±π∞ ∫∏≥ª±‚ ø°∑Ø"), _S(3108, "«ÿ¥Á ƒ≥∏Ø≈Õø°∞‘∑Œ º±π∞¿ª ∫∏≥æ ºˆ æ¯Ω¿¥œ¥Ÿ. ƒ≥∏Ø≈Õ ∏Ì¿ª ¡§»Æ«œ∞‘ ¿‘∑¬«ÿ ¡÷ººø‰."), UMBS_OK);
+			break;
+		case MSG_EX_CASHITEM_ERROR_CANT_GIFT:
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(3107, "º±π∞ ∫∏≥ª±‚ ø°∑Ø"), _S(5366, "¿Ã∫•∆Æ ªÛ«∞¿∫ º±π∞¿Ã ∫“∞°¥…«’¥œ¥Ÿ."), UMBS_OK);
 			break;
 		case MSG_EX_CASHITEM_ERROR_GIFTRECV_SUCCESS:
-			_pUIMgr->GetCashShop()->IsEmptyRecvGift();
-			_pUIMgr->GetCashShop()->Message(MSGCMD_GIFT_ERROR, _S(3109, "ÏÑ†Î¨º Î∞õÍ∏∞"), _S(3110, "ÏÑ†Î¨º Î∞õÏùÄ Î¨ºÌíàÎì§Ïù¥ Ï∫êÎ¶≠ÌÑ∞ ÏïÑÏù¥ÌÖú Ïù∏Î≤§ÌÜ†Î¶¨Î°ú ÏòÆÍ≤®Ï°åÏäµÎãàÎã§."), UMBS_OK);
+			pUIManager->GetCashShopEX()->Message(MSGCMD_CASH_EX_ERROR, _S(3109, "º±π∞ πﬁ±‚"), _S(3110, "º±π∞ πﬁ¿∫ π∞«∞µÈ¿Ã ƒ≥∏Ø≈Õ æ∆¿Ã≈€ ¿Œ∫•≈‰∏Æ∑Œ ø≈∞‹¡≥Ω¿¥œ¥Ÿ."), UMBS_OK);
+			pUIManager->GetCashShopEX()->SetLoadDataState(FALSE);
 			return TRUE;
-		// ÏÑ†Î¨º Í¥ÄÎ†® :Su-won	<----------|
+		// º±π∞ ∞¸∑√ :Su-won	<----------|
 	}
+
+	pUIManager->GetCashShopEX()->SetLoadDataState(FALSE);
 	return FALSE;
 
+}
+void CheckSocketSystemError(UBYTE errcode);
+
+#ifdef XTRAP_SECURE_CKBANG_2010_07_20
+    #include <Engine/XTrapInterface/XTrapInterface.h>
+#endif
+
+void CheckTimerEvent()
+{
+	if (IS_EVENT_ON(A_EVENT_SONGKRAN))
+	{
+		_pNetwork->ga_World.loadTradeItem();
+	}
+
+	if (IS_EVENT_ON(A_EVENT_HOLLOWEEN))
+	{
+		g_fGWTime = 30*3600; // «“∑Œ¿©µ•¿Ã2007¿Ã∫•∆Æø°º≠¥¬ ∞Ëº” π„¿ª ¿Ø¡ˆ «—¥Ÿ.
+		g_fGWTimeMul = 0.0f;
+	}
+	else
+	{
+		g_fGWTime = CUIManager::getSingleton()->GetRadar()->GetHour() * 3600;
+		g_fGWTimeMul = 1.0f;
+	}
+
+	FOREACHINDYNAMICCONTAINER( _pNetwork->ga_World.wo_cenEntities, CEntity, iten) 
+	{
+		if( iten->GetName() == CTString("Color controller") || iten->GetName() == CTString("SunMoon") )
+		{
+			iten->Initialize();
+		}
+	}
+
+	if (!_pUIBuff->IsBuffBySkill(564))
+	{
+		if (CUIManager::getSingleton()->GetInventory()->GetWearingBtn(WEAR_HELMET)->IsEmpty() == false)
+		{
+			int iItemIndex = CUIManager::getSingleton()->GetInventory()->GetWearingBtn(WEAR_HELMET)->getIndex();
+			if ((( ( iItemIndex >= 4927 && iItemIndex <= 4932 ) || iItemIndex == 6228) && IS_EVENT_ON(A_EVENT_HOLLOWEEN))// »£π⁄≈ª ±‚∞£¡¶∞° √ﬂ∞°µ«æ˙¥Ÿ.
+				|| (iItemIndex >= 7253 && iItemIndex <= 7259)) // [ldy1978220 2011/5/31] ∞°πÃ∞Ì 10¡÷≥‚ ¿Ã∫•∆Æ ∞¸∑√ √ﬂ∞° æ∆¿Ã≈€
+			{ // »£π⁄≈ª¿∫ hidden º”º∫¿« npc∏¶ ∫º ºˆ ¿÷¥Ÿ.
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetFlagOn(ENF_SHOWHIDDEN);
+			}
+			else
+			{
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetFlagOff(ENF_SHOWHIDDEN);
+			}
+		}
+	}
+
+
+	LoginNew* pInfo = GAMEDATAMGR()->GetLoginData();
+
+	if (pInfo != NULL)
+	{
+		if (IS_EVENT_ON(A_EVENT_HOLLOWEEN))
+			pInfo->SetLogoType(eLOGO_HOLLOWEEN);
+		else if (IS_EVENT_ON(TEVENT_XMAS_2007))
+			pInfo->SetLogoType(eLOGO_XMAS);
+		else
+			pInfo->SetLogoType(eLOGO_NORMAL);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -247,17 +323,21 @@ BOOL CheckCashItemMessage(UBYTE errcode)
 // ----------------------------------------------------------------------------
 void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 {
-	LONG	ubType;
+	int		i;
+	LONG	lType;
 	UBYTE	errcode;
 	UBYTE	exType;
-	(*istr) >> ubType;
+	SLONG	nServerTime;
+	(*istr) >> lType;
 	CTString		strTitle,strMessage,newName;
 	ULONG			nIndex;
 	UBYTE			nJob;
 	BYTE			bIsGuildName;
 	CUIMsgBox_Info	MsgBoxInfo;
 
-	switch(ubType)
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch(lType)
 	{
 	case MSG_EX_PET_STATUS:
 		ReceivePetStatusMessage(istr);
@@ -265,38 +345,38 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 	case MSG_EX_PET_MOUNT:
 		ReceivePetMountMessage(istr);
 		break;
-	case MSG_EX_PET_LEARN:			// Ìé´ ÍµêÏú°			: skillindex(n) level(c:server) errorcode(n:server)
+	case MSG_EX_PET_LEARN:			// ∆Í ±≥¿∞			: skillindex(n) level(c:server) errorcode(n:server)
 		ReceivePetLearnMessage(istr);
 		break;
-	case MSG_EX_PET_SKILLLIST:		// Ìé´ Ïä§ÌÇ¨ Î¶¨Ïä§Ìä∏	: index(n) count(n) [skillindex(n) skilllevel(c)] ...
+	case MSG_EX_PET_SKILLLIST:		// ∆Í Ω∫≈≥ ∏ÆΩ∫∆Æ	: index(n) count(n) [skillindex(n) skilllevel(c)] ...
 		ReceivePetSkillListMessage(istr);
 		break;
-	case MSG_EX_PET_RESET_SKILL:	// Ìé´ Ïä§ÌÇ¨ Ï¥àÍ∏∞Ìôî
+	case MSG_EX_PET_RESET_SKILL:	// ∆Í Ω∫≈≥ √ ±‚»≠
 		ReceivePetResetSkillMessage(istr);
 		break;
-	case MSG_EX_PET_SELL_INFO:		// Ìé´ ÍµêÌôò/ÌåêÎß§ Ï†ïÎ≥¥: ownerindex(n) petindex(n) petTypeGrade(c) level(n) exp(ll) needexp(ll) hp(n) maxhp(n) ability(n) hungry(n) maxhugry(n) sympathy(n) maxsympathy(n)
+	case MSG_EX_PET_SELL_INFO:		// ∆Í ±≥»Ø/∆«∏≈ ¡§∫∏: ownerindex(n) petindex(n) petTypeGrade(c) level(n) exp(ll) needexp(ll) hp(n) maxhp(n) ability(n) hungry(n) maxhugry(n) sympathy(n) maxsympathy(n)
 		ReceivePetSellInfoMessage(istr);
 		break;
-	case MSG_EX_PET_CHANGE_MOUNT:	// Ìé´ ÌÉÄÏûÖ Î≥ÄÍ≤Ω		: errorcode(n:server)
+	case MSG_EX_PET_CHANGE_MOUNT:	// ∆Í ≈∏¿‘ ∫Ø∞Ê		: errorcode(n:server)
 		ReceivePetChangeMountMessage(istr);
 		break;	
 	
-	case MSG_EX_PET_COMMAND:		// Ìé´ ÏÇ¨ÍµêÎèôÏûë		: pet_index(n) command_skill_index(n) targettype(c) targetindex(n)
+	case MSG_EX_PET_COMMAND:		// ∆Í ªÁ±≥µø¿€		: pet_index(n) command_skill_index(n) targettype(c) targetindex(n)
 		{
 			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->Read_net_Pet(MSG_EX_PET_COMMAND, &(*istr));			
 		}
 		break;
-	case MSG_EX_PET_LEVELUP: // Ìé´ Î†àÎ≤®ÏóÖ petindex(n) typegrade(c) level(n)
+	case MSG_EX_PET_LEVELUP: // ∆Í ∑π∫ßæ˜ petindex(n) typegrade(c) level(n)
 		ReceivePetLevelUpMessage(istr);
 		break;
-	case MSG_EX_PET_MIX_ITEM:		// Ìé´ Ïù¥ÏïÑÌÖú Ï°∞Ìï©	: 
+	case MSG_EX_PET_MIX_ITEM:		// ∆Í ¿Ãæ∆≈€ ¡∂«’	: 
 		ReceviePetItemMixMessage(istr);
 		break;
-	case MSG_EX_PET_CHANGE_ITEM:	// Ìé´ ÏïÑÏù¥ÌÖú ÍµêÌôò  
+	case MSG_EX_PET_CHANGE_ITEM:	// ∆Í æ∆¿Ã≈€ ±≥»Ø  
 		ReceviePetItemChangeMessage(istr);
 		break;
 	case MSG_EX_PET_REBIRTH:
-		ReceviePetRebirthMessage(istr); // Ìé´ Î¥âÏù∏ Ìï¥Ï†ú
+		ReceviePetRebirthMessage(istr); // ∆Í ∫¿¿Œ «ÿ¡¶
 		break;
 	
 	case MSG_EX_PARTY_RECALL:
@@ -313,179 +393,166 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 				if(bIsGuildName)
 				{
 					_pNetwork->MyCharacterInfo.strGuildName=newName;
-					if(_pUIMgr->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_SUCCESS)) return;
-					strTitle	=	_S(191,"ÌôïÏù∏");
-					strMessage	=_S( 2131, 	"Í∏∏ÎìúÏû•Ïóê ÏùòÌï¥ Í∏∏Îìú Ïù¥Î¶ÑÏù¥ Î≥ÄÍ≤ΩÎêòÏóàÏäµÎãàÎã§" ); 
+					if(pUIManager->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_SUCCESS)) return;
+					strTitle	=	_S(191,"»Æ¿Œ");
+					strMessage	=_S( 2131, 	"±ÊµÂ¿Âø° ¿««ÿ ±ÊµÂ ¿Ã∏ß¿Ã ∫Ø∞Êµ«æ˙Ω¿¥œ¥Ÿ" ); 
 					MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
 					MsgBoxInfo.AddString(strMessage);
-					_pUIMgr->CreateMessageBox(MsgBoxInfo);
+					pUIManager->CreateMessageBox(MsgBoxInfo);
 					
 				}
 				else 
 				{
 					_pNetwork->MyCharacterInfo.name=newName;
-					if(_pUIMgr->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_SUCCESS)) return;
-					strTitle	=	_S(191,"ÌôïÏù∏");
-					strMessage	=_S( 2132, 	"Ïù¥Î¶ÑÏù¥ ÏÑ±Í≥µÏ†ÅÏúºÎ°ú Î≥ÄÍ≤ΩÎêòÏóàÏäµÎãàÎã§" ); 
+					if(pUIManager->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_SUCCESS)) return;
+					strTitle	=	_S(191,"»Æ¿Œ");
+					strMessage	=_S( 2132, 	"¿Ã∏ß¿Ã º∫∞¯¿˚¿∏∑Œ ∫Ø∞Êµ«æ˙Ω¿¥œ¥Ÿ" ); 
 					MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
 					MsgBoxInfo.AddString(strMessage);
-					_pUIMgr->CreateMessageBox(MsgBoxInfo);
+					pUIManager->CreateMessageBox(MsgBoxInfo);
 					
-					//wooss 051004 Í∞úÎ™ÖÏãú Î©îÏã†Ï†ÄÏÉÅ Ïù¥Î¶ÑÎèÑ Î≥ÄÍ≤Ω
-					_pUIMgr->GetMessenger()->SetMyInfo(-1,newName);
+					//wooss 051004 ∞≥∏ÌΩ√ ∏ﬁΩ≈¿˙ªÛ ¿Ã∏ßµµ ∫Ø∞Ê
+					pUIManager->GetMessenger()->SetMyInfo(-1,newName);
 					
 				}
 				break;
 				
 			case MSG_EX_NAMECHANGE_ERROR_DUPLICATE:
-				if(_pUIMgr->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_DUPLICATE)) return;
-				strTitle	=	_S(191,"ÌôïÏù∏");
-				strMessage	=_S(12,"Ï§ëÎ≥µÎêú Ïù¥Î¶Ñ ÏûÖÎãàÎã§."); 
+				if(pUIManager->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_DUPLICATE)) return;
+				strTitle	=	_S(191,"»Æ¿Œ");
+				strMessage	=_S(12,"¡ﬂ∫πµ» ¿Ã∏ß ¿‘¥œ¥Ÿ."); 
 				MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
 				MsgBoxInfo.AddString(strMessage);
-				_pUIMgr->CreateMessageBox(MsgBoxInfo);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
 				break;
 				
 			case MSG_EX_NAMECHANGE_ERROR_HELPER:
-				if(_pUIMgr->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_HELPER)) return;
-				strTitle	=	_S(191,"ÌôïÏù∏");
-				strMessage	=	_S( 2133, "Ìó¨ÌçºÏÑúÎ≤Ñ Ïò§Î•ò ÏûÖÎãàÎã§" ); 
+				if(pUIManager->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_HELPER)) return;
+				strTitle	=	_S(191,"»Æ¿Œ");
+				strMessage	=	_S( 2133, "«Ô∆€º≠πˆ ø¿∑˘ ¿‘¥œ¥Ÿ" ); 
 				MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
 				MsgBoxInfo.AddString(strMessage);
-				_pUIMgr->CreateMessageBox(MsgBoxInfo);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
 				break;
 				
 			case MSG_EX_NAMECHANGE_ERROR_INVALID:
-				if(_pUIMgr->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_INVALID)) return;
-				strTitle	=	_S(191,"ÌôïÏù∏");
-				strMessage	=_S( 2134, 	"Ïò¨Î∞îÎ•∏ ÌòïÏãùÏùò Ïù¥Î¶ÑÏù¥ ÏïÑÎãôÎãàÎã§" ); 
+				if(pUIManager->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_INVALID)) return;
+				strTitle	=	_S(191,"»Æ¿Œ");
+				strMessage	=_S( 2134, 	"ø√πŸ∏• «¸Ωƒ¿« ¿Ã∏ß¿Ã æ∆¥’¥œ¥Ÿ" ); 
 				MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
 				MsgBoxInfo.AddString(strMessage);
-				_pUIMgr->CreateMessageBox(MsgBoxInfo);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
 				break;
 				
 			case MSG_EX_NAMECHANGE_ERROR_NOTGUILDBOSS:
-				if(_pUIMgr->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_NOTGUILDBOSS)) return;
-				strTitle	=	_S(191,"ÌôïÏù∏");
-				strMessage	=_S( 2136, 	"Í∏∏ÎìúÏù¥Î¶ÑÏùÄ Í∏∏ÎìúÏû•ÎßåÏù¥ Î≥ÄÍ≤ΩÌï† Ïàò ÏûàÏäµÎãàÎã§" ); 
+				if(pUIManager->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_NOTGUILDBOSS)) return;
+				strTitle	=	_S(191,"»Æ¿Œ");
+				strMessage	=_S( 2136, 	"±ÊµÂ¿Ã∏ß¿∫ ±ÊµÂ¿Â∏∏¿Ã ∫Ø∞Ê«“ ºˆ ¿÷Ω¿¥œ¥Ÿ" ); 
 				MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
 				MsgBoxInfo.AddString(strMessage);
-				_pUIMgr->CreateMessageBox(MsgBoxInfo);
-				break;			
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+				break;	
+
+			case MSG_EX_NAMECHANGE_ERROR_PARTY:
+				if(pUIManager->DoesMessageBoxExist(MSG_EX_NAMECHANGE_ERROR_PARTY)) return;
+				strTitle	=	_S(191,"»Æ¿Œ");
+				strMessage	=_S(4718, "∆ƒ∆º¡ﬂø°¥¬ ¿Ã∏ß¿ª ∫Ø∞Ê«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ); 
+				MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
+				MsgBoxInfo.AddString(strMessage);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+				break;
 			}
 			break;
 
-		case MSG_EX_CASHITEM:			// ÏïÑÏù¥ÌÖú Íµ¨Îß§		: subtype(uc) ...
+		case MSG_EX_CASHITEM:			// æ∆¿Ã≈€ ±∏∏≈		: subtype(uc) ...
 			{
-				ULONG tv_cash,nCtid,nCount;
-				
-				ULONG tv_remainCnt;
-				ULONG tv_listCnt;
-				ULONG tv_cashIdx;
-				int i;
-
-			//	ULONG test;
+				ULONG tv_cash, /*nCtid,*/ nCount;
 				(*istr) >> exType;
+				
 				switch(exType)
 				{
-					case MSG_EX_CASHITEM_BALANCE_REP :		// Ï∫êÏâ¨				: errorCode(uc) cashBalance(n)
+				case MSG_EX_CASHITEM_TYPE_LIST_REP:
+					{ // max type count∏¶ ±‚¡ÿ¿∏∑Œ ªÁøÎ«œ¥¬ indexøÕ ªÁøÎ æ ¥¬ index∏¶ ∫–∫∞«—¥Ÿ.
+						pUIManager->GetCashShopEX()->SetCashType(istr);
+					}
+					break;
+				case MSG_EX_CASHITEM_LIST_REP:
+					{
+						pUIManager->GetCashShopEX()->SetGoodsList(istr);
+					}
+					break;
+				case MSG_EX_CASHITEM_RECOMMAND_REP:
+					{
+						pUIManager->GetCashShopEX()->SetRecommandList(istr);
+					}
+					break;
+				case MSG_EX_CASHITEM_WISHLIST_REP:
+					{
+						pUIManager->GetCashShopEX()->SetWishList(istr);
+					}
+					break;
+
+					case MSG_EX_CASHITEM_BALANCE_REP :		// ƒ≥Ω¨				: errorCode(uc) cashBalance(n)
 						{
 							(*istr) >> errcode;
-							if(CheckCashItemMessage(errcode)){
-								(*istr) >> 	tv_cash;			
-								_pUIMgr->GetCashShop()->SetMyCash(tv_cash);
-								(*istr) >> 	tv_listCnt;
-								if (tv_listCnt >0)
-								{
-									CCashShopData& CS = _pNetwork->GetCashShopData(UCSS_PLATINUM);
-									for(i=0;i<tv_listCnt;i++ ){
-										(*istr) >> tv_cashIdx;
-										(*istr) >> tv_remainCnt;
-										if(tv_cashIdx == CS.m_vShopItemArray[i].m_shopItemIndex)
-											CS.m_vShopItemArray[i].m_limitCnt = tv_remainCnt;
-//										CTString tv_str;
-//										tv_str.PrintF("%d %d %d",tv_cashIdx,CS.m_vShopItemArray[i].m_shopItemIndex,tv_remainCnt,CS.m_vShopItemArray[i].m_limitCnt);
-									}
-								}
+							if(CheckCashItemMessage(errcode))
+							{
+								(*istr) >> 	tv_cash;
+								pUIManager->GetCashShopEX()->SetMyCash(static_cast<SQUAD>(tv_cash));
 							}
-							
 						}
 						break;			
-					case MSG_EX_CASHITEM_PURCHASE_REP :		// ÏùëÎãµ				: errorCode(uc) cashBalance(n)
+					case MSG_EX_CASHITEM_PURCHASE_REP :		// ¿¿¥‰				: errorCode(uc) cashBalance(n)
+					case MSG_EX_CASHITEM_PURCHASE_WITH_COUPON_REP : // ƒÌ∆˘ ±∏∏≈ ¿¿¥‰ : errorCode(uc) cashBalance(n)
 						{							
 							(*istr) >> errcode;
-							if(CheckCashItemMessage(errcode)){
-								(*istr) >> 	tv_cash;			
-								_pUIMgr->GetCashShop()->SetMyCash(tv_cash);
-								_pUIMgr->GetCashShop()->ClearBtnItems(_pUIMgr->GetCashShop()->m_abtnTradeItems,MAX_KIT_SIZE);
-								(*istr) >> 	tv_listCnt;
-								if (tv_listCnt >0)
-								{
-									CCashShopData& CS = _pNetwork->GetCashShopData(UCSS_PLATINUM);
-									for(i=0;i<tv_listCnt;i++ ){
-										(*istr) >> tv_cashIdx;
-										(*istr) >> tv_remainCnt;
-										if(tv_cashIdx == CS.m_vShopItemArray[i].m_shopItemIndex)
-											CS.m_vShopItemArray[i].m_limitCnt = tv_remainCnt;
-									}
-								}
+							if(CheckCashItemMessage(errcode))
+							{
+								(*istr) >> 	tv_cash;
+								pUIManager->GetCashShopEX()->SetMyCash(static_cast<SQUAD>(tv_cash));
+								pUIManager->GetCashShopEX()->CompletePurchase();
 							}
 						}
-						break;			
-					case MSG_EX_CASHITEM_BRING_REP:			// ÏùëÎãµ				: errorCode(uc) 
-						{
-							(*istr) >> errcode;
-
-							_pUIMgr->GetCashShop()->m_bBringItem = FALSE; // ÏïÑÏù¥ÌÖú Í∞ÄÏ†∏Ïò§Í∏∞ ÏôÑÎ£å
-
-							if(CheckCashItemMessage(errcode)){
-								_pUIMgr->GetCashShop()->ClearBtnItems(_pUIMgr->GetCashShop()->m_abtnInvenItems.sa_Array,INVEN_SLOT_TOTAL);
-							}
-
-						}
-						break;	
-					case MSG_EX_CASHITEM_PURCHASELIST_REP:   // ÏùëÎãµ				: count(n) idx(n) ctid(n)
+						break;
+					case MSG_EX_CASHITEM_BRING_REP:			// ¿¿¥‰				: errorCode(uc) 
 						{
 							(*istr) >> errcode;
 							if(CheckCashItemMessage(errcode)){
-								(*istr) >> nCount;
-								nCount = (nCount>KIT_SLOT_TOTAL)?KIT_SLOT_TOTAL:nCount;
-								for( int i = 0 ; i < nCount  ; i++){
-									CUIButtonEx tv_btn;
-									(*istr) >> nIndex;
-									(*istr) >> nCtid;
-									if(_pUIMgr->GetCashShop()->SetCashIndexToBtn(nCtid,nIndex,tv_btn)){
-										_pUIMgr->GetCashShop()->m_abtnKitItems[i] = tv_btn;
-										_pUIMgr->GetCashShop()->m_abtnKitItems[i].Copy(tv_btn);
-									}
-
-								}
+								pUIManager->GetCashShopEX()->CompleteBringItems();
 							}
-							
 						}
 						break;	
-					case MSG_EX_CASHITEM_PURCHASEHISTORY_REP:// ÏùëÎãµ				: errorcode(uc) count(n) ctid(n)
+					case MSG_EX_CASHITEM_PURCHASELIST_REP:   // ¿¿¥‰				: count(n) idx(n) ctid(n)
+						{
+							(*istr) >> errcode;
+							if(CheckCashItemMessage(errcode))
+							{
+								pUIManager->GetCashShopEX()->SetPurchaseItemList(istr);
+							}
+						}
+						break;
+					case MSG_EX_CASHITEM_PURCHASEHISTORY_REP:// ¿¿¥‰				: errorcode(uc) count(n) ctid(n)
 						{
 							(*istr) >> errcode;
 							if(CheckCashItemMessage(errcode)){
 								(*istr >> nCount);
 								if( nCount > 0){
-									_pUIMgr->GetCashShop()->m_abtnHistoryItems.New(nCount);
-									_pUIMgr->GetCashShop()->m_sbHistory.SetScrollPos( 0 );
-									_pUIMgr->GetCashShop()->m_sbHistory.SetScrollRange(nCount);
-									_pUIMgr->GetCashShop()->m_sbHistory.SetCurItemCount(nCount);
-									for( int i=0; i < nCount ;i++){
-										CUIButtonEx tv_btn;
-										ULONG nItemCnt;
-										(*istr) >> nItemCnt;
-										(*istr) >> nCtid;
-										_pUIMgr->GetCashShop()->m_abtnHistoryItems[i].Create(NULL,-1,-1,BTN_SIZE,BTN_SIZE,UI_CASH_SHOP);
-										if(_pUIMgr->GetCashShop()->SetCashIndexToBtn(nCtid,-1,tv_btn)){
-											_pUIMgr->GetCashShop()->m_abtnHistoryItems[i] = tv_btn;
-											_pUIMgr->GetCashShop()->m_abtnHistoryItems[i].Copy(tv_btn);
-											_pUIMgr->GetCashShop()->m_abtnHistoryItems[i].SetItemCount(nItemCnt);
-										}
-									}
+// 									pUIManager->GetCashShop()->m_abtnHistoryItems.New(nCount);
+// 									pUIManager->GetCashShop()->m_sbHistory.SetScrollPos( 0 );
+// 									pUIManager->GetCashShop()->m_sbHistory.SetScrollRange(nCount);
+// 									pUIManager->GetCashShop()->m_sbHistory.SetCurItemCount(nCount);
+// 									for( int i=0; i < nCount ;i++){
+// 										CUIButtonEx tv_btn;
+// 										ULONG nItemCnt;
+// 										(*istr) >> nItemCnt;
+// 										(*istr) >> nCtid;
+// 										pUIManager->GetCashShop()->m_abtnHistoryItems[i].Create(NULL,-1,-1,BTN_SIZE,BTN_SIZE,UI_CASH_SHOP);
+// 										if(pUIManager->GetCashShop()->SetCashIndexToBtn(nCtid,-1,tv_btn)){
+// 											pUIManager->GetCashShop()->m_abtnHistoryItems[i] = tv_btn;
+// 											pUIManager->GetCashShop()->m_abtnHistoryItems[i].Copy(tv_btn);
+// 											pUIManager->GetCashShop()->m_abtnHistoryItems[i].SetItemCount(nItemCnt);
+// 										}
+// 									}
 								}
 							}						
 						}
@@ -497,58 +564,34 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 								UBYTE grade;
 								(*istr) >> grade;
 								grade =5-grade;
-								_pUIMgr->GetGamble()->SetSelectedMarker( grade, grade );
-								_pUIMgr->GetGamble()->Start();
+								pUIManager->GetGamble()->SetSelectedMarker( grade, grade );
+								pUIManager->GetGamble()->Start();
 							}						
 						}
 						break;
 
-					// ÏÑ†Î¨º Í¥ÄÎ†® :Su-won	|--------------------------------------------------->
-					case MSG_EX_CASHITEM_GIFT_REP:					//ÏùëÎãµ	: errcode(uc) 
+					// º±π∞ ∞¸∑√ :Su-won	|--------------------------------------------------->
+					case MSG_EX_CASHITEM_GIFT_REP:					//¿¿¥‰	: errcode(uc) 
 						{
 							(*istr) >> errcode;
 							if(CheckCashItemMessage(errcode))
 							{
-								_pUIMgr->GetCashShop()->ClearBtnItems(_pUIMgr->GetCashShop()->m_abtnInvenItems.sa_Array,INVEN_SLOT_TOTAL);
-
-								_pUIMgr->GetCashShop()->m_bShowSendGift =FALSE;
+								pUIManager->GetCashShopEX()->CompleteBringItems();
 							}
 						}
 						break;
-					case MSG_EX_CASHITEM_GIFT_SENDHISTORY_REP:		// ÏùëÎãµ	: errorcode(uc) count(n) ctid(n) recvcharName(str)
+					case MSG_EX_CASHITEM_WISHLIST_SAVE_REP: // º“∏¡ªÛ¿⁄ æ∆¿Ã≈€ µÓ∑œ ∞·∞˙
 						{
-							(*istr) >> errcode;
-							if(CheckCashItemMessage(errcode))
-							{
-								(*istr >> nCount);
-								if( nCount > 0)
-								{
-									_pUIMgr->GetCashShop()->m_abtnSendHistoryItems.New(nCount);
-									_pUIMgr->GetCashShop()->m_sbGift.SetScrollPos( 0 );
-									_pUIMgr->GetCashShop()->m_sbGift.SetScrollRange(nCount);
-									_pUIMgr->GetCashShop()->m_sbGift.SetCurItemCount(nCount);
-
-									_pUIMgr->GetCashShop()->m_astrSendChar.New(nCount);
-									for( int i=0; i < nCount ;i++)
-									{
-										CUIButtonEx tv_btn;
-										//ULONG nItemCnt;
-										(*istr) >> nCtid;
-										(*istr) >> newName;
-										_pUIMgr->GetCashShop()->m_abtnSendHistoryItems[i].Create(NULL,-1,-1,BTN_SIZE,BTN_SIZE,UI_CASH_SHOP);
-										if(_pUIMgr->GetCashShop()->SetCashIndexToBtn(nCtid,-1,tv_btn))
-										{
-											_pUIMgr->GetCashShop()->m_abtnSendHistoryItems[i] = tv_btn;
-											_pUIMgr->GetCashShop()->m_abtnSendHistoryItems[i].Copy(tv_btn);
-											//_pUIMgr->GetCashShop()->m_abtnSendHistoryItems[i].SetItemCount(nItemCnt);
-											_pUIMgr->GetCashShop()->m_astrSendChar[i] =newName;
-										}
-									}
-								}
-							}
+							//(*istr) >> errcode;
+							pUIManager->GetCashShopEX()->RevWishList(istr, TRUE);
 						}
 						break;
-					case MSG_EX_CASHITEM_GIFT_RECVHISTORY_REP:// ÏùëÎãµ				: errorcode(uc) count(n) ctid(n) recvcharName(str)
+					case MSG_EX_CASHITEM_WISHLIST_DEL_REP:
+						{
+							pUIManager->GetCashShopEX()->RevWishList(istr, FALSE);
+						}
+						break;
+					case MSG_EX_CASHITEM_GIFT_SENDHISTORY_REP:		// ¿¿¥‰	: errorcode(uc) count(n) ctid(n) recvcharName(str)
 						{
 							(*istr) >> errcode;
 							if(CheckCashItemMessage(errcode))
@@ -556,129 +599,164 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 								(*istr >> nCount);
 								if( nCount > 0)
 								{
-									_pUIMgr->GetCashShop()->m_abtnRecvHistoryItems.New(nCount);
-									_pUIMgr->GetCashShop()->m_sbGift.SetScrollPos( 0 );
-									_pUIMgr->GetCashShop()->m_sbGift.SetScrollRange(nCount);
-									_pUIMgr->GetCashShop()->m_sbGift.SetCurItemCount(nCount);
-
-									_pUIMgr->GetCashShop()->m_astrReceiveChar.New(nCount);
-									for( int i=0; i < nCount ;i++)
-									{
-										CUIButtonEx tv_btn;
-										//ULONG nItemCnt;
-										//(*istr) >> nItemCnt;
-										(*istr) >> nCtid;
-										(*istr) >> newName;
-										_pUIMgr->GetCashShop()->m_abtnRecvHistoryItems[i].Create(NULL,-1,-1,BTN_SIZE,BTN_SIZE,UI_CASH_SHOP);
-										if(_pUIMgr->GetCashShop()->SetCashIndexToBtn(nCtid,-1,tv_btn))
-										{
-											_pUIMgr->GetCashShop()->m_abtnRecvHistoryItems[i] = tv_btn;
-											_pUIMgr->GetCashShop()->m_abtnRecvHistoryItems[i].Copy(tv_btn);
-											//_pUIMgr->GetCashShop()->m_abtnReceiveHistoryItems[i].SetItemCount(nItemCnt);
-											_pUIMgr->GetCashShop()->m_astrReceiveChar[i] =newName;
-										}										
-									}
+// 									pUIManager->GetCashShop()->m_abtnSendHistoryItems.New(nCount);
+// 									pUIManager->GetCashShop()->m_sbGift.SetScrollPos( 0 );
+// 									pUIManager->GetCashShop()->m_sbGift.SetScrollRange(nCount);
+// 									pUIManager->GetCashShop()->m_sbGift.SetCurItemCount(nCount);
+// 
+// 									pUIManager->GetCashShop()->m_astrSendChar.New(nCount);
+// 									for( int i=0; i < nCount ;i++)
+// 									{
+// 										CUIButtonEx tv_btn;
+// 										//ULONG nItemCnt;
+// 										(*istr) >> nCtid;
+// 										(*istr) >> newName;
+// 										pUIManager->GetCashShop()->m_abtnSendHistoryItems[i].Create(NULL,-1,-1,BTN_SIZE,BTN_SIZE,UI_CASH_SHOP);
+// 										if(pUIManager->GetCashShop()->SetCashIndexToBtn(nCtid,-1,tv_btn))
+// 										{
+// 											pUIManager->GetCashShop()->m_abtnSendHistoryItems[i] = tv_btn;
+// 											pUIManager->GetCashShop()->m_abtnSendHistoryItems[i].Copy(tv_btn);
+// 											//pUIManager->GetCashShop()->m_abtnSendHistoryItems[i].SetItemCount(nItemCnt);
+// 											pUIManager->GetCashShop()->m_astrSendChar[i] =newName;
+// 										}
+// 									}
 								}
 							}
 						}
 						break;
-					case MSG_EX_CASHITEM_GIFT_RECVLIST_REP:// ÏùëÎãµ
-						{
-							//listflag(c) count(n) idx(n) ctid(n) date(un) sendcharName(str) msg(str)
-							BYTE cListFlag;
-							ULONG nDate;
-
-							(*istr) >> cListFlag;
-
-							int nPrevCount;
-							(*istr) >> nCount;
-
-							if( nCount ==0)
-							{
-								_pUIMgr->GetCashShop()->m_sbReceive.SetCurItemCount(0);
-								break;
-							}
-
-							if( cListFlag & 0x1 )
-							{
-								nPrevCount=0;
-								_pUIMgr->GetCashShop()->m_sbReceive.SetCurItemCount(0);
-
-								_pUIMgr->GetCashShop()->m_abtnRecvGift.New(nCount);
-								_pUIMgr->GetCashShop()->m_astrSend.New(nCount);
-								_pUIMgr->GetCashShop()->m_astrGiftMessage.New(nCount);
-								_pUIMgr->GetCashShop()->m_anDate.New(nCount);
-								_pUIMgr->GetCashShop()->m_anRecvOrder.New(nCount);
-							}
-							else
-							{
-								nPrevCount =_pUIMgr->GetCashShop()->m_abtnRecvGift.sa_Count;
-
-								_pUIMgr->GetCashShop()->m_abtnRecvGift.Expand(nPrevCount+nCount);
-								_pUIMgr->GetCashShop()->m_astrSend.Expand(nPrevCount+nCount);
-								_pUIMgr->GetCashShop()->m_astrGiftMessage.Expand(nPrevCount+nCount);
-								_pUIMgr->GetCashShop()->m_anDate.Expand(nPrevCount+nCount);
-								_pUIMgr->GetCashShop()->m_anRecvOrder.Expand(nPrevCount+nCount);
-							}
-
-							for(int i=nPrevCount; i < nPrevCount+nCount ; i++)
-							{
-								CUIButtonEx tv_btn;
-								(*istr) >> nIndex;
-								(*istr) >> nCtid;
-								if(_pUIMgr->GetCashShop()->SetCashIndexToBtn(nCtid,nIndex,tv_btn))
-								{
-									_pUIMgr->GetCashShop()->m_abtnRecvGift[i] = tv_btn;
-									_pUIMgr->GetCashShop()->m_abtnRecvGift[i].Copy(tv_btn);
-								}
-								(*istr) >> nDate;
-								(*istr) >> newName;
-								(*istr) >> strMessage;
-
-								_pUIMgr->GetCashShop()->m_anDate[i] =nDate;
-								_pUIMgr->GetCashShop()->m_astrSend[i] =newName;
-								_pUIMgr->GetCashShop()->m_astrGiftMessage[i] =strMessage;
-								_pUIMgr->GetCashShop()->m_anRecvOrder[i] =i;
-							}
-							int nCurItemCount =_pUIMgr->GetCashShop()->m_sbReceive.GetCurItemCount();
-							_pUIMgr->GetCashShop()->m_sbReceive.SetCurItemCount( nCurItemCount+nCount);
-						}
-						break;
-					case MSG_EX_CASHITEM_GIFT_RECV_REP:		// ÏùëÎãµ				: errCode(uc)
+					case MSG_EX_CASHITEM_GIFT_RECVHISTORY_REP:// ¿¿¥‰				: errorcode(uc) count(n) ctid(n) recvcharName(str)
 						{
 							(*istr) >> errcode;
-
-							_pUIMgr->GetCashShop()->m_bBringItem = FALSE; // ÏïÑÏù¥ÌÖú Í∞ÄÏ†∏Ïò§Í∏∞ ÏôÑÎ£å
-
 							if(CheckCashItemMessage(errcode))
 							{
-								_pUIMgr->GetCashShop()->ClearBtnItems(_pUIMgr->GetCashShop()->m_abtnInvenItems.sa_Array,INVEN_SLOT_TOTAL);
+								(*istr >> nCount);
+								if( nCount > 0)
+								{
+// 									pUIManager->GetCashShop()->m_abtnRecvHistoryItems.New(nCount);
+// 									pUIManager->GetCashShop()->m_sbGift.SetScrollPos( 0 );
+// 									pUIManager->GetCashShop()->m_sbGift.SetScrollRange(nCount);
+// 									pUIManager->GetCashShop()->m_sbGift.SetCurItemCount(nCount);
+// 
+// 									pUIManager->GetCashShop()->m_astrReceiveChar.New(nCount);
+// 									for( int i=0; i < nCount ;i++)
+// 									{
+// 										CUIButtonEx tv_btn;
+// 										//ULONG nItemCnt;
+// 										//(*istr) >> nItemCnt;
+// 										(*istr) >> nCtid;
+// 										(*istr) >> newName;
+// 										pUIManager->GetCashShop()->m_abtnRecvHistoryItems[i].Create(NULL,-1,-1,BTN_SIZE,BTN_SIZE,UI_CASH_SHOP);
+// 										if(pUIManager->GetCashShop()->SetCashIndexToBtn(nCtid,-1,tv_btn))
+// 										{
+// 											pUIManager->GetCashShop()->m_abtnRecvHistoryItems[i] = tv_btn;
+// 											pUIManager->GetCashShop()->m_abtnRecvHistoryItems[i].Copy(tv_btn);
+// 											//pUIManager->GetCashShop()->m_abtnReceiveHistoryItems[i].SetItemCount(nItemCnt);
+// 											pUIManager->GetCashShop()->m_astrReceiveChar[i] =newName;
+// 										}										
+// 									}
+								}
 							}
-							else if( errcode == MSG_EX_CASHITEM_ERROR_LACKINVEN)
-								_pUIMgr->GetCashShop()->Message(MSGCMD_GIFT_ERROR, _S(3111, "ÏÑ†Î¨º Î∞õÍ∏∞ ÏóêÎü¨"), _S( 265,  "Ï∫êÎ¶≠ÌÑ∞ Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), UMBS_OK);
-
 						}
 						break;
-					case MSG_EX_CASHITEM_GIFT_NOTICE:
+					case MSG_EX_CASHITEM_GIFT_RECVLIST_REP:// ¿¿¥‰
+						{
+							pUIManager->GetCashShopEX()->RevGiftList(istr);
+						}
+						break;
+					case MSG_EX_CASHITEM_GIFT_RECV_REP:		// ¿¿¥‰				: errCode(uc)
+						{
+							(*istr) >> errcode;
+							if (CheckCashItemMessage(errcode))
+							{
+								pUIManager->GetCashShopEX()->RevResultGetGift();
+							}
+						}
+						break;
+					case MSG_EX_CASHITEM_GIFT_NOTICE: // ƒ≥Ω¨ æ∆¿Ã≈€ º±π∞ ∞¯¡ˆ ∏ﬁºº¡ˆ
 						{
 							BYTE bGift;
 
 							(*istr) >> bGift;
-							_pUIMgr->GetQuickSlot()->SetGiftRecv(bGift);
+							// MSG_EX_CASHITEM_GIFT_NOTICE∞° Party π◊ ø¯¡§¥Î ¡§∫∏ ¥Ÿ¿Ω¿∏∑Œ «◊ªÛ πﬁ∞‘ µ«¥¬ ∏ﬁºº¡ˆ∂Û¥¬ ¡∂∞«¿∏∑Œ
+							// ¡∏ ¿Ãµø ¡ﬂ ∆ƒ∆º π◊ ø¯¡§¥Î∞° «ÿ√º µ«æ˙¿ª ∂ß º≠πˆ∑Œ ∫Œ≈Õ ¡§∫∏∞° æ¯¥¬ ∞Õ¿∏∑Œ ∆«¥‹«œø© «ÿ√º √≥∏Æ
+							Party* pParty = GAMEDATAMGR()->GetPartyInfo();
+
+							if (pParty == NULL)
+								return;
+
+							if( pParty->GetIsPartyPlay() == FALSE)
+							{
+								if( pUIManager->IsCSFlagOn(CSF_EXPEDITION) )
+								{
+									pParty->ExpeditionEnd();
+									pUIManager->GetChattingUI()->AddSysMessage( _S( 4665, "ø¯¡§¥Î∞° «ÿ√ºµ«æ˙Ω¿¥œ¥Ÿ." ) );
+								}
+								
+								if( pUIManager->IsCSFlagOn(CSF_PARTY) )
+									pParty->PartyEnd();
+							}
+							//////////////////////////////////////////////////////////////////////////
+							pUIManager->GetQuickSlot()->SetGiftRecv(bGift);
 						}
 						break;
-					// ÏÑ†Î¨º Í¥ÄÎ†® :Su-won	<---------------------------------------------------|
+					// º±π∞ ∞¸∑√ :Su-won	<---------------------------------------------------|
+					case MSG_EX_CASHITEM_CUPON_REP: // ∫∏¿Ø ƒÌ∆˘ ∏ÆΩ∫∆Æ ¿¿¥‰
+						{
+							(*istr) >> errcode;
+
+							if (CheckCashItemMessage(errcode))
+							{ // pUIManager->GetCashShop()->m_pConfirmInfo NULL √º≈© æ»«‘ 
+								// ¿Ã«œ ∏ÆΩ∫∆Æ∏¶ ¿˙¿Â
+								SLONG slCuponCout;
+								(*istr) >> slCuponCout;
+
+								//pUIManager->GetCashShop()->m_pConfirmInfo->ClearCuponData(); // π´¡∂∞« ∏ÆΩ∫∆Æ ≈¨∏ÆæÓ
+
+								if (slCuponCout > 0) // ƒÌ∆˘ ¡∏¿ÁΩ√
+								{
+									int i;
+
+									for (i=0; i<slCuponCout; i++)
+									{
+										CTString strCuponName;
+										SLONG slCuponID;
+										SLONG slDCPoint;
+										SLONG slLimitPoint = 0;
+
+										(*istr) >> strCuponName; // ƒÌ∆˘ ¿Ã∏ß
+										(*istr) >> slCuponID; // ƒÌ∆˘ æ∆¿Ãµ
+										(*istr) >> slDCPoint; // «“¿Œ ±›æ◊
+										(*istr) >> slLimitPoint; // «“¿Œ ¡¶«— ±›æ◊
+
+										//pUIManager->GetCashShop()->m_pConfirmInfo->AddCuponData(strCuponName, slCuponID, slDCPoint, slLimitPoint);
+									}
+								}
+
+								//pUIManager->GetCashShop()->m_pConfirmInfo->SetEnable(TRUE);
+								//pUIManager->GetCashShop()->m_pConfirmInfo->SetVisible(TRUE);
+							}
+						}
+					case MSG_EX_CASHITEM_SHOP_LOCK:
+						{
+							pUIManager->GetCashShopEX()->ForcedExit();
+						}
+						break;
+					case MSG_EX_CASHITEM_SHOP_UNLOCK:
+						{
+							pUIManager->GetCashShopEX()->SetCashShopLock(FALSE);
+						}
+						break;
 				}
 			}
 			break;
 
-		// wooss 051004 Í∞úÎ™ÖÌõÑ Î©îÏã†Ï†Ä Îì±Î°ù
+		// wooss 051004 ∞≥∏Ì»ƒ ∏ﬁΩ≈¿˙ µÓ∑œ
 		case MSG_EX_FRIENDNAMECHANGE :
 			(*istr) >> nIndex;
 			(*istr) >> newName;
 			(*istr) >> nJob;
-			_pUIMgr->GetMessenger()->DeleteMember(nIndex);
-			_pUIMgr->GetMessenger()->AddFriendList(nIndex, 0, newName,(eJob)nJob);
+			pUIManager->GetMessenger()->DeleteMember(nIndex);
+			pUIManager->GetMessenger()->AddFriendList(nIndex, 0, newName,(eJob)nJob);
 			break;
 
 		case MSG_EX_CASTLE_MAP_RECENT:
@@ -701,25 +779,25 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 
 				if( _pUISWDoc->IsWar() ) 
 				{
-					_pUIMgr->GetMap()->SetCurrentWorldMap( _pNetwork->MyCharacterInfo.zoneNo, 1 );
-					_pUIMgr->GetMap()->ReSetData();
+					pUIManager->GetMap()->SetCurrentWorldMap( _pNetwork->MyCharacterInfo.zoneNo, 1 );
+					pUIManager->GetMap()->ReSetData();
 				}
 				else
 				{
-					_pUIMgr->GetMap()->SetCurrentWorldMap( _pNetwork->MyCharacterInfo.zoneNo, 0 );
+					pUIManager->GetMap()->SetCurrentWorldMap( _pNetwork->MyCharacterInfo.zoneNo, 0 );
 					return;
 				}
 
-				_pUIMgr->GetMap()->InitCastleData();
-				// Í∂åÏ¢å
+				pUIManager->GetMap()->InitCastleData();
+				// ±«¡¬
 				(*istr) >> fLordX;
 				(*istr) >> fLordZ;
 				(*istr) >> nLordHP;
 				(*istr) >> nLordMaxHP;
 				
-				_pUIMgr->GetMap()->AddCastleData( CASTLE_LORD, fLordX, fLordZ, -1, nLordHP, nLordMaxHP );
+				pUIManager->GetMap()->AddCastleData( CASTLE_LORD, fLordX, fLordZ, -1, nLordHP, nLordMaxHP );
 
-				// Í≥µÏÑ± ÌÉë 
+				// ∞¯º∫ ≈æ 
 				(*istr) >> lTowerCount;
 
 				for( int i = 0; i < lTowerCount; i++ )
@@ -730,14 +808,14 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 					(*istr) >> nTowerHP;
 					(*istr) >> nTowerMaxHP;
 
-					_pUIMgr->GetMap()->AddCastleData( CASTLE_TOWER, fTowerX, fTowerZ, lTowerIndex, nTowerHP, nTowerMaxHP );
+					pUIManager->GetMap()->AddCastleData( CASTLE_TOWER, fTowerX, fTowerZ, lTowerIndex, nTowerHP, nTowerMaxHP );
 				}
 
-				// Î¶¨Ï†† Ìè¨Ïù∏Ìä∏
+				// ∏Æ¡® ∆˜¿Œ∆Æ
 				(*istr) >> fRegenX;
 				(*istr) >> fRegenY;
 				
-				_pUIMgr->GetMap()->AddCastleData( CASTLE_REGEN, fRegenX, fRegenY );
+				pUIManager->GetMap()->AddCastleData( CASTLE_REGEN, fRegenX, fRegenY );
 				
 				// Final Signal... 
 				(*istr) >> nSenderFlag;
@@ -745,7 +823,7 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 				(*istr) >> fSignalX;
 				(*istr) >> fSignalY;
 					
-				_pUIMgr->GetMap()->AddSignal( fSignalX, fSignalY, nSenderFlag, nSenderIndex );
+				pUIManager->GetMap()->AddSignal( fSignalX, fSignalY, nSenderFlag, nSenderIndex );
 
 			}
 			break;
@@ -761,13 +839,7 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 				(*istr) >> nSenderFlag;
 				(*istr) >> nSenderIndex;
 				
-				_pUIMgr->GetMap()->AddSignal( fSignalX, fSignalY, nSenderFlag, nSenderIndex );
-			}
-			break;
-
-		case MSG_EX_ELEMENTAL_STATUS:
-			{
-				ReceiveElementalStatusMessage( istr );
+				pUIManager->GetMap()->AddSignal( fSignalX, fSignalY, nSenderFlag, nSenderIndex );
 			}
 			break;
 
@@ -795,11 +867,11 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 				(*istr) >> charIndex;
 				(*istr) >> newName;
 			//	if(_pNetwork->MyCharacterInfo.index == charIndex)
-				_pUIMgr->GetGuild()->SetMemberName(charIndex,newName);
+				pUIManager->GetGuild()->SetMemberName(charIndex,newName);
 
 			}
 			break;
-		case MSG_EX_PARTY_MATCH :		// Date : 2006-05-09(Ïò§ÌõÑ 5:43:02), By eons
+		case MSG_EX_PARTY_MATCH :		// Date : 2006-05-09(ø¿»ƒ 5:43:02), By eons
 			{
 				ULONG	ErrorType;
 				ULONG	MatchType;
@@ -811,46 +883,46 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 					{
 						(*istr) >> ErrorType;
 						
-						_pUIMgr->GetPartyAuto()->MatchRegMemberRep( ErrorType );
+						pUIManager->GetPartyAuto()->MatchRegMemberRep( ErrorType );
 					}
 					break;
 				case MSG_EX_PARTY_MATCH_REG_PARTY_REP:
 					{
 						(*istr) >> ErrorType;
 
-						_pUIMgr->GetPartyAuto()->MatchRegPartyRep( ErrorType );
+						pUIManager->GetPartyAuto()->MatchRegPartyRep( ErrorType );
 					}
 					break;
 				case MSG_EX_PARTY_MATCH_MEMBER_LIST_REP:
 					{
-						_pUIMgr->GetPartyAuto()->ReceiveMemberData( istr );
+						pUIManager->GetPartyAutoInvite()->ReceiveMemberData(istr);						
 					}
 					break;
 				case MSG_EX_PARTY_MATCH_PARTY_LIST_REP:
 					{
-						_pUIMgr->GetPartyAuto()->ReceivePartyData( istr );
+						pUIManager->GetPartyAutoParty()->ReceivePartyData(istr);
 					}
 					break;
 				case MSG_EX_PARTY_MATCH_DEL_REP:
 					{
-						strMessage = _S( 2732, "Îì±Î°ùÏù¥ ÏÇ≠Ï†ú ÎêòÏóàÏäµÎãàÎã§." );
-						MsgBoxInfo.SetMsgBoxInfo( _S( 2733, "Îì±Î°ù ÏÇ≠Ï†ú" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+						strMessage = _S( 2732, "µÓ∑œ¿Ã ªË¡¶ µ«æ˙Ω¿¥œ¥Ÿ." );
+						MsgBoxInfo.SetMsgBoxInfo( _S( 2733, "µÓ∑œ ªË¡¶" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
 						MsgBoxInfo.AddString( strMessage );
-						_pUIMgr->CreateMessageBox( MsgBoxInfo );						
+						pUIManager->CreateMessageBox( MsgBoxInfo );						
 					}
 					break;
 				case MSG_EX_PARTY_MATCH_INVITE_REP:
 					{
 						(*istr) >> ErrorType;
 
-						_pUIMgr->GetPartyAuto()->ReceivePartyInviteMessage( ErrorType, istr );
+						pUIManager->GetPartyAutoInvite()->ReceivePartyInviteMessage(ErrorType, istr);
 					}
 					break;
 				case MSG_EX_PARTY_MATCH_JOIN_REP:
 					{
 						(*istr) >> ErrorType;
 
-						_pUIMgr->GetPartyAuto()->ReceivePartyJoinMessage( ErrorType, istr );
+						pUIManager->GetPartyAutoParty()->ReceivePartyJoinMessage(ErrorType, istr);
 					}
 					break;
 				}
@@ -972,26 +1044,26 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 						
 					}
 				}
-				else strMessage=_S(strIdx,"ÏÑúÎ≤Ñ Ìò∏Ï∂ú Ïä§Ìä∏ÎßÅ");
+				else strMessage=_S(strIdx,"º≠πˆ »£√‚ Ω∫∆Æ∏µ");
 
 				switch(outType)
 				{
-					case MSG_EX_STRING_OUTPUT_WINDOW :		// Ï∞Ω
+					case MSG_EX_STRING_OUTPUT_WINDOW :		// √¢
 						{
-							MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+							MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
 							MsgBoxInfo.AddString(strMessage);
-							_pUIMgr->CreateMessageBox(MsgBoxInfo);
+							pUIManager->CreateMessageBox(MsgBoxInfo);
 
 						}
 						break;
-					case MSG_EX_STRING_OUTPUT_SYS :			// ÏãúÏä§ÌÖúÏ∞Ω
-						_pUIMgr->GetChatting()->AddSysMessage(strMessage);
+					case MSG_EX_STRING_OUTPUT_SYS :			// Ω√Ω∫≈€√¢
+						pUIManager->GetChattingUI()->AddSysMessage(strMessage);
 						break;
-					case MSG_EX_STRING_OUTPUT_NOTICE :		// Í≥µÏßÄ
+					case MSG_EX_STRING_OUTPUT_NOTICE :		// ∞¯¡ˆ
 						_UIAutoHelp->SetGMNotice ( strMessage );
 						break;
-					case MSG_EX_STRING_OUTPUT_CHAT :		// Ï±óÏ∞Ω
-						 _pUIMgr->GetChatting()->AddChatMessage(MSG_CHAT_SAY,
+					case MSG_EX_STRING_OUTPUT_CHAT :		// √™√¢
+						 pUIManager->GetChattingUI()->AddChatMessage(MSG_CHAT_SAY,
 							 _pNetwork->MyCharacterInfo.index,_pNetwork->MyCharacterInfo.name,strMessage);
 						break;
 				}
@@ -1027,7 +1099,7 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 			}
 			break;
 			
-	case MSG_EX_CASTLE_WAR: // WSS_DRATAN_SEIGEWARFARE 2007/07/30
+		case MSG_EX_CASTLE_WAR: // WSS_DRATAN_SEIGEWARFARE 2007/07/30
 		{
 			UBYTE bType;
 			ULONG charIdx;
@@ -1037,39 +1109,43 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 			{
 				case MSG_CASTLE_CRISTAL_RESPOND_START:
 					(*istr) >> charIdx;
-					_pUIMgr->GetSiegeWarfareNew()->StartConsensus(charIdx);
+					pUIManager->GetSiegeWarfareNew()->StartConsensus(charIdx);
 					break;
-				case MSG_CASTLE_CRISTAL_RESPOND_END:	// ÍµêÍ∞ê ÏôÑÎ£å								
+				case MSG_CASTLE_CRISTAL_RESPOND_END:	// ±≥∞® øœ∑·								
 					(*istr) >> charIdx;
 					(*istr) >> tStrtmp;
-					tStr.PrintF(_S(3898,"[%s]ÎãòÏù¥ ÌÅ¨Î¶¨Ïä§ÌÉà ÍµêÍ∞êÏóê ÏÑ±Í≥µÌïòÏòÄÏäµÎãàÎã§."), tStrtmp);
-					_pUIMgr->GetChatting()->AddSysMessage( tStr, SYSMSG_ERROR );
-					_pUIMgr->GetSiegeWarfareNew()->CompleteConsensus(charIdx);
+					tStr.PrintF(_S(3898,"[%s]¥‘¿Ã ≈©∏ÆΩ∫≈ª ±≥∞®ø° º∫∞¯«œø¥Ω¿¥œ¥Ÿ."), tStrtmp);
+					pUIManager->GetChattingUI()->AddSysMessage( tStr, SYSMSG_ERROR );
+					pUIManager->GetSiegeWarfareNew()->CompleteConsensus(charIdx);
 					break;
-				case MSG_CASTLE_CRISTAL_RESPOND_FAIL:	// ÍµêÍ∞ê Ïã§Ìå®
+				case MSG_CASTLE_CRISTAL_RESPOND_FAIL:	// ±≥∞® Ω«∆–
 					(*istr) >> charIdx;
 					if( _pNetwork->MyCharacterInfo.index == charIdx)
 					{
-						_pUIMgr->GetChatting()->AddSysMessage( _S( 3751,"ÍµêÍ∞êÏóê Ïã§Ìå®ÌïòÏòÄÏäµÎãàÎã§."), SYSMSG_ERROR );
+						//pUIManager->GetChattingUI()->AddSysMessage( _S( 3751,"±≥∞®ø° Ω«∆–«œø¥Ω¿¥œ¥Ÿ."), SYSMSG_ERROR );
+						//CUIMsgBox_Info	MsgBoxInfo;
+						MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+						MsgBoxInfo.AddString(_S(3751,"±≥∞®ø° Ω«∆–«œø¥Ω¿¥œ¥Ÿ."), 0xE28769FF);
+						pUIManager->CreateMessageBox( MsgBoxInfo );
 					}
-					_pUIMgr->GetSiegeWarfareNew()->StopConsensus(charIdx);					
+					pUIManager->GetSiegeWarfareNew()->StopConsensus(charIdx);					
 					break;
 				case MSG_CASTLE_TOWER_CONTRAL:
 					{
-						_pUIMgr->GetChatting()->AddSysMessage( _S( 3752,"Ï†ïÏÉÅÏ†ÅÏúºÎ°ú Í∞ÄÎèôÎêòÏóàÏäµÎãàÎã§." ), SYSMSG_ERROR );
+						pUIManager->GetChattingUI()->AddSysMessage( _S( 3752,"¡§ªÛ¿˚¿∏∑Œ ∞°µøµ«æ˙Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 					}
 					break;
-				case MSG_CASTLE_TOWER_CONTRAL_LIST:		// ÎßàÏä§Ìä∏ ÌÉÄÏõå ÏÑ§Ï†ï Î¶¨Ïä§Ìä∏
+				case MSG_CASTLE_TOWER_CONTRAL_LIST:		// ∏∂Ω∫∆Æ ≈∏øˆ º≥¡§ ∏ÆΩ∫∆Æ
 					{
 						UBYTE tSet[DRATAN_TOWER_KIND_MAX];
 						for(int i=0;i<DRATAN_TOWER_KIND_MAX;i++)
 						{
 							(*istr) >> tSet[i];
-							_pUIMgr->GetSiegeWarfareNew()->SetTowerSet(i,tSet[i]);
+							pUIManager->GetSiegeWarfareNew()->SetTowerSet(i,tSet[i]);
 						}
 						
-						_pUIMgr->GetSiegeWarfareNew()->SetCBFromTowerSet();
-						_pUIMgr->GetSiegeWarfareNew()->OpenCheckTower();						
+						pUIManager->GetSiegeWarfareNew()->SetCBFromTowerSet();
+						pUIManager->GetSiegeWarfareNew()->OpenCheckTower();						
 						
 					}
 					break;
@@ -1081,52 +1157,52 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 						switch(tType)
 						{
 						case 0:
-							tStr = _S( 3753,"Í≥µÍ≤©Ìòï ÌÉÄÏõå");
+							tStr = _S( 3753,"∞¯∞›«¸ ≈∏øˆ");
 							break;
 						case 1:
-							tStr = _S( 3754,"Í∞ÄÎìúÌòï ÌÉÄÏõå");
+							tStr = _S( 3754,"∞°µÂ«¸ ≈∏øˆ");
 							break;
 						case 2:
-							tStr = _S( 3755,"ÏÑ±Î¨∏");
+							tStr = _S( 3755,"º∫πÆ");
 							break;
 						}						
-						tStr2.PrintF("%d %s",(int)tLevel, _S( 3756,"Îã®Í≥ÑÍ∞Ä Ï†ïÏÉÅÏ†ÅÏúºÎ°ú Í∞ïÌôîÎêòÏóàÏäµÎãàÎã§." ));
+						tStr2.PrintF("%d %s",(int)tLevel, _S( 3756,"¥‹∞Ë∞° ¡§ªÛ¿˚¿∏∑Œ ∞≠»≠µ«æ˙Ω¿¥œ¥Ÿ." ));
 						tStr += tStr2;
-						_pUIMgr->GetChatting()->AddSysMessage( tStr, SYSMSG_ERROR );
+						pUIManager->GetChattingUI()->AddSysMessage( tStr, SYSMSG_ERROR );
 					}
 					break;
 				case MSG_CASTLE_TOWER_REINFORCE_LIST:
 					{					
 						UBYTE tType,tLevel;
 						(*istr) >> tType >> tLevel;		
-						if( (int)tType == _pUIMgr->GetSiegeWarfareNew()->GetUpgradeType())
+						if( (int)tType == pUIManager->GetSiegeWarfareNew()->GetUpgradeType())
 						{								
 							
-							_pUIMgr->GetSiegeWarfareNew()->SetUpgradedLevel(int(tLevel));
-							_pUIMgr->GetSiegeWarfareNew()->SetUpgradePos(int(tLevel));
-							_pUIMgr->GetSiegeWarfareNew()->SetUpgradeLevel((int)tLevel );
-							_pUIMgr->GetSiegeWarfareNew()->OpenUpgradeTower();
+							pUIManager->GetSiegeWarfareNew()->SetUpgradedLevel(int(tLevel));
+							pUIManager->GetSiegeWarfareNew()->SetUpgradePos(int(tLevel));
+							pUIManager->GetSiegeWarfareNew()->SetUpgradeLevel((int)tLevel );
+							pUIManager->GetSiegeWarfareNew()->OpenUpgradeTower();
 						}
 						else 
-							_pUIMgr->GetChatting()->AddSysMessage( _S( 3757,"Í∞ïÌôîÌï† ÌÉÄÏõåÍ∞Ä Ïò¨Î∞îÎ•¥ÏßÄ ÏïäÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+							pUIManager->GetChattingUI()->AddSysMessage( _S( 3757,"∞≠»≠«“ ≈∏øˆ∞° ø√πŸ∏£¡ˆ æ Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
 					}
 					break;
-				case MSG_CASTLE_TOWER_REPAIRE:			// Í≥µÏÑ± ÌÉÄÏõå ÏàòÎ¶¨    cl->gs idx(n) | gs->cl idx(n)
+				case MSG_CASTLE_TOWER_REPAIRE:			// ∞¯º∫ ≈∏øˆ ºˆ∏Æ    cl->gs idx(n) | gs->cl idx(n)
 					{
 						ULONG tIdx;
 						(*istr) >> tIdx;
-						_pUIMgr->GetChatting()->AddSysMessage( _S( 3758,"Ï†ïÏÉÅÏ†ÅÏúºÎ°ú ÏàòÎ¶¨ÎêòÏóàÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+						pUIManager->GetChattingUI()->AddSysMessage( _S( 3758,"¡§ªÛ¿˚¿∏∑Œ ºˆ∏Æµ«æ˙Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
 						
 					}
 					break;
-				case MSG_CASTLE_TOWER_REPAIRE_LIST:		// Í≥µÏÑ± ÌÉÄÏõå ÏàòÎ¶¨ ÏÉÅÌÉú   cl->gs idx(n) | gs->cl money(n)
+				case MSG_CASTLE_TOWER_REPAIRE_LIST:		// ∞¯º∫ ≈∏øˆ ºˆ∏Æ ªÛ≈¬   cl->gs idx(n) | gs->cl money(n)
 					{
 						ULONG tNpcIdx;
 						SQUAD tMoney;
 
 						(*istr) >> tNpcIdx >> tMoney;
-						_pUIMgr->GetSiegeWarfareNew()->SetRepairMoney( tNpcIdx,tMoney );
-						_pUIMgr->GetSiegeWarfareNew()->OpenRepairTower();
+						pUIManager->GetSiegeWarfareNew()->SetRepairMoney( tNpcIdx,tMoney );
+						pUIManager->GetSiegeWarfareNew()->OpenRepairTower();
 					}
 					break;
 				case MSG_CASTLE_TOWER_WARP_LIST:
@@ -1138,68 +1214,74 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 						for( int i=0;i<tCnt ;i++)
 						{
 							(*istr) >> tNpcIdx;
-							_pUIMgr->GetGuildWarPortal()->SetDratanPortalFlag((int)tNpcIdx);
+							pUIManager->GetGuildWarPortal()->SetDratanPortalFlag((int)tNpcIdx);
 						}
-						_pUIMgr->GetGuildWarPortal()->OpenGuildWarPortalDratan();
+						pUIManager->GetGuildWarPortal()->OpenGuildWarPortalDratan();
 					}
 					break;				
-				case MSG_CASTLE_QUARTERS_INSTALL:		// Î∂ÄÌôúÏßÑÏßÄ ÏÑ§Ïπò cl->gs idx(n) | gs->cl  idx(n), gidx(n)
+				case MSG_CASTLE_QUARTERS_INSTALL:		// ∫Œ»∞¡¯¡ˆ º≥ƒ° cl->gs idx(n) | gs->cl  idx(n), gidx(n)
 					{
 						CTString tStr,tGuildName;
 						ULONG tNpcIdx,tGuildIdx;
 						SLONG tNpcUniIndex;
 						(*istr) >> tNpcIdx >> tGuildIdx >> tGuildName >> tNpcUniIndex;
-						tStr.PrintF(_S( 3759,"[%s]Í∏∏ÎìúÍ∞Ä [%d]Î≤à Î∂ÄÌôúÏßÑÏßÄÎ•º Ï†êÎ†πÌñàÏäµÎãàÎã§." ),tGuildName,tNpcIdx-389); // TEMP
+						tStr.PrintF(_S( 3759,"[%s]±ÊµÂ∞° [%d]π¯ ∫Œ»∞¡¯¡ˆ∏¶ ¡°∑…«ﬂΩ¿¥œ¥Ÿ." ),tGuildName,tNpcIdx-389); // TEMP
 						_pNetwork->MyCharacterInfo.mQuarter[tNpcIdx] = tGuildIdx;
-						_pNetwork->MyCharacterInfo.mQuarterName[tNpcIdx] = tGuildName;
-						_pUIMgr->GetChatting()->AddSysMessage( tStr, SYSMSG_ERROR );
+						_pNetwork->MyCharacterInfo.mQuarterName[tNpcIdx] = tGuildName;						
+						pUIManager->GetChattingUI()->AddSysMessage( tStr, SYSMSG_ERROR );
 
-						// Î™π Ïù¥Î¶Ñ Î≥ÄÍ≤Ω
-						CMobData& MD = _pNetwork->GetMobData(tNpcIdx);
-						if(MD.GetMobIndex()>0 && tGuildName.Length() >0 && tGuildIdx != -1)
+						// ∏˜ ¿Ã∏ß ∫Ø∞Ê
+						CMobData* MD = CMobData::getData(tNpcIdx);
+						if(MD->GetMobIndex()>0 && tGuildName.Length() >0 && tGuildIdx != -1)
 						{							
-							tStr = tGuildName + CTString(" ") + _S( 3760,"Í≥µÏÑ± Î∂ÄÌôúÏßÑÏßÄ");;
-							MD.SetMobName(tStr);
+							tStr = tGuildName + CTString(" ") + _S( 3760,"∞¯º∫ ∫Œ»∞¡¯¡ˆ");;
+							MD->SetName(tStr);
 
-							tStr = MD.GetName();
-							MD = _pNetwork->GetMobData(tNpcIdx);
-							tStr = MD.GetName();
+							tStr = MD->GetName();
+							MD = CMobData::getData(tNpcIdx);
+							tStr = MD->GetName();
 						}
 
-						if (!MD.IsNPC())
+						if (!MD->IsNPC())
 						{
 							CEntity* pEntity = NULL;
-							if (_pNetwork->SearchEntityByNetworkID(tNpcUniIndex, MSG_CHAR_NPC, pEntity))
-							{	// ÏùºÎ∞ò npcÏóêÏÑú Î™¨Ïä§ÌÑ∞Î°ú ÏÑ§Ï†ï Î≥ÄÍ≤Ω(ÏàòÏÑ± Ï∏°Ïù¥ Í≥µÍ≤© Í∞ÄÎä•Ìïú npcÎ°ú )
+
+							int		i;
+
+							for (i = 0; i < eOBJ_MAX; ++i)
+							{
+								pEntity = ACTORMGR()->GetEntityByIndexServer((eOBJ_TYPE)i, tNpcUniIndex);
+								// ¿œπ› npcø°º≠ ∏ÛΩ∫≈Õ∑Œ º≥¡§ ∫Ø∞Ê(ºˆº∫ √¯¿Ã ∞¯∞› ∞°¥…«— npc∑Œ )
 								if (pEntity != NULL)
 								{
 									pEntity->SetFirstExtraFlagOff(ENF_EX1_NPC);
+									break;
 								}
 							}
 						}
 					}
 					break;
-				case MSG_CASTLE_QUARTERS_CRUSH:			// Î∂ÄÌôú ÏßÑÏßÄ ÌååÍ¥¥ gs->cl idx(n)
+				case MSG_CASTLE_QUARTERS_CRUSH:			// ∫Œ»∞ ¡¯¡ˆ ∆ƒ±´ gs->cl idx(n)
 					{
 						CTString tStr;
 						ULONG tNpcIdx;
 						(*istr) >> tNpcIdx;
-						tStr.PrintF(_S( 3705,"%dÎ≤à Î∂ÄÌôúÏßÑÏßÄÍ∞Ä ÌååÍ¥¥ÎêòÏóàÏäµÎãàÎã§." ),tNpcIdx-389); // TEMP
+						tStr.PrintF(_S( 3705,"%dπ¯ ∫Œ»∞¡¯¡ˆ∞° ∆ƒ±´µ«æ˙Ω¿¥œ¥Ÿ." ),tNpcIdx-389); // TEMP
 						_pNetwork->MyCharacterInfo.mQuarter[tNpcIdx] = -1;
 						_pNetwork->MyCharacterInfo.mQuarterName[tNpcIdx] = CTString("");
-						_pUIMgr->GetChatting()->AddSysMessage( tStr, SYSMSG_ERROR );
+						pUIManager->GetChattingUI()->AddSysMessage( tStr, SYSMSG_ERROR );
 
-						// Hard Cording ^^;; Ïñ¥Ï©îÏàò ÏóÜÏù¥....
-						// Î™π Ïù¥Î¶Ñ Î≥ÄÍ≤Ω
-						CMobData& MD = _pNetwork->GetMobData(tNpcIdx);
-						if(MD.GetMobIndex()>0)
+						// Hard Cording ^^;; æÓ¬øºˆ æ¯¿Ã....
+						// ∏˜ ¿Ã∏ß ∫Ø∞Ê
+						CMobData* MD = CMobData::getData(tNpcIdx);
+						if(MD->GetMobIndex()>0)
 						{
-							tStr.PrintF(_S( 3685,"Í≥µÏÑ± Î∂ÄÌôúÏßÑÏßÄ%d"),tNpcIdx-389);
-							MD.SetMobName(tStr);
+							tStr.PrintF(_S( 3685,"∞¯º∫ ∫Œ»∞¡¯¡ˆ%d"),tNpcIdx-389);
+							MD->SetName(tStr);
 						}						
 					}
 					break;
-				case MSG_CASTLE_QUARTERS_LIST:			// Î∂ÄÌôú ÏßÑÏßÄ Î¶¨Ïä§Ìä∏ gs->cl 7*(nindex(n), gindex(n))
+				case MSG_CASTLE_QUARTERS_LIST:			// ∫Œ»∞ ¡¯¡ˆ ∏ÆΩ∫∆Æ gs->cl 7*(nindex(n), gindex(n))
 					{		
 						CTString tGuildName;
 						LONG tNpcIdx,tGuildIdx;
@@ -1207,46 +1289,46 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 						for(int i=0;i<7;i++)
 						{	
 							(*istr) >> tNpcIdx >> tGuildIdx >> tGuildName;						
-							// Ï†êÎ†π Í∏∏ÎìúÍ∞Ä Ï°¥Ïû¨ÌïòÎ©¥...
+							// ¡°∑… ±ÊµÂ∞° ¡∏¿Á«œ∏È...
 							if (tGuildIdx!=-1)
 							{
 								_pNetwork->MyCharacterInfo.mQuarter[tNpcIdx] = tGuildIdx;
 								_pNetwork->MyCharacterInfo.mQuarterName[tNpcIdx] = tGuildName;
 
-								// Î™π Ïù¥Î¶Ñ Î≥ÄÍ≤Ω
-								CMobData& MD = _pNetwork->GetMobData(tNpcIdx);
-								if(MD.GetMobIndex()>0 && tGuildName.Length() >0 && tGuildIdx != -1)
+								// ∏˜ ¿Ã∏ß ∫Ø∞Ê
+								CMobData* MD = CMobData::getData(tNpcIdx);
+								if(MD->GetMobIndex()>0 && tGuildName.Length() >0 && tGuildIdx != -1)
 								{
-									tStr = tGuildName +CTString(" ") +_S( 3760,"Í≥µÏÑ± Î∂ÄÌôúÏßÑÏßÄ");
-									MD.SetMobName(tStr);
+									tStr = tGuildName +CTString(" ") +_S( 3760,"∞¯º∫ ∫Œ»∞¡¯¡ˆ");
+									MD->SetName(tStr);
 								}
 							}
-							// Ï†êÎ†π Í∏∏ÎìúÍ∞Ä ÏóÜÎã§Î©¥...
+							// ¡°∑… ±ÊµÂ∞° æ¯¥Ÿ∏È...
 							else 
 							{
-								// Hard Cording ^^;; Ïñ¥Ï©îÏàò ÏóÜÏù¥....
-								// Î™π Ïù¥Î¶Ñ Î≥ÄÍ≤Ω
-								CMobData& MD = _pNetwork->GetMobData(tNpcIdx);
-								if(MD.GetMobIndex()>0)
+								// Hard Cording ^^;; æÓ¬øºˆ æ¯¿Ã....
+								// ∏˜ ¿Ã∏ß ∫Ø∞Ê
+								CMobData* MD = CMobData::getData(tNpcIdx);
+								if(MD->GetMobIndex()>0)
 								{
-									tStr.PrintF(_S( 3685,"Í≥µÏÑ± Î∂ÄÌôúÏßÑÏßÄ%d"),tNpcIdx-389);
-									MD.SetMobName(tStr);
+									tStr.PrintF(_S( 3685,"∞¯º∫ ∫Œ»∞¡¯¡ˆ%d"),tNpcIdx-389);
+									MD->SetName(tStr);
 								}						
 							}
 						}
 					}
 					break;
 
-				case MSG_CASTLE_WAIT_TIME:				// Î∂ÄÌôú ÎåÄÍ∏∞ ÏãúÍ∞Ñ
+				case MSG_CASTLE_WAIT_TIME:				// ∫Œ»∞ ¥Î±‚ Ω√∞£
 					{
 						LONG tWaitTime;
 						(*istr) >> tWaitTime;						
-						_pUIMgr->GetSiegeWarfareNew()->SetWaitTime(tWaitTime);
-						_pUIMgr->GetSiegeWarfareNew()->SetTimeReply(TRUE);
+						pUIManager->GetSiegeWarfareNew()->SetWaitTime(tWaitTime);
+						pUIManager->GetSiegeWarfareNew()->SetTimeReply(TRUE);
 
 					}
 					break;
-				case MSG_EX_CASTLE_ERROR:				// Í≥µÏÑ± ÏóêÎü¨
+				case MSG_EX_CASTLE_ERROR:				// ∞¯º∫ ø°∑Ø
 					{
 						UBYTE errcode;
 						(*istr) >> errcode;
@@ -1262,10 +1344,10 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 				ReceiveExPetColorChange(istr);
 			}
 			break;
-// EDIT : BS : 070413 : Ïã†Í∑ú Ìå®ÌÇ∑ ÏïîÌò∏Ìôî			
+// EDIT : BS : 070413 : Ω≈±‘ ∆–≈∂ æœ»£»≠			
 #ifdef CRYPT_NET_MSG
 #ifdef CRYPT_NET_MSG_MANUAL
-	case MSG_EX_KEYCHANGE:		// EDIT : BS : Ìå®ÌÇ∑ ÏïîÌò∏Ìôî : ÌÇ§ Î≥ÄÍ≤Ω
+	case MSG_EX_KEYCHANGE:		// EDIT : BS : ∆–≈∂ æœ»£»≠ : ≈∞ ∫Ø∞Ê
 		{
 			ULONG nKey;
 			(*istr) >> nKey;
@@ -1295,11 +1377,11 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 			case MSG_DUNGEON_INFO:
 				{
 					ULONG ulEnvRate, ulMonRate;
-
+					
 					(*istr) >> ulEnvRate;
 					(*istr) >> ulMonRate;
 
-					_pUIMgr->GetPortal()->Create_SiegeDungeon_State_MsgBox( ulEnvRate, ulMonRate);
+					pUIManager->GetPortal()->Create_SiegeDungeon_State_MsgBox( ulEnvRate, ulMonRate);
 				}
 				break;
 			case MSG_MANAGEMENT:
@@ -1309,101 +1391,192 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 					(*istr) >> sbSubSubType;
 					switch( sbSubSubType )
 					{
-					case MSG_MANAGEMENT_MANAGER_CONFIRM:					//Í¥ÄÎ¶¨ ÏöîÏ≤≠
+					case MSG_MANAGEMENT_MANAGER_CONFIRM:				//∞¸∏Æ ø‰√ª
 						{
 							(*istr) >> ubError;
 
 							if( ubError == MSG_DVD_ERROR_OK )
 							{
-								_pUIMgr->CreateMessageBoxL( _S(3908, "ÎçòÏ†Ñ Í¥ÄÎ¶¨"),UI_PORTAL, MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL);
-								_pUIMgr->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL,TRUE, _S(3940, "ÏïàÎÖïÌïòÏã≠ÎãàÍπå? ÏÑ±Ï£ºÎãò."),-1,0xa3a1a3ff);
-								_pUIMgr->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL,TRUE, _S(3941, "ÎçòÏ†ÑÏùò Ïñ¥Îñ§ Î∂ÄÎ∂ÑÏùÑ Í¥ÄÎ¶¨ÌïòÏãúÍ≤†ÏäµÎãàÍπå?"),-1,0xa3a1a3ff);
-								
-								_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3921, "ÎçòÏ†Ñ ÎÇ¥Î∂Ä ÌôòÍ≤Ω Ï†úÏñ¥" ), DRATAN_SIEGE_DUNGEON_CONTROL_ENVIRONMENT);
-								_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3926, "ÎçòÏ†Ñ ÎÇ¥Î∂Ä Î™¨Ïä§ÌÑ∞ Ï†úÏñ¥" ), DRATAN_SIEGE_DUNGEON_CONTROL_MONSTER);
-								_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3931, "ÎçòÏ†Ñ ÏûÖÏû•Î£å Ï°∞Ï†ï" ), DRATAN_SIEGE_DUNGEON_CONTROL_ADMISSION_FEE);
-								_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3935, "ÎçòÏ†Ñ ÏàòÎ†µÏÑ∏Ïú® Ï°∞Ï†ï" ), DRATAN_SIEGE_DUNGEON_CONTROL_HUNTING_FEE);
-								_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );
+								pUIManager->CreateMessageBoxL( _S(3908, "¥¯¿¸ ∞¸∏Æ"),UI_PORTAL, MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL);
+								pUIManager->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL,TRUE, _S(3940, "æ»≥Á«œΩ ¥œ±Ó? º∫¡÷¥‘."),-1,0xa3a1a3ff);
+								pUIManager->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL,TRUE, _S(3941, "¥¯¿¸¿« æÓ∂≤ ∫Œ∫–¿ª ∞¸∏Æ«œΩ√∞⁄Ω¿¥œ±Ó?"),-1,0xa3a1a3ff);
+
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3921, "¥¯¿¸ ≥ª∫Œ »Ø∞Ê ¡¶æÓ" ), DRATAN_SIEGE_DUNGEON_CONTROL_ENVIRONMENT);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3926, "¥¯¿¸ ≥ª∫Œ ∏ÛΩ∫≈Õ ¡¶æÓ" ), DRATAN_SIEGE_DUNGEON_CONTROL_MONSTER);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3931, "¥¯¿¸ ¿‘¿Â∑· ¡∂¡§" ), DRATAN_SIEGE_DUNGEON_CONTROL_ADMISSION_FEE);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3935, "¥¯¿¸ ºˆ∑∆ºº¿≤ ¡∂¡§" ), DRATAN_SIEGE_DUNGEON_CONTROL_HUNTING_FEE);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S( 1220, "√Îº“«—¥Ÿ." ) );
+
+								SERVER_INFO()->SetDG_Mode(eDUNGEON_MODE_LORD);
 							}
 							else if( ubError == MSG_DVD_ERROR_CONFIRM )
 							{
-								MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
-								MsgBoxInfo.AddString( _S(3942, "ÏÑ±Ï£º Í∏∏ÎìúÏùò ÎßàÏä§ÌÑ∞, ÎòêÎäî Î∂ÄÍ∏∏ÎìúÎßàÏä§ÌÑ∞Îßå Ï†ëÍ∑ºÌï† Ïàò ÏûàÏäµÎãàÎã§.") );
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
+								pUIManager->CloseMessageBox(MSGCMD_NULL);
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(3942, "º∫¡÷ ±ÊµÂ¿« ∏∂Ω∫≈Õ, ∂«¥¬ ∫Œ±ÊµÂ∏∂Ω∫≈Õ∏∏ ¡¢±Ÿ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+							}
+							else if (ubError == MSG_DVD_ERROR_ZONE)
+							{
+								pUIManager->CloseMessageBox(MSGCMD_NULL);
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(6275, "∞¯º∫ √§≥Œø°º≠∏∏ ¿ÃøÎ¿Ã ∞°¥…«’¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+							}
+							else if (ubError == MSG_DVD_ERROR_NORMAL_MODE)
+							{
+								LONGLONG llNas = 0;
+								(*istr) >> llNas;
+								CTString strString;
+								strString.PrintF(_S(7065, "¡Àº€«œ¡ˆ∏∏ º∫¡÷¥‘ ¡ˆ±›¿∫ ¿œπ› ∞¸∏Æ ∏µÂ ¿‘¥œ¥Ÿ. %I64d ≥™Ω∫∏¶ ¿˙ø°∞‘"), llNas);
+								pUIManager->CreateMessageBoxL( _S(3908, "¥¯¿¸ ∞¸∏Æ"),UI_PORTAL, MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL);
+								pUIManager->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL,TRUE, strString, -1, 0xa3a1a3ff);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(191, "»Æ¿Œ" ), DRATAN_SIEGE_DUNGEON_CHANGE_LORDMODE);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S( 139, "√Îº“" ) );
 							}
 						}
 						break;
-					case MSG_MANAGEMENT_MANAGER_ENV_INFO:				//ÎçòÏ†Ñ ÎÇ¥Î∂Ä ÌôòÍ≤Ω Ï†ïÎ≥¥ ÏöîÏ≤≠
+					case MSG_MANAGEMENT_MANAGER_ENV_INFO:				//¥¯¿¸ ≥ª∫Œ »Ø∞Ê ¡§∫∏ ø‰√ª
 						{
 							ULONG ulCurRate;
+							LONGLONG llNas;
 							(*istr) >> ulCurRate;
+							(*istr) >> llNas;
 
 							if( ulCurRate >90)
 							{
-								MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
-								MsgBoxInfo.AddString( _S(3943, "ÎçîÏù¥ÏÉÅ ÏÉÅÏäπÏãúÌÇ¨ Ïàò ÏóÜÏäµÎãàÎã§.") );
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(3943, "¥ı¿ÃªÛ ªÛΩ¬Ω√≈≥ ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+
+								return;
+							}
+														
+							SERVER_INFO()->SetDG_EnvNas(llNas / 10); // 10% ªÛΩ¬Ω√ ¡ˆ∫“«œ¥¬ ±›æ◊¿Ã ø¿±‚ø° ≥™¥Æ
+							pUIManager->GetPortal()->Create_SiegeDungeon_EnvCtr_MsgBox(ulCurRate);
+						}
+						break;
+					case MSG_MANAGEMENT_MANAGER_MONSTER_INFO:			//¥¯¿¸ ≥ª∫Œ ∏ÛΩ∫≈Õ ¡§∫∏ ø‰√ª
+						{
+							ULONG ulCurRate;
+							LONGLONG llNas;
+							(*istr) >> ulCurRate;
+							(*istr) >> llNas;
+
+							SERVER_INFO()->SetDG_MonsterNas(llNas / 10); // 10% ªÛΩ¬Ω√ ¡ˆ∫“«œ¥¬ ±›æ◊¿Ã ø¿±‚ø° ≥™¥Æ
+
+							if( ulCurRate >90)
+							{
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(3943, "¥ı¿ÃªÛ ªÛΩ¬Ω√≈≥ ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
 
 								return;
 							}
 
-							_pUIMgr->GetPortal()->Create_SiegeDungeon_EnvCtr_MsgBox(ulCurRate);
+							pUIManager->GetPortal()->Create_SiegeDungeon_MonCtr_MsgBox(ulCurRate);
 						}
 						break;
-					case MSG_MANAGEMENT_MANAGER_MONSTER_INFO:				//ÎçòÏ†Ñ ÎÇ¥Î∂Ä Î™¨Ïä§ÌÑ∞ Ï†ïÎ≥¥ ÏöîÏ≤≠
-						{
-							ULONG ulCurRate;
-							(*istr) >> ulCurRate;
-
-							if( ulCurRate >90)
-							{
-								MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
-								MsgBoxInfo.AddString( _S(3943, "ÎçîÏù¥ÏÉÅ ÏÉÅÏäπÏãúÌÇ¨ Ïàò ÏóÜÏäµÎãàÎã§.") );
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
-
-								return;
-							}
-
-							_pUIMgr->GetPortal()->Create_SiegeDungeon_MonCtr_MsgBox(ulCurRate);
-						}
-						break;
-					case MSG_MANAGEMENT_MANAGER_TAX_INFO:				//ÏûÖÏû•Î£å ÏÑ∏Í∏à Ï†ïÎ≥¥ ÏöîÏ≤≠
+					case MSG_MANAGEMENT_MANAGER_TAX_INFO:				//¿‘¿Â∑· ºº±› ¡§∫∏ ø‰√ª
 						{
 							ULONG ulCurFee;
 							(*istr) >> ulCurFee;
 
-							_pUIMgr->GetPortal()->Create_SiegeDungeon_AdmissionCtr_MsgBox(ulCurFee);
+							pUIManager->GetPortal()->Create_SiegeDungeon_AdmissionCtr_MsgBox(ulCurFee);
 						}
 						break;
-					case MSG_MANAGEMENT_MANAGER_HUNTER_TAX_INFO:			//ÏàòÎ†µÏÑ∏ Ï†ïÎ≥¥ ÏöîÏ≤≠
+					case MSG_MANAGEMENT_MANAGER_HUNTER_TAX_INFO:		//ºˆ∑∆ºº ¡§∫∏ ø‰√ª
 						{
 							ULONG ulCurFee;
 							(*istr) >> ulCurFee;
 
-							_pUIMgr->GetPortal()->Create_SiegeDungeon_HuntingCtr_MsgBox(ulCurFee);
+							pUIManager->GetPortal()->Create_SiegeDungeon_HuntingCtr_MsgBox(ulCurFee);
 						}
 						break;
-					case MSG_MANAGEMENT_MANAGER_ENV_CHANGE:				//ÎçòÏ†Ñ ÎÇ¥Î∂ÄÌôòÍ≤Ω Î≥ÄÍ≤Ω
-					case MSG_MANAGEMENT_MANAGER_MONSTER_CHANGE:			//ÎçòÏ†Ñ ÎÇ¥Î∂Ä Î™¨Ïä§ÌÑ∞ ÏÉÅÌÉú Î≥ÄÍ≤Ω
-					case MSG_MANAGEMENT_MANAGER_TAX_CHANGE:				//ÏûÖÏû•Î£å ÏÑ∏Í∏à Î≥ÄÍ≤Ω
-					case MSG_MANAGEMENT_MANAGER_HUNTER_TAX_CHANGE:		//ÏàòÎ†µÏÑ∏ Î≥ÄÍ≤Ω
+					case MSG_MANAGEMENT_MANAGER_ENV_CHANGE:				//¥¯¿¸ ≥ª∫Œ»Ø∞Ê ∫Ø∞Ê
+					case MSG_MANAGEMENT_MANAGER_MONSTER_CHANGE:			//¥¯¿¸ ≥ª∫Œ ∏ÛΩ∫≈Õ ªÛ≈¬ ∫Ø∞Ê
+					case MSG_MANAGEMENT_MANAGER_TAX_CHANGE:				//¿‘¿Â∑· ºº±› ∫Ø∞Ê
+					case MSG_MANAGEMENT_MANAGER_HUNTER_TAX_CHANGE:		//ºˆ∑∆ºº ∫Ø∞Ê
 						{
 							(*istr) >> ubError;
 							if( ubError == MSG_DVD_ERROR_OK )
 							{
-								MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
-								MsgBoxInfo.AddString( _S(3944, "ÎçòÏ†ÑÏùò ÏÉÅÌÉúÍ∞Ä Î≥ÄÍ≤ΩÎêòÏóàÏäµÎãàÎã§.") );
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(3944, "¥¯¿¸¿« ªÛ≈¬∞° ∫Ø∞Êµ«æ˙Ω¿¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
 							}
 							else if( ubError == MSG_DVD_ERROR_MONEY)
 							{
-								MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
-								MsgBoxInfo.AddString( _S(967, "ÎÇòÏä§Í∞Ä Î∂ÄÏ°±Ìï©ÎãàÎã§.") );
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(967, "≥™Ω∫∞° ∫Œ¡∑«’¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
 							}
 						}
 						break;
+					case MSG_MANAGEMENT_MANAGER_CONFIRM_NORMAL:
+						{
+							(*istr) >> ubError;
 
+							if( ubError == MSG_DVD_ERROR_OK )
+							{
+								pUIManager->CreateMessageBoxL( _S(3908, "¥¯¿¸ ∞¸∏Æ"),UI_PORTAL, MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL);
+								pUIManager->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL,TRUE, _S(7060, "«ˆ¿Á ≈◊ø¿Ω∫ π´¥˝¿∫ ... º∫¡÷ ¥ÎΩ≈ ¥¯¿¸¿ª ∞¸∏Æ «“ºˆ ¿÷¥¬ ±««—¿ª µÂ∏Æ∞⁄Ω¿¥œ¥Ÿ."),-1,0xa3a1a3ff);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3921, "¥¯¿¸ ≥ª∫Œ »Ø∞Ê ¡¶æÓ" ), DRATAN_SIEGE_DUNGEON_CONTROL_ENVIRONMENT);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S(3926, "¥¯¿¸ ≥ª∫Œ ∏ÛΩ∫≈Õ ¡¶æÓ" ), DRATAN_SIEGE_DUNGEON_CONTROL_MONSTER);
+								pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL, FALSE, _S( 1220, "√Îº“«—¥Ÿ." ) );
+
+								SERVER_INFO()->SetDG_Mode(eDUNGEON_MODE_NOMAL);
+							}
+							else if( ubError == MSG_DVD_ERROR_CONFIRM )
+							{
+								pUIManager->CloseMessageBox(MSGCMD_NULL);
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(7074, "¡ˆ±›¿∫ ¥¯¿¸ ∞¸∏Æ∞° ¿ﬂ ¿Ã∑ÁæÓ¡ˆ∞Ì ¿÷¥¬ ªÛ≈¬∑Œ, ¥¯¿¸ ∞¸∏Æ ±««—¿Ã º∫¡÷ø°∞‘ ¿÷Ω¿¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+							}
+							else if( ubError == MSG_DVD_ERROR_NORMAL_MODE )
+							{
+								pUIManager->CloseMessageBox(MSGCMD_NULL);
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(7071, "¡ˆ±›¿∫ ¿œπ› ∞¸∏Æ ∏µÂ∑Œ «ˆ¿Á ¥¯¿¸¿∫ º∫¡÷¥‘¿Ã æ∆¥— π´¥˝¿ª ¿ÃøÎ«œ¥¬ «√∑π¿ÃæÓµÈ¿Ã ¡˜¡¢ ∞¸∏Æ∏¶ «œ∞Ì ¿÷Ω¿¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+							}							
+							else if (ubError == MSG_DVD_ERROR_ZONE)
+							{
+								pUIManager->CloseMessageBox(MSGCMD_NULL);
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(6275, "∞¯º∫ √§≥Œø°º≠∏∏ ¿ÃøÎ¿Ã ∞°¥…«’¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+							}
+						}
+						break;
+					case MSG_NAMAGEMENT_CHANGE_OWNER_MODE:
+						{
+							(*istr) >> ubError;
+
+							if( ubError == MSG_DVD_ERROR_OK )
+							{
+								pUIManager->CloseMessageBox(MSGCMD_NULL);
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(7069, "¡§ªÛ¿˚¿∏∑Œ ≥™Ω∫∏¶ ¡ˆ±ﬁ«œº≈º≠ ¡ˆ±›∫Œ≈Õ º∫¡÷¥‘¿Ã ∞¸∏Æ «œΩ« ºˆ ¿÷¿∏Ω ¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+							}
+							else if( ubError == MSG_DVD_ERROR_CONFIRM )
+							{
+								pUIManager->CloseMessageBox(MSGCMD_NULL);
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(3942, "º∫¡÷ ±ÊµÂ¿« ∏∂Ω∫≈Õ, ∂«¥¬ ∫Œ±ÊµÂ∏∂Ω∫≈Õ∏∏ ¡¢±Ÿ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+							}
+							else if (ubError == MSG_DVD_ERROR_MONEY)
+							{
+								pUIManager->CloseMessageBox(MSGCMD_NULL);
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(7070, "≥™Ω∫∞° ∫Œ¡∑ «œø© ∞¸∏Æ∏¶ «œΩ« ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+							}
+						}
+						break;
 					}
 				}
 				break;
@@ -1425,15 +1598,15 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 								return;
 							}
 
-							if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ENTER) )
-								_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENTER);
+							if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ENTER) )
+								pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENTER);
 							
-							strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
+							strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
 							MsgBoxInfo.SetMsgBoxInfo(strMessage,UMBS_YESNO,UI_PORTAL,MSGCMD_SIEGE_DUNGEON_ENTER);
-							strMessage.PrintF( _S(3945, "ÎçòÏ†ÑÏúºÎ°ú Ïù¥ÎèôÌïòÍ∏∞ ÏúÑÌï¥ÏÑúÎäî %dÎÇòÏä§Í∞Ä ÌïÑÏöîÌï©ÎãàÎã§. Ïù¥Îèô ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), ulNeedNas );
+							strMessage.PrintF( _S(3945, "¥¯¿¸¿∏∑Œ ¿Ãµø«œ±‚ ¿ß«ÿº≠¥¬ %d≥™Ω∫∞° « ø‰«’¥œ¥Ÿ. ¿Ãµø «œΩ√∞⁄Ω¿¥œ±Ó?" ), ulNeedNas );
 							MsgBoxInfo.AddString(strMessage);
 
-							_pUIMgr->CreateMessageBox(MsgBoxInfo);
+							pUIManager->CreateMessageBox(MsgBoxInfo);
 						}
 						break;
 					case MSG_DUNGEON_GO:
@@ -1443,9 +1616,11 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 
 							if( ubError == MSG_DVD_ERROR_MONEY )
 							{
-								MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
-								MsgBoxInfo.AddString( _S(967, "ÎÇòÏä§Í∞Ä Î∂ÄÏ°±Ìï©ÎãàÎã§.") );
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
+								MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+								MsgBoxInfo.AddString( _S(967, "≥™Ω∫∞° ∫Œ¡∑«’¥œ¥Ÿ.") );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
+
+								pUIManager->SetCSFlagOff(CSF_TELEPORT);
 							}
 						}
 					}
@@ -1465,16 +1640,31 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 					}
 					else
 					{
-						for( INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actCha.Count(); ++ipl )
+						ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_CHARACTER, ulCharIndex);
+
+						if (pObject != NULL)
 						{
-							CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[ipl];
-							if( ct.cha_Index == ulCharIndex )
-							{	
-								ct.cha_ubGuildNameColor =ubCol;
-								break;
-							}
+							CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+							pTarget->cha_ubGuildNameColor = ubCol;
 						}
 					}
+				}
+				break;
+
+			case MSG_CHANGE_NORMAL_NOTICE: // ¿œπ›∏µÂ ¿¸»Ø
+				{
+					strMessage = _S(7067, "¡ˆ±›∫Œ≈Õ ≈◊ø¿Ω∫¿« π´¥˝¿Ã º∫¡÷ ∞¸∏Æø°º≠ ¿œπ› ∞¸∏Æ∑Œ ¿¸»Øµ«æÓ º∫¡÷∏¶ ¡¶ø‹ «— ¥©±∏≥™ ≈◊ø¿Ω∫¿« π´¥˝¿ª ∞¸∏Æ «œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ. ");
+					_UIAutoHelp->SetGMNotice(strMessage);
+					_pNetwork->ClientSystemMessage(strMessage);
+				}
+				break;
+
+			case MSG_CHANGE_NORMAL_NOTICE_TO_OWNER:
+				{
+					MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+					MsgBoxInfo.AddString( _S(7068, "¡ˆ±›∫Œ≈Õ ≈◊ø¿Ω∫¿« π´¥˝¿Ã ¿œπ› ∞¸∏Æ∑Œ ¿¸»Øµ«æÓ ¥¯¿¸ ∞¸∏Æ ∫∏ªÛ æ∆¿Ã≈€∞˙ ¥¯¿¸ø° ¥Î«— ¥¯¿¸ ¿‘¿Â∑·, ºˆ∑∆ºº∏¶ ¡ˆ±ﬁ πﬁ¡ˆ ∏¯«’¥œ¥Ÿ. º∫¡÷¿« ±««—¿ª ¥ŸΩ√ µ«√£¿∏Ω√∏Æ∏È ¥¯¿¸ ∞¸∏Æ¿Œ¿ª √£æ∆∞° «ˆ¿Á±Ó¡ˆ¿« ∞¸∏Æ ≥™Ω∫∏¶ ¡ˆ±ﬁ«ÿæﬂ ±««—¿ª √£¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ.") );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 				}
 				break;
 			}
@@ -1482,7 +1672,7 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 		break;
 		//[071123: Su-won] DRATAN_SIEGE_DUNGEON
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	case MSG_EX_PET_TURNTO_NPC: // Ìé´ Î≥ÄÏã†
+	case MSG_EX_PET_TURNTO_NPC: // ∆Í ∫ØΩ≈
 		{
 			SLONG slPetIndex;
 			SLONG slNpcIndex;
@@ -1493,98 +1683,24 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 
 			CEntity* penEntity = NULL;
 
-			for(int i=0; i<_pNetwork->ga_srvServer.srv_actPet.Count(); ++i)
+			ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_PET, slPetIndex);
+			CPetTargetInfom* pPetInfo = INFO()->GetMyPetInfo();
+
+			if (pObject != NULL)
 			{
-				if( _pNetwork->ga_srvServer.srv_actPet[i].pet_Index == slPetIndex)
-				{
-					penEntity =_pNetwork->ga_srvServer.srv_actPet[i].pet_pEntity;
-				}
+				penEntity = pObject->GetEntity();
 			}
 
 			if (penEntity != NULL)
 			{
-				if (penEntity == _pNetwork->_PetTargetInfo.pen_pEntity) // ÏûêÏã†Ïù¥ Ïû•Ï∞©Ìïú Ìé´Ïùº Í≤ΩÏö∞
-					_pNetwork->_PetTargetInfo.TransformIndex = slNpcIndex;
+				if (penEntity == pPetInfo->pen_pEntity) // ¿⁄Ω≈¿Ã ¿Â¬¯«— ∆Í¿œ ∞ÊøÏ
+					pPetInfo->TransformIndex = slNpcIndex;
 
-				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->TransfromPet(penEntity, slNpcIndex, slNpcSize); // 10ÏùÄ ÏÇ¨Ïù¥Ï¶à 1Î∞∞
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->TransfromPet(penEntity, slNpcIndex, slNpcSize); // 10¿∫ ªÁ¿Ã¡Ó 1πË
 			}
 		}
 		break;
-	//ttos : Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥
-	case MSG_EX_MONSTERCOMBO:
-		{			
-			UBYTE SubMessage;
-
-			(*istr) >> SubMessage;
-			switch(SubMessage)
-			{
-			case  MSG_EX_MONSTERCOMBO_EDIT_CONTEXT_REP:
-				{
-					INDEX nComboCount;
-					(*istr) >> nComboCount;
-					INDEX tempIndex;
-					for(int i = 0; i < nComboCount; i++)
-					{
-						(*istr) >> tempIndex;
-						_pUIMgr->GetCombo()->SetComboList(i,tempIndex);
-					}
-					_pUIMgr->GetCombo()->SetComboCount(nComboCount);
-					_pUIMgr->GetCombo()->SetActionChack(TRUE);
-					_pUIMgr->GetCombo()->OpenMonsterCombo(TRUE,_pNetwork->MyCharacterInfo.x,_pNetwork->MyCharacterInfo.z);
-					//_pUIMgr->RearrangeOrder( UI_MONSTER_COMBO, TRUE);
-
-				}
-				break;
-			case MSG_EX_MONSTERCOMBO_GOTO_COMBO_PROMPT:
-				{
-					CTString tv_str;
-					INDEX nBoss,nNas;
-					(*istr) >> nBoss;
-					(*istr) >> nNas;
-					_pUIMgr->GetCombo()->SetBossIndex(nBoss);
-					if(_pUIMgr->DoesMessageBoxExist(MSGCMD_EX_MONSTERCOMBO_GOTO_COMBO_PROMPT)) return ;
-					MsgBoxInfo.SetMsgBoxInfo( _S(191, "ÌôïÏù∏" ), UMBS_YESNO, UI_NONE, MSGCMD_EX_MONSTERCOMBO_GOTO_COMBO_PROMPT );
-					tv_str.PrintF(_S(4049,"Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ %d Nas ÏûÖÏû•Î£åÎ•º ÎÇ¥Í≥† ÏûÖÏû•ÌïòÏãúÍ≤†ÏäµÎãàÍπå?"),nNas);
-					MsgBoxInfo.AddString(tv_str);
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
-
-				}break;
-			case MSG_EX_MONSTERCOMBO_MISSION_COMPLETE:
-				{
-					INDEX nNextStagenum;
-					UBYTE bComplete;
-					(*istr) >> bComplete;
-					(*istr) >> nNextStagenum;
-					
-					
-					_pUIMgr->GetCombo()->StageComplete(nNextStagenum,bComplete);
-					
-				}
-				break;
-			case MSG_EX_MONSTERCOMBO_NOTICE_STAGE:  // stage(n) ÏãúÏûëÏãú stage ÎÑòÎ≤ÑÎ©îÏãúÏßÄ Ï†ÑÎã¨
-				{
-					INDEX nStagenum;
-					(*istr) >> nStagenum;
-
-					_pUIMgr->GetCombo()->SetStageNum(nStagenum);
-					_pUIMgr->GetCombo()->SetSysImage(SYS_STAGE,TRUE);				
-				}break;
-			case MSG_EX_MONSTERCOMBO_ERROR:
-				{
-					UBYTE ubError;
-					(*istr) >> ubError;
-					_pUIMgr->GetCombo()->RecComboErrorMessage(ubError);
-				}
-				break;
-			}
-			
-		}
-		break;
-#ifdef RESTART_GAME
-	case MSG_EX_RESTART:// Í≤åÏûÑ Ïû¨ÏãúÏûë Ï≤òÎ¶¨
-			_pUIMgr->GetSystemMenu()->Restart_Internal();
-		break;
-#endif		
+	
 	// [080422: Su-won] EVENT_CHAOSBALL
 	case MSG_EX_CHAOSBALL:
 		{
@@ -1597,13 +1713,12 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 			case MSG_CHAOSBALL_ERROR_ITEM_COUNT:
 				break;
 			case MSG_CHAOSBALL_ERROR_NOSPACE:
-				_pUIMgr->GetChatting()->AddSysMessage( _S( 265,  "Ï∫êÎ¶≠ÌÑ∞ Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );
+				pUIManager->GetChattingUI()->AddSysMessage( _S( 265,  "ƒ≥∏Ø≈Õ ¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR );
 				break;
 			case MSG_CHAOSBALL_ERROR_ITEM_FAULT:
 				break;
 			}			
 		}
-		break;
 	case MSG_EX_ATTACK_PET:
 		{
 			UBYTE ubSubType;
@@ -1624,21 +1739,22 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 			{
 			case MSG_EX_EXTREME_CUBE_STATE_REP:
 				{
-					_pUIMgr->GetShop()->CreateCubeStateMsgBox(istr, TRUE);
+					pUIManager->GetCubeRank()->CreateCubeState(istr, TRUE);
 				}
 				break;
 			case MSG_EX_EXTREME_CUBE_STATE_PERSONAL_REP:
 				{
-					_pUIMgr->GetShop()->CreateCubeStateMsgBox(istr, FALSE);
+					pUIManager->GetCubeRank()->CreateCubeState(istr, FALSE);
 				}
 				break;
 			case MSG_EX_EXTREME_CUBE_COMPLETE:
 				{
-					UBYTE ubCnt;
+					INDEX ubCnt;
 					(*istr) >> ubCnt;
 
-					_pUIMgr->GetCombo()->SetComboCount(ubCnt);
-					_pUIMgr->GetCombo()->SetSysImage(SYS_STAGE, TRUE);
+					//pUIManager->GetCombo()->SetComboCount(ubCnt);
+					pUIManager->GetCombo()->StageComplete(ubCnt,1);
+					pUIManager->GetCombo()->SetSysImage(SYS_STAGE, TRUE, CUBE_TYPE);
 				}
 				break;
 			case MSG_EX_EXTREME_CUBE_ERROR:
@@ -1652,55 +1768,100 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 					{
 					case MSG_EX_EXTREME_CUBE_ERROR_NOITEM:
 						{
-							strMessage = _S(1330, "ÏïÑÏù¥ÌÖúÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§.");
+							strMessage = _S(1330, "æ∆¿Ã≈€¿Ã ∫Œ¡∑«’¥œ¥Ÿ.");
+							pUIManager->SetCSFlagOff(CSF_TELEPORT);
 						}
 						break;
 					case MSG_EX_EXTREME_CUBE_ERROR_OVERCOUNT:
 						{
-							strMessage = _S(4374, "ÌòÑÏû¨ Îì§Ïñ¥Í∞à Ïàò ÏûàÎäî Î∞©Ïù¥ Ï°¥Ïû¨ÌïòÏßÄ ÏïäÏäµÎãàÎã§. Ïû†Ïãú ÌõÑ Îã§Ïãú ÏãúÎèÑÌïòÏó¨ Ï£ºÏã≠ÏãúÏò§.");
+							strMessage = _S(4374, "«ˆ¿Á µÈæÓ∞• ºˆ ¿÷¥¬ πÊ¿Ã ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ. ¿·Ω√ »ƒ ¥ŸΩ√ Ω√µµ«œø© ¡÷Ω Ω√ø¿.");
+							pUIManager->SetCSFlagOff(CSF_TELEPORT);
 						}
 						break;
 					case MSG_EX_EXTREME_CUBE_ERROR_CANNOT_MOVE:
 						{
-							strMessage = _S(4375, "ÌòÑÏû¨ ÌÅêÎ∏åÏóê Îì§Ïñ¥Í∞à Ïàò ÏóÜÏäµÎãàÎã§. Ïû†Ïãú ÌõÑ Îã§Ïãú ÏãúÎèÑÌïòÏó¨ Ï£ºÏã≠ÏãúÏò§.");
+							strMessage = _S(4375, "«ˆ¿Á ≈•∫Íø° µÈæÓ∞• ºˆ æ¯Ω¿¥œ¥Ÿ. ¿·Ω√ »ƒ ¥ŸΩ√ Ω√µµ«œø© ¡÷Ω Ω√ø¿.");
+							pUIManager->SetCSFlagOff(CSF_TELEPORT);
 						}
 						break;
 					case MSG_EX_EXTREME_CUBE_ERROR_CANNOT_CAHNGE_RATE:
 						{
-							strMessage = _S(4376, "ÏûÖÏû•ÌÅêÎ∏å ÏÑ∏Ïú®ÏùÑ Î≥ÄÍ≤ΩÌï† Ïàò ÏóÜÏäµÎãàÎã§.");
+							strMessage = _S(4376, "¿‘¿Â≈•∫Í ºº¿≤¿ª ∫Ø∞Ê«“ ºˆ æ¯Ω¿¥œ¥Ÿ.");
 						}
 						break;
 					case MSG_EX_EXTREME_CUBE_ERROR_NOT_GUILD_CUBE_TIME:
 						{
-							strMessage = _S(4377, "Í∏∏Îìú ÌÅêÎ∏å ÏûÖÏû• ÏãúÍ∞ÑÏù¥ ÏïÑÎãôÎãàÎã§.");
+							strMessage = _S(4377, "±ÊµÂ ≈•∫Í ¿‘¿Â Ω√∞£¿Ã æ∆¥’¥œ¥Ÿ.");
+							pUIManager->SetCSFlagOff(CSF_TELEPORT);
 						}
 						break;
 					case MSG_EX_EXTREME_CUBE_ERROR_NOT_PARTY_CUBE_TIME:
 						{
-							strMessage = _S(4397, "ÌååÌã∞ ÌÅêÎ∏å ÏûÖÏû• ÏãúÍ∞ÑÏù¥ ÏïÑÎãôÎãàÎã§.");
+							strMessage = _S(4397, "∆ƒ∆º ≈•∫Í ¿‘¿Â Ω√∞£¿Ã æ∆¥’¥œ¥Ÿ.");
+							pUIManager->SetCSFlagOff(CSF_TELEPORT);
 						}
 						break;
 					case MSG_EX_EXTREME_CUBE_ERROR_PARTYCUBE:
-						{ // ÌååÌã∞ ÌÅêÎ∏å ÏûÖÏû•
-							strMessage = _S(4398, "ÌååÌã∞ ÌÅêÎ∏åÏóê ÏûÖÏû•ÌïòÏòÄÏäµÎãàÎã§.");
+						{ // ∆ƒ∆º ≈•∫Í ¿‘¿Â
+							strMessage = _S(4398, "∆ƒ∆º ≈•∫Íø° ¿‘¿Â«œø¥Ω¿¥œ¥Ÿ.");
 							_pNetwork->MyCharacterInfo.EntranceType = CURRENT_ENTER_PARTYCUBE;
 							bShowBox = FALSE;
 						}
 						break;
 					case MSG_EX_EXTREME_CUBE_ERROR_GUILDCUBE:
-						{ // Í∏∏Îìú ÌÅêÎ∏å ÏûÖÏû•
-							strMessage = _S(4399, "Í∏∏Îìú ÌÅêÎ∏åÏóê ÏûÖÏû•ÌïòÏòÄÏäµÎãàÎã§.");
+						{ // ±ÊµÂ ≈•∫Í ¿‘¿Â
+							strMessage = _S(4399, "±ÊµÂ ≈•∫Íø° ¿‘¿Â«œø¥Ω¿¥œ¥Ÿ.");
 							_pNetwork->MyCharacterInfo.EntranceType = CURRENT_ENTER_GUILDCUBE;
 							bShowBox = FALSE;
 						}
 						break;
+					case MSG_EX_EXTREME_CUBE_ERROR_START_NOTICE: // ±ÊµÂ≈•∫Í Ω√¿€∏ﬁΩ√¡ˆ
+						{
+							strMessage = _S(4401, "±ÊµÂ≈•∫Í∞° Ω√¿€µ«∞Ì ∆ƒ∆º≈•∫Í∞° ¡æ∑·µ«æ˙Ω¿¥œ¥Ÿ.");
+							_UIAutoHelp->SetGMNotice(strMessage);
+							bShowBox = FALSE;
+						}
+						break;
+					case MSG_EX_EXTREME_CUBE_ERROR_END_NOTICE: // ±ÊµÂ≈•∫Í ¡æ∑·∏ﬁΩ√¡ˆ
+						{
+							strMessage = _S(4402, "±ÊµÂ≈•∫Í∞° ¡æ∑·µ«∞Ì ∆ƒ∆º≈•∫Í∞° Ω√¿€µ«æ˙Ω¿¥œ¥Ÿ.");
+							_UIAutoHelp->SetGMNotice(strMessage);
+							bShowBox = FALSE;
+						}
+						break;
+					case MSG_EX_EXTREME_CUBE_ERROR_START_REMAINTIME: // ±ÊµÂ≈•∫Í Ω√¿€ 1∫–¿¸ ∏ﬁΩ√¡ˆ 
+						{
+							strMessage = _S(4403, "1∫– »ƒ ±ÊµÂ≈•∫Í∞° Ω√¿€µ«∞Ì 1∫– »ƒ ∆ƒ∆º≈•∫Í∞° ¡æ∑·µÀ¥œ¥Ÿ.");
+							_UIAutoHelp->SetGMNotice(strMessage);
+							bShowBox = FALSE;
+						}
+						break;
+					case MSG_EX_EXTREME_CUBE_ERROR_END_REMAINTIME: // ±ÊµÂ≈•∫Í ¡æ∑· 1∫–¿¸ ∏ﬁΩ√¡ˆ
+						{
+							strMessage = _S(4404, "1∫– »ƒ ∆ƒ∆º≈•∫Í∞° Ω√¿€µ«∞Ì 1∫– »ƒ ±ÊµÂ≈•∫Í∞° ¡æ∑·µÀ¥œ¥Ÿ.");
+							_UIAutoHelp->SetGMNotice(strMessage);
+							bShowBox = FALSE;
+						}
+						break;
+					case MSG_EX_EXTREME_CUBE_ERROR_INVEN_NOSPACE:		// ¿Œ∫• ∞¯∞£∫Œ¡∑
+						{
+							strMessage = _S(265, "¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ.");
+						}break;
+					case MSG_EX_EXTREME_CUBE_ERROR_REWARD_PERSONAL_CANNOT:	// ∞≥¿Œ∫∏ªÛ ¡∂∞« æ»∏¬¿Ω
+						{
+							strMessage = _S(1722, "∫∏ªÛ¿ª πﬁ¿∏Ω« ºˆ ¿÷¥¬ ¡∂∞«¿Ã æ∆¥’¥œ¥Ÿ");
+						}break;
+					case MSG_EX_EXTREME_CUBE_ERROR_REWARD_PERSONAL_ALREADY:	// ∞≥¿Œ∫∏ªÛ ¿ÃπÃ πﬁæ“¿Ω	
+						{
+							strMessage = _S(1755, "¿ÃπÃ ∫∏ªÛ¿ª πﬁæ“Ω¿¥œ¥Ÿ.");
+						}break;
 					}
 					
 					if (bShowBox)
 					{
-						MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+						MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
 						MsgBoxInfo.AddString(strMessage);
-						_pUIMgr->CreateMessageBox(MsgBoxInfo);
+						pUIManager->CreateMessageBox(MsgBoxInfo);
 					}
 					else
 					{
@@ -1718,190 +1879,752 @@ void CSessionState::ReceiveExtendMessage( CNetworkMessage *istr )
 			UBYTE ubSubType;
 			(*istr) >> ubSubType;
 
-			MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+			MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
 
 			switch(ubSubType)
 			{
 			case MSG_EX_INIT_SSkill_ERROR_SUCCESS:
 				{
-					MsgBoxInfo.AddString(_S(4247, "Ïä§ÌéòÏÖú Ïä§ÌÇ¨ Ï¥àÍ∏∞ÌôîÏóê ÏÑ±Í≥µÌïòÏòÄÏäµÎãàÎã§."));
+					MsgBoxInfo.AddString(_S(4247, "Ω∫∆‰º» Ω∫≈≥ √ ±‚»≠ø° º∫∞¯«œø¥Ω¿¥œ¥Ÿ."));
 				}
 				break;
 			case MSG_EX_INIT_SSkill_ERROR_FAIL:
 				{
-					MsgBoxInfo.AddString(_S(4248, "Ïä§ÌéòÏÖú Ïä§ÌÇ¨ Ï¥àÍ∏∞ÌôîÏóê Ïã§Ìå®ÌïòÏòÄÏäµÎãàÎã§."));
+					MsgBoxInfo.AddString(_S(4248, "Ω∫∆‰º» Ω∫≈≥ √ ±‚»≠ø° Ω«∆–«œø¥Ω¿¥œ¥Ÿ."));
 				}
 				break;
 			}
 
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 		}
 		break;
+	case MSG_EX_TRIGGER_EVENT:
+		{
+			UBYTE ubSubType;
+			INDEX iTouchID, iPlayID, iContinued;
+			(*istr) >> ubSubType;
+			(*istr) >> iTouchID >> iPlayID >> iContinued;
+
+			switch(ubSubType)
+			{
+			case MSG_EX_TRIGGER_EVENT_ERROR: // º≠πˆ ø°∑Ø
+				break;
+			case MSG_EX_TRIGGER_EVENT_ALREADY_PLAY: // ¿ÃπÃ »∞º∫»≠ µ 
+				break;
+			case MSG_EX_TRIGGER_EVENT_NO_CONDITION: // ¡∂∞«¿Ã º∫∏≥¿Ã æ»µ  (æÓ∂≤ ¡∂∞«¿Ã æ¯¥¬¡ˆ¥¬ ≈¨∂Û∞° ∞Àªˆ«ÿæﬂ «œ≥™?)
+				break;
+			case MSG_EX_TRIGGER_EVENT_TRIGER_EXIST_AREA: // ¡∏ ¿ÃµøΩ√ ¿ÃπÃ µø¿€µ» »Ø∞Ê ø¿∫Í¡ß∆Æ¿« ¡§∫∏∏¶ æ˜µ•¿Ã∆Æ «—¥Ÿ.(Sub Info : 1. Obj count, 2. Objects ID
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ReceiveTriggerEvent(iTouchID, iPlayID, iContinued, istr);
+				break;
+			case MSG_EX_TRIGGER_EVENT_ITEM_COMPOSITION: // æ∆¿Ã≈€ ∞·«’ øœ∑·
+				pUIManager->GetChattingUI()->AddSysMessage(_S(4669, "æ∆¿Ã≈€ ∞·«’ øœ∑·"));
+				break;
+			case MSG_EX_TRIGGER_EVENT_ITEM_DROP: // æ∆¿Ã≈€¿Ã µÂ∂¯µ ( æÓ∂≤ æ∆¿Ã≈€¿Ã µÂ∂¯¿Ã µ«¥¬¡ˆ ≈¨∂Û∞° æÀæ∆æﬂ æÀ∑¡¡÷≥™?)
+				pUIManager->GetChattingUI()->AddSysMessage(_S(4670, "æ∆¿Ã≈€ µÂ∂¯ øœ∑·"));
+				break;
+			case MSG_EX_TRIGGER_EVENT_OPEN_THE_DOOR: // Door object¿« πÆ¿ª ø¨¥Ÿ.(√Êµπ«ÿ¡¶)
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ReceiveTriggerEvent(iTouchID, iPlayID, iContinued, NULL);
+				break;
+			case MSG_EX_TRIGGER_EVENT_START_RAID: // ∑π¿ÃµÂ ¥¯¿¸¿« «√∑π¿Ã Ω√¿€
+				{				
+					//pUIManager->GetChattingUI()->AddSysMessage(_s("∑π¿ÃµÂ «√∑π¿Ã Ω√¿€"));					
+				}
+				break;
+			case MSG_EX_TRIGGER_EVENT_MESSAGE_PRINT: // ∞‘¿” ∏ﬁºº¡ˆ∏¶ √‚∑¬(æÓ∂≤ ∏ﬁºº¡ˆ∏¶ √‚∑¬«“¡ˆ ≈¨∂Û∞° æÀæ∆º≠«ÿæﬂ «‘)
+				{				
+					// [090709: selo] Ω∫∆Æ∏µ ¿Œµ¶Ω∫∏¶ πﬁæ∆ ƒ˘Ω∫∆Æ∫œø° ∑π¿ÃµÂ ∏ﬁΩ√¡ˆ∑Œ √ﬂ∞°«—¥Ÿ
+					INDEX iStringIndex = 0;
+					(*istr) >> iStringIndex;
+					
+					if (iStringIndex > 0)
+					{
+						GAMEDATAMGR()->GetQuest()->AddRaidMessage(iStringIndex);
+					}
+				}
+				break;
+			case MSG_EX_TRIGGER_EVENT_SUMMON_NPC: // npc∏¶ º“»Ø«—¥Ÿ.(æÓ∂≤ npc∞° º“»Øµ…¡ˆ ≈¨∂Û∞° æÀæ∆º≠ «ÿæﬂ «—¥Ÿ.)
+				//pUIManager->GetChattingUI()->AddSysMessage(_s("npcº“»Ø øœ∑·"));
+				break;
+			case MSG_EX_TRIGGER_EVENT_USE_DEBUF: // ƒ≥∏Ø≈Õ∞° µπˆ«¡ø° ∞…∑»¥Ÿ.(¿⁄Ω≈¿« ƒ≥∏Ø≈Õ∏∏)
+				//pUIManager->GetChattingUI()->AddSysMessage(_s("æ— µπˆ«¡ø° ∞…∑»¥Ÿ~"));
+				break;
+			case MSG_EX_TRIGGER_EVENT_ACTIVE_OBJECT: // ø¿∫Í¡ß∆Æ¿« »∞º∫»≠(æ÷¥œ∏ﬁ¿Ãº«¿Ã µø¿€«—¥Ÿ.)
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ReceiveTriggerEvent(iTouchID, iPlayID, iContinued, NULL);
+				break;
+			case MSG_EX_TRIGGER_EVENT_REMOVE_NPC: // npc ¿⁄µø ¡¶∞≈ (npc∏¶ ªË¡¶«—¥Ÿ. ø÷ « ø‰«“±Ó?)
+				//pUIManager->GetChattingUI()->AddSysMessage(_s("npc ¡¶∞≈~"));
+				break;
+			case MSG_EX_TRIGGER_EVENT_TIME_LIMIT:
+				{
+					// [090707: selo] 
+					// ≥≤¿∫ Ω√∞£¿ª πﬁæ∆º≠ 0 ¿ÃªÛ¿Ã∏È ≥≤¿∫ Ω√∞£¿ª º≥¡§«—¥Ÿ.
+					INDEX iRemainTime = 0;
+					(*istr) >> iRemainTime;
+
+					// 0 ¿Ã∏È Ω√∞£¿Ã ¥Ÿµ«º≠ ≥°≥≠ ∞Õ
+					if( 0 == iRemainTime )
+					{
+						GAMEDATAMGR()->GetQuest()->RaidEnd();
+					}
+					// -1 ¿Ã∏È ≥◊¿”µÂ ∏ÛΩ∫≈Õ∏¶ ¿‚æ∆º≠ ≥°≥≠ ∞Õ
+					else if( -1 == iRemainTime )
+					{
+						GAMEDATAMGR()->GetQuest()->RaidEnd();
+					}
+					else
+					{
+						// [090907: selo] ∑π¿ÃµÂ ≥≤¿∫ Ω√∞£¿ª æÀ∏∞¥Ÿ.
+						GAMEDATAMGR()->GetQuest()->SetRaidRemainTime(iRemainTime);	
+				}	}
+				break;
+			case MSG_EX_TRIGGER_EVENT_RESTORE_OBJECT:
+				{
+					CEntity *tmpEntity = NULL;
+
+					tmpEntity = _pNetwork->ga_World.EntityFromID(iPlayID);
+
+					if (tmpEntity != NULL)
+					{
+						tmpEntity->Precache();
+					}
+				}
+				break;
+			}
+		}
+		break;
+	case MSG_EX_AFFINITY:
+		{
+			ReceiveAffinityMessage( istr );
+		}
+		break;
+		
+	case MSG_EX_TUTORIAL:
+		{
+			pUIManager->GetHelp()->OpenTutorial();
+		}	
+		break;
+		
+	case MSG_EX_LOADING_END:
+		{
+			ReceiveExLoadingEndMessage( istr );
+		}
+		break;
+
+	case MSG_EX_NPC_PORTAL_SCROLL:
+		{
+			ReceiveNPCPortalMessage( istr);
+		}
+		break;
+		
+	case MSG_EX_RAID_INFO:
+		{
+			SLONG nRaidCount = 0;
+			SLONG nZoneNum = 0;
+			SLONG nRoomNum = 0;
+
+			(*istr) >> nRaidCount;
+
+			if(pUIManager->DoesMessageBoxExist(MSGCMD_RAID_INFO))
+				pUIManager->CloseMessageBox(MSGCMD_RAID_INFO);
+
+			MsgBoxInfo.SetMsgBoxInfo( _S(4754, "±Õº”µ» ∑π¿ÃµÂ ¡∏ ¡§∫∏"), UMBS_OK, UI_NONE, MSGCMD_RAID_INFO);
+
+			if(nRaidCount > 0)
+			{
+				for( i = 0; i < nRaidCount; i++ )
+				{
+					(*istr) >> nZoneNum;
+					(*istr) >> nRoomNum;
+
+					strMessage.PrintF(_S(4755, "±Õº”µ» ∑π¿ÃµÂ ¡∏ ¿Ã∏ß : %s"),CZoneInfo::getSingleton()->GetZoneName(nZoneNum));
+					MsgBoxInfo.AddString(strMessage);
+					strMessage.PrintF(_S(4756, "±Õº”µ» ∑π¿ÃµÂ ¡∏ ID : %d"), nRoomNum);
+					MsgBoxInfo.AddString(strMessage);
+				}
+			}
+			else
+			{
+				MsgBoxInfo.AddString(_S(4757, "±Õº”µ» ¡∏¿Ã æ¯Ω¿¥œ¥Ÿ."));
+			}
+
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+		}
+		break;	
+		
+	case MSG_EX_TAKE_AGAIN_QUEST_ITEM:
+		{
+			ReceiveTakeAgainQuestItem( istr);						
+		}
+		break;
+	case MSG_EX_COSTUME2:
+		{
+			UCHAR ucType;
+			(*istr) >> ucType;
+			if ( ucType == MSG_EX_COSTUME2_SYSTEM_ERROR )
+			{
+				RecieveCostume2Message( istr );
+			}
+			else if ( ucType == MSG_EX_COSTUEM2_WEARING )
+			{
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->WearingCostumeArmor( istr );
+			}
+			// added by sam 11/02/01 [SAM]
+			else if ( ucType == MSG_EX_COSTUME2_WEARING_SUIT )
+			{
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->WearingCostumeArmorOneSuit( istr );
+			}
+			else if ( ucType == MSG_EX_COSTUME2_PREINVENINFO )
+			{
+				SBYTE	wear_type;	
+				INDEX	uni_index;
+				INDEX	item_index;
+				CEntity			*penPlEntity;
+				CPlayerEntity	*penPlayerEntity;
+
+				penPlEntity = CEntity::GetPlayerEntity(0);		// ƒ≥∏Ø≈Õ ¿⁄±‚ ¿⁄Ω≈
+				penPlayerEntity = static_cast<CPlayerEntity *>(penPlEntity);
+				
+				CModelInstance *pMI	= penPlayerEntity->GetModelInstance();
+
+				if( _pNetwork->MyCharacterInfo.bPetRide || _pNetwork->MyCharacterInfo.bWildPetRide)
+				{
+					CModelInstance *pMITemp = penPlayerEntity->GetModelInstance();
+					
+					INDEX ctmi = pMITemp->mi_cmiChildren.Count();
+					if( ctmi > 0 )
+					{
+						pMI = &pMITemp->mi_cmiChildren[0];
+					}
+					else
+					{
+						pMI	= penPlayerEntity->GetModelInstance();
+					}
+				}
+				
+				for (int i=0; i<WEAR_COSTUME_TOTAL; ++i)
+				{
+					(*istr) >> wear_type; // 0 ~ 6, 11
+					(*istr) >> uni_index;
+					(*istr) >> item_index;
+					
+					if ( item_index >= 0 )
+					{	// ƒ⁄Ω∫∆¨ ¿‘±‚
+						_pNetwork->MyWearCostItem[i].Item_Index = item_index;
+						_pNetwork->MyWearCostItem[i].Item_UniIndex = uni_index;
+						
+						// BUGFIX : ITS(#0002472) ƒ⁄Ω∫∆¨ 2 ¬¯øÎ »ƒ ∞≠Ω≈ -> ¡∏¿ÃµøΩ√ ∏µ® ±˙¡¸ «ˆªÛ ºˆ¡§. [6/9/2011 rumist]
+						if( _pNetwork->MyCharacterInfo.nEvocationIndex == 0 )
+						{
+							if ( !( wear_type == WEAR_HELMET && (CTString)_pNetwork->GetItemData(item_index)->GetItemSmcFileName() == MODEL_TREASURE) )
+							{
+								((CPlayerEntity*)CEntity::GetPlayerEntity(0))->DeleteDefaultArmor(wear_type);
+								_pGameState->WearingArmor(pMI, *_pNetwork->GetItemData(item_index));
+							}
+							if(!((static_cast<CPlayerEntity*>(CEntity::GetPlayerEntity(0)))->IsSitting() && _pNetwork->MyCharacterInfo.job == NIGHTSHADOW))
+								_pNetwork->MyCharacterInfo.itemEffect.Change(_pNetwork->MyCharacterInfo.job, _pNetwork->GetItemData(item_index), wear_type,
+								0, &pMI->m_tmSkaTagManager, 1, _pNetwork->GetItemData(item_index)->GetSubType());
+						}
+					}
+				}
+			}
+		}
+		break;
+	case MSG_EX_DUNGEONTIME:
+		{
+			UCHAR ucType;
+			SLONG slStart, slEnd, slAddExp;
+			CTString strMessage;
+			(*istr) >> ucType;
+
+			if (ucType == MSG_EX_DUNGEONTIME_NOTICE)
+			{
+				(*istr) >> slStart >> slEnd >> slAddExp;
+				strMessage.PrintF(_S(4956, "¥¯¿¸ ≈∏¿”¿Ã Ω√¿€µ«æ˙Ω¿¥œ¥Ÿ. (%dΩ√ ~ %dΩ√, ¥¯¿¸ ∞Ê«Ëƒ° %d%%√ﬂ∞° »πµÊ)"), slStart, slEnd, slAddExp);
+				_UIAutoHelp->SetGMNotice(strMessage);
+				pUIManager->GetSimplePlayerInfo()->StartDungeonTime();
+				pUIManager->GetSimplePlayerInfo()->SetDungeonList(slAddExp);
+			}
+			else if (ucType == MSG_EX_DUNGEONTIME_START)
+			{
+				(*istr) >> slStart >> slEnd >> slAddExp;
+			//TO.DO ¥¯¿¸ ≈∏¿”
+				strMessage.PrintF(_S(4957, "¥¯¿¸ ≈∏¿”¿Ã ¡¯«‡ ¡ﬂ¿‘¥œ¥Ÿ. (%dΩ√ ~ %dΩ√, ¥¯¿¸ ∞Ê«Ëƒ° %d%%√ﬂ∞° »πµÊ)"), slStart, slEnd, slAddExp);
+				_UIAutoHelp->SetGMNotice(strMessage);
+				pUIManager->GetSimplePlayerInfo()->StartDungeonTime();
+				pUIManager->GetSimplePlayerInfo()->SetDungeonList(slAddExp);
+			}
+			else if (ucType == MSG_EX_DUNGEONTIME_END)
+			{
+				_UIAutoHelp->SetGMNotice( _S(4958, "¥¯¿¸≈∏¿”¿Ã ¡æ∑· µ«æ˙Ω¿¥œ¥Ÿ.") );
+				pUIManager->GetSimplePlayerInfo()->StopDungeonTime();
+				pUIManager->GetSimplePlayerInfo()->SetDungeonList(0);
+			}
+		}
+		break;
+	case MSG_EX_SOCKET:
+		{
+			RecieveSocketSystemMessage( istr );
+		}
+		break;
+#ifdef XTRAP_SECURE_CKBANG_2010_07_20
+    case MSG_EX_XTRAP:
+        {
+            if (g_pXTrap_CS_Step2Func)
+            {
+                CNetworkMessage nmMessageTest(MSG_EXTEND);
+                #define XTRAP_CMD_STEP_TWO  0x002
+                nmMessageTest << (ULONG)MSG_EX_XTRAP;
+                nmMessageTest << (BYTE)XTRAP_CMD_STEP_TWO;
+                char szBuf[128] , szSendBuf[128];
+                
+				istr->Read(szBuf, 128);
+#ifdef XTRAP_LOG_ENABLE
+				g_pHexaDump4XTrap_V1("TestXtrapLog.txt", szBuf, 128, "XTrap_stap1_RecBufData");
+#endif
+                g_pXTrap_CS_Step2Func(szBuf, szSendBuf);
+
+                nmMessageTest.Write(szSendBuf , 128 );
+#ifdef XTRAP_LOG_ENABLE
+				g_pHexaDump4XTrap_V1("TestXtrapLog.txt", szSendBuf, 128, "XTrap_stap2_SendBufData");
+#endif
+                _pNetwork->SendToServerNew( nmMessageTest );
+            }
+        }
+        break;
+#endif
+		case MSG_EX_TUTORIAL_RENEWER_2010:
+		{
+			pUIManager->GetHelp()->RepBeginnerTitle( istr );
+		}
+		break;
+	case MSG_EX_RAID_SCENE: // æ∆ƒ≠ªÁø¯ ∑π¿ÃµÂ
+		{
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ReceiveRaidScene(istr);
+		}
+		break;
+
+	case MSG_EX_CASTLLAN:
+		{
+			(*istr) >> errcode;
+			if ( errcode == MSG_EX_CASTLLAN_ERROR )
+			{
+				RecieveLordCostumeMessage( istr );
+			}
+		}
+		break;
+
+	case MSG_EX_SUBJOB:	// [2010/08/25 : Sora] ADD_SUBJOB ∫∏¡∂ ¡˜æ˜ ∏ﬁΩ√¡ˆ
+		{
+			RecieveSubJobMessage(istr);
+		}
+		break;
+	case MSG_EX_RANKING_SYSTEM_EX:		// ∑©≈∑ Ω√Ω∫≈€ ∞≥∆Ì [trylord : 110825]
+		{
+			RecieveRankingListExMessage(istr);
+		}
+	// [2010/10/20 : Sora] ∏ÛΩ∫≈Õ øÎ∫¥ ƒ´µÂ
+	case MSG_EX_MONSTER_MERCENARY:
+		{
+			RecieveMonsterMercenaryCardMessage( istr );
+		}
+		break;
+	case MSG_EX_FACEOFF:
+		{
+			(*istr) >> errcode;
+			if ( errcode == MSG_EX_FACEOFF_REP )
+			{
+				RecieveFaceOffMessage( istr );
+			}
+		}
+		break;
+	case MSG_EX_LUCKYDRAW_BOX:
+		{
+			RecieveLuckyDrawBoxMessage( istr );
+		}
+		break;
+		// ∏ﬁΩ√¡ˆ π⁄Ω∫ √‚∑¬ ∏ﬁΩ√¡ˆ √ﬂ∞° added by sam 11/01/04
+	case MSG_EX_MSGBOX:
+		{	
+			RecieveMsgBoxShow( istr );					
+		}
+		break;
+
+	case MSG_EX_LCBALL:
+		{
+			pUIManager->GetLacaBall()->ReceiveLcBallMessage( istr );
+		}
+		break;
+	// royal rumble [4/19/2011 rumist]
+	case MSG_EX_ROYAL_RUMBLE:
+		{
+			RecieveRoyalrumbleMessage( istr );
+		}
+		break;
+	case MSG_EX_CASH_AUTHENTICATION_CODE:
+		{
+			CTString strUserID;
+			CTString strCode;
+			UBYTE nGrupID,nAuthCode;
+			(*istr) >> nAuthCode;
+			
+
+			if (nAuthCode)
+			{
+				(*istr) >> strUserID;
+				(*istr) >> nGrupID;
+				(*istr) >> strCode;
+
+				CTString temURL;
+				extern ENGINE_API INDEX sam_bFullScreenActive;				
+				
+				if ( IsFullScreen( sam_bFullScreenActive))
+				{												 
+					 pUIManager->GetOption()->ChangeWindowMode();
+					 pUIManager->DestroyRenderTarget();
+					 pUIManager->InitRenderTarget();
+				}
+				
+				temURL.PrintF("http://shop.gamigo.com/game_%d/login/user/%s/hash/%s/", nGrupID, strUserID, strCode);
+				ShellExecute( NULL, "open", temURL, NULL,NULL, SW_SHOWNORMAL );
+			}else
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				MsgBoxInfo.AddString( _S( 3257, "ø‰√ª«— ¿€æ˜¿Ã Ω«∆– «œø¥Ω¿¥œ¥Ÿ." ) );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+			}
+			
+		}break;
+	case MSG_EX_TREASURE_MAP_SYSTEM_KEY_EXCHANGE:
+		{
+			UBYTE ubErrorcode;
+			(*istr) >> ubErrorcode;
+			
+			if (ubErrorcode == MSG_EX_TRS_MAP_KEY_EXCHANGE_ERROR_SUC) // º∫∞¯
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				MsgBoxInfo.AddString( _S( 159, "±≥»Ø¿Ã º∫∞¯¿˚¿∏∑Œ ¿Ã∑ÁæÓ¡≥Ω¿¥œ¥Ÿ." ) );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+
+			}else if (ubErrorcode == MSG_EX_TRS_MAP_KEY_EXCHANGE_ERROR_FAIL) 
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				MsgBoxInfo.AddString( _S( 3257, "ø‰√ª«— ¿€æ˜¿Ã Ω«∆– «œø¥Ω¿¥œ¥Ÿ." ) );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+
+			}else if (ubErrorcode == MSG_EX_TRS_MAP_KEY_EXCHANGE_ERROR_ITEM) 
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				MsgBoxInfo.AddString( _S( 5099, "±≥»Ø ∞°¥…«— æ∆¿Ã≈€¿Ã æ¯Ω¿¥œ¥Ÿ" ) );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+
+			}else if (ubErrorcode == MSG_EX_TRS_MAP_KEY_EXCHANGE_ERROR_COUNT) 
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				MsgBoxInfo.AddString( _S( 5100, "±≥»Ø ∞°¥…«— æ∆¿Ã≈€¿Ã ∫Œ¡∑«’¥œ¥Ÿ" ) );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+
+			}
+
+		}break;
+	case MSG_EX_PKPENALTY_REFORM:
+		{
+			UBYTE ubinx;
+			CTString strSysMessage;
+			CUIMsgBox_Info	MsgBoxInfo;
+
+			(*istr) >> ubinx;
+			if(ubinx == MSG_EX_PKPENALTY_REFORM_REWARD_INFO)
+			{
+				ULONG pkSysRewardFlag;
+				(*istr) >> pkSysRewardFlag;
+				_pNetwork->MyCharacterInfo.pkSysRewardFlag = pkSysRewardFlag;
+				_pNetwork->MyCharacterInfo.bpkSysRewardLate= FALSE;
+			}
+			else if(ubinx == MSG_EX_PKPENALTY_REFORM_REWARD_REP)
+			{
+				INDEX pkSysRewardFlag;
+				UBYTE errcode;
+				(*istr) >> pkSysRewardFlag;
+				(*istr) >> errcode;
+				switch(errcode)
+				{
+				case MSG_EX_PKPENALTY_REFORM_REWARD_ERROR_SUC:
+					_pNetwork->MyCharacterInfo.bpkSysRewardLate= FALSE;
+					break;
+				case MSG_EX_PKPENALTY_REFORM_REWARD_ERROR_COUNT:
+					strSysMessage = _S(2237, "¡ˆ±ﬁπﬁ¿ª ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ.");
+					break;
+				case MSG_EX_PKPENALTY_REFORM_REWARD_ERROR_ONCE:
+					//strSysMessage = _S(4827, "¿ÃπÃ µÓ∑œµ«æÓ ¿÷¥¬ »£ƒ™¿‘¥œ¥Ÿ.");
+				    break;
+				case MSG_EX_PKPENALTY_REFORM_REWARD_ERROR_FAIL:
+					strSysMessage = _S(1745, "¡∂∞«¿Ã ∏¬¡ˆ æ Ω¿¥œ¥Ÿ.");
+				    break;
+				default:
+				    break;
+				}
+				
+			}
+			if (strSysMessage != CTString(""))
+			{
+				MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
+				MsgBoxInfo.AddString(strSysMessage);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+			}
+		}break;
+
+	case MSG_EX_SHUTDOWN:
+		{
+			UCHAR type;
+			SLONG arg;
+			CTString strMessage;
+			(*istr) >> type;
+			(*istr) >> arg;
+			
+			switch( type )
+			{
+				case MSG_EX_SHUTDOWN_REMAIN:
+					{
+						strMessage.PrintF( _s("Shut Down Ω√∞£±Ó¡ˆ %d∫– ≥≤æ“Ω¿¥œ¥Ÿ."), arg );
+						pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_USER, 0xFFFF00FF );
+					}
+					break;
+				case MSG_EX_SHUTDOWN_COUNTDOWN:
+					{
+						strMessage.PrintF( _s("Shut Down Ω√¿€±Ó¡ˆ %d√  ≥≤æ“Ω¿¥œ¥Ÿ. «ÿ¥Áµ«Ω√¥¬ ¿Ø¿˙ ∫–µÈ¿∫ ƒ≥∏Ø≈Õ∏¶ æ»¿¸«— ¡ˆø™¿∏∑Œ ø≈∞‹¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ."), arg );
+						pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_USER, 0xFFFF00FF );
+					}
+					break;
+				case MSG_EX_SHUTDOWN_START:
+					{
+						strMessage.PrintF( _s("Shut Down¿Ã Ω√¿€ µ«æ˙Ω¿¥œ¥Ÿ.") );
+						pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_USER, 0xFFFF00FF );
+					}
+					break;
+				case MSG_EX_SHUTDOWN_END:
+					{
+						strMessage.PrintF( _s("Shut Down¿Ã ¡æ∑· µ«æ˙Ω¿¥œ¥Ÿ.") );
+						pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_USER, 0xFFFF00FF );
+					}
+					break;
+				case MSG_EX_SHUTDOWN_DISCONNECT:
+					{
+						CUIMsgBox_Info	MsgBoxInfo;
+						
+						strMessage.PrintF( _s("ºÀ¥ŸøÓ¿Ã Ω√¿€µ«æ˙Ω¿¥œ¥Ÿ. ºÀ¥ŸøÓ ¡æ∑· Ω√∞¢ ¿Ã»ƒø° ¥ŸΩ√ ¡¢º”«ÿ¡÷ººø‰. »Æ¿Œ¿ª ¥≠∑Ø ≈¨∂Û¿Ãæ∆Æ∏¶ ¡æ∑·«œΩ√±‚ πŸ∂¯¥œ¥Ÿ. (ºÀ¥ŸøÓ ¿˚øÎΩ√∞£ : 24:00-06:00)") );
+						MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_DISCONNECT );
+						MsgBoxInfo.AddString( strMessage );
+						pUIManager->CreateMessageBox(MsgBoxInfo);
+					}
+					break;
+			}
+
+		}break;
+#ifdef	IMPROV1107_NOTICESYSTEM
+	case MSG_EX_USER_NOTICE:
+		{
+			LONG	retCode;
+
+			(*istr) >> retCode;
+			switch(retCode)
+			{
+			case MSG_EX_USER_NOTICE_REG_REP:		// º∫∞¯
+				{
+					pUIManager->GetChattingUI()->AddSysMessage(_S( 5611 ,"¡§ªÛ¿˚¿∏∑Œ µÓ∑œµ«æ˙Ω¿¥œ¥Ÿ."), SYSMSG_NORMAL);
+				}
+				break;
+
+			case MSG_EX_USER_NOTICE_PRINT:
+				{
+					CTString	strName;
+					CTString	strMessage;
+
+					(*istr) >> strName;
+					(*istr) >> strMessage;
+					pUIManager->GetChattingUI()->AddUserNotice(strName, strMessage);
+				}
+				break;
+
+			case MSG_EX_USER_NOTICE_ERROR:
+				{
+					LONG		errcode;
+					CTString	strSysMessage;
+
+					(*istr) >> errcode;
+					if(errcode == MSG_EX_USER_NOTICE_ERROR_NOITEM)
+					{
+						strSysMessage	= _S( 1330 ,"æ∆¿Ã≈€¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );
+					}
+					else if(errcode == MSG_EX_USER_NOTICE_ERROR_LENGTH)
+					{
+						strSysMessage	= _S( 5609 ,"∞¯¡ˆ«“ ≥ªøÎ¿ª ¿‘∑¬«œººø‰." );
+					}
+
+					if (strSysMessage.Length() > 0)
+					{
+						MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+						MsgBoxInfo.AddString(strSysMessage);
+						pUIManager->CreateMessageBox( MsgBoxInfo );
+					}
+
+				}
+				break;
+			}
+		}
+		break;
+#endif	// #ifdef	IMPROV1107_NOTICESYSTEM
+
+//////////////////////////////////////////////////////////////////////////
+// ¿Ã∫•∆Æ Ω√Ω∫≈€ ∞≥º±
+//////////////////////////////////////////////////////////////////////////
+	case MSG_EX_EVENT_AUTOMATION_SYSTEM:
+		{
+			extern ENGINE_API std::map<int,int> g_mapEvent;
+
+			UCHAR type;
+			SLONG nEventIndex;
+			(*istr) >> type;
+
+			switch( type )
+			{
+			case MSG_EX_EVENT_AUTOMATION_LIST:
+				{
+					SLONG nCount;
+					(*istr) >> nCount;
+
+					for( int i=0; i<nCount; i++ )
+					{
+						(*istr) >> nEventIndex;
+						g_mapEvent[nEventIndex] = 1;
+					}
+
+					CheckTimerEvent();
+				}
+				break;
+			case MSG_EX_EVENT_AUTOMATION_ADD:
+				(*istr) >> nEventIndex;
+				g_mapEvent[nEventIndex] = 1;
+
+				CheckTimerEvent();
+				break;
+			case MSG_EX_EVENT_AUTOMATION_REMOVE:
+				(*istr) >> nEventIndex;
+				g_mapEvent.erase(nEventIndex);
+
+				CheckTimerEvent();
+				break;
+			}
+		}
+		break;
+	case MSG_EX_JUMPING_SYSTEM:
+		{
+			UCHAR type;
+			CTString	strSysMessage;
+			INDEX nJumpingLevel;
+
+			(*istr) >> type;
+
+			switch( type )
+			{
+			case MSG_EX_JUMPING_SUCCESS:
+				{
+					strSysMessage.PrintF(_S(5689, "º∫∞¯¿˚¿∏∑Œ ¿˚øÎ µ«æ˙Ω¿¥œ¥Ÿ."));
+				}break;
+			case MSG_EX_JUMPING_ERROR_LEVEL:
+				{
+					strSysMessage.PrintF(_S(5685, "∑π∫ß¿Ã ∏¬¡ˆ æ æ∆ ªÁøÎ«œΩ« ºˆ æ¯Ω¿¥œ¥Ÿ."));
+				}break;
+			case MSG_EX_JUMPING_ERROR_NOT_EXIST_CHAR:
+				{
+					(*istr) >> nJumpingLevel;
+					strSysMessage.PrintF(_S(5690, "«ÿ¥Á ∞Ë¡§ »§¿∫ «ÿ¥Á º≠πˆ ≥ªø° %d ∑π∫ß ¿ÃªÛ¿« ƒ≥∏Ø≈Õ∞° ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ."), nJumpingLevel);
+				}break;
+			}
+
+			MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+			MsgBoxInfo.AddString(strSysMessage);
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+
+		}break;
+
+	//REFORM_SYSTEM
+	case MSG_EX_REFORMER_SYSTEM:
+		{
+			pUIManager->GetReformSystem()->RecvReformSystemResult(istr);
+		}break;
+
+	case MSG_EX_SERVER_TIME:
+		{
+			(*istr) >> nServerTime;
+
+			_pNetwork->slServerTime = nServerTime;
+			_pNetwork->slServerTimeGap = (SLONG)time(NULL) - nServerTime;
+		}break;
 	}
 }
 
 void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 {	
-	CEntity* penPlEntity;
+//	CEntity* penPlEntity;
 	CPlayerEntity* penPlayerEntity;
-	penPlEntity = CEntity::GetPlayerEntity(0); //Ï∫êÎ¶≠ÌÑ∞ ÏûêÍ∏∞ ÏûêÏã†
-	penPlayerEntity = (CPlayerEntity*) penPlEntity;
+// 	penPlEntity = CEntity::GetPlayerEntity(0); //ƒ≥∏Ø≈Õ ¿⁄±‚ ¿⁄Ω≈
+// 	penPlayerEntity = (CPlayerEntity*) penPlEntity;
+	
+	penPlayerEntity = static_cast<CPlayerEntity*>( CEntity::GetPlayerEntity(0) );
 
-	switch(index)
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
+	switch(index)	
 	{
-	case MSG_SUB_STAT:
-		{
-			ULONG	pet_index;
-			CTString Pet_Name;
-			INDEX   pet_level;
-			INDEX	pet_type;
-			__int64	pet_exp;			
-			__int64 pet_next_exp;
-			INDEX	pet_hp,pet_mp;
-			INDEX	pet_maxhp,pet_maxmp;
-			INDEX	pet_faith,pet_max_faith;
-			INDEX	pet_stm,pet_max_stm,pet_point;
-			INDEX	pet_str,pet_str_plus;
-			INDEX	pet_con,pet_con_plus;
-			INDEX	pet_dex,pet_dex_plus;
-			INDEX	pet_int,pet_int_plus;
-			INDEX	pet_state[STATE_END];
-			FLOAT	x;
-			FLOAT	z;
-			FLOAT	h;
-			FLOAT	r;
-			SBYTE	yLayer;
-			UBYTE	sbAttributePos;
-
-			(*istr) >> pet_index;
-			(*istr) >> Pet_Name;
-			(*istr) >> pet_level;
-			(*istr) >> pet_type;
-			(*istr) >> pet_exp;
-			(*istr) >> pet_next_exp;
-			(*istr) >> pet_hp; 
-			(*istr) >> pet_maxhp;
-			(*istr) >> pet_mp;
-			(*istr) >> pet_maxmp;
-			(*istr) >> pet_faith >> pet_max_faith;
-			(*istr) >> pet_stm >> pet_max_stm;
-			(*istr)	>> pet_str >> pet_str_plus;
-			(*istr)	>> pet_con >> pet_con_plus;
-			(*istr)	>> pet_dex >> pet_dex_plus;
-			(*istr)	>> pet_int >> pet_int_plus;
-			(*istr)	>> pet_point;
-			for(int i = 0; i < STATE_END; i++)
-			{
-				(*istr) >> pet_state[i];
-			}
-			(*istr) >> x >> z >> h >> r;
-			(*istr) >> yLayer;
-			(*istr) >> sbAttributePos;
-
-			for(INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actWildPet.Count(); ipl++)
-			{
-				CWildPetInfo &pt = _pNetwork->ga_srvServer.srv_actWildPet[ipl];
-
-				if(pet_index == pt.m_nNetIndex)
-				{
-					pt.m_strName = Pet_Name;
-					pt.m_nLevel = pet_level;
-					pt.m_nType = pet_type;
-					pt.m_exp = pet_exp;
-					pt.m_next_exp = pet_next_exp;
-					pt.m_nHP = pet_hp;
-					pt.m_nMaxHP = pet_maxhp;
-					pt.m_nMP = pet_mp;
-					pt.m_nMaxMP = pet_maxmp;
-					pt.m_nFaith = pet_faith;
-					pt.m_nMaxFaith = pet_max_faith;
-					pt.m_nStm = pet_stm;
-					pt.m_nMaxStm = pet_max_stm;
-					pt.m_nLevelupPoint = pet_point;
-					pt.m_sbAttributePos = sbAttributePos;
-					pt.m_sbYlayer = yLayer;
-					pt.m_nStr = pet_str;
-					pt.m_nStrPlus = pet_str_plus;
-					pt.m_nCon = pet_con;
-					pt.m_nConPlus = pet_con_plus;
-					pt.m_nDex = pet_dex;
-					pt.m_nDexPlus = pet_dex_plus;
-					pt.m_nInt = pet_int;
-					pt.m_nIntPlus = pet_int_plus;
-					for(int i = 0; i < STATE_END; i++)
-					{
-						pt.m_nWildPetState[i] = pet_state[i];
-					}			
-
-
-					penPlayerEntity->SetWildPetData(pt.pet_pEntity,pet_hp,pet_maxhp);
-
-					if(pt.m_nOwnerIndex == _pNetwork->MyCharacterInfo.index)
-					{
-						_pNetwork->_WildPetInfo = pt;
-
-						sPetItem_Info TemPet;
-
-						TemPet.pet_index = pet_index;
-						TemPet.pet_name = Pet_Name;
-						TemPet.pet_level = pet_level;
-						TemPet.pet_str = pet_str;
-						TemPet.pet_con = pet_con;
-						TemPet.pet_dex = pet_dex;
-						TemPet.pet_int = pet_int;
-
-						_pUIMgr->GetWildPetInfo()->AddWildPetInfo(TemPet);
-					}
-				}
-
-				
-
-			}
-			
-		}
-		break;
 	case MSG_SUB_ITEM_WEAR:
 		{
 			SBYTE wear_pos;
 			INDEX wear_item,takeoff_item;
-			int CurPetid;
 
 			(*istr) >> wear_pos;
 			(*istr) >> wear_item;
 			(*istr) >> takeoff_item;
 
-			for(INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actWildPet.Count(); ipl++)
-			{
-				CWildPetInfo &pt = _pNetwork->ga_srvServer.srv_actWildPet[ipl];
-				if(_pNetwork->MyCharacterInfo.index == pt.m_nOwnerIndex)
-				{
-					CurPetid = ipl;
-				}
-			}
+			// ∆Í ¿Â¬¯ ¡§∫∏∞° æ¯¿ª ∞ÊøÏ¿Ã¥Ÿ.
+			if (pInfo->GetMyApetInfo() == NULL)
+				return;
 
-			if(_pNetwork->_WildPetInfo.m_nPetWearIndex[wear_pos] == takeoff_item)
-			{
-				_pGameState->TakeOffArmorTest(_pNetwork->_WildPetInfo.pet_pEntity->GetModelInstance(), takeoff_item);
-				_pNetwork->ga_srvServer.srv_actWildPet[CurPetid].m_nPetWearIndex[wear_pos] = -1;
-				_pNetwork->_WildPetInfo.m_nPetWearIndex[wear_pos] = -1;
-			}
-
-			if (_pNetwork->_WildPetInfo.m_nPetWearIndex[wear_pos] > 0)
-			{
-				_pGameState->TakeOffArmorTest(_pNetwork->_WildPetInfo.pet_pEntity->GetModelInstance(), _pNetwork->_WildPetInfo.m_nPetWearIndex[wear_pos]);
-			}
-			_pNetwork->ga_srvServer.srv_actWildPet[CurPetid].m_nPetWearIndex[wear_pos] = wear_item;
-			_pNetwork->_WildPetInfo.m_nPetWearIndex[wear_pos] = wear_item;
-			_pGameState->WearingArmorTest(_pNetwork->_WildPetInfo.pet_pEntity->GetModelInstance(), wear_item);
+			CWildPetTarget* pTarget = pInfo->GetMyApetInfo();
 			
-			_pUIMgr->GetWildPetInfo()->PetWearItemReSet();
+			if (pTarget->bIsActive == FALSE)
+			{
+				break;
+			}
 
+			if(pTarget->m_nPetWearIndex[wear_pos] == takeoff_item)
+			{
+				if (pTarget->GetEntity() != NULL)
+					_pGameState->TakeOffArmorTest(pTarget->GetEntity()->GetModelInstance(), takeoff_item);
+				
+				pTarget->m_nPetWearIndex[wear_pos] = -1;
+			}
+
+			if (pTarget->m_nPetWearIndex[wear_pos] > 0)
+			{
+				if (pTarget->GetEntity() != NULL)
+					_pGameState->TakeOffArmorTest(pTarget->GetEntity()->GetModelInstance(), pTarget->m_nPetWearIndex[wear_pos]);
+			}			
+						
+			pTarget->m_nPetWearIndex[wear_pos] = wear_item;
+
+			if (pTarget->GetEntity() != NULL)
+				_pGameState->WearingArmorTest(pTarget->GetEntity()->GetModelInstance(), wear_item);
+			
+			pUIManager->GetWildPetInfoUI()->PetWearItemReSet();
+			pUIManager->GetWildPetInfoUI()->updateBaseTab();
 		}
 		break;
 	case MSG_SUB_ITEM_WEARING:
 		{
 			INDEX OwenerIndex,petID;
-			INDEX wearIndex[WILDPET_WEAR_TOTAL],wearPlus[WILDPET_WEAR_TOTAL];
+			INDEX wearIndex[WILDPET_WEAR_TOTAL] = {0,};
+			INDEX wearPlus[WILDPET_WEAR_TOTAL] = {0,};
 
 			(*istr) >> OwenerIndex;
 			(*istr) >> petID;
@@ -1912,28 +2635,35 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 				(*istr) >> wearPlus[i];
 			}
 
-			for(INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actWildPet.Count(); ipl++)
+			ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_WILDPET, petID);
+
+			if (pObject != NULL)
 			{
-				CWildPetInfo &pt = _pNetwork->ga_srvServer.srv_actWildPet[ipl];
-				if (pt.m_nNetIndex == petID)
+				CWildPetTarget* pTarget = static_cast< CWildPetTarget* >(pObject);
+
+				for (int i = 0; i < WILDPET_WEAR_TOTAL; i++)
 				{
-					for (i = 0; i < WILDPET_WEAR_TOTAL; i++)
-					{
-						_pGameState->TakeOffArmorTest(pt.pet_pEntity->GetModelInstance(),pt.m_nPetWearIndex[i]);
+					if (pTarget->GetEntity() != NULL)
+						_pGameState->TakeOffArmorTest(pTarget->GetEntity()->GetModelInstance(), pTarget->m_nPetWearIndex[i]);
 
-						pt.m_nPetWearIndex[i] = wearIndex[i];
-						pt.m_nPetWearPlus[i] = wearPlus[i];
+					pTarget->m_nPetWearIndex[i] = wearIndex[i];
+					pTarget->m_nPetWearPlus[i] = wearPlus[i];
 
-						_pGameState->WearingArmorTest(pt.pet_pEntity->GetModelInstance(),pt.m_nPetWearIndex[i]);
-					}
-					break;
+					if (pTarget->GetEntity() != NULL)
+						_pGameState->WearingArmorTest(pTarget->GetEntity()->GetModelInstance(), pTarget->m_nPetWearIndex[i]);
+				}
+
+				// ∆Í ¡§∫∏∞ªΩ≈ (&_WildPetInfo != &_pNetwork->ga_srvServer.srv_actWildPet)
+				if (pTarget->m_nOwnerIndex == _pNetwork->MyCharacterInfo.index)
+				{
+					pInfo->SetMyApet(pTarget);
+					pUIManager->GetWildPetInfoUI()->PetWearItemReSet();
+					pUIManager->GetWildPetInfoUI()->updateBaseTab();
 				}
 			}
+		}
+		break;
 
-			_pUIMgr->GetWildPetInfo()->PetWearItemReSet();
-
-
-		}break;
 	case MSG_SUB_SKILLLEAN:
 		{
 			CTString	strMessage;
@@ -1948,50 +2678,50 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 				
 					(*istr) >> nSkillIndex;
 					(*istr) >> nSkillLevel;
-
-					_pUIMgr->GetPetTraining()->LearnSkill( nSkillIndex, nSkillLevel );
+					
+					pUIManager->GetPetTraining()->LearnSkill( 0, nSkillIndex, nSkillLevel );
 
 					CSkill		&rSkill = _pNetwork->GetSkillData( nSkillIndex );
-					strMessage.PrintF( _S( 277, "%s Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïòÏòÄÏäµÎãàÎã§" ), rSkill.GetName() );
+					strMessage.PrintF( _S( 277, "%s Ω∫≈≥¿ª Ω¿µÊ«œø¥Ω¿¥œ¥Ÿ" ), rSkill.GetName() );
 
 				}break;
 			case 1:
 				{
-					//Ï∞©Ïö© Ìé´ ÏóÜÏùå
-					strMessage = _S(2203, "Ïï†ÏôÑÎèôÎ¨ºÏùÑ Ï∞©Ïö©ÌïòÏßÄ ÏïäÏïÑ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+					//¬¯øÎ ∆Í æ¯¿Ω
+					strMessage = _S(2203, "æ÷øœµøπ∞¿ª ¬¯øÎ«œ¡ˆ æ æ∆ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 				}break;
 			case 2:
 				{
-					//Î†àÎ≤®Ïù¥ ÏïÑÎãò
-					strMessage = _S( 278, "Î†àÎ≤®Ïù¥ Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+					//∑π∫ß¿Ã æ∆¥‘
+					strMessage = _S( 278, "∑π∫ß¿Ã ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 				}break;
 			case 3:
 				{
-					//Ïä§ÌÇ¨ Î∂ÄÏ°±
-					strMessage = _S( 281, "Ïä§ÌÇ¨ Ï°∞Í±¥Ïù¥ ÎßûÏßÄ ÏïäÏïÑ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+					//Ω∫≈≥ ∫Œ¡∑
+					strMessage = _S( 281, "Ω∫≈≥ ¡∂∞«¿Ã ∏¬¡ˆ æ æ∆ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 				}break;
 			case 4:
 				{
-					//ÌïÑÏöî ÏïÑÏù¥ÌÖú ÏóÜÏùå
-					strMessage = _S( 280, "ÏïÑÏù¥ÌÖúÏù¥ Ï°¥Ïû¨ÌïòÏßÄ ÏïäÏïÑ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+					//« ø‰ æ∆¿Ã≈€ æ¯¿Ω
+					strMessage = _S( 280, "æ∆¿Ã≈€¿Ã ¡∏¿Á«œ¡ˆ æ æ∆ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 				}break;
 			case 5:
 				{
-					//ÌïÑÏöî ÏïÑÏù¥ÌÖú Î∂ÄÏ°±
-					strMessage = _S(4214, "ÌïÑÏöî ÏïÑÏù¥ÌÖúÏùò Î∂ÄÏ°±ÏúºÎ°ú Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§. ");
+					//« ø‰ æ∆¿Ã≈€ ∫Œ¡∑
+					strMessage = _S(4214, "« ø‰ æ∆¿Ã≈€¿« ∫Œ¡∑¿∏∑Œ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ. ");
 					
 				}break;
 
 			}
 			// Close message box of skill learn
-		_pUIMgr->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+		pUIManager->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
 
 		// Create message box of skill learn
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK,
+		MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ω∫≈≥" ), UMBS_OK,
 									UI_PETTRAINING, MSGCMD_PETTRAINING_NOTIFY );
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 
 
 		}break;
@@ -2000,15 +2730,29 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 			INDEX nSkillCont;
 			INDEX nSkillIndex;
 			UBYTE nSkillLevel;
+			int nSkillTime;
 			(*istr) >> nSkillCont;
 			
-			_pUIMgr->GetWildPetInfo()->SkillClear();
-
+			pUIManager->GetWildPetInfoUI()->SkillClear();
+			
 			for(int con = 0; con < nSkillCont; con++)
 			{
 				(*istr) >> nSkillIndex;
 				(*istr) >> nSkillLevel;
-				_pUIMgr->GetWildPetInfo()->AddSkill(nSkillIndex,nSkillLevel);
+				(*istr) >> nSkillTime;
+
+				pUIManager->GetPetTraining()->LearnSkill(0, nSkillIndex, nSkillLevel, FALSE, false);
+
+				CSkill& rSkill = _pNetwork->GetSkillData(nSkillIndex);
+				if ( nSkillTime <= 0 )
+				{
+					rSkill.ResetStartTime();
+					continue;
+				}
+				SLONG slRemainTime = ((SLONG)time(NULL) - _pNetwork->slServerTimeGap) - nSkillTime; 
+
+				if ( slRemainTime > 0 )
+					rSkill.SetStartTime(slRemainTime);
 			}
 
 		}break;
@@ -2022,37 +2766,39 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 			{
 			case 0:
 				{
-					_pUIMgr->GetPetFree()->ClosePetFree(); //ÏÑ±Í≥µ
-					MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OK, UI_PETFREE, UI_NONE );
-					strMessage.PrintF( _S( 2450, "Ìé´Ïùò Î¥âÏù∏ÏùÑ Ìï¥Ï†úÌïòÎäîÎç∞ ÏÑ±Í≥µÌïòÏòÄÏäµÎãàÎã§.") );
+					pUIManager->GetPetFree()->ClosePetFree(); //º∫∞¯
+					MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_PETFREE, UI_NONE );
+					strMessage.PrintF( _S( 2450, "∆Í¿« ∫¿¿Œ¿ª «ÿ¡¶«œ¥¬µ• º∫∞¯«œø¥Ω¿¥œ¥Ÿ.") );
 					MsgBoxInfo.AddString( strMessage );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 				}break;
 			case 1:
 				{
-					//ÏïåÎßûÏßÄ ÏïäÏùÄ ÏïÑÏù¥ÌÖú
-					_pUIMgr->GetChatting()->AddSysMessage( 
-						_S( 2452, "Î¥âÏù∏ÏùÑ Ìï¥Ï†úÌï† Ìé´Ïù¥ Ï°¥Ïû¨ÌïòÏßÄ ÏïäÏäµÎãàÎã§." ), SYSMSG_ERROR );
+					//æÀ∏¬¡ˆ æ ¿∫ æ∆¿Ã≈€
+					pUIManager->GetChattingUI()->AddSysMessage( 
+						_S( 2452, "∫¿¿Œ¿ª «ÿ¡¶«“ ∆Í¿Ã ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 				}break;
 			case 2:
 				{
-					//ÎÇòÏä§Í∞Ä Î™®ÏûêÎûå
-					_pUIMgr->GetChatting()->AddSysMessage( 
-						_S( 2451, "Ìé´Ïùò Î¥âÏù∏ÏùÑ Ìï¥Ï†úÌïòÍ∏∞ ÏúÑÌïú ÎπÑÏö©Ïù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );
+					//≥™Ω∫∞° ∏¿⁄∂˜
+					pUIManager->GetChattingUI()->AddSysMessage( 
+						_S( 2451, "∆Í¿« ∫¿¿Œ¿ª «ÿ¡¶«œ±‚ ¿ß«— ∫ÒøÎ¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR );
 				}break;
 			case 3:
 				{
-					//Î¥âÏù∏ÎêòÏßÄ ÏïäÏùÄ ÏïÑÏù¥ÌÖú
-					_pUIMgr->GetChatting()->AddSysMessage( 
-						_S( 2452, "Î¥âÏù∏ÏùÑ Ìï¥Ï†úÌï† Ìé´Ïù¥ Ï°¥Ïû¨ÌïòÏßÄ ÏïäÏäµÎãàÎã§." ), SYSMSG_ERROR );
+					//∫¿¿Œµ«¡ˆ æ ¿∫ æ∆¿Ã≈€
+					pUIManager->GetChattingUI()->AddSysMessage( 
+						_S( 2452, "∫¿¿Œ¿ª «ÿ¡¶«“ ∆Í¿Ã ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 				}break;
 			}
 		}break;
 	case MSG_SUB_LEVELUP:
 		{
-			_pUIMgr->GetChatting()->AddSysMessage( 
-						_S( 2253, "Ìé´Ïù¥ Î†àÎ≤®ÏóÖ ÌïòÏòÄÏäµÎãàÎã§." ), SYSMSG_NORMAL );
-			WildPetStartEffectGroup("pet_levelup",_pNetwork->_WildPetInfo.m_nNetIndex,_pNetwork->_WildPetInfo.pet_pEntity);
+			pUIManager->GetChattingUI()->AddSysMessage( 
+						_S( 2253, "∆Í¿Ã ∑π∫ßæ˜ «œø¥Ω¿¥œ¥Ÿ." ), SYSMSG_NORMAL );
+			
+			if (pInfo->GetMyApetInfo() != NULL)
+				WildPetStartEffectGroup("pet_levelup", pInfo->GetMyApetInfo()->m_nIdxServer, pInfo->GetMyApetInfo()->m_pEntity);
 
 		}break;
 	case MSG_SUB_DELETE_EQUIP:
@@ -2065,39 +2811,34 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 			(*istr) >> nItem_Index;
 			(*istr) >> wear_pos;
 	
-			_pGameState->TakeOffArmorTest(_pNetwork->_WildPetInfo.pet_pEntity->GetModelInstance(),nItem_Index);
-			_pNetwork->_WildPetInfo.m_nPetWearIndex[wear_pos] = -1;
-			_pUIMgr->GetWildPetInfo()->PetWearItemReSet();
+			strmassage.PrintF(_S(4213, "%s ¿« %s æ∆¿Ã≈€¿Ã ±‚∞£ ∏∏∑·∑Œ ªÁ∂Û¡˝¥œ¥Ÿ." ),strPetname,_pNetwork->GetItemName(nItem_Index));
+			pUIManager->GetChattingUI()->AddSysMessage( strmassage, SYSMSG_NORMAL );
 
-			strmassage.PrintF(_S(4213, "%s Ïùò %s ÏïÑÏù¥ÌÖúÏù¥ Í∏∞Í∞Ñ ÎßåÎ£åÎ°ú ÏÇ¨ÎùºÏßëÎãàÎã§." ),strPetname,_pNetwork->GetItemName(nItem_Index));
+			if (pInfo->GetMyApetInfo() != NULL)
+			{
+				if (pInfo->GetMyApetInfo()->bIsActive == FALSE)
+				{
+					break;
+				}
+				if (pInfo->GetMyApetInfo()->GetEntity() != NULL)
+					_pGameState->TakeOffArmorTest(pInfo->GetMyApetInfo()->GetEntity()->GetModelInstance(),nItem_Index);
+				pInfo->GetMyApetInfo()->m_nPetWearIndex[wear_pos] = -1;
+			
+				// _WildPetInfo¥¬ Ω«¡¶ øÕ¿œµÂ ∆Í¡§∫∏∞° æ∆¥œ¥Ÿ.(_pNetwork->ga_srvServer.srv_actWildPet¿« ∆Í¡§∫∏∏¶ ¡˜¡¢ πŸ≤ŸæÓæﬂ «—¥Ÿ.)
+				// _WildPetInfo∫Øºˆ∞° ∆˜¿Œ≈Õ ∫Øºˆ∞° æ∆¥œ¥Ÿ. &_WildPetInfo != &_pNetwork->ga_srvServer.srv_actWildPet
+				if (pInfo->GetMyApetInfo()->GetEntity() != NULL)
+					pInfo->GetMyApetInfo()->GetEntity()->en_pWildPetTarget->m_nPetWearIndex[wear_pos] = -1;
+			}
+			//////////////////////////////////////////////////////////////////////////
+			pUIManager->GetWildPetInfoUI()->PetWearItemReSet();
 
-			_pUIMgr->GetChatting()->AddSysMessage( strmassage, SYSMSG_NORMAL );
-
-		}break;
-	case MSG_SUB_APET_INFO:
-		{
-			INDEX nPetIndex;
-			INDEX nlevel,nstr,ncon,ndex,nint;
-			CTString petname;
-			sPetItem_Info temPetInfo;
-			(*istr) >> nPetIndex;
-			(*istr) >> petname >> nlevel;
-			(*istr) >> nstr >> ncon >> ndex >> nint;
-
-			temPetInfo.pet_index = nPetIndex;
-			temPetInfo.pet_name = petname;
-			temPetInfo.pet_level = nlevel;
-			temPetInfo.pet_str = nstr;
-			temPetInfo.pet_con = ncon;
-			temPetInfo.pet_dex = ndex;
-			temPetInfo.pet_int = nint;
-
-			_pUIMgr->GetWildPetInfo()->AddWildPetInfo(temPetInfo);
+			
 
 		}break;
-	case MSG_SUB_ADDITEM_MSG:
+
+	case MSG_SUB_ADDITEM_MSG: // ¿Ã∞Õ ∂««— Ω«¡¶ ∆Í ¡§∫∏¿« ∞ªΩ≈¿ª ≈Î«ÿº≠ UI Update∞° µ«æÓæﬂ «—¥Ÿ.
 		{
-			_pUIMgr->GetWildPetInfo()->ReceiveWearItemData(istr);	
+			pUIManager->GetWildPetInfoUI()->ReceiveWearItemData(istr);	
 		}break;
 
 	case MSG_SUB_AI_LIST_NTF:
@@ -2108,11 +2849,11 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 			UBYTE bActive;
 			sWildPet_AI_Slot temAI;
 
-			_pUIMgr->GetWildPetInfo()->AIClear();
+			pUIManager->GetWildPetInfoUI()->AIClear();
 
 			(*istr) >> nAIMaxCount;
 
-			_pUIMgr->GetWildPetInfo()->SetPetAISlotCount(nAIMaxCount);
+			pUIManager->GetWildPetInfoUI()->SetPetAISlotCount(nAIMaxCount);
 
 			(*istr) >> nPetAICount;
 
@@ -2126,13 +2867,12 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 
 				temAI.m_bActive = bActive;
 
-				_pUIMgr->GetWildPetInfo()->AddAIData(nSlotnum, temAI);
+				pUIManager->GetWildPetInfoUI()->AddAIData(nSlotnum, temAI);
 
 			}
 
-			_pUIMgr->GetWildPetInfo()->PetAIReSet();
-			_pUIMgr->GetWildPetInfo()->AIPopupClose();
-
+			pUIManager->GetWildPetInfoUI()->PetAIReSet();
+			pUIManager->GetWildPetInfoUI()->CloseAISetUI();
 
 		}break;
 	case MSG_SUB_AI_UPDATE_REP:
@@ -2140,7 +2880,7 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 			UBYTE ubErrorcode;
 			(*istr) >> ubErrorcode;
 
-			_pUIMgr->GetWildPetInfo()->ErrorMassage(ubErrorcode);
+			pUIManager->GetWildPetInfoUI()->ErrorMessage(ubErrorcode);
 
 		}break;
 	case MSG_SUB_AI_ONOFF_REP:
@@ -2151,23 +2891,132 @@ void CSessionState::ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr)
 			(*istr) >> bActive;
 			(*istr) >> ubErrorCode;
 
-			_pUIMgr->GetWildPetInfo()->SetPetAIActive(bActive);
-			_pUIMgr->GetWildPetInfo()->ErrorMassage(ubErrorCode);			
+			pUIManager->GetWildPetInfoUI()->SetPetAIActive(bActive);
+			pUIManager->GetWildPetInfoUI()->ErrorMessage(ubErrorCode);			
 
 		}break;
+	case MSG_SUB_EVOLUTION: // ¥‹¡ˆ ø°∑Ø π◊ º∫∞¯ ∏ﬁºº¡ˆ √≥∏Æ
+		{
+			UBYTE ubErrorCode;
 
+			(*istr) >> ubErrorCode;
 
+			pUIManager->GetPetTraining()->EvolutionError(ubErrorCode);
+		}break;
+	case MSG_SUB_MOUNT_REP:
+		{
+			UBYTE ubErrorCode;	// 0: º∫∞¯, 1: Ω«∆–
+
+			(*istr) >> ubErrorCode;
+
+			pUIManager->SetCSFlagOff(CSF_PETRIDING);
+		}
+		break;
+	case MSG_SUB_SUMMON_ERROR:
+		{
+			UBYTE ubErrorCode;
+			CTString strMessage;
+
+			(*istr) >> ubErrorCode;
+
+			strMessage.PrintF( _S(5212, "º“»Ø∞°¥…Ω√∞£ %d√  ≥≤æ“Ω¿¥œ¥Ÿ." ), ubErrorCode );						
+			pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_ERROR );
+		}break;
+		// cash item √ﬂ∞° : p2øÎ. [1/19/2011 rumist]
+	case MSG_SUB_STATINIT:
+		{
+			UBYTE ubErrorCode;
+			CTString strMessage;
+			CUIMsgBox_Info MsgBoxInfo;
+			(*istr) >> ubErrorCode;
+			
+			MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+			switch( ubErrorCode )
+			{
+				case 0:
+					MsgBoxInfo.AddString( _S( 5322, "¥…∑¬ƒ° √ ±‚»≠∞° øœ∑· µ«æ˙Ω¿¥œ¥Ÿ." ) );
+				break;
+				case 1:
+					MsgBoxInfo.AddString( _S( 2189,"æ÷øœµøπ∞¿ª ΩΩ∑‘ø° ¿Â¬¯«œø©æﬂ∏∏ «’¥œ¥Ÿ.") );
+				break;
+				case 2:
+					MsgBoxInfo.AddString( _S( 2444, "∆Í ∫¿¿Œ «ÿ¡¶." ) );
+				break;
+				case 3:
+					MsgBoxInfo.AddString( _S( 5320, "√ ±‚»≠ µ… ∆˜¿Œ∆Æ∞° ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ." ) );
+				break;
+			}
+			
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+		}break;
+	case MSG_SUB_EXPUSE:
+		{
+			UBYTE ubErrorCode;
+			CTString strMessage;
+			CUIMsgBox_Info MsgBoxInfo;
+			(*istr) >> ubErrorCode;
+
+			MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+			switch( ubErrorCode )
+			{
+			case 0:
+				MsgBoxInfo.AddString( _S( 5651, "√‡¿˚µ» ∞Ê«Ëƒ°∞° º∫∞¯¿˚¿∏∑Œ ¿˚øÎµ«æ˙Ω¿¥œ¥Ÿ." ) );
+				break;
+			case 1:
+				MsgBoxInfo.AddString( _S( 5673,"√‡¿˚ µ» ∞Ê«Ëƒ°∏¶ ªÁøÎ «“ ºˆ æ¯¥¬ ªÛ≈¬ ¿‘¥œ¥Ÿ.") );
+				break;
+			case 2:
+				MsgBoxInfo.AddString( _S( 4981, "¬¯øÎ¡ﬂ¿Œ æ∆¿Ã≈€¿Ã∞≈≥™, ø√πŸ∏• æ∆¿Ã≈€¿Ã æ∆¥’¥œ¥Ÿ. »Æ¿Œ »ƒ ¥ŸΩ√ Ω√µµ«ÿ ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ." ) );
+				break;
+			case 3:
+				MsgBoxInfo.AddString( _S( 2445, "∆Í æ∆¿Ã≈€∏∏ ∞°¥…«’¥œ¥Ÿ." ) );
+				break;
+			}
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+
+		}break;
+	case MSG_SUB_ERROR_NOT_EXIST_NPC:
+		{
+			CTString strMessage;
+			strMessage.PrintF( _S( 5913, "ºˆ«‡∞°¥…«— NPC∞° ¡÷¿ßø° ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ.") );
+			_pNetwork->ClientSystemMessage(strMessage, SYSMSG_ERROR);
+		}
+		break;
+	case MSG_SUB_INIT_COOLTIME:
+		{
+			UBYTE ubErrorCode;
+			CTString strMessage;
+			CUIMsgBox_Info MsgBoxInfo;
+			(*istr) >> ubErrorCode;
+
+			MsgBoxInfo.SetMsgBoxInfo(_S(191, "»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+
+			switch(ubErrorCode)
+			{
+			case 0:
+				MsgBoxInfo.AddString(_S(6288, "¿Â¬¯ ¡ﬂ¿Œ ∞Ê«Ëƒ° ∆Í¿« ƒ≈∏¿”¿Ã ªË¡¶µ«æÓ ∞Ê«Ëƒ° √‡¿˚¿Ã Ω√¿€µÀ¥œ¥Ÿ."));
+				break;
+			case 1:
+			case 2:
+				MsgBoxInfo.AddString(_S(6289, "ƒ≈∏¿”¿ª ¡¶∞≈«œ∞Ì¿⁄ «œ¥¬ ∞Ê«Ëƒ° ∆Í¿ª ¿Â¬¯«œø© ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ."));
+				break;
+			default:
+				return;
+			}
+
+			pUIManager->CreateMessageBox(MsgBoxInfo);
+		}
+		break;
 	}
-
 }
 
 // ----------------------------------------------------------------------------
 // Name : ReceivePetStatusMessage()
-// Desc : Ïï†ÏôÑÎèôÎ¨º ÏÉÅÌÉú.
+// Desc : æ÷øœµøπ∞ ªÛ≈¬.
 // ----------------------------------------------------------------------------
 void CSessionState::ReceivePetStatusMessage( CNetworkMessage *istr )
 {
-	// Ïï†ÏôÑÎèôÎ¨º ÏÉÅÌÉú	: index(n) petTypeGrade(c) level(n) exp(ll) needexp(ll) hp(n) maxhp(n) hungry(n) maxhugry(n) sympathy(n) maxsympathy(n) x(f) z(f) h(f) r(f) y(c) mapatt(uc)
+	// æ÷øœµøπ∞ ªÛ≈¬	: index(n) petTypeGrade(c) level(n) exp(ll) needexp(ll) hp(n) maxhp(n) hungry(n) maxhugry(n) sympathy(n) maxsympathy(n) x(f) z(f) h(f) r(f) y(c) mapatt(uc)
 	LONG		lIndex;
 	SBYTE		sbPetTypeGrade;
 	LONG		lLevel;
@@ -2185,9 +3034,9 @@ void CSessionState::ReceivePetStatusMessage( CNetworkMessage *istr )
 	FLOAT		fH;
 	FLOAT		fR;	
 	SBYTE		sbYLayer;
-	SBYTE		sbMapAttribute;
+	UWORD		sbMapAttribute;
 	LONG		remainRebirth;
-	CTString	strNameCard ="";
+	CTString	strNameCard;
 
 	(*istr) >> lIndex;
 	(*istr) >> sbPetTypeGrade;
@@ -2211,9 +3060,7 @@ void CSessionState::ReceivePetStatusMessage( CNetworkMessage *istr )
 	(*istr) >> remainRebirth;
 #endif
 
-#ifdef PET_NAMECARD
 	(*istr) >> strNameCard;
-#endif
 
 	CNetworkLibrary::sPetInfo	TempPet;
 	TempPet.lIndex				= lIndex;
@@ -2241,12 +3088,12 @@ void CSessionState::ReceivePetStatusMessage( CNetworkMessage *istr )
 	std::vector<CNetworkLibrary::sPetInfo>::iterator iter = 
 		std::find_if(_pNetwork->m_vectorPetList.begin(), _pNetwork->m_vectorPetList.end(), CNetworkLibrary::FindPet(TempPet) );
 	
-	// Ìé´ Ï†ïÎ≥¥Î•º Î™ª Ï∞æÏúºÎ©¥ Ï∂îÍ∞ÄÌï®.
+	// ∆Í ¡§∫∏∏¶ ∏¯ √£¿∏∏È √ﬂ∞°«‘.
 	if( iter == _pNetwork->m_vectorPetList.end() )
 	{
 		_pNetwork->m_vectorPetList.push_back(TempPet);
 	}	
-	// Ìé´ Ï†ïÎ≥¥Î•º Í∞±Ïã†Ìï®.
+	// ∆Í ¡§∫∏∏¶ ∞ªΩ≈«‘.
 	else
 	{		
 		(*iter).sbPetTypeGrade	= TempPet.sbPetTypeGrade;
@@ -2270,20 +3117,18 @@ void CSessionState::ReceivePetStatusMessage( CNetworkMessage *istr )
 #endif
 		(*iter).strNameCard		= TempPet.strNameCard;
 	}
-
 	_pNetwork->UpdatePetTargetInfo( TempPet.lIndex );
-	_pUIMgr->GetPetInfo()->GetPetDesc();
-	
+	CUIManager::getSingleton()->GetPetInfo()->GetPetDesc();	
 }
 
 // ----------------------------------------------------------------------------
 // Name : ReceivePetMountMessage()
-// Desc : Ïï†ÏôÑÎèôÎ¨º ÌÉÄÍ∏∞.
+// Desc : æ÷øœµøπ∞ ≈∏±‚.
 // ----------------------------------------------------------------------------
-// FIXME : ReceivePetAppearMessage, ReceiveStatusMessage, ReceivePetMountMessage Ï§ëÎ≥µÎêòÎäî ÏΩîÎìú ÎßéÏùå Ï†ïÎ¶¨ ÌïÑÏöî.
+// FIXME : ReceivePetAppearMessage, ReceiveStatusMessage, ReceivePetMountMessage ¡ﬂ∫πµ«¥¬ ƒ⁄µÂ ∏π¿Ω ¡§∏Æ « ø‰.
 void CSessionState::ReceivePetMountMessage( CNetworkMessage *istr )
 {
-	// Ïï†ÏôÑÎèôÎ¨ºÏóê ÌÉÄÍ∏∞	: owner_index(n) mountPetTypeGrade(c)
+	// æ÷øœµøπ∞ø° ≈∏±‚	: owner_index(n) mountPetTypeGrade(c)
 	LONG	lOwnerIndex;
 	SBYTE	sbMountPetTypeGrade;
 
@@ -2292,11 +3137,7 @@ void CSessionState::ReceivePetMountMessage( CNetworkMessage *istr )
 
 	// [070824: Su-won] PET_COLOR_CHANGE
 	SBYTE	sbPetColor =0;
-#ifdef PET_COLOR_CHANGE
 	(*istr) >> sbPetColor;
-#endif
-	//sbPetColor =3;
-
 
 	INDEX iPetType;
 	INDEX iPetAge;
@@ -2307,78 +3148,83 @@ void CSessionState::ReceivePetMountMessage( CNetworkMessage *istr )
 	// [070824: Su-won] PET_COLOR_CHANGE
 	INDEX iPetColoredType = iPetType | (sbPetColor<<8);
 	
-	// ÎÇ¥ Ìé´Ïù∏Í≤ΩÏö∞...
+	// ≥ª ∆Í¿Œ∞ÊøÏ...
 	if( lOwnerIndex == _pNetwork->MyCharacterInfo.index )
 	{			
-		// Ìé´ÏùÑ ÌÉÄÎèÑÎ°ù ÏÑ§Ï†ïÌï¥Ïïº ÌïòÎäî Í≤ΩÏö∞...
+		// ∆Í¿ª ≈∏µµ∑œ º≥¡§«ÿæﬂ «œ¥¬ ∞ÊøÏ...
 		if( iPetType != -1 && 
 			iPetAge != -1 && 
 			bPetRide )
 		{
 			
-			if( _pNetwork->pMyCurrentWearing[WEAR_PET] )
+			if( _pNetwork->MyWearItem[WEAR_PET].IsEmptyItem() == FALSE )
 			{
-				const INDEX iPetIndex = _pNetwork->pMyCurrentWearing[WEAR_PET]->Item_Plus;
+				const INDEX iPetIndex = _pNetwork->MyWearItem[WEAR_PET].Item_Plus;
 				CNetworkLibrary::sPetInfo	TempPet;
 				TempPet.lIndex				= iPetIndex;
+
+				ObjInfo* pInfo = ObjInfo::getSingleton();
+				CPetTargetInfom* pPetInfo = pInfo->GetMyPetInfo();
 				
 				std::vector<CNetworkLibrary::sPetInfo>::iterator iter = 
 					std::find_if(_pNetwork->m_vectorPetList.begin(), _pNetwork->m_vectorPetList.end(), CNetworkLibrary::FindPet(TempPet) );
 				if( iter != _pNetwork->m_vectorPetList.end() )
 				{
-					_pNetwork->_PetTargetInfo.iLevel		= (*iter).lLevel;
-					_pNetwork->_PetTargetInfo.fHealth		= (*iter).lHP;
-					_pNetwork->_PetTargetInfo.fMaxHealth	= (*iter).lMaxHP;
-					_pNetwork->_PetTargetInfo.fMaxHungry	= (*iter).lMaxHungry;
-					_pNetwork->_PetTargetInfo.fHungry		= (*iter).lHungry;
-					_pNetwork->_PetTargetInfo.lAbility		= (*iter).lAbility;
-					_pNetwork->_PetTargetInfo.bIsActive		= TRUE;				
-					_pNetwork->_PetTargetInfo.iType			= iPetType;
-					_pNetwork->_PetTargetInfo.iAge			= iPetAge;
-					_pNetwork->_PetTargetInfo.lIndex		= iPetIndex;
-					_pNetwork->_PetTargetInfo.strNameCard	= (*iter).strNameCard;
+					pPetInfo->iLevel		= (*iter).lLevel;
+					pPetInfo->fHealth		= (*iter).lHP;
+					pPetInfo->fMaxHealth	= (*iter).lMaxHP;
+					pPetInfo->fMaxHungry	= (*iter).lMaxHungry;
+					pPetInfo->fHungry		= (*iter).lHungry;
+					pPetInfo->lAbility		= (*iter).lAbility;
+					pPetInfo->bIsActive		= TRUE;				
+					pPetInfo->iType			= iPetType;
+					pPetInfo->iAge			= iPetAge;
+					pPetInfo->lIndex		= iPetIndex;
+					pPetInfo->strNameCard	= (*iter).strNameCard;
 					
-					_pUIMgr->GetPetInfo()->GetPetDesc();
+					// ∆Í ≈∏∞Ÿ ¡¶∞≈. [11/18/2010 rumist]
+					pPetInfo->pen_pEntity	= NULL;
+					
+					CUIManager::getSingleton()->GetPetInfo()->GetPetDesc();
 				}
 			}
 
-			// Í∏∞Ï°¥Ïùò Ï†ïÎ≥¥Îûë ÎπÑÍµêÎ•º Ìï¥ÏÑú, Ìé´ÏùÑ Ï†úÍ±∞Ìï¥Ïïº ÌïòÎäîÏßÄ? ÏïÑÎãàÎ©¥ ÏÉùÏÑ±Ìï¥Ïïº ÌïòÎäîÏßÄ ÌåêÎã®...
+			// ±‚¡∏¿« ¡§∫∏∂˚ ∫Ò±≥∏¶ «ÿº≠, ∆Í¿ª ¡¶∞≈«ÿæﬂ «œ¥¬¡ˆ? æ∆¥œ∏È ª˝º∫«ÿæﬂ «œ¥¬¡ˆ ∆«¥‹...
 			_pNetwork->RidePet( (CPlayerEntity*)CEntity::GetPlayerEntity(0), NULL, iPetColoredType );
 		}
-		// Ìé´ÏóêÏÑú ÎÇ¥Î¶¨ÎèÑÎ°ù ÏÑ§Ï†ïÌï¥Ïïº ÌïòÎäî Í≤ΩÏö∞...
+		// ∆Íø°º≠ ≥ª∏Æµµ∑œ º≥¡§«ÿæﬂ «œ¥¬ ∞ÊøÏ...
 		else
 		{
 			_pNetwork->LeavePet( (CPlayerEntity*)CEntity::GetPlayerEntity(0) );
 		}
 		//		_pNetwork->MyCharacterInfo.bPetRide = bPetRide;		
 	}
-	// ÌÉÄ Ï∫êÎ¶≠ÌÑ∞Ïùò Ìé´Ïù∏ Í≤ΩÏö∞...
+	// ≈∏ ƒ≥∏Ø≈Õ¿« ∆Í¿Œ ∞ÊøÏ...
 	else
 	{
-		for( INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actCha.Count(); ipl++ )
+		ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_CHARACTER, lOwnerIndex);
+
+		if (pObject != NULL)
 		{
-			CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[ipl];
-			if( ct.cha_Index == lOwnerIndex )
+			CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+			pTarget->cha_iPetType = iPetType;
+			pTarget->cha_iPetAge	= iPetAge;
+			if( pTarget->cha_bPetRide != bPetRide )
 			{
-				ct.cha_iPetType = iPetType;
-				ct.cha_iPetAge	= iPetAge;
-				if( ct.cha_bPetRide != bPetRide )
-				{
-					// Ìé´ÏùÑ ÌÉÄÎèÑÎ°ù ÏÑ§Ï†ïÌï¥Ïïº ÌïòÎäî Í≤ΩÏö∞...
-					if( iPetType != -1 && 
-						iPetAge != -1 && 
-						bPetRide )
-					{	
-						_pNetwork->RidePet( ct.cha_pEntity, NULL, iPetColoredType );
-					}
-					// Ìé´ÏóêÏÑú ÎÇ¥Î¶¨ÎèÑÎ°ù ÏÑ§Ï†ïÌï¥Ïïº ÌïòÎäî Í≤ΩÏö∞...
-					else
-					{
-						_pNetwork->LeavePet( ct.cha_pEntity );
-					}
-					ct.cha_bPetRide = bPetRide;
+				// ∆Í¿ª ≈∏µµ∑œ º≥¡§«ÿæﬂ «œ¥¬ ∞ÊøÏ...
+				if( iPetType != -1 && 
+					iPetAge != -1 && 
+					bPetRide )
+				{	
+					_pNetwork->RidePet( pTarget->GetEntity(), NULL, iPetColoredType );
 				}
-				break;
+				// ∆Íø°º≠ ≥ª∏Æµµ∑œ º≥¡§«ÿæﬂ «œ¥¬ ∞ÊøÏ...
+				else
+				{
+					_pNetwork->LeavePet( pTarget->GetEntity() );
+				}
+				pTarget->cha_bPetRide = bPetRide;
 			}
 		}
 	}	
@@ -2397,18 +3243,22 @@ void CSessionState::ReceivePetLearnMessage( CNetworkMessage *istr )
 	(*istr) >> nSkillIndex;
 	(*istr) >> nSkillLevel;
 	(*istr) >> nErrorcode;
-	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+	CPetTargetInfom* pPetInfo = pInfo->GetMyPetInfo();
+
 	if( nErrorcode == MSG_EX_PET_LEARN_ERROR_OK || nErrorcode == MSG_EX_PET_LEARN_ERROR_AUTO  )
 	{	
-		_pUIMgr->GetPetTraining()->LearnSkill( nSkillIndex, nSkillLevel );
+		pUIManager->GetPetTraining()->LearnSkill( pPetInfo->lIndex, nSkillIndex, nSkillLevel );
 	}
-	else if( nErrorcode == MSG_EX_PET_LEARN_ERROR_AUTO ) // Îã§Ï¢Ö Ïä§ÌÇ¨ ÏäµÎìù 
+	else if( nErrorcode == MSG_EX_PET_LEARN_ERROR_AUTO ) // ¥Ÿ¡æ Ω∫≈≥ Ω¿µÊ 
 	{
-		_pUIMgr->GetPetTraining()->LearnSkill( nSkillIndex, nSkillLevel, TRUE );
+		pUIManager->GetPetTraining()->LearnSkill( pPetInfo->lIndex, nSkillIndex, nSkillLevel, TRUE );
 	}
 	else 
 	{
-		_pUIMgr->GetPetTraining()->LearnSkillError( nErrorcode );
+		pUIManager->GetPetTraining()->LearnSkillError( nErrorcode );
 	}
 
 }
@@ -2422,35 +3272,61 @@ void CSessionState::ReceivePetSkillListMessage( CNetworkMessage *istr )
 	LONG nPetIndex, nCount;
 	LONG nSkillIndex;
 	BYTE nSkillLevel;
+	int nSkillTime;
 
 	(*istr) >> nPetIndex;
 	(*istr) >> nCount;
 
-	_pUIMgr->GetPetInfo()->ClearSkills( nPetIndex );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->GetPetInfo()->ClearSkills( nPetIndex );
 	
 	for( int i = 0; i < nCount; i++ )
 	{
 		(*istr) >> nSkillIndex;
 		(*istr) >> nSkillLevel;
-		
-		_pUIMgr->GetPetInfo()->AddSkill( nPetIndex, nSkillIndex, nSkillLevel );
+		(*istr) >> nSkillTime;
+
+		if (MY_PET_INFO()->lIndex < 0)
+		{
+			MY_INFO()->SetPetSkill(nPetIndex, nSkillIndex, nSkillLevel);
+			pUIManager->GetPetInfo()->AddSkill(nPetIndex, nSkillIndex, nSkillLevel);
+
+			CSkill& rSkill = _pNetwork->GetSkillData(nSkillIndex);
+			if ( nSkillTime <= 0 )
+			{
+				rSkill.ResetStartTime();
+				continue;
+			}
+			SLONG slRemainTime = ((SLONG)time(NULL) - _pNetwork->slServerTimeGap) - nSkillTime; 
+
+			if ( slRemainTime > 0 )
+				rSkill.SetStartTime(slRemainTime);
+
+		}
+		else
+		{
+			pUIManager->GetPetTraining()->LearnSkill(nPetIndex, nSkillIndex, nSkillLevel, FALSE, false);
+		}
 	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : ReceivePetResetSkillMessage()
-// Desc : ÌòÑÏû¨ Ï∞©Ïö©ÌïòÍ≥† ÏûàÎäî Ìé´Ïùò Ïä§ÌÇ¨ Ï¥àÍ∏∞Ìôî
+// Desc : «ˆ¿Á ¬¯øÎ«œ∞Ì ¿÷¥¬ ∆Í¿« Ω∫≈≥ √ ±‚»≠
 // ----------------------------------------------------------------------------
 void CSessionState::ReceivePetResetSkillMessage( CNetworkMessage *istr )
 {
-	_pUIMgr->GetPetInfo()->ClearSkills( _pNetwork->_PetTargetInfo.lIndex );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->GetPetInfo()->ClearSkills( MY_PET_INFO()->lIndex );
 	
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
-	strMessage.PrintF( _S(2565,"Ïï†ÏôÑÎèôÎ¨º Ïä§ÌÇ¨ Ï¥àÍ∏∞ÌôîÍ∞Ä ÏôÑÎ£å ÎêòÏóàÏäµÎãàÎã§." ) );
+	MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+	strMessage.PrintF( _S(2565,"æ÷øœµøπ∞ Ω∫≈≥ √ ±‚»≠∞° øœ∑· µ«æ˙Ω¿¥œ¥Ÿ." ) );
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
@@ -2478,11 +3354,9 @@ void CSessionState::ReceivePetSellInfoMessage( CNetworkMessage *istr )
 	(*istr) >> temp.lRemainRebirth;	
 #endif
 
-#ifdef PET_NAMECARD
 	(*istr) >> temp.strNameCard;
-#endif
 
-	_pUIMgr->GetPetInfo()->AddPetExchangeInfo( temp );
+	CUIManager::getSingleton()->GetPetInfo()->AddPetExchangeInfo( temp );
 	
 }
 
@@ -2494,7 +3368,7 @@ void CSessionState::ReceivePetChangeMountMessage( CNetworkMessage *istr )
 {
 	LONG	lResult;
 	(*istr) >> lResult;
-	_pUIMgr->GetPetInfo()->PetExchangeMount( lResult );
+	CUIManager::getSingleton()->GetPetInfo()->PetExchangeMount( lResult );
 }
 //------------------------------------------------------------------------------
 // CSessionState::ReceivePetLevelUpMessage
@@ -2513,52 +3387,49 @@ void CSessionState::ReceivePetLevelUpMessage( CNetworkMessage *istr )
 
 	// [070824: Su-won] PET_COLOR_CHANGE
 	SBYTE	sbPetColor =0;
-#ifdef PET_COLOR_CHANGE
 	(*istr) >> sbPetColor;
-#endif
 
 	INDEX iPetType;
 	INDEX iPetAge;
 	_pNetwork->CheckPetType( sbTypeGrade, iPetType, iPetAge );
 
-	for(INDEX ipl=0; ipl<_pNetwork->ga_srvServer.srv_actPet.Count(); ipl++) 
+	ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_PET, lPetIndex);
+
+	if (pObject != NULL)
 	{
-		CPetTarget &pt = _pNetwork->ga_srvServer.srv_actPet[ipl];					
-		
-		if (pt.pet_Index == lPetIndex )
+		CPetTarget* pTarget = static_cast< CPetTarget* >(pObject);
+
+		if (pTarget->m_nIdxServer == MY_PET_INFO()->lIndex )
 		{
-			if( pt.pet_Index == _pNetwork->_PetTargetInfo.lIndex )
-			{
-				_pNetwork->ClientSystemMessage( _S(2253, "Ìé´Ïù¥ Î†àÎ≤®ÏóÖ ÌïòÏòÄÏäµÎãàÎã§." ) );
-			}
+			_pNetwork->ClientSystemMessage( _S(2253, "∆Í¿Ã ∑π∫ßæ˜ «œø¥Ω¿¥œ¥Ÿ." ) );
+		}
 
-			// Ìé´Ïùò ÎÇòÏù¥Í∞Ä Î≥ÄÌñàÏùÑÎïå...
-			if( pt.pet_iAge != iPetAge )
+		// ∆Í¿« ≥™¿Ã∞° ∫Ø«ﬂ¿ª∂ß...
+		if (pTarget->pet_iAge != iPetAge )
+		{
+			CEntity	*penEntity = pTarget->GetEntity();
+
+			if (penEntity != NULL)
 			{
-				CEntity	*penEntity = NULL;
-				if( _pNetwork->ga_World.EntityExists( pt.pet_iClientIndex, penEntity ) ) 
+				pTarget->m_nType	= iPetType;
+				pTarget->pet_iAge	= iPetAge;
+
+				// Date : 2005-11-08(ø¿»ƒ 4:04:21), By Lee Ki-hwan
+				// _s ∑Œ √≥∏Æ∞° æ»µ«≥™ø‰?§ª§ª 
+				CTString strPetName = pTarget->pet_OwnerName + _S( 2228, "¿«" ) + CTString(" ") + PetInfo().GetName(iPetType, iPetAge);	
+				pTarget->m_strName	= strPetName;
+				penEntity->SetSkaModel(PetInfo().GetFileName(iPetType, iPetAge));					
+				//((CPlayerEntity*)CEntity::GetPlayerEntity(0))->PetIdleAnim( penEntity );
+				PetInfo().SetPetDataToEntity(iPetType, iPetAge, penEntity, FALSE);
+				penEntity->GetModelInstance()->RefreshTagManager();
+				//penEntity->GetModelInstance()->StopAllAnimations(0.1f);
+
+				if( sbPetColor > 0 )
 				{
-					pt.pet_iType	= iPetType;
-					pt.pet_iAge		= iPetAge;
-
-					// Date : 2005-11-08(Ïò§ÌõÑ 4:04:21), By Lee Ki-hwan
-					// _s Î°ú Ï≤òÎ¶¨Í∞Ä ÏïàÎêòÎÇòÏöî?„Öã„Öã 
-					CTString strPetName = pt.pet_OwnerName + _S( 2228, "Ïùò" ) + PetInfo().GetName(iPetType, iPetAge);		
-					pt.pet_Name		= strPetName;
-					penEntity->SetSkaModel(PetInfo().GetFileName(iPetType, iPetAge));					
-					//((CPlayerEntity*)CEntity::GetPlayerEntity(0))->PetIdleAnim( penEntity );
-					PetInfo().SetPetDataToEntity(iPetType, iPetAge, penEntity, FALSE);
-					penEntity->GetModelInstance()->RefreshTagManager();
-					//penEntity->GetModelInstance()->StopAllAnimations(0.1f);
-
-					if( sbPetColor > 0 )
-					{
-						CTString strTexFile =PetInfo().GetColoredTexFileName(iPetType, iPetAge, sbPetColor);
-						penEntity->GetModelInstance()->mi_aMeshInst[0].mi_tiTextures[0].ti_toTexture.SetData_t( strTexFile );
-					}
+					CTString strTexFile =PetInfo().GetColoredTexFileName(iPetType, iPetAge, sbPetColor);
+					penEntity->GetModelInstance()->mi_aMeshInst[0].mi_tiTextures[0].ti_toTexture.SetData_t( strTexFile );
 				}
 			}
-			break;
 		}
 	}
 
@@ -2568,35 +3439,35 @@ void CSessionState::ReceivePetLevelUpMessage( CNetworkMessage *istr )
 	if( iPetAge >= 2 )
 		strEffect = "pet_levelup_mount";
 	
-	// Ìé´ Î™®Ïñë Î≥ÄÍ≤Ω ...?? 
+	// ∆Í ∏æÁ ∫Ø∞Ê ...?? 
 	PetStartEffectGroup( strEffect, lPetIndex );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ReceviePetItemMixMessage()
-// Desc : Ïú†ÎãàÌÅ¨ ÏïÑÏù¥ÌÖú Ï°∞Ìï© eons
+// Desc : ¿Ø¥œ≈© æ∆¿Ã≈€ ¡∂«’ eons
 // ----------------------------------------------------------------------------
 void CSessionState::ReceviePetItemMixMessage( CNetworkMessage *istr )
 {
 	LONG	lResult;
 	(*istr) >> lResult;
-	_pUIMgr->GetPetItemMix()->PetItemMixRep( lResult );	
+	CUIManager::getSingleton()->GetPetItemMix()->PetItemMixRep( lResult );	
 }
 
 // ----------------------------------------------------------------------------
 // Name : ReceviePetItemChangeMessage()
-// Desc : Ìé´ Ïú†ÎãàÌÅ¨ Ïû¨Î£å ÏïÑÏù¥ÌÖúÏúºÎ°ú ÍµêÌôò eons
+// Desc : ∆Í ¿Ø¥œ≈© ¿Á∑· æ∆¿Ã≈€¿∏∑Œ ±≥»Ø eons
 // ----------------------------------------------------------------------------
 void CSessionState::ReceviePetItemChangeMessage( CNetworkMessage *istr )
 {
 	LONG	lResult;
 	(*istr) >> lResult;
-	_pUIMgr->GetPetTraining()->PetChangeItemError( lResult );
+	CUIManager::getSingleton()->GetPetTraining()->PetChangeItemError( lResult );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ReceviePetRebirthMessage()
-// Desc : eons( Î¥âÏù∏ Ìï¥Ï†ú )
+// Desc : eons( ∫¿¿Œ «ÿ¡¶ )
 // ----------------------------------------------------------------------------
 void CSessionState::ReceviePetRebirthMessage( CNetworkMessage *istr )
 {
@@ -2605,7 +3476,7 @@ void CSessionState::ReceviePetRebirthMessage( CNetworkMessage *istr )
 	(*istr) >> lPetIndex;
 	(*istr) >> lResult;
 
-	_pUIMgr->GetPetFree()->PetFreeError( lPetIndex, lResult );
+	CUIManager::getSingleton()->GetPetFree()->PetFreeError( lPetIndex, lResult );
 }
 
 
@@ -2618,25 +3489,31 @@ void CSessionState::ReceivePartyRecall( CNetworkMessage *istr )
 	CUIMsgBox_Info	MsgBoxInfo;
 	LONG subType;
 	(*istr) >> subType;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch(subType)
 	{
 
 		case MSG_EX_PARTY_RECALL_NOTICE :
-			_pUIMgr->CloseMessageBox(MSGCMD_NULL);
-			MsgBoxInfo.SetMsgBoxInfo( _S(191, "ÌôïÏù∏" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
-			MsgBoxInfo.AddString( _S(2516, "ÌååÌã∞ÏõêÏóêÍ≤å ÏÜåÌôò Î©îÏãúÏßÄÎ•º Î≥¥ÎÉàÏäµÎãàÎã§." ) );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CloseMessageBox(MSGCMD_NULL);
+			MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+			MsgBoxInfo.AddString( _S(2516, "∆ƒ∆ºø¯ø°∞‘ º“»Ø ∏ﬁΩ√¡ˆ∏¶ ∫∏≥¬Ω¿¥œ¥Ÿ." ) );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 			break;
 		case  MSG_EX_PARTY_RECALL_PROMPT :
 			{
 				CTString tv_str;
 				(*istr) >> _pNetwork->m_tmp_idx;
 				(*istr) >> _pNetwork->m_tmp_str;
-				if(_pUIMgr->DoesMessageBoxExist(MSGCMD_EX_PARTY_RECALL_PROMPT)) return ;
-				MsgBoxInfo.SetMsgBoxInfo( _S(191, "ÌôïÏù∏" ), UMBS_YESNO, UI_NONE, MSGCMD_EX_PARTY_RECALL_PROMPT );
-				tv_str.PrintF(_S(2517,"%sÌååÌã∞ÏõêÎãòÍªòÏÑú ÏÜåÌôòÎ©îÏãúÏßÄÎ•º Î≥¥ÎÇ¥ ÏôîÏäµÎãàÎã§. ÏÜåÌôòÏóê ÏùëÌïòÏãúÍ≤†ÏäµÎãàÍπå?"),_pNetwork->m_tmp_str.str_String);
+
+				if( pUIManager->DoesMessageBoxExist(MSGCMD_EX_PARTY_RECALL_PROMPT) )
+					pUIManager->CloseMessageBox(MSGCMD_EX_PARTY_RECALL_PROMPT); // ±‚¡∏¿« ∏ﬁΩ√¡ˆ π⁄Ω∫¥¬ ¡ˆøÏ∞Ì ªı∑ŒøÓ ∏ﬁΩ√¡ˆ∑Œ ∞ªΩ≈
+				
+				MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ" ), UMBS_YESNO, UI_NONE, MSGCMD_EX_PARTY_RECALL_PROMPT );
+				tv_str.PrintF(_S(2517,"%s∆ƒ∆ºø¯¥‘≤≤º≠ º“»Ø∏ﬁΩ√¡ˆ∏¶ ∫∏≥ª ø‘Ω¿¥œ¥Ÿ. º“»Øø° ¿¿«œΩ√∞⁄Ω¿¥œ±Ó?"),_pNetwork->m_tmp_str.str_String);
 				MsgBoxInfo.AddString(tv_str);
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 			}
 			break;
 	
@@ -2650,113 +3527,65 @@ void CSessionState::ReceivePartyRecall( CNetworkMessage *istr )
 			   (*istr) >> strTgt_char;
 			   if(nReq_char == _pNetwork->MyCharacterInfo.index)
 			   {
-			   		_pUIMgr->CloseMessageBox(MSGCMD_NULL);
-					MsgBoxInfo.SetMsgBoxInfo( _S(191, "ÌôïÏù∏" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
-					tv_str.PrintF(_S(2518, "%sÌååÌã∞ÏõêÎãòÏù¥ ÏÜåÌôòÏùÑ Í±∞Ï†àÌïòÏòÄÏäµÎãàÎã§."), strTgt_char);
+			   		pUIManager->CloseMessageBox(MSGCMD_NULL);
+					MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+					tv_str.PrintF(_S(2518, "%s∆ƒ∆ºø¯¥‘¿Ã º“»Ø¿ª ∞≈¿˝«œø¥Ω¿¥œ¥Ÿ."), strTgt_char);
 					MsgBoxInfo.AddString(tv_str);
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 			   }
 			   else {
-				   _pUIMgr->CloseMessageBox(MSGCMD_NULL);
-					MsgBoxInfo.SetMsgBoxInfo( _S(191, "ÌôïÏù∏" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
-					tv_str.PrintF(_S(2519, "%sÌååÌã∞ÏõêÎãòÏùò ÏÜåÌôòÏùÑ Í±∞Ï†àÌïòÏòÄÏäµÎãàÎã§."), strReq_char);
+				   pUIManager->CloseMessageBox(MSGCMD_NULL);
+					MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+					tv_str.PrintF(_S(2519, "%s∆ƒ∆ºø¯¥‘¿« º“»Ø¿ª ∞≈¿˝«œø¥Ω¿¥œ¥Ÿ."), strReq_char);
 					MsgBoxInfo.AddString( tv_str );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );				   
+					pUIManager->CreateMessageBox( MsgBoxInfo );				   
 			   }
 			}
 			break;
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : ReceiveElementalStatusMessage()
-// Desc : 
-// ----------------------------------------------------------------------------
-void CSessionState::ReceiveElementalStatusMessage( CNetworkMessage *istr )
-{
-	// MSG_EX_ELEMENTAL_STATUS,	// ÏÜåÌôòÏàò Ï†ïÎ≥¥		: index(n) elementaltype(c) remain(n) hp(n) maxhp(n) attackspeed(c) magicspeed(c) 
-								// skillspeed(n) walkspeed(f) runspeed(f) attackrange(f) x(f) z(f) h(f) r(f) ylayer(c) mapattr(uc) assist_state(n) assist_count(c) [itemidx(n) index(n) level(c) remain(n)]:count	
-	LONG	lIndex;
-	SBYTE	sbElementalType;
-	LONG	lRemain;
-	LONG	lHP;
-	LONG	lMaxHP;
-	SBYTE	sbAttackSpeed;
-	SBYTE	sbMagicSpeed;
-	LONG	lSkillSpeed;
-	FLOAT	fWalkSpeed;
-	FLOAT	fRunSpeed;	
-	FLOAT	fAttackRange;	
-	FLOAT	fX;
-	FLOAT	fZ;
-	FLOAT	fH;
-	FLOAT	fR;
-	SBYTE	sbYLayer;
-	SBYTE	sbMapAttr;
-	SBYTE	assist_count;
-	SLONG	assist_state;
-
-	(*istr) >> lIndex;
-	(*istr) >> sbElementalType;
-	(*istr) >> lRemain;
-	(*istr) >> lHP;
-	(*istr) >> lMaxHP;
-	(*istr) >> sbAttackSpeed;
-	(*istr) >> sbMagicSpeed;
-	(*istr) >> lSkillSpeed;
-	(*istr) >> fWalkSpeed;
-	(*istr) >> fRunSpeed;	
-	(*istr) >> fAttackRange;	
-	(*istr) >> fX;
-	(*istr) >> fZ;
-	(*istr) >> fH;
-	(*istr) >> fR;
-	(*istr) >> sbYLayer;
-	(*istr) >> sbMapAttr;
-	(*istr) >> assist_state >> assist_count; 
-
-	for( INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actSlave.Count(); ipl++ )
-	{
-		CSlaveTarget	&st = _pNetwork->ga_srvServer.srv_actSlave[ipl];
-		
-		if( st.slave_Index == lIndex )
-		{
-			if( st.slave_pEntity )
+		case MSG_EX_PARTY_RECALL_ERROR_NOT_FOUND_PARTY_PLAYER :
 			{
-				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetElementalData(st.slave_pEntity, lHP, lMaxHP);
-				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetElementalStatus(
-					st.slave_pEntity, sbAttackSpeed, sbMagicSpeed, lSkillSpeed, fWalkSpeed, fRunSpeed, fAttackRange);
+				_pNetwork->ClientSystemMessage(_S(4802, "∞∞¿∫ ¥Î∑˙ø° ¿÷¥¬ ∆ƒ∆º ∏‚πˆ∞° æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR);
 			}
-			
-			st.slave_yLayer = sbYLayer;
-
-			// ÎÇ¥ ÏÜåÌôòÏàòÏù∏ Í≤ΩÏö∞...
-			if( st.slave_OwnerIndex == _pNetwork->MyCharacterInfo.index )
+			break;
+		case MSG_EX_PARTY_RECALL_ERROR_CANT_USE_INSTANT_DUNGEON :
 			{
-				for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
+				_pNetwork->ClientSystemMessage(_S(4504, "¿ŒΩ∫≈œ∆Æ¡∏ ≥ª∫Œø°º≠¥¬ ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR);
+			}
+			break;
+		case MSG_EX_PARTY_RECALL_ERROR_CANT_USE_THIS_CONTINENT :
+			{
+				_pNetwork->ClientSystemMessage(_S(4803, "«ˆ¿Á ¥Î∑˙ø°º± ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR);
+			}
+			break;
+		case MSG_EX_PARTY_RECALL_ERROR_NOT_PARTY:
+			{
+				_pNetwork->ClientSystemMessage(_S(3408, "º“»Ø«“ ∆ƒ∆ºø¯µÈ¿Ã æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR);
+			}
+			break;
+		case MSG_EX_PARTY_RECALL_ERROR_CANT_USE_EXPEND:
+			{
+				_pNetwork->ClientSystemMessage(_S(4752, "ø¯¡§¥Î¡ﬂø°¥¬ ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR);
+			}
+			break;
+		case MSG_EX_PARTY_RECALL_CONFIRM_FAIL:
+			{// ∏Æƒ› ºˆ∂Ù Ω√ ¿Ãµø«“ ºˆ æ¯¥¬ ∞ÊøÏ ≈¨∂Û ∂Ù¿ª «Æ±‚ ¿ß«— ∏ﬁΩ√¡ˆ
+				pUIManager->CloseMessageBox(MSGCMD_NULL);
+				MsgBoxInfo.SetMsgBoxInfo( _S(191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				MsgBoxInfo.AddString( _S(340, "¿Ãµø¿Ã √Îº“µ«æ˙Ω¿¥œ¥Ÿ." ) );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+
+				if(pUIManager->IsCSFlagOn(CSF_TELEPORT))
 				{
-					CUISummon* pUISummon = (CUISummon*)_pUIMgr->GetUI(i);
-					if( pUISummon->GetSummonEntity() && pUISummon->GetSummonIndex() == lIndex )
-					{
-						pUISummon->SetMaxTime(lRemain);		// MaxTimeÏùÄ ÌïúÎ≤àÎßå ÏÑ§Ï†ïÎê©ÎãàÎã§.
-						_pNetwork->_SlaveTargetInfo[i - UI_SUMMON_START].fHealth	= lHP;
-						_pNetwork->_SlaveTargetInfo[i - UI_SUMMON_START].fMaxHealth = lMaxHP;
-						pUISummon->SetLeftTime(lRemain);
-					}
-				}
+					pUIManager->SetCSFlagOff( CSF_TELEPORT );
+				}			
 			}
-			BuffInfo	sBuff;
-			sBuff.m_llStartTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();	
-			
-			st.slave_BuffCount = 0;
-			for( int i = 0; i < assist_count; i++ )
+			break;
+		case MSG_EX_PARTY_RECALL_AREADY:
 			{
-				(*istr) >> sBuff.m_slItemIndex >> sBuff.m_slSkillIndex >> sBuff.m_sbLevel >> sBuff.m_slRemain;
-				st.AddBuff( sBuff );
+				_pNetwork->ClientSystemMessage(_S(556, "¿ÃπÃ ªÁøÎ¡ﬂ¿Œ æ∆¿Ã≈€ ¿‘¥œ¥Ÿ."), SYSMSG_ERROR);
 			}
-		}
+			break;
 
-	
 	}
 }
 
@@ -2766,44 +3595,41 @@ void CSessionState::ReceiveElementalStatusMessage( CNetworkMessage *istr )
 // ----------------------------------------------------------------------------
 void CSessionState::ReceiveElementalDeleteMessage( CNetworkMessage *istr )
 {
-	// MSG_EX_ELEMENTAL_DELETE,	// ÏÜåÌôòÏàò Ï†úÍ±∞		: index(n)
+	// MSG_EX_ELEMENTAL_DELETE,	// º“»Øºˆ ¡¶∞≈		: index(n)
 	LONG lIndex;
 	(*istr) >> lIndex;
-	
-	for( INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actSlave.Count(); ipl++ )
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_SLAVE, lIndex);
+
+	if (pObject != NULL)
 	{
-		CSlaveTarget	&st = _pNetwork->ga_srvServer.srv_actSlave[ipl];
-		
-		if( st.slave_Index == lIndex )
+		CSlaveTarget* pTarget = static_cast< CSlaveTarget* >(pObject);
+
+		// ≥ª º“»Øºˆ¿Œ ∞ÊøÏ...
+		if( pTarget->slave_OwnerIndex == _pNetwork->MyCharacterInfo.index )
 		{
-			// ÎÇ¥ ÏÜåÌôòÏàòÏù∏ Í≤ΩÏö∞...
-			if( st.slave_OwnerIndex == _pNetwork->MyCharacterInfo.index )
+			for (int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i)
 			{
-				for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
+				CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+				
+				if( pUISummon->GetSummonEntity() && pUISummon->GetSummonIndex() == lIndex )
 				{
-					CUISummon* pUISummon = (CUISummon*)_pUIMgr->GetUI(i);
-					if( pUISummon->GetSummonEntity() && pUISummon->GetSummonIndex() == lIndex )
-					{
-						pUISummon->ResetSummon();						
-						break;
-					}
+					pUISummon->ResetSummon();						
+					break;
 				}
-				//_pNetwork->_PetTargetInfo.Init();
-			}
-
-			SlaveInfo().StopIdleEffect( lIndex );	
-			
-#ifdef TARGET_MARK			
-			//Ìï¥Îãπ ÏÜåÌôòÏàòÏùò ÌÉÄÍ≤ü Ïù¥ÌéôÌä∏Î•º ÏóÜÏï∞...
-			_pUIMgr->StopTargetEffect( lIndex );
-#endif
-
-			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ClearTargetInfo(st.slave_pEntity);
-			
-			st.Init();
-			_pNetwork->ga_srvServer.srv_actSlave.SwapAndPop(ipl);
-			break;
+			}			
 		}
+
+		SlaveInfo().StopIdleEffect( lIndex );
+
+		//«ÿ¥Á º“»Øºˆ¿« ≈∏∞Ÿ ¿Ã∆Â∆Æ∏¶ æ¯æ⁄...
+		pUIManager->StopTargetEffect( lIndex );
+
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ClearTargetInfo(pTarget->GetEntity());
+
+		ACTORMGR()->RemoveObject(eOBJ_SLAVE, lIndex);
 	}
 }
 
@@ -2815,11 +3641,12 @@ void CSessionState::ReceiveEvocationStart( CNetworkMessage *istr )
 {
 	// charindex(n) type(c)
 	LONG	lCharIndex;
-	SBYTE	sbType;
-	(*istr) >> lCharIndex;
-	(*istr) >> sbType;
+	INDEX	iType;
 
-	((CPlayerEntity*)CEntity::GetPlayerEntity(0))->EvocationStart( lCharIndex, sbType - 1);	
+	(*istr) >> lCharIndex;
+	(*istr) >> iType;
+
+	((CPlayerEntity*)CEntity::GetPlayerEntity(0))->EvocationStart( lCharIndex, iType);	
 }
 
 // ----------------------------------------------------------------------------
@@ -2832,4 +3659,1190 @@ void CSessionState::ReceiveEvocationStop( CNetworkMessage *istr )
 	LONG	lCharIndex;	
 	(*istr) >> lCharIndex;	
 	((CPlayerEntity*)CEntity::GetPlayerEntity(0))->EvocationStop( lCharIndex );	
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+
+// ----------------------------------------------------------------------------
+//  Name 	: 
+//  Desc 	: 
+// ----------------------------------------------------------------------------
+void AffinityErrChk( UBYTE errType )
+{
+	CUIMsgBox_Info MsgBoxInfo;
+	CTString		MsgBoxMsg;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch( errType )
+	{
+		case MSG_EX_AFFINITY_ERROR_CONNECT_SUCCESS:
+		{
+			MsgBoxMsg.PrintF( _S( 4671, "º∫∞¯¿˚¿∏∑Œ ƒ£±∏∏¶ ∏Œæ˙Ω¿¥œ¥Ÿ." ) );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_CONNECT_NOMONEY:			// ≥™Ω∫∫Œ¡∑
+		{
+			MsgBoxMsg.PrintF( _S(306, "≥™Ω∫∞° ∫Œ¡∑«’¥œ¥Ÿ.") );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_CONNECT_ALREADY:			// ¿ÃπÃºº∑¬ ƒ£±∏∏Œ¿Ω
+		{
+			MsgBoxMsg.PrintF( _S( 4672, "¿ÃπÃ ºº∑¬∞˙ ƒ£±∏∏¶ ∏Œæ˙Ω¿¥œ¥Ÿ." ) );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_ITEM_CONTRIBUTE_MAX:		// ƒ£»≠µµ ∆˜¿Œ∆Æ √÷¥Î∑Œ √°¿Ω
+		{
+			MsgBoxMsg.PrintF( _S( 4673, "ƒ£»≠µµ∞° ∞°µÊ √°Ω¿¥œ¥Ÿ. ¥ı¿ÃªÛ ƒ£»≠µµ∏¶ Ω◊¿ª ºˆ æ¯Ω¿¥œ¥Ÿ." ) );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_ITEM_CONTRIBUTE_MISSMATCH:	// ±‚∫Œ ∫Œ¿˚«’ æ∆¿Ã≈€
+		{
+			MsgBoxMsg.PrintF( _S( 4674, "±‚∫Œ«“ ºˆ æ¯¥¬ æ∆¿Ã≈€¿‘¥œ¥Ÿ. »Æ¿Œ«œ∞Ì ¥ŸΩ√ Ω√µµ«œø© ¡÷Ω Ω√ø¿." ) );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_USESHOP_POINT:			// ªÛ¡°¿ÃøÎ ∆˜¿Œ∆Æ ∫Œ¡∑
+		{
+			MsgBoxMsg.PrintF( _S( 4675, "æ∆¡˜ ¥ÁΩ≈ø°∞‘¥¬ ∆» π∞∞«¿Ã æ¯Ω¿¥œ¥Ÿ. øÏ∏Æ %s ¿ª ¿ß«ÿº≠ ¡∂±›¥ı ≥Î∑¬¿ª «ÿ ¡÷Ω Ω√ø¿." ), 
+			_pNetwork->GetAffinityData()->GetAffinityName( pUIManager->GetAffinity()->GetNPCIndex() ) );	// [2010/12/07 : Sora] ƒ£»≠µµ ∞≥º± 2¬˜
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_GIFTINFO_NOITEM:			// ∫∏ªÛπﬁ¿ª æ∆¿Ã≈€¿Ã æ¯¥Ÿ
+		{
+			MsgBoxMsg.PrintF( _S( 4676, "∏µÁ ∫∏ªÛ¿ª πﬁæ“Ω¿¥œ¥Ÿ. ¥ı¿ÃªÛ ∫∏ªÛπﬁ¿ª æ∆¿Ã≈€¿Ã æ¯Ω¿¥œ¥Ÿ." ) );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_GIFTINFO_NOPOINT:			// ∆˜¿Œ∆Æ∫Œ¡∑¿∏∑Œ ∫∏ªÛ ∏¯πﬁ¿Ω
+		{
+			MsgBoxMsg.PrintF( _S( 4677, "ƒ£»≠µµ∞° ∫Œ¡∑«’¥œ¥Ÿ." ) );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_GIFT_NOSPACE:			// ¿Œ∫•ø° æ∆¿Ã≈€ πﬁ¿ª ∞¯∞£¿Ã æ¯¥Ÿ.
+		{
+			MsgBoxMsg = _S(2850, "¿Œ∫•≈‰∏Æ∞° ∞°µÊ √°Ω¿¥œ¥Ÿ.");
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_NOT_CONNECTED:
+		{
+			MsgBoxMsg = _S( 4678, "æ∆¡˜ ƒ£±∏∏¶ ∏Œ¡ˆ æ æ“Ω¿¥œ¥Ÿ. ∏’¿˙ ƒ£±∏∏¶ ∏ŒæÓ¡÷ººø‰." );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_CONNECT_PCLEVEL:
+		{
+			MsgBoxMsg = _S( 965, "∑π∫ß¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR_CONNECT_NOITEM:
+		{
+			MsgBoxMsg = _S( 1330 ,"æ∆¿Ã≈€¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );
+		}
+			break;
+	}
+	MsgBoxInfo.AddString( MsgBoxMsg );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: ReceiveAffinityMessage()
+//  Desc 	: 
+// ----------------------------------------------------------------------------
+void CSessionState::ReceiveAffinityMessage( CNetworkMessage *istr )
+{
+	UBYTE	ubType;
+	UBYTE	errCode;
+	(*istr) >> ubType;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch( ubType )
+	{
+		case MSG_EX_AFFINITY_ITEM_CONTRIBUTE_REP:
+		{
+			CPrintF("Affinity Contribute success!!\n" );
+		}
+			break;
+		case MSG_EX_AFFINITY_SHOPUSE_REP:
+		{
+			SLONG		npc_idx = 0;
+			(*istr) >> npc_idx;
+			pUIManager->GetAffinity()->OpenShop( npc_idx );
+		}
+			break;
+		case MSG_EX_AFFINITY_GIFT_REP:
+		{
+			// [100324: selo] º±π∞ πﬁ¿∫ npc ¥¬ æÀ∏≤ «◊∏Òø°º≠ ¡¶∞≈ «—¥Ÿ.
+			SLONG npc_idx = 0;
+			(*istr) >> npc_idx;
+
+			_pNetwork->RemoveAffinityRewardNPC(npc_idx);
+
+			if( npc_idx > 0)
+			{
+				Notice* pNotice = GAMEDATAMGR()->GetNotice();
+
+				if (pNotice != NULL)
+					pNotice->DelFromNoticeList(npc_idx, Notice::NOTICE_AFFINITY);
+			}
+		}
+			break;
+		case MSG_EX_AFFINITY_GIFTINFO_REP:
+		{
+			SLONG		gift_point = 0;
+			SLONG		gift_item_index = 0;
+			SLONG		gift_item_count = 0;
+			CTString	MsgTemp;
+			CUIMsgBox_Info	Msg_Info;
+
+			(*istr) >> gift_point;
+			(*istr) >> gift_item_index;
+			(*istr) >> gift_item_count;
+
+			MsgTemp.PrintF( _S( 5302, "%s ºº∑¬¿ª ¿ß«ÿ ∏π¿∫ ≥Î∑¬¿ª «ÿ¡÷º≈º≠ ƒ£»≠µµ∞° %d¡°¿Ã µ«æÓ ¿€¿∫ º±π∞¿ª ¡ÿ∫Ò«ﬂΩ¿¥œ¥Ÿ. \n%s  %d∞≥∏¶ πﬁ¿∏Ω√∞⁄Ω¿¥œ±Ó?" ),
+				_pNetwork->GetAffinityData()->GetAffinityName( pUIManager->GetAffinity()->GetNPCIndex() ), gift_point, _pNetwork->GetItemData( gift_item_index )->GetName(), gift_item_count );
+			
+			Msg_Info.SetMsgBoxInfo( _S(4680, "º±π∞ πﬁ±‚"), UMBS_OKCANCEL, UI_NPC_AFFINITY, MSGCMD_AFFINITY_TAKEPRESENT );
+			Msg_Info.AddString( MsgTemp );
+			pUIManager->CreateMessageBox( Msg_Info );
+		}
+			break;
+		case MSG_EX_AFFINITY_UPDATE_POINT:
+		{
+			SLONG	affinity_index = 0;
+			SLONG	affinity_point = 0;
+			SLONG	affinity_point_bonus = 0;
+			
+			(*istr) >> affinity_index;
+			(*istr) >> affinity_point; // total (±ÊµÂΩ∫≈≥∑Œ ¡ı∞°µ»æÁ¿Ã ∆˜«‘µ»∞™)
+			(*istr) >> affinity_point_bonus; // ±ÊµÂΩ∫≈≥∑Œ ¡ı∞°µ» æÁ
+
+			CNetworkLibrary::_AffinityInfo::mapAffIter iter;
+
+			iter = _pNetwork->AffinityInfo.mapAffinityList.find( affinity_index );
+			if( iter != _pNetwork->AffinityInfo.mapAffinityList.end() )
+			{
+				CTString MsgTemp;
+				int ndelta = affinity_point - (*iter).second.current; // ±‚¡∏ ƒ£»≠µµø°º≠ ¡ı∞°∞™ æÚ±‚
+				// [2010/12/07 : Sora] ƒ£»≠µµ ∞≥º± 2¬˜
+				if (affinity_point_bonus > 0)
+				{
+					MsgTemp.PrintF( _S(6445, "%d(+%d)∏∏≈≠ %sƒ£»≠µµ∞° ªÛΩ¬µ«æ˙Ω¿¥œ¥Ÿ."), ndelta - affinity_point_bonus, affinity_point_bonus,
+						_pNetwork->GetAffinityData()->GetAffinityNameByIndex(affinity_index) );
+				}
+				else
+				{
+					MsgTemp.PrintF( _S(4681, "%d∏∏≈≠ %sƒ£»≠µµ∞° ªÛΩ¬µ«æ˙Ω¿¥œ¥Ÿ."), ndelta,
+						_pNetwork->GetAffinityData()->GetAffinityNameByIndex(affinity_index) );
+				}				
+
+				((*iter).second).current = affinity_point;
+				pUIManager->GetChattingUI()->AddSysMessage( MsgTemp );
+
+				//2012/11/09 jeil ƒ£»≠µµ ∫ŒΩ∫≈Õ æ∆¿Ã≈∆∞¸∑√ √º≈© «œø© ∏ﬁΩ√¡ˆ √‚∑¬ √ﬂ∞° 
+				if(_pUIBuff->IsBuff(9189)){	//πˆ«¡ π¯»£ √º≈© 
+					MsgTemp.PrintF(_S(5815, "(ƒ£»≠µµ ∫ŒΩ∫≈Õ ¿˚øÎ)"));	//Ω∫∆Æ∏µø° ∏ﬁΩ√¡ˆ ¥„±‚
+					pUIManager->GetChattingUI()->AddSysMessage( MsgTemp );	//∏ﬁΩ√¡ˆ √§∆√√¢ø° √‚∑¬
+				}
+				//2012/11/09 jeil ¿”Ω√ ƒ£»≠µµ æ∆¿Ã≈€ «√∑π±◊ √º≈©«œø© ∏ﬁΩ√¡ˆ √‚∑¬ 
+				//ƒ£»≠µµ ∫ŒΩ∫≈Õ æ∆¿Ã≈∆ ¿˚øÎ¡ﬂ¿Œ¡ˆ √º≈© « ø‰ -> π∞æÓ∫∏¿⁄
+				//ƒ£»≠µµ ∫ŒΩ∫≈Õ ¿˚øÎ Ω∫∆Æ∏µ « ø‰ ->∫“æÓ∫∏¿⁄ 
+//				MsgTemp.PrintF("(ƒ£»≠µµ ∫ŒΩ∫≈Õ ¿˚øÎ)");	//Ω∫∆Æ∏µø° ∏ﬁΩ√¡ˆ ¥„±‚
+//				pUIManager->GetChattingUI()->AddSysMessage( MsgTemp );	//∏ﬁΩ√¡ˆ √§∆√√¢ø° √‚∑¬
+
+			}
+			else
+				CPrintF("Affinity Index Error !!\n" );
+		}
+			break;
+		case MSG_EX_AFFINITY_LISTINFO:
+		{
+			SLONG	affinity_cnt = 0;
+			SLONG	affinity_index = 0;
+			SLONG	affinity_point = 0;
+			SLONG	affinity_max = 0;
+			CNetworkLibrary::_AffinityInfo::_AffinityPoint AfPoint;
+			(*istr) >> affinity_cnt;
+
+			_pNetwork->AffinityInfo.count = affinity_cnt;
+
+			for( int i = 0; i < affinity_cnt; ++i )
+			{
+				(*istr) >> affinity_index;
+				(*istr) >> affinity_point;
+				(*istr) >> affinity_max;
+
+				AfPoint.current = affinity_point;
+				AfPoint.max		= affinity_max;
+
+				_pNetwork->AffinityInfo.mapAffinityList.insert( std::make_pair( affinity_index, AfPoint ) );
+			}
+		}
+			break;
+		case MSG_EX_AFFINITY_ADDINFO:
+		{
+			// [6/8/2009 rumist] if server was accept that connect to npc forces, called this message.
+			SLONG affinity_index;
+			SLONG affinity_max = 0;
+			CNetworkLibrary::_AffinityInfo::_AffinityPoint AfPoint;
+			AfPoint.current = 0;
+			(*istr) >> affinity_index;
+
+			(*istr) >> affinity_max;
+			AfPoint.max = affinity_max;
+
+			// ƒ£»≠µµ ∞≥∆Ì2 ƒ£»≠µµ ºº∑¬ ∏Œ¿ª∂ß ∏ÆΩ∫∆Æ æ˜µ•¿Ã∆Æ [2/14/2013 Ranma]
+			CNetworkLibrary::_AffinityInfo::mapAffIter iter = _pNetwork->AffinityInfo.mapAffinityList.find( affinity_index );
+		
+			if ( iter == _pNetwork->AffinityInfo.mapAffinityList.end() )
+			{
+				_pNetwork->AffinityInfo.mapAffinityList.insert( std::make_pair( affinity_index, AfPoint ) );
+			}
+			else
+			{
+				((*iter).second).max = affinity_max;
+			}
+			
+			// [2013/02/05] sykim70 ƒ£»≠µµ ±‚∫Œ UI ∞≥º±
+			_pNetwork->AffinityInfo.count = _pNetwork->AffinityInfo.mapAffinityList.size();
+		}
+			break;
+		case MSG_EX_AFFINITY_ERROR:
+		{
+			(*istr) >> errCode;
+			AffinityErrChk( errCode );
+		}	
+			break;
+			
+		// [100322: selo] ƒ£»≠µµ ∫∏ªÛ æÀ∂˜		
+		case MSG_EX_AFFINITY_REWARD_NOTICE:
+		{					 
+			INDEX noticecount = 0;
+			INDEX npcidx = 0;
+
+			(*istr) >> noticecount;
+
+			if( noticecount > 0 )
+			{
+				Notice* pNotice = GAMEDATAMGR()->GetNotice();
+
+				for( int i = 0; i < noticecount; i++ )
+				{
+					(*istr) >> npcidx;
+					_pNetwork->AddAffinityRewardNPC(npcidx);
+
+					if (pNotice != NULL && npcidx > 0)
+						pNotice->AddToNoticeList(npcidx, Notice::NOTICE_AFFINITY);
+				}
+			}
+		}
+		break;
+
+		// ƒ£»≠µµ ∞≥∆Ì2 ∫∏ªÛ ¡§∫∏ πﬁ¿Ω [2/13/2013 Ranma]		
+		case MSG_EX_AFFINITY_INFOTAB_REP:
+			{					 
+				pUIManager->GetAffinityInfo()->RecvAffinity_RewardInfo(istr);
+			}
+		break;
+	}
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: ReceiveExLoadingEndMessage()
+//  Desc 	: 
+// ----------------------------------------------------------------------------
+void CSessionState::ReceiveExLoadingEndMessage(CNetworkMessage* istr)
+{
+	UBYTE	ubType;
+	(*istr) >> ubType;
+
+	switch( ubType )
+	{
+		case MSG_EX_LODING_END_NPC_PORTAL_USE:
+		{
+			CUIManager::getSingleton()->GetNpcScroll()->UseNPCScroll();
+		}
+			break;
+	}
+}
+
+// ----------------------------------------------------------------------------
+// [100208: selo] 
+//  Name 	: ReceiveTakeAgainQuestItem()
+//  Desc 	: ƒ˘Ω∫∆Æ æ∆¿Ã≈€ ¥ŸΩ√ πﬁ±‚ ( ±◊∏≤¿⁄ πÆ¿« ø≠ºË )
+// ----------------------------------------------------------------------------
+void CSessionState::ReceiveTakeAgainQuestItem(CNetworkMessage* istr)
+{
+	CTString	strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;
+
+	SLONG	slType;
+	(*istr) >> slType;
+
+	switch( slType )
+	{
+	case MSG_EX_TAKE_AGAIN_QUEST_ITEM_SUCCESS:
+		{
+			strMessage.PrintF( _S( 4820, "¡§ªÛ¿˚¿∏∑Œ æ∆¿Ã≈€¿Ã ¡ˆ±ﬁµ«æ˙Ω¿¥œ¥Ÿ.") );
+		}
+		break;
+	case MSG_EX_TAKE_AGAIN_QUEST_ITEM_ERROR_ALREADY_EXIST:
+		{
+			strMessage.PrintF( _S( 4821, "¿Œ∫•≈‰∏Æø° æ∆¿Ã≈€¿Ã ¡∏¿Á«’¥œ¥Ÿ.") );
+		}
+		break;
+	case MSG_EX_TAKE_AGAIN_QUEST_ITEM_ERROR_FULL_INVENTORY:
+		{
+			strMessage.PrintF( _S( 3796, "¿Œ∫•≈‰∏Æ∞° ∞°µÊ¬˜º≠ æ∆¿Ã≈€¿ª πﬁ¿ª ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+		}
+		break;
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if (pUIManager->DoesMessageBoxExist(MSGCMD_QUEST_RESTORE_ITEM_RESULT))
+		pUIManager->CloseMessageBox(MSGCMD_QUEST_RESTORE_ITEM_RESULT);
+
+	MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_QUEST, MSGCMD_QUEST_RESTORE_ITEM_RESULT );
+	MsgBoxInfo.AddString( strMessage );
+	pUIManager->CreateMessageBox( MsgBoxInfo );	
+}
+
+// ----------------------------------------------------------------------------
+//  [4/15/2010 kiny8216] ƒ⁄Ω∫∆¨ Ω√Ω∫≈€2 ∏ﬁΩ√¡ˆ
+//  Name 	: RecieveCostume2Message()
+//  Desc 	: ƒ⁄Ω∫∆¨ Ω√Ω∫≈€2 ∏ﬁΩ√¡ˆ
+// ----------------------------------------------------------------------------
+void CSessionState::RecieveCostume2Message(CNetworkMessage* istr)
+{
+	UCHAR ucType;
+	CTString	strMessage;
+
+	(*istr) >> ucType;
+
+	switch( ucType )
+	{
+	case 0:
+		strMessage.PrintF( _S( 4868, "¬¯øÎ«œ∑¡¥¬ π´±‚∞° ƒ⁄Ω∫∆¨ π´±‚øÕ ≈∏¿‘¿Ã ∆≤∏≥¥œ¥Ÿ.") );
+		break;
+	case 1:
+	case 3:
+		strMessage.PrintF( _S( 4869, "πÊ∆–∏¶ ¬¯øÎ«— ªÛ≈¬ø°º≠¥¬ ¬¯øÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+		break;
+	case 2:
+		strMessage.PrintF( _S( 4870, "¬¯øÎ«œ∑¡¥¬ ƒ⁄Ω∫∆¨ π´±‚∞° ¿Â∫ÒøÕ ≈∏¿‘¿Ã ∆≤∏≥¥œ¥Ÿ.") );
+		break;
+	case 4:
+		strMessage.PrintF( _S( 4871, "ƒ⁄Ω∫∆¨ µ‡æÛº“µÂ∏¶ ¬¯øÎ«— ªÛ≈¬ø°º≠¥¬ πÊ∆–∏¶ ¬¯øÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+		break;
+	case 5:
+		strMessage.PrintF( _S( 4872, "µ‡æÛº“µÂ∏¶ ¬¯øÎ«— ªÛ≈¬ø°º≠¥¬ ƒ⁄Ω∫∆¨ πÊ∆–∏¶ ¬¯øÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+		break;
+	}
+
+	if(strMessage.Length()>0 )
+		CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( strMessage , SYSMSG_ERROR );	
+
+	// ¿Â∫Ò ¬¯øÎ Ω√µµ ªÛ≈¬ «ÿ¡¶
+	CUIManager::getSingleton()->SetCSFlagOffElapsed( CSF_ITEMWEARING );
+}
+
+// SOCKET_SYSTEM_S2 º“ƒœ Ω√Ω∫≈€ ∞¸∑√ ∏ﬁΩ√¡ˆ πﬁ¥¬ ∫Œ∫– [4/3/2013 Ranma]
+void CSessionState::RecieveSocketSystemMessage(CNetworkMessage* istr )
+{
+	UBYTE	slType;
+	(*istr) >> slType;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch( slType )
+	{
+		case MSG_EX_SOCKET_MAKE_REP:
+			{
+				SLONG idx;
+				SBYTE socketCount;
+				(*istr) >> idx;
+				(*istr) >> socketCount;
+
+				// º∫∞¯Ω√ ui æ˜µ•¿Ã∆Æ∞° « ø‰«‘.
+				// π´∞·º∫ ¿Ø¡ˆ∏¶ ¿ß«ÿº≠ º≠πˆ∑Œ∫Œ≈Õ idx∏¶ πﬁ¥¬¥Ÿ.
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->UpdateUI( 2, idx );
+				//pUIManager->GetSocketSystem()->UpdateCreateUI();
+			}
+			break;
+		case MSG_EX_SOCKET_COMBINE_JEWEL_REP:
+			{
+				SLONG idx;
+				(*istr) >> idx;
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->UpdateUI( 0, idx );
+				pUIManager->GetSocketSystem()->UpdateCombineUI(TRUE, true);
+			}
+			break;
+
+		case MSG_EX_SOCKET_UPGRADE_JEWEL_REP:
+		case MSG_EX_SOCKET_UPGRADE_JEWEL_CHAOS_REP:
+			{
+				SLONG jewelIdx;
+				(*istr) >> jewelIdx;
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->UpdateJewelComposUI(CUISocketSystem::GENARAL_JEWEL_COMPOS, jewelIdx);
+			}
+			break;
+
+		case MSG_EX_SOCKET_INFO_REP:
+			{
+			}
+			break;
+
+		case MSG_EX_SOCKET_CLEAN_JEWEL_REP:
+			{
+				SLONG idx;
+				(*istr) >> idx;
+				CUIMsgBox_Info MsgInfo;
+				MsgInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				MsgInfo.AddString( _S( 5000, "º“ƒœ ∫ÒøÏ±‚ ¿€æ˜¿ª ¡§ªÛ¿˚¿∏∑Œ øœ∑·«œø¥Ω¿¥œ¥Ÿ.") );
+				pUIManager->CreateMessageBox( MsgInfo );
+				pUIManager->GetSocketSystem()->CloseSocketSystem();
+			}
+			break;
+
+		case MSG_EX_SOCKET_ERROR:
+			{
+				UBYTE errcode;
+				(*istr) >> errcode;
+				CheckSocketSystemError( errcode );
+			}
+			break;
+	}
+}	
+
+// ø°∑Ø √‚∑¬¿∫ ∏ﬁΩ√¡ˆ∑Œ «“∞«¡ˆ π⁄Ω∫∑Œ √≥∏Æ«“∞«¡ˆ ≥Ì¿« « ø‰. [5/4/2010 rumist]	
+void CheckSocketSystemError(UBYTE errcode)
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CTString tStr;
+
+	switch(errcode)
+	{
+		case MSG_EX_SOCKET_ERROR_ITEM_MISSMATCH:    // ø√πŸ∏• æ∆¿Ã≈€¿Ã æ∆¥’¥œ¥Ÿ.
+				tStr = _S( 4981, "ø√πŸ∏• æ∆¿Ã≈€¿Ã æ∆¥’¥œ¥Ÿ. »Æ¿Œ »ƒ ¥ŸΩ√ Ω√µµ«ÿ ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ." );
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->ClearProcessing();
+				pUIManager->GetSocketSystem()->CloseSocketSystem();
+				break;
+		case MSG_EX_SOCKET_ERROR_FAILED_MAKE:		// º“ƒœ ª˝º∫ Ω«∆–
+				tStr = _S( 5001, "º“ƒœ ª˝º∫ Ω«∆–." );
+				// Ω«∆–Ω√ø°µµ Ω∫≈©∑—¿Ã ¡¶∞≈µ«æÓæﬂ «œπ«∑Œ update∞° « ø‰.
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->UpdateCreateUI(FALSE);
+				break;
+		case MSG_EX_SOCKET_ERROR_NOMONEY:			// µ∑ æ¯¿Ω	
+				tStr = _S( 306, "≥™Ω∫∞° ∫Œ¡∑«’¥œ¥Ÿ." );
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->ClearProcessing();
+				pUIManager->GetSocketSystem()->CloseSocketSystem();
+				break;
+		case MSG_EX_SOCKET_ERROR_MAX_SOCKET:		// ∫∏ºÆ ∞·«’Ω√ º“ƒœ ∞≥ºˆ √ ∞˙
+				tStr = _S( 5002, "º“ƒœ ∞≥ºˆ∞° ∫Œ¡∑«’¥œ¥Ÿ." );
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->ClearProcessing();
+				pUIManager->GetSocketSystem()->CloseSocketSystem();
+				break;
+		case MSG_EX_SOCKET_ERROR_INVEN_NOSPACE:		// ¿Œ∫•∞¯∞£ ∫Œ¡∑
+				tStr = _S( 265, "¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->ClearProcessing();
+				pUIManager->GetSocketSystem()->CloseSocketSystem();
+				break;
+		case MSG_EX_SOCKET_ERROR_NOWEARITEM:		// π´±‚ πÊæÓ±∏∏∏«“ ºˆ ¿÷¥¬ ¿€æ˜¿‘¥œ¥Ÿ.
+				tStr = _S( 520, "π´±‚≥™ πÊæÓ±∏∏∏ ∞°¥…«’¥œ¥Ÿ." );
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->ClearProcessing();
+				pUIManager->GetSocketSystem()->CloseSocketSystem();
+				break;
+		case MSG_EX_SOCKET_ERROR_NOSPACE:			// º“ƒœ¿Ã æ¯¥¬ æ∆¿Ã≈€¿∏∑Œ¥¬ ¿€æ˜¿ª ¡¯«‡«“ ºˆ æ¯Ω¿¥œ¥Ÿ
+				tStr = _S( 4998, "º“ƒœ¿Ã ª˝º∫µ«¡ˆ æ ¿∫ æ∆¿Ã≈€¿‘¥œ¥Ÿ." );
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->ClearProcessing();
+				pUIManager->GetSocketSystem()->CloseSocketSystem();
+				break;
+		case MSG_EX_SOCKET_ERROR_NOJEWEL:			// º“ƒœ¿Ã ∫Òøˆ¿÷¥¬ æ∆¿Ã≈€¿∫ ¿€æ˜¿ª ¡¯«‡«“ ºˆ æ¯Ω¿¥œ¥Ÿ
+				tStr = _S( 5003, "¿ÃπÃ ∫∏ºÆ¿Ã ∞·«’µ«æÓ ¿÷¥¬ æ∆¿Ã≈€¿‘¥œ¥Ÿ." );
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->ClearProcessing();
+				pUIManager->GetSocketSystem()->CloseSocketSystem();
+				break;
+
+		case MSG_EX_SOCKET_ERROR_FAILED_COMBINE: // ∫∏ºÆ ¿Â¬¯ Ω«∆–
+				pUIManager->GetSocketSystem()->CompleteProgress();
+				pUIManager->GetSocketSystem()->UpdateCombineUI(FALSE);
+				break;
+	}
+	
+	if(tStr.Length()>0 )
+		pUIManager->GetChattingUI()->AddSysMessage( tStr , SYSMSG_ERROR );	
+}
+
+
+// ----------------------------------------------------------------------------
+// [9/29/2010 kiny8216] º∫¡÷ ƒ⁄Ω∫∆¨
+//  Name 	: RecieveCostume2Message()
+//  Desc 	: º∫¡÷ ƒ⁄Ω∫∆¨ ∏ﬁΩ√¡ˆ
+// ----------------------------------------------------------------------------
+void CSessionState::RecieveLordCostumeMessage( CNetworkMessage* istr )
+{
+	UBYTE ubType;
+	CTString strMessage;
+	CUIMsgBox_Info MsgBoxInfo;
+
+	(*istr) >> ubType;
+	switch( ubType )
+	{
+	case MSG_EX_CASTLLAN_ERROR_GIVE_ITEM_ERROR:
+		{	// ¡ˆ±ﬁ«“ æ∆¿Ã≈€¿Ã æ¯¿Ω
+			strMessage = _S(2502, "¡ˆ±ﬁ πﬁ¿ª æ∆¿Ã≈€¿Ã æ¯Ω¿¥œ¥Ÿ.");
+		}
+		break;
+	case MSG_EX_CASTLLAN_ERROR_GIVE_ITEM_SUC:
+		{	// ¡ˆ±ﬁ º∫∞¯
+			strMessage = _S(1840, "æ∆¿Ã≈€¿Ã º∫∞¯¿˚¿∏∑Œ ¡ˆ±ﬁ µ«æ˙Ω¿¥œ¥Ÿ");
+		}
+		break;
+	case MSG_EX_CASTLLAN_ERROR_NOT_CASTLLAN:
+		{	// º∫¡÷∞° æ∆¥‘
+			strMessage = _S(1722, "∫∏ªÛ¿ª πﬁ¿∏Ω« ºˆ ¿÷¥¬ ¡∂∞«¿Ã æ∆¥’¥œ¥Ÿ");
+		}
+		break;
+	case MSG_EX_CASTLLAN_ERROR_NOT_CASTLLAN_GUILD:
+		{
+			// º∫¡÷±ÊµÂ∞° æ∆¥‘
+			strMessage = _S( 3743, "º∫¡÷ ±ÊµÂ∞° æ∆¥’¥œ¥Ÿ." );
+		}break;
+	}
+
+	if ( strMessage.Length() > 0)
+	{
+		MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+		MsgBoxInfo.AddString( strMessage );
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+	}
+}
+
+// ----------------------------------------------------------------------------
+//  [2010/08/25 : Sora] ADD_SUBJOB
+//  Name 	: RecieveSubJobMessage()
+//  Desc 	: ∫∏¡∂¡˜æ˜ ∏ﬁΩ√¡ˆ √≥∏Æ
+// ----------------------------------------------------------------------------
+void CSessionState::RecieveSubJobMessage(CNetworkMessage* istr)
+{
+	SLONG	slType;
+	(*istr) >> slType;
+
+	switch( slType )
+	{
+		case MSG_EX_SUBJOB_ERROR_SUCESS:
+			{
+				SLONG subJobCode;
+				(*istr) >> subJobCode;
+				CTString strMessage;
+				strMessage.PrintF( _S( 5083, "[%s]¿∏∑Œ µÓ∑œ µ«æ˙Ω¿¥œ¥Ÿ." ), CUIManager::getSingleton()->GetSubJobName(subJobCode) );
+				_pNetwork->ClientSystemMessage(strMessage, SYSMSG_NORMAL);
+				_pNetwork->MyCharacterInfo.slSubJob = subJobCode;
+			}
+			break;
+		case MSG_EX_SUBJOB_ERROR_FAIL:
+			{
+				SLONG errcode;
+				(*istr) >> errcode;
+				switch( errcode )
+				{
+					case 1:
+						{
+							_pNetwork->ClientSystemMessage(_S( 965, "∑π∫ß¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR);
+						}
+						break;
+					case 2:
+						{
+							_pNetwork->ClientSystemMessage(_S( 1217, "∏Ìº∫ƒ°∞° ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR);
+						}
+						break;
+					case 3:
+						{
+							_pNetwork->ClientSystemMessage(_S( 966, "SP∞° ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR);
+						}
+						break;
+					case 4:
+						{
+							_pNetwork->ClientSystemMessage(_S( 967, "≥™Ω∫∞° ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR);
+						}
+						break;
+				}
+			}		
+			break;
+		case MSG_EX_SUBJOB_ERROR_NOT_TRADER:
+			{
+				CUIMsgBox_Info MsgInfo;
+				MsgInfo.SetMsgBoxInfo( _S( 1748, "æ»≥ª" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				MsgInfo.AddString( _S( 5050, "ªÛ¿Œ¿∏∑Œ µÓ∑œµ«æÓ ¿÷¡ˆ æ Ω¿¥œ¥Ÿ.") );
+				CUIManager::getSingleton()->CreateMessageBox( MsgInfo );			
+			}
+			break;
+	}
+}
+
+// ----------------------------------------------------------------------------
+// [2010/10/20 : Sora] ∏ÛΩ∫≈Õ øÎ∫¥ ƒ´µÂ
+//  Name 	: RecieveMonsterMercenaryCardMessage()
+//  Desc 	: 
+// ----------------------------------------------------------------------------
+void CSessionState::RecieveMonsterMercenaryCardMessage(CNetworkMessage* istr)
+{
+	UBYTE ubType;
+	CTString strMessage;
+	CUIMsgBox_Info MsgBoxInfo;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	pUIManager->CloseMessageBox(MSGCMD_MONSTER_MERCENARY_CARD_ERROR);
+
+	(*istr) >> ubType;
+
+	switch( ubType )
+	{
+		case MSG_EX_MERCENARY_SUMMON:		// º“»Ø/ «ÿ¡¶ º∫∞¯
+			{
+				SLONG uniqItemIndex;
+				SBYTE toggle;
+				//øÎ∫¥√¢ ≈‰±€
+				(*istr) >> uniqItemIndex;
+				(*istr) >> toggle;
+
+				if( toggle > 0 )
+				{
+					CUIIcon* pIcon = pUIManager->GetInventory()->GetItemIcon(uniqItemIndex);
+
+					if (pIcon != NULL)
+						pUIManager->GetMonsterMercenary()->SetUseItemData(pIcon->getIndex());
+				}
+				pUIManager->GetMonsterMercenary()->ToggleMonsterMercenary( toggle );
+			}
+			break;
+		case MSG_EX_MERCENARY_LIMIT_TIME:	// ≥≤¿∫ Ω√∞£ ¡§∫∏
+			{
+				SLONG time;
+				SLONG tab, nInvenIdx;
+
+				(*istr) >> tab;
+				(*istr) >> nInvenIdx;
+				(*istr) >> time;
+
+				CItems	&rItems = _pNetwork->MySlotItem[tab][nInvenIdx];
+
+				strMessage.PrintF(_S( 5158, "[%s]%søÎ∫¥ ªÁøÎ ±‚∞£ ∏∏∑·±Ó¡ˆ %d∫– ≥≤æ“Ω¿¥œ¥Ÿ."), 
+									pUIManager->GetMonsterMercenary()->GetMonsterGrade(rItems.Item_Used2),
+									CMobData::getData(rItems.Item_Plus)->GetName(), time);
+
+				pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_ERROR );
+				return;
+			}
+			break;
+		case MSG_EX_MERCENARY_ERROR:
+			{
+				UBYTE errcode;
+				
+				(*istr) >> errcode;
+
+				switch( errcode )
+				{
+					case MSG_EX_MERCENARY_ERROR_USE_FAIL:		// ªÁøÎ Ω«∆–
+						{
+							strMessage = _S( 5159, "øÎ∫¥¿ª º“»Ø «“ ºˆ æ¯Ω¿¥œ¥Ÿ. »Æ¿Œ »ƒ ¥ŸΩ√ ªÁøÎ«œΩ Ω√ø¿.");
+						}
+						break;
+					case MSG_EX_MERCENARY_ERROR_SUMMON_ALREADY:	// ¿ÃπÃ ¥Ÿ∏•≥—¿Ã º“»Øµ«æÓ ¿÷æÓ ªÁøÎ«“ ºˆ æ¯¿Ω
+						{
+							strMessage = _S( 5160, "¿ÃπÃ øÎ∫¥¿Ã º“»Øµ«æÓ ¿÷Ω¿¥œ¥Ÿ.");
+						}
+						break;
+					case MSG_EX_MERCENARY_ERROR_DONT_SUMMON:	// º“»Ø ∫“∞°
+						{
+							strMessage = strMessage = _S( 5159, "øÎ∫¥¿ª º“»Ø «“ ºˆ æ¯Ω¿¥œ¥Ÿ. »Æ¿Œ »ƒ ¥ŸΩ√ ªÁøÎ«œΩ Ω√ø¿.");
+						}
+						break;
+					case MSG_EX_MERCENARY_ERROR_MON_AUTO_DEL:	// ∏ÛΩ∫≈Õ ¿⁄µø ªË¡¶(∞≈∏Æ∞° ∏÷æÓ¡≥∞≈≥™ Ω√∞£¿Ã ¥Ÿµ«æÓº≠)
+						{
+							pUIManager->GetMonsterMercenary()->ToggleMonsterMercenary( -1 );
+
+							strMessage = _S( 5161, "øÎ∫¥ º“»Ø¿Ã «ÿ¡¶µ«æ˙Ω¿¥œ¥Ÿ.");
+
+							pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_ERROR );
+							return;
+						}
+						break;
+					case MSG_EX_MERCENARY_ERROR_AREA:	// ¿Ã ¡ˆø™ø°º≠¥¬ øÎ∫¥¿ª º“»Ø «“ ºˆ æ¯Ω¿¥œ¥Ÿ. 
+						{
+							// øÎ∫¥√¢ ¥›¿⁄
+							strMessage = _S( 5162, "«ÿ¥Á ¡ˆø™ø°º≠¥¬ øÎ∫¥¿ª º“»Ø «“ ºˆ æ¯Ω¿¥œ¥Ÿ.");
+						}
+						break;
+					default:
+						{
+							strMessage = _S( 5159, "øÎ∫¥¿ª º“»Ø «“ ºˆ æ¯Ω¿¥œ¥Ÿ. »Æ¿Œ »ƒ ¥ŸΩ√ ªÁøÎ«œΩ Ω√ø¿.");
+						}
+						break;
+				}
+			}
+			break;
+	}
+
+	if ( strMessage.Length() > 0)
+	{
+		MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_MONSTER_MERCENARY_CARD_ERROR);
+		MsgBoxInfo.AddString( strMessage );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+	}
+}
+
+void CheckFaceOffError(UBYTE ubError)
+{
+	CTString strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;
+
+	switch( ubError )
+	{
+	case MSG_EX_FACEOFF_ERROR_FAIL:
+		{
+			strMessage.PrintF( _S( 5186, "º∫«¸ƒ´µÂ∞° æ¯∞≈≥™ º∫«¸ø° Ω«∆–«œø¥Ω¿¥œ¥Ÿ. ¿·Ω√ »ƒ ¥ŸΩ√ Ω√µµ«ÿ ¡÷ººø‰."));
+		}
+		break;
+	case MSG_EX_FACEOFF_ERROR_PLZ_CHOISE:
+		{
+			strMessage.PrintF( _S( 5187, "º±≈√«œΩ≈ ø‹∏¥¬ «ˆ¿Á ø‹∏øÕ µø¿œ«’¥œ¥Ÿ."));
+		}
+		break;
+	default:
+		{
+			strMessage.PrintF( _S( 5188, "ø‹«¸ ∫Ø∞Êø° Ω«∆–«œø¥Ω¿¥œ¥Ÿ."));
+		}
+		break;
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->GetInitJob()->CloseInitJob();
+
+	if ( strMessage.Length() > 0 )
+	{
+		MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+		MsgBoxInfo.AddString( strMessage );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+	}
+}
+void CSessionState::RecieveFaceOffMessage( CNetworkMessage* istr )
+{
+	UBYTE ubType;
+	INDEX iCharIndex;
+	UBYTE ubFaceStyle, ubHairStyle;
+	CUIMsgBox_Info	MsgBoxInfo;
+	CTString strMessage;
+
+	(*istr) >> ubType;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch( ubType )
+	{
+	case MSG_EX_FACEOFF_ERROR_SUC:
+		{
+			(*istr) >> ubHairStyle;
+			(*istr) >> ubFaceStyle;
+			(*istr) >> iCharIndex;
+
+			if ( iCharIndex == _pNetwork->MyCharacterInfo.index )
+			{	// ≥ª ƒ≥∏Ø≈Õ∞° face, hair change∏¶ º∫∞¯«— ∞ÊøÏ,
+				_pNetwork->MyCharacterInfo.faceStyle = ubFaceStyle;
+				_pNetwork->MyCharacterInfo.hairStyle = ubHairStyle;
+				pUIManager->GetInitJob()->CloseInitJob();
+				strMessage.PrintF( _S( 5185, "ø‹«¸ ∫Ø∞Êø° º∫∞¯«ﬂΩ¿¥œ¥Ÿ."));
+			}
+			else
+			{	// ¥Ÿ∏• ƒ≥∏Ø≈Õ∞° face, hair change∏¶ º∫∞¯«— ∞ÊøÏ,
+				ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_CHARACTER, iCharIndex);
+
+				if (pObject != NULL)
+				{
+					if (((CPlayerEntity*)CEntity::GetPlayerEntity(0))->IsHelmet(iCharIndex) == TRUE)
+						return;
+
+					CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+					CModelInstance* pMI = pTarget->GetEntity()->en_pmiModelInstance;
+
+					INDEX iJob = pTarget->GetType();
+					((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetAppearanceData( pTarget->GetEntity()->en_ulID, ubHairStyle, ubFaceStyle);
+					((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ChangeHairMesh( pMI, iJob, ubHairStyle - 1);
+					((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ChangeFaceMesh( pMI, iJob, ubFaceStyle - 1);
+					pTarget->cha_itemEffect.Refresh(&pMI->m_tmSkaTagManager, 1);
+					pTarget->cha_statusEffect.Refresh(&pMI->m_tmSkaTagManager, CStatusEffect::R_NONE);
+				}
+			}
+			PCStartEffectGroup("squid", iCharIndex);
+		}
+		break;
+	default :
+		{
+			CheckFaceOffError( ubType );
+		}
+		break;
+	}
+	if ( strMessage.Length() > 0 )
+	{
+		MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+		MsgBoxInfo.AddString( strMessage );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+	}
+}
+
+void CSessionState::RecieveLuckyDrawBoxMessage( CNetworkMessage* istr )
+{
+	CUIMsgBox_Info	MsgBoxInfo;
+	CTString strMessage;
+	SLONG slErrorType;
+
+	(*istr) >> slErrorType;
+
+	switch( slErrorType )
+	{
+		case MSG_LUCKYDRAWBOX_ERROR_SUCESS:
+			return;
+		case MSG_LUCKYDRAWBOX_ERROR_NEED:
+			{
+				strMessage.PrintF( _S( 5311, "ªÛ¿⁄∏¶ ø≠±‚ ¿ß«ÿº≠¥¬ æ∆¿Ã≈€¿Ã « ø‰«’¥œ¥Ÿ »Æ¿Œ »ƒ ¥ŸΩ√ Ω√µµ«œø© ¡÷Ω Ω√ø¿."));
+			}
+			break;
+		case MSG_LUCKYDRAWBOX_ERROR_INVEN:
+			{
+				strMessage.PrintF( _S(4237, "¿Œ∫•≈‰∏Æ¿« ∞¯∞£¿Ã ∫Œ¡∑ «’¥œ¥Ÿ. ¿Œ∫•≈‰∏Æ∏¶ ∫ÒøÓ »ƒ ¥ŸΩ√ Ω√µµ«ÿ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ."));
+			}
+			break;
+		case MSG_LUCKYDRAWBOX_ERROR_USE:
+			{
+				strMessage.PrintF( _S(5312, "æ∆¿Ã≈€¿ª ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."));
+			}
+			break;
+		case MSG_LUCKYDRAWBOX_ERROR_OVER_WEIGHT:
+			{
+				strMessage.PrintF( _S(4237, "¿Œ∫•≈‰∏Æ¿« ∞¯∞£¿Ã ∫Œ¡∑ «’¥œ¥Ÿ. ¿Œ∫•≈‰∏Æ∏¶ ∫ÒøÓ »ƒ ¥ŸΩ√ Ω√µµ«ÿ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ."));
+			}
+			break;
+		default:
+			{
+				strMessage.PrintF( _S(5312, "æ∆¿Ã≈€¿ª ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."));
+			}
+	}
+
+	if ( strMessage.Length() > 0 )
+	{
+		MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+		MsgBoxInfo.AddString( strMessage );
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+	}
+}
+
+
+//added by sam 11/01/04 ∏ﬁΩ√¡ˆ π⁄Ω∫∏¶ ∫∏ø© ¡Ÿ ∏ﬁΩ√¡ˆ∏¶ º≠πˆø°º≠ ∫∏≥ª¡ÿ¥Ÿ. 
+void CSessionState::RecieveMsgBoxShow ( CNetworkMessage* istr )
+{
+	CUIMsgBox_Info	MsgBoxInfo;
+	CTString strMessage;
+	UCHAR chrErrorType;
+	(*istr) >> chrErrorType;
+
+	INDEX nTitle = 191;
+	switch ( chrErrorType )
+	{
+		case MSG_EX_MSGBOX_INVEN_FULL:				// ¿Œ∫•≈‰∏Æ ∞°µÊ¬¸
+			{
+				strMessage.PrintF( _S( 265, "¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ));			
+				
+				break;			
+			}
+		case MSG_EX_MSGBOX_CHANGE_START_POINT:
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S(nTitle,"»Æ¿Œ"), UMBS_YESNO, UI_NONE, MSGCMD_CHANGE_START_POINT, 200);
+				MsgBoxInfo.AddString( _S(5376, "∂ÛΩ∫∆Æ ƒ´ø¿Ω∫ø° ø¿Ω≈ ∞Õ¿ª »Øøµ«’¥œ¥Ÿ.") );
+				MsgBoxInfo.AddString( _S(5377, "¿Ã∞˜¿∫ ¡Í≥Î ¡ˆø™¿« ∂ıµπ º∫ ¿‘¥œ¥Ÿ.") );
+				MsgBoxInfo.AddString( _S(5378, "∏«Ë∞°µÈ¿« »ﬁΩƒ ∞¯∞£¿∏∑ŒΩ·, ±≥∑˘∞° ∞°¿Â »∞πﬂ«— ∞˜¿‘¥œ¥Ÿ.") );
+				MsgBoxInfo.AddString( _S(5379, "√µ√µ»˜ µ—∑Ø ∫∏Ω√∞Ì √ ∫∏¡ˆø™¿∏∑Œ øˆ«¡∏¶ ø¯«œΩ√∏È »Æ¿Œ πˆ∆∞¿ª ¥≠∑Ø¡÷ººø‰.") );
+				MsgBoxInfo.AddString( _S(5380, "(¥‹, √Îº“∏¶ ¥©∏¶ Ω√ √ ∫∏¡ˆø™¿∏∑Œ øˆ«¡ «“ ºˆ æ¯Ω¿¥œ¥Ÿ.)") );
+				MsgBoxInfo.AddString( _S(5381, "√ ∫∏¡ˆø™¿∏∑Œ ¿Ãµø «œΩ√∞⁄Ω¿¥œ±Ó?") );
+				CUIManager::getSingleton()->CreateMessageBox(MsgBoxInfo);
+				return;
+			}
+	}	
+
+	if ( strMessage.Length() > 0 )
+	{
+		MsgBoxInfo.SetMsgBoxInfo( _S(nTitle,"»Æ¿Œ"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+		MsgBoxInfo.AddString( strMessage );
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+	}
+}
+
+void	CSessionState::RecieveUsedPartyItemMessage(CNetworkMessage* istr )
+{
+	INDEX		iItemIdx = -1;
+	CTString	strNickName;
+
+	(*istr) >> iItemIdx;
+	(*istr) >> strNickName;
+
+	CUIManager::getSingleton()->GetNotice()->ShowUsedPartyItemNotice( iItemIdx, strNickName );
+}
+
+
+void	CSessionState::RecieveRoyalrumbleMessage(CNetworkMessage* istr )
+{
+	CUIMsgBox_Info	MsgBoxInfo;
+	CTString strMessage;
+	UBYTE msgIdx				= 0;
+	(*istr) >> msgIdx;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch( msgIdx )
+	{
+		case MSG_EX_ROYAL_RUMBLE_NOTICE:						// ∞¯¡ˆ
+			{
+				UBYTE uResult = 0;
+				(*istr) >> uResult;
+				pUIManager->GetNotice()->ShowRoyalRumbleNotice( uResult );
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_REG_MENU:						// Ω≈√ª∏ﬁ¥∫ »∞º∫»≠.
+			{
+				UBYTE uType = 0;
+				(*istr) >> uType;
+				pUIManager->GetRadar()->SetRoyalRumbleStatus( uType );
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_PLAYER_REP:					// µÓ∑œ Ω≈√ª ∞·∞˙.
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _s(""), UMBS_OK, UI_NONE, MSGCMD_NULL);
+				UBYTE uResult = 0;
+				(*istr) >> uResult;
+				if( uResult == 0 )
+				{
+					MsgBoxInfo.AddString( _S(5414, "∑Œæ‚ ∑≥∫Ìø° ¬¸∞°Ω≈√ª¿ª øœ∑·«œø¥Ω¿¥œ¥Ÿ.") );
+				}
+				else if( uResult == 1 )
+				{
+					MsgBoxInfo.AddString( _S(5415, "≥™Ω∫∞° ∫Œ¡∑«œø© ∑Œæ‚∑≥∫Ìø° ¬¸∞°«œΩ« ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+				}
+				else if( uResult == 2 )
+				{
+					MsgBoxInfo.AddString( _S(5416, "º±ºˆµÓ∑œ¿Ã ∫“∞°¥…«’¥œ¥Ÿ.") );
+				}
+				else if( uResult == 3 )
+				{
+					MsgBoxInfo.AddString( _S(5417, "¿ÃπÃ Ω≈√ª«œø¥Ω¿¥œ¥Ÿ.") );
+				}
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_PLAYER_UNREGIST_REP:			// µÓ∑œ √Îº“.
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S(5405, "∑Œæ‚∑≥∫Ì Ω≈√ª √Îº“"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+				UBYTE uResult = 0;
+				(*istr) >> uResult;
+				if( uResult == 0 )
+				{
+					MsgBoxInfo.AddString( _S(5418, "º∫∞¯¿˚¿∏∑Œ √Îº“µ«æ˙Ω¿¥œ¥Ÿ.") );
+				}
+				else if( uResult == 1 )
+				{
+					MsgBoxInfo.AddString( _S(5419, "√Îº“«“ ºˆ ¿÷¥¬ Ω√∞£¿Ã æ∆¥’¥œ¥Ÿ.") );
+				}
+				else if( uResult == 2 )
+				{
+					MsgBoxInfo.AddString( _S(5420, "µÓ∑œ¿⁄ ∏Ì¥‹ø° æ¯Ω¿¥œ¥Ÿ.") );
+				}
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_PLAYER_REG_RESULT:				// º±ºˆ º±πﬂ ∞·∞˙.
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S(5407, "∑Œæ‚∑≥∫Ì ¬¸∞°Ω≈√ª"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+				UBYTE uResult = 0;
+				(*istr) >> uResult;
+				if( uResult == 0 )
+				{
+					MsgBoxInfo.AddString( _s("Ω≈√ª∏∏ µ» ªÛ≈¬") );
+				}
+				else if( uResult == 1 )
+				{
+					MsgBoxInfo.AddString( _S(5421, "√‡«œµÂ∏≥¥œ¥Ÿ. ∑Œæ‚∑≥∫Ìø° º±πﬂµ«ºÃΩ¿¥œ¥Ÿ. ¿Â∫Ò∏¶ ¡§∫Ò«œø© ¬˜∑ ∏¶ ±‚¥Ÿ∑¡ ¡÷ººø‰.") );
+				}
+				else if( uResult == 2 )
+				{
+					MsgBoxInfo.AddString( _S(5422, "æ»≈∏±ı∞‘µµ ∑Œæ‚∑≥∫Ìø° º±πﬂµ«¡ˆ ∏¯«œºÃΩ¿¥œ¥Ÿ. ¥Ÿ¿Ω ∑Œæ‚∑≥∫Ìø° µµ¿¸«ÿ ¡÷ººø‰.") );
+				}
+				else if( uResult == 3 )
+				{
+					MsgBoxInfo.AddString( _S(5423, "¡Àº€«’¥œ¥Ÿ. ∞Ê±‚∞° √Îº“µ«æ˙Ω¿¥œ¥Ÿ.") );
+				}
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_GO_ZONE:						// ¿Ãµø«œ±‚
+			{
+				MsgBoxInfo.SetMsgBoxInfo( _S(5424, "¥Î±‚Ω« ¿Ãµø"), UMBS_OK|UMBS_USE_TIMER, UI_RADAR, MSGCMD_ROYALRUMBLE_GO_ZONE);
+								
+				MsgBoxInfo.AddString( _S(5425,	"∑Œæ‚∑≥∫Ì ¥Î±‚Ω«∑Œ ¿Ãµø«’¥œ¥Ÿ."
+												"¿Ãµø«œ∑¡∏È »Æ¿Œ πˆ∆∞¿ª ¥©∏£ººø‰."
+												"(¡¶«—Ω√∞£¿Ã ¡ˆ≥™∏È Ω«∞›√≥∏Æ µÀ¥œ¥Ÿ.)" ) );
+// 				MsgBoxInfo.AddString( _s("¿Ãµø«œ∑¡∏È »Æ¿Œ πˆ∆∞¿ª ¥©∏£ººø‰.") );
+// 				MsgBoxInfo.AddString( _s("(¡¶«—Ω√∞£¿Ã ¡ˆ≥™∏È Ω«∞›√≥∏Æ µÀ¥œ¥Ÿ.)") );
+				MsgBoxInfo.SetMsgBoxTimer( 30, FALSE );			// 30 seconds.
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_ENTER_NEXT_PLAYER:				// ¥Ÿ¿Ω º±ºˆ ¿‘¿Â ≥≤¿∫ Ω√∞£
+			{
+				INDEX iLeftTime = 0;
+				(*istr) >> iLeftTime;
+				pUIManager->GetNotice()->ShowRoyalRumbleNextPlayerTime( iLeftTime );
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_HOLD:							// ∞Ê±‚ Ω√¿€ 
+			{
+				;
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_WINNER:						// øÏΩ¬¿⁄ ¿¸√º ∞¯¡ˆ
+			{
+				INDEX iLevelType = 0;
+				INDEX iCharIdx = 0;
+				CTString strNickName;
+				(*istr) >> iLevelType;
+				(*istr) >> iCharIdx;
+				(*istr) >> strNickName;
+				pUIManager->GetNotice()->ShowRoyalRumbleWinner( iLevelType, strNickName );
+				if( _pNetwork->MyCharacterInfo.index == iCharIdx )
+				{
+					pUIManager->GetRadar()->ShowRoyalRumbleTrophy();
+				}
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_REWARD_REP:					// ∫∏ªÛ ¿¿¥‰
+			{
+				UBYTE uResult = 0;
+				(*istr) >> uResult;
+				MsgBoxInfo.SetMsgBoxInfo( _s(""), UMBS_OK, UI_NONE, MSGCMD_NULL);
+				if( uResult == 0 )
+				{
+					MsgBoxInfo.AddString( _S(5427, "∫∏ªÛ ¥ÎªÛ¿⁄∞° æ∆¥’¥œ¥Ÿ.") );
+				}
+				else if( uResult == 1 )
+				{
+					MsgBoxInfo.AddString( _S(1755, "¿ÃπÃ ∫∏ªÛ¿ª πﬁæ“Ω¿¥œ¥Ÿ.") );
+				}
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_POINT_REP:						// ¿¸¿Â∆˜¿Œ∆Æ ¡∂»∏ ¿¿¥‰.
+			{
+				INDEX iWarPoint = 0, iWarAccPoint = 0;
+				(*istr) >> iWarPoint;
+				(*istr) >> iWarAccPoint;
+				MsgBoxInfo.SetMsgBoxInfo( _S(5412, "¿¸¿Â ∆˜¿Œ∆Æ ¡∂»∏"), UMBS_OK, UI_NONE, MSGCMD_NULL);
+				CTString strTemp;
+				MsgBoxInfo.AddString( _S(5428, "∫∏¿Ø ¿¸¿Â ∆˜¿Œ∆Æ"), 0xF2F2F2FF, TEXT_CENTER );
+				MsgBoxInfo.AddString( _s(" ") );
+				strTemp.PrintF( "%d", iWarPoint );
+				MsgBoxInfo.AddString( strTemp, 0xF2F2F2FF, TEXT_CENTER );
+				MsgBoxInfo.AddString( _s(" ") );
+				MsgBoxInfo.AddString( _s(" ") );
+				MsgBoxInfo.AddString( _S(5429, "¥©¿˚ ¿¸¿Â ∆˜¿Œ∆Æ"), 0xF2F2F2FF, TEXT_CENTER );
+				MsgBoxInfo.AddString( _s(" ") );
+				strTemp.PrintF( "%d", iWarAccPoint );
+				MsgBoxInfo.AddString( strTemp, 0xF2F2F2FF, TEXT_CENTER );
+				MsgBoxInfo.AddString( _s(" ") );
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_TIME_REP:
+			{
+				INDEX iTime = -1;
+				(*istr) >> iTime;
+				MsgBoxInfo.SetMsgBoxInfo( _S(5430, "∑Œæ‚∑≥∫Ì ∞Ê±‚ ¿œ¡§"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				CTString strTemp;
+				if( iTime < 0 )
+				{
+					strTemp.PrintF( _S(5431, "«ˆ¿Á ∞Ê±‚∞° ¡¯«‡¡ﬂ¿‘¥œ¥Ÿ.") );
+				}
+				else
+				{
+					strTemp.PrintF( _S(5432, "¥Ÿ¿Ω ∞Ê±‚¥¬ %dΩ√ 00∫–ø° ¡¯«‡µÀ¥œ¥Ÿ."), iTime );
+				}
+				MsgBoxInfo.AddString( strTemp, 0xF2F2F2FF, TEXT_CENTER );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_LEFT_COUNT:
+			{
+				INDEX iLeftCount = 0;
+				(*istr) >> iLeftCount;
+				pUIManager->GetRoyalRumbleIcon()->SetLeftCount( iLeftCount );
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_TIME_NOTICE:
+			{
+				UBYTE uType = 0;
+				INDEX iLeftTime = -1;
+				(*istr) >> uType;
+				(*istr) >> iLeftTime;
+
+				pUIManager->GetRadar()->SetRoyalRumbleSandglass(uType, iLeftTime );
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_NOTFOUND_ITEM:
+			{	
+				MsgBoxInfo.SetMsgBoxInfo( _S( 5576, "∑Œæ‚∑≥∫Ì ¿‘¿Â±«"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+				CTString strTemp;
+				strTemp.PrintF( _S( 5577, "«ÿ¥Á ∑Œæ‚∑≥∫Ì ±∏∞£¿« ¿‘¿Â±«¿Ã ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ.") );
+				MsgBoxInfo.AddString( strTemp, 0xF2F2F2FF, TEXT_CENTER );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+			}
+			break;
+		case MSG_EX_ROYAL_RUMBLE_KILL_PLAYER:
+			{
+				CTString strAttacker;
+				CTString strVictim;
+				CTString strTemp;
+				(*istr) >> strAttacker >> strVictim;
+				// ADD-Contents : ITS#3620 ∞¯∞›¿⁄ Ω∫Ω∫∑Œ ªÁ∏¡Ω√ ∏ﬁΩ√¡ˆ √ﬂ∞°.  [8/22/2011 rumist]
+				if( strAttacker == strVictim )
+					strTemp.PrintF( _S( 5580, "%¥‘¿Ã æ∆øÙµ«æ˙Ω¿¥œ¥Ÿ."), strAttacker );
+				else
+					strTemp.PrintF( _S( 5578, "%s¥‘¿Ã %s¥‘¿ª æ∆øÙΩ√ƒ◊Ω¿¥œ¥Ÿ."), strAttacker, strVictim );
+				pUIManager->GetChattingUI()->AddSysMessage( strTemp, SYSMSG_ERROR );
+			}
+			break;
+	}
+}
+
+void CSessionState::RecieveMasterStoneMessage( CNetworkMessage* istr )
+{
+	ResponseClient::doItemUseMasterStoneUSA* pPacket = reinterpret_cast<ResponseClient::doItemUseMasterStoneUSA*>(istr->GetBuffer());
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->GetMixNew()->MixNewMasterStoneRep(pPacket->error, pPacket->success_type);
+}
+
+void CSessionState::RecieveRankingListExMessage( CNetworkMessage* istr )
+{
+	CUIManager::getSingleton()->GetRankingViewEx()->RecvRankingList(*istr);
 }

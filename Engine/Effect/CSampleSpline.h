@@ -1,16 +1,11 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
-#include <iostream>
-#include <vector>
-using namespace std;
-
-
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CSAMPLESPLINE_H__
 #define __CSAMPLESPLINE_H__
 
 #include <Engine/Base/Types.h>
 #include <Engine/Math/Quaternion.h>
 #include <Engine/Base/Memory.h>
-//#include <vector>
+#include <vector>
 #include <algorithm>
 #include <Engine/Graphics/Color.h>
 #include <Engine/Base/Memory.h>
@@ -39,7 +34,7 @@ using namespace std;
 	}\
 }
 
-//ê¸°ë³¸ì ìœ¼ë¡œ ì‚¬ìš©ë˜ëŠ” linear interpolate í•¨ìˆ˜ì
+//±âº»ÀûÀ¸·Î »ç¿ëµÇ´Â linear interpolate ÇÔ¼öÀÚ
 template<class ValueType>
 class CLerp
 {
@@ -55,12 +50,12 @@ template<>
 class CLerp<COLOR>
 {
 public:
-	ValueType operator()(const ValueType &val1, const ValueType &val2, float ratio)
+	COLOR operator()(const COLOR &val1, const COLOR &val2, float ratio)
 	{
 		return LerpColorInline(val1, val2, ratio);
 	}
 
-	inline void Prepare(unsigned int count, const std::vector<ValueType> &values, std::vector<ValueType> &precomputeValues) {}
+	inline void Prepare(unsigned int count, const std::vector<COLOR> &values, std::vector<COLOR> &precomputeValues) {}
 private:
 };
 
@@ -68,16 +63,16 @@ template<>
 class CLerp<FLOATquat3D>
 {
 public:
-	ValueType operator()(const ValueType &val1, const ValueType &val2, float ratio)
+	FLOATquat3D operator()(const FLOATquat3D &val1, const FLOATquat3D &val2, float ratio)
 	{
 		return Slerp(ratio, val1, val2);
 	}
 
-	inline void Prepare(unsigned int count, const std::vector<ValueType> &values, std::vector<ValueType> &precomputeValues) {}
+	inline void Prepare(unsigned int count, const std::vector<FLOATquat3D> &values, std::vector<FLOATquat3D> &precomputeValues) {}
 private:
 };
 
-//Natural Cubic Spline interpolate í•¨ìˆ˜ì
+//Natural Cubic Spline interpolate ÇÔ¼öÀÚ
 template<class ValueType>
 class CCubicSplineInterpolate
 {
@@ -125,8 +120,8 @@ template<>
 class CCubicSplineInterpolate<FLOAT3D>
 {
 public:
-	ValueType operator()(const ValueType &val1, const ValueType &val2
-						, const ValueType &valPC1, const ValueType &valPC2
+	FLOAT3D operator()(const FLOAT3D &val1, const FLOAT3D &val2
+						, const FLOAT3D &valPC1, const FLOAT3D &valPC2
 						, float ratio)
 	{
 		//return val1
@@ -142,20 +137,20 @@ public:
 	}
 
 	inline void Prepare( unsigned int count
-						, const std::vector<ValueType> &values
-						, std::vector<ValueType> &precomputeValues )
+						, const std::vector<FLOAT3D> &values
+						, std::vector<FLOAT3D> &precomputeValues )
 	{
 		if(count <= 2)
 		{
-			memset(&precomputeValues[0], 0, sizeof(ValueType)*count);
+			memset(&precomputeValues[0], 0, sizeof(FLOAT3D)*count);
 			return;
 		}
 		unsigned int n = count - 1, i;
 		std::vector<float> gamma;
 		gamma.resize(count);
-		std::vector<ValueType> delta;
+		std::vector<FLOAT3D> delta;
 		delta.resize(count);
-		std::vector<ValueType> &vectorTemp = precomputeValues;
+		std::vector<FLOAT3D> &vectorTemp = precomputeValues;
 		vectorTemp.resize(count);
 
 		gamma[0] = 1.0f/2.0f;
@@ -176,7 +171,7 @@ public:
 	}
 };
 
-//Hermite Spline Interpolate í•¨ìˆ˜ì, ì¼ë‹¨ Hermiteì˜ alphaëŠ” 0ì´ë¼ê³  ë‹¨ì •í•¨.
+//Hermite Spline Interpolate ÇÔ¼öÀÚ, ÀÏ´Ü HermiteÀÇ alpha´Â 0ÀÌ¶ó°í ´ÜÁ¤ÇÔ.
 template<class ValueType>
 class CHermiteSplineInterpolate
 {
@@ -204,23 +199,23 @@ public:
 
 /**
 CSampleSpline
--floatë¥¼ í‚¤ë¡œ ê°–ëŠ” sampleë“¤ì„ ì—¬ëŸ¬ê°œ ê°€ì§€ê³  íŠ¹ì • ì…ë ¥(float)ì— ëŒ€í•´ sampleê°’ì˜ interpolateëœ ê°’ì„ ë¦¬í„´í•œë‹¤.
--interpolateí•¨ìˆ˜ëŠ” ì…ë ¥ìœ¼ë¡œ ì£¼ì–´ì§ˆ ìˆ˜ ìˆìœ¼ë©° ê¸°ë³¸ í•¨ìˆ˜ëŠ” linear interpolateì´ë‹¤.
--ê¸°ë³¸ interpolateëŠ” í•¨ìˆ˜ë¡œ êµ¬í˜„ë˜ì–´ ìˆì§€ ì•Šê³  ê°’ì˜ ì—°ì‚°ì„ ì´ìš©í•˜ì—¬ êµ¬í˜„ëœë‹¤.
--í•„ìš”í•œ ì—°ì‚°ì€ ê°’ë“¤ ì‚¬ì´ì˜ ë”í•˜ê¸°, ë¹¼ê¸°, floatìœ¼ë¡œ ê³±í•˜ê¸°ì´ë‹¤.
+-float¸¦ Å°·Î °®´Â sampleµéÀ» ¿©·¯°³ °¡Áö°í Æ¯Á¤ ÀÔ·Â(float)¿¡ ´ëÇØ sample°ªÀÇ interpolateµÈ °ªÀ» ¸®ÅÏÇÑ´Ù.
+-interpolateÇÔ¼ö´Â ÀÔ·ÂÀ¸·Î ÁÖ¾îÁú ¼ö ÀÖÀ¸¸ç ±âº» ÇÔ¼ö´Â linear interpolateÀÌ´Ù.
+-±âº» interpolate´Â ÇÔ¼ö·Î ±¸ÇöµÇ¾î ÀÖÁö ¾Ê°í °ªÀÇ ¿¬»êÀ» ÀÌ¿ëÇÏ¿© ±¸ÇöµÈ´Ù.
+-ÇÊ¿äÇÑ ¿¬»êÀº °ªµé »çÀÌÀÇ ´õÇÏ±â, »©±â, floatÀ¸·Î °öÇÏ±âÀÌ´Ù.
 */
 template<class ValueType, class InterpolateFunc = CLerp<ValueType> >
 class CSampleSpline
 {
 private:
-	//ë²¡í„°ì— ì €ì¥ë˜ëŠ” ìë£Œêµ¬ì¡°
+	//º¤ÅÍ¿¡ ÀúÀåµÇ´Â ÀÚ·á±¸Á¶
 	class CSample
 	{
 	public:
 		float		m_fKey;
 		ValueType	m_value;
 		ValueType	m_valuePrecompute;
-//		std::vector<ValueType>	m_vectorPrecomputeValue;
+		//std::vector<ValueType>	m_vectorPrecomputeValue;
 
 		CSample() {}
 		CSample(float key, const ValueType &value) : m_fKey( key ), m_value( value ) {}
@@ -235,7 +230,7 @@ private:
 		}
 	};
 	typedef std::vector<CSample>			sample_vector;
-	typedef std::vector<CSample>::iterator	sample_iterator;
+	typedef typename std::vector<CSample>::iterator	sample_iterator;
 public:
 	typedef	ValueType ValueType;
 	inline CSampleSpline() : m_iCount( 0 ), m_bPrepared( false ) {}
@@ -243,9 +238,9 @@ public:
 
 	inline void Clear();
 
-	inline int AddSample(float key, const ValueType &value);	//ìƒ˜í”Œì„ ì¶”ê°€í•œë‹¤.
-	inline int RemoveSample(float keyLower, float keyUpper);	//ì¼ì • í‚¤ë²”ìœ„ë¥¼ ì‚­ì œí•œë‹¤.
-	inline int RemoveSample(const ValueType &value);	//íŠ¹ì • valueë¥¼ ê°–ëŠ”ë‹¤ë©´ ì‚­ì œí•œë‹¤.
+	inline int AddSample(float key, const ValueType &value);	//»ùÇÃÀ» Ãß°¡ÇÑ´Ù.
+	inline int RemoveSample(float keyLower, float keyUpper);	//ÀÏÁ¤ Å°¹üÀ§¸¦ »èÁ¦ÇÑ´Ù.
+	inline int RemoveSample(const ValueType &value);	//Æ¯Á¤ value¸¦ °®´Â´Ù¸é »èÁ¦ÇÑ´Ù.
 	inline int RemoveSample(const int index);
 
 	inline float GetKey(int index);
@@ -264,9 +259,9 @@ public:
 		return *this;
 	}
 private:
-//	content
+	//content
 	sample_vector	m_vectorSample;
-//	instance
+	//instance
 	bool			m_bPrepared;
 	int				m_iCount;
 	InterpolateFunc m_interpolateFunc;
@@ -348,15 +343,15 @@ const ValueType &CSampleSpline<ValueType, InterpolateFunc>::GetValue(int index)
 	return m_vectorSample[index].m_value;
 }
 
-//templateì˜ íŠ¹ì„±ì„ ì´ìš©í•¨. ì‚¬ìš©í•˜ì§€ ì•Šìœ¼ë©´ ì½”ë“œê°€ ìƒì„±ë˜ì–´ ì»´íŒŒì¼ ë˜ì§€ ì•ŠëŠ”ë‹¤.
-//í˜¹ì€ ì»´íŒŒì¼ëŸ¬ì˜ ìµœì í™” ê¸°ëŠ¥ì„ ë¯¿ëŠ”ë‹¤. ì‹¤ì œ ì‚¬ìš©ë˜ì§€ ì•ŠëŠ” ì„ì‹œë³€ìˆ˜ì˜ ì œê±°.
+//templateÀÇ Æ¯¼ºÀ» ÀÌ¿ëÇÔ. »ç¿ëÇÏÁö ¾ÊÀ¸¸é ÄÚµå°¡ »ı¼ºµÇ¾î ÄÄÆÄÀÏ µÇÁö ¾Ê´Â´Ù.
+//È¤Àº ÄÄÆÄÀÏ·¯ÀÇ ÃÖÀûÈ­ ±â´ÉÀ» ¹Ï´Â´Ù. ½ÇÁ¦ »ç¿ëµÇÁö ¾Ê´Â ÀÓ½Ãº¯¼öÀÇ Á¦°Å.
 template<class ValueType, class InterpolateFunc>
 void CSampleSpline<ValueType, InterpolateFunc>::Prepare()
 {
 	m_bPrepared = true;
 }
 
-//Natural Cubicì´ì™¸ì˜ ê²ƒì—ì„œëŠ” ì•ˆì“°ì„.
+//Natural CubicÀÌ¿ÜÀÇ °Í¿¡¼­´Â ¾È¾²ÀÓ.
 template<>
 void CSampleSpline< FLOAT3D, CCubicSplineInterpolate<FLOAT3D> >::Prepare()
 {
@@ -383,7 +378,7 @@ void CSampleSpline< FLOAT3D, CCubicSplineInterpolate<FLOAT3D> >::Prepare()
 	}
 }
 
-//ê¸°ë³¸ì€ Lerpì„.
+//±âº»Àº LerpÀÓ.
 template<class ValueType, class InterpolateFunc>
 const ValueType CSampleSpline< ValueType, InterpolateFunc >::Value(float key)
 {
@@ -393,7 +388,8 @@ const ValueType CSampleSpline< ValueType, InterpolateFunc >::Value(float key)
 	else if(key >= m_vectorSample[m_iCount-1].m_fKey) return m_vectorSample[m_iCount-1].m_value;
 	else
 	{
-		for(unsigned int  i=0; i<m_iCount; ++i)
+		unsigned int i;
+		for(i = 0; i < m_iCount; ++i)
 			if(m_vectorSample[i].m_fKey >= key)
 				break;
 		ASSERT(i > 0 && i <= m_iCount-1);
@@ -405,7 +401,7 @@ const ValueType CSampleSpline< ValueType, InterpolateFunc >::Value(float key)
 	}
 }
 
-//í˜„ì¬ Natural Cubic Splineì€ FLOAT3Dí•˜ê³ ë§Œ ê°™ì´ ì“°ì„.
+//ÇöÀç Natural Cubic SplineÀº FLOAT3DÇÏ°í¸¸ °°ÀÌ ¾²ÀÓ.
 template<>
 const FLOAT3D CSampleSpline< FLOAT3D, CCubicSplineInterpolate<FLOAT3D> >::Value(float key)
 {
@@ -415,7 +411,8 @@ const FLOAT3D CSampleSpline< FLOAT3D, CCubicSplineInterpolate<FLOAT3D> >::Value(
 	else if(key >= m_vectorSample[m_iCount-1].m_fKey) return m_vectorSample[m_iCount-1].m_value;
 	else
 	{
-		for(unsigned int  i=0; i<m_iCount; ++i)
+		unsigned int i;
+		for(i = 0; i < m_iCount; ++i)
 			if(m_vectorSample[i].m_fKey >= key)
 				break;
 		ASSERT(i > 0 && i <= m_iCount-1);
@@ -423,14 +420,13 @@ const FLOAT3D CSampleSpline< FLOAT3D, CCubicSplineInterpolate<FLOAT3D> >::Value(
 		unsigned int  uiNext = i;
 		float ratio = (key - m_vectorSample[uiCurrent].m_fKey)
 					/ (m_vectorSample[uiNext].m_fKey - m_vectorSample[uiCurrent].m_fKey);
-         return m_interpolateFunc( m_vectorSample[uiCurrent].m_value, m_vectorSample[uiNext].m_value, ratio);  //by kevin
-		//		return m_interpolateFunc( m_vectorSample[uiCurrent].m_value, m_vectorSample[uiNext].m_value
-//								, m_vectorSample[uiCurrent].m_valuePrecompute, m_vectorSample[uiNext].m_valuePrecompute
-//								, ratio);
+		return m_interpolateFunc( m_vectorSample[uiCurrent].m_value, m_vectorSample[uiNext].m_value
+								, m_vectorSample[uiCurrent].m_valuePrecompute, m_vectorSample[uiNext].m_valuePrecompute
+								, ratio);
 	}
 }
 
-//í˜„ì¬ Hermite Splineì€ FLOAT3Dí•˜ê³ ë§Œ ê°™ì´ ì“°ì„.
+//ÇöÀç Hermite SplineÀº FLOAT3DÇÏ°í¸¸ °°ÀÌ ¾²ÀÓ.
 template<>
 const FLOAT3D CSampleSpline< FLOAT3D, CHermiteSplineInterpolate<FLOAT3D> >::Value(float key)
 {
@@ -440,7 +436,8 @@ const FLOAT3D CSampleSpline< FLOAT3D, CHermiteSplineInterpolate<FLOAT3D> >::Valu
 	else if(key >= m_vectorSample[m_iCount-1].m_fKey) return m_vectorSample[m_iCount-1].m_value;
 	else
 	{
-		for(unsigned int  i=0; i<m_iCount; ++i)
+		unsigned int i;
+		for(i = 0; i < m_iCount; ++i)
 			if(m_vectorSample[i].m_fKey >= key)
 				break;
 		ASSERT(i > 0 && i <= m_iCount-1);
@@ -449,13 +446,13 @@ const FLOAT3D CSampleSpline< FLOAT3D, CHermiteSplineInterpolate<FLOAT3D> >::Valu
 		float ratio = (key - m_vectorSample[uiCurrent].m_fKey)
 					/ (m_vectorSample[uiNext].m_fKey - m_vectorSample[uiCurrent].m_fKey);
 		unsigned int  uiBeforeCurrent = uiCurrent - 1;
-		if(uiCurrent == 0)//0 ~ 1ì‚¬ì´
+		if(uiCurrent == 0)//0 ~ 1»çÀÌ
 		{
 			return Lerp(m_vectorSample[uiCurrent].m_value, m_vectorSample[uiNext].m_value, ratio);
 			//uiBeforeCurrent = 0;
 		}
 		unsigned int  uiAfterNext = uiNext + 1;
-		if(uiAfterNext > m_iCount-1)//m_iCount-2 ~ m_iCount-1ì‚¬ì´
+		if(uiAfterNext > m_iCount-1)//m_iCount-2 ~ m_iCount-1»çÀÌ
 		{
 			return Lerp(m_vectorSample[uiCurrent].m_value, m_vectorSample[uiNext].m_value, ratio);
 			//uiBeforeCurrent = m_iCount-1;
@@ -467,4 +464,4 @@ const FLOAT3D CSampleSpline< FLOAT3D, CHermiteSplineInterpolate<FLOAT3D> >::Valu
 }
 
 #endif //__CSAMPLESPLINE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

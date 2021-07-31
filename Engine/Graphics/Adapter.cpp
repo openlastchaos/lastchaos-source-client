@@ -69,10 +69,15 @@ static CResolution _areResolutions[] =
   {  800,  600 },  
   { 1024,  768 },
   { 1152,  864 },
+  { 1280,  720 },
   { 1280,  800 },
   { 1280,  960 },
-  { 1280, 1024 },
+  { 1280, 1024 },	// wide screen
+  { 1440, 900  },
+  { 1600, 900  },
   { 1600, 1200 },   
+  { 1680, 1050  },	// wide screen
+  { 1920, 1200  },	// wide screen	//  [7/2/2010 rumist]
 };
 // THIS NUMBER MUST NOT BE OVER 25! (otherwise change it in adapter.h)
 static const INDEX MAX_RESOLUTIONS = sizeof(_areResolutions)/sizeof(_areResolutions[0]);
@@ -90,13 +95,12 @@ void CGfxLibrary::InitAPIs(void)
 
 
   // detect current mode and print to console
-  DEVMODE devmode;
-  memset( &devmode, 0, sizeof(devmode));
-  devmode.dmSize = sizeof(devmode);
-  LONG lRes = EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devmode);
+  memset( &gl_devmode, 0, sizeof(gl_devmode));
+  gl_devmode.dmSize = sizeof(gl_devmode);
+  LONG lRes = EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &gl_devmode);
   CPrintF( TRANS("Current display: '%s' version %d - %dx%dx%d\n\n"), 
-           devmode.dmDeviceName, devmode.dmDriverVersion,
-           devmode.dmPelsWidth, devmode.dmPelsHeight, devmode.dmBitsPerPel);
+           gl_devmode.dmDeviceName, gl_devmode.dmDriverVersion,
+           gl_devmode.dmPelsWidth, gl_devmode.dmPelsHeight, gl_devmode.dmBitsPerPel);
 
   // fill OpenGL adapter info
   gl_gaAPI[GAT_OGL].ga_ctAdapters = 1;
@@ -132,7 +136,7 @@ void CGfxLibrary::InitAPIs(void)
     CDisplayMode &dm = pda->da_admDisplayModes[pda->da_ctDisplayModes];
     dm.dm_pixSizeI = re.re_pixSizeI;
     dm.dm_pixSizeJ = re.re_pixSizeJ;
-    dm.dm_ddDepth  = DD_DEFAULT;
+    dm.dm_ddDepth  = DISPD_DEFAULT;
     pda->da_ctDisplayModes++;
   }
 
@@ -151,10 +155,10 @@ void CGfxLibrary::InitAPIs(void)
     pda->da_strRenderer = "3Dfx Voodoo2";
     pda->da_strVersion  = "1.1+";
     CDisplayMode *adm = &pda->da_admDisplayModes[0];
-    adm[0].dm_pixSizeI =  512;  adm[0].dm_pixSizeJ = 384;  adm[0].dm_ddDepth = DD_16BIT;
-    adm[1].dm_pixSizeI =  640;  adm[1].dm_pixSizeJ = 480;  adm[1].dm_ddDepth = DD_16BIT;
-    adm[2].dm_pixSizeI =  800;  adm[2].dm_pixSizeJ = 600;  adm[2].dm_ddDepth = DD_16BIT;
-    adm[3].dm_pixSizeI = 1024;  adm[3].dm_pixSizeJ = 768;  adm[3].dm_ddDepth = DD_16BIT;
+	adm[0].dm_pixSizeI =  512;  adm[0].dm_pixSizeJ = 384;  adm[0].dm_ddDepth = DISPD_16BIT;
+    adm[1].dm_pixSizeI =  640;  adm[1].dm_pixSizeJ = 480;  adm[1].dm_ddDepth = DISPD_16BIT;
+    adm[2].dm_pixSizeI =  800;  adm[2].dm_pixSizeJ = 600;  adm[2].dm_ddDepth = DISPD_16BIT;
+    adm[3].dm_pixSizeI = 1024;  adm[3].dm_pixSizeJ = 768;  adm[3].dm_ddDepth = DISPD_16BIT;
   }
   // try to init Direct3D 8
   BOOL bRes = InitDriver_D3D();
@@ -186,7 +190,7 @@ void CGfxLibrary::InitAPIs(void)
     gl_pD3D->GetDeviceCaps( iAdapter, d3dDevType, &d3dCaps);
     if( !(d3dCaps.Caps2 & D3DCAPS2_CANRENDERWINDOWED)) pda->da_ulFlags |= DAF_FULLSCREENONLY;
 
-	_pGfx->gl_pd3dCaps = d3dCaps;		// Date : 2006-05-16(Å¼Å”ÄŒÃ„ 4:47:51), By eons
+	_pGfx->gl_pd3dCaps = d3dCaps;		// Date : 2006-05-16(¿ÀÈÄ 4:47:51), By eons
 
     // enumerate modes thru resolution list
     for( iResolution=0; iResolution<MAX_RESOLUTIONS; iResolution++)
@@ -207,7 +211,7 @@ void CGfxLibrary::InitAPIs(void)
           CDisplayMode &dm = pda->da_admDisplayModes[pda->da_ctDisplayModes];
           dm.dm_pixSizeI = re.re_pixSizeI;
           dm.dm_pixSizeJ = re.re_pixSizeJ;
-          dm.dm_ddDepth  = DD_DEFAULT;
+          dm.dm_ddDepth  = DISPD_DEFAULT;
           pda->da_ctDisplayModes++;
           break;
         }
@@ -261,17 +265,17 @@ BOOL CDS_SetMode( PIX pixSizeI, PIX pixSizeJ, enum DisplayDepth dd)
   // determine bits per pixel to try to set
   SLONG slBPP2 = 0;
   switch(dd) {
-  case DD_16BIT:
+  case DISPD_16BIT:
     devmode.dmBitsPerPel = 16;
     slBPP2 = 15;
     devmode.dmFields |= DM_BITSPERPEL;
     break;
-  case DD_32BIT:
+  case DISPD_32BIT:
     devmode.dmBitsPerPel = 32;
     slBPP2 = 24;
     devmode.dmFields |= DM_BITSPERPEL;
     break;
-  case DD_DEFAULT:
+  case DISPD_DEFAULT:
     NOTHING;
     break;
   default:

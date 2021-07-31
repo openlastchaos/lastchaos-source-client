@@ -64,8 +64,14 @@ public:
 // declare a list iterator for a class with a CListNode member
 #define LISTITER(baseclass, member) CListIter<baseclass, offsetof(baseclass, member)>
 
+#define FOREACHINLIST_OUT(baseclass, member, head, iter) \
+  for (iter(head) ; !iter.IsPastEnd(); iter.MoveToNext() )
+
 // make 'for' construct for walking a list
 #define FOREACHINLIST(baseclass, member, head, iter) \
+  for (LISTITER(baseclass, member) iter(head); !iter.IsPastEnd(); iter.MoveToNext() )
+
+#define FOREACHINLIST_IN(baseclass, member, head, iter) \
   LISTITER(baseclass, member) iter(head); \
   for ( ; !iter.IsPastEnd(); iter.MoveToNext() )
 

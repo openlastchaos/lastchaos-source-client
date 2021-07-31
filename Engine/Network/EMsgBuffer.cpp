@@ -409,7 +409,7 @@ void CEntityMessage::ReadStartAnim(ULONG &ulEntityID,INDEX &iNewModelAnim, ULONG
 
 };
 
-//! í”Œë ˆì´ì–´ì˜ ì •ë³´ë¥¼ ì—…ë°ì´íŠ¸ í•œë‹¤.->ìŠ¤íŠ¸ë¦¼ì—ì„œ em_nmMessageë¡œ ì˜®ê¸´ë‹¤.ì„œë²„ ì „ìš©í•¨ìˆ˜.
+//! ÇÃ·¹ÀÌ¾îÀÇ Á¤º¸¸¦ ¾÷µ¥ÀÌÆ® ÇÑ´Ù.->½ºÆ®¸²¿¡¼­ em_nmMessage·Î ¿Å±ä´Ù.¼­¹ö Àü¿ëÇÔ¼ö.
 // write an update of player's data - data is prepared in advance by the server and is stored in 'ostr'
 void CEntityMessage::WritePlayerUpdate(ULONG &ulEntityID,CNetworkMessage &ostr)
 {
@@ -728,7 +728,7 @@ void CEntityMessage::ReadSound(ULONG &ulEntityID,UBYTE &ubSoundCode,void* pvSoun
 };
 
 
-//! ê¸°ë³¸ìœ„ì¹˜ê°’ì„ em_nmMessageì— ì“´ë‹¤. ì„œë²„ì „ìš©
+//! ±âº»À§Ä¡°ªÀ» em_nmMessage¿¡ ¾´´Ù. ¼­¹öÀü¿ë
 // write a base placement used for compression of entity placements
 void CEntityMessage::WriteBasePosition(FLOAT3D &vBasePosition)
 {
@@ -912,7 +912,7 @@ void CEMsgBuffer::Clear(void)
 
 };
 
-//! ë²„í¼ì— ë©”ì‹œì§€ë¥¼ ì“´ë‹¤. ì„œë²„ì „ìš©.
+//! ¹öÆÛ¿¡ ¸Ş½ÃÁö¸¦ ¾´´Ù. ¼­¹öÀü¿ë.
 // write a message to the bufffer
 BOOL CEMsgBuffer::WriteMessage(CEntityMessage  &emEntityMessage, BOOL bExpand /* = TRUE */) 
 {
@@ -1006,7 +1006,7 @@ int CEMsgBuffer::PeekMessageAtOffset(CEntityMessage &emEntityMessage,SLONG &slTi
 
   // get the combined entity id and message type
   PeekBytesAtOffset(&(ulTemp),sizeof(ULONG),slTickOffset);
-  //! ë©”ëª¨ë¦¬ ë²„í¼ì—ì„œ ê°€ì ¸ì˜¨ ê°’ì„ emEntityMessageì— ì €ì¥í•œë‹¤.
+  //! ¸Ş¸ğ¸® ¹öÆÛ¿¡¼­ °¡Á®¿Â °ªÀ» emEntityMessage¿¡ ÀúÀåÇÑ´Ù.
   // extract message type
 	emEntityMessage.em_ulType = ulTemp >> 24;
   // extract entity id
@@ -1412,7 +1412,7 @@ void CEMsgBuffer::Expand(SLONG slNewSize)
 
 
 
-//! Entityë©”ì‹œì§€ë¥¼ ë²„í¼ ë©”ëª¨ë¦¬ì— ë°”ì´íŠ¸ë¡œ ì“´ë‹¤.
+//! Entity¸Ş½ÃÁö¸¦ ¹öÆÛ ¸Ş¸ğ¸®¿¡ ¹ÙÀÌÆ®·Î ¾´´Ù.
 // write bytes to buffer 
 void CEMsgBuffer::WriteBytes(const void *pv, SLONG slSize)
 {
@@ -1496,7 +1496,7 @@ SLONG CEMsgBuffer::PeekBytes(const void *pv, SLONG slSize)
   return slSize;
 }
 
-//! ë©”ëª¨ë¦¬ ë²„í¼ë¡œë¶€í„° ì£¼ì–´ì§„ ì˜¤í”„ì…‹ì—ì„œ ë°”ì´íŠ¸ìˆ˜ ë§Œí¼ ì–»ì–´ë‚¸ë‹¤.
+//! ¸Ş¸ğ¸® ¹öÆÛ·ÎºÎÅÍ ÁÖ¾îÁø ¿ÀÇÁ¼Â¿¡¼­ ¹ÙÀÌÆ®¼ö ¸¸Å­ ¾ò¾î³½´Ù.
 // peek a number of bytes from the data buffer at a given offset
 SLONG CEMsgBuffer::PeekBytesAtOffset(const void *pv, SLONG slSize,SLONG &slTickOffset)
 {

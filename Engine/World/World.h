@@ -4,6 +4,7 @@
 	#pragma once
 #endif
 
+#include <Engine/DesignClasses/Singleton/SingletonBase.h>
 #include <Engine/Base/Synchronization.h>
 #include <Engine/Base/CTString.h>
 #include <Engine/Base/Lists.h>
@@ -14,91 +15,134 @@
 #include <Engine/Templates/DynamicContainer.h>
 #include <Engine/World/WorldEntityHashing.h>
 #include <Engine/Network/EntityHashing.h>
-//0507 kwon ì¶”ê°€.
+//0507 kwon Ãß°¡.
 #include <Engine/Entities/OptionData.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 #include <Engine/Effect/CEffectGroup.h>
 #include <Engine/Effect/CWorldTag.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 #include <Engine/Entities/MobData.h>
 #include <Engine/Entities/Skill.h>
 #include <Engine/Entities/SpecialSkill.h>
 #include <Engine/Entities/ShopData.h>
 #include <Engine/Entities/Action.h>		// yjpark
+#include <Engine/Entities/NpcHelp.h>
+#include <Engine/Entities/MissionCase.h> // ttos : ¹Ì¼Ç ÄÉÀÌ½º
+#include <Engine/Entities/WildPetData.h>	// ttos_080725: ½Å±Ô Æê µ¥ÀÌÅÍ
 
-#ifdef HELP_SYSTEM_1
-	#include <Engine/Entities/NpcHelp.h>
-#endif
-
-#include <Engine/Entities/MissionCase.h> // ttos : ë¯¸ì…˜ ì¼€ì´ìŠ¤
-#include <Engine/Entities/WildPetData.h>	// ttos_080725: ì‹ ê·œ í« ë°ì´í„°
 // wooss 050902
 #include <Engine/Entities/CashShopData.h>
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…	09.09
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷	09.09
 #define ZONE_STRUCTURE	1
+#define MAX_ZONE_COUNT	43
+
+
 enum eZone
 {
-	ZONE_FIELD		= 0,	// í•„ë“œ
-	ZONE_DUNGEON	= 1,	// ë˜ì ¼
-	ZONE_SDUNGEON	= 2,	// ì‹±ê¸€ë˜ì ¼
-	ZONE_PDUNGEON	= 3,	// íŒŒí‹°ë˜ì ¼
-	ZONE_SIEGE		= 4,	// ê³µì„±ì „.
+	ZONE_FIELD		= 0,	// ÇÊµå
+	ZONE_DUNGEON	= 1,	// ´øÁ¯
+	ZONE_SDUNGEON	= 2,	// ½Ì±Û´øÁ¯
+	ZONE_PDUNGEON	= 3,	// ÆÄÆ¼´øÁ¯
+	ZONE_SIEGE		= 4,	// °ø¼ºÀü.
 };
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…		09.09
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷		09.09
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Zone Change System)(0.1)
+enum eObjects
+{
+	OJB_NONE		= -1,
+	OJB_TOUCHFIELD	= 0,
+	OBJ_DOORCONTROLLER,
+	OBJ_PORTAL,
+	OBJ_ITEMOBJECT,
+	OBJ_MODELHOLDER,
+	OBJ_CAMERACONTROLLER,
+};
+
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Zone Change System)(0.1)
 extern ENGINE_API SLONG g_slZone;	//current zone index
-extern ENGINE_API BOOL g_bFirstIntoWorld; // ì´ê¸°í™˜ ì¶”ê°€ ( 12. 10 )
+extern ENGINE_API BOOL g_bFirstIntoWorld; // ÀÌ±âÈ¯ Ãß°¡ ( 12. 10 )
 
-class ENGINE_API CZoneInfo
+class ENGINE_API CZoneInfo : public CSingletonBase<CZoneInfo>
 {
 	typedef struct _tagZoneInfo
 	{
 		_tagZoneInfo()
 		{
 			iZoneIndex		= 0;
-			//uiMinLevel		= 0;		// ìµœì†Œ ë ˆë²¨
-			//uiMaxLevel		= 60;		// ìµœëŒ€ ë ˆë²¨
+			//uiMinLevel		= 0;		// ÃÖ¼Ò ·¹º§
+			//uiMaxLevel		= 60;		// ÃÖ´ë ·¹º§
+			fTer_Lodmul		= 0.f;
 			dwAccessJob		= 63;
 			eZoneType		= ZONE_FIELD;
-			pStrExtraName	= NULL;
+			bRaidDungeon = FALSE;
+			vecExtraName.clear();
 		};
-
 		~_tagZoneInfo()
 		{
-			if(pStrExtraName)
-			{
-				delete [] pStrExtraName;
-				pStrExtraName	= NULL;
-			}
-		};
+			vecExtraName.clear();
+		}
 		
-		int			iZoneIndex;			// ì¡´ ë²ˆí˜¸
+		int			iZoneIndex;			// Á¸ ¹øÈ£
 		int			iExtraCount;
-		//UINT		uiMinLevel;			// ìµœì†Œ ë ˆë²¨
-		//UINT		uiMaxLevel;			// ìµœëŒ€ ë ˆë²¨
-		DWORD		dwAccessJob;		// ì ‘ê·¼ ê°€ëŠ¥ ì¢…ì¡±.
-		eZone		eZoneType;			// ì›”ë“œ ì¢…ë¥˜.
-		//UINT		uiTotalEnemies;		// ì¡´ ë‚´ì˜ ì „ì²´ ì—ë„ˆë¯¸ ìˆ˜(ì‹±ê¸€ ë˜ì ¼ì—ì„œë§Œ ì‚¬ìš©ë¨)
-		
-		CTString	strZoneName;		// ì¡´ì´ë¦„ í•œê¸€ 8ì, ì˜ì–´ 16ì ì œí•œ
-		CTString	strZoneWldFile;		// ì›”ë“œ í™”ì¼ëª….
-		CTString	strDescription;		// ì›”ë“œ ì„¤ëª….	
-		CTString	*pStrExtraName;		// ê¸°íƒ€ì´ë¦„ í•œê¸€ 8ì, ì˜ì–´ 16ì ì œí•œ.
-		
+		float		fTer_Lodmul;		// ÅÍ·¹ÀÎ ¹èÀ².
+		//UINT		uiMinLevel;			// ÃÖ¼Ò ·¹º§
+		//UINT		uiMaxLevel;			// ÃÖ´ë ·¹º§
+		DWORD		dwAccessJob;		// Á¢±Ù °¡´É Á¾Á·.
+		eZone		eZoneType;			// ¿ùµå Á¾·ù.
+		//UINT		uiTotalEnemies;		// Á¸ ³»ÀÇ ÀüÃ¼ ¿¡³Ê¹Ì ¼ö(½Ì±Û ´øÁ¯¿¡¼­¸¸ »ç¿ëµÊ)
+		BOOL		bRaidDungeon;		// ·¹ÀÌµå ´øÀüÀÎ°¡¿ä?
+				
+		CTString	strZoneName;		// Á¸ÀÌ¸§ ÇÑ±Û 8ÀÚ, ¿µ¾î 16ÀÚ Á¦ÇÑ
+		CTString	strZoneWldFile;		// ¿ùµå È­ÀÏ¸í.
+		CTString	strDescription;		// ¿ùµå ¼³¸í.	
+		std::vector<CTString>	vecExtraName;
+
 	}sZoneInfo;
 
-public:
-	CZoneInfo();	//ì¡´ ì •ë³´ ì„¸íŒ…, í•˜ë“œì½”ë”©.
-	~CZoneInfo();
+	struct stLoadingInfo
+	{
+		float fStep;
+		CTString strTex1;
+		CTString strTex2;
+	};
 
-	static CZoneInfo &Instance(){ return m_instance;	}
+public:
+
+	typedef struct _tagObjInZone // Raid object used information 
+	{
+		_tagObjInZone()
+		{
+			eObjType = OJB_NONE;
+			iObjectID = 0;
+			bActive = FALSE;
+			bOnTrigger = FALSE;
+		}
+
+		_tagObjInZone(eObjects Type, INDEX iId, CTString sName)
+		{
+			eObjType = Type;
+			iObjectID = iId;
+			strName = sName;
+			bActive = TRUE;
+			bOnTrigger = FALSE;
+		}
+
+		eObjects eObjType;
+		INDEX	iObjectID;
+		BOOL	bActive;
+		BOOL	bOnTrigger;
+		CTString	strName;
+	}ObjInZone;
+
+	CZoneInfo();	//Á¸ Á¤º¸ ¼¼ÆÃ, ÇÏµåÄÚµù.
+	~CZoneInfo();
 
 	int			GetZoneCount()	const	{ return m_nZoneCount;	}
 	int			GetExtraCount(int zone) const;
 	eZone		GetZoneType(int nZone) const;
+	float		GetTerMul(int nZone);
 	//UINT		GetMinLevel(int nZone) const;
 	//UINT		GetMaxLevel(int nZone) const;
 	DWORD		GetAccessJob(int nZone) const;
@@ -108,16 +152,23 @@ public:
 	CTString GetExtraName(int nZone, int nExtra);
 
 	void	SetZoneName( int nZone, CTString &strZoneName );
-	void	SetExtraName( int nZone, int nExtra, CTString &strExtraName );
+	void	SetExtraName(int nZone, int nExtra, const char* szName);
+	void	SetZoneData( int nZone, int nType, int nExtraCnt, const char* szName, const char* szWldFile, float fLodMul);
+
+	BOOL	LoadObjInZoneData(void);
+	BOOL	GetRaidDungeon(int zone);
+	ObjInZone*	GetInZoneData(int iIndex);
+	ObjInZone*	GetInZoneData(CTString strName);
+
+	void	AddLoadingInfo(float fStep, CTString strTex1, CTString strTex2);
+	void	GetLoadingInfo(int nZoneIndex, float& fStep, CTString& strTex1, CTString& strTex2);
 
 protected:
-	static CZoneInfo m_instance;
-
 	int m_nZoneCount;
 	sZoneInfo	*m_pZoneInfo;
+	CStaticStackArray<ObjInZone>		m_ObjInZones;
+	std::vector<stLoadingInfo>			m_vecLoadingInfo;
 };
-inline CZoneInfo &ZoneInfo()	{ return CZoneInfo::Instance();	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Zone Change System)(0.1)
 
 class CTextureTransformation;
 class CTextureBlending;
@@ -153,22 +204,15 @@ public:
 
 	CEntityClass *wo_pecWorldBaseClass;   // world base class (used for some special features)
 	
-	CStaticArray<CMobData>		wo_aMobData; 
-	CStaticArray<CMobName>		wo_aMobName;
 	CStaticArray<CShopData>		wo_aShopData;	
 	CStaticArray<CSkill>		wo_aSkillData;
-	CStaticArray<CSpecialSkill>	wo_aSSkillData;
-	CStaticArray<CAction>		wo_aActionData;		// yjpark
-	
-	//wooss 050902
 	CStaticArray<CCashShopData> wo_aCashShopData;
+	CCashShopData				wo_aCashGoodsData; // 2010.11 version.
 	
 	CDynamicContainer<CEntity>	wo_cenEnemyHolders;
 
 	int		wo_iNumOfShop;
-	int		wo_iNumOfNPC;	
-	int		wo_iNumOfItem;
-
+	
 	CBrushArchive &wo_baBrushes;    // brush archive with all brushes in the world
 	CTerrainArchive &wo_taTerrains; // terrain archive with all terrains in the world
 
@@ -205,6 +249,9 @@ public:
 	CListHead wo_lhTimers;      // timer scheduled entities
 	CListHead wo_lhMovers;        // entities that want to/have to move
 	BOOL wo_bPortalLinksUpToDate; // set if portal-sector links are up to date
+
+	BOOL m_bLoad;
+	bool m_bTradeItemLoad;
 
 	/* Initialize collision grid. */
 	void InitCollisionGrid(void);
@@ -294,19 +341,22 @@ public:
 public:
 // interface:
 	CDynamicContainer<CEntity> wo_cenEntities;           // all entities in the world
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	std::vector<CEntity *> m_vectorLights;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	CEffectGroup *m_pMousePointerEG;
 	CWorldTag m_tagMousePointer;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹œìŠ¤í…œ ì‹±ê¸€ë˜ì ¼ ê°œì„ 	10.07
-	std::vector<CEntity *> m_vectorTargetNPC;			// í”Œë ˆì´ì–´ì™¸ì— íƒ€ê²Ÿì´ ë˜ëŠ” NPCë“¤.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ã½ºÅÛ ½Ì±Û´øÁ¯ °³¼±	10.07
+	std::vector<CEntity *> m_vectorTargetNPC;			// ÇÃ·¹ÀÌ¾î¿Ü¿¡ Å¸°ÙÀÌ µÇ´Â NPCµé.
 	std::vector<CEntity *> m_vectorPreCreateNPC;
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ë˜ì ¼ ê°œì„ 		10.07
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û´øÁ¯ °³¼±		10.07
+
+	// by Input Tab Target Entity
+	std::vector<CEntityPointer> m_vectorTabTargetEntities;
 
 	TIME wo_WorldGameTick;  // game tick that world is currently in
 
@@ -385,9 +435,9 @@ public:
 	/* Write entire world (both brushes and current state). */
 	void Write_t(CTStream *postrm); // throw char *
 
-	// seo wld íŒŒì¼ ë¶„ë¦¬ ì €ì¥ í…ŒìŠ¤íŠ¸ ë£¨í‹´
+	// seo wld ÆÄÀÏ ºĞ¸® ÀúÀå Å×½ºÆ® ·çÆ¾
 	void Save_t_ext(const CTFileName &fnmWorld);	
-	// seo wld íŒŒì¼ ë¶„ë¦¬ ë¡œë“œ í…ŒìŠ¤íŠ¸ ë£¨í‹´.
+	// seo wld ÆÄÀÏ ºĞ¸® ·Îµå Å×½ºÆ® ·çÆ¾.
 	void Load_t_ext(const CTFileName &fnmWorldWls);
 	void Read_t_ext(CTStream *postrmBrsh, CTStream *postrmStat);
 	void Write_t_ext(CTStream *postrmBrsh, CTStream *postrmStat);	
@@ -500,6 +550,59 @@ public:
 	void WriteState_t(CTStream *ostr, BOOL bImportDictionary = FALSE);  // throw char *
 	void WriteState_net_t(CTStream *ostr); // throw char *
 
+	/* by Input TAB. Search Target Enemy*/
+	void AddEntitiesInSector(CBrushSector *pbscSectorInside);
+	void AddEntityZoningSector(CBrushSector *pbsc);
+	void SearchSectorAroundEntity(CEntity* pen, const FLOAT3D &vEyesPos, CAnyProjection3D &prProjection);
+	void TargetSelectedEnemy_Sort(void);
+
+	void LoadLOD();
+
+	void LoadStringNPCName();		// Åø¿¡¼­ ÀĞ¾î¾ß ÇÔ.
+	void loadTradeItem();			// Å¸ÀÌ¸Ó ÀÌº¥Æ®.
+private:
+	void loadMob();
+	void loadShop();
+	void loadSkill();
+	void loadSkillTree();
+	void loadArmorPreview();
+	void loadSSkill();
+	void loadAction();
+	void loadItemData();
+	void loadSetItemData();
+	void loadAffinity();
+	void loadMakeItem();
+	void loadCatalog();
+	void loadEvent();
+	void loadNPCHelp();
+	void loadCombo();
+	void loadBigpet();
+	void loadRareOption();
+	void loadOption();
+	void loadTitleData();
+	void loadQuest();
+	void loadLacarette();
+	void loadZone();
+	void loadNotice();
+	void loadEntity();
+	void loadZoneData();
+	void loadTEventString();
+	void loadLevelUpGuide();
+	void loadChangeEquipment();
+	void LoadItemCollection();
+	void LoadItemCompose();
+	void LoadStringItem();
+	void LoadStringItemSet();
+	void LoadStringOption();
+	void LoadStringOptionRare();
+	void LoadStringQuest();
+	void LoadStringSkill();
+	void LoadStringSkillSpecial();
+	void LoadStringAction();
+	void LoadStringCombo();
+	void LoadStringAffinity();
+	void LoadStringLacarette();
+	void LoadStringItemCollection();
 };
 
 #endif  /* include-once check. */

@@ -1,17 +1,17 @@
 #include "StdH.h"
 #include <Shaders/Common.h>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use Ska Studio)(0.1)
 #define TRANSLUCENT_FLIP				(1UL<<2)	// Use Flip
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use Ska Studio)(0.1)
 
 static const INDEX ctTextures = 1;
 static const INDEX ctUVMaps   = 1;
 static const INDEX ctColors   = 1;
 static const INDEX ctFloats   = 0;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use Ska Studio)(0.1)
 static const INDEX ctFlags    = 3;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use Ska Studio)(0.1)
 static const INDEX ctVertexPrograms = 1;
 static const INDEX ctPixelPrograms = 1;
 
@@ -37,9 +37,9 @@ SHADER_MAIN(Translucent)
 	shaSetColor(iBaseColor);
 	
 	const BOOL bDoubleSided = shaGetFlags()&BASE_DOUBLE_SIDED;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use Ska Studio)(0.1)
 	const BOOL bFlip = shaGetFlags() & TRANSLUCENT_FLIP;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use Ska Studio)(0.1)
 	const BOOL bHardwareShader = shaUseHWShaders();
 	
 	shaEnableBlend();
@@ -58,9 +58,9 @@ SHADER_MAIN(Translucent)
 		shaSetPixelProgramConst(  0, &srBaseColor, 1);
 		// prepare fog and haze
 		shaPrepareFogAndHaze(FALSE);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		shaSetDefaultConstantRegisters();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	}
 	else 
 	{
@@ -76,7 +76,7 @@ SHADER_MAIN(Translucent)
 		shaAttenuateAlphaForFogAndHaze();
 	}
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use Ska Studio)(0.1)
 	// if double sided flag is on
 	if(bDoubleSided) 
 	{
@@ -89,7 +89,7 @@ SHADER_MAIN(Translucent)
 	if(bFlip) shaCullFace(GFX_FRONT);
 	else shaCullFace(GFX_BACK);
 	shaRender();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use Ska Studio)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use Ska Studio)(0.1)
 	
 	if(!bHardwareShader) 
 	{
@@ -98,7 +98,7 @@ SHADER_MAIN(Translucent)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(Translucent,ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -126,5 +126,5 @@ SHADER_DESC(Translucent,ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM|GFX_TEXCOORD0|GFX_NORMAL_STREAM;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }

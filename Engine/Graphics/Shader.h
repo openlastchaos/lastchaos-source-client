@@ -10,19 +10,21 @@
 #include <Engine/Graphics/Color.h>
 #include <Engine/Graphics/GfxLibrary.h>
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 #include <Engine/Effect/CNiceWater.h>
 #include <Engine/SKA/ModelInstance.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
+
+#include <Engine/Entities/SmcParser.h>
 
 // Shader flags
 #define BASE_DOUBLE_SIDED (1UL<<0) // Double sided
 #define BASE_FULL_BRIGHT  (1UL<<1) // Full bright
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define BASE_FLAG_OFFSET		2
 #define BASE_FLAG_DESC()	shDesc.sd_astrFlagNames[0] = "Double Sided";\
 							shDesc.sd_astrFlagNames[1] = "Full Bright"
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 // Shader rendering flags
 #define SHA_RMF_FOG  (1UL<<0) // model has fog
@@ -43,9 +45,9 @@ enum FOGTYPE {
 #define SHA_TEXCOORD3        GFX_TEXCOORD3
 #define SHA_NORMAL_STREAM    GFX_NORMAL_STREAM
 #define SHA_WEIGHT_STREAM    GFX_WEIGHT_STREAM
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define SHA_TANGENT_STREAM    GFX_TANGENT_STREAM
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 #define SHA_NAKED_CODE       (1UL<<31)
 
 struct ShaderDesc
@@ -59,6 +61,14 @@ struct ShaderDesc
 	INDEX sd_ctVertexPrograms;
 	INDEX sd_ctPixelPrograms;
 	CTString sd_strShaderInfo;
+	DWORD   VertexShaderVersion;
+	DWORD   PixelShaderVersion;
+
+	ShaderDesc()
+	{
+		VertexShaderVersion = D3DVS_VERSION(1,1);
+		PixelShaderVersion	= D3DVS_VERSION(1,4);
+	}
 };
 
 struct ShaderParams
@@ -133,9 +143,9 @@ public:
 		GetShaderVPCode = NULL;
 		GetShaderPPCode = NULL;
 	};
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 	CShader(void (*pShaderFunc)(void), void (*pGetShaderDesc)(ShaderDesc *&pshDesc),
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 					void (*pGetShaderVPCode)(CTString &strVPCode, INDEX iVertexProgram),
 					void (*pGetShaderPPCode)(CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)) {
 		hLibrary = NULL;
@@ -151,9 +161,9 @@ public:
 	};
 	void DeleteHandles(void);
 	void (*ShaderFunc)(void);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 	void (*GetShaderDesc)(ShaderDesc *&pshDesc);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 	void (*GetShaderVPCode)(CTString &strVPCode, INDEX iVertexProgram);
 	void (*GetShaderPPCode)(CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType);
 
@@ -172,6 +182,7 @@ public:
 	CStaticArray<PixelProgramHandle>  sh_aPPHandles;  // array of handles for pixel shaders
 	INDEX sh_ctVertexPrograms;
 	INDEX sh_ctPixelPrograms;
+	CSmcParserList	m_TestShaderLog;
 };
 
 /*
@@ -201,9 +212,9 @@ ENGINE_API void shaSetSurfaceUVMaps(GFXTexCoord **paUVMaps, INDEX ctUVMaps);
 ENGINE_API void shaSetVertexBufferID(INDEX iVertexBufferID, INDEX iFirstVertex, INDEX ctVertices);
 // Set normal buffer ID
 ENGINE_API void shaSetNormalBufferID(INDEX iNormalBufferID);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 ENGINE_API void shaSetTangentBufferID(INDEX iTagentBufferID);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 // Set weight buffer ID
 ENGINE_API void shaSetWeightBufferID(INDEX iWeightBufferID);
 // Set array of texcoord buffer IDs
@@ -278,29 +289,29 @@ ENGINE_API void shaSetUVMap(INDEX iUVMap, INDEX iTextureUnit=0);
 ENGINE_API void shaSetColor(INDEX icolIndex);
 
 // Set current vertex program
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
-//ENGINE_API void shaSetVertexProgram(INDEX iVertexProgram);	//ì›ë³¸
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+//ENGINE_API void shaSetVertexProgram(INDEX iVertexProgram);	//¿øº»
 enum NormalMapMeshType
 {
 	NMMT_NONE = 0,
 	NMMT_OBJSPACE,
 	NMMT_TANSPACE,
 };
-ENGINE_API void shaSetVertexProgram(INDEX iVertexProgram, NormalMapMeshType nmmType = NMMT_NONE);	//ìˆ˜ì •ë³¸
-//ì›ë˜ëŠ” ì—†ëŠ” í•¨ìˆ˜ë“¤ì˜ ì¶”ê°€ ì‹œì‘
+ENGINE_API void shaSetVertexProgram(INDEX iVertexProgram, NormalMapMeshType nmmType = NMMT_NONE);	//¼öÁ¤º»
+//¿ø·¡´Â ¾ø´Â ÇÔ¼öµéÀÇ Ãß°¡ ½ÃÀÛ
 ENGINE_API void shaSetDefaultConstantRegisters(void);
-//Billboardë¥¼ ì“°ë ¤ë©´ ë‹¤ë¥¸ VertesShaderConstantë¥¼ ì„¤ì •í•˜ê¸°ì „ì— í˜¸ì¶œí•´ ì£¼ì–´ì•¼í•¨.
+//Billboard¸¦ ¾²·Á¸é ´Ù¸¥ VertesShaderConstant¸¦ ¼³Á¤ÇÏ±âÀü¿¡ È£ÃâÇØ ÁÖ¾î¾ßÇÔ.
 ENGINE_API void shaPrepareForBillboard(BOOL bCylinderType = FALSE, BOOL bNeedCalcLight = FALSE);
 ENGINE_API void shaSetVertexProgramConst_TransformMatrix();
 ENGINE_API void shaSetVertexProgramConst_LightDir();
 ENGINE_API void shaSetVertexProgramConst_LightColor(GFXColor colDiffuseColor, GFXColor colAmbientColor, BOOL bFullBright = FALSE);
 ENGINE_API void shaSetVertexProgramConst_Multiply();
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
 ENGINE_API void shaSetEMBM();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 ENGINE_API void shaSetVertexProgramConst_BoneMatrix();
-//ì›ë˜ëŠ” ì—†ëŠ” í•¨ìˆ˜ë“¤ì˜ ì¶”ê°€ ë
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¿ø·¡´Â ¾ø´Â ÇÔ¼öµéÀÇ Ãß°¡ ³¡
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 // Set current pixel program
 ENGINE_API void shaSetPixelProgram(INDEX iPixelProgram);
@@ -312,17 +323,17 @@ ENGINE_API void shaSetVertexProgramConst(INDEX iRegister, const Matrix12 *pmData
 ENGINE_API void shaSetVertexProgramConst(INDEX iRegister, const Matrix16 *pmData, INDEX ctRegisters);
 // Set const pixel program register
 ENGINE_API void shaSetPixelProgramConst(INDEX iRegister, const ShaderRegister *pData, INDEX ctRegisters);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 // Set const vertex program register
 ENGINE_API void shaGetVertexProgramConst(INDEX iRegister, ShaderRegister &pData);
 ENGINE_API void shaGetVertexProgramConst(INDEX iRegister, Matrix12 &pmData);
 ENGINE_API void shaGetVertexProgramConst(INDEX iRegister, Matrix16 &pmData);
 // Set const pixel program register
 ENGINE_API void shaGetPixelProgramConst(INDEX iRegister, ShaderRegister &pData);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 ENGINE_API void shaSetPixelProgramConst_WaterColor();
 ENGINE_API void shaSetVertexProgramConst_ProjectionMatrix();
 ENGINE_API void shaSetVertexProgramConst_PI();
@@ -333,7 +344,7 @@ ENGINE_API void shaSetVertexProgramConst_CoSine();
 ENGINE_API void shaSetVertexProgramConst_Fixup();
 ENGINE_API void shaSetVertexProgramConst_Timer();
 ENGINE_API void shaSetVertexProgramConst_WaterInformation();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
 
 /* Software vertex proccesing */
 // Set array of texcoords index
@@ -404,9 +415,9 @@ ENGINE_API Matrix12 *shaGetObjToAbsMatrix(void);
 // Get object rendering flags (fog,haze,etc)
 ENGINE_API ULONG shaGetRenFlags(void);
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.17
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.17
 ENGINE_API void shaSetWaterInformation(CNiceWater *pInfo);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.17
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.17
 
 // Set face culling
 ENGINE_API void shaCullFace(GfxFace eFace);

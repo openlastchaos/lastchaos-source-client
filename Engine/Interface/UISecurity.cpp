@@ -1,7 +1,11 @@
 #include "stdh.h"
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <vector>
-#include <Engine/Interface/UISecurity.h>
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UISecurity.h>
+#include <Engine/Interface/UIWareHouse.h>
+
 
 #define MIN_PASSWORD				(6)
 #define MAX_PASSWORD				(8)
@@ -10,12 +14,10 @@
 #define MAX_NUMBER					(7)
 #define	MAX_SECURITY_DESC_CHAR			28
 
-//define String // Date : 2005-07-05(ì˜¤í›„ 3:28:09), By Lee Ki-hwan
-#define ST_PASSWORD_ERROR	_S( 1777, "ì•”í˜¸ ì„¤ì • ì˜¤ë¥˜" )		
-#define ST_SECURE_INPUT		_S( 1727, "ë³´ì•ˆ ìž…ë ¥" )		
-#define ST_PASSWORD_RANGE 	_S( 1729, "8ìž(ì˜ë¬¸ ìˆ«ìžì¡°í•©).") 
-
-extern INDEX g_iCountry;
+//define String // Date : 2005-07-05(¿ÀÈÄ 3:28:09), By Lee Ki-hwan
+#define ST_PASSWORD_ERROR	_S( 1777, "¾ÏÈ£ ¼³Á¤ ¿À·ù" )		
+#define ST_SECURE_INPUT		_S( 1727, "º¸¾È ÀÔ·Â" )		
+#define ST_PASSWORD_RANGE 	_S( 1729, "8ÀÚ(¿µ¹® ¼ýÀÚÁ¶ÇÕ).") 
 
 // ----------------------------------------------------------------------------
 // Name : CUISecurity()
@@ -32,7 +34,6 @@ CUISecurity::CUISecurity()
 // ----------------------------------------------------------------------------
 CUISecurity::~CUISecurity()
 {
-	Destroy();
 }
 
 
@@ -44,13 +45,7 @@ CUISecurity::~CUISecurity()
 void CUISecurity::SetFocus( BOOL bVisible )
 {
 	CUIWindow::SetFocus( bVisible );
-
-	m_ebPersonalNumber.SetFocus( TRUE );
-	if( !bVisible )
-	{
-		m_ebPersonalNumber.SetFocus( FALSE );
-	}
-
+	m_ebPersonalNumber.SetFocus(bVisible);
 }
 
 
@@ -60,9 +55,7 @@ void CUISecurity::SetFocus( BOOL bVisible )
 // ----------------------------------------------------------------------------
 void CUISecurity::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 236, 22 );
@@ -92,14 +85,14 @@ void CUISecurity::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 	
 	// OK button
-	m_btnOK.Create( this, _S( 191, "í™•ì¸" ), 98, 188, 63, 21 );
+	m_btnOK.Create( this, _S( 191, "È®ÀÎ" ), 98, 188, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 	
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), 165, 188, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), 165, 188, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -165,16 +158,16 @@ void CUISecurity::GetSecurityDesc( BOOL bShow )
 	
 	// Make description of Security	
 	/*
-	AddSecurityDescString( _S( 949, "ë³´ê´€ì†Œì˜ ì•”í˜¸ë¥¼ ì„¤ì •í•˜ê² ìŠµë‹ˆë‹¤." ) );	
-	AddSecurityDescString( _S( 950, "ê³„ì • ì•”í˜¸ì™€ ë³„ë„ë¡œ ëœ ì•”í˜¸ë¥¼ ìž…ë ¥í•´ ì£¼ì‹­ì‹œì˜¤." ) );			
+	AddSecurityDescString( _S( 949, "º¸°ü¼ÒÀÇ ¾ÏÈ£¸¦ ¼³Á¤ÇÏ°Ú½À´Ï´Ù." ) );	
+	AddSecurityDescString( _S( 950, "°èÁ¤ ¾ÏÈ£¿Í º°µµ·Î µÈ ¾ÏÈ£¸¦ ÀÔ·ÂÇØ ÁÖ½Ê½Ã¿À." ) );			
 	AddSecurityDescString( CTString( "  " ) );
-	AddSecurityDescString( _S( 951, "ë³´ê´€ì†Œì˜ ì•”í˜¸ë¥¼ ìžŠì—ˆì„ ê²½ìš° í™ˆíŽ˜ì´ì§€ì˜ ì°½ê³  ì•”í˜¸ ì°¾ê¸° ì ˆì°¨ë¥¼ ë”°ë¼ì„œ ì²˜ë¦¬í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤." ), 0xBCBCBCFF );		
+	AddSecurityDescString( _S( 951, "º¸°ü¼ÒÀÇ ¾ÏÈ£¸¦ ÀØ¾úÀ» °æ¿ì È¨ÆäÀÌÁöÀÇ Ã¢°í ¾ÏÈ£ Ã£±â ÀýÂ÷¸¦ µû¶ó¼­ Ã³¸®ÇÒ ¼ö ÀÖ½À´Ï´Ù." ), 0xBCBCBCFF );		
 	*/
-	AddSecurityDescString( _S( 1723, "ì•”í˜¸ë¥¼ ë¶„ì‹¤í•˜ì…¨ë‚˜ìš”?" ) );		
-	AddSecurityDescString( _S( 1724, "ê³„ì •ì— ë“±ë¡ëœ ì£¼ë¯¼ë“±ë¡ ë²ˆí˜¸ ë’·ìžë¦¬ 7ìžë¦¬ë¥¼ ìž…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ) );		
+	AddSecurityDescString( _S( 1723, "¾ÏÈ£¸¦ ºÐ½ÇÇÏ¼Ì³ª¿ä?" ) );		
+	AddSecurityDescString( _S( 1724, "°èÁ¤¿¡ µî·ÏµÈ ÁÖ¹Îµî·Ï ¹øÈ£ µÞÀÚ¸® 7ÀÚ¸®¸¦ ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ) );		
 	AddSecurityDescString( CTString( "  " ) );
-	AddSecurityDescString( _S( 1725,  "ì„±ê³µì ìœ¼ë¡œ ìž…ë ¥ë˜ë©´ ê¸°ì¡´ ì•”í˜¸ê°€ ì‚­ì œë©ë‹ˆë‹¤."  ) );	
-	AddSecurityDescString( _S( 1726,  "ì•”í˜¸ ì‚­ì œ í›„ ì•”í˜¸ë¥¼ ë‹¤ì‹œ ì„¤ì •í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤."  ) );	
+	AddSecurityDescString( _S( 1725,  "¼º°øÀûÀ¸·Î ÀÔ·ÂµÇ¸é ±âÁ¸ ¾ÏÈ£°¡ »èÁ¦µË´Ï´Ù."  ) );	
+	AddSecurityDescString( _S( 1726,  "¾ÏÈ£ »èÁ¦ ÈÄ ¾ÏÈ£¸¦ ´Ù½Ã ¼³Á¤ÇÏ¿© ÁÖ½Ê½Ã¿À."  ) );	
 }
 
 // ----------------------------------------------------------------------------
@@ -188,206 +181,206 @@ void CUISecurity::AddSecurityDescString( CTString &strDesc, COLOR colDesc )
 	if( nLength == 0 )
 		return;
 	
+	int		iPos;
 	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strDesc);
-		INDEX	nChatMax= (MAX_SECURITY_DESC_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
+#if defined G_THAI
+	// Get length of string
+	INDEX	nThaiLen = FindThaiLen(strDesc);
+	INDEX	nChatMax= (MAX_SECURITY_DESC_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
+	if( nLength == 0 )
+		return;
+	// If length of string is less than max char
+	if( nThaiLen <= nChatMax )
+	{
+		// Check line character
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-			
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbSecurityDesc.AddString( 0, strDesc, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
-				
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-				
-				AddSecurityDescString( strTemp, colDesc );
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_SECURITY_DESC_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strDesc,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-			
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
-				
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-					
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-				
-				AddSecurityDescString( strTemp, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
-				
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-				
-				AddSecurityDescString( strTemp, colDesc );
-			}
-
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
 		}
 		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= MAX_SECURITY_DESC_CHAR )
+		// Not exist
+		if( iPos == nLength )
 		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-			
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbSecurityDesc.AddString( 0, strDesc, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
-				
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-				
-				AddSecurityDescString( strTemp, colDesc );
-			}
+			m_lbSecurityDesc.AddString( 0, strDesc, colDesc );
 		}
-		// Need multi-line
 		else
 		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_SECURITY_DESC_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
 			
-			if( b2ByteChar )
-				nSplitPos--;
-			
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-			
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
-				
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-					
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-				
-				AddSecurityDescString( strTemp, colDesc );
-			}
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
 			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
-				
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-				
-				AddSecurityDescString( strTemp, colDesc );
-			}
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+			
+			AddSecurityDescString( strTemp, colDesc );
 		}
 	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = MAX_SECURITY_DESC_CHAR;
+		BOOL	b2ByteChar = FALSE;
+		for( iPos = 0; iPos < nLength; iPos++ )
+		{
+			if(nChatMax < FindThaiLen(strDesc,0,iPos))
+				break;
+		}
+		nSplitPos = iPos;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+		
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( nSplitPos, strTemp2, strTemp );
+			m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
+			
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+				
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+			
+			AddSecurityDescString( strTemp, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
+			
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+			
+			AddSecurityDescString( strTemp, colDesc );
+		}
+
+	}
+#else
+	// If length of string is less than max char
+	if( nLength <= MAX_SECURITY_DESC_CHAR )
+	{
+		// Check line character
+		for( iPos = 0; iPos < nLength; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+		
+		// Not exist
+		if( iPos == nLength )
+		{
+			m_lbSecurityDesc.AddString( 0, strDesc, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
+			
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+			
+			AddSecurityDescString( strTemp, colDesc );
+		}
+	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = MAX_SECURITY_DESC_CHAR;
+		BOOL	b2ByteChar = FALSE;
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] & 0x80 )
+				b2ByteChar = !b2ByteChar;
+			else
+				b2ByteChar = FALSE;
+		}
+		
+		if( b2ByteChar )
+			nSplitPos--;
+		
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+		
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( nSplitPos, strTemp2, strTemp );
+			m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
+			
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+				
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+			
+			AddSecurityDescString( strTemp, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbSecurityDesc.AddString( 0, strTemp2, colDesc );
+			
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+			
+			AddSecurityDescString( strTemp, colDesc );
+		}
+	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
 // Name : OpenChangePassWord()
-// Desc : ì•”í˜¸ ë³€ê²½.
+// Desc : ¾ÏÈ£ º¯°æ.
 // ----------------------------------------------------------------------------
 void CUISecurity::OpenChangePassWord( BOOL bHasPassWord )
 {	
@@ -400,31 +393,30 @@ void CUISecurity::OpenChangePassWord( BOOL bHasPassWord )
 	
 	int nSecurity_ChangePW_Height = SECURITY_CHANGEPW_HEIGHT;
 	// Set size & position
-	if( g_iCountry == TAIWAN || g_iCountry == TAIWAN2 ) 
-		nSecurity_ChangePW_Height += 86;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
 	SetSize( SECURITY_CHANGEPW_WIDTH, nSecurity_ChangePW_Height );
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
-	int	nX = ( pdp->dp_MinI + pdp->dp_MaxI ) / 2 - GetWidth() / 2;
-	int	nY = ( pdp->dp_MinJ + pdp->dp_MaxJ ) / 2 - GetHeight() / 2;
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+	int	nX = ( pDrawPort->dp_MinI + pDrawPort->dp_MaxI ) / 2 - GetWidth() / 2;
+	int	nY = ( pDrawPort->dp_MinJ + pDrawPort->dp_MaxJ ) / 2 - GetHeight() / 2;
 	SetPos( nX, nY );
 	m_btnOK.SetPos( 98, nSecurity_ChangePW_Height - 26 );
 	m_btnCancel.SetPos( 165, nSecurity_ChangePW_Height - 26 );
 	
 	GetSecurityDesc( TRUE );
-	_pUIMgr->RearrangeOrder( UI_SECURITY, TRUE );
+	pUIManager->RearrangeOrder( UI_SECURITY, TRUE );
 }
 
 // ----------------------------------------------------------------------------
 // Name : OpenSecurity()
-// Desc : ì•”í˜¸ë¥¼ ë¬¼ì–´ë´„.
+// Desc : ¾ÏÈ£¸¦ ¹°¾îº½.
 // ----------------------------------------------------------------------------
 void CUISecurity::OpenSecurity( BOOL bHasPassWord )
 {
-	// ì•”í˜¸ê°€ ì„¤ì •ë˜ì–´ ìžˆì§€ ì•Šë‹¤ë©´...
+	// ¾ÏÈ£°¡ ¼³Á¤µÇ¾î ÀÖÁö ¾Ê´Ù¸é...
 	if( !bHasPassWord )
 	{
-		_pNetwork->SendWareHouseListReq( "" );
 		return;
 	}
 	
@@ -434,15 +426,17 @@ void CUISecurity::OpenSecurity( BOOL bHasPassWord )
 	ResetSecurity();
 	
 	m_bHasPassWord		= bHasPassWord;
-	
-	_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_PASSWORD );
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_SECURITY_PASSWORD );
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 1727, "ë³´ì•ˆ ìž…ë ¥" ), UMBS_OK | UMBS_INPUTPASSWORD, UI_SECURITY, MSGCMD_SECURITY_PASSWORD );		
-	CTString	strMessage =  _S( 1728, "ì•”í˜¸ë¥¼ ìž…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." );	
+	MsgBoxInfo.SetMsgBoxInfo( _S( 1727, "º¸¾È ÀÔ·Â" ), UMBS_OK | UMBS_INPUTPASSWORD, UI_SECURITY, MSGCMD_SECURITY_PASSWORD );		
+	CTString	strMessage =  _S( 1728, "¾ÏÈ£¸¦ ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." );	
 	MsgBoxInfo.AddStringEx( strMessage, 0, 0, 0xF2F2F2FF, TEXT_CENTER );
 	strMessage = ST_PASSWORD_RANGE;				
 	MsgBoxInfo.AddStringEx( strMessage, 1, 0, 0xF2F2F2FF, TEXT_CENTER );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
@@ -460,7 +454,7 @@ void CUISecurity::ResetSecurity()
 	
 	m_bHasPassWord			= FALSE;
 	
-	_pUIMgr->RearrangeOrder( UI_SECURITY, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SECURITY, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -469,44 +463,46 @@ void CUISecurity::ResetSecurity()
 // ----------------------------------------------------------------------------
 void CUISecurity::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 	// Add render regions
 	// Background
 	int nX = m_nPosX;
 	int nY = m_nPosY;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, m_nPosY, nX + m_nWidth, nY + 26,
+	pDrawPort->AddTexture( nX, m_nPosY, nX + m_nWidth, nY + 26,
 		m_rtBackTop.U0, m_rtBackTop.V0, 
 		m_rtBackTop.U1, m_rtBackTop.V1,
 		0xFFFFFFFF );
 	
 	nY += 26;	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, nY + 123,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, nY + 123,
 		m_rtBackMiddle1.U0, m_rtBackMiddle1.V0, 
 		m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 		0xFFFFFFFF );
 	
 	nY += 123;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, nY + 9,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, nY + 9,
 		m_rtBackMiddle2.U0, m_rtBackMiddle2.V0, 
 		m_rtBackMiddle2.U1, m_rtBackMiddle2.V1,
 		0xFFFFFFFF );
 	
 	nY += 9;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, nY + 24,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, nY + 24,
 		m_rtBackMiddle1.U0, m_rtBackMiddle1.V0, 
 		m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 		0xFFFFFFFF );
 	
 	nY += 24;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight - 7,
 		m_rtBackMiddle2.U0, m_rtBackMiddle2.V0, 
 		m_rtBackMiddle2.U1, m_rtBackMiddle2.V1,
 		0xFFFFFFFF );	
 	
 	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, m_nPosY + m_nHeight - 7, nX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( nX, m_nPosY + m_nHeight - 7, nX + m_nWidth, m_nPosY + m_nHeight,
 		m_rtBackBottom.U0, m_rtBackBottom.V0, 
 		m_rtBackBottom.U1, m_rtBackBottom.V1,
 		0xFFFFFFFF );
@@ -515,15 +511,15 @@ void CUISecurity::Render()
 	nY = m_nPosY + 162;
 	int nX2 = m_nPosX + m_nWidth - 20;	
 	int nY2 = nY + 16;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 4, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 4, nY2,
 		m_rtInputBoxL.U0, m_rtInputBoxL.V0, m_rtInputBoxL.U1, m_rtInputBoxL.V1,
 		0xFFFFFFFF );
 	// Lower middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 4, nY, nX2 - 4, nY2,
+	pDrawPort->AddTexture( nX + 4, nY, nX2 - 4, nY2,
 		m_rtInputBoxM.U0, m_rtInputBoxM.V0, m_rtInputBoxM.U1, m_rtInputBoxM.V1,
 		0xFFFFFFFF );
 	// Lower right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 4, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 4, nY, nX2, nY2,
 		m_rtInputBoxR.U0, m_rtInputBoxR.V0, m_rtInputBoxR.U1, m_rtInputBoxR.V1,
 		0xFFFFFFFF );
 	
@@ -542,19 +538,19 @@ void CUISecurity::Render()
 	m_ebPersonalNumber.Render();			
 	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();	
+	pDrawPort->FlushRenderingQueue();	
 	
 	// Text in skill learn
-	//_pUIMgr->GetDrawPort()->PutTextEx( _S( 952, "ë³´ê´€ì†Œ ì•”í˜¸ ë³€ê²½ ì„¤ì •" ), m_nPosX + SECURITY_TITLE_TEXT_OFFSETX,	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1730, "ì°½ê³  ì•”í˜¸ ì‚­ì œ" ), m_nPosX + SECURITY_TITLE_TEXT_OFFSETX,	
+	//pDrawPort->PutTextEx( _S( 952, "º¸°ü¼Ò ¾ÏÈ£ º¯°æ ¼³Á¤" ), m_nPosX + SECURITY_TITLE_TEXT_OFFSETX,	
+	pDrawPort->PutTextEx( _S( 1730, "Ã¢°í ¾ÏÈ£ »èÁ¦" ), m_nPosX + SECURITY_TITLE_TEXT_OFFSETX,	
 		m_nPosY + SECURITY_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 	
 	nY = m_nPosY + 164;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1731, "ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸" ), m_nPosX + SECURITY_TITLE_TEXT_OFFSETX - 3,		
+	pDrawPort->PutTextEx( _S( 1731, "ÁÖ¹Îµî·Ï¹øÈ£" ), m_nPosX + SECURITY_TITLE_TEXT_OFFSETX - 3,		
 		nY, 0xFFFFFFFF );
 	
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -563,28 +559,35 @@ void CUISecurity::Render()
 // ----------------------------------------------------------------------------
 void CUISecurity::PressOKBtn()
 {
-	// ì•”í˜¸ ì‚­ì œì‹œ...
+	// ¾ÏÈ£ »èÁ¦½Ã...
 	if( m_ebPersonalNumber.GetString() )
 	{		
 		m_strPersonalNumber = m_ebPersonalNumber.GetString();
+
 		int tv_len = 7;
-		if( g_iCountry == TAIWAN ||g_iCountry == TAIWAN2 ) tv_len = 13;
+#ifdef	G_KOR
+		tv_len = 4;		// ÇöÀç °³¹ß±âÁØ '1111' ·Î ¼³Á¤µÇ¾î ÀÖÀ½.
+#endif	// G_KOR
 		
 		if( m_strPersonalNumber.Length() < tv_len )
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			m_ebPersonalNumber.ResetString();
-			_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
+			pUIManager->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 1732, "ì•”í˜¸ ì‚­ì œ ì˜¤ë¥˜" ) , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );	
-			CTString	strMessage = _S( 1733, "ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸ë¥¼ í™•ì¸í›„ ë‹¤ì‹œ ì‹œë„í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." );	
+			MsgBoxInfo.SetMsgBoxInfo( _S( 1732, "¾ÏÈ£ »èÁ¦ ¿À·ù" ) , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );	
+			CTString	strMessage = _S( 1733, "ÁÖ¹Îµî·Ï¹øÈ£¸¦ È®ÀÎÈÄ ´Ù½Ã ½ÃµµÇÏ¿© ÁÖ½Ê½Ã¿À." );	
 			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );	
-			_pUIMgr->GetSecurity()->ResetSecurity();
+			pUIManager->CreateMessageBox( MsgBoxInfo );	
+			pUIManager->GetSecurity()->ResetSecurity();
 			return;
 		}
 	}		
 	
-	_pNetwork->SendWareHouseDeletePassWord( m_strPersonalNumber );		
+	_pNetwork->SendWareHouseDeletePassWord( m_strPersonalNumber );
+
+	ResetSecurity();
 }
 
 // ----------------------------------------------------------------------------
@@ -612,7 +615,7 @@ WMSG_RESULT	CUISecurity::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 			
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -645,6 +648,7 @@ WMSG_RESULT	CUISecurity::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
 				nOldX = nX;		nOldY = nY;
 				
 				// Close button
@@ -670,14 +674,14 @@ WMSG_RESULT	CUISecurity::MouseMessage( MSG *pMsg )
 				{
 					// Nothing						
 					m_ebPersonalNumber.SetFocus(TRUE);
-					_pUIMgr->RearrangeOrder( UI_SECURITY, TRUE );
+					pUIManager->RearrangeOrder( UI_SECURITY, TRUE );
 					return WMSG_SUCCESS;
 				}
 				// List box
 				else if( m_lbSecurityDesc.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;				
 				
-				_pUIMgr->RearrangeOrder( UI_SECURITY, TRUE );
+				pUIManager->RearrangeOrder( UI_SECURITY, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -774,142 +778,58 @@ WMSG_RESULT	CUISecurity::CharMessage( MSG *pMsg )
 // Name : MsgBoxCommand()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUISecurity::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput , CTString &strConfirm)
-{
-	if( !bOK )
-		return;
-	
-	switch( nCommandCode )
-	{
-	case MSGCMD_NEW_PASSWORD:
-		{
-			if( strInput.Length() < MIN_PASSWORD || strInput.Length() > MAX_PASSWORD)
-			{	
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo(  ST_PASSWORD_ERROR , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );
-				CTString	strMessage = _S( 1734, "ì•”í˜¸ëŠ” 6ìž ì´ìƒ 8ìž ì´í•˜ë¡œ í•˜ì…”ì•¼ í•©ë‹ˆë‹¤." );	
-				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );			
-				return;
-			}
-			if(strInput.IsEqualCaseSensitive(strConfirm)){
-				_pUIMgr->CloseMessageBox( MSGCMD_PASSWORD_UNLOCK_A );
-				m_strNewPassWord=strConfirm;
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( ST_SECURE_INPUT, UMBS_OK | UMBS_INPUTPASSWORD |UMBS_CONFIRMPASSWORD, UI_SECURITY, MSGCMD_PASSWORD_UNLOCK_A );
-				CTString	strMessage =  _S(2270, "ìž ê¸ˆ í•´ì œ ë²ˆí˜¸ë¥¼ ìž…ë ¥í•´ ì£¼ì‹­ì‹œì˜¤." );	
-				MsgBoxInfo.AddStringEx(strMessage, 0, 0, 0xF2F2F2FF, TEXT_CENTER );
-				strMessage = _S(2271,"12ìž ì˜ë¬¸ ìˆ«ìž ì¡°í•©");				
-				MsgBoxInfo.AddStringEx( strMessage, 1, 0, 0xF2F2F2FF, TEXT_CENTER );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
-
-				CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_PASSWORD_UNLOCK_A );						
-				ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-				pMsgBox->GetInputBox().SetMaxChar(MAX_UNLOCK_NUM);
-				pMsgBox->GetConfirmBox().SetMaxChar(MAX_UNLOCK_NUM);
-			} else {
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo(  ST_PASSWORD_ERROR , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );
-				CTString	strMessage = _S(2272, "ìž…ë ¥ ë²ˆí˜¸ê°€ ì¼ì¹˜ í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤." );	
-				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );			
-			}
-
-		}
-		break;
-
-	case MSGCMD_PASSWORD_UNLOCK_A:
-		{
-			if( strInput.Length() < MIN_UNLOCK_NUM || strInput.Length() > MAX_UNLOCK_NUM)
-			{	
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo(  ST_PASSWORD_ERROR , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );
-				CTString	strMessage = _S(2273, "í•´ì œ ë²ˆí˜¸ëŠ” 8ìž ì´ìƒ 12ìž ì´í•˜ë¡œ í•˜ì…”ì•¼ í•©ë‹ˆë‹¤." );	
-				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );			
-				return;
-			}
-
-			if(strInput.IsEqualCaseSensitive(strConfirm)){
-				
-				_pNetwork->SendWareHouseSetupPassWord(m_strNewPassWord,strConfirm);
-				
-			} else {
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo(  ST_PASSWORD_ERROR , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );
-				CTString	strMessage = _S(2272, "ìž…ë ¥ ë²ˆí˜¸ê°€ ì¼ì¹˜ í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤." );	
-				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );			
-			}
-			
-
-		}
-		break;
-
-	}
-
-
-}
-
-// ----------------------------------------------------------------------------
-// Name : MsgBoxCommand()
-// Desc :
-// ----------------------------------------------------------------------------
 void CUISecurity::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 {
-	if( !bOK )
+	if( bOK == FALSE )
 		return;
-	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch( nCommandCode )
 	{	
 	case MSGCMD_OLD_PASSWORD:
 		{
 			if( strInput.Length() < MIN_PASSWORD || strInput.Length() > MAX_PASSWORD)
 			{	
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
+				pUIManager->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
 				CUIMsgBox_Info	MsgBoxInfo;
 				MsgBoxInfo.SetMsgBoxInfo(  ST_PASSWORD_ERROR , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );
-				CTString	strMessage = _S( 1734, "ì•”í˜¸ëŠ” 6ìž ì´ìƒ 8ìž ì´í•˜ë¡œ í•˜ì…”ì•¼ í•©ë‹ˆë‹¤." );	
+				CTString	strMessage = _S( 1734, "¾ÏÈ£´Â 6ÀÚ ÀÌ»ó 8ÀÚ ÀÌÇÏ·Î ÇÏ¼Å¾ß ÇÕ´Ï´Ù." );	
 				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );			
+				pUIManager->CreateMessageBox( MsgBoxInfo );			
 				return;
 			}
 			
 			m_strOldPassWord = strInput;
 
-			_pNetwork->SendWareHouseCheckPassWord(m_strOldPassWord);
-			
+			MsgBoxInputNewPW();			
 		}
 		break;
 	case MSGCMD_NEW_PASSWORD:
 		{
 			if( strInput.Length() < MIN_PASSWORD || strInput.Length() > MAX_PASSWORD)
 			{	
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
+				pUIManager->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
 				CUIMsgBox_Info	MsgBoxInfo;
 				MsgBoxInfo.SetMsgBoxInfo(  ST_PASSWORD_ERROR , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );
-				CTString	strMessage = _S( 1734, "ì•”í˜¸ëŠ” 6ìž ì´ìƒ 8ìž ì´í•˜ë¡œ í•˜ì…”ì•¼ í•©ë‹ˆë‹¤." );	
+				CTString	strMessage = _S( 1734, "¾ÏÈ£´Â 6ÀÚ ÀÌ»ó 8ÀÚ ÀÌÇÏ·Î ÇÏ¼Å¾ß ÇÕ´Ï´Ù." );	
 				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );	
+				pUIManager->CreateMessageBox( MsgBoxInfo );	
 				return;
 			}
 
 			m_strNewPassWord = strInput;
 
-			_pUIMgr->CloseMessageBox( MSGCMD_CONFIRM_PASSWORD );
+			pUIManager->CloseMessageBox( MSGCMD_CONFIRM_PASSWORD );
 			CUIMsgBox_Info	MsgBoxInfo;
 			MsgBoxInfo.SetMsgBoxInfo( ST_SECURE_INPUT, UMBS_OK | UMBS_INPUTPASSWORD, UI_SECURITY, MSGCMD_CONFIRM_PASSWORD );
-			CTString	strMessage =  _S( 1735, "ìƒˆ ì•”í˜¸ë¥¼ í™•ì¸ í•©ë‹ˆë‹¤." );	
+			CTString	strMessage =  _S( 1735, "»õ ¾ÏÈ£¸¦ È®ÀÎ ÇÕ´Ï´Ù." );	
 			MsgBoxInfo.AddStringEx( strMessage, 0, 0, 0xF2F2F2FF, TEXT_CENTER );
 			strMessage = ST_PASSWORD_RANGE;			
 			MsgBoxInfo.AddStringEx( strMessage, 1, 0, 0xF2F2F2FF, TEXT_CENTER );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 			
-			CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_CONFIRM_PASSWORD );						
+			CUIMessageBox* pMsgBox = pUIManager->GetMessageBox( MSGCMD_CONFIRM_PASSWORD );						
 			ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
 			pMsgBox->GetInputBox().SetMaxChar(MAX_PASSWORD);
 		}
@@ -918,29 +838,29 @@ void CUISecurity::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 		{
 			if( strInput.Length() < MIN_PASSWORD || strInput.Length() > MAX_PASSWORD)
 			{
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
+				pUIManager->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
 				CUIMsgBox_Info	MsgBoxInfo;
 				MsgBoxInfo.SetMsgBoxInfo( ST_PASSWORD_ERROR, UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );
-				CTString	strMessage = _S( 1734, "ì•”í˜¸ëŠ” 6ìž ì´ìƒ 8ìž ì´í•˜ë¡œ í•˜ì…”ì•¼ í•©ë‹ˆë‹¤." );	
+				CTString	strMessage = _S( 1734, "¾ÏÈ£´Â 6ÀÚ ÀÌ»ó 8ÀÚ ÀÌÇÏ·Î ÇÏ¼Å¾ß ÇÕ´Ï´Ù." );	
 				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );	
+				pUIManager->CreateMessageBox( MsgBoxInfo );	
 				return;
 			}
 
 			if( m_strNewPassWord != strInput)
 			{
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
+				pUIManager->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
 				CUIMsgBox_Info	MsgBoxInfo;
 				MsgBoxInfo.SetMsgBoxInfo( ST_PASSWORD_ERROR, UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );		
-				MsgBoxInfo.AddString( _S( 853, "ì•”í˜¸ê°€ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤." ) );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
+				MsgBoxInfo.AddString( _S( 853, "¾ÏÈ£°¡ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù." ) );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 				return;
 			}
 
 			m_strConfirmPassWord = strInput;
 
-			// ì„œë²„ë¡œ ë©”ì„¸ì§€ ë³´ë‚´ê¸°...
-			_pNetwork->SendWareHouseSetupPassWord(m_strConfirmPassWord);
+			// ¼­¹ö·Î ¸Þ¼¼Áö º¸³»±â...
+			_pNetwork->SendWareHouseSetupPassWord(m_strConfirmPassWord, m_strOldPassWord);
 		}
 		break;
 	case MSGCMD_SECURITY_NOTIFY:
@@ -951,15 +871,15 @@ void CUISecurity::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 		{	
 			if( strInput.Length() < MIN_PASSWORD || strInput.Length() > MAX_PASSWORD)
 			{	
-				_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
+				pUIManager->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
 				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo(  _S( 1736, "ì•”í˜¸ í™•ì¸ ì˜¤ë¥˜" ) , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );	
-				MsgBoxInfo.AddString( _S( 853, "ì•”í˜¸ê°€ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤." ) );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
+				MsgBoxInfo.SetMsgBoxInfo(  _S( 1736, "¾ÏÈ£ È®ÀÎ ¿À·ù" ) , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );	
+				MsgBoxInfo.AddString( _S( 853, "¾ÏÈ£°¡ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù." ) );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 				return;
 			}
-			// ì•”í˜¸ í™•ì¸ì„ ë³´ë‚´ê³  ì‘ë‹µìœ¼ë¡œ ì•„ì´í…œ ëª©ë¡ì„ ë°›ìŒ.
-			_pNetwork->SendWareHouseListReq( strInput );			
+			// ¾ÏÈ£ È®ÀÎÀ» º¸³»°í ÀÀ´äÀ¸·Î ¾ÆÀÌÅÛ ¸ñ·ÏÀ» ¹ÞÀ½.			
+			pUIManager->GetWareHouse()->SendListReq(strInput);
 		}
 		break;
 	}
@@ -971,71 +891,95 @@ void CUISecurity::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 // ----------------------------------------------------------------------------
 void CUISecurity::MsgBoxLCommand( int nCommandCode, int nResult )
 {
-	switch( nCommandCode )
-	{
-	case MSGLCMD_SECURITY_REQ:
-		{
-			switch ( nResult ) 
-			{
-			case SET_PASSWORD:
-				{
-					// ì•”í˜¸ê°€ ì´ë¯¸ ì„¤ì •ë˜ì–´ìžˆëŠ” ê²½ìš°.
-					if(_pUIMgr->GetWareHouse()->HasPassword())
-					{
-						_pUIMgr->CloseMessageBox( MSGCMD_OLD_PASSWORD );
-						CUIMsgBox_Info	MsgBoxInfo;
-						MsgBoxInfo.SetMsgBoxInfo( ST_SECURE_INPUT, UMBS_OK | UMBS_INPUTPASSWORD, UI_SECURITY, MSGCMD_OLD_PASSWORD );
-						CTString	strMessage =  _S( 1737, "ê¸°ì¡´ ì•”í˜¸ë¥¼ ìž…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." );	
-						MsgBoxInfo.AddStringEx( strMessage, 0, 0, 0xF2F2F2FF, TEXT_CENTER );
-						strMessage = ST_PASSWORD_RANGE;				
-						MsgBoxInfo.AddStringEx( strMessage, 1, 0, 0xF2F2F2FF, TEXT_CENTER );
-						_pUIMgr->CreateMessageBox( MsgBoxInfo );
-						
-						CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_OLD_PASSWORD );						
-						ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-						pMsgBox->GetInputBox().SetMaxChar(MAX_PASSWORD);
-					}
-					// ì•”í˜¸ê°€ ì—†ëŠ” ê²½ìš°...
-					else
-					{
-						_pUIMgr->CloseMessageBox( MSGCMD_NEW_PASSWORD );
-						CUIMsgBox_Info	MsgBoxInfo;
-						if(g_iCountry == TAIWAN||g_iCountry == TAIWAN2) 
-							MsgBoxInfo.SetMsgBoxInfo( ST_SECURE_INPUT, UMBS_OK | UMBS_INPUTPASSWORD |UMBS_CONFIRMPASSWORD, UI_SECURITY, MSGCMD_NEW_PASSWORD );
-						else 
-							MsgBoxInfo.SetMsgBoxInfo( ST_SECURE_INPUT, UMBS_OK | UMBS_INPUTPASSWORD , UI_SECURITY, MSGCMD_NEW_PASSWORD );
-						CTString	strMessage =  _S( 1738, "ìƒˆ ì•”í˜¸ë¥¼ ìž…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." );	
-						MsgBoxInfo.AddStringEx( strMessage, 0, 0, 0xF2F2F2FF, TEXT_CENTER );
-						strMessage = ST_PASSWORD_RANGE;				
-						MsgBoxInfo.AddStringEx( strMessage, 1, 0, 0xF2F2F2FF, TEXT_CENTER );
-						_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	if( nCommandCode != MSGLCMD_SECURITY_REQ )
+		return;
 
-						CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_NEW_PASSWORD );						
-						ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-						if(g_iCountry == TAIWAN||g_iCountry == TAIWAN2){
-							pMsgBox->GetInputBox().SetMaxChar(MAX_PASSWORD);
-							pMsgBox->GetConfirmBox().SetMaxChar(MAX_PASSWORD);
-						}
-						else  pMsgBox->GetInputBox().SetMaxChar(MAX_PASSWORD);
-					}
-				}
-				break;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch ( nResult ) 
+	{
+	case SET_PASSWORD:
+		{
+			// ¾ÏÈ£°¡ ÀÌ¹Ì ¼³Á¤µÇ¾îÀÖ´Â °æ¿ì.
+			if(pUIManager->GetWareHouse()->HasPassword())
+			{
+				pUIManager->CloseMessageBox( MSGCMD_OLD_PASSWORD );
+				CUIMsgBox_Info	MsgBoxInfo;
+				MsgBoxInfo.SetMsgBoxInfo( ST_SECURE_INPUT, UMBS_OK | UMBS_INPUTPASSWORD, UI_SECURITY, MSGCMD_OLD_PASSWORD );
+				CTString	strMessage =  _S( 1737, "±âÁ¸ ¾ÏÈ£¸¦ ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." );	
+				MsgBoxInfo.AddStringEx( strMessage, 0, 0, 0xF2F2F2FF, TEXT_CENTER );
+				strMessage = ST_PASSWORD_RANGE;				
+				MsgBoxInfo.AddStringEx( strMessage, 1, 0, 0xF2F2F2FF, TEXT_CENTER );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 				
-			case UNSET_PASSWORD:
-				{
-					_pUIMgr->SetCSFlagOff( CSF_WAREHOUSE );
-					_pUIMgr->GetSecurity()->OpenChangePassWord( _pUIMgr->GetWareHouse()->HasPassword() );
-				}
-				break;
-			default:
-				{
-					// Character state flags
-					_pUIMgr->SetCSFlagOff( CSF_WAREHOUSE );
-				}
-				break;
+				CUIMessageBox* pMsgBox = pUIManager->GetMessageBox( MSGCMD_OLD_PASSWORD );						
+				ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
+				pMsgBox->GetInputBox().SetMaxChar(MAX_PASSWORD);
 			}
-			break;
+			// ¾ÏÈ£°¡ ¾ø´Â °æ¿ì...
+			else
+			{
+				MsgBoxInputNewPW();
+			}
 		}
+		break;
+		
+	case UNSET_PASSWORD:
+		{
+			pUIManager->SetCSFlagOff( CSF_WAREHOUSE );
+			pUIManager->GetSecurity()->OpenChangePassWord( pUIManager->GetWareHouse()->HasPassword() );
+		}
+		break;
+	default:
+		{
+			// Character state flags
+			pUIManager->SetCSFlagOff( CSF_WAREHOUSE );
+		}
+		break;
+	}
+}
+
+void CUISecurity::MsgBoxInputNewPW()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_NEW_PASSWORD );
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( ST_SECURE_INPUT, UMBS_OK | UMBS_INPUTPASSWORD , UI_SECURITY, MSGCMD_NEW_PASSWORD );
+	CTString	strMessage =  _S( 1738, "»õ ¾ÏÈ£¸¦ ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." );	
+	MsgBoxInfo.AddStringEx( strMessage, 0, 0, 0xF2F2F2FF, TEXT_CENTER );
+	strMessage = ST_PASSWORD_RANGE;				
+	MsgBoxInfo.AddStringEx( strMessage, 1, 0, 0xF2F2F2FF, TEXT_CENTER );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+
+	CUIMessageBox* pMsgBox = pUIManager->GetMessageBox( MSGCMD_NEW_PASSWORD );						
+	ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
+	pMsgBox->GetInputBox().SetMaxChar(MAX_PASSWORD);
+}
+
+void CUISecurity::ShowMsgBoxDelPW( UINT8 result )
+{
+	ResetSecurity();
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(result == 0)		// ¼º°ø
+	{
+		pUIManager->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
+		CUIMsgBox_Info	MsgBoxInfo;
+		MsgBoxInfo.SetMsgBoxInfo(  _S( 1770, "¾ÏÈ£ »èÁ¦" ) , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );	
+		CTString	strMessage = _S( 1771, "¾ÏÈ£°¡ »èÁ¦µÇ¾ú½À´Ï´Ù.  »õ ¾ÏÈ£¸¦ ¼³Á¤ÇÏ½Ê½Ã¿À." );	
+		MsgBoxInfo.AddString( strMessage );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+	}
+	else if(result == 1)	// Æ²¸° ÁÖ¹Îµî·Ï ¹øÈ£
+	{
+		pUIManager->CloseMessageBox( MSGCMD_SECURITY_NOTIFY );
+		CUIMsgBox_Info	MsgBoxInfo;
+		MsgBoxInfo.SetMsgBoxInfo(  _S( 1770, "¾ÏÈ£ »èÁ¦" ) , UMBS_OK, UI_SECURITY, MSGCMD_SECURITY_NOTIFY );	
+		CTString	strMessage = _S( 1772, "ÁÖ¹Îµî·Ï ¹øÈ£°¡ ÀÏÄ¡ÇÏÁö ¾Ê½À´Ï´Ù.  È®ÀÎ ÈÄ ´Ù½Ã ½ÃµµÇÏ¿© ÁÖ½Ê½Ã¿À." );	
+		MsgBoxInfo.AddString( strMessage );
+		pUIManager->CreateMessageBox( MsgBoxInfo );				
 	}
 }
 

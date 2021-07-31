@@ -61,7 +61,7 @@ static inline INDEX MakeKey(INDEX iX, INDEX iZ)
   return iKey;
 }
 
-static inline MakeKeyFromCode(ULONG ulCode)
+static inline INDEX MakeKeyFromCode(ULONG ulCode)
 {
   INDEX iX = SLONG(ulCode)>>16;
   INDEX iZ = SLONG(SWORD(ulCode&0xffff));

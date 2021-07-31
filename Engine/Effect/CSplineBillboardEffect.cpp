@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 #include "StdH.h"
 
 #include "CTag.h"
@@ -59,7 +59,7 @@ BOOL CSplineBillboardEffect::SetTexture(const CTFileName &filename)
 	if(filename == m_strTextureFileName) return FALSE;
 	m_strTextureFileName = filename;
 
-	//í…ìŠ¤ì³ë¥¼ ìƒì„±í•˜ê³  ë¡œë“œí•œë‹¤.
+	//ÅØ½ºÃÄ¸¦ »ı¼ºÇÏ°í ·ÎµåÇÑ´Ù.
 	try
 	{
 		m_ptdTexture = _pTextureStock->Obtain_t(m_strTextureFileName);
@@ -75,9 +75,9 @@ CEffect *CSplineBillboardEffect::Copy()
 {
 	CSplineBillboardEffect *pRet = new CSplineBillboardEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CSplineBillboardEffectì˜ content
+	//CSplineBillboardEffectÀÇ content
 	pRet->m_colTraceBegin = m_colTraceBegin;
 	pRet->m_colTraceEnd = m_colTraceEnd;
 	pRet->m_fTraceTime = m_fTraceTime;
@@ -104,7 +104,7 @@ void CSplineBillboardEffect::Start(FLOAT time, BOOL restart)
 	for(UWORD i=0; i<iTraceCount-1; ++i)
 	{
 		UWORD idx = i * 2;
-		//ë°±í˜ì´ìŠ¤ ì»¬ë§ ì—†ìŒ.
+		//¹éÆäÀÌ½º ÄÃ¸µ ¾øÀ½.
 		m_vectorIndex.push_back( idx+0 );
 		m_vectorIndex.push_back( idx+1 );
 		m_vectorIndex.push_back( idx+2 );
@@ -208,9 +208,9 @@ void CSplineBillboardEffect::Render()
 	if(m_ssSplinePoint.GetSampleCount() < 2) return;
 	
 	if (GetOwner() != NULL)
-	{ // HIDDEN ì†ì„±ì˜ NPCì˜ ì´í™íŠ¸ë¥¼ ë³´ê¸° ìœ„í•´ì„œëŠ” ìºë¦­í„°ê°€ ENF_SHOWHIDDENì„ ê°€ì§€ê³  ìˆì–´ì•¼ í•œë‹¤.
+	{ // HIDDEN ¼Ó¼ºÀÇ NPCÀÇ ÀÌÆåÆ®¸¦ º¸±â À§ÇØ¼­´Â Ä³¸¯ÅÍ°¡ ENF_SHOWHIDDENÀ» °¡Áö°í ÀÖ¾î¾ß ÇÑ´Ù.
 		if (GetOwner()->IsFlagOn(ENF_HIDDEN) && (CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npc effectëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc effect´Â º¼ ¼ö ÀÖ´Ù.
 			return;
 	}
 
@@ -319,7 +319,7 @@ void CSplineBillboardEffect::Render()
 	static bool bDebugValue = FALSE;
 	if(bDebugValue) gfxPolygonMode(GFX_LINE);
 #endif //_DEBUG
-	//ë Œë”ë§ ì„¸íŒ… ë° ë Œë”ë§
+	//·»´õ¸µ ¼¼ÆÃ ¹× ·»´õ¸µ
 	if(m_ptdTexture != NULL)
 	{
 		gfxSetTextureUnit(0);
@@ -348,7 +348,7 @@ void CSplineBillboardEffect::Render()
 	}
 	gfxSetVertexArray( &vectorPos[0], vectorPos.size());
 	gfxSetColorArray( &vectorColor[0] );
-	if(m_ptdTexture != NULL) gfxSetTexCoordArray( &vectorTexCoord[0] );
+	if(m_ptdTexture != NULL) gfxSetTexCoordArray( &vectorTexCoord[0], FALSE );
 	gfxDrawElements( (vectorPos.size()-2)*3, &m_vectorIndex[0]);
 	
 	if(!RM_AreHardwareShadersAvailable())
@@ -436,7 +436,7 @@ void CSplineBillboardEffect::Write(CTStream *pOS)
 
 BOOL CSplineBillboardEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 {
-	//í”„ë¡œì ì…˜ ì„¤ì •
+	//ÇÁ·ÎÁ§¼Ç ¼³Á¤
 	s_pApr = &apr;
 	apr->ObjectPlacementL() = CPlacement3D(FLOAT3D(0,0,0), ANGLE3D(0,0,0));
 	apr->Prepare();
@@ -451,7 +451,7 @@ BOOL CSplineBillboardEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 		apr->pr_ViewerRotationMatrix, 
 		-apr->pr_vViewerPosition*apr->pr_ViewerRotationMatrix);
 
-	//ë Œë”ë§ ìƒíƒœ ì„¤ì •
+	//·»´õ¸µ »óÅÂ ¼³Á¤
 	Matrix12 &mView12 = mAbsToViewer;
 	FLOAT mView16[16];
 	mView16[ 0] = mView12[ 0];  mView16[ 1] = mView12[ 4];  mView16[ 2] = mView12[ 8];  mView16[ 3] = 0;
@@ -480,7 +480,7 @@ BOOL CSplineBillboardEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 
 void CSplineBillboardEffect::EndRender(BOOL bRestoreOrtho)
 {
-	//ë Œë”ë§ ìƒíƒœ ì„¤ì •
+	//·»´õ¸µ »óÅÂ ¼³Á¤
 	gfxDisableVertexProgram();
 	gfxDisablePixelProgram();
 	gfxDisableBlend();
@@ -495,12 +495,12 @@ void CSplineBillboardEffect::EndRender(BOOL bRestoreOrtho)
 
 void CSplineBillboardEffect::InitializeShaders()
 {
-	//Redneringì— ì‚¬ìš©í•  Shaderë¥¼ ìƒì„±í•œë‹¤.
+	//Rednering¿¡ »ç¿ëÇÒ Shader¸¦ »ı¼ºÇÑ´Ù.
 	static char *strVPNoTex =	"vs.1.1"				"\n"
 								"m4x4 oPos, v0, c0"		"\n"
 								"mov oD0, v4"			"\n";
 	m_ulVertexProgramNoTex = gfxCreateVertexProgram(strVPNoTex, GFX_POSITION_STREAM | GFX_COLOR_STREAM);
-	static char *strPPNoTex =	"ps.1.1"				"\n"
+	static char *strPPNoTex =	"ps.1.4"				"\n"
 								"mov r0, v0"			"\n";
 	m_ulPixelProgramNoTex = gfxCreatePixelProgram(strPPNoTex);
 	static char *strVPTex =		"vs.1.1"				"\n"
@@ -508,15 +508,17 @@ void CSplineBillboardEffect::InitializeShaders()
 								"mov oT0, v5"			"\n"
 								"mov oD0, v4"			"\n";
 	m_ulVertexProgramTex = gfxCreateVertexProgram(strVPTex, GFX_POSITION_STREAM | GFX_COLOR_STREAM | GFX_TEXCOORD0);
-	static char *strPPTex =		"ps.1.1"				"\n"
-								"tex t0"				"\n"
-								"mul r0, v0, t0"		"\n";
+	static char *strPPTex =		"ps.1.4"				"\n"
+								//"tex t0"				"\n"
+								"texld r0, t0"			"\n"
+								//"mul r0, v0, t0"		"\n";
+								"mul r0, r0, v0"		"\n";
 	m_ulPixelProgramTex = gfxCreatePixelProgram(strPPTex);
 }
 
 void CSplineBillboardEffect::FinalizeShaders()
 {
-	//Redneringì— ì‚¬ìš©í•œ Shaderë¥¼ ì§€ìš´ë‹¤.
+	//Rednering¿¡ »ç¿ëÇÑ Shader¸¦ Áö¿î´Ù.
 	if(m_ulVertexProgramNoTex) gfxDeleteVertexProgram(m_ulVertexProgramNoTex);
 	m_ulVertexProgramNoTex = 0;
 	if(m_ulPixelProgramNoTex) gfxDeletePixelProgram(m_ulPixelProgramNoTex);
@@ -526,4 +528,4 @@ void CSplineBillboardEffect::FinalizeShaders()
 	if(m_ulPixelProgramTex) gfxDeletePixelProgram(m_ulPixelProgramTex);
 	m_ulPixelProgramTex = 0;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)

@@ -39,7 +39,7 @@ protected:
 	CEntityEffect &operator =(const CEntityEffect &other) { return *this; }
 protected:
 	//contents
-	CEffectControl		*m_pEffectControl;		//effect control Ä¾Å™Å”Â»Â¶Â§Â´Ã‚ NULL
+	CEffectControl		*m_pEffectControl;		//effect control ¾øÀ»¶§´Â NULL
 	//instance
 	COLOR	m_colModelOriginal;
 	FLOAT3D m_vStretchOriginal;

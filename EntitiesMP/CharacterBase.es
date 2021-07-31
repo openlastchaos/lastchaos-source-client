@@ -164,6 +164,17 @@ properties:
 249 BOOL    m_bMobChange = FALSE, //몬스터로 변신해 있느냐..
 252 BOOL	m_bEvocating = FALSE,
 251 BOOL	m_bIsTransform = FALSE,
+253 BOOL	m_bConnectEffect = FALSE,
+254 BOOL	m_bOfTransforming = FALSE,
+247 CEntityPointer m_penStillTarget,
+	{
+		CTextureObject	m_pSkillTexture;
+		CEffectGroup* m_pAttachPlayerEffect;
+		CEffectGroup* m_pAttachEnemyEffect;
+		BOOL	m_bHardcodingSkillLoop;
+	}
+
+
 
 components:
 
@@ -198,6 +209,30 @@ functions:
 
 	void CCharacterBase(void)
 	{
+	}
+
+	void ~CCharacterBase(void)
+	{
+		ReleaseChche(ECT_MODEL, MODEL_FLESH);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_APPLE);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_BANANA);
+		ReleaseChche(ECT_MODEL, MODEL_FLESH_BURGER);
+		ReleaseChche(ECT_MODEL, MODEL_MACHINE);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_MACHINE);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_RED);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_GREEN);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_APPLE); 
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_BANANA);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_BURGER);
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_LOLLY); 
+		ReleaseChche(ECT_TEXTURE, TEXTURE_FLESH_ORANGE); 
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_BASIC_EFFECT);
+		ReleaseChche(ECT_CLASS, CLASS_DEBRIS);
 	}
 
 	// describe how this enemy killed player
@@ -1116,20 +1151,44 @@ functions:
 			return;
 		}
 
-	FLOAT tmNow = en_tmEntityTime;
-	if(m_bSpeedUp)//1214
-	{
-		m_tmSeriousSpeed = 1000.0f;
-	}
-	else
-	{
-		m_tmSeriousSpeed = 0.0f;
-	}
+		FLOAT tmNow = en_tmEntityTime;
 
-	if (m_tmSeriousSpeed>tmNow) {
-			Particles_RunAfterBurner(this, m_tmSeriousSpeed, 0.3f, 0);
-	}
+		if (m_bConnectEffect && m_penStillTarget != NULL)
+		{
+			if (m_penStillTarget->en_RenderType == RT_SKAMODEL && m_penStillTarget->GetFlags() & ENF_ALIVE
+				&& (_pTimer->GetLerpedCurrentTick() - m_tmSkillStartTime) <= m_fSkillAnimTime)
+			{
+				CTag* pSource_Tag = en_pmiModelInstance->m_tmSkaTagManager.Find("LHAND");
+				CTag* pDest_Tag = m_penStillTarget->en_pmiModelInstance->m_tmSkaTagManager.Find("CENTER");
 
+				Particles_Ghostbuster(pSource_Tag->CurrentTagInfo().m_vPos, pDest_Tag->CurrentTagInfo().m_vPos, 3, 1.0f, 1.0f, 33.3333333f, &m_pSkillTexture);
+			}
+			else
+			{
+				m_bConnectEffect = FALSE;
+				m_pSkillTexture.SetData(NULL);
+				StopEffectGroupIfValid(m_pAttachPlayerEffect, 0.1f);
+				StopEffectGroupIfValid(m_pAttachEnemyEffect, 0.1f);
+
+				if (!m_bStop && !m_bAttack && !m_bMoving && !m_bSkilling && !m_bPreSkilling && !m_bPlayAction)
+				{
+					StandingAnim();
+				}
+			}
+		}
+
+		if(m_bSpeedUp)//1214
+		{
+			m_tmSeriousSpeed = 1000.0f;
+		}
+		else
+		{
+			m_tmSeriousSpeed = 0.0f;
+		}
+
+		if (m_tmSeriousSpeed>tmNow) {
+				Particles_RunAfterBurner(this, m_tmSeriousSpeed, 0.3f, 0);
+		}
 
 		// if is dead
 		if( m_fSpiritStartTime != 0.0f)
@@ -1142,6 +1201,7 @@ functions:
 
 	// adjust sound and watcher parameters here if needed
 	virtual void EnemyPostInit(void) {};
+	virtual void PolymophEnd(void)	{};
 
 	/* Handle an event, return false if the event is not handled. */
 	BOOL HandleEvent(const CEntityEvent &ee)
@@ -1393,13 +1453,15 @@ functions:
 		}
 
 		FLOAT3D vDeltaPlane = m_vDesiredPosition - GetPlacement().pl_PositionVector;
+		ANGLE3D aTmpAngle = m_aDesiredRotation;
 		if(vDeltaPlane.Length() > 0.5f)
 	    {
 			vDeltaPlane(2) = 0;		
 			FLOAT3D vWhere = m_vDesiredPosition;
 			vWhere(2) += 2.0f;
 			vDeltaPlane.Normalize();
-			CPlacement3D plWhere=CPlacement3D(vWhere,ANGLE3D(vDeltaPlane(1),0,0));
+			//CPlacement3D plWhere=CPlacement3D(vWhere,ANGLE3D(vDeltaPlane(1),0,0));
+			CPlacement3D plWhere=CPlacement3D(vWhere,aTmpAngle);
 			this->Teleport(plWhere, FALSE);
 		}
 		else
@@ -1407,9 +1469,9 @@ functions:
 	
 		}
 
-		m_vDesiredPosition = GetPlacement().pl_PositionVector;
+		//m_vDesiredPosition = GetPlacement().pl_PositionVector;
 		StopNow();
-		StandingAnim();		
+		StandingAnim();
 	}
 
 	void SkillNow()//0714
@@ -1524,6 +1586,7 @@ functions:
 		m_bConsensus = FALSE; // WSS_DRATAN_SEIGEWARFARE 2007/08/01
 		m_bPolymoph = TRUE;
 		m_bEvocating = FALSE;
+		m_bOfTransforming = TRUE;
 		ForceFullStop(); 
 
 //		m_bMobChange = !m_bMobChange;
@@ -1565,7 +1628,11 @@ void Rebirth()//1211
 }
 
 procedures:
-
+	// dummy main - never called
+	Main(EVoid) 
+	{
+		return;
+	};	
 //**********************************************************
 //                 ATTACK PROCEDURES
 //**********************************************************
@@ -2155,8 +2222,13 @@ procedures:
 						m_bPreSkilling = FALSE;//0813
 						call SpellSkill();						
 					}
+					else if(m_bMoving)
+					{					
+						m_bMoving = FALSE;
+						call MovetoPoint();						
+					}
 					//m_penEnemy이 있다면 attack을 해야한다.
-					if(m_bSkilling)
+					if(m_bSkilling || m_bHardcodingSkillLoop)
 					{
 						// FIXME : 이 플래그를 꺼주면, 스킬 애니메이션이 끝나기도 전에 Attack을 하게 된다.
 						// FIXME : 스킬 애니메이션이 끝난 다음에 m_bSkiling이 꺼져야 함.
@@ -2168,10 +2240,6 @@ procedures:
 					{						
 						m_bAttack = FALSE;//1008
 						call AttackTarget();
-					}
-					else
-					{
-						SetNoTargetEntity();
 					}
 				}
 				else if(m_penEnemy==NULL) //0628 타겟이 없다.
@@ -2206,10 +2274,23 @@ procedures:
 						call StopMovement();					
 					}
 					else if(m_bMoving)
-					{					
+					{
 						m_bMoving = FALSE;
 						call MovetoPoint();						
-					}					
+					}
+					else if(m_bSkilling)
+					{
+						// 타겟이 없어도 사용 가능한 스킬이 있다.
+						m_bSkilling = FALSE;
+						call SkillingTarget();
+					}
+					else
+					{
+						if( m_bIdleAnim && !m_bDeath )
+						{
+							StandingAnim();
+						}
+					}
 				}
 				resume;
 			}
@@ -2278,7 +2359,11 @@ procedures:
 		if(m_bDeath || !m_bIdleAnim)
 		{
 			AnimForDeath();
-			m_bIdleAnim = TRUE;
+
+			if((!en_pCharacterTarget->cha_statusEffect.IsState(EST_ASSIST_FAKEDEATH)))
+			{
+				m_bIdleAnim = TRUE;
+			}
 		}
 		else
 		{
@@ -2399,6 +2484,8 @@ procedures:
 		// let derived class(es) adjust parameters if needed
 		EnemyPostInit();
 
+		m_bHardcodingSkillLoop = FALSE;
+
 		// adjust your difficulty(난이도 조절)
 //강동민 수정 시작 로그인 처리 작업	07.20
 		//AdjustDifficulty();
@@ -2494,12 +2581,6 @@ procedures:
 		}
 	};
 
-	// dummy main - never called
-	Main(EVoid) 
-	{
-		return;
-	};	
-
 	//0628 kwon
 	AttackTarget() // 이 프로시저를 call하기전에 SetTargetEntity()가 선행되어야 한다.
 	{
@@ -2565,6 +2646,11 @@ procedures:
 
 	MovetoPoint() //호출전에 m_fMoveSpeed와 m_vDesiredPosition를 설정해줘야 한다.
 	{
+		if (m_bOfTransforming == TRUE)
+		{
+			PolymophEnd();
+		}
+
 		SetNoTargetEntity();
 		m_aRotateSpeed =  AngleDeg(1800.0f);		
 		m_fMoveFrequency = 0.25f;		

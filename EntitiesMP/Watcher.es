@@ -47,9 +47,10 @@ functions:
 	// NOTE : 안쓰임.
 	INDEX GetRandomPlayer(void)
 	{
+		INDEX i;
 		INDEX ctMaxPlayers		= GetOwner()->en_pwoWorld->m_vectorTargetNPC.size();
 		INDEX ctActivePlayers	= 0;
-		for(INDEX i=0; i < ctMaxPlayers; i++)
+		for(i=0; i < ctMaxPlayers; i++)
 		{
 			CEntity* pEntity = GetOwner()->en_pwoWorld->m_vectorTargetNPC[i];
 			if(pEntity != NULL)			
@@ -70,7 +71,7 @@ functions:
 
 		// find its physical index(물리적 인덱스를 찾고)
 		INDEX iActivePlayer = 0;
-		for(i=0; i<ctMaxPlayers; i++) 
+		for(i=0; i<ctMaxPlayers; i++)
 		{
 			CEntity* pEntity = GetOwner()->en_pwoWorld->m_vectorTargetNPC[i];
 			if(pEntity != NULL)
@@ -439,6 +440,46 @@ functions:
 	}
 
 procedures:
+	Main(EWatcherInit eInit) 
+	{
+		// remember the initial parameters
+		ASSERT((CEntity*)eInit.eidOwner!=NULL);
+		m_penOwner = eInit.eidOwner;
+
+		m_iOwnerID = m_penOwner->en_ulID;
+
+		// init as nothing
+		InitAsVoid();
+		SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+		SetCollisionFlags(ECF_IMMATERIAL);
+
+//강동민 수정 시작 싱글 던젼 작업	07.29
+		if(!_pNetwork->m_bSingleMode)
+		{
+			// if in flyover game mode(Flyover 게임 모드)
+			if (GetSP()->sp_gmGameMode == CSessionProperties::GM_FLYOVER) 
+			{
+				// go to dummy mode
+				jump Dummy();
+				// NOTE: must not destroy self, because owner has a pointer
+			}
+		}
+//강동민 수정 끝 싱글 던젼 작업		07.29
+
+		// generate random number of player to check next(에너미 생성될때만 Watcher가 생성되는듯...) 
+		// (to provide even distribution of enemies among players)
+		m_iPlayerToCheck = GetRandomPlayer()-1;
+		//m_iPlayerToCheck = -1;
+
+		// start in disabled state
+		autocall Inactive() EEnd;
+
+		// cease to exist(에너미가 죽었을때...)
+		Destroy();
+
+		return;
+	};
+
 	// watching
 	Active() 
 	{
@@ -480,44 +521,4 @@ procedures:
 			otherwise() : { resume; };
 		};
 	}
-
-	Main(EWatcherInit eInit) 
-	{
-		// remember the initial parameters
-		ASSERT((CEntity*)eInit.eidOwner!=NULL);
-		m_penOwner = eInit.eidOwner;
-
-		m_iOwnerID = m_penOwner->en_ulID;
-
-		// init as nothing
-		InitAsVoid();
-		SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-		SetCollisionFlags(ECF_IMMATERIAL);
-
-//강동민 수정 시작 싱글 던젼 작업	07.29
-		if(!_pNetwork->m_bSingleMode)
-		{
-			// if in flyover game mode(Flyover 게임 모드)
-			if (GetSP()->sp_gmGameMode == CSessionProperties::GM_FLYOVER) 
-			{
-				// go to dummy mode
-				jump Dummy();
-				// NOTE: must not destroy self, because owner has a pointer
-			}
-		}
-//강동민 수정 끝 싱글 던젼 작업		07.29
-
-		// generate random number of player to check next(에너미 생성될때만 Watcher가 생성되는듯...) 
-		// (to provide even distribution of enemies among players)
-		m_iPlayerToCheck = GetRandomPlayer()-1;
-		//m_iPlayerToCheck = -1;
-
-		// start in disabled state
-		autocall Inactive() EEnd;
-
-		// cease to exist(에너미가 죽었을때...)
-		Destroy();
-
-		return;
-	};
 };

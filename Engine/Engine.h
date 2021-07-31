@@ -1,3 +1,6 @@
+#ifndef		__ENGINE_H__
+#define		__ENGINE_H__
+
 // set this to 1 to enable checks whether somethig is deleted while iterating some array/container
 #define CHECKARRAYLOCKING 0
 
@@ -7,15 +10,14 @@
   #endif
 #endif
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
 #pragma warning(disable : 4786)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+#pragma warning(disable : 4200)
 
 #include <stdlib.h>
 #include <malloc.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string>
+#include <string.h>
 #include <stddef.h>
 #include <time.h>
 #include <math.h>
@@ -48,19 +50,18 @@
 #include <Engine/Base/ListIterator.inl>
 #include <Engine/Base/Console.h>
 #include <Engine/Base/Console_internal.h>
-#include <Engine/Base/Shell_internal.h>
+// #include <Engine/Base/Shell_internal.h>
 #include <Engine/Base/Shell.h>
 #include <Engine/Base/Statistics.h>
 #include <Engine/Base/CRC.h>
 #include <Engine/Base/Translation.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Base/Registry.h>
 #include <Engine/Base/IFeel.h>
 
 #include <Engine/Entities/EntityClass.h>
-#include <Engine/Entities/EntityCollision.h>
-#include <Engine/Entities/EntityProperties.h>
-#include <Engine/Entities/Entity.h>
+// #include <Engine/Entities/EntityCollision.h>
+// #include <Engine/Entities/EntityProperties.h>
+// #include <Engine/Entities/Entity.h>
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Entities/LastPositions.h>
 #include <Engine/Entities/EntityCollision.h>
@@ -82,17 +83,15 @@
 #include <Engine/Math/Quaternion.h>
 #include <Engine/Math/Projection.h>
 #include <Engine/Math/Projection_DOUBLE.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 #include <Engine/Math/AdditionalFunction.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Network/Server.h>
 //#include <Engine/Network/NetworkMessage.h>
 #include <Engine/Network/PlayerSource.h>
 #include <Engine/Network/PlayerTarget.h>
-#include <Engine/Network/SessionState.h>
-#include <Engine/Network/NetworkProfile.h>
 #include <Engine/Network/Compression.h>
 
 #include <Engine/Brushes/Brush.h>
@@ -155,13 +154,40 @@
 #include <Engine/Templates/Selection.cpp>
 
 
+
+typedef struct lua_State lua_State;
 // some global stuff
+ENGINE_API bool SE_CheckEngine();	// [2013/01/16] sykim70
 //ENGINE_API void SE_InitEngine( CTString strGameID, BOOL bTcp = FALSE);  // by seo
 ENGINE_API void SE_InitEngine( CTString strGameID);
 ENGINE_API void SE_EndEngine(void);
 ENGINE_API void SE_LoadDefaultFonts(void);
-ENGINE_API void SE_UpdateWindowHandle( HWND hwndWindowed);
+ENGINE_API void SE_UpdateWindowHandle( HWND hwndWindowed, HWND hdlgWebInterface = NULL);
 ENGINE_API void SE_PretouchIfNeeded(void);
+ENGINE_API const int	SE_GetEngineDllRefCnt();
+
+#ifdef KALYDO
+extern ENGINE_API HWND	g_KalydoWindowHandle;
+ENGINE_API void SE_UpdateStreamingData(void);
+#endif
+
+// Singleton Classes
+class CWebAddress;
+class CUIManager;
+class GameDataManager;
+class StageMgr;
+class UtilHelp;
+
+ENGINE_API CWebAddress* SE_Get_WebAddressPtr();
+ENGINE_API CUIManager*	SE_Get_UIManagerPtr();
+ENGINE_API GameDataManager* SE_Get_GameDataManagerPtr();
+ENGINE_API StageMgr*	SE_Get_StageMgrPtr();
+ENGINE_API void			SE_Destroy_WebAddressPtr();
+ENGINE_API void			SE_Destroy_UIManagerPtr();
+ENGINE_API void			SE_Destroy_GameDataManagerPtr();
+ENGINE_API void			SE_Destroy_StageMgrPtr();
+ENGINE_API void			EndLodData();
+ENGINE_API UtilHelp*	SE_Get_UtilHelpPtr();
 
 extern ENGINE_API CTString _strEngineBuild;  // not valid before InitEngine()!
 extern ENGINE_API ULONG _ulEngineBuildMajor;
@@ -169,11 +195,13 @@ extern ENGINE_API ULONG _ulEngineBuildMinor;
 
 extern ENGINE_API BOOL _bDedicatedServer;
 extern ENGINE_API BOOL _bWorldEditorApp;			// is this world edtior app
-extern ENGINE_API BOOL _bUseBloomInWorldEditor;		// ì—ë””í„°ì— Bloom íš¨ê³¼ On/Offë¥¼ ìœ„í•´ ì¶”ê°€	:Su-won
-extern ENGINE_API BOOL _bTranslucentModel;			// ì—ë””í„°ì— ëª¨ë¸ì„ ë°˜íˆ¬ëª…ìœ¼ë¡œ ë‚˜íƒ€ë‚´ê¸° ìœ„í•´ ì¶”ê°€	:Su-won
-extern ENGINE_API BOOL _bInvisibleOff;				// ì—ë””í„°ì— Invisibleëœ í´ë¦¬ê³¤ì„ ë‚˜íƒ€ë‚´ê¸° ìœ„í•´ ì¶”ê°€	:Su-won
-extern ENGINE_API BOOL _bShowPortalPolygon;			// ì—ë””í„°ì—ì„œ Portalì†ì„±ìœ¼ë¡œ ë˜ì–´ìˆëŠ” í´ë¦¬ê³¤ì„ í™”ë©´ì— ë‚˜íƒ€ë‚¼ì§€ ì—¬ë¶€ :Su-won
-extern ENGINE_API BOOL _bAttributemap_DepthTest;	//ì—ë””í„°ì—ì„œ Attribute ë§µì„ ê·¸ë¦´ ë•Œ DepthTest ì—¬ë¶€ ì„¤ì • :Su-won
+//	±è¿µÈ¯ : Å¬¶óÀÌ¾ğÆ® Àü¿ë ¿£Áø ¼³Á¤ º¯¼ö
+extern ENGINE_API BOOL _bClientApp;			// TRUE ¼³Á¤µÇ¸é °ÔÀÓ Å¬¶óÀÌ¾ğÆ® ÀÌ´Ù.
+extern ENGINE_API BOOL _bUseBloomInWorldEditor;		// ¿¡µğÅÍ¿¡ Bloom È¿°ú On/Off¸¦ À§ÇØ Ãß°¡	:Su-won
+extern ENGINE_API BOOL _bTranslucentModel;			// ¿¡µğÅÍ¿¡ ¸ğµ¨À» ¹İÅõ¸íÀ¸·Î ³ªÅ¸³»±â À§ÇØ Ãß°¡	:Su-won
+extern ENGINE_API BOOL _bInvisibleOff;				// ¿¡µğÅÍ¿¡ InvisibleµÈ Æú¸®°ïÀ» ³ªÅ¸³»±â À§ÇØ Ãß°¡	:Su-won
+extern ENGINE_API BOOL _bShowPortalPolygon;			// ¿¡µğÅÍ¿¡¼­ Portal¼Ó¼ºÀ¸·Î µÇ¾îÀÖ´Â Æú¸®°ïÀ» È­¸é¿¡ ³ªÅ¸³¾Áö ¿©ºÎ :Su-won
+extern ENGINE_API BOOL _bAttributemap_DepthTest;	//¿¡µğÅÍ¿¡¼­ Attribute ¸ÊÀ» ±×¸± ¶§ DepthTest ¿©ºÎ ¼³Á¤ :Su-won
 
 //extern ENGINE_API BOOL _bUseSocket;
 extern ENGINE_API BOOL _bSkaStudioApp;				// is this ska studio app
@@ -182,7 +210,7 @@ extern ENGINE_API BOOL _bShowPolygonAttribute;		// If attributes of polygons are
 extern ENGINE_API BOOL _bLoginProcess;
 extern ENGINE_API CTString _strLogFile;
 
-// <-- ErrorLog.txtì— ë””ìŠ¤í”Œë ˆì´ ì •ë³´ë¥¼ ê¸°ë¡í•˜ê¸° ìœ„í•œ ë¶€ë¶„
+// <-- ErrorLog.txt¿¡ µğ½ºÇÃ·¹ÀÌ Á¤º¸¸¦ ±â·ÏÇÏ±â À§ÇÑ ºÎºĞ
 extern ENGINE_API CTString _strDisplayDriver;
 extern ENGINE_API CTString _strDisplayDriverVersion;
 extern ENGINE_API CTString _strSoundDriver;
@@ -212,25 +240,26 @@ ENGINE_API extern INDEX tmp_ai[10];
 ENGINE_API extern INDEX tmp_i;
 ENGINE_API extern INDEX tmp_fAdd;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.2)
 ENGINE_API extern BOOL g_bBadWeather;
 ENGINE_API extern COLOR g_colWeather;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.2)
 
-// ì¼ë³¸ ìë™ ë¡œê·¸ì¸ 060209 wooss 
+// ÀÏº» ÀÚµ¿ ·Î±×ÀÎ 060209 wooss 
 ENGINE_API BOOL g_bAutoLogin;
+ENGINE_API BOOL g_bAutoRestart;
 ENGINE_API CTString g_nmID ;
 ENGINE_API CTString g_nmPW ;
 ENGINE_API CTString g_nmCID ;
 ENGINE_API CTString g_nmVER ;
 
-//ì¼ë³¸ í—¬ë©§ ê´€ë ¨ ì¶”ê°€ 070313_ttos
-ENGINE_API BOOL g_bHead_change;
 // wooss 070228 ---------------------------->>
 // kw : WSS_EVENT_LOD
-// ì´ë²¤íŠ¸ í”Œë˜ê·¸ ë³€ìˆ˜
+// ÀÌº¥Æ® ÇÃ·¡±× º¯¼ö
 ENGINE_API std::map<int,int> g_mapEvent;
 // -----------------------------------------<<
 	
-//070308_ttos : ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œê¸° ë²ˆí™˜
+//070308_ttos : ºê¶óÁú ³ª½º Ç¥±â ¹øÈ¯
 ENGINE_API BOOL g_bNasTrans;	
+
+#endif		// __ENGINE_H__

@@ -1,20 +1,22 @@
 #include "stdh.h"
-#include <Engine/Interface/UIMixNew.h>
-#include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/Itemdata.h>
-#include <Engine/Interface/UIInventory.h>
-#include <Engine/LocalDefine.h>
 
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
+#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIMixNew.h>
+#include <Engine/Entities/InternalClasses.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Common/Packet/ptype_old_do_item.h>
 
 static int	_iMaxMsgStringChar = 0;
+#define		DEF_MASTERSTONE_MAX	(14)
 
-extern INDEX g_iCountry;
+//extern INDEX g_iCountry;
 // ----------------------------------------------------------------------------
 // Name : CUIMixNew()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIMixNew::CUIMixNew()
+	: m_bMasterstoneAutoProb(false)
 {
 	m_nStringCount		= 0;
 	m_bWaitMixResult	= TRUE;
@@ -28,6 +30,7 @@ CUIMixNew::CUIMixNew()
 	m_nTextCol			= -1;
 
 	m_bIsMix			= TRUE; // default item new mix
+	m_bIsMixMasterStone	= FALSE;	// ∏∂Ω∫≈Õ Ω∫≈Ê√¢ ø©∫Œ
 	
 }
 
@@ -37,7 +40,8 @@ CUIMixNew::CUIMixNew()
 // ----------------------------------------------------------------------------
 CUIMixNew::~CUIMixNew()
 {
-	Destroy();
+	for (int i  = 0; i < MIXNEW_ITEM_SLOT_COUNT; ++i)
+		SAFE_DELETE(m_pIconsSlot[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -46,9 +50,7 @@ CUIMixNew::~CUIMixNew()
 // ----------------------------------------------------------------------------
 void CUIMixNew::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	_iMaxMsgStringChar = 187 / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
@@ -82,35 +84,25 @@ void CUIMixNew::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// OK button
-	m_btnOK.Create( this, _S( 2645, "Í≤∞Ìï©" ), 36, 454, 63, 21 );					
+	m_btnOK.Create( this, _S( 2645, "∞·«’" ), 36, 454, 63, 21 );					
 	m_btnOK.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 117, 454, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 117, 454, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	// Item information region
-	m_rtInfoUL.SetUV( 164, 45, 171, 63, fTexWidth, fTexHeight );
-	m_rtInfoUM.SetUV( 174, 45, 176, 63, fTexWidth, fTexHeight );
-	m_rtInfoUR.SetUV( 179, 45, 186, 63, fTexWidth, fTexHeight );
-	
-	m_rtInfoML.SetUV( 164, 55, 171, 58, fTexWidth, fTexHeight );
-	m_rtInfoMM.SetUV( 174, 55, 176, 58, fTexWidth, fTexHeight );
-	m_rtInfoMR.SetUV( 179, 55, 186, 58, fTexWidth, fTexHeight );
-	
-	m_rtInfoLL.SetUV( 164, 60, 171, 68, fTexWidth, fTexHeight );
-	m_rtInfoLM.SetUV( 174, 60, 176, 68, fTexWidth, fTexHeight );
-	m_rtInfoLR.SetUV( 179, 60, 186, 68, fTexWidth, fTexHeight );
-
-	m_bShowItemInfo = false;
-	m_nCurInfoLines = 0;
-	m_bDetailItemInfo = TRUE;
+	// Slot item button
+	for ( int i  = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
+	{
+		m_pIconsSlot[i] = new CUIIcon;
+		m_pIconsSlot[i]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_MIXNEW, UBET_ITEM);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -140,20 +132,22 @@ void CUIMixNew::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMa
 void CUIMixNew::OpenMixNew ( BOOL bMix)
 {
 	// If this is already exist
-	if( IsVisible() )
+	if( IsVisible() == TRUE )
 		return;
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if( pUIManager->GetInventory()->IsLocked() )
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
-	if( !_pUIMgr->GetInventory()->IsVisible() )
-		_pUIMgr->GetInventory()->ToggleVisible();
+	if( !pUIManager->GetInventory()->IsVisible() )
+		pUIManager->GetInventory()->ToggleVisible();
 
-	_pUIMgr->RearrangeOrder( UI_MIXNEW, TRUE );
+	pUIManager->RearrangeOrder( UI_MIXNEW, TRUE );
 
 	m_bWaitMixResult	= FALSE;
 	m_nCurItemSlot		= -1;
@@ -161,29 +155,31 @@ void CUIMixNew::OpenMixNew ( BOOL bMix)
 	m_btnOK.SetEnable ( FALSE );
 
 	m_bIsMix = bMix;
+	m_bIsMixMasterStone = FALSE;
+
 	if(m_bIsMix) 
 	{
 		// Add string
-		AddString( _S( 2646, "Ïú†Î£å ÏïÑÏù¥ÌÖúÏóê ÌäπÏ†ï Ïû•ÎπÑÏùò Îä•Î†•ÏπòÎ•º ÏùºÏ†ï ÏãúÍ∞ÑÎèôÏïà Î∂ÄÏó¨Ìï¥ Ï§Ñ Ïàò ÏûàÎäî Ï£ºÎ¨∏ÏÑú ÏûÖÎãàÎã§." ) );							
-		AddString( _S( 2647, "Îã®, Í∏∞Ï°¥ Ïû•ÎπÑÎäî Í≤∞Ìï© Í∏∞Í∞ÑÎèôÏïà ÏÇ¨Ïö© Î∂àÍ∞ÄÎä• ÏÉÅÌÉúÍ∞Ä Îê©ÎãàÎã§." ) );
+		AddString( _S( 2646, "¿Ø∑· æ∆¿Ã≈€ø° ∆Ø¡§ ¿Â∫Ò¿« ¥…∑¬ƒ°∏¶ ¿œ¡§ Ω√∞£µøæ» ∫Œø©«ÿ ¡Ÿ ºˆ ¿÷¥¬ ¡÷πÆº≠ ¿‘¥œ¥Ÿ." ) );							
+		AddString( _S( 2647, "¥‹, ±‚¡∏ ¿Â∫Ò¥¬ ∞·«’ ±‚∞£µøæ» ªÁøÎ ∫“∞°¥… ªÛ≈¬∞° µÀ¥œ¥Ÿ." ) );
 		AddString( CTString( " " ) );
-		AddString( _S( 2648, "Ï£ºÏùò!"));
-		AddString( _S( 2649, "Ïù¥ÎØ∏ Í≤∞Ìï©Ìïú Ïû•ÎπÑ ÏïÑÏù¥ÌÖúÏùÄ Ïû¨Í≤∞Ìï©Ïù¥ Î∂àÍ∞ÄÎä•Ìï©ÎãàÎã§.") );
-		AddString( _S( 2650, "ÎòêÌïú, Ïù∏Ï≤∏ Ïã§Ìå®Ïãú Ïú†Î£åÏû•ÎπÑ ÏïÑÏù¥ÌÖúÍ≥º Í∏∞Ï°¥ Ïû•ÎπÑ ÏïÑÏù¥ÌÖúÏù¥ ÎèôÏãúÏóê ÌååÍ¥¥ Îê† ÏàòÎèÑ ÏûàÏäµÎãàÎã§." ) );
+		AddString( _S( 2648, "¡÷¿«!"));
+		AddString( _S( 2649, "¿ÃπÃ ∞·«’«— ¿Â∫Ò æ∆¿Ã≈€¿∫ ¿Á∞·«’¿Ã ∫“∞°¥…«’¥œ¥Ÿ.") );
+		AddString( _S( 2650, "∂««—, ¿Œ√æ Ω«∆–Ω√ ¿Ø∑·¿Â∫Ò æ∆¿Ã≈€∞˙ ±‚¡∏ ¿Â∫Ò æ∆¿Ã≈€¿Ã µøΩ√ø° ∆ƒ±´ µ… ºˆµµ ¿÷Ω¿¥œ¥Ÿ." ) );
 
 		// Slot item button
 		for ( int i  = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
 		{
-			m_btnItemSlot[i].Create( this, m_rcItemSlot[i].Left + 1, m_rcItemSlot[i].Top + 1, BTN_SIZE, BTN_SIZE, UI_MIXNEW, UBET_ITEM );
+			m_pIconsSlot[i]->SetPos(m_rcItemSlot[i].Left + 1, m_rcItemSlot[i].Top + 1);
 		}
 	}
 	else 
 	{
 
 		// Add string
-		AddString( _S(2929, "Ïú†Î£å Ïû•ÎπÑÏóê Í≤∞Ìï©ÎêòÏñ¥ ÏûàÎäî Îä•Î†•ÏπòÎ•º Î∂ÑÎ¶¨Ìï¥Ï£ºÎäî ÏïÑÏù¥ÌÖúÏûÖÎãàÎã§. " )
-			+ _S(2930,"Îä•Î†•ÏπòÎ•º Î∂ÑÎ¶¨ÌïòÎ©¥ Î¥âÏù∏Îêú Í∏∞Ï°¥ Ïû•ÎπÑÎäî Î¥âÏù∏ Ìï¥Ï†úÍ∞Ä ÎêòÍ≥† Ïú†Î£å Ïû•ÎπÑÎäî Îä•Î†•ÏπòÍ∞Ä ÏÇ¨ÎùºÏßëÎãàÎã§."));
-		m_btnItemSlot[0].Create( this, m_rcItemSlot_UN.Left + 1, m_rcItemSlot_UN.Top + 1, BTN_SIZE, BTN_SIZE, UI_MIXNEW, UBET_ITEM );
+		AddString( _S(2929, "¿Ø∑· ¿Â∫Òø° ∞·«’µ«æÓ ¿÷¥¬ ¥…∑¬ƒ°∏¶ ∫–∏Æ«ÿ¡÷¥¬ æ∆¿Ã≈€¿‘¥œ¥Ÿ. " )
+			+ _S(2930,"¥…∑¬ƒ°∏¶ ∫–∏Æ«œ∏È ∫¿¿Œµ» ±‚¡∏ ¿Â∫Ò¥¬ ∫¿¿Œ «ÿ¡¶∞° µ«∞Ì ¿Ø∑· ¿Â∫Ò¥¬ ¥…∑¬ƒ°∞° ªÁ∂Û¡˝¥œ¥Ÿ."));
+		m_pIconsSlot[0]->SetPos(m_rcItemSlot_UN.Left + 1, m_rcItemSlot_UN.Top + 1);
 		
 	}	
 	
@@ -208,6 +204,70 @@ void CUIMixNew::OpenMixNew ( BOOL bMix)
 
 	nNewHeight += m_btnOK.GetHeight() + 7;
 	SetHeight( nNewHeight );
+
+	pUIManager->GetInventory()->Lock( TRUE, TRUE, LOCK_MIXNEW );
+}
+
+// ----------------------------------------------------------------------------
+// Name : OpenMixNewMasterStone()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIMixNew::OpenMixNewMasterStone()
+{
+	// ∏∂Ω∫≈Õ Ω∫≈Ê ¡¯«‡¡ﬂ
+	if( IsVisible() && m_bIsMixMasterStone == TRUE )
+		return;
+	else if( IsVisible() && m_bIsMixMasterStone == FALSE )	// ∞·«’/∫–«ÿ ¡¯«‡¡ﬂ
+		CloseMixNew();
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// If inventory is already locked
+	if( pUIManager->GetInventory()->IsLocked() == TRUE ||
+		pUIManager->GetInventory()->IsLockedArrange() == TRUE )
+	{
+		pUIManager->GetInventory()->ShowLockErrorMessage();
+		return;
+	}
+
+	m_bIsMixMasterStone		= TRUE;
+	m_bIsMix = FALSE;
+
+	if( !pUIManager->GetInventory()->IsVisible() )
+		pUIManager->GetInventory()->ToggleVisible();
+
+	pUIManager->RearrangeOrder( UI_MIXNEW, TRUE );
+
+	m_bWaitMixResult	= FALSE;
+	m_nCurItemSlot		= -1;
+	m_nCurItemCount		= 0;
+	m_btnOK.SetEnable ( FALSE );
+
+	UpdateExplication();
+
+	// Slot item button
+	for ( int i  = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
+	{
+		m_pIconsSlot[i]->SetPos(m_rcItemSlot[i].Left + 1, m_rcItemSlot[i].Top + 1);
+	}
+	
+	// Set region of slot item & money...
+	int	nNewHeight = ( m_nStringCount + 1 ) * _pUIFontTexMgr->GetLineHeight();
+
+	nNewHeight += MIXNEW_ITEM_SLOT_SIZE *3 + _pUIFontTexMgr->GetLineHeight();
+	m_nTextRegionHeight = nNewHeight +1;
+
+	m_rcInsertItem.Top = MIXNEW_DESC_TEXT_SY;
+	m_rcInsertItem.Bottom = nNewHeight;
+
+	nNewHeight += 6;
+	m_btnOK.SetPosY( nNewHeight -5 );
+	m_btnCancel.SetPosY( nNewHeight -5);
+
+	nNewHeight += m_btnOK.GetHeight() + 7;
+	SetHeight( nNewHeight );
+
+	pUIManager->GetInventory()->Lock( TRUE, TRUE, LOCK_MASTERSTONE );
 }
 
 // ----------------------------------------------------------------------------
@@ -220,23 +280,29 @@ void CUIMixNew::CloseMixNew()
 	int i;
 	for ( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
 	{
-		m_btnItemSlot[i].InitBtn();
+		m_pIconsSlot[i]->clearIconData();
 	}
 	
 	m_nTextItemIndex	= -1;						
 	m_nTextRow			= -1;
 	m_nTextCol			= -1;
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close Mix
-	_pUIMgr->RearrangeOrder( UI_MIXNEW, FALSE );
+	pUIManager->RearrangeOrder( UI_MIXNEW, FALSE );
 
 	// Unlock inventory
-	_pUIMgr->GetInventory()->Lock( FALSE, FALSE, LOCK_MIX );
+	if (m_bIsMixMasterStone == TRUE)
+		pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_MASTERSTONE );
+	else
+		pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_MIXNEW );
 
 	m_bWaitMixResult	= FALSE;
 
 	m_nStringCount = 0;
 
+	m_bIsMixMasterStone	= FALSE;
 }
 
 // ----------------------------------------------------------------------------
@@ -247,210 +313,129 @@ void CUIMixNew::AddString( CTString &strDesc )
 {
 	if( m_nStringCount >= MAX_MIXNEW_STRING )
 		return;
-
+	
 	// Get length of string
 	INDEX	nLength = strDesc.Length();
+	INDEX	limitstrpos = _iMaxMsgStringChar;
 	if( nLength == 0 )
 		return;
-
-	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strDesc);
-		INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
-		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-				m_strMixDesc[m_nStringCount++] = strDesc;
-			else
-			{
-				// Split string
-				CTString	strTemp;
-				strDesc.Split( iPos, m_strMixDesc[m_nStringCount++], strTemp );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddString( strTemp );
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strDesc,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp;
-				strDesc.Split( nSplitPos, m_strMixDesc[m_nStringCount++], strTemp );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddString( strTemp );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp;
-				strDesc.Split( iPos, m_strMixDesc[m_nStringCount++], strTemp );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddString( strTemp );
-			}
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= _iMaxMsgStringChar )
-		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-				m_strMixDesc[m_nStringCount++] = strDesc;
-			else
-			{
-				// Split string
-				CTString	strTemp;
-				strDesc.Split( iPos, m_strMixDesc[m_nStringCount++], strTemp );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddString( strTemp );
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp;
-
-#ifdef LINE_CHANGE_BY_WORD
-				if( strDesc[nSplitPos] != ' ' )
-				{
-					for(int i=nSplitPos; i>=0; --i)
-					{
-						if( strDesc[i] == ' ' )
-						{
-							nSplitPos =i;
-							break;
-						}
-					}
-				}
+#if defined(G_THAI)
+	nLength = FindThaiLen(strDesc);
+	limitstrpos = (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
+#else
+	nLength = strDesc.Length();
+	limitstrpos = _iMaxMsgStringChar;
 #endif
 
-				strDesc.Split( nSplitPos, m_strMixDesc[m_nStringCount++], strTemp );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddString( strTemp );
-			}
+	int iPos;
+	// If length of string is less than max char
+	if( nLength <= limitstrpos )
+	{
+		// Check line character		
+		for( iPos = 0; iPos < strDesc.Length(); iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+		
+		// Not exist
+		if( iPos == nLength )
+			m_strMixDesc[m_nStringCount++] = strDesc;
+		else
+		{
+			// Split string
+			CTString	strTemp;
+			strDesc.Split( iPos, m_strMixDesc[m_nStringCount++], strTemp );
+			
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
 			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+			
+			AddString( strTemp );
+		}
+	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = limitstrpos;
+		BOOL	b2ByteChar = FALSE;
+#if defined(G_THAI)
+		for( iPos = 0; iPos < strDesc.Length(); iPos++ )
+		{
+			if(nSplitPos < FindThaiLen(strDesc,0,iPos))
+				break;
+		}
+		nSplitPos = iPos;
+#else
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] & 0x80 )
+				b2ByteChar = !b2ByteChar;
+			else
+				b2ByteChar = FALSE;
+		}
+		
+		if( b2ByteChar )
+			nSplitPos--;
+#endif
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+		
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp;
+#ifdef LINE_CHANGE_BY_WORD
+			if( strDesc[nSplitPos] != ' ' )
 			{
-				// Split string
-				CTString	strTemp;
-				strDesc.Split( iPos, m_strMixDesc[m_nStringCount++], strTemp );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddString( strTemp );
+				for(int i = iPos; i>=0; --i)
+				{
+					if( strDesc[i] == ' ' )
+					{
+						iPos = i;
+						break;
+					}
+				}
 			}
+#endif
+			strDesc.Split( nSplitPos, m_strMixDesc[m_nStringCount++], strTemp );
+			
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+				
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+			
+			AddString( strTemp );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp;
+			strDesc.Split( iPos, m_strMixDesc[m_nStringCount++], strTemp );
+			
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+			
+			AddString( strTemp );
 		}
 	}
 }
@@ -461,8 +446,16 @@ void CUIMixNew::AddString( CTString &strDesc )
 // ----------------------------------------------------------------------------
 void CUIMixNew::Render()
 {
+	if(m_bIsMixMasterStone == TRUE)
+	{
+		RenderMasterStone();
+		return;
+	}
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set mix texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY ,i;
@@ -470,23 +463,23 @@ void CUIMixNew::Render()
 	// Top
 	nX = m_nPosX + m_nWidth;
 	nY = m_nPosY + 26;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
 										m_rtTop.U0, m_rtTop.V0, m_rtTop.U1, m_rtTop.V1,
 										0xFFFFFFFF );
 
 	// Middle 1
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + m_nTextRegionHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + m_nTextRegionHeight,
 										m_rtMiddle1.U0, m_rtMiddle1.V0, m_rtMiddle1.U1, m_rtMiddle1.V1,
 										0xFFFFFFFF );
 
 	// Middle 2
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX+ 10, nY + 65  , nX-10,nY + m_nTextRegionHeight - 35,
+	pDrawPort->AddTexture( m_nPosX+ 10, nY + 65  , nX-10,nY + m_nTextRegionHeight - 35,
 										m_rtMiddle2.U0, m_rtMiddle2.V0, m_rtMiddle2.U1, m_rtMiddle2.V1,
 										0xFFFFFFFF );
 
 	// Bottom
 	nY = m_nPosY + m_nHeight - 7;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
 										m_rtBottom.U0, m_rtBottom.V0, m_rtBottom.U1, m_rtBottom.V1,
 										0xFFFFFFFF );
 
@@ -494,7 +487,7 @@ void CUIMixNew::Render()
 		for ( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
 		{
 			// Slot item region
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcItemSlot[i].Left, m_nPosY + m_rcItemSlot[i].Top,
+			pDrawPort->AddTexture( m_nPosX + m_rcItemSlot[i].Left, m_nPosY + m_rcItemSlot[i].Top,
 												m_nPosX + m_rcItemSlot[i].Right, m_nPosY + m_rcItemSlot[i].Bottom,
 												m_rtItemSlot.U0, m_rtItemSlot.V0, m_rtItemSlot.U1, m_rtItemSlot.V1,
 												0xFFFFFFFF );
@@ -502,7 +495,7 @@ void CUIMixNew::Render()
 	}
 	else {
 		// Slot item region
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcItemSlot_UN.Left, m_nPosY + m_rcItemSlot_UN.Top,
+			pDrawPort->AddTexture( m_nPosX + m_rcItemSlot_UN.Left, m_nPosY + m_rcItemSlot_UN.Top,
 												m_nPosX + m_rcItemSlot_UN.Right, m_nPosY + m_rcItemSlot_UN.Bottom,
 												m_rtItemSlot.U0, m_rtItemSlot.V0, m_rtItemSlot.U1, m_rtItemSlot.V1,
 												0xFFFFFFFF );
@@ -514,11 +507,11 @@ void CUIMixNew::Render()
 	// OK button
 	if(m_bIsMix)
 	{
-		m_btnOK.SetText(_S(2645,"Í≤∞Ìï©"));
+		m_btnOK.SetText(_S(2645,"∞·«’"));
 	}
 	else 
 	{
-		m_btnOK.SetText(_S(2931,"Î∂ÑÎ¶¨"));
+		m_btnOK.SetText(_S(2931,"∫–∏Æ"));
 	}
 	m_btnOK.Render();
 
@@ -526,29 +519,28 @@ void CUIMixNew::Render()
 	m_btnCancel.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Item
 	if(m_bIsMix){
 		for ( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
 		{
-			if( !m_btnItemSlot[i].IsEmpty() )
+			if (m_pIconsSlot[i]->IsEmpty() == false)
 			{
-				m_btnItemSlot[i].Render();
-				_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+				m_pIconsSlot[i]->Render(pDrawPort);
 			}
 		}
 		// Text in mix
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 2651, "Í≤∞Ìï© Ï£ºÎ¨∏ÏÑú" ), m_nPosX + MIXNEW_TITLE_TEXT_OFFSETX,			
+		pDrawPort->PutTextEx( _S( 2651, "∞·«’ ¡÷πÆº≠" ), m_nPosX + MIXNEW_TITLE_TEXT_OFFSETX,			
 											m_nPosY + MIXNEW_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 	}
-	else {
-		if( !m_btnItemSlot[0].IsEmpty() )
+	else 
+	{
+		if (m_pIconsSlot[0]->IsEmpty() == false)
 		{
-			m_btnItemSlot[0].Render();
-			_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+			m_pIconsSlot[0]->Render(pDrawPort);
 		}
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(2932, "Í≤∞Ìï©Î∂ÑÎ¶¨ Ï£ºÎ¨∏ÏÑú" ), m_nPosX + MIXNEW_TITLE_TEXT_OFFSETX,			
+		pDrawPort->PutTextEx( _S(2932, "∞·«’∫–∏Æ ¡÷πÆº≠" ), m_nPosX + MIXNEW_TITLE_TEXT_OFFSETX,			
 										m_nPosY + MIXNEW_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 	}
 
@@ -557,30 +549,26 @@ void CUIMixNew::Render()
 	COLOR tv_col;
 	for( int iDesc = 0; iDesc < m_nStringCount; iDesc++ )
 	{
-		//if(iDesc == 6) tv_col = 0xC87238FF; 
-		if( m_strMixDesc[iDesc] == _S(2648, "Ï£ºÏùò") )
-			tv_col = 0xC87238FF;
-		else
-			tv_col = 0xC5C5C5FF;
-
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strMixDesc[iDesc], nX , nY, tv_col );
+		if(iDesc == 6) tv_col = 0xC87238FF; 
+		else tv_col = 0xC5C5C5FF;
+			pDrawPort->PutTextEx( m_strMixDesc[iDesc], nX , nY, tv_col );
 		nY += _pUIFontTexMgr->GetLineHeight();
 	}
 
 	if(m_bIsMix)
 	{
-		m_strItemSlot[0] = _S( 2735, "Ïú†Î£å ÏïÑÏù¥ÌÖú");
-		m_strItemSlot[1] = _S( 2736, "Ïû•ÎπÑ ÏïÑÏù¥ÌÖú");
+		m_strItemSlot[0] = _S( 2735, "¿Ø∑· æ∆¿Ã≈€");
+		m_strItemSlot[1] = _S( 2736, "¿Â∫Ò æ∆¿Ã≈€");
 		int tv_size =  _pUIFontTexMgr->GetFontSpacing() + _pUIFontTexMgr->GetFontWidth();
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strItemSlot[0], 
+		pDrawPort->PutTextEx( m_strItemSlot[0], 
 			m_nPosX + 62 - m_strItemSlot[0].Length()* tv_size/2 , m_nPosY + MIXNEW_ITEM_SLOT_SIZE*2 + 5, 0x929090FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strItemSlot[1], 
+		pDrawPort->PutTextEx( m_strItemSlot[1], 
 			m_nPosX + 152 - m_strItemSlot[1].Length()* tv_size/2 , m_nPosY + MIXNEW_ITEM_SLOT_SIZE*2 +5, 0x929090FF );
 	}
 	else 
 	{
-		m_strItemSlot[0] = _S(2933,"Í≤∞Ìï© Ìï¥Ï≤¥Ìï† Ïú†Î£å ÏïÑÏù¥ÌÖú");
-		_pUIMgr->GetDrawPort()->PutTextExCX( m_strItemSlot[0], 
+		m_strItemSlot[0] = _S(2933,"∞·«’ «ÿ√º«“ ¿Ø∑· æ∆¿Ã≈€");
+		pDrawPort->PutTextExCX( m_strItemSlot[0], 
 			m_nPosX + m_nWidth/2 , m_nPosY + MIXNEW_ITEM_SLOT_SIZE*2 + 5, 0x929090FF );
 		
 		
@@ -588,12 +576,105 @@ void CUIMixNew::Render()
 
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-
-	//_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-	RenderItemInfo ();
-	//_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 }
+
+
+// ----------------------------------------------------------------------------
+// Name : !!RenderMasterStone()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIMixNew::RenderMasterStone()
+{
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	// Set mix texture
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	// Add render regions
+	int	nX, nY ,i;
+	// Background
+	// Top
+	nX = m_nPosX + m_nWidth;
+	nY = m_nPosY + 26;
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
+										m_rtTop.U0, m_rtTop.V0, m_rtTop.U1, m_rtTop.V1,
+										0xFFFFFFFF );
+
+	// Middle 1
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + m_nTextRegionHeight,
+										m_rtMiddle1.U0, m_rtMiddle1.V0, m_rtMiddle1.U1, m_rtMiddle1.V1,
+										0xFFFFFFFF );
+
+	// Middle 2
+	pDrawPort->AddTexture( m_nPosX+ 10, nY + 65  , nX-10,nY + m_nTextRegionHeight - 35,
+										m_rtMiddle2.U0, m_rtMiddle2.V0, m_rtMiddle2.U1, m_rtMiddle2.V1,
+										0xFFFFFFFF );
+
+	// Bottom
+	nY = m_nPosY + m_nHeight - 7;
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
+										m_rtBottom.U0, m_rtBottom.V0, m_rtBottom.U1, m_rtBottom.V1,
+										0xFFFFFFFF );
+
+	for ( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
+	{
+		// Slot item region
+		pDrawPort->AddTexture( m_nPosX + m_rcItemSlot[i].Left, m_nPosY + m_rcItemSlot[i].Top,
+											m_nPosX + m_rcItemSlot[i].Right, m_nPosY + m_rcItemSlot[i].Bottom,
+											m_rtItemSlot.U0, m_rtItemSlot.V0, m_rtItemSlot.U1, m_rtItemSlot.V1,
+											0xFFFFFFFF );
+	}
+
+	// Close button
+	m_btnClose.Render();
+
+	// OK button
+	m_btnOK.SetText(_S(5434,"æ˜±◊∑π¿ÃµÂ"));
+	m_btnOK.Render();
+
+	// Cancel button
+	m_btnCancel.Render();
+
+	// Render all elements
+	pDrawPort->FlushRenderingQueue();
+
+	// Item
+	for ( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
+	{
+		if (m_pIconsSlot[i]->IsEmpty() == false)
+		{
+			m_pIconsSlot[i]->Render(pDrawPort);
+			pDrawPort->FlushBtnRenderingQueue( UBET_ITEM );
+		}
+	}
+	// Text in title
+	pDrawPort->PutTextEx( _S( 5433, "∏∂Ω∫≈Õ Ω∫≈Ê" ), m_nPosX + MIXNEW_TITLE_TEXT_OFFSETX,			
+										m_nPosY + MIXNEW_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
+
+	nX = m_nPosX + MIXNEW_DESC_TEXT_SX;
+	nY = m_nPosY + MIXNEW_DESC_TEXT_SY + 20;
+	COLOR tv_col;
+	for( int iDesc = 0; iDesc < m_nStringCount; iDesc++ )
+	{
+		if(iDesc == 6) tv_col = 0xC87238FF; 
+		else tv_col = 0xC5C5C5FF;
+			pDrawPort->PutTextEx( m_strMixDesc[iDesc], nX , nY, tv_col );
+		nY += _pUIFontTexMgr->GetLineHeight();
+	}
+
+	m_strItemSlot[0] = _S( 5433, "∏∂Ω∫≈Õ Ω∫≈Ê");
+	m_strItemSlot[1] = _S( 2736, "¿Â∫Ò æ∆¿Ã≈€");
+	int tv_size =  _pUIFontTexMgr->GetFontSpacing() + _pUIFontTexMgr->GetFontWidth();
+	pDrawPort->PutTextEx( m_strItemSlot[0], 
+		m_nPosX + 62 - m_strItemSlot[0].Length()* tv_size/2 , m_nPosY + MIXNEW_ITEM_SLOT_SIZE*2 + 5, 0x929090FF );
+	pDrawPort->PutTextEx( m_strItemSlot[1], 
+		m_nPosX + 152 - m_strItemSlot[1].Length()* tv_size/2 , m_nPosY + MIXNEW_ITEM_SLOT_SIZE*2 +5, 0x929090FF );
+	
+	// Flush all render text queue
+	pDrawPort->EndTextEx();
+}
+
 
 // ----------------------------------------------------------------------------
 // Name : MouseMessage()
@@ -610,10 +691,12 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 	static int	nOldX, nOldY;
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
-	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// TEST MOUSE POS 
-	_pUIMgr->m_mPosX = nX;
-	_pUIMgr->m_mPosY = nY;
+	pUIManager->m_mPosX = nX;
+	pUIManager->m_mPosY = nY;
 
 	// Mouse message
 	switch( pMsg->message )
@@ -622,44 +705,20 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
-				_pUIMgr->SetMouseCursorInsideUIs();
+				pUIManager->SetMouseCursorInsideUIs();
 			
 				if(m_bIsMix)
 				{
 					for( int iRow = 0; iRow < MIXNEW_ITEM_SLOT_COUNT; iRow++ )
-					{
-						bool bShowItem = false;
-						if( IsInsideRect( nX, nY, m_rcItemSlot[iRow] ) )
-						{
-							if( m_btnItemSlot[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								bShowItem = true;
-								ShowItemInfo( true, iRow ) ;
-								break;
-							}
-						}
-						if ( !bShowItem ) 
-							ShowItemInfo( false, -1 );
-					
+					{						
+						m_pIconsSlot[iRow]->MouseMessage( pMsg );
 					}
 				}
 				else
 				{
-					bool bShowItem = false;
-					if( IsInsideRect( nX, nY, m_rcItemSlot_UN ) )
-					{
-						if( m_btnItemSlot[0].MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							bShowItem = true;
-							ShowItemInfo( true, 0 ) ;
-							break;
-						}
-					}
-					if ( !bShowItem ) 
-						ShowItemInfo( false, -1 );
+					m_pIconsSlot[0]->MouseMessage( pMsg );
 				}
 			}
-			else ShowItemInfo( false, -1 );
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -713,7 +772,7 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 					// Nothing
 				}
 				
-				_pUIMgr->RearrangeOrder( UI_MIXNEW, TRUE );
+				pUIManager->RearrangeOrder( UI_MIXNEW, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -722,7 +781,7 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 	case WM_LBUTTONUP:
 		{
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -743,7 +802,12 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 				else if( ( wmsgResult = m_btnOK.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
 					if( wmsgResult == WMSG_COMMAND )
-						SendMixNewReq();
+					{
+						if(m_bIsMixMasterStone == TRUE)
+							SendMixNewMasterStroneReq();
+						else
+							SendMixNewReq();
+					}
 
 					return WMSG_SUCCESS;
 				}
@@ -762,12 +826,12 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					//!! If holding button is item and comes from inventory
-					if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_INVENTORY ||
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_MIXNEW )
+					if (pUIManager->GetDragIcon()->getBtnType() == UBET_ITEM &&
+						pUIManager->GetDragIcon()->GetWhichUI() == UI_INVENTORY ||
+						pUIManager->GetDragIcon()->GetWhichUI() == UI_MIXNEW)
 					{
-						// Í≤∞Ìï© ÏïÑÏù¥ÌÖú
-						if(m_bIsMix)
+						// ∞·«’ æ∆¿Ã≈€
+						if(m_bIsMix || m_bIsMixMasterStone)
 						{
 							bool bChkRgn = FALSE;
 							for( int iRow = 0; iRow < MIXNEW_ITEM_SLOT_COUNT; iRow++ )
@@ -778,26 +842,26 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 									SetMixItem ( NearPosition ( nX-BTN_SIZE/2, nY-BTN_SIZE/2 ) );
 								}
 							}
-							if(!bChkRgn) _pUIMgr->ResetHoldBtn();
+							if(!bChkRgn) pUIManager->ResetHoldBtn();
 						}
-						// Î∂ÑÎ¶¨ ÏïÑÏù¥ÌÖú
+						// ∫–∏Æ æ∆¿Ã≈€
 						else 
 						{
 							if( IsInsideRect( nX, nY, m_rcItemSlot_UN ) )
 								SetMixItem ( NearPosition ( nX-BTN_SIZE/2, nY-BTN_SIZE/2 ) );
 							else 
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 							
 
 						}
 					}
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 					return WMSG_SUCCESS;
 				}
 				else
 				{
 					ResetMixItem ();
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -809,12 +873,25 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ))
 			{
-				
-				for( int iRow = 0; iRow < MIXNEW_ITEM_SLOT_COUNT; iRow++ )
+				int i;
+				for( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
 				{
-					m_nCurItemSlot = NearPosition ( nX-BTN_SIZE/2, nY-BTN_SIZE/2 );	
-					ResetMixItem ();
-					_pUIMgr->ResetHoldBtn();
+					if (m_btnOK.IsInside(nX, nY) == TRUE)
+						return WMSG_SUCCESS;
+				}
+
+				if(m_bIsMixMasterStone == TRUE)
+				{
+					ResetMixItemAll();
+				}
+				else
+				{
+					for( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
+					{
+						m_nCurItemSlot = NearPosition ( nX-BTN_SIZE/2, nY-BTN_SIZE/2 );	
+						ResetMixItem ();
+						pUIManager->ResetHoldBtn();
+					}
 				}
 			}
 			return WMSG_SUCCESS;
@@ -823,301 +900,6 @@ WMSG_RESULT CUIMixNew::MouseMessage( MSG *pMsg )
 	}
 
 	return WMSG_FAIL;
-}
-
-
-// ----------------------------------------------------------------------------
-// Name : RenderItemInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIMixNew::RenderItemInfo ()
-{
-	// ----------------------------------------------------------------------------
-	// Item information ( name and property etc... )
-	if( m_bShowItemInfo )
-	{
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-		// Item information region
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
-											m_rcItemInfo.Right, m_rcItemInfo.Top + 7,
-											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Right, m_rcItemInfo.Bottom - 7,
-											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom,
-											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom,
-											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Right, m_rcItemInfo.Bottom,
-											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
-											0xFFFFFFFF );
-
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-		// Render item information
-		int	nInfoX = m_rcItemInfo.Left + 12;
-		int	nInfoY = m_rcItemInfo.Top + 8;
-		for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
-		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
-			nInfoY += _pUIFontTexMgr->GetLineHeight();
-		}
-
-		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : AddItemInfoString()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIMixNew::AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo )
-{
-	if( m_nCurInfoLines >= MAX_ITEMINFO_LINE )
-		return ;
-
-	// Get length of string
-	INDEX	nLength = strItemInfo.Length();
-	if( nLength <= 0 )
-		return;
-
-	// If length of string is less than max char
-	if( nLength <= MAX_ITEMINFO_CHAR )
-	{
-		m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-		m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-	}
-	// Need multi-line
-	else
-	{
-		// Check splitting position for 2 byte characters
-		int		nSplitPos = MAX_ITEMINFO_CHAR;
-		BOOL	b2ByteChar = FALSE;
-		for( int iPos = 0; iPos < nSplitPos; iPos++ )
-		{
-			if( strItemInfo[iPos] & 0x80 )
-				b2ByteChar = !b2ByteChar;
-			else
-				b2ByteChar = FALSE;
-		}
-
-		if( b2ByteChar )
-			nSplitPos--;
-
-		// Split string
-		CTString	strTemp;
-		strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-		m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-		// Trim space
-		if( strTemp[0] == ' ' )
-		{
-			int	nTempLength = strTemp.Length();
-			for( iPos = 1; iPos < nTempLength; iPos++ )
-			{
-				if( strTemp[iPos] != ' ' )
-					break;
-			}
-
-			strTemp.TrimLeft( strTemp.Length() - iPos );
-		}
-
-		AddItemInfoString( strTemp, colItemInfo );
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : ShowItemInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIMixNew::ShowItemInfo( BOOL bShowInfo, int nItemIndex, BOOL bRenew )
-{
-	static int	nOldBtnID = -1;
-	int			nBtnID;
-
-	m_bShowItemInfo = FALSE;
-
-	// Hide item information
-	if( !bShowInfo )
-	{
-		nOldBtnID = -1;
-		return;
-	}
-
-	BOOL	bUpdateInfo = FALSE;
-	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
-
-	
-	if( nItemIndex >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nBtnID = m_btnItemSlot[nItemIndex].GetBtnID();
-
-		// Update item information
-		if( nOldBtnID != nBtnID || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldBtnID = nBtnID;
-			m_btnItemSlot[nItemIndex].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-			//m_bDetailItemInfo = m_nSelectProcessItem == nItemIndex;
-			
-			if( !GetItemInfo(  nItemIndex, nInfoWidth, nInfoHeight ) )
-				m_bShowItemInfo = FALSE;
-		}
-	}
-
-	// Update item information box
-	if( m_bShowItemInfo && bUpdateInfo )
-	{
-		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
-
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
-
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
-		{
-			nInfoPosY += BTN_SIZE;
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
-		}
-		else
-		{
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
-		}
-	}
-
-	if( !m_bShowItemInfo )
-		nOldBtnID = -1;
-}
-
-// ----------------------------------------------------------------------------
-// Name : GetItemInfo()
-// Desc : 
-// ----------------------------------------------------------------------------
-BOOL CUIMixNew::GetItemInfo( int nItemIndex, int &nInfoWidth, int &nInfoHeight )
-{
-	CTString	strTemp;
-	m_nCurInfoLines = 0;
-
-	int			nIndex;
-	SBYTE		sbOptionType[MAX_ITEM_OPTION], sbOptionLevel[MAX_ITEM_OPTION];
-
-	nIndex		= m_btnItemSlot[nItemIndex].GetItemIndex();
-	SBYTE iRow	= m_btnItemSlot[nItemIndex].GetItemRow ();
-	SBYTE iCol	= m_btnItemSlot[nItemIndex].GetItemCol ();
-
-	CItems	&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-		
-	for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-	{
-		sbOptionType[sbOption] = rItems.GetOptionType( sbOption );
-		sbOptionLevel[sbOption] = rItems.GetOptionLevel( sbOption );
-	}
-	
-	if( nIndex < 0 )
-		return FALSE;
-
-	CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-	const char* szItemName = _pNetwork->GetItemName( rItemData.GetItemIndex() );
-
-	// Get item name
-	strTemp = szItemName;
-	AddItemInfoString( strTemp ); // Î¶¨Ïä§Ìä∏Ïóê Ï∂îÍ∞Ä 
-
-	// Get item information in detail
-	if( m_bDetailItemInfo )
-	{
-		switch( rItemData.GetType() )
-		{
-		case CItemData::ITEM_ACCESSORY:		// Accessory
-			{
-				if(rItems.Item_Used > 0)
-				{
-					strTemp.PrintF(  _S( 510, "ÎÇ¥Íµ¨ÎèÑ : %ld" ), rItems.Item_Used);		
-					AddItemInfoString( strTemp, 0xDEC05BFF );
-				}
-			}
-			break;
-		}
-
-		// Weight
-		strTemp.PrintF( _S( 165, "Î¨¥Í≤å : %d" ), rItemData.GetWeight() );
-		AddItemInfoString( strTemp, 0xDEC05BFF );
-
-		// Options
-		switch( rItemData.GetType() )
-		{
-		case CItemData::ITEM_WEAPON:
-		case CItemData::ITEM_SHIELD:
-		case CItemData::ITEM_ACCESSORY:
-			{
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-				{
-					if( sbOptionType[sbOption] == -1 || sbOptionLevel[sbOption] == 0 )
-						break;
-
-					COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-					strTemp.PrintF( "%s : %d", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) );
-					AddItemInfoString( strTemp, 0x94B7C6FF );
-				}
-			}
-			break;
-		}
-
-		// Description
-		const char	*pDesc = _pNetwork->GetItemDesc( nIndex );
-		if( pDesc[0] != NULL )
-		{
-			strTemp.PrintF( "%s", pDesc );
-			AddItemInfoString( strTemp, 0x9E9684FF );
-		}
-
-		nInfoWidth = 27 - _pUIFontTexMgr->GetFontSpacing() + MAX_ITEMINFO_CHAR *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	}
-	else 
-	{
-
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strItemInfo[0]);				
-		} else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strItemInfo[0].Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 30;
-	}
-
-	return TRUE;
 }
 
 // ========================================================================= //
@@ -1130,110 +912,249 @@ BOOL CUIMixNew::GetItemInfo( int nItemIndex, int &nInfoWidth, int &nInfoHeight )
 // ----------------------------------------------------------------------------
 void CUIMixNew::SetMixItem ( int nSlotIndex )
 {
+	int		i;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	CUIIcon* pDrag = pUIManager->GetDragIcon();
+
+	if (pDrag == NULL)
+		return;
+
+	CItems* pItems = pDrag->getItems();
+
+	if (pItems == NULL)
+		return;
+
 	// If this is wearing item
-	if( _pUIMgr->GetHoldBtn().GetItemWearType() >= 0 )
+	if (pDrag->IsWearTab() == true)
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 554, "Ï∞©Ïö©Ìïú ÏïÑÏù¥ÌÖúÏùÄ Ï°∞Ìï©Ïù¥ Î∂àÍ∞ÄÎä• Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
-		_pUIMgr->ResetHoldBtn();
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 554, "¬¯øÎ«— æ∆¿Ã≈€¿∫ ¡∂«’¿Ã ∫“∞°¥… «’¥œ¥Ÿ." ), SYSMSG_ERROR );	
+		pUIManager->ResetHoldBtn();
 		return;
 	}
 	// If this is not weapon or armor
-	int	nTab = _pUIMgr->GetHoldBtn().GetItemTab();
-	int	nRow = _pUIMgr->GetHoldBtn().GetItemRow();
-	int	nCol = _pUIMgr->GetHoldBtn().GetItemCol();
-	CItems		&rItems = _pNetwork->MySlotItem[nTab][nRow][nCol];
-	CItemData	&rItemData = rItems.ItemData;
+	CItemData	*pItemData = pItems->ItemData;
 
-	if(m_bIsMix)
+	if(m_bIsMixMasterStone == TRUE)
 	{
-		if(rItemData.GetType() != CItemData::ITEM_WEAPON && rItemData.GetType() != CItemData::ITEM_SHIELD) {
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 2652, "Î¨¥Í∏∞ÏôÄ Î∞©Ïñ¥Íµ¨Îßå Ìï©ÏÑ± Í∞ÄÎä•Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
-			_pUIMgr->ResetHoldBtn();
-			return ;
-		}
-		
-		ResetMixItem();	// Î≤ÑÌäºÏù¥ Îì§Î†§ ÏûàÏúºÎ©¥ ÏÇ≠Ï†ú ÌïòÍ≥†
-		
-		// ÏïÑÏù¥ÌÖúÏù¥ ÌòÑÏû¨ ÏÇ¨Ïö©Ï§ëÏù∏ÏßÄ ÌôïÏù∏ ÌïúÎã§.
-		for ( int i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
+		ResetMixItem();
+		// æ∆¿Ã≈€¿Ã «ˆ¿Á ªÁøÎ¡ﬂ¿Œ¡ˆ »Æ¿Œ «—¥Ÿ.
+		for ( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
 		{
-			if ( !m_btnItemSlot[i].IsEmpty () )
+			if ( !m_pIconsSlot[i]->IsEmpty () )
 			{
-				if ( _pUIMgr->GetHoldBtn().GetItemRow() == m_btnItemSlot[i].GetItemRow() && 
-					_pUIMgr->GetHoldBtn().GetItemCol() == m_btnItemSlot[i].GetItemCol() )
+				if (pItems->Item_UniIndex == m_pIconsSlot[i]->getItems()->Item_UniIndex)
 				{
-					_pUIMgr->GetChatting()->AddSysMessage( _S( 556, "Ïù¥ÎØ∏ ÏÇ¨Ïö©Ï§ëÏù∏ ÏïÑÏù¥ÌÖú ÏûÖÎãàÎã§." ), SYSMSG_ERROR );	
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 556, "¿ÃπÃ ªÁøÎ¡ﬂ¿Œ æ∆¿Ã≈€ ¿‘¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
 					return;
 				}
 			}
 		}
 
-		// Ìï≠Î™© Ï≤¥ÌÅ¨ 
+		// «◊∏Ò √º≈© 
 		switch(nSlotIndex)
 		{
 		case 0 : 
 			{
 				CTString tv_str;
-				if(!(rItemData.GetFlag()&ITEM_FLAG_COMPOSITE)){
-					tv_str.PrintF("%p,%x",rItemData.GetFlag(),rItemData.GetFlag());
-					_pUIMgr->GetChatting()->AddSysMessage( _S( 2653, "Ïú†Î£å ÏïÑÏù¥ÌÖúÏùÑ ÏÇ¨Ïö©Ìï¥Ïïº Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
-					_pUIMgr->ResetHoldBtn();
-					return;
-				}
-				if(rItems.IsFlag(FLAG_ITEM_COMPOSITION)){
-					tv_str.PrintF("%p,%x",rItemData.GetFlag(),rItemData.GetFlag());
-					_pUIMgr->GetChatting()->AddSysMessage( _S( 2649, "Ïù¥ÎØ∏ Í≤∞Ìï©Ìïú Ïû•ÎπÑ ÏïÑÏù¥ÌÖúÏùÄ Ïû¨Í≤∞Ìï©Ïù¥ Î∂àÍ∞ÄÎä•Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
-					_pUIMgr->ResetHoldBtn();
-					return;
-				}
-				
+				int nItemIndex = pItemData->GetItemIndex();
 
+				if(!((nItemIndex >= 6111 && nItemIndex <= 6115)		// √÷«œ±ﬁ~√÷ªÛ±ﬁ π´±‚ ∏∂Ω∫≈Õ Ω∫≈Ê
+					|| (nItemIndex >= 7730 && nItemIndex <= 7735)
+					|| nItemIndex == 6124			// π´±‚∏∂Ω∫≈Õ Ω∫≈Ê(+0 ~ +25 => +26)
+					|| nItemIndex == 6120			// πÊæÓ±∏ ∏∂Ω∫≈Õ Ω∫≈Ê(+0 => +26)
+					|| nItemIndex == 10970
+					|| nItemIndex == 10971
+					))
+				{
+					tv_str.PrintF("%p,%x",pItemData->GetFlag(),pItemData->GetFlag());
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 5438, "∏∂Ω∫≈Õ Ω∫≈Ê ¡æ∑˘¿« æ∆¿Ã≈€∏∏ ø√∏± ºˆ ¿÷Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
 			}
 			break;
 		case 1 :
-			{	if ( m_btnItemSlot[0].IsEmpty() ){
-					_pUIMgr->GetChatting()->AddSysMessage( _S( 2654, "Ïú†Î£å ÏïÑÏù¥ÌÖú Î®ºÏ†Ä ÎÑ£Ïñ¥Ïïº Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
-					_pUIMgr->ResetHoldBtn();
+			{
+				if ( m_pIconsSlot[0]->IsEmpty() ){
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 5439, "∏∂Ω∫≈Õ Ω∫≈Ê¿ª ∏’¿˙ ≥÷æÓæﬂ «’¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
 					return;
 				}
-				nTab = m_btnItemSlot[0].GetItemTab();
-				nRow = m_btnItemSlot[0].GetItemRow();
-				nCol = m_btnItemSlot[0].GetItemCol();
-				CItems		&rItems0 = _pNetwork->MySlotItem[nTab][nRow][nCol];
-				CItemData	&rItemData0 = rItems0.ItemData;
-						
-				if(rItemData0.GetJob() != rItemData.GetJob()) {
-					_pUIMgr->GetChatting()->AddSysMessage( _S( 2655, "ÏïÑÏù¥ÌÖúÏùò ÌÅ¥ÎûòÏä§Í∞Ä Í∞ôÏßÄ ÏïäÏäµÎãàÎã§." ), SYSMSG_ERROR );	
-					_pUIMgr->ResetHoldBtn();
-					return;
-				}
-				else if(rItemData0.GetType() != rItemData.GetType()) {
-					_pUIMgr->GetChatting()->AddSysMessage( _S( 2656, "ÏïÑÏù¥ÌÖúÏùò Ï¢ÖÎ•òÍ∞Ä Í∞ôÏßÄ ÏïäÏäµÎãàÎã§." ), SYSMSG_ERROR );	
-					_pUIMgr->ResetHoldBtn();
-					return;
-				}
-				else if(rItemData0.GetSubType() != rItemData.GetSubType()) {
-					_pUIMgr->GetChatting()->AddSysMessage( _S( 2657, "Îã§Î•∏ Ï¢ÖÎ•òÏùò ÏïÑÏù¥ÌÖúÏûÖÎãàÎã§." ), SYSMSG_ERROR );	
-					_pUIMgr->ResetHoldBtn();
-					return;
-				}
-				else if(CItemData::IsUniqueItem(rItemData.GetItemIndex())) {
-					_pUIMgr->GetChatting()->AddSysMessage( _S( 1899, "Ï°∞Ìï© Í∞ÄÎä•Ìïú ÏïÑÏù¥ÌÖúÏù¥ ÏïÑÎãôÎãàÎã§." ), SYSMSG_ERROR );	
-					_pUIMgr->ResetHoldBtn();
-					return;
-				}
+
+				BOOL		bEnableMixItem	= TRUE;
+				CItems*		pItems0		= m_pIconsSlot[0]->getItems();
+				CItemData*	pItemData0	= pItems0->ItemData;
+				INDEX		idxItem		= pItemData0->GetItemIndex();
+				bool bRet = false;
 				
+				if(pItemData->IsFlag(ITEM_FLAG_UPGRADE) == true)
+				{	
+					if ( (pItems->Item_Flag & FLAG_ITEM_COMPOSITION) || (pItems->Item_Flag & FLAG_ITEM_LENT) )
+						bRet = true;
+				}
+				else
+				{
+					if (!(pItems->Item_Flag & FLAG_ITEM_COMPOSITION))
+						bRet = true;
+				}
+
+				if (bRet == true)
+				{
+					// æ∆¿Ã≈€ «√∑°±◊ø° Upgrade ø©∫Œ ∞ÀªÁ
+					CUIMsgBox_Info	MsgBoxInfo;
+
+					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+					MsgBoxInfo.AddString( _S( 170, "æ˜±◊∑π¿ÃµÂ ∞°¥… æ∆¿Ã≈€¿Ã æ∆¥’¥œ¥Ÿ." ) );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+
+				if(CheckMasterStone(pItems, idxItem) == false)
+				{
+					CUIMsgBox_Info	MsgBoxInfo;
+
+					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+					MsgBoxInfo.AddString( _S( 5437, "∏∂Ω∫≈Õ Ω∫≈Ê ¡æ∑˘øÕ ∏¬¡ˆ æ ¥¬ ¿Â∫Ò∏¶ æ˜±◊∑π¿ÃµÂ«“ ºˆ æ¯Ω¿¥œ¥Ÿ. »Æ¿Œ »ƒ ¥ŸΩ√ Ω√µµ«œø© ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ." ) );					
+					pUIManager->CreateMessageBox( MsgBoxInfo );
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+
+				pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_MASTERSTONE );
 			}
 			break;
 		}
 
-		m_btnItemSlot[nSlotIndex].Copy( _pUIMgr->GetHoldBtn() );
+		m_pIconsSlot[nSlotIndex]->copyItem(pDrag);
+
+		if (nSlotIndex == 1)
+		{
+			UpdateExplication(m_pIconsSlot[1]->getItems()->Item_Plus);
+		}
 		
 		BOOL chkEmp = FALSE;
+		for( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
+		{
+			if (m_pIconsSlot[i]->IsEmpty())
+			{
+				chkEmp = TRUE;
+			}
+		}
+
+		if ( !chkEmp )
+		{
+			m_btnOK.SetEnable ( TRUE );
+		}
+		else 
+		{
+			m_btnOK.SetEnable ( FALSE );
+		}
+	}
+	else if(m_bIsMix)
+	{
+		if(pItemData->GetType() != CItemData::ITEM_WEAPON && pItemData->GetType() != CItemData::ITEM_SHIELD) {
+			pUIManager->GetChattingUI()->AddSysMessage( _S( 2652, "π´±‚øÕ πÊæÓ±∏∏∏ «’º∫ ∞°¥…«’¥œ¥Ÿ." ), SYSMSG_ERROR );	
+			pUIManager->ResetHoldBtn();
+			return ;
+		}
+		
+		ResetMixItem();	// πˆ∆∞¿Ã µÈ∑¡ ¿÷¿∏∏È ªË¡¶ «œ∞Ì
+		// æ∆¿Ã≈€¿Ã «ˆ¿Á ªÁøÎ¡ﬂ¿Œ¡ˆ »Æ¿Œ «—¥Ÿ.
 		for ( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
 		{
-			if ( m_btnItemSlot[i].IsEmpty())
+			if (m_pIconsSlot[i]->IsEmpty() == false)
+			{
+				if (pItems->Item_UniIndex == m_pIconsSlot[i]->getItems()->Item_UniIndex)
+				{
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 556, "¿ÃπÃ ªÁøÎ¡ﬂ¿Œ æ∆¿Ã≈€ ¿‘¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+			}
+		}
+
+		// «◊∏Ò √º≈© 
+		switch(nSlotIndex)
+		{
+		case 0 : 
+			{
+				CTString tv_str;
+				if(!(pItemData->GetFlag()&ITEM_FLAG_COMPOSITE)){
+					tv_str.PrintF("%p,%x",pItemData->GetFlag(),pItemData->GetFlag());
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 2653, "¿Ø∑· æ∆¿Ã≈€¿ª ªÁøÎ«ÿæﬂ «’¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+				if(pItems->IsFlag(FLAG_ITEM_COMPOSITION)){
+					tv_str.PrintF("%p,%x",pItemData->GetFlag(),pItemData->GetFlag());
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 2649, "¿ÃπÃ ∞·«’«— ¿Â∫Ò æ∆¿Ã≈€¿∫ ¿Á∞·«’¿Ã ∫“∞°¥…«’¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+			}
+			break;
+		case 1 :
+			{
+				if (m_pIconsSlot[0]->IsEmpty())
+				{
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 2654, "¿Ø∑· æ∆¿Ã≈€ ∏’¿˙ ≥÷æÓæﬂ «’¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+
+				CItems*		pItems0 = m_pIconsSlot[0]->getItems();
+				CItemData*	pItemData0 = pItems0->ItemData;
+						
+#ifdef G_THAI
+				if (GetThaiItemJob(pItemData, pItemData0) == false) 
+				{
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 2655, "æ∆¿Ã≈€¿« ≈¨∑°Ω∫∞° ∞∞¡ˆ æ Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+#else
+				if(pItemData0->GetJob() != pItemData->GetJob()) {
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 2655, "æ∆¿Ã≈€¿« ≈¨∑°Ω∫∞° ∞∞¡ˆ æ Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+#endif // G_THAI
+				else if(pItemData0->GetType() != pItemData->GetType()) {
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 2656, "æ∆¿Ã≈€¿« ¡æ∑˘∞° ∞∞¡ˆ æ Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+				else if(pItemData0->GetSubType() != pItemData->GetSubType()) {
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 2657, "¥Ÿ∏• ¡æ∑˘¿« æ∆¿Ã≈€¿‘¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+				else if(CItemData::IsUniqueItem(pItemData->GetItemIndex())) {
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 1899, "¡∂«’ ∞°¥…«— æ∆¿Ã≈€¿Ã æ∆¥’¥œ¥Ÿ." ), SYSMSG_ERROR );	
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+								// socket system [6/29/2010 rumist]
+#if defined SOCKET_COMPOSITIONBLOCK_ENABLE
+				else if( pItems->GetSocketCount() > 0 ){
+					pUIManager->GetChattingUI()->AddSysMessage( _S( 1899, "¡∂«’ ∞°¥…«— æ∆¿Ã≈€¿Ã æ∆¥’¥œ¥Ÿ." ), SYSMSG_ERROR );
+					pUIManager->ResetHoldBtn();
+					return;
+				}
+#endif
+			}
+			break;
+		}
+
+		m_pIconsSlot[nSlotIndex]->copyItem(pDrag);
+		
+		BOOL chkEmp = FALSE;
+		for( i = 0; i < MIXNEW_ITEM_SLOT_COUNT; i++ )
+		{
+			if ( m_pIconsSlot[i]->IsEmpty())
 			{
 				chkEmp = TRUE;
 			}
@@ -1248,25 +1169,27 @@ void CUIMixNew::SetMixItem ( int nSlotIndex )
 			m_btnOK.SetEnable ( FALSE );
 		}
 		
+		// Lock arrange of inventory
+		pUIManager->GetInventory()->Lock( TRUE, TRUE, LOCK_MIXNEW );
 	}
-	// Î∂ÑÎ¶¨ ÏïÑÏù¥ÌÖú 
+	// ∫–∏Æ æ∆¿Ã≈€ 
 	else {
-		// Ï≤¥ÌÅ¨ ÏÇ¨Ìï≠ 
-		if(!rItems.IsFlag(FLAG_ITEM_COMPOSITION)|| !rItemData.IsFlag(ITEM_FLAG_COMPOSITE))
+		// √º≈© ªÁ«◊ 
+		if(!pItems->IsFlag(FLAG_ITEM_COMPOSITION)|| !pItemData->IsFlag(ITEM_FLAG_COMPOSITE))
 		{
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 2934,"Îä•Î†•ÏπòÍ∞Ä Í≤∞Ìï©Îêú Ïú†Î£å Ïû•ÎπÑ ÏïÑÏù¥ÌÖúÎßå Í≤∞Ìï© Ìï¥Ï†úÍ∞Ä Í∞ÄÎä•Ìï©ÎãàÎã§." ), SYSMSG_ERROR );	
-			_pUIMgr->ResetHoldBtn();
+			pUIManager->GetChattingUI()->AddSysMessage( _S( 2934,"¥…∑¬ƒ°∞° ∞·«’µ» ¿Ø∑· ¿Â∫Ò æ∆¿Ã≈€∏∏ ∞·«’ «ÿ¡¶∞° ∞°¥…«’¥œ¥Ÿ." ), SYSMSG_ERROR );	
+			pUIManager->ResetHoldBtn();
 			return;
 		}
 
-		m_btnItemSlot[0].Copy( _pUIMgr->GetHoldBtn() );
+		m_pIconsSlot[0]->copyItem(pDrag);
 		m_btnOK.SetEnable ( TRUE );
+
+		// Lock arrange of inventory
+		pUIManager->GetInventory()->Lock( TRUE, TRUE, LOCK_MIXNEW );
 	}
 		
-	_pUIMgr->ResetHoldBtn();
-
-	// Lock arrange of inventory
-	_pUIMgr->GetInventory()->Lock( TRUE, TRUE, LOCK_MIX );
+	pUIManager->ResetHoldBtn();
 }
 
 // ----------------------------------------------------------------------------
@@ -1277,16 +1200,39 @@ void CUIMixNew::ResetMixItem ()
 {
 	if ( m_nCurItemSlot != -1 )
 	{
-		m_btnItemSlot[m_nCurItemSlot].SetEmpty ( TRUE );
+		m_pIconsSlot[m_nCurItemSlot]->clearIconData();
 		m_nCurItemSlot = -1;
 		m_nCurItemCount--;
 		m_btnOK.SetEnable ( FALSE );
 	}
 }
 
+void CUIMixNew::ResetMixItemAll()
+{
+	for(int iRow = 0; iRow < MIXNEW_ITEM_SLOT_COUNT; iRow++)
+	{
+		if (m_pIconsSlot[iRow]->IsEmpty() == FALSE)
+		{
+			m_pIconsSlot[iRow]->clearIconData();
+			m_nCurItemCount--;
+			m_btnOK.SetEnable(FALSE);
+		}
+	}
+
+	InvenLockProcess eUI;
+	if (m_bIsMixMasterStone == TRUE)
+		eUI = LOCK_MASTERSTONE;
+	else
+		eUI = LOCK_MIXNEW;
+
+	UIMGR()->GetInventory()->Lock( FALSE, FALSE, eUI );
+	UIMGR()->GetInventory()->Lock( TRUE, TRUE, eUI );
+	UpdateExplication();
+}
+
 // ----------------------------------------------------------------------------
 // Name : NearPosition()
-// Desc : ÌòÑÏû¨ Ìè¨Ïù∏ÌÑ∞ÏôÄ Í∞ÄÏû• Í∞ÄÍπåÏö¥ ÏïÑÏù¥ÌÖú Ïä¨Î°ØÏùò Ìè¨Ïù∏ÌÑ∞Î•º Î¶¨ÌÑ¥ÌïúÎã§.
+// Desc : «ˆ¿Á ∆˜¿Œ≈ÕøÕ ∞°¿Â ∞°±ÓøÓ æ∆¿Ã≈€ ΩΩ∑‘¿« ∆˜¿Œ≈Õ∏¶ ∏Æ≈œ«—¥Ÿ.
 // ----------------------------------------------------------------------------
 int	CUIMixNew::NearPosition ( int nX, int nY )
 {
@@ -1328,34 +1274,36 @@ void CUIMixNew::SendMixNewReq()
 	if( m_bWaitMixResult )
 		return;
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsSkilling() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 2658, "Ïä§ÌÇ¨ ÏÇ¨Ïö©Ï§ëÏóêÎäî Ïù¥Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 2658, "Ω∫≈≥ ªÁøÎ¡ﬂø°¥¬ ¿ÃøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 		return;
 	}
 
-	if( _pUIMgr->IsCSFlagOn( CSF_TELEPORT ) )
+	if( pUIManager->IsCSFlagOn( CSF_TELEPORT ) )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 2659, "ÏàúÍ∞Ñ Ïù¥ÎèôÏ§ëÏóêÎäî Ïù¥Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 2659, "º¯∞£ ¿Ãµø¡ﬂø°¥¬ ¿ÃøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
 		return;
 	}
 
-	int tv_tab,tv_row,tv_col;
-	_pUIMgr->GetInventory()->GetUseItemSlotInfo(tv_tab,tv_row,tv_col);
-	CItems& Items = _pNetwork->MySlotItem[tv_tab][tv_row][tv_col];
+	int tv_tab,tv_idx;
+	pUIManager->GetInventory()->GetUseItemSlotInfo(tv_tab,tv_idx);
+	CItems& Items = _pNetwork->MySlotItem[tv_tab][tv_idx];
 
 	if(m_bIsMix)
 	{
-		_pNetwork->SendMixItemUse( tv_tab,tv_row,tv_col, 
+		_pNetwork->SendMixItemUse(tv_tab, tv_idx, 
 			Items.Item_UniIndex,
-			m_btnItemSlot[0].GetItemUniIndex(), 
-			m_btnItemSlot[1].GetItemUniIndex() );
+			m_pIconsSlot[0]->getItems()->Item_UniIndex, 
+			m_pIconsSlot[1]->getItems()->Item_UniIndex);
 		
 	}
 	else 
 	{
-		_pNetwork->SendUnMixItemUse( tv_tab,tv_row,tv_col, 
-			Items.Item_UniIndex,m_btnItemSlot[0].GetItemUniIndex() );
+		_pNetwork->SendUnMixItemUse( tv_tab,tv_idx, 
+			Items.Item_UniIndex,m_pIconsSlot[0]->getItems()->Item_UniIndex );
 
 	}
 
@@ -1363,7 +1311,48 @@ void CUIMixNew::SendMixNewReq()
 	m_bWaitMixResult = TRUE;
 	
 	// Lock inventory
-	_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_MIX );
+	pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_MIXNEW );
+}
+
+// ----------------------------------------------------------------------------
+// Name : SendMixNewReq()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIMixNew::SendMixNewMasterStroneReq()
+{
+	if( m_bWaitMixResult == TRUE )
+		return;
+
+	if( m_bIsMixMasterStone == FALSE )
+		return;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsSkilling() )
+	{
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 2658, "Ω∫≈≥ ªÁøÎ¡ﬂø°¥¬ ¿ÃøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
+		return;
+	}
+
+	if( pUIManager->IsCSFlagOn( CSF_TELEPORT ) )
+	{
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 2659, "º¯∞£ ¿Ãµø¡ﬂø°¥¬ ¿ÃøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
+		return;
+	}
+
+	CItems*		pItemsMStone		= m_pIconsSlot[0]->getItems();
+	CItemData*	pItemsMStoneData	= pItemsMStone->ItemData;
+	CItems*		pItemsItemTgt		= m_pIconsSlot[1]->getItems();
+	CItemData*	pItemsItemTgtData	= pItemsItemTgt->ItemData;
+
+	_pNetwork->SendMasterStoneUseReq( pItemsMStone->Item_Tab, pItemsMStone->InvenIndex, pItemsMStoneData->GetItemIndex(),
+					pItemsItemTgt->Item_Tab, pItemsItemTgt->InvenIndex, pItemsItemTgtData->GetItemIndex() );
+
+	m_btnOK.SetEnable ( FALSE );
+	m_bWaitMixResult = TRUE;
+	
+	// Lock inventory
+	pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_MASTERSTONE );
 }
 
 // ========================================================================= //
@@ -1376,27 +1365,29 @@ void CUIMixNew::SendMixNewReq()
 // ----------------------------------------------------------------------------
 void CUIMixNew::MixNewRep( SBYTE sbResult )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close message box
-	_pUIMgr->CloseMessageBox( MSGCMD_MIX_REP );
+	pUIManager->CloseMessageBox( MSGCMD_MIX_REP );
 
 	// Show result
 	CTString	strMessage;
 	switch( sbResult )
 	{
-	case MSG_MIX_FAIL_SYSTEM: // ÏûàÏñ¥ÏÑúÎäî ÏïàÎêòÎäî Ïò§Î•ò
-		strMessage = _S( 557, "Ï°∞Ìï©Ïóê Ïã§Ìå® ÌïòÏòÄÏäµÎãàÎã§." );			
+	case MSG_MIX_FAIL_SYSTEM: // ¿÷æÓº≠¥¬ æ»µ«¥¬ ø¿∑˘
+		strMessage = _S( 557, "¡∂«’ø° Ω«∆– «œø¥Ω¿¥œ¥Ÿ." );			
 		break;
 
-	case MSG_MIX_FAIL_REMAKEBOX : // Ïû¨ÌôúÏùò ÏÉÅÏûê Ï†ïÎ≥¥ Ïò§Î•ò
-		strMessage =  _S( 557, "Ï°∞Ìï©Ïóê Ïã§Ìå® ÌïòÏòÄÏäµÎãàÎã§." );			
+	case MSG_MIX_FAIL_REMAKEBOX : // ¿Á»∞¿« ªÛ¿⁄ ¡§∫∏ ø¿∑˘
+		strMessage =  _S( 557, "¡∂«’ø° Ω«∆– «œø¥Ω¿¥œ¥Ÿ." );			
 		break;
 
-	case MSG_MIX_FAIL_ACCESSORY: // Î≥¥ÎÇ∏ Ïï°ÏÑ∏ÏÑúÎ¶¨ Ï†ïÎ≥¥ Ïò§Î•ò
-		strMessage =  _S( 557, "Ï°∞Ìï©Ïóê Ïã§Ìå® ÌïòÏòÄÏäµÎãàÎã§." );			
+	case MSG_MIX_FAIL_ACCESSORY: // ∫∏≥Ω æ◊ººº≠∏Æ ¡§∫∏ ø¿∑˘
+		strMessage =  _S( 557, "¡∂«’ø° Ω«∆– «œø¥Ω¿¥œ¥Ÿ." );			
 		break;
 
 	case MSG_MIX_SUCCESS :
-		strMessage = _S( 558, "Ï°∞Ìï©Ïóê ÏÑ±Í≥µ ÌïòÏòÄÏäµÎãàÎã§." );			
+		strMessage = _S( 558, "¡∂«’ø° º∫∞¯ «œø¥Ω¿¥œ¥Ÿ." );			
 		break;
 	}
 
@@ -1407,8 +1398,276 @@ void CUIMixNew::MixNewRep( SBYTE sbResult )
 //	if ( strMessage.Length() )
 	{
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 2651, "Í≤∞Ìï© Ï£ºÎ¨∏ÏÑú" ), UMBS_OK, UI_MIXNEW, MSGCMD_MIX_REP ); 
+		MsgBoxInfo.SetMsgBoxInfo( _S( 2651, "∞·«’ ¡÷πÆº≠" ), UMBS_OK, UI_MIXNEW, MSGCMD_MIX_REP ); 
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 	}	
+}
+
+// ----------------------------------------------------------------------------
+// Name : MixNewMasterStoneRep()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIMixNew::MixNewMasterStoneRep( int err_type, int success_type )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	m_bWaitMixResult = FALSE;
+
+	switch(err_type)
+	{
+	case 0:
+		{
+			if (m_bMasterstoneAutoProb == true)
+			{
+				m_nMasProb[success_type - 1]++;
+
+				if (m_nOldUpgradeLevel < m_pIconsSlot[1]->getItems()->GetItemPlus())
+				{
+					WriteMasterStone();
+					m_nMasProb[0] = 
+					m_nMasProb[1] = 
+					m_nMasProb[2] = 0;
+				}
+				
+				MasterStoneAutoTestProb();
+				return;
+			}
+
+			// success
+			CUIMsgBox_Info	MsgBoxInfo;
+			MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+
+			switch(success_type)
+			{
+			case MASTERSTONE_INCREASE:
+				MsgBoxInfo.AddString( _S( 5446, "æ˜±◊∑π¿ÃµÂ∞° º∫∞¯«œø¥Ω¿¥œ¥Ÿ." ) );				
+				break;
+			case MASTERSTONE_NOT_CHANGE:
+				MsgBoxInfo.AddString( _S( 178, "æ˜±◊∑π¿ÃµÂ∏¶ Ω«∆–«œø¥Ω¿¥œ¥Ÿ. æ∆¿Ã≈€ø° ∫Ø»≠∞° æ¯Ω¿¥œ¥Ÿ." ) );
+				break;
+			case MASTERSTONE_DECREASE:
+				MsgBoxInfo.AddString( _S( 177, "æ˜±◊∑π¿ÃµÂ∏¶ Ω«∆–«œø¥Ω¿¥œ¥Ÿ. -1 «œ∞≠«œø¥Ω¿¥œ¥Ÿ." ) );
+				break;
+			}			
+
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+
+			if (m_pIconsSlot[0]->getItems() == NULL || m_pIconsSlot[1]->getItems() == NULL)
+			{
+				m_btnOK.SetEnable(FALSE);
+				return;
+			}
+
+			m_pIconsSlot[0]->setCount(m_pIconsSlot[0]->getItems()->Item_Sum);
+			
+			UpdateExplication(m_pIconsSlot[1]->getItems()->Item_Plus);
+
+			if (m_pIconsSlot[0]->getItems()->Item_Sum > 0)
+			{
+				if (CheckMasterStone(m_pIconsSlot[1]->getItems(), m_pIconsSlot[0]->getItems()->Item_Index) == true)
+				{
+					m_btnOK.SetEnable(TRUE);
+					return;
+				}
+			}
+			else
+			{
+				m_pIconsSlot[0]->clearIconData();
+			}
+
+			m_btnOK.SetEnable(FALSE);
+		}
+		break;
+
+	case 1:
+		{	// 1:æ˜±◊∑π¿ÃµÂ «“ºˆ ¿÷¥¬ æ∆¿Ã≈€¿Ã æ∆¥‘
+			pUIManager->GetChattingUI()->AddSysMessage( _S( 170, "æ˜±◊∑π¿ÃµÂ ∞°¥… æ∆¿Ã≈€¿Ã æ∆¥’¥œ¥Ÿ." ), SYSMSG_ERROR );
+			CloseMixNew();
+		}
+		break;
+
+	case 2:
+		{	// 2: ∏∂Ω∫≈ÕΩ∫≈Ê ¡æ∑˘øÕ ∏¬¡ˆ æ ¿Ω
+			CUIMsgBox_Info	MsgBoxInfo;
+
+			MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+			MsgBoxInfo.AddString( _S( 5437, "∏∂Ω∫≈Õ Ω∫≈Ê ¡æ∑˘øÕ ∏¬¡ˆ æ ¥¬ ¿Â∫Ò∏¶ æ˜±◊∑π¿ÃµÂ«“ ºˆ æ¯Ω¿¥œ¥Ÿ. »Æ¿Œ »ƒ ¥ŸΩ√ Ω√µµ«œø© ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ." ) );					
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+			CloseMixNew();
+		}
+		break;
+	}
+}
+
+bool CUIMixNew::GetThaiItemJob(CItemData* pSource, CItemData* pDest)
+{
+	if (pSource->GetJob() != pDest->GetJob())
+	{
+		if ((pSource->GetJob() & MASK_MAGE) && (pDest->GetJob() & MASK_MAGE))
+		{
+			return true;
+		}
+
+		if ((pSource->GetJob() & MASK_ROGUE) && (pDest->GetJob() & MASK_ROGUE))
+		{
+			return true;
+		}
+	}
+	else
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool CUIMixNew::CheckMasterStone( CItems* pTargetItem, int nMasterStoneIndex )
+{
+	CItemData* pItemData = pTargetItem->ItemData;
+	int nItemType = pItemData->GetType();
+	int nItemPlus = pTargetItem->Item_Plus;
+
+	if (nMasterStoneIndex == 6120)
+	{
+		if(!(nItemType == CItemData::ITEM_SHIELD))
+			return false;
+		if(!(nItemPlus >= 0 && nItemPlus <= 24))
+			return false;
+
+		return true;
+	}
+
+	// 6111æ∆¿Ã≈€¿Ã 16∞≠±Ó¡ˆ. πËø≠ º¯º≠¥Î∑Œ +1æø ø√∂Û∞£¥Ÿ. 10971æ∆¿Ã≈€¿Ã 29∞≠.
+	int i; 
+	int nStoneIndex[DEF_MASTERSTONE_MAX] = {6111, 7730, 6112, 7731, 6113, 7732, 6114, 7733, 6115, 6124, 7734, 7735, 10970, 10971};
+	int nMinUpgrade = 16;
+
+	for (i = 0; i < DEF_MASTERSTONE_MAX; ++i)
+	{
+		if (nStoneIndex[i] == nMasterStoneIndex)
+			break;
+
+		if (i == DEF_MASTERSTONE_MAX - 1)
+			return false;
+	}
+
+	if(!(nItemType == CItemData::ITEM_WEAPON ||
+		nItemType == CItemData::ITEM_SHIELD))
+		return false;
+
+	if (!(pTargetItem->Item_Plus >= 0 && pTargetItem->Item_Plus <= (i + nMinUpgrade)))
+		return false;
+
+	return true;
+}
+
+void CUIMixNew::UpdateExplication( int nPlus /*= -1*/ )
+{
+	m_nStringCount = 0;
+
+	if (nPlus >= 0 && nPlus <= 16)
+	{
+		AddString( _S( 6439, "∏∂Ω∫≈Õ Ω∫≈Ê¿ª ªÁøÎ«œø© «ÿ¥Á ¿Â∫Ò∏¶ æ˜±◊∑π¿ÃµÂ Ω√ π´¡∂∞« º∫∞¯¿ª ∫∏¿Â«’¥œ¥Ÿ" ) );
+	}
+	else if (nPlus > 16)
+	{
+		AddString( _S( 6442, "∏∂Ω∫≈Õ Ω∫≈Ê¿ª ªÁøÎ«œø© «ÿ¥Á ¿Â∫Ò∏¶ æ˜±◊∑π¿ÃµÂ Ω√ º∫∞¯«œ¡ˆ ∏¯«œ∏È ∫Ø»≠∞° æ¯∞≈≥™ «œ∂Ùµ… ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+	}
+	else
+	{
+		AddString( _S( 5436, "∏∂Ω∫≈Õ Ω∫≈Ê¿ª ªÁøÎ«ÿº≠ ¿Â∫Ò∏¶ æ˜±◊∑π¿ÃµÂ∏¶ «œ∏È ¡¶«— ºˆƒ° ¿ÃªÛ¿∏∑Œ √÷¥Î +30±Ó¡ˆ æ˜±◊∑π¿ÃµÂ∞° ∞°¥…«’¥œ¥Ÿ." ) );
+	}
+}
+
+bool CUIMixNew::MasterStoneAutoTestProb()
+{
+	if (IsVisible() == FALSE || m_bIsMixMasterStone == FALSE)
+	{
+		UICHAT()->AddSysMessage("Masterstone is not use.");
+		return false;
+	}
+
+	if (m_bMasterstoneAutoProb == false)
+	{
+		m_bMasterstoneAutoProb = true;
+
+		m_nMasProb[0] =
+		m_nMasProb[1] =
+		m_nMasProb[2] = 0;
+		m_nOldUpgradeLevel = 0;
+	}
+
+	if (m_pIconsSlot[0]->IsEmpty() == true ||
+		m_pIconsSlot[1]->IsEmpty() == true ||
+		m_pIconsSlot[0]->getItems() == NULL ||
+		CheckMasterStone(m_pIconsSlot[1]->getItems(), m_pIconsSlot[0]->getItems()->Item_Index) == false)
+	{		
+		m_bMasterstoneAutoProb = false;
+
+		if (m_pIconsSlot[0]->getItems()->Item_Sum == 0)
+			m_pIconsSlot[0]->clearIconData();
+		else
+			m_pIconsSlot[0]->setCount(m_pIconsSlot[0]->getItems()->Item_Sum);
+
+		WriteEnd();
+		
+		return true;
+	}
+
+	if (m_nOldUpgradeLevel < m_pIconsSlot[1]->getItems()->GetItemPlus())
+		m_nOldUpgradeLevel = m_pIconsSlot[1]->getItems()->GetItemPlus();
+
+	SendMixNewMasterStroneReq();	
+
+	return true;
+}
+
+bool CUIMixNew::WriteMasterStone()
+{
+#ifndef		WORLD_EDITOR
+	CTString strFullPath = _fnmApplicationPath.FileDir();
+
+	strFullPath += "\\ProbMasterStone.txt";
+
+	FILE*	pfile;
+
+	pfile = fopen(strFullPath.str_String, "a+");
+
+	if (pfile == NULL)
+		return false;
+
+	std::string str = boost::str( boost::format("Upgrade(%d) : %d\t%d\t%d\t%d\n") % m_pIconsSlot[1]->getItems()->GetItemPlus()
+						% (m_nMasProb[0] + m_nMasProb[1] + m_nMasProb[2])
+						% m_nMasProb[0] % m_nMasProb[1] % m_nMasProb[2] );
+
+	fwrite(str.c_str(), str.size(), 1, pfile);
+
+	fclose(pfile);
+#endif		// WORLD_EDITOR	
+	return true;
+}
+
+void CUIMixNew::WriteEnd()
+{
+#ifndef		WORLD_EDITOR
+	CTString strFullPath = _fnmApplicationPath.FileDir();
+
+	strFullPath += "\\ProbMasterStone.txt";
+
+	FILE*	pfile;
+
+	pfile = fopen(strFullPath.str_String, "a+");
+
+	if (pfile == NULL)
+		return;
+
+	std::string str = boost::str( boost::format("-------------------------------------------------------------------\n\n") );
+	
+	fwrite(str.c_str(), str.size(), 1, pfile);
+
+	fclose(pfile);
+
+	UICHAT()->AddSysMessage("Write Masterstone Prob...");
+#endif		// WORLD_EDITOR
 }

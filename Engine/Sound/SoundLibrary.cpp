@@ -1,5 +1,5 @@
 #include "stdh.h"
-	#include "initguid.h"
+#include "initguid.h"
 
 #include <Engine/Sound/SoundLibrary.h>
 #include <Engine/Base/Translation.h>
@@ -741,12 +741,12 @@ void CSoundLibrary::Init(void)
 {
 	_pShell->DeclareSymbol( "void SndPostFunc(INDEX);", &SndPostFunc);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Open beta)(2004-12-30)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-30)
 	extern FLOAT g_fMscVol;
 	extern FLOAT g_fSndVol;
 	_pShell->DeclareSymbol( "persistent user FLOAT snd_fSoundVolume;",  &g_fSndVol);
 	_pShell->DeclareSymbol( "persistent user FLOAT snd_fMusicVolume;",  &g_fMscVol);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-30)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-30)
 	_pShell->DeclareSymbol( "persistent user INDEX snd_bLinearVolume;", &snd_bLinearVolume);
 
 	_pShell->DeclareSymbol( "persistent user FLOAT snd_tmMixAhead post:SndPostFunc;", &snd_tmMixAhead);
@@ -781,7 +781,7 @@ void CSoundLibrary::Init(void)
 	CPrintF(TRANS("  Detected devices: %d\n"), ctDevices);
 	sl_ctWaveDevices = ctDevices;
 
-	// <-- ErrorLog.txtì— ë””ìŠ¤í”Œë ˆì´ ì •ë³´ë¥¼ ê¸°ë¡í•˜ê¸° ìœ„í•œ ë¶€ë¶„
+	// <-- ErrorLog.txt¿¡ µð½ºÇÃ·¹ÀÌ Á¤º¸¸¦ ±â·ÏÇÏ±â À§ÇÑ ºÎºÐ
 	extern CTString	_strSoundDriver;
 	// -->
 	
@@ -793,7 +793,7 @@ void CSoundLibrary::Init(void)
 		MMRESULT res = waveOutGetDevCaps(iDevice, &woc, sizeof(woc));
 		CPrintF(TRANS("    device %d: %s\n"), 
 			iDevice, woc.szPname);
-		// <-- ErrorLog.txtì— ë””ìŠ¤í”Œë ˆì´ ì •ë³´ë¥¼ ê¸°ë¡í•˜ê¸° ìœ„í•œ ë¶€ë¶„
+		// <-- ErrorLog.txt¿¡ µð½ºÇÃ·¹ÀÌ Á¤º¸¸¦ ±â·ÏÇÏ±â À§ÇÑ ºÎºÐ
 		_strSoundDriver = woc.szPname;
 		// -->
 		CPrintF(TRANS("      ver: %d, id: %d.%d\n"), 
@@ -1041,10 +1041,10 @@ int qsort_CompareSoundObjects( const void *ppso1, const void *ppso2)
 	return 0; */
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(5th Closed beta)(0.2)
-FLOAT g_fSndVol = 1.0f;
-FLOAT g_fMscVol = 1.0f;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+FLOAT g_fSndVol = 50.0f;
+FLOAT g_fMscVol = 50.0f;
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 // update all 3d effects and copy internal data
 void CSoundLibrary::UpdateSounds(void)
@@ -1052,7 +1052,7 @@ void CSoundLibrary::UpdateSounds(void)
 	// do nothing if no sound
 	if( sl_sfFormat==SF_NONE) return;
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	extern ENGINE_API BOOL g_bNoPlaySnd;
 	if(g_bNoPlaySnd)
 	{
@@ -1064,12 +1064,13 @@ void CSoundLibrary::UpdateSounds(void)
 		snd_fSoundVolume = g_fSndVol;
 		snd_fMusicVolume = g_fMscVol;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	_sfStats.StartTimer(CStatForm::STI_SOUNDUPDATE);
 
 	// see if we have valid handle for direct sound and eventually reinit sound
 	if( !(sl_ulFlags&SLF_USINGWAVEOUT) && _hwndCurrent!=_hwndMain) {
 		_hwndCurrent = _hwndMain;
+		sl_pDS->SetCooperativeLevel( _hwndCurrent, DSSCL_PRIORITY);
 		SetFormat( sl_sfFormat);
 	}
 

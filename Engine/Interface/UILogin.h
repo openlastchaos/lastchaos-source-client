@@ -8,13 +8,11 @@
 #ifdef	PRAGMA_ONCE
 	#pragma once
 #endif
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIEditBox.h>
-// [090715:selo] - ì²´í¬ë²„íŠ¼ ì¶”ê°€ 
-#include <Engine/Interface//UICheckButton.h>
-#include <vector>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIScrollBar.h>
+// #include <Engine/Interface/UIButtonEx.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <vector>
 
 
 // Define text position
@@ -26,12 +24,18 @@
 #define	LOGIN_WIDTH					183
 #define	LOGIN_HEIGHT				116
 
+// À¯·ÎÇÇ¾È ¼­¹ö Á¢¼Ó [10/18/2012 Ranma]
+#ifdef EUROUPEAN_SERVER_LOGIN
+#define LOGIN_TITLE_HEIGHT			22	
+#define EUROUPEAN_WIDTH_GAP			10			
+#endif
+
 
 // ----------------------------------------------------------------------------
 // Name : CUILogin
 // Desc :
 // ----------------------------------------------------------------------------
-class CUILogin : public CUIWindow
+class ENGINE_API CUILogin : public CUIWindow
 {
 public:
 	CUILogin();
@@ -42,7 +46,7 @@ public:
 
 	// Reset
 	void	Reset();
-
+	void	ResetBtn();
 	// Render
 	void	Render();
 	void	SecurityRender();
@@ -59,11 +63,13 @@ public:
 
 	CTString	GetUserId(){ return m_strUserID; };
 	CTString	GetPassword(){ return m_strUserPW; };
-	
-	// [090715: selo] ì•„ì´ë”” ì €ì¥
+
+	// [090715: selo] ¾ÆÀÌµğ ÀúÀå
 	void ReadPreviousId();
-	void WritePreviousId();	
-	
+#ifdef DEV_LOGIN
+	void ReadTextDevPreviousIdPw(); // Login.txt ¿¡ ÀúÀåµÈ ¾ÆÀÌµğ ÆĞ½º¿öµå ¾ò¾î¿À±â
+#endif // DEV_LOGIN
+	void WritePreviousId();
 
 	void	Lock(BOOL bLock);	
 	void	SetPWFocus() { m_ebPW.SetFocus(TRUE); }
@@ -88,52 +94,67 @@ public:
 	}
 	void SecurityCardSet(UBYTE* SecurityNum);
 
+	void initialize();
+
+	void setVersion(const char* strVer);
+	const char* getVersion()		{ return m_strVersion.c_str(); }
 protected:
 	// Press OK button
 	void	PressOKBtn();
 
-	BOOL	TryToLogin();			// ë¡œê·¸ì¸ ì‹œë„
+	BOOL	TryToLogin();			// ·Î±×ÀÎ ½Ãµµ
 
 	// Connect to Server
 	BOOL	ConnectToLoginServer();
-	//070901_ttos: ë³´ì•ˆì¹´ë“œ UI	
+	//070901_ttos: º¸¾ÈÄ«µå UI	
 	BOOL	ConnectToSecurityCard();
 	
 private:
 	// User Login
 	UIRect				m_rcSecurityBack;
 	UIRectUV			m_rtLogin;
+	UIRectUV			m_rtClassification;	
 	UIRectUV			m_rtSecurityTop;
 	UIRectUV			m_rtSecurityMid;
 	UIRectUV			m_rtSecurityBottom;
+
+#ifdef	_USE_UI_XML_
+	CUIEditBox*		m_ebID;								// Input Box for User ID
+	CUIEditBox*		m_ebPW;								// Input Box for User Password
+#else	// _USE_UI_XML_
 	CUIEditBox			m_ebID;								// Input Box for User ID
 	CUIEditBox			m_ebPW;								// Input Box for User Password
+#endif	// _USE_UI_XML_
 	CUIEditBox			m_ebSecurity;						// 070823_ttos: Input Box for Security Code
 	int					m_nLoginMsgPosX, m_nLoginMsgPosY;	// Position of error message box for login
-	
 	
 	// Buttons
 	CUIButton			m_btnOK;							// OK button
 	CUIButton			m_btnCancel;						// Cancel button
-	
+
 	// [090715: selo] - checkbox
 	CUICheckButton		m_btnCheck;							// Check button
+	// À¯·ÎÇÇ¾È ¼­¹ö Á¢¼Ó Ã¼Å© [10/18/2012 Ranma]
+#ifdef EUROUPEAN_SERVER_LOGIN
+	CUICheckButton		m_btnEuroupeanCheck;					// Check button
+#endif
 	BOOL				m_bChecked;
-
+	
 private:
 	CTString 			m_strUserID;						// User ID
 	CTString			m_strUserPW;						// User Password
 	BOOL				m_bUserLogin;
 //	BOOL				m_bConnectToLoginServer;
-	CTextureData*		m_ptdClassification;					// ë“±ê¸‰ í‘œì‹œ 
+	CTextureData*		m_ptdClassification;					// µî±Ş Ç¥½Ã 
 //	int					m_LocalVersion;
-	CHAR				m_chSecurityNum[4];					//ë³´ì•ˆ ì¹´ë“œ ë„˜ë²„
-	BOOL				m_bSecurity;						//ë³´ì•ˆì¹´ë“œ ì²´í¬
-	CTString			m_strSecurityCode;					//ë³´ì•ˆ ì¹´ë“œ ì½”ë“œ
-	CTString			m_strSecurityPW;					//ë³´ì•ˆ ì¹´ë“œ íŒ¨ìŠ¤ì›Œë“œ
+	CHAR				m_chSecurityNum[4];					//º¸¾È Ä«µå ³Ñ¹ö
+	BOOL				m_bSecurity;						//º¸¾ÈÄ«µå Ã¼Å©
+	CTString			m_strSecurityCode;					//º¸¾È Ä«µå ÄÚµå
+	CTString			m_strSecurityPW;					//º¸¾È Ä«µå ÆĞ½º¿öµå
 
-	// [090715: selo] ì²´í¬ë²„íŠ¼ í…ìŠ¤ì³ 
+	// [090715: selo] Ã¼Å©¹öÆ° ÅØ½ºÃÄ 
 	CTextureData*		m_ptdButtonTexture;
+	std::string			m_strVersion;
 };
 
 #endif // UISELCHAR_H_

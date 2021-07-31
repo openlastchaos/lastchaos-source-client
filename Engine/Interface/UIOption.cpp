@@ -1,15 +1,21 @@
 #include "stdh.h"
-#include <Engine/Interface/UIOption.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <vector>
+#include <Engine/Interface/UIOption.h>
 #include <Engine/Engine.h>
-#include <Engine/Graphics/ViewPort.h>
-#include <Engine/LocalDefine.h>
+#include <Engine/Network/Web.h>
+#include <Engine/Graphics/Adapter.h>
+#include <Engine/GameStageManager/StageMgr.h>
 
+//2013/04/15 jeil ∑±√≥ø° «ÿªÛµµ ∫Ø∞Ê √ﬂ∞°
+#include <fstream>
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Open beta)(2004-12-30)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Open beta)(2004-12-30)
 extern FLOAT g_fSndVol;
 extern FLOAT g_fMscVol;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Open beta)(2004-12-30)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Open beta)(2004-12-30)
 extern FLOAT		gfx_fBrightness;
 extern FLOAT		gfx_fContrast;
 extern FLOAT		gap_fTextureLODBias;
@@ -24,15 +30,20 @@ extern INDEX		g_iEnterChat;
 extern INDEX		g_iAutoAttack;
 extern INDEX		g_iShowName;
 extern INDEX		g_iShowNameItem;
-#ifdef HELP_SYSTEM_1
-	// wooss 070401 ------------------->><<
-	// kw : WSS_HELP_SYSTEM_1
-	extern INDEX		g_iShowHelp1Icon;
-#endif
+
+// wooss 070401 ------------------->><<
+// kw : WSS_HELP_SYSTEM_1
+extern INDEX		g_iShowHelp1Icon;
+
 extern INDEX		g_iRejectExchange;
 extern INDEX		g_iRejectParty;
+
+extern INDEX		g_iQuestBookOpen;
+
 extern BOOL			_bWindowChanging;
 extern HWND			_hwndMain;
+extern HWND			_hDlgWeb;
+extern cWeb			g_web;
 extern CDrawPort	*_pdpMain;
 extern CDrawPort	*_pdpNormalMain;
 extern CDrawPort	*_pdpWideScreenMain;
@@ -48,12 +59,18 @@ extern INDEX		sam_bWideScreen;
 extern INDEX		cmd_iWindowLeft;
 extern INDEX		cmd_iWindowTop;
 extern INDEX		g_bSlaveNoTarget;			// UI_REFORM :Su-won
-
-static char			achWindowTitle[256];
+// MBCS -> WBCS¿¸»Ø [12/21/2011 rumist]
+static WCHAR		wchWindowTitle[256];
+//static char			achWindowTitle[256];
 static PIX			_pixLastSizeI, _pixLastSizeJ;
+extern ENGINE_API INDEX sam_bFullScreenActive;
 
 int	g_nCurSelResolution;
 extern INDEX	g_iCountry;
+
+#ifdef KALYDO
+extern ENGINE_API HWND	g_KalydoWindowHandle;
+#endif
 
 // ----------------------------------------------------------------------------
 // Name : CUIOption()
@@ -61,10 +78,11 @@ extern INDEX	g_iCountry;
 // ----------------------------------------------------------------------------
 CUIOption::CUIOption()
 {
+	int		i;
 	m_nCurOptionTab = 0;
 	m_bPixelShader = FALSE;
 
-	for( int i = 0; i < 11; i++ )
+	for( i = 0; i < 11; i++ )
 	{
 		m_afBrightness[i] = 0.9f * ( ( i - 5 ) * 0.05f );
 		m_afContrast[i] = 1.0f + 0.9f * ( ( i - 5 ) * 0.05f );
@@ -75,7 +93,7 @@ CUIOption::CUIOption()
 	}
 	for( i = 0; i < 5; i++ )
 	{
-		m_afViewTerrain[i] = 1.0f + 0.5f * ( ( i - 4 ) / 5.0f );
+		m_afViewTerrain[i] = 0.7f + i * 0.075;//1.0f + 0.5f * ( ( i - 4 ) / 5.0f );
 	}
 
 	m_pixDesktopWidth = 0;
@@ -83,6 +101,8 @@ CUIOption::CUIOption()
 
 	m_bShowToolTip = FALSE;
 	m_strToolTip = CTString( "" );
+	m_ptdButtonTexture = NULL;
+		
 }
 
 // ----------------------------------------------------------------------------
@@ -91,13 +111,16 @@ CUIOption::CUIOption()
 // ----------------------------------------------------------------------------
 CUIOption::~CUIOption()
 {
+	Destroy();
+
 	if( _pvpViewPortMain != NULL )
 	{
 		_pGfx->DestroyWindowCanvas( _pvpViewPortMain );
 		_pvpViewPortMain = NULL;
 		_pdpNormalMain = NULL;
 	}
-	Destroy();
+
+	STOCK_RELEASE(m_ptdButtonTexture);
 }
 
 // ----------------------------------------------------------------------------
@@ -107,6 +130,10 @@ CUIOption::~CUIOption()
 void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
 	INDEX tv_chat,tv_fame,tv_auto,tv_summon;
+	tv_chat = 0;
+	tv_fame = 0;
+	tv_auto = 0;
+	tv_summon = 0;
 	extern BOOL g_bIsMalEng;
 
 	switch(g_iCountry)
@@ -128,6 +155,7 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 		tv_chat=tv_fame=tv_auto=tv_summon=3;
 		break;
 	case MALAYSIA:
+		extern BOOL g_bIsMalEng;
 		if(g_bIsMalEng)
 		{
 			tv_chat=tv_summon=0;
@@ -166,13 +194,19 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	case SPAIN://FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	case FRANCE:
 	case POLAND:
+	case RUSSIA:
 	case TURKEY:
+	case MEXICO:
+	case ITALY:
+	case NETHERLANDS:
 		tv_chat=tv_fame=tv_auto=tv_summon=3;
 		break;
+	default:
+		tv_chat=tv_fame=tv_auto=tv_summon=0;
+		break;
 	}
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	//m_rcTitle.SetRect( 0, 0, 230, 22 );
@@ -180,7 +214,7 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_rcTitle.SetRect( 0, 0, 255, 35 );
 	m_rcOptionTab.SetRect( 6, 40, 27, 316 );
 	m_rcInnerBackground.SetRect(32, 61, 245, 363);
-	
+		
 
 	// Create option texture
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\NewOption.tex" ) );
@@ -216,9 +250,10 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	//m_cmbItemPlusEffect.SetDownBtnUV( 168, 401, 181, 414, fTexWidth, fTexHeight );
 	//m_cmbItemPlusEffect.SetUpBtnUV( 183, 401, 196, 414, fTexWidth, fTexHeight );
 	//m_cmbItemPlusEffect.SetDropListUV( 0, 462, 170, 477, fTexWidth, fTexHeight );
-#ifndef OPTION_REJECT_PARTY_AND_EXCHANGE
-	m_cmbItemPlusEffect.Create( this, 40, 242, 198, 16, 176, 4, 17, 10,
+	m_cmbItemPlusEffect.Create( this, 40, 268, 198, 16, 176, 4, 17, 10,
 								10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
+// 	m_cmbItemPlusEffect.Create( this, 40, 270, 198, 16, 176, 4, 17, 10,
+// 								10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
 	m_cmbItemPlusEffect.SetBackUV( 8, 596, 206, 612, fTexWidth, fTexHeight );
 	m_cmbItemPlusEffect.SetDownBtnUV( 283, 5, 300, 15, fTexWidth, fTexHeight );
 	m_cmbItemPlusEffect.SetUpBtnUV( 302, 5, 319, 15, fTexWidth, fTexHeight );
@@ -239,16 +274,15 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cmbItemPlusEffect.CopyScrollDownUV( UBS_IDLE, UBS_ON );
 	m_cmbItemPlusEffect.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
 	// Strings
-	m_cmbItemPlusEffect.AddString( _S( 1031, "ÎÇ¥ Ìö®Í≥º ÎπÑÍ≥µÍ∞ú" ) );		
-	m_cmbItemPlusEffect.AddString( _S( 1032, "ÎÇ¥ Ìö®Í≥º Í≥µÍ∞ú" ) );			
-#endif
+	m_cmbItemPlusEffect.AddString( _S( 1031, "≥ª »ø∞˙ ∫Ò∞¯∞≥" ) );		
+	m_cmbItemPlusEffect.AddString( _S( 1032, "≥ª »ø∞˙ ∞¯∞≥" ) );	
 
 	// Show name slide bar
 	//m_slbShowName.Create( this, OPTION_CONTROL_SX, OPTION_SHOWNAME_SY + 16, 170, 5, 10, 10, 0, 6, 0, 5 );
 	//m_slbShowName.SetBackgroundUV( 0, 498, 170, 503, fTexWidth, fTexHeight );
 	m_slbShowName.Create( this, 43, 93, 191, 5, 12, 12, 0, 6, 0, 5 );
 	m_slbShowName.SetBarUV( 288, 31, 300, 43, fTexWidth, fTexHeight );
-	
+		
 	// Show item name slide bar
 	//m_slbShowNameItem.Create( this, OPTION_CONTROL_SX, OPTION_SHOWNAME_ITEM_SY + 16, 170, 5, 10, 10, 0, 6, 0, 5 );
 	//m_slbShowNameItem.SetBackgroundUV( 0, 498, 170, 503, fTexWidth, fTexHeight );
@@ -290,8 +324,8 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	//m_slbCharQuality.SetBarUV( 198, 386, 208, 396, fTexWidth, fTexHeight );
 	m_slbCharQuality.Create( this, 43, 161, 191, 5, 12, 12, 2, 5, 0, 4 );
 	m_slbCharQuality.SetBarUV( 288, 31, 300, 43, fTexWidth, fTexHeight );
-	m_slbCharQuality.SetEnable( FALSE );	// ÏûÑÏãú
-	m_slbCharQuality.SetCurPos( 4 );		// ÏûÑÏãú
+	m_slbCharQuality.SetEnable( FALSE );	// ¿”Ω√
+	m_slbCharQuality.SetCurPos( 4 );		// ¿”Ω√
 
 	// View-terrain slide bar
 	//m_slbViewTerrain.Create( this, OPTION_CONTROL_SX, OPTION_VIEWTERAIN_SY + 16, 170, 5, 10, 10, 4, 5, 0, 4 );
@@ -312,7 +346,7 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	//m_slbFiltering.Create( this, OPTION_CONTROL_SX, OPTION_FILTERING_SY + 16, 170, 5, 10, 10, 0, 3, 0, 2 );
 	//m_slbFiltering.SetBackgroundUV( 0, 498, 170, 503, fTexWidth, fTexHeight );
 	//m_slbFiltering.SetBarUV( 198, 386, 208, 396, fTexWidth, fTexHeight );
-	m_slbFiltering.Create( this, 43, 263, 191, 5, 12, 12, 0, 3, 0, 2 );
+	m_slbFiltering.Create( this, 43, 263, 191, 5, 12, 12, 0, 7, 0, 6 );; // Ω≈¡÷≥Î∏ ¿« π‡±‚∂ßπÆø° ∫Ì∑“»ø∞˙ ¥‹∞Ë¥√∏≤
 	m_slbFiltering.SetBarUV( 288, 31, 300, 43, fTexWidth, fTexHeight );
 
 	// BGM slide bar
@@ -336,37 +370,6 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	//m_cmbResolution.SetDownBtnUV( 168, 401, 181, 414, fTexWidth, fTexHeight );
 	//m_cmbResolution.SetUpBtnUV( 183, 401, 196, 414, fTexWidth, fTexHeight );
 	//m_cmbResolution.SetDropListUV( 0, 462, 170, 477, fTexWidth, fTexHeight );
-#ifndef OPTION_REJECT_PARTY_AND_EXCHANGE
-	m_cmbItemPlusEffect.Create( this, 40, 242, 198, 16, 176, 4, 17, 10,
-								10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
-#else
-	m_cmbItemPlusEffect.Create( this, 40, 268, 198, 16, 176, 4, 17, 10,
-								10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
-// 	m_cmbItemPlusEffect.Create( this, 40, 270, 198, 16, 176, 4, 17, 10,
-// 								10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
-	m_cmbItemPlusEffect.SetBackUV( 8, 596, 206, 612, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.SetDownBtnUV( 283, 5, 300, 15, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.SetUpBtnUV( 302, 5, 319, 15, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.SetDropListUV( 270, 60, 468, 96, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.CreateScroll( TRUE, 9, 7, 0, 0, 10 );
-	// Up button
-	m_cmbItemPlusEffect.SetScrollUpUV( UBS_IDLE, 209, 416, 218, 423, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.SetScrollUpUV( UBS_CLICK, 220, 416, 229, 423, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.CopyScrollUpUV( UBS_IDLE, UBS_ON );
-	m_cmbItemPlusEffect.CopyScrollUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_cmbItemPlusEffect.SetScrollBarTopUV( 231, 416, 240, 426, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.SetScrollBarMiddleUV( 231, 427, 240, 429, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.SetScrollBarBottomUV( 231, 430, 240, 440, fTexWidth, fTexHeight );
-	// Down button
-	m_cmbItemPlusEffect.SetScrollDownUV( UBS_IDLE, 209, 425, 218, 432, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.SetScrollDownUV( UBS_CLICK, 220, 425, 229, 432, fTexWidth, fTexHeight );
-	m_cmbItemPlusEffect.CopyScrollDownUV( UBS_IDLE, UBS_ON );
-	m_cmbItemPlusEffect.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
-	// Strings
-	m_cmbItemPlusEffect.AddString( _S( 1031, "ÎÇ¥ Ìö®Í≥º ÎπÑÍ≥µÍ∞ú" ) );		
-	m_cmbItemPlusEffect.AddString( _S( 1032, "ÎÇ¥ Ìö®Í≥º Í≥µÍ∞ú" ) );	
-#endif
 
 	m_cmbResolution.Create( this, 40, 80, 198, 16, 176, 4, 17, 10,
 							10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
@@ -388,18 +391,16 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cmbResolution.SetScrollDownUV( UBS_CLICK, 220, 425, 229, 432, fTexWidth, fTexHeight );
 	m_cmbResolution.CopyScrollDownUV( UBS_IDLE, UBS_ON );
 	m_cmbResolution.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
+	// if this client is kalydo version, blocked resolution feature. [11/30/2011 rumist]
+#ifdef KALYDO
+	m_cmbResolution.SetEnable( FALSE );
+#endif
 
-
-	// ÏÑ†ÌÉù Í∞ÄÎä• ÎåÄÏÉÅ ÏÑ§Ï†ï
+	// º±≈√ ∞°¥… ¥ÎªÛ º≥¡§
 	//m_cmbTargetDest.Create( this, OPTION_CONTROL_SX, OPTION_TARGETDEST_SY + 17, 170, 15, 156, 1, 13, 13,
 	//							10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
-#ifndef OPTION_REJECT_PARTY_AND_EXCHANGE
-	m_cmbTargetDest.Create( this, 40, 287, 198, 16, 176, 4, 17, 10,
-								10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
-#else
 	m_cmbTargetDest.Create( this, 40, 308, 198, 16, 176, 4, 17, 10,
 								10, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
-#endif
 	m_cmbTargetDest.SetBackUV( 8, 596, 206, 612, fTexWidth, fTexHeight );
 	m_cmbTargetDest.SetDownBtnUV( 283, 5, 300, 15, fTexWidth, fTexHeight );
 	m_cmbTargetDest.SetUpBtnUV( 302, 5, 319, 15, fTexWidth, fTexHeight );
@@ -420,9 +421,9 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cmbTargetDest.CopyScrollDownUV( UBS_IDLE, UBS_ON );
 	m_cmbTargetDest.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
 	// Strings
-	m_cmbTargetDest.AddString( _S(4163, "Î™®Îëê ÌóàÍ∞Ä" ) );		
-	m_cmbTargetDest.AddString( _S(4164, "ÏÜåÌôòÏàò&Ìé´ Î•ò Ï†úÏô∏" ) );
-	m_cmbTargetDest.AddString( _S(4386, "Ï∫êÎ¶≠ÌÑ∞,ÏÜåÌôòÏàò&Ìé´ Ï†úÏô∏"));
+	m_cmbTargetDest.AddString( _S(4163, "∏µŒ «„∞°" ) );		
+	m_cmbTargetDest.AddString( _S(4164, "º“»Øºˆ&∆Í ∑˘ ¡¶ø‹" ) );
+	m_cmbTargetDest.AddString( _S(4386, "ƒ≥∏Ø≈Õ,º“»Øºˆ&∆Í ¡¶ø‹"));
 
 
 	// -------------------------------------------------------------------------------->>
@@ -476,10 +477,10 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 
 
 	// OK Button
-	//m_btnOK.Create( this, _S( 191, "ÌôïÏù∏" ), 61, 345, 63, 21 );
+	//m_btnOK.Create( this, _S( 191, "»Æ¿Œ" ), 61, 345, 63, 21 );
 	//m_btnOK.SetUV( UBS_IDLE, 0, 440, 63, 461, fTexWidth, fTexHeight );
 	//m_btnOK.SetUV( UBS_CLICK, 65, 440, 128, 461, fTexWidth, fTexHeight );
-	m_btnOK.Create( this, _S( 191, "ÌôïÏù∏" ), 39, 366, 92, 21 );
+	m_btnOK.Create( this, _S( 191, "»Æ¿Œ" ), 39, 366, 92, 21 );
 	m_btnOK.SetRTSurface( UBS_IDLE, rcLeft, rtIdleBtn.rtL );
 	m_btnOK.SetRTSurface( UBS_IDLE, rcMiddel, rtIdleBtn.rtM );
 	m_btnOK.SetRTSurface( UBS_IDLE, rcRight, rtIdleBtn.rtR );
@@ -491,23 +492,23 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_btnOK.SetNewType(TRUE);
 
 	// Init interface Button
-	int	nStrWidth = ( _S( 200, "Ïù∏ÌÑ∞ÌéòÏù¥Ïä§" ).Length() + 3 ) *
+	int	nStrWidth = ( _S( 200, "¿Œ≈Õ∆‰¿ÃΩ∫" ).Length() + 3 ) *
 					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-	//m_btnInitInterface.Create( this, _S( 194, "Ï¥àÍ∏∞Ìôî" ), OPTION_TEXT_SX + nStrWidth,
+	//m_btnInitInterface.Create( this, _S( 194, "√ ±‚»≠" ), OPTION_TEXT_SX + nStrWidth,
 	//							OPTION_INITINTERFACE_SY - 5, 63, 21 );
 	//m_btnInitInterface.SetUV( UBS_IDLE, 0, 440, 63, 461, fTexWidth, fTexHeight );
 	//m_btnInitInterface.SetUV( UBS_CLICK, 65, 440, 128, 461, fTexWidth, fTexHeight );
-	m_btnInitInterface.Create( this, _S( 194, "Ï¥àÍ∏∞Ìôî" ), 128, 335, 75, 22 );
+	m_btnInitInterface.Create( this, _S( 194, "√ ±‚»≠" ), 128, 335, 75, 22 );
 	m_btnInitInterface.SetUV( UBS_IDLE, 113, 0, 182, 22, fTexWidth, fTexHeight );
 	m_btnInitInterface.SetUV( UBS_CLICK, 186, 0, 256, 22, fTexWidth, fTexHeight );	
 	m_btnInitInterface.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnInitInterface.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel Button
-	//m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 126, 345, 63, 21 );
+	//m_btnCancel.Create( this, _S( 139, "√Îº“" ), 126, 345, 63, 21 );
 	//m_btnCancel.SetUV( UBS_IDLE, 0, 440, 63, 461, fTexWidth, fTexHeight );
 	//m_btnCancel.SetUV( UBS_CLICK, 65, 440, 128, 461, fTexWidth, fTexHeight );
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 146, 366, 92, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 146, 366, 92, 21 );
 	m_btnCancel.SetRTSurface( UBS_IDLE, rcLeft, rtIdleBtn.rtL );
 	m_btnCancel.SetRTSurface( UBS_IDLE, rcMiddel, rtIdleBtn.rtM );
 	m_btnCancel.SetRTSurface( UBS_IDLE, rcRight, rtIdleBtn.rtR );
@@ -519,31 +520,46 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_btnCancel.SetNewType(TRUE);
 
 	// Enter chat check button
-	nStrWidth = ( _S( 198, "ÏóîÌÑ∞ Ï±ÑÌåÖ" ).Length() + tv_chat ) *
+#if defined (G_THAI)
+	nStrWidth = FindThaiLen( _S( 198, "ø£≈Õ √§∆√" ) ) + tv_chat;	
+#else
+	nStrWidth = ( _S( 198, "ø£≈Õ √§∆√" ).Length() + tv_chat ) *
 					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 	//m_cbtnEnterChat.Create( this, OPTION_TEXT_SX + nStrWidth , OPTION_ENTERCHAT_SY, 11, 11,
-	//						_S( 198, "ÏóîÌÑ∞ Ï±ÑÌåÖ" ), TRUE, nStrWidth, nStrWidth );
+	//						_S( 198, "ø£≈Õ √§∆√" ), TRUE, nStrWidth, nStrWidth );
 	//m_cbtnEnterChat.SetUV( UCBS_NONE, 224, 401, 235, 412, fTexWidth, fTexHeight );
 	//m_cbtnEnterChat.SetUV( UCBS_CHECK, 198, 401, 209, 412, fTexWidth, fTexHeight );
+#if !defined (G_JAPAN)
 	m_cbtnEnterChat.Create( this, 121, 144, 13, 13,
-							_S( 198, "ÏóîÌÑ∞ Ï±ÑÌåÖ" ), TRUE, nStrWidth, nStrWidth );
+							_S( 198, "ø£≈Õ √§∆√" ), TRUE, nStrWidth, nStrWidth );
+#else
+	m_cbtnEnterChat.Create( this, 121, 144, 13, 13,
+							_S( 198, "ø£≈Õ √§∆√" ), TRUE, nStrWidth - 15, nStrWidth );
+#endif
 	m_cbtnEnterChat.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
 	m_cbtnEnterChat.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
 	m_cbtnEnterChat.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
 	m_cbtnEnterChat.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
 	m_cbtnEnterChat.SetTextColor( TRUE, 0xF2F2F2FF );
 	m_cbtnEnterChat.SetTextColor( FALSE, 0xF2F2F2FF );
-	m_cbtnEnterChat.SetCheck( FALSE );
+	m_cbtnEnterChat.SetCheck( TRUE );
+	// ø£≈Õ√§∆√ ∞≠¡¶ [12/27/2012 Ranma]
+	g_iEnterChat = 1;
 
 	// Auto attack check button
-	nStrWidth = ( strlen( _S( 738, "Ïó∞ÏÜç Í≥µÍ≤©" ) ) + tv_auto ) *				
+#if defined (G_THAI)
+	nStrWidth = FindThaiLen( _S( 738, "ø¨º” ∞¯∞›" ) ) + tv_auto;	
+#else
+	nStrWidth = ( strlen( _S( 738, "ø¨º” ∞¯∞›" ) ) + tv_auto ) *				
 					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 	//m_cbtnAutoAttack.Create( this, OPTION_TEXT_SX + nStrWidth, OPTION_AUTOATTACK_SY, 11, 11,
-	//							 _S( 738, "Ïó∞ÏÜç Í≥µÍ≤©" ), TRUE, nStrWidth, nStrWidth );		
+	//							 _S( 738, "ø¨º” ∞¯∞›" ), TRUE, nStrWidth, nStrWidth );		
 	//m_cbtnAutoAttack.SetUV( UCBS_NONE, 224, 401, 235, 412, fTexWidth, fTexHeight );
 	//m_cbtnAutoAttack.SetUV( UCBS_CHECK, 198, 401, 209, 412, fTexWidth, fTexHeight );
 	m_cbtnAutoAttack.Create( this, 121, 172, 13, 13,
-								 _S( 738, "Ïó∞ÏÜç Í≥µÍ≤©" ), TRUE, nStrWidth, nStrWidth );		
+									_S( 738, "ø¨º” ∞¯∞›" ), TRUE, nStrWidth, nStrWidth );		
 	m_cbtnAutoAttack.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
 	m_cbtnAutoAttack.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
 	m_cbtnAutoAttack.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
@@ -553,41 +569,35 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cbtnAutoAttack.SetCheck( FALSE );
 
 	// Auto attack check button
-	nStrWidth = ( strlen( _S( 1682, "Î™ÖÏÑ± Í≥µÍ∞ú" ) ) +tv_fame ) * 
-				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+	//nStrWidth = ( strlen( _S( 1682, "∏Ìº∫ ∞¯∞≥" ) ) +tv_fame ) * 
+	//			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 	//m_cbtnFameOpen.Create( this, OPTION_TEXT_SX + nStrWidth, OPTION_FAMEOPEN_SY, 11, 11,
-	//					 _S( 1682, "Î™ÖÏÑ± Í≥µÍ∞ú" ), TRUE, nStrWidth, nStrWidth );
+	//					 _S( 1682, "∏Ìº∫ ∞¯∞≥" ), TRUE, nStrWidth, nStrWidth );
 	//m_cbtnFameOpen.SetUV( UCBS_NONE, 224, 401, 235, 412, fTexWidth, fTexHeight );
 	//m_cbtnFameOpen.SetUV( UCBS_CHECK, 198, 401, 209, 412, fTexWidth, fTexHeight );
-	m_cbtnFameOpen.Create( this, 121, 200, 13, 13,
-						 _S( 1682, "Î™ÖÏÑ± Í≥µÍ∞ú" ), TRUE, nStrWidth, nStrWidth );
-	m_cbtnFameOpen.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
-	m_cbtnFameOpen.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
-	m_cbtnFameOpen.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
-	m_cbtnFameOpen.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
-	m_cbtnFameOpen.SetTextColor( TRUE, 0xF2F2F2FF );
-	m_cbtnFameOpen.SetTextColor( FALSE, 0xF2F2F2FF );
-	m_cbtnFameOpen.SetCheck( TRUE );
-	m_cbtnFameOpen.SetEnable( FALSE );
+	//m_cbtnFameOpen.Create( this, 121, 200, 13, 13,
+	//					 _S( 1682, "∏Ìº∫ ∞¯∞≥" ), TRUE, nStrWidth, nStrWidth );
+	//m_cbtnFameOpen.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
+	//m_cbtnFameOpen.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
+	//m_cbtnFameOpen.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
+	//m_cbtnFameOpen.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
+	//m_cbtnFameOpen.SetTextColor( TRUE, 0xF2F2F2FF );
+	//m_cbtnFameOpen.SetTextColor( FALSE, 0xF2F2F2FF );
+	//m_cbtnFameOpen.SetCheck( TRUE );
+	//m_cbtnFameOpen.SetEnable( FALSE );
+
 
 	// wooss 050809
 	// move , summon permission
-	
-	nStrWidth = ( strlen( _S( 2118, "ÏÜåÌôò ÌóàÍ∞Ä" ) ) + tv_summon) * 
+	// ITS #6255 : ∑ØΩ√æ∆ ø‰√ª¿∏∑Œ ¿Œ«— ø…º« Ω∫∆Æ∏µ ¡Ÿ ∏¬√„ ¡§∏Æ. [12/22/2011 rumist]
+#if defined (G_THAI)
+	nStrWidth = FindThaiLen( _S( 2118, "º“»Ø «„∞°" ) ) + tv_summon;	
+#else
+	nStrWidth = ( strlen( _S( 2118, "º“»Ø «„∞°" ) ) + tv_summon) * 
 				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
-
-	if( g_iCountry == THAILAND )
-	{
-		m_cbtnMovePermit.Create( this, OPTION_TEXT_SX + nStrWidth , OPTION_SUMMON_SY, 11, 11,
-							 _S( 2118, "ÏÜåÌôò ÌóàÍ∞Ä" ), TRUE, nStrWidth, nStrWidth );
-	}
-	else
-	{
-		//m_cbtnMovePermit.Create( this, OPTION_TEXT2_SX + nStrWidth + 6 , OPTION_ENTERCHAT_SY, 11, 11,
-		//					 _S( 2118, "ÏÜåÌôò ÌóàÍ∞Ä" ), TRUE, nStrWidth, nStrWidth );
-		m_cbtnMovePermit.Create( this, 225, 144, 13, 13,
-							 _S( 2118, "ÏÜåÌôò ÌóàÍ∞Ä" ), TRUE, nStrWidth, nStrWidth );
-	}
+#endif
+	m_cbtnMovePermit.Create( this, 225, 144, 13, 13,
+							_S( 2118, "º“»Ø «„∞°" ), TRUE, nStrWidth, nStrWidth );
 
 	//m_cbtnMovePermit.SetUV( UCBS_NONE, 224, 401, 235, 412, fTexWidth, fTexHeight );
 	//m_cbtnMovePermit.SetUV( UCBS_CHECK, 198, 401, 209, 412, fTexWidth, fTexHeight );
@@ -602,27 +612,16 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 
 	// wooss 070401 ------------------------------------------------------------------->>
 	// kw : WSS_HELP_SYSTEM_1
-	nStrWidth = ( strlen( _S(284, "ÎèÑÏõÄÎßê" ) ) + 6 ) * 
-				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
 
-	if( g_iCountry == THAILAND )
-	{
-		// TODO : Ï†ÅÏö©Îê† Îïå Îî∞Î°ú ÏúÑÏπò ÏÜê Î¥êÏïº Ìï†ÎìØ...
-		m_cbtnHelp1Icon.Create( this, OPTION_TEXT_SX + nStrWidth , OPTION_SUMMON_SY, 11, 11,
-							 _S(284, "ÎèÑÏõÄÎßê" ), TRUE, nStrWidth, nStrWidth );
-	}
-	else if ( g_iCountry == USA )
-	{
-		m_cbtnHelp1Icon.Create( this, 225 , 172, 13, 13,
-							 _S(284, "ÎèÑÏõÄÎßê" ), TRUE, nStrWidth, nStrWidth );
-	}
-	else
-	{
-		//m_cbtnHelp1Icon.Create( this, OPTION_TEXT2_SX + nStrWidth + 6 , OPTION_ENTERCHAT_SY + 25, 11, 11,
-		//					 _S(284, "ÎèÑÏõÄÎßê" ), TRUE, nStrWidth, nStrWidth );
-		m_cbtnHelp1Icon.Create( this, 225, 172, 13, 13,
-							 _S(284, "ÎèÑÏõÄÎßê" ), TRUE, nStrWidth, nStrWidth );
-	}
+#if defined (G_THAI)
+	// TODO : ¿˚øÎµ… ∂ß µ˚∑Œ ¿ßƒ° º’ ∫¡æﬂ «“µÌ...
+	nStrWidth = FindThaiLen( _S(284, "µµøÚ∏ª" ) ) + tv_summon;
+#else
+	nStrWidth = ( strlen( _S(284, "µµøÚ∏ª" ) ) + tv_summon ) * 
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
+#endif
+	m_cbtnHelp1Icon.Create( this, 225, 172, 13, 13,
+								_S(284, "µµøÚ∏ª" ), TRUE, nStrWidth, nStrWidth );
 
 	//m_cbtnHelp1Icon.SetUV( UCBS_NONE, 224, 401, 235, 412, fTexWidth, fTexHeight );
 	//m_cbtnHelp1Icon.SetUV( UCBS_CHECK, 198, 401, 209, 412, fTexWidth, fTexHeight );
@@ -634,13 +633,18 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cbtnHelp1Icon.SetTextColor( FALSE, 0xF2F2F2FF );
 	m_cbtnHelp1Icon.SetCheck( TRUE );
 
-#ifdef OPTION_REJECT_PARTY_AND_EXCHANGE
 	// [7/9/2009 rumist] rejection request message.
-	nStrWidth = ( strlen( _S( 4456, "Í±∞Îûò Í±∞Î∂Ä" ) ) ) * 
-				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() + 1 );
-
+#if defined (G_RUSSIA)
+	nStrWidth = ( strlen( _S( 4456, "∞≈∑° ∞≈∫Œ" ) ) + tv_summon ) * 
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#elif (G_THAI)
+	nStrWidth = FindThaiLen( _S( 4456, "∞≈∑° ∞≈∫Œ" ) ) + tv_summon;	
+#else
+	nStrWidth = ( strlen( _S( 4456, "∞≈∑° ∞≈∫Œ" ) ) + tv_summon ) * 
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 	m_cbtnRejectExchange.Create( this, 225, 200, 13, 13,
-						 _S( 4456, "Í±∞Îûò Í±∞Î∂Ä" ), TRUE, nStrWidth, nStrWidth );
+							_S( 4456, "∞≈∑° ∞≈∫Œ" ), TRUE, nStrWidth, nStrWidth );
 	m_cbtnRejectExchange.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
 	m_cbtnRejectExchange.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
 	m_cbtnRejectExchange.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
@@ -649,15 +653,19 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cbtnRejectExchange.SetTextColor( FALSE, 0xF2F2F2FF );
 	m_cbtnRejectExchange.SetCheck( TRUE );
 	m_cbtnRejectExchange.SetEnable( TRUE );	
-#endif
 
-#ifdef OPTION_REJECT_PARTY_AND_EXCHANGE
 	// [7/9/2009 rumist] rejection request message.
-	nStrWidth = ( strlen( _S( 4457, "ÌååÌã∞/ÏõêÏ†ïÎåÄ Í±∞Î∂Ä" ) ) ) * 
-				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() + 1 );
-	
+#if defined (G_RUSSIA)
+	nStrWidth = ( strlen( _S( 4457, "∆ƒ∆º ∞≈∫Œ" ) ) + tv_summon - 1 ) * 
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#elif (G_THAI)
+	nStrWidth = FindThaiLen( _S( 4457, "∆ƒ∆º ∞≈∫Œ" ) ) + tv_summon;	
+#else
+	nStrWidth = ( strlen( _S( 4457, "∆ƒ∆º ∞≈∫Œ" ) ) + tv_summon ) * 
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 	m_cbtnRejectParty.Create( this, 225, 226, 13, 13,
-						 _S( 4457, "ÌååÌã∞/ÏõêÏ†ïÎåÄ Í±∞Î∂Ä" ), TRUE, nStrWidth, nStrWidth );
+							_S( 4457, "∆ƒ∆º/ø¯¡§¥Î ∞≈∫Œ" ), TRUE, nStrWidth, nStrWidth );
 	m_cbtnRejectParty.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
 	m_cbtnRejectParty.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
 	m_cbtnRejectParty.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
@@ -666,20 +674,49 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cbtnRejectParty.SetTextColor( FALSE, 0xF2F2F2FF );
 	m_cbtnRejectParty.SetCheck( TRUE );
 	m_cbtnRejectParty.SetEnable( TRUE );
+
+#ifdef	G_KOR
+		nStrWidth = ( strlen( _S(5589, "ƒ˘Ω∫∆Æ∫œ ∆Àæ˜") ) + 1 ) * 
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#elif (G_THAI)
+	nStrWidth = FindThaiLen( _S( 5589, "ƒ˘Ω∫∆Æ∫œ ∆Àæ˜" ) ) + tv_summon;	
+#else
+		nStrWidth = ( strlen( _S(5589, "ƒ˘Ω∫∆Æ∫œ ∆Àæ˜") ) + 3 ) * 
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 #endif
+	m_cbtnQuestBookOpen.Create(this, 121, 200, 13, 13, _S(5589, "ƒ˘Ω∫∆Æ∫œ ∆Àæ˜"), TRUE, nStrWidth, nStrWidth);
+	m_cbtnQuestBookOpen.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
+	m_cbtnQuestBookOpen.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
+	m_cbtnQuestBookOpen.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
+	m_cbtnQuestBookOpen.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
+	m_cbtnQuestBookOpen.SetTextColor( TRUE, 0xF2F2F2FF );
+	m_cbtnQuestBookOpen.SetTextColor( FALSE, 0xF2F2F2FF );
+	m_cbtnQuestBookOpen.SetCheck( TRUE );
+	m_cbtnQuestBookOpen.SetEnable( TRUE );
 
 	// Fullscreen check button
-	// ÎåÄÎßå Î≤ÑÏ†ºÏóêÏÑúÎäî Ï†úÏô∏
-	//nStrWidth = ( strlen( _S( 739, "Ï†ÑÏ≤¥ ÌôîÎ©¥" ) ) + 3 ) *				
+	// ¥Î∏∏ πˆ¡Øø°º≠¥¬ ¡¶ø‹
+	//nStrWidth = ( strlen( _S( 739, "¿¸√º »≠∏È" ) ) + 3 ) *				
 	//				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 	//m_cbtnFullscreen.Create( this, OPTION_TEXT_SX + nStrWidth, OPTION_FULLSCREEN_SY, 11, 11,
-	//							 _S( 739, "Ï†ÑÏ≤¥ ÌôîÎ©¥" ), TRUE, nStrWidth, nStrWidth );		
+	//							 _S( 739, "¿¸√º »≠∏È" ), TRUE, nStrWidth, nStrWidth );		
 	//m_cbtnFullscreen.SetUV( UCBS_NONE, 224, 401, 235, 412, fTexWidth, fTexHeight );
 	//m_cbtnFullscreen.SetUV( UCBS_CHECK, 198, 401, 209, 412, fTexWidth, fTexHeight );
-	nStrWidth = ( strlen( _S( 739, "Ï†ÑÏ≤¥ ÌôîÎ©¥" ) ) + 1 ) *				
+#ifdef G_THAI
+	nStrWidth = FindThaiLen( _S( 739, "¿¸√º »≠∏È" ) ) + tv_summon;
+#else
+	nStrWidth = ( strlen( _S( 739, "¿¸√º »≠∏È" ) ) + 1 ) *				
 					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif // (G_THAI)
+
+	// [091119: selo] ¿¸√º »≠∏È ±€ææ øﬁ¬ ¿∏∑Œ ≥™ø¿¥¬∞≈ø°º≠ ø¿∏•¬ ¿∏∑Œ ≥™ø¿∞‘ «œ±‚
+#if ( defined(G_USA) || defined(G_JAPAN) )
 	m_cbtnFullscreen.Create( this, 98, 105, 13, 13,
-								 _S( 739, "Ï†ÑÏ≤¥ ÌôîÎ©¥" ), TRUE, nStrWidth, nStrWidth );		
+								_S( 739, "¿¸√º »≠∏È" ), FALSE, 15);
+#else
+	m_cbtnFullscreen.Create( this, 98, 105, 13, 13,
+									_S( 739, "¿¸√º »≠∏È" ), TRUE, nStrWidth, nStrWidth );
+#endif
 	m_cbtnFullscreen.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
 	m_cbtnFullscreen.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
 	m_cbtnFullscreen.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
@@ -687,18 +724,32 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cbtnFullscreen.SetTextColor( TRUE, 0xF2F2F2FF );
 	m_cbtnFullscreen.SetTextColor( FALSE, 0xAAAAAAFF );
 	m_cbtnFullscreen.SetCheck( TRUE );
-
+		
 	// Background check button
-	//nStrWidth = ( _S( 207, "Î∞∞Í≤ΩÌö®Í≥º" ).Length() + 3 ) *
+	//nStrWidth = ( _S( 207, "πË∞Ê»ø∞˙" ).Length() + 3 ) *
 	//				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 	//m_cbtnBackground.Create( this, OPTION_TEXT_SX + nStrWidth, OPTION_BACKGROUND_SY, 11, 11,
-	//							_S( 207, "Î∞∞Í≤ΩÌö®Í≥º" ), TRUE, nStrWidth, nStrWidth );
+	//							_S( 207, "πË∞Ê»ø∞˙" ), TRUE, nStrWidth, nStrWidth );
 	//m_cbtnBackground.SetUV( UCBS_NONE, 224, 401, 235, 412, fTexWidth, fTexHeight );
 	//m_cbtnBackground.SetUV( UCBS_CHECK, 198, 401, 209, 412, fTexWidth, fTexHeight );
-	nStrWidth = ( _S( 207, "Î∞∞Í≤ΩÌö®Í≥º" ).Length() + 1 ) *
+#ifdef G_THAI
+	nStrWidth = FindThaiLen( _S( 207, "πË∞Ê»ø∞˙" ) ) + tv_summon;
+#else
+	nStrWidth = ( _S( 207, "πË∞Ê»ø∞˙" ).Length() + 1 ) *
 					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-	m_cbtnBackground.Create( this, 99, 282, 13, 13,
-								_S( 207, "Î∞∞Í≤ΩÌö®Í≥º" ), TRUE, nStrWidth, nStrWidth );
+#endif // (G_THAI)
+
+	if (g_iCountry == MEXICO)
+	{
+		m_cbtnBackground.Create( this, 99, 282, 13, 13,
+								_S( 207, "πË∞Ê»ø∞˙" ), FALSE, 15, 0 );
+	}
+	else
+	{
+		m_cbtnBackground.Create( this, 99, 282, 13, 13,
+								_S( 207, "πË∞Ê»ø∞˙" ), TRUE, nStrWidth, nStrWidth );
+	}
+
 	m_cbtnBackground.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
 	m_cbtnBackground.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
 	m_cbtnBackground.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
@@ -706,7 +757,7 @@ void CUIOption::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_cbtnBackground.SetTextColor( TRUE, 0xF2F2F2FF );
 	m_cbtnBackground.SetTextColor( FALSE, 0xF2F2F2FF );
 	m_cbtnBackground.SetCheck( TRUE );
-	
+		
 	// --------------------------------------------------------------------------------<<
 }
 
@@ -738,19 +789,24 @@ void CUIOption::InitOption()
 {
 	m_cbtnFullscreen.SetEnable( TRUE );
 	m_cbtnFullscreen.SetCheck( IsFullScreen( sam_bFullScreenActive) );
-	
+		
 	// Date : 2005-01-15,   By Lee Ki-hwan
-	// 03-14, Ïû†Í∏à Í∏∞Îä• Ìï¥Ï†ú
-	// 04-08, Ï§ëÍµ≠ ÏõêÎèÑÏö∞ Î™®Îìú ÏßÄÏõê
+	// 03-14, ¿·±› ±‚¥… «ÿ¡¶
+	// 04-08, ¡ﬂ±π ø¯µµøÏ ∏µÂ ¡ˆø¯
 	//if ( g_iCountry == TAIWAN )
 	{
 		//m_cbtnFullscreen.SetEnable( FALSE );
 	//	m_cmbItemPlusEffect.SetEnable ( FALSE );	// Date : 2005-03-03,   By Lee Ki-hwan
 	}
-		
+
+// [2011/04/07 : Sora] DX9.0 ¿ÃªÛ πˆ¿¸ø°º≠¥¬ ¡ˆø¯«œ¡ˆ æ ¿∏π«∑Œ ∫Ò»∞º∫»≠
+#if defined(G_RUSSIA) || defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2)
+	m_slbBrightness.SetEnable( FALSE );
+	m_slbContrast.SetEnable( FALSE );
+#else
 	m_slbBrightness.SetEnable( IsFullScreen( sam_bFullScreenActive ) );
 	m_slbContrast.SetEnable( IsFullScreen( sam_bFullScreenActive ) );
-
+#endif
 	// Pixel shader
 	m_bPixelShader = TRUE;
 	if( !( ( _pGfx->gl_ulFlags & GLF_VERTEXPROGRAM ) && ( _pGfx->gl_ulFlags & GLF_PIXELPROGRAM ) &&
@@ -769,7 +825,8 @@ void CUIOption::InitOption()
 
 	m_nBrightness = -1;
 	m_nContrast = -1;
-	for( int i = 0; i < 11; i++ )
+	int		i;
+	for( i = 0; i < 11; i++ )
 	{
 		if( m_afBrightness[i] == gfx_fBrightness )
 		{
@@ -812,12 +869,19 @@ void CUIOption::InitOption()
 	m_cbtnBackground.SetCheck( g_bRenderDecoration != 0 );
 
 	m_nViewTerrain = -1;
+
+	float fScale = CZoneInfo::getSingleton()->GetTerMul(g_slZone);
+	float fTmpView = 0.f;
+
 	for( i = 0; i < 5; i++ )
 	{
-		if( m_afViewTerrain[i] == ter_fLODMul )
+		fTmpView = m_afViewTerrain[i] * fScale;
+
+		if( fTmpView == ter_fLODMul )
 		{
 			m_slbViewTerrain.SetCurPos( i );
 			m_nViewTerrain = i;
+			break;
 		}
 	}
 	if( m_nViewTerrain == -1 )
@@ -835,20 +899,21 @@ void CUIOption::InitOption()
 	m_slbReflection.SetCurPos( g_iReflectionDetail );
 	m_nReflectionQuality = g_iReflectionDetail;
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Open beta)(2004-12-30)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Open beta)(2004-12-30)
 	m_slbBGM.SetCurPos( g_fMscVol * 100 );
 	m_nBGMVolume = m_slbBGM.GetCurPos();
 	m_slbFXSound.SetCurPos( g_fSndVol * 100 );
 	m_nFXVolume = m_slbFXSound.GetCurPos();
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Open beta)(2004-12-30)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Open beta)(2004-12-30)
 
+	// default option change to enter chat. [9/22/2009 rumist]
 	m_cbtnEnterChat.SetCheck( g_iEnterChat != 0 );
 	m_bEnterChat = g_iEnterChat != 0;
 
 	m_cbtnAutoAttack.SetCheck( g_iAutoAttack != 0 );
 	m_bAutoAttack = g_iAutoAttack != 0;
 
-	//TEMP:Î™ÖÏÑ±Í≥µÍ∞ú
+	//TEMP:∏Ìº∫∞¯∞≥
 //	m_cbtnFameOpen.SetCheck( _pNetwork->MyCharacterInfo.bFameOpen != 0 );
 
 	m_slbShowName.SetCurPos( g_iShowName );
@@ -864,18 +929,16 @@ void CUIOption::InitOption()
 
 	//wooss 050809
 	//default true
-	
+		
 	m_cbtnMovePermit.SetCheck(!(tv_byte& (0x01 << 1)));
-	m_cbtnMovePermit.SetEnable(_pUIMgr->GetUIGameState() == UGS_GAMEON);
-#ifdef HELP_SYSTEM_1
+	m_cbtnMovePermit.SetEnable(STAGEMGR()->GetCurStage() == eSTAGE_GAMEPLAY);
+
 	// wooss 070401 ------------------------------------->>
 	// kw : WSS_HELP_SYSTEM_1
 	m_cbtnHelp1Icon.SetCheck( g_iShowHelp1Icon != 0 );
 	m_iShowHelp1Icon = g_iShowHelp1Icon != 0;
 	// --------------------------------------------------<<
-#endif
 
-#ifdef OPTION_REJECT_PARTY_AND_EXCHANGE
 	// [7/9/2009 rumist] rejection.
 	m_cbtnRejectExchange.SetCheck( g_iRejectExchange != 0 );
 	m_bRejectExchange = g_iRejectExchange != 0;
@@ -883,8 +946,10 @@ void CUIOption::InitOption()
 	// [7/9/2009 rumist] rejection.
 	m_cbtnRejectParty.SetCheck( g_iRejectParty != 0 );
 	m_bRejectParty = g_iRejectParty != 0;
-#endif
 
+	// 1106 UI ∞≥∆Ì - ƒ˘Ω∫∆Æ∫œ ø≠±‚ [09/05/11 trylord]
+	m_cbtnQuestBookOpen.SetCheck(g_iQuestBookOpen != 0 );
+	m_bQuestBookOpen	= g_iQuestBookOpen != 0;
 
 	// UI_REFORM :Su-won
 	m_cmbTargetDest.SetCurSel(g_bSlaveNoTarget);
@@ -906,11 +971,11 @@ void CUIOption::CreateResolutionList()
 	INDEX			ctDisplayCount = 0;
 
 	PIX	pixDepth = 0;
-	if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DD_16BIT )
+	if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DISPD_16BIT )
 		pixDepth = 16;
-	else if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DD_32BIT )
+	else if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DISPD_32BIT )
 		pixDepth = 32;
-	else if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DD_DEFAULT )
+	else if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DISPD_DEFAULT )
 	{
 		if( _pGfx->gl_d3dColorFormat == D3DFMT_X8R8G8B8 ||
 			_pGfx->gl_d3dColorFormat == D3DFMT_A8R8G8B8 )
@@ -988,11 +1053,16 @@ void CUIOption::CreateResolutionList()
 // ----------------------------------------------------------------------------
 void CUIOption::OpenOption()
 {
-	if( IsVisible() )
+	if( IsVisible() == TRUE )
 		return;
 
-	m_cbtnFameOpen.SetEnable( _pUIMgr->GetUIGameState() == UGS_GAMEON );
-	m_cmbItemPlusEffect.SetEnable( _pUIMgr->GetUIGameState() == UGS_GAMEON );
+	ResetPosition( _pdpMain->dp_MinI, _pdpMain->dp_MinJ,
+					_pdpMain->dp_MaxI, _pdpMain->dp_MaxJ );
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+//	m_cbtnFameOpen.SetEnable( pUIManager->GetUIGameState() == UGS_GAMEON );
+	m_cmbItemPlusEffect.SetEnable( STAGEMGR()->GetCurStage() == eSTAGE_GAMEPLAY );
 
 	// Set default option
 	InitOption();
@@ -1001,7 +1071,20 @@ void CUIOption::OpenOption()
 	g_nCurSelResolution = m_cmbResolution.GetCurSel();
 
 	// Set visible
-	_pUIMgr->RearrangeOrder( UI_OPTION, TRUE );
+	pUIManager->RearrangeOrder( UI_OPTION, TRUE );
+}
+
+// toggle option UI [7/19/2010 rumist]
+// ----------------------------------------------------------------------------
+// Name : ToggleOption()
+// Desc :
+// ----------------------------------------------------------------------------
+void	CUIOption::ToggleOption()
+{
+	if( IsVisible() )
+		CancelOption();
+	else
+		OpenOption();
 }
 
 // ----------------------------------------------------------------------------
@@ -1010,14 +1093,28 @@ void CUIOption::OpenOption()
 // ----------------------------------------------------------------------------
 static void CloseMainWindow(void)
 {
-	// if window exists
-	if( _hwndMain != NULL )
+	if (g_web.GetWebHandle() != NULL)
 	{
-		// destroy it
-		DestroyWindow( _hwndMain );
-		_hwndMain = NULL;
+		HWND hTmpDlg = g_web.GetWebHandle();
+		g_web.CloseWebPage(hTmpDlg);
+		DestroyWindow(hTmpDlg);
+	}
+
+	CUIManager::getSingleton()->DestroyRenderTarget();
+		
+	// if window exists
+	//	±Ëøµ»Ø ≈¨∂Û¿Ãæ∆Æ¿« ∞ÊøÏ ∏ﬁ¿Œ «⁄µÈ ªË¡¶ æ»«‘.
+	if(_bClientApp == FALSE)
+	{
+		if( _hwndMain != NULL )
+		{
+			// destroy it
+			DestroyWindow( _hwndMain );
+			_hwndMain = NULL;
+		}
 	}
 }
+
 
 // ----------------------------------------------------------------------------
 // Name : CloseMainWindow()
@@ -1025,26 +1122,45 @@ static void CloseMainWindow(void)
 // ----------------------------------------------------------------------------
 static void OpenMainWindowFullScreen( PIX pixSizeI, PIX pixSizeJ )
 {
-	ASSERT( _hwndMain == NULL );
-	// create a window, invisible initially
-	_hwndMain = CreateWindowEx( WS_EX_TOPMOST | WS_EX_APPWINDOW,
-								"Nksp",
-								"",   // title
-								WS_POPUP,
-								0, 0,
-								100, 100,  // window size
-								NULL,
-								NULL,
-								_hInstanceMain,
-								NULL );
-	// didn't make it?
-	if( _hwndMain == NULL ) FatalError( TRANS( "Cannot open main window!" ) );
-	SE_UpdateWindowHandle( _hwndMain );
+	//	±Ëøµ»Ø : ≈¨∂Û¿Ãæ∆Æ æ∆¥— ∞‹øÏø°∏∏. ª˝º∫.
+	if(_bClientApp == FALSE)
+	{
+		ASSERT( _hwndMain == NULL );
+		// create a window, invisible initially
+		_hwndMain = CreateWindowEx(	WS_EX_TOPMOST | WS_EX_APPWINDOW,
+									"Nksp",
+									"",   // title
+									WS_POPUP,
+									0, 0,
+									pixSizeI, pixSizeJ,  // window size
+									NULL,
+									NULL,
+									_hInstanceMain,
+									NULL );
+		// didn't make it?
+		if( _hwndMain == NULL ) FatalError( TRANS( "Cannot open main window!" ) );
+	}
+	else
+	{
+		//	±Ëøµ»Ø : ¿©µµøÏ ∏ﬁ¿Œ «⁄µÈ √÷ªÛ¿« ∆Àæ˜ ¿©µµøÏ º≥¡§.
+		SetWindowLong(_hwndMain,GWL_EXSTYLE,WS_EX_TOPMOST | WS_EX_APPWINDOW);
+		SetWindowLong(_hwndMain,GWL_STYLE,WS_POPUP);
+	}
+
+	_hDlgWeb = CreateDialog(_hInstanceMain, MAKEINTRESOURCE(g_web.GetWebDlgID()), _hwndMain, g_web.GetWebDlgCallBack());
+
+	if( _hDlgWeb==NULL) FatalError(TRANS("Cannot open Web Dialog!"));
+
+	SE_UpdateWindowHandle( _hwndMain, _hDlgWeb);
 
 	// set window title and show it
-	sprintf( achWindowTitle, TRANS( "Loading..." ) );
-	SetWindowText( _hwndMain, achWindowTitle );
-	ShowWindow( _hwndMain, SW_SHOWNORMAL );
+	// ITS # 6311 : ∑ØΩ√æ∆ Ω∫∆Æ∏µ ∫Ø∞Ê ø‰√ª. [12/15/2011 rumist]
+#if defined (G_RUSSIA)
+	swprintf( wchWindowTitle, L"¨©¨—¨‘¨‚¨Â¨Ÿ¨‹¨—" );
+#else
+	swprintf( wchWindowTitle, L"Loading..." );
+#endif
+	SetWindowTextW( _hwndMain, wchWindowTitle );
 }
 
 // ----------------------------------------------------------------------------
@@ -1053,37 +1169,76 @@ static void OpenMainWindowFullScreen( PIX pixSizeI, PIX pixSizeJ )
 // ----------------------------------------------------------------------------
 static void ResetMainWindowNormal(void)
 {
-	ShowWindow( _hwndMain, SW_HIDE );
-	// add edges and title bar to window size so client area would have size that we requested
-	RECT	rWindow, rClient;
-	GetClientRect( _hwndMain, &rClient );
-	GetWindowRect( _hwndMain, &rWindow );
-	const PIX	pixWidth  = _pixLastSizeI + (rWindow.right-rWindow.left) - (rClient.right-rClient.left);
-	const PIX	pixHeight = _pixLastSizeJ + (rWindow.bottom-rWindow.top) - (rClient.bottom-rClient.top);
+// screen change bug in fullscreen. [9/27/2011 rumist]
+	if (sam_bFullScreenActive)
+	{
+		HDC hDC = GetDC( GetDesktopWindow() );
+		int iDesktopBitsPixel = GetDeviceCaps( hDC, BITSPIXEL );
+		int iDesktopWidth = GetDeviceCaps( hDC, HORZRES );
+		int iDesktopHeight = GetDeviceCaps( hDC, VERTRES );
+		ReleaseDC( GetDesktopWindow(), hDC );
+
+		DEVMODE dm;
+		memset( &dm, 0, sizeof( dm ) );
+		dm.dmSize = sizeof( dm );
+		dm.dmPelsWidth  = _pixLastSizeI;
+		dm.dmPelsHeight = _pixLastSizeJ;
+		dm.dmFields     = DM_PELSWIDTH | DM_PELSHEIGHT;
+		ChangeDisplaySettings( &dm, CDS_FULLSCREEN );
+	}
+
 	int	pixPosX,pixPosY;
-	if( cmd_iWindowLeft > 0 )
-	{    
-		pixPosX = cmd_iWindowLeft > (::GetSystemMetrics(SM_CXSCREEN)) ? (::GetSystemMetrics(SM_CXSCREEN)) : cmd_iWindowLeft;
-		cmd_iWindowLeft = -1;
-	}
-	else
+	PIX	pixWidth, pixHeight;
+
+	if( sam_bFullScreenActive )
 	{
-		pixPosX = (::GetSystemMetrics(SM_CXSCREEN) - pixWidth ) / 2;
+		pixPosX = 0;
+		pixPosY = 0;
+		pixWidth = _pixLastSizeI;
+		pixHeight = _pixLastSizeJ;
 	}
-	if( cmd_iWindowTop > 0 )
+	else 
 	{
-		pixPosY = cmd_iWindowTop > (::GetSystemMetrics(SM_CYSCREEN)) ? (::GetSystemMetrics(SM_CYSCREEN)) : cmd_iWindowTop;
-		cmd_iWindowTop = -1;
-	}
-	else
-	{
-		pixPosY = (::GetSystemMetrics(SM_CYSCREEN) - pixHeight ) / 2;
+		// add edges and title bar to window size so client area would have size that we requested
+		RECT	rWindow, rClient;
+		GetClientRect( _hwndMain, &rClient );
+		GetWindowRect( _hwndMain, &rWindow );
+		pixWidth  = _pixLastSizeI + (rWindow.right-rWindow.left) - (rClient.right-rClient.left);
+		pixHeight = _pixLastSizeJ + (rWindow.bottom-rWindow.top) - (rClient.bottom-rClient.top);
+			
+		if( cmd_iWindowLeft > 0 )
+		{    
+			pixPosX = cmd_iWindowLeft > (::GetSystemMetrics(SM_CXSCREEN)) ? (::GetSystemMetrics(SM_CXSCREEN)) : cmd_iWindowLeft;
+			cmd_iWindowLeft = -1;
+		}
+		else
+		{
+			pixPosX = (::GetSystemMetrics(SM_CXSCREEN) - pixWidth ) / 2;
+		}
+		if( cmd_iWindowTop > 0 )
+		{
+			pixPosY = cmd_iWindowTop > (::GetSystemMetrics(SM_CYSCREEN)) ? (::GetSystemMetrics(SM_CYSCREEN)) : cmd_iWindowTop;
+			cmd_iWindowTop = -1;
+		}
+		else
+		{
+			pixPosY = (::GetSystemMetrics(SM_CYSCREEN) - pixHeight ) / 2;
+		}
 	}
 
 	// set new window size and show it
-	sprintf( achWindowTitle, TRANS( "Loading..." ) );
-	SetWindowPos( _hwndMain, NULL, pixPosX,pixPosY, pixWidth,pixHeight, SWP_NOZORDER );
-	ShowWindow( _hwndMain, SW_SHOW );
+	// ITS # 6311 : ∑ØΩ√æ∆ Ω∫∆Æ∏µ ∫Ø∞Ê ø‰√ª. [12/15/2011 rumist]
+#if defined (G_RUSSIA)
+	swprintf( wchWindowTitle, L"¨©¨—¨‘¨‚¨Â¨Ÿ¨‹¨—" );
+#else
+	swprintf( wchWindowTitle, L"Loading..." );
+#endif
+
+	SetWindowTextW( _hwndMain, wchWindowTitle );
+	if (sam_bFullScreenActive)
+		SetWindowPos( _hwndMain, HWND_TOP, pixPosX,pixPosY, pixWidth,pixHeight, SWP_NOZORDER);
+	else
+		SetWindowPos(_hwndMain, HWND_NOTOPMOST, pixPosX,pixPosY, pixWidth,pixHeight, SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 }
 
 // ----------------------------------------------------------------------------
@@ -1092,29 +1247,83 @@ static void ResetMainWindowNormal(void)
 // ----------------------------------------------------------------------------
 static void OpenMainWindowNormal( PIX pixSizeI, PIX pixSizeJ )
 {
-	ASSERT( _hwndMain == NULL );
-
-	// create a window, invisible initially
-	_hwndMain = CreateWindowEx( WS_EX_APPWINDOW,
-								"Nksp",
-								"",   // title
-								WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
-								10, 10,
-								pixSizeI, pixSizeJ,  // window size
-								NULL,
-								NULL,
-								_hInstanceMain,
-								NULL );
-	// didn't make it?
-	if( _hwndMain == NULL ) FatalError( TRANS( "Cannot open main window!" ) );
-	SE_UpdateWindowHandle( _hwndMain );
-
-	// set window title
-	sprintf( achWindowTitle, TRANS( "Loading..." ) );
-	SetWindowText( _hwndMain, achWindowTitle );
 	_pixLastSizeI = pixSizeI;
 	_pixLastSizeJ = pixSizeJ;
-	ResetMainWindowNormal();
+
+	//	±Ëøµ»Ø : ≈¨∂Û¿ÃæÓ∆Æ¿« ∞ÊøÏø°¥¬ ¿©µµøÏ ª˝º∫ æ»«‘.
+	if(_bClientApp == FALSE)
+	{
+		ASSERT( _hwndMain == NULL );
+	
+		if (sam_bFullScreenActive)
+		{
+			// create a window, invisible initially
+			_hwndMain = CreateWindowEx(
+				WS_EX_TOPMOST | WS_EX_APPWINDOW,
+				"Nksp",
+				"",   // title
+				WS_POPUP,//WS_OVERLAPPED|WS_CAPTION|WS_MINIMIZEBOX|WS_SYSMENU,
+				10,10,
+				100,100,  // window size
+				NULL,
+				NULL,
+				_hInstanceMain,
+				NULL);
+		}
+		else
+		{
+			// create a window, invisible initially
+			_hwndMain = CreateWindowEx(
+				WS_EX_APPWINDOW,
+				"Nksp",
+				"",   // title
+				WS_OVERLAPPED|WS_CAPTION|WS_MINIMIZEBOX|WS_SYSMENU,
+				10,10,
+				100,100,  // window size
+				NULL,
+				NULL,
+				_hInstanceMain,
+				NULL);
+		}
+
+		// didn't make it?
+		if( _hwndMain == NULL ) FatalError( TRANS( "Cannot open main window!" ) );
+	}
+	else
+	{
+		ShowWindow(_hwndMain, SW_HIDE);
+		//	±Ëøµ»Ø : ∏ﬁ¿Œ ¿©µµøÏ Ω∫≈∏¿œ∏∏ ∫Ø∞Ê.
+		if (sam_bFullScreenActive)
+		{
+			//	«Æ∏µÂ
+			SetWindowLong(_hwndMain,GWL_EXSTYLE,WS_EX_TOPMOST | WS_EX_APPWINDOW);
+			SetWindowLong(_hwndMain,GWL_STYLE,WS_POPUP);
+		}
+		else
+		{
+			//	√¢∏µÂ
+			SetWindowLong(_hwndMain,GWL_EXSTYLE,WS_EX_APPWINDOW);
+			SetWindowLong(_hwndMain,GWL_STYLE, (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX));
+		}
+	}
+
+	_hDlgWeb = CreateDialog(_hInstanceMain, MAKEINTRESOURCE(g_web.GetWebDlgID()), _hwndMain, g_web.GetWebDlgCallBack());
+
+	if( _hDlgWeb==NULL) FatalError(TRANS("Cannot open Web Dialog!"));
+
+
+	SE_UpdateWindowHandle( _hwndMain, _hDlgWeb);
+
+	// set window title
+	// ITS # 6311 : ∑ØΩ√æ∆ Ω∫∆Æ∏µ ∫Ø∞Ê ø‰√ª. [12/15/2011 rumist]
+#if defined (G_RUSSIA)
+	swprintf( wchWindowTitle, L"¨©¨—¨‘¨‚¨Â¨Ÿ¨‹¨—" );
+#else
+	swprintf( wchWindowTitle, L"Loading..." );
+#endif
+	SetWindowTextW( _hwndMain, wchWindowTitle );
+	//ResetMainWindowNormal();
+	CUIManager::getSingleton()->DestroyRenderTarget();
 }
 
 // ----------------------------------------------------------------------------
@@ -1129,9 +1338,11 @@ BOOL TryToSetDisplayMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI,
 
 	// mark to start ignoring window size/position messages until settled down
 	_bWindowChanging = TRUE;
+	// remember new settings
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
 	// destroy canvas if existing
-	_pUIMgr->GetGame()->DisableLoadingHook();
 	if( _pvpViewPortMain != NULL )
 	{
 		_pGfx->DestroyWindowCanvas( _pvpViewPortMain );
@@ -1141,14 +1352,38 @@ BOOL TryToSetDisplayMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI,
 
 	// close the application window
 	CloseMainWindow();
+	extern void FinalizeShaders(void);
+	FinalizeShaders();	// Effect shader handle ªË¡¶
+
+	if (bFullScreenMode && !sam_bFullScreenActive)
+	{
+		DEVMODE dm;
+		memset( &dm, 0, sizeof( dm ) );
+		dm.dmSize = sizeof( dm );
+		dm.dmPelsWidth  = pixSizeI;
+		dm.dmPelsHeight = pixSizeJ;
+		dm.dmFields     = DM_PELSWIDTH | DM_PELSHEIGHT;
+		ChangeDisplaySettings( &dm, CDS_FULLSCREEN );
+	}
+	else if (!bFullScreenMode && sam_bFullScreenActive)
+	{
+		//ChangeDisplaySettings(&_pGfx->gl_devmode, CDS_RESET);
+		ChangeDisplaySettings(NULL, 0);
+	}
+
+	sam_bFullScreenActive = (bFullScreenMode==FULLSCREEN_MODE)?FULLSCREEN_MODE:OLD_WINDOW_MODE;
 
 	// try to set new display mode
 	BOOL bSuccess;
-	if( bFullScreenMode) {
+
+	if( bFullScreenMode) 
+	{
 		if( eGfxAPI==GAT_D3D) OpenMainWindowFullScreen( pixSizeI, pixSizeJ);
 		bSuccess = _pGfx->SetDisplayMode( eGfxAPI, iAdapter, pixSizeI, pixSizeJ, eColorDepth);
 		if( bSuccess && eGfxAPI==GAT_OGL) OpenMainWindowFullScreen( pixSizeI, pixSizeJ);
-	} else {
+	} 
+	else 
+	{
 		if( eGfxAPI==GAT_D3D) OpenMainWindowNormal( pixSizeI, pixSizeJ);
 		bSuccess = _pGfx->ResetDisplayMode( eGfxAPI);
 		if( bSuccess && eGfxAPI==GAT_OGL) OpenMainWindowNormal( pixSizeI, pixSizeJ);
@@ -1164,46 +1399,28 @@ BOOL TryToSetDisplayMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI,
 
 		// erase context of both buffers (for the sake of wide-screen)
 		_pdpMain = _pdpNormalMain;
-		if( _pdpMain!=NULL && _pdpMain->Lock()) {
-			_pdpMain->Fill(C_BLACK|CT_OPAQUE);
-			_pdpMain->Unlock();
-			_pvpViewPortMain->SwapBuffers();
-			_pdpMain->Lock();
-			_pdpMain->Fill(C_BLACK|CT_OPAQUE);
-			_pdpMain->Unlock();
-			_pvpViewPortMain->SwapBuffers();
-		}
+   		if( _pdpMain!=NULL && _pdpMain->Lock()) {
+   			_pdpMain->Fill(C_BLACK|CT_OPAQUE);
+   			_pdpMain->Unlock();
+   			_pvpViewPortMain->SwapBuffers();
+   			_pdpMain->Lock();
+   			_pdpMain->Fill(C_BLACK|CT_OPAQUE);
+   			_pdpMain->Unlock();
+   			_pvpViewPortMain->SwapBuffers();
+  		}
 
-		// lets try some wide screen screaming :)
-		const PIX pixYBegAdj = _pdpMain->GetHeight() * 21/24;
-		const PIX pixYEndAdj = _pdpMain->GetHeight() * 3/24;
-		const PIX pixXEnd    = _pdpMain->GetWidth();
-		//if(_pdpWideScreenMain) delete _pdpWideScreenMain;
-		//_pdpWideScreenMain = new CDrawPort( _pdpMain, PIXaabbox2D( PIX2D(0,pixYBegAdj), PIX2D(pixXEnd, pixYEndAdj)));
-		//_pdpWideScreenMain->dp_fWideAdjustment = 9.0f / 12.0f;
-		//if( sam_bWideScreen ) _pdpMain = _pdpWideScreenMain;
-
-		// initial screen fill and swap, just to get context running
-		BOOL bSuccess = FALSE;
-		if( _pdpMain!=NULL && _pdpMain->Lock()) 
-		{
-			//pdp->Fill( LCDGetColor( C_dGREEN|CT_OPAQUE, "bcg fill"));
-			_pdpMain->Fill( C_BLACK|CT_OPAQUE);
-			_pdpMain->Unlock();
-			_pvpViewPortMain->SwapBuffers();
-			bSuccess = TRUE;
-		}
-		_pUIMgr->GetGame()->EnableLoadingHook(_pdpMain);
+		// Win7 µ‡æÛ ∏¥œ≈Õ »Ø∞Êø°º≠ 
+		// ¿¸√º»≠∏È ∫Ø∞Ê Ω√ º≠∫Í ∏¥œ≈Õø°º≠ ¿¸√º »≠∏È¿Ã «Æ∏∞¥Ÿ.
+		SetFocus(_hwndMain);
 
 		// if the mode is not working, or is not accelerated
-		if( !bSuccess || !_pGfx->IsCurrentModeAccelerated())
+		if( !_pGfx->IsCurrentModeAccelerated() )
 		{ // report error
 #ifdef _DEBUG
 			CPrintF( TRANS("This mode does not support hardware acceleration.\n"));
 #endif
 			// destroy canvas if existing
 			if( _pvpViewPortMain!=NULL) {
-				_pUIMgr->GetGame()->DisableLoadingHook();
  				_pGfx->DestroyWindowCanvas( _pvpViewPortMain);
 				_pvpViewPortMain = NULL;
 				_pdpNormalMain = NULL;
@@ -1220,41 +1437,40 @@ BOOL TryToSetDisplayMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI,
 			HRESULT	hrDXT1 = _pGfx->gl_pD3D->CheckDeviceFormat( iAdapter,
 																D3DDEVTYPE_HAL,
 																_pGfx->gl_d3dColorFormat,
-									                            0,
+																0,
 																D3DRTYPE_TEXTURE,
 																D3DFMT_DXT1 );
 			HRESULT	hrDXT3 = _pGfx->gl_pD3D->CheckDeviceFormat( iAdapter,
 																D3DDEVTYPE_HAL,
 																_pGfx->gl_d3dColorFormat,
-									                            0,
+																0,
 																D3DRTYPE_TEXTURE,
 																D3DFMT_DXT3 );
 			HRESULT	hrDXT5 = _pGfx->gl_pD3D->CheckDeviceFormat( iAdapter,
 																D3DDEVTYPE_HAL,
 																_pGfx->gl_d3dColorFormat,
-									                            0,
+																0,
 																D3DRTYPE_TEXTURE,
 																D3DFMT_DXT5 );
 
 			_pGfx->gl_bCompressedTexture = SUCCEEDED( hrDXT1 ) && SUCCEEDED( hrDXT3 ) && SUCCEEDED( hrDXT5 );
 		}
 
-		// remember new settings
-		sam_bFullScreenActive = (bFullScreenMode==FULLSCREEN_MODE)?FULLSCREEN_MODE:OLD_WINDOW_MODE;
-		
 		sam_iScreenSizeI = pixSizeI;
 		sam_iScreenSizeJ = pixSizeJ;
 		sam_iDisplayDepth = eColorDepth;
 		sam_iDisplayAdapter = iAdapter;
 		sam_iGfxAPI = eGfxAPI;
 
-		// Adjust position of UIs
-		_pUIMgr->AdjustUIPos( _pdpMain );
+		// Date : 2005-09-22(ø¿»ƒ 8:26:30), By Lee Ki-hwan
+		// ≈∏¿Ã∆≤ πŸ ¿Á º≥¡¥ 
+		pUIManager->SetTitleName( sam_bFullScreenActive, sam_iScreenSizeI, sam_iScreenSizeJ );
 
-		// Date : 2005-09-22(Ïò§ÌõÑ 8:26:30), By Lee Ki-hwan
-		// ÌÉÄÏù¥ÌãÄ Î∞î Ïû¨ ÏÑ§Ï°ç 
-		_pUIMgr->SetTitleName( sam_bFullScreenActive, sam_iScreenSizeI, sam_iScreenSizeJ );
-		
+		pUIManager->DestroyRenderTarget();
+		pUIManager->InitRenderTarget();
+
+		extern void InitializeShaders(void);
+		InitializeShaders(); // Effect shader handle º≥¡§			
 		// report success
 		return TRUE;
 	}
@@ -1268,6 +1484,31 @@ BOOL TryToSetDisplayMode( enum GfxAPIType eGfxAPI, INDEX iAdapter, PIX pixSizeI,
 	}
 }
 
+#ifdef KALYDO
+const BOOL CUIOption::ToggleFullscreenMode(const BOOL _bEnableFullScreenMode /* = FALSE  */)
+{
+	// already apply this option.
+	if( _bEnableFullScreenMode == m_bFullscreen )
+	{
+		return FALSE;
+	}	
+
+	if (!m_bFullscreen)
+	{
+		m_cbtnFullscreen.SetCheck(TRUE);
+		m_bFullscreen = TRUE;
+	}
+	else
+	{
+		// We need to remember the fullscreen state
+		m_cbtnFullscreen.SetCheck(FALSE);
+		m_bFullscreen = FALSE;
+	}
+
+	return TRUE;
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // Name : ApplyOption()
 // Desc :
@@ -1279,14 +1520,13 @@ void CUIOption::ApplyOption()
 	m_bAutoAttack = m_cbtnAutoAttack.IsChecked();
 	m_nShowName = m_slbShowName.GetCurPos();
 	m_nShowNameItem = m_slbShowNameItem.GetCurPos();
-#ifdef HELP_SYSTEM_1
-	m_iShowHelp1Icon = (INDEX)m_cbtnHelp1Icon.IsChecked();    // wooss 070401 WSS_HELP_SYSTEM_1
-#endif
 
-#ifdef OPTION_REJECT_PARTY_AND_EXCHANGE
+	m_iShowHelp1Icon = (INDEX)m_cbtnHelp1Icon.IsChecked();    // wooss 070401 WSS_HELP_SYSTEM_1
+
 	m_bRejectExchange = m_cbtnRejectExchange.IsChecked();		// [7/9/2009 rumist] rejection 
 	m_bRejectParty = m_cbtnRejectParty.IsChecked();	
-#endif
+
+	m_bQuestBookOpen	= m_cbtnQuestBookOpen.IsChecked();
 
 	m_nBrightness = m_slbBrightness.GetCurPos();
 	m_nContrast = m_slbContrast.GetCurPos();
@@ -1304,11 +1544,11 @@ void CUIOption::ApplyOption()
 
 	// If resolution is changed or window state is toggled
 	PIX	pixDepth = 0;
-	if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DD_16BIT )
+	if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DISPD_16BIT )
 		pixDepth = 16;
-	else if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DD_32BIT )
+	else if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DISPD_32BIT )
 		pixDepth = 32;
-	else if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DD_DEFAULT )
+	else if( _pGfx->gl_dmCurrentDisplayMode.dm_ddDepth == DISPD_DEFAULT )
 	{
 		if( _pGfx->gl_d3dColorFormat == D3DFMT_X8R8G8B8 ||
 			_pGfx->gl_d3dColorFormat == D3DFMT_A8R8G8B8 )
@@ -1320,7 +1560,11 @@ void CUIOption::ApplyOption()
 			_pGfx->gl_d3dColorFormat == D3DFMT_A4R4G4B4 )
 			pixDepth = 16;
 	}
-
+#ifdef KALYDO
+	// ∏∏æ‡ Ω∫≈©∏∞¿Ã ∫Ø∞Êµ«æ˙¿∏∏È æ∆∑° ∑Á∆æ¿∫ øÏ»∏«—¥Ÿ.
+	if( ToggleFullscreenMode() )
+		return;
+#endif
 	int	iRes = m_cmbResolution.GetCurSel();
 	if( iRes >= 0 )
 	{
@@ -1330,26 +1574,31 @@ void CUIOption::ApplyOption()
 			( IsFullScreen( sam_bFullScreenActive ) && m_vecPixDepth[iRes] != pixDepth ) ||
 			m_cbtnFullscreen.IsChecked() != IsFullScreen( sam_bFullScreenActive ) )
 		{
-			DisplayDepth	eDD = DD_DEFAULT;
+			DisplayDepth	eDD = DISPD_DEFAULT;
 			if( m_cbtnFullscreen.IsChecked() )
 			{
 				if( m_vecPixDepth[iRes] == 0 )
-					eDD = DD_DEFAULT;
+					eDD = DISPD_DEFAULT;
 				else if( m_vecPixDepth[iRes] == 16 )
-					eDD = DD_16BIT;
+					eDD = DISPD_16BIT;
 				else if( m_vecPixDepth[iRes] == 32 )
-					eDD = DD_32BIT;
+					eDD = DISPD_32BIT;
 			}
 
 			TryToSetDisplayMode( (GfxAPIType)sam_iGfxAPI, sam_iDisplayAdapter,
 									m_vecPixWidth[iRes], m_vecPixHeight[iRes], eDD, m_cbtnFullscreen.IsChecked() );
-
 			CreateResolutionList();
+
+			// «ÿªÛµµ∞° ∫Ø∞Êµ«æ˙¥Ÿ∏È, UIManager ≈©±‚∏¶ ∞ªΩ≈«ÿæﬂ «—¥Ÿ.
+			SE_Get_UIManagerPtr()->InitPos(0, 0, m_vecPixWidth[iRes], m_vecPixHeight[iRes]);
+			// Adjust position of UIs
+			SE_Get_UIManagerPtr()->AdjustUIPos( _pdpMain );
 		}
 	}
+
 	// fame opn option
-	BOOL bFameOpen = m_cbtnFameOpen.IsChecked();
-	//TEMP:Î™ÖÏÑ±Í≥µÍ∞ú
+//	BOOL bFameOpen = m_cbtnFameOpen.IsChecked();
+	//TEMP:∏Ìº∫∞¯∞≥
 /*
 	if(_pNetwork->MyCharacterInfo.bFameOpen != bFameOpen)
 	{
@@ -1367,7 +1616,7 @@ void CUIOption::ApplyOption()
 
 	// wooss 050809
 	// move, summon permission check + // Item plus effect
-	// Í∏∞Ï°¥ sbItemEffectOptionÏùÑ ÎπÑÌä∏ Îã®ÏúÑÎ°ú Ï≤òÎ¶¨
+	// ±‚¡∏ sbItemEffectOption¿ª ∫Ò∆Æ ¥‹¿ß∑Œ √≥∏Æ
 	// 0x00		Effect	x	Warp	o
 	// 0x01				o			o
 	// 0x10				x			x
@@ -1380,12 +1629,18 @@ void CUIOption::ApplyOption()
 	if(!bMove) tv_byte |= (0x01 << 1); 	
 	
 	_pNetwork->ItemPlusEffectReq( tv_byte );
-	
+		
 	// UI_REFORM :Su-won
 	g_bSlaveNoTarget =m_cmbTargetDest.GetCurSel();
 
 	// Set invisible
-	_pUIMgr->RearrangeOrder( UI_OPTION, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_OPTION, FALSE );
+}
+
+void CUIOption::ResetDisplay(void)
+{
+	TryToSetDisplayMode( (GfxAPIType)sam_iGfxAPI, sam_iDisplayAdapter,
+							sam_iScreenSizeI, sam_iScreenSizeJ, (enum DisplayDepth)sam_iDisplayDepth, IsFullScreen( sam_bFullScreenActive) );
 }
 
 // ----------------------------------------------------------------------------
@@ -1394,33 +1649,38 @@ void CUIOption::ApplyOption()
 // ----------------------------------------------------------------------------
 void CUIOption::CancelOption()
 {
-	g_iEnterChat = m_bEnterChat ? 1 : 0;
+	g_iEnterChat = m_bEnterChat;
 	g_iAutoAttack = m_bAutoAttack ? 1 : 0;
 	g_iShowName = m_nShowName;
 	g_iShowNameItem = m_nShowNameItem;
-#ifdef HELP_SYSTEM_1
+
 	g_iShowHelp1Icon = m_iShowHelp1Icon ? 1 : 0;			// wooss 070401 WSS_HELP_SYSTEM_1
-#endif
+
 	g_iRejectExchange = m_bRejectExchange ? 1 : 0;					// [7/9/2009 rumist] rejection 
 	g_iRejectParty	= m_bRejectParty ? 1 : 0;
+
+	g_iQuestBookOpen	= m_bQuestBookOpen ? 1 : 0;
 
 	gfx_fBrightness = m_afBrightness[m_nBrightness];
 	gfx_fContrast = m_afContrast[m_nContrast];
 
 	gap_fTextureLODBias = m_afTextureQuality[m_nTextureQuality];
 	g_iShadowDetail = m_nShadowQuality;
-	ter_fLODMul = ska_fLODMul = mdl_fLODMul = m_afViewTerrain[m_nViewTerrain];
+
+	float fScale = CZoneInfo::getSingleton()->GetTerMul(g_slZone);
+
+	ter_fLODMul = ska_fLODMul = mdl_fLODMul = (m_afViewTerrain[m_nViewTerrain] * fScale);
 	g_iReflectionDetail = m_nReflectionQuality;
 	g_iUseBloom = m_nFiltering;
 	g_bRenderDecoration = m_bBackground ? 1 : 0;
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(5th Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(5th Closed beta)(0.2)
 	g_fMscVol = m_nBGMVolume / 100.0f;
 	g_fSndVol = m_nFXVolume / 100.0f;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(5th Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(5th Closed beta)(0.2)
 
 	// Set invisible
-	_pUIMgr->RearrangeOrder( UI_OPTION, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_OPTION, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -1429,7 +1689,8 @@ void CUIOption::CancelOption()
 // ----------------------------------------------------------------------------
 void CUIOption::InitInterface()
 {
-	_pUIMgr->ResetUIPos( _pdpMain );
+	CUIManager::getSingleton()->ResetUIPos( _pdpMain );
+	CUIManager::getSingleton()->ResetUISavePos( _pdpMain );
 }
 
 // ----------------------------------------------------------------------------
@@ -1438,25 +1699,27 @@ void CUIOption::InitInterface()
 // ----------------------------------------------------------------------------
 void CUIOption::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set option texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX;
 	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackground.U0, m_rtBackground.V0,
 										m_rtBackground.U1, m_rtBackground.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX +m_rcInnerBackground.Left, m_nPosY +m_rcInnerBackground.Top, 
+	pDrawPort->AddTexture( m_nPosX +m_rcInnerBackground.Left, m_nPosY +m_rcInnerBackground.Top, 
 										m_nPosX +m_rcInnerBackground.Right, m_nPosY +m_rcInnerBackground.Bottom,
 										m_rtInnerBackground[m_nCurOptionTab].U0, m_rtInnerBackground[m_nCurOptionTab].V0,
 										m_rtInnerBackground[m_nCurOptionTab].U1, m_rtInnerBackground[m_nCurOptionTab].V1,
 										0xFFFFFFFF );
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->FlushRenderingQueue();
+		
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 
 	// Option tab
 	for( int iTab = 0; iTab < OPTIONTAB_TOTAL; iTab++ )
@@ -1465,20 +1728,20 @@ void CUIOption::Render()
 		if( iTab == m_nCurOptionTab )
 		{
 			/***
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOptionTab.Left, m_nPosY + nTabPosY,
+			pDrawPort->AddTexture( m_nPosX + m_rcOptionTab.Left, m_nPosY + nTabPosY,
 												m_nPosX + m_rcOptionTab.Right, m_nPosY + nTabPosY + OPTION_TAB_HEIGHT,
 												m_rtSelOptionTab[iTab].U0, m_rtSelOptionTab[iTab].V0,
 												m_rtSelOptionTab[iTab].U1, m_rtSelOptionTab[iTab].V1,
 												0xFFFFFFFF );
 			***/
 
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOptionTab.Left, m_nPosY + nTabPosY,
+			pDrawPort->AddTexture( m_nPosX + m_rcOptionTab.Left, m_nPosY + nTabPosY,
 												m_nPosX + m_rcOptionTab.Right, m_nPosY + nTabPosY + OPTION_TAB_HEIGHT,
 												m_rtSelOptionTabBackground.U0, m_rtSelOptionTabBackground.V0,
 												m_rtSelOptionTabBackground.U1, m_rtSelOptionTabBackground.V1,
 												0xFFFFFFFF );
-			
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOptionTab.Left +6, m_nPosY + nTabPosY +18,
+				
+			pDrawPort->AddTexture( m_nPosX + m_rcOptionTab.Left +6, m_nPosY + nTabPosY +18,
 												m_nPosX + m_rcOptionTab.Right -2, m_nPosY + nTabPosY + OPTION_TAB_HEIGHT -19,
 												m_rtSelOptionTab[iTab].U0, m_rtSelOptionTab[iTab].V0,
 												m_rtSelOptionTab[iTab].U1, m_rtSelOptionTab[iTab].V1,
@@ -1487,27 +1750,27 @@ void CUIOption::Render()
 		else
 		{
 			/***
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOptionTab.Left, m_nPosY + nTabPosY,
+			pDrawPort->AddTexture( m_nPosX + m_rcOptionTab.Left, m_nPosY + nTabPosY,
 												m_nPosX + m_rcOptionTab.Right, m_nPosY + nTabPosY + OPTION_TAB_HEIGHT,
 												m_rtOptionTab[iTab].U0, m_rtOptionTab[iTab].V0,
 												m_rtOptionTab[iTab].U1, m_rtOptionTab[iTab].V1,
 												0xFFFFFFFF );
 			***/
 
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOptionTab.Left, m_nPosY + nTabPosY,
+			pDrawPort->AddTexture( m_nPosX + m_rcOptionTab.Left, m_nPosY + nTabPosY,
 												m_nPosX + m_rcOptionTab.Right, m_nPosY + nTabPosY + OPTION_TAB_HEIGHT,
 												m_rtOptionTabBackground.U0, m_rtOptionTabBackground.V0,
 												m_rtOptionTabBackground.U1, m_rtOptionTabBackground.V1,
 												0xFFFFFFFF );			
 
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOptionTab.Left +6, m_nPosY + nTabPosY +18,
+			pDrawPort->AddTexture( m_nPosX + m_rcOptionTab.Left +6, m_nPosY + nTabPosY +18,
 												m_nPosX + m_rcOptionTab.Right -2, m_nPosY + nTabPosY + OPTION_TAB_HEIGHT -19,
 												m_rtOptionTab[iTab].U0, m_rtOptionTab[iTab].V0,
 												m_rtOptionTab[iTab].U1, m_rtOptionTab[iTab].V1,
 												0xFFFFFFFF );
 		}
 	}
-	
+		
 	// Close button
 	m_btnClose.Render();
 
@@ -1534,26 +1797,23 @@ void CUIOption::Render()
 		m_cbtnAutoAttack.Render();
 
 		//fame open
-		m_cbtnFameOpen.Render();
+//		m_cbtnFameOpen.Render();
 
 		//wooss 050809
 		//MovePermit render
 		m_cbtnMovePermit.Render();
-#ifdef	HELP_SYSTEM_1
+
 		// wooss 070401 ----------->><<
 		// WSS_HELP_SYSYTEM_1
 		m_cbtnHelp1Icon.Render();
-#endif
+
 		// [7/9/2009 rumist] rejection. 
+		m_cbtnRejectExchange.Render();
+		m_cbtnRejectParty.Render();
 
-#ifdef OPTION_REJECT_PARTY_AND_EXCHANGE
-		if( m_cbtnRejectExchange.IsEnabled() )
-			m_cbtnRejectExchange.Render();
-		if( m_cbtnRejectParty.IsEnabled() )
-			m_cbtnRejectParty.Render();
-#endif
+		m_cbtnQuestBookOpen.Render();
 
-	//	if ( g_iCountry == KOREA  ) 03-14, Ïû†Í∏à Í∏∞Îä• Ìï¥Ï†ú
+	//	if ( g_iCountry == KOREA  ) 03-14, ¿·±› ±‚¥… «ÿ¡¶
 		//m_cmbItemPlusEffect.Render();			// Item plus effect
 
 		// Intializing interface button
@@ -1563,9 +1823,9 @@ void CUIOption::Render()
 	else if( m_nCurOptionTab == OPTIONTAB_DISPLAY )
 	{
 		// Fullscreen check button
-		// Date : 2005-01-15,   By Lee Ki-hwan : ÎåÄÎßåÎ°úÏª¨ÎùºÏù¥Ïßï
-		/* Date : 2005-04-08(Ïò§Ï†Ñ 9:50:11), By Lee Ki-hwan
-			MDO ÏöîÏ≤≠ÏúºÎ°ú Ï§ëÍµ≠ÎèÑ ÏúàÎèÑÏö∞ Î™®Îìú ÏßÄÏõê, ÎåÄÎßå Î≤ÑÏ†ÑÏùºÎïåÎßå Î†åÎçîÎßÅ
+		// Date : 2005-01-15,   By Lee Ki-hwan : ¥Î∏∏∑Œƒ√∂Û¿Ã¬°
+		/* Date : 2005-04-08(ø¿¿¸ 9:50:11), By Lee Ki-hwan
+			MDO ø‰√ª¿∏∑Œ ¡ﬂ±πµµ ¿©µµøÏ ∏µÂ ¡ˆø¯, ¥Î∏∏ πˆ¿¸¿œ∂ß∏∏ ∑ª¥ı∏µ
 		*/
 		//if ( g_iCountry != TAIWAN  ) 
 			m_cbtnFullscreen.Render();
@@ -1611,74 +1871,59 @@ void CUIOption::Render()
 	}
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in option
-	//_pUIMgr->GetDrawPort()->PutTextEx( _S( 196, "ÏòµÏÖò" ), m_nPosX + OPTION_TITLE_TEXT_OFFSETX,
+	//pDrawPort->PutTextEx( _S( 196, "ø…º«" ), m_nPosX + OPTION_TITLE_TEXT_OFFSETX,
 	//									m_nPosY + OPTION_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-
-#ifdef OPTION_REJECT_PARTY_AND_EXCHANGE
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 196, "ÏòµÏÖò" ),
+	pDrawPort->PutTextExCX( _S( 196, "ø…º«" ),
 												m_nPosX + OPTION_TITLE_TEXT_CX,
 												m_nPosY + OPTION_TITLE_TEXT_CY, 0xFFFFFFFF );
-#endif
 
 	// Game option
 	if( m_nCurOptionTab == OPTIONTAB_GAME )
 	{
-#ifndef OPTION_REJECT_PARTY_AND_EXCHANGE
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 197, "Í≤åÏûÑ" ),
-												m_nPosX + OPTION_TITLE2_TEXT_CX,
-												m_nPosY + OPTION_TITLE2_TEXT_SY, 0xE1B300FF );
-#else
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 197, "Í≤åÏûÑ" ),
+		pDrawPort->PutTextExCX( _S( 197, "∞‘¿”" ),
 												m_nPosX + OPTION_SUB_TITLE_TEXT_CX,
 												m_nPosY + OPTION_SUB_TITLE_TEXT_CY, 0xE1B300FF );
-#endif
 
 		nX = m_nPosX + OPTION_TEXT_SX;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 199, "Ï∫êÎ¶≠ÌÑ∞ Ïù¥Î¶Ñ ÌëúÏãú" ),
+		pDrawPort->PutTextEx( _S( 199, "ƒ≥∏Ø≈Õ ¿Ã∏ß «•Ω√" ),
 											//nX, m_nPosY + OPTION_SHOWNAME_SY, 0xF2F2F2FF );
 											nX, m_slbShowName.GetAbsPosY() -20, 0xF2F2F2FF );		
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 740, "ÏïÑÏù¥ÌÖú Ïù¥Î¶Ñ ÌëúÏãú" ),			
+		pDrawPort->PutTextEx( _S( 740, "æ∆¿Ã≈€ ¿Ã∏ß «•Ω√" ),			
 											//nX, m_nPosY + OPTION_SHOWNAME_ITEM_SY, 0xF2F2F2FF );
 											nX, m_slbShowNameItem.GetAbsPosY() -20, 0xF2F2F2FF );
-	//	if ( g_iCountry == KOREA  ) 03-14, Ïû†Í∏à Í∏∞Îä• Ìï¥Ï†ú
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1033, "ÏïÑÏù¥ÌÖú ÏóÖÍ∑∏Î†àÏù¥Îìú Ìö®Í≥º" ),			
+	//	if ( g_iCountry == KOREA  ) 03-14, ¿·±› ±‚¥… «ÿ¡¶
+		pDrawPort->PutTextEx( _S( 1033, "æ∆¿Ã≈€ æ˜±◊∑π¿ÃµÂ »ø∞˙" ),			
 											//nX, m_nPosY + OPTION_ITEMEFFECT_SY, 0xF2F2F2FF );
 											nX, m_cmbItemPlusEffect.GetAbsPosY() -20, 0xF2F2F2FF );
 
 		// UI_REFORM :Su-won
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(4165, "ÏÑ†ÌÉùÍ∞ÄÎä• ÎåÄÏÉÅ ÏÑ§Ï†ï" ),			
+		pDrawPort->PutTextEx( _S(4165, "º±≈√∞°¥… ¥ÎªÛ º≥¡§" ),			
 											//nX, m_nPosY + OPTION_TARGETDEST_SY, 0xF2F2F2FF );
 											nX, m_cmbTargetDest.GetAbsPosY() -20, 0xF2F2F2FF );
 
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 200, "Ïù∏ÌÑ∞ÌéòÏù¥Ïä§" ),
+		pDrawPort->PutTextEx( _S( 200, "¿Œ≈Õ∆‰¿ÃΩ∫" ),
 											//nX, m_nPosY + OPTION_INITINTERFACE_SY, 0xF2F2F2FF );
 											nX, m_btnInitInterface.GetAbsPosY(), 0xF2F2F2FF );
 	}
 	// Video option
 	else if( m_nCurOptionTab == OPTIONTAB_DISPLAY )
 	{
-#ifndef OPTION_REJECT_PARTY_AND_EXCHANGE
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 201, "ÎîîÏä§ÌîåÎ†àÏù¥" ),
-												m_nPosX + OPTION_TITLE2_TEXT_CX,
-												m_nPosY + OPTION_TITLE2_TEXT_SY, 0xE1B300FF );
-#else
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 201, "ÎîîÏä§ÌîåÎ†àÏù¥" ),
+		pDrawPort->PutTextExCX( _S( 201, "µΩ∫«√∑π¿Ã" ),
 												m_nPosX + OPTION_SUB_TITLE_TEXT_CX,
 												m_nPosY + OPTION_SUB_TITLE_TEXT_CY, 0xE1B300FF );
-#endif
 
 		nX = m_nPosX + OPTION_TEXT_SX;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 202, "Ìï¥ÏÉÅÎèÑ" ),
+		pDrawPort->PutTextEx( _S( 202, "«ÿªÛµµ" ),
 											//nX, m_nPosY + OPTION_RESOLUTION_SY, 0xF2F2F2FF );
 											nX, m_cmbResolution.GetAbsPosY() -20, 0xF2F2F2FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 203, "Î∞ùÍ∏∞" ),
+		pDrawPort->PutTextEx( _S( 203, "π‡±‚" ),
 											//nX, m_nPosY + OPTION_BRIGHTNESS_SY,
 											nX, m_slbBrightness.GetAbsPosY() -20,
 											IsFullScreen( sam_bFullScreenActive ) ? 0xF2F2F2FF : 0xAAAAAAFF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 204, "ÎåÄÎπÑ" ),
+		pDrawPort->PutTextEx( _S( 204, "¥Î∫Ò" ),
 											//nX, m_nPosY + OPTION_CONTRAST_SY,
 											nX, m_slbContrast.GetAbsPosY() -20 ,
 											IsFullScreen( sam_bFullScreenActive ) ? 0xF2F2F2FF : 0xAAAAAAFF );
@@ -1686,34 +1931,28 @@ void CUIOption::Render()
 	// Graphic option
 	else if( m_nCurOptionTab == OPTIONTAB_GRAPHIC )
 	{
-#ifdef OPTION_REJECT_PARTY_AND_EXCHANGE
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 741, "Í∑∏ÎûòÌîΩ" ),			
-												m_nPosX + OPTION_TITLE2_TEXT_CX,
-												m_nPosY + OPTION_TITLE2_TEXT_SY, 0xE1B300FF );
-#else
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 741, "Í∑∏ÎûòÌîΩ" ),			
+		pDrawPort->PutTextExCX( _S( 741, "±◊∑°«»" ),			
 												m_nPosX + OPTION_SUB_TITLE_TEXT_CX,
 												m_nPosY + OPTION_SUB_TITLE_TEXT_CY, 0xE1B300FF );
-#endif
 
 		nX = m_nPosX + OPTION_TEXT_SX;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 205, "ÌÖçÏä§Ï≥ê ÌÄÑÎ¶¨Ìã∞" ),
+		pDrawPort->PutTextEx( _S( 205, "≈ÿΩ∫√ƒ ƒ˜∏Æ∆º" ),
 											//nX, m_nPosY + OPTION_TEXTURE_SY, 0xF2F2F2FF );
 											nX, m_slbTexture.GetAbsPosY() -20, 0xF2F2F2FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 206, "Í∑∏Î¶ºÏûê ÌÄÑÎ¶¨Ìã∞" ),
+		pDrawPort->PutTextEx( _S( 206, "±◊∏≤¿⁄ ƒ˜∏Æ∆º" ),
 											//nX, m_nPosY + OPTION_SHADOW_SY, 0xF2F2F2FF );
 											nX, m_slbShadow.GetAbsPosY() -20, 0xF2F2F2FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 209, "Ï∫êÎ¶≠ÌÑ∞ ÌÄÑÎ¶¨Ìã∞" ),
+		pDrawPort->PutTextEx( _S( 209, "ƒ≥∏Ø≈Õ ƒ˜∏Æ∆º" ),
 											//nX, m_nPosY + OPTION_CHARACTER_SY, 0xAAAAAAFF );
 											nX, m_slbCharQuality.GetAbsPosY() -20, 0xAAAAAAFF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 208, "ÏãúÏïº-ÏßÄÌòï" ),
+		pDrawPort->PutTextEx( _S( 208, "Ω√æﬂ-¡ˆ«¸" ),
 											//nX, m_nPosY + OPTION_VIEWTERAIN_SY, 0xF2F2F2FF );
 											nX, m_slbViewTerrain.GetAbsPosY() -20, 0xF2F2F2FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 210, "Î∞òÏÇ¨ Ìö®Í≥º" ),
+		pDrawPort->PutTextEx( _S( 210, "π›ªÁ »ø∞˙" ),
 											//nX, m_nPosY + OPTION_REFLECTION_SY,
 											nX, m_slbReflection.GetAbsPosY() -20,
 											m_bPixelShader ? 0xF2F2F2FF : 0xAAAAAAFF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 211, "ÌïÑÌÑ∞ÎßÅ Ìö®Í≥º" ),
+		pDrawPort->PutTextEx( _S( 211, "« ≈Õ∏µ »ø∞˙" ),
 											//nX, m_nPosY + OPTION_FILTERING_SY,
 											nX, m_slbFiltering.GetAbsPosY() -20,
 											m_bPixelShader ? 0xF2F2F2FF : 0xAAAAAAFF );
@@ -1721,31 +1960,25 @@ void CUIOption::Render()
 	// Audio option
 	else
 	{
-#ifndef OPTION_REJECT_PARTY_AND_EXCHANGE
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 212, "Ïò§ÎîîÏò§" ),
-												m_nPosX + OPTION_TITLE2_TEXT_CX,
-												m_nPosY + OPTION_TITLE2_TEXT_SY, 0xE1B300FF );
-#else
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 212, "Ïò§ÎîîÏò§" ),
+		pDrawPort->PutTextExCX( _S( 212, "ø¿µø¿" ),
 												m_nPosX + OPTION_SUB_TITLE_TEXT_CX,
 												m_nPosY + OPTION_SUB_TITLE_TEXT_CY, 0xE1B300FF );
-#endif
 
 		nX = m_nPosX + OPTION_TEXT_SX;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 213, "Î∞∞Í≤ΩÏùå Î≥ºÎ•®" ),
+		pDrawPort->PutTextEx( _S( 213, "πË∞Ê¿Ω ∫º∑˝" ),
 											//nX, m_nPosY + OPTION_BGM_SY, 0xF2F2F2FF );
 											nX, m_slbBGM.GetAbsPosY() -20, 0xF2F2F2FF );									
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 214, "Ìö®Í≥ºÏùå Î≥ºÎ•®" ),
+		pDrawPort->PutTextEx( _S( 214, "»ø∞˙¿Ω ∫º∑˝" ),
 											//nX, m_nPosY + OPTION_FXSOUND_SY, 0xF2F2F2FF );
 											nX, m_slbFXSound.GetAbsPosY() -20, 0xF2F2F2FF );		
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 
 	// Set option texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// UI_REFORM :Su-won
 	if( m_nCurOptionTab == OPTIONTAB_GAME )
@@ -1756,16 +1989,16 @@ void CUIOption::Render()
 		// Show item name slide bar
 		m_slbShowNameItem.Render();
 
-		// Í∏∞Ï°¥Ï≤òÎüº ÌÖçÏä§Ìä∏Î≥¥Îã§ Î®ºÏ†Ä Î†åÎçîÎßÅÌïòÎ©¥ ÏΩ§Î≥¥Î∞ïÏä§Ï∞ΩÏù¥ ÌÖçÏä§Ìä∏Ïóê Í∞ÄÎ¶¨Í∏∞ ÎïåÎ¨∏Ïóê ÌÖçÏä§Ìä∏Î≥¥Îã§ ÎÇòÏ§ëÏóê Î†åÎçîÎßÅÌï®.
+		// ±‚¡∏√≥∑≥ ≈ÿΩ∫∆Æ∫∏¥Ÿ ∏’¿˙ ∑ª¥ı∏µ«œ∏È ƒﬁ∫∏π⁄Ω∫√¢¿Ã ≈ÿΩ∫∆Æø° ∞°∏Æ±‚ ∂ßπÆø° ≈ÿΩ∫∆Æ∫∏¥Ÿ ≥™¡ﬂø° ∑ª¥ı∏µ«‘.
 		m_cmbTargetDest.Render();
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 
 		// Set option texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 		m_cmbItemPlusEffect.Render();			// Item plus effect		
 	}
 	else
@@ -1810,44 +2043,44 @@ void CUIOption::Render()
 		// FX sound slide bar
 		m_slbFXSound.Render();
 	}
-	
+		
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 	// Tool tip
 	if( m_bShowToolTip )
 	{
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
 											m_rcToolTip.Left + 7, m_rcToolTip.Bottom,
 											m_rtToolTipL.U0, m_rtToolTipL.V0, m_rtToolTipL.U1, m_rtToolTipL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
 											m_rcToolTip.Right - 7, m_rcToolTip.Bottom,
 											m_rtToolTipM.U0, m_rtToolTipM.V0, m_rtToolTipM.U1, m_rtToolTipM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
 											m_rcToolTip.Right, m_rcToolTip.Bottom,
 											m_rtToolTipR.U0, m_rtToolTipR.V0, m_rtToolTipR.U1, m_rtToolTipR.V1,
 											0xFFFFFFFF );
 
 		// Text in tool tip
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 3 );
+		pDrawPort->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 3 );
 	}
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -1875,19 +2108,19 @@ void CUIOption::ShowToolTip( BOOL bShow, int nToolTipID )
 		switch( nToolTipID )
 		{
 		case OPTIONTAB_GAME:
-			m_strToolTip = _S( 197, "Í≤åÏûÑ" );
+			m_strToolTip = _S( 197, "∞‘¿”" );
 			break;
 
 		case OPTIONTAB_DISPLAY:
-			m_strToolTip = _S( 201, "ÎîîÏä§ÌîåÎ†àÏù¥" );
+			m_strToolTip = _S( 201, "µΩ∫«√∑π¿Ã" );
 			break;
 
 		case OPTIONTAB_GRAPHIC:
-			m_strToolTip = _S( 741, "Í∑∏ÎûòÌîΩ" );		
+			m_strToolTip = _S( 741, "±◊∑°«»" );		
 			break;
 
 		case OPTIONTAB_AUDIO:
-			m_strToolTip = _S( 212, "Ïò§ÎîîÏò§" );
+			m_strToolTip = _S( 212, "ø¿µø¿" );
 			break;
 
 		default:
@@ -1896,19 +2129,22 @@ void CUIOption::ShowToolTip( BOOL bShow, int nToolTipID )
 		}
 
 		int nInfoWidth;
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);				
-		} else
+#if defined (G_THAI)
+		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);				
+#else
 		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strToolTip.Length() *
 						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 		int	nInfoHeight = 22;
 
 		nInfoX = m_nPosX + m_rcOptionTab.Right + 2;
 		nInfoY = m_nPosY + m_rcOptionTab.Top +
 					( OPTION_TAB_HEIGHT - _pUIFontTexMgr->GetLineHeight() ) / 2;
 
-		if( nInfoX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoX = _pUIMgr->GetMaxI() - nInfoWidth;
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		if( nInfoX + nInfoWidth > pUIManager->GetMaxI() )
+			nInfoX = pUIManager->GetMaxI() - nInfoWidth;
 
 		m_rcToolTip.Left = nInfoX;
 		m_rcToolTip.Top = nInfoY + ( OPTION_TAB_HEIGHT + OPTION_TAB_GAP ) * nToolTipID;
@@ -1932,14 +2168,14 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 	static int	nOldX, nOldY;
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
-	
+		
 	// Mouse message
 	switch( pMsg->message )
 	{
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move option
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -1952,15 +2188,6 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 
 				return WMSG_SUCCESS;
 			}
-			// Close button
-			else if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
-			// OK button
-			else if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
-			// Cancel button
-			else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
 			// Tab region
 			else if( IsInsideRect( nX, nY, m_rcOptionTab ) )
 			{
@@ -2053,7 +2280,9 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 				else if( ( wmsgResult = m_slbViewTerrain.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
 					if( wmsgResult == WMSG_COMMAND )
-						ter_fLODMul = ska_fLODMul = mdl_fLODMul = m_afViewTerrain[m_slbViewTerrain.GetCurPos()];
+					{
+						UpdateTerMul();
+					}
 
 					return WMSG_SUCCESS;
 				}
@@ -2094,7 +2323,16 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 					return WMSG_SUCCESS;
 				}
 			}
-
+			// Close button
+			if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
+				return WMSG_SUCCESS;
+			// OK button
+			if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
+				return WMSG_SUCCESS;
+			// Cancel button
+			if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
+				return WMSG_SUCCESS;
+			
 			// Hide tool tip
 			ShowToolTip( FALSE );
 		}
@@ -2102,6 +2340,15 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDOWN:
 		{
+			if( m_nCurOptionTab == OPTIONTAB_DISPLAY )
+			{
+				// Resolution combo box
+				if( m_cmbResolution.MouseMessage( pMsg ) != WMSG_FAIL )
+				{
+					return WMSG_SUCCESS;
+				}
+			}
+
 			if( IsInside( nX, nY ) )
 			{
 				nOldX = nX;		nOldY = nY;
@@ -2151,19 +2398,18 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 						g_iAutoAttack = m_cbtnAutoAttack.IsChecked() ? 1 : 0;
 					}
 					// Fame open check button
-					else if( m_cbtnFameOpen.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-					}
-#ifdef HELP_SYSTEM_1
+					//else if( m_cbtnFameOpen.MouseMessage( pMsg ) != WMSG_FAIL )
+					//{
+					//}
 					// wooss 070401 WSS_HELP_SYSTEM_1
 					else if( m_cbtnHelp1Icon.MouseMessage( pMsg ) != WMSG_FAIL )
 					{
 						g_iShowHelp1Icon = m_cbtnHelp1Icon.IsChecked() ? 1 : 0;
 					}
-#endif
-
-#ifdef OPTION_REJECT_PARTY_AND_EXCHANGE
-					// [7/9/2009 rumist] rejection 
+					else if( m_cbtnQuestBookOpen.MouseMessage( pMsg ) != WMSG_FAIL )
+					{
+						g_iQuestBookOpen	= m_cbtnQuestBookOpen.IsChecked() ? 1 : 0;
+					}
 					else if( m_cbtnRejectExchange.MouseMessage( pMsg ) != WMSG_FAIL )
 					{
 						g_iRejectExchange = m_cbtnRejectExchange.IsChecked() ? 1 : 0;
@@ -2172,7 +2418,6 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 					{
 						g_iRejectParty = m_cbtnRejectParty.IsChecked() ? 1 : 0;
 					}
-#endif
 					// wooss 050809
 					// MovePermit open check button 
 					else if( m_cbtnMovePermit.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -2203,12 +2448,8 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 				// Display option
 				else if( m_nCurOptionTab == OPTIONTAB_DISPLAY )
 				{
-					// Resolution combo box
-					if( m_cmbResolution.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-					}
 					// Fullscreen check button
-					else if( ( wmsgResult = m_cbtnFullscreen.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					if( ( wmsgResult = m_cbtnFullscreen.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
 						CreateResolutionList();
 					}
@@ -2255,7 +2496,9 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 					else if( ( wmsgResult = m_slbViewTerrain.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
 						if( wmsgResult == WMSG_COMMAND )
-							ter_fLODMul = ska_fLODMul = mdl_fLODMul = m_afViewTerrain[m_slbViewTerrain.GetCurPos()];
+						{
+							UpdateTerMul();
+						}
 					}
 					// Reflection slide bar
 					else if( ( wmsgResult = m_slbReflection.MouseMessage( pMsg ) ) != WMSG_FAIL )
@@ -2287,7 +2530,7 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 					}
 				}
 
-				_pUIMgr->RearrangeOrder( UI_OPTION, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_OPTION, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -2295,8 +2538,10 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -2405,7 +2650,7 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -2474,4 +2719,20 @@ WMSG_RESULT CUIOption::MouseMessage( MSG *pMsg )
 	}
 
 	return WMSG_FAIL;
+}
+
+void CUIOption::ChangeWindowMode ()
+{	
+	if ( IsFullScreen( sam_bFullScreenActive) )
+	{
+		m_cbtnFullscreen.SetCheck(FALSE);	
+		TryToSetDisplayMode( (GfxAPIType)sam_iGfxAPI, sam_iDisplayAdapter,
+									sam_iScreenSizeI,sam_iScreenSizeJ, DISPD_DEFAULT, m_cbtnFullscreen.IsChecked() );	
+	}	
+}
+
+void CUIOption::UpdateTerMul()
+{
+	float fScale = CZoneInfo::getSingleton()->GetTerMul(g_slZone);
+	ter_fLODMul = ska_fLODMul = mdl_fLODMul = (m_afViewTerrain[m_slbViewTerrain.GetCurPos()] * fScale);
 }

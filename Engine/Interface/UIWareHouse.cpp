@@ -1,11 +1,19 @@
 #include "stdh.h"
-#include <Engine/Interface/UIWareHouse.h>
+
+// «Ï¥ı ¡§∏Æ. [12/3/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Interface/UISecurity.h>
-#include <Engine/Entities/Items.h>
-#include <Engine/LocalDefine.h>
+#include <Engine/Interface/UIWareHouse.h>
 #include <Engine/Interface/UIPetInfo.h>
-#include <Engine/PetInfo.h>
+#include <Common/Packet/ptype_inventory.h>
+#include <Common/Packet/ptype_old_do_stash.h>
+#include <Engine/Interface/UISecurity.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Contents/Base/UIQuestNew.h>
+#include <Engine/Contents/Base/UIQuestBookNew.h>
+#include <Engine/Interface/UIHelp.h>
+#include <Engine/Interface/UISocketSystem.h>
+#include <Engine/Contents/Base/UIMsgBoxNumeric_only.h>
+#include <Engine/Info/MyInfo.h>
 
 // Define item slot
 #define WAREHOUSE_WAREHOUSE_WIDTH			216
@@ -17,7 +25,8 @@
 #define WAREHOUSE_BUY_TOP_SLOT_SX			11		// Buy Mode(Top)
 #define WAREHOUSE_BUY_TOP_SLOT_SY			55		// wooss 28 -> 55	
 #define WAREHOUSE_BUY_BOTTOM_SLOT_SX		11		// (Bottom)
-#define WAREHOUSE_BUY_BOTTOM_SLOT_SY		241		// wooss 214 -> 241 	
+#define WAREHOUSE_BUY_BOTTOM_SLOT_SY		239		// wooss 214 -> 241
+#define DEF_EXPANSION_TEXT_AREA				(214)	// ∏∏∑· ±‚∞£ «•Ω√ ≈ÿΩ∫∆Æ øµø™.
 
 #define	ITEM_LIST_START		(1 << 0)
 #define ITEM_LIST_END		(1 << 1)
@@ -31,17 +40,43 @@ enum eSelection
 	WAREHOUSE_TALK,
 };
 
-extern INDEX g_iCountry;
-
-// [KH_07044] 3Ï∞® ÎèÑÏõÄÎßê Í¥ÄÎ†® Ï∂îÍ∞Ä
+// [KH_07044] 3¬˜ µµøÚ∏ª ∞¸∑√ √ﬂ∞°
 extern INDEX g_iShowHelp1Icon;
 
+class CmdWareHouseAddItem : public Command
+{
+public:
+	CmdWareHouseAddItem() : m_pWnd(NULL)	{}
+	void setData(CUIWareHouse* pWnd)	{ m_pWnd = pWnd;	}
+	void execute() 
+	{
+		if (m_pWnd != NULL)
+			m_pWnd->AddItemCallback();
+	}
+private:
+	CUIWareHouse* m_pWnd;
+};
+
+class CmdWareHouseDelItem : public Command
+{
+public:
+	CmdWareHouseDelItem() : m_pWnd(NULL)	{}
+	void setData(CUIWareHouse* pWnd)	{ m_pWnd = pWnd;	}
+	void execute() 
+	{
+		if (m_pWnd != NULL)
+			m_pWnd->DelItemCallback();
+	}
+private:
+	CUIWareHouse* m_pWnd;
+};
 
 // ----------------------------------------------------------------------------
 // Name : CUIWareHouse()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIWareHouse::CUIWareHouse()
+	: m_pItemsTemp(NULL)
 {
 	m_bStorageWareHouse		= FALSE;
 	m_nSelWareHouseItemID	= -1;
@@ -51,16 +86,24 @@ CUIWareHouse::CUIWareHouse()
 	m_nNumOfItem		= 0;
 	m_nTotalPrice		= 0;
 	m_nTex				= 1;
-	m_bShowItemInfo		= FALSE;
-	m_bDetailItemInfo	= FALSE;
-	m_nCurInfoLines		= 0;
 	m_strTotalPrice		= CTString( "0" );
-	m_bHasPassword		= FALSE;
-	m_bSealed			= FALSE;
+	m_bHasPassword		= false;
 	m_strPW				= CTString( "0" );
 	m_nNpcIndex			= -1;
+	m_nNPCVIdx			= -1;
 
 	m_useTime			= 0; //wooss 050817
+
+	//2013/04/02 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
+	m_strTotalNas		= CTString( "0" );
+	m_strInNas			= CTString( "0" );
+	m_strOutNas			= CTString( "0" );
+	m_nInNas			= 0;
+	m_nOutNas			= 0;
+	m_nTotalNas			= 0;
+	m_bCashRemote		= false;
+	m_nTempTradeIdx	= -1;
+	m_nTempStorageIdx	= -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -69,9 +112,35 @@ CUIWareHouse::CUIWareHouse()
 // ----------------------------------------------------------------------------
 CUIWareHouse::~CUIWareHouse()
 {
+	Destroy();
+
 	if( !m_vectorStorageItems.empty() )
 		m_vectorStorageItems.clear();
-	Destroy();
+
+	int		i;
+
+	for (i = 0; i < ITEM_COUNT_IN_INVENTORY_STASH; ++i)
+		SAFE_DELETE(m_pIconWareHouseItems[i]);
+
+	for (i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; ++i)
+		SAFE_DELETE(m_pIconTradeItems[i]);
+}
+
+
+int CUIWareHouse::GetWareHouseItemIndex( int nInvenIdx )
+{
+	if ( nInvenIdx > ITEM_COUNT_IN_INVENTORY_STASH || nInvenIdx < 0)
+		return -1;
+
+	return m_pIconWareHouseItems[nInvenIdx]->getIndex();
+}
+
+LONGLONG CUIWareHouse::GetWareHouseItemCount( int nInvenIdx )
+{
+	if (nInvenIdx < 0 || nInvenIdx >= m_vectorStorageItems.size())
+		return -1;
+	
+	return m_vectorStorageItems[nInvenIdx]->Item_Sum;
 }
 
 // ----------------------------------------------------------------------------
@@ -80,9 +149,7 @@ CUIWareHouse::~CUIWareHouse()
 // ----------------------------------------------------------------------------
 void CUIWareHouse::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	m_rcMainTitle.SetRect( 0, 0, 216, 22 );
 
@@ -119,22 +186,8 @@ void CUIWareHouse::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_rtBlankInven.SetUV( 0, 387, 216, 393, fTexWidth, fTexHeight );
 	m_rtPriceInven.SetUV( 0, 359, 216, 381, fTexWidth, fTexHeight );
 
-	// Outline of unmovable item
-	m_rtUnmovableOutline.SetUV( 218, 86, 250, 118, fTexWidth, fTexHeight );
-
 	// Outline of selected item
 	m_rtSelectOutline.SetUV( 218, 51, 250, 83, fTexWidth, fTexHeight );
-
-	// Item information region
-	m_rtInfoUL.SetUV( 0, 476, 7, 483, fTexWidth, fTexHeight );
-	m_rtInfoUM.SetUV( 10, 476, 12, 483, fTexWidth, fTexHeight );
-	m_rtInfoUR.SetUV( 15, 476, 22, 483, fTexWidth, fTexHeight );
-	m_rtInfoML.SetUV( 0, 486, 7, 488, fTexWidth, fTexHeight );
-	m_rtInfoMM.SetUV( 10, 486, 12, 488, fTexWidth, fTexHeight );
-	m_rtInfoMR.SetUV( 15, 486, 22, 488, fTexWidth, fTexHeight );
-	m_rtInfoLL.SetUV( 0, 491, 7, 498, fTexWidth, fTexHeight );
-	m_rtInfoLM.SetUV( 10, 491, 12, 498, fTexWidth, fTexHeight );
-	m_rtInfoLR.SetUV( 15, 491, 22, 498, fTexWidth, fTexHeight );
 
 	// Close button
 	m_btnClose.Create( this, CTString( "" ), 184, 4, 14, 14 );
@@ -144,26 +197,40 @@ void CUIWareHouse::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Buy button of warehouse
-	m_btnWareHouseKeep.Create( this, _S( 812, "Î≥¥Í¥Ä" ), 105, 339, 51, 21 );			//wooss 312->339		
+	m_btnWareHouseKeep.Create( this, _S( 812, "∫∏∞¸" ), 105, 362, 51, 21 );			//wooss 312->339		//jeil 339 -> 362
 	m_btnWareHouseKeep.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
 	m_btnWareHouseKeep.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
 	m_btnWareHouseKeep.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnWareHouseKeep.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Sell button of warehouse
-	m_btnWareHouseTake.Create( this, _S( 813, "Ï∞æÍ∏∞" ), 105, 339, 51, 21 );			//wooss 312->339
+	m_btnWareHouseTake.Create( this, _S( 813, "√£±‚" ), 105, 362, 51, 21 );			//wooss 312->339
 	m_btnWareHouseTake.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
 	m_btnWareHouseTake.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
 	m_btnWareHouseTake.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnWareHouseTake.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button of warehouse
-	m_btnWareHouseCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 159, 339, 51, 21 );		//wooss 312->339
+	m_btnWareHouseCancel.Create( this, _S( 139, "√Îº“" ), 159, 362, 51, 21 );		//wooss 312->339
 	m_btnWareHouseCancel.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
 	m_btnWareHouseCancel.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
 	m_btnWareHouseCancel.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnWareHouseCancel.CopyUV( UBS_IDLE, UBS_DISABLE );
 	
+	//¿‘±› πˆ∆∞
+	m_btnInNas.Create( this, _S( 5906, "¿‘±›" ), 51, 362, 51, 21 );			
+	m_btnInNas.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
+	m_btnInNas.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
+	m_btnInNas.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnInNas.CopyUV( UBS_IDLE, UBS_DISABLE );
+
+	//√‚±› πˆ∆∞
+	m_btnOutNas.Create( this, _S( 5907, "√‚±›" ), 51, 362, 51, 21 );	
+	m_btnOutNas.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
+	m_btnOutNas.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
+	m_btnOutNas.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnOutNas.CopyUV( UBS_IDLE, UBS_DISABLE );
+
 	// Top scroll bar
 	m_sbTopScrollBar.Create( this, 194, 54, 9, 171 );			//wooss 28 -> 54
 	m_sbTopScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
@@ -190,17 +257,20 @@ void CUIWareHouse::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 
 	// Slot items
 	// WareHouse Slot(5x4)
-	for( int iRow = 0; iRow < WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL; iRow++ )
+	for (int i = 0; i < ITEM_COUNT_IN_INVENTORY_STASH; ++i)
 	{
-		for( int iCol = 0; iCol < WAREHOUSE_WAREHOUSE_SLOT_COL; iCol++ )
-		{			
-			m_abtnWareHouseItems[iRow][iCol].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_WAREHOUSE, UBET_ITEM, 0, iRow, iCol );
-		}
+		//m_pIconWareHouseItems[i].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_WAREHOUSE, UBET_ITEM, 0, i );
+		m_pIconWareHouseItems[i] = new CUIIcon();
+		m_pIconWareHouseItems[i]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_WAREHOUSE, UBET_ITEM);
 	}
 
 	// Trade Slot(5x2)
 	for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
-		m_abtnTradeItems[iItem].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_WAREHOUSE, UBET_ITEM );
+	{
+		//m_pIconTradeItems[iItem].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_WAREHOUSE, UBET_ITEM );
+		m_pIconTradeItems[iItem] = new CUIIcon();
+		m_pIconTradeItems[iItem]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_WAREHOUSE, UBET_ITEM);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -223,97 +293,95 @@ void CUIWareHouse::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pi
 		ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
 }
 
-// ----------------------------------------------------------------------------
-// Name : CheckHasPassWord()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIWareHouse::CheckHasPassWord( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
+void CUIWareHouse::SetNPCPos( int nNPCIdx, FLOAT fX, FLOAT fZ )
 {
-	if(_pUIMgr->DoesMessageBoxLExist( MSGLCMD_WAREHOUSE_REQ ) || IsVisible())
-		return;
-
 	m_fNpcX			= fX;
 	m_fNpcZ			= fZ;
-	m_nNpcIndex		= iMobIndex;
-	m_bHasQuest		= bHasQuest;
-	_pNetwork->SendWareHouseIsSetPassword();
+	m_nNpcIndex		= nNPCIdx;
+	
+	if (CEntity* pEntity = INFO()->GetTargetEntity(eTARGET))
+		m_nNPCVIdx = pEntity->GetNetworkID();
 }
 
 // ----------------------------------------------------------------------------
 // Name : OpenWareHouse()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIWareHouse::OpenWareHouse( SBYTE sbSetPW )
+void CUIWareHouse::OpenWareHouse( SBYTE sbSetPW, bool bCashRemoteOpen )
 {
-	if(_pUIMgr->DoesMessageBoxLExist( MSGLCMD_WAREHOUSE_REQ ) || IsVisible())
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->DoesMessageBoxLExist( MSGLCMD_WAREHOUSE_REQ ) || IsVisible())
 		return;
 	
-	if(_pUIMgr->GetSecurity()->IsVisible() )
+	if(pUIManager->GetSecurity()->IsVisible() )
 	{
 		return;
 	}
 	
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if (pUIManager->GetInventory()->IsLocked() == TRUE ||
+		pUIManager->GetInventory()->IsLockedArrange() == TRUE)
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		// ¿ÃπÃ Lock ¿Œ √¢¿Ã ¿÷¿ª ∞ÊøÏ ø≠¡ˆ ∏¯«—¥Ÿ.
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 	
-	_pUIMgr->CloseMessageBox( MSGCMD_SECURITY_PASSWORD);
-	_pUIMgr->CloseMessageBox( MSGCMD_CONFIRM_PASSWORD);
-	_pUIMgr->CloseMessageBox( MSGCMD_OLD_PASSWORD);	
+	pUIManager->CloseMessageBox( MSGCMD_SECURITY_PASSWORD);
+	pUIManager->CloseMessageBox( MSGCMD_CONFIRM_PASSWORD);
+	pUIManager->CloseMessageBox( MSGCMD_OLD_PASSWORD);	
 
-	BOOL bHasQuest = m_bHasQuest;
+	// ∆–Ω∫øˆµÂ ±‚¥… ªË¡¶ -> Quest has ∑Œ ªÁøÎ¡ﬂ
+	BOOL bHasQuest = sbSetPW ? TRUE : FALSE;
 	ResetWareHouse();
-
-	m_bHasPassword	= sbSetPW;
 
 	// Set position of target npc
 	//m_fNpcX = fX;
 	//m_fNpcZ = fZ;
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOn( CSF_WAREHOUSE );
+	pUIManager->SetCSFlagOn( CSF_WAREHOUSE );
 
-	_pUIMgr->CloseMessageBoxL( MSGLCMD_WAREHOUSE_REQ );
+	pUIManager->CloseMessageBoxL( MSGLCMD_WAREHOUSE_REQ );
 
 	// Create refine message box
-	_pUIMgr->CreateMessageBoxL( _S( 814, "Î≥¥Í¥ÄÏÜå" ) , UI_WAREHOUSE, MSGLCMD_WAREHOUSE_REQ );	
+	pUIManager->CreateMessageBoxL( _S( 814, "∫∏∞¸º“" ) , UI_WAREHOUSE, MSGLCMD_WAREHOUSE_REQ );	
 
 	if( m_nNpcIndex != -1 )
 	{
-		CTString	strNpcName = _pNetwork->GetMobName(m_nNpcIndex);
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+		CTString	strNpcName = CMobData::getData(m_nNpcIndex)->GetName();
+		pUIManager->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, TRUE, strNpcName, -1, 0xE18600FF );
 	}
 
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, TRUE, _S( 815, "Î¨ºÌíà Î≥¥Í¥ÄÏùÑ ÏõêÌïòÏã≠ÎãàÍπå?" ) , -1, 0xA3A1A3FF );		
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, TRUE, _S( 816, "Ï†ÄÌù¨ Î¨ºÌíà Î≥¥Í¥ÄÏÜåÏóêÏÑúÎäî Ïó¨ÌñâÏûêÎãòÏùò Î¨ºÌíàÏùÑ ÏïàÏ†ÑÌïòÍ≤å Î≥¥Í¥ÄÌïòÍ≥† Ïñ∏Ï†ú Ïñ¥ÎîîÏÑúÎì†ÏßÄ Ï†ÄÌù¨ Î¨ºÌíà Î≥¥Í¥ÄÏÜåÍ∞Ä ÏûàÎäî Í≥≥Ïù¥ÎùºÎ©¥ Î¨ºÌíàÏùÑ Ï∞æÏúºÏã§ Ïàò ÏûàÏäµÎãàÎã§." ) , -1, 0xA3A1A3FF );		
+	pUIManager->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, TRUE, _S( 815, "π∞«∞ ∫∏∞¸¿ª ø¯«œΩ ¥œ±Ó?" ) , -1, 0xA3A1A3FF );		
+	pUIManager->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, TRUE, _S( 816, "¿˙»Ò π∞«∞ ∫∏∞¸º“ø°º≠¥¬ ø©«‡¿⁄¥‘¿« π∞«∞¿ª æ»¿¸«œ∞‘ ∫∏∞¸«œ∞Ì æ¡¶ æÓµº≠µÁ¡ˆ ¿˙»Ò π∞«∞ ∫∏∞¸º“∞° ¿÷¥¬ ∞˜¿Ã∂Û∏È π∞«∞¿ª √£¿∏Ω« ºˆ ¿÷Ω¿¥œ¥Ÿ." ) , -1, 0xA3A1A3FF );		
 
 	CTString strMessage;	
-	strMessage.PrintF( _S( 817, "Î¨ºÌíàÏùÑ Îß°Í∏¥Îã§." ) );			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, strMessage, WAREHOUSE_IN );
+	strMessage.PrintF( _S( 817, "π∞«∞¿ª ∏√±‰¥Ÿ." ) );			
+	pUIManager->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, strMessage, WAREHOUSE_IN );
 
-	strMessage.PrintF( _S( 818, "Î¨ºÌíàÏùÑ Ï∞æÎäîÎã§." ) );			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, strMessage, WAREHOUSE_OUT );
+	strMessage.PrintF( _S( 818, "π∞«∞¿ª √£¥¬¥Ÿ." ) );			
+	pUIManager->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, strMessage, WAREHOUSE_OUT );
 
-	if( g_iCountry == KOREA )
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, _S( 819, "ÏïîÌò∏Î•º Î≥ÄÍ≤ΩÌïúÎã§." ), WAREHOUSE_CHANGEPW );		
+#ifdef	STASH_PASSWORD
+	pUIManager->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, _S( 819, "æœ»£∏¶ ∫Ø∞Ê«—¥Ÿ." ), WAREHOUSE_CHANGEPW );
+#endif	// STASH_PASSWORD
 
 	if( bHasQuest )
 	{
-#ifdef	NEW_QUESTBOOK
-		// 2009. 05. 27 ÍπÄÏ†ïÎûò
-		// Ïù¥ÏïºÍ∏∞ÌïúÎã§ Î≥ÄÍ≤Ω Ï≤òÎ¶¨
+		// 2009. 05. 27 ±Ë¡§∑°
+		// ¿Ãæﬂ±‚«—¥Ÿ ∫Ø∞Ê √≥∏Æ
 		CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_WAREHOUSE_REQ);				
-#else
-		strMessage.PrintF( _S( 1053, "Ïù¥ÏïºÍ∏∞ÌïúÎã§." ) );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, strMessage, WAREHOUSE_TALK );		
-#endif
 	}
 
-	strMessage.PrintF( _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );		
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, strMessage );
+	strMessage.PrintF( _S( 1220, "√Îº“«—¥Ÿ." ) );		
+	pUIManager->AddMessageBoxLString( MSGLCMD_WAREHOUSE_REQ, FALSE, strMessage );
+
+	m_bCashRemote = bCashRemoteOpen;
+
+	if (bCashRemoteOpen == true)
+		m_nNPCVIdx = -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -321,27 +389,29 @@ void CUIWareHouse::OpenWareHouse( SBYTE sbSetPW )
 //-----------------------------------------------------------------------------
 void CUIWareHouse::PrepareWareHouse()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Already exchange
-	if( _pUIMgr->IsCSFlagOn( CSF_EXCHANGE ) )
+	if( pUIManager->IsCSFlagOn( CSF_EXCHANGE ) )
 	{
-		_pUIMgr->SetCSFlagOff( CSF_WAREHOUSE );
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 821, "ÍµêÌôòÏ§ëÏóêÎäî Ï∞ΩÍ≥†Î•º ÏÇ¨Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+		pUIManager->SetCSFlagOff( CSF_WAREHOUSE );
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 821, "±≥»Ø¡ﬂø°¥¬ √¢∞Ì∏¶ ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	// Already personal shop
-	if( _pUIMgr->IsCSFlagOn( CSF_PERSONALSHOP ) )
+	if( pUIManager->IsCSFlagOn( CSF_PERSONALSHOP ) )
 	{
-		_pUIMgr->SetCSFlagOff( CSF_WAREHOUSE );
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 822, "Í∞úÏù∏ ÏÉÅÏ†ê ÏÇ¨Ïö©Ï§ëÏóêÎäî Ï∞ΩÍ≥†Î•º ÏÇ¨Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+		pUIManager->SetCSFlagOff( CSF_WAREHOUSE );
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 822, "∞≥¿Œ ªÛ¡° ªÁøÎ¡ﬂø°¥¬ √¢∞Ì∏¶ ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	// Already shop
-	if( _pUIMgr->IsCSFlagOn( CSF_SHOP ) )
+	if( pUIManager->IsCSFlagOn( CSF_SHOP ) )
 	{
-		_pUIMgr->SetCSFlagOff( CSF_WAREHOUSE );
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 807, "ÏÉÅÏ†ê Í±∞ÎûòÏ§ëÏóêÎäî Ï∞ΩÍ≥†Î•º ÏÇ¨Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+		pUIManager->SetCSFlagOff( CSF_WAREHOUSE );
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 807, "ªÛ¡° ∞≈∑°¡ﬂø°¥¬ √¢∞Ì∏¶ ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 		return;
 	}
 
@@ -372,11 +442,11 @@ void CUIWareHouse::PrepareWareHouse()
 		{
 			nY += 35;	nX = WAREHOUSE_BUY_BOTTOM_SLOT_SX;
 		}
-		m_abtnTradeItems[iItem].SetPos( nX, nY );
+		m_pIconTradeItems[iItem]->SetPos( nX, nY );
 		nX += 35;
 	}
 
-	_pUIMgr->RearrangeOrder( UI_WAREHOUSE, TRUE );
+	pUIManager->RearrangeOrder( UI_WAREHOUSE, TRUE );
 }
 
 //-----------------------------------------------------------------------------
@@ -388,31 +458,40 @@ void CUIWareHouse::ResetWareHouse()
 	m_nSelTradeItemID		= -1;
 	m_nSelectedWareHouseID	= -1;
 	m_strTotalPrice = CTString( "0" );
-	m_strPW			= CTString("");
-	m_bSealed		= FALSE;
-	m_bHasPassword	= FALSE;
 	m_nTotalPrice	= 0;
 	m_nNumOfItem	= 0;
 	m_bHasQuest		= FALSE;
 
+	m_strTotalNas		= CTString( "0" );
+	m_strInNas			= CTString( "0" );
+	m_strOutNas			= CTString( "0" );
+	m_nInNas			= 0;
+	m_nOutNas			= 0;
+	m_nTotalNas			= 0;
+
 	ClearItems();
 
-	_pUIMgr->RearrangeOrder( UI_WAREHOUSE, FALSE );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->RearrangeOrder( UI_WAREHOUSE, FALSE );
 
 	// Unlock inventory
-	_pUIMgr->GetInventory()->Lock( FALSE, FALSE, LOCK_WAREHOUSE );
+	pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_WAREHOUSE );
 
 	// Close message box of warehouse
-	_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
-	_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
-	_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
-	_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+	pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
+	pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
+	pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
+	pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+	pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_TAKE_MONEY );		//2013/04/04 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
+
+	pUIManager->GetMsgBoxNumOnly()->CloseBox();
 
 	m_nCurRow = 0;
 	m_sbTopScrollBar.SetScrollPos( 0 );
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOff( CSF_WAREHOUSE );
+	pUIManager->SetCSFlagOff( CSF_WAREHOUSE );
 }
 
 //-----------------------------------------------------------------------------
@@ -420,50 +499,31 @@ void CUIWareHouse::ResetWareHouse()
 //-----------------------------------------------------------------------------
 void CUIWareHouse::RefreshWareHouse()
 {
-	for(int i = 0; i < WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL; i++)
+	for(int i = 0; i < ITEM_COUNT_IN_INVENTORY_STASH; i++)
 	{
-		for(int j = 0; j < WAREHOUSE_WAREHOUSE_SLOT_COL; j++)
-		{
-			m_abtnWareHouseItems[i][j].InitBtn();
-		}
+		m_pIconWareHouseItems[i]->clearIconData();
 	}
 
 	ASSERT(m_vectorStorageItems.size() <= WAREHOUSE_WAREHOUSE_SLOT_COL * WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL && 
 		"Invalid Storge Count" );
 
 	int t = 0;
-	std::vector<CItems>::const_iterator end = m_vectorStorageItems.end();
-	for(std::vector<CItems>::iterator pos = m_vectorStorageItems.begin(); pos != end; ++pos)
-	{
-		if( (*pos).Item_Sum > 0 )
-		{
-			const int iRow = t / WAREHOUSE_WAREHOUSE_SLOT_COL;
-			const int iCol = t % WAREHOUSE_WAREHOUSE_SLOT_COL;
+	vec_Items_iter pos = m_vectorStorageItems.begin();
+	vec_Items_iter end = m_vectorStorageItems.end();
 
-			ASSERT( iRow <= WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL && "Invalid Row Column" );
-			
-			m_abtnWareHouseItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, (*pos).Item_Index,
-				(*pos).Item_UniIndex, (*pos).Item_Wearing );
-			m_abtnWareHouseItems[iRow][iCol].SetItemPlus( (*pos).Item_Plus );
-			m_abtnWareHouseItems[iRow][iCol].SetItemFlag( (*pos).Item_Flag );
-			m_abtnWareHouseItems[iRow][iCol].SetItemUsed( (*pos).Item_Used );
-			m_abtnWareHouseItems[iRow][iCol].SetItemUsed2( (*pos).Item_Used2 );
-			m_abtnWareHouseItems[iRow][iCol].SetItemCount( (*pos).Item_Sum );
-			m_abtnWareHouseItems[iRow][iCol].SetItemRareIndex( (*pos).Item_RareIndex );
-			
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-			{
-				m_abtnWareHouseItems[iRow][iCol].SetItemOptionData( sbOption,
-					(*pos).GetOptionType( sbOption ),
-					(*pos).GetOptionLevel( sbOption ) );
-			}
+	for (; pos != end; ++pos)
+	{
+		if ((*pos)->Item_Sum > 0)
+		{
+			m_pIconWareHouseItems[t]->setData((*pos));
+			m_pIconWareHouseItems[t]->Hide(FALSE);
 			
 			t++;
 		}
 	}
 // wooss 050812
-// ÏïÑÏù¥ÌÖú 25Í∞úÎ•º ÎÑòÏúºÎ©¥ Ïä§ÌÅ¨Î°§ ÌôïÏû•ÎêòÎçò Í≤ÉÏùÑ ÏïÑÏù¥ÌÖú Í∞úÏàòÏóê ÏÉÅÍ¥ÄÏóÜÏù¥ Ïä§ÌÅ¨Î°§ÎêòÍ≤å Î≥ÄÌòï
-// wooss 060807 Îã§Ïãú ÌíÄÏñ¥ Ï§å....
+// æ∆¿Ã≈€ 25∞≥∏¶ ≥—¿∏∏È Ω∫≈©∑— »Æ¿Âµ«¥¯ ∞Õ¿ª æ∆¿Ã≈€ ∞≥ºˆø° ªÛ∞¸æ¯¿Ã Ω∫≈©∑—µ«∞‘ ∫Ø«¸
+// wooss 060807 ¥ŸΩ√ «ÆæÓ ¡‹....
 	const int	ctWareHouseItems	= m_vectorStorageItems.size();	
 	int	nScrollItem = ( ctWareHouseItems + WAREHOUSE_WAREHOUSE_SLOT_COL - 1 ) / WAREHOUSE_WAREHOUSE_SLOT_COL;
 	m_sbTopScrollBar.SetCurItemCount( nScrollItem );
@@ -474,928 +534,146 @@ void CUIWareHouse::RefreshWareHouse()
 //-----------------------------------------------------------------------------
 void CUIWareHouse::ClearItems()
 {
-	if( !m_vectorStorageItems.empty() )
-	{ 
-		m_vectorStorageItems.clear();
-	}
-	for(int i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; i++)
-		m_abtnTradeItems[i].InitBtn();			
+	vec_Items_iter iter = m_vectorStorageItems.begin();
+	vec_Items_iter eiter = m_vectorStorageItems.end();
 
-	for(i = 0; i < WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL; i++)
+	for (; iter != eiter; ++iter)
 	{
-		for(int j = 0; j < WAREHOUSE_WAREHOUSE_SLOT_COL; j++)
-		{
-			m_abtnWareHouseItems[i][j].InitBtn();
-		}
+		SAFE_DELETE(*iter);
+	}
+
+	m_vectorStorageItems.clear();
+
+	iter = m_vecTradeItems.begin();
+	eiter = m_vecTradeItems.end();
+	
+	for (; iter != eiter; ++iter)
+	{
+		SAFE_DELETE(*iter);
+	}
+
+	m_vecTradeItems.clear();
+
+	int		i;
+	for( i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; ++i )
+		m_pIconTradeItems[i]->clearIconData();
+
+	for( i = 0; i < ITEM_COUNT_IN_INVENTORY_STASH; ++i )
+	{
+		m_pIconWareHouseItems[i]->clearIconData();
 	}
 }
 
-// ----------------------------------------------------------------------------
-// Name : AddItemInfoString()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIWareHouse::AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo )
+void CUIWareHouse::DelWareHouseItemToInventory()
 {
-	if( m_nCurInfoLines >= MAX_ITEMINFO_LINE )
-		return ;
-
-	// Get length of string
-	INDEX	nLength = strItemInfo.Length();
-	if( nLength <= 0 )
+	// ∫∏∞¸ ∏µÂø°º≠∏∏ µø¿€
+	if (m_bStorageWareHouse == FALSE)
 		return;
 
-	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strItemInfo);
-		INDEX	nChatMax= (MAX_ITEMINFO_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strItemInfo,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; ++iPos )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= MAX_ITEMINFO_CHAR )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strItemInfo[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; iPos++ )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-		}
-	}
-}
-
-	
-
-// ----------------------------------------------------------------------------
-// Name : GetItemInfo()
-// Desc : nWhichSlot - 0: opposite slot, 1: my slot, 2: inventory slot
-// ----------------------------------------------------------------------------
-BOOL CUIWareHouse::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, int nTradeItem, int nRow, int nCol )
-{
-	CTString	strTemp;
-	m_nCurInfoLines = 0;
-
-	int			nIndex;
-	SQUAD		llCount;
-	ULONG		ulItemPlus, ulFlag;
-	LONG		lItemUsed;
-	LONG		lRareIndex;
-	SBYTE		sbOptionType[MAX_ITEM_OPTION], sbOptionLevel[MAX_ITEM_OPTION];
-
-	switch( nWhichSlot )
-	{
-	case 0:
-		{
-			nIndex		= m_abtnTradeItems[nTradeItem].GetItemIndex();
-			llCount		= m_abtnTradeItems[nTradeItem].GetItemCount();
-			ulItemPlus	= m_abtnTradeItems[nTradeItem].GetItemPlus();
-			ulFlag		= m_abtnTradeItems[nTradeItem].GetItemFlag();
-			lItemUsed	= m_abtnTradeItems[nTradeItem].GetItemUsed();
-			lRareIndex	= m_abtnTradeItems[nTradeItem].GetItemRareIndex();
-
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-			{
-				sbOptionType[sbOption] = m_abtnTradeItems[nTradeItem].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnTradeItems[nTradeItem].GetItemOptionLevel( sbOption );
-			}
-		}
-		break;
-
-	case 1:
-		{
-			nIndex		= m_abtnWareHouseItems[nRow][nCol].GetItemIndex();
-			llCount		= m_abtnWareHouseItems[nRow][nCol].GetItemCount();
-			ulItemPlus	= m_abtnWareHouseItems[nRow][nCol].GetItemPlus();
-			ulFlag		= m_abtnWareHouseItems[nRow][nCol].GetItemFlag();
-			lItemUsed	= m_abtnWareHouseItems[nRow][nCol].GetItemUsed();
-			lRareIndex	= m_abtnWareHouseItems[nRow][nCol].GetItemRareIndex();
-
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-			{
-				sbOptionType[sbOption] = m_abtnWareHouseItems[nRow][nCol].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnWareHouseItems[nRow][nCol].GetItemOptionLevel( sbOption );
-			}
-		}
-		break;
-	}
-	
-	if( nIndex < 0 )
-		return FALSE;
-
-	CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-	CItemRareOption rItemRareOption =_pNetwork->GetRareOptionData(0);
-
-	if(  rItemData.GetFlag() & ITEM_FLAG_RARE )
-	{
-		m_bRareItem =TRUE;
-		rItemRareOption =_pNetwork->GetRareOptionData(lRareIndex);
-		m_iRareGrade =rItemRareOption.GetGrade();
-	}
-	else
-	{
-		m_bRareItem =FALSE;
-		m_iRareGrade =-1;
-	}
-
-
-	const CTString strItemName =_pNetwork->GetItemName( nIndex );
-
-	CTString szItemName =strItemName;
-	if( m_bRareItem )
-	{
-		CTString strPrefix = rItemRareOption.GetPrefix();
-		if( strPrefix.Length() >0)
-			szItemName.PrintF("%s %s", strPrefix, strItemName);
-	}
-
-	COLOR colNas = 0xF2F2F2FF;
-
-	// Get item name	
-	if( ulItemPlus > 0 && !(_pUIMgr->IsPet(rItemData) || _pUIMgr->IsWildPet(rItemData)))
-		strTemp.PrintF( "%s +%d", szItemName, ulItemPlus );
-	else
-	{
-		if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
-		{
-			CTString	strCount;
-			strCount.PrintF( "%I64d", llCount );
-			_pUIMgr->InsertCommaToString( strCount );
-			strTemp.PrintF( "%s(%s)", szItemName, strCount );
-			colNas = _pUIMgr->GetNasColor( llCount );
-		}
-#ifdef Pet_IMPROVEMENT_1ST
-		// [070604: Su-won] 1Ï∞® Ìé´ Í∏∞Îä• Í∞úÏÑ†
-		// Ìé´ ÏßÑÌôî ÏÉÅÌÉú ÌëúÏãú
-		else if( _pUIMgr->IsPet(rItemData) )
-		{
-			const INDEX iPetIndex = ulItemPlus;
-			SBYTE sbPetTypeGrade =_pUIMgr->GetPetInfo()->GetPetTypeGrade( iPetIndex );
-
-			if( sbPetTypeGrade >0 )
-			{
-				INDEX iPetType;
-				INDEX iPetAge;
-				_pNetwork->CheckPetType( sbPetTypeGrade, iPetType, iPetAge );
-				strTemp = szItemName +CTString(" - ")+PetInfo().GetName(iPetType, iPetAge);
-			}
-			else
-				strTemp = szItemName;
-		}
-#endif
-		else
-		{
-			strTemp = szItemName;
-		}
-	}
-	AddItemInfoString( strTemp, colNas );
-
-	const __int64	iPrice = CalculateStoragePrice();
-
-	// Get item information in detail
-	if( m_bDetailItemInfo )
-	{
-		COLOR colString = 0xFFFFFFFF;
-
-		switch( rItemData.GetType() )
-		{
-		case CItemData::ITEM_WEAPON:		// Weapon item
-			{
-				// Class
-				CUIManager::GetClassOfItem( rItemData, strTemp );
-				//AddItemInfoString( strTemp, 0x9E9684FF );
-				AddItemInfoString( strTemp, 0xFFFFFFFF );
-
-				// Level
-				int	nItemLevel = rItemData.GetLevel();
-				int nWearLevelReduction =0;
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; ++sbOption )
-				{
-					if( sbOptionType[sbOption] == -1 || sbOptionType[sbOption] == 0 )
-						break;
-
-					//Ï∞©Ïö©Ï†úÌïúÎ†àÎ≤® Îã§Ïö¥ ÏòµÏÖò
-					if( sbOptionType[sbOption]==49)
-					{
-						COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-						nWearLevelReduction = odItem.GetValue( sbOptionLevel[sbOption] - 1 );
-						break;
-					}
-				}
-
-				if( nWearLevelReduction >0 )
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ) +" (-%d)", nItemLevel, nWearLevelReduction );
-				else
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), nItemLevel );
-					
-#ifdef RARE_ITEM
-				AddItemInfoString( strTemp, 0xFFFFFFFF );
-#else
-				AddItemInfoString( strTemp,
-									nItemLevel > _pNetwork->MyCharacterInfo.level ? 0xD28060FF : 0x9E9684FF );
-#endif
-
-
-				int	nPlusValue;
-				int nBasePhysicalAttack =rItemData.GetPhysicalAttack() +rItemRareOption.GetPhysicalAttack();
-				int nBaseMagicAttack =rItemData.GetMagicAttack() +rItemRareOption.GetMagicAttack();
-				
-#ifndef RARE_ITEM
-				colString =0xDEC05BFF;
-#endif
-				if( ulItemPlus > 0 )
-				{
-					// Physical attack
-					if( rItemData.GetPhysicalAttack() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetPhysicalAttack() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetPhysicalAttack();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetPhysicalAttack(), ulItemPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 355, "Í≥µÍ≤©Î†• : %d + %d" ), nBasePhysicalAttack, nPlusValue );
-						else
-							strTemp.PrintF( _S( 161, "Í≥µÍ≤©Î†• : %d" ), nBasePhysicalAttack );
-															
-						AddItemInfoString( strTemp, colString );
-
-						if( ulItemPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1891, "Î¨ºÎ¶¨ Í≥µÍ≤©Î†• + 75" ));		
-							AddItemInfoString( strTemp, colString );
-						}
-					}
-
-					// Magic attack
-					if( rItemData.GetMagicAttack() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetMagicAttack() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetMagicAttack();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetMagicAttack(), ulItemPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 356, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d + %d" ), nBaseMagicAttack, nPlusValue );
-						else
-							strTemp.PrintF( _S( 162, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d" ), nBaseMagicAttack );
-															
-						AddItemInfoString( strTemp, colString );
-
-						if( ulItemPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1892, "ÎßàÎ≤ï Í≥µÍ≤©Î†• + 50" ));		
-							AddItemInfoString( strTemp, colString );
-						}
-					}
-				}
-				else
-				{
-					// Physical attack
-					if( rItemData.GetPhysicalAttack() > 0 )
-					{
-						strTemp.PrintF( _S( 161, "Í≥µÍ≤©Î†• : %d" ), nBasePhysicalAttack );
-						AddItemInfoString( strTemp, colString );
-					}
-
-					// Magic attack
-					if( rItemData.GetMagicAttack() > 0 )
-					{
-						strTemp.PrintF( _S( 162, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d" ), nBaseMagicAttack );
-						AddItemInfoString( strTemp, colString );
-					}
-				}
-
-				if(lItemUsed > 0)
-				{
-					strTemp.PrintF(  _S( 510, "ÎÇ¥Íµ¨ÎèÑ : %ld" ), lItemUsed);		
-					AddItemInfoString( strTemp, 0xDEC05BFF );
-				}
-			}
-			break;
-
-		case CItemData::ITEM_SHIELD:		// Shield item
-			{
-				// Class
-				CUIManager::GetClassOfItem( rItemData, strTemp );
-#ifdef RARE_ITEM
-				AddItemInfoString( strTemp, 0xFFFFFFFF );
-#else
-				AddItemInfoString( strTemp, 0x9E9684FF );
-#endif
-
-				// Level
-				int	nItemLevel = rItemData.GetLevel();
-				int nWearLevelReduction =0;
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; ++sbOption )
-				{
-					if( sbOptionType[sbOption] == -1 || sbOptionType[sbOption] == 0 )
-						break;
-
-					//Ï∞©Ïö©Ï†úÌïúÎ†àÎ≤® Îã§Ïö¥ ÏòµÏÖò
-					if( sbOptionType[sbOption]==49)
-					{
-						COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-						nWearLevelReduction = odItem.GetValue( sbOptionLevel[sbOption] - 1 );
-						break;
-					}
-				}
-				if( nWearLevelReduction >0 )
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ) +" (-%d)", nItemLevel, nWearLevelReduction );
-				else
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), nItemLevel );
-
-#ifdef RARE_ITEM
-				AddItemInfoString( strTemp, 0xFFFFFFFF );	//Ìù∞ÏÉâÏúºÎ°ú ÌëúÏãú
-#else
-				AddItemInfoString( strTemp,
-									nItemLevel > _pNetwork->MyCharacterInfo.level ? 0xD28060FF : 0x9E9684FF );
-#endif
-
-				int	nPlusValue;
-				int nBasePhysicalDefence =rItemData.GetPhysicalDefence() +rItemRareOption.GetPhysicalDefence();
-				int nBaseMagicDefence =rItemData.GetMagicDefence() +rItemRareOption.GetMagicDefence();
-				
-#ifdef RARE_ITEM
-				colString =0xDEC05BFF;
-#endif
-
-				if( ulItemPlus > 0 )
-				{
-					// Physical defense
-					if( rItemData.GetPhysicalDefence() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetPhysicalDefence() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetPhysicalDefence();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetPhysicalDefence(), ulItemPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 357, "Î∞©Ïñ¥Î†• : %d + %d" ), nBasePhysicalDefence, nPlusValue );
-						else
-							strTemp.PrintF( _S( 163, "Î∞©Ïñ¥Î†• : %d" ), nBasePhysicalDefence );
-															
-						AddItemInfoString( strTemp, colString );
-
-						if( ulItemPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1893, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• + 100" ));		
-							AddItemInfoString( strTemp, colString );
-
-							strTemp.PrintF(_S( 1894, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• + 50" ));			
-							AddItemInfoString( strTemp, colString );
-						}
-					}
-
-					// Magic defense
-					if( rItemData.GetMagicDefence() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetMagicDefence() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetMagicDefence();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetMagicDefence(), ulItemPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 358, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d + %d" ), nBaseMagicDefence, nPlusValue );
-						else
-							strTemp.PrintF( _S( 164, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d" ), nBaseMagicDefence );
-															
-						AddItemInfoString( strTemp, colString );
-
-						if( ulItemPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1893, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• + 100" ));		
-							AddItemInfoString( strTemp, colString);
-
-							strTemp.PrintF(_S( 1894, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• + 50" ));			
-							AddItemInfoString( strTemp, colString );
-						}
-					}
-				}
-				else
-				{
-					// Physical defense
-					if( rItemData.GetPhysicalDefence() > 0 )
-					{
-						strTemp.PrintF( _S( 163, "Î∞©Ïñ¥Î†• : %d" ), nBasePhysicalDefence );
-						AddItemInfoString( strTemp, colString );
-					}
-
-					// Magic defense
-					if( rItemData.GetMagicDefence() > 0 )
-					{
-						strTemp.PrintF( _S( 164, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d" ), nBaseMagicDefence );
-						AddItemInfoString( strTemp, colString );
-					}
-				}
-
-				if(lItemUsed > 0)
-				{
-					strTemp.PrintF(  _S( 510, "ÎÇ¥Íµ¨ÎèÑ : %ld" ), lItemUsed);
-					AddItemInfoString( strTemp, 0xDEC05BFF );
-				}
-			}
-			break;
-
-		case CItemData::ITEM_ACCESSORY:		// Accessory
-			{
-				/*****
-				if(lItemUsed > 0)
-				{
-					strTemp.PrintF(  _S( 510, "ÎÇ¥Íµ¨ÎèÑ : %ld" ), lItemUsed);
-					AddItemInfoString( strTemp, 0xDEC05BFF );
-				}
-				*****/
-			}
-			break;
-				// ÏùºÌöåÏö©
-		case CItemData::ITEM_ONCEUSE:
-			{
-				// ÌÄòÏä§Ìä∏ Ï†ïÎ≥¥ ÌëúÏãú.
-				if ( rItemData.GetSubType() == CItemData::ITEM_SUB_QUEST_SCROLL )
-				{	
-					const int iQuestIndex = rItemData.GetNum0();
-
-					if( iQuestIndex != -1 )
-					{
-						// ÌÄòÏä§Ìä∏ Ïù¥Î¶Ñ Ï∂úÎ†•
-						strTemp.PrintF( "%s", CQuestSystem::Instance().GetQuestName( iQuestIndex ) );
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-						
-						const int iMinLevel = CQuestSystem::Instance().GetQuestMinLevel( iQuestIndex );
-						const int iMaxLevel = CQuestSystem::Instance().GetQuestMaxLevel( iQuestIndex );
-
-						// Î†àÎ≤® Ï†úÌïú Ï∂úÎ†•.
-						strTemp.PrintF( _S( 1660, "Î†àÎ≤® Ï†úÌïú : %d ~ %d" ), iMinLevel, iMaxLevel );		
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-					}
-				}
-			}
-			break;
-
-		case CItemData::ITEM_POTION:	// Date : 2005-01-07,   By Lee Ki-hwan
-			{
-				// Date : 2005-01-14,   By Lee Ki-hwan
-				if ( rItemData.GetSubType() == CItemData::POTION_UP )
-				{
-					if( ulFlag > 0 )
-					{
-						// Level
-						strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), ulFlag );
-						AddItemInfoString( strTemp, 0xD28060FF );
-
-						// Ìñ•ÏÉÅ ÌÉÄÏûÖ
-						int nSkillType = rItemData.GetSkillType();
-						CSkill	&rSkill = _pNetwork->GetSkillData( nSkillType );
-						int Power = rSkill.GetPower( ulFlag - 1);
-
-						if(  rItemData.GetNum1() == CItemData::POTION_UP_PHYSICAL ) // Î¨ºÎ¶¨
-						{
-							if(  rItemData.GetNum2() == CItemData::POTION_UP_ATTACK ) // Í≥µÍ≤©
-							{
-								strTemp.PrintF ( _S( 790, "Î¨ºÎ¶¨ Í≥µÍ≤©Î†• +%d ÏÉÅÏäπ" ), Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-							else if( rItemData.GetNum2() == CItemData::POTION_UP_DEFENSE ) // Î∞©Ïñ¥
-							{
-								strTemp.PrintF ( _S( 791, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-						}
-						else if( rItemData.GetNum1() == CItemData::POTION_UP_MAGIC ) // ÎßàÎ≤ï
-						{
-							if(  rItemData.GetNum2() == CItemData::POTION_UP_ATTACK ) // Í≥µÍ≤©
-							{
-								strTemp.PrintF ( _S( 792, "ÎßàÎ≤ï Í≥µÍ≤©Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-							else if( rItemData.GetNum2() == CItemData::POTION_UP_DEFENSE ) // Î∞©Ïñ¥
-							{
-								strTemp.PrintF ( _S( 793, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-						}
-					}
-				}
-			}
-
-		case CItemData::ITEM_BULLET:		// Bullet item
-			{
-			}
-			break;
-
-		case CItemData::ITEM_ETC:			// Etc item
-			{
-				switch( rItemData.GetSubType() )
-				{
-				case CItemData::ITEM_ETC_REFINE:
-					{
-						// FIXME : Î†àÎ≤® ÌëúÏãúÍ∞Ä ÏïàÎêúÎã§Íµ¨ Ìï¥ÏÑú...
-						// Î∏îÎü¨ÎìúÎùºÍ≥† ÌëúÏãúÍ∞Ä ÎêòÏñ¥ÏûàÎã§Î©¥, ÌëúÏãúÎ•º ÏóÜÏï†Ï§ÄÎã§.
-						if(ulFlag & FLAG_ITEM_OPTION_ENABLE)
-						{
-							ulFlag ^= FLAG_ITEM_OPTION_ENABLE;
-						}
-
-						// Level
-						if( ulFlag > 0 )
-						{
-							strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), ulFlag );
-							AddItemInfoString( strTemp, 0xD28060FF );
-						}
-					}
-					break;
-
-				// Î∏îÎü¨Îìú ÏïÑÏù¥ÌÖú & Ï†ïÌôîÏÑù.
-				case CItemData::ITEM_ETC_OPTION:
-					{
-					}
-					break;
-				}
-			}
-			break;
-		}
-
-		// Weight
-		strTemp.PrintF( _S( 165, "Î¨¥Í≤å : %d" ), rItemData.GetWeight() );
-		AddItemInfoString( strTemp, 0xDEC05BFF );
-
-		
-		const int iFame = rItemData.GetFame();
-		if( iFame > 0 )
-		{
-			strTemp.PrintF( _S( 1096, "Î™ÖÏÑ± %d ÌïÑÏöî" ), iFame );		
-			AddItemInfoString( strTemp, 0xDEC05BFF );
-		}
-
-		if( m_bRareItem )
-		{
-			if( m_iRareGrade <0)
-				AddItemInfoString( _S(3165, "<ÎØ∏Í≥µÍ∞ú ÏòµÏÖò>"), 0xFF4040FF );
-		}
-
-		// Options
-		switch( rItemData.GetType() )
-		{
-		case CItemData::ITEM_WEAPON:
-		case CItemData::ITEM_SHIELD:
-		case CItemData::ITEM_ACCESSORY:
-			{
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-				{
-					if( sbOptionType[sbOption] == -1 || sbOptionLevel[sbOption] == 0 )
-						break;
-
-					COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-					switch(sbOptionType[sbOption])
-					{
-					case 49:		//Ï∞©Ïö©Ï†úÌïúÎ†àÎ≤® Îã§Ïö¥
-						strTemp.PrintF( "%s : -%d", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) );
-						break;
-					case 50:		//ÏÜåÏßÄÎüâ Ï¶ùÍ∞Ä
-					case 51:		//ÎßàÎÇò Ìù°Ïàò
-					case 52:		//ÏÉùÎ™ÖÎ†• Ìù°Ïàò
-					case 55:		//ÌÅ¨Î¶¨Ìã∞Ïª¨ÌôïÎ•† Ï¶ùÍ∞Ä
-					case 56:		//HPÌöåÎ≥µÎ†• ÏÉÅÏäπ
-					case 57:		//MPÌöåÎ≥µÎ†• ÏÉÅÏäπ
-					case 58:		//Ïä§ÌÇ¨Ïø®ÌÉÄÏûÑ Í∞êÏÜå
-					case 59:		//MPÏÜåÎ™®Îüâ Í∞êÏÜå
-					case 60:		//Ïä§ÌÜ§ ÎÇ¥ÏÑ± Ï¶ùÍ∞Ä
-					case 61:		//Ïä§ÌÑ¥ ÎÇ¥ÏÑ± Ï¶ùÍ∞Ä
-					case 62:		//Ïπ®Î¨µ ÎÇ¥ÏÑ± Ï¶ùÍ∞Ä
-					case 63:		//Î∏îÎ°ùÎ•† Ï¶ùÍ∞Ä
-					case 64:		//Ïù¥ÎèôÏÜçÎèÑ Ìñ•ÏÉÅ
-						strTemp.PrintF( "%s : %d%%", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) );
-						break;
-					case 53:		//ÏïîÌùë Í≥µÍ≤©
-					case 54:		//ÎèÖ Í≥µÍ≤©
-					default:
-						strTemp.PrintF( "%s : %d", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) ); 
-					}
-
-					AddItemInfoString( strTemp, 0x94B7C6FF );
-				}
-				if( ulFlag & FLAG_ITEM_OPTION_ENABLE )
-				{
-					AddItemInfoString( _S( 511, "Î∏îÎü¨Îìú ÏòµÏÖò Í∞ÄÎä•" ), 0xE53535FF );		
-				}
-				if( ulFlag & FLAG_ITEM_SEALED )
-				{
-					AddItemInfoString( _S( 512, "Î¥âÏù∏Îêú ÏïÑÏù¥ÌÖú" ), 0xE53535FF );		
-				}
-			}
-			break;
-		}
-
-		// Description
-		const char	*pDesc = _pNetwork->GetItemDesc( nIndex );
-		if( pDesc[0] != NULL )
-		{
-			strTemp.PrintF( "%s", pDesc );
-			AddItemInfoString( strTemp, 0x9E9684FF );
-		}
-
-		nInfoWidth = 27 - _pUIFontTexMgr->GetFontSpacing() + MAX_ITEMINFO_CHAR *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	}
-	else
-	{
-		nInfoWidth = 27 - _pUIFontTexMgr->GetFontSpacing() + MAX_ITEMINFO_CHAR *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	}
-
-	return TRUE;
-}
-
-// ----------------------------------------------------------------------------
-// Name : ShowItemInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIWareHouse::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nTradeItem, int nRow, int nCol )
-{
-	static int	nOldBtnID = -1;
-	int			nBtnID;
-
-	m_bShowItemInfo = FALSE;
-
-	// Hide item information
-	if( !bShowInfo )
-	{
-		nOldBtnID = -1;
+	if(m_nSelTradeItemID < 0)
 		return;
-	}
 
-	BOOL	bUpdateInfo = FALSE;
-	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	// Trade
-	if( nTradeItem >= 0 )
+	CUIIcon* pDrag = pUIManager->GetDragIcon();
+
+	if (pDrag == NULL)
+		return;
+
+	CItems* pItems = pDrag->getItems();
+
+	if (pItems == NULL)
+		return;
+
+	int i, nCnt = m_vecTradeItems.size();
+
+	for (i = 0; i < nCnt; ++i)
 	{
-		m_bShowItemInfo = TRUE;
-		nBtnID		= m_abtnTradeItems[nTradeItem].GetBtnID();
-
-		// Update item information
-		if( nOldBtnID != nBtnID || bRenew )
+		if (m_vecTradeItems[i]->Item_UniIndex == pItems->Item_UniIndex)
 		{
-			bUpdateInfo = TRUE;
-			nOldBtnID = nBtnID;
-			m_abtnTradeItems[nTradeItem].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-			m_bDetailItemInfo = m_nSelTradeItemID == nTradeItem;
-			if( !GetItemInfo( 0, nInfoWidth, nInfoHeight, nTradeItem ) )
-				m_bShowItemInfo = FALSE;
-		}
-	}
-	// WareHouse
-	else if( nRow >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nBtnID = m_abtnWareHouseItems[nRow][nCol].GetBtnID();
-
-		// Update item information
-		if( nOldBtnID != nBtnID || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldBtnID = nBtnID;
-			m_abtnWareHouseItems[nRow][nCol].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-			m_bDetailItemInfo = m_nSelWareHouseItemID == ( nCol + nRow * WAREHOUSE_WAREHOUSE_SLOT_COL );;
-			if( m_bStorageWareHouse )
-				m_bDetailItemInfo = TRUE;
-			
-			if( !GetItemInfo( 1, nInfoWidth, nInfoHeight, -1, nRow, nCol ) )
-				m_bShowItemInfo = FALSE;
+			m_nTempTradeIdx = i;
+			break;
 		}
 	}
 
-	// Update item information box
-	if( m_bShowItemInfo && bUpdateInfo )
-	{
-		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
+	if (i == nCnt)
+		return;
 
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
+	m_pItemsTemp = pItems;
 
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
-		{
-			nInfoPosY += BTN_SIZE;
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
-		}
-		else
-		{
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
-		}
-	}
-
-	if( !m_bShowItemInfo )
-		nOldBtnID = -1;
+	DelWareHouseItem();
 }
 
 // ----------------------------------------------------------------------------
 // Name : RenderWareHouseItems()
-// Desc : Íµ¨ÏûÖÎ™®Îìú...
+// Desc : ±∏¿‘∏µÂ...
 // ----------------------------------------------------------------------------
 void CUIWareHouse::RenderWareHouseItems()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	int	nX = WAREHOUSE_BUY_TOP_SLOT_SX;
 	int	nY = WAREHOUSE_BUY_TOP_SLOT_SY;
 
-	int	iRow, iCol;
-	int	iRowS = m_nCurRow;
-	int	iRowE = iRowS + WAREHOUSE_WAREHOUSE_SLOT_ROW;
-	for( iRow = iRowS; iRow < iRowE; ++iRow )
+	int	i;
+	int	iRowS = (m_nCurRow * WAREHOUSE_WAREHOUSE_SLOT_COL);
+	int	iRowE = (m_nCurRow + WAREHOUSE_WAREHOUSE_SLOT_ROW) * WAREHOUSE_WAREHOUSE_SLOT_COL;
+	
+	for (i = iRowS; i < iRowE; ++i)
 	{
-		for( iCol = 0; iCol < WAREHOUSE_WAREHOUSE_SLOT_COL; ++iCol, nX+= 35)
-		{			
-			m_abtnWareHouseItems[iRow][iCol].SetPos( nX, nY );
-			if( m_abtnWareHouseItems[iRow][iCol].IsEmpty() )
-				continue;
-			
-			m_abtnWareHouseItems[iRow][iCol].Render();
+		if ((i % WAREHOUSE_WAREHOUSE_SLOT_COL) == 0)
+		{
+			nX = WAREHOUSE_BUY_TOP_SLOT_SX;	
+			if (i > iRowS)	nY += 35;
 		}
-		nX = WAREHOUSE_BUY_TOP_SLOT_SX;	nY += 35;
+
+		m_pIconWareHouseItems[i]->SetPos( nX, nY );
+		nX += 35;
+
+		if (m_pIconWareHouseItems[i]->IsEmpty() == true)
+			continue;
+			
+		m_pIconWareHouseItems[i]->Render(pDrawPort);
 	}
 
 	// ---Trade slot items---
-	for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; ++iItem )
+	int		iItem;
+	for( iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; ++iItem )
 	{
-		if( m_abtnTradeItems[iItem].IsEmpty() )
+		if (m_pIconTradeItems[iItem]->IsEmpty() == true)
 				continue;
 		
-		m_abtnTradeItems[iItem].Render();		
-	}
+		m_pIconTradeItems[iItem]->Render(pDrawPort);
+	}	
 
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+	pDrawPort->FlushBtnRenderingQueue( UBET_ITEM );
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Set warehouse texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );	
+	pDrawPort->InitTextureData( m_ptdBaseTexture );	
 
 
 	// Outline of selected item
 	if( m_nSelTradeItemID >= 0 )
 	{
-		m_abtnTradeItems[m_nSelTradeItemID].GetAbsPos( nX, nY );
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+		m_pIconTradeItems[m_nSelTradeItemID]->GetAbsPos( nX, nY );
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 											m_rtSelectOutline.U0, m_rtSelectOutline.V0,
 											m_rtSelectOutline.U1, m_rtSelectOutline.V1,
 											0xFFFFFFFF );
 	}
 	if( m_nSelWareHouseItemID >= 0 )
 	{
-		int	nSelRow = m_nSelWareHouseItemID / WAREHOUSE_WAREHOUSE_SLOT_COL;
-		if( nSelRow >= iRowS && nSelRow < iRowE )
-		{
-			int	nSelCol = m_nSelWareHouseItemID % WAREHOUSE_WAREHOUSE_SLOT_COL;
-
-			m_abtnWareHouseItems[nSelRow][nSelCol].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtSelectOutline.U0, m_rtSelectOutline.V0,
-												m_rtSelectOutline.U1, m_rtSelectOutline.V1,
-												0xFFFFFFFF );
-		}
+		m_pIconWareHouseItems[m_nSelWareHouseItemID]->GetAbsPos( nX, nY );
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+											m_rtSelectOutline.U0, m_rtSelectOutline.V0,
+											m_rtSelectOutline.U1, m_rtSelectOutline.V1,
+											0xFFFFFFFF );
 	}
-
-	// ----------------------------------------------------------------------------
-	// Item information ( name and property etc... )
-	if( m_bShowItemInfo )
-	{
-		// Item information region
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
-											m_rcItemInfo.Right, m_rcItemInfo.Top + 7,
-											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Right, m_rcItemInfo.Bottom - 7,
-											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom,
-											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom,
-											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Right, m_rcItemInfo.Bottom,
-											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
-											0xFFFFFFFF );
-
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-		// Render item information
-		int	nInfoX = m_rcItemInfo.Left + 12;
-		int	nInfoY = m_rcItemInfo.Top + 8;
-		for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
-		{
-			if(iInfo==0 && m_bRareItem && m_iRareGrade>=0)
-				_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, RareItem_Name_Color[m_iRareGrade] );
-			else
-				_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
-			nInfoY += _pUIFontTexMgr->GetLineHeight();
-		}
-
-		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
-	}
-	else
-	{
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	}
+	
+	pDrawPort->FlushRenderingQueue();
 }
 
 // ----------------------------------------------------------------------------
@@ -1403,34 +681,41 @@ void CUIWareHouse::RenderWareHouseItems()
 // Desc :
 // ----------------------------------------------------------------------------
 void CUIWareHouse::Render()
-{
-	// Check distance
-	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcX;
-	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcZ;
-	if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
-		ResetWareHouse();
+{	
+	if ( m_bCashRemote == false)
+	{
+		// Check distance
+		FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcX;
+		FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcZ;
+
+		if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
+			ResetWareHouse();
+	}	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
 
 	// Set warehouse texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	int	nX, nY;
 
 	// Add render regions
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + 24,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + 24,
 										m_rtBackTop.U0, m_rtBackTop.V0,
 										m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + 24,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY + 24,
 										m_nPosX + m_nWidth, m_nPosY + m_nHeight - 38,
 										m_rtBackMiddle.U0, m_rtBackMiddle.V0,
 										m_rtBackMiddle.U1, m_rtBackMiddle.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + m_nHeight - 38,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY + m_nHeight - 38,
 										m_nPosX + m_nWidth, m_nPosY + m_nHeight - 2,
 										m_rtBackBottom.U0, m_rtBackBottom.V0,
 										m_rtBackBottom.U1, m_rtBackBottom.V1,
 										0xFFFFFFFF );	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + m_nHeight - 2,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY + m_nHeight - 2,
 										m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackBottomLine.U0, m_rtBackBottomLine.V0,
 										m_rtBackBottomLine.U1, m_rtBackBottomLine.V1,
@@ -1441,14 +726,14 @@ void CUIWareHouse::Render()
 	nY = m_nPosY + 22;
 
 	//wooss 050811 ExInventory window
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + WAREHOUSE_DAYS_HEIGHT,
 		m_rtExInven.U0, m_rtExInven.V0,
 		m_rtExInven.U1, m_rtExInven.V1,
 		0xFFFFFFFF );
 	nY += WAREHOUSE_DAYS_HEIGHT;
 	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + WAREHOUSE_TOP_HEIGHT,
 		m_rtTopTopInven.U0, m_rtTopTopInven.V0,
 		m_rtTopTopInven.U1, m_rtTopTopInven.V1,
@@ -1456,7 +741,7 @@ void CUIWareHouse::Render()
 
 	nY += WAREHOUSE_TOP_HEIGHT;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + WAREHOUSE_MIDDLE_HEIGHT,
 		m_rtTopMiddleInven.U0, m_rtTopMiddleInven.V0,
 		m_rtTopMiddleInven.U1, m_rtTopMiddleInven.V1,
@@ -1464,7 +749,7 @@ void CUIWareHouse::Render()
 	
 	nY += WAREHOUSE_MIDDLE_HEIGHT;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + WAREHOUSE_MIDDLE_HEIGHT,
 		m_rtTopMiddleInven.U0, m_rtTopMiddleInven.V0,
 		m_rtTopMiddleInven.U1, m_rtTopMiddleInven.V1,
@@ -1472,7 +757,7 @@ void CUIWareHouse::Render()
 	
 	nY += WAREHOUSE_MIDDLE_HEIGHT;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + WAREHOUSE_BOTTOM_HEIGHT,
 		m_rtTopBottomInven.U0, m_rtTopBottomInven.V0,
 		m_rtTopBottomInven.U1, m_rtTopBottomInven.V1,
@@ -1480,14 +765,14 @@ void CUIWareHouse::Render()
 	
 	nY += WAREHOUSE_BOTTOM_HEIGHT;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + 1,
 		m_rtSeperatorInven.U0, m_rtSeperatorInven.V0,
 		m_rtSeperatorInven.U1, m_rtSeperatorInven.V1,
 		0xFFFFFFFF );
 	
 	nY += 1;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + WAREHOUSE_TRADE_HEIGHT,
 		m_rtBottomInven.U0, m_rtBottomInven.V0,
 		m_rtBottomInven.U1, m_rtBottomInven.V1,
@@ -1495,25 +780,20 @@ void CUIWareHouse::Render()
 
 	nY += WAREHOUSE_TRADE_HEIGHT;
 
-	if( m_bStorageWareHouse )
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + 23,
 		m_rtPriceInven.U0, m_rtPriceInven.V0,
 		m_rtPriceInven.U1, m_rtPriceInven.V1,
 		0xFFFFFFFF );
-	}
-	else
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
-		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + 23,
-		m_rtBlankInven.U0, m_rtBlankInven.V0,
-		m_rtBlankInven.U1, m_rtBlankInven.V1,
-		0xFFFFFFFF );
-	}
 	nY += 23;
+	pDrawPort->AddTexture( nX, nY,
+		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + 23,
+		m_rtPriceInven.U0, m_rtPriceInven.V0,
+		m_rtPriceInven.U1, m_rtPriceInven.V1,
+		0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	nY += 23;
+	pDrawPort->AddTexture( nX, nY,
 		nX + WAREHOUSE_WAREHOUSE_WIDTH, nY + 1,
 		m_rtSeperatorInven.U0, m_rtSeperatorInven.V0,
 		m_rtSeperatorInven.U1, m_rtSeperatorInven.V1,
@@ -1529,65 +809,67 @@ void CUIWareHouse::Render()
 	{
 		// Buy & sell button of warehouse
 		m_btnWareHouseKeep.Render();
+		m_btnInNas.Render();	//2013/04/02 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
 	}
 	else
 	{
 		m_btnWareHouseTake.Render();
+		m_btnOutNas.Render();	//2013/04/02 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
 	}
 	
 	// Cancel button of warehouse
 	m_btnWareHouseCancel.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render item information
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 823, "Ï∞ΩÍ≥†" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX,	
+	pDrawPort->PutTextEx( _S( 823, "√¢∞Ì" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX,	
 										m_nPosY + INVEN_TITLE_TEXT_OFFSETY );
 
 	if(m_bStorageWareHouse)
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 824, "Î≥¥Í¥ÄÎ£å" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY );	
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strTotalPrice, m_nPosX + WAREHOUSE_TRADEPRICE_POSX, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY, _pUIMgr->GetNasColor( m_strTotalPrice ) );
+		pDrawPort->PutTextEx( _S( 5908, "¿‘±› ±›æ◊" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX-8, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY );	
+		pDrawPort->PutTextExRX( m_strInNas, m_nPosX + WAREHOUSE_TRADEPRICE_POSX, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY, pUIManager->GetNasColor( m_strInNas ) );
+		pDrawPort->PutTextEx( _S( 824, "∫∏∞¸∑·" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX+10, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY+23 );	
+		pDrawPort->PutTextExRX( m_strTotalPrice, m_nPosX + WAREHOUSE_TRADEPRICE_POSX, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY+23, pUIManager->GetNasColor( m_strTotalPrice ) );
 	}
-
-//	char tv_str[20]={'\0',};
-//	itoa(m_useTime,tv_str,10);
-	
-	// ------ÎßåÎ£åÍ∏∞Í∞Ñ ÎùºÏπ¥Î†•ÏúºÎ°ú ---------wooss-060421--->>
-//	tm* tv_t = new tm;
-	int tv_time = m_useTime;
-	int tv_year,tv_month,tv_day;
-	CTString tv_str,tv_str2;
-//	tv_time *=24;
-	tv_year = tv_time/360;
-	tv_time -= tv_year*360;
-	tv_month = (tv_time)/30;
-	tv_time -= tv_month*30;
-	tv_day = tv_time;
-//		tv_t = _pUIMgr->LClocaltime((time_t*)&m_useTime);
-	if(tv_year >0 ){
-		tv_str2.PrintF(  _S(2623, "%dÎÖÑ"),tv_year);
-		tv_str+=tv_str2+" ";
+	else
+	{
+		pDrawPort->PutTextEx( _S( 5909, "∫∏∞¸ ±›æ◊" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX-8, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY );	
+		pDrawPort->PutTextExRX( m_strTotalNas, m_nPosX + WAREHOUSE_TRADEPRICE_POSX, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY, pUIManager->GetNasColor( m_strTotalNas ) );
+		pDrawPort->PutTextEx( _S( 5910, "√‚±› ±›æ◊" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX-8, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY+23 );	
+		pDrawPort->PutTextExRX( m_strOutNas, m_nPosX + WAREHOUSE_TRADEPRICE_POSX, m_nPosY + WAREHOUSE_BUY_TRADEPRICE_POSY+23, pUIManager->GetNasColor( m_strOutNas ) );
 	}
-	if(tv_month >0 ){
-		tv_str2.PrintF(  _S(2624, "%dÍ∞úÏõî"),tv_month);
-		tv_str+=tv_str2+" ";
-	}
-	if(tv_day >0 ){
-		tv_str2.PrintF(  _S(2625, "%dÏùº"),tv_day);
-		tv_str+=tv_str2+" ";
-	}
-
 	// -----------------------------------------------------------<<
-#ifdef CHARGE_ITEM 
-	//wooss 050811 050917 060207_thai 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(2150, "ÌôïÏû• Í∏∞Í∞Ñ : "), m_nPosX + WAREHOUSE_EXTEND_TEXT_POSX, m_nPosY + WAREHOUSE_EXTEND_TEXT_POSY ); 	
-	_pUIMgr->GetDrawPort()->PutTextExRX(tv_str, m_nPosX + WAREHOUSE_EXTEND_DAYS_POSX+30, m_nPosY + WAREHOUSE_EXTEND_TEXT_POSY ,0xFFFFFFF);
-#endif
 	
+	CTString tv_str;
+
+	if (m_useTime > 0)
+	{
+		tm* pTime = NULL;
+
+		pTime = localtime((time_t*)&m_useTime);
+
+		tv_str.PrintF(  _S( 6070,"∏∏∑· : %d≥‚%dø˘%d¿œ%dΩ√%d∫–"),pTime->tm_year + 1900
+			,pTime->tm_mon + 1,pTime->tm_mday,pTime->tm_hour, pTime->tm_min);
+	}
+
+	pDrawPort->PutTextExCX(tv_str, m_nPosX + DEF_EXPANSION_TEXT_AREA / 2, m_nPosY + WAREHOUSE_EXTEND_TEXT_POSY ,DEF_UI_COLOR_WHITE);
+	
+	{
+		// √¢∞Ì «ˆ¿Á∑Æ / ¿˙¿Â ∞°¥…∑Æ √‚∑¬
+		CTString tmp;
+		int		cap =  150;
+
+		if (m_useTime > 0)
+			cap = 300;
+
+		tmp.PrintF("(%d / %d)", m_vectorStorageItems.size(), cap);
+		pDrawPort->PutTextEx(tmp, m_nPosX + 148, m_nPosY + 40, DEF_UI_COLOR_WHITE);
+	}
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Render Items
 	RenderWareHouseItems();
@@ -1617,8 +899,10 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 	{
 	case WM_MOUSEMOVE:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				pUIManager->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -1634,41 +918,36 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 			}
 
 			// Hold item button
-			if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInItem && ( pMsg->wParam & MK_LBUTTON ) &&
-				( ndX != 0 || ndY != 0 ) )
+			if (pUIManager->GetDragIcon() == NULL && bLButtonDownInItem && 
+				(pMsg->wParam& MK_LBUTTON) && (ndX != 0 || ndY != 0))
 			{
 				// WareHouse items
 				if( m_nSelWareHouseItemID >= 0 )
-				{
-					int	nSelRow = m_nSelWareHouseItemID / WAREHOUSE_WAREHOUSE_SLOT_COL;
-					int	nSelCol = m_nSelWareHouseItemID % WAREHOUSE_WAREHOUSE_SLOT_COL;
-					
+				{					
 					// Close message box of warehouse
-					_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_TAKE_MONEY );		//2013/04/04 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
 					
-					_pUIMgr->SetHoldBtn( m_abtnWareHouseItems[nSelRow][nSelCol] );
-					int	nOffset = BTN_SIZE / 2;
-					_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
+					pUIManager->SetHoldBtn(m_pIconWareHouseItems[m_nSelWareHouseItemID]);
 					
-					m_abtnWareHouseItems[nSelRow][nSelCol].SetBtnState( UBES_IDLE );					
+					pUIManager->GetMsgBoxNumOnly()->CloseBox();
 				}
 				// Trade items
 				else if( m_nSelTradeItemID >= 0 )
 				{
 					// Close message box of warehouse
-					_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+					pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_TAKE_MONEY );		//2013/04/04 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
 
-					_pUIMgr->SetHoldBtn( m_abtnTradeItems[m_nSelTradeItemID] );
-					int	nOffset = BTN_SIZE / 2;
-					_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
+					pUIManager->SetHoldBtn(m_pIconTradeItems[m_nSelTradeItemID]);
 
-					m_abtnTradeItems[m_nSelTradeItemID].SetBtnState( UBES_IDLE );
+					pUIManager->GetMsgBoxNumOnly()->CloseBox();
 				}
 
 				bLButtonDownInItem	= FALSE;
@@ -1693,50 +972,33 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 					m_nCurRow = m_sbTopScrollBar.GetScrollPos();
 
 				return WMSG_SUCCESS;
-			}			
-			// WareHouse
-			else if( IsInsideRect( nX, nY, m_rcTop ) )
+			}
+			else if(m_bStorageWareHouse && m_btnInNas.MouseMessage( pMsg ) != WMSG_FAIL)	//2013/04/02 ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
 			{
-				int	iRow, iCol;
-				int	iRowS = m_nCurRow;								// Start Row
-				int	iRowE = iRowS + WAREHOUSE_WAREHOUSE_SLOT_ROW;	// End Row
-				int	nWhichRow = -1, nWhichCol = -1;
-				for( iRow = iRowS; iRow < iRowE; iRow++ )
-				{
-					for( iCol = 0; iCol < WAREHOUSE_WAREHOUSE_SLOT_COL; iCol++ )
-					{
-						if( m_abtnWareHouseItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							nWhichRow = iRow;	
-							nWhichCol = iCol;
-						}
-					}
-				}
-
-				// Show tool tip
-				ShowItemInfo( TRUE, FALSE, -1, nWhichRow, nWhichCol );
-
 				return WMSG_SUCCESS;
 			}
-			// Trade
-			else if( IsInsideRect( nX, nY, m_rcBottom ) )
+			else if(!m_bStorageWareHouse && m_btnOutNas.MouseMessage( pMsg ) != WMSG_FAIL)	//2013/04/02 ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
 			{
+				return WMSG_SUCCESS;
+			}
+			else
+			{
+				int	i;
+				int	iRowS = m_nCurRow * WAREHOUSE_WAREHOUSE_SLOT_COL;								// Start Row
+				int	iRowE = (m_nCurRow + WAREHOUSE_WAREHOUSE_SLOT_ROW) * WAREHOUSE_WAREHOUSE_SLOT_COL;	// End Row
+				
+				for (i = iRowS; i < iRowE; ++i)
+				{
+					m_pIconWareHouseItems[i]->MouseMessage( pMsg );
+				}
+
 				int	iItem;
-				int	nWhichItem = -1;
 				for( iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
 				{
-					if( m_abtnTradeItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
-						nWhichItem = iItem;	
+					m_pIconTradeItems[iItem]->MouseMessage( pMsg );
 				}
-
-				// Show tool tip
-				ShowItemInfo( TRUE, FALSE, nWhichItem );
-
-				return WMSG_SUCCESS;
+				return WMSG_FAIL;
 			}
-
-			// Hide tool tip
-			ShowItemInfo( FALSE );
 		}
 		break;
 
@@ -1744,6 +1006,7 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
 				nOldX = nX;		nOldY = nY;
 
 				// Close button
@@ -1771,32 +1034,37 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 				{
 					// Nothing
 				}
+				else if(m_bStorageWareHouse && m_btnInNas.MouseMessage( pMsg ) != WMSG_FAIL)	//2013/04/02 ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
+				{
+				
+					//¿‘±› πˆ∆∞
+				}
+				else if(!m_bStorageWareHouse && m_btnOutNas.MouseMessage( pMsg ) != WMSG_FAIL)	//2013/04/02 ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
+				{
+				
+					//√‚±› πˆ∆∞
+				}
 				// WareHouse items
 				else if( !m_bStorageWareHouse && IsInsideRect( nX, nY, m_rcTop ) )
 				{
 					m_nSelWareHouseItemID = -1;
 					m_nSelTradeItemID = -1;
 
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + WAREHOUSE_WAREHOUSE_SLOT_ROW;			// 4Ï§Ñ~
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * WAREHOUSE_WAREHOUSE_SLOT_COL;
+					int	iRowE = (m_nCurRow + WAREHOUSE_WAREHOUSE_SLOT_ROW) * WAREHOUSE_WAREHOUSE_SLOT_COL;
+					
+					for( i = iRowS; i < iRowE; i++ )
 					{
-						for( iCol = 0; iCol < WAREHOUSE_WAREHOUSE_SLOT_COL; iCol++ )
+						if (m_pIconWareHouseItems[i]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
-							if( m_abtnWareHouseItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected item
-								m_nSelWareHouseItemID = iCol + iRow * WAREHOUSE_WAREHOUSE_SLOT_COL;	// ÏÑ†ÌÉùÎêú Ïä¨Î°ØÏùò ÏïÑÏù¥ÌÖú ID
+							// Update selected item
+							m_nSelWareHouseItemID = i;	// º±≈√µ» ΩΩ∑‘¿« æ∆¿Ã≈€ ID
 
-								// Show tool tup
-								ShowItemInfo( TRUE, TRUE, -1, iRow, iCol );
+							bLButtonDownInItem	= TRUE;
 
-								bLButtonDownInItem	= TRUE;
-
-								_pUIMgr->RearrangeOrder( UI_WAREHOUSE, TRUE );
-								return WMSG_SUCCESS;
-							}
+							pUIManager->RearrangeOrder( UI_WAREHOUSE, TRUE );
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -1808,17 +1076,14 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 
 					for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
 					{
-						if( m_abtnTradeItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
+						if (m_pIconTradeItems[iItem]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
 							// Update selected item
-							m_nSelTradeItemID = iItem;			// ÏÑ†ÌÉùÎêú Ïä¨Î°ØÏùò ÏïÑÏù¥ÌÖú ID
-
-							// Show tool tup
-							ShowItemInfo( TRUE, TRUE, iItem );
+							m_nSelTradeItemID = iItem;			// º±≈√µ» ΩΩ∑‘¿« æ∆¿Ã≈€ ID
 
 							bLButtonDownInItem	= TRUE;
 
-							_pUIMgr->RearrangeOrder( UI_WAREHOUSE, TRUE );
+							pUIManager->RearrangeOrder( UI_WAREHOUSE, TRUE );
 							return WMSG_SUCCESS;
 						}
 					}
@@ -1830,7 +1095,7 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 						m_nCurRow = m_sbTopScrollBar.GetScrollPos();
 				}				
 
-				_pUIMgr->RearrangeOrder( UI_WAREHOUSE, TRUE );
+				pUIManager->RearrangeOrder( UI_WAREHOUSE, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -1838,10 +1103,11 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 			bLButtonDownInItem = FALSE;
 
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -1888,6 +1154,24 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 
 					return WMSG_SUCCESS;
 				}
+				else if(m_bStorageWareHouse && ( wmsgResult = m_btnInNas.MouseMessage( pMsg ) ) != WMSG_FAIL )	//2013/04/02 ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
+				{
+					if( wmsgResult == WMSG_COMMAND )
+					{
+						InNas();
+					}
+					return WMSG_SUCCESS;
+					//¿‘±› πˆ∆∞
+				}
+				else if(!m_bStorageWareHouse && ( wmsgResult = m_btnOutNas.MouseMessage( pMsg ) ) != WMSG_FAIL )	//2013/04/02 ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
+				{
+					if( wmsgResult == WMSG_COMMAND )
+					{
+						OutNas();
+					}
+					return WMSG_SUCCESS;
+					//√‚±› πˆ∆∞
+				}
 				// Cancel button of warehouse
 				else if( ( wmsgResult = m_btnWareHouseCancel.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
@@ -1910,18 +1194,16 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 				// WareHouse items
 				else if( IsInsideRect( nX, nY, m_rcTop ) )
 				{
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + WAREHOUSE_WAREHOUSE_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * WAREHOUSE_WAREHOUSE_SLOT_COL;
+					int	iRowE = (m_nCurRow + WAREHOUSE_WAREHOUSE_SLOT_ROW) * WAREHOUSE_WAREHOUSE_SLOT_COL;
+					
+					for( i = iRowS; i < iRowE; i++ )
 					{
-						for( iCol = 0; iCol < WAREHOUSE_WAREHOUSE_SLOT_COL; iCol++ )
+						if (m_pIconWareHouseItems[i]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
-							if( m_abtnWareHouseItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Nothing
-								return WMSG_SUCCESS;
-							}
+							// Nothing
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -1930,7 +1212,7 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 				{
 					for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
 					{
-						if( m_abtnTradeItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
+						if (m_pIconTradeItems[iItem]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
 							// Nothing
 							return WMSG_SUCCESS;
@@ -1943,24 +1225,22 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 				//////////////////////////////////////////////////////////////////////////
 				if( IsInside( nX, nY ) )
 				{
+					CUIIcon* pDrag = pUIManager->GetDragIcon();
 					// If holding button is item and is from warehouse
-					if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_WAREHOUSE )
+					if (pDrag->getBtnType() == UBET_ITEM &&
+						pDrag->GetWhichUI() == UI_WAREHOUSE )
 					{
 						// Trade items
 						if( !m_bStorageWareHouse && IsInsideRect( nX, nY, m_rcBottom ) )
 						{
 							// If this item is moved from warehouse slot
-							if( m_nSelTradeItemID < 0 ||
-								m_abtnTradeItems[m_nSelTradeItemID].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
+							if (m_nSelTradeItemID < 0 ||
+								m_pIconTradeItems[m_nSelTradeItemID]->getIndex() != pDrag->getIndex())
 							{
-								AddWareHouseItem( _pUIMgr->GetHoldBtn().GetItemRow(),
-												_pUIMgr->GetHoldBtn().GetItemCol(),
-												_pUIMgr->GetHoldBtn().GetItemUniIndex(),
-												_pUIMgr->GetHoldBtn().GetItemCount() );
+								AddWareHouseItem(m_nSelWareHouseItemID);
 
 								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 
 								return WMSG_SUCCESS;
 							}
@@ -1968,47 +1248,50 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 						// WareHouse items
 						else if( !m_bStorageWareHouse && IsInsideRect( nX, nY, m_rcTop ) )
 						{
-							int	nSelRow = m_nSelWareHouseItemID / WAREHOUSE_WAREHOUSE_SLOT_COL;
-							int	nSelCol = m_nSelWareHouseItemID % WAREHOUSE_WAREHOUSE_SLOT_COL;
 							// If this item is moved from trade slot
-							if( m_nSelWareHouseItemID < 0 ||
-								m_abtnWareHouseItems[nSelRow][nSelCol].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
+							if (m_nSelWareHouseItemID < 0 ||
+								m_pIconWareHouseItems[m_nSelWareHouseItemID]->getIndex() != pDrag->getIndex())
 							{
-								DelWareHouseItem( _pUIMgr->GetHoldBtn().GetItemRow(),
-												_pUIMgr->GetHoldBtn().GetItemCol(),
-												_pUIMgr->GetHoldBtn().GetItemUniIndex(),
-												_pUIMgr->GetHoldBtn().GetItemCount(),
-												m_nSelTradeItemID );
+ 								m_nTempTradeIdx = m_nSelTradeItemID;
+								m_pItemsTemp = m_vecTradeItems[m_nTempTradeIdx];
+
+								int nCnt = m_vectorStorageItems.size();
+
+								for (int i = 0; i < nCnt; ++i)
+								{
+									if (m_vectorStorageItems[i]->Item_UniIndex == m_pItemsTemp->Item_UniIndex)
+									{
+										m_nTempStorageIdx = i;
+										break;
+									}
+								}
+
+								DelWareHouseItem();
 
 								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 
 								return WMSG_SUCCESS;
 							}
 						}
 					} // If - If holding button is item
-					else if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_INVENTORY && m_bStorageWareHouse)
+					else if (pDrag->getBtnType() == UBET_ITEM &&
+							 pDrag->GetWhichUI() == UI_INVENTORY && m_bStorageWareHouse)
 					{
 						// Trade items
 						if( IsInsideRect( nX, nY, m_rcBottom ) )
 						{
-							// If this item is moved from warehouse slot
-							if( m_nSelTradeItemID < 0 ||
-								m_abtnTradeItems[m_nSelTradeItemID].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
-							{
-								AddWareHouseItemFromInventory( );
+							AddWareHouseItemFromInventory( );
 
-								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+							// Reset holding button
+							pUIManager->ResetHoldBtn();
 
-								return WMSG_SUCCESS;
-							}
+							return WMSG_SUCCESS;
 						}
 					}
 
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				} // If - IsInside
@@ -2026,26 +1309,40 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 				{
 					int	nTradeItemID = m_nSelTradeItemID;
 					m_nSelTradeItemID = -1;
+					CUIManager* pUIManager = CUIManager::getSingleton();
 
 					for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
 					{
-						if( m_abtnTradeItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
+						if (m_pIconTradeItems[iItem]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
 							// Close message box of warehouse
-							_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
-							_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
-							_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
-							_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+							pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
+							pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
+							pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
+							pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+							pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_TAKE_MONEY );		//2013/04/04 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
 
-							DelWareHouseItem( m_abtnTradeItems[iItem].GetItemRow(),
-											m_abtnTradeItems[iItem].GetItemCol(),
-											m_abtnTradeItems[iItem].GetItemUniIndex(),
-											m_abtnTradeItems[iItem].GetItemCount(),
-											nTradeItemID );
+							pUIManager->GetMsgBoxNumOnly()->CloseBox();
 
-							// Show tool tup
-							ShowItemInfo( TRUE, TRUE, iItem );
+							if (iItem >= m_vecTradeItems.size())
+								return WMSG_FAIL;
 
+							m_pItemsTemp = m_vecTradeItems[iItem];
+							m_nTempTradeIdx = nTradeItemID;
+
+							int nCnt = m_vectorStorageItems.size();
+
+							for (int i = 0; i < nCnt; ++i)
+							{
+								if (m_vectorStorageItems[i]->Item_UniIndex == m_pItemsTemp->Item_UniIndex)
+								{
+									m_nTempStorageIdx = i;
+									break;
+								}
+							}
+
+							DelWareHouseItem();
+							
 							return WMSG_SUCCESS;
 						}
 					}
@@ -2054,42 +1351,33 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 				else if( IsInsideRect( nX, nY, m_rcTop ) )
 				{
 					m_nSelWareHouseItemID = -1;
+					CUIManager* pUIManager = CUIManager::getSingleton();
 
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + WAREHOUSE_WAREHOUSE_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * WAREHOUSE_WAREHOUSE_SLOT_COL;
+					int	iRowE = (m_nCurRow + WAREHOUSE_WAREHOUSE_SLOT_ROW) * WAREHOUSE_WAREHOUSE_SLOT_COL;
+					
+					for( i = iRowS; i < iRowE; i++ )
 					{
-						for( iCol = 0; iCol < WAREHOUSE_WAREHOUSE_SLOT_COL; iCol++ )
+						if (m_pIconWareHouseItems[i]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
-							if( m_abtnWareHouseItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
+							if( !m_bStorageWareHouse )
 							{
-								if( !m_bStorageWareHouse )
 								{
-									// Not wearing, not refine stone, can trade
-									CItems		&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-									CItemData	&rItemData = rItems.ItemData;
-									if( rItems.Item_Wearing == -1 &&
-										( rItemData.GetType() != CItemData::ITEM_ETC || rItemData.GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
-										rItemData.GetFlag() & ITEM_FLAG_TRADE )
-									{
-										// Close message box of warehouse
-										_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
-										_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
-										_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
-										_pUIMgr->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+									// Close message box of warehouse
+									pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
+									pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
+									pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_PLUSITEM );
+									pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_ADD_MONEY );
+									pUIManager->CloseMessageBox( MSGCMD_WAREHOUSE_TAKE_MONEY );		//2013/04/04 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
 
-										AddWareHouseItem( iRow, iCol,
-														m_abtnWareHouseItems[iRow][iCol].GetItemUniIndex(),
-														m_abtnWareHouseItems[iRow][iCol].GetItemCount() );
-									}
+									pUIManager->GetMsgBoxNumOnly()->CloseBox();
+
+									AddWareHouseItem(i);
 								}
-
-								// Show tool tup
-								ShowItemInfo( TRUE, TRUE, -1, iRow, iCol );
-
-								return WMSG_SUCCESS;
 							}
+
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -2122,98 +1410,66 @@ WMSG_RESULT CUIWareHouse::MouseMessage( MSG *pMsg )
 	return WMSG_FAIL;
 }
 
-
-// ========================================================================= //
-//                             Command functions                             //
-// ========================================================================= //
-static int		nTempIndex;
-static int		nTempUniIndex;
-static int		nTempRow, nTempCol;
-static SQUAD	llTempCount;
-static int		nTempTradeItemID;
-static ULONG	ulItemPlus;
-static ULONG	ulItemFlag;
-static LONG		lItemUsed;
-static SQUAD	llTempPrice;
-static SBYTE	TempsbOptionType[MAX_ITEM_OPTION];
-static SBYTE	TempsbOptionLevel[MAX_ITEM_OPTION];
-static SQUAD	llMaxTempCount = -1;
-static LONG		lRareIndex;
-
-
-// ----------------------------------------------------------------------------
-// Name : AddWareHouseItem()
-// Desc : From warehouse to trade
-// ----------------------------------------------------------------------------
-void CUIWareHouse::AddWareHouseItem( int nRow, int nCol, int nUniIndex, SQUAD llCount )
+void CUIWareHouse::AddWareHouseItem( int nIndex )
 {
-	nTempRow		= nRow;
-	nTempCol		= nCol;
-	nTempUniIndex	= nUniIndex;
-	llTempCount		= llCount;
-	nTempIndex		= m_abtnWareHouseItems[nTempRow][nTempCol].GetItemIndex();
-	ulItemPlus		= m_abtnWareHouseItems[nTempRow][nTempCol].GetItemPlus();
-	ulItemFlag		= m_abtnWareHouseItems[nTempRow][nTempCol].GetItemFlag();
-	lItemUsed		= m_abtnWareHouseItems[nTempRow][nTempCol].GetItemUsed();
-	llMaxTempCount	= -1;
-	lRareIndex		= m_abtnWareHouseItems[nTempRow][nTempCol].GetItemRareIndex();
+	if (nIndex < 0 || nIndex >= m_vectorStorageItems.size())
+		return;
 
-	for( int i = 0; i < MAX_ITEM_OPTION; i++ )
-	{
-		TempsbOptionType[i] = -1;
-		TempsbOptionLevel[i] = 0;
-	}
+	m_nTempStorageIdx = nIndex;
 
-	for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; ++sbOption )
-	{	
-		TempsbOptionType[sbOption]	= m_abtnWareHouseItems[nTempRow][nTempCol].GetItemOptionType( sbOption );
-		TempsbOptionLevel[sbOption] = m_abtnWareHouseItems[nTempRow][nTempCol].GetItemOptionLevel( sbOption );
-	}
-
-	CItemData&	rItemData = _pNetwork->GetItemData( nTempIndex );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	m_pItemsTemp = m_vectorStorageItems[nIndex];
+	CItemData*	pItemData = m_vectorStorageItems[nIndex]->ItemData;
+	int		nItemIndex = m_vectorStorageItems[nIndex]->Item_Index;
+	SQUAD	nCount = m_vectorStorageItems[nIndex]->Item_Sum;
+	int		nItemPlus = m_vectorStorageItems[nIndex]->Item_Plus;
+	m_nTempMax = -1;
 
 	// Ask quantity
-	if( ( m_bStorageWareHouse && ( rItemData.GetFlag() & ITEM_FLAG_COUNT ) ) ||
-		( !m_bStorageWareHouse && ( rItemData.GetFlag() & ITEM_FLAG_COUNT ) && llTempCount > 1 ) )
+	if ((m_bStorageWareHouse && (pItemData->GetFlag() & ITEM_FLAG_COUNT)) ||
+		(!m_bStorageWareHouse && (pItemData->GetFlag() & ITEM_FLAG_COUNT) && nCount > 1))
 	{
 		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
-									UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_ITEM );
-		const char	*szItemName = _pNetwork->GetItemName( nTempIndex );
+		const char	*szItemName = _pNetwork->GetItemName(nItemIndex);
 
-		if( rItemData.GetType() == CItemData::ITEM_ETC &&
-			rItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
+		if( pItemData->GetType() == CItemData::ITEM_ETC &&
+			pItemData->GetSubType() == CItemData::ITEM_ETC_MONEY )
 		{
-			strMessage.PrintF( _S( 1323, "Î™á ÎÇòÏä§Î•º ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ) );		
+			strMessage.PrintF( _S( 1323, "∏Ó ≥™Ω∫∏¶ ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ) );
+
+			CUIMsgBox_Info	MsgBoxInfo;
+			MsgBoxInfo.SetMsgBoxInfo( _S( 823, "√¢∞Ì" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
+				UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_ITEM );
+
+			MsgBoxInfo.AddString( strMessage );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+			pUIManager->GetMsgBoxNumOnly()->CloseBox();
 		}
 		else
 		{
-			strMessage.PrintF( _S2( 150, szItemName, "Î™á Í∞úÏùò %s<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName );
-		}
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			strMessage.PrintF( _S2( 150, szItemName, "∏Ó ∞≥¿« %s<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ), szItemName );
 
-		CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
-		CTString strItemCount;
-		strItemCount.PrintF( "%I64d", m_abtnWareHouseItems[nTempRow][nTempCol].GetItemCount() );
-		ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-		pMsgBox->GetInputBox().InsertChars( 0, strItemCount.str_String );
+			CmdWareHouseAddItem* pCmd = new CmdWareHouseAddItem;
+			pCmd->setData(this);
+			UIMGR()->GetMsgBoxNumOnly()->SetInfo(pCmd, _S( 823, "√¢∞Ì" ), strMessage, 1, nCount);
+		}
 	}
-	else if( ulItemPlus > 0 && !(_pUIMgr->IsPet(rItemData) || _pUIMgr->IsWildPet(rItemData)))
+	else if (nItemPlus > 0 && !(pUIManager->IsPet(pItemData) || pUIManager->IsWildPet(pItemData) ||
+			 (pItemData->GetType() == CItemData::ITEM_ETC && 
+			  (pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD || nItemIndex == 6941))))
 	{
 		CTString	strMessage;
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_YESNO,		
+		MsgBoxInfo.SetMsgBoxInfo( _S( 823, "√¢∞Ì" ), UMBS_YESNO,		
 									UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_PLUSITEM );
-		const char	*szItemName = _pNetwork->GetItemName( nTempIndex );
-		strMessage.PrintF( _S2( 264, szItemName, "[%s +%d]<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName, ulItemPlus );
+		const char*	szItemName = _pNetwork->GetItemName(nItemIndex);
+		strMessage.PrintF(_S2(264, szItemName, "[%s +%d]<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?"), szItemName, nItemPlus);
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 	}
 	else
 	{
-		WareHouseToTrade( llTempCount, ulItemPlus, ulItemFlag, lItemUsed, lRareIndex );
+		WareHouseToTrade();
 	}
 }
 
@@ -2221,142 +1477,82 @@ void CUIWareHouse::AddWareHouseItem( int nRow, int nCol, int nUniIndex, SQUAD ll
 // Name : AddWareHouseItemFromInventory()
 // Desc : From inventory to trade
 // ----------------------------------------------------------------------------
-void CUIWareHouse::AddWareHouseItemFromInventory( )
+void CUIWareHouse::AddWareHouseItemFromInventory()
 {
-	int nTab, nRow, nCol;
-	nTempUniIndex	= _pUIMgr->GetHoldBtn().GetItemUniIndex();
-	_pUIMgr->GetInventory()->GetLocationOfNormalItem( nTempUniIndex, nRow, nCol );
-
-	if( nRow == -1 )
-		return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
 	
-	nTab					= _pUIMgr->GetHoldBtn().GetItemTab();
-	if(_pNetwork->MySlotItem[nTab][nRow][nCol].Item_Wearing != -1)
-	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 825, "Ïû•Ï∞©ÌïòÍ≥† ÏûàÎäî ÏïÑÏù¥ÌÖúÏùÄ Î≥¥Í¥ÄÌï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+	CUIIcon* pDrag = pUIManager->GetDragIcon();
+
+	if (pDrag == NULL)
 		return;
-	}
-	
-	nTempIndex				= _pUIMgr->GetHoldBtn().GetItemIndex();
-	CItemData	&rItemData	= _pNetwork->GetItemData( nTempIndex );
-	const char* szItemName	= _pNetwork->GetItemName( nTempIndex );
-	ulItemPlus				= _pUIMgr->GetHoldBtn().GetItemPlus();
-	ulItemFlag				= _pUIMgr->GetHoldBtn().GetItemFlag();
-	lItemUsed				= _pUIMgr->GetHoldBtn().GetItemUsed();
-	nTempRow				= nRow;
-	nTempCol				= nCol;
-	llTempCount				= _pNetwork->MySlotItem[nTab][nRow][nCol].Item_Sum;
-	llMaxTempCount			= _pNetwork->MySlotItem[nTab][nRow][nCol].Item_Sum;
-	lRareIndex				= _pUIMgr->GetHoldBtn().GetItemRareIndex();
 
-	for( int i = 0; i < MAX_ITEM_OPTION; i++ )
-	{
-		TempsbOptionType[i] = -1;
-		TempsbOptionLevel[i] = 0;
-	}
+	CItems* pItems = pDrag->getItems();
 
-	for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; ++sbOption )
-	{	
-		TempsbOptionType[sbOption]	= _pNetwork->MySlotItem[nTab][nRow][nCol].Item_OptionType[sbOption];
-		TempsbOptionLevel[sbOption] = _pNetwork->MySlotItem[nTab][nRow][nCol].Item_OptionLevel[sbOption];
-	}
+	if (pItems == NULL)
+		return;
+
+	if (pItems->Item_Wearing >= 0) // ¬¯øÎ¡ﬂ¿Œ ¿Â∫Ò¿œ ∞ÊøÏ µÓ∑œ µ«∏È æ»µ»¥Ÿ.
+		return;
+
+	m_pItemsTemp = pItems;
+		
+	CItemData*	pItemData	= m_pItemsTemp->ItemData;
+	const char* szItemName	= pItemData->GetName();
+
+	int		nItemIndex = m_pItemsTemp->Item_Index;
+	int		nItemPlus = m_pItemsTemp->Item_Plus;
+	ULONG	ulItemFlag = m_pItemsTemp->Item_Flag;
+	m_nTempMax = m_pItemsTemp->Item_Sum;
 
 	// Ask quantity
-	if( ( m_bStorageWareHouse && ( rItemData.GetFlag() & ITEM_FLAG_COUNT ) ) ||
-		( !m_bStorageWareHouse && ( rItemData.GetFlag() & ITEM_FLAG_COUNT ) && llTempCount > 1 ) )
+	if( ( m_bStorageWareHouse && ( pItemData->GetFlag() & ITEM_FLAG_COUNT ) && m_nTempMax > 1) ||
+		( !m_bStorageWareHouse && ( pItemData->GetFlag() & ITEM_FLAG_COUNT ) && m_nTempMax > 1 ) )
 	{
 		CTString	strMessage;
 		CUIMsgBox_Info	MsgBoxInfo;
 
-		// ÎÇòÏä§Ïùò Í≤ΩÏö∞.
-		if( rItemData.GetType() == CItemData::ITEM_ETC &&
-			rItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
+		// ≥™Ω∫¿« ∞ÊøÏ.
+		if( pItemData->GetType() == CItemData::ITEM_ETC &&
+			pItemData->GetSubType() == CItemData::ITEM_ETC_MONEY )
 		{
-			MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
+			MsgBoxInfo.SetMsgBoxInfo( _S( 823, "√¢∞Ì" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
 				UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_MONEY );
-			//strMessage.PrintF( _S( 826, "Î≥¥Í¥ÄÌïòÏã§ ÎÇòÏä§Î•º Ï≤ú Îã®ÏúÑÎ°ú ÏûÖÎ†•Ìï¥ Ï£ºÏã≠ÏãúÏöî. Î≥¥Í¥ÄÎ£åÎäî %d%%ÏûÖÎãàÎã§." ), m_nTex );		
-			strMessage.PrintF(  _S( 960, "Î≥¥Í¥ÄÌïòÏã§ ÎÇòÏä§Î•º ÏûÖÎ†•Ìï¥ Ï£ºÏã≠ÏãúÏò§." )  );		
+			//strMessage.PrintF( _S( 826, "∫∏∞¸«œΩ« ≥™Ω∫∏¶ √µ ¥‹¿ß∑Œ ¿‘∑¬«ÿ ¡÷Ω Ω√ø‰. ∫∏∞¸∑·¥¬ %d%%¿‘¥œ¥Ÿ." ), m_nTex );		
+			strMessage.PrintF(  _S( 960, "∫∏∞¸«œΩ« ≥™Ω∫∏¶ ¿‘∑¬«ÿ ¡÷Ω Ω√ø¿." )  );		
 			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 		}
 		else
 		{
-			MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
-									UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_ITEM );
-			//const char	*szItemName = rItemData.GetName();
-			strMessage.PrintF( _S2( 150, szItemName, "Î™á Í∞úÏùò %s<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName );
-			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
-			
-			CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_WAREHOUSE_ADD_ITEM );
-			CTString strItemCount;
-			strItemCount.PrintF( "%I64d", llMaxTempCount );
-			ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-			pMsgBox->GetInputBox().InsertChars( 0, strItemCount.str_String );
+			strMessage.PrintF( _S2( 150, szItemName, "∏Ó ∞≥¿« %s<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ), szItemName );
+
+			CmdWareHouseAddItem* pCmd = new CmdWareHouseAddItem;
+			pCmd->setData(this);
+			UIMGR()->GetMsgBoxNumOnly()->SetInfo(pCmd, _S( 823, "√¢∞Ì" ), strMessage, 1, m_nTempMax);
 		}		
 	}
-	else if( ulItemPlus > 0 && !(_pUIMgr->IsPet(rItemData) || _pUIMgr->IsWildPet(rItemData)))
+	else if ((pItemData->GetFlag() & ITEM_FLAG_ORIGIN) && (ulItemFlag& FLAG_ITEM_BELONG))
 	{
-		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_YESNO,		
-									UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_PLUSITEM );
-		//const char	*szItemName = rItemData.GetName();
-		strMessage.PrintF( _S2( 264, szItemName, "[%s +%d]<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName, ulItemPlus );
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-	}
-	else
-	{
-		WareHouseToTrade( llTempCount, ulItemPlus, ulItemFlag, lItemUsed, lRareIndex );
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : DelWareHouseItemToInventory()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIWareHouse::DelWareHouseItemToInventory( )
-{
-	if(m_nSelTradeItemID < 0)
+		CTString tv_str;
+		tv_str.PrintF(_S(2578, "¿˙¿Â«“ ºˆ æ¯¥¬ æ∆¿Ã≈€[%s] ¿‘¥œ¥Ÿ." ),pItemData->GetName() );
+		pUIManager->GetChattingUI()->AddSysMessage( tv_str, SYSMSG_ERROR );
 		return;
-
-	// FIXME : ÏàòÏ†ïÏù¥ ÌïÑÏöîÌïú Î∂ÄÎ∂Ñ.
-	nTempRow		= _pUIMgr->GetHoldBtn().GetItemRow();
-	nTempCol		= _pUIMgr->GetHoldBtn().GetItemCol();
-	nTempUniIndex	= _pUIMgr->GetHoldBtn().GetItemUniIndex();
-	llTempCount		= _pUIMgr->GetHoldBtn().GetItemCount();
-	nTempTradeItemID= m_nSelTradeItemID;
-	nTempIndex		= _pUIMgr->GetHoldBtn().GetItemIndex();
-	ulItemPlus		= _pUIMgr->GetHoldBtn().GetItemPlus();
-	ulItemFlag		= _pUIMgr->GetHoldBtn().GetItemFlag();
-	lItemUsed		= _pUIMgr->GetHoldBtn().GetItemUsed();
-	lRareIndex		= _pUIMgr->GetHoldBtn().GetItemRareIndex();
-
-	CItemData	&rItemData = _pNetwork->GetItemData( nTempIndex );
-	const char* szItemName = _pNetwork->GetItemName( nTempIndex );
-	
-	// Ask quantity
-	if( llTempCount > 1 )
+	}
+	else if (nItemPlus > 0 && !(pUIManager->IsPet(pItemData) || pUIManager->IsWildPet(pItemData) ||
+			pItemData->GetType() == CItemData::ITEM_ETC && (pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD || nItemIndex == 6941)))
 	{
 		CTString	strMessage;
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_OKCANCEL | UMBS_INPUTBOX,		
-									UI_WAREHOUSE, MSGCMD_WAREHOUSE_DEL_ITEM );
-		//const char	*szItemName = rItemData.GetName();
-		strMessage.PrintF( _S2( 150, szItemName, "Î™á Í∞úÏùò %s<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName );
+		MsgBoxInfo.SetMsgBoxInfo( _S( 823, "√¢∞Ì" ), UMBS_YESNO,		
+									UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_PLUSITEM );
+		//const char	*szItemName = pItemData->GetName();
+		strMessage.PrintF( _S2( 264, szItemName, "[%s +%d]<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ), szItemName, nItemPlus );
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-
-		CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
-		CTString strItemCount;
-		strItemCount.PrintF( "%I64d", _pUIMgr->GetHoldBtn().GetItemCount() );
-		ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-		pMsgBox->GetInputBox().InsertChars( 0, strItemCount.str_String );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 	}
 	else
 	{
-		TradeToWareHouse( llTempCount, ulItemPlus, ulItemFlag, lItemUsed );
+		WareHouseToTrade();
 	}
 }
 
@@ -2364,47 +1560,35 @@ void CUIWareHouse::DelWareHouseItemToInventory( )
 // Name : DelWareHouseItem()
 // Desc : From trade to warehouse
 // ----------------------------------------------------------------------------
-void CUIWareHouse::DelWareHouseItem( int nRow, int nCol, int nUniIndex, SQUAD llCount, int nTradeItemID )
+void CUIWareHouse::DelWareHouseItem()
 {
-	nTempRow		= nRow;
-	nTempCol		= nCol;
-	nTempUniIndex	= nUniIndex;
-	llTempCount		= llCount;
-	nTempTradeItemID= nTradeItemID;
-	nTempIndex		= m_abtnTradeItems[nTempTradeItemID].GetItemIndex();
+	if (m_pItemsTemp == NULL)
+		return;
 
-	CItemData	&rItemData = _pNetwork->GetItemData( nTempIndex );
+	CItemData	*pItemData = m_pItemsTemp->ItemData;
+
+	if (pItemData == NULL)
+		return;
 	
 	// Ask quantity
-	if( llTempCount > 1 )
+	if (m_pItemsTemp->Item_Sum > 1)
 	{
 		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
-									UI_WAREHOUSE, MSGCMD_WAREHOUSE_DEL_ITEM );
+		const char	*szItemName = _pNetwork->GetItemName(m_pItemsTemp->Item_Index);
 
-		const char	*szItemName = _pNetwork->GetItemName( nTempIndex );
-		if( rItemData.GetType() == CItemData::ITEM_ETC &&
-			rItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
+		if (pItemData->GetType() != CItemData::ITEM_ETC ||
+			pItemData->GetSubType() != CItemData::ITEM_ETC_MONEY)
 		{
-			strMessage.PrintF( _S( 1323, "Î™á ÎÇòÏä§Î•º ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ) );		
-		}
-		else
-		{
-			strMessage.PrintF( _S2( 150, szItemName, "Î™á Í∞úÏùò %s<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName );
-		}
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			strMessage.PrintF( _S2( 150, szItemName, "∏Ó ∞≥¿« %s<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ), szItemName );
 
-		CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_WAREHOUSE_DEL_ITEM );
-		CTString strItemCount;
-		strItemCount.PrintF( "%I64d", m_abtnTradeItems[nTempTradeItemID].GetItemCount() );
-		ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-		pMsgBox->GetInputBox().InsertChars( 0, strItemCount.str_String );
+			CmdWareHouseDelItem* pCmd = new CmdWareHouseDelItem;
+			pCmd->setData(this);
+			UIMGR()->GetMsgBoxNumOnly()->SetInfo(pCmd, _S( 823, "√¢∞Ì" ), strMessage, 1, m_pItemsTemp->Item_Sum);
+		}
 	}
 	else
 	{
-		TradeToWareHouse( llTempCount, ulItemPlus, ulItemFlag, lItemUsed );
+		TradeToWareHouse();
 	}
 }
 
@@ -2414,53 +1598,81 @@ void CUIWareHouse::DelWareHouseItem( int nRow, int nCol, int nUniIndex, SQUAD ll
 // ----------------------------------------------------------------------------
 void CUIWareHouse::KeepItems()
 {
+	int		i;
 	// Buy nothing
-	if( m_nTotalPrice < 0 )
+	if( m_nTotalPrice < 0 && m_nInNas <= 0 )
+	{
+		ErrMessage(eERR_KEEP_FAIL_EMPTY);
 		return;
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Can't stash items
-	for( int i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; i++ )
+	
+	for (i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; i++)
 	{
 		// Add system message
 		CTString tv_str;
-		CItemData	&rItemData = _pNetwork->GetItemData( m_abtnTradeItems[i].GetItemIndex());
-		if( rItemData.GetFlag()&ITEM_FLAG_NO_STASH){
-			tv_str.PrintF(_S(2578, "Ï†ÄÏû•Ìï† Ïàò ÏóÜÎäî ÏïÑÏù¥ÌÖú[%s] ÏûÖÎãàÎã§." ),rItemData.GetName() );
-			_pUIMgr->GetChatting()->AddSysMessage( tv_str, SYSMSG_ERROR );
+		CItems*		pItems = m_pIconTradeItems[i]->getItems();
+
+		if (pItems == NULL)
+			continue;
+
+		CItemData*	pItemData = pItems->ItemData;
+
+		if (pItemData == NULL)
+			continue;
+
+#ifdef ADD_SUBJOB
+
+		if (pItemData->IsFlag(ITEM_FLAG_SELLER) ?
+			!pUIManager->CheckSellerItem(UI_WAREHOUSE, pItemData->GetFlag()) :
+			(pItemData->GetFlag() & ITEM_FLAG_NO_STASH) ||
+			(pItemData->GetFlag() & ITEM_FLAG_ORIGIN && pItems->Item_Flag & FLAG_ITEM_BELONG) || 
+			pItemData->GetFlag() & ITEM_FLAG_ABS)
+#else
+		if ((pItemData->GetFlag() & ITEM_FLAG_NO_STASH) ||
+			(pItemData->GetFlag() & ITEM_FLAG_ORIGIN && pItems->Item_Flag & FLAG_ITEM_BELONG) || 
+			pItemData->GetFlag() & ITEM_FLAG_ABS)
+#endif
+		{
+			tv_str.PrintF(_S(2578, "¿˙¿Â«“ ºˆ æ¯¥¬ æ∆¿Ã≈€[%s] ¿‘¥œ¥Ÿ."), pItemData->GetName());
+			pUIManager->GetChattingUI()->AddSysMessage(tv_str, SYSMSG_ERROR);
 			return;
 		}
-			
+
 	}
 
 	// Not enough money
 	if(_pNetwork->MyCharacterInfo.money < m_nTotalPrice )
 	{
 		// Add system message
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 827, "ÎÇòÏä§Í∞Ä Î∂ÄÏ°±ÌïòÏó¨ Î¨ºÌíàÏùÑ Î≥¥Í¥ÄÌï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );	
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 827, "≥™Ω∫∞° ∫Œ¡∑«œø© π∞«∞¿ª ∫∏∞¸«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );	
 		return;
 	}
 
 	// Check inventory space
 	int	ctEmptySlot = 0;
 	int	ctTradeItems = m_nNumOfItem;
-	for( int iRow = 0; iRow < WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL; iRow++ )
+	
+	for( i = 0; i < ITEM_COUNT_IN_INVENTORY_STASH; i++ )
 	{
-		for( int iCol = 0; iCol < WAREHOUSE_WAREHOUSE_SLOT_COL; iCol++ )
+		if (m_pIconWareHouseItems[i]->IsEmpty())
 		{
-			if( m_abtnWareHouseItems[iRow][iCol].IsEmpty() )
-			{
-				ctEmptySlot++;
-				continue;
-			}
+			ctEmptySlot++;
+			continue;
+		}
 
-			int	nIndex = m_abtnWareHouseItems[iRow][iCol].GetItemIndex();
-			CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-			if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
+		int	nIndex = m_pIconWareHouseItems[i]->getIndex();
+		CItemData*	pItemData = CItemData::getData(nIndex);
+
+		if (pItemData->GetFlag() & ITEM_FLAG_COUNT)
+		{
+			for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
 			{
-				for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
-				{
-					if( nIndex == m_abtnTradeItems[iItem].GetItemIndex() )
-						ctTradeItems--;
-				}
+				if (nIndex == m_pIconTradeItems[iItem]->getIndex())
+					ctTradeItems--;
 			}
 		}
 	}
@@ -2469,13 +1681,12 @@ void CUIWareHouse::KeepItems()
 	if( ctEmptySlot < ctTradeItems )
 	{
 		// Add system message
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 265, "Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 265, "¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR );
 		return;
 	}
 
 	//_pNetwork->BuyItem( m_nSelectedWareHouseID, m_nNumOfItem, m_nTotalPrice );
 	SendWareHouseKeepReq();
-
 }
 
 // ----------------------------------------------------------------------------
@@ -2485,8 +1696,11 @@ void CUIWareHouse::KeepItems()
 void CUIWareHouse::TakeItems()
 {
 	// Sell nothing
-	if( m_nTotalPrice < 0 )
+	if( m_nTotalPrice < 0 && m_nOutNas <= 0 )
+	{
+		ErrMessage(eERR_TAKE_FAIL_EMPTY);
 		return;
+	}
 
 	//_pNetwork->SellItem( m_nSelectedWareHouseID, m_nNumOfItem, m_nTotalPrice );
 	SendWareHouseTakeReq();
@@ -2499,101 +1713,128 @@ void CUIWareHouse::TakeItems()
 // ----------------------------------------------------------------------------
 void CUIWareHouse::MsgBoxLCommand( int nCommandCode, int nResult )
 {
-	switch( nCommandCode )
+	if( nCommandCode != MSGLCMD_WAREHOUSE_REQ )
+		return;
+
+	// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ¿Ãæﬂ±‚ «—¥Ÿ √≥∏Æ ºˆ¡§¿ª ¿ß«— ∑Á∆æ
+	int iQuestIndex = -1;
+	if( ciQuestClassifier < nResult )	
 	{
-	case MSGLCMD_WAREHOUSE_REQ:
+		iQuestIndex = nResult;
+		nResult = ciQuestClassifier;
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch ( nResult ) 
+	{
+	case WAREHOUSE_IN: // π∞«∞¿ª ∏√±‰¥Ÿ
 		{
-			// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ Ïù¥ÏïºÍ∏∞ ÌïúÎã§ Ï≤òÎ¶¨ ÏàòÏ†ïÏùÑ ÏúÑÌïú Î£®Ìã¥
-			int iQuestIndex = -1;
-			if( ciQuestClassifier < nResult )	
+			if (pUIManager->GetInventory()->IsLocked() == TRUE ||
+				pUIManager->GetInventory()->IsLockedArrange() == TRUE)
 			{
-				iQuestIndex = nResult;
-				nResult = ciQuestClassifier;
+				// ¿ÃπÃ Lock ¿Œ √¢¿Ã ¿÷¿ª ∞ÊøÏ ø≠¡ˆ ∏¯«—¥Ÿ.
+				pUIManager->GetInventory()->ShowLockErrorMessage();
+				return;
 			}
 
-			switch ( nResult ) 
+			m_bStorageWareHouse			= TRUE;
+
+			if (m_bHasPassword)
 			{
-			case WAREHOUSE_IN: // Î¨ºÌíàÏùÑ Îß°Í∏¥Îã§
-				{
-					m_bStorageWareHouse			= TRUE;
-					_pUIMgr->GetSecurity()->OpenSecurity( m_bHasPassword );
-
-#ifdef HELP_SYSTEM_1
-// [KH_07043] 3Ï∞® ÎèÑÏõÄÎßê Í¥ÄÎ†® Ï∂îÍ∞Ä
-					if(g_iShowHelp1Icon)
-					{
-						_pUIMgr->GetHelp3()->ClearHelpString();
-						_pUIMgr->GetHelp3()->AddHelpString(_S(3313, "Ï∫êÎ¶≠ÌÑ∞Ïùò Ïù∏Î≤§ÌÜ†Î¶¨ Ï∞ΩÏóêÏÑú Ï∞ΩÍ≥†Ïóê Î≥¥Í¥Ä ÌïòÍ≥†Ïûê ÌïòÎäî Î¨ºÌíàÏùÑ ÌÅ¥Î¶≠ ÌõÑ Ï∞ΩÍ≥†Ïùò ÌïòÎã® ÎπàÏπ∏Ïóê ÎìúÎûòÍ∑∏ ÌïòÏó¨ Ïò¨Î†§ ÎÜìÏäµÎãàÎã§."));
-						_pUIMgr->GetHelp3()->AddHelpString(_S(3314, "Î≥¥Í¥ÄÎ≤ÑÌäºÏùÑ ÎàÑÎ•¥Î©¥ Î≥¥Í¥ÄÎ£åÎßåÌÅº ÏûêÏã†Ïùò Ïù∏Î≤§ÌÜ†Î¶¨ÏóêÏÑú ÎÇòÏä§Í∞Ä Îπ†Ï†∏ÎÇòÍ∞ÄÍ≥† Î¨ºÌíàÏùÄ Ï∞ΩÍ≥†Ïóê Î≥¥Í¥Ä Îê©ÎãàÎã§."));
-						_pUIMgr->GetHelp3()->AddHelpString(_S(3315, "‚Äª Î≥¥Í¥ÄÎ£åÎäî Îß°Í∏∞Î†§Îäî Î¨ºÌíà Î¨¥Í≤åÎãπ 1ÎÇòÏä§ ÏûÖÎãàÎã§."));
-						_pUIMgr->GetHelp3()->AddHelpString(_S(3316, "‚Äª Ìù∞ÏÉâ ÌÖåÎëêÎ¶¨Í∞Ä ÎëòÎü¨ÏßÑ ÏïÑÏù¥ÌÖúÏùÄ Ï∞ΩÍ≥†Ïóê Î≥¥Í¥ÄÏù¥ Î∂àÍ∞ÄÎä•Ìï©ÎãàÎã§."));
-						_pUIMgr->GetHelp3()->AddHelpString(_S(3317, "‚Äª Ï∞ΩÍ≥†Ïóê Î≥¥Í¥Ä Í∞ÄÎä•Ìïú Í≥µÍ∞ÑÏùÄ Í∏∞Î≥∏ 50Ïπ∏Ïù¥Î©∞, Ï∞ΩÍ≥†ÌôïÏû•Ïπ¥ÎìúÎ•º ÏÇ¨Ïö©ÌïòÎ©¥ 150Ïπ∏ÏúºÎ°ú ÌôïÏû•Ìï† Ïàò ÏûàÏäµÎãàÎã§."));
-						_pUIMgr->GetHelp3()->OpenHelp(this);
-					}		
-#endif
-				}
-				break;
-
-			case WAREHOUSE_OUT: // Î¨ºÌíàÏùÑ Ï∞æÎäîÎã§
-				{	
-					m_bStorageWareHouse			= FALSE;
-					_pUIMgr->GetSecurity()->OpenSecurity( m_bHasPassword );
-#ifdef HELP_SYSTEM_1
-// [KH_07043] 3Ï∞® ÎèÑÏõÄÎßê Í¥ÄÎ†® Ï∂îÍ∞Ä
-					if(g_iShowHelp1Icon)
-					{
-						_pUIMgr->GetHelp3()->ClearHelpString();
-						_pUIMgr->GetHelp3()->AddHelpString(_S(3318, "Ï∞ΩÍ≥†Ïóê Î≥¥Í¥ÄÎêú Î¨ºÌíà Ï§ë Ï∞æÏúºÎ†§Îäî Î¨ºÌíàÏùÑ Ï∞ΩÍ≥† Ï∞Ω ÏïÑÎûòÏùò ÎπàÏπ∏ÏúºÎ°ú ÏòÆÍ∏∞Í≥† Ï∞æÍ∏∞ Î≤ÑÌäºÏùÑ ÌÅ¥Î¶≠ Ìï©ÎãàÎã§."));
-						_pUIMgr->GetHelp3()->AddHelpString(_S(3319, "Ï∞æÏùÄ Î¨ºÌíàÏùÄ ÏûêÏã†Ïùò Ïù∏Î≤§ÌÜ†Î¶¨Ïóê ÏòÆÍ≤®ÏßÄÍ≤å Îê©ÎãàÎã§."));
-						_pUIMgr->GetHelp3()->AddHelpString(_S(3320, "‚Äª ÏµúÎåÄ 10Í∞úÏùò ÏïÑÏù¥ÌÖúÏùÑ ÌïúÎ≤àÏóê Ï∞æÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-						_pUIMgr->GetHelp3()->OpenHelp(this);
-					}
-#endif
-				}
-				break;
-
-			case WAREHOUSE_TALK:
-				{
-					// ÌÄòÏä§Ìä∏ Ï∞Ω ÎùÑÏö∞Í∏∞
-					//_pUIMgr->GetQuest()->OpenQuest( _pUIMgr->GetCharacterInfo()->GetMobIndex(), m_fNpcX, m_fNpcZ );
-					CUIQuestBook::TalkWithNPC();
-				}
-				break;
-				
-			case WAREHOUSE_CHANGEPW : // ÏïîÌò∏Î•º Î≥ÄÍ≤ΩÌïúÎã§.
-				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_SECURITY_REQ );
-					
-					_pUIMgr->CreateMessageBoxL( _S( 1743, "Ï∞ΩÍ≥† Î≥¥ÏïàÏÑ§Ï†ï" ) , UI_SECURITY, MSGLCMD_SECURITY_REQ );		
-					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, TRUE, _S( 1778, "Ï∞ΩÍ≥† Î≥¥ÏïàÏùÑ ÏúÑÌïòÏó¨ ÏïîÌò∏Î•º ÏÑ§Ï†ï ÌïòÏã§ Ïàò ÏûàÏäµÎãàÎã§." ), -1, 0xA3A1A3FF );	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, TRUE, CTString("  "), -1, 0xA3A1A3FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, TRUE, _S( 1779, "ÏïîÌò∏Î•º ÏÑ§Ï†ïÌïòÎ©¥ Ï∞ΩÍ≥†Î•º Ïù¥Ïö©Ìï† Îïå ÏÑ§Ï†ïÌïòÏã† ÏïîÌò∏Î•º ÏûÖÎ†•ÌïòÏó¨ÏïºÎßå Ï∞ΩÍ≥†Î•º Ïù¥Ïö©Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), -1, 0xA3A1A3FF );	
-					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, FALSE, _S( 1780, "ÏïîÌò∏ ÏÑ§Ï†ï" ), CUISecurity::SET_PASSWORD );
-					if( m_bHasPassword )
-					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, FALSE, _S( 1781, "ÏïîÌò∏ Î∂ÑÏã§" ), CUISecurity::UNSET_PASSWORD );
-					}
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, FALSE, _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );
-				}
-				break;	
-				
-				// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ ÏàòÏ†ï
-			case ciQuestClassifier:
-				{
-					// ÏÑ†ÌÉùÌïú ÌÄòÏä§Ìä∏Ïóê ÎåÄÌï¥ ÏàòÎùΩ ÎòêÎäî Î≥¥ÏÉÅ Ï∞ΩÏùÑ Ïó∞Îã§.
-					CUIQuestBook::SelectQuestFromMessageBox( iQuestIndex );					
-				}
-				break;
-
-			default:
-				{
-					// Character state flags
-					_pUIMgr->SetCSFlagOff( CSF_WAREHOUSE );
-				}
-				break;
+				pUIManager->GetSecurity()->OpenSecurity(TRUE);
 			}
+			else
+			{
+				SendListReq(CTString(""));
+			}
+			
+			// [KH_07043] 3¬˜ µµøÚ∏ª ∞¸∑√ √ﬂ∞°
+			if(g_iShowHelp1Icon)
+			{
+				pUIManager->GetHelp3()->ClearHelpString();
+				pUIManager->GetHelp3()->AddHelpString(_S(3313, "ƒ≥∏Ø≈Õ¿« ¿Œ∫•≈‰∏Æ √¢ø°º≠ √¢∞Ìø° ∫∏∞¸ «œ∞Ì¿⁄ «œ¥¬ π∞«∞¿ª ≈¨∏Ø »ƒ √¢∞Ì¿« «œ¥‹ ∫Ûƒ≠ø° µÂ∑°±◊ «œø© ø√∑¡ ≥ıΩ¿¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3314, "∫∏∞¸πˆ∆∞¿ª ¥©∏£∏È ∫∏∞¸∑·∏∏≈≠ ¿⁄Ω≈¿« ¿Œ∫•≈‰∏Æø°º≠ ≥™Ω∫∞° ∫¸¡Æ≥™∞°∞Ì π∞«∞¿∫ √¢∞Ìø° ∫∏∞¸ µÀ¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3315, "°ÿ ∫∏∞¸∑·¥¬ ∏√±‚∑¡¥¬ π∞«∞ 1∞≥¥Á 100≥™Ω∫ ¿‘¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3316, "°ÿ »Úªˆ ≈◊µŒ∏Æ∞° µ—∑Ø¡¯ æ∆¿Ã≈€¿∫ √¢∞Ìø° ∫∏∞¸¿Ã ∫“∞°¥…«’¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3317, "°ÿ √¢∞Ìø° ∫∏∞¸ ∞°¥…«— ∞¯∞£¿∫ ±‚∫ª 50ƒ≠¿Ã∏Á, √¢∞Ì»Æ¿Âƒ´µÂ∏¶ ªÁøÎ«œ∏È 150ƒ≠¿∏∑Œ »Æ¿Â«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->OpenHelp(this);
+			}		
+		}
+		break;
+		
+	case WAREHOUSE_OUT: // π∞«∞¿ª √£¥¬¥Ÿ
+		{
+			if (pUIManager->GetInventory()->IsLocked() == TRUE ||
+				pUIManager->GetInventory()->IsLockedArrange() == TRUE)
+			{
+				// ¿ÃπÃ Lock ¿Œ √¢¿Ã ¿÷¿ª ∞ÊøÏ ø≠¡ˆ ∏¯«—¥Ÿ.
+				pUIManager->GetInventory()->ShowLockErrorMessage();
+				return;
+			}
+
+			m_bStorageWareHouse			= FALSE;
+			
+			if (m_bHasPassword)
+			{
+				pUIManager->GetSecurity()->OpenSecurity(TRUE);
+			}
+			else
+			{
+				SendListReq(CTString(""));
+			}
+
+			// [KH_07043] 3¬˜ µµøÚ∏ª ∞¸∑√ √ﬂ∞°
+			if(g_iShowHelp1Icon)
+			{
+				pUIManager->GetHelp3()->ClearHelpString();
+				pUIManager->GetHelp3()->AddHelpString(_S(3318, "√¢∞Ìø° ∫∏∞¸µ» π∞«∞ ¡ﬂ √£¿∏∑¡¥¬ π∞«∞¿ª √¢∞Ì √¢ æ∆∑°¿« ∫Ûƒ≠¿∏∑Œ ø≈±‚∞Ì √£±‚ πˆ∆∞¿ª ≈¨∏Ø «’¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3319, "√£¿∫ π∞«∞¿∫ ¿⁄Ω≈¿« ¿Œ∫•≈‰∏Æø° ø≈∞‹¡ˆ∞‘ µÀ¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3320, "°ÿ √÷¥Î 10∞≥¿« æ∆¿Ã≈€¿ª «—π¯ø° √£¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+				pUIManager->GetHelp3()->OpenHelp(this);
+			}
+		}
+		break;
+		
+	case WAREHOUSE_TALK:
+		{
+			// ƒ˘Ω∫∆Æ √¢ ∂ÁøÏ±‚
+			//pUIManager->GetQuest()->OpenQuest( pUIManager->GetCharacterInfo()->GetMobIndex(), m_fNpcX, m_fNpcZ );
+			CUIQuestBook::TalkWithNPC();
+		}
+		break;
+		
+	case WAREHOUSE_CHANGEPW : // æœ»£∏¶ ∫Ø∞Ê«—¥Ÿ.
+		{
+			pUIManager->CloseMessageBoxL( MSGLCMD_SECURITY_REQ );
+			
+			pUIManager->CreateMessageBoxL( _S( 1743, "√¢∞Ì ∫∏æ»º≥¡§" ) , UI_SECURITY, MSGLCMD_SECURITY_REQ );		
+			
+			pUIManager->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, TRUE, _S( 1778, "√¢∞Ì ∫∏æ»¿ª ¿ß«œø© æœ»£∏¶ º≥¡§ «œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ." ), -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, TRUE, CTString("  "), -1, 0xA3A1A3FF );
+			pUIManager->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, TRUE, _S( 1779, "æœ»£∏¶ º≥¡§«œ∏È √¢∞Ì∏¶ ¿ÃøÎ«“ ∂ß º≥¡§«œΩ≈ æœ»£∏¶ ¿‘∑¬«œø©æﬂ∏∏ √¢∞Ì∏¶ ¿ÃøÎ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), -1, 0xA3A1A3FF );	
+			
+			pUIManager->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, FALSE, _S( 1780, "æœ»£ º≥¡§" ), CUISecurity::SET_PASSWORD );
+			if( m_bHasPassword )
+			{
+				pUIManager->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, FALSE, _S( 1781, "æœ»£ ∫–Ω«" ), CUISecurity::UNSET_PASSWORD );
+			}
+			pUIManager->AddMessageBoxLString( MSGLCMD_SECURITY_REQ, FALSE, _S( 1220, "√Îº“«—¥Ÿ." ) );
+		}
+		break;	
+		
+		// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ºˆ¡§
+	case ciQuestClassifier:
+		{
+			// º±≈√«— ƒ˘Ω∫∆Æø° ¥Î«ÿ ºˆ∂Ù ∂«¥¬ ∫∏ªÛ √¢¿ª ø¨¥Ÿ.
+			CUIQuestBook::SelectQuestFromMessageBox( iQuestIndex );					
+		}
+		break;
+		
+	default:
+		{
+			// Character state flags
+			pUIManager->SetCSFlagOff( CSF_WAREHOUSE );
 		}
 		break;
 	}
@@ -2616,35 +1857,47 @@ void CUIWareHouse::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 	{
 	case MSGCMD_WAREHOUSE_ADD_ITEM:
 		{
-			char	*pcInput	= strInput.str_String;
-			int		nLength		= strInput.Length();
-			for( int iChar = 0; iChar < nLength; iChar++ )
-			{
-				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
-					break;
-			}
-
-			if( iChar == nLength )
-			{
-				SQUAD	llCount = _atoi64( pcInput );
-				if( llCount > 0 && llCount <= llTempCount )
-					WareHouseToTrade( llCount, ulItemPlus, ulItemFlag, lItemUsed, lRareIndex );
-				
-			}
+ 			char	*pcInput	= strInput.str_String;
+ 			int		nLength		= strInput.Length();
+ 			int		iChar;
+ 			for( iChar = 0; iChar < nLength; iChar++ )
+ 			{
+ 				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
+ 					break;
+ 			}
+ 
+ 			if( iChar == nLength )
+ 			{
+ 				SQUAD	llCount = _atoi64( pcInput );
+ 				
+				if (llCount > 0)
+ 				{
+ 					if (llCount > m_pItemsTemp->Item_Sum)
+ 						llCount = m_pItemsTemp->Item_Sum;
+ 
+ 					CItemData* pItemData = m_pItemsTemp->ItemData;
+ 					
+					if (llCount > pItemData->GetStack())
+ 						llCount = pItemData->GetStack();
+ 
+ 					WareHouseToTrade(llCount);
+ 				} 				
+ 			}
 		}
 		break;
 
 	case MSGCMD_WAREHOUSE_ADD_PLUSITEM:
 		{
-			WareHouseToTrade( 1, ulItemPlus, ulItemFlag, lItemUsed, lRareIndex );
+			WareHouseToTrade();
 		}
 		break;
 
-	case MSGCMD_WAREHOUSE_ADD_MONEY:
+	case MSGCMD_WAREHOUSE_ADD_MONEY:	//2013/04/04 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
 		{
 			char	*pcInput	= strInput.str_String;
 			int		nLength		= strInput.Length();
-			for( int iChar = 0; iChar < nLength; iChar++ )
+			int		iChar;
+			for( iChar = 0; iChar < nLength; iChar++ )
 			{
 				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
 					break;
@@ -2652,40 +1905,22 @@ void CUIWareHouse::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 
 			if( iChar == nLength )
 			{
-				//const int iUnit	= 1000;
 				SQUAD	llCount = _atoi64( pcInput );
-				//SQUAD	llNas	= (llCount / 1000) * 1000;				
-
-				if( llCount > 0 && llCount <= llTempCount )
+				//if( llCount > 0 && llCount <= llTempCount )
+				if( (llCount+m_nInNas) > 0 && (llCount+m_nInNas) <= _pNetwork->MyCharacterInfo.money)
 				{
 					llTempNas		= llCount;
-					//if( llCount % 1000 == 0 )
-					//{
-						WareHouseToTrade( llCount, ulItemPlus, ulItemFlag, lItemUsed, lRareIndex );
-						/*
-					}
-					else if( llNas > 0 )
-					{
-						CTString	strMessage;
-						CUIMsgBox_Info	MsgBoxInfo;
-						MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_OKCANCEL,	
-							UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_REQ );
-						strMessage.PrintF( _S( 828, "%d ÎÇòÏä§ Îã®ÏúÑÎ°úÎßå Î≥¥Í¥ÄÏù¥ Í∞ÄÎä•Ìï©ÎãàÎã§.  %I64d ÎÇòÏä§Î•º Î≥¥Í¥ÄÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), iUnit, llNas);	
-						MsgBoxInfo.AddString( strMessage );
-						_pUIMgr->CreateMessageBox( MsgBoxInfo );
-						llTempNas = llNas;
-					}
-					else
-					{
-						CTString	strMessage;
-						CUIMsgBox_Info	MsgBoxInfo;
-						MsgBoxInfo.SetMsgBoxInfo( _S( 823, "Ï∞ΩÍ≥†" ), UMBS_OK,	
-							UI_WAREHOUSE, MSGCMD_WAREHOUSE_ERROR );
-						strMessage.PrintF( _S( 829, "%d ÎÇòÏä§ Îã®ÏúÑÎ°úÎßå Î≥¥Í¥ÄÏù¥ Í∞ÄÎä•Ìï©ÎãàÎã§." ), iUnit);	
-						MsgBoxInfo.AddString( strMessage );
-						_pUIMgr->CreateMessageBox( MsgBoxInfo );
-					}
-					*/
+					//SendWareHouseKeepReqNas( llCount);
+					m_nInNas		+= llCount;
+					m_strInNas.PrintF( "%I64d", m_nInNas );
+					CUIManager::getSingleton()->InsertCommaToString( m_strInNas );
+				
+				}
+				else
+				{
+					CTString strInNasError;
+					strInNasError.PrintF( _S( 5911, "«ˆ¿Á ∞°¡ˆ∞Ì ¿÷¥¬ ≥™Ω∫ ∫∏¥Ÿ ∏π¿∫ ≥™Ω∫∏¶ ¿‘±› «“ ºˆ æ¯Ω¿¥œ¥Ÿ." ));		
+					_pNetwork->ClientSystemMessage( strInNasError );
 				}
 			}
 		}
@@ -2693,7 +1928,7 @@ void CUIWareHouse::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 
 	case MSGCMD_WAREHOUSE_ADD_REQ:
 		{
-			WareHouseToTrade( llTempNas, ulItemPlus, ulItemFlag, lItemUsed, lRareIndex );
+			WareHouseToTrade();
 		}
 		break;
 
@@ -2706,19 +1941,54 @@ void CUIWareHouse::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 		{
 			char	*pcInput	= strInput.str_String;
 			int		nLength		= strInput.Length();
-			for( int iChar = 0; iChar < nLength; iChar++ )
+			int		iChar;
+			for( iChar = 0; iChar < nLength; iChar++ )
 			{
 				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
 					break;
 			}
 
+			if (iChar == nLength)
+			{
+				SQUAD	llCount = _atoi64( pcInput );
+				
+				if (llCount > 0 && llCount <= m_pItemsTemp->Item_Sum)
+					TradeToWareHouse();
+			}
+		}
+		break;
+	case MSGCMD_WAREHOUSE_TAKE_MONEY:	//2013/04/04 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
+		{
+			char	*pcInput	= strInput.str_String;
+			int		nLength		= strInput.Length();
+			int		iChar;
+			for( iChar = 0; iChar < nLength; iChar++ )
+			{
+				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
+					break;
+			}
+			
 			if( iChar == nLength )
 			{
 				SQUAD	llCount = _atoi64( pcInput );
-				if( llCount > 0 && llCount <= llTempCount )
-					TradeToWareHouse( llCount, ulItemPlus, ulItemFlag, lItemUsed );
+				if( (llCount+m_nOutNas) > 0 && (llCount+m_nOutNas) <= m_nTotalNas )
+				{
+					llTempNas		= llCount;
+					//SendWareHouseTakeReqNas( llCount);
+					m_nOutNas		+= llCount;
+					m_strOutNas.PrintF( "%I64d", m_nOutNas );
+					CUIManager::getSingleton()->InsertCommaToString( m_strOutNas );
+					
+				}
+				else
+				{
+					CTString strOutNasError;
+					strOutNasError.PrintF( _S( 5912, "«ˆ¿Á ¿‘±› µ«æÓ ¿÷¥¬ ≥™Ω∫ ∫∏¥Ÿ ∏π¿∫ ≥™Ω∫∏¶ √‚±› «“ ºˆ æ¯Ω¿¥œ¥Ÿ." ));		
+					_pNetwork->ClientSystemMessage( strOutNasError );
+				}
 			}
 		}
+		
 		break;
 	}
 }
@@ -2727,54 +1997,66 @@ void CUIWareHouse::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 // Purpose: 
 // Input  :
 //-----------------------------------------------------------------------------
-void CUIWareHouse::WareHouseToTrade( SQUAD llCount, ULONG ulPlus, ULONG ulFlag, LONG lUsed, LONG lRareIndex )
+void CUIWareHouse::WareHouseToTrade( SQUAD llCount )
 {	
 	// Find same item in trade slot
-	for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
+	int		iItem;
+	for (iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++)
 	{
-		if( m_abtnTradeItems[iItem].GetItemUniIndex() == nTempUniIndex )
+		if (m_pIconTradeItems[iItem]->getItems() != NULL &&
+			m_pIconTradeItems[iItem]->getItems()->Item_UniIndex == m_pItemsTemp->Item_UniIndex)
 			break;
 	}
 
+	// Check if item is countable
+	CItemData*	pItemData = m_pItemsTemp->ItemData;
+
 	// If there is same item
-	if( iItem < WAREHOUSE_TRADE_SLOT_TOTAL )
+	if (iItem < WAREHOUSE_TRADE_SLOT_TOTAL)
 	{
-		// Check if item is countable
-		CItemData&	rItemData = _pNetwork->GetItemData( nTempIndex );
-		if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
+		CItems* pItems = m_pIconTradeItems[iItem]->getItems();
+
+		if (pItems == NULL)
+			return;
+
+		if (pItemData->GetFlag() & ITEM_FLAG_COUNT)
 		{
 			// Update count of trade item
-			SQUAD	llNewCount	= m_abtnTradeItems[iItem].GetItemCount();
+			SQUAD	llNewCount	= pItems->Item_Sum;
 			llNewCount			+= llCount;
 
-			// Ïù∏Î≤§Ïóê Í∞ÄÍ≥† ÏûàÎäî Í∞ØÏàòÎ≥¥Îã§ ÎßéÏùÄ Í∞ØÏàòÏùò ÏïÑÏù¥ÌÖúÏùÑ Î≥¥Í¥ÄÌïòÎ†§ Ìï†Îïå...
-			if(m_bStorageWareHouse && llMaxTempCount > 0)
+			// ¿Œ∫•ø° ∞°∞Ì ¿÷¥¬ ∞πºˆ∫∏¥Ÿ ∏π¿∫ ∞πºˆ¿« æ∆¿Ã≈€¿ª ∫∏∞¸«œ∑¡ «“∂ß...
+			if (m_bStorageWareHouse && m_nTempMax > 0)
 			{
-				if( llNewCount > llMaxTempCount )
-					return;
+				if( llNewCount > m_nTempMax )
+					llNewCount = m_nTempMax;
 			}
 			
-			m_abtnTradeItems[iItem].SetItemCount( llNewCount );
+			m_pIconTradeItems[iItem]->setCount(llNewCount);
 												
-			if( !m_bStorageWareHouse )
+			if (m_bStorageWareHouse == FALSE)
 			{
 				// Update count of warehouse item
-				llNewCount = m_abtnWareHouseItems[nTempRow][nTempCol].GetItemCount();
+				llNewCount = m_vectorStorageItems[m_nTempStorageIdx]->Item_Sum;
 				llNewCount -= llCount;
-				m_abtnWareHouseItems[nTempRow][nTempCol].SetItemCount( llNewCount );
+				
+				m_pIconWareHouseItems[m_nTempStorageIdx]->setCount(llNewCount);
+
 				if( llNewCount <= 0 )
 				{
-					m_abtnWareHouseItems[nTempRow][nTempCol].SetEmpty( TRUE );
+					m_pIconWareHouseItems[m_nTempStorageIdx]->Hide(TRUE);
 
 					// Unselect item
-					if( m_nSelWareHouseItemID == ( nTempCol + nTempRow * WAREHOUSE_WAREHOUSE_SLOT_COL ) )
+					if (m_nSelWareHouseItemID == m_nTempStorageIdx)
 						m_nSelWareHouseItemID = -1;
 				}
 			}
 
 			m_nTotalPrice = CalculateStoragePrice();
 			m_strTotalPrice.PrintF( "%I64d", m_nTotalPrice );
-			_pUIMgr->InsertCommaToString( m_strTotalPrice );
+			CUIManager::getSingleton()->InsertCommaToString( m_strTotalPrice );
+
+			m_pItemsTemp = NULL;
 			return;
 		}
 		else
@@ -2782,160 +2064,170 @@ void CUIWareHouse::WareHouseToTrade( SQUAD llCount, ULONG ulPlus, ULONG ulFlag, 
 			if(m_bStorageWareHouse)
 			{
 				m_nSelWareHouseItemID = -1;
+				m_pItemsTemp = NULL;
 				return;
 			}
 		}
 	}
-
-	// Find empty slot
-	for( iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
+	else
 	{
-		if( m_abtnTradeItems[iItem].IsEmpty() )
-			break;
-	}
-
-	// If there is not empty slot
-	if( iItem == WAREHOUSE_TRADE_SLOT_TOTAL )
-	{
-		CTString	strMessage;
-
-		// Add system message
-		if( m_bStorageWareHouse )
-			strMessage.PrintF( _S( 831, "ÌïúÎ≤àÏóê ÏµúÎåÄ %dÍ∞úÏùò ÏïÑÏù¥ÌÖúÏùÑ Î≥¥Í¥ÄÌïòÏã§ Ïàò ÏûàÏäµÎãàÎã§." ), WAREHOUSE_TRADE_SLOT_TOTAL );	
-		else
-			strMessage.PrintF( _S( 832, "ÌïúÎ≤àÏóê ÏµúÎåÄ %dÍ∞úÏùò ÏïÑÏù¥ÌÖúÏùÑ Ï∞æÏúºÏã§ Ïàò ÏûàÏäµÎãàÎã§." ), WAREHOUSE_TRADE_SLOT_TOTAL );		
-
-		_pUIMgr->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
-		return;
-	}
-
-	m_abtnTradeItems[iItem].SetItemInfo( 0, nTempRow, nTempCol, nTempIndex, nTempUniIndex, -1 );
-	m_abtnTradeItems[iItem].SetItemCount( llCount );
-	m_abtnTradeItems[iItem].SetItemPlus( ulPlus );
-	m_abtnTradeItems[iItem].SetItemFlag( ulFlag );
-	m_abtnTradeItems[iItem].SetItemUsed( lUsed );
-	m_abtnTradeItems[iItem].SetItemRareIndex( lRareIndex );
-	for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; ++sbOption )
-	{	
-		m_abtnTradeItems[iItem].SetItemOptionData(sbOption, TempsbOptionType[sbOption], TempsbOptionLevel[sbOption]);				
-	}
-	
-	if( !m_bStorageWareHouse )
-	{												
-		// Update count of warehouse item
-		SQUAD	llNewCount = m_abtnWareHouseItems[nTempRow][nTempCol].GetItemCount();
-		llNewCount -= llCount;
-		m_abtnWareHouseItems[nTempRow][nTempCol].SetItemCount( llNewCount );
-		if( llNewCount <= 0 )
+		// Find empty slot
+		for( iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
 		{
-			m_abtnWareHouseItems[nTempRow][nTempCol].SetEmpty( TRUE );
-
-			// Unselect item
-			if( m_nSelWareHouseItemID == ( nTempCol + nTempRow * WAREHOUSE_WAREHOUSE_SLOT_COL ) )
-				m_nSelWareHouseItemID = -1;
+			if (m_pIconTradeItems[iItem]->IsEmpty())
+				break;
 		}
-	}
 
-	m_nTotalPrice = CalculateStoragePrice();
-	m_strTotalPrice.PrintF( "%I64d", m_nTotalPrice );
-	_pUIMgr->InsertCommaToString( m_strTotalPrice );
+		// If there is not empty slot
+		if( iItem == WAREHOUSE_TRADE_SLOT_TOTAL )
+		{
+			CTString	strMessage;
+
+			// Add system message
+			if( m_bStorageWareHouse )
+				strMessage.PrintF( _S( 831, "«—π¯ø° √÷¥Î %d∞≥¿« æ∆¿Ã≈€¿ª ∫∏∞¸«œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ." ), WAREHOUSE_TRADE_SLOT_TOTAL );	
+			else
+				strMessage.PrintF( _S( 832, "«—π¯ø° √÷¥Î %d∞≥¿« æ∆¿Ã≈€¿ª √£¿∏Ω« ºˆ ¿÷Ω¿¥œ¥Ÿ." ), WAREHOUSE_TRADE_SLOT_TOTAL );		
+
+			CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_ERROR );
+			return;
+		}
+
+		if (iItem <= m_vecTradeItems.size())
+		{
+			CItems* pNewItems = new CItems(m_pItemsTemp->Item_Index);
+			m_vecTradeItems.push_back(pNewItems);
+		}
+
+		CItems* pItems = m_vecTradeItems[iItem];
+		memcpy(pItems, m_pItemsTemp, sizeof(CItems));
+		m_pIconTradeItems[iItem]->setData(pItems);
+		m_pIconTradeItems[iItem]->setCount(llCount);
+
+		if (m_bStorageWareHouse == FALSE)
+		{												
+			// Update count of warehouse item
+			SQUAD	llNewCount = m_vectorStorageItems[m_nTempStorageIdx]->Item_Sum;
+			llNewCount -= llCount;
+
+			m_pIconWareHouseItems[m_nTempStorageIdx]->setCount(llNewCount);			
+			
+			if( llNewCount <= 0 )
+			{
+				m_pIconWareHouseItems[m_nTempStorageIdx]->Hide(TRUE);
+
+				// Unselect item
+				if (m_nSelWareHouseItemID == m_nTempStorageIdx)
+					m_nSelWareHouseItemID = -1;
+			}
+		}
+
+		m_nTotalPrice = CalculateStoragePrice();
+		m_strTotalPrice.PrintF( "%I64d", m_nTotalPrice );
+		CUIManager::getSingleton()->InsertCommaToString( m_strTotalPrice );
+
+		m_pItemsTemp = NULL;
+	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  :
 //-----------------------------------------------------------------------------
-void CUIWareHouse::TradeToWareHouse( SQUAD llCount, ULONG ulPlus, ULONG ulFlag, LONG lUsed )
+void CUIWareHouse::TradeToWareHouse( SQUAD llCount )
 {
-	// Update count of trade item
-	SQUAD	llNewCount = m_abtnTradeItems[nTempTradeItemID].GetItemCount();
-	llNewCount -= llCount;
-	m_abtnTradeItems[nTempTradeItemID].SetItemCount( llNewCount );
+	if (m_pItemsTemp == NULL)
+		return;
 
-	if( llNewCount <= 0 )
+	// Update count of trade item
+	SQUAD llTrade = m_vecTradeItems[m_nTempTradeIdx]->Item_Sum - llCount;
+	m_pIconTradeItems[m_nTempTradeIdx]->setCount(llTrade);
+
+	if (m_vecTradeItems[m_nTempTradeIdx]->Item_Sum <= 0)
 	{
 		// Rearrange buttons
-		for( int iArrItem = nTempTradeItemID; iArrItem < WAREHOUSE_TRADE_SLOT_TOTAL; iArrItem++ )
+		for( int iArrItem = m_nTempTradeIdx; iArrItem < WAREHOUSE_TRADE_SLOT_TOTAL; iArrItem++ )
 		{
-			if( ( iArrItem + 1 ) == WAREHOUSE_TRADE_SLOT_TOTAL )
+			if ((iArrItem + 1) == WAREHOUSE_TRADE_SLOT_TOTAL)
 			{
-				m_abtnTradeItems[iArrItem].InitBtn();
+				m_pIconTradeItems[iArrItem]->clearIconData();				
 				break;
 			}
 
-			if( m_abtnTradeItems[iArrItem + 1].IsEmpty() )
+			if (m_pIconTradeItems[iArrItem + 1]->IsEmpty())
 			{
-				m_abtnTradeItems[iArrItem].InitBtn();
+				m_pIconTradeItems[iArrItem]->clearIconData();
 				break;
 			}
 
-			m_abtnTradeItems[iArrItem].SetItemInfo( 0,
-													m_abtnTradeItems[iArrItem + 1].GetItemRow(),
-													m_abtnTradeItems[iArrItem + 1].GetItemCol(),
-													m_abtnTradeItems[iArrItem + 1].GetItemIndex(),
-													m_abtnTradeItems[iArrItem + 1].GetItemUniIndex(),
-													-1 );
-			m_abtnTradeItems[iArrItem].SetItemCount( m_abtnTradeItems[iArrItem + 1].GetItemCount() );
-			m_abtnTradeItems[iArrItem].SetItemFlag( m_abtnTradeItems[iArrItem + 1].GetItemFlag() );
-			m_abtnTradeItems[iArrItem].SetItemPlus( m_abtnTradeItems[iArrItem + 1].GetItemPlus() );
-			m_abtnTradeItems[iArrItem].SetItemUsed( m_abtnTradeItems[iArrItem + 1].GetItemUsed() );
-			m_abtnTradeItems[iArrItem].SetItemRareIndex( m_abtnTradeItems[iArrItem + 1].GetItemRareIndex() );
-
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; ++sbOption )
-			{
-				SBYTE sbOptionType	= m_abtnTradeItems[iArrItem + 1].GetItemOptionType(sbOption);
-				SBYTE sbOptionLevel	= m_abtnTradeItems[iArrItem + 1].GetItemOptionLevel(sbOption);
-				m_abtnTradeItems[iArrItem].SetItemOptionData( sbOption, sbOptionType, sbOptionLevel );
-			}
+			m_pIconTradeItems[iArrItem]->setData(m_pIconTradeItems[iArrItem + 1]->getItems());
 		}
 
+		if (m_bStorageWareHouse == FALSE)
+		{
+			// Update count of warehouse item
+			if (m_nTempStorageIdx >= m_vectorStorageItems.size())
+			{
+				m_vectorStorageItems.push_back(m_vecTradeItems[m_nTempTradeIdx]);
+			}
+			else
+			{
+				if (m_vectorStorageItems[m_nTempStorageIdx] == NULL)
+					m_vectorStorageItems[m_nTempStorageIdx] = m_vecTradeItems[m_nTempTradeIdx];
+				else
+					m_vectorStorageItems[m_nTempStorageIdx]->Item_Sum += m_pItemsTemp->Item_Sum;
+			}
+
+			m_pIconWareHouseItems[m_nTempStorageIdx]->setData(m_vectorStorageItems[m_nTempStorageIdx]);
+		}
+		else
+		{
+			SAFE_DELETE(m_vecTradeItems[m_nTempTradeIdx]);
+		}
+
+		m_vecTradeItems.erase(m_vecTradeItems.begin() + m_nTempTradeIdx);
+
 		// Unselect item
-		if( nTempTradeItemID == m_nSelTradeItemID )
+		if (m_nTempTradeIdx == m_nSelTradeItemID)
 			m_nSelTradeItemID = -1;
 	}
 
-	if( !m_bStorageWareHouse )
+	if (m_bStorageWareHouse == FALSE)
 	{
-		// Update count of warehouse item
-		llNewCount = m_abtnWareHouseItems[nTempRow][nTempCol].GetItemCount();
-		llNewCount += llCount;
-		m_abtnWareHouseItems[nTempRow][nTempCol].SetItemCount( llNewCount );
-		if( llNewCount > 0 )
-			m_abtnWareHouseItems[nTempRow][nTempCol].SetEmpty( FALSE );
+		SQUAD llNewCount = m_vectorStorageItems[m_nTempStorageIdx]->Item_Sum + llCount;
+		m_pIconWareHouseItems[m_nTempStorageIdx]->setCount(llNewCount);
+
+		if (m_vectorStorageItems[m_nTempStorageIdx]->Item_Sum > 0)
+			m_pIconWareHouseItems[m_nTempStorageIdx]->Hide(FALSE);
 	}
 
 	m_nTotalPrice = CalculateStoragePrice();
 	m_strTotalPrice.PrintF( "%I64d", m_nTotalPrice );
-	_pUIMgr->InsertCommaToString( m_strTotalPrice );
+	CUIManager::getSingleton()->InsertCommaToString( m_strTotalPrice );
+
+	m_pItemsTemp = NULL;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Î≥¥Í¥ÄÎ£åÎ•º Í≥ÑÏÇ∞Ìï©ÎãàÎã§.
+// Purpose: ∫∏∞¸∑·∏¶ ∞ËªÍ«’¥œ¥Ÿ.
 // Input  :
 //-----------------------------------------------------------------------------
 SQUAD CUIWareHouse::CalculateStoragePrice()
 {
-	const int iTexPerWeight	= 1;	// Î¨¥Í≤å 1Îãπ ÏÑ∏Í∏à.
 	SQUAD llTotalPrice		= 0;
-	SQUAD llTotalWeight		= 0;
-	for( int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++ )
+	SQUAD llItemCnt			= 0;
+	const int nTax			= 100;	// æ∆¿Ã≈€ «—∞≥¿« ºº±› 100ø¯.
+	
+	for (int iItem = 0; iItem < WAREHOUSE_TRADE_SLOT_TOTAL; iItem++)
 	{	
-		if(m_abtnTradeItems[iItem].IsEmpty())
+		if (m_pIconTradeItems[iItem]->IsEmpty())
 			continue;
 
-		const int iIndex	= m_abtnTradeItems[iItem].GetItemIndex();
-		const SQUAD llCount	= m_abtnTradeItems[iItem].GetItemCount();
-		CItemData& ID = _pNetwork->GetItemData(iIndex);
-		if(ID.GetWeight() != 0)
-		{
-			llTotalWeight += ID.GetWeight() * llCount;
-		}
+		llItemCnt		   += m_vecTradeItems[iItem]->Item_Sum;
 	}
 
-	// ÎèàÏùÑ Îî∞Î°ú Í≥ÑÏÇ∞Ìï†Í≤É.
-
-	// Î¨¥Í≤å 1Îãπ 3ÎÇòÏä§.
-	llTotalPrice += llTotalWeight * iTexPerWeight;
+	llTotalPrice += llItemCnt * nTax;
+	
 	return llTotalPrice;
 }
 
@@ -2946,41 +2238,51 @@ SQUAD CUIWareHouse::CalculateStoragePrice()
 void CUIWareHouse::SendWareHouseKeepReq()
 {
 	LONG lKeepCount = 0;
-	for(int i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; ++i)
+	int		i;
+	
+	for( i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; ++i )
 	{
-		if(m_abtnTradeItems[i].IsEmpty())
+		if (m_pIconTradeItems[i]->IsEmpty())
 			continue;
 		lKeepCount++;
 	}
 
-	if(lKeepCount <= 0)
+	if(m_nInNas == 0 && lKeepCount <= 0)
 	{
 		return;
 	}
 
-	// password(str) keepcount(n) [row(c) col(c) item_idx(n) count(ll)]:keepcount
-	CNetworkMessage nmWareHouse(MSG_STASH);
-	nmWareHouse << (UBYTE)MSG_STASH_KEEP_REQ;
-	nmWareHouse << m_strPW;
+	CNetworkMessage nmMessage;
+	RequestClient::doStashKeep* packet = reinterpret_cast<RequestClient::doStashKeep*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_STASH;
+	packet->subType = MSG_STASH_KEEP;
+#ifdef	STASH_PASSWORD
+	memset(packet->password, 0, MAX_STASH_PASSWORD_LENGTH+1);
+	int nSize = m_strPW.Length();
+	if (nSize > MAX_STASH_PASSWORD_LENGTH)
+		nSize = MAX_STASH_PASSWORD_LENGTH;
+	memcpy(packet->password, m_strPW.str_String, nSize);
+#endif	// STASH_PASSWORD
+	packet->npcKind = m_nNPCVIdx;
+	packet->keepMoney = m_nInNas;
+	packet->keepCount = lKeepCount;
 
-	nmWareHouse << lKeepCount;
-
-	for(i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; ++i)
+	for (i = 0; i < lKeepCount; ++i)
 	{
-		if(m_abtnTradeItems[i].IsEmpty())
-			continue;
-		SBYTE sbRow		= m_abtnTradeItems[i].GetItemRow();
-		SBYTE sbCol		= m_abtnTradeItems[i].GetItemCol();
-		LONG lIndex		= m_abtnTradeItems[i].GetItemUniIndex();
-		SQUAD llCount	= m_abtnTradeItems[i].GetItemCount();
+		SWORD nTab		= m_vecTradeItems[i]->Item_Tab;
+		SWORD nIdx		= m_vecTradeItems[i]->InvenIndex;
+		LONG lIndex		= m_vecTradeItems[i]->Item_UniIndex;
+		int  nCnt		= (int)m_vecTradeItems[i]->Item_Sum;
 
-		nmWareHouse << sbRow;
-		nmWareHouse << sbCol;
-		nmWareHouse << lIndex;
-		nmWareHouse << llCount;
+		packet->list[i].tab = nTab;
+		packet->list[i].invenIndex = nIdx;
+		packet->list[i].virtualIndex = lIndex;
+		packet->list[i].count = nCnt;
 	}
-	
-	_pNetwork->SendToServerNew(nmWareHouse);	
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * lKeepCount) );
+
+	_pNetwork->SendToServerNew( nmMessage );
 }
 
 //-----------------------------------------------------------------------------
@@ -2990,118 +2292,267 @@ void CUIWareHouse::SendWareHouseKeepReq()
 void CUIWareHouse::SendWareHouseTakeReq()
 {
 	LONG lTakeCount = 0;
-	for(int i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; ++i)
+	int		i;
+	for( i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; ++i)
 	{
-		if(m_abtnTradeItems[i].IsEmpty())
+		if (m_pIconTradeItems[i]->IsEmpty())
 			continue;
 		lTakeCount++;
 	}
 
-	if(lTakeCount <= 0)
+	if(m_nOutNas == 0 && lTakeCount <= 0)
 	{
 		return;
 	}
 
-	// Ï∞æÍ∏∞ ÏöîÏ≤≠				: password(str) takecount(n) [item_idx(n) count(ll)]:takecount
-	CNetworkMessage nmWareHouse(MSG_STASH);
-	nmWareHouse << (UBYTE)MSG_STASH_TAKE_REQ;
-	nmWareHouse << m_strPW;
+	// √£±‚ ø‰√ª				: password(str) takecount(n) [item_idx(n) count(ll)]:takecount
+	CNetworkMessage nmMessage;
+	RequestClient::doStashTake* packet = reinterpret_cast<RequestClient::doStashTake*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_STASH;
+	packet->subType = MSG_STASH_TAKE;
+#ifdef	STASH_PASSWORD
+	memset(packet->password, 0, MAX_STASH_PASSWORD_LENGTH+1);
+	int nSize = m_strPW.Length();
+	if (nSize > MAX_STASH_PASSWORD_LENGTH)
+		nSize = MAX_STASH_PASSWORD_LENGTH;
+	memcpy(packet->password, m_strPW.str_String, nSize);
+#endif	// STASH_PASSWORD
+	packet->npcKind = m_nNPCVIdx;
+	packet->takeMoney = m_nOutNas;
+	packet->takeCount = lTakeCount;
 
-	nmWareHouse << lTakeCount;
+	for (i = 0; i < lTakeCount; ++i)
+	{		
+		SWORD nIdx		= m_vecTradeItems[i]->GetServerIndex();
+		LONG lIndex		= m_vecTradeItems[i]->Item_UniIndex;
+		int  nCnt		= (int)m_vecTradeItems[i]->Item_Sum;
 
-	for(i = 0; i < WAREHOUSE_TRADE_SLOT_TOTAL; ++i)
-	{
-		if(m_abtnTradeItems[i].IsEmpty())
-			continue;		
-		LONG lIndex		= m_abtnTradeItems[i].GetItemUniIndex();
-		SQUAD llCount	= m_abtnTradeItems[i].GetItemCount();
-		
-		nmWareHouse << lIndex;
-		nmWareHouse << llCount;
+		packet->list[i].invenIndex = nIdx;
+		packet->list[i].virtualIndex = lIndex;
+		packet->list[i].count = nCnt;
 	}
-	
-	_pNetwork->SendToServerNew(nmWareHouse);	
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * lTakeCount) );
+
+	_pNetwork->SendToServerNew( nmMessage );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: ReceiveWareHouseListRep
-// Input  :
-//-----------------------------------------------------------------------------
-void CUIWareHouse::ReceiveWareHouseListRep(CNetworkMessage *istr)
+void CUIWareHouse::ReceiveList( CNetworkMessage *istr )
 {
-	// Ï∞ΩÍ≥† ÏïÑÏù¥ÌÖú Î¶¨Ïä§Ìä∏		: listflag(c) item_idx(n) plus(n) flag(n) used(n) option_count(c) ([option_type(c) option_level(c)]:option_count) count(ll)
-	SBYTE	sbListFlag;
-	LONG	lIndex;
-	LONG	lUniIndex;
-	LONG	lPlus;
-	LONG	lFlag;
-	LONG	lUsed;
-	LONG	lUsed2;
-	SBYTE	sbOptionCount;
-	SQUAD	llCount;
-	LONG	useTime;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	UpdateClient::invenList* pPack = reinterpret_cast<UpdateClient::invenList*>(istr->GetBuffer());
 
-	(*istr) >> sbListFlag;
-
-	if( sbListFlag & ITEM_LIST_EMPTY )	// Empty
+	for (int nList = 0; nList < pPack->count; ++nList)
 	{
-		_pUIMgr->GetSecurity()->ResetSecurity();
-		_pUIMgr->GetInventory()->Lock( TRUE, TRUE, LOCK_WAREHOUSE );
-		_pUIMgr->RearrangeOrder( UI_INVENTORY, TRUE );
-		//_pUIMgr->SetCSFlagOff( CSF_WAREHOUSE );
-		PrepareWareHouse();
-		return;
-	}
+		UpdateClient::itemInfo* pInfo = &pPack->info_list[nList];
 
-	(*istr) >> lUniIndex;
-	(*istr) >> lIndex;
-	(*istr)	>> lPlus;
-	(*istr)	>> lFlag;
-	(*istr)	>> lUsed;
-	(*istr) >> lUsed2;
-	(*istr) >> sbOptionCount;
 
-	CItems Item;
-	Item.InitOptionData();
+		CItems* pItems = new CItems(pInfo->dbIndex);
+		pItems->InitOptionData();
 
-		SBYTE sbOptionType;
-		SBYTE sbOptionLevel;
-	//Î†àÏñ¥ ÏïÑÏù¥ÌÖúÏù¥Î©¥...
+		SBYTE opt_cnt = pInfo->option_count;
 
-	if( _pNetwork->GetItemData(lIndex).GetFlag() & ITEM_FLAG_RARE )
-	{
-		//ÏòµÏÖò Í∞úÏàòÍ∞Ä 0Ïù¥Î©¥ ÎØ∏Í∞êÏ†ï Î†àÏñ¥ÏïÑÏù¥ÌÖú
-		if( sbOptionCount ==0)
-			Item.SetRareIndex(0);
-		//Í∞êÏ†ïÎêú Î†àÏñ¥ ÏïÑÏù¥ÌÖú
-		else
-			_pUIMgr->SetRareOption(istr, Item);
-	}
-	//Î†àÏñ¥ ÏïÑÏù¥ÌÖúÏù¥ ÏïÑÎãàÎ©¥...
-	else
-	{
-		for(int i = 0; i < sbOptionCount; ++i)
+		CItemData* pItemData = CItemData::getData(pInfo->dbIndex);
+	
+		//∑πæÓ æ∆¿Ã≈€¿Ã∏È...
+		if( pItemData->GetFlag() & ITEM_FLAG_RARE )
 		{
-			(*istr) >> sbOptionType;
-			(*istr) >> sbOptionLevel;
-			Item.SetOptionData( i, sbOptionType, sbOptionLevel );
+			//ø…º« ∞≥ºˆ∞° 0¿Ã∏È πÃ∞®¡§ ∑πæÓæ∆¿Ã≈€
+			if (opt_cnt == 0)
+				pItems->SetRareIndex(0);
+			//∞®¡§µ» ∑πæÓ æ∆¿Ã≈€
+			else
+				pUIManager->SetRareOption(&pPack->info_list[nList], *pItems);
+		}		
+		else
+		{
+			//∑πæÓ æ∆¿Ã≈€¿Ã æ∆¥œ∏È...
+			if (pItemData->GetFlag() & ITEM_FLAG_ORIGIN)
+			{
+				pItems->SetItemBelong( pItemData->GetItemBelong() );
+
+				int		OpCount;
+
+				for (OpCount = 0; OpCount < MAX_ORIGIN_OPTION; OpCount++)
+				{
+					pItems->SetOptionData( OpCount, pItemData->GetOptionOriginType(OpCount), 
+						pItemData->GetOptionOriginLevel(OpCount), pInfo->origin_var[OpCount] );
+				}
+
+				// æ∆¿Ã≈€ Ω∫≈≥ ºº∆√
+				for (OpCount = 0; OpCount < MAX_ITEM_SKILL; OpCount++)
+				{
+					pItems->SetItemSkill(OpCount, pItemData->GetOptionSkillType(OpCount), pItemData->GetOptionSkillLevel(OpCount));
+				}
+			}
+			else
+			{
+				for (int OpCount = 0; OpCount < opt_cnt; OpCount++)
+				{
+					pItems->SetOptionData( OpCount, pInfo->option_type[OpCount], 
+						pInfo->option_level[OpCount], ORIGIN_VAR_DEFAULT );
+				}
+			}
 		}
+
+		//(*istr) >> useTime;
+		//pUIManager->GetWareHouse()->SetUseTime(useTime);	//wooss 050817
+
+		pItems->SetItemPlus2(pInfo->plus_2);
+		pItems->SetData( pInfo->dbIndex, pInfo->virtualIndex, -1, -1, pInfo->plus, pInfo->flag, -1, 
+			pInfo->used, pInfo->used_2, -1, pInfo->itemCount );
+
+		pItems->SetServerIndex(pInfo->invenIndex);
+
+	// socket system. [6/23/2010 rumist]
+		pItems->InitSocketInfo();
+		if( pItemData->GetFlag() & ITEM_FLAG_SOCKET )
+		{
+			SBYTE	sbSocketCreateCount = 0;
+			int		sc;
+
+			for (sc = 0; sc < JEWEL_MAX_COUNT; ++sc)
+			{
+				if (pInfo->socket[sc] >= 0)
+				{
+					sbSocketCreateCount++;
+					pItems->SetSocketOption( sc, pInfo->socket[sc] );
+				}
+			}
+
+			pItems->SetSocketCount( sbSocketCreateCount );
+		}
+
+#ifdef DURABILITY
+		pItems->SetDurability(pInfo->now_durability, pInfo->max_durability);
+#endif	//	DURABILITY
+
+		m_vectorStorageItems.push_back(pItems);
 	}
 
-	(*istr) >> llCount;	
-	
-	(*istr) >> useTime;
-	_pUIMgr->GetWareHouse()->SetUseTime(useTime);	//wooss 050817
+	if (IsVisible() == FALSE)
+	{		
+		pUIManager->GetInventory()->Lock( TRUE, TRUE, LOCK_WAREHOUSE );
+		pUIManager->RearrangeOrder( UI_INVENTORY, TRUE );		
+	}
 
-	Item.SetData( lIndex, lUniIndex, -1, -1, -1, lPlus, lFlag, lUsed, lUsed2, -1, llCount);
-	
-	m_vectorStorageItems.push_back(Item);
+	PrepareWareHouse();
+}
 
-	if( sbListFlag & ITEM_LIST_END )	// End
+//≥™Ω∫ ¿‘±› ∆Àæ˜ ª˝º∫ 
+void CUIWareHouse::InNas()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CTString	strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_WAREHOUSE_ADD_MONEY))
+		return;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 5906, "¿‘±›" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
+		UI_WAREHOUSE, MSGCMD_WAREHOUSE_ADD_MONEY );
+	strMessage.PrintF( _S( 5904, "∏Ó ∞≥¿« ≥™Ω∫∏¶ ¿‘±› «œΩ√∞⁄Ω¿¥œ±Ó?" ) );		
+	MsgBoxInfo.AddString( strMessage );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+
+	return;
+}
+//≥™Ω∫ √‚±›«œ±‚ ∆Àæ˜ ª˝º∫ 
+void CUIWareHouse::OutNas()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CTString	strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_WAREHOUSE_TAKE_MONEY))
+		return;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 5907, "√‚±›" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
+		UI_WAREHOUSE, MSGCMD_WAREHOUSE_TAKE_MONEY );
+	strMessage.PrintF( _S( 5905, "∏Ó∞≥¿« ≥™Ω∫∏¶ √‚±› «œΩ√∞⁄Ω¿¥œ±Ó?" ) );		
+	MsgBoxInfo.AddString( strMessage );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+
+	return;
+}
+
+void CUIWareHouse::ReceiveNas( CNetworkMessage *istr )
+{
+	UpdateClient::money* pPack = reinterpret_cast<UpdateClient::money*>(istr->GetBuffer());
+
+	if (pPack->subType == MSG_SUB_UPDATE_MONENY)
 	{
-		_pUIMgr->GetSecurity()->ResetSecurity();
-		_pUIMgr->GetInventory()->Lock( TRUE, TRUE, LOCK_WAREHOUSE );
-		_pUIMgr->RearrangeOrder( UI_INVENTORY, TRUE );
-		PrepareWareHouse();
+		__int64 delta_nas = pPack->nas - m_nTotalNas;
+
+		if (delta_nas > 0)
+		{
+			CTString strOutNas;
+			strOutNas.PrintF( _S( 1346, "≥™Ω∫∏¶ %I64d∞≥ ∫∏∞¸«œø¥Ω¿¥œ¥Ÿ." ), delta_nas);		
+			
+			_pNetwork->ClientSystemMessage( strOutNas );
+		}
+
+		ResetWareHouse();
+	}
+
+	m_nTotalNas = pPack->nas;
+
+	m_strTotalNas.PrintF( "%I64d", m_nTotalNas );
+	CUIManager::getSingleton()->InsertCommaToString( m_strTotalNas );	
+}
+
+void CUIWareHouse::ErrMessage( int nErr )
+{
+	if( CUIManager::getSingleton()->DoesMessageBoxExist( MSGCMD_NULL ) )
+		return;
+
+	CUIMsgBox_Info MsgInfo;
+	MsgInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
+
+	switch( nErr )
+	{
+		case eERR_KEEP_FAIL_EMPTY:
+			MsgInfo.AddString( _S( 5554, "∏√±Ê æ∆¿Ã≈€¿Ã æ¯Ω¿¥œ¥Ÿ. »Æ¿Œ»ƒ ¥ŸΩ√ «œΩ√±‚ πŸ∂¯¥œ¥Ÿ.") );		
+			break;
+		case eERR_TAKE_FAIL_EMPTY:
+			MsgInfo.AddString( _S( 5555, "√£¿ª æ∆¿Ã≈€¿Ã æ¯Ω¿¥œ¥Ÿ. »Æ¿Œ»ƒ ¥ŸΩ√ «œΩ√±‚ πŸ∂¯¥œ¥Ÿ.") );		
+			break;
+	}
+	CUIManager::getSingleton()->CreateMessageBox( MsgInfo );
+}
+
+void CUIWareHouse::SendListReq(CTString& strPW)
+{
+	CNetworkMessage nmMessage;
+	RequestClient::doStashList* packet = reinterpret_cast<RequestClient::doStashList*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_STASH;
+	packet->subType = MSG_STASH_LIST;
+
+#ifdef	STASH_PASSWORD
+	m_strPW = strPW;
+	memset(packet->password, 0, MAX_STASH_PASSWORD_LENGTH+1);
+	int nSize = strPW.Length();
+	if (nSize > MAX_STASH_PASSWORD_LENGTH)
+		nSize = MAX_STASH_PASSWORD_LENGTH;
+	memcpy(packet->password, strPW.str_String, nSize);
+#endif	// STASH_PASSWORD
+
+	nmMessage.setSize( sizeof(*packet) );
+
+	_pNetwork->SendToServerNew( nmMessage );
+}
+
+void CUIWareHouse::AddItemCallback()
+{
+	if (UIMGR()->GetMsgBoxNumOnly()->GetData() > 0)
+	{
+		SQUAD llCount = UIMGR()->GetMsgBoxNumOnly()->GetData();
+		WareHouseToTrade(llCount);
+	}
+}
+
+void CUIWareHouse::DelItemCallback()
+{
+	SQUAD llCount = UIMGR()->GetMsgBoxNumOnly()->GetData();
+
+	if (llCount > 0 && llCount <= m_pItemsTemp->Item_Sum)
+	{
+		TradeToWareHouse(llCount);
 	}
 }

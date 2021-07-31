@@ -5,31 +5,18 @@
 #endif
 #include <Engine/Entities/Entity.h>
 #include <vector>
+#include <Engine/LocalDefine.h>
+#include <Engine/Entities/MobData.h>
 
-
-class ENGINE_API CNpcHelp
+class ENGINE_API CNpcHelp : public stNpcHelp, public LodLoader<CNpcHelp>
 {
-private:
-	typedef struct _tagNpcList
-	{
-		int zone_index;
-		int npc_index;
-		char npc_name[50];
-		char npc_explan[1024];
-	
-	}TNpcList, *PTNpcList;
-	
-protected:
-	
 public:
-	CNpcHelp();
-	~CNpcHelp();
+	static bool	loadEx(const char* FileName);
+};
 
-
-	TNpcList			m_NpcList;
-	int					m_nHelpNpcIndex;
-
-	void		SetData(int iKeeperIdx, const char* pszShopName, int iSellRate, int iBuyRate);
-	static int	LoadNpcListFromFile(CStaticArray<CNpcHelp> &apNpcList, const char* FileName);
+class ENGINE_API CMobHelp : public stNpcHelp, public LodLoader<CMobHelp>
+{
+public:
+	static bool	loadEx(const char* FileName);
 };
 #endif

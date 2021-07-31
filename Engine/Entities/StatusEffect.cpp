@@ -4,38 +4,51 @@
 #include <Engine/Base/Timer.h>
 
 /*
-//skill.hì—ì„œ ì •ì˜.
-#define EST_ASSIST_POISON		0			// ë…
-#define EST_ASSIST_HOLD			1			// í™€ë“œ
-#define EST_ASSIST_CONFUSION	2			// í˜¼ëž€
-#define EST_ASSIST_STONE		3			// ì„í™”
-#define EST_ASSIST_SILENT		4			// ë´‰ì¸
-#define EST_ASSIST_BLOOD		5			// ì¶œí˜ˆ
-#define EST_ASSIST_BLIND		6			// ë¸”ë¼ì¸ë“œ
-#define EST_ASSIST_STURN		7			// ìŠ¤í„´
-#define EST_ASSIST_SLEEP		8			// ìŠ¬ë¦½
-#define EST_ASSIST_HP			9			// HPíšŒë³µ
-#define EST_ASSIST_MP			10			// MPíšŒë³µ
-#define EST_ASSIST_MOVESPD		11			// ì´ì† í–¥ìƒ
-#define EST_ASSIST_HP_CANCEL	12			// HPë³€í™”(0, MAXì—ì„œ ì·¨ì†Œ)
-#define EST_ASSIST_MP_CANCEL	13			// MPë³€í™”(0, MAXì—ì„œ ì·¨ì†Œ)
-#define EST_ASSIST_DIZZY		14			// í˜„ê¸°ì¦
-#define EST_ASSIST_INVISIBLE	15			// ì¸ë¹„ì €ë¸”
-#define EST_ASSIST_SLOTH		16			// ìŠ¬ë¡œìŠ¤ : ê³µì†í•˜ë½
-#define EST_ASSIST_FEAR			17			// ê³µí¬ : í•´ë‹¹ NPCê°€ ë„ë§
-#define EST_ASSIST_FAKEDEATH	18			// ì£½ì€ì²™
-#define EST_ASSIST_PERFECTBODY	19			// íƒ€ì´íƒ„ í¼íŽ™ ë°”ë””
-#define EST_ASSIST_FRENZY		20			// íƒ€ì´íƒ„ í”„ë Œì§€
-#define EST_ASSIST_DAMAGELINK	21			// ë°ë¯¸ì§€ë§í¬
-#define EST_ASSIST_BERSERK		22			// ê·¸ëžœë“œ ëª¬ìŠ¤í„°ì˜ ë¶„ë…¸- ê³µì†
-#define EST_ASSIST_DESPAIR		23			// ížëŸ¬ ë””ì„¸ì´ì–´ ë§ˆí¬
-#define EST_ASSIST_MANA_SCREEN	24			// ì†Œì„œëŸ¬ ë§ˆë‚˜ ìŠ¤í¬ë¦°
-#define EST_ASSIST_BLESS		25			// ì†Œì„œëŸ¬ ìœˆì¦ˆ ë¸”ë ˆì‹±
-#define EST_ASSIST_SAFEGUARD	26			// ë³´í˜¸ë§(ì „íˆ¬ë¶ˆê°€ëŠ¥)
-#define EST_ASSIST_MANTLE		27			// ë§í† 
-#define EST_ASSIST_GUARD		28			// ê²½ë¹„ë³‘ ì†Œí™˜
-#define EST_ASSIST_CRACKER		29			// ì¹¨ìž…ìž ì´íŽ™íŠ¸ ê´€ë ¨(ìƒíƒœ ì´ìƒê³¼ëŠ” ë¬´ê´€:ì„œë²„ì™€ ìƒê´€ì—†ì´ ê°•ì œ ì ìš©)
-#define EST_ASSIST_COUNT		30	
+//skill.h¿¡¼­ Á¤ÀÇ.
+#define EST_ASSIST_POISON		0			// µ¶
+#define EST_ASSIST_HOLD			1			// È¦µå
+#define EST_ASSIST_CONFUSION	2			// È¥¶õ
+#define EST_ASSIST_STONE		3			// ¼®È­
+#define EST_ASSIST_SILENT		4			// ºÀÀÎ
+#define EST_ASSIST_BLOOD		5			// ÃâÇ÷
+#define EST_ASSIST_BLIND		6			// ºí¶óÀÎµå
+#define EST_ASSIST_STURN		7			// ½ºÅÏ
+#define EST_ASSIST_SLEEP		8			// ½½¸³
+#define EST_ASSIST_HP			9			// HPÈ¸º¹
+#define EST_ASSIST_MP			10			// MPÈ¸º¹
+#define EST_ASSIST_MOVESPD		11			// ÀÌ¼Ó Çâ»ó
+#define EST_ASSIST_HP_CANCEL	12			// HPº¯È­(0, MAX¿¡¼­ Ãë¼Ò)
+#define EST_ASSIST_MP_CANCEL	13			// MPº¯È­(0, MAX¿¡¼­ Ãë¼Ò)
+#define EST_ASSIST_DIZZY		14			// Çö±âÁõ
+#define EST_ASSIST_INVISIBLE	15			// ÀÎºñÀúºí
+#define EST_ASSIST_SLOTH		16			// ½½·Î½º : °ø¼ÓÇÏ¶ô
+#define EST_ASSIST_FEAR			17			// °øÆ÷ : ÇØ´ç NPC°¡ µµ¸Á
+#define EST_ASSIST_FAKEDEATH	18			// Á×ÀºÃ´
+#define EST_ASSIST_PERFECTBODY	19			// Å¸ÀÌÅº ÆÛÆå ¹Ùµð
+#define EST_ASSIST_FRENZY		20			// Å¸ÀÌÅº ÇÁ·»Áö
+#define EST_ASSIST_DAMAGELINK	21			// µ¥¹ÌÁö¸µÅ©
+#define EST_ASSIST_BERSERK		22			// ±×·£µå ¸ó½ºÅÍÀÇ ºÐ³ë- °ø¼Ó
+#define EST_ASSIST_DESPAIR		23			// Èú·¯ µð¼¼ÀÌ¾î ¸¶Å©
+#define EST_ASSIST_MANA_SCREEN	24			// ¼Ò¼­·¯ ¸¶³ª ½ºÅ©¸°
+#define EST_ASSIST_BLESS		25			// ¼Ò¼­·¯ À©Áî ºí·¹½Ì
+#define EST_ASSIST_SAFEGUARD	26			// º¸È£¸Á(ÀüÅõºÒ°¡´É)
+#define EST_ASSIST_MANTLE		27			// ¸ÁÅä
+#define EST_ASSIST_GUARD		28			// °æºñº´ ¼ÒÈ¯
+#define EST_ASSIST_CHARGEATC	29			// ÀåÅº(attack)
+#define EST_ASSIST_CHARGEMGC	30			// ÀåÅº(magic)
+#define EST_ASSIST_DISEASE		31			// Áúº´
+#define EST_ASSIST_CURSE		32			// ÀúÁÖ
+#define EST_ASSIST_CONFUSED		33			// ¸ó½ºÅÍ¸¸ È¥¶õ¿¡ °É¸®°Ô ÇÔ
+#define EST_ASSIST_TAMING		34			// ¸ó½ºÅÍ¸¦ ÀÏÁ¤½Ã°£ ¾Æ±ºÀ¸·Î ¸¸µë
+#define EST_ASSIST_FREEZE		35			// °á°è(¼­·Î °ø°Ý ¸øÇÔ, °É¸° °ÍÀº ÀÌµ¿ ¸øÇÔ)
+#define EST_ASSIST_INVERSE_DAMAGE	36		// ÇÇ°Ý ´çÇÏ¸é µ¥¹ÌÁö ¸¸Å­ HP È¸º¹
+#define EST_ASSIST_HP_DOT		37			// Áö¼Ó µ¥¹ÌÁö ÀÔÀ½
+#define EST_ASSIST_REBIRTH		38			// ºÎÈ°
+#define EST_ASSIST_DARKNESS_MODE	39		// ´ÙÅ©´Ï½º ¸ðµå
+#define EST_ASSIST_AURA_DARKNESS	40			// ¿À¿À¶ó - ´ÙÅ©´Ï½º
+#define EST_ASSIST_AURA_WEAKNESS	41			// ¿À¿À¶ó - À§Å©´Ï½º
+#define EST_ASSIST_AURA_ILLUSION	42			// ¿À¿À¶ó - ÀÏ·çÁ¯
+#define EST_ASSIST_COUNT		43
 */
 const char	*CStatusEffect::m_szStatusEffectName[EST_ASSIST_COUNT][T_COUNT] = 
 {
@@ -44,18 +57,18 @@ const char	*CStatusEffect::m_szStatusEffectName[EST_ASSIST_COUNT][T_COUNT] =
 	, {NULL, NULL, NULL}//"STATE_CONFUSION"
 	, {"STATE_STONE", "STATE_STONE", "STATE_STONE"}
 	, {"STATE_SILENT", "STATE_SILENT", "STATE_SILENT"}
-	, {NULL, NULL, NULL}//"STATE_BLOOD"
+	, {"croits_skill02_hits", "croits_skill02_hits", NULL}//"STATE_BLOOD"
 	, {"STATE_BLIND", NULL, NULL}
 	, {"STATE_STUN", "STATE_STUN", "STATE_STUN"}
 	, {"STATE_SLEEP","STATE_SLEEP","STATE_SLEEP"}//"STATE_SLEEP"
 	, {NULL, NULL, NULL}//"STATE_HP"
 	, {NULL, NULL, NULL}//"STATE_MP"
-	, {NULL, NULL, NULL}//"STATE_MOVESPD"
+	, {"DK Normal State", "DK Normal State", NULL}//"STATE_MOVESPD"
 	, {NULL, NULL, NULL}//"HP_CANCEL"
 	, {NULL, NULL, NULL}//"MP_CANCEL"
 	, {"STATE_DIZZY", "STATE_DIZZY", "STATE_DIZZY"}
 	, {NULL, NULL, NULL}//EST_ASSIST_INVISIBLE
-	, {NULL, NULL, NULL}//EST_ASSIST_SLOTH
+	, {"TGT_MISTY_CHAIN", "TGT_MISTY_CHAIN", "TGT_MISTY_CHAIN"}//EST_ASSIST_SLOTH
 	, {NULL, NULL, NULL}//EST_ASSIST_FEAR
 	, {NULL, NULL, NULL}//EST_ASSIST_FAKEDEATH
 	, {"STATE_PERFECTBODY", "STATE_PERFECTBODY", "STATE_PERFECTBODY"}
@@ -67,7 +80,27 @@ const char	*CStatusEffect::m_szStatusEffectName[EST_ASSIST_COUNT][T_COUNT] =
 	, {NULL, NULL, NULL}//EST_ASSIST_BLESS
 	, {NULL, NULL, NULL}//EST_ASSIST_SAFEGUARD
 	, {NULL, NULL, NULL}//EST_ASSIST_MANTLE
-	, {NULL, NULL, NULL}//EST_ASSIST_CRACKER (ì¼ë°˜ ì„œë²„ì—ì„œ ì‚¬ìš© ì•ˆí•¨)
+	, {NULL, NULL, NULL}//EST_ASSIST_GUARD
+	, {NULL, NULL, NULL}//EST_ASSIST_CHARGEATC
+	, {NULL, NULL, NULL}//EST_ASSIST_CHARGEMGC
+	, {NULL, NULL, NULL}//EST_ASSIST_DISEASE
+	, {NULL, NULL, NULL}//EST_ASSIST_CURSE
+	, {NULL, NULL, "STATE_DIZZY"}//EST_ASSIST_CONFUSED
+	, {NULL, NULL, "STATE_RED"}//EST_ASSIST_TAMING
+	, {"TGT_COPE_OF_LIGHT1", "TGT_COPE_OF_LIGHT1", "TGT_COPE_OF_LIGHT1"}//EST_ASSIST_FREEZE
+	, {NULL, NULL, NULL}//EST_ASSIST_INVERSE_DAMAGE
+	, {"TGT_PAIN_SHOT", "TGT_PAIN_SHOT", "TGT_PAIN_SHOT"}//EST_ASSIST_HP_DOT
+	, {NULL, NULL, NULL}//EST_ASSIST_REBIRTH
+	, {"STATE_STONE", "STATE_STONE", NULL}//EST_ASSIST_DARKNESS_MODE
+	, {"OWN_AURA_OF_DARKNESS", "OWN_AURA_OF_DARKNESS", NULL}//EST_ASSIST_AURA_DARKNESS				// ¿À¿À¶ó - ´ÙÅ©´Ï½º
+	, {"OWN_AURA_OF_ILLUSION", "OWN_AURA_OF_ILLUSION", NULL}//EST_ASSIST_AURA_WEAKNESS	41			// ¿À¿À¶ó - À§Å©´Ï½º
+	, {"OWN_AURA_OF_WEAKNESS", "OWN_AURA_OF_WEAKNESS", NULL}//EST_ASSIST_AURA_ILLUSION	42			// ¿À¿À¶ó - ÀÏ·çÁ¯
+	, {NULL, NULL, NULL}//EST_ASSIST_MERCENARY	43
+	, {NULL, NULL, NULL}//EST_ASSIST_SOUL_TOTEM_BUFF 44
+	, {NULL, NULL, NULL}//EST_ASSIST_SOUL_TOTEM_ATTK 45
+	, {NULL, NULL, NULL}//EST_ASSIST_TRAP 46
+	, {NULL, NULL, NULL}//EST_ASSIST_PARASITE 47
+	, {NULL, NULL, NULL}//EST_ASSIST_SUICIDE  48
 };
 
 const char	*CStatusEffect::m_szNPCQuestMark[CQuestSystem::NQT_COUNT] =
@@ -81,11 +114,15 @@ const char	*CStatusEffect::m_szNPCQuestMark[CQuestSystem::NQT_COUNT] =
 CStatusEffect::CStatusEffect()
 : m_slCurrentStatus( 0 )
 , m_eType( T_NPC )
-, m_pNPCQuestMark( NULL )
 , m_eCurrentNPCQuestType( CQuestSystem::NQT_NONE )
 {
-	ASSERT(EST_ASSIST_COUNT == 30);//ë­”ê°€ ë°”ë€Œê²Œ ìžˆìœ¼ë©´ m_szStatusEffectNameì˜ ê°’ì„ ê³ ì³ë¼-_-
+	ASSERT(EST_ASSIST_COUNT == 51);//¹º°¡ ¹Ù²î°Ô ÀÖÀ¸¸é m_szStatusEffectNameÀÇ °ªÀ» °íÃÄ¶ó-_-
 	memset(m_pStatusEffectArray, 0, sizeof(CEffectGroup*)*EST_ASSIST_COUNT);
+
+	for (int i = 0; i < CQuestSystem::NQT_COUNT; ++i)
+	{
+		m_pNPCQuestMark[i] = NULL;
+	}
 }
 
 CStatusEffect::~CStatusEffect()
@@ -95,33 +132,46 @@ CStatusEffect::~CStatusEffect()
 
 CStatusEffect::CStatusEffect(const CStatusEffect &other)
 {
+	int		i;
+
 	m_slCurrentStatus = other.m_slCurrentStatus;
-	for(INDEX i=0; i<EST_ASSIST_COUNT; ++i)
+	for (i = 0; i < EST_ASSIST_COUNT; ++i)
 	{
 		m_pStatusEffectArray[i] = NULL;
 	}
 
 	m_eCurrentNPCQuestType = other.m_eCurrentNPCQuestType;
-	m_pNPCQuestMark = NULL;
+	
+	for (i = 0; i < CQuestSystem::NQT_COUNT; ++i)
+	{
+		m_pNPCQuestMark[i] = NULL;
+	}
 }
 
 CStatusEffect &CStatusEffect::operator=(const CStatusEffect &other)
 {
+	int		i;
+
 	m_slCurrentStatus = other.m_slCurrentStatus;
-	for(INDEX i=0; i<EST_ASSIST_COUNT; ++i)
+	for (i = 0; i < EST_ASSIST_COUNT; ++i)
 	{
 		m_pStatusEffectArray[i] = NULL;
 	}
 
 	m_eCurrentNPCQuestType = other.m_eCurrentNPCQuestType;
-	m_pNPCQuestMark = NULL;
+	for (i = 0; i < CQuestSystem::NQT_COUNT; ++i)
+	{
+		m_pNPCQuestMark[i] = NULL;
+	}
 	return *this;
 }
 
 void CStatusEffect::Reset()
 {
+	int		i;
+
 	m_slCurrentStatus = 0;
-	for(INDEX i=0; i<EST_ASSIST_COUNT; ++i)
+	for (i = 0; i < EST_ASSIST_COUNT; ++i)
 	{
 		if( m_pStatusEffectArray[i] != NULL
 		&& CEffectGroupManager::Instance().IsValidCreated(m_pStatusEffectArray[i]) )
@@ -132,17 +182,24 @@ void CStatusEffect::Reset()
 	memset(m_pStatusEffectArray, 0, sizeof(CEffectGroup*)*EST_ASSIST_COUNT);
 
 	m_eCurrentNPCQuestType = CQuestSystem::NQT_NONE;
-	if(m_pNPCQuestMark
-	&& CEffectGroupManager::Instance().IsValidCreated(m_pNPCQuestMark))
+
+	for (i = 0; i < CQuestSystem::NQT_COUNT; ++i)
 	{
-		m_pNPCQuestMark->Stop(0.5f);
+		if(m_pNPCQuestMark[i]
+		&& CEffectGroupManager::Instance().IsValidCreated(m_pNPCQuestMark[i]))
+		{
+			m_pNPCQuestMark[i]->Stop(0.5f);
+		}
+
+		m_pNPCQuestMark[i] = NULL;
 	}
-	m_pNPCQuestMark = NULL;
 }
 
 void CStatusEffect::Refresh(CTagManager *pTM, eRelation relation)
 {
-	for(INDEX i=0; i<EST_ASSIST_COUNT; ++i)
+	int		i;
+
+	for (i = 0; i < EST_ASSIST_COUNT; ++i)
 	{
 		if( m_pStatusEffectArray[i] != NULL
 		&& CEffectGroupManager::Instance().IsValidCreated(m_pStatusEffectArray[i]) )
@@ -152,11 +209,17 @@ void CStatusEffect::Refresh(CTagManager *pTM, eRelation relation)
 	}
 	memset(m_pStatusEffectArray, 0, sizeof(CEffectGroup*)*EST_ASSIST_COUNT);
 
-	if(m_pNPCQuestMark
-	&& CEffectGroupManager::Instance().IsValidCreated(m_pNPCQuestMark))
+	for (i = 0; i < CQuestSystem::NQT_COUNT; ++i)
 	{
-		m_pNPCQuestMark->Stop(0.5f);
+		if(m_pNPCQuestMark[i]
+		&& CEffectGroupManager::Instance().IsValidCreated(m_pNPCQuestMark[i]))
+		{
+			m_pNPCQuestMark[i]->Stop(0.5f);
+		}
+
+		m_pNPCQuestMark[i] = NULL;
 	}
+
 	if(pTM != NULL)
 	{
 		ChangeStatus(pTM, m_slCurrentStatus, relation);
@@ -164,17 +227,20 @@ void CStatusEffect::Refresh(CTagManager *pTM, eRelation relation)
 	}
 }
 
-#define IS_FLAG_ON(flagAll, flagVal) ( (flagAll) & ((1L)<<(flagVal)) )
+#define IS_FLAG_ON(flagAll, flagVal) ( (flagAll) & (static_cast<SQUAD>((1L))<<(flagVal)) )
 
-void CStatusEffect::ChangeStatus(CTagManager *pTM, SLONG newStatus, eRelation relation)
+void CStatusEffect::ChangeStatus(CTagManager *pTM, SQUAD newStatus, eRelation relation)
 {
 	for(INDEX i=0; i<EST_ASSIST_COUNT; ++i)
 	{
 		if(m_szStatusEffectName[i][m_eType] == NULL) continue;
 		if(i == EST_ASSIST_DAMAGELINK && relation != R_PARTY)  continue;
+		
+		SQUAD tmpStatus = IS_FLAG_ON(m_slCurrentStatus, i);
+		SQUAD tmpNewStatus = IS_FLAG_ON(newStatus, i);
 
 		//Off -> On, Create Effect
-		if( !IS_FLAG_ON(m_slCurrentStatus, i) && IS_FLAG_ON(newStatus, i) )
+		if( !IS_FLAG_ON(m_slCurrentStatus, i) && IS_FLAG_ON(newStatus, i))
 		{
 			ASSERT(m_pStatusEffectArray[i] == NULL);
 			m_pStatusEffectArray[i] = StartEffectGroup(m_szStatusEffectName[i][m_eType], pTM, _pTimer->GetLerpedCurrentTick());
@@ -231,14 +297,15 @@ BOOL CStatusEffect::IsHold()
 
 void CStatusEffect::ChangeNPCQuestMark(CTagManager *pTM, CQuestSystem::eNpcQuestType newStatus)
 {
-	m_eCurrentNPCQuestType = newStatus;
-	if(m_pNPCQuestMark
-	&& CEffectGroupManager::Instance().IsValidCreated(m_pNPCQuestMark))
+	if(m_pNPCQuestMark[m_eCurrentNPCQuestType] && CEffectGroupManager::Instance().IsValidCreated(m_pNPCQuestMark[m_eCurrentNPCQuestType]))
 	{
-		m_pNPCQuestMark->Stop(0.1f);
+		m_pNPCQuestMark[m_eCurrentNPCQuestType]->Stop(0.f);
 	}
-	if(m_szNPCQuestMark[newStatus] != NULL)
+
+	m_eCurrentNPCQuestType = newStatus;
+
+	if(m_szNPCQuestMark[m_eCurrentNPCQuestType] != NULL)
 	{
-		m_pNPCQuestMark = StartEffectGroup(m_szNPCQuestMark[newStatus], pTM, _pTimer->GetLerpedCurrentTick());
+		m_pNPCQuestMark[m_eCurrentNPCQuestType] = StartEffectGroup(m_szNPCQuestMark[newStatus], pTM, _pTimer->GetLerpedCurrentTick() + 0.5f);
 	}
 }

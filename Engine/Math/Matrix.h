@@ -266,7 +266,10 @@ __forceinline Matrix<Type, iRows, iColumns> Matrix<Type, iRows, iColumns>::opera
  * Formula: C=AxB --> Cij=Sum(s=1..k)(Ais*Bsj)
  */
 
-
+#define LimitFloattmp 1.0e-5
+#define LimitFunctmp(result) \
+	if (result < LimitFloattmp && result > -LimitFloattmp) \
+		result = 0.0f
 
 // FLOAT 3x3
 __forceinline Matrix<FLOAT,3,3> Matrix<FLOAT,3,3>::operator*(const Matrix<FLOAT,3,3> &matrix2) const
@@ -281,6 +284,15 @@ __forceinline Matrix<FLOAT,3,3> Matrix<FLOAT,3,3>::operator*(const Matrix<FLOAT,
 	result(3,1) = (*this)(3,1) * matrix2(1,1) + (*this)(3,2) * matrix2(2,1) + (*this)(3,3) * matrix2(3,1);
 	result(3,2) = (*this)(3,1) * matrix2(1,2) + (*this)(3,2) * matrix2(2,2) + (*this)(3,3) * matrix2(3,2);
 	result(3,3) = (*this)(3,1) * matrix2(1,3) + (*this)(3,2) * matrix2(2,3) + (*this)(3,3) * matrix2(3,3);
+
+	int i, j;
+
+	for(i=1; i<4; i++)
+	for(j=1; j<4; j++)
+	{
+		LimitFunctmp(result(i,j));
+	}
+
 	return result;
 }
 

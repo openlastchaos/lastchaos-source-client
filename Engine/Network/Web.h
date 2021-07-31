@@ -1,92 +1,22 @@
-//안태훈 수정 시작	//(5th Closed beta)(0.2)
+//������ ���� ����	//(5th Closed beta)(0.2)
 #ifndef __WEB_H__
 #define __WEB_H__
 
-#include <Windows.h>
-#include <string>
-#include <vector>
-#include <map>
 
-class cSharedWebData;
+#include <string>
+#include "SharedWebData.h"
+
+
 class cThreadWrapper;
 
-ENGINE_API void WebAddressInit();
-//DWORD WINAPI WebThreadFunction(void *parameter);
+
 UINT WINAPI WebThreadFunction(void *parameter);
-std::string ConvertStringToWebParameter(const char *szParam);
-
-//-------------- cWebAddress --------------//
-class cWebAddress
-{
-private:
-	typedef std::map<std::string, std::string> web_map;
-public:
-	~cWebAddress();
-	inline static cWebAddress &Instance()	{ return m_instance;	}
-
-	BOOL RegisterAddress(const char *alias, const char *address);
-	const char *Address(const char *alias);
-private:
-	cWebAddress();
-private:
-	static cWebAddress m_instance;
-	std::map<std::string, std::string> m_mapAddressAlias;
-};
-
-inline BOOL WebAddressRegister(const char *szAlias, const char *szAddress)
-{
-	return cWebAddress::Instance().RegisterAddress(szAlias, szAddress);
-}
-
-inline const char *WebAddress(const char *szAlias)
-{
-	return cWebAddress::Instance().Address(szAlias);
-}
-
-//-------------- cSharedWebData --------------//
-///Web thread와 Game thread간 공유될 객체의 class
-class cSharedWebData
-{
-public:
-	cSharedWebData();
-	~cSharedWebData();
-	
-	void ResetAll();
-
-	HANDLE GetSendWriteEventHandle()	{ return m_hSendWriteEvent;		}
-	HANDLE GetSendReadEventHandle()		{ return m_hSendReadEvent;		}
-	HANDLE GetReceiveWriteEventHandle()	{ return m_hReceiveWriteEvent;	}
-	HANDLE GetReceiveReadEventHandle()	{ return m_hReceiveReadEvent;	}
-
-	void AllocSendMsgBuffer(int size);
-	void FreeSendMsgBuffer();
-	char *GetSendMsgBuffer()			{ return m_szSendMsgBuffer;		}
-
-	void AllocReceiveMsgBuffer(int size);
-	void FreeReceiveMsgBuffer();
-	char *GetReceiveMsgBuffer()			{ return m_szReceiveMsgBuffer;	}
-
-	void SetExit(BOOL bExit)			{ m_bExit = bExit;				}
-	BOOL GetExit()						{ return m_bExit;				}
-
-	void AllocErrorMsgBuffer(int size);
-	void FreeErrorMsgBuffer();
-	char *GetErrorMsgBuffer()			{ return m_szReceiveMsgBuffer;	}
-
-private:
-	HANDLE	m_hSendWriteEvent;		//Send Message Buffer를 쓰기 위해 접근할 때 확인할 event
-	HANDLE	m_hSendReadEvent;		//           〃         읽기            〃
-	char	*m_szSendMsgBuffer;
-	HANDLE	m_hReceiveWriteEvent;	//Receive Message Buffer를 쓰기 위해 접근할 때 확인할 event
-	HANDLE	m_hReceiveReadEvent;	//           〃         읽기            〃
-	char	*m_szReceiveMsgBuffer;
-	BOOL	m_bExit;
-	char	*m_szErrorMsgBuffer;	//접근 권한은 Receive Message Buffer와 공유
-};
 
 
-//-------------- cWeb --------------//
-class cWeb
+typedef BOOL (CALLBACK fn_WebDlgCallBack)(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+
+class ENGINE_API cWeb
 {
 private:
 	enum WEB_STATUS
@@ -96,31 +26,82 @@ private:
 		WS_REQUESTED,
 		WS_READYREAD,
 	};
+
 public:
 	cWeb();
 	~cWeb();
 
 	//control function
-	ENGINE_API BOOL Begin();
-	ENGINE_API BOOL End();
-	//BOOL Refresh();
+	BOOL Begin();
+	BOOL End();
 
 	//web function
-	void Request(const char *szURL);	//web page 요청
-	BOOL Read(std::string &strContent, std::string &strError);		//요청했던 web page 읽기.
+	void Request(const char *szURL);	//web page ��û
+	BOOL Read(std::string &strContent, std::string &strError);		//��û�ߴ� web page �б�.
 
 	//status function
 	BOOL IsBegin()			{ return m_eStatus != WS_PREBEGIN;	}
 	BOOL IsPreBegin()		{ return m_eStatus == WS_PREBEGIN;	}
 	BOOL IsRequest()		{ return m_eStatus == WS_REQUESTED;		}
 	BOOL IsReadyRequest()	{ return m_eStatus == WS_READYREQUEST;	}
-	//BOOL IsReadyRead()		{ return m_eStatus == WS_READYREAD;		}
+	
+	long (WINAPI *EmbedBrowserObject)(HWND hwnd); // Browser Object Embed.
+	void (WINAPI *UnEmbedBrowserObject)(HWND hwnd); // Browser Object UnEmbed.
+	long (WINAPI *DisplayHTMLPage)(HWND hwnd, const char *webPageName); // Page Move
+
+	BOOL IsWebHandle()		{ return (m_hWebWnd!=NULL) ? TRUE : FALSE;}
+
+	BOOL OpenWebPage(HWND hDlg);
+	BOOL SendWebPageOpenMsg(BOOL bShow);
+	BOOL CloseWebPage(HWND hDlg);
+
+	void SetWebHandle(HWND hWebHandle) { m_hWebWnd = hWebHandle; }
+	void SetWebDlgID(INDEX ID) { m_WebDlgID = ID; }
+
+	INDEX GetWebDlgID(void) { return m_WebDlgID; }
+	HWND GetWebHandle(void) { return m_hWebWnd; }
+
+	BOOL (CALLBACK *WebDialogProc)(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	void SetWebDlgCallBack(fn_WebDlgCallBack* fnCallBack) { m_fnWebCallBack = fnCallBack; }
+	fn_WebDlgCallBack* GetWebDlgCallBack(void) { return m_fnWebCallBack; }
+
+	void SetWebPosition(INDEX nWidth, INDEX nHeight);
+	void SetPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ)
+	{
+		m_pixMinI = pixMinI;
+		m_pixMinJ = pixMinJ;
+		m_pixMaxI = pixMaxI;
+		m_pixMaxJ = pixMaxJ;
+	}
+
+	void SetWebMoveWindow(void);
+	void SetPos(int x, int y);
+	void SetSize(int width, int height);
+	void UpdatePos();
+
+	void GetPos(int& x, int& y)	{ x = m_nPosX; y = m_nPosY;	}
+	void GetSize(int& width, int& height)	{ width = m_nWidth; height = m_nHeight;	}
+
+	void SetWebUrl(std::string& url);
+
 private:
 	WEB_STATUS		m_eStatus;
-	cSharedWebData	m_sharedData;
+	CSharedWebData	m_sharedData;
 	cThreadWrapper	*m_pThread;
+	HINSTANCE		m_hWebPage;
+	HWND			m_hWebWnd;
+	INDEX			m_WebDlgID;
+	fn_WebDlgCallBack* m_fnWebCallBack;
+
+	INDEX	m_nPosX, m_nPosY;
+	INDEX	m_nWidth, m_nHeight;
+	PIX m_pixMinI;
+	PIX m_pixMinJ;
+	PIX m_pixMaxI;
+	PIX m_pixMaxJ;
 };
 
 
 #endif //__WEB_H__
-//안태훈 수정 끝	//(5th Closed beta)(0.2)
+//������ ���� ��	//(5th Closed beta)(0.2)

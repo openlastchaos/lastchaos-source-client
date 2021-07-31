@@ -51,7 +51,7 @@ void CPlayerSource::Start_t(CPlayerCharacter &pcCharacter) // throw char *
   }
 
   // request player connection
-  CNetworkMessage nmRegisterPlayer(MSG_REQ_CONNECTPLAYER);
+  CNetworkMessage nmRegisterPlayer((UBYTE)MSG_REQ_CONNECTPLAYER);
   nmRegisterPlayer<<pls_pcCharacter;    // player's character data
   _pNetwork->SendToServerReliable(nmRegisterPlayer);
 
@@ -105,7 +105,7 @@ void CPlayerSource::Start_t(CPlayerCharacter &pcCharacter) // throw char *
       return;
     // if this is disconnect message
     }
-/* //0522 kwon ì‚­ì œ.	
+/* //0522 kwon »èÁ¦.	
 	else if (nmReceived.GetType() == MSG_INF_DISCONNECTED) {
 			// confirm disconnect
 			CNetworkMessage nmConfirmDisconnect(MSG_REP_DISCONNECTED);			
@@ -132,7 +132,7 @@ void CPlayerSource::Start_t(CPlayerCharacter &pcCharacter) // throw char *
     }
 
   }
-/* //0522 kwon ì‚­ì œ.
+/* //0522 kwon »èÁ¦.
 		CNetworkMessage nmConfirmDisconnect(MSG_REP_DISCONNECTED);			
 	_pNetwork->SendToServerReliable(nmConfirmDisconnect);
 */
@@ -160,7 +160,7 @@ void CPlayerSource::ChangeCharacter(CPlayerCharacter &pcNew)
   }
 
   // just request the change
-  CNetworkMessage nmChangeChar(MSG_REQ_CHARACTERCHANGE);
+  CNetworkMessage nmChangeChar((UBYTE)MSG_REQ_CHARACTERCHANGE);
   nmChangeChar<<pls_Index<<pcNew;
   _pNetwork->SendToServerReliable(nmChangeChar);
 
@@ -261,7 +261,7 @@ void CPlayerSource::WriteActionPacket(CNetworkMessage &nm)
     pls_apaLastActions[ipa] = pls_apaLastActions[ipa-1];
   }
   pls_apaLastActions[0] = pls_paAction;
-//0128 í´ë¼ì´ì–¸íŠ¸ì˜ ì‹¤ì§ˆì  ì›€ì§ìž„ì€ ì´ê³³ì—ì„œ ëœë‹¤.
+//0128 Å¬¶óÀÌ¾ðÆ®ÀÇ ½ÇÁúÀû ¿òÁ÷ÀÓÀº ÀÌ°÷¿¡¼­ µÈ´Ù.
   //if (!_pNetwork->IsServer()) 
   //{
   //  ApplyActionLocally(pls_paAction);

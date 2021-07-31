@@ -117,7 +117,7 @@ BOOL YesNoMessage(const char *strFormat, ...)
 	// print it to console
 	CPrintF("%s\n", strBuffer);
 	// create message box
-	return MessageBoxA(NULL, strBuffer, TRANS("Question"), MB_YESNO|MB_ICONQUESTION|MB_SETFOREGROUND|MB_TASKMODAL)==IDYES;
+	return MessageBoxA(NULL, strBuffer, TRANS("Erorr"), MB_OK|MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_TASKMODAL)==IDYES;
 }
 
 /*

@@ -1,20 +1,41 @@
 #include "stdh.h"
+
+#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UITrackPopup.h>
 #include <Engine/Interface/UISimplePop.h>
 #include <Engine/Interface/UIMessenger.h>
-#include <Engine/Interface/UIChatting.h>
-#include <Engine/Interface/UITextureManager.h>
+#include <Engine/Contents/Base/UIPartyNew.h>
+#include <Engine/Contents/Base/UIExpedition.h>
+#include <Engine/Contents/Base/UICharacterInfoNew.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/Base/Party.h>
+#include <Engine/Info/MyInfo.h>
 
-
-// ë¦¬ìŠ¤íŠ¸ ë°•ìŠ¤ í¬ê¸°ì— ë§žê²Œ ë°•ìŠ¤ë¥¼ ê·¸ë¦´ë•Œ ìœ„,ì•„ëž˜/ ì¢Œ,ìš° ì—¬ë°± 
+// ¸®½ºÆ® ¹Ú½º Å©±â¿¡ ¸Â°Ô ¹Ú½º¸¦ ±×¸±¶§ À§,¾Æ·¡/ ÁÂ,¿ì ¿©¹é 
 #define SPACE_UPDONW	14
 #define SPACE_LEFTRIGT	10
 
 CUISimplePop::CUISimplePop()
 {
+	m_ptdMenuTexture = NULL;
+	m_ptdExpeditionTexture = NULL;
+	m_bTarget = true;
+	m_nNoTargetCharIndex = -1;
 }
 
 CUISimplePop::~CUISimplePop()
 {
+	if (m_ptdMenuTexture)
+	{
+		_pTextureStock->Release(m_ptdMenuTexture);
+		m_ptdMenuTexture = NULL;
+	}
+
+	if (m_ptdExpeditionTexture)
+	{
+		_pTextureStock->Release(m_ptdExpeditionTexture);
+		m_ptdExpeditionTexture = NULL;
+	}
 }
 
 void CUISimplePop::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight)
@@ -37,7 +58,8 @@ void CUISimplePop::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_rtBackLM.SetUV( 174, 60, 176, 68, fTexWidth, fTexHeight );
 	m_rtBackLR.SetUV( 179, 60, 186, 68, fTexWidth, fTexHeight );
 
-	CUIListBox::Create( NULL, 0,  0, 100, 174, _pUIFontTexMgr->GetLineHeight()+2, 6, 3, 1, TRUE, TRUE );
+	CUIListBox::Create( NULL, 0,  0, 100, 179, _pUIFontTexMgr->GetLineHeight()+2, 6, 3, 1, TRUE, TRUE );
+
 	SetScrollBar( FALSE );
 	SetSelBar( 100, _pUIFontTexMgr->GetLineHeight()+2, 187, 46, 204, 61, fTexWidth, fTexHeight );
 	SetOverColor( 0xF8E1B5FF );
@@ -53,43 +75,104 @@ void CUISimplePop::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_tpList.m_rtBackLM.SetUV( 174, 60, 176, 68, fTexWidth, fTexHeight );
 	m_tpList.m_rtBackLR.SetUV( 179, 60, 186, 68, fTexWidth, fTexHeight );
 
-	m_tpList.Create( this, 0,  0, 100, 100, _pUIFontTexMgr->GetLineHeight(), 6, 3, 1, TRUE, TRUE );
+
+	m_tpList.Create( this, 0,  0, 100, 102, _pUIFontTexMgr->GetLineHeight(), 6, 3, 1, TRUE, TRUE );
 	m_tpList.SetScrollBar( FALSE );
 	m_tpList.SetSelBar( 100, _pUIFontTexMgr->GetLineHeight()+2, 187, 46, 204, 61, fTexWidth, fTexHeight );
 	m_tpList.SetOverColor( 0xF8E1B5FF );
 	m_tpList.SetSelectColor( 0xF8E1B5FF );
+	m_tpList.Hide();
 
-	m_tpList.AddMenuList(_S(3354, "ì¼ë°˜"));
-	m_tpList.AddMenuList(_S(2664, "ìž…ìˆ˜ìš°ì„ "));
-	m_tpList.AddMenuList(_S(2665, "ì „íˆ¬ í˜•"));
-
-	//ì„œë¸Œ ë©”ë‰´ íˆ´íŒì— ì‚¬ìš©ë  í™”ì‚´í‘œ í…ìŠ¤ì³ ì¶”ê°€
+	//¼­ºê ¸Þ´º ÅøÆÁ¿¡ »ç¿ëµÉ È­»ìÇ¥ ÅØ½ºÃÄ Ãß°¡
 	m_ptdMenuTexture = CreateTexture( CTString( "Data\\Interface\\WebBoard.tex" ) );
 	fTexWidth = m_ptdMenuTexture->GetPixWidth();
 	fTexHeight = m_ptdMenuTexture->GetPixHeight();
 
-	m_rtArrow.SetUV(34, 117, 42, 125, fTexWidth, fTexHeight);		//ë…¸ëž€ í™”ì‚´í‘œ
+	m_rtArrow.SetUV(34, 117, 42, 125, fTexWidth, fTexHeight);		//³ë¶õ È­»ìÇ¥
+
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM
+	m_ptdExpeditionTexture = CreateTexture( CTString("Data\\Interface\\Expedition.tex") );
+	fTexWidth = m_ptdExpeditionTexture->GetPixWidth();
+	fTexHeight = m_ptdExpeditionTexture->GetPixHeight();
+
+	int nPosX = 474;
+	for(int i=0; i<LABEL_INDEX_TOTAL; i++)
+	{
+		m_rtLabelIcon[i].SetUV(nPosX, 182, nPosX + 18, 200, fTexWidth, fTexHeight);
+
+		nPosX -= 20;
+	}
+//////////////////////////////////////////////////////////////////////////
 }
 
 void CUISimplePop::OpenPop(CTString strUserName, BOOL bParty, BOOL bGuild, INDEX ixPos, INDEX iyPos)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
+	// Å¸°Ù Ä³¸¯ÅÍ°¡ ÀÚ½ÅÀÌ¸é ¸®ÅÏ.
+	if ( pInfo->GetTargetEntity(eTARGET) && 
+		(pInfo->GetTargetServerIdx(eTARGET) == _pNetwork->MyCharacterInfo.index) )
+		return;
+
+	if( pInfo->GetTargetType(eTARGET) != CHARACTER && pInfo->GetTargetType(eTARGET) != MOB)
+	{
+		// Ä³¸¯ÅÍ³ª mobÀÌ ¾Æ´Ï¸é ¸®ÅÏ
+		return;
+	}
+	else if(pInfo->GetTargetType(eTARGET) == MOB && !pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		// ¿øÁ¤´ë¿¡ Âü¿©ÇÏÁö ¾ÊÀº»óÅÂ¿¡¼­ mobÅ¬¸¯½Ã ¸®ÅÏ
+		return;
+	}
+
 	SetExeList(strUserName, bParty, bGuild);
-	_pUIMgr->RearrangeOrder( UI_SIMPLE_POP, TRUE );
-// [KH_070423] í¬ê¸° ê´€ë ¨(í™”ë©´ì„ ë„˜ì„ ê²ƒ ê°™ìœ¼ë©´ í™”ë©´ì— ì ¤ ì˜¤ë¥¸ìª½ì— ë¶™ì¸ë‹¤)
-	if(ixPos + GetWidth() > _pUIMgr->GetDrawPort()->GetWidth())
-		ixPos = _pUIMgr->GetDrawPort()->GetWidth() - GetWidth();
-	if(iyPos + GetHeight() > _pUIMgr->GetDrawPort()->GetHeight())
-		iyPos = _pUIMgr->GetDrawPort()->GetHeight() - GetHeight();
+	pUIManager->RearrangeOrder(UI_SIMPLE_POP, TRUE);
+
+// [KH_070423] Å©±â °ü·Ã(È­¸éÀ» ³ÑÀ» °Í °°À¸¸é È­¸é¿¡ Á© ¿À¸¥ÂÊ¿¡ ºÙÀÎ´Ù)
+	if(ixPos + GetWidth() > pUIManager->GetDrawPort()->GetWidth())
+		ixPos = pUIManager->GetDrawPort()->GetWidth() - GetWidth();
+	if(iyPos + GetHeight() > pUIManager->GetDrawPort()->GetHeight())
+		iyPos = pUIManager->GetDrawPort()->GetHeight() - GetHeight();
 
 	SetPos(ixPos, iyPos);
+	m_bTarget = true;
+	m_nNoTargetCharIndex = -1;
+	Show();
+}
+
+ENGINE_API void CUISimplePop::OpenPopNoTarget( CTString strName, int nCharIndex, bool bParty, INDEX ixPos, INDEX iyPos )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
+	if (strName.IsEmpty() || strName == _pNetwork->MyCharacterInfo.name)
+	{
+		// Ä³¸¯ÅÍ ÀÌ¸§ÀÌ ¾ø°Å³ª, ÀÚ±â ÀÚ½ÅÀÏ °æ¿ì ¸®ÅÏ
+		return;
+	}
+
+	SetExeListNoTarget(strName, bParty);
+	pUIManager->RearrangeOrder(UI_SIMPLE_POP, TRUE);
+
+	// [KH_070423] Å©±â °ü·Ã(È­¸éÀ» ³ÑÀ» °Í °°À¸¸é È­¸é¿¡ Á© ¿À¸¥ÂÊ¿¡ ºÙÀÎ´Ù)
+	if(ixPos + GetWidth() > pUIManager->GetDrawPort()->GetWidth())
+		ixPos = pUIManager->GetDrawPort()->GetWidth() - GetWidth();
+	if(iyPos + GetHeight() > pUIManager->GetDrawPort()->GetHeight())
+		iyPos = pUIManager->GetDrawPort()->GetHeight() - GetHeight();
+
+	SetPos(ixPos, iyPos);
+	m_bTarget = false;
+	m_strNoTargetName = strName;
+	m_nNoTargetCharIndex = nCharIndex;
 	Show();
 }
 
 void CUISimplePop::ClosePop()
 {
-	_pUIMgr->RearrangeOrder( UI_SIMPLE_POP, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIMPLE_POP, FALSE );
 	Hide();
-	
 }
 
 void CUISimplePop::Render()
@@ -99,76 +182,273 @@ void CUISimplePop::Render()
 	if( m_vecString.size() <= 0 )
 		return;
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	CUITrackPopup::Render();
 	m_tpList.Render();	
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 
-// [KH_070423] í™”ì‚´í‘œ
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdMenuTexture );
+// [KH_070423] È­»ìÇ¥
 
-	INDEX nX = GetPosX() + 80;
-	INDEX nY = GetPosY();
-	INDEX nLine = 4;
+	if(pInfo->GetTargetType(eTARGET) != MOB && !(pUIManager->IsCSFlagOn(CSF_EXPEDITION)) && m_bTarget == true)
+	{
+		pDrawPort->InitTextureData( m_ptdMenuTexture );
 
-	INDEX nYSpace =((_pUIFontTexMgr->GetLineHeight()+3) - 7)/2 + 2;
+		INDEX nX = GetPosX() + 80;
+		INDEX nY = GetPosY();
+		INDEX nLine = 4;
+
+		INDEX nYSpace =((_pUIFontTexMgr->GetLineHeight()+3) - 7)/2 + 2;
 
 
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY + nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine,
-										nX + 7, nY + nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine+7,
-										m_rtArrow.U0, m_rtArrow.V0, m_rtArrow.U1, m_rtArrow.V1,
-										0xFFFFFFFF );
+		pDrawPort->AddTexture( nX, nY + nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine,
+											nX + 7, nY + nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine+7,
+											m_rtArrow.U0, m_rtArrow.V0, m_rtArrow.U1, m_rtArrow.V1,
+											0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
+	}
+	else if (!(pUIManager->IsCSFlagOn(CSF_EXPEDITION)) && m_bTarget == false) // ³ëÅ¸°Ù ¸ðµåÀÏ °æ¿ì
+	{
+		pDrawPort->InitTextureData( m_ptdMenuTexture );
+
+		INDEX nX = GetPosX() + 80;
+		INDEX nY = GetPosY();
+		INDEX nLine = 3;
+
+		INDEX nYSpace =((_pUIFontTexMgr->GetLineHeight() + 3) - 7) / 2 + 2;
+		
+		pDrawPort->AddTexture( nX, nY + nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine,
+			nX + 7, nY + nYSpace +(_pUIFontTexMgr->GetLineHeight()+2)*nLine+7,
+			m_rtArrow.U0, m_rtArrow.V0, m_rtArrow.U1, m_rtArrow.V1,
+			0xFFFFFFFF );
+
+		pDrawPort->FlushRenderingQueue();
+	}
+
+	// [sora] ´ë»ó Ç¥½Ä ¾ÆÀÌÄÜ render
+	if(m_tpList.IsVisible())
+	{
+		// command¿¡ Ç¥½Ä ¼³Á¤¸Þ´º°¡ ÀÖ´Ù¸é ¾ÆÀÌÄÜÀ» ±×·ÁÁØ´Ù
+		if(m_tpList.GetCommandNum(0) == SPST2_SETLABEL1)
+		{
+			pDrawPort->InitTextureData(m_ptdExpeditionTexture);
+			
+			int nPosX = m_tpList.GetAbsPosX() + 6;
+			int nPosY = 0;
+			for(int i=0; i<LABEL_INDEX_TOTAL; i++)
+			{
+
+				nPosY = m_tpList.GetAbsPosY() + (_pUIFontTexMgr->GetLineHeight())*i + 4;
+				pDrawPort->AddTexture( nPosX, nPosY, nPosX + 12, nPosY + 12,
+													m_rtLabelIcon[i].U0, m_rtLabelIcon[i].V0, m_rtLabelIcon[i].U1, m_rtLabelIcon[i].V1,
+													0xFFFFFFFF );
+
+			}
+
+			pDrawPort->FlushRenderingQueue();
+		}
+	}
 }
 
-void CUISimplePop::SetExeList(CTString strUserName, BOOL bParty, BOOL bGuild)
+// Å¸°Ù¾øÀÌ ÆË¾÷Ã¢ ¿­±â
+void CUISimplePop::SetExeListNoTarget( CTString strUserName, bool bParty)
 {
-	INDEX iListNum = 0;
-	INDEX iExeNum = SPSO_NAME;
-
 	ResetAllStrings();
 
-	AddMenuList(strUserName, C_YELLOW|0xff);			m_iExeNum[iListNum++] = iExeNum++;
-	AddMenuList(_S(3355, "ê·“ì†ë§") + _s("       "));	m_iExeNum[iListNum++] = iExeNum++;
-	AddMenuList(_S(2484, "ì¹œêµ¬ë“±ë¡"));					m_iExeNum[iListNum++] = iExeNum++;
-	AddMenuList(_S(3356, "êµí™˜ì‹ ì²­"));					m_iExeNum[iListNum++] = iExeNum++;
-	AddMenuList(_S(3357, "íŒŒí‹°ì‹ ì²­"));					m_iExeNum[iListNum++] = iExeNum++;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	Party* pParty = GAMEDATAMGR()->GetPartyInfo();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
+	if (pParty == NULL)
+		return;
+	
+	// ÀÌ¸§
+	AddMenuList(strUserName, C_YELLOW|0xff, SPSO_NAME);
+	// ±Ó¼Ó¸»
+	AddMenuList(_S(3355, "±Ó¼Ó¸»") + _s("       "), 0xc2bac5FF, SPSO_WHISPER);
+	// Ä£±¸µî·Ï
+	AddMenuList(_S(2484, "Ä£±¸µî·Ï"), 0xc2bac5FF, SPSO_FRIEND);
+
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		AddMenuList(_S(4644, "¿øÁ¤´ë½ÅÃ»"), 0xc2bac5FF, SPSO_EXPEDITION_INVITE);
+	}
+	else
+	{
+		AddMenuList(_S(3357, "ÆÄÆ¼½ÅÃ»"), 0xc2bac5FF, SPSO_PARTY);
+	}
 
 	if(bParty)
 	{
-		AddMenuList(_S(3358, "íŒŒí‹° ê°•í‡´"));				m_iExeNum[iListNum++] = iExeNum++;
-		AddMenuList(_S(3359, "íŒŒí‹°ìž¥ ìœ„ìž„"));			m_iExeNum[iListNum++] = iExeNum++;
+		if(pUIManager->IsCSFlagOn(CSF_PARTY))
+		{
+			AddMenuList(_S(3358, "ÆÄÆ¼ °­Åð"), 0xc2bac5FF, SPSO_PARTY_OUT);
+			AddMenuList(_S(3359, "ÆÄÆ¼Àå À§ÀÓ"), 0xc2bac5FF, SPSO_PARTY_JANG);
+		}
 	}
-	else
-		iExeNum += 2;
 
-	AddMenuList(_S(3360, "ê¸¸ë“œê°€ìž…"));					m_iExeNum[iListNum++] = iExeNum++;
-
-	if(bGuild)
+	if(pParty->GetExpeditionMyPosition() == 0) // MSG_EXPED_MEMBERTYPE_BOSS = 0
 	{
-		CTString tempString;
-		tempString.PrintF("%s %s", _S(1097, "ê¸¸ë“œì „íˆ¬"), _S(124, "ì‹ ì²­"));
-		AddMenuList(tempString);						m_iExeNum[iListNum++] = iExeNum++;
-		tempString.PrintF("%s %s", _S(1097, "ê¸¸ë“œì „íˆ¬"), _S(3361, "ì¤‘ë‹¨"));
-		AddMenuList(tempString);						m_iExeNum[iListNum++] = iExeNum++;
-		
-	}	
-	else
-		iExeNum += 2;
+		AddMenuList(_S(4645, "¿øÁ¤´ë °­Åð"), 0xc2bac5FF, SPSO_EXPEDITION_KICK);
+	}
 
-	AddMenuList(_S(139,  "ì·¨ì†Œ"));			m_iExeNum[iListNum++] = iExeNum++;
-
-	while(iListNum < SPSO_END)
-		m_iExeNum[iListNum++] = SPSO_END;
+#if defined ( G_BRAZIL )
+		// brazil ¿äÃ» ½ÉÇÃ ÆË¾÷À» ÅëÇÑ Ã¤ÆÃ ºí·°. [3/9/2011 rumist]
+	AddMenuList( _S(4458, "Ã¤ÆÃ Â÷´Ü"), 0xc2bac5FF, SPSO_MUTE_CHARACTER );
+#endif
+	
+	AddMenuList(_S(139,  "Ãë¼Ò"), 0xc2bac5FF, SPSO_CANCEL);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM ÆË¾÷Ã¢ ¸Þ´º ¼³Á¤
+//////////////////////////////////////////////////////////////////////////
+void CUISimplePop::SetExeList(CTString strUserName, BOOL bParty, BOOL bGuild)
+{
+//	INDEX iListNum = 0;
+//	INDEX iExeNum = SPSO_NAME;
+
+	// ±âÁ¸ÀÇ m_iExeNum ¹è¿­·Î ¿ÜºÎ¿¡ ¼³Á¤µÇ¾îÀÖ´ø command°ªÀ» CUITrackPopup³»ºÎ¿¡ ÀúÀåÇÏµµ·Ï ¼öÁ¤
+	// (CUITrackPopupÅ¬·¡½º Âü°í)
+
+	ResetAllStrings();
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	Party* pParty = GAMEDATAMGR()->GetPartyInfo();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
+	if (pParty == NULL)
+		return;
+
+	AddMenuList(strUserName, C_YELLOW|0xff, SPSO_NAME);
+	if(pInfo->GetTargetType(eTARGET) == CHARACTER)
+	{
+		AddMenuList(_S(3355, "±Ó¼Ó¸»") + _s("       "), 0xc2bac5FF, SPSO_WHISPER);
+		AddMenuList(_S(2484, "Ä£±¸µî·Ï"), 0xc2bac5FF, SPSO_FRIEND);
+		AddMenuList(_S(3356, "±³È¯½ÅÃ»"), 0xc2bac5FF, SPSO_TRADE);
+
+		if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+		{
+			AddMenuList(_S(4644, "¿øÁ¤´ë½ÅÃ»"), 0xc2bac5FF, SPSO_EXPEDITION_INVITE);
+		}
+		else
+		{
+			AddMenuList(_S(3357, "ÆÄÆ¼½ÅÃ»"), 0xc2bac5FF, SPSO_PARTY);
+		}
+
+		if(bParty)
+		{
+			if(pUIManager->IsCSFlagOn(CSF_PARTY))
+			{
+				AddMenuList(_S(3358, "ÆÄÆ¼ °­Åð"), 0xc2bac5FF, SPSO_PARTY_OUT);
+				AddMenuList(_S(3359, "ÆÄÆ¼Àå À§ÀÓ"), 0xc2bac5FF, SPSO_PARTY_JANG);
+			}
+		}
+
+		if(pParty->GetExpeditionMyPosition() == 0) // MSG_EXPED_MEMBERTYPE_BOSS = 0
+		{
+			AddMenuList(_S(4645, "¿øÁ¤´ë °­Åð"), 0xc2bac5FF, SPSO_EXPEDITION_KICK);
+		}
+
+		AddMenuList(_S(3360, "±æµå°¡ÀÔ"), 0xc2bac5FF, SPSO_GUILD_IN);
+
+		if(bGuild)
+		{
+			CTString tempString;
+			tempString.PrintF("%s", _S(4800, "±æµåÀüÅõ ½ÅÃ»"));
+			AddMenuList(tempString, 0xc2bac5FF, SPSO_GUILD_WAR_START);
+			tempString.PrintF("%s", _S(4801, "±æµåÀüÅõ Áß´Ü"));
+			AddMenuList(tempString, 0xc2bac5FF, SPSO_GUILD_WAR_END);
+		}
+
+#if defined ( G_BRAZIL )
+		// brazil ¿äÃ» ½ÉÇÃ ÆË¾÷À» ÅëÇÑ Ã¤ÆÃ ºí·°. [3/9/2011 rumist]
+		AddMenuList( _S(4458, "Ã¤ÆÃ Â÷´Ü"), 0xc2bac5FF, SPSO_MUTE_CHARACTER );
+#endif
+	}
+
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+
+		if(pParty->GetExpeditionMyPosition() == 0 || pParty->GetExpeditionMyPosition() == 1)
+		{	
+			// [sora] MSG_EXPED_MEMBERTYPE_BOSS = 0, MSG_EXPED_MEMBERTYPE_MBOSS = 1 ¿øÁ¤ ´ëÀå°ú ºÎ´ëÀå¸¸ Ç¥½ÄÁöÁ¤ °¡´É
+			int isLabeled = -1;
+			if(pInfo->GetTargetEntity(eTARGET)) // Å¸°ÙÀÌ °¡±îÀÌ ÀÖÀ»°æ¿ì¸¸ Ç¥½Ã
+			{
+				isLabeled = pParty->IsLabeled(pInfo->GetTargetType(eTARGET), pInfo->GetTargetServerIdx(eTARGET));
+
+				if(isLabeled >= 0)
+				{
+					AddMenuList(_S(4646,"Ç¥½ÄÇØÁ¦"), 0xc2bac5FF, SPSO_RESETLABEL);	
+					
+				}
+				
+				AddMenuList(_S(4647,"´ë»óÇ¥½Ã"), 0xc2bac5FF, SPSO_SETLABEL);	
+			}
+		}
+
+	}
+
+
+	AddMenuList(_S(139,  "Ãë¼Ò"), 0xc2bac5FF, SPSO_CANCEL);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM ÆË¾÷Ã¢ ¼­ºê¸Þ´º ¼³Á¤
+//////////////////////////////////////////////////////////////////////////
+void CUISimplePop::SetSubExeList(INDEX iCommandNum )
+{
+	m_tpList.ResetAllStrings();
+
+	switch(iCommandNum)
+	{
+		case SPSO_PARTY:
+		{
+			m_tpList.AddMenuList(_S(3354, "ÀÏ¹Ý"), 0xc2bac5FF, SPST_PARTY_JOIN_A);
+#ifndef DISABLE_PARTY_TYPE_BATTLE	// [2010/07/12 : Sora] ÀüÅõÇü ÆÄÆ¼ Á¦°Å
+			m_tpList.AddMenuList(_S(2665, "ÀüÅõ Çü"), 0xc2bac5FF, SPST_PARTY_JOIN_C);
+#endif
+		}
+			break;
+
+		case SPSO_SETLABEL:
+		{
+			CTString iconTerm = CTString("   ");
+			m_tpList.AddMenuList(iconTerm + _S(4648, "Ç¥½Ä:µµ³¢"), 0xc2bac5FF, SPST2_SETLABEL1);
+			m_tpList.AddMenuList(iconTerm + _S(4649, "Ç¥½Ä:À¯·É"), 0xc2bac5FF, SPST2_SETLABEL2);
+			m_tpList.AddMenuList(iconTerm + _S(4650, "Ç¥½Ä:¹ß¹Ù´Ú"), 0xc2bac5FF, SPST2_SETLABEL3);
+			m_tpList.AddMenuList(iconTerm + _S(4651, "Ç¥½Ä:Á¶°¢Ä®"), 0xc2bac5FF, SPST2_SETLABEL4);
+			m_tpList.AddMenuList(iconTerm + _S(4652, "Ç¥½Ä:¶Ë"), 0xc2bac5FF, SPST2_SETLABEL5);
+			m_tpList.AddMenuList(iconTerm + _S(4653, "Ç¥½Ä:¾Ç¸¶"), 0xc2bac5FF, SPST2_SETLABEL6);
+			m_tpList.AddMenuList(iconTerm + _S(4654, "Ç¥½Ä:ÇØ°ñ"), 0xc2bac5FF, SPST2_SETLABEL7);
+
+		}
+			break;
+
+		default:
+			break;
+	}
+
+}
+
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM ÆË¾÷Ã¢ ¸Þ´º ½ÇÇà
+//////////////////////////////////////////////////////////////////////////
 void CUISimplePop::Execution(INDEX exeNum)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	Party* pParty = GAMEDATAMGR()->GetPartyInfo();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
 	switch(exeNum)
 	{
 	case SPSO_NAME:
@@ -178,53 +458,175 @@ void CUISimplePop::Execution(INDEX exeNum)
 		{
 			CTString tempInput;
 
-			ClosePop();		// [KH_070424] ê·“ì†ë§ì‹œ ì±„íŒ…ì°½ í¬ì»¤ìŠ¤ê°€ êº¼ì ¸ì„œ ë¯¸ë¦¬ êº¼ë²„ë¦¼
-			tempInput.PrintF("!%s ", _pNetwork->_TargetInfo.TargetName);
-			_pUIMgr->GetChatting()->OpenAndSetString(tempInput);
+			ClosePop();		// [KH_070424] ±Ó¼Ó¸»½Ã Ã¤ÆÃÃ¢ Æ÷Ä¿½º°¡ ²¨Á®¼­ ¹Ì¸® ²¨¹ö¸²
+
+			if (m_bTarget == true)
+				tempInput.PrintF("!%s ", pInfo->GetTargetName(eTARGET));
+			else
+				tempInput.PrintF("!%s ", m_strNoTargetName);
+
+			pUIManager->GetChattingUI()->SetInputString(tempInput);
 		}
 		break;
 	case SPSO_FRIEND:
-		_pUIMgr->GetMessenger()->MsgBoxCommand( MSGCMD_MESSENGER_ADD_REQ, TRUE, CTString(_pNetwork->_TargetInfo.TargetName) );
+		{
+			if (m_bTarget == true)
+				pUIManager->GetMessenger()->MsgBoxCommand( MSGCMD_MESSENGER_ADD_REQ, TRUE, CTString(pInfo->GetTargetName(eTARGET)) );
+			else
+				pUIManager->GetMessenger()->MsgBoxCommand( MSGCMD_MESSENGER_ADD_REQ, TRUE, m_strNoTargetName );
+		}
 		break;
 	case SPSO_TRADE:
-		_pUIMgr->GetCharacterInfo()->UseAction( 5 );
+		pUIManager->GetCharacterInfo()->UseAction( 5 );
 		break;
 	case SPSO_PARTY:
 		NOTHING;
 		break;
 	case SPSO_PARTY_OUT:
-		_pUIMgr->GetCharacterInfo()->UseAction( 12 );
+		{
+			if (m_bTarget == true)
+				pUIManager->GetCharacterInfo()->UseAction( 12 );
+			else
+				pParty->SendPartyKick(m_strNoTargetName);
+		}
+		
 		break;
 	case SPSO_PARTY_JANG:
-		_pUIMgr->GetCharacterInfo()->UseAction( 39 );
+		{
+			if (m_bTarget == true)
+				pUIManager->GetCharacterInfo()->UseAction( 39 );
+			else
+				pParty->MandateBossReq(m_strNoTargetName);
+		}
 		break;
 	case SPSO_GUILD_IN:
-		_pUIMgr->GetCharacterInfo()->UseAction( 24 );
+		pUIManager->GetCharacterInfo()->UseAction( 24 );
 		break;
 	case SPSO_GUILD_WAR_START:
-		_pUIMgr->GetCharacterInfo()->UseAction( 31 );
+		pUIManager->GetCharacterInfo()->UseAction( 31 );
 		break;
 	case SPSO_GUILD_WAR_END:
-		_pUIMgr->GetCharacterInfo()->UseAction( 32 );
+		pUIManager->GetCharacterInfo()->UseAction( 32 );
+		break;
+
+	case SPSO_EXPEDITION_INVITE:
+		{
+			if (m_bTarget == true)
+				pParty->SendExpeditionInvite(CTString(pInfo->GetTargetName(eTARGET)));
+			else
+				pParty->SendExpeditionInviteReq(m_nNoTargetCharIndex, m_strNoTargetName);
+		}
 		break;
 	case SPSO_CANCEL:
 		NOTHING;
 		break;
 	case SPSO_END:
-		ASSERTALWAYS("ì´ê²ƒì´ ë“¤ì–´ì˜¤ë©´ ì•ˆë˜ëŠ” ê²ë‹ˆë‹¤.");
+		ASSERTALWAYS("ÀÌ°ÍÀÌ µé¾î¿À¸é ¾ÈµÇ´Â °Ì´Ï´Ù.");
 		break;
 
 	case SPST_PARTY_JOIN_A:
-		_pUIMgr->GetCharacterInfo()->UseAction( 6 );
+		{
+			if (m_bTarget == true)
+				pUIManager->GetCharacterInfo()->UseAction( 6 );
+			else
+			{
+				if (m_nNoTargetCharIndex == _pNetwork->MyCharacterInfo.index)
+					return;
+
+				pParty->SendPartyInviteReq( PT_PEACEEVER, m_nNoTargetCharIndex, m_strNoTargetName );
+			}
+		}
 		break;
 	case SPST_PARTY_JOIN_B:
-		_pUIMgr->GetCharacterInfo()->UseAction( 7 );
+		{
+			if (m_bTarget == true)
+				pUIManager->GetCharacterInfo()->UseAction( 7 );
+			else
+			{
+				if (m_nNoTargetCharIndex == _pNetwork->MyCharacterInfo.index)
+					return;
+
+				pParty->SendPartyInviteReq( PT_SURVIVAL, m_nNoTargetCharIndex, m_strNoTargetName );
+			}
+		}
 		break;
 	case SPST_PARTY_JOIN_C:
-		_pUIMgr->GetCharacterInfo()->UseAction( 8 );
+		{
+			if (m_bTarget == true)
+				pUIManager->GetCharacterInfo()->UseAction( 8 );
+			else
+			{
+				if (m_nNoTargetCharIndex == _pNetwork->MyCharacterInfo.index)
+					return;
+
+				pParty->SendPartyInviteReq( PT_ATTACK, m_nNoTargetCharIndex, m_strNoTargetName );
+			}
+		}
 		break;
+
+	case SPSO_RESETLABEL:	// Ç¥½Ä ÇØÁ¦
+	{
+		pParty->SendTargetLabelReSet(pInfo->GetTargetType(eTARGET), pInfo->GetTargetServerIdx(eTARGET));
+	}
+		break;
+
+	case SPST2_SETLABEL1:
+	case SPST2_SETLABEL2:
+	case SPST2_SETLABEL3:
+	case SPST2_SETLABEL4:
+	case SPST2_SETLABEL5:
+	case SPST2_SETLABEL6:
+	case SPST2_SETLABEL7:
+	{
+		// Ç¥½Ä ¼³Á¤
+		SLONG slLabelIndex = exeNum -  SPST2_START;
+
+		pParty->SendTargetLabelSet(pInfo->GetTargetType(eTARGET), pInfo->GetTargetServerIdx(eTARGET), slLabelIndex);
+	}
+		break;
+
+	case SPSO_EXPEDITION_KICK:
+	{
+		//±âÁ¸ ¸Þ½ÃÁö¹Ú½º°¡ ÀÖÀ¸¸é ´Ý¾ÆÁØ´Ù
+		if(pUIManager->DoesMessageBoxExist(MSGCMD_EXPEDITION_KICK))
+			pUIManager->CloseMessageBox(MSGCMD_EXPEDITION_KICK);
+
+		CTString strMessage;
+		SLONG slIndex = 0;
+		
+		if (m_bTarget == true)
+			slIndex = pParty->GetExpeditionMemberIndex(pInfo->GetTargetName(eTARGET));
+		else
+			slIndex = pParty->GetExpeditionMemberIndex(m_strNoTargetName);
+
+		if(slIndex >= 0)
+		{	
+			CUIMsgBox_Info	MsgBoxInfo;
+			MsgBoxInfo.SetMsgBoxInfo( _S(4493, "¿øÁ¤´ë" ), UMBS_YESNO, UI_PARTY, MSGCMD_EXPEDITION_KICK );
+			
+			if (m_bTarget == true)
+				strMessage.PrintF( _S(4655, "%s´ÔÀ» Ãß¹æÇÏ½Ã°Ú½À´Ï±î?" ), pInfo->GetTargetName(eTARGET) );
+			else
+				strMessage.PrintF( _S(4655, "%s´ÔÀ» Ãß¹æÇÏ½Ã°Ú½À´Ï±î?" ), m_strNoTargetName );			
+
+			pUIManager->GetExpedition()->SetSelectIndex(slIndex);
+				
+			MsgBoxInfo.AddString( strMessage );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+		}
+	}
+		break;
+	case SPSO_MUTE_CHARACTER:
+		{
+			if (m_bTarget == true)
+				pUIManager->GetChatFilter()->CharacterFilterInSimplePopup( pInfo->GetTargetName(eTARGET) );
+			else
+				pUIManager->GetChatFilter()->CharacterFilterInSimplePopup( m_strNoTargetName );
+		}
+		break;
+
 	default:
-		ASSERTALWAYS("ì´ê²ƒì´ ë“¤ì–´ì˜¤ë©´ ì•ˆë˜ëŠ” ê²ë‹ˆë‹¤.");
+		ASSERTALWAYS("ÀÌ°ÍÀÌ µé¾î¿À¸é ¾ÈµÇ´Â °Ì´Ï´Ù.");
 		break;
 	}
 }
@@ -246,7 +648,8 @@ WMSG_RESULT	CUISimplePop::MouseMessage(MSG *pMsg)
 		INDEX iExeNum = SPSO_END;
 		if( m_tpList.MouseMessage( pMsg ) != WMSG_FAIL )
 		{
-			iExeNum = m_tpList.GetCurSel() + SPST_START;
+			// [sora] ¼­ºê¸Þ´º ¸Þ½ÃÁö Ã³¸®
+			iExeNum = m_tpList.GetCommandNum(m_tpList.GetCurSel());
 
 			Execution(iExeNum);
 			
@@ -255,9 +658,10 @@ WMSG_RESULT	CUISimplePop::MouseMessage(MSG *pMsg)
 
 			return WMSG_SUCCESS;
 		}
-		else if( CUITrackPopup::MouseMessage( pMsg ) != WMSG_FAIL )
+		if( CUITrackPopup::MouseMessage( pMsg ) != WMSG_FAIL )
 		{
-			iExeNum = m_iExeNum[GetCurSel()];
+			// [sora] ¸ÞÀÎ¸Þ´º ¸Þ½ÃÁö Ã³¸®
+			iExeNum = GetCommandNum(GetCurSel());
 			m_tpList.Hide();
 
 			Execution(iExeNum);
@@ -275,28 +679,51 @@ WMSG_RESULT	CUISimplePop::MouseMessage(MSG *pMsg)
 		}
 
 	}
-	else if(pMsg->message == WM_MOUSEMOVE && (m_tpList.MouseMessage( pMsg ) != WMSG_FAIL || m_iExeNum[GetCurSel()] == SPSO_PARTY))
-	{	// [KH_070423] m_tpList.MouseMessage ëŠ” ì‹¤í–‰ì„ ì•ˆí•˜ë©´ ì„ íƒí‘œì‹œê°€ ì•ˆë˜ë¯€ë¡œ í•´ì£¼ëŠ” ê²ƒì´ë‹¤. (if êµ¬ë¬¸ê³¼ëŠ” ë³„ ìƒê´€ ì—†ìŒ)
-		if(m_iExeNum[GetCurSel()] == SPSO_PARTY)
+	else if(pMsg->message == WM_MOUSEMOVE )
+	{	// [KH_070423] m_tpList.MouseMessage ´Â ½ÇÇàÀ» ¾ÈÇÏ¸é ¼±ÅÃÇ¥½Ã°¡ ¾ÈµÇ¹Ç·Î ÇØÁÖ´Â °ÍÀÌ´Ù. (if ±¸¹®°ú´Â º° »ó°ü ¾øÀ½)
+		
+		// [sora] ¼­ºê¸Þ´º ¸Þ½ÃÁö Ã³¸®
+		if(m_tpList.MouseMessage( pMsg ) != WMSG_FAIL )
 		{
-			int PosX = GetWidth() - 3;
-			int PosY = (_pUIFontTexMgr->GetLineHeight()+2)*4;
-
-// [KH_070423] í¬ê¸°ê´€ë ¨ ì¶”ê°€
-			if(GetPosX() + GetWidth() + m_tpList.GetWidth() > _pUIMgr->GetDrawPort()->GetWidth())
-				PosX = 3 - m_tpList.GetWidth();
-
-			m_tpList.SetPos( PosX, PosY );
-			m_tpList.Show();
+			return WMSG_SUCCESS;
 		}
 
-		return CUITrackPopup::MouseMessage(pMsg);
+		WMSG_RESULT wmsg = CUITrackPopup::MouseMessage(pMsg);
+		if(wmsg != WMSG_FAIL)
+		{
+			// [sora] ¸ÞÀÎ¸Þ´º ¸Þ½ÃÁö Ã³¸®
+			if(GetCommandNum(GetCurSel()) == SPSO_PARTY || GetCommandNum(GetCurSel()) == SPSO_SETLABEL)
+			{
+				SetSubExeList(GetCommandNum(GetCurSel()));
+
+				int PosX = GetWidth() - 3;
+				int PosY = (_pUIFontTexMgr->GetLineHeight()+2)*GetCurSel();
+
+				CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+				// [KH_070423] Å©±â°ü·Ã Ãß°¡
+				if(GetPosX() + GetWidth() + m_tpList.GetWidth() > pDrawPort->GetWidth())
+					PosX = 3 - m_tpList.GetWidth();
+
+				m_tpList.SetPos( PosX, PosY );
+				m_tpList.Show();
+			}
+		}
+
+		return wmsg;
 	}
 	else
 	{
-		if(pMsg->message != WM_LBUTTONDOWN)
+		// [sora] ¼­ºê¸Þ´º ¸Þ½ÃÁö Ã³¸®
+		if (pMsg->message != WM_LBUTTONDOWN)
 			m_tpList.Hide();
-		return CUITrackPopup::MouseMessage(pMsg);
+
+		WMSG_RESULT wmsg = m_tpList.MouseMessage(pMsg);
+		
+		if (wmsg != WMSG_FAIL)
+			return wmsg;
+
+		return CUITrackPopup::MouseMessage(pMsg); 
 	}
 
 	return WMSG_FAIL;

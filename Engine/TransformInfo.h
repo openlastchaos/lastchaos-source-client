@@ -26,11 +26,13 @@ private:
 		{
 		};
 
-		CTString		strName;									// ì´ë¦„ ì •ë³´.		
-		CTString		strFileName;								// íŒŒì¼ëª….
-		CTString		aStrAnimationName[ANIM_TOTAL];				// ì• ë‹ˆë©”ì´ì…˜ ì´ë¦„.
-		int				iAttackSpeed;								// ê¸°ë³¸ ê³µì†		
-		float			afImpactTimeTable[MAX_ATTACK];				// ì´í™íŠ¸ì™€ ì‚¬ìš´ë“œ ë° ë°ë¯¸ì§€ê°€ ì ìš©ë˜ëŠ” íƒ€ì´ë°.
+		CTString		strName;									// ÀÌ¸§ Á¤º¸.		
+		CTString		strFileName;								// ÆÄÀÏ¸í.
+		CTString		aStrAnimationName[ANIM_TOTAL];				// ¾Ö´Ï¸ŞÀÌ¼Ç ÀÌ¸§.
+		int				iAttackSpeed;								// ±âº» °ø¼Ó		
+		float			afImpactTimeTable[MAX_ATTACK];				// ÀÌÆåÆ®¿Í »ç¿îµå ¹× µ¥¹ÌÁö°¡ Àû¿ëµÇ´Â Å¸ÀÌ¹Ö.
+		int				nSkillIndex;								// ½ºÅ³ ÀÎµ¦½º.
+		int				nType;
 		
 	}sTransformInfo;
 
@@ -56,7 +58,11 @@ public:
 	CTString	GetFileName( int iTransform );
 	
 	float		GetImpactTime( int iTransform, int iAttackType )	const;
-	CTString	GetAnimationName( int iTransform, int iAnimType );	
+	CTString	GetAnimationName( int iTransform, int iAnimType );
+
+	void		SetInfo( int iTransform, int nIndex );
+	int			GetSkillIndex( int iTransform );
+	int			GetType( int nSkillIndex );
 
 protected:
 	static CTransformInfo m_instance;

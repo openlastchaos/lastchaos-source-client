@@ -1,18 +1,22 @@
 #include "stdh.h"
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/Items.h>
 #include <Engine/Interface/UISkillLearn.h>
-#include <Engine/Interface/UIInventory.h>
 #include <Engine/Interface/UIPetItemMix.h>
+#include <Engine/Interface/UIProduct.h>
+#include <Engine/Interface/UIInventory.h>
 
 enum eChangeSelection
 {
-	DRAGON_WEAPON = 2,						// ÎìúÎûòÍ≥§ Î¨¥Í∏∞
-	KNIGHT_AMOR,						// ÎÇòÏù¥Ìä∏ Î∞©Ïñ¥
+	DRAGON_WEAPON = 2,						// µÂ∑°∞Ô π´±‚
+	KNIGHT_AMOR,						// ≥™¿Ã∆Æ πÊæÓ
 };
 
-extern INDEX g_iCountry;
+#define DEF_MAX_DRAGON_WEAPON_MATERIAL_COUNT 3
+#define DEF_MAX_KNIGHT_AMOR_MATERIAL_COUNT 3
+
 static int _iMaxMsgStringChar = 0;
 
 // -----------------------------------------------------------------------------
@@ -31,6 +35,7 @@ CUIPetItemMix::CUIPetItemMix()
 CUIPetItemMix::~CUIPetItemMix()
 {
 	Destroy();
+	ClearProcessItems();
 }
 
 // ------------------------------------------------------------------------------
@@ -54,7 +59,7 @@ void CUIPetItemMix::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	m_rcItem.SetRect( 13, 33, 218, 203 );
 	m_rcDesc.SetRect( 13, 203, 218, 331 );
 
-	// Process Texture ÏÉùÏÑ± - SkillLearn Texture ÏÇ¨Ïö©
+	// Process Texture ª˝º∫ - SkillLearn Texture ªÁøÎ
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\SkillLearn.tex" ) );
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
@@ -65,17 +70,6 @@ void CUIPetItemMix::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 
 	m_rtSelOutline.SetUV( 218, 80, 250, 112, fTexWidth, fTexHeight );
 
-	// Item information region
-	m_rtInfoUL.SetUV( 218, 113, 225, 120, fTexWidth, fTexHeight );
-	m_rtInfoUM.SetUV( 228, 113, 230, 120, fTexWidth, fTexHeight );
-	m_rtInfoUR.SetUV( 233, 113, 240, 120, fTexWidth, fTexHeight );
-	m_rtInfoML.SetUV( 218, 123, 225, 125, fTexWidth, fTexHeight );
-	m_rtInfoMM.SetUV( 228, 123, 230, 125, fTexWidth, fTexHeight );
-	m_rtInfoMR.SetUV( 233, 123, 240, 125, fTexWidth, fTexHeight );
-	m_rtInfoLL.SetUV( 218, 128, 225, 135, fTexWidth, fTexHeight );
-	m_rtInfoLM.SetUV( 228, 128, 230, 135, fTexWidth, fTexHeight );
-	m_rtInfoLR.SetUV( 233, 128, 240, 135, fTexWidth, fTexHeight );	
-
 	// Close button
 	m_btnClose.Create( this, CTString( "" ), 184, 4, 14, 14 );
 	m_btnClose.SetUV( UBS_IDLE, 219, 0, 233, 14, fTexWidth, fTexHeight );
@@ -84,28 +78,28 @@ void CUIPetItemMix::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Process button A( KNGIHT )
-	m_btnOK[1].Create( this, _S( 2457, "Ï†úÏûë A" ), 12, 372-diff, 54, 21 );			
+	m_btnOK[1].Create( this, _S( 2457, "¡¶¿€ A" ), 12, 372-diff, 54, 21 );			
 	m_btnOK[1].SetUV( UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight );
 	m_btnOK[1].SetUV( UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight );
 	m_btnOK[1].CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK[1].CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Process button B( KNGIHT )
-	m_btnOK[2].Create( this, _S( 2458, "Ï†úÏûë B" ), 76, 372-diff, 54, 21 );			
+	m_btnOK[2].Create( this, _S( 2458, "¡¶¿€ B" ), 76, 372-diff, 54, 21 );			
 	m_btnOK[2].SetUV( UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight );
 	m_btnOK[2].SetUV( UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight );
 	m_btnOK[2].CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK[2].CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Process button DRAGON
-	m_btnOK[0].Create( this, _S( 2459, "Ï†úÏûë" ), 76, 372-diff, 54, 21 );			
+	m_btnOK[0].Create( this, _S( 2459, "¡¶¿€" ), 76, 372-diff, 54, 21 );			
 	m_btnOK[0].SetUV( UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight );
 	m_btnOK[0].SetUV( UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight );
 	m_btnOK[0].CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK[0].CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 149, 372-diff, 54, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 149, 372-diff, 54, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -158,9 +152,7 @@ void CUIPetItemMix::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	m_bSatisfiedA = FALSE;
 	m_bSatisfiedB = FALSE;
 
-	m_bShowItemInfo = false;
 	m_nPetType = -1;
-	m_nCurInfoLines = 0;
 	m_bDetailItemInfo = TRUE;
 }
 
@@ -195,8 +187,6 @@ void CUIPetItemMix::Clear()
 	m_bSatisfiedA			= FALSE;
 	m_bSatisfiedB			= FALSE;
 
-	m_btnProcessItems.size();
-
 //	m_nProcessText			= -1;				
 	m_nRow					= -1;
 	m_nCol					= -1;
@@ -210,68 +200,69 @@ void CUIPetItemMix::Clear()
 	for ( int i=0; i<T_KNIGHT_MAX; i++ )
 		memset ( &m_NStuffKnight[i], 0, sizeof(CNeedStuff) );
 
-	m_nJobIndex[TITAN] = 918; // ÌÉÄÏù¥ÌÉÑ
-	m_nJobIndex[KNIGHT] = 923; // Í∏∞ÏÇ¨
-	m_nJobIndex[HEALER] = 938; // ÌûêÎü¨
-	m_nJobIndex[MAGE] = 928; // Î©îÏù¥ÏßÄ
-	m_nJobIndex[ROGUE] = 933; // Î°úÍ∑∏
-	m_nJobIndex[SORCERER] = 943; // ÏÜåÏÑúÎü¨
+	m_nJobIndex[TITAN] = 918; // ≈∏¿Ã≈∫
+	m_nJobIndex[KNIGHT] = 923; // ±‚ªÁ
+	m_nJobIndex[HEALER] = 938; // »˙∑Ø
+	m_nJobIndex[MAGE] = 928; // ∏ﬁ¿Ã¡ˆ
+	m_nJobIndex[ROGUE] = 933; // ∑Œ±◊
+	m_nJobIndex[SORCERER] = 943; // º“º≠∑Ø
+#ifdef CHAR_EX_ROGUE
+	m_nJobIndex[EX_ROGUE] = 933; // [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+#endif
+#ifdef CHAR_EX_MAGE
+	m_nJobIndex[EX_MAGE] = 928; // 2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° 
+#endif
 
 	m_bWaitProcessResult = FALSE;
 	m_lbPreconditionDesc.ResetAllStrings();
 
-	for(std::vector<CUIButtonEx>::iterator pos = m_btnProcessItems.begin(); pos != m_btnProcessItems.end(); ++pos)
-	{
-		(*pos).InitBtn();
-	}
+	ClearProcessItems();
 
 	InitNeedItem();
-
-	m_btnProcessItems.clear ();
 }
 
 // ----------------------------------------------------------------------------
 // Name : InitNeedItem()
-// Desc : ÎÇòÏù¥Ìä∏ Î©îÏñ¥ ÏïÑÏù¥ÌÖú Ïû¨Î£å Ïù∏Îç±Ïä§ Ï†ÄÏû•
+// Desc : ≥™¿Ã∆Æ ∏ﬁæÓ æ∆¿Ã≈€ ¿Á∑· ¿Œµ¶Ω∫ ¿˙¿Â
 // ----------------------------------------------------------------------------
 void CUIPetItemMix::InitNeedItem( void )
 {
-	m_NStuffKnight[T_HELMET].nNeedA[0] = 886; // 25%	Ìà¨Íµ¨
+	m_NStuffKnight[T_HELMET].nNeedA[0] = 886; // 25%	≈ı±∏
 	m_NStuffKnight[T_HELMET].nNeedA[1] = 889;
 	m_NStuffKnight[T_HELMET].nNeedA[2] = 894;
 	m_NStuffKnight[T_HELMET].nNeedB[0] = 888; // 75%	
 	m_NStuffKnight[T_HELMET].nNeedB[1] = 891;
 	m_NStuffKnight[T_HELMET].nNeedB[2] = 894;
 
-	m_NStuffKnight[T_COAT].nNeedA[0] = 891; // 25%		ÏÉÅÏùò
+	m_NStuffKnight[T_COAT].nNeedA[0] = 891; // 25%		ªÛ¿«
 	m_NStuffKnight[T_COAT].nNeedA[1] = 892;
 	m_NStuffKnight[T_COAT].nNeedA[2] = 894;
 	m_NStuffKnight[T_COAT].nNeedB[0] = 893; // 75%
 	m_NStuffKnight[T_COAT].nNeedB[1] = 889;
 	m_NStuffKnight[T_COAT].nNeedB[2] = 894;
 
-	m_NStuffKnight[T_PANTS].nNeedA[0] = 886; // 25%		ÌïòÏùò
+	m_NStuffKnight[T_PANTS].nNeedA[0] = 886; // 25%		«œ¿«
 	m_NStuffKnight[T_PANTS].nNeedA[1] = 891;
 	m_NStuffKnight[T_PANTS].nNeedA[2] = 894;
 	m_NStuffKnight[T_PANTS].nNeedB[0] = 890; // 75%
 	m_NStuffKnight[T_PANTS].nNeedB[1] = 892;
 	m_NStuffKnight[T_PANTS].nNeedB[2] = 894;
 
-	m_NStuffKnight[T_BOOTS].nNeedA[0] = 889; // 25%		Î∂ÄÏ∏†
+	m_NStuffKnight[T_BOOTS].nNeedA[0] = 889; // 25%		∫Œ√˜
 	m_NStuffKnight[T_BOOTS].nNeedA[1] = 892;
 	m_NStuffKnight[T_BOOTS].nNeedA[2] = 894;
 	m_NStuffKnight[T_BOOTS].nNeedB[0] = 890; // 75%
 	m_NStuffKnight[T_BOOTS].nNeedB[1] = 886;
 	m_NStuffKnight[T_BOOTS].nNeedB[2] = 894;
 
-	m_NStuffKnight[T_GLOVE].nNeedA[0] = 889; // 25%		Ïû•Í∞ë
+	m_NStuffKnight[T_GLOVE].nNeedA[0] = 889; // 25%		¿Â∞©
 	m_NStuffKnight[T_GLOVE].nNeedA[1] = 892;
 	m_NStuffKnight[T_GLOVE].nNeedA[2] = 894;
 	m_NStuffKnight[T_GLOVE].nNeedB[0] = 888; // 75%
 	m_NStuffKnight[T_GLOVE].nNeedB[1] = 886;
 	m_NStuffKnight[T_GLOVE].nNeedB[2] = 894;
 
-	m_NStuffKnight[T_SHIELD].nNeedA[0] = 886; // 25%	Î∞©Ìå®
+	m_NStuffKnight[T_SHIELD].nNeedA[0] = 886; // 25%	πÊ∆–
 	m_NStuffKnight[T_SHIELD].nNeedA[1] = 892;
 	m_NStuffKnight[T_SHIELD].nNeedA[2] = 894;
 	m_NStuffKnight[T_SHIELD].nNeedB[0] = 893; // 75%
@@ -281,13 +272,13 @@ void CUIPetItemMix::InitNeedItem( void )
 
 // ----------------------------------------------------------------------------
 // Name : InitPetItemMix()
-// Desc : ÏïÑÏù¥ÌÖú Ï†ïÎ≥¥ Í∞±Ïã†
+// Desc : æ∆¿Ã≈€ ¡§∫∏ ∞ªΩ≈
 // ----------------------------------------------------------------------------
 void CUIPetItemMix::InitPetItemMix( int nType )
 {	
-	m_btnProcessItems.clear ();
+	ClearProcessItems();
 
-	CUIButtonEx UIButtonEx;
+	CUIIcon* pIcon = NULL;
 	int bit = 0x00000001;
 
 	if( DRAGON_WEAPON == nType )
@@ -296,25 +287,26 @@ void CUIPetItemMix::InitPetItemMix( int nType )
 		{
 			if( i == 0 )
 			{
-				CItemData& ItemData = _pNetwork->GetItemData( UNI_DRAGON_SWORD );
-				if( ItemData.GetItemIndex() == -1 ) 
+				CItemData* pItemData = _pNetwork->GetItemData( UNI_DRAGON_SWORD );
+				if( pItemData->GetItemIndex() == -1 ) 
 					continue;
 
-				UIButtonEx.Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETITEMMIX ); 
-				UIButtonEx.SetItemInfo ( 0, 0, 0, ItemData.GetItemIndex(), -1, -1 );
-				m_btnProcessItems.push_back ( UIButtonEx );
+				pIcon = new CUIIcon;
+				pIcon->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETITEMMIX, UBET_ITEM);
+				pIcon->setData(UBET_ITEM, pItemData->GetItemIndex());
+				m_vecIcons.push_back ( pIcon );
 			}
 			else
 			{
-				CItemData& ItemData = _pNetwork->GetItemData( UNI_DUAL_DRAGON_SWORD + i-1 );
+				CItemData* pItemData = _pNetwork->GetItemData( UNI_DUAL_DRAGON_SWORD + i-1 );
 
-				if( ItemData.GetItemIndex() == -1 ) 
+				if( pItemData->GetItemIndex() == -1 ) 
 					continue;
 
-				UIButtonEx.Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETITEMMIX ); 
-				UIButtonEx.SetItemInfo ( 0, 0, 0, ItemData.GetItemIndex(), -1, -1 );
-					
-				m_btnProcessItems.push_back ( UIButtonEx );
+				pIcon = new CUIIcon;
+				pIcon->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETITEMMIX, UBET_ITEM);
+				pIcon->setData(UBET_ITEM, pItemData->GetItemIndex());					
+				m_vecIcons.push_back ( pIcon );
 			}
 		}
 	}
@@ -324,33 +316,35 @@ void CUIPetItemMix::InitPetItemMix( int nType )
 
 		for( int i=0; i<T_SHIELD; i++ )
 		{
-			CItemData& ItemData = _pNetwork->GetItemData( m_nJobIndex[ubJob]+i );
+			CItemData* pItemData = _pNetwork->GetItemData( m_nJobIndex[ubJob]+i );
 
-			if( ItemData.GetItemIndex() == -1 )
+			if( pItemData->GetItemIndex() == -1 )
 				continue;
 
-			UIButtonEx.Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETITEMMIX );
-			UIButtonEx.SetItemInfo( 0, 0, 0, ItemData.GetItemIndex(), -1, -1 );
-			m_btnProcessItems.push_back( UIButtonEx );
+			pIcon = new CUIIcon;
+			pIcon->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETITEMMIX, UBET_ITEM);
+			pIcon->setData(UBET_ITEM, pItemData->GetItemIndex());
+			m_vecIcons.push_back( pIcon );
 		}
 
 		if( ubJob == KNIGHT )
 		{
-			CItemData& ItemData = _pNetwork->GetItemData( UNI_KNIGHT_DEFENDSHIELD );
+			CItemData* pItemData = _pNetwork->GetItemData( UNI_KNIGHT_DEFENDSHIELD );
 			
-			if( ItemData.GetItemIndex() != -1 )
+			if( pItemData->GetItemIndex() != -1 )
 			{
-				UIButtonEx.Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETITEMMIX );
-				UIButtonEx.SetItemInfo( 0, 0, 0, ItemData.GetItemIndex(), -1, -1 );
-				m_btnProcessItems.push_back( UIButtonEx );
+				pIcon = new CUIIcon;
+				pIcon->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETITEMMIX, UBET_ITEM);
+				pIcon->setData(UBET_ITEM, pItemData->GetItemIndex());
+				m_vecIcons.push_back( pIcon );
 			}
 		}
 	}
 
-	AddString ( _S( 561, "Í∞ÄÍ≥µÌíàÏùÑ ÏÑ†ÌÉùÌï¥ Ï£ºÏã≠ÏãúÏò§." ), COLOR_TEXT  );		
+	AddString ( _S( 561, "∞°∞¯«∞¿ª º±≈√«ÿ ¡÷Ω Ω√ø¿." ), COLOR_TEXT  );		
 
 	m_sbProcessItem.SetScrollPos( 0 );
-	m_sbProcessItem.SetCurItemCount( m_btnProcessItems.size()  );
+	m_sbProcessItem.SetCurItemCount( m_vecIcons.size()  );
 
 	if( DRAGON_WEAPON == nType )
 		m_btnOK[0].SetEnable ( m_bSatisfiedA );	
@@ -363,7 +357,7 @@ void CUIPetItemMix::InitPetItemMix( int nType )
 
 // ----------------------------------------------------------------------------
 // Name : OpenPetItemMix()
-// Desc : Ï°∞Ìï© Ï∞ΩÏùÑ Ïó∞Îã§.
+// Desc : ¡∂«’ √¢¿ª ø¨¥Ÿ.
 // ----------------------------------------------------------------------------
 void CUIPetItemMix::OpenPetItemMix(  int nType  )
 {
@@ -373,7 +367,7 @@ void CUIPetItemMix::OpenPetItemMix(  int nType  )
 	Clear ();
 	m_nPetType = nType;
 
-	_pUIMgr->RearrangeOrder( UI_PETITEMMIX, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_PETITEMMIX, TRUE );
 	
 	InitPetItemMix ( nType );
 }
@@ -385,7 +379,7 @@ void CUIPetItemMix::OpenPetItemMix(  int nType  )
 void CUIPetItemMix::ClosePetItemMix()
 {
 	// Close refine
-	_pUIMgr->RearrangeOrder( UI_PETITEMMIX, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_PETITEMMIX, FALSE );
 
 	Clear();
 }
@@ -396,29 +390,31 @@ void CUIPetItemMix::ClosePetItemMix()
 // ------------------------------------------------------------------------------
 void CUIPetItemMix::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 // Add render regions -----------------------------------------------------------------------------------------------
 	// Background up
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + PROCESS_TOP_HEIGHT,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + PROCESS_TOP_HEIGHT,
 										m_rtBackgroundTop.U0, m_rtBackgroundTop.V0, m_rtBackgroundTop.U1, m_rtBackgroundTop.V1,
 										0xFFFFFFFF );
 
 	// Background down 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY+PROCESS_TOP_HEIGHT, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY+PROCESS_TOP_HEIGHT, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackgroundBtm.U0, m_rtBackgroundBtm.V0, m_rtBackgroundBtm.U1, m_rtBackgroundBtm.V1,
 										0xFFFFFFFF );
 
 	// Render Title Text
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 2459, "Ï†úÏûë" ) , m_nPosX + PROCESS_TITLE_TEXT_OFFSETX,				
+	pDrawPort->PutTextEx( _S( 2459, "¡¶¿€" ) , m_nPosX + PROCESS_TITLE_TEXT_OFFSETX,				
 										m_nPosY + PROCESS_TITLE_TEXT_OFFSETY );
 
 	// Render Process Type
 	if( m_nPetType == DRAGON_WEAPON )
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 2460, "ÎìúÎûòÍ≥§ Ïõ®Ìè∞ Ï†úÏûë" ), m_nPosX + 106, m_nPosY + 35, COLOR_TITLE );
+		pDrawPort->PutTextExCX( _S( 2460, "µÂ∑°∞Ô ø˛∆˘ ¡¶¿€" ), m_nPosX + 106, m_nPosY + 35, COLOR_TITLE );
 	else if( m_nPetType == KNIGHT_AMOR )
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 2461, "ÎÇòÏù¥Ìä∏ Î©îÏñ¥ Î∞©Ïñ¥Íµ¨ Ï†úÏûë" ), m_nPosX + 106, m_nPosY + 35, COLOR_TITLE );
+		pDrawPort->PutTextExCX( _S( 2461, "≥™¿Ã∆Æ ∏ﬁæÓ πÊæÓ±∏ ¡¶¿€" ), m_nPosX + 106, m_nPosY + 35, COLOR_TITLE );
 
 	// Process Item Scroll bar
 	m_sbProcessItem.Render();
@@ -441,7 +437,7 @@ void CUIPetItemMix::Render()
 	// Cancel button
 	m_btnCancel.Render();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
 	// Render Process Item
@@ -450,33 +446,33 @@ void CUIPetItemMix::Render()
 	int	nY = SLEARN_SLOT_SY;
 
 	int	iEnd = m_sbProcessItem.GetScrollPos() + PRODUCT_SLOT_ROW;
-	if( iEnd > m_btnProcessItems.size() )
-		iEnd = m_btnProcessItems.size();
+	if( iEnd > m_vecIcons.size() )
+		iEnd = m_vecIcons.size();
 
 	for ( int i = m_sbProcessItem.GetScrollPos(); i < iEnd; i++ )
 	{
-		if( !m_btnProcessItems[i].IsEmpty() )
+		if( !m_vecIcons[i]->IsEmpty() )
 		{
 			// render Item
-			m_btnProcessItems[i].SetPos ( nX, nY );
-			m_btnProcessItems[i].Render();
+			m_vecIcons[i]->SetPos ( nX, nY );
+			m_vecIcons[i]->Render(pDrawPort);
 			
 			
 			// render Item desc 
-			CItemData& ItemData = _pNetwork->GetItemData ( m_btnProcessItems[i].GetIndex() );
-			const char* szItemName = _pNetwork->GetItemName ( m_btnProcessItems[i].GetIndex() );
+			CItemData* pItemData = _pNetwork->GetItemData ( m_vecIcons[i]->getIndex() );
+			const char* szItemName = _pNetwork->GetItemName ( m_vecIcons[i]->getIndex() );
 			
-			_pUIMgr->GetDrawPort()->PutTextExCX( CTString ( szItemName ), m_nPosX + 122, m_nPosY + nY + 8, 0xC3C3C3ff );
+			pDrawPort->PutTextExCX( CTString ( szItemName ), m_nPosX + 122, m_nPosY + nY + 8, 0xC3C3C3ff );
 												
 			nY += SLEARN_SLOT_OFFSETY;
 		}
 	}
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+	pDrawPort->FlushBtnRenderingQueue( UBET_ITEM );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	nX = SLEARN_SLOT_SX;
 	nY = SLEARN_SLOT_SY;
@@ -494,82 +490,12 @@ void CUIPetItemMix::Render()
 			BoxY = m_nPosY + nY + ( SLEARN_SLOT_OFFSETY *  nOffset ) -1;
 
 			
-			_pUIMgr->GetDrawPort()->AddTexture( BoxX, BoxY,	BoxX + 34, BoxY + 34,
+			pDrawPort->AddTexture( BoxX, BoxY,	BoxX + 34, BoxY + 34,
 											m_rtSelOutline.U0, m_rtSelOutline.V0, m_rtSelOutline.U1, m_rtSelOutline.V1,
 											0xffffffff );
 		}
 	}
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	
-	RenderItemInfo ();
-}
-
-// ----------------------------------------------------------------------------
-// Name : RenderItemInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIPetItemMix::RenderItemInfo ()
-{
-	// ----------------------------------------------------------------------------
-	// Item information ( name and property etc... )
-	if( m_bShowItemInfo )
-	{
-
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-		// Item information region
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
-											m_rcItemInfo.Right, m_rcItemInfo.Top + 7,
-											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-											m_rcItemInfo.Right, m_rcItemInfo.Bottom - 7,
-											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom,
-											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom,
-											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-											m_rcItemInfo.Right, m_rcItemInfo.Bottom,
-											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
-											0xFFFFFFFF );
-
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-		// Render item information
-		int	nInfoX = m_rcItemInfo.Left + 12;
-		int	nInfoY = m_rcItemInfo.Top + 8;
-		for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
-		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
-			nInfoY += _pUIFontTexMgr->GetLineHeight();
-		}
-
-		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
-	}
+	pDrawPort->FlushRenderingQueue();
 }
 
 // ----------------------------------------------------------------------------
@@ -595,14 +521,14 @@ WMSG_RESULT CUIPetItemMix::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 				int	iRowS = m_sbProcessItem.GetScrollPos();
 				int	iRowE = iRowS + PROCESS_SLOT_ROW;
 
-				if ( m_btnProcessItems.size() < iRowE )
+				if ( m_vecIcons.size() < iRowE )
 				{
-					iRowE = m_btnProcessItems.size();
+					iRowE = m_vecIcons.size();
 				}
 				
 				if ( IsInsideRect ( nX, nY, m_rcItem ) )
@@ -610,18 +536,9 @@ WMSG_RESULT CUIPetItemMix::MouseMessage( MSG *pMsg )
 					bool bShowItem = false;
 					for( int iRow = iRowS; iRow < iRowE; iRow++ )
 					{
-						if( m_btnProcessItems[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							bShowItem = true;
-							ShowItemInfo( true, iRow ) ;					
-						}
+						m_vecIcons[iRow]->MouseMessage( pMsg );
 					}
-
-					if ( !bShowItem ) 
-						ShowItemInfo( false, -1 );
 				}
-				else
-					ShowItemInfo( false, -1 );
 			}
 			
 		
@@ -640,9 +557,9 @@ WMSG_RESULT CUIPetItemMix::MouseMessage( MSG *pMsg )
 			else if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
 			// OK button
-			else if( m_btnOK[1].MouseMessage( pMsg ) != WMSG_FAIL )  // Ï†úÏûë ÌÉÄÏûÖ A
+			else if( m_btnOK[1].MouseMessage( pMsg ) != WMSG_FAIL )  // ¡¶¿€ ≈∏¿‘ A
 				return WMSG_SUCCESS;
-			else if( m_btnOK[2].MouseMessage( pMsg ) != WMSG_FAIL )  // Ï†úÏûë ÌÉÄÏûÖ B
+			else if( m_btnOK[2].MouseMessage( pMsg ) != WMSG_FAIL )  // ¡¶¿€ ≈∏¿‘ B
 				return WMSG_SUCCESS;
 			else if( m_btnOK[0].MouseMessage( pMsg ) != WMSG_FAIL && m_nPetType == DRAGON_WEAPON )  // DRAGON
 				return WMSG_SUCCESS;
@@ -697,7 +614,7 @@ WMSG_RESULT CUIPetItemMix::MouseMessage( MSG *pMsg )
 						return WMSG_SUCCESS;
 				}
 
-				_pUIMgr->RearrangeOrder( UI_PETITEMMIX, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_PETITEMMIX, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -706,7 +623,7 @@ WMSG_RESULT CUIPetItemMix::MouseMessage( MSG *pMsg )
 	case WM_LBUTTONUP:
 		{
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (UIMGR()->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -763,14 +680,14 @@ WMSG_RESULT CUIPetItemMix::MouseMessage( MSG *pMsg )
 					int	iRowS = m_sbProcessItem.GetScrollPos();
 					int	iRowE = iRowS + PROCESS_SLOT_ROW;
 
-					if ( m_btnProcessItems.size() < iRowE )
+					if ( m_vecIcons.size() < iRowE )
 					{
-						iRowE = m_btnProcessItems.size();
+						iRowE = m_vecIcons.size();
 					}
 		
 					for( int iRow = iRowS; iRow < iRowE; iRow++ )
 					{
-						if( m_btnProcessItems[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
+						if( m_vecIcons[iRow]->MouseMessage( pMsg ) != WMSG_FAIL )
 						{
 							m_nSelectProcessItem = iRow;
 
@@ -815,239 +732,6 @@ WMSG_RESULT CUIPetItemMix::MouseMessage( MSG *pMsg )
 }
 
 // ----------------------------------------------------------------------------
-// Name : AddItemInfoString()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIPetItemMix::AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo )
-{
-	if( m_nCurInfoLines >= MAX_ITEMINFO_LINE )
-		return ;
-
-	// Get length of string
-	INDEX	nLength = strItemInfo.Length();
-	if( nLength <= 0 )
-		return;
-
-	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strItemInfo);
-		INDEX	nChatMax= (MAX_ITEMINFO_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strItemInfo,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; ++iPos )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= MAX_ITEMINFO_CHAR )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strItemInfo[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; iPos++ )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-		}
-	}
-}
-
-
-// ----------------------------------------------------------------------------
-// Name : ShowItemInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIPetItemMix::ShowItemInfo( BOOL bShowInfo, int nItemIndex, BOOL bRenew )
-{
-	static int	nOldBtnID = -1;
-	int			nBtnID;
-
-	m_bShowItemInfo = FALSE;
-
-	// Hide item information
-	if( !bShowInfo )
-	{
-		nOldBtnID = -1;
-		return;
-	}
-
-	BOOL	bUpdateInfo = FALSE;
-	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
-
-	
-	if( nItemIndex >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nBtnID = m_btnProcessItems[nItemIndex].GetBtnID();
-
-		// Update item information
-		if( nOldBtnID != nBtnID || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldBtnID = nBtnID;
-			m_btnProcessItems[nItemIndex].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-		//	m_bDetailItemInfo = m_nSelectProcessItem == nItemIndex;
-			
-			if( !GetItemInfo(  nItemIndex, nInfoWidth, nInfoHeight ) )
-				m_bShowItemInfo = FALSE;
-		}
-	}
-
-	// Update item information box
-	if( m_bShowItemInfo && bUpdateInfo )
-	{
-		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
-
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
-
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
-		{
-			nInfoPosY += BTN_SIZE;
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
-		}
-		else
-		{
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
-		}
-	}
-
-	if( !m_bShowItemInfo )
-		nOldBtnID = -1;
-}
-
-
-// ----------------------------------------------------------------------------
-// Name : GetItemInfo()
-// Desc : 
-// ----------------------------------------------------------------------------
-BOOL CUIPetItemMix::GetItemInfo( int nItemIndex, int &nInfoWidth, int &nInfoHeight )
-{
-	CTString	strTemp;
-	m_nCurInfoLines = 0;
-
-	int			nIndex = m_btnProcessItems[nItemIndex].GetItemIndex();
-
-	if( nIndex < 0 )
-		return FALSE;
-
-	CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-	const char* szItemName = _pNetwork->GetItemName( nIndex );
-
-	// Get item name
-	strTemp = szItemName;
-	AddItemInfoString( strTemp ); // Î¶¨Ïä§Ìä∏Ïóê Ï∂îÍ∞Ä 
-
-	// Get item information in detail
-	if( m_bDetailItemInfo )
-	{
-		// Weight
-		strTemp.PrintF( _S( 165, "Î¨¥Í≤å : %d" ), rItemData.GetWeight() );
-		AddItemInfoString( strTemp, 0xDEC05BFF );
-
-		// Description
-		const char	*pDesc = _pNetwork->GetItemDesc( nIndex );
-		if( pDesc[0] != NULL )
-		{
-			strTemp.PrintF( "%s", pDesc );
-			AddItemInfoString( strTemp, 0x9E9684FF );
-		}
-
-		nInfoWidth = 27 - _pUIFontTexMgr->GetFontSpacing() + MAX_ITEMINFO_CHAR *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	}
-	else 
-	{
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strItemInfo[0]);				
-		} else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strItemInfo[0].Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 30;
-	}
-
-	return TRUE;
-}
-
-
-// ----------------------------------------------------------------------------
 // Name : SelectItem()
 // Desc :
 // ----------------------------------------------------------------------------
@@ -1058,32 +742,34 @@ void CUIPetItemMix::SelectItem ( int _nIndex )
 		_nIndex = m_nSelectProcessItem;
 		if ( _nIndex == -1 ) return;
 	}
-
+	int	 i;
 	BOOL bNeedItemA			= FALSE;	
 	BOOL bNeedItemB			= FALSE;	
 	BOOL bNeedItemCount		= FALSE;
 	BOOL bNeedItems[6];
-	for( int i=0; i<6; i++ )
+	for( i = 0; i < 6; i++ )
 		bNeedItems[i] = FALSE;
 		
 	m_lbPreconditionDesc.ResetAllStrings();
 	
-	// ÏÉùÏÇ∞ ÌïòÍ≥†Ïûê ÌïòÎäî ÏïÑÏù¥ÌÖú Î™©Î°ù
-	if ( m_btnProcessItems[_nIndex].GetIndex() == -1 ) return;
-	CItemData&		ProcessItemData	= _pNetwork-> GetItemData ( m_btnProcessItems[_nIndex].GetIndex() );
+	// ª˝ªÍ «œ∞Ì¿⁄ «œ¥¬ æ∆¿Ã≈€ ∏Ò∑œ
+	if ( m_vecIcons[_nIndex]->getIndex() == -1 ) return;
+	CItemData* pProcessItemData = _pNetwork-> GetItemData ( m_vecIcons[_nIndex]->getIndex() );
 
-	// ÌïÑÏöî ÏïÑÏù¥ÌÖú 
+	// « ø‰ æ∆¿Ã≈€ 
 	int nIndexTemp = 0;
-	int NeedCntA = 0;
-	int NeedCntB = 0;
-	CItemData InvenItem;
-
-	//ÌïÑÏöî ÏïÑÏù¥ÌÖú Ï¢ÖÎ•òÏôÄ Í∞ØÏàò ÏñªÍ∏∞ 
+	int NeedCntA[MAX_MAKE_ITEM_MATERIAL] = {0,};
+	int NeedCntB[MAX_MAKE_ITEM_MATERIAL] = {0,};
+	int nResultA = 0, nResultB = 0;
+	CItemData* pInvenItem = NULL;
+	
+	int		nCnt;
+	//« ø‰ æ∆¿Ã≈€ ¡æ∑˘øÕ ∞πºˆ æÚ±‚ 
 	if( m_nPetType == DRAGON_WEAPON )
 	{
-		for( int i=0; i<3; i++ )
+		for( i = 0; i < DEF_MAX_DRAGON_WEAPON_MATERIAL_COUNT; i++ )
 		{
-			nIndexTemp = ProcessItemData.GetNeedItemIndex( i );
+			nIndexTemp = pProcessItemData->GetNeedItemIndex( i );
 
 			if( nIndexTemp == -1 ) return;
 
@@ -1091,110 +777,137 @@ void CUIPetItemMix::SelectItem ( int _nIndex )
 			m_NeedItems[i].llCount	= 1; 
 		}
 
-		for ( int nTab = 0; nTab < INVEN_SLOT_TAB; nTab++ )
+		int		t, i, each;
+
+		for (t = 0; t <= INVENTORY_TAB_CASH_2; ++t)
 		{
-			for ( int nRow = 0 ; nRow < INVEN_SLOT_ROW_TOTAL; nRow++ )
+			if (t == INVENTORY_TAB_NORMAL)			each = ITEM_COUNT_IN_INVENTORY_NORMAL;
+			else if ( t == INVENTORY_TAB_CASH_1 )	each = ITEM_COUNT_IN_INVENTORY_CASH_1;
+			else each = ITEM_COUNT_IN_INVENTORY_CASH_2; 
+
+			for (i = 0 ; i < each; ++i)
 			{
-				for ( int nCol = 0 ; nCol < INVEN_SLOT_COL; nCol++ )
+
+				pInvenItem = _pNetwork->MySlotItem[t][i].ItemData;
+
+				for( nCnt = 0; nCnt < DEF_MAX_DRAGON_WEAPON_MATERIAL_COUNT; nCnt++ )
 				{
-					InvenItem = _pNetwork->MySlotItem[nTab][nRow][nCol].ItemData;
-					
-					for( int nCnt = 0; nCnt < 3; nCnt++ )
+					if (m_NeedItems[nCnt].ItemData != NULL &&
+						pInvenItem != NULL &&
+						pInvenItem->GetItemIndex() == m_NeedItems[nCnt].ItemData->GetItemIndex() )
 					{
-						if ( InvenItem.GetItemIndex() == m_NeedItems[nCnt].ItemData.GetItemIndex() )
-						{
-							NeedCntA++;
-							bNeedItemCount = TRUE;
-							m_NeedItems[nCnt].sbMatTab = nTab;
-							m_NeedItems[nCnt].sbMatRow = nRow;
-							m_NeedItems[nCnt].sbMatCol = nCol;
-							bNeedItems[nCnt] = TRUE;
-						}
+						NeedCntA[nCnt] = 1;
+						bNeedItemCount = TRUE;
+						m_NeedItems[nCnt].MatTab = t;
+						m_NeedItems[nCnt].inven_idx = i;
+						bNeedItems[nCnt] = TRUE;
+						// todo : ¡æ∑· ¡∂∞« √£¿ª ∞Õ
 					}
-			
-				}		
+				}
 			}
 		}
 
-		if( NeedCntA == 3 )	bNeedItemA = TRUE;	// Ï°∞Ìï© ÏïÑÏù¥ÌÖú Ï°∞Í±¥ ÎßåÏ°±
+		
+		for ( i = 0; i < DEF_MAX_DRAGON_WEAPON_MATERIAL_COUNT; i++ )
+		{
+			nResultA += NeedCntA[i];
+		}
+
+		if( nResultA == DEF_MAX_DRAGON_WEAPON_MATERIAL_COUNT )	bNeedItemA = TRUE;	// ¡∂«’ æ∆¿Ã≈€ ¡∂∞« ∏∏¡∑
 
 	}
 	else if( m_nPetType == KNIGHT_AMOR )
 	{
 		int nJob = _pNetwork->MyCharacterInfo.job;
 
-		for( int i=0; i<3; i++ )
+		for( i = 0; i < DEF_MAX_KNIGHT_AMOR_MATERIAL_COUNT; i++ )
 		{
 			m_NeedItems[i].ItemData = _pNetwork->GetItemData( m_NStuffKnight[_nIndex].nNeedA[i] );
 			m_NeedItems[i].llCount	= 1; 
 		}
-		for( i=0; i<3; i++ )
+		for( i = 0; i < DEF_MAX_KNIGHT_AMOR_MATERIAL_COUNT; i++ )
 		{
 			m_NeedItems[i+3].ItemData = _pNetwork->GetItemData( m_NStuffKnight[_nIndex].nNeedB[i] );
 			m_NeedItems[i+3].llCount	= 1; 
 		}
 
-		for ( int nTab = 0; nTab < INVEN_SLOT_TAB; nTab++ )
-		{
-			for ( int nRow = 0 ; nRow < INVEN_SLOT_ROW_TOTAL; nRow++ )
-			{
-				for ( int nCol = 0 ; nCol < INVEN_SLOT_COL; nCol++ )
-				{
-					InvenItem = _pNetwork->MySlotItem[nTab][nRow][nCol].ItemData;
-					
-					for( int nCnt = 0; nCnt < 3; nCnt++ )
-					{
-						if ( InvenItem.GetItemIndex() == m_NeedItems[nCnt].ItemData.GetItemIndex() )
-						{
-							NeedCntA++;
-							bNeedItemCount = TRUE;
-							m_NeedItems[nCnt].sbMatTab = nTab;
-							m_NeedItems[nCnt].sbMatRow = nRow;
-							m_NeedItems[nCnt].sbMatCol = nCol;
-							bNeedItems[nCnt] = TRUE;
-						}
-					}
+		int		t, i, each;
 
-					for( nCnt = 0; nCnt < 3; nCnt++ )
+		for (t = 0; t <= INVENTORY_TAB_CASH_2; ++t)
+		{
+			if (t == INVENTORY_TAB_NORMAL)			each = ITEM_COUNT_IN_INVENTORY_NORMAL;
+			else if ( t == INVENTORY_TAB_CASH_1 )	each = ITEM_COUNT_IN_INVENTORY_CASH_1;
+			else each = ITEM_COUNT_IN_INVENTORY_CASH_2; 
+
+			for (i = 0 ; i < each; ++i)
+			{
+
+				pInvenItem = _pNetwork->MySlotItem[t][i].ItemData;
+
+				for( nCnt = 0; nCnt < DEF_MAX_KNIGHT_AMOR_MATERIAL_COUNT; nCnt++ )
+				{
+					if (m_NeedItems[nCnt].ItemData != NULL && 
+						pInvenItem != NULL &&
+						pInvenItem->GetItemIndex() == m_NeedItems[nCnt].ItemData->GetItemIndex() )
 					{
-						if ( InvenItem.GetItemIndex() == m_NeedItems[nCnt+3].ItemData.GetItemIndex() )
-						{
-							NeedCntB++;
-							bNeedItemCount = TRUE;
-							m_NeedItems[nCnt+3].sbMatTab = nTab;
-							m_NeedItems[nCnt+3].sbMatRow = nRow;
-							m_NeedItems[nCnt+3].sbMatCol = nCol;
-							bNeedItems[nCnt+3] = TRUE;
-						}
-					}					
-				}		
+						NeedCntA[nCnt] = 1;
+						bNeedItemCount = TRUE;
+						m_NeedItems[nCnt].MatTab = t;
+						m_NeedItems[nCnt].inven_idx = i;
+						bNeedItems[nCnt] = TRUE;
+					}
+				}
+
+				for( nCnt = 0; nCnt < DEF_MAX_KNIGHT_AMOR_MATERIAL_COUNT; nCnt++ )
+				{
+					if (m_NeedItems[nCnt+3].ItemData !=NULL && 
+						pInvenItem != NULL &&
+						pInvenItem->GetItemIndex() == m_NeedItems[nCnt+3].ItemData->GetItemIndex())
+					{
+						NeedCntB[nCnt] = 1;
+						bNeedItemCount = TRUE;
+						m_NeedItems[nCnt+3].MatTab = t;
+						m_NeedItems[nCnt+3].inven_idx = i;
+						bNeedItems[nCnt+3] = TRUE;
+					}
+				}
 			}
 		}
 
-		if( NeedCntA == 3 )	bNeedItemA = TRUE;	// Ï°∞Ìï© ÏïÑÏù¥ÌÖú Ï°∞Í±¥ ÎßåÏ°±
-		if( NeedCntB == 3 )	bNeedItemB = TRUE;	// Ï°∞Ìï© ÏïÑÏù¥ÌÖú Ï°∞Í±¥ ÎßåÏ°±
+		for ( i = 0; i < DEF_MAX_KNIGHT_AMOR_MATERIAL_COUNT; i++)
+		{
+			nResultA += NeedCntA[i];
+			nResultB += NeedCntB[i];
+		}
+
+		if( nResultA == DEF_MAX_KNIGHT_AMOR_MATERIAL_COUNT )	bNeedItemA = TRUE;	// ¡∂«’ æ∆¿Ã≈€ ¡∂∞« ∏∏¡∑
+		if( nResultB == DEF_MAX_KNIGHT_AMOR_MATERIAL_COUNT )	bNeedItemB = TRUE;	// ¡∂«’ æ∆¿Ã≈€ ¡∂∞« ∏∏¡∑
 	}
 
-// Ï°∞Í±¥ Ï∂úÎ†• 
+// ¡∂∞« √‚∑¬ 
 	CTString strTitle;
 	CTString strSpace = "";
 	CTString strJobNames[TOTAL_JOB+1] =
 	{
-		_S( 44, "Í∏∞ÏÇ¨" ), _S( 43, "ÌÉÄÏù¥ÌÉÑ" ), _S( 45, "ÌûêÎü¨" ),
-		_S( 46, "Î©îÏù¥ÏßÄ" ), _S( 47, "Î°úÍ∑∏" ), _S( 48,"ÏÜåÏÑúÎü¨" ), ""
+		_S( 44, "±‚ªÁ" ), _S( 43, "≈∏¿Ã≈∫" ), _S( 45, "»˙∑Ø" ),
+		_S( 46, "∏ﬁ¿Ã¡ˆ" ), _S( 47, "∑Œ±◊" ), _S( 48,"º“º≠∑Ø" ), "",
 	};
 
-// ÌïÑÏöî Ïä§ÌÇ¨ Ï∂úÎ†• 
+// « ø‰ Ω∫≈≥ √‚∑¬ 
 	if( m_nPetType == DRAGON_WEAPON )
 	{
-		strTitle.PrintF( _S( 2462, "ÌïÑÏöî Ïû¨Î£å" ) );
+		strTitle.PrintF( _S( 2462, "« ø‰ ¿Á∑·" ) );
 		strTitle = strTitle + "(" + strJobNames[_nIndex/2] + ")";
 		AddString ( strTitle, COLOR_SUB_TITLE ); 
 
 		for( int i=0; i<3; i++ )
 		{
-			const char* szItemName = m_NeedItems[i].ItemData.GetName();
-			strTitle.PrintF ( _S( 576, "%s : %dÍ∞ú" ), strSpace + szItemName, m_NeedItems[i].llCount );
+			const char* szItemName = NULL;
+			if (m_NeedItems[i].ItemData != NULL)
+			{
+				szItemName = m_NeedItems[i].ItemData->GetName();
+				strTitle.PrintF ( _S( 576, "%s : %d∞≥" ), strSpace + szItemName, m_NeedItems[i].llCount );
+			}
 
 			AddString ( strTitle, bNeedItems[i]? COLOR_TEXT : COLOR_NONE );
 		}
@@ -1204,22 +917,30 @@ void CUIPetItemMix::SelectItem ( int _nIndex )
 	}
 	else if( m_nPetType == KNIGHT_AMOR )
 	{
-		AddString ( _S( 2463, "ÌïÑÏöî Ïû¨Î£åA" ), COLOR_SUB_TITLE );
+		AddString ( _S( 2463, "« ø‰ ¿Á∑·A" ), COLOR_SUB_TITLE );
 
-		for( int i=0; i<3; i++ )
+		for( i = 0; i < 3; i++ )
 		{
-			const char* szItemName = m_NeedItems[i].ItemData.GetName();
-			strTitle.PrintF ( _S( 576, "%s : %dÍ∞ú " ), strSpace + szItemName, m_NeedItems[i].llCount );
+			const char* szItemName = NULL;
+			if (m_NeedItems[i].ItemData != NULL)
+			{
+				szItemName = m_NeedItems[i].ItemData->GetName();
+				strTitle.PrintF ( _S( 576, "%s : %d∞≥ " ), strSpace + szItemName, m_NeedItems[i].llCount );
+			}
 
 			AddString ( strTitle, bNeedItems[i]? COLOR_TEXT : COLOR_NONE );
 		}
 
-		AddString ( _S( 2464, "ÌïÑÏöî Ïû¨Î£åB" ), COLOR_SUB_TITLE );
+		AddString ( _S( 2464, "« ø‰ ¿Á∑·B" ), COLOR_SUB_TITLE );
 
-		for( i=0; i<3; i++ )
+		for( i = 0; i < 3; i++ )
 		{
-			const char* szItemName = m_NeedItems[i+3].ItemData.GetName();
-			strTitle.PrintF ( _S( 576, "%s : %dÍ∞ú " ), strSpace + szItemName, m_NeedItems[i+3].llCount );
+			const char* szItemName = NULL;
+			if (m_NeedItems[i+3].ItemData != NULL)
+			{
+				szItemName = m_NeedItems[i+3].ItemData->GetName();
+				strTitle.PrintF ( _S( 576, "%s : %d∞≥ " ), strSpace + szItemName, m_NeedItems[i+3].llCount );
+			}
 
 			AddString ( strTitle, bNeedItems[i+3]? COLOR_TEXT : COLOR_NONE );
 		}
@@ -1286,25 +1007,24 @@ void CUIPetItemMix::AddString ( CTString& strText, COLOR colText )
 // ----------------------------------------------------------------------------
 void CUIPetItemMix::SendPetItemMixReq( int nbtn, int nType )
 {
-	if( m_bWaitProcessResult )
+	if( m_bWaitProcessResult == TRUE )
 		return;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
 	if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsSkilling() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage(  _S( 941, "Ïä§ÌÇ¨ ÏÇ¨Ïö©Ï§ëÏóêÎäî Í∞ÄÍ≥µÏùÑ Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ) , SYSMSG_ERROR );		
+		pUIManager->GetChattingUI()->AddSysMessage(  _S( 941, "Ω∫≈≥ ªÁøÎ¡ﬂø°¥¬ ∞°∞¯¿ª «“ ºˆ æ¯Ω¿¥œ¥Ÿ." ) , SYSMSG_ERROR );		
 		return;
 	}
 
-	if( _pUIMgr->IsCSFlagOn( CSF_TELEPORT ) )
+	if( pUIManager->IsCSFlagOn( CSF_TELEPORT ) )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage(  _S( 942, "ÏàúÍ∞Ñ Ïù¥ÎèôÏ§ëÏóêÎäî Í∞ÄÍ≥µÏùÑ Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ) , SYSMSG_ERROR );	
+		pUIManager->GetChattingUI()->AddSysMessage(  _S( 942, "º¯∞£ ¿Ãµø¡ﬂø°¥¬ ∞°∞¯¿ª «“ ºˆ æ¯Ω¿¥œ¥Ÿ." ) , SYSMSG_ERROR );	
 		return;
 	}
 
-	CItemData& ProcessItemData	= _pNetwork->GetItemData ( m_btnProcessItems[m_nSelectProcessItem].GetIndex() );
-	
-
-	_pNetwork->SendPetItemMix ( m_btnProcessItems[m_nSelectProcessItem].GetIndex(), nbtn );
+	_pNetwork->SendPetItemMix ( m_vecIcons[m_nSelectProcessItem]->getIndex(), nbtn );
 
 	m_bWaitProcessResult = TRUE;
 	
@@ -1330,25 +1050,38 @@ void CUIPetItemMix::PetItemMixRep( SBYTE sbResult )
 	switch( sbResult )
 	{
 	case MSG_EX_PET_MIX_ITEM_ERROR_OK:
-		strMessage = _S( 580, "Ï†úÏûëÏóê ÏÑ±Í≥µ ÌïòÏòÄÏäµÎãàÎã§." );										
+		strMessage = _S( 580, "¡¶¿€ø° º∫∞¯ «œø¥Ω¿¥œ¥Ÿ." );										
 		break;
 	case MSG_EX_PET_MIX_ITEM_ERROR_FAIL:
-		strMessage = _S( 577, "Ï†úÏûëÏóê Ïã§Ìå® ÌïòÏòÄÏäµÎãàÎã§." );
+		strMessage = _S( 577, "¡¶¿€ø° Ω«∆– «œø¥Ω¿¥œ¥Ÿ." );
 		break;
 	case MSG_EX_PET_MIX_ITEM_ERROR_NOITEM:
-		strMessage = _S( 2465, "Ï†úÏûëÏóê ÌïÑÏöîÌïú Ïû¨Î£åÍ∞Ä Î∂ÄÏ°±Ìï©ÎãàÎã§." );
+		strMessage = _S( 2465, "¡¶¿€ø° « ø‰«— ¿Á∑·∞° ∫Œ¡∑«’¥œ¥Ÿ." );
 		break;
 	case MSG_EX_PET_MIX_ITEM_ERROR_NOMIX:
-		strMessage = _S( 2466, "Ï†úÏûëÏóê Ï†ÅÌï©ÌïòÏßÄ ÏïäÏùÄ Ï°∞Ìï©ÏûÖÎãàÎã§." );
+		strMessage = _S( 2466, "¡¶¿€ø° ¿˚«’«œ¡ˆ æ ¿∫ ¡∂«’¿‘¥œ¥Ÿ." );
 		break;
 	}
 
 	ClosePetItemMix();
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 2459, "Ï†úÏûë" ), UMBS_OK, UI_PETITEMMIX, MSG_EX_PET_MIX_ITEM );		
+	MsgBoxInfo.SetMsgBoxInfo( _S( 2459, "¡¶¿€" ), UMBS_OK, UI_PETITEMMIX, MSG_EX_PET_MIX_ITEM );		
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 
 	m_bWaitProcessResult = FALSE;	
+}
+
+void CUIPetItemMix::ClearProcessItems()
+{
+	int	i;
+	int	max = m_vecIcons.size();
+
+	for (i = 0; i < max; ++i)
+	{
+		SAFE_DELETE(m_vecIcons[i]);
+	}
+
+	m_vecIcons.clear();
 }

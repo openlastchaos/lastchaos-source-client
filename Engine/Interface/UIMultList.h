@@ -1,4 +1,3 @@
-
 #ifndef	UIMULTILIST_H_
 #define	UIMULTILIST_H_
 #ifdef	PRAGMA_ONCE
@@ -6,90 +5,71 @@
 #endif
 
 #include <Engine/Interface/UIListBox.h>
+#include <Engine/Interface/UIImageBox.h>
 
 #define ICON_WIDTH	18
 #define ICON_HEIGHT 15
 
-enum CONTENT_TYPE 
+enum CONTENT_TYPE
 {
-	TYPE_TEXT,	// ë¬¸ì
-	TYPE_ICON,	// ì´ë¯¸ì§€ 
+	TYPE_TEXT,	// ¹®ÀÚ
+	TYPE_ICON,	// ÀÌ¹ÌÁö
 };
 
 typedef COLOR		ALPHA;
 //------------------------------------------------------------------------------
 // CUIMultiList
-// Explain: ë©”ì‹ ì €ì—ì„œ ì‚¬ìš©í•˜ëŠ” ì‚¬ìš©ì ë¦¬ìŠ¤íŠ¸ ìœ„í•´ì„œ ì‘ì„±ëœ 
-//			ì´ë¯¸ì§€ì™€ TEXTë¥¼ ë‹´ì„ ìˆ˜ ìˆëŠ” MultiListBox 
+// Explain: ÀÌ¹ÌÁö¿Í TEXT¸¦ ´ãÀ» ¼ö ÀÖ´Â MultiListBox
 // Date : 2005-05-18,Author: Lee Ki-hwan
-// History: 
+// History:
 //------------------------------------------------------------------------------
 class CUIMultiList : public CUIListBox
 {
-
 protected:
-	typedef struct _sVecIcon
-	{
-		std::vector<UIRectUV>	vecIcon;
-
-	} sVecIcon;
-
-	typedef struct _sVecAlpha
-	{
-		std::vector<ALPHA>		vecAhpla;
-	} sVecAlpha;
-
+	struct sVecIcon {
+		std::vector<CUIImageBox*> vecIcon;
+	};
 
 protected:
 	std::vector<CONTENT_TYPE>	m_vecConType;
-
 	std::vector<sVecIcon>		m_vecIcon;
-	std::vector<sVecAlpha>		m_vecAlpha;
+	CTextureData* m_ptdCommonBtnTexture;
+
+	int m_nLineGap;
+	int m_nIconOffset;
 
 public:
-
 	CUIMultiList();
 	virtual ~CUIMultiList();
 
-
 	// Create
-	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight, int nLineHeight,
-					int nSpaceX, int nSpaceY, int nColumn, BOOL bSelectList );
+	void Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight, int nLineHeight,
+				int nSpaceX, int nSpaceY, int nColumn, BOOL bSelectList,
+				int nLineGap, int nIconOffset);
 
-	void	Render();
-	void	RenderIcon( int nColumn, int nX, int nY );
-	void	RenderString( int nColumn, int nX, int nY );
+	WMSG_RESULT	MouseMessage(MSG *pMsg);
 
-	void	SetColumnType( int nColumn, CONTENT_TYPE eContentType );
+	void Render();
+	void RenderIcon(int nColumn, int nX, int nY);
+	void RenderIconPopup();
+	void RenderString(int nColumn, int nX, int nY);
 
-	void	ResetAllData();
+	void SetColumnType(int nColumn, CONTENT_TYPE eContentType);
+	void ResetAllData();
 
-	
 	// Get count of current item
-	int		GetCurItemCount( int nCol ) const
+	int GetCurItemCount(int nCol) const
 	{
-		ASSERT( nCol < m_nColumnCount );
+		ASSERT(nCol < m_nColumnCount);
 		return m_vecString[nCol].vecString.size();
 	} 
 
 	// Set Icon
-	void	AddIcon( int nCol, UIRectUV &rtIcon, ALPHA alpIcon = 0xFFFFFFFF, BOOL bSelectable = TRUE );
-	void	InsertIcon( int nIndex, int nCol, UIRectUV &rtIcon, ALPHA alpIcon = 0xFFFFFFFF, BOOL bSelectable = TRUE );
-	void	RemoveIcon( int nIndex, int nCol );
-	void	MoveIcon( int nFromIndex, int nToIndex, int nCol );
-	void	SetIcon( int nCol, int nIndex, UIRectUV &rtIcon );
-	void	SetAlpha( int nCol, int nIndex, ALPHA alpIcon = 0xFFFFFFFF );
+	void AddIcon(int nCol, CUIImageBox::eImageType type, int index,
+				 BOOL bShowPopup = FALSE, CTString popupInfo = CTString(""),
+				 BOOL bSelectable = TRUE, COLOR Color = 0xFFFFFFFF);
 
-	UIRectUV	&GetIcon( int nCol, int nIndex )
-	{
-		ASSERT( nCol < m_nColumnCount );
-		ASSERT( nIndex < m_vecIcon[nCol].vecIcon.size() );
-		return m_vecIcon[nCol].vecIcon[nIndex];
-	}
-
-
+	int GetTopItem();
 };
 
-
 #endif	// UISCROLLBAR_H_
-

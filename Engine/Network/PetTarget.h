@@ -1,8 +1,7 @@
 #ifndef __PETTARGET_H__
 #define __PETTARGET_H__
 
-
-//#include <Engine/Network/NetworkMessage.h>
+#include <Engine/Object/ObjectBase.h>
 #include <Engine/Base/CTString.h>
 #include <Engine/Interface/UIBuff.h>
 #include <Engine/Entities/StatusEffect.h>
@@ -34,21 +33,15 @@ public:
 	ENGINE_API void	Init();
 };
 
-// FIXME : ë§ì€ ì •ë¦¬ í•„ìš”...ã…¡.ã…¡
-class ENGINE_API CPetTarget 
+// FIXME : ¸¹Àº Á¤¸® ÇÊ¿ä...¤Ñ.¤Ñ
+class ENGINE_API CPetTarget : public ObjectBase
 {
 public:
-	INDEX			pet_Index;
-	INDEX			pet_iType;
 	INDEX			pet_iAge;
-	INDEX			pet_iClientIndex;
-	CEntity			*pet_pEntity;	
-	CTString		pet_Name;
 	CTString		pet_OwnerName;
-	SBYTE			pet_yLayer;	
 	CStatusEffect	pet_statusEffect;
 	CEffectGroup	*pet_pNormalEffect;
-	UBYTE			pet_sbAttributePos;
+	UWORD			pet_sbAttributePos;
 	INDEX			pet_OwnerIndex;	
 	CTString		pet_strNameCard;
 	
@@ -61,11 +54,9 @@ public:
 	CPetTarget(const CPetTarget &other);
 	CPetTarget &operator=(const CPetTarget &other);
 	
-	void	Init(void);
 	void	SetData( INDEX index, CTString& strName, CTString& strOwnerName, INDEX iOwnerIndex, INDEX iPetType, INDEX iPetAge, CEntity *pEntity, SBYTE sbyLayer, CTString strNameCard );	
 	void	SetClientPetId( INDEX index );
-	void	SetyLayer( SBYTE sbyLayer ) { pet_yLayer = sbyLayer; }	
-	void	ChangeStatus(CTagManager* pTM, SLONG status)
+	void	ChangeStatus(CTagManager* pTM, SQUAD status)
 	{
 		if(pet_statusEffect.IsStatusChanged(status))
 			pet_statusEffect.ChangeStatus(pTM, status, CStatusEffect::R_ENEMY);
@@ -77,70 +68,66 @@ public:
 };
 enum STATETYPE
 {
-	STATE_ATTACK		= 0,	// ê³µê²©ë ¥
-	STATE_MAGIC_ATTACK	= 1,	// ë§ˆë²• ê³µê²©ë ¥
-	STATE_DEFENCE		= 2,	// ë°©ì–´ë ¥	
-	STATE_MAGIC_DEFENCE	= 3,	// ë§ˆë²• ë°©ì–´ë ¥
-	STATE_HITPOINT		= 4,	// ëª…ì¤‘ë„
-	STATE_AVOID			= 5,	// íšŒí”¼ë„
-// 	STATE_STRONG		= 6,	// ê°•ì¸í•¨	
-// 	STATE_MAGIC_AVOID	= 7,	// ë§ˆë²• íšŒí”¼ë„
-// 	STATE_ATTACK_SPEED	= 8,	// ê³µê²© ì†ë„
-// 	STATE_RUN_SPEED		= 9,	// ì´ë™ ì†ë„
-// 	STATE_CRITICAL		= 10,	// í¬ë¦¬í‹°ì»¬ í™•ë¥ 
-// 	STATE_DEADLY		= 11,	// ë°ë“¤ë¦¬ í™•ë¥ 
+	STATE_ATTACK		= 0,	// °ø°İ·Â
+	STATE_MAGIC_ATTACK	= 1,	// ¸¶¹ı °ø°İ·Â
+	STATE_DEFENCE		= 2,	// ¹æ¾î·Â	
+	STATE_MAGIC_DEFENCE	= 3,	// ¸¶¹ı ¹æ¾î·Â
+	STATE_HITPOINT		= 4,	// ¸íÁßµµ
+	STATE_AVOID			= 5,	// È¸ÇÇµµ
+// 	STATE_STRONG		= 6,	// °­ÀÎÇÔ	
+// 	STATE_MAGIC_AVOID	= 7,	// ¸¶¹ı È¸ÇÇµµ
+// 	STATE_ATTACK_SPEED	= 8,	// °ø°İ ¼Óµµ
+// 	STATE_RUN_SPEED		= 9,	// ÀÌµ¿ ¼Óµµ
+// 	STATE_CRITICAL		= 10,	// Å©¸®Æ¼ÄÃ È®·ü
+// 	STATE_DEADLY		= 11,	// µ¥µé¸® È®·ü
 	STATE_END,
 };
 
-class ENGINE_API CWildPetInfo
+class ENGINE_API CWildPetTarget : public ObjectBase
 {
 public:
 	BOOL		bIsActive;
-	INDEX		m_nIndex;		// í« íˆ´ ì¸ë±ìŠ¤
-	INDEX		m_nNetIndex;
+	BOOL		bDeath;
+	INDEX		m_nIndex;		// Æê Åø ÀÎµ¦½º
 	INDEX		m_nOwnerIndex;
-	INDEX		m_nLevel;		// ê³µê²© í« ë ˆë²¨
-	INDEX		m_nLevelupPoint;	// ê³µê²© í« ì„±ì¥í¬ì¸íŠ¸
-	INDEX		m_nType;			// ê³µê²© í« íƒ€ì…
-	CTString	m_strName;		// ê³µê²© í« ì´ë¦„
+	INDEX		m_nLevel;		// °ø°İ Æê ·¹º§
+	INDEX		m_nLevelupPoint;	// °ø°İ Æê ¼ºÀåÆ÷ÀÎÆ®
 	// Bagic
-	INDEX		m_nStr;			// ê³µê²© í« í˜
-	INDEX		m_nStrPlus;		//	ê³µê²© í« í˜ ì¶”ê°€
-	INDEX		m_nCon;			// ê³µê²© í« ì²´ë ¥
-	INDEX		m_nConPlus;		// ê³µê²© í« ì²´ë ¥ ì¶”ê°€	
-	INDEX		m_nDex;			// ê³µê²© í« ë¯¼ì²©
-	INDEX		m_nDexPlus;		// ê³µê²© í« ë¯¼ì²© ì¶”ê°€
-	INDEX		m_nInt;			// ê³µë ¥ í« ì§€í˜œ
-	INDEX		m_nIntPlus;		// ê³µê²© í« ì§€í˜œ ì¶”ê°€
-	__int64		m_exp;			// ê³µê²© í« ê²½í—˜ì¹˜
-	__int64		m_next_exp;		// ê³µê²© í« ë§¥ìŠ¤(ë ˆë²¨ì—…) ê²½í—˜ì¹˜
-	INDEX		m_nHP;			// ê³µê²© í« HP
-	INDEX		m_nMP;			// ê³µê²© í« MP
-	INDEX		m_nMaxHP;		// ê³µê²© í« Max HP
-	INDEX		m_nMaxMP;		// ê³µê²© í« Max MP
-	INDEX		m_nFaith;		// ê³µê²© í« ì¶©ì„±ì‹¬
-	INDEX		m_nStm;			// ê³µê²© í« ë°°ê³ í””
-	INDEX		m_nMaxFaith;	// ê³µê²© í« ìµœëŒ€ ì¶©ì„±ì‹¬
-	INDEX		m_nMaxStm;		// ê³µê²© í« ìµœëŒ€ ë°°ê³ í””
-	INDEX		m_nSpeed;		// ê³µê²© í« ì´ë™ ì†ë„
-	INDEX		m_nAISlot;		// ê³µê²© í« AI ìŠ¬ë¡¯ê°œìˆ˜
-	INDEX		pet_iClientIndex; //ê³µê²© í« Client World Index
-	CEntity			*pet_pEntity;
-	SBYTE		m_sbYlayer;
+	INDEX		m_nStr;			// °ø°İ Æê Èû
+	INDEX		m_nStrPlus;		//	°ø°İ Æê Èû Ãß°¡
+	INDEX		m_nCon;			// °ø°İ Æê Ã¼·Â
+	INDEX		m_nConPlus;		// °ø°İ Æê Ã¼·Â Ãß°¡	
+	INDEX		m_nDex;			// °ø°İ Æê ¹ÎÃ¸
+	INDEX		m_nDexPlus;		// °ø°İ Æê ¹ÎÃ¸ Ãß°¡
+	INDEX		m_nInt;			// °ø·Â Æê ÁöÇı
+	INDEX		m_nIntPlus;		// °ø°İ Æê ÁöÇı Ãß°¡
+	__int64		m_exp;			// °ø°İ Æê °æÇèÄ¡
+	__int64		m_next_exp;		// °ø°İ Æê ¸Æ½º(·¹º§¾÷) °æÇèÄ¡
+	INDEX		m_nHP;			// °ø°İ Æê HP
+	INDEX		m_nMP;			// °ø°İ Æê MP
+	INDEX		m_nMaxHP;		// °ø°İ Æê Max HP
+	INDEX		m_nMaxMP;		// °ø°İ Æê Max MP
+	INDEX		m_nFaith;		// °ø°İ Æê Ãæ¼º½É
+	INDEX		m_nStm;			// °ø°İ Æê ¹è°íÇÄ
+	INDEX		m_nMaxFaith;	// °ø°İ Æê ÃÖ´ë Ãæ¼º½É
+	INDEX		m_nMaxStm;		// °ø°İ Æê ÃÖ´ë ¹è°íÇÄ
+	INDEX		m_nSpeed;		// °ø°İ Æê ÀÌµ¿ ¼Óµµ
+	INDEX		m_nAISlot;		// °ø°İ Æê AI ½½·Ô°³¼ö
 	UBYTE		m_sbAttributePos;
+	SBYTE		m_sbTransStat;
+	BOOL		m_bMount;
 	// state
-	INDEX	m_nWildPetState[STATE_END];	// ê³µê²© í« ìƒíƒœ
-	INDEX	m_nWildPetStatePlus[STATE_END]; // ìƒíƒœ í”ŒëŸ¬ìŠ¤
+	INDEX	m_nWildPetState[STATE_END];	// °ø°İ Æê »óÅÂ
+	INDEX	m_nWildPetStatePlus[STATE_END]; // »óÅÂ ÇÃ·¯½º
 	INDEX	m_nPetWearIndex[WILDPET_WEAR_TOTAL];
 	INDEX	m_nPetWearPlus[WILDPET_WEAR_TOTAL];
 public:
-	CWildPetInfo();
-	~CWildPetInfo();
+	CWildPetTarget();
+	~CWildPetTarget();
 
-	CWildPetInfo(const CWildPetInfo &other);
-	CWildPetInfo &operator=(const CWildPetInfo &other);	
+	CWildPetTarget(const CWildPetTarget &other);
+	CWildPetTarget &operator=(const CWildPetTarget &other);	
 
-	void Init();
 	void SetWildPetToEntity(CEntity *pEntity, INDEX nindex, INDEX *nWearIndex, INDEX *nWearPlus);
 
 };

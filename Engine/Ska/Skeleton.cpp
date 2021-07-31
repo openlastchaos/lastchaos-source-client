@@ -10,6 +10,12 @@
 #include <Engine/Graphics/DrawPort.h>
 #include <Engine/Templates/DynamicContainer.cpp>
 
+#ifdef KALYDO
+#include <Kalydo/KRFReadLib/Include/KRFReadLib.h>
+CTString CSkeleton::strDefaultSkeletonPath = "data\\Defaults\\test.bs";
+#endif
+
+
 #define SKELETON_VERSION  6
 #define SKELETON_ID       "SKEL"
 
@@ -32,7 +38,11 @@ CSkeleton::~CSkeleton()
 INDEX CSkeleton::FindBoneInLOD(INDEX iBoneID,INDEX iSkeletonLod) const
 {
 #if 1
-  ASSERT(this!=NULL);
+//  ASSERT(this!=NULL);
+  // safe code [11/21/2011 rumist]
+  if( this == NULL )
+	return -1;
+
   if(iSkeletonLod<0 || iSkeletonLod>=skl_aSkeletonLODs.Count()) {
     return -1;
   }
@@ -319,6 +329,97 @@ void CSkeleton::Write_t(CTStream *ostrFile)
     }
   }
 }
+
+#ifdef KALYDO
+static void KCPSkeletonDownloaded(const char* fileName, TKResult result, void* id)
+{
+	switch (result)
+	{
+	case KR_OK:
+		{
+	// 		((CSerial*)id)->Clear();
+	// 		((CSerial*)id)->Load_t( CTFileName( fileName ) );
+			SLS* pSLS = new SLS();
+			pSLS->pTarget = reinterpret_cast<CSerial*>(id);
+			pSLS->pTargetFilePath = fileName;
+			g_deqLoadData.push_back( pSLS );
+		}
+		break;
+	case KR_DOWNLOAD_FAILED:
+	case KR_FILE_CORRUPT:
+		krfRequestKCPFile(fileName, &KCPSkeletonDownloaded, id);
+	//default:
+		// unknown error!
+	}
+}
+
+void CSkeleton::Load_t(const CTFileName &fnFileName)
+{
+  ASSERT(!IsUsed());
+  // mark that you have changed
+  MarkChanged();
+  // 근데 이게 확실한가?? 호출 매커니즘의 정확한 해명이 필요할 거 같다.
+  TKResult tkResult = KR_OK;
+  tkResult = krfRequestKCPFile( fnFileName, NULL, NULL );
+  // if file exist in local disk.
+  if( KR_OK == tkResult )
+  {
+	// open a stream
+	CTFileStream istrFile;
+	istrFile.Open_t(fnFileName);
+	// read object from stream
+	Read_t(&istrFile);
+	// if still here (no exceptions raised)
+	// remember filename
+	ser_FileName = fnFileName;
+  }
+  else
+  {
+	CPrintF("Request file to kcp : %s\n", fnFileName );
+	//?????????????
+	CTFileStream istrFile;
+	istrFile.Open_t( strDefaultSkeletonPath );
+	Read_t(&istrFile);
+	ser_FileName = fnFileName;
+	if( tkResult == KR_FILE_NOT_AVAILABLE )
+	{
+		MarkUsed();
+	}
+	tkResult = krfRequestKCPFile(fnFileName, &KCPSkeletonDownloaded, this);
+	if( KR_FILE_NOT_FOUND == tkResult )
+	{
+		CPrintF("[Load_t] Skeleton File Not Found in kalydo...\n" );
+	}
+	else if( KR_IO_PENDING == tkResult )
+	{
+		CPrintF("[Load_t] Skeleton File already request...\n" );
+	}
+	else
+	{
+		;
+	}
+  }  
+}
+
+void CSkeleton::Load_Delay_t(const CTFileName &fnFileName)
+{
+  // mark that you have changed
+  MarkChanged();
+  // 근데 이게 확실한가?? 호출 매커니즘의 정확한 해명이 필요할 거 같다.
+
+  //if( kfileExists( fnFileName ) )
+	// open a stream
+	CTFileStream istrFile;
+	istrFile.Open_t(fnFileName);
+	// read object from stream
+	Read_t(&istrFile);
+	// if still here (no exceptions raised)
+	// remember filename
+	ser_FileName = fnFileName;
+	MarkUnused();
+}
+
+#endif
 
 // read from stream
 void CSkeleton::Read_t(CTStream *istrFile)

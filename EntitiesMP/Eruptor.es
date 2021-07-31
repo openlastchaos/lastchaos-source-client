@@ -179,6 +179,36 @@ functions:
     }
   }
 procedures:
+  Main(EVoid) {
+    // init as model
+    CModelHolder2::InitModelHolder();
+
+    // limit values
+    if (m_fTime <= 0.0f) { m_fTime = 0.05f; }
+    if (m_fMaxSpeed < m_fMinSpeed) { m_fMaxSpeed = m_fMinSpeed; }
+    if (m_fAngle < 0.0f) { m_fAngle = 0.0f; }
+
+    // stretch factors must not have extreme values
+    if (Abs(m_fStretchX)  < 0.01f) { m_fStretchX   = 0.01f;  }
+    if (Abs(m_fStretchY)  < 0.01f) { m_fStretchY   = 0.01f;  }
+    if (Abs(m_fStretchZ)  < 0.01f) { m_fStretchZ   = 0.01f;  }
+    if (m_fStretchAll< 0.01f) { m_fStretchAll = 0.01f;  }
+
+    if (Abs(m_fStretchX)  >100.0f) { m_fStretchX   = 100.0f*Sgn(m_fStretchX); }
+    if (Abs(m_fStretchY)  >100.0f) { m_fStretchY   = 100.0f*Sgn(m_fStretchY); }
+    if (Abs(m_fStretchZ)  >100.0f) { m_fStretchZ   = 100.0f*Sgn(m_fStretchZ); }
+    if (m_fStretchAll>100.0f) { m_fStretchAll = 100.0f; }
+
+    if (m_fStretchWidth <0.0f) { m_fStretchWidth  = 0.0f; };
+    if (m_fStretchHeight<0.0f) { m_fStretchHeight = 0.0f; };
+    if (m_fStretchDepth <0.0f) { m_fStretchDepth  = 0.0f; };
+    if (m_fStretchWidth >1.0f) { m_fStretchWidth  = 1.0f; };
+    if (m_fStretchHeight>1.0f) { m_fStretchHeight = 1.0f; };
+    if (m_fStretchDepth >1.0f) { m_fStretchDepth  = 1.0f; };
+
+    jump MainLoop();
+  }
+
 /************************************************************
  *                    A C T I O N S                         *
  ************************************************************/
@@ -238,34 +268,4 @@ procedures:
 
     return;
   };
-
-  Main(EVoid) {
-    // init as model
-    CModelHolder2::InitModelHolder();
-
-    // limit values
-    if (m_fTime <= 0.0f) { m_fTime = 0.05f; }
-    if (m_fMaxSpeed < m_fMinSpeed) { m_fMaxSpeed = m_fMinSpeed; }
-    if (m_fAngle < 0.0f) { m_fAngle = 0.0f; }
-
-    // stretch factors must not have extreme values
-    if (Abs(m_fStretchX)  < 0.01f) { m_fStretchX   = 0.01f;  }
-    if (Abs(m_fStretchY)  < 0.01f) { m_fStretchY   = 0.01f;  }
-    if (Abs(m_fStretchZ)  < 0.01f) { m_fStretchZ   = 0.01f;  }
-    if (m_fStretchAll< 0.01f) { m_fStretchAll = 0.01f;  }
-
-    if (Abs(m_fStretchX)  >100.0f) { m_fStretchX   = 100.0f*Sgn(m_fStretchX); }
-    if (Abs(m_fStretchY)  >100.0f) { m_fStretchY   = 100.0f*Sgn(m_fStretchY); }
-    if (Abs(m_fStretchZ)  >100.0f) { m_fStretchZ   = 100.0f*Sgn(m_fStretchZ); }
-    if (m_fStretchAll>100.0f) { m_fStretchAll = 100.0f; }
-
-    if (m_fStretchWidth <0.0f) { m_fStretchWidth  = 0.0f; };
-    if (m_fStretchHeight<0.0f) { m_fStretchHeight = 0.0f; };
-    if (m_fStretchDepth <0.0f) { m_fStretchDepth  = 0.0f; };
-    if (m_fStretchWidth >1.0f) { m_fStretchWidth  = 1.0f; };
-    if (m_fStretchHeight>1.0f) { m_fStretchHeight = 1.0f; };
-    if (m_fStretchDepth >1.0f) { m_fStretchDepth  = 1.0f; };
-
-    jump MainLoop();
-  }
 };

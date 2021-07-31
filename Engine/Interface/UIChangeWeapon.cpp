@@ -1,16 +1,21 @@
 #include "stdh.h"
-#include <Engine/Interface/UIChangeWeapon.h>
+
+// Çì´õ Á¤¸®. [12/1/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <vector>
+#include <Engine/Interface/UIChangeWeapon.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/ItemData.h>
 #include <algorithm>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Interface/UIHelp.h>
+#include <Engine/Interface/UIMixNew.h>
+#include <Engine/Contents/Base/UIQuestNew.h>
+#include <Engine/Contents/Base/UIQuestBookNew.h>
 
 extern INDEX g_iCountry;
 
-// [KH_07044] 3ì°¨ ë„ì›€ë§ ê´€ë ¨ ì¶”ê°€
-#ifdef HELP_SYSTEM_1
+// [KH_07044] 3Â÷ µµ¿ò¸» °ü·Ã Ãß°¡
 extern INDEX g_iShowHelp1Icon;
-#endif
 
 enum eSelection
 {
@@ -18,7 +23,7 @@ enum eSelection
 	CHANGEWEAPON_TALK,
 	CHANGEWEAPON_EVENT,
 	CHANGESHIELD_OK,
-
+	CHANGEWEAPON_MASTERSTONE,
 };
 
 static int	_iMaxMsgStringChar = 0;
@@ -32,12 +37,12 @@ static int	_iMaxMsgStringChar = 0;
 
 #define EXCHANGE_LIMIT_LEVEL			(29)
 
-//#define CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
-//#define CHANGE_WEAPON_SHIELD_EVENT			// ë¬´ê¸° ë°©ì–´êµ¬ êµì²´ ì´ë²¤íŠ¸
+//#define CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
+//#define CHANGE_WEAPON_SHIELD_EVENT			// ¹«±â ¹æ¾î±¸ ±³Ã¼ ÀÌº¥Æ®
 
-// NOTE : ì„œë²„ì¸¡ì— í•˜ë“œì½”ë”© ë˜ì–´ ìˆëŠ” ë¬´ê¸° êµì²´ ê°€ëŠ¥ ì•„ì´í…œ ì¸ë±ìŠ¤.
-// ë ˆë²¨, í•œì†ê²€, ì„ê¶, ìŠ¤íƒœí”„, ëŒ€ê²€, ë„ë¼, ìˆìŠ¤í…Œí”„, í™œ, ë‹¨ê²€, -1, -1, -1, ì´ë„ë¥˜, ì™„ë“œ, ì‚¬ì´ë“œ, í´ì•” : í• ì¼ : ì†Œì„œëŸ¬
-const static matchTable[12][16] = {
+// NOTE : ¼­¹öÃø¿¡ ÇÏµåÄÚµù µÇ¾î ÀÖ´Â ¹«±â ±³Ã¼ °¡´É ¾ÆÀÌÅÛ ÀÎµ¦½º.
+// ·¹º§, ÇÑ¼Õ°Ë, ¼®±Ã, ½ºÅÂÇÁ, ´ë°Ë, µµ³¢, ¼ô½ºÅ×ÇÁ, È°, ´Ü°Ë, -1, -1, -1, ÀÌµµ·ù, ¿Ïµå, »çÀÌµå, Æú¾Ï : ÇÒÀÏ : ¼Ò¼­·¯
+const static int matchTable[12][16] = {
 	{1,48,530,600,12,558,356,50,528,-1,-1,-1,459,599,-1,-1},
 	{5,53,666,628,51,601,357,56,529,-1,-1,-1,610,619,-1,-1},
 	{9,55,637,629,52,602,358,57,532,-1,-1,-1,611,620,-1,-1},
@@ -54,13 +59,13 @@ const static matchTable[12][16] = {
 
 // ----------------------------------------------------------------------------
 // Name : IsChangeableWeapon()
-// Desc : ë°”ê¿€ìˆ˜ ìˆëŠ” ì•„ì´í…œì¸ì§€ ì²´í¬í•©ë‹ˆë‹¤.
+// Desc : ¹Ù²Ü¼ö ÀÖ´Â ¾ÆÀÌÅÛÀÎÁö Ã¼Å©ÇÕ´Ï´Ù.
 // ----------------------------------------------------------------------------
 BOOL CUIChangeWeapon::IsChangeableWeapon( int iWeaponIndex )
 {
 	if( iWeaponIndex == -1 )
 		return FALSE;
-	// ì•„ì´í…œ ëª©ë¡ì„ ì„œë²„ì¸¡ì—ì„œ ê¸ì–´ë‹¤ê°€ ì“¸ìˆ˜ ìˆê²Œ...
+	// ¾ÆÀÌÅÛ ¸ñ·ÏÀ» ¼­¹öÃø¿¡¼­ ±Ü¾î´Ù°¡ ¾µ¼ö ÀÖ°Ô...
 	for( int i = 1; i < 12; ++i )
 	{
 		for( int j = 0; j < 16; ++j )
@@ -79,6 +84,7 @@ BOOL CUIChangeWeapon::IsChangeableWeapon( int iWeaponIndex )
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIChangeWeapon::CUIChangeWeapon()
+	: m_pSelItem(NULL)
 {
 	m_eChangeWeaponState	= CHANGEWEAPON_REQ;
 	m_nStringCount			= 0;
@@ -103,7 +109,6 @@ CUIChangeWeapon::CUIChangeWeapon()
 // ----------------------------------------------------------------------------
 CUIChangeWeapon::~CUIChangeWeapon()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -112,9 +117,7 @@ CUIChangeWeapon::~CUIChangeWeapon()
 // ----------------------------------------------------------------------------
 void CUIChangeWeapon::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	_iMaxMsgStringChar = 190 / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
@@ -150,14 +153,14 @@ void CUIChangeWeapon::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// OK button
-	m_btnOK.Create( this, _S( 191, "í™•ì¸" ), 78, 371, 63, 21 );
+	m_btnOK.Create( this, _S( 191, "È®ÀÎ" ), 78, 371, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), 146, 371, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), 146, 371, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -212,18 +215,18 @@ void CUIChangeWeapon::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	// Slot item button
 	m_btnSlotItem.Create( this, m_rcItemSlot.Left + 1, m_rcItemSlot.Top + 1, BTN_SIZE, BTN_SIZE, UI_CHANGEWEAPON, UBET_ITEM );
 /*
-	AddWeaponInfo( CItemData::ITEM_WEAPON_KNIFE,	_S( 1038, "ê¸°ì‚¬ë„" ),	TITAN );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_CROSSBOW, _S( 1039, "ì„ê¶" ),		ROGUE );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_STAFF,	_S( 1040, "ìŠ¤íƒœí”„" ),	MAGE );			
-	AddWeaponInfo( CItemData::ITEM_WEAPON_BIGSWORD, _S( 1041, "ëŒ€ê²€" ),		TITAN );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_AXE,		_S( 1042, "ë„ë¼" ),		TITAN );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_SSTAFF,	_S( 1043, "ìˆìŠ¤íƒœí”„" ), MAGE );			
-	AddWeaponInfo( CItemData::ITEM_WEAPON_BOW,		_S( 1044, "í™œ" ),		HEALER );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_DAGGER,	_S( 1045, "ë‹¨ê²€" ),		ROGUE );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_TWOSWORD, _S( 1046, "ì´ë„ë¥˜" ),	KNIGHT );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_WAND,		_S( 1047, "íëŸ¬ì™„ë“œ" ),		HEALER );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_SCYTHE,	_S( 2306,"ì‚¬ì´ë“œ" ),		SORCERER );		
-	AddWeaponInfo( CItemData::ITEM_WEAPON_POLEARM,		_S(2307, "í´ì•”" ),		SORCERER );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_KNIFE,	_S( 1038, "±â»çµµ" ),	TITAN );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_CROSSBOW, _S( 1039, "¼®±Ã" ),		ROGUE );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_STAFF,	_S( 1040, "½ºÅÂÇÁ" ),	MAGE );			
+	AddWeaponInfo( CItemData::ITEM_WEAPON_BIGSWORD, _S( 1041, "´ë°Ë" ),		TITAN );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_AXE,		_S( 1042, "µµ³¢" ),		TITAN );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_SSTAFF,	_S( 1043, "¼ô½ºÅÂÇÁ" ), MAGE );			
+	AddWeaponInfo( CItemData::ITEM_WEAPON_BOW,		_S( 1044, "È°" ),		HEALER );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_DAGGER,	_S( 1045, "´Ü°Ë" ),		ROGUE );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_TWOSWORD, _S( 1046, "ÀÌµµ·ù" ),	KNIGHT );	
+	AddWeaponInfo( CItemData::ITEM_WEAPON_WAND,		_S( 1047, "Èú·¯¿Ïµå" ),		HEALER );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_SCYTHE,	_S( 2306,"»çÀÌµå" ),		SORCERER );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_POLEARM,		_S(2307, "Æú¾Ï" ),		SORCERER );		
 
 	RefreshWeaponList();
 	*/
@@ -255,75 +258,100 @@ void CUIChangeWeapon::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX
 // ----------------------------------------------------------------------------
 void CUIChangeWeapon::OpenChangeWeapon(int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->GetInventory()->IsLocked() == TRUE ||
+		pUIManager->GetInventory()->IsLockedArrange() == TRUE)
+	{
+		pUIManager->GetInventory()->ShowLockErrorMessage();
+		return;
+	}
+
 	// If this is already exist
-	if( _pUIMgr->DoesMessageBoxLExist( MSGLCMD_CHANGEWEAPON_REQ ) || IsVisible() )
+	if( pUIManager->DoesMessageBoxLExist( MSGLCMD_CHANGEWEAPON_REQ ) || IsVisible() )
 		return;
 
-	// ì „ì§ ìºë¦­í„°ì¸ì§€ë¥¼ ì²´í¬í•¨!!!
-	// ì „ì§ ìºë¦­í„°ê°€ ì•„ë‹ˆë¼ë©´ return;
-	//_pUIMgr->GetChatting()->AddSysMessage( _S( 1048, "ì „ì§ ìºë¦­í„°ë§Œ ë¬´ê¸° êµì²´ë¥¼ í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
+	// ÀüÁ÷ Ä³¸¯ÅÍÀÎÁö¸¦ Ã¼Å©ÇÔ!!!
+	// ÀüÁ÷ Ä³¸¯ÅÍ°¡ ¾Æ´Ï¶ó¸é return;
+	//pUIManager->GetChatting()->AddSysMessage( _S( 1048, "ÀüÁ÷ Ä³¸¯ÅÍ¸¸ ¹«±â ±³Ã¼¸¦ ÇÒ ¼ö ÀÖ½À´Ï´Ù." ), SYSMSG_ERROR );		
 
-	_pUIMgr->CloseMessageBox( MSGCMD_CHANGEWEAPON_REP );
-	_pUIMgr->CloseMessageBox( MSGCMD_CHANGEWEAPON_NOTIFY );
+	pUIManager->CloseMessageBox( MSGCMD_CHANGEWEAPON_REP );
+	pUIManager->CloseMessageBox( MSGCMD_CHANGEWEAPON_NOTIFY );
 
 	// Set position of target npc
 	m_fNpcX = fX;
 	m_fNpcZ = fZ;
 
-	CMobData& MD = _pNetwork->GetMobData(iMobIndex);
-
-	// Create refine message box
-	_pUIMgr->CreateMessageBoxL( _S(2308, "ë¬´ê¸°ë° ë°©ì–´êµ¬ êµì²´" ), UI_CHANGEWEAPON, MSGLCMD_CHANGEWEAPON_REQ );		
-
-	CTString	strNpcName = _pNetwork->GetMobName(iMobIndex);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-
-#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S( 1050, "ì§€ê¸ˆ ì‚¬ìš©í•˜ê³  ìˆëŠ” ë¬´ê¸°ë‚˜ ë°©ì–´êµ¬ê°€ ë§ˆìŒì— ë“¤ì§€ ì•ŠëŠ”ê²ê°€?" ), -1, 0xA3A1A3FF );		
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S( 1051, "ê·¸ëŸ¼ ë‚´ê°€ ìë„¤ë¥¼ ë„ì™€ì¤„ ìˆ˜ ìˆê² êµ¬ë§Œ." ), -1, 0xA3A1A3FF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2309,"í•˜ì§€ë§Œ ì£¼ì˜í•´ì•¼í•  ì‚¬í•­ì´ ìˆë„¤"), -1, 0xA3A1A3FF );			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2310,"êµì²´ë˜ëŠ” ì¥ë¹„ëŠ” ì œë ¨ëœ ìˆ˜ì¹˜ë§Œ ë‚¨ê³  ë¸”ëŸ¬ë“œ ì˜µì…˜ê°’ì´ ì‚­ì œë˜ë‹ˆê¹Œ ì˜ ìƒê°í•´ ë³´ì‹œê³  êµì²´ê²Œë‚˜."), -1, 0xF3BA0CFF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2311,"ê·¸ë˜ë„ ì´ë ‡ê²Œ ì‰½ê²Œ ìƒˆë¡œìš´ ì¥ë¹„ë¥¼ êµ¬í•  ìˆ˜ ìˆëŠ” ê³³ì´ ì–´ë”” ìˆê² ë‚˜..."), -1, 0xA3A1A3FF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2312,"ì ë¹¨ë¦¬ êµí™˜í•˜ê²Œë‚˜...  ì‚¬ëŒë“¤ì´ ë” ëª°ë¦¬ê¸° ì „ì—..."), -1, 0xA3A1A3FF );
-#else
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2152,"ë‹¹ì‹ ë„ ë¬´ê¸° êµì²´ë¥¼ í•˜ëŸ¬ ì˜¤ì‹  ê²ƒ ë§ì£ ?"), -1, 0xA3A1A3FF );			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2153,"ì‚¬ìš©í•˜ë˜ ë¬´ê¸°ë¥¼ ë¬´ë£Œë¡œ ë‹¤ë¥¸ ì¢…ë¥˜ì˜ ë¬´ê¸°ë¡œ ë°”ê¿” ì¤€ë‹¤ëŠ” ì†Œë¬¸ì´ ì–´ì°Œë‚˜ ë¹ ë¥´ê²Œ í¼ì¡Œë˜ì§€ ì‰´ì„¸ì—†ì´ ì‚¬ëŒë“¤ì´ ëª°ë ¤ì™€ì„œ ì •ì‹ ì´ ì—†ë„¤ìš”."), -1, 0xA3A1A3FF );			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2154,"í•˜ì§€ë§Œ ì£¼ì˜í•´ì•¼í•  ì‚¬í•­ì´ ìˆì–´ìš”!"), -1, 0xA3A1A3FF );			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2155,"êµì²´ë˜ëŠ” ë¬´ê¸°ëŠ” ì œë ¨ëœ ìˆ˜ì¹˜ë§Œ ë‚¨ê³  ë¸”ëŸ¬ë“œ ì˜µì…˜ê°’ì´ ì‚­ì œë˜ë‹ˆê¹Œ ì˜ ìƒê°í•´ ë³´ì‹œê³  êµì²´í•˜ì„¸ìš”."), -1, 0xF3BA0CFF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2156,"ê·¸ë˜ë„ ì´ë ‡ê²Œ ì‰½ê²Œ ìƒˆë¡œìš´ ë¬´ê¸°ë¥¼ êµ¬í•  ìˆ˜ ìˆëŠ” ê³³ì´ ì–´ë”” ìˆê² ì–´ìš”..."), -1, 0xA3A1A3FF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2157,"ì ë¹¨ë¦¬ êµí™˜í•˜ì„¸ìš”.  ì‚¬ëŒë“¤ì´ ë” ëª°ë¦¬ê¸° ì „ì—ìš”..."), -1, 0xA3A1A3FF );
-	
-#endif
+	CMobData* MD = CMobData::getData(iMobIndex);
 
 	CTString strMessage;	
-	strMessage.PrintF( _S( 1049, "ë¬´ê¸° êµì²´" ) );			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage, CHANGEWEAPON_OK );	
+
+#ifdef	MASTERSTONE
+	if(iMobIndex == 1261)		// ÀÎÃ¦Æ® ¸¶½ºÅÍ ´Ò¸® ; ¸¶½ºÅÍ ½ºÅæ¿ë
+	{
+		pUIManager->CreateMessageBoxL( _S(5435, "¸¶½ºÅÍ ½ºÅæÀ¸·Î ¾÷±×·¹ÀÌµåÇÏ±â" ), UI_CHANGEWEAPON, MSGLCMD_CHANGEWEAPON_REQ );		
+
+		CTString	strNpcName = CMobData::getData(iMobIndex)->GetName();
+		pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+
+		pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(5443,"ÀÏ¹İÀÎÀÌ ¾ÆÀÌÅÛÀ» ¾÷±×·¹ÀÌµåÇÏ´Â µ¥´Â ÇÑ°è°¡ ÀÖ½À´Ï´Ù. Àú´Â ±× ÇÑ°è¸¦ ¶Ù¾î ³Ñ´Â ¾÷±×·¹ÀÌµåÇÏ´Â ¹æ¹ıÀ» ¾Ë°í ÀÖÀ¸¸ç ¶ÇÇÑ Àú¸¸ ¾÷±×·¹ÀÌµå ÇÑ°è ¼öÄ¡ ÀÌ»ó +26±îÁö ¾÷±×·¹ÀÌµå ÇÒ ¼ö ÀÖ½À´Ï´Ù."), -1, 0xA3A1A3FF );
+		pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(5444,"±× ¹æ¹ıÀº ¸¶½ºÅÍ ½ºÅæÀÔ´Ï´Ù. ¸¶½ºÅÍ ½ºÅæÀº Å©°Ô ¹«±â¸¶½ºÅÍ ½ºÅæ°ú ¹æ¾î ±¸ ¸¶½ºÅÍ ½ºÅæ 2°¡Áö°¡ ÀÖÀ¸¸ç ¹«±â ¸¶½ºÅÍ ½ºÅæÀº µî±Şº°·Î 6´Ü°è°¡ Á¸ÀçÇÕ´Ï´Ù."), -1, 0xA3A1A3FF );
+		pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(5445,"(0~16, 0~18, 0~20, 0~22, 0~24, 0~25) ¹æ¾î ±¸ ¸¶½ºÅÍ ½ºÅæÀº µî±Ş ¾øÀÌ »ç¿ë °¡´ÉÇÕ´Ï´Ù. Á¦°¡ÇÏ´Â ¾÷±×·¹ÀÌµå´Â ½ÇÆĞ ¾øÀÌ 100%¼º°øÀ» ÀÚ¶ûÇÕ´Ï´Ù."), -1, 0xA3A1A3FF );
+
+		strMessage= _S(5435, "¸¶½ºÅÍ ½ºÅæÀ¸·Î ¾÷±×·¹ÀÌµå ÇÏ±â" );			
+		pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage, CHANGEWEAPON_MASTERSTONE );	
+
+		strMessage.PrintF( _S( 1220, "Ãë¼ÒÇÑ´Ù." ) );
+		pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage );	
+
+		return;
+	}
+#endif
+
+	// Create refine message box
+	pUIManager->CreateMessageBoxL( _S(2308, "¹«±â¹× ¹æ¾î±¸ ±³Ã¼" ), UI_CHANGEWEAPON, MSGLCMD_CHANGEWEAPON_REQ );		
+
+	CTString	strNpcName = CMobData::getData(iMobIndex)->GetName();
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+
+#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S( 1050, "Áö±İ »ç¿ëÇÏ°í ÀÖ´Â ¹«±â³ª ¹æ¾î±¸°¡ ¸¶À½¿¡ µéÁö ¾Ê´Â°Õ°¡?" ), -1, 0xA3A1A3FF );		
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S( 1051, "±×·³ ³»°¡ ÀÚ³×¸¦ µµ¿ÍÁÙ ¼ö ÀÖ°Ú±¸¸¸." ), -1, 0xA3A1A3FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2309,"ÇÏÁö¸¸ ÁÖÀÇÇØ¾ßÇÒ »çÇ×ÀÌ ÀÖ³×"), -1, 0xA3A1A3FF );			
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2310,"±³Ã¼µÇ´Â Àåºñ´Â Á¦·ÃµÈ ¼öÄ¡¸¸ ³²°í ºí·¯µå ¿É¼Ç°ªÀÌ »èÁ¦µÇ´Ï±î Àß »ı°¢ÇØ º¸½Ã°í ±³Ã¼°Ô³ª."), -1, 0xF3BA0CFF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2311,"±×·¡µµ ÀÌ·¸°Ô ½±°Ô »õ·Î¿î Àåºñ¸¦ ±¸ÇÒ ¼ö ÀÖ´Â °÷ÀÌ ¾îµğ ÀÖ°Ú³ª..."), -1, 0xA3A1A3FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2312,"ÀÚ »¡¸® ±³È¯ÇÏ°Ô³ª...  »ç¶÷µéÀÌ ´õ ¸ô¸®±â Àü¿¡..."), -1, 0xA3A1A3FF );
+#else
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2152,"´ç½Åµµ ¹«±â ±³Ã¼¸¦ ÇÏ·¯ ¿À½Å °Í ¸ÂÁÒ?"), -1, 0xA3A1A3FF );			
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2153,"»ç¿ëÇÏ´ø ¹«±â¸¦ ¹«·á·Î ´Ù¸¥ Á¾·ùÀÇ ¹«±â·Î ¹Ù²ã ÁØ´Ù´Â ¼Ò¹®ÀÌ ¾îÂî³ª ºü¸£°Ô ÆÛÁ³´øÁö ½¯¼¼¾øÀÌ »ç¶÷µéÀÌ ¸ô·Á¿Í¼­ Á¤½ÅÀÌ ¾ø³×¿ä."), -1, 0xA3A1A3FF );			
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2154,"ÇÏÁö¸¸ ÁÖÀÇÇØ¾ßÇÒ »çÇ×ÀÌ ÀÖ¾î¿ä!"), -1, 0xA3A1A3FF );			
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2155,"±³Ã¼µÇ´Â ¹«±â´Â Á¦·ÃµÈ ¼öÄ¡¸¸ ³²°í ºí·¯µå ¿É¼Ç°ªÀÌ »èÁ¦µÇ´Ï±î Àß »ı°¢ÇØ º¸½Ã°í ±³Ã¼ÇÏ¼¼¿ä."), -1, 0xF3BA0CFF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2156,"±×·¡µµ ÀÌ·¸°Ô ½±°Ô »õ·Î¿î ¹«±â¸¦ ±¸ÇÒ ¼ö ÀÖ´Â °÷ÀÌ ¾îµğ ÀÖ°Ú¾î¿ä..."), -1, 0xA3A1A3FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, TRUE, _S(2157,"ÀÚ »¡¸® ±³È¯ÇÏ¼¼¿ä.  »ç¶÷µéÀÌ ´õ ¸ô¸®±â Àü¿¡¿ä..."), -1, 0xA3A1A3FF );
+#endif
+
+	strMessage.PrintF( _S( 1049, "¹«±â ±³Ã¼" ) );			
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage, CHANGEWEAPON_OK );	
 	
 	// wooss add shield item exchange
-	strMessage= _S(2313, "ë°©ì–´êµ¬ êµì²´" );			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage, CHANGESHIELD_OK );	
+	strMessage= _S(2313, "¹æ¾î±¸ ±³Ã¼" );			
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage, CHANGESHIELD_OK );	
 
 	if( bHasQuest )
 	{
-#ifdef	NEW_QUESTBOOK
-		// 2009. 05. 27 ê¹€ì •ë˜
-		// ì´ì•¼ê¸°í•œë‹¤ ë³€ê²½ ì²˜ë¦¬
+		// 2009. 05. 27 ±èÁ¤·¡
+		// ÀÌ¾ß±âÇÑ´Ù º¯°æ Ã³¸®
 		CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_CHANGEWEAPON_REQ);				
-#else
-		strMessage.PrintF( _S( 1053, "ì´ì•¼ê¸°í•œë‹¤." ) );	
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage, CHANGEWEAPON_TALK );
-#endif
-
 	}
 	
-	if( MD.IsEvent() )
+	if( MD->IsEvent() )
 	{
-		strMessage.PrintF( _S( 100, "ì´ë²¤íŠ¸." ) );			
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage, CHANGEWEAPON_EVENT );
+		strMessage.PrintF( _S( 100, "ÀÌº¥Æ®." ) );			
+		pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage, CHANGEWEAPON_EVENT );
 	}
 
-	strMessage.PrintF( _S( 1220, "ì·¨ì†Œí•œë‹¤." ) );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage );	
+	strMessage.PrintF( _S( 1220, "Ãë¼ÒÇÑ´Ù." ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_CHANGEWEAPON_REQ, FALSE, strMessage );	
 
 }
 
@@ -349,10 +377,12 @@ void CUIChangeWeapon::CloseChangeWeapon()
 	m_strWeight.Clear();
 	m_slLevel				= -1;
 
-	// Close refine
-	_pUIMgr->RearrangeOrder( UI_CHANGEWEAPON, FALSE );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	_pUIMgr->GetInventory()->Lock( FALSE, FALSE, LOCK_CHANGEWEAPON );
+	// Close refine
+	pUIManager->RearrangeOrder( UI_CHANGEWEAPON, FALSE );
+
+	pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_CHANGEWEAPON );
 
 	m_strChangeWeaponMoney.Clear();
 
@@ -370,13 +400,18 @@ void CUIChangeWeapon::Render()
 	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcX;
 	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcZ;
 	// cash item check wooss 051011
-	if(!m_bCashItemChk)
+	if( m_bCashItemChk == FALSE )
+	{
 		if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
+		{
 			CloseChangeWeapon();
+		}
+	}
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// Set refine texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY, nX2, nY2;
@@ -385,67 +420,67 @@ void CUIChangeWeapon::Render()
 	// Top
 	nX = m_nPosX + m_nWidth;
 	nY = m_nPosY + 26;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
 		m_rtTop.U0, m_rtTop.V0,
 		m_rtTop.U1, m_rtTop.V1,
 		0xFFFFFFFF );
 	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 103,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 103,
 		m_rtMiddle1.U0, m_rtMiddle1.V0,
 		m_rtMiddle1.U1, m_rtMiddle1.V1,
 		0xFFFFFFFF );
 
 	nY += 103;
 	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 11,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 11,
 		m_rtMiddle2.U0, m_rtMiddle2.V0,
 		m_rtMiddle2.U1, m_rtMiddle2.V1,
 		0xFFFFFFFF );
 
 	nY += 11;
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 18,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 18,
 		m_rtMiddle3.U0, m_rtMiddle3.V0,
 		m_rtMiddle3.U1, m_rtMiddle3.V1,
 		0xFFFFFFFF );
 
 	nY += 18;
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 101,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 101,
 		m_rtMiddle1.U0, m_rtMiddle1.V0,
 		m_rtMiddle1.U1, m_rtMiddle1.V1,
 		0xFFFFFFFF );
 
 	nY += 101;
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 4,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 4,
 		m_rtMiddle2.U0, m_rtMiddle2.V0,
 		m_rtMiddle2.U1, m_rtMiddle2.V1,
 		0xFFFFFFFF );
 	
 	nY += 4;
 	
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 101,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 101,
 		m_rtMiddle1.U0, m_rtMiddle1.V0,
 		m_rtMiddle1.U1, m_rtMiddle1.V1,
 		0xFFFFFFFF );
 
 	nY += 101;
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
 		m_rtMiddle2.U0, m_rtMiddle2.V0,
 		m_rtMiddle2.U1, m_rtMiddle2.V1,
 		0xFFFFFFFF );
 	
 	// Bottom
 	nY = m_nPosY + m_nHeight - 7;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
 		m_rtBottom.U0, m_rtBottom.V0,
 		m_rtBottom.U1, m_rtBottom.V1,
 		0xFFFFFFFF );
 
 	// Slot item region
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcItemSlot.Left, m_nPosY + m_rcItemSlot.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcItemSlot.Left, m_nPosY + m_rcItemSlot.Top,
 										m_nPosX + m_rcItemSlot.Right, m_nPosY + m_rcItemSlot.Bottom,
 										m_rtItemSlot.U0, m_rtItemSlot.V0, m_rtItemSlot.U1, m_rtItemSlot.V1,
 										0xFFFFFFFF );
@@ -456,16 +491,16 @@ void CUIChangeWeapon::Render()
 	nY2 = nY + 13;
 
 	if(!m_bCashItemChk){
-	// Point    ê¸ˆì•¡ ë°•ìŠ¤ wooss 051011
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 4, nY2,
+	// Point    ±İ¾× ¹Ú½º wooss 051011
+	pDrawPort->AddTexture( nX, nY, nX + 4, nY2,
 		m_rtInputBoxL.U0, m_rtInputBoxL.V0, m_rtInputBoxL.U1, m_rtInputBoxL.V1,
 		0xFFFFFFFF );
 	//Lower middle
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 4, nY, nX2 - 4, nY2,
+		pDrawPort->AddTexture( nX + 4, nY, nX2 - 4, nY2,
 			m_rtInputBoxM.U0, m_rtInputBoxM.V0, m_rtInputBoxM.U1, m_rtInputBoxM.V1,
 			0xFFFFFFFF );
 	// Lower right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 4, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 4, nY, nX2, nY2,
 		m_rtInputBoxR.U0, m_rtInputBoxR.V0, m_rtInputBoxR.U1, m_rtInputBoxR.V1,
 		0xFFFFFFFF );
 	}
@@ -483,148 +518,137 @@ void CUIChangeWeapon::Render()
 	m_lbWeaponList.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Item
 	if( !m_btnSlotItem.IsEmpty() )
 	{
 		m_btnSlotItem.Render();
-		_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+		pDrawPort->FlushBtnRenderingQueue( UBET_ITEM );
 	}
 
 	if( m_eChangeWeaponState == CHANGEWEAPON_STAT ){
 	
 		// Text in refine
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1049, "ë¬´ê¸° êµì²´"  ), m_nPosX + CHANGEWEAPON_TITLE_TEXT_OFFSETX,		
+		pDrawPort->PutTextEx( _S( 1049, "¹«±â ±³Ã¼"  ), m_nPosX + CHANGEWEAPON_TITLE_TEXT_OFFSETX,		
 											m_nPosY + CHANGEWEAPON_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1057, "êµì²´ë¬´ê¸°" ), m_nPosX + 40,		
+		pDrawPort->PutTextEx( _S( 1057, "±³Ã¼¹«±â" ), m_nPosX + 40,		
 											m_nPosY + 60, 0xFFFFFFFF );
 
 		// cash item check wooss 051011
 		if(!m_bCashItemChk) {
 			nY = m_nPosY + 104;
-			_pUIMgr->GetDrawPort()->PutTextEx( _S( 1058, "í•„ìš”ë‚˜ìŠ¤" ), m_nPosX + 40,		
+			pDrawPort->PutTextEx( _S( 1058, "ÇÊ¿ä³ª½º" ), m_nPosX + 40,		
 										nY, 0xFFFFFFFF );
 			// ChangeWeaponing money
 #ifdef CHANGE_WEAPON_SHIELD_EVENT	
-			_pUIMgr->GetDrawPort()->PutTextEx( _S(2315," êµì²´ ì´ë²¤íŠ¸"),	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );	
+			pDrawPort->PutTextEx( _S(2315," ±³Ã¼ ÀÌº¥Æ®"),	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );	
 #else
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strChangeWeaponMoney,	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );				
+			pDrawPort->PutTextEx( m_strChangeWeaponMoney,	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );				
 #endif 
 
 		}
 		
 		nY = m_nPosY + 143;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1059, "ë¬´ê¸° ë¦¬ìŠ¤íŠ¸" ), m_nPosX + 12,		
+		pDrawPort->PutTextEx( _S( 1059, "¹«±â ¸®½ºÆ®" ), m_nPosX + 12,		
 											nY, 0xE18600FF );
 
 		nY = m_nPosY + 269;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1065, "ë¬´ê¸° ì´ë¦„" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S( 1065, "¹«±â ÀÌ¸§" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponName, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponName, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
 		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1066, "ë¬´ê¸° ë ˆë²¨" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S( 1066, "¹«±â ·¹º§" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponLevel, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponLevel, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
 		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1067, "ì‚¬ìš© í´ë˜ìŠ¤" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S( 1067, "»ç¿ë Å¬·¡½º" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponClass, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponClass, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
 		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1068, "ê³µê²©ë ¥" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S( 1068, "°ø°İ·Â" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponAttack, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponAttack, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
 		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1069, "ë§ˆë²• ê³µê²©ë ¥" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S( 1069, "¸¶¹ı °ø°İ·Â" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponMagicAttack, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponMagicAttack, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
-		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1070, "ë¬´ê²Œ" ), m_nPosX + WEAPON_INFO_START_X,		
-											nY, 0xFFFFFFFF );
-
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeight, m_nPosX + WEAPON_DESC_START_X,
-											nY, 0xFFd223FF );
+		
 	}
 	else if( m_eChangeWeaponState == CHANGEWEAPON_SHIELD){
 		// Text in refine
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 2313,"ë°©ì–´êµ¬ êµì²´"  ), m_nPosX + CHANGEWEAPON_TITLE_TEXT_OFFSETX,		
+		pDrawPort->PutTextEx( _S( 2313,"¹æ¾î±¸ ±³Ã¼"  ), m_nPosX + CHANGEWEAPON_TITLE_TEXT_OFFSETX,		
 											m_nPosY + CHANGEWEAPON_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 2314,"êµì²´ ë°©ì–´êµ¬" ), m_nPosX + 30,		
+		pDrawPort->PutTextEx( _S( 2314,"±³Ã¼ ¹æ¾î±¸" ), m_nPosX + 30,		
 											m_nPosY + 60, 0xFFFFFFFF );
 
 		// cash item check wooss 051011
 		if(!m_bCashItemChk) {
 			nY = m_nPosY + 104;
-			_pUIMgr->GetDrawPort()->PutTextEx( _S( 1058, "í•„ìš”ë‚˜ìŠ¤" ), m_nPosX + 40,		
+			pDrawPort->PutTextEx( _S( 1058, "ÇÊ¿ä³ª½º" ), m_nPosX + 40,		
 										nY, 0xFFFFFFFF );
 #ifdef CHANGE_WEAPON_SHIELD_EVENT	
-			_pUIMgr->GetDrawPort()->PutTextEx( _S(2315," êµì²´ ì´ë²¤íŠ¸"), m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );	
+			pDrawPort->PutTextEx( _S(2315," ±³Ã¼ ÀÌº¥Æ®"), m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );	
 #else
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strChangeWeaponMoney,	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );				
+			pDrawPort->PutTextEx( m_strChangeWeaponMoney,	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );				
 #endif 
 		}
 		
 		nY = m_nPosY + 143;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(2316, "í´ë˜ìŠ¤ ë¦¬ìŠ¤íŠ¸" ), m_nPosX + 12,		
+		pDrawPort->PutTextEx( _S(2316, "Å¬·¡½º ¸®½ºÆ®" ), m_nPosX + 12,		
 											nY, 0xE18600FF );
 
 		nY = m_nPosY + 269;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(2317, "ë°©ì–´êµ¬ ì´ë¦„" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S(2317, "¹æ¾î±¸ ÀÌ¸§" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponName, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponName, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
 		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(2318, "ë°©ì–´êµ¬ ë ˆë²¨" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S(2318, "¹æ¾î±¸ ·¹º§" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponLevel, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponLevel, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
 		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1067, "ì‚¬ìš© í´ë˜ìŠ¤" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S( 1067, "»ç¿ë Å¬·¡½º" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponClass, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponClass, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
 		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(87, "ë°©ì–´ë ¥" ), m_nPosX + WEAPON_INFO_START_X,		
+		pDrawPort->PutTextEx( _S(87, "¹æ¾î·Â" ), m_nPosX + WEAPON_INFO_START_X,		
 											nY, 0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeaponDefence, m_nPosX + WEAPON_DESC_START_X,		
+		pDrawPort->PutTextExRX( m_strWeaponDefence, m_nPosX + WEAPON_DESC_START_X,		
 											nY, 0xFFd223FF );
 
-		nY += 15;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 1070, "ë¬´ê²Œ" ), m_nPosX + WEAPON_INFO_START_X,		
-											nY, 0xFFFFFFFF );
-
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strWeight, m_nPosX + WEAPON_DESC_START_X,
-											nY, 0xFFd223FF );
+	
 
 	}
 
-
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -649,7 +673,7 @@ WMSG_RESULT CUIChangeWeapon::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move refine
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -718,18 +742,24 @@ WMSG_RESULT CUIChangeWeapon::MouseMessage( MSG *pMsg )
 							m_llChangeWeaponMoney = CalculateNeedNas( m_slLevel );
 							m_strChangeWeaponMoney.PrintF( "%I64d", m_llChangeWeaponMoney );
 						
-							// FIXME : ì´ í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ê¸° ì „ì—, ì•„ì´í…œì„ ì„ íƒí–ˆëŠ”ì§€ë¶€í„° í™•ì¸.
-							// ì•„ì´í…œ ì„¤ëª…ì„ ì–»ìŠµë‹ˆë‹¤.
-							GetWeaponInfo( _pNetwork->MyCharacterInfo.job, m_slLevel, TempMember.iIndex );
+							// FIXME : ÀÌ ÇÔ¼ö¸¦ È£ÃâÇÏ±â Àü¿¡, ¾ÆÀÌÅÛÀ» ¼±ÅÃÇß´ÂÁöºÎÅÍ È®ÀÎ.
+							// ¾ÆÀÌÅÛ ¼³¸íÀ» ¾ò½À´Ï´Ù.
+							GetWeaponInfo( TempMember.iJob, m_slLevel, TempMember.iIndex );
 						}
 						else if( m_eChangeWeaponState == CHANGEWEAPON_SHIELD )
 						{
 							m_llChangeWeaponMoney = CalculateNeedNasS( m_slLevel );
 							m_strChangeWeaponMoney.PrintF( "%I64d", m_llChangeWeaponMoney );
 						
-							// FIXME : ì´ í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ê¸° ì „ì—, ì•„ì´í…œì„ ì„ íƒí–ˆëŠ”ì§€ë¶€í„° í™•ì¸.
-							// ì•„ì´í…œ ì„¤ëª…ì„ ì–»ìŠµë‹ˆë‹¤.
-							GetShieldInfo( iSelWeapon, m_slLevel,m_selItem.ItemData.GetSubType());
+							// FIXME : ÀÌ ÇÔ¼ö¸¦ È£ÃâÇÏ±â Àü¿¡, ¾ÆÀÌÅÛÀ» ¼±ÅÃÇß´ÂÁöºÎÅÍ È®ÀÎ.
+							// ¾ÆÀÌÅÛ ¼³¸íÀ» ¾ò½À´Ï´Ù.
+							
+							// ³ªÀÌÆ®¼Îµµ¿ì ¾ÆÀÌÅÛÀº ±³È¯ Ç°¸ñÀÌ ¾Æ´Ï´Ù. µû¶ó¼­ 6¹øÅÇ¿¡ ³ªÀÌÆ®¼Îµµ¿ì°¡ ºüÁ®ÀÖ±â ¶§¹®¿¡ ¿¹¿ÜÃ³¸®.
+							if (iSelWeapon >= 6)
+								++iSelWeapon;
+
+							if (m_pSelItem->ItemData != NULL)
+								GetShieldInfo( iSelWeapon, m_slLevel, m_pSelItem->ItemData->GetSubType());
 						}
 						
 					}
@@ -738,7 +768,7 @@ WMSG_RESULT CUIChangeWeapon::MouseMessage( MSG *pMsg )
 				else if( m_lbWeaponDesc.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
 
-				_pUIMgr->RearrangeOrder( UI_CHANGEWEAPON, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_CHANGEWEAPON, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -746,8 +776,10 @@ WMSG_RESULT CUIChangeWeapon::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if( pUIManager->GetHoldBtn().IsEmpty() )
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -799,8 +831,8 @@ WMSG_RESULT CUIChangeWeapon::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// If holding button is item and comes from inventory
-					if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_INVENTORY )
+					if( pUIManager->GetHoldBtn().GetBtnType() == UBET_ITEM &&
+						pUIManager->GetHoldBtn().GetWhichUI() == UI_INVENTORY )
 					{
 						if( IsInsideRect( nX, nY, m_rcInsertItem ) )
 						{
@@ -813,7 +845,7 @@ WMSG_RESULT CUIChangeWeapon::MouseMessage( MSG *pMsg )
 					}
 
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -855,70 +887,78 @@ WMSG_RESULT CUIChangeWeapon::MouseMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 void CUIChangeWeapon::SetChangeShieldItem()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If this is wearing item
-	if( _pUIMgr->GetHoldBtn().GetItemWearType() >= 0 )
+	if( pUIManager->GetHoldBtn().GetItemWearType() >= 0 )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1071, "ì°©ìš©ëœ ì•„ì´í…œì€ êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 1071, "Âø¿ëµÈ ¾ÆÀÌÅÛÀº ±³Ã¼ÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	// If this is not weapon or armor
-	int	nTab = _pUIMgr->GetHoldBtn().GetItemTab();
-	int	nRow = _pUIMgr->GetHoldBtn().GetItemRow();
-	int	nCol = _pUIMgr->GetHoldBtn().GetItemCol();
-	// CItems		&rItems = _pNetwork->MySlotItem[nTab][nRow][nCol];
+	int	nTab = pUIManager->GetHoldBtn().GetItemTab();
+	int	nIdx = pUIManager->GetHoldBtn().GetInvenIndex();
 	// wooss : add shield item exchange
-	m_selItem = _pNetwork->MySlotItem[nTab][nRow][nCol];
-	CItemData	&rItemData = m_selItem.ItemData;
-	if( rItemData.GetType() != CItemData::ITEM_SHIELD )
-	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S(2320, "ë°©ì–´êµ¬ë§Œ êµì²´ í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
+	m_pSelItem = &_pNetwork->MySlotItem[nTab][nIdx];
+	CItemData*	pItemData = m_pSelItem->ItemData;
+	
+	if( pItemData->GetType() != CItemData::ITEM_SHIELD )	{
+		pUIManager->GetChatting()->AddSysMessage( _S(2320, "¹æ¾î±¸¸¸ ±³Ã¼ ÇÒ ¼ö ÀÖ½À´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 
-#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
-	if( rItemData.GetLevel() < 29 || rItemData.GetLevel() >72)
+#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
+	if( pItemData->GetLevel() < 29 || pItemData->GetLevel() >72)
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1073, "êµì²´í•  ìˆ˜ ìˆëŠ” ì•„ì´í…œ ë ˆë²¨ì´ ì•„ë‹™ë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 1073, "±³Ã¼ÇÒ ¼ö ÀÖ´Â ¾ÆÀÌÅÛ ·¹º§ÀÌ ¾Æ´Õ´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
+#if defined SOCKET_CHANGEWEAPON_ENABLE
+	if( (m_pSelItem->GetSocketCount() > 0) )
+	{
+		pUIManager->GetChatting()->AddSysMessage( _S(2158,"±³Ã¼ÇÒ ¼ö ¾ø´Â ¾ÆÀÌÅÛÀÔ´Ï´Ù."), SYSMSG_ERROR );
+		return;
+	}
+#endif
 #else
 
-	// êµí™˜ ê°€ëŠ¥í•œ ì•„ì´í…œ ëª©ë¡ì¸ì§€ í™•ì¸í•©ë‹ˆë‹¤.
-	if( !IsChangeableWeapon( rItems.Item_Index ) )
+	// ±³È¯ °¡´ÉÇÑ ¾ÆÀÌÅÛ ¸ñ·ÏÀÎÁö È®ÀÎÇÕ´Ï´Ù.
+	if( !IsChangeableWeapon( rItems.Item_Index )
+#if defined SOCKET_CHANGEWEAPON_ENABLE
+		|| (m_pSelItem->GetSocketCount() > 0) 
+#endif
+		)
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S(2158,"êµì²´í•  ìˆ˜ ì—†ëŠ” ì•„ì´í…œì…ë‹ˆë‹¤."), SYSMSG_ERROR );
+		pUIManager->GetChatting()->AddSysMessage( _S(2158,"±³Ã¼ÇÒ ¼ö ¾ø´Â ¾ÆÀÌÅÛÀÔ´Ï´Ù."), SYSMSG_ERROR );
 		return;
 	}
 #endif
 
 	// If refining money is short
-	m_slLevel = rItemData.GetLevel();
+	m_slLevel = pItemData->GetLevel();
 
 	// Insert upgrade slot
-	m_btnSlotItem.Copy( _pUIMgr->GetHoldBtn() );
+	m_btnSlotItem.Copy( pUIManager->GetHoldBtn() );
 	
 	m_llChangeWeaponMoney = CalculateNeedNasS( m_slLevel );
 	m_strChangeWeaponMoney.PrintF( "%I64d", m_llChangeWeaponMoney );
 
 	// Lock inventory
-	//_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_CHANGEWEAPON );
+	//pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_CHANGEWEAPON );
 	int	iSelWeapon = m_lbWeaponList.GetCurSel();
-	if( iSelWeapon == -1 )
-	{
-		return;
-	}
-	else
+	
+	if (iSelWeapon >= 0)
 	{
 		sWeaponInfo &TempMember = m_vectorWeaponInfo[iSelWeapon];
 
-		// FIXME : ì´ í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ê¸° ì „ì—, ì•„ì´í…œì„ ì„ íƒí–ˆëŠ”ì§€ë¶€í„° í™•ì¸.
-		// ì•„ì´í…œ ì„¤ëª…ì„ ì–»ìŠµë‹ˆë‹¤.
-		GetShieldInfo( _pNetwork->MyCharacterInfo.job, m_slLevel,m_selItem.ItemData.GetSubType());
-
-		// Lock inventory
-		_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_CHANGEWEAPON );
+		// FIXME : ÀÌ ÇÔ¼ö¸¦ È£ÃâÇÏ±â Àü¿¡, ¾ÆÀÌÅÛÀ» ¼±ÅÃÇß´ÂÁöºÎÅÍ È®ÀÎ.
+		// ¾ÆÀÌÅÛ ¼³¸íÀ» ¾ò½À´Ï´Ù.
+		GetShieldInfo( _pNetwork->MyCharacterInfo.job, m_slLevel, m_pSelItem->ItemData->GetSubType());
 	}
+
+	// Lock inventory
+	pUIManager->GetInventory()->Lock( TRUE, TRUE, LOCK_CHANGEWEAPON );
 }
 
 // ----------------------------------------------------------------------------
@@ -927,59 +967,65 @@ void CUIChangeWeapon::SetChangeShieldItem()
 // ----------------------------------------------------------------------------
 void CUIChangeWeapon::SetChangeWeaponItem()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If this is wearing item
-	if( _pUIMgr->GetHoldBtn().GetItemWearType() >= 0 )
+	if( pUIManager->GetHoldBtn().GetItemWearType() >= 0 )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1071, "ì°©ìš©ëœ ì•„ì´í…œì€ êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 1071, "Âø¿ëµÈ ¾ÆÀÌÅÛÀº ±³Ã¼ÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	// If this is not weapon or armor
-	int	nTab = _pUIMgr->GetHoldBtn().GetItemTab();
-	int	nRow = _pUIMgr->GetHoldBtn().GetItemRow();
-	int	nCol = _pUIMgr->GetHoldBtn().GetItemCol();
-	// CItems		&rItems = _pNetwork->MySlotItem[nTab][nRow][nCol];
+	int	nTab = pUIManager->GetHoldBtn().GetItemTab();
+	int	nIdx = pUIManager->GetHoldBtn().GetInvenIndex();
 	// wooss : add shield item exchange
-	CItems		&m_selItem = _pNetwork->MySlotItem[nTab][nRow][nCol];
-	CItemData	&rItemData = m_selItem.ItemData;
-	if( rItemData.GetType() != CItemData::ITEM_WEAPON )
+
+	m_pSelItem = &_pNetwork->MySlotItem[nTab][nIdx];
+	CItemData*	pItemData = m_pSelItem->ItemData;
+	if( pItemData->GetType() != CItemData::ITEM_WEAPON )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1072, "ë¬´ê¸°ë§Œ êµì²´ í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 1072, "¹«±â¸¸ ±³Ã¼ ÇÒ ¼ö ÀÖ½À´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	// 060810 wooss
-	// ì¶”ê°€ëœ êµí™˜ ë¶ˆê°€ ì•„ì´í…œ
-	// 1. í”Œë˜í‹°ëŠ„ ì œë ¨ì„ ì ìš© ì•„ì´í…œ 2. í•©ì„±í•œ ì•„ì´í…œ
-	if(		m_selItem.IsFlag(PLATINUM_MAX_PLUS) 
-		||	m_selItem.IsFlag(FLAG_ITEM_COMPOSITION))
+	// Ãß°¡µÈ ±³È¯ ºÒ°¡ ¾ÆÀÌÅÛ
+	// 1. ÇÃ·¡Æ¼´½ Á¦·Ã¼® Àû¿ë ¾ÆÀÌÅÛ 2. ÇÕ¼ºÇÑ ¾ÆÀÌÅÛ
+	if(		m_pSelItem->IsFlag(PLATINUM_MAX_PLUS) 
+		||	m_pSelItem->IsFlag(FLAG_ITEM_COMPOSITION)
+#if defined SOCKET_CHANGEWEAPON_ENABLE
+		||	(m_pSelItem->GetSocketCount() > 0) 
+#endif
+		)
+
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S(2158,"êµì²´í•  ìˆ˜ ì—†ëŠ” ì•„ì´í…œì…ë‹ˆë‹¤."), SYSMSG_ERROR );
+		pUIManager->GetChatting()->AddSysMessage( _S(2158,"±³Ã¼ÇÒ ¼ö ¾ø´Â ¾ÆÀÌÅÛÀÔ´Ï´Ù."), SYSMSG_ERROR );
 		return;
 	}
 
-#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
-	if( rItemData.GetLevel() < 29 || rItemData.GetLevel() >69)
+#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
+	if( pItemData->GetLevel() < 29 || pItemData->GetLevel() >69)
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1073, "êµì²´í•  ìˆ˜ ìˆëŠ” ì•„ì´í…œ ë ˆë²¨ì´ ì•„ë‹™ë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 1073, "±³Ã¼ÇÒ ¼ö ÀÖ´Â ¾ÆÀÌÅÛ ·¹º§ÀÌ ¾Æ´Õ´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 #else
 
-	// êµí™˜ ê°€ëŠ¥í•œ ì•„ì´í…œ ëª©ë¡ì¸ì§€ í™•ì¸í•©ë‹ˆë‹¤.
+	// ±³È¯ °¡´ÉÇÑ ¾ÆÀÌÅÛ ¸ñ·ÏÀÎÁö È®ÀÎÇÕ´Ï´Ù.
 	if( !IsChangeableWeapon( rItems.Item_Index ) )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S(2158,"êµì²´í•  ìˆ˜ ì—†ëŠ” ì•„ì´í…œì…ë‹ˆë‹¤."), SYSMSG_ERROR );
+		pUIManager->GetChatting()->AddSysMessage( _S(2158,"±³Ã¼ÇÒ ¼ö ¾ø´Â ¾ÆÀÌÅÛÀÔ´Ï´Ù."), SYSMSG_ERROR );
 		return;
 	}
 #endif
 
 	// If refining money is short
-	m_slLevel = rItemData.GetLevel();
+	m_slLevel = pItemData->GetLevel();
 
 
 	// Insert upgrade slot
-	m_btnSlotItem.Copy( _pUIMgr->GetHoldBtn() );
+	m_btnSlotItem.Copy( pUIManager->GetHoldBtn() );
 
 	m_llChangeWeaponMoney = CalculateNeedNas( m_slLevel );
 	m_strChangeWeaponMoney.PrintF( "%I64d", m_llChangeWeaponMoney );
@@ -987,23 +1033,20 @@ void CUIChangeWeapon::SetChangeWeaponItem()
 
 
 	// Lock inventory
-	//_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_CHANGEWEAPON );
+	//pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_CHANGEWEAPON );
 	int	iSelWeapon = m_lbWeaponList.GetCurSel();
-	if( iSelWeapon == -1 )
-	{
-		return;
-	}
-	else
+	
+	if (iSelWeapon >= 0)
 	{
 		sWeaponInfo &TempMember = m_vectorWeaponInfo[iSelWeapon];
 
-		// FIXME : ì´ í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ê¸° ì „ì—, ì•„ì´í…œì„ ì„ íƒí–ˆëŠ”ì§€ë¶€í„° í™•ì¸.
-		// ì•„ì´í…œ ì„¤ëª…ì„ ì–»ìŠµë‹ˆë‹¤.
+		// FIXME : ÀÌ ÇÔ¼ö¸¦ È£ÃâÇÏ±â Àü¿¡, ¾ÆÀÌÅÛÀ» ¼±ÅÃÇß´ÂÁöºÎÅÍ È®ÀÎ.
+		// ¾ÆÀÌÅÛ ¼³¸íÀ» ¾ò½À´Ï´Ù.
 		GetWeaponInfo( _pNetwork->MyCharacterInfo.job, m_slLevel,  TempMember.iIndex );
-
-		// Lock inventory
-		_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_CHANGEWEAPON );
 	}
+
+	// Lock inventory
+	pUIManager->GetInventory()->Lock( TRUE, TRUE, LOCK_CHANGEWEAPON );
 }
 
 // ----------------------------------------------------------------------------
@@ -1014,28 +1057,42 @@ void CUIChangeWeapon::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strIn
 {
 	switch( nCommandCode )
 	{
-	case MSGCMD_CHANGEWEAPON_REP:		// ë¬´ê¸° êµì²´ í™•ì¸.
+	case MSGCMD_CHANGEWEAPON_REP:		// ¹«±â ±³Ã¼ È®ÀÎ.
 		{
 			if( bOK )
 			{
 				int	iSelWeapon = m_lbWeaponList.GetCurSel();
 				if( iSelWeapon != -1 )
 				{
-					SBYTE sbRow		= m_btnSlotItem.GetItemRow();
-					SBYTE sbCol		= m_btnSlotItem.GetItemCol();
+					SWORD nTab		= m_btnSlotItem.GetItemTab();
+					SWORD nIdx		= m_btnSlotItem.GetInvenIndex();
 					int iUniIndex	= m_btnSlotItem.GetItemUniIndex();
-					// ì„œë²„ìª½ìœ¼ë¡œ ë©”ì„¸ì§€ ë³´ë‚´ê¸°.
+					// ¼­¹öÂÊÀ¸·Î ¸Ş¼¼Áö º¸³»±â.
 					sWeaponInfo &TempMember = m_vectorWeaponInfo[iSelWeapon];
 
-#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
+					int nCheckIdx = _pNetwork->MySlotItem[nTab][nIdx].Item_UniIndex;
+
+					if (iUniIndex != nCheckIdx)
+					{
+						m_btnSlotItem.InitBtn();
+						break;
+					}
+					
+#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
 					if(m_bCashItemChk)
-						_pNetwork->UseChangeWeaponItem( sbRow, sbCol, iUniIndex, TempMember.iIndex );
+						_pNetwork->UseChangeWeaponItem( nTab, nIdx, iUniIndex, TempMember.iIndex );
 					else
 					{
 						if(m_eChangeWeaponState == CHANGEWEAPON_STAT)
-							_pNetwork->ChangeWeaponReq( sbRow, sbCol, iUniIndex, TempMember.iIndex );
+							_pNetwork->ChangeWeaponReq( nTab, nIdx, iUniIndex, TempMember.iIndex );
 						else if(m_eChangeWeaponState == CHANGEWEAPON_SHIELD)
-							_pNetwork->ChangeWeaponReq( sbRow, sbCol, iUniIndex, iSelWeapon);
+						{
+							// ³ªÀÌÆ®¼Îµµ¿ì ¾ÆÀÌÅÛÀº ±³È¯ Ç°¸ñÀÌ ¾Æ´Ï´Ù. µû¶ó¼­ 6¹øÅÇ¿¡ ³ªÀÌÆ®¼Îµµ¿ì°¡ ºüÁ®ÀÖ±â ¶§¹®¿¡ ¿¹¿ÜÃ³¸®.
+							if (iSelWeapon >= 6)
+								++iSelWeapon;
+
+							_pNetwork->ChangeWeaponReq( nTab, nIdx, iUniIndex, iSelWeapon);
+						}
 					}
 							
 #else				
@@ -1059,51 +1116,51 @@ void CUIChangeWeapon::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strIn
 // ----------------------------------------------------------------------------
 void CUIChangeWeapon::MsgBoxLCommand( int nCommandCode, int nResult )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch( nCommandCode )
 	{
 	case MSGLCMD_CHANGEWEAPON_REQ:
 		if( nResult == CHANGEWEAPON_OK )
 		{
 			m_vectorWeaponInfo.clear();		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_KNIFE,	_S( 1038, "ê¸°ì‚¬ë„" ),	TITAN );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_CROSSBOW, _S( 1039, "ì„ê¶" ),		ROGUE );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_STAFF,	_S( 1040, "ìŠ¤íƒœí”„" ),	MAGE );			
-			AddWeaponInfo( CItemData::ITEM_WEAPON_BIGSWORD, _S( 1041, "ëŒ€ê²€" ),		TITAN );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_AXE,		_S( 1042, "ë„ë¼" ),		TITAN );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_SSTAFF,	_S( 1043, "ìˆìŠ¤íƒœí”„" ), MAGE );			
-			AddWeaponInfo( CItemData::ITEM_WEAPON_BOW,		_S( 1044, "í™œ" ),		HEALER );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_DAGGER,	_S( 1045, "ë‹¨ê²€" ),		ROGUE );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_TWOSWORD, _S( 1046, "ì´ë„ë¥˜" ),	KNIGHT );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_WAND,		_S( 1047, "íëŸ¬ì™„ë“œ" ),		HEALER );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_SCYTHE,	_S(2306, "ì‚¬ì´ë“œ" ),		SORCERER );		
-			AddWeaponInfo( CItemData::ITEM_WEAPON_POLEARM,		_S(2307, "í´ì•”" ),		SORCERER );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_KNIFE,	_S( 1038, "±â»çµµ" ),	KNIGHT ); // [2012/05/18 : Sora]  ITS 9075 TITAN -> KNIGHT	
+			AddWeaponInfo( CItemData::ITEM_WEAPON_CROSSBOW, _S( 1039, "¼®±Ã" ),		ROGUE );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_STAFF,	_S( 1040, "½ºÅÂÇÁ" ),	MAGE );			
+			AddWeaponInfo( CItemData::ITEM_WEAPON_BIGSWORD, _S( 1041, "´ë°Ë" ),		TITAN );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_AXE,		_S( 1042, "µµ³¢" ),		TITAN );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_SSTAFF,	_S( 1043, "¼ô½ºÅÂÇÁ" ), MAGE );			
+			AddWeaponInfo( CItemData::ITEM_WEAPON_BOW,		_S( 1044, "È°" ),		HEALER );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_DAGGER,	_S( 1045, "´Ü°Ë" ),		ROGUE );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_TWOSWORD, _S( 1046, "ÀÌµµ·ù" ),	KNIGHT );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_WAND,		_S( 1047, "Èú·¯¿Ïµå" ),		HEALER );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_SCYTHE,	_S(2306, "»çÀÌµå" ),		SORCERER );		
+			AddWeaponInfo( CItemData::ITEM_WEAPON_POLEARM,		_S(2307, "Æú¾Ï" ),		SORCERER );		
 
 			RefreshWeaponList();
 
 			m_eChangeWeaponState = CHANGEWEAPON_STAT;
-			_pUIMgr->RearrangeOrder( UI_CHANGEWEAPON, TRUE );
+			pUIManager->RearrangeOrder( UI_CHANGEWEAPON, TRUE );
 
-			if( !_pUIMgr->GetInventory()->IsVisible() )
-				_pUIMgr->GetInventory()->ToggleVisible();
-#ifdef HELP_SYSTEM_1			
-// [KH_07044] 3ì°¨ ë„ì›€ë§ ê´€ë ¨ ì¶”ê°€
+			if( !pUIManager->GetInventory()->IsVisible() )
+				pUIManager->GetInventory()->ToggleVisible();			
+			// [KH_07044] 3Â÷ µµ¿ò¸» °ü·Ã Ãß°¡
 			if(g_iShowHelp1Icon)
 			{
-				_pUIMgr->GetHelp3()->ClearHelpString();
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3288, "êµì²´í•˜ê³ ì í•˜ëŠ” ë¬´ê¸°ë‚˜ ë°©ì–´êµ¬ë¥¼ ì™¼ìª½ ìƒë‹¨ì˜ ë¹ˆ ì¹¸ì— ì˜¬ë ¤ ë†“ìœ¼ë©´ êµì²´ë¹„ìš©ì´ ê³„ì‚°ë˜ë©°, êµì²´í•˜ë ¤ëŠ” ì¢…ë¥˜ë¥¼ ì„ íƒí•˜ê³  í™•ì¸ì„ ëˆ„ë¥´ë©´ ë¹„ìš©ì´ ì§€ë¶ˆë˜ê³  ì œë ¨ëœ ìˆ˜ì¹˜ ê·¸ëŒ€ë¡œ ì„ íƒí•œ ì¢…ë¥˜ì˜ ì¥ë¹„ë¡œ êµí™˜ì´ ì´ë£¨ì–´ ì§‘ë‹ˆë‹¤."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3289, "â€» êµì²´ë˜ëŠ” ë¬´ê¸° ë° ë°©ì–´êµ¬ì˜ ë¸”ëŸ¬ë“œ ì˜µì…˜ì€ ì˜®ê²¨ì§€ì§€ ì•ŠìŠµë‹ˆë‹¤."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3290, "â€» 29ë ˆë²¨ ì´ìƒì˜ ì¥ë¹„ë¶€í„° êµì²´ê°€ ê°€ëŠ¥í•©ë‹ˆë‹¤."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3291, "â€» ì°©ìš© ì¤‘ì¸ ì¥ë¹„ë‚˜ ë ˆì–´ì˜µì…˜ ì¥ë¹„(73ë ˆë²¨ ì´ìƒ)ëŠ” êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
-				_pUIMgr->GetHelp3()->OpenHelp(this);
+				pUIManager->GetHelp3()->ClearHelpString();
+				pUIManager->GetHelp3()->AddHelpString(_S(3288, "±³Ã¼ÇÏ°íÀÚ ÇÏ´Â ¹«±â³ª ¹æ¾î±¸¸¦ ¿ŞÂÊ »ó´ÜÀÇ ºó Ä­¿¡ ¿Ã·Á ³õÀ¸¸é ±³Ã¼ºñ¿ëÀÌ °è»êµÇ¸ç, ±³Ã¼ÇÏ·Á´Â Á¾·ù¸¦ ¼±ÅÃÇÏ°í È®ÀÎÀ» ´©¸£¸é ºñ¿ëÀÌ ÁöºÒµÇ°í Á¦·ÃµÈ ¼öÄ¡ ±×´ë·Î ¼±ÅÃÇÑ Á¾·ùÀÇ Àåºñ·Î ±³È¯ÀÌ ÀÌ·ç¾î Áı´Ï´Ù."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3289, "¡Ø ±³Ã¼µÇ´Â ¹«±â ¹× ¹æ¾î±¸ÀÇ ºí·¯µå ¿É¼ÇÀº ¿Å°ÜÁöÁö ¾Ê½À´Ï´Ù."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3290, "¡Ø 29·¹º§ ÀÌ»óÀÇ ÀåºñºÎÅÍ ±³Ã¼°¡ °¡´ÉÇÕ´Ï´Ù."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3291, "¡Ø Âø¿ë ÁßÀÎ Àåºñ³ª ·¹¾î¿É¼Ç Àåºñ(73·¹º§ ÀÌ»ó)´Â ±³Ã¼ÇÒ ¼ö ¾ø½À´Ï´Ù."));
+				pUIManager->GetHelp3()->OpenHelp(this);
 			}
-#endif
 		}		
-		else if( nResult == CHANGEWEAPON_TALK )				// ì´ì•¼ê¸°í•˜ê¸°.
+		else if( nResult == CHANGEWEAPON_TALK )				// ÀÌ¾ß±âÇÏ±â.
 		{
 			//TODO : NewQuestSystem
-			// í€˜ìŠ¤íŠ¸ ì°½ ë„ìš°ê¸°
+			// Äù½ºÆ® Ã¢ ¶ç¿ì±â
 			CUIQuestBook::TalkWithNPC();
-			//_pUIMgr->GetQuest()->OpenQuest( _pUIMgr->GetCharacterInfo()->GetMobIndex(), m_fNpcX, m_fNpcZ );
+			//pUIManager->GetQuest()->OpenQuest( pUIManager->GetCharacterInfo()->GetMobIndex(), m_fNpcX, m_fNpcZ );
 		}
 		else if( nResult == CHANGEWEAPON_EVENT )			// Event
 		{
@@ -1112,46 +1169,52 @@ void CUIChangeWeapon::MsgBoxLCommand( int nCommandCode, int nResult )
 		{
 			m_vectorWeaponInfo.clear();
 					
-			AddWeaponInfo( TITAN,	_S( 43, "íƒ€ì´íƒ„" ),	TITAN );		
-			AddWeaponInfo( KNIGHT,  _S( 44, "ê¸°ì‚¬" ),		KNIGHT );		
-			AddWeaponInfo( HEALER,	_S( 45, "íëŸ¬" ),		HEALER );			
-			AddWeaponInfo( MAGE,	_S( 46, "ë©”ì´ì§€" ),	MAGE );			
-			AddWeaponInfo( ROGUE,	_S( 47, "ë¡œê·¸" ),		ROGUE );		
-			AddWeaponInfo( SORCERER, _S( 48,"ì†Œì„œëŸ¬" ),	SORCERER );		
-		
+			AddWeaponInfo( TITAN,	_S( 43, "Å¸ÀÌÅº" ),	TITAN );		
+			AddWeaponInfo( KNIGHT,  _S( 44, "±â»ç" ),		KNIGHT );		
+			AddWeaponInfo( HEALER,	_S( 45, "Èú·¯" ),		HEALER );			
+			AddWeaponInfo( MAGE,	_S( 46, "¸ŞÀÌÁö" ),	MAGE );			
+			AddWeaponInfo( ROGUE,	_S( 47, "·Î±×" ),		ROGUE );		
+			AddWeaponInfo( SORCERER, _S( 48,"¼Ò¼­·¯" ),	SORCERER );		
+#ifdef CHAR_EX_ROGUE
+			AddWeaponInfo( EX_ROGUE,	_S( 5732, "EX·Î±×" ),		EX_ROGUE );		// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+#endif
+#ifdef CHAR_EX_MAGE
+			AddWeaponInfo( EX_MAGE,	_S( 5820, "¾ÆÅ©¸ŞÀÌÁö" ),		EX_MAGE );		// 2013/01/08 jeil EX¸ŞÀÌÁö Ãß°¡ ³ªÁß¿¡ ½ºÆ®¸µ ³ª¿À¸é ¼öÁ¤ 
+#endif
 			RefreshWeaponList();
 		
 
 			m_eChangeWeaponState = CHANGEWEAPON_SHIELD;
-			_pUIMgr->RearrangeOrder( UI_CHANGEWEAPON, TRUE );
+			pUIManager->RearrangeOrder( UI_CHANGEWEAPON, TRUE );
 
-			if( !_pUIMgr->GetInventory()->IsVisible() )
-				_pUIMgr->GetInventory()->ToggleVisible();
-#ifdef HELP_SYSTEM_1
-			// [KH_07044] 3ì°¨ ë„ì›€ë§ ê´€ë ¨ ì¶”ê°€
+			if( !pUIManager->GetInventory()->IsVisible() )
+				pUIManager->GetInventory()->ToggleVisible();
+			// [KH_07044] 3Â÷ µµ¿ò¸» °ü·Ã Ãß°¡
 			if(g_iShowHelp1Icon)
 			{
-				_pUIMgr->GetHelp3()->ClearHelpString();
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3288, "êµì²´í•˜ê³ ì í•˜ëŠ” ë¬´ê¸°ë‚˜ ë°©ì–´êµ¬ë¥¼ ì™¼ìª½ ìƒë‹¨ì˜ ë¹ˆ ì¹¸ì— ì˜¬ë ¤ ë†“ìœ¼ë©´ êµì²´ë¹„ìš©ì´ ê³„ì‚°ë˜ë©°, êµì²´í•˜ë ¤ëŠ” ì¢…ë¥˜ë¥¼ ì„ íƒí•˜ê³  í™•ì¸ì„ ëˆ„ë¥´ë©´ ë¹„ìš©ì´ ì§€ë¶ˆë˜ê³  ì œë ¨ëœ ìˆ˜ì¹˜ ê·¸ëŒ€ë¡œ ì„ íƒí•œ ì¢…ë¥˜ì˜ ì¥ë¹„ë¡œ êµí™˜ì´ ì´ë£¨ì–´ ì§‘ë‹ˆë‹¤."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3289, "â€» êµì²´ë˜ëŠ” ë¬´ê¸° ë° ë°©ì–´êµ¬ì˜ ë¸”ëŸ¬ë“œ ì˜µì…˜ì€ ì˜®ê²¨ì§€ì§€ ì•ŠìŠµë‹ˆë‹¤."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3290, "â€» 29ë ˆë²¨ ì´ìƒì˜ ì¥ë¹„ë¶€í„° êµì²´ê°€ ê°€ëŠ¥í•©ë‹ˆë‹¤."));
-				_pUIMgr->GetHelp3()->AddHelpString(_S(3291, "â€» ì°©ìš© ì¤‘ì¸ ì¥ë¹„ë‚˜ ë ˆì–´ì˜µì…˜ ì¥ë¹„(73ë ˆë²¨ ì´ìƒ)ëŠ” êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
-				_pUIMgr->GetHelp3()->OpenHelp(this);
+				pUIManager->GetHelp3()->ClearHelpString();
+				pUIManager->GetHelp3()->AddHelpString(_S(3288, "±³Ã¼ÇÏ°íÀÚ ÇÏ´Â ¹«±â³ª ¹æ¾î±¸¸¦ ¿ŞÂÊ »ó´ÜÀÇ ºó Ä­¿¡ ¿Ã·Á ³õÀ¸¸é ±³Ã¼ºñ¿ëÀÌ °è»êµÇ¸ç, ±³Ã¼ÇÏ·Á´Â Á¾·ù¸¦ ¼±ÅÃÇÏ°í È®ÀÎÀ» ´©¸£¸é ºñ¿ëÀÌ ÁöºÒµÇ°í Á¦·ÃµÈ ¼öÄ¡ ±×´ë·Î ¼±ÅÃÇÑ Á¾·ùÀÇ Àåºñ·Î ±³È¯ÀÌ ÀÌ·ç¾î Áı´Ï´Ù."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3289, "¡Ø ±³Ã¼µÇ´Â ¹«±â ¹× ¹æ¾î±¸ÀÇ ºí·¯µå ¿É¼ÇÀº ¿Å°ÜÁöÁö ¾Ê½À´Ï´Ù."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3290, "¡Ø 29·¹º§ ÀÌ»óÀÇ ÀåºñºÎÅÍ ±³Ã¼°¡ °¡´ÉÇÕ´Ï´Ù."));
+				pUIManager->GetHelp3()->AddHelpString(_S(3291, "¡Ø Âø¿ë ÁßÀÎ Àåºñ³ª ·¹¾î¿É¼Ç Àåºñ(73·¹º§ ÀÌ»ó)´Â ±³Ã¼ÇÒ ¼ö ¾ø½À´Ï´Ù."));
+				pUIManager->GetHelp3()->OpenHelp(this);
 			}
-#endif
 		}
-		// [090527: selo] í™•ì¥íŒ© í€˜ìŠ¤íŠ¸ ìˆ˜ì •
+		else if(nResult == CHANGEWEAPON_MASTERSTONE)
+		{
+			pUIManager->GetMixNew()->OpenMixNewMasterStone();
+		}
+		// [090527: selo] È®ÀåÆÑ Äù½ºÆ® ¼öÁ¤
 		else if( ciQuestClassifier < nResult )	
 		{
-			// ì„ íƒí•œ í€˜ìŠ¤íŠ¸ì— ëŒ€í•´ ìˆ˜ë½ ë˜ëŠ” ë³´ìƒ ì°½ì„ ì—°ë‹¤.
+			// ¼±ÅÃÇÑ Äù½ºÆ®¿¡ ´ëÇØ ¼ö¶ô ¶Ç´Â º¸»ó Ã¢À» ¿¬´Ù.
 			CUIQuestBook::SelectQuestFromMessageBox( nResult );
 		}
 		else
 		{
-			_pUIMgr->RearrangeOrder( UI_CHANGEWEAPON, FALSE );
+			pUIManager->RearrangeOrder( UI_CHANGEWEAPON, FALSE );
 		}
 		break;
-		
 	
 	}
 }
@@ -1162,7 +1225,7 @@ void CUIChangeWeapon::MsgBoxLCommand( int nCommandCode, int nResult )
 // ----------------------------------------------------------------------------
 SQUAD CUIChangeWeapon::CalculateNeedNas( int iWeaponLevel )
 {
-#ifdef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
+#ifdef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
 	return 0;
 #else
 	ASSERT( iWeaponLevel <= CRITERION_LEVEL && "Invalid Weapon Level" );
@@ -1185,7 +1248,7 @@ SQUAD CUIChangeWeapon::CalculateNeedNas( int iWeaponLevel )
 // ----------------------------------------------------------------------------
 SQUAD CUIChangeWeapon::CalculateNeedNasS( int iWeaponLevel )
 {
-#ifdef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
+#ifdef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
 	return 0;
 #else
 	ASSERT( iWeaponLevel <= CRITERION_LEVEL && "Invalid Weapon Level" );
@@ -1207,79 +1270,62 @@ SQUAD CUIChangeWeapon::CalculateNeedNasS( int iWeaponLevel )
 // ----------------------------------------------------------------------------
 void CUIChangeWeapon::SendChangeWeaponReq()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsSkilling() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1074, "ìŠ¤í‚¬ ì‚¬ìš©ì¤‘ì—ëŠ” ì•„ì´í…œì„ êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );	
+		pUIManager->GetChatting()->AddSysMessage( _S( 1074, "½ºÅ³ »ç¿ëÁß¿¡´Â ¾ÆÀÌÅÛÀ» ±³Ã¼ÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );	
 		return;
 	}
 	
-	if( _pUIMgr->IsCSFlagOn( CSF_TELEPORT ) )
+	if( pUIManager->IsCSFlagOn( CSF_TELEPORT ) )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1075, "ìˆœê°„ ì´ë™ì¤‘ì—ëŠ” ì•„ì´í…œë¥¼ êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );	
+		pUIManager->GetChatting()->AddSysMessage( _S( 1075, "¼ø°£ ÀÌµ¿Áß¿¡´Â ¾ÆÀÌÅÛ¸¦ ±³Ã¼ÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );	
 		return;
 	}
 	
 	if( m_btnSlotItem.IsEmpty() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1076, "êµì²´í•  ì•„ì´í…œì´ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 1076, "±³Ã¼ÇÒ ¾ÆÀÌÅÛÀÌ ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	const ULONG ulFlag = m_btnSlotItem.GetItemFlag();
-/*
-#ifndef CHANGE_WEAPON_SHIELD_EVENT		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
-	if( m_btnSlotItem.GetItemPlus() > 0 )
-	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1077, "í”ŒëŸ¬ìŠ¤ ì•„ì´í…œì€ êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
-		return;
-	}
-#endif
-
-	
-
-#ifndef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
-	if( ulFlag & FLAG_ITEM_OPTION_ENABLE )
-	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1078, "ë¸”ëŸ¬ë“œ ì•„ì´í…œì€ êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
-		return;
-	}
-#endif
-*/
 	if( ulFlag & FLAG_ITEM_SEALED )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1079, "ë´‰ì¸ëœ ì•„ì´í…œì€ êµì²´í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 1079, "ºÀÀÎµÈ ¾ÆÀÌÅÛÀº ±³Ã¼ÇÒ ¼ö ¾ø½À´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 
 #ifndef CHANGE_WEAPON_SHIELD_EVENT
 	if( m_llChangeWeaponMoney > _pNetwork->MyCharacterInfo.money && !m_bCashItemChk )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1080, "êµì²´ ë¹„ìš©ì´ ë¶€ì¡±í•©ë‹ˆë‹¤." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 1080, "±³Ã¼ ºñ¿ëÀÌ ºÎÁ·ÇÕ´Ï´Ù." ), SYSMSG_ERROR );		
 		return;
 	}
 #endif
 
 	if( m_lbWeaponList.GetCurSel() == -1 )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 2321,"ìƒˆë¡œìš´ ë¬´ê¸°ë° ë°©ì–´êµ¬ë¥¼ ì„ íƒí•´ì£¼ì‹­ì‹œìš”." ), SYSMSG_ERROR );		
+		pUIManager->GetChatting()->AddSysMessage( _S( 2321,"»õ·Î¿î ¹«±â¹× ¹æ¾î±¸¸¦ ¼±ÅÃÇØÁÖ½Ê½Ã¿ä." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	// wooss 051217 add shield item exchange
 	if(m_slLevel < EXCHANGE_LIMIT_LEVEL)
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S(2322,"29Lvì´ìƒì˜ ë¬´ê¸°ë° ë°©ì–´êµ¬ë§Œ êµì²´ë¥¼ í•˜ì‹¤ ìˆ˜ ìˆìŠµë‹ˆë‹¤."));
+		pUIManager->GetChatting()->AddSysMessage( _S(2322,"29LvÀÌ»óÀÇ ¹«±â¹× ¹æ¾î±¸¸¸ ±³Ã¼¸¦ ÇÏ½Ç ¼ö ÀÖ½À´Ï´Ù."));
 		return;
 	}
 
 	
-	_pUIMgr->CloseMessageBox( MSGCMD_CHANGEWEAPON_REP );
+	pUIManager->CloseMessageBox( MSGCMD_CHANGEWEAPON_REP );
 	
 	// Create message box of remission
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S(2308, "ë¬´ê¸°ë° ë°©ì–´êµ¬ êµì²´" ), UMBS_OKCANCEL,UI_CHANGEWEAPON, MSGCMD_CHANGEWEAPON_REP );
-	MsgBoxInfo.AddString( _S(2323,"êµì²´ ë¬´ê¸°ë° ë°©ì–´êµ¬ì— ì œë ¨ëœ ê¸°ë¡ì€ ì˜®ê²¨ì§€ì§€ë§Œ ë¸”ëŸ¬ë“œ ì˜µì…˜ì€ ì˜®ê²¨ì§€ì§€ ì•ŠìŠµë‹ˆë‹¤. ë¬´ê¸°ë° ë°©ì–´êµ¬ë¥¼ êµì²´í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ) );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	MsgBoxInfo.SetMsgBoxInfo( _S(2308, "¹«±â¹× ¹æ¾î±¸ ±³Ã¼" ), UMBS_OKCANCEL,UI_CHANGEWEAPON, MSGCMD_CHANGEWEAPON_REP );
+	MsgBoxInfo.AddString( _S(2323,"±³Ã¼ ¹«±â¹× ¹æ¾î±¸¿¡ Á¦·ÃµÈ ±â·ÏÀº ¿Å°ÜÁöÁö¸¸ ºí·¯µå ¿É¼ÇÀº ¿Å°ÜÁöÁö ¾Ê½À´Ï´Ù. ¹«±â¹× ¹æ¾î±¸¸¦ ±³Ã¼ÇÏ½Ã°Ú½À´Ï±î?" ) );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 
@@ -1295,7 +1341,9 @@ void CUIChangeWeapon::AddWeaponDescString( CTString &strDesc, COLOR colDesc )
 		return;
 
 	// wooss 051002
-	if(g_iCountry == THAILAND){
+#if defined(G_THAI)
+	{
+		int		iPos;
 		// Get length of string
 		INDEX	nThaiLen = FindThaiLen(strDesc);
 		INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
@@ -1305,7 +1353,7 @@ void CUIChangeWeapon::AddWeaponDescString( CTString &strDesc, COLOR colDesc )
 		if( nThaiLen <= nChatMax )
 		{
 			// Check line character
-		for( int iPos = 0; iPos < nLength; iPos++ )
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
 			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
 				break;
@@ -1338,7 +1386,7 @@ void CUIChangeWeapon::AddWeaponDescString( CTString &strDesc, COLOR colDesc )
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = _iMaxMsgStringChar;
 			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if(nChatMax < FindThaiLen(strDesc,0,iPos))
 					break;
@@ -1393,12 +1441,15 @@ void CUIChangeWeapon::AddWeaponDescString( CTString &strDesc, COLOR colDesc )
 
 		}
 		
-	} else {
+	}
+#else
+	{
 		// If length of string is less than max char
 		if( nLength <= _iMaxMsgStringChar )
 		{
 			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			int iPos;
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
 					break;
@@ -1431,7 +1482,8 @@ void CUIChangeWeapon::AddWeaponDescString( CTString &strDesc, COLOR colDesc )
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = _iMaxMsgStringChar;
 			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
+			int iPos;
+			for( iPos = 0; iPos < nSplitPos; iPos++ )
 			{
 				if( strDesc[iPos] & 0x80 )
 					b2ByteChar = !b2ByteChar;
@@ -1442,7 +1494,7 @@ void CUIChangeWeapon::AddWeaponDescString( CTString &strDesc, COLOR colDesc )
 			if( b2ByteChar )
 				nSplitPos--;
 
-			// Check line character
+			// Check line character			
 			for( iPos = 0; iPos < nSplitPos; iPos++ )
 			{
 				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
@@ -1489,6 +1541,7 @@ void CUIChangeWeapon::AddWeaponDescString( CTString &strDesc, COLOR colDesc )
 			}
 		}
 	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -1498,33 +1551,50 @@ void CUIChangeWeapon::AddWeaponDescString( CTString &strDesc, COLOR colDesc )
 void CUIChangeWeapon::GetWeaponInfo( int iJob, int iWeaponLevel, int iWeaponType )
 {
 	ASSERT( iWeaponLevel != -1 && "Invalid Weapon Level" );	
-	for( int i = 1; i < _pNetwork->wo_iNumOfItem; ++i )
+	CItemData::_map::iterator	iter = CItemData::_mapdata.begin();
+	CItemData::_map::iterator	eiter = CItemData::_mapdata.end();
+
+	for (;iter != eiter; ++iter)
 	{
-		CItemData& ID = _pNetwork->GetItemData( i );
-		if( ID.GetType() != CItemData::ITEM_WEAPON )
+		CItemData* pID = (*iter).second;
+		
+		if (pID == NULL)
 			continue;
 		
-		if( ID.GetSubType() != iWeaponType )
+		if( pID->GetType() != CItemData::ITEM_WEAPON )
 			continue;
 		
-		if( ID.GetLevel() != iWeaponLevel )
+		if( pID->GetSubType() != iWeaponType )
+			continue;
+		
+		if( pID->GetLevel() != iWeaponLevel )
 			continue;
 
-#ifdef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
-		if( !IsChangeableWeapon( ID.GetItemIndex() ) )
+		// [2012/05/18 : Sora] ITS 9075 ¹«±â±³È¯ Ä«µå ¹ö±× (Á¶°ÇÀÌ ¿Ö ¹æ¾î±¸ÇÏ°í ´Ù¸£Áö..ÀÏ´Ü ÅëÀÏ -_-;)
+		if( !(pID->GetJob()&(1<<iJob)))
+			continue;
+
+		if( !(pID->IsFlag(ITEM_FLAG_CHANGE)))
+			continue;
+		// [2012/05/18 : Sora]  //
+
+#ifdef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
+		if( !IsChangeableWeapon( pID->GetItemIndex() ) )
 		{
 			continue;
 		}
 #endif
 		
-		m_strWeaponName			= ID.GetName();
-		m_strWeaponLevel.PrintF( "%d", ID.GetLevel() );
+		m_strWeaponName			= pID->GetName();
+		m_strWeaponLevel.PrintF( "%d", pID->GetLevel() );
 		
-		// FIXME : í•˜ë‚˜ì˜ ë¬´ê¸°ë¥¼ ë‹¤ë¥¸ ë‘ ì§ì—…ì´ ì“¸ìˆ˜ ìˆë‚˜???
+		// FIXME : ÇÏ³ªÀÇ ¹«±â¸¦ ´Ù¸¥ µÎ Á÷¾÷ÀÌ ¾µ¼ö ÀÖ³ª???
+		// [2012/05/18 : Sora] ITS 9075 À­ ¸»Ã³·³ ÇÊ¿ä ¾øÀ»µí...»©ÀÚ
+		/*
 		CTString strTemp;
 		for(int i = 0; i < TOTAL_JOB; ++i)
 		{
-			if( ID.CanUse(i) )
+			if( pID->CanUse(i) )
 			{
 				strTemp += JobInfo().GetName(i);
 				break;
@@ -1532,9 +1602,11 @@ void CUIChangeWeapon::GetWeaponInfo( int iJob, int iWeaponLevel, int iWeaponType
 		}
 		
 		m_strWeaponClass		= strTemp;
-		m_strWeaponAttack.PrintF( "%d", ID.GetPhysicalAttack() );
-		m_strWeaponMagicAttack.PrintF( "%d", ID.GetMagicAttack() );
-		m_strWeight.PrintF( "%d", ID.GetWeight() );
+		*/
+		m_strWeaponClass		= CJobInfo::getSingleton()->GetName(iJob);
+		// [2012/05/18 : Sora]  //
+		m_strWeaponAttack.PrintF( "%d", pID->GetPhysicalAttack() );
+		m_strWeaponMagicAttack.PrintF( "%d", pID->GetMagicAttack() );
 		return;
 	}	
 
@@ -1554,37 +1626,43 @@ void CUIChangeWeapon::GetWeaponInfo( int iJob, int iWeaponLevel, int iWeaponType
 void CUIChangeWeapon::GetShieldInfo( int iJob, int iWeaponLevel ,int iWeaponType)
 {
 	ASSERT( iWeaponLevel != -1 && "Invalid Weapon Level" );	
-	for( int i = 1; i < _pNetwork->wo_iNumOfItem; ++i )
+	CItemData::_map::iterator	iter = CItemData::_mapdata.begin();
+	CItemData::_map::iterator	eiter = CItemData::_mapdata.end();
+
+	for (;iter != eiter; ++iter)
 	{
-		CItemData& ID = _pNetwork->GetItemData( i );
-		if( ID.GetType() != CItemData::ITEM_SHIELD )
+		CItemData* pID = (*iter).second;
+
+		if (pID == NULL)
 			continue;
 
-		if( ID.GetSubType() != iWeaponType )
+		if( pID->GetType() != CItemData::ITEM_SHIELD )
+			continue;
+
+		if( pID->GetSubType() != iWeaponType )
 			continue;
 				
-		if( ID.GetLevel() != iWeaponLevel )
+		if( pID->GetLevel() != iWeaponLevel )
 			continue;
 		
-		if( !(ID.GetJob()&(1<<iJob)))
+		if( !(pID->GetJob()&(1<<iJob)))
 			continue;
 
-		if( !(ID.IsFlag(ITEM_FLAG_CHANGE)))
+		if( !(pID->IsFlag(ITEM_FLAG_CHANGE)))
 			continue;
 		
 
-#ifdef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2íŒ4íŒ ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸.
-		if( !IsChangeableWeapon( ID.GetItemIndex() ) )
+#ifdef CHANGE_WEAPON_EVENT_2PAN4PAN		// 2ÆÇ4ÆÇ ¹«±â ±³Ã¼ ÀÌº¥Æ®.
+		if( !IsChangeableWeapon( pID->GetItemIndex() ) )
 		{
 			continue;
 		}
 #endif
 		
-		m_strWeaponName			= ID.GetName();
-		m_strWeaponLevel.PrintF( "%d", ID.GetLevel() );
-		m_strWeaponClass		= JobInfo().GetName(iJob);
-		m_strWeaponDefence.PrintF( "%d", ID.GetPhysicalDefence() );
-		m_strWeight.PrintF( "%d", ID.GetWeight() );
+		m_strWeaponName			= pID->GetName();
+		m_strWeaponLevel.PrintF( "%d", pID->GetLevel() );
+		m_strWeaponClass		= CJobInfo::getSingleton()->GetName(iJob);
+		m_strWeaponDefence.PrintF( "%d", pID->GetPhysicalDefence() );
 		return;
 	}	
 
@@ -1625,5 +1703,214 @@ void CUIChangeWeapon::RefreshWeaponList()
 		m_lbWeaponList.AddString( 0, (*it).strName );
 	}
 	
+}
+
+void CUIChangeWeapon::initialize()
+{
+	_iMaxMsgStringChar = 190 / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+
+	// Region of each part
+	m_rcTitle.SetRect( 0, 0, 216, 22 );
+	m_rcItemSlot.SetRect( 97, 0, 131, 0 );
+	m_rcInsertItem.SetRect( 3, 0, 213, 0 );
+	
+	m_rcItemSlot.Top		= 51;
+	m_rcItemSlot.Bottom		= m_rcItemSlot.Top + 34;
+
+	m_rcInsertItem.Top		= 33;
+	m_rcInsertItem.Bottom	= m_rcItemSlot.Bottom + 33;
+
+	// Slot item button
+	m_btnSlotItem.Create( this, m_rcItemSlot.Left + 1, m_rcItemSlot.Top + 1, BTN_SIZE, BTN_SIZE, UI_CHANGEWEAPON, UBET_ITEM );
+/*
+	AddWeaponInfo( CItemData::ITEM_WEAPON_KNIFE,	_S( 1038, "±â»çµµ" ),	TITAN );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_CROSSBOW, _S( 1039, "¼®±Ã" ),		ROGUE );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_STAFF,	_S( 1040, "½ºÅÂÇÁ" ),	MAGE );			
+	AddWeaponInfo( CItemData::ITEM_WEAPON_BIGSWORD, _S( 1041, "´ë°Ë" ),		TITAN );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_AXE,		_S( 1042, "µµ³¢" ),		TITAN );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_SSTAFF,	_S( 1043, "¼ô½ºÅÂÇÁ" ), MAGE );			
+	AddWeaponInfo( CItemData::ITEM_WEAPON_BOW,		_S( 1044, "È°" ),		HEALER );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_DAGGER,	_S( 1045, "´Ü°Ë" ),		ROGUE );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_TWOSWORD, _S( 1046, "ÀÌµµ·ù" ),	KNIGHT );	
+	AddWeaponInfo( CItemData::ITEM_WEAPON_WAND,		_S( 1047, "Èú·¯¿Ïµå" ),		HEALER );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_SCYTHE,	_S( 2306,"»çÀÌµå" ),		SORCERER );		
+	AddWeaponInfo( CItemData::ITEM_WEAPON_POLEARM,		_S(2307, "Æú¾Ï" ),		SORCERER );		
+
+	RefreshWeaponList();
+	*/
+}
+
+void CUIChangeWeapon::OnUpdate( float fElapsedTime )
+{
+
+}
+
+void CUIChangeWeapon::OnRender( CDrawPort* pDraw )
+{
+	// Check distance
+	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcX;
+	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcZ;
+	// cash item check wooss 051011
+	if( m_bCashItemChk == FALSE )
+	{
+		if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
+		{
+			CloseChangeWeapon();
+		}
+	}
+
+	// Set refine texture
+	pDraw->InitTextureData( m_ptdBaseTexture );
+
+	// Add render regions
+	int	nX, nY, nX2, nY2;
+
+	nX	= m_nPosX + 95;
+	nX2	= nX + 84;
+	nY	= m_nPosY + 102;
+	nY2 = nY + 13;
+
+	if(!m_bCashItemChk){
+		// Point    ±İ¾× ¹Ú½º wooss 051011
+		pDraw->AddTexture( nX, nY, nX + 4, nY2,
+			m_rtInputBoxL.U0, m_rtInputBoxL.V0, m_rtInputBoxL.U1, m_rtInputBoxL.V1,
+			0xFFFFFFFF );
+		//Lower middle
+		pDraw->AddTexture( nX + 4, nY, nX2 - 4, nY2,
+			m_rtInputBoxM.U0, m_rtInputBoxM.V0, m_rtInputBoxM.U1, m_rtInputBoxM.V1,
+			0xFFFFFFFF );
+		// Lower right
+		pDraw->AddTexture( nX2 - 4, nY, nX2, nY2,
+			m_rtInputBoxR.U0, m_rtInputBoxR.V0, m_rtInputBoxR.U1, m_rtInputBoxR.V1,
+			0xFFFFFFFF );
+	}
+
+	// Render all elements
+	pDraw->FlushRenderingQueue();
+
+	// Item
+	if( !m_btnSlotItem.IsEmpty() )
+	{
+		m_btnSlotItem.Render();
+		pDraw->FlushBtnRenderingQueue( UBET_ITEM );
+	}
+
+	if( m_eChangeWeaponState == CHANGEWEAPON_STAT ){
+
+		// Text in refine
+		pDraw->PutTextEx( _S( 1049, "¹«±â ±³Ã¼"  ), m_nPosX + CHANGEWEAPON_TITLE_TEXT_OFFSETX,		
+			m_nPosY + CHANGEWEAPON_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
+
+		pDraw->PutTextEx( _S( 1057, "±³Ã¼¹«±â" ), m_nPosX + 40,		
+			m_nPosY + 60, 0xFFFFFFFF );
+
+		// cash item check wooss 051011
+		if(!m_bCashItemChk) {
+			nY = m_nPosY + 104;
+			pDraw->PutTextEx( _S( 1058, "ÇÊ¿ä³ª½º" ), m_nPosX + 40,		
+				nY, 0xFFFFFFFF );
+			// ChangeWeaponing money
+#ifdef CHANGE_WEAPON_SHIELD_EVENT	
+			pDraw->PutTextEx( _S(2315," ±³Ã¼ ÀÌº¥Æ®"),	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );	
+#else
+			pDraw->PutTextEx( m_strChangeWeaponMoney,	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );				
+#endif 
+
+		}
+
+		nY = m_nPosY + 143;
+		pDraw->PutTextEx( _S( 1059, "¹«±â ¸®½ºÆ®" ), m_nPosX + 12,		
+			nY, 0xE18600FF );
+
+		nY = m_nPosY + 269;
+		pDraw->PutTextEx( _S( 1065, "¹«±â ÀÌ¸§" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponName, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+
+		nY += 15;
+		pDraw->PutTextEx( _S( 1066, "¹«±â ·¹º§" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponLevel, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+
+		nY += 15;
+		pDraw->PutTextEx( _S( 1067, "»ç¿ë Å¬·¡½º" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponClass, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+
+		nY += 15;
+		pDraw->PutTextEx( _S( 1068, "°ø°İ·Â" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponAttack, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+
+		nY += 15;
+		pDraw->PutTextEx( _S( 1069, "¸¶¹ı °ø°İ·Â" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponMagicAttack, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+	}
+	else if( m_eChangeWeaponState == CHANGEWEAPON_SHIELD){
+		// Text in refine
+		pDraw->PutTextEx( _S( 2313,"¹æ¾î±¸ ±³Ã¼"  ), m_nPosX + CHANGEWEAPON_TITLE_TEXT_OFFSETX,		
+			m_nPosY + CHANGEWEAPON_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
+
+		pDraw->PutTextEx( _S( 2314,"±³Ã¼ ¹æ¾î±¸" ), m_nPosX + 30,		
+			m_nPosY + 60, 0xFFFFFFFF );
+
+		// cash item check wooss 051011
+		if(!m_bCashItemChk) {
+			nY = m_nPosY + 104;
+			pDraw->PutTextEx( _S( 1058, "ÇÊ¿ä³ª½º" ), m_nPosX + 40,		
+				nY, 0xFFFFFFFF );
+#ifdef CHANGE_WEAPON_SHIELD_EVENT	
+			pDraw->PutTextEx( _S(2315," ±³Ã¼ ÀÌº¥Æ®"), m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );	
+#else
+			pDraw->PutTextEx( m_strChangeWeaponMoney,	m_nPosX + 95, m_nPosY + 102, 0xE1B300FF );				
+#endif 
+		}
+
+		nY = m_nPosY + 143;
+		pDraw->PutTextEx( _S(2316, "Å¬·¡½º ¸®½ºÆ®" ), m_nPosX + 12,		
+			nY, 0xE18600FF );
+
+		nY = m_nPosY + 269;
+		pDraw->PutTextEx( _S(2317, "¹æ¾î±¸ ÀÌ¸§" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponName, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+
+		nY += 15;
+		pDraw->PutTextEx( _S(2318, "¹æ¾î±¸ ·¹º§" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponLevel, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+
+		nY += 15;
+		pDraw->PutTextEx( _S( 1067, "»ç¿ë Å¬·¡½º" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponClass, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+
+		nY += 15;
+		pDraw->PutTextEx( _S(87, "¹æ¾î·Â" ), m_nPosX + WEAPON_INFO_START_X,		
+			nY, 0xFFFFFFFF );
+
+		pDraw->PutTextExRX( m_strWeaponDefence, m_nPosX + WEAPON_DESC_START_X,		
+			nY, 0xFFd223FF );
+	}
+
+	// Flush all render text queue
+	pDraw->EndTextEx();
 }
 

@@ -24,13 +24,13 @@ static void ValidateIDToString(const CTString &strString,INDEX iIndex)
 	INDEX ctString = _astrStringTable.Count();
 	for(INDEX istr=0;istr<ctString;istr++) {
 		if(istr == iIndex) {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(For Performance)(0.3)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.3)
 			ASSERT(strString == _astrStringTable[istr]);
 			//ASSERT(IsEqualCaseSensitive(strString, _astrStringTable[istr]));
 		} else {
 			ASSERT(strString != _astrStringTable[istr]);
 			//ASSERT(!IsEqualCaseSensitive(strString, _astrStringTable[istr]));
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.3)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.3)
 		}
 	}
 #endif
@@ -52,10 +52,10 @@ static BOOL CompareStrings(INDEX iObject, const void *pObject)
 {
 	const CTString &strString = *(const CTString*)pObject;
 	const CTString &strInTable = _astrStringTable[iObject];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(For Performance)(0.3)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.3)
 	return strString == strInTable;
 	//return strString.IsEqualCaseSensitive(strInTable);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.3)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.3)
 }
 
 // Callback function for hash calculation
@@ -93,7 +93,7 @@ extern INDEX ska_StringToID(const CTString &strString)
 	MEMTRACK_SETFLAGS(mem,MTF_NOSTACKTRACE);
 	// safety check
 	if(strString=="") {
-	//0729 kwon ìž„ì‹œì‚­ì œ.
+	//0729 kwon ÀÓ½Ã»èÁ¦.
 	//  ASSERTALWAYS("Converting empty string to id");
 		return -1;
 	}

@@ -49,6 +49,7 @@ typedef BOOL (WINAPI *MINIDUMPWRITEDUMP)(HANDLE hProcess, DWORD dwPid, HANDLE hF
 MiniDumper *MiniDumper::gpDumper = NULL;
 
 MiniDumper::MiniDumper(bool headless)
+	: m_pExceptionInfo(NULL)
 {
 	// Detect if there is more than one MiniDumper.
 	ASSERT( !gpDumper );
@@ -133,8 +134,8 @@ LONG MiniDumper::WriteMiniDump(_EXCEPTION_POINTERS *pExceptionInfo )
 					ExInfo.ExceptionPointers = pExceptionInfo;
 					ExInfo.ClientPointers = NULL;
 					
-					// write the dump
-					BOOL bOK = pMiniDumpWriteDump( GetCurrentProcess(), GetCurrentProcessId(), hFile, MiniDumpNormal, &ExInfo, VGetUserStreamArray(), NULL );
+					// write the dump //MiniDumpNormal --> MiniDumpWithFullMemory
+					BOOL bOK = pMiniDumpWriteDump( GetCurrentProcess(), GetCurrentProcessId(), hFile, MiniDumpWithFullMemory, &ExInfo, VGetUserStreamArray(), NULL );
 					if (bOK)
 					{
 						szResult = NULL;

@@ -4,7 +4,6 @@
 #include <Engine/Base/CTString.h>
 #include <Engine/Base/ErrorReporting.h>
 #include <Engine/Base/ErrorTable.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Base/Synchronization.h>
 #include <Engine/Base/Translation.h>
 #include <Engine/Base/MemoryTracking.h>
@@ -22,19 +21,22 @@
 #include <Engine/Interface/UIManager.h>
 #include <Engine/Interface/UIMessageBox.h>
 #include <vector>
+#include <Engine/GameState.h>
+#include <Engine/GameStageManager/StageMgr.h>
+#include <Engine/Loading.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
 #define SERVER_LOCAL_CLIENT     0
-// ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+// °­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 #define MAX_LOGINSERVER			(5)
-// ê°•ë™ë¯¼ ìˆ˜ì • ë
+// °­µ¿¹Î ¼öÁ¤ ³¡
 // application state variables by NSP
 //extern BOOL g_bTcp;
 // end of ..
 
 #define USER_NUM_FULL		1000
-#define USER_NUM_BUSY		300 // í™ì½©ì€ 300, ë‚˜ë¨¸ì§€ëŠ” 400
+#define USER_NUM_BUSY		300
 
 extern INDEX net_iPort;
 extern CTString net_strLocalHost;
@@ -43,6 +45,10 @@ extern INDEX net_bReportICMPErrors;
 extern FLOAT net_fDropPackets;
 extern FLOAT net_tmConnectionTimeout;
 extern INDEX net_bReportPackets;
+
+#ifdef EUROUPEAN_SERVER_LOGIN
+extern INDEX g_iConnectEuroupean;
+#endif
 
 extern SOCKET g_hSocket;
 extern INDEX	g_iCountry;
@@ -94,42 +100,17 @@ static struct ErrorCode ErrorCodes[] = {
 	ERRORCODE(WSANO_RECOVERY    , "WSANO_RECOVERY"),
 	ERRORCODE(WSANO_DATA        , "WSANO_DATA"),
 };
-static struct ErrorTable SocketErrors = ERRORTABLE(ErrorCodes);
 
-struct sIPFilter
+struct LoginServer
 {
-	unsigned char	chSB1;
-	unsigned char	chSB2;
-	unsigned char	chSB3;
-	unsigned char	chSB4;
-	INDEX			iCountry;	// êµ­ê°€
-
-	sIPFilter()
-	{
-		chSB1		= -1;
-		chSB2		= -1;
-		chSB3		= -1;
-		chSB4		= -1;
-		iCountry	= -1;
-	}
-	
-	void	SetIP( unsigned char SB1, unsigned char SB2, unsigned char SB3, unsigned char SB4, INDEX Country )
-	{
-		chSB1		= SB1;
-		chSB2		= SB2;
-		chSB3		= SB3;
-		chSB4		= SB4;
-		iCountry	= Country;
-	}
-	
-	bool operator<(const sIPFilter &other) const
-	{
-		if( iCountry < other.iCountry )
-			return true;
-		return false;
-	}
+	char	szName[100];
+	char	szAddress[100];
+	char	szPort[100];
+	char	szFullUsers[50];
+	char	szBusyUsers[50];
 };
 
+static struct ErrorTable SocketErrors = ERRORTABLE(ErrorCodes);
 
 //structures used to emulate bandwidth and latency parameters - shared by all client interfaces
 CPacketBufferStats _pbsSend;
@@ -247,8 +228,6 @@ CCommunicationInterface::CCommunicationInterface(void)
   }
 	*/
   client_cnt = 0;
-
-
 };
 
 
@@ -260,14 +239,13 @@ void CCommunicationInterface::Init(void)
 	cci_bWinSockOpen = FALSE;
 	cci_bInitialized = TRUE;
 	
-// ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
-	cci_szNick[0]			= 0;
+// °­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 	cci_szAddr[0]			= 0;
 	cci_iPort				= -1;
 	cci_iSelectedServerNum	= -1;
 	cci_iFullUsers			= 0;
 	cci_iBusyUsers			= 0;
-// ê°•ë™ë¯¼ ìˆ˜ì • ë
+// °­µ¿¹Î ¼öÁ¤ ³¡
 	
 	// mark as initialized
 	cm_bNetworkInitialized = FALSE;
@@ -275,8 +253,9 @@ void CCommunicationInterface::Init(void)
 	cci_pbMasterInput.Clear();
 	cci_pbMasterOutput.Clear();
 	
-	cci_bInitUpdateMasterBuffer = TRUE; //0616 updatemasterbuufers()ì˜ ì´ˆê¸°í™”í• ìˆ˜ ìˆê²Œ í•œë‹¤..
-	
+	cci_bInitUpdateMasterBuffer = TRUE; //0616 updatemasterbuufers()ÀÇ ÃÊ±âÈ­ÇÒ¼ö ÀÖ°Ô ÇÑ´Ù..
+
+	SetIPFilter();
 };
 
 // close
@@ -340,7 +319,7 @@ void CCommunicationInterface::EndWinsock(void)
   cci_bWinSockOpen = FALSE;
 };
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…	09.09
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷	09.09
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -371,12 +350,14 @@ void CCommunicationInterface::Reconnect(CTString strIP, ULONG ulPort)
 	Disconnect();
 
 	CreateSocket_t();
+	InitWinsock();
+
 	_tcpip.ConnectToServer(strIP.str_String, ulPort);
 	cci_bWinSockOpen	= TRUE;
 	cci_bSocketOpen		= TRUE;
 	cci_hSocket			= _tcpip.Socket;
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…		09.09
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷		09.09
 
 
 // prepares the comm interface for use - MUST be invoked before any data can be sent/received
@@ -389,7 +370,7 @@ BOOL CCommunicationInterface::PrepareForUse(BOOL bUseNetwork, BOOL bClient, BOOL
 	// if the network is already initialized, shut it down before proceeding
 	if (cm_bNetworkInitialized) 
 	{
-		// ì†Œì¼“ì„ ë‹«ëŠ” ë¶€ë¶„.
+		// ¼ÒÄÏÀ» ´İ´Â ºÎºĞ.
 		Unprepare();
 	}
 	
@@ -431,7 +412,7 @@ BOOL CCommunicationInterface::PrepareForUse(BOOL bUseNetwork, BOOL bClient, BOOL
 		// if there is a desired local address
 		if (net_strLocalHost!="") 
 		{
-			// í˜„ì¬ë¡œì„œëŠ” ì“°ì´ëŠ” net_strLocalHostê°€ ì“°ì´ëŠ” ë³€ìˆ˜ê°€ ì•„ë‹Œ ê²ƒê°™ë‹¤. by seo 40225
+			// ÇöÀç·Î¼­´Â ¾²ÀÌ´Â net_strLocalHost°¡ ¾²ÀÌ´Â º¯¼ö°¡ ¾Æ´Ñ °Í°°´Ù. by seo 40225
 			CPrintF(TRANS("  user forced local address: %s\n"), (const char*)net_strLocalHost);
 			// use that address
 			cm_strName = net_strLocalHost;
@@ -460,8 +441,7 @@ BOOL CCommunicationInterface::PrepareForUse(BOOL bUseNetwork, BOOL bClient, BOOL
 		{
 			// get the addresses
 			cm_strAddress = "";
-			INDEX i;
-			for(i=0; phe->h_addr_list[i]!=NULL; i++) 
+			for(INDEX i=0; phe->h_addr_list[i]!=NULL; i++) 
 			{
 				if (i>0)
 				{
@@ -481,7 +461,7 @@ BOOL CCommunicationInterface::PrepareForUse(BOOL bUseNetwork, BOOL bClient, BOOL
 		// try to open master UDP socket
 		try 
 		{
-			// ì†Œì¼“ì„ ìƒì„±í•˜ëŠ” ë¶€ë¶„.
+			// ¼ÒÄÏÀ» »ı¼ºÇÏ´Â ºÎºĞ.
 			OpenSocket_t(cm_ulLocalHost, bClient?0:net_iPort);
 			cci_pbMasterInput.pb_ppbsStats = NULL;
 			cci_pbMasterOutput.pb_ppbsStats = NULL;
@@ -546,7 +526,7 @@ void CCommunicationInterface::GetHostName(CTString &strName, CTString &strAddres
 // create an inet-family socket
 void CCommunicationInterface::CreateSocket_t()
 {
-	//0105 1line ì§€ìš°ê¸°
+	//0105 1line Áö¿ì±â
 	//  ASSERT(cci_hSocket==INVALID_SOCKET);
 	// open the socket
 	//0105
@@ -616,20 +596,242 @@ CTString CCommunicationInterface::GetSocketError(INDEX iError)
 	return strError;
 };
 
+BOOL CCommunicationInterface::CheckIPFilter()
+{
+	// È¸»ç ³»ºÎ°¡ ¾Æ´Ï¶ó¸é IP ÇÊÅÍ¸µ...
+#if defined VER_TEST
+	return FALSE;
+#endif
+	return TRUE;
+}
+
+BOOL CCommunicationInterface::IsValidIP()
+{
+	//-----------------------------------------------------------------
+	BOOL bSatisfied = FALSE;
+
+	hostent *Hostent = gethostbyname(cci_szAddr);
+	if (Hostent != NULL)
+	{
+		// sl.dta¿¡ ÀÖ´ø IP¸¦ ¾ò¾î¿È.
+		for( INDEX i = 0; Hostent->h_addr_list[i] != NULL; ++i )
+		{
+			// (chSB1.chSB2.chSB3.chSB4)
+			const unsigned char chSB1 = ((const in_addr *)Hostent->h_addr_list[i])->S_un.S_un_b.s_b1;
+			const unsigned char chSB2 = ((const in_addr *)Hostent->h_addr_list[i])->S_un.S_un_b.s_b2;
+			const unsigned char chSB3 = ((const in_addr *)Hostent->h_addr_list[i])->S_un.S_un_b.s_b3;
+			const unsigned char chSB4 = ((const in_addr *)Hostent->h_addr_list[i])->S_un.S_un_b.s_b4;
+
+			for( std::vector<sIPFilter>::iterator iter = m_vecIPFilter.begin(); iter != m_vecIPFilter.end(); ++iter )
+			{
+				// ÇØ´çÇÏ´Â ³ª¶óÀÇ Çã¿ë IP ¸ñ·Ïµé...
+				if( g_iCountry == (*iter).iCountry )
+				{
+					// (chSB1.chSB2.chSB3.chSB4)
+					const unsigned char chFilterSB1 = (*iter).chSB1;
+					const unsigned char chFilterSB2 = (*iter).chSB2;
+					const unsigned char chFilterSB3 = (*iter).chSB3;
+					const unsigned char chFilterSB4 = (*iter).chSB4;
+
+					// sl.dta¿¡ ÀÖ´ø ¾ÆÀÌÇÇ¿Í ÇÏµå ÄÚµùµÇ¾îÀÖ´Â IP°¡ µ¿ÀÏÇÏ´Ù¸é, Á¶°ÇÀ» ¸¸Á·ÇÔ.
+					if( chSB1 == chFilterSB1 && chSB2 == chFilterSB2 )
+					{
+						if( chFilterSB3 == (UCHAR)-1 || chFilterSB3 == chSB3 )
+						{
+							if( chFilterSB4 == (UCHAR)-1 || chFilterSB4 == chSB4)
+							{
+								// Á¶°Ç ¸¸Á·
+								bSatisfied = TRUE;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return bSatisfied;
+}
+
+void CCommunicationInterface::SetIPFilter()
+{
+	// IP Filter ¸ñ·Ï.
+	sIPFilter	TempIP;
+
+	//-------------------IP Filtering List------------------------------
+	// NOTE : ±âº»ÀûÀ¸·Î ¾Õ¿¡ µÎ Å¬·¡½º¿¡ ÇØ´çÇÏ´Â ÁÖ¼Ò´Â Ã¼Å©ÇÕ´Ï´Ù.
+	// -1	: ÇØ´ç Å¬·¡½ºÀÇ ¸ğµç ¹øÈ£(?) Çã¿ë.
+	
+	// Áß±¹ ¾ÆÀÌÇÇ¸¦ ÀÓ½Ã·Î ¿­¾îÁÜ
+	for (int i=129; i<=190; ++i)
+	{
+		TempIP.SetIP( 123, 127, 98, i, KOREA );	// KOREA(119.205.XXX.XXX)
+		m_vecIPFilter.push_back( TempIP );
+	}
+
+	// °³¹ß QA
+	{
+		TempIP.SetIP( 10, 1, 90, -1, g_iCountry );
+		m_vecIPFilter.push_back( TempIP );
+	}
+
+	// Thai
+	{
+		TempIP.SetIP( 61, 90, -1, -1, THAILAND);		// THAILAND : MAIN
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 103, 251, -1, -1, THAILAND);		// THAILAND : TEST
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 202, 183, -1, -1, THAILAND);		// THAILAND : LIVE
+		m_vecIPFilter.push_back( TempIP );
+	}
+	
+	// Gamigo
+	{
+		TempIP.SetIP( 178, 19, 73, 77, GERMANY);	// GER_Live : 195.245.86.71
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 92, GERMANY);	// GET_Test : 195.245.86.82
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 91, GERMANY);	// GET_Test : 195.245.86.82
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 80, ITALY);		// ÀÌÅ»¸®¾Æ ¶óÀÌºê
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 87, ITALY);		// ÀÌÅ»¸®¾Æ Å×¼·
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 195, 245, 86, 130, ITALY);	// ÀÌÅ»¸®¾Æ Å×¼·(±¸¹öÀü)
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 195, 245, 86, 157, ITALY);	// ÀÌÅ»¸®¾Æ Å×¼·(EP2)
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 85, SPAIN) ;		// Spain : test
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 95, SPAIN) ;		// Spain : test
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 78, SPAIN);		// Spain : Main
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 86, FRANCE) ;	// France : test
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 93, FRANCE) ;	// France : test
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 79, FRANCE);		// France : Main
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 89 , POLAND) ;	// Poland : test
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 82, POLAND);		// Poland : Main
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 178, 19, 73, 94, POLAND);		// Poland : EP2
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 46, 253, 149, 249, ENGLAND);
+		m_vecIPFilter.push_back( TempIP );
+		
+		// À¯·ÎÇÇ¾È ¼­¹ö Ãß°¡ ¼­¹öÅëÇÕÀ¸·Î ÀÎÇÑ ·Î±×ÀÎ ¼­¹ö º¯°æ IP ÇÊÅÍ¸µ Ãß°¡ [11/19/2012 Ranma]
+		// µ¶ÀÏ
+		TempIP.SetIP( 46, 253, 149, 77, GERMANY);	// GER_Live : 46.253.149.77
+		m_vecIPFilter.push_back( TempIP );
+		// ÀÌÅ»¸®¾Æ
+		TempIP.SetIP( 46, 253, 149, 80, ITALY);		// ÀÌÅ»¸®¾Æ ¶óÀÌºê  : 46.253.149.80
+		m_vecIPFilter.push_back( TempIP );
+		// ½ºÆäÀÎ
+		TempIP.SetIP( 46, 253, 149, 78, SPAIN);		// ½ºÆäÀÎ ¶óÀÌºê  : 46.253.149.78
+		m_vecIPFilter.push_back( TempIP );
+		// ÇÁ¶û½º
+		TempIP.SetIP( 46, 253, 149, 79, FRANCE);	// ÇÁ¶û½º ¶óÀÌºê  : 46.253.149.79
+		m_vecIPFilter.push_back( TempIP );
+		// Æú¶õµå
+		TempIP.SetIP( 46, 253, 149, 82, POLAND);	// Æú¶õµå ¶óÀÌºê  : 46.253.149.82
+		m_vecIPFilter.push_back( TempIP );
+		// ¿µ±¹
+		TempIP.SetIP( 46, 253, 149, 66, ENGLAND);	// ¿µ±¹ ¶óÀÌºê
+		m_vecIPFilter.push_back( TempIP );
+
+		if (FindHosNameIP("test2.it.lc.gamigo.com", TempIP, ITALY) == true)
+			m_vecIPFilter.push_back( TempIP );
+
+		// °¡¹Ì°í ·ÎÄÃÀÇ °æ¿ì¿¡ À¯·¯ÇÇ¾È ¼­¹ö¸¦ Ãß°¡
+		if ( IsGamigo( g_iCountry ) )
+		{
+			TempIP.SetIP( 46, 253, 149, 200, g_iCountry);	// [2012/08/20 : Sora] À¯·¯ÇÇ¾È ¼­¹ö Å×¼· 1
+			m_vecIPFilter.push_back( TempIP );
+
+			TempIP.SetIP( 46, 253, 149, 201, g_iCountry);	// [2012/08/20 : Sora] À¯·¯ÇÇ¾È ¼­¹ö Å×¼· 2
+			m_vecIPFilter.push_back( TempIP );
+
+			TempIP.SetIP( 46, 253, 149, 112, g_iCountry);	// [11/19/2012 Ranma] À¯·¯ÇÇ¾È ¶óÀÌºê
+			m_vecIPFilter.push_back( TempIP );
+
+			if (FindHosNameIP("login.ea.lc.gamigo.com", TempIP, g_iCountry) == true)
+				m_vecIPFilter.push_back( TempIP );
+		}
+	}
+
+	{
+		TempIP.SetIP( 46, 253, 149, 252, USA);
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 209, 239, 121, 42, USA);
+		m_vecIPFilter.push_back( TempIP );
+	}
+
+	// Brz, Mex
+	{
+		TempIP.SetIP( 173, 224, 123, 83, BRAZIL );	// BRZ_°¡¹Ì°í ¶óÀÌºê.
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 46, 253, 149, 250, BRAZIL );	// BRZ_°¡¹Ì°í Å×½ºÆ®.
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 173, 224, 123, 76, MEXICO );	// MEX_°¡¹Ì°í ¶óÀÌºê.
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 46, 253, 149, 251, MEXICO );	// MEX_°¡¹Ì°í Å×½ºÆ®.
+		m_vecIPFilter.push_back( TempIP );
+	}
+
+	// Russia
+	{
+		TempIP.SetIP( 88, 212, -1, -1, RUSSIA);	// RUS_Live : 88.212.221.201
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 188, 93, -1, -1, RUSSIA);	// RUS_Live : 88.212.221.201
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 86, 62, -1, -1, RUSSIA);		// RUS_Test : 86.62.121.33
+		m_vecIPFilter.push_back( TempIP );
+
+		TempIP.SetIP( 46, 253, -1, -1, RUSSIA);		// RUS_Test : 46.253.149.247
+		m_vecIPFilter.push_back( TempIP );
+
+		if (FindHosNameIP("login.ru.lc.gamigo.com", TempIP, RUSSIA) == true)
+			m_vecIPFilter.push_back( TempIP );
+	}
+
+	std::sort( m_vecIPFilter.begin(), m_vecIPFilter.end() );
+}
+
 // open an UDP socket at given port
 void CCommunicationInterface::OpenSocket_t(ULONG ulLocalHost, ULONG ulLocalPort)
 {
 	// create the socket as UDP
-	// ì†Œì¼“ì„ ìƒì„±í•¨.
 	CreateSocket_t();
 	
-	// bind it to that address/port
-	//0105 2line ì§€ìš°ê¸°
-	//  Bind_t(ulLocalHost, ulLocalPort);
-	// go non-blocking
-	//  SetNonBlocking_t();
-	
-	// ì„œë²„ë¡œ ë™ì‘ì‹œì—...
+	// ¼­¹ö·Î µ¿ÀÛ½Ã¿¡...
 	if(m_bTcpIp && _pNetwork->IsTcpServer)
 	{	 
 		//	 SetNonBlocking_t(); 
@@ -655,7 +857,7 @@ void CCommunicationInterface::OpenSocket_t(ULONG ulLocalHost, ULONG ulLocalPort)
 				(const char*)GetSocketError(WSAGetLastError()));
 		}
 		
-		// ì„œë²„ë¡œ ë™ì‘ì‹œì—.
+		// ¼­¹ö·Î µ¿ÀÛ½Ã¿¡.
 		if(listen(cci_hSocket,57)== SOCKET_ERROR) 
 		{			
 			int err = WSAGetLastError();
@@ -665,384 +867,62 @@ void CCommunicationInterface::OpenSocket_t(ULONG ulLocalHost, ULONG ulLocalPort)
 	}
 	else if(m_bTcpIp)
 	{
-		CTFileName fnmServer = CTString("sl.dta");
-		CTFileName fnmServer2 = CTString("sl2.dta");				// ì¤‘êµ­ìª½ ë‘ë²ˆì§¸ ìœ ì €ë””ë¹„êµ°.
-		CTFileName fnmSLD = CTString("sl_d.dta");
-		//CTFileName fnmServer = CTString("server.txt");//0907
-		CTFileStream strmFile;
-		
-		/*
-		if (!FileExists(fnmServer)) 
-		{	
-			_tcpip.InitSocket();
-			_tcpip.ConnectToServer("211.181.248.153", 4001); //ì„œë²„ê°€ ë„ì›Œì ¸ìˆëŠ” ì»´í“¨í„° ì•„ì´í”¼
-			cci_hSocket = _tcpip.Socket;
-			return;		 
-		} 
-		else 
+		LoginServer loginsvr[MAX_LOGINSERVER];
+		memset(&loginsvr, 0, sizeof(LoginServer) * MAX_LOGINSERVER);
+
+		int	ServerNum = ReadInfo(loginsvr);
+
+#ifdef	VER_TEST
 		{
-		*/
-		// Date : 2005-11-03(ì˜¤í›„ 2:39:02), By Lee Ki-hwan
-		// ë¡œê·¸ì¸ ì‹œë„ì‹œë§ˆë‹¤ sl.dtaë¥¼ ìƒˆë¡œ ì½ì–´ ì˜¤ë„ë¡ ìˆ˜
-		//	if(cci_iSelectedServerNum == -1)
-			{
-				FILE *fp = NULL;
-				FILE *fp_sld = NULL;
-				
-				char buf[256];
-				
-				// ì„œë²„ ì´ë¦„  , ì£¼ì†Œ
-				int ServerNum;
-				int i;
-				unsigned char key;
-				int iKey, iKeyTemp;	
-				
-				CTString fnTemp;
-				CTString fnSLD;		
-				CTString strFullPath = _fnmApplicationPath.FileDir();
-				
-				// ì½ì–´ë“¤ì¼ sl?.dta ê²°ì •í•˜ê¸°.
-				fnSLD = strFullPath + fnmSLD;
-				if (fp_sld = fopen(fnSLD, "rt")) {				// mdoìš© sl_d.dtaê°€ ìˆìœ¼ë©´
-					int nRegion = -1;
-					fscanf(fp_sld, "%d", &nRegion);
-					
-					if( nRegion == 1 ) // 2ë²ˆì§¸ ì§€ì—­
-					{
-						fnTemp = strFullPath + fnmServer2;		// sl2.dta :  region 1
-						m_b2stLocal = TRUE;
-					}
-					else
-					{
-						fnTemp = strFullPath + fnmServer;		// default : region 0
-						m_b2stLocal = FALSE;					
-					}
-					fclose(fp_sld);					
-				} else {				// other country, i.e, nako, insrea ...
-					fnTemp = strFullPath + fnmServer;
-				}
-				
-				fp = fopen(fnTemp, "rb");
-				if(fp == NULL) return;
-				
-				for (i = 0; i < 6; i++) 
-				{
-					fread(&key, 1, 1, fp);
-				}
-				fread(&iKey, sizeof(int), 1, fp);
-				fread(&key, 1, 1, fp);
-				
-				fread(&ServerNum, sizeof(int), 1, fp);
-				
-				iKeyTemp	= ServerNum;
-				ServerNum	-= iKey;
-				iKey		= iKeyTemp;
-				
-				struct LoginServer
-				{
-					char	szName[100];
-					char	szAddress[100];
-					char	szPort[100];
-					char	szFullUsers[50];
-					char	szBusyUsers[50];
-				};
-				
-				LoginServer loginsvr[MAX_LOGINSERVER];
-				memset(&loginsvr, 0, sizeof(LoginServer) * MAX_LOGINSERVER);
-				
-				for (i = 0; i < ServerNum; i++) 
-				{
-					// ì²«ë²ˆì§¸ ì½ì€ì¤„ì„ bufì— ë„£ëŠ”ë‹¤.
-					int count;
-					int idx;
-					unsigned char data;
-					fread(&count, sizeof(int), 1, fp);
-					
-					iKeyTemp	= count;
-					count		-= iKey;
-					iKey		= iKeyTemp;
-					
-					for (idx = 0; idx < count; idx++) 
-					{
-						fread(&data, 1, 1, fp);
-						buf[idx] = data - key;
-						key = data;
-					}
-					buf[count] = '\0';
-					
-					sscanf(buf, "%s %s %s %s %s", 
-						loginsvr[i].szName, loginsvr[i].szAddress, loginsvr[i].szPort, loginsvr[i].szFullUsers, loginsvr[i].szBusyUsers);
-				}
-				
-				fclose(fp);
-				
-				cci_iSelectedServerNum	= rand() % ServerNum;
-				cci_iPort				= atoi(loginsvr[cci_iSelectedServerNum].szPort);
-				cci_iBusyUsers			= atoi(loginsvr[cci_iSelectedServerNum].szBusyUsers);
-				cci_iFullUsers			= atoi(loginsvr[cci_iSelectedServerNum].szFullUsers);
+			CUIManager::getSingleton()->setIPString(loginsvr[0].szAddress);
+		}
+#endif	// VER_TEST
 
-				if(cci_iBusyUsers <= 0)
-				{
-					if (g_iCountry == HONGKONG)
-					{
-						cci_iBusyUsers = USER_NUM_BUSY;
-					}
-					else
-					{
-						cci_iBusyUsers = USER_NUM_BUSY+100;
-					}
-				}
-				if(cci_iFullUsers <= 0)
-				{
-					cci_iFullUsers = USER_NUM_FULL;
-				}
-				strcpy(cci_szAddr, loginsvr[cci_iSelectedServerNum].szAddress);
-			}
-			
-			//-------------------------------------------------------------------------------
-			//					### í´ë¼ì´ì–¸íŠ¸ ì ‘ì† ë¶€ë¶„ ì œí•œ ###
-			//
-			// NOTE : í•´ë‹¹í•˜ëŠ” IPë§Œ ì ‘ì†ì„ í—ˆìš©í•˜ê³  ì‹¶ë‹¤ë©´, vecClientFilterì— ì¶”ê°€í•˜ê³ ,
-			// NOTE : CLIENT_FILTERë¥¼ ì²´í¬í• ê²ƒ.
-			// NOTE : ì¤‘êµ­ê³¼ ëŒ€ë§Œêº¼ëŠ” define ì²´í¬
-			// NOTE : í•œêµ­êº¼ëŠ” define í•´ì œ.
-			//-------------------------------------------------------------------------------
-			// FIXME : IP_FILTERì™€ CLIENT_FILTERê°€ ì¤‘ë³µë˜ëŠ” ë¶€ë¶„ì´ ë§ê³ , ë”°ë¡œ í•¨ìˆ˜ë¡œ ë¹¼ì•¼ í• ê²ƒ ê°™ìŒ.
-//#define CLIENT_FILTER
-#ifdef CLIENT_FILTER
-			// í´ë¼ì´ì–¸íŠ¸ì˜ í—ˆìš© IP.
-			BOOL bCanConnect = FALSE;
+		if (ServerNum <= 0)
+			return;
 
-			std::vector<sIPFilter>	vecClientFilter;
+		cci_iSelectedServerNum	= rand() % ServerNum;
+		cci_iPort				= atoi(loginsvr[cci_iSelectedServerNum].szPort);
+		cci_iBusyUsers			= atoi(loginsvr[cci_iSelectedServerNum].szBusyUsers);
+		cci_iFullUsers			= atoi(loginsvr[cci_iSelectedServerNum].szFullUsers);
 
-			sIPFilter TempClientFilter;
-			//-------------------IP Filtering List------------------------------
-			// NOTE : ê¸°ë³¸ì ìœ¼ë¡œ ì•ì— ë‘ í´ë˜ìŠ¤ì— í•´ë‹¹í•˜ëŠ” ì£¼ì†ŒëŠ” ì²´í¬í•©ë‹ˆë‹¤.
-			// -1	: í•´ë‹¹ í´ë˜ìŠ¤ì˜ ëª¨ë“  ë²ˆí˜¸(?) í—ˆìš©.
-			TempClientFilter.SetIP( 203, 95, -1, -1, CHINA );		// CHINA(203.95.XXX.XXX)
-			vecClientFilter.push_back( TempClientFilter );
-
-			TempClientFileter.SetIP( 222, 161, 120, -1), CHINA );	// CHINA(222.161.120.XXX)	// inserted by seo
-			vecClientFilter.push_back( TempClientFilter );
-
-			TempClientFilter.SetIP( 220, 130, 170, -1, TAIWAN );	// TAIWAN(220.130.170.XXX)
-			vecClientFilter.push_back( TempClientFilter );
-
-			TempClientFilter.SetIP( 222, 122, 55, 219, TAIWAN );	// TAIWAN(222.122.55.219)
-			vecClientFilter.push_back( TempClientFilter );
-			
-			TempClientFilter.SetIP( 220, 130, 170, -1, TAIWAN2 );	// TAIWAN(220.130.170.XXX) wooss050929
-			vecClientFilter.push_back( TempClientFilter );
-
-			TempClientFilter.SetIP( 222, 122, 55, 219, TAIWAN2 );	// TAIWAN(222.122.55.219)
-			vecClientFilter.push_back( TempClientFilter );
+		if(cci_iBusyUsers <= 0)
+		{
+#if defined (G_HONGKONG)
+			cci_iBusyUsers = USER_NUM_BUSY;
+#else
+			cci_iBusyUsers = USER_NUM_BUSY+100;
+#endif
+		}
+		if(cci_iFullUsers <= 0)
+		{
+			cci_iFullUsers = USER_NUM_FULL;
+		}
+		strcpy(cci_szAddr, loginsvr[cci_iSelectedServerNum].szAddress);
 
 
-			//-----------------------------------------------------------------
-			std::sort( vecClientFilter.begin(), vecClientFilter.end() );
-			std::vecotr<sIPFilter>::iterator itr;
-			
-			for( iter = vecClientFilter.begin(); iter != vecClientFilter.end(); ++iter )
-			{
-				// í•´ë‹¹í•˜ëŠ” ë‚˜ë¼ì˜ í—ˆìš© IP ëª©ë¡ë“¤...
-				if( g_iCountry == (*iter).iCountry )
-				{
-					// (chSB1.chSB2.chSB3.chSB4)
-					const unsigned char chFilterSB1 = (*iter).chSB1;
-					const unsigned char chFilterSB2 = (*iter).chSB2;
-					const unsigned char chFilterSB3 = (*iter).chSB3;
-					const unsigned char chFilterSB4 = (*iter).chSB4;
-					
-					// í—ˆìš©í•˜ëŠ” í´ë¼ì´ì–¸íŠ¸ IPì¼ ê²½ìš°ì—...
-					if( cm_chSB1 == chFilterSB1 && cm_chSB2 == chFilterSB2 )
-					{
-						// ì„¸ë²ˆì§¸ ìë¦¬ ë¹„êµ
-						if( chFilterSB3 != -1 )
-						{
-							if( cm_chSB3 == chFilterSB3 )
-							{
-								// ì¡°ê±´ ë§Œì¡±
-								bCanConnect = TRUE;
-								break;
-							}
-						}
-						
-						// ë„¤ë²ˆì§¸ ìë¦¬ ë¹„êµ
-						if( chFilterSB4 != -1 )
-						{
-							if( cm_chSB4 == chFilterSB4 )
-							{
-								// ì¡°ê±´ ë§Œì¡±
-								bCanConnect = TRUE;
-								break;
-							}
-						}
-						
-						// ì¡°ê±´ ë§Œì¡±
-						bCanConnect = TRUE;
-						break;
-					}
-				}
-			}					
-			
-			// ì¡°ê±´ì„ ë§Œì¡± ì•ˆí• ë•Œ!!!
-			if( !bCanConnect )
+		//-------------------------------------------------------------------------------
+		//					### ¼­¹ö Á¢¼Ó ºÎºĞ Á¦ÇÑ ###
+		//
+		// NOTE : sl.dtaÀÇ ¾Õ¿¡ µÎ ÀÚ¸®¿Í vecIPFilter¿¡ µé¾î°¡ÀÖ´Â IP¸¦ ºñ±³ÇÏ¿©,
+		// NOTE : °°´Ù¸é Á¢¼ÓÀ» Çã¿ëÇÑ´Ù.
+		// NOTE : Çã¿ëÇØ¾ß ÇÒ IP°¡ ´õ Ãß°¡µÈ´Ù¸é vecIPFilter¿¡ Ãß°¡ÇÏ°í, 
+		// NOTE : IP_FILTER¸¦ Ã¼Å©ÇÒ°Í.
+		// NOTE : ÁÖÀÇ!!! È¸»ç ³»ºÎ¿¡¼­´Â '¼­¹ö Á¢¼Ó ºÎºĞ Ã¼Å©'¸¦ ÇÏÁö ¾ÊÀ½. !!!
+		//-------------------------------------------------------------------------------
+		// FIXME : IP_FILTER¿Í CLIENT_FILTER°¡ Áßº¹µÇ´Â ºÎºĞÀÌ ¸¹°í, µû·Î ÇÔ¼ö·Î »©¾ß ÇÒ°Í °°À½.
+
+		if (CheckIPFilter() == TRUE)
+		{
+			if (IsValidIP() == FALSE)
 			{
 				cci_iSelectedServerNum = -1;
 				return;
 			}
-#endif
-			//-------------------------------------------------------------------------------
-			//					### ì„œë²„ ì ‘ì† ë¶€ë¶„ ì œí•œ ###
-			//
-			// NOTE : sl.dtaì˜ ì•ì— ë‘ ìë¦¬ì™€ vecIPFilterì— ë“¤ì–´ê°€ìˆëŠ” IPë¥¼ ë¹„êµí•˜ì—¬,
-			// NOTE : ê°™ë‹¤ë©´ ì ‘ì†ì„ í—ˆìš©í•œë‹¤.
-			// NOTE : í—ˆìš©í•´ì•¼ í•  IPê°€ ë” ì¶”ê°€ëœë‹¤ë©´ vecIPFilterì— ì¶”ê°€í•˜ê³ , 
-			// NOTE : IP_FILTERë¥¼ ì²´í¬í• ê²ƒ.
-			// NOTE : ì£¼ì˜!!! íšŒì‚¬ ë‚´ë¶€ì—ì„œëŠ” 'ì„œë²„ ì ‘ì† ë¶€ë¶„ ì²´í¬'ë¥¼ í•˜ì§€ ì•ŠìŒ. !!!
-			//-------------------------------------------------------------------------------
-			// FIXME : IP_FILTERì™€ CLIENT_FILTERê°€ ì¤‘ë³µë˜ëŠ” ë¶€ë¶„ì´ ë§ê³ , ë”°ë¡œ í•¨ìˆ˜ë¡œ ë¹¼ì•¼ í• ê²ƒ ê°™ìŒ.
-#define IP_FILTER
-#ifdef IP_FILTER
+		}
+		// ¼­¹ö¿¡ Á¢¼ÓÀ» ½Ãµµ.
+		_tcpip.ConnectToServer(cci_szAddr, cci_iPort); //¼­¹ö°¡ ¶ç¿öÁ®ÀÖ´Â ÄÄÇ»ÅÍ ¾ÆÀÌÇÇ	
 
-			// íšŒì‚¬ ë‚´ë¶€ê°€ ì•„ë‹ˆë¼ë©´ IP í•„í„°ë§...
-//			if( !((cm_chSB1 == 211) && (cm_chSB2 == 181) && (cm_chSB3 == 248)) && g_iCountry != MALAYSIA) // (211.181.248.XXX)
-//			060719 íšŒì‚¬ ì´ì „...ì•„ì´í”¼ ë³€ê²½
-/*			if( !((cm_chSB1 == 61) && (cm_chSB2 == 104) && (cm_chSB3 == 44)) && 
-				g_iCountry != BRAZIL && g_iCountry != HONGKONG && g_iCountry != GERMANY && g_iCountry != SPAIN && g_iCountry != FRANCE && g_iCountry != POLAND) // (211.181.248.XXX)	FRANCE_SPAIN_CLOSEBETA_NA_20081124*/
-			if (!((cm_chSB1 == 61) && (cm_chSB2 == 104) && (cm_chSB3 == 44)) && g_iCountry == KOREA) //íšŒì‚¬ ë‚´ë¶€ ì•„ì´í”¼ë§Œ í•„í„° ì ìš©í•˜ì§€ ì•ŠëŠ”ë‹¤.
-			{
-				std::vector<sIPFilter>	vecIPFilter;
-
-				// IP Filter ëª©ë¡.
-				sIPFilter	TempIP;
-
-				//-------------------IP Filtering List------------------------------
-				// NOTE : ê¸°ë³¸ì ìœ¼ë¡œ ì•ì— ë‘ í´ë˜ìŠ¤ì— í•´ë‹¹í•˜ëŠ” ì£¼ì†ŒëŠ” ì²´í¬í•©ë‹ˆë‹¤.
-				// -1	: í•´ë‹¹ í´ë˜ìŠ¤ì˜ ëª¨ë“  ë²ˆí˜¸(?) í—ˆìš©.
-				TempIP.SetIP( 222, 122, -1, -1, KOREA );	// KOREA(222.122.XXX.XXX)
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 61, 63, -1, -1, TAIWAN );		// TAIWAN(61.63.XXX.XXX)
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 61, 30, -1, -1, TAIWAN );	// TAIWAN(61.30.XXX.XXX) -> 61.30 wooss 060320
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 61, 63, -1, -1, TAIWAN2 );		// TAIWAN2(61.63.XXX.XXX) wooss050929
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 61, 30, -1, -1, TAIWAN2 );	// TAIWAN2(61.30.XXX.XXX) -> 61.30 wooss 060320
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 61, 151, -1, -1, CHINA );		// CHINA(61.151.XXX.XXX)
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 222, 161, -1, -1, CHINA );		// CHINA(222.161.XXX.XXX)	// inserted by seo
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 61., 90, -1, -1, THAILAND);		// THAILAND : MAIN
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 203, 144, -1, -1, THAILAND);		// THAILAND : TEST
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 210, 174, -1, -1, JAPAN) ;		// JAPAN : MAIN
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 61, 78, -1, -1, JAPAN);		// JAPAN : TEST
-				vecIPFilter.push_back( TempIP );
-
-				TempIP.SetIP( 202, 75, 57, -1, MALAYSIA) ;		// MALAYSIA : 202.75.57.41
-				vecIPFilter.push_back( TempIP );				// TEST		: 202.75.57.46
-
-				//TempIP.SetIP( 64, 15, -1, -1, USA );		// USA : 64.15.152.89
-															// TEST : 64.15.147.198
-				TempIP.SetIP( 72, 55, -1, -1, USA);			// USA : 72.55.177.168
-				TempIP.SetIP( 174, 142, -1, -1, USA);		// USA : 174.142.177.132(í…Œì„­)
-				vecIPFilter.push_back( TempIP );			// TEST : 72.55.177.160
-
-				//-----------------------------------------------------------------
-				
-				std::sort( vecIPFilter.begin(), vecIPFilter.end() );				
-				
-				// ì†Œì¼“ì„ ì´ˆê¸°í™”í•¨.
-				//_tcpip.InitSocket();
-				
-				BOOL bSatisfied = FALSE;
-				
-				hostent *Hostent = gethostbyname(cci_szAddr);
-				if (Hostent != NULL)
-				{
-					// sl.dtaì— ìˆë˜ IPë¥¼ ì–»ì–´ì˜´.
-					INDEX i;
-
-					for( i = 0; Hostent->h_addr_list[i] != NULL; ++i )
-					{
-						// (chSB1.chSB2.chSB3.chSB4)
-						const unsigned char chSB1 = ((const in_addr *)Hostent->h_addr_list[i])->S_un.S_un_b.s_b1;
-						const unsigned char chSB2 = ((const in_addr *)Hostent->h_addr_list[i])->S_un.S_un_b.s_b2;
-						const unsigned char chSB3 = ((const in_addr *)Hostent->h_addr_list[i])->S_un.S_un_b.s_b3;
-						const unsigned char chSB4 = ((const in_addr *)Hostent->h_addr_list[i])->S_un.S_un_b.s_b4;
-						
-						std::vector<sIPFilter>::iterator iter;
-
-						for( iter = vecIPFilter.begin(); iter != vecIPFilter.end(); ++iter )
-						{
-							// í•´ë‹¹í•˜ëŠ” ë‚˜ë¼ì˜ í—ˆìš© IP ëª©ë¡ë“¤...
-							if( g_iCountry == (*iter).iCountry )
-							{
-								// (chSB1.chSB2.chSB3.chSB4)
-								const unsigned char chFilterSB1 = (*iter).chSB1;
-								const unsigned char chFilterSB2 = (*iter).chSB2;
-								const unsigned char chFilterSB3 = (*iter).chSB3;
-								const unsigned char chFilterSB4 = (*iter).chSB4;
-				
-								// sl.dtaì— ìˆë˜ ì•„ì´í”¼ì™€ í•˜ë“œ ì½”ë”©ë˜ì–´ìˆëŠ” IPê°€ ë™ì¼í•˜ë‹¤ë©´, ì¡°ê±´ì„ ë§Œì¡±í•¨.
-								if( chSB1 == chFilterSB1 && chSB2 == chFilterSB2 )
-								{
-									if( chFilterSB3 != -1 )
-									{
-										if( chFilterSB3 == chSB3 )
-										{
-											// ì¡°ê±´ ë§Œì¡±
-											bSatisfied = TRUE;
-											break;
-										}
-									}
-
-									if( chFilterSB4 != -1 )
-									{
-										if( chFilterSB4 == chSB4 )
-										{
-											// ì¡°ê±´ ë§Œì¡±
-											bSatisfied = TRUE;
-											break;
-										}
-									}
-
-									// ì¡°ê±´ ë§Œì¡±
-									bSatisfied = TRUE;
-									break;
-								}
-							}
-						}
-					}
-				}
-				
-				// ì¡°ê±´ì„ ë§Œì¡± ì•ˆí• ë•Œ!!!
-				if( !bSatisfied )
-				{
-					cci_iSelectedServerNum = -1;
-					return;
-				}
-			}
-#endif
-			
-			// ì„œë²„ì— ì ‘ì†ì„ ì‹œë„.
-			_tcpip.ConnectToServer(cci_szAddr, cci_iPort); //ì„œë²„ê°€ ë„ì›Œì ¸ìˆëŠ” ì»´í“¨í„° ì•„ì´í”¼		  	  
-		//}		
-		
 		cci_hSocket = _tcpip.Socket;
 		g_hSocket	= cci_hSocket;
 	}
@@ -1126,7 +1006,7 @@ BOOL CCommunicationInterface::Broadcast_Receive(void *pvReceive, SLONG &slReceiv
 	return cm_ciBroadcast.ReceiveFrom(pvReceive, slReceiveSize,&adrAddress,FALSE);
 }
 
-//! ë¸Œë¡œë“œìºìŠ¤íŠ¸ ì¸ë²„í¼ ì—…ë°ì´íŠ¸. ì—°ê²°ìš”ì²­ ì²˜ë¦¬.
+//! ºê·ÎµåÄ³½ºÆ® ÀÎ¹öÆÛ ¾÷µ¥ÀÌÆ®. ¿¬°á¿äÃ» Ã³¸®.
 // update the broadcast input buffer - handle any incoming connection requests
 void CCommunicationInterface::Broadcast_Update_t() 
 {
@@ -1136,17 +1016,17 @@ void CCommunicationInterface::Broadcast_Update_t()
 	ULONG iClient;
 	UBYTE ubDummy=65;
 
-	//! ì¸ë²„í¼ì— ì—°ê²°ìš”ì²­ íŒ¨í‚·ì´ ë“¤ì–´ì™”ë‹¤ë©´,
+	//! ÀÎ¹öÆÛ¿¡ ¿¬°á¿äÃ» ÆĞÅ¶ÀÌ µé¾î¿Ô´Ù¸é,
 	// while there is a connection request packet in the input buffer
 	while ((ppaConnectionRequest = cm_ciBroadcast.ci_pbReliableInputBuffer.GetConnectRequestPacket()) != NULL) {
 		// see if there is a client already connected at that address and port
 		bIsAlready = FALSE;
 		for (iClient=1;iClient<SERVER_CLIENTS;iClient++) 
 		{
-			//! ì´ë¯¸ ì ‘ì†í•´ìˆëŠ” ì–´ë“œë ˆìŠ¤ë¼ë©´,
+			//! ÀÌ¹Ì Á¢¼ÓÇØÀÖ´Â ¾îµå·¹½º¶ó¸é,
 			if (cm_aciClients[iClient].ci_adrAddress.adr_ulAddress == ppaConnectionRequest->pa_adrAddress.adr_ulAddress &&
 					cm_aciClients[iClient].ci_adrAddress.adr_uwPort == ppaConnectionRequest->pa_adrAddress.adr_uwPort) {
-		   //! ê·¸ê±´ ì ‘ì†ì‹œë„í•˜ë‹¤ ì‹¤íŒ¨í•œ ê²ƒì´ë‹ˆ í´ë¦¬ì–´í•œë‹¤.
+		   //! ±×°Ç Á¢¼Ó½ÃµµÇÏ´Ù ½ÇÆĞÇÑ °ÍÀÌ´Ï Å¬¸®¾îÇÑ´Ù.
           // if it is, this client probably failed to connect the last time, so clear it
           _pNetwork->ga_srvServer.HandleClientDisconected(iClient);
 			}
@@ -1155,11 +1035,11 @@ void CCommunicationInterface::Broadcast_Update_t()
 		// find an empty client structure
 		bFoundEmpty = FALSE;
 		for (iClient=1;iClient<SERVER_CLIENTS;iClient++) {
-			//! ì‚¬ìš©í•˜ì§€ ì•ŠëŠ” arrayë¥¼ ì°¾ì•˜ë‹¤ë©´, ê·¸ê³³ì— í´ë¼ì´ì–¸íŠ¸ ì£¼ì†Œì™€ í¬íŠ¸ ì €ì¥.
+			//! »ç¿ëÇÏÁö ¾Ê´Â array¸¦ Ã£¾Ò´Ù¸é, ±×°÷¿¡ Å¬¶óÀÌ¾ğÆ® ÁÖ¼Ò¿Í Æ÷Æ® ÀúÀå.
 			if (cm_aciClients[iClient].ci_bUsed == FALSE) {
 				bFoundEmpty = TRUE;
-				//0105 ì—¬ê¸°ì„œ í´ë¼ì´ì–¸íŠ¸ ì£¼ì†Œì™€ í¬íŠ¸ë¥¼ ì €ì¥í•œë‹¤.
-				if(m_bTcpIp&& _pNetwork->IsTcpServer){//ì„œë²„
+				//0105 ¿©±â¼­ Å¬¶óÀÌ¾ğÆ® ÁÖ¼Ò¿Í Æ÷Æ®¸¦ ÀúÀåÇÑ´Ù.
+				if(m_bTcpIp&& _pNetwork->IsTcpServer){//¼­¹ö
 					int sockaddr_size = sizeof( SOCKADDR_IN );		
 					SOCKADDR_IN clientsockaddr;	
 					//0131	//0202				
@@ -1175,7 +1055,7 @@ void CCommunicationInterface::Broadcast_Update_t()
 					cm_aciClients[iClient].ci_adrAddress.adr_ulAddress = ppaConnectionRequest->pa_adrAddress.adr_ulAddress;
 					cm_aciClients[iClient].ci_adrAddress.adr_uwPort = ppaConnectionRequest->pa_adrAddress.adr_uwPort;
 				}
-				//! IDìƒì„±. 
+				//! ID»ı¼º. 
 				// generate the ID
 				UWORD uwID = _pTimer->GetHighPrecisionTimer().tv_llValue&0x0FFF;
 				if (uwID==0 || uwID=='//') {
@@ -1186,13 +1066,13 @@ void CCommunicationInterface::Broadcast_Update_t()
 				// form the connection response packet
 				ppaConnectionRequest->pa_adrAddress.adr_uwID = '//';
 				ppaConnectionRequest->pa_uwReliable = UDP_PACKET_RELIABLE | UDP_PACKET_RELIABLE_HEAD | UDP_PACKET_RELIABLE_TAIL | UDP_PACKET_CONNECT_RESPONSE;
-				//! í´ë¼ì´ì–¸íŠ¸ì— í• ë‹¹ëœ IDë¥¼ ì•Œë ¤ì¤€ë‹¤.
+				//! Å¬¶óÀÌ¾ğÆ®¿¡ ÇÒ´çµÈ ID¸¦ ¾Ë·ÁÁØ´Ù.
 				// return it to the client
 				ppaConnectionRequest->WriteToPacket(&(cm_aciClients[iClient].ci_adrAddress.adr_uwID),sizeof(cm_aciClients[iClient].ci_adrAddress.adr_uwID),ppaConnectionRequest->pa_uwReliable,cm_ciBroadcast.ci_ulSequence++,ppaConnectionRequest->pa_adrAddress.adr_uwID,sizeof(cm_aciClients[iClient].ci_adrAddress.adr_uwID));
 				if (cm_ciBroadcast.ci_pbOutputBuffer.AppendPacket(*ppaConnectionRequest,TRUE,FALSE) == FALSE) {
 					ASSERT (FALSE);
 				}
-				//! ì´ í´ë¼ì´ì–¸íŠ¸ëŠ” ì´ì œ ì‚¬ìš©ë˜ëŠ”ê±°ë‹¤.
+				//! ÀÌ Å¬¶óÀÌ¾ğÆ®´Â ÀÌÁ¦ »ç¿ëµÇ´Â°Å´Ù.
 				cm_aciClients[iClient].ci_bUsed = TRUE;
 				//0131
 				//				client_cnt++;
@@ -1226,10 +1106,10 @@ void CCommunicationInterface::Server_Init_t(void)
   ASSERT(cci_bInitialized);
   ASSERT(!cci_bServerInitialized);
 	
-  INDEX iClient;
+
 
   // for each client
-  for(iClient=0; iClient<SERVER_CLIENTS; iClient++) {
+  for(INDEX iClient=0; iClient<SERVER_CLIENTS; iClient++) {
     // clear its status
     cm_aciClients[iClient].Clear();
 		cm_aciClients[iClient].ci_pbOutputBuffer.pb_ppbsStats = &_pbsSend;
@@ -1260,17 +1140,14 @@ void CCommunicationInterface::Server_Close(void)
 {
   CTSingleLock slComm(&cm_csComm, TRUE);
 
-  INDEX iClient;
   // close all clients
-  for (iClient=0; iClient<SERVER_CLIENTS; iClient++) {
+  for (INDEX iClient=0; iClient<SERVER_CLIENTS; iClient++) {
     cm_aciClients[iClient].Clear();
   }
 
   // mark that the server is uninitialized
   cci_bServerInitialized = FALSE;
 };
-
-
 
 /*
 *  Server clear client and prepare for new connection
@@ -1327,9 +1204,7 @@ ULONG CCommunicationInterface::Server_GetMaxPendingData()
 
   ULONG ulMaxData = 0;
   ULONG ulData;
-  INDEX iClient;
-
-  for (iClient=0;iClient<SERVER_CLIENTS;iClient++) {
+  for (INDEX iClient=0;iClient<SERVER_CLIENTS;iClient++) {
     ulData = cm_aciClients[iClient].GetPendingDataSize();
     if (ulData > ulMaxData) {
       ulMaxData = ulData;
@@ -1342,9 +1217,9 @@ ULONG CCommunicationInterface::Server_GetMaxPendingData()
 ULONG CCommunicationInterface::Server_GetTotalPendingData()
 {
   CTSingleLock slComm(&cm_csComm, TRUE);
-  INDEX iClient;
+
   ULONG ulData = 0;
-  for (iClient=0;iClient<SERVER_CLIENTS;iClient++) {
+  for (INDEX iClient=0;iClient<SERVER_CLIENTS;iClient++) {
     ulData += cm_aciClients[iClient].GetPendingDataSize();
   }
   return ulData;
@@ -1386,7 +1261,7 @@ BOOL CCommunicationInterface::Server_Receive_Unreliable(INDEX iClient, void *pvR
   return cm_aciClients[iClient].Receive(pvReceive, slReceiveSize,FALSE);
 };
 
-//! ì„œë²„ ì—…ë°ì´íŠ¸
+//! ¼­¹ö ¾÷µ¥ÀÌÆ®
 BOOL CCommunicationInterface::Server_Update()
 {
 
@@ -1396,51 +1271,51 @@ BOOL CCommunicationInterface::Server_Update()
 	CTimerValue tvNow = _pTimer->GetHighPrecisionTimer();
 	//	INDEX iClient;
 	
-	//! ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ì™€ í´ë¼ì´ì–¸íŠ¸ 0ë²ˆì§¸ arrayì˜ ë²„í¼ë¥¼ ë§êµí™˜ í•œë‹¤. inputë²„í¼<->outë²„í¼
+	//! ·ÎÄÃ Å¬¶óÀÌ¾ğÆ®¿Í Å¬¶óÀÌ¾ğÆ® 0¹øÂ° arrayÀÇ ¹öÆÛ¸¦ ¸Â±³È¯ ÇÑ´Ù. input¹öÆÛ<->out¹öÆÛ
 	// transfer packets for the local client
 	if (cm_ciLocalClient.ci_bUsed && cm_ciLocalClient.ci_pciOther != NULL) {
 		cm_ciLocalClient.ExchangeBuffers();
 	};
 	
-	/* //0311 ì‚­ì œ
-	//! outë²„í¼ ì—…ë°ì´íŠ¸.
+	/* //0311 »èÁ¦
+	//! out¹öÆÛ ¾÷µ¥ÀÌÆ®.
 	cm_aciClients[0].UpdateOutputBuffers();
 	
-	//! ì‹±í´ í”Œë ˆì´ê°€ ì•„ë‹ˆë¼ë©´,
+	//! ½ÌÅ¬ ÇÃ·¹ÀÌ°¡ ¾Æ´Ï¶ó¸é,
 	// if not just playing single player
 	if (cci_bServerInitialized) {
 		try {
-			//! ë¸Œë¡œë“œ ìºìŠ¤íŠ¸ ì—…ë°ì´íŠ¸.
+			//! ºê·Îµå Ä³½ºÆ® ¾÷µ¥ÀÌÆ®.
 			Broadcast_Update_t();
 		} catch (char *strError) {
 			CPrintF(strError);
 		}
 		
-		//! ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì— ëŒ€í•˜ì—¬ outë²„í¼ì—ì„œ ë§ˆìŠ¤í„° outë²„í¼ë¡œ íŒ¨í‚·ì„ ì „ì†¡í•œë‹¤. ë¡œì»¬ ì œì™¸.
+		//! ¸ğµç Å¬¶óÀÌ¾ğÆ®¿¡ ´ëÇÏ¿© out¹öÆÛ¿¡¼­ ¸¶½ºÅÍ out¹öÆÛ·Î ÆĞÅ¶À» Àü¼ÛÇÑ´Ù. ·ÎÄÃ Á¦¿Ü.
 		// for each client transfer packets from the output buffer to the master output buffer
 		for (iClient=1; iClient<SERVER_CLIENTS; iClient++) {
 			CClientInterface &ci = cm_aciClients[iClient];
-			//! ê·¸ í´ë¼ì´ì–¸íŠ¸ê°€ ì—°ê²°ë˜ì–´ ìˆì§€ ì•Šìœ¼ë©´ skip
+			//! ±× Å¬¶óÀÌ¾ğÆ®°¡ ¿¬°áµÇ¾î ÀÖÁö ¾ÊÀ¸¸é skip
 			// if not connected
 			if (!ci.ci_bUsed) {
 				// skip it
 				continue;
 			}
-			//! outë²„í¼ ì—…ë°ì´íŠ¸.
+			//! out¹öÆÛ ¾÷µ¥ÀÌÆ®.
 			// update its buffers, if a reliable packet is overdue (has not been delivered too long)
 			// disconnect the client			
 			if (ci.UpdateOutputBuffers() != FALSE) {
-				//! ë§Œì•½ ì•„ì›ƒë²„í¼ì˜ ì²«ë²ˆì§¸íŒ¨í‚·ì´ ë³´ë‚´ì§ˆ ì‹œê°„ì„ ê¸°ë‹¤ë¦¬ëŠ” íŒ¨í‚·ì´ ìˆë‹¤ë©´,??
-				//!íŒ¨í‚·ì´ ë³´ë‚´ì§ˆ ì‹œê°„ì´ë¼ë©´ ë§ˆìŠ¤í„° ì•„ì›ƒë²„í¼ë¡œ ì „ì†¡í•œë‹¤.
+				//! ¸¸¾à ¾Æ¿ô¹öÆÛÀÇ Ã¹¹øÂ°ÆĞÅ¶ÀÌ º¸³»Áú ½Ã°£À» ±â´Ù¸®´Â ÆĞÅ¶ÀÌ ÀÖ´Ù¸é,??
+				//!ÆĞÅ¶ÀÌ º¸³»Áú ½Ã°£ÀÌ¶ó¸é ¸¶½ºÅÍ ¾Æ¿ô¹öÆÛ·Î Àü¼ÛÇÑ´Ù.
 				// transfer packets ready to be sent out to the master output buffer
 				while (ci.ci_pbOutputBuffer.pb_ulNumOfPackets > 0) {
 					ppaPacket = ci.ci_pbOutputBuffer.PeekFirstPacket();
-					//! ë³´ë‚¼ ì‹œê°„ì´ë¼ë©´,
+					//! º¸³¾ ½Ã°£ÀÌ¶ó¸é,
 					if (ppaPacket->pa_tvSendWhen < tvNow) {
 						ci.ci_pbOutputBuffer.RemoveFirstPacket(FALSE);
-						//0105 ACKíŒ¨í‚·ë²„í¼ í™•ì¸ í•˜ì§€ ì•Šê¸°
-						if(!(m_bTcpIp&& _pNetwork->IsTcpServer)){//ì„œë²„
-							//! ë¦´ë¼ì´ì–´ë¸” íŒ¨í‚·ì´ë¼ë©´ ì•„í¬íŒ¨í‚· ìƒì„±.
+						//0105 ACKÆĞÅ¶¹öÆÛ È®ÀÎ ÇÏÁö ¾Ê±â
+						if(!(m_bTcpIp&& _pNetwork->IsTcpServer)){//¼­¹ö
+							//! ¸±¶óÀÌ¾îºí ÆĞÅ¶ÀÌ¶ó¸é ¾ÆÅ©ÆĞÅ¶ »ı¼º.
 							if (ppaPacket->pa_uwReliable & UDP_PACKET_RELIABLE) {
 								ppaPacketCopy = CreatePacket();
 								*ppaPacketCopy = *ppaPacket;
@@ -1449,7 +1324,7 @@ BOOL CCommunicationInterface::Server_Update()
 								}
 							}
 						}
-						//! ë§ˆìŠ¤í„° outë²„í¼ì— ë„£ëŠ”ë‹¤.
+						//! ¸¶½ºÅÍ out¹öÆÛ¿¡ ³Ö´Â´Ù.
 						if (cci_pbMasterOutput.AppendPacket(*ppaPacket,FALSE,FALSE) == FALSE){
 							ASSERT(FALSE);
 						}
@@ -1468,11 +1343,11 @@ BOOL CCommunicationInterface::Server_Update()
 		// update broadcast output buffers
 		// update its buffers
 		cm_ciBroadcast.UpdateOutputBuffers();
-		//! ë¸Œë¡œë“œìºìŠ¤íŠ¸ ì•„ì›ƒë²„í¼ì— íŒ¨í‚·ì´ ìˆë‹¤ë©´,
+		//! ºê·ÎµåÄ³½ºÆ® ¾Æ¿ô¹öÆÛ¿¡ ÆĞÅ¶ÀÌ ÀÖ´Ù¸é,
 		// transfer packets ready to be sent out to the master output buffer
 		while (cm_ciBroadcast.ci_pbOutputBuffer.pb_ulNumOfPackets > 0) {
 			ppaPacket = cm_ciBroadcast.ci_pbOutputBuffer.PeekFirstPacket();
-			//! ë³´ë‚¼ ì‹œê°„ì´ ë˜ì—ˆë‹¤ë©´, 
+			//! º¸³¾ ½Ã°£ÀÌ µÇ¾ú´Ù¸é, 
 			if (ppaPacket->pa_tvSendWhen < tvNow) {
 				cm_ciBroadcast.ci_pbOutputBuffer.RemoveFirstPacket(FALSE);
 				if (cci_pbMasterOutput.AppendPacket(*ppaPacket,FALSE,FALSE) == FALSE) {
@@ -1485,14 +1360,14 @@ BOOL CCommunicationInterface::Server_Update()
 	*/		
 		// send/receive packets over the TCP/IP stack
 		UpdateMasterBuffers();
-	/* //0311 ì‚­ì œ
-		//! ë§ˆìŠ¤í„° inë²„í¼ì— íŒ¨í‚·ì´ ë“¤ì–´ìˆë‹¤ë©´,
+	/* //0311 »èÁ¦
+		//! ¸¶½ºÅÍ in¹öÆÛ¿¡ ÆĞÅ¶ÀÌ µé¾îÀÖ´Ù¸é,
 		// dispatch all packets from the master input buffer to the clients' input buffers
 		while (cci_pbMasterInput.pb_ulNumOfPackets > 0) {
 			BOOL bClientFound;
 			ppaPacket = cci_pbMasterInput.GetFirstPacket();
 			bClientFound = FALSE;
-			//! ì ‘ì†í—ˆê°€ ìš”ì²­í•˜ëŠ” ë¸Œë¡œíŠ¸ìºìŠ¤íŠ¸ íŒ¨í‚·ì´ë¼ë©´,
+			//! Á¢¼ÓÇã°¡ ¿äÃ»ÇÏ´Â ºê·ÎÆ®Ä³½ºÆ® ÆĞÅ¶ÀÌ¶ó¸é,
 			if (ppaPacket->pa_adrAddress.adr_uwID=='//' || ppaPacket->pa_adrAddress.adr_uwID==0) {
 				if (cm_ciBroadcast.ci_pbInputBuffer.AppendPacket(*ppaPacket,FALSE,TRUE) == FALSE) {
 					DeletePacket(ppaPacket);
@@ -1500,9 +1375,9 @@ BOOL CCommunicationInterface::Server_Update()
 				bClientFound = TRUE;
 			} else {
 				for (iClient=0; iClient<SERVER_CLIENTS; iClient++) {
-					//! ê° í´ë¼ì´ì–¸íŠ¸ ì•„ì´ë”” í™•ì¸
+					//! °¢ Å¬¶óÀÌ¾ğÆ® ¾ÆÀÌµğ È®ÀÎ
 					if (ppaPacket->pa_adrAddress.adr_uwID == cm_aciClients[iClient].ci_adrAddress.adr_uwID) {
-						//! í•´ë‹¹ ì¸ë²„í¼ì—  íŒ¨í‚· ë„£ê¸°.
+						//! ÇØ´ç ÀÎ¹öÆÛ¿¡  ÆĞÅ¶ ³Ö±â.
 						if (cm_aciClients[iClient].ci_pbInputBuffer.AppendPacket(*ppaPacket,FALSE,TRUE) == FALSE) {
 							DeletePacket(ppaPacket);
 						}
@@ -1519,7 +1394,7 @@ BOOL CCommunicationInterface::Server_Update()
 				}
 			}
 		}
-		//! ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ ì¸ë²„í¼ ì—…ë°ì´íŠ¸
+		//! ¸ğµç Å¬¶óÀÌ¾ğÆ® ÀÎ¹öÆÛ ¾÷µ¥ÀÌÆ®
 		for (iClient=1; iClient<SERVER_CLIENTS; iClient++) {
 			cm_aciClients[iClient].UpdateInputBuffers();
 		}
@@ -1528,17 +1403,16 @@ BOOL CCommunicationInterface::Server_Update()
 	}
 	*/	
 	cm_aciClients[0].UpdateInputBuffers();
-	//! ë¡œì»¬ ì¸ë²„í¼ ì—…ë°ì´íŠ¸
+	//! ·ÎÄÃ ÀÎ¹öÆÛ ¾÷µ¥ÀÌÆ®
 	cm_ciLocalClient.UpdateInputBuffers();
-	/* //0311 ì‚­ì œ
-	//! ë¸Œë¡œë“œìºìŠ¤íŠ¸ ì¸ë²„í¼ ì—…ë°ì´íŠ¸
+	/* //0311 »èÁ¦
+	//! ºê·ÎµåÄ³½ºÆ® ÀÎ¹öÆÛ ¾÷µ¥ÀÌÆ®
 	cm_ciBroadcast.UpdateInputBuffersBroadcast();
-	//! ë¸Œë¡œë“œìºìŠ¤íŠ¸ ì—…ë°ì´íŠ¸
+	//! ºê·ÎµåÄ³½ºÆ® ¾÷µ¥ÀÌÆ®
 	Broadcast_Update_t();
 	*/	
 	return TRUE;
 };
-
 
 /*
 *  ---->>>>  CLIENT  <<<<----
@@ -1547,7 +1421,7 @@ BOOL CCommunicationInterface::Server_Update()
 /*
 *  Initialize client
 */
-//!í´ë¼ì´ì–¸íŠ¸ ì´ˆê¸°í™”
+//!Å¬¶óÀÌ¾ğÆ® ÃÊ±âÈ­
 void CCommunicationInterface::Client_Init_t(char* strServerName)
 {
   CTSingleLock slComm(&cm_csComm, TRUE);
@@ -1574,26 +1448,26 @@ void CCommunicationInterface::Client_Init_t(ULONG ulServerAddress)
 
   ASSERT(cci_bInitialized);
   ASSERT(!cci_bClientInitialized);
-	//! í´ë¼ì´ì–¸íŠ¸ ì¸í„°í˜ì´ìŠ¤ ì´ˆê¸°í™”.outë²„í¼,Inë²„í¼ state ì´ˆê¸°í™”.
+	//! Å¬¶óÀÌ¾ğÆ® ÀÎÅÍÆäÀÌ½º ÃÊ±âÈ­.out¹öÆÛ,In¹öÆÛ state ÃÊ±âÈ­.
   cm_ciLocalClient.Clear();
 	cm_ciLocalClient.ci_pbOutputBuffer.pb_ppbsStats = &_pbsSend;
 	cm_ciLocalClient.ci_pbInputBuffer.pb_ppbsStats = &_pbsRecv;
-	//! ì„œë²„ê°€ ì•„ë‹ˆë¼ë©´(í´ë¼ì´ì–¸íŠ¸ ì´ˆê¸°í™” í•˜ê³  ë„˜ì–´ì˜¨..)
+	//! ¼­¹ö°¡ ¾Æ´Ï¶ó¸é(Å¬¶óÀÌ¾ğÆ® ÃÊ±âÈ­ ÇÏ°í ³Ñ¾î¿Â..)
   // if this computer is not the server
   if (!cci_bServerInitialized) {
     // open with connecting to remote server
     cm_ciLocalClient.ci_bClientLocal= FALSE;
-	//! ì—¬ê¸° ë“¤ì–´ê°€ì„œ ì„œë²„ ì ‘ì†ìŠ¹ì¸ì„ ë°›ëŠ”ë‹¤.
+	//! ¿©±â µé¾î°¡¼­ ¼­¹ö Á¢¼Ó½ÂÀÎÀ» ¹Ş´Â´Ù.
     Client_OpenNet_t(ulServerAddress);
 
   // if this computer is server
   } else {
-		//! ì„œë²„ë¼ë©´ ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ ì„¤ì •.
+		//! ¼­¹ö¶ó¸é ·ÎÄÃ Å¬¶óÀÌ¾ğÆ® ¼³Á¤.
     // open local client
     cm_ciLocalClient.ci_bClientLocal = TRUE;
     Client_OpenLocal();
   }
-	//! í´ë¼ì´ì–¸íŠ¸ ì´ˆê¸°í™” ë˜ì—ˆìŒ.
+	//! Å¬¶óÀÌ¾ğÆ® ÃÊ±âÈ­ µÇ¾úÀ½.
   cci_bClientInitialized = TRUE;
 };
 
@@ -1606,9 +1480,8 @@ void CCommunicationInterface::Client_Close(void)
 
   ASSERT(cci_bInitialized);
 
-  TIME tmWait;
 	// dispatch remaining packets (keep trying for half a second - 10 attempts)
-  for(tmWait=0; tmWait<500;
+  for(TIME tmWait=0; tmWait<500;
     Sleep(NET_WAITMESSAGE_DELAY), tmWait+=NET_WAITMESSAGE_DELAY) {
     // if all packets are successfully sent, exit loop
 		if  ((cm_ciLocalClient.ci_pbOutputBuffer.pb_ulNumOfPackets == 0) 
@@ -1630,14 +1503,14 @@ void CCommunicationInterface::Client_Close(void)
 /*
 *  Open client local
 */
-//! ì„œë²„ì—ì„œ ì“°ëŠ” ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ ì˜¤í”ˆ
+//! ¼­¹ö¿¡¼­ ¾²´Â ·ÎÄÃ Å¬¶óÀÌ¾ğÆ® ¿ÀÇÂ
 void CCommunicationInterface::Client_OpenLocal(void)
 {
   CTSingleLock slComm(&cm_csComm, TRUE);
-  //! ì„œë²„ìƒ 0ë²ˆì§¸ í´ë¼ì´ì–¸íŠ¸ í…Œì´ë¸”ê³¼ ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ ì¸í„°í˜ì´ìŠ¤ë¥¼ ì—°ê²°í•œë‹¤.
+  //! ¼­¹ö»ó 0¹øÂ° Å¬¶óÀÌ¾ğÆ® Å×ÀÌºí°ú ·ÎÄÃ Å¬¶óÀÌ¾ğÆ® ÀÎÅÍÆäÀÌ½º¸¦ ¿¬°áÇÑ´Ù.
   CClientInterface &ci0 = cm_ciLocalClient;
   CClientInterface &ci1 = cm_aciClients[SERVER_LOCAL_CLIENT];
-  //! ì„œë¡œ ë¡œì»¬ë¡œ ì§€ì •.  
+  //! ¼­·Î ·ÎÄÃ·Î ÁöÁ¤.  
   ci0.ci_bUsed = TRUE;
   ci0.SetLocal(&ci1);
   ci1.ci_bUsed = TRUE;
@@ -1648,7 +1521,7 @@ void CCommunicationInterface::Client_OpenLocal(void)
 /*
 *  Open client remote
 */
-//! í´ë¼ì´ì–¸íŠ¸ ì˜¤í”ˆ.
+//! Å¬¶óÀÌ¾ğÆ® ¿ÀÇÂ.
 void CCommunicationInterface::Client_OpenNet_t(ULONG ulServerAddress)
 {
   CTSingleLock slComm(&cm_csComm, TRUE);
@@ -1668,11 +1541,10 @@ void CCommunicationInterface::Client_OpenNet_t(ULONG ulServerAddress)
 
   // start waiting for server's response
   if (ctRetries>1) {
-    SetProgressDescription(TRANS("waiting for server"));
     CallProgressHook_t(0.0f);
   }
 
-	//!	ì—°ê²° ìš”ì²­ íŒ¨í‚·ì„ ë§Œë“ ë‹¤.
+	//!	¿¬°á ¿äÃ» ÆĞÅ¶À» ¸¸µç´Ù.
 	// form the connection request packet
 	ppaInfoPacket = CreatePacket();
 	ubReliable = UDP_PACKET_RELIABLE | UDP_PACKET_RELIABLE_HEAD | UDP_PACKET_RELIABLE_TAIL | UDP_PACKET_CONNECT_REQUEST;
@@ -1680,44 +1552,43 @@ void CCommunicationInterface::Client_OpenNet_t(ULONG ulServerAddress)
 	ppaInfoPacket->pa_adrAddress.adr_uwPort = net_iPort;
 	ppaInfoPacket->pa_ubRetryNumber = 0;
 	ppaInfoPacket->WriteToPacket(&ubDummy,1,ubReliable,cm_ciLocalClient.ci_ulSequence++,'//',1);
-	//! ì—°ê²°ìš”ì²­íŒ¨í‚·ì„ ì•„ì›ƒë²„í¼ì— ë„£ëŠ”ë‹¤.
+	//! ¿¬°á¿äÃ»ÆĞÅ¶À» ¾Æ¿ô¹öÆÛ¿¡ ³Ö´Â´Ù.
 	if (cm_ciLocalClient.ci_pbOutputBuffer.AppendPacket(*ppaInfoPacket,TRUE,FALSE) == FALSE){
     ASSERT(FALSE);
   }
-	//! ì„œë²„ ì£¼ì†Œì™€ í¬íŠ¸ ë²ˆí˜¸ë¥¼ í´ë¼ì´ì–¸íŠ¸ ì¸í„°í˜ì´ìŠ¤ì— ì…‹íŒ…
+	//! ¼­¹ö ÁÖ¼Ò¿Í Æ÷Æ® ¹øÈ£¸¦ Å¬¶óÀÌ¾ğÆ® ÀÎÅÍÆäÀÌ½º¿¡ ¼ÂÆÃ
 	// set client destination address to server address
 	cm_ciLocalClient.ci_adrAddress.adr_ulAddress = ulServerAddress;
 	cm_ciLocalClient.ci_adrAddress.adr_uwPort = net_iPort;
 	
-	INDEX iRetry;
   // for each retry
-	for(iRetry=0; iRetry<ctRetries; iRetry++) 
+	for(INDEX iRetry=0; iRetry<ctRetries; iRetry++) 
 	{
-	    //! ë²„í¼ë¥¼ ì—…ë°ì´íŠ¸ í•˜ì—¬ ì•„ì›ƒë²„í¼ì•ˆì— ìˆëŠ” ì ‘ì†ìš”ì²­íŒ¨í‚·ì„ ë³´ë‚´ê³ , ì ‘ì†ìŠ¹ì¸ íŒ¨í‚·ì„ ê¸°ë‹¤ë¦°ë‹¤.
+	    //! ¹öÆÛ¸¦ ¾÷µ¥ÀÌÆ® ÇÏ¿© ¾Æ¿ô¹öÆÛ¾È¿¡ ÀÖ´Â Á¢¼Ó¿äÃ»ÆĞÅ¶À» º¸³»°í, Á¢¼Ó½ÂÀÎ ÆĞÅ¶À» ±â´Ù¸°´Ù.
 		// send/receive and juggle the buffers
 		if (Client_Update() == FALSE) 
 		{
 			break;
 		}
-		//! ë¦´ë¼ì´ì–´ë¸” Inputë²„í¼ì— ì–´ë– í•œ íŒ¨í‚·ì´ ë“¤ì–´ì™€ ìˆë‹¤ë©´,
+		//! ¸±¶óÀÌ¾îºí Input¹öÆÛ¿¡ ¾î¶°ÇÑ ÆĞÅ¶ÀÌ µé¾î¿Í ÀÖ´Ù¸é,
 		// if there is something in the input buffer
 		if (cm_ciLocalClient.ci_pbReliableInputBuffer.pb_ulNumOfPackets > 0) 
 		{
-			//! ì²«íŒ¨í‚·ì„ ì–»ì–´ì™€ì„œ
+			//! Ã¹ÆĞÅ¶À» ¾ò¾î¿Í¼­
 			ppaReadPacket = cm_ciLocalClient.ci_pbReliableInputBuffer.GetFirstPacket();
-			//! ê·¸ê²Œ ì ‘ì†ìŠ¹ì¸ íŒ¨í‚·ì´ë¼ë©´ 
+			//! ±×°Ô Á¢¼Ó½ÂÀÎ ÆĞÅ¶ÀÌ¶ó¸é 
 			// and it is a connection confirmation
 			if (ppaReadPacket->pa_uwReliable &  UDP_PACKET_CONNECT_RESPONSE) 
 			{
 				// the client has succedeed to connect, so read the uwID from the packet
-				//! ë³´ë‚´ì˜¨ íŒ¨í‚·ì—ì„œ adr_uwIDì„ ì–»ëŠ”ë‹¤.
+				//! º¸³»¿Â ÆĞÅ¶¿¡¼­ adr_uwIDÀ» ¾ò´Â´Ù.
 				cm_ciLocalClient.ci_adrAddress.adr_ulAddress = ulServerAddress;
 				cm_ciLocalClient.ci_adrAddress.adr_uwPort = net_iPort;
 				cm_ciLocalClient.ci_adrAddress.adr_uwID = *((UWORD*) (ppaReadPacket->pa_pubPacketData + MAX_HEADER_SIZE));
 				cm_ciLocalClient.ci_bUsed = TRUE;
 				cm_ciLocalClient.ci_bClientLocal = FALSE;
 				cm_ciLocalClient.ci_pciOther = NULL;
-				//! ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ì—ì„œ ê·¸ íŒ¨í‚·ì„ ì§€ìš´ë‹¤.
+				//! ¸±¶óÀÌ¾îºí input¹öÆÛ¿¡¼­ ±× ÆĞÅ¶À» Áö¿î´Ù.
 				cm_ciLocalClient.ci_pbReliableInputBuffer.RemoveConnectResponsePackets();
 
 				DeletePacket(ppaReadPacket);
@@ -1735,7 +1606,6 @@ void CCommunicationInterface::Client_OpenNet_t(ULONG ulServerAddress)
 	cci_bBound = FALSE;
 	ThrowF_t(TRANS("Client: Timeout receiving UDP port"));
 };
-
 
 /*
 *  Clear local client
@@ -1766,9 +1636,9 @@ BOOL CCommunicationInterface::Client_IsConnected(void)
 void CCommunicationInterface::Client_Send_Reliable(const void *pvSend, SLONG slSendSize)
 {
   CTSingleLock slComm(&cm_csComm, TRUE);
-  //! outputë²„í¼ì— ë„£ê¸°.
+  //! output¹öÆÛ¿¡ ³Ö±â.
   cm_ciLocalClient.Send(pvSend, slSendSize,TRUE);
-  //! ë¡œì»¬ì´ë¼ë©´ ì„œë²„ ì—…ë°ì´íŠ¸.
+  //! ·ÎÄÃÀÌ¶ó¸é ¼­¹ö ¾÷µ¥ÀÌÆ®.
   if (cci_bServerInitialized) {
     Server_Update();
   } else {
@@ -1787,13 +1657,12 @@ BOOL CCommunicationInterface::Client_Receive_Reliable(CTStream &strmReceive)
   CTSingleLock slComm(&cm_csComm, TRUE);
   return cm_ciLocalClient.Receive(strmReceive,TRUE);
 };
-//! íŒ¨í‚·ì— ì í˜€ìˆëŠ” ì „ì†¡ì‚¬ì´ì¦ˆ(slExpectedSize)ì™€ ì‹¤ì œë¡œ ë²„í¼ì— ì¡´ì¬í•˜ëŠ” ë¦´ë¼ì´ì–´ë¸” íŒ¨í‚·ì˜ ì‚¬ì´ì¦ˆ(slReceivedSize)ë¥¼ ì–»ì–´ë‚¸ë‹¤.
+//! ÆĞÅ¶¿¡ ÀûÇôÀÖ´Â Àü¼Û»çÀÌÁî(slExpectedSize)¿Í ½ÇÁ¦·Î ¹öÆÛ¿¡ Á¸ÀçÇÏ´Â ¸±¶óÀÌ¾îºí ÆĞÅ¶ÀÇ »çÀÌÁî(slReceivedSize)¸¦ ¾ò¾î³½´Ù.
 void CCommunicationInterface::Client_PeekSize_Reliable(SLONG &slExpectedSize,SLONG &slReceivedSize)
 {
   slExpectedSize = cm_ciLocalClient.GetExpectedReliableSize();
   slReceivedSize = cm_ciLocalClient.GetCurrentReliableSize();
 }
-
 
 /*
 *  Client Send/Receive Unreliable
@@ -1816,7 +1685,7 @@ BOOL CCommunicationInterface::Client_Receive_Unreliable(void *pvReceive, SLONG &
   return cm_ciLocalClient.Receive(pvReceive, slReceiveSize,FALSE);
 };
 
-//0311 kwon í•¨ìˆ˜ ì¶”ê°€
+//0311 kwon ÇÔ¼ö Ãß°¡
 void CCommunicationInterface::Client_Send_Unreliable_New(const void *pvSend, SLONG slSendSize, BOOL bLogin)
 {
   CTSingleLock slComm(&cm_csComm, TRUE);
@@ -1832,7 +1701,7 @@ void CCommunicationInterface::Client_Send_Unreliable_New(const void *pvSend, SLO
   }
 };
 
-//0311 kwon í•¨ìˆ˜ì¶”ê°€. ì—¬ê¸°ì„œ ë§ˆìŠ¤í„° input ë²„í¼ì—ì„œ íŒ¨í‚· ì½ì–´ë“¤ì—¬ sessionstateì—ì„œ ì¨ì•¼í•œë‹¤.
+//0311 kwon ÇÔ¼öÃß°¡. ¿©±â¼­ ¸¶½ºÅÍ input ¹öÆÛ¿¡¼­ ÆĞÅ¶ ÀĞ¾îµé¿© sessionstate¿¡¼­ ½á¾ßÇÑ´Ù.
 BOOL CCommunicationInterface::Client_Receive_Unreliable_New(void *pvReceive, SLONG &slReceiveSize, INDEX &index)
 {
 	CTSingleLock slComm(&cm_csComm, TRUE);
@@ -1891,7 +1760,7 @@ BOOL CCommunicationInterface::Client_Update(void)
 	CTimerValue tvNow = _pTimer->GetHighPrecisionTimer();
 
 
-    //! í´ë¼ì´ì–¸íŠ¸ì˜ ì•„ì›ƒë²„í¼ ê°±ì‹ 
+    //! Å¬¶óÀÌ¾ğÆ®ÀÇ ¾Æ¿ô¹öÆÛ °»½Å
 	// update local client's output buffers
 	if (cm_ciLocalClient.UpdateOutputBuffers() == FALSE) {
 		return FALSE;
@@ -1902,11 +1771,11 @@ BOOL CCommunicationInterface::Client_Update(void)
 		// put all pending packets in the master output buffer
 		while (cm_ciLocalClient.ci_pbOutputBuffer.pb_ulNumOfPackets > 0) {
 			ppaPacket = cm_ciLocalClient.ci_pbOutputBuffer.PeekFirstPacket();
-			//! pa_tvSendWhenëŠ” ì¬ì‹œë„ ê°„ê²©
+			//! pa_tvSendWhen´Â Àç½Ãµµ °£°İ
 			if (ppaPacket->pa_tvSendWhen < tvNow) {
-				//! ë‹¤ì‹œ ë³´ë‚¼ ì‹œê°„ì´ ë˜ì—ˆë‹¤ë©´ ì•„ì›ƒë²„í¼ì—ì„œ ì§€ìš°ê³ ,
+				//! ´Ù½Ã º¸³¾ ½Ã°£ÀÌ µÇ¾ú´Ù¸é ¾Æ¿ô¹öÆÛ¿¡¼­ Áö¿ì°í,
 				cm_ciLocalClient.ci_pbOutputBuffer.RemoveFirstPacket(FALSE);
-				//! ë¦´ë¼ì´ì–´ë¸” íŒ¨í‚·ì´ë¼ë©´ ì•„í¬ë²„í¼ì— íŒ¨í‚·ì„ ë³µì‚¬í•´ ë†“ëŠ”ë‹¤.
+				//! ¸±¶óÀÌ¾îºí ÆĞÅ¶ÀÌ¶ó¸é ¾ÆÅ©¹öÆÛ¿¡ ÆĞÅ¶À» º¹»çÇØ ³õ´Â´Ù.
 				if (ppaPacket->pa_uwReliable & UDP_PACKET_RELIABLE) {
 					ppaPacketCopy = CreatePacket();
 					*ppaPacketCopy = *ppaPacket;
@@ -1914,7 +1783,7 @@ BOOL CCommunicationInterface::Client_Update(void)
 						ASSERT(FALSE);
 					}
 				}
-				//! íŒ¨í‚·ì„ ë§ˆìŠ¤í„°ì•„ì›ƒë²„í¼ì— ë„£ëŠ”ë‹¤.
+				//! ÆĞÅ¶À» ¸¶½ºÅÍ¾Æ¿ô¹öÆÛ¿¡ ³Ö´Â´Ù.
 				if (cci_pbMasterOutput.AppendPacket(*ppaPacket,FALSE,FALSE) == FALSE){
 					ASSERT(FALSE);
 				}
@@ -1924,15 +1793,15 @@ BOOL CCommunicationInterface::Client_Update(void)
 			}
 		}
 
-		//! ë¸Œë¡œë“œìºìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ì˜ ì•„ì›ƒë²„í¼ ê°±ì‹ 
+		//! ºê·ÎµåÄ³½ºÆ® Å¬¶óÀÌ¾ğÆ®ÀÇ ¾Æ¿ô¹öÆÛ °»½Å
 		// update broadcast output buffers
 		// update its buffers
 		cm_ciBroadcast.UpdateOutputBuffers();
-        //! ë¸Œë¡œë“œìºìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ì˜ ì•„ì›ƒë²„í¼ì— ë§ˆìŠ¤í„°ì•„ì›ƒë²„í¼ë¡œ ë³´ë‚¼ íŒ¨í‚·ì´ ìˆë‹¤ë©´ 
+        //! ºê·ÎµåÄ³½ºÆ® Å¬¶óÀÌ¾ğÆ®ÀÇ ¾Æ¿ô¹öÆÛ¿¡ ¸¶½ºÅÍ¾Æ¿ô¹öÆÛ·Î º¸³¾ ÆĞÅ¶ÀÌ ÀÖ´Ù¸é 
 		// transfer packets ready to be sent out to the master output buffer
 		while (cm_ciBroadcast.ci_pbOutputBuffer.pb_ulNumOfPackets > 0) {
 			ppaPacket = cm_ciBroadcast.ci_pbOutputBuffer.PeekFirstPacket();
-			//! ë³´ë‚¼ì‹œê°„ì´ ë˜ì—ˆë‹¤ë©´ ë§ˆìŠ¤í„°ì•„ì›ƒë²„í¼ë¡œ ë³´ë‚¸ë‹¤.
+			//! º¸³¾½Ã°£ÀÌ µÇ¾ú´Ù¸é ¸¶½ºÅÍ¾Æ¿ô¹öÆÛ·Î º¸³½´Ù.
 			if (ppaPacket->pa_tvSendWhen < tvNow) {
 				cm_ciBroadcast.ci_pbOutputBuffer.RemoveFirstPacket(FALSE);
 				if (cci_pbMasterOutput.AppendPacket(*ppaPacket,FALSE,FALSE) == FALSE){
@@ -1943,18 +1812,18 @@ BOOL CCommunicationInterface::Client_Update(void)
 			}
 		}
 
-		//! ë§ˆìŠ¤í„°ë²„í¼ ê°±ì‹ 
+		//! ¸¶½ºÅÍ¹öÆÛ °»½Å
 		// send/receive packets over the TCP/IP stack
 		UpdateMasterBuffers();
 
-		//ë§ˆìŠ¤í„° input ë²„í¼ì— íŒ¨í‚·ì´ ìˆë‹¤ë©´ 
+		//¸¶½ºÅÍ input ¹öÆÛ¿¡ ÆĞÅ¶ÀÌ ÀÖ´Ù¸é 
 		// dispatch all packets from the master input buffer to the clients' input buffers
 		while (cci_pbMasterInput.pb_ulNumOfPackets > 0) {
 			BOOL bClientFound;
 			ppaPacket = cci_pbMasterInput.GetFirstPacket();
 			bClientFound = FALSE;
 			
-			//! íŒ¨í‚·ì£¼ì†Œê°€ ë¸Œë¡œë“œìºìŠ¤íŠ¸ì´ê³  ì–¸ë¦´ë¼ì–´ì–´ë¸” ì „ì†¡ì´ì—ˆë‹¤ë©´, ê·¸ê²ƒì„ ë¸Œë¡œë“œìºìŠ¤íŠ¸ inputë²„í¼ì— ë„£ëŠ”ë‹¤.
+			//! ÆĞÅ¶ÁÖ¼Ò°¡ ºê·ÎµåÄ³½ºÆ®ÀÌ°í ¾ğ¸±¶ó¾î¾îºí Àü¼ÛÀÌ¾ú´Ù¸é, ±×°ÍÀ» ºê·ÎµåÄ³½ºÆ® input¹öÆÛ¿¡ ³Ö´Â´Ù.
 			// if the packet address is broadcast and it's an unreliable transfer, put it in the broadcast buffer
 			if ((ppaPacket->pa_adrAddress.adr_uwID=='//' || ppaPacket->pa_adrAddress.adr_uwID==0) && 
 				ppaPacket->IsUnreliable()) {
@@ -1962,7 +1831,7 @@ BOOL CCommunicationInterface::Client_Update(void)
 					DeletePacket(ppaPacket);
 				}
 				bClientFound = TRUE;
-				//! ì´íŒ¨í‚·ì˜ adr_uwIDì™€ ì´ í´ë¼ì´ì–¸íŠ¸ì˜ adr_uwIDê°€ ì¼ì¹˜í•œë‹¤ë©´ í´ë¼ì´ì–¸íŠ¸ Inputë²„í¼ì— ë„£ëŠ”ë‹¤.
+				//! ÀÌÆĞÅ¶ÀÇ adr_uwID¿Í ÀÌ Å¬¶óÀÌ¾ğÆ®ÀÇ adr_uwID°¡ ÀÏÄ¡ÇÑ´Ù¸é Å¬¶óÀÌ¾ğÆ® Input¹öÆÛ¿¡ ³Ö´Â´Ù.
 				// if the packet is for this client, accept it
 			} else if ((ppaPacket->pa_adrAddress.adr_uwID == cm_ciLocalClient.ci_adrAddress.adr_uwID) || 
 				ppaPacket->pa_adrAddress.adr_uwID=='//' || ppaPacket->pa_adrAddress.adr_uwID==0) { 
@@ -1983,7 +1852,7 @@ BOOL CCommunicationInterface::Client_Update(void)
 		}
 
 	}
-    //! í´ë¼ì´ì–¸íŠ¸ inputë²„í¼ë¥¼ ê°±ì‹ .ë¸Œë¡œë“œìºìŠ¤íŠ¸ inputë²„í¼ ê°±ì‹ 
+    //! Å¬¶óÀÌ¾ğÆ® input¹öÆÛ¸¦ °»½Å.ºê·ÎµåÄ³½ºÆ® input¹öÆÛ °»½Å
 	cm_ciLocalClient.UpdateInputBuffers();
 	cm_ciBroadcast.UpdateInputBuffersBroadcast();
 
@@ -1993,9 +1862,9 @@ BOOL CCommunicationInterface::Client_Update(void)
 // update master UDP socket and route its messages
 void CCommunicationInterface::UpdateMasterBuffers() 
 {
-	//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…	07.20
-	// NOTE : ë¡œê·¸ì¸ ì‹œ ë„¤íŠ¸ì›Œí¬ ë©”ì„¸ì§€ê°€ ë¦¬í„´ì„ í•˜ê²Œë˜ë©´ ê°€ì§€ ì•ŠëŠ”ë‹¤!!!
-	// NOTE : Send, Recvë¥¼ í•˜ì§€ ì•Šê¸° ë•Œë¬¸ì—...
+	//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷	07.20
+	// NOTE : ·Î±×ÀÎ ½Ã ³×Æ®¿öÅ© ¸Ş¼¼Áö°¡ ¸®ÅÏÀ» ÇÏ°ÔµÇ¸é °¡Áö ¾Ê´Â´Ù!!!
+	// NOTE : Send, Recv¸¦ ÇÏÁö ¾Ê±â ¶§¹®¿¡...
 	extern BOOL _bWorldEditorApp;
 	extern BOOL _bUseSocket;
 	extern BOOL _bLoginProcess;
@@ -2003,7 +1872,7 @@ void CCommunicationInterface::UpdateMasterBuffers()
 	//{
 	//	return;
 	//}
-	//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…		07.20
+	//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷		07.20
 	UBYTE aub[MAX_PACKET_SIZE];
 	CAddress adrIncomingAddress;
 	SOCKADDR_IN sa;
@@ -2019,12 +1888,12 @@ void CCommunicationInterface::UpdateMasterBuffers()
 	
 	if ( cci_bInitUpdateMasterBuffer ) 
 	{
-		//0616 kwon ë©¤ë²„ë³€ìˆ˜ë¡œ ìˆ˜ì •.
+		//0616 kwon ¸â¹öº¯¼ö·Î ¼öÁ¤.
 		ulBandwidth = 0;
 		tmLastBandwithRecorded = _pTimer->GetHighPrecisionTimer().GetSeconds();
 		cci_bInitUpdateMasterBuffer = FALSE;
 
-		//0311 kwon ì„ì‹œë¡œ ë„£ì€ ë°”ìš´ë“œ
+		//0311 kwon ÀÓ½Ã·Î ³ÖÀº ¹Ù¿îµå
 		cci_bBound = TRUE;
 	}
 	
@@ -2047,7 +1916,7 @@ void CCommunicationInterface::UpdateMasterBuffers()
 			
 			client_socket = socket;
 			client_cnt++;
-			cci_bBound = TRUE;//ì—´ì–´ë³´ì£~
+			cci_bBound = TRUE;//¿­¾îº¸Àã~
 		}
 	}
 	//..	
@@ -2060,17 +1929,17 @@ void CCommunicationInterface::UpdateMasterBuffers()
 		{			
 			// initially, nothing is done
 			bSomethingDone = FALSE;
-			//0105 1line ì§€ìš°ê¸°
+			//0105 1line Áö¿ì±â
 			//			slSizeReceived = recvfrom(cci_hSocket,(char*)aub,MAX_PACKET_SIZE,0,(SOCKADDR *)&sa,&size);
 			//0105
 			if(m_bTcpIp&& _pNetwork->IsTcpServer)
-			{//ì„œë²„
+			{//¼­¹ö
 				//0131				
 				slSizeReceived = recv(client_socket,(char*)aub,MAX_PACKET_SIZE,0);																
 				
 			}
 			else if( m_bTcpIp )
-			{//í´ë¼ì´ì–¸íŠ¸
+			{//Å¬¶óÀÌ¾ğÆ®
 			//	slSizeReceived = recv(cci_hSocket,(char*)aub,MAX_PACKET_SIZE,0);
 				slSizeReceived = recv(cci_hSocket,(char*)m_inbuf.GetPoint(), m_inbuf.GetRemain(),0);
 			}
@@ -2080,7 +1949,7 @@ void CCommunicationInterface::UpdateMasterBuffers()
 			}
 			//..
 			tvNow = _pTimer->GetHighPrecisionTimer();
-			//0105 2line ì§€ìš°ê¸°
+			//0105 2line Áö¿ì±â
 			//			adrIncomingAddress.adr_ulAddress = ntohl(sa.sin_addr.s_addr);
 			//			adrIncomingAddress.adr_uwPort = ntohs(sa.sin_port);
 			//0105
@@ -2102,20 +1971,14 @@ void CCommunicationInterface::UpdateMasterBuffers()
 						CPrintF(TRANS("Socket error during UDP receive. %s\n"), 
 							(const char*)GetSocketError(iResult));
 						cci_bBound = FALSE; //0311 kwon
-						//0611 kwon ì¶”ê°€.
+						//0611 kwon Ãß°¡.
 						//_pNetwork->ga_sesSessionState.ses_strDisconnected = TRANS("Try to Reconnect...");
-						if( !_bLoginProcess || _pUIMgr->GetUIGameState() == UGS_SELCHAR )
+
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
+						if( !_bLoginProcess || STAGEMGR()->GetCurStage() == eSTAGE_SELCHAR )
 						{
-							// FIXME : ì¤‘ë³µë˜ëŠ” ì½”ë“œê°€ ë§ìŒ.
-							_pUIMgr->CloseMessageBox(MSGCMD_DISCONNECT);
-							CUIMsgBox_Info	MsgBoxInfo;
-							MsgBoxInfo.SetMsgBoxInfo( _S( 299, "ì‹œìŠ¤í…œ" ), UMBS_OK, UI_NONE, MSGCMD_DISCONNECT );
-							MsgBoxInfo.AddString( _S( 300, "ì„œë²„ì™€ì˜ ì—°ê²°ì´ ëŠì–´ì¡ŒìŠµë‹ˆë‹¤." ) );
-							_pUIMgr->CreateMessageBox( MsgBoxInfo );
-							cci_bInitUpdateMasterBuffer = FALSE;
-							cci_bBound = FALSE;
-							_pNetwork->m_bSendMessage = FALSE;
-							_cmiComm.Disconnect();
+							ShowDisconnMsg();
 						}
 						return;
 					}
@@ -2124,7 +1987,7 @@ void CCommunicationInterface::UpdateMasterBuffers()
 			} 
 			else 
 			{
-				/* //kwon 0322 ì‚­ì œ
+				/* //kwon 0322 »èÁ¦
 				// if there is not at least one byte more in the packet than the header size
 				if (slSizeReceived <= MAX_HEADER_SIZE) {
 					// the packet is in error
@@ -2148,7 +2011,7 @@ void CCommunicationInterface::UpdateMasterBuffers()
 					if (slSizeReceived == 0)
 						continue;
 					m_inbuf.SetPoint(slSizeReceived);
-					/* //0322 kwon ì‚­ì œ
+					/* //0322 kwon »èÁ¦
 					// if no packet drop emulation (or the packet is not dropped), form the packet 
 					// and add it to the end of the UDP Master's input buffer
 					ppaNewPacket = CreatePacket();
@@ -2183,20 +2046,31 @@ void CCommunicationInterface::UpdateMasterBuffers()
 		sa.sin_family		= AF_INET;
 		sa.sin_addr.s_addr	= htonl(ppaNewPacket->pa_adrAddress.adr_ulAddress);
 		sa.sin_port			= htons(ppaNewPacket->pa_adrAddress.adr_uwPort);
-		//0105 1line ì§€ìš°ê¸°		
+		//0105 1line Áö¿ì±â		
 		//    slSizeSent = sendto(cci_hSocket, (char*) ppaNewPacket->pa_pubPacketData, (int) ppaNewPacket->pa_slSize, 0, (SOCKADDR *)&sa, sizeof(sa));
 		//0105		
 		if( m_bTcpIp && _pNetwork->IsTcpServer )
 		{
-			//ì„œë²„
+			//¼­¹ö
 			//0131			
 			slSizeSent = send(client_socket, (char*) ppaNewPacket->pa_pubPacketData, (int) ppaNewPacket->pa_slSize, 0);		
 			
 		}
 		else if( m_bTcpIp )
 		{
-			//í´ë¼ì´ì–¸íŠ¸		
-			slSizeSent = send(cci_hSocket, (char*) ppaNewPacket->pa_pubPacketData, (int) ppaNewPacket->pa_slSize, 0);
+			// [2013/01/09] sykim70
+			unsigned int res = htonl(m_crc.CalcCRC32(ppaNewPacket->pa_pubPacketData+MAX_HEADER_SIZE, ppaNewPacket->pa_slSize-MAX_HEADER_SIZE));
+			memcpy(ppaNewPacket->pa_pubPacketData+ppaNewPacket->pa_slSize, &res, sizeof(unsigned int));
+			//Å¬¶óÀÌ¾ğÆ®		
+			slSizeSent = send(cci_hSocket, (char*) ppaNewPacket->pa_pubPacketData, (int) (ppaNewPacket->pa_slSize+sizeof(unsigned int)), 0);
+			if( slSizeSent < 0 )
+			{
+// 				DWORD errcod = WSAGetLastError();
+// 				CTString temp;
+// 				temp.PrintF( "%d", errcod );
+// 				MessageBox( NULL, temp, "", MB_OK );
+			}
+
 		}
 		else
 		{	
@@ -2218,36 +2092,25 @@ void CCommunicationInterface::UpdateMasterBuffers()
 			} 
 			else if ( iResult != WSAECONNRESET || net_bReportICMPErrors ) 
 			{
-				// FIXME : ì¤‘ë³µë˜ëŠ” ì½”ë“œê°€ ë§ìŒ.
+				// FIXME : Áßº¹µÇ´Â ÄÚµå°¡ ¸¹À½.
 				//extern BOOL _bLoginProcess;
-				if( !_bLoginProcess || _pUIMgr->GetUIGameState() == UGS_SELCHAR )
-				{
-					_pUIMgr->CloseMessageBox(MSGCMD_DISCONNECT);
-					CUIMsgBox_Info	MsgBoxInfo;
-					MsgBoxInfo.SetMsgBoxInfo( _S( 299, "ì‹œìŠ¤í…œ" ), UMBS_OK, UI_NONE, MSGCMD_DISCONNECT );
-					MsgBoxInfo.AddString( _S( 300, "ì„œë²„ì™€ì˜ ì—°ê²°ì´ ëŠì–´ì¡ŒìŠµë‹ˆë‹¤." ) );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
-					cci_bInitUpdateMasterBuffer = FALSE;
-					_pNetwork->m_bSendMessage = FALSE;
-					_cmiComm.Disconnect();
+
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
+				if( !_bLoginProcess || STAGEMGR()->GetCurStage() == eSTAGE_SELCHAR )
+				{					
+					ShowDisconnMsg();
 				}
-//				CPrintF(TRANS("Socket error during UDP send. %s\n"), 
-//					(const char*)GetSocketError(iResult));
+
 				cci_bBound = FALSE; //0311 kwon
 			}
 			else //0824
 			{
-				if( !_bLoginProcess || _pUIMgr->GetUIGameState() == UGS_SELCHAR )
+				CUIManager* pUIManager = CUIManager::getSingleton();
+				
+				if( !_bLoginProcess || STAGEMGR()->GetCurStage() == eSTAGE_SELCHAR )
 				{									
-					// FIXME : ì¤‘ë³µë˜ëŠ” ì½”ë“œê°€ ë§ìŒ.
-					_pUIMgr->CloseMessageBox(MSGCMD_DISCONNECT);
-					CUIMsgBox_Info	MsgBoxInfo;
-					MsgBoxInfo.SetMsgBoxInfo( _S( 299, "ì‹œìŠ¤í…œ" ), UMBS_OK, UI_NONE, MSGCMD_DISCONNECT );
-					MsgBoxInfo.AddString( _S( 300, "ì„œë²„ì™€ì˜ ì—°ê²°ì´ ëŠì–´ì¡ŒìŠµë‹ˆë‹¤." ) );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
-					cci_bInitUpdateMasterBuffer = FALSE;
-					_pNetwork->m_bSendMessage = FALSE;
-					_cmiComm.Disconnect();
+					ShowDisconnMsg();
 				}
 				cci_bBound = FALSE;
 			}
@@ -2280,15 +2143,173 @@ void CCommunicationInterface::UpdateMasterBuffers()
 
 //------------------------------------------------------------------------------
 // CCommunicationInterface::Is2rdLocal
-// Explain: ì¤‘êµ­ Local 2ë²ˆì§¸ ì§€ì—­ì´ ì„ íƒë˜ì—ˆëŠ”ì§€ í™•ì¸ 
+// Explain: Áß±¹ Local 2¹øÂ° Áö¿ªÀÌ ¼±ÅÃµÇ¾ú´ÂÁö È®ÀÎ 
 // Date : 2005-05-02,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 BOOL CCommunicationInterface::Is2rdLocal()
 {
-	extern INDEX	g_iCountry;
-
-	if ( g_iCountry != CHINA )  // ì¤‘êµ­ Localì´ ì•„ë‹ˆë©´ ë¬´ì¡°ê±´ FALSE ( í˜„ì¬ ì¤‘êµ­ë²„ì „ì—ë§Œ ì ìš©ë¨ )
+	if ( g_iCountry != CHINA )  // Áß±¹ LocalÀÌ ¾Æ´Ï¸é ¹«Á¶°Ç FALSE ( ÇöÀç Áß±¹¹öÀü¿¡¸¸ Àû¿ëµÊ )
 		return FALSE;
 
 	return m_b2stLocal;
+}
+
+int CCommunicationInterface::ReadInfo( LoginServer* stLogin )
+{
+#ifdef	VER_TEST
+	// °³¹ß ¹öÁ¯¿ë ¾ÆÀÌÇÇ txt °¡Á®¿À±â
+	{
+		std::string	strPath = _fnmApplicationPath.FileDir();
+		strPath += "sl.txt";
+
+		FILE* fp = fopen(strPath.c_str(), "rt");
+		if (fp != NULL)
+		{
+			fscanf(fp, "%s %s %s %s %s", 
+				stLogin[0].szName, stLogin[0].szAddress, stLogin[0].szPort, stLogin[0].szFullUsers, stLogin[0].szBusyUsers);
+
+			fclose(fp);
+
+			return 1;
+		}
+	}
+#endif	// VER_TEST
+
+	CTFileName fnmServer = CTString("sl.dta");
+
+#ifdef EUROUPEAN_SERVER_LOGIN
+	if (g_iConnectEuroupean)
+	{
+		fnmServer = CTString("sl_Euro.dta");
+	}
+#endif	
+		
+	CTFileName fnmServer2 = CTString("sl2.dta");				// Áß±¹ÂÊ µÎ¹øÂ° À¯Àúµğºñ±º.
+	CTFileName fnmSLD = CTString("sl_d.dta");
+	//CTFileName fnmServer = CTString("server.txt");//0907
+	CTFileStream strmFile;
+		
+	int ServerNum;
+	
+	{
+		FILE *fp = NULL;
+		FILE *fp_sld = NULL;
+				
+		char buf[256];
+				
+		// ¼­¹ö ÀÌ¸§  , ÁÖ¼Ò
+		int i;
+		unsigned char key;
+		int iKey, iKeyTemp;	
+				
+		CTString fnTemp;
+		CTString fnSLD;		
+		CTString strFullPath = _fnmApplicationPath.FileDir();
+				
+		// ÀĞ¾îµéÀÏ sl?.dta °áÁ¤ÇÏ±â.
+		fnSLD = strFullPath + fnmSLD;
+		if (fp_sld = fopen(fnSLD, "rt")) {				// mdo¿ë sl_d.dta°¡ ÀÖÀ¸¸é
+			int nRegion = -1;
+			fscanf(fp_sld, "%d", &nRegion);
+					
+			if( nRegion == 1 ) // 2¹øÂ° Áö¿ª
+			{
+				fnTemp = strFullPath + fnmServer2;		// sl2.dta :  region 1
+				m_b2stLocal = TRUE;
+			}
+			else
+			{
+				fnTemp = strFullPath + fnmServer;		// default : region 0
+				m_b2stLocal = FALSE;					
+			}
+			fclose(fp_sld);					
+		} else {				// other country, i.e, nako, insrea ...
+			fnTemp = strFullPath + fnmServer;
+		}
+				
+		fp = fopen(fnTemp, "rb");
+		if(fp == NULL) return 0;
+				
+		for (i = 0; i < 6; i++) 
+		{
+			fread(&key, 1, 1, fp);
+		}
+		fread(&iKey, sizeof(int), 1, fp);
+		fread(&key, 1, 1, fp);
+				
+		fread(&ServerNum, sizeof(int), 1, fp);
+				
+		iKeyTemp	= ServerNum;
+		ServerNum	-= iKey;
+		iKey		= iKeyTemp;				
+				
+		for (i = 0; i < ServerNum; i++) 
+		{
+			// Ã¹¹øÂ° ÀĞÀºÁÙÀ» buf¿¡ ³Ö´Â´Ù.
+			int count;
+			unsigned char data;
+			fread(&count, sizeof(int), 1, fp);
+					
+			iKeyTemp	= count;
+			count		-= iKey;
+			iKey		= iKeyTemp;
+					
+			for (int idx = 0; idx < count; idx++) 
+			{
+				fread(&data, 1, 1, fp);
+				buf[idx] = data - key;
+				key = data;
+			}
+			buf[count] = '\0';
+					
+			sscanf(buf, "%s %s %s %s %s", 
+				stLogin[i].szName, stLogin[i].szAddress, stLogin[i].szPort, stLogin[i].szFullUsers, stLogin[i].szBusyUsers);
+		}
+				
+		fclose(fp);
+	}
+
+	return ServerNum;
+}
+
+void CCommunicationInterface::ShowDisconnMsg()
+{
+	if ( _pGameState->IsRestartGame() == TRUE || _pGameState->GetGameMode() == CGameState::GM_RESTART )
+		return;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	// FIXME : Áßº¹µÇ´Â ÄÚµå°¡ ¸¹À½.
+	pUIManager->CloseMessageBox(MSGCMD_DISCONNECT);
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 299, "½Ã½ºÅÛ" ), UMBS_OK, UI_NONE, MSGCMD_DISCONNECT );
+	MsgBoxInfo.AddString( _S( 300, "¼­¹ö¿ÍÀÇ ¿¬°áÀÌ ²÷¾îÁ³½À´Ï´Ù." ) );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+	cci_bInitUpdateMasterBuffer = FALSE;
+	_pNetwork->m_bSendMessage = FALSE;
+	_cmiComm.Disconnect();
+}
+
+void CCommunicationInterface::attachCRC( CPacket* packet )
+{
+	unsigned int res = htonl(m_crc.CalcCRC32(packet->pa_pubPacketData + MAX_HEADER_SIZE, packet->pa_slSize - MAX_HEADER_SIZE));
+	memcpy(packet->pa_pubPacketData + packet->pa_slSize, &res, sizeof(unsigned int));
+}
+
+bool CCommunicationInterface::FindHosNameIP( const char* szHostName, sIPFilter &ip, INDEX iCountry )
+{
+	sockaddr_in sai;
+	memset(&sai, 0, sizeof(sockaddr_in));
+	sai.sin_addr.s_addr = inet_addr(szHostName);
+	if(INADDR_NONE == sai.sin_addr.s_addr)
+	{
+		hostent *Hostent = gethostbyname(szHostName);
+
+		if (Hostent == NULL)
+			return false;
+
+		sai.sin_addr.s_addr = ((struct in_addr FAR *)(Hostent->h_addr))->s_addr;
+		ip.SetIP(sai.sin_addr.S_un.S_un_b.s_b1, sai.sin_addr.S_un.S_un_b.s_b2, sai.sin_addr.S_un.S_un_b.s_b3, sai.sin_addr.S_un.S_un_b.s_b4, iCountry);
+	}
+
+	return true;
 }

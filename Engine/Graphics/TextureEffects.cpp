@@ -1382,8 +1382,8 @@ rowLoop:
 			push    edx
 			mov     ecx,D [_pixTexWidth]
 pixLoop:
-//	prefetchnta [ebx+ 16]
-//	prefetchnta [ebx+ eax*2 +16]
+	prefetchnta [ebx+ 16]
+	prefetchnta [ebx+ eax*2 +16]
 			movd    mm1,D [ebx]
 			movd    mm3,D [ebx+ eax*2]
 			movq    mm2,mm1
@@ -1398,7 +1398,7 @@ pixLoop:
 			pand    mm2,Q [mmBaseMasks]
 			pmaddwd mm2,Q [mmBaseWidth]
 			movd    edx,mm2
-//	 prefetcht1 [esi+ edx*4 +16]
+	 prefetcht1 [esi+ edx*4 +16]
 			mov     edx,D [esi+ edx*4]
 			mov     D [edi],edx
 			// advance to next texture pixel
@@ -1470,9 +1470,9 @@ rowLoop2:
 			mov     edx,D [_pixTexWidth]
 			mov     ecx,D [_pixBufferWidth]
 pixLoop2:
-//	prefetchnta [ebx+ 16]
-//	prefetchnta [ebx+ eax*2 +16]
-//	prefetchnta [ebx+ eax*4 +16]
+	prefetchnta [ebx+ 16]
+	prefetchnta [ebx+ eax*2 +16]
+	prefetchnta [ebx+ eax*4 +16]
 			mov     eax,D [_pixBufferWidth]
 
 			movd    mm1,D [ebx+ 2]
@@ -1529,7 +1529,7 @@ pixLoop2:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi],eax
 
@@ -1564,7 +1564,7 @@ pixLoop2:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm1,mm7
 			movd    eax,mm1
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4 +4],eax
 
@@ -1646,9 +1646,9 @@ pixLoop4:
 			mov     eax,D [_pixBufferWidth]
 			mov     edx,D [_pixTexWidth]
 
-//	prefetchnta [ebx+ 16]
-//	prefetchnta [ebx+ eax*2 +16]
-//	prefetchnta [ebx+ eax*4 +16]
+	prefetchnta [ebx+ 16]
+	prefetchnta [ebx+ eax*2 +16]
+	prefetchnta [ebx+ eax*4 +16]
 			movd    mm1,D [ebx+ 2]
 			movd    mm0,D [ebx+ eax*2]
 			psllq   mm0,32
@@ -1704,7 +1704,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi],eax
 			// texel 01
@@ -1718,7 +1718,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi +4],eax
 			// texel 02
@@ -1730,7 +1730,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi +8],eax
 			// texel 03
@@ -1744,7 +1744,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi +12],eax
 
@@ -1759,7 +1759,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4],eax
 			// texel 11
@@ -1779,7 +1779,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4 +4],eax
 			// texel 12
@@ -1797,7 +1797,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4 +8],eax
 			// texel 13
@@ -1817,7 +1817,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4 +12],eax
 
@@ -1830,7 +1830,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*8],eax
 			// texel 21
@@ -1848,7 +1848,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*8 +4],eax
 			// texel 22
@@ -1862,7 +1862,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*8 +8],eax
 			// texel 23
@@ -1880,7 +1880,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*8 +12],eax
 
@@ -1896,7 +1896,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4],eax
 			// texel 31
@@ -1916,7 +1916,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4 +4],eax
 			// texel 32
@@ -1934,7 +1934,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4 +8],eax
 			// texel 33
@@ -1954,7 +1954,7 @@ pixLoop4:
 			psrlq   mm7,Q [mmBaseWidthShift]
 			paddd   mm0,mm7
 			movd    eax,mm0
-//	 prefetcht1 [esi+ eax*4 +16]
+	 prefetcht1 [esi+ eax*4 +16]
 			mov     eax,D [esi+ eax*4]
 			mov     D [edi+ edx*4 +12],eax
 
@@ -2828,9 +2828,9 @@ void CTextureEffectGlobal::Render( INDEX iWantedMipLevel, PIX pixTexWidth, PIX p
 {
 	extern INDEX _iStatsMode;
 	INDEX old = _iStatsMode;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Create Effect Texture Bug Fix)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Create Effect Texture Bug Fix)(0.1)
 	_iStatsMode = 3;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Create Effect Texture Bug Fix)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Create Effect Texture Bug Fix)(0.1)
 	// setup some internal vars
 	_ptdEffect = teg_ptdTexture;
 	_ptdBase   = teg_ptdTexture->td_ptdBaseTexture;
@@ -2852,9 +2852,9 @@ void CTextureEffectGlobal::Render( INDEX iWantedMipLevel, PIX pixTexWidth, PIX p
 		_pixTexHeight = _ptdEffect->GetHeight() >>iWantedMipLevel;
 		RenderPlasmaFire();
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Create Effect Texture Bug Fix)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Create Effect Texture Bug Fix)(0.1)
 	_iStatsMode = old;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Create Effect Texture Bug Fix)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Create Effect Texture Bug Fix)(0.1)
 }
 
 

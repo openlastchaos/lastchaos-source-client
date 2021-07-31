@@ -97,5 +97,44 @@ BOOL ENGINE_API IsDerivedFromClass( CEntity *pen, const char *pstrClassName);
 BOOL ENGINE_API IsDerivedFromClass( CEntity *pen, class CDLLEntityClass *pdec);
 
 
+
+struct PlayerControls 
+{
+	FLOAT fMoveForward;
+	FLOAT fMoveBackward;
+	FLOAT fMoveLeft;
+	FLOAT fMoveRight;
+	FLOAT fMoveUp;
+	FLOAT fMoveDown;
+	
+	FLOAT fTurnLeft;
+	FLOAT fTurnRight;
+	FLOAT fTurnUp;
+	FLOAT fTurnDown;
+	FLOAT fTurnBankingLeft;
+	FLOAT fTurnBankingRight;	
+	
+	FLOAT fLookLeft;
+	FLOAT fLookRight;
+	FLOAT fLookUp;
+	FLOAT fLookDown;
+	FLOAT fLookBankingLeft;
+	FLOAT fLookBankingRight;
+	
+#define CTL_DIGITAL_FIRST bCenterView
+	
+	BOOL bCenterView;
+	//BOOL bSelectWeapon[MAX_WEAPONS+1];
+	//BOOL bWeaponNext;
+	//BOOL bWeaponPrev;
+	//BOOL bWeaponFlip;
+	
+	BOOL bWalk;
+	BOOL bStrafe;
+	BOOL bFire;	
+	BOOL bUse;
+	BOOL b3rdPersonView;	
+};
+
 #endif  /* include-once check. */
 

@@ -159,14 +159,14 @@ bool CSmcInfo::SaveSmcInfoText(std::string sFilename)
 	fout.open(sFilename.c_str(), ios_base::out);//|ios_base::app);
 
 	fout << "SMC Name: " << m_SmcFileName << '\n';
-	fout << "MESH Total NUM: " << MeshInfoSize << '\n'; // ë©”ì‰¬ ê°¯ìˆ˜
+	fout << "MESH Total NUM: " << MeshInfoSize << '\n'; // ¸Þ½¬ °¹¼ö
 
 	for (i=0; i<MeshInfoSize; i++)
-	{ // ë©”ì‰¬ ì •ë³´ ì €ìž¥
-		fout << "Mesh Number: " << m_MeshInfoList[i].GetMeshNumber() << '\n';	// ë©”ì‰¬ ë²ˆí˜¸
-		fout << "Mesh Path: " << m_MeshInfoList[i].GetMeshTFNM() << '\n';	// ë©”ì‰¬ íŒŒì¼ ê²½ë¡œ
+	{ // ¸Þ½¬ Á¤º¸ ÀúÀå
+		fout << "Mesh Number: " << m_MeshInfoList[i].GetMeshNumber() << '\n';	// ¸Þ½¬ ¹øÈ£
+		fout << "Mesh Path: " << m_MeshInfoList[i].GetMeshTFNM() << '\n';	// ¸Þ½¬ ÆÄÀÏ °æ·Î
 		TexInfoSize = m_MeshInfoList[i].GetTexInfoSize();
-		fout << "Tex Total NUM: " << TexInfoSize << '\n'; // í…ìŠ¤ì²˜ ê°¯ìˆ˜
+		fout << "Tex Total NUM: " << TexInfoSize << '\n'; // ÅØ½ºÃ³ °¹¼ö
 
 		for (j=0; j<TexInfoSize; j++)
 		{
@@ -175,7 +175,7 @@ bool CSmcInfo::SaveSmcInfoText(std::string sFilename)
 		}
 	}
 
-	fout << '\n'; // ë
+	fout << '\n'; // ³¡
 
 	fout.close();
 

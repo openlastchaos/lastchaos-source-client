@@ -33,10 +33,10 @@ public:
 	FLOATplane3D pr_plMirror;         // plane to mirror(warp) about
 	FLOATplane3D pr_plMirrorView;     // mirror(warp) clip plane in view space
 	FLOAT pr_fViewStretch;            // stretch of entire view
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 	BOOL pr_bNiceWater;
 	FLOATplane3D pr_plNiceWaterView;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
 
 	// internal variables
 	BOOL pr_Prepared;                 // set if all precalculated variables are prepared
@@ -418,11 +418,11 @@ private:
 	CIsometricProjection3D ap_Isometric;
 	CPerspectiveProjection3D ap_Perspective;
 	CParallelProjection3D ap_Parallel;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 	
 public:
 	CProjection3D *ap_CurrentProjection;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 	/* Default constructor. */
 	inline CAnyProjection3D(void) : ap_CurrentProjection(NULL) {};
 	/* Copy constructor. */

@@ -1,17 +1,17 @@
 #include "StdH.h"
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 #include <Shaders/Common.h>
 
 static const INDEX ctTextures		= 3; 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
 //static const INDEX ctTextures		= 3; 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 static const INDEX ctUVMaps			= 1;
 static const INDEX ctColors			= 1;
 static const INDEX ctFloats			= 0;
 static const INDEX ctFlags			= 0;
 static const INDEX iBumpTexture		= 0;		// Bump Texture
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
 //static const INDEX iBumpTexture2		= 1;	// Bump Texture2
 static const INDEX iBaseTexture		= 1;		// Base Texture
 static const INDEX iWaterTexture	= 2;		// Water Texture
@@ -32,36 +32,36 @@ static void SetRenderingState()
 	shaDisableBlend();
 	// Set alpha test
 	shaDisableAlphaTest();
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
-	shaSetTextureWrapping( GFX_REPEAT, GFX_REPEAT, 0);			// ì›ë³¸.	
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
+	shaSetTextureWrapping( GFX_REPEAT, GFX_REPEAT, 0);			// ¿øº».	
 	shaSetTextureWrapping( GFX_CLAMP, GFX_CLAMP, 1);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 	
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 	//CTimerValue tvNow   = _pTimer->GetHighPrecisionTimer();
 	//FLOAT r = 0.01f;
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.26
-	// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.26
+	// ¿øº».
 	//_pGfx->gl_pd3dDevice->SetTextureStageState( 1, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT4|D3DTTFF_PROJECTED );
 	_pGfx->gl_pd3dDevice->SetTextureStageState( 1, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_PROJECTED );
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.26
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.26
 }
 
 static void InitShaderProcess()
 {
-	// NOTE : ì• ë‹ˆë©”ì´ì…˜ í…ìŠ¤ì³ê°€ ì ìš©ë ìˆ˜ ìˆë„ë¡ í•´ì•¼í•œë‹¤.
-	// NOTE : ê¸°ì¡´ì˜ ë¬¼ í…ìŠ¤ì³ë¥¼ ì…í ê²½ìš°ë¥¼ ê³ ë ¤í•´ì„œ...
-	//ì‚¬ìš©í•  Textureì§€ì •
+	// NOTE : ¾Ö´Ï¸ŞÀÌ¼Ç ÅØ½ºÃÄ°¡ Àû¿ëµÉ¼ö ÀÖµµ·Ï ÇØ¾ßÇÑ´Ù.
+	// NOTE : ±âÁ¸ÀÇ ¹° ÅØ½ºÃÄ¸¦ ÀÔÈú °æ¿ì¸¦ °í·ÁÇØ¼­...
+	//»ç¿ëÇÒ TextureÁöÁ¤
 	shaSetTexture(iBumpTexture, 0);		// Bump Texture1
 	//shaSetTexture(iBumpTexture2, 1);	// Bump Texture2
 	shaSetTexture(iBaseTexture, 1);		// Reflection Texture
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 	//	shaSetTexture(iWaterTexture, 2);	// Water Texture
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
-	//ì‚¬ìš©í•  UVì¢Œí‘œì…‹
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
+	//»ç¿ëÇÒ UVÁÂÇ¥¼Â
 	shaSetUVMap(iBaseUVMap);
 }
 
@@ -69,15 +69,15 @@ static void VertexShaderProcess(INDEX iVertexProgram)
 {
 	shaSetVertexProgram(iVertexProgram);
 
-	// ê´‘ì›ì˜ ìœ„ì¹˜ì™€ ì¹´ë©”ë¼ì˜ ìœ„ì¹˜ëŠ” ì™¸ë¶€ì—ì„œ ì„¤ì •í•´ì¤„ê²ƒ...	
+	// ±¤¿øÀÇ À§Ä¡¿Í Ä«¸Ş¶óÀÇ À§Ä¡´Â ¿ÜºÎ¿¡¼­ ¼³Á¤ÇØÁÙ°Í...	
 	shaSetVertexProgramConst_TransformMatrix();	//c0~c3
 	shaSetVertexProgramConst_ProjectionMatrix();//c20~c23
 	shaSetVertexProgramConst_Multiply();		//c7
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
-	// ë²”í”„ë§¤í•‘ì„ ìœ„í•œ ì„¤ì •.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
+	// ¹üÇÁ¸ÅÇÎÀ» À§ÇÑ ¼³Á¤.
 	shaSetEMBM();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 	shaSetVertexProgramConst_WaterInformation();	
 }
 
@@ -102,10 +102,10 @@ SHADER_MAIN(WaterHolder)
 		SetRenderingState();
 		InitShaderProcess();
 		
-		// NOTE : ì§€í˜•ë¶€ë¶„ì— Fogë‚˜ Hazeê°€ ì ìš©ë˜ì–´ ìˆìœ¼ë©´, ì œëŒ€ë¡œ íˆ¬ëª…í•˜ê²Œ ë‚˜ì˜¤ì§€ ì•ŠìŒ.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.23
+		// NOTE : ÁöÇüºÎºĞ¿¡ Fog³ª Haze°¡ Àû¿ëµÇ¾î ÀÖÀ¸¸é, Á¦´ë·Î Åõ¸íÇÏ°Ô ³ª¿ÀÁö ¾ÊÀ½.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.23
 		shaEnableBlend();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.23
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.23
 		shaEnableDepthWrite();
 		shaBlendFunc(
 			GFX_SRC_ALPHA,
@@ -120,19 +120,19 @@ SHADER_MAIN(WaterHolder)
 	}
 	else	//USE VS(SOFT or HARD), NON-PS
 	{
-		// ì•„ë˜ ì½”ë“œ í™•ì¸ ì•ˆí•´ë´¤ìŒ.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+		// ¾Æ·¡ ÄÚµå È®ÀÎ ¾ÈÇØºÃÀ½.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 		SetRenderingState();
-		//ì‚¬ìš©í•  Textureì§€ì •				
+		//»ç¿ëÇÒ TextureÁöÁ¤				
 		shaSetTexture(iWaterTexture, 0);	// Water Texture
-		//ì‚¬ìš©í•  UVì¢Œí‘œì…‹
+		//»ç¿ëÇÒ UVÁÂÇ¥¼Â
 		shaSetUVMap(iBaseUVMap);		
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 		Render();
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(WaterHolder, ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -155,9 +155,12 @@ SHADER_DESC(WaterHolder, ShaderDesc *&pshDesc)
 		shDescMe.sd_ctPixelPrograms = ctPixelPrograms;
 		shDescMe.sd_ulStreamFlags.New(ctVertexPrograms);
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM | GFX_TEXCOORD0;
+		shDescMe.PixelShaderVersion = D3DPS_VERSION(1,1); /// WaterHolder´Â 1.4¿¡¼­ »ç¿ëÇÒ ¼ö ¾ø´Â texbem¸í·ÉÀ¸·Î ÀÎÇØ 1.1À» »ç¿ë.
+			// ¹üÇÁ ¸Ê ÅØ½ºÃ³ÀÇ »ç¿ë ¹æ½ÄÀ» ¹Ù²Ù´Â°Ô ¾î·Æ±â ¶§¹®¿¡, 1.1»ç¿ë
+			// ÃßÈÄ Water ±¸Çö¿¡ ´ëÇØ ¼öÁ¤ÀÌ ÇÊ¿äÇÒ °ÍÀ¸·Î º¸ÀÓ.
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(WaterHolder, CTString &strVPCode, INDEX iVertexProgram)
@@ -165,25 +168,25 @@ SHADER_VCODE(WaterHolder, CTString &strVPCode, INDEX iVertexProgram)
 	if(iVertexProgram == iWaterHolderVP)
 	{		
 		strVPCode =
-			// ì •ì ì„ ë³€í™˜í•´ì„œ ë¬¼ê²°ì²˜ëŸ¼ í”ë“¤ë¦¬ë„ë¡ í•˜ëŠ” ë¶€ë¶„.
+			// Á¤Á¡À» º¯È¯ÇØ¼­ ¹°°áÃ³·³ Èçµé¸®µµ·Ï ÇÏ´Â ºÎºĞ.
 /*
-			"mul r0, c15, v5.x							\n"	// í…ìŠ¤ì³ ì¢Œí‘œë“¤ì„ ì£¼ê¸°ì  ì‚¬ì¸íŒŒì˜ ì…ë ¥ìœ¼ë¡œ ì‚¬ìš©.
-			"mad r0, c16, v5.y, r0						\n"	// í…ìŠ¤ì³ ì¢Œí‘œë“¤ì„ ì£¼ê¸°ì  ì‚¬ì¸íŒŒì˜ ì…ë ¥ìœ¼ë¡œ ì‚¬ìš©.
+			"mul r0, c15, v5.x							\n"	// ÅØ½ºÃÄ ÁÂÇ¥µéÀ» ÁÖ±âÀû »çÀÎÆÄÀÇ ÀÔ·ÂÀ¸·Î »ç¿ë.
+			"mad r0, c16, v5.y, r0						\n"	// ÅØ½ºÃÄ ÁÂÇ¥µéÀ» ÁÖ±âÀû »çÀÎÆÄÀÇ ÀÔ·ÂÀ¸·Î »ç¿ë.
 			
-			"mov r1, c17.x								\n"	// ì‹œê°„.
-			"mad r0, r1, c14, r0						\n"	// ë¹„ë¡€ëœ ì‹œê°„ì„ ë”í•´ì„œ ì£¼íŒŒìˆ˜ì— ë”°ë¼ êµ´ê³¡ë“¤ì„ ì´ë™.
+			"mov r1, c17.x								\n"	// ½Ã°£.
+			"mad r0, r1, c14, r0						\n"	// ºñ·ÊµÈ ½Ã°£À» ´õÇØ¼­ ÁÖÆÄ¼ö¿¡ µû¶ó ±¼°îµéÀ» ÀÌµ¿.
 			"add r0, r0, c13							\n"
 			
-			"frc r0.xy, r0								\n"	// ë„¤ ì„±ë¶„ë“¤ì˜ ì†Œìˆ˜ë¶€ë“¤ì„ ì·¨í•œë‹¤.
+			"frc r0.xy, r0								\n"	// ³× ¼ººĞµéÀÇ ¼Ò¼öºÎµéÀ» ÃëÇÑ´Ù.
 			"frc r1.xy, r0.zwzw							\n"
 			"mov r0.zw, r1.xyxy							\n"
 
-			"mul r0, r0, c11.x							\n"	// ë³´ì • ê³„ìˆ˜ë¥¼ ê³±í•œë‹¤.
-			"sub r0, r0, c7.w							\n"	// 0.5ë¥¼ ëº€ë‹¤.
-			"mul r0, r0, c20.w							\n"	// í…ìŠ¤ì³ ì¢Œí‘œë“¤ì— 2*PIë¥¼ ê³±í•œë‹¤.
-															// ì´ëŸ¬ë©´ í…ìŠ¤ì³ ì¢Œí‘œë“¤ì˜ ë²”ìœ„ëŠ” (-PIì—ì„œ PI)ê°€ ëœë‹¤.
+			"mul r0, r0, c11.x							\n"	// º¸Á¤ °è¼ö¸¦ °öÇÑ´Ù.
+			"sub r0, r0, c7.w							\n"	// 0.5¸¦ »«´Ù.
+			"mul r0, r0, c20.w							\n"	// ÅØ½ºÃÄ ÁÂÇ¥µé¿¡ 2*PI¸¦ °öÇÑ´Ù.
+															// ÀÌ·¯¸é ÅØ½ºÃÄ ÁÂÇ¥µéÀÇ ¹üÀ§´Â (-PI¿¡¼­ PI)°¡ µÈ´Ù.
 
-			"mul r5, r0, r0								\n"	// ì‚¬ì¸ê³¼ ì½”ì‚¬ì¸ì˜ í…Œì¼ëŸ¬ ê¸‰ìˆ˜ ì „ê°œë¥¼ ê³„ì‚°í•œë‹¤.
+			"mul r5, r0, r0								\n"	// »çÀÎ°ú ÄÚ»çÀÎÀÇ Å×ÀÏ·¯ ±Ş¼ö Àü°³¸¦ °è»êÇÑ´Ù.
 			"mul r1, r5, r0								\n"
 			"mul r6, r1, r0								\n"
 			"mul r2, r6, r0								\n"
@@ -201,42 +204,42 @@ SHADER_VCODE(WaterHolder, CTString &strVPCode, INDEX iVertexProgram)
 			"mad r5, r7, c9.z, r5						\n"
 			"mad r5, r8, c9.w, r5						\n"
 
-			"dp4 r0, r4, c12							\n"		// íŒŒë“¤ì— íŒŒê³  ìƒìˆ˜ë“¤ì„ ê³±í•œë‹¤.
+			"dp4 r0, r4, c12							\n"		// ÆÄµé¿¡ ÆÄ°í »ó¼öµéÀ» °öÇÑ´Ù.
 
-			"mul r0.xyz, c7.xxyx, r0					\n"		// ì´ ì •ì ì—ì„œì˜ íŒŒ í¬ê¸°ì— ë²•ì„ ì„ ê³±í•œë‹¤.
-			"add r0.xyz, r0, v0							\n"		// ìœ„ì¹˜ì— ë”í•œë‹¤.
-			"mov r0.w, c7.y								\n"		// ë™ì°¨í•­
-			"m4x4 oPos,   r0,       c0                  \n"		// ìµœì¢… ìœ„ì¹˜ = ê°ì²´ ê³µê°„ ìœ„ì¹˜ * ì„¸ê³„:ë·°:íˆ¬ì˜ í–‰ë ¬
+			"mul r0.xyz, c7.xxyx, r0					\n"		// ÀÌ Á¤Á¡¿¡¼­ÀÇ ÆÄ Å©±â¿¡ ¹ı¼±À» °öÇÑ´Ù.
+			"add r0.xyz, r0, v0							\n"		// À§Ä¡¿¡ ´õÇÑ´Ù.
+			"mov r0.w, c7.y								\n"		// µ¿Â÷Ç×
+			"m4x4 oPos,   r0,       c0                  \n"		// ÃÖÁ¾ À§Ä¡ = °´Ã¼ °ø°£ À§Ä¡ * ¼¼°è:ºä:Åõ¿µ Çà·Ä
 			*/
 			
 			//------------------------------------------------
-			// ë‘ ì¥ì˜ ë²”í”„ë§µì„ ê°€ë¡œì§ˆëŸ¬ íë¥´ê²Œ í•˜ëŠ” ë¶€ë¶„.
-			// c17 -> ì‹œê°„
-			// c18 -> í…ìŠ¤ì³ íë¥´ê²Œ í•˜ëŠ” ê°’ë“¤.
-			// v5 -> í…ìŠ¤ì³ ì¢Œí‘œ.
-			// c0 -> ì •ì  ë³€í™˜ í–‰ë ¬.
+			// µÎ ÀåÀÇ ¹üÇÁ¸ÊÀ» °¡·ÎÁú·¯ Èå¸£°Ô ÇÏ´Â ºÎºĞ.
+			// c17 -> ½Ã°£
+			// c18 -> ÅØ½ºÃÄ Èå¸£°Ô ÇÏ´Â °ªµé.
+			// v5 -> ÅØ½ºÃÄ ÁÂÇ¥.
+			// c0 -> Á¤Á¡ º¯È¯ Çà·Ä.
 			// c21 -> View * Proj * Tex Matrix
 			/*"mov r0, c17.x								\n"
 			"mul r0, r0, c18.xyxy						\n"
 			"frc r0.xy, r0								\n"
 			"add r0, v5, r0								\n"
-			"mov oT0, r0								\n"		// ë²”í”„ë§µ ì¢Œí‘œ 1
+			"mov oT0, r0								\n"		// ¹üÇÁ¸Ê ÁÂÇ¥ 1
 			*/
 			"mov r0, v5									\n"
 			"add r0, r0, c17.yz							\n"
-			"mov oT0, r0								\n"		// ë²”í”„ë§µ ì¢Œí‘œ 1
+			"mov oT0, r0								\n"		// ¹üÇÁ¸Ê ÁÂÇ¥ 1
 
 /*
 			"mov r0, c17.x								\n"
 			"mul r0, r0, c18.zwzw						\n"
 			"frc r0.xy, r0								\n"
 			"add r0, v5, r0								\n"
-			"mov oT1, r0.yxzw							\n"		// ë²”í”„ë§µ ì¢Œí‘œ 2
+			"mov oT1, r0.yxzw							\n"		// ¹üÇÁ¸Ê ÁÂÇ¥ 2
 			*/
 			
-			"m4x4 oPos,   v0,       c0                  \n"		// ìµœì¢… ìœ„ì¹˜ = ê°ì²´ ê³µê°„ ìœ„ì¹˜ * ì„¸ê³„:ë·°:íˆ¬ì˜ í–‰ë ¬			
+			"m4x4 oPos,   v0,       c0                  \n"		// ÃÖÁ¾ À§Ä¡ = °´Ã¼ °ø°£ À§Ä¡ * ¼¼°è:ºä:Åõ¿µ Çà·Ä			
 			
-			// ì•„ë˜ì—ì„œ êµ¬í•´ì§€ëŠ” 4ì°¨ì› ê°’ì„ 2ì°¨ì›ìœ¼ë¡œ íˆ¬ì˜í•´ì•¼ í•¨.
+			// ¾Æ·¡¿¡¼­ ±¸ÇØÁö´Â 4Â÷¿ø °ªÀ» 2Â÷¿øÀ¸·Î Åõ¿µÇØ¾ß ÇÔ.
 			// 
 			"m4x4 oT1, v0, c21							\n"
 								;
@@ -244,12 +247,12 @@ SHADER_VCODE(WaterHolder, CTString &strVPCode, INDEX iVertexProgram)
 }
 
 SHADER_PCODE(WaterHolder, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
-{
+{  // pixel shader 1.4»ç¿ë ¾ÈÇÔ
 	if(iPixelProgram == iWaterHolderPP)
 	{
 		// c2 -> WaterColor
 		strPPCode =	"tex				t0		\n"
-					"texbem t1,			t0		\n"		// ë²”í”„ ë§¤í•‘.
+					"texbem t1,			t0		\n"		// ¹üÇÁ ¸ÅÇÎ.
 					"mov	r0.rgb,			t1	\n"
 					"+mov   r0.a,    c3.a		\n"
 					//"mov	r0,			t1		\n"
@@ -262,4 +265,4 @@ SHADER_PCODE(WaterHolder, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFog
 								;
 	}
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö		04.13

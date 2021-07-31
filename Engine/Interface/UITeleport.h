@@ -9,12 +9,12 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIScrollBar.h>
+// 
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIScrollBar.h>
 
 #define	TELEPORT_MAX_MEMO			15
-// [KH_070315] í”„ë¦¬ë¯¸ì—„ì€ 20ê°œ
+// [KH_070315] ÇÁ¸®¹Ì¾öÀº 20°³
 #define	TELEPORT_PRIMIUM_MAX_MEMO	20
 // wooss 050810
 #define	TELEPORT_MAX_ROW			5
@@ -40,7 +40,7 @@
 #define	TELEPORT_WIDTH				472	// wooss 050810 427 -> 472
 #define	TELEPORT_HEIGHT				160
 
-// [KH_070315] í”„ë¦¬ë¯¸ì—„ ë©”ëª¨ë¦¬ ìŠ¤í¬ë¡¤ ê´€ë ¨ ì¶”ê°€
+// [KH_070315] ÇÁ¸®¹Ì¾ö ¸Ş¸ğ¸® ½ºÅ©·Ñ °ü·Ã Ãß°¡
 #define	TELEPORT_PRIMIUM_TITLE_OFFSETX		TELEPORT_TITLE_OFFSETX				// 25
 #define	TELEPORT_PRIMIUM_TITLE_OFFSETY		TELEPORT_TITLE_OFFSETY		+ 2		// 7
 #define	TELEPORT_PRIMIUM_CONTENT_NAME_SY	TELEPORT_CONTENT_NAME_SY	+ 20	// 52
@@ -72,13 +72,13 @@ protected:
 	CUIButton			m_btnMemorize;						// Memorize button
 	CUIButton			m_btnCancel;						// Cancel button
 	SBYTE				m_sbSelection;						// Index of selected content
-	SBYTE				m_sbPage;								// [KH_070316] Index of selected Page : í”„ë¦¬ë¯¸ì—„ì—ì„œë§Œ ì“´ë‹¤.
+	SBYTE				m_sbPage;								// [KH_070316] Index of selected Page : ÇÁ¸®¹Ì¾ö¿¡¼­¸¸ ¾´´Ù.
 	
 	//wooss 050810
 	CUIScrollBar		m_sbScrollBar;						// Scroll Bar
 	
 	// String
-// [KH_070316] í”„ë¦¬ë¯¸ì—„ê³¼ ê°™ì´ ì“°ë¯€ë¡œ 20ê°œ(TELEPORT_PRIMIUN_MAX_MEMO)ë¡œ ì¡ìŒ
+// [KH_070316] ÇÁ¸®¹Ì¾ö°ú °°ÀÌ ¾²¹Ç·Î 20°³(TELEPORT_PRIMIUN_MAX_MEMO)·Î ÀâÀ½
 	CTString			m_strZone[TELEPORT_PRIMIUM_MAX_MEMO];	// Strings of zone name
 	CTString			m_strCoord[TELEPORT_PRIMIUM_MAX_MEMO];	// Strings of coordinate
 	CTString			m_strMemo[TELEPORT_PRIMIUM_MAX_MEMO];	// Strings of memo
@@ -130,7 +130,7 @@ public:
 	// Network message functions ( receive )
 	// wooss 050816 add useTime 
 	void	SetTeleportInfo( UBYTE ubSlot, SLONG slZone, FLOAT fX, FLOAT fZ, CTString &strComment );
-	void	SetUseTime(int t) {m_useTime = t ; }
+	void	SetUseTime(int t);
 	int		GetUseTime() { return m_useTime; }
 
 	// Command functions
@@ -139,7 +139,7 @@ public:
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 };
 
-// [KH_070315] í”„ë¦¬ë¯¸ì—„ ë©”ëª¨ë¦¬ìŠ¤í¬ë¡¤ ê´€ë ¨ ì¶”ê°€
+// [KH_070315] ÇÁ¸®¹Ì¾ö ¸Ş¸ğ¸®½ºÅ©·Ñ °ü·Ã Ãß°¡
 #define TELEPORT_PAGE_MAX 4
 
 class CUITeleportPrimium : public CUITeleport

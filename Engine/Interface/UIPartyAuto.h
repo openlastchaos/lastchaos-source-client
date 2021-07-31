@@ -9,12 +9,12 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UICheckButton.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIComboBox.h>
-#include <vector>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <Engine/Interface/UICheckButton.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIComboBox.h>
+// #include <vector>
 
 #define P_AUTO_WIDTH	598
 #define P_AUTO_HEIGHT	423
@@ -26,7 +26,19 @@
 #define JF_MAGE			0x00000008
 #define JF_ROGUE		0x00000010
 #define JF_SORCERER		0x00000020
-#define JF_ALLCLASS		0x0000003F
+#define JF_NIGHTSHADOW	0x00000040
+
+#ifdef CHAR_EX_ROGUE
+	#define JF_EX_ROGUE		0x00000080	// [2012/08/27 : Sora] EX·Î±× Ãß°¡
+		#ifdef CHAR_EX_MAGE
+			#define JF_EX_MAGE 0x00000100	//	2013/01/08 jeil EX¸ŞÀÌÁö Ãß°¡ ÇÃ·¹±× °ü·ÃÇØ¼­ ¹°¾îº¸°í Ãß°¡·Î ¼öÁ¤ÇÊ¿ä ÀÓ½Ã°ª 
+			#define JF_ALLCLASS		0x000001FF	
+		#else
+			#define JF_ALLCLASS		0x000000FF
+	#endif
+#else
+	#define JF_ALLCLASS		0x0000007F
+#endif
 
 enum eAutoPartySelection
 {
@@ -37,123 +49,29 @@ enum eAutoPartySelection
 	PARTY_DEL,
 };
 
+struct PartyListData
+{
+	CTString	strSubject;		// ÆÄÆ¼ ¹®±¸ ¹× Ä³¸¯¸í
+	DWORD		dwJobflag;		// Á÷¾÷
+	int			nIndex;			// Ä³¸¯ ½Äº°ÀÚ ¹× º¸½º ½Äº°ÀÚ
+	int			nLeveldiff;		// ·¹º§ Á¦ÇÑ on/off
+	int			nZone;			// ÆÄÆ¼ À§Ä¡
+	int			nPartyType;		// ÆÄÆ¼ Á¾·ù
+	int			nLimitLv;		// Á¦ÇÑ ·¹º§( »ç¿ë ¾ÈÇÔ )
+	int			nPartyNum;		// ÆÄÆ¼ ÇöÀç ¸ğÁı ÀÎ¿ø
+};
+
 // ----------------------------------------------------------------------------
 // Name : CUIPartyAuto
-// Desc : íŒŒí‹°ì˜¤í†  ë§¤ì¹­ ì‹œìŠ¤í…œ
+// Desc : ÆÄÆ¼¿ÀÅä ¸ÅÄª ½Ã½ºÅÛ
 // ----------------------------------------------------------------------------
 
 class CUIPartyAuto : public CUIWindow
 {
 protected:
-	typedef struct
-	{
-		CTString	strSubject;		// íŒŒí‹° ë¬¸êµ¬ ë° ìºë¦­ëª…
-		DWORD		dwJobflag;		// ì§ì—…
-		int			nIndex;			// ìºë¦­ ì‹ë³„ì ë° ë³´ìŠ¤ ì‹ë³„ì
-		int			nLeveldiff;		// ë ˆë²¨ ì œí•œ on/off
-		int			nZone;			// íŒŒí‹° ìœ„ì¹˜
-		int			nPartyType;		// íŒŒí‹° ì¢…ë¥˜
-		int			nLimitLv;		// ì œí•œ ë ˆë²¨( ì‚¬ìš© ì•ˆí•¨ )
-	}PartyListData;
-
-	// storage current page list
-	std::vector<PartyListData>	m_vectorPartyListData;
-
-	CTextureData	*m_ptdAddTexture;		// Add Texture resource
-
-	// Button
-	// Join set
-	CUIButton	m_btnEqualDivide;			// ê· ë“± ë¶„ë°° íŒŒí‹°
-	CUIButton	m_btnFirstObtain;			// ì…ìˆ˜ ìš°ì„  íŒŒí‹°
-	CUIButton	m_btnFight;					// ì „íˆ¬í˜• íŒŒí‹°
-	CUIButton	m_btnClose;					// Close button
-
-	CUIButton	m_btnRegistOK;				// íŒŒí‹° ë“±ë¡ í™•ì¸( ë°  íŒŒí‹° ì¡°ì¸ ì‹ ì²­, íŒŒí‹° ì´ˆëŒ€ )
-	CUIButton	m_btnRegistCancel;			// íŒŒí‹° ë“±ë¡ ì·¨ì†Œ
-	
-	CUIButton	m_btnNextbtn;				// ë‹¤ìŒ í˜ì´ì§€
-	CUIButton	m_btnPrevbtn;				// ì´ì „ í˜ì´ì§€
-	CUIButton	m_btnRefresh;				// ìƒˆë¡œ ê³ ì¹¨
-	CUIEditBox	m_ebNoticeName;				// Input box
-
-	CUICheckButton	m_cbtnTitan;			// Titan
-	CUICheckButton	m_cbtnKnight;			// Knight
-	CUICheckButton	m_cbtnHealer;			// Healer
-	CUICheckButton	m_cbtnMage;				// Mage
-	CUICheckButton	m_cbtnRogue;			// Rogue
-	CUICheckButton	m_cbtnSorcerer;			// Socceror
-
-	CUICheckButton	m_cbtnLevelLimit;		// ë ˆë²¨ ì œí•œ
-	CUIComboBox		m_cmbNeedClass;			// í•„ìš” í´ë˜ìŠ¤
-	CUIComboBox		m_cmbPartyType;			// íŒŒí‹° íƒ€ì…
-
 	// Region of each part
 	// Join set
 	UIRect		m_rcJoinTitle;				// Region of title
-	UIRect		m_rcSelLine;				// line select rectangle
-
-	// UV of each part
-	// Join set
-	UIRectUV	m_rtJoinTopL;				// UV of Top background
-	UIRectUV	m_rtJoinTopM;				// UV of Top background
-	UIRectUV	m_rtJoinTopR;				// UV of Top background
-	UIRectUV	m_rtJoinGapL;				// UV of Gap
-	UIRectUV	m_rtJoinGapM;				// UV of Gap
-	UIRectUV	m_rtJoinGapR;				// UV of Gap
-	UIRectUV	m_rtJoinMiddleL;			// UV of middle background
-	UIRectUV	m_rtJoinMiddleM;			// UV of middle background
-	UIRectUV	m_rtJoinMiddleR;			// UV of middle background
-	UIRectUV	m_rtJoinBottomL;			// UV of bottom background
-	UIRectUV	m_rtJoinBottomM;			// UV of bottom background
-	UIRectUV	m_rtJoinBottomR;			// UV of bottom	background
-
-	UIRectUV	m_rtSelListBackTopL;		// UV of List Background
-	UIRectUV	m_rtSelListBackTopM;
-	UIRectUV	m_rtSelListBackTopR;
-	UIRectUV	m_rtSelListBackMiddleL;
-	UIRectUV	m_rtSelListBackMiddleM;
-	UIRectUV	m_rtSelListBackMiddleR;
-	UIRectUV	m_rtSelListBackBottomL;
-	UIRectUV	m_rtSelListBackBottomM;
-	UIRectUV	m_rtSelListBackBottomR;
-	UIRectUV	m_rtSelListMiddleL;			// UV of List middle background
-	UIRectUV	m_rtSelListMiddleM;
-	UIRectUV	m_rtSelListMiddleR;
-
-	UIRectUV	m_rtStrTooltipTopL;				// tool tip
-	UIRectUV	m_rtStrTooltipTopM;
-	UIRectUV	m_rtStrTooltipTopR;
-	UIRectUV	m_rtStrTooltipMiddleL;	
-	UIRectUV	m_rtStrTooltipMiddleM;	
-	UIRectUV	m_rtStrTooltipMiddleR;
-	UIRectUV	m_rtStrTooltipBottomL;
-	UIRectUV	m_rtStrTooltipBottomM;
-	UIRectUV	m_rtStrTooltipBottomR;
-
-	UIRectUV	m_rtNoticeNameL;			// UV of NoticeName background
-	UIRectUV	m_rtNoticeNameM;			
-	UIRectUV	m_rtNoticeNameR;
-
-	UIRectUV	m_rtListSubjectRect;			// UV of Subject background
-	UIRectUV	m_rtline;					// UV of line background
-	UIRectUV	m_rtSelectBar;				// UV of select bar background
-
-	UIRectUV	m_rtTitanImage;			// UV of Check box Job Image
-	UIRectUV	m_rtKnightImage;
-	UIRectUV	m_rtHealerImage;
-	UIRectUV	m_rtMageImage;
-	UIRectUV	m_rtRogueImage;
-	UIRectUV	m_rtSorcererImage;
-	UIRectUV	m_rtPartyLvImage;		// UV of limitlevel image
-	UIRectUV	m_rtPeaceeverImage;		// UV of PT_PEACEEVER image
-	UIRectUV	m_rtSurvival;			// UV of PT_SURVIVAL image
-	UIRectUV	m_rtAttack;				// UV of PT_ATTACK image
-
-	CTString	m_strNoticeName;			// Party Notice Name
-	
-	DWORD		m_dwJobFlag;				// Job Flag
-	
-	BOOL		m_bIsPartyRequested;			// 
 	BOOL		m_bShowTextScroll;
 	BOOL		m_bTextDir;
 
@@ -169,11 +87,6 @@ protected:
 
 protected:
 	void		AdjustUIPos();
-	void		PressOKBtn();
-	void		PartyMatchJoin( SBYTE sbType, SLONG slBoss, CTString strBossName, SLONG slChar,
-							CTString strCharName, SBYTE sbCharJob );
-	void		SendPartyReq( int nNum );	// 1-> Next, 0->Current, -1-> Prev
-	void		RenderTooltip();		// ì‚­ì œ ì˜ˆì •
 	BOOL		Is2ByteChar( int nCharIndex, int nFirstCheck, CTString strText );
 public:
 	CUIPartyAuto();
@@ -182,12 +95,6 @@ public:
 	// Create
 	void		Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
 	void		Clear();
-	// Render
-	void		Render();
-	void		JoinRender();
-	void		LeaderJoinRender();
-	void		SelectListRender();
-	void		ListRecordRender();
 
 	// Adjust position
 	void		ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
@@ -195,21 +102,10 @@ public:
 
 	void		OpenPartyMatching();										// system select mode
 	void		OpenAutoParty( int nType );			// Oepn AutoParty Menu
-	void		CloseAutoParty();						
-
-	// Edit box focus
-	BOOL		IsEditBoxFocused() { return m_ebNoticeName.IsFocused();	}
-	void		KillFocusEditBox() { m_ebNoticeName.SetFocus( FALSE ); }
+	void		CloseAutoParty();
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
-	WMSG_RESULT KeyMessage( MSG *pMsg );
-	WMSG_RESULT IMEMessage( MSG *pMsg );
-	WMSG_RESULT CharMessage( MSG *pMsg );
-
-	WMSG_RESULT JoinMouseMsg( MSG *pMsg ); // ê°€ì… í¬ë§ íŒŒí‹° ë“±ë¡
-	WMSG_RESULT LeaderRegMouseMsg( MSG *pMsg ); // íŒŒí‹°ì¥ íŒŒí‹° ë“±ë¡
-	WMSG_RESULT	PartyListMouseMsg( MSG *pMsg ); // íŒŒí‹° ë¦¬ìŠ¤íŠ¸ ë° íŒŒí‹°ì› ì´ˆëŒ€ ë¦¬ìŠ¤íŠ¸ 
 
 	// Command functions
 	void		MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
@@ -218,18 +114,6 @@ public:
 	// Error Msg
 	void		MatchRegMemberRep( int nErrorcode );
 	void		MatchRegPartyRep( int nErrorcode );
-
-	// Network receive
-	void		ReceiveMemberData( CNetworkMessage *istr );
-	void		ReceivePartyData( CNetworkMessage *istr );
-	void		ReceivePartyInviteMessage( int nErrorcode, CNetworkMessage *istr );
-	void		ReceivePartyJoinMessage( int nErrorcode, CNetworkMessage *istr );
-
-	// Add list
-	void		AddPartyData( int nIndex, int nLvdiff, int nZone,
-										CTString strComment, DWORD dwFlag, int limitLv, int nPtType );
-	void		AddCharData( int nIndex, int nLvdiff, int nZone, 
-										CTString strCharName, int nJob, int limitLv, int nPtType );
 
 	// text scroll
 	void		TextScroll( CTString strText );

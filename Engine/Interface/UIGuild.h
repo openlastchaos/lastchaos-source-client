@@ -15,10 +15,14 @@
 #include <Engine/Interface/UIEditBox.h>
 #include <Engine/Interface/UIMultiEditBox.h>
 #include <Engine/Interface/UIWebBoard.h>
-
+#include <Engine/Interface/UIComboBox.h>
 #include <vector>
 #include <Engine/Interface/UIDrawFigure.h>	//WSS_NEW_GUILD_SYSTEM 070611
 #include <Engine/LocalDefine.h>				//WSS_NEW_GUILD_SYSTEM 070611
+#include <Engine/Interface/UIListBoxEx.h>
+#include <Engine/Interface/UIGuildArrangeMemberCont.h>
+#include <Common/Packet/ptype_old_do_guild.h>
+
 
 // Define text position
 #define	GUILD_TITLE_TEXT_OFFSETX		25
@@ -31,32 +35,55 @@
 // Define member level
 enum eMemberLevel
 {
-	GUILD_MEMBER_BOSS		= 0,		// ë‹¨ì¥
-	GUILD_MEMBER_VICE_BOSS	= 1,		// ë¶€ë‹¨ì¥
-	GUILD_MEMBER_MEMBER		= 2,		// ë‹¨ì›
-	GUILD_MEMBER_NOMEMBER	= -1,		// ë©¤ë²„ ì•„ë‹˜
-}; 
+	GUILD_MEMBER_BOSS			= 0,		// ´ÜÀå
+	GUILD_MEMBER_VICE_BOSS		= 1,		// ºÎ´ÜÀå
+	GUILD_MEMBER_MEMBER			= 2,		// ´Ü¿ø
+	GUILD_MEMBER_RUSH_CAPTAIN	= 3,		// µ¹°İ´ëÀå
+	GUILD_MEMBER_SUPPORT_CAPTAIN= 4,		// Áö¿ø´ëÀå
+	GUILD_MEMBER_RECON_CAPTAIN	= 5,		// Á¤Âû´ëÀå
+	GUILD_MEMBER_RUSH			= 6,		// µ¹°İ´ë¿ø
+	GUILD_MEMBER_SUPPORT		= 7,		// Áö¿ø´ë¿ø
+	GUILD_MEMBER_RECON			= 8,		// Á¤Âû´ë¿ø
+	GUILD_MEMBER_TOTAL			= 9,		// TOTAL
+	GUILD_MEMBER_NOMEMBER	= -1,		// ¸â¹ö ¾Æ´Ô
+};
 
-#define	MAX_APPLICANTS			(10)		// ìµœëŒ€ ê°€ì… ì‹ ì²­ì.
-
+#define	MAX_APPLICANTS			(10)		// ÃÖ´ë °¡ÀÔ ½ÅÃ»ÀÚ.
+#define GUILD_SKILL_VIEW_MAX	(5)			// ±æµå ½ºÅ³ Ã¢¿¡ º¸ÀÌ´Â ÃÖ´ë ½ºÅ³ °¹¼ö
 // WSS_NEW_GUILD_SYSTEM 070716 ------------------------------->>
-#define MAX_GUILDINFO_TAB	(5)			//í•´ì™¸ë¡œì»¬ì€ ê¸¸ë“œ ê²Œì‹œíŒ ì‚¬ìš© ì•ˆí•¨ ì‚¬ìš©ì‹œ (6)ìœ¼ë¡œ ìˆ˜ì •
+#if defined(G_KOR)
+	#define MAX_GUILDINFO_TAB	(6)
+#else
+	#define MAX_GUILDINFO_TAB	(5)			//ÇØ¿Ü·ÎÄÃÀº ±æµå °Ô½ÃÆÇ »ç¿ë ¾ÈÇÔ »ç¿ë½Ã (6)À¸·Î ¼öÁ¤
+	#define LOCAL_NEW_GUILD					//ÇØ¿Ü ·ÎÄÃ
+#endif
 #define LIMIT_GUILD_LEVEL	(6)
-#define LOCAL_NEW_GUILD					//í•´ì™¸ ë¡œì»¬
 // Define Guild Info Tab
 enum eGUILDNEW
 {
-	NEW_GUILD_INFO				= 0,		// ê¸¸ë“œ ì •ë³´
-	NEW_GUILD_MEMBER_INFO		= 1,		// ê¸¸ë“œì› ì •ë³´
-	NEW_GUILD_SKILL				= 2,		// ê¸¸ë“œ ìŠ¤í‚¬
+	NEW_GUILD_INFO				= 0,		// ±æµå Á¤º¸
+	NEW_GUILD_MEMBER_INFO		= 1,		// ±æµå¿ø Á¤º¸
+	NEW_GUILD_SKILL				= 2,		// ±æµå ½ºÅ³
 #ifndef LOCAL_NEW_GUILD
-	NEW_GUILD_BOARD,						// ê¸¸ë“œ ê²Œì‹œíŒ
+	NEW_GUILD_BOARD,						// ±æµå °Ô½ÃÆÇ
 #endif
-	NEW_GUILD_NOTICE,					// ê¸¸ë“œ ê³µì§€ì‚¬í•­
-	NEW_GUILD_MANAGE,					// ê¸¸ë“œ ê´€ë¦¬		
+	NEW_GUILD_NOTICE,					// ±æµå °øÁö»çÇ×
+	NEW_GUILD_MANAGE,					// ±æµå °ü¸®		
 };
-// -----------------------------------------------------------<<
 
+enum eGUILD_MEMBER_LIST
+{
+	eGML_NAME = 0,
+	eGML_TITLE,
+	eGML_LV,
+	eGML_CLASS,
+	eGML_LOCAL,
+	eGML_CONTRIBUTION,
+	eGML_POINT,
+	eGML_MAX
+};
+class CUIIcon;
+// -----------------------------------------------------------<<
 
 // ----------------------------------------------------------------------------
 // Name : CUIGuild
@@ -69,19 +96,19 @@ protected:
 	enum eGuildState
 	{
 		GUILD_REQ,
-		GUILD_CREATE,		// ìƒì„±
-		GUILD_UPGRADE,		// ìŠ¹ê¸‰
-		GUILD_DESTROY,		// í•´ì²´
-		GUILD_MANAGER,		// ê´€ë¦¬
-		GUILD_MANAGER_NEW,	// ì‹ ê·œ ê¸¸ë“œ ì‹œìŠ¤í…œ WSS_NEW_GUILD_SYSTEM 070704
+		GUILD_CREATE,		// »ı¼º
+		GUILD_UPGRADE,		// ½Â±Ş
+		GUILD_DESTROY,		// ÇØÃ¼
+		GUILD_MANAGER,		// °ü¸®
+		GUILD_MANAGER_NEW,	// ½Å±Ô ±æµå ½Ã½ºÅÛ WSS_NEW_GUILD_SYSTEM 070704
 	};
 	
 	// Define guild tab
 	enum GUILD_TAB
 	{
 		GUILD_TAB_NONE		= -1,
-		GUILD_TAB_MEMBER	= 0,		// ë©¤ë²„ ëª©ë¡
-		GUILD_TAB_TREE		= 1,		// ê¸¸ë“œ íŠ¸ë¦¬
+		GUILD_TAB_MEMBER	= 0,		// ¸â¹ö ¸ñ·Ï
+		GUILD_TAB_TREE		= 1,		// ±æµå Æ®¸®
 		GUILD_TAB_TOTAL		= 2,
 	};
 
@@ -114,9 +141,10 @@ protected:
 		}
 
 		SLONG			lIndex;
-		CTString		strMemberName;		// ë©¤ë²„ëª…?
-		int				eRanking;			// ìˆœìœ„?
-		BOOL			bOnline;			// ì ‘ì†ì¤‘?
+		CTString		strMemberName;		// ¸â¹ö¸í?
+		int				eRanking;			// ¼øÀ§?
+		BOOL			bOnline;			// Á¢¼ÓÁß?
+
 	};
 
 	// Function Object
@@ -135,18 +163,18 @@ protected:
 		}
 	};
 
-	std::vector<sGuildMember>	m_vectorMemberList;			// ë‹¨ì› ëª©ë¡
-
+	std::vector<sGuildMember>	m_vectorMemberList;			// ´Ü¿ø ¸ñ·Ï
+	
 	// Controls
 	CUIButton				m_btnClose;						// Close button
 	CUIButton				m_btnOK;						// OK button
 	CUIButton				m_btnCancel;					// Cancel button
 
-	CUIButton				m_btnChangeBoss;				// ë‹¨ì¥ ì´ì„
-	CUIButton				m_btnAccept;					// ë¶€ë‹¨ì¥ ì„ëª…(appointment)
-	CUIButton				m_btnReject;					// ë¶€ë‹¨ì¥ í•´ì„(dismissal)
-	CUIButton				m_btnMemberFire;				// ë‹¨ì› í‡´ì¶œ
-	CUIButton				m_btnExit;						// ë‹«ê¸°
+	CUIButton				m_btnChangeBoss;				// ´ÜÀå ÀÌÀÓ
+	CUIButton				m_btnAccept;					// ºÎ´ÜÀå ÀÓ¸í(appointment)
+	CUIButton				m_btnReject;					// ºÎ´ÜÀå ÇØÀÓ(dismissal)
+	CUIButton				m_btnMemberFire;				// ´Ü¿ø ÅğÃâ
+	CUIButton				m_btnExit;						// ´İ±â
 
 	// Region of each part
 	UIRect					m_rcTitle;						// Region of title bar
@@ -187,19 +215,21 @@ protected:
 	int						m_iUserRanking;					// Ranking of user
 	BOOL					m_bGuildJoinReq;				//
 
-	BOOL					m_bChackNpc;					//ì¹´ì˜¤ë§ˆì„ NPC ê¸¸ë“œ ë§ˆìŠ¤í„° ì²´í¬
+	BOOL					m_bChackNpc;					//Ä«¿À¸¶À» NPC ±æµå ¸¶½ºÅÍ Ã¼Å©
 	// WSS_NEW_GUILD_SYSTEM 070608 ------------------------->>
 
-	// ê¸¸ë“œ ì •ë³´------------------------------------>>
-	// ê¸¸ë“œ ì‹œìŠ¤í…œ ê°œí¸ ì¶”ê°€ ë³€ìˆ˜
-	INDEX					m_iSelTab;						// ì„ íƒí•œ í…(0 ~ 5)
-	INDEX					m_iGuildAverageLevel;			// ê¸¸ë“œ í‰ê·  ë ˆë²¨
-	INDEX					m_iGuildOwnLand;				// ê¸¸ë“œ ì†Œìœ  ì˜ì§€
-	INDEX					m_iGuildTotalPoint;				// ê¸¸ë“œ ì´ í¬ì¸íŠ¸
-	INDEX					m_iGuildMyPoint;				// ë‚˜ì˜ ê¸°ì—¬ í¬ì¸íŠ¸		
+	// ±æµå Á¤º¸------------------------------------>>
+	// ±æµå ½Ã½ºÅÛ °³Æí Ãß°¡ º¯¼ö
+	INDEX					m_iSelTab;						// ¼±ÅÃÇÑ ÅÜ(0 ~ 5)
+	INDEX					m_iGuildAverageLevel;			// ±æµå Æò±Õ ·¹º§
+	INDEX					m_iGuildOwnLand;				// ±æµå ¼ÒÀ¯ ¿µÁö
+	INDEX					m_iGuildTotalPoint;				// ±æµå ÃÑ Æ÷ÀÎÆ®
+	INDEX					m_iGuildMyPoint;				// ³ªÀÇ ±â¿© Æ÷ÀÎÆ®		
 	INDEX					m_iNumOfMaxMember;				// Number of Max Member 
 
-	// ë Œë”ë§ ê´€ë ¨ ì¶”ê°€ ë³€ìˆ˜
+	CTString				m_strRemoteGuildJoinTaget;		// ¿ø°İ ±æµå °¡ÀÔ ´ë»ó ÀÌ¸§
+
+	// ·»´õ¸µ °ü·Ã Ãß°¡ º¯¼ö
 	// Region of each part
 	UIRect					m_rcTitleNew;					// Region of title bar
 	UIRect					m_rcWindowNew;					// Region of Entire Window
@@ -218,10 +248,10 @@ protected:
 	UIRectUV				m_uvLineH;						// UV of Horizon line
 
 	// Common Box
-	CUIDrawBox				m_bxBox1;						// Box(1) - ì˜…ì€ ìƒ‰ ë°•ìŠ¤
-	CUIDrawBox				m_bxBox1_1;						// Box(1) - ì˜…ì€ ìƒ‰ ë°•ìŠ¤ ë°‘ì¤„ ì—†ëŠ”ê±°
-	CUIDrawBox				m_bxBox1_2;						// Box(1) - ì˜…ì€ ìƒ‰ ë°•ìŠ¤ ìœ—ì¤„ ì—†ëŠ”ê±°
-	CUIDrawBox				m_bxBox2;						// Box(2) - ì§™ì€ ìƒ‰ ë°•ìŠ¤
+	CUIDrawBox				m_bxBox1;						// Box(1) - ¿¶Àº »ö ¹Ú½º
+	CUIDrawBox				m_bxBox1_1;						// Box(1) - ¿¶Àº »ö ¹Ú½º ¹ØÁÙ ¾ø´Â°Å
+	CUIDrawBox				m_bxBox1_2;						// Box(1) - ¿¶Àº »ö ¹Ú½º À­ÁÙ ¾ø´Â°Å
+	CUIDrawBox				m_bxBox2;						// Box(2) - Â£Àº »ö ¹Ú½º
 	CUIDrawBox				m_bxBackGroundBox;				// Box of Top Background
 	CUIDrawBox				m_bxBackGroundBox2;				// Box of Bottom Background
 
@@ -230,35 +260,33 @@ protected:
 	CUIListBox				m_lbMemberHostilityList;		// List box of Alliance member list
 
 	// Buttons
-	CUIButton				m_btnEdit;						// í¸ì§‘ ë²„íŠ¼
-	CUIButton				m_btnCloseNew;					// X ë²„íŠ¼
-	CUIButton				m_btnExitNew;					// ë‹«ê¸° ë²„íŠ¼
-	CUIButton				m_btnGuildMarkBack;				// ê¸¸ë“œ ë§ˆí¬ ë°”íƒ• ë²„íŠ¼
+	CUIButton				m_btnEdit;						// ÆíÁı ¹öÆ°
+	CUIButton				m_btnCloseNew;					// X ¹öÆ°
+	CUIButton				m_btnExitNew;					// ´İ±â ¹öÆ°
+	CUIButton				m_btnGuildMarkBack;				// ±æµå ¸¶Å© ¹ÙÅÁ ¹öÆ°
 	// --------------------------------------------<<
 
-	// ê¸¸ë“œì› ì •ë³´ -------------------------------->>	
+	// ±æµå¿ø Á¤º¸ -------------------------------->>	
 	
-	CUIListBox				m_lbGuildMemberList;			// Guild Member List
-	INDEX					m_iOnlineMembers;				// ì ‘ì†í•œ ê¸¸ë“œì›
+	CUIListBoxEx			m_lbGuildMemberList;			// Guild Member List
+	INDEX					m_iOnlineMembers;				// Á¢¼ÓÇÑ ±æµå¿ø
 					
 	// --------------------------------------------<<
 
-	// ê¸¸ë“œ ìŠ¤í‚¬ ---------------------------------->>
+	// ±æµå ½ºÅ³ ---------------------------------->>
 	UIRect					m_rcGuildSkillList;
-	CUIButton				m_btnGetSkill;					// ìŠµë“í•˜ê¸°
-	CUIButtonEx*			m_btnGuildSkill;				// ê¸¸ë“œ ìŠ¤í‚¬ í•¨ìˆ˜
+	CUIButton				m_btnGetSkill;					// ½ÀµæÇÏ±â
 	CUIScrollBar			m_sbGuildSkillBar;				// Guild Skill Scroll Bar
-	CStaticArray<CSkill>	m_arGuildSkillList;				// Guild Skill List(from skills.bin)
 	INDEX					m_iGuildSkillPos;				// Guild Skill Position
-	BOOL					m_bIsSelList;					// ê¸¸ë“œ ìŠ¤í‚¬ ì²´í¬ ì—¬ë¶€
+	BOOL					m_bIsSelList;					// ±æµå ½ºÅ³ Ã¼Å© ¿©ºÎ
 	CUIListBox				m_lbGuildSkillDesc;
 	
 	// --------------------------------------------<<
 
-	// ê¸¸ë“œ ê²Œì‹œíŒ -------------------------------->>
-	CUIWebBoard*			m_pWebBoard;					// ê¸¸ë“œ ê²Œì‹œíŒì—ì„œ ì‚¬ìš©(ì´ì „ ê²Œì‹œíŒì—ì„œ)
-	CUIDrawBox				m_bxBox3;						// Box(3) - ë…¹ìƒ‰ ë°•ìŠ¤
-	CUIDrawBox				m_bxBox4;						// Box(4) - í…Œë‘ë¦¬ì—†ëŠ” ê²€ì •ë°•ìŠ¤
+	// ±æµå °Ô½ÃÆÇ -------------------------------->>
+	CUIWebBoard*			m_pWebBoard;					// ±æµå °Ô½ÃÆÇ¿¡¼­ »ç¿ë(ÀÌÀü °Ô½ÃÆÇ¿¡¼­)
+	CUIDrawBox				m_bxBox3;						// Box(3) - ³ì»ö ¹Ú½º
+	CUIDrawBox				m_bxBox4;						// Box(4) - Å×µÎ¸®¾ø´Â °ËÁ¤¹Ú½º
 
 	// Controls	
 	CUIButton			m_btnPrev;							// Prev button
@@ -283,83 +311,81 @@ protected:
 	CUIEditBox			m_ebWriteSubject;					// Subject edit box in writing
 
 	// Write ...
-	CUIMultiEditBox		m_mebContent;						// ì“°ê¸° ë‚´ìš©
+	CUIMultiEditBox		m_mebContent;						// ¾²±â ³»¿ë
 	
 	// -------------------------------------------->>
 
-	// ê¸¸ë“œ ê³µì§€ ---------------------------------->>
-	// ê³µì§€ ì…ë ¥	
-	CUIEditBox				m_ebNoticeTitle;					// ì œëª©
-	CUIMultiEditBox			m_mebNoticeContent;					// ë‚´ìš©
-	CUIButton				m_btnNotice;						// ê³µì§€ ë²„íŠ¼
-	CUIButton				m_btnNoticeCorrect;					// ìˆ˜ì • ë²„íŠ¼	
-	CUIButton				m_btnUpdateNotice;					// ì‘ì„±ì™„ë£Œ ë²„íŠ¼
-	BOOL					m_bEnableCorrect;					// ìˆ˜ì • ì—¬ë¶€
+	// ±æµå °øÁö ---------------------------------->>
+	// °øÁö ÀÔ·Â	
+	CUIEditBox				m_ebNoticeTitle;					// Á¦¸ñ
+	CUIMultiEditBox			m_mebNoticeContent;					// ³»¿ë
+	CUIButton				m_btnNotice;						// °øÁö ¹öÆ°
+	CUIButton				m_btnNoticeCorrect;					// ¼öÁ¤ ¹öÆ°	
+	CUIButton				m_btnUpdateNotice;					// ÀÛ¼º¿Ï·á ¹öÆ°
+	BOOL					m_bEnableCorrect;					// ¼öÁ¤ ¿©ºÎ
 	// --------------------------------------------<<
 
-	// ê¸¸ë“œ ê´€ë¦¬ ---------------------------------->>
-	std::vector<INDEX>		m_vManageMemberIndex;			// ë©¤ë²„ ì¸ë±ìŠ¤(list boxì˜ ìˆœì„œì™€ ê°™ìŒ)
-	CUIListBox				m_lbManageMemberList;			// ì„¤ì • ë¦¬ìŠ¤íŠ¸
-	CUIButton				m_btnChangeBossNew;				// ë‹¨ì¥ ì´ì„
-	CUIButton				m_btnAcceptNew;					// ë¶€ë‹¨ì¥ ì„ëª…
-	CUIButton				m_btnRejectNew;					// ë¶€ë‹¨ì¥ í•´ì„
-	CUIButton				m_btnMemberFireNew;				// ë©¤ë²„ í‡´ì¶œ
-	CUIButton				m_btnChangeSetting;				// ì„¤ì • ë³€ê²½
+	// ±æµå °ü¸® ---------------------------------->>
+	std::vector<INDEX>		m_vManageMemberIndex;			// ¸â¹ö ÀÎµ¦½º(list boxÀÇ ¼ø¼­¿Í °°À½)
+	CUIListBox				m_lbManageMemberList;			// ¼³Á¤ ¸®½ºÆ®
+	CUIButton				m_btnChangeBossNew;				// ´ÜÀå ÀÌÀÓ
+	CUIButton				m_btnAcceptNew;					// ºÎ´ÜÀå ÀÓ¸í
+	CUIButton				m_btnRejectNew;					// ºÎ´ÜÀå ÇØÀÓ
+	CUIButton				m_btnMemberFireNew;				// ¸â¹ö ÅğÃâ
+	CUIButton				m_btnChangeSetting;				// ¼³Á¤ º¯°æ
 
-	// ìˆ˜ì • ìœˆë„ìš°
-	BOOL					m_bApplySettingOn;				// ì„¤ì • ë³€ê²½ì°½ ìƒíƒœ
-	CUIButton				m_btnApplySetting;				// ì„¤ì • ì ìš©
-	CUIButton				m_btnApplySettingClose;			// ì„¤ì • ì ìš© ë‹«ê¸°
-	CUIEditBox				m_ebChangePositionName;			// ì§ìœ„ëª… ë³€ê²½
-	CUIEditBox				m_ebChangePayExp;				// ìƒë‚© ê²½í˜ì¹˜ í¬ì¸íŠ¸ 
-	CUIEditBox				m_ebChangePayFame;				// ìƒë‚© ëª…ì„±ì¹˜ í¬ì¸íŠ¸
+	// ¼öÁ¤ À©µµ¿ì
+	BOOL					m_bApplySettingOn;				// ¼³Á¤ º¯°æÃ¢ »óÅÂ
+	CUIButton				m_btnApplySetting;				// ¼³Á¤ Àû¿ë
+	CUIButton				m_btnApplySettingClose;			// ¼³Á¤ Àû¿ë ´İ±â
+	CUIEditBox				m_ebChangePositionName;			// Á÷À§¸í º¯°æ
+	CUIEditBox				m_ebChangePayExp;				// »ó³³ °æÈûÄ¡ Æ÷ÀÎÆ® 
+	CUIEditBox				m_ebChangePayFame;				// »ó³³ ¸í¼ºÄ¡ Æ÷ÀÎÆ®
+	CUICheckButton			m_ckGuildStashPermission;		// ±æµå Ã¢°í »ç¿ë¿©ºÎ [6/24/2011 rumist]
 
 	
+	int						m_nSelSkillTab;					// ¼±ÅÃµÈ ±æµå ½ºÅ³ ÅÇ ( 0 : Passive Guild Skill, 1 : Active Guild Skill )
+	CTString				m_strSkillTabPopupInfo;			// ÅÇ ÆË¾÷ Á¤º¸ (¾×Æ¼ºê, ÆĞ½Ã¤Ñ)
+	UIRect					m_rcSkillTab[2];				// ±æµå ½ºÅ³ ÅÇ
+	UIRect					m_rcSkillBtn[5];				// ±æµå ½ºÅ³ ¹öÆ° À§Ä¡
+	UIRect					m_rcSkillTabPopupInfo;			// ÅÇ ÆË¾÷ Á¤º¸
+	UIRectUV				m_rtSelBoxUV;					// ¼±ÅÃµÈ ±æµå ½ºÅ³ UV
+	UIRectUV				m_rtSelSideTabUV;				// ¼±ÅÃµÈ ¼¼·Î ÅÇ
+	UIRectUV				m_rtUnSelSideTabUV;				// ¼±ÅÃ ¾ÈµÈ ¼¼·Î ÅÇ
+	UIRectUV				m_rtPopupUL;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPopupUM;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPopupUR;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPopupML;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPopupMM;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPopupMR;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPopupLL;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPopupLM;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPopupLR;					// ±æµå ½ºÅ³ ÅÇ ÆË¾÷ UV
+	UIRectUV				m_rtPassiveTabIconUV[2];		// Passive Tab Icon UV
+	UIRectUV				m_rtActiveTabIconUV[2];			// Active Tab Icon UV
+	CTextureData			*m_ptdSelBoxTexture;			// ¼±ÅÃµÈ ±æµå ½ºÅ³ Texture
+	CUIButton				m_btnUseSkill;					// ±æµå ½ºÅ³ »ç¿ëÇÏ±â ¹öÆ°
+	CUIListBox				m_lbUseInfo;					// ½ºÅ³ »ç¿ë Á¤º¸ Ç¥½Ã ¹Ú½º
+	CUIListBox				m_lbLearnInfo;					// ½ºÅ³ ½Àµæ Á¤º¸ Ç¥½Ã ¹Ú½º
 	// --------------------------------------------<<
-		// inner class
-	class clsGuildMemberNew
-	{	
-		public:
-		clsGuildMemberNew()
-		{
-			lIndex			= -1;
-			eRanking		= GUILD_MEMBER_MEMBER;			
-			bOnline			= FALSE;
-			sPosName		= "";	
-			iLevel			=0;				
-			iJob			=-1;		
-			iJob2			=-1;
-			sLocName		="";
-			iLocation		=-1;	
-			iServDegree		=0;		
-			iCumulPoint		=0;
-			iExpServ		=0;	
-			iFameServ		=0;	
-			sRanking		= "";
-			sJobName		="";	
-		}	
+	// [1/3/2011 kiny8216] NEW_CORPS
+	CUIComboBox				m_cmbCorps;							// ±º´Ü ¼±ÅÃ ÄŞº¸ ¹Ú½º
+	INDEX					m_iCorpsMember;						// ÀÏ¹İÁ÷À§ ¸â¹ö ¼ö
+	INDEX					m_iCorpsBoss;						// ´ëÀåÁ÷À§ ¸â¹ö ¼ö
+	CTString				m_strCorps[GUILD_MEMBER_TOTAL];		// ±º´Ü ½ºÆ®¸µ
+	// [1/11/2011 kiny8216] GUILD_SKILL_FIX
+	CUIIcon*				m_pIconsGuildSkillEx[GUILD_SKILL_VIEW_MAX];	// ±æµå ½ºÅ³ ¹öÆ°
+	std::vector<CSkill>		m_vecGuildPassiveSkill;						// ±æµå ÆĞ½Ãºê ½ºÅ³
+	std::vector<CSkill>		m_vecGuildActiveSkill;						// ±æµå ¾×Æ¼ºê ½ºÅ³
 
-		SLONG			lIndex;
-		CTString		strMemberName;		// ë©¤ë²„ëª…?
-		int				eRanking;			// ìˆœìœ„?		
-		BOOL			bOnline;			// ì ‘ì†ì¤‘?
-// WSS_NEW_GUILD_SYSTEM 070705 ------------------------------------------->>
-// ì¶”ê°€ ë©¤ë²„ ë³€ìˆ˜
-		CTString		sRanking;			// ë””í´íŠ¸ ì§ìœ„ëª…
-		CTString		sPosName;			// ì§ìœ„ëª…
-		INT				iLevel;				// ë ˆë²¨
-		CTString		sJobName;			// í´ë˜ìŠ¤ ëª…
-		INT				iJob;				// í´ë˜ìŠ¤
-		INT				iJob2;				// ì „ì§ í´ë˜ìŠ¤
-		CTString		sLocName;			// ì ‘ì† ìœ„ì¹˜
-		INT				iLocation;			// ì ‘ì† ìœ„ì¹˜
-		INT				iServDegree;		// ê¸°ì—¬ë„ 
-		INT				iCumulPoint;		// ëˆ„ì  í¬ì¸íŠ¸
-		INT				iExpServ;			// ê²½í—˜ì¹˜ ìƒë‚©ë„
-		INT				iFameServ;			// ëª…ì„±ì¹˜ ìƒë‚©ë„
-// -----------------------------------------------------------------------<<
+	LONG					m_guildMarkTime;					// [sora] GUILD_MARK
+	CTString				m_strGuildMarkTime;
+	CUIGuildMarkIcon*		m_pIconGuildMark;
 
-	};
+	// Á¤·ÄÀ» À§ÇØ Ãß°¡.
+	ContGuild				m_ContGuild;
+
+	INDEX			m_iSyndiType;
 
 	// -------------------------------------------------------<<
 
@@ -373,19 +399,19 @@ protected:
 	void	GetGuildDesc( BOOL bShow = TRUE );
 	void	AddGuildDescString( CTString &strDesc, COLOR colDesc = 0xF2F2F2FF );
 
-	// ê¸¸ë“œ ìì²´ì— ëŒ€í•œ ì²˜ë¦¬
-	void	CreateGuild();			// ê¸¸ë“œ ìƒì„±
-	void	UpgradeGuild();			// ê¸¸ë“œ ìŠ¹ê¸‰
-	void	DestroyGuild();			// ê¸¸ë“œ í•´ì²´
-	void	GoGuildZone();			// ê¸¸ë“œ ì „ìš© ê³µê°„ìœ¼ë¡œ...
+	// ±æµå ÀÚÃ¼¿¡ ´ëÇÑ Ã³¸®
+	void	CreateGuild();			// ±æµå »ı¼º
+	void	UpgradeGuild();			// ±æµå ½Â±Ş
+	void	DestroyGuild();			// ±æµå ÇØÃ¼
+	void	GoGuildZone();			// ±æµå Àü¿ë °ø°£À¸·Î...
 
-	// ë©¤ë²„ì— ëŒ€í•œ ì²˜ë¦¬
-	void	ChangeBoss();			// ë‹¨ì¥ ì´ì„
-	void	AddViceBoss();			// ë¶€ë‹¨ì¥ ì„ëª…
-	void	DelViceBoss();			// ë¶€ë‹¨ì¥ í•´ì„
-	void	MemberFire();			// ë‹¨ì› í‡´ì¶œ
+	// ¸â¹ö¿¡ ´ëÇÑ Ã³¸®
+	void	ChangeBoss();			// ´ÜÀå ÀÌÀÓ
+	void	AddViceBoss();			// ºÎ´ÜÀå ÀÓ¸í
+	void	DelViceBoss();			// ºÎ´ÜÀå ÇØÀÓ
+	void	MemberFire();			// ´Ü¿ø ÅğÃâ
 	
-	//void	ApplicantReject();		// ê°€ì… ê±°ë¶€
+	//void	ApplicantReject();		// °¡ÀÔ °ÅºÎ
 
 public:
 	CUIGuild();
@@ -407,23 +433,23 @@ public:
 	void	ResetGuild();
 	void	ClearMemberList();
 
-	void	JoinGuild( LONG lGuildIndex, LONG lChaIndex, const CTString& strName );		// ê¸¸ë“œ ê°€ì…
-	void	QuitGuild();		// ê¸¸ë“œ íƒˆí‡´
+	void	JoinGuild( LONG lGuildIndex, LONG lChaIndex, const CTString& strName, INDEX iSyndiType );		// ±æµå °¡ÀÔ
+	void	QuitGuild();		// ±æµå Å»Åğ
 
-	// ë©¤ë²„ ëª©ë¡ ê´€ë¦¬
-	void	AddToMemberList( LONG lIndex, const CTString& strName, int eLevel = GUILD_MEMBER_MEMBER, BOOL bOnline = TRUE );		// ë©¤ë²„ ëª©ë¡ì— ì¶”ê°€
+	// ¸â¹ö ¸ñ·Ï °ü¸®
+	void	AddToMemberList( LONG lIndex, const CTString& strName, int eLevel = GUILD_MEMBER_MEMBER, BOOL bOnline = TRUE );		// ¸â¹ö ¸ñ·Ï¿¡ Ãß°¡
 	void	DelFromMemberList( LONG lIndex );
 	void	ChangeMemberLevel( LONG lIndex, int eLevel );
 	void	ChangeMemberOnline( LONG lIndex, BOOL bOnline );
 
-	// ë©¤ë²„ ëª©ë¡ ê°±ì‹ 
-	// NOTE : ì¸í„°í˜ì´ìŠ¤ë¥¼ ì—´ë•ŒëŠ” ë°˜ë“œì‹œ ê°±ì‹ ë˜ì–´ì•¼ í•˜ëŠ” ë¶€ë¶„ì´ë¯€ë¡œ TRUEë¡œ ì„¤ì •í•˜ê³ ,
-	// NOTE : ë³´ì´ëŠ” ìƒíƒœì¼ë•Œë§Œ ê°±ì‹ í•˜ê³ ì í•œë‹¤ë©´ FALSEë¡œ ì„¤ì •í• ê²ƒ.
+	// ¸â¹ö ¸ñ·Ï °»½Å
+	// NOTE : ÀÎÅÍÆäÀÌ½º¸¦ ¿­¶§´Â ¹İµå½Ã °»½ÅµÇ¾î¾ß ÇÏ´Â ºÎºĞÀÌ¹Ç·Î TRUE·Î ¼³Á¤ÇÏ°í,
+	// NOTE : º¸ÀÌ´Â »óÅÂÀÏ¶§¸¸ °»½ÅÇÏ°íÀÚ ÇÑ´Ù¸é FALSE·Î ¼³Á¤ÇÒ°Í.
 	void	RefreshMemberList( BOOL bInit = FALSE );
 	void	RefreshApplicantList( BOOL bInit = FALSE);
 
-	// ì§€ì›ìì— ëŒ€í•œ ì²˜ë¦¬
-	void	ApplicantAccept( LONG lIndex );		// ê°€ì… ìŠ¹ì¸
+	// Áö¿øÀÚ¿¡ ´ëÇÑ Ã³¸®
+	void	ApplicantAccept( LONG lIndex );		// °¡ÀÔ ½ÂÀÎ
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
@@ -436,7 +462,7 @@ public:
 	void	MsgBoxLCommand( int nCommandCode, int nResult );
 
 	// WSS_NEW_GUILD_SYSTEM 070702
-	// ë¶ˆí•„ìš”í•´ì„œ ì£¼ì„ ì²˜ë¦¬
+	// ºÒÇÊ¿äÇØ¼­ ÁÖ¼® Ã³¸®
 	// Set focus
 //	void	SetFocus( BOOL bVisible );
 			
@@ -470,7 +496,6 @@ public:
 	void	RenderNew();
 	void	RenderNewGuildInfo(int nx,int ny);
 	void	RenderNewGuildMemberInfo(int nx,int ny);
-	void	RenderNewGuildSkill(int nx,int ny);	
 	void	RenderNewGuildNoticeInput();
 	void	RenderNewGuildManage(int nx,int ny);
 	void	RenderNewGuildManagePopup();
@@ -479,37 +504,38 @@ public:
 	void	RenderNewGuildBoardRead();
 	void	RenderNewGuildBoardWrite();	
 		
-	// ê¸¸ë“œ ë©¤ë²„ ì •ë³´ ì¶”ê°€
+	// ±æµå ¸â¹ö Á¤º¸ Ãß°¡
 	void	AddGuildMemberInfo(clsGuildMemberNew tMemberInfo);
 	void	AddGuildManageInfo(clsGuildMemberNew tMemberInfo);
 	CTString SetPosName(CTString tName);
 
-	// ê¸¸ë“œ ê²Œì‹œíŒ
+	// ±æµå °Ô½ÃÆÇ
 	void	GetBoardListContent();
 	void	GetBoardReadContent();	
 
-	// ê¸¸ë“œ ê´€ë¦¬ ì„¤ì • ê´€ë ¨ ì „ì²´ ë²„íŠ¼ ì„¸íŒ…
+	// ±æµå °ü¸® ¼³Á¤ °ü·Ã ÀüÃ¼ ¹öÆ° ¼¼ÆÃ
 	void	SetManagePopup(BOOL bEnable);
 	void	ResetManagePopupString();
-	// ì„¤ì • ìˆ˜ì • í•­ëª© ì²´í¬
+	// ¼³Á¤ ¼öÁ¤ Ç×¸ñ Ã¼Å©
 	BOOL	CheckDataValidation();
 	
 	// Message Send
 	void	SendRequestGuildTab(int iTabNum);
 	void	SendChangeGuildInclination(UBYTE ubIncline);
-	void	SendAdjustGuildMemberInfo( int charIdx, CTString posName ,int expPer, int famePer);
+	void	SendAdjustGuildMemberInfo( int charIdx, CTString posName ,int expPer, int famePer, int corps = -1, UBYTE ubStashAuth = 0 );
 	void	SendUpdateGuildNotice( CTString strTitle, CTString strContents);
 	void	SendRequestGuildNotice();	
 	void	SendLearnGuildSkill(int skillIdx); 
 	// Message Receive
 	void	ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr);
+	void	UpdateGuildSkillLearnMessage(UpdateClient::doNewGuildSkillLearnToMemberMsg& SkillInfo);
 
 	// Mouse Message
 	WMSG_RESULT	MouseMessageNew( MSG *pMsg );
 	WMSG_RESULT	MouseMessageNewBoard( MSG *pMsg );
 
 	// Encode Notice String
-	// \r\n MultiBoxì— ì‚¬ìš©ìœ¼ë¡œ ìŠ¤íŠ¸ë§ í•¨ìˆ˜ ìˆ˜ì •
+	// \r\n MultiBox¿¡ »ç¿ëÀ¸·Î ½ºÆ®¸µ ÇÔ¼ö ¼öÁ¤
 	void EncodeNoticeString(CTString& tStr);
 	void DecodeNoticeString(CTString& tStr);
 
@@ -518,14 +544,46 @@ public:
 	// Guild Skill Setup
 	void SetGuildSkillList();
 	// Guild Skill Check
-	int GetGuildSkillLevel(int skillIdx);
+	ENGINE_API int GetGuildSkillLevel(int skillIdx);
 	// Set Guild Skill Member Extend
 	void ResetGuildMaxMember(int guildSkillLevel);
 	// Set Guild Position Name
 	CTString ResetPosName(CTString tPosName,int ulPosition);
 
+	void RenderNewGuildSkillExtend(int nX,int nY);			// È®Àå ±æµå ½ºÅ³Ã¢ ·»´õ
+	
+	void ReceiveGuildSkillExtend(CNetworkMessage* istr);	// È®Àå ±æµå ½ºÅ³ Á¤º¸ ¹Ş±â (Server->Client) : (int)skill_type, (int)count, (int)skill_index, (int)skill_level
+	
+	void SetGuildSkillInfo();								// È®Àå ±æµå ½ºÅ³ Ã¢ »ç¿ë Á¤º¸, ½Àµæ Á¤º¸ ¼³Á¤
+	void SetSkillPopupInfo(int nTab);
+
+	int	GetGuildSkillCount();								// ±æµå ½ºÅ³ ÃÑ °¹¼ö ¾ò±â
+	CUIIcon* GetSkillButton(int nPos);					// ±æµå ½ºÅ³ ¹öÆ° ¾ò±â
+	CSkill* GetGuildSkill(int nPos);						// (½ºÅ³Ã¢¿¡¼­ Å¬¸¯ ½Ã Æ÷Áö¼ÇÀ¸·Î) ±æµå ½ºÅ³ ¾ò±â
+	BOOL CheckUseGuildSkill(int nSkillIndex);				// ±æµå ½ºÅ³ »ç¿ë Á¶°Ç Ã¼Å©
+	BOOL StartGuildSkillDelay( int nSkillIndex );			// ±æµå ½ºÅ³ µô·¹ÀÌ ¼³Á¤
+	INDEX GetSelectedPositon();								// ÄŞº¸¹Ú½º¿¡¼­ ¼±ÅÃµÈ ºÎ´ë Á¤º¸ ¾ò±â
+	void SetSkillBtnInfo();									// ±æµå ½ºÅ³ ¹öÆ° Á¤º¸ ¼³Á¤
+	BOOL GetSkillDelay( INDEX index );						// ½ºÅ³ µô·¹ÀÌ ¾ò±â
+	DOUBLE GetReuseTime( INDEX SkillIndex );				// Àç»ç¿ë½Ã°£ ¾ò±â
+	DOUBLE GetCoolTime( DOUBLE ReuseTime, DOUBLE StartTime );	// ÄğÅ¸ÀÓ ¾ò±â
+	void SetCorpsInfo( INDEX memberCount, INDEX bossCount );	// ±æµåÀÇ ºÎ´ë Á¤º¸ ¼³Á¤
+	void InitString();										// ºÎ´ë °ü·Ã ½ºÆ®¸µ ¼³Á¤
+	void SetCorpsComboBox();								// ºÎ´ë ¼³Á¤ ÄŞº¸ ¹Ú½º ¼³Á¤
+	void ReceiveCorpsInfo(CNetworkMessage* istr);			// ±æµå ºÎ´ë Á¤º¸ ¹Ş±â
 	// --------------------------------------------------------------------<<
 
+	void		SetRemoteGuildJoinTaget(CTString &strTargetName)		{ m_strRemoteGuildJoinTaget = strTargetName;	}
+	CTString	GetRemoteGuildJoinTaget()								{ return m_strRemoteGuildJoinTaget;				}
+	void		ArrangeMemList(const int eType);
+	CUICheckButton* m_pCbMemberArrange[eGML_MAX];
+	BOOL		IsOnline(CTString strName);
+	int			GetMemberNetIdx( CTString strName );
+	WMSG_RESULT OpenGuildPop(int nMemberIdx, int nX, int nY);
+
+	void		ResetArrangeState();
+	void		ClearGuildSkill();
+	void		ClearGuildSkillCooltime();
 };
 
 #endif	// UIGUILD_H_

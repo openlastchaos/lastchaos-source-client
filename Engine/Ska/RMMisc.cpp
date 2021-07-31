@@ -21,20 +21,20 @@ extern CStaticStackArray<struct RenMorph> _aRenMorphs;
 extern CStaticStackArray<struct RenWeight> _aRenWeights;
 extern CStaticStackArray<struct MeshVertex> _aMorphedVertices;
 extern CStaticStackArray<struct MeshNormal> _aMorphedNormals;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 extern CStaticStackArray<struct MeshTangent> _aMorphedTangents;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 extern CStaticStackArray<struct MeshVertex> _aFinalVertices;
 extern CStaticStackArray<struct MeshNormal> _aFinalNormals;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 extern CStaticStackArray<struct MeshTangent> _aFinalTangents;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 extern CStaticStackArray<struct RenMatrix> _aWeightMatrices;
 extern CStaticStackArray<struct SurfaceMatrices> _aSurfacesMatrices;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 extern void CalculateRenderingData(CModelInstance &mi, BOOL bRenderToScreen);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 extern void UnlockMeshReadBuffers(const MeshLOD &mlod);
 extern void LockMeshReadBuffers(const MeshLOD &mlod);
 extern void PrepareMeshForRendering(RenMesh &rmsh, INDEX iSkeletonLOD);
@@ -52,9 +52,9 @@ extern INDEX _ctMeshVertices;            // mesh lod vertex count
 
 static MeshVertex *_pavFinalVertices;
 static MeshNormal *_panFinalNormals;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 static MeshTangent *_panFinalTangents;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 static CModelInstance *_pmiCurrent = NULL;
 static MeshLOD *_pmlodCurrent = NULL;
@@ -92,7 +92,7 @@ static void CleanPreview(void)
 
 static GFXColor GetColor(INDEX iColor)
 {
-	const ctColors = sizeof(_aColors)/sizeof(GFXColor);
+	const int ctColors = sizeof(_aColors)/sizeof(GFXColor);
 	iColor = iColor%ctColors;
 
 
@@ -363,7 +363,7 @@ static void ColorizeSelectedSurface(void)
 	if(_pmsrfCurrent->msrf_ulFlags&MS_MESH_SUBSURFACE) {
 		CTString strSurface = ska_IDToString(_pmsrfCurrent->msrf_iSurfaceID);
 		const char *pstrSurf =  (const char*)strSurface;
-		char *pstrUnderline = strrchr(pstrSurf,'_');
+		char *pstrUnderline = strrchr(const_cast<char *>(pstrSurf),'_');
 		if(pstrUnderline!=NULL) {
 			INDEX iLength = pstrUnderline-pstrSurf;
 			char *pstrSurfName = new char[iLength+1];
@@ -431,13 +431,13 @@ static void RenderMesh_Preview(RenMesh &rmsh, RenModel &rm)
 			shaSetIndices( &msrf.msrf_auwTriangles[0].mt_uwVertexIndex[0], msrf.msrf_auwTriangles.Count()*3);
 		}
 		shaSetTexture(-1);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
-		//ë¶€ë¶„ ì„ íƒì‹œ ì´ˆë¡ìƒ‰ ë°˜íˆ¬ëª…ìœ¼ë¡œ ë‚˜ì˜¬ ê²½ìš° ì²˜ë¦¬ê´€ë ¨.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+		//ºÎºĞ ¼±ÅÃ½Ã ÃÊ·Ï»ö ¹İÅõ¸íÀ¸·Î ³ª¿Ã °æ¿ì Ã³¸®°ü·Ã.
 		shaEnableDepthTest();
 		shaEnableDepthWrite();
 		//shaDisableDepthTest();
 		//shaDisableDepthWrite();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		if(_iSelectionID>=0) {
 			shaBlendFunc(GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
 			shaEnableBlend();

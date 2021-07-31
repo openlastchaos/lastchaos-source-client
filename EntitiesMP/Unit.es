@@ -109,6 +109,7 @@ properties :
 	116 INDEX	m_bKillEnemy = FALSE,
 
 	232 FLOAT3D m_vMyPositionTmp = FLOAT3D(0.0f, 0.0f, 0.0f),	
+	112 INDEX	m_enAttackerID = 0,
 
 //---------------------------------------------------------------------------------
 	// 플레이어의 소유물인 경우에만 해당.
@@ -118,6 +119,8 @@ properties :
 //---------------------------------------------------------------------------------
  {
 	CSelectedEntities		m_dcEnemies;
+	FLOAT		m_fAttackSpeed;
+	ANGLE3D		m_aDesiredRotation;
  }
         
 components:
@@ -148,12 +151,14 @@ functions:
 	virtual void SetNoTargetEntity(void) {}
 	virtual void StopandTeleport() {}
 	virtual void MoveNow() {}
+	virtual void SendActEvent(void) {}
 
 	virtual BOOL CheckTarget(CEntity* penTarget) { return FALSE; }
 	virtual BOOL UseSkill( int iSkillIndex ) { return FALSE; }
 
 	// 이동할수 있는가???
-	virtual BOOL IsMovable() { return TRUE; };	
+	virtual BOOL IsMovable() { return TRUE; }
+	virtual BOOL IsAvailableRide()		{ return FALSE;	}
 	virtual void StopMove()
 	{
 		if( _pNetwork->m_bSingleMode )
@@ -328,6 +333,7 @@ functions:
 
 		// get delta to desired position
 		FLOAT3D vDelta = m_vDesiredPosition - GetPlacement().pl_PositionVector;
+		vDelta(2) = 0.0f;
 
 		// if we may rotate
 		if (m_aRotateSpeed>0.0f) 
@@ -381,6 +387,7 @@ functions:
 		{
 			//0703 kwon 높이맵이 적용되기 전까지는 평면이동을 하게 했다.
 			FLOAT3D vDelta = m_vDesiredPosition - GetPlacement().pl_PositionVector;
+			vDelta(2) = 0.0f;
 
 			FLOAT length = vDelta.Length();
 			FLOAT deltaX = m_vDesiredPosition(1) - GetPlacement().pl_PositionVector(1);
@@ -393,6 +400,8 @@ functions:
 			{
 				//이전에 메시지 보낼때와 비교해서 0.5보다 적게 갔다면,
 				FLOAT3D vDelta = GetPlacement().pl_PositionVector - m_vMyPositionTmp;
+				vDelta(2) = 0.0f;
+
 				if(vDelta.Length() < 0.5f)
 				{
 					//y값을 고려하지 않은 거리 계산.
@@ -480,7 +489,7 @@ functions:
 	virtual ULONG SetDesiredMovement(void) 
 	{
 		ULONG ulFlags = 0;
-
+/*
 		// get delta to desired position
 		FLOAT3D vDelta = m_vDesiredPosition - GetPlacement().pl_PositionVector;
 
@@ -500,14 +509,13 @@ functions:
 			if (aWantedHeadingRelative < -m_aRotateSpeed*m_fMoveFrequency) 
 			{
 				// start turning left
-				//aHeadingRotation = -m_aRotateSpeed;
-				aHeadingRotation = -(m_aRotateSpeed*m_fMoveFrequency);
+				aHeadingRotation = -m_aRotateSpeed;
 			// if desired position is right
 			} 
 			else if (aWantedHeadingRelative > m_aRotateSpeed*m_fMoveFrequency) 
 			{
 				// start turning right
-				aHeadingRotation = +(m_aRotateSpeed*m_fMoveFrequency);
+				aHeadingRotation = +m_aRotateSpeed;
 			// if desired position is more-less ahead
 			} 
 			else 
@@ -530,12 +538,14 @@ functions:
 			// stop rotating
 			SetDesiredRotation(ANGLE3D(0, 0, 0));			
 		}
+*/
+		ulFlags = SetDesiredRotate();
 
 		// if we may move(이동중이야...)
 		if (m_fMoveSpeed > 0.0f ) 
 		{
 			FLOAT3D vDeltaPlane = m_vDesiredPosition - GetPlacement().pl_PositionVector;
-			//vDeltaPlane(2) = 0.0f;
+			vDeltaPlane(2) = 0.0f;
 
 			FLOAT fLength = vDeltaPlane.Length();
 
@@ -580,6 +590,7 @@ functions:
 
 		// get delta to desired position
 		FLOAT3D vDelta = m_vDesiredPosition - GetPlacement().pl_PositionVector;
+		vDelta(2) = 0.0f;
 
 		// if we may rotate(회전할때... 적과의 각도를 계산해서 회전~)
 		if (m_aRotateSpeed>0.0f) 
@@ -664,6 +675,7 @@ functions:
 	virtual void RotatingAnim(void) {};
 	virtual void AttackAnim(void) {};
 	virtual void HungryAnim(void) {}; // 배고픔 동작
+	virtual void ActEventAnim(void) {}; // 대기 동작 활성화(배고픔에서 벗어 날때 및 대기동작 변경)
 
 	// ----------------------------------------------------------------------------
 	// Name : 

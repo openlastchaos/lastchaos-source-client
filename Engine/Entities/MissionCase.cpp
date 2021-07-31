@@ -2,79 +2,62 @@
 
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Entities/MissionCase.h>
-//강동민 수정 시작 테스트 클라이언트 작업	06.09
 #include <Engine/Entities/EntityClass.h>
 #include <Engine/Entities/EntityProperties.h>
 #include <Engine/Ska/StringTable.h>
-//강동민 수정 끝 테스트 클라이언트 작업		06.09
+#include <Engine/Interface/UIManager.h>
 
-/*
- *  Constructor.
- */
-CMissionCase::CMissionCase(void)
-{
-	memset(&m_MissionData, 0, sizeof(TMissionData));
-
-}
-
-/*
- *  Destructor.
- */
-CMissionCase::~CMissionCase(void) 
-{
-
-}
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &apShopData - 
 //			FileName - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CMissionCase::LoadMissionFromFile(CStaticArray<CMissionCase> &apMissiondata, const char* FileName)
+bool CMissionCase::loadEx(const char* FileName)
 {	
-	FILE* fMissiondata = NULL;
-	if ((fMissiondata = fopen(FileName, "rb")) == NULL) 
-	{
-		MessageBox(NULL, "MissionCase File is not Exist.", "error!", MB_OK);
-		return -1;
-	}
-	int		nMission_total=0;
-	int		iReadBytes	= 0;
-		
-	// 이벤트 개수 체크
-	fread(&nMission_total,sizeof(int),1,fMissiondata);
-	apMissiondata.New(nMission_total);
-	ASSERT(apMissiondata.Count() > 0 && "Invalid MissionCase Data");		
-	ASSERT(nMission_total > 0 && "Invalid MissionCase Data");
-	//////////////////////////////////////////////////////////////////////////	
-	// MACRO DEFINITION
-	//////////////////////////////////////////////////////////////////////////	
-#define LOADINT(d)			iReadBytes = fread(&d, sizeof(int), 1, fMissiondata);
-#define LOADSHORT(d)		iReadBytes = fread(&d, sizeof(short), 1, fMissiondata);
-#define LOADCHAR(d)			iReadBytes = fread(&d, sizeof(char), 1, fMissiondata);
-#define LOADFLOAT(d)		iReadBytes = fread(&d, sizeof(float), 1, fMissiondata);
-#define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fMissiondata); }
-	//////////////////////////////////////////////////////////////////////////	
+	FILE*	fp = NULL;
 
-	for(int i = 0; i < nMission_total; ++i)
-	{
-		CMissionCase& MC	= apMissiondata[i];
-		TMissionData& MissionData	= MC.m_MissionData;		
-		LOADINT(MissionData.nMission_index);
-		LOADSTR(MissionData.strMission_name);
-		LOADINT(MissionData.price);
-		LOADINT(MissionData.iIconTexID);
-		LOADINT(MissionData.iIconTexRow);
-		LOADINT(MissionData.iIconTexCol);
-		LOADCHAR(MissionData.bSkill);		
-		LOADINT(MissionData.iPoint);
-	}
-	fclose(fMissiondata);
-		
-	#undef LOADINT
-	#undef LOADCHAR
-	#undef LOADFLOAT
-	#undef LOADSTR				
+	fp = fopen(FileName, "rb");
 
-	return nMission_total;
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	stMonsterCombo* pdata = new stMonsterCombo[_nSize];
+	fread(pdata, sizeof(stMonsterCombo) * _nSize, 1, fp);
+	fclose(fp);
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CMissionCase* ptmp = new CMissionCase;
+		memcpy(ptmp, &pdata[i], sizeof(stMonsterCombo));
+
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+		else
+		{
+			_vecdata.push_back(ptmp);
+		}
+	}
+
+	m_dummy = new CMissionCase; // ���̵���Ÿ ����
+	memset(m_dummy, 0, sizeof(stMonsterCombo));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
 }

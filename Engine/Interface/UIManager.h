@@ -5,321 +5,57 @@
 
 #ifndef	UIMANAGER_H_
 #define	UIMANAGER_H_
-#ifdef	PRAGMA_ONCE
-	#pragma once
-#endif
 
-
-#include <Engine/Graphics/DrawPort.h>
+#include <Engine/DesignClasses/Singleton/SingletonBase.h>
 #include <GameMP/Game.h>
-#include <Engine/Interface/UIPlayerInfo.h>
-#include <Engine/Interface/UITargetInfo.h>
-#include <Engine/Interface/UIRadar.h>
-#include <Engine/Interface/UIInventory.h>
-#include <Engine/Interface/UICharacterInfo.h>
-#include <Engine/Interface/UIExchange.h>
-#include <Engine/Interface/UIPortal.h>
-#include <Engine/Interface/UIPersonalShop.h>
-#include <Engine/Interface/UIGuild.h>
-#include <Engine/Interface/UIGuildBattle.h> // Date : 2005-03-17,   By Lee Ki-hwan
-#include <Engine/Interface/UIWareHouse.h>
-#include <Engine/Interface/UISystemMenu.h>
-#include <Engine/Interface/UIParty.h>
-#include <Engine/Interface/UIMap.h>
-#include <Engine/Interface/UIRefine.h>
-#include <Engine/Interface/UIProcess.h>		
-#include <Engine/Interface/UIProduct.h>		// ì´ê¸°í™˜ ( 12.7)
-#include <Engine/Interface/UIMix.h>			// ì´ê¸°í™˜ ( 12.7)
-#include <Engine/Interface/UICompound.h>	// Date : 2005-01-12,   By Lee Ki-hwan
-#include <Engine/Interface/UIBilling.h>	// Date : 2005-04-30(ì˜¤í›„ 3:58:10), By Lee Ki-hwan
-#include <Engine/Interface/UITalk.h> // Date : 2005-05-24(ì˜¤í›„ 1:30:50), By Lee Ki-hwana
-
-//#include <Engine/Interface/UISkillLearn.h>
-#include <Engine/Interface/UIRemission.h>
-#include <Engine/Interface/UIMessenger.h>
-#include <Engine/Interface/UIWebBoard.h>
-#include <Engine/Interface/UIQuest.h>
-#include <Engine/Interface/UIChatting.h>
-#include <Engine/Interface/UISecurity.h>
-
-#include <Engine/Interface/UILogin.h>
-#include <Engine/Interface/UIOption.h>
-#include <Engine/Interface/UISelectServer.h>
-#include <Engine/Interface/UIChangeWeapon.h>
-#include <Engine/Interface/UIInitJob.h>
-#include <Engine/Interface/UIHelper.h>
-#include <Engine/Interface/UIQuiz.h>
-#include <Engine/Interface/UIHelp.h>		// ë„ì›€ë§ ì¶”ê°€
-#include <Engine/Interface/UIHelpOld.h>		// ì˜ˆì „ ë„ì›€ë§
-#include <Engine/Interface/UIGamble.h>
-#include <Engine/Interface/UIRanking.h>
-#include <Engine/Interface/UISiegeWarfare.h>
-#include <Engine/Interface/UISiegeWarfareNew.h>	// WSS_DRATAN_SIEGEWAREFARE 070727
-#include <Engine/Interface/UIProcessNPC.h>
-#include <Engine/Interface/UISelectResource.h>
-#include <Engine/Interface/UIBillItem.h>
-#include <Engine/Interface/UIGuildWarPortal.h>
-#include <Engine/Interface/UIGWMix.h>
-#include <Engine/Interface/UIGuildStash.h>
-#include <Engine/Interface/UIMouseCursor.h>
-
-#include <Engine/Interface/UISelectList.h>
-#include <Engine/Interface/UIPetItemMix.h>
-#include <Engine/Interface/UIPetFree.h>
-#include <Engine/Interface/UIOXQuizEvent.h>
-
-// wooss 050819
-// UI CASH SHOP
-#include <Engine/Interface/UICashShop.h>
-#include <Engine/Interface/UIPartyAuto.h>// party auto matching system
-#include <Engine/Interface/UICollectBox.h>
-#include <Engine/Interface/UIMixNew.h>
-#include <Engine/interface/UIBingoBox.h>
-#include <Engine/Interface/UINpcHelp.h>
-// wooss 070330 ----------------------->><<
-// kw : WSS_HELP_SYSTEM_1
-#include <Engine/interface/UIHelpIcon.h>
-
-// [KH_070419] ì‹¬í”Œ íŒì—… ê´€ë ¨ ì¶”ê°€
-#include <Engine/Interface/UISimplePop.h>
-
-// WSS_MINIGAME ----------------------->><<
-#include <Engine/interface/UIMinigame.h>
-
-#include <Engine/interface/UIFlowerTree.h>
-
-// WSS_GUILDMASTER ---------------------->><<
+#include <Engine/Interface/UIWindowDeclare.h>
+#include <Engine/Interface/UIEditBox.h>
+#include <Engine/Interface/UIMultiEditBox.h>
+#include <Engine/Interface/UIFocus.h>
+#include <Engine/Interface/UITooltipMgr.h>
 #include <Engine/Interface/UIDrawFigure.h>
-// WSS_NEW_GUILD_SYSTEM 070715 ---------->><<
-#include <Engine/Interface/UIGuildNotice.h>
-// ttos_080116 : ëª¬ìŠ¤í„° ì½¤ë³´
-#include <Engine/Interface/UIMonsterCombo.h>
-// ê³µê²© í« ì‹œìŠ¤í…œ
-#include <Engine/Interface/UIWildPetInfo.h>
 
-//ê±°ë˜ëŒ€í–‰ ì‹œìŠ¤í…œ
-#include <Engine/Interface/UIAuction.h>
+#include <Engine/Base/DamageLogInfo.h>
 
-// [090709: selo] í« ë¬¸ì–‘ ì‹œìŠ¤í…œ
-#include <Engine/Interface/UITatoo.h>
+#include <Engine/Interface/UILacarette.h>
 
-//[ttos_2009_7_17]: CHARATER_CHAT_FILTER ìºë¦­í„° ì±„íŒ… í•„í„°
-//******************************************************
-#include <Engine/Interface/UIFiltering.h>
 
 class CWorld;
-
-class CUITeleport;
-class CUITeleportPrimium;
-class CUIQuestBook;
-class CUISelectWord;
-class CUINotice;
-class CUIPetTraining;
-class CUIPetTargetInfo;
-class CUIWildPetTargetInfo;
-class CUIPetInfo;
-class CUISummon;
-class CUIMessageBox;
+class CUIListBox;
+class CUIMouseCursor;
 class CUIMsgBox_Info;
-class CUISingleBattle;
-class CUISkillLearn;
-class CUIQuickSlot;
-class CUISelChar;
-class CUICreateChar;
-class CUIShop;
-class CUIChatting;
-class CUINpcHelp;
 
 // Link library
 #pragma comment( lib, "imm32.lib" )
 
-// Game state
-enum UIGameState
-{
-	UGS_NONE			= -1,		// None
-	UGS_LOGIN			= 0,		// ID & PW page
-	UGS_SELSERVER		= 1,		// Server selection page
-	UGS_SELCHAR			= 2,		// Character selection page
-	UGS_CREATECHAR		= 3,		// Character creation page
-	UGS_GAMEON			= 4,		// Game running
-	UGS_GAMELOADING		= 5,		// Game loading
-	UGS_UI_TEST			= 6,		// Game UI TEST quick loanding ui wooss 050822
-};
-
-
-// User interface types
-enum UI_TYPE
-{
-	UI_NONE					= -1,
-	UI_TYPE_START			= 0,
-
-	UI_ALWAYS_SHOW_START	= UI_TYPE_START,				// í•­ìƒ ë³´ì´ëŠ” ì¸í„°í˜ì´ìŠ¤ |<--
-	UI_PLAYERINFO			= UI_ALWAYS_SHOW_START,
-	UI_CHATTING,
-	UI_PETTARGETINFO,
-	UI_WILDPETTARGETINFO,
-	UI_QUICKSLOT,
-	UI_SUMMON_START,
-	UI_SUMMON_FIRST	= UI_SUMMON_START,
-	UI_SUMMON_SECOND,
-	UI_SUMMON_END	= UI_SUMMON_SECOND,	
-	UI_RADAR,
-	UI_NOTICE,
-	UI_TARGETINFO,	
-	UI_HELP_ICON,	
-	UI_ALWAYS_SHOW_END,										// í•­ìƒ ë³´ì´ëŠ” ì¸í„°í˜ì´ìŠ¤     -->|
-
-	UI_SELECTIVE_SHOW_START	= UI_ALWAYS_SHOW_END,			// ì„ íƒì ìœ¼ë¡œ ë³´ì´ëŠ” ì¸í„°í˜ì´ìŠ¤ |<--
-	UI_INVENTORY			= UI_SELECTIVE_SHOW_START,
-	UI_CHARACTERINFO,
-	UI_EXCHANGE,
-	UI_PORTAL,
-	UI_SHOP,
-	UI_PERSONALSHOP,
-	UI_WAREHOUSE,
-	UI_SECURITY,
-	UI_SYSTEMMENU,
-	UI_PARTY,
-	UI_GUILD,
-	UI_HELP,
-	UI_HELP3,
-	UI_SINGLE_BATTLE,
-	UI_GUILD_BATTLE, // Date : 2005-03-17,   By Lee Ki-hwan
-	UI_SIEGE_WARFARE,	// ê³µì„±ì „ // Date : 2005-06-27(ì˜¤ì „ 10:46:11), By Lee Ki-hwan
-	UI_SIEGE_WARFARE_NEW,	// ì‹ ê³µì„±ì „ // WSS_DRATAN_SIEGEWARFARE 070727
-	UI_GUILDWARPORTAL,
-	UI_BILLING,			// ëŒ€ë§Œ ìœ ë£Œí™”(ì •ì•¡) Date : 2005-04-30(ì˜¤í›„ 3:55:19), By Lee Ki-hwan
-	UI_BILL_ITEM,		// ëŒ€ë§Œ ìœ ë£Œí™” ì•„ì´í…œ ì§€ê¸‰ ì‹œìŠ¤í…œ
-	UI_MAP,
-	UI_OPTION,
-	UI_REFINE,
-	UI_PROCESS,
-	UI_PRODUCT,		// ì´ê¸°í™˜(12.7)	
-	UI_MIX,
-	UI_MIXNEW,		//  wooss 060523
-	UI_COMPOUND,	// Date : 2005-01-12,   By Lee Ki-hwan
-	UI_REMISSION,
-	UI_QUEST,
-	UI_QUESTBOOK_LIST,
-	UI_QUESTBOOK_CONTENT,
-	UI_QUESTBOOK_COMPLETE,
-	UI_QUESTBOOK_NEW,
-	UI_SKILLLEARN,
-	UI_CHANGEWEAPON,
-	UI_HELPER,
-	UI_INITJOB,
-	UI_TELEPORT,
-	UI_TELEPORT_PRIMIUM,	// [KH_070315] í”„ë¦¬ë¯¸ì—„ ë©”ëª¨ë¦¬ìŠ¤í¬ë¡¤ ê´€ë ¨ ì¶”ê°€
-	UI_MESSENGER,
-	UI_WEBBOARD,
-	UI_QUIZ,
-	UI_PETTRAINING,
-	UI_PETINFO,
-	UI_RANKING,	
-	UI_GAMBLE,
-	UI_PROCESSNPC,
-	UI_SELECTRESOURCE,
-	UI_CASH_SHOP,			//wooss 050820 
-	UI_GW_MIX, // ê³µì„± ì•„ì´í…œ ì¡°í•© 
-	UI_GUILDSTASH,	// ê¸¸ë“œ ë‚˜ìŠ¤ ë³´ê´€í•¨ 
-	UI_SELECTWORD,
-	UI_SELECTLIST,	// ì¹œêµ¬ì°¾ê¸°ì´ë²¤íŠ¸ 060126
-	UI_PETITEMMIX,	// í« ì•„ì´í…œ ì¡°í•©( ìœ ë‹ˆí¬ ì•„ì´í…œ ì œì‘ )
-	UI_PETFREE,			// í« ë´‰ì¸ í•´ì œ
-	UI_QUIZEVENT,		// O.X QUIZ EVENT
-	UI_PARTYAUTO,
-	UI_COLLECTBOX,		// ê³¤ì¶© ì±„ì§‘ ë°•ìŠ¤ 
-	UI_BINGOBOX,		// ëŸ¬ë¸ŒëŸ¬ë¸Œ ì´ë²¤íŠ¸ ì´ˆì½”ë › ì±„ì§‘ ë°•ìŠ¤
-	UI_NPCHELP,			// NPC ì•ˆë‚´ ì‹œìŠ¤í…œ
-	UI_SIMPLE_POP,		// [KH_070419] ì‹¬í”Œ íŒì—… ê´€ë ¨ ì¶”ê°€
-	UI_MINIGAME,		// WSS_MINIGAME 070418
-	UI_FLOWERTREE,		// ê½ƒë†€ì´ ì¸í„°í˜ì´ìŠ¤	
-
-	UI_GUILD_NOTICE,	// WSS_NEW_GUILD_SYSTEM 070715 
-	UI_MONSTER_COMBO,	// ttos_080116 : ëª¬ìŠ¤í„° ì½¤ë³´
-	UI_WILDPET_INFO,	// ê³µê²© í« Info
-	UI_AUCTION,			// ê±°ë˜ëŒ€í–‰
-	UI_TATOO,			// [090709: selo] í« ë¬¸ì–‘ ì‹œìŠ¤í…œ
-	UI_CHAT_FILTER,		//[ttos_2009_7_17]: CHARATER_CHAT_FILTER ìºë¦­í„° ì±„íŒ… í•„í„°
-	UI_SELECTIVE_SHOW_END,									// ì„ íƒì ìœ¼ë¡œ ë³´ì´ëŠ” ì¸í„°í˜ì´ìŠ¤     -->|
-
-	UI_LOGIN_SHOW_START		= UI_SELECTIVE_SHOW_END,		// ë¡œê·¸ì¸ ì¸í„°í˜ì´ìŠ¤ |<--
-	UI_LOGIN				= UI_LOGIN_SHOW_START,
-	UI_CREATE_CHAR,
-	UI_SEL_CHAR,
-	UI_SEL_SERVER,
-	UI_LOGIN_SHOW_END,										// ë¡œê·¸ì¸ ì¸í„°í˜ì´ìŠ¤     -->|
-
-	UI_MESSENGER_TALK_START = UI_LOGIN_SHOW_END,			// ë©”ì‹ ì € ëŒ€í™” ìƒì     -->|
-	UI_MESSENGER_TALK1		= UI_MESSENGER_TALK_START,
-	UI_MESSENGER_TALK2,
-	UI_MESSENGER_TALK3,
-	UI_MESSENGER_TALK4,
-	UI_MESSENGER_TALK5,
-	UI_MESSENGER_TALK6,
-	UI_MESSENGER_TALK7,
-	UI_MESSENGER_TALK8,
-	UI_MESSENGER_TALK9,
-	UI_MESSENGER_TALK10,
-	UI_MESSENGER_TALK_END,									// ë©”ì‹ ì € ëŒ€í™” ìƒì |<--
-
-	UI_MESSAGEBOX_START		= UI_MESSENGER_TALK_END,		// ë©”ì„¸ì§€ ë°•ìŠ¤ ì¸í„°í˜ì´ìŠ¤ |<--
-	UI_MESSAGEBOX1			= UI_MESSAGEBOX_START,
-	UI_MESSAGEBOX2,
-	UI_MESSAGEBOX3,
-	UI_MESSAGEBOX4,
-	UI_MESSAGEBOX5,
-	UI_MESSAGEBOX6,
-	UI_MESSAGEBOX7,
-	UI_MESSAGEBOX8,
-	UI_MESSAGEBOX9,
-	UI_MESSAGEBOX10,
-	UI_MESSAGEBOX11,
-	UI_MESSAGEBOX12,
-	UI_MESSAGEBOX13,
-	UI_MESSAGEBOX14,
-	UI_MESSAGEBOX15,
-	UI_MESSAGEBOX_END,										// ë©”ì„¸ì§€ ë°•ìŠ¤ ì•ˆí„°í˜ì´ìŠ¤     -->|
-
-	UI_MESSAGEBOXL_START	= UI_MESSAGEBOX_END,			// ëŒ€í™” ìƒì ì¸í„°í˜ì´ìŠ¤ |<--
-	UI_MESSAGEBOXL1			= UI_MESSAGEBOXL_START,
-	UI_MESSAGEBOXL2,
-	UI_MESSAGEBOXL3,
-	UI_MESSAGEBOXL4,
-	UI_MESSAGEBOXL5,
-	UI_MESSAGEBOXL_END,										// ëŒ€í™” ìƒì ì•ˆí„°í˜ì´ìŠ¤     -->|
-
-	UI_TYPE_END				= UI_MESSAGEBOXL_END,
-};
-
-
 // Message box command code
 enum UI_MSGCMD
 {
-	MSGCMD_DROPITEM	= 0,					// ì•„ì´í…œ ë“œë¡­
-	MSGCMD_EXCH_REQ_SRC,					// êµí™˜ ìš”ì²­
-	MSGCMD_EXCH_REQ_DEST,					// êµí™˜ ìš”ì²­
-	MSGCMD_EXCH_ADD_ITEM,					// êµí™˜ì°½ì— ì•„ì´í…œ ì¶”ê°€
-	MSGCMD_EXCH_DEL_ITEM,					// êµí™˜ì°½ì—ì„œ ì•„ì´í…œ ì‚­ì œ
-	MSGCMD_WAREHOUSE_ADD_ITEM,				// ì°½ê³ ì— ì¶”ê°€
-	MSGCMD_WAREHOUSE_ADD_PLUSITEM,			// ì°½ê³ ì— ì¶”ê°€
-	MSGCMD_WAREHOUSE_ADD_MONEY,				// ì°½ê³ ì— ëˆ ë„£ê¸°.
-	MSGCMD_WAREHOUSE_ADD_REQ,				// ë³´ê´€ í™•ì¸
-	MSGCMD_WAREHOUSE_ERROR,					// ë³´ê´€ ì˜¤ë¥˜.
-	MSGCMD_WAREHOUSE_DEL_ITEM,				// ì°½ê³ ì—ì„œ ì¸ë²¤ì— ì¶”ê°€	
-	MSGCMD_GUILD_JOIN,						// ê¸¸ë“œ ê°€ì…
-	MSGCMD_GUILD_JOIN_REQ,					// ê°€ì… ì‹ ì²­ì¤‘
-	MSGCMD_GUILD_QUIT,						// ê¸¸ë“œ íƒˆí‡´
-	MSGCMD_GUILD_QUIT_CONFIRM,				// ê¸¸ë“œ íƒˆí‡´ í™•ì¸
-	MSGCMD_GUILD_DESTROY,					// ê¸¸ë“œ í•´ì²´
-	MSGCMD_GUILD_ERROR,						// ê¸¸ë“œì—ì„œ ì—ëŸ¬ ë°œìƒ.
-	MSGCMD_GUILD_ROOM,						// ê¸¸ë“œ ì „ìš© ê³µê°„ìœ¼ë¡œ ì´ë™.
-	MSGCMD_GUILD_APPLICANT_JOIN,			// ë©¤ë²„ ì‹ ì²­ì„ í•¨.
-	MSGCMD_GUILD_KICK,						// ë©¤ë²„ í‡´ì¶œ
-	MSGCMD_GUILD_ADD_VICE_BOSS,				// ë¶€ë‹¨ì¥ ì„ëª…
-	MSGCMD_GUILD_DEL_VICE_BOSS,				// ë¶€ë‹¨ì¥ í‡´ì¶œ
-	MSGCMD_GUILD_CHANGE_BOSS,				// ë‹¨ì¥ ì´ì„
-	MSGCMD_GUILD_LORD_NOTICE,				// ì„±ì£¼ ê³µì§€ 
+	MSGCMD_DROPITEM	= 0,					// ¾ÆÀÌÅÛ µå·Ó
+	MSGCMD_EXCH_REQ_SRC,					// ±³È¯ ¿äÃ»
+	MSGCMD_EXCH_REQ_DEST,					// ±³È¯ ¿äÃ»
+	MSGCMD_EXCH_DEL_ITEM,					// ±³È¯Ã¢¿¡¼­ ¾ÆÀÌÅÛ »èÁ¦
+	MSGCMD_WAREHOUSE_ADD_ITEM,				// Ã¢°í¿¡ Ãß°¡
+	MSGCMD_WAREHOUSE_ADD_PLUSITEM,			// Ã¢°í¿¡ Ãß°¡
+	MSGCMD_WAREHOUSE_ADD_MONEY,				// Ã¢°í¿¡ µ· ³Ö±â.
+	MSGCMD_WAREHOUSE_ADD_REQ,				// º¸°ü È®ÀÎ
+	MSGCMD_WAREHOUSE_ERROR,					// º¸°ü ¿À·ù.
+	MSGCMD_WAREHOUSE_DEL_ITEM,				// Ã¢°í¿¡¼­ ÀÎº¥¿¡ Ãß°¡	
+	MSGCMD_GUILD_JOIN,						// ±æµå °¡ÀÔ
+	MSGCMD_GUILD_JOIN_REQ,					// °¡ÀÔ ½ÅÃ»Áß
+	MSGCMD_GUILD_QUIT,						// ±æµå Å»Åğ
+	MSGCMD_GUILD_QUIT_CONFIRM,				// ±æµå Å»Åğ È®ÀÎ
+	MSGCMD_GUILD_DESTROY,					// ±æµå ÇØÃ¼
+	MSGCMD_GUILD_ERROR,						// ±æµå¿¡¼­ ¿¡·¯ ¹ß»ı.
+	MSGCMD_GUILD_ROOM,						// ±æµå Àü¿ë °ø°£À¸·Î ÀÌµ¿.
+	MSGCMD_GUILD_APPLICANT_JOIN,			// ¸â¹ö ½ÅÃ»À» ÇÔ.
+	MSGCMD_GUILD_KICK,						// ¸â¹ö ÅğÃâ
+	MSGCMD_GUILD_ADD_VICE_BOSS,				// ºÎ´ÜÀå ÀÓ¸í
+	MSGCMD_GUILD_DEL_VICE_BOSS,				// ºÎ´ÜÀå ÅğÃâ
+	MSGCMD_GUILD_CHANGE_BOSS,				// ´ÜÀå ÀÌÀÓ
+	MSGCMD_GUILD_LORD_NOTICE,				// ¼ºÁÖ °øÁö
+	MSGCMD_GUILD_RECALL_USE_REQ,			// ±æµå ¸®Äİ »ç¿ë ¿©ºÎ
+	MSGCMD_GUILD_RECALL,					// ±æµå ¸®Äİ ¸Ş½ÃÁö ¹Ú½º
 	 
 	// MSGCMD_GUILD_BATTLE_ // Date : 2005-03-19,   By Lee Ki-hwan
 	MSGCMD_GUILD_BATTLE_ERROR,
@@ -330,430 +66,579 @@ enum UI_MSGCMD
 	MSGCMD_GUILD_BATTLE_STOP_REQ_REP,
 	MSGCMD_GUILD_BATTLE_MESSAGE,
 
-	//	MSGCMD_BILLING // Date : 2005-05-06(ì˜¤í›„ 1:53:01), By Lee Ki-hwan
-	MSGCMD_BILLING_NOT_ALLOW,				// ì‚¬ìš©ê¶Œí•œ ì—†ìŒ(í™”ë©´7)
+	//	MSGCMD_BILLING // Date : 2005-05-06(¿ÀÈÄ 1:53:01), By Lee Ki-hwan
+	MSGCMD_BILLING_NOT_ALLOW,				// »ç¿ë±ÇÇÑ ¾øÀ½(È­¸é7)
 	MSGCMD_BILLING_CONFIRM,
 	MSGCMD_BILLING_CHARGE_CONFIRM,
 	MSGCMD_BILLING_ERROR,
 	MSGCMD_BILL_ITEM_REP,
 
-	MSGCMD_SHOP_ADD_ITEM,					// ìƒì ì°½ì— ì•„ì´í…œ ì¶”ê°€
-	MSGCMD_SHOP_DEL_ITEM,					// ìƒì ì°½ì—ì„œ ì•„ì´ì³„ ì‚­ì œ
-	MSGCMD_SHOP_ADD_PLUSITEM,				// ìƒì ì°½ì—ì„œ ì—…ê·¸ë ˆì´ë“œ ì•„ì´í…œ ì¶”ê°€
-	MSGCMD_SHOP_PRICE,						// ìƒì ì°½ì— ê°€ê²© ì…ë ¥.
-	MSGCMD_SHOP_FAIL_ITEM,					// ìƒì ì°½ì—ì„œ íŒë§¤í•  ìˆ˜ ì—†ëŠ” ì•„ì´í…œì˜ ê²½ìš°
-	MSGCMD_SHOP_START,						// ìƒì  ì‹œì‘.	
-	MSGCMD_PERSONALSHOP_ERROR,				// ê°œì¸ ìƒì  ì´ë¦„ì— ì˜¤ë¥˜.
-	MSGCMD_SYSMENU_EXIT,					// ê²Œì„ ì¢…ë£Œ
-	MSGCMD_SYSMENU_RESTART,					// ê²Œì„ ì¬ì‹œì‘
-	MSGCMD_PARTY_INVITE,					// íŒŒí‹° ì´ˆëŒ€
-	MSGCMD_PARTY_ALLOW,						// íŒŒí‹° ìˆ˜ë½
-	MSGCMD_PARTY_MANDATE_REQ,				// íŒŒí‹° ìœ„ì„ ìš”ì²­ 
-	MSGCMD_PARTY_MANDATE,					// íŒŒí‹° ìœ„ì„
-	MSGCMD_INVEN_UPGRADE_REQ,				// ì•„ì´í…œ ì—…ê·¸ë ˆì´ë“œ ìš”ì²­
-	MSGCMD_INVEN_UPGRADE_REP,				// ì•„ì´ì³„ ì—…ê·¸ë ˆì´ë“œ ê²°ê³¼
-	MSGCMD_ITEM_LEVELDOWN_REQ,				// ì•„ì´í…œ ë ˆë²¨ ë‹¤ìš´ ìš”ì²­
-	MSGCMD_ITEM_LEVELDOWN_REP,				// ì•„ì´í…œ ë ˆë²¨ ë‹¤ìš´ ê²°ê³¼
-	MSGCMD_INVEN_OPTION_ADD_REQ,			// ì•„ì´í…œ ì˜µì…˜ ì¶”ê°€ ìš”ì²­
-	MSGCMD_INVEN_OPTION_ADD_REP,			// ì•„ì´í…œ ì˜µì…˜ ì¶”ê°€ ê²°ê³¼
-	MSGCMD_INVEN_OPTION_DEL_REQ,			// ì•„ì´í…œ ì˜µì…˜ ì œê±° ìš”ì²­
-	MSGCMD_INVEN_OPTION_DEL_REP,			// ì•„ì´í…œ ì˜µì…˜ ì œê±° ê²°ê³¼
-	MSGCMD_REFINE_REP,						// ì œë ¨ ê²°ê³¼
-	MSGCMD_QUEST_GIVEUP,					// í€˜ìŠ¤íŠ¸ í¬ê¸°
-//	MSGCMD_QUEST_PRIZE,						// í€˜ìŠ¤íŠ¸ ë³´ìƒ
-	MSGCMD_QUEST_NOTIFY,					// í€˜ìŠ¤íŠ¸ ì—ëŸ¬, í™•ì¸
-	MSGCMD_QUEST_NEWQUEST,					// ìƒˆë¡œìš´ í€˜ìŠ¤íŠ¸ í™•ì¸.
-	MSGCMD_QUEST_FAIL,						// í€˜ìŠ¤íŠ¸ ì‹¤íŒ¨(ê³µì£¼ê°€ ì£½ìŒ.)
-	MSGCMD_QUEST_COMPLETE,					// í€˜ìŠ¤íŠ¸ ì™„ë£Œ í™•ì¸.
-	MSGCMD_SKILLLEARN_NOTIFY,				// ìŠ¤í‚¬ ìŠµë“ ì—ëŸ¬
-	MSGCMD_REMISSION_NOTIFY,				// ë©´ì£„ë¶€ ìŠµë“ ì—ëŸ¬
-	MSGCMD_REMISSION_BUY,					// ë©´ì£„ë¶€ êµ¬ì…
-	MSGCMD_QUEST_START,						// í€˜ìŠ¤íŠ¸ ì‹œì‘
-	MSGCMD_TELEPORT_MEMO,					// ë©”ëª¨ë¦¬ ìŠ¤í¬ë¡¤ ì €ì¥
-	MSGCMD_LOGIN_ERROR,						// ë¡œê·¸ì¸ ì—ëŸ¬
-	MSGCMD_SERVER_ERROR,					// ì„œë²„ ì„ íƒ ë¶€ë¶„ì—ì„œ ì—ëŸ¬
-	MSGCMD_SELCHAR_ERROR,					// ìºë¦­í„° ì„ íƒ ë¶€ë¶„ì—ì„œ ì—ëŸ¬
-	MSGCMD_CREATE_ERROR,					// ìºë¦­í„° ìƒì„± ë¶€ë¶„ì—ì„œ ì—ëŸ¬
-	MSGCMD_DELETE_CHARACTER,				// ìºë¦­í„° ì‚­ì œ
-	MSGCMD_DELETE_CHARACTER_SECURITY,				// ìºë¦­í„° ì‚­ì œ ë³´ì•ˆ 	
-	MSGCMD_DELETE_CHARACTER_ERROR,			// ìºë¦­í„° ì‚­ì œ ì˜¤ë¥˜ 
-	MSGCMD_DISCONNECT,						// ì ‘ì†ëŠê¹€
-	MSGCMD_CONNECT_ERROR,					// ì ‘ì† ì‹¤íŒ¨
-	MSGCMD_WEBBOARD_ERROR,					// ì›¹ì—ì„œ ë¬¸ì œ ìƒê¹€
-	MSGCMD_PROCESS_REP,						// ê°€ê³µ ê²°ê³¼
-	MSGCMD_PROCESS_NOTIFY,					// ê°€ê³µ ì—ëŸ¬, í™•ì¸
-	MSGCMD_PRODUCT_REP,						// ì œì¡° ê²°ê³¼
-	MSGCMD_PRODUCT_NOTIFY,					// ì œì¡° ì—ëŸ¬, í™•ì¸
-	MSGCMD_EVENT_PRIZE,						// ì´ë²¤íŠ¸ ë³´ìƒ ìš”ì²­.
-	MSGCMD_EVENT_RESULT,					// ì´ë²¤íŠ¸ ë³´ìƒ ê²°ê³¼.
-	MSGCMD_WEAPONCHANGE_EVENT,				// ë¬´ê¸° êµì²´ í™•ì¸.
-	MSGCMD_MIX_REP,							// ì¡°í•© ê²°ê³¼
-	MSGCMD_MIX_NOTIFY,						// ì¡°í•© ì—ëŸ¬, í™•ì¸
-	MSGCMD_COMPOUND_REP,					// í•©ì„± ê²°ê³¼
-	MSGCMD_CHANGEJOB,						// ì „ì§ í• êº¼ì•¼???
-	MSGCMD_INITJOB_NOTIFY,					// ì„ì‹œ
-	MSGCMD_INITJOB_GIVEUP,					// ì§ì—… í¬ê¸°
-	MSGCMD_INITJOB_STAT,					// ìŠ¤íƒ¯ í™˜ì›
+	MSGCMD_SHOP_ADD_PLUSITEM,				// »óÁ¡Ã¢¿¡¼­ ¾÷±×·¹ÀÌµå ¾ÆÀÌÅÛ Ãß°¡
+	MSGCMD_SHOP_PRICE,						// »óÁ¡Ã¢¿¡ °¡°İ ÀÔ·Â.
+	MSGCMD_SHOP_FAIL_ITEM,					// »óÁ¡Ã¢¿¡¼­ ÆÇ¸ÅÇÒ ¼ö ¾ø´Â ¾ÆÀÌÅÛÀÇ °æ¿ì
+	MSGCMD_SHOP_START,						// »óÁ¡ ½ÃÀÛ.	
+	MSGCMD_PERSONALSHOP_ERROR,				// °³ÀÎ »óÁ¡ ÀÌ¸§¿¡ ¿À·ù.
+	MSGCMD_SYSMENU_EXIT,					// °ÔÀÓ Á¾·á
+	MSGCMD_SYSMENU_RESTART,					// °ÔÀÓ Àç½ÃÀÛ
+	MSGCMD_PARTY_INVITE,					// ÆÄÆ¼ ÃÊ´ë
+	MSGCMD_PARTY_ALLOW,						// ÆÄÆ¼ ¼ö¶ô
+	MSGCMD_PARTY_MANDATE_REQ,				// ÆÄÆ¼ À§ÀÓ ¿äÃ» 
+	MSGCMD_PARTY_MANDATE,					// ÆÄÆ¼ À§ÀÓ
+	MSGCMD_INVEN_UPGRADE_REQ,				// ¾ÆÀÌÅÛ ¾÷±×·¹ÀÌµå ¿äÃ»
+	MSGCMD_INVEN_UPGRADE_REP,				// ¾ÆÀÌÃÀ ¾÷±×·¹ÀÌµå °á°ú
+	MSGCMD_ITEM_LEVELDOWN_REQ,				// ¾ÆÀÌÅÛ ·¹º§ ´Ù¿î ¿äÃ»
+	MSGCMD_ITEM_LEVELDOWN_REP,				// ¾ÆÀÌÅÛ ·¹º§ ´Ù¿î °á°ú
+	MSGCMD_INVEN_OPTION_ADD_REQ,			// ¾ÆÀÌÅÛ ¿É¼Ç Ãß°¡ ¿äÃ»
+	MSGCMD_INVEN_OPTION_ADD_REP,			// ¾ÆÀÌÅÛ ¿É¼Ç Ãß°¡ °á°ú
+	MSGCMD_INVEN_OPTION_DEL_REQ,			// ¾ÆÀÌÅÛ ¿É¼Ç Á¦°Å ¿äÃ»
+	MSGCMD_INVEN_OPTION_DEL_REP,			// ¾ÆÀÌÅÛ ¿É¼Ç Á¦°Å °á°ú
+	MSGCMD_INVEN_DIVIDE,					// ¾ÆÀÌÅÛ ³ª´©±â
+	MSGCMD_REFINE_REP,						// Á¦·Ã °á°ú
+	MSGCMD_QUEST_GIVEUP,					// Äù½ºÆ® Æ÷±â
+//	MSGCMD_QUEST_PRIZE,						// Äù½ºÆ® º¸»ó
+	MSGCMD_QUEST_NOTIFY,					// Äù½ºÆ® ¿¡·¯, È®ÀÎ
+	MSGCMD_QUEST_NEWQUEST,					// »õ·Î¿î Äù½ºÆ® È®ÀÎ.
+	MSGCMD_QUEST_FAIL,						// Äù½ºÆ® ½ÇÆĞ(°øÁÖ°¡ Á×À½.)
+	MSGCMD_QUEST_COMPLETE,					// Äù½ºÆ® ¿Ï·á È®ÀÎ.
+	MSGCMD_SKILLLEARN_NOTIFY,				// ½ºÅ³ ½Àµæ ¿¡·¯
+	MSGCMD_REMISSION_NOTIFY,				// ¸éÁËºÎ ½Àµæ ¿¡·¯
+	MSGCMD_REMISSION_BUY,					// ¸éÁËºÎ ±¸ÀÔ
+	MSGCMD_QUEST_START,						// Äù½ºÆ® ½ÃÀÛ
+	MSGCMD_TELEPORT_MEMO,					// ¸Ş¸ğ¸® ½ºÅ©·Ñ ÀúÀå
+	MSGCMD_LOGIN_ERROR,						// ·Î±×ÀÎ ¿¡·¯
+	MSGCMD_SERVER_ERROR,					// ¼­¹ö ¼±ÅÃ ºÎºĞ¿¡¼­ ¿¡·¯
+	MSGCMD_SELCHAR_ERROR,					// Ä³¸¯ÅÍ ¼±ÅÃ ºÎºĞ¿¡¼­ ¿¡·¯
+	MSGCMD_CREATE_ERROR,					// Ä³¸¯ÅÍ »ı¼º ºÎºĞ¿¡¼­ ¿¡·¯
+	MSGCMD_DELETE_CHARACTER,				// Ä³¸¯ÅÍ »èÁ¦
+	MSGCMD_DELETE_CHARACTER_SECURITY,				// Ä³¸¯ÅÍ »èÁ¦ º¸¾È 	
+	MSGCMD_DELETE_CHARACTER_ERROR,			// Ä³¸¯ÅÍ »èÁ¦ ¿À·ù 
+	MSGCMD_DISCONNECT,						// Á¢¼Ó²÷±è
+	MSGCMD_CONNECT_ERROR,					// Á¢¼Ó ½ÇÆĞ
+	MSGCMD_WEBBOARD_ERROR,					// À¥¿¡¼­ ¹®Á¦ »ı±è
+	MSGCMD_PROCESS_REP,						// °¡°ø °á°ú
+	MSGCMD_PROCESS_NOTIFY,					// °¡°ø ¿¡·¯, È®ÀÎ
+	MSGCMD_PRODUCT_REP,						// Á¦Á¶ °á°ú
+	MSGCMD_PRODUCT_NOTIFY,					// Á¦Á¶ ¿¡·¯, È®ÀÎ
+	MSGCMD_EVENT_PRIZE,						// ÀÌº¥Æ® º¸»ó ¿äÃ».
+	MSGCMD_EVENT_RESULT,					// ÀÌº¥Æ® º¸»ó °á°ú.
+	MSGCMD_WEAPONCHANGE_EVENT,				// ¹«±â ±³Ã¼ È®ÀÎ.
+	MSGCMD_MIX_REP,							// Á¶ÇÕ °á°ú
+	MSGCMD_MIX_NOTIFY,						// Á¶ÇÕ ¿¡·¯, È®ÀÎ
+	MSGCMD_COMPOUND_REP,					// ÇÕ¼º °á°ú
+	MSGCMD_CHANGEJOB,						// ÀüÁ÷ ÇÒ²¨¾ß???
+	MSGCMD_INITJOB_NOTIFY,					// ÀÓ½Ã
+	MSGCMD_INITJOB_GIVEUP,					// Á÷¾÷ Æ÷±â
+	MSGCMD_INITJOB_STAT,					// ½ºÅÈ È¯¿ø
 	MSGCMD_HELPER_NOTIFY,					//
-	MSGCMD_HELPER_BEMYTEACHER,				// ë‚´ ì„ ìƒì´ ë˜ì–´ë‹¬ë¼ê³  ìš”ì²­.
-	MSGCMD_HELPER_BEMYTEACHER_REQ,			// ë‚´ ì„ ìƒì´ ë˜ì–´ë‹¬ë¼ê³  ìš”ì²­ ê¸°ë‹¤ë¦¼.
-	MSGCMD_HELPER_FIRE_MYTEACHER,			// í•™ìƒì´ ì„ ìƒì„ ì§œë¦„.
-	MSGCMD_HELPER_REGISTER,					// ì„ ìƒìœ¼ë¡œ ëª©ë¡ì— ì˜¬ë¦¼.
-	MSGCMD_HELPER_CANCEL_REGISTER,			// ì„ ìƒ ëª©ë¡ì—ì„œ ë‚´ë¦¼.
-	MSGCMD_HELPER_STUDENT_ACCEPT,			// í›„ê²¬ì¸ìœ¼ë¡œ ë“±ë¡ í™•ì¸
+	MSGCMD_HELPER_BEMYTEACHER,				// ³» ¼±»ıÀÌ µÇ¾î´Ş¶ó°í ¿äÃ».
+	MSGCMD_HELPER_BEMYTEACHER_REQ,			// ³» ¼±»ıÀÌ µÇ¾î´Ş¶ó°í ¿äÃ» ±â´Ù¸².
+	MSGCMD_HELPER_FIRE_MYTEACHER,			// ÇĞ»ıÀÌ ¼±»ıÀ» Â¥¸§.
+	MSGCMD_HELPER_REGISTER,					// ¼±»ıÀ¸·Î ¸ñ·Ï¿¡ ¿Ã¸².
+	MSGCMD_HELPER_CANCEL_REGISTER,			// ¼±»ı ¸ñ·Ï¿¡¼­ ³»¸².
+	MSGCMD_HELPER_STUDENT_ACCEPT,			// ÈÄ°ßÀÎÀ¸·Î µî·Ï È®ÀÎ
 	MSGCMD_SIEGE_WARFARE_ERROR,
-	MSGCMD_SIEGE_WARFARE_INFO,				// ê³µì„±ì „- ê³µì„±ì •ë³´ í™•ì¸ì°½
-	MSGCMD_CHANGEWEAPON_REP,				// ë¬´ê¸° êµì²´ í™•ì¸
-	MSGCMD_CHANGEWEAPON_NOTIFY,				// ë¬´ê¸° êµì²´ ë©”ì„¸ì§€
+	MSGCMD_SIEGE_WARFARE_INFO,				// °ø¼ºÀü- °ø¼ºÁ¤º¸ È®ÀÎÃ¢
+	MSGCMD_CHANGEWEAPON_REP,				// ¹«±â ±³Ã¼ È®ÀÎ
+	MSGCMD_CHANGEWEAPON_NOTIFY,				// ¹«±â ±³Ã¼ ¸Ş¼¼Áö
 	MSGCMD_PETTRAINING_NOTIFY,
-	MSGCMD_PET_CHANGE,						// íƒˆ ê²ƒìœ¼ë¡œ ë³€í™˜?	
-	MSGCMD_PET_CHANGE_NOTIFY,				// íƒˆ ê²ƒìœ¼ë¡œ ë³€í™˜?	
-	MSGCMD_PET_DESTRUCTION,					// í« ì¬ë£Œì•„ì´í…œ ë³€í™˜ì‹œ ì†Œë©¸ ë©”ì„¸ì§€		eons
-	MSGCMD_PARTYAUTO_REGIST,				// íŒŒí‹° ì˜¤í†  ì‹œìŠ¤í…œ ( íŒŒí‹° ë“±ë¡ )
-	MSGCMD_PARTYAUTO_REGIST_ERROR,			// íŒŒí‹° ì˜¤í†  ì‹œìŠ¤í…œ ( íŒŒí‹° ë“±ë¡ ì—ëŸ¬ )
-	MSGCMD_PARTYAUTO_JOIN_ALLOW,			// íŒŒí‹° ì˜¤í†  ì‹œìŠ¤í…œì˜ ì¡°ì¸ í—ˆë½ ë° ê±°ì ˆ
+	MSGCMD_PET_CHANGE,						// Å» °ÍÀ¸·Î º¯È¯?	
+	MSGCMD_PET_CHANGE_NOTIFY,				// Å» °ÍÀ¸·Î º¯È¯?	
+	MSGCMD_PET_DESTRUCTION,					// Æê Àç·á¾ÆÀÌÅÛ º¯È¯½Ã ¼Ò¸ê ¸Ş¼¼Áö		eons
+	MSGCMD_PARTYAUTO_REGIST,				// ÆÄÆ¼ ¿ÀÅä ½Ã½ºÅÛ ( ÆÄÆ¼ µî·Ï )
+	MSGCMD_PARTYAUTO_REGIST_ERROR,			// ÆÄÆ¼ ¿ÀÅä ½Ã½ºÅÛ ( ÆÄÆ¼ µî·Ï ¿¡·¯ )
+	MSGCMD_PARTYAUTO_JOIN_ALLOW,			// ÆÄÆ¼ ¿ÀÅä ½Ã½ºÅÛÀÇ Á¶ÀÎ Çã¶ô ¹× °ÅÀı
 	
-	// Date : 2005-05-23(ì˜¤í›„ 6:05:37), By Lee Ki-hwan
+	// Date : 2005-05-23(¿ÀÈÄ 6:05:37), By Lee Ki-hwan
 	MSGCMD_MESSENGER_START =  MSGCMD_CHANGEWEAPON_NOTIFY + 1, 
-	MSGCMD_MESSENGER_ADD_REQ = MSGCMD_MESSENGER_START,	// ì¹œêµ¬ ë“±ë¡ ì‹ ì²­
-	MSGCMD_MESSENGER_ADD_REP,				// ì¹œêµ¬ ë“±ë¡ ìˆ˜ë½
-	MSGCMD_MESSENGER_ADD_WAIT,				// ì¹œêµ¬ ë“±ë¡ ëŒ€ê¸°
-	MSGCMD_MESSENGER_BLOCK_REQ,				// ì¹œêµ¬ ì°¨ë‹¨ ìš”ì²­
-	MSGCMD_MESSENGER_BLOCK,					// ì¹œêµ¬ ì°¨ë‹¨
-	MSGCMD_MESSENGER_UNBLOCK,					// ì¹œêµ¬ í•´ì œ
-	MSGCMD_MESSENGER_DEL_REQ,				// ì¹œêµ¬ ì‚­ì œ ìš”ì²­
-	MSGCMD_MESSENGER_DEL,					// ì¹œêµ¬ ì‚­ì œ
+	MSGCMD_MESSENGER_ADD_REQ = MSGCMD_MESSENGER_START,	// Ä£±¸ µî·Ï ½ÅÃ»
+	MSGCMD_MESSENGER_ADD_REP,				// Ä£±¸ µî·Ï ¼ö¶ô
+	MSGCMD_MESSENGER_ADD_WAIT,				// Ä£±¸ µî·Ï ´ë±â
+	MSGCMD_MESSENGER_BLOCK_REQ,				// Ä£±¸ Â÷´Ü ¿äÃ»
+	MSGCMD_MESSENGER_BLOCK,					// Ä£±¸ Â÷´Ü
+	MSGCMD_MESSENGER_UNBLOCK,					// Ä£±¸ ÇØÁ¦
+	MSGCMD_MESSENGER_DEL_REQ,				// Ä£±¸ »èÁ¦ ¿äÃ»
+	MSGCMD_MESSENGER_DEL,					// Ä£±¸ »èÁ¦
+	MSGCMD_MESSENGER_BLOCK_DEL_REQ,			// Â÷´Ü ¸ñ·Ï¿¡¼­ »èÁ¦ ¿äÃ»
+	MSGCMD_MESSENGER_BLOCK_DEL,
 
-	MSGCMD_MESSENGER_GROUP_ADD,				// ê·¸ë£¹ ì¶”ê°€
-	MSGCMD_MESSENGER_GROUP_DEL,				// ê·¸ë£¹ ì‚­ì œ
-	MSGCMD_MESSENGER_GROUP_RENAME,			// ê·¸ë£¹ ì´ë¦„ ë³€ê²½
-	MSGCMD_MESSENGER_GROUP_MOVE,			// ê·¸ë£¹ ë³€ê²½
+	MSGCMD_MESSENGER_GROUP_ADD,				// ±×·ì Ãß°¡
+	MSGCMD_MESSENGER_GROUP_DEL,				// ±×·ì »èÁ¦
+	MSGCMD_MESSENGER_GROUP_RENAME,			// ±×·ì ÀÌ¸§ º¯°æ
+	MSGCMD_MESSENGER_GROUP_MOVE,			// ±×·ì º¯°æ
 
-	MSGCMD_MESSENGER_ERROR,					// ì—ëŸ¬ 
+	MSGCMD_MESSENGER_ERROR,					// ¿¡·¯ 
 	MSGCMD_MESSENGER_END = MSGCMD_MESSENGER_ERROR,  
-	MSGCMD_PC_DEATH,						// ìºë¦­í„° ì‚¬ë§ì‹œ ë§ˆì„ë¡œ ì´ë™	
-	MSGCMD_SUPERGOJE_REQUEST,				// ì´ˆê³ ê¸‰ ì œë ¨ì„ ë°›ê³  ì‹¶ì–´?
-	MSGCMD_SUPERGOJE_NOTIFY,				// ì´ˆê³ ê¸‰ ì œë ¨ì„ ê´€ë ¨ ì•Œë¦¼
-	MSGCMD_OLD_PASSWORD,					// ì´ì „ íŒ¨ìŠ¤ì›Œë“œ
-	MSGCMD_NEW_PASSWORD,					// ìƒˆë¡œìš´ íŒ¨ìŠ¤ì›Œë“œ
-	MSGCMD_CONFIRM_PASSWORD,				// ì•”í˜¸ í™•ì¸
+	MSGCMD_PC_DEATH,						// Ä³¸¯ÅÍ »ç¸Á½Ã ¸¶À»·Î ÀÌµ¿	
+	MSGCMD_SUPERGOJE_REQUEST,				// ÃÊ°í±Ş Á¦·Ã¼® ¹Ş°í ½Í¾î?
+	MSGCMD_SUPERGOJE_NOTIFY,				// ÃÊ°í±Ş Á¦·Ã¼® °ü·Ã ¾Ë¸²
+	MSGCMD_OLD_PASSWORD,					// ÀÌÀü ÆĞ½º¿öµå
+	MSGCMD_NEW_PASSWORD,					// »õ·Î¿î ÆĞ½º¿öµå
+	MSGCMD_CONFIRM_PASSWORD,				// ¾ÏÈ£ È®ÀÎ
 	MSGCMD_SECURITY_NOTIFY,
-	MSGCMD_SECURITY_PASSWORD,				// ì•”í˜¸ ë¬»ê¸°
-	MSGCMD_PASSWORD_UNLOCK_A,				// ì•”í˜¸ í’€ê¸° ë²ˆí˜¸ ë¬»ê¸° (ëŒ€ë§Œ)
-	MSGCMD_PASSWORD_UNLOCK_R,				// ì•”í˜¸ ì…ë ¥ 	
+	MSGCMD_SECURITY_PASSWORD,				// ¾ÏÈ£ ¹¯±â
 
 	MSGCMD_BOOSTER_UPGRADE_REQ,
 	MSGCMD_BOOSTER_UPGRADE_REP,
-	MSGCMD_SIEGE_WARFARE_MOVEING_CONFIRM,	// ê³µì„± ì§€ì—­ ì´ë™ í™•ì¸ 	
-	MSGCMD_BOOST_RANDON_PRODUCT_ERROR,		// ë¶€ìŠ¤í„° ìƒì‚° ì˜¤ë¥˜
+	MSGCMD_SIEGE_WARFARE_MOVEING_CONFIRM,	// °ø¼º Áö¿ª ÀÌµ¿ È®ÀÎ 	
+	MSGCMD_BOOST_RANDON_PRODUCT_ERROR,		// ºÎ½ºÅÍ »ı»ê ¿À·ù
 	
-	// Guild Nast Stash // Date : 2005-09-06(ì˜¤ì „ 10:03:33), By Lee Ki-hwan
+	// Guild Nast Stash // Date : 2005-09-06(¿ÀÀü 10:03:33), By Lee Ki-hwan
 	MSGCMD_GUILDSTASH_TAKE_VIEW,	
 	MSGCMD_GUILDSTASH_TAKE_STASH,	
 	MSGCMD_GUILDSTASH_INFO,	
 	MSGCMD_GUILDSTASH_ERROR,
-	// Date : 2005-09-06(ì˜¤ì „ 10:03:41), By Lee Ki-hwan
+	// Date : 2005-09-06(¿ÀÀü 10:03:41), By Lee Ki-hwan
 
-	MSGCND_MOON_DAY_EVENT_GIVE_ITEM,		//2006 ì¶”ì„ ì´ë²¤íŠ¸: ì˜¤ìƒ‰ì†¡í¸ì„ ë³´ìƒí’ˆìœ¼ë¡œ êµí™˜
-	MSGCMD_HARVEST_MOON_DAY_EVENT_UPGRADE1,	//2006 ì¶”ì„ ì´ë²¤íŠ¸: ì†¡í¸ì„ ë§Œë“¦.
-	MSGCMD_HARVEST_MOON_DAY_EVENT_UPGRADE2,	//2006 ì¶”ì„ ì´ë²¤íŠ¸: ì˜¤ìƒ‰ì†¡í¸ì„ ë§Œë“¦.
+	MSGCND_MOON_DAY_EVENT_GIVE_ITEM,		//2006 Ãß¼® ÀÌº¥Æ®: ¿À»ö¼ÛÆíÀ» º¸»óÇ°À¸·Î ±³È¯
+	MSGCMD_HARVEST_MOON_DAY_EVENT_UPGRADE1,	//2006 Ãß¼® ÀÌº¥Æ®: ¼ÛÆíÀ» ¸¸µê.
+	MSGCMD_HARVEST_MOON_DAY_EVENT_UPGRADE2,	//2006 Ãß¼® ÀÌº¥Æ®: ¿À»ö¼ÛÆíÀ» ¸¸µê.
 	
 	// wooss 050802 add MSGCMD 
-	MSGCMD_USE_CONFIRM_HEXP,				//ì‚¬ìš©í›„ ì£½ì—ˆì„ ê²½ìš° ì£¼ë¬¸ì„œ ì‚¬ìš©ì—¬ë¶€ë¥¼ í™•ì¸í•œë‹¤ 
+	MSGCMD_USE_CONFIRM_HEXP,				//»ç¿ëÈÄ Á×¾úÀ» °æ¿ì ÁÖ¹®¼­ »ç¿ë¿©ºÎ¸¦ È®ÀÎÇÑ´Ù 
 	MSGCMD_USE_CONFIRM_AEXP,
 	MSGCMD_USE_CONFIRM_HEXP_LUCKY,
 	MSGCMD_USE_CONFIRM_AEXP_LUCKY,
 	MSGCMD_USE_CONFIRM_REBIRTH,
-	MSGCMD_USE_RECOVER_ITEM_HEXP,			// ê²½í—˜ì¹˜ ë³µêµ¬ ì£¼ë¬¸ì„œë¥¼ ì‚¬ìš©í•œë‹¤
-	MSGCMD_USE_RECOVER_ITEM_AEXP,			// ìˆ™ë ¨ì¹˜ ë³µêµ¬ ì£¼ë¬¸ì„œ
+	MSGCMD_USE_RECOVER_ITEM_HEXP,			// °æÇèÄ¡ º¹±¸ ÁÖ¹®¼­¸¦ »ç¿ëÇÑ´Ù
+	MSGCMD_USE_RECOVER_ITEM_AEXP,			// ¼÷·ÃÄ¡ º¹±¸ ÁÖ¹®¼­
 	MSGCMD_USE_RECOVER_ITEM_HEXP_LUCKY,
 	MSGCMD_USE_RECOVER_ITEM_AEXP_LUCKY,
-	MSGCMD_USE_REBIRTH_ITEM,				// ë¶€í™œ ì£¼ë¬¸ì„œ
+	MSGCMD_USE_REBIRTH_ITEM,				// ºÎÈ° ÁÖ¹®¼­
+	MSGCMD_USE_REBIRTH_ITEM_SCROLL2,		// rebirth scroll item [11/10/2009 rumist]
 	
 	// wooss 050803 
-	MSGCMD_CHECK_ITEM_HEXP,					// inventoryì°½ì—ì„œ ë”ë¸” í´ë¦­ì‹œ  
-	MSGCMD_CHECK_ITEM_AEXP,					// ë‹¤ë¥¸ ì•„ì´í…œ ì‚¬ìš©ì—¬ë¶€ ì²´í¬
-	MSGCMD_CHECK_ITEM_REBIRTH,				// ê²½í—˜ì¹˜ë³µêµ¬ ,ìˆ™ë ¨ë„ë³µêµ¬, ë¶€í™œ ì£¼ë¬¸ì„œ
+	MSGCMD_CHECK_ITEM_HEXP,					// inventoryÃ¢¿¡¼­ ´õºí Å¬¸¯½Ã  
+	MSGCMD_CHECK_ITEM_AEXP,					// ´Ù¸¥ ¾ÆÀÌÅÛ »ç¿ë¿©ºÎ Ã¼Å©
+	MSGCMD_CHECK_ITEM_REBIRTH,				// °æÇèÄ¡º¹±¸ ,¼÷·Ãµµº¹±¸, ºÎÈ° ÁÖ¹®¼­
 
 	// wooss 050807
-	MSGCMD_USE_WARP_ITEM,					// ìˆœê°„ì´ë™ ë§ˆë²•ì„œë¥¼ ì‚¬ìš©í•œë‹¤
-	MSGCMD_WARP_TO_CANCEL,					// ìˆœê°„ì´ë™ì„ ì·¨ì†Œí•œë‹¤
-	MSGCMD_WARP_TAKE_CANCEL,				// ì†Œí™˜ì„ ì·¨ì†Œí•œë‹¤ 
-	MSGCMD_WARP_TO_REQ_CALL,				// ìˆœê°„ì´ë™ ìš”ì²­ì„ ë°›ì•˜ì„ ê²½ìš° sessionStateì—ì„œ ì²˜ë¦¬ 
-	MSGCMD_WARP_TAKE_REQ_CALL,				// ì†Œí™˜ ìš”ì²­ì„ ë°›ì•˜ì„ ê²½ìš° sessionStateì—ì„œ ì²˜ë¦¬
+	MSGCMD_USE_WARP_ITEM,					// ¼ø°£ÀÌµ¿ ¸¶¹ı¼­¸¦ »ç¿ëÇÑ´Ù
+	MSGCMD_WARP_TO_CANCEL,					// ¼ø°£ÀÌµ¿À» Ãë¼ÒÇÑ´Ù
+	MSGCMD_WARP_TAKE_CANCEL,				// ¼ÒÈ¯À» Ãë¼ÒÇÑ´Ù 
+	MSGCMD_WARP_TO_REQ_CALL,				// ¼ø°£ÀÌµ¿ ¿äÃ»À» ¹Ş¾ÒÀ» °æ¿ì sessionState¿¡¼­ Ã³¸® 
+	MSGCMD_WARP_TAKE_REQ_CALL,				// ¼ÒÈ¯ ¿äÃ»À» ¹Ş¾ÒÀ» °æ¿ì sessionState¿¡¼­ Ã³¸®
 
 	// wooss 050817
-	MSGCMD_USE_PC_SUMMON_ITEM,				// ì†Œí™˜ ë§ˆë²•ì„œë¥¼ ì‚¬ìš©í•œë‹¤
+	MSGCMD_USE_PC_SUMMON_ITEM,				// ¼ÒÈ¯ ¸¶¹ı¼­¸¦ »ç¿ëÇÑ´Ù
 	// wooss 050818
-	MSGCMD_USE_BOSS_SUMMON_ITEM,			// ë³´ìŠ¤ ëª¬ìŠ¤í„° ì†Œí™˜ ë§ˆë²•ì„œ
+	MSGCMD_USE_BOSS_SUMMON_ITEM,			// º¸½º ¸ó½ºÅÍ ¼ÒÈ¯ ¸¶¹ı¼­
 	// wooss 050812
-	MSGCMD_CONFIRM_CHANGE_MY_NAME,			// ìºë¦­í„° ê°œëª…ì¹´ë“œ ì‚¬ìš©ì—¬ë¶€ í™•ì¸
-	MSGCMD_CONFIRM_CHANGE_GUILD_NAME,		// ê¸¸ë“œ ê°œëª…ì¹´ë“œ ì‚¬ìš©ì—¬ë¶€ í™•ì¸
-	MSGCMD_USE_CHANGE_MY_NAME_ITEM,			// ìºë¦­í„° ê°œëª…ì¹´ë“œ ì‚¬ìš©
-	MSGCMD_USE_CHANGE_GUILD_NAME_ITEM,		// ê¸¸ë“œ ê°œëª…ì¹´ë“œ ì‚¬ìš©
-	MSGCMD_BAN_NAME,						// í˜•ì‹ì´ ë§ì§€ì•ŠëŠ” ì´ë¦„
+	MSGCMD_CONFIRM_CHANGE_MY_NAME,			// Ä³¸¯ÅÍ °³¸íÄ«µå »ç¿ë¿©ºÎ È®ÀÎ
+	MSGCMD_CONFIRM_CHANGE_GUILD_NAME,		// ±æµå °³¸íÄ«µå »ç¿ë¿©ºÎ È®ÀÎ
+	MSGCMD_USE_CHANGE_MY_NAME_ITEM,			// Ä³¸¯ÅÍ °³¸íÄ«µå »ç¿ë
+	MSGCMD_USE_CHANGE_GUILD_NAME_ITEM,		// ±æµå °³¸íÄ«µå »ç¿ë
+	MSGCMD_BAN_NAME,						// Çü½ÄÀÌ ¸ÂÁö¾Ê´Â ÀÌ¸§
 
-	MSGCMD_CONFIRM_MEMSCROLL_EX,			// ë©”ëª¨ë¦¬ ìŠ¤í¬ë¡¤ í™•ì¥ ì‚¬ìš©í™•ì¸
-	MSGCMD_CONFIRM_WAREHOUSE_EX,			// ì°½ê³  í™•ì¥ ì‚¬ìš©í™•ì¸
-	MSGCMD_PROLONG_MEMSCROLL_EX,			// ë©”ëª¨ë¦¬ ìŠ¤í¬ë¡¤ì„ ê¸°í•œ ì—°ì¥
-	MSGCMD_PROLONG_WAREHOUSE_EX,			// í™•ì¥ ì°½ê³  ê¸°í•œ ì—°ì¥
+	MSGCMD_CONFIRM_MEMSCROLL_EX,			// ¸Ş¸ğ¸® ½ºÅ©·Ñ È®Àå »ç¿ëÈ®ÀÎ
+	MSGCMD_CONFIRM_WAREHOUSE_EX,			// Ã¢°í È®Àå »ç¿ëÈ®ÀÎ
+	MSGCMD_PROLONG_MEMSCROLL_EX,			// ¸Ş¸ğ¸® ½ºÅ©·ÑÀ» ±âÇÑ ¿¬Àå
+	MSGCMD_PROLONG_WAREHOUSE_EX,			// È®Àå Ã¢°í ±âÇÑ ¿¬Àå
 	// wooss 050821
-	MSGCMD_CONFIRM_SLOT_ITEM,				// ìºë¦­í„° í™•ì¥ ìŠ¬ë¡¯ ì‚¬ìš© í™•ì¸ 
-	MSGCMD_USE_SLOT_ITEM,					// ìºë¦­í„° í™•ì¥ ìŠ¬ë¡¯ ì‚¬ìš©
+	MSGCMD_CONFIRM_SLOT_ITEM,				// Ä³¸¯ÅÍ È®Àå ½½·Ô »ç¿ë È®ÀÎ 
+	MSGCMD_USE_SLOT_ITEM,					// Ä³¸¯ÅÍ È®Àå ½½·Ô »ç¿ë
 
-	MSGCMD_CONFIRM_PARTY_RECALL_ITEM,		// íŒŒí‹°ë¦¬ì½œ ì•„ì´í…œ ì‚¬ìš© í™•ì¸ 060303 wooss
+	MSGCMD_CONFIRM_PARTY_RECALL_ITEM,		// ÆÄÆ¼¸®Äİ ¾ÆÀÌÅÛ »ç¿ë È®ÀÎ 060303 wooss
 	
-	MSGCMD_USE_ITEM,						// ë‹¨ìˆœ í™•ì¸ì°½ì„ ê±°ì¹ ê²½ìš° UseSlotItem() ë‹¤ì‹œ ë³´ë‚¼ë•Œ	
-	MSGCMD_SELECT_WORD_NOTIFY,				// ë‹¨ì–´ ì„ íƒ í™”ë©´ 
+	MSGCMD_USE_ITEM,						// ´Ü¼ø È®ÀÎÃ¢À» °ÅÄ¥°æ¿ì UseSlotItem() ´Ù½Ã º¸³¾¶§	
+	MSGCMD_SELECT_WORD_NOTIFY,				// ´Ü¾î ¼±ÅÃ È­¸é 
 
-	MSGCMD_ASK_ONE_FIVE,					// 2pan4pan ì´ë²¤íŠ¸ ë©”ì‹œì§€ 051031
+	MSGCMD_ASK_ONE_FIVE,					// 2pan4pan ÀÌº¥Æ® ¸Ş½ÃÁö 051031
 	MSGCMD_ASK_ONE_FOUR,	
 	MSGCMD_ASK_TWO_OPEN,
 
-	MSGCMD_ASK_NEWYEAR1,					// ì‹ ë…„ ì´ë²¤íŠ¸1 ê¿ˆí¬ë§ ì´ë²¤íŠ¸ 
-	MSGCMD_ASK_NEWYEAR2,					// ì‹ ë…„ ì´ë²¤íŠ¸2 ì¸ë‚´ì˜ ì—´ë§¤ ì´ë²¤íŠ¸
+	MSGCMD_ASK_NEWYEAR1,					// ½Å³â ÀÌº¥Æ®1 ²ŞÈñ¸Á ÀÌº¥Æ® 
+	MSGCMD_ASK_NEWYEAR2,					// ½Å³â ÀÌº¥Æ®2 ÀÎ³»ÀÇ ¿­¸Å ÀÌº¥Æ®
 
 	MSGCMD_EVENT_COUPON_SENDNUM,			// 060118 wooss japan coupon event
 
-	MSGLCMD_EVENT_CLOTHES_EXCHANGE,			// ì¼ë³¸ ì „í†µ ì˜ìƒ êµí™˜ ì´ë²¤íŠ¸
+	MSGLCMD_EVENT_CLOTHES_EXCHANGE,			// ÀÏº» ÀüÅë ÀÇ»ó ±³È¯ ÀÌº¥Æ®
 	
-	MSGCMD_INPUT_FRIEND,					// ì¹œêµ¬ ì°¾ê¸° ì´ë²¤íŠ¸ 
+	MSGCMD_INPUT_FRIEND,					// Ä£±¸ Ã£±â ÀÌº¥Æ® 
 	MSGCMD_TIME_FRIEND,	
 	MSGCMD_REWARD_FRIEND,	
 	
-	MSGCMD_EX_PARTY_RECALL_PROMPT,			// íŒŒí‹° ë¦¬ì½œ ( ìœ ë£Œ ì•„ì´í…œ) // wooss 060306
+	MSGCMD_EX_PARTY_RECALL_PROMPT,			// ÆÄÆ¼ ¸®Äİ ( À¯·á ¾ÆÀÌÅÛ) // wooss 060306
 
 	MSGCMD_CONFIRM_UPGRADESTONE_ITEM,		// wooss 060516 platinum item
 
 	MSGCMD_CONFIRM_MIXNEWREQ_ITEM,				// wooss 060523 composite item 			
 	MSGCMD_CONFIRM_MIXNEW_ITEM,				// wooss 060523 composite item 			
 	MSGCMD_CONFIRM_UNMIX_ITEM,
-	MSGCMD_PET_MOUNT_CANCEL_CARD,			// í« ë§ˆìš´íŠ¸ í›ˆë ¨ ì·¨ì†Œ ì¹´ë“œ ì‚¬ìš© í™•ì¸ ( ìœ ë£Œ ì•„ì´í…œ )
-	MSGCMD_USE_PET_MOUNT_CANCEL_CARD,		// í« ë§ˆìš´íŠ¸ í›ˆë ¨ ì·¨ì†Œ ì¹´ë“œ ì‚¬ìš©( ìœ ë£Œ ì•„ì´í…œ )
+	MSGCMD_PET_MOUNT_CANCEL_CARD,			// Æê ¸¶¿îÆ® ÈÆ·Ã Ãë¼Ò Ä«µå »ç¿ë È®ÀÎ ( À¯·á ¾ÆÀÌÅÛ )
+	MSGCMD_USE_PET_MOUNT_CANCEL_CARD,		// Æê ¸¶¿îÆ® ÈÆ·Ã Ãë¼Ò Ä«µå »ç¿ë( À¯·á ¾ÆÀÌÅÛ )
  	
-	MSGCMD_COMFIRM_USE_ITEM,				// (By eons) ê°™ì€ ìŠ¤í‚¬ì˜ ì•„ì´í…œ ì‚¬ìš©ì‹œ í™•ì¸ ë©”ì„¸ì§€ 
-	MSGCMD_WORLDCUP_EVENT1_NUM,				// ì›”ë“œì»µ ì´ë²¤íŠ¸
-	MSGCMD_GOLDENBALL_EVENT,				// (By eons) ê³¨ë“ ë³¼ ì´ë²¤íŠ¸
+	MSGCMD_COMFIRM_USE_ITEM,				// (By eons) °°Àº ½ºÅ³ÀÇ ¾ÆÀÌÅÛ »ç¿ë½Ã È®ÀÎ ¸Ş¼¼Áö 
+	MSGCMD_WORLDCUP_EVENT1_NUM,				// ¿ùµåÄÅ ÀÌº¥Æ®
+	MSGCMD_GOLDENBALL_EVENT,				// (By eons) °ñµçº¼ ÀÌº¥Æ®
 
 	MSGCMD_GAMBLE_READY,					// Cash MoonStone
 	MSGCMD_GAMBLE_READYSEL,
 
 	MSGCMD_SHOP_LEASE_ITEM,					// Lease Shop CMD
 	
-	MSGCMD_COLLECTBOX_BUY_REQ,					// ê³¤ì¶© ì±„ì§‘ ìƒì êµ¬ì…
-	MSGCMD_INSECTITEM_DROP,						// ê³¤ì¶© ì•„ì´í…œ ë“œë¡­
+	MSGCMD_COLLECTBOX_BUY_REQ,					// °ïÃæ Ã¤Áı »óÀÚ ±¸ÀÔ
+	MSGCMD_INSECTITEM_DROP,						// °ïÃæ ¾ÆÀÌÅÛ µå·Ó
 
-	MSGCMD_PROMO_KEY_ENTER,						//í”„ë¡œëª¨ íŒ¨í‚¤ì§€ ì¸ì¦í‚¤ ì…ë ¥(ë§ë ˆìƒ¤)
+	MSGCMD_PROMO_KEY_ENTER,						//ÇÁ·Î¸ğ ÆĞÅ°Áö ÀÎÁõÅ° ÀÔ·Â(¸»·¹»ş)
 
 	//Su-won
 	MSGCMD_GIFT_SEND,
 	MSGCMD_GIFT_RECV,
 	MSGCMD_GIFT_ERROR,
-	MSGCMD_RARE_IDENTIFY,			// ì¥ë¹„ ê°ì • ì•„ì´í…œ ì‚¬ìš©
-	MSGCMD_USE_RARE_IDENTIFY,		// ì¥ë¹„ ê°ì • ì•„ì´í…œ ì‚¬ìš© í™•ì¸
+	MSGCMD_RARE_IDENTIFY,			// Àåºñ °¨Á¤ ¾ÆÀÌÅÛ »ç¿ë
+	MSGCMD_USE_RARE_IDENTIFY,		// Àåºñ °¨Á¤ ¾ÆÀÌÅÛ »ç¿ë È®ÀÎ
 
-	MSGCMD_USE_PACKING_PAPER,		// í¬ì¥ì§€ ì•„ì´í…œ ì‚¬ìš©
-	MSGCMD_SAVE_BINGOITEM,			// ë¹™ê³  ì•„ì´í…œ ì €ì¥ í™•ì¸
-	MSGCMD_OK_EXCHANGE_CHOCOBOX,	// ì´ˆì½”ìƒì êµí™˜ í™•ì¸
+	MSGCMD_USE_PACKING_PAPER,		// Æ÷ÀåÁö ¾ÆÀÌÅÛ »ç¿ë
+	MSGCMD_SAVE_BINGOITEM,			// ºù°í ¾ÆÀÌÅÛ ÀúÀå È®ÀÎ
+	MSGCMD_OK_EXCHANGE_CHOCOBOX,	// ÃÊÄÚ»óÀÚ ±³È¯ È®ÀÎ
 
 	MSGCMD_GOTO_EGEHA,
 
 	// wooss 070305 ----------------------------------------------------->>
 	// kw : WSS_WHITEDAY_2007
-	MSGCMD_WHITEDAY_BLUELETTER,			// í™”ì´íŠ¸ë°ì´ í¸ì§€ ì•„ì´í…œ ì‚¬ìš©
+	MSGCMD_WHITEDAY_BLUELETTER,			// È­ÀÌÆ®µ¥ÀÌ ÆíÁö ¾ÆÀÌÅÛ »ç¿ë
 	MSGCMD_WHITEDAY_PINKLETTER,
 	// ------------------------------------------------------------------<<
 
-// [KH_070326] ë‹¬ê±€ ì´ë²¤íŠ¸ ê´€ë ¨
+// [KH_070326] ´Ş°¿ ÀÌº¥Æ® °ü·Ã
 	MSGCMD_CONFIRM_EASTER_EGGS,
 	
-	MSGCMD_SONGKRAN_REWARD,				//íƒœêµ­ ì†¡í¬ë€ ì´ë²¤íŠ¸ ê¸ˆ,ì€ê·¸ë¦‡ ì‚¬ìš©
+	MSGCMD_SONGKRAN_REWARD,				//ÅÂ±¹ ¼ÛÅ©¶õ ÀÌº¥Æ® ±İ,Àº±×¸© »ç¿ë
 	//WSS_GUILD_MASTER 070411 ----------------------->>
-	MSGCMD_GUILDMASTER_1,				// ê¸¸ë“œ í¬ì¸íŠ¸ ìœˆë„ìš°
-	MSGCMD_GUILDMASTER_1_1,				// ê¸¸ë“œ í¬ì¸íŠ¸ ë“±ë¡
-	MSGCMD_GUILDMASTER_1_2,				// ê¸¸ë“œ í¬ì¸íŠ¸ ê°±ì‹ 
-	MSGCMD_GUILDMASTER_2_1,				// êµí™˜ê¶Œ ë°›ê¸° 
+	MSGCMD_GUILDMASTER_1,				// ±æµå Æ÷ÀÎÆ® À©µµ¿ì
+	MSGCMD_GUILDMASTER_1_1,				// ±æµå Æ÷ÀÎÆ® µî·Ï
+	MSGCMD_GUILDMASTER_1_2,				// ±æµå Æ÷ÀÎÆ® °»½Å
+	MSGCMD_GUILDMASTER_2_1,				// ±³È¯±Ç ¹Ş±â 
 	// ----------------------------------------------<<
-	MSGCMD_MINIGAME_SELECT_ITEM,		// WSS_MINIGAME 070420 ì—½ê¸° ë¬´ê¸° ì„ íƒ
+	MSGCMD_MINIGAME_SELECT_ITEM,		// WSS_MINIGAME 070420 ¿±±â ¹«±â ¼±ÅÃ
 
-	MSGCMD_FLOWERTREE_SUPPORT,			// ê½ƒë†€ì´ ì´ë²¤íŠ¸ ê°œí™”ë•ê¸°
-	MSGCMD_FLOWERTREE_TICKET,			// ê½ƒë†€ì´ ì´ë²¤íŠ¸ êµí™˜ê¶Œ ë°›ê¸°
-	MSGCMD_FLOWERTREE_TICKETEX,			// ê½ƒë†€ì´ ì´ë²¤íŠ¸ êµí™˜ê¶Œ ë°›ê¸° í™•ì¸
+	MSGCMD_FLOWERTREE_SUPPORT,			// ²É³îÀÌ ÀÌº¥Æ® °³È­µ½±â
+	MSGCMD_FLOWERTREE_TICKET,			// ²É³îÀÌ ÀÌº¥Æ® ±³È¯±Ç ¹Ş±â
+	MSGCMD_FLOWERTREE_TICKETEX,			// ²É³îÀÌ ÀÌº¥Æ® ±³È¯±Ç ¹Ş±â È®ÀÎ
 
-	MSGCMD_PET_NAMECARD_USE,			// í«ì˜ ëª…ì°°: ì•„ì´í…œ ì‚¬ìš©
-	MSGCMD_PET_NAMECARD_INPUT,			// í«ì˜ ëª…ì°°: ì´ë¦„ ì…ë ¥
+	MSGCMD_PET_NAMECARD_USE,			// ÆêÀÇ ¸íÂû: ¾ÆÀÌÅÛ »ç¿ë
+	MSGCMD_PET_NAMECARD_INPUT,			// ÆêÀÇ ¸íÂû: ÀÌ¸§ ÀÔ·Â
 
 	// [070702 :Su-won] SUMMER_2007
-	MSGCMD_SUMMER2007_PAPERFOLDING,		//ì¢…ì´ì ‘ê¸°
-	MSGCMD_SUMMER2007_PAPERBLENDING,	//ìƒ‰ì¢…ì´ ì¡°í•©
+	MSGCMD_SUMMER2007_PAPERFOLDING,		//Á¾ÀÌÁ¢±â
+	MSGCMD_SUMMER2007_PAPERBLENDING,	//»öÁ¾ÀÌ Á¶ÇÕ
 
 	// [070807: Su-won] EVENT_ADULT_OPEN
-	MSGCMD_ADULTEVENT_ALCHEMIST,		// ì„±ì¸ì„œë²„ ì˜¤í”ˆì´ë²¤íŠ¸(ì¥ë¹„ì¡°í•© ì—°ê¸ˆìˆ  ì´ë²¤íŠ¸): ì¥ë¹„ ì¡°í•©
-	MSGCMD_EVENT_SHOOT,  // ì„±ì¸ì„œë²„ ì˜¤í”ˆì´ë²¤íŠ¸(ì„±ì¸ë“¤ë§Œì˜ íŠ¹ê¶Œ): ì°¸ì—¬ í™•ì¸ì°½
+	MSGCMD_ADULTEVENT_ALCHEMIST,		// ¼ºÀÎ¼­¹ö ¿ÀÇÂÀÌº¥Æ®(ÀåºñÁ¶ÇÕ ¿¬±İ¼ú ÀÌº¥Æ®): Àåºñ Á¶ÇÕ
+	MSGCMD_EVENT_SHOOT,  // ¼ºÀÎ¼­¹ö ¿ÀÇÂÀÌº¥Æ®(¼ºÀÎµé¸¸ÀÇ Æ¯±Ç): Âü¿© È®ÀÎÃ¢
 	
 	MSGCMD_SIEGE_WARFARE_BUY_QUARTER,	// WSS_DRATAN_SEIGEWARFARE 2007/08/13
 	MSGCMD_SIEGE_WARFARE_WAIT_QUARTER,	// WSS_DRATAN_SEIGEWARFARE 2007/08/13
 	MSGCMD_SIEGEWARFARE_REBIRTH,		// WSS_DRATAN_SEIGEWARFARE 2007/08/22
 
-	MSGCMD_BJMONO_2007_CHANGE_REQ,		// SK BJ MONO ì‘ëª¨ê¶Œ êµí™˜ ìš”ì²­ ë©”ì„¸ì§€ ë°•ìŠ¤
-	MSGCMD_TG2007_1000DAYS_CAP_UPGRADE,	// ê¸°ë…ëª¨ì ì—…ê·¸ë ˆì´ë“œ ë©”ì„¸ì§€ ë°•ìŠ¤
+	MSGCMD_BJMONO_2007_CHANGE_REQ,		// SK BJ MONO ÀÀ¸ğ±Ç ±³È¯ ¿äÃ» ¸Ş¼¼Áö ¹Ú½º
+	MSGCMD_TG2007_1000DAYS_CAP_UPGRADE,	// ±â³ä¸ğÀÚ ¾÷±×·¹ÀÌµå ¸Ş¼¼Áö ¹Ú½º
 
 	// [070824: Su-won] REFINE_PROTECT
-	MSGCMD_INVEN_UPGRADE_PROTECT_REQ,	// ì œë ¨ ë³´í˜¸ ì•„ì´í…œ ì‚¬ìš©
+	MSGCMD_INVEN_UPGRADE_PROTECT_REQ,	// Á¦·Ã º¸È£ ¾ÆÀÌÅÛ »ç¿ë
 
 	// [070824: Su-won] PET_COLOR_CHANGE
-	MSGCMD_PET_COLORCHANGE_USE,			// í« ìƒ‰ìƒ ë³€ê²½ ì•„ì´í…œ ì‚¬ìš©
+	MSGCMD_PET_COLORCHANGE_USE,			// Æê »ö»ó º¯°æ ¾ÆÀÌÅÛ »ç¿ë
 	// [090713: selo] PET_TATOO_CHANGE
-	MSGCMD_PET_TATOOCHANGE_USE,			// í« ìƒ‰ìƒ ë°ë° ë¬¸ì–‘ ë³€ê²½ ì•„ì´í…œ ì‚¬ìš©
+	MSGCMD_PET_TATOOCHANGE_USE,			// Æê »ö»ó ¹×¹× ¹®¾ç º¯°æ ¾ÆÀÌÅÛ »ç¿ë
 
 	// [071122: Su-won] DRATAN_SIEGE_DUNGEON
-	MSGCMD_SIEGE_DUNGEON_STATE,						//ë˜ì „ ìƒíƒœì°½
-	MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL,		//ë˜ì „ ë‚´ë¶€ í™˜ê²½ ì œì–´ì°½
-	MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL,			//ë˜ì „ ë‚´ë¶€ ëª¬ìŠ¤í„° ì œì–´ì°½
-	MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL,		//ë˜ì „ ì…ì¥ë£Œ ì„¤ì •ì°½
-	MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL,		//ë˜ì „ ìˆ˜ë µì„¸ìœ¨ ì„¤ì •ì°½
+	MSGCMD_SIEGE_DUNGEON_STATE,						//´øÀü »óÅÂÃ¢
+	MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL,		//´øÀü ³»ºÎ È¯°æ Á¦¾îÃ¢
+	MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL,			//´øÀü ³»ºÎ ¸ó½ºÅÍ Á¦¾îÃ¢
+	MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL,		//´øÀü ÀÔÀå·á ¼³Á¤Ã¢
+	MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL,		//´øÀü ¼ö·Æ¼¼À² ¼³Á¤Ã¢
 
-	MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CHANGE,		//ë˜ì „ ë‚´ë¶€ í™˜ê²½ ë³€ê²½ í™•ì¸ì°½
-	MSGCMD_SIEGE_DUNGEON_MONSTER_CHANGE,			//ë˜ì „ ë‚´ë¶€ ëª¬ìŠ¤í„° ë³€ê²½ í™•ì¸ì°½
-	MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CHANGE,		//ë˜ì „ ì…ì¥ë£Œ ë³€ê²½ í™•ì¸ì°½
-	MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CHANGE,		//ë˜ì „ ìˆ˜ë µì„¸ìœ¨ ë³€ê²½ í™•ì¸ì°½
-	MSGCMD_SIEGE_DUNGEON_ENTER,						//ë˜ì „ ì´ë™ í™•ì¸ì°½
+	MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CHANGE,		//´øÀü ³»ºÎ È¯°æ º¯°æ È®ÀÎÃ¢
+	MSGCMD_SIEGE_DUNGEON_MONSTER_CHANGE,			//´øÀü ³»ºÎ ¸ó½ºÅÍ º¯°æ È®ÀÎÃ¢
+	MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CHANGE,		//´øÀü ÀÔÀå·á º¯°æ È®ÀÎÃ¢
+	MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CHANGE,		//´øÀü ¼ö·Æ¼¼À² º¯°æ È®ÀÎÃ¢
+	MSGCMD_SIEGE_DUNGEON_ENTER,						//´øÀü ÀÌµ¿ È®ÀÎÃ¢
 
 	// [071122: Su-won] NEW_MOONSTONE
 	MSGCMD_MOONSTONE_MIX,
 	
-	MSGCMD_EVENT_XMAS_2007_DECO,					// í¬ë¦¬ìŠ¤ë§ˆìŠ¤ íŠ¸ë¦¬ í™•ì¸ì°½
-	MSGCMD_PETTRANSFORM_RU,							// í« ë£¨ëŒí”„ ë³€ì‹  ì£¼ë¬¸ì„œ í™•ì¸ì°½
+	MSGCMD_EVENT_XMAS_2007_DECO,					// Å©¸®½º¸¶½º Æ®¸® È®ÀÎÃ¢
+	MSGCMD_PETTRANSFORM_RU,							// Æê ·çµ¹ÇÁ º¯½Å ÁÖ¹®¼­ È®ÀÎÃ¢
 
-	MSGCMD_EVENT_NEWYEAR_2008,						// 2008 ì‹ ë…„ì´ë²¤íŠ¸, ë²„í”„ ìˆ˜ë½ í™•ì¸ì°½
+	MSGCMD_EVENT_NEWYEAR_2008,						// 2008 ½Å³âÀÌº¥Æ®, ¹öÇÁ ¼ö¶ô È®ÀÎÃ¢
 
-	MSGCMD_USE_SMALL_CORD,							// ë³µì£¼ë¨¸ë‹ˆ ë…¸ëˆ ì‚¬ìš©
-	MSGCMD_OK_EXCHANGE_LUCKYBOX,					// ì†Œë§ìƒì êµí™˜ í™•ì¸
+	MSGCMD_USE_SMALL_CORD,							// º¹ÁÖ¸Ó´Ï ³ë²ö »ç¿ë
+	MSGCMD_OK_EXCHANGE_LUCKYBOX,					// ¼Ò¸Á»óÀÚ ±³È¯ È®ÀÎ
 
-	MSGCMD_EVENT_SAKURA_2008,						// 2008ë…„ ë²šê½ƒ ì´ë²¤íŠ¸: ë³´ìƒêµí™˜ í™•ì¸ì°½
+	MSGCMD_EVENT_SAKURA_2008,						// 2008³â º¢²É ÀÌº¥Æ®: º¸»ó±³È¯ È®ÀÎÃ¢
 
-	MSGCMD_EVENT_CHAOSBALL,							//ì¹´ì˜¤ìŠ¤ë³¼ ì´ë²¤íŠ¸: ì¹´ì˜¤ìŠ¤ë³¼ ë´‰ì¸í•´ì œ ì°½
+	MSGCMD_EVENT_CHAOSBALL,							//Ä«¿À½ºº¼ ÀÌº¥Æ®: Ä«¿À½ºº¼ ºÀÀÎÇØÁ¦ Ã¢
 	
 	MSGCMD_PRESSCORPS,
 
-	MSGCMD_ITEMDELETE,								// ì¸ë²¤í† ë¦¬ íœ´ì§€í†µ ë©”ì‹œì§€ ì²˜ë¦¬
+	MSGCMD_ITEMDELETE,								// ÀÎº¥Åä¸® ÈŞÁöÅë ¸Ş½ÃÁö Ã³¸®
 
-	MSGCMD_PARTY_OPTION,							//íŒŒí‹° ì˜µì…˜(ì¢…ë¥˜ ë³€ê²½) ì°½
+	MSGCMD_PARTY_OPTION,							//ÆÄÆ¼ ¿É¼Ç(Á¾·ù º¯°æ) Ã¢
 
-	MSGCMD_EVENT_PHOENIX,							//í”¼ë‹‰ìŠ¤ ì´ë²¤íŠ¸
+	MSGCMD_EVENT_PHOENIX,							//ÇÇ´Ğ½º ÀÌº¥Æ®
 	///////////////////////////////////////////////////////////////////////////////////	
 	// Cube
-	MSGCMD_CUBE_PARTY_GROUP_ENTRANCE,						//Cube: íŒŒí‹° ì…ì¥
-	MSGCMD_CUBE_PARTY_PERSON_ENTRANCE,							//Cube: íŒŒí‹° ê°œì¸ ì…ì¥
-	MSGCMD_CUBE_GUILD_GROUP_ENTRANCE,						//Cube: ê¸¸ë“œ ì…ì¥
-	MSGCMD_CUBE_GUILD_PERSON_ENTRANCE,							//Cube: ê¸¸ë“œ ê°œì¸ ì…ì¥
-	MSGCMD_CUBE_STATE,														//Cube: íë¸Œ í˜„í™©
-	MSGCMD_CUBE_CHANGE_RATE,											//Cube: ì„¸ìœ¨ ë³€ê²½
+	MSGCMD_CUBE_PARTY_GROUP_ENTRANCE,						//Cube: ÆÄÆ¼ ÀÔÀå
+	MSGCMD_CUBE_PARTY_PERSON_ENTRANCE,							//Cube: ÆÄÆ¼ °³ÀÎ ÀÔÀå
+	MSGCMD_CUBE_GUILD_GROUP_ENTRANCE,						//Cube: ±æµå ÀÔÀå
+	MSGCMD_CUBE_GUILD_PERSON_ENTRANCE,							//Cube: ±æµå °³ÀÎ ÀÔÀå
+	MSGCMD_CUBE_STATE,											//Cube: ÆÄÆ¼ ¹× ±æµå Å¥ºê ÇöÈ²
+	MSGCMD_CUBE_CHANGE_RATE,											//Cube: ¼¼À² º¯°æ
 	// Cube
 	///////////////////////////////////////////////////////////////////////////////////	
-	MSGCMD_INITJOB_SSKILL,							// ìŠ¤í˜ì…œ ìŠ¤í‚¬ ì´ˆê¸°í™” í™•ì¸ì°½
+	MSGCMD_INITJOB_SSKILL,							// ½ºÆä¼È ½ºÅ³ ÃÊ±âÈ­ È®ÀÎÃ¢
 	
 	MSGCMD_AUCTION_BUYITEM,
-	MSGCMD_AUCTION_ITEMREGISTER,
+	MSGCMD_AUCTION_FAVORITE,
+	MSGCMD_AUCTION_FAVORITE_CANCEL,
 	MSGCMD_AUCTION_CANCELREGISTER,
 	MSGCMD_AUCTION_INFO,
+	
+	MSGCMD_CONFIRM_OBJECTCLICK,						// ¿ÀºêÁ§Æ® Å¬¸¯ È®ÀÎ
 
-	//[ttos_2009_7_17]: CHARATER_CHAT_FILTER ìºë¦­í„° ì±„íŒ… í•„í„°
+	MSGCMD_ITEM_BELONG,
+
+	// [sora] ¿øÁ¤´ë
+	MSGCMD_EXPEDITION_INVITE,						//¿øÁ¤´ë ÃÊ´ë
+	MSGCMD_EXPEDITION_INVITE_BY_NAME,
+	MSGCMD_EXPEDITION_ALLOW,						//¿øÁ¤´ë Âü¿© ¿©ºÎ
+	MSGCMD_EXPEDITION_END,
+	MSGCMD_EXPEDITION_QUIT,
+	MSGCMD_EXPEDITION_SET_BOSS,
+	MSGCMD_EXPEDITION_SET_MBOSS,
+	MSGCMD_EXPEDITION_RESET_MBOSS,
+	MSGCMD_EXPEDITION_KICK,
+	MSGCMD_EXPEDITION_GO_STARTPLACE,				// ºÎÈ°À§Ä¡·Î ÀÌµ¿
+	MSGCMD_EXPEDITION_ERROR,
+	MSGCMD_EXPEDITION_COLLECTITEM,
+	//¿øÁ¤´ë ¿¡·¯ ¸Ş½ÃÁö
+	// [6/3/2009 rumist] define NPC Affinity System Message type.
+	MSGCMD_AFFINITY_CONTRACT,
+	MSGCMD_AFFINITY_TAKEPRESENT,
+
+	MSGCMD_DIVISION_INFO,							// [sora] ÆÄÆ¼, ¿øÁ¤´ë ºĞ¹è¹æ½Ä Á¤º¸Ç¥½Ã
+
+//[ttos_2009_7_17]: CHARATER_CHAT_FILTER Ä³¸¯ÅÍ Ã¤ÆÃ ÇÊÅÍ
 	MSGCMD_CHAT_BLOCK_REQ,
 	MSGCMD_CHAT_BLOCK,
 	MSGCMD_CHAT_ERROR,
 
+	// [sora 090824 Á¦ÀÛ °ü·Ã]
+	MSGCMD_SEAL_MEMBER,					// Á¦ÀÛ ÇùÈ¸ µî·Ï
+	MSGCMD_LEARN_SEAL,					// Á¦ÀÛ ÁõÇ¥ È¹µæ
+	
+	MSGCMD_PET_EVOLUTION,				// Æê ÁøÈ­
+
+	MSGCMD_RAID_INFO,					// ±Í¼ÓµÈ ·¹ÀÌµå Á¸ Á¤º¸
+	MSGCMD_NICKNAME_DELETE,
+
+	MSGCMD_QUEST_RESTORE_ITEM,			// [100208: selo] Äù½ºÆ® ¾ÆÀÌÅÛ ´Ù½Ã ¹Ş±â
+	MSGCMD_QUEST_RESTORE_ITEM_RESULT,	// [100208: selo] Äù½ºÆ® ¾ÆÀÌÅÛ ´Ù½Ã ¹Ş±â °á°ú
+
+	// [100322: selo] Ä£È­µµ º¸»ó ¾Ë¶÷
+	MSGCMD_AFFINITY_REWARD_NOTICE,
+
+	MSGCMD_LACARETTE_GET_TOKEN,			// [100325 : sora]¶óÄ«·¿ ÅäÅ« ¹Ş±â
+	MSGCMD_LACARETTE_ERROR,				// [2010/04/16 : Sora] ¶óÄ«·¿ ¸Ş½ÃÁö Ã¢
+	MSGCMD_LACARETTE_REMIND,			// [2010/04/21 : Sora] ¶óÄ«·¿ »ç¿ëÈ®ÀÎ ¸Ş½ÃÁö
+	
+	MSGCMD_EVENT_WORLDCUP_EVENT2_REREQ,	// ($E_WC2010) [100517: selo] 2010 ¿ùµåÄÅ ÀÌº¥Æ®2 ¿ì½Â ±¹°¡ ÀçÀÀ¸ğ
+	
+	MSGCMD_EVENT_WORLDCUP_EVENT2_REQ,	// ($E_WC2010) [100514: selo] 2010 ¿ùµåÄÅ ÀÌº¥Æ®2 ¿ì½Â ±¹°¡ ÀÀ¸ğ
+	MSGCMD_EVENT_WORLDCUP_EVENT2_STATUS,// ($E_WC2010) [100514: selo] 2010 ¿ùµåÄÅ ÀÌº¥Æ®2 ÀÀ¸ğ ÇöÈ²
+
+	MSGCMD_EVENT_WORLDCUP_EVENT3,		// ($E_WC2010) [100518: selo] 2010 ¿ùµåÄÅ ÀÌº¥Æ®3 ÀÀ´ä ¸Ş½ÃÁö ¹Ú½º
+	
+	MSGCMD_SOCKETSYSTEM_CHANCECARD,		// socket system : one more chance card [5/18/2010 rumist]
+	MSGCMD_QUEST_TUTORIAL_START,		// tutorial renewal. [8/2/2010 rumist]
+	MSGCMD_QUEST_TUTORIAL_CANCEL,
+
+	MSGCMD_HELPER_PLAYTIME,				// [8/31/2010 kiny8216] ÈÄ°ßÀÎ ½Ã½ºÅÛ °³Æí : ÁÖÀÌ¿ë½Ã°£
+	MSGCMD_HELPER_FIRE_MYSTUDENT,		// [8/31/2010 kiny8216] ÈÄ°ßÀÎ ½Ã½ºÅÛ °³Æí : ÈÄ°ßÀÎ Æ÷±â
+
+	MSGCMD_SOULOFSCALP_CONFIRM,			// ¿µÈ¥ÀÇ Â¡Ç¥ ±³È¯ È®ÀÎ Ã¢
+	MSGCMD_REGISTER_MERCHANT,			// [2010/08/25 : Sora] ADD_SUBJOB
+	MSGCMD_COMBO_ERROR,					// [2010/10/06 : Sora] ¸ó½ºÅÍ ÄŞº¸ ¿¡·¯ ¸Ş½ÃÁö Áßº¹ Ç¥½Ã ¼öÁ¤
+
+	MSGCMD_PROMOTION2_REQ,				// [10/6/2010 kiny8216] ÄíÆù ÇÁ·Î¸ğ¼Ç ÀÌº¥Æ® : ÄíÆù ÀÌº¥Æ® »óÇ° ¿äÃ»
+	
+	MSGCMD_LOGINSERV_BLOCK_USER,		// [10/27/2010 kiny8216] ºê¶óÁú ÆĞ½º¿öµå 3¹ø Æ²·Á¼­ ºí·Ï
+	MSGCMD_MONSTER_MERCENARY_CARD_USE,		// [2010/10/20 : Sora] ¸ó½ºÅÍ ¿ëº´ Ä«µå
+	MSGCMD_MONSTER_MERCENARY_CARD_HOLDER_USE,
+	MSGCMD_MONSTER_MERCENARY_CARD_ERROR,
+	MSGCMD_FACECHANGE,					// ¿ÜÇü º¯°æ ¸ğµå
+	MSGCMD_FACECHANGE_OK,				// ¿ÜÇü º¯°æ ¿äÃ»
+	
+	MSGCMD_CASH_EX_ERROR,			// ¼Ò¸Á»óÀÚ ÀÌ¿ëÁß ¿¡·¯
+
+	MSGCMD_PET_STAT_INIT_CARD_USE,		// pet status initialize card [1/19/2011 rumist]
+
+	MSGCMD_ATTENDANCE,				// [2011/01/18 : Sora] Ãâ¼® ÀÌº¥Æ®	
+	MSGCMD_LACABALL_ERROR,				// laca ball error. [1/27/2011 rumist]
+	
+	MSGCMD_COMEBACK_CONFIRM,		// ÈŞ¸é °èÁ¤ º¸»ó ÀÌº¥Æ® ¼±¹° ¹Ş±â
+	MSGCMD_BIRTHDAY_CONFIRM,		// »ıÀÏ ¼±¹° ¹Ş±â
+	MSGCMD_CHANGE_START_POINT,		// µ¶ÀÏ ¿äÃ»À¸·Î ÁÖ³ë ½ºÅ¸Æ® Æ÷ÀÎÆ® º¯°æ [4/6/2011 ldy1978220]
+	MSGCMD_ROYALRUMBLE_JOIN_REQ,		// royal rumble game ½ÅÃ» [4/26/2011 rumist]
+	MSGCMD_ROYALRUMBLE_REJECT_REQ,		// royal rumble game ½ÅÃ» Ãë¼Ò 
+	MSGCMD_ROYALRUMBLE_GO_ZONE,			// go to royal rumble zone.
+	MSGCMD_ROYALRUMBLE_WINNER_OUT,		// go to start zone.
+
+	MSGCMD_GUILD_MARK_CONFIRM,			// [sora] GUILD_MARK
+	MSGCMD_GUILD_MARK_REGISTER,			// [sora] GUILD_MARK
+	MSGCMD_KB_EXCHAGE_HEART,			// [2011/11/14 : Sora] ÅÂ±¹ ±¹¿Õ Åº»ıÀÏ ÀÌº¥Æ®
+	MSGCMD_KB_EXCHAGE_FLAG,				// [2011/11/14 : Sora] ÅÂ±¹ ±¹¿Õ Åº»ıÀÏ ÀÌº¥Æ®
+
+	MSGCMD_USERNOTICE,					// [11/17/11 trylord] À¯Àú °øÁö ½Ã½ºÅÛ
+
+	MSGCMD_SHUTDOWN_TIME,				// [2011/12/07 : Sora] ¼Ë´Ù¿î ¸Ş½ÃÁö
+
+	MSGCMD_GUILDMASTER_KICK_REQUEST,		// ±æµåÀå ÇØÀÓ ½É»ç ½ÅÃ» È®ÀÎ [trylord 111228]
+	MSGCMD_GUILDMASTER_KICK_CANCEL_REQUEST,	// ±æµåÀå ÇØÀÓ ÀÌÀÇ ½ÅÃ» È®ÀÎ [trylord 111228]
+	MSGCMD_GUILDREMOTE_JOIN_TOMASTER,		// ±æµå¿ø°İ - ±æ¸¶ ½ÅÃ»¹ŞÀ½
+	MSGCMD_GUILDREMOTE_JOIN_TOUSER,			// ±æµå¿ø°İ - À¯Àú°¡ ½ÅÃ»¹ŞÀ½
+
+	MSGCMD_USE_PET_ACCUMULATE,			// ÃàÀûÆê ¸Ş½ÃÁö ¹Ú½º
+	MSGCMD_USE_PET_ACCUMULATE2,
+	MSGCMD_SENDMAIL_COUNT_INPUT,		// [2012/01/18] ¸ŞÀÏ º¸³»±â ¾ÆÀÌÅÛ Ä«¿îÆ® ¼¼ÆÃ
+	MSGCMD_SENDMAIL_COUNT_ADD,			// [2012/01/18] ¸ŞÀÏ º¸³»±â ¾ÆÀÌÅÛ Ä«¿îÆ® ´õÇÏ±â
+	MSGCMD_SENDMAIL_MONEY_INPUT,		// [2012/01/26] ¸ŞÀÏ º¸³»±â µ· ÀÔ·Â ¸Ş½ÃÁö ¹Ú½º
+	MSGCMD_JUMPIMGPOTION,				// µ¶ÀÏ ¿äÃ» Á¡ÇÎ Æ÷¼Ç »ç¿ë½Ã
+	MSGCMD_DELETMAIL_CHECK,				// ¸ŞÀÏ »èÁ¦ Àç È®ÀÎ
+
+	MSGCMD_CHAR_SLOT_EXTEND,			// [2012/07/05 : Sora]  Ä³¸¯ÅÍ ½½·Ô È®Àå ¾ÆÀÌÅÛ
+	//MSGCMD_CHAR_SERVER_MOVE,			// Ä³¸¯ÅÍ ¼­¹ö ÀÌÀü ¾ÆÀÌÅÛ [7/25/2012 Ranma]
+
+	MSGCMD_NEWGUILDSTASH_ILLEGAL_USER,	// ºÎÁ¤ »ç¿ëÀÚ. ÇØÅ· »ç¿ë °¡´É¼º À¯Àú. [7/17/2012 rumist]
+
+	MSGCMD_CHARMOVETOANOTHERSERVER_SUCCESS, // ENABLE_CHARACTER_MOVE_TO_OTHER_SERVER_ITEM // ¼º°ø½Ã messagebox º¸¿©ÁÖ±â (Å¸ÀÌ¸Ó Æ÷ÇÔ) [7/25/2012 Ranma]
 	// wooss 050806
-	MSGCMD_NULL,						// ë‹¨ìˆœ í™•ì¸ ë©”ì‹œì§€ë°•ìŠ¤ ì²˜ë¦¬ 
+	MSGCMD_FORTUNE,						// [2013/02/13] sykim70 Fortune System
+	MSGCMD_MYSTERIOUS_BEAD_SEND_ITEM,	// ½ÅºñÇÑ ¼®»ó ±¸½½ ¾ÆÀÌÅÛ »ç¿ëÈÄ EXPRESS·Î ¾ÆÀÌÅÛ Àü¼Û½Ã »ç¿ë MSG
+	MSGCMD_WAREHOUSE_TAKE_MONEY,			//2013/04/04 jeil ³ª½º ¾ÆÀÌÅÛ Á¦°Å 
+	MSGCMD_EXCH_ADD_NAS,				//2013/04/09 jeil ³ª½º ¾ÆÀÌÅÛ Á¦°Å 
+	MSGCMD_NULL,						// ´Ü¼ø È®ÀÎ ¸Ş½ÃÁö¹Ú½º Ã³¸® 
+	MSGCMD_JEWEL_COMPOS_JEWEL_COMPOS_SCROLL,
+	MSGCMD_EXPRESS_RECV,
+	MSGCMD_EXPRESS_RECVALL,
+	MSGCMD_EXPRESS_DELETE,
+	MSGCMD_EXPRESS_DELETEALL,
+	MSGCMD_EXPRESS_REMOTE_ITEMUSE,
+	MSGCMD_EXPRESS_REMOTE_ERROR,
+	MSGCMD_PET_STASH_INSTASH,
+	MSGCMD_PET_STASH_OUTSTASH,
+	MSGCMD_PET_STASH_ERROR,
+	MSGCMD_PET_STASH_ERROR_SEALED,
+	MSGCMD_PET_STASH_USEITEM,
+	MSGCMD_TEST_UIBASE,
+	MSGCMD_ITEM_DUPLICATION_CHECK,
+	MSGCMD_INVENTORY_ARRANGE,
+	MSGCMD_USE_SEALED_SOUL,
+	MSGCMD_SYNDICATE_PUTON_JEWEL_REQ,
+	MSGCMD_SYNDICATE_SECESSION_REQ,
+#ifdef DURABILITY
+	MSGCMD_DURABILITY_MATERIAL_COUNT,
+	MSGCMD_DURABILITY_REPAIR,
+	MSGCMD_DURABILITY_SPECIAL_REPAIR,
+	MSGCMD_DURABILITY_RECOVER,
+#endif	//	DURABILITY
+	MSGCMD_EXP_PET_COOLTIME_REMOVE,
+	MSGCMD_ATTENDANCE_ASSURE_OK_UPD,
+	MSGCMD_ATTENDANCE_ITEM_USE,
+#ifdef PREMIUM_CHAR	
+	MSGCMD_PREMIUM_CHAR_ITEM_USE,
+#endif	//	PREMIUM_CHAR
+	MSGCMD_LOGOUT_RELIC_WARRING,
 	MSGCMD_TOTAL
 };
 
 enum UI_MSGLCMD
 {
-	MSGLCMD_REFINE_REQ = 0,					// ì œë ¨ ìš”ì²­ì°½
-	MSGLCMD_PROCESS_REQ,					// ê°€ê³µ ìš”ì²­ì°½
-	MSGLCMD_PRODUCT_REQ,					// ì œì¡° ìš”ì²­ì°½
-	MSGLCMD_MIX_REQ,						// ì¡°í•©(ì¬í™œì˜ ìƒì) ìš”ì²­ì°½
-	MSGLCMD_COMPOUND_REQ,					// í•©ì„±(ë¹„ë°€ì˜ ìƒì) ìš”ì²­ì°½
-	MSGLCMD_QUEST_INTRO,					// í€˜ìŠ¤íŠ¸ ì†Œê°œì°½
-	MSGLCMD_QUEST_PRIZE,					// í€˜ìŠ¤íŠ¸ ë³´ìƒì°½.
-// FIXME : íŠœí† ë¦¬ì–¼ë§Œ íŠ¹ì´í•´ì„œ... ë§˜ì— ì•ˆë“¬.
-	MSGLCMD_QUEST_TUTORIAL,					// íŠœí† ë¦¬ì–¼ í€˜ìŠ¤íŠ¸
+	MSGLCMD_REFINE_REQ = 0,					// Á¦·Ã ¿äÃ»Ã¢
+	MSGLCMD_PROCESS_REQ,					// °¡°ø ¿äÃ»Ã¢
+	MSGLCMD_PRODUCT_REQ,					// Á¦Á¶ ¿äÃ»Ã¢
+	MSGLCMD_MIX_REQ,						// Á¶ÇÕ(ÀçÈ°ÀÇ »óÀÚ) ¿äÃ»Ã¢
+	MSGLCMD_COMPOUND_REQ,					// ÇÕ¼º(ºñ¹ĞÀÇ »óÀÚ) ¿äÃ»Ã¢
+	MSGLCMD_QUEST_INTRO,					// Äù½ºÆ® ¼Ò°³Ã¢
+	MSGLCMD_QUEST_PRIZE,					// Äù½ºÆ® º¸»óÃ¢.
+// FIXME : Æ©Åä¸®¾ó¸¸ Æ¯ÀÌÇØ¼­... ¸¾¿¡ ¾Èµë.
+	MSGLCMD_QUEST_TUTORIAL,					// Æ©Åä¸®¾ó Äù½ºÆ®
 	MSGLCMD_SHOP_REQ,						// SHOP REQUEST		Insert By cpp2angle (04.12.18)
-	MSGLCMD_GUILD_REQ,						// ê¸¸ë“œ
-	MSGLCMD_GUILD_BATTLE_REQ,				// ê¸¸ë“œ ì „íˆ¬ // Date : 2005-03-17,   By Lee Ki-hwan
-	MSGLCMD_WAREHOUSE_REQ,					// ì°½ê³ ...
-	MSGLCMD_SECURITY_REQ,					// ë³´ì•ˆ...
-	MSGLCMD_SKILLLEARN_REQ,					// ìŠ¤í‚¬ ìŠµë“ì°½
-	MSGLCMD_SSKILLLEARN_REQ,				// íŠ¹ìˆ˜ ìŠ¤í‚¬ ìŠµë“ì°½
-	MSGLCMD_CHANGEJOB_REQ,					// ì „ì§ì°½...
-	MSGLCMD_REMISSION_REQ,					// ë©´ì£„ë¶€
-	MSGLCMD_QUEST_REQ,						// í€˜ìŠ¤íŠ¸.
-	MSGLCMD_EVENT,							// ì´ë²¤íŠ¸ ì„ íƒì°½.
-	MSGLCMD_HARVEST_MOON_DAY1,				// ì¶”ì„ë§ì´ ì´ë²¤íŠ¸ 
-	MSGLCMD_HARVEST_MOON_DAY2 = 20,				// ì¶”ì„ë§ì´ ì´ë²¤íŠ¸ 
-	MSGLCMD_HELPER_REQ,						// í›„ê²¬ì¸ ì‹œìŠ¤í…œ.
-	MSGLCMD_INITJOB_REQ,					// ì„ì‹œ
-	MSGLCMD_CHANGEWEAPON_REQ,				// ë¬´ê¸° êµì²´
-	MSGLCMD_STORY_INTRO,					// ì‹±ê¸€ë˜ì ¼ ë‚´ìš© ì†Œê°œ
-	MSGLCMD_CHANGEWEAPON_EVENT_REQ,			// ë¬´ê¸° êµì²´ ì´ë²¤íŠ¸	
-	MSGLCMD_GATE_OF_DIMENSION,				// í¼ìŠ¤ë„ ë˜ì ¼ 4 - ì°¨ì›ì˜ ë¬¸
-	MSGLCMD_EVENT_NOTICE,					// ì´ë²¤íŠ¸ ì•Œë¦¼
-	MSGLCMD_TREASUREBOX_EVENT,				// ë³´ë¬¼ ìƒì ì´ë²¤íŠ¸.
-	MSGLCMD_SIEGE_WARFARE,					// ê³µì„±ì „ - ê¸°ë³¸
+	MSGLCMD_GUILD_REQ,						// ±æµå
+	MSGLCMD_GUILD_BATTLE_REQ = 10,				// ±æµå ÀüÅõ // Date : 2005-03-17,   By Lee Ki-hwan
+	MSGLCMD_WAREHOUSE_REQ,					// Ã¢°í...
+	MSGLCMD_SECURITY_REQ,					// º¸¾È...
+	MSGLCMD_SKILLLEARN_REQ,					// ½ºÅ³ ½ÀµæÃ¢
+	MSGLCMD_SSKILLLEARN_REQ,				// Æ¯¼ö ½ºÅ³ ½ÀµæÃ¢
+	MSGLCMD_CHANGEJOB_REQ,					// ÀüÁ÷Ã¢...
+	MSGLCMD_REMISSION_REQ,					// ¸éÁËºÎ
+	MSGLCMD_QUEST_REQ,						// Äù½ºÆ®.
+	MSGLCMD_EVENT,							// ÀÌº¥Æ® ¼±ÅÃÃ¢.
+	MSGLCMD_HARVEST_MOON_DAY1,				// Ãß¼®¸ÂÀÌ ÀÌº¥Æ® 
+	MSGLCMD_HARVEST_MOON_DAY2 = 20,				// Ãß¼®¸ÂÀÌ ÀÌº¥Æ® 
+	MSGLCMD_HELPER_REQ,						// ÈÄ°ßÀÎ ½Ã½ºÅÛ.
+	MSGLCMD_INITJOB_REQ,					// ÀÓ½Ã
+	MSGLCMD_CHANGEWEAPON_REQ,				// ¹«±â ±³Ã¼
+	MSGLCMD_STORY_INTRO,					// ½Ì±Û´øÁ¯ ³»¿ë ¼Ò°³
+	MSGLCMD_CHANGEWEAPON_EVENT_REQ,			// ¹«±â ±³Ã¼ ÀÌº¥Æ®	
+	MSGLCMD_GATE_OF_DIMENSION,				// ÆÛ½º³Î ´øÁ¯ 4 - Â÷¿øÀÇ ¹®
+	MSGLCMD_EVENT_NOTICE,					// ÀÌº¥Æ® ¾Ë¸²
+	MSGLCMD_TREASUREBOX_EVENT,				// º¸¹° »óÀÚ ÀÌº¥Æ®.
+	MSGLCMD_SIEGE_WARFARE,					// °ø¼ºÀü - ±âº»
 	MSGLCMD_MERCEAR_REQ = 30,	
-	MSGLCMD_PROCESSNPC_REQ,					// ê°€ê³µ NPC
-	MSGLCMD_PROCESSNPC_MINERAL_REQ,			// ê´‘ì„ ì •ë ¨
-	MSGLCMD_PROCESSNPC_ENERGY_REQ,			// ì›ì†Œ ì •ì œ
-	MSGLCMD_PROCESSNPC_CROP_REQ,			// ì‹ë¬¼ ê°€ê³µ.
-	MSGLCMD_PETTRAINING_REQ,				// ì• ì™„ë™ë¬¼ í›ˆë ¨.
-	MSGLCMD_PETCHANGE_REQ,					// ì• ì™„ë™ë¬¼ ë³€í˜•
-	MSGLCMD_PETSKILLINIT_REQ,				// ì• ì™„ë™ë¬¼ ìŠ¤í‚¬ ì´ˆê¸°í™”
-	MSGLCMD_PETSTUFFCHANGE_REQ,				// ì• ì™„ë™ë¬¼ì„ ì¬ë£Œ ì•„ì´í…œìœ¼ë¡œ ë³€í™˜  // eons
-	MSGLCMD_PETUNIQUEPRODUCT_REQ,			// ìœ ë‹ˆí¬ ì•„ì´í…œ ì œì‘		// eons
-	MSGLCMD_GW_MIX_REQ = 40,						// ê³µì„± ì•„ì´í…œ ì¡°í•© 
-	MSGLCMD_PARTYAUTOMATCH_REQ,				// íŒŒí‹° ì˜¤í†  ë§¤ì¹­ ì‹œìŠ¤í…œ	// eons
+	MSGLCMD_PROCESSNPC_REQ,					// °¡°ø NPC
+	MSGLCMD_PROCESSNPC_MINERAL_REQ,			// ±¤¼® Á¤·Ã
+	MSGLCMD_PROCESSNPC_ENERGY_REQ,			// ¿ø¼Ò Á¤Á¦
+	MSGLCMD_PROCESSNPC_CROP_REQ,			// ½Ä¹° °¡°ø.
+	MSGLCMD_PETTRAINING_REQ,				// ¾Ö¿Ïµ¿¹° ÈÆ·Ã.
+	MSGLCMD_PETCHANGE_REQ,					// ¾Ö¿Ïµ¿¹° º¯Çü
+	MSGLCMD_PETSKILLINIT_REQ,				// ¾Ö¿Ïµ¿¹° ½ºÅ³ ÃÊ±âÈ­
+	MSGLCMD_PETSTUFFCHANGE_REQ,				// ¾Ö¿Ïµ¿¹°À» Àç·á ¾ÆÀÌÅÛÀ¸·Î º¯È¯  // eons
+	MSGLCMD_PETUNIQUEPRODUCT_REQ,			// À¯´ÏÅ© ¾ÆÀÌÅÛ Á¦ÀÛ		// eons
+	MSGLCMD_GW_MIX_REQ = 40,						// °ø¼º ¾ÆÀÌÅÛ Á¶ÇÕ 
+	MSGLCMD_PARTYAUTOMATCH_REQ,				// ÆÄÆ¼ ¿ÀÅä ¸ÅÄª ½Ã½ºÅÛ	// eons
 	MSGCMD_GW_MIX_REP,
 	MSGLCMD_GUILDSTASH_REQ,
 	MSGLCMD_RENUAL_EVENT,
-	MSGLCMD_EVENT_2PAN4PAN_ONE,				// ì´íŒì‚¬íŒ ì´ë²¤íŠ¸ ë¨¸ë‹ˆ êµí™˜ wooss 051031
-	MSGLCMD_EVENT_2PAN4PAN_TWO,				// ì´íŒì‚¬íŒ ì´ë²¤íŠ¸ ë³´ë¬¼ìƒì ì—´ê¸°
-	MSGCMD_EVENT_2PAN4PAN_THREE,			// ì´íŒì‚¬íŒ ì´ë²¤íŠ¸ ìºë¦­í„°ë³´ìƒ ì¹´ë“œ
+	MSGLCMD_EVENT_2PAN4PAN_ONE,				// ÀÌÆÇ»çÆÇ ÀÌº¥Æ® ¸Ó´Ï ±³È¯ wooss 051031
+	MSGLCMD_EVENT_2PAN4PAN_TWO,				// ÀÌÆÇ»çÆÇ ÀÌº¥Æ® º¸¹°»óÀÚ ¿­±â
+	MSGCMD_EVENT_2PAN4PAN_THREE,			// ÀÌÆÇ»çÆÇ ÀÌº¥Æ® Ä³¸¯ÅÍº¸»ó Ä«µå
 	
-	MSGLCMD_EVENT_NEWYEAR1,					// ì‹ ë…„ì´ë²¤íŠ¸ ê¿ˆê³¼ í¬ë§
-	MSGLCMD_EVENT_NEWYEAR2,					// ì‹ ë…„ì´ë²¤íŠ¸ ì¸ë‚´ì˜ ì—´ë§¤
-	MSGLCMD_EVENT_FIND_FRIEND = 50,				// ì¹œêµ¬ ì°¾ê¸° ì´ë²¤íŠ¸
-	MSGLCMD_CLOTHES_EXCHANGE,				// ì¼ë³¸ ì „í†µì˜ìƒ ì´ë²¤íŠ¸
-	MSGLCMD_EVENT_OXQUIZ,					// O.Xì´ë²¤íŠ¸
-	MSGLCMD_PLATINUM_STONE_EXCHANGE,		// í”Œë˜í‹°ëŠ„ ì œë ¨ì„ êµí™˜
-	MSGCMD_ASK_PLATINUM_EXCHANGE1,			// í”Œë˜í‹°ëŠ„ ì œë ¨ì„ êµí™˜ í™•ì¸
+	MSGLCMD_EVENT_NEWYEAR1,					// ½Å³âÀÌº¥Æ® ²Ş°ú Èñ¸Á
+	MSGLCMD_EVENT_NEWYEAR2,					// ½Å³âÀÌº¥Æ® ÀÎ³»ÀÇ ¿­¸Å
+	MSGLCMD_EVENT_FIND_FRIEND = 50,				// Ä£±¸ Ã£±â ÀÌº¥Æ®
+	MSGLCMD_CLOTHES_EXCHANGE,				// ÀÏº» ÀüÅëÀÇ»ó ÀÌº¥Æ®
+	MSGLCMD_EVENT_OXQUIZ,					// O.XÀÌº¥Æ®
+	MSGLCMD_PLATINUM_STONE_EXCHANGE,		// ÇÃ·¡Æ¼´½ Á¦·Ã¼® ±³È¯
+	MSGCMD_ASK_PLATINUM_EXCHANGE1,			// ÇÃ·¡Æ¼´½ Á¦·Ã¼® ±³È¯ È®ÀÎ
 	MSGCMD_ASK_PLATINUM_EXCHANGE2,
 	MSGCMD_ASK_PLATINUM_EXCHANGE3,
-	MSGLCMD_RAINYDAY,						// ì¼ë³¸ ë¹—ë°©ìš¸ ì´ë²¤íŠ¸
-	MSGLCMD_MOTHERDAY,						// íƒœêµ­ ì–´ë¨¸ë‹ˆë‚  ì´ë²¤íŠ¸
-	MSGCMD_WORLDCUP_EVENT1,			// ì›”ë“œì»µ ì´ë²¤íŠ¸ 1 (ìš°ìŠ¹êµ­)
+	MSGLCMD_RAINYDAY,						// ÀÏº» ºø¹æ¿ï ÀÌº¥Æ®
+	MSGLCMD_MOTHERDAY,						// ÅÂ±¹ ¾î¸Ó´Ï³¯ ÀÌº¥Æ®
+	MSGCMD_WORLDCUP_EVENT1,			// ¿ùµåÄÅ ÀÌº¥Æ® 1 (¿ì½Â±¹)
 	MSGCMD_WORLDCUP_EVENT1_EXCHANGE,
 	MSGCMD_WORLDCUP_EVENT1_RECEIVE,
 
-	MSGCMD_WORLDCUP_GOLDENBALL,				// ê³¨ë“ ë³¼ ì´ë²¤íŠ¸
-	MSGCMD_WORLDCUP_GOLDENBALL_ENTRY,		// ê³¨ë“ ë³¼ ì´ë²¤íŠ¸ ì‘ëª¨
-	MSGCMD_WORLDCUP_GOLDENBALL_REQUITAL,	// ê³¨ë“  ë³¼ ì´ë²¤íŠ¸ ë³´ìƒ
+	MSGCMD_WORLDCUP_GOLDENBALL,				// °ñµçº¼ ÀÌº¥Æ®
+	MSGCMD_WORLDCUP_GOLDENBALL_ENTRY,		// °ñµçº¼ ÀÌº¥Æ® ÀÀ¸ğ
+	MSGCMD_WORLDCUP_GOLDENBALL_REQUITAL,	// °ñµç º¼ ÀÌº¥Æ® º¸»ó
 	
-	MSGLCMD_BUDDHISM_EVENT,					// ë¶ˆêµ ì´›ë¶ˆ ì¶•ì œ ì´ë²¤íŠ¸( íƒœêµ­ )
-	MSGLCMD_COLLECT_INSECT_EVENT,				// ì—¬ë¦„ ê³¤ì¶© ì±„ì§‘ ì´ë²¤íŠ¸
-	MSGLCMD_COLLECT_BOX_GIFT,				// ê³¤ì¶© ì±„ì§‘ìƒì ë³´ìƒ
-	MSGLCMD_EVENT_PROMOPACK,				// í”„ë¡œëª¨ íŒ¨í‚¤ì§€ ì´ë²¤íŠ¸ (ë§ë ˆìƒ¤)
-	
+	MSGLCMD_BUDDHISM_EVENT,					// ºÒ±³ ÃĞºÒ ÃàÁ¦ ÀÌº¥Æ®( ÅÂ±¹ )
+	MSGLCMD_COLLECT_INSECT_EVENT,				// ¿©¸§ °ïÃæ Ã¤Áı ÀÌº¥Æ®
+	MSGLCMD_COLLECT_BOX_GIFT,				// °ïÃæ Ã¤Áı»óÀÚ º¸»ó
+	MSGLCMD_EVENT_PROMOPACK,				// ÇÁ·Î¸ğ ÆĞÅ°Áö ÀÌº¥Æ® (¸»·¹»ş)
+
 	MSGLCMD_EVENT_XMAS_2006,				// 2006 XMas Event [12/11/2006 Theodoric]
 	MSGLCMD_EVENT_XMAS_2006_COUNT,			// 2006 XMas Event [12/11/2006 Theodoric]
 	MSGLCMD_EVENT_XMAS_2006_CHANGE,			// 2006 XMas Event [12/11/2006 Theodoric]
 
-	MSGLCMD_EVENT_LOVE_LOVE,				// ëŸ¬ë¸ŒëŸ¬ë¸Œ ì´ë²¤íŠ¸
+	MSGLCMD_EVENT_LOVE_LOVE,				// ·¯ºê·¯ºê ÀÌº¥Æ®
 
 											// wooss 070305 kw: WSS_WHITEDAY_2007
 	MSGLCMD_WHITEDAY_2007,					// 2007 WhiteDay Event
 	
-	MSGLCMD_EVENT_MAY,						// 5ì›” ê°€ì •ì˜ë‹¬ ì´ë²¤íŠ¸
+	MSGLCMD_EVENT_MAY,						// 5¿ù °¡Á¤ÀÇ´Ş ÀÌº¥Æ®
 	
 	MSGLCMD_GUILDMASTER,					// WSS_GUILD_MASTER 070411
 	MSGLCMD_GUILDMASTER_2,
@@ -761,14 +646,14 @@ enum UI_MSGLCMD
 	MSGLCMD_EVENT_MINIGAME,					// WSS_MINIGAME 070420	
 
 	MSGLCMD_SUMMER_2007,					// [070702 :Su-won] SUMMER_2007
-	MSGLCMD_RESERVE_REQ,					// ì˜ˆë¹„ (ì•…ë• ìƒì¸, ì–´ë‘ ì˜ ìŠ¤í‚¬ ë§ˆìŠ¤í„° ì‚¬ìš©)	
+	MSGLCMD_RESERVE_REQ,					// ¿¹ºñ (¾Ç´ö »óÀÎ, ¾îµÒÀÇ ½ºÅ³ ¸¶½ºÅÍ »ç¿ë)	
 	MSGLCMD_SIEGE_WARFARE_UPGRADE,			// WSS_DRATAN_SIEGEWARFARE 070730
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// [070807: Su-won] EVENT_ADULT_OPEN
-	MSGLCMD_EVENT_ADULT_MAGICCARD,			// ì„±ì¸ì„œë²„ ì˜¤í”ˆ ì´ë²¤íŠ¸(ë§¤ì§ì¹´ë“œë¥¼ ì°¾ì•„ë¼!)
-	MSGLCMD_EVENT_ADULT_CHANGEJOB,			// ì„±ì¸ì„œë²„ ì˜¤í”ˆ ì´ë²¤íŠ¸(ì „ì§ë‹¬ì„±!ì ˆë§ì˜ ë¶€ì ì„ ë°›ì•„ë¼!)
-	MSGLCMD_EVENT_ADULT_ALCHEMIST,			// ì„±ì¸ì„œë²„ ì˜¤í”ˆ ì´ë²¤íŠ¸(ì¥ë¹„ì¡°í•© ì—°ê¸ˆìˆ  ì´ë²¤íŠ¸)
+	MSGLCMD_EVENT_ADULT_MAGICCARD,			// ¼ºÀÎ¼­¹ö ¿ÀÇÂ ÀÌº¥Æ®(¸ÅÁ÷Ä«µå¸¦ Ã£¾Æ¶ó!)
+	MSGLCMD_EVENT_ADULT_CHANGEJOB,			// ¼ºÀÎ¼­¹ö ¿ÀÇÂ ÀÌº¥Æ®(ÀüÁ÷´Ş¼º!Àı¸ÁÀÇ ºÎÀûÀ» ¹Ş¾Æ¶ó!)
+	MSGLCMD_EVENT_ADULT_ALCHEMIST,			// ¼ºÀÎ¼­¹ö ¿ÀÇÂ ÀÌº¥Æ®(ÀåºñÁ¶ÇÕ ¿¬±İ¼ú ÀÌº¥Æ®)
 	// [070807: Su-won] EVENT_ADULT_OPEN
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -779,78 +664,134 @@ enum UI_MSGLCMD
 	MSGLCMD_DRATAN_SIEGE_DUNGEON_CONTROL,
 
 	MSGLCMD_RED_TREASUREBOX_EVENT,
-	MSGCMD_EX_MONSTERCOMBO_GOTO_COMBO_PROMPT, // ëª¬ìŠ¤í„° ì½¤ë³´ ëŒ€ê¸°ë°© ì´ë™
-	MSGCMD_EX_MONSTERCOMBO_RECALL_TO_COMBO_PROMPT, // ëŒ€ê¸°ë°©ì—ì„œ íŒŒí‹° ì†Œí™˜
-	MSGCMD_COMBO_GIVEUP,						// ëª¬ìŠ¤í„° ì½¤ë³´ í¬ê¸°
+	MSGCMD_EX_MONSTERCOMBO_GOTO_COMBO_PROMPT, // ¸ó½ºÅÍ ÄŞº¸ ´ë±â¹æ ÀÌµ¿
+	MSGCMD_EX_MONSTERCOMBO_RECALL_TO_COMBO_PROMPT, // ´ë±â¹æ¿¡¼­ ÆÄÆ¼ ¼ÒÈ¯
+	MSGCMD_COMBO_GIVEUP,						// ¸ó½ºÅÍ ÄŞº¸ Æ÷±â
 
-	MSGLCMD_CHAOSBALL_EVENT,				//ì¹´ì˜¤ìŠ¤ë³¼ ì´ë²¤íŠ¸	
+	MSGLCMD_CHAOSBALL_EVENT,				//Ä«¿À½ºº¼ ÀÌº¥Æ®	
 
 	//Cube
-	MSGLCMD_CUBE_PARTY_ENTRANCE,		//íŒŒí‹°ì…ì¥ ì„ íƒì°½
-	MSGLCMD_CUBE_GUILD_ENTRANCE,		//ê¸¸ë“œì…ì¥ ì„ íƒì°½
+	MSGLCMD_CUBE_PARTY_ENTRANCE,		//ÆÄÆ¼ÀÔÀå ¼±ÅÃÃ¢
+	MSGLCMD_CUBE_GUILD_ENTRANCE,		//±æµåÀÔÀå ¼±ÅÃÃ¢
+
+	MSGLCMD_RAID_CONTINUED_MESSAGE,		// ·¹ÀÌµå ½Ã½ºÅÛ ÁøÇà ¸Ş¼¼Áö
+	//MakeItem
+	MSGLCMD_PRODUCETNPC_VOUCHER,		// Á¦ÀÛ ¾ÆÀÌÅÛ ÁõÇ¥
+	MSGLCMD_PRODUCETNPC_LEARN,			// Á¦ÀÛ ¾ÆÀÌÅÛ ±â¼ú ½À
+
+	// [6/3/2009 rumist] define NPC Affinity System Request Message Type.
+	MSGLCMD_AFFINITY_DONATE_REQ,		// request to donation view.
+
+	// connie [2009/9/18] - 
+	MSGLCMD_NPC_SCROLL_MESSAGE,
+
+	// tutorial open. [8/2/2010 rumist]
+	MSGLCMD_QUEST_TUTORIAL_OPEN,
 	
+	MSGLCMD_TUTORIAL_MESSAGE1,
+	MSGLCMD_TUTORIAL_MESSAGE2,
+	MSGLCMD_TUTORIAL_MESSAGE3,
+	MSGLCMD_TUTORIAL_MESSAGE4,
+	MSGLCMD_TUTORIAL_MESSAGE5,
+	MSGLCMD_TUTORIAL_MESSAGE6,
+	// add tutorial message box.
+	MSGLCMD_TUTORIAL_MESSAGE7,
+	
+	MSGLCMD_AUCTION,
+	
+	// [100222: selo] ¿¬¼Ó ´ÙÀÌ¾ó·Î±× Æ®¸®°Å 
+	MSGLCMD_CONSECUTIVE_DIALOGUE,
+	MSGLCMD_SOCKET_SYSTEM,
+	MSGLCMD_SOCKET_SYSTEM_EMPTY,
+	MSGLCMD_SOCKET_SYSTEM_EMPTY_BOX,
+	MSGLCMD_SOCKET_SYSTEM_JEWEL_COMPOS,
+	MSGLCMD_LACARETTE_GET_TOKEN,		// ¶óÄ«·¿ ÅäÅ« È¹µæ
+
+	MSGLCMD_EVENT_WORLDCUP_EVENT1,		// ($E_WC2010) [100511: selo] 2010 ¿ùµåÄÅ ÀÌº¥Æ®1
+	MSGLCMD_EVENT_WORLDCUP_EVENT2,		// ($E_WC2010) [100514: selo] 2010 ¿ùµåÄÅ ÀÌº¥Æ®2
+	MSGLCMD_EVENT_WORLDCUP_EVENT3,		// ($E_WC2010) [100514: selo] 2010 ¿ùµåÄÅ ÀÌº¥Æ®3
+	
+	MSGLCMD_ATTENDANCE_SYSTEM,			// [7/2/2010 kiny8216] Ãâ¼® ½Ã½ºÅÛ
+	
+	MSGLCMD_REGISTER_MERCHANT,			// // [2010/08/26 : Sora] ADD_SUBJOB »óÀÎ µî·Ï
+	MSGLCMD_LORD_COSTUME_REQ,			// [9/15/2010 kiny8216] ¼ºÁÖ ÄÚ½ºÆ¬
+
+	MSGLCMD_ROYALRUMBLE_MANAGER,		// royal rumble °ü¸®ÀÎ. [4/25/2011 rumist]
+	MSGLCMD_NEWGUILDSTASH_REQ,
+	MSGLCMD_REFORM_SYSTEM,				// reform system [8/31/2012 ¹ÚÈÆ]	
+	MSGLCMD_SYNDICATE_JEWEL_GIVE,
+	MSGLCMD_SYNDICATE_SECESSION_REQ,
 	MSGLCMD_TOTAL
 };
 
+enum CHECK_ITEM_FLAG
+{
+	UI_ITEM_FLAG_DEFAULT,
+	UI_ITEM_FLAG_RARE,
+	UI_ITEM_FLAG_SET,
+};
+
 // wooss 050802 define cash item 
-#define		RECOVER_HEXP_ITEM		844		// ê²½í—˜ì¹˜ ë³µêµ¬ ì£¼ë¬¸ì„œ	
-#define		RECOVER_HEXP_ITEM_LUCKY	2035	// ëŸ­í‚¤ ê²½í—˜ì¹˜ ë³µêµ¬ ì£¼ë¬¸ì„œ
-#define		RECOVER_AEXP_ITEM		845		// ìˆ™ë ¨ë„ ë³µêµ¬ ì£¼ë¬¸ì„œ
-#define		RECOVER_AEXP_ITEM_LUCKY	2036	// ëŸ­í‚¤ ìˆ™ë ¨ë„ ë³µêµ¬ ì£¼ë¬¸ì„œ
-#define		REBIRTH_ITEM			846		// ë¶€í™œ ì£¼ë¬¸ì„œ
-#define		WARP_ITEM				857		// ìˆœê°„ì´ë™ ë§ˆë²•ì„œ
-#define		PC_SUMMON_ITEM			858		// ìºë¦­í„°(PC) ì†Œí™˜ ë§ˆë²•ì„œ	
-#define		BAAL_SUMMON_ITEM		859		// ë°”ì•Œ ì†Œí™˜ ë§ˆë²•ì„œ
-#define		DEATHNIGHT_SUMMON_ITEM	860		// ë°ìŠ¤ë‚˜ì´íŠ¸ ì†Œí™˜ ë§ˆë²•ì„œ
-#define		CHANGE_MY_NAME_ITEM		842		// ìºë¦­í„° ê°œëª…ì¹´ë“œ
-#define		CHANGE_GUILD_NAME_ITEM	843		// ê¸¸ë“œ ê°œëª…ì¹´ë“œ	
-#define		MEMSCROLL_EX_ITEM		840		// ë©”ëª¨ë¦¬ ìŠ¤í¬ë¡¤ í™•ì¥ ì¹´ë“œ
-#define		WAREHOUSE_EX_ITEM		841		// ê°œì¸ì°½ê³  í™•ì¥ ì¹´ë“œ
-#define		INIT_STATUS_ITEM		847		// ìŠ¤í…Œì´í„°ìŠ¤ ì´ˆê¸°í™” ì¹´ë“œ
-#define		INIT_COMBAT_SKILL_ITEM	848		// ì „íˆ¬ìŠ¤í‚¬ ì´ˆê¸°í™” ì¹´ë“œ
-#define		INIT_SPECIAL_SKILL_ITEM	849		// íŠ¹ìˆ˜ìŠ¤í‚¬ ì´ˆê¸°í™” ì¹´ë“œ
-#define		INIT_ALL_ITEM			851		// ëŠ¥ë ¥ì¹˜ ì´ˆê¸°í™” ì¹´ë“œ
-#define		EX_SLOT_ITEM			839		// ìºë¦­í„° ìŠ¬ë¡ í™•ì¥ ì¹´ë“œ
-#define		EXCHANGE_WEAPON_ITEM	975		// ë¬´ê¸° êµí™˜ ì¹´ë“œ	
-#define		EXCHANGE_ARMOR_ITEM		2355	// ë°©ì–´êµ¬ êµí™˜ ì¹´ë“œ
-#define		CHANGE_MY_NAME_ITEM_UE	1120	// ìºë¦­í„° ê°œëª… ì¹´ë“œ(í†µí•©ì´ë²¤íŠ¸ ê¸°ì¡´ ê°œëª…ì¹´ë“œì—ì„œ ì†ì„œì„ ë‹¤ë¥´ê²Œ ì²˜ë¦¬)
-#define		PARTY_RECALL_ITEM1		1298	// ë¬´ê¸° êµí™˜ ì•„ì´í…œ	
-#define		PARTY_RECALL_ITEM2		1299	// ë¬´ê¸° êµí™˜ ì•„ì´í…œ	
-#define		PARTY_RECALL_ITEM3		1300	// ë¬´ê¸° êµí™˜ ì•„ì´í…œ	
-#define		PARTY_RECALL_ITEM4		1413	// ë¬´ê¸° êµí™˜ ì•„ì´í…œ	
-#define		PARTY_RECALL_ITEM5		1414	// ë¬´ê¸° êµí™˜ ì•„ì´í…œ	
-#define		PARTY_RECALL_ITEM6		1415	// ë¬´ê¸° êµí™˜ ì•„ì´í…œ	
-#define		PLATINUM_IRIS_ITEM				1416	// í”Œë˜í‹°ëŠ„ ì•„ì´ë¦¬ìŠ¤ 
-#define		PLATINUM_BOOSTER_ITEM			1417	// í”Œë˜í‹°ëŠ„ ë¶€ìŠ¤í„° 
-#define		PLATINUM_UPGRADESTONE_ITEM1		1418	// í”Œë˜í‹°ëŠ„ ì œë ¨ì„(ê°ì • ì „)	
-#define		PLATINUM_UPGRADESTONE_ITEM2		1419	// í”Œë˜í‹°ëŠ„ ì œë ¨ì„(ê°ì • í›„)
-#define		COMPOSITE_ITEM1					1420	// ê²°í•© ì£¼ë¬¸ì„œ
-#define		COMPOSITE_ITEM2					1421	// ê²°í•© ì£¼ë¬¸ì„œ
-#define		COMPOSITE_ITEM_EVENT1			2664	// ê²°í•© ì£¼ë¬¸ì„œ
-#define		COMPOSITE_ITEM_EVENT2			2665	// ê²°í•© ì£¼ë¬¸ì„œ
-#define		PET_MOUNT_CANCEL_CARD			1519	// í« ë§ˆìš´íŠ¸ í›ˆë ¨ ì·¨ì†Œ ì¹´ë“œ
-#define		UNCOMPOSITE_ITEM				1540	// ê²°í•© ë¶„ë¦¬ ì£¼ë¬¸ì„œ
-#define		PACKING_PAPER_ITEM				2046	// í¬ì¥ì§€ ì•„ì´í…œ
-#define		SMALL_CORD_ITEM					2632	// ë³µì£¼ë¨¸ë‹ˆ ë…¸ëˆ
+#define		RECOVER_HEXP_ITEM		844		// °æÇèÄ¡ º¹±¸ ÁÖ¹®¼­
+#define		RECOVER_HEXP_ITEM_LUCKY	2035	// ·°Å° °æÇèÄ¡ º¹±¸ ÁÖ¹®¼­	
+#define		RECOVER_AEXP_ITEM		845		// ¼÷·Ãµµ º¹±¸ ÁÖ¹®¼­
+#define		RECOVER_AEXP_ITEM_LUCKY	2036	// ·°Å° ¼÷·Ãµµ º¹±¸ ÁÖ¹®¼­
+#define		REBIRTH_ITEM			846		// ºÎÈ° ÁÖ¹®¼­
+#define		WARP_ITEM				857		// ¼ø°£ÀÌµ¿ ¸¶¹ı¼­
+#define		PC_SUMMON_ITEM			858		// Ä³¸¯ÅÍ(PC) ¼ÒÈ¯ ¸¶¹ı¼­	
+#define		BAAL_SUMMON_ITEM		859		// ¹Ù¾Ë ¼ÒÈ¯ ¸¶¹ı¼­
+#define		DEATHNIGHT_SUMMON_ITEM	860		// µ¥½º³ªÀÌÆ® ¼ÒÈ¯ ¸¶¹ı¼­
+#define		CHANGE_MY_NAME_ITEM		842		// Ä³¸¯ÅÍ °³¸íÄ«µå
+#define		CHANGE_GUILD_NAME_ITEM	843		// ±æµå °³¸íÄ«µå	
+#define		MEMSCROLL_EX_ITEM		840		// ¸Ş¸ğ¸® ½ºÅ©·Ñ È®Àå Ä«µå
+#define		WAREHOUSE_EX_ITEM		841		// °³ÀÎÃ¢°í È®Àå Ä«µå
+#define		INIT_STATUS_ITEM		847		// ½ºÅ×ÀÌÅÍ½º ÃÊ±âÈ­ Ä«µå
+#define		INIT_COMBAT_SKILL_ITEM	848		// ÀüÅõ½ºÅ³ ÃÊ±âÈ­ Ä«µå
+#define		INIT_SPECIAL_SKILL_ITEM	849		// Æ¯¼ö½ºÅ³ ÃÊ±âÈ­ Ä«µå
+#define		INIT_SKILL_ITEM			850		// ½ºÅ³ ÃÊ±âÈ­ ¾ÆÀÌÅÛ.
+#define		INIT_ALL_ITEM			851		// ´É·ÂÄ¡ ÃÊ±âÈ­ Ä«µå
+#define		EXCHANGE_WEAPON_ITEM	975		// ¹«±â ±³È¯ Ä«µå	
+#define		EXCHANGE_ARMOR_ITEM		2355	// ¹æ¾î±¸ ±³È¯ Ä«µå
+#define		CHANGE_MY_NAME_ITEM_UE	1120	// Ä³¸¯ÅÍ °³¸í Ä«µå(ÅëÇÕÀÌº¥Æ® ±âÁ¸ °³¸íÄ«µå¿¡¼­ ¼Ó¼­À» ´Ù¸£°Ô Ã³¸®)
+#define		PARTY_RECALL_ITEM1		1298	// ÆÄÆ¼ ¸®Äİ ¾ÆÀÌÅÛ	(24½Ã°£)
+#define		PARTY_RECALL_ITEM2		1299	// ÆÄÆ¼ ¸®Äİ ¾ÆÀÌÅÛ	(7ÀÏ°£)
+#define		PARTY_RECALL_ITEM3		1300	// ÆÄÆ¼ ¸®Äİ ¾ÆÀÌÅÛ	(30ÀÏ°£)
+#define		PARTY_RECALL_ITEM4		1413	// ÆÄÆ¼ ¸®Äİ ¾ÆÀÌÅÛ	(3½Ã°£)
+#define		PARTY_RECALL_ITEM5		1414	// ÆÄÆ¼ ¸®Äİ ¾ÆÀÌÅÛ	(7½Ã°£)
+#define		PARTY_RECALL_ITEM6		1415	// ÆÄÆ¼ ¸®Äİ ¾ÆÀÌÅÛ	(1½Ã°£)
+#define		PARTY_RECALL_IRIS		2945	// ÆÄÆ¼ ¸®Äİ ¾ÆÀÌÅÛ (¾ÆÀÌ¸®½º ´ë·ú¿¡¼­¸¸ »ç¿ë[1½Ã°£])
+#define		PARTY_RECALL_ASKA		2946	// ÆÄÆ¼ ¸®Äİ ¾ÆÀÌÅÛ (¾Æ½ºÄ«µğ¾Æ ´ë·ú¿¡¼­¸¸ »ç¿ë[1½Ã°£])
+#define		PLATINUM_IRIS_ITEM				1416	// ÇÃ·¡Æ¼´½ ¾ÆÀÌ¸®½º 
+#define		PLATINUM_BOOSTER_ITEM			1417	// ÇÃ·¡Æ¼´½ ºÎ½ºÅÍ 
+#define		PLATINUM_UPGRADESTONE_ITEM1		1418	// ÇÃ·¡Æ¼´½ Á¦·Ã¼®(°¨Á¤ Àü)	
+#define		PLATINUM_UPGRADESTONE_ITEM2		1419	// ÇÃ·¡Æ¼´½ Á¦·Ã¼®(°¨Á¤ ÈÄ)
+#define		COMPOSITE_ITEM1					1420	// °áÇÕ ÁÖ¹®¼­
+#define		COMPOSITE_ITEM2					1421	// °áÇÕ ÁÖ¹®¼­
+#define		COMPOSITE_ITEM_EVENT1			2664	// °áÇÕ ÁÖ¹®¼­
+#define		COMPOSITE_ITEM_EVENT2			2665	// °áÇÕ ÁÖ¹®¼­
+#define		PET_MOUNT_CANCEL_CARD			1519	// Æê ¸¶¿îÆ® ÈÆ·Ã Ãë¼Ò Ä«µå
+#define		UNCOMPOSITE_ITEM				1540	// °áÇÕ ºĞ¸® ÁÖ¹®¼­
+#define		PACKING_PAPER_ITEM				2046	// Æ÷ÀåÁö ¾ÆÀÌÅÛ
+#define		SMALL_CORD_ITEM					2632	// º¹ÁÖ¸Ó´Ï ³ë²ö
 // wooss 070305
 // kw : WSS_WHITEDAY_2007
-#define		BLUE_LETTER_ITEM				2135	// í•˜ëŠ˜ìƒ‰ í¸ì§€ì§€
-#define		PINK_LETTER_ITEM				2136	// í•‘í¬ìƒ‰ í¸ì§€ì§€
+#define		BLUE_LETTER_ITEM				2135	// ÇÏ´Ã»ö ÆíÁöÁö
+#define		PINK_LETTER_ITEM				2136	// ÇÎÅ©»ö ÆíÁöÁö
 
-// [KH_070315] í”„ë¦¬ë¯¸ì—„ ë©”ëª¨ë¦¬ìŠ¤í¬ë¡¤ ê´€ë ¨ ì¶”ê°€
-#define		PRIMIUM_TELEPORT				2052	// [KH_070315] í”„ë¦¬ë¯¸ì—„ ë©”ëª¨ë¦¬ìŠ¤í¬
+// [KH_070315] ÇÁ¸®¹Ì¾ö ¸Ş¸ğ¸®½ºÅ©·Ñ °ü·Ã Ãß°¡
+#define		PRIMIUM_TELEPORT				2052	// [KH_070315] ÇÁ¸®¹Ì¾ö ¸Ş¸ğ¸®½ºÅ©
 
-// [KH_070326] ë‹¬ê±€ ì´ë²¤íŠ¸ ê´€ë ¨
+// [KH_070326] ´Ş°¿ ÀÌº¥Æ® °ü·Ã
 #define		EASTER_EGGS						2148
-// [KH_070413] ìŠ¤ìŠ¹ì˜ë‚  ì´ë²¤íŠ¸ ê´€ë ¨ ì¶”ê°€
+// [KH_070413] ½º½ÂÀÇ³¯ ÀÌº¥Æ® °ü·Ã Ãß°¡
 #define		MEDAL_OF_DISCIPLE				2329
 #define		MEDAL_OF_TEACHER				2330
 
-// WSS_GUILDMASTER 070511 ì–´ë²„ì´ë‚  ì´ë²¤íŠ¸ ìƒí’ˆìœ¼ë¡œ ì¶”ê°€
-#define		MEMSCROLL_EX_ITEM_7DAYS		2348		// ë©”ëª¨ë¦¬ ìŠ¤í¬ë¡¤ í™•ì¥ ì¹´ë“œ
-#define		WAREHOUSE_EX_ITEM_7DAYS		2347		// ê°œì¸ì°½ê³  í™•ì¥ ì¹´ë“œ
+// WSS_GUILDMASTER 070511 ¾î¹öÀÌ³¯ ÀÌº¥Æ® »óÇ°À¸·Î Ãß°¡
+#define		MEMSCROLL_EX_ITEM_7DAYS		2348		// ¸Ş¸ğ¸® ½ºÅ©·Ñ È®Àå Ä«µå
+#define		WAREHOUSE_EX_ITEM_7DAYS		2347		// °³ÀÎÃ¢°í È®Àå Ä«µå
 
-#define		PET_NAMECARD_ITEM			2360		// í«ì˜ ëª…ì°°
+#define		PET_NAMECARD_ITEM			2360		// ÆêÀÇ ¸íÂû
 
 // [070824: Su-won] PET_COLOR_CHANGE
 #define		PET_COLOR_RED				2396
@@ -879,47 +820,76 @@ enum UI_MSGLCMD
 #define		MOONSTONE_STRONG_MIX_BOX			2555
 #define		MOONSTONE_TRUSTY_MIX_BOX			2556
 
-// eons ë£¨ëŒí”„ ë³€ì‹  ì£¼ë¬¸ì„œ
+// eons ·çµ¹ÇÁ º¯½Å ÁÖ¹®¼­
 #define		PET_TRANSFORM_RU			2604
 #define		PET_TRANSFORM_RETURN		2605
 
-#define		REBIRTH_ITEM_NEWBIE			2667		// ë¶€í™œ ì£¼ë¬¸ì„œ(ì´ˆë³´ììš©)
-#define		REBIRTH_ITEM_PHOENIX		3218		// í”¼ë‹‰ìŠ¤ì˜ ë¶€í™œ ì•„ì´í…œ
+#define		REBIRTH_ITEM_NEWBIE			2667		// ºÎÈ° ÁÖ¹®¼­(ÃÊº¸ÀÚ¿ë)
+#define		REBIRTH_ITEM_PHOENIX		3218		// ÇÇ´Ğ½ºÀÇ ºÎÈ° ¾ÆÀÌÅÛ
+#define		REBIRTH_ITEM_SCROLL2		4933		// rebirth second item. [11/10/2009 rumist]
+#define		REBIRTH_ITEM_EVENT			7056		// [ÀÌº¥Æ®¿ë]ºÎÈ° ÁÖ¹®¼­
 
-// Type:ì¼íšŒìš© - SubType:ê¸°íƒ€ì¼íšŒìš© ì•„ì´í…œ
+// Ä³½¬ ÀÎº¥ ¿­¼è ¾ÆÀÌÅÛ.
+#define		INVEN_CASH_KEY1				(9936)
+#define		INVEN_CASH_KEY2				(9937)
+
+#define		DEF_HOLYWATER_STRONG		(10295) // ÈûÀÇ¼º¼ö (È¦¸®¿öÅÍ) ¾ÆÀÌÅÛ
+#define		DEF_HOLYWATER_MYSTERY		(10296) // ½ÅºñÇÑ¼º¼ö (È¦¸®¿öÅÍ) ¾ÆÀÌÅÛ
+#define		DEF_HOLYWATER_DAMAGE		(10978) // °İµ¹ÀÇ¼º¼ö (È¦¸®¿öÅÍ) ¾ÆÀÌÅÛ
+#define		DEF_HOLYWATER_SKILLDAMAGE	(10979) // ±âÀûÀÇ¼º¼ö (È¦¸®¿öÅÍ) ¾ÆÀÌÅÛ
+
+// Type:ÀÏÈ¸¿ë - SubType:±âÅ¸ÀÏÈ¸¿ë ¾ÆÀÌÅÛ
 enum ITEM_ONCEUSE_ETC
 {
-	RARE_IDENTITY_ITEM1	=1838,			// ë‹ë³´ê¸°. ë ˆì–´ì•„ì´í…œ ê°ì •. ì¼ì • í™•ë¥ ë¡œ ê°ì •
-	RARE_IDENTITY_ITEM2	=1839,			// í™©ê¸ˆ ë‹ë³´ê¸°. ë ˆì–´ì•„ì´í…œ ê°ì •. 100% ê°ì •
-	GOLD_DISH =2146,					// íƒœêµ­ ì†¡í¬ë€ ì´ë²¤íŠ¸ ê¸ˆê·¸ë¦‡ 
-	SILVER_DISH =2147,					// íƒœêµ­ ì†¡í¬ë€ ì´ë²¤íŠ¸ ì€ê·¸ë¦‡
-	RARE_IDENTITY_ITEM_NEWBIE =2666,	// ì´ˆë³´ììš© ë‹ë³´ê¸°.
+	RARE_IDENTITY_ITEM1	=1838,			// µ¸º¸±â. ·¹¾î¾ÆÀÌÅÛ °¨Á¤. ÀÏÁ¤ È®·ü·Î °¨Á¤
+	RARE_IDENTITY_ITEM2	=1839,			// È²±İ µ¸º¸±â. ·¹¾î¾ÆÀÌÅÛ °¨Á¤. 100% °¨Á¤
+	GOLD_DISH =2146,					// ÅÂ±¹ ¼ÛÅ©¶õ ÀÌº¥Æ® ±İ±×¸© 
+	SILVER_DISH =2147,					// ÅÂ±¹ ¼ÛÅ©¶õ ÀÌº¥Æ® Àº±×¸©
+	RARE_IDENTITY_ITEM_NEWBIE =2666,	// ÃÊº¸ÀÚ¿ë µ¸º¸±â.
+	// socket system [5/18/2010 rumist]
+	SOCKET_ITEM_CHANCE_CARD = 5329,		// socket one more chance card.
+	PET_STAT_INIT_CARD		= 6281,		// pet status initialize card. [1/19/2011 rumist]
+	MYSTERIOUS_BEAD			= 9938,		// ½ÅºñÇÑ ¼®»ó ±¸½½ ¾ÆÀÌÅÛ
+	SEALED_SOUL				= 10022,	// ºÀÀÎµÈ ¿µÈ¥
+	EXP_PET_COOLTIME_REMOVE = 10286,	// °æÇèÄ¡Æê ÄğÅ¸ÀÓ Á¦°ÅÁ¦.
+};
+
+// HUD Type
+enum HUD_DATA_TYPE
+{
+	HUD_CHARACTER_TYPE	= 0,
+	HUD_ITEM_TYPE		= 1,
 };
 
 // Character state flags
 #define	CSF_EMPTYALL			0x00000000
-#define	CSF_SKILL				0x00000001		// ìŠ¤í‚¬ ì‚¬ìš©ì¤‘
-#define	CSF_TELEPORT			0x00000002		// ìˆœê°„ ì´ë™ì¤‘
-#define	CSF_PARTY				0x00000004		// íŒŒí‹° í”Œë ˆì´ì¤‘
-#define	CSF_PARTY_REQ			0x00000008		// íŒŒí‹° ìš”ì²­ì¤‘
-#define	CSF_EXCHANGE			0x00000010		// êµí™˜ì¤‘
-#define	CSF_SHOP				0x00000020		// ìƒì  ê±°ë˜ì¤‘
-#define CSF_REMISSION			0x00000040		// ë©´ì£„ë¶€.
-#define	CSF_PERSONALSHOP		0x00000080		// ìƒì  ê±°ë˜ì¤‘
-#define CSF_WAREHOUSE			0x00000100		// ë³´ê´€í•¨ ì´ìš©ì¤‘.
-#define CSF_CHANGEWEAPON		0x00000200		// ë¬´ê¸° êµì²´ì¤‘...
-#define CSF_QUIZ				0x00000400		// í€´ì¦ˆ ë§ì¶”ëŠ” ì¤‘.
-#define CSF_MOONSTONE			0x00000800		// ë¬¸ìŠ¤í†¤ ì´ë²¤íŠ¸ ì¤‘.
-#define CSF_CASTLE_WAR_READY	0x00001000		// ê³µì„± ì¤€ë¹„ì¤‘ì—ëŠ” ëª» ì›€ì§ì„...
-#define CSF_MOUNT_HUNGRY		0x00002000		// ë§ˆìš´íŠ¸ ìƒíƒœì—ì„œ ë°°ê°€ ê³ í””.
-// ê³µì„±, ê¸¸ë“œ ë“±ë“± ì¶”ê°€ ì˜ˆì •
+#define	CSF_SKILL				0x00000001		// ½ºÅ³ »ç¿ëÁß
+#define	CSF_TELEPORT			0x00000002		// ¼ø°£ ÀÌµ¿Áß
+#define	CSF_PARTY				0x00000004		// ÆÄÆ¼ ÇÃ·¹ÀÌÁß
+#define	CSF_PARTY_REQ			0x00000008		// ÆÄÆ¼ ¿äÃ»Áß
+#define	CSF_EXCHANGE			0x00000010		// ±³È¯Áß
+#define	CSF_SHOP				0x00000020		// »óÁ¡ °Å·¡Áß
+#define CSF_REMISSION			0x00000040		// ¸éÁËºÎ.
+#define	CSF_PERSONALSHOP		0x00000080		// »óÁ¡ °Å·¡Áß
+#define CSF_WAREHOUSE			0x00000100		// º¸°üÇÔ ÀÌ¿ëÁß.
+#define CSF_CHANGEWEAPON		0x00000200		// ¹«±â ±³Ã¼Áß...
+#define CSF_QUIZ				0x00000400		// ÄûÁî ¸ÂÃß´Â Áß.
+#define CSF_MOONSTONE			0x00000800		// ¹®½ºÅæ ÀÌº¥Æ® Áß.
+#define CSF_CASTLE_WAR_READY	0x00001000		// °ø¼º ÁØºñÁß¿¡´Â ¸ø ¿òÁ÷ÀÓ...
+#define CSF_MOUNT_HUNGRY		0x00002000		// ¸¶¿îÆ® »óÅÂ¿¡¼­ ¹è°¡ °íÇÄ.
+#define	CSF_EXPEDITION			0x00004000		// [sora] ¿øÁ¤´ë ÇÃ·¹ÀÌÁß
+#define	CSF_EXPEDITION_REQ		0x00008000		// [sora] ¿øÁ¤´ë Âü¿© ¿äÃ»Áß
+#define CSF_PETRIDING			0x00010000		// ÆêÀ» Å¸°í ÀÖ´Â Áß~~(Å¬¶ó¿¡¼­ ¼­¹öÀÀ´ä¶§±îÁö)
+#define CSF_SKILLREADY			0x00020000		// ½ºÅ³ ·¹µğ Ã³¸® Áß
+#define CSF_ITEMWEARING			0x00040000		// Àåºñ Âø¿ë ¹× ±³Ã¼ ½Ãµµ Áß
+// °ø¼º, ±æµå µîµî Ãß°¡ ¿¹Á¤
 
-// ì´ë™í•  ìˆ˜ ì—†ëŠ” ìƒíƒœ
+// ÀÌµ¿ÇÒ ¼ö ¾ø´Â »óÅÂ
 #define CSF_CANNOT_MOVE_MASK		( CSF_SKILL | CSF_TELEPORT | CSF_PERSONALSHOP | CSF_MOONSTONE | CSF_CASTLE_WAR_READY | CSF_MOUNT_HUNGRY )
-// ìˆœê°„ ì´ë™ í•  ìˆ˜ ì—†ëŠ” ìƒíƒœ
+// ¼ø°£ ÀÌµ¿ ÇÒ ¼ö ¾ø´Â »óÅÂ ([sora]¿øÁ¤´ë Ãß°¡)
 #define	CSF_CANNOT_TELEPORT_MASK	( CSF_SKILL | CSF_TELEPORT | CSF_PARTY_REQ |		\
-									  CSF_EXCHANGE | CSF_PERSONALSHOP )					\
-// ì•‰ì„ ìˆ˜ ì—†ëŠ” ìƒíƒœ
+									  CSF_EXCHANGE | CSF_PERSONALSHOP | CSF_EXPEDITION_REQ )					\
+// ¾ÉÀ» ¼ö ¾ø´Â »óÅÂ
 #define CSF_CANNOT_SITDOWN_MASK		( CSF_SKILL | CSF_TELEPORT | CSF_EXCHANGE )
 #define CSF_CANNOT_ATTACK_MASK		( CSF_CASTLE_WAR_READY )
 
@@ -928,39 +898,39 @@ enum ITEM_ONCEUSE_ETC
 #define	UI_VALID_SQRDIST			300.0f
 
 
-// edit by cpp2angel (04.12.20) : ìƒì‚° ì¸í„°í˜ì´ìŠ¤ì— ì‚¬ìš©ë˜ëŠ” ì¹¼ë¼ ê°’
-#define COLOR_TITLE		0xe1b300ff	// íƒ€ì´í‹€ 
-#define COLOR_SUB_TITLE	0xff9170ff	// ì„œë¸Œ íƒ€ì´í‹€ 
-#define COLOR_TEXT		0xffffffff	// ê¸°ë³¸ í…ìŠ¤íŠ¸ì— ì‚¬ìš© 
-#define COLOR_NONE		0x7f7f7fff	// ì—†ëŠ” ì¡°ê±´ë“¤
+// edit by cpp2angel (04.12.20) : »ı»ê ÀÎÅÍÆäÀÌ½º¿¡ »ç¿ëµÇ´Â Ä®¶ó °ª
+#define COLOR_TITLE		0xe1b300ff	// Å¸ÀÌÆ² 
+#define COLOR_SUB_TITLE	0xff9170ff	// ¼­ºê Å¸ÀÌÆ² 
+#define COLOR_TEXT		0xffffffff	// ±âº» ÅØ½ºÆ®¿¡ »ç¿ë 
+#define COLOR_NONE		0x7f7f7fff	// ¾ø´Â Á¶°Çµé
 
-// Time ê´€ë ¨ ë©”í¬ë¡œ
-// Date : 2005-07-07(ì˜¤í›„ 3:21:10), By Lee Ki-hwan
+// Time °ü·Ã ¸ŞÅ©·Î
+// Date : 2005-07-07(¿ÀÈÄ 3:21:10), By Lee Ki-hwan
 #define MINUTE_TO_SEC(x)	((x)*60)
 #define HOUR_TO_SEC(x)		((x)*60*60)
 #define DAY_TO_SEC(x)		((x)*60*60*24)
 
-// Week ê´€ë ¨ ë©”í¬ë¡œ
-// Date : 2005-07-07(ì˜¤í›„ 3:21:20), By Lee Ki-hwan
-enum EWEEK { SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, NOTDAY };
+// Week °ü·Ã ¸ŞÅ©·Î
+// Date : 2005-07-07(¿ÀÈÄ 3:21:20), By Lee Ki-hwan
+enum EWEEK { SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY };
 
-// Date : 2005-11-16(ì˜¤í›„ 7:42:49), By Lee Ki-hwan
-// íƒ€ê²© Type 
-#define		HITTYPE_MISS			(1 << 0)		// íšŒí”¼
-#define		HITTYPE_WEAK			(1 << 1)		// ì•½í•˜ê²Œ
-#define		HITTYPE_NORMAL			(1 << 2)		// ë³´í†µ
-#define		HITTYPE_STRONG			(1 << 3)		// ê°•í•˜ê²Œ
-#define		HITTYPE_HARD			(1 << 4)		// ë§¤ìš° ê°•í•˜ê²Œ
-#define		HITTYPE_CRITICAL		(1 << 5)		// í¬ë¦¬í‹°ì»¬
-#define		HITTYPE_DEADLY			(1 << 6)		// ì£½ë„ë¡ ê°•í•˜ê²Œ
+// Date : 2005-11-16(¿ÀÈÄ 7:42:49), By Lee Ki-hwan
+// Å¸°İ Type 
+#define		HITTYPE_MISS			(1 << 0)		// È¸ÇÇ
+#define		HITTYPE_WEAK			(1 << 1)		// ¾àÇÏ°Ô
+#define		HITTYPE_NORMAL			(1 << 2)		// º¸Åë
+#define		HITTYPE_STRONG			(1 << 3)		// °­ÇÏ°Ô
+#define		HITTYPE_HARD			(1 << 4)		// ¸Å¿ì °­ÇÏ°Ô
+#define		HITTYPE_CRITICAL		(1 << 5)		// Å©¸®Æ¼ÄÃ
+#define		HITTYPE_DEADLY			(1 << 6)		// Á×µµ·Ï °­ÇÏ°Ô
 
-// Date : 2005-11-16(ì˜¤í›„ 1:17:00), By Lee Ki-hwan
+// Date : 2005-11-16(¿ÀÈÄ 1:17:00), By Lee Ki-hwan
 typedef struct _tagDAMAGE
 {
-	SBYTE	sbTargetFlag;	// íƒ€ê²© ì¢…ë¥˜ 
-	ULONG	ulDamage;		// ë°ë¯¸ì§€ í¬ê¸°
-	ULONG	ulIndex;		// íƒ€ê²©ì„ ì¤€ Index
-	FLOAT	fX, fY;			// ì¶œë ¥ 
+	SBYTE	sbTargetFlag;	// Å¸°İ Á¾·ù 
+	ULONG	ulDamage;		// µ¥¹ÌÁö Å©±â
+	ULONG	ulIndex;		// Å¸°İÀ» ÁØ Index
+	FLOAT	fX, fY;			// Ãâ·Â 
 	DOUBLE	dStartTime;
 	BOOL	bVisible;
 	FLOAT	fSize;
@@ -971,6 +941,7 @@ typedef struct _tagDAMAGE
 	{
 		sbTargetFlag	= 0;
 		ulDamage		= 0;
+		ulIndex			= 0;
 		fX = fY			= 0.0f;
 		dStartTime		= 0.0f;
 		bVisible		= FALSE;
@@ -997,29 +968,90 @@ typedef struct _stHELP1
 	int			m_width;
 	int			m_height;
 
-} HELP1;
+	int		transFlag;	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
 
+	_stHELP1()
+	{
+		m_index = -1;
+		transFlag = 0;
+	}
+
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslate();
+	void ClearNoTranslate();
+} HELP1;
 typedef HELP1* pHELP1;
 // ----------------------------------------------------------------<<
-
-
-const int RareItem_Name_Color[5] = { 0x1C54CCFF, 0x20A51CFF, 0xE5E230FF, 0xFFFFFFFF, 0xFFFFFFFF};
-
-// FIXME : ì¦ì€ ì‚½ì…ê³¼ ì‚­ì œê°€ ìˆëŠ” ë¶€ë¶„ì´ë¯€ë¡œ listê°€ ì €ì ˆí• ë“¯...
+// FIXME : ÀæÀº »ğÀÔ°ú »èÁ¦°¡ ÀÖ´Â ºÎºĞÀÌ¹Ç·Î list°¡ ÀúÀıÇÒµí...
 typedef std::vector<DAMAGE>		DAMAGE_deque;
 
+// added by sam 11/03/02
+// ¹ø¿ª µÇÁö¾ÊÀº ½ºÆ®¸µ ÀúÀåÀ» À§ÇÑ º¤ÅÍ 
+// [2011/05/31 : Sora] Å¬¶óÀÌ¾ğÆ® ¸¸ÀÌ ¾Æ´Ï°í ´Ù¸¥°÷¿¡µµ »ç¿ëÇÒ ¼ö ÀÖ°Ô È®Àå
+enum eTransTab
+{
+	CLIENT_STRING = 0,
+	ITEM_STRING,
+	NPC_STRING,
+	SKILL_STRING,
+	QUEST_STRING,
+	RARE_OPTION_STRING,
+	ACTION_STRING,
+	OPTION_STRING,
+	SPECIAL_SKILL_STRING,
+	HELP1_STRING,
+	MONSTER_COMBO_STRING,
+	AFFINITY_STRING,
+	ITEMCOLLECTION_STRING,
+	TYPE_MAX
+};
+
+enum eHUD_RENDER_UI_TYPE
+{
+	eRENDER_UI_TYPE_NONE = 0,
+	eRENDER_UI_TYPE_CASHSHOP,
+	eRENDER_UI_TYPE_MAKETITLE
+};
+
+//_RTWidth = 366, _RTHeight = 226,
+#define		DEF_DEFAULT_RT_WIDTH	366
+#define		DEF_DEFAULT_RT_HEIGHT	226
+
+class CUIGuildMarkIcon;
+class CUIIcon;
+class CUIImageSplit;
+
+typedef std::vector<INDEX> NO_TRANS_STRING_INDEX;
+typedef NO_TRANS_STRING_INDEX::iterator NO_TRANS_STRING_INDEX_IT;
 // ----------------------------------------------------------------------------
 // Name : CUIManager
 // Desc :
 // ----------------------------------------------------------------------------
-class ENGINE_API CUIManager
+class ENGINE_API CUIManager : public CUIWindowDeclare,
+							  public CSingletonBase<CUIManager>
 {
+	friend CSingletonBase<CUIManager>;
+
+private:
+	CUIManager();
+	virtual ~CUIManager();
+	
+public:
+	enum UVRectPos {
+		UV_UL, UV_UM, UV_UR,
+		UV_ML, UV_MM, UV_MR,
+		UV_LL, UV_LM, UV_LR,
+		UV_Total,
+	};
+
 protected:
-	UIGameState		m_ugsGameState;						// Game state for UIs
 	CDrawPort		*m_pUIDrawPort;						// Pointer of draw port for rendering UIs
-	CUIWindow		*m_apUIs[UI_TYPE_END];				// Pointers of UIs
+	
+	CUIWindow		*m_apUIsOld;						// Prev Select UI
 	int				m_aUIOrder[UI_TYPE_END];			// Order of UIs
-	CUIButtonEx		m_btnHoldBtn;						// Holding button
+	int				m_nDragX, m_nDragY;
+	CUIIcon*		m_pIconDrag;
+	CUIBase*		m_pBaseDrag;
 	CUIMouseCursor	*m_pumcMouseCursor;					// Pointer of mouse cursor
 	BOOL			m_bShowUIs;							// If UIs are shown or not
 	BOOL			m_bRButtonDown;						// Hide mouse cursor if lbutton is down
@@ -1031,9 +1063,11 @@ protected:
 	// Name, chatting & shop popup
 	CTextureData	*m_ptdPopupTexture;					// Texture of popup
 	CTextureData	*m_ptBlackTexture;					// Texture of popup
+	CTextureData	*m_ptdExpeditionTexture;
 
 	UIRect			m_rcName;							// Region of name
 	UIRect			m_rcGuildName;						// Region of name
+	UIRect			m_rcNickName;						// Region of nickname
 	UIRect			m_rcGuild;							// Region of guild
 	UIRect			m_rcChat;							// Region of chatting
 	UIRect			m_rcShop;							// Region of shop
@@ -1042,6 +1076,9 @@ protected:
 	UIRectUV		m_rtNameL;							// UV of name
 	UIRectUV		m_rtNameC;
 	UIRectUV		m_rtNameR;
+	UIRectUV		m_rtPremiumNameL;					// UV of Premium char name effect
+	UIRectUV		m_rtPremiumNameC;
+	UIRectUV		m_rtPremiumNameR;
 	UIRectUV		m_rtNameRPK;
 	UIRectUV		m_rtNameRDefPK1;
 	UIRectUV		m_rtNameRDefPK2;
@@ -1072,29 +1109,64 @@ protected:
 	UIRectUV		m_rtShopPremLL;
 	UIRectUV		m_rtShopPremLo;
 	UIRectUV		m_rtShopPremRL;
+	UIRectUV		m_rtNickNameL;							// UV of name
+	UIRectUV		m_rtNickNameC;
+	UIRectUV		m_rtNickNameR;
+	
+	CUIImageSplit*	m_pIsMakeTitleGuideLine;
+
+	UIRectUV		m_rtTargetLabel[LABEL_INDEX_TOTAL];	//0 µµ³¢, 1 À¯·É, 2 ¹ß¹Ù´Ú, 3 Á¶°¢Ä®, 4 ¶Ë, 5 ¾Ç¸¶, 6 ÇØ°ñ 
 
 	CStaticArray<CTString>	m_aStringData;				// Array of string data
 
 	DWORD			m_dwCSF;							// Character state flags
+	TIME			m_tCSFElapsedTime;					// CSF ElapsedTime
 
 	CGame			*m_pGame;
 	int				m_LocalVersion;
 
+	CTString		m_strSubJobName[TOTAL_SUBJOB];			// [2010/08/26 : Sora] ADD_SUBJOB º¸Á¶ Á÷¾÷¸í
+
+	CRenderTexture* m_RenderTarget;							// [3/18/2011 kiny8216] LuckyDraw Open Rendter Target
+	BOOL			m_bShowAni;								// [3/18/2011 kiny8216] LuckyDraw Render
+	FLOAT			m_fAniStartTime;						// [3/18/2011 kiny8216] LuckyDraw Animation Time
+	CTextureData	*m_ptdAniBG;							// [3/18/2011 kiny8216] LuckyDraw Animation BackGround Texture
+	CUIRectSurface	m_AniBackGround;						// [3/18/2011 kiny8216] LuckyDraw Animation BackGround Render Surface
 public :
 	// wooss 050822 
-	// TEST UIë¥¼ ìœ„í•´ ì¶”ê°€
-	// TEST í™˜ê²½ì´ ì•„ë‹ ê²½ìš° ì´ë¶€ë¶„ì„ 0ë¡œ ì²˜ë¦¬ 
+	// TEST UI¸¦ À§ÇØ Ãß°¡
+	// TEST È¯°æÀÌ ¾Æ´Ò °æ¿ì ÀÌºÎºĞÀ» 0·Î Ã³¸® 
 	// testUI_TYPE
-	BOOL			m_testUI_MODE;
-	UI_TYPE			m_testUI_TYPE;		//wooss  UI test variable 
 	int				m_mPosX,m_mPosY;
-	int				m_nHelpNpc_Index;	// NPC ì•ˆë‚´ì‹œìŠ¤í…œ 
+	int				m_JapanTempEvent;					// ÀÏº» º¸¹° »óÀÚ ÀÌº¥Æ® ¹ß»ı À¯¹« ÀúÀå
+
+	int				m_nHelpNpc_Index;	// NPC ¾È³»½Ã½ºÅÛ 
+	// connie [2009/9/16] - NPC Ã£±â
+	FLOAT			m_fHelpMobX, m_fHelpMobZ;
+	BOOL			m_IsHelpMob;
+	UINT			m_NPCScrollZoneNo;				// BUG FIX : TO-KR-T20100223-010 [2/24/2010 rumist]
+	BOOL			m_IsInField;
 	// wooss 070324 --------------------------------------------------->><<
 	// kw : WSS_HELP_SYSTEM_1
 	CStaticArray<HELP1>	m_aHelp1Data;				// Array of string data
 
 	CUIDrawBox		m_bxGuildRankBox;				// WSS_GUILDMASTER 070517	
 
+	CUIEditBox		m_ebRefCntReturn;				// ÂüÁ¶ °ü·Ã Ã¼Å©¿ë.(¾Æ³ö ¿ø·¡ ÀÌ·¸°Ô ¾ÈÂ¥´Âµ¥.;;¤Ì¤Ì;) [11/23/2009 rumist]
+	CUIMultiEditBox m_mbRefCntReturn;				// ¸ÖÆ¼¿ë.
+
+	CDamageLogInfo	m_DamageLogInfo;				// QAÆÀ ¹ë·±½º Å×½ºÆ® ¿ë
+
+	int				 	m_nCurInfoLines;						// Count of current item information lines
+	CTString			m_strItemInfo[MAX_CASH_ITEMINFO_LINE];							// Item information string
+	COLOR				m_colItemInfo[MAX_CASH_ITEMINFO_LINE];							// Color of item information string
+
+	NO_TRANS_STRING_INDEX m_vecNoTrans[TYPE_MAX];
+
+	bool	m_bCursorInGame;
+	std::vector<std::string>	m_vecAdditionalPath;
+
+	void	RenderHUDObjectNamePopup(CEntity* pHudEntity, CDrawPort* pDraw, CProjection3D* pprProjection);
 protected:
 	// Internal functions
 	void	RenderObjectNamePopup( CProjection3D* pprProjection );
@@ -1103,36 +1175,37 @@ protected:
 	// wooss 070324 --------------------------------------------------->>
 	// kw : WSS_HELP_SYSTEM_1
 	void	LoadHelp1Data( const CTFileName &fnString );
+	void	LoadHelp1String();
 	// ----------------------------------------------------------------<<
 
 	// Command functions
-	void	DropItem( int nTab, int nRow, int nCol );
+	void	DropItem( int nTab, int inven_idx );
 
 	// Network message functions ( send )
-	void	SendDropItem( int nTab, int nRow, int nCol, SQUAD llCount = 1 );
+	void	SendDropItem( int nTab, int inven_idx, SQUAD llCount = 1 );
 
+public:
 	// WSS_GUILDMASTER 070517 ---------------------------------------->><<
 	void	DrawGuildRankBox(UIRect,SBYTE,FLOAT);
 
-public:
 	int				m_nShowMessageBox;
-
-	CUIManager();
-	~CUIManager();
 
 	// Create & destroy
 	void	Create();
-	void	Destroy();
+
+	void	InitHardCoreCreate();
+	void	DestroyAll();
+
+	void	InitUIString();
 
 	// Render
 	void	Render( CDrawPort *pdp, CProjection3D* pprProjection );
-
-	// Set game
-	void	SetBackgroundWorld( CWorld *pWorld );
+	
 	void	SetGameHandle( CGame *pGame );
 
 	// Get drawport
 	CDrawPort	*GetDrawPort() const { return m_pUIDrawPort; }
+	void	SetDrawPort( CDrawPort* pDraw ) { m_pUIDrawPort = pDraw; }
 	PIX		GetMinI() const { return m_pixMinI; }
 	PIX		GetMinJ() const { return m_pixMinJ; }
 	PIX		GetMaxI() const { return m_pixMaxI; }
@@ -1141,8 +1214,10 @@ public:
 	// String data
 	CTString	&GetString( INDEX iIndex )
 	{
-		ASSERT( iIndex < m_aStringData.Count() );
-		return m_aStringData[iIndex];
+		#pragma warning( disable:4172 )
+		static CTString nullStr = "";
+		//nullStr = "";
+		return iIndex < m_aStringData.Count() ? m_aStringData[iIndex] : nullStr;
 	}
 	CTString	&GetString( INDEX iIndex, INDEX iSrc );
 	CTString	&GetString( INDEX iIndex, const char *szSrc );
@@ -1151,9 +1226,8 @@ public:
 	CTString	&GetString( INDEX iIndex, const CTString &strSrc1, const CTString &strSrc2 );
 
 	// Game state
-	void	SetUIGameState( UIGameState ugsGameState );
-	UIGameState	GetUIGameState() const { return m_ugsGameState; }
-
+	void	SetUIGameState(BOOL bGameOn = FALSE);
+	
 	// Toggle visible UIs
 	void	ToggleVisibleUIs() { m_bShowUIs = !m_bShowUIs; }
 	BOOL	IsVisibleUIs()		{ return m_bShowUIs; }
@@ -1164,13 +1238,27 @@ public:
 
 	// Adjust position of UIs
 	void	ResetUIPos( CDrawPort *pdp );		// Initialize position of UIs
+	void	ResetUISavePos( CDrawPort *pdp );		// Initialize position of UIs
 	void	AdjustUIPos( CDrawPort *pdp );		// Adjust position of UIs when main window changes
 
 	// Set & get character state flags
-	void	SetCSFlagOn( DWORD dwCSF ) { m_dwCSF |= dwCSF; }
-	void	SetCSFlagOff( DWORD dwCSF ) { m_dwCSF &= ~dwCSF; }
+	void	SetCSFlagOn( DWORD dwCSF );
+	void	SetCSFlagOff( DWORD dwCSF ) {
+#ifdef	VER_TEST
+	if (dwCSF == CSF_TELEPORT)
+		LOG_DEBUG("@@@@@ FREE CSF_TELEPORT");
+#endif	// VER_TEST
+		
+		m_dwCSF &= ~dwCSF; 
+	}
 	void	ResetCSFlag() { m_dwCSF = 0; }
 	DWORD	IsCSFlagOn( DWORD dwCSF ) { return m_dwCSF & dwCSF; }
+	BOOL	IsInputLock();
+
+	void	SetCSFlagOnElapsed( DWORD dwCSF, TIME tTime ) { m_dwCSF |= dwCSF; m_tCSFElapsedTime = tTime; }
+	void	SetCSFlagOffElapsed( DWORD dwCSF ) { m_dwCSF &= ~dwCSF; m_tCSFElapsedTime = 0; }
+	void	ResetCSFlagElapsed() { m_dwCSF = 0; m_tCSFElapsedTime = 0; }
+	DWORD	IsCSFlagOnElapsed( DWORD dwCSF, TIME tElapsedTime );
 
 	// Set & get mouse position state
 	void	SetMouseCursorInsideUIs( UIMCType umctType = UMCT_NORMAL )
@@ -1178,6 +1266,7 @@ public:
 		m_umctTypeInUI = umctType;
 		m_bMouseInsideUIs = TRUE;
 	}
+	void	SetMouseInsideUIs(BOOL bOn) { m_bMouseInsideUIs = bOn; }
 	BOOL	IsMouseInsideUIs() const { return m_bMouseInsideUIs; }
 	BOOL	IsInsideUpperUIs( INDEX iCurUIIndex, int nX, int nY );
 
@@ -1189,118 +1278,36 @@ public:
 
 	// Get UIs
 	CUIWindow			*GetUI( int nUIIndex ) const { return m_apUIs[nUIIndex]; }
-	CUIChatting			*GetChatting() { return (CUIChatting *)m_apUIs[UI_CHATTING]; }
-	CUIPlayerInfo		*GetPlayerInfo() { return (CUIPlayerInfo *)m_apUIs[UI_PLAYERINFO]; }
-	CUITargetInfo		*GetTargetInfo() { return (CUITargetInfo *)m_apUIs[UI_TARGETINFO]; }
-	CUIHelpIcon			*GetHelpIcon() { return (CUIHelpIcon *)m_apUIs[UI_HELP_ICON]; }
-	CUIQuickSlot		*GetQuickSlot() { return (CUIQuickSlot *)m_apUIs[UI_QUICKSLOT]; }
-	CUIRadar			*GetRadar() { return (CUIRadar *)m_apUIs[UI_RADAR]; }
-	CUIInventory		*GetInventory() { return (CUIInventory *)m_apUIs[UI_INVENTORY]; }
-	CUICharacterInfo	*GetCharacterInfo() { return (CUICharacterInfo *)m_apUIs[UI_CHARACTERINFO]; }
-	CUIExchange			*GetExchange() { return (CUIExchange *)m_apUIs[UI_EXCHANGE]; }
-	CUIPortal			*GetPortal() { return (CUIPortal *)m_apUIs[UI_PORTAL]; }
-	CUIShop				*GetShop() { return (CUIShop *)m_apUIs[UI_SHOP]; }
-	CUIQuiz				*GetQuiz() { return (CUIQuiz *)m_apUIs[UI_QUIZ]; }
-	CUIPetTraining		*GetPetTraining() { return (CUIPetTraining *)m_apUIs[UI_PETTRAINING]; }
-	CUIPetInfo			*GetPetInfo() { return (CUIPetInfo *)m_apUIs[UI_PETINFO]; }
-	CUIGamble			*GetGamble() { return (CUIGamble *)m_apUIs[UI_GAMBLE]; }
-	CUIPersonalShop		*GetPersonalShop() { return (CUIPersonalShop *)m_apUIs[UI_PERSONALSHOP]; }
-	CUIGuild			*GetGuild() { return (CUIGuild *)m_apUIs[UI_GUILD]; }
-	CUIRanking			*GetRanking() { return (CUIRanking *)m_apUIs[UI_RANKING]; }
-	CUIPetTargetInfo	*GetPetTargetInfo() { return (CUIPetTargetInfo *)m_apUIs[UI_PETTARGETINFO]; }
-	CUIWildPetTargetInfo	*GetWildPetTargetInfo() { return (CUIWildPetTargetInfo *)m_apUIs[UI_WILDPETTARGETINFO]; }
-	CUIGuildBattle		*GetGuildBattle() { return (CUIGuildBattle *)m_apUIs[UI_GUILD_BATTLE]; }
-	CUIBilling			*GetBilling() { return (CUIBilling *)m_apUIs[UI_BILLING]; }
-	CUIBillItem			*GetBillItem() { return (CUIBillItem *)m_apUIs[UI_BILL_ITEM]; }
-	CUIWareHouse		*GetWareHouse() { return (CUIWareHouse *)m_apUIs[UI_WAREHOUSE]; }
-	CUISecurity			*GetSecurity() { return (CUISecurity *)m_apUIs[UI_SECURITY]; }
-	CUISystemMenu		*GetSystemMenu() { return (CUISystemMenu *)m_apUIs[UI_SYSTEMMENU]; }
-	CUIParty			*GetParty() { return (CUIParty *)m_apUIs[UI_PARTY]; }
-	CUIMap				*GetMap() { return (CUIMap *)m_apUIs[UI_MAP]; }
-	CUIOption			*GetOption() { return (CUIOption *)m_apUIs[UI_OPTION]; }
-	CUIRefine			*GetRefine() { return (CUIRefine *)m_apUIs[UI_REFINE]; }
-	CUIProcess			*GetProcess() { return (CUIProcess *)m_apUIs[UI_PROCESS]; }
-	CUIProduct			*GetProduct() { return (CUIProduct *)m_apUIs[UI_PRODUCT]; }
-	CUIProcessNPC		*GetProcessNPC() { return (CUIProcessNPC *)m_apUIs[UI_PROCESSNPC]; }
-	CUISelectResource	*GetSelectResource() { return (CUISelectResource *)m_apUIs[UI_SELECTRESOURCE]; }
-	CUIGuildWarPortal	*GetGuildWarPortal() { return (CUIGuildWarPortal *)m_apUIs[UI_GUILDWARPORTAL]; }
-	CUIMix				*GetMix() { return (CUIMix *)m_apUIs[UI_MIX]; }
-	CUIMixNew			*GetMixNew() { return (CUIMixNew *)m_apUIs[UI_MIXNEW]; }
-	CUICompound			*GetCompound() { return (CUICompound *)m_apUIs[UI_COMPOUND]; }
-	CUIGuildStash		*GetGuildStash() { return (CUIGuildStash *)m_apUIs[UI_GUILDSTASH]; }
 
-	CUIRemission		*GetRemission() { return (CUIRemission *)m_apUIs[UI_REMISSION]; }
-	CUIQuest			*GetQuest() { return (CUIQuest *)m_apUIs[UI_QUEST]; }
-	CUIQuestBook		*GetQuestBookList() { return (CUIQuestBook *)m_apUIs[UI_QUESTBOOK_LIST]; }
-	CUIQuestBook		*GetQuestBookContent() { return (CUIQuestBook *)m_apUIs[UI_QUESTBOOK_CONTENT]; }
-	CUIQuestBook		*GetQuestBookComplete() { return (CUIQuestBook *)m_apUIs[UI_QUESTBOOK_COMPLETE]; }
-	CUIQuestBook		*GetQuestBookNew() { return (CUIQuestBook *)m_apUIs[UI_QUESTBOOK_NEW]; }
-
-	CUISummon			*GetSummonFirst() { return (CUISummon *)m_apUIs[UI_SUMMON_FIRST]; }
-	CUISummon			*GetSummonSecond() { return (CUISummon *)m_apUIs[UI_SUMMON_SECOND]; }
-
-	CUISkillLearn		*GetSkillLearn() { return (CUISkillLearn *)m_apUIs[UI_SKILLLEARN]; }
-	CUIChangeWeapon		*GetChangeWeapon() { return (CUIChangeWeapon *)m_apUIs[UI_CHANGEWEAPON]; }
-	CUIHelper			*GetHelper() { return (CUIHelper *)m_apUIs[UI_HELPER]; }
-	CUISingleBattle		*GetSingleBattle() { return (CUISingleBattle *)m_apUIs[UI_SINGLE_BATTLE]; }
-	CUIHelp				*GetHelp() { return (CUIHelp *)m_apUIs[UI_HELP]; }
-	CUIHelpOld			*GetHelpOld() { return (CUIHelpOld *)m_apUIs[UI_HELP]; }
-	CUIInitJob			*GetInitJob() { return (CUIInitJob *)m_apUIs[UI_INITJOB]; }
-	CUITeleport			*GetTeleport() { return (CUITeleport *)m_apUIs[UI_TELEPORT]; }
-	CUITeleportPrimium	*GetTeleportPrimium() { return (CUITeleportPrimium *)m_apUIs[UI_TELEPORT_PRIMIUM]; }	// [KH_070315] í”„ë¦¬ë¯¸ì—„ ë©”ëª¨ë¦¬ìŠ¤í¬ë¡¤ ê´€ë ¨ ì¶”ê°€
-	CUIHelp3			*GetHelp3() { return (CUIHelp3 *)m_apUIs[UI_HELP3]; }
-	CUIMessenger		*GetMessenger() { return (CUIMessenger *)m_apUIs[UI_MESSENGER]; }
-	CUITalk				*GetTalk( int iUIIndex ) { return (CUITalk *)m_apUIs[iUIIndex]; }
-	CUIWebBoard			*GetWebBoard() { return (CUIWebBoard *)m_apUIs[UI_WEBBOARD]; }
-	CUINotice			*GetNotice() { return (CUINotice *)m_apUIs[UI_NOTICE]; }
-	CUISiegeWarfare		*GetSiegeWarfare() { return (CUISiegeWarfare *)m_apUIs[UI_SIEGE_WARFARE]; }
-	CUISiegeWarfareNew	*GetSiegeWarfareNew() { return (CUISiegeWarfareNew *)m_apUIs[UI_SIEGE_WARFARE_NEW]; } // WSS_DRATAN_SIEGEWARFARE 070727
-	CUICashShop			*GetCashShop() { return (CUICashShop*)m_apUIs[UI_CASH_SHOP];}				//wooss
-	CUISimplePop		*GetSimplePop() { return (CUISimplePop*)m_apUIs[UI_SIMPLE_POP]; }	// [KH_070419] ì‹¬í”Œ íŒì—… ê´€ë ¨ ì¶”ê°€
-	CUIGWMix			*GetGWMix() { return (CUIGWMix *)m_apUIs[UI_GW_MIX]; }
-	CUISelectWord		*GetSelectWord() { return (CUISelectWord*)m_apUIs[UI_SELECTWORD]; }
-	CUISelectList		*GetSelectList() { return (CUISelectList*)m_apUIs[UI_SELECTLIST]; } // ì¹œêµ¬ì°¾ê¸° ì´ë²¤íŠ¸ 060126
-	CUIPetItemMix		*GetPetItemMix() { return (CUIPetItemMix*)m_apUIs[UI_PETITEMMIX]; } // í«ì•„ì´í…œ ì¡°í•©( ìœ ë‹ˆí¬ )
-	CUIPetFree			*GetPetFree()	{ return (CUIPetFree*)m_apUIs[UI_PETFREE]; } // í« ë´‰ì¸ í•´ì œ
-	CUIOXQuizEvent		*GetOXQuizEvent() { return (CUIOXQuizEvent*)m_apUIs[UI_QUIZEVENT]; } // O.X í€´ì¦ˆ ì´ë²¤íŠ¸
-	CUIPartyAuto		*GetPartyAuto() { return (CUIPartyAuto*)m_apUIs[UI_PARTYAUTO]; } // party auto matching
-	CUICollectBox		*GetCollectBox() { return (CUICollectBox*)m_apUIs[UI_COLLECTBOX]; } // ê³¤ì¶© ì±„ì§‘ìƒì
-	CUIBingoBox			*GetBingoBox() { return (CUIBingoBox*)m_apUIs[UI_BINGOBOX]; } // ì´ˆì½”ë › ìˆ˜ì§‘ ìƒì
-	CUINpcHelp			*GetNpcHelp() {return (CUINpcHelp*)m_apUIs[UI_NPCHELP];} //Npc ì•ˆë‚´ì‹œìŠ¤í…œ
-	CUIMinigame			*GetMinigame() {return (CUIMinigame*)m_apUIs[UI_MINIGAME];} //WSS_MINIGAME 070418
-	CUIFlowerTree		*GetFlowerTree() {return (CUIFlowerTree*)m_apUIs[UI_FLOWERTREE];} // ê½ƒë†€ì´ ì¸í„°í˜ì´ìŠ¤
-	CUIGuildNotice		*GetGuildNotice() {return (CUIGuildNotice*)m_apUIs[UI_GUILD_NOTICE];}// WSS_NEW_GUILD_SYSTEM 070715 
-
-	CUILogin			*GetLogin() { return (CUILogin *)m_apUIs[UI_LOGIN]; }
-	CUISelChar			*GetSelChar() { return (CUISelChar *)m_apUIs[UI_SEL_CHAR]; }
-	CUICreateChar		*GetCreateChar() { return (CUICreateChar *)m_apUIs[UI_CREATE_CHAR]; }
-	CUISelectServer		*GetSelServer() { return (CUISelectServer *)m_apUIs[UI_SEL_SERVER]; }
-	CUIMonsterCombo		*GetCombo() {return(CUIMonsterCombo *)m_apUIs[UI_MONSTER_COMBO]; }
-	CUIWildPetInfo		*GetWildPetInfo() {return (CUIWildPetInfo *)m_apUIs[UI_WILDPET_INFO]; }
-	CUIAuction			*GetAuction() { return (CUIAuction *)m_apUIs[UI_AUCTION]; }
-
-	CUITatoo			*GetTatoo() { return (CUITatoo *)m_apUIs[UI_TATOO]; }	// [090709: selo] í« ë¬¸ì–‘ ì‹œìŠ¤í…œ
-
-	//[ttos_2009_7_17]: CHARATER_CHAT_FILTER ìºë¦­í„° ì±„íŒ… í•„í„°
-	CUIChatFilter		*GetChatFilter()	{ return (CUIChatFilter *)m_apUIs[UI_CHAT_FILTER]; }
-	CGame				*GetGame() { return m_pGame; }
-
+	CGame*	GetGame() { return m_pGame; }
+	
 	// Holding button
-	void	SetHoldBtn( CUIButtonEx &btnHolding ) { m_btnHoldBtn.Copy( btnHolding ); }
-	void	ResetHoldBtn() { m_btnHoldBtn.InitBtn(); }
-	CUIButtonEx	&GetHoldBtn() { return m_btnHoldBtn; }
+	void	SetHoldBtn(CUIIcon* pIcon);
+	void	SetHoldBtn(CUIBase* pBase);
+
+	void	ResetHoldBtn() { 
+		m_pIconDrag = NULL;
+		m_pBaseDrag = NULL;
+		m_nDragX = -100;
+		m_nDragY = -100;
+	}
+	CUIIcon* GetDragIcon()		{ return m_pIconDrag; }
+	CUIBase* GetDragBase()		{ return m_pBaseDrag; }
 
 	// MessageBox
-	void	CreateMessageBox( CUIMsgBox_Info &rMsgBoxInfo, int nPosX = -1, int nPosY = -1 );
+	BOOL	CreateMessageBox( CUIMsgBox_Info &rMsgBoxInfo, int nPosX = -1, int nPosY = -1 );
 	void	CloseMessageBox( int nCommandCode );
 	BOOL	DoesMessageBoxExist( int nCommandCode );
 
 	void	CreateMessageBoxL( CTString &strTitle, int nWhichUI, int nCommandCode,
 								int nPosX = -1, int nPosY = -1 );
-	void	AddMessageBoxLString( int nCommandCode, BOOL bDesc, CTString &strMessage, int iValue = -1, const COLOR colDesc = 0xF2F2F2FF, CTString strPrefix = "o"  );
+	void	AddMessageBoxLString( int nCommandCode, BOOL bDesc, CTString &strMessage, int iValue = -1, const COLOR colDesc = 0xF2F2F2FF, CTString strPrefix = "o" );
 	void	CloseMessageBoxL( int nCommandCode );
 	BOOL	DoesMessageBoxLExist( int nCommandCode );
 	CUIMessageBox *GetMessageBox( int nCommandCode );
+
+	// [090909 sora]
+	CUIMessageBoxL *GetMessageBoxL( int nCommandCode );
 
 	// WSS_SELECTIVE_UI_FUCNTION 2007/08/15 
 	// SELECTIVE UI
@@ -1311,10 +1318,13 @@ public:
 
 	// Message
 	void	MsgProc( MSG *pMsg, BOOL *pbIMEProc );
+	void	MsgSimpleProc( MSG *pMsg );
+	void	MsgProcWeb(MSG *pMsg);
 
 	// Command functions
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput ,CTString &strConfirm );
+	void	MsgCommonCommand( int nCommandCode );
 	
 	//wooss 050805 add message command for select button
 	void	MsgBoxBtnCommand( int nCommandCode, int btnNum, CTString &strInput );
@@ -1329,30 +1339,68 @@ public:
 
 	void	CancelSkill( BOOL bLostTarget = TRUE, BOOL bSkillError=FALSE);
 	void	Reset();
-	void	Lock( BOOL bLock );
-
 	void	LostTarget();
 
 	void	SetVersion(int ver){m_LocalVersion = ver;};
 	int		GetVersion(){return m_LocalVersion;};
 	
 	// wooss  060404 
-	BOOL	IsPet(CItemData& rItemData);
-	BOOL	IsWildPet(CItemData& rItemData);
-	// wooss 060421
-	struct tm * LClocaltime ( time_t *timp );
-	
+	BOOL	IsPet(CItemData* pItemData);
+	BOOL	IsWildPet(CItemData* pItemData);
+
 	BOOL checkName(CTString strMsg, int chkType);
 
 	CTString GetWeekToString( int nWeek )
 	{
 		if( nWeek < 0 || nWeek > 6 ) return CTString("None ");
-		CTString strWeek[7] = { "ì¼" , "ì›”" , "í™”" , "ìˆ˜" , "ëª©" , "ê¸ˆ" , "í† " };	// ë²ˆì—­
+		CTString strWeek[7] = { "ÀÏ" , "¿ù" , "È­" , "¼ö" , "¸ñ" , "±İ" , "Åä" };	// ¹ø¿ª
 		return strWeek[nWeek];
+	}
+
+	// GetWeekToString °¡ ¹ø¿ªµÈ ÅØ½ºÆ®¸¦ ³Ñ°Ü ÁÖÁö ¾Ê¾Æ¼­ Ãß°¡ 
+	// added by sam 101220
+	int GetWeekToStringIndex( int nWeek )
+	{
+		if( nWeek < 0 || nWeek > 6 ) return -1;
+		switch ( nWeek )
+		{
+			case 0:
+			{
+				return 1930;
+			}
+			case 1:
+			{
+				return 1931;
+			}
+			case 2:
+			{
+				return 1932;
+			}
+			case 3:
+			{
+				return 1933;
+			}
+			case 4:
+			{
+				return 1934;
+			}
+			case 5:
+			{
+				return 1935;
+			}
+			case 6:
+			{
+				return 1936;
+			}
+			default:
+			{
+				return -1;				
+			}
+		}
 	}
 	
 	void SetTitleName( INDEX bFullScreen, int iScreenSizeI, int iScreenSizeJ );
-	static void GetClassOfItem( CItemData & rItemData, CTString &strClass );
+	static void GetClassOfItem( CItemData* pItemData, CTString &strClass );
 	DAMAGE_deque	m_qDamage;	
 	UIRectUV		m_rtNumber[10];
 	UIRect			m_rcNumber;
@@ -1362,10 +1410,9 @@ public:
 	
 	BOOL			m_bDamageState; 
 	
-	int				m_nCoolTimeReductionRate;		//ìŠ¤í‚¬ì¿¨íƒ€ì„ê°ì†Œì˜µì…˜ì´ ë¶™ì€ ì¥ë¹„ë¥¼ ì…ê³  ìˆì„ ë•Œ ì¿¨íƒ€ì„ ê°ì†Œë¹„ìœ¨
-	int				m_nNeedMPReductionRate;				//MPì†Œëª¨ëŸ‰ ê°ì†Œ ì˜µì…˜ì´ ë¶™ì€ ì¥ë¹„ë¥¼ ì…ê³  ìˆì„ ë•Œ ê°ì†Œë¹„ìœ¨
+	int				m_nCoolTimeReductionRate;		//½ºÅ³ÄğÅ¸ÀÓ°¨¼Ò¿É¼ÇÀÌ ºÙÀº Àåºñ¸¦ ÀÔ°í ÀÖÀ» ¶§ ÄğÅ¸ÀÓ °¨¼ÒºñÀ²
+	int				m_nNeedMPReductionRate;				//MP¼Ò¸ğ·® °¨¼Ò ¿É¼ÇÀÌ ºÙÀº Àåºñ¸¦ ÀÔ°í ÀÖÀ» ¶§ °¨¼ÒºñÀ²
 
-	//[070703: Su-won] TARGET_MARK
 	std::map<SLONG, CEffectGroup *> m_mapEG;
 	
 	void AddDamageData( ULONG ulDamage, SBYTE sbTargetFlag, ULONG ulClientIndex, BOOL bDamaged );
@@ -1379,8 +1426,8 @@ public:
 	void DrawNumber( int nX, int nY, int nNumber, COLOR colColor = 0xFFFFFFFF, FLOAT fRatio = 1.0f );
 	void DrawText( int nX, int nY, SBYTE sbTargetFlag, COLOR colColor = 0xFFFFFFFF, FLOAT fRatio = 1.0f );
 
-	BOOL IsRareItem(CTString strName);
 	void SetRareOption( CNetworkMessage *istr, CItems& rItem );
+	void SetRareOption( UpdateClient::itemInfo* pInfo, CItems& rItem );
 	
 	int  GetCoolTimeReductionRate() { return m_nCoolTimeReductionRate; }
 	int  GetNeedMPReductionRate() { return m_nNeedMPReductionRate; }
@@ -1395,36 +1442,141 @@ public:
 
 	// ----------------------------------------------------------<<
 
-	//[070703: Su-won] TARGET_MARK		|----->		
 	BOOL IsEnemy( void* pTarget, TARGET_TYPE eType, BOOL bSearch =FALSE );
 	void StartTargetEffect( SLONG slIndex, CEntity* penEntity, BOOL bEnemy );
 	void StopTargetEffect( SLONG slIndex );
-	//[070703: Su-won] TARGET_MARK		<-----|
-	
-	// ì›ì •ëŒ€, RAID ê´€ë ¨
-	BOOL IsPlayInZone();	// ì¸ìŠ¤í„´íŠ¸ì¡´ í”Œë ˆì´ì¤‘ì¸ì§€ ì²´í¬
+
+	// [sora] ¿øÁ¤´ë, RAID °ü·Ã
+	BOOL IsPlayInZone();	// ÀÎ½ºÅÏÆ®Á¸ ÇÃ·¹ÀÌÁßÀÎÁö Ã¼Å©
+	BOOL IsInstantZone(int nZone);
+
+	// Focus Check¿ë ÇÔ¼ö. [11/23/2009 rumist]
+	inline BOOL	IsFocusInAllEditbox() const { return CUIEditBox::IsFocusingEditBox(); }
+	//inline const BOOL	IsFocusInAllEditbox() { return m_ebRefCntReturn.IsFocusedInAll() | m_mbRefCntReturn.IsFocusedInAll(); }
+	BOOL IsFocusAllEditBox();	
+	// [2010/08/26 : Sora] ADD_SUBJOB º¸Á¶ Á÷¾÷ °ü·Ã Ãß°¡ÇÔ¼ö
+	CTString GetSubJobName( SLONG slSubJobCode );
+	BOOL CheckSellerItem(  UI_TYPE uiType,  int flag );
+
+	// [2010/09/17 : Sora] Player.es¿¡¼­ ¼ÒÄÏ ½Ã½ºÅÛ È£Ãâ¿ë
+	void OpenSocketSystem(int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ );
+
+	void InitCurInfoLines(void) { m_nCurInfoLines = 0; }
+	void AddItemInfoString(CTString &strItemInfo, COLOR colItemInfo ,int maxLine, int maxChars);
+	void RenderBtnInfo(CTextureData* texData, CUIButton& srcBtn, UIRectUV rtUV[], int nLength=34);
+
+	// added by sam 11/03/02 ¹ø¿ªµÇÁö ¾ÊÀº ½ºÆ®¸µ ³Ñ¹ö º¸ÀÌ±â
+	void ShowNoTranslationString ();
+	void HideNoTranslationString ();
+	void ToggleNoTranslationString ();
+	// [2011/05/31 : Sora] Å¬¶óÀÌ¾ğÆ® ¸¸ÀÌ ¾Æ´Ï°í ´Ù¸¥°÷¿¡µµ »ç¿ëÇÒ ¼ö ÀÖ°Ô È®Àå
+	void SetNoTranslationString( int transType, int index );
+	void InitRenderTarget(int nWidth = DEF_DEFAULT_RT_WIDTH, int nHeight = DEF_DEFAULT_RT_HEIGHT);
+	void DestroyRenderTarget();
+	void HUD_SetItemModelData( INDEX iIndex );
+	void HUD_DrawItemModel();
+	void SetShowAni( BOOL bShow )	{	m_bShowAni = bShow;	}
+	BOOL IsShowAni()	{	return m_bShowAni;	}
+	CRenderTexture* GetRenderTarget()	{	return m_RenderTarget;	}
+
+	BOOL CheckDratanWarInside(CCharacterTarget* pTarget);
+	BOOL MyCheckDratanWarInside();
+
+	void InteractionMsgBoxReject(); // ¿äÃ» ¸Ş½ÃÁö ¹Ú½º °ÅºÎ
+
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslateFlag( eNoTransType transType, int* flag )
+	{
+		(*flag) |= transType;
+	}
+
+	BOOL IsNotTranslated( eNoTransType transType, int flag )
+	{
+		return transType & flag;
+	}
+
+	void Update( float fDeltaTime, float fElapsedTime );
 
 protected:
-	void RenderDamage( DAMAGE_deque::iterator iter, DOUBLE dDealyTime, int nX, int nY );
-	void RenderNotice();
+	void RenderDamage( int nIndex, DAMAGE_deque::iterator iter, DOUBLE dDealyTime, int nX, int nY );
+	void RenderNotice();	
+
+
+public:
+	void Render(CDrawPort* pDraw) 
+	{
+		CUIBase::Render( pDraw );
+
+		CUIBase* pUI = CUIFocus::getSingleton()->getUI();
+		if (pUI)
+			pUI->Render(pDraw);
+
+		CUITooltipMgr::getSingleton()->Render(pDraw);
+	}
+	virtual void OnRender(CDrawPort* pDraw) {};
+
+	bool isCreateVisible(UI_TYPE type)
+	{
+		// »õ·Î¿î UI´Â Hide »ç¿ë
+		if (m_apUIs[type] != NULL && 
+			m_apUIs[type]->IsVisible() == TRUE || m_apUIs[type]->GetHide() == FALSE)
+			return true;
+
+		return false;
+	}
+
+	bool getCursorInGame()	{ return m_bCursorInGame; }
+	std::string GetFullPath(std::string strFileName);
+	int	GetPathCount()	{ return m_vecAdditionalPath.size();	}
+	void ItemNameColorInI();
+	COLOR GetItemNameColor(int nType) {	return m_colItemDropName[nType];	}
+	void DropItemCallback();
+	void SetGuildMark();
+
+#ifdef	VER_TEST
+	void setIPString(const char* strIP) { 
+		extern INDEX sam_bFullScreenActive;
+		extern INDEX sam_iScreenSizeI;
+		extern INDEX sam_iScreenSizeJ;
+
+		m_strIP = strIP; 
+		SetTitleName( sam_bFullScreenActive, sam_iScreenSizeI, sam_iScreenSizeJ );
+	}
+
+	bool GetDebugOutMode()			{ return m_bOutDebugString; }
+	void SetDebugOutMode(bool bOut)	{ m_bOutDebugString = bOut; }
+private:
+	std::string m_strIP;
+
+	bool m_bOutDebugString;	
+#endif	// VER_TEST
+private:
+	COLOR m_colItemDropName[eDROPITEM_NAME_COL_MAX];
+	CUIGuildMarkIcon*	m_pIconGuildMark;
 };
 
-ENGINE_API extern CUIManager	*_pUIMgr;
+#define		UIMGR()		CUIManager::getSingleton()
+
+// KALYDO
+ENGINE_API extern  struct PlayerControls pctlCurrent;
 
 
 
-inline ENGINE_API CTString _SFunc( int x, char* );
+inline ENGINE_API CTString _SFunc( int x );
 
 //#define KEY_SHOW_STRING_INDEX
-
-#ifndef KEY_SHOW_STRING_INDEX
-#define _S(x,comment) _pUIMgr->GetString(x)
-#else
-#define _S(x,comment) _SFunc(x,comment)
-#endif
-#define _S2(x,str1,comment) _pUIMgr->GetString(x,str1)
-#define _S3(x,str1,str2,comment) _pUIMgr->GetString(x,str1,str2)
+// ¹Ì¹ø¿ª Ã£¾Æ³»±â [10/13/2011 rumist]
+#define _S(x,comment) _SFunc(x)
+#define _S2(x,str1,comment) CUIManager::getSingleton()->GetString(x,str1)
+#define _S3(x,str1,str2,comment) CUIManager::getSingleton()->GetString(x,str1,str2)
 #define _s(str) CTString(str)
+
+// ÀÓ½Ã·Î Ãß°¡µÈ Define
+// getSingleton¿¡¼­ singleton object¸¦ »õ·Î »ı¼ºÇÏ¿© ¹Ş°Ô µÇ¾î, comment¸¦ Ã£À» ¼ö ¾ø°Ô µÈ´Ù.
+// Á÷Á¢ ÂüÁ¶ °´Ã¼¸¦ Àü´ŞÇÏ´Â define ÇÔ¼ö¸¦ ¼±¾ğÇÏ¿´´Ù.
+#define _SMgr(m, x, comment) m->GetString(x)
+#define _S2Mgr(m, x, str1, comment) m->GetString(x, str1)
+#define _S3Mgr(m, x, str1, str2, comment) m->GetString(x, str1, str2)
 
 #endif	// UIMANAGER_H_
 

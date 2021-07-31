@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLES_H__
 #define __CPARTICLES_H__
 
@@ -24,9 +24,9 @@ protected:
 		}
 	};
 public:
-	//ëì—ì„œë¶€í„° ì¶”ê°€í•œë‹¤. ë¦¬í„´í•˜ëŠ” ê°’ì€ ì‹¤ì œ ë”í•´ì§„ ê°œìˆ˜, ì´ê°œìˆ˜ê°€ ì•„ë‹˜. ë©”ëª¨ë¦¬ ì œí•œ.
+	//³¡¿¡¼­ºÎÅÍ Ãß°¡ÇÑ´Ù. ¸®ÅÏÇÏ´Â °ªÀº ½ÇÁ¦ ´õÇØÁø °³¼ö, ÃÑ°³¼ö°¡ ¾Æ´Ô. ¸Þ¸ð¸® Á¦ÇÑ.
 	UINT AddNew(UINT wantAddCount);
-	//ëì—ì„œë¶€í„° ì§€ìš´ë‹¤. ë¦¬í„´ê°’ì€ ì‹¤ì œ ì§€ì›Œì§„ ê°’.
+	//³¡¿¡¼­ºÎÅÍ Áö¿î´Ù. ¸®ÅÏ°ªÀº ½ÇÁ¦ Áö¿öÁø °ª.
 	void EraseLast(UINT wantEraseCount)
 	{
 		if(wantEraseCount <= 0) return;
@@ -45,9 +45,9 @@ public:
 	void RenderTrail(MEX mexWidth, MEX mexHeight);
 	void RenderTrailVelocity(MEX mexWidth, MEX mexHeight);
 protected:
-	static UINT	m_uiAllCount;	//ì „ì²´ íŒŒí‹°í´ì˜ ê°œìˆ˜.
+	static UINT	m_uiAllCount;	//ÀüÃ¼ ÆÄÆ¼Å¬ÀÇ °³¼ö.
 	std::vector<CParticle> m_vectorParticle;
 };
 
 #endif //__CPARTICLES_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

@@ -19,10 +19,10 @@
 //#include "ModelsMP/Player/SeriousSam/Player.h"
 //#include "ModelsMP/Player/SeriousSam/Body.h"
 //#include "ModelsMP/Player/SeriousSam/Head.h"
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…	07.07
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷	07.07
 #include <Engine/GlobalDefinition.h>
 #include <Engine/JobInfo.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…		07.07
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷		07.07
 extern INDEX ent_bReportBrokenChains;
 
 void CCompMessageID::Clear(void)
@@ -128,7 +128,7 @@ void SetBoolFromBoolEType(BOOL &bSet, BoolEType bet) {
 };
 
 // send event to target
-void SendToTarget(CEntity *penSendEvent, EventEType eetEventType, CEntity *penCaused) {
+void SendToTarget(CEntity *penSendEvent, EventEType eetEventType, CEntity *penCaused, CEntityEvent* peeEvent) {
 	// if target is valid
 	if (penSendEvent != NULL) {
 		switch (eetEventType) {
@@ -186,6 +186,14 @@ void SendToTarget(CEntity *penSendEvent, EventEType eetEventType, CEntity *penCa
 				break;
 			case EET_ADDHOSTILE:
 				penSendEvent->SendEvent(EAddHostile());
+				break;
+			case EET_DOORCONTROLL:
+				{
+					if (peeEvent)
+					{
+						penSendEvent->SendEvent((*peeEvent));
+					}
+				}
 				break;
 		}
 	}
@@ -393,7 +401,7 @@ void SpawnHitTypeEffect(CEntity *pen, enum BulletHitType bhtType, BOOL bSound, F
 					GetNormalComponent( vDistance/fDistance, vHitNormal, ese.vDirection);
 					FLOAT fLength = ese.vDirection.Length();
 					fLength   = Clamp( fLength*3, 1.0f, 3.0f);
-					fDistance = Clamp( log10(fDistance), 0.5, 2.0);
+					fDistance = Clamp<FLOAT>( (FLOAT)log10(fDistance), 0.5f, 2.0f);
 					ese.vStretch = FLOAT3D( fDistance, fLength*fDistance, 1.0f);
 					try {
 
@@ -590,32 +598,32 @@ CLensFlareType _lftProjectileYellowBubbleGlow;
 //CLensFlareType _lftCatmanFireGlow;
 CLensFlareType _lftWhiteGlowFar;
 
-#define FLARE_CREATE(type,noof,tex,pos,rot,i,j,flags,amp,des,falloff)\
-	type.lft_aolfFlares.New(noof);\
-	type.lft_aolfFlares[0].olf_toTexture.SetData_t(CTFILENAME("Data\\Textures\\Effects\\Flares\\" tex));\
-	type.lft_aolfFlares[0].olf_fReflectionPosition = pos;\
-	type.lft_aolfFlares[0].olf_aRotationFactor = AngleDeg(rot);\
-	type.lft_aolfFlares[0].olf_fSizeIOverScreenSizeI = i;\
-	type.lft_aolfFlares[0].olf_fSizeJOverScreenSizeI = j;\
-	type.lft_aolfFlares[0].olf_ulFlags = flags;\
-	type.lft_aolfFlares[0].olf_fLightAmplification = amp;\
-	type.lft_aolfFlares[0].olf_fLightDesaturation = des;\
-	type.lft_aolfFlares[0].oft_fFallOffFactor = falloff;
-#define FLARE_GLARE(type,compression,intensity,des,falloff)\
-	type.lft_fGlareCompression = compression;\
-	type.lft_fGlareIntensity = intensity;\
-	type.lft_fGlareDesaturation = des;\
-	type.lft_fGlareFallOffFactor = falloff;
-#define REFLECTION(type,i,fnm,pos,size) \
-	type.lft_aolfFlares[i].olf_toTexture.SetData_t(CTFILENAME("Data\\Textures\\Effects\\Flares\\" fnm));\
-	type.lft_aolfFlares[i].olf_fReflectionPosition = pos;\
-	type.lft_aolfFlares[i].olf_aRotationFactor = AngleDeg(0.0f);\
-	type.lft_aolfFlares[i].olf_fSizeIOverScreenSizeI = size;\
-	type.lft_aolfFlares[i].olf_fSizeJOverScreenSizeI = size;\
-	type.lft_aolfFlares[i].olf_ulFlags = OLF_FADEINTENSITY|OLF_FADEOFCENTER;\
-	type.lft_aolfFlares[i].olf_fLightAmplification = 7.0f;\
-	type.lft_aolfFlares[i].olf_fLightDesaturation = 0.5f;\
-	type.lft_aolfFlares[i].oft_fFallOffFactor = 5.0f;
+#define FLARE_CREATE(flag,noof,tex,pos,rot,i,j,flags,amp,des,falloff)\
+	flag.lft_aolfFlares.New(noof);\
+	flag.lft_aolfFlares[0].olf_toTexture.SetData_t(CTFILENAME("Data\\Textures\\Effects\\Flares\\" tex));\
+	flag.lft_aolfFlares[0].olf_fReflectionPosition = pos;\
+	flag.lft_aolfFlares[0].olf_aRotationFactor = AngleDeg(rot);\
+	flag.lft_aolfFlares[0].olf_fSizeIOverScreenSizeI = i;\
+	flag.lft_aolfFlares[0].olf_fSizeJOverScreenSizeI = j;\
+	flag.lft_aolfFlares[0].olf_ulFlags = flags;\
+	flag.lft_aolfFlares[0].olf_fLightAmplification = amp;\
+	flag.lft_aolfFlares[0].olf_fLightDesaturation = des;\
+	flag.lft_aolfFlares[0].oft_fFallOffFactor = falloff;
+#define FLARE_GLARE(flag,compression,intensity,des,falloff)\
+	flag.lft_fGlareCompression = compression;\
+	flag.lft_fGlareIntensity = intensity;\
+	flag.lft_fGlareDesaturation = des;\
+	flag.lft_fGlareFallOffFactor = falloff;
+#define REFLECTION(flag,i,fnm,pos,size) \
+	flag.lft_aolfFlares[i].olf_toTexture.SetData_t(CTFILENAME("Data\\Textures\\Effects\\Flares\\" fnm));\
+	flag.lft_aolfFlares[i].olf_fReflectionPosition = pos;\
+	flag.lft_aolfFlares[i].olf_aRotationFactor = AngleDeg(0.0f);\
+	flag.lft_aolfFlares[i].olf_fSizeIOverScreenSizeI = size;\
+	flag.lft_aolfFlares[i].olf_fSizeJOverScreenSizeI = size;\
+	flag.lft_aolfFlares[i].olf_ulFlags = OLF_FADEINTENSITY|OLF_FADEOFCENTER;\
+	flag.lft_aolfFlares[i].olf_fLightAmplification = 7.0f;\
+	flag.lft_aolfFlares[i].olf_fLightDesaturation = 0.5f;\
+	flag.lft_aolfFlares[i].oft_fFallOffFactor = 5.0f;
 
 // init lens flare effects
 void InitLensFlares(void) {
@@ -1103,16 +1111,17 @@ BOOL SetPlayerAppearance(CModelInstance *pmiModel, CPlayerCharacter *ppc, CTStri
 BOOL SetPlayerAppearanceSka(CModelInstance *pmiModel, CPlayerCharacter *ppc, CTString &strName, BOOL bPreview, ULONG type)
 {
 	// first kill any existing model
-	if (pmiModel!=NULL) {
-		pmiModel->Clear();
-	}
+	if (pmiModel == NULL)
+		return FALSE;
+	
+	pmiModel->Clear();
 	pmiModel->mi_bRenderShadow = TRUE;
-
+	
 	CTString fnmDefault;
 	
 	if( ppc != NULL )
 	{
-		fnmDefault = JobInfo().GetFileName( ppc->pc_iPlayerType );
+		fnmDefault = CJobInfo::getSingleton()->GetFileName( ppc->pc_iPlayerType );
 	}
 	
 	// if no character, or player models are disabled
@@ -1122,12 +1131,12 @@ BOOL SetPlayerAppearanceSka(CModelInstance *pmiModel, CPlayerCharacter *ppc, CTS
 		
 		if( type >= TITAN && type <= TOTAL_JOB )
 		{
-			fnmDefault = JobInfo().GetFileName( type );
+			fnmDefault = CJobInfo::getSingleton()->GetFileName( type );
 		}
 		else
 		{
-			CMobData& MD = _pNetwork->GetMobData( type );
-			fnmDefault = MD.GetMobSmcFileName();
+			CMobData* MD = CMobData::getData( type );
+			fnmDefault = MD->GetMobSmcFileName();
 		}
 		
 		BOOL bSucceeded = SetPlayerAppearance_internal(pmiModel, fnmDefault, strName, bPreview);
@@ -1271,13 +1280,13 @@ CEntityPointer Debris_Spawn(
 		eSpawn.fSize = _fEntitySize*fSize;
 	}
 	
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹œìŠ¤í…œ ì‹±ê¸€ë˜ì ¼ ê°œì„ 	10.05
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ã½ºÅÛ ½Ì±Û´øÁ¯ °³¼±	10.05
 	CDLLEntityClass *pdecDLLClass		= penDebris->GetClass()->ec_pdecDLLClass;	
 	CEntityProperty &epDebrisCollision	= *pdecDLLClass->PropertyForTypeAndID(CEntityProperty::EPT_BOOL, 201);
 	ENTITYPROPERTY( &*penDebris, epDebrisCollision.ep_slOffset, BOOL) = _bCollision;
 	CEntityProperty &epDebrisFade		= *pdecDLLClass->PropertyForTypeAndID(CEntityProperty::EPT_BOOL, 200);
 	ENTITYPROPERTY( &*penDebris, epDebrisFade.ep_slOffset, BOOL) = _bFade;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ë˜ì ¼ ê°œì„ 		10.05
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û´øÁ¯ °³¼±		10.05
 
 	// initialize it
 	penDebris->Initialize(eSpawn,FALSE);

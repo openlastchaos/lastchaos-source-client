@@ -15,8 +15,8 @@ class CMeshInfo
 public:
 	typedef struct _TEXTURES
 	{
-		char*	_sTexName;	// í…ìŠ¤ì²˜ ì´ë¦„
-		char*	_sTexTFNM;	// í…ìŠ¤ì²˜ì˜ íŒŒì¼ ê²½ë¡œ
+		char*	_sTexName;	// ÅØ½ºÃ³ ÀÌ¸§
+		char*	_sTexTFNM;	// ÅØ½ºÃ³ÀÇ ÆÄÀÏ °æ·Î
 
 		_TEXTURES()
 		{
@@ -56,8 +56,8 @@ public:
 
 	void operator = (const CMeshInfo& Mesh);
 
-	void Clear();		// ë³€ìˆ˜ ì´ˆê¸°í™”
-	void Destroy();		// í• ë‹¹ëœ ë³€ìˆ˜ ì´ˆê¸°í™”
+	void Clear();		// º¯¼ö ÃÊ±âÈ­
+	void Destroy();		// ÇÒ´çµÈ º¯¼ö ÃÊ±âÈ­
 
 	inline void SetMeshNumber(int num)
 	{
@@ -83,10 +83,10 @@ public:
 	bool AddTextureInfo(const char* strTexName, const char* strTexTFNM);
 	
 protected:
-	int		m_MeshNumber; // í˜„ì¬ smcíŒŒì¼ì˜ ë©”ì‰¬ ë²ˆí˜¸
-	char*	m_MeshTFNM;	// ë©”ì‰¬ì˜ bmíŒŒì¼ ê²½ë¡œ
+	int		m_MeshNumber; // ÇöÀç smcÆÄÀÏÀÇ ¸Ş½¬ ¹øÈ£
+	char*	m_MeshTFNM;	// ¸Ş½¬ÀÇ bmÆÄÀÏ °æ·Î
 	
-	std::vector<TEXTUREINFO>	m_vecTextures;	// í…ìŠ¤ì²˜ ì •ë³´ ëª©ë¡
+	std::vector<TEXTUREINFO>	m_vecTextures;	// ÅØ½ºÃ³ Á¤º¸ ¸ñ·Ï
 };
 
 typedef std::vector<CMeshInfo>::iterator	vecMeshInfoItor;
@@ -118,11 +118,11 @@ public:
 	inline int GetMeshInfoListSize() { return m_MeshInfoList.size(); }
 	inline CMeshInfo GetMeshInfo(int num) { return m_MeshInfoList[num]; }
 
-	bool SaveSmcInfoText(std::string sFilename);	// TextíŒŒì¼ë¡œ ì €ì¥
+	bool SaveSmcInfoText(std::string sFilename);	// TextÆÄÀÏ·Î ÀúÀå
 
 protected:
-	char*	m_SmcFileName;		// smc íŒŒì¼ ì´ë¦„
-	vecMeshInfo	m_MeshInfoList; // smcíŒŒì¼ ë‚´ì˜ ë©”ì‰¬ ì •ë³´ë¦¬ìŠ¤íŠ¸
+	char*	m_SmcFileName;		// smc ÆÄÀÏ ÀÌ¸§
+	vecMeshInfo	m_MeshInfoList; // smcÆÄÀÏ ³»ÀÇ ¸Ş½¬ Á¤º¸¸®½ºÆ®
 };
 
 #endif

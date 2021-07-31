@@ -6,17 +6,10 @@
 
 #ifndef	UIWILDPETINFO_H_
 #define	UIWILDPETINFO_H_
-#ifdef	PRAGMA_ONCE
-	#pragma once
-#endif
 
-#include <Engine/Interface/UIDrawFigure.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UITrackPopup.h>
-#include <Engine/Network/PetTarget.h>
-#include <map>
+#include <Engine/Interface/UICheckButton.h>
+
+class CUIIcon;
 
 #define WILDPETINFO_WIDTH			273
 #define WILDPETINFO_HEIGHT			401
@@ -24,10 +17,10 @@
 
 struct sWildPet_AI_Slot 
 {
-	BOOL	m_bActive;		// AI ìŠ¬ë¡¯ í™œì„± ìƒíƒœ
-	INDEX	m_nSillType;	// ìŠ¤í‚¬ íƒ€ì… Skill = 0, Action = 1
-	INDEX	m_nTargetSlot;	// íƒ€ê²Ÿ ì•„ì´í…œ ì¸ë±ìŠ¤ ì €ì¥
-	INDEX	m_nActionSlot;	// í–‰ë™ ìŠ¤í‚¬ ì¸ë±ìŠ¤ ì €ì¥
+	BOOL	m_bActive;		// AI ½½·Ô È°¼º »óÅÂ
+	INDEX	m_nSillType;	// ½ºÅ³ Å¸ÀÔ Skill = 0, Action = 1
+	INDEX	m_nTargetSlot;	// Å¸°Ù ¾ÆÀÌÅÛ ÀÎµ¦½º ÀúÀå
+	INDEX	m_nActionSlot;	// Çàµ¿ ½ºÅ³ ÀÎµ¦½º ÀúÀå
 };
 
 enum WILDPET_SLOT
@@ -39,23 +32,28 @@ enum WILDPET_SLOT
 
 enum WILDPET_POINT
 {
-	WILDPET_STR	= 0,	// í˜ í¬ì¸íŠ¸
-	WILDPET_CON	= 1,	// ì²´ë ¥ í¬ì¸íŠ¸
-	WILDPET_DEX	= 2,	// ë¯¼ì²© í¬ì¸íŠ¸
-	WILDPET_INT	= 3,	// ì§€í˜œ í¬ì¸íŠ¸
+	WILDPET_STR	= 0,	// Èû Æ÷ÀÎÆ®
+	WILDPET_CON	= 1,	// Ã¼·Â Æ÷ÀÎÆ®
+	WILDPET_DEX	= 2,	// ¹ÎÃ¸ Æ÷ÀÎÆ®
+	WILDPET_INT	= 3,	// ÁöÇı Æ÷ÀÎÆ®
 	POINT_END,
-
 };
 
-typedef std::map<SLONG, CUIButtonEx*> UIButton_map;
-
-typedef std::map<SLONG, sPetItem_Info> WildPetInfo_map;
+enum eAI_TYPE
+{
+	AI_NONE = -1,
+	AI_TARGET_ENEMY = 0,
+	AI_TARGET_OWNER,
+	AI_TARGET_PET,
+	AI_TARGET_ITEM,
+};
 
 class CUIWildPetInfo : public CUIWindow
 {
 protected:
+	typedef std::map<SLONG, CUIIcon*> map_Icon;
+	typedef std::map<SLONG, sPetItem_Info> WildPetInfo_map;
 
-	CWildPetInfo *pMyWildPetInfo;
 	CTextureData	*m_ptdButtonTexture;
 	CUIRectSurface	m_rtsBace;
 	CUIRectSurface	m_rtsAIBace;
@@ -64,19 +62,24 @@ protected:
 	UIRectUV		m_rtSkillBace;
 	UIRectUV		m_rtStmImage;
 	UIRectUV		m_rtFaithImage;
-	CUIButtonEx		m_abtnWearing[WILDPET_WEAR_TOTAL];
-	CUIButtonEx		m_abtnSkill[8];
+	CUIIcon*		m_pIconWearing[WILDPET_WEAR_TOTAL];
+	CUIIcon*		m_pIconSkill[8];
 	CUIButton		m_btTabSlot[WILDPET_SLOT_TOTAL];
 	CUIButton		m_btnPoint[POINT_END];
 	CUIButton		m_btnClose;
-	CUIButton		m_btnAIEdit;		// AI í¸ì§‘ ë²„íŠ¼
-// 	CUIButton		m_btnAION;			// AI í™œì„± ë²„íŠ¼
-//	CUIButton		m_btnAIOFF;			// AI ë¹„í™œì„± ë²„íŠ¼
+	CUIButton		m_btnAIEdit;		// AI ÆíÁı ¹öÆ°
+// 	CUIButton		m_btnAION;			// AI È°¼º ¹öÆ°
+//	CUIButton		m_btnAIOFF;			// AI ºñÈ°¼º ¹öÆ°
 	UIRect			m_rtAIONOFF;
 	UIRectUV		m_rvAIONOFF;
-	CUIButton		m_btnAIMake;		// AI í¸ì§‘ ì™„ë£Œ ë²„íŠ¼
+	CUIButton		m_btnAIMake;		// AI ÆíÁı ¿Ï·á ¹öÆ°
 	CUIScrollBar	m_sbSkillList;
-	
+
+	CUIDrawBox		m_rvAccuback;
+	UIRectUV		m_rvAccublank;
+	CUIButton		m_btnAccumulateUse;
+	CWildPetData	*m_Petdata;
+
 	INDEX			m_nTebnum;
 	INDEX			m_nAISlotCount;
 	BOOL			m_bTitle;
@@ -84,13 +87,13 @@ protected:
 	BOOL			m_bAIActive;
 	BOOL			m_bSlideUI;
 
-	UIButton_map	m_btnmapSkills;		// Buttons of Skill
+	map_Icon		m_mapIconSkills;		// Buttons of Skill
 	WildPetInfo_map		m_mapWildPetInfo;
 
 	sWildPet_AI_Slot	m_sAISlot[WILDPET_AI_MAXSLOT];
 	CUICheckButton		m_cbtnAISlotActive[WILDPET_AI_MAXSLOT];
-	CUIButtonEx			m_abtAITarget[WILDPET_AI_MAXSLOT];
-	CUIButtonEx			m_abtAIAction[WILDPET_AI_MAXSLOT];
+	CUIIcon*			m_pIconAITarget[WILDPET_AI_MAXSLOT];
+	CUIIcon*			m_pIconAIAction[WILDPET_AI_MAXSLOT];
 	UIRect				m_rtAITarget[WILDPET_AI_MAXSLOT];
 	UIRect				m_rtAIAction[WILDPET_AI_MAXSLOT];
 
@@ -105,13 +108,13 @@ public:
 	void	Render();
 	void	InfoRender();
 	void	SkillRender();
-	BOOL	IsLearnSkill( int nSkillIndex );
+	ENGINE_API BOOL	IsLearnSkill( int nSkillIndex );
 	void	SkillClear();
 	void	AddSkill( int nSkillIndex, SBYTE sbSkillLevel );
-	void	UpdateSkill(int nSkillIndex, SBYTE sbLevel );
 	void	sendSkillList();
-	ENGINE_API	INDEX	GetSkillLevel( int nSkillIndex );
 	void	UseSkill( int nIndex );
+	// author by rumist : since : 2010-12-20 21:03
+	ENGINE_API	BOOL	IsUsableSkill( LONG nSkillIndex );
 
 	void	PetWearItemReSet();
 	void	ReceiveWearItemData(CNetworkMessage *istr);
@@ -121,6 +124,7 @@ public:
 	void	sendWildPetPointUP(UBYTE ubPoint);
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	ToggleVisible();
 	void	AddWildPetInfo( sPetItem_Info sPetInfo );
@@ -133,6 +137,8 @@ public:
 	inline BOOL GetAIActive() {return m_bAIActive; }
 	inline int GetPetAISlotCount() {return m_nAISlotCount;}
 	sWildPet_AI_Slot* GetPetAI() {return m_sAISlot;}
+	
+	void	RemoveSlot(CUIIcon* pIcon);
 
 	void	AddAIData(int nSlotnum, sWildPet_AI_Slot sAISlotdata);
 	void	ErrorMassage(UBYTE errorcode);
@@ -141,10 +147,25 @@ public:
 	void	PetAIReSet();
 	void	AIPopupClose() {m_bSlideUI = FALSE;}
 	void	AIClear();
-	void	StartSkillDelay(int nSkillindex);
-	ENGINE_API BOOL	GetSkillDelay(int nslot);
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
+
+	// esc closing support [5/30/2011 rumist]
+	BOOL	CloseWindowByEsc()				{ ToggleVisible();	return TRUE;		}
+	void	AccumulateInfoRender();
+	BOOL	IsWildPetCoolTime();
+	int	GetWildPetFlag() {return m_Petdata->nFlag;}
+
+	void	OnUpdate( float fDeltaTime, ULONG ElapsedTime );
+
+private:
+	void	deleteSkill();
+
+	BOOL	CheckAIItem(CItemData* pAIItem, int nSlot);
+	BOOL	CheckAIAction(CUIIcon* pIcon, int nSlot);
+
+	BOOL	CheckAIType(int nAIType, int nActionType);
+	int		GetActionAIType(CUIIcon* pIcon);
 };
 
 #endif

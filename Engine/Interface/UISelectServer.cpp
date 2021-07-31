@@ -1,6 +1,9 @@
 #include "stdh.h"
-#include <Engine/Interface/UISelectServer.h>
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
+#include <vector>
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UISelectServer.h>
 #include <Engine/World/World.h>
 #include <algorithm>
 #include <Engine/GameState.h>
@@ -9,26 +12,32 @@
 #include <Engine/Interface/UILogin.h>
 #include <Engine/Network/TcpIpConnection.h>
 #include <Engine/GlobalDefinition.h>
-#include <Engine/LocalDefine.h>
+#include <Engine/Base/md5.h>
 
 //#define USER_NUM_FULL		300
 //#define USER_NUM_BUSY		280
 
-// Date : 2005-05-17(ì˜¤í›„ 4:54:18), By Lee Ki-hwan
+// Date : 2005-05-17(¿ÀÈÄ 4:54:18), By Lee Ki-hwan
 extern INDEX g_iCountry;
 extern CDrawPort *_pdpMain;
 
-#define TEMP_SERVER_LIST // define ì„œë²„êµ° ë²ˆí˜¸ ìˆœì„œë¡œ ì •ë ¬..
+#ifdef EUROUPEAN_SERVER_LOGIN
+extern INDEX g_iConnectEuroupean;
+#endif
+
+#define TEMP_SERVER_LIST // define ¼­¹ö±º ¹øÈ£ ¼ø¼­·Î Á¤·Ä..
 // -----wooss 060425------------------------------------------->>
 #define NOTICE_SIZE_Y	112
 
-#ifndef RECOMMEND_SERVER_EVENT
-#undef NOTICE_SIZE_Y
-#define NOTICE_SIZE_Y	0
-#endif
-
 #define RECOMMEND_POS_X   133
 // -------------------------------------------------<<
+
+enum eSERVER_TYPE
+{
+	SERVER_TYPE_NONE = 0,
+	SERVER_TYPE_RECOMEND = 1,
+	SERVER_TYPE_SPEEDUP,
+};
 
 // ----------------------------------------------------------------------------
 // Name : CUISelectServer()
@@ -38,21 +47,19 @@ CUISelectServer::CUISelectServer()
 {
 	m_nRecentServerGroup = -1;
 	m_nRecentServer = -1;
-	m_nRecomendSvr = -1;	
-	m_nRecomendSvrOrder = -1;
 
-	m_astrServerName[0] = _S( 796, "ì¹´íƒ€ë¥´" ); 
-	m_astrServerName[1] = _S( 797, "í¬ë¦¬ìŠ¤" ); 
-	m_astrServerName[2] = _S( 798, "í•˜ë¥´í˜" ); 
-	m_astrServerName[3] = _S( 799, "ì¹¸ìë¥´" ); 
-	m_astrServerName[4] = _S( 800, "ì„¸ì´ë²„" ); 
-	m_astrServerName[5] = _S( 801, "ìŠ¤í˜ë„ë‚˜" ); 
-	m_astrServerName[6] = _S( 802, "íŒŒëƒë“œ" ); 
-	m_astrServerName[7] = _S( 803, "ë§ˆë…¸í”Œ" ); 
-	m_astrServerName[8] = _S( 804, "ì»¤í‹€ëŸ¬ìŠ¤" ); 
-	m_astrServerName[9] = _S( 805, "ìƒ¤ë¸Œë¥´" ); 
+	m_astrServerName[0] = _S( 796, "Ä«Å¸¸£" ); 
+	m_astrServerName[1] = _S( 797, "Å©¸®½º" ); 
+	m_astrServerName[2] = _S( 798, "ÇÏ¸£Æä" ); 
+	m_astrServerName[3] = _S( 799, "Ä­ÀÚ¸£" ); 
+	m_astrServerName[4] = _S( 800, "¼¼ÀÌ¹ö" ); 
+	m_astrServerName[5] = _S( 801, "½ºÆäµµ³ª" ); 
+	m_astrServerName[6] = _S( 802, "ÆÄ³Äµå" ); 
+	m_astrServerName[7] = _S( 803, "¸¶³ëÇÃ" ); 
+	m_astrServerName[8] = _S( 804, "Ä¿Æ²·¯½º" ); 
+	m_astrServerName[9] = _S( 805, "»şºê¸£" ); 
 	
-	// ëŒ€ë§Œ 2ì°¨ ì„œë²„êµ° 
+	// ´ë¸¸ 2Â÷ ¼­¹ö±º 
 	m_astrServerName[10] = _S( 1846, "2st-Group1-tw" );
 	m_astrServerName[11] = _S( 1847, "2st-Group1-tw" );
 	m_astrServerName[12] = _S( 1848, "2st-Group1-tw" );
@@ -64,7 +71,7 @@ CUISelectServer::CUISelectServer()
 	m_astrServerName[18] = _S( 1854, "2st-Group1-tw" );
 	m_astrServerName[19] = _S( 1855, "2st-Group1-tw" );
 
-	// 2st Local ì¤‘êµ­ì— ì¶”ê°€ë˜ëŠ” 2ì°¨ ì§€ì—­ì— ëŒ€í•œ ì„œë²„êµ° Name
+	// 2st Local Áß±¹¿¡ Ãß°¡µÇ´Â 2Â÷ Áö¿ª¿¡ ´ëÇÑ ¼­¹ö±º Name
 	m_astrServerName[20] = _S( 1395, "2st-Group1" );
 	m_astrServerName[21] = _S( 1396, "2st-Group2" );
 	m_astrServerName[22] = _S( 1397, "2st-Group3" );
@@ -75,17 +82,31 @@ CUISelectServer::CUISelectServer()
 	m_astrServerName[27] = _S( 1402, "2st-Group8" );
 	m_astrServerName[28] = _S( 1403, "2st-Group9" );
 	m_astrServerName[29] = _S( 1404, "2st-Group10" );
-	m_astrServerName[30] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[31] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[32] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[33] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[34] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[35] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[36] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[37] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[38] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	m_astrServerName[39] = _S( 246, "í…ŒìŠ¤íŠ¸ ì„œë²„" );
-	
+	m_astrServerName[30] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[31] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[32] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[33] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[34] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[35] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[36] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[37] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[38] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+	m_astrServerName[39] = _S( 246, "Å×½ºÆ® ¼­¹ö" );
+
+#ifdef EUROUPEAN_SERVER_LOGIN
+	m_astrServerName[40] = _S( 5786, "European1" );
+	m_astrServerName[41] = _S( 5787, "European2" );
+	m_astrServerName[42] = _S( 5788, "European3" );
+	m_astrServerName[43] = _S( 5789, "European4" );
+	m_astrServerName[44] = _S( 5790, "European5" );
+	m_astrServerName[45] = _S( 5791, "European6" );
+	m_astrServerName[46] = _S( 5792, "European7" );
+	m_astrServerName[47] = _S( 5793, "European8" );
+	m_astrServerName[48] = _S( 5794, "European9" );
+	m_astrServerName[49] = _S( 5795, "European10" );
+#endif
+	// test
+	m_plbServer = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -94,7 +115,6 @@ CUISelectServer::CUISelectServer()
 // ----------------------------------------------------------------------------
 CUISelectServer::~CUISelectServer()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,13 +123,7 @@ CUISelectServer::~CUISelectServer()
 // ----------------------------------------------------------------------------
 void CUISelectServer::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-#ifdef RECOMMEND_SERVER_EVENT
-	SetSize( nWidth , nHeight + NOTICE_SIZE_Y );
-#else
-	SetSize( nWidth, nHeight );
-#endif
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight + NOTICE_SIZE_Y);
 
 	// Create portal texture
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\SelectServer.tex" ) );
@@ -118,30 +132,21 @@ void CUISelectServer::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 
 	// UV Coordinate of each part
 	// Background
-#ifdef 	RECOMMEND_SERVER_EVENT
 	m_rtBackTop.SetUV( 0, 0, 416, 28, fTexWidth, fTexHeight ); // 46- >24
 	m_rtBackTop1.SetUV( 0, 23, 416, 27, fTexWidth, fTexHeight );
-	// ê³µì§€ í‘œì‹œ ì°½
+	// °øÁö Ç¥½Ã Ã¢
 	m_rtBackTop2.SetUV( 20, 50, 30, 60, fTexWidth, fTexHeight );
-	// ì„œë²„êµ° , ì„œë²„ í‘œì‹œ 
+	// ¼­¹ö±º , ¼­¹ö Ç¥½Ã 
 	m_rtBackMiddle0.SetUV( 0, 29, 416, 59, fTexWidth, fTexHeight );
-#else 
-	m_rtBackTop.SetUV( 0, 0, 416, 46, fTexWidth, fTexHeight );
-#endif
 	m_rtBackMiddle.SetUV( 0, 50, 416, 62, fTexWidth, fTexHeight );
 	m_rtBackBottom.SetUV( 0, 66, 416, 105, fTexWidth, fTexHeight );
 
-	// ì¶”ì²œì´ë²¤íŠ¸ ì´ë¯¸ì§€ wooss 060426
-	if(g_iCountry == BRAZIL)
-	{
-		m_rtRecommend.SetUV(83,112,145,128,fTexWidth, fTexHeight );	// UV of Recommend Image
-	}else
-	{
-		m_rtRecommend.SetUV(17,112,80,128,fTexWidth, fTexHeight );	// UV of Recommend Image
-	}	
+	// ÃßÃµÀÌº¥Æ® ÀÌ¹ÌÁö wooss 060426
+	m_rtRecommend.SetUV(17,112,80,128,fTexWidth, fTexHeight );	// UV of Recommend Image
+	m_rtSpeed.SetUV(81,113,144,128,fTexWidth, fTexHeight );	// UV of SpeedServer Image
 
 	// Ok button
-	m_btnOK.Create( this, _S( 249, "ì ‘ì†" ), 274, 205 + NOTICE_SIZE_Y, 63, 21 );
+	m_btnOK.Create( this, _S( 249, "Á¢¼Ó" ), 274, 205 + NOTICE_SIZE_Y, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 449, 0, 512, 21, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 449, 23, 512, 44, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
@@ -149,7 +154,19 @@ void CUISelectServer::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_btnOK.SetEnable(FALSE);
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), 340, 205+ NOTICE_SIZE_Y, 63, 21 );
+#ifdef RESTART_GAME
+	#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+		m_btnCancel.Create( this, _S( 2681, "ÀÌÀü" ), 208, 205+ NOTICE_SIZE_Y, 63, 21 );
+	#else
+		m_btnCancel.Create( this, _S( 286, "Á¾·á" ), 340, 205+ NOTICE_SIZE_Y, 63, 21 );
+	#endif
+#else
+	#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+		m_btnCancel.Create( this, _S( 2681, "ÀÌÀü" ), 208, 205+ NOTICE_SIZE_Y, 63, 21 );
+	#else
+		m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), 340, 205+ NOTICE_SIZE_Y, 63, 21 );
+	#endif
+#endif
 	m_btnCancel.SetUV( UBS_IDLE, 449, 0, 512, 21, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 449, 23, 512, 44, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -199,6 +216,13 @@ void CUISelectServer::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_lbServer.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
 
 //	m_nRecomendSvr = FindRecomendSvr();
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+	m_btnExit.Create( this, _S( 286, "Á¾·á" ), 340, 205+ NOTICE_SIZE_Y, 63, 21 );
+	m_btnExit.SetUV( UBS_IDLE, 449, 0, 512, 21, fTexWidth, fTexHeight );
+	m_btnExit.SetUV( UBS_CLICK, 449, 23, 512, 44, fTexWidth, fTexHeight );
+	m_btnExit.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnExit.CopyUV( UBS_IDLE, UBS_DISABLE );
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -225,66 +249,88 @@ void CUISelectServer::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX
 // ----------------------------------------------------------------------------
 void CUISelectServer::Render()
 {
-	CDrawPort *pdp = _pUIMgr->GetDrawPort();
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+	extern BOOL g_bAutoRestart;
+	if(g_bAutoRestart)
+	{
+		CUIManager::getSingleton()->RenderLoading();
+		return;
+	}
+#endif
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// Set select server texture
-	pdp->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
-#ifdef RECOMMEND_SERVER_EVENT
 	int	nY = m_nPosY + NOTICE_SIZE_Y + 29;
 	int	nY2 = m_nPosY + m_nHeight - 39;
-	pdp->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY +28,
-						m_rtBackTop.U0, m_rtBackTop.V0, m_rtBackTop.U1, m_rtBackTop.V1,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY +28,
+		m_rtBackTop.U0, m_rtBackTop.V0, m_rtBackTop.U1, m_rtBackTop.V1,
 						0xFFFFFFFF );
-	pdp->AddTexture( m_nPosX, m_nPosY +28, m_nPosX + m_nWidth, nY,
-						m_rtBackTop1.U0, m_rtBackTop1.V0, m_rtBackTop1.U1, m_rtBackTop1.V1,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY +28, m_nPosX + m_nWidth, nY,
+		m_rtBackTop1.U0, m_rtBackTop1.V0, m_rtBackTop1.U1, m_rtBackTop1.V1,
 						0xFFFFFFFF );
-	// ê³µì§€ ì°½
-	pdp->AddTexture( m_nPosX + 13 , m_nPosY +29, m_nPosX + m_nWidth - 13, nY -3,
+	// °øÁö Ã¢
+	pDrawPort->AddTexture( m_nPosX + 13 , m_nPosY +29, m_nPosX + m_nWidth - 13, nY -3,
 						m_rtBackTop2.U0, m_rtBackTop2.V0, m_rtBackTop2.U1, m_rtBackTop2.V1,
 						0xFFFFFFFF );
-//	pdp->AddTexture( m_nPosX + 18 , m_nPosY +29, m_nPosX + m_nWidth - 18, nY,
+//	pDrawPort->AddTexture( m_nPosX + 18 , m_nPosY +29, m_nPosX + m_nWidth - 18, nY,
 //						m_rtBackTop2.U0, m_rtBackTop2.V0, m_rtBackTop2.U1, m_rtBackTop2.V1,
 //						0xFFFFFFFF );
-	// ì„œë²„êµ°, ì„œë²„ í‘œì‹œ
-	pdp->AddTexture( m_nPosX, nY , m_nPosX + m_nWidth, nY + 29,
+	// ¼­¹ö±º, ¼­¹ö Ç¥½Ã
+	pDrawPort->AddTexture( m_nPosX, nY , m_nPosX + m_nWidth, nY + 29,
 						m_rtBackMiddle0.U0, m_rtBackMiddle0.V0, m_rtBackMiddle0.U1, m_rtBackMiddle0.V1,
 						0xFFFFFFFF );
-	pdp->AddTexture( m_nPosX, nY + 29 , m_nPosX + m_nWidth, nY2 ,
+	pDrawPort->AddTexture( m_nPosX, nY + 29 , m_nPosX + m_nWidth, nY2 ,
 						m_rtBackMiddle.U0, m_rtBackMiddle.V0, m_rtBackMiddle.U1, m_rtBackMiddle.V1,
 						0xFFFFFFFF );
-	pdp->AddTexture( m_nPosX, nY2, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY2, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 						m_rtBackBottom.U0, m_rtBackBottom.V0, m_rtBackBottom.U1, m_rtBackBottom.V1,
 						0xFFFFFFFF );
 
-	// ì¶”ì²œ ì„œë²„ ì´ë¯¸ì§€
-	if( m_nRecomendSvr > 0)
+	// ÃßÃµ ¼­¹ö ÀÌ¹ÌÁö
+	int count = m_vectorGroupInfo.size();
+
+	for ( int i = 0; i < count; i++)
 	{
-		pdp->AddTexture( m_nPosX+RECOMMEND_POS_X , nY+4+(15*m_nRecomendSvrOrder) , m_nPosX +RECOMMEND_POS_X+ 63, nY + 4 + (15*(m_nRecomendSvrOrder+1)),
-						m_rtRecommend.U0, m_rtRecommend.V0, m_rtRecommend.U1, m_rtRecommend.V1,
-						0xFFFFFFFF );
-	}
-#else
-	int	nY = m_nPosY + 47;
-	int	nY2 = m_nPosY + m_nHeight - 39;
-	pdp->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, nY,
-						m_rtBackTop.U0, m_rtBackTop.V0, m_rtBackTop.U1, m_rtBackTop.V1,
-						0xFFFFFFFF );
-	pdp->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY2,
-						m_rtBackMiddle.U0, m_rtBackMiddle.V0, m_rtBackMiddle.U1, m_rtBackMiddle.V1,
-						0xFFFFFFFF );
-	pdp->AddTexture( m_nPosX, nY2, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
-						m_rtBackBottom.U0, m_rtBackBottom.V0, m_rtBackBottom.U1, m_rtBackBottom.V1,
-						0xFFFFFFFF );
+		UBYTE Type = m_vectorGroupInfo[i].ubServerType;
+		int nOrder = m_vectorGroupInfo[i].nOrder;
+		FLOAT U0, U1, V0, V1;
 
-#endif
+		switch (Type)
+		{
+		case SERVER_TYPE_RECOMEND:
+			U0 = m_rtRecommend.U0;
+			U1 = m_rtRecommend.U1;
+			V0 = m_rtRecommend.V0;
+			V1 = m_rtRecommend.V1;
+			break;
+		case SERVER_TYPE_SPEEDUP:
+			U0 = m_rtSpeed.U0;
+			U1 = m_rtSpeed.U1;
+			V0 = m_rtSpeed.V0;
+			V1 = m_rtSpeed.V1;			
+			break;
+		default:
+			continue;
+		}
+		
+		pDrawPort->AddTexture( m_nPosX+RECOMMEND_POS_X , nY+4+(15* nOrder) , m_nPosX +RECOMMEND_POS_X+ 63, nY + 4 + (15*(nOrder+1)),
+				U0, V0, U1, V1,	0xFFFFFFFF );	
+	}
+	
 	// Ok button
 	m_btnOK.Render();
 
 	// Cancel button
 	m_btnCancel.Render();
+
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+	m_btnExit.Render();
+#endif
 
 	// Server group list box
 	m_lbServerGroup.Render();
@@ -293,38 +339,55 @@ void CUISelectServer::Render()
 	m_lbServer.Render();
 
 	// Render all elements
-	pdp->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// text render
-	pdp->PutTextEx( _S( 250, "ì„œë²„ ì„ íƒ" ),
+	pDrawPort->PutTextEx( _S( 250, "¼­¹ö ¼±ÅÃ" ),
 					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, m_nPosY + SELECTSERVER_TITLE_TEXT_OFFSETY , 0xFFFFFFFF );
-	pdp->PutTextEx( _S( 251, "ì„œë²„êµ°" ),
+	pDrawPort->PutTextEx( _S( 251, "¼­¹ö±º" ),
 					m_nPosX + SELECTSERVER_GROUP_TEXT_POSX, m_nPosY + SELECTSERVER_GROUP_TEXT_POSY + NOTICE_SIZE_Y, 0xFFB500FF );
-	pdp->PutTextEx( _S( 370, "ì„œë²„" ),
+	pDrawPort->PutTextEx( _S( 370, "¼­¹ö" ),
 					m_nPosX + SELECTSERVER_SERVER_TEXT_POSX, m_nPosY + SELECTSERVER_SERVER_TEXT_POSY + NOTICE_SIZE_Y, 0xFFB500FF );
-#ifdef RECOMMEND_SERVER_EVENT	
+
 	// --Add Message -------------------------------------------------->>
 	int tv_y = m_nPosY + SELECTSERVER_TITLE_TEXT_OFFSETY + 35;
-	pdp->PutTextEx( _S(2618, "â™£ì¶”ì²œ ì„œë²„ë€?" ),
+
+#if defined G_KOR
+	// ±¹³» ¼³¸í ¼öÁ¤(ÃÊº¸Áö¿ø)
+	pDrawPort->PutTextEx( _S(4874, "¢ÀÃÊº¸Áö¿ø ¼­¹ö¶õ?" ),
 					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFAAFFFF );
 	tv_y+=20;
-	pdp->PutTextEx( _S(2619, "ë§¤ì¼ ì •ì˜¤ì— êµì²´ê°€ ë˜ë©°, í•´ë‹¹ ì„œë²„ì—ì„œ í”Œë ˆì´ë¥¼ í•˜ë©´ 30ë ˆë²¨" ), 
+	pDrawPort->PutTextEx( _S(4875, "¶ó½ºÆ®Ä«¿À½º¸¦ Ã³À½ ½ÃÀÛÇÏ½Å´Ù¸é 3Ã¤³Î(ÃÊº¸Áö¿ø) ¼­¹ö¸¦ ÃßÃµ" ), 
 					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFFFFFFF );
 	tv_y+=15;
-	pdp->PutTextEx( _S(2620, "ì´í•˜ì˜ ìºë¦­í„°ëŠ” ì‚¬ëƒ¥ì‹œ ì‹ ë¹„í•œ íš¨ê³¼ë¥¼ ì£¼ëŠ” ë²„í”„ ì•„ì´í…œì„ ì–»ì„" ),
+	pDrawPort->PutTextEx( _S(4876, "ÇØ µå¸³´Ï´Ù. 3Ã¤³Î¿¡ ÀÖ´Â 'ÃÊº¸ Áö¿ø»ç'¸¦ ÅëÇØ °æÇèÄ¡/¼÷·Ãµµ" ),
 					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFFFFFFF );
 	tv_y+=15;
-	pdp->PutTextEx( _S(2621, "ìˆ˜ ìˆìœ¼ë©°, ëª¨ë“  ìœ ì €ì— ëŒ€í•´ì„œ 1ì‹œê°„ ê°„ê²©ìœ¼ë¡œ ì¶”ì²¨ì„ í†µí•˜ì—¬ "), 
+	pDrawPort->PutTextEx( _S(4877, "2¹è, ¹°¸®/¸¶¹ı °ø°İ·ÂÀÌ 20% Çâ»óµÇ´Â 'ÃÊº¸Áö¿ø ¹öÇÁ'¸¦ ¹ŞÀ¸"), 
 					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFFFFFFF );
 	tv_y+=15;
-	pdp->PutTextEx( _S(2622, "ë¬¸ìŠ¤í†¤ 10ê°œë¥¼ ë“œë¦¬ëŠ” ì´ë²¤íŠ¸ ì…ë‹ˆë‹¤."), 
+	pDrawPort->PutTextEx( _S(4878, "½Ç ¼ö ÀÖ½À´Ï´Ù. 'ÃÊº¸Áö¿ø ¹öÇÁ'´Â ·¹º§ 60±îÁö¸¸ Á¦°øµË´Ï´Ù."), 
 					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFFFFFFF );
-	
-	// ----------------------------------------------------------------<<
+#else
+	pDrawPort->PutTextEx( _S(2618, "¢ÀÃßÃµ ¼­¹ö¶õ?" ),
+					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFAAFFFF );
+	tv_y+=20;
+	pDrawPort->PutTextEx( _S(2619, "¸ÅÀÏ Á¤¿À¿¡ ±³Ã¼°¡ µÇ¸ç, ÇØ´ç ¼­¹ö¿¡¼­ ÇÃ·¹ÀÌ¸¦ ÇÏ¸é 30·¹º§" ), 
+					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFFFFFFF );
+	tv_y+=15;
+	pDrawPort->PutTextEx( _S(2620, "ÀÌÇÏÀÇ Ä³¸¯ÅÍ´Â »ç³É½Ã ½ÅºñÇÑ È¿°ú¸¦ ÁÖ´Â ¹öÇÁ ¾ÆÀÌÅÛÀ» ¾òÀ»" ),
+					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFFFFFFF );
+	tv_y+=15;
+	pDrawPort->PutTextEx( _S(2621, "¼ö ÀÖÀ¸¸ç, ¸ğµç À¯Àú¿¡ ´ëÇØ¼­ 1½Ã°£ °£°İÀ¸·Î ÃßÃ·À» ÅëÇÏ¿© "), 
+					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFFFFFFF );
+	tv_y+=15;
+	pDrawPort->PutTextEx( _S(2622, "¹®½ºÅæ 10°³¸¦ µå¸®´Â ÀÌº¥Æ® ÀÔ´Ï´Ù."), 
+					m_nPosX + SELECTSERVER_TITLE_TEXT_OFFSETX, tv_y , 0xFFFFFFFF );
 #endif
+	// ----------------------------------------------------------------<<
 	
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -333,6 +396,11 @@ void CUISelectServer::Render()
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUISelectServer::MouseMessage( MSG *pMsg )
 {
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+	extern BOOL g_bAutoRestart;
+	if(g_bAutoRestart)
+		return WMSG_FAIL;
+#endif
 	WMSG_RESULT	wmsgResult;
 
 	// Mouse point
@@ -348,6 +416,10 @@ WMSG_RESULT CUISelectServer::MouseMessage( MSG *pMsg )
 				return WMSG_SUCCESS;
 			else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+			else if( m_btnExit.MouseMessage( pMsg ) != WMSG_FAIL )
+				return WMSG_SUCCESS;
+#endif
 			else if( m_lbServerGroup.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
 			else if( m_lbServer.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -367,18 +439,38 @@ WMSG_RESULT CUISelectServer::MouseMessage( MSG *pMsg )
 				{
 					// Nothing
 				}
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+				else if( m_btnExit.MouseMessage( pMsg ) != WMSG_FAIL )
+				{
+
+				}
+#endif
 				else if( ( wmsgResult = m_lbServerGroup.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
+					// is not have server list, connect button disable. [9/1/2010 rumist]
 					if( wmsgResult == WMSG_COMMAND )
+					{
 						SetServerList();
+					}
+					else
+					{
+						m_btnOK.SetEnable( FALSE );
+					}
 				}
 				else if( ( wmsgResult = m_lbServer.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
 					if( wmsgResult == WMSG_COMMAND )
-						m_btnOK.SetEnable( TRUE );
+					{
+						if( m_lbServerGroup.GetCurSel() >= 0 )
+							m_btnOK.SetEnable( TRUE );
+					}
+					else
+					{
+						m_btnOK.SetEnable( FALSE );
+					}
 				}
 
-				_pUIMgr->RearrangeOrder( UI_SEL_SERVER, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_SEL_SERVER, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -401,12 +493,19 @@ WMSG_RESULT CUISelectServer::MouseMessage( MSG *pMsg )
 //#define AUTO_LOGIN
 //#ifdef AUTO_LOGIN
 					extern BOOL g_bAutoLogin;
+					extern BOOL g_bAutoRestart;
 					if(g_bAutoLogin)
 					{
 						_pGameState->Running()		= FALSE;
 						_pGameState->QuitScreen()	= TRUE;
-						_pUIMgr->SetUIGameState( UGS_NONE );
+						CUIManager::getSingleton()->SetUIGameState( UGS_NONE );
 					}
+					else if( g_bAutoRestart )
+					{
+						g_bAutoRestart = FALSE;
+						Close();
+					}
+
 //#endif
 #ifdef RESTRICT_SOUND
 					extern BOOL _bNTKernel;
@@ -425,6 +524,18 @@ WMSG_RESULT CUISelectServer::MouseMessage( MSG *pMsg )
 
 				return WMSG_SUCCESS;
 			}
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+			else if( ( wmsgResult = m_btnExit.MouseMessage( pMsg ) ) != WMSG_FAIL )
+			{
+				if( wmsgResult == WMSG_COMMAND )
+				{
+					_pGameState->Running()		= FALSE;
+					_pGameState->QuitScreen()	= FALSE;
+				}			
+
+				return WMSG_SUCCESS;
+			}
+#endif
 			else if( m_lbServerGroup.MouseMessage(pMsg) != WMSG_FAIL )
 			{
 				return WMSG_SUCCESS;
@@ -491,21 +602,28 @@ WMSG_RESULT CUISelectServer::KeyMessage( MSG *pMsg )
 //-----------------------------------------------------------------------------
 void CUISelectServer::PressOKBtn()
 {
-	// ì„œë²„êµ°ê³¼ ì„œë²„ê°€ ì„ íƒë˜ì—ˆìœ¼ë©´ ì ‘ì† ì‹œë„.
+	// ¼­¹ö±º°ú ¼­¹ö°¡ ¼±ÅÃµÇ¾úÀ¸¸é Á¢¼Ó ½Ãµµ.
 	int	nSelServerGroup = m_lbServerGroup.GetCurSel();
 	int	nSelServer = m_lbServer.GetCurSel();
 	if( nSelServerGroup != -1 && nSelServer != -1 )
 	{
 		sServerInfo &SI = m_vectorGroupInfo[nSelServerGroup].vectorServerInfo[nSelServer];
 								
-		// ì„œë²„ì— ì—°ê²°ì„ ì‹œë„í•©ë‹ˆë‹¤.
+		// ¼­¹ö¿¡ ¿¬°áÀ» ½ÃµµÇÕ´Ï´Ù.
 		if( SI.iPlayerNum < _cmiComm.cci_iFullUsers )
 		{
-				_pSound->Mute();		
+			_pSound->Mute();
+			if(_pNetwork->m_iServerGroup != m_vectorGroupInfo[nSelServerGroup].iServerNo)
+			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+				pUIManager->GetRankingViewEx()->ClearRankingList();
+			}
 			_pNetwork->m_iServerGroup = m_vectorGroupInfo[nSelServerGroup].iServerNo;
-			_pNetwork->m_iServerCh = SI.iSubNum;
+			_pNetwork->m_iServerCh = SI.iSubNum;		// UI_REFORM :Su-won
 
 			ConnectToServer( SI.strAddress, SI.iPortNum );
+
+			_pGameState->ClearCharacterSlot();
 			
 #ifdef RESTRICT_SOUND
 			extern BOOL _bNTKernel;
@@ -522,6 +640,20 @@ void CUISelectServer::PressOKBtn()
 // ----------------------------------------------------------------------------
 void CUISelectServer::ResetServerList()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	// reset server list for server move items.
+#ifdef ENABLE_CHARACTER_MOVE_TO_OTHER_SERVER_ITEM
+	pUIManager->GetCharServerMove()->ResetServerList();	
+
+	// Ä³¸¯ÅÍ ¼­¹ö ÀÌÀü ¼­¹ö¸®½ºÆ® ¹Ş±â [7/24/2012 Ranma]
+	std::vector<sGroupInfo>::iterator			iter = m_vectorGroupInfo.begin();		
+	
+	for ( ; iter != m_vectorGroupInfo.end(); iter++)
+	{
+		pUIManager->GetCharServerMove()->AddServerListForCharMove(GetServerGroupName(iter->iServerNo), iter->iServerNo);
+	}
+#endif
+
 	// List box
 	m_lbServerGroup.ResetAllStrings();
 	m_lbServer.ResetAllStrings();
@@ -530,8 +662,6 @@ void CUISelectServer::ResetServerList()
 	m_vectorGroupInfo.clear();
 	m_nRecentServerGroup = -1;
 	m_nRecentServer = -1;
-	m_nRecomendSvr = -1;
-	m_nRecomendSvrOrder = -1;
 
 	// Button
 	m_btnOK.SetEnable( FALSE );
@@ -550,10 +680,12 @@ void CUISelectServer::ResetServerList()
 //			&strAddress - 
 //			lPortNum - 
 //-----------------------------------------------------------------------------
-void CUISelectServer::AddToServerList(LONG lServerNo, LONG lSubNum, LONG lPlayerNum, CTString &strAddress, LONG lPortNum ,UBYTE bIsRecommend)
+void CUISelectServer::AddToServerList(LONG lServerNo, LONG lSubNum, LONG lPlayerNum, CTString &strAddress, LONG lPortNum ,UBYTE ubServerType)
 {
 	sGroupInfo	GroupInfo;
 	GroupInfo.iServerNo		= lServerNo;
+	GroupInfo.ubServerType	= ubServerType;
+	GroupInfo.nOrder		= -1;
 
 	std::vector<sGroupInfo>::iterator iter = std::find_if(m_vectorGroupInfo.begin(), m_vectorGroupInfo.end(), 
 		FindGroup(GroupInfo));
@@ -563,20 +695,12 @@ void CUISelectServer::AddToServerList(LONG lServerNo, LONG lSubNum, LONG lPlayer
 		m_vectorGroupInfo.push_back(GroupInfo);
 		iter = m_vectorGroupInfo.end() - 1;
 	}
-// Date : 2006-04-21(ì˜¤í›„ 4:13:13), By eons
-#if( g_iCountry == KOREA )
-#undef TEMP_SERVER_LIST
-#endif
 
-#ifdef TEMP_SERVER_LIST
-
-	extern INDEX	g_iCountry;
-
-	// êµ­ë‚´
-	if(g_iCountry == KOREA)
+	// ±¹³»
+/*	if(g_iCountry == KOREA)
 	{
-		// FIXME : ì„ì˜ì ìœ¼ë¡œ 4, 2, 1, 5, 3ì˜ ìˆœì„œë¡œ ë‚˜ì˜¤ë„ë¡ ì²˜ë¦¬í•¨...
-		// FIXME : í•˜ë“œ ì½”ë”©ëœ ë‚´ìš©.
+		// FIXME : ÀÓÀÇÀûÀ¸·Î 4, 2, 1, 5, 3ÀÇ ¼ø¼­·Î ³ª¿Àµµ·Ï Ã³¸®ÇÔ...
+		// FIXME : ÇÏµå ÄÚµùµÈ ³»¿ë.
 		switch(lServerNo)
 		{
 		case 4:
@@ -595,49 +719,28 @@ void CUISelectServer::AddToServerList(LONG lServerNo, LONG lSubNum, LONG lPlayer
 			(*iter).iGroupState	= 0;
 			break;
 		}	
-	}
-	// ëŒ€ë§Œ
-	else if(g_iCountry == TAIWAN || g_iCountry == TAIWAN2 ) //wooss 050929
+	}*/
+	// server list change [8/19/2010 rumist]
+#if defined G_HONGKONG
+	// FIXME : ÀÓÀÇÀûÀ¸·Î 4, 2, 1, 5, 3ÀÇ ¼ø¼­·Î ³ª¿Àµµ·Ï Ã³¸®ÇÔ...
+	// FIXME : ÇÏµå ÄÚµùµÈ ³»¿ë.
+	switch(lServerNo)
 	{
-		// FIXME : ì„ì˜ì ìœ¼ë¡œ 1, 2, 3, 4, 5, 6, 7, 8ì˜ ìˆœì„œë¡œ ë‚˜ì˜¤ë„ë¡ ì²˜ë¦¬í•¨...		
-		switch(lServerNo)
-		{
-		case 1:
-		case 11:
-			(*iter).iGroupState	= 7;
-			break;
-		case 2:
-		case 12:
-			(*iter).iGroupState	= 6;
-			break;
-		case 3:
-		case 13:
-			(*iter).iGroupState	= 5;
-			break;
-		case 4:
-		case 14:
-			(*iter).iGroupState	= 4;
-			break;
-		case 5:
-		case 15:
-			(*iter).iGroupState	= 3;
-			break;
-		case 6:
-		case 16:
-			(*iter).iGroupState	= 2;
-			break;
-		case 7:
-		case 17:
-			(*iter).iGroupState	= 1;
-			break;
-		case 8:
-		case 18:
-			(*iter).iGroupState	= 0;
-			break;
-		}
-		
-	}
+	case 2:
+		(*iter).iGroupState	= 3;
+		break;
+	case 3:
+		(*iter).iGroupState	= 2;
+		break;
+	case 1:
+		(*iter).iGroupState	= 1;
+		break;
+	case 4:
+		(*iter).iGroupState	= 0;
+		break;
+	}	
 #endif
+//#endif
 
 	sServerInfo	ServerInfo;
 	ServerInfo.iPlayerNum	= lPlayerNum;
@@ -645,30 +748,11 @@ void CUISelectServer::AddToServerList(LONG lServerNo, LONG lSubNum, LONG lPlayer
 	ServerInfo.strAddress	= strAddress;
 	ServerInfo.iPortNum		= lPortNum;
 
-#ifndef TEMP_SERVER_LIST
-	(*iter).iGroupState		-= lPlayerNum;
-	/*
-	if( lPlayerNum == -1 )								// ì ê²€
-	{
-		(*iter).iGroupState	+= 0;
-	}
-	else if( lPlayerNum >= _cmiComm.cci_iFullUsers )	// FULL
-	{
-		(*iter).iGroupState	+= 1;
-	}
-	else if( lPlayerNum >= _cmiComm.cci_iBusyUsers )	// BUSY
-	{
-		(*iter).iGroupState	+= 2;
-	}
-	else												// ì›í• 
-	{
-		(*iter).iGroupState	+= 3;
-	}
-	*/
+	// SERVER LIST ÀÇ ¼øÂ÷ Á¤·Ä ¿äÃ» [20/05/2011 rumist]
+#if defined G_KOR
+	//(*iter).iGroupState		-= lPlayerNum;
 #endif
-	if(bIsRecommend) {
-		m_nRecomendSvr = lServerNo;
-	}
+
 	(*iter).vectorServerInfo.push_back(ServerInfo);
 }
 
@@ -678,12 +762,12 @@ void CUISelectServer::AddToServerList(LONG lServerNo, LONG lSubNum, LONG lPlayer
 // ----------------------------------------------------------------------------
 void CUISelectServer::Close()
 {
-	// NOTE : ë¡œê·¸ì¸ ì‹¤íŒ¨ì‹œ ì†Œì¼“ì„ ë‹«ê³  ë‹¤ì‹œ ìƒì„±í•´ì•¼í•˜ëŠ” ë¶€ë¶„.				
+	// NOTE : ·Î±×ÀÎ ½ÇÆĞ½Ã ¼ÒÄÏÀ» ´İ°í ´Ù½Ã »ı¼ºÇØ¾ßÇÏ´Â ºÎºĞ.				
 	_cmiComm.Reconnect(_cmiComm.cci_szAddr, _cmiComm.cci_iPort);
 
 	ResetServerList();
 
-	_pUIMgr->SetUIGameState( UGS_LOGIN );
+	CUIManager::getSingleton()->SetUIGameState( UGS_LOGIN );
 }
 
 //-----------------------------------------------------------------------------
@@ -697,24 +781,39 @@ void CUISelectServer::ConnectToServer(CTString strIP, ULONG ulPortNum)
 	if(_pNetwork->m_bSendMessage)
 		return;
 
-	// ì†Œì¼“ì˜ ì—°ê²°ì„ ëŠì—ˆë‹¤ê°€, ë‹¤ì‹œ ì—°ê²°í•¨.
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// ¼ÒÄÏÀÇ ¿¬°áÀ» ²÷¾ú´Ù°¡, ´Ù½Ã ¿¬°áÇÔ.
 	_cmiComm.Reconnect(strIP, ulPortNum);
 	if(_tcpip.Socket == INVALID_SOCKET)
 	{
-		//CPrintF("ê²Œì„ ì„œë²„ì™€ ì—°ê²°í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\n");
+		//CPrintF("°ÔÀÓ ¼­¹ö¿Í ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù.\n");
 
-		_pUIMgr->CloseMessageBox(MSGCMD_CONNECT_ERROR);
+		pUIManager->CloseMessageBox(MSGCMD_CONNECT_ERROR);
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 424, "ì ‘ì† ì˜¤ë¥˜" ), UMBS_OK, UI_SEL_SERVER, MSGCMD_CONNECT_ERROR );
-		MsgBoxInfo.AddString( _S( 426, "ê²Œì„ ì„œë²„ì™€ ì—°ê²°í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		MsgBoxInfo.SetMsgBoxInfo( _S( 424, "Á¢¼Ó ¿À·ù" ), UMBS_OK, UI_SEL_SERVER, MSGCMD_CONNECT_ERROR );
+		MsgBoxInfo.AddString( _S( 426, "°ÔÀÓ ¼­¹ö¿Í ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù." ) );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 
 		_pNetwork->m_bSendMessage = FALSE;
 		return;
 	}
 
-	_pNetwork->SendLoginMessage(_pNetwork->m_strUserID, _pNetwork->m_strUserPW, _pUIMgr->GetVersion());
-	_pUIMgr->Lock(TRUE);
+	// [091103: selo] ¹Ì±¹¿¡ md5 Àû¿ëÇÔ
+#if defined(G_JAPAN)/* || defined(G_USA)*/ 
+	// ÆĞ½º¿öµå MD5·Î ¾ÏÈ£È­
+	char tmpPass[1024];
+	char tmpResult[256];
+	md5_buffer(_pNetwork->m_strUserPW, _pNetwork->m_strUserPW.Length(), tmpPass);
+	md5_sig_to_string(tmpPass, tmpResult, sizeof(tmpResult));
+	CTString CT_tmpPass = tmpResult;
+	CT_tmpPass.ToUpper(); // MD5·Î ¾ÏÈ£È­µÈ ÆĞ½º¿öµå´Â ´ë¹®ÀÚ·Î Àü¼Û(¼­¹ö¿¡¼­ ´ë¹®ÀÚ·Î µÈ ÆĞ½º¿öµå·Î Ã³¸®)
+	_pNetwork->SendLoginMessage(_pNetwork->m_strUserID, CT_tmpPass, pUIManager->GetVersion());
+#else
+	_pNetwork->SendLoginMessage(_pNetwork->m_strUserID, _pNetwork->m_strUserPW, pUIManager->GetVersion());
+#endif
+
+	pUIManager->Lock(TRUE);
 }
 
 //-----------------------------------------------------------------------------
@@ -732,10 +831,11 @@ void CUISelectServer::Reset()
 //-----------------------------------------------------------------------------
 void CUISelectServer::SetRecentServer( int iRecentGroup, int iRecentServer )
 {
-	// Sort server list - ì¶”í›„ ì •ë ¬ ë°©ì‹ì´ ì¶”ê°€ë  ì§€ë„ ëª¨ë¦„..
+	// Sort server list - ÃßÈÄ Á¤·Ä ¹æ½ÄÀÌ Ãß°¡µÉ Áöµµ ¸ğ¸§..
 	std::sort(m_vectorGroupInfo.begin(), m_vectorGroupInfo.end());
 
-	for( int iGroup = 0; iGroup < m_vectorGroupInfo.size(); iGroup++ )
+	int		iGroup;
+	for( iGroup = 0; iGroup < m_vectorGroupInfo.size(); iGroup++ )
 		std::sort( m_vectorGroupInfo[iGroup].vectorServerInfo.begin(), m_vectorGroupInfo[iGroup].vectorServerInfo.end());		
 
 	m_nRecentServerGroup	= iRecentGroup;
@@ -789,12 +889,13 @@ void CUISelectServer::SetRecentServer( int iRecentGroup, int iRecentServer )
 	for( iGroup = 0; iGroup < m_vectorGroupInfo.size(); iGroup++ )
 	{
 		int	iGroupNo = m_vectorGroupInfo[iGroup].iServerNo;
+		int nServerType = m_vectorGroupInfo[iGroup].ubServerType;
 
-		// í…ŒìŠ¤íŠ¸ ì„œë²„ë©´....
+		// Å×½ºÆ® ¼­¹ö¸é....
 		extern UINT g_uiEngineVersion;
 		if(g_uiEngineVersion >= 10000 ){
-			if( iGroupNo == m_nRecomendSvr) 
-				m_nRecomendSvrOrder = iGroupNo-1000;
+			if( nServerType > SERVER_TYPE_NONE ) 
+				m_vectorGroupInfo[iGroup].nOrder = iGroupNo-1000;
 		}
 
 		if ( iGroupNo == 1001 )
@@ -802,9 +903,9 @@ void CUISelectServer::SetRecentServer( int iRecentGroup, int iRecentServer )
 			iGroupNo -= 990;
 		}
 		
-		// ì¶”ì²œ ì„œë²„ ë•Œë¬¸ì—.
-		else if (iGroupNo == m_nRecomendSvr) 
-			m_nRecomendSvrOrder = iGroup +1;
+		// ÃßÃµ ¼­¹ö ¶§¹®¿¡.
+		else if (nServerType > SERVER_TYPE_NONE) 
+			m_vectorGroupInfo[iGroup].nOrder = iGroup +1;
 		strRecomend = GetServerGroupName(iGroupNo);
 
 
@@ -850,7 +951,14 @@ void CUISelectServer::SetRecentServer( int iRecentGroup, int iRecentServer )
 			SetServerList();
 			m_lbServer.SetCurSel( iRecentServer );
 			m_btnOK.SetEnable( TRUE );
-		}
+		}		
+	}
+	else	// [090611: selo] °ÔÀÓÀ» Ã³À½ ½ÃÀÛÇÏ´Â °èÁ¤ÀÌ¸é default °ªÀ» ¼³Á¤ÇÑ´Ù.
+	{
+		m_lbServerGroup.SetCurSel(0);
+		SetServerList();
+		m_lbServer.SetCurSel(0);
+		m_btnOK.SetEnable( TRUE );
 	}
 }
 
@@ -882,92 +990,175 @@ void CUISelectServer::SetServerList()
 			iGroupNo = 11;
 		}
 		
-		if ( g_iCountry == USA )
-		{
-			CTString strServer;
+#if defined G_USA
+		CTString strServer;
 
-			switch( iServerNo )
-			{ // USA 5, 6 Non-Pvp Server
-			case 3:
-			case 4:
-				{
-					if (sGroup.iServerNo == 2 || sGroup.iServerNo == 3 || sGroup.iServerNo == 4 || sGroup.iServerNo == 5)
-					{
-						strServer = CTString("(Non-PvP)");
-					}
-				}
-				break;
-			case 5:
-			case 6:
-				{
-					if (sGroup.iServerNo == 1)
-					{
-						strServer = CTString("(Non-PvP)");
-					}
-					else if (sGroup.iServerNo == 2 && iServerNo == 6)
-					{
-						strServer = CTString("(Roleplaying)");
-					}
-				}
-				break;
-			default:
-				strServer = CTString("");
+		switch( iServerNo )
+		{ 
+		case 1:
+		case 2:
+			{
+				strServer = CTString("(PvP)");
 			}
+			break;
+		case 3:
+			{
+				strServer = CTString("(Raid)");
+			}
+			break;
+		case 4:
+			{
+				strServer = CTString("(Non-PvP)");
+			}
+			break;
+		case 5:
+		// change server no 6  to newbie server [9/2/2010 rumist]
+		case 6:
+			{
+				strServer = CTString("(Newbie)");
+			}				
+			break;
+		default:
+			strServer = CTString("");
+		}
+		strServerName.PrintF("%s-%d %s ", GetServerGroupName(iGroupNo), iServerNo, strServer);
+#elif defined G_HONGKONG
+		CTString strServer;
 
-			strServerName.PrintF("%s-%d %s ", GetServerGroupName(iGroupNo), iServerNo, strServer);
-		}
-		else if ( g_iCountry == BRAZIL )
+		switch( iServerNo )
 		{
-			CTString strServer;
-			switch(iServerNo)
-			{
-			case 2:
-				{
-					strServer = CTString("(Serv-PVP)");
-				}
-				break;
-			case 7: case 8:
-				{
-					if (sGroup.iServerNo == 1)
-					{
-						strServer = CTString("(Non-PvP)");
-					}
-				}
-				break;
-			default:
-				strServer = CTString("");
-			}			
-			strServerName.PrintF("%s-%d%s", GetServerGroupName(iGroupNo), iServerNo, strServer);
+		// [111115] : Ã¤³Î º¯µ¿ °ü·Ã Non-PvP Ç¥±â by.Sol9
+		case 5:
+		case 6:
+			strServer = CTString("(Non-PvP)");
+			break;
+		default:
+			strServer = CTString("");
 		}
-		else if ( g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
-		{//ê³µì„±ì±„ë„ 4ë²ˆ 
-			CTString strServer;
-			switch(iServerNo)
+
+		strServerName.PrintF("%s-%d %s ", GetServerGroupName(iGroupNo), iServerNo, strServer);
+#elif defined G_GERMAN || defined G_EUROPE3 || defined G_EUROPE2 || defined G_NETHERLANDS
+		CTString strServer;
+
+		switch(iServerNo)
+		{
+		case 2:
+		case 5:
 			{
-			case 2:
-			case 5:
+				strServer = CTString("(Non-PvP)");
+			}break;
+		case 6:
+			{
+				if ((g_iCountry != GERMANY && (iGroupNo == 2 || iGroupNo == 3 || iGroupNo == 4)) || 
+					(g_iCountry == GERMANY && (iGroupNo == 6 || iGroupNo == 7)))
 				{
-					strServer = CTString("(Non-PvP)");
-				}break;
-			case 6:
-				{
-					if (
-						((g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND) && iGroupNo == 2) ||
-						(g_iCountry == GERMANY && iGroupNo == 6))
-					{
-						strServer = CTString("(RPG)");
-					}
-				}break;
-			default:
-				strServer = CTString("");
-			}			
-			
-			strServerName.PrintF("%s-%d%s", GetServerGroupName(iGroupNo), iServerNo, strServer);
+					strServer = CTString("(RPG)");
+				}
+			}break;
+		default:
+			strServer = CTString("");
+		}			
+
+#ifdef EUROUPEAN_SERVER_LOGIN
+		if(g_iConnectEuroupean)
+			strServer = CTString("");
+#endif
+		strServerName.PrintF("%s-%d%s", GetServerGroupName(iGroupNo), iServerNo, strServer);
+#elif defined G_JAPAN
+		CTString strServer;
+
+		switch( iServerNo )
+		{
+		
+		// connie [2009/10/29] - ¸®¾ó ¼­¹ö ¼³Á¤ º¯°æ				
+		case 1:
+			strServer = CTString( "(Non-PvP)" );
+			break;
+		case 2:
+			strServer = CTString( "(Non-PvP)" );
+			break; 
+		case 3:
+			strServer.PrintF( "(%s)", _S( 2417, "°ø¼º" ) );
+
+			break;
+		case 4:
+			strServer = CTString( "(Non-PvP)" );
+			break;
+		default :
+			strServer = CTString( "" );
+			break;
+		}
+
+		strServerName.PrintF( "%s-%d %s ", GetServerGroupName( iGroupNo ), iServerNo, strServer );
+#elif defined G_RUSSIA
+		CTString strServer;
+		if(iServerNo < 5)
+		{
+			strServer = CTString("(PvP)");
 		}
 		else
 		{
-			strServerName.PrintF( "%s-%d ", GetServerGroupName( iGroupNo ), iServerNo );
+			strServer = CTString("(Non-PvP)");
 		}
+		strServerName.PrintF("%s-%d %s", GetServerGroupName(iGroupNo), iServerNo, strServer);
+#elif defined(G_MAXICO) || defined(G_BRAZIL)
+		CTString strServer;
+		switch(iServerNo)
+		{
+		case 1:
+			{
+				strServer = CTString("(PvP)");
+			}
+			break;
+		case 2:
+		case 3:
+			{
+				strServer = CTString("(no-PvP)");
+			}
+			break;
+		case 4:
+			{
+				strServer = CTString("(Free-PvP)");
+			}
+			break;
+		default:
+			strServer = CTString("");
+		}
+		strServerName.PrintF("%s-%d%s", GetServerGroupName(iGroupNo), iServerNo, strServer);
+#elif defined(G_THAI)
+		CTString strServer;
+		switch(iServerNo)
+		{
+		case 1:
+			{
+				strServer.PrintF( "(%s)", _S( 2417, "°ø¼º" ) );
+			}
+			break;
+		case 5:
+			{
+				strServer.PrintF( "(%s)", _S( 5599, "»óÁ¡Ã¤³Î" ) );
+			}
+			break;
+		default:
+			strServer = CTString("");
+		}
+		strServerName.PrintF("%s-%d%s", GetServerGroupName(iGroupNo), iServerNo, strServer);
+#elif defined(G_KOR)
+		CTString strName;
+
+		switch(iServerNo)
+		{
+		case 2: // ±¹³» 2Ã¤³Î ·Î¾â ·³ºí Ç¥½Ã
+			strName.PrintF("(%s)", _S(5404, "·Î¾â·³ºí"));
+			break;
+		default:
+			strName = CTString("");
+			break;
+		}
+		strServerName.PrintF("%s-%d%s", GetServerGroupName(iGroupNo), iServerNo, strName);
+#else
+		strServerName.PrintF( "%s-%d ", GetServerGroupName( iGroupNo ), iServerNo );
+#endif
 		
 		if( sGroup.iServerNo == m_nRecentServerGroup && iServerNo == m_nRecentServer )
 			m_lbServer.AddString( 0, strServerName, 0x7E8FEBFF );
@@ -976,7 +1167,7 @@ void CUISelectServer::SetServerList()
 
 		if( sInfo.iPlayerNum == -1 )
 		{
-			m_lbServer.AddString( 1, _S( 372, "ì ê²€" ), 0x9400D6FF );
+			m_lbServer.AddString( 1, _S( 372, "Á¡°Ë" ), 0x9400D6FF );
 		}
 		else if( sInfo.iPlayerNum >= _cmiComm.cci_iFullUsers )
 		{
@@ -984,11 +1175,11 @@ void CUISelectServer::SetServerList()
 		}
 		else if( sInfo.iPlayerNum >= _cmiComm.cci_iBusyUsers )
 		{
-			m_lbServer.AddString( 1, _S( 374, "í˜¼ì¡" ), 0xFF9533FF );
+			m_lbServer.AddString( 1, _S( 374, "È¥Àâ" ), 0xFF9533FF );
 		}
 		else
 		{
-			m_lbServer.AddString( 1, _S( 371, "ì›í™œ" ), 0xCCCCCCFF );
+			m_lbServer.AddString( 1, _S( 371, "¿øÈ°" ), 0xCCCCCCFF );
 		}
 	}
 
@@ -1008,7 +1199,7 @@ void CUISelectServer::Lock(BOOL bLock)
 
 //------------------------------------------------------------------------------
 // CUISelectServer::GetServerGroupName
-// Explain:  Group ë²ˆí˜¸ë¥¼ ë°”íƒ•ìœ¼ë¡œ ì„œë²„êµ° ì´ë¦„ì„ ë¦¬í„´í•œë‹¤
+// Explain:  Group ¹øÈ£¸¦ ¹ÙÅÁÀ¸·Î ¼­¹ö±º ÀÌ¸§À» ¸®ÅÏÇÑ´Ù
 // Date : 2005-05-02,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 CTString CUISelectServer::GetServerGroupName( int iGroupNo )
@@ -1017,10 +1208,21 @@ CTString CUISelectServer::GetServerGroupName( int iGroupNo )
 
 	extern INDEX	g_iCountry;
 
-	if ( g_iCountry != CHINA )  // ì¤‘êµ­ Localì´ ì•„ë‹ˆë©´ ë¬´ì¡°ê±´ ê¸°ì¡´ ë£¨í‹´~
+	if (iGroupNo >= 1000)
+		iGroupNo %= 1000;
+
+#ifdef EUROUPEAN_SERVER_LOGIN
+	if(g_iConnectEuroupean)
+	{
+		return m_astrServerName[iGroupNo + 40];
+	}
+#endif
+
+
+	if ( g_iCountry != CHINA )  // Áß±¹ LocalÀÌ ¾Æ´Ï¸é ¹«Á¶°Ç ±âÁ¸ ·çÆ¾~
 		return m_astrServerName[iGroupNo];
 
-	if( !_cmiComm.Is2rdLocal() ) // 2ë²ˆì§¸ ì§€ì—­ì´ ì•„ë‹ˆê±°ë‚˜
+	if( !_cmiComm.Is2rdLocal() ) // 2¹øÂ° Áö¿ªÀÌ ¾Æ´Ï°Å³ª
 	{
 		return m_astrServerName[iGroupNo];
 	}
@@ -1032,8 +1234,8 @@ CTString CUISelectServer::GetServerGroupName( int iGroupNo )
 
 //------------------------------------------------------------------------------
 // CUISelectServer::FindRecomendSvr
-// Explain:  ê²Œì„ë£¨íŠ¸ì—ì„œ rsvr.txt í™”ì¼ì„ ì°¾ê³ , í•´ë‹¹ ë‚´ìš©ì„ ì½ì–´ì™€ì„œ ë¦¬í„´í•œë‹¤.
-// ì¶”ì²œ ì„œë²„ ì´ë²¤íŠ¸ë¥¼ ìœ„í•œ ì„ì‹œ ì²˜ë¦¬..
+// Explain:  °ÔÀÓ·çÆ®¿¡¼­ rsvr.txt È­ÀÏÀ» Ã£°í, ÇØ´ç ³»¿ëÀ» ÀĞ¾î¿Í¼­ ¸®ÅÏÇÑ´Ù.
+// ÃßÃµ ¼­¹ö ÀÌº¥Æ®¸¦ À§ÇÑ ÀÓ½Ã Ã³¸®..
 // Date : 2005-07-06 ,Author: Seo
 //------------------------------------------------------------------------------
 int CUISelectServer::FindRecomendSvr()
@@ -1051,8 +1253,23 @@ int CUISelectServer::FindRecomendSvr()
 
 		if (iRSvr < -1 || (iRSvr > 4 && iRSvr != 11))
 			iRSvr = -1;
+
+		fclose(fp);
 		return iRSvr;
 	}
 
 	return iRSvr;
 }
+
+void CUISelectServer::initialize()
+{
+// 	m_plbServer = (CUIListBox*)findUI( "lb_server" );
+// 	CTString strTemp = "Test";
+// 	if( m_plbServer )
+// 	{
+// 		m_plbServer->AddString(0,  strTemp );
+// 		m_plbServer->InsertString(0, 15, strTemp );
+// 	}
+}
+
+

@@ -17,17 +17,18 @@
 
 enum eGroup
 {
-	GROUP_INSERT,		//ê·¸ë£¹ ì¶”ê°€
-	GROUP_DELETE,		//ê·¸ë£¹ ì‚­ì œ
-	GROUP_RENAME,		//ê·¸ë£¹ëª… ë³€ê²½
+	GROUP_INSERT,		//±×·ì Ãß°¡
+	GROUP_DELETE,		//±×·ì »èÁ¦
+	GROUP_RENAME,		//±×·ì¸í º¯°æ
 };
 
 enum eMemberMenu
 {
-	MM_GROUP_CHANGE,	//ê·¸ë£¹ ì´ë™
-	MM_CHAT,			//ëŒ€í™”í•˜ê¸°
-	MM_DELETE,			//ì‚­ì œ
-	MM_BLOCK			//ì°¨ë‹¨
+	MM_GROUP_CHANGE,	//±×·ì ÀÌµ¿
+	MM_CHAT,			//´ëÈ­ÇÏ±â
+	MM_DELETE,			//»èÁ¦
+	MM_BLOCK,			//Â÷´Ü
+	MM_TELEPORT			//ÅÚ·¹Æ÷Æ®
 };
 //------------------------------------------------------------------------------
 // CUIMessenger
@@ -39,26 +40,27 @@ class CUIMessenger : public CUIWindow
 {
 protected:
 	// Controls
-	CUIButton				m_btmSetState;				//ìƒíƒœë³€í™” ë²„íŠ¼
+	CUIButton				m_btmSetState;				//»óÅÂº¯È­ ¹öÆ°
 	
-	CUIButton				m_btnClose;					//ë‹«ê¸° ë²„íŠ¼
-	CUIButton				m_btnGroup;					//"ê·¸ë£¹ê´€ë¦¬" ë²„íŠ¼
-	CUIButton				m_btnBlock;					//"ì°¨ë‹¨" ë²„íŠ¼
-	CUIButton				m_btnInsert;				//"ì¶”ê°€" ë²„íŠ¼
-	CUIButton				m_btnDelete;				//"ì‚­ì œ" ë²„íŠ¼
+	CUIButton				m_btnClose;					//´İ±â ¹öÆ°
+	CUIButton				m_btnGroup;					//"±×·ì°ü¸®" ¹öÆ°
+	CUIButton				m_btnBlock;					//"Â÷´Ü" ¹öÆ°
+	CUIButton				m_btnInsert;				//"Ãß°¡" ¹öÆ°
+	CUIButton				m_btnDelete;				//"»èÁ¦" ¹öÆ°
 	
-	CUIScrollBar			m_sbMemberList;				//ìŠ¤í¬ë¡¤
+	CUIScrollBar			m_sbMemberList;				//½ºÅ©·Ñ
 
-	CTString				m_strTitle;					//íƒ€ì´í‹€ë°” ì´ë¦„
+	CTString				m_strTitle;					// Å¸ÀÌÆ²¹Ù ÀÌ¸§
 
 	// Information of friend & guild
-	CMemberInfo					m_MyInfo;				//ë‚´ ì •ë³´
+	CMemberInfo				m_MyInfo;					// ³» Á¤º¸
+	int						m_nTarIndex;				// »ó´ë¹æ ÀÎµ¦
 
 	
 	// Region of each part
 	UIRect					m_rcTitle;								// Region of title
 	
-	// í¬ê¸° ë³€ê²½ ê°€ëŠ¥ ì˜ì—­
+	// Å©±â º¯°æ °¡´É ¿µ¿ª
 	UIRect					m_rcResizeLeft;							// Region of left resizing
 	UIRect					m_rcResizeRight;						// Region of right resizing
 	UIRect					m_rcResizeBottomL;						// Region of left bottom resizing
@@ -66,9 +68,9 @@ protected:
 	UIRect					m_rcResizeBottomR;						// Region of right bottom resizing
 	
 	//Tab
-	UIRect					m_rcFriendTab;				//ì¹œêµ¬íƒ­ ì˜ì—­
-	UIRect					m_rcBlockTab;				//ì°¨ë‹¨íƒ­ ì˜ì—­
-	bool					m_bFriendTab;				//í™œì„±í™”ëœ íƒ­( true=>ì¹œêµ¬, false=>ì°¨ë‹¨)
+	UIRect					m_rcFriendTab;				//Ä£±¸ÅÇ ¿µ¿ª
+	UIRect					m_rcBlockTab;				//Â÷´ÜÅÇ ¿µ¿ª
+	bool					m_bFriendTab;				//È°¼ºÈ­µÈ ÅÇ( true=>Ä£±¸, false=>Â÷´Ü)
 
 	// UV of each part
 	UIRectUV3				m_rt3BackT;								// UV of upper left background
@@ -86,44 +88,45 @@ protected:
 	UIRectUV3				m_rt3BackM;								// UV of middle left background
 	UIRectUV3				m_rt3BackL;								// UV of lower left background
 	
-	int						m_nBoardHeight;				//ê·¸ë£¹ì„ í‘œì‹œí•  ë¶€ë¶„ì˜ ë†’ì´
+	int						m_nBoardHeight;				//±×·ìÀ» Ç¥½ÃÇÒ ºÎºĞÀÇ ³ôÀÌ
 
-	CUITrackPopup			m_tpSetMyState;				//ë‚´ìƒíƒœë³€ê²½ íˆ´íŒ
-	CUITrackPopup			m_tpMemberMenu;				//ë©¤ë²„ ìš°í´ë¦­ì‹œ ë‚˜íƒ€ë‚˜ëŠ” íˆ´íŒ
-	CUITrackPopup			m_tpBlock;					//ì°¨ë‹¨ ë©¤ë²„ ìš°í´ë¦¬ì‹œ ë‚˜íƒ€ë‚˜ëŠ” í†¨íŒ
+	CUITrackPopup			m_tpSetMyState;				//³»»óÅÂº¯°æ ÅøÆÁ
+	CUITrackPopup			m_tpMemberMenu;				//¸â¹ö ¿ìÅ¬¸¯½Ã ³ªÅ¸³ª´Â ÅøÆÁ
+	CUITrackPopup			m_tpBlock;					//Â÷´Ü ¸â¹ö ¿ìÅ¬¸®½Ã ³ªÅ¸³ª´Â ÅçÆÁ
 	
-//ê·¸ë£¹ ê´€ë ¨ ë©¤ë²„
+//±×·ì °ü·Ã ¸â¹ö
 protected:
-	std::vector<CUIGroup*>	m_vecGroup;					//ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸
-	CUIGroup				m_mgBlock;					//ì°¨ë‹¨ ë©¤ë²„ ê·¸ë£¹
+	std::vector<CUIGroup*>	m_vecGroup;					//±×·ì ¸®½ºÆ®
+	CUIGroup				m_mgBlock;					//Â÷´Ü ¸â¹ö ±×·ì
 
-	CUITrackPopup			m_tpGroup;					//"ê·¸ë£¹ê´€ë¦¬" ë²„íŠ¼ í´ë¦­ì‹œ ë‚˜íƒ€ë‚˜ëŠ” íˆ´íŒ
-	CUITrackPopup			m_tpGroupMenu;				//ê·¸ë£¹ ìš°í´ë¦­ì‹œ ë‚˜íƒ€ë‚˜ëŠ” íˆ´íŒ
-	CUITrackPopup			m_tpGroupList;				//íˆ´íŒì—ì„œ ì‚¬ìš©í•˜ëŠ” ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸
+	CUITrackPopup			m_tpGroup;					//"±×·ì°ü¸®" ¹öÆ° Å¬¸¯½Ã ³ªÅ¸³ª´Â ÅøÆÁ
+	CUITrackPopup			m_tpGroupMenu;				//±×·ì ¿ìÅ¬¸¯½Ã ³ªÅ¸³ª´Â ÅøÆÁ
+	CUITrackPopup			m_tpGroupList;				//ÅøÆÁ¿¡¼­ »ç¿ëÇÏ´Â ±×·ì ¸®½ºÆ®
 
-	float					m_fTexWidth, m_fTexHeight;	//í…ìŠ¤ì³ì˜ í¬ê¸°
+	float					m_fTexWidth, m_fTexHeight;	//ÅØ½ºÃÄÀÇ Å©±â
 
-	UIRect					m_rcBoard;					//ê·¸ë£¹ì„ í‘œì‹œí•  ì˜ì—­
+	UIRect					m_rcBoard;					//±×·ìÀ» Ç¥½ÃÇÒ ¿µ¿ª
 		
-	int						m_nSelectGroup;				//í˜„ì¬ ì„ íƒí•œ ê·¸ë£¹(vector<> ìƒì˜ ì¸ë±ìŠ¤)
-	int						m_nTalkCount;				//ì‹¤í–‰ì¤‘ì¸ ì±„íŒ…ì°½ì˜ ìˆ˜
-	CMemberInfo				m_miSelectMember;			//í˜„ì¬ ì„ íƒí•œ ë©¤ë²„
+	int						m_nSelectGroup;				//ÇöÀç ¼±ÅÃÇÑ ±×·ì(vector<> »óÀÇ ÀÎµ¦½º)
+	int						m_nTalkCount;				//½ÇÇàÁßÀÎ Ã¤ÆÃÃ¢ÀÇ ¼ö
+	CMemberInfo				m_miSelectMember;			//ÇöÀç ¼±ÅÃÇÑ ¸â¹ö
 	
-	bool					m_bSelect;					//ë©¤ë²„ë¥¼ í´ë¦­?
-	bool					m_bDragging;				//ë“œë˜ê·¸ì¤‘?
-	bool					m_bDrop;					//ë“œë˜ê·¸ì¤‘ì¸ ë©¤ë²„ë¥¼ ë“œë?
+	bool					m_bSelect;					//¸â¹ö¸¦ Å¬¸¯?
+	bool					m_bDragging;				//µå·¡±×Áß?
+	bool					m_bDrop;					//µå·¡±×ÁßÀÎ ¸â¹ö¸¦ µå¶ø?
 
-	int						m_nX, m_nY;					//ë§ˆìš°ìŠ¤ì˜ ìœ„ì¹˜(ë©¤ë²„ ë“œë˜ê·¸ì‹œ ì‚¬ìš©)
-	int						m_nFriendScrollPos;			//ì¹œêµ¬ íƒ­ì—ì„œì˜ ìŠ¤í¬ë¡¤ ìœ„ì¹˜
-	int						m_nBlockScrollPos;			//ì°¨ë‹¨ íƒ­ì—ì„œì˜ ìŠ¤í¬ë¡¤ ìœ„ì¹˜
+	int						m_nX, m_nY;					//¸¶¿ì½ºÀÇ À§Ä¡(¸â¹ö µå·¡±×½Ã »ç¿ë)
+	int						m_nFriendScrollPos;			//Ä£±¸ ÅÇ¿¡¼­ÀÇ ½ºÅ©·Ñ À§Ä¡
+	int						m_nBlockScrollPos;			//Â÷´Ü ÅÇ¿¡¼­ÀÇ ½ºÅ©·Ñ À§Ä¡
 
-	int						m_nActiveMenu;				//ê·¸ë£¹ ë¦¬ìŠ¤íŠ¸(m_tpGroupList)ë¥¼ ë‚˜íƒ€ë‚¼ íˆ´íŒ
+	int						m_nActiveMenu;				//±×·ì ¸®½ºÆ®(m_tpGroupList)¸¦ ³ªÅ¸³¾ ÅøÆÁ
 														// 0 => m_tpGroupMenu, 1 =>m_tpGroup
+	bool					m_bPremiumChar;
 
-	CTextureData*			m_ptdMenuTexture;			//íˆ´íŒì— ì‚¬ìš©ë  í™”ì‚´í‘œë¥¼ ìœ„í•œ í…ìŠ¤ì³
-	UIRectUV				m_rtArrow;					//í™”ì‚´í‘œ í…ìŠ¤ì³ ì¢Œí‘œ
+	CTextureData*			m_ptdMenuTexture;			//ÅøÆÁ¿¡ »ç¿ëµÉ È­»ìÇ¥¸¦ À§ÇÑ ÅØ½ºÃÄ
+	UIRectUV				m_rtArrow;					//È­»ìÇ¥ ÅØ½ºÃÄ ÁÂÇ¥
 	
-	UIRectUV				m_rtTab;					//í… í…ìŠ¤ì³ ì¢Œí‘œ	
+	UIRectUV				m_rtTab;					//ÅÜ ÅØ½ºÃÄ ÁÂÇ¥	
 			
 public:
 	CUIMessenger();
@@ -152,6 +155,7 @@ public:
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Reset
@@ -175,10 +179,9 @@ public:
 	void DeleteMember( int nCharIndex );
 	//void SetMemberCondition( eCondition eState );
 	void SetMemberCondition( int nCharIndex, eCondition eState );
+	eCondition GetMemberCondition(int nCharIndex);
 	void SetMemberMenu(eMemberMenu eMenu, int nSubMenu);
 	void SetBlock( int nCharIndex, CTString strName, bool bBlock);
-
-
 
 	// Group
 	void AddGroup(int nGroupIndex, CTString strName);
@@ -201,11 +204,16 @@ public:
 	void Block(BYTE cError, int nCharIndex, CTString strName);
 	void UnBlock(BYTE cError, int nCharIndex, CTString strName);
 	
+	// Ä£±¸¸Ş´º ¾÷µ¥ÀÌÆ®
+	void UpdateMemberMenu();
 
+	// ÇÁ¸®¹Ì¾ö Ä³¸¯ÅÍ
+	void SetPremiumBenefit(bool bUse);
+	
 	//	Network
-	void RegistMemberReq( CTString strName );	// ì¹œêµ¬ë“±ë¡ ìš”ì²­
-	void RegistMemberReq( int nCharIndex, CTString strName );	// ì¹œêµ¬ë“±ë¡ ìš”ì²­
-	void RegistAllow();		// ì¹œêµ¬ ë“±ë¡ ìˆ˜ë½ 
+	void RegistMemberReq( CTString strName );	// Ä£±¸µî·Ï ¿äÃ»
+	void RegistMemberReq( int nCharIndex, CTString strName );	// Ä£±¸µî·Ï ¿äÃ»
+	void RegistAllow();		// Ä£±¸ µî·Ï ¼ö¶ô 
 	//void RevTalk( int nSendIndex, CTString strSendName, CTString strRecvName, CTString strMessage );
 	void RevTalk( int nMakeCharIndex, int nChatIndex, CTString strSendName, CTString strChat, int nColIndex );
 	
@@ -234,11 +242,13 @@ public:
 
 	bool IsUseLevel();
 	
-	
+	std::vector<CUIGroup*>& GetGroup(void) { return m_vecGroup; }
+
 	//  [12/8/2006 KwonYongDae]
 	int OpenTalk( int nChatIndex, const CMemberInfo targetInfo );
 	void RevOneVsOneTalk( int nSenderIndex, int nResiverIndex, CTString strSendName, CTString strChat, int nColIndex );
-	
+
+	BOOL	CloseWindowByEsc()			{ ToggleVisible();	return TRUE;		}	
 };
 
 

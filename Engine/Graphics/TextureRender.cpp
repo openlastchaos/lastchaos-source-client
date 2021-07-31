@@ -17,7 +17,7 @@
 
 #include <Engine/Base/Statistics_internal.h>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add CRenderTexture class for Render to Texture)(0.1)
 #include <Engine/Base/MemoryTracking.h>
 #include <d3d8.h>
 
@@ -38,7 +38,7 @@ CRenderTexture::~CRenderTexture()
 	if(m_pDepthStencil) m_pDepthStencil->Release();
 }
 
-// sehan D3DFORMAT fmt ì¶”ê°€ // sehan end
+// sehan D3DFORMAT fmt Ãß°¡ // sehan end
 BOOL CRenderTexture::Init(INDEX width, INDEX height, ULONG flag, D3DFORMAT fmt)
 {
 	TRACKTEX_HEAP();
@@ -46,18 +46,18 @@ BOOL CRenderTexture::Init(INDEX width, INDEX height, ULONG flag, D3DFORMAT fmt)
 	// check maximum supported texture dimension
 	if( width>MAX_MEX || height>MAX_MEX)
 	{
-		ASSERTALWAYS("ë„ˆë¬´ í° í…ìŠ¤ì³ ì‚¬ì´ì¦ˆì„. BY ANT");
+		ASSERTALWAYS("³Ê¹« Å« ÅØ½ºÃÄ »çÀÌÁîÀÓ. BY ANT");
 		return FALSE;
 	}
 
-	// sehan D3DFMT_A8R8G8B8 ë¥¼ fmt ë¡œ ë°”ê¿ˆ. // sehan end
+	// sehan D3DFMT_A8R8G8B8 ¸¦ fmt ·Î ¹Ù²Ş. // sehan end
 	rt_tdTexture.td_ulInternalFormat = fmt;
 	
 	// determine mip index from mex size and alpha channel presence
 	rt_tdTexture.td_iFirstMipLevel = 0;
 	rt_tdTexture.td_ulFlags = flag;
 	rt_tdTexture.td_ulFlags |= TEX_ALPHACHANNEL;	//alhpa
-	rt_tdTexture.td_ulFlags |= TEX_TRANSPARENT;		//alphaê°€ ìˆìœ¼ë©´ í•­ìƒ.
+	rt_tdTexture.td_ulFlags |= TEX_TRANSPARENT;		//alpha°¡ ÀÖÀ¸¸é Ç×»ó.
 	rt_tdTexture.td_ulFlags |= TEX_32BIT;
 	rt_tdTexture.td_ulFlags |= TEX_CONSTANT;
 	rt_tdTexture.td_ulFlags &= ~TEX_STATIC;
@@ -77,15 +77,15 @@ BOOL CRenderTexture::Init(INDEX width, INDEX height, ULONG flag, D3DFORMAT fmt)
 	rt_tdTexture.td_pulFrames = NULL;
 	rt_tdTexture.td_ctFrames = 1;
 
-	//IDirect3DTexture8ì˜ ìƒì„±.
+	//IDirect3DTexture8ÀÇ »ı¼º.
 	IDirect3DTexture8 *pTexture = NULL;
-	// sehan D3DFMT_A8R8G8B8 ë¥¼ fmt ë¡œ ë°”ê¿ˆ. // sehan end
+	// sehan D3DFMT_A8R8G8B8 ¸¦ fmt ·Î ¹Ù²Ş. // sehan end
 	HRESULT hr = _pGfx->gl_pd3dDevice->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, fmt, D3DPOOL_DEFAULT, &pTexture);
 	if(hr == NOERROR)
 	{
-		rt_tdTexture.td_ulObject = (ULONG)pTexture;	//ë‚´ê°€ ì‘ì„±í–ˆì§€ë§Œ ì‹«ë‹¤.  -_-;
+		rt_tdTexture.td_ulObject = (ULONG)pTexture;	//³»°¡ ÀÛ¼ºÇßÁö¸¸ ½È´Ù.  -_-;
 		pTexture->GetSurfaceLevel(0, &rt_pSurface);
-		//ì¼ë‹¨ Depth Stencil SurfaceëŠ” ì“°ì§€ ì•Šì§€ë§Œ ì„¤ì •í•´ì•¼ ëœë‹¤.
+		//ÀÏ´Ü Depth Stencil Surface´Â ¾²Áö ¾ÊÁö¸¸ ¼³Á¤ÇØ¾ß µÈ´Ù.
 		hr = _pGfx->gl_pd3dDevice->CreateDepthStencilSurface(width, height, D3DFMT_D16, D3DMULTISAMPLE_NONE, &m_pDepthStencil);
 		if(hr == NOERROR)
 		{
@@ -129,4 +129,4 @@ void CRenderTexture::End()		// SetRenderTarget old
 		m_pOldDepthStencil = NULL;
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add CRenderTexture class for Render to Texture)(0.1)

@@ -9,10 +9,10 @@
 	#pragma once
 #endif
 
-#include <vector>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/GlobalDefinition.h>
+// #include <vector>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIButtonEx.h>
+// #include <Engine/GlobalDefinition.h>
 
 // Define size of notice slot
 #if COUNTRY == TAIWAN
@@ -27,13 +27,16 @@
 #define	NOTICE_WIDTH					35
 #define	NOTICE_HEIGHT					(BTN_SIZE*MAX_NOTICE)
 
+#define NOTICE_HEIGHT_GAP				(20 + CHILD_QUICKSLOT_HEIGHT * 2)
+
 enum eNoticeType
 {
-	NOTICE_QUEST	= 0,		// í€˜ìŠ¤íŠ¸ ì¼ê²½ìš°...
-	NOTICE_POLYMOPH	= 1,		// ë³€ì‹  ìƒíƒœì—ì„œ ë˜ëŒì•„ì˜´.
-	NOTICE_EVENT	= 2,		// ì´ë²¤íŠ¸.
-	NOTICE_TRANSFORM= 3,		// ë³€ì‹ ì²´(ê°•ì‹ )
-	NOTICE_AUCTION	= 4,		// ê²½ë§¤
+	NOTICE_QUEST	= 0,		// Äù½ºÆ® ÀÏ°æ¿ì...
+	NOTICE_POLYMOPH,			// º¯½Å »óÅÂ¿¡¼­ µÇµ¹¾Æ¿È.
+	NOTICE_EVENT,				// ÀÌº¥Æ®.
+	NOTICE_TRANSFORM,			// º¯½ÅÃ¼(°­½Å)
+//	NOTICE_AUCTION,				// °æ¸Å
+	NOTICE_AFFINITY,			// [100322: selo] Ä£È­µµ º¸»ó
 };
 
 // ----------------------------------------------------------------------------
@@ -103,9 +106,11 @@ private:
 
 	CUIButtonEx			m_abtnItems[MAX_NOTICE];
 
-	int					m_nLeftTime;					// ë‚¨ì€ ì‹œê°„	
-	TIME				m_tmLeftTime;					// íƒ€ì´ë¨¸ ìš© ì„ì‹œ ë³€ìˆ˜
+	int					m_nLeftTime;					// ³²Àº ½Ã°£	
+	TIME				m_tmLeftTime;					// Å¸ÀÌ¸Ó ¿ë ÀÓ½Ã º¯¼ö
 
+	// [2011/01/18 : Sora] Ãâ¼® ÀÌº¥Æ®
+	BOOL			m_bAttendanceEvent;
 private:
 	// Internal functions
 	void	RenderBtns();
@@ -141,7 +146,19 @@ public:
 	void	Clear();
 
 	void	SetLeftTime( int nLeftTime );
-	void	UpdateTimeInfo();
+	
+	// [2011/01/18 : Sora] Ãâ¼® ÀÌº¥Æ®
+	void	ShowAttendanceMessage( SLONG attendanceRate );
+	void	ShowAttendanceNotice( SLONG attendanceRate, SLONG enchantRate, SLONG expSpRate );
+	BOOL	IsAttendanceEventOn() { return m_bAttendanceEvent; }
+
+	// used party item. [4/25/2011 rumist]
+	void	ShowUsedPartyItemNotice( const INDEX& nItemIdx, const CTString& strNickName );
+
+	// royal rumble notice [4/26/2011 rumist]
+	void	ShowRoyalRumbleNotice( const UBYTE uType );
+	void	ShowRoyalRumbleWinner( const INDEX& iLevel, const CTString& strNickName );
+	void	ShowRoyalRumbleNextPlayerTime( const INDEX iLeftTime );
 };
 
 

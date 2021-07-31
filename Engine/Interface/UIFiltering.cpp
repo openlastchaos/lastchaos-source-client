@@ -1,14 +1,12 @@
 #include "stdh.h"
-#include <Engine/Base/Memory.h>
-#include "UIFiltering.h"
-#include "Engine/GlobalDefinition.h"
-#include <stdio.h>
-#include <Engine/Base/Memory.h>
-#include <algorithm>
-#include <iostream>
-#include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Entities/InternalClasses.h>
 
+// Çì´õ Á¤¸®. [12/1/2009 rumist]
+#include <Engine/Interface/UIInternalClasses.h>
+#include <string>
+#include <vector>
+#include <Engine/Interface/UIFiltering.h>
+#include <algorithm>
+#include <Engine/Entities/InternalClasses.h>
 
 CUIFiltering _UIFiltering;
 CUIFiltering _UIFilteringCharacter;
@@ -18,13 +16,17 @@ extern INDEX g_iCountry;
 
 #define is_space(c)		(c == 0x20 || (c >= 0x09 && c <= 0x0D))
 
-char*	szKey	= "34toiuoakfaj2095lkjalsd;lweou";
-char*	szKey_brz = {"0x8D,0x8F,0x81,0x90,0x9D,0x8D,0x90,0x9D,0x81,0x81,0x9D,0x8F,0x8D,0x8D,0x81,0x90,0x81,0x8D,0x90,0x8F"}; 
-					//"%â˜†@â–¡â™ â–¶â”ã‰µâ“¤â…µã¥â—‘ï¿¦â™©â”›";
+// modified by D.K 
+// since 2009-09-29
+// comments : key change string to hexa code.
+#pragma warning( disable: 4305)		// disable truncation warning.
+#pragma warning( disable: 4309)		// disable truncation warning.
+const char	szKey_brz[32] = {0x8D,0x8F,0x81,0x90,0x9D,0x8D,0x90,0x9D,0x81,0x81,0x9D,0x8F,0x8D,0x8D,0x81,0x90,0x81,0x8D,0x90,0x8F,
+								0x8D,0x8F,0x9D,0x8F,0x9D,0x8D,0x90,0x9D,0x81,0x90,0x81,0x9D};
 
 //------------------------------------------------------------------------------
 // makeLowCase()
-// Explain:  ë¹„êµì‹œ ì†Œë¬¸ìë¡œ ë³€í™˜ 
+// Explain:  ºñ±³½Ã ¼Ò¹®ÀÚ·Î º¯È¯ 
 // Date : 2006-04-03 wooss
 //------------------------------------------------------------------------------
 void makeLowCase(char* tmpChar)
@@ -35,8 +37,8 @@ void makeLowCase(char* tmpChar)
 
 //------------------------------------------------------------------------------
 // lessLength
-// Explain:  ë¬¸ìì—´ ë¹„êµí•¨ìˆ˜ ( for std::sort )
-// Date : 2005-01-28(ì˜¤í›„ 7:34:12) Lee Ki-hwan
+// Explain:  ¹®ÀÚ¿­ ºñ±³ÇÔ¼ö ( for std::sort )
+// Date : 2005-01-28(¿ÀÈÄ 7:34:12) Lee Ki-hwan
 //------------------------------------------------------------------------------
 bool lessLength(const FILTER& f1, const FILTER& f2)
 {
@@ -68,7 +70,7 @@ void CUIFiltering::Clear()
 // Explain:  
 // Date : 2005-01-13,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
-BOOL CUIFiltering::Create( char* file_name )
+BOOL CUIFiltering::Create( char* file_name , bool charfilter)
 {
 	
 	FILE* fp;	
@@ -83,16 +85,17 @@ BOOL CUIFiltering::Create( char* file_name )
 		return FALSE;
 	}
 	
-	// íŒŒì¼ ë²„ì ¼ ì²´í¬
+	// ÆÄÀÏ ¹öÁ¯ Ã¼Å©
 	fread ( szReadBuffer, MAX_STR_LENGTH, 1, fp );
 	EnDecoding ( szEndCodingBuffer, szReadBuffer );
 	
 	if ( strcmp ( szEndCodingBuffer, m_strRefineWord ) != 0 )
 	{
+		fclose(fp);
 		return FALSE;	
 	}
 
-	// íŒŒì¼ ê°œìˆ˜ ì²´í¬ 
+	// ÆÄÀÏ °³¼ö Ã¼Å© 
 	fread ( szReadBuffer, MAX_STR_LENGTH, 1, fp );
 	m_nListCount = atoi ( szReadBuffer );
 	
@@ -116,6 +119,8 @@ BOOL CUIFiltering::Create( char* file_name )
 	fclose(fp);			
 
 	stable_sort ( m_vList.begin(), m_vList.end(), lessLength );
+
+	m_bCharacterfilter = charfilter;
 	
 	//MySort_ForFilter ( m_vList, m_nListCount );			
 
@@ -154,13 +159,13 @@ void CUIFiltering::Destroy()
 
 //------------------------------------------------------------------------------
 // CUIFiltering::Filtering
-// Explain:  ì…ë ¥ëœ ë‹¨ì–´ë¥¼ í•„í„°ë§ í•˜ì—¬ ê²°ê³¼ë¥¼ ì €ì¥
+// Explain:  ÀÔ·ÂµÈ ´Ü¾î¸¦ ÇÊÅÍ¸µ ÇÏ¿© °á°ú¸¦ ÀúÀå
 // Date : 2005-01-13,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 BOOL CUIFiltering::Filtering( char* syntax )
 {
-	int space_array[256];	// ë„ì–´ì“°ê¸°ê°€ ìˆëŠ” ìœ„
-	int space_cnt = 0;		// ë„ì–´ì“°ê¸°ê°€ 
+	int space_array[256];	// ¶ç¾î¾²±â°¡ ÀÖ´Â À§
+	int space_cnt = 0;		// ¶ç¾î¾²±â°¡ 
 	int i, pos;
 	
 	int len = strlen ( syntax );
@@ -170,18 +175,21 @@ BOOL CUIFiltering::Filtering( char* syntax )
 	}
 
 	// add new temp val 060419--------------------<<
-	char *tv_syntax = new(char[len+1]);
-	strcpy(tv_syntax,syntax);
+	//char *tv_syntax = new(char[len+1]);
+	//strcpy(tv_syntax,syntax);
+	char chComp[256];
+	memcpy(chComp, syntax, len);
+	chComp[len] = '\0';
 	// ------------------------------------------->>
 
-	// space ë¥¼ ëª¨ë‘ ì—†ì• ê³ , space ê°€ ìˆë˜ 
+	// space ¸¦ ¸ğµÎ ¾ø¾Ö°í, space °¡ ÀÖ´ø 
 	for ( i = 0; i < len; i++ ) 
 	{
-		if ( is_space ( tv_syntax[i] ) ) 
+		if ( is_space ( chComp[i] ) ) 
 		{
 			for ( pos = i; pos < len; pos++ ) 
 			{
-				tv_syntax[pos] = tv_syntax[pos+1];
+				chComp[pos] = chComp[pos+1];
 			}
 
 			space_array[space_cnt++] = i;
@@ -189,12 +197,14 @@ BOOL CUIFiltering::Filtering( char* syntax )
 			i--;
 		}
 		else {
-			// ì˜ë¬¸ì ì†Œë¬¸ìë¡œ ë¹„êµ 060403
-			makeLowCase( &tv_syntax[i] );
+			//[ttos_2009_8_6]: Ã¤ÆÃ¹«½Ã´Â Ä³¸¯ÅÍÀÌ¸§À¸·Î ºñ±³ÇÏ¹Ç·Î ½ºÆ®¸µ º¯È¯À» ½ÃÅ°Áö ¾Ê´Â´Ù
+			// ¿µ¹®ÀÚ ¼Ò¹®ÀÚ·Î ºñ±³ 060403
+			if(!m_bCharacterfilter) 
+				makeLowCase( &chComp[i] );
 		}
 	}
 
-	// í•„í„°ë§
+	// ÇÊÅÍ¸µ
 	i = 0;
 	BOOL bFount;
 	int mid, left, right;
@@ -204,28 +214,41 @@ BOOL CUIFiltering::Filtering( char* syntax )
 	{
 		bFount = FALSE;
 		left = 0;
-		right =  m_nListCount - 1;	// Date : 2005-01-17,   By Lee Ki-hwan : ë²„ê·¸ ìˆ˜ì •
+		right =  m_nListCount - 1;	// Date : 2005-01-17,   By Lee Ki-hwan : ¹ö±× ¼öÁ¤
 
 		while ( right >= left ) 
 		{
 			mid = ( right + left ) / 2;
 			
-			int Res = m_vList[mid].strString.compare ( 0, m_vList[mid].nString, tv_syntax+i, 0, m_vList[mid].nString );
+			int Res;
+			if (!m_bCharacterfilter)
+			{
+				Res = m_vList[mid].strString.compare ( 0, m_vList[mid].nString, chComp+i, 0, m_vList[mid].nString );
+			}else
+			{
+				Res = m_vList[mid].strString.compare ( 0, m_vList[mid].nString, chComp+i, 0, len);
+			}
+
+			
 			//strncmp ( m_vList[mid].strString, &syntax[i], m_vList[mid].nString );
 					
 			if ( Res < 0 ) 
 			{
-				left = mid + 1;	  // check_bufferì´ ë” í¬ë©´ 
+				left = mid + 1;	  // check_bufferÀÌ ´õ Å©¸é 
 			} 
 			else if ( Res > 0 ) 
 			{
-				right = mid - 1; //  check_bufferì´ ë” ì‘ìœ¼ë©´
+				right = mid - 1; //  check_bufferÀÌ ´õ ÀÛÀ¸¸é
 			} 
-			else // ì°¾ì•˜ë‹¤.
-			{ 
-				memcpy ( &tv_syntax[i], m_vList[mid].strReword.c_str(), m_vList[mid].nReword );
-				bFount = TRUE;
-				break;
+			else // Ã£¾Ò´Ù.
+			{
+				if (!m_bCharacterfilter || (m_bCharacterfilter && m_vList[mid].nString == len))
+				{
+					memcpy ( &chComp[i], m_vList[mid].strReword.c_str(), m_vList[mid].nReword );
+					bFount = TRUE;
+					break;
+				}
+				
 			}
 		}
 
@@ -238,7 +261,7 @@ BOOL CUIFiltering::Filtering( char* syntax )
 		} 
 		else 
 		{
-			if ( tv_syntax[i] < 0 || tv_syntax[i] > 127 )  //2ë°”ì´íŠ¸
+			if ( chComp[i] < 0 || chComp[i] > 127 )  //2¹ÙÀÌÆ®
 			{
 				i += 2;
 			} 
@@ -250,7 +273,7 @@ BOOL CUIFiltering::Filtering( char* syntax )
 
 	} // while ( i < len ) 
 /*
-	// ë„ì–´ ì“°ê¸° ë³µêµ¬ 
+	// ¶ç¾î ¾²±â º¹±¸ 
 	for ( i = space_cnt - 1; i >= 0; i-- ) 
 	{
 		for ( pos = len; pos >= space_array[i]; pos-- ) 
@@ -268,7 +291,7 @@ BOOL CUIFiltering::Filtering( char* syntax )
 
 //------------------------------------------------------------------------------
 // CUIFiltering::Filtering
-// Explain:   ì…ë ¥ëœ ë‹¨ì–´ë¥¼ í•„í„°ë§ í•˜ì—¬ ê²°ê³¼ë¥¼ ì €ì¥
+// Explain:   ÀÔ·ÂµÈ ´Ü¾î¸¦ ÇÊÅÍ¸µ ÇÏ¿© °á°ú¸¦ ÀúÀå
 // Date : 2005-01-13,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 BOOL CUIFiltering::Filtering( char* syntax, int* szReturn )
@@ -289,12 +312,12 @@ BOOL CUIFiltering::Filtering( char* syntax, int* szReturn )
 	chComp[len] = '\0';
 	// ------------------------------------------->>
 
-	// space ë¥¼ ëª¨ë‘ ì—†ì• ê³ , space ê°€ ìˆë˜ 
+	// space ¸¦ ¸ğµÎ ¾ø¾Ö°í, space °¡ ÀÖ´ø 
 	for ( i = 0; i < len; i++ ) 
 	{
 		if ( is_space ( chComp[i] ) ) 
 		{
-			if (g_iCountry != USA)
+#if !defined(G_USA)
 			{
 				for ( pos = i; pos < len; pos++ ) 
 				{
@@ -304,14 +327,17 @@ BOOL CUIFiltering::Filtering( char* syntax, int* szReturn )
 				len--;
 				i--;
 			}
+#endif
 		}
 		else {
-			// ì˜ë¬¸ì ì†Œë¬¸ìë¡œ ë¹„êµ 060403
-			makeLowCase( &chComp[i] );
+			//[ttos_2009_8_6]: Ã¤ÆÃ¹«½Ã´Â Ä³¸¯ÅÍÀÌ¸§À¸·Î ºñ±³ÇÏ¹Ç·Î ½ºÆ®¸µ º¯È¯À» ½ÃÅ°Áö ¾Ê´Â´Ù
+			// ¿µ¹®ÀÚ ¼Ò¹®ÀÚ·Î ºñ±³ 060403 
+			if(!m_bCharacterfilter) 
+				makeLowCase( &chComp[i] );
 		}
 	}
 
-	// í•„í„°ë§
+	// ÇÊÅÍ¸µ
 	i = 0;
 	BOOL bFount;
 	int mid, left, right;
@@ -334,13 +360,13 @@ BOOL CUIFiltering::Filtering( char* syntax, int* szReturn )
 				
 			if ( Res < 0 ) 
 			{
-				left = mid + 1;	  // check_bufferì´ ë” í¬ë©´ 
+				left = mid + 1;	  // check_bufferÀÌ ´õ Å©¸é 
 			} 
 			else if ( Res > 0 ) 
 			{
-				right = mid - 1; //  check_bufferì´ ë” ì‘ìœ¼ë©´
+				right = mid - 1; //  check_bufferÀÌ ´õ ÀÛÀ¸¸é
 			} 
-			else // ì°¾ì•˜ë‹¤.
+			else // Ã£¾Ò´Ù.
 			{ 
 				szReturn[nCountIndex++] = mid;
 				
@@ -357,7 +383,7 @@ BOOL CUIFiltering::Filtering( char* syntax, int* szReturn )
 		} 
 		else 
 		{
-			if ( chComp[i] < 0 || chComp[i] > 127 )  //2ë°”ì´íŠ¸
+			if ( chComp[i] < 0 || chComp[i] > 127 )  //2¹ÙÀÌÆ®
 			{
 				i += 2;
 			} 
@@ -393,10 +419,7 @@ char* CUIFiltering::GetString ( int nIndex ) const
 //------------------------------------------------------------------------------
 char* CUIFiltering::GetKey() const
 {
-	if(g_iCountry == BRAZIL || g_iCountry == HONGKONG || g_iCountry == USA || g_iCountry == GERMANY 
-		|| g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND || g_iCountry == TURKEY)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
-		return (char*)szKey_brz;
-	else return (char*)szKey;
+	return (char*)szKey_brz;
 }
 
 
@@ -407,13 +430,13 @@ char* CUIFiltering::GetKey() const
 //------------------------------------------------------------------------------
 void CUIFiltering::EnDecoding( char* szResult, const char* szData )
 {
-//	int nKeyLeng = strlen ( szKey );
 	char* TempKey = GetKey(); 
 	int nKeyLeng = strlen ( TempKey);
 	int nDataLen = strlen ( szData );
 	int nKeyIndex = 0;
 
-	for ( int i = 0; i < nDataLen; i++ )
+	int i;
+	for ( i = 0; i < nDataLen; i++ )
 	{
 		szResult[i] = szData[i] ^ TempKey[nKeyIndex];
 		if( ++nKeyIndex > nKeyLeng ) nKeyIndex = 0;
@@ -467,7 +490,7 @@ char* CUIFiltering::GetFileName() const
 	return (char*) m_strFileName;
 }
 
-//[ttos_2009_7_17]: CHARATER_CHAT_FILTER ìºë¦­í„° ì±„íŒ… í•„í„°
+//[ttos_2009_7_17]: CHARATER_CHAT_FILTER Ä³¸¯ÅÍ Ã¤ÆÃ ÇÊÅÍ
 //******************************************************
 //---------------------------------------------------
 // CUIChatFilter
@@ -479,11 +502,14 @@ CUIChatFilter::CUIChatFilter()
 	m_nSelIndex = -1;
 
 	m_lbCharName.ResetAllStrings();
+	m_ptdButtonTexture = NULL;
 }
 
 CUIChatFilter::~CUIChatFilter()
 {
-	
+	Destroy();
+
+	STOCK_RELEASE(m_ptdButtonTexture);
 }
 
 static int	_nMsgBoxLineHeight = 0;
@@ -502,10 +528,10 @@ void CUIChatFilter::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 	
 	// Set size of UI on this texture.
-	m_rtsBase.AddRectSurface(UIRect(0,0,nWidth,nHeight),UIRectUV(0,386,250,717,fTexWidth,fTexHeight));	// ìœ„ì— í‹€.
+	m_rtsBase.AddRectSurface(UIRect(0,0,nWidth,nHeight),UIRectUV(0,386,250,717,fTexWidth,fTexHeight));	// À§¿¡ Æ².
 
 	// Set title.
-	m_rtTitle.SetRect(0,0,nWidth,37);
+	m_rtTitle.SetRect(20, 0, nWidth - 40, 37);
 
 		// Get Button Texture Size.
 	fTexWidth = m_ptdButtonTexture->GetPixWidth();
@@ -518,13 +544,13 @@ void CUIChatFilter::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_btnClose.CopyUV(UBS_IDLE,UBS_ON);
 	m_btnClose.CopyUV(UBS_IDLE,UBS_DISABLE);
 
-	m_btnAddChar.Create(this,_S(550, "ì¶”ê°€"),35,305,70,22);
+	m_btnAddChar.Create(this,_S(550, "Ãß°¡"),35,305,70,22);
 	m_btnAddChar.SetUV(UBS_IDLE,113, 0, 182, 21,fTexWidth,fTexHeight);
 	m_btnAddChar.SetUV(UBS_CLICK,186, 0, 255, 21,fTexWidth,fTexHeight);
 	m_btnAddChar.CopyUV(UBS_IDLE,UBS_ON);
 	m_btnAddChar.CopyUV(UBS_IDLE,UBS_DISABLE);
 
-	m_btnDelChar.Create(this,_S(551, "ì‚­ì œ"),145,305,70,22);
+	m_btnDelChar.Create(this,_S(551, "»èÁ¦"),145,305,70,22);
 	m_btnDelChar.SetUV(UBS_IDLE,113, 0, 182, 21,fTexWidth,fTexHeight);
 	m_btnDelChar.SetUV(UBS_CLICK,186, 0, 255, 21,fTexWidth,fTexHeight);
 	m_btnDelChar.CopyUV(UBS_IDLE,UBS_ON);
@@ -552,17 +578,39 @@ void CUIChatFilter::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_lbCharName.SetScrollBarBottomUV( 185, 62, 194, 70, fTexWidth, fTexHeight );
 }
 
+// ----------------------------------------------------------------------------
+// Name : ResetPosition()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIChatFilter::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	SetPos( ( pixMaxI + pixMinI - GetWidth() ) / 2, ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
+}
+
+// ----------------------------------------------------------------------------
+// Name : AdjustPosition()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIChatFilter::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	if( m_nPosX < pixMinI || m_nPosX + GetWidth() > pixMaxI ||
+		m_nPosY < pixMinJ || m_nPosY + GetHeight() > pixMaxJ )
+		ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
+}
+
 void CUIChatFilter::Render()
 {
-		// Set shop texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	// Set shop texture
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	m_rtsBase.SetPos( m_nPosX, m_nPosY );
-	m_rtsBase.RenderRectSurface( _pUIMgr->GetDrawPort(), 0xFFFFFFFF );
+	m_rtsBase.RenderRectSurface( pDrawPort, 0xFFFFFFFF );
 	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 	
 	m_btnAddChar.Render();
 	m_btnDelChar.Render();
@@ -570,11 +618,11 @@ void CUIChatFilter::Render()
 
 	m_lbCharName.Render();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 	CTString strTemp;
-	strTemp.PrintF( _S( 4458, "ì±„íŒ… ì°¨ë‹¨" ) );
-	_pUIMgr->GetDrawPort()->PutTextExCX( strTemp, m_nPosX + 125, m_nPosY + 17, 0xC5C5C5FF );
-	_pUIMgr->GetDrawPort()->EndTextEx();	
+	strTemp.PrintF( _S( 4458, "Ã¤ÆÃ Â÷´Ü" ) );
+	pDrawPort->PutTextExCX( strTemp, m_nPosX + 125, m_nPosY + 17, 0xC5C5C5FF );
+	pDrawPort->EndTextEx();	
 	
 }
 
@@ -582,7 +630,7 @@ void CUIChatFilter::OpenChatFilter()
 {
 	ListUpdate();
 
-	_pUIMgr->RearrangeOrder( UI_CHAT_FILTER, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_CHAT_FILTER, TRUE );
 }
 
 void CUIChatFilter::CloseChatFilter()
@@ -590,7 +638,7 @@ void CUIChatFilter::CloseChatFilter()
 	m_lbCharName.ResetAllStrings();
 	m_strSelName.Clear();
 	m_nSelIndex = -1;
-	_pUIMgr->RearrangeOrder( UI_CHAT_FILTER, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_CHAT_FILTER, FALSE );
 }
 
 void CUIChatFilter::ListUpdate()
@@ -598,7 +646,7 @@ void CUIChatFilter::ListUpdate()
 	_UICharacterChatFilter.Clear();
 	CTString	strFullPath = _fnmApplicationPath.FileDir();
 	strFullPath += "Data\\CharacterChatFilter.dat"; 
-	_UICharacterChatFilter.Create(strFullPath.str_String);
+	_UICharacterChatFilter.Create(strFullPath.str_String, true);
 	m_lbCharName.ResetAllStrings();
 	int count = _UICharacterChatFilter.GetListCount();
 	CTString strTem;
@@ -624,7 +672,7 @@ void CUIChatFilter::SaveFile()
 		MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
 		return;
 	}
-	_UICharacterChatFilter.Clear();
+//	_UICharacterChatFilter.Clear();
 	int nCount = m_lbCharName.GetCurItemCount(0);
 
 	char szBuffer[MAX_STR_LENGTH]; 
@@ -671,7 +719,12 @@ void CUIChatFilter::DelCharName()
 		return;		
 	}
 
+	// ÇÊÅÍ¸®½ºÆ®¿¡¼­ ÇØÁ¦ µÇ¸é ½ºÆĞ¸Ó ¸Ê¿¡¼­µµ ÇØÁ¦ added by sam 11/03/02
+	CUIManager::getSingleton()->GetChattingUI()->SpamerLift( m_strSelName );
+
 	m_lbCharName.RemoveString(m_nSelIndex,0);
+	m_nSelIndex = -1;
+	m_strSelName.Clear();
 	SaveFile();
 	ListUpdate();
 }
@@ -691,7 +744,7 @@ WMSG_RESULT	CUIChatFilter::MouseMessage( MSG *pMsg )
 		case WM_MOUSEMOVE:
 			{
 				if( IsInside( nX, nY ) )
-					_pUIMgr->SetMouseCursorInsideUIs();
+					CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 				int	ndX = nX - nOldX;
 				int	ndY = nY - nOldY;
@@ -749,7 +802,7 @@ WMSG_RESULT	CUIChatFilter::MouseMessage( MSG *pMsg )
 						return WMSG_SUCCESS;
 					}
 	
-					_pUIMgr->RearrangeOrder( UI_CHAT_FILTER, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_CHAT_FILTER, TRUE );
 					return WMSG_SUCCESS;
 				}
 			}	
@@ -767,7 +820,7 @@ WMSG_RESULT	CUIChatFilter::MouseMessage( MSG *pMsg )
 						return WMSG_SUCCESS;
 					}else if (m_btnAddChar.MouseMessage( pMsg) != WMSG_FAIL )
 					{
-						Message( MSGCMD_CHAT_BLOCK_REQ, _S(3004, "ìºë¦­í„° ì°¨ë‹¨"), _S(3007, "ì°¨ë‹¨í•  ìºë¦­ëª…ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
+						Message( MSGCMD_CHAT_BLOCK_REQ, _S(3004, "Ä³¸¯ÅÍ Â÷´Ü"), _S(3007, "Â÷´ÜÇÒ Ä³¸¯¸íÀ» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), UMBS_OKCANCEL | UMBS_INPUTBOX );
 
 						return WMSG_SUCCESS;
 					}else if (m_btnDelChar.MouseMessage( pMsg ) != WMSG_FAIL)
@@ -782,6 +835,11 @@ WMSG_RESULT	CUIChatFilter::MouseMessage( MSG *pMsg )
 
 			}
 		break;
+		case WM_LBUTTONDBLCLK:
+			{
+
+			}
+			break;
 		case WM_MOUSEWHEEL:
 			{
 				if (IsInside(nX, nY))
@@ -797,14 +855,16 @@ WMSG_RESULT	CUIChatFilter::MouseMessage( MSG *pMsg )
 
 void CUIChatFilter::Message( int nCommandCode, CTString strTitle, CTString strMessage, DWORD dwStyle )
 {
-	if( _pUIMgr->DoesMessageBoxExist( nCommandCode ) )
-	return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( nCommandCode ) )
+		return;
 
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( strTitle, dwStyle, UI_CHAT_FILTER, nCommandCode ); 
 	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 void CUIChatFilter::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
@@ -816,22 +876,23 @@ void CUIChatFilter::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInpu
 		{
 			if( bOK )
 			{
-				if( strInput.Length() < 2 || strInput.Length() > 16 )
-				{
-					Message( MSGCMD_CHAT_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(3009, "ì°¨ë‹¨í•˜ê³ ì í•˜ëŠ” ì´ë¦„ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤"), UMBS_OK);		
-					return;
-				}
-				if( _UICharacterChatFilter.Filtering((char *)((const char *)strInput)))
-				{
-					Message( MSGCMD_CHAT_ERROR, _S(3008, "ì°¨ë‹¨ ì—ëŸ¬"), _S(3011, "ì´ë¯¸ ì°¨ë‹¨ëœ ìºë¦­ì…ë‹ˆë‹¤."), UMBS_OK);
-					return;
-				}
-				
+				// Â÷´ÜÀÇ ¼ø¼­¸¦ ¹Ù²Ş. [3/9/2011 rumist]
+// 				if( strInput.Length() < 2 || strInput.Length() > 16 )
+// 				{
+// 					Message( MSGCMD_CHAT_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3009, "Â÷´ÜÇÏ°íÀÚ ÇÏ´Â ÀÌ¸§ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù"), UMBS_OK);		
+// 					return;
+// 				}
+// 				if( _UICharacterChatFilter.Filtering((char *)((const char *)strInput)))
+// 				{
+// 					Message( MSGCMD_CHAT_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3011, "ÀÌ¹Ì Â÷´ÜµÈ Ä³¸¯ÀÔ´Ï´Ù."), UMBS_OK);
+// 					return;
+// 				}
+// 				
 	
 				CTString strMessage;
-				strMessage.PrintF(_S(3005, "%së‹˜ì„ ì°¨ë‹¨í•˜ì‹œê² ìŠµë‹ˆê¹Œ?"), strInput);
+				strMessage.PrintF(_S(3005, "%s´ÔÀ» Â÷´ÜÇÏ½Ã°Ú½À´Ï±î?"), strInput);
 				m_strSelName = strInput;
-				Message( MSGCMD_CHAT_BLOCK, _S(3004, "ìºë¦­í„° ì°¨ë‹¨"), strMessage, UMBS_YESNO );		
+				Message( MSGCMD_CHAT_BLOCK, _S(3004, "Ä³¸¯ÅÍ Â÷´Ü"), strMessage, UMBS_YESNO );		
 			}
 		}
 		break;
@@ -840,6 +901,16 @@ void CUIChatFilter::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInpu
 		{
 			if( bOK)
 			{
+				if( m_strSelName.Length() < 2 || m_strSelName.Length() > 16 )
+				{
+					Message( MSGCMD_CHAT_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3009, "Â÷´ÜÇÏ°íÀÚ ÇÏ´Â ÀÌ¸§ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù"), UMBS_OK);		
+					return;
+				}
+				if( _UICharacterChatFilter.Filtering((char *)((const char *)m_strSelName)))
+				{
+					Message( MSGCMD_CHAT_ERROR, _S(3008, "Â÷´Ü ¿¡·¯"), _S(3011, "ÀÌ¹Ì Â÷´ÜµÈ Ä³¸¯ÀÔ´Ï´Ù."), UMBS_OK);
+					return;
+				}
 				AddCharName(m_strSelName.str_String);	
 			}else
 			{
@@ -856,5 +927,14 @@ void CUIChatFilter::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInpu
 
 	}
 
+}
+
+// call by simple popup window.
+void	CUIChatFilter::CharacterFilterInSimplePopup( CTString strCharName )
+{
+	CTString strMessage;
+	strMessage.PrintF(_S(3005, "%s´ÔÀ» Â÷´ÜÇÏ½Ã°Ú½À´Ï±î?"), strCharName);
+	m_strSelName = strCharName;
+	Message( MSGCMD_CHAT_BLOCK, _S(3004, "Ä³¸¯ÅÍ Â÷´Ü"), strMessage, UMBS_YESNO );	
 }
 //***********************************************************************************

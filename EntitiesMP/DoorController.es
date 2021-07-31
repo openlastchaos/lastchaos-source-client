@@ -21,12 +21,14 @@ enum DoorType {
 class CDoorController : CRationalEntity {
 name      "DoorController";
 thumbnail "Thumbnails\\DoorController.tbn";
-features  "HasName", "IsTargetable";
+features  "HasName", "IsTargetable", "HasRaidObject", "RaidEvent";
 
 
 properties:
 
   1 CTString m_strName          "Name" 'N' = "DoorController",
+  200 BOOL m_bRaidObject		"This entity is RaidObject" = FALSE,		// 레이드 오브젝트 설정
+  201 INDEX m_RaidEventType		"Raid Event Type" = 0,			// 레이드 이벤트 타입	  
   2 CTString m_strDescription = "",
   3 CEntityPointer m_penTarget1  "Target1" 'T' COLOR(C_MAGENTA|0xFF),
   4 CEntityPointer m_penTarget2  "Target2" COLOR(C_MAGENTA|0xFF),
@@ -46,6 +48,8 @@ properties:
   18 INDEX	m_iOpenMobNum		"Mob Count"	= 1,			// 문을 열때 몹이 몇마리 이하 남아있어야 하는가?
   20 INDEX	m_iMaxCheckPoint	"Max Check Point"	= 0,	// MAX CHECK POINT
 //강동민 수정 끝 다중 공격 작업		08.27
+
+  21 FLOAT m_tmRaidSendedTime = 0.0f,	//[091106: selo] 레이드 이벤트 정보를 보낸 시간
 
 
 components:
@@ -227,6 +231,37 @@ functions:
   }
 
 procedures:
+  Main()
+  {
+    InitAsEditorModel();
+    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+    SetCollisionFlags(ECF_TOUCHMODEL);
+
+    // set appearance
+    GetModelObject()->StretchModel(FLOAT3D(m_fWidth, m_fHeight, m_fWidth));
+    SetModel(MODEL_DOORCONTROLLER);
+    SetModelMainTexture(TEXTURE_DOORCONTROLLER);
+    ModelChangeNotify();
+
+    // don't start in wed
+    autowait(0.1f);
+
+    // dispatch to aproppriate loop
+    switch(m_dtType) {
+    case DT_AUTO: {
+      jump DoorAuto();
+                  } break;
+    case DT_TRIGGERED: {
+      jump DoorTriggered();
+                       } break;
+    case DT_TRIGGEREDAUTO: {
+      jump DoorTriggeredAuto();
+                       } break;
+    case DT_LOCKED: {
+      jump DoorLocked();
+                    } break;
+    }
+  }
 
   // entry point for automatic functioning
   DoorAuto()
@@ -294,7 +329,33 @@ procedures:
         on (EActivate) : {
           // go to active state
           m_bActive = TRUE;
-          jump DoorAutoActive();
+		  switch(m_dtType)
+		  {
+		  case DT_AUTO: 
+			  {
+				jump DoorAuto();
+			  }
+			  break;
+		  case DT_TRIGGERED:
+			  {
+				jump DoorTriggered();
+			  }
+			  break;
+		  case DT_TRIGGEREDAUTO:
+			  {
+				jump DoorTriggeredAuto();
+			  }
+			  break;
+		  case DT_LOCKED:
+			  {
+				jump DoorLocked();
+			  }
+			  break;
+		  default:
+			  {
+				jump DoorAutoActive();
+			  }
+		  }
         }
         otherwise() : {
           resume;
@@ -330,7 +391,11 @@ procedures:
 				on (ETrigger eTrigger) : 
 				{
 					m_penCaused = eTrigger.penCaused;
-					TriggerDoor();
+					
+					if (m_bActive)
+					{
+						TriggerDoor();
+					}
 					//jump DoorDummy();
 					//m_bActive = FALSE;
 					//jump DoorAutoInactive();					
@@ -350,7 +415,29 @@ procedures:
 						}
 						resume;
 					}
-				}				
+				}
+				on (EActivate) :
+				{
+					m_bActive = TRUE;
+					resume;
+				}
+
+				on (EDeactivate) :
+				{
+					m_bActive = FALSE;
+					resume;
+				}
+
+				on (EDoorControll eDoor) :
+				{
+					if (eDoor.bOpen && !m_bOpened || !eDoor.bOpen && m_bOpened)	// Opening or closing
+					{
+						TriggerDoor();
+						m_bOpened = !m_bOpened;
+					}
+					resume;
+				}
+
 				otherwise() : 
 				{
 					resume;
@@ -409,6 +496,16 @@ procedures:
 //강동민 수정 끝 다중 공격 작업		08.27
 						}
 //강동민 수정 끝 싱글 던젼 작업		07.27
+						else if (m_bRaidObject && m_bActive)
+						{
+							// [091106: selo] 보낸 시간 후 1초 이전에는 서버에 보내지 않는다
+							FLOAT tmCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+							if( tmCurTime - m_tmRaidSendedTime > 1000 )
+							{
+								m_tmRaidSendedTime = tmCurTime;
+								_pNetwork->SendRaidObjectEvent(en_ulID);
+							}
+						}
 						// if he has no key
 						else 
 						{	
@@ -419,6 +516,15 @@ procedures:
 						}
 						//resume;
 					}
+					resume;
+				}
+				on (ETrigger eTrigger) : 
+				{
+					m_penCaused = eTrigger.penCaused;
+					TriggerDoor();
+					//jump DoorDummy();
+					m_bActive = FALSE;
+					jump DoorAutoInactive();					
 					resume;
 				}
 				otherwise() : 
@@ -460,38 +566,6 @@ procedures:
       
       // wait a bit to recover
       autowait(0.1f);
-    }
-  }
-
-  Main()
-  {
-    InitAsEditorModel();
-    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-    SetCollisionFlags(ECF_TOUCHMODEL);
-
-    // set appearance
-    GetModelObject()->StretchModel(FLOAT3D(m_fWidth, m_fHeight, m_fWidth));
-    SetModel(MODEL_DOORCONTROLLER);
-    SetModelMainTexture(TEXTURE_DOORCONTROLLER);
-    ModelChangeNotify();
-
-    // don't start in wed
-    autowait(0.1f);
-
-    // dispatch to aproppriate loop
-    switch(m_dtType) {
-    case DT_AUTO: {
-      jump DoorAuto();
-                  } break;
-    case DT_TRIGGERED: {
-      jump DoorTriggered();
-                       } break;
-    case DT_TRIGGEREDAUTO: {
-      jump DoorTriggeredAuto();
-                       } break;
-    case DT_LOCKED: {
-      jump DoorLocked();
-                    } break;
     }
   }
 };

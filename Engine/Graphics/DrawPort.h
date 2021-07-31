@@ -14,6 +14,7 @@
 #define DPTF_PRINTSPECIALCODES  (1L<<10)
 #define DPTF_IGNORESPECIALCODES (1L<<11)
 
+struct UIRectUV;
 
 class ENGINE_API CDrawPort {
 // implementation:
@@ -35,6 +36,8 @@ public:
 	ULONG dp_ulTextBlendingType;   // prredefinedBlendType (PBT_BLEND and such) - cannot use wrapper's enum here 
 	FLOAT dp_fWideAdjustment;      // for wide (16:9 or 16:10) screen support (needed in some calculations) = 1.0f or >1 (10/12 perhaps)
 	BOOL  dp_bRenderingOverlay;    // set when scene renderer requires overlay mode (don't clear z-buffer)
+
+	CTextureData* stCurrentTextureData; //≈ÿΩ∫∆Æ√‚∑¬Ω√ «ˆ¿Á ≈ÿΩ∫√ƒ∏¶ ¿˙¿Â
 
 	// adjust this during frame to be used for screen blending
 	ULONG dp_ulBlendingRA, dp_ulBlendingGA, dp_ulBlendingBA; // r*a, g*a, b*a
@@ -121,16 +124,18 @@ public:
 	};
 
 	// returns width of entire text string (with scale included)
-	ULONG GetTextWidth( const CTString &strText) const; 
+	ULONG GetTextWidth(const char* strText);
+	CTString GetTextWidth(const CTString &strText, INDEX nWidth) const;
+	ULONG GetTextWidth2(const CTString &strText);
 	 
 	// writes text string on drawport (left-aligned)
 	void PutText( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend=0xFFFFFFFF) const;
 	// writes text string on drawport (centered arround X)
-	void PutTextC( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend=0xFFFFFFFF) const;
+	void PutTextC( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend=0xFFFFFFFF);
 	// writes text string on drawport (centered arround X and Y)
-	void PutTextCXY( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend=0xFFFFFFFF) const;
+	void PutTextCXY( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend=0xFFFFFFFF);
 	// writes text string on drawport (right-aligned)
-	void PutTextR( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend=0xFFFFFFFF) const;
+	void PutTextR( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend=0xFFFFFFFF);
 
 	// yjpark |<--
 	// Writes text on drawport ( expansion version ) - internal
@@ -146,6 +151,8 @@ public:
 							FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const;
 	void	PutTextExBrz( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend, // eons 061102 
 							FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const;
+	void	PutTextExRus( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend, // eons 061102 
+							FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const;
 
 	void	PutTextCharExKor( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
 								FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const;
@@ -159,6 +166,8 @@ public:
 								FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const;
 	void	PutTextCharExBrz( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
 								FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const; // eons 061102
+	void	PutTextCharExRus( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
+								FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const; // eons 061102
 
 	// Writes text on drawport ( expansion version )
 	void	PutTextEx( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend = 0xF2F2F2FF,
@@ -167,16 +176,16 @@ public:
 							FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 ) const;
 	// Writes text string on drawport ( centered arround X, expansion version )
 	void	PutTextExCX( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend = 0xF2F2F2FF,
-							FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 ) const;
+							FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 );
 	// Writes text string on drawport ( right-aligned, expansion version )
 	void	PutTextExRX( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend = 0xF2F2F2FF,
-							FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 ) const;
+							FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 );
 	// Writes text string on drawport ( centered arround X, expansion version, expansion version )
 	void	PutTextCharExCX( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend = 0xF2F2F2FF,
 								FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 ) const;
 	// Writes text string on drawport ( right-aligned, expansion version, expansion version )
 	void	PutTextCharExRX( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend = 0xF2F2F2FF,
-								FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 ) const;
+								FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 );
 	// Flush rendering queue for text ( expansion versoin )
 	void	EndTextEx( BOOL bDepthTest = FALSE );
 
@@ -184,6 +193,8 @@ public:
 	void AddBtnTexture( const int nTexID, const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1, 
 						const FLOAT fU0, const FLOAT fV0, const FLOAT fU1, const FLOAT fV1,
 						const COLOR col ) const;
+	void AddBtnTexture( const int nTexID, const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1, 
+						const UIRectUV uv, const COLOR col ) const;
 	// Flush rendering queue for button
 	void	FlushBtnRenderingQueue( int nBtnType, const ULONG ulPBT = 203 );
 	// yjpark     -->|
@@ -203,7 +214,7 @@ public:
 
 	// advanced texture display
 	void InitTexture( class CTextureObject *pTO, const BOOL bClamp=FALSE, 
-							const ULONG ulPBT=203) const; // prepares texture and rendering arrays
+							const ULONG ulPBT=203, const BOOL bDepthTest = FALSE) const; // prepares texture and rendering arrays
 	void InitTextureData( class CTextureData *pTD, const BOOL bClamp = FALSE, const ULONG ulPBT = 203,
 							const BOOL bDepthTest = FALSE ) const;
 	// adds one full texture to rendering queue
@@ -212,6 +223,8 @@ public:
 	void AddTexture( const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1, 
 							const FLOAT fU0, const FLOAT fV0, const FLOAT fU1, const FLOAT fV1,
 							const COLOR col, FLOAT fZ = 0 ) const;
+	void AddTexture( const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1, 
+							const UIRectUV uv, const COLOR col, FLOAT fZ = 0 ) const;
 	// adds one textured quad to rendering queue (up-left start, counter-clockwise)
 	void AddTexture( const FLOAT fI0, const FLOAT fJ0, const FLOAT fU0, const FLOAT fV0, const COLOR col0,
 							const FLOAT fI1, const FLOAT fJ1, const FLOAT fU1, const FLOAT fV1, const COLOR col1,
@@ -223,7 +236,9 @@ public:
 							const FLOAT fU2, const FLOAT fV2, const FLOAT fU3, const FLOAT fV3, const COLOR col ) const;
 	// adds one flat triangle rendering queue (up-left start, counter-clockwise)
 	void AddTriangle( const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1,
-							const FLOAT fI2, const FLOAT fJ2, const COLOR col) const; 
+							const FLOAT fI2, const FLOAT fJ2, const COLOR col, const float fz = 0) const; 
+	// ªÁ∞¢«¸ πˆ≈ÿΩ∫ √ﬂ∞°. left, top, right, bottom
+	void AddQuadrangle( const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1, const COLOR col, const FLOAT fz = 0 ) const;
 
 	// renders all textures from rendering queue and flushed rendering arrays
 	void FlushRenderingQueue(void) const; 
@@ -260,16 +275,23 @@ public:
 	// grab screen (iGrabZBuffer: 0=no, 1=if allowed, 2=yes)
 	void GrabScreen( class CImageInfo &iiGrabbedImage, INDEX iGrabZBuffer=0) const;
 	// functions for getting depth of points on drawport
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë Water Íµ¨ÌòÑ		04.22
-	//BOOL IsPointVisible(PIX pixI, PIX pixJ, FLOAT fOoK, INDEX iID, INDEX iMirrorLevel=0) const;		// ÏõêÎ≥∏.
+//∞≠µøπŒ ºˆ¡§ Ω√¿€ Water ±∏«ˆ		04.22
+	//BOOL IsPointVisible(PIX pixI, PIX pixJ, FLOAT fOoK, INDEX iID, INDEX iMirrorLevel=0) const;		// ø¯∫ª.
 	BOOL IsPointVisible(CAnyProjection3D &apr, PIX pixI, PIX pixJ, FLOAT fOoK, INDEX iID, INDEX iMirrorLevel=0) const;
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù Water Íµ¨ÌòÑ			04.22
+//∞≠µøπŒ ºˆ¡§ ≥° Water ±∏«ˆ			04.22
 	// render one lens flare
 	void RenderLensFlare( CTextureObject *pto, FLOAT fI, FLOAT fJ,
 												FLOAT fSizeI, FLOAT fSizeJ, ANGLE aRotation, COLOR colLight) const;
 
 	// blend entire drawport with accumulated colors
 	void BlendScreen(void);
+	
+	int CheckShowCharLength(char* strString, int nWidth);
+	int GetTextSectionWidth(char* strString, int nSectionEnd, BOOL bIsPassWordBox);
+
+	void StockCurrentTextureData(CTextureData* cT) { stCurrentTextureData = cT; };
+
+	void PutTextRus(const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend);
 };
 
 

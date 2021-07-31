@@ -4,9 +4,15 @@
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Entities/ItemData.h>
 #include <Engine/Network/CNetwork.h>
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Secure/FileSecure.h>	// [2012/07/18 : Sora]  ÆÄÀÏ º¸¾ÈÄÚµå Ãß°¡
+
 
 #define LOAD_ITEMARMOR_EFFECT
-//#define DEL_PET_AI
+
+// [2010/10/20 : Sora] 
+#define  MERCENARY_CARD_HOLDER_MAX 4
+const int mercenary_card_holder[MERCENARY_CARD_HOLDER_MAX] = {6251, 6256, 6257, 6258};
 
 /*
  *  Constructor.
@@ -14,8 +20,7 @@
 CItemData::CItemData(void)
 :Item_MeshCnt(0), Item_TexCnt(0), Item_Tex2Cnt(0)
 {
-	memset(&Item_Data, 0, sizeof(_ItemStat));
-	Item_Data.index = -1;
+	//memset(&Item_Data, 0, sizeof(_ItemStat));
 	ZeroMemory(&fileBm,255);
 	ZeroMemory(&fileTex,255);
 	ZeroMemory(&fileTexNormal,255);
@@ -26,6 +31,8 @@ CItemData::CItemData(void)
 	ZeroMemory(&fileTex3,255);
 	ZeroMemory(&fileTex3Normal,255);
 	bCreateSet = FALSE;
+
+	StartTime = 0.0;
 }
 
 /*
@@ -33,31 +40,41 @@ CItemData::CItemData(void)
  */
 CItemData::~CItemData(void) 
 {
+	
+}
+
+CItemData& CItemData::operator=(const CItemData& data)
+{
+	name = data.name;
+	descr = data.descr;
+	return *this;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ì•„ì´í…œ ë°ì´í„°ë¥¼ íŒŒì¼ë¡œë¶€í„° ì½ì–´ë“¤ì…ë‹ˆë‹¤.
-// Input  : &apItemData - ì•„ì´í…œ ëª©ë¡ì´ ì €ì¥ë  ë°°ì—´.
-//			FileName - íŒŒì¼ëª….
+// Purpose: ¾ÆÀÌÅÛ µ¥ÀÌÅÍ¸¦ ÆÄÀÏ·ÎºÎÅÍ ÀĞ¾îµéÀÔ´Ï´Ù.
+// Input  : &apItemData - ¾ÆÀÌÅÛ ¸ñ·ÏÀÌ ÀúÀåµÉ ¹è¿­.
+//			FileName - ÆÄÀÏ¸í.
 // Output : 	static int
 //-----------------------------------------------------------------------------
-int CItemData::LoadItemDataFromFile(CStaticArray<CItemData> &apItemData, const char* FileName)
-{	
+int CItemData::LoadJewelItemDataFromFile(CStaticArray<JewelComosInfo> &apJewelData, const char* FileName)
+{
 	FILE *fp		= NULL;
+
 	if ((fp = fopen(FileName, "rb")) == NULL) 
 	{
 		MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
 		return -1;
 	}
 
-	int iLastItemIndex	= 0;
+	int iLastGradeIndex	= 0;
 	int iLength			= -1;
 	int iReadBytes		= 0;
 
-	iReadBytes = fread(&iLastItemIndex, sizeof(int), 1, fp);				// ITEM ë°ì´í„°ì˜ ë§ˆì§€ë§‰ ì¸ë±ìŠ¤.
-	apItemData.New(iLastItemIndex); 
-	ASSERT(apItemData.Count() >= iLastItemIndex && "Invalid Array Count");
-	ASSERT(iLastItemIndex > 0 && "Invalid Item Data");
+//	fflush(fp);
+	iReadBytes = fread(&iLastGradeIndex, sizeof(int), 1, fp);				// JewelComposµ¥ÀÌÅ¸ÀÇ ÅÂÀÌºí ÃÑ °¹¼ö.
+	apJewelData.New(iLastGradeIndex); 
+	ASSERT(apJewelData.Count() >= iLastGradeIndex && "Invalid Array Count");
+	ASSERT(iLastGradeIndex > 0 && "Invalid Item Data");
 	//////////////////////////////////////////////////////////////////////////	
 	// MACRO DEFINITION
 	//////////////////////////////////////////////////////////////////////////	
@@ -68,68 +85,31 @@ int CItemData::LoadItemDataFromFile(CStaticArray<CItemData> &apItemData, const c
 #define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fp); }
 	//////////////////////////////////////////////////////////////////////////	
 	
-	for(int i = 0; i < iLastItemIndex; ++i)
+	for(int i = 0; i < iLastGradeIndex; ++i)
 	{
 		int iIndex = -1;
-		LOADINT(iIndex);		
+		LOADINT(iIndex);
+
 		if(iReadBytes <= 0)		break;										// EOF
 		ASSERT(iIndex != -1	&& "Invalid Item Index");
 
-		CItemData& ID		= apItemData[iIndex];
-		_ItemStat& ItemData = ID.Item_Data;
-		ItemData.index		= iIndex;
-
-		LOADSTR(ItemData.name);
-//		LOADINT(ItemData.job);
-		{ int iLen;
-		LOADINT(iLen); 
-		iReadBytes = fread(&ItemData.job, iLen, 1, fp); 
-		}
-		LOADINT(ItemData.weight);
-		LOADINT(ItemData.fame);
-		LOADINT(ItemData.level);
-		LOADINT(ItemData.flag);
-
-		LOADINT(ItemData.wearing);
-		LOADINT(ItemData.type);
-		LOADINT(ItemData.subType);
-
-		for (int j = 0; j < MAX_MAKE_ITEM_MATERIAL; ++j)
-		{
-			LOADINT(ItemData.needItemIndex[j]);
-			LOADINT(ItemData.needItemCount[j]);
-		}
-
-		LOADINT(ItemData.needSSkillIndex);
-		LOADINT(ItemData.needSSkillCount);
-		LOADINT(ItemData.needSSkillIndex2);
-		LOADINT(ItemData.needSSkillCount2);
-
-		LOADINT(ItemData.num0);
-		LOADINT(ItemData.num1);
-		LOADINT(ItemData.num2);
-		LOADINT(ItemData.num3);
-
-		LOADINT(ItemData.price);
-
-		LOADSTR(ItemData.fileSMC);
-
-		LOADINT(ItemData.iIconTexID);
-		LOADINT(ItemData.iIconTexRow);
-		LOADINT(ItemData.iIconTexCol);
-
-		LOADSTR(ItemData.descr);
-
-#ifdef LOAD_ITEMARMOR_EFFECT
-		LOADSTR(ItemData.ArmorEffectName);
-#endif
-
-#ifdef DEL_PET_AI
-		LOADINT(ItemData.PetAI_Set0);
-		LOADINT(ItemData.PetAI_Set1);
-		LOADINT(ItemData.PetAI_Set2);
-		LOADINT(ItemData.PetAI_Set3);
-#endif
+		JewelComosInfo& ID		= apJewelData[iIndex - 1];
+		ID.index = iIndex;
+		LOADINT(ID.nor_comp_nas);
+		LOADINT(ID.ca_comp_nas);
+		LOADINT(ID.ca_jew_create);
+		LOADINT(ID.nor_comp_val);
+		LOADINT(ID.ca_comp_val);
+		LOADINT(ID.nor_up_2);
+		LOADINT(ID.nor_up_3);
+		LOADINT(ID.ca_up_2);
+		LOADINT(ID.ca_up_3);
+		LOADINT(ID.nor_down_1);
+		LOADINT(ID.nor_down_2);
+		LOADINT(ID.nor_down_3);
+		LOADINT(ID.ca_down_1);
+		LOADINT(ID.ca_down_2);
+		LOADINT(ID.ca_down_3);
 	}
 	fclose(fp);
 //////////////////////////////////////////////////////////////////////////	
@@ -137,74 +117,160 @@ int CItemData::LoadItemDataFromFile(CStaticArray<CItemData> &apItemData, const c
 #undef LOADCHAR
 #undef LOADFLOAT
 #undef LOADSTR
-	return iLastItemIndex;
+	return iLastGradeIndex;
 }
 
-//-----------------------------------------------------------------------------
-CItemName::CItemName()
-{
-	memset(&Item_Data, 0, sizeof(_ItemStat));
-	Item_Data.index = -1;
-}
+bool CItemData::loadItemEx(const char* FileName)
+{	
+	FILE*	fp = NULL;
 
-CItemName::~CItemName()
-{
-}
+	fp = fopen(FileName, "rb");
 
-//-----------------------------------------------------------------------------
-// Purpose: ì•„ì´í…œ ì´ë¦„ë¥¼ íŒŒì¼ë¡œë¶€í„° ì½ì–´ë“¤ì…ë‹ˆë‹¤.
-//-----------------------------------------------------------------------------
-int CItemName::LoadItemNameFromFile(CStaticArray<CItemName> &apItemName, const char* FileName)
-{
-	FILE *fp		= NULL;
-	if ((fp = fopen(FileName, "rb")) == NULL) 
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
 	{
-		MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
-		return -1;
+		fclose(fp);
+		return false;
 	}
-	
-	int iLastItemIndex	= 0;
-	int iLength			= -1;
-	int iReadBytes		= 0;
-	
-	iReadBytes = fread(&iLastItemIndex, sizeof(int), 1, fp);				// ITEM ë°ì´í„°ì˜ ë§ˆì§€ë§‰ ì¸ë±ìŠ¤.
-	apItemName.New(iLastItemIndex);
-	ASSERT(apItemName.Count() >= iLastItemIndex && "Invalid Array Count");
-	ASSERT(iLastItemIndex > 0 && "Invalid Item Data");
-	//////////////////////////////////////////////////////////////////////////	
-	// MACRO DEFINITION
-	//////////////////////////////////////////////////////////////////////////	
-#define LOADINT(d)			iReadBytes = fread(&d, sizeof(int), 1, fp);
-#define LOADSHORT(d)		iReadBytes = fread(&d, sizeof(short), 1, fp);
-#define LOADCHAR(d)			iReadBytes = fread(&d, sizeof(char), 1, fp);
-#define LOADFLOAT(d)		iReadBytes = fread(&d, sizeof(float), 1, fp);
-#define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fp); }
-	//////////////////////////////////////////////////////////////////////////	
-	
-	for(int i = 0; i < iLastItemIndex; ++i)
-	{
-		int iIndex = -1;
-		LOADINT(iIndex);		
-		if(iReadBytes <= 0)		break;										// EOF
-		ASSERT(iIndex != -1	&& "Invalid Item Index");
-		
-		CItemName& ID		= apItemName[iIndex];
-		_ItemStat& ItemData = ID.Item_Data;
-		ItemData.index		= iIndex;
-		
-		LOADSTR(ItemData.name);
-		LOADSTR(ItemData.descr);
-	}
+
+	stItem* pdata = new stItem[_nSize];
+	fread(pdata, sizeof(stItem) * _nSize, 1, fp);
 	fclose(fp);
-	//////////////////////////////////////////////////////////////////////////	
-#undef LOADINT
-#undef LOADCHAR
-#undef LOADFLOAT
-#undef LOADSTR
-	return iLastItemIndex;
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CItemData* ptmp = new CItemData;
+		memcpy(ptmp, &pdata[i], sizeof(stItem));
+
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+			continue;
+		}
+
+		_vecdata.push_back(ptmp);
+
+		if(ptmp->type == ITEM_ETC && ( ptmp->subType == ITEM_ETC_JEWEL || ptmp->subType == ITEM_ETC_CHAOSJEWEL ) && ptmp->num3 > 0)
+		{
+			_vecJewelInfo vecJewelInfo;
+			JewelInfo jewelinfo;
+			jewelinfo.Jewel_idx = ptmp->getindex();
+			jewelinfo.Jewel_composGrade = ptmp->num3;
+			vecJewelInfo.push_back(jewelinfo);
+
+			std::map<int, _vecJewelInfo>::iterator	iterJewelGradeInfo = _pNetwork->wo_mapJewelGradeInfo.find(ptmp->num0);
+			std::map<int, _vecJewelInfo>::iterator	iterJewelGradeInfoEnd = _pNetwork->wo_mapJewelGradeInfo.end();
+
+			if (iterJewelGradeInfo != iterJewelGradeInfoEnd)
+			{
+				iterJewelGradeInfo->second.push_back(jewelinfo);
+			}
+			else
+			{
+				_pNetwork->wo_mapJewelGradeInfo.insert(std::make_pair( ptmp->num0, vecJewelInfo));
+			}
+
+			if (ptmp->subType == ITEM_ETC_CHAOSJEWEL)
+			{
+				std::map<int, _vecJewelInfo>::iterator	iterChaosJewelGradeInfo = _pNetwork->wo_mapChaosJewelGradeInfo.find(ptmp->num0);
+				std::map<int, _vecJewelInfo>::iterator	iterChaosJewelGradeInfoEnd = _pNetwork->wo_mapChaosJewelGradeInfo.end();
+
+				if (iterChaosJewelGradeInfo != iterChaosJewelGradeInfoEnd)
+				{
+					iterChaosJewelGradeInfo->second.push_back(jewelinfo);
+				}
+				else
+				{
+					_pNetwork->wo_mapChaosJewelGradeInfo.insert(std::make_pair( ptmp->num0, vecJewelInfo));
+				}
+			}
+		}
+	}
+
+	m_dummy = new CItemData; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	memset(m_dummy, 0, sizeof(stItem));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
 }
 
+bool CFortuneData::loadFortuneEx( const char* FileName )
+{
+	FILE*	fp = NULL;
 
+	fp = fopen(FileName, "rb");
+
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	stFortune* pdata = new stFortune[_nSize];
+	fread(pdata, sizeof(stFortune) * _nSize, 1, fp);
+	fclose(fp);
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CFortuneData* ptmp = new CFortuneData;
+		memcpy(ptmp, &pdata[i], sizeof(stFortune));
+		
+		if (_mapdata.insert(std::make_pair(i, ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+	}
+
+	m_dummy = new CFortuneData; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	memset(m_dummy, 0, sizeof(stFortune));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
+}
+
+//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+void CItemData::SetNoTranslate()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, transFlag ) )
+		SetName( CTString(0, "[%d] : item name", index) );
+
+	if( pUIManager->IsNotTranslated( TRANS_DESC, transFlag ) )
+		SetDesc( CTString(0, "[%d] : item desc", index) );
+}
+
+void CItemData::ClearNoTranslate()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, transFlag ) )
+		SetName("");
+
+	if( pUIManager->IsNotTranslated( TRANS_DESC, transFlag ) )
+		SetDesc("");
+}
 
 
 
@@ -213,7 +279,7 @@ int nLordItmeIndex[CItemData::LORD_ITEM_TOTAL] = { 861, 862, 863, 864, 865, 866,
 
 int	CItemData::GetPhysicalAttack()
 {	
-	if( !IsFlag( ITEM_FLAG_LORD ) ) return Item_Data.pAttack;
+	if( !IsFlag( ITEM_FLAG_LORD ) ) return num0;
 	int nLordLevel = _pNetwork->MyCharacterInfo.level;
 	if(!IsFlag( PLATINUM_MAX_PLUS )) nLordLevel = nLordLevel > 15 ? 15 : nLordLevel;
 	
@@ -223,48 +289,48 @@ int	CItemData::GetPhysicalAttack()
 	float	fIncrease = 0.0f;
 	int		nBaseAttack = 0;
 	
-	switch( Item_Data.index )
+	switch( index )
 	{
-	case 861:	// ëŒ€ê²€
+	case 861:	// ´ë°Ë
 		fIncrease = 3.0f;
 		nBaseAttack = 20;
 		break;
-	case 862:	// ë„ë¼
+	case 862:	// µµ³¢
 		fIncrease = 3.3f;
 		nBaseAttack = 23;
 		break;
-	case 863:	// í•œì†ê²€  
+	case 863:	// ÇÑ¼Õ°Ë  
 		fIncrease = 2.4f;
 		nBaseAttack = 16;
 		break;
-	case 864:	// ì´ë„ë¥˜
+	case 864:	// ÀÌµµ·ù
 		fIncrease = 2.8f;
 		nBaseAttack = 19;
 		break;
-	case 865:	// í™œ
+	case 865:	// È°
 		fIncrease = 2.5f;
 		nBaseAttack = 14;
 		break;
-	case 869:	// ë‹¨ê²€
+	case 869:	// ´Ü°Ë
 		fIncrease = 2.9f;
 		nBaseAttack = 10;
 		break;
-	case 970:	// ì„ê¶
+	case 970:	// ¼®±Ã
 		fIncrease = 2.5f;
 		nBaseAttack = 10;
 		break;
 
 	}
 
-	// ì„±ì£¼ì˜ ë¬´ê¸°ì¸ ê²½ìš°ì—ëŠ” ì„±ì£¼ì— ë ˆë²¨ì„ ê¸°ì´ˆë¡œ ê³µê²©ë ¥ì„ ê³„ì‚°
+	// ¼ºÁÖÀÇ ¹«±âÀÎ °æ¿ì¿¡´Â ¼ºÁÖ¿¡ ·¹º§À» ±âÃÊ·Î °ø°İ·ÂÀ» °è»ê
 	fAttack = ( nBaseAttack + ( nLordLevel - 1 ) * fIncrease ) * fN;
 
 	return fAttack;	
 }
 
 int	CItemData::GetMagicAttack()
-{	
-	if( !IsFlag( ITEM_FLAG_LORD ) ) return Item_Data.mAttack;
+{
+	if( !IsFlag( ITEM_FLAG_LORD ) ) return num1;
 		
 	int nLordLevel = _pNetwork->MyCharacterInfo.level;
 
@@ -275,38 +341,38 @@ int	CItemData::GetMagicAttack()
 	float	fIncrease = 0.0f;
 	int		nBaseAttack = 0;
 
-	switch( Item_Data.index )
+	switch( index )
 	{
-	case 866:	// ì™„ë“œ(íëŸ¬)
+	case 866:	// ¿Ïµå(Èú·¯)
 		fIncrease = 1.9f;
 		nBaseAttack = 10;
 		break;
-	case 867:	// ì™„ë“œ(ë©”ì´ì§€)
+	case 867:	// ¿Ïµå(¸ŞÀÌÁö)
 		fIncrease = 3.5f;
 		nBaseAttack = 10;
 		break;
-	case 868:	// ìŠ¤í…Œí”„
+	case 868:	// ½ºÅ×ÇÁ
 		fIncrease = 3.0f;
 		nBaseAttack = 10;
 		break;
-	case 1070:  // ì‚¬ì´ë“œ
+	case 1070:  // »çÀÌµå
 		fIncrease = 2.9f;
 		nBaseAttack = 20;
 		break;
-	case 1071:  // í´ì•”
+	case 1071:  // Æú¾Ï
 		fIncrease = 2.5f;
 		nBaseAttack = 18;
 		break;
 	}
 	
-	// ì„±ì£¼ì˜ ë¬´ê¸°ì¸ ê²½ìš°ì—ëŠ” ì„±ì£¼ì— ë ˆë²¨ì„ ê¸°ì´ˆë¡œ ê³µê²©ë ¥ì„ ê³„ì‚°
+	// ¼ºÁÖÀÇ ¹«±âÀÎ °æ¿ì¿¡´Â ¼ºÁÖ¿¡ ·¹º§À» ±âÃÊ·Î °ø°İ·ÂÀ» °è»ê
 	fAttack = ( nBaseAttack + ( nLordLevel - 1 ) * fIncrease ) *fN;
 
 	return fAttack;	
 	
 }
 
-// ì„±ì£¼ ë¬´ê¸°ì¸ì§€ ì•„ë‹Œì§€ íŒë‹¤
+// ¼ºÁÖ ¹«±âÀÎÁö ¾Æ´ÑÁö ÆÇ´Ù
 bool CItemData::IsLordItem( int nIndex )
 {
 	for( int i = 0; i < CItemData::LORD_ITEM_TOTAL; i++ )
@@ -319,7 +385,7 @@ bool CItemData::IsLordItem( int nIndex )
 	return false;
 }
 
-// ì„±ì£¼ ë¬´ê¸°ì¸ì§€ ì•„ë‹Œì§€ íŒë‹¤
+// ¼ºÁÖ ¹«±âÀÎÁö ¾Æ´ÑÁö ÆÇ´Ù
 bool CItemData::IsUniqueItem( int nIndex )
 {
 	if(nIndex == 887) return true;
@@ -328,29 +394,143 @@ bool CItemData::IsUniqueItem( int nIndex )
 	return false;
 }
 
+bool CItemData::IsMercenaryCardHolder()
+{
+	for( int i=0; i<MERCENARY_CARD_HOLDER_MAX; ++i )
+	{
+		if( mercenary_card_holder[i] == index )
+			return true;
+	}
 
-
-
-
-
+	return false;
+}
 
 CItemRareOption::CItemRareOption()
 {
-	//ZeroMemory(this, 0);
-	memset(this, 0 , sizeof(CItemRareOption));
-	//m_iIndex = 0;
-	m_iGrade = -1;
-	//memset(m_strPrefix, 0 , 50);
 }
 
 CItemRareOption::~CItemRareOption()
 {
+	
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ì•„ì´í…œ ë ˆì–´ ì˜µì…˜ì„ íŒŒì¼ë¡œë¶€í„° ì½ì–´ë“¤ì…ë‹ˆë‹¤.
+// Purpose: ¾ÆÀÌÅÛ ·¹¾î ¿É¼ÇÀ» ÆÄÀÏ·ÎºÎÅÍ ÀĞ¾îµéÀÔ´Ï´Ù.
 //-----------------------------------------------------------------------------
-int CItemRareOption::LoadItemRareOptionFromFile(std::vector<CItemRareOption> &apItemRareOption, const char* FileName)
+bool CItemRareOption::loadEx(const char* FileName)
+{
+	FILE*	fp = NULL;
+
+	fp = fopen(FileName, "rb");
+
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	stRareOption* pdata = new stRareOption[_nSize];
+	fread(pdata, sizeof(stRareOption) * _nSize, 1, fp);
+	fclose(fp);
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CItemRareOption* ptmp = new CItemRareOption;
+		memcpy(ptmp, &pdata[i], sizeof(stRareOption));
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+	}
+
+	m_dummy = new CItemRareOption; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	memset(m_dummy, 0, sizeof(stRareOption));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
+}
+
+//SET_ITEM_ADD				//[ttos_2009_5_22]: ¼¼Æ® ¾ÆÀÌÅÛ Àû¿ë
+CSetItemData::CSetItemData()
+{
+}
+
+CSetItemData::~CSetItemData()
+{
+}
+
+bool CSetItemData::loadSetItemEx(const char* FileName)
+{
+	FILE*	fp = NULL;
+
+	fp = fopen(FileName, "rb");
+
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	stSetItem* pdata = new stSetItem[_nSize];
+	fread(pdata, sizeof(stSetItem) * _nSize, 1, fp);
+	fclose(fp);
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CSetItemData* ptmp = new CSetItemData;
+		memcpy(ptmp, &pdata[i], sizeof(stSetItem));
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+	}
+
+	m_dummy = new CSetItemData; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	memset(m_dummy, 0, sizeof(stSetItem));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
+}
+
+CMakeItemData::CMakeItemData()
+{
+	//ZeroMemory(this, 0);
+	memset(this, 0 , sizeof(CMakeItemData));
+	for (int i = 0; i < MAX_STUFF_ITEM; i++)
+	{
+		this->m_StuffItem[i].nStuff_Index = -1;
+		this->m_StuffItem[i].nStuff_Count = 0;
+	}
+
+}
+
+CMakeItemData::~CMakeItemData()
+{
+}
+
+int CMakeItemData::LoadMakeItemFromFile(CStaticArray<CMakeItemData> &apMakeItem, const char* FileName)
 {
 	FILE *fp		= NULL;
 	if ((fp = fopen(FileName, "rb")) == NULL) 
@@ -358,12 +538,14 @@ int CItemRareOption::LoadItemRareOptionFromFile(std::vector<CItemRareOption> &ap
 		MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
 		return -1;
 	}
-	
+
 	int iCount	= 0;
 	int iReadBytes		= 0;
 	
-	iReadBytes = fread(&iCount, sizeof(int), 1, fp);				// ë°ì´í„°ì˜ ê°œìˆ˜
-	apItemRareOption.reserve(iCount+1);
+	iReadBytes = fread(&iCount, sizeof(int), 1, fp);				// µ¥ÀÌÅÍÀÇ °³¼ö
+	apMakeItem.New(iCount);
+	ASSERT(apMakeItem.Count() >= iCount && "Invalid Array Count");
+	ASSERT(iCount > 0 && "Invalid SetItem Data");
 	//////////////////////////////////////////////////////////////////////////	
 	// MACRO DEFINITION
 	//////////////////////////////////////////////////////////////////////////	
@@ -371,34 +553,41 @@ int CItemRareOption::LoadItemRareOptionFromFile(std::vector<CItemRareOption> &ap
 #define LOADSHORT(d)		iReadBytes = fread(&d, sizeof(short), 1, fp);
 #define LOADCHAR(d)			iReadBytes = fread(&d, sizeof(char), 1, fp);
 #define LOADFLOAT(d)		iReadBytes = fread(&d, sizeof(float), 1, fp);
+#define LOADQUAD(d)			iReadBytes = fread(&d, sizeof(UQUAD), 1, fp);
 #define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fp); }
 	//////////////////////////////////////////////////////////////////////////	
-	
-	//0ë²ˆì€ ê¸°ë³¸ ê°ì²´ ì‚½ì…. ì‹¤ì œë¡œ ì‚¬ìš©ë˜ì§€ëŠ” ì•ŠìŒ. 
-	//vectorì˜ ê°ì²´ ì¸ë±ìŠ¤ì™€ ì˜µì…˜ ì¸ë±ìŠ¤ë¥¼ ì¼ì¹˜ì‹œí‚¤ê¸° ìœ„í•´.....
-	apItemRareOption.push_back( CItemRareOption() );
+
 	for(int i = 0; i < iCount; ++i)
 	{
-		CItemRareOption temp;
+		CMakeItemData& temMakeData = apMakeItem[i];
 		
-		LOADINT(temp.m_iIndex);
-		//if(iReadBytes <= 0)		break;										// EOF
-		//ASSERT(iIndex != -1	&& "Invalid Item Index");
+		LOADINT(temMakeData.m_nFactory_Index);
+		if(iReadBytes <= 0)		break;
+		LOADSTR(temMakeData.m_strFactory_Name);
+		LOADINT(temMakeData.m_nFactory_Type);
+		LOADINT(temMakeData.m_nFactory_Subtype);
+		LOADINT(temMakeData.m_nItemIndex);
 		
-		LOADINT(temp.m_iGrade);
-		LOADINT(temp.m_iType);
-		LOADSTR(temp.m_strPrefix);
-		LOADINT(temp.m_iPhysical_attack);
-		LOADINT(temp.m_iPhysical_defence);
-		LOADINT(temp.m_iMagic_attack);
-		LOADINT(temp.m_iMagic_defence);
-		for(int j=0; j<10; ++j)
-		{
-			LOADINT(temp.m_Option[j].index);
-			LOADINT(temp.m_Option[j].level);
-		}
+		// [090904: selo] ÆÑÅä¸® ÀÌ¸§À» ¾ÆÀÌÅÛ ÀÌ¸§À¸·Î ¼³Á¤ÇÑ´Ù.
+		//				  ±âÈ¹¿¡¼­ È®Àå¼ºÀ» µÎ¾î Factory_NameÀ» µÎ¾ú±â¿¡ 
+		//				  Â÷ÈÄ º¯°æµÉ °¡´É¼ºÀÌ ÀÖ´Ù.
+		CItemData* pItemData = _pNetwork->GetItemData(temMakeData.m_nItemIndex);
 
-		apItemRareOption.push_back(temp);
+		if (pItemData == NULL || pItemData->GetItemIndex() < 0)
+			continue;
+
+		strcpy(temMakeData.m_strFactory_Name, pItemData->GetName()); 
+
+		LOADQUAD(temMakeData.m_nMakeExp);
+		LOADQUAD(temMakeData.m_nNeedExp);
+		LOADQUAD(temMakeData.m_nNeedNas);
+				
+		for (int cont = 0; cont < MAX_STUFF_ITEM; ++cont)
+		{
+			LOADINT(temMakeData.m_StuffItem[cont].nStuff_Index);
+			LOADINT(temMakeData.m_StuffItem[cont].nStuff_Count);
+		}
+		
 	}
 	fclose(fp);
 	//////////////////////////////////////////////////////////////////////////	
@@ -407,5 +596,5 @@ int CItemRareOption::LoadItemRareOptionFromFile(std::vector<CItemRareOption> &ap
 #undef LOADFLOAT
 #undef LOADSTR
 	return iCount;
-}
 
+}

@@ -4,6 +4,10 @@
 #include <Engine/Interface/UIGroup.h>
 #include <Engine/Interface/UITextureManager.h>
 #include <algorithm>
+#include <Engine/Interface/UIGroup.h>
+
+using namespace std;
+
 // Definition
 #define GROUP_NAME_OFFSET_X 18	
 
@@ -13,7 +17,6 @@
 
 #define ICON_WIDTH	18
 #define ICON_HEIGHT 15
-
 
 UIRectUV m_rcIcon[TOTAL_JOB][TOTAL_CONDITION];
 
@@ -51,9 +54,9 @@ void CUIGroup::Clear()
 	//m_btnReduction.Claer();	
 	//m_mlMember.Clear();		
 
-	//m_strGroupName = "Group";	// ìƒì„±ì‹œ ê¸°ë³¸ ì´ë¦„ì€ Group
-	m_vecMember.clear();		// ë©¤ë²„ ì‚­ì œ
-	m_bExtension = false;		// ê¸°ë³¸ ì„¤ì •ì€ í™•ì¥ ëœ ìƒíƒœ ( ê¸°ì–µí•˜ê³  ìˆì„ ìˆ˜ëŠ” ì—†ë‹¤. ) (X)
+	//m_strGroupName = "Group";	// »ı¼º½Ã ±âº» ÀÌ¸§Àº Group
+	m_vecMember.clear();		// ¸â¹ö »èÁ¦
+	m_bExtension = false;		// ±âº» ¼³Á¤Àº È®Àå µÈ »óÅÂ ( ±â¾ïÇÏ°í ÀÖÀ» ¼ö´Â ¾ø´Ù. ) (X)
 	//m_nScrollPos = 0;	
 	m_bShowGroupName = true;
 	
@@ -74,9 +77,7 @@ void CUIGroup::Clear()
 //------------------------------------------------------------------------------
 void CUIGroup::Create(  CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	m_nLineHeight =nHeight;
 
@@ -148,7 +149,7 @@ void CUIGroup::AddMember( CMemberInfo MemberInfo )
 //------------------------------------------------------------------------------
 bool CUIGroup::DeleteMember( CTString strName )
 {
-	//ì¹œêµ¬ë¦¬ìŠ¤íŠ¸ ê²€ìƒ‰ í›„ ì‚­ì œ
+	//Ä£±¸¸®½ºÆ® °Ë»ö ÈÄ »èÁ¦
 	std::vector<CMemberInfo>::iterator iterBegin = m_vecMember.begin();
 	std::vector<CMemberInfo>::iterator iterEnd = m_vecMember.end();
 	std::vector<CMemberInfo>::iterator iter;
@@ -157,7 +158,8 @@ bool CUIGroup::DeleteMember( CTString strName )
 	{
 		if( iter->m_strName == strName )
 		{
-			m_vecMember.erase( iter );
+			iter = m_vecMember.erase( iter );
+			iterEnd = m_vecMember.end();
 			break;
 		}
 	}
@@ -177,7 +179,7 @@ bool CUIGroup::DeleteMember( CTString strName )
 
 bool CUIGroup::DeleteMember( int nCharIndex)
 {
-	//ì¹œêµ¬ë¦¬ìŠ¤íŠ¸ ê²€ìƒ‰ í›„ ì‚­ì œ
+	//Ä£±¸¸®½ºÆ® °Ë»ö ÈÄ »èÁ¦
 	std::vector<CMemberInfo>::iterator iterBegin = m_vecMember.begin();
 	std::vector<CMemberInfo>::iterator iterEnd = m_vecMember.end();
 	std::vector<CMemberInfo>::iterator iter;
@@ -187,7 +189,8 @@ bool CUIGroup::DeleteMember( int nCharIndex)
 	{
 		if( iter->m_nCharIndex == nCharIndex )
 		{
-			m_vecMember.erase( iter );
+			iter = m_vecMember.erase( iter );
+			iterEnd = m_vecMember.end();
 			break;
 		}
 		i++;
@@ -255,7 +258,7 @@ void CUIGroup::SetExtension( bool bExtension )
 {
 	if( m_vecMember.empty() )
 	{
-		// ë§´ë²„ê°€ ì „í˜€ ì—†ëŠ” ê²½ìš°ì—ëŠ” ê·¸ëƒ¥ ë„˜ì–´ê°~
+		// ¸É¹ö°¡ ÀüÇô ¾ø´Â °æ¿ì¿¡´Â ±×³É ³Ñ¾î°¨~
 		//m_bExtension = true;
 		m_bExtension = false;
 	}
@@ -266,10 +269,10 @@ void CUIGroup::SetExtension( bool bExtension )
 
 //------------------------------------------------------------------------------
 // CUIGroup::ReloadMember
-// Explain:  ë°ì´í„°ì— ì €ì¥ëœ ë°ì´í„°ë¥¼ ListViewì— ì •ë ¬í•´ì„œ ë„£ëŠ”ë‹¤.
-//			í˜¸ì¶œì‹œê¸° 
-//			1. ë°ì´í„°ê°€ ìƒˆë¡œ ì…ë ¥ë  ë•Œ
-//			2. ë§´ë²„ì˜ ìƒíƒœê°€ ë°”ë€” ë•Œ 
+// Explain:  µ¥ÀÌÅÍ¿¡ ÀúÀåµÈ µ¥ÀÌÅÍ¸¦ ListView¿¡ Á¤·ÄÇØ¼­ ³Ö´Â´Ù.
+//			È£Ãâ½Ã±â 
+//			1. µ¥ÀÌÅÍ°¡ »õ·Î ÀÔ·ÂµÉ ¶§
+//			2. ¸É¹öÀÇ »óÅÂ°¡ ¹Ù²ğ ¶§ 
 // Date : 2005-05-24,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGroup::ReloadMember()
@@ -283,16 +286,16 @@ void CUIGroup::ReloadMember()
 	//std::vector<CMemberInfo> vecOffLineMember;
 	//std::vector<CMemberInfo> vecOnLineMember;
 
-	//! Sort ( ê°€ë‚˜ë‹¤ ìˆœ ... )
+	//! Sort ( °¡³ª´Ù ¼ø ... )
 	std::stable_sort( m_vecMember.begin(), m_vecMember.end(), CompareObj );
-	//ì˜¨ë¼ì¸ ìƒíƒœì¸ ë©¤ë²„ë¥¼ ì•ìœ¼ë¡œ...
+	//¿Â¶óÀÎ »óÅÂÀÎ ¸â¹ö¸¦ ¾ÕÀ¸·Î...
 	std::stable_partition(m_vecMember.begin(), m_vecMember.end(), CompareCondition);
 
 	/**********
 	iterBegin = m_vecMember.begin();
 	iterEnd = m_vecMember.end();
 	
-	// ì¼ë‹¨ ë‹¤ ì§€ì›Œ
+	// ÀÏ´Ü ´Ù Áö¿ö
 	m_mlMember.ResetAllData();
 	m_mlMember.ChangeLineCount( 0 );
 	
@@ -312,7 +315,7 @@ void CUIGroup::ReloadMember()
 		
 	}
 
-	// ë‚¨ê²¨ë’€ë˜ ì˜¤í”„ë¼ì¸ ë§´ë²„ ì²˜ë¦¬ 
+	// ³²°Üµ×´ø ¿ÀÇÁ¶óÀÎ ¸É¹ö Ã³¸® 
 	iterBegin = vecOffLineMember.begin();
 	iterEnd = vecOffLineMember.end();
 	
@@ -410,7 +413,7 @@ int CUIGroup::Render( int& nLineY, int nShowHeight )
 
 	if( m_bShowGroupName)
 	{
-		// ë²„íŠ¼ ì¶œë ¥
+		// ¹öÆ° Ãâ·Â
 		if( m_bExtension ) 
 		{
 			m_btnReduction.Render();
@@ -424,19 +427,21 @@ int CUIGroup::Render( int& nLineY, int nShowHeight )
 			
 	if( IsExtension() )
 	{
+		CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 		for(int i=nStartLine;; ++i)
 		{
 			if( nLineY*m_nLineHeight >=nShowHeight || i>m_vecMember.size()-1)
 				break;
 
-			//ì¹œêµ¬ ê·¸ë£¹ì¼ ë•Œ
+			//Ä£±¸ ±×·ìÀÏ ¶§
 			if( m_nIndex >=0)
 			{
-				_pUIMgr->GetDrawPort()->PutTextEx( m_vecMember[i].m_strName, nX +GROUP_MEMBER_NAME_OFFSET_X,
+				pDrawPort->PutTextEx( m_vecMember[i].m_strName, nX +GROUP_MEMBER_NAME_OFFSET_X,
 													nY +m_nLineHeight*(i+1),
 													0xf2f2f2ff);
 									
-				_pUIMgr->GetDrawPort()->AddTexture( nX + GROUP_MEMBER_ICON_OFFSET_X, nY +m_nLineHeight*(i+1),
+				pDrawPort->AddTexture( nX + GROUP_MEMBER_ICON_OFFSET_X, nY +m_nLineHeight*(i+1),
 												nX + GROUP_MEMBER_ICON_OFFSET_X+ ICON_WIDTH, nY +m_nLineHeight*(i+1) +ICON_HEIGHT,
 												m_rcIcon[m_vecMember[i].m_eJob][m_vecMember[i].m_eCondition].U0, m_rcIcon[m_vecMember[i].m_eJob][m_vecMember[i].m_eCondition].V0,
 												m_rcIcon[m_vecMember[i].m_eJob][m_vecMember[i].m_eCondition].U1, m_rcIcon[m_vecMember[i].m_eJob][m_vecMember[i].m_eCondition].V1,
@@ -450,16 +455,16 @@ int CUIGroup::Render( int& nLineY, int nShowHeight )
 				}
 				***/
 			}
-			//ì°¨ë‹¨ ê·¸ë£¹ì¼ ë•Œ
+			//Â÷´Ü ±×·ìÀÏ ¶§
 			else
 			{
-				_pUIMgr->GetDrawPort()->PutTextEx( m_vecMember[i].m_strName, nX +GROUP_MEMBER_NAME_OFFSET_X,
+				pDrawPort->PutTextEx( m_vecMember[i].m_strName, nX +GROUP_MEMBER_NAME_OFFSET_X,
 														nY +m_nLineHeight*(i+1),
 														0xf2f2f2ff);
 
 				if( m_vecMember[i].m_nGroupIndex >=0 )
 				{
-					_pUIMgr->GetDrawPort()->AddTexture( nX + GROUP_MEMBER_ICON_OFFSET_X, nY +m_nLineHeight*(i+1),
+					pDrawPort->AddTexture( nX + GROUP_MEMBER_ICON_OFFSET_X, nY +m_nLineHeight*(i+1),
 														nX + GROUP_MEMBER_ICON_OFFSET_X+ ICON_WIDTH, nY +m_nLineHeight*(i+1) +ICON_HEIGHT,
 														m_rcIcon[m_vecMember[i].m_eJob][m_vecMember[i].m_eCondition].U0, m_rcIcon[m_vecMember[i].m_eJob][m_vecMember[i].m_eCondition].V0,
 														m_rcIcon[m_vecMember[i].m_eJob][m_vecMember[i].m_eCondition].U1, m_rcIcon[m_vecMember[i].m_eJob][m_vecMember[i].m_eCondition].V1,
@@ -472,7 +477,7 @@ int CUIGroup::Render( int& nLineY, int nShowHeight )
 			//SelectBar render
 			if( i==m_nSelectLine && IsFocused())
 			{
-				_pUIMgr->GetDrawPort()->AddTexture( nX + GROUP_MEMBER_NAME_OFFSET_X, nY + m_nLineHeight*(i+1),
+				pDrawPort->AddTexture( nX + GROUP_MEMBER_NAME_OFFSET_X, nY + m_nLineHeight*(i+1),
 													//nX + GROUP_MEMBER_NAME_OFFSET_X +m_vecMember[i].m_strName.Length()*8, 
 													nX + GROUP_MEMBER_NAME_OFFSET_X +m_vecMember[i].m_strName.Length()*( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() +1),
 													nY + m_nLineHeight*(i+2),
@@ -484,16 +489,18 @@ int CUIGroup::Render( int& nLineY, int nShowHeight )
 	}
 
 
-	// ê·¸ë£¹ ì´ë¦„ ì¶œë ¥ ( ì¸ì› ìˆ˜ë„ í‘œì‹œ ) 
+	// ±×·ì ÀÌ¸§ Ãâ·Â ( ÀÎ¿ø ¼öµµ Ç¥½Ã ) 
 	if( m_bShowGroupName)
 	{
+		CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 		CTString strGroupName;
+
 		strGroupName.PrintF( "%s (%d)", m_strGroupName, m_vecMember.size() );
 		//strGroupName.PrintF( "%s (%d)", m_strGroupName, (nShowRange/m_nLineHeight) -1 );
 		
 		if( m_nSelectLine ==-1 && IsFocused())
 		{
-			_pUIMgr->GetDrawPort()->AddTexture( nX + GROUP_NAME_OFFSET_X, nY,
+			pDrawPort->AddTexture( nX + GROUP_NAME_OFFSET_X, nY,
 												//nX + GROUP_MEMBER_NAME_OFFSET_X +m_vecMember[i].m_strName.Length()*8, 
 												nX + GROUP_NAME_OFFSET_X +strGroupName.Length()*( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() +1),
 												nY + m_nLineHeight,
@@ -501,7 +508,7 @@ int CUIGroup::Render( int& nLineY, int nShowHeight )
 												m_rtSelectBar.U1, m_rtSelectBar.V1,
 												0xFFFFFFFF );
 		}
-		_pUIMgr->GetDrawPort()->PutTextEx( strGroupName, nX + GROUP_NAME_OFFSET_X, nY, 
+		pDrawPort->PutTextEx( strGroupName, nX + GROUP_NAME_OFFSET_X, nY, 
 			COLOR_GROUP);
 	}
 
@@ -597,7 +604,7 @@ WMSG_RESULT	CUIGroup::MouseMessage( MSG *pMsg )
 
 //------------------------------------------------------------------------------
 // CUIGroup::GetShowRange
-// Explain:  ê·¸ë£¹ë¦¬ìŠ¤íŠ¸ ì¶œë ¥ì‹œ ì‚¬ìš©í•  ì˜ì—­ í¬ê¸° ë¦¬í„´ ( ê·¸ë£¹ì´ë¦„ì€ ì œì™¸ )
+// Explain:  ±×·ì¸®½ºÆ® Ãâ·Â½Ã »ç¿ëÇÒ ¿µ¿ª Å©±â ¸®ÅÏ ( ±×·ìÀÌ¸§Àº Á¦¿Ü )
 //			1. Scroll Pos
 //			2. Extension
 // Date : 2005-05-22,Author: Lee Ki-hwan
@@ -702,10 +709,11 @@ bool CompareCondition(CMemberInfo info)
 
 bool FindObj( CMemberInfo mi, CTString strName)
 {
-		if( mi.m_strName ==strName)
-			return true;
-		else
-			return false;
+	if( strcmp(mi.m_strName , strName) == 0)
+		return true;
+	else
+		return false;
+
 }
 
 void CUIGroup::SetIndex(int nIndex)

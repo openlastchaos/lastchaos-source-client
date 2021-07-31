@@ -9,7 +9,7 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIWindow.h>
 
 #define JUNO_COUNT					5			
 #define DRATAN_COUNT				11			
@@ -18,16 +18,15 @@
 #define SHOW_TIME					5000
 #define SIGNBOARD_SY				120
 
-#define SIGNBOARD_DEFAULT_DIR		"Data\\Interface\\SignBoard"
 
 class ENGINE_API CUISignBoard
 {
 protected:
-	BOOL		m_bStop;					// ì •ì§€ ìƒíƒœì¸ê°?
+	BOOL		m_bStop;					// Á¤Áö »óÅÂÀÎ°¨?
 	int			m_nWidth;
 	int			m_nHeight;
 
-	CTString	m_strLocalName;				// í‘œì‹œí•  ì§€ì—­ ì´ë¦„ 
+	CTString	m_strLocalName;				// Ç¥½ÃÇÒ Áö¿ª ÀÌ¸§ 
 	float		m_fShowTime;
 	int			m_iAlpha;
 	int			m_FadeInOp;

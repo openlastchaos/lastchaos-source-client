@@ -302,6 +302,17 @@ inline BOOL TestPointInPolygon(CBrushPolygon &bpo, const FLOAT3D &v)
  * Constructor.
  */
 CLayerMaker::CLayerMaker(void)
+	: lm_pbpoPolygon(NULL)
+	, lm_pbsmShadowMap(NULL)
+	, lm_fMipFactor(NULL)
+	, lm_pwoWorld(NULL)
+	, lm_pbslLayer(NULL)
+	, lm_fpixHotU(NULL)
+	, lm_fpixHotV(NULL)
+	, lm_fLightPlaneDistance(NULL)
+	, lm_pubPolygonMask(NULL)
+	, lm_pubLayer(NULL)
+	, lm_plsLight(NULL)
 {
 }
 

@@ -22,7 +22,7 @@ CReusableContainer<CNetworkStreamBlock> _rcStreamBlockContainer(4);
 
 static struct ErrorCode ErrorCodes[] = {
 // message types
-//0522 kwon ì‚­ì œ.
+//0522 kwon »èÁ¦.
 //ERRORCODE(MSG_REQ_ENUMSERVERS, "MSG_REQ_ENUMSERVERS"),
 //ERRORCODE(MSG_SERVERINFO, "MSG_SERVERINFO"),
 //ERRORCODE(MSG_INF_DISCONNECTED, "MSG_INF_DISCONNECTED"),
@@ -69,7 +69,6 @@ CNetworkMessage::CNetworkMessage(UBYTE mtType)
   nm_pubMessage = (UBYTE*) AllocMemory(nm_slMaxSize);
   Initialize(mtType);
 }
-
 /* Copying. */
 CNetworkMessage::CNetworkMessage(const CNetworkMessage &nmOriginal)
 {
@@ -104,7 +103,6 @@ void CNetworkMessage::operator=(const CNetworkMessage &nmOriginal)
   // remember the type
   nm_mtType = nmOriginal.nm_mtType;
 }
-
 /*
  * Destructor.
  */
@@ -162,7 +160,7 @@ void CNetworkMessage::Initialize(UBYTE mtType)
   UBYTE ubType = nm_mtType;
   Write(&ubType, sizeof(ubType));
 }
-//0524 kwon ì¶”ê°€.
+//0524 kwon Ãß°¡.
 void CNetworkMessage::SetLoginType( UBYTE LoginType)
 {
 	UBYTE ubType = nm_mtType;
@@ -425,7 +423,7 @@ void CNetworkMessage::Dump(void)
   CPrintF("\n--\n");
 }
 
-//! ë©”ì‹œì§€ ë²„í¼ë¥¼ ê¼­ ë§žê²Œ ì¤„ì¸ë‹¤.
+//! ¸Þ½ÃÁö ¹öÆÛ¸¦ ²À ¸Â°Ô ÁÙÀÎ´Ù.
 // shrink message buffer to exactly fit contents
 void CNetworkMessage::Shrink(void)
 {
@@ -544,7 +542,7 @@ CNetworkStreamBlock::CNetworkStreamBlock(UBYTE mtType, INDEX iSequenceNumber)
 {
 }
 
-//! ë°›ì€ ë©”ì‹œì§€ë¡œë¶€í„° ë¸”ë¡ì„ ì½ì–´ë“¤ì¸ë‹¤.
+//! ¹ÞÀº ¸Þ½ÃÁö·ÎºÎÅÍ ºí·ÏÀ» ÀÐ¾îµéÀÎ´Ù.
 /*
  * Read a block from a received message.
  */
@@ -709,14 +707,14 @@ INDEX CNetworkStream::GetNewestSequence(void)
   return pnsb->nsb_iSequenceNumber;
 }
 
-//! ë¸”ë¡ì„ ì´ë¯¸ í• ë‹¹ëœ ìŠ¤íŠ¸ë¦¼ì— ë”í•œë‹¤.
+//! ºí·ÏÀ» ÀÌ¹Ì ÇÒ´çµÈ ½ºÆ®¸²¿¡ ´õÇÑ´Ù.
 /*
  * Add a block that is already allocated to the stream.
  */
 void CNetworkStream::AddAllocatedBlock(CNetworkStreamBlock *pnsbBlock)
 {
   // search all blocks already in list
-  FOREACHINLIST(CNetworkStreamBlock, nsb_lnInStream, ns_lhBlocks, itnsbInList) {
+  FOREACHINLIST_IN(CNetworkStreamBlock, nsb_lnInStream, ns_lhBlocks, itnsbInList) {
     // if the block in list has same sequence as the one to add
     if (itnsbInList->nsb_iSequenceNumber == pnsbBlock->nsb_iSequenceNumber) {
       // just discard the new block
@@ -753,7 +751,7 @@ void CNetworkStream::AddBlock(CNetworkStreamBlock &nsbBlock)
   AddAllocatedBlock(pnsbCopy);
 }
 
-//! ì„œë¸Œë©”ì‹œì§€ë¡œì„œ ë¸”ë¡ì„ ë©”ì‹œì§€ë¡œë¶€í„° ì½ëŠ”ë‹¤. ê·¸ë¦¬ê³  ê·¸ê²ƒì„ ìŠ¤íŠ¸ë¦¼ì— ì¶”ê°€í•œë‹¤.
+//! ¼­ºê¸Þ½ÃÁö·Î¼­ ºí·ÏÀ» ¸Þ½ÃÁö·ÎºÎÅÍ ÀÐ´Â´Ù. ±×¸®°í ±×°ÍÀ» ½ºÆ®¸²¿¡ Ãß°¡ÇÑ´Ù.
 /*
  * Read a block as a submessage from a message and add it to the stream.
  */
@@ -1013,7 +1011,8 @@ CNetworkMessage &operator>>(CNetworkMessage &nm, CPlayerAction &pa)
   }
 
   // find number of zero bits for flags
-  for(INDEX iZeros=0; iZeros<6; iZeros++) {
+  INDEX iZeros;
+  for(iZeros = 0; iZeros < 6; iZeros++) {
     UBYTE ub=0;
     nm.ReadBits(&ub, 1);
     if (ub!=0) {
@@ -1066,7 +1065,6 @@ CTStream &operator>>(CTStream &strm, CPlayerAction &pa)
   return strm;
 }
 
-
 // Create new network stream block (use instead of new CNetworkStreamBlock)
 extern CNetworkStreamBlock *CreateNetworkStreamBlock(void)
 {
@@ -1081,3 +1079,4 @@ extern void DeleteNetworkStreamBlock(CNetworkStreamBlock *pnsbBlock)
   CObjectRestore<BOOL> or(_rcStreamBlockContainer.rc_bNowDeleting,TRUE);
   _rcStreamBlockContainer.DeleteObject(pnsbBlock);
 }
+

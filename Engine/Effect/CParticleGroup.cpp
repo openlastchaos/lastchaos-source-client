@@ -1,7 +1,7 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
-#include "CParticleGroup.h"
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #include "stdh.h"
+#include "CParticleGroup.h"
 #include <Engine/Graphics/Color.h>
 #include <Engine/Base/FileName.h>
 #include <Engine/Graphics/DrawPort.h>
@@ -239,4 +239,4 @@ void CParticleGroup::Write(CTStream *pOS)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

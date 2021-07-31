@@ -6,7 +6,6 @@
 #include "StdH.h"
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Base/Stream.h>
-#include <Engine/Base/CRC.h>
 %}
 
 class export CPlayerEntity : CMovableModelEntity {
@@ -54,25 +53,41 @@ functions:
 
 	// FIXME : 왜 이런식으로 해둔거지?ㅡ.ㅡ
   virtual void Read_net_Mob(int index, CNetworkMessage *istr) {};
-  virtual void Read_net_Character(int index, CNetworkMessage *istr) {};
+  virtual void Read_net_Character(int type, int sub_type, CNetworkMessage *istr) {};
   virtual void Read_net_Pet(int index, CNetworkMessage *istr) {};
   virtual void Read_net_WildPet(int index, CNetworkMessage *istr) {};
   virtual void Read_net_Summon(int index, CNetworkMessage *istr) {};
+  virtual void Read_net_Damage_Character(CNetworkMessage *istr) {};
   virtual void Read_net_Damage( SBYTE sbType, CNetworkMessage *istr) {};
+  virtual void Read_net_DissappearEffect(CNetworkMessage* istr)	{}
+  virtual void Read_net_StatusPC(CNetworkMessage *istr) {};
+  virtual void Read_net_StatusNPC(CNetworkMessage *istr) {};
+  virtual void Read_net_StatusPet(CNetworkMessage *istr) {};
+  virtual void Read_net_StatusElemental(CNetworkMessage *istr) {};  
   virtual void ProcessProduce(SBYTE sbChaType, SLONG slChaIndex, SBYTE sbTargetType, SLONG slTargetIndex, SLONG slTargetHP) {};
   
   virtual void StandDown( BOOL bStand ) {};  
   virtual void OpenGate( int iGateNumber, BOOL bOpenGate ) {};
   virtual void SetMobData(CEntity* penEntity, SLONG hp, SLONG maxHp, int level, BOOL bNpc, int mobIdx) {};
-  virtual void SetChaData(int index, int type, ULONG hp, ULONG maxHp, SBYTE hairstyle, SBYTE facestyle, CTString& strName, SBYTE state, SBYTE pkTitle, SLONG pkstate) {};
+  virtual void SetChaData(int index, int type, ULONG hp, ULONG maxHp, SBYTE hairstyle, SBYTE facestyle, CTString& strName, UWORD state, SBYTE pkTitle, SLONG pkstate) {};
   virtual void SetPetData(CEntity* penEntity, SLONG hp, SLONG maxHP) {};  
   virtual void SetWildPetData(CEntity* penEntity, SLONG hp, SLONG maxHP) {};
-  virtual void SetPetColor(CEntity* penEntity, UBYTE sbPetColor) {};
   virtual void SetElementalData(CEntity* penEntity, SLONG hp, SLONG maxHP ) {};
   virtual void SetElementalStatus(CEntity* penEntity, SBYTE sbAttackSpeed, SBYTE sbMagicSpeed, LONG lSkillSpeed, FLOAT fWalkSpeed, FLOAT fRunSpeed, FLOAT fAttackRange ){};
   virtual void SetShopData( INDEX index, SBYTE sbShopType) {};
+  
+  // [100107: selo] 트레이너를 피하기 위한 중요 속성 정보 관리
+  virtual void SetImportantValues( FLOAT fWalkspeed, FLOAT fRunspeed, FLOAT fAttackrange, SBYTE sbAttackspeed, SBYTE sbMagicspeed ) {};
+  virtual FLOAT GetWalkspeed() { return 0.0f; };
+  virtual FLOAT GetRunspeed() { return 0.0f; };
+  virtual FLOAT GetAttackrange() { return 0.0f; };
+  virtual SBYTE GetAttackspeed() { return 0; };
+  virtual SBYTE GetMagicspeed() { return 0; };
+  
+  virtual void SetSkillCancel( BOOL bCanSkillCancel ){};
 
   virtual void StartCamera(CEntity *pTarget, BOOL bRestart) {};
+  virtual void SetWideScreen(CEntity *pTarget, BOOL bWide, FLOAT fFov) {};
   virtual void GetProjection(CAnyProjection3D& apr) {};
 
   virtual void LostTarget(){};
@@ -86,6 +101,7 @@ functions:
   virtual void LoadSkillAnimID(){};
   virtual void UseAction(int ActionIndex){};
   virtual void StopMove(){};
+  virtual void ClearMove() {}
   
 
   virtual void SetProduct(SLONG slChaIndex, SBYTE slProductType) {};
@@ -103,31 +119,41 @@ functions:
   virtual void RidingPet(CEntity *pCharacter, INDEX iPetType ) {};
   virtual void LeavingPet(CEntity *pCharacter ) {};
   virtual BOOL IsRidePet( CEntity *pCharacter ) { return FALSE; };
+  
+  virtual void RidingWildPet(CEntity *pCharacter, CEntity *pWildPet, CTString strFileName ) {};
+  virtual void LeavingWildPet(CEntity *pCharacter ) {};
+
 
   virtual	BOOL IsMoving() { return FALSE; };
   virtual	BOOL IsActionSitting() { return FALSE; }
   virtual	BOOL IsIdle()	{ return FALSE; }
+  // ITS #3744 : 변신상태 파악용 [8/30/2011 rumist]
+  virtual	const BOOL IsTransform() const { return FALSE;	}
 
   virtual   void ClearTargetInfo(CEntity* penEntity){};
 
-  virtual	void SetCharacterHairChange(CEntity* penEntity, SBYTE sbType, INDEX Cnt, BOOL IsMe) {};
+  virtual	void SetCharacterHairChange(INDEX nSIdx, SBYTE sbType, BOOL IsMe) {};
   virtual	void SetCharacterAppearance(CModelInstance *pMI, int iJob, SBYTE sbHairStyle, SBYTE sbFaceStyle)	{};
   virtual	void ChangeFaceMesh(CModelInstance *pMI, int iJob, SBYTE sbType)	{};		// 머리 바꾸기  
   virtual	void ChangeHairMesh(CModelInstance *pMI, int iJob, SBYTE sbType)	{};		// 헤어 스타일 바꾸기
 
   // add for collect quest 060721
   virtual	void CancelProduct() {};
-  virtual	void DeleteWearingWeapon(BOOL bException) {};
-  virtual	void AppearWearingWeapon() {};
+  virtual	void DeleteWearingWeapon(BOOL bException, BOOL bMode) {};
+  virtual	void AppearWearingWeapon(BOOL bSkillEnd) {};
 
 //  virtual	void WearingArmor(SLONG tabId, SLONG rowId, SLONG colId) {};
   virtual	void DeleteDefaultArmor(int type) {};
   virtual	void WearingDefaultArmor(int type) {};
   virtual	void DeleteCurrentArmor(int weartype) {};
-  virtual	void SetChaWearing(class CCharacterTarget &ct, CEntity* penEntity, CNetworkMessage *istr) {};
+  virtual	void SetChaWearing(class CCharacterTarget* pTarget, CEntity* penEntity, CNetworkMessage *istr) {};
+  virtual	void SetCharCostumeWearing(class CCharacterTarget* pTarget, CEntity* penEntity, CNetworkMessage *istr) {};
+  virtual	void WearingCostumeArmor( CNetworkMessage *istr ) {};
+  virtual	void WearingCostumeArmorOneSuit( CNetworkMessage *istr ) {};	// added by sam 11/02/07 [SAM] 코스튬2 한벌의상 입기/벗기 (자신이 아닌 다른 캐릭터)
+  virtual	BOOL IsHelmet(INDEX iCharIndex)	{ return FALSE;	}
   virtual   void Rebirth(){};
   virtual   void DeathYou(){};
-  virtual   void DeathInit(){};
+  virtual   void PlayerInit(bool bDeath){};
   virtual   BOOL IsAlreadyDie(){return FALSE;};
   virtual   void SetDie(){};
   virtual	void SetTarget(CEntity* penEntity){};
@@ -137,12 +163,20 @@ functions:
   virtual void SetTargetMe(){};
   virtual void PlayItemSound(BOOL bPick, BOOL bMoney){};
   virtual void PlayButtonSound(){};
+  virtual void PlayJewelDullSound(){};
+  virtual void PlayJewelRefinementSound(){};
+  virtual void PlayJewelShinySound(){};
+  virtual void PlayPetStashEffectSound(){};
+  virtual void PlayPetStashCardSelSound(){};
+  virtual void PlayHolyWaterSound(){};
+  
   virtual void CommandAttack(){};
   virtual BOOL CommandAction(){ return FALSE; };		//물뿌리기 액션을 사용하기 위한 타겟을 설정
 
   virtual void PlayBGM(CTFileName fnFileName){};
   
   virtual void SearchNearItem(){};
+  virtual void SetCharacterState(CEntity* cha_Entity, INDEX ch_state) {};
   // FIXME : 상태를 확인하는데 매번 이렇게 찾아야 하는가?
   virtual BOOL IsSkilling(){return FALSE;};
   virtual BOOL IsSitting(){return FALSE;};
@@ -156,6 +190,7 @@ functions:
   virtual BOOL IsSocialActing(){ return FALSE; }
   virtual BOOL IsPolymophing(){ return FALSE; }
   virtual BOOL IsTransforming(){ return FALSE; }
+  virtual BOOL IsChanging() { return FALSE; }
   virtual void AppearChaPolymoph(CEntity* pentity, INDEX mobindex){};
   virtual void TransfromPet(CEntity* pentity, INDEX mobIndex, INDEX mobSize){};
   virtual void ReturnTransformPet(CEntity* pentity){};
@@ -165,10 +200,12 @@ functions:
   virtual void AppearChaTransform( CEntity* pEntity, INDEX iTransformType ){};
 
   // eons 추가 (061207) : 악세사리 착용시 Effect적용
-  virtual void PlAddAccessoryEffect(INDEX iCt,CEntity *penEntity, BOOL bIsMe){};
+  virtual void PlAddAccessoryEffect(CEntity *penEntity, CCharacterTarget* pTarget){};
+
+  virtual void EnemyTargetSelected_InputTab() {};
 
   // 강신 시작 & 강신 종료.
-  virtual void EvocationStart( LONG lIndex, SBYTE sbType){};
+  virtual void EvocationStart( LONG lIndex, int nSkillIndex){};
   virtual void EvocationStop( LONG lIndex){};
   virtual BOOL CheckChangeCondition(INDEX level, INDEX zone){ return FALSE;};  
   virtual void SetSummonCommand( CEntity* pEntity, INDEX iCommand ) {};
@@ -185,9 +222,28 @@ functions:
 	virtual void AddDeathItem(CEntity *penEnemy, FLOAT3D pos, class CItemTarget *pItemTarget, class CItemData *pItemData) {};
 //안태훈 수정 끝	//(5th Closed beta)(0.2)
 
+	virtual void ReceiveTriggerEvent(INDEX iIn, INDEX iOut, INDEX iContinued, CNetworkMessage *iStr){};
+	virtual void ReceiveRaidScene(CNetworkMessage *istr) {};
+	virtual void SendTriggerEvent(INDEX iTarget, INDEX eetEventType/* EET_TRIGGER */) {};
+	virtual CEntity* GetClickObject(void) { return NULL; }
 	// 전사의 축복 시스템 작업시 추가 wooss
 	virtual void DropDeathItem(CEntity *penEnemy) {};
-
+	
+	virtual void HUD_DrawModel(CDrawPort* pdp, FLOAT fMinX, FLOAT fMinY, FLOAT fMaxX, FLOAT fMaxY, INDEX iType, FLOAT fDistance, FLOAT fHeight) {};
+	virtual FLOAT GetAnimationTime() { return 0.0f; }
+	virtual void HUD_SetCharModelData(INDEX iJob, INDEX iHairStyle, INDEX iFaceStyle) {};
+	virtual void HUD_SetModelData(INDEX iType, INDEX iIndex, INDEX iUIType) {};
+	virtual void HUD_WearingModel(INDEX iType, INDEX iJob, INDEX iItem, BOOL bLogin) {};
+	virtual void HUD_ChangeHairMesh(INDEX iJob, INDEX iHairStyle) {};
+	virtual void HUD_ChangeFaceMesh(INDEX iJob, INDEX iFaceStyle) {};
+	virtual void HUD_PlayAnimation(INDEX iJob, INDEX AnimID) {};
+	virtual void HUD_PlayAnimation(CTString strAniName) {};
+	virtual void HUD_SetModelColor(const COLOR ModelColor)	{};
+	virtual void HUD_SetTitleEffect(CTString strEffectName) {};
+	virtual BOOL IsHudModel_Used() { return FALSE; }
+	virtual void SetHudModel_Use(BOOL bUse) {};
+	virtual void SetDecoModeCamera( FLOAT fDistance, FLOAT fHeight ) {};
+	virtual void SetAppearanceData( int inde, SBYTE hairstyle, SBYTE facestyle ) {};
   /* Get name of this player. */
   export CTString GetPlayerName(void)
   {

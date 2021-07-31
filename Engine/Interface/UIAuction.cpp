@@ -1,8 +1,10 @@
 #include "stdh.h"
-#include <Engine/Interface/UIAuction.h>
+
+// header ¡§∏Æ. [12/1/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <vector>
+#include <Engine/Interface/UIAuction.h>
 #include <Engine/Interface/UIPetInfo.h>
-#include <map>
 
 #define	AUCTION_TAB_WIDTH 101
 #define AUCTION_ITEMSTRING_CENTERX 181
@@ -10,27 +12,50 @@
 #define AUCTION_ITEMTOTALNAS_CENTERX 449
 #define AUCTION_ETCSTRING_CENTERX 568
 
-#define AUCTION_NAS_MAX 999999999999	//ÏûÖÎ†•Í∞ÄÎä• ÎÇòÏä§ ÏµúÎåÄ Í∏àÏï°
+#define AUCTION_NAS_MAX 999999999999	//¿‘∑¬∞°¥… ≥™Ω∫ √÷¥Î ±›æ◊
+#define USE_AUCTION 0
 
-#define AUCTION_CANT_SEARCH_AND_REG		// [090616: selo] ÌåêÎß§ÎåÄÌñâ Í≤ÄÏÉâ Î∞è Îì±Î°ù Í∏àÏßÄ
+#define ITEM_COUNT 7
+#define AUTION_WEAPON_COUNT 17
+#define ACCESS_COUNT 9
+#define ARMOR_COUNT 8
+
+//2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° ∞¸∑√ ºˆ¡§ 
+#ifdef CHAR_EX_ROGUE	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+
+	#ifdef CHAR_EX_MAGE
+		#define JOB_COUNT 11
+	#else
+		#define JOB_COUNT 10
+	#endif
+
+#else
+
+	#ifdef  CHAR_EX_MAGE
+		#define JOB_COUNT 10
+	#else
+		#define JOB_COUNT 9
+	#endif
+	
+#endif
 
 CTString strTabName[AUCTION_TAB_TOTAL];
 
-CTString strItemType[7];
+CTString strItemType[ITEM_COUNT];
 
-CTString strItemSubTypeWeapon[16];
-CTString strItemSubTypeArmor[7];
-CTString strItemSubTypeAccessory[9];
+CTString strItemSubTypeWeapon[AUTION_WEAPON_COUNT];
+CTString strItemSubTypeArmor[ARMOR_COUNT];
+CTString strItemSubTypeAccessory[ACCESS_COUNT];
 
-CTString strItemClass[8];
+CTString strItemClass[JOB_COUNT];
 
 CTString strHelp[AUCTION_TAB_TOTAL];
 
 
-static int nShopSellRate = 0;		//npcÏïÑÏù¥ÌÖú Íµ¨Îß§Ïãú Ï†ÅÏö©ÎêòÎäî ÎπÑÏú®
-static int nShowItemSlot = 0;		//ÌòÑÏû¨ Í∞ÄÎ¶¨ÌÇ§Îäî Ïä¨Î°Ø(ÏïÑÏù¥ÌÖú Ï†ïÎ≥¥ ÌëúÏãúÏö©)
+static int nShopSellRate = 0;		//npcæ∆¿Ã≈€ ±∏∏≈Ω√ ¿˚øÎµ«¥¬ ∫Ò¿≤
+static int nShowItemSlot = 0;		//«ˆ¿Á ∞°∏Æ≈∞¥¬ ΩΩ∑‘(æ∆¿Ã≈€ ¡§∫∏ «•Ω√øÎ)
 
-const int nLimitRegistItemNumber = 10; // ÌîåÎ†àÏù¥Ïñ¥Îãπ Îì±Î°ùÍ∞ÄÎä•Ìïú ÏïÑÏù¥ÌÖú Í∞úÏàò
+const int nLimitRegistItemNumber = 10; // «√∑π¿ÃæÓ¥Á µÓ∑œ∞°¥…«— æ∆¿Ã≈€ ∞≥ºˆ
 
 // ----------------------------------------------------------------------------
 // Name : CUIAuction()
@@ -47,8 +72,8 @@ CUIAuction::CUIAuction()
 
 	m_bReverse = FALSE;
 	m_bRegister = FALSE;
-	m_bSettle = FALSE;
-	m_bSettleRequest = FALSE;
+	// ∑Œ±◊¿Œ »ƒ 1π¯¿« ¡§ªÍ∞°¥… «œµµ∑œ FALSE -> TRUE∑Œ ºˆ¡§ [4/21/2011 ldy1978220]
+	m_bSettle = TRUE;
 
 	m_strTitleName = CTString("");
 
@@ -59,71 +84,93 @@ CUIAuction::CUIAuction()
 	m_nSearchedClass = 0;
 	m_strSearched = CTString("");
 
-	m_nNpcIndex = -1;
 	m_AuctionSurface.Clear();
 
-	strTabName[0] = _S( 399, "Ï°∞Ìöå" );
-	strTabName[1] = _S( 2489, "Îì±Î°ù" );
-	strTabName[2] = _S( 4265, "Ï†ïÏÇ∞" );
+	strTabName[0] = _S( 399, "¡∂»∏" );
+	strTabName[1] = _S( 2489, "µÓ∑œ" );
+	strTabName[2] = _S( 4265, "¡§ªÍ" );
 
-	//ÏùºÌöåÏö© Îí§Ïóê ÌÉÑÌôò ÌîåÎûòÍ∑∏Í∞Ä ÏûàÏùå
-	strItemType[0] =_S( 506, "Ï†ÑÏ≤¥" ); 
-	strItemType[1] =_S( 2375, "Î¨¥Í∏∞" ); 
-	strItemType[2] =_S( 2376, "Î∞©Ïñ¥Íµ¨" ); 
-	strItemType[3] =_S( 4266, "ÏùºÌöåÏö©" );
-	strItemType[4] =_S( 4267, "Í∏∞ÌÉÄ" );
-	strItemType[5] =_S( 726, "ÏïÖÏÑ∏ÏÇ¨Î¶¨" );
-	strItemType[6] =_S( 4268, "Ìè¨ÏÖò" );
+	//¿œ»∏øÎ µ⁄ø° ≈∫»Ø «√∑°±◊∞° ¿÷¿Ω
+	strItemType[0] =_S( 506, "¿¸√º" ); 
+	strItemType[1] =_S( 4775, "π´±‚" ); 
+	strItemType[2] =_S( 4776, "πÊæÓ±∏" ); 
+	strItemType[3] =_S( 4266, "¿œ»∏øÎ" );
+	strItemType[4] =_S( 4267, "±‚≈∏" );
+	strItemType[5] =_S( 726, "æ«ººªÁ∏Æ" );
+	strItemType[6] =_S( 4268, "∆˜º«" );
 
-	strItemSubTypeWeapon[0] = _S( 506, "Ï†ÑÏ≤¥" );
-	strItemSubTypeWeapon[1] = _S( 1038, "Í∏∞ÏÇ¨ÎèÑ" );
-	strItemSubTypeWeapon[2] = _S( 1039, "ÏÑùÍ∂Å" );
-	strItemSubTypeWeapon[3] = _S( 1040, "Ïä§ÌÉúÌîÑ" );
-	strItemSubTypeWeapon[4] = _S( 1041, "ÎåÄÍ≤Ä" );
-	strItemSubTypeWeapon[5] = _S( 1042, "ÎèÑÎÅº" );
-	strItemSubTypeWeapon[6] = _S( 4269, "Î©îÏù¥ÏßÄÏôÑÎìú" );
-	strItemSubTypeWeapon[7] = _S( 1044, "Ìôú" );
-	strItemSubTypeWeapon[8] = _S( 1045, "Îã®Í≤Ä" );
-	strItemSubTypeWeapon[9] = _S( 4270, "Ï±ÑÍµ¥ÎèÑÍµ¨" );
-	strItemSubTypeWeapon[10] = _S( 4271, "Ï±ÑÏßëÎèÑÍµ¨" );
-	strItemSubTypeWeapon[11] = _S( 4272, "Ï∞®ÏßÄÎèÑÍµ¨" );
-	strItemSubTypeWeapon[12] = _S( 1046, "Ïù¥ÎèÑÎ•ò" );
-	strItemSubTypeWeapon[13] = _S( 1047, "ÌûêÎü¨ÏôÑÎìú" );
-	strItemSubTypeWeapon[14] = _S( 2306, "ÏÇ¨Ïù¥Îìú" );
-	strItemSubTypeWeapon[15] = _S( 2307, "Ìè¥Ïïî" );
+	strItemSubTypeWeapon[0] = _S( 506, "¿¸√º" );
+	strItemSubTypeWeapon[1] = _S( 1038, "±‚ªÁµµ" );
+	strItemSubTypeWeapon[2] = _S( 1039, "ºÆ±√" );
+	strItemSubTypeWeapon[3] = _S( 1040, "Ω∫≈¬«¡" );
+	strItemSubTypeWeapon[4] = _S( 1041, "¥Î∞À" );
+	strItemSubTypeWeapon[5] = _S( 1042, "µµ≥¢" );
+	strItemSubTypeWeapon[6] = _S( 4269, "∏ﬁ¿Ã¡ˆøœµÂ" );
+	strItemSubTypeWeapon[7] = _S( 1044, "»∞" );
+	strItemSubTypeWeapon[8] = _S( 1045, "¥‹∞À" );
+	strItemSubTypeWeapon[9] = _S( 4270, "√§±ºµµ±∏" );
+	strItemSubTypeWeapon[10] = _S( 4271, "√§¡˝µµ±∏" );
+	strItemSubTypeWeapon[11] = _S( 4272, "¬˜¡ˆµµ±∏" );
+	strItemSubTypeWeapon[12] = _S( 1046, "¿Ãµµ∑˘" );
+	strItemSubTypeWeapon[13] = _S( 1047, "»˙∑ØøœµÂ" );
+	strItemSubTypeWeapon[14] = _S( 2306, "ªÁ¿ÃµÂ" );
+	strItemSubTypeWeapon[15] = _S( 2307, "∆˙æœ" );
+	strItemSubTypeWeapon[16] = _S( 4614, "»•" );
 
-	strItemSubTypeArmor[0] = _S( 506, "Ï†ÑÏ≤¥" );
-	strItemSubTypeArmor[1] = _S( 142, "Î®∏Î¶¨" );
-	strItemSubTypeArmor[2] = _S( 4273, "ÏÉÅÏùò" );
-	strItemSubTypeArmor[3] = _S( 4274, "ÌïòÏùò" );
-	strItemSubTypeArmor[4] = _S( 4275, "Ïû•Í∞ë" );
-	strItemSubTypeArmor[5] = _S( 4276, "Ïã†Î∞ú" );
-	strItemSubTypeArmor[6] = _S( 4277, "Î∞©Ìå®" );
+	strItemSubTypeArmor[0] = _S( 506, "¿¸√º" );
+	strItemSubTypeArmor[1] = _S( 142, "∏”∏Æ" );
+	strItemSubTypeArmor[2] = _S( 4273, "ªÛ¿«" );
+	strItemSubTypeArmor[3] = _S( 4274, "«œ¿«" );
+	strItemSubTypeArmor[4] = _S( 4275, "¿Â∞©" );
+	strItemSubTypeArmor[5] = _S( 4276, "Ω≈πﬂ" );
+	strItemSubTypeArmor[6] = _S( 4277, "πÊ∆–" );
+	strItemSubTypeArmor[7] = _S( 4613, "≥Ø∞≥" );
 
-	strItemSubTypeAccessory[0] = _S( 506, "Ï†ÑÏ≤¥" );
-	strItemSubTypeAccessory[1] = _S( 4278, "Î∂ÄÏ†Å" );
-	strItemSubTypeAccessory[2] = _S( 4279, "ÎßàÎ†®ÏÑù" );
-	strItemSubTypeAccessory[3] = _S( 4280, "Î∞òÏßùÏù¥Îäî Îèå" );
-	strItemSubTypeAccessory[4] = _S( 4281, "Í∑ÄÍ±∏Ïù¥" );
-	strItemSubTypeAccessory[5] = _S( 4282, "Î∞òÏßÄ" );
-	strItemSubTypeAccessory[6] = _S( 4283, "Î™©Í±∏Ïù¥" );
-	strItemSubTypeAccessory[7] = _S( 2188, "Ïï†ÏôÑÎèôÎ¨º" );
-	strItemSubTypeAccessory[8] = _S( 4284, "Í≥µÍ≤©Ìòï Ïï†ÏôÑÎèôÎ¨º" );
+	strItemSubTypeAccessory[0] = _S( 506, "¿¸√º" );
+	strItemSubTypeAccessory[1] = _S( 4278, "∫Œ¿˚" );
+	strItemSubTypeAccessory[2] = _S( 4279, "∏∂∑√ºÆ" );
+	strItemSubTypeAccessory[3] = _S( 4280, "π›¬¶¿Ã¥¬ µπ" );
+	strItemSubTypeAccessory[4] = _S( 4281, "±Õ∞…¿Ã" );
+	strItemSubTypeAccessory[5] = _S( 4282, "π›¡ˆ" );
+	strItemSubTypeAccessory[6] = _S( 4283, "∏Ò∞…¿Ã" );
+	strItemSubTypeAccessory[7] = _S( 2188, "æ÷øœµøπ∞" );
+	strItemSubTypeAccessory[8] = _S( 4284, "∞¯∞›«¸ æ÷øœµøπ∞" );
 
-	//ÏÜåÏÑúÎü¨ÏôÄ Í≥µÍ≤©Ìòï PETÏÇ¨Ïù¥Ïóê not use ÌîåÎûòÍ∑∏ ÌïòÎÇò ÏûàÏùå
-	strItemClass[0] = _S( 506, "Ï†ÑÏ≤¥" );
-	strItemClass[1] = _S( 43, "ÌÉÄÏù¥ÌÉÑ" );
-	strItemClass[2] = _S( 44, "Í∏∞ÏÇ¨" );
-	strItemClass[3] = _S( 45, "ÌûêÎü¨" );
-	strItemClass[4] = _S( 46, "Î©îÏù¥ÏßÄ" );
-	strItemClass[5] = _S( 47, "Î°úÍ∑∏" );
-	strItemClass[6] = _S( 48, "ÏÜåÏÑúÎü¨" );
-	strItemClass[7] = _S( 4284, "Í≥µÍ≤©Ìòï Ïï†ÏôÑÎèôÎ¨º" );
+	//º“º≠∑ØøÕ ∞¯∞›«¸ PETªÁ¿Ãø° not use «√∑°±◊ «œ≥™ ¿÷¿Ω
+	strItemClass[0] = _S( 506, "¿¸√º" );
+	strItemClass[1] = _S( 43, "≈∏¿Ã≈∫" );
+	strItemClass[2] = _S( 44, "±‚ªÁ" );
+	strItemClass[3] = _S( 45, "»˙∑Ø" );
+	strItemClass[4] = _S( 46, "∏ﬁ¿Ã¡ˆ" );
+	strItemClass[5] = _S( 47, "∑Œ±◊" );
+	strItemClass[6] = _S( 48, "º“º≠∑Ø" );
+	strItemClass[7] = _S( 4410, "≥™¿Ã∆Æ Ω¶µµøÏ" );
+#ifdef CHAR_EX_ROGUE		//2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° ∞¸∑√ ºˆ¡§ Ω∫∆Æ∏µ ≥™ø¿∏È √ﬂ∞° ºˆ¡§ « ø‰ 
+	#ifdef CHAR_EX_MAGE
+		strItemClass[8] = _S( 5732, "EX∑Œ±◊" );	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+		strItemClass[9] = _S( 5820, "æ∆≈©∏ﬁ¿Ã¡ˆ" );
+		strItemClass[10] = _S( 4284, "∞¯∞›«¸ æ÷øœµøπ∞" );
+	#else
+		strItemClass[8] = _S( 5732, "EX∑Œ±◊" );	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+		strItemClass[9] = _S( 4284, "∞¯∞›«¸ æ÷øœµøπ∞" );
+	#endif
+#else
+
+	#ifdef CHAR_EX_MAGE
+		strItemClass[8] = _S( 5820, "æ∆≈©∏ﬁ¿Ã¡ˆ" );	
+
+
+		strItemClass[9] = _S( 4284, "∞¯∞›«¸ æ÷øœµøπ∞" );
+	#else
+		strItemClass[8] = _S( 4284, "∞¯∞›«¸ æ÷øœµøπ∞" );
+	#endif
+	
+#endif
 
 	strHelp[0] = CTString( "-" );
-	strHelp[1] = _S( 4285,"Ïù∏Î≤§ÌÜ†Î¶¨ÏóêÏÑú ÏïÑÏù¥ÌÖúÏùÑ Îì±Î°ùÌïòÏó¨ ÏÇ¨Ïö©Ìï† Ïàò ÏûàÏäµÎãàÎã§.");
-	strHelp[2] = _S( 4286,"Ï†ïÏÇ∞ ÏÑúÎπÑÏä§Î•º ÌÜµÌï¥ Í±∞ÎûòÎ•º ÏôÑÎ£åÌïòÏã§ Ïàò ÏûàÏäµÎãàÎã§.");
-
+	strHelp[1] = _S( 4285,"¿Œ∫•≈‰∏Æø°º≠ æ∆¿Ã≈€¿ª µÓ∑œ«œø© ªÁøÎ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
+	strHelp[2] = _S( 4286,"¡§ªÍ º≠∫ÒΩ∫∏¶ ≈Î«ÿ ∞≈∑°∏¶ øœ∑·«œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ.");
+	m_ptdButtonTexture = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -132,26 +179,30 @@ CUIAuction::CUIAuction()
 // ----------------------------------------------------------------------------
 CUIAuction::~CUIAuction()
 {
-	Destroy();
+	if (m_ptdButtonTexture)
+	{
+		_pTextureStock->Release(m_ptdButtonTexture);
+		m_ptdButtonTexture = NULL;
+	}
 }
 
 
 // ----------------------------------------------------------------------------
 // Name : Create()
-// Desc : ÏÉùÏÑ±
+// Desc : ª˝º∫
 // ----------------------------------------------------------------------------
 void CUIAuction::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
+	m_pParent = (CUIBase*)pParentWnd;
 	SetPos( nX, nY );
 	SetSize( nWidth, nHeight );
 
 	m_nCurrnetTab = AUCTION_TAB_REFER;
-	m_strTitleName = _S( 4287, "Í±∞Îûò ÎåÄÌñâ ÏÑúÎπÑÏä§" );
+	m_strTitleName = _S( 4287, "∞≈∑° ¥Î«‡ º≠∫ÒΩ∫" );
 	
-	CTextureData* tmpTexture = CreateTexture(CTString("Data\\Interface\\Auction.tex"));
-	FLOAT	fTexWidth = tmpTexture->GetPixWidth();
-	FLOAT	fTexHeight = tmpTexture->GetPixHeight();
+	m_ptdBaseTexture = CreateTexture(CTString("Data\\Interface\\Auction.tex"));
+	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
+	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
 	m_rcTitle.SetRect(0,0,AUCTION_WIDTH,36);
 
@@ -166,9 +217,9 @@ void CUIAuction::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 		left += (AUCTION_TAB_WIDTH + 3);
 	}
 
-	m_AuctionSurface.AddRectSurface(UIRect(0,0,643,509), UIRectUV(0,0,643,509,fTexWidth,fTexHeight));				//Î©îÏù∏ ÏúàÎèÑÏö∞ 0
-	m_AuctionSurface.AddRectSurface(UIRect(416, 65, 547, 81), UIRectUV(0, 518, 105, 534, fTexWidth, fTexHeight));	//ÏóêÎîîÌä∏ Î∞ïÏä§ 1
-	m_AuctionSurface.AddRectSurface(UIRect(131, 64, 510, 80), UIRectUV(176, 538, 556, 555, fTexWidth, fTexHeight));	//ÎèÑÏõÄÎßê Î∞∞Í≤Ω 2
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,643,509), UIRectUV(0,0,643,509,fTexWidth,fTexHeight));				//∏ﬁ¿Œ ¿©µµøÏ 0
+	m_AuctionSurface.AddRectSurface(UIRect(416, 65, 547, 81), UIRectUV(0, 518, 105, 534, fTexWidth, fTexHeight));	//ø°µ∆Æ π⁄Ω∫ 1
+	m_AuctionSurface.AddRectSurface(UIRect(131, 64, 510, 80), UIRectUV(176, 538, 556, 555, fTexWidth, fTexHeight));	//µµøÚ∏ª πË∞Ê 2
 
 	m_btnFirst.Create( this, CTString( "" ), 252, 480, 17, 19 );
 	m_btnFirst.SetUV( UBS_IDLE, 138, 515, 155, 534, fTexWidth, fTexHeight );
@@ -203,13 +254,13 @@ void CUIAuction::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_cmbItemType.SetDownBtnUV( 117, 522, 130, 529, fTexWidth, fTexHeight );
 	m_cmbItemType.SetUpBtnUV( 117, 522, 130, 529, fTexWidth, fTexHeight );
 	m_cmbItemType.SetDropListUV( 0, 537, 105, 555, fTexWidth, fTexHeight );
-//	m_cmbItemType.CreateScroll( TRUE, 9, 7, 0, 0, 10 );
-	for(int k=0; k<7; k++)
+	//	m_cmbItemType.CreateScroll( TRUE, 9, 7, 0, 0, 10 );
+	for(int k=0; k < ITEM_COUNT; k++)
 	{
 		m_cmbItemType.AddString(strItemType[k]);
 	}
 
-	m_cmbItemSubType.Create( this, 122, 65, 141, 16, 123, 6, 13, 7, 16, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
+	m_cmbItemSubType.Create( this, 122, 65, 141, 16, 123, 6, 13, 7, 17, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
 	m_cmbItemSubType.SetBackUV( 0, 518, 105, 534, fTexWidth, fTexHeight );
 	m_cmbItemSubType.SetDownBtnUV( 117, 522, 130, 529, fTexWidth, fTexHeight );
 	m_cmbItemSubType.SetUpBtnUV( 117, 522, 130, 529, fTexWidth, fTexHeight );
@@ -224,7 +275,7 @@ void CUIAuction::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_cmbClass.SetDropListUV( 0, 537, 105, 555, fTexWidth, fTexHeight );
 //	m_cmbClass.AddString(CTString("-"));
 //	m_cmbClass.CreateScroll( TRUE, 9, 7, 0, 0, 10 );
-	for(int l=0; l<7; l++)
+	for(int l=0; l < JOB_COUNT; l++)
 	{
 		m_cmbClass.AddString(strItemClass[l]);
 	}
@@ -233,46 +284,44 @@ void CUIAuction::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_ebSearch.SetFocus( FALSE );
 	m_ebSearch.SetReadingWindowUV( 0, 518, 105, 534, fTexWidth, fTexHeight );
 	m_ebSearch.SetCandidateUV( 0, 518, 105, 534, fTexWidth, fTexHeight );
-	// [090611: selo] ÌåêÎß§ ÎåÄÌñâÏãú ÏÑúÎ≤Ñ Î¨∏Ï†úÎ°ú Í≤ÄÏÉâ EditboxÎ•º ÏÇ¨Ïö© Î∂àÍ∞Ä ÌïòÍ≤å Ìï®
-	m_ebSearch.SetEnable(FALSE);
 
 
-	m_btnSortItem.Create( this, _S( 4288, "ÏïÑÏù¥ÌÖú" ), 16, 90, 325, 17 );
+	m_btnSortItem.Create( this, _S( 4288, "æ∆¿Ã≈€" ), 16, 90, 325, 17 );
 	m_btnSortItem.SetUV( UBS_IDLE, 0, 560, 325, 577, fTexWidth, fTexHeight );
 	m_btnSortItem.SetUV( UBS_CLICK, 0, 579, 325, 596, fTexWidth, fTexHeight );
 	m_btnSortItem.SetUV( UBS_DISABLE, 0, 560, 325, 577, fTexWidth, fTexHeight );
 	m_btnSortItem.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnSortItem.SetEnable(FALSE);
 
-	m_btnSortCount.Create( this, _S( 2396, "ÏàòÎüâ" ), 343, 90, 50, 17 );
+	m_btnSortCount.Create( this, _S( 2396, "ºˆ∑Æ" ), 343, 90, 50, 17 );
 	m_btnSortCount.SetUV( UBS_IDLE, 327, 560, 377, 577, fTexWidth, fTexHeight );
 	m_btnSortCount.SetUV( UBS_CLICK, 327, 579, 377, 596, fTexWidth, fTexHeight );
 	m_btnSortCount.SetUV( UBS_DISABLE, 327, 560, 377, 577, fTexWidth, fTexHeight );
 	m_btnSortCount.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnSortCount.SetEnable(FALSE);
 
-	m_btnSortTotalNas.Create( this, _S( 4289, "Ï¥ùÏï°" ), 395, 90, 113, 17 );
+	m_btnSortTotalNas.Create( this, _S( 4289, "√—æ◊" ), 395, 90, 113, 17 );
 	m_btnSortTotalNas.SetUV( UBS_IDLE, 379, 560, 492, 577, fTexWidth, fTexHeight );
 	m_btnSortTotalNas.SetUV( UBS_CLICK, 379, 579, 492, 596, fTexWidth, fTexHeight );
 	m_btnSortTotalNas.SetUV( UBS_DISABLE, 379, 560, 492, 577, fTexWidth, fTexHeight );
 	m_btnSortTotalNas.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnSortTotalNas.SetEnable(FALSE);
 
-	m_btnSortLevel.Create( this, _S( 73, "Î†àÎ≤®" ), 510, 90, 118, 17 );
+	m_btnSortLevel.Create( this, _S( 73, "∑π∫ß" ), 510, 90, 118, 17 );
 	m_btnSortLevel.SetUV( UBS_IDLE, 494, 560, 612, 577, fTexWidth, fTexHeight );
 	m_btnSortLevel.SetUV( UBS_CLICK, 494, 579, 612, 596, fTexWidth, fTexHeight );
 	m_btnSortLevel.SetUV( UBS_DISABLE, 494, 560, 612, 577, fTexWidth, fTexHeight );
 	m_btnSortLevel.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnSortLevel.SetEnable(FALSE);
 
-	m_btnSortFinishDay.Create( this, _S( 4290, "ÎßàÍ∞êÏùºÏûê" ), 510, 90, 118, 17 );
+	m_btnSortFinishDay.Create( this, _S( 4290, "∏∂∞®¿œ¿⁄" ), 510, 90, 118, 17 );
 	m_btnSortFinishDay.SetUV( UBS_IDLE, 494, 560, 612, 577, fTexWidth, fTexHeight );
 	m_btnSortFinishDay.SetUV( UBS_CLICK, 494, 579, 612, 596, fTexWidth, fTexHeight );
 	m_btnSortFinishDay.SetUV( UBS_DISABLE, 494, 560, 612, 577, fTexWidth, fTexHeight );
 	m_btnSortFinishDay.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnSortFinishDay.SetEnable(FALSE);
 
-	m_btnSortPassDay.Create( this, _S( 4291, "ÏÉÅÌÉú" ), 510, 90, 118, 17 );
+	m_btnSortPassDay.Create( this, _S( 4291, "ªÛ≈¬" ), 510, 90, 118, 17 );
 	m_btnSortPassDay.SetUV( UBS_IDLE, 494, 560, 612, 577, fTexWidth, fTexHeight );
 	m_btnSortPassDay.SetUV( UBS_CLICK, 494, 579, 612, 596, fTexWidth, fTexHeight );
 	m_btnSortPassDay.SetUV( UBS_DISABLE, 494, 560, 612, 577, fTexWidth, fTexHeight );
@@ -280,14 +329,14 @@ void CUIAuction::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_btnSortPassDay.SetEnable(FALSE);
 
 	
-	tmpTexture = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
+	m_ptdButtonTexture = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
 
-	fTexWidth = tmpTexture->GetPixWidth();
-	fTexHeight = tmpTexture->GetPixHeight();
+	fTexWidth = m_ptdButtonTexture->GetPixWidth();
+	fTexHeight = m_ptdButtonTexture->GetPixHeight();
 
-	m_AuctionSurface.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(145, 138, 239, 171, fTexWidth, fTexHeight));	//ÏÑ†ÌÉùÏù¥ÎØ∏ÏßÄ 3
+	m_AuctionSurface.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(145, 138, 239, 171, fTexWidth, fTexHeight));	//º±≈√¿ÃπÃ¡ˆ 3
 	
-	// ÏïÑÏù¥ÌÖú ÏÉÅÏÑ∏Ï†ïÎ≥¥Ï∞Ω 4~12
+	// æ∆¿Ã≈€ ªÛºº¡§∫∏√¢ 4~12
 	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(0,137,19,156,fTexWidth,fTexHeight));	// 20 * 20
 	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(20,137,120,156,fTexWidth,fTexHeight));	// 101 * 20
 	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(121,137,140,156,fTexWidth,fTexHeight));	// 20 * 20
@@ -309,32 +358,30 @@ void CUIAuction::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 	m_btnClose.SetUV( UBS_DISABLE,155, 74, 169, 88, fTexWidth, fTexHeight );
 	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
 	
-	m_btnSearch.Create( this, _S( 386, "Í≤ÄÏÉâ" ), 552, 62, 79, 22 );
+	m_btnSearch.Create( this, _S( 386, "∞Àªˆ" ), 552, 62, 79, 22 );
 	m_btnSearch.SetUV( UBS_IDLE, 113, 0, 183, 21, fTexWidth, fTexHeight );
 	m_btnSearch.SetUV( UBS_CLICK, 186, 0, 256, 21, fTexWidth, fTexHeight );
 	m_btnSearch.SetUV( UBS_DISABLE, 145, 178, 215, 199, fTexWidth, fTexHeight );
 	m_btnSearch.CopyUV( UBS_IDLE, UBS_ON );
-#ifdef AUCTION_CANT_SEARCH_AND_REG	// [090616: selo] ÌåêÎß§ÎåÄÌñâ Í≤ÄÏÉâ Î≤ÑÌäº ÎπÑÌôúÏÑ±Ìôî
-	m_btnSearch.SetEnable(FALSE);
-#endif
 
-	m_btnBuy.Create( this, _S( 600, "Íµ¨ÏûÖ" ), 533, 478, 98, 22 );
+	m_btnBuy.Create( this, _S( 600, "±∏¿‘" ), 533, 478, 98, 22 );
 	m_btnBuy.SetUV( UBS_IDLE, 113, 0, 183, 21, fTexWidth, fTexHeight );
 	m_btnBuy.SetUV( UBS_CLICK, 186, 0, 256, 21, fTexWidth, fTexHeight );
 	m_btnBuy.SetUV( UBS_DISABLE, 145, 178, 215, 199, fTexWidth, fTexHeight );
 	m_btnBuy.CopyUV( UBS_IDLE, UBS_ON );
 
-	m_btnCancelRegister.Create( this, _S( 4292, "Îì±Î°ùÏ∑®ÏÜå" ), 533, 478, 98, 22 );
+	m_btnCancelRegister.Create( this, _S( 4292, "µÓ∑œ√Îº“" ), 533, 478, 98, 22 );
 	m_btnCancelRegister.SetUV( UBS_IDLE, 113, 0, 183, 21, fTexWidth, fTexHeight );
 	m_btnCancelRegister.SetUV( UBS_CLICK, 186, 0, 256, 21, fTexWidth, fTexHeight );
 	m_btnCancelRegister.SetUV( UBS_DISABLE, 145, 178, 215, 199, fTexWidth, fTexHeight );
 	m_btnCancelRegister.CopyUV( UBS_IDLE, UBS_ON );
 
-	m_btnExecuteSettlement.Create( this, _S( 4265, "Ï†ïÏÇ∞" ), 533, 478, 98, 22 );
+	m_btnExecuteSettlement.Create( this, _S( 4265, "¡§ªÍ" ), 533, 478, 98, 22 );
 	m_btnExecuteSettlement.SetUV( UBS_IDLE, 113, 0, 183, 21, fTexWidth, fTexHeight );
 	m_btnExecuteSettlement.SetUV( UBS_CLICK, 186, 0, 256, 21, fTexWidth, fTexHeight );
 	m_btnExecuteSettlement.SetUV( UBS_DISABLE, 145, 178, 215, 199, fTexWidth, fTexHeight );
 	m_btnExecuteSettlement.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnExecuteSettlement.SetEnable(FALSE);
 
 	int nBtnPosY = 112;
 	for(int j=0; j<AUCTION_SLOT_MAX; ++j)
@@ -348,75 +395,108 @@ void CUIAuction::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 }
 
 // ----------------------------------------------------------------------------
-// Name : OpenAuction(int nNpcIndex, FLOAT fNpcPosX, FLOAT fNpcPosZ) (npc Ïù∏Îç±Ïä§, ÏúÑÏπòÍ∞í) 
-// Desc : Í±∞ÎûòÎåÄÌñâÏ∞Ω Ïó¥Í∏∞
+// Name : OpenAuction(int nNpcIndex, FLOAT fNpcPosX, FLOAT fNpcPosZ) (npc ¿Œµ¶Ω∫, ¿ßƒ°∞™) 
+// Desc : ∞≈∑°¥Î«‡ npc ∏ﬁΩ√¡ˆ √‚∑¬
 // ----------------------------------------------------------------------------
 void CUIAuction::OpenAuction(int nNpcIndex, FLOAT fNpcPosX, FLOAT fNpcPosZ)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxLExist( MSGLCMD_AUCTION ) || IsVisible() )	
+		return;
+
+	m_fNpcX = fNpcPosX;
+	m_fNpcZ = fNpcPosZ;
+
+	pUIManager->CreateMessageBoxL(_S(4287, "∞≈∑° ¥Î«‡ º≠∫ÒΩ∫"), UI_AUCTION, MSGLCMD_AUCTION);
+	CTString strNpcName = _pNetwork->GetMobName(nNpcIndex);
+
+	pUIManager->AddMessageBoxLString(MSGLCMD_AUCTION, TRUE, strNpcName, -1, 0xE18600FF);
+	pUIManager->AddMessageBoxLString(MSGLCMD_AUCTION, TRUE, _S(4352, "ªÛ¿Œ¿« »ƒøπ ±ÊµÂ¥¬ ¥Î∑˙ø°º≠ ∞°¿Â æ»¿¸«œ∞Ì ∫¸∏• ∞≈∑° ¥Î«‡ º≠∫ÒΩ∫∏¶ º“¡§¿« ºˆºˆ∑·∏¶ πﬁ∞Ì ¡¶∞¯«œ∞Ì ¿÷¥Ÿ."), -1, 0xa3a1a3ff);
+	pUIManager->AddMessageBoxLString(MSGLCMD_AUCTION, TRUE, _s(" "));
+	pUIManager->AddMessageBoxLString(MSGLCMD_AUCTION, TRUE, _S(4353, "∞≈∑°∏¶ ∏√±‚∞Ì ΩÕ¿∫ π∞∞«¿Ã ¿÷¥¬ ∞Õ¿Œ∞°?"), -1, 0xa3a1a3ff);
+	pUIManager->AddMessageBoxLString(MSGLCMD_AUCTION, TRUE, _s(" "));
 	
+	CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_QUEST_REQ);
+	
+	pUIManager->AddMessageBoxLString(MSGLCMD_AUCTION, FALSE, _S(4354, "∞≈∑° ¥Î«‡ º≠∫ÒΩ∫∏¶ ¿ÃøÎ«—¥Ÿ."), USE_AUCTION);
+	pUIManager->AddMessageBoxLString(MSGLCMD_AUCTION, FALSE, _S( 1748, "NPC æ»≥ª" ), NPC_HELP);
+	pUIManager->AddMessageBoxLString(MSGLCMD_AUCTION, FALSE, _S( 1220, "√Îº“«—¥Ÿ." ) );	
+}
+
+// ----------------------------------------------------------------------------
+// Name : UseAuction
+// Desc : ∞≈∑°¥Î«‡√¢ ø≠±‚
+// ----------------------------------------------------------------------------
+void CUIAuction::UseAuction()
+{
+	if( IsVisible() == TRUE)
+		return;
+
 	InitAll();
 
 	if(nShopSellRate == 0)
 	{
-		const CShopData &SD = _pNetwork->GetShopData(20); //ÏûÑÏãú Ï•¨ÎÖ∏ Ïû°ÌôîÏÉÅ Í∏∞Ï§Ä 
+		const CShopData &SD = _pNetwork->GetShopData(20); //¿”Ω√ ¡Í≥Î ¿‚»≠ªÛ ±‚¡ÿ 
 		nShopSellRate = SD.GetSellRate();
 	}
 
-	m_nNpcIndex = nNpcIndex;
-	m_fNpcX = fNpcPosX;
-	m_fNpcZ = fNpcPosZ;
-
-	_pUIMgr->RearrangeOrder(UI_AUCTION, TRUE);
+	CUIManager::getSingleton()->RearrangeOrder(UI_AUCTION, TRUE);
 }
 
 // ----------------------------------------------------------------------------
 // Name : CloseAuction()
-// Desc : Í±∞ÎûòÎåÄÌñâÏ∞Ω Îã´Í∏∞
+// Desc : ∞≈∑°¥Î«‡√¢ ¥›±‚
 // ----------------------------------------------------------------------------
 void CUIAuction::CloseAuction()
 {
 	CloseAuctionMessageBox();
+	m_ebSearch.SetFocus(FALSE);
 
-	_pUIMgr->RearrangeOrder(UI_AUCTION, FALSE);
+	CUIManager::getSingleton()->GetInventory()->Lock(FALSE, FALSE, LOCK_AUCTION);
+	CUIManager::getSingleton()->RearrangeOrder(UI_AUCTION, FALSE);
 }
 
 
 // ----------------------------------------------------------------------------
 // Name : CloseAuctionMessageBox()
-// Desc : Í±∞ÎûòÎåÄÌñâÏ∞Ω ÏóêÏÑú ÏÇ¨Ïö©Ìïú Î©îÏãúÏßÄÎ∞ïÏä§Í∞Ä Ïó¥Î†§ÏûàÏùÑ Í≤ΩÏö∞ Îã´ÏïÑÏ§ÄÎã§
+// Desc : ∞≈∑°¥Î«‡√¢ ø°º≠ ªÁøÎ«— ∏ﬁΩ√¡ˆπ⁄Ω∫∞° ø≠∑¡¿÷¿ª ∞ÊøÏ ¥›æ∆¡ÿ¥Ÿ
 // ----------------------------------------------------------------------------
 void CUIAuction::CloseAuctionMessageBox()
 {
-	if(_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_ITEMREGISTER))		//ÏïÑÏù¥ÌÖú Îì±Î°ùÏ∞Ω
-		_pUIMgr->CloseMessageBox(MSGCMD_AUCTION_ITEMREGISTER);
-	
-	if(_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_BUYITEM))			//ÏïÑÏù¥ÌÖú Íµ¨Îß§Ï∞Ω
-		_pUIMgr->CloseMessageBox(MSGCMD_AUCTION_BUYITEM);
-	
-	if(_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_CANCELREGISTER))		//ÏïÑÏù¥ÌÖú Îì±Î°ùÏ∑®ÏÜåÏ∞Ω
-		_pUIMgr->CloseMessageBox(MSGCMD_AUCTION_CANCELREGISTER);
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	if(_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_INFO))				//Îì±Î°ùÏôÑÎ£å, Ï∑®ÏÜåÎì±	
-		_pUIMgr->CloseMessageBox(MSGCMD_AUCTION_INFO);
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_ITEMREGISTER))		//æ∆¿Ã≈€ µÓ∑œ√¢
+		pUIManager->CloseMessageBox(MSGCMD_AUCTION_ITEMREGISTER);
+	
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_BUYITEM))			//æ∆¿Ã≈€ ±∏∏≈√¢
+		pUIManager->CloseMessageBox(MSGCMD_AUCTION_BUYITEM);
+	
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_CANCELREGISTER))		//æ∆¿Ã≈€ µÓ∑œ√Îº“√¢
+		pUIManager->CloseMessageBox(MSGCMD_AUCTION_CANCELREGISTER);
+
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_INFO))				//µÓ∑œøœ∑·, √Îº“µÓ	
+		pUIManager->CloseMessageBox(MSGCMD_AUCTION_INFO);
 }
 
 // ----------------------------------------------------------------------------
 // Name : Render()
-// Desc : Î†åÎçî
+// Desc : ∑ª¥ı
 // ----------------------------------------------------------------------------
 void CUIAuction::Render()
 {
 
-	//ÏùºÏ†ï Í±∞Î¶¨Ïù¥ÏÉÅ Îñ®Ïñ¥ÏßÄÎ©¥ Ï∞ΩÏùÑ Îã´ÎäîÎã§
-	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcX;
-	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcZ;
-	if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
+	//¿œ¡§ ∞≈∏Æ¿ÃªÛ ∂≥æÓ¡ˆ∏È √¢¿ª ¥›¥¬¥Ÿ
+	if( IsFarNPC() == TRUE )
 		CloseAuction();
 
-	_pUIMgr->GetDrawPort()->InitTextureData(CreateTexture(CTString("Data\\Interface\\Auction.tex")));
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+	pDrawPort->InitTextureData(m_ptdBaseTexture);
 	
 	m_AuctionSurface.SetPos(m_nPosX, m_nPosY);
-	m_AuctionSurface.RenderRectSurface(_pUIMgr->GetDrawPort(), 0xFFFFFFFF, 0);
+	m_AuctionSurface.RenderRectSurface(pDrawPort, 0xFFFFFFFF, 0);
 	m_btnFirst.Render();
 	m_btnPrev.Render();
 	m_btnNext.Render();
@@ -439,21 +519,21 @@ void CUIAuction::Render()
 		m_btnSortPassDay.Render();
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	_pUIMgr->GetDrawPort()->InitTextureData(CreateTexture(CTString( "Data\\Interface\\CommonBtn.tex" )));
+	pDrawPort->InitTextureData(m_ptdButtonTexture);
 
 	for(int i=0; i<AUCTION_TAB_TOTAL; i++)
 	{
 		if(i == m_nCurrnetTab)
 		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTabArea[i].Left , m_nPosY + m_rcTabArea[i].Top, m_nPosX + m_rcTabArea[i].Right, m_nPosY + m_rcTabArea[i].Bottom,
+			pDrawPort->AddTexture( m_nPosX + m_rcTabArea[i].Left , m_nPosY + m_rcTabArea[i].Top, m_nPosX + m_rcTabArea[i].Right, m_nPosY + m_rcTabArea[i].Bottom,
 							m_rtSelectedTab.U0, m_rtSelectedTab.V0, m_rtSelectedTab.U1, m_rtSelectedTab.V1,
 							0xFFFFFFFF );
 		}
 		else
 		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTabArea[i].Left , m_nPosY + m_rcTabArea[i].Top, m_nPosX + m_rcTabArea[i].Right, m_nPosY + m_rcTabArea[i].Bottom,
+			pDrawPort->AddTexture( m_nPosX + m_rcTabArea[i].Left , m_nPosY + m_rcTabArea[i].Top, m_nPosX + m_rcTabArea[i].Right, m_nPosY + m_rcTabArea[i].Bottom,
 							m_rtUnSelectedTab.U0, m_rtUnSelectedTab.V0, m_rtUnSelectedTab.U1, m_rtUnSelectedTab.V1,
 							0xFFFFFFFF );		
 		}
@@ -464,9 +544,7 @@ void CUIAuction::Render()
 	m_btnClose.Render();
 	if(m_nCurrnetTab ==  AUCTION_TAB_REFER)
 	{
-		// [090616: selo] Í≤ΩÎß§ÎåÄÌñâ Í≤ÄÏÉâÎ≤ÑÌäº ÎπÑÌôúÏÑ±Ìôî
-		if( m_btnSearch.IsEnabled() )
-			m_btnSearch.Render();
+		m_btnSearch.Render();
 		m_btnBuy.Render();
 	}
 	else if(m_nCurrnetTab ==  AUCTION_TAB_REGISTER)
@@ -478,12 +556,12 @@ void CUIAuction::Render()
 		m_btnExecuteSettlement.Render();
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	int nStrPosY = 0;
 	CTString strTemp = CTString("");
 
-	if (m_AuctionItemData.Count() > 0) // ÏïÑÏù¥ÌÖú Î¶¨Ïä§Ìä∏Í∞Ä ÏûàÎã§Î©¥
+	if (m_AuctionItemData.Count() > 0) // æ∆¿Ã≈€ ∏ÆΩ∫∆Æ∞° ¿÷¥Ÿ∏È
 	{
 		int nCnt;
 
@@ -493,74 +571,72 @@ void CUIAuction::Render()
 
 			nStrPosY = m_nPosY + (nCnt * 36) + 123;
 			strTemp.PrintF("%s", GetItemFullName(m_btnAuctionItem[nCnt]) );
-			_pUIMgr->GetDrawPort()->PutTextExCX( strTemp,m_nPosX + AUCTION_ITEMSTRING_CENTERX, nStrPosY, 0xFFFFFFFF);
+			pDrawPort->PutTextExCX( strTemp,m_nPosX + AUCTION_ITEMSTRING_CENTERX, nStrPosY, 0xFFFFFFFF);
 			strTemp.PrintF("%d", m_btnAuctionItem[nCnt].GetItemCount());
-			_pUIMgr->GetDrawPort()->PutTextExCX( strTemp,m_nPosX + AUCTION_ITEMCOUNT_CENTERX, nStrPosY, 0xFFFFFFFF);
+			pDrawPort->PutTextExCX( strTemp,m_nPosX + AUCTION_ITEMCOUNT_CENTERX, nStrPosY, 0xFFFFFFFF);
 
 			if(m_AuctionItemData[nCnt].llNasTotal > 0)
 			{
-				//strTemp.PrintF("%I64d", m_nNasTotal[l]);
-				//_pUIMgr->InsertCommaToString( strTemp );
-				strTemp = _pUIMgr->NasNumToWord(m_AuctionItemData[nCnt].llNasTotal);
+				strTemp = pUIManager->NasNumToWord(m_AuctionItemData[nCnt].llNasTotal);
 			}
 			else
 			{
 				strTemp = CTString("-");
 			}
 			
-			_pUIMgr->GetDrawPort()->PutTextExRX( strTemp,m_nPosX + AUCTION_ITEMTOTALNAS_CENTERX + 50, nStrPosY ,_pUIMgr->GetNasColor(m_AuctionItemData[nCnt].llNasTotal));
+			pDrawPort->PutTextExRX( strTemp,m_nPosX + AUCTION_ITEMTOTALNAS_CENTERX + 50, nStrPosY, pUIManager->GetNasColor(m_AuctionItemData[nCnt].llNasTotal));
 			
 			if(m_nCurrnetTab ==  AUCTION_TAB_REFER)
 			{
 				strTemp.PrintF("%d", m_AuctionItemData[nCnt].nEtc);
-				_pUIMgr->GetDrawPort()->PutTextExCX( strTemp, m_nPosX + AUCTION_ETCSTRING_CENTERX, nStrPosY ,0xFFFFFFFF);
+				pDrawPort->PutTextExCX( strTemp, m_nPosX + AUCTION_ETCSTRING_CENTERX, nStrPosY ,0xFFFFFFFF);
 			}
 			else if(m_nCurrnetTab ==  AUCTION_TAB_REGISTER)
 			{
 				if(m_AuctionItemData[nCnt].AuctionItemStatus == MSG_TRADEAGENT_FINISH_DAY)
 				{
-					strTemp.PrintF(_S(2511, "%dÏùº"), m_AuctionItemData[nCnt].nEtc);
+					strTemp.PrintF(_S(2511, "%d¿œ"), m_AuctionItemData[nCnt].nEtc);
 				}
 				else if(m_AuctionItemData[nCnt].AuctionItemStatus == MSG_TRADEAGENT_FINISH_HOUR)
 				{
-					strTemp.PrintF(_S(2512, "%dÏãúÍ∞Ñ"), m_AuctionItemData[nCnt].nEtc);
+					strTemp.PrintF(_S(2512, "%dΩ√∞£"), m_AuctionItemData[nCnt].nEtc);
 				}
 				else if(m_AuctionItemData[nCnt].AuctionItemStatus == MSG_TRADEAGENT_FINISH_MIN)
 				{
-					strTemp.PrintF(_S(2513, "%dÎ∂Ñ"), m_AuctionItemData[nCnt].nEtc);
+					strTemp.PrintF(_S(2513, "%d∫–"), m_AuctionItemData[nCnt].nEtc);
 				}
 				
-				_pUIMgr->GetDrawPort()->PutTextExCX( strTemp, m_nPosX + AUCTION_ETCSTRING_CENTERX, nStrPosY ,0xFFFFFFFF);
+				pDrawPort->PutTextExCX( strTemp, m_nPosX + AUCTION_ETCSTRING_CENTERX, nStrPosY ,0xFFFFFFFF);
 			}
 			else if(m_nCurrnetTab ==  AUCTION_TAB_SETTLEMENT)
 			{
 				switch(m_AuctionItemData[nCnt].AuctionItemStatus)
 				{
 					case MSG_TRADEAGENT_STATE_SELL_BEFORE:
-						strTemp.PrintF(_S(4310, "ÌåêÎß§Ï§ë"));
+						strTemp.PrintF(_S(4310, "∆«∏≈¡ﬂ"));
 						break;
 					case MSG_TRADEAGENT_STATE_SELL_COMPLETE:
-						strTemp.PrintF(_S(4311, "ÌåêÎß§(%dÏùº)"), m_AuctionItemData[nCnt].nEtc);
+						strTemp.PrintF(_S(4311, "∆«∏≈(%d¿œ)"), m_AuctionItemData[nCnt].nEtc);
 						break;
 					case MSG_TRADEAGENT_STATE_SELL_RETURNED:
-						strTemp.PrintF(_S(4312, "Î∞òÏÜ°(%dÏùº)"), m_AuctionItemData[nCnt].nEtc);
+						strTemp.PrintF(_S(4312, "π›º€(%d¿œ)"), m_AuctionItemData[nCnt].nEtc);
 						break;
 					case MSG_TRADEAGENT_STATE_CALCULATE_COMPLETE:
-						strTemp.PrintF(_S(4313, "Ï†ïÏÇ∞ÏôÑÎ£å"));
+						strTemp.PrintF(_S(4313, "¡§ªÍøœ∑·"));
 						break;
 					case MSG_TRADEAGENT_STATE_CALCULATE_OVERTIME:
-						strTemp.PrintF(_S(4379, "Ï†ïÏÇ∞Í∏∞Ìïú Ï¥àÍ≥º"));
+						strTemp.PrintF(_S(4379, "¡§ªÍ±‚«— √ ∞˙"));
 						break;
 					case MSG_TRADEAGENT_STATE_BUY:
-						strTemp.PrintF(_S(4314, "Íµ¨ÏûÖ(%dÏùº)"), m_AuctionItemData[nCnt].nEtc);
+						strTemp.PrintF(_S(4314, "±∏¿‘(%d¿œ)"), m_AuctionItemData[nCnt].nEtc);
 						break;
 				}
-				_pUIMgr->GetDrawPort()->PutTextExCX( strTemp, m_nPosX + AUCTION_ETCSTRING_CENTERX, nStrPosY ,0xFFFFFFFF);
+				pDrawPort->PutTextExCX( strTemp, m_nPosX + AUCTION_ETCSTRING_CENTERX, nStrPosY ,0xFFFFFFFF);
 			}
 		}
 	}
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( m_strTitleName, m_nPosX + (AUCTION_WIDTH / 2), m_nPosY + 15, 0xDED9A0FF );
+	pDrawPort->PutTextExCX( m_strTitleName, m_nPosX + (AUCTION_WIDTH / 2), m_nPosY + 15, 0xDED9A0FF );
 
 	COLOR colorStr = 0xFFFFFFFF;
 	for(int j=0; j<AUCTION_TAB_TOTAL; ++j)
@@ -573,27 +649,27 @@ void CUIAuction::Render()
 		{
 			colorStr = 0xa3a1a3ff;
 		}
-		_pUIMgr->GetDrawPort()->PutTextExCX( strTabName[j], m_nPosX + m_rcTabArea[j].GetCenterX() + 1, m_nPosY + 44, colorStr );
+		pDrawPort->PutTextExCX( strTabName[j], m_nPosX + m_rcTabArea[j].GetCenterX() + 1, m_nPosY + 44, colorStr );
 	}
 
 	CTString strPage = CTString("");
 	strPage.PrintF("%d/%d", m_nCurrentPage, m_nMaxPage);
-	_pUIMgr->GetDrawPort()->PutTextExCX( strPage, m_nPosX + 328, m_nPosY + 482, 0xFFFFFFFF );
+	pDrawPort->PutTextExCX( strPage, m_nPosX + 328, m_nPosY + 482, 0xFFFFFFFF );
 	
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->FlushBtnRenderingQueue( UBET_ITEM );
+	pDrawPort->EndTextEx();
 
-	_pUIMgr->GetDrawPort()->InitTextureData(CreateTexture(CTString( "Data\\Interface\\CommonBtn.tex" )));
+	pDrawPort->InitTextureData(m_ptdButtonTexture);
 	
 	if(m_nCurrentSelectedItem != -1)
 	{
 		m_AuctionSurface.m_RectSurfaceArray[3].m_RT = m_rcSelectArea;
-		m_AuctionSurface.RenderRectSurface(_pUIMgr->GetDrawPort(), 0xFFFFFFFF, 3);
+		m_AuctionSurface.RenderRectSurface(pDrawPort, 0xFFFFFFFF, 3);
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	_pUIMgr->GetDrawPort()->InitTextureData(CreateTexture(CTString("Data\\Interface\\Auction.tex")));
+	pDrawPort->InitTextureData(m_ptdBaseTexture);
 
 	if(m_nCurrnetTab ==  AUCTION_TAB_REFER)
 	{
@@ -601,28 +677,24 @@ void CUIAuction::Render()
 		m_cmbItemSubType.Render();
 		m_cmbClass.Render();
 
-		// [090611: selo] Í≤ÄÏÉâ EditboxÍ∞Ä ÎπÑÌï†ÏÑ±Ìôî Ïù¥Î©¥ ÎûúÎçî ÏïàÌïòÍ≤å ÌïúÎã§.
-		if( TRUE == m_ebSearch.IsEnabled() )
-		{
-			m_AuctionSurface.RenderRectSurface(_pUIMgr->GetDrawPort(), 0xFFFFFFFF, 1);
-		
-			m_ebSearch.Render();
+		m_AuctionSurface.RenderRectSurface(pDrawPort, 0xFFFFFFFF, 1);
 
-			if(m_ebSearch.DoesShowReadingWindow())
-			{
-				m_ebSearch.RenderReadingWindow();
-			}
+		m_ebSearch.Render();
+
+		if(m_ebSearch.DoesShowReadingWindow())
+		{
+			m_ebSearch.RenderReadingWindow();
 		}
 	}
 	else
 	{
-		m_AuctionSurface.RenderRectSurface(_pUIMgr->GetDrawPort(), 0xFFFFFFFF, 2);
+		m_AuctionSurface.RenderRectSurface(pDrawPort, 0xFFFFFFFF, 2);
 
-		_pUIMgr->GetDrawPort()->PutTextExCX( strHelp[m_nCurrnetTab], m_nPosX + 320, m_nPosY + 65, 0xFFFFFFFF );
+		pDrawPort->PutTextExCX( strHelp[m_nCurrnetTab], m_nPosX + 320, m_nPosY + 65, 0xFFFFFFFF );
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 
 	if(m_AuctionItemData.Count() > 0)
 	{
@@ -673,7 +745,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 		case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 
 			int	ndX = nX - nOldX;
@@ -792,40 +864,44 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 				}
 				else
 				{
-					for(int nTabNum=0; nTabNum<AUCTION_TAB_TOTAL; ++nTabNum)  // ÌÉ≠ ÏÑ†ÌÉù
+					for(int nTabNum=0; nTabNum<AUCTION_TAB_TOTAL; ++nTabNum)  // ≈« º±≈√
 					{
 						if( IsInsideRect(nX, nY, m_rcTabArea[nTabNum]) && nTabNum != m_nCurrnetTab && m_btnSearch.IsEnabled())
 						{
 							if (nTabNum == AUCTION_TAB_REGISTER)
 								_pNetwork->SendTradeAgentRegListReq(1, m_nCurretnSorting);
 							else if (nTabNum == AUCTION_TAB_SETTLEMENT && m_bSettle)
+							{
 								_pNetwork->SendTradeAgentCalcListReq(1, m_nCurretnSorting);
+								// ¡§ªÍ ∏ÆΩ∫∆Æ ø‰√ª »ƒ ∏ÆΩ∫∆Æ∞° ¿÷¿ª ∞ÊøÏø°∏∏ TRUE∑Œ πŸ≤€¥Ÿ [4/21/2011 ldy1978220]
+								m_bSettle = FALSE;
+							}
 							else
 								SetTab(nTabNum);
 						}
 					}
 				}
 
-				if (m_nCurrnetTab == AUCTION_TAB_REFER) //  Ï°∞Ìöå ÌéòÏù¥ÏßÄ
+				if (m_nCurrnetTab == AUCTION_TAB_REFER) //  ¡∂»∏ ∆‰¿Ã¡ˆ
 				{
-					if( (wmsgResult = m_cmbItemType.MouseMessage( pMsg )) != WMSG_FAIL ) // Î©îÏù∏ ÌÉÄÏûÖ ÏÑ†ÌÉù
+					if( (wmsgResult = m_cmbItemType.MouseMessage( pMsg )) != WMSG_FAIL ) // ∏ﬁ¿Œ ≈∏¿‘ º±≈√
 					{
 						if( wmsgResult == WMSG_COMMAND )
 							SetItemSubType(m_cmbItemType.GetCurSel());
 					}
-					else if( m_cmbItemSubType.MouseMessage( pMsg ) != WMSG_FAIL ) { // ÏÑúÎ∏å ÌÉÄÏûÖ ÏÑ†ÌÉù
+					else if( m_cmbItemSubType.MouseMessage( pMsg ) != WMSG_FAIL ) { // º≠∫Í ≈∏¿‘ º±≈√
 
 					}
-					else if( m_cmbClass.MouseMessage( pMsg ) != WMSG_FAIL ) { // ÌÅ¥ÎûòÏä§ ÏÑ†ÌÉù
+					else if( m_cmbClass.MouseMessage( pMsg ) != WMSG_FAIL ) { // ≈¨∑°Ω∫ º±≈√
 
 					}
-					else if( (wmsgResult = m_btnSearch.MouseMessage( pMsg )) != WMSG_FAIL ) { // Í≤ÄÏÉâ
+					else if( (wmsgResult = m_btnSearch.MouseMessage( pMsg )) != WMSG_FAIL ) { // ∞Àªˆ
 
 					}
-					else if( m_btnBuy.MouseMessage( pMsg ) != WMSG_FAIL ) { // Íµ¨ÏûÖ
+					else if( m_btnBuy.MouseMessage( pMsg ) != WMSG_FAIL ) { // ±∏¿‘
 
 					}
-					else if( m_ebSearch.MouseMessage( pMsg ) != WMSG_FAIL ) { // Í≤ÄÏÉâÏûÖÎ†• ÏóêÎîîÌä∏ Î∞ïÏä§
+					else if( m_ebSearch.MouseMessage( pMsg ) != WMSG_FAIL ) { // ∞Àªˆ¿‘∑¬ ø°µ∆Æ π⁄Ω∫
 
 					}
 					else if( m_btnSortItem.MouseMessage( pMsg ) != WMSG_FAIL ) {
@@ -837,11 +913,11 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 					else if( m_btnSortTotalNas.MouseMessage( pMsg ) != WMSG_FAIL )	{
 						// Nothing
 					}
-					else if( m_btnSortLevel.MouseMessage( pMsg ) != WMSG_FAIL ) {  // Î†àÎ≤® Ï†ïÎ†¨
+					else if( m_btnSortLevel.MouseMessage( pMsg ) != WMSG_FAIL ) {  // ∑π∫ß ¡§∑ƒ
 
 					}
 				}
-				else if(m_nCurrnetTab ==  AUCTION_TAB_REGISTER)	// Îì±Î°ù ÌéòÏù¥ÏßÄ
+				else if(m_nCurrnetTab ==  AUCTION_TAB_REGISTER)	// µÓ∑œ ∆‰¿Ã¡ˆ
 				{
 					if( m_btnCancelRegister.MouseMessage( pMsg ) != WMSG_FAIL )	{
 
@@ -850,7 +926,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 
 					}
 				}
-				else if(m_nCurrnetTab ==  AUCTION_TAB_SETTLEMENT) // Ï†ïÏÇ∞ ÌéòÏù¥ÏßÄ
+				else if(m_nCurrnetTab ==  AUCTION_TAB_SETTLEMENT) // ¡§ªÍ ∆‰¿Ã¡ˆ
 				{
 					if( m_btnExecuteSettlement.MouseMessage( pMsg ) != WMSG_FAIL )	{
 
@@ -860,7 +936,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 					}
 				}
 
-				_pUIMgr->RearrangeOrder( UI_AUCTION, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_AUCTION, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -868,10 +944,11 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 
 		case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 			bLButtonDownInBtn = FALSE;
 
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if( pUIManager->GetHoldBtn().IsEmpty() )
 			{
 				bTitleBarClick = FALSE;
 				if( !IsFocused() )
@@ -894,11 +971,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
-						if(m_nCurrentPage  <= 1)
-						{
-							GoPage(1);
-						}
-						else
+						if(m_nCurrentPage > 1)
 						{
 							GoPage(m_nCurrentPage-1);
 						}
@@ -909,11 +982,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
-						if(m_nCurrentPage  >= m_nMaxPage)
-						{
-							GoPage(m_nMaxPage);
-						}
-						else
+						if(m_nCurrentPage < m_nMaxPage)
 						{
 							GoPage(m_nCurrentPage+1);
 						}
@@ -951,7 +1020,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							if(_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_BUYITEM))
+							if(pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_BUYITEM))
 							{
 								return WMSG_SUCCESS;
 							}
@@ -963,30 +1032,32 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								m_nRegisterItemCount = m_btnAuctionItem[m_nCurrentSelectedItem].GetItemCount();
 
 								CUIMsgBox_Info MsgBoxInfo;
-								MsgBoxInfo.SetMsgBoxInfo( _S( 4293,"ÏïÑÏù¥ÌÖú Íµ¨ÏûÖ Ï†ïÎ≥¥"), UMBS_OKCANCEL | UMBS_BUTTONEX, UI_AUCTION, MSGCMD_AUCTION_BUYITEM );
+								MsgBoxInfo.SetMsgBoxInfo( _S( 4293,"æ∆¿Ã≈€ ±∏¿‘ ¡§∫∏"), UMBS_OKCANCEL | UMBS_BUTTONEX, UI_AUCTION, MSGCMD_AUCTION_BUYITEM );
 								MsgBoxInfo.SetBtnType(m_btnAuctionItem[m_nCurrentSelectedItem].GetBtnType(), -1, 1);
 								CTString strTemp, strTemp2;
 								strTemp.PrintF("%s",GetItemFullName(m_btnAuctionItem[m_nCurrentSelectedItem]));
 								MsgBoxInfo.AddStringEx(strTemp, 0, 10);
-								strTemp.PrintF(_S(4294, "ÏïÑÏù¥ÌÖú Í∞úÏàò : %I64d"), m_btnAuctionItem[m_nCurrentSelectedItem].GetItemCount());
+								strTemp.PrintF(_S(4294, "æ∆¿Ã≈€ ∞≥ºˆ : %I64d"), m_btnAuctionItem[m_nCurrentSelectedItem].GetItemCount());
 								MsgBoxInfo.AddStringEx(strTemp, 3, 0);
 								strTemp2.PrintF("%I64d", m_AuctionItemData[m_nCurrentSelectedItem].llNasTotal);
-								strTemp.PrintF(_S(4295,"Ï¥ù Í∏àÏï° : %s"), strTemp2);
+								strTemp.PrintF(_S(4295,"√— ±›æ◊ : %s"), strTemp2);
 								MsgBoxInfo.AddStringEx(strTemp, 5, 0);
 								
-								_pUIMgr->CreateMessageBox(MsgBoxInfo);
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnEx(0).Copy(m_btnAuctionItem[m_nCurrentSelectedItem]);
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnEx(0).SetPos(15, 30);
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnSlotRect(0).SetRect(14, 29, 16 + BTN_SIZE, 31 + BTN_SIZE);
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnInsertSlot(0).SetRect(0,0,0,0);
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnOK().SetEnable(TRUE);
+								pUIManager->CreateMessageBox(MsgBoxInfo);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnEx(0).Copy(m_btnAuctionItem[m_nCurrentSelectedItem]);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnEx(0).SetPos(15, 30);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnSlotRect(0).SetRect(14, 29, 16 + BTN_SIZE, 31 + BTN_SIZE);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnInsertSlot(0).SetRect(0,0,0,0);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_BUYITEM)->GetBtnOK().SetEnable(TRUE);
 							}
 						}
 						return WMSG_SUCCESS;
 					}
 					else if( ( wmsgResult = m_btnSortLevel.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
-						if( wmsgResult == WMSG_COMMAND )
+						// ¡§∑ƒ¿Ã ¡¶¥Î∑Œ ±∏«ˆµ«æÓ ¿÷¡ˆ æ ±‚ ∂ßπÆø° ªÁøÎ«œ¡ˆ æ ¥¬¥Ÿ. √ﬂ»ƒ, ≈¨∂Û¿Ãæ∆Æø°º≠ ¿⁄√º¿˚¿∏∑Œ ∏µÁ ∏ÆΩ∫∆Æ∏¶ ¡§∑ƒ«œø©
+						// «•«ˆ«œµµ∑œ ±∏«ˆ«œ¥¬ ∞Õ¿Ã ¡¡∞⁄¥Ÿ.(º≠πˆø°º≠ √÷¿˚¿« ∏ÆΩ∫∆Æ∏¶ πﬁ∞Ì, ±◊æ»ø°º≠ ¡§∑ƒ √≥∏Æ)
+						/*if( wmsgResult == WMSG_COMMAND )
 						{
 							if(m_nCurretnSorting / 2 == ITEM_SORT_LEVEL)
 							{
@@ -998,12 +1069,14 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								m_bReverse = FALSE;
 								SortItem(ITEM_SORT_LEVEL, m_bReverse);
 							}
-						}
+						}*/
 						return WMSG_SUCCESS;
 					}
 					else if( ( wmsgResult = m_btnSortTotalNas.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
-						if( wmsgResult == WMSG_COMMAND )
+						// ¡§∑ƒ¿Ã ¡¶¥Î∑Œ ±∏«ˆµ«æÓ ¿÷¡ˆ æ ±‚ ∂ßπÆø° ªÁøÎ«œ¡ˆ æ ¥¬¥Ÿ. √ﬂ»ƒ, ≈¨∂Û¿Ãæ∆Æø°º≠ ¿⁄√º¿˚¿∏∑Œ ∏µÁ ∏ÆΩ∫∆Æ∏¶ ¡§∑ƒ«œø©
+						// «•«ˆ«œµµ∑œ ±∏«ˆ«œ¥¬ ∞Õ¿Ã ¡¡∞⁄¥Ÿ.(º≠πˆø°º≠ √÷¿˚¿« ∏ÆΩ∫∆Æ∏¶ πﬁ∞Ì, ±◊æ»ø°º≠ ¡§∑ƒ √≥∏Æ)
+						/*if( wmsgResult == WMSG_COMMAND )
 						{
 							if(m_nCurretnSorting / 2 == ITEM_SORT_TOTALNAS)
 							{
@@ -1015,14 +1088,16 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								m_bReverse = FALSE;
 								SortItem(ITEM_SORT_TOTALNAS, m_bReverse);
 							}
-						}
+						}*/
 						return WMSG_SUCCESS;
 					}
 					else if( ( wmsgResult = m_btnSortItem.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
-						if( wmsgResult == WMSG_COMMAND )
+						// ¡§∑ƒ¿Ã ¡¶¥Î∑Œ ±∏«ˆµ«æÓ ¿÷¡ˆ æ ±‚ ∂ßπÆø° ªÁøÎ«œ¡ˆ æ ¥¬¥Ÿ. √ﬂ»ƒ, ≈¨∂Û¿Ãæ∆Æø°º≠ ¿⁄√º¿˚¿∏∑Œ ∏µÁ ∏ÆΩ∫∆Æ∏¶ ¡§∑ƒ«œø©
+						// «•«ˆ«œµµ∑œ ±∏«ˆ«œ¥¬ ∞Õ¿Ã ¡¡∞⁄¥Ÿ.(º≠πˆø°º≠ √÷¿˚¿« ∏ÆΩ∫∆Æ∏¶ πﬁ∞Ì, ±◊æ»ø°º≠ ¡§∑ƒ √≥∏Æ)
+						/*if( wmsgResult == WMSG_COMMAND )
 						{
-							//m_nCurretnSortingÍ∞íÏùÄ Ï†ïÏùòÎêú Ï†ïÎ†¨Î∞©Ïãù * Ïò§Î¶Ñ,ÎÇ¥Î¶ºÏ∞®ÏàúÏùò2Î∞©ÏãùÏúºÎ°ú Ï†ïÏùòÎêú Ï†ïÎ†¨Í∞íÏùò 2Î∞∞Î°ú ÎêòÏñ¥ ÏûàÏùå
+							//m_nCurretnSorting∞™¿∫ ¡§¿«µ» ¡§∑ƒπÊΩƒ * ø¿∏ß,≥ª∏≤¬˜º¯¿«2πÊΩƒ¿∏∑Œ ¡§¿«µ» ¡§∑ƒ∞™¿« 2πË∑Œ µ«æÓ ¿÷¿Ω
 							if(m_nCurretnSorting / 2 == ITEM_SORT_INDEX)
 							{
 								m_bReverse = !m_bReverse;
@@ -1033,12 +1108,14 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								m_bReverse = FALSE;
 								SortItem(ITEM_SORT_INDEX, m_bReverse);
 							}
-						}
+						}*/
 						return WMSG_SUCCESS;
 					}
 					else if( ( wmsgResult = m_btnSortCount.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
-						if( wmsgResult == WMSG_COMMAND )
+						// ¡§∑ƒ¿Ã ¡¶¥Î∑Œ ±∏«ˆµ«æÓ ¿÷¡ˆ æ ±‚ ∂ßπÆø° ªÁøÎ«œ¡ˆ æ ¥¬¥Ÿ. √ﬂ»ƒ, ≈¨∂Û¿Ãæ∆Æø°º≠ ¿⁄√º¿˚¿∏∑Œ ∏µÁ ∏ÆΩ∫∆Æ∏¶ ¡§∑ƒ«œø©
+						// «•«ˆ«œµµ∑œ ±∏«ˆ«œ¥¬ ∞Õ¿Ã ¡¡∞⁄¥Ÿ.(º≠πˆø°º≠ √÷¿˚¿« ∏ÆΩ∫∆Æ∏¶ πﬁ∞Ì, ±◊æ»ø°º≠ ¡§∑ƒ √≥∏Æ)
+						/*if( wmsgResult == WMSG_COMMAND )
 						{
 							if(m_nCurretnSorting / 2 == ITEM_SORT_COUNT)
 							{
@@ -1050,7 +1127,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								m_bReverse = FALSE;
 								SortItem(ITEM_SORT_COUNT, m_bReverse);
 							}
-						}
+						}*/
 						return WMSG_SUCCESS;
 					}
 				}
@@ -1060,27 +1137,27 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{	
-							if(_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_CANCELREGISTER))
-								_pUIMgr->CloseMessageBox(MSGCMD_AUCTION_CANCELREGISTER);
+							if(pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_CANCELREGISTER))
+								pUIManager->CloseMessageBox(MSGCMD_AUCTION_CANCELREGISTER);
 
-							if(_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_ITEMREGISTER))
-								_pUIMgr->CloseMessageBox(MSGCMD_AUCTION_ITEMREGISTER);
+							if(pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_ITEMREGISTER))
+								pUIManager->CloseMessageBox(MSGCMD_AUCTION_ITEMREGISTER);
 
 							if(m_nCurrentSelectedItem != -1)
 							{
-								if (m_bRegister) // Îì±Î°ù ÏöîÏ≤≠ Ï§ëÏùºÎïå
+								if (m_bRegister) // µÓ∑œ ø‰√ª ¡ﬂ¿œ∂ß
 								{
-									_pNetwork->ClientSystemMessage(_S(4387, "Îì±Î°ùÏöîÏ≤≠Ï§ëÏóêÎäî Ìï† Ïàò ÏóÜÏäµÎãàÎã§."), SYSMSG_ERROR);
+									_pNetwork->ClientSystemMessage(_S(4387, "µÓ∑œø‰√ª¡ﬂø°¥¬ «“ ºˆ æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR);
 								}
 								else
 								{
 									m_nSelectedItemCancel = m_nCurrentSelectedItem;
 									CUIMsgBox_Info MsgBoxInfo;
-									MsgBoxInfo.SetMsgBoxInfo( _S(4292, "Îì±Î°ùÏ∑®ÏÜå"), UMBS_OKCANCEL, UI_AUCTION, MSGCMD_AUCTION_CANCELREGISTER );
-									MsgBoxInfo.AddString(_S(4296, "ÏÑ†ÌÉùÌïú ÏïÑÏù¥ÌÖúÏùò Í±∞ÎûòÎ•º Ï∑®ÏÜåÌïòÏãúÍ≤†ÏäµÎãàÍπå?"));
-									MsgBoxInfo.AddString(_S(4297, "Í±∞ÎûòÎ•º Ï∑®ÏÜåÌïòÎ©¥ Î≥¥Ï¶ùÍ∏àÏùÄ ÎèåÎ†§Î∞õÏùÑ Ïàò ÏóÜÏäµÎãàÎã§."));
+									MsgBoxInfo.SetMsgBoxInfo( _S(4292, "µÓ∑œ√Îº“"), UMBS_OKCANCEL, UI_AUCTION, MSGCMD_AUCTION_CANCELREGISTER );
+									MsgBoxInfo.AddString(_S(4296, "º±≈√«— æ∆¿Ã≈€¿« ∞≈∑°∏¶ √Îº“«œΩ√∞⁄Ω¿¥œ±Ó?"));
+									MsgBoxInfo.AddString(_S(4297, "∞≈∑°∏¶ √Îº“«œ∏È ∫∏¡ı±›¿∫ µπ∑¡πﬁ¿ª ºˆ æ¯Ω¿¥œ¥Ÿ."));
 
-									_pUIMgr->CreateMessageBox(MsgBoxInfo);
+									pUIManager->CreateMessageBox(MsgBoxInfo);
 								}
 							}
 						}
@@ -1088,7 +1165,9 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 					}
 					else if( ( wmsgResult = m_btnSortFinishDay.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
-						if( wmsgResult == WMSG_COMMAND )
+						// ¡§∑ƒ¿Ã ¡¶¥Î∑Œ ±∏«ˆµ«æÓ ¿÷¡ˆ æ ±‚ ∂ßπÆø° ªÁøÎ«œ¡ˆ æ ¥¬¥Ÿ. √ﬂ»ƒ, ≈¨∂Û¿Ãæ∆Æø°º≠ ¿⁄√º¿˚¿∏∑Œ ∏µÁ ∏ÆΩ∫∆Æ∏¶ ¡§∑ƒ«œø©
+						// «•«ˆ«œµµ∑œ ±∏«ˆ«œ¥¬ ∞Õ¿Ã ¡¡∞⁄¥Ÿ.(º≠πˆø°º≠ √÷¿˚¿« ∏ÆΩ∫∆Æ∏¶ πﬁ∞Ì, ±◊æ»ø°º≠ ¡§∑ƒ √≥∏Æ)
+						/*if( wmsgResult == WMSG_COMMAND )
 						{
 							if(m_nCurretnSorting / 2 == ITEM_SORT_FINISHDAY)
 							{
@@ -1100,7 +1179,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								m_bReverse = FALSE;
 								SortItem(ITEM_SORT_FINISHDAY, m_bReverse);
 							}
-						}
+						}*/
 						return WMSG_SUCCESS;
 					}
 				}
@@ -1110,17 +1189,16 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 					{	
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							if (m_AuctionItemData.Count() > 0 && m_bSettle && !m_bSettleRequest) // Ï†ïÏÇ∞Ìï† ÏïÑÏù¥ÌÖúÏù¥ ÏûàÏúºÎ©¥ Ï†ïÏÇ∞ ÏöîÏ≤≠
-							{
+							if (m_AuctionItemData.Count() > 0 && m_bSettle) // ¡§ªÍ«“ æ∆¿Ã≈€¿Ã ¿÷¿∏∏È ¡§ªÍ ø‰√ª
 								_pNetwork->SendTradeAgentCalculateReq();
-								m_bSettleRequest = TRUE;
-							}
 						}
 						return WMSG_SUCCESS;
 					}
 					else if( ( wmsgResult = m_btnSortPassDay.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
-						if( wmsgResult == WMSG_COMMAND )
+						// ¡§∑ƒ¿Ã ¡¶¥Î∑Œ ±∏«ˆµ«æÓ ¿÷¡ˆ æ ±‚ ∂ßπÆø° ªÁøÎ«œ¡ˆ æ ¥¬¥Ÿ. √ﬂ»ƒ, ≈¨∂Û¿Ãæ∆Æø°º≠ ¿⁄√º¿˚¿∏∑Œ ∏µÁ ∏ÆΩ∫∆Æ∏¶ ¡§∑ƒ«œø©
+						// «•«ˆ«œµµ∑œ ±∏«ˆ«œ¥¬ ∞Õ¿Ã ¡¡∞⁄¥Ÿ.(º≠πˆø°º≠ √÷¿˚¿« ∏ÆΩ∫∆Æ∏¶ πﬁ∞Ì, ±◊æ»ø°º≠ ¡§∑ƒ √≥∏Æ)
+						/*if( wmsgResult == WMSG_COMMAND )
 						{
 							if(m_nCurretnSorting / 2 == ITEM_SORT_PASSDAY)
 							{
@@ -1132,7 +1210,7 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								m_bReverse = FALSE;
 								SortItem(ITEM_SORT_PASSDAY, m_bReverse);
 							}
-						}
+						}*/
 						return WMSG_SUCCESS;
 					}
 				}
@@ -1145,26 +1223,25 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 					{
 						if(IsInsideRect(nX, nY, m_rcRegisterArea))
 						{
-#ifndef AUCTION_CANT_SEARCH_AND_REG	// [090616: selo] ÌåêÎß§ÎåÄÌñâ Îì±Î°ù Î™ªÌïòÍ≤åÌï®
 							if(CanRegister())
 							{
-								if(_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_ITEMREGISTER))
-									_pUIMgr->CloseMessageBox(MSGCMD_AUCTION_ITEMREGISTER);
+								if(pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_ITEMREGISTER))
+									pUIManager->CloseMessageBox(MSGCMD_AUCTION_ITEMREGISTER);
 
-								// Îì±Î°ù Ï∑®ÏÜå Î©îÏÑ∏ÏßÄ Î∞ïÏä§Î•º Îã´ÏïÑ Ï§ÄÎã§.
-								if (_pUIMgr->DoesMessageBoxExist(MSGCMD_AUCTION_CANCELREGISTER))
-									_pUIMgr->CloseMessageBox(MSGCMD_AUCTION_CANCELREGISTER);
+								// µÓ∑œ √Îº“ ∏ﬁºº¡ˆ π⁄Ω∫∏¶ ¥›æ∆ ¡ÿ¥Ÿ.
+								if (pUIManager->DoesMessageBoxExist(MSGCMD_AUCTION_CANCELREGISTER))
+									pUIManager->CloseMessageBox(MSGCMD_AUCTION_CANCELREGISTER);
 
-								m_btnRegisterItem.Copy(_pUIMgr->GetHoldBtn());
+								m_btnRegisterItem.Copy(pUIManager->GetHoldBtn());
 
 								CUIMsgBox_Info MsgBoxInfo;
 								CTString strTemp;
-								MsgBoxInfo.SetMsgBoxInfo( _S(4298, "ÏïÑÏù¥ÌÖú Îì±Î°ù Ï†ïÎ≥¥"), UMBS_OKCANCEL | UMBS_INPUTBOX | UMBS_SECOND_INPUTBOX,
+								MsgBoxInfo.SetMsgBoxInfo( _S(4298, "æ∆¿Ã≈€ µÓ∑œ ¡§∫∏"), UMBS_OKCANCEL | UMBS_INPUTBOX | UMBS_SECOND_INPUTBOX,
 																			UI_AUCTION, MSGCMD_AUCTION_ITEMREGISTER, 250);	
-								MsgBoxInfo.AddString( _S(4299, "ÏïÑÏù¥ÌÖú Í∞úÏàò") );
-								MsgBoxInfo.AddString( _S(4300, "ÌåêÎß§Ìï† Ï¥ù Í∏àÏï°") );
+								MsgBoxInfo.AddString( _S(4299, "æ∆¿Ã≈€ ∞≥ºˆ") );
+								MsgBoxInfo.AddString( _S(4300, "∆«∏≈«“ √— ±›æ◊") );
 								MsgBoxInfo.AddString(CTString(" "));
-								strTemp.PrintF(_S(4301, "Î≥¥Ï¶ùÍ∏à: %I64dÎÇòÏä§"), m_nDepositMoney);
+								strTemp.PrintF(_S(4301, "∫∏¡ı±›: %I64d≥™Ω∫"), m_nDepositMoney);
 								MsgBoxInfo.AddString(strTemp, 0xF2F2F2FF, TEXT_RIGHT);
 
 								MsgBoxInfo.SetInputBox( 0, 15, 0, 130 );
@@ -1173,11 +1250,11 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								MsgBoxInfo.m_nInputPosY += 4;
 								MsgBoxInfo.m_nSEInputPosY += 7;
 
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
+								pUIManager->CreateMessageBox( MsgBoxInfo );
 
 								strTemp.PrintF("%I64d", m_btnRegisterItem.GetItemCount());
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_ITEMREGISTER)->GetInputBox().SetString(strTemp.str_String);
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_ITEMREGISTER)->GetInputBox().SetFocus(FALSE);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_ITEMREGISTER)->GetInputBox().SetString(strTemp.str_String);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_ITEMREGISTER)->GetInputBox().SetFocus(FALSE);
 								if(m_btnRegisterItem.GetItemPrice() > 0)
 								{
 									strTemp.PrintF("%I64d", m_btnRegisterItem.GetItemCount() * ( ( m_btnRegisterItem.GetItemPrice() * nShopSellRate ) / 100 ));
@@ -1186,30 +1263,29 @@ WMSG_RESULT	CUIAuction::MouseMessage( MSG *pMsg )
 								{
 									strTemp.PrintF("0");
 								}
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_ITEMREGISTER)->GetSEInputBox().SetString(strTemp.str_String);
-								_pUIMgr->GetMessageBox(MSGCMD_AUCTION_ITEMREGISTER)->GetSEInputBox().SetFocus(FALSE);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_ITEMREGISTER)->GetSEInputBox().SetString(strTemp.str_String);
+								pUIManager->GetMessageBox(MSGCMD_AUCTION_ITEMREGISTER)->GetSEInputBox().SetFocus(FALSE);
 							}
 							else
 							{
 								CUIMsgBox_Info MsgBoxInfo;
-								MsgBoxInfo.SetMsgBoxInfo( _S(4302, "ÏïÑÏù¥ÌÖú Îì±Î°ù"), UMBS_OK, UI_NONE, MSGCMD_AUCTION_INFO );
+								MsgBoxInfo.SetMsgBoxInfo( _S(4302, "æ∆¿Ã≈€ µÓ∑œ"), UMBS_OK, UI_NONE, MSGCMD_AUCTION_INFO );
 
-								if(_pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM)
+								if(pUIManager->GetHoldBtn().GetBtnType() == UBET_ITEM)
 								{
-									MsgBoxInfo.AddString(_S(4346, "Îì±Î°ùÌï† Ïàò ÏóÜÎäî ÏïÑÏù¥ÌÖúÏûÖÎãàÎã§."));
+									MsgBoxInfo.AddString(_S(4346, "µÓ∑œ«“ ºˆ æ¯¥¬ æ∆¿Ã≈€¿‘¥œ¥Ÿ."));
 								}
 								else
 								{
-									MsgBoxInfo.AddString(_S(4347, "ÏïÑÏù¥ÌÖúÎßå Îì±Î°ùÌï† Ïàò ÏûàÏäµÎãàÎã§."));
+									MsgBoxInfo.AddString(_S(4347, "æ∆¿Ã≈€∏∏ µÓ∑œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
 								}	
 								
-								_pUIMgr->CreateMessageBox(MsgBoxInfo);	
+								pUIManager->CreateMessageBox(MsgBoxInfo);	
 							}
-#endif	// AUCTION_CANT_SEARCH_AND_REG
 						}
 					}
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -1278,7 +1354,7 @@ WMSG_RESULT CUIAuction::KeyMessage(MSG *pMsg )
 	{	
 		if( pMsg->wParam == VK_RETURN )
 		{	
-			//ÏóîÌÑ∞ÌÇ§ ÎàÑÎ•¥Î©¥ Í≤∏ÏÉâ
+			//ø£≈Õ≈∞ ¥©∏£∏È ∞‚ªˆ
 			SearchItem(1, m_nCurretnSorting);
 			return WMSG_SUCCESS;
 		}
@@ -1300,7 +1376,7 @@ void CUIAuction::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 {
 	switch( nCommandCode )
 	{
-		case MSGCMD_AUCTION_CANCELREGISTER:	//Îì±Î°ù Ï∑®ÏÜå
+		case MSGCMD_AUCTION_CANCELREGISTER:	//µÓ∑œ √Îº“
 		{
 			if(bOK)
 			{
@@ -1313,7 +1389,7 @@ void CUIAuction::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		}
 			break;
 
-		case MSGCMD_AUCTION_BUYITEM:		//ÏïÑÏù¥ÌÖú Íµ¨Îß§
+		case MSGCMD_AUCTION_BUYITEM:		//æ∆¿Ã≈€ ±∏∏≈
 		{
 			if(bOK)
 			{
@@ -1330,8 +1406,8 @@ void CUIAuction::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 
 // ----------------------------------------------------------------------------
 // Name : MsgBoxCommand(int nCommandCode, BOOL bOK, CTString &strInput ,CTString &strConfirm) 
-// (strInput = Îì±Î°ùÌï† ÏïÑÏù¥ÌÖú Í∞úÏàò, strConfirm = Îì±Î°ùÌï† ÏïÑÏù¥ÌÖú Ï¥ùÏï°)
-// Desc : ÏïÑÏù¥ÌÖú Îì±Î°ù Ï†ïÎ≥¥ ÏûÖÎ†• Î©îÏãúÏßÄ Î∞ïÏä§ÏóêÏÑú Ïò® Í∞íÏùÑ Î∞õÎäî Î∂ÄÎ∂Ñ
+// (strInput = µÓ∑œ«“ æ∆¿Ã≈€ ∞≥ºˆ, strConfirm = µÓ∑œ«“ æ∆¿Ã≈€ √—æ◊)
+// Desc : æ∆¿Ã≈€ µÓ∑œ ¡§∫∏ ¿‘∑¬ ∏ﬁΩ√¡ˆ π⁄Ω∫ø°º≠ ø¬ ∞™¿ª πﬁ¥¬ ∫Œ∫–
 // ----------------------------------------------------------------------------
 void CUIAuction::MsgBoxCommand(int nCommandCode, BOOL bOK, CTString &strInput ,CTString &strConfirm)
 {
@@ -1351,15 +1427,15 @@ void CUIAuction::MsgBoxCommand(int nCommandCode, BOOL bOK, CTString &strInput ,C
 					SQUAD nItemPrice = _atoi64(strConfirm);	
 					if(nItemCount <= 0 || nItemPrice <= 0)
 					{
-						strTemp = _S(4348, "0 Ïù¥ÏÉÅÏùò Ïà´ÏûêÎ•º ÏûÖÎ†•Ìï¥ Ï£ºÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+						strTemp = _S(4348, "0 ¿ÃªÛ¿« º˝¿⁄∏¶ ¿‘∑¬«ÿ ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 					}
 					else if(nItemCount > m_btnRegisterItem.GetItemCount())
 					{
-						strTemp = _S(4349, "Î≥¥Ïú† Í∞úÏàòÎ•º Ï¥àÍ≥ºÌïòÏòÄÏäµÎãàÎã§.");
+						strTemp = _S(4349, "∫∏¿Ø ∞≥ºˆ∏¶ √ ∞˙«œø¥Ω¿¥œ¥Ÿ.");
 					}
 					else if(nItemPrice > AUCTION_NAS_MAX)
 					{
-						strTemp.PrintF(_S(4350, "Í∏àÏï°ÏùÑ 1~%I64dÏÇ¨Ïù¥Ïùò Í∞íÏúºÎ°ú ÏûÖÎ†•Ìï¥ Ï£ºÏãúÍ∏∞ Î∞îÎûçÎãàÎã§."), AUCTION_NAS_MAX);
+						strTemp.PrintF(_S(4350, "±›æ◊¿ª 1~%I64dªÁ¿Ã¿« ∞™¿∏∑Œ ¿‘∑¬«ÿ ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ."), AUCTION_NAS_MAX);
 					}
 					else
 					{
@@ -1372,7 +1448,7 @@ void CUIAuction::MsgBoxCommand(int nCommandCode, BOOL bOK, CTString &strInput ,C
 				}
 				else
 				{
-					strTemp = _S(4351, "Ïà´ÏûêÎ•º ÏûÖÎ†•Ìï¥ Ï£ºÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+					strTemp = _S(4351, "º˝¿⁄∏¶ ¿‘∑¬«ÿ ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 				}
 			}
 			else
@@ -1383,15 +1459,47 @@ void CUIAuction::MsgBoxCommand(int nCommandCode, BOOL bOK, CTString &strInput ,C
 		break;
 	}
 
-	MsgBoxInfo.SetMsgBoxInfo( _S(4302, "ÏïÑÏù¥ÌÖú Îì±Î°ù"), UMBS_OK, UI_NONE, MSGCMD_NULL );
+	MsgBoxInfo.SetMsgBoxInfo( _S(4302, "æ∆¿Ã≈€ µÓ∑œ"), UMBS_OK, UI_NONE, MSGCMD_NULL );
 	MsgBoxInfo.AddString(strTemp);
 	
-	_pUIMgr->CreateMessageBox(MsgBoxInfo);	
+	CUIManager::getSingleton()->CreateMessageBox(MsgBoxInfo);	
+}
+
+// ----------------------------------------------------------------------------
+// Name : MsgBoxLCommand(int nCommandCode, int nResult )
+// Desc : ∞≈∑°¥Î«‡ npc ∏ﬁΩ√¡ˆ√≥∏Æ 
+// ----------------------------------------------------------------------------
+void CUIAuction::MsgBoxLCommand(int nCommandCode, int nResult )
+{
+	switch(nCommandCode)
+	{
+		case MSGLCMD_AUCTION:
+			{
+				if(nResult == USE_AUCTION)
+				{
+					if (pUIManager->GetInventory()->IsLocked() == TRUE ||
+						pUIManager->GetInventory()->IsLockedArrange() == TRUE)
+					{
+						// ¿ÃπÃ Lock ¿Œ √¢¿Ã ¿÷¿ª ∞ÊøÏ ø≠¡ˆ ∏¯«—¥Ÿ.
+						pUIManager->GetInventory()->ShowLockErrorMessage();
+						return;
+					}
+
+					CUIManager::getSingleton()->GetAuction()->UseAuction();
+				}
+				else if(nResult == NPC_HELP)
+				{
+					CUIManager::getSingleton()->RearrangeOrder( UI_NPCHELP, TRUE );
+				}
+			}
+			break;
+	}
+
 }
 
 // ----------------------------------------------------------------------------
 // Name : InitSlotItem()
-// Desc : ÏïÑÏù¥ÌÖú Ïä¨Î°Ø Ï¥àÍ∏∞Ìôî
+// Desc : æ∆¿Ã≈€ ΩΩ∑‘ √ ±‚»≠
 // ----------------------------------------------------------------------------
 void CUIAuction::InitSlotItem()
 {
@@ -1408,13 +1516,12 @@ void CUIAuction::InitSlotItem()
 
 // ----------------------------------------------------------------------------
 // Name : InitAll()
-// Desc : Í±∞ÎûòÎåÄÌñâ Ï¥àÍ∏∞Ìôî
+// Desc : ∞≈∑°¥Î«‡ √ ±‚»≠
 // ----------------------------------------------------------------------------
 void CUIAuction::InitAll()
 {
 	m_nCurrnetTab = AUCTION_TAB_REFER;
 	m_bRegister = FALSE;
-	m_bSettleRequest = FALSE;
 	InitSlotItem();
 	m_cmbItemType.SetCurSel(0);
 	SetItemSubType(0);
@@ -1438,14 +1545,15 @@ void CUIAuction::InitAll()
 	m_btnPrev.SetEnable(FALSE);
 	m_btnNext.SetEnable(FALSE);
 	m_btnLast.SetEnable(FALSE);
+	
 	m_btnSearch.SetEnable(TRUE);
 }
 
 
 // ----------------------------------------------------------------------------
 // Name : SetSlotItem(int nIndex, int nAuctionIndex, CUIButtonEx &btnAuctionItem, SQUAD nNasTotal, int nEtc, int nItemStatus)
-//			         (   Ïä¨Î°ØÎ≤àÌò∏, Í±∞ÎûòÎåÄÌñâÎì±Î°ùÎ≤àÌò∏,          Îì±Î°ùÌï† ÏïÑÏù¥ÌÖú Î≤ÑÌäº,         Ï¥ù Í∏àÏï°, ÎÇ®ÏùÄÏãúÍ∞Ñ,    ÏïÑÏù¥ÌÖú ÏÉÅÌÉú )
-// Desc : Í±∞ÎûòÎåÄÌñâ ÏïÑÏù¥ÌÖú Ïä¨Î°ØÏóê Ìï¥Îãπ Ï†ïÎ≥¥ ÏûÖÎ†•
+//			         (   ΩΩ∑‘π¯»£, ∞≈∑°¥Î«‡µÓ∑œπ¯»£,          µÓ∑œ«“ æ∆¿Ã≈€ πˆ∆∞,         √— ±›æ◊, ≥≤¿∫Ω√∞£,    æ∆¿Ã≈€ ªÛ≈¬ )
+// Desc : ∞≈∑°¥Î«‡ æ∆¿Ã≈€ ΩΩ∑‘ø° «ÿ¥Á ¡§∫∏ ¿‘∑¬
 // ----------------------------------------------------------------------------
 void CUIAuction::SetSlotItem(int nIndex, int nAuctionIndex, CUIButtonEx &btnAuctionItem, SQUAD nNasTotal, int nEtc, int nItemStatus)
 {
@@ -1466,7 +1574,7 @@ void CUIAuction::SetSlotItem(int nIndex, int nAuctionIndex, CUIButtonEx &btnAuct
 
 // ----------------------------------------------------------------------------
 // Name : SetItemSubType(int nItemType)
-// Desc : Í≤ÄÏÉâÏΩ§Î≥¥Î∞ïÏä§  ÏïÑÏù¥ÌÖú ÌÉÄÏûÖÏóê Îî∞Î•∏ ÏïÑÏù¥ÌÖú ÏÑúÎ∏åÌÉÄÏûÖ ÏΩ§Î≥¥Î∞ïÏä§ ÏÑ§Ï†ï
+// Desc : ∞Àªˆƒﬁ∫∏π⁄Ω∫  æ∆¿Ã≈€ ≈∏¿‘ø° µ˚∏• æ∆¿Ã≈€ º≠∫Í≈∏¿‘ ƒﬁ∫∏π⁄Ω∫ º≥¡§
 // ----------------------------------------------------------------------------
 void CUIAuction::SetItemSubType(int nItemType)
 {
@@ -1474,43 +1582,43 @@ void CUIAuction::SetItemSubType(int nItemType)
 	
 	switch(nItemType)
 	{
-		case 0:	//Ï†ÑÏ≤¥
+		case 0:	//¿¸√º
 		{
 			m_cmbItemSubType.AddString(CTString("-"));
 		}
 		break;
 
-		case 1: //Î¨¥Í∏∞
+		case 1: //π´±‚
 		{
-			for(int i=0; i<16; i++)
+			for(int i=0; i<AUTION_WEAPON_COUNT; i++)
 			{
 				m_cmbItemSubType.AddString(strItemSubTypeWeapon[i]);
 			}
 		}
 		break;
 
-		case 2: //Î∞©Ïñ¥Íµ¨
+		case 2: //πÊæÓ±∏
 		{
-			for(int i=0; i<7; i++)
+			for(int i=0; i<ARMOR_COUNT; i++)
 			{
 				m_cmbItemSubType.AddString(strItemSubTypeArmor[i]);
 			}
 		}
 		break;
 		
-		case 3: //ÏóëÏÑ∏ÏÑúÎ¶¨
+		case 3: //ø¢ººº≠∏Æ
 		{
-			for(int i=0; i<9; i++)
+			for(int i=0; i<ACCESS_COUNT; i++)
 			{
 				m_cmbItemSubType.AddString(strItemSubTypeAccessory[i]);
 			}
 		}
 		break;
-		case 4:	//ÏùºÌöåÏö©
-		case 5:	//Ìè¨ÏÖò
-		case 6:	//Í∏∞ÌÉÄ
+		case 4:	//¿œ»∏øÎ
+		case 5:	//∆˜º«
+		case 6:	//±‚≈∏
 		{
-			m_cmbItemSubType.AddString(_S(506, "Ï†ÑÏ≤¥"));
+			m_cmbItemSubType.AddString(_S(506, "¿¸√º"));
 		}
 		break;
 		
@@ -1525,7 +1633,7 @@ void CUIAuction::SetItemSubType(int nItemType)
 
 // ----------------------------------------------------------------------------
 // Name : GetRegisterItemData(CTString &strItemName, SQUAD& nItemCount, SQUAD& nItemPrice)
-// Desc : Íµ¨Îß§Ìïú ÏïÑÏù¥ÌÖúÏùò Ï†ïÎ≥¥Î•º Î∞òÌôò
+// Desc : ±∏∏≈«— æ∆¿Ã≈€¿« ¡§∫∏∏¶ π›»Ø
 // ----------------------------------------------------------------------------
 void CUIAuction::GetRegisterItemData(CTString &strItemName, SQUAD& nItemCount, SQUAD& nItemPrice)
 {
@@ -1537,7 +1645,7 @@ void CUIAuction::GetRegisterItemData(CTString &strItemName, SQUAD& nItemCount, S
 
 // ----------------------------------------------------------------------------
 // Name : GetItemFullName(CUIButtonEx &btnItem)
-// Desc : Ìï¥Îãπ ÏïÑÏù¥ÌÖúÏùò Ï†ÑÏ≤¥Ïù¥Î¶Ñ(prefix, +Ìè¨Ìï®)ÏùÑ ÏñªÎäîÎã§
+// Desc : «ÿ¥Á æ∆¿Ã≈€¿« ¿¸√º¿Ã∏ß(prefix, +∆˜«‘)¿ª æÚ¥¬¥Ÿ
 // ----------------------------------------------------------------------------
 CTString CUIAuction::GetItemFullName(CUIButtonEx &btnItem)
 {
@@ -1587,10 +1695,15 @@ CTString CUIAuction::GetItemFullName(CUIButtonEx &btnItem)
 
 // ----------------------------------------------------------------------------
 // Name : SearchItem(int nPageNum, int nAlignType)
-// Desc : ÏïÑÏù¥ÌÖú Í≤ÄÏÉâ ÏöîÏ≤≠(ÌéòÏù¥ÏßÄ Î≤àÌò∏, Ï†ïÎ†¨ Î∞©Ïãù)
+// Desc : æ∆¿Ã≈€ ∞Àªˆ ø‰√ª(∆‰¿Ã¡ˆ π¯»£, ¡§∑ƒ πÊΩƒ)
 // ----------------------------------------------------------------------------
 void CUIAuction::SearchItem(int nPageNum, int nAlignType)
 {
+	if (!m_btnSearch.IsEnabled())
+	{
+		return;
+	}
+
 	CTString strSearch;
 	strSearch.PrintF("%s", m_ebSearch.GetString());
 
@@ -1599,19 +1712,18 @@ void CUIAuction::SearchItem(int nPageNum, int nAlignType)
 	m_nSearchedClass = m_cmbClass.GetCurSel();
 	m_strSearched = strSearch;
 
-	int nItemtype = (m_nSearchedItemType > 3 ? m_nSearchedItemType : m_nSearchedItemType - 1 ); //ÏïÑÏù¥ÌÖú ÌÉÄÏûÖ Ï§ëÍ∞ÑÏóê ÏÇ¨Ïö©ÎêòÏßÄ ÏïäÎäî Î∂ÄÎ∏êÏùÑ ÎπÑÏºúÍ∞ÄÍ∏∞ ÏúÑÌï®
+	int nItemtype = (m_nSearchedItemType > 3 ? m_nSearchedItemType : m_nSearchedItemType - 1 ); //æ∆¿Ã≈€ ≈∏¿‘ ¡ﬂ∞£ø° ªÁøÎµ«¡ˆ æ ¥¬ ∫Œ∫Ï¿ª ∫Òƒ—∞°±‚ ¿ß«‘
 	int nItemSubType = m_nSearchedItemSubType - 1;
-	int nClass =  (m_nSearchedClass > 6 ? m_nSearchedClass : m_nSearchedClass - 1 );			//ÏïÑÏù¥ÌÖú ÌÉÄÏûÖ Ï§ëÍ∞ÑÏóê ÏÇ¨Ïö©ÎêòÏßÄ ÏïäÎäî Î∂ÄÎ∏êÏùÑ ÎπÑÏºúÍ∞ÄÍ∏∞ ÏúÑÌï®
-	
-	m_btnSearch.SetEnable(FALSE);	// [090611: selo] Í≤ÄÏÉâ ÏöîÏ≤≠ ÌõÑ ÏÑúÎ≤Ñ ÏùëÎãµ Ï†ÑÍπåÏßÄ search Î≤ÑÌäºÏùÑ diable ÏãúÌÇ®Îã§.
+	int nClass =  (m_nSearchedClass > JOB_COUNT-2 ? WILDPET_JOB : m_nSearchedClass-1 );			//æ∆¿Ã≈€ ≈∏¿‘ ¡ﬂ∞£ø° ªÁøÎµ«¡ˆ æ ¥¬ ∫Œ∫Ï¿ª ∫Òƒ—∞°±‚ ¿ß«‘
 
+	m_btnSearch.SetEnable(FALSE); // ∞Àªˆ¡ﬂ¿Ã∏È ∫Ò»∞º∫»≠
 	_pNetwork->SendTradeAgentSearchReq(nPageNum, nItemtype, nItemSubType, nClass, strSearch, nAlignType);
 }
 
 
 // ----------------------------------------------------------------------------
 // Name : IsSearchConditionChanged()
-// Desc : ÏïÑÏù¥ÌÖú Í≤ÄÏÉâÌõÑ Ï°∞Í±¥Ïù¥ Î∞îÎÄåÏóàÎäîÍ∞Ä(ÏΩ§Î≥¥Î∞ïÏä§Î≥ÄÍ≤Ω, Í≤ÄÏÉâÏñ¥ Î≥ÄÍ≤ΩÎì±)
+// Desc : æ∆¿Ã≈€ ∞Àªˆ»ƒ ¡∂∞«¿Ã πŸ≤Óæ˙¥¬∞°(ƒﬁ∫∏π⁄Ω∫∫Ø∞Ê, ∞ÀªˆæÓ ∫Ø∞ÊµÓ)
 // ----------------------------------------------------------------------------
 BOOL CUIAuction::IsSearchConditionChanged()
 {
@@ -1628,7 +1740,7 @@ BOOL CUIAuction::IsSearchConditionChanged()
 
 // ----------------------------------------------------------------------------
 // Name : GoPage(int nPageNum)
-// Desc : ÌéòÏù¥ÏßÄ Ïù¥Îèô ÏöîÏ≤≠
+// Desc : ∆‰¿Ã¡ˆ ¿Ãµø ø‰√ª
 // ----------------------------------------------------------------------------
 void CUIAuction::GoPage(int nPageNum)
 {
@@ -1648,9 +1760,9 @@ void CUIAuction::GoPage(int nPageNum)
 	{
 		case AUCTION_TAB_REFER:
 			{
-				if(IsSearchConditionChanged()) //Í≤ÄÏÉâ Ï°∞Í±¥Ïù¥ Î∞îÍ∑ÄÏóàÎã§Î©¥
+				if(IsSearchConditionChanged()) //∞Àªˆ ¡∂∞«¿Ã πŸ±Õæ˙¥Ÿ∏È
 				{
-					//Ïù¥Ï†Ñ Ï°∞Í±¥ÏúºÎ°ú ÎêòÎèåÎ¶¨Í≥† Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠
+					//¿Ã¿¸ ¡∂∞«¿∏∑Œ µ«µπ∏Æ∞Ì ∏ÆΩ∫∆Æ ø‰√ª
 					m_cmbItemType.SetCurSel(m_nSearchedItemType);
 					m_cmbItemSubType.SetCurSel(m_nSearchedItemSubType);
 					m_cmbClass.SetCurSel(m_nSearchedClass);
@@ -1676,7 +1788,7 @@ void CUIAuction::GoPage(int nPageNum)
 
 // ----------------------------------------------------------------------------
 // Name : BuyItem()
-// Desc : ÏïÑÏù¥ÌÖú Íµ¨Îß§ ÏöîÏ≤≠
+// Desc : æ∆¿Ã≈€ ±∏∏≈ ø‰√ª
 // ----------------------------------------------------------------------------
 void CUIAuction::BuyItem()
 {
@@ -1691,7 +1803,7 @@ void CUIAuction::BuyItem()
 
 // ----------------------------------------------------------------------------
 // Name : CancelRegister()
-// Desc : Îì±Î°ù Ï∑®ÏÜå ÏöîÏ≤≠
+// Desc : µÓ∑œ √Îº“ ø‰√ª
 // ----------------------------------------------------------------------------
 void CUIAuction::CancelRegister()
 {
@@ -1706,52 +1818,97 @@ void CUIAuction::CancelRegister()
 
 // ----------------------------------------------------------------------------
 // Name : RegisterItem()
-// Desc : ÏïÑÏù¥ÌÖú Îì±Î°ù ÏöîÏ≤≠
+// Desc : æ∆¿Ã≈€ µÓ∑œ ø‰√ª
 // ----------------------------------------------------------------------------
 void CUIAuction::RegisterItem()
 {
-	m_bRegister = TRUE; // Îì±Î°ù ÏöîÏ≤≠ ÏÉÅÌÉú
+	m_bRegister = TRUE; // µÓ∑œ ø‰√ª ªÛ≈¬
 	_pNetwork->SendTradeAgentRegReq(m_btnRegisterItem.GetItemTab(), m_btnRegisterItem.GetItemRow(), m_btnRegisterItem.GetItemCol(), 
 									m_btnRegisterItem.GetItemIndex(), m_nRegisterItemCount, m_nRegisterItemPrice, m_nDepositMoney);
 }
 
 // ----------------------------------------------------------------------------
 // Name : CanRegister()
-// Desc : ÌòÑÏû¨ ÎìúÎûòÍ∑∏&ÎìúÎ°≠ Îêú ÏïÑÏù¥ÌÖúÏù¥ Îì±Î°ùÌï† Ïàò ÏûàÎäî ÏïÑÏù¥ÌÖúÏù∏ÏßÄ ÌôïÏù∏ (ÏïÑÏù¥ÌÖú ÏÜçÏÑ±Ïóê exchangeÍ∞Ä Ï≤¥ÌÅ¨Îêú ÏïÑÏù¥ÌÖúÎßå Í±∞ÎûòÎåÄÌñâ Í∞ÄÎä•)
+// Desc : «ˆ¿Á µÂ∑°±◊&µÂ∑” µ» æ∆¿Ã≈€¿Ã µÓ∑œ«“ ºˆ ¿÷¥¬ æ∆¿Ã≈€¿Œ¡ˆ »Æ¿Œ (æ∆¿Ã≈€ º”º∫ø° exchange∞° √º≈©µ» æ∆¿Ã≈€∏∏ ∞≈∑°¥Î«‡ ∞°¥…)
 // ----------------------------------------------------------------------------
 BOOL CUIAuction::CanRegister()
 {
 	if (m_bRegister)
 	{
-		_pNetwork->ClientSystemMessage(_S(4387, "Îì±Î°ùÏöîÏ≤≠Ï§ëÏóêÎäî Ìï† Ïàò ÏóÜÏäµÎãàÎã§."), SYSMSG_ERROR);
+		_pNetwork->ClientSystemMessage(_S(4387, "µÓ∑œø‰√ª¡ﬂø°¥¬ «“ ºˆ æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR);
 		return FALSE;
 	}
 
-	if(_pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-	_pUIMgr->GetHoldBtn().GetWhichUI() == UI_INVENTORY)
-	{
-		SBYTE sbWearType = _pUIMgr->GetHoldBtn().GetItemWearType();
-		
-		CItemData&	rItemData = _pNetwork->GetItemData( _pUIMgr->GetHoldBtn().GetItemIndex() );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
+	if(pUIManager->GetHoldBtn().GetBtnType() == UBET_ITEM &&
+	pUIManager->GetHoldBtn().GetWhichUI() == UI_INVENTORY)
+	{
+		SBYTE sbWearType = pUIManager->GetHoldBtn().GetItemWearType();
 		
-		//ÎÇòÏä§Îäî Îì±Î°ù Î∂àÍ∞Ä
+		CItemData&	rItemData = _pNetwork->GetItemData( pUIManager->GetHoldBtn().GetItemIndex() );
+
+		if (rItemData.GetFlag() & ITEM_FLAG_NOTTRADEAGENT)	// ∞≈∑°¥Î«‡µÓ∑œ∫“∞°	
+		{
+			return FALSE;
+		}
+		
+		//≥™Ω∫¥¬ µÓ∑œ ∫“∞°
 		if((rItemData.GetType() == CItemData::ITEM_ETC && 
 			rItemData.GetSubType() == CItemData::ITEM_ETC_MONEY))
 		{
 			return FALSE;
 		}
 
-		CItems	&rItems = _pNetwork->MySlotItem[_pUIMgr->GetHoldBtn().GetItemTab()][_pUIMgr->GetHoldBtn().GetItemRow()][_pUIMgr->GetHoldBtn().GetItemCol()];
-		
-		//Ï∞©Ïö©Ìïú ÏïÑÏù¥ÌÖúÏù¥ ÏïÑÎãàÎ©¥ÏÑú, ÎåÄÏó¨, ÌîåÎûòÌã∞ÎäÑ Î∂ÄÏä§ÌÑ∞ÎèÑ ÏïÑÎãàÏñ¥Ïïº ÌïúÎã§
+		CItems	&rItems = _pNetwork->MySlotItem[pUIManager->GetHoldBtn().GetItemTab()][pUIManager->GetHoldBtn().GetItemRow()][pUIManager->GetHoldBtn().GetItemCol()];
+#if defined SOCKET_SYSTEM
+		// º“ƒœ æ∆¿Ã≈€¿∫ π´¡∂∞« ∏∑¥¬¥Ÿ. [6/16/2010 rumist]
+		if( rItems.GetSocketCount() > 0 )
+			return FALSE;
+#endif
+
+#ifdef ADD_SUBJOB
+		if( rItemData.IsFlag( ITEM_FLAG_SELLER ) )
+		{
+			return pUIManager->CheckSellerItem(UI_AUCTION, rItemData.GetFlag());
+		}
+		else
+		{
+			// [2010/10/20 : Sora] ªÁøÎ¡ﬂ¿Œ ∏ÛΩ∫≈Õ øÎ∫¥ ƒ´µÂ¥¬ µÓ∑œ ∫“∞°
+			if( rItemData.GetType() == CItemData::ITEM_ETC && rItemData.GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD )
+			{
+				if( rItems.Item_Used > 0 )
+					return FALSE;
+			}
+			//¬¯øÎ«— æ∆¿Ã≈€¿Ã æ∆¥œ∏Èº≠, ¥Îø©, «√∑°∆º¥Ω ∫ŒΩ∫≈Õµµ æ∆¥œæÓæﬂ «—¥Ÿ
+			if( (sbWearType < 0) &&
+				(rItems.ItemData.GetFlag() & ITEM_FLAG_EXCHANGE) && 
+				!(rItems.IsFlag(FLAG_ITEM_LENT)) && 
+				!(rItems.IsFlag(FLAG_ITEM_PLATINUMBOOSTER_ADDED)) &&
+				!(rItems.IsFlag(FLAG_ITEM_BELONG)) )
+			{
+				return TRUE;
+			}
+		}
+#else
+		// [2010/10/20 : Sora] ªÁøÎ¡ﬂ¿Œ ∏ÛΩ∫≈Õ øÎ∫¥ ƒ´µÂ¥¬ µÓ∑œ ∫“∞°
+		if( (rItemData.GetType() == CItemData::ITEM_ETC) && 
+			(rItemData.GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD) &&
+			(rItems.Item_Used > 0) )
+		{
+			return FALSE;
+		}
+
+		//¬¯øÎ«— æ∆¿Ã≈€¿Ã æ∆¥œ∏Èº≠, ¥Îø©, «√∑°∆º¥Ω ∫ŒΩ∫≈Õµµ æ∆¥œæÓæﬂ «—¥Ÿ
 		if( (sbWearType < 0) &&
 			(rItems.ItemData.GetFlag() & ITEM_FLAG_EXCHANGE) && 
 			!(rItems.IsFlag(FLAG_ITEM_LENT)) && 
-			!(rItems.IsFlag(FLAG_ITEM_PLATINUMBOOSTER_ADDED)) )
+			!(rItems.IsFlag(FLAG_ITEM_PLATINUMBOOSTER_ADDED)) &&
+			!(rItems.IsFlag(FLAG_ITEM_BELONG)) )
 		{
 			return TRUE;
 		}
+#endif
 	}
 								
 	return FALSE;
@@ -1759,7 +1916,7 @@ BOOL CUIAuction::CanRegister()
 
 // ----------------------------------------------------------------------------
 // Name : GetCurrentAuctionItemCount()
-// Desc : ÌòÑÏû¨ ÌéòÏù¥ÏßÄÏóê ÌëúÏãúÎêòÏñ¥ÏûàÎäî ÏïÑÏù¥ÌÖú Í∞úÏàòÎ•º Î∞òÌôò
+// Desc : «ˆ¿Á ∆‰¿Ã¡ˆø° «•Ω√µ«æÓ¿÷¥¬ æ∆¿Ã≈€ ∞≥ºˆ∏¶ π›»Ø
 // ----------------------------------------------------------------------------
 int CUIAuction::GetCurrentAuctionItemCount()
 {
@@ -1769,7 +1926,7 @@ int CUIAuction::GetCurrentAuctionItemCount()
 
 // ----------------------------------------------------------------------------
 // Name : SortItem(int nSortType, BOOL bReverse /* = FALSE */)
-// Desc : Ï†ïÎ†¨ Î∞©ÏãùÏùÑ ÏßÄÏ†ïÌïòÏó¨ ÏöîÏ≤≠(Ï†ïÎ†¨ Ìï†Ï¢ÖÎ•ò, Î∞©Ïãù)
+// Desc : ¡§∑ƒ πÊΩƒ¿ª ¡ˆ¡§«œø© ø‰√ª(¡§∑ƒ «“¡æ∑˘, πÊΩƒ)
 // ----------------------------------------------------------------------------
 void CUIAuction::SortItem(int nSortType, BOOL bReverse /* = FALSE */)
 {
@@ -1813,7 +1970,7 @@ void CUIAuction::SortItem(int nSortType, BOOL bReverse /* = FALSE */)
 
 // ----------------------------------------------------------------------------
 // Name : EnableSortBtn()
-// Desc : Ï†ïÎ†¨Î≤ÑÌäº ÎπÑÌôúÏÑ±Ìôî(Î¶¨Ïä§Ìä∏Ïóê ÏïÑÏù¥ÌÖúÏù¥ ÏóÜÏùÑÍ≤ΩÏö∞Ïóê ÎπÑÌôúÏÑ±Ìôî ÏãúÌÇ®Îã§)
+// Desc : ¡§∑ƒπˆ∆∞ ∫Ò»∞º∫»≠(∏ÆΩ∫∆Æø° æ∆¿Ã≈€¿Ã æ¯¿ª∞ÊøÏø° ∫Ò»∞º∫»≠ Ω√≈≤¥Ÿ)
 // ----------------------------------------------------------------------------
 void CUIAuction::EnableSortBtn()
 {
@@ -1827,22 +1984,12 @@ void CUIAuction::EnableSortBtn()
 	m_btnNext.SetEnable(TRUE);
 	m_btnLast.SetEnable(TRUE);
 
-	m_btnSearch.SetEnable(TRUE);
-}
-
-// ----------------------------------------------------------------------------
-//  [6/11/2009 selo]
-// Name : EnableSearchBtn()
-// Desc : Í≤ÄÏÉâ Î≤ÑÌäº ÌôúÏÑ±Ìôî
-// ----------------------------------------------------------------------------
-void CUIAuction::EnableSearchBtn()
-{
-	m_btnSearch.SetEnable(TRUE);
+	m_btnSearch.SetEnable(TRUE); // ∞Àªˆ øœ∑· »ƒ »∞º∫»≠µ 
 }
 
 // ----------------------------------------------------------------------------
 // Name : SetTab()
-// Desc : ÌÉ≠ÏÑ†ÌÉùÏóê Îî∞Î•∏ Í±∞ÎûòÎåÄÌñâ ÌéòÏù¥ÏßÄ ÏÖãÌåÖ
+// Desc : ≈«º±≈√ø° µ˚∏• ∞≈∑°¥Î«‡ ∆‰¿Ã¡ˆ º¬∆√
 // ----------------------------------------------------------------------------
 void CUIAuction::SetTab(int nIndex)
 {
@@ -1850,6 +1997,8 @@ void CUIAuction::SetTab(int nIndex)
 
 	if (m_nCurrnetTab != nIndex)
 	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+		
 		m_nCurrnetTab = nIndex;
 		m_nCurrentPage = 1;
 		m_nMaxPage = 1;
@@ -1868,12 +2017,10 @@ void CUIAuction::SetTab(int nIndex)
 			m_btnPrev.SetEnable(FALSE);
 			m_btnNext.SetEnable(FALSE);
 			m_btnLast.SetEnable(FALSE);
-
-			m_btnSearch.SetEnable(TRUE);
-
-			if( _pUIMgr->GetInventory()->IsVisible() )
+			
+			if( pUIManager->GetInventory()->IsVisible() )
 			{
-				_pUIMgr->GetInventory()->ToggleVisible();
+				pUIManager->GetInventory()->ToggleVisible();
 			}
 		}
 		else if(m_nCurrnetTab == AUCTION_TAB_REGISTER)
@@ -1887,12 +2034,12 @@ void CUIAuction::SetTab(int nIndex)
 			m_btnPrev.SetEnable(TRUE);
 			m_btnNext.SetEnable(TRUE);
 			m_btnLast.SetEnable(TRUE);
-			if( !_pUIMgr->GetInventory()->IsVisible() )
+			if( !pUIManager->GetInventory()->IsVisible() )
 			{
-				_pUIMgr->GetInventory()->ToggleVisible();
+				pUIManager->GetInventory()->ToggleVisible();
 			}
 
-			_pUIMgr->RearrangeOrder( UI_INVENTORY, TRUE );
+			pUIManager->RearrangeOrder( UI_INVENTORY, TRUE );
 		}
 		else if(m_nCurrnetTab == AUCTION_TAB_SETTLEMENT)
 		{
@@ -1905,10 +2052,91 @@ void CUIAuction::SetTab(int nIndex)
 			m_btnPrev.SetEnable(TRUE);
 			m_btnNext.SetEnable(TRUE);
 			m_btnLast.SetEnable(TRUE);
-			if( _pUIMgr->GetInventory()->IsVisible() )
+			if( pUIManager->GetInventory()->IsVisible() )
 			{
-				_pUIMgr->GetInventory()->ToggleVisible();
+				pUIManager->GetInventory()->ToggleVisible();
 			}
 		}	
 	}
+
+	if (m_nCurrnetTab == AUCTION_TAB_REFER)
+	{
+		m_btnSearch.SetEnable(TRUE); // ∞Àªˆ øœ∑· »ƒ »∞º∫»≠µ 
+	}
+}
+
+BOOL CUIAuction::IsFarNPC()
+{
+	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcX;
+	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcZ;
+	if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
+		return TRUE;
+
+	return FALSE;
+}
+
+void CUIAuction::initialize()
+{
+// 	if( m_cmbItemType == NULL )
+// 		m_cmbItemType = (CUIComboBox*)findUI( "cbb_item_type" );
+// 
+// 	if( m_cmbItemSubType == NULL )
+// 		m_cmbItemSubType = (CUIComboBox*)findUI( "cbb_sub_type" );
+// 
+// 	if( m_cmbClass == NULL )
+// 		m_cmbClass = (CUIComboBox*)findUI( "cbb_class" );
+
+	m_nCurrnetTab = AUCTION_TAB_REFER;
+	m_strTitleName = _S( 4287, "∞≈∑° ¥Î«‡ º≠∫ÒΩ∫" );
+
+	m_rcTitle.SetRect(0,0,AUCTION_WIDTH,36);
+
+	m_rcRegisterArea.SetRect(0,0,AUCTION_WIDTH,AUCTION_HEIGHT);
+	m_rcSelectArea.SetRect(0,0,0,0);
+	m_rcItemArea.SetRect(12,86,631,454);
+
+	int left = 8; 
+	for(int i=0; i<AUCTION_TAB_TOTAL; i++)
+	{
+		m_rcTabArea[i].SetRect(left,37,left+AUCTION_TAB_WIDTH,58);
+		left += (AUCTION_TAB_WIDTH + 3);
+	}
+
+	m_ptdButtonTexture = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
+
+	float fTexWidth = 0.f, fTexHeight = 0.f;
+	fTexWidth = m_ptdButtonTexture->GetPixWidth();
+	fTexHeight = m_ptdButtonTexture->GetPixHeight();
+
+	m_AuctionSurface.AddRectSurface(UIRect(0, 0, 0, 0), UIRectUV(145, 138, 239, 171, fTexWidth, fTexHeight));	//º±≈√¿ÃπÃ¡ˆ 3
+
+	// æ∆¿Ã≈€ ªÛºº¡§∫∏√¢ 4~12
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(0,137,19,156,fTexWidth,fTexHeight));	// 20 * 20
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(20,137,120,156,fTexWidth,fTexHeight));	// 101 * 20
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(121,137,140,156,fTexWidth,fTexHeight));	// 20 * 20
+
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(0,157,19,206,fTexWidth,fTexHeight));	// 20 * 50
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(20,157,120,206,fTexWidth,fTexHeight)); // 101 * 50
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(121,157,140,206,fTexWidth,fTexHeight)); // 20 * 50
+
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(0,207,19,226,fTexWidth,fTexHeight));	// 20 * 20
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(20,207,120,226,fTexWidth,fTexHeight)); // 101 * 20
+	m_AuctionSurface.AddRectSurface(UIRect(0,0,0,0), UIRectUV(121,207,140,226,fTexWidth,fTexHeight));	// 20 * 20
+
+	m_rtSelectedTab.SetUV(0, 106, 101, 128, fTexWidth, fTexHeight );
+	m_rtUnSelectedTab.SetUV(104, 106, 205, 128, fTexWidth, fTexHeight );
+
+	int nBtnPosY = 112;
+	for(int j=0; j<AUCTION_SLOT_MAX; ++j)
+	{
+		m_btnAuctionItem[j].Create( this, 17, nBtnPosY, BTN_SIZE, BTN_SIZE, UI_AUCTION, UBET_ITEM );
+		nBtnPosY += 36;
+	}
+
+	m_btnRegisterItem.Create(this, -1, -1, BTN_SIZE, BTN_SIZE, UI_AUCTION, UBET_ITEM);
+}
+
+void CUIAuction::OnUpdate( float fElapsedTime )
+{
+
 }

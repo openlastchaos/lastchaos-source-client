@@ -10,7 +10,7 @@
 #endif
 
 
-#include <vector>
+// #include <vector>
 #include <Engine/Interface/UIButton.h>
 #include <Engine/Interface/UICheckButton.h>
 #include <Engine/Interface/UIComboBox.h>
@@ -48,16 +48,16 @@ enum OptionTab
 //#define	OPTION_TITLE2_TEXT_SY		17
 
 #define	OPTION_TEXT_SX				35
-#define	OPTION_TEXT2_SX				120	//wooss 050809 ì†Œí™˜í—ˆê°€
+#define	OPTION_TEXT2_SX				120	//wooss 050809 ¼ÒÈ¯Çã°¡
 #define	OPTION_CONTROL_SX			40
-// êµ­ë‚´ì˜ defineê°’ê³¼ ëŒ€ë§Œ íƒœêµ­ê³¼ì˜ defineê°’ì´ ë‹¤ë¥¸ë‹¤.
+// ±¹³»ÀÇ define°ª°ú ´ë¸¸ ÅÂ±¹°úÀÇ define°ªÀÌ ´Ù¸¥´Ù.
 #define	OPTION_SHOWNAME_SY			54
 #define	OPTION_SHOWNAME_ITEM_SY		84
 #define	OPTION_ENTERCHAT_SY			119
 #define	OPTION_AUTOATTACK_SY		144
 #define OPTION_FAMEOPEN_SY			169
 
-#define	OPTION_SUMMON_SY			179  // íƒœêµ­ì—ë§Œ ì ìš©
+#define	OPTION_SUMMON_SY			179  // ÅÂ±¹¿¡¸¸ Àû¿ë
 
 #define	OPTION_ITEMEFFECT_SY		194
 #define	OPTION_INITINTERFACE_SY		305
@@ -96,7 +96,7 @@ enum OptionTab
 // Name : CUIOption
 // Desc :
 // ----------------------------------------------------------------------------
-class CUIOption : public CUIWindow
+class ENGINE_API CUIOption : public CUIWindow
 {
 protected:
 	// Controls
@@ -111,6 +111,7 @@ protected:
 	CUICheckButton		m_cbtnHelp1Icon;					// Help1 Icon 
 	CUICheckButton		m_cbtnRejectExchange;				// Rejection of request message that exchange
 	CUICheckButton		m_cbtnRejectParty;					// and party.
+	CUICheckButton		m_cbtnQuestBookOpen;				// Äù½ºÆ® ¼ö¶ô½Ã Äù½ºÆ®ºÏ ¿©´Â ¿©ºÎ [09/05/11 trylord]
 
 	CUISlideBar			m_slbShowName;						// Show name slide bar
 	CUISlideBar			m_slbShowNameItem;					// Show item name slide bar
@@ -133,7 +134,7 @@ protected:
 	CUISlideBar			m_slbBGM;							// BGM slide bar
 	CUISlideBar			m_slbFXSound;						// FX sound slide bar
 
-	CUIComboBox			m_cmbTargetDest;					// UI_REFORM :Su-won -ì„ íƒê°€ëŠ¥ ëŒ€ìƒ ì„¤ì • ì½¤ë³´ ë°•ìŠ¤
+	CUIComboBox			m_cmbTargetDest;					// UI_REFORM :Su-won -¼±ÅÃ°¡´É ´ë»ó ¼³Á¤ ÄŞº¸ ¹Ú½º
 
 	int					m_nCurOptionTab;					// Current tab of option ( game, video, audio )
 	BOOL				m_bShowToolTip;						// If tool tip is shown or not
@@ -147,6 +148,7 @@ protected:
 	BOOL				m_bFameOpen;
 	BOOL				m_bRejectExchange;						// [7/9/2009 rumist] rejection options. 
 	BOOL				m_bRejectParty;
+	BOOL				m_bQuestBookOpen;
 	int					m_nShowName;
 	int					m_nShowNameItem;
 	int					m_nBrightness;
@@ -216,6 +218,9 @@ public:
 
 	// Open option
 	void	OpenOption();
+	// toggle support. [7/19/2010 rumist]
+	// Toggle option
+	void	ToggleOption();
 
 	// Init option
 	void	InitOption();
@@ -233,12 +238,23 @@ public:
 		m_pixDesktopWidth = pixWidth;
 		m_pixDesktopHeight = pixHeigth;
 	}
+	
+	void	ResetDisplay(void);
 
 	// Get texture quality
 	FLOAT	GetTextureQuality( int nStep ) const { return m_afTextureQuality[nStep]; }
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
+
+	//À©µµ¿ì ¸ğµå·Î °­Á¦ º¯°æ added by sam 11/01/17
+	void ChangeWindowMode ();
+
+	void UpdateTerMul();
+#ifdef KALYDO
+	const BOOL	ToggleFullscreenMode(const BOOL _bEnableFullScreenMode = FALSE );
+	BOOL	m_bFullscreen;
+#endif
 };
 
 #endif // UISELCHAR_H_

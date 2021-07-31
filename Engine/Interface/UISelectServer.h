@@ -9,12 +9,16 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIListBox.h>
-#include <vector>
+// #include <Engine/Interface/UIListBox.h>
+// #include <vector>
 
 
 // Define max count of server name
+#ifdef EUROUPEAN_SERVER_LOGIN
+#define	MAX_SERVER_NAME						50
+#else
 #define	MAX_SERVER_NAME						40
+#endif
 
 
 // Define text position
@@ -41,6 +45,7 @@ protected:
 	// Controls
 	CUIButton			m_btnOK;								// OK button
 	CUIButton			m_btnCancel;							// Cancel button
+	CUIButton			m_btnExit;								// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
 	CUIListBox			m_lbServerGroup;						// Server group list box
 	CUIListBox			m_lbServer;								// Server list box
 
@@ -57,14 +62,17 @@ protected:
 	UIRectUV			m_rtBackMiddle;							// UV of middle background
 	UIRectUV			m_rtBackBottom;							// UV of bottom background
  
-	// ì¶”ì²œì´ë²¤íŠ¸ ì´ë¯¸ì§€ wooss 060426
+	// ÃßÃµÀÌº¥Æ® ÀÌ¹ÌÁö wooss 060426
 	UIRectUV			m_rtRecommend;							// UV of bottom background
+	UIRectUV			m_rtSpeed;								// UV of bottom background
+
+	CUIListBox*		m_plbServer;
 	
-	// ì„œë²„.
+	// ¼­¹ö.
 	struct sServerInfo
 	{
-		ULONG			iSubNum;			// Sub Server ë²ˆí˜¸.
-		ULONG			iPlayerNum;			// í”Œë ˆì´ì–´ ìˆ˜.
+		ULONG			iSubNum;			// Sub Server ¹øÈ£.
+		ULONG			iPlayerNum;			// ÇÃ·¹ÀÌ¾î ¼ö.
 		CTString		strAddress;			// IP Address
 		ULONG			iPortNum;			// Port Num
 
@@ -74,7 +82,7 @@ protected:
 			else if(iPlayerNum > other.iPlayerNum)   return false;
 			else
 			{
-				// NOTE : ì„œë¸Œ ë²ˆí˜¸ë¥¼ ê¸°ì¤€ìœ¼ë¡œ í• ê¹Œ? í”Œë ˆì´ì–´ ìˆ˜ë¥¼ ê¸°ì¤€ìœ¼ë¡œ í• ê¹Œ???
+				// NOTE : ¼­ºê ¹øÈ£¸¦ ±âÁØÀ¸·Î ÇÒ±î? ÇÃ·¹ÀÌ¾î ¼ö¸¦ ±âÁØÀ¸·Î ÇÒ±î???
 				if(iSubNum < other.iSubNum)			return true;
 				else if(iSubNum > other.iSubNum)	return false;
 			}
@@ -89,7 +97,7 @@ protected:
 		}
 	};
 
-	// ì„œë²„ êµ°
+	// ¼­¹ö ±º
 	struct sGroupInfo
 	{
 		sGroupInfo()
@@ -101,16 +109,17 @@ protected:
 			vectorServerInfo.clear();
 		}
 
-		ULONG			iServerNo;		// ì„œë²„ êµ° ë²ˆí˜¸
-	
-
-		// FULLì´ê±°ë‚˜ ì ê²€ ì¤‘ì´ë©´ -1ì”© ë”í•¨, ì›í• ì´ë©´ +1ì”© ë”í•¨.
-		int				iGroupState;						// êµ° ìƒíƒœì— ë”°ë¥¸ ì ìˆ˜.
-		std::vector<sServerInfo>	vectorServerInfo;		// ì„œë²„ ëª©ë¡.
+		ULONG			iServerNo;		// ¼­¹ö ±º ¹øÈ£
+		UBYTE			ubServerType;	// ¼­¹ö ±º Å¸ÀÔ
+		int				nOrder;
+		
+		// FULLÀÌ°Å³ª Á¡°Ë ÁßÀÌ¸é -1¾¿ ´õÇÔ, ¿øÇÒÀÌ¸é +1¾¿ ´õÇÔ.
+		int				iGroupState;						// ±º »óÅÂ¿¡ µû¸¥ Á¡¼ö.
+		std::vector<sServerInfo>	vectorServerInfo;		// ¼­¹ö ¸ñ·Ï.
 
 		bool operator<(const sGroupInfo &other) const
 		{			
-			// GroupStateê°€ ë†’ì€ ìˆœìœ¼ë¡œ ì •ë ¬ì„ í•˜ê³ , ê°™ë‹¤ë©´ ì„œë²„ ë²ˆí˜¸ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ì •ë ¬í•©ë‹ˆë‹¤.
+			// GroupState°¡ ³ôÀº ¼øÀ¸·Î Á¤·ÄÀ» ÇÏ°í, °°´Ù¸é ¼­¹ö ¹øÈ£¸¦ ±âÁØÀ¸·Î Á¤·ÄÇÕ´Ï´Ù.
 			/*
 			if(iServerNo < other.iServerNo)			return true;
 			else if(iServerNo > other.iServerNo)	return false;
@@ -164,36 +173,32 @@ protected:
 
 	std::vector<sGroupInfo>		m_vectorGroupInfo;
 
-	// ì¶”ì²œ ì„œë²„ ì´ë²¤íŠ¸
-	int m_nRecomendSvr;
+	// ÃßÃµ ¼­¹ö ÀÌº¥Æ®
 	int FindRecomendSvr();
-
-	// Another Recommend Server Event
-	int m_nRecomendSvrOrder;		// ì¶”ì²œì„œë²„ í‘œì‹œ ìˆœì„œ
-
+	
 protected:
 	// Internal functions
-	void	Close();
-	void	PressOKBtn();
 
-	// NOTE : ìë™ ë¡œê·¸ì¸ì„ ìœ„í•´ì„œ ìœ„ì¹˜ ë³€ê²½.
-	//void	ConnectToServer( CTString strIP, ULONG ulPortNum );		// ì„œë²„ì™€ ì ‘ì† ì‹œë„
+	// NOTE : ÀÚµ¿ ·Î±×ÀÎÀ» À§ÇØ¼­ À§Ä¡ º¯°æ.
+	//void	ConnectToServer( CTString strIP, ULONG ulPortNum );		// ¼­¹ö¿Í Á¢¼Ó ½Ãµµ
 	void	SetServerList();
 
 public:
 	CUISelectServer();
 	~CUISelectServer();
 
-	ENGINE_API void	ConnectToServer( CTString strIP, ULONG ulPortNum );		// ì„œë²„ì™€ ì ‘ì† ì‹œë„
+	ENGINE_API void	ConnectToServer( CTString strIP, ULONG ulPortNum );		// ¼­¹ö¿Í Á¢¼Ó ½Ãµµ
 
 	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
 
 	// Render
 	void	Render();
-
+	
 	// Reset
 	void	Reset();
+
+	void initialize();
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
@@ -207,11 +212,13 @@ public:
 
 	//Zone Info Manage
 	void ENGINE_API	ResetServerList();	
-	void ENGINE_API AddToServerList(LONG lServerNo, LONG lSubNum, LONG lPlayerNum, CTString &strAddress, LONG lPortNum ,UBYTE bIsRecommend = 0);
+	void ENGINE_API AddToServerList(LONG lServerNo, LONG lSubNum, LONG lPlayerNum, CTString &strAddress, LONG lPortNum ,UBYTE ubServerType = 0);
 	void ENGINE_API SetRecentServer(int iRecentGroup = -1, int iRecentServer = -1);
 
 	BOOL	IsEmptyGroup() { return m_vectorGroupInfo.empty(); };
 	CTString GetServerGroupName( int iGroupNo );
+	void	PressOKBtn();
+	void	Close();
 
 };
 

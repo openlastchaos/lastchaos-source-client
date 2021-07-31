@@ -4,46 +4,56 @@
 #pragma once
 #endif
 
-
+#include <Engine/LocalDefine.h>
 #include <Engine/Entities/Entity.h>
 #include <Engine/Network/ChatMsgBuffer.h>
+#include <Engine/Help/LoadLod.h>
+#include <common/header/def_npc.h>
 
-#define		NPC_SHOPPER				(1 << 0)	// ìƒì ì£¼ì¸ì—¬ë¶€?
-#define		NPC_FIRSTATTACK			(1 << 1)	// ì„ ê³µì—¬ë¶€?
-#define		NPC_ATTACK				(1 << 2)	// ë°˜ê²©ê°€ëŠ¥?
-#define		NPC_MOVING				(1 << 3)	// ì´ë™ê°€ëŠ¥?
-#define		NPC_PEACEFUL			(1 << 4)	// í‰í™”ì ì¸ ëª¹(ì›í´ë¦­ìœ¼ë¡œ ê³µê²© ì•ˆ ì‹œí‚¬ë•Œ)
-#define		NPC_ZONEMOVER			(1 << 5)	// ì¡´ ì´ë™ì‹œì¼œì£¼ëŠ” NPC
-#define		NPC_CASTLE_GUARD		(1 << 6)	// ìˆ˜í˜¸ë³‘
-#define		NPC_REFINER				(1 << 7)	// ì—°ê¸ˆìˆ ì‚¬ NPC
+#define		NPC_SHOPPER				(1 << 0)	// »óÁ¡ÁÖÀÎ¿©ºÎ?
+#define		NPC_FIRSTATTACK			(1 << 1)	// ¼±°ø¿©ºÎ?
+#define		NPC_ATTACK				(1 << 2)	// ¹İ°İ°¡´É?
+#define		NPC_MOVING				(1 << 3)	// ÀÌµ¿°¡´É?
+#define		NPC_PEACEFUL			(1 << 4)	// ÆòÈ­ÀûÀÎ ¸÷(¿øÅ¬¸¯À¸·Î °ø°İ ¾È ½ÃÅ³¶§)
+#define		NPC_ZONEMOVER			(1 << 5)	// Á¸ ÀÌµ¿½ÃÄÑÁÖ´Â NPC
+#define		NPC_CASTLE_GUARD		(1 << 6)	// ¼öÈ£º´
+#define		NPC_REFINER				(1 << 7)	// ¿¬±İ¼ú»ç NPC
 #define		NPC_QUEST				(1 << 8)	// Quest NPC
-#define		NPC_CASTLE_TOWER		(1 << 9)	// ê³µê²©í˜ ìˆ˜í˜¸ìƒ
-#define		NPC_MINERAL				(1 << 10)	// ë¯¸ë„¤ë„
-#define		NPC_CROPS				(1 << 11)	// ë†ì‘ë¬¼
-#define		NPC_ENERGY				(1 << 12)	// ì—ë„ˆì§€
-#define		NPC_ETERNAL				(1 << 13)	// ì§€ì†
-#define		NPC_LORD_SYMBOL			(1 << 14)	// ì„±ì£¼ì˜ ì¦ëª…
-#define		NPC_REMISSION			(1 << 15)	// ë©´ì£„ë¶€
-#define		NPC_EVENT				(1 << 16)	// ì´ë²¤íŠ¸
-#define		NPC_GUARD				(1 << 17)	// ê²½ë¹„ë³‘
-#define		NPC_KEEPER				(1 << 18)	// ì°½ê³ 
-#define		NPC_GUILD				(1 << 19)	// ê¸¸ë“œ
-#define		NPC_MBOSS				(1 << 20)	// ì¤€ë³´ìŠ¤
-#define		NPC_BOSS				(1 << 21)	// ë³´ìŠ¤
-#define		NPC_RESETSTAT			(1 << 22)	// ìŠ¤íƒ¯ ì´ˆê¸°í™”
-#define		NPC_CHANGEWEAPON		(1 << 23)	// ë¬´ê¸° êµì²´
-#define		NPC_WARCASTLE			(1 << 24)	// ê³µì„± NPC
-#define		NPC_DISPLAY_MAP			(1 << 25)	// ì§€ë„ì— í‘œì‹œë˜ëŠ”ì§€ ì—¬ë¶€
-#define		NPC_QUEST_COLLECT		(1 << 26)	// ìˆ˜ì§‘ í€˜ìŠ¤íŠ¸ìš©
-#define		NPC_PARTY_MOB			(1 << 27)	// íŒŒí‹°ëª¹ í‘œì‹œ
-#define		NPC_RAID				(1 << 28)	// ë ˆì´ë“œ ëª¹
-#define		NPC_SUBCITY				(1 << 29)	// ì„œë¸Œ ë§ˆì„ NPC			// WSS_ADD_FLAG 2007/08/09 ì¹´ì˜¤í—Œí„° ë§ˆì„ NPC
-#define		NPC_CHAOCITY			(1 << 30)	// ì¹´ì˜¤ë§ˆì„ ì „ìš© ë¦¬ì   NPC
-#define		NPC_HUNTERCITY			(1 << 31)	// í—Œí„°ë§ˆì„ ì „ìš© ë¦¬ì   NPC
-// FLAG Extension	// 2009ë…„ 2ì›”
-#define		NPC_AUCTION				(1 << 0)	// ê±°ë˜ ëŒ€í–‰ NPC
-#define		NPC_COLLSION_ENABLE		(1 << 1)	// ìºë¦­í„°ì˜ ëª¨ë¸ì— ì¶©ëŒ flagì ìš© ìœ ë¬´
+#define		NPC_CASTLE_TOWER		(1 << 9)	// °ø°İÇõ ¼öÈ£»ó
+#define		NPC_MINERAL				(1 << 10)	// ¹Ì³×¶ö
+#define		NPC_CROPS				(1 << 11)	// ³óÀÛ¹°
+#define		NPC_ENERGY				(1 << 12)	// ¿¡³ÊÁö
+#define		NPC_ETERNAL				(1 << 13)	// Áö¼Ó
+#define		NPC_LORD_SYMBOL			(1 << 14)	// ¼ºÁÖÀÇ Áõ¸í
+#define		NPC_REMISSION			(1 << 15)	// ¸éÁËºÎ
+#define		NPC_EVENT				(1 << 16)	// ÀÌº¥Æ®
+#define		NPC_GUARD				(1 << 17)	// °æºñº´
+#define		NPC_KEEPER				(1 << 18)	// Ã¢°í
+#define		NPC_GUILD				(1 << 19)	// ±æµå
+#define		NPC_MBOSS				(1 << 20)	// ÁØº¸½º
+#define		NPC_BOSS				(1 << 21)	// º¸½º
+#define		NPC_RESETSTAT			(1 << 22)	// ½ºÅÈ ÃÊ±âÈ­
+#define		NPC_CHANGEWEAPON		(1 << 23)	// ¹«±â ±³Ã¼
+#define		NPC_WARCASTLE			(1 << 24)	// °ø¼º NPC
+#define		NPC_DISPLAY_MAP			(1 << 25)	// Áöµµ¿¡ Ç¥½ÃµÇ´ÂÁö ¿©ºÎ
+#define		NPC_QUEST_COLLECT		(1 << 26)	// ¼öÁı Äù½ºÆ®¿ë
+#define		NPC_PARTY_MOB			(1 << 27)	// ÆÄÆ¼¸÷ Ç¥½Ã
+#define		NPC_RAID				(1 << 28)	// ·¹ÀÌµå ¸÷
+#define		NPC_SUBCITY				(1 << 29)	// ¼­ºê ¸¶À» NPC			// WSS_ADD_FLAG 2007/08/09 Ä«¿ÀÇåÅÍ ¸¶À» NPC
+#define		NPC_CHAOCITY			(1 << 30)	// Ä«¿À¸¶À» Àü¿ë ¸®Á¨ NPC
+#define		NPC_HUNTERCITY			(1 << 31)	// ÇåÅÍ¸¶À» Àü¿ë ¸®Á¨ NPC
+// FLAG Extension	// 2009³â 2¿ù
+#define		NPC_AUCTION				(1 << 0)	// °Å·¡ ´ëÇà NPC
+#define		NPC_COLLSION_ENABLE		(1 << 1)	// Ä³¸¯ÅÍÀÇ ¸ğµ¨¿¡ Ãæµ¹ flagÀû¿ë À¯¹«
+#define		NPC_FACTORY				(1 << 2)	// ¾ÆÀÌÅÛ Á¦ÀÛ °ü·Ã NPC
+#define		NPC_TRIGGER_CHOICE		(1 << 3)	// NPC¿Í ´ëÈ­ÇÏ¸é Æ®¸®°Å ¹ßµ¿
+#define		NPC_DONT_ATTACK				(1 << 6)	// Totem NPC
+#define		NPC_AFFINITY			(1 << 7)	// Ä£È­µµ NPC
+#define		NPC_SHADOW				(1 << 8)	// ±×¸²ÀÚ ¸ó½ºÅÍ & NPC [2/11/2011 rumist]
+#define		NPC_CRAFTING			(1 << 9)	// Á¦ÀÛ
+#define		NPC_TOTEM_ITEM			(1 << 10)	// ¾ÆÀÌÅÛÀ¸·Î ¼ÒÈ¯µÈ ÅäÅÛ NPC
 
+#define		NPC_NO_SHADOW_CAST		(1 << 31)	// ±×¸²ÀÚ Ä³½ºÆÃ Á¦¿ÜÇÔ.
 #define		NPC_MASK				( NPC_ZONEMOVER | NPC_SHOPPER | NPC_REFINER | NPC_QUEST | NPC_REMISSION | NPC_EVENT | NPC_KEEPER | NPC_GUILD | NPC_RESETSTAT | NPC_CHANGEWEAPON | NPC_WARCASTLE | NPC_GUARD)
 #define		NPC_RESOURCE_MASK		( NPC_MINERAL | NPC_CROPS | NPC_ETERNAL | NPC_ENERGY | NPC_QUEST_COLLECT)
 
@@ -86,75 +96,29 @@ enum eSiegewarfareQuartersSetup
 	QUARTER_ATTACK,
 };
 // ---------------------------------------------------<<
-class ENGINE_API CMobData 
+class ENGINE_API CMobData : public stNpc, public LodLoader<CMobData>
 {	
 private:
-	// NPC íˆ´ì—ì„œ ì‚¬ìš©í•˜ê³  ìˆëŠ” êµ¬ì¡°ì²´
-	// CMobDataì˜ ë‚´ë¶€ì—ì„œë§Œ ì‚¬ìš©ë©ë‹ˆë‹¤.
-	struct _npcStat
-	{
-		int		index, level, hp, mp;
-		int		attackSpeed;						// ê³µê²© ì†ë„.
-		float	walkspeed;
-		float	runspeed;
-		float	scale;
-		float	AttackDistance;
-		float	size;
-		char	skill;								// Skill Master í•„ë“œ.
-		char	sskillmaster;
-		int		effect[5];
-		int		type;								// ì–´ë–¤ í˜•íƒœì˜ NPCì¸ê°€? ìƒì¸? ë“±ë“±...
-		int		typeSE;								// NPCí”Œë˜ê·¸ë¥¼ ì „ë¶€ ì‚¬ìš©í•˜ì—¬ ì¶”ê°€ëœ NPCí”Œë˜ê·¸
-		char	name[50];
-		char	fileSMC[255];
-		char	motion_Idle[50];
-		char	motion_Walk[50];
-		char	motion_Wound[50];
-		char	motion_Attack[50];
-		char	motion_Die[50];
-		char	motion_Run[50];
-		char	motion_Idle2[50];
-		char	motion_Attack2[50];		
+	UBYTE	attrdef;
+	UBYTE	attratt;
+	UBYTE	attrdefLv;
+	UBYTE	attrattLv;		
 
-		char	attackType;
-		char	fireDelayCount;
-		float	client_fireobjDelay[4];
-		char	fireEffect0[256];
-		char	fireEffect1[256];
-		char	fireEffect2[256];
-		char	fireObject;
-		float	fireSpeed;
-
-		// 050221 : bs : ìŠ¤í‚¬ ìˆ˜ì •
-		int		skill0_index;
-		char	skill0_level;
-		int		skill1_index;
-		char	skill1_level;
-	};
-
+	std::string	name;
+	std::string desc;
+	int		transFlag;	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
 private:
-	union
-	{
-		ULONG		mob_ulZoneFlag;
-		//int			mob_iAttackType;				// ê³µê²©í•˜ëŠ” ë°©ì‹(ì˜ˆ : ì›ê±°ë¦¬, ê·¼ê±°ë¦¬)
-	};
-	union
-	{
-		ULONG		mob_ulExtraFlag;
-	};
+	ZONEFLAGS	mob_ulZoneFlag;
+	ZONEFLAGS	mob_ulExtraFlag;
 
-	char		motion_Attack3[50];
-	char		motion_Attack4[50];
+	char		motion_Attack3[DEF_ANI_LENGTH];
+	char		motion_Attack4[DEF_ANI_LENGTH];
 	BOOL		mob_bBoss;
-	_npcStat	mob_Data;
-	
+		
 	//---------------------------------------------
-	// íŒë§¤ ëŒ€í–‰ NPC
+	// ÆÇ¸Å ´ëÇà NPC
 	INDEX		Owner_Index;
-//	CTString	Owner_name;
-//	CTString	Owner_Shop_name;
-	ChatMsgBuffer	ShopMsg;		
-
+	short		channel_flag;
 public:
 	/* Default constructor. */
 	CMobData(void);
@@ -164,260 +128,296 @@ public:
 	inline BOOL IsBoss()	const
 	{	return mob_bBoss;		}
 
-	BOOL IsNPC() const ;	// WSS_DRATAN_SEIGEWARFARE 2007/08/08 ìˆ˜ì •í•¨...
+	BOOL IsNPC() const ;	// WSS_DRATAN_SEIGEWARFARE 2007/08/08 ¼öÁ¤ÇÔ...
 
 	int  IsMyQuarter() const ;	// WSS_DRATAN_SEIGEWARFARE 2007/08/13
 
 	inline BOOL IsResource()	const
-	{	return (mob_Data.type & NPC_RESOURCE_MASK);		}
+	{	return (flag & NPC_RESOURCE_MASK);		}
 
 	inline BOOL	IsShopper()		const
 	{ 
-		return (mob_Data.type & NPC_SHOPPER);	
+		return (flag & NPC_SHOPPER);	
 	}	
 
 	inline BOOL IsMovable()		const
 	{
-		return (mob_Data.type & NPC_MOVING);
+		return (flag & NPC_MOVING);
 	}
 
 	inline BOOL IsZoneMoving()	const
 	{ 
-		return (mob_Data.type & NPC_ZONEMOVER);
+		return (flag & NPC_ZONEMOVER);
 	}
 
 	inline BOOL IsCastleGuard() const
 	{
-		return (mob_Data.type & NPC_CASTLE_GUARD);
+		return (flag & NPC_CASTLE_GUARD);
 	}
 
 	inline BOOL IsLordSymbol() const
 	{
-		return (mob_Data.type & NPC_LORD_SYMBOL);
+		return (flag & NPC_LORD_SYMBOL);
 	}
 
 	inline BOOL IsCastleTower() const
 	{
-		return (mob_Data.type & NPC_CASTLE_TOWER);
+		return (flag & NPC_CASTLE_TOWER);
 	}
 		
 	inline BOOL IsRefiner()		const
 	{ 
-		return (mob_Data.type & NPC_REFINER); 
+		return (flag & NPC_REFINER); 
 	}
 
 	inline BOOL IsPeaceful()	const
 	{
-		return (mob_Data.type & NPC_PEACEFUL); 
+		return (flag & NPC_PEACEFUL); 
 	}	
 
-	inline BOOL IsQuest()		const			// í€˜ìŠ¤íŠ¸ NPC
+	inline BOOL IsQuest()		const			// Äù½ºÆ® NPC
 	{
-		return (mob_Data.type & NPC_QUEST);
+		return (flag & NPC_QUEST);
 	}
 	
-	inline BOOL IsSkillMaster() const			// ìŠ¤í‚¬ ë§ˆìŠ¤í„°
+	inline BOOL IsSkillMaster() const			// ½ºÅ³ ¸¶½ºÅÍ
 	{
-		return (mob_Data.skill != -1);
+		return (skillmaster != -1);
 	}
 
-	inline BOOL IsMineral()		const			// ê´‘ë¬¼
+	inline BOOL IsMineral()		const			// ±¤¹°
 	{
-		return (mob_Data.type & NPC_MINERAL);
+		return (flag & NPC_MINERAL);
 	}
 	
-	inline BOOL IsCrops()		const			// ì‘ë¬¼
+	inline BOOL IsCrops()		const			// ÀÛ¹°
 	{
-		return (mob_Data.type & NPC_CROPS);
+		return (flag & NPC_CROPS);
 	}
 
-	inline BOOL IsEnergy()		const			// ì—ë„ˆì§€
+	inline BOOL IsEnergy()		const			// ¿¡³ÊÁö
 	{
-		return (mob_Data.type & NPC_ENERGY);
+		return (flag & NPC_ENERGY);
 	}
 
-	inline BOOL IsCollect()		const			// ìˆ˜ì§‘ë¬¼
+	inline BOOL IsCollect()		const			// ¼öÁı¹°
 	{
-		return (mob_Data.type & NPC_QUEST_COLLECT);
+		return (flag & NPC_QUEST_COLLECT);
 	}
 
-	inline BOOL IsEternal()		const			// ì§€ì† ìì›
+	inline BOOL IsEternal()		const			// Áö¼Ó ÀÚ¿ø
 	{
-		return (mob_Data.type & NPC_ETERNAL);
+		return (flag & NPC_ETERNAL);
 	}
 
-	inline BOOL IsSSkillMaster()	const		//íŠ¹ìˆ˜ ìŠ¤í‚¬ ë§ˆìŠ¤í„°.
+	inline BOOL IsSSkillMaster()	const		//Æ¯¼ö ½ºÅ³ ¸¶½ºÅÍ.
 	{
-		return (mob_Data.sskillmaster != -1);
+		return (sskillmaster != -1);
 	}
 
-	inline BOOL IsRemission()		const		// ë©´ì£„ë¶€
+	inline BOOL IsRemission()		const		// ¸éÁËºÎ
 	{
-		return (mob_Data.type & NPC_REMISSION);
+		return (flag & NPC_REMISSION);
 	}
 	
 	inline char GetSkillMaster()	const
 	{
-		return mob_Data.skill;
+		return skillmaster;
 	}
 
 	inline char GetSpecialSkillMaster() const
 	{
-		return mob_Data.sskillmaster;
+		return sskillmaster;
 	}
 
-	inline BOOL IsEvent()			const		// ì´ë²¤íŠ¸
+	inline BOOL IsEvent()			const		// ÀÌº¥Æ®
 	{
-		return (mob_Data.type & NPC_EVENT);
+		return (flag & NPC_EVENT);
 	}
 
 	inline BOOL IsGuard() const
 	{
-		return ( mob_Data.type & NPC_GUARD );
+		return ( flag & NPC_GUARD );
 	}
 
-	inline BOOL IsWareHouse() const				// ì°½ê³ 
+	inline BOOL IsWareHouse() const				// Ã¢°í
 	{
-		return ( mob_Data.type & NPC_KEEPER );
+		return ( flag & NPC_KEEPER );
 	}
 
-	inline BOOL IsGuild() const					// ê¸¸ë“œ
+	inline BOOL IsGuild() const					// ±æµå
 	{
-		return ( mob_Data.type & NPC_GUILD );
+		return ( flag & NPC_GUILD );
 	}
 
-	inline BOOL IsChangeWeapon() const			// ë¬´ê¸° êµí™˜
+	inline BOOL IsChangeWeapon() const			// ¹«±â ±³È¯
 	{
-		return ( mob_Data.type & NPC_CHANGEWEAPON );
+		return ( flag & NPC_CHANGEWEAPON );
 	}
 
-	inline BOOL IsCollectQuest() const			// ìˆ˜ì§‘ í€˜ìŠ¤íŠ¸ NPC
+	inline BOOL IsCollectQuest() const			// ¼öÁı Äù½ºÆ® NPC
 	{
-		return ( mob_Data.type & NPC_QUEST_COLLECT );
+		return ( flag & NPC_QUEST_COLLECT );
 	}
 
-	inline BOOL IsPartyMob() const			// íŒŒí‹°ëª¹ 
+	inline BOOL IsPartyMob() const			// ÆÄÆ¼¸÷ 
 	{
-		return ( mob_Data.type & NPC_PARTY_MOB );
+		return ( flag & NPC_PARTY_MOB );
 	}
 
 	inline BOOL IsWarCastle() const
 	{
-		return ( mob_Data.type & NPC_WARCASTLE );
+		return ( flag & NPC_WARCASTLE );
 	}
 
-	inline BOOL IsResetStat() const				// ìŠ¤íƒ¯ ì´ˆê¸°í™”
+	inline BOOL IsResetStat() const				// ½ºÅÈ ÃÊ±âÈ­
 	{
-		return ( mob_Data.type & NPC_RESETSTAT );
+		return ( flag & NPC_RESETSTAT );
 	}
 
-	inline BOOL IsChaoVill() const				// ì¹´ì˜¤ ë§ˆì„  // WSS_REMOVE_NAMEPOPUP 2007/08/14
+	inline BOOL IsChaoVill() const				// Ä«¿À ¸¶À»  // WSS_REMOVE_NAMEPOPUP 2007/08/14
 	{
-		return ( mob_Data.type & NPC_CHAOCITY );
+		return ( flag & NPC_CHAOCITY );
 	}
 
-	inline BOOL IsHunterVill() const				// í—Œí„° ë§ˆì„ // WSS_REMOVE_NAMEPOPUP 2007/08/14
+	inline BOOL IsHunterVill() const				// ÇåÅÍ ¸¶À» // WSS_REMOVE_NAMEPOPUP 2007/08/14
 	{
-		return ( mob_Data.type & NPC_HUNTERCITY );
+		return ( flag & NPC_HUNTERCITY );
 	}
 
-	inline BOOL IsAuctionChar() const				// ê±°ë˜ ëŒ€í–‰NPC
+	inline BOOL IsAuctionChar() const				// °Å·¡ ´ëÇàNPC
 	{
-		return ( mob_Data.typeSE & NPC_AUCTION );
+		return ( flag1 & NPC_AUCTION );
 	}
 
-	inline BOOL IsCollsionModel()					// ëª¨ë¸ì— ì¶©ëŒ ì ìš©ë  NPC
+	inline BOOL IsCollsionModel()					// ¸ğµ¨¿¡ Ãæµ¹ Àû¿ëµÉ NPC
 	{
-		return ( mob_Data.typeSE & NPC_COLLSION_ENABLE);
+		return ( flag1 & NPC_COLLSION_ENABLE);
+	}
+
+	inline BOOL IsMakeItemNPC()						// ¾ÆÀÌÅÛ Á¦ÀÛ °ü·Ã NPC
+	{
+		return ( flag1 & NPC_FACTORY);
+	}
+
+	inline BOOL	IsAffinityNPC()						// Ä£È­µµ NPC
+	{
+		return ( flag1 & NPC_AFFINITY );
+	}
+
+	inline BOOL	IsDontAttack()					// Totem MOB
+	{
+		return ( flag1 & NPC_DONT_ATTACK );
 	}
 	
+	inline BOOL	IsShadowNPC() const					// shadow type npc.
+	{
+		return ( flag1 & NPC_SHADOW );
+	}
+
+	inline BOOL IsCrafting() const
+	{
+		return ( flag1 & NPC_CRAFTING );
+	}
+	
+	inline BOOL IsTotemItem() const
+	{
+		return ( flag1 & NPC_TOTEM_ITEM );
+	}
+
+	inline BOOL IsNPCFlag2nd(ULONG flag) const
+	{
+		return (flag1 & flag);
+	}
+
 	CTString	GetAnimAttackNameByID(int iAttackID);	
-	inline void SetZoneMovingFlag(ULONG ulZoneFlag)
+	inline void SetZoneMovingFlag(ZONEFLAGS ulZoneFlag)
 	{	mob_ulZoneFlag = ulZoneFlag; };
 	
-	inline void SetExtraFlag(ULONG ulExtraFlag)
+	inline void SetExtraFlag(ZONEFLAGS ulExtraFlag)
 	{	mob_ulExtraFlag = ulExtraFlag;	};
 
 	inline int GetMobIndex()			const
-	{	return mob_Data.index;}
+	{	return index;}
 	
 	inline const char* GetMobSmcFileName()
-	{	return mob_Data.fileSMC;}
+	{	return fileSMC;}
 
 	inline void SetMobSmcFileName(CTString MobName)
 	{
-		ZeroMemory(mob_Data.fileSMC, strlen(mob_Data.fileSMC));
-		strcpy(mob_Data.fileSMC, MobName.str_String);
+		ZeroMemory(fileSMC, strlen(fileSMC));
+		strcpy(fileSMC, MobName.str_String);
 	}
 	
 	inline int GetLevel()				const
-	{	return mob_Data.level;}
+	{	return level;}
 	
 	inline float GetWalkSpeed()			const
-	{	return mob_Data.walkspeed;}
+	{	return walkSpeed;}
 
 	inline float GetRunSpeed()			const
-	{	return mob_Data.runspeed;}
+	{	return runSpeed;}
 
 	inline float GetAttackDistance()	const
-	{	return mob_Data.AttackDistance;	}
+	{	return attackArea;	}
 	
 	inline float GetHealth()			const
-	{	return mob_Data.hp;}
+	{	return hp;}
 	
 	inline int	GetMP()					const
-	{	return mob_Data.mp;}
+	{	return mp;}
 
 	inline int	GetAttackSpeed()		const
-	{	return mob_Data.attackSpeed;	}
+	{	return attackSpeed;	}
 
 	inline float GetScale()				const
-	{	return mob_Data.scale;}
+	{	return scale;}
 
 	inline float GetSize()				const
-	{	return mob_Data.size;}
+	{	return size;}
 
 	inline float GetScaledSize()		const
-	{	return mob_Data.size * mob_Data.scale;}
+	{	return fBound * scale;}
 
 	inline int	GetType()				const
-	{	return mob_Data.type;	}
-	inline ULONG GetZoneMovingFlag()	const	
+	{	return flag;	}
+	inline ZONEFLAGS GetZoneMovingFlag()const	
 	{	return mob_ulZoneFlag; }
 
-	inline ULONG GetExtraFlag()			const
+	inline ZONEFLAGS GetExtraFlag()		const
 	{	return mob_ulExtraFlag;	};
 	
-	// NOTE : ì›”ë“œ ì—ë””í„°ì—ì„œë§Œ ì“°ì—¬ì•¼ í•©ë‹ˆë‹¤.
+	// NOTE : ¿ùµå ¿¡µğÅÍ¿¡¼­¸¸ ¾²¿©¾ß ÇÕ´Ï´Ù.
+	void SetName(const char* str)	{ name = str; }
 	inline const char*	GetName()
-	{	return mob_Data.name;}
+	{	return name.c_str();}
 	
 	inline const char*	GetAnimWalkName()
-	{	return mob_Data.motion_Walk;}
+	{	return motion_Walk;}
 	
 	inline const char* GetAnimRunName()
-	{	return mob_Data.motion_Run;	}
+	{	return motion_Run;	}
 	
 	inline const char*	GetAnimAttackName()
-	{	return mob_Data.motion_Attack;}
+	{	return motion_Attack;}
 	
 	inline const char*	GetAnimDefaultName()
-	{	return mob_Data.motion_Idle;}
+	{	return motion_Idle;}
 	
 	inline const char*	GetAnimDeathName()
-	{	return mob_Data.motion_Die;}
+	{	return motion_Die;}
 	
 	inline const char*	GetAnimWoundName()
-	{	return mob_Data.motion_Wound;}
+	{	return motion_Dam;}
 	
 	inline const char* GetNormalBoxName()
 	{	return ("Default");}	
 
 	inline const char* GetAnimAttack2Name()
-	{	return mob_Data.motion_Attack2;}
+	{	return motion_Attack2;}
 
 	inline const char*	GetAnimDefault2Name()
-	{	return mob_Data.motion_Idle2;}
+	{	return motion_Idle2;}
 
 	inline const char* GetAnimAttack3Name()
 	{	return motion_Attack3;}
@@ -426,45 +426,40 @@ public:
 	{	return motion_Attack4;}
 
 	inline char GetAttackType() const
-	{	return mob_Data.attackType;	}	
+	{	return attackType;	}	
 
 	inline char GetDelayCount()		const
-	{	return mob_Data.fireDelayCount;	}
+	{	return fireDelayCount;	}
 
 	inline float GetDelay(int i)		const
-	{	return mob_Data.client_fireobjDelay[i];	}
+	{	return fireDelay[i];	}
 
 	inline const char* GetFireEffect0()
-	{	return mob_Data.fireEffect0;	}
+	{	return fireEffect0;	}
 
 	inline const char* GetFireEffect1()
-	{	return mob_Data.fireEffect1;	}
+	{	return fireEffect1;	}
 
 	inline const char* GetFireEffect2()
-	{	return mob_Data.fireEffect2;	}
+	{	return fireEffect2;	}
 
 	inline int GetMissileType()	const
-	{	return (int)mob_Data.fireObject;	}	
+	{	return (int)fireObject;	}	
 
 	inline float GetMissileSpeed()	const
-	{	return mob_Data.fireSpeed;	}
+	{	return fireSpeed;	}
 
 	inline int GetSkill0Index()	const
-	{	return mob_Data.skill0_index;	}
+	{	return skill0_index;	}
 
 	inline char	GetSkill0Level()	const
-	{	return mob_Data.skill0_level;	}
+	{	return skill0_level;	}
 
 	inline int GetSkill1Index()	const
-	{	return mob_Data.skill1_index;	}
+	{	return skill1_index;	}
 
 	inline char	GetSkill1Level()	const
-	{	return mob_Data.skill1_level;	}
-	
-	// WSS_DRATAN_SEIGEWARFARE 2007/08/23 -------------->>
-	inline void	SetMobName(CTString tName)
-	{	strcpy( mob_Data.name , tName.str_String); }
-	// -------------------------------------------------<<
+	{	return skill1_level;	}
 
 	inline void	SetOwnerIndex(INDEX Ownerindex)
 	{
@@ -475,56 +470,110 @@ public:
 	{
 		return Owner_Index;
 	}
-	
-	inline void SetShopmsg(CTString &strMsg)
+
+	inline UBYTE GetAttratt() const
 	{
-		ShopMsg.SetChatMsg(strMsg);
+		return attratt;
+	}
+	
+	inline UBYTE GetAttrdef() const
+	{
+		return attrdef;
+	}
+
+	inline UBYTE GetAttrattLv() const
+	{
+		return attrattLv;
+	}
+	
+	inline UBYTE GetAttrdefLv() const
+	{
+		return attrdefLv;
+	}
+	
+	inline void	SetAttribute(UBYTE ubAttratt, UBYTE ubAttrdef, UBYTE ubAttrattLv, UBYTE ubAttrdefLv)
+	{
+		attratt = ubAttratt;
+		attrdef = ubAttrdef;
+		attrattLv = ubAttrattLv;
+		attrdefLv = ubAttrdefLv;
+	}
+
+	int	GetSyndicateType()
+	{
+		return rvr_value;
+	}
+
+	int GetSyndicateGrade()
+	{
+		return rvr_grade;
+	}
+
+	float GetBound()
+	{
+		return fBound;
+	}
+
+	void SetChannelFlag(short channelFlag)	{ channel_flag = channelFlag;	}
+	bool IsChannelFlag(int nChannel)	
+	{ 
+		if( channel_flag & ( 1 << (nChannel - 1) )) 
+			return true;
+		return false; 
 	}
 
 public:
-	//-----------------------------------------------------------------------------
-	// Purpose: NPC ë°ì´í„°ë¥¼ ì½ì–´ë“¤ì—¬ì„œ MobData ë°°ì—´ì„ ìƒì„±í•©ë‹ˆë‹¤.
-	// Input  : &apMobData - ë°ì´í„°ê°€ ì €ì¥ë  ë°°ì—´.
-	//			FileName - ì½ì–´ë“¤ì¼ í™”ì¼ëª… MOBì›”ë“œë²ˆí˜¸.lod
-	// Output : int - í™”ì¼ë¡œë¶€í„° ì½ì–´ë“¤ì¸ NPC ë°ì´í„°ì˜ ê°¯ìˆ˜ë¥¼ ë°˜í™˜í•©ë‹ˆë‹¤.
-	//-----------------------------------------------------------------------------
-	static int LoadNPCDataFromFile(CStaticArray<CMobData> &apMobData, const char* FileName, const char* ZNFileName = NULL);
-	static int SetMobDataToNPC(CEntity* penEntity, CMobData& MD, const char* szMobName);
-};
+	void SetNoTranslate();
+	void ClearNoTranslate();
 
-class ENGINE_API CMobName
-{
-private:
-	// NPC íˆ´ì—ì„œ ì‚¬ìš©í•˜ê³  ìˆëŠ” êµ¬ì¡°ì²´
-	// CMobNameDataì˜ ë‚´ë¶€ì—ì„œë§Œ ì‚¬ìš©ë©ë‹ˆë‹¤.
-	struct _npcStat
+	int& GetTranslateFlag()		{ return transFlag; }
+	void SetTranslateFlag(int flag);
+
+	inline const char* GetDesc()
 	{
-		int index;
-		char name[50];
-	};
-
-private:	
-	_npcStat	mob_Name;
+		return desc.c_str();
+	}
 	
-public:
-	/* Default constructor. */
-	CMobName(void);
-	/* Destructor. */
-	~CMobName(void);
+	void SetDesc(const char* strDesc) { desc = strDesc; }
 
-	inline int GetMobIndex()			const
-	{	return mob_Name.index;}
-
-	inline const char*	GetName()
-	{	return mob_Name.name;}
-
-public:
 	//-----------------------------------------------------------------------------
-	// Purpose: NPC ë°ì´í„°ë¥¼ ì½ì–´ë“¤ì—¬ì„œ CMobNameData ë°°ì—´ì„ ìƒì„±í•©ë‹ˆë‹¤.
-	// Input  : &apMobData - ë°ì´í„°ê°€ ì €ì¥ë  ë°°ì—´.
-	//			FileName - ì½ì–´ë“¤ì¼ í™”ì¼ëª… MOBì›”ë“œë²ˆí˜¸.lod
-	// Output : int - í™”ì¼ë¡œë¶€í„° ì½ì–´ë“¤ì¸ NPC ë°ì´í„°ì˜ ê°¯ìˆ˜ë¥¼ ë°˜í™˜í•©ë‹ˆë‹¤.
+	// Purpose: NPC µ¥ÀÌÅÍ¸¦ ÀĞ¾îµé¿©¼­ MobData ¹è¿­À» »ı¼ºÇÕ´Ï´Ù.
+	// Input  : &apMobData - µ¥ÀÌÅÍ°¡ ÀúÀåµÉ ¹è¿­.
+	//			FileName - ÀĞ¾îµéÀÏ È­ÀÏ¸í MOB¿ùµå¹øÈ£.lod
+	// Output : int - È­ÀÏ·ÎºÎÅÍ ÀĞ¾îµéÀÎ NPC µ¥ÀÌÅÍÀÇ °¹¼ö¸¦ ¹İÈ¯ÇÕ´Ï´Ù.
 	//-----------------------------------------------------------------------------
-	static int LoadMobNameFromFile(CStaticArray<CMobName> &apMobData, const char* FileName);
+#if		(_MSC_VER <= 1200)
+	
+	static CMobData* getData(int idx) {
+		
+		std::map<int, CMobData*>::iterator it = _mapdata.find(idx);
+		
+		if (it != _mapdata.end())
+			return (*it).second;
+		
+		return m_dummy;
+	}
+	
+	static _map* getmapPtr() { return &_mapdata; } 
+
+	static int getsize()	{ return (int)_mapdata.size(); }
+
+	static CMobData* getDataSeq(int Idx)
+	{
+		if (Idx < 0 || Idx >= _vecdata.size())
+			return m_dummy;
+		
+		return _vecdata[Idx];
+	}
+
+#endif	// (_MSC_VER <= 1200)
+
+	static bool loadEx(const char* FileName);
+	static bool LoadZoneData(const char* ZNFileName);
+	static void SetSDNpc(); // ½Ì±Û´øÀü NPC ¼ÂÆÃ
+	static bool LoadChannelData(const char* FileName);
+
+	static int SetMobDataToNPC(CEntity* penEntity, CMobData* MD, const char* szMobName);	
 };
+
 #endif

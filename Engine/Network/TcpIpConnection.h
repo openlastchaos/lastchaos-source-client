@@ -26,9 +26,9 @@ public:
 	int m_nSecureMethod;
 	int m_nSecureNum;
 	
-	BOOL m_bConnect;//connectê°€ ë˜ì—ˆëŠ”ì§€...
+	BOOL m_bConnect;//connect°¡ µÇ¾ú´ÂÁö...
 	
-	char m_Inbuf[1024]; //íì— ë“¤ì–´ê°€ëŠ” ë²„í¼
+	char m_Inbuf[1024]; //Å¥¿¡ µé¾î°¡´Â ¹öÆÛ
 	char m_strSendingBuf[MAX_SEND_BUF_LEN+200];		
 
 public:
@@ -51,20 +51,20 @@ public:
 	BOOL FlushSendingBuffer();
 	void ResetSendingBuffer();	
 	
-	// ì•”í˜¸í™”ë¥¼ ìœ„í•œ í•¨ìˆ˜
+	// ¾ÏÈ£È­¸¦ À§ÇÑ ÇÔ¼ö
 	int ExpandData (char *des, char *src, int size);
 	int CompressData (char *des, char * src, int size);	
 	
-	//ì†Œì¼“ ì´ˆê¸°í™”
+	//¼ÒÄÏ ÃÊ±âÈ­
 	BOOL InitSocket();		
 	
-	//í•œì¤„ì”© receive í•˜ê¸°.
+	//ÇÑÁÙ¾¿ receive ÇÏ±â.
 	int PerformSocketRead(SOCKET desc, char *read_point, int space_left);
 	int ProcessInput(); 
 	
 	int ReadMessage(char *buf, int buf_len, BOOL bSecure = TRUE);
 
-	//ì—ëŸ¬ì²´í¬
+	//¿¡·¯Ã¼Å©
 	int WhatErr();
 	
 };

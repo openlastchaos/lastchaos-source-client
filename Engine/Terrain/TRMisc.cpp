@@ -8,6 +8,7 @@
 #include <Engine/Math/Matrix12.h>
 #include <Engine/Entities/ShadingInfo.h>
 #include <Engine/Entities/Entity.h>
+#include <Engine/Brushes/Brush.h>
 
 extern TerrainInfo _tiTerrainInfo;
 static CStaticStackArray<FLOAT3D>	_avxExtractedVertices;
@@ -66,25 +67,25 @@ extern void TR_ExtractVertices(CTerrainImp *ptr, CTRect rcSource,
 	}
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 //extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, const CTRect &rcExtract, 
 //																		FLOAT3D **pavRetVtx, INDEX &ctRetVertices, UWORD **puwRetInd, INDEX &ctRetIndices)
 extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, CTRect &rcExtract, 
 									 FLOAT3D **pavRetVtx, INDEX &ctRetVertices, UWORD **puwRetInd, INDEX &ctRetIndices)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 {
 	ASSERT(ptrTerrain!=NULL);
 	ASSERT(ptrTerrain->tr_ptrTerrain!=NULL);
 	ASSERT(ptrTerrain->tr_ptrTerrain->tr_puwHeightMap!=NULL);
 	
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
-	// ì›ë³¸
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+	// ¿øº»
 	//ASSERT(rcExtract.rc_slLeft>=0);
 	//ASSERT(rcExtract.rc_slTop>=0);
 	//ASSERT(rcExtract.rc_slRight<=ptrTerrain->tr_ptrTerrain->tr_pixHeightMapWidth);
 	//ASSERT(rcExtract.rc_slBottom<=ptrTerrain->tr_ptrTerrain->tr_pixHeightMapHeight);
 
-	// ìˆ˜ì •
+	// ¼öÁ¤
 	if(rcExtract.rc_slLeft < 0)	rcExtract.rc_slLeft = 0;
 	if(rcExtract.rc_slTop < 0)	rcExtract.rc_slTop = 0;
 
@@ -93,7 +94,7 @@ extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, CTRect &rcExtra
 
 	if(rcExtract.rc_slBottom >ptrTerrain->tr_ptrTerrain->tr_pixHeightMapHeight)
 		rcExtract.rc_slBottom = ptrTerrain->tr_ptrTerrain->tr_pixHeightMapHeight;	
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 	const CTerrainImp *ptr = ptrTerrain->tr_ptrTerrain;
 
 	const UWORD *puwHeightMap      = ptr->tr_puwHeightMap;
@@ -118,7 +119,7 @@ extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, CTRect &rcExtra
 
 	const INDEX ctvx  = ctvtxX * ctvtxZ;
 	const INDEX ctind = ctqdsX * ctqdsZ * 6;
-	if(ctind<=0 || ctvx<=0) {
+	if(ctind<=0 || ctvx<=0 || (ctqdsX < 0 && ctqdsZ < 0)) {
 		*pavRetVtx = NULL;
 		*puwRetInd = NULL;
 		ctRetVertices = 0;
@@ -140,8 +141,8 @@ extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, CTRect &rcExtra
 		for(INDEX iX=0;iX<ctvtxX;iX++) 
 		{
 			// Get pixel
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
-			// ì›ë³¸
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+			// ¿øº»
 			/*
 			const SLONG slX         = iX+slLeft;
 			const SLONG slZ         = iZ+slTop;
@@ -152,17 +153,17 @@ extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, CTRect &rcExtra
 			SLONG slZ         = iZ+slTop;
 			SLONG slPixel     = slX + slZ*pixHeightMapWidth;
 			SLONG slEdgePixel = ClampUp(slX, pixEdgeMapWidth-1L) + ClampUp(slZ, pixEdgeMapHeight-1L)*pixEdgeMapWidth;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 			
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 			if(slEdgePixel < 0)					slEdgePixel = 0;
 			if(slPixel < 0)						slPixel = 0;
 			if(slEdgePixel >= slEdgeMapSize)	slEdgePixel = slEdgeMapSize;
 			if(slPixel >= slHeightMapSize)		slPixel = slHeightMapSize;
-			// ì›ë³¸
+			// ¿øº»
 			//ASSERT(slEdgePixel>=0 && slEdgePixel<slEdgeMapSize);
 			//ASSERT(slPixel>=0 && slPixel<slHeightMapSize);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 			const UWORD uwHeight    = puwHeightMap[slPixel];
 			const UBYTE ubEdgeVal   = pubEdgeMap[slEdgePixel];
@@ -299,17 +300,17 @@ extern FLOAT2D TR_CalcShadingTC(const CTerrain *ptrTerrain, const FLOAT3D &vPoin
 	FLOAT fU = fX / ((FLOAT)(pixHeightMapWidth)  / pixShadowMapWidth);
 	FLOAT fV = fY / ((FLOAT)(pixHeightMapHeight) / pixShadowMapHeight);
 	
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
-	// ì›ë³¸
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+	// ¿øº»
 	//ASSERT(fU>0.0f && fU<pixShadowMapWidth);
 	//ASSERT(fV>0.0f && fV<pixShadowMapHeight);
-	// ê°•ì œë¡œ ê²½ê³„ê°’ì„ ë§žì¶¤.
+	// °­Á¦·Î °æ°è°ªÀ» ¸ÂÃã.
 	if(fU < 0.0f)					fU = 0.0f;
 	if(fV < 0.0f)					fV = 0.0f;
 
 	if(fU >= pixShadowMapWidth)	fU = pixShadowMapWidth;
 	if(fV >= pixShadowMapHeight)	fV = pixShadowMapHeight;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 	return FLOAT2D(fU,fV);
 	return FLOAT2D(0,0);
 }
@@ -512,11 +513,11 @@ extern FLOAT TR_GetHeight( CTerrainImp *ptr, FLOAT fX, FLOAT fZ )
 
 extern void TR_ExtractAttrPoligonsInRect( CTerrainImp *ptr, CTRect &rcExtract, 
 											FLOAT3D **pavRetVtx, INDEX &ctRetVertices, GFXColor **pacolRetCol,
-											UWORD **puwRetInd, INDEX &ctRetIndices, UBYTE ubAttr )
+											UWORD **puwRetInd, INDEX &ctRetIndices, UWORD ubAttr )
 {
 	ASSERT( ptr != NULL );
 
-	const UBYTE			*pubAttr = ptr->tr_pubAttributeMap;
+	const UWORD			*pubAttr = ptr->tr_pubAttributeMap;
 	const SLONG			slAttrAspect = ptr->tr_slAttributeMapSizeAspect;
 	const SLONG			slLeft = rcExtract.rc_slLeft * slAttrAspect;
 	const SLONG			slTop = rcExtract.rc_slTop * slAttrAspect;;
@@ -545,12 +546,15 @@ extern void TR_ExtractAttrPoligonsInRect( CTerrainImp *ptr, CTRect &rcExtract,
 	_auwExtractedIndices.Push( ctind );
 
 	GFXColor	attrColor;
-	switch( ubAttr )
-	{
-	case 255:
-		attrColor.Set( 0xE42DDEAA );
-		break;
-	}
+// 	switch( ubAttr )
+// 	{
+// 	case 255:
+// 		attrColor.Set( 0xE42DDEAA );
+// 		break;
+// 	}
+
+	if (ubAttr & MATT_UNWALKABLE)
+		attrColor.Set(0xE42DDEAA);
 
 	INDEX	iVertex = 0;
 	// for each vertex
@@ -656,7 +660,7 @@ extern void TR_ExtractAttrBlockPolygonsInRect( CTerrainImp *ptr, CTRect &rcExtra
 {
 	ASSERT( ptr != NULL );
 
-	const UBYTE			*pubAttr = ptr->tr_pubAttributeMap;
+	const UWORD			*pubAttr = ptr->tr_pubAttributeMap;
 
 	if( pubAttr == NULL )
 		return;
@@ -679,7 +683,9 @@ extern void TR_ExtractAttrBlockPolygonsInRect( CTerrainImp *ptr, CTRect &rcExtra
 	const INDEX			ctvtxX = slWidth + 1;
 	const INDEX			ctvtxZ = slHeight + 1;
 	const INDEX			ctvx  = ctvtxX * ctvtxZ *2;
-	const INDEX			ctind = ctqdsX * (ctqdsZ+1) * 6 * 4 * 2;
+//	const INDEX			ctind = ctqdsX * (ctqdsZ+1) *2 * 6;
+	const INDEX			ctind = ctqdsX * (ctqdsZ+1) * 6 * 4 *2;
+
 	if( ctind <= 0 || ctvx <= 0 )
 	{
 		*pavRetVtx = NULL;
@@ -732,7 +738,7 @@ extern void TR_ExtractAttrBlockPolygonsInRect( CTerrainImp *ptr, CTRect &rcExtra
 		for( INDEX iqdX = 0; iqdX < ctqdsX; iqdX++ )
 		{
 			SLONG	slX = iqdX + slLeft;
-			if( pubAttr[slX + slZ * pixAttrWidth] == 255 )
+			if (pubAttr[slX + slZ* pixAttrWidth] & MATT_UNWALKABLE)
 			{
 				//Top Edge
 				//if( pubAttr[slX + (slZ-1) * pixAttrWidth] != 255)

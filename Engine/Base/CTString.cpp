@@ -5,6 +5,7 @@
 #include <Engine/Base/Memory.h>
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Console.h>
+#include <Engine/Base/TLVar.h>
 
 
 // string statistics
@@ -111,9 +112,8 @@ char *StringDuplicate(const char *strOriginal)
 	// allocate that much memory
 	char *strCopy = StringAlloc(ctLen);
 	// copy it there
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Bug fix)(0.1)
-	if(strCopy != strOriginal) memcpy(strCopy, strOriginal, ctLen+1);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Bug fix)(0.1)
+	if(strCopy != strOriginal) memcpy(strCopy, strOriginal, ctLen);
+	strCopy[ctLen] = '\0';
 	STRING_CHECKMEMORY();
 	// result is the pointer to the copied string
 	return strCopy;
@@ -126,7 +126,7 @@ char *StringDuplicate(const UWORD *strwOriginal)
 {
 	STRING_CHECKMEMORY();
 	// get the len
-	INDEX ctLen = wcslen(strwOriginal);
+	INDEX ctLen = wcslen((const wchar_t *)strwOriginal);
 	// allocate that much memory
 	char *strCopy = StringAlloc(ctLen);
 	// copy it there
@@ -193,7 +193,7 @@ BOOL CTString::operator!=(const char *strOther) const
 }
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Fix Bug)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Fix Bug)(0.1)
 BOOL CTString::IsEqualCaseSensitive(const CTString &strOther) const
 {
 	ASSERT(IsValid() && strOther.IsValid());
@@ -214,7 +214,7 @@ ENGINE_API BOOL IsEqualCaseSensitive(const char *strThis, const CTString &strOth
 
 	return strcmp(strThis, strOther.str_String) == 0;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Fix Bug)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Fix Bug)(0.1)
 
 /*
  * String concatenation.
@@ -498,10 +498,10 @@ ULONG CTString::GetHash(void) const
 	INDEX len = strlen(str_String);
 
 	for(INDEX i=0; i<len; i++) {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.3)
-		ulKey = _rotl(ulKey,4)+toupper(str_String[i]);	//ì›ë³¸
-		//ulKey = _rotl(ulKey,4) + str_String[i];	//ëŒ€ì†Œë¬¸ì êµ¬ë¶„í•¨.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.3)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.3)
+		ulKey = _rotl(ulKey,4)+toupper(str_String[i]);	//¿øº»
+		//ulKey = _rotl(ulKey,4) + str_String[i];	//´ë¼Ò¹®ÀÚ ±¸ºĞÇÔ.
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.3)
 	}
 	return ulKey;
 }
@@ -591,6 +591,11 @@ BOOL CTString::IsValid(void) const
 }
 #endif // NDEBUG
 
+// return to empty string data
+BOOL CTString::IsEmpty(void) const
+{
+	return (str_String == NULL || str_String[0] == 0);
+}
 
 /* Load an entire text file into a string. */
 void CTString::ReadUntilEOF_t(CTStream &strmFile)  // throw char *
@@ -689,8 +694,10 @@ INDEX CTString::PrintF(const char *strFormat, ...)
 }
 
 
-static _declspec(thread) INDEX _ctBufferSize = 0;
-static _declspec(thread) char *_pchBuffer = NULL;
+//static _declspec(thread) INDEX _ctBufferSize = 0;
+//static _declspec(thread) char *_pchBuffer = NULL;
+static TLVar<INDEX> _ctBufferSize = 0;
+//static TLVar<char*> _pchBuffer = NULL;
 
 INDEX CTString::VPrintF(const char *strFormat, va_list arg)
 {
@@ -728,11 +735,11 @@ INDEX CTString::VPrintF(const char *strFormat, va_list arg)
 extern void FreeVPrintF(void)
 {
 	// if vprintf allocated some memory
-	if(_pchBuffer!=NULL) {
-		// free temp memory
-		FreeMemory(_pchBuffer);
-		_pchBuffer = NULL;
-	}
+//	if(_pchBuffer!=NULL) {
+//		// free temp memory
+//		FreeMemory(_pchBuffer);
+//		_pchBuffer = NULL;
+//	}
 }
 
 static void *psscanf = &sscanf;

@@ -142,7 +142,8 @@ PARAMCONTENT	([^\ \n\";]|(\\\ ))
 	if (strParam.FindSubstr(strParamNo)!=-1) {
 		_pShell->ErrorF("Parameter substitution recursion detected!");
 	} else {
-		for(INDEX ctFound=0;; ctFound++) {
+		INDEX ctFound;
+		for(ctFound=0;; ctFound++) {
 			if (!_strCmd.ReplaceSubstr(strParamNo, strParam)) {
 				break;
 			}

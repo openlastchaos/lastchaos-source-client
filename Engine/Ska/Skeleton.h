@@ -58,6 +58,9 @@ struct ENGINE_API SkeletonBone
 
 class ENGINE_API CSkeleton : public CSerial
 {
+#ifdef KALYDO
+  static CTString strDefaultSkeletonPath;
+#endif
 public:
   // Constructor
   CSkeleton();
@@ -75,7 +78,11 @@ public:
   void AddSkletonLod(SkeletonLOD &slod);
   // Remove skleton lod form skeleton
   void RemoveSkeletonLod(SkeletonLOD *pslodRemove);
-
+#ifdef KALYDO
+  void Load_t(const CTFileName &fnFileName);
+  void Load_Delay_t(const CTFileName &fnFileName);
+//  void Reload();
+#endif
   void Read_t( CTStream *istrFile); // throw char *
   void Write_t( CTStream *ostrFile); // throw char *
   void Clear(void);

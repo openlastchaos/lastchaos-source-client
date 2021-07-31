@@ -81,7 +81,7 @@ static void ConvARGB8( ULONG *pulSrc, void *pDst, PIX pixWidth, PIX pixHeight, S
 rowLoop:
     mov     ecx,D [pixWidth]
 pixLoop:
-    //prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov     eax,D [esi]
     or      eax,D [_ulAlphaMask]
     bswap   eax
@@ -109,7 +109,7 @@ rowLoop:
     push    ebx
     mov     ecx,D [pixWidth]
 pixLoop:
-    //prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov     eax,D [esi]
     or      eax,D [_ulAlphaMask]
     mov     ebx,eax
@@ -150,7 +150,7 @@ rowLoop:
     push    ebx
     mov     ecx,D [pixWidth]
 pixLoop:
-    //prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov     eax,D [esi]
     mov     ebx,eax
     mov     edx,eax
@@ -190,7 +190,7 @@ rowLoop:
     push    ebx
     mov     ecx,D [pixWidth]
 pixLoop:
-    //prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov     eax,D [esi]
     mov     ebx,eax
     mov     edx,eax
@@ -225,7 +225,7 @@ static void ConvAL8( ULONG *pulSrc, void *pDst, PIX pixWidth, PIX pixHeight, SLO
 rowLoop:
     mov     ecx,D [pixWidth]
 pixLoop:
-    //prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov     eax,D [esi]
     ror     eax,8
     bswap   eax
@@ -252,7 +252,7 @@ static void ConvL8( ULONG *pulSrc, void *pDst, PIX pixWidth, PIX pixHeight, SLON
 rowLoop:
     mov     ecx,D [pixWidth]
 pixLoop:
-//    prefetchnta [esi+16]
+    prefetchnta [esi+16]
     mov     eax,D [esi]
     mov     B [edi],al
     add     esi,4
@@ -328,8 +328,8 @@ clusterLoop:
     movq    mm3,Q [esi+ edi+ 0]
     movq    mm4,Q [esi+ edi+ 8]
 
-//    prefetchnta [esi+ 16]
-//    prefetchnta [esi+ edi+ 16]
+    prefetchnta [esi+ 16]
+    prefetchnta [esi+ edi+ 16]
     add     esi,16
  		mov     edi,ebx				  // eax = U
 		or      edi,ecx 				// eax = U | V
@@ -384,10 +384,10 @@ clusterLoop:
     movd    mm0,edx
   punpckldq mm4,mm0
 
-//		movntq  Q [edi+  0],mm1
-//		movntq  Q [edi+  8],mm3
-////		movntq  Q [edi+ 16],mm2
-//		movntq  Q [edi+ 24],mm4
+		movntq  Q [edi+  0],mm1
+		movntq  Q [edi+  8],mm3
+		movntq  Q [edi+ 16],mm2
+		movntq  Q [edi+ 24],mm4
     mov     edi,D [slSrcPitch]
 	
 		sub     ebx,D [slAddU]			// part 1 of adding 8 to U
@@ -429,8 +429,8 @@ clusterLoop:
     movq    mm3,Q [esi+ edi+ 0]
     movq    mm4,Q [esi+ edi+ 8]
 
-//    prefetchnta [esi+ 16]
-//    prefetchnta [esi+ edi+ 16]
+    prefetchnta [esi+ 16]
+    prefetchnta [esi+ edi+ 16]
     add     esi,16
  		mov     edi,ebx				  // eax = U
 		or      edi,ecx 				// eax = U | V
@@ -514,8 +514,8 @@ clusterLoop:
     paddw   mm1,Q [_mmSignAdd]
     paddw   mm2,Q [_mmSignAdd]
 
-//		movntq  Q [edi+ 0],mm1
-//		movntq  Q [edi+ 8],mm2
+		movntq  Q [edi+ 0],mm1
+		movntq  Q [edi+ 8],mm2
     mov     edi,D [slSrcPitch]
 	
 		sub     ebx,D [slAddU]			// part 1 of adding 8 to U
@@ -557,8 +557,8 @@ clusterLoop:
     movq    mm3,Q [esi+ edi+ 0]
     movq    mm4,Q [esi+ edi+ 8]
 
-//    prefetchnta [esi+ 16]
-//    prefetchnta [esi+ edi+ 16]
+    prefetchnta [esi+ 16]
+    prefetchnta [esi+ edi+ 16]
     add     esi,16
  		mov     edi,ebx				  // eax = U
 		or      edi,ecx 				// eax = U | V
@@ -642,8 +642,8 @@ clusterLoop:
     paddw   mm1,Q [_mmSignAdd]
     paddw   mm2,Q [_mmSignAdd]
 
-//		movntq  Q [edi+ 0],mm1
-//		movntq  Q [edi+ 8],mm2
+		movntq  Q [edi+ 0],mm1
+		movntq  Q [edi+ 8],mm2
     mov     edi,D [slSrcPitch]
 	
 		sub     ebx,D [slAddU]			// part 1 of adding 8 to U
@@ -685,8 +685,8 @@ clusterLoop:
     movq    mm3,Q [esi+ edi+ 0]
     movq    mm4,Q [esi+ edi+ 8]
 
-//    prefetchnta [esi+ 16]
-//    prefetchnta [esi+ edi+ 16]
+    prefetchnta [esi+ 16]
+    prefetchnta [esi+ edi+ 16]
     add     esi,16
  		mov     edi,ebx				  // eax = U
 		or      edi,ecx 				// eax = U | V
@@ -749,8 +749,8 @@ clusterLoop:
     paddw   mm1,mm7
     paddw   mm2,mm7
 
-//		movntq  Q [edi+ 0],mm1
-//		movntq  Q [edi+ 8],mm2
+		movntq  Q [edi+ 0],mm1
+		movntq  Q [edi+ 8],mm2
     mov     edi,D [slSrcPitch]
 	
 		sub     ebx,D [slAddU]			// part 1 of adding 8 to U
@@ -792,8 +792,8 @@ clusterLoop:
     movq    mm3,Q [esi+ edi+ 0]
     movq    mm4,Q [esi+ edi+ 8]
 
-//    prefetchnta [esi+ 16]
-//    prefetchnta [esi+ edi+ 16]
+    prefetchnta [esi+ 16]
+    prefetchnta [esi+ edi+ 16]
     add     esi,16
  		mov     edi,ebx				  // eax = U
 		or      edi,ecx 				// eax = U | V
@@ -834,8 +834,8 @@ clusterLoop:
     paddw   mm1,mm7
     paddw   mm2,mm7
 
-//		movntq  Q [edi+ 0],mm1
-//		movntq  Q [edi+ 8],mm2
+		movntq  Q [edi+ 0],mm1
+		movntq  Q [edi+ 8],mm2
     mov     edi,D [slSrcPitch]
 	
 		sub     ebx,D [slAddU]			// part 1 of adding 8 to U
@@ -877,8 +877,8 @@ clusterLoop:
     movq    mm3,Q [esi+ edi+ 0]
     movq    mm4,Q [esi+ edi+ 8]
 
-//    prefetchnta [esi+ 16]
-//    prefetchnta [esi+ edi+ 16]
+    prefetchnta [esi+ 16]
+    prefetchnta [esi+ edi+ 16]
     add     esi,16
  		mov     edi,ebx				  // eax = U
 		or      edi,ecx 				// eax = U | V
@@ -892,7 +892,7 @@ clusterLoop:
    packuswb mm2,mm4
    packuswb mm1,mm2
 
-//		movntq  Q [edi],mm1
+		movntq  Q [edi],mm1
     mov     edi,D [slSrcPitch]
 	
 		sub     ebx,D [slAddU]			// part 1 of adding 8 to U

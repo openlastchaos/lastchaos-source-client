@@ -1,5 +1,6 @@
 #include "stdh.h"
 
+#include <DbgHelp.h>
 #include <tchar.h>
 #include <Engine/Build.h>
 #include <Engine/Base/Stream.h>
@@ -9,10 +10,12 @@
 #include <Engine/Base/ErrorReporting.h>
 #include <Engine/Network/Web.h>
 #include <wininet.h>
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Contents/Login/UILoginNew.h>
 
 static LPTOP_LEVEL_EXCEPTION_FILTER _efPreviousFilter; // Previous filter
 static char _fnReportFileName[MAX_PATH] = ""; // Report file name
-static CTString strSendErrorData = "";  // ì „ì†¡í•  ì—ëŸ¬ ë°ì´í„° 
+static CTString strSendErrorData = "";  // Àü¼ÛÇÒ ¿¡·¯ µ¥ÀÌÅÍ 
 //extern ULONG _ulEngineBuildMajor;
 //extern ULONG _ulEngineBuildMinor;
 extern void FCPrintF(CTFileStream *pstrm,const char *strFormat, ...);
@@ -20,7 +23,7 @@ extern UINT g_uiEngineVersion;
 extern int g_iLocalVersion;
 extern SLONG	g_slZone;
 
-// <-- ErrorLog.txtì— ë””ìŠ¤í”Œë ˆì´ ì •ë³´ë¥¼ ê¸°ë¡í•˜ê¸° ìœ„í•œ ë¶€ë¶„
+// <-- ErrorLog.txt¿¡ µğ½ºÇÃ·¹ÀÌ Á¤º¸¸¦ ±â·ÏÇÏ±â À§ÇÑ ºÎºĞ
 extern CTString _strDisplayDriver;
 extern CTString _strDisplayDriverVersion;
 extern CTString	_strSoundDriver;
@@ -49,7 +52,7 @@ static void _tprintf(HANDLE hFile, const char *format, ...)
 	ULONG ulBytesWritten;
 	WriteFile(hFile,achBuffer,iLength, &ulBytesWritten, 0);
 
-	strSendErrorData += achBuffer;// ì›¹ ì „ì†¡ ë°ì´í„°
+	strSendErrorData += achBuffer;// À¥ Àü¼Û µ¥ÀÌÅÍ
 }
 
 static LPTSTR GetExceptionString(ULONG ulCode)
@@ -142,6 +145,26 @@ static void IntelStackWalk(HANDLE hFile, PCONTEXT pContext)
 	_tprintf(hFile, "\nmanual stack frame walk end:\r\n" );
 }
 
+static void ConvertStringToWebParameter(const char *szParam, std::string& strOutput)
+{
+	if( szParam == NULL )
+		return;
+
+	int nLength = strlen(szParam);
+	if( nLength == 0 )
+		return;
+
+	for( int i=0; i<nLength; ++i )
+	{
+		if(szParam[i] == '\n')		strOutput += "%0a";
+		else if(szParam[i] == '\r')	strOutput += "%0d";
+		else if(szParam[i] == '+')	strOutput += "%2b";
+		else if(szParam[i] == '&')	strOutput += "error_andchar";
+		else if(szParam[i] == ' ')	strOutput += "%20";
+		else strOutput += szParam[i];
+	}
+}
+
 static void SendErrorInfo( HANDLE hFile, CTString &csContents )
 {
 	HINTERNET hOpen, hConnect, hReq;
@@ -190,8 +213,8 @@ static void SendErrorInfo( HANDLE hFile, CTString &csContents )
 
 	//post header
 	const TCHAR *pszHeader = TEXT("Content-Type: application/x-www-form-urlencoded");
-	std::string csConvert( "" );
-	csConvert = ConvertStringToWebParameter( csContents.str_String );
+	std::string csConvert = "";
+	ConvertStringToWebParameter(csContents.str_String, csConvert);
 	CTString csSendData = "";
 	csSendData.PrintF( "err_version=%d&err_log=%s&err_country=%d", g_uiEngineVersion, csConvert.c_str(), g_iCountry );
 	DWORD dwSize = csSendData.Length();
@@ -226,7 +249,8 @@ static void GenerateExceptionReport(HANDLE hFile, PEXCEPTION_POINTERS pException
 	BOOL bSuccess = GetLogicalAddress(pExceptionRecord->ExceptionAddress, szFaultingModule,
 		sizeof(szFaultingModule), section, offset);
 	ASSERT(bSuccess);
-	_tprintf(hFile, "[%08X][v.%d-%d][%d]\r\n", pExceptionRecord->ExceptionAddress, g_uiEngineVersion, g_iLocalVersion, g_slZone );
+//	_tprintf(hFile, "[%08X][v.%d-%d][%d]\r\n", pExceptionRecord->ExceptionAddress, g_uiEngineVersion, g_iLocalVersion, g_slZone );
+	_tprintf(hFile, "[Ver %s]\r\n", CUIManager::getSingleton()->GetLogin()->getVersion());
 #else 
 #define GETVARNAME(x) #x
 	_tprintf(hFile, "Referent variable: %s 0x%08X\r\n",GETVARNAME(__RefFuncAtAbsAddr),&__RefFuncAtAbsAddr);
@@ -259,59 +283,13 @@ static void GenerateExceptionReport(HANDLE hFile, PEXCEPTION_POINTERS pException
 	{
 		_tprintf(hFile, "Error getting OS info: %s\r\n", GetWindowsError(GetLastError()) );
 	}
-	_tprintf(hFile, "Total Memory : %s\r\n", _strTotalMemory);			// ë¬¼ë¦¬ì  ë©”ëª¨ë¦¬ í¬ê¸°
+	_tprintf(hFile, "Total Memory : %s\r\n", _strTotalMemory);			// ¹°¸®Àû ¸Ş¸ğ¸® Å©±â
 	_tprintf(hFile, "\r\n");
 	
-	//--------------------Display Info----------------------------------
-	// NOTE : ì•„ë˜ ì½”ë“œëŠ” ë ˆì§€ìŠ¤íŠ¸ë¦¬ì—ì„œ ì •ë³´ë¥¼ ì½ì–´ì˜¤ë˜ ë¶€ë¶„ì¸ë°,
-	// NOTE : DXí•¨ìˆ˜ë¥¼ í†µí•´ì„œ ì–»ì–´ì˜¨ ë””ìŠ¤í”Œë ˆì´ ì •ë³´ë¥¼ ì‚¬ìš©í•˜ë„ë¡ ìˆ˜ì •í–ˆìŒ.
-	/*
-	HKEY hKey;
-    long lResult;
-
-	lResult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\0000",
-			0, 
-			KEY_ALL_ACCESS,
-			&hKey
-			);
-
-    if( lResult == ERROR_SUCCESS ) 
-    {
-        DWORD len = MAX_PATH;
-        BYTE buff[MAX_PATH] = {0};
-        DWORD type = 1;
-        int ecode = RegQueryValueEx(hKey, "DriverDesc", NULL, &type, buff, &len);
-        if(ERROR_SUCCESS == ecode)
-        {           
-			_tprintf(hFile, "Display : %s\r\n", buff);
-        }
-        RegCloseKey(hKey);
-    }
-
-	lResult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Service\\Class\\Display\\0000",
-			0, 
-			KEY_ALL_ACCESS,
-			&hKey
-			);
-
-	if( lResult == ERROR_SUCCESS ) 
-    {
-        DWORD len = MAX_PATH;
-        BYTE buff[MAX_PATH] = {0};
-        DWORD type = 1;
-        int ecode = RegQueryValueEx(hKey, "DriverDesc", NULL, &type, buff, &len);
-        if(ERROR_SUCCESS == ecode)
-        {           
-			_tprintf(hFile, "Display : %s\r\n", buff);
-        }
-        RegCloseKey(hKey);
-    }
-	*/	
-	
-	_tprintf(hFile, "Display : %s\r\n", _strDisplayDriver);				// ê·¸ë˜í”½ ì¹´ë“œ ì¢…ë¥˜
-	_tprintf(hFile, "Display Version : %s\r\n", _strDisplayDriverVersion);// ê·¸ë˜í”½ ë“œë¼ì´ë²„ ë²„ì ¼
-	_tprintf(hFile, "Sound : %s\r\n", _strSoundDriver);					// ì‚¬ìš´ë“œ ì¹´ë“œ ì¢…ë¥˜
-	//_tprintf(hFile, "National-Code : %d\r\n", g_iCountry);				// êµ­ê°€ ì½”ë“œ
+	_tprintf(hFile, "Display : %s\r\n", _strDisplayDriver);				// ±×·¡ÇÈ Ä«µå Á¾·ù
+	_tprintf(hFile, "Display Version : %s\r\n", _strDisplayDriverVersion);// ±×·¡ÇÈ µå¶óÀÌ¹ö ¹öÁ¯
+	_tprintf(hFile, "Sound : %s\r\n", _strSoundDriver);					// »ç¿îµå Ä«µå Á¾·ù
+	//_tprintf(hFile, "National-Code : %d\r\n", g_iCountry);				// ±¹°¡ ÄÚµå
 	_tprintf(hFile, "\r\n");
 	
 	_tprintf(hFile, "Crashed at: %s %s\r\n", strDate, strTime);
@@ -360,12 +338,84 @@ static void GenerateExceptionReport(HANDLE hFile, PEXCEPTION_POINTERS pException
 	// Done
 	_tprintf(hFile, "\r\n" );
 
-	if( YesNoMessage( "Send Error Report?" ) )
-	{	// ì›¹ìœ¼ë¡œ ì—ëŸ¬ë°ì´í„° ì „ì†¡
-		SendErrorInfo( hFile, strSendErrorData );
-		// ì „ì†¡í›„ ì´ˆê¸°í™”
-		strSendErrorData.Clear();
+	if( YesNoMessage( "Error log information saved in ErrorLog.txt" ) )
+	{	// À¥À¸·Î ¿¡·¯µ¥ÀÌÅÍ Àü¼Û
+		//SendErrorInfo( hFile, strSendErrorData );
+		// Àü¼ÛÈÄ ÃÊ±âÈ­
+		//strSendErrorData.Clear();
 	}
+}
+
+// based on dbghelp.h
+typedef BOOL (WINAPI *MINIDUMPWRITEDUMP)(HANDLE hProcess, DWORD dwPid, HANDLE hFile, MINIDUMP_TYPE DumpType,
+	CONST PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
+	CONST PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
+	CONST PMINIDUMP_CALLBACK_INFORMATION CallbackParam
+	);
+
+int WriteDump( PEXCEPTION_POINTERS pExceptionInfo )
+{
+	//¹İµå½Ã ·Îµù
+	HMODULE DllHandle = LoadLibrary(_T("DBGHELP.DLL"));
+	if (DllHandle == NULL)
+	{
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	//DBGHELP.DLL¿¡¼­ MiniDumpWriteDump¸¦ ºÒ·¯¿Í Dump¶ó°í Á¤ÀÇÇÏ¸ç ÀÌ°É·Î ´ıÇÁ ÆÄÀÏÀ» »ı¼ºÇÕ´Ï´Ù.
+	MINIDUMPWRITEDUMP Dump = (MINIDUMPWRITEDUMP)GetProcAddress(DllHandle, "MiniDumpWriteDump");
+	if (Dump == NULL)
+	{
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+
+	SYSTEMTIME SystemTime;
+	GetLocalTime(&SystemTime);	//ÇöÀç½Ã°£ È¹µæ
+
+	TCHAR DumpPath[MAX_PATH] = {0,};
+	//´ıÇÁ ÆÄÀÏ ÀÌ¸§ ¼³Á¤
+	sprintf(DumpPath, _T("%d-%d-%d %d_%d_%d.dmp"), 
+		SystemTime.wYear,
+		SystemTime.wMonth,
+		SystemTime.wDay,
+		SystemTime.wHour,
+		SystemTime.wMinute,
+		SystemTime.wSecond);
+
+	//´ıÇÁ ÆÄÀÏ »ı¼º
+	HANDLE FileHandle = CreateFile(DumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (FileHandle == INVALID_HANDLE_VALUE)
+	{
+//		printLastError();
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	//MiniDump ¿¹¿Ü Á¤º¸ ÀúÀå ±¸Á¶Ã¼
+	_MINIDUMP_EXCEPTION_INFORMATION MiniDumpExceptionInfo;
+	MiniDumpExceptionInfo.ThreadId			= GetCurrentThreadId();
+	MiniDumpExceptionInfo.ExceptionPointers	= (PEXCEPTION_POINTERS)pExceptionInfo;
+	MiniDumpExceptionInfo.ClientPointers		= NULL;
+
+	//ÇöÀç ÇÁ·Î¼¼½º¿¡ ´ëÇÑ ´ıÇÁ ±â·ÏÀ» ½ÇÇàÇÕ´Ï´Ù.
+	BOOL Success = Dump(
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		FileHandle,				//´ıÇÁ¸¦ ±â·ÏÇÒ ÆÄÀÏ ÇÚµé
+		MiniDumpNormal,
+		&MiniDumpExceptionInfo,	//MiniDump ¿¹¿Ü Á¤º¸
+		NULL,
+		NULL);
+
+	//´ıÇÁ ±â·Ï ¼³°ø½Ã ¼öÇà
+	if (Success)
+	{
+		CloseHandle(FileHandle);
+		return EXCEPTION_EXECUTE_HANDLER;
+	}
+	CloseHandle(FileHandle);
+
+	return EXCEPTION_CONTINUE_SEARCH;
 }
 
 static LONG WINAPI _UnhandledExceptionFilter(PEXCEPTION_POINTERS pExceptionInfo)
@@ -391,7 +441,9 @@ static LONG WINAPI _UnhandledExceptionFilter(PEXCEPTION_POINTERS pExceptionInfo)
 		}
 	}
 
-	// íŠ•ê²¼ì„ë•Œ ì†Œì¼“ì„ ë‹«ëŠ”ë‹¤.
+	WriteDump(pExceptionInfo);
+
+	// Æ¨°åÀ»¶§ ¼ÒÄÏÀ» ´İ´Â´Ù.
 	extern SOCKET g_hSocket;
 	if(g_hSocket != INVALID_SOCKET)
 	{
@@ -495,11 +547,13 @@ extern void DumpCurrentStack(CTFileStream *pstrm/*=NULL*/)
 	
 	ULONG aulStack[STACKTRACKDEPTH];
 	
-	ULONG ulFrame;
+	ULONG	ulFrame;
+	int		isd;
 	// Get current frame (ebp)
 	__asm mov dword ptr ulFrame, ebp;
 	// walk all frames
-	for(INDEX isd=0;isd<STACKTRACKDEPTH;isd++) {
+	for( isd = 0; isd < STACKTRACKDEPTH; isd++ ) 
+	{
 		// Get previous frame
 		ULONG ulPrevFrame = *(ULONG*)ulFrame;
 		// Get calling address
@@ -520,7 +574,7 @@ extern void DumpCurrentStack(CTFileStream *pstrm/*=NULL*/)
 		ulFrame = ulPrevFrame; // go to next frame
 	}
 	
-	for(isd=0;isd<STACKTRACKDEPTH;isd++) {
+	for( isd = 0; isd < STACKTRACKDEPTH; isd++) {
 		ULONG ulAddress = aulStack[isd];
 		// if done
 		if(ulAddress==0) {

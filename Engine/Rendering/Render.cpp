@@ -64,25 +64,25 @@ extern CStaticStackArray<GFXVertex> _avtxScene;
 
 extern void SetViewMatrix( Matrix12 &mView12);
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ê·¸ë¦¼ì ì˜µì…˜ ì‘ì—…	08.16
-// FIXME : ê·¸ë¦¼ì ë‹¨ê³„ë¥¼ ì–´ë–»ê²Œ ë‚˜ëˆŒê²ƒì¸ê°€?
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ±×¸²ÀÚ ¿É¼Ç ÀÛ¾÷	08.16
+// FIXME : ±×¸²ÀÚ ´Ü°è¸¦ ¾î¶»°Ô ³ª´­°ÍÀÎ°¡?
 enum eShadowDetail
 {
-	SHADOW_NONE			= 0,// ê·¸ë¦¼ì ì—†ìŒ.	
-	SHADOW_SIMPLE_ONLY	= 1,// í”Œë ˆì´ì–´ë§Œ ë‘¥ê·¼ ê·¸ë¦¼ì í•˜ë‚˜
-	SHADOW_PROJ_ONLY	= 2,// í”Œë ˆì´ì–´ë§Œ í’€ ê·¸ë¦¼ì í•˜ë‚˜
-	SHADOW_SIMPLE_ALL	= 3,// ëª¨ë‘ ë‘¥ê·¼ ê·¸ë¦¼ì
-	SHADOW_PROJ_ALL		= 4,// ëª¨ë‘ í’€ ê·¸ë¦¼ì
+	SHADOW_NONE			= 0,// ±×¸²ÀÚ ¾øÀ½.	
+	SHADOW_SIMPLE_ONLY	= 1,// ÇÃ·¹ÀÌ¾î¸¸ µÕ±Ù ±×¸²ÀÚ ÇÏ³ª
+	SHADOW_PROJ_ONLY	= 2,// ÇÃ·¹ÀÌ¾î¸¸ Ç® ±×¸²ÀÚ ÇÏ³ª
+	SHADOW_SIMPLE_ALL	= 3,// ¸ğµÎ µÕ±Ù ±×¸²ÀÚ
+	SHADOW_PROJ_ALL		= 4,// ¸ğµÎ Ç® ±×¸²ÀÚ
 };
 
 enum eReflectionDetail
 {
-	REFLECTION_NONE = 0,	// ë°˜ì‚¬ ì•ˆí•¨
-	REFLECTION_SKY,			// í•˜ëŠ˜ë§Œ ë°˜ì‚¬
+	REFLECTION_NONE = 0,	// ¹İ»ç ¾ÈÇÔ
+	REFLECTION_SKY,			// ÇÏ´Ã¸¸ ¹İ»ç
 	REFLECTION_OBJECT,
 	REFLECTION_ALL,
 };
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ê·¸ë¦¼ì ì˜µì…˜ ì‘ì—…		08.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ ±×¸²ÀÚ ¿É¼Ç ÀÛ¾÷		08.16
 
 extern Matrix16 _matWaterProj = {0};
 static BOOL bRenderReflection = FALSE;
@@ -90,13 +90,13 @@ extern BOOL				_bRenderProjectionShadow	= FALSE;
 //#define MAXDISTANCE		(15.0f)
 static const float _fSHDPlayerDistance = 15.0f;
 static const float _fSHDCameraDistance = 100.0f;
-// NOTE : Refractionì€ ì¶”í›„ì— ì§€ì›í•  ê²ƒì„ ê³ ë ¤í•˜ì—¬...
-extern CRenderTexture*	re_prtReflection			= NULL;		// Reflectionìœ¼ë¡œ ì‚¬ìš©í•  í…ìŠ¤ì³.
+// NOTE : RefractionÀº ÃßÈÄ¿¡ Áö¿øÇÒ °ÍÀ» °í·ÁÇÏ¿©...
+extern CRenderTexture*	re_prtReflection			= NULL;		// ReflectionÀ¸·Î »ç¿ëÇÒ ÅØ½ºÃÄ.
 extern BOOL				re_bInitReflectionTexture	= FALSE;
 
 extern BOOL				re_bRenderReflection		= TRUE;
 /*
-extern CRenderTexture*	re_prtRefraction			= NULL;		// Refractionìœ¼ë¡œ ì‚¬ìš©í•  í…ìŠ¤ì³.
+extern CRenderTexture*	re_prtRefraction			= NULL;		// RefractionÀ¸·Î »ç¿ëÇÒ ÅØ½ºÃÄ.
 extern BOOL				re_bInitRefractionTexture	= FALSE;
 extern BOOL				re_bRenderRefraction		= FALSE;
 */
@@ -117,7 +117,7 @@ extern void ReleaseReflectionTexture()
 
 extern void ReleaseRefractionTexture()
 {
-	// NOTE : Refractionì€ ì¶”í›„ì— ì§€ì›í•  ê²ƒì„ ê³ ë ¤í•˜ì—¬...
+	// NOTE : RefractionÀº ÃßÈÄ¿¡ Áö¿øÇÒ °ÍÀ» °í·ÁÇÏ¿©...
 	/*
 	if(re_prtRefraction)
 	{
@@ -128,7 +128,7 @@ extern void ReleaseRefractionTexture()
 	*/
 }
 
-static Matrix16			_matShadowProj;	// ê´‘ì›ì—ì„œ íˆ¬ì˜í•˜ëŠ” í–‰ë ¬...
+static Matrix16			_matShadowProj;	// ±¤¿ø¿¡¼­ Åõ¿µÇÏ´Â Çà·Ä...
 static Matrix12			_matWorldToLight;
 static CRenderTexture	*_prtShadow			= NULL;
 static BOOL				_bInitShadowTexture	= FALSE;	
@@ -152,15 +152,15 @@ extern void ReleaseShadowTexture()
 #endif
 
 // the renderer structures used in rendering
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add CRenderTexture class for Render to Texture)(0.1)
 #include <algorithm>
-//#define MAX_RENDERERS 2	//ì›ë³¸
+//#define MAX_RENDERERS 2	//¿øº»
 
 #define MAX_RENDERERS 3
 #define IDX_MAIN_RENDERER				0
 #define IDX_MIRROR_RENDERER				1
 #define IDX_WATER_RENDERER				2
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add CRenderTexture class for Render to Texture)(0.1)
 static CRenderer _areRenderers[MAX_RENDERERS];
 static BOOL _bMirrorDrawn = FALSE;
 
@@ -318,6 +318,7 @@ void ClearRenderer(void)
 		re.re_amiWaters.Clear();
 		re.re_avvxViewVertices.Clear();
 		re.re_aiEdgeVxMain.Clear();
+		re.re_admDelayedModels_AddWater.Clear();
 	}
 	
 	CPrintF("Renderer buffers cleared.\n");
@@ -465,13 +466,13 @@ void CRenderer::AddInitialSectors(void)
 			{
 				ReflectPositionVectorByPlane(re_prProjection->pr_plMirror, plBcgViewer.pl_PositionVector);
 			}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
 			if(re_prProjection->pr_bNiceWater)
 			{
 				extern FLOATplane3D		_plReflect;
 				ReflectPositionVectorByPlane(_plReflect, plBcgViewer.pl_PositionVector);
 			}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 			plViewer.RelativeToAbsoluteSmooth(plBcgViewer);
 			re_prBackgroundProjection->ViewerPlacementL() = plViewer;
 			re_prBackgroundProjection->ObjectPlacementL() = CPlacement3D(FLOAT3D(0,0,0), ANGLE3D(0,0,0));
@@ -613,7 +614,7 @@ void CRenderer::ScanForOtherSectors(void)
 
 BOOL CRenderer::ScanWaterEntity()
 {
-	// ê±°ìš¸ì— í•´ë‹¹í•˜ëŠ” ì—”í‹°í‹°ë¥¼ ìŠ¤ìº”í•©ë‹ˆë‹¤.
+	// °Å¿ï¿¡ ÇØ´çÇÏ´Â ¿£Æ¼Æ¼¸¦ ½ºÄµÇÕ´Ï´Ù.
 	for(INDEX iModel=0; iModel<re_admDelayedModels.Count(); ++iModel) 
 	{		
 		if(!(re_admDelayedModels[iModel].dm_ulFlags & DMF_VISIBLE))		// Visible Check
@@ -687,17 +688,17 @@ void CRenderer::RenderTerrains(void)
 	
 	// begin terrain rendering
 	TR_BeginRenderingView(*papr, re_pdpDrawPort);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.19
-	// NOTE : í´ë¦¬í•‘ì„ í•˜ê²Œ ë˜ë©´ Terrainì´ 0ì˜ ìœ„ì¹˜ë¥¼ ë²—ì–´ë‚˜ê²Œ ë ë•Œ ì•ˆë‚˜ì˜¤ê²Œ ë˜ëŠ” ë¬¸ì œê°€ ë°œìƒí•¨.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.19
+	// NOTE : Å¬¸®ÇÎÀ» ÇÏ°Ô µÇ¸é TerrainÀÌ 0ÀÇ À§Ä¡¸¦ ¹ş¾î³ª°Ô µÉ¶§ ¾È³ª¿À°Ô µÇ´Â ¹®Á¦°¡ ¹ß»ıÇÔ.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.22
 	//if(papr->ap_CurrentProjection->pr_bNiceWater)
 	//	gfxDisableClipPlane();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.22
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.19
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.19
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
 	//if(papr->ap_CurrentProjection->pr_bMirror || papr->ap_CurrentProjection->pr_bWarp)
 	//	gfxDisableClipPlane();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 	
 	// for all active terrains
 	{
@@ -758,20 +759,29 @@ void CRenderer::RenderWireFrameTerrains(void)
 	TR_EndRenderingView();
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add CRenderTexture class for Render to Texture)(0.1)
 #include <Engine/Graphics/Texture.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add CRenderTexture class for Render to Texture)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include <Engine/Effect/EffectCommon.h>
 #include <Engine/Effect/CEffectGroupManager.h>
 #include <Engine/Effect/CEffectManager.h>
 
 /* Process effect */
-void CRenderer::ProcessEffects(BOOL bBackground)
+void CRenderer::ProcessEffects(BOOL bBackground, EFF_RENDER_TYPE erType /* = ER_NORMAL */, CAnyProjection3D* ppr /* = NULL */)
 {
 	CAnyProjection3D *papr;
-	if( bBackground) papr = &re_prBackgroundProjection;
-	else papr = &re_prProjection;
+
+	if (ppr == NULL)
+	{
+		if( bBackground) papr = &re_prBackgroundProjection;
+		else papr = &re_prProjection;
+	}
+	else
+	{
+		papr = ppr;
+	}
+
 	CAnyProjection3D &prProjection = *papr;
 	papr = NULL;
 
@@ -784,6 +794,9 @@ void CRenderer::ProcessEffects(BOOL bBackground)
 	for(iter = iterBegin; iter != iterEnd; ++iter)
 	{
 		CEffectGroup *pEG = *iter;
+
+		if (pEG->GetgERType() != erType) { continue; }
+	
 		pEG->SetProjection(prProjection);
 		if(pEG->Active() && !pEG->Process(fCurrentTime))
 		{
@@ -792,10 +805,13 @@ void CRenderer::ProcessEffects(BOOL bBackground)
 	}
 	for(CEffectGroupManager::my_list::iterator it=listDelete.begin(); it!=listDelete.end(); ++it)
 	{
+		if ((*it)->GetgERType() != erType) { continue; }
 		CEffectGroupManager::Instance().Destroy(*it);
 	}
 	listDelete.clear();
 }
+
+static EFF_RENDER_TYPE g_ERType = ER_NORMAL;
 
 //class for render
 class CRenderFunc
@@ -803,19 +819,37 @@ class CRenderFunc
 public:
 	inline void operator()(CEffect *pEffect)
 	{
-		if(pEffect->Playing())
+		if(pEffect->GetERType() == g_ERType && pEffect->Playing())
 			pEffect->Render();
 	}
 };
 
 /* Render effect */
-void CRenderer::RenderEffects(BOOL bBackground)
+void CRenderer::RenderEffects(BOOL bBackground, EFF_RENDER_TYPE erType /* = ER_NORMAL */,
+							  CAnyProjection3D* ppr /* = NULL */, CDrawPort* pdp /* = NULL */)
 {
 	CAnyProjection3D *papr;
-	if( bBackground) papr = &re_prBackgroundProjection;
-	else papr = &re_prProjection;
+	
+	if (ppr == NULL)
+	{
+		if( bBackground) papr = &re_prBackgroundProjection;
+		else papr = &re_prProjection;
+	}
+	else
+	{
+		papr = ppr;
+	}
+
 	CAnyProjection3D &prProjection = *papr;
+	CDrawPort*	pdpDrawPort = re_pdpDrawPort;
+
+	if (pdp != NULL)
+	{
+		pdpDrawPort = pdp;
+	}
+
 	papr = NULL;
+	g_ERType = erType;
 	
 	CRenderFunc renderFunc;
 	for(DWORD dwEffectType=0; dwEffectType<(DWORD)ET_COUNT; ++dwEffectType)
@@ -826,7 +860,7 @@ void CRenderer::RenderEffects(BOOL bBackground)
 		if(listCreated.empty()) continue;
 		if(effectType != ET_MDL)
 		{
-			if((*listCreated.begin())->BeginRender(prProjection, re_pdpDrawPort))
+			if((*listCreated.begin())->BeginRender(prProjection, pdpDrawPort))
 			{
 				std::for_each(listCreated.begin(), listCreated.end(), renderFunc);
 				(*listCreated.begin())->EndRender(FALSE);
@@ -834,12 +868,12 @@ void CRenderer::RenderEffects(BOOL bBackground)
 		}
 		else
 		{
-			if((*listCreated.begin())->BeginRender(prProjection, re_pdpDrawPort))
+			if((*listCreated.begin())->BeginRender(prProjection, pdpDrawPort))
 			{
 				CEffectManager::my_list::const_iterator iter;
 				for(iter=listCreated.begin(); iter!=listCreated.end(); ++iter)
 				{
-					if((*iter)->Playing() && !((CMdlEffect*)(*iter))->GetOverDraw())
+					if((*iter)->GetERType() == g_ERType && (*iter)->Playing() && !((CMdlEffect*)(*iter))->GetOverDraw())
 						(*iter)->Render();
 				}
 				(*listCreated.begin())->EndRender(FALSE);
@@ -848,33 +882,33 @@ void CRenderer::RenderEffects(BOOL bBackground)
 	}
 	CEffectManager::my_list &listCreated = CEffectManager::Instance().GetCreatedList(ET_MDL);
 	if(listCreated.empty()) return;
-	if((*listCreated.begin())->BeginRender(prProjection, re_pdpDrawPort))
+	if((*listCreated.begin())->BeginRender(prProjection, pdpDrawPort))
 	{
 		CEffectManager::my_list::const_iterator iter;
 		for(iter=listCreated.begin(); iter!=listCreated.end(); ++iter)
 		{
-			if((*iter)->Playing() && ((CMdlEffect*)(*iter))->GetOverDraw())
+			if((*iter)->GetERType() == g_ERType && (*iter)->Playing() && ((CMdlEffect*)(*iter))->GetOverDraw())
 				(*iter)->Render();
 		}
 		(*listCreated.begin())->EndRender(FALSE);
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 extern INDEX g_bShowTerrain;
 extern INDEX g_bShowBSP;
 extern INDEX g_bShowModel;
 extern INDEX g_iShowReflectionMap;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Option)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Option)(0.1)
 extern INDEX g_iUseBloom;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Option)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Option)(0.1)
 
 // draw the prepared things to screen
 void CRenderer::DrawToScreen(void)
 {
 	// sehan
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Option)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Option)(0.1)
 	if( re_iIndex == IDX_MAIN_RENDERER && re_prProjection->IsPerspective())
 	{		
 		if (re_bRenderBloom && g_iUseBloom > 0) 
@@ -886,14 +920,14 @@ void CRenderer::DrawToScreen(void)
 			}
 		}
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Option)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Option)(0.1)
 	// sehan end
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
 	extern INDEX g_bShowTerrain;
 	extern INDEX g_bShowBSP;
 	extern INDEX g_bShowModel;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
 
 	extern INDEX g_iShadowDetail;
 
@@ -921,141 +955,136 @@ void CRenderer::DrawToScreen(void)
 
 	extern BOOL		_bWorldEditorApp;
 	//wooss 050822
-	//TEST UIë¥¼ ìœ„í•œ ì¶”ê°€ ì‚¬í•­  
-	if(_pUIMgr->m_testUI_MODE && !_bWorldEditorApp) {
-
-	}else 
+	
+	
+	if (re_bBackgroundEnabled) 
 	{
-		if (re_bBackgroundEnabled) 
-		{
-			// render models that were kept for delayed rendering.
-			ChangeStatsMode(CStatForm::STI_MODELSETUP);
-			RenderModels(TRUE);   // render background models
-			ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
-		}
-		
-		// if polygons should be drawn
-		if (!re_bRenderingShadows &&
-			re_bBackgroundEnabled
-			&&_wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE) 
-		{
-			// render translucent portals
-			CPerspectiveProjection3D *pprPerspective = (CPerspectiveProjection3D*)(CProjection3D*)(re_prBackgroundProjection);
-			RenderScene( re_pdpDrawPort, SortTranslucentPolygons(re_pspoFirstBackgroundTranslucent),
-				re_prBackgroundProjection, re_colSelection, TRUE);
-		}
-		
-		if( re_bBackgroundEnabled) 
-		{
-			ChangeStatsMode(CStatForm::STI_PARTICLERENDERING);
-			RenderParticles(TRUE); // render background particless
-			ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
-		}
-		
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
-		//render effect, ì¼ë‹¨ ë°±ê·¸ë¼ìš´ë“œ ì´í™íŠ¸ëŠ” ì—†ìŒ.
-		//ChangeStatsMode(CStatForm::STI_EFFECT);
-		//ProcessEffects();
-		//RenderEffects(TRUE); // render background effects
-		//ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)	
-		
-		//------------------------------------------------- second render non-background
-		// if polygons should be drawn
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
-		if( !re_bRenderingShadows
-			&& _wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE
-			&& g_bShowBSP) 
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
-		{
-			// render the spans to screen
-			re_prProjection->Prepare();
-			CPerspectiveProjection3D *pprPerspective = (CPerspectiveProjection3D*)(CProjection3D*)re_prProjection;
-			RenderScene( re_pdpDrawPort, re_pspoFirst, re_prProjection, re_colSelection, FALSE);
-		}
-		
-		// Render active terrains
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
-		//g_bShowTerrain = FALSE;			// inserted by seo 4 test.
-		if( !re_bRenderingShadows
-			&& _wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE
-			&& g_bShowTerrain) 
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
-		{
-			RenderTerrains();
-		}
-		
-	//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
-		CTerrain *ptrTerrain = NULL;
-		FORDELETELIST(CTerrain, tr_lnInActiveTerrains, re_lhActiveTerrains, ittr) 
-		{
-			ptrTerrain = ittr;
-		}
-		
-		extern CNetworkLibrary *_pNetwork;
-		
-		if(ptrTerrain)
-		{
-			extern INDEX ter_bShowCharacterShadow;		// ì¶”ê°€ë¨.	
+		// render models that were kept for delayed rendering.
+		ChangeStatsMode(CStatForm::STI_MODELSETUP);
+		RenderModels(TRUE);   // render background models
+		ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
+	}
 
-			// ìºë¦­í„° ê·¸ë¦¼ìë¥¼ ì§€í˜•ì— ê·¸ë¦½ë‹ˆë‹¤.
-			// FIXME : ì‹±ê¸€ëª¨ë“œì—ì„œëŠ” ê·¸ë¦¼ìë¥¼ ê·¸ë¦¬ì§€ ì•ŠìŒ.(ì†ë„ í–¥ìƒì„ ìœ„í•´ì„œ...)
-			if(g_iShadowDetail == SHADOW_PROJ_ALL || g_iShadowDetail == SHADOW_PROJ_ONLY)
+	// if polygons should be drawn
+	if (!re_bRenderingShadows &&
+		re_bBackgroundEnabled
+		&&_wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE) 
+	{
+		// render translucent portals
+		CPerspectiveProjection3D *pprPerspective = (CPerspectiveProjection3D*)(CProjection3D*)(re_prBackgroundProjection);
+		RenderScene( re_pdpDrawPort, SortTranslucentPolygons(re_pspoFirstBackgroundTranslucent),
+			re_prBackgroundProjection, re_colSelection, TRUE);
+	}
+
+	if( re_bBackgroundEnabled) 
+	{
+		ChangeStatsMode(CStatForm::STI_PARTICLERENDERING);
+		RenderParticles(TRUE); // render background particless
+		ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
+	}
+
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
+	//render effect, ÀÏ´Ü ¹é±×¶ó¿îµå ÀÌÆåÆ®´Â ¾øÀ½.
+	//ChangeStatsMode(CStatForm::STI_EFFECT);
+	//ProcessEffects();
+	//RenderEffects(TRUE); // render background effects
+	//ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)	
+
+	//------------------------------------------------- second render non-background
+	// if polygons should be drawn
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
+	if( !re_bRenderingShadows
+		&& _wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE
+		&& g_bShowBSP) 
+		//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
+	{
+		// render the spans to screen
+		re_prProjection->Prepare();
+		CPerspectiveProjection3D *pprPerspective = (CPerspectiveProjection3D*)(CProjection3D*)re_prProjection;
+		RenderScene( re_pdpDrawPort, re_pspoFirst, re_prProjection, re_colSelection, FALSE);
+	}
+
+	// Render active terrains
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
+	//g_bShowTerrain = FALSE;			// inserted by seo 4 test.
+	if( !re_bRenderingShadows
+		&& _wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE
+		&& g_bShowTerrain) 
+		//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
+	{
+		RenderTerrains();
+	}
+
+	//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+	CTerrain *ptrTerrain = NULL;
+	FORDELETELIST(CTerrain, tr_lnInActiveTerrains, re_lhActiveTerrains, ittr) 
+	{
+		ptrTerrain = ittr;
+	}
+
+	extern CNetworkLibrary *_pNetwork;
+
+	if(ptrTerrain)
+	{
+		extern INDEX ter_bShowCharacterShadow;		// Ãß°¡µÊ.	
+
+		// Ä³¸¯ÅÍ ±×¸²ÀÚ¸¦ ÁöÇü¿¡ ±×¸³´Ï´Ù.
+		// FIXME : ½Ì±Û¸ğµå¿¡¼­´Â ±×¸²ÀÚ¸¦ ±×¸®Áö ¾ÊÀ½.(¼Óµµ Çâ»óÀ» À§ÇØ¼­...)
+		if(g_iShadowDetail == SHADOW_PROJ_ALL || g_iShadowDetail == SHADOW_PROJ_ONLY)
+		{
+			if(ter_bShowCharacterShadow && !_pNetwork->m_bSingleMode)
 			{
-				if(ter_bShowCharacterShadow && !_pNetwork->m_bSingleMode)
-				{
-					if( re_iIndex == IDX_MAIN_RENDERER)
-						RenderSkaModelShadowToTerrain(ptrTerrain, re_prProjection.ap_CurrentProjection->pr_ViewerPlacement);
-				}
+				if( re_iIndex == IDX_MAIN_RENDERER)
+					RenderSkaModelShadowToTerrain(ptrTerrain, re_prProjection.ap_CurrentProjection->pr_ViewerPlacement);
 			}
 		}
-		
-		// if wireframe should be drawn
-		if( !re_bRenderingShadows &&
-			( _wrpWorldRenderPrefs.wrp_ftEdges     != CWorldRenderPrefs::FT_NONE
-			|| _wrpWorldRenderPrefs.wrp_ftVertices  != CWorldRenderPrefs::FT_NONE
-			|| _wrpWorldRenderPrefs.wrp_stSelection == CWorldRenderPrefs::ST_VERTICES
-			|| _wrpWorldRenderPrefs.IsFieldBrushesOn())) 
-		{
-			// render in wireframe all brushes that were added (in orthographic projection!)
-			re_pdpDrawPort->SetOrtho();
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
-			if(g_bShowBSP) RenderWireFrameBrushes();
-			if(g_bShowTerrain) RenderWireFrameTerrains();
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
-		}
-		
-		// render models that were kept for delayed rendering
-		ChangeStatsMode(CStatForm::STI_MODELSETUP);
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
-		if(g_bShowModel) 
-		{
-			RenderModels(FALSE); // render non-background models
+	}
 
-			//_pGfx->gl_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-		}
+	// if wireframe should be drawn
+	if( !re_bRenderingShadows &&
+		( _wrpWorldRenderPrefs.wrp_ftEdges     != CWorldRenderPrefs::FT_NONE
+		|| _wrpWorldRenderPrefs.wrp_ftVertices  != CWorldRenderPrefs::FT_NONE
+		|| _wrpWorldRenderPrefs.wrp_stSelection == CWorldRenderPrefs::ST_VERTICES
+		|| _wrpWorldRenderPrefs.IsFieldBrushesOn())) 
+	{
+		// render in wireframe all brushes that were added (in orthographic projection!)
+		re_pdpDrawPort->SetOrtho();
+		//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
+		if(g_bShowBSP) RenderWireFrameBrushes();
+		if(g_bShowTerrain) RenderWireFrameTerrains();
+		//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
+	}
 
+	// render models that were kept for delayed rendering
+	ChangeStatsMode(CStatForm::STI_MODELSETUP);
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
+	if(g_bShowModel) 
+	{
+		RenderModels(FALSE); // render non-background models
 
+		//_pGfx->gl_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+	}
 
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
 		ChangeStatsMode(CStatForm::STI_PARTICLERENDERING);
 		RenderParticles(FALSE); // render non-background particles
 		ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
 
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
-	//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¬¼ í¼í¬ë¨¼ìŠ¤ ì‘ì—…
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
+	//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
 		extern INDEX g_iReflectionDetail;
 		if(!re_prProjection->pr_bNiceWater && g_bShowModel && g_iReflectionDetail != REFLECTION_NONE)
-	//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¬¼ í¼í¬ë¨¼ìŠ¤ ì‘ì—…
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
+	//°­µ¿¹Î ¼öÁ¤ ³¡ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
 			RenderNiceWaterModels();
 		
 		// if polygons should be drawn
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
 		if (!re_bRenderingShadows
 			&&_wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE
 			&& g_bShowBSP) 
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
 		{
 			// render translucent portals
 			CPerspectiveProjection3D *pprPerspective = (CPerspectiveProjection3D*)(CProjection3D*)re_prProjection;
@@ -1064,30 +1093,30 @@ void CRenderer::DrawToScreen(void)
 				re_prProjection, re_colSelection, TRUE);
 		}
 
-	//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.07
-		// NOTE : ì•„ë˜ ë£¨í‹´ì„ Terrainì— ê·¸ë¦¼ìë¥¼ ê·¸ë¦¬ëŠ” ë£¨í‹´ê³¼ ë¶„ë¦¬í•´ì„œ ìƒê°í• ê²ƒì¸ê°€?
-		// NOTE : í•©ì³ì ¸ë„ ë¬´ê´€í• ê±° ê°™ìŒ.
-		// NOTE : ì†ë„ê°€ ëŠë ¤ì§ˆ ìˆ˜ ìˆëŠ” ë¶€ë¶„ì„.
-		// NOTE : ì™œëƒí•˜ë©´, ì‰ë„ìš° ë§µì„ 2ë²ˆ ìƒì„±í•˜ê²Œ ë˜ê¸°ë•Œë¬¸(SKAë¥¼ ì´ 3ë²ˆ ë Œë”ë§í•œë‹¤êµ¬ ìƒê°í•´ë³´ì.)
-	//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.16
+	//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.07
+		// NOTE : ¾Æ·¡ ·çÆ¾À» Terrain¿¡ ±×¸²ÀÚ¸¦ ±×¸®´Â ·çÆ¾°ú ºĞ¸®ÇØ¼­ »ı°¢ÇÒ°ÍÀÎ°¡?
+		// NOTE : ÇÕÃÄÁ®µµ ¹«°üÇÒ°Å °°À½.
+		// NOTE : ¼Óµµ°¡ ´À·ÁÁú ¼ö ÀÖ´Â ºÎºĞÀÓ.
+		// NOTE : ¿Ö³ÄÇÏ¸é, ½¦µµ¿ì ¸ÊÀ» 2¹ø »ı¼ºÇÏ°Ô µÇ±â¶§¹®(SKA¸¦ ÃÑ 3¹ø ·»´õ¸µÇÑ´Ù±¸ »ı°¢ÇØº¸ÀÚ.)
+	//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.16
 		const BOOL bRenderShadowToBrush = TRUE;	
-	//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.16
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
+	//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.16
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
 		if(bRenderShadowToBrush && g_bShowBSP && !_pNetwork->m_bSingleMode)
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
 		{
 			if(g_iShadowDetail == SHADOW_PROJ_ALL || g_iShadowDetail == SHADOW_PROJ_ONLY)
 			{
 				if(re_iIndex == IDX_MAIN_RENDERER)
 				{
-					// Brush Polygonì— ìºë¦­í„° ì‰ë„ìš°ë¥¼ ê·¸ë¦½ë‹ˆë‹¤.
+					// Brush Polygon¿¡ Ä³¸¯ÅÍ ½¦µµ¿ì¸¦ ±×¸³´Ï´Ù.
 					RenderShadowToBrushPolygon(re_prProjection->pr_ViewerPlacement);
 				}
 			}
 		}
-	//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.07
+	//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.07
 		
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 		if(re_pdpDrawPort)
 		{
 			//render effect
@@ -1097,7 +1126,7 @@ void CRenderer::DrawToScreen(void)
 			RenderEffects(FALSE); // render non-background effects
 			ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
 		}
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 		
 		// render lens flares
 		if( !re_bRenderingShadows) 
@@ -1108,7 +1137,7 @@ void CRenderer::DrawToScreen(void)
 		}
 
 		// sehan
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Option)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Option)(0.1)
 		extern BOOL _bUseBloomInWorldEditor;
 		if(re_iIndex == IDX_MAIN_RENDERER && re_prProjection->IsPerspective())
 		{		
@@ -1118,12 +1147,12 @@ void CRenderer::DrawToScreen(void)
 				RenderBloom();
 			}
 		}
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Option)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Option)(0.1)
 		// sehan end
-	} // TEST_UI_TYPE wooss 050822
+	
 	
 	//full screen effect render.
-	//ì¼ë‹¨ì€ blind effect ì²˜ë¦¬ë§Œ hardcodingí•¨.
+	//ÀÏ´ÜÀº blind effect Ã³¸®¸¸ hardcodingÇÔ.
 	extern INDEX g_iShowName;
 	INDEX iShowNameOld = g_iShowName;
 	extern INDEX g_iShowNameItem;
@@ -1184,13 +1213,13 @@ void CRenderer::DrawToScreen(void)
 	// User interface
 	if( re_iIndex == IDX_MAIN_RENDERER && re_pdpDrawPort )
 	{
-		_pUIMgr->Render( re_pdpDrawPort, re_prProjection );
+		CUIManager::getSingleton()->Render( re_pdpDrawPort, re_prProjection );
 		g_iShowName = iShowNameOld;
 		g_iShowNameItem = iShowNameItemOld;
 	}
 
 	extern BOOL		_bWorldEditorApp;
-	// ì›”ë“œì—ë””í„° ìƒì—ì„œ íƒ€ê²Ÿê³¼ì˜ ê´€ê³„ë¥¼ ë³´ì—¬ì£¼ëŠ” ë¶€ë¶„ì„.
+	// ¿ùµå¿¡µğÅÍ »ó¿¡¼­ Å¸°Ù°úÀÇ °ü°è¸¦ º¸¿©ÁÖ´Â ºÎºĞÀÓ.
 	// if entity targets should be drawn
 	if( _bWorldEditorApp )
 	{
@@ -1207,8 +1236,8 @@ void CRenderer::DrawToScreen(void)
 		}
 	}
 	
-	// NOTE : ë””ë²„ê¹…ìš©.
-	// NOTE : ë°˜ì‚¬ë§µì„ ë³´ì—¬ì¤ë‹ˆë‹¤.
+	// NOTE : µğ¹ö±ë¿ë.
+	// NOTE : ¹İ»ç¸ÊÀ» º¸¿©Áİ´Ï´Ù.
 	extern INDEX g_iShowReflectionMap;
 	if(!re_prProjection->pr_bNiceWater && g_iShowReflectionMap && re_prtReflection)
 	{
@@ -1256,7 +1285,7 @@ void CRenderer::FillMirrorDepth(CMirror &mi)
 	RenderSceneZOnly( re_pdpDrawPort, pspoFirst, re_prProjection);
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 {
 	if(re_avvxViewVertices.Count() <= 0)		return;
@@ -1267,7 +1296,7 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 	//gfxPolygonMode(GFX_FILL);
 	gfxEnableBlend();	
 
-	// ì‚¬ìš©í•  ê·¸ë¦¼ì í…ìŠ¤ì³ ìƒì„±.
+	// »ç¿ëÇÒ ±×¸²ÀÚ ÅØ½ºÃÄ »ı¼º.
 	if(_bInitShadowTexture == FALSE)
 	{
 		if(_prtShadow)
@@ -1280,7 +1309,7 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 		_bInitShadowTexture = TRUE;
 	}
 	
-	// ì´ì „ì˜ ìƒíƒœ ì €ì¥.
+	// ÀÌÀüÀÇ »óÅÂ ÀúÀå.
 	INDEX iOldFilter, iOldAnisotropy;
 	gfxGetTextureFiltering( iOldFilter, iOldAnisotropy);
 	
@@ -1290,13 +1319,13 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 	gfxEnableDepthBias();
 	
 	gfxBlendFunc(
-		GFX_SRC_ALPHA,				// ì…í˜€ì§ˆ...
-		GFX_INV_SRC_ALPHA);			// ë°”ë‹¥
+		GFX_SRC_ALPHA,				// ÀÔÇôÁú...
+		GFX_INV_SRC_ALPHA);			// ¹Ù´Ú
 
 	CPlacement3D plLight;
 	HRESULT hr;
 	//-------------------------------------------------------------------------------
-	// ëª¨ë¸ë“¤ì— ëŒ€í•´ì„œ ì²˜ë¦¬í•¨.
+	// ¸ğµ¨µé¿¡ ´ëÇØ¼­ Ã³¸®ÇÔ.
 	for( INDEX iModel=0; iModel<CRenderer::re_admDelayedModels.Count(); iModel++) 
 	{
 		CDelayedModel &dm	= CRenderer::re_admDelayedModels[iModel];
@@ -1313,7 +1342,7 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 			if(en.GetFlags() & ENF_ITEM)
 				continue;
 			
-			// NOTE : í”Œë ˆì´ì–´ì˜ ê·¸ë¦¼ìë§Œ ë³´ì´ë„ë¡ í•¨.
+			// NOTE : ÇÃ·¹ÀÌ¾îÀÇ ±×¸²ÀÚ¸¸ º¸ÀÌµµ·Ï ÇÔ.
 			if(g_iShadowDetail == SHADOW_PROJ_ONLY)
 			{
 				if(!en.IsPlayer())				continue;
@@ -1352,8 +1381,8 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 			FLOAT3D vTotalLightDirection( 1.0f, -1.0f, 1.0f);
 			FLOATplane3D plFloorPlane(FLOAT3D( 0.0f, 1.0f, 0.0f), 0.0f);	
 			
-			FLOAT fTotalShadowIntensity = 0.0f;		// ì›ë³¸
-			BOOL bRenderModelShadow = FALSE;		// ì›ë³¸
+			FLOAT fTotalShadowIntensity = 0.0f;		// ¿øº»
+			BOOL bRenderModelShadow = FALSE;		// ¿øº»
 			
 			if( !re_bRenderingShadows)
 			{
@@ -1368,8 +1397,8 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 			}
 			
 			//////////////////////////////////////////////////////////////////////////
-			// 02.20. ê¸ˆ.
-			// NOTE : ê°ë„ë¥¼ ì œí•œí•©ë‹ˆë‹¤(240ë„ì—ì„œ 300ë„ë¡œ ì œí•œí–ˆìŒ.)
+			// 02.20. ±İ.
+			// NOTE : °¢µµ¸¦ Á¦ÇÑÇÕ´Ï´Ù(240µµ¿¡¼­ 300µµ·Î Á¦ÇÑÇßÀ½.)
 			ANGLE3D vAngleLightTemp;
 			DirectionVectorToAngles(vTotalLightDirection, vAngleLightTemp);
 			if(vAngleLightTemp(2) < 0)
@@ -1383,7 +1412,7 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 			if(_amlLights.Count() <= 0) continue;
 			
 			//////////////////////////////////////////////////////////////////////////
-			// ì¶”ì¶œí•  ë©´ì˜ ë©´ì  êµ¬í•˜ê¸°.
+			// ÃßÃâÇÒ ¸éÀÇ ¸éÀû ±¸ÇÏ±â.
 			FLOATaabbox3D FrameBBox;
 			mi.GetAllFramesBBox(FrameBBox);
 			FrameBBox.StretchByVector(mi.mi_vStretch);
@@ -1391,16 +1420,16 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 			FLOAT3D vMax = FrameBBox.maxvect;
 			FLOAT3D vLength = vMin - vMax;
 			
-			// NOTE : ëª¨ë¸ì˜ ë¹„ìœ¨ì„ ê°ì•ˆí•˜ì—¬ ì´ë™ì‹œì¼œì•¼í•©ë‹ˆë‹¤.
+			// NOTE : ¸ğµ¨ÀÇ ºñÀ²À» °¨¾ÈÇÏ¿© ÀÌµ¿½ÃÄÑ¾ßÇÕ´Ï´Ù.
 			plLight.pl_PositionVector = -vTotalLightDirection * (vLength.Length() * 1.2f);
 			plLight.pl_OrientationAngle = vAngleLightTemp;
 			
 			//////////////////////////////////////////////////////////////////////////
-			// Shadow Map ìƒì„±.
+			// Shadow Map »ı¼º.
 			D3DXMATRIX matProjOld;
 			hr = _pGfx->gl_pd3dDevice->GetTransform(D3DTS_PROJECTION, &matProjOld);
 			
-			// 02.23 ìˆ˜ì •.
+			// 02.23 ¼öÁ¤.
 			D3DVIEWPORT8 vpOld;
 			D3DVIEWPORT8 vpNew;
 			_pGfx->gl_pd3dDevice->GetViewport(&vpOld);
@@ -1419,11 +1448,11 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0);				D3D_CHECKERROR(hr);
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);	D3D_CHECKERROR(hr);
 			
-			// Shadow Mapì„ ìƒì„±í•˜ê¸° ìœ„í•´ì„œ ì§€ì •í•œ ìƒ‰ìœ¼ë¡œ ì¹ í•´ì§„ ëª¨ë¸ì„ ë Œë”ë§í•©ë‹ˆë‹¤.
+			// Shadow MapÀ» »ı¼ºÇÏ±â À§ÇØ¼­ ÁöÁ¤ÇÑ »öÀ¸·Î Ä¥ÇØÁø ¸ğµ¨À» ·»´õ¸µÇÕ´Ï´Ù.
 			RM_AddFlag(RMF_SHOWSHADOW);
 			_bRenderProjectionShadow = TRUE;
 			
-			// SKA ëª¨ë¸ ë Œë”ë§.
+			// SKA ¸ğµ¨ ·»´õ¸µ.
 			RenderOneSkaModelToTexture(en, plModel, plLight, FALSE, dm.dm_fMipFactor, dm.dm_ulFlags);
 			_bRenderProjectionShadow = FALSE;
 			RM_RemoveFlag(RMF_SHOWSHADOW);
@@ -1431,7 +1460,7 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 			_pGfx->gl_pd3dDevice->SetViewport(&vpOld);
 			RM_SetRenderingType(0);
 			
-			// ì´ì „ì˜ íˆ¬ì˜í–‰ë ¬ë¡œ ë³µêµ¬ì‹œí‚µë‹ˆë‹¤.(ì´ ì½”ë“œê°€ ì—†ìœ¼ë©´ í™”ë©´ì´ ì œëŒ€ë¡œ Clearë˜ì§€ ì•ŠìŒ)
+			// ÀÌÀüÀÇ Åõ¿µÇà·Ä·Î º¹±¸½ÃÅµ´Ï´Ù.(ÀÌ ÄÚµå°¡ ¾øÀ¸¸é È­¸éÀÌ Á¦´ë·Î ClearµÇÁö ¾ÊÀ½)
 			hr = _pGfx->gl_pd3dDevice->SetTransform(D3DTS_PROJECTION, &matProjOld);
 			//////////////////////////////////////////////////////////////////////////
 			gfxEnableBlend();			
@@ -1440,28 +1469,28 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 			Matrix16 matShadowUV;
 			CreateShadowMatrix(
 				&mi,
-				en.GetLerpedPlacement(),							// SKA ëª¨ë¸ì˜ ìœ„ì¹˜.
-				matShadowUV,										// ì–»ì€ í…ìŠ¤ì³ íˆ¬ì˜ í–‰ë ¬
+				en.GetLerpedPlacement(),							// SKA ¸ğµ¨ÀÇ À§Ä¡.
+				matShadowUV,										// ¾òÀº ÅØ½ºÃÄ Åõ¿µ Çà·Ä
 				_matWorldToLight,
 				_matShadowProj,
-				SHADOWTEXTURESIZE,									// í…ìŠ¤ì³ í¬ê¸°
-				plEye);												// ì¹´ë©”ë¼ ìœ„ì¹˜
+				SHADOWTEXTURESIZE,									// ÅØ½ºÃÄ Å©±â
+				plEye);												// Ä«¸Ş¶ó À§Ä¡
 			
 			//////////////////////////////////////////////////////////////////////////
-			// í…ìŠ¤ì³ ì„¤ì • ë° í…ìŠ¤ì³ í–‰ë ¬ ì„¤ì •.
+			// ÅØ½ºÃÄ ¼³Á¤ ¹× ÅØ½ºÃÄ Çà·Ä ¼³Á¤.
 			gfxSetTextureUnit(0);
 			_prtShadow->rt_tdTexture.SetAsCurrent();
 			//gfxDisableTexture();
 			
 			gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
 			
-			// NOTE : ì—”ì§„ì—ì„œ ì„¤ì •í•˜ëŠ” ë¶€ë¶„ì´ ì—†ìœ¼ë¯€ë¡œ, ì§ì ‘ ì„¤ì •í–ˆìŒ.
-			// ì¹´ë©”ë¼ ì¢Œí‘œê³„ì˜ ë²„í…ìŠ¤ì¢Œí‘œë¥¼ í…ìŠ¤ì³ í–‰ë ¬ì˜ ì…ë ¥ìœ¼ë¡œ ì‚¬ìš©í•¨.
+			// NOTE : ¿£Áø¿¡¼­ ¼³Á¤ÇÏ´Â ºÎºĞÀÌ ¾øÀ¸¹Ç·Î, Á÷Á¢ ¼³Á¤ÇßÀ½.
+			// Ä«¸Ş¶ó ÁÂÇ¥°èÀÇ ¹öÅØ½ºÁÂÇ¥¸¦ ÅØ½ºÃÄ Çà·ÄÀÇ ÀÔ·ÂÀ¸·Î »ç¿ëÇÔ.
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_CAMERASPACEPOSITION);	D3D_CHECKERROR(hr);
 			hr = _pGfx->gl_pd3dDevice->SetTransform( D3DTS_TEXTURE0, (_D3DMATRIX*)&matShadowUV);						D3D_CHECKERROR(hr);
 			
-			// ë™ì°¨ì¢Œí‘œê³„ í…ìŠ¤ì³ ë³€í™˜ í–‰ë ¬ì„ ì‚¬ìš©í•˜ë„ë¡ ì„¤ì •í•´ì¤€ë‹¤. 
-			// ì´ë ‡ê²Œ í•´ì•¼ D3Dê°€ íˆ¬ì˜ ë‚˜ëˆ—ì…ˆ(projection divide)ì—°ì‚°ì„ í•œë‹¤.
+			// µ¿Â÷ÁÂÇ¥°è ÅØ½ºÃÄ º¯È¯ Çà·ÄÀ» »ç¿ëÇÏµµ·Ï ¼³Á¤ÇØÁØ´Ù. 
+			// ÀÌ·¸°Ô ÇØ¾ß D3D°¡ Åõ¿µ ³ª´°¼À(projection divide)¿¬»êÀ» ÇÑ´Ù.
 			hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT4|D3DTTFF_PROJECTED );	D3D_CHECKERROR(hr);
 
 		int iCount = _avtxScene.Count();
@@ -1470,13 +1499,13 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 		FLOAT3D			vPoint;
 		FLOATplane3D	plPlane;
 		
-		// NOTE : ì•„ë˜ ì»¨í…Œì´ë„ˆë¥¼ ë£¨í”„ ë°”ê¹¥ìœ¼ë¡œ ë¹¼ê³ ì„œ, ë¸ŒëŸ¬ì‹œ í´ë¦¬ê³¤ì„ í•œêº¼ë²ˆì— ì²˜ë¦¬í•˜ë„ë¡ í•˜ì.
+		// NOTE : ¾Æ·¡ ÄÁÅ×ÀÌ³Ê¸¦ ·çÇÁ ¹Ù±ùÀ¸·Î »©°í¼­, ºê·¯½Ã Æú¸®°ïÀ» ÇÑ²¨¹ø¿¡ Ã³¸®ÇÏµµ·Ï ÇÏÀÚ.
 		CDynamicContainer<CBrushPolygon> dcPolygons;
 		//en.GetNearPolygonsInSphere(35.0f, dcPolygons);
 		
-		// ëª¨ë¸ì˜ ìœ„ì¹˜ì—ì„œ í•´ë‹¹ êµ¬ì˜ ë²”ìœ„ë‚´ì˜ í´ë¦¬ê³¤ë“¤ì„ ì¶”ì¶œí•´ëƒ…ë‹ˆë‹¤.
-		// NOTE : ì´ì™€ ê°™ì€ ë°©ì‹ì™¸ì— ë‹¤ë¥¸ ë°©ì‹ì€ ì—†ì„ê¹Œ???
-		// NOTE : ëª¨ë¸ì˜ ë°”ìš´ë”© êµ¬ì˜ ë²”ìœ„ë‚´ì— ìˆëŠ” ëª¨ë“  í´ë¦¬ê³¤ë“¤ì„ ì¶”ì¶œí•´ëƒ„...
+		// ¸ğµ¨ÀÇ À§Ä¡¿¡¼­ ÇØ´ç ±¸ÀÇ ¹üÀ§³»ÀÇ Æú¸®°ïµéÀ» ÃßÃâÇØ³À´Ï´Ù.
+		// NOTE : ÀÌ¿Í °°Àº ¹æ½Ä¿Ü¿¡ ´Ù¸¥ ¹æ½ÄÀº ¾øÀ»±î???
+		// NOTE : ¸ğµ¨ÀÇ ¹Ù¿îµù ±¸ÀÇ ¹üÀ§³»¿¡ ÀÖ´Â ¸ğµç Æú¸®°ïµéÀ» ÃßÃâÇØ³¿...
 		en.GetNearPolygonsInSphere(1.0f, dcPolygons);
 
 		if(dcPolygons.Count() > 0)
@@ -1491,19 +1520,19 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 				if(&bsc == NULL)					continue;
 				if(bsc.bsc_ivvx0 < 0)				continue;
 				
-				// í™”ë©´ì— ë³´ì´ëŠ” í´ë¦¬ê³¤ì„ ì–»ê³ ,
-				// (ë·° ê³µê°„ìœ¼ë¡œ ë³€í™˜ëœ ì •ì .)
+				// È­¸é¿¡ º¸ÀÌ´Â Æú¸®°ïÀ» ¾ò°í,
+				// (ºä °ø°£À¸·Î º¯È¯µÈ Á¤Á¡.)
 				if(bsc.bsc_ivvx0 >= re_avvxViewVertices.Count()) continue;
 				const CViewVertex *pvvx0		= &re_avvxViewVertices[bsc.bsc_ivvx0];
 				ASSERT(pvvx0 != NULL && "Invalid View Vertex");
 				const INDEX ctVtx				= bpo.bpo_apbvxTriangleVertices.Count();
 				const INDEX ctIdx				= bpo.bpo_aiTriangleElements.Count();
 				
-				// ë³´ì´ëŠ” í´ë¦¬ê³¤ì˜ Primitiveë¥¼ ë Œë”ë§í•©ë‹ˆë‹¤.
-				// NOTE : ì•„ë˜ì™€ ê°™ì€ ë°©ì‹ìœ¼ë¡œ ë Œë”ë§í•˜ë©´ ì†ë„ê°€ ëŠë¦´ë“¯...
-				// NOTE : AddPolygonToSceneë¥¼ ì‚¬ìš©í•´ì„œ í•œêº¼ë²ˆì— ë Œë”ë§í•´ë„ ë ê²ƒ ê°™ê¸°ë„ í•¨.
+				// º¸ÀÌ´Â Æú¸®°ïÀÇ Primitive¸¦ ·»´õ¸µÇÕ´Ï´Ù.
+				// NOTE : ¾Æ·¡¿Í °°Àº ¹æ½ÄÀ¸·Î ·»´õ¸µÇÏ¸é ¼Óµµ°¡ ´À¸±µí...
+				// NOTE : AddPolygonToScene¸¦ »ç¿ëÇØ¼­ ÇÑ²¨¹ø¿¡ ·»´õ¸µÇØµµ µÉ°Í °°±âµµ ÇÔ.
 				{
-					// ì•„ë«ì—ì„œ ì¸ë±ìŠ¤ ì–»ê³ , ì •ì  ì–»ê³  í•˜ëŠ” ë¶€ë¶„ì€ í•œë²ˆì— ì²˜ë¦¬ ê°€ëŠ¥í• ë“¯...
+					// ¾Æ·§¿¡¼­ ÀÎµ¦½º ¾ò°í, Á¤Á¡ ¾ò°í ÇÏ´Â ºÎºĞÀº ÇÑ¹ø¿¡ Ã³¸® °¡´ÉÇÒµí...
 					for( INDEX iTri=0;iTri<ctIdx;iTri+=3)
 					{
 						const INDEX iind1		= bpo.bpo_aiTriangleElements[iTri+0];
@@ -1535,7 +1564,7 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 						const UWORD auwIndices[3] = {0, 1, 2};
 						
 						gfxSetVertexArray( (GFXVertex*)&vTriangleVtxs[0], 3);
-						//gfxSetTexCoordArray( tcTriangleTex);
+						//gfxSetTexCoordArray( tcTriangleTex, FALSE);
 						gfxSetColorArray(&colArray[0]);
 						gfxDrawElements( 3, auwIndices);
 					}
@@ -1553,7 +1582,7 @@ void CRenderer::RenderShadowToBrushPolygon(const CPlacement3D &plEye)
 	shaClearTextureMatrix();
 		
 	gfxDisableDepthBias();
-	// ì´ì „ì˜ í•„í„°ë§ ëª¨ë“œë¡œ ë³µêµ¬.
+	// ÀÌÀüÀÇ ÇÊÅÍ¸µ ¸ğµå·Î º¹±¸.
 	gfxSetTextureFiltering( iOldFilter, iOldAnisotropy);
 	
 	gfxDisableBlend();
@@ -1574,17 +1603,17 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 	if( bModelSetupTimer) _sfStats.StopTimer(CStatForm::STI_MODELSETUP);
 	_sfStats.StartTimer(CStatForm::STI_SHADOWRENDERING);
 	
-	// NOTE : ê·¸ë¦¼ìë¥¼ ê·¸ë¦´ì§€ ì•ˆ ê·¸ë¦´ì§€ í”Œë˜ê·¸ í•„ìš”(ì „ì²´ì ìœ¼ë¡œ ì ìš©í•  ë¶€ë¶„...)
+	// NOTE : ±×¸²ÀÚ¸¦ ±×¸±Áö ¾È ±×¸±Áö ÇÃ·¡±× ÇÊ¿ä(ÀüÃ¼ÀûÀ¸·Î Àû¿ëÇÒ ºÎºĞ...)
 	BOOL bRenderShadow = TRUE;
 	if(bRenderShadow)
 	{
-		// NOTE : ì´ì „ ìƒíƒœê°€ Blend ë˜ëŠ” ìƒíƒœì´ë¯€ë¡œ êº¼ì¤˜ì•¼ í•¨.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.22
+		// NOTE : ÀÌÀü »óÅÂ°¡ Blend µÇ´Â »óÅÂÀÌ¹Ç·Î ²¨Áà¾ß ÇÔ.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.22
 		//gfxDisableBlend();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.22
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.22
 		
 		//////////////////////////////////////////////////////////////////////////
-		// ì‚¬ìš©í•  ê·¸ë¦¼ì í…ìŠ¤ì³ ìƒì„±.
+		// »ç¿ëÇÒ ±×¸²ÀÚ ÅØ½ºÃÄ »ı¼º.
 		if(_bInitShadowTexture == FALSE)
 		{
 			if(_prtShadow)
@@ -1597,27 +1626,27 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 			_bInitShadowTexture = TRUE;
 		}
 		
-		// ì´ì „ì˜ ìƒíƒœ ì €ì¥.
+		// ÀÌÀüÀÇ »óÅÂ ÀúÀå.
 		INDEX iOldFilter, iOldAnisotropy;
 		gfxGetTextureFiltering( iOldFilter, iOldAnisotropy);
 		
-		// ì™¸ê³½ì„ ì„ í•´ê²°í•˜ê¸° ìœ„í•´ì„œ í•„í„°ë§ ì ìš©
-		// í•„í„°ë§ off
-		// í™•ëŒ€ ë ê²½ìš°ì—” ì•„ë¬´ë˜ë„ í•„í„°ë§ì„ ì¼œëŠ”ê²ƒì´ ë³´ê¸° ì¢‹ë‹¤.
-		// ê·¸ëŸ¬ë‚˜ ìŠ¤í”„ë¼ì´íŠ¸ëŠ” íˆ¬ëª…ìƒ‰ê³¼ í•„í„°ë§ì´ ì¼ì–´ë‚˜ê¸°ë•Œë¬¸ì—
-		// íˆ¬ëª…ìƒ‰ê³¼ì˜ ê²½ê³„ë¶€ë¶„ì´ í…Œë‘ë¦¬ê°€ ìƒê¸¸ìˆ˜ìˆë‹¤.	
+		// ¿Ü°û¼±À» ÇØ°áÇÏ±â À§ÇØ¼­ ÇÊÅÍ¸µ Àû¿ë
+		// ÇÊÅÍ¸µ off
+		// È®´ë µÉ°æ¿ì¿£ ¾Æ¹«·¡µµ ÇÊÅÍ¸µÀ» ÄÑ´Â°ÍÀÌ º¸±â ÁÁ´Ù.
+		// ±×·¯³ª ½ºÇÁ¶óÀÌÆ®´Â Åõ¸í»ö°ú ÇÊÅÍ¸µÀÌ ÀÏ¾î³ª±â¶§¹®¿¡
+		// Åõ¸í»ö°úÀÇ °æ°èºÎºĞÀÌ Å×µÎ¸®°¡ »ı±æ¼öÀÖ´Ù.	
 		INDEX iNewFilter=202, iNewAnisotropy=1;
 		gfxSetTextureFiltering( iNewFilter, iNewAnisotropy);
 		
 		gfxEnableDepthBias();
 		
-		FLOAT3D *pavVertices	= NULL;			// ì •ì  í¬ì¸í„°.
-		UWORD *puwIndices		= NULL;			// ì¸ë±ìŠ¤ í¬ì¸í„°.
-		INDEX ctVertices		= 0;			// ì •ì ì˜ ê°¯ìˆ˜.
-		INDEX ctIndices			= 0;			// ì¸ë±ìŠ¤ì˜ ê°œìˆ˜.		
+		FLOAT3D *pavVertices	= NULL;			// Á¤Á¡ Æ÷ÀÎÅÍ.
+		UWORD *puwIndices		= NULL;			// ÀÎµ¦½º Æ÷ÀÎÅÍ.
+		INDEX ctVertices		= 0;			// Á¤Á¡ÀÇ °¹¼ö.
+		INDEX ctIndices			= 0;			// ÀÎµ¦½ºÀÇ °³¼ö.		
 		
 		//////////////////////////////////////////////////////////////////////////
-		// ê·¸ë¦¼ìê°€ ê²¹ì¹˜ì§€ ì•Šë„ë¡ ì²˜ë¦¬í•˜ê¸° ìœ„í•´ì„œ ìŠ¤í…ì‹¤ì„ ì‚¬ìš©í•˜ê³  ìˆìŒ.
+		// ±×¸²ÀÚ°¡ °ãÄ¡Áö ¾Êµµ·Ï Ã³¸®ÇÏ±â À§ÇØ¼­ ½ºÅÙ½ÇÀ» »ç¿ëÇÏ°í ÀÖÀ½.
 		/*
 		HRESULT hr;	
 		hr = _pGfx->gl_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE, FALSE);				D3D_CHECKERROR(hr);
@@ -1625,16 +1654,16 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 		hr = _pGfx->gl_pd3dDevice->SetRenderState(D3DRS_STENCILREF,   0);					D3D_CHECKERROR(hr);
 		hr = _pGfx->gl_pd3dDevice->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_INCR);	D3D_CHECKERROR(hr);
 		
-		// NOTE : Shadow Mapì„ ìƒì„± í˜¹ì€...
+		// NOTE : Shadow MapÀ» »ı¼º È¤Àº...
 		hr = _pGfx->gl_pd3dDevice->SetRenderState( D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);	D3D_CHECKERROR(hr);
-		// NOTE : í•„í„°ë§ ì ìš©í›„ ì™¸ê³½ì„  ë¬¸ì œë¥¼ í•´ê²°í•˜ê¸° ìœ„í•œ...
+		// NOTE : ÇÊÅÍ¸µ Àû¿ëÈÄ ¿Ü°û¼± ¹®Á¦¸¦ ÇØ°áÇÏ±â À§ÇÑ...
 		//hr = _pGfx->gl_pd3dDevice->SetRenderState( D3DRS_ALPHAREF,  1);
 		hr = _pGfx->gl_pd3dDevice->SetRenderState( D3DRS_ALPHAREF,  0x40);					D3D_CHECKERROR(hr);
 		*/
 		
 		gfxBlendFunc(
-			GFX_SRC_ALPHA,			// ì…í˜€ì§ˆ...
-			GFX_INV_SRC_ALPHA);		// ë°”ë‹¥
+			GFX_SRC_ALPHA,			// ÀÔÇôÁú...
+			GFX_INV_SRC_ALPHA);		// ¹Ù´Ú
 		
 		CPlacement3D plLight;
 		//////////////////////////////////////////////////////////////////////////
@@ -1643,7 +1672,7 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 			CDelayedModel &dm = re_admDelayedModels[iModel];
 			CEntity &en = *dm.dm_penModel;
 			
-			// ska ëª¨ë¸ì¼ ê²½ìš°.
+			// ska ¸ğµ¨ÀÏ °æ¿ì.
 			if( en.en_RenderType == CEntity::RT_SKAMODEL || en.en_RenderType == CEntity::RT_SKAEDITORMODEL)
 			{
 				CModelInstance &mi = *en.GetModelInstance();
@@ -1658,7 +1687,7 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				if(en.GetFlags() & ENF_ITEM)
 					continue;
 
-				// NOTE : í”Œë ˆì´ì–´ì˜ ê·¸ë¦¼ìë§Œ ë³´ì´ë„ë¡ í•¨.
+				// NOTE : ÇÃ·¹ÀÌ¾îÀÇ ±×¸²ÀÚ¸¸ º¸ÀÌµµ·Ï ÇÔ.
 				if(g_iShadowDetail == SHADOW_PROJ_ONLY)
 				{
 					if(!en.IsPlayer())				continue;
@@ -1694,8 +1723,8 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				FLOAT3D vTotalLightDirection( 1.0f, -1.0f, 1.0f);
 				FLOATplane3D plFloorPlane(FLOAT3D( 0.0f, 1.0f, 0.0f), 0.0f);	
 				
-				FLOAT fTotalShadowIntensity = 0.0f;		// ì›ë³¸
-				BOOL bRenderModelShadow = FALSE;		// ì›ë³¸
+				FLOAT fTotalShadowIntensity = 0.0f;		// ¿øº»
+				BOOL bRenderModelShadow = FALSE;		// ¿øº»
 				
 				if( !re_bRenderingShadows)
 				{
@@ -1710,8 +1739,8 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				}
 				
 				//////////////////////////////////////////////////////////////////////////
-				// 02.20. ê¸ˆ.
-				// NOTE : ê°ë„ë¥¼ ì œí•œí•©ë‹ˆë‹¤(240ë„ì—ì„œ 300ë„ë¡œ ì œí•œí–ˆìŒ.)
+				// 02.20. ±İ.
+				// NOTE : °¢µµ¸¦ Á¦ÇÑÇÕ´Ï´Ù(240µµ¿¡¼­ 300µµ·Î Á¦ÇÑÇßÀ½.)
 				ANGLE3D vAngleLightTemp;
 				DirectionVectorToAngles(vTotalLightDirection, vAngleLightTemp);
 				if(vAngleLightTemp(2) < 0)
@@ -1725,7 +1754,7 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				if(_amlLights.Count() <= 0) continue;
 				
 				//////////////////////////////////////////////////////////////////////////
-				// ì¶”ì¶œí•  ë©´ì˜ ë©´ì  êµ¬í•˜ê¸°.
+				// ÃßÃâÇÒ ¸éÀÇ ¸éÀû ±¸ÇÏ±â.
 				FLOATaabbox3D FrameBBox;
 				mi.GetAllFramesBBox(FrameBBox);
 				FrameBBox.StretchByVector(mi.mi_vStretch);
@@ -1733,17 +1762,17 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				FLOAT3D vMax = FrameBBox.maxvect;
 				FLOAT3D vLength = vMin - vMax;
 				
-				// NOTE : ëª¨ë¸ì˜ ë¹„ìœ¨ì„ ê°ì•ˆí•˜ì—¬ ì´ë™ì‹œì¼œì•¼í•©ë‹ˆë‹¤.
+				// NOTE : ¸ğµ¨ÀÇ ºñÀ²À» °¨¾ÈÇÏ¿© ÀÌµ¿½ÃÄÑ¾ßÇÕ´Ï´Ù.
 				plLight.pl_PositionVector = -vTotalLightDirection * (vLength.Length() * 1.2f);
 				//plLight.pl_PositionVector(2) += fHeight/2.0f;
 				plLight.pl_OrientationAngle = vAngleLightTemp;
 				
 				//////////////////////////////////////////////////////////////////////////
-				// Shadow Map ìƒì„±.
+				// Shadow Map »ı¼º.
 				D3DXMATRIX matProjOld;
 				HRESULT hr = _pGfx->gl_pd3dDevice->GetTransform(D3DTS_PROJECTION, &matProjOld);				
 				
-				// 02.23 ìˆ˜ì •.
+				// 02.23 ¼öÁ¤.
 				D3DVIEWPORT8 vpOld;
 				D3DVIEWPORT8 vpNew;
 				_pGfx->gl_pd3dDevice->GetViewport(&vpOld);
@@ -1760,11 +1789,11 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				vpNew.Height = SHADOWTEXTURESIZE-2;
 				_pGfx->gl_pd3dDevice->SetViewport(&vpNew);
 				
-				// Shadow Mapì„ ìƒì„±í•˜ê¸° ìœ„í•´ì„œ ì§€ì •í•œ ìƒ‰ìœ¼ë¡œ ì¹ í•´ì§„ ëª¨ë¸ì„ ë Œë”ë§í•©ë‹ˆë‹¤.
+				// Shadow MapÀ» »ı¼ºÇÏ±â À§ÇØ¼­ ÁöÁ¤ÇÑ »öÀ¸·Î Ä¥ÇØÁø ¸ğµ¨À» ·»´õ¸µÇÕ´Ï´Ù.
 				RM_AddFlag(RMF_SHOWSHADOW);
 				_bRenderProjectionShadow = TRUE;
 				
-				// SKA ëª¨ë¸ ë Œë”ë§.
+				// SKA ¸ğµ¨ ·»´õ¸µ.
 				RenderOneSkaModelToTexture(en, plModel, plLight, FALSE, dm.dm_fMipFactor, dm.dm_ulFlags);
 
 				_bRenderProjectionShadow = FALSE;
@@ -1773,13 +1802,13 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				_pGfx->gl_pd3dDevice->SetViewport(&vpOld);
 				RM_SetRenderingType(0);
 				
-				// ì´ì „ì˜ íˆ¬ì˜í–‰ë ¬ë¡œ ë³µêµ¬ì‹œí‚µë‹ˆë‹¤.(ì´ ì½”ë“œê°€ ì—†ìœ¼ë©´ í™”ë©´ì´ ì œëŒ€ë¡œ Clearë˜ì§€ ì•ŠìŒ)
+				// ÀÌÀüÀÇ Åõ¿µÇà·Ä·Î º¹±¸½ÃÅµ´Ï´Ù.(ÀÌ ÄÚµå°¡ ¾øÀ¸¸é È­¸éÀÌ Á¦´ë·Î ClearµÇÁö ¾ÊÀ½)
 				hr = _pGfx->gl_pd3dDevice->SetTransform(D3DTS_PROJECTION, &matProjOld);
 				//////////////////////////////////////////////////////////////////////////
 				//gfxEnableAlphaTest();
 				gfxEnableBlend();
 				
-				// ì¶”ì¶œ ë²”ìœ„ë¥¼ ì¡°ì ˆí•˜ê¸° ìœ„í•´ì„œ Terrainì˜ Stretchí–‰ë ¬ì˜ ì—­ì„ ê³±í•©ë‹ˆë‹¤.
+				// ÃßÃâ ¹üÀ§¸¦ Á¶ÀıÇÏ±â À§ÇØ¼­ TerrainÀÇ StretchÇà·ÄÀÇ ¿ªÀ» °öÇÕ´Ï´Ù.
 				Matrix12 matStretch;
 				TR_GetStretchMatrix(matStretch);
 				matStretch[0] = 1.0f/matStretch[0];
@@ -1789,14 +1818,14 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				
 				FLOAT fSize = vLength.Length() * 0.8f;
 				
-				// ì¶”ì¶œí•  ì˜ì—­ ì„¤ì •.
+				// ÃßÃâÇÒ ¿µ¿ª ¼³Á¤.
 				CTRect rcExtract(
 					plModel.pl_PositionVector(1) - fSize,	// Left
 					plModel.pl_PositionVector(3) - fSize,	// Top
 					plModel.pl_PositionVector(1) + fSize,	// Right
 					plModel.pl_PositionVector(3) + fSize);	// Bottom
 				
-				// Terrainìœ¼ë¡œë¶€í„° ë©´ì„ ì¶”ì¶œí•¨.
+				// TerrainÀ¸·ÎºÎÅÍ ¸éÀ» ÃßÃâÇÔ.
 				TR_ExtractPoligonsInRect(ptrTerrain, rcExtract, &pavVertices, ctVertices, &puwIndices, ctIndices);
 				if(pavVertices == NULL || puwIndices == NULL || ctVertices == 0 || ctIndices == 0)	break;
 				
@@ -1804,39 +1833,39 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 				Matrix16 matShadowUV;
 				CreateShadowMatrix(
 					&mi,
-					en.GetLerpedPlacement(),							// SKA ëª¨ë¸ì˜ ìœ„ì¹˜.
-					matShadowUV,										// ì–»ì€ í…ìŠ¤ì³ íˆ¬ì˜ í–‰ë ¬
+					en.GetLerpedPlacement(),							// SKA ¸ğµ¨ÀÇ À§Ä¡.
+					matShadowUV,										// ¾òÀº ÅØ½ºÃÄ Åõ¿µ Çà·Ä
 					_matWorldToLight,
 					_matShadowProj,
-					SHADOWTEXTURESIZE,									// í…ìŠ¤ì³ í¬ê¸°
-					plEye);												// ì¹´ë©”ë¼ ìœ„ì¹˜
+					SHADOWTEXTURESIZE,									// ÅØ½ºÃÄ Å©±â
+					plEye);												// Ä«¸Ş¶ó À§Ä¡
 				
 				//////////////////////////////////////////////////////////////////////////
-				// í…ìŠ¤ì³ ì„¤ì • ë° í…ìŠ¤ì³ í–‰ë ¬ ì„¤ì •.
+				// ÅØ½ºÃÄ ¼³Á¤ ¹× ÅØ½ºÃÄ Çà·Ä ¼³Á¤.
 				gfxSetTextureUnit(0);
 				_prtShadow->rt_tdTexture.SetAsCurrent();
 					
 				
 				gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
 				
-				// NOTE : ì—”ì§„ì—ì„œ ì„¤ì •í•˜ëŠ” ë¶€ë¶„ì´ ì—†ìœ¼ë¯€ë¡œ, ì§ì ‘ ì„¤ì •í–ˆìŒ.
-				// ì¹´ë©”ë¼ ì¢Œí‘œê³„ì˜ ë²„í…ìŠ¤ì¢Œí‘œë¥¼ í…ìŠ¤ì³ í–‰ë ¬ì˜ ì…ë ¥ìœ¼ë¡œ ì‚¬ìš©í•¨.
+				// NOTE : ¿£Áø¿¡¼­ ¼³Á¤ÇÏ´Â ºÎºĞÀÌ ¾øÀ¸¹Ç·Î, Á÷Á¢ ¼³Á¤ÇßÀ½.
+				// Ä«¸Ş¶ó ÁÂÇ¥°èÀÇ ¹öÅØ½ºÁÂÇ¥¸¦ ÅØ½ºÃÄ Çà·ÄÀÇ ÀÔ·ÂÀ¸·Î »ç¿ëÇÔ.
 				hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_CAMERASPACEPOSITION );		D3D_CHECKERROR(hr);
 				hr = _pGfx->gl_pd3dDevice->SetTransform( D3DTS_TEXTURE0, (_D3DMATRIX*)&matShadowUV);							D3D_CHECKERROR(hr);
 				
-				// ë™ì°¨ì¢Œí‘œê³„ í…ìŠ¤ì³ ë³€í™˜ í–‰ë ¬ì„ ì‚¬ìš©í•˜ë„ë¡ ì„¤ì •í•´ì¤€ë‹¤. 
-				// ì´ë ‡ê²Œ í•´ì•¼ D3Dê°€ íˆ¬ì˜ ë‚˜ëˆ—ì…ˆ(projection divide)ì—°ì‚°ì„ í•œë‹¤.
+				// µ¿Â÷ÁÂÇ¥°è ÅØ½ºÃÄ º¯È¯ Çà·ÄÀ» »ç¿ëÇÏµµ·Ï ¼³Á¤ÇØÁØ´Ù. 
+				// ÀÌ·¸°Ô ÇØ¾ß D3D°¡ Åõ¿µ ³ª´°¼À(projection divide)¿¬»êÀ» ÇÑ´Ù.
 				hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT4|D3DTTFF_PROJECTED );	D3D_CHECKERROR(hr);
 				
 				//////////////////////////////////////////////////////////////////////////
-				// Fog ë° Hazeì˜ ì ìš©.
-				// NOTE : 2ì›” 11ì¼ ì‘ì—… ë‚´ìš©.			
-				// NOTE : ê·¸ë¦¼ìë¥¼ ìºë¦­í„°ê°€ Fogë‚´ì— ìˆì„ ë•Œ ì²˜ë¦¬í•˜ëŠ” ê²½ìš°ì—ëŠ” ìºë¦­í„°ê°€ Fog ìœ„ìª½ìˆì„ê²½ìš°,
-				// NOTE : ê·¸ë¦¼ìëŠ” Terrainìœ„ì— ìƒê¸°ê²Œ ëœë‹¤.  ì¦‰, ê·¸ë¦¼ìëŠ” Terrainìœ„ì— ìƒê¸°ë¯€ë¡œ,
-				// NOTE : ì§€í˜•ì— Fogê°€ ì ìš©ë˜ì–´ìˆì„ ë•Œ ì²˜ë¦¬í•´ì¤Œ.
-				// NOTE : ê° ì •ì ë§ˆë‹¤ Fogì™€ Hazeë¡œë¶€í„° ì˜í–¥ë°›ì€ ì•ŒíŒŒê°’ì„ ê³„ì‚°í•´ì•¼ í•˜ê¸° ë•Œë¬¸ì— Triangleë§ˆë‹¤ ì²˜ë¦¬í–ˆìœ¼ë‚˜,
-				// NOTE : ìµœì í™”ê°€ ê°€ëŠ¥í•œ ë¶€ë¶„(ì¶”í›„ ì‘ì—…)
-				// NOTE : ì „ì²´ ì •ì ì˜ ì•ŒíŒŒê°’ì„ ë¯¸ë¦¬ ë³€ê²½í•œë’¤ì— í•œêº¼ë²ˆì— ë Œë”ë§í•˜ëŠ” ì‹ìœ¼ë¡œ ìˆ˜ì •í• ê²ƒ.
+				// Fog ¹× HazeÀÇ Àû¿ë.
+				// NOTE : 2¿ù 11ÀÏ ÀÛ¾÷ ³»¿ë.			
+				// NOTE : ±×¸²ÀÚ¸¦ Ä³¸¯ÅÍ°¡ Fog³»¿¡ ÀÖÀ» ¶§ Ã³¸®ÇÏ´Â °æ¿ì¿¡´Â Ä³¸¯ÅÍ°¡ Fog À§ÂÊÀÖÀ»°æ¿ì,
+				// NOTE : ±×¸²ÀÚ´Â TerrainÀ§¿¡ »ı±â°Ô µÈ´Ù.  Áï, ±×¸²ÀÚ´Â TerrainÀ§¿¡ »ı±â¹Ç·Î,
+				// NOTE : ÁöÇü¿¡ Fog°¡ Àû¿ëµÇ¾îÀÖÀ» ¶§ Ã³¸®ÇØÁÜ.
+				// NOTE : °¢ Á¤Á¡¸¶´Ù Fog¿Í Haze·ÎºÎÅÍ ¿µÇâ¹ŞÀº ¾ËÆÄ°ªÀ» °è»êÇØ¾ß ÇÏ±â ¶§¹®¿¡ Triangle¸¶´Ù Ã³¸®ÇßÀ¸³ª,
+				// NOTE : ÃÖÀûÈ­°¡ °¡´ÉÇÑ ºÎºĞ(ÃßÈÄ ÀÛ¾÷)
+				// NOTE : ÀüÃ¼ Á¤Á¡ÀÇ ¾ËÆÄ°ªÀ» ¹Ì¸® º¯°æÇÑµÚ¿¡ ÇÑ²¨¹ø¿¡ ·»´õ¸µÇÏ´Â ½ÄÀ¸·Î ¼öÁ¤ÇÒ°Í.
 				
 				Matrix12 matObjToView;
 				TR_GetObjToViewMatrix(matObjToView);
@@ -1863,7 +1892,7 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 		shaClearTextureMatrix();
 		
 		gfxDisableDepthBias();
-		// ì´ì „ì˜ í•„í„°ë§ ëª¨ë“œë¡œ ë³µêµ¬.
+		// ÀÌÀüÀÇ ÇÊÅÍ¸µ ¸ğµå·Î º¹±¸.
 		gfxSetTextureFiltering( iOldFilter, iOldAnisotropy);
 	}
 	_sfStats.StopTimer(CStatForm::STI_SHADOWRENDERING);
@@ -1874,9 +1903,9 @@ void CRenderer::RenderSkaModelShadowToTerrain(CTerrain *ptrTerrain, const CPlace
 void CRenderer::Render(void)
 {
 	extern INDEX g_iReflectionDetail;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	//this->PrepareTerrainLights();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 
 	// if the world doesn't have all portal-sector links updated
 	if( !re_pwoWorld->wo_bPortalLinksUpToDate) 
@@ -1906,7 +1935,7 @@ void CRenderer::Render(void)
 	ChangeStatsMode(CStatForm::STI_SWAPBUFFERS);
 	extern INDEX ogl_iFinish;  ogl_iFinish = Clamp( ogl_iFinish, 0L, 3L);
 	extern INDEX d3d_iFinish;  d3d_iFinish = Clamp( d3d_iFinish, 0L, 3L);
-	// NOTE : ì“¸ëª¨ì—†ëŠ” ë¶€ë¶„.
+	// NOTE : ¾µ¸ğ¾ø´Â ºÎºĞ.
 	/*
 	if( (ogl_iFinish==1 && _pGfx->gl_eCurrentAPI==GAT_OGL) 
 		|| (d3d_iFinish==1 && _pGfx->gl_eCurrentAPI==GAT_D3D)) 
@@ -1940,10 +1969,10 @@ void CRenderer::Render(void)
 	ChangeStatsMode(CStatForm::STI_WORLDTRANSFORM);
 	if(  !re_bRenderingShadows
 		&&  re_prProjection.IsPerspective()
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add CRenderTexture class for Render to Texture)(0.1)
-		//		&&  re_iIndex<MAX_RENDERERS-1	//ì›ë³¸
-		&&  re_iIndex == IDX_MAIN_RENDERER	//miain rendererì—ì„œë§Œ mirrorìª½ ë Œë”ë¥¼ í˜¸ì¶œí•˜ëŠ” ë£¨í‹´ì„ íƒˆ ìˆ˜ ìˆìŒ.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add CRenderTexture class for Render to Texture)(0.1)
+		//		&&  re_iIndex<MAX_RENDERERS-1	//¿øº»
+		&&  re_iIndex == IDX_MAIN_RENDERER	//miain renderer¿¡¼­¸¸ mirrorÂÊ ·»´õ¸¦ È£ÃâÇÏ´Â ·çÆ¾À» Å» ¼ö ÀÖÀ½.
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add CRenderTexture class for Render to Texture)(0.1)
 		&&  re_amiMirrors.Count()>0
 		&& !re_pdpDrawPort->IsOverlappedRendering())
 	{
@@ -1952,10 +1981,10 @@ void CRenderer::Render(void)
 		CleanupScanning();
 		
 		// take next renderer
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add CRenderTexture class for Render to Texture)(0.1)
-		//		CRenderer &re = _areRenderers[re_iIndex+1];	//ì›ë³¸
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add CRenderTexture class for Render to Texture)(0.1)
+		//		CRenderer &re = _areRenderers[re_iIndex+1];	//¿øº»
 		CRenderer &re = _areRenderers[IDX_MIRROR_RENDERER];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add CRenderTexture class for Render to Texture)(0.1)
 		// for each mirror
 		for( INDEX i=0; i<re_amiMirrors.Count(); i++)
 		{
@@ -2068,8 +2097,8 @@ void CRenderer::Render(void)
 			re_pdpDrawPort->FillZBuffer(ZBUF_BACK);
 		}
 
-		// NOTE : ì›”ë“œ ë‚´ì— Terrain ì—”í‹°í‹°ê°€ í•˜ë‚˜ë§Œ ë“¤ì–´ê°€ê²Œ ë  ê²½ìš°ì—ëŠ”
-		// NOTE : Terrain ì—”í‹°í‹°ë¥¼ ì™¸ë¶€ë¡œ ë¹¼ë†“ì•„ë„ ì¢‹ì„ë“¯...
+		// NOTE : ¿ùµå ³»¿¡ Terrain ¿£Æ¼Æ¼°¡ ÇÏ³ª¸¸ µé¾î°¡°Ô µÉ °æ¿ì¿¡´Â
+		// NOTE : Terrain ¿£Æ¼Æ¼¸¦ ¿ÜºÎ·Î »©³õ¾Æµµ ÁÁÀ»µí...
 		if(re_lhActiveTerrains.IsEmpty())
 		{
 			// for all entities in world 
@@ -2085,7 +2114,7 @@ void CRenderer::Render(void)
 		// draw the prepared things to screen
 		DrawToScreen();
 	}
-	// Waterë¥¼ ë Œë”ë§í•¨.
+	// Water¸¦ ·»´õ¸µÇÔ.
 	else if(
 		re_iIndex == IDX_MAIN_RENDERER &&	
 		iWaterCount > 0 &&
@@ -2096,13 +2125,13 @@ void CRenderer::Render(void)
 		)
 	{
 		CleanupScanning();
-		// NOTE : ìƒˆë¡œìš´ ë Œë”ëŸ¬ë¥¼ ì„¤ì •í–ˆê¸° ë•Œë¬¸ì—,
-		// NOTE : ì„¹í„° ê³„ì‚° ë°, ì—”í‹°í‹° ëª©ë¡ì„ ì–»ì–´ì™€ì•¼ í•©ë‹ˆë‹¤.
-		// NOTE : ì´ ë¶€ë¶„ì€, RenderReflection()ì—ì„œ ìˆ˜í–‰ë©ë‹ˆë‹¤
+		// NOTE : »õ·Î¿î ·»´õ·¯¸¦ ¼³Á¤Çß±â ¶§¹®¿¡,
+		// NOTE : ¼½ÅÍ °è»ê ¹×, ¿£Æ¼Æ¼ ¸ñ·ÏÀ» ¾ò¾î¿Í¾ß ÇÕ´Ï´Ù.
+		// NOTE : ÀÌ ºÎºĞÀº, RenderReflection()¿¡¼­ ¼öÇàµË´Ï´Ù
 		// take next renderer
 		CRenderer &re = _areRenderers[IDX_WATER_RENDERER];
 		
-		//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
+		//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
 		PIX pixDPSizeI = re_pdpDrawPort->GetWidth();
 		PIX pixDPSizeJ = re_pdpDrawPort->GetHeight();
 
@@ -2112,9 +2141,11 @@ void CRenderer::Render(void)
 		CDynamicStackArray<FLOAT3D> ClippedVertices;
 		
 		//-----------------------------------------------------------------------------------------------
-		// DrawPortì˜ ì˜ì—­ ê³„ì‚°í•˜ëŠ” ë¶€ë¶„.
+		// DrawPortÀÇ ¿µ¿ª °è»êÇÏ´Â ºÎºĞ.
 		//-----------------------------------------------------------------------------------------------
-		for( INDEX i=0; i<re_amiWaters.Count(); i++)
+		int		i, j;
+
+		for( i = 0; i < re_amiWaters.Count(); ++i )
 		{
 			CWaterEntity &water	= re_amiWaters[i];
 			CEntity &en			= *water.m_pWaterEntity;
@@ -2122,7 +2153,7 @@ void CRenderer::Render(void)
 			ASSERT(pMI != NULL && "Invalid Water Entity!!!");
 			_plReflect			= water.m_plPlane;
 			
-			CPlacement3D plModel = en.GetLerpedPlacement();		// ëª¨ë¸ì˜ ìœ„ì¹˜.
+			CPlacement3D plModel = en.GetLerpedPlacement();		// ¸ğµ¨ÀÇ À§Ä¡.
 			FLOATmatrix3D mat;			
 			MakeRotationMatrixFast(mat, ANGLE3D(0.0f, 0.0f, 0.0f));
 			Matrix12 matTemp;
@@ -2141,15 +2172,15 @@ void CRenderer::Render(void)
 			vertex[2](3)	= vMax(3);			
 			vertex[3]		= vMax;
 
-			for(int i = 0; i < 4; ++i)
+			for( i = 0; i < 4; ++i )
 			{
 				TransformVector((float*)&vertex[i], matTemp);
 				re_prProjection->PreClip(vertex[i], vertex[i]);
 			}
 
-			for(i = 0; i < 4; ++i)
+			for( i = 0; i < 4; ++i)
 			{
-				for(int j = i; j < 4; ++j)
+				for( j = i; j < 4; ++j)
 				{
 					if(i == j) 
 						continue;
@@ -2173,7 +2204,7 @@ void CRenderer::Render(void)
 		{
 			vProjMin	= ClippedVertices[0];
 			vProjMax	= ClippedVertices[0];
-			for(i = 0; i < ClippedVertices.Count(); i++)
+			for( i = 0; i < ClippedVertices.Count(); i++)
 			{
 				FLOAT3D vTemp = ClippedVertices[i];
 				if(vProjMin(1) > vTemp(1))		vProjMin(1) = vTemp(1);
@@ -2188,7 +2219,7 @@ void CRenderer::Render(void)
 			ClippedVertices.PopAll();
 		}
 		
-		// NOTE : ë°˜ì‚¬ ì˜ì—­ì„ ì œí•œí•˜ì—¬, ìµœëŒ€í•œ ì†ë„ í–¥ìƒì„ ê¾€í•´ë³´ì...
+		// NOTE : ¹İ»ç ¿µ¿ªÀ» Á¦ÇÑÇÏ¿©, ÃÖ´ëÇÑ ¼Óµµ Çâ»óÀ» ²ÒÇØº¸ÀÚ...
 		PIX pixMirrorMinI = vProjMin(1);
 		PIX pixMirrorMinJ = vProjMin(2);
 		
@@ -2216,41 +2247,41 @@ void CRenderer::Render(void)
 		}
 		
 		// calculate mirror size
-		// ê±°ìš¸ì˜ í¬ê¸° ê³„ì‚°.
+		// °Å¿ïÀÇ Å©±â °è»ê.
 		PIX pixMirrorSizeI = pixMirrorMaxI-pixMirrorMinI;		// Width
 		PIX pixMirrorSizeJ = pixMirrorMaxJ-pixMirrorMinJ;		// Height
 		
-		// ì¸ìë¡œ ë„˜ê²¨ì§„ ê°’ì„ ë°”íƒ•ìœ¼ë¡œ Sub DrawPortë¥¼ ë§Œë“­ë‹ˆë‹¤.
+		// ÀÎÀÚ·Î ³Ñ°ÜÁø °ªÀ» ¹ÙÅÁÀ¸·Î Sub DrawPort¸¦ ¸¸µì´Ï´Ù.
 		CDrawPort dpMirror( re_pdpDrawPort, 
-			pixMirrorMinI /(DOUBLE)pixDPSizeI,		// ê±°ìš¸ì˜ ì‹œì‘ì¢Œí‘œ ê³„ì‚°(í™”ë©´ìƒì˜ ë¹„ìœ¨ì¸ë“¯...)
-			pixMirrorMinJ /(DOUBLE)pixDPSizeJ,		// ê±°ìš¸ì˜ ì‹œì‘ì¢Œí‘œ ê³„ì‚°(í™”ë©´ìƒì˜ ë¹„ìœ¨ë¡œ...)
-			pixMirrorSizeI/(DOUBLE)pixDPSizeI,		// ê±°ìš¸ì˜ í¬ê¸° ê³„ì‚°(í™”ë©´ìƒì˜ ë¹„ìœ¨ë¡œ...)
-			pixMirrorSizeJ/(DOUBLE)pixDPSizeJ);		// ê±°ìš¸ì˜ í¬ê¸° ê³„ì‚°(í™”ë©´ìƒì˜ ë¹„ìœ¨ë¡œ...)
+			pixMirrorMinI /(DOUBLE)pixDPSizeI,		// °Å¿ïÀÇ ½ÃÀÛÁÂÇ¥ °è»ê(È­¸é»óÀÇ ºñÀ²ÀÎµí...)
+			pixMirrorMinJ /(DOUBLE)pixDPSizeJ,		// °Å¿ïÀÇ ½ÃÀÛÁÂÇ¥ °è»ê(È­¸é»óÀÇ ºñÀ²·Î...)
+			pixMirrorSizeI/(DOUBLE)pixDPSizeI,		// °Å¿ïÀÇ Å©±â °è»ê(È­¸é»óÀÇ ºñÀ²·Î...)
+			pixMirrorSizeJ/(DOUBLE)pixDPSizeJ);		// °Å¿ïÀÇ Å©±â °è»ê(È­¸é»óÀÇ ºñÀ²·Î...)
 		
-		//re_pdpDrawPort->SetAsCurrent();				// ì›ë³¸
+		//re_pdpDrawPort->SetAsCurrent();				// ¿øº»
 		dpMirror.SetAsCurrent();
 		
 		// set it up for rendering
 		re.re_pwoWorld     = re_pwoWorld;
 		re.re_prProjection = re_prProjection;
-		//re.re_pdpDrawPort  = re_pdpDrawPort;			// ì›ë³¸.
+		//re.re_pdpDrawPort  = re_pdpDrawPort;			// ¿øº».
 		re.re_pdpDrawPort  = &dpMirror;
-		//re.InitClippingRectangle( 0, 0, re_pdpDrawPort->GetWidth(), re_pdpDrawPort->GetHeight());		// ì›ë³¸
+		//re.InitClippingRectangle( 0, 0, re_pdpDrawPort->GetWidth(), re_pdpDrawPort->GetHeight());		// ¿øº»
 		re.InitClippingRectangle( 0, 0, dpMirror.GetWidth(), dpMirror.GetHeight());
 		
 		// setup projection to use the mirror drawport and keep same perspective as before
-		// ì´ì „ê³¼ ê°™ì€ ì›ê·¼ì„ ìœ ì§€í•˜ê³ , ê±°ìš¸ì˜ Drawportë¥¼ ì‚¬ìš©í•˜ë„ë¡ í”„ë¡œì ì…˜ ì„¤ì •í•¨.
-		// NOTE : ì¤‘ìš”í•¨...
+		// ÀÌÀü°ú °°Àº ¿ø±ÙÀ» À¯ÁöÇÏ°í, °Å¿ïÀÇ Drawport¸¦ »ç¿ëÇÏµµ·Ï ÇÁ·ÎÁ§¼Ç ¼³Á¤ÇÔ.
+		// NOTE : Áß¿äÇÔ...
 		re.re_prProjection->ScreenBBoxL() = FLOATaabbox2D( 
-			FLOAT2D(0,0),						// ì‹œì‘ ì¢Œí‘œ
-			FLOAT2D(pixDPSizeI, pixDPSizeJ));	// í¬ê¸°
+			FLOAT2D(0,0),						// ½ÃÀÛ ÁÂÇ¥
+			FLOAT2D(pixDPSizeI, pixDPSizeJ));	// Å©±â
 		
-		// SubDrawPortì˜ í¬ê¸° ì§€ì •.
-		// NOTE : ì¤‘ìš”í•¨.  ê±°ìš¸ì˜ ì˜ì—­ì„ ì„¤ì •í•˜ëŠ” ë¶€ë¶„ìœ¼ë¡œ ë§¤ìš° ì¤‘ìš”í•¨.
-		// NOTE : ì›ê·¼ íˆ¬ì˜ ìƒìˆ˜ì˜ ê°’ì„ ì„¤ì •í•¨.
-		// NOTE : í´ë¦¬í•‘ ì˜ì—­ì˜ ê°’ì´ ì œëŒ€ë¡œ ë„˜ì–´ì˜¤ê¸°ëŠ” í•˜ì§€ë§Œ, Reflection í…ìŠ¤ì³ë¥¼ ìƒì„±í• ë•Œ Viewì˜ ì‹œì ì´ ì´ìƒí•˜ê²Œ ì ìš©ë¨.
+		// SubDrawPortÀÇ Å©±â ÁöÁ¤.
+		// NOTE : Áß¿äÇÔ.  °Å¿ïÀÇ ¿µ¿ªÀ» ¼³Á¤ÇÏ´Â ºÎºĞÀ¸·Î ¸Å¿ì Áß¿äÇÔ.
+		// NOTE : ¿ø±Ù Åõ¿µ »ó¼öÀÇ °ªÀ» ¼³Á¤ÇÔ.
+		// NOTE : Å¬¸®ÇÎ ¿µ¿ªÀÇ °ªÀÌ Á¦´ë·Î ³Ñ¾î¿À±â´Â ÇÏÁö¸¸, Reflection ÅØ½ºÃÄ¸¦ »ı¼ºÇÒ¶§ ViewÀÇ ½ÃÁ¡ÀÌ ÀÌ»óÇÏ°Ô Àû¿ëµÊ.
 		((CPerspectiveProjection3D&)(*re.re_prProjection)).ppr_boxSubScreen =
-			FLOATaabbox2D( FLOAT2D(pixMirrorMinI, pixMirrorMinJ),				// ê±°ìš¸ ì˜ì—­
+			FLOATaabbox2D( FLOAT2D(pixMirrorMinI, pixMirrorMinJ),				// °Å¿ï ¿µ¿ª
 			FLOAT2D(pixMirrorMaxI, pixMirrorMaxJ));
 		re.re_penViewer				= NULL;
 		re.re_bRenderingShadows		= FALSE;
@@ -2290,12 +2321,12 @@ void CRenderer::Render(void)
 		//re.Render();
 
 		//////////////////////////////////////////////////////////////////////////
-		// ë°˜ì‚¬ ë§µì„ ìƒì„±í•©ë‹ˆë‹¤.
+		// ¹İ»ç ¸ÊÀ» »ı¼ºÇÕ´Ï´Ù.
 		//////////////////////////////////////////////////////////////////////////		
-		// NOTE : ë¬¼ì— í•„ìš”ì—†ëŠ” ë¶€ë¶„ì„ ì œê±°í•˜ê¸° ìœ„í•´ì„œ ë”°ë¡œ ë Œë”ë§ ë£¨í‹´ì„ íƒ€ë„ë¡ í•¨.
+		// NOTE : ¹°¿¡ ÇÊ¿ä¾ø´Â ºÎºĞÀ» Á¦°ÅÇÏ±â À§ÇØ¼­ µû·Î ·»´õ¸µ ·çÆ¾À» Å¸µµ·Ï ÇÔ.
 		if(g_iReflectionDetail != REFLECTION_NONE)
 		{
-		re.RenderReflection(/*water.m_matWaterProj*/);
+			re.RenderReflection(/*water.m_matWaterProj*/);
 		}
 		//StartStatsMode(CStatForm::STI_WORLDTRANSFORM);
 		
@@ -2369,10 +2400,10 @@ void CRenderer::Render(void)
 	
 	// for D3D (or mirror) we have to check depth points now, because we need back (not depth!) buffer for it,
 	// and D3D can't guarantee that it won't be discarded upon swapbuffers (especially if multisampling is on!) :(
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.16
-	//if( !re_bRenderingShadows && ((_pGfx->gl_eCurrentAPI==GAT_D3D && !d3d_bAlternateDepthReads) || re_iIndex>0))	// ì›ë³¸
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.16
+	//if( !re_bRenderingShadows && ((_pGfx->gl_eCurrentAPI==GAT_D3D && !d3d_bAlternateDepthReads) || re_iIndex>0))	// ¿øº»
 	if( re_iIndex != IDX_WATER_RENDERER && !re_bRenderingShadows && ((_pGfx->gl_eCurrentAPI==GAT_D3D && !d3d_bAlternateDepthReads) || re_iIndex>0)) 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.16
 	{
 		extern void CheckDelayedDepthPoints( const CDrawPort *pdp, INDEX iMirrorLevel=0);
 		CheckDelayedDepthPoints( re_pdpDrawPort, re_iIndex);
@@ -2390,7 +2421,7 @@ void CRenderer::Render(void)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ë°˜ì‚¬ë§µì„ ì–»ê¸°ìœ„í•œ ë¶€ë¶„.
+// Purpose: ¹İ»ç¸ÊÀ» ¾ò±âÀ§ÇÑ ºÎºĞ.
 //-----------------------------------------------------------------------------
 void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 {	
@@ -2408,17 +2439,17 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 	CSetFPUPrecision FPUPrecision(FPT_24BIT);
 	
 	// initialize all rendering structures
-	// NOTE : (ë‚´ë¶€ì ìœ¼ë¡œ Mirror í‰ë©´ì´ ì„¤ì •ë˜ì–´ ìˆì„ ê²½ìš°, Viewerì˜ ìœ„ì¹˜ë¥¼ ë°˜ì‚¬ì‹œí‚µë‹ˆë‹¤.)	
-	// NOTE : (ë‚´ë¶€ì—ì„œ í˜¸ì¶œë˜ëŠ” Prepare()ì—ì„œ ë°˜ì‚¬ë¨...)
+	// NOTE : (³»ºÎÀûÀ¸·Î Mirror Æò¸éÀÌ ¼³Á¤µÇ¾î ÀÖÀ» °æ¿ì, ViewerÀÇ À§Ä¡¸¦ ¹İ»ç½ÃÅµ´Ï´Ù.)	
+	// NOTE : (³»ºÎ¿¡¼­ È£ÃâµÇ´Â Prepare()¿¡¼­ ¹İ»çµÊ...)
 	Initialize();
 
-	// ì—”í‹°í‹°ë“¤ì„ ê°ê°ì˜ Active Listì— ì¶”ê°€í•©ë‹ˆë‹¤.	
+	// ¿£Æ¼Æ¼µéÀ» °¢°¢ÀÇ Active List¿¡ Ãß°¡ÇÕ´Ï´Ù.	
 	// add initial sectors to active lists
 	AddInitialSectors();
 
 	// scan through portals for other sectors
-	// NOTE : (ë‚´ë¶€ì ìœ¼ë¡œëŠ” ê±°ìš¸ì„ ì¶”ê°€í•˜ê³ , ê±°ìš¸ ë‚´ì˜ í´ë¦¬ê³¤ ì¶”ê°€ë“±ì˜ ì—­í• ì„ í•©ë‹ˆë‹¤.)
-	// NOTE : ë°˜ë“œì‹œ ìˆì–´ì•¼ ë˜ëŠ” ë¶€ë¶„...
+	// NOTE : (³»ºÎÀûÀ¸·Î´Â °Å¿ïÀ» Ãß°¡ÇÏ°í, °Å¿ï ³»ÀÇ Æú¸®°ï Ãß°¡µîÀÇ ¿ªÇÒÀ» ÇÕ´Ï´Ù.)
+	// NOTE : ¹İµå½Ã ÀÖ¾î¾ß µÇ´Â ºÎºĞ...
 	ScanForOtherSectors();
 
 	// if rendering a mirror
@@ -2431,8 +2462,8 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 	{
 			re_pdpDrawPort->FillZBuffer(ZBUF_BACK);
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
-	// DrawPortì˜ í”„ë¡œì ì…˜ í–‰ë ¬ê°’ì„ ì €ì¥í•¨.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
+	// DrawPortÀÇ ÇÁ·ÎÁ§¼Ç Çà·Ä°ªÀ» ÀúÀåÇÔ.
 	if(re_prProjection->pr_bNiceWater)
 	{
 		CAnyProjection3D *papr;
@@ -2442,7 +2473,7 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 		re_pdpDrawPort->SetProjection(*papr);
 		_pGfx->gl_pd3dDevice->GetTransform(D3DTS_PROJECTION, (D3DXMATRIX*)&_matWaterProj);
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 	//-----------------------------------------------------------------------------
 	{
 		ChangeStatsMode(CStatForm::STI_WORLDRENDERING);	
@@ -2456,7 +2487,7 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 		if (!re_bRenderingShadows &&
 			_wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE) 
 		{
-			// ë°°ê²½(Sky Box) -> Not Ska ëª¨ë¸ ë Œë”ë§.
+			// ¹è°æ(Sky Box) -> Not Ska ¸ğµ¨ ·»´õ¸µ.
 			if( re_bBackgroundEnabled) 
 			{
 				// render the polygons to screen
@@ -2469,14 +2500,14 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 		
 		if (re_bBackgroundEnabled)
 		{
-			// Sky Box(SKA ëª¨ë¸) ë Œë”ë§.
+			// Sky Box(SKA ¸ğµ¨) ·»´õ¸µ.
 			// render models that were kept for delayed rendering.
 			//ChangeStatsMode(CStatForm::STI_MODELSETUP);
 			RenderModels(TRUE);   // render background models
 			//ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
 		}
 		
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 		// if polygons should be drawn
 		if (!re_bRenderingShadows &&
 			re_bBackgroundEnabled
@@ -2496,7 +2527,7 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 			ChangeStatsMode(CStatForm::STI_WORLDRENDERING);
 		}
 		*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 		
 		//------------------------------------------------- second render non-background
 		// if polygons should be drawn
@@ -2511,7 +2542,7 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 			RenderScene( re_pdpDrawPort, re_pspoFirst, re_prProjection, re_colSelection, FALSE);
 		}
 		
-		// FIXME : SKYë§Œ ë Œë”ë§í•  ê²ƒì¸ê°€? Terrainë„ ë Œë”ë§ í• ê²ƒì¸ê°€?
+		// FIXME : SKY¸¸ ·»´õ¸µÇÒ °ÍÀÎ°¡? Terrainµµ ·»´õ¸µ ÇÒ°ÍÀÎ°¡?
 		// Render active terrains
 		if( !re_bRenderingShadows
 			&& _wrpWorldRenderPrefs.wrp_ftPolygons != CWorldRenderPrefs::FT_NONE
@@ -2555,16 +2586,16 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 	//CleanupScanning();
 	re_prProjection->pr_bNiceWater	= FALSE;
 	
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ê·¸ë¦¼ì ì˜µì…˜ ì‘ì—…	08.16
-	// FIXME : ë¬¼ì´ ë“¤ì–´ê°€ë©´ FOGì™€ HAZEê°€ ì ìš©ë˜ì§€ ì•ŠìŒ...
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ±×¸²ÀÚ ¿É¼Ç ÀÛ¾÷	08.16
+	// FIXME : ¹°ÀÌ µé¾î°¡¸é FOG¿Í HAZE°¡ Àû¿ëµÇÁö ¾ÊÀ½...
 	// disable fog/haze
 	//StopFog();
 	//StopHaze();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ê·¸ë¦¼ì ì˜µì…˜ ì‘ì—…		08.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ ±×¸²ÀÚ ¿É¼Ç ÀÛ¾÷		08.16
 	// reset vertex arrays if this is the last renderer  
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
 	//if( re_iIndex==0) _avtxScene.PopAll();	
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22
 
 	re_aspoScreenPolygons.Clear();
 	re_admDelayedModels.Clear();
@@ -2574,6 +2605,7 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 	re_amiWaters.Clear();
 	re_avvxViewVertices.Clear();
 	re_aiEdgeVxMain.Clear();
+	re_admDelayedModels_AddWater.Clear();
 
 	CleanupScanning();
 	
@@ -2581,12 +2613,12 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 	//ASSERT( GetFPUPrecision()==FPT_24BIT);
 	//StopStatsMode();
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.29
 	extern INDEX gfx_bRenderReflection;
 	gfx_bRenderReflection = FALSE;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.29
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 
 
 /*
@@ -2595,7 +2627,7 @@ void CRenderer::RenderReflection(/*Matrix16 &matWaterProj*/)
 CRenderer::CRenderer(void)
 {
 	// setup self index
-	INDEX i = this-_areRenderers;
+	INDEX i = this - _areRenderers;
 	ASSERT(i>=0 && i<MAX_RENDERERS);
 	re_iIndex = i;
 
@@ -2616,10 +2648,10 @@ CRenderer::CRenderer(void)
 			_pBackVertexBuffer[width][height] = NULL;
 		}
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë²„ê·¸ ì‚¬ëƒ¥ ì‘ì—…	09.09
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ¹ö±× »ç³É ÀÛ¾÷	09.09
     //m_dwTexCoord4OffsetVertexShader = 0L;
     //m_dwAddFourPixelShader = 0L;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë²„ê·¸ ì‚¬ëƒ¥ ì‘ì—…		09.09
+//°­µ¿¹Î ¼öÁ¤ ³¡ ¹ö±× »ç³É ÀÛ¾÷		09.09
 	// sehan end
 }
 /*
@@ -2627,8 +2659,8 @@ CRenderer::CRenderer(void)
 */
 CRenderer::~CRenderer(void)
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë²„ê·¸ ì‚¬ëƒ¥ ì‘ì—…	09.09
-	// StopDisplayMode()ì—ì„œ í•´ì œí•´ì£¼ê¸° ë•Œë¬¸ì— ì£¼ì„ì²˜ë¦¬í•¨.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ¹ö±× »ç³É ÀÛ¾÷	09.09
+	// StopDisplayMode()¿¡¼­ ÇØÁ¦ÇØÁÖ±â ¶§¹®¿¡ ÁÖ¼®Ã³¸®ÇÔ.
 	/*
 	// sehan
 	for( int i = 0; i < 2; i++ )
@@ -2646,7 +2678,7 @@ CRenderer::~CRenderer(void)
 		}
 	}	
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë²„ê·¸ ì‚¬ëƒ¥ ì‘ì—…		09.09
+//°­µ¿¹Î ¼öÁ¤ ³¡ ¹ö±× »ç³É ÀÛ¾÷		09.09
 	extern void ClearFog();
 	extern void ClearHaze();
 	ClearFog();
@@ -2725,12 +2757,12 @@ void RenderView(CWorld &woWorld, CEntity &enViewer,
 	re.re_ubLightIllumination = 0;
 
 	// sehan
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Option)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Option)(0.1)
 	if( re.re_iIndex == IDX_MAIN_RENDERER)
 	{
 		if (g_iUseBloom > 0) 
 		{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Option)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Option)(0.1)
 			re.re_bRenderBloom = TRUE;
 			if( (_pGfx->gl_ulFlags&GLF_VERTEXPROGRAM) && 
 				(_pGfx->gl_ulFlags&GLF_PIXELPROGRAM) && 
@@ -2745,12 +2777,12 @@ void RenderView(CWorld &woWorld, CEntity &enViewer,
 	// sehan end
 	}
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Option)(0.1)1
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Option)(0.1)1
 	extern FLOAT ter_fLODMul;
 	extern FLOAT g_fFarClipPlus;
 	re.re_prProjection->FarClipDistanceL() = 450 * ter_fLODMul + g_fFarClipPlus;
 	re.re_prProjection->NearClipDistanceL() = 0.7f;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Option)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Option)(0.1)
 
 	// render the view
 	re.Render();

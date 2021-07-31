@@ -19,14 +19,29 @@ static struct GameGUI_interface _Interface;
 void Initialize(const CTFileName &fnGameSettings)
 {
   try {
-    #ifndef NDEBUG 
-      #define GAMEDLL "Bin\\Debug\\GameMPD.dll"
-    #else
-      #define GAMEDLL "Bin\\GameMP.dll"
-    #endif
+#ifndef NDEBUG 
+
+#	ifdef	WORLD_EDITOR
+#		define GAMEDLL "GameMPD.dll"
+#	else
+#		define GAMEDLL "Bin\\Debug\\GameMPD.dll"
+#	endif
+
+#else
+#	ifdef	WORLD_EDITOR
+	#define GAMEDLL "GameMP.dll"
+#	else	// WORLD_EDITOR
+    #define GAMEDLL "Bin\\GameMP.dll"
+#	endif	// WORLD_EDITOR
+#endif
     CTFileName fnmExpanded;
+#ifndef		WORLD_EDITOR
     ExpandFilePath(EFP_READ, CTString(GAMEDLL), fnmExpanded);
-    HMODULE hGame = LoadLibrary(fnmExpanded);
+#else
+	fnmExpanded = _fnmApplicationPath + _fnmApplicationExe.FileDir() + GAMEDLL;
+#endif
+
+	HMODULE hGame = LoadLibrary(fnmExpanded);
     if (hGame==NULL) {
       ThrowF_t("%s", GetWindowsError(GetLastError()));
     }
@@ -40,7 +55,8 @@ void Initialize(const CTFileName &fnGameSettings)
     FatalError("%s", strError);
   }
   // init game - this will load persistent symbols
-  _pGame->Initialize(fnGameSettings);
+  // 수정된 더미. [3/2/2011 rumist]
+  _pGame->Initialize(fnGameSettings, FALSE );
 
 }
 // save settings and cleanup

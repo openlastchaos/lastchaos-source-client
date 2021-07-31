@@ -653,7 +653,7 @@ BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,108,7,21,20
     DEFPUSHBUTTON   "OK",IDOK,177,7,32,14,WS_GROUP
     CTEXT           "Serious Engine",IDC_STATIC,7,9,58,8,SS_NOPREFIX
-    LTEXT           "Copyright Â© 2000 CroTeam LLC. All rights reserved.",
+    LTEXT           "Copyright © 2000 CroTeam LLC. All rights reserved.",
                     IDC_STATIC,7,72,197,8
     CTEXT           "Serious Modeler",IDC_STATIC,7,18,60,8,SS_NOPREFIX
     LTEXT           "For licensing Serious Engine email:",IDC_STATIC,7,42,
@@ -1428,7 +1428,7 @@ BEGIN
             VALUE "FileDescription", "MODELER MFC Application\0"
             VALUE "FileVersion", "1, 0, 0, 1\0"
             VALUE "InternalName", "MODELER\0"
-            VALUE "LegalCopyright", "Copyright Â© 1997\0"
+            VALUE "LegalCopyright", "Copyright © 1997\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "MODELER.EXE\0"
             VALUE "ProductName", "MODELER Application\0"

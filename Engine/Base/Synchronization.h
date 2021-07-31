@@ -4,6 +4,8 @@
   #pragma once
 #endif
 
+#include <Engine/Base/TLVar.h>
+
 // intra-process mutex (only used by thread of same process)
 // NOTE: mutex has no interface - it is locked using CTSingleLock
 class CTCriticalSection {
@@ -32,6 +34,7 @@ public:
   ENGINE_API void Unlock(void);
 };
 
+extern TLVar<INDEX> _iLastLockedMutex;
 
 #endif  /* include-once check. */
 

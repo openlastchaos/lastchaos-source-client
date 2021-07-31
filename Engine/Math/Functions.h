@@ -432,8 +432,8 @@ __forceinline FLOAT Sqrt( FLOAT x) { return (FLOAT)sqrt( ClampDn( x, 0.0f)); }
 
 //------------------------------------------------------------------------------
 // GetAngle
-// Explain: ë‘ ì´ì°¨ì› ë°±í„° ì‚¬ì´ì˜ ê°ì„ êµ¬í•´ì¤Œ 
-// * 360 ë„ ê¸°ì¤€ 
+// Explain: µÎ ÀÌÂ÷¿ø ¹éÅÍ »çÀÌÀÇ °¢À» ±¸ÇØÁÜ 
+// * 360 µµ ±âÁØ 
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 __forceinline float GetAngle( float x1, float y1, float x2, float y2 )
@@ -456,13 +456,13 @@ __forceinline float GetAngle( float x1, float y1, float x2, float y2 )
 #define ANGLE_SNAP (0.25f)   //0x0010
 // Wrap angle to be between 0 and 360 degrees
 __forceinline ANGLE WrapAngle(ANGLE a) {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	return a - floorf(a / 360.0f) * 360.0f;
 	//ANGLE result = a - floorf(a / 360.0f) * 360.0f;
 	//result = result < 0 ? 360.0f + result : result;
 	//return (ANGLE)result;
 	//return (ANGLE) fmod( fmod(a,360.0) + 360.0, 360.0);  // 0..360
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 }
 
 // Normalize angle to be between -180 and +180 degrees

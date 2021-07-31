@@ -84,7 +84,8 @@ extern void InternalShader_Mask(void)
 
   // copy view space vertices, project 'em to screen space and mark clipping
   TransformedVertexData *patvd = (TransformedVertexData*)AllocMemory( ctVtx*sizeof(TransformedVertexData));
-  for( INDEX iVtx=0; iVtx<ctVtx; iVtx++)
+  INDEX iVtx;
+  for( iVtx = 0; iVtx < ctVtx; iVtx++)
   {
     // fetch model vertex and transform it to view space (infact, light space)
     TransformedVertexData &tvd = patvd[iVtx];
@@ -384,7 +385,7 @@ extern void InternalShader_Mask(void)
 }
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 extern void InternalShaderDesc_Mask(ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -399,5 +400,5 @@ extern void InternalShaderDesc_Mask(ShaderDesc *&pshDesc)
 		shDescMe.sd_strShaderInfo = "Mask shader for shadowmaps";
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }

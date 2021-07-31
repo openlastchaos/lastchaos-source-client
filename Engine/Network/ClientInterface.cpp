@@ -25,7 +25,7 @@
 extern FLOAT net_fDropPackets;
 extern INDEX net_bReportPackets;
 //0105
-extern BOOL _bTcp4ClientInterface = FALSE;   // í´ë¼ì´ì–¸íŠ¸ì˜ ë„¤íŠ¸ì› ì¸í„°í˜ì´ìŠ¤ê°€ TCPì¸ì§€ UDPì¸ì§€ êµ¬ë¶„í•˜ëŠ” ì¸ã….
+extern BOOL _bTcp4ClientInterface = FALSE;   // Å¬¶óÀÌ¾ğÆ®ÀÇ ³×Æ®¿÷ ÀÎÅÍÆäÀÌ½º°¡ TCPÀÎÁö UDPÀÎÁö ±¸ºĞÇÏ´Â ÀÎ¤¿.
 
 CClientInterface::CClientInterface(void)
 {
@@ -82,11 +82,11 @@ void CClientInterface::SetLocal(CClientInterface *pciOther)
 		
 };
 
-//0311 kwoní•¨ìˆ˜ì¶”ê°€. ë§ˆìŠ¤í„° ë²„í¼ë¡œ ì§ì ‘ íŒ¨í‚· ë³´ë‚´ê¸°.
+//0311 kwonÇÔ¼öÃß°¡. ¸¶½ºÅÍ ¹öÆÛ·Î Á÷Á¢ ÆĞÅ¶ º¸³»±â.
 // send a message through this client interface
 void CClientInterface::SendNew(const void *pvSend, SLONG slSize)
 {
-	//0524 kwon ì„ì‹œ ì‚­ì œ.
+	//0524 kwon ÀÓ½Ã »èÁ¦.
 	//ASSERT (ci_bUsed);
 	ASSERT(pvSend != NULL && slSize>0);
 	
@@ -136,7 +136,7 @@ void CClientInterface::SendNew(const void *pvSend, SLONG slSize)
 		ppaNewPacket->pa_adrAddress.adr_ulAddress = ci_adrAddress.adr_ulAddress;
 		ppaNewPacket->pa_adrAddress.adr_uwPort = ci_adrAddress.adr_uwPort;
 		ppaNewPacket->pa_adrAddress.adr_uwID = ci_adrAddress.adr_uwID;
-		//0309 ë§ˆìŠ¤í„°ë²„í¼ë¡œ ë°”ë¡œ ë³´ë‚¸ë‹¤. send to real server
+		//0309 ¸¶½ºÅÍ¹öÆÛ·Î ¹Ù·Î º¸³½´Ù. send to real server
 		if (_cmiComm.cci_pbMasterOutput.AppendPacket(*ppaNewPacket,TRUE,FALSE) == FALSE) {
 			ASSERT(FALSE);
 		}
@@ -155,7 +155,7 @@ void CClientInterface::SendNew(const void *pvSend, SLONG slSize)
 	// so send it
 	ppaNewPacket = CreatePacket();
 	
-	ulSequence = (++ci_ulSequence);
+	ulSequence = _pNetwork->getSeq();
 	ppaNewPacket->WriteToPacket(pubData,slSizeToSend,uwPacketReliable,ulSequence,ci_adrAddress.adr_uwID,slTransferSize);
 	ppaNewPacket->pa_adrAddress.adr_ulAddress = ci_adrAddress.adr_ulAddress;
 	ppaNewPacket->pa_adrAddress.adr_uwPort = ci_adrAddress.adr_uwPort;
@@ -324,7 +324,7 @@ BOOL CClientInterface::Receive(void *pvReceive, SLONG &slSize,BOOL bReliable)
 	// we'll use the other receive procedure, and tell it to ignore the address
 	return ReceiveFrom(pvReceive,slSize,NULL,bReliable);
 };
-//! ì¸í„°í˜ì´ìŠ¤ë¥¼ í†µí•´ ë©”ì‹œì§€ë¥¼ ë°›ëŠ”ë‹¤.
+//! ÀÎÅÍÆäÀÌ½º¸¦ ÅëÇØ ¸Ş½ÃÁö¸¦ ¹Ş´Â´Ù.
 // receive a message through the interface, and fill in the originating address
 BOOL CClientInterface::ReceiveFrom(void *pvReceive, SLONG &slSize, CAddress *padrAdress,BOOL bReliable)
 {
@@ -332,21 +332,21 @@ BOOL CClientInterface::ReceiveFrom(void *pvReceive, SLONG &slSize, CAddress *pad
 	UBYTE* pubData = (UBYTE*) pvReceive;
 	SLONG slDummySize;
 	UWORD uwReliable;
-	//! ë¦´ë¼ì´ì–´ë¸” ë©”ì‹œì§€ë¼ë©´,
+	//! ¸±¶óÀÌ¾îºí ¸Ş½ÃÁö¶ó¸é,
 	// if a reliable message is requested
 	if (bReliable) {
-		//! ì™„ì „í•œ ë¦´ë¼ì´ì–´ë¸” ë©”ì‹œì§€ì¸ì§€ ì²´í¬
+		//! ¿ÏÀüÇÑ ¸±¶óÀÌ¾îºí ¸Ş½ÃÁöÀÎÁö Ã¼Å©
 		// if there is no complete reliable message ready
 		if (ci_pbReliableInputBuffer.CheckSequence(slDummySize,TRUE) == FALSE) {
 			return FALSE;
-        //! ì¤€ë¹„ëœ ë©”ì‹œì§€ê°€ ì˜ˆìƒëœ ì‚¬ì´ì¦ˆë³´ë‹¤ í¬ë‹¤ë©´ ë¦¬í„´ FALSE
+        //! ÁØºñµÈ ¸Ş½ÃÁö°¡ ¿¹»óµÈ »çÀÌÁîº¸´Ù Å©´Ù¸é ¸®ÅÏ FALSE
 		// if the ready message is longer than the expected size
 		} else if ( GetCurrentReliableSize() > slSize) {
 			return FALSE;
 		// if everything is ok, compose the message and kill the packets
 		} else {
-			//! ë¸Œë¡œë“œìºìŠ¤íŠ¸ì—ì„œë§Œ ì–´ë“œë ˆìŠ¤ê°€ NULLì´ ì•„ë‹ˆë‹¤. ì„œë²„ì—ì„  ì•ˆì”€.
-			//! ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ì—ì„œ ì²«ë²ˆì§¸ íŒ¨í‚·ì„ ì½ì–´ì™€ì„œ ì£¼ì†Œ,í¬íŠ¸,ì•„ì´ë””ë¥¼ ì–»ì–´ë‚¸ë‹¤.
+			//! ºê·ÎµåÄ³½ºÆ®¿¡¼­¸¸ ¾îµå·¹½º°¡ NULLÀÌ ¾Æ´Ï´Ù. ¼­¹ö¿¡¼± ¾È¾¸.
+			//! ¸±¶óÀÌ¾îºí input¹öÆÛ¿¡¼­ Ã¹¹øÂ° ÆĞÅ¶À» ÀĞ¾î¿Í¼­ ÁÖ¼Ò,Æ÷Æ®,¾ÆÀÌµğ¸¦ ¾ò¾î³½´Ù.
 			// fill in the originating address (if necessary)
 			if (padrAdress != NULL) {
 				ppaPacket = ci_pbReliableInputBuffer.PeekFirstPacket();
@@ -356,8 +356,8 @@ BOOL CClientInterface::ReceiveFrom(void *pvReceive, SLONG &slSize, CAddress *pad
 			}
 
 			slSize = 0;
-			//! uwReliableí”Œë˜ê·¸ ê°’ì´ í…Œì¼ì´ ë‚˜ì˜¬ë•Œê¹Œì§€ ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ì—ì„œ íŒ¨í‚·ì„ ì½ì–´ì™€ì„œ
-			//! pubDataë¡œ ì˜®ê¸´ë‹¤.
+			//! uwReliableÇÃ·¡±× °ªÀÌ Å×ÀÏÀÌ ³ª¿Ã¶§±îÁö ¸±¶óÀÌ¾îºí input¹öÆÛ¿¡¼­ ÆĞÅ¶À» ÀĞ¾î¿Í¼­
+			//! pubData·Î ¿Å±ä´Ù.
 			do {
 				ppaPacket = ci_pbReliableInputBuffer.GetFirstPacket();
 				uwReliable = ppaPacket->pa_uwReliable;
@@ -369,13 +369,13 @@ BOOL CClientInterface::ReceiveFrom(void *pvReceive, SLONG &slSize, CAddress *pad
 			} while (!(uwReliable & UDP_PACKET_RELIABLE_TAIL));
 			return TRUE;
 		}
-	//! ì–¸ë¦´ë¼ì´ì–´ë¸” ë©”ì‹œì§€ë¼ë©´,
+	//! ¾ğ¸±¶óÀÌ¾îºí ¸Ş½ÃÁö¶ó¸é,
 	// if an unreliable message is requested
 	} else {
 		// if there are no packets in the input buffer, return
 		if (ci_pbInputBuffer.pb_ulNumOfPackets == 0) {
 			return FALSE;
-			//! ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ê°€ ë¹„ì–´ìˆì§€ ì•Šë‹¤ë©´, inputë²„í¼ë¡œë¶€í„° ì•„ë¬´ê²ƒë„ ë°›ì„ìˆ˜ ì—†ë‹¤.			
+			//! ¸±¶óÀÌ¾îºí input¹öÆÛ°¡ ºñ¾îÀÖÁö ¾Ê´Ù¸é, input¹öÆÛ·ÎºÎÅÍ ¾Æ¹«°Íµµ ¹ŞÀ»¼ö ¾ø´Ù.			
 			// if the reliable buffer is not empty, nothing can be accepted from the input buffer
 			// because it would be accepted out-of order (before earlier sequences have been read)
 		} else if (ci_pbReliableInputBuffer.pb_ulNumOfPackets != 0) {
@@ -384,11 +384,11 @@ BOOL CClientInterface::ReceiveFrom(void *pvReceive, SLONG &slSize, CAddress *pad
 		
 		ppaPacket = ci_pbInputBuffer.PeekFirstPacket();
 		
-		//! inputë²„í¼ì— ìˆëŠ” ì²«ë²ˆì§¸ íŒ¨í‚·ì´ ì–¸ë¦´ë¦¬ì–´ë¸”ì´ ì•„ë‹ˆë¼ë©´ ë¦¬í„´ FALSE
+		//! input¹öÆÛ¿¡ ÀÖ´Â Ã¹¹øÂ° ÆĞÅ¶ÀÌ ¾ğ¸±¸®¾îºíÀÌ ¾Æ´Ï¶ó¸é ¸®ÅÏ FALSE
 		// if the first packet in the input buffer is not unreliable
 		if (!ppaPacket->IsUnreliable()) {
 			return FALSE;
-			//! ì™„ì „ì¹˜ ì•Šì€ ë©”ì‹œì§€ë¼ë©´ ë¦¬í„´ FALSE
+			//! ¿ÏÀüÄ¡ ¾ÊÀº ¸Ş½ÃÁö¶ó¸é ¸®ÅÏ FALSE
 			// if there is no complete message ready
 		} else if (ci_pbInputBuffer.CheckSequence(slDummySize,FALSE) == FALSE) {
 			return FALSE;
@@ -405,7 +405,7 @@ BOOL CClientInterface::ReceiveFrom(void *pvReceive, SLONG &slSize, CAddress *pad
 			}
 			
 			slSize = 0;
-			//! í…Œì¼ì´ ë‚˜ì˜¬ë•Œê¹Œì§€ íŒ¨í‚·ì„ ë°›ì•„ì„œ ì‚¬ì´ì¦ˆë¥¼ ì–»ì–´ë‚¸ë‹¤.
+			//! Å×ÀÏÀÌ ³ª¿Ã¶§±îÁö ÆĞÅ¶À» ¹Ş¾Æ¼­ »çÀÌÁî¸¦ ¾ò¾î³½´Ù.
 			do {
 				ppaPacket = ci_pbInputBuffer.GetFirstPacket();
 				uwReliable = ppaPacket->pa_uwReliable;
@@ -540,7 +540,7 @@ BOOL CClientInterface::UpdateInputBuffers(void)
 	// if there are packets in the input buffer, process them
 	FORDELETELIST(CPacket,pa_lnListNode,ci_pbInputBuffer.pb_lhPacketStorage,ppaPacket) {
 		CPacket &paPacket = *ppaPacket;
-		//! ì•„í¬íŒ¨í‚·ì´ë¼ë©´,
+		//! ¾ÆÅ©ÆĞÅ¶ÀÌ¶ó¸é,
 		// if it's an acknowledge packet, remove the acknowledged packets from the wait acknowledge buffer
 		if (ppaPacket->pa_uwReliable & UDP_PACKET_ACKNOWLEDGE) {
 			ULONG *pulAck;
@@ -562,30 +562,30 @@ BOOL CClientInterface::UpdateInputBuffers(void)
 					tvNow = _pTimer->GetHighPrecisionTimer();
 					CPrintF("%lu: Received acknowledge for packet sequence %d\n",(ULONG) tvNow.GetMilliseconds(),ulSequence);
 				}
-				//! ì•„í¬ë²„í¼ì—ì„œ í•´ë‹¹ ì‹œí€€ìŠ¤ íŒ¨í‚·ì„ ì‚­ì œí•œë‹¤.
+				//! ¾ÆÅ©¹öÆÛ¿¡¼­ ÇØ´ç ½ÃÄö½º ÆĞÅ¶À» »èÁ¦ÇÑ´Ù.
 				// remove the matching packet from the wait acknowledge buffer
 				ci_pbWaitAckBuffer.RemovePacket(ulSequence,TRUE);
-				//! ì•„ì›ƒë²„í¼ì—ì„œ ì¬ì „ì†¡ì„ ê¸°ë‹¤ë¦¬ê³  ìˆëŠ” í•´ë‹¹ ì‹œí€€ìŠ¤ íŒ¨í‚·ì„ ì‚­ì œí•œë‹¤.
+				//! ¾Æ¿ô¹öÆÛ¿¡¼­ ÀçÀü¼ÛÀ» ±â´Ù¸®°í ÀÖ´Â ÇØ´ç ½ÃÄö½º ÆĞÅ¶À» »èÁ¦ÇÑ´Ù.
 				// if the packet is waiting to be resent it's in the outgoing buffer, so remove it
 				ci_pbOutputBuffer.RemovePacket(ulSequence,TRUE);
 				pulAck++;
 				slSize -= sizeof(ULONG);
 			}
-			//! inputë²„í¼ì˜ ê·¸ íŒ¨í‚·ì„ ì‚­ì œí•œë‹¤.
+			//! input¹öÆÛÀÇ ±× ÆĞÅ¶À» »èÁ¦ÇÑ´Ù.
 			// take this packet out of the input buffer and kill it
 			ci_pbInputBuffer.RemovePacket(ppaPacket->pa_ulSequence,FALSE);
 			DeletePacket(ppaPacket);
 			
 			bSomethingDone = TRUE;
-			//! ë¦´ë¼ì´ì–´ë¸” íŒ¨í‚·ì´ë¼ë©´,
+			//! ¸±¶óÀÌ¾îºí ÆĞÅ¶ÀÌ¶ó¸é,
 			// if the packet is reliable
 		} else if (ppaPacket->pa_uwReliable & UDP_PACKET_RELIABLE) {
 			
-			//! ì´ íŒ¨í‚·ì´ ë¸Œë¡œë“œìºìŠ¤íŠ¸ ì–´ë“œë˜ìŠ¤ë¡œ ë¶€í„° ì˜¨ê±°ë¼ë©´ ì•„í¬íŒ¨í‚·ì„ ìƒì„±í•˜ì—¬ ë³´ë‚¸ë‹¤.
+			//! ÀÌ ÆĞÅ¶ÀÌ ºê·ÎµåÄ³½ºÆ® ¾îµå·¡½º·Î ºÎÅÍ ¿Â°Å¶ó¸é ¾ÆÅ©ÆĞÅ¶À» »ı¼ºÇÏ¿© º¸³½´Ù.
 			// generate packet acknowledge
 			// if the packet is from the broadcast address, send the acknowledge for that packet only
 			if (ppaPacket->pa_adrAddress.adr_uwID == '//' || ppaPacket->pa_adrAddress.adr_uwID == 0) {
-				//0105 ACKíŒ¨í‚· ì§€ìš°ê¸°
+				//0105 ACKÆĞÅ¶ Áö¿ì±â
 				if(!_bTcp4ClientInterface){
 					CPacket *ppaAckPacket = CreatePacket();
 					ppaAckPacket->pa_adrAddress.adr_ulAddress = ppaPacket->pa_adrAddress.adr_ulAddress;
@@ -601,8 +601,8 @@ BOOL CClientInterface::UpdateInputBuffers(void)
 				//..					
 				ci_pbInputBuffer.RemovePacket(ppaPacket->pa_ulSequence,FALSE);          
 			}	else {
-/* //0311 ì‚­ì œ
-				//! ì•„í¬íŒ¨í‚·ì´ ìµœëŒ€ì¹˜50ê°œë¡œ ê°€ë“ì°¬ë‹¤ë©´,
+/* //0311 »èÁ¦
+				//! ¾ÆÅ©ÆĞÅ¶ÀÌ ÃÖ´ëÄ¡50°³·Î °¡µæÂù´Ù¸é,
 				// if we have filled the packet to the maximum with acknowledges (an extremely rare event)
 				// finish this packet and start the next one
 				if (ulAckCount == iMaxAcks) {
@@ -617,7 +617,7 @@ BOOL CClientInterface::UpdateInputBuffers(void)
 					}						
 				}	
 
-				//! ì´íŒ¨í‚·ì˜ ì‹œí€€ìŠ¤ë¥¼  ì €ì¥í•˜ê³ ,
+				//! ÀÌÆĞÅ¶ÀÇ ½ÃÄö½º¸¦  ÀúÀåÇÏ°í,
 				// add the acknowledge for this packet
 				pulGenAck[ulAckCount] = ppaPacket->pa_ulSequence;
 				
@@ -626,24 +626,24 @@ BOOL CClientInterface::UpdateInputBuffers(void)
 					tvNow = _pTimer->GetHighPrecisionTimer();
 					CPrintF("%lu: Acknowledging packet sequence %d\n",(ULONG) tvNow.GetMilliseconds(),ppaPacket->pa_ulSequence);
 				}
-				//! ì•„í¬ì¹´ìš´íŠ¸ë¥¼ ì¦ê°€ì‹œí‚¨ë‹¤.
+				//! ¾ÆÅ©Ä«¿îÆ®¸¦ Áõ°¡½ÃÅ²´Ù.
 				ulAckCount++;
 */
 			}
 			
-			//! í•´ë‹¹ íŒ¨í‚·ì„ inputë²„í¼ì—ì„œ ì‚­ì œí•œë‹¤.
+			//! ÇØ´ç ÆĞÅ¶À» input¹öÆÛ¿¡¼­ »èÁ¦ÇÑ´Ù.
 			// take this packet out of the input buffer
 			ci_pbInputBuffer.RemovePacket(ppaPacket->pa_ulSequence,FALSE);		
 			
-			//! ê·¸ íŒ¨í‚·ì´ ì•„í¬íŒ¨í‚·ì´ê±°ë‚˜
-			//! ë˜ëŠ” ì—°ê²°í™•ì¸ ì‘ë‹µ íŒ¨í‚·ì´ê³  í´ë¼ì´ì–¸íŠ¸ê°€ ì•„ì§ ì—°ê²°ì´ ë˜ì§€ ì•Šì•˜ê±°ë‚˜, 
-			//! ë¡œì»¬í´ë¼ì´ì–¸íŠ¸ë¼ë©´,		
+			//! ±× ÆĞÅ¶ÀÌ ¾ÆÅ©ÆĞÅ¶ÀÌ°Å³ª
+			//! ¶Ç´Â ¿¬°áÈ®ÀÎ ÀÀ´ä ÆĞÅ¶ÀÌ°í Å¬¶óÀÌ¾ğÆ®°¡ ¾ÆÁ÷ ¿¬°áÀÌ µÇÁö ¾Ê¾Ò°Å³ª, 
+			//! ·ÎÄÃÅ¬¶óÀÌ¾ğÆ®¶ó¸é,		
 			// a packet can be accepted from the broadcast ID only if it is an acknowledge packet or 
 			// if it is a connection confirmation response packet and the client isn't already connected
 			if (ppaPacket->pa_adrAddress.adr_uwID == '//' || ppaPacket->pa_adrAddress.adr_uwID == 0) {
 				if  (((!ci_bUsed) && (ppaPacket->pa_uwReliable & UDP_PACKET_CONNECT_RESPONSE)) ||
 					(ppaPacket->pa_uwReliable & UDP_PACKET_ACKNOWLEDGE) || ci_bClientLocal) {
-					//! ê·¸ íŒ¨í‚·ì„ ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ì— ì‚½ì…í•œë‹¤.
+					//! ±× ÆĞÅ¶À» ¸±¶óÀÌ¾îºí input¹öÆÛ¿¡ »ğÀÔÇÑ´Ù.
 					ppaPacket->pa_ulSequence = 0;
 					if (ci_pbReliableInputBuffer.InsertPacket(*ppaPacket,FALSE) == FALSE) {
 						DeletePacket(ppaPacket);
@@ -652,8 +652,8 @@ BOOL CClientInterface::UpdateInputBuffers(void)
 					DeletePacket(ppaPacket);
 				}
 				// reject duplicates
-				//! í•´ë‹¹ íŒ¨í‚·ì˜ ì‹œí€€ìŠ¤ê°€ ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ì—ì„œ ë§ˆì§€ë§‰ìœ¼ë¡œ ë‚˜ê°„ ì‹œí€€ìŠ¤ë³´ë‹¤ í¬ê³ ,
-				//! ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ì•ˆì— í•´ë‹¹ ì‹œí€€ìŠ¤ê°€ ì—†ë‹¤ë©´, ë¦´ë¼ì´ì–´ë¸” ë²„í¼ì— íŒ¨í‚·ì„ ì‚½ì…í•œë‹¤.
+				//! ÇØ´ç ÆĞÅ¶ÀÇ ½ÃÄö½º°¡ ¸±¶óÀÌ¾îºí input¹öÆÛ¿¡¼­ ¸¶Áö¸·À¸·Î ³ª°£ ½ÃÄö½ºº¸´Ù Å©°í,
+				//! ¸±¶óÀÌ¾îºí input¹öÆÛ¾È¿¡ ÇØ´ç ½ÃÄö½º°¡ ¾ø´Ù¸é, ¸±¶óÀÌ¾îºí ¹öÆÛ¿¡ ÆĞÅ¶À» »ğÀÔÇÑ´Ù.
 			} else if (ppaPacket->pa_ulSequence > ci_pbReliableInputBuffer.pb_ulLastSequenceOut &&
 				!(ci_pbReliableInputBuffer.IsSequenceInBuffer(ppaPacket->pa_ulSequence))) {
 				if (ci_pbReliableInputBuffer.InsertPacket(*ppaPacket,FALSE) == FALSE) {
@@ -666,10 +666,10 @@ BOOL CClientInterface::UpdateInputBuffers(void)
 			// if the packet is unreliable, leave it in the input buffer
 			// when it is needed, the message will be pulled from there
 		} else {
-			//! í•´ë‹¹ íŒ¨í‚·ì˜ ì‹œí€€ìŠ¤ê°€ inputë²„í¼ì—ì„œ ë§ˆì§€ë§‰ìœ¼ë¡œ ë‚˜ê°„ ì‹œí€€ìŠ¤ë³´ë‹¤ í¬ë‹¤ë©´,
+			//! ÇØ´ç ÆĞÅ¶ÀÇ ½ÃÄö½º°¡ input¹öÆÛ¿¡¼­ ¸¶Áö¸·À¸·Î ³ª°£ ½ÃÄö½ºº¸´Ù Å©´Ù¸é,
 			// reject duplicates			
 			if (ppaPacket->pa_ulSequence > ci_pbInputBuffer.pb_ulLastSequenceOut) { 
-				//! í•´ë‹¹ íŒ¨í‚·ì˜ ì‹œí€€ìŠ¤ì™€ ê°™ì€ íŒ¨í‚·ì´ 1ê°œë³´ë‹¤ ë§ë‹¤ë©´, íŒ¨í‚· ì‚­ì œ.
+				//! ÇØ´ç ÆĞÅ¶ÀÇ ½ÃÄö½º¿Í °°Àº ÆĞÅ¶ÀÌ 1°³º¸´Ù ¸¹´Ù¸é, ÆĞÅ¶ »èÁ¦.
 				if (ci_pbReliableInputBuffer.GetSequenceRepeat(ppaPacket->pa_ulSequence) > 1) {										
 					ci_pbInputBuffer.RemovePacket(ppaPacket->pa_ulSequence,TRUE);
 				}				
@@ -679,12 +679,12 @@ BOOL CClientInterface::UpdateInputBuffers(void)
 			
 		}
 	}
-/* //0311 ì‚­ì œ
+/* //0311 »èÁ¦
 	// if there are any remaining unsent acknowldges, put them into a packet and send it
-	//0105 ackíŒ¨í‚· ì—†ì• ê¸°.	
+	//0105 ackÆĞÅ¶ ¾ø¾Ö±â.	
 	if(!_bTcp4ClientInterface){
-		//! ì•„í¬ ì¹´ìš´íŠ¸ê°€ ìˆë‹¤ë©´, ì•„í¬íŒ¨í‚·ì„ ìƒì„±í•˜ì—¬ outputë²„í¼ì— ë„£ëŠ”ë‹¤. 
-		//! ì•„í¬ì¹´ìš´íŠ¸ê°€ ì—¬ëŸ¬ê°œ ìˆì–´ë„ í•œë²ˆë§Œ ë³´ë‚¸ë‹¤.
+		//! ¾ÆÅ© Ä«¿îÆ®°¡ ÀÖ´Ù¸é, ¾ÆÅ©ÆĞÅ¶À» »ı¼ºÇÏ¿© output¹öÆÛ¿¡ ³Ö´Â´Ù. 
+		//! ¾ÆÅ©Ä«¿îÆ®°¡ ¿©·¯°³ ÀÖ¾îµµ ÇÑ¹ø¸¸ º¸³½´Ù.
 		if (ulAckCount >0) {
 			CPacket *ppaAckPacket = CreatePacket();
 			ppaAckPacket->pa_adrAddress.adr_ulAddress = ci_adrAddress.adr_ulAddress;
@@ -711,11 +711,11 @@ BOOL CClientInterface::UpdateInputBuffersBroadcast(void)
 {
 	BOOL bSomethingDone;
 	CTimerValue tvNow;
-	//! ë¸Œë¡œë“œìºìŠ¤íŠ¸ì˜ Inputë²„í¼ì— íŒ¨í‚·ì´ ìˆë‹¤ë©´,
+	//! ºê·ÎµåÄ³½ºÆ®ÀÇ Input¹öÆÛ¿¡ ÆĞÅ¶ÀÌ ÀÖ´Ù¸é,
 	// if there are packets in the input buffer, process them
 	FORDELETELIST(CPacket,pa_lnListNode,ci_pbInputBuffer.pb_lhPacketStorage,ppaPacket) {
 		CPacket &paPacket = *ppaPacket;
-			//! ê·¸ íŒ¨í‚·ì´ ê¸°ë‹¤ë¦¬ëŠ” ì•„í¬íŒ¨í‚·ì´ë¼ë©´ ì•„í¬ë²„í¼ì— ìˆëŠ” í•´ë‹¹íŒ¨í‚·ì„ ì‚­ì œí•œë‹¤.
+			//! ±× ÆĞÅ¶ÀÌ ±â´Ù¸®´Â ¾ÆÅ©ÆĞÅ¶ÀÌ¶ó¸é ¾ÆÅ©¹öÆÛ¿¡ ÀÖ´Â ÇØ´çÆĞÅ¶À» »èÁ¦ÇÑ´Ù.
 			// if it's an acknowledge packet, remove the acknowledged packets from the wait acknowledge buffer
 			if (ppaPacket->pa_uwReliable & UDP_PACKET_ACKNOWLEDGE) {
 				ULONG *pulAck;
@@ -725,7 +725,7 @@ BOOL CClientInterface::UpdateInputBuffersBroadcast(void)
 				slSize = ppaPacket->pa_slSize - MAX_HEADER_SIZE;
 				// if slSize isn't rounded to the size of ulSequence, abort 
 				ASSERT (slSize % sizeof(ULONG) == 0);
-				//!ì•„í¬íŒ¨í‚·ì˜ ìˆœì„œë¥¼ ì–»ì–´ë‚¸ë‹¤.
+				//!¾ÆÅ©ÆĞÅ¶ÀÇ ¼ø¼­¸¦ ¾ò¾î³½´Ù.
 				// get the pointer to the start of acknowledged sequences
 				pulAck = (ULONG*) (ppaPacket->pa_pubPacketData + MAX_HEADER_SIZE);
 				// for each acknowledged sequence number
@@ -737,25 +737,25 @@ BOOL CClientInterface::UpdateInputBuffersBroadcast(void)
 						tvNow = _pTimer->GetHighPrecisionTimer();
 						CPrintF("%lu: Received acknowledge for broadcast packet sequence %d\n",(ULONG) tvNow.GetMilliseconds(),ulSequence);
 					}
-					//! ì•„í¬ë²„í¼ì—ì„œ ê·¸ íŒ¨í‚·ì„ ì‚­ì œí•œë‹¤.
+					//! ¾ÆÅ©¹öÆÛ¿¡¼­ ±× ÆĞÅ¶À» »èÁ¦ÇÑ´Ù.
 					// remove the matching packet from the wait acknowledge buffer
 					ci_pbWaitAckBuffer.RemovePacket(ulSequence,TRUE);
-					//! ê·¸ íŒ¨í‚·ì´ ì¬ì „ì†¡ì„ ìœ„í•´ ì•„ì›ƒë²„í¼ì— ìˆë‹¤ë©´ ê·¸ íŒ¨í‚·ë„ ì‚­ì œí•œë‹¤.
+					//! ±× ÆĞÅ¶ÀÌ ÀçÀü¼ÛÀ» À§ÇØ ¾Æ¿ô¹öÆÛ¿¡ ÀÖ´Ù¸é ±× ÆĞÅ¶µµ »èÁ¦ÇÑ´Ù.
 					// if the packet is waiting to be resent it's in the outgoing buffer, so remove it
 					ci_pbOutputBuffer.RemovePacket(ulSequence,TRUE);
 					pulAck++;
 					slSize -= sizeof(ULONG);
 				}
-                //! inputë²„í¼ì˜ íŒ¨í‚· ì‚­ì œí•œë‹¤.
+                //! input¹öÆÛÀÇ ÆĞÅ¶ »èÁ¦ÇÑ´Ù.
 				ci_pbInputBuffer.RemovePacket(ppaPacket->pa_ulSequence,FALSE);
 				bSomethingDone = TRUE;
 				DeletePacket(ppaPacket);
-			//! ë¦´ë¼ì´ì–´ë¸” íŒ¨í‚·ì´ë¼ë©´,
+			//! ¸±¶óÀÌ¾îºí ÆĞÅ¶ÀÌ¶ó¸é,
 			// if the packet is reliable
 			} else if (ppaPacket->pa_uwReliable & UDP_PACKET_RELIABLE) {
-//0105 AckíŒ¨í‚· ìƒì„±í•˜ì§€ ì•Šê¸° ìœ„í•´ ì ì‹œ ì§€ìš°ê¸°.
+//0105 AckÆĞÅ¶ »ı¼ºÇÏÁö ¾Ê±â À§ÇØ Àá½Ã Áö¿ì±â.
 				if(!_bTcp4ClientInterface){				
-					//! ì•„í¬ íŒ¨í‚·ì„ ìƒì„±í•˜ì—¬ ì•„ì›ƒë²„í¼ë¡œ ë³´ë‚¸ë‹¤.
+					//! ¾ÆÅ© ÆĞÅ¶À» »ı¼ºÇÏ¿© ¾Æ¿ô¹öÆÛ·Î º¸³½´Ù.
 					// generate packet acknowledge (each reliable broadcast packet is acknowledged separately 
 					// because the broadcast interface can receive packets from any number of different addresses
 					CPacket *ppaAckPacket = CreatePacket();
@@ -772,20 +772,20 @@ BOOL CClientInterface::UpdateInputBuffersBroadcast(void)
 					tvNow = _pTimer->GetHighPrecisionTimer();
 					CPrintF("%lu: Acknowledging broadcast packet sequence %d\n",(ULONG) tvNow.GetMilliseconds(),ppaPacket->pa_ulSequence);
 				}
-				//! ê·¸ëŸ°í›„ì— inputë²„í¼ì˜ ê·¸ íŒ¨í‚·ì„ ì‚­ì œí•˜ê³ ì„ ,
+				//! ±×·±ÈÄ¿¡ input¹öÆÛÀÇ ±× ÆĞÅ¶À» »èÁ¦ÇÏ°í¼±,
 				ci_pbInputBuffer.RemovePacket(ppaPacket->pa_ulSequence,FALSE);
-				//! ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ì— ë„£ëŠ”ë‹¤.
+				//! ¸±¶óÀÌ¾îºí input¹öÆÛ¿¡ ³Ö´Â´Ù.
 				if (ci_pbReliableInputBuffer.InsertPacket(*ppaPacket,FALSE) == FALSE) {
 					DeletePacket(ppaPacket);
 				}				
 			} else {
-			//! ì´ íŒ¨í‚·ì´ ì–¸ë¦´ë¼ì´ì–´ë¸” íŒ¨í‚·ì´ë¼ë©´ input ë²„í¼ì— ë‚¨ê²¨ë†“ëŠ”ë‹¤.
+			//! ÀÌ ÆĞÅ¶ÀÌ ¾ğ¸±¶óÀÌ¾îºí ÆĞÅ¶ÀÌ¶ó¸é input ¹öÆÛ¿¡ ³²°Ü³õ´Â´Ù.
 			// if the packet is unreliable, leave it in the input buffer
 			// when it is needed, the message will be pulled from there
 			// have to check for duplicates	
 			ci_pbInputBuffer.RemovePacket(ppaPacket->pa_ulSequence,FALSE);
 			if (!(ci_pbReliableInputBuffer.IsSequenceInBuffer(ppaPacket->pa_ulSequence))) {						
-				//! input ë²„í¼ì— ë„£ëŠ”ë‹¤.
+				//! input ¹öÆÛ¿¡ ³Ö´Â´Ù.
 				if (ci_pbInputBuffer.InsertPacket(*ppaPacket,FALSE) == FALSE) {
 					DeletePacket(ppaPacket);
 				}
@@ -808,14 +808,14 @@ BOOL CClientInterface::UpdateOutputBuffers(void)
 	CPacket* ppaPacket;
 	UBYTE ubRetry;
 
-	//! ì•„í¬ë²„í¼ì— íŒ¨í‚·ì´ ìˆë‹¤ë©´ 
+	//! ¾ÆÅ©¹öÆÛ¿¡ ÆĞÅ¶ÀÌ ÀÖ´Ù¸é 
 	// handle resends
 	while (ci_pbWaitAckBuffer.pb_ulNumOfPackets > 0) {
 		ppaPacket = ci_pbWaitAckBuffer.PeekFirstPacket();
 		
 		ubRetry = ppaPacket->CanRetry();
 		switch (ubRetry) {
-			//! ì•„í¬ë²„í¼ì—ì„œ íŒ¨í‚·ì„ êº¼ë‚´ì„œ Outputë²„í¼ì— ë„£ëŠ”ë‹¤.
+			//! ¾ÆÅ©¹öÆÛ¿¡¼­ ÆĞÅ¶À» ²¨³»¼­ Output¹öÆÛ¿¡ ³Ö´Â´Ù.
 			// if it's time to retry sending the packet
 			case RS_NOW: {	ci_pbWaitAckBuffer.RemoveFirstPacket(FALSE);
 											ci_pbOutputBuffer.Retry(*ppaPacket);
@@ -825,7 +825,7 @@ BOOL CClientInterface::UpdateOutputBuffers(void)
 			case RS_NOTNOW: { return TRUE; }
 			// if the packet has reached the retry limit - close the client's connection
 			case RS_NOTATALL: { 
-//0105 2line ì§€ìš°ê¸°
+//0105 2line Áö¿ì±â
 //				Clear(); 
 //									return FALSE;
 //0105
@@ -833,7 +833,7 @@ BOOL CClientInterface::UpdateOutputBuffers(void)
 					Clear(); // ACK 
 					return FALSE;
 				}else{
-					//! ì´ì œ ìˆ˜ëª…ì„ ë‹¤í–ˆìœ¼ë‹ˆ ì´ íŒ¨í‚·ì€ ì•„í¬ë²„í¼ì—ì„œ ì§€ì›Œë²„ë¦°ë‹¤.
+					//! ÀÌÁ¦ ¼ö¸íÀ» ´ÙÇßÀ¸´Ï ÀÌ ÆĞÅ¶Àº ¾ÆÅ©¹öÆÛ¿¡¼­ Áö¿ö¹ö¸°´Ù.
 					ci_pbWaitAckBuffer.Clear();
 					return TRUE;
 				}
@@ -869,7 +869,7 @@ CPacket* CClientInterface::GetPendingPacket(void)
 
 };
 
-//! ë¦´ë¼ì´ì–´ë¸” inputë²„í¼ì˜ ì²«ë²ˆì§¸ íŒ¨í‚·ì˜ pa_slTransferSizeë¥¼ ë¦¬í„´í•œë‹¤.
+//! ¸±¶óÀÌ¾îºí input¹öÆÛÀÇ Ã¹¹øÂ° ÆĞÅ¶ÀÇ pa_slTransferSize¸¦ ¸®ÅÏÇÑ´Ù.
 // reads the expected size of current realiable message in the reliable input buffer
 SLONG CClientInterface::GetExpectedReliableSize(void)
 {
@@ -880,7 +880,7 @@ SLONG CClientInterface::GetExpectedReliableSize(void)
 	return ppaPacket->pa_slTransferSize;
 };
 
-//! ë²„í¼ ì‹œì‘ì ì— ìˆëŠ” ë¦´ë¼ì´ì–´ë¸” íŒ¨í‚·ì˜ ì´ ì‚¬ì´ì¦ˆë¥¼ ë¦¬í„´í•œë‹¤.
+//! ¹öÆÛ ½ÃÀÛÁ¡¿¡ ÀÖ´Â ¸±¶óÀÌ¾îºí ÆĞÅ¶ÀÇ ÃÑ »çÀÌÁî¸¦ ¸®ÅÏÇÑ´Ù.
 // reads the expected size of current realiable message in the reliable input buffer
 SLONG CClientInterface::GetCurrentReliableSize(void)
 {

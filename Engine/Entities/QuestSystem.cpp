@@ -2,57 +2,149 @@
 #include <Engine/Base/FileName.h>
 #include <Engine/Base/Stream.h>
 
-#include <Engine/Entities/QuestSystem.h>
+#include "QuestSystem.h"
+#include <Engine/Ska/Render.h>
 #include <Engine/Base/ErrorReporting.h>
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Network/Server.h>
 #include <Engine/Interface/UIManager.h>
 #include <Engine/JobInfo.h>
 #include <Engine/World/World.h>
-#include <Engine/LocalDefine.h>
+#include <Engine/Interface/UIInventory.h>
 
-// ------------- CQuestStaticData ------------- 
-CQuestStaticData::CQuestStaticData()
-: m_iIndex( -1 )
-, m_iCategory( 0 )
-, m_iPartyScale( 0 )
+//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+void CQuestStaticData::SetNoTranslate()
 {
+	char buff[MAX_PATH];
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, transFlag ) )
+	{
+		sprintf( buff, "[%d] : quest name", index );
+		m_szName = buff;
+	}
+	if( pUIManager->IsNotTranslated( TRANS_DESC, transFlag ) )
+	{
+		sprintf( buff, "[%d] : quest name", index );
+		m_szDesc = buff;
+	}
+	if( pUIManager->IsNotTranslated( TRANS_DESC2, transFlag ) )
+	{
+		sprintf( buff, "[%d] : quest name", index );
+		m_szDesc2 = buff;
+	}
+	if( pUIManager->IsNotTranslated( TRANS_DESC3, transFlag ) )
+	{
+		sprintf( buff, "[%d] : quest name", index );
+		m_szDesc3 = buff;
+	}
 }
 
-CQuestStaticData::~CQuestStaticData()
+void CQuestStaticData::ClearNoTranslate()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, transFlag ) )
+		m_szName = "";
+	if( pUIManager->IsNotTranslated( TRANS_DESC, transFlag ) )
+		m_szDesc = "";
+	if( pUIManager->IsNotTranslated( TRANS_DESC2, transFlag ) )
+		m_szDesc2 = "";
+	if( pUIManager->IsNotTranslated( TRANS_DESC3, transFlag ) )
+		m_szDesc3 = "";
+}
+
+bool CQuestStaticData::loadEx( const char* fileName )
+{
+	FILE*	fp = NULL;
+
+	fp = fopen(fileName, "rb");
+
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	stQuest* pdata = new stQuest[_nSize];
+	fread(pdata, sizeof(stQuest) * _nSize, 1, fp);
+	fclose(fp);
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CQuestStaticData* ptmp = new CQuestStaticData;
+		memcpy(ptmp, &pdata[i], sizeof(stQuest));
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+	}
+
+	m_dummy = new CQuestStaticData; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	memset(m_dummy, 0, sizeof(stQuest));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
 }
 
 // ------------- CQuestDynamicData ------------- 
-CQuestDynamicData::CQuestDynamicData(const CQuestStaticData &data)
-: m_rStaticData( data )
+CQuestDynamicData::CQuestDynamicData(CQuestStaticData* data)
+: m_pStaticData(data)
 , m_bQuestComplete( FALSE )
-, m_iQuestIndex( data.m_iIndex )
+, m_iQuestIndex( data->index )
 , m_ctTitleDesc( 0 )
 , m_ctStatusDesc( 0 )
 , m_ctPrizeDesc( 0 )
 , m_ctOptionPrizeDesc( 0 )
 , m_ctNeedDesc( 0 )
 {
-	for(INDEX i=0; i<QUEST_MAX_CONDITION; ++i)
+	INDEX	i;
+	for( i = 0; i < QUEST_MAX_CONDITION; ++i )
 	{
 		//m_iConditionValue[i] = conditionValue[i];
 		m_iCurrentConditionValueStatus[i] = 0;
 	}
 	
 	m_bPrize = FALSE;
-	for(i=0; i<QUEST_MAX_PRIZE; ++i)
+	for( i = 0; i < QUEST_MAX_PRIZE; ++i )
 	{
-		m_bPrize = m_bPrize || (m_rStaticData.m_iPrizeType[i] != -1);
-		m_iPrizeType[i] = m_rStaticData.m_iPrizeType[i];
-		m_iPrizeIndex[i] = FindItemForPrize(m_iPrizeType[i], m_rStaticData.m_iPrizeIndex[i]);
-		m_iPrizeData[i] = m_rStaticData.m_iPrizeData[i];
-				
-		m_bOptionPrize = m_rStaticData.m_bOptionPrize;
-		m_iOptionPrizeType[i] = m_rStaticData.m_iOptionPrizeType[i];
-		m_iOptionPrizeIndex[i] = FindItemForPrize(m_iOptionPrizeType[i], m_rStaticData.m_iOptionPrizeIndex[i]);
-		m_iOptionPrizeData[i] = m_rStaticData.m_iOptionPrizeData[i];
-		m_iOptionPrizePlus[i] = m_rStaticData.m_iOptionPrizePlus[i];
+		m_bPrize = m_bPrize || (m_pStaticData->prizeType[i] != -1);
+		m_iPrizeType[i] = m_pStaticData->prizeType[i];
+		m_iPrizeIndex[i] = FindItemForPrize(m_iPrizeType[i], m_pStaticData->prizeIndex[i]);
+		m_iPrizeData[i] = m_pStaticData->prizeData[i];
+	}
+
+	// [090728: selo] ¿É¼Ç º¸»óÀº µû·Î ·çÇÁ¸¦ µ¹°ÔÇÔ (°¹¼ö°¡ ´Ş¶óÁ³À½)
+	m_iOptionPrizeCount = QUEST_MAX_OPTPRIZE;
+
+	for( i = 0; i < m_iOptionPrizeCount; ++i )
+	{
+		m_bOptionPrize = m_pStaticData->optionPrize;
+		m_iOptionPrizeType[i] = m_pStaticData->optPrizeType[i];
+		
+		// [090727: selo] Äù½ºÆ®ÅøÀÇ º¸»ó¿¡ Only Ã¼Å©¹Ú½º¸¦ Ã¼Å©ÇÏ¸é
+		// Á÷Á¾¿¡ »ó°ü¾øÀÌ ÇØ´ç ¾ÆÀÌÅÛ ±×´ë·Î Àû¿ëÇÑ´Ù.
+		if( m_pStaticData->onlyOptPrize )
+		{
+			m_iOptionPrizeIndex[i] = m_pStaticData->optPrizeIndex[i];
+		}
+		else
+		{
+			m_iOptionPrizeIndex[i] = FindItemForPrize(m_iOptionPrizeType[i], m_pStaticData->optPrizeIndex[i]);
+		}		
+		m_iOptionPrizeData[i] = m_pStaticData->optPrizeData[i];
+		m_iOptionPrizePlus[i] = m_pStaticData->optPrizePlus[i];
 	}
 	
 	m_strIntroDesc = "";
@@ -62,12 +154,13 @@ CQuestDynamicData::CQuestDynamicData(const CQuestStaticData &data)
 		m_strStatusDesc[i] = "";
 	for( i = 0; i < QUEST_PRIZE_DESC; i++ )
 		m_strPrizeDesc[i] = "";
-	for( i = 0; i < QUEST_PRIZE_DESC; i++ )
+	for( i = 0; i < QUEST_OPTION_PRIZE_DESC; i++ )
 		m_strOptionPrizeDesc[i] = "";
 	for( i = 0; i < QUEST_NEED_DESC; i++ )
 		m_strNeedDesc[i] = "";
 	
-	MakeQuestFirstDesc();
+	if (m_pStaticData->index > 0)
+		MakeQuestFirstDesc();
 }
 
 CQuestDynamicData::~CQuestDynamicData()
@@ -76,23 +169,36 @@ CQuestDynamicData::~CQuestDynamicData()
 
 INDEX CQuestDynamicData::FindItemForPrize(INDEX type, INDEX index)
 {
+	// Äù½ºÆ® º¸»ó ¾ÆÀÌÅÛÀ» Á÷¾÷º°·Î º¸»óÇÔ
 	if(type != QPRIZE_ITEM) return index;
 
-	CItemData	&ItemData = _pNetwork->GetItemData( index );
-	if(ItemData.GetType() == CItemData::ITEM_SHIELD
-	&& ItemData.GetSubType() != CItemData::ITEM_SHIELD_SHIELD)
+	CItemData*	pItemData = _pNetwork->GetItemData( index );
+
+	if (pItemData == NULL)
+		return index;
+
+	int max = CItemData::getsize();
+	
+	if (pItemData->GetType() == CItemData::ITEM_SHIELD &&
+		pItemData->GetSubType() != CItemData::ITEM_SHIELD_SHIELD)
 	{
-		for(int i=0; i<_pNetwork->wo_iNumOfItem; ++i)
+		for (int i = 0; i < max; ++i)
 		{
-			if(_pNetwork->GetItemData(i).GetType() == ItemData.GetType()
-			&& _pNetwork->GetItemData(i).GetSubType() == ItemData.GetSubType()
-			&& _pNetwork->GetItemData(i).GetLevel() == ItemData.GetLevel()
-			&& _pNetwork->GetItemData(i).CanUse(_pNetwork->MyCharacterInfo.job))
+			CItemData*	ptempItem = _pNetwork->GetItemData(i);
+
+			if (ptempItem == NULL)
+				continue;
+
+			if (ptempItem->GetType() == pItemData->GetType() &&
+				ptempItem->GetSubType() == pItemData->GetSubType() &&
+				ptempItem->GetLevel() == pItemData->GetLevel() &&
+				ptempItem->CanUse(_pNetwork->MyCharacterInfo.job))
 			{
 				return i;
 			}
 		}
 	}
+
 	return index;
 }
 
@@ -131,7 +237,7 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 	CTString	strTemp;
 	switch( GetQuestType1() )
 	{
-	case QTYPE_KIND_COLLECTION:		// ìˆ˜ì§‘í˜• í€˜ìŠ¤íŠ¸
+	case QTYPE_KIND_COLLECTION:		// ¼öÁıÇü Äù½ºÆ®
 		{
 			// Title desc
 			INDEX	ctCond = 0;
@@ -143,17 +249,16 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 				ASSERT( GetConditionType( iCond ) == QCONDITION_ITEM
 					||  GetConditionType( iCond ) == QCONDITION_ITEM_NORMAL);
 				
-				//const char	*szItemName = _pNetwork->GetItemData( GetConditionIndex( iCond ) ).GetName();
 				const char	*szItemName = _pNetwork->GetItemName( GetConditionIndex( iCond ) );
 				if( ctCond == 0 )
 				{
-					m_strTitleDesc[m_ctTitleDesc].PrintF( _S2( 49, szItemName, ", %s<ë¥¼> %dë§ˆë¦¬" ),
+					m_strTitleDesc[m_ctTitleDesc].PrintF( _S2( 49, szItemName, ", %s<¸¦> %d¸¶¸®" ),
 						szItemName, GetConditionNum( iCond ) );
 					ctCond++;
 				}
 				else
 				{
-					strTemp.PrintF( _S2( 50, szItemName, ", %s<ë¥¼> %dê°œ" ),
+					strTemp.PrintF( _S2( 50, szItemName, ", %s<¸¦> %d°³" ),
 						szItemName, GetConditionNum( iCond ) );
 					m_strTitleDesc[m_ctTitleDesc] += strTemp;
 					ctCond++;
@@ -162,13 +267,13 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 			
 			if( ctCond > 0 )
 			{
-				m_strTitleDesc[m_ctTitleDesc] += _S( 51, " ëª¨ì•„ì™€ë¼\n\n" );
+				m_strTitleDesc[m_ctTitleDesc] += _S( 51, " ¸ğ¾Æ¿Í¶ó\n\n" );
 				m_colTitleDesc[m_ctTitleDesc++] = 0x80CC17FF;
 			}
 		}
 		break;
 		
-	case QTYPE_KIND_DELIVERY:		// ë°°ë‹¬í˜• í€˜ìŠ¤íŠ¸
+	case QTYPE_KIND_DELIVERY:		// ¹è´ŞÇü Äù½ºÆ®
 		{
 			// Title desc
 			INDEX	ctCond = 0;
@@ -183,13 +288,13 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 				const char	*szItemName = _pNetwork->GetItemName( GetConditionIndex( iCond ) );
 				if( ctCond == 0 )
 				{
-					m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 460, "%s %dê°œ " ),	
+					m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 460, "%s %d°³ " ),	
 						szItemName, GetConditionNum( iCond ) );
 					ctCond++;
 				}
 				else
 				{
-					strTemp.PrintF( _S( 461 , ", %s %dê°œ " ),
+					strTemp.PrintF( _S( 461 , ", %s %d°³ " ),
 						szItemName, GetConditionNum( iCond ) );
 					m_strTitleDesc[m_ctTitleDesc] += strTemp;
 					ctCond++;
@@ -198,9 +303,8 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 			
 			if( ctCond > 0 && GetPrizeNPCIndex() != -1)
 			{
-				//const char	*szMobName = _pNetwork->GetMobData( GetPrizeNPCIndex() ).GetMonsterName();
-				const char	*szMobName = _pNetwork->GetMobName( GetPrizeNPCIndex() );
-				strTemp.PrintF( _S( 462, "ë¥¼ %sì—ê²Œ ì „ë‹¬í•˜ë¼.\n" ), szMobName);			
+				const char	*szMobName = CMobData::getData( GetPrizeNPCIndex() )->GetName();
+				strTemp.PrintF( _S( 462, "¸¦ %s¿¡°Ô Àü´ŞÇÏ¶ó.\n" ), szMobName);			
 				
 				m_strTitleDesc[m_ctTitleDesc] += strTemp;
 				m_colTitleDesc[m_ctTitleDesc++] = 0x80CC17FF;
@@ -208,7 +312,7 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 		}
 		break;
 		
-	case QTYPE_KIND_REPEAT:			// ë°˜ë³µ í€˜ìŠ¤íŠ¸
+	case QTYPE_KIND_REPEAT:			// ¹İº¹ Äù½ºÆ®
 		{
 			// Desc
 			INDEX	ctCond = 0;
@@ -217,19 +321,16 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 				if( GetConditionType( iCond ) == -1 )
 					continue;
 				
-				ASSERT( GetConditionType( iCond ) == QCONDITION_NPC );				
-				
-				//const char	*szMobName = _pNetwork->GetMobData( GetConditionIndex( iCond ) ).GetMonsterName();
-				const char	*szMobName = _pNetwork->GetMobName( GetConditionIndex( iCond ) );
+				const char	*szMobName = CMobData::getData( GetConditionIndex( iCond ) )->GetName();
 				if( ctCond == 0 )
 				{
-					m_strTitleDesc[m_ctTitleDesc].PrintF( _S2( 52, szMobName, "%s<ë¥¼> %dë§ˆë¦¬" ),
+					m_strTitleDesc[m_ctTitleDesc].PrintF( _S2( 52, szMobName, "%s<¸¦> %d¸¶¸®" ),
 						szMobName, GetConditionNum( iCond ) );
 					ctCond++;
 				}
 				else
 				{
-					strTemp.PrintF( _S2( 53, szMobName, ", %s<ë¥¼> %dë§ˆë¦¬" ),
+					strTemp.PrintF( _S2( 53, szMobName, ", %s<¸¦> %d¸¶¸®" ),
 						szMobName, GetConditionNum( iCond ) );
 					m_strTitleDesc[m_ctTitleDesc] += strTemp;
 					ctCond++;
@@ -238,102 +339,22 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 			
 			if( ctCond > 0 )
 			{
-				m_strTitleDesc[m_ctTitleDesc] += _S( 54, " ê²©íŒŒí•˜ë¼\n\n" );
+				m_strTitleDesc[m_ctTitleDesc] += _S( 54, " °İÆÄÇÏ¶ó\n\n" );
 				m_colTitleDesc[m_ctTitleDesc++] = 0x80CC17FF;
 			}
 		}
 		break;
-	case QTYPE_KIND_SAVE:		// êµ¬ì¶œí˜• í€˜ìŠ¤íŠ¸ ìˆ˜í–‰.
+	case QTYPE_KIND_SAVE:		// ±¸ÃâÇü Äù½ºÆ® ¼öÇà.
 		{
-		/*
-		// Desc
-		INDEX	ctCond = 0;
-		for( INDEX iCond = 0; iCond < QUEST_MAX_CONDITION; iCond++ )
-		{
-		const int iConditionType = GetConditionType( iCond );
-		if( iConditionType == -1 )
-		continue;
-		
-		  //ASSERT( GetConditionType( iCond ) == QCONDITION_NPC );
-		  
-			if(iConditionType == QCONDITION_NPC)
-			{
-			const char*	szMobName = _pNetwork->GetMobData( GetConditionIndex( iCond ) ).GetMonsterName();
-			if( ctCond == 0 )
-			{
-			m_strTitleDesc[m_ctTitleDesc].PrintF( _S2( 55, szMobName, "%s<ë¥¼>" ), szMobName );
-			ctCond++;
-			}
-			else
-			{
-			strTemp.PrintF( _S2( 56, szMobName, ", %s<ë¥¼>" ), szMobName );
-			m_strTitleDesc[m_ctTitleDesc] += strTemp;
-			ctCond++;
-			}
-			}
-			else if(iConditionType == QCONDITION_ITEM)
-			{
-			const char	*szItemName = _pNetwork->GetItemData( GetConditionIndex( iCond ) ).GetName();
-			if( ctCond == 0 )
-			{
-			m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 460, "%s %dê°œ ",	
-			szItemName, GetConditionNum( iCond ) );
-			ctCond++;
-			}
-			else
-			{
-			strTemp.PrintF( _S( 461 , ", %s %dê°œ " ),						
-			szItemName, GetConditionNum( iCond ) );
-			m_strTitleDesc[m_ctTitleDesc] += strTemp;
-			ctCond++;
-			}
-			}
-			}
-			*/
-			
-			// FIXME : í•˜ë“œ ì½”ë”©í•œ ë¶€ë¶„
-			// FIXME : í•„ë“œìƒì—ëŠ” êµ¬ì¶œí•˜ë ¤ëŠ” NPCê°€ ì°í˜€ìˆì§€ ì•Šê¸° ë•Œë¬¸ì—, ëª¹ LOD í™”ì¼ì— NPC ì •ë³´ê°€ ì—†ì–´ì„œ,
-			// FIXME : í‘œì‹œê°€ ë˜ì§€ ì•Šì•„ì„œ, í•˜ë“œ ì½”ë”©í•¨.
-			m_strTitleDesc[m_ctTitleDesc] += _S( 463 , "ë‚˜ì˜¤ ê³µì£¼ë¥¼ êµ¬ì¶œí•˜ë¼.\n" );		
+			m_strTitleDesc[m_ctTitleDesc] += _S( 463 , "³ª¿À °øÁÖ¸¦ ±¸ÃâÇÏ¶ó.\n" );		
 			m_colTitleDesc[m_ctTitleDesc++] = 0x80CC17FF;
 		}
 		break;
-	case QTYPE_KIND_DEFEAT:		// ì‹±ê¸€ë˜ì ¼ í€˜ìŠ¤íŠ¸ ìˆ˜í–‰.
+	case QTYPE_KIND_DEFEAT:		// ½Ì±Û´øÁ¯ Äù½ºÆ® ¼öÇà.
 		{
-			// FIXME : QTYPE_KIND_REPEATì™€ ì¤‘ë³µë˜ëŠ” ë¶€ë¶„ì„.
-			// Desc
 			INDEX	ctCond = 0;
-			/*
-			for( INDEX iCond = 0; iCond < QUEST_MAX_CONDITION; iCond++ )
-			{
-			if( GetConditionType( iCond ) == -1 )
-			continue;
-			
-			  ASSERT( GetConditionType( iCond ) == QNEED_MONSTER );
-			  
-				const char	*szMonName = _pNetwork->GetMobData( GetConditionIndex( iCond ) ).GetMonsterName();
-				if( ctCond == 0 )
-				{
-				m_strTitleDesc[m_ctTitleDesc].PrintF( _S2( 348, szMonName, "%s<ë¥¼> %dë§ˆë¦¬" ),
-				szMonName, GetConditionValue( iCond ) );
-				ctCond++;
-				}
-				else
-				{
-				strTemp.PrintF( _S2( 349, szMonName, ", %s<ë¥¼> %dë§ˆë¦¬" ),
-				szMonName, GetConditionValue( iCond ) );
-				m_strTitleDesc[m_ctTitleDesc] += strTemp;
-				ctCond++;
-				}
-				}
-			*/
-			
-			//if( ctCond > 0 )
-			//{
-			// FIXME : í•˜ë“œ ì½”ë”©.
-			m_strTitleDesc[m_ctTitleDesc] += _S( 350, "ë°œë¡ì„ ê²©íŒŒí•˜ë¼\n\n" );
+			m_strTitleDesc[m_ctTitleDesc] += _S( 350, "¹ß·ÏÀ» °İÆÄÇÏ¶ó\n\n" );
 			m_colTitleDesc[m_ctTitleDesc++] = 0x80CC17FF;
-			//}
 		}
 		break;
 	}
@@ -348,11 +369,11 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 	
 	if( bNeedItem )
 	{
-		m_strTitleDesc[m_ctTitleDesc] = _S( 351, "í•„ìš” ì•„ì´í…œ" );
+		m_strTitleDesc[m_ctTitleDesc] = _S( 351, "ÇÊ¿ä ¾ÆÀÌÅÛ" );
 		m_colTitleDesc[m_ctTitleDesc++] = 0xF2F2F2FF;
 		
 		INDEX	ctNeed = 0;
-		for( iNeed = 0; iNeed < MAX_MAX_NEED_ITEM; iNeed++ )
+		for( INDEX iNeed = 0; iNeed < MAX_MAX_NEED_ITEM; iNeed++ )
 		{
 			if( GetNeedItemIndex( iNeed ) == -1 )
 				continue;
@@ -360,14 +381,14 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 			const char* szItemName = _pNetwork->GetItemName( GetNeedItemIndex( iNeed ) );
 			if( ctNeed == 0 )
 			{
-				m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 352, "%s %dê°œ\n" ),
+				m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 352, "%s %d°³\n" ),
 					szItemName,
 					GetNeedItemCount( iNeed ) );
 				ctNeed++;
 			}
 			else
 			{
-				strTemp.PrintF( _S( 352, "%s %dê°œ\n" ),
+				strTemp.PrintF( _S( 352, "%s %d°³\n" ),
 					szItemName,
 					GetNeedItemCount( iNeed ) );
 				m_strTitleDesc[m_ctTitleDesc] += strTemp;
@@ -390,8 +411,8 @@ void CQuestDynamicData::MakeQuestStatusDesc()
 	// Status desc
 	switch( GetQuestType1() )
 	{
-	case QTYPE_KIND_COLLECTION:		// ìˆ˜ì§‘í˜• í€˜ìŠ¤íŠ¸
-	case QTYPE_KIND_DELIVERY:		// ë°°ë‹¬í˜• í€˜ìŠ¤íŠ¸
+	case QTYPE_KIND_COLLECTION:		// ¼öÁıÇü Äù½ºÆ®
+	case QTYPE_KIND_DELIVERY:		// ¹è´ŞÇü Äù½ºÆ®
 		{
 			for( INDEX iCond = 0; iCond < QUEST_MAX_CONDITION; iCond++ )
 			{
@@ -402,7 +423,7 @@ void CQuestDynamicData::MakeQuestStatusDesc()
 					||  GetConditionType( iCond ) == QCONDITION_ITEM_NORMAL );
 				const char *szItemName = _pNetwork->GetItemName( GetConditionIndex( iCond ) );
 				
-				m_strStatusDesc[m_ctStatusDesc].PrintF( _S( 58, "%s ìˆ«ì" ),
+				m_strStatusDesc[m_ctStatusDesc].PrintF( _S( 58, "%s ¼ıÀÚ" ),
 					szItemName );
 				m_colStatusDesc[m_ctStatusDesc++] = 0xC0C0C0FF;
 				m_strStatusDesc[m_ctStatusDesc].PrintF( "%d / %d", GetCurrentConditionValueStatus( iCond ),
@@ -415,27 +436,18 @@ void CQuestDynamicData::MakeQuestStatusDesc()
 		}
 		break;
 		
-/*
-	case QTYPE_KIND_DELIVERY:		// ë°°ë‹¬í˜• í€˜ìŠ¤íŠ¸
-		{
-		}
-		break;
-*/
-		
-	case QTYPE_KIND_REPEAT:			// ë°˜ë³µ í€˜ìŠ¤íŠ¸
+	case QTYPE_KIND_REPEAT:			// ¹İº¹ Äù½ºÆ®
 		{
 			for( INDEX iCond = 0; iCond < QUEST_MAX_CONDITION; iCond++ )
 			{
 				if( GetConditionType( iCond ) == -1 )
 					continue;
-				
-				//ASSERT( GetConditionType( iCond ) == QCONDITION_MONSTER );
-				
-				m_strStatusDesc[m_ctStatusDesc].PrintF( _S( 59, "%s ê²©íŒŒ ìˆ˜" ),
-					//_pNetwork->GetMobData( GetConditionIndex( iCond ) ).GetMonsterName() );
-					_pNetwork->GetMobName( GetConditionIndex( iCond ) ) );
+
+				m_strStatusDesc[m_ctStatusDesc].PrintF( _S( 59, "%s °İÆÄ ¼ö" ),
+
+				CMobData::getData(GetConditionIndex( iCond ) )->GetName());
 				m_colStatusDesc[m_ctStatusDesc++] = 0xC0C0C0FF;
-				//m_strStatusDesc[m_ctStatusDesc].PrintF( "0" );
+
 				m_strStatusDesc[m_ctStatusDesc].PrintF( "%d / %d", GetCurrentConditionValueStatus( iCond ),
 					GetConditionNum( iCond ) );
 				m_colStatusDesc[m_ctStatusDesc++] = 0x80CC17FF;
@@ -445,11 +457,11 @@ void CQuestDynamicData::MakeQuestStatusDesc()
 				m_strStatusDesc[m_ctStatusDesc - 1] += "\n\n";
 		}
 		break;
-	case QTYPE_KIND_SAVE:			// êµ¬ì¶œ í€˜ìŠ¤íŠ¸
+	case QTYPE_KIND_SAVE:			// ±¸Ãâ Äù½ºÆ®
 		{
 		}
 		break;
-	case QTYPE_KIND_DEFEAT:			// ê²©íŒŒ í€˜ìŠ¤íŠ¸
+	case QTYPE_KIND_DEFEAT:			// °İÆÄ Äù½ºÆ®
 		{
 		}
 		break;
@@ -463,7 +475,7 @@ void CQuestDynamicData::MakeQuestPrizeDesc()
 		m_strPrizeDesc[i].Clear();
 	m_ctPrizeDesc = 0;
 	
-	m_strPrizeDesc[m_ctPrizeDesc] = _S( 60, "í€˜ìŠ¤íŠ¸ ë³´ìƒ" );
+	m_strPrizeDesc[m_ctPrizeDesc] = _S( 60, "Äù½ºÆ® º¸»ó" );
 	m_colPrizeDesc[m_ctPrizeDesc++] = 0xF2F2F2FF;
 	
 	for( INDEX iPrize = 0; iPrize < QUEST_MAX_PRIZE; iPrize++ )
@@ -473,21 +485,15 @@ void CQuestDynamicData::MakeQuestPrizeDesc()
 		case QPRIZE_ITEM:
 			{
 				INDEX		iPrizeIndex = GetPrizeIndex( iPrize );
-				m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 61, "%s %dê°œ" ),
+				m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 61, "%s %d°³" ),
 					_pNetwork->GetItemName( iPrizeIndex ), GetPrizeData( iPrize ) );
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			}
 			break;
 		case QPRIZE_MONEY:
 			{
-				//INDEX		iPrizeIndex = GetPrizeIndex( iPrize );
-				//CItemData	&ItemData = _pNetwork->GetItemData( iPrizeIndex );
-				
-				//if( ItemData.GetType() == CItemData::ITEM_ETC &&			//ëˆì¼ë•Œ ~ê°œë¼ê³  í•˜ë©´ ì´ìƒí•˜ë‹ˆê¹.
-				//	ItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
 				{
-					//m_strPrizeDesc[m_ctPrizeDesc].PrintF( "%s", _pNetwork->GetItemData( iPrizeIndex ).GetName());
-					m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 836, "%d ë‚˜ìŠ¤" ), GetPrizeData( iPrize ) );
+					m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 836, "%d ³ª½º" ), GetPrizeData( iPrize ) );
 				}
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			}
@@ -495,13 +501,24 @@ void CQuestDynamicData::MakeQuestPrizeDesc()
 			
 		case QPRIZE_EXP:
 			{
-				m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 62, "ê²½í—˜ì¹˜ %d" ), GetPrizeData( iPrize ) );
+				CTString strTemp;
+				strTemp.PrintF( "%s %I64u", _S( 89, "°æÇèÄ¡"), GetPrizeData( iPrize ) );
+				m_strPrizeDesc[m_ctPrizeDesc] = strTemp;
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			} break;
 			
 		case QPRIZE_SP:
 			{
+#if defined (G_GERMAN)
+				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "%s %d", _S( 90, "¼÷·Ãµµ" ), GetPrizeData( iPrize ) );
+#else	// else about japan, german, europe3, europe2, netherlands.
+				// support russia string [9/7/2010 rumist]
+#if defined (G_RUSSIA)
+				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "%s %d", _S( 4415, "SP" ), GetPrizeData( iPrize ) );
+#else	// else about russia
 				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "SP %d", GetPrizeData( iPrize ) );
+#endif	// end russia
+#endif	//end japan, german, europe3, europe2, netherlands.
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			} break;
 		case QPRIZE_SKILL:
@@ -514,10 +531,20 @@ void CQuestDynamicData::MakeQuestPrizeDesc()
 		case QPRIZE_SSKILL:
 			{
 				INDEX		iPrizeIndex = GetPrizeIndex( iPrize );
-				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "%s", _pNetwork->GetSSkillData( iPrizeIndex ).GetName() );
+				CSpecialSkill* pData = CSpecialSkill::getData(iPrizeIndex);
+
+				if (pData == NULL)
+					break;
+
+				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "%s", pData->GetName() );
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			}
 			break;
+		case QPRIZE_RVR_POINT:
+			{
+				m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S(6263, "°á»ç´ë Æ÷ÀÎÆ® %d"), GetPrizeData( iPrize ) );
+				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
+			}
 		default:
 			break;
 		}
@@ -531,10 +558,13 @@ void CQuestDynamicData::MakeQuestOptionPrizeDesc()
 		m_strOptionPrizeDesc[i].Clear();
 	m_ctOptionPrizeDesc = 0;
 	
-	m_strOptionPrizeDesc[m_ctOptionPrizeDesc] = _S( 1654, "í€˜ìŠ¤íŠ¸ ì„ íƒ ë³´ìƒ (ë‹¤ìŒì¤‘ 1)" );
+	m_strOptionPrizeDesc[m_ctOptionPrizeDesc] = _S( 1654, "Äù½ºÆ® ¼±ÅÃ º¸»ó (´ÙÀ½Áß 1)" );
 	m_colOptionPrizeDesc[m_ctOptionPrizeDesc++] = 0xF2F2F2FF;
 	
-	for( INDEX iPrize = 0; iPrize < QUEST_MAX_PRIZE; iPrize++ )
+	// [090728: selo] ¿É¼Ç º¸»ó °³¼ö ¸¸Å­ µ¹°Ô º¯°æ
+	m_iOptionPrizeCount = QUEST_MAX_OPTPRIZE;
+
+	for( INDEX iPrize = 0; iPrize < m_iOptionPrizeCount; iPrize++ )
 	{
 		switch( GetOptionPrizeType( iPrize ) )
 		{
@@ -543,59 +573,25 @@ void CQuestDynamicData::MakeQuestOptionPrizeDesc()
 				INDEX		iPrizeItemIndex = GetOptionPrizeIndex( iPrize );
 				if(GetOptionPrizePlus(iPrize) > 0)
 				{
-					m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 1655, "%s +%d  %dê°œ" ),
+					m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 1655, "%s +%d  %d°³" ),
 						_pNetwork->GetItemName( iPrizeItemIndex ), GetOptionPrizePlus(iPrize), GetOptionPrizeData( iPrize ) );
 				}
 				else
 				{
-					if(iPrizeItemIndex == 19)//ë‚˜ìŠ¤ì¸ ê²½ìš°(í”ŒëŸ¬ìŠ¤ëœ ë‚˜ìŠ¤ëŠ” ì¡´ì¬í•˜ì§€ ì•ŠëŠ”ë‹¤)
+					if(iPrizeItemIndex == 19)//³ª½ºÀÎ °æ¿ì(ÇÃ·¯½ºµÈ ³ª½º´Â Á¸ÀçÇÏÁö ¾Ê´Â´Ù)
 					{
-						m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 836, "%d ë‚˜ìŠ¤" ),
+						m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 836, "%d ³ª½º" ),
 							GetOptionPrizeData( iPrize ) );
 					}
 					else
 					{
-						m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 61, "%s %dê°œ" ),
+						m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 61, "%s %d°³" ),
 							_pNetwork->GetItemName( iPrizeItemIndex ), GetOptionPrizeData( iPrize ) );
 					}
 				}
 				m_colOptionPrizeDesc[m_ctOptionPrizeDesc++] = 0xFFB54DFF;
 			}
 			break;
-/*		//ì¼ë‹¨ì€ ì•„ì´í…œë§Œ ìˆë‹¤ê³  í•¨.
-		case QPRIZE_MONEY:
-			{
-				m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 836, "%d ë‚˜ìŠ¤" ), GetOptionPrizeData( iPrize ) );
-				m_colOptionPrizeDesc[m_ctOptionPrizeDesc++] = 0xFFB54DFF;
-			}
-			break;
-			
-		case QPRIZE_EXP:
-			{
-				m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 62, "ê²½í—˜ì¹˜ %d" ), GetOptionPrizeData( iPrize ) );
-				m_colOptionPrizeDesc[m_ctOptionPrizeDesc++] = 0xFFB54DFF;
-			} break;
-			
-		case QPRIZE_SP:
-			{
-				m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( "SP %d", GetOptionPrizeData( iPrize ) );
-				m_colOptionPrizeDesc[m_ctOptionPrizeDesc++] = 0xFFB54DFF;
-			} break;
-		case QPRIZE_SKILL:
-			{
-				INDEX		iPrizeIndex = GetOptionPrizeIndex( iPrize );
-				m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( "%s", _pNetwork->GetSkillData( iPrizeIndex ).GetName() );
-				m_colOptionPrizeDesc[m_ctOptionPrizeDesc++] = 0xFFB54DFF;
-			}
-			break;
-		case QPRIZE_SSKILL:
-			{
-				INDEX		iPrizeIndex = GetOptionPrizeIndex( iPrize );
-				m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( "%s", _pNetwork->GetSSkillData( iPrizeIndex ).GetName() );
-				m_colOptionPrizeDesc[m_ctOptionPrizeDesc++] = 0xFFB54DFF;
-			}
-			break;
-*/
 		default:
 			break;
 		}
@@ -604,21 +600,27 @@ void CQuestDynamicData::MakeQuestOptionPrizeDesc()
 
 void CQuestDynamicData::MakeQuestNeedDesc()
 {
+	CJobInfo* pInfo = CJobInfo::getSingleton();
+
+	if (pInfo == NULL)
+		return;
+
 	// Reset strings
 	for( INDEX i = 0; i < m_ctNeedDesc; i++ )
 		m_strNeedDesc[i].Clear();
 	m_ctNeedDesc = 0;
 	
-	m_strNeedDesc[m_ctNeedDesc] = _S( 464, "í•„ìš” ì¡°ê±´" );
+	m_strNeedDesc[m_ctNeedDesc] = _S( 464, "ÇÊ¿ä Á¶°Ç" );
 	m_colNeedDesc[m_ctNeedDesc++] = 0xF2F2F2FF;
-	
-	m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 465, "ë ˆë²¨ : %d ~ %d" ), GetNeedMinLevel(), GetNeedMaxLevel() );
+	if (GetNeedMaxLevel() == 999)
+		m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 5667, "·¹º§ : %d ~ MAX" ), GetNeedMinLevel());
+	else
+		m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 465, "·¹º§ : %d ~ %d" ), GetNeedMinLevel(), GetNeedMaxLevel() );
 	m_colNeedDesc[m_ctNeedDesc++] = 0xFFB54DFF;
-	
 	const int iNeedJob = GetNeedJob();
 	if(iNeedJob != -1)
 	{
-		m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 466, "ì§ì—… : %s" ), JobInfo().GetName(iNeedJob, 0));
+		m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 466, "Á÷¾÷ : %s" ), pInfo->GetName(iNeedJob, 0));
 		m_colNeedDesc[m_ctNeedDesc++] = 0xFFB54DFF;
 	}
 	
@@ -631,7 +633,7 @@ void CQuestDynamicData::MakeQuestNeedDesc()
 		const char* szItemName = _pNetwork->GetItemName( GetNeedItemIndex( iNeed ) );
 		if( ctNeed == 0 )
 		{
-			m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 352, "%s %dê°œ\n" ),
+			m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 352, "%s %d°³\n" ),
 				szItemName,
 				GetNeedItemCount( iNeed ) );
 			ctNeed++;
@@ -639,7 +641,7 @@ void CQuestDynamicData::MakeQuestNeedDesc()
 		else
 		{
 			CTString strTemp;
-			strTemp.PrintF( _S( 352, "%s %dê°œ\n" ),
+			strTemp.PrintF( _S( 352, "%s %d°³\n" ),
 				szItemName,
 				GetNeedItemCount( iNeed ) );
 			m_strNeedDesc[m_ctNeedDesc] += strTemp;
@@ -651,15 +653,12 @@ void CQuestDynamicData::MakeQuestNeedDesc()
 	m_colNeedDesc[m_ctNeedDesc++] = 0xFFB54DFF;
 }
 
-
 // ------------- CQuestSystem ------------- 
 CQuestSystem CQuestSystem::m_instance;
 
 static int test_cnt = 0;
 CQuestSystem::CQuestSystem()
-: m_iQuestStaticDataLastIndex(0)
-, m_aQuestStaticData( NULL )
-, m_pCurrentRequest( NULL )
+: m_pCurrentRequest( NULL )
 {
 	++test_cnt;
 }
@@ -672,7 +671,7 @@ CQuestSystem::~CQuestSystem()
 	{
 		delete m_vectorCurrentUserQuest[i];
 	}
-	delete[] m_aQuestStaticData;
+	
 }
 
 void CQuestSystem::ClearAllDynamicData()
@@ -769,141 +768,56 @@ BOOL CQuestSystem::Remove(INDEX idxQuest)
 	return FALSE;
 }
 
-void CQuestSystem::Load(const CTFileName &fnm, void (*progress)(FLOAT) )
+bool CQuestSystem::Load()
 {
-	try
+	int lastIndex = 0;
+
+	CQuestStaticData::_map::iterator	iter = CQuestStaticData::_mapdata.begin();
+	CQuestStaticData::_map::iterator	eiter = CQuestStaticData::_mapdata.end();
+
+	for (;iter != eiter; ++iter)
 	{
-		CTFileStream read;
-		read.Open_t(fnm);
-		
-		INDEX lastIndex = 0;
-		read >> lastIndex;
-		if(m_aQuestStaticData) delete[] m_aQuestStaticData;
-		m_aQuestStaticData = new CQuestStaticData[lastIndex+1];
-		if(m_aQuestStaticData == NULL) throw "Not enough memory for load quest data";
-		m_vectorQuestAllowList.resize(lastIndex + 1);
-		memset(&m_vectorQuestAllowList[0], QAT_ALLOW, sizeof(BOOL)*(lastIndex+1));
-		m_iQuestStaticDataLastIndex = lastIndex;
-		
-		for(INDEX i=0; i<=lastIndex; ++i)
+		CQuestStaticData* pQuest = (*iter).second;
+
+		if (pQuest == NULL)
+			continue;
+
+		if(QSTART_NPC == pQuest->startType)
 		{
-			INDEX index = -1;
-			read >> index;
-			
-			//ì—†ëŠ” indexëŠ” ê±´ë„ˆë›´ë‹¤.
-			for(INDEX j=i; j<index; ++j) m_aQuestStaticData[j].m_iIndex = -1;
-			i = index;
-			
-			m_aQuestStaticData[i].m_iIndex = index;
-			
-			INDEX lenName = 0;
-			read >> lenName;
-			memset(&m_aQuestStaticData[i].m_szName, 0, sizeof(m_aQuestStaticData[i].m_szName));
-			read.Read_t(&m_aQuestStaticData[i].m_szName, lenName);
-			
-			read >> m_aQuestStaticData[i].m_iType1;
-			read >> m_aQuestStaticData[i].m_iType2;			
-			read >> m_aQuestStaticData[i].m_iStartType;
-			read >> m_aQuestStaticData[i].m_iStartData;
-			//read >> m_aQuestStaticData[i].m_iNPCIndex;
-			//			read >> m_aQuestStaticData[i].m_iGiveNPCIndex;
-			read >> m_aQuestStaticData[i].m_iPrizeNPCIndex;
+			mmap::value_type insertPairValue(pQuest->startData, pQuest->index);
+			m_mmapNPCToQuest.insert(insertPairValue);
 
-			read >> m_aQuestStaticData[i].m_iPreQuestIndex;
-			read >> m_aQuestStaticData[i].m_iStartNPCZoneIndex;
-			read >> m_aQuestStaticData[i].m_iPrizeNPCZoneIndex;
-
-			read >> m_aQuestStaticData[i].m_iNeedEXP;
-			read >> m_aQuestStaticData[i].m_iNeedMinLevel;
-			read >> m_aQuestStaticData[i].m_iNeedMaxLevel;
-			read >> m_aQuestStaticData[i].m_iNeedJob;
-#ifdef PKPENALTY_QUEST
-			read >> m_aQuestStaticData[i].m_iMinPenalty;
-			read >> m_aQuestStaticData[i].m_iMaxPenalty;
-#endif
-
-			if(QSTART_NPC == m_aQuestStaticData[i].m_iStartType)
+			if (pQuest->preQuestNo > 0)
 			{
-				ASSERT(m_aQuestStaticData[i].m_iStartData != -1);
-				mmap::value_type insertPairValue(m_aQuestStaticData[i].m_iStartData, m_aQuestStaticData[i].m_iIndex);
-				m_mmapNPCToQuest.insert(insertPairValue);
-
-				if (m_aQuestStaticData[i].m_iPreQuestIndex>0)
-				{
-					mmap::value_type insertPairReverseValue(m_aQuestStaticData[i].m_iPreQuestIndex, m_aQuestStaticData[i].m_iIndex);
-					m_mmapPreQuestToCurQuest.insert(insertPairReverseValue);
-				}
-			}			
-
-#			if MAX_MAX_NEED_ITEM < QUEST_MAX_CONDITION
-#			error "Quest System : Max Need Item Count must be larger than Max Condition Count"
-#			endif
-			for(j=0; j<MAX_MAX_NEED_ITEM; ++j)
-			{
-				read >> m_aQuestStaticData[i].m_iNeedItemIndex[j];
-				read >> m_aQuestStaticData[i].m_iNeedItemCount[j];
+				mmap::value_type insertPairReverseValue(pQuest->preQuestNo, pQuest->index);
+				m_mmapPreQuestToCurQuest.insert(insertPairReverseValue);
 			}
-			for(j = 0; j < QUEST_MAX_CONDITION;++j)
-			{
-				read >> m_aQuestStaticData[i].m_iConditionType[j];
-				read >> m_aQuestStaticData[i].m_iConditionIndex[j];
-				read >> m_aQuestStaticData[i].m_iConditionNum[j];
-				
-				for(int t = 0; t < QUEST_MAX_CONDITION_DATA; ++t)
-				{
-					read >> m_aQuestStaticData[i].m_iConditionData[j][t];
-				}
-			}
-			
-			for(j = 0; j  <QUEST_MAX_PRIZE; ++j)
-			{
-				read >> m_aQuestStaticData[i].m_iPrizeType[j];
-				read >> m_aQuestStaticData[i].m_iPrizeIndex[j];
-				read >> m_aQuestStaticData[i].m_iPrizeData[j];
-			}
-
-			read >> m_aQuestStaticData[i].m_bOptionPrize;
-			for(j = 0; j  <QUEST_MAX_PRIZE; ++j)
-			{
-				read >> m_aQuestStaticData[i].m_iOptionPrizeType[j];
-				read >> m_aQuestStaticData[i].m_iOptionPrizeIndex[j];
-				read >> m_aQuestStaticData[i].m_iOptionPrizeData[j];
-				read >> m_aQuestStaticData[i].m_iOptionPrizePlus[j];
-			}
-
-			INDEX lenDesc = 0;
-			read >> lenDesc;
-			memset(&m_aQuestStaticData[i].m_szDesc, 0, sizeof(m_aQuestStaticData[i].m_szDesc));
-			read.Read_t(&m_aQuestStaticData[i].m_szDesc, lenDesc);
-			
-			lenDesc = 0;
-			read >> lenDesc;
-			memset(&m_aQuestStaticData[i].m_szDesc2, 0, sizeof(m_aQuestStaticData[i].m_szDesc2));
-			read.Read_t(&m_aQuestStaticData[i].m_szDesc2, lenDesc);
-			
-			lenDesc = 0;
-			read >> lenDesc;
-			memset(&m_aQuestStaticData[i].m_szDesc3, 0, sizeof(m_aQuestStaticData[i].m_szDesc3));
-			read.Read_t(&m_aQuestStaticData[i].m_szDesc3, lenDesc);
-
-			// [090617: selo] íŒŒí‹° íƒ€ì… ì¶”ê°€ ( 0 : ì¼ë°˜, 1 : íŒŒí‹°, 2 : ì›ì •ëŒ€ )
-#ifdef NEW_QUESTBOOK
-			read >> m_aQuestStaticData[i].m_iPartyScale;
-#endif
-			
-			if(progress != NULL) (*progress)(FLOAT(i) / FLOAT(lastIndex));
 		}
+
+		lastIndex = pQuest->getindex();
 	}
-	catch(char *szErr)
-	{
-		ThrowF_t("Error while loading Quest data, Reported message is \"%s.\" ", szErr);
-	}
+	
+	m_vectorQuestAllowList.resize(lastIndex + 1);
+	memset(&m_vectorQuestAllowList[0], QAT_ALLOW, sizeof(BOOL)*(lastIndex+1));
+
+	return true;
 }
 
 CQuestSystem::eNpcQuestType CQuestSystem::TestNPCForQuest(INDEX iNPCIndex)
 {
-	///í˜„ì¬ ì™„ë£Œëœ(ë³´ìƒì€ ì•ˆë°›ì€) ëª¨ë“  questì˜ ë³´ìƒ npc indexì™€ ë¹„êµí•œë‹¤.
-	///ë³´ìƒí•´ ì¤„ ìˆ˜ ìˆë‹¤ë©´ NQT_CAN_PRIZEë¥¼ ë¦¬í„´.
+	///ÇöÀç ¿Ï·áµÈ(º¸»óÀº ¾È¹ŞÀº) ¸ğµç questÀÇ º¸»ó npc index¿Í ºñ±³ÇÑ´Ù.
+	///º¸»óÇØ ÁÙ ¼ö ÀÖ´Ù¸é NQT_CAN_PRIZE¸¦ ¸®ÅÏ.
+
+	CMobData* MD = CMobData::getData(iNPCIndex);
+
+	if (MD->IsChannelFlag(_pNetwork->m_iServerCh) == false)
+	{
+		return NQT_NONE;
+	}
+
+	if (_pNetwork->IsRvrZone() && MD->GetSyndicateType() != _pNetwork->MyCharacterInfo.iSyndicateType)
+		return NQT_NONE;
+
 	for(INDEX i=0; i<m_vectorCurrentUserQuest.size(); ++i)
 	{
 		if(m_vectorCurrentUserQuest[i]->IsQuestComplete()
@@ -916,24 +830,34 @@ CQuestSystem::eNpcQuestType CQuestSystem::TestNPCForQuest(INDEX iNPCIndex)
 		}
 	}
 
-	///ì´ npcê°€ ì¤„ ìˆ˜ ìˆëŠ” ëª¨ë“  questë¥¼ ì°¾ëŠ”ë‹¤.
+	///ÀÌ npc°¡ ÁÙ ¼ö ÀÖ´Â ¸ğµç quest¸¦ Ã£´Â´Ù.
 	mmap::iterator iterLower = m_mmapNPCToQuest.lower_bound(iNPCIndex); 
 	mmap::iterator iterUpper = m_mmapNPCToQuest.upper_bound(iNPCIndex);
 	if(iterLower == m_mmapNPCToQuest.end()) return NQT_NONE;
 	
-	///ìˆ˜í–‰ ê°€ëŠ¥ ì¡°ê±´ì„ ê²€ì‚¬í•´ì„œ ìˆ˜í–‰ê°€ëŠ¥í•˜ë©´ NQT_HAVE_QUESTë¥¼ ë¦¬í„´.
+	///¼öÇà °¡´É Á¶°ÇÀ» °Ë»çÇØ¼­ ¼öÇà°¡´ÉÇÏ¸é NQT_HAVE_QUEST¸¦ ¸®ÅÏ.
 	//if(iterUpper != m_mmapNPCToQuest.end()) ++iterUpper;
 	for(mmap::iterator iter=iterLower; iter!=iterUpper; ++iter)
 	{
 		INDEX iQuestIndex = (*iter).second;
-		///í˜„ì¬ ìˆ˜í–‰ ì¤‘ì¸ í€˜ìŠ¤íŠ¸ì¸ì§€ í™•ì¸í•œë‹¤.
-		///m_vectorQuestAllowListì—ì„œ ì´ë¯¸ ìˆ˜í–‰í•˜ê±°ë‚˜ í¬ê¸°í•œ í€˜ìŠ¤íŠ¸ì¸ì§€ ê²€ì‚¬í•œë‹¤.
+		///ÇöÀç ¼öÇà ÁßÀÎ Äù½ºÆ®ÀÎÁö È®ÀÎÇÑ´Ù.
+		///m_vectorQuestAllowList¿¡¼­ ÀÌ¹Ì ¼öÇàÇÏ°Å³ª Æ÷±âÇÑ Äù½ºÆ®ÀÎÁö °Ë»çÇÑ´Ù.
+
+		// RVR¿ë ¿¬°èÄù½ºÆ®. ¿¬°èÄù½ºÆ® Å¸ÀÔÀÌ ¾ø±â ¶§¹®¿¡ ÀÓ½Ã·Î ÇÏµåÄÚµù.
+		// µÎ Äù½ºÆ®Áß ÇÏ³ª¶óµµ ¼öÇà°¡´É »óÅÂ°¡ ¾Æ´Ï¶ó¸é NPC¿¡°Ô Q¸¶Å©¸¦ »Ñ·ÁÁÖÁö ¾Ê´Â´Ù.
+		if (iQuestIndex == 682 || iQuestIndex == 683)
+		{
+			if (m_vectorQuestAllowList[ 682 ] != QAT_ALLOW ||
+				m_vectorQuestAllowList[ 683 ] != QAT_ALLOW)
+				return NQT_NONE;
+		}
+
 		if (m_vectorQuestAllowList[ iQuestIndex ] == QAT_ALLOW)
 		{
-			ASSERT(m_aQuestStaticData[iQuestIndex].m_iStartType == QSTART_NPC);
-			//start quest npc zone ê²€ì‚¬
-			if(m_aQuestStaticData[iQuestIndex].m_iStartNPCZoneIndex == -1
-			|| m_aQuestStaticData[iQuestIndex].m_iStartNPCZoneIndex == g_slZone)
+			ASSERT(CQuestStaticData::getData(iQuestIndex)->startType == QSTART_NPC);
+			//start quest npc zone °Ë»ç
+			if (CQuestStaticData::getData(iQuestIndex)->startNpcZoneNo == -1 || 
+				CQuestStaticData::getData(iQuestIndex)->startNpcZoneNo == g_slZone)
 			{
 				if(CanIDoQuest(iQuestIndex))
 				{
@@ -943,56 +867,65 @@ CQuestSystem::eNpcQuestType CQuestSystem::TestNPCForQuest(INDEX iNPCIndex)
 		}
 	}
 
-	///NQT_NONEì„ ë¦¬í„´
+	///NQT_NONEÀ» ¸®ÅÏ
 	return NQT_NONE;
 }
 
 BOOL CQuestSystem::CanIDoQuest(INDEX iQuestIndex)
 {
 	if(iQuestIndex == -1) return FALSE;
-	if(m_aQuestStaticData[iQuestIndex].m_iIndex == -1) return FALSE;
+	CQuestStaticData* Quest = CQuestStaticData::getData(iQuestIndex);
 
-	CQuestStaticData &Quest = m_aQuestStaticData[iQuestIndex];
+	if (Quest == NULL)
+		return FALSE;
 
-	///ì„ í–‰ í€˜ìŠ¤íŠ¸ ì¡°ê±´ ê²€ì‚¬
-	if(Quest.m_iPreQuestIndex != 0
-	&& m_vectorQuestAllowList[ Quest.m_iPreQuestIndex ] != QAT_ALREADY_DONE)
+	///¼±Çà Äù½ºÆ® Á¶°Ç °Ë»ç
+	if(Quest->preQuestNo != 0
+	&& m_vectorQuestAllowList[ Quest->preQuestNo ] != QAT_ALREADY_DONE)
 	{
 		return FALSE;
 	}
-	///ê²½í—˜ì¹˜ ê²€ì‚¬
-	if(Quest.m_iNeedMinLevel == _pNetwork->MyCharacterInfo.level
-	&& Quest.m_iNeedEXP > _pNetwork->MyCharacterInfo.curExp)
+// 	///°æÇèÄ¡ °Ë»ç
+// 	if(Quest->m_iNeedMinLevel == _pNetwork->MyCharacterInfo.level
+// 	&& Quest->m_iNeedEXP > _pNetwork->MyCharacterInfo.curExp)
+// 	{
+// 		return FALSE;
+// 	}
+	///·¹º§ °Ë»ç
+	if(Quest->needMinLevel > _pNetwork->MyCharacterInfo.level
+	|| Quest->needMaxLevel < _pNetwork->MyCharacterInfo.level)
 	{
 		return FALSE;
 	}
-	///ë ˆë²¨ ê²€ì‚¬
-	if(Quest.m_iNeedMinLevel > _pNetwork->MyCharacterInfo.level
-	|| Quest.m_iNeedMaxLevel < _pNetwork->MyCharacterInfo.level)
+	///Á÷¾÷ °Ë»ç
+	if(Quest->needJob != -1/*ALL*/ && _pNetwork->MyCharacterInfo.job != Quest->needJob)
 	{
 		return FALSE;
 	}
-	///ì§ì—… ê²€ì‚¬
-	if(Quest.m_iNeedJob != -1/*ALL*/ && _pNetwork->MyCharacterInfo.job != Quest.m_iNeedJob)
-	{
-		return FALSE;
-	}
-#ifdef PKPENALTY_QUEST	
-	if ((Quest.m_iMinPenalty != 0 && Quest.m_iMaxPenalty != 0)) // min, max penaltyê°€ ëª¨ë‘ 0ì´ë©´ ê²€ì‚¬ í•˜ì§€ ì•ŠëŠ”ë‹¤.
-	{	// pk í˜ë„í‹° ì¡°ê±´ ê²€ì‚¬
-		if (_pNetwork->MyCharacterInfo.pkpenalty < Quest.m_iMinPenalty ||
-			_pNetwork->MyCharacterInfo.pkpenalty > Quest.m_iMaxPenalty)
+	if ((Quest->needMinPenalty != 0 && Quest->needMaxPenalty != 0)) // min, max penalty°¡ ¸ğµÎ 0ÀÌ¸é °Ë»ç ÇÏÁö ¾Ê´Â´Ù.
+	{	// pk Æä³ÎÆ¼ Á¶°Ç °Ë»ç
+		if (_pNetwork->MyCharacterInfo.pkpenalty < Quest->needMinPenalty ||
+			_pNetwork->MyCharacterInfo.pkpenalty > Quest->needMaxPenalty)
 		{
 			return FALSE;
 		}
 	}
-#endif
 
-	///í•„ìš” ì•„ì´í…œ ê²€ì‚¬
+	// °á»ç´ë Å¸ÀÔ °Ë»ç OR Á÷À§ °Ë»ç.
+	if (Quest->rvr_type > 0 && Quest->rvr_type > 0)
+	{
+		if (Quest->rvr_type != _pNetwork->MyCharacterInfo.iSyndicateType || 
+			Quest->rvr_grade > _pNetwork->MyCharacterInfo.iSyndicateGrade)
+			return FALSE;
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	///ÇÊ¿ä ¾ÆÀÌÅÛ °Ë»ç
 	for(int i=0; i<MAX_MAX_NEED_ITEM; ++i)
 	{
-		if(Quest.m_iNeedItemIndex[i] != -1
-		&& _pUIMgr->GetInventory()->GetItemCount(Quest.m_iNeedItemIndex[i]) < Quest.m_iNeedItemCount[i])
+		if(Quest->needItemIndex[i] != -1
+		&& pUIManager->GetInventory()->GetItemCount(Quest->needItemIndex[i]) < Quest->needItemCount[i])
 		{
 			return FALSE;
 		}
@@ -1000,55 +933,32 @@ BOOL CQuestSystem::CanIDoQuest(INDEX iQuestIndex)
 	return TRUE;
 }
 
-void CQuestSystem::RefreshNPCQuestMark(INDEX iNPCIndex)
-{
-	if(iNPCIndex == -1) return;
-	INDEX iMobCount = _pNetwork->ga_srvServer.srv_amtMob.Count();
-	for(INDEX i=0; i<iMobCount; ++i)
-	{
-		CMobTarget &mt = _pNetwork->ga_srvServer.srv_amtMob[i];
-		if(mt.mob_iType == iNPCIndex)
-		{
-			CEntity *penNPC = mt.mob_pEntity;
-			if(penNPC && penNPC->GetModelInstance())
-			{
-				mt.mob_statusEffect.ChangeNPCQuestMark(
-					&penNPC->GetModelInstance()->m_tmSkaTagManager
-					, TestNPCForQuest(iNPCIndex));
-			}
-			return;
-		}
-	}
-}
-
 CTString CQuestSystem::MakeInfoForCondition(int iQuestIndex, int iConditionType, int iConditionIndex, int iCurrentCnt, int iConditionCnt)
 {
 	CTString strRet;
 	if(iConditionType == QCONDITION_NPC)
 	{
-		CMobData &mob = _pNetwork->GetMobData(iConditionIndex);
-		strRet.PrintF( _S( 1656, "%s ë§ˆë¦¬ %d/%d" ), mob.GetName(), iCurrentCnt, iConditionCnt);
+		CMobData* mob = CMobData::getData(iConditionIndex);
+		strRet.PrintF( _S( 1656, "%s ¸¶¸® %d/%d" ), mob->GetName(), iCurrentCnt, iConditionCnt);
 	}
-#ifdef PKPENALTY_QUEST	
 	else if (iConditionType == QCONDITION_PC)
-	{// PK í€˜ìŠ¤íŠ¸
-		strRet.PrintF( _S(3976, "PK ìŠ¹ë¦¬ %d/%d"), iCurrentCnt, iConditionCnt);
+	{// PK Äù½ºÆ®
+		strRet.PrintF( _S(3976, "PK ½Â¸® %d/%d"), iCurrentCnt, iConditionCnt);
 	}
-#endif	
 	else if(iConditionType == QCONDITION_ITEM || iConditionType == QCONDITION_ITEM_NORMAL)
 	{
-		CItemData &item = _pNetwork->GetItemData(iConditionIndex);
-		strRet.PrintF( _S( 1657, "%s ê°œìˆ˜ %d/%d" ), item.GetName(), iCurrentCnt, iConditionCnt);
+		CItemData* pItem = _pNetwork->GetItemData(iConditionIndex);
+		strRet.PrintF( _S( 1657, "%s °³¼ö %d/%d" ), pItem->GetName(), iCurrentCnt, iConditionCnt);
 	}
-	// [090616: selo] í™•ì¥íŒ© í€˜ìŠ¤íŠ¸ ì‹ ê·œ ì¡°ê±´
+	// [090616: selo] È®ÀåÆÑ Äù½ºÆ® ½Å±Ô Á¶°Ç
 	else if(iConditionType == QCONDITION_AREA)
 	{
-		strRet.PrintF( _s("%d/%d"), iCurrentCnt, iConditionCnt);
+		strRet.PrintF( CTString("%d/%d"), iCurrentCnt, iConditionCnt);
 	}
 	else if(iConditionType == QCONDITION_ITEMUSE)
 	{
-		CItemData &item = _pNetwork->GetItemData(iConditionIndex);
-		strRet.PrintF( _S( 1657, "%s ê°œìˆ˜ %d/%d" ), item.GetName(), iCurrentCnt, iConditionCnt);
+		CItemData* pItem = _pNetwork->GetItemData(iConditionIndex);
+		strRet.PrintF( _S( 1657, "%s °³¼ö %d/%d" ), pItem->GetName(), iCurrentCnt, iConditionCnt);
 	}
 
 	return strRet;
@@ -1065,8 +975,29 @@ INDEX CQuestSystem::SearchContactQuestIndex(INDEX iQuestIndex)
 	if (ItrQuestToNPC != m_mmapPreQuestToCurQuest.end())
 	{
 		iContactQuest = (*ItrQuestToNPC).second;
-		iContactNpcIndex = m_aQuestStaticData[iContactQuest].m_iPrizeNPCIndex;
+		iContactNpcIndex = CQuestStaticData::getData(iContactQuest)->prizeNPC;
 	}
 
 	return iContactNpcIndex;
+}
+
+//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+void CQuestSystem::SetNoTranslate( std::vector<INDEX> transList )
+{
+	std::vector<INDEX>::iterator it = transList.begin();
+
+	for ( ; it != transList.end(); ++it )
+	{
+		CQuestStaticData::getData((*it))->SetNoTranslate();
+	}
+}
+
+void CQuestSystem::ClearNoTranslate( std::vector<INDEX> transList )
+{
+	std::vector<INDEX>::iterator it = transList.begin();
+
+	for ( ; it != transList.end(); ++it )
+	{
+		CQuestStaticData::getData((*it))->ClearNoTranslate();
+	}
 }

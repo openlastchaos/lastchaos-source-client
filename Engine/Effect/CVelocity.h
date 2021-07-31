@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CVELOCITY_H__
 #define __CVELOCITY_H__
 
@@ -6,9 +6,9 @@
 #include <Engine/Base/Memory.h>
 enum VelocityType
 {
-	VT_ZERO			= 0,	//ì›€ì§ì´ì§€ ì•ŠìŒ.
-	VT_DIRECTION	= 1,	//ì¼ì •í•œ ë°©í–¥
-	VT_POINT		= 2,	//ì¼ì •í•œ ì†ë„, íŠ¹ì • ì§€ì ì—ì„œ ë°œìƒ, ë°©ì‚¬í˜•
+	VT_ZERO			= 0,	//¿òÁ÷ÀÌÁö ¾ÊÀ½.
+	VT_DIRECTION	= 1,	//ÀÏÁ¤ÇÑ ¹æÇâ
+	VT_POINT		= 2,	//ÀÏÁ¤ÇÑ ¼Óµµ, Æ¯Á¤ ÁöÁ¡¿¡¼­ ¹ß»ý, ¹æ»çÇü
 };
 
 class CVelocity
@@ -51,4 +51,4 @@ protected:
 };
 
 #endif //__CVELOCITY_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

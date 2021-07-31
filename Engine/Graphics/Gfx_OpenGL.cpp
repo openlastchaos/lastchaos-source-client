@@ -199,7 +199,7 @@ BOOL CGfxLibrary::SetupPixelFormat_OGL( HDC hdc, BOOL bReport/*=FALSE*/)
   else                        gap_iDepthBits = 32;
 
   // find closest pixel format
-  pfd.cColorBits = (dd!=DD_16BIT) ? 32 : 16;
+  pfd.cColorBits = (dd!=DISPD_16BIT) ? 32 : 16;
   iPixelFormat = FindPixelFormat_OGL( hdc, pfd, gap_iDepthBits);
 
   if( !iPixelFormat) {

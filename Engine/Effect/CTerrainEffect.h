@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CTERRAINEFFECT_H__
 #define __CTERRAINEFFECT_H__
 
@@ -23,10 +23,10 @@ public:
 
 	//NEW_DELETE_DEFINITION(CTerrainEffect);
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	virtual void Read(CTStream *istrFile);
 	virtual void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	
 	virtual void Start(FLOAT time, BOOL restart = FALSE);
 	virtual BOOL Process(FLOAT time);
@@ -58,19 +58,19 @@ public:
 	virtual void EndRender(BOOL bRestoreOrtho);
 protected:
 	//content variable
-	CTFileName			m_strTextureFileName;	//textureì˜ íŒŒì¼ ì´ë¦„
-	CRectFlt			m_rcArea;				//ë²”ìœ„, Tagì˜ ìƒëŒ€ì¢Œí‘œê³„ì´ìš©.
-	COLOR				m_colEffect;			//ìƒ‰ê¹”.
+	CTFileName			m_strTextureFileName;	//textureÀÇ ÆÄÀÏ ÀÌ¸§
+	CRectFlt			m_rcArea;				//¹üÀ§, TagÀÇ »ó´ëÁÂÇ¥°èÀÌ¿ë.
+	COLOR				m_colEffect;			//»ö±ò.
 	PredefinedBlendType	m_eBlendType;
-	EFFECT_OF_TAG_TYPE	m_eRotation;			//tagì˜ íšŒì „ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
-	EFFECT_OF_TAG_TYPE	m_ePosition;			//tagì˜ ì´ë™ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
+	EFFECT_OF_TAG_TYPE	m_eRotation;			//tagÀÇ È¸Àü¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
+	EFFECT_OF_TAG_TYPE	m_ePosition;			//tagÀÇ ÀÌµ¿¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
 	//instance variable
-	CTextureData		*m_ptdTexture;			//ì‹¤ì œ ë¡œë”©ëœ texture
-	static CTerrain		*m_pTerrain;			//Effectê°€ ê·¸ë ¤ì§ˆ Terrain, BSPëŠ” ê³ ë ¤ì—†ìŒ. 
+	CTextureData		*m_ptdTexture;			//½ÇÁ¦ ·ÎµùµÈ texture
+	static CTerrain		*m_pTerrain;			//Effect°¡ ±×·ÁÁú Terrain, BSP´Â °í·Á¾øÀ½. 
 	FLOAT3D				m_vPos;
 	FLOATquat3D			m_qRot;
 	COLOR				m_colCurrent;
 };
 
 #endif //__CTERRAINEFFECT_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

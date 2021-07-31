@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLESABSORPTION_H__
 #define __CPARTICLESABSORPTION_H__
 
@@ -75,19 +75,19 @@ protected:
 	}
 protected:
 	//content
-	PARTICLES_ABSORPTION_TYPE	m_patType;		//íƒ€ì….
-	PARTICLE_MOVE_TYPE			m_pmtType;		//íŒŒí‹°í´ ì›€ì§ì„ íƒ€ì….
-	BOOL						m_bDependLife;	//Lifeê°ì†Œ ì²˜ë¦¬ ì—¬ë¶€.
+	PARTICLES_ABSORPTION_TYPE	m_patType;		//Å¸ÀÔ.
+	PARTICLE_MOVE_TYPE			m_pmtType;		//ÆÄÆ¼Å¬ ¿òÁ÷ÀÓ Å¸ÀÔ.
+	BOOL						m_bDependLife;	//Life°¨¼Ò Ã³¸® ¿©ºÎ.
 	//instance
-	FLOAT3D		m_vCenter;		//Absorptionì˜ ì¤‘ì‹¬
-	FLOATquat3D	m_quatDir;		//Absorptionì˜ ë°©í–¥
-	FLOAT3D		m_vOldCenter;	//Absorptionì˜ ì¤‘ì‹¬(old)
-	FLOATquat3D	m_quatOldDir;	//Absorptionì˜ ë°©í–¥(old)
-	FLOAT3D		m_vDeltaCenter;	//Absorptionì˜ ì¤‘ì‹¬ì˜ ë³€í™”
-	FLOATquat3D	m_quatDeltaDir;	//Absorptionì˜ ë°©í–¥ì˜ ë³€í™”
+	FLOAT3D		m_vCenter;		//AbsorptionÀÇ Áß½É
+	FLOATquat3D	m_quatDir;		//AbsorptionÀÇ ¹æÇâ
+	FLOAT3D		m_vOldCenter;	//AbsorptionÀÇ Áß½É(old)
+	FLOATquat3D	m_quatOldDir;	//AbsorptionÀÇ ¹æÇâ(old)
+	FLOAT3D		m_vDeltaCenter;	//AbsorptionÀÇ Áß½ÉÀÇ º¯È­
+	FLOATquat3D	m_quatDeltaDir;	//AbsorptionÀÇ ¹æÇâÀÇ º¯È­
 };
 
 typedef CRefCountPtr<CParticlesAbsorption> ptr_absoprtion;
 
 #endif //__CPARTICLESABSORPTION_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

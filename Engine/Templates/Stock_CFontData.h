@@ -21,6 +21,8 @@
 
 ENGINE_API extern CStock_CFontData *_pFontStock;
 
+#define FONT_STOCK_RELEASE(p) { if(p){ _pFontStock->Release(p); p = NULL; } }
+
 
 #endif  /* include-once check. */
 

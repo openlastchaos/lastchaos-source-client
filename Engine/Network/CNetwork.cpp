@@ -1,96 +1,128 @@
 #include "StdH.h"
+#include <set>
 #include <Engine/Build.h>
 #include <Engine/Base/Console.h>
 #include <Engine/Base/CRCTable.h>
 #include <Engine/Base/MemoryTracking.h>
 #include <Engine/Base/Shell.h>
-#include <Engine/Base/ProgressHook.h>
+#include <Engine/Base/Statistics_internal.h>
+#include <Engine/Base/ListIterator.inl>
+#include <Engine/Base/FileName.h>
 #include <Engine/Base/Timer.h>
+#include <Engine/Graphics/DrawPort.h>
+#include <Engine/Rendering/Render_internal.h>
+#include <Engine/Sound/SoundLibrary.h>
+#include <Engine/Math/Float.h>
+#include <Engine/Brushes/BrushArchive.h>
+#include <Engine/Models/ModelObject.h>
+#include <Engine/Ska/ModelInstance.h>
+
+#include <Engine/Entities/InternalClasses.h>
+#include <Engine/Entities/Precaching.h>
+#include <Engine/Entities/ShadingInfo.h>
+#include <Engine/Entities/EntityCollision.h>
+#include <Engine/Entities/LastPositions.h>
+#include <Engine/Entities/OptionData.h>
+#include <Engine/World/WorldEntityHashing.h>
 #include <Engine/Network/Server.h>
 #include <Engine/Network/SessionState.h>
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Network/Compression.h>
 #include <Engine/Network/PlayerSource.h>
 #include <Engine/Network/PlayerTarget.h>
-#include <Engine/Base/MemoryTracking.h>
-//#include <Engine/Network/GameSpy.h>
-#include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/Precaching.h>
 #include <Engine/Network/CommunicationInterface.h>
+#include <Engine/Network/NetworkProfile.h>
+#include <Engine/Network/LevelChange.h>
+#include <Engine/Network/EntityHashing.h>
+#include <Engine/Network/tcpipconnection.h>
+#include <Engine/Network/MessageDefine.h>
+
 #include <Engine/Templates/Stock_CFontData.h>
 #include <Engine/Templates/Stock_CModelData.h>
 #include <Engine/Templates/Stock_CAnimData.h>
 #include <Engine/Templates/Stock_CTextureData.h>
 #include <Engine/Templates/Stock_CSoundData.h>
 #include <Engine/Templates/Stock_CEntityClass.h>
-
-#include <Engine/interface/UIManager.h>
-#include <Engine/Interface/UIProcess.h>			// Ïù¥Í∏∞Ìôò Ï∂îÍ∞Ä ( 12. 6 )
-#include <Engine/Base/Statistics_internal.h>
-#include <Engine/Graphics/DrawPort.h>
-#include <Engine/Sound/SoundLibrary.h>
-#include <Engine/Rendering/Render.h>
-#include <Engine/Rendering/Render_internal.h>
-#include <Engine/Base/ListIterator.inl>
-#include <Engine/Math/Float.h>
-
-#include <Engine/Network/NetworkProfile.h>
-#include <Engine/Network/LevelChange.h>
-#include <Engine/Brushes/BrushArchive.h>
-#include <Engine/Entities/Entity.h>
-#include <Engine/Models/ModelObject.h>
-#include <Engine/Ska/ModelInstance.h>
-#include <Engine/Entities/ShadingInfo.h>
-#include <Engine/Entities/EntityCollision.h>
-#include <Engine/Entities/LastPositions.h>
-
-#include <Engine/Templates/DynamicContainer.cpp>
-#include <Engine/Templates/DynamicArray.cpp>
-#include <Engine/Templates/StaticArray.cpp>
-#include <Engine/Templates/StaticStackArray.cpp>
-
-#include <Engine/Templates/Stock_CAnimData.h>
-#include <Engine/Templates/Stock_CTextureData.h>
-#include <Engine/Templates/Stock_CSoundData.h>
-#include <Engine/Templates/Stock_CEntityClass.h>
-#include <Engine/Templates/Stock_CModelData.h>
 #include <Engine/Templates/Stock_CAnimSet.h>
 #include <Engine/Templates/Stock_CMesh.h>
 #include <Engine/Templates/Stock_CShader.h>
 #include <Engine/Templates/Stock_CSkeleton.h>
 #include <Engine/Templates/Stock_CModelInstance.h>
+#include <Engine/Templates/DynamicContainer.cpp>
+#include <Engine/Templates/DynamicArray.cpp>
+#include <Engine/Templates/StaticArray.cpp>
+#include <Engine/Templates/StaticStackArray.cpp>
 
-#include <Engine/Network/EntityHashing.h>
-#include <Engine/World/WorldEntityHashing.h>
-//0105
-#include <Engine/Network/tcpipconnection.h>
-//0603 kwon 
-#include <Engine/Entities/ItemData.h>
-#include <Engine/Entities/OptionData.h>
-#include <Engine/Interface/UIManager.h>		// yjpark
+#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/interface/UIManager.h>
+#include <Engine/interface/UISpinButton.h>
+#include <Engine/interface/UIMessageBox.h>
+#include <Engine/Interface/UIProcess.h>			// ¿Ã±‚»Ø √ﬂ∞° ( 12. 6 )
+#include <Engine/Interface/UISiegeWarfareDoc.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Interface/UISummon.h>
+#include <Engine/Interface/UITeleport.h>
+#include <Engine/Interface/UIQuickSlot.h>
+#include <Engine/Interface/UIShop.h>
+#include <Engine/Contents/Base/ChattingUI.h>		// yjpark
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Interface/UIProduct.h>
+#include <Engine/Interface/UIGamble.h>
+#include <Engine/Contents/function/WildPetInfoUI.h>
+#include <Engine/Interface/UISiegeWarfareNew.h>
+#include <Engine/Interface/UIMix.h>
+#include <Engine/Interface/UIReformSystem.h>
+#include <Engine/Interface/UIGuildWarPortal.h>
+#include <Engine/Contents/Base/UIPartyNew.h>
+#include <Engine/Interface/UICompound.h>
+#include <Engine/Contents/Base/UIChangeWeaponNew.h>
+#include <Engine/Interface/UISocketSystem.h>
+#include <Engine/Contents/Base/UIQuestNew.h>
+#include <Engine/Contents/Base/UIQuestAccept.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/Base/Quest.h>
+#include <Engine/Contents/Base/Party.h>
+#include <Engine/Contents/function/TitleData.h>
+#include <Engine/Contents/function/WildPetTargetUI.h>
 #include <Engine/Effect/CTerrainEffect.h>	// yjpark
 #include <Engine/JobInfo.h>
 #include <Engine/PetInfo.h>
 #include <Engine/SlaveInfo.h>
-#include <Engine/Interface/UISiegeWarfareDoc.h>
-#include <Engine/Interface/UIGuild.h>
-#include <Engine/Network/MessageDefine.h>
-#include <Engine/Interface/UISummon.h>
-#include <Engine/Interface/UIQuestBook.h>
-#include <Engine/Interface/UITeleport.h>
-#include <Engine/Interface/UIQuickSlot.h>
-#include <Engine/Interface/UIShop.h>
-#include <Engine/Interface/UIChatting.h>		// yjpark
 #include <Engine/LocalDefine.h>
+#include <Engine/Info/MyInfo.h>
+#include <Engine/Help/ItemHelp.h>
+#include <Engine/Contents/function/PetTargetUI.h>
 // WSS_NPROTECT 070402 --------------------------------->>
 #ifndef NO_GAMEGUARD
-	#include <NPGameLib.h>
+//	#include <NPGameLib.h>
 	#include <Engine\GameState.h>
-	extern ENGINE_API CNPGameLib npgl;
+//	extern ENGINE_API CNPGameLib npgl;
 #endif
 // -----------------------------------------------------<<
+#include <Engine/GameState.h>
+#include <Common/Packet/ptype_old_do_item.h>
+#include <Common/Packet/ptype_old_do_exapet.h>
+#include <Common/Packet/ptype_old_do_guild.h>
+#include <Common/Packet/ptype_old_do_pk.h>
+#include <Common/Packet/ptype_old_do_reform_system.h>
+#include <Common/Packet/ptype_old_do_stash.h>
+#include <Common/Packet/ptype_old_mempos.h>
+#include <Common/Packet/ptype_old_do_action.h>
+#include <Common/Packet/ptype_old_do_attack.h>
+#include <Common/Packet/ptype_old_do_changejob.h>
+#include <Common/Packet/ptype_old_do_move.h>
+#include <Common/Packet/ptype_old_do_skill.h>
+#include <Common/Packet/ptype_old_do_sskill.h>
+#include <Engine/Object/ActorMgr.h>
+#include <Engine/Loading.h>
+#include <Common/Packet/ptype_old_do_friend.h>
+#include <Common/Packet/ptype_old_extend.h>
+#include <Common/Packet/ptype_attendance.h>
+#include <Common/Packet/ptype_old_login.h>
+#include <common/Packet/ptype_premium_char.h>
 
 #define MAX_MOVE_LIST		(20)
+#define	DEF_SKILL_SEND_DELAY	200
 
 // pointer to global instance of the only game object in the application
 CNetworkLibrary *_pNetwork= NULL;
@@ -189,8 +221,6 @@ extern INDEX net_ctChatMessages = 0;  // counter for incoming chat messages
 extern CPacketBufferStats _pbsSend;
 extern CPacketBufferStats _pbsRecv;
 
-extern INDEX g_iCountry;
-
 class CGatherCRC {
 public:
   BOOL bOld;
@@ -228,19 +258,10 @@ extern void ClearRenderer(void);
 extern void DumpSkaStringToIDTable(void);
 extern void DumpShellHashTable(void);
 
-// Check Attack Flag
-#define ENF_EX2_PVP				(1L<<0)
-#define ENF_EX2_LEGIT			(1L<<1)
-#define ENF_EX2_MYPARTY			(1L<<2)
-#define ENF_EX2_MYGUILD			(1L<<3)
-#define ENF_EX2_ENEMYGUILD		(1L<<4)
-#define ENF_EX2_WAR_OURFORCE	(1L<<5)
-#define ENF_EX2_WAR_ENEMY		(1L<<6)
-
 // cache all shadowmaps now
 extern void CacheShadows(void)
 {
-	// mute all sounds
+	// mute all soundsf
 	_pSound->Mute();
 	CWorld *pwo = (CWorld*)_pShell->GetINDEX("pwoCurrentWorld");
 	if( pwo!=NULL) {
@@ -595,7 +616,7 @@ static void KickByName(const CTString &strName, const CTString &strReason)
 
 static void Admin(const CTString &strCommand)
 {
-/* //0522 kwon ÏÇ≠Ï†ú.
+/* //0522 kwon ªË¡¶.
 CNetworkMessage nm(MSG_ADMIN_COMMAND);
 nm<<net_strAdminPassword<<strCommand;
 _pNetwork->SendToServerReliable(nm);
@@ -834,24 +855,23 @@ extern void FreeUnusedStock(void)
 	_pShaderStock->FreeUnused();
 }
 
-/*
-* Default constructor.
-*/
-CNetworkLibrary::CNetworkLibrary(void) :
-ga_IsServer(FALSE),               // is not server
-ga_bFirstMainLoop(TRUE),          // MainLoop will be run for the first time
-ga_bDemoRec(FALSE),               // not recording demo
-ga_bDemoPlay(FALSE),              // not playing demo
-ga_bDemoPlayFinished(FALSE),      // demo not finished
-ga_srvServer(*new CServer),
-ga_sesSessionState(*new CSessionState),
+CNetworkLibrary::CNetworkLibrary(void) 
+	: ga_IsServer(FALSE)               // is not server
+	, ga_bFirstMainLoop(TRUE)          // MainLoop will be run for the first time	
+	, ga_bDemoRec(FALSE)               // not recording demo
+	, ga_bDemoPlay(FALSE)              // not playing demo
+	, ga_bDemoPlayFinished(FALSE)      // demo not finished
+	, ga_srvServer(*new CServer)
+	, ga_sesSessionState(*new CSessionState)
 #ifdef NDEBUG
-m_ubGMLevel( 0 )
+	, m_ubGMLevel( 0 )
 #else
-m_ubGMLevel( 1 )
+	, m_ubGMLevel( 1 )
 #endif
+	, ga_tvDemoTimerLastTime((__int64)0)
+	, m_nSkillSendTime(0)
 {
-	// EDIT : BS : Ìå®ÌÇ∑ ÏïîÌò∏Ìôî
+	// EDIT : BS : ∆–≈∂ æœ»£»≠
 #ifdef CRYPT_NET_MSG
 	CNM_InitKeyValue(&cnmKey);
 #ifndef CRYPT_NET_MSG_MANUAL
@@ -860,7 +880,14 @@ m_ubGMLevel( 1 )
 #else
 	cnmKey = CNM_INIT_KEY;
 #endif // #ifdef CRYPT_NET_MSG
-
+#ifdef CRYPT_NET_MSG
+	CNM_InitKeyValue(&subHelperKey);
+#ifndef CRYPT_NET_MSG_MANUAL
+	CNM_InitKeyValue(&subHelperKeyServer);
+#endif // #ifndef CRYPT_NET_MSG_MANUAL
+#else
+	subHelperKey = CNM_INIT_KEY;
+#endif // #ifdef CRYPT_NET_MSG
 	// EDIT : BS : BEGIN
 	m_tickSendMoveList = 0;
 	// EDIT : BS : END
@@ -889,21 +916,10 @@ m_ubGMLevel( 1 )
 	//0105
 	//IsTcpServer = FALSE;		// by seo-40225
 	m_bReadyStart = FALSE;
-	wo_aItemData.Clear();
-//	wo_aItemData.New(MAXITEMDATA);			// ÏõêÎ≥∏.
-	wo_aItemName.Clear();
-//	wo_aItemName.New(MAXITEMDATA);
-	wo_iNumOfItem = -1;
-	wo_iNumOfItemName = -1;
-	wo_iNumOfAction = -1;			// yjpark
+	wo_aJewelData.Clear();
+	wo_iNumOfJewelGradeData = -1;
 	wo_iNumOfSkill = -1;			// yjpark
-	wo_iNumOfSSkill = -1;
-	wo_iNumOfMobName = -1;
 	m_bSingleMode = FALSE;
-	
-	wo_aOptionData.Clear();
-	wo_vecItemRareOption.clear();
-	wo_iNumOfOption = -1;
 	
 	wo_dwEnemyCount			= 0;
 	wo_dwKilledEnemyCount	= 0;
@@ -915,12 +931,13 @@ m_ubGMLevel( 1 )
 	MyCharacterInfo.StatPoint = 0;	
 	MyCharacterInfo.sbItemEffectOption = 0;
 	
-	// ÏºÄÎ¶≠ÌÑ∞ÏôÄ Ïó∞Í¥ÄÎêú Pet Í¥ÄÎ†® Îç∞Ïù¥ÌÑ∞ Ï¥àÍ∏∞Ìôî
+	// ƒ…∏Ø≈ÕøÕ ø¨∞¸µ» Pet ∞¸∑√ µ•¿Ã≈Õ √ ±‚»≠
 	MyCharacterInfo.bPetRide = FALSE; 
 	MyCharacterInfo.iPetType = -1;
 	MyCharacterInfo.iPetAge = -1;
-	
+	MyCharacterInfo.bWildPetRide = FALSE;
 	MyCharacterInfo.secretkey = 0;
+	MyCharacterInfo.pktitle = 0;
 
 	// WSS_VISIBLE 070511
 	MyCharacterInfo.m_ModelColor = NULL;
@@ -928,23 +945,64 @@ m_ubGMLevel( 1 )
 	// WSS_GUILDMASTER 070511
 	MyCharacterInfo.sbGuildRank = 0;
 	MyCharacterInfo.bConsensus = FALSE;	// WSS_DRATAN_SEIGEWARFARE 2007/08/01	
-	
+	MyCharacterInfo.sbSoulCount = 0;
 	MyCharacterInfo.EntranceType = CURRENT_ENTER_NORMAL;
+
+	MyCharacterInfo.eMorphStatus	= MyChaInfo::eMORPH_END;
 
 	m_uiSendedTime = 0;
 	m_bSendMessage = FALSE;
 
 	m_iServerGroup = -1;
 	m_iServerCh	= -1;
+	m_iServerType = -1;
 	
 	m_bIsPvp = FALSE;
 
-	for(int i =0; i<WEAR_TOTAL;++i)
+	int		i;
+	for( i = 0; i < WEAR_TOTAL; ++i )
 	{	
-		pMyCurrentWearing[i] = NULL;
+		MyWearItem[i].Init();
+	}
+
+	for( i = 0; i < WEAR_COSTUME_TOTAL; ++i )
+	{
+		MyWearCostItem[i].Init();
 	}
 
 	ga_bGuildWar = FALSE;
+	
+	// [7/15/2010 kiny8216] MONSTER_ENERGY_IGNITION_SYSTEM
+	MyCharacterInfo.ep		= 0;
+	MyCharacterInfo.maxEP	= 0;
+
+	MyCharacterInfo.iGP = 0;
+	MyCharacterInfo.iStudentGiveUpCnt = 0;
+
+	// «—π˙¿«ªÛ added by sam 110131
+	MyCharacterInfo.bOneSuit = FALSE;
+	MyCharacterInfo.iOneSuitDBIndex = -1;
+	MyCharacterInfo.iOneSuitUniIndex = -1;
+	MyCharacterInfo.bpkSysRewardLate = -1;//«—π¯µµ πﬁ¡ˆ æ æ“¿∏∏È -1
+	MyCharacterInfo.iSyndicateType = 0;	// π´º“º”¿∏∑Œ √ ±‚»≠.
+	MyCharacterInfo.iSyndicateGrade = 0;
+	MyCharacterInfo.lSyndicateAccPoint = 0;
+	MyCharacterInfo.iHitEffectType = 0;
+	MyCharacterInfo.useTotem = false;
+
+	memset(m_iNetworkResponse, 0, sizeof(int) * MSG_END);
+	memset(m_iNetworkResponseEx, 0, sizeof(int) * MSG_EX_END);
+
+	// º≠πˆ≈∏¿” √ ±‚»≠
+	slServerTimeGap = 0;
+	slServerTime = 0;
+		
+	bMoveCharacterSelectUI = FALSE;
+
+	// rvr¡∏ ¡¯¿‘ ø©∫Œ.
+	m_bIsRvr = FALSE;
+
+	MyCharacterInfo.stCustomTitle.Init();
 }
 
 /*
@@ -952,17 +1010,12 @@ m_ubGMLevel( 1 )
 */
 CNetworkLibrary::~CNetworkLibrary(void)
 {
-	wo_aItemData.Clear();
-	wo_aItemName.Clear();
-	wo_iNumOfItem = -1;
-	wo_iNumOfItemName = -1;
-	wo_iNumOfAction = -1;			// yjpark
+	wo_aMakeItemData.Clear();
+	wo_aLacaretteData.Clear();
+	
+	wo_aJewelData.Clear();
+	wo_iNumOfJewelGradeData = -1;
 	wo_iNumOfSkill = -1;			// yjpark
-	wo_iNumOfSSkill = -1;
-	wo_iNumOfMobName = -1;
-	wo_aOptionData.Clear();
-	wo_vecItemRareOption.clear();
-	wo_iNumOfOption = -1;
 	// clear the global world
 	ga_World.Clear();
 	
@@ -1126,13 +1179,12 @@ void CNetworkLibrary::Init(const CTString &strGameID)
 	_pShell->DeclareSymbol("INDEX pwoCurrentWorld;", &_pwoCurrentWorld);
 
 	// WSS_DRATAN_SEIGEWARFARE 2007/08/14 -------------------------------->>
-	// 390 ~ 399 Í≥µÏÑ± Î∂ÄÌôúÏßÑÏßÄ Ï¥àÍ∏∞Ìôî
+	// 390 ~ 399 ∞¯º∫ ∫Œ»∞¡¯¡ˆ √ ±‚»≠
 	for(int i=0;i<10;i++)
 	{	
 		_pNetwork->MyCharacterInfo.mQuarter[390+i] = -1;
 		_pNetwork->MyCharacterInfo.mQuarterName[390+i] = CTString("");
 	}
-	// -------------------------------------------------------------------<<
 }
 
 
@@ -1152,7 +1204,7 @@ void CNetworkLibrary::StartPeerToPeer_t(const CTString &strSessionName,
 	TRACKMEM(Mem,"Network");
 	// remove all pending sounds
 	_pSound->Flush();
-	StartProgress();
+	CallProgressHook_t(0.f);
 	
 	// go on
 #ifdef _DEBUG
@@ -1176,10 +1228,14 @@ void CNetworkLibrary::StartPeerToPeer_t(const CTString &strSessionName,
 		CPrintF( TRANS("  network is off\n"));
 	}
 	
+	BOOL bLock = TRUE;
+
+	if (_pNetwork->bMoveCharacterSelectUI == TRUE)
+		bLock = FALSE;
 	// access to the list of handlers must be locked
-	CTSingleLock slHooks(&_pTimer->tm_csHooks, TRUE);
+	CTSingleLock slHooks(&_pTimer->tm_csHooks, bLock);
 	// synchronize access to network
-	CTSingleLock slNetwork(&ga_csNetwork, TRUE);
+	CTSingleLock slNetwork(&ga_csNetwork, bLock);
 	
 	ga_strSessionName = strSessionName;
 	ga_bLocalPause = FALSE;
@@ -1199,8 +1255,10 @@ void CNetworkLibrary::StartPeerToPeer_t(const CTString &strSessionName,
 		// load the world
 		_pTimer->SetCurrentTick(0.0f);  // must have timer at 0 while loading
 //		ga_World.Load_t(fnmWorld);
+		
 		//wooss 050822
-		if(!_pUIMgr->m_testUI_MODE)	ga_World.Load_t(fnmWorld);
+		extern BOOL _bWorldEditorApp;
+		ga_World.Load_t(fnmWorld);
 		
 		// delete all entities that don't fit given spawn flags
 		ga_World.FilterEntitiesBySpawnFlags(ga_sesSessionState.ses_ulSpawnFlags);
@@ -1209,39 +1267,45 @@ void CNetworkLibrary::StartPeerToPeer_t(const CTString &strSessionName,
 		ga_fnmWorld = CTString("");
 		_cmiComm.Server_Close();
 		_cmiComm.Client_Close();
-		StopProgress();
+		//StopProgress();
+		CLoadingImage::getSingleton()->StopLoading();
 		throw;
 	}
 	// remember the world pointer
 	_pShell->SetINDEX("pwoCurrentWorld", (INDEX)&ga_World);
 	
-	//  SetProgressDescription(TRANS("starting server"));
-	SetProgressDescription(TRANS("starting Last Chaos..."));
 	CallProgressHook_t(0.0f);
-	// initialize server
-	try {
-		//! ÏÑúÎ≤Ñ Ï¥àÍ∏∞Ìôî.
-		ga_srvServer.Start_t();
-	} catch (char *) {
-		ga_World.Clear();
-		StopProgress();
-		throw;
+	if (_pNetwork->bMoveCharacterSelectUI == FALSE)
+	{
+		// initialize server
+		try {
+			//! º≠πˆ √ ±‚»≠.
+			ga_srvServer.Start_t();
+		} catch (char *) {
+			ga_World.Clear();
+			//StopProgress();
+			CLoadingImage::getSingleton()->StopLoading();
+			throw;
+		}
 	}
 	ga_IsServer = TRUE;
 	CallProgressHook_t(1.0f);
 	
-	SetProgressDescription(TRANS("Entering World"));
 	CallProgressHook_t(0.0f);
-	// initialize session state
-	try {
-		//! ÏÑ∏ÏÖò Ïä§ÌÖåÏù¥Ìä∏ Ï¥àÍ∏∞Ìôî Î∞è ÏÑúÎ≤Ñ Ïä§ÌÉÄÌä∏.
-		ga_sesSessionState.Start_t(-1);
-	} catch (char *strError) {
-		(void)strError;
-		ga_srvServer.Stop();
-		ga_World.Clear();
-		StopProgress();
-		throw;
+	if (_pNetwork->bMoveCharacterSelectUI == FALSE)
+	{
+		// initialize session state
+		try {
+			//! ººº« Ω∫≈◊¿Ã∆Æ √ ±‚»≠ π◊ º≠πˆ Ω∫≈∏∆Æ.
+			ga_sesSessionState.Start_t(-1);
+		} catch (char *strError) {
+			(void)strError;
+			ga_srvServer.Stop();
+			ga_World.Clear();
+			//StopProgress();
+			CLoadingImage::getSingleton()->StopLoading();
+			throw;
+		}
 	}
 	CallProgressHook_t(1.0f);
 	
@@ -1261,7 +1325,8 @@ void CNetworkLibrary::StartPeerToPeer_t(const CTString &strSessionName,
 	
 	FinishCRCGather();
 	CPrintF( TRANS("  started.\n"));
-	StopProgress();
+	//StopProgress();
+	CLoadingImage::getSingleton()->StopLoading();
 	// mute sounds for one second
 	_pSound->Mute(1);
 }
@@ -1334,7 +1399,7 @@ void CNetworkLibrary::Load_t(const CTFileName &fnmGame) // throw char *
   _pSound->Flush();
   
 
-  StartProgress();
+  CallProgressHook_t(0.f);
 
   // access to the list of handlers must be locked
   CTSingleLock slHooks(&_pTimer->tm_csHooks, TRUE);
@@ -1368,7 +1433,8 @@ void CNetworkLibrary::Load_t(const CTFileName &fnmGame) // throw char *
     ga_sesSessionState.Read_t(&strmFile);
     strmFile.ExpectID_t("GEND");   // game end
   } catch(char *) {
-    StopProgress();
+    //StopProgress();
+	CLoadingImage::getSingleton()->StopLoading();
     ga_srvServer.Stop();
     ga_IsServer = FALSE;
     throw;
@@ -1405,7 +1471,8 @@ void CNetworkLibrary::Load_t(const CTFileName &fnmGame) // throw char *
   _bNeedPretouch = TRUE;
 
   FinishCRCGather();
-  StopProgress();
+  //StopProgress();
+  CLoadingImage::getSingleton()->StopLoading();
 }
 
 /*
@@ -1431,7 +1498,7 @@ void CNetworkLibrary::JoinSession_t(const CNetworkSession &nsSesssion, INDEX ctL
   TRACKMEM(Mem,"Network");
   // remove all pending sounds
   _pSound->Flush();
-  StartProgress();
+  CallProgressHook_t(0.f);
 
   // report session addres
   CPrintF( TRANS("Joining session at: '%s'\n"), nsSesssion.ns_strAddress);
@@ -1457,7 +1524,6 @@ void CNetworkLibrary::JoinSession_t(const CNetworkSession &nsSesssion, INDEX ctL
 
   ga_IsServer = FALSE;
 
-  SetProgressDescription(TRANS("connecting"));
   CallProgressHook_t(0.0f);
   // initialize session state
   try {
@@ -1465,7 +1531,8 @@ void CNetworkLibrary::JoinSession_t(const CNetworkSession &nsSesssion, INDEX ctL
   } catch(char *) {
     ga_World.Clear();
     FreeUnusedStock();
-    StopProgress();
+    //StopProgress();
+	CLoadingImage::getSingleton()->StopLoading();
     throw;
   }
 
@@ -1483,7 +1550,8 @@ void CNetworkLibrary::JoinSession_t(const CNetworkSession &nsSesssion, INDEX ctL
   MainLoop();
 
   CPrintF("  joined\n");
-  StopProgress();
+  //StopProgress();
+  CLoadingImage::getSingleton()->StopLoading();
 }
 
 /* Start playing a demo. */
@@ -1771,10 +1839,14 @@ void CNetworkLibrary::StopGame(void)
 	_pGfx->Flush();
 	
 	CPrintF( TRANS("stopping game.\n"));
+	BOOL bLock = TRUE;
+
+	if (_pNetwork->bMoveCharacterSelectUI == TRUE)
+		bLock = FALSE;
 	// access to the list of handlers must be locked
-	CTSingleLock slHooks(&_pTimer->tm_csHooks, TRUE);
+	CTSingleLock slHooks(&_pTimer->tm_csHooks, bLock);
 	// synchronize access to network
-	CTSingleLock slNetwork(&ga_csNetwork, TRUE);
+	CTSingleLock slNetwork(&ga_csNetwork, bLock);
 	
 	/*
 	// stop demo recording if active
@@ -1792,21 +1864,36 @@ void CNetworkLibrary::StopGame(void)
 
 	LeavePet( (CPlayerEntity*)CEntity::GetPlayerEntity(0) );
 	ClearPetList();
-	_pNetwork->_PetTargetInfo.Init();
+	MY_PET_INFO()->Init();
+
+	ACTORMGR()->RemoveAll();
 	
-	// stop session
-	ga_sesSessionState.Stop();
-	
-	// stop server
-	if (ga_IsServer) {
-		ga_srvServer.Stop();
-		ga_IsServer = FALSE;
+	if (_pNetwork->bMoveCharacterSelectUI == FALSE)
+	{
+		// stop session
+		ga_sesSessionState.Stop();
+
+		// stop server
+		if (ga_IsServer) {
+			ga_srvServer.Stop();
+			ga_IsServer = FALSE;
+		}
+
+		ga_strSessionName = "";
 	}
+	else
+	{
+		_pNetwork->ga_srvServer.srv_apltPlayers.Clear();
+		_pNetwork->ga_srvServer.srv_apltPlayers.New(NET_MAXGAMEPLAYERS);
+
+		INDEX iPlayer = 0;
+		{FOREACHINSTATICARRAY(_pNetwork->ga_srvServer.srv_apltPlayers, CPlayerTarget, itplt) {
+			itplt->plt_Index = iPlayer;
+			iPlayer++;
+		}}
+	}	
 	
-	ga_strSessionName = "";
-	
-	ga_World.Clear();
-	
+	ga_World.Clear();	
 	
 	// free default state if existing
 	if (ga_pubDefaultState!=NULL) {
@@ -1860,8 +1947,12 @@ void CNetworkLibrary::ChangeLevel(
 void CNetworkLibrary::ChangeLevel_internal(void)
 {
 	_pNetwork->MyCharacterInfo.itemEffect.Clear();
-	_cmiComm.m_inbuf.Clear();
-	//TODO : Îã§Î•∏ Ï∫êÎ¶≠ÌÑ∞Îì§Ïùò item effectÎèÑ Ï≤òÎ¶¨Ìï¥ÏïºÌï®.
+	_pNetwork->MyCharacterInfo.eMorphStatus = MyChaInfo::eMORPH_END;
+
+	MyCharacterInfo.stCustomTitle.Init();
+
+	_cmiComm.m_inbuf.ClearBuffer();
+	//TODO : ¥Ÿ∏• ƒ≥∏Ø≈ÕµÈ¿« item effectµµ √≥∏Æ«ÿæﬂ«‘.
 	ga_ubNumLevelChanges++;
 	ga_sesSessionState.ses_ubNumLevelChanges = ga_ubNumLevelChanges;
 	
@@ -1889,7 +1980,7 @@ void CNetworkLibrary::ChangeLevel_internal(void)
 		ga_srvServer.StopNetProcess(); 
 	}
 	
-	StartProgress();
+	CallProgressHook_t(0.f);
 	
 	// find all entities that are to cross to next level
 	CEntitySelection* psenToCross = new CEntitySelection;
@@ -1936,6 +2027,7 @@ void CNetworkLibrary::ChangeLevel_internal(void)
 	
 	CGatherCRC gc;
 	
+	ACTORMGR()->RemoveAll();
 	ga_World.Clear();
 	
 	
@@ -1946,7 +2038,7 @@ void CNetworkLibrary::ChangeLevel_internal(void)
     InitCRCGather();
 	//}
 	
-	/* //0522 kwon ÏÇ≠Ï†ú.
+	/* //0522 kwon ªË¡¶.
 	if (bMultiplayer) {
     // create base info to be sent
     extern CTString ser_strMOTD;
@@ -1990,7 +2082,8 @@ void CNetworkLibrary::ChangeLevel_internal(void)
 			ga_World.FilterEntitiesBySpawnFlags(ga_sesSessionState.ses_ulSpawnFlags);
 			// if that fails
 		} catch (char *strError2) {
-			StopProgress();
+			//StopProgress();
+			CLoadingImage::getSingleton()->StopLoading();
 			// fatal error
 			FatalError(
 				TRANS("Cannot change level because:\n%s\n"
@@ -2015,8 +2108,7 @@ void CNetworkLibrary::ChangeLevel_internal(void)
 	delete psenInTemp;
 	delete psenCrossed;
 	delete pwldTemp;
-	
-	SetProgressDescription(TRANS("precaching"));
+
 	CallProgressHook_t(0.0f);
 	// precache data needed by entities
 	if( gam_iPrecachePolicy>=PRECACHE_SMART) {
@@ -2064,8 +2156,9 @@ void CNetworkLibrary::ChangeLevel_internal(void)
 	CTerrainEffect::SetTerrain( NULL );		// yjpark
 	
 	FinishCRCGather();
-	Sleep(200);
-	StopProgress();
+//	Sleep(200);
+	//StopProgress();
+	CLoadingImage::getSingleton()->StopLoading();
 	
 	// mute sounds for one second
 	_pSound->Mute(1);
@@ -2078,7 +2171,7 @@ void CNetworkLibrary::ChangeLevel_client_internal_t(void)
   _pSound->Flush();
 
   TRACKMEM(Mem,"Network");
-  StartProgress();
+  CallProgressHook_t(0.f);
 
   EPreLevelChange ePreChange;
   ePreChange.iUserData = _pNetwork->ga_iNextLevelUserData;
@@ -2127,7 +2220,7 @@ void CNetworkLibrary::ChangeLevel_client_internal_t(void)
   _bNeedPretouch = TRUE;
 
   FinishCRCGather();
-/* //0522 kwon ÏÇ≠Ï†ú.
+/* //0522 kwon ªË¡¶.
     // send data request
   CPrintF(TRANS("Sending full game state request\n"));
   CNetworkMessage nmRequestGameState(MSG_REQ_GAMESTATE);
@@ -2180,7 +2273,7 @@ static void SendAdminResponse(ULONG ulAdr, UWORD uwPort, ULONG ulCode, const CTS
 {
   CTString str = strResponse;
   INDEX iLineCt = 0;
-/* //0522 kwon ÏÇ≠Ï†ú.
+/* //0522 kwon ªË¡¶.
   while (str!="") {
     CTString strLine = str;
     strLine.OnlyFirstLine();
@@ -2203,6 +2296,27 @@ void CNetworkLibrary::MainLoop(void)
 {
   TRACKMEM(Mem,"Network");
 
+#if !defined(_DEBUG) && !defined(KALYDO) && !defined(G_KOR) && !defined(VER_TEST)
+  BOOL bIsDebuggerPresent = FALSE;
+  __asm {
+	  // TIB(Thread Information Block)¿« ¿ßƒ° æÚ±‚
+	  mov		eax, fs:[0x18]
+	  // TIBø°º≠ 0x30 ¿ßƒ°ø° «ÿ¥Á«œ¥¬ ∞Õ¿Ã debugging∞˙ ∞¸∑√µ» ±∏¡∂√ºø° ¥Î«— ∆˜¿Œ≈Õ¿”
+	  mov		eax, dword ptr [eax+0x30]
+	  // «ÿ¥Á ±∏¡∂√ºø°º≠ µŒπ¯¬∞ WORDø° ¿˙¿Âµ» ∞™¿Ã «ˆ¿Á «¡∑ŒººΩ∫∞° µπˆ±Î ¡ﬂ¿Œ¡ˆø° ¥Î«— ∞™¿Ã¥Ÿ.
+	  movzx	eax, byte ptr [eax+2]
+	  // ∞·∞˙ ∏Æ≈œ
+	  mov		bIsDebuggerPresent, eax
+  }
+  if (bIsDebuggerPresent) {
+	  static int counter = 0;
+	  counter++;
+	  if (counter == 10) {
+		  _pGameState->Running() = FALSE;
+		  _pGameState->QuitScreen() = FALSE;
+	  }
+  }
+#endif
 
   // synchronize access to network
   CTSingleLock slNetwork(&ga_csNetwork, TRUE);
@@ -2210,19 +2324,19 @@ void CNetworkLibrary::MainLoop(void)
     ga_tvLastMainLoop = _pTimer->GetHighPrecisionTimer();
     ga_bFirstMainLoop = FALSE;
   }
-/* //0311 ÏÇ≠Ï†ú
-  //! 1Î™ÖÏù¥ÏÉÅ ÌîåÎ†àÏù¥ ÌïòÍ≥† ÏûàÎã§Î©¥,
+/* //0311 ªË¡¶
+  //! 1∏Ì¿ÃªÛ «√∑π¿Ã «œ∞Ì ¿÷¥Ÿ∏È,
   // update network state variable (to control usage of some cvars that cannot be altered in mulit-player mode)
   _bMultiPlayer = (_pNetwork->ga_sesSessionState.GetPlayersCount() > 1);
 */
-  //! ÏõîÎìú Ï≤¥Ïù∏ÏßÄ.
+  //! ø˘µÂ √º¿Œ¡ˆ.
   // if should change world
   if (_lphCurrent==LCP_SIGNALLED) {
     // really do the level change here
     ChangeLevel_internal();
     _lphCurrent=LCP_CHANGED;
   }
-/* //0311 ÏÇ≠Ï†ú
+/* //0311 ªË¡¶
   if (_bStartDemoRecordingNextTime) {
     if (!_pNetwork->IsServer()) {
       CPrintF("Demos can be recorded only on server computer or in single player mode.\n");
@@ -2283,17 +2397,17 @@ void CNetworkLibrary::MainLoop(void)
   }
 */
   //0109
-  //ga_fGameRealTimeFactor:Í≤åÏûÑ ÏãúÍ∞Ñ Í∞ÄÏÜçÏù∏Ïûê =1
-  //ses_fRealTimeFactor : ÌäπÏàòÌö®Í≥ºÏóê ÎåÄÌïòÏó¨ ÏãúÍ∞ÑÏùÑ ÎäêÎ¶¨Í≤å ÌïòÍ±∞ÎÇò Îπ†Î•¥Í≤å ÌïòÎäî Ïù∏Ïûê =1
-  //tvLastAction : ÎßàÏßÄÎßâ Ïï°ÏÖòÏùÑ Ìïú ÏãúÍ∞Ñ
-  //tvNewMainLoop : ÎÑ§Ìä∏ÏõåÌÅ¨ Î©îÏù∏loopÏóê Îì§Ïñ¥Ïò® ÏãúÍ∞Ñ.
+  //ga_fGameRealTimeFactor:∞‘¿” Ω√∞£ ∞°º”¿Œ¿⁄ =1
+  //ses_fRealTimeFactor : ∆Øºˆ»ø∞˙ø° ¥Î«œø© Ω√∞£¿ª ¥¿∏Æ∞‘ «œ∞≈≥™ ∫¸∏£∞‘ «œ¥¬ ¿Œ¿⁄ =1
+  //tvLastAction : ∏∂¡ˆ∏∑ æ◊º«¿ª «— Ω√∞£
+  //tvNewMainLoop : ≥◊∆Æøˆ≈© ∏ﬁ¿Œloopø° µÈæÓø¬ Ω√∞£.
   extern BOOL _bWorldEditorApp;
   TIME fPeriod = _pTimer->TickQuantum/(ga_fGameRealTimeFactor*ga_sesSessionState.ses_fRealTimeFactor);
   double dDeltaTime = tvNewMainLoop.GetSeconds() - ga_tvLastMainLoop.GetSeconds();
 
-  // NOTE : Ï∫êÎ¶≠ÌÑ∞Í∞Ä Ï†úÏûêÎ¶¨ÏóêÏÑú Î™ªÏõÄÏßÅÏù¥Îçò Î¨∏Ï†ú ÎïåÎ¨∏Ïóê...
-  // NOTE : ÏõêÏù∏ÏùÄ dDeltaTimeÏù¥ ÏùåÏàòÍ∞íÏù¥Ïñ¥ÏÑú Í∑∏Îû¨Ïùå...
-  // NOTE : ÏõîÎìú Î°úÎî©Ïù¥ Ïò§ÎûòÍ±∏Î¶¨Í±∞ÎÇò, Î¨∏Ï†úÍ∞Ä ÏÉùÍ∏∏Í≤ΩÏö∞Ïóê...
+  // NOTE : ƒ≥∏Ø≈Õ∞° ¡¶¿⁄∏Æø°º≠ ∏¯øÚ¡˜¿Ã¥¯ πÆ¡¶ ∂ßπÆø°...
+  // NOTE : ø¯¿Œ¿∫ dDeltaTime¿Ã ¿Ωºˆ∞™¿ÃæÓº≠ ±◊∑®¿Ω...
+  // NOTE : ø˘µÂ ∑Œµ˘¿Ã ø¿∑°∞…∏Æ∞≈≥™, πÆ¡¶∞° ª˝±Ê∞ÊøÏø°...
   if( !ga_bFirstMainLoop && dDeltaTime < 0 )
   {
 	  ga_tvLastMainLoop = tvNewMainLoop.GetSeconds();
@@ -2304,9 +2418,9 @@ void CNetworkLibrary::MainLoop(void)
 
   dDeltaTime = tvNewMainLoop.GetSeconds() - tvLastAction.GetSeconds();
 
-  // NOTE : Ï∫êÎ¶≠ÌÑ∞Í∞Ä Ï†úÏûêÎ¶¨ÏóêÏÑú Î™ªÏõÄÏßÅÏù¥Îçò Î¨∏Ï†ú ÎïåÎ¨∏Ïóê...
-  // NOTE : ÏõêÏù∏ÏùÄ dDeltaTimeÏù¥ ÏùåÏàòÍ∞íÏù¥Ïñ¥ÏÑú Í∑∏Îû¨Ïùå...
-  // NOTE : ÏõîÎìú Î°úÎî©Ïù¥ Ïò§ÎûòÍ±∏Î¶¨Í±∞ÎÇò, Î¨∏Ï†úÍ∞Ä ÏÉùÍ∏∏Í≤ΩÏö∞Ïóê...
+  // NOTE : ƒ≥∏Ø≈Õ∞° ¡¶¿⁄∏Æø°º≠ ∏¯øÚ¡˜¿Ã¥¯ πÆ¡¶ ∂ßπÆø°...
+  // NOTE : ø¯¿Œ¿∫ dDeltaTime¿Ã ¿Ωºˆ∞™¿ÃæÓº≠ ±◊∑®¿Ω...
+  // NOTE : ø˘µÂ ∑Œµ˘¿Ã ø¿∑°∞…∏Æ∞≈≥™, πÆ¡¶∞° ª˝±Ê∞ÊøÏø°...
   if( dDeltaTime < 0 )
   {
 	  tvLastAction = tvNewMainLoop.GetSeconds();
@@ -2351,8 +2465,8 @@ void CNetworkLibrary::MainLoop(void)
         while (ctTicks < ulClampedActions) 
 		{
 		  //0109 
-		  //ulActionsÎäî ÏßÄÎÇúÎ≤à Ïï°ÏÖòÌõÑ Î∞ÄÎ¶∞ Ïï°ÏÖò Í∞ØÏàò
-		  //ulClampedActionsÎäî Ï≤òÎ¶¨ ÌóàÏö© Ïï°ÏÖòÍ∞ØÏàò.ÏµúÎåÄ 10Í∞ú.
+		  //ulActions¥¬ ¡ˆ≥≠π¯ æ◊º«»ƒ π–∏∞ æ◊º« ∞πºˆ
+		  //ulClampedActions¥¬ √≥∏Æ «„øÎ æ◊º«∞πºˆ.√÷¥Î 10∞≥.
           // make actions packet for all local players and send to server
           SendActionsToServer();
           ctTicks++;
@@ -2385,18 +2499,18 @@ void CNetworkLibrary::MainLoop(void)
     _cmiComm.Server_Update();
     ga_srvServer.HandleAll();
   }
-/* //0311 ÏÇ≠Ï†ú
-//! ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ ÏóÖÎç∞Ïù¥Ìä∏.
+/* //0311 ªË¡¶
+//! ≈¨∂Û¿Ãæ∆Æ æ˜µ•¿Ã∆Æ.
     if (_cmiComm.Client_Update() == FALSE) {
       ga_sesSessionState.Stop();
       _sfStats.StopTimer(CStatForm::STI_MAINLOOP);
       return;
     }
 */
-//! ÏÑ∏ÏÖò loop
+//! ººº« loop
     ga_sesSessionState.SessionStateLoop();
-/* //0311 ÏÇ≠Ï†ú     
-//! Îòê ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ ÏóÖÎç∞Ïù¥Ìä∏.
+/* //0311 ªË¡¶     
+//! ∂« ≈¨∂Û¿Ãæ∆Æ æ˜µ•¿Ã∆Æ.
     if (_cmiComm.Client_Update() == FALSE) {
       ga_sesSessionState.Stop();
       _sfStats.StopTimer(CStatForm::STI_MAINLOOP);
@@ -2418,12 +2532,12 @@ void CNetworkLibrary::MainLoop(void)
   if (IsServer()) {
     _cmiComm.Server_Update();
     ga_srvServer.HandleAll();
-	//! ÏÑúÎ≤ÑÎ°ú Î∂ÄÌÑ∞ Ïò§Îäî Í≤åÏûÑ Ïä§Ìä∏Î¶ºÏùÑ Ï≤òÎ¶¨ÌïúÎã§. Î°úÏª¨ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏.
+	//! º≠πˆ∑Œ ∫Œ≈Õ ø¿¥¬ ∞‘¿” Ω∫∆Æ∏≤¿ª √≥∏Æ«—¥Ÿ. ∑Œƒ√≈¨∂Û¿Ãæ∆Æ.
     // process the game stream coming from the server
     ga_sesSessionState.ProcessGameStream();
   }
-/* //0311 ÏÇ≠Ï†ú
-//! tick Îç∞Ïù¥ÌÉÄÎ•º ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏Î°ú Î≥¥ÎÇ∏Îã§. 
+/* //0311 ªË¡¶
+//! tick µ•¿Ã≈∏∏¶ ≈¨∂Û¿Ãæ∆Æ∑Œ ∫∏≥Ω¥Ÿ. 
   // sent tick data to the clients only once, and after the last tick has been processed
   if (ulClampedTicks>0 && ga_IsServer && !ga_bDemoPlay && ga_srvServer.srv_bActive) {
     ga_srvServer.ServerNetProcess();     
@@ -2439,16 +2553,17 @@ void CNetworkLibrary::MainLoop(void)
   // set the lerping factor for current frame
   if (!ga_bDemoPlay) {
     ga_sesSessionState.SetLerpFactor(tvNow);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Add Sun Moon Entity and etc)(0.2)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Add Sun Moon Entity and etc)(0.2)
 	g_fGWTime += (float)(( tvNow - ga_tvDemoTimerLastTime ).GetSeconds()) * RWTOneSec2GWTSec * g_fGWTimeMul;
-	if( g_fGWTime > (FLOAT)GAMETIME_ONEDAY_SECOND )
+	if( g_fGWTime > (FLOAT)GAMETIME_ONEDAY_SECOND ){
 		g_fGWTime -= (FLOAT)GAMETIME_ONEDAY_SECOND * int(g_fGWTime / (FLOAT)GAMETIME_ONEDAY_SECOND);															// yjpark     -->|
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Add Sun Moon Entity and etc)(0.2)
+	}
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Add Sun Moon Entity and etc)(0.2)
   } else {
     ga_sesSessionState.SetLerpFactor(CTimerValue(ga_fDemoTimer));
   }
   ga_tvDemoTimerLastTime = tvNow;
-/* //0311 ÏÇ≠Ï†ú
+/* //0311 ªË¡¶
   // if playing a demo
   if (ga_bDemoPlay) {
     // if synchronizing by real time
@@ -2493,7 +2608,7 @@ void CNetworkLibrary::MainLoop(void)
         break;
       }
 /*
-//! ÏÑúÎ≤ÑÎäî Ïù¥Î∞ëÏúºÎ°ú ÏïàÎì§Ïñ¥Í∞Ä~
+//! º≠πˆ¥¬ ¿Ãπÿ¿∏∑Œ æ»µÈæÓ∞°~
       // if this message is not valid rcon message or a server enumeration request
       if (nmReceived.GetType() != MSG_EXTRA && nmReceived.GetType() != MSG_REQ_ENUMSERVERS) {
         // skip it
@@ -2572,12 +2687,12 @@ void CNetworkLibrary::MainLoop(void)
   }
   _sfStats.StopTimer(CStatForm::STI_MAINLOOP);
 }
-//! Ïù¥Ìï®ÏàòÎäî Î°úÏª¨ ÌîåÎ†àÏù¥Ïñ¥Î•º ÏúÑÌïúÍ≤É.
+//! ¿Ã«‘ºˆ¥¬ ∑Œƒ√ «√∑π¿ÃæÓ∏¶ ¿ß«—∞Õ.
 // make actions packet for local players and send to server
 void CNetworkLibrary::SendActionsToServer(void)
 {
 	// make the packet
-	CNetworkMessage nmAction(MSG_ACTIONS);
+	CNetworkMessage nmAction((UBYTE)MSG_ACTIONS);
 	
 	// for all local players on this machine
 	for(INDEX ipls=0; ipls<ga_aplsPlayers.Count(); ++ipls) 
@@ -2587,7 +2702,7 @@ void CNetworkLibrary::SendActionsToServer(void)
 		pls.WriteActionPacket(nmAction);
 	}
 	// send the packet
-	//0130 1line ÏßÄÏö∞Í∏∞
+	//0130 1line ¡ˆøÏ±‚
 	//0203
 	if (_pNetwork->IsServer())
 	{
@@ -2754,44 +2869,18 @@ CEntity *CNetworkLibrary::GetEntityOfClass(const CTString &strClass, INDEX iEnti
 CEntity* CNetworkLibrary::GetEntityByTypeIndex(SBYTE sbCharType, SLONG slCharIndex)
 {
 	CEntity* penEntity=NULL;
-	if( sbCharType == MSG_CHAR_PC )
+
+	if( _pNetwork->MyCharacterInfo.index == slCharIndex )
 	{
-		if( _pNetwork->MyCharacterInfo.index == slCharIndex )
-		{
-			penEntity = (CPlayerEntity*)CEntity::GetPlayerEntity(0);
-		}
-		else
-		{
-			for( INDEX iChar = 0; iChar < _pNetwork->ga_srvServer.srv_actCha.Count(); iChar++ )
-			{
-				CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[iChar];
-				if( ct.cha_Index == slCharIndex )
-				{
-					penEntity = ct.cha_pEntity;
-				}
-			}
-		}
+		penEntity = (CPlayerEntity*)CEntity::GetPlayerEntity(0);
 	}
-	else if( sbCharType == MSG_CHAR_NPC )
+	else
 	{
-		for( INDEX iMob = 0; iMob < _pNetwork->ga_srvServer.srv_amtMob.Count(); iMob++ )
+		ObjectBase* pObject = ACTORMGR()->GetObject((eOBJ_TYPE)sbCharType, slCharIndex);
+
+		if (pObject != NULL)
 		{
-			CMobTarget	&mt = _pNetwork->ga_srvServer.srv_amtMob[iMob];
-			if( mt.mob_Index == slCharIndex )
-			{
-				penEntity = mt.mob_pEntity;					
-			}
-		}
-	}
-	else if( sbCharType == MSG_CHAR_ELEMENTAL )
-	{
-		for( INDEX iSlave = 0; iSlave < _pNetwork->ga_srvServer.srv_actSlave.Count(); iSlave++ )
-		{
-			CSlaveTarget	&st = _pNetwork->ga_srvServer.srv_actSlave[iSlave];
-			if( st.slave_Index == slCharIndex )
-			{
-				penEntity = st.slave_pEntity;					
-			}
+			penEntity = pObject->GetEntity();
 		}
 	}
 
@@ -2806,58 +2895,44 @@ CEntity* CNetworkLibrary::GetEntityByTypeIndex(SBYTE sbCharType, SLONG slCharInd
 // return	: 	Client Country Code
 	
 	//Clinet Define country
-	//KOREA					0		// ÌïúÍµ≠
-	//TAIWAN				1		// ÎåÄÎßå
-	//CHINA					2		// Ï§ëÍµ≠
-	//THAILAND				3		// ÌÉúÍµ≠
-	//TAIWAN2				4		// ÎåÄÎßå Ï≤úÌïòÎåÄÎûÄ wooss 050929
-	//JAPAN					5		// ÏùºÎ≥∏ wooss 051123
+	//KOREA					0		// «—±π
+	//TAIWAN				1		// ¥Î∏∏
+	//CHINA					2		// ¡ﬂ±π
+	//THAILAND				3		// ≈¬±π
+	//TAIWAN2				4		// ¥Î∏∏ √µ«œ¥Î∂ı wooss 050929
+	//JAPAN					5		// ¿œ∫ª wooss 051123
 	//MALAYSIA    			6
-	//USA					7		// ÎØ∏Íµ≠
-	//BRAZIL				8		// Î∏åÎùºÏßà
-	//HONGKONG				9		// ÌôçÏΩ©
+	//USA					7		// πÃ±π
+	//BRAZIL				8		// ∫Í∂Û¡˙
+	//HONGKONG				9		// »´ƒ·
 
 	//Sever Define country
-	//LC_KOR		0	// Íµ≠ÎÇ¥
-	//LC_TWN		1	// ÎåÄÎßå - ÌòÅÎ™Ö
-	//LC_TWN2		2	// ÎåÄÎßå - Ï≤úÌïòÎåÄÎûÄ, LC_TWNÍ≥º ÎèôÏãúÏóê ÏÑ§Ï†ïÌï¥Ïïº Ìï®
-	//LC_CHN		3	// Ï§ëÍµ≠
-	//LC_TLD		4	// ÌÉúÍµ≠
-	//LC_TLD_ENG	5	// ÌÉúÍµ≠ ÏòÅÏñ¥
-	//LC_JPN		6 	// ÏùºÎ≥∏
-	//LC_MAL		7 	// ÎßêÎ†àÏù¥ÏãúÏïÑ
-	//LC_MAL_ENG	8 	// ÎßêÎ†àÏù¥ÏãúÏïÑ ÏòÅÏñ¥ 
-	//LC_USA		9	// ÎØ∏Íµ≠
-	//LC_BRZ		10	// Î∏åÎùºÏßà
-	//LC_HBK		11	// ÌôçÏΩ©
+	//LC_KOR		0	// ±π≥ª
+	//LC_TWN		1	// ¥Î∏∏ - «ı∏Ì
+	//LC_TWN2		2	// ¥Î∏∏ - √µ«œ¥Î∂ı, LC_TWN∞˙ µøΩ√ø° º≥¡§«ÿæﬂ «‘
+	//LC_CHN		3	// ¡ﬂ±π
+	//LC_TLD		4	// ≈¬±π
+	//LC_TLD_ENG	5	// ≈¬±π øµæÓ
+	//LC_JPN		6 	// ¿œ∫ª
+	//LC_MAL		7 	// ∏ª∑π¿ÃΩ√æ∆
+	//LC_MAL_ENG	8 	// ∏ª∑π¿ÃΩ√æ∆ øµæÓ 
+	//LC_USA		9	// πÃ±π
+	//LC_BRZ		10	// ∫Í∂Û¡˙
+	//LC_HBK		11	// »´ƒ·
 
 int CNetworkLibrary::ReturnCCC(int iSCC)
 {
+	extern INDEX g_iCountry;
+
 	int iCCC;
 	switch(iSCC)
 	{
 		case 0:
 			iCCC = KOREA;
 			break;
-		case 1:
-			iCCC = TAIWAN;
-			break;
-		case 2:
-			iCCC = TAIWAN2;
-			break;
-		case 3:
-			iCCC = CHINA;
-			break;
 		case 4:
 		case 5:
 			iCCC = THAILAND;
-			break;
-		case 6:
-			iCCC = JAPAN;
-			break;
-		case 7:		
-		case 8:
-			iCCC = MALAYSIA;
 			break;
 		case 9:
 			iCCC = USA;
@@ -2865,12 +2940,8 @@ int CNetworkLibrary::ReturnCCC(int iSCC)
 		case 10:
 			iCCC = BRAZIL;
 			break;
-		case 11:
-		case 12:
-			iCCC = HONGKONG;
-			break;
 		case 13:
-			iCCC = GERMANY;
+			iCCC = g_iCountry;
 			break;
 		case 14://FRANCE_SPAIN_CLOSEBETA_NA_20081124
 			iCCC = SPAIN;
@@ -2884,11 +2955,15 @@ int CNetworkLibrary::ReturnCCC(int iSCC)
 		case 17:
 			iCCC = RUSSIA;
 			break;
-		case 18:
-			iCCC = TURKEY;
+		case 19:
+			iCCC = ITALY;
 			break;
-		default : 
+		case 20:
+			iCCC = MEXICO;
+			break;
+		default:
 			iCCC = -1;
+			break;
 	}
 
 	return iCCC;
@@ -2973,25 +3048,6 @@ void *CNetworkLibrary::GetSessionProperties(void)
   return ga_aubProperties;
 }
 
-/* Send chat message from some players to some other players. */
-/*
-void CNetworkLibrary::SendChat(ULONG ulFrom, ULONG ulTo, const CTString &strMessage)
-{
-  // if the string is too long
-  if (strlen(strMessage)>256) {
-    // refuse it
-    return;
-  }
-
-  // just make the message and send it to server
-  CNetworkMessage nm(MSG_CHAT_IN);
-  nm<<ulFrom;
-  nm<<ulTo;
-  nm<<strMessage;
-  SendToServer(nm);
-}
-*/
-
 void CNetworkLibrary::SendChat(ULONG ulFrom, ULONG ulTo, const CTString &strMessage)
 {
   // if the string is too long
@@ -3005,7 +3061,7 @@ void CNetworkLibrary::SendChat(ULONG ulFrom, ULONG ulTo, const CTString &strMess
 //  nm<<ulFrom;
 //  nm<<ulTo;
 
-// Ï±ÑÌåÖ				: chat_type(uc) sender_index(n) sender_name(str) receiver_index(n) receiver_name(str) chat(str)												
+// √§∆√				: chat_type(uc) sender_index(n) sender_name(str) receiver_index(n) receiver_name(str) chat(str)												
   ULONG recvIndex = -1;
   CTString	strRecvName="";
   /*
@@ -3019,18 +3075,17 @@ void CNetworkLibrary::SendChat(ULONG ulFrom, ULONG ulTo, const CTString &strMess
 			break;
 		}
 	}
-	if(recvIndex==-1)//ÎßåÏïΩ Ï∞æÏßÄ Î™ªÌñàÎã§Î©¥,
+	if(recvIndex==-1)//∏∏æ‡ √£¡ˆ ∏¯«ﬂ¥Ÿ∏È,
 	{
 		return;
 	}
   */
-  CNetworkMessage nm(MSG_CHAT);
+  CNetworkMessage nm((UBYTE)MSG_CHAT);
   nm<< (unsigned char)MSG_CHAT_SAY; //0528 kwon
   nm<< MyCharacterInfo.index;
   nm<< MyCharacterInfo.name;
   nm<< strRecvName;
   nm<<strMessage;
-//  SendToServer(nm);
   SendToServerNew(nm);
 }
 
@@ -3136,7 +3191,7 @@ void CNetworkLibrary::AddBandwidthGraphValue(ULONG ulBandwidth)
   ga_aulBandwidthGraph[0] = ulBandwidth;
 }
   
-//! Í≤åÏûÑÏù¥ ÏïÑÏßÅ Ïã§ÌñâÎêòÏßÄ ÏïäÏïòÏùÑÎïåÎäî Î∏åÎ°úÎìúÏ∫êÏä§Ìä∏ Î©îÏãúÏßÄÎßå Î∞õÎäîÎã§.
+//! ∞‘¿”¿Ã æ∆¡˜ Ω««‡µ«¡ˆ æ æ“¿ª∂ß¥¬ ∫Í∑ŒµÂƒ≥Ω∫∆Æ ∏ﬁΩ√¡ˆ∏∏ πﬁ¥¬¥Ÿ.
 // handle broadcast messages (server enumeration)
 void CNetworkLibrary::GameInactive(void)
 {
@@ -3199,6 +3254,8 @@ void CNetworkLibrary::FinishCRCGather(void)
     // remember it
     strmCRC.SetPos_t(0);
     ga_slCRCList = strmCRC.GetStreamSize();
+	if (ga_pubCRCList != NULL)
+		FreeMemory(ga_pubCRCList);
     ga_pubCRCList = (UBYTE*)AllocMemory(ga_slCRCList);
     strmCRC.Read_t(ga_pubCRCList, ga_slCRCList);
     // remember its CRC
@@ -3244,7 +3301,7 @@ void CNetworkLibrary::EnumSessionsStart(BOOL bInternet)
 /* Continue numeration of existing sessions. */
 void CNetworkLibrary::EnumSessionsContinue()
 {
-/* //0522 kwon ÏÇ≠Ï†ú.
+/* //0522 kwon ªË¡¶.
   // we will send enumeration requests two times per second
   const TIME tmRequestInterval = 0.75f;
   static TIME tmLastRequest = -1.0f;
@@ -3372,412 +3429,292 @@ void CNetworkLibrary::SendMessagetoServer(char *msg)
 }
 //..
 
-/****   Inventory   **********************************************************/
-void  CNetworkLibrary::SetMyCurrentWearing(int tabId, int rowId, int colId)
+// ----------------------------------------------------------------------------
+// Name : GetWearingEffect()
+// Desc : ¬¯øÎ¡ﬂ¿Œ æ∆¿Ã≈€¿« ¿Ã∆Â∆Æ ¡§∫∏(¿Ã∏ß)∏¶ ∞°¡Æø¬¥Ÿ.
+// ----------------------------------------------------------------------------
+CTString CNetworkLibrary::GetWearingEffect(eEquipment Type, INDEX subType)
 {
-	//= MySlotItem[tabId][rowId][colId]
-	CItemData& ItemData = _pNetwork->MySlotItem[tabId][rowId][colId].ItemData;
-	CItems& Items = _pNetwork->MySlotItem[tabId][rowId][colId];
-	
-	if(ItemData.GetType()==CItemData::ITEM_SHIELD)
+	CTString strEffectName = CTString("");
+
+	if (_pNetwork->MyWearItem[Type].IsEmptyItem() == FALSE)
 	{
-		switch(ItemData.GetSubType())
+		CItems* pItem = &_pNetwork->MyWearItem[Type];
+
+		switch(subType)
 		{
-		case CItemData::ITEM_SHIELD_HEAD://Î®∏Î¶¨
-			Items.Item_Wearing = WEAR_HELMET;
-			pMyCurrentWearing[WEAR_HELMET] = &Items;
-			break;
-		case CItemData::ITEM_SHIELD_COAT:// ÏÉÅÏùò		
-			Items.Item_Wearing = WEAR_JACKET;
-			//MyCurrentWearing[ARMOR] =Items;
-			pMyCurrentWearing[WEAR_JACKET] = &Items;
-			break;
-		case CItemData::ITEM_SHIELD_PANTS:// ÌïòÏùò			
-			Items.Item_Wearing = WEAR_PANTS;
-			//MyCurrentWearing[PANTS] = Items;
-			pMyCurrentWearing[WEAR_PANTS] = &Items;
-			break;
-		case CItemData::ITEM_SHIELD_GLOVE:// Ïû•Í∞ë			
-			Items.Item_Wearing = WEAR_GLOVES;
-			//MyCurrentWearing[GLOVE] = Items;
-			pMyCurrentWearing[WEAR_GLOVES] = &Items;
-			break;
-		case CItemData::ITEM_SHIELD_SHOES:// Ïã†Î∞ú			
-			Items.Item_Wearing = WEAR_BOOTS;
-			//MyCurrentWearing[BOOTS] = Items;
-			pMyCurrentWearing[WEAR_BOOTS] = &Items;
-			break;		
-		case CItemData::ITEM_SHIELD_SHIELD:// Î∞©Ìå®.			
-			Items.Item_Wearing = WEAR_SHIELD;
-			//MyCurrentWearing[SHIELD] = Items;
-			pMyCurrentWearing[WEAR_SHIELD] = &Items;
-			break;
-		}
-	} 
-	else if(ItemData.GetType()==CItemData::ITEM_WEAPON) //0609 kwon
-	{	
-		const BOOL bExtension = _pNetwork->IsExtensionState( _pNetwork->MyCharacterInfo.job, ItemData );
-		_pNetwork->MyCharacterInfo.bExtension = bExtension;
-
-		if( pMyCurrentWearing[WEAR_WEAPON] && 
-			pMyCurrentWearing[WEAR_WEAPON]->Item_Index == Items.Item_Index )
-		{
-			return;
-		}
-
-		Items.Item_Wearing = WEAR_WEAPON;
-		//MyCurrentWearing[WEAPON] = Items;
-		pMyCurrentWearing[WEAR_WEAPON] = &Items;
-	}
-	else if( ItemData.GetType() == CItemData::ITEM_ACCESSORY )
-	{
-		//MyCurrentWearing[Items.Item_Wearing] = Items;
-		pMyCurrentWearing[Items.Item_Wearing] = &Items;
-	}
-
-//[ttos_2009_1_15]:Ïø®ÌÉÄÏûÑ Í∞êÏÜå Î∞è MPÎüâ Í∞êÏÜå ÏòµÏÖòÏùÑ ÌÅ¥ÎùºÏóêÏÑú Í≥ÑÏÇ∞ÌïòÏßÄ ÏïäÍ≥† ÏÑúÎ≤ÑÏóêÏÑú Î∞õÏùå
- 	_pUIMgr->SetCoolTimeReductionRate(0);
-	_pUIMgr->SetNeedMPReductionRate(0);
-
-	CItems rItems =_pNetwork->MySlotItem[tabId][rowId][colId];
-	for(SBYTE sbOption=0; sbOption<MAX_ITEM_OPTION; ++sbOption)
-	{
-		//ÏòµÏÖòÏ§ëÏóê Ïä§ÌÇ¨Ïø®ÌÉÄÏûÑ Í∞êÏÜå(Index: 58)ÎÇò MPÏÜåÎ™®Îüâ Í∞êÏÜå(Index: 59)Í∞Ä ÏûàÏúºÎ©¥ ÏòµÏÖòÍ∞í ÏÑ§Ï†ï...
-		SBYTE sbOptionType =rItems.GetOptionType(sbOption);
-
-		if( sbOptionType ==-1)
-			break;
-		/**/
-		if( sbOptionType ==58 || sbOptionType ==59)
-		{
-			COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType );
-			SBYTE sbOptionLevel =rItems.GetOptionLevel(sbOption);							
-			int nOptionValue =odItem.GetValue( sbOptionLevel - 1 );
-			
-			if( sbOptionType ==58 )
-				_pUIMgr->AddCoolTimeReductionRate(nOptionValue);
-			if( sbOptionType ==59 )
-				_pUIMgr->AddNeedMPReductionRate(nOptionValue);
-		}/**/
-	}
-}
-
-void  CNetworkLibrary::DeleteMyCurrentWearing(int weartype)
-{
-	if(weartype==-1)
-	{
-		return;
-	}
-	SBYTE Tab,Row,Col;
-	if(_pNetwork->pMyCurrentWearing[weartype])
-	{
-		Tab = _pNetwork->pMyCurrentWearing[weartype]->Item_Tab;
-		Row = _pNetwork->pMyCurrentWearing[weartype]->Item_Row;
-		Col = _pNetwork->pMyCurrentWearing[weartype]->Item_Col;	
-		
-		//Tab = _pNetwork->MyCurrentWearing[weartype].Item_Tab;
-		//Row = _pNetwork->MyCurrentWearing[weartype].Item_Row;
-		//Col = _pNetwork->MyCurrentWearing[weartype].Item_Col;
-		//	CPrintF(TRANS("DeleteMyCurrentWearing : weartype=%d Tab=%d,Row=%d,Col=%d \n"), weartype,Tab,Row,Col);
-		if(Tab==-1 || Row==-1 || Col==-1)
-		{
-			return;
-		}
-		MySlotItem[Tab][Row][Col].Item_Wearing = -1; //Ï∞©Ïö©Ïù¥ Ìï¥Ï†úÎêòÏóàÎã§Îäî Îúª.
-
-
-		//ÏòµÏÖòÏ§ëÏóê Ïä§ÌÇ¨Ïø®ÌÉÄÏûÑ Í∞êÏÜå(Index: 58)ÎÇò MPÏÜåÎ™®Îüâ Í∞êÏÜå(Index: 59)Í∞Ä ÏûàÏúºÎ©¥ ÏòµÏÖòÍ∞í 0ÏúºÎ°ú ÏÑ§Ï†ï...
-		//[ttos_2009_1_15]:Ïø®ÌÉÄÏûÑ Í∞êÏÜå Î∞è MPÎüâ Í∞êÏÜå ÏòµÏÖòÏùÑ ÌÅ¥ÎùºÏóêÏÑú Í≥ÑÏÇ∞ÌïòÏßÄ ÏïäÍ≥† ÏÑúÎ≤ÑÏóêÏÑú Î∞õÏùå
-		CItems* rItems =_pNetwork->pMyCurrentWearing[weartype];
-
-		for(SBYTE sbOption=0; sbOption<(SBYTE)MAX_ITEM_OPTION; ++sbOption)
-		{
-			SBYTE sbOptionType =rItems->GetOptionType(sbOption);
-			if( sbOptionType ==-1)
-				break;
-			/**/
-			if( sbOptionType ==58 || sbOptionType ==59)
+		case 0: // pItemData->ArmorEffectName
 			{
-				COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType );
-				SBYTE sbOptionLevel =rItems->GetOptionLevel(sbOption);							
-				int nOptionValue =odItem.GetValue( sbOptionLevel - 1 );
-				
-				if( sbOptionType ==58 )
-					_pUIMgr->AddCoolTimeReductionRate(-nOptionValue);
-				if( sbOptionType ==59 )
-					_pUIMgr->AddNeedMPReductionRate(-nOptionValue);
-			}/**/
+				strEffectName = pItem->ItemData->GetArmorEffectName();
+			}
+			break;
+		case 1: // pItemData->MissileShotEffect
+			{
+				strEffectName = pItem->ItemData->GetMissileShotEffect();
+			}
+			break;
+		case 2: // pItemData->ShotHitEffect
+			{
+				strEffectName = pItem->ItemData->GetShotHitEffect();
+			}
+			break;
 		}
 	}
 
-	if( weartype == WEAR_WEAPON )
-	{
-		_pNetwork->MyCharacterInfo.bExtension = FALSE;
-	}
-	
-	//_pNetwork->MyCurrentWearing[weartype].Init(); // wear slotÏùò Í∞ëÏò∑ÏùÑ ÏßÄÏö∞Í∏∞.
-	_pNetwork->pMyCurrentWearing[weartype] = NULL;
+	return strEffectName;
 }
 
-void CNetworkLibrary::DropItem(int tabId, int rowId, int colId, SQUAD cnt)
+void CNetworkLibrary::DropItem(int tabId, int inven_idx, SQUAD cnt)
 {
-	CItems& Items = MySlotItem[tabId][rowId][colId];
-	//0616 kwon ÏûÖÍ≥†ÏûàÎäî ÏïÑÏù¥ÌÖúÏùÄ ÎìúÎ°≠ Î™ªÌïòÍ≤å ÌïòÍ∏∞.
-	if(Items.Item_Wearing != -1)
+	CItems& rItems = MySlotItem[tabId][inven_idx];
+	//0616 kwon ¿‘∞Ì¿÷¥¬ æ∆¿Ã≈€¿∫ µÂ∑” ∏¯«œ∞‘ «œ±‚.
+	if(rItems.Item_Wearing != -1)
 	{
 //		CPrintF(TRANS("Can't Drop because this Item is Wearing... \n"));
 		return;
 	}
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_THROW;							
-	nmItem << Items.Item_Tab;
-	nmItem << Items.Item_Row;
-	nmItem << Items.Item_Col;
-	nmItem << Items.Item_UniIndex;
-	nmItem << cnt;//Items.Item_Sum; //0621 kwon ÏàòÏ†ï.
-	SendToServerNew(nmItem);
+
+	CNetworkMessage nmMessage;
+	RequestClient::doItemThrow* packet = reinterpret_cast<RequestClient::doItemThrow*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_THROW;
+	packet->tab = rItems.Item_Tab;
+	packet->invenIndex = rItems.InvenIndex;
+	packet->virtualIndex = rItems.Item_UniIndex;
+	packet->count = cnt;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew(nmMessage);
 }
 
-void CNetworkLibrary::SwapItem(int tabId, int rowId, int colId, int rowId2, int colId2)
+void CNetworkLibrary::SwapItem(int tabId, int inven_idx, int tabId2, int inven_idx2)
 {
-	CItems& Items = MySlotItem[tabId][rowId][colId]; //source
-	CItems& Items2 = MySlotItem[tabId][rowId2][colId2];//target
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_SWAP;							
-	nmItem << Items.Item_Tab;
-	nmItem << Items.Item_Row;
-	nmItem << Items.Item_Col;
-	nmItem << Items.Item_UniIndex;
-	nmItem << (SBYTE)rowId2;//Items.Item_Row;
-	nmItem << (SBYTE)colId2;//Items.Item_Col;
-	nmItem << Items2.Item_UniIndex;
-	SendToServerNew(nmItem);
+	//CItems* pItems = &MySlotItem[tabId][inven_idx]; //source
+	//CItems* pItems2 = &MySlotItem[tabId][inven_idx2];//target
+	CNetworkMessage nmMessage;
+	RequestClient::doItemSwap* packet = reinterpret_cast<RequestClient::doItemSwap*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_SWAP;
+	packet->stab = tabId;
+	packet->sinvenIndex = inven_idx;
+	packet->ttab = tabId2;
+	packet->tinvenIndex = inven_idx2;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew(nmMessage);
 //	CPrintF(TRANS("Send MSG_ITEM_SWAP : ITEM [%d][%d][%d] -> [%d][%d][%d]  Swaped!!! \n"),tabId,rowId,colId,tabId,rowId2,colId2);
+}
+
+void CNetworkLibrary::DivideItem( SWORD nTabS, SWORD nIdxS, SWORD nTabT, SWORD nIdxT, int count )
+{
+	CNetworkMessage nmMessage;
+	RequestClient::doItemDivide* packet = reinterpret_cast<RequestClient::doItemDivide*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_DIVIDE;
+	packet->tab = nTabS;
+	packet->invenIndex = nIdxS;
+	packet->ttab = nTabT;
+	packet->tinvenIndex = nIdxT;
+	packet->divide_count = count;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew(nmMessage);
 }
 
 void CNetworkLibrary::ArrangeItem(int tab)
 {				 
-	CNetworkMessage nmItem(MSG_ITEM); 	
+	CNetworkMessage nmItem((UBYTE)MSG_ITEM); 	
 	nmItem << (SBYTE)MSG_ITEM_ARRANGE;								
 	nmItem << (SBYTE)tab;
 	SendToServerNew(nmItem);
 
-	_pUIMgr->GetInventory()->ClearAllItems( tab );
-//	CPrintF(TRANS("Send MSG_ITEM_ARRANGE!!! \n"));		
-	//0610 kwon Ï¥àÍ∏∞Ìôî.		
-	
-/*
-	for(int i =0; i<TOTAL_WEAR;++i)
-	{			
-		ga_srvServer.srv_apltPlayers[0].plt_penPlayerEntity->DeleteCurrentArmor(i);//1005 ÏïÑÏù¥ÌÖú Íπ®ÏßÄÎäî Î≤ÑÍ∑∏ÏàòÏ†ï.
-		//MyCurrentWearing[i].Init();
-		pMyCurrentWearing[i] = NULL;
-	}
-
-	for(int row=0;row<TOTAL_ROW;++row)
-	{
-		for(int col=0;col<TOTAL_COL;++col)
-		{
-			MySlotItem[tab][row][col].Init();
-		}
-	}
-*/
- //Î©îÏãúÏßÄ Ïò®ÌõÑÏóê Ï≤òÎ¶¨.
+	CUIManager::getSingleton()->GetInventory()->ClearAllItems( tab );
 }
 
 // ----------------------------------------------------------------------------
 // Name : UpgradeItem()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::UpgradeItem( SBYTE sbRow1, SBYTE sbCol1, SLONG slPlus,
-									SBYTE sbRow2, SBYTE sbCol2, SLONG slLevel, 
-									INDEX iProtect, SBYTE sbRow3, SBYTE sbCol3 )
+void CNetworkLibrary::UpgradeItem( SLONG nWearPos, SLONG VirIndex, SLONG slPlus,
+									SWORD nTab2, SWORD inven_idx2, SLONG slLevel, 
+									INDEX iProtect, SWORD nTab3, SWORD inven_idx3 )
 {				 
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_UPGRADE_REQ;								
-	nmItem << sbRow1;
-	nmItem << sbCol1;
-	nmItem << slPlus;
-	nmItem << sbRow2;
-	nmItem << sbCol2;
-	nmItem << slLevel;
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUpgrade* packet = reinterpret_cast<RequestClient::doItemUpgrade*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_UPGRADE_REQ;
+	packet->wearPos = nWearPos;
+	packet->vIndex = VirIndex;
+	packet->tab_2 = nTab2;
+	packet->invenIndex_2 = inven_idx2;
 	
-	// [070824: Su-won] REFINE_PROTECT
-#ifdef REFINE_PROTECT
-	nmItem << iProtect;		//Ï†úÎ†®Ïóê ÏÇ¨Ïö©Ìï† Ï†úÎ†®Î≥¥Ìò∏ÏÑù ÏïÑÏù¥ÌÖú Ïù∏Îç±Ïä§
-	nmItem << sbRow3;		//ÏÇ¨Ïö©Ìïú Ï†úÎ†®Î≥¥Ìò∏ÏÑùÏùò Ïù∏Î≤§ ÏúÑÏπò
-	nmItem << sbCol3;
-#endif
+	packet->tab_3 = nTab3;
+	packet->invenIndex_3 = inven_idx3;
 
-	SendToServerNew(nmItem);
+	packet->plus = slPlus;
+	packet->level = slLevel;
+	packet->runeItemDBIndex = iProtect;
+
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew(nmMessage);
 }
 
 // ----------------------------------------------------------------------------
 // Name : UpgradeItem()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::ItemLevelDown(SBYTE sbRow1, SBYTE sbCol1, SBYTE sbRow2, SBYTE sbCol2)
+void CNetworkLibrary::ItemLevelDown(SWORD inven_idx1, SWORD inven_idx2)
 {
-	CNetworkMessage nmItem(MSG_ITEM);
+	CNetworkMessage nmItem((UBYTE)MSG_ITEM);
 	nmItem << (SBYTE)MSG_ITEM_LEVELDOWN;
-	nmItem << sbRow1;
-	nmItem << sbCol1;
-	nmItem << sbRow2;
-	nmItem << sbCol2;
+	nmItem << inven_idx1;
+	nmItem << inven_idx2;
 	SendToServerNew(nmItem);
 }
 
 // ----------------------------------------------------------------------------
 // Name : OptionAddItem()
-// Desc : Î∏îÎü¨Îìú ÏïÑÏù¥ÌÖú & Ï†ïÌôî ÏòµÏÖò Ï∂îÍ∞Ä
+// Desc : ∫Ì∑ØµÂ æ∆¿Ã≈€ & ¡§»≠ ø…º« √ﬂ∞°
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::OptionAddItem( SBYTE sbRow1, SBYTE sbCol1, SBYTE slWearPos,
-									SBYTE sbRow2, SBYTE sbCol2 )
+void CNetworkLibrary::OptionAddItem(UWORD slWearPos, int WearVirIdx, SWORD nTab, SWORD inven_idx, int JemVirIdx)
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_OPTION_ADD_REQ;
-	nmItem << sbRow1;
-	nmItem << sbCol1;
-	nmItem << slWearPos;
-	nmItem << sbRow2;
-	nmItem << sbCol2;
-	SendToServerNew(nmItem);
+	CNetworkMessage nmMessage;
+	RequestClient::doItemAddOption* packet = reinterpret_cast<RequestClient::doItemAddOption*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_OPTION_ADD_REQ;
+	packet->weapon_wearPos = slWearPos;
+	packet->weapon_virtualIndex = WearVirIdx;
+	packet->jam_tab = nTab;
+	packet->jam_invenIndex = inven_idx;
+	packet->jam_virtualIndex = JemVirIdx;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 // ----------------------------------------------------------------------------
 // Name : OptionDelItem()
-// Desc : Î∏îÎü¨Îìú ÏïÑÏù¥ÌÖú & Ï†ïÌôî ÏòµÏÖò Ï†úÍ±∞
+// Desc : ∫Ì∑ØµÂ æ∆¿Ã≈€ & ¡§»≠ ø…º« ¡¶∞≈
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::OptionDelItem( SBYTE sbRow1, SBYTE sbCol1, SBYTE slWearPos,
-									SBYTE sbRow2, SBYTE sbCol2 )
+void CNetworkLibrary::OptionDelItem(UWORD slWearPos, int WearVirIdx, SWORD nTab, SWORD inven_idx, int JemVirIdx)
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_OPTION_DEL_REQ;
-	nmItem << sbRow1;
-	nmItem << sbCol1;
-	nmItem << slWearPos;
-	nmItem << sbRow2;
-	nmItem << sbCol2;
-	SendToServerNew(nmItem);
-}
+	CNetworkMessage nmMessage;
+	RequestClient::doItemDelOption* packet = reinterpret_cast<RequestClient::doItemDelOption*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_OPTION_DEL_REQ;
+	packet->weapon_wearPos = slWearPos;
+	packet->weapon_virtualIndex = WearVirIdx;
+	packet->jam_tab = nTab;
+	packet->jam_invenIndex = inven_idx;
+	packet->jam_virtualIndex = JemVirIdx;
+	nmMessage.setSize( sizeof(*packet) );
 
-// ----------------------------------------------------------------------------
-// Name : HasItem()
-// Desc : 
-// ----------------------------------------------------------------------------
-BOOL CNetworkLibrary::HasItem( int iIndex )
-{
-	// Ïù∏Î≤§ÏóêÏÑú ÌïÑÏöî ÏïÑÏù¥ÌÖú Í≤ÄÏÇ¨ ( nUniIndex Ï≤òÎ¶¨ ÏïàÌñàÏùå )
-	for ( int nTab = 0; nTab < INVEN_SLOT_TAB; nTab++ )
-	{
-		for ( int nRow = 0 ; nRow < INVEN_SLOT_ROW_TOTAL; nRow++ )
-		{
-			for ( int nCol = 0 ; nCol < INVEN_SLOT_COL; nCol++ )
-			{
-				CItems& rItem = _pNetwork->MySlotItem[nTab][nRow][nCol];
-				
-				if ( iIndex == rItem.Item_Index )
-				{
-					return TRUE;
-				}		
-			}		
-		}
-	}
-	return FALSE;
+	SendToServerNew( nmMessage );
 }
 
 // ----------------------------------------------------------------------------
 // Name : RefineReq()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::RefineReq( SBYTE sbRow, SBYTE sbCol )
+void CNetworkLibrary::RefineReq( SWORD nTab, SWORD inven_idx )
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_REFINE_REQ;								
-	nmItem << sbRow;
-	nmItem << sbCol;
-	SendToServerNew(nmItem);
+	CNetworkMessage nmMessage;
+	RequestClient::doItemRefin* packet = reinterpret_cast<RequestClient::doItemRefin*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_REFINE_REQ;
+	packet->tab = nTab;
+	packet->invenIndex = inven_idx;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
-// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë ( 12. 6 ) : CNeedItems Î∞∞Ïó¥ ÌòïÌÉúÎ°ú Î≥ÄÌôò
+// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ ( 12. 6 ) : CNeedItems πËø≠ «¸≈¬∑Œ ∫Ø»Ø
 // ----------------------------------------------------------------------------
 // Name : ProcessReq()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::ProcessReq( SBYTE sbRow, SBYTE sbCol, 
+void CNetworkLibrary::ProcessReq( SWORD nTab, SWORD inven_idx, 
 								 SLONG slResultIndex, SLONG slResultCount, 
 								 CNeedItems* NeedItems )
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	
-	nmItem << (SBYTE)MSG_ITEM_PROCESS_REQ;								
-	nmItem << sbRow;
-	nmItem << sbCol;
-	nmItem << slResultIndex;
-	nmItem << slResultCount;
+	CNetworkMessage nmMessage;
+	RequestClient::doItemProcess* packet = reinterpret_cast<RequestClient::doItemProcess*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_PROCESS_REQ;
+	packet->useitem_tab = nTab;
+	packet->useitem_invenIndex = inven_idx;
+	packet->resultItemDBIndex = slResultIndex;
+	packet->listCount = slResultCount;
 
-	for(int i = 0 ; i < slResultCount; ++i)
+	for (int i = 0; i < slResultCount; ++i)
 	{
-		nmItem << NeedItems[i].sbMatTab;
-		nmItem << NeedItems[i].sbMatRow;
-		nmItem << NeedItems[i].sbMatCol;
-		nmItem << NeedItems[i].llCount;
+		packet->list[i].tab =			NeedItems[i].MatTab;
+		packet->list[i].invenIndex =	NeedItems[i].inven_idx;
+		packet->list[i].count =   (int)NeedItems[i].llCount;
 	}
-	
-	SendToServerNew(nmItem);
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * slResultCount) );
+
+	SendToServerNew( nmMessage );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ProductReq()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::ProductReq( SBYTE sbRow, SBYTE sbCol, 
+void CNetworkLibrary::ProductReq( SWORD nTab, SWORD inven_idx, 
 								 SLONG slResultIndex, SLONG slResultCount, 
 								 CNeedItems* NeedItems )
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	
-	nmItem << (SBYTE)MSG_ITEM_MAKE_REQ;								
-	nmItem << sbRow;
-	nmItem << sbCol;
-	nmItem << slResultIndex;
-	nmItem << slResultCount;
+	CNetworkMessage nmMessage;
+	RequestClient::doItemMake* packet = reinterpret_cast<RequestClient::doItemMake*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_MAKE_REQ;
+	packet->useitem_tab = nTab;
+	packet->useitem_invenIndex = inven_idx;
+	packet->resultItemDBIndex = slResultIndex;
+	packet->listCount = slResultCount;
 
-	for(int i = 0 ; i < slResultCount; ++i)
+	for (int i = 0; i < slResultCount; ++i)
 	{
-		nmItem << NeedItems[i].sbMatTab;
-		nmItem << NeedItems[i].sbMatRow;
-		nmItem << NeedItems[i].sbMatCol;
-		nmItem << NeedItems[i].llCount;
+		packet->list[i].dbIndex = NeedItems[i].ItemData->GetItemIndex();
+		packet->list[i].count = (int)NeedItems[i].llCount;
 	}
-	
-	SendToServerNew(nmItem);
-}
-// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù ( 12. 6 )
 
-// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë ( 12. 8 ) : Ï°∞Ìï©
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * slResultCount));
+
+	SendToServerNew( nmMessage );
+
+}
+// ¿Ã±‚»Ø ºˆ¡§ ≥° ( 12. 6 )
+
+// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ ( 12. 8 ) : ¡∂«’
 // ----------------------------------------------------------------------------
 // Name : MixReq()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::MixReq( SBYTE sbTextRow, SBYTE sbTextCol, SBYTE* sbRow, SBYTE* sbCol )
+void CNetworkLibrary::MixReq( SWORD nTab, SWORD inven_idx, SWORD* arrTab, SWORD* arrIdx )
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	
-	nmItem << (SBYTE)MSG_ITEM_MIX_REQ;	
-	
-	nmItem << sbTextRow;
-	nmItem << sbTextCol;
-		
-	for(int i = 0 ; i < MIX_ITEM_SLOT_COUNT; ++i)
+	CNetworkMessage nmMessage;
+	RequestClient::doItemMix* packet = reinterpret_cast<RequestClient::doItemMix*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_MIX_REQ;
+	packet->useitem_tab = nTab;
+	packet->useitem_invenIndex = inven_idx;
+
+	for (int i = 0; i < MIX_ITEM_SLOT_COUNT; ++i)
 	{
-		nmItem << sbRow[i];
-		nmItem << sbCol[i];
+		packet->list[i].tab = arrTab[i];
+		packet->list[i].invenIndex = arrIdx[i];
 	}
-	
-	SendToServerNew(nmItem);
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * MIX_ITEM_SLOT_COUNT));
+
+	SendToServerNew( nmMessage );
 }
-// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù (04.12.18)
+// ¿Ã±‚»Ø ºˆ¡§ ≥° (04.12.18)
 
 
 //------------------------------------------------------------------------------
@@ -3785,103 +3722,130 @@ void CNetworkLibrary::MixReq( SBYTE sbTextRow, SBYTE sbTextCol, SBYTE* sbRow, SB
 // Explain:  
 // Date : 2005-01-12,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
-void CNetworkLibrary::CompoundReq( SBYTE sbTextRow, SBYTE sbTextCol, SBYTE* sbRow, SBYTE* sbCol )
+void CNetworkLibrary::CompoundReq( SWORD nTab, SWORD nInvenIdx, SWORD* arrTab, SWORD* arrIdx )
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	
-	nmItem << (SBYTE)MSG_ITEM_ARCANE_REQ;	
-	
-	nmItem << sbTextRow;
-	nmItem << sbTextCol;
-		
-	for(int i = 0 ; i < COMPOUND_ITEM_SLOT_COUNT; ++i)
+	CNetworkMessage nmMessage;
+	RequestClient::doItemArcane* packet = reinterpret_cast<RequestClient::doItemArcane*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_ARCANE_REQ;
+	packet->useitem_tab = nTab;
+	packet->useitem_invenIndex = nInvenIdx;
+
+	for (int i = 0 ; i < COMPOUND_ITEM_SLOT_COUNT; ++i)
 	{
-		nmItem << sbRow[i];
-		nmItem << sbCol[i];
+		packet->list[i].tab = arrTab[i];
+		packet->list[i].invenIndex = arrIdx[i];
 	}
-	
-	SendToServerNew(nmItem);
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * COMPOUND_ITEM_SLOT_COUNT) );
+
+	SendToServerNew( nmMessage );
 }
 // ----------------------------------------------------------------------------
 // Name : SendProlongMessage() wooss 050816
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::SendProlongMessage( int tabId, int rowId, int colId)
+void CNetworkLibrary::SendProlongMessage(int tabId, int inven_idx)
 {
-	CItems& Items = MySlotItem[tabId][rowId][colId];
+	CItems* pItems = &MySlotItem[tabId][inven_idx];
 
-	if(Items.Item_Index ==-1) //ÎπÑÏñ¥ÏûàÎäî Ïä¨Î°ØÏù¥Îã§.
+	if(pItems->Item_Index ==-1) //∫ÒæÓ¿÷¥¬ ΩΩ∑‘¿Ã¥Ÿ.
 		return;
 	
-	CNetworkMessage nmItem(MSG_ITEM); 	
-			nmItem << (SBYTE)MSG_ITEM_USE_PROLONG;				
-			nmItem << (UBYTE)tabId;
-			nmItem << (UBYTE)rowId;
-			nmItem << (UBYTE)colId;
-			nmItem << (ULONG)Items.Item_UniIndex;
-			
-	SendToServerNew(nmItem);
-	
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUse* packet = reinterpret_cast<RequestClient::doItemUse*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE_PROLONG;
+	packet->tab = tabId;
+	packet->invenIndex = inven_idx;
+	packet->virtualIndex = pItems->Item_UniIndex;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew(nmMessage);
 }
 
 // ----------------------------------------------------------------------------
 // Name : SendCashItemMessage() wooss 060105
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::SendCashItemMessage(int nType)
+void CNetworkLibrary::SendCashItemMessage(int nType, INDEX searchType, INDEX ReqPage)
 {
-	int tv_i,nCnt;
-	CNetworkMessage nmItem(MSG_EXTEND);
-	nmItem << (ULONG)MSG_EX_CASHITEM;
-	nmItem << (UBYTE)nType;
+	CNetworkMessage nmCash((UBYTE)MSG_EXTEND);
+	nmCash << (ULONG)MSG_EX_CASHITEM;
+	nmCash << (UBYTE)nType;
+
 	switch(nType)
 	{
+	case MSG_EX_CASHITEM_LIST_REQ:
+		{
+			nmCash << (ULONG)searchType;
+
+			if (ReqPage < 1)
+			{
+				nmCash << (ULONG)(1);
+			}
+			else
+			{
+				nmCash << (ULONG)ReqPage;
+			}
+		}
+		break;
+	case MSG_EX_CASHITEM_RECOMMAND_REQ:
+		{
+			nmCash << (ULONG)searchType;
+		}
+		break;
+	case MSG_EX_CASHITEM_WISHLIST_SAVE_REQ:
+		{
+			nmCash << (ULONG)searchType; // ø©±‚º≠¥¬ CTID¿Ã¥Ÿ.
+		}
+	}
+
+	SendToServerNew(nmCash);
+}
+
+void CNetworkLibrary::SendCashItemMessage(int nType)
+{
+//	int tv_i,nCnt;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	CNetworkMessage nmItem((UBYTE)MSG_EXTEND);
+	nmItem << (ULONG)MSG_EX_CASHITEM;
+	nmItem << (UBYTE)nType;
+
+	switch(nType)
+	{
+		case MSG_EX_CASHITEM_SHOP_OPEN_REQ: // 2010.11 ƒ≥Ω√º• ø¿«¬ ø‰√ª
+		case MSG_EX_CASHITEM_WISHLIST_REQ: // º“∏¡ªÛ¿⁄ ∏ÆΩ∫∆Æ ø‰√ª
 		case MSG_EX_CASHITEM_BALANCE_REQ :
+		case MSG_EX_CASHITEM_CUPON_REQ : // ∫∏¿Ø ƒÌ∆˘ ∏ÆΩ∫∆Æ ø‰√ª
 			SendToServerNew(nmItem);
 			break;
 
 		case MSG_EX_CASHITEM_PURCHASE_REQ :
-			{
-				CUIButtonEx tv_btn;
-				for(tv_i=0 ,nCnt =0; tv_i<MAX_KIT_SIZE ; tv_i++){ 
-					tv_btn = _pUIMgr->GetCashShop()->m_abtnTradeItems[tv_i];
-					if(!tv_btn.IsEmpty()) nCnt++; 
-				}
-				nmItem<<(ULONG)_pUIMgr->GetCashShop()->GetMyCash();
-				nmItem<<(ULONG)nCnt;
-				
-				int tv_sum=0;
-				for(tv_i=0 ; tv_i<MAX_KIT_SIZE ; tv_i++){
-					tv_btn= _pUIMgr->GetCashShop()->m_abtnTradeItems[tv_i];
-					if(tv_btn.IsEmpty()	)
-						continue;
-					nmItem<<(ULONG)tv_btn.GetCashIndex();
-					CCashShopData& CD	= _pNetwork->GetCashShopData(tv_btn.GetCashType());
-					tv_sum += CD.m_vShopItemArray[tv_btn.GetCashTypeIndex()].m_cash ;
-				}
-				nmItem<<(ULONG)tv_sum;
-				
-				SendToServerNew(nmItem);
-			}
+		case MSG_EX_CASHITEM_PURCHASE_WITH_COUPON_REQ :
 			break;
 
 		case MSG_EX_CASHITEM_BRING_REQ :
 			{
-				CUIButtonEx tv_btn;
-				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
-					tv_btn = _pUIMgr -> GetCashShop()->m_abtnInvenItems[tv_i];
-					if(!tv_btn.IsEmpty())  nCnt++;
-				}
-				nmItem<<(ULONG)nCnt;
+				// CashshopEX ∏Æ¥∫æÛ
 
-				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
-					tv_btn= _pUIMgr->GetCashShop()->m_abtnInvenItems[tv_i];
-					if(tv_btn.IsEmpty()	)
-						continue;
-					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
-					nmItem<<(ULONG)tv_btn.GetCashIndex();
-				}
-				SendToServerNew(nmItem);
+// 				CUIButtonEx tv_btn;
+// 				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
+// 					tv_btn = pUIManager -> GetCashShop()->m_abtnInvenItems[tv_i];
+// 					if(!tv_btn.IsEmpty())  nCnt++;
+// 				}
+// 				nmItem<<(ULONG)nCnt;
+// 
+// 				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
+// 					tv_btn= pUIManager->GetCashShop()->m_abtnInvenItems[tv_i];
+// 					if(tv_btn.IsEmpty()	)
+// 						continue;
+// 					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
+// 					nmItem<<(ULONG)tv_btn.GetCashIndex();
+// 				}
+// 				SendToServerNew(nmItem);
 		
 			}			
 			break;
@@ -3893,117 +3857,119 @@ void CNetworkLibrary::SendCashItemMessage(int nType)
 
 		case MSG_EX_CASHITEM_PURCHASEHISTORY_REQ :
 			{
-				std::vector<CTString> tv_vecStr;
-				int tv_curSel;
-				// YEAR
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbYear.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbYear.GetCurSel();
-				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
-				// MONTH
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbMonth.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbMonth.GetCurSel();
-				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-				// DAY
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbDay.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbDay.GetCurSel();
-				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-
-				SendToServerNew(nmItem);
+// 				std::vector<CTString> tv_vecStr;
+// 				int tv_curSel;
+// 				// YEAR
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbYear.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbYear.GetCurSel();
+// 				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
+// 				// MONTH
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbMonth.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbMonth.GetCurSel();
+// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
+// 				// DAY
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbDay.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbDay.GetCurSel();
+// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
+// 
+// 				SendToServerNew(nmItem);
 			}
 			break;
 
-		//ÏÑ†Î¨º Í¥ÄÎ†® :Su-won		|-------------------------------------------->
-		case MSG_EX_CASHITEM_GIFT_REQ :			// ÏÑ†Î¨º Î≥¥ÎÇ¥Í∏∞ ÏöîÏ≤≠
+		//º±π∞ ∞¸∑√ :Su-won		|-------------------------------------------->
+		case MSG_EX_CASHITEM_GIFT_REQ :			// º±π∞ ∫∏≥ª±‚ ø‰√ª
 			{
+				// CashshopEX ∏Æ¥∫æÛ
+
 				//charName(str) Msg(str) count(n) idx(n) ctid(n)
 
-				nmItem<<_pUIMgr->GetCashShop()->m_ebChar.GetString();
-				nmItem<<_pUIMgr->GetCashShop()->m_ebGiftMessage.GetString();
-
-				CUIButtonEx tv_btn;
-				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
-					tv_btn = _pUIMgr -> GetCashShop()->m_abtnInvenItems[tv_i];
-					if(!tv_btn.IsEmpty())  nCnt++;
-				}
-				nmItem<<(ULONG)nCnt;
-
-				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
-					tv_btn= _pUIMgr->GetCashShop()->m_abtnInvenItems[tv_i];
-					if(tv_btn.IsEmpty()	)
-						continue;
-					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
-					nmItem<<(ULONG)tv_btn.GetCashIndex();
-				}
-				SendToServerNew(nmItem);
+// 				nmItem<<pUIManager->GetCashShop()->m_ebChar.GetString();
+// 				nmItem<<pUIManager->GetCashShop()->m_ebGiftMessage.GetString();
+// 
+// 				CUIButtonEx tv_btn;
+// 				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
+// 					tv_btn = pUIManager -> GetCashShop()->m_abtnInvenItems[tv_i];
+// 					if(!tv_btn.IsEmpty())  nCnt++;
+// 				}
+// 				nmItem<<(ULONG)nCnt;
+// 
+// 				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
+// 					tv_btn= pUIManager->GetCashShop()->m_abtnInvenItems[tv_i];
+// 					if(tv_btn.IsEmpty()	)
+// 						continue;
+// 					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
+// 					nmItem<<(ULONG)tv_btn.GetCashIndex();
+// 				}
+// 				SendToServerNew(nmItem);
 			}
 			break;
 
-		case MSG_EX_CASHITEM_GIFT_SENDHISTORY_REQ:  // Î≥¥ÎÇ∏ ÏÑ†Î¨º ÎÇ¥Ïó≠ Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠ : y(n) m(c) d(c)
+		case MSG_EX_CASHITEM_GIFT_SENDHISTORY_REQ:  // ∫∏≥Ω º±π∞ ≥ªø™ ∏ÆΩ∫∆Æ ø‰√ª : y(n) m(c) d(c)
 			{
-				std::vector<CTString> tv_vecStr;
-				int tv_curSel;
-				// YEAR
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbGiftYear.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbGiftYear.GetCurSel();
-				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
-				// MONTH
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbGiftMonth.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbGiftMonth.GetCurSel();
-				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-				// DAY
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbGiftDay.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbGiftDay.GetCurSel();
-				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-
-				SendToServerNew(nmItem);
+// 				std::vector<CTString> tv_vecStr;
+// 				int tv_curSel;
+// 				// YEAR
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftYear.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftYear.GetCurSel();
+// 				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
+// 				// MONTH
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftMonth.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftMonth.GetCurSel();
+// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
+// 				// DAY
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftDay.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftDay.GetCurSel();
+// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
+// 
+// 				SendToServerNew(nmItem);
 			}
 			break;
 
-		case MSG_EX_CASHITEM_GIFT_RECVHISTORY_REQ:  // Î∞õÏùÄ ÏÑ†Î¨º ÎÇ¥Ïó≠ Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠ : y(n) m(c) d(c)
+		case MSG_EX_CASHITEM_GIFT_RECVHISTORY_REQ:  // πﬁ¿∫ º±π∞ ≥ªø™ ∏ÆΩ∫∆Æ ø‰√ª : y(n) m(c) d(c)
 			{
-				std::vector<CTString> tv_vecStr;
-				int tv_curSel;
-				// YEAR
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbGiftYear.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbGiftYear.GetCurSel();
-				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
-				// MONTH
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbGiftMonth.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbGiftMonth.GetCurSel();
-				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-				// DAY
-				tv_vecStr = _pUIMgr->GetCashShop()->m_cbGiftDay.GetVecString();
-				tv_curSel = _pUIMgr->GetCashShop()->m_cbGiftDay.GetCurSel();
-				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-
-				SendToServerNew(nmItem);
+// 				std::vector<CTString> tv_vecStr;
+// 				int tv_curSel;
+// 				// YEAR
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftYear.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftYear.GetCurSel();
+// 				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
+// 				// MONTH
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftMonth.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftMonth.GetCurSel();
+// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
+// 				// DAY
+// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftDay.GetVecString();
+// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftDay.GetCurSel();
+// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
+// 
+// 				SendToServerNew(nmItem);
 			}
 			break;
-		case MSG_EX_CASHITEM_GIFT_RECVLIST_REQ:  // Î∞õÏùÄ ÏÑ†Î¨º Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠
+		case MSG_EX_CASHITEM_GIFT_RECVLIST_REQ:  // πﬁ¿∫ º±π∞ ∏ÆΩ∫∆Æ ø‰√ª
 			{
 				SendToServerNew(nmItem);
 			}
 			break;
-		case MSG_EX_CASHITEM_GIFT_RECV_REQ:		// Î∞õÏùÄ ÏÑ†Î¨º Ïù∏Î≤§ÏúºÎ°ú Ïù¥Îèô ÏöîÏ≤≠ : count(n) idx(c) ctid(c)
+		case MSG_EX_CASHITEM_GIFT_RECV_REQ:		// πﬁ¿∫ º±π∞ ¿Œ∫•¿∏∑Œ ¿Ãµø ø‰√ª : count(n) idx(c) ctid(c)
 			{
-				CUIButtonEx tv_btn;
-				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
-					tv_btn = _pUIMgr -> GetCashShop()->m_abtnInvenItems[tv_i];
-					if(!tv_btn.IsEmpty())  nCnt++;
-				}
-				nmItem<<(ULONG)nCnt;
-
-				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
-					tv_btn= _pUIMgr->GetCashShop()->m_abtnInvenItems[tv_i];
-					if(tv_btn.IsEmpty()	)
-						continue;
-					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
-					nmItem<<(ULONG)tv_btn.GetCashIndex();
-				}
-				SendToServerNew(nmItem);
+// 				CUIButtonEx tv_btn;
+// 				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
+// 					tv_btn = pUIManager -> GetCashShop()->m_abtnInvenItems[tv_i];
+// 					if(!tv_btn.IsEmpty())  nCnt++;
+// 				}
+// 				nmItem<<(ULONG)nCnt;
+// 
+// 				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
+// 					tv_btn= pUIManager->GetCashShop()->m_abtnInvenItems[tv_i];
+// 					if(tv_btn.IsEmpty()	)
+// 						continue;
+// 					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
+// 					nmItem<<(ULONG)tv_btn.GetCashIndex();
+// 				}
+// 				SendToServerNew(nmItem);
 			}
 			break;
-		//ÏÑ†Î¨º Í¥ÄÎ†® :Su-won		<--------------------------------------------|
+		//º±π∞ ∞¸∑√ :Su-won		<--------------------------------------------|
 	}
 }
 
@@ -4014,7 +3980,7 @@ void CNetworkLibrary::SendCashItemMessage(int nType)
 void CNetworkLibrary::SendChangMyName(CTString strMsg)
 {
 
-	CNetworkMessage nmItem(MSG_EXTEND);
+	CNetworkMessage nmItem((UBYTE)MSG_EXTEND);
 		nmItem << (ULONG)MSG_EX_NAMECHANGE;
 		nmItem << (ULONG)CHANGE_MY_NAME_ITEM;
 		nmItem << strMsg;
@@ -4029,7 +3995,7 @@ void CNetworkLibrary::SendChangMyName(CTString strMsg)
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendChangGuildName(CTString strMsg)
 {
-	CNetworkMessage nmItem(MSG_EXTEND);
+	CNetworkMessage nmItem((UBYTE)MSG_EXTEND);
 		nmItem << (ULONG)MSG_EX_NAMECHANGE;
 		nmItem << (ULONG)CHANGE_GUILD_NAME_ITEM;
 		nmItem << strMsg;
@@ -4043,25 +4009,150 @@ void CNetworkLibrary::SendChangGuildName(CTString strMsg)
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendExSlotMessage(int slotNum)
 {
-	int tabId,rowId,colId;
-	_pUIMgr->GetInventory()->GetUseItemSlotInfo(tabId,rowId,colId);
-	CItems& Items = MySlotItem[tabId][rowId][colId];
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	_pUIMgr->CloseMessageBox(MSGCMD_USE_SLOT_ITEM);
+	int tabId, inven_idx;
+
+	pUIManager->GetInventory()->GetUseItemSlotInfo(tabId, inven_idx);
+	CItems* pItems = &MySlotItem[tabId][inven_idx];
+
+	pUIManager->CloseMessageBox(MSGCMD_USE_SLOT_ITEM);
 	
-	if(Items.Item_Index ==-1) //ÎπÑÏñ¥ÏûàÎäî Ïä¨Î°ØÏù¥Îã§.
+	if(pItems->Item_Index ==-1) //∫ÒæÓ¿÷¥¬ ΩΩ∑‘¿Ã¥Ÿ.
 		return;
-	if(slotNum>0) slotNum--;
-	CNetworkMessage nmItem(MSG_ITEM); 	
-			nmItem << (SBYTE)MSG_ITEM_USE;				
-			nmItem << (UBYTE)tabId;
-			nmItem << (UBYTE)rowId;
-			nmItem << (UBYTE)colId;
-			nmItem << (ULONG)Items.Item_UniIndex;
-			nmItem << (ULONG)slotNum;
 
-	SendToServerNew(nmItem);
+	if(slotNum>0) 
+		slotNum--;
 
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUse* packet = reinterpret_cast<RequestClient::doItemUse*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE;
+	packet->tab = tabId;
+	packet->invenIndex = inven_idx;
+	packet->virtualIndex = pItems->Item_UniIndex;
+	packet->extra_1 = slotNum;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+}
+// ----------------------------------------------------------------------------
+// Name : SendItemWearingMSG()
+// Desc : 
+// ----------------------------------------------------------------------------
+bool CNetworkLibrary::SendItemWearingMSG(SBYTE sbType, SBYTE sbWearPos, SWORD nTab, SWORD inven_idx, char take, int nVirIndex)
+{
+	CUIManager* pUIMgr = CUIManager::getSingleton();
+
+	pUIMgr->ResetHoldBtn();
+
+	if (pUIMgr->GetInventory()->IsLockedArrange() == TRUE)
+		return false;
+
+	pUIMgr->GetQuickSlot()->SetWearingLock(TRUE);
+
+	if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+	{ // ∫Ò«‡ ∏µÂø°º≠¥¬ ¿Â∫Ò ¬¯øÎ¿ª «“ ºˆ æ¯Ω¿¥œ¥Ÿ.
+		return false;
+	}
+
+	CEntity* pEntity = CEntity::GetPlayerEntity( 0 );
+	CPlayerEntity* pPlayerEntity = (CPlayerEntity*)pEntity;
+
+	CTString strSysmessage;
+
+	if (pPlayerEntity->IsTransforming() && sbWearPos != WEAR_PET)
+	{	// ∞≠Ω≈ ¡ﬂø°¥¬ ¿Â∫Ò∏¶ ¬¯øÎ π◊ ≈ª¬¯ «“ ºˆ æ¯¥Ÿ
+		strSysmessage.PrintF(_S(5179, "∞≠Ω≈ ¡ﬂø°¥¬ ¿ÃøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."));
+		ClientSystemMessage(strSysmessage, SYSMSG_ERROR);
+		return false;
+	}
+	else if (pPlayerEntity->IsPolymophing() && sbWearPos != WEAR_PET)
+	{	// ∫ØΩ≈ ¡ﬂø°¥¬ ¿Â∫Ò∏¶ ¬¯øÎ π◊ ≈ª¬¯ «“ ºˆ æ¯¥Ÿ
+		strSysmessage.PrintF(_S(5181, "∫ØΩ≈ ¡ﬂø°¥¬ ¿ÃøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."));
+		ClientSystemMessage(strSysmessage, SYSMSG_ERROR);
+		return false;
+	}
+
+	if (sbType == MSG_ITEM_WEAR_COSTUME)
+	{
+		CNetworkMessage nmMessage;
+		RequestClient::doItemWearCostume* packet = reinterpret_cast<RequestClient::doItemWearCostume*>(nmMessage.nm_pubMessage);
+		packet->type = MSG_ITEM;
+		packet->subType = MSG_ITEM_WEAR_COSTUME;
+		packet->tab = nTab;
+		packet->invenIndex = inven_idx;
+		packet->wearPos = sbWearPos;
+		nmMessage.setSize( sizeof(*packet) );
+
+		SendToServerNew( nmMessage );
+	}
+	else if (sbType == MSG_ITEM_WEAR_COSTUME_TAKEOFF)
+	{
+		CNetworkMessage nmMessage;
+		RequestClient::doItemWearCostumeTakeOff* packet = reinterpret_cast<RequestClient::doItemWearCostumeTakeOff*>(nmMessage.nm_pubMessage);
+		packet->type = MSG_ITEM;
+		packet->subType = MSG_ITEM_WEAR_COSTUME_TAKEOFF;
+		packet->tab = nTab;
+		packet->invenIndex = inven_idx;
+		packet->vIndex = nVirIndex;
+		packet->wearPos = sbWearPos;
+		nmMessage.setSize( sizeof(*packet) );
+
+		SendToServerNew( nmMessage );
+	}
+	else if (sbType == MSG_ITEM_WEAR_COSTUME_SUIT)
+	{
+		CNetworkMessage nmMessage;
+		RequestClient::doItemWearCostumeSuit* packet = reinterpret_cast<RequestClient::doItemWearCostumeSuit*>(nmMessage.nm_pubMessage);
+		packet->type = MSG_ITEM;
+		packet->subType = MSG_ITEM_WEAR_COSTUME_SUIT;
+		packet->tab = nTab;
+		packet->invenIndex = inven_idx;
+		nmMessage.setSize( sizeof(*packet) );
+
+		SendToServerNew( nmMessage );
+	}
+	else if (sbType == MSG_ITEM_WEAR_COSTUME_SUIT_TAKEOFF)
+	{
+		CNetworkMessage nmMessage;
+		RequestClient::doItemWearCostumeSuitTakeOff* packet = reinterpret_cast<RequestClient::doItemWearCostumeSuitTakeOff*>(nmMessage.nm_pubMessage);
+		packet->type = MSG_ITEM;
+		packet->subType = MSG_ITEM_WEAR_COSTUME_SUIT_TAKEOFF;
+		packet->tab = nTab;
+		packet->invenIndex = inven_idx;
+		nmMessage.setSize( sizeof(*packet) );
+
+		SendToServerNew( nmMessage );
+	}
+	else if (sbType == MSG_ITEM_WEAR_TAKE_OFF)
+	{
+		CNetworkMessage nmMessage;
+		RequestClient::doItemWearTakeOff* packet = reinterpret_cast<RequestClient::doItemWearTakeOff*>(nmMessage.nm_pubMessage);
+		packet->type = MSG_ITEM;
+		packet->subType = MSG_ITEM_WEAR_TAKE_OFF;
+		packet->wearPos = sbWearPos;
+		packet->tab = nTab;
+		packet->invenIndex = inven_idx;
+		nmMessage.setSize( sizeof(*packet) );
+
+		SendToServerNew( nmMessage );
+	}
+	else
+	{
+		CNetworkMessage nmMessage;
+		RequestClient::doItemWear* packet = reinterpret_cast<RequestClient::doItemWear*>(nmMessage.nm_pubMessage);
+		packet->type = MSG_ITEM;
+		packet->subType = MSG_ITEM_WEAR;
+		packet->wearPos = sbWearPos;
+		packet->tab = nTab;
+		packet->invenIndex = inven_idx;
+		nmMessage.setSize( sizeof(*packet) );
+
+		SendToServerNew( nmMessage );
+	}
+	
+	return true;
 }
 
 
@@ -4069,33 +4160,90 @@ void CNetworkLibrary::SendExSlotMessage(int slotNum)
 // Name : UseSlotItem()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::UseSlotItem( int tabId, int rowId, int colId, SBYTE sbWearType )
+void CNetworkLibrary::UseSlotItem( int tabId, int inven_idx, SBYTE sbWearType )
 {
-	CItems& Items = MySlotItem[tabId][rowId][colId];
+	CItems* pItems = &MySlotItem[tabId][inven_idx];
 	
-	if(Items.Item_Index ==-1) //ÎπÑÏñ¥ÏûàÎäî Ïä¨Î°ØÏù¥Îã§.
+	if(pItems->Item_Index ==-1) //∫ÒæÓ¿÷¥¬ ΩΩ∑‘¿Ã¥Ÿ.
 		return;
-	
-	//0615 kwon 
-	INDEX PlayerType = ga_srvServer.srv_apltPlayers[0].plt_penPlayerEntity->en_pcCharacter.pc_iPlayerType;//ÌÉÄÏù¥ÌÉÑ:0,mage:1,healer:2
-	
-	
-	if(!Items.ItemData.CanUse(PlayerType) && !Items.ItemData.CanUse(WILDPET_JOB)) //0615 kwon 
-	{
-		ClientSystemMessage( _S( 294, "Ï∞©Ïö© Ìï†Ïàò ÏóÜÎäî ÏïÑÏù¥ÌÖúÏûÖÎãàÎã§." ), SYSMSG_ERROR );
+
+	// æ∆¿Ã≈€ ƒ≈∏¿” ∞ÀªÁ
+	DOUBLE dStartTime = 0;
+	DOUBLE dCoolTime;
+	DOUBLE dReUseTime = 0.0;
+
+	dStartTime = pItems->ItemData->StartTime;
+	dReUseTime = MY_INFO()->GetReuseItem(pItems->Item_Index);
+	dCoolTime = ItemHelp::GetCoolTime(dReUseTime, dStartTime);
+
+	if (dCoolTime > 0.0)
 		return;
-	}
-	
-	if( Items.ItemData.GetType() == CItemData::ITEM_WEAPON || 
-		Items.ItemData.GetType() == CItemData::ITEM_SHIELD ||
-		Items.ItemData.GetType() == CItemData::ITEM_ACCESSORY )
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	char castlewar = pItems->ItemData->GetCastleWar();
+
+	if (castlewar != CItemData::eANYWHERE)
 	{
-		// NOTE : ÌÖåÏÑ≠ÏóêÏÑú Ïï†ÏôÑÎèôÎ¨º ÌÉàÍ≤ÉÏùÑ Ïû•Ï∞©Ìï†Ïàò ÏóÜÎèÑÎ°ù ÌïòÎäî Î∂ÄÎ∂Ñ...
-		// Ïï†ÏôÑÎèôÎ¨º ÏùºÎïå...
-		if( (Items.ItemData.GetSubType() == CItemData::ACCESSORY_PET || Items.ItemData.GetSubType() == CItemData::ACCESSORY_WILDPET)
-			&& Items.Item_Wearing == -1 )
+		bool bError = false;
+		int nErrorSting = 7064;
+		
+		bool bMeracJoin = _pNetwork->MyCharacterInfo.zoneNo == 7 && _pNetwork->MyCharacterInfo.sbJoinFlagMerac != WCJF_NONE && _pNetwork->ga_bGuildWar == TRUE ? true : false;
+		bool bDratanJoin = _pNetwork->MyCharacterInfo.zoneNo == 4 && _pNetwork->MyCharacterInfo.sbJoinFlagDratan != WCJF_NONE && pUIManager->GetSiegeWarfareNew()->GetWarState() == TRUE ? true : false;
+
+		switch (castlewar)
 		{
-			const INDEX iPetIndex = MySlotItem[tabId][rowId][colId].Item_Plus;
+		case CItemData::eSIEGEAREA_ALL:	//	1	¿¸√º ∞¯º∫ø°º≠∏∏ ªÁøÎ ∞°¥…
+		    {
+		        if (bMeracJoin == false && bDratanJoin == false)
+		        {
+		            bError = true;
+		            nErrorSting = 7064;
+		        }
+		    }
+		    break;
+
+		case CItemData::eSIEGEAREA_MERAC:	//	2	∏ﬁ∂Û≈© ∞¯º∫ø°º≠∏∏ ªÁøÎ ∞°¥…
+		    {
+		        if (bMeracJoin == false)
+		        {
+		            bError = true;
+		            nErrorSting = 7075;
+		        }
+		    }
+		    break;
+
+		case CItemData::eSIEGEAREA_DRATAN:	//	3	µÂ∂Û≈∫ ∞¯º∫ø°º≠∏∏ ªÁøÎ ∞°¥…
+		    {
+		        if (bDratanJoin == false)
+		        {
+		            bError = true;
+		            nErrorSting = 7076;
+		        }
+		    }
+		    break;
+		}
+		
+		if (bError == true)
+		{
+			ClientSystemMessage( _S( nErrorSting, "∞¯º∫ ¡ˆø™ø°º≠∏∏ ªÁøÎ «“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
+			return;
+		}
+	}
+
+	if( pItems->ItemData->GetType() == CItemData::ITEM_WEAPON || 
+		pItems->ItemData->GetType() == CItemData::ITEM_SHIELD ||
+		pItems->ItemData->GetType() == CItemData::ITEM_ACCESSORY )
+	{
+		if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+		{ // ∫Ò«‡ ∏µÂø°º≠¥¬ ¿Â∫Ò ¬¯øÎ¿ª «“ ºˆ æ¯Ω¿¥œ¥Ÿ.
+			return;
+		}
+		// NOTE : ≈◊º∑ø°º≠ æ÷øœµøπ∞ ≈ª∞Õ¿ª ¿Â¬¯«“ºˆ æ¯µµ∑œ «œ¥¬ ∫Œ∫–...
+		// æ÷øœµøπ∞ ¿œ∂ß...
+		if( (pItems->ItemData->GetSubType() == CItemData::ACCESSORY_PET || pItems->ItemData->GetSubType() == CItemData::ACCESSORY_WILDPET)
+			&& pItems->Item_Wearing == -1 )
+		{
+			const INDEX iPetIndex = MySlotItem[tabId][inven_idx].Item_Plus;
 			CNetworkLibrary::sPetInfo	TempPet;
 			TempPet.lIndex				= iPetIndex;
 			std::vector<CNetworkLibrary::sPetInfo>::iterator iter = 
@@ -4107,40 +4255,40 @@ void CNetworkLibrary::UseSlotItem( int tabId, int rowId, int colId, SBYTE sbWear
 				_pNetwork->CheckPetType( (*iter).sbPetTypeGrade, iPetType, iPetAge );				
 				const BOOL bPetRide = PetInfo().IsRide(iPetType, iPetAge);
 				
-				// ÌÉÄÏïºÌïòÎäî ÎßêÏùºÍ≤ΩÏö∞...
+				// ≈∏æﬂ«œ¥¬ ∏ª¿œ∞ÊøÏ...
 				if( bPetRide )
 				{
-					//ClientSystemMessage( _S( 294, "Ï∞©Ïö© Ìï†Ïàò ÏóÜÎäî ÏïÑÏù¥ÌÖúÏûÖÎãàÎã§." ), SYSMSG_ERROR );
+					//ClientSystemMessage( _S( 294, "¬¯øÎ «“ºˆ æ¯¥¬ æ∆¿Ã≈€¿‘¥œ¥Ÿ." ), SYSMSG_ERROR );
 					
-					// Í≥µÍ≤©Ï§ëÏù¥Í±∞ÎÇò Ïä§ÌÇ¨ ÏÇ¨Ïö©Ï§ëÏùºÎïåÎäî Î∞îÍøÄÏàò ÏóÜÏùå.
+					// ∞¯∞›¡ﬂ¿Ã∞≈≥™ Ω∫≈≥ ªÁøÎ¡ﬂ¿œ∂ß¥¬ πŸ≤‹ºˆ æ¯¿Ω.
 					if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsAttacking() )
 					{
-						ClientSystemMessage( _S(2579, "Í≥µÍ≤©Ï§ëÏùºÎïåÎäî Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌÉà Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+						ClientSystemMessage( _S(2579, "∞¯∞›¡ﬂ¿œ∂ß¥¬ æ÷øœµøπ∞¿ª ≈ª ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 						return;
 					}
 					
 					if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsPolymophing() )
 					{
-						ClientSystemMessage( _S( 2574, "Î≥ÄÏã†Ï§ëÏùºÎïåÎäî Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌÉà Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+						ClientSystemMessage( _S( 2574, "∫ØΩ≈¡ﬂ¿œ∂ß¥¬ æ÷øœµøπ∞¿ª ≈ª ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 						return;						
 					}
 					
-					if( _pNetwork->MyCharacterInfo.sbEvocationType != -1 )
+					if( _pNetwork->MyCharacterInfo.nEvocationIndex > 0 )
 					{
-						ClientSystemMessage( _S(2580, "Í∞ïÏã†Ï§ëÏùºÎïåÎäî Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌÉà Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+						ClientSystemMessage( _S(2580, "∞≠Ω≈¡ﬂ¿œ∂ß¥¬ æ÷øœµøπ∞¿ª ≈ª ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 						return;
 					}
 					
-					// Í≥µÏÑ±Ï§ëÏù¥Í≥† Í≥µÏÑ±ÏßÄÏó≠ ÎÇ¥ÏóêÏÑúÎäî Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÏÜåÌôòÌï† Ïàò ÏóÜÏùå
-					if( _pNetwork->MyCharacterInfo.sbAttributePos == ATTC_WAR && _pUISWDoc->IsWar() )
+					// ∞¯º∫¡ﬂ¿Ã∞Ì ∞¯º∫¡ˆø™ ≥ªø°º≠¥¬ æ÷øœµøπ∞¿ª º“»Ø«“ ºˆ æ¯¿Ω
+					if( _pNetwork->MyCharacterInfo.sbAttributePos & MATT_WAR && _pUISWDoc->IsWar() )
 					{
-						ClientSystemMessage( _S( 2583, "Í≥µÏÑ±Ï§ëÏóêÎäî Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌÉà Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+						ClientSystemMessage( _S( 2583, "∞¯º∫¡ﬂø°¥¬ æ÷øœµøπ∞¿ª ≈ª ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 						return;
 					}					
 					
 					if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsSkilling() )
 					{
-						ClientSystemMessage( _S(2581, "Ïä§ÌÇ¨ ÏÇ¨Ïö©Ï§ëÏùºÎïåÎäî Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌÉà Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+						ClientSystemMessage( _S(2581, "Ω∫≈≥ ªÁøÎ¡ﬂ¿œ∂ß¥¬ æ÷øœµøπ∞¿ª ≈ª ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 						return;
 					}
 
@@ -4148,150 +4296,171 @@ void CNetworkLibrary::UseSlotItem( int tabId, int rowId, int colId, SBYTE sbWear
 					{
 						return;
 					}
+
+					pUIManager->SetCSFlagOn(CSF_PETRIDING);
 				}
 			}
 		}
-		
-		// Î¨¥Í∏∞ ÏùºÎïå...
-		if( Items.ItemData.GetType() == CItemData::ITEM_WEAPON )
+
+		if (pUIManager->IsCSFlagOnElapsed(CSF_ITEMWEARING, 5000)) // æ∆¿Ã≈€ ¬¯øÎ π◊ ≈ª¬¯¿ª Ω√µµ ¡ﬂ¿‘¥œ¥Ÿ.
 		{
-			// Í≥µÍ≤©Ï§ëÏù¥Í±∞ÎÇò Ïä§ÌÇ¨ ÏÇ¨Ïö©Ï§ëÏùºÎïåÎäî Î∞îÍøÄÏàò ÏóÜÏùå.
+			ClientSystemMessage( _S( 305, "¿Â∫Ò∏¶ ¬¯øÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
+			return;
+		}
+
+		//SET_ITEM_ADD				//[ttos_2009_5_22]: ºº∆Æ æ∆¿Ã≈€ ¿˚øÎ
+		if (pItems->ItemData->GetFlag()&ITEM_FLAG_ORIGIN)
+		{
+			if (pItems->GetItemBelong() != -1 && !pItems->IsFlag(FLAG_ITEM_BELONG))
+			{
+				if(pUIManager->DoesMessageBoxExist(MSGCMD_ITEM_BELONG)) 
+				{
+					return;
+				}
+				CUIMsgBox_Info	MsgBoxInfo;
+				CTString	strMessage[2];
+				strMessage[0] = _S(4102,"∞Ê∞Ì!");
+				strMessage[1] = _S(4657, "æ∆¿Ã≈€¿ª ¬¯øÎ«œ∏È ±Õº”µ«æÓ ∞≈∑°øÕ √¢∞Ì∫∏∞¸¿Ã ∫“∞°¥…«œ∞‘ µÀ¥œ¥Ÿ. ¬¯øÎ«œΩ√∞⁄Ω¿¥œ±Ó?");
+				MsgBoxInfo.SetMsgBoxInfo(strMessage[0], UMBS_OKCANCEL, UI_NONE, MSGCMD_ITEM_BELONG	);
+				MsgBoxInfo.AddString(strMessage[1]);
+				if (pUIManager->CreateMessageBox(MsgBoxInfo))
+					pUIManager->GetMessageBox(MSGCMD_ITEM_BELONG)->SetInvenUseItemInfo( tabId, inven_idx );
+				return;
+			}
+		}
+
+		// π´±‚ ¿œ∂ß...
+		if( pItems->ItemData->GetType() == CItemData::ITEM_WEAPON )
+		{
+			// ∞¯∞›¡ﬂ¿Ã∞≈≥™ Ω∫≈≥ ªÁøÎ¡ﬂ¿œ∂ß¥¬ πŸ≤‹ºˆ æ¯¿Ω.
 			if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsAttacking() )
 			{
-				ClientSystemMessage( _S( 1324, "Í≥µÍ≤©Ï§ëÏùºÎïåÎäî Î¨¥Í∏∞Î•º ÍµêÏ≤¥Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+				ClientSystemMessage( _S( 1324, "∞¯∞›¡ﬂ¿œ∂ß¥¬ π´±‚∏¶ ±≥√º«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 				return;
 			}
 			
 			if( ( (CPlayerEntity*)CEntity::GetPlayerEntity(0) )->IsSkilling() )
 			{
-				ClientSystemMessage( _S( 1325, "Ïä§ÌÇ¨ ÏÇ¨Ïö©Ï§ëÏùºÎïåÎäî Î¨¥Í∏∞Î•º ÍµêÏ≤¥Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+				ClientSystemMessage( _S( 1325, "Ω∫≈≥ ªÁøÎ¡ﬂ¿œ∂ß¥¬ π´±‚∏¶ ±≥√º«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 				return;
 			}
 		}
-		
-		if(Items.Item_Wearing != -1) //ÌòÑÏû¨ Ïù¥ Í∞ëÏò∑ÏùÑ ÏûÖÍ≥† ÏûàÎÑ§? -1Ïù¥ ÏïÑÎãàÎ©¥ Ï∞©Ïö©Ï§ëÏù¥ÎùºÎäî Îúª.
-		{					
-			CNetworkMessage nmItem(MSG_ITEM); 	
-			nmItem << (SBYTE)MSG_ITEM_WEAR;				
-			nmItem << Items.Item_Wearing;
-			nmItem << (SBYTE)-1;
-			nmItem << (SBYTE)-1;
-			nmItem << (SBYTE)-1;
-			nmItem << (SLONG)-1;
-			
-			SendToServerNew(nmItem);	
+
+		SBYTE sbType = (SBYTE)MSG_ITEM_WEAR;	// æ∆¿Ã≈€ ∏ﬁΩ√¡ˆ ≈∏¿‘
+		SBYTE sbWear = -1;
+
+		// Item Flag »Æ¿Œ
+		if( pItems->ItemData->GetFlag() & ITEM_FLAG_COSTUME2 ) { 
+			// ƒ⁄Ω∫∆¨2 Ω√Ω∫≈€ æ∆¿Ã≈€
+			if( pItems->ItemData->GetSubType() == CItemData::ITEM_SHIELD_ONE_SUIT )
+				sbType = (SBYTE)MSG_ITEM_WEAR_COSTUME_SUIT;
+			else
+				sbType = (SBYTE)MSG_ITEM_WEAR_COSTUME;
 		}
-		else //Ïù¥ Í∞ëÏò∑ÏùÑ ÏûÖÍ≥† ÏûàÏßÄ ÏïäÏÜå. Î≤ÑÎü≠~
+
+		if( pItems->ItemData->GetType() == CItemData::ITEM_ACCESSORY && 
+			!(pItems->ItemData->GetSubType() == CItemData::ACCESSORY_PET || pItems->ItemData->GetSubType() == CItemData::ACCESSORY_WILDPET))
 		{
-			SBYTE	sbWear = -1;
-			if( Items.ItemData.GetType() == CItemData::ITEM_ACCESSORY && 
-				!(Items.ItemData.GetSubType() == CItemData::ACCESSORY_PET || Items.ItemData.GetSubType() == CItemData::ACCESSORY_WILDPET))
+			// ¿Œ∫•≈‰∏Æ¿« ∫Û¿⁄∏Æ∏¶ »Æ¿Œ«’¥œ¥Ÿ.
+			for(int iWearPos = WEAR_ACCESSORY1; iWearPos <= WEAR_ACCESSORY3; ++iWearPos)
 			{
-				// Ïù∏Î≤§ÌÜ†Î¶¨Ïùò ÎπàÏûêÎ¶¨Î•º ÌôïÏù∏Ìï©ÎãàÎã§.
-				for(int iWearPos = WEAR_ACCESSORY1; iWearPos <= WEAR_ACCESSORY3; ++iWearPos)
+				if(!_pNetwork->MyWearItem[iWearPos].IsEmptyItem() == FALSE)
 				{
-					if(!_pNetwork->pMyCurrentWearing[iWearPos])
-					{
-						sbWear = iWearPos;
-						break;
-					}
+					sbWear = iWearPos;
+					break;
 				}
 			}
-			else
-			{
-				sbWear = Items.ItemData.GetWearingPosition();
-			}
-
-			CNetworkMessage nmItem(MSG_ITEM); 	
-			nmItem << (SBYTE)MSG_ITEM_WEAR;
-			nmItem << sbWear;
-			nmItem << Items.Item_Tab;
-			nmItem << Items.Item_Row;
-			nmItem << Items.Item_Col;
-			nmItem << Items.Item_UniIndex;
-
-			SendToServerNew(nmItem);	
 		}
+		else
+		{
+			sbWear = pItems->ItemData->GetWearingPosition();
+		}
+		// Send msg
+		if( SendItemWearingMSG( sbType, sbWear, pItems->Item_Tab, pItems->InvenIndex, 0 ) ) 
+		{
+			pUIManager->SetCSFlagOnElapsed(CSF_ITEMWEARING, _pTimer->GetLerpedCurrentTick()*1000);
+		}
+		//}
 	}
-	else if(Items.ItemData.GetType() == CItemData::ITEM_ONCEUSE)
+	else if(pItems->ItemData->GetType() == CItemData::ITEM_ONCEUSE)
 	{
-		switch( Items.ItemData.GetSubType() )
+		switch( pItems->ItemData->GetSubType() )
 		{
 	
-		case CItemData::ITEM_SUB_WARP:			// Ïù¥Îèô
+		case CItemData::ITEM_SUB_WARP:			// ¿Ãµø
 			{
-				if( Items.ItemData.GetWarpType() == 0 )			// Î¶¨ÌÑ¥ Ïä§ÌÅ¨Î°§
+				if( pItems->ItemData->GetWarpType() == 0 )			// ∏Æ≈œ Ω∫≈©∑—
 				{
-					if( _pUIMgr->IsCSFlagOn( CSF_CANNOT_TELEPORT_MASK ) )
+					if( pUIManager->IsCSFlagOn( CSF_CANNOT_TELEPORT_MASK ) )
 					{
-						_pUIMgr->GetTeleport()->ShowTeleportError();
+						pUIManager->GetTeleport()->ShowTeleportError();
 						return;
 					}
 				}
-				else if( Items.ItemData.GetWarpType() == 1 )	// Î©îÎ™®Î¶¨ Ïä§ÌÅ¨Î°§
+				else if( pItems->ItemData->GetWarpType() == 1 )	// ∏ﬁ∏∏Æ Ω∫≈©∑—
 				{
-					// [KH_070315] ÌîÑÎ¶¨ÎØ∏ÏóÑ Î©îÎ™®Î¶¨Ïä§ÌÅ¨Î°§ Í¥ÄÎ†® Ï∂îÍ∞Ä
-					if(Items.Item_Index == PRIMIUM_TELEPORT)
-						_pUIMgr->GetTeleportPrimium()->OpenTeleport();
+					// [KH_070315] «¡∏ÆπÃæˆ ∏ﬁ∏∏ÆΩ∫≈©∑— ∞¸∑√ √ﬂ∞°
+					if(pItems->Item_Index == PRIMIUM_TELEPORT)
+						pUIManager->GetTeleportPrimium()->OpenTeleport();
 					else
-						_pUIMgr->GetTeleport()->OpenTeleport();
+						pUIManager->GetTeleport()->OpenTeleport();
 					return;
 				}			
 			}
 			break;
 		
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë ( 12. 6 ) : ÏÉùÏÇ∞ ÏãúÏä§ÌÖú
-		case CItemData::ITEM_SUB_PROCESS_DOC:	// Í∞ÄÍ≥µ Î¨∏ÏÑú
+		// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ ( 12. 6 ) : ª˝ªÍ Ω√Ω∫≈€
+		case CItemData::ITEM_SUB_PROCESS_DOC:	// ∞°∞¯ πÆº≠
 			{
-				if ( _pUIMgr->GetProduct()->IsVisible() || _pUIMgr->GetMix()->IsVisible() ||
-					_pUIMgr->GetCompound()->IsVisible() )
+				if ( pUIManager->GetProduct()->IsVisible() || pUIManager->GetMix()->IsVisible() ||
+					pUIManager->GetCompound()->IsVisible() )
 				{
 					return;
 				}
 
-				_pUIMgr->GetProcess()->OpenProcess( Items.Item_Index, rowId, colId );
+				pUIManager->GetProcess()->OpenProcess( pItems->Item_Index, tabId, inven_idx );
 				return;
 			}
 			break;
-		case CItemData::ITEM_SUB_MAKE_POTION_DOC:	// Í∞ÄÍ≥µ Î¨∏ÏÑú
-		case CItemData::ITEM_SUB_MAKE_TYPE_DOC:	// Ï†úÏûë Î¨∏ÏÑú
+		case CItemData::ITEM_SUB_MAKE_POTION_DOC:	// ∞°∞¯ πÆº≠
+		case CItemData::ITEM_SUB_MAKE_TYPE_DOC:	// ¡¶¿€ πÆº≠
 			{
-				if ( _pUIMgr->GetProcess()->IsVisible() || _pUIMgr->GetMix()->IsVisible() ||
-					_pUIMgr->GetCompound()->IsVisible() )
+				if ( pUIManager->GetProcess()->IsVisible() || pUIManager->GetMix()->IsVisible() ||
+					pUIManager->GetCompound()->IsVisible() )
 				{
 					return;
 				}
 
-				_pUIMgr->GetProduct()->OpenProduct( Items.Item_Index, rowId, colId );
+				pUIManager->GetProduct()->OpenProduct( pItems->Item_Index, tabId, inven_idx );
 				return;
 			}
 			break;
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù ( 12. 10 )
+		// ¿Ã±‚»Ø ºˆ¡§ ≥° ( 12. 10 )
 		// Date : 2005-01-12,   By Lee Ki-hwan
-		case CItemData::ITEM_SUB_BOX : // ÏÉÅÏûê ( Ï°∞Ìï© )
+		case CItemData::ITEM_SUB_BOX : // ªÛ¿⁄ ( ¡∂«’ )
 			{
-				switch ( Items.ItemData.GetBoxType() )
+				switch ( pItems->ItemData->GetBoxType() )
 				{
-				case CItemData::BOX_REMAKE: // ÏïÑÏù¥ÌÖú Ï°∞Ìï© ( Ïû¨ÌôúÏùò ÏÉÅÏûê )
-					if ( _pUIMgr->GetProcess()->IsVisible() ||
-						_pUIMgr->GetProduct()->IsVisible() ||
-						_pUIMgr->GetCompound()->IsVisible() )
+				case CItemData::BOX_REMAKE: // æ∆¿Ã≈€ ¡∂«’ ( ¿Á»∞¿« ªÛ¿⁄ )
+					if ( pUIManager->GetProcess()->IsVisible() ||
+						pUIManager->GetProduct()->IsVisible() ||
+						pUIManager->GetCompound()->IsVisible() )
 					{
 						return;
 					}
 					
-					_pUIMgr->GetMix()->OpenMix ( Items.Item_Index, rowId, colId );
+					pUIManager->GetMix()->OpenMix( pItems->Item_Index, tabId, inven_idx );
 					return;
 					
 				case CItemData::BOX_ARCANE:
-					if ( _pUIMgr->GetProcess()->IsVisible() || 
-						_pUIMgr->GetProduct()->IsVisible() ||
-						_pUIMgr->GetMix()->IsVisible() )
+					if ( pUIManager->GetProcess()->IsVisible() || 
+						pUIManager->GetProduct()->IsVisible() ||
+						pUIManager->GetMix()->IsVisible() )
 					{
 						return;
 					}
 
-					_pUIMgr->GetCompound()->OpenCompound ( Items.Item_Index, rowId, colId );
+					pUIManager->GetCompound()->OpenCompound( pItems->Item_Index, tabId, inven_idx );
 					return;
 				
 				
@@ -4302,35 +4471,37 @@ void CNetworkLibrary::UseSlotItem( int tabId, int rowId, int colId, SBYTE sbWear
 		case  CItemData::ITEM_SUB_CHANGE_DOC:	
 			{
 			
-				if(!ga_srvServer.srv_apltPlayers[0].plt_penPlayerEntity->CheckChangeCondition(Items.ItemData.GetNum2(), Items.ItemData.GetNum3()))
+				if(!ga_srvServer.srv_apltPlayers[0].plt_penPlayerEntity->CheckChangeCondition(pItems->ItemData->GetNum2(), pItems->ItemData->GetNum3()))
 				{
 					return;
 				}
 				
+				// ∫ØΩ≈ Ω∫≈©∑— ªÁøÎ
+				_pNetwork->MyCharacterInfo.eMorphStatus		= MyChaInfo::eMORPH_TRANSFORMATION_BEGIN;
 			}
 			break;
-			// ÌÄòÏä§Ìä∏ Ïä§ÌÅ¨Î°§.
+			// ƒ˘Ω∫∆Æ Ω∫≈©∑—.
 		case CItemData::ITEM_SUB_QUEST_SCROLL:
 			{
-				const int iQuestIndex = Items.ItemData.GetNum0();
+				const int iQuestIndex = pItems->ItemData->GetNum0();
 				if( CQuestSystem::Instance().CanIDoQuest( iQuestIndex ) )
 				{
 					if( CQuestSystem::Instance().GetDynamicDataByQuestIndex( iQuestIndex ) == NULL )
 					{						
-						_pUIMgr->GetInventory()->Lock( TRUE, TRUE, LOCK_QUEST );
-						_pUIMgr->GetQuestBookNew()->OpenQuestBook( iQuestIndex, &Items );
+						pUIManager->GetInventory()->Lock( TRUE, TRUE, LOCK_QUEST );
+						pUIManager->GetQuestAccept()->open( iQuestIndex, pItems );
 					}
 					else
 					{
 						CTString strSysMessage;
-						strSysMessage.PrintF( _S( 1744, "Ïù¥ÎØ∏ ÏàòÌñâÏ§ëÏù∏ ÌÄòÏä§Ìä∏ÏûÖÎãàÎã§."  ) );		
+						strSysMessage.PrintF( _S( 1744, "¿ÃπÃ ºˆ«‡¡ﬂ¿Œ ƒ˘Ω∫∆Æ¿‘¥œ¥Ÿ."  ) );		
 						_pNetwork->ClientSystemMessage( strSysMessage, SYSMSG_ERROR );
 					}
 				}
 				else
 				{
 					CTString strSysMessage;
-					strSysMessage.PrintF( _S( 1745, "Ï°∞Í±¥Ïù¥ ÎßûÏßÄ ÏïäÏäµÎãàÎã§."  ) );		
+					strSysMessage.PrintF( _S( 1745, "¡∂∞«¿Ã ∏¬¡ˆ æ Ω¿¥œ¥Ÿ."  ) );		
 					_pNetwork->ClientSystemMessage( strSysMessage, SYSMSG_ERROR );
 				}
 				return;
@@ -4339,22 +4510,27 @@ void CNetworkLibrary::UseSlotItem( int tabId, int rowId, int colId, SBYTE sbWear
 
 		case CItemData::ITEM_SUB_TARGET:
 			{
-				if( !_pNetwork->_TargetInfo.bIsActive )
+				ObjInfo* pInfo = ObjInfo::getSingleton();
+
+				if( pInfo->IsTargetActive(eTARGET) == FALSE )
 						return;
 				
-				LONG iMobClientIndex = _pNetwork->_TargetInfo.pen_pEntity->en_lNetworkID;
-				SBYTE cTargetType = _pNetwork->_TargetInfo.TargetType;
+				LONG iMobClientIndex = pInfo->GetTargetServerIdx(eTARGET);
+				SBYTE cTargetType = pInfo->GetTargetType(eTARGET);
 
-				CItemData	&rItemData = _pNetwork->GetItemData( Items.Item_Index );
-
-				if( !_pUIMgr->GetQuickSlot()->StartSkillDelay( Items.ItemData.GetNum0() ) )
+				if( !pUIManager->GetQuickSlot()->StartSkillDelay( pItems->ItemData->GetNum0() ) )
 				{
-					if( !_pUIMgr->GetInventory()->StartSkillDelay( Items.ItemData.GetNum0() ) )
+					if( !pUIManager->GetInventory()->StartSkillDelay( pItems->ItemData->GetNum0() ) )
 						return;
 				}
 				
-				SendtargetItemUse(Items.Item_Tab, Items.Item_Row, Items.Item_Col, Items.Item_UniIndex, cTargetType, iMobClientIndex);
+				SendtargetItemUse(pItems->Item_Tab, pItems->InvenIndex, pItems->Item_UniIndex, cTargetType, iMobClientIndex);
 				return;
+			}
+			break;
+
+		case CItemData::ITEM_SUB_EXPRESS_REMOTE:
+			{
 			}
 			break;
 
@@ -4362,29 +4538,73 @@ void CNetworkLibrary::UseSlotItem( int tabId, int rowId, int colId, SBYTE sbWear
 			break;
 		}
 
-		SendItemUse(Items.Item_Tab, Items.Item_Row, Items.Item_Col, Items.Item_UniIndex, 0);		
+		SendItemUse(pItems->Item_Tab, pItems->InvenIndex, pItems->Item_UniIndex, 0);		
 	}
-	else if ( Items.ItemData.GetType() == CItemData::ITEM_POTION )
+	else if ( pItems->ItemData->GetType() == CItemData::ITEM_POTION )
 	{
-		CItemData	&rItemData = _pNetwork->GetItemData( Items.Item_Index );
-
-		if( !_pUIMgr->GetQuickSlot()->StartSkillDelay( Items.ItemData.GetNum0() ) )
-		{
-			if( !_pUIMgr->GetInventory()->StartSkillDelay( Items.ItemData.GetNum0() ) )
+		CItemData*	pItemData = _pNetwork->GetItemData( pItems->Item_Index );
+		
+		//2012/11/13 jeil ∫ŒΩ∫≈Õ æ∆¿Ã≈∆ ¡ﬂ∫π ªÁøÎ √º≈© 	
+		if(_pUIBuff->IsBuff(9189) && pItemData->GetItemIndex() == 9189)
+		{	
+			CTString strSysMessage;
+			strSysMessage.PrintF( _S(5816,"ƒ£»≠µµ ∫ŒΩ∫≈Õ¥¬ ¡ﬂ∫π ªÁøÎ¿Ã ∫“∞°¥… «’¥œ¥Ÿ.") );		
+			_pNetwork->ClientSystemMessage( strSysMessage, SYSMSG_ERROR );
 			return;
-		}
-
-		SendItemUse(Items.Item_Tab, Items.Item_Row, Items.Item_Col, Items.Item_UniIndex, 0);
-	}
-	// ÏÉùÏÇ∞Î¨ºÏùò Í≤ΩÏö∞.
-	else if( Items.ItemData.GetType() == CItemData::ITEM_ETC && 
-		Items.ItemData.GetSubType() == CItemData::ITEM_ETC_PRODUCT )
-	{
-		if( _pNetwork->_PetTargetInfo.bIsActive )
+		}		
+		if( !pUIManager->GetQuickSlot()->StartSkillDelay( pItems->ItemData->GetNum0() ) )
 		{
-			SendItemUse(Items.Item_Tab, Items.Item_Row, Items.Item_Col, Items.Item_UniIndex, 0);
+			if( !pUIManager->GetInventory()->StartSkillDelay( pItems->ItemData->GetNum0() ) )
+				return;
+		}
+		
+		// item ¡ﬂ∫π √º≈©
+		if ( pItemData->GetFlag() & ITEM_FLAG_DUPLICATION && _pUIBuff->IsBuff( pItemData->GetItemIndex() ) )
+		{
+			if ( pUIManager->DoesMessageBoxExist( MSGCMD_ITEM_DUPLICATION_CHECK ) )
+			{
+				pUIManager->CloseMessageBox( MSGCMD_ITEM_DUPLICATION_CHECK );
+			}
+			
+			CTString strMessage, strTitle;
+			CUIMsgBox_Info msgBoxInfo;						
+			strTitle.PrintF(_S( 191, "»Æ¿Œ" ));
+			msgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OKCANCEL, UI_NONE ,MSGCMD_ITEM_DUPLICATION_CHECK);
+			strMessage.PrintF( _S( 6076, "¿ÃπÃ %søÕ µø¿œ«— »ø∞˙∞° ¿˚øÎµ«æÓ ¿÷Ω¿¥œ¥Ÿ. ¡§∏ª∑Œ ªÁøÎ «œΩ√∞⁄Ω¿¥œ±Ó?"), _pNetwork->GetItemName( pItems->Item_Index ) );
+			msgBoxInfo.AddString(strMessage);
+
+			if ( pUIManager )
+			{
+				pUIManager->CreateMessageBox( msgBoxInfo );
+				pUIManager->GetMessageBox(MSGCMD_ITEM_DUPLICATION_CHECK)->SetInvenUseItemInfo( tabId, inven_idx );
+				return;
+			}
+		}
+		SendItemUse(pItems->Item_Tab, pItems->InvenIndex, pItems->Item_UniIndex, 0);
+	}
+	else if (pItems->ItemData->GetType() == CItemData::ITEM_ETC) // ±‚≈∏ æ∆¿Ã≈€
+	{
+		if (pItems->ItemData->GetSubType() == CItemData::ITEM_ETC_PRODUCT && _pNetwork->MyWearItem[WEAR_PET].IsEmptyItem() == FALSE)
+		{ // ª˝ªÍπ∞
+			SendItemUse(pItems->Item_Tab, pItems->InvenIndex, pItems->Item_UniIndex, 0);
+		}
+		else if (pItems->ItemData->GetFlag() & ITEM_FLAG_TRIGGER || pItems->ItemData->GetSubType() == CItemData::ITEM_ETC_SKILL) // [2010/10/20 : Sora] º≠∫Í≈∏¿‘¿ª ∫Ò∆Æ∑Œ √º≈©«œ¥¯ ∫Œ∫–¿ª ºˆ¡§
+		{ // [090810: selo] ∆Æ∏Æ∞≈ æ∆¿Ã≈€¿Œ ∞ÊøÏ , // Ω∫≈≥ Ω¿µÊ ¿œ ∞ÊøÏ
+			SendItemUse(pItems->Item_Tab, pItems->InvenIndex, pItems->Item_UniIndex, 0);
+		}
+		else if ( pItems->ItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD )	// [2010/10/20 : Sora] ∏ÛΩ∫≈Õ øÎ∫¥ ƒ´µÂ
+		{
+			if( !pUIManager->GetQuickSlot()->StartSkillDelay( pItems->ItemData->GetNum0() ) )
+			{
+				if( !pUIManager->GetInventory()->StartSkillDelay( pItems->ItemData->GetNum0() ) )
+					return;
+			}
+
+			SendItemUse(pItems->Item_Tab, pItems->InvenIndex, pItems->Item_UniIndex, 0);
 		}
 	}
+
+	//2012/11/09 jeil ƒ£»≠µµ ∫ŒΩ∫≈Õ æ∆¿Ã≈∆ √º≈© «œ±‚ 
 }
 
 /****   WareHouse *********************************************************/
@@ -4394,7 +4614,7 @@ void CNetworkLibrary::UseSlotItem( int tabId, int rowId, int colId, SBYTE sbWear
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendWareHouseChangePassword(const CTString& strOld, const CTString& strNew)
 {	
-	CNetworkMessage nmWareHouse(MSG_STASH);
+	CNetworkMessage nmWareHouse((UBYTE)MSG_STASH);
 	nmWareHouse << (UBYTE)MSG_STASH_CHANGE_PASSWORD_REQ;
 	nmWareHouse << strOld;
 	nmWareHouse << strNew;
@@ -4407,69 +4627,52 @@ void CNetworkLibrary::SendWareHouseChangePassword(const CTString& strOld, const 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendWareHouseIsSetPassword()
 {
-	CNetworkMessage nmWareHouse(MSG_STASH);
+	CNetworkMessage nmWareHouse((UBYTE)MSG_STASH);
 	nmWareHouse << (UBYTE)MSG_STASH_ISSETPASSWORD;	
 	SendToServerNew(nmWareHouse);
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: SendWareHouseSeal
-// Input  : Ï∞ΩÍ≥† Ïû†Í∏à ÏöîÏ≤≠.
+// Input  : √¢∞Ì ¿·±› ø‰√ª.
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendWareHouseSeal()
 {
-	CNetworkMessage nmWareHouse(MSG_STASH);
+	CNetworkMessage nmWareHouse((UBYTE)MSG_STASH);
 	nmWareHouse << (UBYTE)MSG_STASH_SEAL;	
 	SendToServerNew(nmWareHouse);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: SendWareHouseListReq
-// Input  :
-//-----------------------------------------------------------------------------
-void CNetworkLibrary::SendWareHouseListReq( const CTString& strPW )
-{	
-	CNetworkMessage nmWareHouse(MSG_STASH);
-	nmWareHouse << (UBYTE)MSG_STASH_LIST_REQ;
-	nmWareHouse << strPW;	
-	SendToServerNew(nmWareHouse);	
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: SendWareHouseCheckPassWord
-// Input  :
-//-----------------------------------------------------------------------------
-void CNetworkLibrary::SendWareHouseCheckPassWord( const CTString& strPW )
-{
-	CNetworkMessage nmWareHouse(MSG_STASH);
-	nmWareHouse << (UBYTE)MSG_STASH_CHECK_PASSWORD_REQ;
-	nmWareHouse << strPW;
-	SendToServerNew(nmWareHouse);	
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: SendWareHouseSetupPassWord
 // Input  :
 //-----------------------------------------------------------------------------
-void CNetworkLibrary::SendWareHouseSetupPassWord( const CTString& strPW )
+void CNetworkLibrary::SendWareHouseSetupPassWord( const CTString& strPW, const CTString& strOldPW )
 {
-	CNetworkMessage nmWareHouse(MSG_STASH);
-	nmWareHouse << (UBYTE)MSG_STASH_SETTING_NEWPASSWORD_REQ;
-	nmWareHouse << strPW;
-	SendToServerNew(nmWareHouse);	
-}
+#ifdef	STASH_PASSWORD
+	CNetworkMessage nmMessage;
+	RequestClient::doStashChangePassword* packet = reinterpret_cast<RequestClient::doStashChangePassword*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_STASH;
+	packet->subType = MSG_STASH_CHANGE_PASSWORD;
+	int nSize = strOldPW.Length();
+	if (nSize > 0)
+	{
+		memset(packet->old_password, 0, MAX_STASH_PASSWORD_LENGTH+1);
+		nSize = strOldPW.Length();
+		if (nSize > MAX_STASH_PASSWORD_LENGTH)
+			nSize = MAX_STASH_PASSWORD_LENGTH;
+		memcpy(packet->old_password, strOldPW.str_String, nSize);
+	}
 
-//-----------------------------------------------------------------------------
-// Purpose: SendWareHouseSetupPassWord
-// Input  : 051125 wooss
-//-----------------------------------------------------------------------------
-void CNetworkLibrary::SendWareHouseSetupPassWord( const CTString& strPW ,const CTString& strUNLOCK)
-{
-	CNetworkMessage nmWareHouse(MSG_STASH);
-	nmWareHouse << (UBYTE)MSG_STASH_SETTING_NEWPASSWORD_REQ;
-	nmWareHouse << strPW;
-	nmWareHouse << strUNLOCK;
-	SendToServerNew(nmWareHouse);	
+	memset(packet->new_password, 0, MAX_STASH_PASSWORD_LENGTH+1);
+	nSize = strPW.Length();
+	if (nSize > MAX_STASH_PASSWORD_LENGTH)
+		nSize = MAX_STASH_PASSWORD_LENGTH;
+	memcpy(packet->new_password, strPW.str_String, nSize);
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+#endif	// STASH_PASSWORD
 }
 
 //-----------------------------------------------------------------------------
@@ -4478,10 +4681,21 @@ void CNetworkLibrary::SendWareHouseSetupPassWord( const CTString& strPW ,const C
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendWareHouseDeletePassWord( const CTString& strID )
 {
-	CNetworkMessage nmWareHouse(MSG_STASH);
-	nmWareHouse << (UBYTE)MSG_STASH_DELETE_PASSWORD_REQ;
-	nmWareHouse << strID;
-	SendToServerNew(nmWareHouse);	
+#ifdef	STASH_PASSWORD
+	CNetworkMessage nmMessage;
+	RequestClient::doStashDeletePassword* packet = reinterpret_cast<RequestClient::doStashDeletePassword*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_STASH;
+	packet->subType = MSG_STASH_DELETE_PASSWORD;
+
+	memset(packet->identity, 0, A_CID_LENGTH+1);
+	int nSize = strID.Length();
+	if (nSize > A_CID_LENGTH)
+		nSize = A_CID_LENGTH;
+	memcpy(packet->identity, strID.str_String, nSize);
+
+	nmMessage.setSize( sizeof(*packet) );
+	SendToServerNew( nmMessage );
+#endif	// STASH_PASSWORD
 }
 
 /****   Guild   ***********************************************************/
@@ -4489,9 +4703,9 @@ void CNetworkLibrary::SendWareHouseDeletePassWord( const CTString& strID )
 // Name : GuildJoin()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildJoin( SLONG slGuildIndex, SLONG slSrcIndex, SLONG slDestIndex )			// Í∞ÄÏûÖ Ïã†Ï≤≠
+void CNetworkLibrary::GuildJoin( SLONG slGuildIndex, SLONG slSrcIndex, SLONG slDestIndex )			// ∞°¿‘ Ω≈√ª
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_REGIST_REQ;
 	nmGuild << slGuildIndex;
 	nmGuild << slSrcIndex;
@@ -4501,11 +4715,11 @@ void CNetworkLibrary::GuildJoin( SLONG slGuildIndex, SLONG slSrcIndex, SLONG slD
 
 // ----------------------------------------------------------------------------
 // Name : GuildQuit()
-// Desc : Í∏∏Îìú ÌÉàÌá¥
+// Desc : ±ÊµÂ ≈ª≈
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::GuildQuit( )
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_OUT_REQ;
 	nmGuild << (LONG)_pNetwork->MyCharacterInfo.lGuildIndex;
 	SendToServerNew(nmGuild);
@@ -4513,11 +4727,11 @@ void CNetworkLibrary::GuildQuit( )
 
 // ----------------------------------------------------------------------------
 // Name : GuildCreate()
-// Desc : Í∏∏Îìú ÏÉùÏÑ±
+// Desc : ±ÊµÂ ª˝º∫
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildCreate( const CTString &strGuildName )		// Í∏∏Îìú ÏÉùÏÑ±
+void CNetworkLibrary::GuildCreate( const CTString &strGuildName )		// ±ÊµÂ ª˝º∫
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_CREATE;
 	//nmGuild << _pNetwork->MyCharacterInfo.index;
 	nmGuild << strGuildName;
@@ -4526,11 +4740,11 @@ void CNetworkLibrary::GuildCreate( const CTString &strGuildName )		// Í∏∏Îìú ÏÉù
 
 // ----------------------------------------------------------------------------
 // Name : GuildUpgrade()
-// Desc : Í∏∏Îìú ÏäπÍ∏â
+// Desc : ±ÊµÂ Ω¬±ﬁ
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildUpgrade()							// Í∏∏Îìú ÏäπÍ∏â
+void CNetworkLibrary::GuildUpgrade()							// ±ÊµÂ Ω¬±ﬁ
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_LEVELUP;	
 	SendToServerNew(nmGuild);
 }
@@ -4539,10 +4753,10 @@ void CNetworkLibrary::GuildUpgrade()							// Í∏∏Îìú ÏäπÍ∏â
 // Name : GuildDestroy()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildDestroy()							// Í∏∏Îìú Ìï¥Ï≤¥
+void CNetworkLibrary::GuildDestroy()							// ±ÊµÂ «ÿ√º
 {
-	// Í∏∏Îìú Ìï¥Ï≤¥ Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.
-	CNetworkMessage nmGuild(MSG_GUILD);
+	// ±ÊµÂ «ÿ√º ∏ﬁΩ√¡ˆ ∫∏≥ª±‚.
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_BREAKUP;	
 	SendToServerNew(nmGuild);
 }
@@ -4551,10 +4765,10 @@ void CNetworkLibrary::GuildDestroy()							// Í∏∏Îìú Ìï¥Ï≤¥
 // Name : GuildChangeBoss()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildChangeBoss( SLONG slDestIndex )		// Îã®Ïû• Ïù¥ÏûÑ
+void CNetworkLibrary::GuildChangeBoss( SLONG slDestIndex )		// ¥‹¿Â ¿Ã¿”
 {
-	// Í∏∏Îìú Ìï¥Ï≤¥ Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.
-	CNetworkMessage nmGuild(MSG_GUILD);
+	// ±ÊµÂ «ÿ√º ∏ﬁΩ√¡ˆ ∫∏≥ª±‚.
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_CHANGE_BOSS;	
 	nmGuild << (LONG)_pNetwork->MyCharacterInfo.lGuildIndex;
 	nmGuild << _pNetwork->MyCharacterInfo.index;
@@ -4566,10 +4780,10 @@ void CNetworkLibrary::GuildChangeBoss( SLONG slDestIndex )		// Îã®Ïû• Ïù¥ÏûÑ
 // Name : GuildAddViceBoss()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildAddViceBoss( SLONG slDestIndex )		// Î∂ÄÎã®Ïû• ÏûÑÎ™Ö
+void CNetworkLibrary::GuildAddViceBoss( SLONG slDestIndex )		// ∫Œ¥‹¿Â ¿”∏Ì
 {
-	// Í∏∏Îìú Ìï¥Ï≤¥ Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.
-	CNetworkMessage nmGuild(MSG_GUILD);
+	// ±ÊµÂ «ÿ√º ∏ﬁΩ√¡ˆ ∫∏≥ª±‚.
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_APPOINT_OFFICER;	
 	nmGuild << (LONG)_pNetwork->MyCharacterInfo.lGuildIndex;
 	nmGuild << slDestIndex;
@@ -4580,10 +4794,10 @@ void CNetworkLibrary::GuildAddViceBoss( SLONG slDestIndex )		// Î∂ÄÎã®Ïû• ÏûÑÎ™Ö
 // Name : GuildDelViceBoss()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildDelViceBoss( SLONG slDestIndex )		// Î∂ÄÎã®Ïû• Ìï¥ÏûÑ
+void CNetworkLibrary::GuildDelViceBoss( SLONG slDestIndex )		// ∫Œ¥‹¿Â «ÿ¿”
 {
-	// Í∏∏Îìú Ìï¥Ï≤¥ Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.
-	CNetworkMessage nmGuild(MSG_GUILD);
+	// ±ÊµÂ «ÿ√º ∏ﬁΩ√¡ˆ ∫∏≥ª±‚.
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_FIRE_OFFICER;	
 	nmGuild << (LONG)_pNetwork->MyCharacterInfo.lGuildIndex;
 	nmGuild << slDestIndex;
@@ -4594,10 +4808,10 @@ void CNetworkLibrary::GuildDelViceBoss( SLONG slDestIndex )		// Î∂ÄÎã®Ïû• Ìï¥ÏûÑ
 // Name : GuildMemberFire()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildMemberFire( SLONG slDestIndex )		// Î©§Î≤Ñ Ìá¥Ï∂ú
+void CNetworkLibrary::GuildMemberFire( SLONG slDestIndex )		// ∏‚πˆ ≈√‚
 {
-	// Í∏∏Îìú Ìï¥Ï≤¥ Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.
-	CNetworkMessage nmGuild(MSG_GUILD);
+	// ±ÊµÂ «ÿ√º ∏ﬁΩ√¡ˆ ∫∏≥ª±‚.
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_KICK;	
 	nmGuild << (LONG)_pNetwork->MyCharacterInfo.lGuildIndex;
 	nmGuild << slDestIndex;
@@ -4606,11 +4820,11 @@ void CNetworkLibrary::GuildMemberFire( SLONG slDestIndex )		// Î©§Î≤Ñ Ìá¥Ï∂ú
 
 // ----------------------------------------------------------------------------
 // Name : GuildApplicantAccept()
-// Desc : ÏöîÏ≤≠ÏûêÏóê ÎåÄÌï¥ÏÑú Í∞ÄÏûÖ ÏäπÏù∏ÌïòÍ∏∞.
+// Desc : ø‰√ª¿⁄ø° ¥Î«ÿº≠ ∞°¿‘ Ω¬¿Œ«œ±‚.
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildApplicantAccept( SLONG slDestIndex )	// Í∞ÄÏûÖ ÏäπÏù∏
+void CNetworkLibrary::GuildApplicantAccept( SLONG slDestIndex )	// ∞°¿‘ Ω¬¿Œ
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_REGIST_ALLOW;
 	nmGuild << (LONG)_pNetwork->MyCharacterInfo.lGuildIndex;
 	nmGuild << slDestIndex;
@@ -4619,12 +4833,12 @@ void CNetworkLibrary::GuildApplicantAccept( SLONG slDestIndex )	// Í∞ÄÏûÖ ÏäπÏù∏
 
 // ----------------------------------------------------------------------------
 // Name : GuildApplicantReject()
-// Desc : ÏöîÏ≤≠ÏûêÏóê ÎåÄÌï¥ÏÑú Í∞ÄÏûÖ Í±∞Î∂ÄÌïòÍ∏∞.
+// Desc : ø‰√ª¿⁄ø° ¥Î«ÿº≠ ∞°¿‘ ∞≈∫Œ«œ±‚.
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::GuildApplicantReject( SBYTE sbWhoCancel )	// Í∞ÄÏûÖ Í±∞Î∂Ä
+void CNetworkLibrary::GuildApplicantReject( SBYTE sbWhoCancel )	// ∞°¿‘ ∞≈∫Œ
 {
-	// Í∏∏Îìú Ìï¥Ï≤¥ Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.
-	CNetworkMessage nmGuild(MSG_GUILD);
+	// ±ÊµÂ «ÿ√º ∏ﬁΩ√¡ˆ ∫∏≥ª±‚.
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_REGIST_CANCEL;	
 	nmGuild << sbWhoCancel;
 	SendToServerNew(nmGuild);
@@ -4635,14 +4849,14 @@ void CNetworkLibrary::GuildApplicantReject( SBYTE sbWhoCancel )	// Í∞ÄÏûÖ Í±∞Î∂Ä
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::GBReq
-// Explain: Í∏∏Îìú Ï†ÑÌà¨ ÏöîÏ≤≠
-// Date : 2005-03-18(Ïò§ÌõÑ 3:16:42) Lee Ki-hwan
+// Explain: ±ÊµÂ ¿¸≈ı ø‰√ª
+// Date : 2005-03-18(ø¿»ƒ 3:16:42) Lee Ki-hwan
 // Edit History 
-// Date : 2005-04-15(Ïò§ÌõÑ 7:49:53), By Lee Ki-hwan : SLONG nTime Ï∂îÍ∞Ä
+// Date : 2005-04-15(ø¿»ƒ 7:49:53), By Lee Ki-hwan : SLONG nTime √ﬂ∞°
 //------------------------------------------------------------------------------
 void CNetworkLibrary::GBReq( SLONG nCharIndex, SLONG nPrize, SLONG nTime )
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_BATTLE_REQ_REQ;	
 	nmGuild << nCharIndex;
 	nmGuild << nPrize;
@@ -4655,12 +4869,12 @@ void CNetworkLibrary::GBReq( SLONG nCharIndex, SLONG nPrize, SLONG nTime )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::GBReqReject
-// Explain: Í∏∏Îìú Ï†ÑÌà¨ ÏöîÏ≤≠ Í±∞Ï†à
-// Date : 2005-03-18(Ïò§ÌõÑ 3:16:45) Lee Ki-hwan
+// Explain: ±ÊµÂ ¿¸≈ı ø‰√ª ∞≈¿˝
+// Date : 2005-03-18(ø¿»ƒ 3:16:45) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::GBReqReject()
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_BATTLE_REQ_REJECT;	
 	SendToServerNew(nmGuild);
 }
@@ -4668,12 +4882,12 @@ void CNetworkLibrary::GBReqReject()
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::GBReqAccept
-// Explain: Í∏∏Îìú Ï†ÑÌà¨ ÏàòÎùΩ
-// Date : 2005-03-18(Ïò§ÌõÑ 3:16:47) Lee Ki-hwan
+// Explain: ±ÊµÂ ¿¸≈ı ºˆ∂Ù
+// Date : 2005-03-18(ø¿»ƒ 3:16:47) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::GBReqAccept()
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_BATTLE_REQ_ACCEPT;	
 	SendToServerNew(nmGuild);
 }
@@ -4681,12 +4895,12 @@ void CNetworkLibrary::GBReqAccept()
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::GBStopReqSend
-// Explain: Í∏∏Îìú Ï†ÑÌà¨ Ï§ëÏßÄ ÏöîÏ≤≠ 
-// Date : 2005-03-18(Ïò§ÌõÑ 3:16:50) Lee Ki-hwan
+// Explain: ±ÊµÂ ¿¸≈ı ¡ﬂ¡ˆ ø‰√ª 
+// Date : 2005-03-18(ø¿»ƒ 3:16:50) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::GBStopReq( SLONG nCharIndex )
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_BATTLE_STOP_REQ;
 	nmGuild << nCharIndex;
 	SendToServerNew(nmGuild);
@@ -4695,12 +4909,12 @@ void CNetworkLibrary::GBStopReq( SLONG nCharIndex )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::GBStopReqReject
-// Explain:  Í∏∏Îìú Ï†ÑÌà¨ Ï§ëÏßÄ ÏöîÏ≤≠ Í±∞Ï†à 
-// Date : 2005-03-18(Ïò§ÌõÑ 3:16:52) Lee Ki-hwan
+// Explain:  ±ÊµÂ ¿¸≈ı ¡ﬂ¡ˆ ø‰√ª ∞≈¿˝ 
+// Date : 2005-03-18(ø¿»ƒ 3:16:52) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::GBStopReqReject()	
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_BATTLE_STOP_REJECT;	
 	SendToServerNew(nmGuild);
 }
@@ -4708,12 +4922,12 @@ void CNetworkLibrary::GBStopReqReject()
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::GBStopReqAccept
-// Explain:  Í∏∏Îìú Ï†ÑÌà¨ Ï§ëÏßÄ ÏöîÏ≤≠ ÏàòÎùΩ 
-// Date : 2005-03-18(Ïò§ÌõÑ 3:30:03) Lee Ki-hwan
+// Explain:  ±ÊµÂ ¿¸≈ı ¡ﬂ¡ˆ ø‰√ª ºˆ∂Ù 
+// Date : 2005-03-18(ø¿»ƒ 3:30:03) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::GBStopReqAccept()	
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_GUILD_BATTLE_STOP_ACCEPT;	
 	SendToServerNew(nmGuild);
 }
@@ -4723,11 +4937,13 @@ void CNetworkLibrary::GBStopReqAccept()
 // Name : TeachTeacherRegister()
 // Desc :
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::TeachTeacherRegister()			// ÏÑ†ÏÉù Î™©Î°ùÏóê Ï∂îÍ∞Ä
+void CNetworkLibrary::TeachTeacherRegister(SBYTE sbStartPlayTime, SBYTE sbEndPlayTime)			// º±ª˝ ∏Ò∑œø° √ﬂ∞°
 {
-	CNetworkMessage nmTeach(MSG_TEACH);
+	CNetworkMessage nmTeach((UBYTE)MSG_TEACH);
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_LIST;	
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_LIST_UP;
+	nmTeach << (SBYTE)sbStartPlayTime;
+	nmTeach << (SBYTE)sbEndPlayTime;
 	SendToServerNew(nmTeach);
 }
 
@@ -4735,9 +4951,9 @@ void CNetworkLibrary::TeachTeacherRegister()			// ÏÑ†ÏÉù Î™©Î°ùÏóê Ï∂îÍ∞Ä
 // Name : TeachTeacherCancelRegister()
 // Desc :
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::TeachTeacherCancelRegister()		// ÏÑ†ÏÉù Î™©Î°ùÏóêÏÑú ÎπºÏ§ò
+void CNetworkLibrary::TeachTeacherCancelRegister()		// º±ª˝ ∏Ò∑œø°º≠ ª©¡‡
 {
-	CNetworkMessage nmTeach(MSG_TEACH);
+	CNetworkMessage nmTeach((UBYTE)MSG_TEACH);
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_LIST;	
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_LIST_DN;
 	SendToServerNew(nmTeach);
@@ -4745,11 +4961,11 @@ void CNetworkLibrary::TeachTeacherCancelRegister()		// ÏÑ†ÏÉù Î™©Î°ùÏóêÏÑú ÎπºÏ§
 
 // ----------------------------------------------------------------------------
 // Name : TeachRefreshTeacherList()
-// Desc : ÌõÑÍ≤¨Ïù∏ Î™©Î°ù Í∞±Ïã†
+// Desc : »ƒ∞ﬂ¿Œ ∏Ò∑œ ∞ªΩ≈
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::TeachRefreshTeacherList()
 {
-	CNetworkMessage nmTeach(MSG_TEACH);
+	CNetworkMessage nmTeach((UBYTE)MSG_TEACH);
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_LIST;	
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_LIST_SHOW;
 	SendToServerNew(nmTeach);
@@ -4757,11 +4973,11 @@ void CNetworkLibrary::TeachRefreshTeacherList()
 
 // ----------------------------------------------------------------------------
 // Name : TeachTeacherRequest()
-// Desc : ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠
+// Desc : »ƒ∞ﬂ¿Œ Ω≈√ª
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::TeachTeacherRequest( SLONG slCharIndex, CTString& strName )
 {
-	CNetworkMessage nmTeach(MSG_TEACH);
+	CNetworkMessage nmTeach((UBYTE)MSG_TEACH);
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_REQ;	
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_REQ_REQ;	
 	nmTeach << (LONG)slCharIndex;
@@ -4771,12 +4987,12 @@ void CNetworkLibrary::TeachTeacherRequest( SLONG slCharIndex, CTString& strName 
 
 // ----------------------------------------------------------------------------
 // Name : TeachTeacherReject()
-// Desc : ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠ Ï∑®ÏÜå.
+// Desc : »ƒ∞ﬂ¿Œ Ω≈√ª √Îº“.
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::TeachTeacherReject( BOOL bStudent, SLONG slCharIndex, CTString& strName )
 {
-	// ÏÑ†ÏÉù ÏöîÏ≤≠ Í±∞Ï†à	: char_type(uc) reject_charindex(n) reject_charname(str)
-	CNetworkMessage nmTeach(MSG_TEACH);
+	// º±ª˝ ø‰√ª ∞≈¿˝	: char_type(uc) reject_charindex(n) reject_charname(str)
+	CNetworkMessage nmTeach((UBYTE)MSG_TEACH);
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_REQ;	
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_REQ_REJECT;
 
@@ -4793,12 +5009,12 @@ void CNetworkLibrary::TeachTeacherReject( BOOL bStudent, SLONG slCharIndex, CTSt
 
 // ----------------------------------------------------------------------------
 // Name : TeachTeacherAccept()
-// Desc : ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠ ÌôïÏù∏.
+// Desc : »ƒ∞ﬂ¿Œ Ω≈√ª »Æ¿Œ.
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::TeachTeacherAccept( SLONG slTeacherIndex, CTString& strTeacherName, SLONG slStudentIndex, CTString& strStudentName )
 {
-	// ÏÑ†ÏÉù ÌóàÎùΩ		: teacher_index(n) teacher_name(str) student_index(n) student_name(str)
-	CNetworkMessage nmTeach(MSG_TEACH);
+	// º±ª˝ «„∂Ù		: teacher_index(n) teacher_name(str) student_index(n) student_name(str)
+	CNetworkMessage nmTeach((UBYTE)MSG_TEACH);
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_REQ;
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_REQ_ACCEPT;
 	nmTeach << slTeacherIndex;
@@ -4814,8 +5030,8 @@ void CNetworkLibrary::TeachTeacherAccept( SLONG slTeacherIndex, CTString& strTea
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::TeachTeacherGiveUp( SLONG slTeacherIndex, CTString& strTeacherName, SLONG slStudentIndex, CTString& strStudentName )
 {
-	// ÏÑ†ÏÉù ÌóàÎùΩ		: teacher_index(n) teacher_name(str) student_index(n) student_name(str)
-	CNetworkMessage nmTeach(MSG_TEACH);
+	// º±ª˝ «„∂Ù		: teacher_index(n) teacher_name(str) student_index(n) student_name(str)
+	CNetworkMessage nmTeach((UBYTE)MSG_TEACH);
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_REQ;
 	nmTeach << (UBYTE)MSG_TEACH_TEACHER_GIVEUP;
 	nmTeach << slTeacherIndex;
@@ -4827,74 +5043,93 @@ void CNetworkLibrary::TeachTeacherGiveUp( SLONG slTeacherIndex, CTString& strTea
 
 // ----------------------------------------------------------------------------
 // Name : ChangeJobReq()
-// Desc : Ï†ÑÏßÅ ÏöîÏ≤≠
+// Desc : ¿¸¡˜ ø‰√ª
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::ChangeJobReq( SBYTE sbJob )
+void CNetworkLibrary::ChangeJobReq( SBYTE sbJob, int nNpcVirIdx )
 {
-	SBYTE sbChangeJob = sbJob;
-	CNetworkMessage nmChangeJob(MSG_CHANGEJOB);
-	nmChangeJob << (UBYTE)MSG_CHANGEJOB_REQ;	
-	nmChangeJob << sbChangeJob;
-	SendToServerNew(nmChangeJob);
+	CNetworkMessage nmChangeJob;
+	RequestClient::changeJob* packet = reinterpret_cast<RequestClient::changeJob*>(nmChangeJob.nm_pubMessage);
+	packet->type = MSG_CHANGEJOB;
+	packet->subType = MSG_CHANGEJOB_REQ;
+	packet->npcIndex = nNpcVirIdx;
+	packet->job = sbJob;
+	nmChangeJob.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmChangeJob );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ChangeJobGiveUp()
-// Desc : ÏßÅÏóÖ Ìè¨Í∏∞
+// Desc : ¡˜æ˜ ∆˜±‚
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::ChangeJobGiveUp()
+void CNetworkLibrary::ChangeJobGiveUp(int nNpcVirIdx)
 {
-	CNetworkMessage nmChangeJob(MSG_CHANGEJOB);
-	nmChangeJob << (UBYTE)MSG_CHANGEJOB_RESET_REQ;		
-	SendToServerNew(nmChangeJob);
+	CNetworkMessage nmChangeJob;
+	RequestClient::changeJobReset* packet = reinterpret_cast<RequestClient::changeJobReset*>(nmChangeJob.nm_pubMessage);
+	packet->type = MSG_CHANGEJOB;
+	packet->subType = MSG_CHANGEJOB_RESET_REQ;
+	packet->npcIndex = nNpcVirIdx;
+	nmChangeJob.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmChangeJob );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ChangeWeaponReq()
 // Desc : 
 // ----------------------------------------------------------------------------
-void CNetworkLibrary::ChangeWeaponReq( SBYTE sbRow, SBYTE sbCol, LONG lItemIndex, LONG lChangeType )
+void CNetworkLibrary::ChangeWeaponReq( SWORD nTab, SWORD inven_idx, LONG lItemVirIndex, LONG lTradeIndex, LONG lChangeType, LONG lTokenVirIndex, LONG lTokenCount )
 {
-	// Î¨¥Í∏∞ ÍµêÌôò ÏöîÏ≤≠		: row(c) col(c) itemindex(n) changetype(n)
-	CNetworkMessage nmChangeWeapon(MSG_ITEM);
-	nmChangeWeapon << (UBYTE)MSG_ITEM_CHANGEWEAPON_REQ;		
-	nmChangeWeapon << sbRow;
-	nmChangeWeapon << sbCol;
-	nmChangeWeapon << lItemIndex;
-	nmChangeWeapon << lChangeType;
-	SendToServerNew(nmChangeWeapon);
+	CNetworkMessage nmMessage;
+	RequestClient::doItemChangeWeapon* packet = reinterpret_cast<RequestClient::doItemChangeWeapon*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_CHANGEWEAPON_REQ;
+	packet->tab = nTab;
+	packet->invenIndex = inven_idx;
+	packet->virtualIndex = lItemVirIndex;
+	packet->exchangeDBIndex = lTradeIndex;
+	packet->changeType = lChangeType;
+	packet->goldTokenItemVIndex = lTokenVirIndex;
+	packet->goldTokenCount = lTokenCount;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ChangeWeaponEventReq()
-// Desc : 2Ìåê 4Ìåê Î¨¥Í∏∞ ÍµêÏ≤¥ Ïù¥Î≤§Ìä∏
+// Desc : 2∆« 4∆« π´±‚ ±≥√º ¿Ã∫•∆Æ
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::ChangeWeaponEventReq( LONG lItemIndex, LONG lChangeType )
 {
-	if(_pUIMgr->GetChangeWeapon()->GetCashItem()) {
-		
-		int tv_tab,tv_row,tv_col;
-		_pUIMgr->GetInventory()->GetUseItemSlotInfo(tv_tab,tv_row,tv_col);
-		
-		CItems& Items = _pNetwork->MySlotItem[tv_tab][tv_row][tv_col];
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-		if(Items.Item_Index ==-1) //ÎπÑÏñ¥ÏûàÎäî Ïä¨Î°ØÏù¥Îã§.
+	if(pUIManager->GetChangeWeapon()->GetCashItem()) {
+		
+		int tv_tab, inven_idx;
+		pUIManager->GetInventory()->GetUseItemSlotInfo(tv_tab, inven_idx);
+		
+		CItems* pItems = &MySlotItem[tv_tab][inven_idx];
+
+		if(pItems->Item_Index ==-1) //∫ÒæÓ¿÷¥¬ ΩΩ∑‘¿Ã¥Ÿ.
 			return;
-	
-		CNetworkMessage nmItem(MSG_ITEM); 	
-		nmItem << (SBYTE)MSG_ITEM_USE;								
-		nmItem << Items.Item_Tab;
-		nmItem << Items.Item_Row;
-		nmItem << Items.Item_Col;
-		nmItem << Items.Item_UniIndex;
-		nmItem << lItemIndex;
-		nmItem << lChangeType;
-		SendToServerNew(nmItem);
+
+		CNetworkMessage nmMessage;
+		RequestClient::doItemUse* packet = reinterpret_cast<RequestClient::doItemUse*>(nmMessage.nm_pubMessage);
+		packet->type = MSG_ITEM;
+		packet->subType = MSG_ITEM_USE;
+		packet->tab = pItems->Item_Tab;
+		packet->invenIndex = pItems->InvenIndex;
+		packet->virtualIndex = pItems->Item_UniIndex;
+		packet->extra_1 = lChangeType;
+		nmMessage.setSize( sizeof(*packet) );
+
+		SendToServerNew( nmMessage );
 	
 				
 	} else {
-		// MSG_EVENT_CHANGE_WITHOUT_OPTION,			// 2Ìåê4Ìåê Î¶¨Îâ¥Ïñº Î¨¥Í∏∞ ÍµêÏ≤¥ Ïù¥Î≤§Ìä∏ : old_itemindex(n) new_subtype(n)
-		CNetworkMessage nmChangeWeapon(MSG_EVENT);
+		// MSG_EVENT_CHANGE_WITHOUT_OPTION,			// 2∆«4∆« ∏Æ¥∫æÛ π´±‚ ±≥√º ¿Ã∫•∆Æ : old_itemindex(n) new_subtype(n)
+		CNetworkMessage nmChangeWeapon((UBYTE)MSG_EVENT);
 		nmChangeWeapon << (UBYTE)MSG_EVENT_CHANGE_WITHOUT_OPTION;			
 		nmChangeWeapon << lItemIndex;
 		nmChangeWeapon << lChangeType;
@@ -4913,8 +5148,8 @@ void CNetworkLibrary::StatReset( int iStr, int iDex, int iInt, int iCon )
 	LONG lInt = iInt;
 	LONG lCon = iCon;
 
-	// Ìè¨Ïù∏Ìä∏ Ï¥àÍ∏∞Ìôî
-	CNetworkMessage nmStat(MSG_STATPOINT);
+	// ∆˜¿Œ∆Æ √ ±‚»≠
+	CNetworkMessage nmStat((UBYTE)MSG_STATPOINT);
 	nmStat << (UBYTE)MSG_STATPOINT_RESET;
 	nmStat << lStr;
 	nmStat << lDex;
@@ -4929,28 +5164,28 @@ void CNetworkLibrary::StatReset( int iStr, int iDex, int iInt, int iCon )
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendChangeWeaponEvent()
 {
-	if( !_pNetwork->pMyCurrentWearing[WEAR_WEAPON] )
+	if (_pNetwork->MyWearItem[WEAR_WEAPON].IsEmptyItem() == FALSE)
 	{
 		CTString strSysMessage;
-		strSysMessage.PrintF( _S( 1326, "ÍµêÏ≤¥Ìï† Î¨¥Í∏∞Î•º Ïû•Ï∞©ÌïòÏó¨ Ï£ºÏã≠ÏãúÏò§." ) );		
+		strSysMessage.PrintF( _S( 1326, "±≥√º«“ π´±‚∏¶ ¿Â¬¯«œø© ¡÷Ω Ω√ø¿." ) );		
 		_pNetwork->ClientSystemMessage( strSysMessage, SYSMSG_ERROR );
 		return;
 	}
 	
-	const int iWeaponType = _pNetwork->pMyCurrentWearing[WEAR_WEAPON]->ItemData.GetSubType();
+	const int iWeaponType = _pNetwork->MyWearItem[WEAR_WEAPON].ItemData->GetSubType();
 	
-	// ÏÉùÏÇ∞ÎèÑÍµ¨Î•º Ïû•Ï∞©ÌïòÍµ¨ ÏûàÏùÑÎïå...
+	// ª˝ªÍµµ±∏∏¶ ¿Â¬¯«œ±∏ ¿÷¿ª∂ß...
 	if(iWeaponType == CItemData::ITEM_WEAPON_MINING || 
 		iWeaponType == CItemData::ITEM_WEAPON_GATHERING || 
 		iWeaponType == CItemData::ITEM_WEAPON_CHARGE)
 	{
 		CTString strSysMessage;
-		strSysMessage.PrintF( _S( 1327, "ÏÉùÏÇ∞ ÎèÑÍµ¨Îäî ÍµêÏ≤¥Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ) );		
+		strSysMessage.PrintF( _S( 1327, "ª˝ªÍ µµ±∏¥¬ ±≥√º«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ) );		
 		_pNetwork->ClientSystemMessage( strSysMessage, SYSMSG_ERROR );
 		return;
 	}
 		
-	CNetworkMessage nmChangeWeapon(MSG_EVENT);
+	CNetworkMessage nmChangeWeapon((UBYTE)MSG_EVENT);
 	nmChangeWeapon << (UBYTE)MSG_EVENT_CHANGEWEAPON;
 	SendToServerNew( nmChangeWeapon );
 }
@@ -4961,18 +5196,10 @@ void CNetworkLibrary::SendChangeWeaponEvent()
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendMoonStoneStartReq()
 {
-	CNetworkMessage	nmMoonStone( MSG_EVENT );
+	CNetworkMessage	nmMoonStone( (UBYTE)MSG_EVENT );
 
-#ifdef NEW_MOONSTONE
 	nmMoonStone << (SBYTE)MSG_EVENT_NEW_MOONSTONE;
 	nmMoonStone << (SBYTE)MSG_EVENT_NEW_MOONSTONE_START_REQ;
-#else
-	LONG lIndex	= MyCharacterInfo.index;
-	
-	nmMoonStone << (SBYTE)MSG_EVENT_MOONSTONE;
-	nmMoonStone << (SBYTE)MSG_EVENT_MOONSTONE_START_REQ;	
-	nmMoonStone << lIndex;
-#endif
 	SendToServerNew( nmMoonStone );
 }
 
@@ -4982,18 +5209,11 @@ void CNetworkLibrary::SendMoonStoneStartReq()
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendMoonStoneTryReq()
 {
-	CNetworkMessage	nmMoonStone( MSG_EVENT );
+	CNetworkMessage	nmMoonStone( (UBYTE)MSG_EVENT );
 
-#ifdef NEW_MOONSTONE
 	nmMoonStone << (SBYTE)MSG_EVENT_NEW_MOONSTONE;
 	nmMoonStone << (SBYTE)MSG_EVENT_NEW_MOONSTONE_TRY_REQ;
-	nmMoonStone << (ULONG)_pUIMgr->GetGamble()->GetUsedMoonStoneIndex();
-#else
-	LONG lIndex	= MyCharacterInfo.index;
-	nmMoonStone << (SBYTE)MSG_EVENT_MOONSTONE;
-	nmMoonStone << (SBYTE)MSG_EVENT_MOONSTONE_TRY_REQ;	
-	nmMoonStone << lIndex;
-#endif
+	nmMoonStone << (ULONG)CUIManager::getSingleton()->GetGamble()->GetUsedMoonStoneIndex();
 	SendToServerNew( nmMoonStone );
 }
 
@@ -5003,25 +5223,17 @@ void CNetworkLibrary::SendMoonStoneTryReq()
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendMoonStoneResultReq()
 {
-	CNetworkMessage	nmMoonStone( MSG_EVENT );
+	CNetworkMessage	nmMoonStone( (UBYTE)MSG_EVENT );
 
-#ifdef NEW_MOONSTONE
 	nmMoonStone << (SBYTE)MSG_EVENT_NEW_MOONSTONE;
 	nmMoonStone << (SBYTE)MSG_EVENT_NEW_MOONSTONE_RESULT_REQ;
-#else
-	LONG lIndex	= MyCharacterInfo.index;
-	
-	nmMoonStone << (SBYTE)MSG_EVENT_MOONSTONE;
-	nmMoonStone << (SBYTE)MSG_EVENT_MOONSTONE_RESULT_REQ;
-	nmMoonStone << lIndex;
-#endif
 	SendToServerNew( nmMoonStone );
 }
 
 // [071122: Su-won] NEW_MOONSTONE
 void CNetworkLibrary::SendMoonStoneMix(INDEX iMoonStone, INDEX iMoonStoneBox)
 {
-	CNetworkMessage	nmMoonStone( MSG_EVENT );
+	CNetworkMessage	nmMoonStone( (UBYTE)MSG_EVENT );
 
 	nmMoonStone << (SBYTE)MSG_EVENT_NEW_MOONSTONE;
 	nmMoonStone << (SBYTE)MSG_EVENT_NEW_MOONSTONE_MIX_REQ;
@@ -5036,27 +5248,9 @@ void CNetworkLibrary::SendMoonStoneMix(INDEX iMoonStone, INDEX iMoonStoneBox)
 // Desc :
 // Date : [6/20/2006] , Wooss
 //////////////////////////////////////////////////////////////////////////
-void CNetworkLibrary::SendCashMoonStoneReq(CUIButtonEx slotBtn)
-{
-	CNetworkMessage nmItem(MSG_EXTEND);
-	nmItem	<< (ULONG)MSG_EX_CASHITEM;
-	nmItem	<< (UBYTE)MSG_EX_CASHITEM_MOONSTONE_START;
-	nmItem	<< (UBYTE)slotBtn.GetItemTab();
-	nmItem	<< (UBYTE)slotBtn.GetItemRow(); 
-	nmItem	<< (UBYTE)slotBtn.GetItemCol();
-	nmItem	<< (ULONG)slotBtn.GetItemUniIndex();
-	nmItem  << (LONG)_pUIMgr->GetGamble()->GetSelCashItemIdx();
-	
-	SendToServerNew(nmItem);
-}
-//////////////////////////////////////////////////////////////////////////
-// Name : SendMoonStoneTryReq()	
-// Desc :
-// Date : [6/20/2006] , Wooss
-//////////////////////////////////////////////////////////////////////////
 void CNetworkLibrary::SendCashMoonStoneReward()
 {
-	CNetworkMessage nmItem(MSG_EXTEND);
+	CNetworkMessage nmItem((UBYTE)MSG_EXTEND);
 	nmItem	<< (ULONG)MSG_EX_CASHITEM;
 	nmItem	<< (UBYTE)MSG_EX_CASHITEM_MOONSTONE_STOP;
 	SendToServerNew(nmItem);
@@ -5067,7 +5261,7 @@ void CNetworkLibrary::SendCashMoonStoneReward()
 void CNetworkLibrary::ExchangeReq_Req( SLONG slDestIndex, CTString &strDestName )
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_EXCHANGE );
+	CNetworkMessage	nm( (UBYTE)MSG_EXCHANGE );
 	nm << (SBYTE)MSG_EXCHANGE_REQ;
 	nm << (SBYTE)MSG_EXCHANGE_REQ_REQ;
 	nm << MyCharacterInfo.index;
@@ -5081,7 +5275,7 @@ void CNetworkLibrary::ExchangeReq_Req( SLONG slDestIndex, CTString &strDestName 
 void CNetworkLibrary::ExchangeReq_Rep()
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_EXCHANGE );
+	CNetworkMessage	nm( (UBYTE)MSG_EXCHANGE );
 	nm << (SBYTE)MSG_EXCHANGE_REQ;
 	nm << (SBYTE)MSG_EXCHANGE_REQ_REP;
 
@@ -5091,7 +5285,7 @@ void CNetworkLibrary::ExchangeReq_Rep()
 void CNetworkLibrary::ExchangeReq_Rej()
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_EXCHANGE );
+	CNetworkMessage	nm( (UBYTE)MSG_EXCHANGE );
 	nm << (SBYTE)MSG_EXCHANGE_REQ;
 	nm << (SBYTE)MSG_EXCHANGE_REQ_REJECT;
 
@@ -5101,7 +5295,7 @@ void CNetworkLibrary::ExchangeReq_Rej()
 void CNetworkLibrary::ExchangeReq_Ready()
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_EXCHANGE );
+	CNetworkMessage	nm( (UBYTE)MSG_EXCHANGE );
 	nm << (SBYTE)MSG_EXCHANGE_REQ;
 	nm << (SBYTE)MSG_EXCHANGE_REQ_READY;
 
@@ -5111,7 +5305,7 @@ void CNetworkLibrary::ExchangeReq_Ready()
 void CNetworkLibrary::ExchangeReq_Ok()
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_EXCHANGE );
+	CNetworkMessage	nm( (UBYTE)MSG_EXCHANGE );
 	nm << (SBYTE)MSG_EXCHANGE_REQ;
 	nm << (SBYTE)MSG_EXCHANGE_REQ_OK;
 
@@ -5121,7 +5315,7 @@ void CNetworkLibrary::ExchangeReq_Ok()
 void CNetworkLibrary::ExchangeItem_Add( int nUniIndex, SQUAD llCount )
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_EXCHANGE );
+	CNetworkMessage	nm( (UBYTE)MSG_EXCHANGE );
 	nm << (SBYTE)MSG_EXCHANGE_ITEM;
 	nm << (SBYTE)MSG_EXCHANGE_ITEM_ADD;
 	nm << (SLONG)nUniIndex;
@@ -5133,7 +5327,7 @@ void CNetworkLibrary::ExchangeItem_Add( int nUniIndex, SQUAD llCount )
 void CNetworkLibrary::ExchangeItem_Del( int nUniIndex, SQUAD llCount )
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_EXCHANGE );
+	CNetworkMessage	nm( (UBYTE)MSG_EXCHANGE );
 	nm << (SBYTE)MSG_EXCHANGE_ITEM;
 	nm << (SBYTE)MSG_EXCHANGE_ITEM_DEL;
 	nm << (SLONG)nUniIndex;
@@ -5145,7 +5339,7 @@ void CNetworkLibrary::ExchangeItem_Del( int nUniIndex, SQUAD llCount )
 void CNetworkLibrary::AddQuickSlot( int nPage, int nSlotNum, int nSlotType, int nData0, int nData1 )
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_QUICKSLOT );
+	CNetworkMessage	nm( (UBYTE)MSG_QUICKSLOT );
 	nm << (SBYTE)MSG_QUICKSLOT_ADD;
 	nm << (SBYTE)nPage;
 	nm << (SBYTE)nSlotNum;
@@ -5153,8 +5347,8 @@ void CNetworkLibrary::AddQuickSlot( int nPage, int nSlotNum, int nSlotType, int 
 
 	if( nSlotType == 2 )
 	{
-		nm << (SBYTE)nData0;
-		nm << (SBYTE)nData1;
+		nm << (SWORD)nData0;
+		nm << (SWORD)nData1;
 	}
 	else if( nSlotType >= 0 )
 	{
@@ -5164,32 +5358,46 @@ void CNetworkLibrary::AddQuickSlot( int nPage, int nSlotNum, int nSlotType, int 
 	SendToServerNew( nm );
 }
 
-void CNetworkLibrary::SwapQuickSlot( int nPage, int nSlotNum1, int nSlotNum2 )
+void CNetworkLibrary::SwapQuickSlot( int nPage1, int nSlot1, int nPage2, int nSlot2 )
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_QUICKSLOT );
+	CNetworkMessage	nm( (UBYTE)MSG_QUICKSLOT );
 	nm << (SBYTE)MSG_QUICKSLOT_SWAP;
-	nm << (SBYTE)nPage;
-	nm << (SBYTE)nSlotNum1;
-	nm << (SBYTE)nSlotNum2;
+	nm << (SBYTE)nPage1;
+	nm << (SBYTE)nSlot1;
+	nm << (SBYTE)nPage2;
+	nm << (SBYTE)nSlot2;
 
 	SendToServerNew( nm );
 }
 
-void CNetworkLibrary::PartyInvite( SBYTE sbType, SLONG slIndex )
+// TO-KR-T20090903-005 ∞¸∑√ ∆ƒ∆º Ω≈√ª ºˆ¡§. [11/27/2009 rumist]
+// void CNetworkLibrary::PartyInvite( SBYTE sbType, SLONG slIndex )
+// {
+// 	// Send network message
+// 	CNetworkMessage	nm( MSG_PARTY );
+// 	nm << (SBYTE)MSG_PARTY_INVITE;
+// 	nm << sbType;
+// 	nm << slIndex;
+// 
+// 	SendToServerNew( nm );
+// }
+void CNetworkLibrary::PartyInvite( SBYTE sbType, SLONG slIndex, CTString strName )
 {
 	// Send network message
-	CNetworkMessage	nm( MSG_PARTY );
+	CNetworkMessage	nm( (UBYTE)MSG_PARTY );
 	nm << (SBYTE)MSG_PARTY_INVITE;
 	nm << sbType;
 	nm << slIndex;
+	nm << strName;
 
 	SendToServerNew( nm );
 }
 
+
 void CNetworkLibrary::PartyAllow()
 {
-	CNetworkMessage	nm( MSG_PARTY );
+	CNetworkMessage	nm( (UBYTE)MSG_PARTY );
 	nm << (SBYTE)MSG_PARTY_ALLOW;
 
 	SendToServerNew( nm );
@@ -5197,7 +5405,7 @@ void CNetworkLibrary::PartyAllow()
 
 void CNetworkLibrary::PartyReject()
 {
-	CNetworkMessage	nm( MSG_PARTY );
+	CNetworkMessage	nm( (UBYTE)MSG_PARTY );
 	nm << (SBYTE)MSG_PARTY_REJECT;
 
 	SendToServerNew( nm );
@@ -5205,7 +5413,7 @@ void CNetworkLibrary::PartyReject()
 
 void CNetworkLibrary::PartyQuit()
 {
-	CNetworkMessage	nm( MSG_PARTY );
+	CNetworkMessage	nm( (UBYTE)MSG_PARTY );
 	nm << (SBYTE)MSG_PARTY_QUIT;
 
 	SendToServerNew( nm );
@@ -5213,7 +5421,7 @@ void CNetworkLibrary::PartyQuit()
 
 void CNetworkLibrary::PartyKick( SLONG slIndex )
 {
-	CNetworkMessage	nm( MSG_PARTY );
+	CNetworkMessage	nm( (UBYTE)MSG_PARTY );
 	nm << (SBYTE)MSG_PARTY_KICK;
 	nm << slIndex;
 
@@ -5222,7 +5430,7 @@ void CNetworkLibrary::PartyKick( SLONG slIndex )
 
 void CNetworkLibrary::ItemPlusEffectReq( SBYTE sbOption )
 {
-	CNetworkMessage	nm( MSG_UI );
+	CNetworkMessage	nm( (UBYTE)MSG_UI );
 	nm << (SBYTE)MSG_UI_PLUS_EFFECT_REQ;
 	nm << sbOption;
 
@@ -5234,10 +5442,10 @@ void CNetworkLibrary::ItemPlusEffectReq( SBYTE sbOption )
 // Name : FindTargetsInRange()
 // Desc : 
 // ----------------------------------------------------------------------------
-// FIXME : ÌçºÌè¨Î®ºÏä§ Ï∏°Ï†ïÏù¥ ÌïÑÏöîÌïú Î∂ÄÎ∂Ñ.
-// FIXME : ÏÜåÌôòÏàò Î∞è Ïã±Í∏ÄÎçòÏ†ºÏùò Í≤ΩÏö∞ ÏÜçÎèÑÏóêÏÑú Î¨∏Ï†úÍ∞Ä Î∞úÏÉùÌï†Ïàò ÏûàÎäî Ìï®ÏàòÏûÑ.
+// FIXME : ∆€∆˜∏’Ω∫ √¯¡§¿Ã « ø‰«— ∫Œ∫–.
+// FIXME : º“»Øºˆ π◊ ΩÃ±€¥¯¡Ø¿« ∞ÊøÏ º”µµø°º≠ πÆ¡¶∞° πﬂª˝«“ºˆ ¿÷¥¬ «‘ºˆ¿”.
 void CNetworkLibrary::FindTargetsInRange(
-								 CEntity* pPlayer, 								// ÌÉÄÍ≤ü.
+								 CEntity* pPlayer, 								// ≈∏∞Ÿ.
 								 CEntity* pCenter,
 								 CSelectedEntities &cen, 								 
 								 FLOAT fFallOffRange, 
@@ -5252,7 +5460,7 @@ void CNetworkLibrary::FindTargetsInRange(
 
 	CEntity* penPlEntity;
 	CPlayerEntity* penPlayerEntity;
-	penPlEntity = CEntity::GetPlayerEntity(0); //Ï∫êÎ¶≠ÌÑ∞ ÏûêÍ∏∞ ÏûêÏã†
+	penPlEntity = CEntity::GetPlayerEntity(0); //ƒ≥∏Ø≈Õ ¿⁄±‚ ¿⁄Ω≈
 	penPlayerEntity = (CPlayerEntity*) penPlEntity;
 
 	// for each entity in the world of this entity
@@ -5283,7 +5491,7 @@ void CNetworkLibrary::FindTargetsInRange(
 				// for all entities in the sector
 				{FOREACHDSTOFSRC(itbsc->bsc_rsEntities, CEntity, en_rdSectors, pen)
 					
-					// SKA Î™®Îç∏Îßå Ïª®ÌÖåÏù¥ÎÑàÏóê Ï∂îÍ∞ÄÌï©ÎãàÎã§.
+					// SKA ∏µ®∏∏ ƒ¡≈◊¿Ã≥ ø° √ﬂ∞°«’¥œ¥Ÿ.
 					if ((pen->en_RenderType==CEntity::RT_SKAMODEL)
 						&& (pen->GetFlags() & ENF_ALIVE)
 						&& boxRange.HasContactWith(
@@ -5308,13 +5516,13 @@ void CNetworkLibrary::FindTargetsInRange(
 
 										if ( (pen != pCenter) )
 										{
-											// ÏµúÎåÄ Í∞ØÏàòÎ•º ÎÑòÏßÄ ÏïäÎèÑÎ°ù ÌïòÍ≥†...
+											// √÷¥Î ∞πºˆ∏¶ ≥—¡ˆ æ µµ∑œ «œ∞Ì...
 											if(iCount >= iMaxEnemies)
 											{
 												return;
 											}
 
-											// ÎÇ¥Í∞Ä ÎÇòÌïúÌÖå Ïì¥ Í≤ΩÏö∞...
+											// ≥ª∞° ≥™«—≈◊ æ¥ ∞ÊøÏ...
 											if( pPlayer == pCenter )
 											{
 												FLOAT3D vDelta = pen->GetPlacement().pl_PositionVector - pPlayer->GetPlacement().pl_PositionVector;
@@ -5329,13 +5537,13 @@ void CNetworkLibrary::FindTargetsInRange(
 													}
 												}
 											}
-											// Î≤îÏúÑ Ï†úÌïúÏù¥ ÏóÜÏùÑÎïå...( Ïù¥ Í≤ΩÏö∞ÏóêÎäî ÌîåÎ†àÏù¥Ïñ¥ Ï§ëÏã¨Ïù¥Ïñ¥ÏïºÎßå Ìï®!!! )
+											// π¸¿ß ¡¶«—¿Ã æ¯¿ª∂ß...( ¿Ã ∞ÊøÏø°¥¬ «√∑π¿ÃæÓ ¡ﬂΩ…¿ÃæÓæﬂ∏∏ «‘!!! )
 											else if( iTargetType != CSkill::STT_TARGET_RECT && 
 													fAngle != 360.0f )
 											{
-												// ÌîåÎ†àÏù¥Ïñ¥ÏôÄ Í∞Å ÏóîÌã∞Ìã∞ ÏÇ¨Ïù¥Ïùò Í∞ÅÎèÑÎ•º Í≥ÑÏÇ∞ÌïòÏó¨ Ï≤òÎ¶¨Ìï®.
-												// ÌîåÎ†àÏù¥Ïñ¥Ïùò ÏúÑÏπòÏôÄ ÏóîÌã∞Ìã∞Ïùò ÏúÑÏπòÏùò Î≤°ÌÑ∞Î•º Íµ¨ÌïòÍ≥†,
-												// Í∑∏ Í∞íÏùÑ HeadingÏúºÎ°ú Î≥ÄÌôòÌï®.
+												// «√∑π¿ÃæÓøÕ ∞¢ ø£∆º∆º ªÁ¿Ã¿« ∞¢µµ∏¶ ∞ËªÍ«œø© √≥∏Æ«‘.
+												// «√∑π¿ÃæÓ¿« ¿ßƒ°øÕ ø£∆º∆º¿« ¿ßƒ°¿« ∫§≈Õ∏¶ ±∏«œ∞Ì,
+												// ±◊ ∞™¿ª Heading¿∏∑Œ ∫Ø»Ø«‘.
 												FLOAT3D vNormal;
 												FLOAT	fLength;
 												//AnglesToDirectionVector(pPlayer->GetPlacement().pl_OrientationAngle, vNormal);
@@ -5349,8 +5557,8 @@ void CNetworkLibrary::FindTargetsInRange(
 
 												if( fLength <= fFallOffRange )
 												{
-													// FIXME : ÎäêÎ¶∞ Î£®Ìã¥ÏûÑ.
-													// FIXME : ÌÖåÏù¥Î∏îÏùÑ Ïù¥Ïö©Ìï†Í≤É.
+													// FIXME : ¥¿∏∞ ∑Á∆æ¿”.
+													// FIXME : ≈◊¿Ã∫Ì¿ª ¿ÃøÎ«“∞Õ.
 													//ANGLE aDelta = GetRelativeHeading(vDelta);
 													float fDelta = acos((vNormal%vDelta)/(vNormal.Length() * vDelta.Length()));
 													ANGLE aDelta = AngleRad(fDelta);
@@ -5365,7 +5573,7 @@ void CNetworkLibrary::FindTargetsInRange(
 													}
 												}
 											}
-											// ÌÉÄÍ≤ü Ï§ëÏã¨.
+											// ≈∏∞Ÿ ¡ﬂΩ….
 											else if( iTargetType == CSkill::STT_TARGET_RANGE )
 											{
 												FLOAT3D vDelta = pen->GetPlacement().pl_PositionVector - pCenter->GetPlacement().pl_PositionVector;
@@ -5379,7 +5587,7 @@ void CNetworkLibrary::FindTargetsInRange(
 													}												
 												}
 											}
-											// ÏùºÏßÅÏÑ† ÏÇ¨Í∞ÅÌòï ÏòÅÏó≠Ïùº Í≤ΩÏö∞...
+											// ¿œ¡˜º± ªÁ∞¢«¸ øµø™¿œ ∞ÊøÏ...
 											else if( iTargetType == CSkill::STT_TARGET_RECT )											
 											{
 												FLOAT3D vNormal;												
@@ -5457,7 +5665,7 @@ void CNetworkLibrary::FindTargetsInRangeEx(CEntity* pCenter, CSelectedEntities& 
 
 				// for all entities in the sector
 				{FOREACHDSTOFSRC(itbsc->bsc_rsEntities, CEntity, en_rdSectors, pen)
-					// SKA Î™®Îç∏Îßå Ïª®ÌÖåÏù¥ÎÑàÏóê Ï∂îÍ∞ÄÌï©ÎãàÎã§.
+					// SKA ∏µ®∏∏ ƒ¡≈◊¿Ã≥ ø° √ﬂ∞°«’¥œ¥Ÿ.
 					if ((pen->en_RenderType == CEntity::RT_SKAMODEL) && (pen->GetFlags() & ENF_ALIVE) &&
 						boxRange.HasContactWith(FLOATaabbox3D(pen->GetPlacement().pl_PositionVector, pen->en_fSpatialClassificationRadius)))
 					{
@@ -5484,14 +5692,22 @@ void CNetworkLibrary::FindTargetsInRangeEx(CEntity* pCenter, CSelectedEntities& 
 
 											if (vDelta.Length() <= fFallOffRange)
 											{
-												//if (((CUnit*)_pNetwork->_WildPetInfo.pet_pEntity)->CheckTarget(pen))	// ÌòÑÏû¨ Îì±Î°ùÎêú Ìé´Ïùò AI Ï°∞Í±¥
-												if (((CPlayerEntity*)CEntity::GetPlayerEntity(0))->CheckEntityOfTarget(_pNetwork->_WildPetInfo.pet_pEntity, pen))
-												{
-													cen.Add(pen);
-													iCount++;
+												ObjInfo* pInfo = ObjInfo::getSingleton();
 
-													if (iCount >= iMaxEnemies)
-														return;
+												//if (((CUnit*)INFO()->_WildPetInfo.pet_pEntity)->CheckTarget(pen))	// «ˆ¿Á µÓ∑œµ» ∆Í¿« AI ¡∂∞«
+												if (pInfo->GetMyApetInfo() != NULL && pInfo->GetMyApetInfo()->GetEntity()) // øπø‹ √≥∏Æ
+												{
+													if (((CPlayerEntity*)CEntity::GetPlayerEntity(0))->CheckEntityOfTarget(pInfo->GetMyApetInfo()->m_pEntity, pen))
+													{
+														cen.Add(pen);
+														iCount++;
+														
+														if (iCount >= iMaxEnemies)
+															return;
+													}
+												}
+												else{
+													return;
 												}
 											}
 										}
@@ -5508,20 +5724,20 @@ void CNetworkLibrary::FindTargetsInRangeEx(CEntity* pCenter, CSelectedEntities& 
 	}
 }
 
-// Î©ÄÌã∞ Í≥µÍ≤©Í∞ÄÎä•ÌïúÏßÄÎ•º ÌåêÎã®Ìï©ÎãàÎã§.
+// ∏÷∆º ∞¯∞›∞°¥…«—¡ˆ∏¶ ∆«¥‹«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 // Name : CheckSkillAttack()
 // Desc : 
 // ----------------------------------------------------------------------------
 BOOL CNetworkLibrary::CheckSkillAttack( INDEX iSkillIndex, CEntity* pEntity )
 {
-	// Ïù¥Ï™ΩÏúºÎ°ú iSkillIndex Í∞Ä -1Ïù¥ Îì§Ïñ¥Ïò§Î©¥ ÏïàÎê®.
+	// ¿Ã¬ ¿∏∑Œ iSkillIndex ∞° -1¿Ã µÈæÓø¿∏È æ»µ .
 	if( iSkillIndex == -1 )
 		return FALSE;
 
 	CEntity* penPlEntity;
 	CPlayerEntity* penPlayerEntity;
-	penPlEntity = CEntity::GetPlayerEntity(0); //Ï∫êÎ¶≠ÌÑ∞ ÏûêÍ∏∞ ÏûêÏã†
+	penPlEntity = CEntity::GetPlayerEntity(0); //ƒ≥∏Ø≈Õ ¿⁄±‚ ¿⁄Ω≈
 	penPlayerEntity = (CPlayerEntity*) penPlEntity;
 	
 	BOOL bForHelp		= FALSE;	
@@ -5535,13 +5751,13 @@ BOOL CNetworkLibrary::CheckSkillAttack( INDEX iSkillIndex, CEntity* pEntity )
 	BOOL bIsSummon		= pEntity->IsSlave();
 	BOOL bIsPlayer		= pEntity->IsPlayer();
 
-	// Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌÉÄÍ≥† ÏûàÏùÑÎïå Ïì∏Ïàò ÏûàÎäî Ïä§ÌÇ¨Ïùº Í≤ΩÏö∞.
+	// æ÷øœµøπ∞¿ª ≈∏∞Ì ¿÷¿ª∂ß æµºˆ ¿÷¥¬ Ω∫≈≥¿œ ∞ÊøÏ.
 	if( _pNetwork->MyCharacterInfo.bPetRide && !( ( iJob2 == 2 || iJob2 == 3 ) ) )
 	{
 		return FALSE;
 	}
 	
-	// HELP Ïä§ÌÇ¨ÏùÄ ÎÇ¥ Ïï†ÏôÑÎèôÎ¨º
+	// HELP Ω∫≈≥¿∫ ≥ª æ÷øœµøπ∞
 	if( bForHelp )
 	{
 		if( bIsPlayer )
@@ -5555,12 +5771,12 @@ BOOL CNetworkLibrary::CheckSkillAttack( INDEX iSkillIndex, CEntity* pEntity )
 	}
 	else
 	{
-		// ÏûêÍ∏∞Í∞Ä ÏûêÍ∏∞ÌïúÌÖå Í≥µÍ≤©Ìï†ÏàòÎäî ÏóÜÏùå.
+		// ¿⁄±‚∞° ¿⁄±‚«—≈◊ ∞¯∞›«“ºˆ¥¬ æ¯¿Ω.
 		if( bIsPlayer )
 		{
 			return FALSE;
 		}
-		// Í∑∏ Ïù¥Ïô∏Ïùò Í≤ΩÏö∞.
+		// ±◊ ¿Ãø‹¿« ∞ÊøÏ.
 		else
 		{
 			return ((CPlayerEntity*)CEntity::GetPlayerEntity(0))->CheckNormalAttack( pEntity, 0.0f );
@@ -5569,7 +5785,7 @@ BOOL CNetworkLibrary::CheckSkillAttack( INDEX iSkillIndex, CEntity* pEntity )
 	return FALSE;
 }
 
-// NOTE : Í≥µÍ≤©Ïûê Î™©Î°ùÏù¥ 20Í∞úÎ•º ÎÑòÍ±∞ÎÇò, ÏãúÍ∞ÑÏù¥ Ï¥àÍ≥ºÌïúÍ≤ΩÏö∞ÏóêÎäî Î©îÏãúÏßÄÎ•º Î≥¥ÎÇºÍ≤É...
+// NOTE : ∞¯∞›¿⁄ ∏Ò∑œ¿Ã 20∞≥∏¶ ≥—∞≈≥™, Ω√∞£¿Ã √ ∞˙«—∞ÊøÏø°¥¬ ∏ﬁΩ√¡ˆ∏¶ ∫∏≥æ∞Õ...
 // ----------------------------------------------------------------------------
 // Name : AddAttackList()
 // Desc : 
@@ -5606,105 +5822,127 @@ void CNetworkLibrary::AddAttackList( UBYTE ubAttackType, INDEX iAttackIndex, UBY
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendAttackList()
 {
-	if( !m_vectorAttackNPCList.empty() )
+	int i;
+	if( !m_vectorAttackNPCList.empty() ) // NPC∞° NPC∏¶ ∞¯∞›«œ∑¡∞Ì «“∂ß...	
 	{
 		INDEX iCount	= m_vectorAttackNPCList.size();
-		CNetworkMessage nmAttack(MSG_PD_ATTACK);
-
+		CNetworkMessage nmAttack;
+		RequestClient::doPDAttack* packet = reinterpret_cast<RequestClient::doPDAttack*>(nmAttack.nm_pubMessage);
+		packet->type = MSG_PD_ATTACK;
+		packet->subType = 0;
+				
 		std::vector<sAttackInfo>::iterator it	= m_vectorAttackNPCList.begin();
-		std::vector<sAttackInfo>::iterator end	= m_vectorAttackNPCList.end();
-		
-		// NPCÍ∞Ä NPCÎ•º Í≥µÍ≤©ÌïòÎ†§Í≥† Ìï†Îïå...
-		nmAttack << (UBYTE)MSG_CHAR_NPC;
-		nmAttack << (*it).iTargetIndex;
-		nmAttack << (UBYTE)(*it).ubAttackType;
-		nmAttack << (UBYTE)iCount;		
-		
-		for( ; it != end; ++it )
+		std::vector<sAttackInfo>::iterator end	= m_vectorAttackNPCList.end();		
+
+		packet->tIndex = (*it).iTargetIndex;
+		packet->tCharType = MSG_CHAR_NPC;		
+		packet->attackType = (*it).ubAttackType;
+		packet->multicount = iCount;
+			
+		for( i = 0; it != end; ++it, i++ )
 		{
 			INDEX iIndex = (*it).iAttackIndex;
-			nmAttack << iIndex;
+			packet->list[i].index = iIndex;
 		}
-		
+
+		int nSize = sizeof(RequestClient::doPDAttack::tag_multi) * i;	
+		nmAttack.setSize( sizeof(*packet) + nSize);
+
 		SendToServerNew(nmAttack);
 
 		if( !m_vectorAttackNPCList.empty() )
 			m_vectorAttackNPCList.clear();
 	}
 
-	if( !m_vectorAttackSummonList.empty() )
+	if( !m_vectorAttackSummonList.empty() ) // NPC∞° º“»Øºˆ∏¶ ∞¯∞›«œ∑¡∞Ì «“∂ß...
 	{
 		INDEX iCount	= m_vectorAttackSummonList.size();
-		CNetworkMessage nmAttack(MSG_PD_ATTACK);
+		CNetworkMessage nmAttack;
+		RequestClient::doPDAttack* packet = reinterpret_cast<RequestClient::doPDAttack*>(nmAttack.nm_pubMessage);
+		packet->type = MSG_PD_ATTACK;
+		packet->subType = 0;
 
 		std::vector<sAttackInfo>::iterator it	= m_vectorAttackSummonList.begin();
 		std::vector<sAttackInfo>::iterator end	= m_vectorAttackSummonList.end();
 		
-		// NPCÍ∞Ä NPCÎ•º Í≥µÍ≤©ÌïòÎ†§Í≥† Ìï†Îïå...
-		nmAttack << (UBYTE)MSG_CHAR_ELEMENTAL;
-		nmAttack << (*it).iTargetIndex;
-		nmAttack << (UBYTE)(*it).ubAttackType;
-		nmAttack << (UBYTE)iCount;		
-		
-		for( ; it != end; ++it )
+		packet->tIndex = (*it).iTargetIndex;
+		packet->tCharType = MSG_CHAR_ELEMENTAL;		
+		packet->attackType = (*it).ubAttackType;
+		packet->multicount = iCount;
+
+		for( i = 0; it != end; ++it, i++ )
 		{
 			INDEX iIndex = (*it).iAttackIndex;
-			nmAttack << iIndex;
+			packet->list[i].index = iIndex;
 		}
-		
+	
+		int nSize = sizeof(RequestClient::doPDAttack::tag_multi) * i;	
+		nmAttack.setSize( sizeof(*packet) + nSize);
+
 		SendToServerNew(nmAttack);
 
 		if( !m_vectorAttackSummonList.empty() )
 			m_vectorAttackSummonList.clear();
 	}
 
-	if( !m_vectorAttackPetList.empty() )
+	if( !m_vectorAttackPetList.empty() )// NPC∞° Pet¿ª ∞¯∞›«œ∑¡∞Ì «“∂ß...
 	{
 		INDEX iCount	= m_vectorAttackPetList.size();
-		CNetworkMessage nmAttack(MSG_PD_ATTACK);
+		CNetworkMessage nmAttack;
+		RequestClient::doPDAttack* packet = reinterpret_cast<RequestClient::doPDAttack*>(nmAttack.nm_pubMessage);
+		packet->type = MSG_PD_ATTACK;
+		packet->subType = 0;
 
 		std::vector<sAttackInfo>::iterator it	= m_vectorAttackPetList.begin();
 		std::vector<sAttackInfo>::iterator end	= m_vectorAttackPetList.end();
-		
-		// NPCÍ∞Ä NPCÎ•º Í≥µÍ≤©ÌïòÎ†§Í≥† Ìï†Îïå...
-		nmAttack << (UBYTE)MSG_CHAR_PET;
-		nmAttack << (*it).iTargetIndex;
-		nmAttack << (UBYTE)(*it).ubAttackType;
-		nmAttack << (UBYTE)iCount;		
-		
-		for( ; it != end; ++it )
+
+		packet->tIndex = (*it).iTargetIndex;
+		packet->tCharType = MSG_CHAR_PET;		
+		packet->attackType = (*it).ubAttackType;
+		packet->multicount = iCount;
+
+		for( i = 0; it != end; ++it, i++ )
 		{
 			INDEX iIndex = (*it).iAttackIndex;
-			nmAttack << iIndex;
+			packet->list[i].index = iIndex;
 		}
-		
+
+		int nSize = sizeof(RequestClient::doPDAttack::tag_multi) * i;	
+		nmAttack.setSize( sizeof(*packet) + nSize);
+
 		SendToServerNew(nmAttack);
 
 		if( !m_vectorAttackPetList.empty() )
 			m_vectorAttackPetList.clear();
 	}
 	
-	if( !m_vectorAttackPCList.empty() )
+	if( !m_vectorAttackPCList.empty() ) // NPC∞° PC∏¶ ∞¯∞›«œ∑¡∞Ì «“∂ß...
 	{
 		INDEX iCount	= m_vectorAttackPCList.size();
-		CNetworkMessage nmAttack(MSG_PD_ATTACK);
+		CNetworkMessage nmAttack;
+		RequestClient::doPDAttack* packet = reinterpret_cast<RequestClient::doPDAttack*>(nmAttack.nm_pubMessage);
+		packet->type = MSG_PD_ATTACK;
+		packet->subType = 0;
 
 		std::vector<sAttackInfo>::iterator it	= m_vectorAttackPCList.begin();
 		std::vector<sAttackInfo>::iterator end	= m_vectorAttackPCList.end();
 		
-		// NPCÍ∞Ä PCÎ•º Í≥µÍ≤©ÌïòÎ†§Í≥† Ìï†Îïå...
-		nmAttack << (UBYTE)MSG_CHAR_PC;
-		nmAttack << (*it).iTargetIndex;		
-		nmAttack << (UBYTE)(*it).ubAttackType;
-		nmAttack << (UBYTE)iCount;		
-		
-		for( ; it != end; ++it )
+		packet->tIndex = (*it).iTargetIndex;
+		packet->tCharType = MSG_CHAR_PC;		
+		packet->attackType = (*it).ubAttackType;
+		packet->multicount = iCount;			
+				
+		for( i = 0; it != end; ++it, i++ )
 		{
 			INDEX iIndex = (*it).iAttackIndex;
-			nmAttack << iIndex;
+			packet->list[i].index = iIndex;
 		}
-		
+
+		int nSize = sizeof(RequestClient::doPDAttack::tag_multi) * i;	
+		nmAttack.setSize( sizeof(*packet) + nSize);
+
 		SendToServerNew(nmAttack);
+
 		CPrintF("Send Attack List : %d\n", iCount );
 
 		if( !m_vectorAttackPCList.empty() )
@@ -5746,7 +5984,7 @@ void CNetworkLibrary::AddMoveList( INDEX iIndex, FLOAT fX, FLOAT fZ, FLOAT fH, F
 	TempMove.fAngle		= fAngle;
 	m_vectorMoveList.push_back(TempMove);
 
-	// 20Í∞úÎ•º ÎÑòÏñ¥Í∞ÄÎ©¥... ÏÑúÎ≤ÑÎ°ú Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÉÑ.
+	// 20∞≥∏¶ ≥—æÓ∞°∏È... º≠πˆ∑Œ ∏ﬁºº¡ˆ∏¶ ∫∏≥ø.
 	if( m_vectorMoveList.size() >= MAX_MOVE_LIST )
 	{
 		SendMoveList();	
@@ -5759,14 +5997,14 @@ void CNetworkLibrary::AddMoveList(CEntity &en)
 	if (en.IsEnemy())
 	{
 		DWORD curTickCount = GetTickCount();
-		// EDIT : BS : ÏãúÍ∞Ñ ÎîúÎ†àÏù¥
+		// EDIT : BS : Ω√∞£ µÙ∑π¿Ã
 		if (en.m_tickSendPDMove == 0 || curTickCount - en.m_tickSendPDMove >= 500)
 		{
 			en.m_tickSendPDMove = curTickCount;
 
 			CPlacement3D pl		= en.GetLerpedPlacement();
 
-			// Í∞ôÏùÄ ÎÑòÏù¥ ÏûàÏúºÎ©¥ Ï¢åÌëúÎßå ÏàòÏ†ï
+			// ∞∞¿∫ ≥—¿Ã ¿÷¿∏∏È ¡¬«•∏∏ ºˆ¡§
 			bool bAdd = true;
 			if (!m_vectorMoveList.empty())
 			{
@@ -5798,7 +6036,7 @@ void CNetworkLibrary::AddMoveList(CEntity &en)
 				m_vectorMoveList.push_back(TempMove);
 			}
 
-			// 20Í∞úÎ•º ÎÑòÏñ¥Í∞ÄÎ©¥... ÏÑúÎ≤ÑÎ°ú Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÉÑ.
+			// 20∞≥∏¶ ≥—æÓ∞°∏È... º≠πˆ∑Œ ∏ﬁºº¡ˆ∏¶ ∫∏≥ø.
 			if( m_vectorMoveList.size() >= MAX_MOVE_LIST )
 			{
 				SendMoveList(true);	
@@ -5819,8 +6057,8 @@ void CNetworkLibrary::SendMoveList(bool bForce)
 
 // EDIT : BS : BEGIN
 	DWORD tickCur = GetTickCount();
-	// EDIT : BS : ÏãúÍ∞Ñ ÎîúÎ†àÏù¥
-	// Î¶¨Ïä§Ìä∏Í∞Ä Í∞ÄÎìù Ïïà Ï∞®Í≥† ÏµúÍ∑º Î≥¥ÎÇ∏ÏßÄ 0.5Ï¥àÍ∞Ä Ïïà ÏßÄÎÇ¨ÏúºÎ©¥ Î™®ÏùÄÎã§
+	// EDIT : BS : Ω√∞£ µÙ∑π¿Ã
+	// ∏ÆΩ∫∆Æ∞° ∞°µÊ æ» ¬˜∞Ì √÷±Ÿ ∫∏≥Ω¡ˆ 0.5√ ∞° æ» ¡ˆ≥µ¿∏∏È ∏¿∫¥Ÿ
 	if (!bForce
 		&& m_vectorMoveList.size() < MAX_MOVE_LIST
 		&& m_tickSendMoveList != 0
@@ -5828,37 +6066,38 @@ void CNetworkLibrary::SendMoveList(bool bForce)
 		return ;
 	m_tickSendMoveList = tickCur;
 // EDIT : BS : END
-	
-	INDEX iCount		= m_vectorMoveList.size();	
+	int count;
+	//MSG_PD_MOVE,				//π´∫Í				: movetype(uc) speed(f) x(f) z(f) h(f) r(f) y(n) multicount(c) multiindex(n:multicount)
+	CNetworkMessage nmMove;
+	RequestClient::moveForPernalDungeon* packet = reinterpret_cast<RequestClient::moveForPernalDungeon*>(nmMove.nm_pubMessage);
+	packet->type = MSG_PD_MOVE;
+	packet->subType = 0;
+	packet->moveType = MSG_MOVE_STOP;
 
-	//MSG_PD_MOVE,				//Î¨¥Î∏å				: movetype(uc) speed(f) x(f) z(f) h(f) r(f) y(n) multicount(c) multiindex(n:multicount)
-	CNetworkMessage nmMove(MSG_PD_MOVE);
-	UBYTE ubMoveType	= (UBYTE)MSG_MOVE_STOP;
-	FLOAT fSpeed		= 0.0f;	
-	nmMove << ubMoveType;
-	nmMove << fSpeed;
-	
-	nmMove << (UBYTE)iCount;
+	std::set<INDEX> tset;
 
 	std::vector<sMoveInfo>::iterator it		= m_vectorMoveList.begin();
 	std::vector<sMoveInfo>::iterator end	= m_vectorMoveList.end();
-	for( ; it != end; ++it )
+	for( count = 0; it != end; ++it, ++count)
 	{
-		INDEX	iIndex	= (*it).iIndex;
-		FLOAT	fX		= (*it).fX;
-		FLOAT	fZ		= (*it).fZ;
-		FLOAT	fH		= (*it).fH;
-		FLOAT	fAngle	= (*it).fAngle;
+		if (tset.insert((*it).iIndex).second == false)
+			continue;
 
-		nmMove << iIndex;
-		nmMove << fX;
-		nmMove << fZ;
-		nmMove << fH + 0.5f;
-		nmMove << fAngle;
-		nmMove << MyCharacterInfo.yLayer;			// Y Layer
+		packet->list[count].multiIndex = (*it).iIndex;
+		packet->list[count].x = (*it).fX;
+		packet->list[count].z = (*it).fZ;
+		packet->list[count].h = (*it).fH + 0.5f;
+		packet->list[count].r = (*it).fAngle;
+		packet->list[count].ylayer = MyCharacterInfo.yLayer;
 	}
+
+	packet->multicount = tset.size();
+	int nSize = sizeof(RequestClient::moveForPernalDungeon::tag_multi) * count;
+
+	nmMove.setSize(sizeof(*packet) + nSize);
 	SendToServerNew(nmMove);
-	CPrintF("Send Move List : %d\n", iCount );
+
+	CPrintF("Send Move List : %d\n", count );
 	ClearMoveList();
 }
 
@@ -5906,7 +6145,7 @@ void CNetworkLibrary::SendRegenList()
 
 	for(;it != end; ++it)
 	{	
-		CNetworkMessage nmMobSpawn(MSG_NPC_REGEN);	
+		CNetworkMessage nmMobSpawn((UBYTE)MSG_NPC_REGEN);	
 		nmMobSpawn << (*it).iIndex;						// Index
 		nmMobSpawn << (*it).iMobType;					// DB Index
 		nmMobSpawn << (*it).fX;							// Pos X
@@ -5974,91 +6213,140 @@ void CNetworkLibrary::DelLegitList(int Index)
 	SearchLegitList(Index, TRUE);
 }
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Zone Change System)(0.1)
+// ----------------------------------------------------------------------------
+// Name : AddAffinityRewardNPC()
+// Desc : 
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::AddAffinityRewardNPC(int iIndex)
+{
+	// ¿ÃπÃ ∏ÆΩ∫∆Æø° ¿÷¿∏∏È ±◊≥… ∏Æ≈œ
+	if( std::count(m_listAffinityRewardNPCList.begin(), m_listAffinityRewardNPCList.end(), iIndex) )
+		return;
+
+	m_listAffinityRewardNPCList.push_back(iIndex);	
+}
+
+// ----------------------------------------------------------------------------
+// Name : RemoveAffinityRewardNPC()
+// Desc : 
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::RemoveAffinityRewardNPC(int iIndex)
+{
+	m_listAffinityRewardNPCList.remove(iIndex);	
+}
+
+// ----------------------------------------------------------------------------
+// Name : ClearAffinityRewardNPC()
+// Desc : 
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::ClearAffinityRewardNPC()
+{
+	m_listAffinityRewardNPCList.clear();
+	m_listAffinityRewardNPCList.resize(0);	
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetAffinityRewardNPCListCount()
+// Desc : 
+// ----------------------------------------------------------------------------
+const int CNetworkLibrary::GetAffinityRewardNPCListCount()
+{
+	return m_listAffinityRewardNPCList.size();
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetAffinityRewardNPCList()
+// Desc : 
+// ----------------------------------------------------------------------------
+const std::list<int>& CNetworkLibrary::GetAffinityRewardNPCList()
+{
+	return m_listAffinityRewardNPCList;
+}
+
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Zone Change System)(0.1)
 // ----------------------------------------------------------------------------
 // Name : GoZone()
 // Desc : 
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::GoZone(int zone, int extra,int npcIdx )
 {
-//	const UINT iMinLevel = ZoneInfo().GetMinLevel(zone);
-//	const UINT iMaxLevel = ZoneInfo().GetMaxLevel(zone);
-	/*
-	if(
-		iMinLevel <= _pNetwork->MyCharacterInfo.level &&	// Î†àÎ≤® Ï≤¥ÌÅ¨
-		_pNetwork->MyCharacterInfo.level <= iMaxLevel)
-	{
-	*/
-		const int iJob = _pNetwork->MyCharacterInfo.job;
-		if(ZoneInfo().GetAccessJob(zone) & (1 << iJob))			// ÏßÅÏóÖ Ï≤¥ÌÅ¨
-		{
-			CNetworkMessage nmZone(MSG_GO_ZONE);
-			nmZone << (SLONG)zone;
-			nmZone << (SLONG)extra;
-			
-			// -- wooss 060515 ---------------------------------->>
-			nmZone << (LONG)npcIdx;
-			// --------------------------------------------------<<
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-			SendToServerNew(nmZone);
-			// (eons) Ïã†Ï†Ñ Í≥º ÌïÑÎìú Ïù¥ÎèôÏãú ÏßÄÏó≠ÌëúÏãú Î¨∏Ï†úÎ°ú ÏßÄÏó≠ Î≤àÌò∏ Ï†ÄÏû•
-			_pNetwork->MyCharacterInfo.LocalNo = extra;			
-
-			CEntity* penPlEntity = CEntity::GetPlayerEntity(0); //Ï∫êÎ¶≠ÌÑ∞ ÏûêÍ∏∞ ÏûêÏã†
-			CPlayerEntity* penPlayerEntity;			
-			penPlayerEntity = (CPlayerEntity*) penPlEntity;
-			penPlayerEntity->DeathInit();
-		}
-		else
-		{
-			CTString strSysMessage;
-			strSysMessage.PrintF( _S2( 295, JobInfo().GetName(iJob), "%s<Îäî> Ïù¥ÎèôÌï†Ïàò ÏóÜÎäî Í≥≥ÏûÖÎãàÎã§." ), JobInfo().GetName(iJob) );
-			_pNetwork->ClientSystemMessage( strSysMessage, SYSMSG_ERROR );
-		}
-	/*
+	// (eons) Ω≈¿¸ ∞˙ « µÂ ¿ÃµøΩ√ ¡ˆø™«•Ω√ πÆ¡¶∑Œ ¡ˆø™ π¯»£ ¿˙¿Â
+	_pNetwork->MyCharacterInfo.LocalNo = extra;
+	
+	if(pUIManager->IsInstantZone(zone)) // [sora] ¿Œ¡∏¿∏∑Œ ¿Ãµø«“ ∞ÊøÏ
+	{	
+		RaidInzoneJoinReq(zone);
+		return;
 	}
-	else
+	
+	if(pUIManager->IsPlayInZone()) // [sora] ¿ŒΩ∫≈œ∆Æ¡∏≥ª∫Œø°º≠ ≥™∞•∞ÊøÏ
 	{
-		CTString strSysMessage;
-		strSysMessage.PrintF( _S2( 295, JobInfo().GetName(iJob), "%s<Îäî> Ïù¥ÎèôÌï†Ïàò ÏóÜÎäî Í≥≥ÏûÖÎãàÎã§." ), JobInfo().GetName(iJob) );
-		_pNetwork->ClientSystemMessage( strSysMessage, SYSMSG_ERROR );
+		// [090709: selo] ∑π¿ÃµÂø°º≠ ≥™∞•∂ß¥¬ ƒ˘Ω∫∆Æ ∫œ¿« ∑π¿ÃµÂ ∏ﬁΩ√¡ˆ∏¶ ∫ÒøÓ¥Ÿ
+		GAMEDATAMGR()->GetQuest()->RemoveRaidMessageAll();
+		
+		RaidInzoneQuitReq(zone, extra);
+		
+		return;
 	}
-	*/
+	
+	const int iJob = _pNetwork->MyCharacterInfo.job;
+
+	INFO()->TargetClear();
+
+	pUIManager->SetCSFlagOn(CSF_TELEPORT);
+
+	//----------------------------------------------------
+	CNetworkMessage nmZone;
+	RequestClient::moveGoZone* packet = reinterpret_cast<RequestClient::moveGoZone*>(nmZone.nm_pubMessage);
+	packet->type = MSG_GO_ZONE;
+	packet->subType = 0;
+	packet->zone = zone;
+	packet->extra = extra;
+	packet->npcIndex = npcIdx;
+	nmZone.setSize(sizeof(*packet));
+	SendToServerNew(nmZone);
+	// (eons) Ω≈¿¸ ∞˙ « µÂ ¿ÃµøΩ√ ¡ˆø™«•Ω√ πÆ¡¶∑Œ ¡ˆø™ π¯»£ ¿˙¿Â
+	_pNetwork->MyCharacterInfo.LocalNo = extra;
 }
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Zone Change System)(0.1)
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Teleport System)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Teleport System)(0.1)
 void CNetworkLibrary::WriteCurrentPos(int slot, const char *szComment)
 {
-	CNetworkMessage nmMemPos(MSG_MEMPOS);
-	nmMemPos << (SBYTE)MSG_MEMPOS_WRITE;
-	nmMemPos << (SBYTE)slot;
-	nmMemPos << CTString(szComment);
-	SendToServerNew(nmMemPos);
-}
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Teleport System)(0.1)
+	CNetworkMessage nmMemPos;
+	RequestClient::memposWrite* packet = reinterpret_cast<RequestClient::memposWrite*>(nmMemPos.nm_pubMessage);
+	packet->type = MSG_MEMPOS;
+	packet->subType = MSG_MEMPOS_WRITE;
+	packet->slot = slot;
+	memcpy(packet->comment, szComment, MEMPOS_COMMENT_LENGTH + 1);
+	nmMemPos.setSize( sizeof(*packet) );
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(GM Command)(0.1)
+	_pNetwork->SendToServerNew(nmMemPos);
+}
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Teleport System)(0.1)
+
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(GM Command)(0.1)
 void CNetworkLibrary::SendWhoAmI()
 {
-	CNetworkMessage nmGM(MSG_GM);
+	CNetworkMessage nmGM((UBYTE)MSG_GM);
 	nmGM << (SBYTE)MSG_GM_WHOAMI;
 	SendToServerNew(nmGM);
 }
 
 void CNetworkLibrary::SendGMCommand(const char *szCommand)
 {
-	CNetworkMessage nmGM(MSG_GM);
+	CNetworkMessage nmGM((UBYTE)MSG_GM);
 	nmGM << (SBYTE)MSG_GM_COMMAND;
 	nmGM << CTString(szCommand);
 	SendToServerNew(nmGM);
 }
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(GM Command)(0.1)
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Game Manager Command)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(GM Command)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Game Manager Command)(0.1)
 //-----------------------------------------------------------------------------
-// NOTE : Íµ¨Ï∂ú NPCÏùò Ï†ïÎ≥¥Î•º ÌååÌã∞Î°ú ÌëúÏãúÌïòÍ∏∞ ÏúÑÌïú Î∂ÄÎ∂ÑÏù¥Î©∞,
-// NOTE : ÌòÑÏû¨Îäî ÌååÌã∞Î©§Î≤ÑÎ°ú Î∞òÎìúÏãú 1Î™ÖÎßå ÎêòÎèÑÎ°ù ÎêòÏñ¥ÏûàÏùå.
-// NOTE : Ï∂îÌõÑ, Î≥ÄÍ≤ΩÌï†Í≤É.
+// NOTE : ±∏√‚ NPC¿« ¡§∫∏∏¶ ∆ƒ∆º∑Œ «•Ω√«œ±‚ ¿ß«— ∫Œ∫–¿Ã∏Á,
+// NOTE : «ˆ¿Á¥¬ ∆ƒ∆º∏‚πˆ∑Œ π›µÂΩ√ 1∏Ì∏∏ µ«µµ∑œ µ«æÓ¿÷¿Ω.
+// NOTE : √ﬂ»ƒ, ∫Ø∞Ê«“∞Õ.
 // ----------------------------------------------------------------------------
 // Name : AddRescueNPC()
 // Desc : 
@@ -6069,10 +6357,10 @@ void CNetworkLibrary::AddRescueNPC(CEntity* pEntity)
 	{				
 		CEntityProperty	&epPropertyNpcIndex	= *(pEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 91));	// Enemy Index
 		const INDEX		iMobIndex = ENTITYPROPERTY( &*pEntity, epPropertyNpcIndex.ep_slOffset, INDEX);
-		CMobData		&MD	= _pNetwork->GetMobData(iMobIndex);
+		CMobData*		MD	= CMobData::getData(iMobIndex);
 		FLOAT3D			vPos = pEntity->en_plPlacement.pl_PositionVector;
-		_pUIMgr->GetParty()->PartyAddMember( 0, 0, CTString(_pNetwork->GetMobName(iMobIndex)), 0, 0, MD.GetLevel(),
-												MD.GetHealth(), MD.GetHealth(), MD.GetMP(), MD.GetMP(),
+		GAMEDATAMGR()->GetPartyInfo()->PartyAddMember( 0, 0, CTString(MD->GetName()), 0, 0, MD->GetLevel(),
+												MD->GetHealth(), MD->GetHealth(), MD->GetMP(), MD->GetMP(),
 												vPos( 1 ), vPos( 3 ), 0, _pNetwork->MyCharacterInfo.zoneNo );
 	}
 }
@@ -6087,10 +6375,9 @@ void CNetworkLibrary::UpdateRescueNPC(CEntity* pEntity, int iHP, int iMP)
 	{				
 		CEntityProperty	&epPropertyNpcIndex	= *(pEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 91));	// Enemy Index
 		const INDEX		iMobIndex = ENTITYPROPERTY( &*pEntity, epPropertyNpcIndex.ep_slOffset, INDEX);
-		CMobData		&MD	= _pNetwork->GetMobData(iMobIndex);
+		CMobData*		MD	= CMobData::getData(iMobIndex);
 		FLOAT3D			vPos = pEntity->en_plPlacement.pl_PositionVector;
-		//_pUIMgr->GetParty()->PartyAddMember(0, 0, CTString(MD.GetMonsterName()), 1, MD.GetLevel(), MD.GetHealth(), MD.GetHealth(),  MD.GetMP(), MD.GetMP());
-		_pUIMgr->GetParty()->PartyMemberInfo( 0, MD.GetLevel(), iHP, MD.GetHealth(), iMP, MD.GetMP(),
+		GAMEDATAMGR()->GetPartyInfo()->PartyMemberInfo( 0, MD->GetLevel(), iHP, MD->GetHealth(), iMP, MD->GetMP(),
 												vPos( 1 ), vPos( 3 ), 0, _pNetwork->MyCharacterInfo.zoneNo );		
 	}
 }
@@ -6101,229 +6388,32 @@ void CNetworkLibrary::UpdateRescueNPC(CEntity* pEntity, int iHP, int iMP)
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::EndRescueNPC()
 {
-	if(_pUIMgr->GetParty()->GetMemberCount())
-		_pUIMgr->GetParty()->PartyEnd();
-}
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Name : 
-// Desc : ÎåÄÏó¨ ÏïÑÏù¥ÌÖú Ï†ïÎ†¨ÏùÑ ÏúÑÌïú ÎπÑÍµêÌï®Ïàò
-//-----------------------------------------------------------------------------
-bool ItemLevelOfComp( const int& x, const int& y )
-{
-	CItemData	rItemData[2];
-
-	rItemData[0] = _pNetwork->GetItemData(x);
-	rItemData[1] = _pNetwork->GetItemData(y);
-
-	return rItemData[0].GetLevel() < rItemData[1].GetLevel();
+	if(GAMEDATAMGR()->GetPartyInfo()->GetMemberCount())
+		GAMEDATAMGR()->GetPartyInfo()->PartyEnd();
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÎåÄÏó¨ÌïòÎäî ÏïÑÏù¥ÌÖú Î™©Î°ùÏùÑ ÏÑ§Ï†ïÌï¥Ï§å.
-// Input  : job index ( 1 - 6 )
-//-----------------------------------------------------------------------------
-int CNetworkLibrary::RefreshLeaseItem(int iJobIndex)
-{
-	if(iJobIndex == -1)	return - 1;
-				
-	CItemData	rItemData[2];
-	
-	int			tv_itemIdx;
-	int			tv_itemLevel;
-	int			iRow,iCol;
-
-	std::vector<int> vecbtnItems;
-
-	for(int t = 0, selNum=0 ; t < wo_iNumOfItem; ++t)
-	{	
-		if(	wo_aItemData[t].GetJob() == 0x01 << iJobIndex &&
-			wo_aItemData[t].GetType() == CItemData::ITEM_WEAPON )
-		{
-			tv_itemLevel = wo_aItemData[t].GetLevel();
-			if(	tv_itemLevel >= LEASE_MIN_LEVEL &&
-				tv_itemLevel <= LEASE_MAX_LEVEL )
-			{
-				if(wo_aItemData[t].IsFlag(ITEM_FLAG_LENT) )
-				{
-					tv_itemIdx = wo_aItemData[t].GetItemIndex();
-
-					vecbtnItems.push_back(tv_itemIdx);
-
-					selNum++;
-				}
-			}
-		}
-	}
-	// ÏïÑÏù¥ÌÖú Î†àÎ≤®Î≥Ñ Ï†ïÎ†¨
-	std::sort(vecbtnItems.begin(), vecbtnItems.end(), ItemLevelOfComp );
-
-	std::vector<int>::iterator btnItr;
-
-	for ( btnItr=vecbtnItems.begin(), selNum=0; btnItr!=vecbtnItems.end(); btnItr++ )
-	{
-		tv_itemIdx = (*btnItr);
-		
-		if(selNum !=0)
-		{
-			rItemData[0] = _pNetwork->GetItemData((*btnItr));
-			rItemData[1] = _pNetwork->GetItemData(
-			(_pUIMgr->GetShop()->m_abtnShopItems[0]+selNum-1)->GetItemIndex());
-				
-			if(rItemData[1].GetLevel() == rItemData[0].GetLevel())
-			{
-				// ÎÇòÏ§ëÏóê ÏÑúÎ∏åÌÉÄÏûÖÏù¥ ÏûëÎã§Î©¥ Î∞îÍøîÏ§ÄÎã§.
-				if(rItemData[1].GetSubType() > rItemData[0].GetSubType())
-				{
-					iRow = (selNum-1) / SHOP_SHOP_SLOT_COL;
-					iCol = (selNum-1) % SHOP_SHOP_SLOT_COL;
-					_pUIMgr->GetShop()->m_abtnShopItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, tv_itemIdx, -1, -1 );
-					tv_itemIdx = rItemData[1].GetItemIndex();																										 
-				}
-			}
-		}
-		iRow = selNum / SHOP_SHOP_SLOT_COL;
-		iCol = selNum % SHOP_SHOP_SLOT_COL;
-		// Ïù¥Î∂ÄÎ∂ÑÏù¥ Shop Ïù∏Î≤§ÌÜ†Î¶¨ ÏïàÏúºÎ°ú Îì§Ïñ¥Í∞àÍ≤É...
-		_pUIMgr->GetShop()->m_abtnShopItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, tv_itemIdx, -1, -1 );
-		_pUIMgr->GetShop()->m_abtnShopItems[iRow][iCol].SetItemCount( 1 );
-		selNum++;
-	}
-
-	return selNum;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: ÌåêÎß§ÌïòÎäî ÏïÑÏù¥ÌÖú Î™©Î°ùÏùÑ Ïù∏Î≤§ÌÜ†Î¶¨Ïóê ÏÑ§Ï†ïÌï¥Ï§å.
-// Input  : SD - 
-//-----------------------------------------------------------------------------
-int CNetworkLibrary::RefreshShopItem(int iShopIndex)
-{
-	if(iShopIndex == -1)	return - 1;
-	//if(_pUIMgr->GetShop()->IsVisible())	return;
-	CShopData &SD = _pNetwork->GetShopData(iShopIndex);
-	if(SD.GetIndex() == -1) return - 1;
-	for(int t = 0; t < SD.m_iNumOfItem; ++t)
-	{						
-		int iItemIndex = SD.m_vectorSellItems[t];
-		CItemData &ID = _pNetwork->GetItemData(iItemIndex);
-		if(ID.GetItemIndex() == -1) continue;
-
-		const int iRow = t / SHOP_SHOP_SLOT_COL;
-		const int iCol = t % SHOP_SHOP_SLOT_COL;
-		// Ïù¥Î∂ÄÎ∂ÑÏù¥ Shop Ïù∏Î≤§ÌÜ†Î¶¨ ÏïàÏúºÎ°ú Îì§Ïñ¥Í∞àÍ≤É...
-		_pUIMgr->GetShop()->m_abtnShopItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, iItemIndex, -1, -1 );
-		_pUIMgr->GetShop()->m_abtnShopItems[iRow][iCol].SetItemCount( 1 );
-	}
-
-	return t;
-}
-//-----------------------------------------------------------------------------
-// Purpose: Ïù¥Î≤§Ìä∏Î°ú ÌåêÎß§Ìï†  ÏïÑÏù¥ÌÖú Î™©Î°ùÏùÑ ÏÑ§Ï†ïÌï¥Ï§å. Î¨¥Í∏∞ÎåÄÏó¨ÏÉÅÏùò Î°úÏßÅ Ï†ÅÏö©
-// Input  : job index ( 1 - 6 )
-//-----------------------------------------------------------------------------
-#define EVENT_MAY_LEVELMIN (5)
-#define EVENT_MAY_LEVELMAX (32)
-
-int CNetworkLibrary::RefreshEventItem(int iJobIndex, int itype)
-{
-	if(iJobIndex == -1)	return - 1;
-				
-	CItemData	rItemData[2];
-	
-	int			tv_itemIdx;
-	int			tv_itemLevel;
-	int			iRow,iCol;
-
-	std::vector<int> vecbtnItems;
-	
-	CShopData SD;
-	
-	if(itype == CItemData::ITEM_SHIELD)		// ÏÉÅÏ†ê NPCÏùò ÏïÑÏù¥ÌÖúÏùÑ Í∞ÄÏ†∏Ïò¥
-	{
-		SD = (CShopData)_pNetwork->GetShopData(90);			// Î∞©Ïñ¥Íµ¨ ÏÉÅÏù∏
-	}else
-	{
-		SD = (CShopData)_pNetwork->GetShopData(33);			// Î¨¥Í∏∞ÏÉÅÏù∏
-	}	
-
-	for(int t = 0, selNum=0 ; t < SD.m_iNumOfItem; ++t)
-	{	
-		int iItemIndex = SD.m_vectorSellItems[t];
-		CItemData &ID = _pNetwork->GetItemData(iItemIndex);
-		
-		if( ID.GetJob() == 0x01 << iJobIndex &&	ID.GetType() == itype )
-		{
-			tv_itemLevel = ID.GetLevel();
-			if(	tv_itemLevel >= EVENT_MAY_LEVELMIN &&
-				tv_itemLevel <= EVENT_MAY_LEVELMAX )
-			{			
-				tv_itemIdx = ID.GetItemIndex();
-
-				vecbtnItems.push_back(tv_itemIdx);
-
-				selNum++;
-				
-			}
-		}
-	}
-	// ÏïÑÏù¥ÌÖú Î†àÎ≤®Î≥Ñ Ï†ïÎ†¨
-	std::sort(vecbtnItems.begin(), vecbtnItems.end(), ItemLevelOfComp );
-
-	std::vector<int>::iterator btnItr;
-
-	for ( btnItr=vecbtnItems.begin(), selNum=0; btnItr!=vecbtnItems.end(); btnItr++ )
-	{
-		tv_itemIdx = (*btnItr);
-		
-		if(selNum !=0)
-		{
-			rItemData[0] = _pNetwork->GetItemData((*btnItr));
-			rItemData[1] = _pNetwork->GetItemData(
-			(_pUIMgr->GetShop()->m_abtnShopItems[0]+selNum-1)->GetItemIndex());
-				
-			if(rItemData[1].GetLevel() == rItemData[0].GetLevel())
-			{
-				// ÎÇòÏ§ëÏóê ÏÑúÎ∏åÌÉÄÏûÖÏù¥ ÏûëÎã§Î©¥ Î∞îÍøîÏ§ÄÎã§.
-				if(rItemData[1].GetSubType() > rItemData[0].GetSubType())
-				{
-					iRow = (selNum-1) / SHOP_SHOP_SLOT_COL;
-					iCol = (selNum-1) % SHOP_SHOP_SLOT_COL;
-					_pUIMgr->GetShop()->m_abtnShopItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, tv_itemIdx, -1, -1 );
-					tv_itemIdx = rItemData[1].GetItemIndex();																										 
-				}
-			}
-		}
-		iRow = selNum / SHOP_SHOP_SLOT_COL;
-		iCol = selNum % SHOP_SHOP_SLOT_COL;
-		// Ïù¥Î∂ÄÎ∂ÑÏù¥ Shop Ïù∏Î≤§ÌÜ†Î¶¨ ÏïàÏúºÎ°ú Îì§Ïñ¥Í∞àÍ≤É...
-		_pUIMgr->GetShop()->m_abtnShopItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, tv_itemIdx, -1, -1 );
-		_pUIMgr->GetShop()->m_abtnShopItems[iRow][iCol].SetItemCount( 1 );
-		selNum++;
-	}
-
-	return selNum;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Î™©Î°ùÏóê ÏûàÎäî ÏïÑÏù¥ÌÖúÏùÑ ÎåÄÏó¨ Ìï©ÎãàÎã§.
+// Purpose: ∏Ò∑œø° ¿÷¥¬ æ∆¿Ã≈€¿ª ¥Îø© «’¥œ¥Ÿ.
 // Input  : iShopID - 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendLeaseItem(int iItemIdx)
 {
-	CNetworkMessage nmItem(MSG_ITEM);
-	nmItem << (SBYTE)MSG_ITEM_LEND_WEAPON;
-	nmItem << (LONG)iItemIdx;						// ITEM INDEX
-	SendToServerNew(nmItem);	
+	CNetworkMessage nmMessage;
+	RequestClient::doItemLendWeapon* packet = reinterpret_cast<RequestClient::doItemLendWeapon*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_LEND_WEAPON;
+	packet->itemDBIndex = iItemIdx;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 //-----------------------------------------------------------------------------
-// Purpose: Î™©Î°ùÏóê ÏûàÎäî Ïù¥Î≤§Ìä∏ ÏïÑÏù¥ÌÖúÏùÑ Íµ¨ÏûÖÌï©ÎãàÎã§. (2007 Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏)
+// Purpose: ∏Ò∑œø° ¿÷¥¬ ¿Ã∫•∆Æ æ∆¿Ã≈€¿ª ±∏¿‘«’¥œ¥Ÿ. (2007 ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ)
 // Input  : iShopID - 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendEventItem(int iItemIdx, int iItemcont)
 {
-	CNetworkMessage nmItem(MSG_EVENT);
+	CNetworkMessage nmItem((UBYTE)MSG_EVENT);
 	nmItem << (SBYTE)MSG_EVENT_CHILDRENSDAY_2007;
 	nmItem << (LONG)MSG_EVENT_CHILDRENSDAY_2007_REQ;
 	nmItem << (LONG)iItemIdx;						// ITEM INDEX
@@ -6332,127 +6422,142 @@ void CNetworkLibrary::SendEventItem(int iItemIdx, int iItemcont)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Î™©Î°ùÏóê ÏûàÎäî ÏïÑÏù¥ÌÖúÏùÑ Íµ¨ÏûÖÌï©ÎãàÎã§.
+// Purpose: ∏Ò∑œø° ¿÷¥¬ æ∆¿Ã≈€¿ª ±∏¿‘«’¥œ¥Ÿ.
 // Input  : iShopID - 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::BuyItem(int iShopID, int iNumOfItem, __int64 iTotalPrice)
 {
-	__int64 iSumPrice	= iTotalPrice;	
-	CNetworkMessage nmItem(MSG_ITEM);
-	nmItem << (SBYTE)MSG_ITEM_BUY;
-	nmItem << (SLONG)iShopID;						// NPC INDEX
-	nmItem << iTotalPrice;							// PRICE
-	nmItem << (SLONG)iNumOfItem;
-	for( int i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	CNetworkMessage nmMessage;
+	RequestClient::doItemBuy* packet = reinterpret_cast<RequestClient::doItemBuy*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_BUY;
+	packet->npcIndex = iShopID;
+	packet->clientPrice = iTotalPrice;
+	packet->buyCount = iNumOfItem;
+
+	for (int i = 0; i < iNumOfItem; ++i)
 	{
-		if( _pUIMgr->GetShop()->m_abtnTradeItems[i].IsEmpty() )
-			break;
-		SLONG	slIndex = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemIndex();
-		SQUAD	llItemCount = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemCount();
-////		CPrintF("Buy IDX:%d,Cnt:%d\n", slIndex, llItemCount);
-		nmItem << slIndex;
-		nmItem << llItemCount;
+		SLONG	slIndex = pUIManager->GetShop()->GetTradeItem(i)->Item_Index;
+		SQUAD	llItemCount = pUIManager->GetShop()->GetTradeItem(i)->Item_Sum;
+
+		packet->list[i].dbIndex = slIndex;
+		packet->list[i].count = llItemCount;
 	}
-	SendToServerNew(nmItem);	
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * iNumOfItem) );
+
+	SendToServerNew(nmMessage);	
 //	CPrintF("Send MSG_ITEM_BUY, Shop ID : %d, Total Item Count : %d, Total Price : %ld\n", iShopID, iNumOfItem, iSumPrice);	
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Î™©Î°ùÏóê ÏûàÎäî ÏïÑÏù¥ÌÖúÏùÑ ÌåêÎß§Ìï©ÎãàÎã§.
+// Purpose: ∏Ò∑œø° ¿÷¥¬ æ∆¿Ã≈€¿ª ∆«∏≈«’¥œ¥Ÿ.
 // Input  : iShopID - 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SellItem(int iShopID, int iNumOfItem, __int64 iTotalPrice)
 {
-	__int64 iSumPrice = iTotalPrice;
-	CNetworkMessage nmItem(MSG_ITEM);
-	nmItem << (SBYTE)MSG_ITEM_SELL;
-	nmItem << (SLONG)iShopID;						// NPC INDEX
-	nmItem << iTotalPrice;							// PRICE	
-	nmItem << (SLONG)iNumOfItem;
-	for( int i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	CNetworkMessage nmMessage;
+	RequestClient::doItemSell* packet = reinterpret_cast<RequestClient::doItemSell*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_SELL;
+	packet->npcIndex = iShopID;
+	packet->clientPrice = iTotalPrice;
+	packet->sellCount = iNumOfItem;
+
+	for (int i = 0; i < iNumOfItem; ++i)
 	{
-		if( _pUIMgr->GetShop()->m_abtnTradeItems[i].IsEmpty() )
-			break;
-		SBYTE	sbTab = 0;
-		SBYTE	sbRow = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemRow();
-		SBYTE	sbCol = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemCol();
-		SLONG	slUniIndex = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemUniIndex();
-		SQUAD	llCnt = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemCount();
+		SWORD	nTab = pUIManager->GetShop()->GetTradeItem(i)->Item_Tab;
+		SWORD	nIndex = pUIManager->GetShop()->GetTradeItem(i)->InvenIndex;
+		SQUAD	llCnt = pUIManager->GetShop()->GetTradeItem(i)->Item_Sum;
+
 		if(_pNetwork->m_ubGMLevel > 1)
-			CPrintF("Sell Tab:%d,Row:%d,Col:%d,UDX:%d,Cnt:%d\n", sbTab, sbRow, sbCol, slUniIndex, llCnt);
-		nmItem << sbTab;					// TAB
-		nmItem << sbRow;					// ROW
-		nmItem << sbCol;					// COL
-		nmItem << llCnt;					// COUNT
-	}		
-	SendToServerNew(nmItem);
+			CPrintF("Sell Tab:%d,Idx:%d,Cnt:%d\n", nTab, nIndex, llCnt);
+
+		packet->list[i].tab = nTab;
+		packet->list[i].invenIndex = nIndex;
+		packet->list[i].count = llCnt;
+	}
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * iNumOfItem) );
+
+	SendToServerNew(nmMessage);
 //	CPrintF("Send MSG_ITEM_SELL, Shop ID : %d, Total Item Count : %d, Total Price : %ld\n", iShopID, iNumOfItem, iSumPrice);
 }
 //-----------------------------------------------------------------------------
-// Purpose: Ïû°ÌôîÏÉÅ Ïù¥Ïö© Ï£ºÎ¨∏ÏÑú Î™©Î°ùÏóê ÏûàÎäî ÏïÑÏù¥ÌÖúÏùÑ Íµ¨ÏûÖÌï©ÎãàÎã§.
+// Purpose: ¿‚»≠ªÛ ¿ÃøÎ ¡÷πÆº≠ ∏Ò∑œø° ¿÷¥¬ æ∆¿Ã≈€¿ª ±∏¿‘«’¥œ¥Ÿ.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::FieldShopBuyItem( int iNumOfItem, __int64 iTotalPrice)
 {
-	__int64 iSumPrice	= iTotalPrice;	
-	CNetworkMessage nmItem(MSG_ITEM);
-	nmItem << (SBYTE)MSG_ITEM_USE_GROCERY_BUY;
-	nmItem << iTotalPrice;							// PRICE
-	nmItem << (SLONG)iNumOfItem;
-	for( int i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	CNetworkMessage nmMessage;
+	RequestClient::doItemGroceryItemBuy* packet = reinterpret_cast<RequestClient::doItemGroceryItemBuy*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE_GROCERY_BUY;
+	packet->clientPrice = iTotalPrice;
+	packet->buyCount = iNumOfItem;
+
+	for (int i = 0; i < iNumOfItem; ++i)
 	{
-		if( _pUIMgr->GetShop()->m_abtnTradeItems[i].IsEmpty() )
-			break;
-		SLONG	slIndex = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemIndex();
-		SQUAD	llItemCount = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemCount();
-////		CPrintF("Buy IDX:%d,Cnt:%d\n", slIndex, llItemCount);
-		nmItem << slIndex;
-		nmItem << llItemCount;
+		SLONG	slIndex = pUIManager->GetShop()->GetTradeItem(i)->Item_Index;
+		SQUAD	llItemCount = pUIManager->GetShop()->GetTradeItem(i)->Item_Sum;
+
+		packet->list[i].itemDBIndex = slIndex;
+		packet->list[i].count = llItemCount;
 	}
-	SendToServerNew(nmItem);	
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * iNumOfItem) );
+
+	SendToServerNew( nmMessage );
 //	CPrintF("Send MSG_ITEM_BUY, Shop ID : %d, Total Item Count : %d, Total Price : %ld\n", iShopID, iNumOfItem, iSumPrice);	
 }
 //-----------------------------------------------------------------------------
-// Purpose: Ïû°ÌôîÏÉÅ Ïù¥Ïö© Ï£ºÎ¨∏ÏÑú Î™©Î°ùÏóê ÏûàÎäî ÏïÑÏù¥ÌÖúÏùÑ ÌåêÎß§Ìï©ÎãàÎã§.
+// Purpose: ¿‚»≠ªÛ ¿ÃøÎ ¡÷πÆº≠ ∏Ò∑œø° ¿÷¥¬ æ∆¿Ã≈€¿ª ∆«∏≈«’¥œ¥Ÿ.
 // Input  :  
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::FieldShopSellItem(int iNumOfItem, __int64 iTotalPrice)
 {
-	__int64 iSumPrice = iTotalPrice;
-	CNetworkMessage nmItem(MSG_ITEM);
-	nmItem << (SBYTE)MSG_ITEM_USE_GROCERY_SELL;
-	nmItem << iTotalPrice;							// PRICE	
-	nmItem << (SLONG)iNumOfItem;
-	for( int i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	CNetworkMessage nmMessage;
+	RequestClient::doItemGroceryItemSell* packet = reinterpret_cast<RequestClient::doItemGroceryItemSell*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE_GROCERY_SELL;
+	packet->clientPrice = iTotalPrice;
+	packet->sellCount = iNumOfItem;
+
+	for (int i = 0; i < iNumOfItem; ++i)
 	{
-		if( _pUIMgr->GetShop()->m_abtnTradeItems[i].IsEmpty() )
-			break;
-		SBYTE	sbTab = 0;
-		SBYTE	sbRow = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemRow();
-		SBYTE	sbCol = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemCol();
-		SLONG	slUniIndex = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemUniIndex();
-		SQUAD	llCnt = _pUIMgr->GetShop()->m_abtnTradeItems[i].GetItemCount();
-		if(_pNetwork->m_ubGMLevel > 1)
-			CPrintF("Sell Tab:%d,Row:%d,Col:%d,UDX:%d,Cnt:%d\n", sbTab, sbRow, sbCol, slUniIndex, llCnt);
-		nmItem << sbTab;					// TAB
-		nmItem << sbRow;					// ROW
-		nmItem << sbCol;					// COL
-		nmItem << llCnt;					// COUNT
-	}		
-	SendToServerNew(nmItem);
-//	CPrintF("Send MSG_ITEM_SELL, Shop ID : %d, Total Item Count : %d, Total Price : %ld\n", iShopID, iNumOfItem, iSumPrice);
+		SWORD	nTab = pUIManager->GetShop()->GetTradeItem(i)->Item_Tab;
+		SWORD	nIndex = pUIManager->GetShop()->GetTradeItem(i)->InvenIndex;
+		int		nCnt = (int)pUIManager->GetShop()->GetTradeItem(i)->Item_Sum;
+
+		packet->list[i].tab = nTab;
+		packet->list[i].invenIndex = nIndex;
+		packet->list[i].count = nCnt;
+	}
+
+	nmMessage.setSize( sizeof(*packet) + (sizeof(packet->list[0]) * iNumOfItem) );
+
+	SendToServerNew( nmMessage );
 }
 
 
 //0616 kwon
-void CNetworkLibrary::SendChatMessage(int index, CTString &strRecvName, CTString &strMessage)
+void CNetworkLibrary::SendChatMessage(int index, CTString &strRecvName, CTString &strMessage, SLONG nExpChatType)
 {
-	CNetworkMessage nm(MSG_CHAT);
+	CNetworkMessage nm((UBYTE)MSG_CHAT);
 	nm << (unsigned char)index;
 	nm << MyCharacterInfo.index;
 	nm << MyCharacterInfo.name;
 	nm << strRecvName;
 	nm << strMessage;
+	nm << nExpChatType;
 	
 	SendToServerNew(nm);
 }
@@ -6464,254 +6569,70 @@ void CNetworkLibrary::SendStopMessage(CEntity *pEntity, CPlacement3D MyPlacement
 		return;
 
 	if(_cmiComm. IsNetworkOn())
-	{		
-		CNetworkMessage nmPlayerMove(MSG_MOVE); 	
-		nmPlayerMove << (UBYTE)pEntity->GetNetworkType();
-		nmPlayerMove << (UBYTE)MSG_MOVE_STOP;				
-		nmPlayerMove << pEntity->GetNetworkID();
-		nmPlayerMove << 0.0f;//plr_fSpeed;
-		nmPlayerMove << MyPlacement.pl_PositionVector(1);
-		nmPlayerMove << MyPlacement.pl_PositionVector(3);
-		nmPlayerMove << MyPlacement.pl_PositionVector(2);
-		nmPlayerMove << MyPlacement.pl_OrientationAngle(1);
-		nmPlayerMove << MyCharacterInfo.yLayer;
+	{	
+		CNetworkMessage nmPlayerMove;
+		RequestClient::moveForNormal* packet = reinterpret_cast<RequestClient::moveForNormal*>(nmPlayerMove.nm_pubMessage);
+		packet->type = MSG_MOVE;
+		packet->subType = 0;
+		packet->charType = pEntity->GetNetworkType();
+		packet->moveType = MSG_MOVE_STOP;
+		packet->index = pEntity->GetNetworkID();
+		packet->speed = 0.0f;
+		packet->x = MyPlacement.pl_PositionVector(1);
+		packet->z = MyPlacement.pl_PositionVector(3);
+		packet->h = MyPlacement.pl_PositionVector(2);
+		packet->r = MyPlacement.pl_OrientationAngle(1);
+		packet->ylayer = MyCharacterInfo.yLayer;
+
+		nmPlayerMove.setSize(sizeof(*packet));
+
 		SendToServerNew(nmPlayerMove);	
 	}
 }
 
-//ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ ÏïÑÏù¥ÌÖú Ïù∏Îç±Ïä§Î°ú ÏÑúÎ≤ÑÏù∏Îç±Ïä§Î•º Ï∞æÎäîÎã§.
-SLONG CNetworkLibrary::SearchItemIndex(ULONG Index)
-{
-	SLONG item_index = -1;
-	for(INDEX ipl=0; ipl<_pNetwork->ga_srvServer.srv_aitItem.Count(); ++ipl) 
-	{//ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ Ïù∏Îç±Ïä§Î°ú ÏïÑÏù¥ÌÖú Ïú†ÎãàÌÅ¨ Ïù∏Îç±Ïä§ Ï∞æÍ∏∞.
-		CItemTarget &it = _pNetwork->ga_srvServer.srv_aitItem[ipl];
-		if (it.item_iClientIndex == Index)
-		{								
-			item_index = it.item_Index;
-			break;
-		}
-	}
-	return item_index; 
-}
-
-SLONG CNetworkLibrary::SearchClientChaIndex(ULONG Index)//Ïù¥Í±¥ ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ Ïù∏Îç±Ïä§Î•º Ï∞æÎäî Ìï®Ïàò.
+SLONG CNetworkLibrary::SearchClientChaIndex(ULONG Index)//¿Ã∞« ≈¨∂Û¿Ãæ∆Æ ¿Œµ¶Ω∫∏¶ √£¥¬ «‘ºˆ.
 {
 	SLONG	cha_index = -1;
-	for(INDEX ipl=0; ipl<ga_srvServer.srv_actCha.Count(); ++ipl) 
+
+	int		i;
+
+	for (i = 0; i < eOBJ_MAX; ++i)
 	{
-		CCharacterTarget &ct = ga_srvServer.srv_actCha[ipl];
-		if (ct.cha_Index == Index) 
-		{																			
-			cha_index = ct.cha_iClientIndex;
+		ObjectBase* pObject = ACTORMGR()->GetObject((eOBJ_TYPE)i, Index);
+
+		if (pObject != NULL)
+		{
+			cha_index = pObject->GetCIndex();
 			break;
 		}
 	}
+
 	return cha_index;
 }
 
-SLONG CNetworkLibrary::SearchClientMobIndex(ULONG Index)
-{
-	SLONG	mob_index = -1;
-	for(INDEX ipl=0; ipl<ga_srvServer.srv_amtMob.Count(); ++ipl) 
-	{
-		CMobTarget &mt = ga_srvServer.srv_amtMob[ipl];
-		if (mt.mob_Index == Index) 
-		{																			
-			mob_index = mt.mob_iClientIndex;
-			break;
-		}
-	}
-	return mob_index;
-}
-
-SLONG CNetworkLibrary::SearchClientPetIndex(ULONG Index)
-{
-	SLONG	pet_index = -1;
-	for(INDEX ipl=0; ipl<ga_srvServer.srv_actPet.Count(); ++ipl) 
-	{
-		CPetTarget &mt = ga_srvServer.srv_actPet[ipl];
-		if (mt.pet_Index == Index) 
-		{																			
-			pet_index = mt.pet_iClientIndex;
-			break;
-		}
-	}
-	return pet_index;
-}
-
-SLONG CNetworkLibrary::SearchClientSlaveIndex(ULONG Index)
-{
-	SLONG	slave_index = -1;
-	for(INDEX ipl=0; ipl<ga_srvServer.srv_actSlave.Count(); ++ipl) 
-	{
-		CSlaveTarget &st = ga_srvServer.srv_actSlave[ipl];
-		if (st.slave_Index == Index) 
-		{																			
-			slave_index = st.slave_iClientIndex;
-			break;
-		}
-	}
-	return slave_index;
-}
-
 //-----------------------------------------------------------------------------
-// Purpose: ÎÑ§Ìä∏ÏõåÌÅ¨ IDÍ∞íÏúºÎ°ú ÏóîÌã∞Ìã∞Î•º ÏñªÏäµÎãàÎã§.
+// Purpose: ≥◊∆Æøˆ≈© ID∞™¿∏∑Œ ø£∆º∆º∏¶ æÚΩ¿¥œ¥Ÿ.
 // Input  : 
 //-----------------------------------------------------------------------------
 BOOL CNetworkLibrary::SearchEntityByNetworkID( long lIndex, SBYTE sbType, CEntity* &pEntity )
 {
-	// Ï∫êÎ¶≠ÌÑ∞Ïóê ÎåÄÌï¥ÏÑú...
-	if( sbType == MSG_CHAR_PC )
+	// ƒ≥∏Ø≈Õø° ¥Î«ÿº≠...
+	if (lIndex == MyCharacterInfo.index)
 	{
-		if( lIndex == MyCharacterInfo.index )
-		{
-			pEntity = CEntity::GetPlayerEntity(0);
-			return TRUE;
-		}
+		pEntity = CEntity::GetPlayerEntity(0);
+		return TRUE;
+	}
+	else
+	{
+		int		i;
 
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_actCha.Count(); ipl2++) 
+		for (i = 0; i < eOBJ_MAX; ++i)
 		{
-			CCharacterTarget &ct = _pNetwork->ga_srvServer.srv_actCha[ipl2];
-			if (ct.cha_Index == lIndex )
-			{				
-				return ga_World.EntityExists(ct.cha_iClientIndex, pEntity);
-			}
-		}
-	}
-	// Î™πÏóê ÎåÄÌï¥ÏÑú...
-	else if( sbType == MSG_CHAR_NPC )
-	{
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_amtMob.Count(); ipl2++) 
-		{
-			CMobTarget &mt = _pNetwork->ga_srvServer.srv_amtMob[ipl2];
-			if (mt.mob_Index == lIndex) 
-			{				
-				return _pNetwork->ga_World.EntityExists(mt.mob_iClientIndex, pEntity);
-			}
-		}
-	}
-	// Ïï†ÏôÑÎèôÎ¨ºÏóê ÎåÄÌï¥ÏÑú...
-	else if( sbType == MSG_CHAR_PET )
-	{
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_actPet.Count(); ipl2++) 
-		{
-			CPetTarget &pt = _pNetwork->ga_srvServer.srv_actPet[ipl2];
-			if (pt.pet_Index == lIndex) 
-			{			
-				return ga_World.EntityExists(pt.pet_iClientIndex, pEntity);
-			}
-		}
-	}
-	// ÏÜåÌôòÏàòÏóê ÎåÄÌï¥ÏÑú...
-	else if( sbType == MSG_CHAR_ELEMENTAL )
-	{
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_actSlave.Count(); ipl2++) 
-		{
-			CSlaveTarget &st = _pNetwork->ga_srvServer.srv_actSlave[ipl2];
-			if (st.slave_Index == lIndex) 
-			{			
-				return ga_World.EntityExists(st.slave_iClientIndex, pEntity);
-			}
-		}
-	}
-	// Ïï†ÏôÑÎèôÎ¨ºÏóê ÎåÄÌï¥ÏÑú...
-	else if( sbType == MSG_CHAR_WILDPET )
-	{
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_actWildPet.Count(); ipl2++) 
-		{
-			CWildPetInfo &pt = _pNetwork->ga_srvServer.srv_actWildPet[ipl2];
-			if (pt.m_nNetIndex == lIndex) 
-			{			
-				return ga_World.EntityExists(pt.pet_iClientIndex, pEntity);
-			}
-		}
-	}
+			ObjectBase* pObject = ACTORMGR()->GetObject((eOBJ_TYPE)i, lIndex);
 
-	return FALSE;
-}
-
-//======================================================================================================
-// Name : SearchEntityByNetworkID
-// Exlplain : Ïù∏Îç±Ïä§ Ï†ïÎ≥¥Î°ú CEntity Î∞è CCharacterTarget Count Ï†ïÎ≥¥Î•º ÏñªÎäîÎã§.
-// 
-//======================================================================================================
-BOOL CNetworkLibrary::SearchEntityByNetworkID(long lIndex, SBYTE sbType, CEntity* &pEntity, INDEX& cnt)
-{
-	INDEX ipl2;
-
-	if( sbType == MSG_CHAR_PC )
-	{
-		for ( ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_actCha.Count(); ipl2++ ) 
-		{
-			CCharacterTarget &ct = _pNetwork->ga_srvServer.srv_actCha[ipl2];
-			if (ct.cha_Index == lIndex )
-			{				
-				if ( ga_World.EntityExists(ct.cha_iClientIndex, pEntity) )
-				{
-					cnt = ipl2;
-					return TRUE;
-				}
-			}
-		}		
-	}
-	else if( sbType == MSG_CHAR_NPC )
-	{
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_amtMob.Count(); ipl2++) 
-		{
-			CMobTarget &mt = _pNetwork->ga_srvServer.srv_amtMob[ipl2];
-			if (mt.mob_Index == lIndex) 
-			{				
-				if ( ga_World.EntityExists(mt.mob_iClientIndex, pEntity) )
-				{
-					cnt = ipl2;
-					return TRUE;
-				}
-			}
-		}
-	}
-	else if( sbType == MSG_CHAR_PET )
-	{
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_actPet.Count(); ipl2++) 
-		{
-			CPetTarget &pt = _pNetwork->ga_srvServer.srv_actPet[ipl2];
-			if (pt.pet_Index == lIndex) 
+			if (pObject != NULL)
 			{			
-				if ( ga_World.EntityExists(pt.pet_iClientIndex, pEntity) )
-				{
-					cnt = ipl2;
-					return TRUE;
-				}
-			}
-		}
-	}
-	else if( sbType == MSG_CHAR_ELEMENTAL )
-	{
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_actSlave.Count(); ipl2++) 
-		{
-			CSlaveTarget &st = _pNetwork->ga_srvServer.srv_actSlave[ipl2];
-			if (st.slave_Index == lIndex) 
-			{			
-				if ( ga_World.EntityExists(st.slave_iClientIndex, pEntity) )
-				{
-					cnt = ipl2;
-					return TRUE;
-				}
-			}
-		}
-	}
-	else if( sbType == MSG_CHAR_WILDPET )
-	{
-		for(INDEX ipl2=0; ipl2<_pNetwork->ga_srvServer.srv_actWildPet.Count(); ipl2++) 
-		{
-			CWildPetInfo &pt = _pNetwork->ga_srvServer.srv_actWildPet[ipl2];
-			if (pt.m_nNetIndex == lIndex) 
-			{			
-				if ( ga_World.EntityExists(pt.pet_iClientIndex, pEntity) )
-				{
-					cnt = ipl2;
-					return TRUE;
-				}
+				return _pNetwork->ga_World.EntityExists(pObject->GetCIndex(), pEntity);
 			}
 		}
 	}
@@ -6725,25 +6646,31 @@ void CNetworkLibrary::SendPickMessage( CEntity* pEntity, ULONG ItemIndex, BOOL b
 	{
 		if( bLayerCheck )
 		{
-			for( INDEX i = 0; i < _pNetwork->ga_srvServer.srv_aitItem.Count(); ++i )
-			{
-				CItemTarget	&it = _pNetwork->ga_srvServer.srv_aitItem[i];
-				if( it.item_Index == ItemIndex )
-				{
-					if( abs( it.item_yLayer - MyCharacterInfo.yLayer ) > 1 )
-						return;
+			ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_ITEM, ItemIndex);
 
-					break;
-				}
+			if (pObject != NULL)
+			{
+				if( abs( pObject->GetyLayer() - MyCharacterInfo.yLayer ) > 1 )
+					return;
 			}
 		}
 
-		CNetworkMessage nmItem(MSG_ITEM); 	
-		nmItem << (UBYTE)MSG_ITEM_TAKE;									
-		nmItem << pEntity->GetNetworkType();
-		nmItem << pEntity->GetNetworkID();
-		nmItem << ItemIndex;							
-		SendToServerNew(nmItem);	
+		CUIManager* pUIManager = CUIManager::getSingleton();
+		if( pUIManager->GetReformSystem()->IsVisible() ) // ∏Æ∆˚ Ω√Ω∫≈€ UI∞° ø≠∑¡ ¿÷¿ª ∞ÊøÏ ¥‹√‡≈∞ ∏∑¿Ω [9/6/2012 Ranma]
+			return;
+		if( pUIManager->GetSocketSystem()->IsVisible() ) // º“ƒœ Ω√Ω∫≈€ UI∞° ø≠∑¡ ¿÷¿ª ∞ÊøÏ ¥‹√‡≈∞ ∏∑¿Ω Ranma
+			return;
+
+		CNetworkMessage nmMessage;
+		RequestClient::doItemTake* packet = reinterpret_cast<RequestClient::doItemTake*>(nmMessage.nm_pubMessage);
+		packet->type = MSG_ITEM;
+		packet->subType = MSG_ITEM_TAKE;
+		packet->char_type = pEntity->GetNetworkType();
+		packet->char_index = pEntity->GetNetworkID();
+		packet->virtualIndex = ItemIndex;
+		nmMessage.setSize( sizeof(*packet) );
+
+		SendToServerNew(nmMessage);	
 	}
 }
 
@@ -6759,29 +6686,41 @@ void CNetworkLibrary::SendMoveMessage(CEntity *pEntity, CPlacement3D plPlacement
 
 	if(_cmiComm. IsNetworkOn())
 	{
-		CNetworkMessage nmPlayerMove(MSG_MOVE);
-		SBYTE sbNetworkType = pEntity->GetNetworkType();
-		nmPlayerMove << (UBYTE)sbNetworkType;
-		if(speed < 2.0f)
-		{							
-			nmPlayerMove << (UBYTE)MSG_MOVE_WALK;
+		CNetworkMessage nmPlayerMove;
+		RequestClient::moveForNormal* packet = reinterpret_cast<RequestClient::moveForNormal*>(nmPlayerMove.nm_pubMessage);
+		packet->type = MSG_MOVE;
+		packet->subType = 0;
+		packet->charType = pEntity->GetNetworkType();
+
+		// [2012/08/22 : Sora] ≥™¿Ã∆Æ Ω¶µµøÏ ∫Ò«‡¡ﬂø°¥¬ ∫Ò«‡ ∏ﬁΩ√¡ˆ∏¶ ∫∏≥ªµµ∑œ ºˆ¡§
+		UBYTE movetype;
+		if ( ( pEntity->IsPlayer() ) && 
+			( _pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING ) )
+		{
+			movetype = MSG_MOVE_FLY;
 		}
 		else
 		{
-			nmPlayerMove << (UBYTE)MSG_MOVE_RUN;
+			if(speed < 2.0f)
+				movetype = MSG_MOVE_WALK;
+			else
+				movetype = MSG_MOVE_RUN;
 		}
-		nmPlayerMove << pEntity->GetNetworkID();
-		nmPlayerMove << speed;						
-		nmPlayerMove << plPlacement.pl_PositionVector(1);
-		nmPlayerMove << plPlacement.pl_PositionVector(3);
-		nmPlayerMove << plPlacement.pl_PositionVector(2);
-		nmPlayerMove << plPlacement.pl_OrientationAngle(1);
-		nmPlayerMove << MyCharacterInfo.yLayer;
-		
-		SendToServerNew(nmPlayerMove);
 
-		// Í∏∏Îìú Ï†ÑÏüÅÏ§ë Ìè¨ÌÉàÏùÑ ÌÉÄÎ†§Í≥† ÌïòÎäîÎç∞ Ïù¥ÎèôÏùÑ  ÌïòÎ©¥ Ï∑®ÏÜå (Ï§ëÏßÄ)
-		_pUIMgr->GetGuildWarPortal()->PortalCancel();
+		packet->moveType = movetype;
+		packet->index = pEntity->GetNetworkID();
+		packet->speed = speed;
+		packet->x = plPlacement.pl_PositionVector(1);
+		packet->z = plPlacement.pl_PositionVector(3);
+		packet->h = plPlacement.pl_PositionVector(2);
+		packet->r = plPlacement.pl_OrientationAngle(1);
+		packet->ylayer = MyCharacterInfo.yLayer;
+
+		nmPlayerMove.setSize(sizeof(*packet));
+
+		SendToServerNew(nmPlayerMove);
+		// ±ÊµÂ ¿¸¿Ô¡ﬂ ∆˜≈ª¿ª ≈∏∑¡∞Ì «œ¥¬µ• ¿Ãµø¿ª  «œ∏È √Îº“ (¡ﬂ¡ˆ)
+		CUIManager::getSingleton()->GetGuildWarPortal()->PortalCancel();
 	}
 }
 
@@ -6791,7 +6730,7 @@ void CNetworkLibrary::SendMoveMessage(CEntity *pEntity, CPlacement3D plPlacement
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendAttackSymbol()
 {
-	CNetworkMessage nmGuildWar( MSG_GUILD );
+	CNetworkMessage nmGuildWar( (UBYTE)MSG_GUILD );
 	nmGuildWar << (UBYTE)MSG_GUILD_WAR_ATTACK_SYMBOL;
 	SendToServerNew(nmGuildWar);
 }
@@ -6808,67 +6747,79 @@ void CNetworkLibrary::SendAttackMessage(CEntity *pAttackerEntity, CEntity *pTarg
 	}
 	if(_cmiComm. IsNetworkOn())
 	{
-		CNetworkMessage nmPlayerAttack(MSG_ATTACK);
-		nmPlayerAttack << (UBYTE)pAttackerEntity->GetNetworkType();
-		nmPlayerAttack << pAttackerEntity->GetNetworkID();
-		
-		nmPlayerAttack << (UBYTE)pTargetEntity->GetNetworkType();
-		INDEX iNetworkID = pTargetEntity->GetNetworkID();
-		nmPlayerAttack << iNetworkID;
-		nmPlayerAttack<< (UBYTE)0;
-		nmPlayerAttack<< (UBYTE)0;
-		
-		SendToServerNew(nmPlayerAttack);		
+		CNetworkMessage nmPlayerAttack;
+		RequestClient::doAttack* packet = reinterpret_cast<RequestClient::doAttack*>(nmPlayerAttack.nm_pubMessage);
+		packet->type = MSG_ATTACK;
+		packet->subType = 0;
+		packet->aCharType = pAttackerEntity->GetNetworkType();
+		packet->aIndex = pAttackerEntity->GetNetworkID();		
+		packet->tCharType = pTargetEntity->GetNetworkType();
+		packet->tIndex = pTargetEntity->GetNetworkID();
+		packet->multicount = 0;
+		packet->list[0].index = 0;
+
+		nmPlayerAttack.setSize( sizeof(*packet) );
+
+		SendToServerNew(nmPlayerAttack);
+		//-------------------------------------------------------
 	}
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Booster ÏóÖÍ∏Ä.
+// Purpose: Booster æ˜±€.
 // Input  : Index - 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendBoosterUpgrade(LONG itemServerIndex)
 {
-	CNetworkMessage nmPlayerProcess(MSG_ITEM);
-	nmPlayerProcess << (unsigned char)MSG_ITEM_ADD_BOOSTER;
-	nmPlayerProcess << itemServerIndex;
-	SendToServerNew(nmPlayerProcess);	
+	CNetworkMessage nmMessage;
+	RequestClient::doItemAddBooster* packet = reinterpret_cast<RequestClient::doItemAddBooster*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_ADD_BOOSTER;
+	packet->boostitem_vitualIndex = itemServerIndex;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: NPC ÌÜµÌï¥ÏÑú Í∞ÄÍ≥µÌïòÍ∏∞
+// Purpose: NPC ≈Î«ÿº≠ ∞°∞¯«œ±‚
 // Input  : Index - 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendNPCProcessMessage(LONG processItemDBIndex, LONG count)
 {
-	//MSG_ITEM_PROCESS_NPC,		// NPCÎ•º ÌÜµÌï¥ Í∞ÄÍ≥µ		: processItemDBIndex(n) count(n) errcode(n:s)
+	//MSG_ITEM_PROCESS_NPC,		// NPC∏¶ ≈Î«ÿ ∞°∞¯		: processItemDBIndex(n) count(n) errcode(n:s)
 	if(!_cmiComm.IsNetworkOn()) return;
 
-	CNetworkMessage nmPlayerProcess(MSG_ITEM);
-	nmPlayerProcess << (unsigned char)MSG_ITEM_PROCESS_NPC;
-	nmPlayerProcess << processItemDBIndex;
-	nmPlayerProcess << count;
-	SendToServerNew(nmPlayerProcess);	
+	CNetworkMessage nmMessage;
+	RequestClient::doItemProcessNpc* packet = reinterpret_cast<RequestClient::doItemProcessNpc*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_PROCESS_NPC;
+	packet->itemDBIndex = processItemDBIndex;
+	packet->count = count;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÏÉùÏÇ∞ÌïòÍ∏∞.
+// Purpose: ª˝ªÍ«œ±‚.
 // Input  : Index - 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendSelectProduceMessage(LONG npc_client_index, LONG item_db_index)
 {
-	// ÏÉùÏÇ∞ Í¥ÄÎ†®		: producekind(c) attackchartype(c) attackIndex(n) targetchartype(c) targetindex(n)
+	// ª˝ªÍ ∞¸∑√		: producekind(c) attackchartype(c) attackIndex(n) targetchartype(c) targetindex(n)
 	if(!_cmiComm.IsNetworkOn()) return;
 
 	if( item_db_index >= 0 )
 	{
-		CNetworkMessage nmPlayerProduce(MSG_SELECT_PRODUCE);
+		CNetworkMessage nmPlayerProduce((UBYTE)MSG_SELECT_PRODUCE);
 		nmPlayerProduce << npc_client_index;
 		nmPlayerProduce << item_db_index;
 		SendToServerNew(nmPlayerProduce);	
 	}
 	else
 	{
-		CNetworkMessage nmPlayerProduce( MSG_RANDOM_PRODUCE );
+		CNetworkMessage nmPlayerProduce( (UBYTE)MSG_RANDOM_PRODUCE );
 		nmPlayerProduce << npc_client_index;
 			SendToServerNew(nmPlayerProduce);
 	}
@@ -6885,7 +6836,7 @@ void CNetworkLibrary::SendCollectProduceMessage(LONG npc_client_index)
 {
 	if(!_cmiComm.IsNetworkOn()) return;
 
-	CNetworkMessage nmQuest(MSG_QUEST);
+	CNetworkMessage nmQuest((UBYTE)MSG_QUEST);
 	nmQuest << (UBYTE)MSG_QUEST_COLLECT;
 	nmQuest << npc_client_index;
 
@@ -6897,7 +6848,7 @@ void CNetworkLibrary::SendCollectProduceMessage(LONG npc_client_index)
 
 void CNetworkLibrary::SendProduceMessage(ULONG Index, SBYTE sbKind)
 {
-	// ÏÉùÏÇ∞ Í¥ÄÎ†®		: producekind(c) attackchartype(c) attackIndex(n) targetchartype(c) targetindex(n)
+	// ª˝ªÍ ∞¸∑√		: producekind(c) attackchartype(c) attackIndex(n) targetchartype(c) targetindex(n)
 /*	if(_cmiComm. IsNetworkOn())
 	{		
 		CNetworkMessage nmPlayerAttack(MSG_PRODUCE);
@@ -6928,7 +6879,7 @@ void CNetworkLibrary::SendProduceMessage(ULONG Index, SBYTE sbKind)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Î∞∞Ïó¥ÎÇ¥Ïóê ÏûàÎäî Î™®Îì† ÏóîÌã∞Ìã∞Ïóê ÎåÄÌï¥ÏÑú Attack MessageÎ•º Î≥¥ÎÉÖÎãàÎã§(Ïã±Í∏Ä Î™®ÎìúÏóêÏÑúÎßå ÏÇ¨Ïö©Îê®)
+// Purpose: πËø≠≥ªø° ¿÷¥¬ ∏µÁ ø£∆º∆ºø° ¥Î«ÿº≠ Attack Message∏¶ ∫∏≥¿¥œ¥Ÿ(ΩÃ±€ ∏µÂø°º≠∏∏ ªÁøÎµ )
 // Input  : &dcEntities - 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendAttackMessageInContainer(CSelectedEntities &dcEntities)
@@ -6959,41 +6910,49 @@ void CNetworkLibrary::SendAttackMessageInContainer(CSelectedEntities &dcEntities
 	
 	if(_cmiComm. IsNetworkOn())
 	{
-		CNetworkMessage nmPlayerAttack(MSG_ATTACK);						
-		
-		nmPlayerAttack << (UBYTE)MSG_CHAR_PC;						
-		nmPlayerAttack << MyCharacterInfo.index;			
-		
-		nmPlayerAttack << (UBYTE)MSG_CHAR_NPC;
-		
+		CNetworkMessage nmPlayerAttack;
+		RequestClient::doAttack* packet = reinterpret_cast<RequestClient::doAttack*>(nmPlayerAttack.nm_pubMessage);
+		packet->type = MSG_ATTACK;
+		packet->subType = 0;
+		packet->aCharType = MSG_CHAR_PC;
+		packet->aIndex = MyCharacterInfo.index;		
+		packet->tCharType = MSG_CHAR_NPC;
+
+		int nMobCount = dcEntities.Count() - 1;
+						
 		BOOL bFirst = FALSE;
-		// for each entity in container		
-		for( ENTITIES_ITERATOR it = dcEntities.vectorSelectedEntities.begin();
-			it != dcEntities.vectorSelectedEntities.end(); ++it )
+		int i;
+		ENTITIES_ITERATOR it = dcEntities.vectorSelectedEntities.begin();		
+		// for each entity in container
+		for( i = 0; it != dcEntities.vectorSelectedEntities.end(); ++it, i++ )
 		{
 			CEntity &en = *(*it);
 			INDEX iMobIndex = en.GetNetworkID();
 			if(!bFirst)
 			{
 				bFirst = TRUE;					
-				nmPlayerAttack << (ULONG)iMobIndex;
-				nmPlayerAttack << (UBYTE)0;
-				nmPlayerAttack << (UBYTE)(dcEntities.Count() - 1);
+				packet->tIndex = iMobIndex;
+				packet->attackType = 0;
+				packet->multicount = nMobCount;
 				continue;
 			}
-			nmPlayerAttack << (ULONG)iMobIndex;
+			packet->list[i].index = iMobIndex;
 		}
+		
+		int nSize = sizeof(RequestClient::doAttack::tag_multi) * i;	
+		nmPlayerAttack.setSize( sizeof(*packet) + nSize );
+
 		SendToServerNew(nmPlayerAttack);
 	}
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ïä§ÌÇ¨ ÏÇ¨Ïö© Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÇ¥Ï§å.
+// Purpose: Ω∫≈≥ ªÁøÎ ∏ﬁºº¡ˆ∏¶ ∫∏≥ª¡‹.
 // Input  : nSkillIndex - 
 //			nTargetIndex - 
 //			bFire - 
 //-----------------------------------------------------------------------------
-// FIXME : ÏΩîÎìú Ï†ïÎ¶¨Í∞Ä ÌïÑÏöîÌï®.
+// FIXME : ƒ⁄µÂ ¡§∏Æ∞° « ø‰«‘.
 void CNetworkLibrary::SendSkillMessage(int nSkillIndex, CEntity *pEntity, int nTargetIndex, BOOL bFire, UBYTE ubMove/*=0*/)
 {
 	ASSERT( pEntity != NULL && "Invalid Entity Pointer" );
@@ -7001,8 +6960,9 @@ void CNetworkLibrary::SendSkillMessage(int nSkillIndex, CEntity *pEntity, int nT
 		return;
 
 	CSkill &SkillData = GetSkillData( nSkillIndex );//0807
+	ObjInfo* pInfo = ObjInfo::getSingleton();
 
-	// FIXME : Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌÉÄÍ≥† ÏûàÎäî ÏÉÅÌÉúÏóêÏÑú Ïä§ÌÇ¨ÏùÑ Ïì∞Î†§Í≥† Ìï†Îïå...
+	// FIXME : æ÷øœµøπ∞¿ª ≈∏∞Ì ¿÷¥¬ ªÛ≈¬ø°º≠ Ω∫≈≥¿ª æ≤∑¡∞Ì «“∂ß...
 	if( pEntity->IsPlayer() 
 		&& _pNetwork->MyCharacterInfo.bPetRide 
 		&& SkillData.GetJob() == PET_JOB )
@@ -7010,7 +6970,65 @@ void CNetworkLibrary::SendSkillMessage(int nSkillIndex, CEntity *pEntity, int nT
 		SendPetSkillMessage( nSkillIndex, NULL, pEntity, bFire );
 		return;
 	}
-	
+
+	RequestClient::skillReady* Readypacket = NULL;
+	RequestClient::skillFire* Firepacket = NULL;
+	CTString strSysMessage;
+
+	if( pEntity->IsPlayer() && pInfo->GetMyApetInfo() != NULL && pInfo->GetMyApetInfo()->GetEntity() && SkillData.GetJob() == WILDPET_JOB )
+	{
+		CSkill &SkillData = GetSkillData( nSkillIndex );
+
+		CNetworkMessage nmSkill;
+		CEntity* pEn = pInfo->GetMyApetInfo()->GetEntity();
+
+		if (pEn != NULL)
+		{
+			if(bFire)
+			{
+				Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmSkill.nm_pubMessage);
+				Firepacket->type = MSG_SKILL;
+				Firepacket->subType = MSG_SKILL_FIRE;
+
+				Firepacket->skillIndex = nSkillIndex;
+				Firepacket->cMoveChar = 0;
+				Firepacket->charType = MSG_CHAR_WILDPET;
+				Firepacket->charIndex = pInfo->GetMyApetInfo()->GetSIndex();
+				Firepacket->targetType = pEn->GetNetworkType();
+				Firepacket->targetIndex = pInfo->GetMyApetInfo()->GetSIndex();
+				Firepacket->listCount = 0;
+				nmSkill.setSize( sizeof(*Firepacket) );
+
+				strSysMessage.PrintF( _S( 297, "%s Ω∫≈≥¿ª ªÁøÎ«’¥œ¥Ÿ." ), SkillData.GetName() );
+			}
+			else
+			{
+				if (CheckSendSkill(nSkillIndex) == false)
+					return;
+
+				Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmSkill.nm_pubMessage);
+				Readypacket->type = MSG_SKILL;
+				Readypacket->subType = MSG_SKILL_READY;
+
+				Readypacket->skillIndex = nSkillIndex;
+				Readypacket->cMoveChar = 0;
+				Readypacket->charType = MSG_CHAR_WILDPET;				
+				Readypacket->charIndex = pInfo->GetMyApetInfo()->GetSIndex();
+				Readypacket->targetType = pEn->GetNetworkType();
+				Readypacket->targetIndex = pInfo->GetMyApetInfo()->GetSIndex();
+				Readypacket->nDummySkillSpeed = 0;
+				nmSkill.setSize( sizeof(*Readypacket) );
+
+				strSysMessage.PrintF( _S( 298, "%s Ω∫≈≥¿ª Ω∫∆Á«’¥œ¥Ÿ." ), SkillData.GetName() );
+			}
+
+			ClientSystemMessage( strSysMessage);
+			
+			SendToServerNew(nmSkill);
+		}
+		return;
+	}	
+
 	if(_cmiComm. IsNetworkOn())
 	{	
 		if( _pNetwork->m_bSingleMode && pEntity->IsEnemy() )
@@ -7025,38 +7043,13 @@ void CNetworkLibrary::SendSkillMessage(int nSkillIndex, CEntity *pEntity, int nT
 			_pNetwork->SendMoveList();
 		}
 
-		// char_index(n) skill_index(n) target_type(c) target_index(n) count(n) [target_type(c) target_index(n)] * count
-		CTString strSysMessage;
-		CNetworkMessage nmPlayerSkill(MSG_SKILL);
-		if(bFire)
-		{
-			nmPlayerSkill << (UBYTE)MSG_SKILL_FIRE;	
-			strSysMessage.PrintF( _S( 297, "%s Ïä§ÌÇ¨ÏùÑ ÏÇ¨Ïö©Ìï©ÎãàÎã§." ), SkillData.GetName() );
-		}
-		else
-		{
-			nmPlayerSkill << (UBYTE)MSG_SKILL_READY;			
-			strSysMessage.PrintF( _S( 298, "%s Ïä§ÌÇ¨ÏùÑ Ïä§Ìé†Ìï©ÎãàÎã§." ), SkillData.GetName() );
-		}
-		ClientSystemMessage( strSysMessage);
-		UBYTE ubCharType = (UBYTE)MSG_CHAR_PC;
-		nmPlayerSkill << ubCharType;
-		nmPlayerSkill << MyCharacterInfo.index;
-		nmPlayerSkill << (ULONG)nSkillIndex;
-		LONG nTargetType;
-		nTargetType = pEntity->GetNetworkType();
-		nmPlayerSkill << (unsigned char)nTargetType; //Ïö∞ÏÑ†ÏùÄ ÌÉÄÍ≤ü=NPCÎßå.
-		nmPlayerSkill << (ULONG)nTargetIndex; 
-		nmPlayerSkill << (SBYTE)0;
-		nmPlayerSkill << (ULONG)0; // skillspeed (ÏÇ¨Ïö©ÏïàÌï® ÌòÑÏû¨ 0Í≥†Ï†ï )
-
 		CEntity *penPlEntity = NULL;
 		CPlayerEntity *penPlayerEntity = NULL;
 		FLOAT3D plVector = FLOAT3D( 0.0f, 0.0f, 0.0f );
 		ANGLE3D plAngle = ANGLE3D( 0.0f, 0.0f, 0.0f );
 		SBYTE sbLayer = 0;
 
-		if ( nSkillIndex == 401 && ubMove == 1 ) // ÎåÄÏâ¨
+		if ( nSkillIndex == 401 && ubMove == 1 ) // ¥ÎΩ¨
 		{
 			penPlEntity = CEntity::GetPlayerEntity(0);
 			penPlayerEntity = (CPlayerEntity*)penPlEntity;
@@ -7065,42 +7058,80 @@ void CNetworkLibrary::SendSkillMessage(int nSkillIndex, CEntity *pEntity, int nT
 			plVector = pl.pl_PositionVector;
 			plAngle = pl.pl_OrientationAngle;
 
-			INDEX Cnt;
+			int		i;
 
-			if ( _pNetwork->SearchEntityByNetworkID( nTargetIndex, nTargetType, pEntity, Cnt) )
+			for (i = 0; i < eOBJ_MAX; ++i)
 			{
-				switch( nTargetType )
+				ObjectBase* pObject = ACTORMGR()->GetObject((eOBJ_TYPE)i, nTargetIndex);
+
+				if (pObject != NULL)
 				{
-				case MSG_CHAR_PC:
-					{
-						sbLayer = ga_srvServer.srv_actCha[Cnt].cha_yLayer;
-					}
-					break;
-				case MSG_CHAR_NPC:
-					{
-						sbLayer = ga_srvServer.srv_amtMob[Cnt].mob_yLayer;
-					}
-					break;
-				case MSG_CHAR_PET:
-					{
-						sbLayer = ga_srvServer.srv_actPet[Cnt].pet_yLayer;
-					}
-					break;
-				case MSG_CHAR_ELEMENTAL:
-					{
-						sbLayer = ga_srvServer.srv_actSlave[Cnt].slave_yLayer;
-					}
+					sbLayer = pObject->GetyLayer();
 					break;
 				}
 			}
 		}
+				
+		CNetworkMessage nmPlayerSkill;
 
-		nmPlayerSkill << (UBYTE)ubMove; // Ïù¥Îèô Ïó¨Î∂Ä
-		nmPlayerSkill << plVector(1); // x
-		nmPlayerSkill << plVector(3); // z
-		nmPlayerSkill << plVector(2); // h
-		nmPlayerSkill << plAngle(1); // r
-		nmPlayerSkill << sbLayer; // y(c) // Ï∏µ
+		if(bFire)
+		{
+#if defined (G_USA)
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
+#endif
+			Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmPlayerSkill.nm_pubMessage);
+			Firepacket->type = MSG_SKILL;
+			Firepacket->subType = MSG_SKILL_FIRE;
+
+			Firepacket->skillIndex = nSkillIndex;
+			Firepacket->charType = MSG_CHAR_PC;
+			Firepacket->charIndex = MyCharacterInfo.index;
+			Firepacket->targetType = pEntity->GetNetworkType();
+			Firepacket->targetIndex = nTargetIndex;
+			Firepacket->listCount = 0;
+			Firepacket->nDummySkillSpeed = 0;
+			Firepacket->cMoveChar = ubMove;
+			Firepacket->fx = plVector(1);
+			Firepacket->fz = plVector(3);
+			Firepacket->fh = plVector(2);
+			Firepacket->fr = plAngle(1);
+			Firepacket->cYlayer = sbLayer;
+
+			nmPlayerSkill.setSize( sizeof(*Firepacket) );
+			
+			strSysMessage.PrintF( _S( 297, "%s Ω∫≈≥¿ª ªÁøÎ«’¥œ¥Ÿ." ), SkillData.GetName() );
+		}
+		else
+		{
+			if (CheckSendSkill(nSkillIndex) == false)
+				return;
+
+#if defined (G_USA)
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
+#endif
+			Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmPlayerSkill.nm_pubMessage);
+			Readypacket->type = MSG_SKILL;
+			Readypacket->subType = MSG_SKILL_READY;
+
+			Readypacket->skillIndex = nSkillIndex;
+			Readypacket->charType = MSG_CHAR_PC;
+			Readypacket->charIndex = MyCharacterInfo.index;
+			Readypacket->targetType = pEntity->GetNetworkType();
+			Readypacket->targetIndex = nTargetIndex;
+			Readypacket->nDummySkillSpeed = 0;
+			Readypacket->cMoveChar = ubMove;
+			Readypacket->fx = plVector(1);
+			Readypacket->fz = plVector(3);
+			Readypacket->fh = plVector(2);
+			Readypacket->fr = plAngle(1);
+			Readypacket->cYlayer = sbLayer;
+			nmPlayerSkill.setSize( sizeof(*Readypacket) );
+
+			CUIManager::getSingleton()->SetCSFlagOn(CSF_SKILLREADY);
+			strSysMessage.PrintF( _S( 298, "%s Ω∫≈≥¿ª Ω∫∆Á«’¥œ¥Ÿ." ), SkillData.GetName() );
+		}
+		
+		ClientSystemMessage( strSysMessage);
 
 		SendToServerNew(nmPlayerSkill);
 	}
@@ -7111,32 +7142,58 @@ void CNetworkLibrary::SendSkillMessage(int nSkillIndex, CEntity *pEntity, int nT
 // Input  : 
 //			
 //-----------------------------------------------------------------------------
-// FIXME : ÏΩîÎìú Ï†ïÎ¶¨Í∞Ä ÌïÑÏöîÌï®.
-// FIXME : SendSkillMessage Í≥ÑÏó¥Îì§ Ï†ïÎ¶¨ ÌïÑÏöî.
+// FIXME : ƒ⁄µÂ ¡§∏Æ∞° « ø‰«‘.
+// FIXME : SendSkillMessage ∞Ëø≠µÈ ¡§∏Æ « ø‰.
 void CNetworkLibrary::SendPetSkillMessage(int nSkillIndex, CEntity *pSourceEntity, CEntity *pTargetEntity, BOOL bFire)
 {	
 	CSkill &SkillData = GetSkillData( nSkillIndex );
-
-	// char_index(n) skill_index(n) target_type(c) target_index(n) count(n) [target_type(c) target_index(n)] * count
 	CTString strSysMessage;
-	CNetworkMessage nmPetSkill(MSG_SKILL);
+
+	CNetworkMessage nmPetSkill;
+	RequestClient::skillReady* Readypacket = NULL;
+	RequestClient::skillFire* Firepacket = NULL;
+	CPetTargetInfom* pPetInfo = INFO()->GetMyPetInfo();
+
 	if(bFire)
 	{
-		nmPetSkill << (UBYTE)MSG_SKILL_FIRE;	
-		strSysMessage.PrintF( _S( 297, "%s Ïä§ÌÇ¨ÏùÑ ÏÇ¨Ïö©Ìï©ÎãàÎã§." ), SkillData.GetName() );
+		Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmPetSkill.nm_pubMessage);
+		Firepacket->type = MSG_SKILL;
+		Firepacket->subType = MSG_SKILL_FIRE;
+
+		Firepacket->skillIndex = nSkillIndex;
+		Firepacket->cMoveChar = 0;
+		Firepacket->charType = MSG_CHAR_PET;
+		Firepacket->charIndex = pPetInfo->lIndex;
+		Firepacket->targetType = pTargetEntity->GetNetworkType();
+		Firepacket->targetIndex = pTargetEntity->GetNetworkID();
+		Firepacket->listCount = 0;
+		nmPetSkill.setSize( sizeof(*Firepacket) );
+
+		strSysMessage.PrintF( _S( 297, "%s Ω∫≈≥¿ª ªÁøÎ«’¥œ¥Ÿ." ), SkillData.GetName() );
 	}
 	else
 	{
-		nmPetSkill << (UBYTE)MSG_SKILL_READY;			
-		strSysMessage.PrintF( _S( 298, "%s Ïä§ÌÇ¨ÏùÑ Ïä§Ìé†Ìï©ÎãàÎã§." ), SkillData.GetName() );
+		if (CheckSendSkill(nSkillIndex) == false)
+			return;
+
+		Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmPetSkill.nm_pubMessage);
+		Readypacket->type = MSG_SKILL;
+		Readypacket->subType = MSG_SKILL_READY;
+
+		Readypacket->skillIndex = nSkillIndex;
+		Readypacket->cMoveChar = 0;
+		Readypacket->charType = MSG_CHAR_PET;
+		Readypacket->charIndex = pPetInfo->lIndex;
+		Readypacket->targetType = pTargetEntity->GetNetworkType();
+		Readypacket->targetIndex = pTargetEntity->GetNetworkID();
+		Readypacket->nDummySkillSpeed = 0;
+		nmPetSkill.setSize( sizeof(*Readypacket) );
+
+		strSysMessage.PrintF( _S( 298, "%s Ω∫≈≥¿ª Ω∫∆Á«’¥œ¥Ÿ." ), SkillData.GetName() );
 	}
-	ClientSystemMessage( strSysMessage);	
-	nmPetSkill << (UBYTE)MSG_CHAR_PET;
-	nmPetSkill << (LONG)_pNetwork->_PetTargetInfo.lIndex;
-	nmPetSkill << (ULONG)nSkillIndex;		
-	nmPetSkill << (unsigned char)pTargetEntity->GetNetworkType();
-	nmPetSkill << (ULONG)pTargetEntity->GetNetworkID(); 
-	nmPetSkill << (SBYTE)0;
+
+	ClientSystemMessage( strSysMessage);
+
 	SendToServerNew(nmPetSkill);
 }
 
@@ -7145,36 +7202,57 @@ void CNetworkLibrary::SendPetSkillMessage(int nSkillIndex, CEntity *pSourceEntit
 // Input  : 
 //			
 //-----------------------------------------------------------------------------
-// FIXME : ÏΩîÎìú Ï†ïÎ¶¨Í∞Ä ÌïÑÏöîÌï®.
-// FIXME : SendSkillMessage Í≥ÑÏó¥Îì§ Ï†ïÎ¶¨ ÌïÑÏöî.
+// FIXME : ƒ⁄µÂ ¡§∏Æ∞° « ø‰«‘.
+// FIXME : SendSkillMessage ∞Ëø≠µÈ ¡§∏Æ « ø‰.
 void CNetworkLibrary::SendSlaveSkillMessage(int nSkillIndex, CEntity *pSourceEntity, CEntity *pTargetEntity, BOOL bFire)
 {
-	//ASSERT( pSourceEntity != NULL && "Invalid Entity Pointer" );
-	//if( pSourceEntity == NULL )
-	//	return;
-
 	CSkill &SkillData = GetSkillData( nSkillIndex );
-
-	// char_index(n) skill_index(n) target_type(c) target_index(n) count(n) [target_type(c) target_index(n)] * count
 	CTString strSysMessage;
-	CNetworkMessage nmSkill(MSG_SKILL);
+
+	CNetworkMessage nmSkill;
+	RequestClient::skillReady* Readypacket = NULL;
+	RequestClient::skillFire* Firepacket = NULL;
+
 	if(bFire)
 	{
-		nmSkill << (UBYTE)MSG_SKILL_FIRE;	
-		strSysMessage.PrintF( _S( 297, "%s Ïä§ÌÇ¨ÏùÑ ÏÇ¨Ïö©Ìï©ÎãàÎã§." ), SkillData.GetName() );
+		Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmSkill.nm_pubMessage);
+		Firepacket->type = MSG_SKILL;
+		Firepacket->subType = MSG_SKILL_FIRE;
+
+		Firepacket->skillIndex = nSkillIndex;
+		Firepacket->cMoveChar = 0;
+		Firepacket->charType = pSourceEntity->GetNetworkType();
+		Firepacket->charIndex = pSourceEntity->GetNetworkID();
+		Firepacket->targetType = pTargetEntity->GetNetworkType();
+		Firepacket->targetIndex = pTargetEntity->GetNetworkID();
+		Firepacket->listCount = 0;
+		nmSkill.setSize( sizeof(*Firepacket) );
+
+		strSysMessage.PrintF( _S( 297, "%s Ω∫≈≥¿ª ªÁøÎ«’¥œ¥Ÿ." ), SkillData.GetName() );
 	}
 	else
 	{
-		nmSkill << (UBYTE)MSG_SKILL_READY;			
-		strSysMessage.PrintF( _S( 298, "%s Ïä§ÌÇ¨ÏùÑ Ïä§Ìé†Ìï©ÎãàÎã§." ), SkillData.GetName() );
+		if (CheckSendSkill(nSkillIndex) == false)
+			return;
+
+		Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmSkill.nm_pubMessage);
+		Readypacket->type = MSG_SKILL;
+		Readypacket->subType = MSG_SKILL_READY;
+
+		Readypacket->skillIndex = nSkillIndex;
+		Readypacket->cMoveChar = 0;
+		Readypacket->charType = pSourceEntity->GetNetworkType();
+		Readypacket->charIndex = pSourceEntity->GetNetworkID();
+		Readypacket->targetType = pTargetEntity->GetNetworkType();
+		Readypacket->targetIndex = pTargetEntity->GetNetworkID();
+		Readypacket->nDummySkillSpeed = 0;
+		nmSkill.setSize( sizeof(*Readypacket) );
+
+		strSysMessage.PrintF( _S( 298, "%s Ω∫≈≥¿ª Ω∫∆Á«’¥œ¥Ÿ." ), SkillData.GetName() );
 	}
-	ClientSystemMessage( strSysMessage);	
-	nmSkill << (UBYTE)pSourceEntity->GetNetworkType();
-	nmSkill << (LONG)pSourceEntity->GetNetworkID();
-	nmSkill << (ULONG)nSkillIndex;		
-	nmSkill << (unsigned char)pTargetEntity->GetNetworkType();
-	nmSkill << (ULONG)pTargetEntity->GetNetworkID(); 
-	nmSkill << (SBYTE)0;
+
+	ClientSystemMessage( strSysMessage);
+
 	SendToServerNew(nmSkill);
 }
 
@@ -7184,7 +7262,7 @@ void CNetworkLibrary::SendSlaveSkillMessage(int nSkillIndex, CEntity *pSourceEnt
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendPetCommandMessage( int nSkillIndex, CEntity *pSourceEntity )
 {
-	// MSG_EX_PET_COMMAND,			// Ìé´ ÏÇ¨ÍµêÎèôÏûë		: pet_index(n) command_skill_index(n) targettype(c) targetindex(n)
+	// MSG_EX_PET_COMMAND,			// ∆Í ªÁ±≥µø¿€		: pet_index(n) command_skill_index(n) targettype(c) targetindex(n)
 	ASSERT( pSourceEntity != NULL && "Invalid Entity Pointer" );
 	if( pSourceEntity == NULL )
 		return;	
@@ -7196,13 +7274,13 @@ void CNetworkLibrary::SendPetCommandMessage( int nSkillIndex, CEntity *pSourceEn
 
 	const int iSkillType = SkillData.GetType();
 
-	// Ìé´ Ïª§Îß®Îìú Ïä§ÌÇ¨Îßå!!!
+	// ∆Í ƒø∏«µÂ Ω∫≈≥∏∏!!!
 	if( iSkillType != CSkill::ST_PET_COMMAND )
 	{
 		return;
 	}
 
-	CNetworkMessage nmPet( MSG_EXTEND );	
+	CNetworkMessage nmPet( (UBYTE)MSG_EXTEND );	
 	nmPet << (LONG)MSG_EX_PET_COMMAND;
 	nmPet << pSourceEntity->GetNetworkID();	
 	nmPet << (LONG)nSkillIndex;
@@ -7216,8 +7294,8 @@ void CNetworkLibrary::SendPetCommandMessage( int nSkillIndex, CEntity *pSourceEn
 // Input  : nSkillIndex - 
 //			&dcEntities - 
 //-----------------------------------------------------------------------------
-// FIXME : ÏΩîÎìú Ï†ïÎ¶¨Í∞Ä ÌïÑÏöîÌï®.
-// FIXME : SendSlaveSkillMessageInContainer() ÏÜåÌôîÏàòÏùò Ïä§ÌÇ¨ Î©îÏÑ∏ÏßÄ.
+// FIXME : ƒ⁄µÂ ¡§∏Æ∞° « ø‰«‘.
+// FIXME : SendSlaveSkillMessageInContainer() º“»≠ºˆ¿« Ω∫≈≥ ∏ﬁºº¡ˆ.
 void CNetworkLibrary::SendSkillMessageInContainer(int nSkillIndex, CSelectedEntities &dcEntities, BOOL bFire)
 {
 	INDEX iMobCount	= dcEntities.Count();
@@ -7231,117 +7309,112 @@ void CNetworkLibrary::SendSkillMessageInContainer(int nSkillIndex, CSelectedEnti
 				it != dcEntities.vectorSelectedEntities.end(); ++it )
 			{
 				CEntity &en = *(*it);
-// EDIT : BS : BEGIN
-//				if( en.IsEnemy() || en.IsSlave() || en.IsPet() )
-//				{
-//					CPlacement3D pl		= en.GetLerpedPlacement();
-//					_pNetwork->AddMoveList( 
-//						en.GetNetworkID(),
-//						pl.pl_PositionVector(1), 
-//						pl.pl_PositionVector(3), 
-//						pl.pl_PositionVector(2),
-//						pl.pl_OrientationAngle(1) );
-//				}
 				_pNetwork->AddMoveList(en);
-// EDIT : BS : END
 			}
 			_pNetwork->SendMoveList();		
 		}
 
 		CSkill &SkillData = GetSkillData( nSkillIndex );//0807
 		CTString strSysMessage;
-		CNetworkMessage nmPlayerSkill(MSG_SKILL);
-		// char_index(n) skill_index(n) target_type(c) target_index(n) count(n) [target_type(c) target_index(n)] * count
-		if(bFire)
+		RequestClient::skillReady* Readypacket = NULL;
+		RequestClient::skillFire* Firepacket = NULL;
+
+		CNetworkMessage nmPlayerSkill;
+
+		UBYTE ubCharType = (UBYTE)MSG_CHAR_PC;		
+		int CharIndex;
+		// FIXME : ∆Í¿ª ≈∏∞Ì ¿÷¥¬ ∞ÊøÏ.
+		if( _pNetwork->MyCharacterInfo.bPetRide )
 		{
-			nmPlayerSkill << (UBYTE)MSG_SKILL_FIRE;	
-
-			strSysMessage.PrintF( _S( 297, "%s Ïä§ÌÇ¨ÏùÑ ÏÇ¨Ïö©Ìï©ÎãàÎã§." ), SkillData.GetName() );
-			ClientSystemMessage( strSysMessage );
-
-			UBYTE ubCharType = (UBYTE)MSG_CHAR_PC;		
-
-			// FIXME : Ìé´ÏùÑ ÌÉÄÍ≥† ÏûàÎäî Í≤ΩÏö∞.
-			if( _pNetwork->MyCharacterInfo.bPetRide )
-			{
-				ubCharType = (UBYTE)MSG_CHAR_PET;
-			}
-
-			BOOL bFirst = FALSE;
-			nmPlayerSkill << ubCharType;
-
-			// FIXME : Ìé´ÏùÑ ÌÉÄÍ≥† ÏûàÎäî Í≤ΩÏö∞.
-			if( _pNetwork->MyCharacterInfo.bPetRide )
-			{
-				nmPlayerSkill << (LONG)_pNetwork->_PetTargetInfo.lIndex;
-			}
-			else
-			{
-				nmPlayerSkill << MyCharacterInfo.index;
-			}
-			nmPlayerSkill << (ULONG)nSkillIndex;						
-			for( ENTITIES_ITERATOR it = dcEntities.vectorSelectedEntities.begin();
-				it != dcEntities.vectorSelectedEntities.end(); ++it )
-			{
-				CEntity &en			= *(*it);
-				INDEX iIndex		= -1;
-				INDEX nTargetType	= 1;
-
-				nTargetType			= en.GetNetworkType();
-				iIndex				= en.GetNetworkID();
-				
-				if(!bFirst)
-				{
-					bFirst = TRUE;					
-					nmPlayerSkill << (unsigned char)nTargetType;
-					nmPlayerSkill << (ULONG)iIndex;
-					nmPlayerSkill << (SBYTE)(iMobCount - 1);			// ÌÉÄÍ≤üÏùò Í∞ØÏàò.
-					continue;
-				}
-				nmPlayerSkill << (unsigned char)nTargetType;
-				nmPlayerSkill << (ULONG)iIndex;
-			}
+			ubCharType = (UBYTE)MSG_CHAR_PET;
+			CharIndex = MY_PET_INFO()->lIndex;
 		}
 		else
 		{
-			nmPlayerSkill << (UBYTE)MSG_SKILL_READY;
-			
-			strSysMessage.PrintF( _S( 298, "%s Ïä§ÌÇ¨ÏùÑ Ïä§Ìé†Ìï©ÎãàÎã§." ), SkillData.GetName() );
-			ClientSystemMessage( strSysMessage);
-			
-			UBYTE ubCharType = (UBYTE)MSG_CHAR_PC;		
-			// FIXME : Ìé´ÏùÑ ÌÉÄÍ≥† ÏûàÎäî Í≤ΩÏö∞.
-			if( _pNetwork->MyCharacterInfo.bPetRide )
-			{
-				ubCharType = (UBYTE)MSG_CHAR_PET;
-			}			
+			ubCharType = (UBYTE)MSG_CHAR_PC;
+			CharIndex = MyCharacterInfo.index;
+		}
 
-			nmPlayerSkill << ubCharType;
+		ENTITIES_ITERATOR it = dcEntities.vectorSelectedEntities.begin();
+		ENTITIES_ITERATOR it_End = dcEntities.vectorSelectedEntities.end();
+		INDEX iIndex		= -1;
+		INDEX nTargetType	= 1;
 
-			// FIXME : Ìé´ÏùÑ ÌÉÄÍ≥† ÏûàÎäî Í≤ΩÏö∞.
-			if( _pNetwork->MyCharacterInfo.bPetRide )
-			{
-				nmPlayerSkill << (LONG)_pNetwork->_PetTargetInfo.lIndex;
-			}
-			else
-			{
-				nmPlayerSkill << MyCharacterInfo.index;
-			}
-			nmPlayerSkill << (ULONG)nSkillIndex;
-			for( ENTITIES_ITERATOR it = dcEntities.vectorSelectedEntities.begin();
-				it != dcEntities.vectorSelectedEntities.end(); ++it )
+		if(bFire)
+		{
+#if defined (G_USA)
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
+#endif
+			Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmPlayerSkill.nm_pubMessage);
+			Firepacket->type = MSG_SKILL;
+			Firepacket->subType = MSG_SKILL_FIRE;
+
+			Firepacket->skillIndex = nSkillIndex;
+			Firepacket->charType = ubCharType;
+			Firepacket->charIndex = CharIndex;
+			Firepacket->cMoveChar = 0;
+
+			BOOL bFirst = FALSE;
+			int i, Size;
+			for( i = 0; it != it_End; ++it)
 			{
 				CEntity &en			= *(*it);
-				INDEX iIndex		= -1;
-				INDEX nTargetType	= 1;
 				nTargetType			= en.GetNetworkType();
 				iIndex				= en.GetNetworkID();
-				
-				nmPlayerSkill << (unsigned char)nTargetType; //Ïö∞ÏÑ†ÏùÄ ÌÉÄÍ≤ü=NPCÎßå.
-				nmPlayerSkill << (ULONG)iIndex;
-			}			
+
+				if(!bFirst)
+				{
+					bFirst = TRUE;					
+					Firepacket->targetType = nTargetType;
+					Firepacket->targetIndex = iIndex;
+					Firepacket->listCount = iMobCount - 1;// ≈∏∞Ÿ¿« ∞πºˆ.
+					continue;
+				}
+				Firepacket->list[i].mtargettype = nTargetType;
+				Firepacket->list[i].mtargetindex = iIndex;
+				++i;
+			}
+			Size = sizeof(RequestClient::skillFire::tag_list) * i;
+			nmPlayerSkill.setSize( sizeof(*Firepacket) + Size );
+			
+			strSysMessage.PrintF( _S( 297, "%s Ω∫≈≥¿ª ªÁøÎ«’¥œ¥Ÿ." ), SkillData.GetName() );
 		}
-		SendToServerNew(nmPlayerSkill);	
+		else
+		{
+			if (CheckSendSkill(nSkillIndex) == false)
+				return;
+
+#if defined (G_USA)
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
+#endif
+			Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmPlayerSkill.nm_pubMessage);
+			Readypacket->type = MSG_SKILL;
+			Readypacket->subType = MSG_SKILL_READY;
+
+			Readypacket->skillIndex = nSkillIndex;
+			Readypacket->cMoveChar = 0;
+			Readypacket->charType = ubCharType;
+			Readypacket->charIndex = CharIndex;
+
+			for( ; it != it_End; ++it )
+			{
+				CEntity &en			= *(*it);
+				nTargetType			= en.GetNetworkType();
+				iIndex				= en.GetNetworkID();
+
+				Readypacket->targetType = nTargetType;
+				Readypacket->targetIndex = iIndex;
+			}			
+					
+			nmPlayerSkill.setSize( sizeof(*Readypacket) );
+
+			CUIManager::getSingleton()->SetCSFlagOn(CSF_SKILLREADY);
+			strSysMessage.PrintF( _S( 298, "%s Ω∫≈≥¿ª Ω∫∆Á«’¥œ¥Ÿ." ), SkillData.GetName() );
+		}
+
+		ClientSystemMessage( strSysMessage);
+
+		SendToServerNew(nmPlayerSkill);
 	}
 }
 
@@ -7350,8 +7423,8 @@ void CNetworkLibrary::SendSkillMessageInContainer(int nSkillIndex, CSelectedEnti
 // Input  : nSkillIndex - 
 //			&dcEntities - 
 //-----------------------------------------------------------------------------
-// FIXME : ÏΩîÎìú Ï†ïÎ¶¨Í∞Ä ÌïÑÏöîÌï®.
-// FIXME : SendSlaveSkillMessageInContainer() ÏÜåÌôîÏàòÏùò Ïä§ÌÇ¨ Î©îÏÑ∏ÏßÄ.
+// FIXME : ƒ⁄µÂ ¡§∏Æ∞° « ø‰«‘.
+// FIXME : SendSlaveSkillMessageInContainer() º“»≠ºˆ¿« Ω∫≈≥ ∏ﬁºº¡ˆ.
 void CNetworkLibrary::SendSlaveSkillMessageInContainer(int nSkillIndex, CEntity *pSourceEntity, CSelectedEntities &dcEntities, BOOL bFire)
 {
 	if( pSourceEntity == NULL )
@@ -7368,87 +7441,97 @@ void CNetworkLibrary::SendSlaveSkillMessageInContainer(int nSkillIndex, CEntity 
 				it != dcEntities.vectorSelectedEntities.end(); ++it )
 			{
 				CEntity &en = *(*it);
-// EDIT : BS : BEGIN
-//				if( en.IsEnemy() || en.IsSlave() || en.IsPet() )
-//				{
-//					CPlacement3D pl		= en.GetLerpedPlacement();
-//					_pNetwork->AddMoveList( 
-//						en.GetNetworkID(),
-//						pl.pl_PositionVector(1), 
-//						pl.pl_PositionVector(3), 
-//						pl.pl_PositionVector(2),
-//						pl.pl_OrientationAngle(1) );
-//				}
 				_pNetwork->AddMoveList(en);
-// EDIT : BS : END
 			}
 			_pNetwork->SendMoveList();		
 		}
 
 		CSkill &SkillData = GetSkillData( nSkillIndex );//0807
 		CTString strSysMessage;
-		CNetworkMessage nmPlayerSkill(MSG_SKILL);
-		// char_index(n) skill_index(n) target_type(c) target_index(n) count(n) [target_type(c) target_index(n)] * count
+		RequestClient::skillReady* Readypacket = NULL;
+		RequestClient::skillFire* Firepacket = NULL;
+
+		CNetworkMessage nmPlayerSkill;
+				
+		ENTITIES_ITERATOR it = dcEntities.vectorSelectedEntities.begin();
+		ENTITIES_ITERATOR it_End = dcEntities.vectorSelectedEntities.end();
+		INDEX iIndex		= -1;
+		INDEX nTargetType	= 1;
+
 		if(bFire)
 		{
-			nmPlayerSkill << (UBYTE)MSG_SKILL_FIRE;	
+#if defined (G_USA)
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
+#endif
+			Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmPlayerSkill.nm_pubMessage);
+			Firepacket->type = MSG_SKILL;
+			Firepacket->subType = MSG_SKILL_FIRE;
 
-			strSysMessage.PrintF( _S( 297, "%s Ïä§ÌÇ¨ÏùÑ ÏÇ¨Ïö©Ìï©ÎãàÎã§." ), SkillData.GetName() );
-			ClientSystemMessage( strSysMessage );
+			Firepacket->skillIndex = nSkillIndex;
+			Firepacket->cMoveChar = 0;
+			Firepacket->charType = pSourceEntity->GetNetworkType();
+			Firepacket->charIndex = pSourceEntity->GetNetworkID();			
 
-			UBYTE ubCharType = (UBYTE)pSourceEntity->GetNetworkType();
 			BOOL bFirst = FALSE;
-			nmPlayerSkill << ubCharType;
-			nmPlayerSkill << pSourceEntity->GetNetworkID();
-			
-			nmPlayerSkill << (ULONG)nSkillIndex;						
-			for( ENTITIES_ITERATOR it = dcEntities.vectorSelectedEntities.begin();
-				it != dcEntities.vectorSelectedEntities.end(); ++it )
+			int i, Size;
+			for( i = 0; it != it_End; ++it)
 			{
 				CEntity &en			= *(*it);
-				INDEX iIndex		= -1;
-				INDEX nTargetType	= 1;
-
 				nTargetType			= en.GetNetworkType();
 				iIndex				= en.GetNetworkID();
-				
+
 				if(!bFirst)
 				{
 					bFirst = TRUE;					
-					nmPlayerSkill << (unsigned char)nTargetType;
-					nmPlayerSkill << (ULONG)iIndex;
-					nmPlayerSkill << (SBYTE)(iMobCount - 1);			// ÌÉÄÍ≤üÏùò Í∞ØÏàò.
+					Firepacket->targetType = nTargetType;
+					Firepacket->targetIndex = iIndex;
+					Firepacket->listCount = iMobCount - 1;// ≈∏∞Ÿ¿« ∞πºˆ.
 					continue;
 				}
-				nmPlayerSkill << (unsigned char)nTargetType;
-				nmPlayerSkill << (ULONG)iIndex;
+				Firepacket->list[i].mtargettype = nTargetType;
+				Firepacket->list[i].mtargetindex = iIndex;
+				++i;
 			}
+			Size = sizeof(RequestClient::skillFire::tag_list) * i;
+			nmPlayerSkill.setSize( sizeof(*Firepacket) + Size );
+
+			strSysMessage.PrintF( _S( 297, "%s Ω∫≈≥¿ª ªÁøÎ«’¥œ¥Ÿ." ), SkillData.GetName() );
 		}
 		else
 		{
-			nmPlayerSkill << (UBYTE)MSG_SKILL_READY;
-			
-			strSysMessage.PrintF( _S( 298, "%s Ïä§ÌÇ¨ÏùÑ Ïä§Ìé†Ìï©ÎãàÎã§." ), SkillData.GetName() );
-			ClientSystemMessage( strSysMessage);
-			
-			UBYTE ubCharType = (UBYTE)pSourceEntity->GetNetworkType();
-			nmPlayerSkill << ubCharType;
-			nmPlayerSkill << pSourceEntity->GetNetworkID();			
-			nmPlayerSkill << (ULONG)nSkillIndex;
-			for( ENTITIES_ITERATOR it = dcEntities.vectorSelectedEntities.begin();
-				it != dcEntities.vectorSelectedEntities.end(); ++it )
+			if (CheckSendSkill(nSkillIndex) == false)
+				return;
+
+#if defined (G_USA)
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
+#endif
+			Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmPlayerSkill.nm_pubMessage);
+			Readypacket->type = MSG_SKILL;
+			Readypacket->subType = MSG_SKILL_READY;
+
+			Readypacket->skillIndex = nSkillIndex;
+			Readypacket->cMoveChar = 0;
+			Readypacket->charType = pSourceEntity->GetNetworkType();
+			Readypacket->charIndex = pSourceEntity->GetNetworkID();
+
+			for( ; it != it_End; ++it )
 			{
 				CEntity &en			= *(*it);
-				INDEX iIndex		= -1;
-				INDEX nTargetType	= 1;
 				nTargetType			= en.GetNetworkType();
 				iIndex				= en.GetNetworkID();
-				
-				nmPlayerSkill << (unsigned char)nTargetType; //Ïö∞ÏÑ†ÏùÄ ÌÉÄÍ≤ü=NPCÎßå.
-				nmPlayerSkill << (ULONG)iIndex;
+
+				Readypacket->targetType = nTargetType;
+				Readypacket->targetIndex = iIndex;
 			}			
+
+			nmPlayerSkill.setSize( sizeof(*Readypacket) );
+
+			strSysMessage.PrintF( _S( 298, "%s Ω∫≈≥¿ª Ω∫∆Á«’¥œ¥Ÿ." ), SkillData.GetName() );
 		}
-		SendToServerNew(nmPlayerSkill);	
+
+		ClientSystemMessage( strSysMessage);
+
+		SendToServerNew(nmPlayerSkill);
 	}
 }
 
@@ -7458,27 +7541,29 @@ void CNetworkLibrary::SendSlaveSkillMessageInContainer(int nSkillIndex, CEntity 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendCancelSkillMessage()
 {
-	CNetworkMessage nmPlayerSkill(MSG_SKILL);
-
-	UBYTE ubCharType = (UBYTE)MSG_CHAR_PC;
-	// FIXME : Ìé´ÏùÑ ÌÉÄÍ≥† ÏûàÎäî Í≤ΩÏö∞.
+	UBYTE ubCharType;
+	int nIdex;
+	// FIXME : ∆Í¿ª ≈∏∞Ì ¿÷¥¬ ∞ÊøÏ.
 	if( _pNetwork->MyCharacterInfo.bPetRide )
 	{
+		nIdex = MY_PET_INFO()->lIndex;
 		ubCharType = (UBYTE)MSG_CHAR_PET;
-	}
-	
-	nmPlayerSkill << (UBYTE)MSG_SKILL_CANCEL;
-	nmPlayerSkill << ubCharType;
-	// FIXME : Ìé´ÏùÑ ÌÉÄÍ≥† ÏûàÎäî Í≤ΩÏö∞.
-	if( _pNetwork->MyCharacterInfo.bPetRide )
-	{
-		nmPlayerSkill << (LONG)_pNetwork->_PetTargetInfo.lIndex;
 	}
 	else
 	{
-		nmPlayerSkill << MyCharacterInfo.index;
+		nIdex = MyCharacterInfo.index;
+		ubCharType = (UBYTE)MSG_CHAR_PC;
 	}
-	SendToServerNew(nmPlayerSkill);	
+
+	CNetworkMessage nmPlayerSkill;
+	RequestClient::skillCancel* packet = reinterpret_cast<RequestClient::skillCancel*>(nmPlayerSkill.nm_pubMessage);
+	packet->type = MSG_SKILL;
+	packet->subType = MSG_SKILL_CANCEL;
+	packet->charType = ubCharType;
+	packet->charIndex = nIdex;
+
+	nmPlayerSkill.setSize( sizeof(*packet) );
+	SendToServerNew(nmPlayerSkill);
 }
 
 //-----------------------------------------------------------------------------
@@ -7497,25 +7582,29 @@ void CNetworkLibrary::SetMyPosition(CPlacement3D plPlacement, FLOAT camera_angle
 
 void CNetworkLibrary::ClientSystemMessage( CTString &strSysMessage, int nSysType )
 {
-	_pUIMgr->GetChatting()->AddSysMessage( strSysMessage, nSysType );
+	CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( strSysMessage, nSysType );
 }
 
 void CNetworkLibrary::SendRebirthMessage()
 {	
+	UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
 	if(_cmiComm. IsNetworkOn())
 	{
-		CNetworkMessage nmRebirth(MSG_PC_REBIRTH); 			
+		CNetworkMessage nmRebirth((UBYTE)MSG_PC_REBIRTH); 			
 		SendToServerNew(nmRebirth);	
 	}
 }
 
 //wooss 050805
-//ÌôïÏû•Îêú Î¶¨Î≤ÑÏä§ Î©îÏãúÏßÄ ÏïÑÏù¥ÌÖú ÏÇ¨Ïö©Ïó¨Î∂ÄÏôÄ Î∂ÄÌôú Ïû•ÏÜå 
+//»Æ¿Âµ» ∏ÆπˆΩ∫ ∏ﬁΩ√¡ˆ æ∆¿Ã≈€ ªÁøÎø©∫ŒøÕ ∫Œ»∞ ¿Âº“ 
 void CNetworkLibrary::SendRebirthMessageEx(int nIndex ,BOOL bUse ,BOOL bHere)
 {	
+	UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
 	if(_cmiComm. IsNetworkOn())
 	{
-		CNetworkMessage nmRebirth(MSG_PC_REBIRTH);
+		CNetworkMessage nmRebirth((UBYTE)MSG_PC_REBIRTH);
 		nmRebirth << (ULONG)nIndex;
 		nmRebirth << (UBYTE)bUse;
 		nmRebirth << (UBYTE)bHere;
@@ -7526,7 +7615,7 @@ void CNetworkLibrary::SendRebirthMessageEx(int nIndex ,BOOL bUse ,BOOL bHere)
 //wooss 050808
 void CNetworkLibrary::SendWarpItemMessage(UBYTE nmWarpType, CTString sCharName,BOOL bAllow)
 {
-	CNetworkMessage nmWarp(MSG_WARP);
+	CNetworkMessage nmWarp((UBYTE)MSG_WARP);
 
 	switch(nmWarpType)
 	{
@@ -7578,29 +7667,7 @@ void CNetworkLibrary::SendWarpItemMessage(UBYTE nmWarpType, CTString sCharName,B
 
 void CNetworkLibrary::DeleteAllMob()
 {
-	for( INDEX ipl = 0; ipl < ga_srvServer.srv_amtMob.Count(); ++ipl )
-	{
-		CMobTarget	&mt = ga_srvServer.srv_amtMob[ipl];
-		mt.Init();
-	}
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(5th Closed beta)(0.2)
-	const int iMaxMobNum = ga_srvServer.srv_iMaxMobNum;
-	ga_srvServer.srv_amtMob.Clear();
-    ga_srvServer.srv_amtMob.New(iMaxMobNum);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(5th Closed beta)(0.2)
-
-	for( ipl = 0; ipl < ga_srvServer.srv_actCha.Count(); ++ipl )
-	{
-		CCharacterTarget	&ct = ga_srvServer.srv_actCha[ipl];
-		ct.Init();
-	}	
-
-	for( ipl = 0; ipl < ga_srvServer.srv_aitItem.Count(); ++ipl )
-	{
-		CItemTarget	&it = ga_srvServer.srv_aitItem[ipl];
-		it.Init();
-	}
-	ga_srvServer.ReAllocEntities();		
+	ACTORMGR()->RemoveAll();
 }
 
 // ----------------------------------------------------------------------------
@@ -7610,18 +7677,24 @@ void CNetworkLibrary::DeleteAllMob()
 void CNetworkLibrary::SendActionMessage(SBYTE action_type, SBYTE action_id, SBYTE state, CEntityPointer epTarget )
 {
 	if(_cmiComm. IsNetworkOn())
-	{		
-		CNetworkMessage nmAction(MSG_ACTION); 			
-		nmAction << MyCharacterInfo.index;
-		nmAction << action_type;
-		nmAction << action_id;
-		//nmAction << state;
+	{
+		int targetIdx = 0;
+		CNetworkMessage nmAction;
+		RequestClient::action* packet = reinterpret_cast<RequestClient::action*>(nmAction.nm_pubMessage);
+		packet->type = MSG_ACTION;
+		packet->subType = 0;
+		packet->typevalue = action_type;
+		packet->index = action_id;
 
-		//Î¨ºÎøåÎ¶¨Í∏∞ Ïï°ÏÖòÏùº ÎïåÎäî ÌÉÄÍ≤ü Ïù∏Îç±Ïä§ Ï†ÑÎã¨
+		//π∞ª—∏Æ±‚ æ◊º«¿œ ∂ß¥¬ ≈∏∞Ÿ ¿Œµ¶Ω∫ ¿¸¥ﬁ
 		if( action_id ==42 && epTarget )
-			nmAction << (ULONG)epTarget->GetNetworkID();
+			targetIdx = epTarget->GetNetworkID();
 
-		SendToServerNew(nmAction);	
+		packet->targetIndex = targetIdx;
+
+		nmAction.setSize( sizeof(*packet) );
+
+		SendToServerNew(nmAction);		
 	}
 }
 
@@ -7631,7 +7704,7 @@ void CNetworkLibrary::SendActionMessage(SBYTE action_type, SBYTE action_id, SBYT
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendQuestMessage(UBYTE msgQuestType, INDEX data)
 {
-	CNetworkMessage nmQuest(MSG_QUEST);
+	CNetworkMessage nmQuest((UBYTE)MSG_QUEST);
 	nmQuest << (UBYTE)msgQuestType;
 	nmQuest << SLONG(data);
 
@@ -7640,11 +7713,11 @@ void CNetworkLibrary::SendQuestMessage(UBYTE msgQuestType, INDEX data)
 
 // ----------------------------------------------------------------------------
 // Name : SendQuestPrizeMessage()
-// Desc : ÌÄòÏä§Ìä∏ Î≥¥ÏÉÅ Î©îÏãúÏßÄ.
+// Desc : ƒ˘Ω∫∆Æ ∫∏ªÛ ∏ﬁΩ√¡ˆ.
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendQuestPrizeMessage(UBYTE msgType, INDEX iQuestIndex, INDEX iNpcIndex, INDEX iOptionItemIndex, INDEX iOptionItemPlust)
 {
-	CNetworkMessage nmQuest(MSG_QUEST);
+	CNetworkMessage nmQuest((UBYTE)MSG_QUEST);
 	nmQuest << (UBYTE)MSG_QUEST_PRIZE;
 	nmQuest << SLONG(iQuestIndex);
 	nmQuest << SLONG(iNpcIndex);
@@ -7656,7 +7729,7 @@ void CNetworkLibrary::SendQuestPrizeMessage(UBYTE msgType, INDEX iQuestIndex, IN
 
 void CNetworkLibrary::SendUseStatPoint( UBYTE ubStatType )
 {
-	CNetworkMessage nmStat(MSG_STATPOINT);
+	CNetworkMessage nmStat((UBYTE)MSG_STATPOINT);
 	nmStat << (UBYTE)MSG_STATPOINT_USE;
 	nmStat << ubStatType;
 
@@ -7664,55 +7737,69 @@ void CNetworkLibrary::SendUseStatPoint( UBYTE ubStatType )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÏùºÎ∞ò Ïä§ÌÇ¨ Î∞∞Ïö∞Í∏∞
+// Purpose: ¿œπ› Ω∫≈≥ πËøÏ±‚
 // Input  : 
 //-----------------------------------------------------------------------------
-void CNetworkLibrary::SendSkillLearn( SLONG slIndex )
+void CNetworkLibrary::SendSkillLearn( SLONG slIndex, int NpcVirIdx )
 {
-	CNetworkMessage nmSkillLearn(MSG_SKILL);
-	nmSkillLearn << (UBYTE)MSG_SKILL_LEARN;
-	nmSkillLearn << slIndex;
-
+	CNetworkMessage nmSkillLearn;
+	RequestClient::skillLearn* packet = reinterpret_cast<RequestClient::skillLearn*>(nmSkillLearn.nm_pubMessage);
+	packet->type = MSG_SKILL;
+	packet->subType = MSG_SKILL_LEARN;
+	packet->npcIndex = NpcVirIdx;
+	packet->skillIndex = slIndex;
+	
+	nmSkillLearn.setSize( sizeof(*packet) );
 	SendToServerNew(nmSkillLearn);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÌäπÏàò Ïä§ÌÇ¨ Î∞∞Ïö∞Í∏∞
+// Purpose: ∆Øºˆ Ω∫≈≥ πËøÏ±‚
 // Input  : 
 //-----------------------------------------------------------------------------
-void CNetworkLibrary::SendSSkillLearn( SLONG slIndex )
+void CNetworkLibrary::SendSSkillLearn( SLONG slIndex, int NpcVirIdx )
 {
-	CNetworkMessage nmSkillLearn(MSG_SSKILL);
-	nmSkillLearn << (UBYTE)MSG_SSKILL_LEARN;
-	nmSkillLearn << slIndex;
-
-	SendToServerNew(nmSkillLearn);
+	CNetworkMessage nmSSkillLearn;
+	RequestClient::sskill* packet = reinterpret_cast<RequestClient::sskill*>(nmSSkillLearn.nm_pubMessage);
+	packet->type = MSG_SSKILL;
+	packet->subType = MSG_SSKILL_LEARN;
+	packet->sskillIndex = slIndex;
+	packet->npcIndex = NpcVirIdx;
+	
+	nmSSkillLearn.setSize( sizeof(RequestClient::sskill) );
+	SendToServerNew(nmSSkillLearn);
 }
 
 void CNetworkLibrary::SendTeleportWrite( UBYTE sendMSG, UBYTE ubSlot, CTString &strComment )
 {
-	CNetworkMessage nmMemPos(sendMSG);
-	nmMemPos << (UBYTE)MSG_MEMPOS_WRITE;
-	nmMemPos << ubSlot;
-	nmMemPos << strComment;
+	CNetworkMessage nmMemPos;
+	RequestClient::memposWrite* packet = reinterpret_cast<RequestClient::memposWrite*>(nmMemPos.nm_pubMessage);
+	packet->type = sendMSG;
+	packet->subType = MSG_MEMPOS_WRITE;
+	packet->slot = ubSlot;
+	memcpy(packet->comment, strComment.str_String, MEMPOS_COMMENT_LENGTH + 1);
+	nmMemPos.setSize( sizeof(*packet) );
 
-	SendToServerNew(nmMemPos);
+	_pNetwork->SendToServerNew(nmMemPos);
 }
 
-// [KH_070316] ÌîÑÎ¶¨ÎØ∏ÏóÑ Î©îÎ™®Î¶¨ Í¥ÄÎ†® Î≥ÄÍ≤Ω ( UBYTE ubSlot ) -> ( UBYTE sendMSG, UBYTE ubSlot )
+// [KH_070316] «¡∏ÆπÃæˆ ∏ﬁ∏∏Æ ∞¸∑√ ∫Ø∞Ê ( UBYTE ubSlot ) -> ( UBYTE sendMSG, UBYTE ubSlot )
 void CNetworkLibrary::SendTeleportMove( UBYTE sendMSG, UBYTE ubSlot )
 {
-	CNetworkMessage nmMemPos(sendMSG);
-	nmMemPos << (UBYTE)MSG_MEMPOS_MOVE;
-	nmMemPos << ubSlot;
+	CNetworkMessage nmMemPos;
+	RequestClient::memposWrite* packet = reinterpret_cast<RequestClient::memposWrite*>(nmMemPos.nm_pubMessage);
+	packet->type = sendMSG;
+	packet->subType = MSG_MEMPOS_MOVE;
+	packet->slot = ubSlot;
+	nmMemPos.setSize( sizeof(*packet) );
 
-	SendToServerNew(nmMemPos);
+	_pNetwork->SendToServerNew(nmMemPos);
 }
 
 void CNetworkLibrary::SendWarpTeleport( int iTeleportIndex )
 {
 	LONG lTeleportIndex = iTeleportIndex;
-	CNetworkMessage nmWarp( MSG_WARP );
+	CNetworkMessage nmWarp( (UBYTE)MSG_WARP );
 	nmWarp << (UBYTE)MSG_WARP_TELEPORT;
 	nmWarp << lTeleportIndex;
 	SendToServerNew( nmWarp );
@@ -7720,19 +7807,19 @@ void CNetworkLibrary::SendWarpTeleport( int iTeleportIndex )
 
 void CNetworkLibrary::SendWarpCancel()
 {
-	CNetworkMessage nmWarp( MSG_WARP );
+	CNetworkMessage nmWarp( (UBYTE)MSG_WARP );
 	nmWarp << (UBYTE)MSG_WARP_CANCEL;
 
 	SendToServerNew( nmWarp );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: HPÏôÄ MPÏùò Ìå®ÎÑêÌã∞ ÌöåÎ≥µ
+// Purpose: HPøÕ MP¿« ∆–≥Œ∆º »∏∫π
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendRecoverHPMP( SBYTE sbHPCount, SBYTE sbMPCount )
 {
-	CNetworkMessage nmRecoverHP( MSG_PK );
+	CNetworkMessage nmRecoverHP( (UBYTE)MSG_PK );
 	nmRecoverHP << (UBYTE)MSG_PK_RECOVER_HPMP;
 	nmRecoverHP << sbHPCount;
 	nmRecoverHP << sbMPCount;
@@ -7740,27 +7827,30 @@ void CNetworkLibrary::SendRecoverHPMP( SBYTE sbHPCount, SBYTE sbMPCount )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÏïÑÏù¥ÌÖú Î¥âÏù∏ Ìï¥Ï†ú
+// Purpose: æ∆¿Ã≈€ ∫¿¿Œ «ÿ¡¶
 // Input  : 
 //-----------------------------------------------------------------------------
-void CNetworkLibrary::SendRecoverItemSeal( SBYTE sbTab, SBYTE sbRow, SBYTE sbCol, SLONG slIndex)
+void CNetworkLibrary::SendRecoverItemSeal( SWORD nTab, SWORD nIdx, SLONG slIndex)
 {
-	CNetworkMessage nmRecoverItemSeal( MSG_PK );
-	nmRecoverItemSeal << (UBYTE)MSG_PK_RECOVER_ITEMSEAL;
-	nmRecoverItemSeal << sbTab;
-	nmRecoverItemSeal << sbRow;
-	nmRecoverItemSeal << sbCol;
-	nmRecoverItemSeal << slIndex;
-	SendToServerNew( nmRecoverItemSeal );
+	CNetworkMessage nmMessage;
+	RequestClient::doPKRecoverItemSealed* packet = reinterpret_cast<RequestClient::doPKRecoverItemSealed*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_PK;
+	packet->subType = MSG_PK_RECOVER_ITEMSEAL;
+	packet->tab = nTab;
+	packet->invenIndex = nIdx;
+	packet->virtualIndex = slIndex;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ïù¥Î≤§Ìä∏ Î≥¥ÏÉÅÎ∞õÍ∏∞
+// Purpose: ¿Ã∫•∆Æ ∫∏ªÛπﬁ±‚
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendEventPrize()
 {
-	CNetworkMessage nmEventPrize( MSG_EVENT );
+	CNetworkMessage nmEventPrize( (UBYTE)MSG_EVENT );
 
 	nmEventPrize << (UBYTE)MSG_EVENT_LATTO;
 	nmEventPrize << (UBYTE)MSG_EVENT_LATTO_CHANGE_LUCKYBAG_REQ;
@@ -7774,7 +7864,7 @@ void CNetworkLibrary::SendEventPrize()
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendEventTreasureList()
 {
-	CNetworkMessage nmEvent( MSG_EVENT );
+	CNetworkMessage nmEvent( (UBYTE)MSG_EVENT );
 	nmEvent << (UBYTE)MSG_EVENT_TREASUREBOX;
 	nmEvent << (UBYTE)MSG_EVENT_TREASUREBOX_TRY_REQ;
 	nmEvent << _pNetwork->MyCharacterInfo.index;
@@ -7787,43 +7877,16 @@ void CNetworkLibrary::SendEventTreasureList()
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendEventOpenTreasure()
 {
-	CNetworkMessage nmEvent( MSG_EVENT );
+	CNetworkMessage nmEvent( (UBYTE)MSG_EVENT );
 	nmEvent << (UBYTE)MSG_EVENT_TREASUREBOX;
 	nmEvent << (UBYTE)MSG_EVENT_TREASUREBOX_OPEN_REQ;
 	nmEvent << _pNetwork->MyCharacterInfo.index;
 	_pNetwork->SendToServerNew( nmEvent );
 }
 
-//0826
-void CNetworkLibrary::PickItemAround()
-{
-	for( INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_aitItem.Count(); ++ipl )
-	{
-		CItemTarget	&it = _pNetwork->ga_srvServer.srv_aitItem[ipl];
-		if( it.item_pEntity )
-		{
-			// If y layer is different
-			if( abs( it.item_yLayer - MyCharacterInfo.yLayer ) > 1 )
-				continue;
-
-			FLOAT fDistance;
-			fDistance = sqrt((it.item_pEntity->en_plPlacement.pl_PositionVector(1)-MyCharacterInfo.x) 
-				*(it.item_pEntity->en_plPlacement.pl_PositionVector(1)-MyCharacterInfo.x) 
-				+(it.item_pEntity->en_plPlacement.pl_PositionVector(3)-MyCharacterInfo.z) 
-				* (it.item_pEntity->en_plPlacement.pl_PositionVector(3)-MyCharacterInfo.z) );
-			
-			if(fDistance <= 3.0f)
-			{
-				SendPickMessage( CEntity::GetPlayerEntity(0), it.item_Index, FALSE );
-				break;
-			}
-		}
-	}
-}
-
 void CNetworkLibrary::SendEventNewyear(int tv_event)
 {
-	CNetworkMessage nmEvent( MSG_EVENT );
+	CNetworkMessage nmEvent( (UBYTE)MSG_EVENT );
 
 	switch(tv_event)
 	{
@@ -7847,17 +7910,17 @@ void CNetworkLibrary::SendEventNewyear(int tv_event)
 	}
 }
 
-// [KH_070413] Ïä§ÏäπÏùòÎÇ† Ïù¥Î≤§Ìä∏ Í¥ÄÎ†® Ï∂îÍ∞Ä
+// [KH_070413] Ω∫Ω¬¿«≥Ø ¿Ã∫•∆Æ ∞¸∑√ √ﬂ∞°
 void CNetworkLibrary::SendEventMaster()
 {
-	CNetworkMessage nmEvent( MSG_EVENT );
+	CNetworkMessage nmEvent( (UBYTE)MSG_EVENT );
 	nmEvent << (UBYTE)MSG_EVENT_TEACH_2007;
 	_pNetwork->SendToServerNew( nmEvent );
 }
 
 void CNetworkLibrary::SendFindFriend(int tv_event,void * strInput)
 {
-	CNetworkMessage nmEvent( MSG_EVENT );
+	CNetworkMessage nmEvent( (UBYTE)MSG_EVENT );
 	nmEvent << (UBYTE)tv_event;
 	switch(tv_event)
 	{
@@ -7885,233 +7948,124 @@ void CNetworkLibrary::SendFindFriend(int tv_event,void * strInput)
 }
 
 void CNetworkLibrary::DelMobTarget(ULONG ClientIndex)
-{	
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(5th Closed beta)(0.2)
-	for(INDEX ipl=0; ipl<ga_srvServer.srv_amtMob.Count(); ++ipl) 
+{
+	// º≠πˆ ¿Œµ¶Ω∫∏¶ ∞Æ∞Ì ¿÷¥Ÿ∏È, ±◊∞Õ¿∏∑Œ ¡ˆøÏ¿⁄!!
+	ObjectBase* pObject = ACTORMGR()->GetObjectByCIndex(eOBJ_MOB, ClientIndex);
+
+	if (pObject != NULL)
 	{
-		CMobTarget &mt = ga_srvServer.srv_amtMob[ipl];
-		if (mt.mob_iClientIndex == ClientIndex) 
-		{	
-			//ÌÉÄÍ≤ü Ïù¥ÌéôÌä∏ ÏóÜÏï∞...
-			_pUIMgr->StopTargetEffect( mt.mob_Index );
-
-			mt.Init();
-			ga_srvServer.srv_amtMob.SwapAndPop(ipl);
-
-			break;
-		}
-	}	
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(5th Closed beta)(0.2)
+		//≈∏∞Ÿ ¿Ã∆Â∆Æ æ¯æ⁄...
+		CUIManager::getSingleton()->StopTargetEffect( pObject->GetSIndex() );
+		ACTORMGR()->RemoveObject(eOBJ_MOB, pObject->GetSIndex());
+	}
 }
 
 void CNetworkLibrary::DelChaTarget(ULONG ClientIndex)
 {
-	for(INDEX ipl=0; ipl<ga_srvServer.srv_actCha.Count(); ++ipl) 
+	ObjectBase* pObject = ACTORMGR()->GetObjectByCIndex(eOBJ_CHARACTER, ClientIndex);
+
+	if (pObject != NULL)
 	{
-		CCharacterTarget &ct = ga_srvServer.srv_actCha[ipl];
-		if (ct.cha_iClientIndex == ClientIndex) 
-		{	
-			//ÌÉÄÍ≤ü Ïù¥ÌéôÌä∏ ÏóÜÏï∞...
-			_pUIMgr->StopTargetEffect( ct.cha_Index );
+		//≈∏∞Ÿ ¿Ã∆Â∆Æ æ¯æ⁄...
+		CUIManager::getSingleton()->StopTargetEffect( pObject->GetSIndex() );
+		ACTORMGR()->RemoveObject(eOBJ_CHARACTER, pObject->GetSIndex());
+	}
+}
 
-			ct.Init();
-			ga_srvServer.srv_actCha.SwapAndPop(ipl);
+void CNetworkLibrary::DelWildPetTarget(ULONG ulSIndex)
+{
+	ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_WILDPET, ulSIndex);
 
-			break;
+	if (pObject != NULL)
+	{
+		CWildPetTarget* pTarget = static_cast< CWildPetTarget* >(pObject);
+
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		//≈∏∞Ÿ ¿Ã∆Â∆Æ æ¯æ⁄...
+		pUIManager->StopTargetEffect(pTarget->GetSIndex());
+
+		if (pTarget->m_nOwnerIndex == _pNetwork->MyCharacterInfo.index)
+		{
+			pUIManager->GetWildPetTargetInfo()->closeUI();
+			INFO()->SetMyApet(NULL);
+			pUIManager->GetWildPetInfoUI()->AIClear();
+			pUIManager->GetQuickSlot()->RemoveWildPetSkill();
 		}
-	}	
+
+		ACTORMGR()->RemoveObject(eOBJ_WILDPET, pObject->GetSIndex());
+	}
 }
 
 void CNetworkLibrary::ResetMobStatus(ULONG ClientIndex)
 {
-	for(INDEX ipl=0; ipl<ga_srvServer.srv_amtMob.Count(); ++ipl) 
+	ObjectBase* pObject = ACTORMGR()->GetObjectByCIndex(eOBJ_MOB, ClientIndex);
+	
+	if (pObject != NULL)
 	{
-		CMobTarget &mt = ga_srvServer.srv_amtMob[ipl];
-		if (mt.mob_iClientIndex == ClientIndex) 
-		{
-			mt.ResetStatus();
-			break;
-		}
-	}	
+		CMobTarget* pTarget = static_cast< CMobTarget* >(pObject);
+		pTarget->ResetStatus();
+	}
 }
 
 void CNetworkLibrary::ResetChaStatus(ULONG ClientIndex)
 {
-	for(INDEX ipl=0; ipl<ga_srvServer.srv_actCha.Count(); ++ipl) 
-	{
-		CCharacterTarget &ct = ga_srvServer.srv_actCha[ipl];
-		if (ct.cha_iClientIndex == ClientIndex) 
-		{
-			ct.ResetStatus();
-			break;
-		}
-	}	
-}
+	ObjectBase* pObject = ACTORMGR()->GetObjectByCIndex(eOBJ_CHARACTER, ClientIndex);
 
-void CNetworkLibrary::SendSkillCancelMessage()
-{
-	if(_cmiComm. IsNetworkOn())
-	{		
-		CNetworkMessage nmSkill(MSG_SKILL); 	
-		
-		nmSkill << (UBYTE)MSG_SKILL_CANCEL;			
-		nmSkill << _pNetwork->MyCharacterInfo.index;					
-		_pNetwork->SendToServerNew(nmSkill);	
+	if (pObject != NULL)
+	{
+		CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+		pTarget->ResetStatus();
 	}
 }
 
-// Ranking Í¥ÄÎ†®
+// Ranking ∞¸∑√
 //-----------------------------------------------------------------------------
-// Purpose: Îû≠ÌÇπ Î¶¨Ïä§Ìä∏Î•º ÏöîÏ≤≠Ìï®.
+// Purpose: ∑©≈∑ ∏ÆΩ∫∆Æ∏¶ ø‰√ª«‘.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::Ranking_RequestList( SBYTE sbJob )
 {
 	SBYTE sbReqJob	= sbJob;
-	CNetworkMessage nmQuest(MSG_QUEST);
+	CNetworkMessage nmQuest((UBYTE)MSG_QUEST);
 	nmQuest << (UBYTE)MSG_QUEST_PD4_RANK_VIEW_REQ;
 	nmQuest << sbReqJob;
 	_pNetwork->SendToServerNew(nmQuest);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Î≥¥ÏÉÅ Î¶¨Ïä§Ìä∏Î•º ÏöîÏ≤≠Ìï®.
+// Purpose: ∫∏ªÛ ∏ÆΩ∫∆Æ∏¶ ø‰√ª«‘.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::Ranking_RequestPrizeList()
 {
-	CNetworkMessage nmQuest(MSG_QUEST);
+	CNetworkMessage nmQuest((UBYTE)MSG_QUEST);
 	nmQuest << (UBYTE)MSG_QUEST_PD4_RANK_REWARD_RANK_REQ;	
 	_pNetwork->SendToServerNew(nmQuest);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Î≥¥ÏÉÅÏùÑ ÏöîÏ≤≠Ìï®.
+// Purpose: ∫∏ªÛ¿ª ø‰√ª«‘.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::Ranking_Prize()
 {
-	CNetworkMessage nmQuest(MSG_QUEST);
+	CNetworkMessage nmQuest((UBYTE)MSG_QUEST);
 	nmQuest << (UBYTE)MSG_QUEST_PD4_REWARD;	
 	_pNetwork->SendToServerNew(nmQuest);	
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÏßÅÏóÖÍ≥º Ìï¥Îãπ Î¨¥Í∏∞Ïùò ÏïÑÏù¥ÌÖú Ï†ïÎ≥¥Î•º Í∞ñÍ≥†ÏÑú, Î¨¥Í∏∞Í∞Ä 2Î≤àÏß∏ ÌÉÄÏûÖ(Ï†ÑÏßÅ)Ïù∏ÏßÄÎ•º Ï≤¥ÌÅ¨
+// Purpose: ¡˜æ˜∞˙ «ÿ¥Á π´±‚¿« æ∆¿Ã≈€ ¡§∫∏∏¶ ∞Æ∞Ìº≠, π´±‚∞° 2π¯¬∞ ≈∏¿‘(¿¸¡˜)¿Œ¡ˆ∏¶ √º≈©
 //-----------------------------------------------------------------------------
 BOOL CNetworkLibrary::IsExtensionState( int iJob, CItemData& ID )
 {
 	if( ID.GetType() == CItemData::ITEM_WEAPON )
 	{
-		if( ID.GetSubType() == JobInfo().GetSkillWeponType( iJob, 1 ) )
+		if( ID.GetSubType() == CJobInfo::getSingleton()->GetSkillWeponType( iJob, 1 ) )
 			return TRUE;		
 	}
 	return FALSE;
-}
-
-
-
-//------------------------------------------------------------------------------
-// CNetworkLibrary::BillInfoSectionListReq
-// Explain:  
-// Date : 2005-05-12,Author: Lee Ki-hwan
-//------------------------------------------------------------------------------
-void CNetworkLibrary::BillInfoSectionListReq()
-{
-	CNetworkMessage nmBilling( MSG_BILLINFO );
-	nmBilling << (UBYTE)MSG_BILLINFO_SECTION_LIST_REQ;
-	
-	SendToServerNew(nmBilling);
-}
-
-//------------------------------------------------------------------------------
-// CNetworkLibrary::BillInfoUserInfoReq
-// Explain:  
-// Date : 2005-05-12,Author: Lee Ki-hwan
-//------------------------------------------------------------------------------
-void CNetworkLibrary::BillInfoUserInfoReq()		
-{
-	CNetworkMessage nmBilling( MSG_BILLINFO );
-	nmBilling << (UBYTE)MSG_BILLINFO_USERINFO_REQ;
-	
-	SendToServerNew(nmBilling);
-
-}
-
-
-//------------------------------------------------------------------------------
-// CNetworkLibrary::BillInfoPayReserveReq
-// Explain:  
-// Date : 2005-05-12,Author: Lee Ki-hwan
-//------------------------------------------------------------------------------
-void CNetworkLibrary::BillInfoPayReserveReq()
-{
-	CNetworkMessage nmBilling( MSG_BILLINFO );
-	nmBilling << (UBYTE)MSG_BILLINFO_PAY_RESERVE_REQ;
-	
-	SendToServerNew(nmBilling);
-
-}
-
-
-//------------------------------------------------------------------------------
-// CNetworkLibrary::BillInfoPayOtherReq
-// Explain:  
-// Date : 2005-05-12,Author: Lee Ki-hwan
-//------------------------------------------------------------------------------
-void CNetworkLibrary::BillInfoPayOtherReq( CTString strGuid )
-{
-	CNetworkMessage nmBilling( MSG_BILLINFO );
-	nmBilling << (UBYTE)MSG_BILLINFO_PAY_OTHER_REQ;
-	nmBilling << strGuid;
-	
-	SendToServerNew(nmBilling);
-
-}
-
-//------------------------------------------------------------------------------
-// CNetworkLibrary::BillItemListReq
-// Explain: Ïú†Î£åÌôî ÏßÄÍ∏â ÏïÑÏù¥ÌÖú Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠
-// Date : 2005-08-10,Author: Lee Ki-hwan
-//------------------------------------------------------------------------------
-void CNetworkLibrary::BillItemListReq()
-{
-	CNetworkMessage nmNetMsg( MSG_BILLINFO );
-	nmNetMsg << (UBYTE)MSG_BILLINFO_ITEM_LIST_REQ;
-	
-	SendToServerNew(nmNetMsg);
-}
-
-//------------------------------------------------------------------------------
-// CNetworkLibrary::BillItemReceiveReq
-// Explain:  Ïú†Î£åÌôî ÏßÄÍ∏â ÏïÑÏù¥ÌÖú ÏöîÏ≤≠( To Inventory )
-// Date : 2005-08-10,Author: Lee Ki-hwan
-//------------------------------------------------------------------------------
-void CNetworkLibrary::BillItemReceiveReq()
-{
-	LONG	itemCount;
-	
-	std::vector<CUIButtonEx> tv_itemInfo;
-	std::vector<int> tv_sel;
-	CNetworkMessage nmNetMsg( MSG_BILLINFO );
-
-	tv_itemInfo=_pUIMgr->GetBillItem()->GetBtnItemInfo();
-	tv_sel=_pUIMgr->GetBillItem()->GetSelectItemInfo();
-	
-	nmNetMsg << (UBYTE)MSG_BILLINFO_ITEM_REQ;
-	itemCount = tv_sel.size();
-	nmNetMsg << itemCount;
-	for(;itemCount>0;itemCount--)
-	{
-		nmNetMsg << (LONG)tv_itemInfo[tv_sel[itemCount-1]].GetItemUniIndex();
-		nmNetMsg << (LONG)tv_itemInfo[tv_sel[itemCount-1]].GetItemIndex();
-		nmNetMsg << (LONG)tv_itemInfo[tv_sel[itemCount-1]].GetItemPlus();
-		nmNetMsg << (LONG)tv_itemInfo[tv_sel[itemCount-1]].GetItemFlag();
-		nmNetMsg << (LONG)tv_itemInfo[tv_sel[itemCount-1]].GetItemCount();
-	}
-
-
-	SendToServerNew(nmNetMsg);
 }
 
 // Messenger...
@@ -8122,13 +8076,19 @@ void CNetworkLibrary::BillItemReceiveReq()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrRegistReq( int nCharIndex, CTString strCharName )
 {
-	CNetworkMessage nmFriend( MSG_FRIEND );
-	nmFriend << (UBYTE)MSG_FRIEND_REGIST_REQUEST;
-	nmFriend << (ULONG)nCharIndex;
-	nmFriend << strCharName;
+	CNetworkMessage nmMessage;
+	RequestClient::doFriendRegReq* packet = reinterpret_cast<RequestClient::doFriendRegReq*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_FRIEND;
+	packet->subType = MSG_FRIEND_REGIST_REQUEST;
+	packet->requesterindex = nCharIndex;
+#if		(_MSC_VER > 1200)
+	sprintf_s(packet->name, MAX_CHAR_NAME_LENGTH, "%s", strCharName.str_String);
+#else
+	sprintf(packet->name, "%s", strCharName.str_String);
+#endif
+	nmMessage.setSize(sizeof(*packet));
 
-	SendToServerNew(nmFriend);
-
+	SendToServerNew(nmMessage);
 }
 
 
@@ -8138,15 +8098,15 @@ void CNetworkLibrary::MgrRegistReq( int nCharIndex, CTString strCharName )
 // Date : 2005-05-19,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrRegistAllow( int nCharIndex, CTString strReqCharName )
-{
-	CNetworkMessage nmFriend( MSG_FRIEND );
-	nmFriend << (UBYTE)MSG_FRIEND_REGIST_ALLOW;
-	nmFriend << (ULONG)nCharIndex;
-	nmFriend << strReqCharName;
+{	
+	CNetworkMessage nmMessage;
+	RequestClient::doFriendRegAllow* packet = reinterpret_cast<RequestClient::doFriendRegAllow*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_FRIEND;
+	packet->subType = MSG_FRIEND_REGIST_ALLOW;
+	packet->charIndex = nCharIndex;
+	nmMessage.setSize(sizeof(*packet));
 
-	
-	SendToServerNew(nmFriend);
-
+	SendToServerNew(nmMessage);
 }
 
 
@@ -8157,50 +8117,59 @@ void CNetworkLibrary::MgrRegistAllow( int nCharIndex, CTString strReqCharName )
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrSetCondition( int nCharIndex, int nCondition )
 {
-	CNetworkMessage nmFriend( MSG_FRIEND );
-	nmFriend << (UBYTE)MSG_FRIEND_SET_CONDITION;
-	nmFriend << (ULONG)nCharIndex;
-	nmFriend << (ULONG)nCondition;
+	CNetworkMessage nmMessage;
+	RequestClient::doFriendSetCondition* packet = reinterpret_cast<RequestClient::doFriendSetCondition*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_FRIEND;
+	packet->subType = MSG_FRIEND_SET_CONDITION;
+	packet->charIndex = nCharIndex;
+	packet->condition = nCondition;
+	nmMessage.setSize(sizeof(*packet));
 
-	SendToServerNew(nmFriend);
+	SendToServerNew(nmMessage);
 }
 
 
 void CNetworkLibrary::MgrDeleteMember( int nCharIndex, int nTargetIndex, CTString strName )
 {
-	CNetworkMessage nmFriend( MSG_FRIEND );
-	nmFriend << (UBYTE)MSG_FRIEND_DELETE_MEMBER;
-	nmFriend << (ULONG)nCharIndex;
-	nmFriend << (ULONG)nTargetIndex;
-	nmFriend << strName;
+	CNetworkMessage nmMessage;
+	RequestClient::doFriendDeleteMember* packet = reinterpret_cast<RequestClient::doFriendDeleteMember*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_FRIEND;
+	packet->subType = MSG_FRIEND_DELETE_MEMBER;
+	packet->requestIndex = nCharIndex;
+	packet->targetIndex = nTargetIndex;
+	strcpy(packet->name, strName);
+	nmMessage.setSize(sizeof(*packet));
 
-	SendToServerNew(nmFriend);
-}
-
-
-void CNetworkLibrary::MgrRegistCancel()
-{
-	CNetworkMessage nmFriend( MSG_FRIEND );
-	nmFriend << (UBYTE)MSG_FRIEND_REGIST_CANCEL;
-	
-	SendToServerNew(nmFriend);
-
+	SendToServerNew(nmMessage);
 }
 
 void CNetworkLibrary::MgrRegistCancel(int nCharIndex, CTString strReqName)
 {
-	CNetworkMessage nmFriend( MSG_FRIEND );
-	nmFriend << (UBYTE)MSG_FRIEND_REGIST_CANCEL;
-	nmFriend << (LONG)nCharIndex;
-	nmFriend << strReqName;
-	
-	SendToServerNew(nmFriend);
+	CNetworkMessage nmMessage;
+	RequestClient::doFriendRegCancel* packet = reinterpret_cast<RequestClient::doFriendRegCancel*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_FRIEND;
+	packet->subType = MSG_FRIEND_REGIST_CANCEL;
+	packet->charIndex = nCharIndex;
+	nmMessage.setSize(sizeof(*packet));
 
+	SendToServerNew(nmMessage);
+}
+
+void CNetworkLibrary::MgrFriendDeleteBlock( int nCharIndex )
+{
+	CNetworkMessage nmMessage;
+	RequestClient::doFriendDeleteBlock* packet = reinterpret_cast<RequestClient::doFriendDeleteBlock*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_FRIEND;
+	packet->subType = MSG_FRIEND_DELETE_BLOCK;
+	packet->charIndex = nCharIndex;
+	nmMessage.setSize(sizeof(*packet));
+
+	SendToServerNew(nmMessage);
 }
 
 void CNetworkLibrary::SendFriendCatting( int nCharIndex, CTString strName, CTString strTargetName, CTString strMessage )
 {
-	CNetworkMessage nmFriend( MSG_CHAT );
+	CNetworkMessage nmFriend( (UBYTE)MSG_CHAT );
 	nmFriend << (UBYTE)MSG_CHAT_MESSENGER;
 
 	nmFriend << (ULONG)nCharIndex;
@@ -8216,13 +8185,14 @@ void CNetworkLibrary::SendFriendCatting( int nCharIndex, CTString strName, CTStr
 // Explain:  
 // Date : 2005-07-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
-void CNetworkLibrary::SetTimeReq( int nDay, int nHour )
+void CNetworkLibrary::SetTimeReq(int nDay, int nHour, int nZone /* = -1  */)
 {
-	CNetworkMessage nmGuildWar( MSG_GUILD );
+	CNetworkMessage nmGuildWar( (UBYTE)MSG_GUILD );
 	nmGuildWar << (UBYTE)MSG_GUILD_WAR_SET_TIME_REQ;
 
 	nmGuildWar << (ULONG)nDay;
 	nmGuildWar << (ULONG)nHour;
+	nmGuildWar << (ULONG)nZone;
 		
 	SendToServerNew(nmGuildWar);
 }
@@ -8234,7 +8204,7 @@ void CNetworkLibrary::SetTimeReq( int nDay, int nHour )
 //------------------------------------------------------------------------------
 void CNetworkLibrary::GetTimeReq()
 {
-	CNetworkMessage nmGuildWar( MSG_GUILD );
+	CNetworkMessage nmGuildWar( (UBYTE)MSG_GUILD );
 	nmGuildWar << (UBYTE)MSG_GUILD_WAR_GET_TIME;
 
 	SendToServerNew(nmGuildWar);
@@ -8247,7 +8217,7 @@ void CNetworkLibrary::GetTimeReq()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::AttackReq()
 {
-	CNetworkMessage nmGuildWar( MSG_GUILD );
+	CNetworkMessage nmGuildWar( (UBYTE)MSG_GUILD );
 	nmGuildWar << (UBYTE)MSG_GUILD_WAR_JOIN_ATTACK_GUILD;
 
 	SendToServerNew(nmGuildWar);
@@ -8260,7 +8230,7 @@ void CNetworkLibrary::AttackReq()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::DefenseGuildReq()
 {
-	CNetworkMessage nmGuildWar( MSG_GUILD );
+	CNetworkMessage nmGuildWar( (UBYTE)MSG_GUILD );
 	nmGuildWar << (UBYTE)MSG_GUILD_WAR_JOIN_DEFENSE_GUILD;
 
 	SendToServerNew(nmGuildWar);
@@ -8273,7 +8243,7 @@ void CNetworkLibrary::DefenseGuildReq()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::AttackCharReq()
 {
-	CNetworkMessage nmGuildWar( MSG_GUILD );
+	CNetworkMessage nmGuildWar( (UBYTE)MSG_GUILD );
 	nmGuildWar << (UBYTE)MSG_GUILD_WAR_JOIN_ATTACK_CHAR;
 
 	SendToServerNew(nmGuildWar);
@@ -8286,51 +8256,54 @@ void CNetworkLibrary::AttackCharReq()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::AttackGuildReq()
 {
-	CNetworkMessage nmGuildWar( MSG_GUILD );
+	CNetworkMessage nmGuildWar( (UBYTE)MSG_GUILD );
 	nmGuildWar << (UBYTE)MSG_GUILD_WAR_JOIN_DEFENSE_CHAR;
 
 	SendToServerNew(nmGuildWar);
 }
 
-void CNetworkLibrary::WarItemMixReq( SBYTE* sbRow, SBYTE* sbCol )
+void CNetworkLibrary::WarItemMixReq( SWORD* arrTab, SWORD* arrIdx )
 {
-	CNetworkMessage nmWarItemMix( MSG_ITEM );
-	nmWarItemMix << (UBYTE)MSG_ITEM_MIX_WARITEM;
+	CNetworkMessage nmMessage;
+	RequestClient::doItemMixWar* packet = reinterpret_cast<RequestClient::doItemMixWar*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_MIX_WARITEM;
+	packet->tab_1 = arrTab[0];
+	packet->invenIndex_1 = arrIdx[0];
+	packet->tab_2 = arrTab[1];
+	packet->invenIndex_2 = arrIdx[1];
+	packet->tab_3 = arrTab[2];
+	packet->invenIndex_3 = arrIdx[2];
+	nmMessage.setSize( sizeof(*packet) );
 
-	for( int i = 0; i < GW_MIX_ITEM_SLOT_COUNT; i++ )
-	{
-		nmWarItemMix << (SBYTE)sbRow[i];
-		nmWarItemMix << (SBYTE)sbCol[i];
-	}
-	
-	SendToServerNew(nmWarItemMix);
+	SendToServerNew( nmMessage );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ïï†ÏôÑ ÎèôÎ¨ºÏùÑ Ìò∏Ï∂úÌï®.
+// Purpose: æ÷øœ µøπ∞¿ª »£√‚«‘.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::CallPet( LONG lIndex )
 {
-	CNetworkMessage nmPet( MSG_EXTEND );	
+	CNetworkMessage nmPet( (UBYTE)MSG_EXTEND );	
 	nmPet << (LONG)MSG_EX_PET_CALL;
 	nmPet << lIndex;
 	SendToServerNew(nmPet);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ìé´ ÌÉÄÏûÖ Ï†ïÎ≥¥Î•º ÏñªÏäµÎãàÎã§.
-// Input  : ÏÑúÎ≤ÑÏóêÏÑú Ïò§Îäî Í≤ÉÍ≥º ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ÏóêÏÑú Ïì∞Ïù¥ÎçòÍ≤å Îã¨ÎùºÏÑú... ÌïÑÏöîÌïú Î∂ÄÎ∂Ñ...
+// Purpose: ∆Í ≈∏¿‘ ¡§∫∏∏¶ æÚΩ¿¥œ¥Ÿ.
+// Input  : º≠πˆø°º≠ ø¿¥¬ ∞Õ∞˙ ≈¨∂Û¿Ãæ∆Æø°º≠ æ≤¿Ã¥¯∞‘ ¥ﬁ∂Ûº≠... « ø‰«— ∫Œ∫–...
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::CheckPetType( SBYTE sbPetTypeGrade, INDEX &iPetType, INDEX &iPetAge )
 {	
-	// MASKÎ•º ÌïòÎìú ÏΩîÎî©Ìï®...
+	// MASK∏¶ «œµÂ ƒ⁄µ˘«‘...
 	iPetType	= ((sbPetTypeGrade & 0xF0) >> 4) - 1;
 	iPetAge		= (sbPetTypeGrade & 0x0F) - 1;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ï∫êÎ¶≠ÌÑ∞Í∞Ä Ìé´ÏùÑ ÌÉÄÎèÑÎ°ù Ï≤òÎ¶¨Ìï©ÎãàÎã§.
+// Purpose: ƒ≥∏Ø≈Õ∞° ∆Í¿ª ≈∏µµ∑œ √≥∏Æ«’¥œ¥Ÿ.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::RidePet( CEntity *pCharacter, CEntity *pPet, INDEX iPetType )
@@ -8344,33 +8317,53 @@ void CNetworkLibrary::RidePet( CEntity *pCharacter, CEntity *pPet, INDEX iPetTyp
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ï∫êÎ¶≠ÌÑ∞Í∞Ä Ìé´ÏóêÏÑú ÎÇ¥Î¶¨ÎèÑÎ°ù Ï≤òÎ¶¨Ìï©ÎãàÎã§.
+// Purpose: ƒ≥∏Ø≈Õ∞° ∆Íø°º≠ ≥ª∏Æµµ∑œ √≥∏Æ«’¥œ¥Ÿ.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::LeavePet( CEntity *pCharacter )
 {
 	if( !pCharacter )
 		return;
-	
-	if( pCharacter->IsPlayer() )
-	{
-		// ÌîåÎ†àÏù¥Ïñ¥Ïùò Í≤ΩÏö∞.
-		if( _pNetwork->MyCharacterInfo.bPetRide )
-		{
-			_pUIMgr->GetQuickSlot()->RemovePetSkill();
-		}
-	}
 
 	((CPlayerEntity*)CEntity::GetPlayerEntity(0))->LeavingPet( pCharacter );	
 }
 
+// author : rumist [12/20/2010 rumist]
 //-----------------------------------------------------------------------------
-// Purpose: Ìé´ Ï†ïÎ≥¥Î•º Í∞±Ïã†Ìï©ÎãàÎã§.
+// Purpose: ƒ≥∏Ø≈Õ∞° ∆Í¿ª ≈∏µµ∑œ √≥∏Æ«’¥œ¥Ÿ.
+// Input  : 
+//-----------------------------------------------------------------------------
+void	CNetworkLibrary::RideWildPet(CEntity *pCharacter, CEntity* pWildPet, CTString strFileName )
+{
+	if( (NULL == pCharacter) || (NULL == pWildPet) )
+		return;
+
+	LeaveWildPet( pCharacter );
+
+	(static_cast<CPlayerEntity*>(CEntity::GetPlayerEntity(0)))->RidingWildPet( pCharacter, pWildPet, strFileName );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: ƒ≥∏Ø≈Õ∞° ∆Íø°º≠ ≥ª∏Æµµ∑œ √≥∏Æ«’¥œ¥Ÿ.
+// Input  : 
+//-----------------------------------------------------------------------------
+void	CNetworkLibrary::LeaveWildPet(CEntity *pCharacter )
+{
+	if( !pCharacter )
+		return;
+	
+	(static_cast<CPlayerEntity*>(CEntity::GetPlayerEntity(0)))->LeavingWildPet( pCharacter );	
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: ∆Í ¡§∫∏∏¶ ∞ªΩ≈«’¥œ¥Ÿ.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::UpdatePetTargetInfo( INDEX iPetIndex )
 {
-	if( !_pNetwork->_PetTargetInfo.bIsActive || _pNetwork->_PetTargetInfo.lIndex != iPetIndex )
+	CPetTargetInfom* pPetInfo = INFO()->GetMyPetInfo();
+
+	if( !pPetInfo->bIsActive || pPetInfo->lIndex != iPetIndex )
 		return;
 
 	CNetworkLibrary::sPetInfo	TempPet;
@@ -8379,34 +8372,36 @@ void CNetworkLibrary::UpdatePetTargetInfo( INDEX iPetIndex )
 		std::find_if(_pNetwork->m_vectorPetList.begin(), _pNetwork->m_vectorPetList.end(), CNetworkLibrary::FindPet(TempPet) );
 	if( iter != _pNetwork->m_vectorPetList.end() )
 	{		
-		_pNetwork->_PetTargetInfo.iLevel		= (*iter).lLevel;
-		_pNetwork->_PetTargetInfo.fHealth		= (*iter).lHP;
-		_pNetwork->_PetTargetInfo.fMaxHealth	= (*iter).lMaxHP;
-		_pNetwork->_PetTargetInfo.fMaxHungry	= (*iter).lMaxHungry;
-		_pNetwork->_PetTargetInfo.fHungry		= (*iter).lHungry;
-		_pNetwork->_PetTargetInfo.lAbility		= (*iter).lAbility;
-		_pNetwork->_PetTargetInfo.strNameCard	= (*iter).strNameCard;
+		pPetInfo->iLevel		= (*iter).lLevel;
+		pPetInfo->fHealth		= (*iter).lHP;
+		pPetInfo->fMaxHealth	= (*iter).lMaxHP;
+		pPetInfo->fMaxHungry	= (*iter).lMaxHungry;
+		pPetInfo->fHungry		= (*iter).lHungry;
+		pPetInfo->lAbility		= (*iter).lAbility;
+		pPetInfo->strNameCard	= (*iter).strNameCard;
 
 		INDEX iPetType	= -1;
 		INDEX iPetAge	= -1;
 		_pNetwork->CheckPetType( (*iter).sbPetTypeGrade, iPetType, iPetAge );
-		_pNetwork->_PetTargetInfo.iAge			= iPetAge;
-		_pNetwork->_PetTargetInfo.iType			= iPetType;
+		pPetInfo->iAge			= iPetAge;
+		pPetInfo->iType			= iPetType;
 
 		const BOOL bPetRide = PetInfo().IsRide(iPetType, iPetAge);
 		if( bPetRide )
 		{
-			// ÎßàÏö¥Ìä∏ ÏÉÅÌÉúÏóêÏÑú Ïï†ÏôÑÎèôÎ¨ºÏùò Î∞∞Í≥†ÌîîÏù¥ 0Ïù¥ÎùºÎ©¥ ÏõÄÏßÅÏù¥ÏßÄ Î™ªÌï®.
+			// ∏∂øÓ∆Æ ªÛ≈¬ø°º≠ æ÷øœµøπ∞¿« πË∞Ì«ƒ¿Ã 0¿Ã∂Û∏È øÚ¡˜¿Ã¡ˆ ∏¯«‘.
 			if( (*iter).lHungry <= 0 )
-				_pUIMgr->SetCSFlagOn( CSF_MOUNT_HUNGRY );
+				CUIManager::getSingleton()->SetCSFlagOn( CSF_MOUNT_HUNGRY );
 			else			
-				_pUIMgr->SetCSFlagOff( CSF_MOUNT_HUNGRY );
+				CUIManager::getSingleton()->SetCSFlagOff( CSF_MOUNT_HUNGRY );
 		}
+
+		UIMGR()->GetPetTargetUI()->updateUI();
 	}
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ìé´ Ï†ïÎ≥¥Î•º ÌÅ¥Î¶¨Ïñ¥Ìï©ÎãàÎã§.
+// Purpose: ∆Í ¡§∫∏∏¶ ≈¨∏ÆæÓ«’¥œ¥Ÿ.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::ClearPetList()
@@ -8417,17 +8412,6 @@ void CNetworkLibrary::ClearPetList()
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : 
-//-----------------------------------------------------------------------------
-void CNetworkLibrary::ChangePetMount()
-{
-	CNetworkMessage nmPet( MSG_EXTEND );	
-	nmPet << (LONG)MSG_EX_PET_CHANGE_MOUNT;	
-	SendToServerNew(nmPet);
-}
-
 //------------------------------------------------------------------------------
 // CNetworkLibrary::LearnPetSkill
 // Explain:  
@@ -8435,7 +8419,7 @@ void CNetworkLibrary::ChangePetMount()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::LearnPetSkill( LONG nSkillIndex )
 {
-	CNetworkMessage nmPet( MSG_EXTEND );	
+	CNetworkMessage nmPet( (UBYTE)MSG_EXTEND );	
 	nmPet << (LONG)MSG_EX_PET_LEARN;
 	nmPet << (LONG)nSkillIndex;
 
@@ -8444,7 +8428,7 @@ void CNetworkLibrary::LearnPetSkill( LONG nSkillIndex )
 
 void CNetworkLibrary::LearnWildPetSkill( LONG nSkillIndex )
 {
-	CNetworkMessage nmWildPet( MSG_EXTEND );
+	CNetworkMessage nmWildPet( (UBYTE)MSG_EXTEND );
 	
 	nmWildPet << (LONG)MSG_EX_ATTACK_PET;
 	nmWildPet << (UBYTE)MSG_SUB_SKILLLEAN;
@@ -8459,9 +8443,10 @@ void CNetworkLibrary::LearnWildPetSkill( LONG nSkillIndex )
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendPetChangeRide()
 {
-	CNetworkMessage	nmPet( MSG_EXTEND );
+	CNetworkMessage	nmPet( (UBYTE)MSG_EXTEND );
 	nmPet << (LONG)MSG_EX_PET_CHANGE_MOUNT;
-		
+	
+	CUIManager::getSingleton()->SetCSFlagOn(CSF_PETRIDING);
 	SendToServerNew( nmPet );
 }
 
@@ -8471,7 +8456,7 @@ void CNetworkLibrary::SendPetChangeRide()
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendPetSkillInit()
 {
-	CNetworkMessage	nmPet( MSG_EXTEND );
+	CNetworkMessage	nmPet( (UBYTE)MSG_EXTEND );
 	nmPet << (LONG)MSG_EX_PET_RESET_SKILL;
 		
 	SendToServerNew( nmPet );
@@ -8483,7 +8468,7 @@ void CNetworkLibrary::SendPetSkillInit()
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendPetDestruction()
 {
-	CNetworkMessage nmPet( MSG_EXTEND );
+	CNetworkMessage nmPet( (UBYTE)MSG_EXTEND );
 	nmPet << (LONG)MSG_EX_PET_CHANGE_ITEM;
 
 	SendToServerNew( nmPet );
@@ -8495,10 +8480,10 @@ void CNetworkLibrary::SendPetDestruction()
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendPetItemMix( SLONG slPetItemIndex, SLONG slmethod )
 {
-	CNetworkMessage nmPet( MSG_EXTEND );
-	nmPet << (LONG)MSG_EX_PET_MIX_ITEM;   // Ï°∞Ìï© Î©îÏÑ∏ÏßÄ
-	nmPet << slPetItemIndex;   // Ï†úÏûë Ïú†ÎãàÌÅ¨ ÏïÑÏù¥ÌÖú Ïù∏Îç±Ïä§
-	nmPet << slmethod;		// Ï†úÏûë Ïú†Ìòï 0, 1
+	CNetworkMessage nmPet( (UBYTE)MSG_EXTEND );
+	nmPet << (LONG)MSG_EX_PET_MIX_ITEM;   // ¡∂«’ ∏ﬁºº¡ˆ
+	nmPet << slPetItemIndex;   // ¡¶¿€ ¿Ø¥œ≈© æ∆¿Ã≈€ ¿Œµ¶Ω∫
+	nmPet << slmethod;		// ¡¶¿€ ¿Ø«¸ 0, 1
 
 	SendToServerNew( nmPet );
 }
@@ -8509,28 +8494,31 @@ void CNetworkLibrary::SendPetItemMix( SLONG slPetItemIndex, SLONG slmethod )
 // ----------------------------------------------------------------------------
 void CNetworkLibrary::SendPetRebirth( SLONG slPetIndex )
 {
-	CNetworkMessage nmPet( MSG_EXTEND );
-	nmPet << (LONG)MSG_EX_PET_REBIRTH;   // Ï°∞Ìï© Î©îÏÑ∏ÏßÄ
-	nmPet << slPetIndex;   // Ï†úÏûë Ïú†ÎãàÌÅ¨ ÏïÑÏù¥ÌÖú Ïù∏Îç±Ïä§
+	CNetworkMessage nmPet( (UBYTE)MSG_EXTEND );
+	nmPet << (LONG)MSG_EX_PET_REBIRTH;   // ¡∂«’ ∏ﬁºº¡ˆ
+	nmPet << slPetIndex;   // ¡¶¿€ ¿Ø¥œ≈© æ∆¿Ã≈€ ¿Œµ¶Ω∫
 
 	SendToServerNew( nmPet );
 }
 
-void CNetworkLibrary::SendWildPetRebirth( int nRow, int nCol)
+void CNetworkLibrary::SendWildPetRebirth( int nTab, int nIdx, int nNpcIdx )
 {
-	CNetworkMessage nmPet( MSG_EXTEND );
-	nmPet << (ULONG)MSG_EX_ATTACK_PET;
-	nmPet << (UBYTE)MSG_SUB_REBIRTH;
-	nmPet << (INDEX)nRow;
-	nmPet << (INDEX)nCol;
+	CNetworkMessage nmMessage;
+	RequestClient::doExApetRebirth* packet = reinterpret_cast<RequestClient::doExApetRebirth*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_EXTEND;
+	packet->subType = htonl(MSG_EX_ATTACK_PET);
+	packet->thirdType = MSG_SUB_REBIRTH;
+	packet->tab = nTab;
+	packet->invenIndex = nIdx;
+	packet->npcIndex = nNpcIdx;
+	nmMessage.setSize( sizeof(*packet) );
 
-	SendToServerNew( nmPet );
-
+	SendToServerNew( nmMessage );
 }
 
 void CNetworkLibrary::SendPetitemInfo(SLONG slOwnerIndex,int nitemIndex)
 {
-	CNetworkMessage nmpet(MSG_EXTEND);
+	CNetworkMessage nmpet((UBYTE)MSG_EXTEND);
 
 	nmpet << (ULONG)MSG_EX_ATTACK_PET;
 	nmpet << (UBYTE)MSG_SUB_APET_INFO;
@@ -8548,36 +8536,43 @@ void CNetworkLibrary::SendPetitemInfo(SLONG slOwnerIndex,int nitemIndex)
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyRecallConfirm(CTString tmp_str,LONG tmp_idx,BOOL tmp_answer)
 {
-	// Î¶¨ÏΩú ÌôïÏù∏ Î©îÏãúÏßÄ YES/NO
-	CNetworkMessage nmItem(MSG_EXTEND); 	
+	// ∏Æƒ› »Æ¿Œ ∏ﬁΩ√¡ˆ YES/NO
+	CNetworkMessage nmItem((UBYTE)MSG_EXTEND); 	
 	nmItem << (LONG)MSG_EX_PARTY_RECALL;
 	nmItem << (LONG)MSG_EX_PARTY_RECALL_CONFIRM;
 	nmItem << tmp_idx;
 	nmItem << tmp_str;
 	nmItem << (UBYTE)tmp_answer;
 	_pNetwork->SendToServerNew(nmItem);
+
+	if (tmp_answer) // ∏Æƒ› Ω¬≥´¿œ∂ß∏∏
+	{
+		CUIManager::getSingleton()->SetCSFlagOn( CSF_TELEPORT );
+	}
 }
 
 
 void CNetworkLibrary::SendMovingGuildWarArea()
 {
-	CNetworkMessage nmWarp( MSG_WARP );
+	UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
+	CNetworkMessage nmWarp( (UBYTE)MSG_WARP );
 	nmWarp << (UBYTE)MSG_WARP_PROMPT;
 	
 	nmWarp << MyCharacterInfo.lWarpZone;
 	nmWarp << MyCharacterInfo.lWarpPos;
 
 	SendToServerNew(nmWarp);
-
+	
 	// WSS_DRATAN_SIEGEWARFARE 071011
-	if(!_pUIMgr->GetSiegeWarfareNew()->GetWarState())
+	if(!CUIManager::getSingleton()->GetSiegeWarfareNew()->GetWarState())
 		_pUISWDoc->SetDealy();
 }
 
 
 bool CNetworkLibrary::IsLord() 
 {
-	// ÎÇ¥ Í∏∏ÎìúÍ∞Ä ÏÑ±Ï£º Í∏∏ÎìúÏù¥Í≥† ÎÇ¥Í∞Ä Í∑∏ Í∏∏ÎìúÏùò Í∏∏ÎìúÏû•Ïù¥Î©¥ ÏÑ±Ï£º
+	// ≥ª ±ÊµÂ∞° º∫¡÷ ±ÊµÂ¿Ã∞Ì ≥ª∞° ±◊ ±ÊµÂ¿« ±ÊµÂ¿Â¿Ã∏È º∫¡÷
 	if( ( MyCharacterInfo.sbJoinFlagMerac == WCJF_OWNER || MyCharacterInfo.sbJoinFlagDratan == WCJF_OWNER) 
 		&& ( MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS ) )
 		return true;
@@ -8591,7 +8586,7 @@ bool CNetworkLibrary::IsLord()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendGuildStashHistroyReq()
 {
-	CNetworkMessage nmMessage( MSG_GUILD );
+	CNetworkMessage nmMessage( (UBYTE)MSG_GUILD );
 	nmMessage << (UBYTE)MSG_GUILD_STASH_HISTORY_REQ;
 	
 	SendToServerNew(nmMessage);
@@ -8604,7 +8599,7 @@ void CNetworkLibrary::SendGuildStashHistroyReq()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendGuildStashViewReq()
 {
-	CNetworkMessage nmMessage( MSG_GUILD );
+	CNetworkMessage nmMessage( (UBYTE)MSG_GUILD );
 	nmMessage << (UBYTE)MSG_GUILD_STASH_VIEW_REQ;
 	
 	SendToServerNew(nmMessage);
@@ -8618,7 +8613,7 @@ void CNetworkLibrary::SendGuildStashViewReq()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendGuildStashTakeReq( LONGLONG llMoney )
 {
-	CNetworkMessage nmMessage( MSG_GUILD );
+	CNetworkMessage nmMessage( (UBYTE)MSG_GUILD );
 	nmMessage << (UBYTE)MSG_GUILD_STASH_TAKE_REQ;
 	
 	nmMessage << llMoney;
@@ -8633,7 +8628,7 @@ void CNetworkLibrary::SendGuildStashTakeReq( LONGLONG llMoney )
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendChuseokUpgrade()
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 	nmMessage << (UBYTE)MSG_EVENT_CHUSEOK_UPGRADE;
 	
 	SendToServerNew(nmMessage);
@@ -8646,19 +8641,19 @@ void CNetworkLibrary::SendChuseokUpgrade()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendChuseokExchange()
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 	nmMessage << (UBYTE)MSG_EVENT_CHUSEOK_EXCHANGE;
 	
 	SendToServerNew(nmMessage);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
-// 2006 Ï∂îÏÑù Ïù¥Î≤§Ìä∏ :Su-won			|--------------------------------------------->
+// 2006 √ﬂºÆ ¿Ã∫•∆Æ :Su-won			|--------------------------------------------->
 	
-//ÏÜ°Ìé∏ ÎßåÎì§Í∏∞
+//º€∆Ì ∏∏µÈ±‚
 void CNetworkLibrary::Send2006ChuseokRicecakeMake()
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_CHUSEOK_2006;
 	nmMessage << (ULONG)MSG_EVENT_CHUSEOK_2006_MAKE_RICECAKE;
@@ -8666,10 +8661,10 @@ void CNetworkLibrary::Send2006ChuseokRicecakeMake()
 	SendToServerNew( nmMessage );
 }
 
-//Ïò§ÏÉâ ÏÜ°Ìé∏ ÎßåÎì§Í∏∞
+//ø¿ªˆ º€∆Ì ∏∏µÈ±‚
 void CNetworkLibrary::Send2006ChuseokRainbowMake()
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_CHUSEOK_2006;
 	nmMessage << (ULONG)MSG_EVENT_CHUSEOK_2006_MAKE_RAINBOW_CAKE;
@@ -8677,23 +8672,23 @@ void CNetworkLibrary::Send2006ChuseokRainbowMake()
 	SendToServerNew( nmMessage );
 }
 
-//Ïò§ÏÉâÏÜ°Ìé∏ Î≥¥ÏÉÅÌíàÏúºÎ°ú ÍµêÌôòÌïòÍ∏∞
+//ø¿ªˆº€∆Ì ∫∏ªÛ«∞¿∏∑Œ ±≥»Ø«œ±‚
 void CNetworkLibrary::Send2006ChuseokExchange()
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_CHUSEOK_2006;
 	nmMessage << (ULONG)MSG_EVENT_CHUSEOK_2006_GIFT;
 
 	SendToServerNew( nmMessage );
 }	
-// 2006 Ï∂îÏÑù Ïù¥Î≤§Ìä∏ :Su-won			<---------------------------------------------|
+// 2006 √ﬂºÆ ¿Ã∫•∆Æ :Su-won			<---------------------------------------------|
 ///////////////////////////////////////////////////////////////////////////////////
 
 // 2006 X-Mase event [12/12/2006 Theodoric]
 void CNetworkLibrary::Send2006XMasEvent( SLONG nCakeCount) 
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_XMAS_2006;
 	nmMessage << nCakeCount;
@@ -8708,8 +8703,18 @@ void CNetworkLibrary::Send2006XMasEvent( SLONG nCakeCount)
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendCouponItemReq(CTString strNum)
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
-	nmMessage << (UBYTE)MSG_EVENT_PACKAGE_ITEM_GIVE;
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
+	
+	extern INDEX g_iCountry;
+	if( g_iCountry == TURKEY )
+	{
+		nmMessage << (UBYTE)MSG_EVENT_EUR2_PROMOTION;
+	}
+	else
+	{
+		nmMessage << (UBYTE)MSG_EVENT_PACKAGE_ITEM_GIVE;
+	}
+	
 	nmMessage << strNum;
 	
 	SendToServerNew(nmMessage);
@@ -8723,7 +8728,7 @@ void CNetworkLibrary::SendCouponItemReq(CTString strNum)
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendConnectItemReq()
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 	nmMessage << (UBYTE)MSG_EVENT_OPENBETA_CONN;
 		
 	SendToServerNew(nmMessage);
@@ -8735,7 +8740,7 @@ void CNetworkLibrary::SendConnectItemReq()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendClothesExchange( int nValue )
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 	nmMessage << (UBYTE)MSG_EVENT_SAKURABUD;
 	nmMessage << (UBYTE)nValue;
 
@@ -8744,7 +8749,7 @@ void CNetworkLibrary::SendClothesExchange( int nValue )
 
 void CNetworkLibrary::SendRainyDayExchange()
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 	nmMessage << (UBYTE)MSG_EVENT_RAIN_2006;
 	SendToServerNew( nmMessage );
 }
@@ -8752,7 +8757,7 @@ void CNetworkLibrary::SendRainyDayExchange()
 
 void CNetworkLibrary::Send2p4pLetter( LONG lGameIndex )
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 	nmMessage << (UBYTE)MSG_EVENT_2PAN4PAN_LETTER;
 	nmMessage << (LONG)lGameIndex;
 	
@@ -8760,12 +8765,12 @@ void CNetworkLibrary::Send2p4pLetter( LONG lGameIndex )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÌÉÄÏö¥ÏúºÎ°ú Í∑ÄÌôòÌï©ÎãàÎã§.
+// Purpose: ≈∏øÓ¿∏∑Œ ±Õ»Ø«’¥œ¥Ÿ.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendPetWarpTown()
 {
-	CNetworkMessage nmPet( MSG_EXTEND );	
+	CNetworkMessage nmPet( (UBYTE)MSG_EXTEND );	
 	nmPet << (LONG)MSG_EX_PET_WARPTOWN;	
 	SendToServerNew(nmPet);
 }
@@ -8778,7 +8783,7 @@ void CNetworkLibrary::SendPetWarpTown()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MandateBossReq( CTString strMandateCharName )
 {
-	CNetworkMessage	nmMessage( MSG_PARTY );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_PARTY );
 	nmMessage << (SBYTE)MSG_PARTY_CHANGEBOSS;
 	nmMessage << (CTString) strMandateCharName;
 		
@@ -8786,13 +8791,13 @@ void CNetworkLibrary::MandateBossReq( CTString strMandateCharName )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Î°úÍ∑∏Ïù∏ Î©îÏÑ∏ÏßÄÎ•º ÏÑúÎ≤ÑÎ°ú Î≥¥ÎÉÖÎãàÎã§.
+// Purpose: ∑Œ±◊¿Œ ∏ﬁºº¡ˆ∏¶ º≠πˆ∑Œ ∫∏≥¿¥œ¥Ÿ.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendLoginMessage(CTString& strID, CTString& strPW, ULONG ulVersion)
 {
-	// EDIT : BS : 070413 : Ïã†Í∑ú Ìå®ÌÇ∑ ÏïîÌò∏Ìôî
-	// EDIT : BS : Ìå®ÌÇ∑ ÏïîÌò∏Ìôî : ÏïîÌò∏Ìôî ÌÇ§ Ï¥àÍ∏∞Ìôî
+	// EDIT : BS : 070413 : Ω≈±‘ ∆–≈∂ æœ»£»≠
+	// EDIT : BS : ∆–≈∂ æœ»£»≠ : æœ»£»≠ ≈∞ √ ±‚»≠
 #ifdef CRYPT_NET_MSG
 	CNM_InitKeyValue(&cnmKey);
 #ifndef CRYPT_NET_MSG_MANUAL
@@ -8802,13 +8807,39 @@ void CNetworkLibrary::SendLoginMessage(CTString& strID, CTString& strPW, ULONG u
 	cnmKey = CNM_INIT_KEY;
 #endif // #ifdef CRYPT_NET_MSG
 
-	// Î°úÍ∑∏Ïù∏ ÏÑúÎ≤ÑÏóê Ï†ëÏÜç ÌõÑ, ÏÉàÎ°úÏö¥ ÏÑúÎ≤ÑÏóê Ï†ëÏÜçÏùÑ ÏãúÎèÑÌï©ÎãàÎã§.
-	CNetworkMessage nmLoginNew(MSG_LOGIN);			// Î°úÍ∑∏Ïù∏ Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.			
-	nmLoginNew << ulVersion;	    
-	nmLoginNew << (unsigned char)MSG_LOGIN_NEW;		// ÏÑúÎ≤Ñ Ïù¥Îèô
-	
-	nmLoginNew << strID;
-	nmLoginNew << strPW;
+#ifdef	VER_TEST
+	int nOther = 0, nVtm = ulVersion, nLocal;
+	{
+		// ¥Ÿ∏• º≠πˆø° ¡¢º”«œ±‚
+		std::string strFullPath = _fnmApplicationPath.FileDir();
+		strFullPath += "sl.txt";
+
+		nOther	= GetPrivateProfileInt( "OTHER_SERVER", "OTHER", 0, strFullPath.c_str() );
+		if (nOther > 0)
+		{
+			nVtm	= GetPrivateProfileInt( "OTHER_SERVER", "VTM", ulVersion, strFullPath.c_str() );
+			nLocal	= GetPrivateProfileInt( "OTHER_SERVER", "LOCAL", 0, strFullPath.c_str() );
+		}
+		
+	}
+#endif	// VER_TEST
+
+	CNetworkMessage nmMessage;
+	RequestClient::LoginFromClient* packet = reinterpret_cast<RequestClient::LoginFromClient*>(nmMessage.nm_pubMessage);
+
+	// ∑Œ±◊¿Œ º≠πˆø° ¡¢º” »ƒ, ªı∑ŒøÓ º≠πˆø° ¡¢º”¿ª Ω√µµ«’¥œ¥Ÿ.
+	packet->type = MSG_LOGIN;
+	packet->subType = MSG_LOGIN_NEW;
+	packet->mode = 0;
+	packet->version = VERSION_FOR_CLIENT;
+
+#if	(_MSC_VER > 1200)
+	strncpy_s(packet->id, MAX_ID_NAME_LENGTH, strID.str_String, strID.Length());
+	strncpy_s(packet->pw, MAX_PWD_LENGTH, strPW.str_String, strPW.Length());
+#else
+	strncpy(packet->id, strID.str_String, strID.Length());
+	strncpy(packet->pw, strPW.str_String, strPW.Length());
+#endif
 
 	// new Version serialization 060710
 	// national code 
@@ -8816,72 +8847,49 @@ void CNetworkLibrary::SendLoginMessage(CTString& strID, CTString& strPW, ULONG u
 	INDEX tv_idx;
 	switch(g_iCountry)
 	{
-	case KOREA :
-		tv_idx = 0;
-		break;
-	case TAIWAN : 
-		tv_idx = 1;
-		break;
-	case CHINA : 
-		tv_idx = 3;
-		break;
-	case THAILAND :
-		tv_idx = 4;
-		break;
-	case TAIWAN2 :
-		tv_idx = 2;
-		break;
-	case JAPAN : 
-		tv_idx = 6;
-		break;
-	case MALAYSIA :
-		tv_idx = 7;
-		break;
-	case USA:
-		tv_idx = 9;
-		break;
-	case BRAZIL:
-		tv_idx = 10;
-		break;
-	case HONGKONG: 
-		tv_idx = 11;
-		break;
-	case GERMANY: 
-		tv_idx = 13;
-		break;
-	case SPAIN://FRANCE_SPAIN_CLOSEBETA_NA_20081124
-		tv_idx = 14;
-		break;
-	case FRANCE:
-		tv_idx = 15;
-		break;
-	case POLAND:
-		tv_idx = 16;
-		break;
-	case RUSSIA:
-		tv_idx = 17;
-		break;
-	case TURKEY:
-		tv_idx = 18;
+	case KOREA :		tv_idx = 0;		break;	
+	
+	case BRAZIL:		tv_idx = 10;	break;
+	case MEXICO:		tv_idx = 20;	break;
+	
+	case GERMANY:		tv_idx = 13;	break;
+	case SPAIN:			tv_idx = 14;	break;
+	case FRANCE:		tv_idx = 15;	break;
+	case POLAND:		tv_idx = 16;	break;	
+	case ITALY:			tv_idx = 19;	break;
+	case USA:			tv_idx = 9;		break;
+
+	case RUSSIA:		tv_idx = 17;	break;
+	
+	case THAILAND :		tv_idx = 4;		break;
+	default:			
+		tv_idx = g_iCountry;	// ENGLAND
 		break;
 	}
-
-	nmLoginNew << (UBYTE)tv_idx;
+#ifdef	VER_TEST
+	if (nOther > 0)
+		packet->nation = (UBYTE)nLocal;
+	else 
+		packet->nation = (UBYTE)tv_idx;
+#else	// VER_TEST
+	packet->nation = (UBYTE)tv_idx;
+#endif	// VER_TEST
 	
-	// EDIT : BS : 070413 : Ïã†Í∑ú Ìå®ÌÇ∑ ÏïîÌò∏Ìôî
-	// EDIT : BS : 070413 : Ïã†Í∑ú Ìå®ÌÇ∑ ÏïîÌò∏Ìôî
+	// EDIT : BS : 070413 : Ω≈±‘ ∆–≈∂ æœ»£»≠
+	// EDIT : BS : 070413 : Ω≈±‘ ∆–≈∂ æœ»£»≠
 #ifdef CRYPT_NET_MSG
 #ifndef CRYPT_NET_MSG_MANUAL
 	ULONG ulSeed = (ULONG)CNM_MakeSeedForClient(strID, strPW, GetTickCount());
-	nmLoginNew << ulSeed;
 #endif // #ifndef CRYPT_NET_MSG_MANUAL
 #endif // #ifdef CRYPT_NET_MSG
 
-	SendToServerNew(nmLoginNew, TRUE);
-	m_uiSendedTime		= timeGetTime();
+	nmMessage.setSize(sizeof(*packet));
+
+	SendToServerNew(nmMessage, TRUE);
+	m_uiSendedTime		= (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();
 	m_bSendMessage		= TRUE;
 
-	// EDIT : BS : 070413 : Ïã†Í∑ú Ìå®ÌÇ∑ ÏïîÌò∏Ìôî
+	// EDIT : BS : 070413 : Ω≈±‘ ∆–≈∂ æœ»£»≠
 #ifdef CRYPT_NET_MSG
 #ifndef CRYPT_NET_MSG_MANUAL
 	CNM_MakeKeyFromSeed(&_pNetwork->cnmKey, (unsigned int)ulSeed);
@@ -8892,8 +8900,8 @@ void CNetworkLibrary::SendLoginMessage(CTString& strID, CTString& strPW, ULONG u
 void CNetworkLibrary::SendSecurityMessage(CTString& strSecurity)
 {
 
-	// Î°úÍ∑∏Ïù∏ ÏÑúÎ≤ÑÏóê Ï†ëÏÜç ÌõÑ, Î≥¥Ïïà Ïπ¥Îìú Ï≤¥ÌÅ¨ ÏãúÎèÑÌï©ÎãàÎã§.
-	CNetworkMessage nmSecurityCardNew(MSG_EXTEND);			// Î≥¥ÏïàÏπ¥Îìú Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.			
+	// ∑Œ±◊¿Œ º≠πˆø° ¡¢º” »ƒ, ∫∏æ» ƒ´µÂ √º≈© Ω√µµ«’¥œ¥Ÿ.
+	CNetworkMessage nmSecurityCardNew((UBYTE)MSG_EXTEND);			// ∫∏æ»ƒ´µÂ ∏ﬁΩ√¡ˆ ∫∏≥ª±‚.			
 	nmSecurityCardNew << (LONG)MSG_EX_SECURE_CARD;
 	for(int i=0; i<4; i++)
 	{
@@ -8905,42 +8913,40 @@ void CNetworkLibrary::SendSecurityMessage(CTString& strSecurity)
 			
 }
 //-----------------------------------------------------------------------------
-// Purpose: ÏäàÌçºÍ≥†Ï†ú.
+// Purpose: Ω¥∆€∞Ì¡¶.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendSuperStoneReq()
 {
-	CNetworkMessage msg(MSG_EVENT);
+	CNetworkMessage msg((UBYTE)MSG_EVENT);
 	msg << (SBYTE)MSG_EVENT_SUPERSTONE;
 	msg << (SBYTE)MSG_EVENT_SUPERSTONE_REQ;
 	SendToServerNew(msg);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ï∫êÎ¶≠ÌÑ∞ ÏÇ≠Ï†ú.
+// Purpose: ƒ≥∏Ø≈Õ ªË¡¶.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendDeleteCharacter(ULONG ulIndex,BYTE del)
 {	
-	CNetworkMessage nmChaDel(MSG_MENU); //Ï∫êÎ¶≠
+	CNetworkMessage nmChaDel((UBYTE)MSG_MENU); //ƒ≥∏Ø
 	nmChaDel << (unsigned char)MSG_MENU_DEL;
 	nmChaDel << ulIndex;
-#ifdef NEW_DELETE_CHAR
 	nmChaDel << del;
-#endif
 
 	SendToServerNew(nmChaDel,TRUE);	
-	m_uiSendedTime		= timeGetTime();
+	m_uiSendedTime		= (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); timeGetTime();
 	m_bSendMessage		= TRUE;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ï∫êÎ¶≠ÌÑ∞ ÏÇ≠Ï†ú.
+// Purpose: ƒ≥∏Ø≈Õ ªË¡¶.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendDeleteCharacter(ULONG ulIndex, CTString& strSecuNum, BYTE del)
 {	
-	CNetworkMessage nmChaDel(MSG_MENU); //Ï∫êÎ¶≠
+	CNetworkMessage nmChaDel((UBYTE)MSG_MENU); //ƒ≥∏Ø
 	nmChaDel << (unsigned char)MSG_MENU_DEL;
 	nmChaDel << ulIndex;
 	nmChaDel << strSecuNum;
@@ -8948,138 +8954,138 @@ void CNetworkLibrary::SendDeleteCharacter(ULONG ulIndex, CTString& strSecuNum, B
 	
 		
 	SendToServerNew(nmChaDel,TRUE);	
-	m_uiSendedTime		= timeGetTime();
+	m_uiSendedTime		= (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();
 	m_bSendMessage		= TRUE;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Í≤åÏûÑ ÏãúÏûë.
+// Purpose: ∞‘¿” Ω√¿€.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendGameStart(ULONG ulIndex)
 {
-	/////Ïä§ÌÉÄÌä∏
-	CNetworkMessage nmChaStart(MSG_MENU); 
+	/////Ω∫≈∏∆Æ
+	CNetworkMessage nmChaStart((UBYTE)MSG_MENU); 
 	nmChaStart << (unsigned char)MSG_MENU_START;
 	nmChaStart << ulIndex;
 	SendToServerNew(nmChaStart,TRUE);	
-	m_uiSendedTime		= timeGetTime();
+	m_uiSendedTime		= (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();
 	m_bSendMessage		= TRUE;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Î™¨Ïä§ÌÑ∞ Î≥ÄÏã† Ï¢ÖÎ£å.
+// Purpose: ∏ÛΩ∫≈Õ ∫ØΩ≈ ¡æ∑·.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendStopChange()
 {
-	CNetworkMessage nmStopChange(MSG_CHANGE); 	
+	CNetworkMessage nmStopChange((UBYTE)MSG_CHANGE); 	
 	nmStopChange << (unsigned char)MSG_CHANGE_CANCEL;
 	SendToServerNew(nmStopChange);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Í∞ïÏã† Ï¢ÖÎ£å.
-// Input  : 
-//-----------------------------------------------------------------------------
-void CNetworkLibrary::SendStopEvocation()
-{
-	CNetworkMessage nmEvocation(MSG_EXTEND); 	
-	nmEvocation << (LONG)MSG_EX_EVOCATION_STOP;
-	nmEvocation << _pNetwork->MyCharacterInfo.index;
-	SendToServerNew(nmEvocation);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Ï∫êÎ¶≠ÌÑ∞ ÏÉùÏÑ±.
+// Purpose: ƒ≥∏Ø≈Õ ª˝º∫.
 // Input  : 
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::SendCreateCharacter( CTString& strName, UBYTE ubJob, UBYTE ubHair, UBYTE ubFace )
 {
-	CNetworkMessage nmChaNew(MSG_MENU);			//Ï∫êÎ¶≠ ÏÉùÏÑ±.
+	CNetworkMessage nmChaNew((UBYTE)MSG_MENU);			//ƒ≥∏Ø ª˝º∫.
 	nmChaNew << (unsigned char)MSG_MENU_NEW;	  	
 	nmChaNew << strName;
 	nmChaNew << (UBYTE)ubJob;
 	nmChaNew << (UBYTE)ubHair;
 	nmChaNew << (UBYTE)ubFace;
-    _pNetwork->SendToServerNew(nmChaNew,TRUE);
-//	   _pNetwork->SendToServerNew(nmChaNew,FALSE);
-	_pNetwork->m_uiSendedTime		= timeGetTime();
+    _pNetwork->SendToServerNew(nmChaNew,TRUE);	
+	_pNetwork->m_uiSendedTime		= (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();
 	_pNetwork->m_bSendMessage		= TRUE;
 } 
 
 //-----------------------------------------------------------------------------
-// Purpose: ÏïÑÏù¥ÌÖú ÏÇ¨Ïö© Î©îÏÑ∏ÏßÄ.
+// Purpose: æ∆¿Ã≈€ ªÁøÎ ∏ﬁºº¡ˆ.
 // Input  : 
 //-----------------------------------------------------------------------------
-void CNetworkLibrary::SendItemUse( SBYTE sbTab, SBYTE sbRow, SBYTE sbCol, LONG lIndex, LONG lEtc )
+void CNetworkLibrary::SendItemUse( SWORD nTab, SWORD nInvenIdx, LONG lIndex, LONG lEtc )
 {
-	// ÏïÑÏù¥ÌÖúÏùÑ ÌÜµÌï¥ÏÑú ÌÄòÏä§Ìä∏Î•º ÏñªÏúºÎ†§ Ìï† Í≤ΩÏö∞
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_USE;								
-	nmItem << sbTab;
-	nmItem << sbRow;
-	nmItem << sbCol;
-	nmItem << lIndex;
-	nmItem << lEtc;
-	_pNetwork->SendToServerNew(nmItem);
+	// æ∆¿Ã≈€¿ª ≈Î«ÿº≠ ƒ˘Ω∫∆Æ∏¶ æÚ¿∏∑¡ «“ ∞ÊøÏ
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUse* packet = reinterpret_cast<RequestClient::doItemUse*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE;
+	packet->tab = nTab;
+	packet->invenIndex = nInvenIdx;
+	packet->virtualIndex = lIndex;
+	packet->extra_1 = lEtc;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÌÉÄÍ≤üÏù¥ ÌïÑÏöîÌïú ÏïÑÏù¥ÌÖú ÏÇ¨Ïö© Î©îÏÑ∏ÏßÄ.
+// Purpose: ≈∏∞Ÿ¿Ã « ø‰«— æ∆¿Ã≈€ ªÁøÎ ∏ﬁºº¡ˆ.
 // Input  : 
 //-----------------------------------------------------------------------------
-void CNetworkLibrary::SendtargetItemUse( SBYTE sbTab, SBYTE sbRow, SBYTE sbCol, LONG lIndex, SBYTE sbType, LONG lMobIndex )
+void CNetworkLibrary::SendtargetItemUse( SWORD nTab, SWORD nInvenIdx, LONG lIndex, SBYTE sbType, LONG lMobIndex )
 {
-	// ÏïÑÏù¥ÌÖúÏùÑ ÌÜµÌï¥ÏÑú ÌÄòÏä§Ìä∏Î•º ÏñªÏúºÎ†§ Ìï† Í≤ΩÏö∞
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_TARGET;								
-	nmItem << sbTab;
-	nmItem << sbRow;
-	nmItem << sbCol;
-	nmItem << lIndex;
-	nmItem << sbType;
-	nmItem << lMobIndex;
-	_pNetwork->SendToServerNew(nmItem);
+	// æ∆¿Ã≈€¿ª ≈Î«ÿº≠ ƒ˘Ω∫∆Æ∏¶ æÚ¿∏∑¡ «“ ∞ÊøÏ
+	CNetworkMessage nmMessage;
+	RequestClient::doItemTarget* packet = reinterpret_cast<RequestClient::doItemTarget*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_TARGET;
+	packet->tab = nTab;
+	packet->invenIndex = nInvenIdx;
+	packet->virtualIndex = lIndex;
+	packet->charType = sbType;
+	packet->charIndex = lMobIndex;	
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÏïÑÏù¥ÌÖú ÏÇ¨Ïö© Î©îÏÑ∏ÏßÄ( Ìï©ÏÑ± )
+// Purpose: æ∆¿Ã≈€ ªÁøÎ ∏ﬁºº¡ˆ( «’º∫ )
 // Date  :  060523 wooss
 //-----------------------------------------------------------------------------
-void CNetworkLibrary::SendMixItemUse( SBYTE sbTab, SBYTE sbRow, SBYTE sbCol, LONG lMixItemidx, LONG lCashItemIdx, LONG lgameItemIdx)
+void CNetworkLibrary::SendMixItemUse( SWORD nTab, SWORD nInvenIdx, LONG lMixItemidx, LONG lCashItemIdx, LONG lgameItemIdx)
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_USE;								
-	nmItem << sbTab;
-	nmItem << sbRow;
-	nmItem << sbCol;
-	nmItem << lMixItemidx;
-	nmItem << lCashItemIdx;
-	nmItem << lgameItemIdx;
-	_pNetwork->SendToServerNew(nmItem);
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUse* packet = reinterpret_cast<RequestClient::doItemUse*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE;
+	packet->tab = nTab;
+	packet->invenIndex = nInvenIdx;
+	packet->virtualIndex = lMixItemidx;
+	packet->extra_1 = lCashItemIdx;
+	packet->extra_2 = lgameItemIdx;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: ÏïÑÏù¥ÌÖú ÏÇ¨Ïö© Î©îÏÑ∏ÏßÄ( Î∂ÑÎ¶¨ )
+// Purpose: æ∆¿Ã≈€ ªÁøÎ ∏ﬁºº¡ˆ( ∫–∏Æ )
 // Date  :  060627 wooss
 //-----------------------------------------------------------------------------
-void CNetworkLibrary::SendUnMixItemUse( SBYTE sbTab, SBYTE sbRow, SBYTE sbCol, LONG lMixItemidx, LONG lCashItemIdx)
+void CNetworkLibrary::SendUnMixItemUse( SWORD nTab, SWORD nIdx, LONG lMixItemidx, LONG lCashItemIdx)
 {
-	CNetworkMessage nmItem(MSG_ITEM); 	
-	nmItem << (SBYTE)MSG_ITEM_USE;								
-	nmItem << sbTab;
-	nmItem << sbRow;
-	nmItem << sbCol;
-	nmItem << lMixItemidx;
-	nmItem << lCashItemIdx;
-	_pNetwork->SendToServerNew(nmItem);
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUse* packet = reinterpret_cast<RequestClient::doItemUse*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE;
+	packet->tab = nTab;
+	packet->invenIndex = nIdx;
+	packet->virtualIndex = lMixItemidx;
+	packet->extra_1 = lCashItemIdx;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 
 //-----------------------------------------------------------------------------
-// Purpose: ÏÜåÌôòÏàò ÏÉùÏÑ±.
-// Input  : ÌîåÎ†àÏù¥Ïñ¥Ïùò Í≤ΩÏö∞ÏóêÎßå Ìï¥ÎãπÌïòÎäî Í≤É Í∞ôÏùå...
+// Purpose: º“»Øºˆ ª˝º∫.
+// Input  : «√∑π¿ÃæÓ¿« ∞ÊøÏø°∏∏ «ÿ¥Á«œ¥¬ ∞Õ ∞∞¿Ω...
 //-----------------------------------------------------------------------------
 void CNetworkLibrary::CreateSlave( int iOwnerIndex, CEntity* pOwnerEntity, int iType )
 {
@@ -9095,7 +9101,7 @@ void CNetworkLibrary::CreateSlave( int iOwnerIndex, CEntity* pOwnerEntity, int i
 
 void CNetworkLibrary::SendEvent24(int sel,SBYTE eventType)
 {
-	CNetworkMessage	nmMessage( MSG_EVENT);
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT);
 	
 	switch(eventType)
 	{
@@ -9120,19 +9126,19 @@ void CNetworkLibrary::SendEvent24(int sel,SBYTE eventType)
 	SendToServerNew( nmMessage );
 
 
-//	MSG_EVENT_2PAN4PAN_GOODS_CHECK,				// 2Ìåê4Ìåê Î¶¨Îâ¥Ïñº ÏïÑÏù¥ÌÖú Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠ : count(n:server) wooss 051031
-//	MSG_EVENT_2PAN4PAN_GOODS_REQ,				// 2Ìåê4Ìåê Î¶¨Îâ¥Ïñº ÏïÑÏù¥ÌÖú Î∞õÍ∏∞ ÏöîÏ≤≠ :
-//	MSG_EVENT_2PAN4PAN_GOODS_REP,				// 2Ìåê4Ìåê Î¶¨Îâ¥Ïñº ÏïÑÏù¥ÌÖú Î∞õÍ∏∞ ÏùëÎãµ : MSG_EVENT_2PAN4PAN_GOODS_ERROR_TYPE(n) count(n) [itemdbindex(n) itemcount(ll)]*count
+//	MSG_EVENT_2PAN4PAN_GOODS_CHECK,				// 2∆«4∆« ∏Æ¥∫æÛ æ∆¿Ã≈€ ∏ÆΩ∫∆Æ ø‰√ª : count(n:server) wooss 051031
+//	MSG_EVENT_2PAN4PAN_GOODS_REQ,				// 2∆«4∆« ∏Æ¥∫æÛ æ∆¿Ã≈€ πﬁ±‚ ø‰√ª :
+//	MSG_EVENT_2PAN4PAN_GOODS_REP,				// 2∆«4∆« ∏Æ¥∫æÛ æ∆¿Ã≈€ πﬁ±‚ ¿¿¥‰ : MSG_EVENT_2PAN4PAN_GOODS_ERROR_TYPE(n) count(n) [itemdbindex(n) itemcount(ll)]*count
 
-//	MSG_EVENT_2PAN4PAN_MONEY_REQ,				// 2Ìåê4Ìåê Î®∏Îãà Ïπ¥Îìú ÍµêÌôò ÏöîÏ≤≠ : type(n)
-												// type : 1 - ÎßûÍ≥†, 2 - Ìè¨Ïª§
-//	MSG_EVENT_2PAN4PAN_MONEY_REP,				// 2Ìåê4Ìåê Î®∏Îãà Ïπ¥Îìú ÍµêÌôò ÏùëÎãµ : success(n)
-												// success : 0 - Ïã§Ìå®, 1 - ÏÑ±Í≥µ
+//	MSG_EVENT_2PAN4PAN_MONEY_REQ,				// 2∆«4∆« ∏”¥œ ƒ´µÂ ±≥»Ø ø‰√ª : type(n)
+												// type : 1 - ∏¬∞Ì, 2 - ∆˜ƒø
+//	MSG_EVENT_2PAN4PAN_MONEY_REP,				// 2∆«4∆« ∏”¥œ ƒ´µÂ ±≥»Ø ¿¿¥‰ : success(n)
+												// success : 0 - Ω«∆–, 1 - º∫∞¯
 
-//	MSG_EVENT_2PAN4PAN_BOX_CHECK,				// 2Ìåê4Ìåê ÏÉÅÏûê ÍµêÌôò Í≤ÄÏÇ¨	: flag(n:server)
-												// flag : 0 - ÏóÜÏùå, 1 - ÏûàÏùå
-//	MSG_EVENT_2PAN4PAN_BOX_REQ,					// 2Ìåê4Ìåê ÏÉÅÏûê ÍµêÌôò ÏöîÏ≤≠	: 
-//	MSG_EVENT_2PAN4PAN_BOX_REP,					// 2Ìåê4Ìåê ÏÉÅÏûê ÍµêÌôò ÏùëÎãµ	: MSG_EVENT_2PAN4PAN_BOX_ERROR_TYPE(n) count(n)  [itemdbindex(n) itemcount(ll)]*count
+//	MSG_EVENT_2PAN4PAN_BOX_CHECK,				// 2∆«4∆« ªÛ¿⁄ ±≥»Ø ∞ÀªÁ	: flag(n:server)
+												// flag : 0 - æ¯¿Ω, 1 - ¿÷¿Ω
+//	MSG_EVENT_2PAN4PAN_BOX_REQ,					// 2∆«4∆« ªÛ¿⁄ ±≥»Ø ø‰√ª	: 
+//	MSG_EVENT_2PAN4PAN_BOX_REP,					// 2∆«4∆« ªÛ¿⁄ ±≥»Ø ¿¿¥‰	: MSG_EVENT_2PAN4PAN_BOX_ERROR_TYPE(n) count(n)  [itemdbindex(n) itemcount(ll)]*count
 
 }
 
@@ -9143,7 +9149,7 @@ void CNetworkLibrary::SendEvent24(int sel,SBYTE eventType)
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendCastleMapRecent()
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (LONG)MSG_EX_CASTLE_MAP_RECENT;
 			
 	SendToServerNew( nmMessage );
@@ -9158,7 +9164,7 @@ void CNetworkLibrary::SendCastleMapRecent()
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendCastleMapSignal( FLOAT fX, FLOAT fY, LONG lSenderFlag, LONG lSenderIndex )
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (LONG)MSG_EX_CASTLE_MAP_SIGNAL;
 
 	nmMessage << (FLOAT)fX;
@@ -9171,15 +9177,15 @@ void CNetworkLibrary::SendCastleMapSignal( FLOAT fX, FLOAT fY, LONG lSenderFlag,
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendGameStart
-// Explain: Î°úÎî©Ïù¥ ÏôÑÎ£åÎêòÎ©¥ ÏÑúÎ≤ÑÏóê MSG_START_GAMEÎ•º Î≥¥ÎÇ∏Îã§.
-// * ÌòÑÏû¨ Î°úÎî©ÎêòÍ≥† ÏûàÎäî zone Î≤àÌò∏Îäî Ï¥àÍ∏∞Ìôî
+// Explain: ∑Œµ˘¿Ã øœ∑·µ«∏È º≠πˆø° MSG_START_GAME∏¶ ∫∏≥Ω¥Ÿ.
+// * «ˆ¿Á ∑Œµ˘µ«∞Ì ¿÷¥¬ zone π¯»£¥¬ √ ±‚»≠
 // Date : 2005-11-03,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendGameStart()
 {
 	SetLoadingZone( -1 );
 	
-	CNetworkMessage nmStartGame(MSG_START_GAME);
+	CNetworkMessage nmStartGame((UBYTE)MSG_START_GAME);
 	_pNetwork->SendToServerNew(nmStartGame,TRUE);	
 	
 	_cmiComm.Server_Update();
@@ -9188,8 +9194,8 @@ void CNetworkLibrary::SendGameStart()
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SetLoadingZone
-// Explain: ÏÑúÎ≤ÑÏóêÏÑú MSG_DB_OKÎ©îÏÑ∏ÏßÄÎ•º Î∞õÏúºÎ©¥ Ï°¥Î≤àÌò∏Î•º Ï†ÄÏû•ÌïòÏó¨ 
-// Ï°¥ Î°úÎî©Ïù¥ ÏôÑÎ£å Îêú ÌõÑÏóê MSG_START_GAMEÎ•º Î≥¥ÎÇ∏Îã§.
+// Explain: º≠πˆø°º≠ MSG_DB_OK∏ﬁºº¡ˆ∏¶ πﬁ¿∏∏È ¡∏π¯»£∏¶ ¿˙¿Â«œø© 
+// ¡∏ ∑Œµ˘¿Ã øœ∑· µ» »ƒø° MSG_START_GAME∏¶ ∫∏≥Ω¥Ÿ.
 // Date : 2005-11-03,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SetLoadingZone( LONG lZone )
@@ -9200,8 +9206,8 @@ void CNetworkLibrary::SetLoadingZone( LONG lZone )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::GetLoadingZone
-// Explain: Î°úÎî©ÎêòÍ≥† ÏûàÎäî Ï°¥Ïùò Î≤àÌò∏Î•º ÏñªÏñ¥ Ïò®Îã§.
-// * Î°úÎî©ÏùÑ ÌïòÍ≥† ÏûàÏßÄ ÏïäÏùÑÎïåÎäî -1
+// Explain: ∑Œµ˘µ«∞Ì ¿÷¥¬ ¡∏¿« π¯»£∏¶ æÚæÓ ø¬¥Ÿ.
+// * ∑Œµ˘¿ª «œ∞Ì ¿÷¡ˆ æ ¿ª∂ß¥¬ -1
 // Date : 2005-11-03,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 LONG CNetworkLibrary::GetLoadingZone()
@@ -9211,25 +9217,25 @@ LONG CNetworkLibrary::GetLoadingZone()
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::GetLoadingZone
-// Explain: Î°úÎî©ÎêòÍ≥† ÏûàÎäî Ï°¥Ïùò Î≤àÌò∏Î•º ÏñªÏñ¥ Ïò®Îã§.
-// * Î°úÎî©ÏùÑ ÌïòÍ≥† ÏûàÏßÄ ÏïäÏùÑÎïåÎäî -1
+// Explain: ∑Œµ˘µ«∞Ì ¿÷¥¬ ¡∏¿« π¯»£∏¶ æÚæÓ ø¬¥Ÿ.
+// * ∑Œµ˘¿ª «œ∞Ì ¿÷¡ˆ æ ¿ª∂ß¥¬ -1
 // Date : 2005-11-03,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendNetCafeOpenBox()
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 	nmMessage << (UBYTE)MSG_EVENT_PCBANG;
 	SendToServerNew( nmMessage );
 }
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendPartyRegistNormal
-// Explain: ÌååÌã∞ Îß§Ïπ≠ ÏùºÎ∞ò Îì±Î°ù ÏöîÏ≤≠
-// Date : 2006-05-09(Ïò§ÌõÑ 5:14:07), By eons
+// Explain: ∆ƒ∆º ∏≈ƒ™ ¿œπ› µÓ∑œ ø‰√ª
+// Date : 2006-05-09(ø¿»ƒ 5:14:07), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyRegistNormal( int nType )
 {
-	CNetworkMessage		nmMessage( MSG_EXTEND );
+	CNetworkMessage		nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH;
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH_REG_MEMBER_REQ;
 
@@ -9240,12 +9246,12 @@ void CNetworkLibrary::SendPartyRegistNormal( int nType )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendPartyRegistParty
-// Explain: ÌååÌã∞ Îß§Ïπ≠ ÌååÌã∞ Îì±Î°ù ÏöîÏ≤≠
-// Date : 2006-05-09(Ïò§ÌõÑ 5:14:07), By eons
+// Explain: ∆ƒ∆º ∏≈ƒ™ ∆ƒ∆º µÓ∑œ ø‰√ª
+// Date : 2006-05-09(ø¿»ƒ 5:14:07), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyRegistParty( CTString strComment, DWORD JobFlag, int LimitLevel )
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH;
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH_REG_PARTY_REQ;
 	nmMessage << strComment;
@@ -9257,19 +9263,19 @@ void CNetworkLibrary::SendPartyRegistParty( CTString strComment, DWORD JobFlag, 
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendPartyRegistParty
-// Explain: ÌååÌã∞ Îß§Ïπ≠ ÌååÌã∞ Îì±Î°ù ÏöîÏ≤≠
-// Date : 2006-05-13(Ïò§ÌõÑ 1:22:33), By eons
+// Explain: ∆ƒ∆º ∏≈ƒ™ ∆ƒ∆º µÓ∑œ ø‰√ª
+// Date : 2006-05-13(ø¿»ƒ 1:22:33), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyListReq( int nPage, int nJob, int nLimitLv, int nPtType, BOOL bState )
 {
-	CNetworkMessage nmMessage( MSG_EXTEND );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH;
 
-	if( bState ) // ÌååÌã∞ ÌåÄ Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠
+	if( bState ) // ∆ƒ∆º ∆¿ ∏ÆΩ∫∆Æ ø‰√ª
 	{
 		nmMessage << (ULONG)MSG_EX_PARTY_MATCH_PARTY_LIST_REQ;
 	}
-	else// ÌååÌã∞ Î©§Î≤Ñ Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠
+	else// ∆ƒ∆º ∏‚πˆ ∏ÆΩ∫∆Æ ø‰√ª
 	{
 		nmMessage << (ULONG)MSG_EX_PARTY_MATCH_MEMBER_LIST_REQ;
 	}
@@ -9284,12 +9290,12 @@ void CNetworkLibrary::SendPartyListReq( int nPage, int nJob, int nLimitLv, int n
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendPartyRegistDelete
-// Explain: ÌååÌã∞ Îß§Ïπ≠ ÌååÌã∞ Îì±Î°ù ÏÇ≠Ï†ú ÏöîÏ≤≠
-// Date : 2006-05-15(Ïò§Ï†Ñ 9:54:51), By eons
+// Explain: ∆ƒ∆º ∏≈ƒ™ ∆ƒ∆º µÓ∑œ ªË¡¶ ø‰√ª
+// Date : 2006-05-15(ø¿¿¸ 9:54:51), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyRegistDelete()
 {
-	CNetworkMessage nmMessage( MSG_EXTEND );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH;
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH_DEL_REQ;
 
@@ -9298,12 +9304,12 @@ void CNetworkLibrary::SendPartyRegistDelete()
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendPartyInviteReq
-// Explain: ÌååÌã∞ Îß§Ïπ≠ ÏùºÎ∞ò Ï¥àÎåÄ ÏöîÏ≤≠
-// Date : 2006-05-15(Ïò§Ï†Ñ 9:54:51), By eons
+// Explain: ∆ƒ∆º ∏≈ƒ™ ¿œπ› √ ¥Î ø‰√ª
+// Date : 2006-05-15(ø¿¿¸ 9:54:51), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyInviteReq( int nCharIndex )
 {
-	CNetworkMessage nmMessage( MSG_EXTEND );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH;
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH_INVITE_REQ;
 	nmMessage << (SLONG)nCharIndex;
@@ -9313,12 +9319,12 @@ void CNetworkLibrary::SendPartyInviteReq( int nCharIndex )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendPartyJoinReq
-// Explain: ÌååÌã∞ Îß§Ïπ≠ ÌååÌã∞ Ï°∞Ïù∏ ÏöîÏ≤≠
-// Date : 2006-05-15(Ïò§ÌõÑ 1:39:55), By eons
+// Explain: ∆ƒ∆º ∏≈ƒ™ ∆ƒ∆º ¡∂¿Œ ø‰√ª
+// Date : 2006-05-15(ø¿»ƒ 1:39:55), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyJoinReq( int nBossIndex )
 {
-	CNetworkMessage nmMessage( MSG_EXTEND );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH;
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH_JOIN_REQ;
 	nmMessage << (SLONG)nBossIndex;
@@ -9328,12 +9334,12 @@ void CNetworkLibrary::SendPartyJoinReq( int nBossIndex )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendPartyJoinAllow
-// Explain: ÌååÌã∞ Îß§Ïπ≠ ÌååÌã∞ Ï°∞Ïù∏ ÌóàÎùΩ
-// Date : 2006-05-15(Ïò§ÌõÑ 1:28:11), By eons
+// Explain: ∆ƒ∆º ∏≈ƒ™ ∆ƒ∆º ¡∂¿Œ «„∂Ù
+// Date : 2006-05-15(ø¿»ƒ 1:28:11), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyJoinAllow( int nReqIndex )
 {
-	CNetworkMessage nmMessage( MSG_EXTEND );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH;
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH_JOIN_ALLOW;
 	nmMessage << (SLONG)nReqIndex;
@@ -9343,12 +9349,12 @@ void CNetworkLibrary::SendPartyJoinAllow( int nReqIndex )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendPartyJoinReject
-// Explain: ÌååÌã∞ Îß§Ïπ≠ ÌååÌã∞ Ï°∞Ïù∏ Í±∞Ï†à
-// Date : 2006-05-15(Ïò§ÌõÑ 1:28:11), By eons
+// Explain: ∆ƒ∆º ∏≈ƒ™ ∆ƒ∆º ¡∂¿Œ ∞≈¿˝
+// Date : 2006-05-15(ø¿»ƒ 1:28:11), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendPartyJoinReject( int nReqIndex )
 {
-	CNetworkMessage nmMessage( MSG_EXTEND );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH;
 	nmMessage << (ULONG)MSG_EX_PARTY_MATCH_JOIN_REJECT;
 	nmMessage << (SLONG)nReqIndex;
@@ -9363,7 +9369,7 @@ void CNetworkLibrary::SendPartyJoinReject( int nReqIndex )
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendWorldCupEvent( int msgCmd, int iSelIdx )
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 	
 	switch(msgCmd)
 	{
@@ -9392,11 +9398,11 @@ void CNetworkLibrary::SendWorldCupEvent( int msgCmd, int iSelIdx )
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendWorldCupGoldenBallEvent
 // Explain: Golden ball event
-// Date : 2006-06-01(Ïò§ÌõÑ 8:05:27), By eons
+// Date : 2006-06-01(ø¿»ƒ 8:05:27), By eons
 //------------------------------------------------------------------------------
 void CNetworkLibrary::SendWorldCupGoldenBallEvent( int nSendType, int nTeamAScore, int nTeamBScore )
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_GOLDENBALL;
 	nmMessage << (LONG)nSendType;
@@ -9414,11 +9420,11 @@ void CNetworkLibrary::SendWorldCupGoldenBallEvent( int nSendType, int nTeamAScor
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrOneVsOneConnect
 // Explain: OneOnOneChatMessenger
-// Date : 2006-12-11(Ïò§ÌõÑ 8:05:27), By KwonYongDae
+// Date : 2006-12-11(ø¿»ƒ 8:05:27), By KwonYongDae
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrOneVsOneConnect( int nCharIndex, int nOtherCharIndex, CTString strChat )
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER;
 	nmMessage << (BYTE)MSG_EX_MESSENGER_ONE_VS_ONE;
@@ -9432,11 +9438,11 @@ void CNetworkLibrary::MgrOneVsOneConnect( int nCharIndex, int nOtherCharIndex, C
 //============================================================================================================
 // CNetworkLibrary::SendBuddhismEvent
 // Explain : Buddhism event
-// Date : 2006-06-27(Ïò§Ï†Ñ 10:44:09), By eons
+// Date : 2006-06-27(ø¿¿¸ 10:44:09), By eons
 //============================================================================================================
 void CNetworkLibrary::SendBuddhismEvent( BYTE nType )
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_TLD_BUDDHIST;
 	nmMessage << (BYTE)nType;
@@ -9446,13 +9452,13 @@ void CNetworkLibrary::SendBuddhismEvent( BYTE nType )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrFriendInvite
-// Explain: ÏπúÍµ¨Î•º ÎåÄÌôîÏóê Ï¥àÎåÄÌïúÎã§
-// nCharIndex - Ï±ÑÌåÖÏ∞Ω ÏÉùÏÑ± Ï∫êÎ¶≠ Ïù∏Îç±Ïä§, ChatIndex -Ï±ÑÌåÖÏ∞Ω Ïù∏Îç±Ïä§, strTargetName -Ï¥àÎåÄÌï† Ï∫êÎ¶≠ Ïù¥Î¶Ñ
+// Explain: ƒ£±∏∏¶ ¥Î»≠ø° √ ¥Î«—¥Ÿ
+// nCharIndex - √§∆√√¢ ª˝º∫ ƒ≥∏Ø ¿Œµ¶Ω∫, ChatIndex -√§∆√√¢ ¿Œµ¶Ω∫, strTargetName -√ ¥Î«“ ƒ≥∏Ø ¿Ã∏ß
 // Date : 2006-6-1 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrFriendInvite( int nCharIndex, int nChatIndex, int nTargetIndex)
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER;
 	nmMessage << (BYTE)MSG_EX_MESSENGER_INVITE;
@@ -9465,13 +9471,13 @@ void CNetworkLibrary::MgrFriendInvite( int nCharIndex, int nChatIndex, int nTarg
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrFriendOut
-// Explain: ÏπúÍµ¨Í∞Ä ÎåÄÌôîÏ∞ΩÏóêÏÑú ÎÇòÍ∞ê.
-// nCharIndex - Ï±ÑÌåÖÏ∞Ω ÏÉùÏÑ± Ï∫êÎ¶≠ Ïù∏Îç±Ïä§, nChatIndex -Ï±ÑÌåÖÏ∞Ω Ïù∏Îç±Ïä§
+// Explain: ƒ£±∏∞° ¥Î»≠√¢ø°º≠ ≥™∞®.
+// nCharIndex - √§∆√√¢ ª˝º∫ ƒ≥∏Ø ¿Œµ¶Ω∫, nChatIndex -√§∆√√¢ ¿Œµ¶Ω∫
 // Date : 2006-6-1 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrFriendOut( int nCharIndex, int nChatIndex )
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER;
 	nmMessage << (BYTE)MSG_EX_MESSENGER_OUT;
@@ -9483,13 +9489,13 @@ void CNetworkLibrary::MgrFriendOut( int nCharIndex, int nChatIndex )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrFriendChat
-// Explain: ÏπúÍµ¨Í∞Ä ÎåÄÌôîÏ∞ΩÏóêÏÑú ÎÇòÍ∞ê.
-// nCharIndex - Ï±ÑÌåÖÏ∞Ω ÏÉùÏÑ± Ï∫êÎ¶≠ Ïù∏Îç±Ïä§, nChatIndex -Ï±ÑÌåÖÏ∞Ω Ïù∏Îç±Ïä§, strChat -Ï±ÑÌåÖ ÎÇ¥Ïö©
+// Explain: ƒ£±∏∞° ¥Î»≠√¢ø°º≠ ≥™∞®.
+// nCharIndex - √§∆√√¢ ª˝º∫ ƒ≥∏Ø ¿Œµ¶Ω∫, nChatIndex -√§∆√√¢ ¿Œµ¶Ω∫, strChat -√§∆√ ≥ªøÎ
 // Date : 2006-6-1 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrFriendChat( int nCharIndex, int nChatIndex, CTString strChat)
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER;
 	nmMessage << (BYTE)MSG_EX_MESSENGER_CHAT;
@@ -9502,13 +9508,13 @@ void CNetworkLibrary::MgrFriendChat( int nCharIndex, int nChatIndex, CTString st
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrBlock
-// Explain: ÏπúÍµ¨Î•º Ï∞®Îã®ÏãúÌÇ¥.
-// strTarget -Ï∞®Îã®ÎåÄÏÉÅ Ï∫êÎ¶≠ Ïù¥Î¶Ñ
+// Explain: ƒ£±∏∏¶ ¬˜¥‹Ω√≈¥.
+// strTarget -¬˜¥‹¥ÎªÛ ƒ≥∏Ø ¿Ã∏ß
 // Date : 2006-6-2 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrBlock( CTString strTarget)
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 
 	nmMessage << (LONG)MSG_EX_MESSENGER
 			  << (BYTE)MSG_EX_MESSENGER_BLOCK
@@ -9519,13 +9525,13 @@ void CNetworkLibrary::MgrBlock( CTString strTarget)
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrUnBlock
-// Explain: Ï∞®Îã®Îêú Ï∫êÎ¶≠ÏùÑ Ìï¥Ï†úÌï®.
-// strTarget -Ï∞®Îã®ÎåÄÏÉÅ Ï∫êÎ¶≠ Ïù¥Î¶Ñ
+// Explain: ¬˜¥‹µ» ƒ≥∏Ø¿ª «ÿ¡¶«‘.
+// strTarget -¬˜¥‹¥ÎªÛ ƒ≥∏Ø ¿Ã∏ß
 // Date : 2006-6-9 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrUnBlock( int nCharIndex )
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 
 	nmMessage << (LONG)MSG_EX_MESSENGER
 			  << (BYTE)MSG_EX_MESSENGER_RELEASE_BLOCK
@@ -9536,13 +9542,13 @@ void CNetworkLibrary::MgrUnBlock( int nCharIndex )
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrGroupAdd
-// Explain: Î©îÏã†Ï†ÄÏóê Í∑∏Î£πÏùÑ Ï∂îÍ∞Ä.
-// strName -Ï∂îÍ∞ÄÌï† Í∑∏Î£π Ïù¥Î¶Ñ
+// Explain: ∏ﬁΩ≈¿˙ø° ±◊∑Ï¿ª √ﬂ∞°.
+// strName -√ﬂ∞°«“ ±◊∑Ï ¿Ã∏ß
 // Date : 2006-6-1 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrGroupAdd( CTString strName)
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER
 			  << (BYTE)MSG_EX_MESSENGER_GROUP_ADD
@@ -9553,13 +9559,13 @@ void CNetworkLibrary::MgrGroupAdd( CTString strName)
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrGroupDel
-// Explain: Î©îÏã†Ï†ÄÏóê Í∑∏Î£πÏùÑ ÏÇ≠Ï†úÌï®.
-// nGroupIndex -ÏÇ≠Ï†úÌï† Í∑∏Î£π Ïù∏Îç±Ïä§
+// Explain: ∏ﬁΩ≈¿˙ø° ±◊∑Ï¿ª ªË¡¶«‘.
+// nGroupIndex -ªË¡¶«“ ±◊∑Ï ¿Œµ¶Ω∫
 // Date : 2006-6-1 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrGroupDel( int nGroupIndex)
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER;
 	nmMessage << (BYTE)MSG_EX_MESSENGER_GROUP_DEL;
@@ -9570,13 +9576,13 @@ void CNetworkLibrary::MgrGroupDel( int nGroupIndex)
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrGroupRename
-// Explain: Î©îÏã†Ï†ÄÏóê Í∑∏Î£π Ïù¥Î¶ÑÏùÑ Î≥ÄÍ≤ΩÌï®.
-// nGroupIndex -Î≥ÄÍ≤ΩÌï† Í∑∏Î£π Ïù∏Îç±Ïä§, strNewName -Î≥ÄÍ≤ΩÌï† Ïù¥Î¶Ñ.
+// Explain: ∏ﬁΩ≈¿˙ø° ±◊∑Ï ¿Ã∏ß¿ª ∫Ø∞Ê«‘.
+// nGroupIndex -∫Ø∞Ê«“ ±◊∑Ï ¿Œµ¶Ω∫, strNewName -∫Ø∞Ê«“ ¿Ã∏ß.
 // Date : 2006-6-1 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrGroupRename( int nGroupIndex, CTString strNewName)
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER;
 	nmMessage << (BYTE)MSG_EX_MESSENGER_GROUP_CHANGE;
@@ -9588,13 +9594,13 @@ void CNetworkLibrary::MgrGroupRename( int nGroupIndex, CTString strNewName)
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrGroupMove
-// Explain: Î©îÏã†Ï†ÄÏóê ÏπúÍµ¨Ïùò Í∑∏Î£πÏùÑ Î≥ÄÍ≤ΩÌï®.
-// nGroupIndex -Î≥ÄÍ≤ΩÌï† Í∑∏Î£π Ïù∏Îç±Ïä§, strCharName -Í∑∏Î£πÏùÑ Ïù¥ÎèôÌï† Ï∫êÎ¶≠ Ïù¥Î¶Ñ.
+// Explain: ∏ﬁΩ≈¿˙ø° ƒ£±∏¿« ±◊∑Ï¿ª ∫Ø∞Ê«‘.
+// nGroupIndex -∫Ø∞Ê«“ ±◊∑Ï ¿Œµ¶Ω∫, strCharName -±◊∑Ï¿ª ¿Ãµø«“ ƒ≥∏Ø ¿Ã∏ß.
 // Date : 2006-6-1 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrGroupMove( int nGroupIndex, int nCharIndex)
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER;
 	nmMessage << (BYTE)MSG_EX_MESSENGER_GROUP_MOVE;
@@ -9606,13 +9612,13 @@ void CNetworkLibrary::MgrGroupMove( int nGroupIndex, int nCharIndex)
 
 //------------------------------------------------------------------------------
 // CNetworkLibrary::MgrSetChatColor
-// Explain: Ï±ÑÌåÖÍ∏ÄÏùò ÏÉâÍπî ÏÑ§Ï†ï
-// colChat -Î≥ÄÍ≤ΩÌï† ÏÉâ
+// Explain: √§∆√±€¿« ªˆ±Ú º≥¡§
+// colChat -∫Ø∞Ê«“ ªˆ
 // Date : 2006-6-7 Su-won
 //------------------------------------------------------------------------------
 void CNetworkLibrary::MgrSetChatColor( int nColIndex)
 {
-	CNetworkMessage	nmMessage( MSG_EXTEND );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EXTEND );
 	
 	nmMessage << (LONG)MSG_EX_MESSENGER;
 	nmMessage << (BYTE)MSG_EX_MESSENGER_CHATCOLOR_CHAGNE;
@@ -9623,12 +9629,12 @@ void CNetworkLibrary::MgrSetChatColor( int nColIndex)
 
 //============================================================================================================
 // CNetworkLibrary::SendBuyCollectBox
-// Explain : Í≥§Ï∂© Ï±ÑÏßë ÏÉÅÏûê Íµ¨ÏûÖ
-// Date : 2006-06-28(Ïò§ÌõÑ 4:21:15), By eons
+// Explain : ∞Ô√Ê √§¡˝ ªÛ¿⁄ ±∏¿‘
+// Date : 2006-06-28(ø¿»ƒ 4:21:15), By eons
 //============================================================================================================
 void CNetworkLibrary::SendBuyCollectBox( void )
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_COLLECT_BUG;
 	nmMessage << (ULONG)MSG_EVENT_COLLECT_BUG_BUY_BOX_REQ;
@@ -9638,12 +9644,12 @@ void CNetworkLibrary::SendBuyCollectBox( void )
 
 //============================================================================================================
 // CNetworkLibrary::SendGiftCollectBox
-// Explain : Í≥§Ï∂© Ï±ÑÏßë ÏÉÅÏûê Î≥¥ÏÉÅ ÏöîÏ≤≠
-// Date : 2006-06-28(Ïò§ÌõÑ 4:23:19), By eons
+// Explain : ∞Ô√Ê √§¡˝ ªÛ¿⁄ ∫∏ªÛ ø‰√ª
+// Date : 2006-06-28(ø¿»ƒ 4:23:19), By eons
 //============================================================================================================
 void CNetworkLibrary::SendGiftCollectBox( void )
 {
-	CNetworkMessage	nmMessage( MSG_EVENT );
+	CNetworkMessage	nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_COLLECT_BUG;
 	nmMessage << (ULONG)MSG_EVENT_COLLECT_BUG_GIFT_REQ;
@@ -9653,12 +9659,12 @@ void CNetworkLibrary::SendGiftCollectBox( void )
 
 //============================================================================================================
 // CNetworkLibrary::SendDropInsect
-// Explain : Í≥§Ï∂© ÏïÑÏù¥ÌÖú ÎìúÎ°≠
-// Date : 2006-06-28(Ïò§ÌõÑ 4:24:31), By eons
+// Explain : ∞Ô√Ê æ∆¿Ã≈€ µÂ∑”
+// Date : 2006-06-28(ø¿»ƒ 4:24:31), By eons
 //============================================================================================================
 void CNetworkLibrary::SendDropInsect( int nInsect )
 {
-	CNetworkMessage nmMessage( MSG_EVENT );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_COLLECT_BUG;
 	nmMessage << (ULONG)MSG_EVENT_COLLECT_BUG_DROP;
@@ -9686,12 +9692,12 @@ void CNetworkLibrary::SetCheckPointData(int questIdx,int chkNumFlag, int maxChkf
 
 //==============================================================================================
 // CNetworkLibrary::SendUsaOpenBetaGift
-// Expalin : ÎØ∏Íµ≠ Ïò§Ìîà Î≤†ÌÉÄ ÏÑ†Î¨º ÏßÄÍ∏â( 7ÏùºÍ∞Ñ )
+// Expalin : πÃ±π ø¿«¬ ∫£≈∏ º±π∞ ¡ˆ±ﬁ( 7¿œ∞£ )
 // Date : [11/16/2006] , eons
 //==============================================================================================
 void CNetworkLibrary::SendUsaOpenBetaGift(void)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_OPEN_BETA_GIFT;
 
@@ -9700,12 +9706,12 @@ void CNetworkLibrary::SendUsaOpenBetaGift(void)
 
 //=============================================================================================
 // CNetworkLibrary::SendSaveBingoItem
-// Explain : Îü¨Î∏åÎü¨Î∏å Ïù¥Î≤§Ìä∏(Ï¥àÏΩîÏÉÅÏûê ÏïÑÏù¥ÌÖú Ï†ÄÏû• ÏöîÏ≤≠)
+// Explain : ∑Ø∫Í∑Ø∫Í ¿Ã∫•∆Æ(√ ƒ⁄ªÛ¿⁄ æ∆¿Ã≈€ ¿˙¿Â ø‰√ª)
 //
 //=============================================================================================
 void CNetworkLibrary::SendSaveBingoItem(BYTE nPos, int nGiftItemIndex, int nBoxItemIndex)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_VALENTINE_2007;
 	nmMessage << (ULONG)MSG_EVENT_VALENTINE_2007_BINGO_ITEM_ARRANGE;
@@ -9718,12 +9724,12 @@ void CNetworkLibrary::SendSaveBingoItem(BYTE nPos, int nGiftItemIndex, int nBoxI
 
 //=============================================================================================
 // CNetworkLibrary::SendSaveBingoItem
-// Explain : Îü¨Î∏åÎü¨Î∏å Ïù¥Î≤§Ìä∏(Ï¥àÏΩîÏÉÅÏûê ÏïÑÏù¥ÌÖú Ï†ÄÏû• ÏöîÏ≤≠)
+// Explain : ∑Ø∫Í∑Ø∫Í ¿Ã∫•∆Æ(√ ƒ⁄ªÛ¿⁄ æ∆¿Ã≈€ ¿˙¿Â ø‰√ª)
 //
 //=============================================================================================
 void CNetworkLibrary::SendReqGiftChocoBox(int nUniItemIndex)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_VALENTINE_2007;
 	nmMessage << (ULONG)MSG_EVENT_VALENTINE_2007_BINGO_GIFT;
@@ -9736,7 +9742,7 @@ void CNetworkLibrary::SendReqGiftChocoBox(int nUniItemIndex)
 // kw : WSS_WHITEDAY_2007 
 void CNetworkLibrary::SendWhiteday2007(UBYTE ubType)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_WHITEDAY_2007;
 	nmMessage << (ULONG)MSG_EVENT_WHITEDAY_2007_EXCHANGE_REQ;
@@ -9747,7 +9753,7 @@ void CNetworkLibrary::SendWhiteday2007(UBYTE ubType)
 
 void CNetworkLibrary::SendWhiteday2007Letter(int itemIdx,COLOR colMsg,CTString tStr)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_WHITEDAY_2007;
 	nmMessage << (ULONG)MSG_EVENT_WHITEDAY_2007_LETTER_REQ;
@@ -9761,10 +9767,10 @@ void CNetworkLibrary::SendWhiteday2007Letter(int itemIdx,COLOR colMsg,CTString t
 
 // WSS_GUILDMASTER 070416 ----------------------------------------->>
 
-// Í∏∏ÎìúÌè¨Ïù∏Ìä∏ Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠ 
+// ±ÊµÂ∆˜¿Œ∆Æ ∏ÆΩ∫∆Æ ø‰√ª 
 void CNetworkLibrary::SendRequestParentsday(int reqIdx)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_PARENTSDAY_2007;
 	nmMessage << (ULONG)reqIdx;
@@ -9772,10 +9778,10 @@ void CNetworkLibrary::SendRequestParentsday(int reqIdx)
 	SendToServerNew(nmMessage);
 }
 
-// Í∏∏Îìú Ìè¨Ïù∏Ìä∏ Îì±Î°ù
+// ±ÊµÂ ∆˜¿Œ∆Æ µÓ∑œ
 void CNetworkLibrary::SendParentsdayAddPoint(int charIdx)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_PARENTSDAY_2007;
 	nmMessage << (ULONG)MSG_EVENT_PARENTSDAY_2007_ADD_POINT;
@@ -9784,8 +9790,10 @@ void CNetworkLibrary::SendParentsdayAddPoint(int charIdx)
 	SendToServerNew(nmMessage);
 }
 // ----------------------------------------------------------------<<	
+/*
 #ifndef NO_GAMEGUARD
 // WSS_NPROTECT 070402 --------------------------------->>
+
 void CNetworkLibrary::SendnProtectAuth2(DWORD dwArg)
 {
 	GG_AUTH_DATA m_AuthData;
@@ -9807,71 +9815,71 @@ void CNetworkLibrary::SendnProtectAuth2(DWORD dwArg)
 
 BOOL CNetworkLibrary::Init_nProtect()
 {	
-	// npgl Ï¥àÍ∏∞Ìôî ÏóêÎü¨ Î©îÏãúÏßÄ Ï∂úÎ†•
+	// npgl √ ±‚»≠ ø°∑Ø ∏ﬁΩ√¡ˆ √‚∑¬
 	DWORD dwResult = npgl.Init();
 	if ( dwResult != NPGAMEMON_SUCCESS )
 	{
 		CTString msg,errStr;
 		switch(dwResult)
 		{
-			// TODO : Î©îÏãúÏßÄ Ï∂úÎ†•(p18)
+			// TODO : ∏ﬁΩ√¡ˆ √‚∑¬(p18)
 		case NPGAMEMON_ERROR_EXIST:
-			errStr = _S(3321,"Í≤åÏûÑÍ∞ÄÎìúÍ∞Ä Ïã§Ìñâ Ï§ëÏûÖÎãàÎã§. Ïû†Ïãú ÌõÑÎÇò Ïû¨Î∂ÄÌåÖ ÌõÑÏóê Îã§Ïãú Ïã§ÌñâÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3321,"∞‘¿”∞°µÂ∞° Ω««‡ ¡ﬂ¿‘¥œ¥Ÿ. ¿·Ω√ »ƒ≥™ ¿Á∫Œ∆√ »ƒø° ¥ŸΩ√ Ω««‡«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;
 		case NPGAMEMON_ERROR_GAME_EXIST:
-			errStr = _S(3322,"Í≤åÏûÑÏù¥ Ï§ëÎ≥µ Ïã§ÌñâÎêòÏóàÍ±∞ÎÇò Í≤åÏûÑÍ∞ÄÎìúÍ∞Ä Ïù¥ÎØ∏ Ïã§Ìñâ Ï§ë ÏûÖÎãàÎã§. Í≤åÏûÑ Ï¢ÖÎ£å ÌõÑ Îã§Ïãú Ïã§ÌñâÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§,");
+			errStr = _S(3322,"∞‘¿”¿Ã ¡ﬂ∫π Ω««‡µ«æ˙∞≈≥™ ∞‘¿”∞°µÂ∞° ¿ÃπÃ Ω««‡ ¡ﬂ ¿‘¥œ¥Ÿ. ∞‘¿” ¡æ∑· »ƒ ¥ŸΩ√ Ω««‡«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ,");
 			break;
 		case NPGAMEMON_ERROR_INIT:
-			errStr = _S(3323,"Í≤åÏûÑÍ∞ÄÎìú Ï¥àÍ∏∞Ìôî ÏóêÎü¨ÏûÖÎãàÎã§. Ïû¨Î∂ÄÌåÖ ÌõÑ Îã§Ïãú Ïã§ÌñâÌï¥ Î≥¥Í±∞ÎÇò Ï∂©ÎèåÌï† Ïàò ÏûàÎäî Îã§Î•∏ ÌîÑÎ°úÍ∑∏Îû®Îì§ÏùÑ Ï¢ÖÎ£åÌïú ÌõÑ Ïã§ÌñâÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3323,"∞‘¿”∞°µÂ √ ±‚»≠ ø°∑Ø¿‘¥œ¥Ÿ. ¿Á∫Œ∆√ »ƒ ¥ŸΩ√ Ω««‡«ÿ ∫∏∞≈≥™ √Êµπ«“ ºˆ ¿÷¥¬ ¥Ÿ∏• «¡∑Œ±◊∑•µÈ¿ª ¡æ∑·«— »ƒ Ω««‡«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;
 		case NPGAMEMON_ERROR_AUTH_GAMEGUARD:
 		case NPGAMEMON_ERROR_NFOUND_GG:			
 		case NPGAMEMON_ERROR_AUTH_INI:		
 		case NPGAMEMON_ERROR_NFOUND_INI:
-			errStr = _S(3324,"Í≤åÏûÑÍ∞ÄÎìú ÌååÏùºÏù¥ ÏóÜÍ±∞ÎÇò Î≥ÄÏ°∞ÎêòÏóàÏäµÎãàÎã§. Í≤åÏûÑÍ∞ÄÎìú ÏÖãÏóÖ ÌååÏùºÏùÑ ÏÑ§ÏπòÌï¥Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3324,"∞‘¿”∞°µÂ ∆ƒ¿œ¿Ã æ¯∞≈≥™ ∫Ø¡∂µ«æ˙Ω¿¥œ¥Ÿ. ∞‘¿”∞°µÂ º¬æ˜ ∆ƒ¿œ¿ª º≥ƒ°«ÿ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;
 		case NPGAMEMON_ERROR_CRYPTOAPI:
-			errStr = _S(3325,"ÏúàÎèÑÏö∞Ïùò ÏùºÎ∂Ä ÏãúÏä§ÌÖú ÌååÏùºÏù¥ ÏÜêÏÉÅÎêòÏóàÏäµÎãàÎã§. Ïù∏ÌÑ∞ÎÑ∑ ÏùµÏä§ÌîåÎ°úÎü¨(IE)Î•º Îã§Ïãú ÏÑ§ÏπòÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3325,"¿©µµøÏ¿« ¿œ∫Œ Ω√Ω∫≈€ ∆ƒ¿œ¿Ã º’ªÛµ«æ˙Ω¿¥œ¥Ÿ. ¿Œ≈Õ≥› ¿ÕΩ∫«√∑Œ∑Ø(IE)∏¶ ¥ŸΩ√ º≥ƒ°«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;
 		case NPGAMEMON_ERROR_EXECUTE:
-			errStr = _S(3326,"Í≤åÏûÑÍ∞ÄÎìú Ïã§ÌñâÏóê Ïã§Ìå®ÌñàÏäµÎãàÎã§. Í≤åÏûÑÍ∞ÄÎìú ÏÖãÏóÖ ÌååÏùºÏùÑ Îã§Ïãú ÏÑ§ÏπòÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3326,"∞‘¿”∞°µÂ Ω««‡ø° Ω«∆–«ﬂΩ¿¥œ¥Ÿ. ∞‘¿”∞°µÂ º¬æ˜ ∆ƒ¿œ¿ª ¥ŸΩ√ º≥ƒ°«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;
 		case NPGAMEMON_ERROR_ILLEGAL_PRG:
-			errStr = _S(3327,"Î∂àÎ≤ï ÌîÑÎ°úÍ∑∏Îû®Ïù¥ Î∞úÍ≤¨ÎêòÏóàÏäµÎãàÎã§. Î∂àÌïÑÏöîÌïú ÌîÑÎ°úÍ∑∏Îû®ÏùÑ Ï¢ÖÎ£åÌïú ÌõÑ Îã§Ïãú Ïã§ÌñâÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3327,"∫“π˝ «¡∑Œ±◊∑•¿Ã πﬂ∞ﬂµ«æ˙Ω¿¥œ¥Ÿ. ∫“« ø‰«— «¡∑Œ±◊∑•¿ª ¡æ∑·«— »ƒ ¥ŸΩ√ Ω««‡«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 //			break;
 		case NPGMUP_ERROR_ABORT:
-			errStr = _S(3328,"Í≤åÏûÑÍ∞ÄÎìú ÏóÖÎç∞Ïù¥Ìä∏Î•º Ï∑®ÏÜåÌïòÏÖ®ÏäµÎãàÎã§. Ï†ëÏÜçÏù¥ Í≥ÑÏÜçÎêòÏßÄ ÏïäÏùÑ Í≤ΩÏö∞ Ïù∏ÌÑ∞ÎÑ∑ Î∞è Í∞úÏù∏ Î∞©ÌôîÎ≤Ω ÏÑ§Ï†ïÏùÑ Ï°∞Ï†ïÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3328,"∞‘¿”∞°µÂ æ˜µ•¿Ã∆Æ∏¶ √Îº“«œºÃΩ¿¥œ¥Ÿ. ¡¢º”¿Ã ∞Ëº”µ«¡ˆ æ ¿ª ∞ÊøÏ ¿Œ≈Õ≥› π◊ ∞≥¿Œ πÊ»≠∫Æ º≥¡§¿ª ¡∂¡§«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;
 		case NPGMUP_ERROR_CONNECT:			
 		case HOOK_TIMEOUT:
-			errStr = _S(3329,"Î∞îÏù¥Îü¨Ïä§ÎÇò Ïä§ÌååÏù¥Ïõ®Ïñ¥Î°ú Ïù∏Ìï¥ ÌõÑÌÇπÏù¥ Ïã§Ìå®ÌïòÏòÄÏäµÎãàÎã§. ÏµúÏã†Î∞±Ïã†ÏùÑ Î∞õÏúºÏã† ÌõÑ Ïª¥Ìì®ÌÑ∞ Ï†ÑÏ≤¥Í≤ÄÏÇ¨Î•º Ìï¥ Ï£ºÏã≠ÏãúÏò§");
+			errStr = _S(3329,"πŸ¿Ã∑ØΩ∫≥™ Ω∫∆ƒ¿Ãø˛æÓ∑Œ ¿Œ«ÿ »ƒ≈∑¿Ã Ω«∆–«œø¥Ω¿¥œ¥Ÿ. √÷Ω≈πÈΩ≈¿ª πﬁ¿∏Ω≈ »ƒ ƒƒ«ª≈Õ ¿¸√º∞ÀªÁ∏¶ «ÿ ¡÷Ω Ω√ø¿");
 			break;
 		case NPGAMEMON_ERROR_GAMEGUARD:
-			errStr = _S(3330,"Í≤åÏûÑÍ∞ÄÎìú Ï¥àÍ∏∞Ìôî ÏóêÎü¨ ÎòêÎäî Íµ¨Î≤ÑÏ†ºÏùò Í≤åÏûÑÍ∞ÄÎìú ÌååÏùºÏûÖÎãàÎã§. Í≤åÏûÑÍ∞ÄÎìú ÏÖãÏóÖ ÌååÏùºÏùÑ Îã§Ïãú ÏÑ§ÏπòÌïòÍ≥† Í≤åÏûÑÏùÑ Ïã§ÌñâÌï¥ Ï£ºÏã≠ÏãúÏò§");
+			errStr = _S(3330,"∞‘¿”∞°µÂ √ ±‚»≠ ø°∑Ø ∂«¥¬ ±∏πˆ¡Ø¿« ∞‘¿”∞°µÂ ∆ƒ¿œ¿‘¥œ¥Ÿ. ∞‘¿”∞°µÂ º¬æ˜ ∆ƒ¿œ¿ª ¥ŸΩ√ º≥ƒ°«œ∞Ì ∞‘¿”¿ª Ω««‡«ÿ ¡÷Ω Ω√ø¿");
 			break;
 		case NPGMUP_ERROR_PARAM:
-			errStr = _S(3331,"ini ÌååÏùºÏù¥ ÏóÜÍ±∞ÎÇò Î≥ÄÏ°∞ÎêòÏóàÏäµÎãàÎã§. Í≤åÏûÑÍ∞ÄÎìú ÏÖãÏóÖ ÌååÏùºÏùÑ ÏÑ§ÏπòÌïòÎ©¥ Ìï¥Í≤∞Ìï† Ïàò ÏûàÏäµÎãàÎã§.");
+			errStr = _S(3331,"ini ∆ƒ¿œ¿Ã æ¯∞≈≥™ ∫Ø¡∂µ«æ˙Ω¿¥œ¥Ÿ. ∞‘¿”∞°µÂ º¬æ˜ ∆ƒ¿œ¿ª º≥ƒ°«œ∏È «ÿ∞·«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
 			break;
 		case NPGMUP_ERROR_INIT:
-			errStr = _S(3332,"npgmup.des Ï¥àÍ∏∞Ìôî ÏóêÎü¨ÏûÖÎãàÎã§. Í≤åÏûÑÍ∞ÄÎìú Ìè¥ÎçîÎ•º ÏÇ≠Ï†úÌõÑ Îã§Ïãú Í≤åÏûÑ Ïã§ÌñâÌï¥ Ï£ºÏã≠ÏãúÏò§.");
+			errStr = _S(3332,"npgmup.des √ ±‚»≠ ø°∑Ø¿‘¥œ¥Ÿ. ∞‘¿”∞°µÂ ∆˙¥ı∏¶ ªË¡¶»ƒ ¥ŸΩ√ ∞‘¿” Ω««‡«ÿ ¡÷Ω Ω√ø¿.");
 			break;
 		case NPGMUP_ERROR_DOWNCFG:
-			errStr = _S(3333,"Í≤åÏûÑÍ∞ÄÎìú ÏóÖÎç∞Ïù¥Ìä∏ ÏÑúÎ≤Ñ Ï†ëÏÜçÏóê Ïã§Ìå®ÌïòÏòÄÏäµÎãàÎã§. Ïû†Ïãú ÌõÑ Ïû¨ÏãúÎèÑ Ìï¥Î≥¥Í±∞ÎÇò, Í∞úÏù∏ Î∞©ÌôîÎ≤ΩÏù¥ ÏûàÎã§Î©¥ ÏÑ§Ï†ïÏùÑ Ï°∞Ï†ïÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3333,"∞‘¿”∞°µÂ æ˜µ•¿Ã∆Æ º≠πˆ ¡¢º”ø° Ω«∆–«œø¥Ω¿¥œ¥Ÿ. ¿·Ω√ »ƒ ¿ÁΩ√µµ «ÿ∫∏∞≈≥™, ∞≥¿Œ πÊ»≠∫Æ¿Ã ¿÷¥Ÿ∏È º≥¡§¿ª ¡∂¡§«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;
 		case NPGMUP_ERROR_AUTH:
-			errStr = _S(3334,"Í≤åÏûÑÍ∞ÄÎìú ÏóÖÎç∞Ïù¥Ìä∏Î•º ÏôÑÎ£åÌïòÏßÄ Î™ª ÌñàÏäµÎãàÎã§. Î∞îÏù¥Îü¨Ïä§ Î∞±Ïã†ÏùÑ ÏùºÏãú Ï§ëÏßÄÏãúÌÇ® ÌõÑ Ïû¨ÏãúÎèÑ Ìï¥Î≥¥ÏãúÍ±∞ÎÇò, PCÍ¥ÄÎ¶¨ ÌîÑÎ°úÍ∑∏Îû®ÏùÑ ÏÇ¨Ïö©ÌïòÏãúÎ©¥ ÏÑ§Ï†ïÏùÑ Ï°∞Ï†ïÌï¥ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3334,"∞‘¿”∞°µÂ æ˜µ•¿Ã∆Æ∏¶ øœ∑·«œ¡ˆ ∏¯ «ﬂΩ¿¥œ¥Ÿ. πŸ¿Ã∑ØΩ∫ πÈΩ≈¿ª ¿œΩ√ ¡ﬂ¡ˆΩ√≈≤ »ƒ ¿ÁΩ√µµ «ÿ∫∏Ω√∞≈≥™, PC∞¸∏Æ «¡∑Œ±◊∑•¿ª ªÁøÎ«œΩ√∏È º≥¡§¿ª ¡∂¡§«ÿ ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;
 		case NPGAMEMON_ERROR_NPSCAN:
-			errStr = _S(3335,"Î∞îÏù¥Îü¨Ïä§ Î∞è Ìï¥ÌÇπÌà¥ Í≤ÄÏÇ¨ Î™®Îìà Î°úÎî©Ïóê Ïã§Ìå® ÌñàÏäµÎãàÎã§. Î©îÎ™®Î¶¨ Î∂ÄÏ°±Ïù¥Í±∞ÎÇò Î∞îÏù¥Îü¨Ïä§Ïóê ÏùòÌïú Í∞êÏóºÏùº Ïàò ÏûàÏäµÎãàÎã§.");			
+			errStr = _S(3335,"πŸ¿Ã∑ØΩ∫ π◊ «ÿ≈∑≈¯ ∞ÀªÁ ∏µ‚ ∑Œµ˘ø° Ω«∆– «ﬂΩ¿¥œ¥Ÿ. ∏ﬁ∏∏Æ ∫Œ¡∑¿Ã∞≈≥™ πŸ¿Ã∑ØΩ∫ø° ¿««— ∞®ø∞¿œ ºˆ ¿÷Ω¿¥œ¥Ÿ.");			
 			break;
 		default:
-			errStr = _S(3336,"Í≤åÏûÑÍ∞ÄÎìú Ïã§Ìñâ Ï§ë ÏóêÎü¨Í∞Ä Î∞úÏÉùÌïòÏòÄÏäµÎãàÎã§. Í≤åÏûÑ Ìè¥Îçî ÏïàÏùò GameGuardÌè¥ÎçîÏóê ÏûàÎäî *erl ÌååÏùºÏùÑ Î≤ÑÍ∑∏Î†àÌè¨ÌåÖÏãú Ï≤®Î∂ÄÌïòÏó¨ Ï£ºÏãúÍ∏∞ Î∞îÎûçÎãàÎã§.");
+			errStr = _S(3336,"∞‘¿”∞°µÂ Ω««‡ ¡ﬂ ø°∑Ø∞° πﬂª˝«œø¥Ω¿¥œ¥Ÿ. ∞‘¿” ∆˙¥ı æ»¿« GameGuard∆˙¥ıø° ¿÷¥¬ *erl ∆ƒ¿œ¿ª πˆ±◊∑π∆˜∆√Ω√ √∑∫Œ«œø© ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ.");
 			break;			
 		}
-		msg.PrintF(_S(3342,"Í≤åÏûÑÍ∞ÄÎìú ÏóêÎü¨ : %lu"),dwResult);
+		msg.PrintF(_S(3342,"∞‘¿”∞°µÂ ø°∑Ø : %lu"),dwResult);
 		MessageBox(NULL,errStr.str_String,msg,MB_OK);
 		
-		// Í≤åÏûÑ Ï¢ÖÎ£å
+		// ∞‘¿” ¡æ∑·
 		return FALSE;
 	}	
 
@@ -9886,30 +9894,30 @@ BOOL CNetworkLibrary::NPGameMonCallbackErrChk(DWORD dwMsg, DWORD dwArg)
 
 	switch(dwMsg)
 	{
-		// TODO : Î©îÏãúÏßÄ Ï≤òÎ¶¨ (p21)		
+		// TODO : ∏ﬁΩ√¡ˆ √≥∏Æ (p21)		
 		case NPGAMEMON_COMM_ERROR :
 		case NPGAMEMON_COMM_CLOSE :
 			tAppExit = TRUE;
 			break;
 		case NPGAMEMON_INIT_ERROR :
 			tAppExit = TRUE;
-			g_szHackMsg.PrintF(_S(3337,"Í≤åÏûÑÍ∞ÄÎìú Ï¥àÍ∏∞Ìôî ÏóêÎü¨ : %lu"), dwArg);
+			g_szHackMsg.PrintF(_S(3337,"∞‘¿”∞°µÂ √ ±‚»≠ ø°∑Ø : %lu"), dwArg);
 			break;
 		case NPGAMEMON_SPEEDHACK :
 			tAppExit = TRUE;
-			g_szHackMsg = _S(3338,"Ïä§ÌîºÎìúÌïµÏù¥ Í∞êÏßÄÎêòÏóàÏäµÎãàÎã§.");
+			g_szHackMsg = _S(3338,"Ω∫««µÂ«Ÿ¿Ã ∞®¡ˆµ«æ˙Ω¿¥œ¥Ÿ.");
 			break;						
 		case NPGAMEMON_GAMEHACK_KILLED :
 			tAppExit = TRUE;
-			g_szHackMsg.PrintF(_S(3339,"Í≤åÏûÑÌïµÏù¥ Î∞úÍ≤¨ÎêòÏóàÏäµÎãàÎã§.\r\n%s"),npgl.GetInfo());
+			g_szHackMsg.PrintF(_S(3339,"∞‘¿”«Ÿ¿Ã πﬂ∞ﬂµ«æ˙Ω¿¥œ¥Ÿ.\r\n%s"),npgl.GetInfo());
 			break;
 		case NPGAMEMON_GAMEHACK_DETECT :
 			tAppExit = TRUE;
-			g_szHackMsg.PrintF(_S(3340,"Í≤åÏûÑÌïµÏù¥ Î∞úÍ≤¨ÎêòÏóàÏäµÎãàÎã§.\r\n%s"),npgl.GetInfo());
+			g_szHackMsg.PrintF(_S(3340,"∞‘¿”«Ÿ¿Ã πﬂ∞ﬂµ«æ˙Ω¿¥œ¥Ÿ.\r\n%s"),npgl.GetInfo());
 			break;
 		case NPGAMEMON_GAMEHACK_DOUBT :
 			tAppExit = TRUE;
-			g_szHackMsg.PrintF(_S(3341,"Í≤åÏûÑÏù¥ÎÇò Í≤åÏûÑÍ∞ÄÎìúÍ∞Ä Î≥ÄÏ°∞ÎêòÏóàÏäµÎãàÎã§.\r\n%s"),npgl.GetInfo());
+			g_szHackMsg.PrintF(_S(3341,"∞‘¿”¿Ã≥™ ∞‘¿”∞°µÂ∞° ∫Ø¡∂µ«æ˙Ω¿¥œ¥Ÿ.\r\n%s"),npgl.GetInfo());
 			break;
 		case NPGAMEMON_CHECK_CSAUTH2 :
 			SendnProtectAuth2(dwArg);
@@ -9928,18 +9936,19 @@ void CNetworkLibrary::Check_nProtect()
 {
 	if( npgl.Check() != NPGAMEMON_SUCCESS )
 	{
-		// Í≤åÏûÑ Ï¢ÖÎ£å
+		// ∞‘¿” ¡æ∑·
 		_pGameState->Running()		= FALSE;
 		_pGameState->QuitScreen()	= FALSE;
 	}
 }
 
 #endif
+  /**/
 // -----------------------------------------------------<<
 
 // WSS_MINIGAME 070420 -------------------------------------------->>
 
-void CNetworkLibrary::SendMinigameDefaultMessage(UBYTE subType)
+void CNetworkLibrary::SendMinigameDefaultMessage(UBYTE eventType, UBYTE subType)
 {
 	// MSG_EVENT_GOMDORI_2007_CHECKITEM
 	// MSG_EVENT_GOMDORI_2007_START
@@ -9947,24 +9956,24 @@ void CNetworkLibrary::SendMinigameDefaultMessage(UBYTE subType)
 	// MSG_EVENT_GOMDORI_2007_END
 	// MSG_EVENT_GOMDORI_2007_VIEW_STATUS
 
-	CNetworkMessage nmMessage(MSG_EVENT);
-	nmMessage << (UBYTE)MSG_EVENT_GOMDORI_2007;	
-	nmMessage << (UBYTE)subType;
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
+	nmMessage << eventType;	
+	nmMessage << subType;
 	SendToServerNew(nmMessage);
 }
 
-void CNetworkLibrary::SendMinigameSelect(UBYTE cSelect)
+void CNetworkLibrary::SendMinigameSelect(UBYTE eventType, UBYTE subType, UBYTE cSelect)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
-	nmMessage << (UBYTE)MSG_EVENT_GOMDORI_2007;	
-	nmMessage << (UBYTE)MSG_EVENT_GOMDORI_2007_SELECT;
-	nmMessage << (UBYTE)cSelect;
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
+	nmMessage << eventType;	
+	nmMessage << subType;
+	nmMessage << cSelect;
 	SendToServerNew(nmMessage);
 }
 
 void CNetworkLibrary::SendMinigameSelectGift(ULONG cSelect)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 	nmMessage << (UBYTE)MSG_EVENT_GOMDORI_2007;	
 	nmMessage << (UBYTE)MSG_EVENT_GOMDORI_2007_SELECT_GIFT;
 	nmMessage << (ULONG)cSelect;
@@ -9978,42 +9987,46 @@ void CNetworkLibrary::SendMinigameSelectGift(ULONG cSelect)
 /************************************************************************/
 void CNetworkLibrary::SendFlowerTreeReq(UBYTE subType)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 	nmMessage << (UBYTE)MSG_EVENT_FLOWERTREE_2007;
 	nmMessage << subType;
 	SendToServerNew(nmMessage);
 }
 
 // [070613: Su-won] 
-// Î¨¥Í∏∞,Î∞©Ïñ¥Íµ¨ ÍµêÌôò Ïπ¥Îìú ÏÇ¨Ïö© ÏöîÏ≤≠
-void CNetworkLibrary::UseChangeWeaponItem( SBYTE sbRow, SBYTE sbCol, LONG lItemIndex, LONG lChangeType )
+// π´±‚,πÊæÓ±∏ ±≥»Ø ƒ´µÂ ªÁøÎ ø‰√ª
+void CNetworkLibrary::UseChangeWeaponItem( SWORD nTab, SWORD inven_idx, LONG lItemIndex, LONG lChangeType, LONG lTradeItemIndex )
 {
-	CNetworkMessage nmMessage(MSG_ITEM);
-	nmMessage << (SBYTE)MSG_ITEM_EXCHANGE_EQUIP_REQ;
-
-	int tv_tab,tv_row,tv_col;
-	_pUIMgr->GetInventory()->GetUseItemSlotInfo(tv_tab,tv_row,tv_col);
+	int tv_tab, tv_idx;
+	CUIManager::getSingleton()->GetInventory()->GetUseItemSlotInfo(tv_tab, tv_idx);
 	
-	CItems& Items = _pNetwork->MySlotItem[tv_tab][tv_row][tv_col];
+	CItems* pItems = &MySlotItem[tv_tab][tv_idx];
 
-	if(Items.Item_Index ==-1) //ÎπÑÏñ¥ÏûàÎäî Ïä¨Î°ØÏù¥Îã§.
+	if(pItems->Item_Index ==-1) //∫ÒæÓ¿÷¥¬ ΩΩ∑‘¿Ã¥Ÿ.
 		return;
 	
-	nmMessage << sbRow;
-	nmMessage << sbCol;
-	nmMessage << lItemIndex;
-	nmMessage << lChangeType;
-	nmMessage << Items.Item_Row;
-	nmMessage << Items.Item_Col;
-	nmMessage << Items.Item_UniIndex;
-	SendToServerNew(nmMessage);
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUseExchangeEquip* packet = reinterpret_cast<RequestClient::doItemUseExchangeEquip*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_EXCHANGE_EQUIP_REQ;
+	packet->tab_1 = nTab;
+	packet->invenIndex_1 = inven_idx;
+	packet->tab_2 = tv_tab;
+	packet->invenIndex_2 = tv_idx;
+	packet->virtualIndex = lItemIndex;
+	packet->changeType = lChangeType;
+	packet->exchangeDBIndex = lTradeItemIndex;
+
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 // [070613: Su-won] 
-// Ìé´ Î™ÖÏ∞∞ ÏïÑÏù¥ÌÖú ÏÇ¨Ïö© ÏöîÏ≤≠
+// ∆Í ∏Ì¬˚ æ∆¿Ã≈€ ªÁøÎ ø‰√ª
 void CNetworkLibrary::SendPetNameChageReq( int nPetIndex, CTString strPetName )
 {
-	CNetworkMessage nmMessage( MSG_EXTEND );
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage << (ULONG)MSG_EX_PET_CHANGE_NAME;
 	
 	nmMessage << (SLONG)nPetIndex;
@@ -10023,10 +10036,10 @@ void CNetworkLibrary::SendPetNameChageReq( int nPetIndex, CTString strPetName )
 }
 
 // [070705: Su-won] EVENT_SUMMBER_2007
-// 2007 Ïó¨Î¶Ñ Ïù¥Î≤§Ìä∏: Ï¢ÖÏù¥ Ï†ëÍ∏∞ ÏöîÏ≤≠
+// 2007 ø©∏ß ¿Ã∫•∆Æ: ¡æ¿Ã ¡¢±‚ ø‰√ª
 void CNetworkLibrary::SendPaperFoldingReq(int nItemIndex0, int nItemIndex1, int nItemIndex2)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_SUMMER_VACATION_2007;
 	nmMessage << (UBYTE)MSG_EVENT_SUMMER_VACATION_2007_PAPER_FIGURES;
@@ -10038,10 +10051,10 @@ void CNetworkLibrary::SendPaperFoldingReq(int nItemIndex0, int nItemIndex1, int 
 }
 
 // [070705: Su-won] EVENT_SUMMBER_2007
-// 2007 Ïó¨Î¶Ñ Ïù¥Î≤§Ìä∏: ÏÉâÏ¢ÖÏù¥ Ï°∞Ìï© ÏöîÏ≤≠
+// 2007 ø©∏ß ¿Ã∫•∆Æ: ªˆ¡æ¿Ã ¡∂«’ ø‰√ª
 void CNetworkLibrary::SendPaperBlendingReq(int nItemIndex)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_SUMMER_VACATION_2007;
 	nmMessage << (UBYTE)MSG_EVENT_SUMMER_VACATION_2007_INCHEN;
@@ -10051,33 +10064,33 @@ void CNetworkLibrary::SendPaperBlendingReq(int nItemIndex)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 // [070807: Su-won] EVENT_ADULT_OPEN
-// ÏÑ±Ïù∏ÏÑúÎ≤Ñ Ïò§Ìîà Ïù¥Î≤§Ìä∏ Í¥ÄÎ†® Î≥¥ÏÉÅ ÏöîÏ≤≠
+// º∫¿Œº≠πˆ ø¿«¬ ¿Ã∫•∆Æ ∞¸∑√ ∫∏ªÛ ø‰√ª
 //
 // Parameter:
-// iEvent - Ïù¥Î≤§Ìä∏ Î≤àÌò∏( 0:Îß§ÏßÅÏπ¥Îìú Ïù¥Î≤§Ìä∏, 1:Ï†ÑÏßÅ Ïù¥Î≤§Ìä∏, 2:Ïó∞Í∏àÏà† Ïù¥Î≤§Ìä∏)
-// tv_tab, tv_row, tv_col - Ïó∞Í∏àÏà†Ïóê ÏÇ¨Ïö©Ìï† Ïû•ÎπÑÏùò Ïù∏Î≤§ ÏúÑÏπò. Ïó∞Í∏àÏà† Ïù¥Î≤§Ìä∏ÏóêÎßå ÏÇ¨Ïö©
+// iEvent - ¿Ã∫•∆Æ π¯»£( 0:∏≈¡˜ƒ´µÂ ¿Ã∫•∆Æ, 1:¿¸¡˜ ¿Ã∫•∆Æ, 2:ø¨±›º˙ ¿Ã∫•∆Æ)
+// tv_tab, tv_row, tv_col - ø¨±›º˙ø° ªÁøÎ«“ ¿Â∫Ò¿« ¿Œ∫• ¿ßƒ°. ø¨±›º˙ ¿Ã∫•∆Æø°∏∏ ªÁøÎ
 //
 void CNetworkLibrary::SendAdultOpenEventReq( int iEvent, int tv_tab, int tv_row, int tv_col)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_OPEN_ADULT_SERVER;
 	
 	switch( iEvent )
 	{
-		//Îß§ÏßÅÏπ¥Îìú Ïù¥Î≤§Ìä∏
+		//∏≈¡˜ƒ´µÂ ¿Ã∫•∆Æ
 	case 0:
 		{
 			nmMessage << (UBYTE)MSG_EVENT_OPEN_ADULT_SERVER_MAGIC_REQ;
 		}
 		break;
-		//Ï†ÑÏßÅ Ïù¥Î≤§Ìä∏
+		//¿¸¡˜ ¿Ã∫•∆Æ
 	case 1:
 		{
 			nmMessage << (UBYTE)MSG_EVENT_OPEN_ADULT_SERVER_CHABGEJOB_EXCHANGE;
 		}
 		break;
-		//Ïó∞Í∏àÏà† Ïù¥Î≤§Ìä∏
+		//ø¨±›º˙ ¿Ã∫•∆Æ
 	case 2:
 		{
 			nmMessage << (UBYTE)MSG_EVENT_OPEN_ADULT_SERVER_UPGRADE_REQ;
@@ -10097,7 +10110,7 @@ void CNetworkLibrary::SendAdultOpenEventReq( int iEvent, int tv_tab, int tv_row,
 // WSS_TG2007 2007/09/14 ------------------------------------------------------------>>
 void CNetworkLibrary::SendTG2007ScreenshotReq()
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 	nmMessage << (UBYTE)MSG_EVENT_SSHOT_2007;
 	nmMessage << (UBYTE)MSG_EVENT_SSHOT_2007_RECIVE;	
 	SendToServerNew(nmMessage);
@@ -10105,7 +10118,7 @@ void CNetworkLibrary::SendTG2007ScreenshotReq()
 
 void CNetworkLibrary::SendTG2007RichYearReq(int subType)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 	nmMessage << (UBYTE)MSG_EVENT_RICHYEAR;
 	nmMessage << (UBYTE)subType;	
 	SendToServerNew(nmMessage);
@@ -10117,7 +10130,7 @@ void CNetworkLibrary::SendTG2007RichYearReq(int subType)
 //============================================================================================================
 void CNetworkLibrary::SendBJMono2007Req(UBYTE subType, ULONG ulNum)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_BJMONO_2007;
 	nmMessage << subType;
@@ -10134,13 +10147,13 @@ void CNetworkLibrary::SendBJMono2007Req(UBYTE subType, ULONG ulNum)
 // CNetworkLibrary::SendLC1000DayCapUpgradeReq
 // 
 //============================================================================================================
-void CNetworkLibrary::SendLC1000DayHatUpgradeReq(SBYTE sbRow, SBYTE sbCol, LONG lItemIndex)
+void CNetworkLibrary::SendLC1000DayHatUpgradeReq(SWORD nIdx, LONG lItemIndex)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 	
 	nmMessage << (UBYTE)MSG_EVENT_LC_1000DAY;
 	nmMessage << (UBYTE)MSG_EVENT_LC_1000DAY_HAT_UPDATE;
-	nmMessage << sbRow << sbCol;
+//	nmMessage << sbRow << sbCol;
 	nmMessage << lItemIndex;
 
 	SendToServerNew(nmMessage);
@@ -10152,7 +10165,7 @@ void CNetworkLibrary::SendLC1000DayHatUpgradeReq(SBYTE sbRow, SBYTE sbCol, LONG 
 //============================================================================================================
 void CNetworkLibrary::SendLC1000DayTakeHatReq()
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_LC_1000DAY;
 	nmMessage << (UBYTE)MSG_EVENT_LC_1000DAY_HAT;
@@ -10166,7 +10179,7 @@ void CNetworkLibrary::SendLC1000DayTakeHatReq()
 //============================================================================================================
 void CNetworkLibrary::SendTakeFireCracker()
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_LC_1000DAY;
 	nmMessage << (UBYTE)MSG_EVENT_LC_1000DAY_FIRECRACKER;
@@ -10180,7 +10193,7 @@ void CNetworkLibrary::SendTakeFireCracker()
 //============================================================================================================
 void CNetworkLibrary::SendHalloween2007Req(UBYTE subType)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_HALLOWEEN_2007;
 	nmMessage << (UBYTE)subType;
@@ -10191,7 +10204,12 @@ void CNetworkLibrary::SendHalloween2007Req(UBYTE subType)
 //[071123: Su-won] DRATAN_SIEGE_DUNGEON
 void CNetworkLibrary::SendDratanSiegeDungeonMSG(UBYTE ubSubType, UBYTE ubSubSubType, int nValue)
 {
-	CNetworkMessage nmMessage( MSG_EXTEND );
+	if (ubSubType == MSG_DUNGEON_ENTER && ubSubSubType == MSG_DUNGEON_GO)
+	{
+		UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+	}
+
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
 	nmMessage<< (LONG)MSG_EX_DVD;
 	nmMessage<< ubSubType;
 	if( ubSubType == MSG_MANAGEMENT || ubSubType == MSG_DUNGEON_ENTER)
@@ -10210,10 +10228,10 @@ void CNetworkLibrary::SendDratanSiegeDungeonMSG(UBYTE ubSubType, UBYTE ubSubSubT
 	SendToServerNew(nmMessage);
 }
 
-// ttos : ÌåêÎß§ÎåÄÌñâ ÏÉÅÏù∏
+// ttos : ∆«∏≈¥Î«‡ ªÛ¿Œ
 void CNetworkLibrary::SendCashPersonShop(UBYTE subType)
 {
-	CNetworkMessage nmMessage(MSG_EXTEND);
+	CNetworkMessage nmMessage((UBYTE)MSG_EXTEND);
 	
 	nmMessage << (LONG)MSG_EX_ALTERNATE_MERCHANT;
 	nmMessage << (UBYTE)subType;
@@ -10227,7 +10245,7 @@ void CNetworkLibrary::SendCashPersonShop(UBYTE subType)
 //============================================================================================================
 void CNetworkLibrary::SendXMAS2007DecoReq(UBYTE subType)
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_XMAS_2007;
 	nmMessage << subType;
@@ -10235,40 +10253,51 @@ void CNetworkLibrary::SendXMAS2007DecoReq(UBYTE subType)
 	SendToServerNew(nmMessage);
 }
 
-#ifdef RESTART_GAME
 //============================================================================================================
 // CNetworkLibrary::SendRestartGame
-// Ïõπ Ïã§ÌñâÎ≤ÑÏ†ÑÏúºÎ°ú Ïù∏Ìïú Ïû¨ÏãúÏûë ÏöîÏ≤≠ Î©îÏÑ∏ÏßÄ
+// ¿• Ω««‡πˆ¿¸¿∏∑Œ ¿Œ«— ¿ÁΩ√¿€ ø‰√ª ∏ﬁºº¡ˆ
 //============================================================================================================
 void CNetworkLibrary::SendRestartGame()
 {
-	CNetworkMessage nmMessage(MSG_EXTEND);
-
+	CNetworkMessage nmMessage((UBYTE)MSG_EXTEND);
 	nmMessage << (ULONG)MSG_EX_RESTART;
+	nmMessage << (SBYTE)0;
 
-	SendToServerNew(nmMessage);
+	SendToServerNew( nmMessage );
 }
-#endif
+
+void CNetworkLibrary::SendReceiveRestartGame()
+{
+	CNetworkMessage nmMessage((UBYTE)MSG_EXTEND);
+	nmMessage << (ULONG)MSG_EX_RESTART;
+	nmMessage << (SBYTE)1;
+
+	SendToServerNew( nmMessage );
+}
 
 //============================================================================================================
 // CNetworkLibrary::SendUseGoDungeon
-// ÎçòÏ†ÑÏù¥Îèô Ï£ºÎ¨∏ÏÑú ÏÇ¨Ïö©
+// ¥¯¿¸¿Ãµø ¡÷πÆº≠ ªÁøÎ
 //============================================================================================================
 void CNetworkLibrary::SendUseGoDungeon(INDEX iItemIndex, INDEX iZone, INDEX iExtra)
 {
-	CNetworkMessage nmMessage(MSG_ITEM);
+	UIMGR()->SetCSFlagOn(CSF_TELEPORT);
 
-	nmMessage << (UBYTE)MSG_ITEM_USE_WARPDOC;
-	nmMessage << (ULONG)iItemIndex;
-	nmMessage << (ULONG)iZone;
-	nmMessage << (ULONG)iExtra;
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUseWarpDoc* packet = reinterpret_cast<RequestClient::doItemUseWarpDoc*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE_WARPDOC;
+	packet->virtualIndex = iItemIndex;
+	packet->zone = iZone;
+	packet->extra = iExtra;
+	nmMessage.setSize( sizeof(*packet) );
 
-	SendToServerNew(nmMessage);
+	SendToServerNew( nmMessage );
 }
 
 //============================================================================================================
 // CNetworkLibrary::SendPresscorpsMessage
-// ÎùºÏπ¥Í∏∞ÏûêÎã® ÌòúÌÉù Í¥ÄÎ†® (ÌôïÏÑ±Í∏∞ Í∏∞Îä• Î©îÏÑ∏ÏßÄ Ï†ÑÏÜ°) Ïô∏ÏπòÍ∏∞!
+// ∂Ûƒ´±‚¿⁄¥‹ «˝≈√ ∞¸∑√ (»Æº∫±‚ ±‚¥… ∏ﬁºº¡ˆ ¿¸º€) ø‹ƒ°±‚!
 //============================================================================================================
 void CNetworkLibrary::SendPresscorpsMessage(ULONG ulItemIndex, CTString Sendstr)
 {
@@ -10276,24 +10305,30 @@ void CNetworkLibrary::SendPresscorpsMessage(ULONG ulItemIndex, CTString Sendstr)
 	{
 		return;
 	}
-	CNetworkMessage nmMessage(MSG_ITEM); 	
-	nmMessage << (SBYTE)MSG_ITEM_USE_PRESSCORPS;
-	nmMessage << ulItemIndex;
-	
+		
 	CTString tmpString = _pNetwork->MyCharacterInfo.name + ": " + Sendstr;
 
-	nmMessage << tmpString;
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUsePressCorps* packet = reinterpret_cast<RequestClient::doItemUsePressCorps*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_USE_PRESSCORPS;
+	packet->virtuaIndex = ulItemIndex;
 
-	_pNetwork->SendToServerNew(nmMessage);
+	strcpy(packet->str, tmpString.str_String);
+	packet->str[tmpString.Length()] = '\0';
+
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
 }
 
 //============================================================================================================
 // CNetworkLibrary::SendUpdatePlayTime
-// ÌîåÎ†àÏù¥ ÏãúÍ∞Ñ 10Î∂ÑÍ∞ÑÍ≤©ÏúºÎ°ú ÏóÖÎç∞Ïù¥Ìä∏ Î©îÏÑ∏ÏßÄ Ï†ÑÎã¨
+// «√∑π¿Ã Ω√∞£ 10∫–∞£∞›¿∏∑Œ æ˜µ•¿Ã∆Æ ∏ﬁºº¡ˆ ¿¸¥ﬁ
 //============================================================================================================
 void CNetworkLibrary::SendUpdatePlayTime(ULONG nTime)
 {
-	CNetworkMessage nmMessage(MSG_EXTEND);
+	CNetworkMessage nmMessage((UBYTE)MSG_EXTEND);
 
 	nmMessage << (ULONG)MSG_EX_UPDATE_PLAYTIME;
 	nmMessage << (ULONG)nTime;
@@ -10301,40 +10336,42 @@ void CNetworkLibrary::SendUpdatePlayTime(ULONG nTime)
 	_pNetwork->SendToServerNew(nmMessage);
 }
 
-void CNetworkLibrary::SendItemDelete(SBYTE iTab, SBYTE iRow, SBYTE iCol, INDEX UniIndex, SQUAD count)
+void CNetworkLibrary::SendItemDelete(SWORD iTab, SWORD inven_idx, INDEX UniIndex, SQUAD count)
 {
-	CNetworkMessage nmMessage(MSG_ITEM);
-
-	nmMessage << (SBYTE)MSG_ITEM_DELETE;
-	nmMessage << iTab << iRow << iCol;
-	nmMessage << UniIndex;
-	nmMessage << count;
+	CNetworkMessage nmMessage;
+	RequestClient::doItemDelete* packet = reinterpret_cast<RequestClient::doItemDelete*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_DELETE;
+	packet->tab = iTab;
+	packet->invenIndex = inven_idx;
+	packet->virualIndex = UniIndex;
+	nmMessage.setSize( sizeof(*packet) );
 
 	_pNetwork->SendToServerNew(nmMessage);
 }
 
-void CNetworkLibrary::SendUseWildPetItem(int posId, int tabId, int rowId, int colId, int item_index)
+void CNetworkLibrary::SendUseWildPetItem(int posId, int tabId, int inven_idx, int item_index)
 {
-	
-	CNetworkMessage nmMessage(MSG_EXTEND);
-
-	nmMessage << (ULONG)MSG_EX_ATTACK_PET;
-	nmMessage << (SBYTE)MSG_SUB_ITEM_WEAR;
-	nmMessage << (SBYTE)posId;
-	nmMessage << (SBYTE)tabId;
-	nmMessage << (SBYTE)rowId;
-	nmMessage << (SBYTE)colId;
-	nmMessage << (ULONG)item_index;
+	CNetworkMessage nmMessage;
+	RequestClient::doExApetItemWear* packet = reinterpret_cast<RequestClient::doExApetItemWear*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_EXTEND;
+	packet->subType = htonl(MSG_EX_ATTACK_PET);
+	packet->thirdType = MSG_SUB_ITEM_WEAR;
+	packet->tab = tabId;
+	packet->invenIndex = inven_idx;
+	packet->itemIdx = item_index;
+	packet->wearPos = posId;
+	nmMessage.setSize( sizeof(*packet) );
 
 	_pNetwork->SendToServerNew(nmMessage);
 }
 
 //////////////////////////////////////////////////////////////////////////
-// ÌîºÎãâÏä§ Ï∫êÎ¶≠ÌÑ∞ Í∞ÄÎä• Ïó¨Î∂Ä ÌôïÏù∏
+// ««¥–Ω∫ ƒ≥∏Ø≈Õ ∞°¥… ø©∫Œ »Æ¿Œ
 
 void CNetworkLibrary::SendPhoenixCharacterCondition()
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_PHOENIX;
 
@@ -10342,11 +10379,11 @@ void CNetworkLibrary::SendPhoenixCharacterCondition()
 }
 
 //////////////////////////////////////////////////////////////////////////
-// ÌîºÎãâÏä§ Ï∫êÎ¶≠ÌÑ∞ Ïã†Ï≤≠
+// ««¥–Ω∫ ƒ≥∏Ø≈Õ Ω≈√ª
 
 void CNetworkLibrary::SendCreatePhoenixCharacter()
 {
-	CNetworkMessage nmMessage(MSG_EVENT);
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
 
 	nmMessage << (UBYTE)MSG_EVENT_PHOENIX_SUCCESS;
 
@@ -10357,161 +10394,1414 @@ void CNetworkLibrary::SendCreatePhoenixCharacter()
 //////////////////////////////////////////////////////////////////////////
 //============================================================================================================
 // CNetworkLibrary::SendInitSSkillReq
-// Ïä§ÌéòÏÖú Ïä§ÌÇ¨ Ï¥àÍ∏∞Ìôî ÏöîÏ≤≠
+// Ω∫∆‰º» Ω∫≈≥ √ ±‚»≠ ø‰√ª
 //============================================================================================================
 void CNetworkLibrary::SendInitSSkillReq()
 {
-	CNetworkMessage nmMessage(MSG_EXTEND);
+	CNetworkMessage nmMessage((UBYTE)MSG_EXTEND);
 	nmMessage << (ULONG)MSG_EX_INIT_SSKILL;
 	_pNetwork->SendToServerNew(nmMessage);
 }
 
 //============================================================================================================
 // CNetworkLibrary::SendUsingSpeedHack
-// Ïä§ÌîºÎìú Ìïµ ÏÇ¨Ïö©Ïûê ÏÑúÎ≤ÑÏóê ÌÜµÎ≥¥
+// Ω∫««µÂ «Ÿ ªÁøÎ¿⁄ º≠πˆø° ≈Î∫∏
 //============================================================================================================
-void CNetworkLibrary::SendUsingSpeedHack()
+void CNetworkLibrary::SendInput()  // SendUsingSpeedHack --> SendInput
 {
-	CNetworkMessage nmMessage(MSG_EXTEND);
+	CNetworkMessage nmMessage((UBYTE)MSG_EXTEND);
 	nmMessage << (ULONG)MSG_EX_DISCONNECT_HACK_CHARACTER;
 	nmMessage << (FLOAT)_pTimer->tmTimeDelay;
 	_pNetwork->SendToServerNew(nmMessage);
 }
 
+//[ttos_2009_3_18]: «œ≥™∆˜Ω∫ π◊ SK∫Í∑ŒµÂπÍµÂ ∞°¿‘¿⁄ ¿Ã∫•∆Æ
+void CNetworkLibrary::SendHanaposEvent(int nNpcVirIdx)
+{
+	CNetworkMessage nmMessage;
+	RequestClient::skillHanaroEvent* packet = reinterpret_cast<RequestClient::skillHanaroEvent*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_SKILL;
+	packet->subType = MSG_SKILL_HANARO_EVENT;
+	packet->npcIndex = nNpcVirIdx;
+	
+	nmMessage.setSize( sizeof(*packet) );
+	SendToServerNew(nmMessage);
+}
 
+void CNetworkLibrary::SendEventRequital(int nRequital)
+{
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
+
+	nmMessage << (UBYTE)MSG_EVENT_REQUITAL;
+	nmMessage << (SLONG)nRequital;
+
+	_pNetwork->SendToServerNew(nmMessage);
+}
+
+//=========================================================================
+// √ ∫∏ ¡ˆø¯ªÁ π◊ ¡ﬂ¿˙∑π∫ß ¡ˆø¯ªÁ Ω∫≈≥ ªÁøÎ ø‰√ª(∞Ì∑π∫ß ¡ˆø¯ªÁµµ ∞∞¿Ã ªÁøÎ)
+//=========================================================================
+void CNetworkLibrary::SendSupportSkill(UBYTE ubMsg)
+{
+	CNetworkMessage nm;
+	RequestClient::skillUseEP* packet = reinterpret_cast<RequestClient::skillUseEP*>(nm.nm_pubMessage);
+	packet->type = MSG_SKILL;
+	packet->subType = ubMsg;	
+	nm.setSize( sizeof(*packet) );
+	SendToServerNew(nm);
+}
+
+//============================================================================================================
+// void SendEventMsg()¥¬ ¿Ã∫•∆Æ ∏ﬁºº¡ˆ «‘ºˆ∞° ∞Ëº” ¥√æÓ≥™¥¬∞Õ¿ª »∏«««œ±‚ ¿ß«œø© ≈Î«’ √≥∏Æ∏¶ «œµµ∑œ «’Ω√¥Ÿ.
+// CNetwork classø°º≠ ¿Ã∫•∆Æ ¿¸º€ ∆ƒ∂ÛπÃ≈Õ∏¶ πﬁæ∆º≠ «—π¯ø° SendEventMsg()∑Œ ¿¸º€«œµµ∑œ «’Ω√¥Ÿ.
+// ¿¸º€ ∆ƒ∂ÛπÃ≈Õ¥¬ ∞¢ ∫Øºˆ ≈∏¿‘ ∫∞∑Œ, ULONG, UBYTE, CTString 3∞°¡ˆ ≈∏¿‘∏∏¿∏∑Œ ¿¸º€ √≥∏Æ∞° øÎ¿««œπ«∑Œ(type casting),
+// ¿¸º€ ∆ƒ∂ÛπÃ≈Õ ∫Øºˆ¥¬ static_Array<ULONG>, static_array<UBYTE>, static_array<CTString>¿∏∑Œ «’Ω√¥Ÿ.
+// ¿Ã∫•∆Æ ∏ﬁºº¡ˆ ∆–≈∂ «¡∑Œ≈‰ƒ›¿ª º≠πˆøÕ ≥Ì¿««œø© ∏¬√ﬂµµ∑œ «’Ω√¥Ÿ.
+// ¿Ã«ÿ æ»µ«∏È πŸ∫∏~
+//============================================================================================================
+void CNetworkLibrary::SendEventMsg(UBYTE ubEventType)
+{
+	CNetworkMessage nmMessage((UBYTE)MSG_EVENT);
+
+	nmMessage << ubEventType;
+	_pNetwork->SendToServerNew(nmMessage);
+}
+
+//============================================================================================================
+// CNetworkLibrary::SendRaidObjectEvent()
+// ∑π¿ÃµÂ Ω√Ω∫≈€ ø¿∫Í¡ß∆Æ »∞º∫»≠ ∏ﬁºº¡ˆ(≈¨∏Ø π◊ ¡¯¿‘)
+//============================================================================================================
+void CNetworkLibrary::SendRaidObjectEvent(ULONG iObjectID)
+{
+	CNetworkMessage nmMessage((UBYTE)MSG_EXTEND);
+
+	nmMessage << (ULONG)MSG_EX_TRIGGER_EVENT;
+	nmMessage << iObjectID;
+
+	_pNetwork->SendToServerNew(nmMessage);
+}
 
 //////////////////////////////////////////////////////////////////////////
-// ÌåêÎß§ÎåÄÌñâ
-//============================================================================================================
-// CNetworkLibrary::SendTradeAgentSearchReq
-// Í±∞ÎûòÎåÄÌñâ ÏïÑÏù¥ÌÖú Ï°∞Ìöå ÏöîÏ≤≠
-//============================================================================================================
-void CNetworkLibrary::SendTradeAgentSearchReq(int nPageNo, int nitemType,int nitemSubType,int nJobClass,CTString stSearchWord, int nAlignType /* = -1 */)
+// [sora] RAID_SYSTEM
+//////////////////////////////////////////////////////////////////////////
+
+// [sora] ø¯¡§¥Î∑Œ ¿¸»Ø ø‰√ª
+void CNetworkLibrary::ExpeditionCreateReq()
 {
-	CNetworkMessage nmMessage(MSG_TRADEAGENT);
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_CREATE_REQ;
 
-	nmMessage << (UBYTE)MSG_TRADEAGENT_SEARCH_REQ;
-	nmMessage << (SLONG)nitemType; 
-	nmMessage << (SLONG)nitemSubType; 
-	nmMessage << (SLONG)nJobClass; 
-	nmMessage << stSearchWord;		//Í≤ÄÏÉâÏñ¥
-	nmMessage << (SLONG)nPageNo; 
-	nmMessage << (SLONG)nAlignType; 
-
-	_pNetwork->SendToServerNew(nmMessage);
+	SendToServerNew( nm );
 }
 
-//============================================================================================================
-// CNetworkLibrary::SendTradeAgentBuyReq
-// Í±∞ÎûòÎåÄÌñâ ÏïÑÏù¥ÌÖú Íµ¨ÏûÖ ÏöîÏ≤≠
-//============================================================================================================
-void CNetworkLibrary::SendTradeAgentBuyReq(int nListidx, LONGLONG nTotalMoney)
+// [sora] ø¯¡§¥Î √ ¥Î
+void CNetworkLibrary::ExpeditionInviteReq( SLONG slIndex )
 {
-	CNetworkMessage nmMessage(MSG_TRADEAGENT);
+	// Send network message
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_INVITE_REQ;
+	nm << slIndex;
 
-	nmMessage << (UBYTE)MSG_TRADEAGENT_BUY_REQ;
-	nmMessage << (SLONG)nListidx; 
-	nmMessage << (LONGLONG)nTotalMoney;
-
-	_pNetwork->SendToServerNew(nmMessage);
+	SendToServerNew( nm );
 }
 
-//============================================================================================================
-// CNetworkLibrary::SendTradeAgentRegListReq
-// Í±∞ÎûòÎåÄÌñâ ÏïÑÏù¥ÌÖú Îì±Î°ù Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠
-//============================================================================================================
-void CNetworkLibrary::SendTradeAgentRegListReq(int nPageNo, int nAlignType /* = -1 */)
+// [sora] ø¯¡§¥Î √ ¥Î ºˆ∂Ù
+void CNetworkLibrary::ExpeditionAllowReq()
 {
-	CNetworkMessage nmMessage(MSG_TRADEAGENT);
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_ALLOW_REQ;
 
-	nmMessage << (UBYTE)MSG_TRADEAGENT_REG_LIST_REQ;
-	nmMessage << (SLONG)nPageNo; 
-	nmMessage << (SLONG)nAlignType; 
-
-	_pNetwork->SendToServerNew(nmMessage);
+	SendToServerNew( nm );
 }
 
-//============================================================================================================
-// CNetworkLibrary::SendTradeAgentCalcListReq
-// Í±∞ÎûòÎåÄÌñâ Ï†ïÏÇ∞ Î¶¨Ïä§Ìä∏ ÏöîÏ≤≠
-//============================================================================================================
-void CNetworkLibrary::SendTradeAgentCalcListReq(int nPageNo, int nAlignType /* = -1 */)
+// [sora] ø¯¡§¥Î √ ¥Î ∞≈¿˝
+void CNetworkLibrary::ExpeditionRejectReq()
 {
-	CNetworkMessage nmMessage(MSG_TRADEAGENT);
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_REJECT_REQ;
 
-	nmMessage << (UBYTE)MSG_TRADEAGENT_CALCLIST_REQ;
-	nmMessage << (SLONG)nPageNo; 
-	nmMessage << (SLONG)nAlignType; 
-
-	_pNetwork->SendToServerNew(nmMessage);
+	SendToServerNew( nm );
 }
 
-//============================================================================================================
-// CNetworkLibrary::SendTradeAgentRegCancelReq
-// Í±∞ÎûòÎåÄÌñâ ÏïÑÏù¥ÌÖú Îì±Î°ù Ï∑®ÏÜå ÏöîÏ≤≠
-//============================================================================================================
-void CNetworkLibrary::SendTradeAgentRegCancelReq(int nListidx)
+// [sora] ø¯¡§¥Î ≈ª≈
+void CNetworkLibrary::ExpeditionQuitReq()
 {
-	CNetworkMessage nmMessage(MSG_TRADEAGENT);
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_QUIT_REQ;
+	nm << (SLONG)MSG_EXPED_QUITMODE_NORMAL;
 
-	nmMessage << (UBYTE)MSG_TRADEAGENT_REG_CANCEL_REQ;
-	nmMessage << (SLONG)nListidx; 
-
-	_pNetwork->SendToServerNew(nmMessage);
+	SendToServerNew( nm );
 }
 
-//============================================================================================================
-// CNetworkLibrary::SendTradeAgentRegReq
-// Í±∞ÎûòÎåÄÌñâ ÏïÑÏù¥ÌÖú Îì±Î°ù ÏöîÏ≤≠
-//============================================================================================================
-void CNetworkLibrary::SendTradeAgentRegReq(char iTab, char iRow, char iCol,int iIIndex, int nCount, LONGLONG nTotalMoney, LONGLONG nDepositMoney)
+// [sora] ø¯¡§¥Î √ﬂπÊ
+void CNetworkLibrary::ExpeditionKickReq( SLONG slIndex )
 {
-	CNetworkMessage nmMessage(MSG_TRADEAGENT);
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_KICK_REQ;
+	nm << slIndex;
 
-	nmMessage << (UBYTE)MSG_TRADEAGENT_REG_REQ;
-	nmMessage << (SBYTE)iTab;
-	nmMessage << (SBYTE)iRow;
-	nmMessage << (SBYTE)iCol;
-	nmMessage << (SLONG)iIIndex;
-	nmMessage << (SLONG)nCount;
-	nmMessage << (LONGLONG)nTotalMoney;
-	nmMessage << (LONGLONG)nDepositMoney;
-
-	_pNetwork->SendToServerNew(nmMessage);
+	SendToServerNew( nm );
 }
 
-//============================================================================================================
-// CNetworkLibrary::SendTradeAgentCalculateReq
-// Í±∞ÎûòÎåÄÌñâ ÏïÑÏù¥ÌÖú Ï†ïÏÇ∞ ÏöîÏ≤≠
-//============================================================================================================
-void CNetworkLibrary::SendTradeAgentCalculateReq()
+// [sora] ø¯¡§¥Î «ÿ√º
+void CNetworkLibrary::ExpeditionEndReq()
 {
-	CNetworkMessage nmMessage(MSG_TRADEAGENT);
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_ENDEXPED_REQ;
 
-	nmMessage << (UBYTE)MSG_TRADEAGENT_CALCULATE_REQ;
-
-	_pNetwork->SendToServerNew(nmMessage);
+	SendToServerNew( nm );
 }
 
-//============================================================================================================
-// CNetworkLibrary::SendTradeAgentCheckCalcReq
-// Í±∞ÎûòÎåÄÌñâ Ï†ïÏÇ∞Ìï† ÏïÑÏù¥ÌÖú ÏöîÏ≤≠ (Ïù¥Í≤å Ïôú ÌïÑÏöîÌïúÍ±∞Ïïº~~~~~~)(Î°úÍ∑∏Ïù∏Ïãú Ïù¥Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÇ¥ÏïºÎßå Ï†ïÏÇ∞ ÏïåÎ¶ºÏùÑ Î∞õÏùÑ Ïàò ÏûàÎã§.)
-//============================================================================================================
-void CNetworkLibrary::SendTradeAgentCheckCalcReq()
+// [sora] ø¯¡§¥Î ∫–πËπÊΩƒ ∫Ø∞Ê
+void CNetworkLibrary::ExpeditionChangeDivisionTypeReq(UBYTE msgType, SBYTE sbExpedType, SBYTE sbDiviType)
 {
-	CNetworkMessage nmMessage(MSG_TRADEAGENT);
+	CNetworkMessage	nm( msgType );
+	nm << (SBYTE)MSG_CHANGETYPE_REQ;
+	nm << sbDiviType;
+	nm << sbExpedType;
 
-	nmMessage << (UBYTE)MSG_TRADEAGENT_CHECKCALC_REQ;
-
-	_pNetwork->SendToServerNew(nmMessage);
+	SendToServerNew( nm );
 }
 
-//[ttos_2009_3_18]: ÌïòÎÇòÌè¨Ïä§ Î∞è SKÎ∏åÎ°úÎìúÎ∞¥Îìú Í∞ÄÏûÖÏûê Ïù¥Î≤§Ìä∏
-void CNetworkLibrary::SendHanaposEvent()
+// [sora] ø¯¡§¥Î¿Â ∫Ø∞Ê
+void CNetworkLibrary::ExpeditionChangeLeaderReq( SLONG slIndex )
 {
-	CNetworkMessage nmMessage(MSG_SKILL);
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_CHANGEBOSS_REQ;
+	nm << (SLONG)MSG_EXPED_CHANGEBOSS_MANUAL;
+	nm << slIndex;
 
-	nmMessage << (UBYTE)MSG_SKILL_HANARO_EVENT;
+	SendToServerNew( nm );
+}
+
+// [sora] ø¯¡§ ∫Œ¥Î¿Â ∫Ø∞Ê
+void CNetworkLibrary::ExpeditionChangeSubLeaderReq(BOOL bIsSubLeader, SLONG slIndex )
+{
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	if(bIsSubLeader)
+	{
+		nm << (SBYTE)MSG_SETMBOSS_REQ;	
+	}
+	else
+	{
+		nm << (SBYTE)MSG_RESETMBOSS_REQ;
+	}
+	nm << slIndex;
+
+	SendToServerNew( nm );
+}
+
+// [sora] ±◊∑Ï ∫Ø∞Ê
+void CNetworkLibrary::ExpeditionChangeGroupReq(SLONG slGroupSrc, SLONG slIndex, SLONG slGroupDesc, SLONG slPos )
+{
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_MOVEGROUP_REQ;
+	nm << slGroupSrc;
+	nm << slIndex;
+	nm << slGroupDesc;
+	nm << slPos;
+
+	SendToServerNew( nm );
+}
+
+// [sora] ∏‚πˆ √ﬂ∞°
+void CNetworkLibrary::ExpeditionAddCharReq( CTString &strCharName )
+{
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_ADDMEMBER_REQ;
+	nm << strCharName;
+
+	SendToServerNew( nm );
+}
+
+
+// [sora] ªÏ∆Ï∫∏±‚
+void CNetworkLibrary::ExpeditionViewDetailReq( SLONG slGroup, SLONG slIndex )
+{
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_VIEWDETAIL_REQ;
+	nm << slGroup;
+	nm << slIndex;
+
+	SendToServerNew( nm );
+}
+
+
+// [sora] «•Ωƒ º≥¡§, «ÿ¡¶
+void CNetworkLibrary::ExpeditionSetLabelReq(SLONG slCharType, SLONG slMode, SLONG slLabelType, SLONG slIndex)
+{
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_SET_LABEL_REQ;
+	nm << slCharType;
+	nm << slMode;
+	nm << slLabelType;
+	nm << slIndex;
+
+	SendToServerNew( nm );
+}
+//------------------------------------------------------------------------------
+// CUIParty::ExpeditionCollectQuestItemReq()
+// Explain: [sora] ø¯¡§¥Î ƒ˘Ω∫∆Æ æ∆¿Ã≈€ ºˆ¡˝
+//------------------------------------------------------------------------------		 
+void CNetworkLibrary::ExpeditionCollectQuestItemReq(SLONG slIndex)
+{
+	CNetworkMessage	nm( (UBYTE)MSG_EXPEDITION );
+	nm << (SBYTE)MSG_QUESTITEM_CHECK_REQ;
+	nm << slIndex;
+
+	SendToServerNew( nm );
+}
+
+// [sora] ∆ƒ∆º «ÿ√º
+void CNetworkLibrary::PartyEndReq()
+{
+	CNetworkMessage	nm( (UBYTE)MSG_PARTY );
+	nm << (SBYTE)MSG_PARTY_ENDPARTY_REQ;
+
+	SendToServerNew( nm );
+}
+
+
+// [sora] ¿Œ¥¯ √ ±‚»≠
+void CNetworkLibrary::InitInZoneReq()
+{
+	CNetworkMessage	nm( (UBYTE)MSG_PARTY );
+	nm << (SBYTE)MSG_PARTY_INZONE_CLEAR_REQ;
+
+	SendToServerNew( nm );
+}
+
+// [sora] ¿Œ¡∏ ¿‘¿Â ø‰√ª
+void CNetworkLibrary::RaidInzoneJoinReq(SLONG slZoneNo, SLONG exParam)
+{
+	UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
+	CNetworkMessage	nm( (UBYTE)MSG_RAID );
+	nm << (SBYTE)MSG_RAID_INZONE_JOIN;
+	nm << slZoneNo;
+
+	if (exParam >= 0)
+	{
+		nm << exParam;
+	}
+
+	SendToServerNew( nm );
+}
+
+// [sora] ¿Œ¡∏ ≥™∞°±‚ ø‰√ª
+// [100125 sora] ¿Œ¡∏ ≥™∞•∂ß ¡∏π¯»£∏¶ ¡ˆ¡§«“ ºˆ ¿÷µµ∑œ ºˆ¡§
+void CNetworkLibrary::RaidInzoneQuitReq(SLONG slZoneNo /* = -1 */, SLONG slExtraNo)
+{
+	UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
+	CNetworkMessage	nm( (UBYTE)MSG_RAID );
+	nm << (SBYTE)MSG_RAID_INZONE_QUIT;
+	nm << (SLONG)1;
+	nm << (SLONG)0;
+	nm << slZoneNo;
+	nm << slExtraNo;
+
+	SendToServerNew( nm );
+}
+//////////////////////////////////////////////////////////////////////////
+void CNetworkLibrary::SendMakeItemList(ULONG sealtype, UBYTE UItype)
+{
+	CNetworkMessage	nmMessage((UBYTE)MSG_FACTORY);
+
+	nmMessage << (UBYTE)MSG_FACTORY_ITEM_LIST;
+	nmMessage << (UBYTE)UItype;		// 0: NPCø°º≠ ø‰√ª 1: ∏∏µÈ±‚ø°º≠ ø‰√ª
+	nmMessage << (ULONG)sealtype;
 
 	_pNetwork->SendToServerNew(nmMessage);
+
+}
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------
+//  Name 	: SendAffinityConnectReq()
+//  Desc 	: ƒ£±∏ ø‰√ª.
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendAffinityConnectReq( SLONG npcIdx )
+{
+	CNetworkMessage nm( (UBYTE)MSG_EXTEND );
+	nm << (ULONG)MSG_EX_AFFINITY;
+	nm << (UBYTE)MSG_EX_AFFINITY_CONNECT_REQ;
+	nm << (SLONG)npcIdx;
+
+	SendToServerNew( nm );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendAffinityShopReq()
+//  Desc 	: request shop used permission.
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendAffinityShopReq( SLONG npcIdx )
+{
+	CNetworkMessage nm( (UBYTE)MSG_EXTEND );
+	nm << (ULONG)MSG_EX_AFFINITY;
+	nm << (UBYTE)MSG_EX_AFFINITY_SHOPUSE_REQ;
+	nm << (SLONG) npcIdx;
+
+	SendToServerNew( nm );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendAffinityGiftInfoReq()
+//  Desc 	: request next present information.
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendAffinityGiftInfoReq( SLONG npcIdx )
+{
+	// ƒ£»≠µµ ∞≥∆Ì2 ∫∏ªÛ ø‰√ª [2/5/2013 Ranma]
+	CNetworkMessage nm( (UBYTE)MSG_EXTEND );
+	nm << (ULONG)MSG_EX_AFFINITY;
+	nm << (UBYTE)MSG_EX_AFFINITY_GIFTINFO_REQ;
+	nm << (SLONG)npcIdx;
+
+	SendToServerNew( nm );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendAffinityGiftReq()
+//  Desc 	: request to take a present.
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendAffinityGiftReq( SLONG npcIdx )
+{
+	CNetworkMessage nm( (UBYTE)MSG_EXTEND );
+	nm << (ULONG)MSG_EX_AFFINITY;
+	nm << (UBYTE)MSG_EX_AFFINITY_GIFT_REQ;
+	nm << (SLONG)npcIdx;
+
+	SendToServerNew( nm );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendAffinityInfoTabReq()
+//  Desc 	: ƒ£»≠µµ ∞≥∆Ì2 ƒ£»≠µµ ∫∏ªÛ ¡§∫∏ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendAffinityInfoTabReq( SLONG npcIdx )
+{
+	CNetworkMessage nm( (UBYTE)MSG_EXTEND );
+	nm << (ULONG)MSG_EX_AFFINITY;
+	nm << (UBYTE)MSG_EX_AFFINITY_INFOTAB_REQ;
+	nm << (SLONG)npcIdx;
+	
+	SendToServerNew( nm );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: ClearAffinityData()
+//  Desc 	: 
+// ---------------------------------------------------------------------------- 
+void CNetworkLibrary::ClearAffinityData()
+{
+	AffinityInfo.count = 0;
+	AffinityInfo.point = 0;
+	AffinityInfo.mapAffinityList.clear();
+}
+
+void CNetworkLibrary::SendNPCPortalGoReq(SLONG slIndex)
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+
+	nm << (SLONG) MSG_EX_NPC_PORTAL_SCROLL;
+	nm << (SLONG) MSG_NPC_PORTAL_GO;
+	nm << (SLONG) slIndex;
+
+	SendToServerNew(nm);
+}
+
+
+void CNetworkLibrary::SendNPCPortalLocationReq(SLONG slIndex)
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG) MSG_EX_NPC_PORTAL_SCROLL;
+	nm << (SLONG) MSG_NPC_PORTAL_LOCATION;
+	nm << (SLONG) slIndex;
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendRaidInfoReq()
+//  Desc 	: ¿⁄Ω≈¿Ã º”«ÿ¿÷¥¬ ∑π¿ÃµÂ ¡§∫∏∏¶ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRaidInfoReq()
+{
+	CNetworkMessage	nm( (UBYTE)MSG_EXTEND );
+	nm << (ULONG)MSG_EX_RAID_INFO;
+
+	SendToServerNew( nm );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendCheckComposition()
+//  Desc 	: 
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendCheckComposition(SWORD nTab, SWORD nInvenIdx, SLONG slUniIndex)
+{
+	CNetworkMessage nmMessage;
+	RequestClient::doItemCheckComposition* packet = reinterpret_cast<RequestClient::doItemCheckComposition*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_CHECK_COMPOSITION;
+	packet->tab = nTab;
+	packet->invenIndex = nInvenIdx;
+	packet->virtualIndex = slUniIndex;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+}
+
+// ----------------------------------------------------------------------------
+// [100208: selo]
+//  Name 	: SendRestoreAbandonQuest()
+//  Desc 	: ∆˜±‚«— ƒ˘Ω∫∆Æ ∫π±∏ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRestoreAbandonQuest(SQUAD llMoney)
+{
+	CNetworkMessage nm((UBYTE)MSG_QUEST);
+	nm << (UBYTE)MSG_QUEST_RESTORE_ABANDON;
+	nm << llMoney;
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+// [100208: selo]
+//  Name 	: SendTakeAgainQuestItem()
+//  Desc 	: ƒ˘Ω∫∆Æ æ∆¿Ã≈€ ¥ŸΩ√ πﬁ±‚
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendTakeAgainQuestItem()
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG)MSG_EX_TAKE_AGAIN_QUEST_ITEM;
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+// [100324: sora]
+//  Name 	: SendLacaretteTokenReq()
+//  Desc 	: ≈‰≈´ πﬁ±‚
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendLacaretteTokenReq()
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG)MSG_EX_LACARETTE;
+	nm << (UBYTE)MSG_EX_LACARETTE_TOKEN_REQ;
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+// [100324: sora]
+//  Name 	: SendLacaretteRetteReq()
+//  Desc 	: ∂Ûƒ´∑ø ∞·∞˙ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendLacaretteRetteReq( SLONG courseNum, SLONG couseIndex, SLONG tokenIndex )
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG)MSG_EX_LACARETTE;
+	nm << (UBYTE)MSG_EX_LACARETTE_RETTE_REQ;
+	nm << (SLONG)courseNum;
+	nm << (SLONG)couseIndex;
+	nm << (SLONG)tokenIndex;
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+// [100324: sora]
+//  Name 	: SendLacaretteUseCountReq()
+//  Desc 	: ∂Ûƒ´∑ø ¿ÃøÎ »Ωºˆ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendLacaretteUseCountReq()
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG)MSG_EX_LACARETTE;
+	nm << (UBYTE)MSG_EX_LACARETTE_UI_REQ;
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+// [100325: sora]
+//  Name 	: SendLacaretteResultReq()
+//  Desc 	: ∂Ûƒ´∑ø ¥Á√∑ æ∆¿Ã≈€ ¡ˆ±ﬁø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendLacaretteResultReq( INDEX itemIndex )
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG)MSG_EX_LACARETTE;
+	nm << (UBYTE)MSG_EX_LACARETTE_RESULT_REQ;
+	nm << (SLONG)itemIndex;
+
+	SendToServerNew(nm);
+}
+
+void CNetworkLibrary::SendLacaretteCloseReq()
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG)MSG_EX_LACARETTE;
+	nm << (UBYTE)MSG_EX_LACARETTE_UI_COLSE;
+
+	SendToServerNew(nm);
+}
+
+void CNetworkLibrary::SendLacaretteTokenReadyReq()
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG)MSG_EX_LACARETTE;
+	nm << (UBYTE)MSG_EX_LACARETTE_TOKEN_READY_REQ;
+
+	SendToServerNew(nm);
+}
+
+// ------------------------------------------------------------------
+//  [5/13/2010 selo0530] ($E_WC2010)
+// 
+//	Name : SendWorldCup2010_Event
+//  Desc : 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event Message
+//  Info : 
+//		Trade : iParam(tradeType - 1. √‡±∏∞¯ -> »≤±› √‡±∏∞¯, 2. »≤±› √‡±∏∞¯ -> √‡¡¶ ªÛ¿⁄)
+//		Status Req : iParam(resultType - 1. øÏΩ¬ ±π∞° ¿¿∏ ¿¸ «ˆ»≤ »Æ¿Œ	2. ¿¿∏ «ˆ»≤ »Æ¿Œ)
+//		Toto Req : iParam(nItemIndex1 - ±π±‚ æ∆¿Ã≈€ ¿Œµ¶Ω∫)
+//		Gift Req : iParam(null) [≈‰≈‰ ∫∏ªÛ ø‰√ª]
+//		Attendance Req : iParam(null) [¿¿ø¯ √‚ºÆ]
+//		SupportCard Req : iParam(supportType) [¿¿ø¯ƒ´µÂ ∫∏ªÛ Type]
+// ------------------------------------------------------------------
+void CNetworkLibrary::SendWorldCup2010_Event(MSG_EVENT_WORLDCUP2010_TYPE e_Type, INDEX iParam /* = 0 */)
+{
+	CNetworkMessage nmEvent((UBYTE)MSG_EVENT);
+
+	nmEvent << (UBYTE)MSG_EVENT_WORLDCUP_2010;
+	nmEvent << (UBYTE)e_Type;
+
+	if (iParam > 0)
+	{
+		nmEvent << iParam;
+	}
+
+	SendToServerNew(nmEvent);
+}
+
+// ----------------------------------------------------------------------------
+//  [2010/06/30 : Sora]
+//  Name 	: SendOwnerGuildBuffReq()
+//  Desc 	: º∫¡÷ ±ÊµÂ πˆ«¡ ∫Œø© ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendOwnerGuildBuffReq()
+{
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
+
+	nmGuild << (UBYTE)MSG_CASTLE_BUFF;
+	SendToServerNew(nmGuild);
+}
+
+// ----------------------------------------------------------------------------
+// [7/2/2010 kiny8216] ATTENDANCE_SYSTEM : √‚ºÆ Ω√Ω∫≈€
+//  Name 	: SendAttendanceReq()
+//  Desc 	: ¥©¿˚ √‚ºÆ¿œºˆ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendAttendanceReq( INDEX subType )
+{
+	CNetworkMessage nm;
+
+	switch(subType)
+	{
+	case 0: // ¥©¿˚ «ˆ»≤
+		{
+			RequestClient::AttendanceCheck* packet = reinterpret_cast<RequestClient::AttendanceCheck*>(nm.nm_pubMessage);
+			packet->type = MSG_EXTEND;
+			packet->subType = MSG_EX_ATTENDANCE_EXP_SYSTEM;
+			packet->thirdType = MSG_SUB_ATTENDANCE_CHECK_REQ;
+			nm.setSize( sizeof(*packet) );
+		}
+		break;
+
+	case 1: // ∫∏ªÛ πﬁ±‚
+		{
+			RequestClient::AttendanceReward* packet = reinterpret_cast<RequestClient::AttendanceReward*>(nm.nm_pubMessage);
+			packet->type = MSG_EXTEND;
+			packet->subType = MSG_EX_ATTENDANCE_EXP_SYSTEM;
+			packet->thirdType = MSG_SUB_ATTENDANCE_REWARD_REQ;
+			nm.setSize( sizeof(*packet) );
+		}
+		break;
+
+	case 2: // √‚ºÆ ∫∏«Ë æ∆¿Ã≈€ «ÿ¡¶
+		{
+			RequestClient::AttendanceAssureOk* packet = reinterpret_cast<RequestClient::AttendanceAssureOk*>(nm.nm_pubMessage);
+			packet->type = MSG_EXTEND;
+			packet->subType = MSG_EX_ATTENDANCE_EXP_SYSTEM;
+			packet->thirdType = MSG_SUB_ATTENDANCE_ASSURE_CANCEL_OK_REQ;
+			nm.setSize( sizeof(*packet) );
+		}
+		break;
+	}
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+// [7/15/2010 kiny8216] MONSTER_ENERGY_IGNITION_SYSTEM
+//  Name 	: SendEnergySkillMessage()
+//  Desc 	: ∏ÛΩ∫≈Õ ø°≥ ¡ˆ Ω∫≈≥ ªÁøÎ ∏ﬁΩ√¡ˆ
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendEnergySkillMessage()
+{
+	CNetworkMessage nm;
+	RequestClient::skillUseEP* packet = reinterpret_cast<RequestClient::skillUseEP*>(nm.nm_pubMessage);
+	packet->type = MSG_SKILL;
+	packet->subType = MSG_SKILL_USEEP;	
+	nm.setSize( sizeof(*packet) );
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+// [100901] æ∆ƒ≠ªÁø¯ ∑π¿ÃµÂ Scene Message
+//  Name 	: SendRaidScene()
+//  Desc 	: ø˘µÂ æ»ø° ¡∏¿Á«œ¥¬ Scene Active∑Œ º≥¡§µ» ø¿∫Í¡ß∆Æ∞° ∫∏≥ª¥¬ ∏ﬁΩ√¡ˆ(TouchField, ItemObjects)
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRaidScene(INDEX ObjType, INDEX Id, INDEX iData)
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	const INDEX iOBJECT_TYPE_TODO = 0;
+	nm << (SLONG)MSG_EX_RAID_SCENE;
+	nm << iOBJECT_TYPE_TODO;
+	nm << ObjType;
+	nm << Id;
+	nm << iData;
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+// [8/31/2010 kiny8216] »ƒ∞ﬂ¿Œ Ω√Ω∫≈€ ∞≥∆Ì
+//  Name 	: TeachGiftReq()
+//  Desc 	: »ƒ∞ﬂ¿Œ ∫∏ªÛ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::TeachGiftReq()
+{
+	CNetworkMessage nmTeach((UBYTE)MSG_TEACH);
+	nmTeach << (UBYTE)MSG_TEACH_RENEWER_TEACH_GIFT;	
+	SendToServerNew(nmTeach);
+}
+
+// ----------------------------------------------------------------------------
+// [9/29/2010 kiny8216] º∫¡÷ ƒ⁄Ω∫∆¨
+//  Name 	: LordCostumeReq()
+//  Desc 	: º∫¡÷ ƒ⁄Ω∫∆¨ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::LordCostumeReq()
+{
+	CNetworkMessage nmTeach((UBYTE)MSG_EXTEND);
+	nmTeach << (INDEX)MSG_EX_CASTLLAN;
+	nmTeach << (UBYTE)MSG_EX_CASTLLAN_GIVE_ITEM_REQ;
+	SendToServerNew(nmTeach);
+}
+// º∫¡÷ ±ÊµÂ ƒ⁄Ω∫∆¨ [1/21/2011 ldy1978220]
+void CNetworkLibrary::LordGuildCostumeReq()
+{
+	CNetworkMessage nmTeach((UBYTE)MSG_EXTEND);
+	nmTeach << (INDEX)MSG_EX_CASTLLAN;
+	nmTeach << (UBYTE)MSG_EX_CASTLLAN_GIVE_ITEM_GUILD_COSTUME_REQ;
+	SendToServerNew(nmTeach);
+}
+
+void CNetworkLibrary::LordGuildTitleReq()
+{
+	CNetworkMessage nmTeach((UBYTE)MSG_EXTEND);
+	nmTeach << (INDEX)MSG_EX_CASTLLAN;
+	nmTeach << (UBYTE)MSG_EX_CASTLLAN_GIVE_ITEM_GUILD_TITLE_REQ;
+	SendToServerNew(nmTeach);
+}
+
+// ----------------------------------------------------------------------------
+//  [2010/08/25 : Sora] ADD_SUBJOB
+//  Name 	: SendSubJobRegister()
+//  Desc 	: ∫∏¡∂¡˜æ˜ µÓ∑œ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendSubJobRegister(SLONG subJobCode)
+{
+	CNetworkMessage nm((UBYTE)MSG_EXTEND);
+	nm << (SLONG)MSG_EX_SUBJOB;
+	nm << (SBYTE)MSG_EX_SUBJOB_REGIST;
+	nm << (SLONG)subJobCode;
+	SendToServerNew(nm);
+}
+
+//------------------------------------------------------------------------------
+// [10/6/2010 kiny8216] ƒÌ∆˘ «¡∑Œ∏º« ¿Ã∫•∆Æ
+// Name		:  SendPromotionEventReq()
+// Desc		:  ƒÌ∆˘ «¡∑Œ∏º« ¿Ã∫•∆Æ æ∆¿Ã≈€ ø‰√ª
+//------------------------------------------------------------------------------
+void CNetworkLibrary::SendPromotionEventReq(CTString strNum)
+{
+	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
+	nmMessage << (UBYTE)MSG_EVENT_PROMOTION2;
+	nmMessage << (UBYTE)MSG_EVENT_PROMOTION2_COUPON_USE_REQ;
+	nmMessage << strNum;
+	
+	SendToServerNew(nmMessage);
+}
+
+//added by sam 10/11/11
+void CNetworkLibrary::SendRankingLsit ( INDEX iIndex, INDEX iPageIndex )
+{
+	CNetworkMessage nmMessage( (UBYTE)MSG_EXTEND );
+	nmMessage << (INDEX)MSG_EX_RANKING_SYSTEM;
+	nmMessage << (UBYTE)MSG_EX_RANKING_LIST_REQ;
+	nmMessage << iIndex;	
+	nmMessage << iPageIndex;
+	SendToServerNew(nmMessage);
+}
+
+void CNetworkLibrary::SendGuildWarTimeMenu()
+{
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
+
+	nmGuild << (UBYTE)MSG_GUILD_WAR_SET_TIME_MENU;
+	SendToServerNew(nmGuild);
+}
+
+void CNetworkLibrary::SendGuildWarTimeReq()
+{
+	CNetworkMessage nmGuildWar( (UBYTE)MSG_GUILD );
+	nmGuildWar << (UBYTE)MSG_GUILD_WAR_GET_TIME_UNI_REQ;
+		
+	SendToServerNew(nmGuildWar);
+}
+
+void CNetworkLibrary::SendFaceOffMessage( UBYTE ubType, UBYTE ubFaceType, UBYTE ubHairType )
+{
+	CNetworkMessage nmFaceOff((UBYTE)MSG_EXTEND);
+	nmFaceOff << (INDEX)MSG_EX_FACEOFF;
+	nmFaceOff << (UBYTE)ubType;
+	
+	if ( ubType == MSG_EX_FACEOFF_REQ )
+	{
+		nmFaceOff << ubHairType;
+		nmFaceOff << ubFaceType;
+	}
+
+	SendToServerNew( nmFaceOff );
+}
+
+void CNetworkLibrary::SendWildPetMountReq(const BOOL bMount )
+{
+	CNetworkMessage	nmWildPetMount( (UBYTE)MSG_EXTEND );
+	nmWildPetMount << (ULONG)MSG_EX_ATTACK_PET;
+	nmWildPetMount << (SBYTE)MSG_SUB_MOUNT_REQ;
+	nmWildPetMount << (SBYTE)( bMount?0:1);
+
+	CUIManager::getSingleton()->SetCSFlagOn(CSF_PETRIDING);
+
+	SendToServerNew( nmWildPetMount );
+}
+
+// ----------------------------------------------------------------------------
+// [2011/01/18 : Sora] √‚ºÆ ¿Ã∫•∆Æ 2011
+//  Name 	: SendAttendanceRewardReq()
+//  Desc 	: √‚ºÆ ¿Ã∫•∆Æ ∞≥¿Œ ∫∏ªÛ
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendAttendanceRewardReq()
+{
+	CNetworkMessage nmEvent((UBYTE)MSG_EVENT);
+	nmEvent << (UBYTE)MSG_EVENT_ATTENDANCE_2011;
+	nmEvent << (UBYTE)MSG_EVENT_ATTENDANCE_2011_INDIVIDUAL_REWARD_REQ;
+
+	SendToServerNew(nmEvent);
+}
+
+// ----------------------------------------------------------------------------
+// [2011/02/09 : Sora] ƒ˘Ω∫∆Æ æ∆¿Ã≈€ ¥ŸΩ√ πﬁ±‚
+//  Name 	: SendRestoreQuestItem()
+//  Desc 	: øœ∑·µ» ƒ˘Ω∫∆Æ¿« ∫∏ªÛæ∆¿Ã≈€¿ª ¥ŸΩ√ πﬁ¥¬¥Ÿ
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRestoreQuestItem( SLONG questIndex )
+{
+	CNetworkMessage nm((UBYTE)MSG_QUEST);
+	nm << (UBYTE)MSG_QUEST_ITEM_REQ;
+	nm << questIndex;
+
+	SendToServerNew(nm);
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendComebackMessage()
+//  Desc 	: »ﬁ∏È ∞Ë¡§ ∫∏ªÛ ¿Ã∫•∆Æ ∏ﬁΩ√¡ˆ
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendComebackMessage()
+{
+	CNetworkMessage nmComeback( (UBYTE)MSG_EVENT );
+	nmComeback << (UBYTE)MSG_EVENT_USER_COMEBACK;
+
+	SendToServerNew( nmComeback );
+}
+// ----------------------------------------------------------------------------
+//  Name 	: SendBirthdayMessage()
+//  Desc 	: ª˝¿œ º±π∞ ∞¸∑√ ∏ﬁΩ√¡ˆ
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendBirthdayMessage( INDEX index )
+{
+	CNetworkMessage nmBirthday( (UBYTE)MSG_EVENT );
+	nmBirthday << (UBYTE)MSG_EVENT_CHAR_BIRTHDAY;
+
+	if ( index == EVENT_BIRTHDAY_GIFT )
+	{	// º±π∞ ø‰√ª
+		nmBirthday << (SBYTE)MSG_EVENT_CHAR_BIRTHDAY_GIFT_REQ;
+	}
+	else if ( index == EVENT_BIRTHDAY_INFO )
+	{	// ¡§∫∏ ø‰√ª
+		nmBirthday << (SBYTE)MSG_EVENT_CHAR_BIRTHDAY_BDAY_REQ;
+	}
+
+	SendToServerNew( nmBirthday );
+}
+
+// royal rumble [4/19/2011 rumist]
+// ----------------------------------------------------------------------------
+//  Name 	: SendRoyalRumbleJoinReq()
+//  Desc 	: ∑Œæ‚ ∑≥∫Ì ¬¸∞° Ω≈√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRoyalRumbleJoinReq()
+{
+	CNetworkMessage nmRoyal( (UBYTE)MSG_EXTEND );
+	nmRoyal << (INDEX)MSG_EX_ROYAL_RUMBLE;
+	nmRoyal << (UBYTE)MSG_EX_ROYAL_RUMBLE_PLAYER_REQ;
+
+	SendToServerNew( nmRoyal );
+}
+// ----------------------------------------------------------------------------
+//  Name 	: SendRoyalRUmbleRejectReq()
+//  Desc 	: ∑Œæ‚ ∑≥∫Ì ¬¸∞° Ω≈√ª √Îº“
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRoyalRumbleRejectReq()
+{
+	CNetworkMessage nmRoyal( (UBYTE)MSG_EXTEND );
+	nmRoyal << (INDEX)MSG_EX_ROYAL_RUMBLE;
+	nmRoyal << (UBYTE)MSG_EX_ROYAL_RUMBLE_PLAYER_UNREGIST_REQ;
+
+	SendToServerNew( nmRoyal );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendRoyalRumbleRewardReq()
+//  Desc 	: ∑Œæ‚ ∑≥∫Ì ∫∏ªÛ Ω≈√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRoyalRumbleRewardReq()
+{
+	CNetworkMessage nmRoyal( (UBYTE)MSG_EXTEND );
+	nmRoyal << (INDEX)MSG_EX_ROYAL_RUMBLE;
+	nmRoyal << (UBYTE)MSG_EX_ROYAL_RUMBLE_REWARD_REQ;
+
+	SendToServerNew( nmRoyal );
+}
+// ----------------------------------------------------------------------------
+//  Name 	: SendRoyalRumblePointReq()
+//  Desc 	: ∑Œæ‚ ∑≥∫Ì ¿¸¿Â ∆˜¿Œ∆Æ »Æ¿Œ.
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRoyalRumblePointReq()
+{
+	CNetworkMessage nmRoyal( (UBYTE)MSG_EXTEND );
+	nmRoyal << (INDEX)MSG_EX_ROYAL_RUMBLE;
+	nmRoyal << (UBYTE)MSG_EX_ROYAL_RUMBLE_POINT_REQ;
+
+	SendToServerNew( nmRoyal );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendRoyalRumbleNextTimeReq()
+//  Desc 	: ∑Œæ‚ ∑≥∫Ì ¥Ÿ¿Ω ∞Ê±‚ ¿œ¡§ ¡∂»∏.
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRoyalRumbleNextTimeReq()
+{
+	CNetworkMessage nmRoyal( (UBYTE)MSG_EXTEND );
+	nmRoyal << (INDEX)MSG_EX_ROYAL_RUMBLE;
+	nmRoyal << (UBYTE)MSG_EX_ROYAL_RUMBLE_TIME_REQ;
+
+	SendToServerNew( nmRoyal );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendRoyalRumbleStartReq()
+//  Desc 	: ∑Œæ‚∑≥∫Ì ¥Î±‚Ω« ¿Ãµø.
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendRoyalRumbleStartReq()
+{
+	UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
+	CNetworkMessage nmRoyal( (UBYTE)MSG_EXTEND );
+	nmRoyal << (INDEX)MSG_EX_ROYAL_RUMBLE;
+	nmRoyal << (UBYTE)MSG_EX_ROYAL_RUMBLE_GO_ZONE;
+
+	SendToServerNew( nmRoyal );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendMasterStoneUseReq()
+//  Desc 	: ∏∂Ω∫≈Õ Ω∫≈Ê ªÁøÎ ø‰√ª.
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendMasterStoneUseReq(SWORD nMStoneTab, SWORD ubMStoneIdx, SLONG slMStone, 
+						SWORD nTargetTab, SWORD ubItemTgtIdx, SLONG slItemTgt)
+{
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUseMasterStoneUSA* packet = reinterpret_cast<RequestClient::doItemUseMasterStoneUSA*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_MASTERSTONE_USE;
+	packet->tab_1 = nMStoneTab;
+	packet->invenIndex_1 = ubMStoneIdx;
+	packet->itemDBIndex_1 = slMStone;
+	packet->tab_2 = nTargetTab;
+	packet->invenIndex_2 = ubItemTgtIdx;
+	packet->itemDBIndex_2 = slItemTgt;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendGuildMarkWndOpenReq()
+//  Desc 	: ±ÊµÂ∏∂≈© √¢ ø¿«¬ ø‰√ª
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendGuildMarkWndOpenReq()
+{
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
+	nmGuild << (UBYTE)MSG_NEW_GUILD_MARK_EDIT_WND;
+	SendToServerNew(nmGuild);
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendGuildMarkEditEndReq()
+//  Desc 	: ±ÊµÂ∏∂≈© ∆Ì¡˝øœ∑·
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendGuildMarkEditEndReq( SBYTE gm_row, SBYTE gm_col, SBYTE bg_row, SBYTE bg_col, SWORD nTab, SWORD nInvenIdx )
+{
+	CNetworkMessage nmMessage;
+	RequestClient::doNewGuildSkillMarkEditFinish* packet = reinterpret_cast<RequestClient::doNewGuildSkillMarkEditFinish*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_GUILD;
+	packet->subType = MSG_NEW_GUILD_MARK_EDIT_FIN;
+	packet->gm_row = gm_row;
+	packet->gm_col = gm_col;
+	packet->bg_row = bg_row;
+	packet->bg_col = bg_col;
+	packet->tab = nTab;
+	packet->invenIndex = nInvenIdx;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew(nmMessage);
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendRankingListEx()
+//  Desc 	: ∑©≈∑ ∏ÆΩ∫∆Æ ø‰√ª
+// ----------------------------------------------------------------------------
+
+void CNetworkLibrary::SendRankingListEx(UCHAR ucType, UCHAR ucSubType)
+{
+	CNetworkMessage	nmRanking((UBYTE)MSG_EXTEND);
+
+	nmRanking << (LONG)MSG_EX_RANKING_SYSTEM_EX;
+	nmRanking << (UCHAR)MSG_EX_RANKING_LIST;
+	nmRanking << (UCHAR)ucType;
+	nmRanking << (UCHAR)ucSubType;
+
+	SendToServerNew(nmRanking);
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendRankingListEx()
+//  Desc 	: ∑©≈∑ ∞Àªˆ ∏ÆΩ∫∆Æ ø‰√ª
+// ----------------------------------------------------------------------------
+
+void CNetworkLibrary::SendRankingSearchListEx(UCHAR ucType, UCHAR ucSubType, CTString pcstrSearch)
+{
+	CNetworkMessage	nmRanking((UBYTE)MSG_EXTEND);
+
+	nmRanking << (LONG)MSG_EX_RANKING_SYSTEM_EX;
+	nmRanking << (UCHAR)MSG_EX_RANKING_SEARCH;
+	nmRanking << (UCHAR)ucType;
+	nmRanking << (UCHAR)ucSubType;
+	nmRanking << pcstrSearch;
+
+	SendToServerNew(nmRanking);
+}
+
+void CNetworkLibrary::pkPenaltyReformRewardReq(LONG titlenum)
+{
+	CNetworkMessage nmPKReward((UBYTE)MSG_EXTEND);
+	nmPKReward << (LONG)MSG_EX_PKPENALTY_REFORM;
+	nmPKReward << (UBYTE)MSG_EX_PKPENALTY_REFORM_REWARD_REQ;
+	nmPKReward << (LONG)titlenum;
+	SendToServerNew(nmPKReward);
+
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendEventKrathongReq()
+//  Desc 	: ≈©∂Û≈Î ¿Ã∫•∆Æ ¿Á∑·±≥»Ø ø‰√ª
+// ----------------------------------------------------------------------------
+
+void CNetworkLibrary::SendEventKrathongReq()
+{
+	CNetworkMessage	nmKrathong((UBYTE)MSG_EVENT);
+	nmKrathong << (UBYTE)MSG_EVENT_LOI_KRATHONG;
+
+	SendToServerNew(nmKrathong);
+}
+
+// ----------------------------------------------------------------------------
+//	[2011/11/14 : Sora]
+//  Name 	: SendKBRewardReq()
+//  Desc 	: ≈¬±π ±πø’ ≈∫ª˝¿œ ¿Ã∫•∆Æ æ∆¿Ã≈€ ±≥»Ø ø‰√ª 
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendKBRewardReq( UCHAR commandNum )
+{
+	CNetworkMessage nmEvent((UBYTE)MSG_EVENT);
+	nmEvent << (UCHAR)MSG_EVENT_KB_REWARD;
+	nmEvent << (UCHAR)commandNum;	// 0¿∫ ≈∫ª˝¿œ º±π∞ªÛ¿⁄∑Œ ±≥»Ø 1¿∫ ¿«ªÛªÛ¿⁄∑Œ ±≥»Ø
+
+	SendToServerNew(nmEvent);
+}
+
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendUserNotice()
+//  Desc 	: ¿Ø¿˙ ∞¯¡ˆ ∏ﬁºº¡ˆ ¿¸º€
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendUserNotice(CTString strMessage)
+{
+	CNetworkMessage	nmUserNotice(MSG_EXTEND);
+	nmUserNotice << (LONG)MSG_EX_USER_NOTICE;
+	nmUserNotice << (LONG)MSG_EX_USER_NOTICE_REG_REQ;
+	nmUserNotice << (CTString)strMessage;
+
+	SendToServerNew(nmUserNotice);
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendGuildMasterKickReq()
+//  Desc 	: ±ÊµÂ ∏∂Ω∫≈Õ∏¶ √ﬂπÊ Ω≈√ª«—¥Ÿ
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendGuildMasterKickReq(INDEX idxGuild)
+{
+	CNetworkMessage nmGuildMKick(MSG_GUILD);
+	nmGuildMKick << (UCHAR)MSG_GUILD_MASTER_KICK_REQ;
+	nmGuildMKick << (INDEX)idxGuild;
+	SendToServerNew(nmGuildMKick);
+}
+
+// ----------------------------------------------------------------------------
+//  Name 	: SendGuildMasterKickCancelReq()
+//  Desc 	: ±ÊµÂ ∏∂Ω∫≈Õ∞° √ﬂπÊø° ¿Ã¿«¡¶±‚«—¥Ÿ
+// ----------------------------------------------------------------------------
+void CNetworkLibrary::SendGuildMasterKickCancelReq(INDEX idxGuild)
+{
+	CNetworkMessage nmGuildMKick(MSG_GUILD);
+	nmGuildMKick << (UCHAR)MSG_GUILD_MASTER_KICK_CANCEL_REQ;
+	nmGuildMKick << (INDEX)idxGuild;
+	SendToServerNew(nmGuildMKick);
+}
+
+void CNetworkLibrary::SendGuildRemoteJoinReq(CTString strTargetName, LONG lType)
+{
+	CNetworkMessage nmGuild(MSG_GUILD);
+	nmGuild << (UBYTE)MSG_GUILD_REMOTE_JOIN_REQ;
+	nmGuild << strTargetName;
+	nmGuild << MyCharacterInfo.name;
+	nmGuild << lType;
+	SendToServerNew(nmGuild);
+}
+
+void CNetworkLibrary::SendGuildRemoteJoinOKReq(CTString strTargetName, LONG lType)
+{
+	CNetworkMessage nmGuild(MSG_GUILD);
+	nmGuild << (UBYTE)MSG_GUILD_REMOTE_JOIN_OK;
+	nmGuild << strTargetName;
+	nmGuild << lType;
+	SendToServerNew(nmGuild);
+}
+
+void CNetworkLibrary::SendGuildRemoteJoinNOReq()
+{
+	CNetworkMessage nmGuild(MSG_GUILD);
+	nmGuild << (UBYTE)MSG_GUILD_REMOTE_JOIN_NO;
+	SendToServerNew(nmGuild);
+}
+
+void CNetworkLibrary::SendGuildRecallReq()
+{
+	CNetworkMessage nmMessage;
+	pTypeBase* packet = reinterpret_cast<pTypeBase*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_GUILD;
+	packet->subType = MSG_GUILD_ROOM_RECALL;	
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+}
+//	FD_TEST ±Ëøµ»Ø : ±‚¥…«‘ºˆ √ﬂ∞°
+void	CNetworkLibrary::Set_MyChar_MorphStatus_EVOCATION_CONVERTING()
+{
+	MyCharacterInfo.eMorphStatus		= CNetworkLibrary::MyChaInfo::eMORPH_EVOCATION_CONVERTING;
+	return;
+}
+
+void	CNetworkLibrary::Set_MyChar_MorphStatus_EVOCATION()
+{
+	MyCharacterInfo.eMorphStatus		= CNetworkLibrary::MyChaInfo::eMORPH_EVOCATION;
+}
+
+void	CNetworkLibrary::Set_MyChar_MorphStatus_MORPH_END()
+{
+	MyCharacterInfo.eMorphStatus		= CNetworkLibrary::MyChaInfo::eMORPH_END;
+}
+
+bool	CNetworkLibrary::Is_MyChar_MorphStatus_MORPH_END()
+{
+	if(MyCharacterInfo.eMorphStatus	== CNetworkLibrary::MyChaInfo::eMORPH_END)
+		return true;
+	return false;
+}
+
+void	CNetworkLibrary::Set_MyChar_MorphStatus_TRANSFORMATION()
+{
+	MyCharacterInfo.eMorphStatus		= CNetworkLibrary::MyChaInfo::eMORPH_TRANSFORMATION;
+}
+
+void	CNetworkLibrary::Set_MyChar_MorphStatus_EVOCATION_BEGIN()
+{
+	MyCharacterInfo.eMorphStatus		= CNetworkLibrary::MyChaInfo::eMORPH_EVOCATION_BEGIN;
+}
+
+int		CNetworkLibrary::Get_MyChar_MorphStatus()
+{
+	return MyCharacterInfo.eMorphStatus;
+}
+
+bool	CNetworkLibrary::Get_MyChar_Attack(int targetID,LONG	targetHP) // TO.DO HP
+{
+	CNetworkLibrary::sPetInfo	TempPet;
+	TempPet.lIndex				= targetID;
+	std::vector<CNetworkLibrary::sPetInfo>::iterator iter = 
+		std::find_if(m_vectorPetList.begin(), m_vectorPetList.end(), CNetworkLibrary::FindPet(TempPet) );
+	if( iter != m_vectorPetList.end() )
+	{
+		(*iter).lHP = targetHP;
+		return	true;
+	}
+	return false;
+}
+
+bool CNetworkLibrary::IsAttackMe( int targetID )
+{
+	if( MyCharacterInfo.index == targetID )
+		return true;
+	
+	CNetworkLibrary::sPetInfo	TempPet;
+	TempPet.lIndex				= targetID;
+	std::vector<CNetworkLibrary::sPetInfo>::iterator iter = 
+		std::find_if(m_vectorPetList.begin(), m_vectorPetList.end(), CNetworkLibrary::FindPet(TempPet) );
+	if( iter != m_vectorPetList.end() )
+		return true;
+
+	// º“º≠∑Ø ¡§∑… √≥∏Æ
+	ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_SLAVE, targetID);
+
+	if (pObject != NULL)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void	CNetworkLibrary::Set_MyChar_Effect(int item_E, int statusEffect)
+{
+	MyCharacterInfo.itemEffect.Refresh(NULL, item_E);
+	MyCharacterInfo.statusEffect.Refresh(NULL, (CStatusEffect::eRelation)statusEffect);
+}
+
+SBYTE	CNetworkLibrary::Get_MyChar_faceStyle()
+{
+	return MyCharacterInfo.faceStyle;
+}
+
+SBYTE	CNetworkLibrary::Get_MyChar_hairStyle()
+{
+	return MyCharacterInfo.hairStyle;
+}
+
+UBYTE	CNetworkLibrary::Get_MyChar_Job()
+{
+	return MyCharacterInfo.job;
+}
+
+void CNetworkLibrary::SendPetAccumulateUse(SBYTE scType, LONG lIndex)
+{
+	CNetworkMessage nmPetAccumulate((UBYTE)MSG_EXTEND);
+	nmPetAccumulate << (ULONG)MSG_EX_ATTACK_PET;
+	nmPetAccumulate << (SBYTE)MSG_SUB_EXPUSE;
+	nmPetAccumulate << scType;
+	nmPetAccumulate << lIndex;
+	
+	SendToServerNew(nmPetAccumulate);
+}
+
+void CNetworkLibrary::SendReformItemReq( UCHAR reformerGrade, SWORD reformerTab, SWORD reformerIdx, 
+	SWORD magnifierTab, SWORD magnifierIdx, ULONG magnifierCount, SWORD reformItemTab, SWORD reformItemIdx, int nNPCVIdx )
+{
+	CNetworkMessage nmMessage;
+	RequestClient::doReform* packet = reinterpret_cast<RequestClient::doReform*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_EXTEND;
+	packet->subType = htonl(MSG_EX_REFORMER_SYSTEM);
+	packet->thirdType = 0;
+	packet->npcIndex = nNPCVIdx;
+	packet->reformer_tab = reformerTab;
+	packet->reformer_invenIndex = reformerIdx;
+	packet->magnifire_tab = magnifierTab;
+	packet->magnifire_invenIndex = magnifierIdx;
+	packet->reform_tab = reformItemTab;
+	packet->reform_invenIndex = reformItemIdx;
+	packet->grade = reformerGrade;
+	packet->count = magnifierCount;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+}
+
+void CNetworkLibrary::ResetSkillDelayTime() // Ω∫≈≥ ƒ≈∏¿” √ ±‚»≠
+{
+	FOREACHINSTATICARRAY(ga_World.wo_aSkillData, CSkill, iter)
+	{
+		iter->ResetStartTime();
+		iter->SetToggle(false);		// ≈‰±€µµ ≤®¡ÿ¥Ÿ.
+	}
+}
+void CNetworkLibrary::ResetItemDelayTime() // æ∆¿Ã≈€ ƒ≈∏¿” √ ±‚»≠
+{
+	CItemData::_map::iterator	iter = CItemData::_mapdata.begin();
+	CItemData::_map::iterator	eiter = CItemData::_mapdata.end();
+
+	for (; iter != eiter; ++iter)
+	{	
+		CItemData* pItem = (*iter).second;
+	
+		if (pItem == NULL)
+			continue;
+
+		pItem->StartTime = 0.0f;
+	}
+}
+
+void CNetworkLibrary::SendReqServerTime()
+{
+	CNetworkMessage nmServerTime(MSG_EXTEND);
+	nmServerTime << (ULONG)MSG_EX_SERVER_TIME;
+	
+	SendToServerNew(nmServerTime);
+}
+
+void CNetworkLibrary::RestartGame()
+{
+	MyCharacterInfo.money = 0;
+	MyCharacterInfo.sbSoulCount = 0;
+	MyCharacterInfo.bExtension = FALSE;
+	MyCharacterInfo.nEvocationIndex = 0;
+	MyCharacterInfo.statusEffect.Reset();
+	MyCharacterInfo.itemEffect.Clear();
+	MyCharacterInfo.iHitEffectType = 0;
+	MyCharacterInfo.eMorphStatus = MyChaInfo::eMORPH_END;
+	MyCharacterInfo.useTotem = false;
+
+	ClearAffinityData();
+	// ƒ£»≠µµ ∫∏ªÛ NPC ∏ÆΩ∫∆Æ ≈¨∏ÆæÓ
+	ClearAffinityRewardNPC();
+
+	MonsterMercenaryInfo.Init();
+
+	// leave wild pet
+	LeaveWildPet( (CPlayerEntity*)CEntity::GetPlayerEntity(0) );
+	ClearPetList();
+
+	INFO()->clear();
+	
+	SetRvrZone(FALSE); // RVR ¡∏ º¬∆√ √ ±‚»≠
+
+	ResetSkillDelayTime();//Ω∫≈≥ µÙ∑π¿Ã ≈∏¿” √ ±‚»≠
+	ResetItemDelayTime();// æ∆¿Ã≈€ µÙ∑π¿Ã ≈∏¿” √ ±‚
+
+	m_vectorLegitList.clear();
+
+	MyCharacterInfo.stCustomTitle.Init();
+}
+
+bool CNetworkLibrary::CheckSendSkill(INDEX nIndex)
+{
+	__int64	_cur = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+	// ∞∞¿∫ Ω∫≈≥¿∫ ¡§«ÿ¡¯ Ω√∞£≥ªø° ¡ﬂ∫π ªÁøÎ ±›¡ˆ.
+	if (m_nLastSkillIndex == nIndex &&
+		(_cur - m_nSkillSendTime) < DEF_SKILL_SEND_DELAY)
+	{
+		CUIManager* pUIMgr = UIMGR();
+
+		pUIMgr->GetChattingUI()->AddSysMessage(_S(5550, "¿ÃπÃ ªÁøÎ¡ﬂ¿‘¥œ¥Ÿ."), SYSMSG_ERROR);
+		pUIMgr->SetCSFlagOff(CSF_SKILLREADY);
+		pUIMgr->CancelSkill(FALSE, TRUE);
+		return false;
+	}
+
+	m_nSkillSendTime = _cur;
+	m_nLastSkillIndex = nIndex;	
+
+	return true;
+}
+
+void CNetworkLibrary::SendClickObject( int charIndex )
+{
+	if (_pGameState->GetRestartGameValue() == TRUE)
+		return;
+
+ 	CNetworkMessage nmMessage;
+	RequestClient::doSetTargetInfo* packet = reinterpret_cast<RequestClient::doSetTargetInfo*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_EXTEND;
+	packet->subType = MSG_EX_SET_TARGET;
+	packet->charIndex = charIndex;
+
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+}
+
+void CNetworkLibrary::SendPremiumCharItemUse( SWORD tab, SWORD invenIdx, int VirtualIdx )
+{
+#ifdef PREMIUM_CHAR
+	CNetworkMessage nmMessage;
+	RequestClient::premiumChar_UseItem* packet = reinterpret_cast<RequestClient::premiumChar_UseItem*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_PREMIUM_CHAR;
+	packet->subType = MSG_SUB_PREMIUM_CHAR_USE_ITEM;
+	packet->tab = tab;
+	packet->invenIndex = invenIdx;
+	packet->virtualIndex = VirtualIdx;
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+#endif	//	PREMIUM_CHAR
+}
+
+void CNetworkLibrary::SendPremiumCharJumpReq( CTString strCharName )
+{
+#ifdef PREMIUM_CHAR
+	CNetworkMessage nmMessage;
+	RequestClient::premiumChar_JumpToChar* packet = reinterpret_cast<RequestClient::premiumChar_JumpToChar*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_PREMIUM_CHAR;
+	packet->subType = MSG_SUB_PREMIUM_CHAR_JUMP_TO_CHAR;
+#if	!defined(WORLD_EDITOR)
+	strcpy_s(packet->toCharName, MAX_CHAR_NAME_LENGTH, strCharName.str_String);	
+#else
+	strcpy(packet->toCharName, strCharName.str_String);
+#endif	// WORLD_EDITOR
+	nmMessage.setSize( sizeof(*packet) );
+
+	SendToServerNew( nmMessage );
+#endif	//	PREMIUM_CHAR
 }

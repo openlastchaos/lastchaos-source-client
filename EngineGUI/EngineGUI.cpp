@@ -224,11 +224,11 @@ void CEngineGUI::GetFullScreenModeFromRegistry( CTString strSectionName, CDispla
   // prepare full screen mode as default
   dm.dm_pixSizeI = 640;
   dm.dm_pixSizeJ = 480;
-  dm.dm_ddDepth  = DD_DEFAULT;
+  dm.dm_ddDepth  = DISPD_DEFAULT;
   // read FS parameters from registry
   CTString strResult = AfxGetApp()->GetProfileString( strSectionName, "Full screen mode", "640 x 480 x 0");
   strResult.ScanF( "%d x %d x %d", &dm.dm_pixSizeI, &dm.dm_pixSizeJ, &dm.dm_ddDepth);
-  if( dm.dm_ddDepth<DD_DEFAULT || dm.dm_ddDepth>DD_32BIT) dm.dm_ddDepth = DD_DEFAULT;
+  if( dm.dm_ddDepth<DISPD_DEFAULT || dm.dm_ddDepth>DISPD_32BIT) dm.dm_ddDepth = DISPD_DEFAULT;
   strResult = AfxGetApp()->GetProfileString( strSectionName, "Full screen API", "OpenGL");
   gat = (strResult=="Direct3D") ? GAT_D3D : GAT_OGL;
 }

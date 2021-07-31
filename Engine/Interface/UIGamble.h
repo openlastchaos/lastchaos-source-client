@@ -9,13 +9,10 @@
 	#pragma once
 #endif
 
+class CUIIcon;
 
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIButtonEx.h>
-//#include <Engine/Interface/UIInventory.h>
-#include <Engine/Interface/UIListBox.h>
 #include <Engine/Ska/ModelInstance.h>
-#include <vector>
+
 
 // Define text position
 #define	GAMBLE_TITLE_TEXT_OFFSETX			25
@@ -29,8 +26,13 @@
 #define GAMBLE_TOTAL_SLOT					5
 
 // [071122] New_MoonStone :Su-won
-#define MAX_REWARD_COUNT					24		//ìµœëŒ€ ë³´ìƒí’ˆ ìˆ˜
-#define MOONSTONE_COUNT						5		//ë¬¸ìŠ¤í†¤ì˜ ì¢…ë¥˜ ìˆ˜
+#define MAX_REWARD_COUNT					24		//ÃÖ´ë º¸»óÇ° ¼ö
+
+#ifdef MOONSTONE_COUNT_ADD	// [2010/11/23 : Sora] ¹®½ºÅæ °³¼ö Ãß°¡
+	#define MOONSTONE_COUNT						6		//¹®½ºÅæÀÇ Á¾·ù ¼ö
+#else
+	#define MOONSTONE_COUNT						5		//¹®½ºÅæÀÇ Á¾·ù ¼ö
+#endif
 
 // ----------------------------------------------------------------------------
 // Name : CUIGamble
@@ -44,9 +46,9 @@ protected:
 	UIRect				m_rcSlot[GAMBLE_TOTAL_SLOT];
 	DOUBLE				m_dSlotOld[GAMBLE_TOTAL_SLOT];
 	DOUBLE				m_dSlotElapsed[GAMBLE_TOTAL_SLOT];	
-	int					m_iSelectedMarker[GAMBLE_TOTAL_SLOT];		// ì„œë²„ì—ì„œ ë°›ì€ ì„ íƒëœ ë§ˆì»¤ê°’...
+	int					m_iSelectedMarker[GAMBLE_TOTAL_SLOT];		// ¼­¹ö¿¡¼­ ¹ŞÀº ¼±ÅÃµÈ ¸¶Ä¿°ª...
 	int					m_iCurMarker[GAMBLE_TOTAL_SLOT];
-	int					m_iMarkerScore[GAMBLE_TOTAL_MARK];			// ë³µê¶Œ ì ìˆ˜ ê²°ì •...
+	int					m_iMarkerScore[GAMBLE_TOTAL_MARK];			// º¹±Ç Á¡¼ö °áÁ¤...
 	BOOL				m_iStoppedMarker[GAMBLE_TOTAL_MARK];
 	BOOL				m_bSelectedFixed;
 	int					m_iMaxMarker;
@@ -58,12 +60,11 @@ protected:
 	UIRectUV			m_rtBackMiddle;
 	UIRectUV			m_rtBackBottom;	
 
-	UIRectUV			m_rtMark[GAMBLE_TOTAL_MARK];				// ë¬¸ìŠ¤í†¤ í‘œì‹œ ë§ˆí¬...
-	UIRectUV			m_rtSelect;									// ë¬¸ìŠ¤í†¤ ì„ íƒëœ ë§ˆí¬ í‘œì‹œ.
-	UIRectUV			m_rtSmallNumber[GAMBLE_TOTAL_NUMBER];		// ë¬¸ìŠ¤í†¤ í¬ì¸íŠ¸ í‘œì‹œ ìˆ«ì
+	UIRectUV			m_rtMark[GAMBLE_TOTAL_MARK];				// ¹®½ºÅæ Ç¥½Ã ¸¶Å©...
+	UIRectUV			m_rtSelect;									// ¹®½ºÅæ ¼±ÅÃµÈ ¸¶Å© Ç¥½Ã.
+	UIRectUV			m_rtSmallNumber[GAMBLE_TOTAL_NUMBER];		// ¹®½ºÅæ Æ÷ÀÎÆ® Ç¥½Ã ¼ıÀÚ
 	
 	// Buttons	
-	CUIButton			m_btnStart;
 	CUIButton			m_btnStop;
 	CUIButton			m_btnCancel;
 
@@ -76,11 +77,8 @@ protected:
 	int					m_iStopSlot;
 	CEntity*			m_pNpcEntity;
 
-	// Cash MoonStone Valuables
-	CUIButtonEx		m_slotBtn;
 	BOOL			m_bIsCashMoonStone;
 	BOOL			m_bIsReady;			// Check Ready State
-	CUIButton		m_btnReady;			// Ready Button
 	INDEX			m_selCashItemIdx;
 
 	// Cash MoonStone Structure
@@ -95,13 +93,13 @@ protected:
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	// [071122: Su-won] NEW_MOONSTONE
-	CStaticArray<INDEX>	m_saReward[5];
-	INDEX*				m_iTexID;					// ë¬¸ìŠ¤í†¤ ì•„ì´ì½˜ í…ìŠ¤ì³ ID
-	UIRectUV*			m_rtNewMark;				// ë¬¸ìŠ¤í†¤ ì•„ì´ì½˜ í…ìŠ¤ì³ ì¢Œí‘œ
+	CStaticArray<INDEX>	m_saReward[MOONSTONE_COUNT];
+	INDEX*				m_iTexID;					// ¹®½ºÅæ ¾ÆÀÌÄÜ ÅØ½ºÃÄ ID
+	UIRectUV*			m_rtNewMark;				// ¹®½ºÅæ ¾ÆÀÌÄÜ ÅØ½ºÃÄ ÁÂÇ¥
 	
-	INDEX				m_iUsedMoonStone;							// ë¬¸ìŠ¤í†¤ì— ì‚¬ìš©ëœ ë¬¸ìŠ¤í†¤ ì¢…ë£Œ
+	INDEX				m_iUsedMoonStone;							// ¹®½ºÅæ¿¡ »ç¿ëµÈ ¹®½ºÅæ Á¾·á
 
-	CUIButtonEx			m_btnMoonStone[5];								// ë£°ë ›ì— ì‚¬ìš©í•  ë¬¸ìŠ¤í†¤ ë²„íŠ¼
+	CUIIcon*			m_pIconsMoonStone[5];								// ·ê·¿¿¡ »ç¿ëÇÒ ¹®½ºÅæ ¹öÆ°
 	// [071108: Su-won] NEW_MOONSTONE
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -126,21 +124,16 @@ public:
 
 	void	ResetGamble();
 
-	// ë³´ìƒ ì´í™íŠ¸ í‘œì‹œí•˜ê¸°...
+	// º¸»ó ÀÌÆåÆ® Ç¥½ÃÇÏ±â...
 	void	ShowPrizeEffect();
 	
 	void	SetSelectedMarker( int iSlot, int iCount );
 	void	SetAccumulate( int iAccumulate );
 
-	// For Cash Moonstone
-	void	OpenReady();
-	void	OpenReadySelect();
 	// Check Cash Item
 	BOOL	 	CheckCashItem(int itemIdx);
 	void		SetSelCashItemIdx(int idx) { m_selCashItemIdx = idx; }
 	int			GetSelCashItemIdx() { return m_selCashItemIdx; }
-	CUIButtonEx GetSlotBtn() { return m_slotBtn; }
-	void		SetSlotBtn(CUIButtonEx btn) { m_slotBtn = btn; }
 
 	//////////////////////////////////////////////////////////
 	// [071122: Su-won] NEW_MOONSTONE
@@ -150,10 +143,6 @@ public:
 	// [071122: Su-won] NEW_MOONSTONE
 	//////////////////////////////////////////////////////////
 
-
-	// Command functions
-	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
-
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
@@ -161,8 +150,8 @@ public:
 	std::vector<CASHITEMS>& GetCashItemList() { return m_cashItemList; }
 
 protected:	
-	void	DrawNumber( int x, int y, int nNumber );				// ìˆ«ìí‘œì‹œ
-	void	DrawNumber( int x, int y, CTString& strNumber );		// ìˆ«ìí‘œì‹œ
+	void	DrawNumber( int x, int y, int nNumber );				// ¼ıÀÚÇ¥½Ã
+	void	DrawNumber( int x, int y, CTString& strNumber );		// ¼ıÀÚÇ¥½Ã
 	void	RenderSlot( int iSlot, int iMarker );
 	void	RenderSelectedSlot( );
 	void	Init();

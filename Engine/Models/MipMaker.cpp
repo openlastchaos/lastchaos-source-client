@@ -156,7 +156,8 @@ void CMipModel::FromObject3D_t( CObject3D &objRestFrame, CObject3D &objMipSource
     INDEX ctPolygonVertices = opoPolygon.opo_PolygonEdges.Count();
     // allocate polygon vertices
     CMipPolygonVertex *ppvPolygonVertices[ 32];
-    for( INDEX iPolygonVertice=0; iPolygonVertice<ctPolygonVertices; iPolygonVertice++)
+	int		iPolygonVertice;
+    for( iPolygonVertice = 0; iPolygonVertice < ctPolygonVertices; ++iPolygonVertice )
     {
       // allocate one polygon vertex
       ppvPolygonVertices[ iPolygonVertice] = new( CMipPolygonVertex);
@@ -164,7 +165,7 @@ void CMipModel::FromObject3D_t( CObject3D &objRestFrame, CObject3D &objMipSource
 
     opoPolygon.opo_PolygonEdges.Lock();
     // for each polygon vertex in the polygon
-    for( iPolygonVertice=0; iPolygonVertice<ctPolygonVertices; iPolygonVertice++)
+    for( iPolygonVertice = 0; iPolygonVertice < ctPolygonVertices; iPolygonVertice++)
     {
       CMipPolygonVertex *ppvPolygonVertex = ppvPolygonVertices[ iPolygonVertice];
       // get the object vertex as first vertex of the edge

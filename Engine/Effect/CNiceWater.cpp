@@ -1,4 +1,4 @@
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
 #include "StdH.h"
 
 #include <Engine/Math/Functions.h>
@@ -53,7 +53,7 @@ CNiceWater::~CNiceWater()
 
 void CNiceWater::Render()
 {
-	// NOTE : SKA ëª¨ë¸ì´ë¼ì„œ ë”°ë¡œ ë Œë”ë§í•  í•„ìš”ê°€ ì—†ì„ë“¯...
+	// NOTE : SKA ¸ğµ¨ÀÌ¶ó¼­ µû·Î ·»´õ¸µÇÒ ÇÊ¿ä°¡ ¾øÀ»µí...
 }
 
 void CNiceWater::Clear()
@@ -62,4 +62,4 @@ void CNiceWater::Clear()
 	m_toBump.SetData(NULL);
 	m_toWater.SetData(NULL);
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22

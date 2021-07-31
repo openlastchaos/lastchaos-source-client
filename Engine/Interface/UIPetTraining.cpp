@@ -1,13 +1,23 @@
 #include "stdh.h"
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <vector>
-#include <Engine/Interface/UIPetTraining.h>
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIPetTraining.h>
 #include <Engine/Interface/UIPetInfo.h>
-#include <Engine/Interface/UIWildPetInfo.h>
+#include <Engine/Contents/function/WildPetInfoUI.h>
+#include <Engine/Contents/Base/UINoticeNew.h>
+#include <Engine/Interface/UIPetFree.h>
+#include <Engine/Contents/Base/UIQuestNew.h>
+#include <Engine/Contents/Base/UIQuestBookNew.h>
 #include <Engine/Interface/UIQuickSlot.h>
+#include <Engine/Interface/UIPetItemMix.h>
 #include <Engine/Interface/UIInventory.h>
-#include <Engine/Petinfo.h>
-#include <Engine/Network/MessageDefine.h>
+
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/Base/Notice.h>
+#include <Engine/Info/MyInfo.h>
+
 
 #define	PT_TAB_WIDTH				96
 #define	PT_COMMAND_TAB_CX			60
@@ -20,7 +30,7 @@
 #define	PT_NAME_CX					122
 #define	PT_NAME_SY					58
 #define	PT_NEED_RX					184
-#define	PT_CURSP_SX					40 //Ïù¥Í∏∞Ìôò ÏàòÏ†ï (05.01.03) : SP->ÏàôÎ†®ÎèÑ ÎùºÎäî Îã®Ïñ¥ Î≥ÄÍ≤Ω ÌïòÎ©¥ÏÑú ÏàòÏπò ÏàòÏ†ï(97->75)
+#define	PT_CURSP_SX					40 //¿Ã±‚»Ø ºˆ¡§ (05.01.03) : SP->º˜∑√µµ ∂Û¥¬ ¥‹æÓ ∫Ø∞Ê «œ∏Èº≠ ºˆƒ° ºˆ¡§(97->75)
 #define	PT_CURSP_RX					199
 #define	PT_CURSP_SY					343
 #define	PT_DESC_CHAR_WIDTH			170
@@ -29,7 +39,6 @@
 #define	PT_TITLE_TEXT_OFFSETX		25
 #define	PT_TITLE_TEXT_OFFSETY		5
 
-extern INDEX g_iCountry;
 
 enum eSelection
 {
@@ -37,18 +46,19 @@ enum eSelection
 	PET_CHANGE,
 	PET_SKILLINIT,
 	PET_TALK,
-	PET_STUFF, // Ìé´ Ïû¨Î£å ÏïÑÏù¥ÌÖú Î≥ÄÌôò
-	PET_UNIQUE_PRODUCT,  // Ïú†ÎãàÌÅ¨ ÏïÑÏù¥ÌÖú Ï†úÏûë
-	PET_SEAL_CANCEL,	// Ìé´ Î¥âÏù∏ Ìï¥Ï†ú
+	PET_STUFF, // ∆Í ¿Á∑· æ∆¿Ã≈€ ∫Ø»Ø
+	PET_UNIQUE_PRODUCT,  // ¿Ø¥œ≈© æ∆¿Ã≈€ ¡¶¿€
+	PET_SEAL_CANCEL,	// ∆Í ∫¿¿Œ «ÿ¡¶
+	PET_EVOLUTION,		// ∆Í ¡¯»≠
 	PET_NPC_HELP,
 };
 
 enum eChangeSelection
 {
-	CHANGE_RIDE,						// ÌÉàÍ≤ÉÏúºÎ°ú...
-	PETITEM_DESTRUCTION,				// Ìé´ ÏïÑÏù¥ÌÖú ÏÜåÎ©∏
-	DRAGON_WEAPON,						// ÎìúÎûòÍ≥§ Î¨¥Í∏∞
-	KNIGHT_AMOR,						// ÎÇòÏù¥Ìä∏ Î∞©Ïñ¥
+	CHANGE_RIDE,						// ≈ª∞Õ¿∏∑Œ...
+	PETITEM_DESTRUCTION,				// ∆Í æ∆¿Ã≈€ º“∏Í
+	DRAGON_WEAPON,						// µÂ∑°∞Ô π´±‚
+	KNIGHT_AMOR,						// ≥™¿Ã∆Æ πÊæÓ
 };
 
 // Date : 2005-03-07,   By Lee Ki-hwan
@@ -63,6 +73,8 @@ CUIPetTraining::CUIPetTraining()
 	m_nSelSkillID		= -1;	
 
 	m_nCurrentTab		= PETTRAINING_TAB_COMMAND;
+
+	m_nNpcIndex = -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +83,13 @@ CUIPetTraining::CUIPetTraining()
 // ----------------------------------------------------------------------------
 CUIPetTraining::~CUIPetTraining()
 {
-	Destroy();
+	int		i;
+
+	for (i = 0; i < SLEARN_SLOT_ROW_TOTAL ; ++i)
+		SAFE_DELETE(m_pIconsCommand[i]);
+
+	for (i = 0; i < SLEARN_SLOT_ROW_TOTAL ; ++i)
+		SAFE_DELETE(m_pIconsSkill[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -80,9 +98,7 @@ CUIPetTraining::~CUIPetTraining()
 // ----------------------------------------------------------------------------
 void CUIPetTraining::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	_iMaxMsgStringChar = PT_DESC_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
@@ -109,14 +125,14 @@ void CUIPetTraining::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, 
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Learn button
-	m_btnLearn.Create( this, _S( 269, "ÏäµÎìù" ), 70, 372, 63, 21 );
+	m_btnLearn.Create( this, _S( 269, "Ω¿µÊ" ), 70, 372, 63, 21 );
 	m_btnLearn.SetUV( UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight );
 	m_btnLearn.SetUV( UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight );
 	m_btnLearn.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnLearn.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 141, 372, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 141, 372, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -188,18 +204,19 @@ void CUIPetTraining::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, 
 	m_lbSkillDesc.CopyScrollDownUV( UBS_IDLE, UBS_ON );
 	m_lbSkillDesc.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
 
+	int		iRow;
 	// Active skill buttons
-	for( int iRow = 0; iRow < SLEARN_SLOT_ROW_TOTAL ; iRow++ )
+	for( iRow = 0; iRow < SLEARN_SLOT_ROW_TOTAL ; iRow++ )
 	{
-		m_btnCommands[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETTRAINING,
-											UBET_SKILL, 0, iRow );
+		m_pIconsCommand[iRow] = new CUIIcon;
+		m_pIconsCommand[iRow]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETTRAINING, UBET_SKILL);
 	}
 
 	// Passive skill buttons
 	for( iRow = 0; iRow < SLEARN_SLOT_ROW_TOTAL ; iRow++ )
 	{
-		m_btnSkills[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETTRAINING,
-											UBET_SKILL, 0, iRow );
+		m_pIconsSkill[iRow] = new CUIIcon;
+		m_pIconsSkill[iRow]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PETTRAINING, UBET_SKILL);
 	}
 }
 
@@ -234,17 +251,18 @@ void CUIPetTraining::InitPetTraining()
 	// Reset description
 	m_lbSkillDesc.ResetAllStrings();
 	
+	int		iRow;
 	// Reset buttons
-	for( int iRow = 0; iRow < SLEARN_SLOT_ROW_TOTAL; iRow++ )
+	for( iRow = 0; iRow < SLEARN_SLOT_ROW_TOTAL; iRow++ )
 	{
-		m_btnCommands[iRow].InitBtn();
-		m_btnSkills[iRow].InitBtn();
+		m_pIconsCommand[iRow]->clearIconData();
+		m_pIconsSkill[iRow]->clearIconData();
 	}
 	
 	// Collect skills
 	INDEX	ctPosCommand = 0, ctPosSkill = 0;			// Possible
 	INDEX	ctImposCommand = 0, ctImposSkill = 0;		// Impossible	
-	
+
 	std::vector<sCollectSkill>		vectorPosCommand;
 	std::vector<sCollectSkill>		vectorImposCommand;
 	std::vector<sCollectSkill>		vectorPosSkill;
@@ -256,17 +274,19 @@ void CUIPetTraining::InitPetTraining()
 	vectorImposSkill.resize(SLEARN_SLOT_ROW_TOTAL);
 
 	INDEX iCrrJob = PET_JOB;
+	ObjInfo* pInfo = ObjInfo::getSingleton();
 
-	if(_pNetwork->_PetTargetInfo.bIsActive)
+	if(pInfo->GetMyPetInfo()->bIsActive)
 	{
 		iCrrJob = PET_JOB;
 	}
-	else if(_pNetwork->_WildPetInfo.bIsActive)
+	else if(pInfo->GetMyApetInfo() != NULL && pInfo->GetMyApetInfo()->bIsActive)
 	{
 		iCrrJob = WILDPET_JOB;
 	}
 	
-	for( int iSkill = 1; iSkill <= _pNetwork->wo_iNumOfSkill; iSkill++ )
+	int iSkill;
+	for( iSkill = 1; iSkill <= _pNetwork->wo_iNumOfSkill; iSkill++ )
 	{
 		CSkill	&rSkill = _pNetwork->GetSkillData( iSkill );
 				
@@ -278,24 +298,27 @@ void CUIPetTraining::InitPetTraining()
 		{
 			continue;
 		}
-		// Type Íµ¨Î∂Ñ 
+		// Type ±∏∫– 
 		if(iCrrJob == PET_JOB)
 		{
-			if( ( rSkill.GetJob2() % 2 != _pNetwork->_PetTargetInfo.iType%2 ) )
+			if( ( rSkill.GetJob2() % 2 != pInfo->GetMyPetInfo()->iType%2 ) )
 			{
 				continue;
 			}
 			
-			// ÌÉÄÎäî Í≤ÉÏùºÎïåÎäî Job 2Ïù¥ÏÉÅÏùò Ïä§ÌÇ¨Îßå Ï≤òÎ¶¨ 
-			if( rSkill.GetJob2() < 2 &&  _pNetwork->_PetTargetInfo.iAge == 2 )
+			// ≈∏¥¬ ∞Õ¿œ∂ß¥¬ Job 2¿ÃªÛ¿« Ω∫≈≥∏∏ √≥∏Æ 
+			if( rSkill.GetJob2() < 2 &&  pInfo->GetMyPetInfo()->iAge == 2 )
 			{
 				continue;
 			}
 		}else if(iCrrJob == WILDPET_JOB)
 		{
-			if(!((rSkill.GetJob2() ==_pNetwork->_WildPetInfo.m_nType)&&(rSkill.GetWildpetIndex() == _pNetwork->_WildPetInfo.m_nIndex)))
+			if (pInfo->GetMyApetInfo() != NULL)
 			{
-				continue;
+				if(!((rSkill.GetJob2() ==pInfo->GetMyApetInfo()->m_nType)&&(rSkill.GetWildpetIndex() == pInfo->GetMyApetInfo()->m_nIndex)))
+				{
+					continue;
+				}
 			}
 
 		}
@@ -303,22 +326,12 @@ void CUIPetTraining::InitPetTraining()
 		int		nSkillIndex = rSkill.GetIndex();
 		
 		SBYTE	sbSkillLevel = -1;
+
 		if (iCrrJob == PET_JOB)
-		{
-			if( _pUIMgr->GetPetInfo()->IsLearnSkill( _pNetwork->_PetTargetInfo.lIndex, nSkillIndex ) )
-			{
-				sbSkillLevel = _pUIMgr->GetPetInfo()->GetSkillLevel( _pNetwork->_PetTargetInfo.lIndex, nSkillIndex );
-			}
-			
-		}else if(iCrrJob == WILDPET_JOB)
-		{
-			if(_pUIMgr->GetWildPetInfo()->IsLearnSkill(nSkillIndex))
-			{
-				sbSkillLevel = _pUIMgr->GetWildPetInfo()->GetSkillLevel(nSkillIndex);
-			}
-		}
-			
-		
+			sbSkillLevel = MY_INFO()->GetPetSkillLevel(pInfo->GetMyPetInfo()->lIndex, nSkillIndex);
+		else if(iCrrJob == WILDPET_JOB)
+			sbSkillLevel = MY_INFO()->GetPetSkillLevel(0, nSkillIndex);
+
 		// If this skill is already max level
 		if( sbSkillLevel >= rSkill.GetMaxLevel() )
 			continue;
@@ -332,7 +345,7 @@ void CUIPetTraining::InitPetTraining()
 		{
 		case CSkill::ST_PET_COMMAND:	// pet command
 			{
-				if( ulNeedCharLevel <= _pNetwork->_PetTargetInfo.iLevel )
+				if( ulNeedCharLevel <= pInfo->GetMyPetInfo()->iLevel )
 				{
 					vectorPosCommand[ctPosCommand++].SetData(nSkillIndex, sbSkillLevel, ulNeedCharLevel);				
 				}
@@ -346,7 +359,13 @@ void CUIPetTraining::InitPetTraining()
 		case CSkill::ST_PET_SKILL_PASSIVE:	// pet skill
 		case CSkill::ST_PET_SKILL_ACTIVE:
 			{
-				if( ulNeedCharLevel <= _pNetwork->_PetTargetInfo.iLevel )
+				int petLevel;
+				if( iCrrJob == WILDPET_JOB )
+					petLevel = pInfo->GetMyApetInfo()->m_nLevel;
+				else
+					petLevel = pInfo->GetMyPetInfo()->iLevel;
+
+				if( ulNeedCharLevel <= petLevel )
 				{
 					vectorPosSkill[ctPosSkill++].SetData(nSkillIndex, sbSkillLevel, ulNeedCharLevel);		
 				}
@@ -356,9 +375,9 @@ void CUIPetTraining::InitPetTraining()
 				}
 			}
 			break;
-		case CSkill::ST_MELEE:		// Í≥µÍ≤©Ìòï Ìé´ÏùÄ Í∏∞Ï°¥ Ìé´ Ïä§ÌÇ¨ÏùÑ ÏÇ¨Ïö©ÌïòÏßÄ ÏïäÏùå
+		case CSkill::ST_MELEE:		// ∞¯∞›«¸ ∆Í¿∫ ±‚¡∏ ∆Í Ω∫≈≥¿ª ªÁøÎ«œ¡ˆ æ ¿Ω
 			{
-				if( ulNeedCharLevel <= _pNetwork->_WildPetInfo.m_nLevel )
+				if( ulNeedCharLevel <= pInfo->GetMyApetInfo()->m_nLevel )
 				{
 					vectorPosSkill[ctPosSkill++].SetData(nSkillIndex, sbSkillLevel, ulNeedCharLevel);		
 				}
@@ -380,10 +399,16 @@ void CUIPetTraining::InitPetTraining()
 	iSkill = 0;
 	// Possible active skill
 	for( iRow = 0; iRow < ctPosCommand; iRow++ )
-		m_btnCommands[iSkill++].SetSkillInfo( vectorPosCommand[iRow].lSkillIndex, vectorPosCommand[iRow].sbSkillLevel );
+	{
+		m_pIconsCommand[iSkill++]->setData(UBET_SKILL, vectorPosCommand[iRow].lSkillIndex);
+	}
+	
 	// Impossible active skill
 	for( iRow = 0; iRow < ctImposCommand; iRow++ )
-		m_btnCommands[iSkill++].SetSkillInfo( vectorImposCommand[iRow].lSkillIndex, vectorImposCommand[iRow].sbSkillLevel );
+	{
+		m_pIconsCommand[iSkill++]->setData(UBET_SKILL, vectorImposCommand[iRow].lSkillIndex);
+	}
+
 	// Set active scroll bar
 	m_sbCommandIcon.SetScrollPos( 0 );
 	m_sbCommandIcon.SetCurItemCount( iSkill );
@@ -392,32 +417,75 @@ void CUIPetTraining::InitPetTraining()
 	iSkill = 0;
 	// Possible passive skill
 	for( iRow = 0; iRow < ctPosSkill; iRow++ )
-		m_btnSkills[iSkill++].SetSkillInfo( vectorPosSkill[iRow].lSkillIndex, vectorPosSkill[iRow].sbSkillLevel );
+	{
+		m_pIconsSkill[iSkill++]->setData(UBET_SKILL, vectorPosSkill[iRow].lSkillIndex);
+	}
+
 	// Impossible passive skill
 	for( iRow = 0; iRow < ctImposSkill; iRow++ )
-		m_btnSkills[iSkill++].SetSkillInfo( vectorImposSkill[iRow].lSkillIndex, vectorImposSkill[iRow].sbSkillLevel );
+	{
+		m_pIconsSkill[iSkill++]->setData(UBET_SKILL, vectorImposSkill[iRow].lSkillIndex);
+	}
 	// Set passive scroll bar
 	m_sbSkillIcon.SetScrollPos( 0 );
 	m_sbSkillIcon.SetCurItemCount( iSkill );
+
+	m_vecCommand.clear();
+
+	for (iRow = 0; iRow < vectorPosCommand.size(); ++iRow)
+	{
+		if (vectorPosCommand[iRow].lSkillIndex > 0)
+			m_vecCommand.push_back(vectorPosCommand[iRow]);
+	}
+
+	for (iRow = 0; iRow < vectorImposCommand.size(); ++iRow)
+	{
+		if (vectorImposCommand[iRow].lSkillIndex > 0)
+			m_vecCommand.push_back(vectorImposCommand[iRow]);
+	}
+
+	m_vecSkill.clear();
+
+	for (iRow = 0; iRow < vectorPosSkill.size(); ++iRow)
+	{
+		if (vectorPosSkill[iRow].lSkillIndex > 0)
+			m_vecSkill.push_back(vectorPosSkill[iRow]);
+	}
+
+	for (iRow = 0; iRow < vectorImposSkill.size(); ++iRow)
+	{
+		if (vectorImposSkill[iRow].lSkillIndex > 0)
+			m_vecSkill.push_back(vectorImposSkill[iRow]);
+	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : IsNotPetWear()
-// Desc : Ìé´ Ïû•Ï∞© Ïó¨Î∂ÄÎ•º ÌôïÏù∏ÌïòÍ≥† Î©îÏÑ∏ÏßÄ Ï∞ΩÏùÑ Î≥¥Ïó¨ Ï§çÎãàÎã§.
+// Desc : ∆Í ¿Â¬¯ ø©∫Œ∏¶ »Æ¿Œ«œ∞Ì ∏ﬁºº¡ˆ √¢¿ª ∫∏ø© ¡›¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 bool CUIPetTraining::IsNotPetWear()
 {
-	if( !(_pNetwork->_PetTargetInfo.bIsActive || _pNetwork->_WildPetInfo.m_nNetIndex > 0 ))
+	bool bWildPet = false;
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
+	if (pInfo->GetMyApetInfo() != NULL)
 	{
+		bWildPet  = pInfo->GetMyApetInfo()->m_nIdxServer > 0 ? true : false;
+	}
+	
+	if( !(pInfo->GetMyPetInfo()->bIsActive || bWildPet))
+	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
 		// Close message box of skill learn
-		_pUIMgr->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+		pUIManager->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
 		
 		// Create message box of skill learn
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S(2188, "Ïï†ÏôÑÎèôÎ¨º" ), UMBS_OK,
+		MsgBoxInfo.SetMsgBoxInfo( _S(2188, "æ÷øœµøπ∞" ), UMBS_OK,
 			UI_PETTRAINING, MSGCMD_PETTRAINING_NOTIFY );
-		MsgBoxInfo.AddString( _S(2189,"Ïï†ÏôÑÎèôÎ¨ºÏùÑ Ïä¨Î°ØÏóê Ïû•Ï∞©ÌïòÏó¨ÏïºÎßå Ìï©ÎãàÎã§.") );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		MsgBoxInfo.AddString( _S(2189,"æ÷øœµøπ∞¿ª ΩΩ∑‘ø° ¿Â¬¯«œø©æﬂ∏∏ «’¥œ¥Ÿ.") );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 		return true;
 	}
 	else
@@ -426,67 +494,69 @@ bool CUIPetTraining::IsNotPetWear()
 
 // ----------------------------------------------------------------------------
 // Name : OpenPetTraining()
-// Desc : nMasterTypeÏùÄ ÏùºÎ∞ò Ïä§ÌÇ¨ÏùºÎïåÎäî ÏßÅÏóÖ, ÌäπÏàò Ïä§ÌÇ¨ÏùºÎïåÎäî ÌäπÏàò Ïä§ÌÇ¨ÌÉÄÏûÖÏù¥ Îê©ÎãàÎã§.
+// Desc : nMasterType¿∫ ¿œπ› Ω∫≈≥¿œ∂ß¥¬ ¡˜æ˜, ∆Øºˆ Ω∫≈≥¿œ∂ß¥¬ ∆Øºˆ Ω∫≈≥≈∏¿‘¿Ã µÀ¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 void CUIPetTraining::OpenPetTraining( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If this is already exist
-	if( _pUIMgr->DoesMessageBoxLExist( MSGLCMD_PETTRAINING_REQ ) || IsVisible() )
+	if( pUIManager->DoesMessageBoxLExist( MSGLCMD_PETTRAINING_REQ ) || IsVisible() )
 		return;	
 
 	// Set position of target npc
 	m_fNpcX = fX;
 	m_fNpcZ = fZ;
+
+	m_nNpcIndex = iMobIndex;
 	
-	CMobData& MD	= _pNetwork->GetMobData(iMobIndex);	
-	CTString	strNpcName = _pNetwork->GetMobName(iMobIndex);	
+	CMobData* MD	= CMobData::getData(iMobIndex);	
+	CTString	strNpcName = CMobData::getData(iMobIndex)->GetName();	
 	
 	// Create skill learn message box
-	_pUIMgr->CreateMessageBoxL( _S(2190, "Ïï†ÏôÑÎèôÎ¨º ÌõàÎ†®" ), UI_PETTRAINING, MSGLCMD_PETTRAINING_REQ );
+	pUIManager->CreateMessageBoxL( _S(2190, "æ÷øœµøπ∞ »∆∑√" ), UI_PETTRAINING, MSGLCMD_PETTRAINING_REQ );
 	
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, TRUE, strNpcName, -1, 0xE18600FF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, TRUE, _S(2191, "Ï†ÄÏóêÍ≤å Î¨¥Ïä® Î≥ºÏùºÏù¥ ÏûàÏúºÏã≠ÎãàÍπå?" ), -1, 0xA3A1A3FF );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, TRUE, _S(2192, "Ìé´ÏùÑ ÌõàÎ†®ÏãúÌÇ§Í≥† Ïã∂ÏäµÎãàÍπå?" ), -1, 0xA3A1A3FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, TRUE, _S(2191, "¿˙ø°∞‘ π´Ωº ∫º¿œ¿Ã ¿÷¿∏Ω ¥œ±Ó?" ), -1, 0xA3A1A3FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, TRUE, _S(2192, "∆Í¿ª »∆∑√Ω√≈∞∞Ì ΩÕΩ¿¥œ±Ó?" ), -1, 0xA3A1A3FF );
 	
 	CTString strMessage;
-	strMessage.PrintF( _S(2193, "Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌõàÎ†®ÏãúÌÇ®Îã§." ) );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_TRAINING );
+	strMessage.PrintF( _S(2193, "æ÷øœµøπ∞¿ª »∆∑√Ω√≈≤¥Ÿ." ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_TRAINING );
 
-//  060518 ÌÉàÍ≤É Îã§ Îì§Ïñ¥Í∞ê
+//  060518 ≈ª∞Õ ¥Ÿ µÈæÓ∞®
 //	if(g_iCountry == JAPAN ||g_iCountry == KOREA || g_iCountry == TAIWAN  || g_iCountry == TAIWAN2 )
 	{	
-		strMessage.PrintF( _S(2194, "ÌÉàÍ≤ÉÏúºÎ°ú ÎßåÎì†Îã§." ) );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_CHANGE );		
+		strMessage.PrintF( _S(2194, "≈ª∞Õ¿∏∑Œ ∏∏µÁ¥Ÿ." ) );
+		pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_CHANGE );		
 	}
 	
-	strMessage.PrintF( _S( 2467, "Ìé´ Ïû¨Î£å ÏïÑÏù¥ÌÖú Î≥ÄÌôò" ) );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_STUFF );
+	strMessage.PrintF( _S( 2467, "∆Í ¿Á∑· æ∆¿Ã≈€ ∫Ø»Ø" ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_STUFF );
 
-	strMessage.PrintF( _S( 2468, "Ïú†ÎãàÌÅ¨ ÏïÑÏù¥ÌÖú Ï†úÏûë" ) );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_UNIQUE_PRODUCT );
+	strMessage.PrintF( _S( 2468, "¿Ø¥œ≈© æ∆¿Ã≈€ ¡¶¿€" ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_UNIQUE_PRODUCT );
 	
-	strMessage.PrintF( _S( 2444, "Ìé´ Î¥âÏù∏Ìï¥Ï†ú" ) );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_SEAL_CANCEL );
+	strMessage.PrintF( _S( 2444, "∆Í ∫¿¿Œ«ÿ¡¶" ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_SEAL_CANCEL );
 
-	strMessage.PrintF( _S(2195, "Ïä§ÌÇ¨ÏùÑ Ï¥àÍ∏∞ÌôîÏãúÌÇ®Îã§." ) );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_SKILLINIT );		
+	strMessage.PrintF( _S(2195, "Ω∫≈≥¿ª √ ±‚»≠Ω√≈≤¥Ÿ." ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_SKILLINIT );
+
+	strMessage.PrintF(_S(4744, "æ÷øœµøπ∞ ¡¯»≠"));
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_EVOLUTION );
 
 	if( bHasQuest )
 	{
-#ifdef	NEW_QUESTBOOK
-		// 2009. 05. 27 ÍπÄÏ†ïÎûò
-		// Ïù¥ÏïºÍ∏∞ÌïúÎã§ Î≥ÄÍ≤Ω Ï≤òÎ¶¨
+		// 2009. 05. 27 ±Ë¡§∑°
+		// ¿Ãæﬂ±‚«—¥Ÿ ∫Ø∞Ê √≥∏Æ
 		CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_PETTRAINING_REQ);				
-#else
-		strMessage.PrintF( _S( 1053, "Ïù¥ÏïºÍ∏∞ÌïúÎã§." ) );	
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage, PET_TALK );
-#endif
 	}
 
 
-	_pUIMgr->AddMessageBoxLString(MSGLCMD_PETTRAINING_REQ, FALSE, _S( 1748, "NPC ÏïàÎÇ¥" ), PET_NPC_HELP); //ttos : ÏïàÎÇ¥ÏãúÏä§ÌÖú Ï∂îÍ∞ÄÏãú
-	strMessage.PrintF( _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );		
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage );
+	pUIManager->AddMessageBoxLString(MSGLCMD_PETTRAINING_REQ, FALSE, _S( 1748, "NPC æ»≥ª" ), PET_NPC_HELP); //ttos : æ»≥ªΩ√Ω∫≈€ √ﬂ∞°Ω√
+	strMessage.PrintF( _S( 1220, "√Îº“«—¥Ÿ." ) );		
+	pUIManager->AddMessageBoxLString( MSGLCMD_PETTRAINING_REQ, FALSE, strMessage );
 	
 	m_nSelCommandID		= -1;
 	m_nSelSkillID	= -1;
@@ -498,10 +568,14 @@ void CUIPetTraining::OpenPetTraining( int iMobIndex, BOOL bHasQuest, FLOAT fX, F
 // ----------------------------------------------------------------------------
 void CUIPetTraining::ClosePetTraining()
 {
-	// Close message box of skill learn
-	_pUIMgr->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	_pUIMgr->RearrangeOrder( UI_PETTRAINING, FALSE );
+	// Close message box of skill learn
+	pUIManager->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+
+	pUIManager->RearrangeOrder( UI_PETTRAINING, FALSE );
+
+	pUIManager->GetInventory()->Lock(FALSE, FALSE, LOCK_PET_TRAINING);
 }
 
 // ----------------------------------------------------------------------------
@@ -517,18 +591,21 @@ void CUIPetTraining::Render()
 	//if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
 	//	ClosePetTraining();
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
 										0xFFFFFFFF );
 
 
 	// Tab
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab.Left + PT_TAB_WIDTH, m_nPosY + m_rcTab.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcTab.Left + PT_TAB_WIDTH, m_nPosY + m_rcTab.Top,
 		m_nPosX + m_rcTab.Left + PT_TAB_WIDTH + 1, m_nPosY + m_rcTab.Bottom,
 		m_rtTabLine.U0, m_rtTabLine.V0, m_rtTabLine.U1, m_rtTabLine.V1,
 		0xFFFFFFFF );	
@@ -552,39 +629,39 @@ void CUIPetTraining::Render()
 	m_lbSkillDesc.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Skill buttons
 	RenderSkillBtns();
 
 	// Text in skill learn
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(2190, "Ïï†ÏôÑÎèôÎ¨º ÌõàÎ†®" ), m_nPosX + PT_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( _S(2190, "æ÷øœµøπ∞ »∆∑√" ), m_nPosX + PT_TITLE_TEXT_OFFSETX,
 										m_nPosY + PT_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 	
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(2174, "Ïª§Îß®Îìú"), m_nPosX + PT_COMMAND_TAB_CX, 
+	pDrawPort->PutTextExCX( _S(2174, "ƒø∏«µÂ"), m_nPosX + PT_COMMAND_TAB_CX, 
 		m_nPosY + PT_TAB_SY,
 		m_nCurrentTab == PETTRAINING_TAB_COMMAND ? 0xFFCB00FF : 0x6B6B6BFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(91, "Ïä§ÌÇ¨" ), m_nPosX + PT_SKILL_TAB_CX,
+	pDrawPort->PutTextExCX( _S(91, "Ω∫≈≥" ), m_nPosX + PT_SKILL_TAB_CX,
 		m_nPosY + PT_TAB_SY,
 		m_nCurrentTab == PETTRAINING_TAB_SKILL ? 0xFFCB00FF : 0x6B6B6BFF );	
 
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï(05.01.03) : SP->ÏàôÎ†®ÎèÑ Î°ú ÏàòÏ†ï
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(2181, "Í∏∞Ïà† Ìè¨Ïù∏Ìä∏" ) , m_nPosX + PT_CURSP_SX,			
+	// ¿Ã±‚»Ø ºˆ¡§(05.01.03) : SP->º˜∑√µµ ∑Œ ºˆ¡§
+	pDrawPort->PutTextEx( _S(2181, "±‚º˙ ∆˜¿Œ∆Æ" ) , m_nPosX + PT_CURSP_SX,			
 										m_nPosY + PT_CURSP_SY );
 	
 	CTString strAbility;
 
-	if(_pNetwork->_PetTargetInfo.lAbility >= 0)
+	if(pInfo->GetMyPetInfo()->lAbility >= 0)
 	{
-		strAbility.PrintF( "%d", _pNetwork->_PetTargetInfo.lAbility );
+		strAbility.PrintF( "%d", pInfo->GetMyPetInfo()->lAbility );
 	}
 	else{
 		strAbility.PrintF("0");
 	}
-	_pUIMgr->GetDrawPort()->PutTextExRX( strAbility, m_nPosX + PT_CURSP_RX, m_nPosY + PT_CURSP_SY, 0xBDA99FFF );
+	pDrawPort->PutTextExRX( strAbility, m_nPosX + PT_CURSP_RX, m_nPosY + PT_CURSP_SY, 0xBDA99FFF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -598,11 +675,12 @@ void CUIPetTraining::AddSkillDescString( CTString &strDesc, COLOR colDesc )
 	if( nLength == 0 )
 		return;
 
+	int		iPos;
 	// If length of string is less than max char
 	if( nLength <= _iMaxMsgStringChar )
 	{
 		// Check line character
-		for( int iPos = 0; iPos < nLength; iPos++ )
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
 			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
 				break;
@@ -635,7 +713,7 @@ void CUIPetTraining::AddSkillDescString( CTString &strDesc, COLOR colDesc )
 		// Check splitting position for 2 byte characters
 		int		nSplitPos = _iMaxMsgStringChar;
 		BOOL	b2ByteChar = FALSE;
-		for( int iPos = 0; iPos < nSplitPos; iPos++ )
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
 		{
 			if( strDesc[iPos] & 0x80 )
 				b2ByteChar = !b2ByteChar;
@@ -715,7 +793,7 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 	AddSkillDescString( strTemp, 0xFFC672FF );
 
 	if( rSkill.GetFlag() & SF_SINGLEMODE )
-		AddSkillDescString( _S( 499, "ÌçºÏä§ÎÑêÎçòÏ†Ñ Ï†ÑÏö© Ïä§ÌÇ¨" ), 0xCACACAFF );
+		AddSkillDescString( _S( 499, "∆€Ω∫≥Œ¥¯¿¸ ¿¸øÎ Ω∫≈≥" ), 0xCACACAFF );
 
 	AddSkillDescString( CTString( " " ) );
 
@@ -749,16 +827,16 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 			bLearnItem = TRUE;
 	}
 	
-	//!!! Ï∂îÍ∞Ä ÏûëÏóÖ ÌïÑÏöî 
+	//!!! √ﬂ∞° ¿€æ˜ « ø‰ 
 	switch( rSkill.GetType() )
 	{
 	case CSkill::ST_MELEE:					// Active
 	case CSkill::ST_RANGE:					// Active
 	case CSkill::ST_MAGIC:					// Active
 		{
-			strTemp.PrintF( _S( 256, "ÌïÑÏöî Î†àÎ≤® : %d" ), rSkill.GetLearnLevel( nLevel ) );
+			strTemp.PrintF( _S( 256, "« ø‰ ∑π∫ß : %d" ), rSkill.GetLearnLevel( nLevel ) );
 			AddSkillDescString( strTemp, 0xBDA99FFF );
-			strTemp.PrintF( _S( 257, "ÌïÑÏöî SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // ÏàôÎ†®ÎèÑ
+			strTemp.PrintF( _S( 257, "« ø‰ SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // º˜∑√µµ
 			AddSkillDescString( strTemp, 0xBDA99FFF );				
 
 			const int iLearnStr = rSkill.GetLearnStr( nLevel );
@@ -768,33 +846,33 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 
 			if( iLearnStr > 0 ) 
 			{
-				strTemp.PrintF( _S( 1391, "ÌïÑÏöî Ìûò : %d" ), iLearnStr );		// ÌïÑÏöî Ìûò 
+				strTemp.PrintF( _S( 1391, "« ø‰ »˚ : %d" ), iLearnStr );		// « ø‰ »˚ 
 				AddSkillDescString( strTemp, 0xBDA99FFF );
 			}
 
 			if( iLearnDex > 0 ) 
 			{
-				strTemp.PrintF( _S( 1392, "ÌïÑÏöî ÎØºÏ≤© : %d" ), iLearnDex );	// ÌïÑÏöî ÎØºÏ≤©
+				strTemp.PrintF( _S( 1392, "« ø‰ πŒ√∏ : %d" ), iLearnDex );	// « ø‰ πŒ√∏
 				AddSkillDescString( strTemp, 0xBDA99FFF );
 			}
 			
 			if( iLearnInt > 0 ) 
 			{
-				strTemp.PrintF( _S( 1393, "ÌïÑÏöî ÏßÄÌòú : %d" ), iLearnInt );	// ÌïÑÏöî ÏßÄÌòú
+				strTemp.PrintF( _S( 1393, "« ø‰ ¡ˆ«˝ : %d" ), iLearnInt );	// « ø‰ ¡ˆ«˝
 				AddSkillDescString( strTemp, 0xBDA99FFF );
 			}
 
 			if( iLearnCon > 0 )
 			{
-				strTemp.PrintF( _S( 1394, "ÌïÑÏöî Ï≤¥Ïßà : %d" ), iLearnCon );	// ÌïÑÏöî Ï≤¥Ïßà
+				strTemp.PrintF( _S( 1394, "« ø‰ √º¡˙ : %d" ), iLearnCon );	// « ø‰ √º¡˙
 				AddSkillDescString( strTemp, 0xBDA99FFF );
 			}
 			
 			// Need skill
 			if( bLearnSkill )
 			{
-				AddSkillDescString( _S( 258, "ÌïÑÏöî Ïä§ÌÇ¨" ), 0xBDA99FFF );
-				for( i = 0; i < 3; i++ )
+				AddSkillDescString( _S( 258, "« ø‰ Ω∫≈≥" ), 0xBDA99FFF );
+				for( int i = 0; i < 3; i++ )
 				{
 					if( nLearnSkillIndex[i] != -1 )
 					{
@@ -808,13 +886,12 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 			// Need item
 			if( bLearnItem )
 			{
-				AddSkillDescString( _S( 259, "ÌïÑÏöî ÏïÑÏù¥ÌÖú" ), 0xBDA99FFF );
-				for( i = 0; i < 3; i++ )
+				AddSkillDescString( _S( 259, "« ø‰ æ∆¿Ã≈€" ), 0xBDA99FFF );
+				for( int i = 0; i < 3; i++ )
 				{
 					if( nLearnItemIndex[i] != -1 )
 					{
-						CItemData	&rNeedItem = _pNetwork->GetItemData( nLearnItemIndex[i] );
-						strTemp.PrintF( _S( 260, "  %s %dÍ∞ú" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
+						strTemp.PrintF( _S( 260, "  %s %d∞≥" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
 						AddSkillDescString( strTemp, 0xBDA99FFF );
 					}
 				}
@@ -826,7 +903,7 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 			{
 				if( nNeedMP != 0 )
 				{
-					strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
+					strTemp.PrintF( _S( 64, "º“∏ MP : %d" ), nNeedMP );
 					AddSkillDescString( strTemp, 0xBDA99FFF );
 				}
 			}
@@ -834,36 +911,37 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 			{
 				if( nNeedMP == 0 )
 				{
-					strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );		
+					strTemp.PrintF( _S( 500, "º“∏ HP : %d" ), nNeedHP );		
 					AddSkillDescString( strTemp, 0xBDA99FFF );
 				}
 				else
 				{
-					strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
+					strTemp.PrintF( _S( 64, "º“∏ MP : %d" ), nNeedMP );
 					AddSkillDescString( strTemp, 0xBDA99FFF );
-					strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );		
+					strTemp.PrintF( _S( 500, "º“∏ HP : %d" ), nNeedHP );		
 					AddSkillDescString( strTemp, 0xBDA99FFF );
 				}
 			}
 
 			if( rSkill.GetPower( nLevel ) > 0 )
 			{
-				strTemp.PrintF( _S( 65, "ÏúÑÎ†• : %d" ), rSkill.GetPower( nLevel ) );
+				strTemp.PrintF( _S( 65, "¿ß∑¬ : %d" ), rSkill.GetPower( nLevel ) );
 				AddSkillDescString( strTemp, 0xBDA99FFF );
 			}
 
-			strTemp.PrintF( _S( 66, "Ïú†Ìö® Í±∞Î¶¨ : %.1f" ), rSkill.GetFireRange() );
+			strTemp.PrintF( _S( 66, "¿Ø»ø ∞≈∏Æ : %.1f" ), rSkill.GetFireRange() );
 			AddSkillDescString( strTemp, 0xBDA99FFF );
-			strTemp.PrintF( _S( 261, "ÏµúÎåÄÏä§ÌÇ¨ Î†àÎ≤® : %d" ), rSkill.GetMaxLevel() );
+			strTemp.PrintF( _S( 261, "√÷¥ÎΩ∫≈≥ ∑π∫ß : %d" ), rSkill.GetMaxLevel() );
 			AddSkillDescString( strTemp, 0xBDA99FFF );
 		}
 		break;
 
-	case CSkill::ST_PASSIVE:				// Passive
+	case CSkill::ST_PASSIVE:
+	case CSkill::ST_PET_SKILL_PASSIVE:				// Passive
 	{
-		strTemp.PrintF( _S( 256, "ÌïÑÏöî Î†àÎ≤® : %d" ), rSkill.GetLearnLevel( nLevel ) );
+		strTemp.PrintF( _S( 256, "« ø‰ ∑π∫ß : %d" ), rSkill.GetLearnLevel( nLevel ) );
 		AddSkillDescString( strTemp, 0xBDA99FFF );
-		strTemp.PrintF( _S( 257, "ÌïÑÏöî SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // ÏàôÎ†®ÎèÑ
+		strTemp.PrintF( _S( 257, "« ø‰ SP : %d" ), rSkill.GetLearnSP( nLevel ) ); // º˜∑√µµ
 		AddSkillDescString( strTemp, 0xBDA99FFF );
 
 		const int iLearnStr = rSkill.GetLearnStr( nLevel );
@@ -873,33 +951,33 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 		
 		if( iLearnStr > 0 ) 
 		{
-			strTemp.PrintF( _S( 1391, "ÌïÑÏöî Ìûò : %d" ), iLearnStr );		// ÌïÑÏöî Ìûò
+			strTemp.PrintF( _S( 1391, "« ø‰ »˚ : %d" ), iLearnStr );		// « ø‰ »˚
 			AddSkillDescString( strTemp, 0xBDA99FFF );
 		}
 		
 		if( iLearnDex > 0 ) 
 		{
-			strTemp.PrintF( _S( 1392, "ÌïÑÏöî ÎØºÏ≤© : %d" ), iLearnDex );	// ÌïÑÏöî ÎØºÏ≤©
+			strTemp.PrintF( _S( 1392, "« ø‰ πŒ√∏ : %d" ), iLearnDex );	// « ø‰ πŒ√∏
 			AddSkillDescString( strTemp, 0xBDA99FFF );
 		}
 		
 		if( iLearnInt > 0 ) 
 		{
-			strTemp.PrintF( _S( 1393, "ÌïÑÏöî ÏßÄÌòú : %d" ), iLearnInt );	// ÌïÑÏöî ÏßÄÌòú
+			strTemp.PrintF( _S( 1393, "« ø‰ ¡ˆ«˝ : %d" ), iLearnInt );	// « ø‰ ¡ˆ«˝
 			AddSkillDescString( strTemp, 0xBDA99FFF );
 		}
 		
 		if( iLearnCon > 0 )
 		{
-			strTemp.PrintF( _S( 1394, "ÌïÑÏöî Ï≤¥Ïßà : %d" ), iLearnCon );	// ÌïÑÏöî Ï≤¥Ïßà
+			strTemp.PrintF( _S( 1394, "« ø‰ √º¡˙ : %d" ), iLearnCon );	// « ø‰ √º¡˙
 			AddSkillDescString( strTemp, 0xBDA99FFF );
 		}
 
 		// Need skill
 		if( bLearnSkill )
 		{
-			AddSkillDescString( _S( 258, "ÌïÑÏöî Ïä§ÌÇ¨" ), 0xBDA99FFF );
-			for( i = 0; i < 3; i++ )
+			AddSkillDescString( _S( 258, "« ø‰ Ω∫≈≥" ), 0xBDA99FFF );
+			for( int i = 0; i < 3; i++ )
 			{
 				if( nLearnSkillIndex[i] != -1 )
 				{
@@ -913,19 +991,18 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 		// Need item
 		if( bLearnItem )
 		{
-			AddSkillDescString( _S( 259, "ÌïÑÏöî ÏïÑÏù¥ÌÖú" ), 0xBDA99FFF );
-			for( i = 0; i < 3; i++ )
+			AddSkillDescString( _S( 259, "« ø‰ æ∆¿Ã≈€" ), 0xBDA99FFF );
+			for( int i = 0; i < 3; i++ )
 			{
 				if( nLearnItemIndex[i] != -1 )
 				{
-					CItemData	&rNeedItem = _pNetwork->GetItemData( nLearnItemIndex[i] );
-					strTemp.PrintF( _S( 260, "  %s %dÍ∞ú" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
+					strTemp.PrintF( _S( 260, "  %s %d∞≥" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
 					AddSkillDescString( strTemp, 0xBDA99FFF );
 				}
 			}
 		}
 
-		strTemp.PrintF( _S( 261, "ÏµúÎåÄÏä§ÌÇ¨ Î†àÎ≤® : %d" ), rSkill.GetMaxLevel() );
+		strTemp.PrintF( _S( 261, "√÷¥ÎΩ∫≈≥ ∑π∫ß : %d" ), rSkill.GetMaxLevel() );
 		AddSkillDescString( strTemp, 0xBDA99FFF );
 	}
 	break;
@@ -938,6 +1015,9 @@ void CUIPetTraining::GetSkillDesc( int nIndex, int nLevel )
 // ----------------------------------------------------------------------------
 void CUIPetTraining::RenderSkillBtns()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
 	int	nX = SLEARN_SLOT_SX, nY = SLEARN_SLOT_SY;
 	int	iRow, iRowS, iRowE;
 	// Active skill tab
@@ -948,11 +1028,11 @@ void CUIPetTraining::RenderSkillBtns()
 		iRowE = iRowS + SLEARN_SLOT_ROW;
 	    for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
 		{      
-			m_btnCommands[iRow].SetPos( nX, nY );
-			if( m_btnCommands[iRow].IsEmpty() )		
+			m_pIconsCommand[iRow]->SetPos( nX, nY );
+			if( m_pIconsCommand[iRow]->IsEmpty() )		
 				continue;
 			
-			m_btnCommands[iRow].Render();
+			m_pIconsCommand[iRow]->Render(pDrawPort);
 		}
 	}
 	// Passive skill tab
@@ -963,15 +1043,16 @@ void CUIPetTraining::RenderSkillBtns()
 		iRowE = iRowS + SLEARN_SLOT_ROW;
 	    for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
 		{
-			m_btnSkills[iRow].SetPos( nX, nY );
-			if( m_btnSkills[iRow].IsEmpty() )		
+			m_pIconsSkill[iRow]->SetPos( nX, nY );
+			if( m_pIconsSkill[iRow]->IsEmpty() )		
 				continue;
 			
-			m_btnSkills[iRow].Render();
+			m_pIconsSkill[iRow]->Render(pDrawPort);
 		}
-	}
+	}	
+
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_SKILL );
+	pDrawPort->FlushBtnRenderingQueue( UBET_SKILL );
 
 	// Outline of selected button
 	// Active skill tab
@@ -982,16 +1063,16 @@ void CUIPetTraining::RenderSkillBtns()
 		if( m_nSelCommandID >= 0 && iRowS <= m_nSelCommandID && m_nSelCommandID < iRowE )
 		{
 			// Set skill learn texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-			m_btnCommands[m_nSelCommandID].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+			m_pIconsCommand[m_nSelCommandID]->GetAbsPos( nX, nY );
+			pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 												m_rtSelOutline.U0, m_rtSelOutline.V0,
 												m_rtSelOutline.U1, m_rtSelOutline.V1,
 												0xFFFFFFFF );
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 		}
 	}
 	// Passive skill tab
@@ -1003,23 +1084,31 @@ void CUIPetTraining::RenderSkillBtns()
 		if( m_nSelSkillID >= 0 && iRowS <= m_nSelSkillID && m_nSelSkillID < iRowE )
 		{
 			// Set skill learn texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-			m_btnSkills[m_nSelSkillID].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+			m_pIconsSkill[m_nSelSkillID]->GetAbsPos( nX, nY );
+			pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 												m_rtSelOutline.U0, m_rtSelOutline.V0,
 												m_rtSelOutline.U1, m_rtSelOutline.V1,
 												0xFFFFFFFF );
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 		}
 	}	
 
 	nY = PT_NAME_SY;
 	// Active skill tab
-	int	nCharLevel	= _pNetwork->MyCharacterInfo.level;
-	int nCharSP		= _pNetwork->MyCharacterInfo.sp;
+	int	nCharLevel = 0;
+	
+	if(pInfo->GetMyPetInfo()->bIsActive)
+	{
+		nCharLevel = pInfo->GetMyPetInfo()->iLevel;
+	}
+	else if(pInfo->GetMyApetInfo() != NULL && pInfo->GetMyApetInfo()->bIsActive)
+	{
+		nCharLevel = pInfo->GetMyApetInfo()->m_nLevel;
+	}
 	
 	if( m_nCurrentTab == PETTRAINING_TAB_COMMAND )
 	{
@@ -1027,19 +1116,29 @@ void CUIPetTraining::RenderSkillBtns()
 		iRowE = iRowS + SLEARN_SLOT_ROW;
 		for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
 		{
-			if( m_btnCommands[iRow].IsEmpty() )
+			if( m_pIconsCommand[iRow]->IsEmpty() )
 				continue;
   
-			CSkill	&rSkill = _pNetwork->GetSkillData( m_btnCommands[iRow].GetSkillIndex() );
-			SBYTE	sbLevel = m_btnCommands[iRow].GetSkillLevel();
+			CSkill	&rSkill = _pNetwork->GetSkillData( m_pIconsCommand[iRow]->getIndex() );
+			SBYTE	sbLevel = m_vecCommand[iRow].sbSkillLevel;
 			int		nNeedLevel = rSkill.GetLearnLevel( sbLevel - 1 );
 
 			m_strShortDesc.PrintF( "%s", rSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + PT_NAME_CX, m_nPosY + nY,
+			pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + PT_NAME_CX, m_nPosY + nY,
 													nCharLevel >= nNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
 
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+			m_strShortDesc.PrintF( "Lv %2d   %s %2d", sbLevel, _S( 90, "º˜∑√µµ" ), rSkill.GetLearnSP( sbLevel - 1 ) );
+#else	// else about japan, german, europe3, europe2, netherlands.
+			// [2/28/2013 Ranma] support russia string
+#if defined (G_RUSSIA)
+			m_strShortDesc.PrintF( "%s %2d   %s %2d",_S( 4414, "LV" ), sbLevel, _S( 4415, "SP" ), rSkill.GetLearnSP( sbLevel - 1 ) );
+#else	// else about russia
 			m_strShortDesc.PrintF( "Lv %2d   SP %2d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strShortDesc, m_nPosX + PT_NEED_RX,
+#endif	// end russia
+#endif	//end japan, german, europe3, europe2, netherlands.
+
+			pDrawPort->PutTextExRX( m_strShortDesc, m_nPosX + PT_NEED_RX,
 													m_nPosY + nY + 17, 0xBDA99FFF );
 		}
 	}
@@ -1050,19 +1149,27 @@ void CUIPetTraining::RenderSkillBtns()
 		iRowE = iRowS + SLEARN_SLOT_ROW;
 		for( iRow = iRowS; iRow < iRowE; iRow++, nY += SLEARN_SLOT_OFFSETY )
 		{
-			if( m_btnSkills[iRow].IsEmpty() )
+			if (m_pIconsSkill[iRow]->IsEmpty())
 				continue;
   
-			CSkill	&rSkill = _pNetwork->GetSkillData( m_btnSkills[iRow].GetSkillIndex() );
-			SBYTE	sbLevel = m_btnSkills[iRow].GetSkillLevel();
+			CSkill	&rSkill = _pNetwork->GetSkillData( m_pIconsSkill[iRow]->getIndex() );
+			SBYTE	sbLevel = m_vecSkill[iRow].sbSkillLevel;
 			int		nNeedLevel = rSkill.GetLearnLevel( sbLevel - 1 );
 
 			m_strShortDesc.PrintF( "%s", rSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + PT_NAME_CX, m_nPosY + nY,
+			pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + PT_NAME_CX, m_nPosY + nY,
 													nCharLevel >= nNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
-
-			m_strShortDesc.PrintF( "Lv %2d  SP %4d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strShortDesc, m_nPosX + PT_NEED_RX,
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+			m_strShortDesc.PrintF( "Lv %2d   %s %2d", sbLevel, _S( 90, "º˜∑√µµ" ), rSkill.GetLearnSP( sbLevel - 1 ) );
+#else	// else about japan, german, europe3, europe2, netherlands.
+			// [2/28/2013 Ranma] support russia string
+#if defined (G_RUSSIA)
+			m_strShortDesc.PrintF( "%s %2d   %s %2d",_S( 4414, "LV" ), sbLevel, _S( 4415, "SP" ), rSkill.GetLearnSP( sbLevel - 1 ) );
+#else	// else about russia
+			m_strShortDesc.PrintF( "Lv %2d   SP %2d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
+#endif	// end russia
+#endif	//end japan, german, europe3, europe2, netherlands.
+			pDrawPort->PutTextExRX( m_strShortDesc, m_nPosX + PT_NEED_RX,
 													m_nPosY + nY + 17, 0xBDA99FFF );
 		}
 	}	
@@ -1093,7 +1200,7 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move skill learn
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -1124,7 +1231,6 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 				// Reset state of selected button
 				if( bLButtonDownInBtn && m_nSelCommandID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
 				{
-					m_btnCommands[m_nSelCommandID].SetBtnState( UBES_IDLE );
 					bLButtonDownInBtn = FALSE;
 				}
 				// Active icon scroll bar
@@ -1137,7 +1243,6 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 				// Reset state of selected button
 				if( bLButtonDownInBtn && m_nSelSkillID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
 				{
-					m_btnSkills[m_nSelSkillID].SetBtnState( UBES_IDLE );
 					bLButtonDownInBtn = FALSE;
 				}
 				// Passive icon scroll bar
@@ -1177,8 +1282,8 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 						{
 							if( m_nSelCommandID >= 0)
 							{
-								GetSkillDesc( m_btnCommands[m_nSelCommandID].GetSkillIndex(),
-												m_btnCommands[m_nSelCommandID].GetSkillLevel() );
+								GetSkillDesc( m_pIconsCommand[m_nSelCommandID]->getIndex(),
+												m_vecCommand[m_nSelCommandID].sbSkillLevel );
 							}
 							else
 								GetSkillDesc( -1 );
@@ -1187,8 +1292,8 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 						{
 							if( m_nSelSkillID >= 0)
 							{
-								GetSkillDesc( m_btnSkills[m_nSelSkillID].GetSkillIndex(),
-												m_btnSkills[m_nSelSkillID].GetSkillLevel() );
+								GetSkillDesc( m_pIconsSkill[m_nSelSkillID]->getIndex(),
+												m_vecSkill[m_nSelSkillID].sbSkillLevel );
 							}
 							else
 								GetSkillDesc( -1 );
@@ -1226,19 +1331,22 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 						int	iRowE = iRowS + SLEARN_SLOT_ROW;
 						for( int iRow = iRowS; iRow < iRowE; iRow++ )
 						{
-							if( m_btnCommands[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
+							if( m_pIconsCommand[iRow]->MouseMessage( pMsg ) != WMSG_FAIL )
 							{
 								// Update selected skill
 								m_nSelCommandID = iRow;
 								if( nOldSelSkillID != m_nSelCommandID )
 								{
-									GetSkillDesc( m_btnCommands[iRow].GetSkillIndex(),
-													m_btnCommands[iRow].GetSkillLevel() );
+									if (m_pIconsCommand[iRow]->IsEmpty() == false)
+									{
+										GetSkillDesc( m_pIconsCommand[iRow]->getIndex(),
+													m_vecCommand[iRow].sbSkillLevel );
+									}
 								}
 
 								bLButtonDownInBtn = TRUE;
 
-								_pUIMgr->RearrangeOrder( UI_PETTRAINING, TRUE );
+								CUIManager::getSingleton()->RearrangeOrder( UI_PETTRAINING, TRUE );
 								return WMSG_SUCCESS;
 							}
 						}
@@ -1262,19 +1370,22 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 						int	iRowE = iRowS + SLEARN_SLOT_ROW;
 						for( int iRow = iRowS; iRow < iRowE; iRow++ )
 						{
-							if( m_btnSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
+							if( m_pIconsSkill[iRow]->MouseMessage( pMsg ) != WMSG_FAIL )
 							{
 								// Update selected skill
 								m_nSelSkillID = iRow;
 								if( nOldSelSkillID != m_nSelSkillID )
 								{
-									GetSkillDesc( m_btnSkills[iRow].GetSkillIndex(),
-													m_btnSkills[iRow].GetSkillLevel() );
+									if (m_pIconsSkill[iRow]->IsEmpty() == false)
+									{
+										GetSkillDesc( m_pIconsSkill[iRow]->getIndex(),
+													m_vecSkill[iRow].sbSkillLevel );
+									}
 								}
 
 								bLButtonDownInBtn = TRUE;
 
-								_pUIMgr->RearrangeOrder( UI_PETTRAINING, TRUE );
+								CUIManager::getSingleton()->RearrangeOrder( UI_PETTRAINING, TRUE );
 								return WMSG_SUCCESS;
 							}
 						}
@@ -1282,7 +1393,8 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 						GetSkillDesc( -1 );
 					}
 				}
-				_pUIMgr->RearrangeOrder( UI_PETTRAINING, TRUE );
+
+				CUIManager::getSingleton()->RearrangeOrder( UI_PETTRAINING, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -1292,8 +1404,10 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 		{
 			bLButtonDownInBtn = FALSE;
 
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -1342,7 +1456,7 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 						int	iRowE = iRowS + SLEARN_SLOT_ROW;
 						for( int iRow = iRowS; iRow < iRowE; iRow++ )
 						{
-							if( m_btnCommands[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
+							if( m_pIconsCommand[iRow]->MouseMessage( pMsg ) != WMSG_FAIL )
 								return WMSG_SUCCESS;
 						}
 					}
@@ -1360,7 +1474,7 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 						int	iRowE = iRowS + SLEARN_SLOT_ROW;
 						for( int iRow = iRowS; iRow < iRowE; iRow++ )
 						{
-							if( m_btnSkills[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
+							if( m_pIconsSkill[iRow]->MouseMessage( pMsg ) != WMSG_FAIL )
 								return WMSG_SUCCESS;
 						}
 					}
@@ -1372,7 +1486,7 @@ WMSG_RESULT CUIPetTraining::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -1457,7 +1571,7 @@ void CUIPetTraining::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInp
 	case MSGCMD_PETTRAINING_NOTIFY:
 		break;
 
-	case MSGCMD_PET_CHANGE:				// ÌÉàÍ≤ÉÏúºÎ°ú Î≥ÄÌôò?
+	case MSGCMD_PET_CHANGE:				// ≈ª∞Õ¿∏∑Œ ∫Ø»Ø?
 		if( bOK )
 		{
 			_pNetwork->SendPetChangeRide();
@@ -1466,15 +1580,16 @@ void CUIPetTraining::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInp
 		{
 		}
 		break;
-	case MSGCMD_PET_DESTRUCTION:		// Ìé´ ÏïÑÏù¥ÌÖú ÏÜåÎ©∏( ÏÜåÎ©∏ÎêòÎ©¥ÏÑú Ïû¨Î£åÏïÑÏù¥ÌÖúÏúºÎ°ú~~ ) eons
+	case MSGCMD_PET_DESTRUCTION:		// ∆Í æ∆¿Ã≈€ º“∏Í( º“∏Íµ«∏Èº≠ ¿Á∑·æ∆¿Ã≈€¿∏∑Œ~~ ) eons
 		if( bOK )
 		{
-			// TODO : ÎÑ§Ìä∏ÏõåÌÅ¨ Î©îÏÑ∏ÏßÄÎ•º ÎÑ£Ïûê.
+			// TODO : ≥◊∆Æøˆ≈© ∏ﬁºº¡ˆ∏¶ ≥÷¿⁄.
 			_pNetwork->SendPetDestruction();
 		}
 		else
 		{
 		}
+		CUIManager::getSingleton()->GetInventory()->Lock(FALSE, FALSE, LOCK_PET_TRAINING);
 		break;
 	}
 }
@@ -1485,122 +1600,182 @@ void CUIPetTraining::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInp
 // ----------------------------------------------------------------------------
 void CUIPetTraining::MsgBoxLCommand( int nCommandCode, int nResult )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
 	CTString strMessage;
 	switch( nCommandCode )
 	{
 	case MSGLCMD_PETTRAINING_REQ:
-		if( nResult == PET_TRAINING )				// Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌõàÎ†®ÏãúÌÇ®Îã§.
+		if( nResult == PET_TRAINING )				// æ÷øœµøπ∞¿ª »∆∑√Ω√≈≤¥Ÿ.
 		{
-			if( IsNotPetWear() )		// Ìé´ Ïû•Ï∞© ÌôïÏù∏
+			if( IsNotPetWear() )		// ∆Í ¿Â¬¯ »Æ¿Œ
 				return;
 
-			_pUIMgr->RearrangeOrder( UI_PETTRAINING, TRUE );
+			if (pUIManager->GetInventory()->IsLocked() == TRUE ||
+				pUIManager->GetInventory()->IsLockedArrange() == TRUE)
+			{
+				// ¿ÃπÃ Lock ¿Œ √¢¿Ã ¿÷¿ª ∞ÊøÏ ø≠¡ˆ ∏¯«—¥Ÿ.
+				pUIManager->GetInventory()->ShowLockErrorMessage();
+				return;
+			}
+
+			pUIManager->GetInventory()->Lock(TRUE, TRUE, LOCK_PET_TRAINING);
+
+			pUIManager->RearrangeOrder( UI_PETTRAINING, TRUE );
 
 			InitPetTraining( );
 			m_nCurrentTab = PETTRAINING_TAB_COMMAND;
 		}
-		else if( nResult == PET_CHANGE )			// ÌÉàÍ≤ÉÏúºÎ°ú ÎßåÎì†Îã§.
+		else if( nResult == PET_CHANGE )			// ≈ª∞Õ¿∏∑Œ ∏∏µÁ¥Ÿ.
 		{
-			_pUIMgr->CloseMessageBoxL( MSGLCMD_PETCHANGE_REQ );
+			pUIManager->CloseMessageBoxL( MSGLCMD_PETCHANGE_REQ );
 			// Create skill learn message box
-			_pUIMgr->CreateMessageBoxL( _S(2196,"Ïï†ÏôÑÎèôÎ¨º Î≥ÄÌòïÏ∞Ω"), UI_PETTRAINING, MSGLCMD_PETCHANGE_REQ );	
+			pUIManager->CreateMessageBoxL( _S(2196,"æ÷øœµøπ∞ ∫Ø«¸√¢"), UI_PETTRAINING, MSGLCMD_PETCHANGE_REQ );	
 
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETCHANGE_REQ, TRUE, _S(2197,"Ïï†ÏôÑÎèôÎ¨ºÏùÑ Ïù¥ÎèôÏàòÎã®ÏúºÎ°ú Î≥ÄÌòïÏãúÌÇ¨ Ïàò ÏûàÏäµÎãàÎã§."), -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETCHANGE_REQ, TRUE, _S(2198,"Ïù¥ÎèôÏàòÎã®Ïù¥ ÎêòÎ©¥ Ïï†ÏôÑÎèôÎ¨º ÏùºÎïå Î∞∞Ïõ†Îçò Í∏∞Ïà†ÏùÄ Î™®Îëê Ï¥àÍ∏∞ÌôîÎêòÎ©∞, Ïù¥Îèô ÏàòÎã®ÏúºÎ°úÏÑúÏùò ÏÉàÎ°úÏö¥ Í∏∞Ïà† ÎßåÏùÑ Î∞∞Ïö∞Í≤å ÎêòÎãà Ïã†Ï§ëÌûà ÏÉùÍ∞ÅÌïòÏãúÍ∏∞ Î∞îÎûçÎãàÎã§."), -1, 0xA3A1A3FF );		
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETCHANGE_REQ, TRUE, _S(2197,"æ÷øœµøπ∞¿ª ¿Ãµøºˆ¥‹¿∏∑Œ ∫Ø«¸Ω√≈≥ ºˆ ¿÷Ω¿¥œ¥Ÿ."), -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETCHANGE_REQ, TRUE, _S(2198,"¿Ãµøºˆ¥‹¿Ã µ«∏È æ÷øœµøπ∞ ¿œ∂ß πËø¸¥¯ ±‚º˙¿∫ ∏µŒ √ ±‚»≠µ«∏Á, ¿Ãµø ºˆ¥‹¿∏∑Œº≠¿« ªı∑ŒøÓ ±‚º˙ ∏∏¿ª πËøÏ∞‘ µ«¥œ Ω≈¡ﬂ»˜ ª˝∞¢«œΩ√±‚ πŸ∂¯¥œ¥Ÿ."), -1, 0xA3A1A3FF );		
 			
 			CTString strMessage;
-			strMessage.PrintF( _S(2199, "ÌÉàÍ≤ÉÏúºÎ°ú ÌõàÎ†®ÌïòÍ∏∞." ) );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETCHANGE_REQ, FALSE, strMessage, CHANGE_RIDE );
+			strMessage.PrintF( _S(2199, "≈ª∞Õ¿∏∑Œ »∆∑√«œ±‚." ) );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETCHANGE_REQ, FALSE, strMessage, CHANGE_RIDE );
 		}
 		else if( nResult == PET_SKILLINIT)
 		{
-			_pUIMgr->CloseMessageBoxL( MSGLCMD_PETSKILLINIT_REQ );
-			// Create skill learn message box
-			_pUIMgr->CreateMessageBoxL( _S(2575,"Ïï†ÏôÑÎèôÎ¨º Ïä§ÌÇ¨ Ï¥àÍ∏∞Ìôî"), UI_PETTRAINING, MSGLCMD_PETSKILLINIT_REQ );	
+			if (pInfo->GetMyApetInfo() != NULL &&
+				pInfo->GetMyApetInfo()->m_nIdxServer > 0)
+			{
+				// P2 ∆Í¿Ã∂Û∏È 
+				pUIManager->GetChattingUI()->AddSysMessage(_S(6279, "Ω∫≈≥ √ ±‚»≠∞° ∫“∞°¥…«— ¡æ∑˘¿« æ÷øœµøπ∞¿‘¥œ¥Ÿ."), SYSMSG_ERROR);
+				return;
+			}
 
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, TRUE, _S(2576, "Ïï†ÏôÑÎèôÎ¨º Ïä§ÌÇ¨ Ï¥àÍ∏∞ÌôîÎäî Ïï†ÏôÑÎèôÎ¨ºÏù¥ ÏäµÎìùÌñàÎçò Í∏∞Ïà†Îì§ÏùÑ Í∏∞Ïà† Ìè¨Ïù∏Ìä∏Î°ú ÌôòÏõêÏãúÌÇ§Îäî Í≤ÉÏùÑ ÎßêÌï©ÎãàÎã§."), -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, TRUE,CTString(""),0xA3A1A3FF);
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, TRUE, _S(2577, "Ïï†ÏôÑÎë•Î¨º Ïä§ÌÇ¨ÏùÑ Ï¥àÍ∏∞ÌôîÏãúÌÇ§Î©¥ ÌôòÏõêÎ∞õÏùÄ Í∏∞Ïà† Ìè¨Ïù∏Ìä∏Î°ú Ïï†ÏôÑÎèôÎ¨ºÏùÑ Ïû¨ ÍµêÏú° ÏãúÌÇ§Í±∞ÎÇò Ïú†Ï†ÄÍ∞Ñ Ïï†ÏôÑÎèôÎ¨º ÍµêÌôòÏùÑ Ìï† Ïàò ÏûàÏäµÎãàÎã§. "), -1, 0xA3A1A3FF );		
+			pUIManager->CloseMessageBoxL( MSGLCMD_PETSKILLINIT_REQ );
+			// Create skill learn message box
+			pUIManager->CreateMessageBoxL( _S(2575,"æ÷øœµøπ∞ Ω∫≈≥ √ ±‚»≠"), UI_PETTRAINING, MSGLCMD_PETSKILLINIT_REQ );	
+
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, TRUE, _S(2576, "æ÷øœµøπ∞ Ω∫≈≥ √ ±‚»≠¥¬ æ÷øœµøπ∞¿Ã Ω¿µÊ«ﬂ¥¯ ±‚º˙µÈ¿ª ±‚º˙ ∆˜¿Œ∆Æ∑Œ »Øø¯Ω√≈∞¥¬ ∞Õ¿ª ∏ª«’¥œ¥Ÿ."), -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, TRUE,CTString(""),0xA3A1A3FF);
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, TRUE, _S(2577, "æ÷øœµ’π∞ Ω∫≈≥¿ª √ ±‚»≠Ω√≈∞∏È »Øø¯πﬁ¿∫ ±‚º˙ ∆˜¿Œ∆Æ∑Œ æ÷øœµøπ∞¿ª ¿Á ±≥¿∞ Ω√≈∞∞≈≥™ ¿Ø¿˙∞£ æ÷øœµøπ∞ ±≥»Ø¿ª «“ ºˆ ¿÷Ω¿¥œ¥Ÿ. "), -1, 0xA3A1A3FF );		
 			
 			CTString strMessage;
-			strMessage.PrintF( _S(2575, "Ïï†ÏôÑÎèôÎ¨º Ïä§ÌÇ¨ Ï¥àÍ∏∞Ìôî" ) );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, FALSE, strMessage, PET_SKILLINIT );
-			strMessage.PrintF( _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, FALSE, strMessage );
+			strMessage.PrintF( _S(2575, "æ÷øœµøπ∞ Ω∫≈≥ √ ±‚»≠" ) );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, FALSE, strMessage, PET_SKILLINIT );
+			strMessage.PrintF( _S( 1220, "√Îº“«—¥Ÿ." ) );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSKILLINIT_REQ, FALSE, strMessage );
 			
 		}
-		else if( nResult == PET_TALK )				// Ïù¥ÏïºÍ∏∞ ÌïúÎã§.
+		else if ( nResult == PET_EVOLUTION)
+		{
+			if( pUIManager->DoesMessageBoxExist( MSGCMD_PET_EVOLUTION ) ) return;
+
+			pUIManager->CloseMessageBoxL( MSGLCMD_PETSKILLINIT_REQ );
+
+			CUIMsgBox_Info MsgBoxInfo;
+			strMessage.PrintF(_S(4727, "∆Í ¡¯»≠" ));
+			MsgBoxInfo.SetMsgBoxInfo( strMessage, UMBS_YESNO | UMBS_BUTTONEX, UI_NONE, MSGCMD_PET_EVOLUTION );
+			strMessage.PrintF(_S(4745,  "¡¯»≠∏¶ «œ∞‘ µ«∏È ∏Ω¿¿Ã πŸ≤Ó∏Á ∑π∫ß¿∫ 1∑π∫ß¿Ã µÀ¥œ¥Ÿ. ±‚¡∏ø° ªÁøÎ«ﬂ¥¯ ∆Í ¿Ã∏ß∞˙ Ω∫≈≥¿∫ √ ±‚»≠µ«æÓ ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ. Ω≈¡ﬂ»˜ ª˝∞¢«ÿº≠ ¡¯»≠∏¶ ∞·¡§«œººø‰" ));
+			MsgBoxInfo.SetBtnType( UBET_ITEM, CItemData::ITEM_ACCESSORY, CItemData::ACCESSORY_PET );
+			MsgBoxInfo.AddString( strMessage );
+			pUIManager->CreateMessageBox( MsgBoxInfo );		
+		}
+		else if( nResult == PET_TALK )				// ¿Ãæﬂ±‚ «—¥Ÿ.
 		{
 			//TODO : NewQuestSystem
-			// ÌÄòÏä§Ìä∏ Ï∞Ω ÎùÑÏö∞Í∏∞
+			// ƒ˘Ω∫∆Æ √¢ ∂ÁøÏ±‚
 			CUIQuestBook::TalkWithNPC();
 		}
-		else if( nResult == PET_STUFF ) // Ìé´ Ïû¨Î£å ÏïÑÏù¥ÌÖú Î≥ÄÌôò eons
+		else if( nResult == PET_STUFF ) // ∆Í ¿Á∑· æ∆¿Ã≈€ ∫Ø»Ø eons
 		{
-			_pUIMgr->CloseMessageBoxL( MSGLCMD_PETSTUFFCHANGE_REQ );
-			_pUIMgr->CreateMessageBoxL( _S( 2467, "Ìåª Ïû¨Î£å ÏïÑÏù¥ÌÖú Î≥ÄÌôò" ), UI_PETTRAINING, MSGLCMD_PETSTUFFCHANGE_REQ );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSTUFFCHANGE_REQ, TRUE,
-				_S( 2470, "ÎßàÏö¥Ìä∏ ÏÉÅÌÉúÏùò Ìé´ÏùÑ ÏÜåÎ©∏ÏãúÌÇ§Í≥† Ïú†ÎãàÌÅ¨ ÏïÑÏù¥ÌÖú Ï†úÏûë Ïû¨Î£åÎ•º ÏñªÏùÑ Ïàò ÏûàÏäµÎãàÎã§." ), -1, 0xA3A1A3FF );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSTUFFCHANGE_REQ, TRUE,
-				_S( 2471, "Ìé´Ïùò Î†àÎ≤®Ïù¥ ÎÜíÏùÑÏàòÎ°ù Í≥†Í∏â Ïû¨Î£åÎ•º ÏñªÏùÑ Ïàò ÏûàÎäî ÌôïÎ•†Ïù¥ Ï¶ùÍ∞ÄÌï©ÎãàÎã§." ), -1, 0xA3A1A3FF );
+			pUIManager->CloseMessageBoxL( MSGLCMD_PETSTUFFCHANGE_REQ );
+			pUIManager->CreateMessageBoxL( _S( 2467, "∆÷ ¿Á∑· æ∆¿Ã≈€ ∫Ø»Ø" ), UI_PETTRAINING, MSGLCMD_PETSTUFFCHANGE_REQ );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSTUFFCHANGE_REQ, TRUE,
+				_S( 2470, "∏∂øÓ∆Æ ªÛ≈¬¿« ∆Í¿ª º“∏ÍΩ√≈∞∞Ì ¿Ø¥œ≈© æ∆¿Ã≈€ ¡¶¿€ ¿Á∑·∏¶ æÚ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ), -1, 0xA3A1A3FF );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSTUFFCHANGE_REQ, TRUE,
+				_S( 2471, "∆Í¿« ∑π∫ß¿Ã ≥Ù¿ªºˆ∑œ ∞Ì±ﬁ ¿Á∑·∏¶ æÚ¿ª ºˆ ¿÷¥¬ »Æ∑¸¿Ã ¡ı∞°«’¥œ¥Ÿ." ), -1, 0xA3A1A3FF );
 
 			CTString strMessage;
-			strMessage.PrintF( _S( 2472, "Ìé´ÏùÑ ÏÜåÎ©∏ ÏãúÌÇ®Îã§." ) );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSTUFFCHANGE_REQ, FALSE, strMessage, PETITEM_DESTRUCTION );
-			strMessage.PrintF( _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETSTUFFCHANGE_REQ, FALSE, strMessage );
+			strMessage.PrintF( _S( 2472, "∆Í¿ª º“∏Í Ω√≈≤¥Ÿ." ) );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSTUFFCHANGE_REQ, FALSE, strMessage, PETITEM_DESTRUCTION );
+			strMessage.PrintF( _S( 1220, "√Îº“«—¥Ÿ." ) );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETSTUFFCHANGE_REQ, FALSE, strMessage );
 		}
 		else if( nResult == PET_UNIQUE_PRODUCT )//060217 eons
 		{
-			_pUIMgr->CloseMessageBoxL( MSGLCMD_PETUNIQUEPRODUCT_REQ );
-			_pUIMgr->CreateMessageBoxL( _S( 2473, "ÏïÑÏù¥ÌÖú Ï°∞Ìï©" ), UI_PETTRAINING, MSGLCMD_PETUNIQUEPRODUCT_REQ );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, TRUE,
-				_S( 2474, "Ìé´ÏúºÎ°ú Î∂ÄÌÑ∞ ÏñªÏñ¥ÏßÑ Ï†úÏûëÏû¨Î£åÎì§ÏùÑ Ïù¥Ïö©ÌïòÏó¨ Ïú†ÎãàÌÅ¨ ÏïÑÏù¥ÌÖúÏùÑ Ï°∞Ìï©ÌïòÏã§ Ïàò ÏûàÏäµÎãàÎã§." ), -1, 0xA3A1A3FF );
+			if( _pNetwork->MyCharacterInfo.job == NIGHTSHADOW )
+			{
+				CTString	strMessage;
+				CUIMsgBox_Info	MsgBoxInfo;
+				MsgBoxInfo.SetMsgBoxInfo(   _S( 191, "»Æ¿Œ" ), UMBS_OK, UI_NONE, MSGCMD_NULL);
+				strMessage.PrintF( _S(5691, "≥™¿Ã∆ÆΩ¶µµøÏ¥¬ ¿ÃøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ) );
+				MsgBoxInfo.AddString( strMessage );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+				return;
+			}
+
+			pUIManager->CloseMessageBoxL( MSGLCMD_PETUNIQUEPRODUCT_REQ );
+			pUIManager->CreateMessageBoxL( _S( 2473, "æ∆¿Ã≈€ ¡∂«’" ), UI_PETTRAINING, MSGLCMD_PETUNIQUEPRODUCT_REQ );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, TRUE,
+				_S( 2474, "∆Í¿∏∑Œ ∫Œ≈Õ æÚæÓ¡¯ ¡¶¿€¿Á∑·µÈ¿ª ¿ÃøÎ«œø© ¿Ø¥œ≈© æ∆¿Ã≈€¿ª ¡∂«’«œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ." ), -1, 0xA3A1A3FF );
 			
 			CTString strMessage;
-			strMessage.PrintF( _S( 2460, "ÎìúÎûòÍ≥§ Ïõ®Ìè∞ Ï†úÏûë" ) );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage, DRAGON_WEAPON );
-			strMessage.PrintF( _S( 2475, "ÎÇòÏù¥Ìä∏ Î∞©Ïñ¥Íµ¨ Ï†úÏûë" ) );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage, KNIGHT_AMOR );
-			strMessage.PrintF( _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage );
+			strMessage.PrintF( _S( 2460, "µÂ∑°∞Ô ø˛∆˘ ¡¶¿€" ) );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage, DRAGON_WEAPON );
+			strMessage.PrintF( _S( 2475, "≥™¿Ã∆Æ πÊæÓ±∏ ¡¶¿€" ) );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage, KNIGHT_AMOR );
+			strMessage.PrintF( _S( 1220, "√Îº“«—¥Ÿ." ) );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage );
 		}
-		else if( nResult == PET_SEAL_CANCEL )	// Ìé´ Î¥âÏù∏ Ìï¥Ï†ú
+		else if( nResult == PET_SEAL_CANCEL )	// ∆Í ∫¿¿Œ «ÿ¡¶
 		{
-			_pUIMgr->GetPetFree()->OpenPetFree();
+			//[100119 sora] ∆Í ∫¿¿Œ «ÿ¡¶Ω√ ¬¯øÎ«— ∆Í¿Ã ∫¿¿Œµ» ∆Í¿Œ¡ˆ »Æ¿Œ«œ¥¬ ∫Œ∫– √ﬂ∞°
+			if (_pNetwork->MyWearItem[WEAR_PET].IsEmptyItem() == FALSE && _pNetwork->MyWearItem[WEAR_PET].IsFlag( FLAG_ITEM_SEALED ))
+			{
+				// Close message box of skill learn
+				pUIManager->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+				
+				// Create message box of skill learn
+				CUIMsgBox_Info	MsgBoxInfo;
+				MsgBoxInfo.SetMsgBoxInfo( _S(2188, "æ÷øœµøπ∞" ), UMBS_OK,
+					UI_PETTRAINING, MSGCMD_PETTRAINING_NOTIFY );
+				MsgBoxInfo.AddString( _S(4765,"¬¯øÎ¿ª «ÿ¡¶«œø©æﬂ ∫Œ»∞¿Ã ∞°¥…«’¥œ¥Ÿ.") );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
+				return;
+			}
+			pUIManager->GetPetFree()->OpenPetFree(m_fNpcX, m_fNpcZ, m_nNpcIndex);
 		}
 		else if( nResult == PET_NPC_HELP)										
 		{
-			_pUIMgr->RearrangeOrder( UI_NPCHELP, TRUE );
+			pUIManager->RearrangeOrder( UI_NPCHELP, TRUE );
 		}
-		// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ ÏàòÏ†ï
+		// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ºˆ¡§
 		else if( ciQuestClassifier < nResult )	
 		{
-			// ÏÑ†ÌÉùÌïú ÌÄòÏä§Ìä∏Ïóê ÎåÄÌï¥ ÏàòÎùΩ ÎòêÎäî Î≥¥ÏÉÅ Ï∞ΩÏùÑ Ïó∞Îã§.
+			// º±≈√«— ƒ˘Ω∫∆Æø° ¥Î«ÿ ºˆ∂Ù ∂«¥¬ ∫∏ªÛ √¢¿ª ø¨¥Ÿ.
 			CUIQuestBook::SelectQuestFromMessageBox( nResult );
 		}
 		break;
-	case MSGLCMD_PETCHANGE_REQ:						// Ïï†ÏôÑÎèôÎ¨º Î≥ÄÌòïÏ∞Ω.
-		if( nResult == CHANGE_RIDE )				// ÌÉàÍ≤ÉÏúºÎ°ú ÌõàÎ†®ÌïòÍ∏∞.
+	case MSGLCMD_PETCHANGE_REQ:						// æ÷øœµøπ∞ ∫Ø«¸√¢.
+		if( nResult == CHANGE_RIDE )				// ≈ª∞Õ¿∏∑Œ »∆∑√«œ±‚.
 		{
-			if( IsNotPetWear() )		// Ìé´ Ïû•Ï∞© ÌôïÏù∏
+			if( IsNotPetWear() )		// ∆Í ¿Â¬¯ »Æ¿Œ
 				return;
 			// Create message box of skill learn
 			CTString	strMessage;
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S(2200, "ÌÉà Í≤É ÌõàÎ†®" ), UMBS_OKCANCEL, UI_PETTRAINING, MSGCMD_PET_CHANGE );
-			strMessage.PrintF( _S(2201, "Ï†ïÎßê ÌÉà Í≤É ÌõàÎ†®ÏùÑ ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ) );
+			MsgBoxInfo.SetMsgBoxInfo( _S(2200, "≈ª ∞Õ »∆∑√" ), UMBS_OKCANCEL, UI_PETTRAINING, MSGCMD_PET_CHANGE );
+			strMessage.PrintF( _S(2201, "¡§∏ª ≈ª ∞Õ »∆∑√¿ª «œΩ√∞⁄Ω¿¥œ±Ó?" ) );
 			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 		}
 		else
 		{
 		}
 		break;
-	case MSGLCMD_PETSKILLINIT_REQ://!!Ìåª Ïä§ÌÇ¨ Ï¥àÍ∏∞Ìôî ÏûëÏóÖ 
+	case MSGLCMD_PETSKILLINIT_REQ://!!∆÷ Ω∫≈≥ √ ±‚»≠ ¿€æ˜ 
 		{
 			if(nResult == PET_SKILLINIT){
-				if( IsNotPetWear() ) // Ìé´ Ïû•Ï∞© ÌôïÏù∏
+				if( IsNotPetWear() ) // ∆Í ¿Â¬¯ »Æ¿Œ
 					return;
 				else 
 					_pNetwork->SendPetSkillInit();		
@@ -1608,18 +1783,18 @@ void CUIPetTraining::MsgBoxLCommand( int nCommandCode, int nResult )
 
 		}
 		break;
-	case MSGLCMD_PETSTUFFCHANGE_REQ: // Ìåª Ïû¨Î£å ÏïÑÏù¥ÌÖú Î≥ÄÌôò
-		if( nResult == PETITEM_DESTRUCTION )	// Ìé´ÏùÑ ÏÜåÎ©∏ ÏãúÌÇ®Îã§.
+	case MSGLCMD_PETSTUFFCHANGE_REQ: // ∆÷ ¿Á∑· æ∆¿Ã≈€ ∫Ø»Ø
+		if( nResult == PETITEM_DESTRUCTION )	// ∆Í¿ª º“∏Í Ω√≈≤¥Ÿ.
 		{
-			if( IsNotPetWear() ) // Ìé´ Ïû•Ï∞© ÌôïÏù∏
+			if( IsNotPetWear() ) // ∆Í ¿Â¬¯ »Æ¿Œ
 				return;
 
 				CTString	strMessage;
 				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S(191,"ÌôïÏù∏"), UMBS_OKCANCEL, UI_PETTRAINING, MSGCMD_PET_DESTRUCTION );
-				strMessage.PrintF( _S( 2476, "Ï†ïÎßê ÏïÑÏù¥ÌÖúÏúºÎ°ú ÍµêÌôò ÌïòÏãúÍ≤†ÏäµÎãàÍπå?") );
+				MsgBoxInfo.SetMsgBoxInfo( _S(191,"»Æ¿Œ"), UMBS_OKCANCEL, UI_PETTRAINING, MSGCMD_PET_DESTRUCTION );
+				strMessage.PrintF( _S( 2476, "¡§∏ª æ∆¿Ã≈€¿∏∑Œ ±≥»Ø «œΩ√∞⁄Ω¿¥œ±Ó?") );
 				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
+				pUIManager->CreateMessageBox( MsgBoxInfo );
 		}
 		else
 		{
@@ -1628,11 +1803,11 @@ void CUIPetTraining::MsgBoxLCommand( int nCommandCode, int nResult )
 	case MSGLCMD_PETUNIQUEPRODUCT_REQ:
 		if( nResult == DRAGON_WEAPON )
 		{
-			_pUIMgr->GetPetItemMix()->OpenPetItemMix( DRAGON_WEAPON );
+			pUIManager->GetPetItemMix()->OpenPetItemMix( DRAGON_WEAPON );
 		}
 		else if( nResult == KNIGHT_AMOR )
 		{
-			_pUIMgr->GetPetItemMix()->OpenPetItemMix( KNIGHT_AMOR );
+			pUIManager->GetPetItemMix()->OpenPetItemMix( KNIGHT_AMOR );
 		}
 		else
 		{
@@ -1652,7 +1827,8 @@ void CUIPetTraining::MsgBoxLCommand( int nCommandCode, int nResult )
 void CUIPetTraining::SendLearnSkill()
 {
 	// Close message box of skill learn
-	_pUIMgr->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+	CUIManager::getSingleton()->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+	ObjInfo* pInfo = ObjInfo::getSingleton();
 
 	SLONG	slIndex;
 	if( m_nCurrentTab == PETTRAINING_TAB_COMMAND )
@@ -1660,26 +1836,26 @@ void CUIPetTraining::SendLearnSkill()
 		if( m_nSelCommandID < 0 )
 			return;
 
-		if( m_btnCommands[m_nSelCommandID].IsEmpty() )
+		if( m_pIconsCommand[m_nSelCommandID]->IsEmpty() )
 			return;
 
-		slIndex = m_btnCommands[m_nSelCommandID].GetSkillIndex();
+		slIndex = m_pIconsCommand[m_nSelCommandID]->getIndex();
 	}
 	else if( m_nCurrentTab == PETTRAINING_TAB_SKILL )
 	{
 		if( m_nSelSkillID < 0 )
 			return;
 
-		if( m_btnSkills[m_nSelSkillID].IsEmpty() )
+		if( m_pIconsSkill[m_nSelSkillID]->IsEmpty() )
 			return;
 		
-		slIndex = m_btnSkills[m_nSelSkillID].GetSkillIndex();
+		slIndex = m_pIconsSkill[m_nSelSkillID]->getIndex();
 	}	
 
-	if( _pNetwork->_PetTargetInfo.bIsActive)
+	if( pInfo->GetMyPetInfo()->bIsActive)
 	{
 		_pNetwork->LearnPetSkill( slIndex );
-	}else if(_pNetwork->_WildPetInfo.m_nNetIndex > 0 )
+	}else if(pInfo->GetMyApetInfo() != NULL && pInfo->GetMyApetInfo()->m_nIdxServer > 0 )
 	{
 		_pNetwork->LearnWildPetSkill( slIndex );
 	}
@@ -1694,96 +1870,99 @@ void CUIPetTraining::SendLearnSkill()
 // Name : LearnSkill()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIPetTraining::LearnSkill( SLONG slIndex, SBYTE sbLevel, BOOL bAutoLearn )
+void CUIPetTraining::LearnSkill( int nPetIdx, SLONG slIndex, SBYTE sbLevel, BOOL bAutoLearn, bool bShowMsg )
 {	
 	CSkill		&rSkill = _pNetwork->GetSkillData( slIndex );
-	
-	// Close message box of skill learn
-	_pUIMgr->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
 	
 	// Create message box of skill learn
-	CTString	strMessage;
-	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK, UI_PETTRAINING, MSGCMD_PETTRAINING_NOTIFY );
-	
-	if( bAutoLearn ) 
+	if (bShowMsg == true)
 	{
-		strMessage.PrintF( _S(2202, "ÏÉàÎ°úÏö¥ ÏÇ¨ÍµêÎèôÏûë(%s)ÏùÑ ÏäµÎìùÌïòÏòÄÏäµÎãàÎã§." ), rSkill.GetName() );
-	}
-	else 
-	{
-		strMessage.PrintF( _S( 277, "%s Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌïòÏòÄÏäµÎãàÎã§" ), rSkill.GetName() );
-	}
+		// Close message box of skill learn
+		pUIManager->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+
+		CTString	strMessage;
+		CUIMsgBox_Info	MsgBoxInfo;
+		MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ω∫≈≥" ), UMBS_OK, UI_PETTRAINING, MSGCMD_PETTRAINING_NOTIFY );
 	
-	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		if( bAutoLearn ) 
+		{
+			strMessage.PrintF( _S(2202, "ªı∑ŒøÓ ªÁ±≥µø¿€(%s)¿ª Ω¿µÊ«œø¥Ω¿¥œ¥Ÿ." ), rSkill.GetName() );
+		}
+		else 
+		{
+			strMessage.PrintF( _S( 277, "%s Ω∫≈≥¿ª Ω¿µÊ«œø¥Ω¿¥œ¥Ÿ" ), rSkill.GetName() );
+		}
 	
+		MsgBoxInfo.AddString( strMessage );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+	}
+
+	MY_INFO()->SetPetSkill(nPetIdx, slIndex, sbLevel);
 
 	if(rSkill.GetJob() == PET_JOB)
 	{
-		if( _pUIMgr->GetPetInfo()->IsLearnSkill( _pNetwork->_PetTargetInfo.lIndex, slIndex ) )
-		{
-			_pUIMgr->GetPetInfo()->UpdateSkill( _pNetwork->_PetTargetInfo.lIndex, slIndex, sbLevel );
-			_pUIMgr->GetQuickSlot()->UpdateSkillLevel( slIndex, sbLevel );
-		}
-		else
-		{
-			_pUIMgr->GetPetInfo()->AddSkill( _pNetwork->_PetTargetInfo.lIndex, slIndex, sbLevel );
-		}
-	}else if(rSkill.GetJob() == WILDPET_JOB)
-	{
-		if(_pUIMgr->GetWildPetInfo()->IsLearnSkill(slIndex))
-		{
-			_pUIMgr->GetWildPetInfo()->UpdateSkill(slIndex, sbLevel);
-			_pUIMgr->GetQuickSlot()->UpdateSkillLevel( slIndex, sbLevel );
+		int nPetIdx = MY_PET_INFO()->lIndex;
 
-		}else
+		if (pUIManager->GetPetInfo()->IsLearnSkill(nPetIdx, slIndex) == FALSE)
 		{
-			_pUIMgr->GetWildPetInfo()->AddSkill(slIndex,sbLevel);
+			pUIManager->GetPetInfo()->AddSkill( nPetIdx, slIndex, sbLevel );
 		}		
-
 	}
-	
+	else if(rSkill.GetJob() == WILDPET_JOB)
+	{
+		if(pUIManager->GetWildPetInfoUI()->IsLearnSkill(slIndex) == FALSE)
+		{
+			pUIManager->GetWildPetInfoUI()->AddSkill(slIndex,sbLevel);
+		}
+	}	
 	
 	BOOL	bUpdate = FALSE;
 	
 	// Not Special Skill
-	for( int iRow = 0; iRow < SLEARN_SLOT_ROW_TOTAL; iRow++ )
 	{
-		if( m_btnCommands[iRow].GetSkillIndex() == slIndex )
+		int i, nSize = m_vecCommand.size();
+
+		for (i = 0; i < nSize; ++i)
 		{
-			m_btnCommands[iRow].SetSkillLevel( sbLevel + 1 );
-			bUpdate = TRUE;
-			break;
-		}
-	}
-	
-	if( !bUpdate )
-	{
-		for( iRow = 0; iRow < SLEARN_SLOT_ROW_TOTAL; iRow++ )
-		{
-			if( m_btnSkills[iRow].GetSkillIndex() == slIndex )
+			if (m_vecCommand[i].lSkillIndex == slIndex)
 			{
-				m_btnSkills[iRow].SetSkillLevel( sbLevel + 1 );
+				m_vecCommand[i].sbSkillLevel = sbLevel + 1;
+				bUpdate = TRUE;
 				break;
 			}
 		}
 	}
 	
+	if( !bUpdate )
+	{
+		int i, nSize = m_vecSkill.size();
+
+		for (i = 0; i < nSize; ++i)
+		{
+			if (m_vecSkill[i].lSkillIndex == slIndex)
+			{
+				m_vecSkill[i].sbSkillLevel = sbLevel + 1;
+				break;
+			}
+		}
+	}
+
 	if( sbLevel >= rSkill.GetMaxLevel() )
 	{
 		if( m_nCurrentTab == PETTRAINING_TAB_COMMAND )
 			m_nSelCommandID = -1;
 		else if( m_nCurrentTab == PETTRAINING_TAB_SKILL )
 			m_nSelSkillID = -1;			
-		
+
 		GetSkillDesc( -1 );
-		
+
 		InitPetTraining( );
-		
+
 		return;
 	}
-	
+
 	GetSkillDesc( slIndex, sbLevel + 1 );
 }
 
@@ -1798,28 +1977,30 @@ void CUIPetTraining::LearnSkillError( UBYTE ubError )
 	switch( ubError )
 	{
 	case MSG_EX_PET_LEARN_ERROR_LEVEL:
-		strMessage = _S( 278, "Î†àÎ≤®Ïù¥ Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 278, "∑π∫ß¿Ã ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 	case MSG_EX_PET_LEARN_ERROR_POINT:
-		strMessage = _S( 279, "ÏàôÎ†®ÎèÑÍ∞Ä Î∂ÄÏ°±ÌïòÏó¨ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 279, "º˜∑√µµ∞° ∫Œ¡∑«œø© Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 	case MSG_EX_PET_LEARN_ERROR_ITEM:
-		strMessage = _S( 280, "ÏïÑÏù¥ÌÖúÏù¥ Ï°¥Ïû¨ÌïòÏßÄ ÏïäÏïÑ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S( 280, "æ∆¿Ã≈€¿Ã ¡∏¿Á«œ¡ˆ æ æ∆ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 	case MSG_EX_PET_LEARN_ERROR_WEAR:
-		strMessage = _S(2203, "Ïï†ÏôÑÎèôÎ¨ºÏùÑ Ï∞©Ïö©ÌïòÏßÄ ÏïäÏïÑ Ïä§ÌÇ¨ÏùÑ ÏäµÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+		strMessage = _S(2203, "æ÷øœµøπ∞¿ª ¬¯øÎ«œ¡ˆ æ æ∆ Ω∫≈≥¿ª Ω¿µÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
 		break;
 	}
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close message box of skill learn
-	_pUIMgr->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
+	pUIManager->CloseMessageBox( MSGCMD_PETTRAINING_NOTIFY );
 
 	// Create message box of skill learn
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ïä§ÌÇ¨" ), UMBS_OK,
+	MsgBoxInfo.SetMsgBoxInfo( _S( 270, "Ω∫≈≥" ), UMBS_OK,
 								UI_PETTRAINING, MSGCMD_PETTRAINING_NOTIFY );
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
@@ -1834,21 +2015,69 @@ void CUIPetTraining::PetChangeItemError( SBYTE sbResult )
 	switch( sbResult )
 	{
 	case MSG_EX_PET_CHANGE_ITEM_ERROR_OK:
-		strMessageA = _S( 2477, "Ï∂ïÌïòÌï©ÎãàÎã§.\n\nÏú†ÎãàÌÅ¨ ÏïÑÏù¥ÌÖú Ïû¨Î£åÎ•º ÌöçÎìùÌïòÏÖ®ÏäµÎãàÎã§" );
+		strMessageA = _S( 2477, "√‡«œ«’¥œ¥Ÿ.\n\n¿Ø¥œ≈© æ∆¿Ã≈€ ¿Á∑·∏¶ »πµÊ«œºÃΩ¿¥œ¥Ÿ" );
 		break;
 	case MSG_EX_PET_CHANGE_ITEM_ERROR_NOITEM:
-		strMessageA = _S( 2478, "ÏïÑÏù¥ÌÖú ÌöçÎìù Ïã§Ìå®" );
+		strMessageA = _S( 2478, "æ∆¿Ã≈€ »πµÊ Ω«∆–" );
 		break;
 	case MSG_EX_PET_CHANGE_ITEM_ERROR_FAIL:
-		strMessageA = _S( 2479, "ÏïÑÏù¥ÌÖú ÌöçÎìù Ï°∞Í±¥Ïù¥ ÏïÑÎãôÎãàÎã§" );
+		strMessageA = _S( 2479, "æ∆¿Ã≈€ »πµÊ ¡∂∞«¿Ã æ∆¥’¥œ¥Ÿ" );
 		break;
 	}
 
 	ClosePetTraining();
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 1519, "ÍµêÌôò" ), UMBS_OK, UI_PETITEMMIX, MSG_EX_PET_MIX_ITEM );		
+	MsgBoxInfo.SetMsgBoxInfo( _S( 1519, "±≥»Ø" ), UMBS_OK, UI_PETITEMMIX, MSG_EX_PET_MIX_ITEM );		
 
 	MsgBoxInfo.AddString( strMessageA );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+}
+
+void CUIPetTraining::EvolutionError(UBYTE errorcode)
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// Show result
+	CTString	strMessageA;
+	
+	switch( errorcode )
+	{
+	case 0:
+		strMessageA = _S(4746, "∆Í ¡¯»≠ø° º∫∞¯«œø¥Ω¿¥œ¥Ÿ." );
+		break;
+	case 1:
+		strMessageA = _S(4747, "¡¯»≠«“ ºˆ æ¯¥¬ ∑π∫ß¿‘¥œ¥Ÿ." );
+		break;
+	case 2:
+		strMessageA = _S(4748, "¬¯øÎ¿ª «ÿ¡¶«œø©æﬂ ¡¯»≠∞° ∞°¥…«’¥œ¥Ÿ." );
+		break;
+	case 3:
+		strMessageA = _S(1921, "¿Œ∫•≈‰∏Æ∞° ∫Œ¡∑«’¥œ¥Ÿ." );
+		break;
+	case 4:
+		strMessageA = _S(4750, "¡¯»≠ ∞°¥…«— ∆Í¿Ã ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ." );
+		break;
+	case 6:
+		strMessageA = _S(5442, "∆Í ¿Â∫Ò∏¶ ¬¯øÎ«— ªÛ≈¬ø°º≠¥¬ ¡¯»≠ «“ ºˆ æ¯Ω¿¥œ¥Ÿ.");
+		break;
+		// [091013: selo] ∞¯∞›«¸ ∆Í¿Ã ¡¯»≠ ∞°¥…«— ∑π∫ß¿Ã µ«∏È Notice ∑Œ æÀ∏∞¥Ÿ.
+	case 5:
+		{
+			Notice* pNotice = GAMEDATAMGR()->GetNotice();
+
+			if (pNotice != NULL)
+				pNotice->AddToNoticeList(4020, Notice::NOTICE_EVENT);
+
+			return;
+		}		
+	}
+
+	ClosePetTraining();
+
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S(4751, "¡¯»≠" ), UMBS_OK, UI_PETTRAINING, MSGCMD_PETTRAINING_NOTIFY );		
+
+	MsgBoxInfo.AddString( strMessageA );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }

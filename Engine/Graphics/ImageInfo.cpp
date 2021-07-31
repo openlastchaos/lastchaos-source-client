@@ -6,13 +6,11 @@
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Memory.h>
 #include <Engine/Math/Functions.h>
+
 #include <ijl.h>
+#pragma comment(lib, "ijl15L.lib")
 
 extern void FlipBitmap( UBYTE *pubSrc, UBYTE *pubDst, PIX pixWidth, PIX pixHeight, INDEX iFlipType, BOOL bAlphaChannel);
-
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	09.06
-#pragma comment(lib, "ijl15L.lib")
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		09.06
 
 // Order of CroTeam true color pixel components
 #define COMPONENT_1 red
@@ -400,7 +398,7 @@ void CImageInfo::SaveTGA_t( const CTFileName &strFileName) const // throw char *
   FreeMemory( pTGABuffer);
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	09.06
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	09.06
 void CImageInfo::SaveJPG_t(const CTFileName &strFileName)	const
 {
 	JPEG_CORE_PROPERTIES jcp;
@@ -412,7 +410,7 @@ void CImageInfo::SaveJPG_t(const CTFileName &strFileName)	const
 
 	jcp.DIBChannels		= 3;
 	jcp.DIBColor		= IJL_BGR;	
-	jcp.DIBHeight		= -ii_Height; // ìŒìˆ˜ë¡œ í•˜ë‹ˆê¹Œ ë’¤ì§‘í˜”ë˜ ê·¸ë¦¼ì´ ë‹¤ì‹œ ì›ë˜ëŒ€ë¡œ..
+	jcp.DIBHeight		= -ii_Height; // À½¼ö·Î ÇÏ´Ï±î µÚÁıÇû´ø ±×¸²ÀÌ ´Ù½Ã ¿ø·¡´ë·Î..
 	jcp.DIBWidth		= ii_Width;
 	long DIBLineSize	= ((ii_Width)*3)/4*4;
 	jcp.DIBPadBytes		= DIBLineSize - ii_Width * 3;	
@@ -459,9 +457,21 @@ void CImageInfo::SaveJPG_t(const CTFileName &strFileName)	const
 	
 	// free temorary allocated memory for TGA image format
 	FreeMemory( pJPGBuffer);
-}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		09.06
 
+	// [2012/02/22 : Sora] ½ºÅ©¸°¼¦ ÆÄÀÏ º¯Á¶ È®ÀÎ¿ë Çì´õ Ãß°¡
+	FILE *file;
+	file = fopen( strFileName, "a+" );
+
+	if( fseek( file, 0,  SEEK_END ) == 0 )
+	{
+		int sltemp = jcp.JPGSizeBytes;
+		sltemp ^= 0xFFFFFFFF;
+		fwrite( &sltemp, sizeof(int), 1, file );
+	}
+
+	fclose( file );
+
+}
 
 /* PCX ***********************************************************************
 * This routine reads file with given file name and if it is valid PCX file it
@@ -560,7 +570,7 @@ void CImageInfo::LoadAnyGfxFormat_t( const CTFileName &strFileName) // throw cha
   if( iFileFormat == PCX_FILE) LoadPCX_t( strFileName);
   if( iFileFormat == TGA_FILE) LoadTGA_t( strFileName);
 
-	// FIXME : ì‹œê°„ë‚˜ë©´ í•œë²ˆ êµ¬í˜„í•´ ë³´ì...
+	// FIXME : ½Ã°£³ª¸é ÇÑ¹ø ±¸ÇöÇØ º¸ÀÚ...
 	//if( iFileFormat == JPG_FILE)
   if( iFileFormat == UNSUPPORTED_FILE) throw( "Gfx format not supported.");
 }

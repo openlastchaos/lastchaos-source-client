@@ -1,4 +1,7 @@
 #include "stdh.h"
+
+// 헤더 정리. [12/2/2009 rumist]
+#include <Engine/Interface/UIWindow.h>
 #include <Engine/Interface/UISlideBar.h>
 #include <Engine/Interface/UIManager.h>
 
@@ -14,6 +17,8 @@ CUISlideBar::CUISlideBar()
 	m_nRange = 0;
 	m_nMinPos = 0;
 	m_nMaxPos = 0;
+
+	setType(eUI_CONTROL_SLIDEBAR);
 }
 
 // ----------------------------------------------------------------------------
@@ -25,6 +30,15 @@ CUISlideBar::~CUISlideBar()
 	Destroy();
 }
 
+CUIBase* CUISlideBar::Clone()
+{
+	CUISlideBar* pSlideBar = new CUISlideBar(*this);
+
+	CUIBase::CloneChild(pSlideBar);
+
+	return pSlideBar;
+}
+
 // ----------------------------------------------------------------------------
 // Name : Create()
 // Desc :
@@ -33,9 +47,7 @@ void CUISlideBar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 							int nBarWidth, int nBarHeight,
 							int nCurPos, int nRange, int nMinPos, int nMaxPos )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	m_rcBar.Top = ( m_nHeight - nBarHeight ) / 2;
 	m_rcBar.Bottom = m_rcBar.Top + nBarHeight;
@@ -90,7 +102,7 @@ void CUISlideBar::SetCurPos( int nCurPos )
 // ----------------------------------------------------------------------------
 void CUISlideBar::SetRange( int nRange )
 {
-	if( m_nMinPos + nRange <= m_nMaxPos )
+	if( m_nMinPos + nRange <= (m_nMaxPos+1) )
 		m_nRange = nRange;
 }
 
@@ -132,15 +144,17 @@ void CUISlideBar::Render()
 	int	nX, nY;
 	GetAbsPos( nX, nY );
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Add render regions
 	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, nY + m_nHeight,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, nY + m_nHeight,
 										m_rtBackground.U0, m_rtBackground.V0,
 										m_rtBackground.U1, m_rtBackground.V1,
 										0xFFFFFFFF );
 
 	// Bar
-	_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcBar.Left, nY + m_rcBar.Top,
+	pDrawPort->AddTexture( nX + m_rcBar.Left, nY + m_rcBar.Top,
 										nX + m_rcBar.Right, nY + m_rcBar.Bottom,
 										m_rtBar.U0, m_rtBar.V0, m_rtBar.U1, m_rtBar.V1,
 										0xFFFFFFFF );
@@ -211,4 +225,89 @@ WMSG_RESULT CUISlideBar::MouseMessage( MSG *pMsg )
 	}
 
 	return WMSG_FAIL;
+}
+
+void CUISlideBar::OnRender( CDrawPort* pDraw )
+{
+	if( m_pTexData == NULL )
+	{
+#ifdef UI_TOOL
+	RenderBorder(pDraw);
+#endif // UI_TOOL
+		return;
+	}
+
+	// Get position
+	int	nX, nY;
+	GetAbsPos( nX, nY );
+
+	pDraw->InitTextureData( m_pTexData );
+	// Add render regions
+	// Background
+	pDraw->AddTexture( nX, nY, nX + m_nWidth, nY + m_nHeight,
+		m_rtBackground.U0, m_rtBackground.V0,
+		m_rtBackground.U1, m_rtBackground.V1,
+		0xFFFFFFFF );
+
+	// Bar
+	pDraw->AddTexture( nX + m_rcBar.Left, nY + m_rcBar.Top,
+		nX + m_rcBar.Right, nY + m_rcBar.Bottom,
+		m_rtBar.U0, m_rtBar.V0, m_rtBar.U1, m_rtBar.V1,
+		0xFFFFFFFF );
+
+	pDraw->FlushRenderingQueue();
+
+#ifdef UI_TOOL
+	RenderBorder(pDraw);
+#endif // UI_TOOL
+}
+
+void CUISlideBar::setBar( int nWidth, int nHeight )
+{
+	m_rcBar.Top = ( m_nHeight - nHeight ) / 2;
+	m_rcBar.Bottom = m_rcBar.Top + nHeight;
+	m_rcBar.Left = 0;
+	m_rcBar.Right = nWidth;
+
+	m_rcSlide.SetRect( 0, m_rcBar.Top, m_nWidth, m_rcBar.Bottom );
+}
+
+UIRectUV CUISlideBar::getBackUV()
+{
+	UIRectUV uv = m_rtBackground;
+
+	std::string strImg = getTexString();
+	if(m_pTexData)
+	{
+		float fTexW, fTexH;
+		fTexW = m_pTexData->GetPixWidth();
+		fTexH = m_pTexData->GetPixHeight();
+
+		uv.U0 = uv.U0 * fTexW;
+		uv.V0 = uv.V0 * fTexH;
+		uv.U1 = uv.U1 * fTexW;
+		uv.V1 = uv.V1 * fTexH;
+	}
+
+	return uv; 
+}
+
+UIRectUV CUISlideBar::getBarUV()
+{
+	UIRectUV uv = m_rtBar;
+
+	std::string strImg = getTexString();
+	if(m_pTexData)
+	{
+		float fTexW, fTexH;
+		fTexW = m_pTexData->GetPixWidth();
+		fTexH = m_pTexData->GetPixHeight();
+
+		uv.U0 = uv.U0 * fTexW;
+		uv.V0 = uv.V0 * fTexH;
+		uv.U1 = uv.U1 * fTexW;
+		uv.V1 = uv.V1 * fTexH;
+	}
+
+	return uv; 
 }

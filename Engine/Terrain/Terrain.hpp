@@ -105,7 +105,7 @@ public:
   UWORD *tr_puwHeightMap;           // Terrain height map
   UWORD *tr_puwShadingMap;          // Terrain shading map (for entity shading)
   UBYTE *tr_pubEdgeMap;             // Terrain edge map
-  UBYTE	*tr_pubAttributeMap;		// Terrain attribute map											//yjpark
+  UWORD	*tr_pubAttributeMap;		// Terrain attribute map											//yjpark
   CTextureData *tr_ptdEdgeMap;      // Terrain edge map as texture
   CTextureData *tr_ptdShadowMap;    // Terrain shadow map
   CTextureData *tr_ptdTopMap;       // Terrain top map

@@ -5,10 +5,10 @@
 #endif
 
 // Include Files
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIEditBox.h>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIEditBox.h>
 
 // Define size of SINGLE Battle
 #define	SB_WIDTH						118
@@ -16,12 +16,12 @@
 
 //------------------------------------------------------------------------------
 // CUISingleBattle
-// Explain:  ê¸¸ë“œ ì „íˆ¬ 
+// Explain:  ±æµå ÀüÅõ 
 //------------------------------------------------------------------------------
 class ENGINE_API CUISingleBattle : public CUIWindow
 {
 protected:
-	UIRect					m_rcBox;						// ì‹œê°„ í‘œì‹œ ì°½ (ë°°ê²½)
+	UIRect					m_rcBox;						// ½Ã°£ Ç¥½Ã Ã¢ (¹è°æ)
 	UIRect					m_rcRedBox;						// RedBox : KillCount
 	UIRect					m_rcBlueBox;					// BlueBox : KillCount
 		
@@ -29,12 +29,12 @@ protected:
 	UIRectUV				m_rtBlueBox;					// BlueBox : KillCount
 	UIRectUV				m_rtRedBox;						// RedBox : KillCount
 	
-	UIRectUV				m_rtSmallNumber[10];			// ì‹œê°„ í‘œì‹œ ìš© ìˆ«ì
-	UIRectUV				m_rtLargeNumber[10];			// KillCount í‘œì‹œ ìš© ìˆ«ì 
-	UIRectUV				m_rtColon;						// ì‹œê°„ í‘œì‹œ ìš© :(ì½œë¡ )		
+	UIRectUV				m_rtSmallNumber[10];			// ½Ã°£ Ç¥½Ã ¿ë ¼ıÀÚ
+	UIRectUV				m_rtLargeNumber[10];			// KillCount Ç¥½Ã ¿ë ¼ıÀÚ 
+	UIRectUV				m_rtColon;						// ½Ã°£ Ç¥½Ã ¿ë :(Äİ·Ğ)		
 
 	// etc
-	CTString				m_strTitle;						// íƒ€ì´í‹€ ì´ë¦„ (ê¸¸ë“œì „íˆ¬ ê´€ë ¨ ë©”ì„¸ì§€ ë¿Œë¦´ë•Œ ì‚¬ìš©)	
+	CTString				m_strTitle;						// Å¸ÀÌÆ² ÀÌ¸§ (±æµåÀüÅõ °ü·Ã ¸Ş¼¼Áö »Ñ¸±¶§ »ç¿ë)	
 	
 public:
 
@@ -44,7 +44,7 @@ public:
 	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
 	void	Clear();	//
-	void	Close();	// ì¢…ë£Œ
+	void	Close();	// Á¾·á
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
@@ -58,8 +58,8 @@ public:
 
 	// Render
 	void	Render();					// Render	
-	void	RenderGBStatus();			// ê¸¸ë“œ ì „íˆ¬ ìƒíƒœì°½
-	void	DrawNumber( int x, int y, int nNumber, bool bLarge = false );	// ìˆ«ì	
+	void	RenderGBStatus();			// ±æµå ÀüÅõ »óÅÂÃ¢
+	void	DrawNumber( int x, int y, int nNumber, bool bLarge = false );	// ¼ıÀÚ	
 	void	DrawColon( int x, int y );	// Colon Render
 
 	void	RenderKillPoint();			// Render Kill Point

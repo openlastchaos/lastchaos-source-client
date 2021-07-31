@@ -197,8 +197,8 @@ static void MakeOneMipmap( ULONG *pulSrcMipmap, ULONG *pulDstMipmap, PIX pixWidt
 rowLoop:
     mov     ecx,D [pixWidth]
 pixLoop:           
-//    prefetchnta [esi+ 16]
-//    prefetchnta [esi+ ebx*8+ 16]
+    prefetchnta [esi+ 16]
+    prefetchnta [esi+ ebx*8+ 16]
     movq    mm1,Q [esi]        // up-left   & up-right
     movq    mm3,Q [esi+ ebx*8] // down-left & down-right 
     movq    mm2,mm1

@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CPARTICLEEFFECT_H__
 #define __CPARTICLEEFFECT_H__
 
@@ -21,10 +21,10 @@ public:
 
 	//NEW_DELETE_DEFINITION(CParticleEffect);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	virtual void Read(CTStream *istrFile);
 	virtual void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	
 	virtual void Start(FLOAT time, BOOL restart = FALSE);
 	virtual BOOL Process(FLOAT time);
@@ -51,14 +51,14 @@ protected:
 	
 protected:
 	//content variable
-	std::string			m_strParticleGroupName;	//CParticleGroupManagerì— ë“±ë¡ëœ íŒŒí‹°í´ ê·¸ë£¹ì˜ ì´ë¦„.
-	EFFECT_OF_TAG_TYPE	m_eRotation;			//tagì˜ íšŒì „ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
+	std::string			m_strParticleGroupName;	//CParticleGroupManager¿¡ µî·ÏµÈ ÆÄÆ¼Å¬ ±×·ìÀÇ ÀÌ¸§.
+	EFFECT_OF_TAG_TYPE	m_eRotation;			//tagÀÇ È¸Àü¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
 	//instance variable
-	CParticleGroup		*m_pParticleGroup;		//ì‹¤ì œ Createëœ íŒŒí‹°í´ ê·¸ë£¹.
+	CParticleGroup		*m_pParticleGroup;		//½ÇÁ¦ CreateµÈ ÆÄÆ¼Å¬ ±×·ì.
 	ptr_tag				m_ptrTag;
 	BOOL				m_bOnlyStart;
 	BOOL				m_bShapeSizeRecalc;
 };
 
 #endif //__CPARTICLEEFFECT_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

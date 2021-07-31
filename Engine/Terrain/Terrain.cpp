@@ -6,13 +6,14 @@
 #include <Engine/Terrain/TRLayer.h>
 #include <Engine/Terrain/TRLayer.hpp>
 #include <Engine/Templates/Stock_CTextureData.h>
+#include <Engine/Brushes/Brush.h>
 
 extern TerrainInfo _tiTerrainInfo;
 BOOL	_bLoadTerrain = FALSE;		// yjpark
 template <class Type>
 extern void TerrainMapCrop(Type *ptDst, SLONG slDstWidth, SLONG slDstHeight,
 													 const Type *ptSrc, SLONG slSrcWidth, SLONG slSrcHeight, UBYTE ubFill);
-#define TR_FNM_VERSION 19			// yjpark
+#define TR_FNM_VERSION 20			// yjpark
 
 // Constructor
 CTerrain::CTerrain(void)
@@ -146,7 +147,8 @@ static void ReadTerrainVersion17_t( CTerrain *ptrTerrain, CTStream *istrFile )
 
 	istrFile->ExpectID_t( "TRSM" );
 	ULONG	ulShadowTime;
-	for( INDEX itrs = 0; itrs < cttrs; itrs++ )
+	INDEX itrs;
+	for( itrs = 0; itrs < cttrs; itrs++ )
 	{
 		// World time for current shadow map
 		istrFile->Read_t( &ulShadowTime, sizeof(ULONG) );
@@ -241,13 +243,67 @@ static void ReadTerrainVersion17_t( CTerrain *ptrTerrain, CTStream *istrFile )
 	}
 
 	//[070626: Su-won] Terrain Ver.19
-	if( ptr->tr_iTerrainVersion >= 19)
+	if (ptr->tr_iTerrainVersion >= 20)
+	{
+		istrFile->ExpectID_t( "TRAM" );
+		const SLONG	slAttributeMapSize = ptr->tr_vMetricSize( 1 ) * ptr->tr_vMetricSize( 3 ) * sizeof(UWORD);
+		ptr->tr_pubAttributeMap = (UWORD*)AllocMemory(slAttributeMapSize);
+		UWORD	*pubAttributeMap = ptr->tr_pubAttributeMap;
+		istrFile->Read_t(pubAttributeMap, slAttributeMapSize);
+	}
+	else if( ptr->tr_iTerrainVersion >= 19)
 	{
 		istrFile->ExpectID_t( "TRAM" );
 		const SLONG	slAttributeMapSize = ptr->tr_vMetricSize( 1 ) * ptr->tr_vMetricSize( 3 );
-		ptr->tr_pubAttributeMap = (UBYTE *)AllocMemory(slAttributeMapSize);
-		UBYTE	*pubAttributeMap = ptr->tr_pubAttributeMap;
+		ptr->tr_pubAttributeMap = (UWORD*)AllocMemory(slAttributeMapSize * sizeof(UWORD));
+		UBYTE	*pubAttributeMap = (UBYTE*)AllocMemory(slAttributeMapSize);
 		istrFile->Read_t( pubAttributeMap, slAttributeMapSize );
+
+		int		i;
+
+		for (i = 0; i < slAttributeMapSize; ++i)
+		{
+			switch (pubAttributeMap[i])
+			{
+			case ATTC_WALKABLE:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_WALKABLE;
+				break;
+			case ATTC_PEACE:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_PEACE;
+				break;
+			case ATTC_PRODUCT_PUBLIC:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_PRODUCT_PUBLIC;
+				break;
+			case ATTC_PRODUCT_PRIVATE:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_PRODUCT_PRIVATE;
+				break;
+			case ATTC_STAIR_UP:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_STAIR_UP;
+				break;
+			case ATTC_STAIR_DOWN:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_STAIR_DOWN;
+				break;
+			case ATTC_WAR:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_WAR;
+				break;
+			case ATTC_FREEPKZONE:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_FREEPKZONE;
+				break;
+			case ATTC_UNWALKABLE:
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_UNWALKABLE;
+				break;
+			default:
+				//ASSERT(0);
+				ptr->tr_pubAttributeMap[i] = (UWORD)MATT_UNWALKABLE;
+				break;
+			}
+		}
+
+		if (pubAttributeMap != NULL)
+		{
+			FreeMemory( pubAttributeMap );
+			pubAttributeMap = NULL;
+		}	
 	}
 
 	// Terrain data end
@@ -348,7 +404,8 @@ static void ReadTerrainVersion16_t( CTerrain *ptrTerrain, CTStream *istrFile )
 
 	istrFile->ExpectID_t( "TRSM" );
 	ULONG	ulShadowTime;
-	for( INDEX itrs = 0; itrs < cttrs; itrs++ )
+	INDEX itrs;
+	for( itrs = 0; itrs < cttrs; itrs++ )
 	{
 		// World time for current shadow map
 		istrFile->Read_t( &ulShadowTime, sizeof(ULONG) );
@@ -1143,7 +1200,7 @@ void CTerrain::Read_t(CTStream *istrFile)
 		(*istrFile) >> ptr->tr_iTerrainVersion;
 
 		//[070626: Su-won] Terrain Ver.19
-		if( ptr->tr_iTerrainVersion == 19 )
+		if( ptr->tr_iTerrainVersion >= 19 )
 		{
 			ReadTerrainVersion17_t( this, istrFile );
 			ASSERT( _CrtCheckMemory() );
@@ -1204,7 +1261,7 @@ void CTerrain::Write_t(CTStream *ostrFile)
 	const UWORD *puwHeightMap          = ptr->tr_puwHeightMap;
 	const UBYTE *pubEdgeMap            = ptr->tr_pubEdgeMap;
 	const ULONG *pulTopMap             = ptr->tr_ptdTopMap->td_pulFrames;
-	const UBYTE *pubAttributeMap       = ptr->tr_pubAttributeMap;	//[070626: Su-won] Terrain Ver.19
+	const UWORD *pubAttributeMap       = ptr->tr_pubAttributeMap;	//[070626: Su-won] Terrain Ver.19
 	const SLONG slShadowMapSizeAspect  = ptr->tr_slShadowMapSizeAspect;
 	const SLONG slShadingMapSizeAspect = ptr->tr_slShadingMapSizeAspect;
 	const SLONG slAttributeMapSizeAspect = ptr->tr_slAttributeMapSizeAspect;	//[070626: Su-won] Terrain Ver.19	
@@ -1277,7 +1334,8 @@ void CTerrain::Write_t(CTStream *ostrFile)
 	// Terrain shadow map
 	ostrFile->WriteID_t("TRSM");
 	ULONG	ulShadowTime;
-	for( INDEX itrs = 0; itrs < cttrs; itrs++ )								// yjpark |<--
+	INDEX itrs;
+	for( itrs = 0; itrs < cttrs; itrs++ )								// yjpark |<--
 	{
 		// World time for current shadow map
 		ulShadowTime = ptr->tr_aulShadowTimes[itrs];
@@ -1353,7 +1411,13 @@ void CTerrain::Write_t(CTStream *ostrFile)
 
 	//[070626: Su-won] Terrain Ver.19
 	//Write Attibute Map
-	if( TR_FNM_VERSION >=19)
+	if (TR_FNM_VERSION >= 20)
+	{
+		const SLONG	slAttributeMapSize = ptr->tr_vMetricSize( 1 ) * ptr->tr_vMetricSize( 3 );
+		ostrFile->WriteID_t("TRAM");
+		ostrFile->Write_t(pubAttributeMap, slAttributeMapSize * sizeof(UWORD));
+	}
+	else if (TR_FNM_VERSION >= 19)
 	{
 		const SLONG	slAttributeMapSize = ptr->tr_vMetricSize( 1 ) * ptr->tr_vMetricSize( 3 );
 		ostrFile->WriteID_t("TRAM");

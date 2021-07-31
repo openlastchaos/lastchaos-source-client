@@ -1,8 +1,11 @@
 #include "stdh.h"
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <vector>
-#include <Engine/Interface/UISelectWord.h>
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UISelectWord.h>
 #include <Engine/Entities/EntityProperties.h>
+#include <Engine/Contents/Base/UIQuestNew.h>
 
 #define BUTTON_HEIGHT		71
 #define BUTTON_WIDTH		146
@@ -30,8 +33,6 @@ CUISelectWord::~CUISelectWord()
 		_pTextureStock->Release( m_ptdNakoTitle );
 		m_ptdNakoTitle = NULL;
 	}
-
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,11 +40,8 @@ CUISelectWord::~CUISelectWord()
 // Desc :
 // ----------------------------------------------------------------------------
 void CUISelectWord::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
-{
-	
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+{	
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 236, 22 );
@@ -149,7 +147,7 @@ void CUISelectWord::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX p
 
 // ----------------------------------------------------------------------------
 // Name : OpenSelectResource()
-// Desc : iType = 1 ì±„êµ´, iType = 2 ì±„ì§‘, iType = 3 ì°¨ì§€
+// Desc : iType = 1 Ã¤±¼, iType = 2 Ã¤Áý, iType = 3 Â÷Áö
 // ----------------------------------------------------------------------------
 void CUISelectWord::OpenSelectWord()
 {	
@@ -160,7 +158,7 @@ void CUISelectWord::OpenSelectWord()
 		return;
 	}
 	
-	_pUIMgr->RearrangeOrder( UI_SELECTWORD, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SELECTWORD, TRUE );
 }
 
 // ----------------------------------------------------------------------------
@@ -169,10 +167,7 @@ void CUISelectWord::OpenSelectWord()
 // ----------------------------------------------------------------------------
 void CUISelectWord::ResetSelectWord()
 {
-	/*if(!m_vectorWordList.empty())
-		m_vectorWordList.clear();
-		*/
-	_pUIMgr->RearrangeOrder( UI_SELECTWORD, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SELECTWORD, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -181,27 +176,29 @@ void CUISelectWord::ResetSelectWord()
 // ----------------------------------------------------------------------------
 void CUISelectWord::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 	// Add render regions
 	// Background
 	int nX = m_nPosX;
 	int nY = m_nPosY;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, m_nPosY, nX + m_nWidth, nY + TITLEBAR_HEIGHT,
+	pDrawPort->AddTexture( nX, m_nPosY, nX + m_nWidth, nY + TITLEBAR_HEIGHT,
 		m_rtBackTop.U0, m_rtBackTop.V0, 
 		m_rtBackTop.U1, m_rtBackTop.V1,
 		0xFFFFFFFF );
 	
 	nY += TITLEBAR_HEIGHT;	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight - 7,
 		m_rtBackMiddle1.U0, m_rtBackMiddle1.V0, 
 		m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 		0xFFFFFFFF );
 	
 	nY = m_nPosY + m_nHeight - 7;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( nX, nY, nX + m_nWidth, m_nPosY + m_nHeight,
 		m_rtBackBottom.U0, m_rtBackBottom.V0, 
 		m_rtBackBottom.U1, m_rtBackBottom.V1,
 		0xFFFFFFFF );	
@@ -209,9 +206,9 @@ void CUISelectWord::Render()
 	m_btnClose.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();	
+	pDrawPort->FlushRenderingQueue();	
 	
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdNakoTitle );
+	pDrawPort->InitTextureData( m_ptdNakoTitle );
 	
 	UIButton_vector::iterator itend = m_vectorWordList.end();
 	UIButton_vector::iterator it = m_vectorWordList.begin();
@@ -222,15 +219,15 @@ void CUISelectWord::Render()
 	}
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();	
+	pDrawPort->FlushRenderingQueue();	
 	
-	CTString strTitle = _S(2223, "ê²Œìž„ íƒ€ì´í‹€ ì„ íƒ" );
+	CTString strTitle = _S(2223, "°ÔÀÓ Å¸ÀÌÆ² ¼±ÅÃ" );
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( strTitle, m_nPosX + SELECTREWORD_TITLE_TEXT_OFFSETX,	
+	pDrawPort->PutTextEx( strTitle, m_nPosX + SELECTREWORD_TITLE_TEXT_OFFSETX,	
 		m_nPosY + SELECTREWORD_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 	
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -258,7 +255,7 @@ WMSG_RESULT	CUISelectWord::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 			
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -278,8 +275,6 @@ WMSG_RESULT	CUISelectWord::MouseMessage( MSG *pMsg )
 			{
 				return WMSG_SUCCESS;
 			}
-			
-
 		}
 		break;
 	case WM_LBUTTONDOWN:
@@ -305,17 +300,17 @@ WMSG_RESULT	CUISelectWord::MouseMessage( MSG *pMsg )
 					
 					for(; it != end; ++it)
 					{
-						if( (*it).MouseMessage( pMsg ) != WMSG_FAIL )//button ëˆ„ë¦„
+						if( (*it).MouseMessage( pMsg ) != WMSG_FAIL )//button ´©¸§
 						{
 							//int dist = std::distance(m_vectorWordList.begin(), it);
-							//!! ì„œë²„ì— ë©”ì„¸ì§€ ë³´ë‚´ê¸° 
+							//!! ¼­¹ö¿¡ ¸Þ¼¼Áö º¸³»±â 
 						
 							return WMSG_SUCCESS;
 						}
 					}
 				}
 				
-				_pUIMgr->RearrangeOrder( UI_SELECTWORD, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_SELECTWORD, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -330,7 +325,7 @@ WMSG_RESULT	CUISelectWord::MouseMessage( MSG *pMsg )
 				if(wmsgResult == WMSG_COMMAND)
 				{
 					ResetSelectWord();
-					_pUIMgr->GetQuest()->MsgBoxLCommand( MSGLCMD_EVENT, QUEST_RENUAL_EVENT );
+					CUIManager::getSingleton()->GetQuest()->MsgBoxLCommand( MSGLCMD_EVENT, QUEST_RENUAL_EVENT );
 
 				}
 				return WMSG_SUCCESS;
@@ -387,21 +382,21 @@ void CUISelectWord::ResultProcess( LONG lError )
 	switch( lError )
 	{
 	case MSG_EVENT_2PAN4PAN_WORD_OK:
-		strMessage = _S(2224, "ì´ë²¤íŠ¸ ìƒí’ˆì´ ì§€ê¸‰ë˜ì—ˆìŠµë‹ˆë‹¤." );
+		strMessage = _S(2224, "ÀÌº¥Æ® »óÇ°ÀÌ Áö±ÞµÇ¾ú½À´Ï´Ù." );
 		ResetSelectWord();
 		break;
 	case MSG_EVENT_2PAN4PAN_WORD_NOITEM:
-		strMessage = _S(2225, "ìš”ì²­í•œ íƒ€ì´í‹€ê³¼ ì†Œì§€í•œ ì•„ì´í…œì´ ì¼ì¹˜í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤. ë‹¤ì‹œ í™•ì¸í•˜ì—¬ ì£¼ì‹œê¸° ë°”ëžë‹ˆë‹¤." );
+		strMessage = _S(2225, "¿äÃ»ÇÑ Å¸ÀÌÆ²°ú ¼ÒÁöÇÑ ¾ÆÀÌÅÛÀÌ ÀÏÄ¡ÇÏÁö ¾Ê½À´Ï´Ù. ´Ù½Ã È®ÀÎÇÏ¿© ÁÖ½Ã±â ¹Ù¶ø´Ï´Ù." );
 		break;
 	case MSG_EVENT_2PAN4PAN_WORD_ALREADY:
-		strMessage = _S(2226, "ì´ë¯¸ ì§€ê¸‰ë°›ì€ ìƒí’ˆì€ ë‹¤ì‹œ ì§€ê¸‰ ë°›ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤." );
+		strMessage = _S(2226, "ÀÌ¹Ì Áö±Þ¹ÞÀº »óÇ°Àº ´Ù½Ã Áö±Þ ¹ÞÀ» ¼ö ¾ø½À´Ï´Ù." );
 		break;
 	}
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S(2209, "ë‚±ë§ ë§žì¶”ê¸° ì´ë²¤íŠ¸" ), UMBS_OK, UI_SELECTWORD, MSGCMD_SELECT_WORD_NOTIFY );
+	MsgBoxInfo.SetMsgBoxInfo( _S(2209, "³¹¸» ¸ÂÃß±â ÀÌº¥Æ®" ), UMBS_OK, UI_SELECTWORD, MSGCMD_SELECT_WORD_NOTIFY );
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 	
 	ResetSelectWord();
 }	

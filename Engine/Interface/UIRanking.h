@@ -9,11 +9,11 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <vector>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <vector>
 
 // Define text position
 #define	RANKING_TITLE_TEXT_OFFSETX		25
@@ -21,7 +21,7 @@
 
 // Define size of Ranking
 #define	RANKING_WIDTH					311
-#define	RANKING_HEIGHT					260
+#define	RANKING_HEIGHT					280//260
 
 // ----------------------------------------------------------------------------
 // Name : CUIRanking
@@ -33,8 +33,8 @@ protected:
 	// Ranking State
 	enum eRankingState
 	{
-		RANKING_LIST,		// ë­í‚¹ ë¦¬ìŠ¤íŠ¸.
-		RANKING_PRIZE,		// ë­í‚¹ì— ë”°ë¥¸ ë³´ìƒ
+		RANKING_LIST,		// ·©Å· ¸®½ºÆ®.
+		RANKING_PRIZE,		// ·©Å·¿¡ µû¸¥ º¸»ó
 	};
 
 	// internal structure
@@ -51,10 +51,10 @@ protected:
 		{			
 		}
 		
-		CTString		strName;			// ë©¤ë²„ëª…?		
-		BOOL			bSuccess;			// ì„±ê³µ ì—¬ë¶€.
-		LONG			lPoint;				// íšë“ í¬ì¸íŠ¸.
-		__int64			llTime;				// ì†Œìš” ì‹œê°„.
+		CTString		strName;			// ¸â¹ö¸í?		
+		BOOL			bSuccess;			// ¼º°ø ¿©ºÎ.
+		LONG			lPoint;				// È¹µæ Æ÷ÀÎÆ®.
+		__int64			llTime;				// ¼Ò¿ä ½Ã°£.
 	};
 
 	struct sUserPrize
@@ -62,19 +62,19 @@ protected:
 		sUserPrize()
 		{
 			strName			= "";	
-			iItemIndex		= -1;			// ì•„ì´í…œ ì¸ë±ìŠ¤
-			iNumOfItem		= -1;			// ì•„ì´í…œ ê°¯ìˆ˜.
+			iItemIndex		= -1;			// ¾ÆÀÌÅÛ ÀÎµ¦½º
+			iNumOfItem		= -1;			// ¾ÆÀÌÅÛ °¹¼ö.
 			bReward			= FALSE;
 		}
 		
-		CTString		strName;			// ì´ë¦„
-		INDEX			iItemIndex;			// ì•„ì´í…œ ì¸ë±ìŠ¤
-		INDEX			iNumOfItem;			// ì•„ì´í…œ ê°¯ìˆ˜.		
-		BOOL			bReward;			// ë³´ìƒë¬¼í’ˆ ê°€ëŠ¥
+		CTString		strName;			// ÀÌ¸§
+		INDEX			iItemIndex;			// ¾ÆÀÌÅÛ ÀÎµ¦½º
+		INDEX			iNumOfItem;			// ¾ÆÀÌÅÛ °¹¼ö.		
+		BOOL			bReward;			// º¸»ó¹°Ç° °¡´É
 	};
 
-	std::vector<sUserRanking>	m_vectorRankingList;		// ë‹¨ì› ëª©ë¡
-	std::vector<sUserPrize>		m_vectorPrizeList;			// ë³´ìƒ ëª©ë¡
+	std::vector<sUserRanking>	m_vectorRankingList;		// ´Ü¿ø ¸ñ·Ï
+	std::vector<sUserPrize>		m_vectorPrizeList;			// º¸»ó ¸ñ·Ï
 
 	// Controls
 	CUIButton				m_btnClose;						// Close button	
@@ -126,15 +126,15 @@ public:
 	void	ClearRankingList();
 	void	ClearPrizeList();
 	
-	// ë³´ìƒ ëª©ë¡ ê´€ë¦¬.
+	// º¸»ó ¸ñ·Ï °ü¸®.
 	void	AddToPrizeList( const CTString& strName, INDEX iItemIndex, INDEX iItemCount, BOOL bReward );	
 
-	// ë©¤ë²„ ëª©ë¡ ê´€ë¦¬
-	void	AddToRankingList( const CTString& strName, BOOL bSuccess, LONG lPoint, __int64 llTime );		// ë©¤ë²„ ëª©ë¡ì— ì¶”ê°€	
+	// ¸â¹ö ¸ñ·Ï °ü¸®
+	void	AddToRankingList( const CTString& strName, BOOL bSuccess, LONG lPoint, __int64 llTime );		// ¸â¹ö ¸ñ·Ï¿¡ Ãß°¡	
 
-	// ë©¤ë²„ ëª©ë¡ ê°±ì‹ 
-	// NOTE : ì¸í„°í˜ì´ìŠ¤ë¥¼ ì—´ë•ŒëŠ” ë°˜ë“œì‹œ ê°±ì‹ ë˜ì–´ì•¼ í•˜ëŠ” ë¶€ë¶„ì´ë¯€ë¡œ TRUEë¡œ ì„¤ì •í•˜ê³ ,
-	// NOTE : ë³´ì´ëŠ” ìƒíƒœì¼ë•Œë§Œ ê°±ì‹ í•˜ê³ ì í•œë‹¤ë©´ FALSEë¡œ ì„¤ì •í• ê²ƒ.
+	// ¸â¹ö ¸ñ·Ï °»½Å
+	// NOTE : ÀÎÅÍÆäÀÌ½º¸¦ ¿­¶§´Â ¹İµå½Ã °»½ÅµÇ¾î¾ß ÇÏ´Â ºÎºĞÀÌ¹Ç·Î TRUE·Î ¼³Á¤ÇÏ°í,
+	// NOTE : º¸ÀÌ´Â »óÅÂÀÏ¶§¸¸ °»½ÅÇÏ°íÀÚ ÇÑ´Ù¸é FALSE·Î ¼³Á¤ÇÒ°Í.
 	void	RefreshRankingList( BOOL bInit = FALSE );
 	void	RefreshPrizeList( BOOL bInit = FALSE );	
 
@@ -143,6 +143,67 @@ public:
 
 	// Set focus
 	void	SetFocus( BOOL bVisible );	
+	// esc closing support [5/30/2011 rumist]
+	BOOL	CloseWindowByEsc()				{ ResetRanking();			return TRUE;		}
+};
+
+class CUICubeRank : public CUIWindow
+{
+protected:
+
+	struct sCubeRank
+	{
+		sCubeRank()
+		{
+			Init();
+		}
+		
+		~sCubeRank()
+		{
+
+		}
+		
+		void Init()
+		{
+			nRank = 0;
+			strGuildName = "";
+			strChaName = "";
+			lPoint = 0;
+		}
+		BYTE nRank;
+		CTString strGuildName;
+		CTString strChaName;
+		LONG lPoint;
+	};
+
+	LONG m_lMypoint;	
+	sCubeRank m_stCubeRank[2][5];
+	CUIDrawBox	m_bxBackground[4];
+	CUIButton		m_btnOK;
+
+	BOOL		m_bGuild;
+	// Region of each part
+	UIRect					m_rcTitle;						// Region of title bar	
+
+
+
+public:
+	CUICubeRank();
+	~CUICubeRank();
+	// Create
+	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+	
+	// Render
+	void	Render();
+	
+	// Adjust position
+	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	WMSG_RESULT MouseMessage( MSG *pMsg );
+
+	void	CubeRankInit();
+	void	CubeRankClose();
+	void	CreateCubeState(CNetworkMessage *istr, BOOL bGuild);
 };
 
 #endif	// UIRANKING_H_

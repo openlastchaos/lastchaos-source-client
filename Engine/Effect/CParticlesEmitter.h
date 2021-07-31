@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLESEMITTER_H__
 #define __CPARTICLESEMITTER_H__
 
@@ -21,7 +21,7 @@ enum EMIT_AXIS_TYPE
 {
 	EAT_PLUS_X	= 0,
 	EAT_MINUS_X	= 1,
-	EAT_PLUS_Y	= 2,	//ê¸°ë³¸ê°’
+	EAT_PLUS_Y	= 2,	//±âº»°ª
 	EAT_MINUS_Y	= 3,
 	EAT_PLUS_Z	= 4,
 	EAT_MINUS_Z	= 5,
@@ -77,20 +77,20 @@ protected:
 	INDEX TimeProcessAndAddParticle(FLOAT deltaTime, CParticles &particles);
 
 	//content
-	PARTICLES_EMITTER_TYPE	m_petType;	//ì—ë¯¸í„° íƒ€ì….
-	ULONG	m_ulTotalCount;		//ì´ ë°©ì¶œ ê°œìˆ˜
-	FLOAT	m_fCountPerSec;		//ë°©ì¶œ ì†ë„.
-	CParticlePrototype	m_particlePrototype;	//íŒŒí‹°í´ì˜ í”„ë¡œí† íƒ€ì…, ìœ„ì¹˜, ë°©í–¥, ì†ë„, ê°€ì†ë„ëŠ” ì‚¬ìš©ë˜ì§€ ì•ŠìŒ.
+	PARTICLES_EMITTER_TYPE	m_petType;	//¿¡¹ÌÅÍ Å¸ÀÔ.
+	ULONG	m_ulTotalCount;		//ÃÑ ¹æÃâ °³¼ö
+	FLOAT	m_fCountPerSec;		//¹æÃâ ¼Óµµ.
+	CParticlePrototype	m_particlePrototype;	//ÆÄÆ¼Å¬ÀÇ ÇÁ·ÎÅäÅ¸ÀÔ, À§Ä¡, ¹æÇâ, ¼Óµµ, °¡¼Óµµ´Â »ç¿ëµÇÁö ¾ÊÀ½.
 	BOOL	m_bLocalType;
 	//instance
 	PARTICLE_RENDER_TYPE	m_ePtcType;
-	FLOAT3D		m_vCenter;		//Emitterì˜ ì¤‘ì‹¬
-	FLOATquat3D	m_quatDir;		//Emitterì˜ ë°©í–¥, ìˆë‹¤ë©´...
-	ULONG	m_ulLeftCount;		//í˜„ì¬ ë‚¨ì€ ë°©ì¶œ ê°€ëŠ¥ìˆ˜
-	FLOAT	m_fProcessedTime;	//ì§„í–‰ëœ ì‹œê°„.
+	FLOAT3D		m_vCenter;		//EmitterÀÇ Áß½É
+	FLOATquat3D	m_quatDir;		//EmitterÀÇ ¹æÇâ, ÀÖ´Ù¸é...
+	ULONG	m_ulLeftCount;		//ÇöÀç ³²Àº ¹æÃâ °¡´É¼ö
+	FLOAT	m_fProcessedTime;	//ÁøÇàµÈ ½Ã°£.
 };
 
 typedef CRefCountPtr<CParticlesEmitter> ptr_emitter;
 
 #endif //__CPARTICLESEMITTER_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

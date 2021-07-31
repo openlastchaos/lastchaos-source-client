@@ -40,14 +40,14 @@ TIME _CurrentTickTimer = 0.0f;
 // pointer to global timer object
 CTimer *_pTimer = NULL;
 //! 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Adjust Time Tick)(0.1)
-const TIME	CTimer::TickQuantum = TIME(1/20.0);		// ì›ëž˜ 20 ticks per second
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Adjust Time Tick)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Adjust Time Tick)(0.1)
+const TIME	CTimer::TickQuantum = TIME(1/20.0);		// ¿ø·¡ 20 ticks per second
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Adjust Time Tick)(0.1)
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.2)
 float g_fGWTime = 0.0f;
 float g_fGWTimeMul = 1.0f;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.2)
 
 /*
  * Timer interrupt callback function.
@@ -97,10 +97,7 @@ void CTimer_TimerFunc_internal(void)
 	_pTimer->tmTimeDelay = (TIME)(tvTimeNow - _pTimer->tm_tvLastTimeOnTime).GetSeconds();
 	_pTimer->tmTickDelay = (tmTickNow - _pTimer->tm_tmLastTickOnTime);
 
-/*	if (_pTimer->tmTimeDelay > 0.05f)
-	{
-		CPrintF("tmTimeDelay : %f || tmTickDelay : %f \n", _pTimer->tmTimeDelay, _pTimer->tmTickDelay);
-	}*/
+	//CPrintF("tmTimeDelay : %f || tmTickDelay : %f \n", tmTimeDelay, tmTickDelay);
 
     _sfStats.StartTimer(CStatForm::STI_TIMER);
     // if we are keeping up to time (more or less)
@@ -155,7 +152,8 @@ static __int64 GetCPUSpeedHz(void)
   __int64 llSpeedMeasured;
 
   // try to measure
-  for( INDEX iSet=0; iSet<MAX_MEASURES; iSet++)
+  INDEX iSet;
+  for(iSet = 0; iSet < MAX_MEASURES; iSet++)
   { // one time has several tries
     for( iTry=0; iTry<MAX_MEASURE_TRIES; iTry++)
     { // wait the state change on the timer
@@ -253,6 +251,18 @@ CTimer::CTimer(BOOL bInterrupt /*=TRUE*/)
   // disable lerping by default
   tm_fLerpFactor = 1.0f;
   tm_fLerpFactor2 = 1.0f;
+  
+  uPeriod = TARGET_RESOLUTION;
+
+  TIMECAPS tc;
+
+  if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR)
+  {
+		// Error
+  }
+
+  uPeriod = min(max(tc.wPeriodMin, TARGET_RESOLUTION), tc.wPeriodMax);
+  timeBeginPeriod(uPeriod);
 
   //0216
   tm_tvStartTime = GetHighPrecisionTimer();
@@ -271,7 +281,8 @@ CTimer::CTimer(BOOL bInterrupt /*=TRUE*/)
     if( tm_TimerID==NULL) FatalError(TRANS("Cannot initialize multimedia timer!"));
 
     // make sure that timer interrupt is ticking
-    for( INDEX iTry=1; iTry<=3; iTry++) {
+	INDEX iTry;
+    for(iTry = 1; iTry <= 3; iTry++) {
       const TIME tmTickBefore = GetRealTimeTick();
       Sleep(1000* iTry*3 *TickQuantum);
       const TIME tmTickAfter = GetRealTimeTick();
@@ -289,7 +300,7 @@ CTimer::CTimer(BOOL bInterrupt /*=TRUE*/)
 CTimer::~CTimer(void)
 {
   ASSERT(_pTimer == this);
-
+	timeEndPeriod(uPeriod);
   // destroy timer
   if (tm_bInterrupt) {
     ASSERT(tm_TimerID!=NULL);

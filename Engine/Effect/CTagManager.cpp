@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #include "stdH.h"
 #pragma warning(disable : 4786)
@@ -21,28 +21,28 @@ CTagManager::~CTagManager()
 
 BOOL CTagManager::Register(CTag *pTag)
 {
-	//ì´ë¦„ì´ ì—†ê±°ë‚˜ ê°™ì€ ì´ë¦„ìœ¼ë¡œ ë“±ë¡ëœ ê²ƒì´ ìˆìŒ
+	//ÀÌ¸§ÀÌ ¾ø°Å³ª °°Àº ÀÌ¸§À¸·Î µî·ÏµÈ °ÍÀÌ ÀÖÀ½
 	if( pTag->GetName() == "" || Find(pTag->GetName()) != NULL ) return FALSE;
 
 	my_ptr ptr( pTag->Copy() );
 	if( pTag->GetName() == "__ROOT" ) m_ptrRootTag = ptr;
 	my_map::value_type registerTri( pTag->GetName(), ptr );
-	//ë“±ë¡ ì„±ê³µ or ì‹¤íŒ¨ ì •ë³´ë¥¼ ë¦¬í„´
+	//µî·Ï ¼º°ø or ½ÇÆĞ Á¤º¸¸¦ ¸®ÅÏ
 	return m_mapRegistered.insert( registerTri ).second;
 }
 
 BOOL CTagManager::RegisterNoCopy(CTag *pTag)
 {
-	//ì´ë¦„ì´ ì—†ê±°ë‚˜ ê°™ì€ ì´ë¦„ìœ¼ë¡œ ë“±ë¡ëœ ê²ƒì´ ìˆìŒ
+	//ÀÌ¸§ÀÌ ¾ø°Å³ª °°Àº ÀÌ¸§À¸·Î µî·ÏµÈ °ÍÀÌ ÀÖÀ½
 	if( pTag->GetName() == "" || Find(pTag->GetName()) != NULL ) return FALSE;
 
 	if( pTag->GetName() == "__ROOT" ) m_ptrRootTag = pTag;
 	my_map::value_type registerTri( pTag->GetName(), ptr_tag(pTag) );
-	//ë“±ë¡ ì„±ê³µ or ì‹¤íŒ¨ ì •ë³´ë¥¼ ë¦¬í„´
+	//µî·Ï ¼º°ø or ½ÇÆĞ Á¤º¸¸¦ ¸®ÅÏ
 	return m_mapRegistered.insert( registerTri ).second;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 BOOL CTagManager::Unregister(const char *name)
 {
 	if( std::string(name) == "__ROOT" ) m_ptrRootTag.SetNull();
@@ -50,7 +50,7 @@ BOOL CTagManager::Unregister(const char *name)
 }
 
 BOOL CTagManager::Unregister(std::string &name)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 {
 	my_map::iterator iter = m_mapRegistered.find(name);
 	if(iter == m_mapRegistered.end()) return FALSE;
@@ -59,21 +59,21 @@ BOOL CTagManager::Unregister(std::string &name)
 	return TRUE;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 BOOL CTagManager::IsRegister(const char *name)
 {
 	return IsRegister(std::string(name));
 }
 
 BOOL CTagManager::IsRegister(std::string &name)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 {
 	my_map::iterator iter = m_mapRegistered.find(name);
 	if(iter == m_mapRegistered.end()) return FALSE;
 	return TRUE;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 CTag *CTagManager::Find(const char *name, BOOL bFindHierarchy)
 {
 	return Find(std::string(name), bFindHierarchy);
@@ -81,22 +81,28 @@ CTag *CTagManager::Find(const char *name, BOOL bFindHierarchy)
 
 CTag *CTagManager::Find(std::string &name, BOOL bFindHierarchy)
 {
-	my_map::iterator iter = m_mapRegistered.find(name);
-	if(iter != m_mapRegistered.end()) return (*iter).second.GetNative();
-/*
-	//not found in this tag manager
-	if(!bFindHierarchy)	return NULL;
-	else if(!m_vectorChild.empty())
+	if (!m_mapRegistered.empty())
+	{
+		my_map::iterator iter = m_mapRegistered.find(name);
+		if(iter != m_mapRegistered.end()) return (*iter).second.GetNative();
+	}
+
+	if (bFindHierarchy == FALSE)
+	{
+		return NULL;
+	}
+	else if(m_vectorChild.empty() == false)
 	{
 		CTag *pRet = NULL;
 		for(INDEX i=0; i < m_vectorChild.size() && pRet == NULL; ++i)
 		{
 			pRet = m_vectorChild[i]->Find(name, TRUE);
+
+			if (pRet != NULL)
+				return pRet;
 		}
-		return pRet;
 	}
-	else return NULL;
-*/
+
 	return NULL;
 }
 
@@ -119,4 +125,4 @@ BOOL CTagManager::HasActiveTag()
 }
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

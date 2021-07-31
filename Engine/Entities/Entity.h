@@ -13,12 +13,12 @@
 #include <Engine/Math/Placement.h>
 #include <Engine/Entities/EntityEvent.h>
 #include <Engine/Entities/EntityPointer.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include <Engine/Effect/CTag.h>
 #include <Engine/Effect/CEntityTag.h>
 #include <Engine/Effect/CTagManager.h>
 #include <Engine/Effect/CRefCountPtr.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 #define WLD_AUTO_ENTITY_ID  -1
 
@@ -43,6 +43,7 @@ public:
 	FLOAT fs_fVelocity;       // max. velocity that force can give (m/s) (along the direction)
 };
 
+typedef ULONG64		ZONEFLAGS;
 
 #define DECL_DLL ENGINE_API
 #include <Engine/Classes/BaseEvents.h>
@@ -92,7 +93,7 @@ public:
 #define ENF_PROJECTIONSHADOWS (1L<<17)  // model that has cluster shadows
 #define ENF_ZONEMOVING		  (1L<<19)
 // prediction was here!
-//0607 kwon ì¶”ê°€.
+//0607 kwon Ãß°¡.
 #define ENF_ITEM            (1L<<20)  
 #define ENF_HIDDEN            (1L<<21)  // set if the entity is hidden (for editing)
 #define ENF_NOSHADINGINFO     (1L<<22)  // the entity doesn't need FindShadingInfo(), it will set its own shading
@@ -102,14 +103,14 @@ public:
 #define ENF_MARKDESTROY       (1L<<26)  // when this entity is destroyed, remember it so we can transport that over network
 #define ENF_NONETCONNECT      (1L<<27)  // marks that this no update is required for this entity on game join (unless any of the two previous flags are set)
 #define ENF_NICEWATER		  (1L<<28)
-// FIXME : ENF_CHARACTER í”Œë˜ê·¸ë¥¼ ì²´í¬í•˜ëŠ” ë°©ì‹ì´ ì•„ë‹Œ, IsCharacter() ê²€ì‚¬ë¡œ í•´ê²° ê°€ëŠ¥í•¨.
-// FIXME : IsOfClassë‚˜ ê¸°íƒ€ ë‹¤ë¥¸ í•¨ìˆ˜ë¡œë„ ì»¤ë²„ ê°€ëŠ¥í•¨.
+// FIXME : ENF_CHARACTER ÇÃ·¡±×¸¦ Ã¼Å©ÇÏ´Â ¹æ½ÄÀÌ ¾Æ´Ñ, IsCharacter() °Ë»ç·Î ÇØ°á °¡´ÉÇÔ.
+// FIXME : IsOfClass³ª ±âÅ¸ ´Ù¸¥ ÇÔ¼ö·Îµµ Ä¿¹ö °¡´ÉÇÔ.
 //#define ENF_CHARACTER		  (1L<<29)
 #define	ENF_SHOWHIDDEN		  (1L<<30)	// show hidden npc (only show npc)
 #define ENF_RENDERREFLECTION  (1L<<31)
 //------------------------------------------------------------
-// ì£¼ì˜!!! ë”ì´ìƒ í”Œë˜ê·¸ë¥¼ ì¶”ê°€í•˜ì§€ ë§ê²ƒ.
-// 4bytesë¥¼ ëª¨ë‘ ë‹¤ ì‚¬ìš©í–ˆìŒ.
+// ÁÖÀÇ!!! ´õÀÌ»ó ÇÃ·¡±×¸¦ Ãß°¡ÇÏÁö ¸»°Í.
+// 4bytes¸¦ ¸ğµÎ ´Ù »ç¿ëÇßÀ½.
 //------------------------------------------------------------
 // First Extra Flags
 #define ENF_EX1_TERRAINSHADOW	(1L<<0)
@@ -117,12 +118,25 @@ public:
 #define ENF_EX1_PEACEFUL		(1L<<4)
 #define ENF_EX1_NPC				(1L<<5)
 #define ENF_EX1_PRODUCTION		(1L<<6)
-#define ENF_EX1_CURRENT_PET		(1L<<7)		// ë‚´ ì• ì™„ë™ë¬¼ì¸ ê²½ìš°...
-#define ENF_EX1_CURRENT_SLAVE	(1L<<8)		// ë‚´ ì†Œí™˜ìˆ˜ì˜ ê²½ìš°...
-#define ENF_EX1_CURRENT_WILDPET	(1L<<9)		// ê³µí˜í˜• íŒ»ì¸ê²½
-
+#define ENF_EX1_CURRENT_PET		(1L<<7)		// ³» ¾Ö¿Ïµ¿¹°ÀÎ °æ¿ì...
+#define ENF_EX1_CURRENT_SLAVE	(1L<<8)		// ³» ¼ÒÈ¯¼öÀÇ °æ¿ì...
+#define ENF_EX1_CURRENT_WILDPET	(1L<<9)		// °øÇõÇü ÆÖÀÎ°æ
+#define ENF_EX1_CLICK_OBJECT	(1L<<10)	// Å¬¸¯°¡´ÉÇÑ ¿ÀºêÁ§Æ®ÀÎ °æ¿ì(·¹ÀÌµå ½Ã½ºÅÛ¿ë)
+#define ENF_EX1_MONSTER_MERCENARY	(1L<<11)	// [2010/10/20 : Sora] ¸ó½ºÅÍ ¿ëº´ Ä«µå
+#define ENF_EX1_TOTEM			(1L<<12)	// Totem
+#define ENF_EX1_TRAP			(1L<<13)	// Trap
+#define ENF_EX1_SUICIDE			(1L<<14)	// ÀÚÆø ±â»ıÃæ
+#define ENF_EX1_TOTEM_ITEM		(1L<<15)	// Totem
 // selections of entities
 typedef CSelection<CEntity, ENF_SELECTED> CEntitySelection;
+
+enum EntityComponentType {  // DO NOT RENUMBER!
+	ECT_TEXTURE   = 1,    // texture data
+	ECT_MODEL     = 2,    // model data
+	ECT_CLASS     = 3,    // entity class
+	ECT_SOUND     = 4,    // sound data
+	ECT_SKAMODEL  = 5,    // ska model
+};
 
 /*
 *  General structure of an entity instance.
@@ -147,10 +161,19 @@ public:
 		RT_SKAMODEL    = 9,     // render as ska model
 		RT_SKAEDITORMODEL = 10, // render as ska model, but only in editor
 		RT_TERRAIN        = 11, // render as terrain
-
-
-
 	};
+
+	enum NickNameEffectType {
+ 		NICKNAME_ATTACK_EFFECT = 0,
+ 		NICKNAME_DAMAGE_EFFECT = 1,
+		NICKNAME_ATTACH_EFFECT = 2,
+	 };
+
+	enum EntityUseType {
+		EU_NORMAL	= 0,
+		EU_DUMMY	= 1,		// Only using modelinstance
+	};
+
 	/* Entity physics flags. */
 #define EPF_ORIENTEDBYGRAVITY     (1UL<<0) // set if gravity influences its orientation
 #define EPF_TRANSLATEDBYGRAVITY   (1UL<<1) // set if gravity can move it
@@ -204,6 +227,7 @@ public:
 #define ESOUND_MAX_DATA_SIZE 32
 	
 public:
+	enum EntityUseType en_EntityUseType;	// how is this used type
 	enum RenderType en_RenderType;  // how is it rendered
 	ULONG en_ulPhysicsFlags;        // ways of interacting with environment
 	ULONG en_ulCollisionFlags;      // which entities to collide with
@@ -243,7 +267,7 @@ public:
 		class CCharacterTarget	*en_pCharacterTarget;
 		class CPetTarget		*en_pPetTarget;
 		class CSlaveTarget		*en_pSlaveTarget;
-		class CWildPetInfo		*en_pWildPetInfo;
+		class CWildPetTarget	*en_pWildPetTarget;
 	};
 	
 	CTString en_strItemName;
@@ -259,10 +283,10 @@ public: // these must be public for iteration
 	CListHead en_lhChildren;      // list of child entities
 public:
 	CPlacement3D en_plRelativeToParent;   // placement relative to parent placement
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	//CTagManager		*m_ptmTagManager;
 	CLightSource	*m_plsLight;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	
 public:
 	// reference counting functions
@@ -396,7 +420,7 @@ public:
 	void SetSkaModel(SLONG idSkaModelComponent);
 	void SetSkaColisionInfo();
 
-	//0601 kwon í•¨ìˆ˜ ì¶”ê°€.
+	//0601 kwon ÇÔ¼ö Ãß°¡.
 	CModelInstance* SetSkaModelItem(const CTString &fnmModel);
 	CModelInstance* SetSkaModelItem_t(const CTString &fnmModel);
 	
@@ -475,6 +499,8 @@ public:
 	void PrecacheSound(SLONG slID);
 	void PrecacheClass(SLONG slID, INDEX iUser = -1);
 	void PrecacheSkaModel(SLONG slID);
+
+	void ReleaseChche(EntityComponentType eType, SLONG slID);
 	
 	/* Create a new entity of given class in this world. */
 	CEntity *CreateEntity(const CPlacement3D &plPlacement, SLONG idModelComponent,ULONG ulEntityID = WLD_AUTO_ENTITY_ID,BOOL bNetwork = TRUE);
@@ -606,7 +632,7 @@ public:
 	inline CCharacterTarget *GetCharacterTarget(void) { return en_pCharacterTarget; }
 	inline CPetTarget *GetPetTarget(void) { return en_pPetTarget; }
 	inline CSlaveTarget *GetSlaveTarget(void) { return en_pSlaveTarget; }
-	inline CWildPetInfo *GetWildPetTargetInfo(void) { return en_pWildPetInfo; }
+	inline CWildPetTarget *GetWildPetTargetInfo(void) { return en_pWildPetTarget; }
 	void SetParent(CEntity *penNewParent);
 	
 	// find first child of given class
@@ -623,6 +649,8 @@ public:
 	virtual BOOL	IsSlave(void) const;
 	virtual BOOL	IsWildPet(void) const;
 	virtual SBYTE	GetNetworkType()	const;
+	// is available pet riding.
+	virtual BOOL	IsAvailableRide(void);
 
 	/* Return max Game Players */
 	static INDEX GetMaxPlayers(void);
@@ -637,7 +665,7 @@ public:
 	CLastPositions *GetLastPositions(INDEX ctPositions);
 	/* Get nearest position of nearest brush polygon to this entity if available. */
 	CBrushPolygon *GetNearestPolygon(FLOAT3D &vPoint, FLOATplane3D &plPlane, FLOAT &fDistanceToEdge);
-	// BSPìœ„ì— ê·¸ë¦¼ìë¥¼ ë¿Œë ¤ì£¼ê¸° ìœ„í•´ì„œ í•„ìš”í•œ í•¨ìˆ˜.
+	// BSPÀ§¿¡ ±×¸²ÀÚ¸¦ »Ñ·ÁÁÖ±â À§ÇØ¼­ ÇÊ¿äÇÑ ÇÔ¼ö.
 	void GetNearPolygonsInSphere(FLOAT fRadius, CDynamicContainer<CBrushPolygon> &dcBrushPolygon);
 	/* Get absolute position of point on entity given relative to its size. */
 	void GetEntityPointRatio(const FLOAT3D &vRatio, FLOAT3D &vAbsPoint, BOOL bLerped=FALSE);
@@ -670,12 +698,12 @@ public:
 	/* Check if entity can drop marker for making linked route. */
 	virtual BOOL DropsMarker(CTFileName &fnmMarkerClass, CTString &strTargetProperty) const;
 	/* Get light source information - return NULL if not a light source. */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	CLightSource *GetLightSource(void)
 	{
 		return m_plsLight;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 	/* Is target valid. */
 	virtual BOOL IsTargetValid(SLONG slPropertyOffset, CEntity *penTarget);
 	
@@ -758,20 +786,30 @@ public:
 	/* Fill in entity statistics - for AI purposes only */
 	virtual BOOL FillEntityStatistics(struct EntityStats *pes);
 	
+	/* ·¹ÀÌµå ¿ÀºêÁ§Æ® ¼±¾ğ*/
+	virtual BOOL GetRaidObject(void) const;
+	virtual INDEX GetRaidEvent(void) const;
+	virtual BOOL GetAlBackground(void) const; // ska ¸ğµ¨ ·£´õ¸µ Á¤·Ä¿ë
+	
 	/* Model change notify */
 	void ModelChangeNotify(void);
 	/* Terrain change notify */ 
 	void TerrainChangeNotify(void);
 	
-	// FIXME : ì™œ ë¹„ìŠ·í•œ ì½”ë“œê°€ ì´ë ‡ê²Œ ë§ì´ ìˆëŠ”ê±°ì§€? ã…¡.ã…¡
-	void SetTargetInfo(float fMaxHealth, float fHealth, BOOL bMe, int level, int Pk = -1,int PkState = 0,int PkLegit=0,int dbIdx=-1);
+	// FIXME : ¿Ö ºñ½ÁÇÑ ÄÚµå°¡ ÀÌ·¸°Ô ¸¹ÀÌ ÀÖ´Â°ÅÁö? ¤Ñ.¤Ñ
+	bool SetTargetInfo(float fMaxHealth, float fHealth, BOOL bMe, int level, int Pk = -1,int PkState = 0,int PkLegit=0,int dbIdx=-1);
+	void SetTargetSyndicateInfo(int nType, int nGrade);
 	void UpdateTargetInfo( float fMaxHealth, float fHealth ,int Pk = -1, int PkState = 0,int PkLegit=0);
 	void DelTargetInfo();
 	// WSS_GUILDMASTER 070517 ------------------>><<
-	// ìˆ˜ì • -> ê¸¸ë“œê´€ë ¨ ë‚´ìš© ctë¥¼ ì´ìš©í•´ ì²˜ë¦¬ 
-	// player.esì˜ ê´€ë ¨ í•¨ìˆ˜ í˜¸ì¶œ ë¶€ë¶„( charater í˜¸ì¶œ ë¶€ë¶„ ìˆ˜ì •í•¨)
-	void SetTargetInfoReal( float fMaxHealth, float fHealth, int level, int Pk = -1, int PkState = 0, SQUAD llCount = 0,int PkLegit=0,CCharacterTarget* ct =NULL);
-
+	// ¼öÁ¤ -> ±æµå°ü·Ã ³»¿ë ct¸¦ ÀÌ¿ëÇØ Ã³¸® 
+	// player.esÀÇ °ü·Ã ÇÔ¼ö È£Ãâ ºÎºĞ( charater È£Ãâ ºÎºĞ ¼öÁ¤ÇÔ)	nType == DBIndex
+	void SetTargetInfoReal( float fMaxHealth, float fHealth, int level, int Pk = -1, int PkState = 0, SQUAD llCount = 0,int PkLegit=0,CCharacterTarget* ct =NULL, int nType = -1);
+	void AddSkaModel(const CTString &fnmModel);
+	void DelSkaModel(const CTString &fnmModel);
+	bool HasSkaModel(const CTString &fnmModel);
+	virtual void SetNickNameDamageEffect(INDEX iNickIndex, NickNameEffectType iType);
+	virtual void SetCustomTitleEffect(CTString effectName);
 };
 
 // all standard smart pointer functions are here as inlines

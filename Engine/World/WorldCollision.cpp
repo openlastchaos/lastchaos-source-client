@@ -1,6 +1,7 @@
 #include "StdH.H"
 
 #include <Engine/World/World.h>
+#include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/World/WorldCollision.h>
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Base/ListIterator.inl>
@@ -22,6 +23,8 @@
 #include <Engine/LocalDefine.h>
 #include <Engine/Interface/UIManager.h>
 #include <Engine/Network/Server.h>
+#include <Engine/Interface/UISiegeWarfareNew.h>
+#include <Engine/Object/ActorMgr.h>
 
 // these are used for making projections for converting from X space to Y space this way:
 //  MatrixMulT(mY, mX, mXToY);
@@ -560,7 +563,7 @@ void CClipMove::FindAbsoluteMovementBoxForA(void)
 	}
 }
 
-//Temp ì‹œì‘
+//Temp ½ÃÀÛ
 /*
  * Clip movement if B is a model.
  */
@@ -606,7 +609,7 @@ void CClipMove::ClipModelMoveToModel(void)
 #include <Engine/Math/OBBox.h>
 void CClipMove::ClipModelMoveToModel(void)
 {
-	//Sphereê°„ ì¶©ëŒì— í•„ìš”í•œ ë°ì´í„° ì¤€ë¹„. AABBì „ì²´ë¥¼ í¬í•¨í•˜ëŠ” Sphereì„.
+	//Sphere°£ Ãæµ¹¿¡ ÇÊ¿äÇÑ µ¥ÀÌÅÍ ÁØºñ. AABBÀüÃ¼¸¦ Æ÷ÇÔÇÏ´Â SphereÀÓ.
 	INDEX temp;
 	FLOATaabbox3D abA, abB;
 	cm_penMoving->GetCollisionBoxParameters(cm_penMoving->GetCollisionBoxIndex(), abA, temp);
@@ -620,7 +623,7 @@ void CClipMove::ClipModelMoveToModel(void)
 	vB[0] += abA.Size();
 	vB[1] += abA.Size();
 
-	FLOAT fRadiusA = abA.Size().Length() * 0.49f;//ë°˜ì§€ë¦„ ê³„ì‚°ì„ Entityìª½ì— ë¯¸ë£¨ë©´ ë©”ëª¨ë¦¬ëŠ” ë”ì“°ì§€ë§Œ ì—°ì‚°ëŸ‰ì€ ì ì–´ì§.
+	FLOAT fRadiusA = abA.Size().Length() * 0.49f;//¹İÁö¸§ °è»êÀ» EntityÂÊ¿¡ ¹Ì·ç¸é ¸Ş¸ğ¸®´Â ´õ¾²Áö¸¸ ¿¬»ê·®Àº Àû¾îÁü.
 	FLOAT fRadiusB = abB.Size().Length() * 0.49f;
 
 	//sphere test
@@ -637,8 +640,8 @@ void CClipMove::ClipModelMoveToModel(void)
 	//obb test
  	if( !obA.HasContactWith(obB) ) return;
 
-	//slidingì„ ìœ„í•œ ì ‘ì´‰ë©´ ì¶”ì •, A, Bì‚¬ì´ ì„ ë¶„ì´ Bì˜ obbì˜ ì–´ëŠë©´ì„ í†µê³¼í–ˆë‚˜ë¡œ ì¶”ì •.
-	//B(tested)ì˜ obbì˜ ì„¸ ì¶•ì— ëŒ€í•œ dotê°’ ê³„ì‚°.
+	//slidingÀ» À§ÇÑ Á¢ÃË¸é ÃßÁ¤, A, B»çÀÌ ¼±ºĞÀÌ BÀÇ obbÀÇ ¾î´À¸éÀ» Åë°úÇß³ª·Î ÃßÁ¤.
+	//B(tested)ÀÇ obbÀÇ ¼¼ Ãà¿¡ ´ëÇÑ dot°ª °è»ê.
 	const FLOAT3D vStartToEnd = vA[1] - vA[0];
 	FLOAT3D vAxisXB = mB[iUseIndex].GetColumn(1);
 	FLOAT3D vAxisYB = mB[iUseIndex].GetColumn(2);
@@ -651,8 +654,8 @@ void CClipMove::ClipModelMoveToModel(void)
 	fAxisValB2 = fabs(fAxisValB2);
 	fAxisValB3 = fabs(fAxisValB3);
 
-	//B(tested)ì˜ obbì˜ í•œ ë©´ì˜ normalì„ Collision normalë¡œ ì‚¼ëŠ”ë‹¤.
-	//ì¶•ì˜ ê°’ì´ ì œì¼ í¬ë‹¤ëŠ” ê²ƒì€ ê·¸ ì¶•ì´ ë°©í–¥ì˜ obbë©´ì—ì„œ ì¶©ëŒì´ ìˆì—ˆì„ ê°€ëŠ¥ì„±ì´ í¬ë‹¤ëŠ” ëœ»ì„.
+	//B(tested)ÀÇ obbÀÇ ÇÑ ¸éÀÇ normalÀ» Collision normal·Î »ï´Â´Ù.
+	//ÃàÀÇ °ªÀÌ Á¦ÀÏ Å©´Ù´Â °ÍÀº ±× ÃàÀÌ ¹æÇâÀÇ obb¸é¿¡¼­ Ãæµ¹ÀÌ ÀÖ¾úÀ» °¡´É¼ºÀÌ Å©´Ù´Â ¶æÀÓ.
 	FLOAT3D vCollisionNormalTemp(0,0,-1);
 	if( fAxisValB1 > fAxisValB2 && fAxisValB1 > fAxisValB3 )
 	{
@@ -670,10 +673,10 @@ void CClipMove::ClipModelMoveToModel(void)
 		else vCollisionNormalTemp = vAxisZB;
 	}
 
-	//CClipMoveì˜ ê°’ì„ ì„¸íŒ….
+	//CClipMoveÀÇ °ªÀ» ¼¼ÆÃ.
 	cm_fMovementFraction = fFractionValue;
 	cm_vClippedLine = (vStartToEnd * (1.0f - fFractionValue));
-	ASSERT(cm_vClippedLine.Length() < 100.0f);	//samì— ìˆë˜ê±°
+	ASSERT(cm_vClippedLine.Length() < 100.0f);	//sam¿¡ ÀÖ´ø°Å
 	//FLOAT3D vCollisionPoint = vStartToEnd * fFractionValue + vA[0];
 	FLOAT3D vCollisionPoint = vB[iUseIndex] + vCollisionNormalTemp;
 	FLOAT3D vCollisionNormal = vCollisionNormalTemp;
@@ -682,8 +685,8 @@ void CClipMove::ClipModelMoveToModel(void)
 	cm_penHit = cm_penTested;
 	cm_pbpoHit = cm_pbpoTested;
 }
-*/	//OBB ë°©ì‹ ì¶©ëŒ
-//Temp ë
+*/	//OBB ¹æ½Ä Ãæµ¹
+//Temp ³¡
 
 
 
@@ -891,6 +894,8 @@ void CClipMove::CacheNearPolygons(void)
 
 void CClipMove::ClipToNonZoningSector(CBrushSector *pbsc)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// for each polygon in the sector
 	FOREACHINSTATICARRAY(pbsc->bsc_abpoPolygons, CBrushPolygon, itbpo) {
 		// if its bbox has no contact with bbox of movement path, or it is passable
@@ -900,15 +905,15 @@ void CClipMove::ClipToNonZoningSector(CBrushSector *pbsc)
 			continue;
 		}
 		//WSS_DRATAN_SIEGEWARFARE 071009 -------------------------------------->>
-		//ë“œë¼íƒ„ ê³µì„±ì‹œ ìˆ˜ì„±ì¸¡ì˜ ê²½ìš° ê²°ê³„ ì¶©ëŒì„ í•˜ì§€ ì•Šê²Œ í•œë‹¤.
+		//µå¶óÅº °ø¼º½Ã ¼ö¼ºÃøÀÇ °æ¿ì °á°è Ãæµ¹À» ÇÏÁö ¾Ê°Ô ÇÑ´Ù.
 		BOOL tJoin = FALSE;
-		if (_pUIMgr->GetSiegeWarfareNew()->GetWarState())
+		if (pUIManager->GetSiegeWarfareNew()->GetWarState())
 		{			
 			if( cm_penB->en_ulID == 14230 ||
 				cm_penB->en_ulID == 14229 ||
 				cm_penB->en_ulID == 14228 )
 			{	
-				// í”Œë ˆì´ì–´ ìºë¦­í„°
+				// ÇÃ·¹ÀÌ¾î Ä³¸¯ÅÍ
 				if( CEntity::GetPlayerEntity(0) == cm_penA )
 				{
 					if( _pNetwork->MyCharacterInfo.sbJoinFlagDratan == WCJF_OWNER || 
@@ -917,19 +922,22 @@ void CClipMove::ClipToNonZoningSector(CBrushSector *pbsc)
 						tJoin = TRUE;							
 					}							
 				}
-				// ë‹¤ë¥¸ ìºë¦­í„°
+				// ´Ù¸¥ Ä³¸¯ÅÍ
 				else 
 				{
-					for(INDEX i=0; i<_pNetwork->ga_srvServer.srv_actCha.Count(); ++i)
+					ObjectBase* pObject = ACTORMGR()->GetObjectByEntity(cm_penA);
+
+					if (pObject != NULL)
 					{
-						CCharacterTarget &ct = _pNetwork->ga_srvServer.srv_actCha[i];
-						if( ct.cha_pEntity == cm_penA )
+						if (pObject->m_eType == eOBJ_CHARACTER)
 						{
-							if( ct.cha_sbJoinFlagDratan == WCJF_OWNER || 
-								ct.cha_sbJoinFlagDratan == WCJF_DEFENSE_GUILD )
+							CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+							if( pTarget->cha_sbJoinFlagDratan == WCJF_OWNER || 
+								pTarget->cha_sbJoinFlagDratan == WCJF_DEFENSE_GUILD )
 							{
-								tJoin = TRUE;							
-							}							
+								tJoin = TRUE;
+							}
 						}
 					}
 				}
@@ -983,27 +991,27 @@ void CClipMove::ClipToTerrain(CEntity *pen)
 	}
 
 	// [070705: Su-won] ATTRIBUTEMAP_BLOCK
-#ifdef ATTRIBUTEMAP_BLOCK
 	CTRect rcExtract;
 	rcExtract.rc_slLeft = cm_boxMovementPath.minvect(1) -1.0f;
 	rcExtract.rc_slRight = cm_boxMovementPath.maxvect(1) +1.0f;
 	rcExtract.rc_slTop = cm_boxMovementPath.minvect(3) -1.0f;
 	rcExtract.rc_slBottom = cm_boxMovementPath.maxvect(3) +1.0f;
 
-
-	TR_ExtractAttrBlockPolygonsInRect( tr.tr_ptrTerrain, rcExtract, &pavVertices, ctVertices, &puwIndices, ctIndices, 10.0f);
-	for( iTri=0;iTri<ctIndices;iTri+=3) 
+	if(g_slZone != 21)
 	{
-		const INDEX iind1 = puwIndices[iTri+0];
-		const INDEX iind2 = puwIndices[iTri+1];
-		const INDEX iind3 = puwIndices[iTri+2];
-		const FLOAT3D &v0 = pavVertices[iind1];
-		const FLOAT3D &v1 = pavVertices[iind2];
-		const FLOAT3D &v2 = pavVertices[iind3];
-		ClipMoveToTerrainPolygon(v0,v1,v2);
+		TR_ExtractAttrBlockPolygonsInRect( tr.tr_ptrTerrain, rcExtract, &pavVertices, ctVertices, &puwIndices, ctIndices, 10.0f);
+		for( INDEX iTri = 0; iTri < ctIndices; iTri += 3)
+		{
+			const INDEX iind1 = puwIndices[iTri+0];
+			const INDEX iind2 = puwIndices[iTri+1];
+			const INDEX iind3 = puwIndices[iTri+2];
+			const FLOAT3D &v0 = pavVertices[iind1];
+			const FLOAT3D &v1 = pavVertices[iind2];
+			const FLOAT3D &v2 = pavVertices[iind3];
+			ClipMoveToTerrainPolygon(v0,v1,v2);
+		}
 	}
-#endif
-
+	
 }
 
 
@@ -1152,8 +1160,9 @@ void CClipMove::ClipMoveToModels(void)
 	}
 
 	// WSS_CHARACTER_COLLISION 070628 ------------->>
-	// ìì‹ ì˜ ìºë¦­í„°ë§Œ ì¶©ëŒ ì²´í¬
-	if(!cm_penMoving->IsPlayer())
+	// ÀÚ½ÅÀÇ Ä³¸¯ÅÍ¸¸ Ãæµ¹ Ã¼Å©
+	// $ : µå¶óÅº °ø¼º Ã³¸® ´ç½Ã ¼öÁ¤µÈ »çÇ×À¸·Î º¸ÀÓ. ½Ì±Û ´øÀü¿¡¼­´Â ÇÃ·¹ÀÌ¾î ¿ÜÀÇ ¸ğµ¨ÀÌ Ãæµ¹Ã³¸®¸¦ ÇØ¾ß µÇ¼­. ½Ì±Û´øÀüÀº ¿¹¿Ü·Î ÇÑ´Ù.
+	if(!cm_penMoving->IsPlayer() && !_pNetwork->m_bSingleMode)
 	{
 		return;	
 	}
@@ -1166,6 +1175,8 @@ void CClipMove::ClipMoveToModels(void)
 	static CStaticStackArray<CEntity*> apenNearEntities;
 	cm_pwoWorld->FindEntitiesNearBox(cm_boxMovementPath, apenNearEntities);
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// for each of the found entities
 	{for(INDEX ienFound=0; ienFound<apenNearEntities.Count(); ienFound++) {
 		CEntity &enToCollide = *apenNearEntities[ienFound];
@@ -1175,22 +1186,11 @@ void CClipMove::ClipMoveToModels(void)
 			continue;
 		}
 
-// WSS_CHARACTER_COLLISION 070628
-#define CASTLE_WAR
-#ifdef CASTLE_WAR
-		if(!_pNetwork->ga_bGuildWar &&
-			// WSS_DRATAN_SEIGEWARFARE 2007/09/11 
-			// ë“œë¼íƒ„ ê³µì„± ê´€ë ¨ ì¶©ëŒ ì¶”ê°€ 
-		   !(_pUIMgr->GetSiegeWarfareNew()->GetWarState()&&_pNetwork->MyCharacterInfo.sbAttributePos == ATTC_WAR) )
-		{			
-			// NOTE : ê³µì„±ì „ì—ì„œ ì¶©ëŒ ì²˜ë¦¬ë¥¼ í•˜ê²Œ í•˜ë„ë¡ í•˜ê¸° ìœ„í•œ ë¶€ë¶„.
-			// NOTE : Networkë‚˜ Worldì— ê³µì„±ì „ í”Œë˜ê·¸ë¥¼ ë„£ì–´ì£¼ë„ë¡ í•˜ì.
-			if( enToCollide.IsCharacter() || enToCollide.IsPlayer() )
-			{
-				continue; 
-			}
+		// °ø¼ºÀü¿¡ °ü°è ¾øÀÌ ¸ğµç Ä³¸¯ÅÍ, Player ´Â Ãæµ¹ °Ë»ç Á¦¿Ü
+		if( enToCollide.IsCharacter() || enToCollide.IsPlayer() )
+		{
+			continue; 
 		}
-#endif
 
 		if( enToCollide.GetFirstExFlags() & ( ENF_EX1_CURRENT_SLAVE | ENF_EX1_CURRENT_PET ) )
 		{

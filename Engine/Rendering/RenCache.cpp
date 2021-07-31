@@ -36,8 +36,8 @@ static FLOAT fooFarRatioI,  fooFarRatioJ;
 static CRenderer *_preThis;
 
 
-// ì›”ë“œ ì—ë””í„°ì—ì„œ ì†ì„±ë§µì„ ë³´ì—¬ì£¼ê¸° ìœ„í•œ ì„ì‹œìš©..
-// í”„ë¡œì íŠ¸ë¥¼ ë”°ë¡œ ì¶”ê°€í•  ì˜ˆì •..
+// ¿ùµå ¿¡µğÅÍ¿¡¼­ ¼Ó¼º¸ÊÀ» º¸¿©ÁÖ±â À§ÇÑ ÀÓ½Ã¿ë..
+// ÇÁ·ÎÁ§Æ®¸¦ µû·Î Ãß°¡ÇÒ ¿¹Á¤..
 //#define	WORLD_EDITOR
 
 
@@ -379,9 +379,9 @@ inline void CRenderer::MakeScreenEdge( CScreenEdge &sed, FLOAT fI0, FLOAT fJ0, F
 	ldtDirection = LDT_DESCENDING;
 
 	// if vertex 0 is below vertex 1
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	if ( fDJ<0 ) { // fJ0>fJ1
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 		// mark edge as ascending
 		ldtDirection = LDT_ASCENDING;
 		Swap(fI0, fI1);
@@ -409,10 +409,10 @@ inline void CRenderer::MakeScreenEdge( CScreenEdge &sed, FLOAT fI0, FLOAT fJ0, F
 	// if bottom vertex is above screen top or top vertex is below screen bottom
 	FLOAT fDJ1Up = fJ1-re_fbbClipBox.Min()(2);
 	FLOAT fDJ0Dn = re_fbbClipBox.Max()(2)-fJ0;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	if (fDJ1Up<0 || fDJ0Dn<0) {
 	//if ((SLONG&)(fDJ1Up)<0 || (SLONG&)(fDJ0Dn)<0) {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 		// generate dummy horizontal screen edge
 		sed.sed_pixTopJ    = (PIX) 0;
 		sed.sed_pixBottomJ = (PIX) 0;
@@ -771,8 +771,10 @@ CScreenPolygon *CRenderer::MakeScreenPolygon(CBrushPolygon &bpo)
 	bpo.bpo_ulFlags &= ~BPOF_RENDERTRANSLUCENT;
 
 	// if the polygon is a portal that is either translucent or selected
+	extern BOOL _bShowPortalPolygon;
 	if( bForceTraslucency || ((bpo.bpo_ulFlags & BPOF_RENDERASPORTAL)
-												&& ((bpo.bpo_ulFlags & BPOF_TRANSLUCENT) || bSelected))) {
+										&& ((bpo.bpo_ulFlags & BPOF_TRANSLUCENT) || bSelected || _bShowPortalPolygon))) 
+	{
 		// if not rendering shadows
 		if (!re_bRenderingShadows) {
 			// mark for rendering as translucent
@@ -786,13 +788,21 @@ CScreenPolygon *CRenderer::MakeScreenPolygon(CBrushPolygon &bpo)
 				re_pspoFirstTranslucent = &spo.spo_spoScenePolygon;
 			}
 			// if it is not translucent (ie. it is just plain portal, but selected)
-			if( !(bpo.bpo_ulFlags & BPOF_TRANSLUCENT) && !bForceTraslucency) {
+			if( (!(bpo.bpo_ulFlags & BPOF_TRANSLUCENT) && !bForceTraslucency) 
+				|| _bShowPortalPolygon)
+			{
 				// set its texture for selection
 				CModelObject *pmoSelectedPortal = _wrpWorldRenderPrefs.wrp_pmoSelectedPortal;
 				if (pmoSelectedPortal!=NULL) {
 					sppo.spo_aptoTextures[0] = &pmoSelectedPortal->mo_toTexture;
 					sppo.spo_acolColors[0] = C_WHITE|CT_OPAQUE;
 					sppo.spo_aubTextureFlags[0] = STXF_BLEND_ALPHA;
+					if(_bShowPortalPolygon)
+					{
+						//sppo.spo_acolColors[0] = C_dRED|CT_OPAQUE;
+						sppo.spo_acolColors[0] = 0xEECA9DFF;
+						sppo.spo_aubTextureFlags[0] = STXF_BLEND_SHADE|STXF_BLEND_ALPHA;
+					}
 				}
 				// get its mapping gradients from shadowmap and stretch
 				CWorkingPlane &wpl  = *bpo.bpo_pbplPlane->bpl_pwplWorking;

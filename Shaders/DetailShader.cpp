@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 #include "StdH.h"
 #include <Shaders/Common.h>
 
@@ -35,7 +35,7 @@ SHADER_MAIN(Detail)
 	
 	// Set alpha test
 	//shaDisableAlphaTest();	--->
-	shaEnableAlphaTest();			//ì•ŒíŒŒ í…ŒìŠ¤íŠ¸ë¥¼ ìˆ˜í–‰í•˜ê²Œ ìˆ˜ì • :Su-won
+	shaEnableAlphaTest();			//¾ËÆÄ Å×½ºÆ®¸¦ ¼öÇàÇÏ°Ô ¼öÁ¤ :Su-won
 	
 	shaSetTexture(iBaseTexture,0);
 	shaSetUVMap(iBaseUVMap);
@@ -53,9 +53,9 @@ SHADER_MAIN(Detail)
 		colBase.MultiplyRGBA( (GFXColor)shaGetModelColor(), (GFXColor)shaGetCurrentColor());
 		colDetail = shaGetColor(iDetailColor);
 
-		//ì•ŒíŒŒí…ŒìŠ¤íŠ¸ê°€ í™œì„±í™”ë˜ì–´ Fade Outí•  ë•Œ, ModelHolder3ì—ì„œ ì„¤ì •í•œ ëª¨ë¸ì˜ ì•ŒíŒŒê°’ì´
-		//128~255ì‚¬ì´ì¼ ë•Œ ëª¨ë¸ì´ í™”ë©´ì—ì„œ ì‚¬ë¼ì§€ëŠ” í˜„ìƒ(ì•ŒíŒŒí…ŒìŠ¤íŠ¸ì‹œ ë¹„êµê°’ì´ 128ë¡œ ë˜ì–´ìˆì–´ì„œ...)ë•Œë¬¸ì—
-		//ì´ ë¶€ë¶„ ì¶”ê°€.		:Su-won
+		//¾ËÆÄÅ×½ºÆ®°¡ È°¼ºÈ­µÇ¾î Fade OutÇÒ ¶§, ModelHolder3¿¡¼­ ¼³Á¤ÇÑ ¸ğµ¨ÀÇ ¾ËÆÄ°ªÀÌ
+		//128~255»çÀÌÀÏ ¶§ ¸ğµ¨ÀÌ È­¸é¿¡¼­ »ç¶óÁö´Â Çö»ó(¾ËÆÄÅ×½ºÆ®½Ã ºñ±³°ªÀÌ 128·Î µÇ¾îÀÖ¾î¼­...)¶§¹®¿¡
+		//ÀÌ ºÎºĞ Ãß°¡.		:Su-won
 		if( colBase.a >=128)
 			colBase.a /=2.0f;
 
@@ -92,9 +92,9 @@ SHADER_MAIN(Detail)
 		shaSetPixelProgramConst(1, &srDetailColor, 1);
 		// prepare fog and haze
 		shaPrepareFogAndHaze(bOpaque);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		shaSetDefaultConstantRegisters();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	}
 	else 
 	{
@@ -194,7 +194,7 @@ SHADER_MAIN(Detail)
 				// render detail pass
 				shaRender();
 			}
-*/	//ì¼ë‹¨ Shaderì—†ëŠ” ì¹´ë“œì—ì„œ Detail í…ìŠ¤ì³ ë Œë”ë§ ì•ˆí•¨. 
+*/	//ÀÏ´Ü Shader¾ø´Â Ä«µå¿¡¼­ Detail ÅØ½ºÃÄ ·»´õ¸µ ¾ÈÇÔ. 
 			
 			// disable overbrighning
 			shaDisableOverBrightning();
@@ -214,7 +214,7 @@ SHADER_MAIN(Detail)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(Detail,ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -247,7 +247,7 @@ SHADER_DESC(Detail,ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM|GFX_TEXCOORD0|GFX_NORMAL_STREAM;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(Detail, CTString &strVPCode, INDEX iVertexProgram)
@@ -270,29 +270,42 @@ SHADER_PCODE(Detail, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 		// if this is detail pixel shader
 		if(iPixelProgram==iDetailPP) 
 		{
-			strPPCode = "tex    t0                   \n" // load base texture
+/*			strPPCode = "tex    t0                   \n" // load base texture
 						"tex    t1                   \n" // load detail texture
 						"mul    t0,     t0,    c0    \n" // mul base texture with base color
 						"mul    t1,     t1,    c1    \n" // mul detail texture with detail color
 						"mul_x2 t0,     t0,    v0    \n" // shade pixel
 						"mul_x2 r0,     t0,    t1    \n" // combine textures
-						;
+						;*/
 			// else if this is base pixel shader
+			strPPCode = "texld	r0,    t0                   \n" // load base texture
+						"texld	r1,    t1                   \n" // load detail texture
+						"mul    r2,     r0,    c0    \n" // mul base texture with base color
+						"mul    r1,     r1,    c1    \n" // mul detail texture with detail color
+						"mul_x2 r2,     r2,    v0    \n" // shade pixel
+						"mul_x2 r0,     r2,    r1    \n" // combine textures
+						;
 		}
 		else if(iPixelProgram==iTranslucentPP) 
 		{
-			strPPCode = "tex    t0                   \n" // load base texture
+/*			strPPCode = "tex    t0                   \n" // load base texture
 						"mul    t0,     t0,    c0    \n" // mul base texture with base color
 						"mul    r0.rgb, t0,    t0.a  \n" // Fc=Bc*Ba
 						"mul_x2 r0.rgb, r0,    v0    \n" // Shade pixel
 						"+mov   r0.a,   1-t0.a       \n" // Fa = (1-Ba)
+						;*/
+			strPPCode = "texld	r0,	    t0                   \n" // load base texture
+						"mul    r1,     r0,    c0    \n" // mul base texture with base color
+						"mul    r0.rgb, r1,    r1.a  \n" // Fc=Bc*Ba
+						"mul_x2 r0.rgb, r0,    v0    \n" // Shade pixel
+						"+mov   r0.a,   1-r1.a       \n" // Fa = (1-Ba)
 						;
 		}
 	}
 	else if(eFogType==FT_OPAQUE) 
 	{
 		ASSERT(iPixelProgram==iDetailPP);
-		strPPCode = "tex    t0                     \n" // load base texture
+/*		strPPCode = "tex    t0                     \n" // load base texture
 					"tex    t1                     \n" // load detail texture
 					"tex    t2                     \n" // load fog texture
 					"mul    t0,     t0,    c0      \n" // mul base texture with base color
@@ -301,12 +314,22 @@ SHADER_PCODE(Detail, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 					"mul_x2 t0,     t0,    v0      \n" // Shade pixel
 					"mul_x2 r0,     t0,    t1      \n" // Combine textures
 					"lrp    r0.rgb, t2.a,  t2,  r0 \n" // Add fog
+					;*/
+		strPPCode = "texld  r0,    t0              \n" // load base texture
+					"texld  r1,    t1              \n" // load detail texture
+					"texld  r2,    t2              \n" // load fog texture
+					"mul    r3,     r0,    c0      \n" // mul base texture with base color
+					"mul    r1,     r1,    c1      \n" // mul detail texture with detail color
+					"mul    r2,     r2,    c7      \n" // mul fog texture with fog color
+					"mul_x2 r3,     r3,    v0      \n" // Shade pixel
+					"mul_x2 r0,     r3,    r1      \n" // Combine textures
+					"lrp    r0.rgb, r2.a,  r2,  r0 \n" // Add fog
 					;
 	}
 	else if(eFogType==FT_NON_OPAQUE) 
 	{
 		ASSERT(iPixelProgram==iTranslucentPP);
-		strPPCode = "tex    t0                     \n" // load base texture
+/*		strPPCode = "tex    t0                     \n" // load base texture
 					"tex    t2                     \n" // load fog texture
 					"mul    t0,     t0,    c0      \n" // mul base texture with base color
 					"mul    t2,     t2,    c7      \n" // mul fog texture with fog color
@@ -314,7 +337,16 @@ SHADER_PCODE(Detail, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 					"mul    r0.rgb, t0,    t0.a    \n" // Fc = Bc*Ba
 					"mul_x2 r0.rgb, r0,    v0      \n" // Shade pixel
 					"+mov   r0.a,   1-t0.a         \n" // Fa = (1-Ba)
+					;*/
+		strPPCode = "texld	r0,		t0             \n" // load base texture
+					"texld	r2,		t2             \n" // load fog texture
+					"mul    r1,     r0,    c0      \n" // mul base texture with base color
+					"mul    r2,     r2,    c7      \n" // mul fog texture with fog color
+					"mul    r1.a,   r1,    1-r2.a  \n" // attenuate base tex alpha with fog alpha
+					"mul    r0.rgb, r1,    r1.a    \n" // Fc = Bc*Ba
+					"mul_x2 r0.rgb, r0,    v0      \n" // Shade pixel
+					"+mov   r0.a,   1-r1.a         \n" // Fa = (1-Ba)
 					;
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)

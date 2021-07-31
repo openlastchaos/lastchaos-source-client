@@ -1,3 +1,16 @@
+
+#pragma warning(disable : 4391)		// Platform SDK Warning
+#pragma warning(disable : 4996)
+
+#if		!defined(WORLD_EDITOR)
+#include <boost/function.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/shared_ptr.hpp>
+#endif	// WORLD_EDITOR
 #include <Engine\Engine.h>
 #include <GameMP/SessionProperties.h>
 #include <GameMP/PlayerSettings.h>
@@ -18,6 +31,7 @@
 #include "..\Common\EmanatingParticles.h"
 #include "..\Common\GameInterface.h"
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.03
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.03
 #pragma comment(lib, "winmm.lib")
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.03
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.03
+

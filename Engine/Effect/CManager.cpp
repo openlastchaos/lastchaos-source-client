@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #pragma warning(disable : 4786)
 #include <Engine/Base/Timer.h>
@@ -12,11 +12,11 @@ CTYPEManager CTYPEManager::m_instance;
 
 struct Delete
 {
-	inline void operator()(TYPE *p) { delete p; p = NULL; }
+	inline void operator()(TYPE *p) { if (p) delete p; p = NULL; }
 };
 struct DeleteSecond
 {
-	inline void operator()(CTYPEManager::my_map::value_type &p) { delete p.second; p.second = NULL; }
+	inline void operator()(CTYPEManager::my_map::value_type &p) { if (p.second) delete p.second; p.second = NULL; }
 };
 
 CTYPEManager::CTYPEManager()
@@ -53,7 +53,7 @@ BOOL CTYPEManager::Register(TYPE *prototype)
 	if( prototype->GetName() == "" || IsRegistered(prototype->GetName()) ) return FALSE;
 
 	my_map::value_type registerTri( prototype->GetName(), prototype->Copy() );
-	//ë“±ë¡ ì„±ê³µ or ì‹¤íŒ¨ ì •ë³´ë¥¼ ë¦¬í„´
+	//µî·Ï ¼º°ø or ½ÇÆĞ Á¤º¸¸¦ ¸®ÅÏ
 	return m_mapRegistered.insert( registerTri ).second;
 }
 
@@ -89,7 +89,7 @@ void CTYPEManager::Destroy(TYPE *obj)
 	obj = NULL;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef FINALVERSION
 void CTYPEManager::Read(CTStream *istrFile)
 {
@@ -105,6 +105,6 @@ void CTYPEManager::Write(CTStream *ostrFile)
 	ostrFile->WriteID_t("EGMG");
 }
 #endif //FINALVERSION
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

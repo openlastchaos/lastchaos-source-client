@@ -4,59 +4,89 @@
 #pragma once
 #endif
 
+#include <Engine/LocalDefine.h>
+#include <Engine/GlobalDefinition.h>
 #include <vector>
+#include <map>
 #include <Engine/Base/CTString.h>
+#include <Common/CommonDef.h>
+#include <Common/header/def_item.h>
+#include <Common/header/def_option.h>
+#include <Engine/Help/LoadLod.h>
 
-#define		MAX_MAKE_ITEM_MATERIAL		10	// ì•„ì´í…œ ì œì‘ì‹œ ìµœëŒ€ ì¬ë£Œ ìˆ˜
+#define		MAX_MAKE_ITEM_MATERIAL		10	// ¾ÆÀÌÅÛ Á¦ÀÛ½Ã ÃÖ´ë Àç·á ¼ö
 
 // Item Proto flag
-#define		ITEM_FLAG_COUNT		(1 << 0)	// ì…€ ìˆ˜ ìˆëŠ” ì•„ì´í…œì¸ê°€
-#define		ITEM_FLAG_DROP		(1 << 1)	// ë“œë¡­  ê°€ëŠ¥ ì•„ì´í…œì¸ê°€ê°€
-#define		ITEM_FLAG_UPGRADE	(1 << 2)	// ì—…ê·¸ë ˆì´ë“œ ê°€ëŠ¥í•œ ì•„ì´í…œì¸ê°€
-#define		ITEM_FLAG_EXCHANGE	(1 << 3)	// êµí™˜ ê°€ëŠ¥ ì•„ì´í…œì¸ê°€ê°€ (ìœ ì €ê°„)
-#define		ITEM_FLAG_TRADE		(1 << 4)	// ë§¤ë§¤ ê°€ëŠ¥ ì•„ì´í…œì¸ê°€ê°€
-#define		ITEM_FLAG_BORKEN	(1 << 5)	// íŒŒê´´ ê°€ëŠ¥ ì•„ì´í…œì¸ê°€ê°€
-#define		ITEM_FLAG_MADE		(1 << 6)	// ìƒì‚° ê°€ëŠ¥ ì•„ì´í…œì¸ê°€ê°€
-#define		ITEM_FLAG_MIX		(1 << 7)	// ì¡°í•© ì•„ì´í…œ : DBì— ì €ì¥ì•ˆë¨
-#define		ITEM_FLAG_CASH		(1 << 8)	// ìœ ë£Œ ì•„ì´í…œ
-#define		ITEM_FLAG_LORD		(1 << 9)	// ì„±ì£¼ ì „ìš© ì•„ì´í…œ
-#define		ITEM_FLAG_NO_STASH	(1 << 10)	// ì°½ê³  ë³´ê´€ ë¶ˆê°€ëŠ¥ ì•„ì´í…œ
-#define		ITEM_FLAG_CHANGE    (1 << 11)	// ë‹¤ë¥¸ ì§ì—…ìš© ì•„ì´í…œìœ¼ë¡œ êµí™˜ ê°€ëŠ¥ ì—¬ë¶€ //wooss 051217
-#define		ITEM_FLAG_COMPOSITE	(1 << 12)	// ì•„ì´í…œ í•©ì„± ê°€ëŠ¥ ì—¬ë¶€
-#define		ITEM_FLAG_CASHMOON	(1 << 13)	// ìºì‰¬ ë¬¸ìŠ¤í†¤ ë£°ë › ê°€ëŠ¥ ì—¬ë¶€ 
-#define		ITEM_FLAG_LENT		(1 << 14)	// ëŒ€ì—¬ìš© ë¬´ê¸°
-#define		ITEM_FLAG_RARE		(1 << 15)	// ë ˆì–´ ì•„ì´í…œ
-#define		ITEM_FLAG_ABS		(1 << 16)	// ì•„ì´í…œì˜ ë‚¨ì€ ì‹œê°„ ì¡´ì¬ ì—¬ë¶€
-#define		ITEM_FLAG_GENERNAL	(1 << 17)	// ì•„ì´í…œ ì„±í–¥
-#define		ITEM_FLAG_CAO		(1 << 18)	// ì¹´ì˜¤ í—Œí„° ì•„ì´í…œ
-#define     ITEM_FLAG_ORIGIN	(1 << 19)	// ì˜¤ë¦¬ì§€ë„ ì˜µì…˜(SET_ITEM_ADD [ttos_2009_5_22]: ì„¸íŠ¸ ì•„ì´í…œ ì ìš©)
-#define		ITEM_FLAG_TRIGGER	(1 << 20)	// íŠ¸ë¦¬ê±° [090707: selo]
-#define		ITEM_FLAG_RAIDSPE	(1 << 21)	// ë ˆì´ë“œ ìŠ¤í˜ì…œ ì•„ì´í…œ [090707: selo]
-#define		ITEM_FLAG_QUEST		(1 << 22)	// í€˜ìŠ¤íŠ¸ ì•„ì´í…œ [090616: selo]
+#define		ITEM_FLAG_COUNT			((LONGLONG)1 << 0)	// ¼¿ ¼ö ÀÖ´Â ¾ÆÀÌÅÛÀÎ°¡
+#define		ITEM_FLAG_DROP			((LONGLONG)1 << 1)	// µå·Ó  °¡´É ¾ÆÀÌÅÛÀÎ°¡°¡
+#define		ITEM_FLAG_UPGRADE		((LONGLONG)1 << 2)	// ¾÷±×·¹ÀÌµå °¡´ÉÇÑ ¾ÆÀÌÅÛÀÎ°¡
+#define		ITEM_FLAG_EXCHANGE		((LONGLONG)1 << 3)	// ±³È¯ °¡´É ¾ÆÀÌÅÛÀÎ°¡°¡ (À¯Àú°£)
+#define		ITEM_FLAG_TRADE			((LONGLONG)1 << 4)	// ¸Å¸Å °¡´É ¾ÆÀÌÅÛÀÎ°¡°¡
+#define		ITEM_FLAG_NOT_DELETE	((LONGLONG)1 << 5)	// ÆÄ±« °¡´É ¾ÆÀÌÅÛÀÎ°¡°¡
+#define		ITEM_FLAG_MADE			((LONGLONG)1 << 6)	// »ı»ê °¡´É ¾ÆÀÌÅÛÀÎ°¡°¡
+#define		ITEM_FLAG_MIX			((LONGLONG)1 << 7)	// Á¶ÇÕ ¾ÆÀÌÅÛ : DB¿¡ ÀúÀå¾ÈµÊ
+#define		ITEM_FLAG_CASH			((LONGLONG)1 << 8)	// À¯·á ¾ÆÀÌÅÛ
+#define		ITEM_FLAG_LORD			((LONGLONG)1 << 9)	// ¼ºÁÖ Àü¿ë ¾ÆÀÌÅÛ
+#define		ITEM_FLAG_NO_STASH		((LONGLONG)1 << 10)	// Ã¢°í º¸°ü ºÒ°¡´É ¾ÆÀÌÅÛ
+#define		ITEM_FLAG_CHANGE		((LONGLONG)1 << 11)	// ´Ù¸¥ Á÷¾÷¿ë ¾ÆÀÌÅÛÀ¸·Î ±³È¯ °¡´É ¿©ºÎ //wooss 051217
+#define		ITEM_FLAG_COMPOSITE		((LONGLONG)1 << 12)	// ¾ÆÀÌÅÛ ÇÕ¼º °¡´É ¿©ºÎ
+#define		ITEM_FLAG_DUPLICATION	((LONGLONG)1 << 13)	// Áßº¹ »ç¿ë ¹¯±â
+#define		ITEM_FLAG_LENT			((LONGLONG)1 << 14)	// ´ë¿©¿ë ¹«±â
+#define		ITEM_FLAG_RARE			((LONGLONG)1 << 15)	// ·¹¾î ¾ÆÀÌÅÛ
+#define		ITEM_FLAG_ABS			((LONGLONG)1 << 16)	// ¾ÆÀÌÅÛÀÇ ³²Àº ½Ã°£ Á¸Àç ¿©ºÎ
+#define		ITEM_FLAG_NOT_REFORM	((LONGLONG)1 << 17)	// ¾ÆÀÌÅÛ ¸®Æû °¡´É ¿©ºÎ
+#define		ITEM_FLAG_ZONEMOVE_DEL	((LONGLONG)1 << 18)	// Á¸ ÀÌµ¿½Ã »ç¶óÁö´Â ¾ÆÀÌÅÛ
+#define     ITEM_FLAG_ORIGIN		((LONGLONG)1 << 19)	// ¿À¸®Áö³Î ¿É¼Ç(SET_ITEM_ADD [ttos_2009_5_22]: ¼¼Æ® ¾ÆÀÌÅÛ Àû¿ë)
+#define		ITEM_FLAG_TRIGGER		((LONGLONG)1 << 20)	// Æ®¸®°Å [090707: selo]
+#define		ITEM_FLAG_RAIDSPE		((LONGLONG)1 << 21)	// ·¹ÀÌµå ½ºÆä¼È ¾ÆÀÌÅÛ [090707: selo]
+#define		ITEM_FLAG_QUEST			((LONGLONG)1 << 22)	// Äù½ºÆ® ¾ÆÀÌÅÛ [090616: selo]
+#define		ITEM_FLAG_BOX			((LONGLONG)1 << 23)	// LuckyDrawBox
+#define		ITEM_FLAG_NOTTRADEAGENT	((LONGLONG)1 << 24)	// °Å·¡´ëÇàµî·ÏºÒ°¡
+#define		ITEM_FLAG_DURABILITY	((LONGLONG)1 << 25)	// ³»±¸µµ ¾ÆÀÌÅÛ
+#define		ITEM_FLAG_COSTUME2		((LONGLONG)1 << 26)	// ÄÚ½ºÆ¬2 ¾ÆÀÌÅÛ
+#define		ITEM_FLAG_SOCKET		((LONGLONG)1 << 27)	// socket flag. [6/22/2010 rumist]
+#define		ITEM_FLAG_SELLER		((LONGLONG)1 << 28)		// [2010/08/27 : Sora] ADD_SUBJOB »óÀÎÃß°¡
+#define		ITEM_FLAG_CASTLLAN		((LONGLONG)1 << 29)		// ¼ºÁÖ¸¸ Âø¿ë °¡´ÉÇÑ ¾ÆÀÌÅÛ
+#define		ITEM_FLAG_NONRVR		((LONGLONG)1 << 31)	// RVRÀÏ °æ¿ì »ç¿ë ºÒ°¡ ¾ÆÀÌÅÛ ÇÃ·¡±×.
+#define		ITEM_FLAG_QUESTGIVE		((LONGLONG)1 << 32)	// Äù½ºÆ® ±âºÎ °¡´É ¾ÆÀÌÅÛ
+#define		ITEM_FLAG_TOGGLE		((LONGLONG)1 << 33)	// Åä±Û ¾ÆÀÌÅÛ.
+#define		ITEM_FLAG_COMPOSE		((LONGLONG)1 << 34)	// ÇÕ¼º ¾ÆÀÌÅÛ.
+#define		ITEM_FLAG_NOTSINGLE		((LONGLONG)1 << 35) // ½Ì±Û ´øÀü¿¡¼­ »ç¿ë ºÒ°¡.
+#define		ITEM_FLAG_INVISIBLE_COSTUME ((LONGLONG)1 << 36)	// Åõ¸í ÄÚ½ºÆ¬
 
-	
-/*
-#define		BLOOD_ITEM			(1 << 7)	// ì•„ì´í…œ í”Œë˜ê·¸.
-#define		SEALED_ITEM			(1 << 8)	// ë´‰ì¸ëœ ì•„ì´í…œ.
-#define		ITEM_FLAG_SUPER_STONE_USED		(1 << 9)	// ìŠˆí¼ê³ ì œë¡œ ì—…ê·¸ë ˆì´ë“œ í–ˆìŒ..//0627
-#define		ITEM_FLAG_BOOSTER	(1 << 10)	// ë¶€ìŠ¤í„°ê°€ ë°œë¼ì§„ ì•„ì´í…œì¸ê°€?
-*/
-
-// Item Flag : ìµœìƒìœ„ 1ë¹„íŠ¸ëŠ” ì‚¬ìš© ë¶ˆê°€!!! 
-// 6ë¹„íŠ¸ê¹Œì§€ ì¼€ë¥´, ë„¨, ì¼ë°˜ ì œë ¨ì„ì˜ ë ˆë²¨ê³¼, í”Œë ˆí‹°ëŠ„ ì œë ¨ì„ì„ ë°”ë¥¸ ì•„ì´í…œì˜ ë ˆë²¨ë¡œ ì‚¬ìš© 
+// Item Flag : ÃÖ»óÀ§ 1ºñÆ®´Â »ç¿ë ºÒ°¡!!! 
+// 6ºñÆ®±îÁö ÄÉ¸£, ³Ù, ÀÏ¹İ Á¦·Ã¼®ÀÇ ·¹º§°ú, ÇÃ·¹Æ¼´½ Á¦·Ã¼®À» ¹Ù¸¥ ¾ÆÀÌÅÛÀÇ ·¹º§·Î »ç¿ë 
 #define		PLATINUM_MAX_PLUS 127 
 #define		FLAG_ITEM_PLATINUM_GET(a, b) (b = a & PLATINUM_MAX_PLUS) 
 #define		FLAG_ITEM_PLATINUM_SET(a, b) (a = ( (a &~ PLATINUM_MAX_PLUS) | b )) 
-#define		FLAG_ITEM_OPTION_ENABLE			(1 << 7)	// ì•„ì´í…œ í”Œë˜ê·¸ì— ì˜µì…˜ì„ ë¶™ì¼ ìˆ˜ ìˆëŠ” ìƒíƒœë¥¼ êµ¬ë¶„, Bit ì—°ì‚°
-#define		FLAG_ITEM_SEALED				(1 << 8)	// ì•„ì´í…œ ë´‰ì¸
-#define		FLAG_ITEM_SUPER_STONE_USED		(1 << 9)	// ìŠˆí¼ê³ ì œë¡œ ì—…ê·¸ë ˆì´ë“œ í–ˆìŒ..//0627
-#define		FLAG_ITEM_BOOSTER_ADDED			(1 << 10)	// ë¶€ìŠ¤í„° ì¥ì°© ì—¬ë¶€
-#define		FLAG_ITEM_SILVERBOOSTER_ADDED	(1 << 11)	// ì‹¤ë²„ ë¶€ìŠ¤í„° ì¥ì°© ì—¬ë¶€
-#define		FLAG_ITEM_GOLDBOOSTER_ADDED		(1 << 12)	// ê³¨ë“œ ë¶€ìŠ¤í„° ì¥ì°© ì—¬ë¶€
-#define		FLAG_ITEM_PLATINUMBOOSTER_ADDED	(1 << 13)	// í”Œë˜í‹°ëŠ„ ë¶€ìŠ¤í„° ì¥ì°© ì—¬ë¶€
-#define		FLAG_ITEM_COMPOSITION			(1 << 14)	// í•©ì„± ì•„ì´í…œ ì ìš© ì—¬ë¶€
-#define		FLAG_ITEM_LENT					(1 << 15)	// ëŒ€ì—¬ëœ ì•„ì´í…œ
-#define		FLAG_ITEM_LEVELDOWN				(1 << 16)	// ë ˆë²¨ ë‹¤ìš´ëœ ì•„ì´í…œ
+#define		FLAG_ITEM_OPTION_ENABLE			(1 << 7)	// ¾ÆÀÌÅÛ ÇÃ·¡±×¿¡ ¿É¼ÇÀ» ºÙÀÏ ¼ö ÀÖ´Â »óÅÂ¸¦ ±¸ºĞ, Bit ¿¬»ê
+#define		FLAG_ITEM_SEALED				(1 << 8)	// ¾ÆÀÌÅÛ ºÀÀÎ
+#define		FLAG_ITEM_SUPER_STONE_USED		(1 << 9)	// ½´ÆÛ°íÁ¦·Î ¾÷±×·¹ÀÌµå ÇßÀ½..//0627
+#define		FLAG_ITEM_BOOSTER_ADDED			(1 << 10)	// ºÎ½ºÅÍ ÀåÂø ¿©ºÎ
+#define		FLAG_ITEM_SILVERBOOSTER_ADDED	(1 << 11)	// ½Ç¹ö ºÎ½ºÅÍ ÀåÂø ¿©ºÎ
+#define		FLAG_ITEM_GOLDBOOSTER_ADDED		(1 << 12)	// °ñµå ºÎ½ºÅÍ ÀåÂø ¿©ºÎ
+#define		FLAG_ITEM_PLATINUMBOOSTER_ADDED	(1 << 13)	// ÇÃ·¡Æ¼´½ ºÎ½ºÅÍ ÀåÂø ¿©ºÎ
+#define		FLAG_ITEM_COMPOSITION			(1 << 14)	// ÇÕ¼º ¾ÆÀÌÅÛ Àû¿ë ¿©ºÎ
+#define		FLAG_ITEM_LENT					(1 << 15)	// ´ë¿©µÈ ¾ÆÀÌÅÛ
+#define		FLAG_ITEM_LEVELDOWN				(1 << 16)	// ·¹º§ ´Ù¿îµÈ ¾ÆÀÌÅÛ
+#define		FLAG_ITEM_BELONG				(1 << 17)	// ±Í¼Ó ¾ÆÀÌÅÛ ±Í¼Ó »óÅÂ(SET_ITEM_ADD [ttos_2009_5_22]: ¼¼Æ® ¾ÆÀÌÅÛ Àû¿ë)
+#define		FLAG_ITEM_SOCKET				(1 << 18)	// ¼ÒÄÏ °¡°øÇß´ÂÁö ¿©ºÎ [5/10/2010 rumist]
+#define		FLAG_ITEM_SUPER_RUNE_USED		(1 << 19)	// °¡¹Ì°í ¿äÃ»À¸·Î ÀÎÇÑ ÃÊ°í±Ş ·é ¾ÆÀÌÅÛ ÇÃ·¡±× [8/24/2012 ¹ÚÈÆ] 
+
+// SOCKET_SYSTEM_S2 º¸¼® Âø¿ë À§Ä¡ ¿©ºÎ [4/2/2013 Ranma]
+#define		JEWEL_COMPOSITE_POSITION_WEAPON		(1 << 0)
+#define		JEWEL_COMPOSITE_POSITION_HELMET		(1 << 1)
+#define		JEWEL_COMPOSITE_POSITION_ARMOR		(1 << 2)
+#define		JEWEL_COMPOSITE_POSITION_PANTS		(1 << 3)
+#define		JEWEL_COMPOSITE_POSITION_GLOVES		(1 << 4)
+#define		JEWEL_COMPOSITE_POSITION_SHOES		(1 << 5)
+#define		JEWEL_COMPOSITE_POSITION_SHIELD		(1 << 6)
+#define		JEWEL_COMPOSITE_POSITION_BACKWING	(1 << 7)
+
+//SET_ITEM_ADD				//[ttos_2009_5_22]: ¼¼Æ® ¾ÆÀÌÅÛ Àû¿ë
+#define MAX_SET_OPTION  11
+#define MAX_ITEM_SKILL			3			// ¼¼Æ® ¾ÆÀÌÅÛÀÇ ÃÖ´ë ½ºÅ³ 
+#define RUNE_ITEM_LEVEL			146			// ·é Àû¿ë ¾ÆÀÌÅÛ·¹º§		
 
 struct ItemSmcParseInfo 
 {
@@ -75,7 +105,7 @@ struct ItemSmcParseInfo
 
 struct sPetItem_Info 
 {
-	//ê³µê²© í« ì•„ì´í…œ
+	//°ø°İ Æê ¾ÆÀÌÅÛ
 	CTString	pet_name;
 	INDEX		pet_index;
 	INDEX		pet_level;
@@ -83,125 +113,46 @@ struct sPetItem_Info
 	INDEX		pet_con;
 	INDEX		pet_dex;
 	INDEX		pet_int;
+	INDEX		pet_cooltime;
+	__int64		pet_accexp;
 };
 
-class ENGINE_API CItemData
+struct JewelComosInfo
+{
+	int index;
+	int nor_comp_nas;
+	int ca_comp_nas;
+	int ca_jew_create;
+	int nor_comp_val;
+	int ca_comp_val;
+	int nor_up_2;
+	int nor_up_3;
+	int ca_up_2;
+	int ca_up_3;
+	int nor_down_1;
+	int nor_down_2;
+	int nor_down_3;
+	int ca_down_1;
+	int ca_down_2;
+	int ca_down_3;
+};
+
+class CFortuneData : public stFortune, public LodLoader<CFortuneData>
+{
+public:
+	static bool loadFortuneEx(const char* FileName);
+};
+
+class ENGINE_API CItemData : public stItem, public LodLoader<CItemData>
 {
 private:
-	// ITEM íˆ´ì—ì„œ ì‚¬ìš©í•˜ê³  ìˆëŠ” êµ¬ì¡°ì²´
-	// CItemDataì˜ ë‚´ë¶€ì—ì„œë§Œ ì‚¬ìš©ë©ë‹ˆë‹¤.
-	struct _ItemStat
-	{
-		int		index;			// ì•„ì´í…œ ê³ ìœ  INDEX
-		char	name[50];		// ì•„ì´í…œ ì´ë¦„.
-		int		job;			// ì§ì—….	
-		int		weight;			// ë¬´ê²Œ.
-		int		fame;			// ëª…ì„±ì¹˜.
-		int		level;			// ë ˆë²¨
-		int		flag;			// í”Œë˜ê·¸~
-		int		wearing;		// ì°©ìš© ìœ„ì¹˜.
-		int		type;			// íƒ€ì…
-		int		subType;		// ì„œë¸Œ íƒ€ì…
-		char	descr[255];		// ì„¤ëª….
+	// ITEM Åø¿¡¼­ »ç¿ëÇÏ°í ÀÖ´Â ±¸Á¶Ã¼
+	// CItemDataÀÇ ³»ºÎ¿¡¼­¸¸ »ç¿ëµË´Ï´Ù.
+	int transFlag;
+	std::string name;		// ¾ÆÀÌÅÛ ÀÌ¸§.
+	std::string descr;		// ¼³¸í.
 
-		int		needItemIndex[MAX_MAKE_ITEM_MATERIAL];
-		int		needItemCount[MAX_MAKE_ITEM_MATERIAL];
-
-		int		needSSkillIndex;
-		int		needSSkillCount;
-		int		needSSkillIndex2;
-		int		needSSkillCount2;
-
-		union
-		{
-			int	num0;
-			int pAttack;		// ë¬¼ë¦¬ ê³µê²©ë ¥
-			int	pDefense;		// ë¬¼ë¦¬ ë°©ì–´ë ¥
-			int sec;			// ì´ˆ(s)(ë§ˆë‹¤) ì¦‰íš¨(-1)
-			int skillType;		// ë³´ì¡°.
-			int	warpType;		// ì›Œí”„ íƒ€ì…
-			int questnum;		// í€˜ìŠ¤íŠ¸ ë²ˆí˜¸.
-			int processtype;	// ê°€ê³µ íƒ€ì…
-			int optiontype;		// ì˜µì…˜ íƒ€ì…
-			int	producttype;	// ì œì¡° íƒ€ì…
-			int boxtype;		// Box Type // Date : 2005-01-12,   By Lee Ki-hwan
-			int	refinetype;		// Refine Type // Date : 2005-01-12,   By Lee Ki-hwan
-			int pettype;		// ì• ì™„ë™ë¬¼ ì¢…ë¥˜.
-		};
-
-		union
-		{
-			int num1;
-			int	mAttack;		// ë§ˆë²• ê³µê²©ë ¥
-			int	mDffense;		// ë§ˆë²• ë°©ì–´ë ¥
-			int recoverHP;		// HP íšŒë³µ...
-			int skillLevel;		// ë³´ì¡°
-			int zonenum;		// ì›”ë“œ ë²ˆí˜¸.
-			int processsubtype;	// ê°€ê³µ ì„œë¸Œ íƒ€ì….
-			int	productsubtype;	// ì œì¡° íƒ€ì…
-		};
-
-		union
-		{
-			int num2;
-			int attackSpeed;	// ê³µê²© ì†ë„.
-			int recoverMP;		// MP íšŒë³µ
-			int extranum;		// Extra ë²ˆí˜¸.
-			int sskill;			// íŠ¹ìˆ˜ ìŠ¤í‚¬
-			int grade;			// ë“±ê¸‰
-		};
-
-		union
-		{
-			int num3;
-			int count;			// í¬ì…˜ ì œì‘ ê°¯ìˆ˜ 
-		};
-
-		int		price;
-		char	fileSMC[255];
-		char	ArmorEffectName[255];
-
-		int		iIconTexID;			// ì•„ì´ì½˜ í…ìŠ¤ì³ ID
-		int		iIconTexRow;		// ì•„ì´ì½˜ì˜ ROWìƒì˜ ìœ„ì¹˜(ìµœëŒ€ 8)
-		int		iIconTexCol;		// ì•„ì´ì½˜ì˜ COLìƒì˜ ìœ„ì¹˜(ìµœëŒ€ 16)
-
-		// [090608: selo] í€˜ìŠ¤íŠ¸ ì‚¬ìš©ì œí•œ ì•„ì´í…œ ê´€ë ¨
-		union
-		{
-			int		PetAI_Set0;
-			int		restrictionZoneNo;	// ì‚¬ìš©ì œí•œ ì¡´ ë²ˆí˜¸
-		};
-		
-		union
-		{
-			int		PetAI_Set1;
-			int		restrictionPosX;	// ì‚¬ìš©ì œí•œ ì¢Œí‘œ X
-		};
-		
-		union
-		{
-			int		PetAI_Set2;
-			int		restrictionPosZ;	// ì‚¬ìš©ì œí•œ ì¢Œí‘œ Z			
-		};
-		
-		union
-		{
-			int		PetAI_Set3;
-			int		restrictionPosY;	// ì‚¬ìš©ì œí•œ ì¢Œí‘œ Y			
-		};
-		
-		union
-		{
-			int		SetItem_Index;		//SET_ITEM_ADD				//[ttos_2009_5_22]: ì„¸íŠ¸ ì•„ì´í…œ ì ìš©
-			int		restrictionRadius;	// ì‚¬ìš©ì œí•œ ë°˜ê²½
-		};
-
-	};	
-
-	_ItemStat	Item_Data;
-
-
-	//0601 kwon ì¶”ê°€.
+	//0601 kwon Ãß°¡.
 	char	fileBm[255];
 	char	fileTex[255];
 	char	fileTexNormal[255];
@@ -222,35 +173,36 @@ public:
 
 	enum ITEMTYPE
 	{
-		ITEM_WEAPON			= 0,	// ë¬´ê¸°
-		ITEM_SHIELD			= 1,	// ë°©ì–´êµ¬
-		ITEM_ONCEUSE		= 2,	// ì¼íšŒìš©
-		ITEM_BULLET			= 3,	// íƒ„í™˜
-		ITEM_ETC			= 4,	// ê¸°íƒ€
-		ITEM_ACCESSORY		= 5,	// ì•…ì„¸ì„œë¦¬
-		ITEM_POTION			= 6,	// í¬ì…˜			// Date : 2005-01-07,   By Lee Ki-hwan
+		ITEM_WEAPON			= 0,	// ¹«±â
+		ITEM_SHIELD			= 1,	// ¹æ¾î±¸
+		ITEM_ONCEUSE		= 2,	// ÀÏÈ¸¿ë
+		ITEM_BULLET			= 3,	// ÅºÈ¯
+		ITEM_ETC			= 4,	// ±âÅ¸
+		ITEM_ACCESSORY		= 5,	// ¾Ç¼¼¼­¸®
+		ITEM_POTION			= 6,	// Æ÷¼Ç			// Date : 2005-01-07,   By Lee Ki-hwan
 	};
 
 	enum ITEMWEAPONTYPE
 	{
-		ITEM_WEAPON_KNIFE	= 0,	// ê¸°ì‚¬ë„(ë‚˜ì´íŠ¸)
-		ITEM_WEAPON_CROSSBOW= 1,	// ì„ê¶(ë¡œê·¸)
-		ITEM_WEAPON_STAFF	= 2,	// ìŠ¤íƒœí”„(ë©”ì´ì§€)
-		ITEM_WEAPON_BIGSWORD= 3,	// ëŒ€ê²€(íƒ€ì´íƒ„)
-		ITEM_WEAPON_AXE		= 4,	// ë„ë¼(íƒ€ì´íƒ„)
-		ITEM_WEAPON_SSTAFF	= 5,	// ìˆìŠ¤íƒœí”„(ë©”ì´ì§€)
-		ITEM_WEAPON_BOW		= 6,	// í™œ(íëŸ¬)
-		ITEM_WEAPON_DAGGER	= 7,	// ë‹¨ê²€(ë¡œê·¸)
-		ITEM_WEAPON_MINING	= 8,	// ì±„êµ´ë„êµ¬
-		ITEM_WEAPON_GATHERING= 9,	// ì±„ì§‘ë„êµ¬
-		ITEM_WEAPON_CHARGE	= 10,	// ì°¨ì§€ë„êµ¬
-		ITEM_WEAPON_TWOSWORD= 11,	// ì´ë„ë¥˜(ë‚˜ì´íŠ¸)
-		ITEM_WEAPON_WAND	= 12,	// ì™„ë“œ(íëŸ¬)
-		ITEM_WEAPON_SCYTHE	= 13,	// ì‚¬ì´ë“œ
-		ITEM_WEAPON_POLEARM	= 14,	// í´ì•”.		
+		ITEM_WEAPON_KNIFE	= 0,	// ±â»çµµ(³ªÀÌÆ®)
+		ITEM_WEAPON_CROSSBOW= 1,	// ¼®±Ã(·Î±×)
+		ITEM_WEAPON_STAFF	= 2,	// ½ºÅÂÇÁ(¸ŞÀÌÁö)
+		ITEM_WEAPON_BIGSWORD= 3,	// ´ë°Ë(Å¸ÀÌÅº)
+		ITEM_WEAPON_AXE		= 4,	// µµ³¢(Å¸ÀÌÅº)
+		ITEM_WEAPON_SSTAFF	= 5,	// ¼ô½ºÅÂÇÁ(¸ŞÀÌÁö)
+		ITEM_WEAPON_BOW		= 6,	// È°(Èú·¯)
+		ITEM_WEAPON_DAGGER	= 7,	// ´Ü°Ë(·Î±×)
+		ITEM_WEAPON_MINING	= 8,	// Ã¤±¼µµ±¸
+		ITEM_WEAPON_GATHERING= 9,	// Ã¤Áıµµ±¸
+		ITEM_WEAPON_CHARGE	= 10,	// Â÷Áöµµ±¸
+		ITEM_WEAPON_TWOSWORD= 11,	// ÀÌµµ·ù(³ªÀÌÆ®)
+		ITEM_WEAPON_WAND	= 12,	// ¿Ïµå(Èú·¯)
+		ITEM_WEAPON_SCYTHE	= 13,	// »çÀÌµå
+		ITEM_WEAPON_POLEARM	= 14,	// Æú¾Ï.		
+		ITEM_WEAPON_SOUL	= 15,	// È¥(³ªÀÌÆ®½¦µµ¿ì)
 	};
 
-	// íƒ„í™˜ ì¢…ë¥˜
+	// ÅºÈ¯ Á¾·ù
 	enum ITEMBULLETTYPE
 	{
 		ITEM_BULLET_ATTACK	= 0,	// Attack Bullet
@@ -258,181 +210,214 @@ public:
 		ITEM_BULLET_ARROW	= 2,	// Arrow
 	};
 
-	// ê¸°íƒ€ íƒ€ì…
+	// ±âÅ¸ Å¸ÀÔ
 	enum ITEMETCTYPE
 	{
-		ITEM_ETC_QUEST		= 0,	// í€˜ìŠ¤íŠ¸
-		ITEM_ETC_EVENT		= 1,	// ì´ë²¤íŠ¸
-		ITEM_ETC_SKILL		= 2,	// ìŠ¤í‚¬ ìŠµë“
-		ITEM_ETC_REFINE		= 3,	// ì œë ¨
-		ITEM_ETC_MATERIAL	= 4,	// ì¬ë£Œ.
-		ITEM_ETC_MONEY		= 5,	// ëˆ
-		ITEM_ETC_PRODUCT	= 6,	// ìƒì‚°í’ˆ
-		ITEM_ETC_PROCESS	= 7,	// ê°€ê³µí’ˆ
-		ITEM_ETC_OPTION		= 8,	// ì˜µì…˜ ì•„ì´í…œ
-		ITEM_ETC_SAMPLE		= 9,	// ì‹œë£Œ
-		// 10ë²ˆì€ Textureë³´ì´ê¸° ìœ„í•´ì„œ ì‚¬ìš©.
-		IETC_MIX_TYPE1		= 11, // ê³µì„±ì¡°í•©1
-		IETC_MIX_TYPE2		= 12, // ê³µì„±ì¡°í•©2
-		IETC_MIX_TYPE3		= 13, // ê³µì„±ì¡°í•©3
-		ITEM_PET_AI			= 14,	// í« AI
+		ITEM_ETC_QUEST			= 0,	// Äù½ºÆ®
+		ITEM_ETC_EVENT			= 1,	// ÀÌº¥Æ®
+		ITEM_ETC_SKILL			= 2,	// ½ºÅ³ ½Àµæ
+		ITEM_ETC_REFINE			= 3,	// Á¦·Ã
+		ITEM_ETC_MATERIAL		= 4,	// Àç·á.
+		ITEM_ETC_MONEY			= 5,	// µ·
+		ITEM_ETC_PRODUCT		= 6,	// »ı»êÇ°
+		ITEM_ETC_PROCESS		= 7,	// °¡°øÇ°
+		ITEM_ETC_OPTION			= 8,	// ¿É¼Ç ¾ÆÀÌÅÛ
+		ITEM_ETC_SAMPLE			= 9,	// ½Ã·á
+		// 10¹øÀº Textureº¸ÀÌ±â À§ÇØ¼­ »ç¿ë.
+		IETC_MIX_TYPE1			= 11, // °ø¼ºÁ¶ÇÕ1
+		IETC_MIX_TYPE2			= 12, // °ø¼ºÁ¶ÇÕ2
+		IETC_MIX_TYPE3			= 13, // °ø¼ºÁ¶ÇÕ3
+		ITEM_PET_AI				= 14,	// Æê AI
+		ITEM_ETC_QUESTTRIGGER	= 15,	// quest trigger. server used only.
+		// ¼­¹ö¸¸ »ç¿ëÇÏ´Â Äù½ºÆ® Æ®¸®°Å
+		ITEM_ETC_JEWEL			= 16,	// jewels in socket system.
+		ITEM_ETC_STABILIZER		= 17,	// stabilize about jewels combine.
+		ITEM_ETC_PROC_SCROLL	= 18,	// process about socket creation.	
+		ITEM_ETC_MONSTER_MERCENARY_CARD = 19, // ¸ó½ºÅÍ ¿ëº´ Ä«µå
+		ITEM_ETC_GUILD_MARK		= 20,	// [sora] GUILD_MARK
+		ITEM_ETC_REFORMER		= 21, //¸®Æû ¾ÆÀÌÅÛ
+		ITEM_ETC_CHAOSJEWEL		= 22,
+		ITEM_ETC_FUNCTIONS		= 23, // ±â´É¼º ¾ÆÀÌÅÛ
+		ITEM_ETC_SYNDICATEJEWEL = 24, // °á»ç´ë Ã¢Á¶ÀÇ º¸¼® ¾ÆÀÌÅÛ
 	};
 
-	// ì˜µì…˜ ì•„ì´í…œ ì¢…ë¥˜.
+	enum ITEMREFORMERTYPE
+	{
+		ITEM_ETC_REFORMER_MID_GRADE		= 0,
+		ITEM_ETC_REFORMER_HIGH_GRADE	= 1,
+	};
+
+	// ¿É¼Ç ¾ÆÀÌÅÛ Á¾·ù.
 	enum ITEMOPTIONTYPE
 	{
 		ITEM_OPTION_BLOOD	= 0,	// Blood Item
 		ITEM_OPTION_CLEAR	= 1,	// Clear Item
 	};
 
-	// ë°©ì–´êµ¬ ì¢…ë¥˜.
+	// ¹æ¾î±¸ Á¾·ù.
 	enum ITEMSHIELDTYPE
 	{
-		ITEM_SHIELD_HEAD	= 0,	// ë¨¸ë¦¬
-		ITEM_SHIELD_COAT	= 1,	// ìƒì˜
-		ITEM_SHIELD_PANTS	= 2,	// í•˜ì˜
-		ITEM_SHIELD_GLOVE	= 3,	// ì¥ê°‘
-		ITEM_SHIELD_SHOES	= 4,	// ì‹ ë°œ
-		ITEM_SHIELD_SHIELD	= 5,	// ë°©íŒ¨		
+		ITEM_SHIELD_HEAD	= 0,	// ¸Ó¸®
+		ITEM_SHIELD_COAT	= 1,	// »óÀÇ
+		ITEM_SHIELD_PANTS	= 2,	// ÇÏÀÇ
+		ITEM_SHIELD_GLOVE	= 3,	// Àå°©
+		ITEM_SHIELD_SHOES	= 4,	// ½Å¹ß
+		ITEM_SHIELD_SHIELD	= 5,	// ¹æÆĞ	
+		ITEM_SHIELD_BACKWING = 6,	// ³¯°³
+		ITEM_SHIELD_ONE_SUIT  = 7,   // ÇÑ ¹ú ÀÇ»ó added by sam 11/01/31 [SAM]		
 	};
 
-	// ì°©ìš© ìœ„ì¹˜.
-	enum ITEMWEARINGPOS
+	// ÀÏÈ¸¿ë
+	enum ITEMSUBTYPE		// Date : 2005-01-07,   By Lee Ki-hwan : Æ÷¼Ç ¼öÁ¤
 	{
-		ITEM_WEAR_NONE		= -1,	// ë¯¸ì°©ìš©
-		ITEM_WEAR_HEAD		= 0,	// íˆ¬êµ¬
-		ITEM_WEAR_COAT		= 1,	// ìƒì˜		
-		ITEM_WEAR_WEAPON	= 2,	// ë¬´ê¸°
-		ITEM_WEAR_PANTS		= 3,	// í•˜ì˜
-		ITEM_WEAR_SHIELD	= 4,	// ë°©íŒ¨
-		ITEM_WEAR_GLOVE		= 5,	// ì¥ê°‘
-		ITEM_WEAR_SHOES		= 6,	// ì‹ ë°œ
-		ITEM_WEAR_ACCESSORY1= 7,	// ì•¡ì„œì„œë¦¬1
-		ITEM_WEAR_ACCESSORY2= 8,	// ì•¡ì„œì„œë¦¬2
-		ITEM_WEAR_ACCESSORY3= 9,	// ì•¡ì„œì„œë¦¬3
-		ITEM_WEAR_PET		= 10,	// í« ì°©ìš©
-	};
-
-	// ì¼íšŒìš©
-	enum ITEMSUBTYPE		// Date : 2005-01-07,   By Lee Ki-hwan : í¬ì…˜ ìˆ˜ì •
-	{
-		ITEM_SUB_WARP			= 0,// ì›Œí”„
+		ITEM_SUB_WARP			= 0,// ¿öÇÁ
 	
-		// ìƒì‚° ì‹œìŠ¤í…œ
-		ITEM_SUB_PROCESS_DOC		= 1,	// ê°€ê³µ ë¬¸ì„œ
-		ITEM_SUB_MAKE_TYPE_DOC		= 2,	// ì œì‘ ì¢…ë¥˜, ë ˆë²¨ ë¬¸ì„œ
-		ITEM_SUB_BOX				= 3,	// ìƒì
-		ITEM_SUB_MAKE_POTION_DOC	= 4,	// í¬ì…˜ ì œì‘ ë¬¸ì„œ // Date : 2005-01-07,   By Lee Ki-hwan
+		// »ı»ê ½Ã½ºÅÛ
+		ITEM_SUB_PROCESS_DOC		= 1,	// °¡°ø ¹®¼­
+		ITEM_SUB_MAKE_TYPE_DOC		= 2,	// Á¦ÀÛ Á¾·ù, ·¹º§ ¹®¼­
+		ITEM_SUB_BOX				= 3,	// »óÀÚ
+		ITEM_SUB_MAKE_POTION_DOC	= 4,	// Æ÷¼Ç Á¦ÀÛ ¹®¼­ // Date : 2005-01-07,   By Lee Ki-hwan
 		ITEM_SUB_CHANGE_DOC			= 5,
 		ITEM_SUB_QUEST_SCROLL		= 6,
-		ITEM_SUB_CASH_ITEM			= 7,	// ì¼íšŒìš© ìºì‰¬ì•„ì´í…œ
-		ITEM_SUB_ETC				= 9,
-		ITEM_SUB_TARGET				= 10,	// íƒ€ê²Ÿ ì•„ì´í…œ
+		ITEM_SUB_CASH_ITEM			= 7,	// ÀÏÈ¸¿ë Ä³½¬¾ÆÀÌÅÛ
+		ITEM_SUB_ETC				= 9,	// ±âÅ¸ ÀÏÈ¸
+		ITEM_SUB_TARGET				= 10,	// Å¸°Ù ¾ÆÀÌÅÛ¿ë
+		ITEM_SUB_TITLE				= 11,	// È£Äª ¾ÆÀÌÅÛ
+		ITEM_SUB_JUMPING_PAKAGE		= 12,	// Á¡ÇÎ ÆĞÅ°Áö : »ç¿ëÇÏ¸é Á¡ÇÎ Æ÷¼Ç°ú º¸»ó ¾ÆÀÌÅÛÀ» Áö±ŞÇØÁØ´Ù.
+		ITEM_SUB_JUMPING_POTION		= 13,	// Á¡ÇÎ Æ÷¼Ç : »ç¿ëÇÏ¸é Ä³¸¯Å× ·¹º§À» Æ¯Á¤ ·¹º§·Î ¿Ã·ÁÁÖ´Â ¾ÆÀÌÅÛ
+		ITEM_SUB_CHAR_SLOT_EXTEND	= 14,	// Ä³¸¯ÅÍ ½½·Ô È®Àå
+		ITEM_SUB_CHAR_SERVER_MOVE	= 15,	// Ä³¸¯ÅÍ ¼­¹ö ÀÌÀü [Ranma]
+		ITEM_SUB_EXPRESS_REMOTE		= 16,	// LCE ¿ø°İ 
+		ITEM_SUB_JEWEL_POCKET		= 17,	// ÀÏ¹İ º¸¼® ÁÖ¸Ó´Ï
+		ITEM_SUB_CHAOS_JEWEL_POCKET	= 18,	// Ä«¿À½º º¸¼® ÁÖ¸Ó´Ï
+		ITEM_SUB_INVEN_CASH_BAG_KEY	= 19,	// Ä³½¬ ÀÎº¥Åä¸® ¿­¼è ¾ÆÀÌÅÛ.
+		ITEM_SUB_PET_STASH_USE_ITEM = 20,	// Æê Ã¢°í ÀÌ¿ë±Ç
+		ITEM_SUB_GPS				= 21,	// GPS
+		ITEM_SUB_HOLY_WATER			= 22,	// ¼º¼ö ¾ÆÀÌÅÛ.
+		ITEM_SUB_PROTECT_PVP		= 23,	// PVP ¹æ¾î¾ÆÀÌÅÛ.
 	};
 
 	enum ACCESSORYTYPE
 	{
-		ACCESSORY_CHARM			= 0,	// ë¶€ì 
-		ACCESSORY_MAGICSTONE	= 1,	// ë§ˆë ¨ì„
-		ACCESSORY_LIGHTSTONE	= 2,	// ë°˜ì§ì´ëŠ”ëŒ
-		ACCESSORY_EARING		= 3,	// ê·€ê±¸ì´.
-		ACCESSORY_RING			= 4,	// ë°˜ì§€
-		ACCESSORY_NECKLACE		= 5,	// ëª©ê±¸ì´
-		ACCESSORY_PET			= 6,	// í«
-		ACCESSORY_WILDPET		= 7,	// ê³µê²©í˜• í«
+		ACCESSORY_CHARM			= 0,	// ºÎÀû
+		ACCESSORY_MAGICSTONE	= 1,	// ¸¶·Ã¼®
+		ACCESSORY_LIGHTSTONE	= 2,	// ¹İÂ¦ÀÌ´Âµ¹
+		ACCESSORY_EARING		= 3,	// ±Í°ÉÀÌ.
+		ACCESSORY_RING			= 4,	// ¹İÁö
+		ACCESSORY_NECKLACE		= 5,	// ¸ñ°ÉÀÌ
+		ACCESSORY_PET			= 6,	// Æê
+		ACCESSORY_WILDPET		= 7,	// °ø°İÇü Æê
+		ACCESSORY_RELIC			= 8,	// À¯¹°
 	};
 
-	// SubType : í¬ì…˜  // Date : 2005-01-07,   By Lee Ki-hwan
+	// SubType : Æ÷¼Ç  // Date : 2005-01-07,   By Lee Ki-hwan
 	enum POTIONTYPE
 	{
-		POTION_STATE	= 0,	// ìƒíƒœì´ìƒì¹˜ë£Œ
-		POTION_HP		= 1,	// ìƒëª…íšŒë³µ
-		POTION_MP		= 2,	// ë§ˆë‚˜íšŒë³µ
-		POTION_DUAL		= 3,	// HP+MP íšŒë³µ
-		POTION_STAT		= 4,	// Stat ìƒìŠ¹
-		POTION_ETC		= 5,	// ê¸°íƒ€ (ì´ë™í–¥ìƒ)	
-		POTION_UP		= 6,	// ê³µë°©í–¥ìƒ
-		POTION_TEARS	= 7,	// ëˆˆë¬¼
-		POTION_CRYSTAL	= 8,	// ê²°ì •
+		POTION_STATE	= 0,	// »óÅÂÀÌ»óÄ¡·á
+		POTION_HP		= 1,	// »ı¸íÈ¸º¹
+		POTION_MP		= 2,	// ¸¶³ªÈ¸º¹
+		POTION_DUAL		= 3,	// HP+MP È¸º¹
+		POTION_STAT		= 4,	// Stat »ó½Â
+		POTION_ETC		= 5,	// ±âÅ¸ (ÀÌµ¿Çâ»ó)	
+		POTION_UP		= 6,	// °ø¹æÇâ»ó
+		POTION_TEARS	= 7,	// ´«¹°
+		POTION_CRYSTAL	= 8,	// °áÁ¤
+		POTION_POTAL_SCROLL = 9, // NPCÆ÷Å» ½ºÅ©·Ñ
+		POTION_INC_HEAL_HP, // HP È¸º¹¼Óµµ Áõ°¡.
+		POTION_INC_HEAL_MP, // MP È¸º¹¼Óµµ Áõ°¡.
+		POTION_PET_HEAL_HP,		// Æê HPÈ¸º¹.
+		POTION_INC_PET_MOVE_SPD, // Æê ÀÌµ¿¼Óµµ Áõ°¡.
+		POTION_TOTEM,			// ÅäÅÛ ¾ÆÀÌÅÛ.
+		POTION_PET_HEAL_MP		// Æê MPÈ¸º¹
 	};
 
 	enum POTIONSUBTYPE_UP
 	{
-		POTION_UP_PHYSICAL	= 0,	// ë¬¼ë¦¬
-		POTION_UP_MAGIC		= 1,	// ë§ˆë²•
-		POTION_UP_ATTACK	= 0,	// ê³µê²©
-		POTION_UP_DEFENSE	= 1,	// ë°©ì–´
+		POTION_UP_PHYSICAL	= 0,	// ¹°¸®
+		POTION_UP_MAGIC		= 1,	// ¸¶¹ı
+		POTION_UP_ATTACK	= 0,	// °ø°İ
+		POTION_UP_DEFENSE	= 1,	// ¹æ¾î
 	};
 
-	// IONCE_PROCESS_DOC ì¢…ë¥˜ 1
+	// IONCE_PROCESS_DOC Á¾·ù 1
 	enum PROCESSDOCTYPE
 	{
-		PROCESS_DOC_STONE		= 0,   // ê´‘ì„ ì •ë ¨ ë¬¸ì„œ
-		PROCESS_DOC_PLANT		= 1,   // ì‹ë¬¼ ê°€ê³µ ë¬¸ì„œ
-		PROCESS_DOC_ELEMENT		= 2,   // ì›ì†Œ ì •ì œ ë¬¸ì„œ
+		PROCESS_DOC_STONE		= 0,   // ±¤¼® Á¤·Ã ¹®¼­
+		PROCESS_DOC_PLANT		= 1,   // ½Ä¹° °¡°ø ¹®¼­
+		PROCESS_DOC_ELEMENT		= 2,   // ¿ø¼Ò Á¤Á¦ ¹®¼­
 	};
 
-	// ìŠ¤í†¤ ì •ë ¨ ë¬¸ì„œ ì¢…ë¥˜
+	// ½ºÅæ Á¤·Ã ¹®¼­ Á¾·ù
 	enum PROCESSDOCSUBTYPE_STONE 
 	{
-		PROCESS_DOC_SUB_STONE0	= 0,		// ìŠ¤í†¤ ì˜¨ ì •ë ¨ ë¬¸ì„œ
-		PROCESS_DOC_SUB_STONE1	= 1,		// ìŠ¤í†¤ ë¦¬ìŠ¤ ì •ë ¨ ë¬¸ì„œ
-		PROCESS_DOC_SUB_STONE2	= 2,		// ìŠ¤í†¤ ì›¨ë²„ ì •ë ¨ ë¬¸ì„œ
-		PROCESS_DOC_SUB_STONE3	= 3,		// ìŠ¤í†¤ ë¹„ìŠ¤íŠ¸ ì •ë ¨ ë¬¸ì„œ
-		PROCESS_DOC_SUB_STONE4	= 4,		// ìŠ¤í†¤ ì›°ìŠ¤ë˜ ì •ë ¨ ë¬¸ì„œ
+		PROCESS_DOC_SUB_STONE0	= 0,		// ½ºÅæ ¿Â Á¤·Ã ¹®¼­
+		PROCESS_DOC_SUB_STONE1	= 1,		// ½ºÅæ ¸®½º Á¤·Ã ¹®¼­
+		PROCESS_DOC_SUB_STONE2	= 2,		// ½ºÅæ ¿ş¹ö Á¤·Ã ¹®¼­
+		PROCESS_DOC_SUB_STONE3	= 3,		// ½ºÅæ ºñ½ºÆ® Á¤·Ã ¹®¼­
+		PROCESS_DOC_SUB_STONE4	= 4,		// ½ºÅæ À£½º´ø Á¤·Ã ¹®¼­
 	};
 	
-	// ì‹ë¬¼ ì •ë ¨ ë¬¸ì„œ ì¢…ë¥˜
+	// ½Ä¹° Á¤·Ã ¹®¼­ Á¾·ù
 	enum PROCESSDOCSUBTYPE_PLANT
 	{
-		PROCESS_DOC_SUB_PLANT0	= 0,		// í¬ë½ì˜ ë…¸ë€ì ê°€ê³µ ë¬¸ì„œ
-		PROCESS_DOC_SUB_PLANT1	= 1,		// í¬ë½ì˜ ì¤„ê¸° ê°€ê³µ ë¬¸ì„œ
-		PROCESS_DOC_SUB_PLANT2	= 2,		// í¬ë½ì˜ íŒŒë€ì ê°€ê³µ ë¬¸ì„œ
-		PROCESS_DOC_SUB_PLANT3	= 3,		// í¬ë½ì˜ ê°€ì‹œ ê°€ê³µ ë¬¸ì„œ
-		PROCESS_DOC_SUB_PLANT4	= 4,		// í¬ë½ì˜ ê½ƒ ê°€ê³µ ë¬¸ì„œ
+		PROCESS_DOC_SUB_PLANT0	= 0,		// Å©¶ôÀÇ ³ë¶õÀÙ °¡°ø ¹®¼­
+		PROCESS_DOC_SUB_PLANT1	= 1,		// Å©¶ôÀÇ ÁÙ±â °¡°ø ¹®¼­
+		PROCESS_DOC_SUB_PLANT2	= 2,		// Å©¶ôÀÇ ÆÄ¶õÀÙ °¡°ø ¹®¼­
+		PROCESS_DOC_SUB_PLANT3	= 3,		// Å©¶ôÀÇ °¡½Ã °¡°ø ¹®¼­
+		PROCESS_DOC_SUB_PLANT4	= 4,		// Å©¶ôÀÇ ²É °¡°ø ¹®¼­
 	};
 
-	// ì›ì†Œ ì •ë ¨ ë¬¸ì„œ ì¢…ë¥˜
+	// ¿ø¼Ò Á¤·Ã ¹®¼­ Á¾·ù
 	enum PROCESSDOCSUBTYPE_ELEMENT
 	{
-		PROCESS_DOC_SUB_ELEMENT0	= 0,	// Eë“±ê¸‰ ì›ì†Œ ì •ì œ ë¬¸ì„œ
-		PROCESS_DOC_SUB_ELEMENT1	= 1,	// Dë“±ê¸‰ ì›ì†Œ ì •ì œ ë¬¸ì„œ
-		PROCESS_DOC_SUB_ELEMENT2	= 2,	// Cë“±ê¸‰ ì›ì†Œ ì •ì œ ë¬¸ì„œ
-		PROCESS_DOC_SUB_ELEMENT3	= 3,	// Bë“±ê¸‰ ì›ì†Œ ì •ì œ ë¬¸ì„œ
-		PROCESS_DOC_SUB_ELEMENT4	= 4,	// Aë“±ê¸‰ ì›ì†Œ ì •ì œ ë¬¸ì„œ
+		PROCESS_DOC_SUB_ELEMENT0	= 0,	// Eµî±Ş ¿ø¼Ò Á¤Á¦ ¹®¼­
+		PROCESS_DOC_SUB_ELEMENT1	= 1,	// Dµî±Ş ¿ø¼Ò Á¤Á¦ ¹®¼­
+		PROCESS_DOC_SUB_ELEMENT2	= 2,	// Cµî±Ş ¿ø¼Ò Á¤Á¦ ¹®¼­
+		PROCESS_DOC_SUB_ELEMENT3	= 3,	// Bµî±Ş ¿ø¼Ò Á¤Á¦ ¹®¼­
+		PROCESS_DOC_SUB_ELEMENT4	= 4,	// Aµî±Ş ¿ø¼Ò Á¤Á¦ ¹®¼­
 	};
 
-	// ONCE_BOX  ì¢…ë¥˜ // Date : 2005-01-12,   By Lee Ki-hwan
+	// ONCE_BOX  Á¾·ù // Date : 2005-01-12,   By Lee Ki-hwan
 	enum BOXTYPE
 	{
-		BOX_REMAKE		= 0,		// ì¬í™œì˜ìƒì
-		BOX_ARCANE		= 1,		// ë¹„ë°€ì˜ìƒì
+		BOX_REMAKE		= 0,		// ÀçÈ°ÀÇ»óÀÚ
+		BOX_ARCANE		= 1,		// ºñ¹ĞÀÇ»óÀÚ
 	};
 
 	enum REFINE_TYPE // Date : 2005-01-12,   By Lee Ki-hwan
 	{
-		REFINE_GENERAL	= 0,		// ì¼ë°˜ì œë ¨ì„
-		REFINE_SPECIAL	= 1,		// ê³ ê¸‰ì œë ¨ì„
+		REFINE_GENERAL	= 0,		// ÀÏ¹İÁ¦·Ã¼®
+		REFINE_SPECIAL	= 1,		// °í±ŞÁ¦·Ã¼®
+		REFINE_SUPER_SPECIAL = 2,	// ÃÊ°í±ŞÁ¦·Ã¼®
+		REFINE_BOOSTER	= 3,		// ºÎ½ºÅÍ
+		REFINE_LUCKY	= 4,		// Çà¿îÀÇ °í±Ş Á¦·Ã¼®
+		REFINE_PLATINUM	= 5,		// ÇÃ·¡Æ¼³Ñ Á¦·Ã¼®
+		REFINE_CHAOS	= 6,		// Æ¯±Ş Á¦·Ã¼®
+		REFINE_PURITY_RUNE = 7,		// Á¤È­µÈ ·é
+		REFINE_DEVIL_RUNE = 8,		// ¾Ç¸¶ÀÇ ·é 
+		REFINE_CHAOS_RUNE = 9,		// Ä«¿À½º ·é [8/24/2012 ¹ÚÈÆ] 
+		REFINE_SUPER_RUNE = 10,		// ÃÊ°í±Ş ·é
+		REFINE_LUCKY_RUNE = 11		// Çà¿î ·é
 	};
 
 	enum LORD_ITEM_TYPE
 	{
-		LORD_ITEM_BIGSWORD	= 0,	// ëŒ€ê²€(íƒ€ì´íƒ„)
-		LORD_ITEM_AXE		= 1,	// ë„ë¼(íƒ€ì´íƒ„)
-		LORD_ITEM_KNIFE		= 2,	// ê¸°ì‚¬ë„(ë‚˜ì´íŠ¸)
-		LORD_ITEM_TWOSWORD	= 3,	// ì´ë„ë¥˜(ë‚˜ì´íŠ¸)
-		LORD_ITEM_BOW		= 4,	// í™œ(íëŸ¬)
-		LORD_ITEM_WAND		= 5,	// ì™„ë“œ(íëŸ¬)
-		LORD_ITEM_SSTAFF	= 6,	// ìˆìŠ¤íƒœí”„(ë©”ì´ì§€)
-		LORD_ITEM_STAFF		= 7,	// ìŠ¤íƒœí”„(ë©”ì´ì§€)
-		LORD_ITEM_DAGGER	= 8,	// ë‹¨ê²€(ë¡œê·¸)
-		LORD_ITEM_CROSSBOW	= 9,	// ì„ê¶(ë¡œê·¸)
-		LORD_ITEM_SCYTHE    = 10,   // ì‚¬ì´ë“œ(ì†Œì„œëŸ¬)
-		LORD_ITEM_POLARM    = 11,	// í´ì•”(ì†Œì„œëŸ¬)
+		LORD_ITEM_BIGSWORD	= 0,	// ´ë°Ë(Å¸ÀÌÅº)
+		LORD_ITEM_AXE		= 1,	// µµ³¢(Å¸ÀÌÅº)
+		LORD_ITEM_KNIFE		= 2,	// ±â»çµµ(³ªÀÌÆ®)
+		LORD_ITEM_TWOSWORD	= 3,	// ÀÌµµ·ù(³ªÀÌÆ®)
+		LORD_ITEM_BOW		= 4,	// È°(Èú·¯)
+		LORD_ITEM_WAND		= 5,	// ¿Ïµå(Èú·¯)
+		LORD_ITEM_SSTAFF	= 6,	// ¼ô½ºÅÂÇÁ(¸ŞÀÌÁö)
+		LORD_ITEM_STAFF		= 7,	// ½ºÅÂÇÁ(¸ŞÀÌÁö)
+		LORD_ITEM_DAGGER	= 8,	// ´Ü°Ë(·Î±×)
+		LORD_ITEM_CROSSBOW	= 9,	// ¼®±Ã(·Î±×)
+		LORD_ITEM_SCYTHE    = 10,   // »çÀÌµå(¼Ò¼­·¯)
+		LORD_ITEM_POLARM    = 11,	// Æú¾Ï(¼Ò¼­·¯)
 		LORD_ITEM_TOTAL		= 12
 	};
 
-	// AI ì ìš© ë²”ìœ„
+	// AI Àû¿ë ¹üÀ§
 	enum PET_AI_SET0 
 	{
 		PET_AI_RANGE_3M		= 1,		
@@ -440,19 +425,17 @@ public:
 		PET_AI_RANGE_10M	= 3,
 		PET_AI_RANGE_20M	= 4,
 		PET_AI_RANGE_30M	= 5,
-
 	};
-	// AI ì„¸ë¶€ì„ íƒ
+	// AI ¼¼ºÎ¼±ÅÃ
 	enum PET_AI_SET1
 	{
 		PET_AI_HP		= 1,
 		PET_AI_MP		= 2,
 		PET_AI_STM		= 3,
 		PET_AI_FAITH	= 4,
-
 	};
 
-	// AI ì„¸ë¶€ì„ íƒ ì¡°ê±´( %ì´í•˜ )
+	// AI ¼¼ºÎ¼±ÅÃ Á¶°Ç( %ÀÌÇÏ )
 	enum PET_AI_SET2
 	{
 		PET_AI_PERCENT_99	= 1,
@@ -463,52 +446,63 @@ public:
 		PET_AI_PERCENT_50	= 6,
 	};
 
-	// AI ì ìš© íƒ€ê²Ÿ
+	// AI Àû¿ë Å¸°Ù
 	enum PET_AI_SET3
 	{
-		PET_AI_OWNER_ATTACK_ENEMY	= 1,	// ì£¼ì¸ì´ ê³µê²©í•˜ëŠ” ì 
-		PET_AI_ENEMY_ATTACK_OWNER	= 2,	// ì£¼ì¸ì„ ê³µê²©í•˜ëŠ” ì 
-		PET_AI_ENEMY_ATTACK_PET		= 3,	// í«ì„ ê³µê²©í•˜ëŠ” ì 
-		PET_AI_ENEMY				= 4,	// ì 
-		PET_AI_PET					= 5,	// í«
-		PET_AI_OWNER				= 6,	// ì£¼ì¸
-		PET_AI_ITEM					= 7,	// ì•„ì´í…œ
+		PET_AI_OWNER_ATTACK_ENEMY	= 1,	// ÁÖÀÎÀÌ °ø°İÇÏ´Â Àû
+		PET_AI_ENEMY_ATTACK_OWNER	= 2,	// ÁÖÀÎÀ» °ø°İÇÏ´Â Àû
+		PET_AI_ENEMY_ATTACK_PET		= 3,	// ÆêÀ» °ø°İÇÏ´Â Àû
+		PET_AI_ENEMY				= 4,	// Àû
+		PET_AI_PET					= 5,	// Æê
+		PET_AI_OWNER				= 6,	// ÁÖÀÎ
+		PET_AI_ITEM					= 7,	// ¾ÆÀÌÅÛ
 	};
 
+	// °ø¼ºÀü ITEM »ç¿ë
+	enum eCASTLE_WAR
+	{
+		eANYWHERE = 0,		//	0	¾îµğ¼­µç »ç¿ë °¡´É
+		eSIEGEAREA_ALL,		//	1	ÀüÃ¼ °ø¼º¿¡¼­¸¸ »ç¿ë °¡´É
+		eSIEGEAREA_MERAC,	//	2	¸Ş¶óÅ© °ø¼º¿¡¼­¸¸ »ç¿ë °¡´É
+		eSIEGEAREA_DRATAN,	//	3	µå¶óÅº °ø¼º¿¡¼­¸¸ »ç¿ë °¡´É
+	};
+	
 	/* Default constructor. */
 	CItemData(void);
 	/* Destructor. */
 	~CItemData(void);
 
+	CItemData& operator = (const CItemData& data);
+
 	//----------------------------------------------------
 	// Properties
-	// - ItemDataëŠ” ItemToolì—ì„œ ì„¤ì •ëœ ë°ì´í„°ë¥¼ ë°›ì•„ì„œ ì²˜ë¦¬í•˜ëŠ”ë°,
-	// - ê²Œì„ ë‚´ë¶€ì—ì„œ ë°ì´í„°ê°€ ë³€ê²½ë  ì¼ì´ ê±°ì˜ ì—†ì„ ê²ƒì´ë‹¤.
-	// - ê³ ë¡œ, ì¶”í›„ì—ëŠ” í”„ë¡œí¼í‹° í•¨ìˆ˜ë¥¼ ê°–ê³  ìˆëŠ” ê²ƒë³´ë‹¤ëŠ” êµ¬ì¡°ì²´ë¥¼ 
-	// - publicìœ¼ë¡œ ë…¸ì¶œí•˜ëŠ”ê²Œ ì¢‹ì„ë“¯.	
-	// - ì•„ë‹ˆë©´, ItemData êµ¬ì¡°ì²´ë¥¼ ë°˜í™˜í•˜ëŠ” ê²ƒë„ ì¢‹ì„ê±° ê°™ì€ë°...
-	// - ë˜í•œ, ê²Œì„ ë‚´ì—ì„œ ë°ì´í„°ê°€ ë³€ê²½ë  ì¼ì´ ì—†ìœ¼ë¯€ë¡œ, Set ë©”ì†Œë“œë“¤ì€ í•„ìš”ê°€ ì—†ì„ë“¯...
+	// - ItemData´Â ItemTool¿¡¼­ ¼³Á¤µÈ µ¥ÀÌÅÍ¸¦ ¹Ş¾Æ¼­ Ã³¸®ÇÏ´Âµ¥,
+	// - °ÔÀÓ ³»ºÎ¿¡¼­ µ¥ÀÌÅÍ°¡ º¯°æµÉ ÀÏÀÌ °ÅÀÇ ¾øÀ» °ÍÀÌ´Ù.
+	// - °í·Î, ÃßÈÄ¿¡´Â ÇÁ·ÎÆÛÆ¼ ÇÔ¼ö¸¦ °®°í ÀÖ´Â °Íº¸´Ù´Â ±¸Á¶Ã¼¸¦ 
+	// - publicÀ¸·Î ³ëÃâÇÏ´Â°Ô ÁÁÀ»µí.	
+	// - ¾Æ´Ï¸é, ItemData ±¸Á¶Ã¼¸¦ ¹İÈ¯ÇÏ´Â °Íµµ ÁÁÀ»°Å °°Àºµ¥...
+	// - ¶ÇÇÑ, °ÔÀÓ ³»¿¡¼­ µ¥ÀÌÅÍ°¡ º¯°æµÉ ÀÏÀÌ ¾øÀ¸¹Ç·Î, Set ¸Ş¼ÒµåµéÀº ÇÊ¿ä°¡ ¾øÀ»µí...
 	//----------------------------------------------------	
 
-	// ì‹±ê¸€ ëª¨ë“œ ì „ìš©.
+	// ½Ì±Û ¸ğµå Àü¿ë.
 	inline BOOL IsExclusiveSingleMode()
 	{	return FALSE; };
 
 	inline BOOL	CanUse(int iPlayerID)	
-	{	return ( Item_Data.job & (1 << iPlayerID) );	};
+	{	return ( job & (1 << iPlayerID) );	};
 	
 	inline BOOL IsProductionItem()
 	{
-		return ( Item_Data.subType == ITEM_WEAPON_MINING ||
-			Item_Data.subType == ITEM_WEAPON_GATHERING ||
-			Item_Data.subType == ITEM_WEAPON_CHARGE );
+		return ( subType == ITEM_WEAPON_MINING ||
+			subType == ITEM_WEAPON_GATHERING ||
+			subType == ITEM_WEAPON_CHARGE );
 	}
 
 	inline void SetItemSmcFileName(const char* FileName)
-	{	strcpy(Item_Data.fileSMC, FileName);}
+	{	strcpy(fileSMC, FileName);}
 
 	inline void SetArmorEffectName(const char* FileName)
-	{	strcpy(Item_Data.ArmorEffectName, FileName);	}
+	{	strcpy(efffectName, FileName);	}
 
 	inline void SetItemBMFileName(const char* FileName)
 	{	strcpy(fileBm, FileName);}
@@ -540,13 +534,13 @@ public:
 	inline void SetMeshCnt(int Index)
 	{	Item_MeshCnt = Index;}
 	
-	inline void SetTexCnt(int Index) //ì²«ë²ˆì§¸ ë©”ì‰¬ì˜ í…ìŠ¤ì³ ì¹´ìš´íŠ¸.
+	inline void SetTexCnt(int Index) //Ã¹¹øÂ° ¸Ş½¬ÀÇ ÅØ½ºÃÄ Ä«¿îÆ®.
 	{	Item_TexCnt = Index;}
 	
-	inline void SetTex2Cnt(int Index) //ë‘ë²ˆì§¸ ë©”ì‰¬ì˜ í…ìŠ¤ì³ ì¹´ìš´íŠ¸.
+	inline void SetTex2Cnt(int Index) //µÎ¹øÂ° ¸Ş½¬ÀÇ ÅØ½ºÃÄ Ä«¿îÆ®.
 	{	Item_Tex2Cnt = Index;}
 	
-	inline void SetTex3Cnt(int Index) //ì„¸ë²ˆì§¸ ë©”ì‰¬ì˜ í…ìŠ¤ì³ ì¹´ìš´íŠ¸.
+	inline void SetTex3Cnt(int Index) //¼¼¹øÂ° ¸Ş½¬ÀÇ ÅØ½ºÃÄ Ä«¿îÆ®.
 	{	Item_Tex3Cnt = Index;}
 	
 	inline void SetCreateSet(BOOL bSet)
@@ -554,10 +548,16 @@ public:
 
 	//--------------------------------------------------------------
 	inline const char* GetItemSmcFileName()
-	{	return Item_Data.fileSMC;}
+	{	return fileSMC;}
 
 	inline const char* GetArmorEffectName()
-	{	return Item_Data.ArmorEffectName;	}
+	{	return efffectName;	}
+
+	inline const char* GetMissileShotEffect()
+	{	return attackEffectName; }
+
+	inline const char* GetShotHitEffect()
+	{	return damageEffectName;	}
 	
 	inline const char* GetItemBMFileName()
 	{	return fileBm;}
@@ -586,19 +586,12 @@ public:
 	inline const char* GetItemTEX3NormalFileName()
 	{	return fileTex3Normal;}
 	
-	inline int GetFlag()		const
-	{	return Item_Data.flag;}
+	inline __int64 GetFlag()		const
+	{	return flag;}
 
-	/* Item_Data.flag ì€ lodì—ì„œ ë¡œë”©í•œ Property Flagì„ 
-	inline bool CanUseSuperGOJE() const
+	inline bool IsFlag( __int64 nFlag ) const 
 	{
-		return (Item_Data.flag & FLAG_ITEM_SUPER_STONE_USED) == 0;
-	}
-	*/
-	
-	inline bool IsFlag( int nFlag ) const 
-	{
-		if( Item_Data.flag & nFlag ) return true;
+		if( flag & nFlag ) return true;
 		return false;
 	}
 
@@ -618,251 +611,404 @@ public:
 	{	return Item_Tex3Cnt;}
 	
 	inline int	GetNum0() const		
-	{	return Item_Data.num0;	}
+	{	return num0;	}
 
 	inline int	GetNum1() const		
-	{	return Item_Data.num1;	}
+	{	return num1;	}
 
 	inline int	GetNum2() const		
-	{	return Item_Data.num2;	}
+	{	return num2;	}
 
 	inline int	GetNum3() const		
-	{	return Item_Data.num3;	}
+	{	return num3;	}
 
 	inline int GetItemIndex()	const
-	{	return Item_Data.index;}
+	{	return index;	}
 	
 	inline int GetGrade()		const
-	{	return Item_Data.grade;}
+	{	return num2;}
 
 	inline int GetJob()			const
-	{	return Item_Data.job; }
+	{	return job; }
 
 	inline int GetLevel()		const
-	{	return Item_Data.level;	}
-
-	inline int GetWeight()		const
-	{	return Item_Data.weight;	}
+	{	return level;	}
+	inline int GetStack() const { return stack;	}
 
 	inline int GetFame()		const
-	{	return Item_Data.fame;	}
+	{	return fame;	}
 	
-	// ì°©ìš© ìœ„ì¹˜ë¥¼ ë°˜í™˜í•©ë‹ˆë‹¤.
+	// Âø¿ë À§Ä¡¸¦ ¹İÈ¯ÇÕ´Ï´Ù.
 	inline int GetWearingPosition()	const
-	{	return Item_Data.wearing;}
+	{	return wearing;}
 	
 	inline int	GetType()		const
-	{	return Item_Data.type;}
+	{	return type;	}
 	
 	inline int	GetSubType()	const
-	{	return Item_Data.subType;}
+	{	return subType;	}
 	
 	inline int	GetZoneNum()	const
-	{	return Item_Data.zonenum;	}
+	{	return num1;	}
 
 	inline int	GetExtraNum()	const
-	{	return Item_Data.extranum;	}
+	{	return num2;	}
 
 	inline int	GetQuestNum()	const
-	{	return	Item_Data.questnum;	}
+	{	return	num0;	}
 
 	inline int	GetPetType()	const
-	{	return Item_Data.pettype;	}
+	{	return num0;	}
 	
 	inline int	GetPrice()		const
-	{	return Item_Data.price;}
+	{	return price;}
 
-	inline int	GetProcessType()	const		// ê°€ê³µ íƒ€ì…
-	{	return Item_Data.processtype;	}
+	inline int	GetProcessType()	const		// °¡°ø Å¸ÀÔ
+	{	return num0;	}
 
-	inline int	GetProcessSubType()	const		// ì„œë¸Œ íƒ€ì…
-	{	return Item_Data.processsubtype;	}
+	inline int	GetProcessSubType()	const		// ¼­ºê Å¸ÀÔ
+	{	return num1;	}
 
-	inline int	GetProductType()	const		// ì œì¡° íƒ€ì…
-	{	return Item_Data.producttype;	}
+	inline int	GetProductType()	const		// Á¦Á¶ Å¸ÀÔ
+	{	return num0;	}
 
-	inline int	GetProductSubType()	const		// ì œì¡° ì„œë¸Œ íƒ€ì…
-	{	return Item_Data.productsubtype;	}
+	inline int	GetProductSubType()	const		// Á¦Á¶ ¼­ºê Å¸ÀÔ
+	{	return num1;	}
 
-	inline int	GetProcessSkill()	const		// ê°€ê³µ ìŠ¤í‚¬
-	{	return Item_Data.sskill;	}
+	inline int	GetProcessSkill()	const		// °¡°ø ½ºÅ³
+	{	return num2;	}
 
 	inline int	GetBoxType()	const		// Box type
-	{	return Item_Data.boxtype;	}
+	{	return num0;	}
 
 	inline int	GetRefineType()	const		// Refinetype type
-	{	return Item_Data.refinetype;	}
+	{	return num0;	}
 
 	inline int GetMakePotionCount () const 
-	{	return Item_Data.count;	}
+	{	return num3;	}
 
 	inline int	GetNeedItemIndex( int nIndex )	const	
-	{	return Item_Data.needItemIndex[nIndex];	}
+	{	return needItemIndex[nIndex];	}
 
 	inline int	GetNeedItemCount( int nIndex )	const
-	{	return Item_Data.needItemCount[nIndex];	}
+	{	return needItemCount[nIndex];	}
 
 	inline int	GetNeedSSkillIndex()	const
-	{	return Item_Data.needSSkillIndex;	}
+	{	return needSSkillIndex;	}
 
 	inline int	GetNeedSSkillCount()	const
-	{	return Item_Data.needSSkillCount;	}
+	{	return needSSkillCount;	}
 
 	inline int	GetNeedSSkillIndex2()	const
-	{	return Item_Data.needSSkillIndex2;	}
+	{	return needSSkillIndex2;	}
 
 	inline int	GetNeedSSkillCount2()	const
-	{	return Item_Data.needSSkillCount2;	}
+	{	return needSSkillCount2;	}
 	
 	inline int	GetPhysicalDefence()	const
-	{	return Item_Data.pDefense;	}
+	{	return num0;	}
 	
-	int	GetPhysicalAttack();		// ê³µì„± ë³´ìƒ ì‘ì—… ì¶”ê°€ë¡œ ì¼ë°˜ í•¨ìˆ˜ë¡œ ì „í™˜ 
+	int	GetPhysicalAttack();		// °ø¼º º¸»ó ÀÛ¾÷ Ãß°¡·Î ÀÏ¹İ ÇÔ¼ö·Î ÀüÈ¯ 
 	int	GetMagicAttack();
 		
 	inline int	GetMagicDefence()		const
-	{	return Item_Data.mDffense;	}
+	{	return num1;	}
 	
 	inline int	GetAttackSpeed()		const
-	{	return Item_Data.attackSpeed;}
+	{	return num2;}
 	
 	inline int	GetRecoverSec()			const
-	{	return Item_Data.sec;		}
+	{	return num0;		}
 
 	inline int	GetRecoverHP()			const
-	{	return Item_Data.recoverHP;	}
+	{	return num1;	}
 	
 	inline int	GetRecoverMP()			const
-	{	return Item_Data.recoverMP;	}
+	{	return num2;	}
 	
 	inline int	GetSkillType()			const
-	{	return Item_Data.skillType;	}
+	{	return num0;	}
 	
 	inline int	GetSkillLevel()			const
-	{	return Item_Data.skillLevel;}
+	{	return num1;}
 
 	inline int	GetOptionType()			const
-	{	return Item_Data.optiontype;}
+	{	return num0;}
 	
 	inline const char* GetName()
-	{	return Item_Data.name;	}
+	{	return name.c_str();	}
+
+	inline void SetName(const char* str)	{ name = str; }
 
 	inline const char* GetDesc()
-	{	return Item_Data.descr;	}
+	{	return descr.c_str();	}
+
+	inline void SetDesc(const char* str)	{ descr = str; }
 
 	inline int	GetWarpType() const 
-	{ return Item_Data.warpType; }
+	{ return num0; }
 	
 	inline int GetIconTexID()			const
-	{	return Item_Data.iIconTexID;}
+	{	return textureID;}
 	
 	inline int GetIconTexRow()			const
-	{	return Item_Data.iIconTexRow;}
+	{	return textureRow;}
 	
 	inline int GetIconTexCol()			const
-	{	return Item_Data.iIconTexCol;	}
+	{	return textureCol;	}
 
-	inline int GetPetAISet0() const
-	{ return Item_Data.PetAI_Set0; }
+	inline int GetPetAISet0() const // SOCKET_SYSTEM_S2 ¿¡¼­ º¸¼®ÀÏ °æ¿ì ÀåÂø À§Ä¡°¡ ³Ñ¾î¿È [4/2/2013 Ranma]
+	{ return set0; }
 
 	inline int GetPetAISet1() const
-	{ return Item_Data.PetAI_Set1; }
+	{ return set1; }
 
 	inline int GetPetAISet2() const
-	{ return Item_Data.PetAI_Set2; }
+	{ return set2; }
 
 	inline int GetPetAISet3() const
-	{ return Item_Data.PetAI_Set3; }
+	{ return set3; }
 
-	// [090608: selo] í€˜ìŠ¤íŠ¸ ì•„ì´í…œ ì‚¬ìš© ì œí•œ
-	inline int GetRestrictionZoneNo() const		// ì‚¬ìš©ì œí•œ ì¡´ ë²ˆí˜¸
-	{ return Item_Data.restrictionZoneNo; }
+	//SET_ITEM_ADD				//[ttos_2009_5_22]: ¼¼Æ® ¾ÆÀÌÅÛ Àû¿ë
+	inline int GetSetItemIndex() const
+	{ return set4; }
 
-	inline int GetRestrictionPosX() const		// ì‚¬ìš©ì œí•œ Xì¢Œí‘œ
-	{ return Item_Data.restrictionPosX; }
 
-	inline int GetRestrictionPosY() const		// ì‚¬ìš©ì œí•œ Yì¢Œí‘œ
-	{ return Item_Data.restrictionPosY; }
+	// [090608: selo] Äù½ºÆ® ¾ÆÀÌÅÛ »ç¿ë Á¦ÇÑ
+	inline int GetRestrictionZoneNo() const		// »ç¿ëÁ¦ÇÑ Á¸ ¹øÈ£
+	{ return set0; }
 
-	inline int GetRestrictionPosZ() const		// ì‚¬ìš©ì œí•œ Zì¢Œí‘œ
-	{ return Item_Data.restrictionPosZ; }
+	inline int GetRestrictionPosX() const		// »ç¿ëÁ¦ÇÑ XÁÂÇ¥
+	{ return set1; }
 
-	inline int GetRestrictionRadius() const		// ì‚¬ìš©ì œí•œ ë°˜ê²½
-	{ return Item_Data.restrictionRadius; }
+	inline int GetRestrictionPosY() const		// »ç¿ëÁ¦ÇÑ YÁÂÇ¥
+	{ return set3; }
 
-	static bool IsLordItem( int nIndex ) ; // ì„±ì£¼ ë¬´ê¸° ì¸ì§€ ì•„ë‹Œì§€ íŒë‹¤. 
-	static bool IsUniqueItem( int nIndex ) ; // ìœ ë‹ˆí¬ ë¬´ê¸° ì¸ì§€ ì•„ë‹Œì§€ íŒë‹¤. 
+	inline int GetRestrictionPosZ() const		// »ç¿ëÁ¦ÇÑ ZÁÂÇ¥
+	{ return set2; }
+
+	inline int GetRestrictionRadius() const		// »ç¿ëÁ¦ÇÑ ¹İ°æ
+	{ return set4; }
+	
+	// socket system [7/16/2010 rumist]
+	inline int GetSocketOptionIndex()	const
+	{ return rareOptionType[0];	}
+
+	inline int GetSocketOptionLevel()	const
+	{ return rareOptionLevel[0];	}
+
+	inline	int GetJumpingLevel() const
+	{ return num0;	}
+
+	// [2013/02/13] sykim70 Fortune System
+	inline int GetFortuneIndex() const
+	{ return fortuneIndex; }
+
+	static bool IsLordItem( int nIndex ) ; // ¼ºÁÖ ¹«±â ÀÎÁö ¾Æ´ÑÁö ÆÇ´Ù. 
+	static bool IsUniqueItem( int nIndex ) ; // À¯´ÏÅ© ¹«±â ÀÎÁö ¾Æ´ÑÁö ÆÇ´Ù. 
+
+	// [2010/10/20 : Sora] ¿ëº´ Ä«µåÁı Ã¼Å©
+	bool IsMercenaryCardHolder();
+
+	inline int GetItemBelong()	{ return rareOptionType[0]; }
+
+	inline int GetOptionOriginType(int idx)
+	{ 
+		if (idx < 0 || idx >= MAX_ORIGIN_OPTION)
+			return 0;
+		return rareOptionType[idx + 1];
+	}
+	inline int GetOptionOriginLevel(int idx)
+	{ 
+		if (idx < 0 || idx >= MAX_ORIGIN_OPTION)
+			return 0;
+		return rareOptionLevel[idx + 1];
+	}
+
+	inline int GetOptionSkillType(int idx)
+	{ 
+		if (idx < 0 || idx >= MAX_ITEM_SKILL)
+			return 0;
+		return rareOptionType[idx + MAX_ORIGIN_OPTION + 1];
+	}
+	inline int GetOptionSkillLevel(int idx)
+	{ 
+		if (idx < 0 || idx >= MAX_ITEM_SKILL)
+			return 0;
+		return rareOptionLevel[idx + MAX_ORIGIN_OPTION + 1];
+	}
+
+	inline char GetCastleWar()
+	{ 
+		return castleWar;
+	}
+
+	int& GetTransFlag() {
+		return transFlag;
+	}
+
+	inline int GetSyndicateType()
+	{ 
+		return syndicate_type;
+	}
+
+	inline int GetSyndicateGrade()
+	{ 
+		return syndicate_grade;
+	}
+
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslate();
+	void ClearNoTranslate();
+
+	static int LoadItemNameFromFile(const char* FileName);
 	
 	//-----------------------------------------------------------------------------
-	// Purpose: ì•„ì´í…œ ë°ì´í„°ë¥¼ í™”ì¼ë¡œë¶€í„° ì½ì–´ë“¤ì…ë‹ˆë‹¤.
-	// Input  : &apItemData - ì €ì¥ë  ë°°ì—´.
-	//			FileName - íŒŒì¼ëª…
+	// Purpose: ¾ÆÀÌÅÛ µ¥ÀÌÅÍ¸¦ È­ÀÏ·ÎºÎÅÍ ÀĞ¾îµéÀÔ´Ï´Ù.
+	// Input  : &apItemData - ÀúÀåµÉ ¹è¿­.
+	//			FileName - ÆÄÀÏ¸í
 	// Output : 	static int
 	//-----------------------------------------------------------------------------
-	static int LoadItemDataFromFile(CStaticArray<CItemData> &apItemData, const char* FileName);
+	static bool loadItemEx(const char* FileName);
+	static int LoadJewelItemDataFromFile(CStaticArray<JewelComosInfo> &apJewelData, const char* FileName);
 	static void LoadItemSmcDataFromFile(CStaticArray<ItemSmcParseInfo> &apItemSmcData, const char* FileName);
+
+#if		(_MSC_VER <= 1200)
+
+	static int getsize()	{ return (int)_mapdata.size(); }
+
+	static CItemData* getDataSeq(int Idx)
+	{
+		if (Idx < 0 || Idx >= _vecdata.size())
+			return m_dummy;
+
+		return _vecdata[Idx];
+	}
+
+#endif	// (_MSC_VER <= 1200)
 };
 
-class CItemName
+class CItemRareOption : public stRareOption, public LodLoader<CItemRareOption>
 {
 private:
-	// ITEM íˆ´ì—ì„œ ì‚¬ìš©í•˜ê³  ìˆëŠ” êµ¬ì¡°ì²´
-	// CItemDataì˜ ë‚´ë¶€ì—ì„œë§Œ ì‚¬ìš©ë©ë‹ˆë‹¤.
-	struct _ItemStat
-	{
-		int		index;			// ì•„ì´í…œ ê³ ìœ  INDEX
-		char	name[50];		// ì•„ì´í…œ ì´ë¦„.		
-		char	descr[255];
-	};
-	_ItemStat	Item_Data;
-
-public:
-	CItemName();
-	~CItemName();
-
-	inline const char* GetName()
-	{	return Item_Data.name;	}
-
-	inline const char* GetDesc()
-	{	return Item_Data.descr;	}
-
-	static int LoadItemNameFromFile(CStaticArray<CItemName> &apItemName, const char* FileName);
-};
-
-class CItemRareOption
-{
-private:
-	struct RareOption
-	{
-		int index;
-		int level;
-	};
-
-	int			m_iIndex;				// ë ˆì–´ ì˜µì…˜ ì¸ë±ìŠ¤
-	int			m_iGrade;				// ë ˆì–´ ì˜µì…˜ ë“±ê¸‰ (0=A, 1=B, 2=C, 3=D, 4=E)
-	int			m_iType;				// ë ˆì–´ ì˜µì…˜ ì¢…ë¥˜ (0=ë¬´ê¸°, 1=ë°©ì–´êµ¬, 2=ì•¡ì„œì‚¬ë¦¬)
-	int			m_iLen_prefix;			// ì ‘ë‘ì–´ ê¸¸ì´
-	char		m_strPrefix[50];			// ì ‘ë‘ì–´
-	int			m_iPhysical_attack;	// ë¬¼ë¦¬ ê³µê²©ë ¥
-	int			m_iPhysical_defence;	// ë¬¼ë¦¬ ë°©ì–´ë ¥
-	int			m_iMagic_attack;		// ë§ˆë²• ê³µê²©ë ¥
-	int			m_iMagic_defence;		// ë§ˆë²• ë°©ì–´ë ¥
-public:
-	RareOption	m_Option[10];			// ë ˆì–´ ì˜µì…˜
-	
+	std::string m_strPrefix;			// Á¢µÎ¾î
 public:
 	CItemRareOption();
 	~CItemRareOption();
 
-	inline const int GetIndex()				{ return m_iIndex; }
-	inline const int GetGrade()				{ return m_iGrade; }	
-	inline const int GetType()				{ return m_iType;}
-	inline const char* GetPrefix()			{ return m_strPrefix; }
-	inline const int GetPhysicalAttack()	{ return m_iPhysical_attack; }
-	inline const int GetPhysicalDefence()	{ return m_iPhysical_defence; }
-	inline const int GetMagicAttack()		{ return m_iMagic_attack; }
-	inline const int GetMagicDefence()		{ return m_iMagic_defence;	}	
+	inline const int GetIndex()				
+	{	return getindex(); }
+	inline const int GetGrade()				
+	{	return a_grade;		}	
+	inline const int GetType()				
+	{	return a_type; }
+	void SetPrefix(const char* str)			{ m_strPrefix = str;		}
+	inline const char* GetPrefix()			{ return m_strPrefix.c_str(); }
+	inline const int GetPhysicalAttack()	
+	{	return a_attack;	}
+	inline const int GetPhysicalDefence()	
+	{	return a_defense;	}
+	inline const int GetMagicAttack()		
+	{	return a_magic;		}
+	inline const int GetMagicDefence()		
+	{	return a_resist;	}
 
-	static int LoadItemRareOptionFromFile(std::vector<CItemRareOption> &apItemRareOption, const char* FileName);
+	static bool loadEx(const char* FileName);
+
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslate()
+	{
+		char buff[MAX_PATH] = {0,};
+		sprintf( buff, "[%d] : rare option", getindex() );
+		m_strPrefix = buff;
+	}
+
+	void ClearNoTranslate()
+	{
+		m_strPrefix = "";
+	}
 };
+
+//SET_ITEM_ADD				//[ttos_2009_5_22]: ¼¼Æ® ¾ÆÀÌÅÛ Àû¿ë
+class CSetItemData : public stSetItem, public LodLoader<CSetItemData>
+{
+private:
+	struct SetOption
+	{
+		int nSetCount;
+		int nSetType;
+		int nSetOptionIndex;
+		int nOptionLevel;
+	};
+	std::string	m_strSetItemName;	// SetItem Name
+
+public:
+	enum SET_OPTION_TYPE
+	{
+		SET_ITEM_TYPE_NONE = -1,
+		SET_ITEM_TYPE_OPTION = 0,
+		SET_ITEM_TYPE_SKILL = 1,
+	};
+	CSetItemData();
+	~CSetItemData();
+
+	inline const int GetSetItemIndex()		{ return getindex(); }
+	void SetName(const char* str)			{ m_strSetItemName = str; }
+	inline const char* GetName()			{ return m_strSetItemName.c_str(); }
+	inline const LONG GetApplyItemIndex(int nWearPos)	{ return item[nWearPos]; }
+	inline const SetOption GetOption(int OptionNum)		
+	{
+		SetOption setOpdata;
+		
+		setOpdata.nSetCount = wearCnt[OptionNum];
+		setOpdata.nSetType = optionType[OptionNum];
+		setOpdata.nSetOptionIndex = option[OptionNum];
+		setOpdata.nOptionLevel = optionLevel[OptionNum];
+			
+		return setOpdata;
+	}
+	inline const int GetMaxOption()		{ return optionCnt; }
+	static bool loadSetItemEx(const char* FileName);
+};
+
+#define  MAX_STUFF_ITEM	5
+
+class CMakeItemData
+{
+private:
+	struct SetStuff
+	{
+		int nStuff_Index;
+		int	nStuff_Count;
+	};
+
+	int		m_nFactory_Index;				// Á¦ÀÛ ¾ÆÀÌÅÛ ÀÎµ¦½º
+	char	m_strFactory_Name[50];			// Á¦ÀÛ ¾ÆÀÌÅÛ ÀÌ¸§
+	int		m_nFactory_Type;				// Á¦ÀÛ Å¸ÀÔ
+	int		m_nFactory_Subtype;				// Á¦ÀÛ ¼­ºê Å¸ÀÔ
+	int		m_nItemIndex;					// ¾ÆÀÌÅÛ µ¥ÀÌÅÍ ÀÎµ¦½º
+	UQUAD	m_nMakeExp;						// °íÀ¯ ¼÷·Ãµµ
+	UQUAD	m_nNeedExp;						// ÇÊ¿ä ¼÷·Ãµµ
+	UQUAD	m_nNeedNas;						// ÇÊ¿ä ³ª½º
+	SetStuff m_StuffItem[MAX_STUFF_ITEM];	// Àç·á ¾ÆÀÌÅÛ
+
+public:
+	CMakeItemData();
+	~CMakeItemData();
+
+	int GetMakeItemType() { return m_nFactory_Type; }
+	int	GetMakeItemSubType() { return m_nFactory_Subtype; }
+	char* GetName()	{ return m_strFactory_Name; }
+	int GetFactoryIndex()	{ return m_nFactory_Index; }
+	UQUAD GetMakeExp()		{ return m_nMakeExp; }
+	UQUAD GetNeedNas()		{ return m_nNeedNas; }
+	UQUAD GetNeedExp()		{ return m_nNeedExp; }
+	int GetItemButtonIndex() { return m_nItemIndex; }
+	SetStuff GetStuffItem(int Col)	{ return m_StuffItem[Col]; }
+	int	GetStuffItemIndex(int Col)	{ return m_StuffItem[Col].nStuff_Index; }
+	int	GetStuffItemCount(int Col)	{ return m_StuffItem[Col].nStuff_Count; }
+
+	static int LoadMakeItemFromFile(CStaticArray<CMakeItemData> &apMakeItem, const char* FileName);
+};
+
 #endif

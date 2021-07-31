@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLESPROCESSCONTROL_H__
 #define __CPARTICLESPROCESSCONTROL_H__
 
@@ -23,7 +23,7 @@ public:
 	virtual void Read(CTStream *istrFile);
 	virtual void Write(CTStream *ostrFile);
 
-	//usePtcPosê°€ ì°¸ì´ë©´ íŒŒí‹°í´ì˜ í¬ì§€ì…˜ì— ì§ì ‘ ì„¸íŒ…, ì•„ë‹ˆë©´ velocityì´ìš©, velocityì´ìš©ì€ trailë•Œë¬¸.
+	//usePtcPos°¡ ÂüÀÌ¸é ÆÄÆ¼Å¬ÀÇ Æ÷Áö¼Ç¿¡ Á÷Á¢ ¼¼ÆÃ, ¾Æ´Ï¸é velocityÀÌ¿ë, velocityÀÌ¿ëÀº trail¶§¹®.
 	void SetCircleInfo(BOOL usePtcPos, FLOAT angleSpeed);
 	void SetSpiralInfo(BOOL usePtcPos, FLOAT angleSpeed, FLOAT heightSpeed);
 
@@ -49,4 +49,4 @@ protected:
 };
 
 #endif //__CPARTICLESPROCESSCONTROL_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

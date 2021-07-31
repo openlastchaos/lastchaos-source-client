@@ -6,34 +6,32 @@
 #include <Engine/Entities/Entity.h>
 #include <vector>
 
+#include <Engine/Help/LoadLod.h>
+#include <common/header/def_combo.h>
 
-class ENGINE_API CMissionCase
+
+class ENGINE_API CMissionCase : public stMonsterCombo, public LodLoader<CMissionCase>
 {
 private:
-	typedef struct _tagMissionData
-	{
-//		int		nMaxCount;			// 미션 케이스 총 갯수
-		int		nMission_index;		// 미션 인덱스
-		char	strMission_name[50];// 미션 네임
-		int		price;				// 입장료
-		int		iIconTexID;			// 아이콘 텍스쳐 ID
-		int		iIconTexRow;		// 아이콘의 ROW상의 위치(최대 8)
-		int		iIconTexCol;		// 아이콘의 COL상의 위치(최대 16)
-		BOOL	bSkill;				// 미션 패널티 유무
-		int		iPoint;				// 미션 포인트
-	
-	}TMissionData, *PTMissionData;
-	
-protected:
-	
+	std::string strName;
 public:
-	CMissionCase();
-	~CMissionCase();
+	static bool	loadEx(const char* FileName);
 
+	//[sora] �̹��� ��Ʈ�� index ǥ��
+	void SetNoTranslate()
+	{
+		char buf[MAX_PATH] = {0,};
+		sprintf( buf, "[%d] : monster combo", index );
+		strName = buf;
+	}
 
-	TMissionData			m_MissionData;
-	int						m_nMission_index;
+	void ClearNoTranslate()
+	{
+		strName = "";
+	}
 
-	static int	LoadMissionFromFile(CStaticArray<CMissionCase> &apMissiondata, const char* FileName);
+	int GetIndex()						{ return index; }
+	void SetName(const char* str)		{ strName = str; }
+	const char* GetName()				{ return strName.c_str(); }
 };
 #endif

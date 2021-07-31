@@ -30,8 +30,6 @@ extern FLOAT mdl_fLODMul;
 extern FLOAT mdl_fLODAdd;
 extern INDEX mdl_iLODDisappear; // 0=never, 1=ignore bias, 2=with bias
 
-
-
 CModelData::CModelData(const CModelData &c) { ASSERT(FALSE); };
 CModelData &CModelData::operator=(const CModelData &c){ ASSERT(FALSE); return *this; }; 
 
@@ -327,7 +325,6 @@ void CModelData::Clear(void)
   md_FramesCt = 0;
   md_MipCt = 0;
 }
-
 
 // get amount of memory used by this object
 SLONG CModelData::GetUsedMemory(void)
@@ -1952,7 +1949,8 @@ INDEX CModelObject::GetMipModel( FLOAT fMipFactor)
   ASSERT( pMD != NULL);
   if( !mo_AutoMipModeling) return mo_iManualMipLevel;
   // calculate current mip model
-  for( INDEX i=0; i<pMD->md_MipCt; i++) {
+  INDEX i;
+  for(i = 0; i < pMD->md_MipCt; i++) {
     if( fMipFactor < pMD->md_MipSwitchFactors[i]) return i;
   }
   return i-1;

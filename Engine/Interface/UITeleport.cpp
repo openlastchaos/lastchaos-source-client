@@ -1,68 +1,16 @@
 #include "stdh.h"
-#include <Engine/Interface/UITeleport.h>
+
+// «Ï¥ı ¡§∏Æ. [12/3/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UITeleport.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/Entity.h>
-#include <Engine/Entities/EntityProperties.h>
-#include <Engine/Classes/PlayerEntity.h>
+#include <Engine/Help/Util_Help.h>
 
 static CTString	strTempMemo;
-// wooss 050830
-// ÏûòÎ™ªÎêú Î¨∏ÏûêÎ•º Î∞∞Ï†úÌïòÍ≥† Ïä§Ìä∏ÎßÅÏùÑ ÎßåÎì†Îã§
-// -> ÏàòÏ†ï : ÏûòÎ™ªÎêú Î¨∏Ïûê Î∞úÍ≤¨Ïãú TRUEÎ•º Î¶¨ÌÑ¥ÌïúÎã§
-BOOL MemBanChar(CTString& strInput)
-{
-	CTString sBanChar="%'";
-	CTString tv_str;
-	
-	for(int i=0;i<sBanChar.Length();i++)
-	{
-		tv_str.DeleteChar(0);
-		tv_str.InsertChar(0,sBanChar[i]);
-		for(int j=0;j<strInput.Length();j++)
-		{
-			INDEX findIndex=-1;
-			findIndex=strInput.FindSubstr(tv_str);
-			if(findIndex!=-1) 
-			{
-				strTempMemo.PrintF(("[ %s ]"),tv_str);	// Ï∞ΩÏùÑ ÎùÑÏö∞ÏßÄ ÏïäÍ≥† Í∏àÏßÄ Î¨∏ÏûêÎ•º ÏÇ≠Ï†úÌïòÏó¨ 
-				return TRUE;								// Ï≤òÎ¶¨Ìï† Îïå Ïù¥ Îëê ÎùºÏù∏ÏùÑ ÏßÄÏö¥Îã§
-				strInput.DeleteChar(findIndex);
-			}
-		}
-	}
 
-	return FALSE;
-}
-/*
-//wooss 050810
-//inner function
-//Ïà´ÏûêÎ•º Î¨∏ÏûêÎ°ú Î≥ÄÌôò...
-CTString ItoC(int nNum)
-{
-	std::list<char>				numList;					
-	std::list<char>::iterator	i_beginList,i_endList;
-	
-	char		cNum;	
-	CTString	sNum;
-	for(int	i=0;nNum>=10;i++)
-	{
-		cNum='0'+nNum%10;
-		numList.push_back(cNum);
-		nNum/=10;
-	}
-	cNum='0'+nNum;
-	numList.push_back(cNum);
-	
-	i_beginList=numList.begin();
-	i_endList=numList.end();
-	for(;i_beginList!=i_endList;i_beginList++,i--)
-	{
-		sNum.InsertChar(i,(*i_beginList));
-	}
-	return sNum;
-}
-*/
+#define DEF_EXPIRETIME_SX (34)
+#define DEF_EXPIRETIME_SY (136)
+
 // ----------------------------------------------------------------------------
 // Name : cipher
 // Desc : Inner Function
@@ -85,7 +33,7 @@ int Tcipher(int num)
 // ----------------------------------------------------------------------------
 CUITeleport::CUITeleport()
 {
-	m_useTime = 0 ; // wooss Î©îÎ™®Î¶¨Ïä§ÌÅ¨Î°§ ÌôïÏû•Ïπ¥Îìú ÏÇ¨Ïö©Ïó¨Î∂Ä
+	m_useTime = 0 ; // wooss ∏ﬁ∏∏ÆΩ∫≈©∑— »Æ¿Âƒ´µÂ ªÁøÎø©∫Œ
 	m_sbPage = 0;
 	m_bPrimium = FALSE;
 	m_sbSelection = -1;
@@ -105,7 +53,6 @@ CUITeleport::CUITeleport()
 // ----------------------------------------------------------------------------
 CUITeleport::~CUITeleport()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -114,9 +61,7 @@ CUITeleport::~CUITeleport()
 // ----------------------------------------------------------------------------
 void CUITeleport::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 //	m_rcTitle.SetRect( 0, 0, 427, 22 );
@@ -124,9 +69,11 @@ void CUITeleport::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 
 	// wooss 050810
 	m_rcTitle.SetRect( 0, 0, 472, 22 );
+#if defined G_RUSSIA
 	m_rcContents.SetRect( 12, 48, 452, 123 );
-
-
+#else
+	m_rcContents.SetRect( 12, 48, 418, 123 );
+#endif
 	// Create teleport texture
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Teleport.tex" ) );
 	FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();
@@ -141,7 +88,7 @@ void CUITeleport::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_rtBackground.SetUV( 0, 0, 472, 160, fTexWidth, fTexHeight );
 	m_rtSelBar.SetUV( 0, 215, 350, 231, fTexWidth, fTexHeight );
 	//scroll bar
-	m_sbScrollBar.Create( this, 453, 47, 8, 81 );
+	m_sbScrollBar.Create( this, 453, 47, 9, 82 );
 	m_sbScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
 	m_sbScrollBar.SetScrollPos( 0 );
 	m_sbScrollBar.SetScrollRange( TELEPORT_MAX_MEMO );
@@ -174,21 +121,21 @@ void CUITeleport::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Move button
-	m_btnMove.Create( this, _S( 289, "Ïù¥Îèô" ), 268, 133, 63, 21 );
+	m_btnMove.Create( this, _S( 289, "¿Ãµø" ), 268, 133, 63, 21 );
 	m_btnMove.SetUV( UBS_IDLE, 0, 164, 63, 185, fTexWidth, fTexHeight );
 	m_btnMove.SetUV( UBS_CLICK, 66, 164, 129, 185, fTexWidth, fTexHeight );
 	m_btnMove.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnMove.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Memorize button
-	m_btnMemorize.Create( this, _S( 290, "Ï†ÄÏû•" ), 334, 133, 63, 21 );
+	m_btnMemorize.Create( this, _S( 290, "¿˙¿Â" ), 334, 133, 63, 21 );
 	m_btnMemorize.SetUV( UBS_IDLE, 0, 164, 63, 185, fTexWidth, fTexHeight );
 	m_btnMemorize.SetUV( UBS_CLICK, 66, 164, 129, 185, fTexWidth, fTexHeight );
 	m_btnMemorize.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnMemorize.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 400, 133, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 400, 133, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 164, 63, 185, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 164, 129, 185, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -223,9 +170,12 @@ void CUITeleport::OpenTeleport()
 {
 	if( IsVisible() )
 		return;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if( !((CPlayerEntity*)CEntity::GetPlayerEntity(0))->IsIdle() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 789, "Îã§Î•∏ ÌñâÎèô Ï§ëÏóêÎäî Î©îÎ™®Î¶¨Ïä§ÌÅ¨Î°§ÏùÑ ÏÇ¨Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 789, "¥Ÿ∏• «‡µø ¡ﬂø°¥¬ ∏ﬁ∏∏ÆΩ∫≈©∑—¿ª ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 		return;
 	}
 	
@@ -245,8 +195,19 @@ void CUITeleport::OpenTeleport()
 		m_btnMemorize.SetEnable( TRUE );
 	}
 
-// [KH_070315] ÌîÑÎ¶¨ÎØ∏ÏóÑÏùº Îïå Î∂ÑÍ∏∞
-	_pUIMgr->RearrangeOrder( m_bPrimium ? UI_TELEPORT_PRIMIUM : UI_TELEPORT, TRUE );
+	//modified by sam  ∑ØΩ√æ∆ø°º≠ Ω∫≈©∑—πŸ¿« øÚ¡˜¿Ã¿Ã ¿ÃªÛ«œ¥Ÿ «œø© ø©±‚ºˆ¡§ ∑ª¥ıø°º≠ ºˆ¡§«ÿº≠ Ω∫≈©∑—¿Ã ¿ÃªÛ«œ∞‘ µø¿€ 
+	if(m_useTime > 0) // 070205_ttos ∏ﬁ∏∏Æ ªÁøÎΩ√ 5ƒ≠ ªÁøÎ »Æ¿ÂΩ√ 15ƒ≠ ªÁøÎ∞°¥…
+	{
+		m_sbScrollBar.SetScrollRange( TELEPORT_MAX_MEMO );
+		m_sbScrollBar.SetCurItemCount( TELEPORT_MAX_MEMO );
+	}else 
+	{
+		m_sbScrollBar.SetScrollRange( TELEPORT_MAX_ROW );
+		m_sbScrollBar.SetCurItemCount( TELEPORT_MAX_ROW );
+	}
+
+// [KH_070315] «¡∏ÆπÃæˆ¿œ ∂ß ∫–±‚
+	pUIManager->RearrangeOrder( m_bPrimium ? UI_TELEPORT_PRIMIUM : UI_TELEPORT, TRUE );
 }
 
 // ----------------------------------------------------------------------------
@@ -255,15 +216,17 @@ void CUITeleport::OpenTeleport()
 // ----------------------------------------------------------------------------
 void CUITeleport::NotUseMemEx()
 {
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_NULL ) )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_NULL ) )
 		return;
 	CTString	strTitle,strMsg;
-	strTitle = _S(191,"ÌôïÏù∏");
-	strMsg	 = "Î©îÎ™®Î¶¨ Ïä§ÌÅ¨Î°§ ÌôïÏû• Ïπ¥ÎìúÎ•º ÏÇ¨Ïö©Ï§ëÏù¥ ÏïÑÎãàÍ±∞ÎÇò Ïù¥Ïö©ÏãúÍ∞ÑÏù¥ Í≤ΩÍ≥ºÌïòÏòÄÏäµÎãàÎã§.";
+	strTitle = _S(191,"»Æ¿Œ");
+	strMsg	 = "∏ﬁ∏∏Æ Ω∫≈©∑— »Æ¿Â ƒ´µÂ∏¶ ªÁøÎ¡ﬂ¿Ã æ∆¥œ∞≈≥™ ¿ÃøÎΩ√∞£¿Ã ∞Ê∞˙«œø¥Ω¿¥œ¥Ÿ.";
  	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,UI_NONE, MSGCMD_NULL );
 	MsgBoxInfo.AddString( strMsg );
-	_pUIMgr->CreateMessageBox(MsgBoxInfo);
+	pUIManager->CreateMessageBox(MsgBoxInfo);
 }
 
 
@@ -274,11 +237,13 @@ void CUITeleport::NotUseMemEx()
 // ----------------------------------------------------------------------------
 void CUITeleport::CloseTeleport()
 {
-	_pUIMgr->CloseMessageBox( MSGCMD_TELEPORT_MEMO );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox( MSGCMD_TELEPORT_MEMO );
 
 	m_sbSelection = -1;
-// [KH_070315] ÌîÑÎ¶¨ÎØ∏ÏóÑÏùº Îïå Î∂ÑÍ∏∞
-	_pUIMgr->RearrangeOrder( m_bPrimium ? UI_TELEPORT_PRIMIUM : UI_TELEPORT, FALSE );
+// [KH_070315] «¡∏ÆπÃæˆ¿œ ∂ß ∫–±‚
+	pUIManager->RearrangeOrder( m_bPrimium ? UI_TELEPORT_PRIMIUM : UI_TELEPORT, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -287,61 +252,75 @@ void CUITeleport::CloseTeleport()
 // ----------------------------------------------------------------------------
 void CUITeleport::OpenMemorizeMsgBox()
 {
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_TELEPORT_MEMO ) )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_TELEPORT_MEMO ) )
 		return;
 
 	if( m_sbSelection == -1 )
 		return;
 
 	CTString	strZone, strCoord;
-	strZone.PrintF( "%-8s: %s", _S( 291, "Ï°¥" ),
-								ZoneInfo().GetZoneName( _pNetwork->MyCharacterInfo.zoneNo ) );
-	strCoord.PrintF( "%-8s: %d,%d", _S( 292, "Ï¢åÌëú" ),
+	strZone.PrintF( "%-8s: %s", _S( 291, "¡∏" ),
+								CZoneInfo::getSingleton()->GetZoneName( _pNetwork->MyCharacterInfo.zoneNo ) );
+	strCoord.PrintF( "%-8s: %d,%d", _S( 292, "¡¬«•" ),
 										(int)_pNetwork->MyCharacterInfo.x, (int)_pNetwork->MyCharacterInfo.z );
 
 	CUIMsgBox_Info	MsgBoxInfo;
-// [KH_070315] ÌîÑÎ¶¨ÎØ∏ÏóÑÏùº Îïå Î∂ÑÍ∏∞
-	MsgBoxInfo.SetMsgBoxInfo( _S( 375, "Î©îÎ™®Î¶¨ Ïä§ÌÅ¨Î°§" ), UMBS_OKCANCEL | UMBS_INPUTBOX,
+// [KH_070315] «¡∏ÆπÃæˆ¿œ ∂ß ∫–±‚
+	MsgBoxInfo.SetMsgBoxInfo( _S( 375, "∏ﬁ∏∏Æ Ω∫≈©∑—" ), UMBS_OKCANCEL | UMBS_INPUTBOX,
 								m_bPrimium ? UI_TELEPORT_PRIMIUM : UI_TELEPORT, MSGCMD_TELEPORT_MEMO );
 	MsgBoxInfo.AddStringEx( strZone, 0, 0 );
 	MsgBoxInfo.AddStringEx( strCoord, 1, 0 );
-	MsgBoxInfo.AddStringEx( _S( 293, "Î©îÎ™®" ), 2, 0 );
-	MsgBoxInfo.SetInputBox( 2, 10, 32 );
+	MsgBoxInfo.AddStringEx( _S( 293, "∏ﬁ∏" ), 2, 0 );
 
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+#if defined G_RUSSIA
+	MsgBoxInfo.SetInputBox( 3, 10, 25 ); // 2->3 ¿∏∑Œ πÆ¿Â¿Ã ∞„ƒß modified by sam 11/02/22
+#else
+	MsgBoxInfo.SetInputBox( 2, 10, 32 );
+#endif
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
+void CUITeleport::SetUseTime(int t)
+{
+	m_useTime = t;
+
+	//modified by sam  ∑ØΩ√æ∆ø°º≠ Ω∫≈©∑—πŸ¿« øÚ¡˜¿Ã¿Ã ¿ÃªÛ«œ¥Ÿ «œø© ø©±‚ºˆ¡§ ∑ª¥ıø°º≠ ºˆ¡§«ÿº≠ Ω∫≈©∑—¿Ã ¿ÃªÛ«œ∞‘ µø¿€ 
+	if (m_useTime > 0)
+	{
+		m_sbScrollBar.SetScrollRange( TELEPORT_MAX_MEMO ); // added by sam 11/02/22
+		m_sbScrollBar.SetCurItemCount( TELEPORT_MAX_MEMO );
+	}
+	else
+	{	
+		m_sbScrollBar.SetScrollRange( TELEPORT_MAX_ROW ); // added by sam 11/02/22
+		m_sbScrollBar.SetCurItemCount( TELEPORT_MAX_ROW );
+	}
+}
 // ----------------------------------------------------------------------------
 // Name : Render()
 // Desc :
 // ----------------------------------------------------------------------------
 void CUITeleport::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set teleport texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
 										0xFFFFFFFF );
 	
-	if(m_useTime > 0) // 070205_ttos Î©îÎ™®Î¶¨ ÏÇ¨Ïö©Ïãú 5Ïπ∏ ÏÇ¨Ïö© ÌôïÏû•Ïãú 15Ïπ∏ ÏÇ¨Ïö©Í∞ÄÎä•
-	{
-		m_sbScrollBar.SetScrollRange( TELEPORT_MAX_MEMO );
-		m_sbScrollBar.SetCurItemCount( TELEPORT_MAX_MEMO );
-	}else 
-	{
-		m_sbScrollBar.SetScrollRange( TELEPORT_MAX_ROW );
-		m_sbScrollBar.SetCurItemCount( TELEPORT_MAX_ROW );
-	}
-
 	// Selection bar
 	int	nY;
 	if( m_sbSelection >= 0 )
 	{
 		nY = m_nPosY + m_rcContents.Top + m_sbSelection * TELEPORT_CONTENT_OFFSETY;
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcContents.Left, nY,
+		pDrawPort->AddTexture( m_nPosX + m_rcContents.Left, nY,
 											m_nPosX + m_rcContents.Right, nY + TELEPORT_CONTENT_OFFSETY,
 											m_rtSelBar.U0, m_rtSelBar.V0, m_rtSelBar.U1, m_rtSelBar.V1,
 											0xFFFFFFFF );
@@ -364,22 +343,22 @@ void CUITeleport::Render()
 	m_sbScrollBar.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in teleport
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 375, "Î©îÎ™®Î¶¨ Ïä§ÌÅ¨Î°§" ), m_nPosX + TELEPORT_TITLE_OFFSETX,
+	pDrawPort->PutTextEx( _S( 375, "∏ﬁ∏∏Æ Ω∫≈©∑—" ), m_nPosX + TELEPORT_TITLE_OFFSETX,
 										m_nPosY + TELEPORT_TITLE_OFFSETY, 0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 291, "Ï°¥" ), m_nPosX + TELEPORT_ZONE_CX,
+	pDrawPort->PutTextExCX( _S( 291, "¡∏" ), m_nPosX + TELEPORT_ZONE_CX,
 											m_nPosY + TELEPORT_CONTENT_NAME_SY );
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 292, "Ï¢åÌëú" ), m_nPosX + TELEPORT_COORD_CX,
+	pDrawPort->PutTextExCX( _S( 292, "¡¬«•" ), m_nPosX + TELEPORT_COORD_CX,
 											m_nPosY + TELEPORT_CONTENT_NAME_SY );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 293, "Î©îÎ™®" ), m_nPosX + TELEPORT_MEMO_CX,
+	pDrawPort->PutTextExCX( _S( 293, "∏ﬁ∏" ), m_nPosX + TELEPORT_MEMO_CX,
 											m_nPosY + TELEPORT_CONTENT_NAME_SY );
 
 	//wooss 050810
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 2119, "Í∏∞Í∞Ñ" ), m_nPosX + TELEPORT_REMAIN_CX,		
+	pDrawPort->PutTextExCX( _S( 2119, "±‚∞£" ), m_nPosX + TELEPORT_REMAIN_CX,		
 											m_nPosY + TELEPORT_CONTENT_NAME_SY );
 
 	nY = m_nPosY + TELEPORT_CONTENT_SY;
@@ -390,28 +369,40 @@ void CUITeleport::Render()
 	
 	for( ; i < TELEPORT_MAX_ROW+j; i++ )
 	{
-		
 		char sNum[10] = {'\0',};
 		itoa(i+1,sNum,10);
-		char sTime[10] = { '\0', }; 
-		itoa(m_useTime,sTime,10);
 		int tv_c = Tcipher(i+1);
-		_pUIMgr->GetDrawPort()->PutTextCharEx( sNum, tv_c, m_nPosX + TELEPORT_NUM_SX - (tv_c-1)*3, nY );
+		pDrawPort->PutTextCharEx( sNum, tv_c, m_nPosX + TELEPORT_NUM_SX - (tv_c-1)*3, nY );
 
 		if( m_nZoneNum[i] != -1 )
 		{
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strZone[i], m_nPosX + TELEPORT_ZONE_CX, nY );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strCoord[i], m_nPosX + TELEPORT_COORD_CX, nY );
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strMemo[i], m_nPosX + TELEPORT_MEMO_SX, nY );
-			if(i<TELEPORT_MAX_ROW)	_pUIMgr->GetDrawPort()->PutTextEx( _S(2120,"ÏòÅÍµ¨"), m_nPosX + TELEPORT_TIME_SX, nY );	
-				else _pUIMgr->GetDrawPort()->PutTextEx( CTString(sTime)+_S(2123,"Ïùº") , m_nPosX + TELEPORT_TIME_SX, nY );	//wooss 050816
+			pDrawPort->PutTextExCX( m_strZone[i], m_nPosX + TELEPORT_ZONE_CX, nY );
+			pDrawPort->PutTextExCX( m_strCoord[i], m_nPosX + TELEPORT_COORD_CX, nY );
+			pDrawPort->PutTextEx( m_strMemo[i], m_nPosX + TELEPORT_MEMO_SX, nY );
+			if(i<TELEPORT_MAX_ROW)	pDrawPort->PutTextEx( _S(2120,"øµ±∏"), m_nPosX + TELEPORT_TIME_SX, nY );	
+			else 
+			{
+				pDrawPort->PutTextEx( _S(6031,"»Æ¿Â") , m_nPosX + TELEPORT_TIME_SX, nY );	//wooss 050816
+			}
 		}
 
 		nY += TELEPORT_CONTENT_OFFSETY;
 	}
 
+	if (m_useTime > 0)
+	{
+		tm* pTime = NULL;
+		pTime = localtime((time_t*)&m_useTime);
+		CTString strExpireTime;
+	
+		strExpireTime.PrintF(  _S( 6070,"∏∏∑· : %d≥‚%dø˘%d¿œ%dΩ√%d∫–"),pTime->tm_year + 1900
+			,pTime->tm_mon + 1,pTime->tm_mday,pTime->tm_hour, pTime->tm_min);
+
+		pDrawPort->PutTextEx( strExpireTime , m_nPosX + DEF_EXPIRETIME_SX, m_nPosY + DEF_EXPIRETIME_SY );
+	}
+
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -439,7 +430,7 @@ WMSG_RESULT CUITeleport::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move teleport
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -482,6 +473,7 @@ WMSG_RESULT CUITeleport::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
 				nOldX = nX;		nOldY = nY;
 
 				// Close button
@@ -526,12 +518,12 @@ WMSG_RESULT CUITeleport::MouseMessage( MSG *pMsg )
 				// Selection content
 				else if( IsInsideRect( nX, nY, m_rcContents ) )
 				{
-					if( !_pUIMgr->DoesMessageBoxExist( MSGCMD_TELEPORT_MEMO ) )
+					if( !pUIManager->DoesMessageBoxExist( MSGCMD_TELEPORT_MEMO ) )
 					{
 						UBYTE	ubOldSel = m_sbSelection;
 						m_sbSelection = ( nY - m_nPosY - m_rcContents.Top ) / TELEPORT_CONTENT_OFFSETY;
 
-// [KH_070316] Ï∂îÍ∞Ä 15Í∞ú 20Í∞ú Í¥ÄÎ†®
+// [KH_070316] √ﬂ∞° 15∞≥ 20∞≥ ∞¸∑√
 						if( ( m_bPrimium && m_sbSelection >= TELEPORT_PRIMIUM_MAX_MEMO ) ||
 							( !m_bPrimium && m_sbSelection >= TELEPORT_MAX_MEMO ) )
 							m_sbSelection = ubOldSel;
@@ -554,8 +546,8 @@ WMSG_RESULT CUITeleport::MouseMessage( MSG *pMsg )
 					}
 				}
 
-// [KH_070315] ÌîÑÎ¶¨ÎØ∏ÏóÑÏùº Îïå Î∂ÑÍ∏∞
-				_pUIMgr->RearrangeOrder( m_bPrimium ? UI_TELEPORT_PRIMIUM : UI_TELEPORT, TRUE );
+// [KH_070315] «¡∏ÆπÃæˆ¿œ ∂ß ∫–±‚
+				pUIManager->RearrangeOrder( m_bPrimium ? UI_TELEPORT_PRIMIUM : UI_TELEPORT, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -563,8 +555,10 @@ WMSG_RESULT CUITeleport::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -586,8 +580,16 @@ WMSG_RESULT CUITeleport::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
-						if(m_useTime<=0 && chkMemPos>=TELEPORT_MAX_ROW) NotUseMemEx();
-							else SendTeleportMove();
+// 						if (_pNetwork->IsRvrZone())
+// 						{
+// 							pUIManager->GetChattingUI()->AddSysMessage( _S( 47, "∏ﬁ∏∏Æ Ω∫≈©∑—¿ª ªÁøÎ«“ ºˆ æ¯¥¬ ¡ˆø™¿‘¥œ¥Ÿ." ), SYSMSG_ERROR );
+// 							return WMSG_FAIL;
+// 						}
+
+						if(m_useTime<=0 && chkMemPos>=TELEPORT_MAX_ROW) 
+							NotUseMemEx();
+						else 
+							SendTeleportMove();
 					}
 
 					return WMSG_SUCCESS;
@@ -597,8 +599,10 @@ WMSG_RESULT CUITeleport::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
-						if(m_useTime<=0 && chkMemPos>=TELEPORT_MAX_ROW) NotUseMemEx();
-							else OpenMemorizeMsgBox();
+						if(m_useTime<=0 && chkMemPos>=TELEPORT_MAX_ROW)
+							NotUseMemEx();
+						else
+							OpenMemorizeMsgBox();
 					}
 
 					return WMSG_SUCCESS;
@@ -625,7 +629,7 @@ WMSG_RESULT CUITeleport::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -675,21 +679,6 @@ void CUITeleport::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 	switch( nCommandCode )
 	{
 	case MSGCMD_TELEPORT_MEMO:
-		//wooss 050830
-		//Í∏àÏßÄÎ¨∏ÏûêÍ∞Ä ÏûàÏùåÏùÑ ÏïåÎ†§Ï§ÄÎã§
-		if(MemBanChar( strInput))
-		{
-			CUIMsgBox_Info	MsgBoxInfo;
-			CTString strSysMessage;
-			_pUIMgr->CloseMessageBox( MSGCMD_NULL );
-			MsgBoxInfo.SetMsgBoxInfo( _S( 375, "Î©îÎ™®Î¶¨ Ïä§ÌÅ¨Î°§" ), UMBS_OK, UI_NONE, MSGCMD_NULL );
-			strSysMessage=_S( 1858, "ÏûòÎ™ªÎêú Î¨∏ÏûêÍ∞Ä Ìè¨Ìï®ÎêòÏñ¥ ÏûàÏäµÎãàÎã§");
-			MsgBoxInfo.AddString(strSysMessage);
-			MsgBoxInfo.AddString(strTempMemo);
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
-
-		}
-		else
 		{
 			strTempMemo = strInput;
 			SendTeleportWrite();
@@ -705,18 +694,22 @@ void CUITeleport::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 void CUITeleport::ShowTeleportError()
 {
 	CTString	strSysMessage;
-	if( _pUIMgr->IsCSFlagOn( CSF_SKILL ) )
-		strSysMessage = _S( 376, "Ïä§ÌÇ¨ÏùÑ ÏÇ¨Ïö©ÌïòÍ≥† ÏûàÏäµÎãàÎã§." );
-	else if( _pUIMgr->IsCSFlagOn( CSF_TELEPORT ) )
-		strSysMessage = _S( 377, "Îã§Î•∏ Ïû•ÏÜåÎ°ú Ïù¥ÎèôÏùÑ Ï§ÄÎπÑÌïòÍ≥† ÏûàÏäµÎãàÎã§." );
-	else if( _pUIMgr->IsCSFlagOn( CSF_PARTY_REQ ) )
-		strSysMessage = _S( 378, "ÌååÌã∞ Ïã†Ï≤≠Ïù¥ ÏßÑÌñâÏ§ëÏûÖÎãàÎã§." );
-	else if( _pUIMgr->IsCSFlagOn( CSF_EXCHANGE ) )
-		strSysMessage = _S( 379, "ÍµêÌôòÏù¥ ÏßÑÌñâÏ§ëÏûÖÎãàÎã§." );
-	else
-		strSysMessage = _S( 384, "Ïù¥ÎèôÌï† Ïàò ÏóÜÏäµÎãàÎã§." );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	_pUIMgr->GetChatting()->AddSysMessage( strSysMessage, SYSMSG_ERROR );
+	if( pUIManager->IsCSFlagOn( CSF_SKILL ) )
+		strSysMessage = _S( 376, "Ω∫≈≥¿ª ªÁøÎ«œ∞Ì ¿÷Ω¿¥œ¥Ÿ." );
+	else if( pUIManager->IsCSFlagOn( CSF_TELEPORT ) )
+		strSysMessage = _S( 377, "¥Ÿ∏• ¿Âº“∑Œ ¿Ãµø¿ª ¡ÿ∫Ò«œ∞Ì ¿÷Ω¿¥œ¥Ÿ." );
+	else if( pUIManager->IsCSFlagOn( CSF_PARTY_REQ ) )
+		strSysMessage = _S( 378, "∆ƒ∆º Ω≈√ª¿Ã ¡¯«‡¡ﬂ¿‘¥œ¥Ÿ." );
+	else if( pUIManager->IsCSFlagOn( CSF_EXCHANGE ) )
+		strSysMessage = _S( 379, "±≥»Ø¿Ã ¡¯«‡¡ﬂ¿‘¥œ¥Ÿ." );
+	else if( pUIManager->IsCSFlagOn( CSF_EXPEDITION_REQ ) ) // [sora] ø¯¡§¥Î Ω≈√ª¡ﬂ
+		strSysMessage = _S( 4656, "ø¯¡§¥Î Ω≈√ª¿Ã ¡¯«‡¡ﬂ¿‘¥œ¥Ÿ.." );
+	else
+		strSysMessage = _S( 384, "¿Ãµø«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );
+
+	pUIManager->GetChattingUI()->AddSysMessage( strSysMessage, SYSMSG_ERROR );
 }
 
 
@@ -733,12 +726,19 @@ void CUITeleport::SendTeleportWrite()
 	int tv_scrollbarPos=m_sbScrollBar.GetScrollPos();				// wooss 050816 
 	if( !((CPlayerEntity*)CEntity::GetPlayerEntity(0))->IsIdle() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 789, "Îã§Î•∏ ÌñâÎèô Ï§ëÏóêÎäî Î©îÎ™®Î¶¨Ïä§ÌÅ¨Î°§ÏùÑ ÏÇ¨Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );
+		CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 789, "¥Ÿ∏• «‡µø ¡ﬂø°¥¬ ∏ﬁ∏∏ÆΩ∫≈©∑—¿ª ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 		return;
 	}
-// [KH_070316] Î≥ÄÍ≤Ω ÌîÑÎ¶¨ÎØ∏ÏóÑ Í¥ÄÎ†®
+// [KH_070316] ∫Ø∞Ê «¡∏ÆπÃæˆ ∞¸∑√
+
+	if (UTIL_HELP()->IsSpecialChar(strTempMemo.str_String) == true)
+	{
+		UIMGR()->GetChattingUI()->AddSysMessage ( _S( 437, "πÆ¿Âø° ±›¡ˆµ» ¥‹æÓ∞° ∆˜«‘µ«æÓ ¿÷Ω¿¥œ¥Ÿ." ) );
+		return;
+	}
+
 	if(m_bPrimium)
-		_pNetwork->SendTeleportWrite( MSG_MEMPOSPLUS, m_sbSelection + m_sbPage * TELEPORT_MAX_ROW, strTempMemo );	//wooss 050816
+		_pNetwork->SendTeleportWrite( XXXMSG_MEMPOSPLUS, m_sbSelection + m_sbPage * TELEPORT_MAX_ROW, strTempMemo );	//wooss 050816
 	else
 		_pNetwork->SendTeleportWrite( MSG_MEMPOS, m_sbSelection + m_sbScrollBar.GetScrollPos(), strTempMemo );	//wooss 050816
 	strTempMemo.Clear();
@@ -750,7 +750,9 @@ void CUITeleport::SendTeleportWrite()
 // ----------------------------------------------------------------------------
 void CUITeleport::SendTeleportMove()
 {
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_TELEPORT_MEMO ) )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_TELEPORT_MEMO ) )
 		return;
 
 	if( m_sbSelection == -1 )
@@ -759,18 +761,18 @@ void CUITeleport::SendTeleportMove()
 	if( _pNetwork->MyCharacterInfo.zoneNo != m_nZoneNum[m_sbSelection+m_sbScrollBar.GetScrollPos()] )
 		return;
 
-	if( _pUIMgr->IsCSFlagOn( CSF_CANNOT_TELEPORT_MASK ) )
+	if( pUIManager->IsCSFlagOn( CSF_CANNOT_TELEPORT_MASK ) )
 		ShowTeleportError();
 	else if( !((CPlayerEntity*)CEntity::GetPlayerEntity(0))->IsIdle() )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 789, "Îã§Î•∏ ÌñâÎèô Ï§ëÏóêÎäî Î©îÎ™®Î¶¨Ïä§ÌÅ¨Î°§ÏùÑ ÏÇ¨Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 789, "¥Ÿ∏• «‡µø ¡ﬂø°¥¬ ∏ﬁ∏∏ÆΩ∫≈©∑—¿ª ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 		return;
 	}
 	else
 	{
-// [KH_070316] Î≥ÄÍ≤Ω ÌîÑÎ¶¨ÎØ∏ÏóÑ Í¥ÄÎ†®
+// [KH_070316] ∫Ø∞Ê «¡∏ÆπÃæˆ ∞¸∑√
 		if(m_bPrimium)
-			_pNetwork->SendTeleportMove( MSG_MEMPOSPLUS, m_sbSelection + m_sbSelection * TELEPORT_MAX_ROW);
+			_pNetwork->SendTeleportMove( XXXMSG_MEMPOSPLUS, m_sbSelection + m_sbSelection * TELEPORT_MAX_ROW);
 		else
 			_pNetwork->SendTeleportMove( MSG_MEMPOS, m_sbSelection +m_sbScrollBar.GetScrollPos());
 	}
@@ -787,8 +789,11 @@ void CUITeleport::SendTeleportMove()
 // ----------------------------------------------------------------------------
 void CUITeleport::SetTeleportInfo( UBYTE ubSlot, SLONG slZone, FLOAT fX, FLOAT fZ, CTString &strComment )
 {
+	if (ubSlot > TELEPORT_PRIMIUM_MAX_MEMO)
+		return;
+
 	m_nZoneNum[ubSlot] = slZone;
-	m_strZone[ubSlot] = ZoneInfo().GetZoneName( slZone );
+	m_strZone[ubSlot] = CZoneInfo::getSingleton()->GetZoneName( slZone );
 	m_strCoord[ubSlot].PrintF( "%4d,%-4d", (int)fX, (int)fZ );
 	m_strMemo[ubSlot] = strComment;
 	
@@ -796,7 +801,7 @@ void CUITeleport::SetTeleportInfo( UBYTE ubSlot, SLONG slZone, FLOAT fX, FLOAT f
 	{
 		m_btnMemorize.SetEnable( TRUE );
 
-// [KH_070316] ÏàòÏ†ï - ÌîÑÎ¶¨ÎØ∏ÏóÑ Î©îÎ™®Î¶¨ Í¥ÄÎ†® ÏàòÏ†ï
+// [KH_070316] ºˆ¡§ - «¡∏ÆπÃæˆ ∏ﬁ∏∏Æ ∞¸∑√ ºˆ¡§
 		if(m_bPrimium || _pNetwork->MyCharacterInfo.zoneNo == m_nZoneNum[m_sbSelection+m_sbScrollBar.GetScrollPos()])
 			m_btnMove.SetEnable( TRUE );
 		else
@@ -816,18 +821,23 @@ void CUITeleport::SetTeleportInfo( UBYTE ubSlot, SLONG slZone, FLOAT fX, FLOAT f
 CUITeleportPrimium::CUITeleportPrimium()
 {
 	m_bPrimium = TRUE;
+	m_ptdPopupTexture = NULL;
 }
 CUITeleportPrimium::~CUITeleportPrimium()
 {
-	Destroy();
+	// BUG FIX : ∆Ø¡§ ≈ÿΩ∫√ƒ¿« ¡ﬂ∫π ∑ŒµÂ∑Œ ¿Œ«— ¿¸√º «ÿ¡ˆ ∫“∞°. ¿Ã¿Ø¥¬ _pTextureStock≥ªø°º≠ [4/26/2010 rumist]
+	//			 Ref Count∏¶ ¿ÃªÛ«œ∞‘ «œ∞Ì ¿÷±‚ ∂ßπÆ. [4/26/2010 rumist]
+	if( m_ptdPopupTexture )
+	{
+		_pTextureStock->Release( m_ptdPopupTexture );
+		m_ptdPopupTexture = NULL;
+	}
 }
 
-// [KH_070315] CreateÎ•º ÏÉÅÏÜçÎ∞õÏïÑ OverRiding
+// [KH_070315] Create∏¶ ªÛº”πﬁæ∆ OverRiding
 void CUITeleportPrimium::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight)
 {
-	m_pParentWnd = pParentWnd;
-	SetPos(nX, nY);
-	SetSize(nWidth, nHeight);
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	m_rcTitle.SetRect(0, 0, 472, 22);
 	m_rcContents.SetRect(12, 68, 418, 143);
@@ -850,7 +860,7 @@ void CUITeleportPrimium::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidt
 
 	for(INDEX i = 0; i < TELEPORT_PAGE_MAX; i++)
 	{
-		strPage.PrintF("%d%s", i + 1, _S(3076, "ÌéòÏù¥ÏßÄ"));
+		strPage.PrintF("%d%s", i + 1, _S(3076, "∆‰¿Ã¡ˆ"));
 		m_btnPage[i].Create(this, strPage, 159 + 66 * i, 27, 63, 21);
 		m_btnPage[i].SetUV(UBS_IDLE, 0, 164, 63, 185, fTexWidth, fTexHeight);
 		m_btnPage[i].SetUV(UBS_CLICK, 66, 164, 129, 185, fTexWidth, fTexHeight);
@@ -866,32 +876,32 @@ void CUITeleportPrimium::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidt
 	m_btnClose.CopyUV(UBS_IDLE, UBS_DISABLE);
 
 	// Move button
-	m_btnMove.Create(this, _S(289, "Ïù¥Îèô"), 225, 153, 63, 21);
+	m_btnMove.Create(this, _S(289, "¿Ãµø"), 225, 153, 63, 21);
 	m_btnMove.SetUV(UBS_IDLE, 0, 164, 63, 185, fTexWidth, fTexHeight);
 	m_btnMove.SetUV(UBS_CLICK, 66, 164, 129, 185, fTexWidth, fTexHeight);
 	m_btnMove.CopyUV(UBS_IDLE, UBS_ON);
 	m_btnMove.CopyUV(UBS_IDLE, UBS_DISABLE);
 
 	// Memorize button
-	m_btnMemorize.Create(this, _S(290, "Ï†ÄÏû•"), 291, 153, 63, 21);
+	m_btnMemorize.Create(this, _S(290, "¿˙¿Â"), 291, 153, 63, 21);
 	m_btnMemorize.SetUV(UBS_IDLE, 0, 164, 63, 185, fTexWidth, fTexHeight);
 	m_btnMemorize.SetUV(UBS_CLICK, 66, 164, 129, 185, fTexWidth, fTexHeight);
 	m_btnMemorize.CopyUV(UBS_IDLE, UBS_ON);
 	m_btnMemorize.CopyUV(UBS_IDLE, UBS_DISABLE);
 
 	// Cancel button
-	m_btnCancel.Create(this, _S(139, "Ï∑®ÏÜå"), 357, 153, 63, 21);
+	m_btnCancel.Create(this, _S(139, "√Îº“"), 357, 153, 63, 21);
 	m_btnCancel.SetUV(UBS_IDLE, 0, 164, 63, 185, fTexWidth, fTexHeight);
 	m_btnCancel.SetUV(UBS_CLICK, 66, 164, 129, 185, fTexWidth, fTexHeight);
 	m_btnCancel.CopyUV(UBS_IDLE, UBS_ON);
 	m_btnCancel.CopyUV(UBS_IDLE, UBS_DISABLE);
 
-// [KH_070315] Ï∂îÍ∞Ä
+// [KH_070315] √ﬂ∞°
 	m_ptdPopupTexture = CreateTexture(CTString("Data\\Interface\\NamePopup.tex"));
 	fTexWidth	= m_ptdPopupTexture->GetPixWidth();
 	fTexHeight	= m_ptdPopupTexture->GetPixHeight();
 
-// [KH_070315] ÌÖåÎëêÎ¶¨Îì§
+// [KH_070315] ≈◊µŒ∏ÆµÈ
 	m_rtShopPremLU.SetUV(35, 0, 48, 13, fTexWidth, fTexHeight);
 	m_rtShopPremUp.SetUV(49, 0, 50, 13, fTexWidth, fTexHeight);
 	m_rtShopPremRU.SetUV(51, 0, 64, 13, fTexWidth, fTexHeight);
@@ -904,63 +914,67 @@ void CUITeleportPrimium::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidt
 	m_rtShopPremBLo.SetUV(49, 23, 50, 29, fTexWidth, fTexHeight);
 	m_rtShopPremBRL.SetUV(58, 23, 64, 29, fTexWidth, fTexHeight);
 
-// [KH_070315] Ïä§ÌÅ¨Î°§Î∞îÎäî Ïì∞ÏßÄ ÏïäÎäîÎã§. scroll barÎ∂ÄÎ∂Ñ ÏÇ≠Ï†ú
+// [KH_070315] Ω∫≈©∑—πŸ¥¬ æ≤¡ˆ æ ¥¬¥Ÿ. scroll bar∫Œ∫– ªË¡¶
 }
 
-// [KH_070315] RenderÎ•º ÏÉÅÏÜçÎ∞õÏïÑ OverRiding
+// [KH_070315] Render∏¶ ªÛº”πﬁæ∆ OverRiding
 void CUITeleportPrimium::Render()
 {
-// [KH_070315] ÌÖåÎëêÎ¶¨
-	// Set teleport texture
-	_pUIMgr->GetDrawPort()->InitTextureData(m_ptdPopupTexture);
+	INDEX i, j;
 
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX, m_nPosY, m_nPosX + 13, m_nPosY + 13,
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+// [KH_070315] ≈◊µŒ∏Æ
+	// Set teleport texture
+	pDrawPort->InitTextureData(m_ptdPopupTexture);
+
+	pDrawPort->AddTexture(m_nPosX, m_nPosY, m_nPosX + 13, m_nPosY + 13,
 								m_rtShopPremLU.U0, m_rtShopPremLU.V0, m_rtShopPremLU.U1, m_rtShopPremLU.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + 13, m_nPosY, m_nPosX + m_nWidth - 13, m_nPosY + 13,
+	pDrawPort->AddTexture(m_nPosX + 13, m_nPosY, m_nPosX + m_nWidth - 13, m_nPosY + 13,
 								m_rtShopPremUp.U0, m_rtShopPremUp.V0, m_rtShopPremUp.U1, m_rtShopPremUp.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + m_nWidth - 13, m_nPosY, m_nPosX + m_nWidth, m_nPosY + 13,
+	pDrawPort->AddTexture(m_nPosX + m_nWidth - 13, m_nPosY, m_nPosX + m_nWidth, m_nPosY + 13,
 								m_rtShopPremRU.U0, m_rtShopPremRU.V0, m_rtShopPremRU.U1, m_rtShopPremRU.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX, m_nPosY + 13, m_nPosX + 13, m_nPosY + 26,
+	pDrawPort->AddTexture(m_nPosX, m_nPosY + 13, m_nPosX + 13, m_nPosY + 26,
 								m_rtShopPremLL.U0, m_rtShopPremLL.V0, m_rtShopPremLL.U1, m_rtShopPremLL.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + 13, m_nPosY + 13, m_nPosX + m_nWidth - 13, m_nPosY + 26,
+	pDrawPort->AddTexture(m_nPosX + 13, m_nPosY + 13, m_nPosX + m_nWidth - 13, m_nPosY + 26,
 								m_rtShopPremLo.U0, m_rtShopPremLo.V0, m_rtShopPremLo.U1, m_rtShopPremLo.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + m_nWidth - 13, m_nPosY + 13, m_nPosX + m_nWidth, m_nPosY + 26,
+	pDrawPort->AddTexture(m_nPosX + m_nWidth - 13, m_nPosY + 13, m_nPosX + m_nWidth, m_nPosY + 26,
 								m_rtShopPremRL.U0, m_rtShopPremRL.V0, m_rtShopPremRL.U1, m_rtShopPremRL.V1, 0xFFFFFFFF);
 	// Render elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
 	// Set teleport texture
-	_pUIMgr->GetDrawPort()->InitTextureData(m_ptdBaseTexture);
+	pDrawPort->InitTextureData(m_ptdBaseTexture);
 
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX, m_nPosY + 26, m_nPosX + 375, m_nPosY + 50,
+	pDrawPort->AddTexture(m_nPosX, m_nPosY + 26, m_nPosX + 375, m_nPosY + 50,
 										m_rtBackgroundPage.U0, m_rtBackgroundPage.V0, m_rtBackgroundPage.U1, m_rtBackgroundPage.V1,
 										0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + 375, m_nPosY + 26, m_nPosX + m_nWidth, m_nPosY + 50,
+	pDrawPort->AddTexture(m_nPosX + 375, m_nPosY + 26, m_nPosX + m_nWidth, m_nPosY + 50,
 										m_rtBackgroundPageR.U0, m_rtBackgroundPageR.V0, m_rtBackgroundPageR.U1, m_rtBackgroundPageR.V1,
 										0xFFFFFFFF);
 
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX, m_nPosY + 50, m_nPosX + 419, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture(m_nPosX, m_nPosY + 50, m_nPosX + 419, m_nPosY + m_nHeight,
 										m_rtBackgroundBottom.U0, m_rtBackgroundBottom.V0, m_rtBackgroundBottom.U1, m_rtBackgroundBottom.V1,
 										0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + 419, m_nPosY + 50, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture(m_nPosX + 419, m_nPosY + 50, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackgroundBottomR.U0, m_rtBackgroundBottomR.V0, m_rtBackgroundBottomR.U1, m_rtBackgroundBottomR.V1,
 										0xFFFFFFFF);
 
-// [KH_070315] Ïä§ÌÅ¨Î°§Î∞î Î∂ÄÎ∂Ñ ÏÇ≠Ï†ú ÏÇ≠Ï†ú
+// [KH_070315] Ω∫≈©∑—πŸ ∫Œ∫– ªË¡¶ ªË¡¶
 
 	// Selection bar
 	int	nY;
 	if(m_sbSelection >= 0)
 	{
 		nY = m_nPosY + m_rcContents.Top + m_sbSelection * TELEPORT_PRIMIUM_CONTENT_OFFSETY;
-		_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + m_rcContents.Left, nY,
+		pDrawPort->AddTexture(m_nPosX + m_rcContents.Left, nY,
 											m_nPosX + m_rcContents.Right, nY + TELEPORT_PRIMIUM_CONTENT_OFFSETY,
 											m_rtSelBar.U0, m_rtSelBar.V0, m_rtSelBar.U1, m_rtSelBar.V1,
 											0xFFFFFFFF);
 	}
 
-	for(INDEX i = 0; i < TELEPORT_PAGE_MAX; i++)
+	for( i = 0; i < TELEPORT_PAGE_MAX; i++)
 		m_btnPage[i].Render();
 
 	// Close button
@@ -975,44 +989,43 @@ void CUITeleportPrimium::Render()
 	// Cancel button
 	m_btnCancel.Render();
 
-// [KH_070315] ÏïàÍ∑∏Î¶º
+// [KH_070315] æ»±◊∏≤
 //	// Scroll Bar button
 //	m_sbScrollBar.Render();
 
 	// Render elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-// [KH_070316] ÌÖåÎëêÎ¶¨ 2
+// [KH_070316] ≈◊µŒ∏Æ 2
 	// Set teleport texture
-	_pUIMgr->GetDrawPort()->InitTextureData(m_ptdPopupTexture);
+	pDrawPort->InitTextureData(m_ptdPopupTexture);
 
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX, m_nPosY + 26, m_nPosX + 5, m_nPosY + m_nHeight - 5,
+	pDrawPort->AddTexture(m_nPosX, m_nPosY + 26, m_nPosX + 5, m_nPosY + m_nHeight - 5,
 								m_rtShopPremBL.U0, m_rtShopPremBL.V0, m_rtShopPremBL.U1, m_rtShopPremBL.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + m_nWidth - 5, m_nPosY + 26, m_nPosX + m_nWidth, m_nPosY + m_nHeight - 5,
+	pDrawPort->AddTexture(m_nPosX + m_nWidth - 5, m_nPosY + 26, m_nPosX + m_nWidth, m_nPosY + m_nHeight - 5,
 								m_rtShopPremBR.U0, m_rtShopPremBR.V0, m_rtShopPremBR.U1, m_rtShopPremBR.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX, m_nPosY + m_nHeight - 5, m_nPosX + 5, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture(m_nPosX, m_nPosY + m_nHeight - 5, m_nPosX + 5, m_nPosY + m_nHeight,
 								m_rtShopPremBLL.U0, m_rtShopPremBLL.V0, m_rtShopPremBLL.U1, m_rtShopPremBLL.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + 5, m_nPosY + m_nHeight - 5, m_nPosX + m_nWidth - 5, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture(m_nPosX + 5, m_nPosY + m_nHeight - 5, m_nPosX + m_nWidth - 5, m_nPosY + m_nHeight,
 								m_rtShopPremBLo.U0, m_rtShopPremBLo.V0, m_rtShopPremBLo.U1, m_rtShopPremBLo.V1, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + m_nWidth - 5, m_nPosY + m_nHeight - 5, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture(m_nPosX + m_nWidth - 5, m_nPosY + m_nHeight - 5, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 								m_rtShopPremBRL.U0, m_rtShopPremBRL.V0, m_rtShopPremBRL.U1, m_rtShopPremBRL.V1, 0xFFFFFFFF);
 
 	// Render elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in teleport
-	_pUIMgr->GetDrawPort()->PutTextEx(CTString("ÌîÑÎ¶¨ÎØ∏ÏóÑ Î©îÎ™®Î¶¨ Î∂Å"), m_nPosX + TELEPORT_PRIMIUM_TITLE_OFFSETX,
+	pDrawPort->PutTextEx(CTString("«¡∏ÆπÃæˆ ∏ﬁ∏∏Æ ∫œ"), m_nPosX + TELEPORT_PRIMIUM_TITLE_OFFSETX,
 										m_nPosY + TELEPORT_PRIMIUM_TITLE_OFFSETY, 0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->PutTextExCX(_S(291, "Ï°¥"), m_nPosX + TELEPORT_PRIMIUM_ZONE_CX,
+	pDrawPort->PutTextExCX(_S(291, "¡∏"), m_nPosX + TELEPORT_PRIMIUM_ZONE_CX,
 											m_nPosY + TELEPORT_PRIMIUM_CONTENT_NAME_SY);
-	_pUIMgr->GetDrawPort()->PutTextExCX(_S(292, "Ï¢åÌëú"), m_nPosX + TELEPORT_PRIMIUM_COORD_CX,
+	pDrawPort->PutTextExCX(_S(292, "¡¬«•"), m_nPosX + TELEPORT_PRIMIUM_COORD_CX,
 											m_nPosY + TELEPORT_PRIMIUM_CONTENT_NAME_SY);
-	_pUIMgr->GetDrawPort()->PutTextExCX(_S(293, "Î©îÎ™®"), m_nPosX + TELEPORT_PRIMIUM_MEMO_CX,
+	pDrawPort->PutTextExCX(_S(293, "∏ﬁ∏"), m_nPosX + TELEPORT_PRIMIUM_MEMO_CX,
 											m_nPosY + TELEPORT_PRIMIUM_CONTENT_NAME_SY);
 
-	nY = m_nPosY + TELEPORT_PRIMIUM_CONTENT_SY;
+	nY = m_nPosY + TELEPORT_PRIMIUM_CONTENT_SY;	
 	
-	INDEX j;
 //	i = j = m_sbScrollBar.GetScrollPos();
 	i = j = m_sbPage * TELEPORT_MAX_ROW;
 	
@@ -1024,23 +1037,23 @@ void CUITeleportPrimium::Render()
 		char sTime[10] = { '\0', }; 
 		itoa(m_useTime,sTime,10);
 		int tv_c = Tcipher(i+1);
-		_pUIMgr->GetDrawPort()->PutTextCharEx(sNum, tv_c, m_nPosX + TELEPORT_PRIMIUM_NUM_SX - (tv_c-1)*3, nY);
+		pDrawPort->PutTextCharEx(sNum, tv_c, m_nPosX + TELEPORT_PRIMIUM_NUM_SX - (tv_c-1)*3, nY);
 
 		if(m_nZoneNum[i] != -1)
 		{
-			_pUIMgr->GetDrawPort()->PutTextExCX(m_strZone[i], m_nPosX + TELEPORT_PRIMIUM_ZONE_CX, nY);
-			_pUIMgr->GetDrawPort()->PutTextExCX(m_strCoord[i], m_nPosX + TELEPORT_PRIMIUM_COORD_CX, nY);
-			_pUIMgr->GetDrawPort()->PutTextEx(m_strMemo[i], m_nPosX + TELEPORT_PRIMIUM_MEMO_SX, nY);
+			pDrawPort->PutTextExCX(m_strZone[i], m_nPosX + TELEPORT_PRIMIUM_ZONE_CX, nY);
+			pDrawPort->PutTextExCX(m_strCoord[i], m_nPosX + TELEPORT_PRIMIUM_COORD_CX, nY);
+			pDrawPort->PutTextEx(m_strMemo[i], m_nPosX + TELEPORT_PRIMIUM_MEMO_SX, nY);
 		}
 
 		nY += TELEPORT_PRIMIUM_CONTENT_OFFSETY;
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
-// [KH_070316] ÎßàÏö∞Ïä§ Î©îÏãúÏßÄ
+// [KH_070316] ∏∂øÏΩ∫ ∏ﬁΩ√¡ˆ
 WMSG_RESULT CUITeleportPrimium::MouseMessage( MSG *pMsg )
 {
 	WMSG_RESULT	wmsgResult;
@@ -1048,7 +1061,7 @@ WMSG_RESULT CUITeleportPrimium::MouseMessage( MSG *pMsg )
 	// Title bar
 	static BOOL bTitleBarClick = FALSE;
 
-// [KH_070316] forÎ¨∏ÏùÑ ÏúÑÌïú.
+// [KH_070316] forπÆ¿ª ¿ß«—.
 	INDEX i = 0;
 	// Mouse point
 	static int	nOldX, nOldY;
@@ -1060,7 +1073,7 @@ WMSG_RESULT CUITeleportPrimium::MouseMessage( MSG *pMsg )
 	{
 	case WM_MOUSEMOVE:
 		if( IsInside( nX, nY ) )
-			_pUIMgr->SetMouseCursorInsideUIs();
+			CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 		for(i = 0; i < TELEPORT_PAGE_MAX; i++)
 			if(m_btnPage[i].MouseMessage( pMsg ) != WMSG_FAIL)
@@ -1070,13 +1083,14 @@ WMSG_RESULT CUITeleportPrimium::MouseMessage( MSG *pMsg )
 	case WM_LBUTTONDOWN:
 		if( IsInside( nX, nY ) )
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 			nOldX = nX;		nOldY = nY;
 
 			// Close button
 			for(i = 0; i < TELEPORT_PAGE_MAX; i++)
 				if( m_btnPage[i].MouseMessage( pMsg ) != WMSG_FAIL )
 				{
-					_pUIMgr->RearrangeOrder( UI_TELEPORT_PRIMIUM, TRUE );
+					pUIManager->RearrangeOrder( UI_TELEPORT_PRIMIUM, TRUE );
 					return WMSG_SUCCESS;
 				}
 		}
@@ -1084,7 +1098,7 @@ WMSG_RESULT CUITeleportPrimium::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		// If holding button doesn't exist
-		if( _pUIMgr->GetHoldBtn().IsEmpty() )
+		if (UIMGR()->GetDragIcon() == NULL)
 		{
 			// Title bar
 			bTitleBarClick = FALSE;

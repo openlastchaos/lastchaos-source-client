@@ -81,7 +81,9 @@ public:
     EPT_FLOATMATRIX3D = 24,     // FLOATmatrix3D
     EPT_FLAGS = 25,             // flags - ULONG bitfield with names for each field
     EPT_MODELINSTANCE = 26,
-    // next free number: 27
+	EPT_ZONEFLAGS = 27,
+	EPT_ZONEFLAGS_EX = 28,
+    // next free number: 29
   } ep_eptType;               // type of property
   CEntityPropertyEnumType *ep_pepetEnumType;   // if the type is EPT_ENUM or EPT_FLAGS
 
@@ -107,7 +109,7 @@ public:
 };
 
 // macro for accessing property inside an entity
-#define ENTITYPROPERTY(entityptr, offset, type) (*((type *)(((UBYTE *)entityptr)+offset)))
+#define ENTITYPROPERTY(entityptr, offset, flag) (*((flag *)(((UBYTE *)entityptr)+offset)))
 
 /////////////////////////////////////////////////////////////////////
 // Classes and macros for defining entity event handler functions
@@ -123,14 +125,6 @@ public:
 
 /////////////////////////////////////////////////////////////////////
 // Classes and macros for defining entity components
-
-enum EntityComponentType {  // DO NOT RENUMBER!
-  ECT_TEXTURE   = 1,    // texture data
-  ECT_MODEL     = 2,    // model data
-  ECT_CLASS     = 3,    // entity class
-  ECT_SOUND     = 4,    // sound data
-  ECT_SKAMODEL  = 5,    // ska model
-};
 
 // Entity component flags (DO NOT RENUMBER!)
 #define CF_EDITOR (1UL<<1)
@@ -231,6 +225,8 @@ public:
   void PrecacheTexture(SLONG slID);
   void PrecacheSound(SLONG slID);
   void PrecacheClass(SLONG slID, INDEX iUser = -1);
+
+  void ReleaseCache(EntityComponentType eType, SLONG slID);
 };
 
 /* rcg10062001 */

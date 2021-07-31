@@ -192,7 +192,7 @@ void CBrushMip::Read_new_t( CTStream *pistrm) // throw char *
 			bm_fMaxDistance = 1E6f;
 		} else {
 			FLOAT fPerspectiveRatio = 640/(2.0f*Tan(90.0f/2));
-			bm_fMaxDistance = fPerspectiveRatio*(double)pow(2, (int)bm_fMaxDistance)/1024; //by kevin
+			bm_fMaxDistance = fPerspectiveRatio*pow(2, bm_fMaxDistance)/1024;
 		}
 	}
 
@@ -556,8 +556,8 @@ void CBrushSector::Read_t( CTStream *pistrm) // throw char *
 				itbpe->bpe_bReverse = FALSE;
 			}
 
-			//ì›”ë“œ íŒŒì¼ì„ ë¡œë”©í•  ë•Œ íŠ•ê¸°ëŠ” ë¬¸ì œë•Œë¬¸ì— ì¶”ê°€...
-			//ë­”ê°€ ì ì¬ì ì¸ ë¬¸ì œê°€ ìˆì§€ ì•Šì„ê¹Œ???...			:Su-won
+			//¿ùµå ÆÄÀÏÀ» ·ÎµùÇÒ ¶§ Æ¨±â´Â ¹®Á¦¶§¹®¿¡ Ãß°¡...
+			//¹º°¡ ÀáÀçÀûÀÎ ¹®Á¦°¡ ÀÖÁö ¾ÊÀ»±î???...			:Su-won
 			if( iEdge >ctEdges-1 )
 				iEdge =ctEdges-1;
 
@@ -600,10 +600,10 @@ void CBrushSector::Read_t( CTStream *pistrm) // throw char *
 			// read shadow animation object index
 			UBYTE ubDummy;
 			(*pistrm)>>ubDummy;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Worldbase Overbright to NonOver)(0.1)
 			bpo.bpo_colShadow = C_WHITE|CT_OPAQUE;
 			//bpo.bpo_colShadow = C_GRAY|CT_OPAQUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Worldbase Overbright to NonOver)(0.1)
 		}
 
 		// read the attribute of a polygon				// yjpark |<--

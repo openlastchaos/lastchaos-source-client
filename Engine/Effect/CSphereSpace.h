@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CSPHERESPACE_H__
 #define __CSPHERESPACE_H__
 
@@ -91,4 +91,4 @@ bool CSphereDoubleSpace::IsInThis(const FLOAT3D &point)
 }
 
 #endif //__CSPHERESPACE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

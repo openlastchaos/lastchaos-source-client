@@ -134,9 +134,9 @@ SHADER_MAIN(MultiLayer)
 		shaSetPixelProgramConst( 1, &srColor2,     1);
 		// prepare fog and haze
 		shaPrepareFogAndHaze(bOpaque);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Add Tagent-space Normal Map)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Add Tagent-space Normal Map)(0.1)
 		shaSetDefaultConstantRegisters();
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Add Tagent-space Normal Map)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Add Tagent-space Normal Map)(0.1)
 	}
 	else 
 	{
@@ -210,7 +210,7 @@ SHADER_MAIN(MultiLayer)
 	}
 }
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(For Performance)(0.1)
 SHADER_DESC(MultiLayer, ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -242,7 +242,7 @@ SHADER_DESC(MultiLayer, ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM|GFX_TEXCOORD0|GFX_TEXCOORD1|GFX_NORMAL_STREAM;
 	}
 	pshDesc = &shDescMe;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(MultiLayer, CTString &strVPCode, INDEX iVertexProgram)
@@ -263,7 +263,7 @@ SHADER_PCODE(MultiLayer, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogT
 	
 	if(eFogType==FT_NONE) 
 	{
-		strPPCode = "tex    t0                     \n" // load texture1
+/*		strPPCode = "tex    t0                     \n" // load texture1
 					"tex    t1                     \n" // load texture2
 					"mul    t0,     t0,     c0     \n" // mul texture1 with color1
 					"mul    t1,     t1,     c1     \n" // mul texture2 with color2
@@ -271,11 +271,20 @@ SHADER_PCODE(MultiLayer, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogT
 					"lrp    r0.rgb, 1-t1.a, r0, t1 \n" // Fc = L0c*L0a*(1-L1a) + L1c*L1a
 					"+mul   r0.a,   1-t0,   1-t1   \n" // Fa = (1-L0a)*(1-L1a)
 					"mul_x2 r0.rgb, r0,     v0     \n" // Shade pixel
-					;                             
+					;                             */
+		strPPCode = "texld	r0,		t0			\n" // load texture1
+					"texld  r1,		t1			\n" // load texture2
+					"mul    r3,     r0,     c0     \n" // mul texture1 with color1
+					"mul    r1,     r1,     c1     \n" // mul texture2 with color2
+					"mul    r0.rgb, r3,     r3.a   \n" // L0c*L0a
+					"lrp    r0.rgb, 1-r1.a, r0, r1 \n" // Fc = L0c*L0a*(1-L1a) + L1c*L1a
+					"+mul   r0.a,   1-r3,   1-r1   \n" // Fa = (1-L0a)*(1-L1a)
+					"mul_x2 r0.rgb, r0,     v0     \n" // Shade pixel
+					;
 	}
 	else if(eFogType==FT_OPAQUE) 
 	{
-		strPPCode = "tex    t0                     \n" // load texture1
+/*		strPPCode = "tex    t0                     \n" // load texture1
 					"tex    t1                     \n" // load texture2
 					"tex    t2                     \n" // load fog texture
 					"mul    t0,     t0,     c0     \n" // mul texture1 with color1
@@ -286,11 +295,23 @@ SHADER_PCODE(MultiLayer, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogT
 					"+mul   r0.a,   1-t0,   1-t1   \n" // Fa = (1-L0a)*(1-L1a)
 					"mul_x2 r0.rgb, r0,     v0     \n" // Shade pixel
 					"lrp    r0.rgb, t2.a,   t2,  r0\n" // Add fog
-					;                             
+					;*/
+		strPPCode = "texld	r0,    t0                     \n" // load texture1
+					"texld	r1,    t1                     \n" // load texture2
+					"texld	r2,    t2                     \n" // load fog texture
+					"mul    r3,     r0,     c0     \n" // mul texture1 with color1
+					"mul    r1,     r1,     c1     \n" // mul texture2 with color2
+					"mul    r2,     r2,     c7     \n" // mul fog texture with fog color
+					"mul    r0.rgb, r3,     r3.a   \n" // L0c*L0a
+					"lrp    r0.rgb, 1-r1.a, r0, r1 \n" // Fc = L0c*L0a*(1-L1a) + L1c*L1a
+					"+mul   r0.a,   1-r3,   1-r1   \n" // Fa = (1-L0a)*(1-L1a)
+					"mul_x2 r0.rgb, r0,     v0     \n" // Shade pixel
+					"lrp    r0.rgb, r2.a,   r2,  r0\n" // Add fog
+					;
 	}
 	else if(eFogType==FT_NON_OPAQUE) 
 	{
-		strPPCode = "tex    t0                     \n" // load texture1
+/*		strPPCode = "tex    t0                     \n" // load texture1
 					"tex    t1                     \n" // load texture2
 					"tex    t2                     \n" // load fog texture
 					"mul    t0,     t0,     c0     \n" // mul texture1 with color1
@@ -302,6 +323,19 @@ SHADER_PCODE(MultiLayer, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogT
 					"lrp    r0.rgb, 1-t1.a, r0, t1 \n" // Fc = L0c*L0a*(1-L1a) + L1c*L1a
 					"+mul   r0.a,   1-t0,   1-t1   \n" // Fa = (1-L0a)*(1-L1a)
 					"mul_x2 r0.rgb, r0,     v0     \n" // Shade pixel
-					;                             
+					;*/
+		strPPCode = "texld	r0,    t0                     \n" // load texture1
+					"texld	r1,    t1                     \n" // load texture2
+					"texld	r2,    t2                     \n" // load fog texture
+					"mul    r3,     r0,     c0     \n" // mul texture1 with color1
+					"mul    r1,     r1,     c1     \n" // mul texture2 with color2
+					"mul    r2,     r2,     c7     \n" // mul fog texture with fog color
+					"mul    r3.a,   r3.a,   1-r2.a \n" // attenuate texture1 alpha with fog alpha
+					"mul    r0.rgb, r3,     r3.a   \n" // L0c*L0a
+					"+mul   r1.a,   r1.a,   1-t2.a \n" // attenuate texture2 alpha with fog alpha
+					"lrp    r0.rgb, 1-r1.a, r0, r1 \n" // Fc = L0c*L0a*(1-L1a) + L1c*L1a
+					"+mul   r0.a,   1-r3,   1-r1   \n" // Fa = (1-L0a)*(1-L1a)
+					"mul_x2 r0.rgb, r0,     v0     \n" // Shade pixel
+					;
 	} 
 }

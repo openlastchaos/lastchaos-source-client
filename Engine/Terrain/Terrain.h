@@ -56,10 +56,10 @@ ENGINE_API extern void TR_BeginRenderingView(CAnyProjection3D &apr, CDrawPort *p
 // cleanup after batch terrain rendering
 ENGINE_API extern void TR_EndRenderingView(void);
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 ENGINE_API extern void TR_GetStretchMatrix(Matrix12 &matStretch);
 ENGINE_API extern void TR_GetObjToViewMatrix(Matrix12 &matObjToView);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 // setup terrain position
 ENGINE_API extern void TR_SetTerrainPlacement(const CPlacement3D &pl);
@@ -131,12 +131,12 @@ ENGINE_API extern FLOAT TR_TestRayCastHit(CTerrain *ptrTerrain, const FLOATmatri
 ENGINE_API extern void TR_ExtractPolygonsInBox(const CTerrain *ptrTerrain, const FLOATaabbox3D &bboxExtract,
 																							 const Matrix12 &mObjToAbs, FLOAT3D **pavVtx, INDEX &ctVtx,
 																							 UWORD **puwInd, INDEX &ctIndices);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 //ENGINE_API extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, const CTRect &rcExtract,
 //																								FLOAT3D **pavVtx, INDEX &ctVtx, UWORD **puwInd, INDEX &ctIndices);
 ENGINE_API extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, CTRect &rcExtract,
 																								FLOAT3D **pavVtx, INDEX &ctVtx, UWORD **puwInd, INDEX &ctIndices);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 ENGINE_API extern FLOAT2D TR_CalcShadingTC(const CTerrain *ptrTerrain, const FLOAT3D &vPointAbs, const Matrix12 &mObjToAbs);
 
@@ -227,6 +227,8 @@ ENGINE_API extern void TR_GenerateAttributeMap( CTerrain *ptrTerrain, CWorld *pW
 ENGINE_API extern void TR_ClearAttributeMap( CTerrain *ptrTerrain );
 ENGINE_API extern void TR_ImportAttributeMap_t( CTerrain *ptrTerrain, CTFileName &fnm );
 ENGINE_API extern void TR_ExportAttributeMap_t( CTerrain *ptrTerrain, CTFileName &fnm );
+
+ENGINE_API extern void TR_DrawModelAttribute( CWorld *pWorld, UWORD* pbMap, PIX pixAttributeMapWidth );
 
 // Server height map
 ENGINE_API extern void TR_ExportServerHeightMap_t( CTerrain *ptrTerrain, CTFileName &fnm );				// yjpark     -->|

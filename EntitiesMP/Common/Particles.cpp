@@ -1123,6 +1123,7 @@ void Particles_RocketTrail_Prepare(CEntity *pen)
 }
 void Particles_RocketTrail(CEntity *pen, FLOAT fStretch)
 {
+	INDEX iPos;
 	CLastPositions *plp = pen->GetLastPositions(ROCKET_TRAIL_POSITIONS);
 	FLOAT fSeconds = _pTimer->GetLerpedCurrentTick();
 	
@@ -1133,7 +1134,7 @@ void Particles_RocketTrail(CEntity *pen, FLOAT fStretch)
 	const FLOAT3D *pvPos2 = &plp->GetPosition(1);
 	INDEX iParticle = 0;
 	INDEX iParticlesLiving = plp->lp_ctUsed*ROCKET_TRAIL_INTERPOSITIONS;
-	for( INDEX iPos=2; iPos<plp->lp_ctUsed; iPos++)
+	for( iPos=2; iPos<plp->lp_ctUsed; iPos++)
 	{
 		pvPos1 = pvPos2;
 		pvPos2 = &plp->GetPosition(iPos);
@@ -1444,7 +1445,7 @@ void DECL_DLL Particles_Waterfall(CEntity *pen, INDEX ctCount, FLOAT fStretchAll
 		
 		// apply time strech
 		//fT *= 1/fParam1;
-		//Param2ê°’ìœ¼ë¡œ ë–¨ì–´ì§€ëŠ” ì†ë„ ë‹¬ë¼ì§€ê²Œ ë³€ê²½	:Su-won
+		//Param2°ªÀ¸·Î ¶³¾îÁö´Â ¼Óµµ ´Ş¶óÁö°Ô º¯°æ	:Su-won
 		fT *= 1.0f/(fParam1*fParam2);
 
 		// get fraction part
@@ -1467,7 +1468,7 @@ void DECL_DLL Particles_Waterfall(CEntity *pen, INDEX ctCount, FLOAT fStretchAll
 		UBYTE ubA=UBYTE((colA&0xFF)*0.75f*fMipBlender);
 		
 		//COLOR colCombined=(col&0xFFFFFF00)|ubA;
-		COLOR colCombined=(col&cColor)|ubA;		//Color ì†ì„±ê°’ì„ ìƒ‰ì„ ë³€ê²½í•  ìˆ˜ ìˆê²Œ ìˆ˜ì •:Su-won
+		COLOR colCombined=(col&cColor)|ubA;		//Color ¼Ó¼º°ªÀ» »öÀ» º¯°æÇÒ ¼ö ÀÖ°Ô ¼öÁ¤:Su-won
 		
 		//colCombined = C_WHITE|CT_OPAQUE;
 		Particle_RenderSquare( vPos, fFinalSize, fAngle, colCombined);
@@ -1827,7 +1828,7 @@ void Particles_Stardust( CEntity *pen, FLOAT fSize, FLOAT fHeight,
 	INDEX ctOffsetSpace = 128;
 
 	ASSERT( (ctParticles+ctOffsetSpace)<=CT_MAX_PARTICLES_TABLE);
-	if( Particle_GetMipFactor()>7.0f) return;
+	//if( Particle_GetMipFactor()>7.0f) return;
 
 	FLOAT fNow = _pTimer->GetLerpedCurrentTick();
 	SetupParticleTexture( ptTexture);
@@ -1936,7 +1937,7 @@ void Particles_Spiral( CEntity *pen, FLOAT fSize, FLOAT fHeight,
 	for( INDEX iStar=0; iStar<ctParticles; iStar++)
 	{
 		//FLOAT fT = fNow+afTimeOffsets[iStar];
-		//fParam2ê°’(fSpeed)ìœ¼ë¡œ ì†ë„ ì¡°ì ˆë˜ë„ë¡ ìˆ˜ì •	:Su-won
+		//fParam2°ª(fSpeed)À¸·Î ¼Óµµ Á¶ÀıµÇµµ·Ï ¼öÁ¤	:Su-won
 		FLOAT fT = fNow+afTimeOffsets[iStar] *(1.0f/fSpeed);
 
 		for( INDEX iTrail=0; iTrail<ctSpiralTrail; iTrail++) {
@@ -1976,7 +1977,7 @@ void Particles_Emanate( CEntity *pen, FLOAT fSize, FLOAT fHeight,
 		FLOAT fT = fNow+afTimeOffsets[iStar];
 		// apply time strech
 		//fT *= 1/EMANATE_TOTAL_TIME;	===>
-		//Param2(fSpeed)ê°’ìœ¼ë¡œ ì†ë„ ì¡°ì ˆë˜ë„ë¡ ìˆ˜ì •	:Su-won
+		//Param2(fSpeed)°ªÀ¸·Î ¼Óµµ Á¶ÀıµÇµµ·Ï ¼öÁ¤	:Su-won
 		fT *= 1/fSpeed;
 
 		// get fraction part
@@ -1994,7 +1995,7 @@ void Particles_Emanate( CEntity *pen, FLOAT fSize, FLOAT fHeight,
 			afStarsPositions[iStar][1],
 			afStarsPositions[iStar][2])*fSize*(fF+0.4f);
 		*****///=====>
-		// fParam1(fDirection)ê°’ì´ 1ì´ë©´ ì•ˆìª½ìœ¼ë¡œ ëª¨ì•„ì§€ê³  1ì´ ì•„ë‹ˆë©´ ì›ë˜ì²˜ëŸ¼ ë°”ê¹¥ìœ¼ë¡œ í¼ì§€ê²Œ ìˆ˜ì • :Su-won
+		// fParam1(fDirection)°ªÀÌ 1ÀÌ¸é ¾ÈÂÊÀ¸·Î ¸ğ¾ÆÁö°í 1ÀÌ ¾Æ´Ï¸é ¿ø·¡Ã³·³ ¹Ù±ùÀ¸·Î ÆÛÁö°Ô ¼öÁ¤ :Su-won
 		FLOAT3D vPos;
 		if( fDirection!=1)
 		{
@@ -2018,7 +2019,7 @@ void Particles_Emanate( CEntity *pen, FLOAT fSize, FLOAT fHeight,
 		UBYTE ub = NormFloatToByte( fFade*fDisappearRatio);
 		COLOR colStar = RGBToColor( ub, ub, ub>>1);
 		//Particle_RenderSquare( vPos, 0.1f, 0, colStar|0xFF);
-		//Param3(fPSize)ê°’ìœ¼ë¡œ íŒŒí‹°í´ í¬ê¸°, Colorê°’ìœ¼ë¡œ íŒŒí‹°í´ ìƒ‰ê¹” ì¡°ì ˆë˜ê²Œ ìˆ˜ì •	:Su-won
+		//Param3(fPSize)°ªÀ¸·Î ÆÄÆ¼Å¬ Å©±â, Color°ªÀ¸·Î ÆÄÆ¼Å¬ »ö±ò Á¶ÀıµÇ°Ô ¼öÁ¤	:Su-won
 		Particle_RenderSquare( vPos, fPSize, 0, (colStar&cColor)|0xFF);
 	}
 	// all done
@@ -2193,7 +2194,7 @@ void Particles_RunningDust_Prepare(CEntity *pen)
 {
 	pen->GetLastPositions(RUNNING_DUST_TRAIL_POSITIONS);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Original Sam Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Original Sam Effect)(0.1)
 void Particles_RunningDust(CEntity *pen)
 {
 	Particle_PrepareTexture( &_toBulletSmoke, PBT_BLEND);
@@ -2241,7 +2242,7 @@ void Particles_RunningDust(CEntity *pen)
 	// all done
 	Particle_Flush();
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Original Sam Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Original Sam Effect)(0.1)
 
 void Particles_DustFall(CEntity *pen, FLOAT tmStarted, FLOAT3D vStretch)
 {
@@ -2512,9 +2513,17 @@ void Particles_PowerUpIndicator( CEntity *pen, enum ParticleTexture ptTexture, F
 
 #define CT_LIGHTNINGS 8
 void Particles_Ghostbuster(const FLOAT3D &vSrc, const FLOAT3D &vDst, INDEX ctRays, FLOAT fSize, FLOAT fPower,
-													 FLOAT fKneeDivider/*=33.3333333f*/)
+													 FLOAT fKneeDivider/*=33.3333333f*/, CTextureObject* GhostbusterBeam)
 {
-	Particle_PrepareTexture(&_toGhostbusterBeam, PBT_ADD);
+	if (GhostbusterBeam != NULL)
+	{
+		Particle_PrepareTexture(GhostbusterBeam, PBT_ADD);
+	}
+	else
+	{
+		Particle_PrepareTexture(&_toGhostbusterBeam, PBT_ADD);
+	}
+
 	Particle_SetTexturePart( 512, 512, 0, 0);
 	// get direction vector
 	FLOAT3D vZ = vDst-vSrc;
@@ -3105,14 +3114,15 @@ void Particles_Rain(CEntity *pen, CEnvironmentParticlesHolder* eph, FLOAT fGridS
 	SnapFloat( vPos(2), fGridSize);
 	SnapFloat( vPos(3), fGridSize);  
 	FLOAT fNow = _pTimer->GetLerpedCurrentTick();
-	
+
 	// [080218: Su-won] WORLDEDITOR_FIX
-	// EnvironmentParticleHolderì˜ 'Particle Texture' ì†ì„±ìœ¼ë¡œ ì„¤ì •í•œ í…ìŠ¤ì³ë¥¼ íŒŒí‹°í´ì— ì‚¬ìš©
+	// EnvironmentParticleHolderÀÇ 'Particle Texture' ¼Ó¼ºÀ¸·Î ¼³Á¤ÇÑ ÅØ½ºÃÄ¸¦ ÆÄÆ¼Å¬¿¡ »ç¿ë
 	if( eph->m_fnTexture != CTString(""))
 		Particle_PrepareTexture(&(eph->m_moParticleTextureHolder.mo_toTexture), PBT_BLEND);
-	// 'Particle Texture' ì†ì„±ì„ ì„¤ì •í•˜ì§€ ì•Šìœ¼ë©´ ê¸°ë³¸ í…ìŠ¤ì³ ì‚¬ìš©
+	// 'Particle Texture' ¼Ó¼ºÀ» ¼³Á¤ÇÏÁö ¾ÊÀ¸¸é ±âº» ÅØ½ºÃÄ »ç¿ë
 	else
-	Particle_PrepareTexture(&_toRaindrop, PBT_BLEND);
+		Particle_PrepareTexture(&_toRaindrop, PBT_BLEND);
+
 	Particle_SetTexturePart( 512, 4096, 0, 0);
 
 	FLOAT fMinX = boxRainMap.Min()(1);
@@ -3150,10 +3160,10 @@ void Particles_Rain(CEntity *pen, CEnvironmentParticlesHolder* eph, FLOAT fGridS
 			fZ+=afStarsPositions[iRnd2][2];
 			// stretch to falling time
 			FLOAT fY = vPos(2)+RAIN_SOURCE_HEIGHT*(1-fRatio);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
-			//ë¹„ì˜ ìƒ‰ê¹” ê´€ë ¨ ì½”ë“œ ìˆ˜ì •, ì›ë˜ ì½”ë“œëŒ€ë¡œ í•˜ë©´ ê²€ì€ë¹„ê°€ ë‚´ë¦¼.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
+			//ºñÀÇ »ö±ò °ü·Ã ÄÚµå ¼öÁ¤, ¿ø·¡ ÄÚµå´ë·Î ÇÏ¸é °ËÀººñ°¡ ³»¸².
 			UBYTE ubR = 0xFF;//64+afStarsPositions[(INDEX)fT0*CT_MAX_PARTICLES_TABLE][2]*64;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 			
 			//COLOR colDrop = RGBToColor(ubR, ubR, ubR)|(UBYTE(fFactor*255.0f));
 			COLOR colDrop = (eph->m_colParticle&0xFFFFFF00) |(UBYTE(fFactor*255.0f));
@@ -3226,14 +3236,14 @@ void Particles_Snow(CEntity *pen, CEnvironmentParticlesHolder* eph, FLOAT fGridS
 
 	SnapFloat( tmSnapSnowFalling, Snow_Tile_Drop_Time);
 	FLOAT fTileRatio = (tmSnowFalling-tmSnapSnowFalling)/Snow_Tile_Drop_Time;
-	
+
 	// [080218: Su-won] WORLDEDITOR_FIX
-	// EnvironmentParticleHolderì˜ 'Particle Texture' ì†ì„±ìœ¼ë¡œ ì„¤ì •í•œ í…ìŠ¤ì³ë¥¼ íŒŒí‹°í´ì— ì‚¬ìš©
+	// EnvironmentParticleHolderÀÇ 'Particle Texture' ¼Ó¼ºÀ¸·Î ¼³Á¤ÇÑ ÅØ½ºÃÄ¸¦ ÆÄÆ¼Å¬¿¡ »ç¿ë
 	if( eph->m_fnTexture != CTString(""))
 		Particle_PrepareTexture(&(eph->m_moParticleTextureHolder.mo_toTexture), PBT_BLEND);
-	// 'Particle Texture' ì†ì„±ì„ ì„¤ì •í•˜ì§€ ì•Šìœ¼ë©´ ê¸°ë³¸ í…ìŠ¤ì³ ì‚¬ìš©
+	// 'Particle Texture' ¼Ó¼ºÀ» ¼³Á¤ÇÏÁö ¾ÊÀ¸¸é ±âº» ÅØ½ºÃÄ »ç¿ë
 	else
-	Particle_PrepareTexture(&_toSnowdrop, PBT_BLEND);
+		Particle_PrepareTexture(&_toSnowdrop, PBT_BLEND);
 	
 	Particle_SetTexturePart( 512, 512, 0, 0);
 
@@ -3938,11 +3948,11 @@ void Particles_Death(CEntity *pen, TIME tmStart)
 {
 	FLOAT fMipFactor = Particle_GetMipFactor();
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	BOOL bVisible = FALSE;
 	if(pen->en_RenderType == CEntity::RT_SKAMODEL) bVisible = pen->GetModelInstance()->IsModelVisible( fMipFactor);
 	else if(pen->en_RenderType == CEntity::RT_MODEL) bVisible = pen->en_pmoModelObject->IsModelVisible( fMipFactor);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	if( !bVisible) return;
 
 	FLOAT fTime = _pTimer->GetLerpedCurrentTick()-tmStart;
@@ -4218,11 +4228,11 @@ void Particles_BrushBurning(CEntity *pen, FLOAT3D vPos[], INDEX ctCount, FLOAT3D
 void Particles_Appearing(CEntity *pen, TIME tmStart)
 {
 	FLOAT fMipFactor = Particle_GetMipFactor();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	BOOL bVisible = FALSE;
 	if(pen->en_RenderType == CEntity::RT_SKAMODEL) bVisible = pen->GetModelInstance()->IsModelVisible( fMipFactor);
 	else if(pen->en_RenderType == CEntity::RT_MODEL) bVisible = pen->en_pmoModelObject->IsModelVisible( fMipFactor);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	if( !bVisible) return;
 
 	FLOAT tmNow;
@@ -5453,11 +5463,11 @@ void Particles_CollectEnergy(CEntity *pen, FLOAT tmStart, FLOAT tmStop, BOOL bCl
 void Particles_SummonerDisappear( CEntity *pen, FLOAT tmStart)
 {
 	FLOAT fMipFactor = Particle_GetMipFactor();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	BOOL bVisible = FALSE;
 	if(pen->en_RenderType == CEntity::RT_SKAMODEL) bVisible = pen->GetModelInstance()->IsModelVisible( fMipFactor);
 	else if(pen->en_RenderType == CEntity::RT_MODEL) bVisible = pen->en_pmoModelObject->IsModelVisible( fMipFactor);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	if( !bVisible) return;
 
 	Particle_PrepareTexture(&_toSEStar01, PBT_ADDALPHA);
@@ -5939,11 +5949,11 @@ void Particles_ModelGlow( CEntity *pen, FLOAT tmEnd, enum ParticleTexture ptText
 	}
 	
 	FLOAT fMipFactor = Particle_GetMipFactor();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	BOOL bVisible = FALSE;
 	if(pen->en_RenderType == CEntity::RT_SKAMODEL) bVisible = pen->GetModelInstance()->IsModelVisible( fMipFactor);
 	else if(pen->en_RenderType == CEntity::RT_MODEL) bVisible = pen->en_pmoModelObject->IsModelVisible( fMipFactor);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	if( !bVisible) return;
 
 	SetupParticleTextureWithAddAlpha( ptTexture );
@@ -6021,6 +6031,8 @@ void Particles_ModelGlow2( CModelObject *mo, CPlacement3D pl, FLOAT tmEnd, enum 
 	Particle_Flush();
 }
 
+#define DEF_AFTER_BURN_POS_GAP	0.2f
+
 void Particles_RunAfterBurner(CEntity *pen, FLOAT tmEnd, FLOAT fStretch, INDEX iGradientType)
 {
 	FLOAT3D vGDir = ((CMovableEntity *)pen)->en_vGravityDir;
@@ -6089,7 +6101,9 @@ void Particles_RunAfterBurner(CEntity *pen, FLOAT tmEnd, FLOAT fStretch, INDEX i
 	{
 		pvPos1 = pvPos2;
 		pvPos2 = &plp->GetPosition(iPos);
-		if( *pvPos1==*pvPos2) continue;
+		
+		if ((*pvPos1 - *pvPos2).Length() <= DEF_AFTER_BURN_POS_GAP)
+			continue;
 
 		FLOAT fT=(iPos+_pTimer->GetLerpFactor())*_pTimer->TickQuantum;
 		FLOAT fRatio=fT/(CT_AFTERBURNER_SMOKES*_pTimer->TickQuantum);
@@ -6136,7 +6150,9 @@ void Particles_RunAfterBurner(CEntity *pen, FLOAT tmEnd, FLOAT fStretch, INDEX i
 	{
 		pvPos2 = pvPos1;
 		pvPos1 = &plp->GetPosition(iFlare);
-		if( *pvPos1==*pvPos2) continue;
+		
+		if ((*pvPos1 - *pvPos2).Length() <= DEF_AFTER_BURN_POS_GAP)
+			continue;
 
 		for (INDEX iInter=CT_AFTERBURNER_HEAD_INTERPOSITIONS-1; iInter>=0; iInter--)
 		{

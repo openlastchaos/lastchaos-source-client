@@ -9,20 +9,30 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIWindow.h>
+#define AUTOHELO_SHOW_TIME			8000			// (m sec) Áö¿ªÀÌ¸§ÀÌ Ç¥½Ã µÇ´Â ½Ã°£ 
 
-#define AUTOHELO_SHOW_TIME			8000			// (m sec) ì§€ì—­ì´ë¦„ì´ í‘œì‹œ ë˜ëŠ” ì‹œê°„ 
-#define INTERVAL_TIME				15000			// ìžë™ ë„ì›€ë§ì´ ë¬´ì‹œ ë˜ëŠ” ì‹œê°„
+#if defined(G_BRAZIL)
+	#define INTERVAL_TIME				30000			// ÀÚµ¿ µµ¿ò¸»ÀÌ ¹«½Ã µÇ´Â ½Ã°£
+#else
+	#define INTERVAL_TIME				15000			// ÀÚµ¿ µµ¿ò¸»ÀÌ ¹«½Ã µÇ´Â ½Ã°£
+#endif
+
 #define RND_HELP_TIME				20000
 
 #define RND_HELP_LEVEL_LOW			1	
 #define RND_HELP_LEVEL_HIGH			5
-#define RND_HELP_LEVEL_MAX			100				// 070820_ttos: ë¸Œë¼ì§ˆ ìš”ì²­ ë ˆë²¨ ì œí•œ ì—†ìŒ
+#define RND_HELP_LEVEL_MAX			100				// 070820_ttos: ºê¶óÁú ¿äÃ» ·¹º§ Á¦ÇÑ ¾øÀ½
 
 // Define notice delay time
+#ifdef	IMPROV1107_NOTICESYSTEM
+#define	CHATMSG_NOTICE_DELAY		3000			// milliseconds
+#define	CHATMSG_NOTICE_FADEOUT		2000
+#else
 #define	CHATMSG_NOTICE_DELAY		8000			// milliseconds
 #define	CHATMSG_NOTICE_FADEOUT		7000
+#endif
 #define	CHATMSG_NOTICE_FADETIME		( CHATMSG_NOTICE_DELAY - CHATMSG_NOTICE_FADEOUT )
+#define CLASSIFICATION_TIME			60*60*1000			//µî±ÞÇ¥½Ã ½Ã°£ 1½Ã°£¸¶´Ù 
 
 
 // ----------------------------------------------------------------------------
@@ -31,20 +41,20 @@
 // ----------------------------------------------------------------------------
 struct _SAutoHelpInfo
 {
-	CTString	m_strMessage;		// ì¶œë ¥ ë©”ì„¸ì§€
-	int			m_iEndLevel;		// ë ˆë²¨ ì œí•œ 
-	int			m_iStartLevel;		// ë ˆë²¨ ì œí•œ 
-	int			m_Kindred;			// ì ìš© ì¢…ì¡±
-	BOOL		m_bJustOnce;		// í•œë²ˆë§Œ í•˜ëŠ” ê²ë‹ˆë‹¤.
-	BOOL		m_bActive;			// í™œì„±í™” ì¤‘ìž…ë‹ˆë‹¤.
+	CTString	m_strMessage;		// Ãâ·Â ¸Þ¼¼Áö
+	int			m_iEndLevel;		// ·¹º§ Á¦ÇÑ 
+	int			m_iStartLevel;		// ·¹º§ Á¦ÇÑ 
+	int			m_Kindred;			// Àû¿ë Á¾Á·
+	BOOL		m_bJustOnce;		// ÇÑ¹ø¸¸ ÇÏ´Â °Ì´Ï´Ù.
+	BOOL		m_bActive;			// È°¼ºÈ­ ÁßÀÔ´Ï´Ù.
 
 
 	void Clear ()
 	{
 		//SetInfo ( CTString (""), -1, -1, -1, FALSE );
-		m_iEndLevel		= -1;			// ë ˆë²¨ ì œí•œ 
+		m_iEndLevel		= -1;			// ·¹º§ Á¦ÇÑ 
 		m_iStartLevel	= -1;
-		m_Kindred		= -1;			// ì ìš© ì¢…ì¡±
+		m_Kindred		= -1;			// Àû¿ë Á¾Á·
 		m_bJustOnce		= FALSE;
 		m_bActive		= FALSE;
 		m_strMessage.Clear();
@@ -53,10 +63,10 @@ struct _SAutoHelpInfo
 	void SetInfo ( CTString strMessage, int iStartLevel = -1, 
 					int iLevel = -1, int Kindred = -1, BOOL bJustOnce = FALSE )
 	{
-		m_strMessage	= strMessage;		// ì¶œë ¥ ë©”ì„¸ì§€
-		m_iEndLevel		= iLevel;			// ë ˆë²¨ ì œí•œ 
+		m_strMessage	= strMessage;		// Ãâ·Â ¸Þ¼¼Áö
+		m_iEndLevel		= iLevel;			// ·¹º§ Á¦ÇÑ 
 		m_iStartLevel	= iStartLevel;
-		m_Kindred		= Kindred;			// ì ìš© ì¢…ì¡±
+		m_Kindred		= Kindred;			// Àû¿ë Á¾Á·
 		m_bJustOnce		= bJustOnce;
 		m_bActive		= FALSE;
 			
@@ -65,6 +75,16 @@ struct _SAutoHelpInfo
 	bool CheckInfo ();
 };
 
+typedef struct _SGMNotice
+{
+	CTString	strGMNotice;
+	COLOR		colGMTextColor;
+	__int64		i64GMNoticeTime;
+	__int64		i64GMFadeTime;
+	BOOL		bCompleteVisible;
+	UIRect		rcBackground;
+
+}SGMNotice;
 
 // ----------------------------------------------------------------------------
 // Name : AUTO_HELP_INDEX
@@ -72,14 +92,14 @@ struct _SAutoHelpInfo
 // ----------------------------------------------------------------------------
 enum AUTO_HELP_INDEX
 {
-	AU_MOB_KILL,			// ëª¬ìŠ¤í„°ë¥¼ ì£½ì˜€ì„ ë•Œ
-	AU_ITEM_DROP,			// ì•„ì´í…œì´ ë–¨ì–´ì¡Œì„ ê²½ìš°
-	AU_PICK_ITEM ,			// ë°”ë‹¥ì— ë–¨ì–´ì§„ ì•„ì´í…œì„ ì£¼ì—ˆì„ ë•Œ
-	AU_GET_SKILL_POINT,		// ìˆ™ë ¥ë„ë¥¼ ì–»ì„ ë•Œ
-	AU_MOVE_DRATAN,			// ë“œë¼íƒ„ìœ¼ë¡œ ì´ë™
+	AU_MOB_KILL,			// ¸ó½ºÅÍ¸¦ Á×¿´À» ¶§
+	AU_ITEM_DROP,			// ¾ÆÀÌÅÛÀÌ ¶³¾îÁ³À» °æ¿ì
+	AU_PICK_ITEM ,			// ¹Ù´Ú¿¡ ¶³¾îÁø ¾ÆÀÌÅÛÀ» ÁÖ¾úÀ» ¶§
+	AU_GET_SKILL_POINT,		// ¼÷·Âµµ¸¦ ¾òÀ» ¶§
+	AU_MOVE_DRATAN,			// µå¶óÅºÀ¸·Î ÀÌµ¿
 	
 	
-	AU_LEVEL_UP,			// ë ˆë²¨ì—…
+	AU_LEVEL_UP,			// ·¹º§¾÷
 	AU_LEVEL_UP_QUEST2,		// Quest ...
 	AU_LEVEL_UP_QUEST8,
 	AU_LEVEL_UP_QUEST9,
@@ -93,9 +113,9 @@ enum AUTO_HELP_INDEX
 	AU_RANDOM_HELP_END = 31,					// 29
 	
 	// wooss 060328 add thai_auto_help
-	AU_NO_TOXICOSIS_S = 32,							// 3ì‹œê°„ë§ˆë‹¤ í•œë²ˆì”© íœ´ì‹ì„ ì·¨í•  ê²ƒì„ ê¶Œìž¥
+	AU_NO_TOXICOSIS_S = 32,							// 3½Ã°£¸¶´Ù ÇÑ¹ø¾¿ ÈÞ½ÄÀ» ÃëÇÒ °ÍÀ» ±ÇÀå
 	AU_NO_TOXICOSIS_E = 35,
-	AU_NO_TOXICOSIS_VACATION_S = 36,					// ë°©í•™ì¤‘ í•˜ë£¨ì¢…ì¼ ê²Œìž„ë§Œ í•˜ëŠ” ìœ ì €ë“¤ì„ ì„ ë„í•˜ëŠ” ë‚´ìš©
+	AU_NO_TOXICOSIS_VACATION_S = 36,					// ¹æÇÐÁß ÇÏ·çÁ¾ÀÏ °ÔÀÓ¸¸ ÇÏ´Â À¯ÀúµéÀ» ¼±µµÇÏ´Â ³»¿ë
 	AU_NO_TOXICOSIS_VACATION_E = 39,
 
 	AUTOHELP_COUNT,			
@@ -111,12 +131,15 @@ class ENGINE_API CUIAutoHelp
 {
 protected:
 	CTextureData	*m_ptdBaseTexture;					// Texture of window
+	CTextureData	*m_ptdClassification;				// °ÔÀÓ µî±Þ Ç¥½Ã
 
-	BOOL			m_bStop;							// ì •ì§€ ìƒíƒœì¸ê°?
-	float			m_fShowTime;						// ë³´ì—¬ ì§€ê³  ìžˆëŠ” ì‹œê°„
-	__int64			m_tmStartTime;						// ë³´ì´ê¸° ì‹œìž‘ í•œ ì‹œê°„
+	BOOL			m_bStop;							// Á¤Áö »óÅÂÀÎ°¨?
+	float			m_fShowTime;						// º¸¿© Áö°í ÀÖ´Â ½Ã°£
+	__int64			m_tmStartTime;						// º¸ÀÌ±â ½ÃÀÛ ÇÑ ½Ã°£
 	
-	__int64			m_tmEndTime;						// ë³´ì´ê³  ë‚œ í›„ ì €ìž¥ ëœ ì‹œê°„ 
+	__int64			m_tmEndTime;						// º¸ÀÌ°í ³­ ÈÄ ÀúÀå µÈ ½Ã°£ 
+	__int64			m_tmClassification;					// µî±ÞÇ¥½Ã ÀúÀå½Ã°£
+	__int64			m_tmCurTime;						// µî±ÞÇ¥½Ã °ü·Ã ÇöÀç ½Ã°£
 
 	// Additional autohelp for thai - wooss 060328 ------------------------------->>
 	__int64			m_tmCheckTime;						// time check for thai
@@ -124,26 +147,38 @@ protected:
 	int				m_iNoticeTime;
 	// ---------------------------------------------------------------------------<<
 
-	BOOL			m_bVisible;							// í™”ë©´ì— ë³´ì—¬ ì£¼ê³  ìžˆëŠ”ê°€?
-	int				m_nActiveIndex;						// í˜„ì œ ë³´ì—¬ ì£¼ê³  ìžˆëŠ” ë„ì›€ë§ Index
+	BOOL			m_bVisible;							// È­¸é¿¡ º¸¿© ÁÖ°í ÀÖ´Â°¡?
+	int				m_nActiveIndex;						// ÇöÁ¦ º¸¿© ÁÖ°í ÀÖ´Â µµ¿ò¸» Index
 
 	_SAutoHelpInfo	m_AutoHelpInfo[AUTOHELP_COUNT];
 	BOOL			m_bCondition[AUTOHELP_COUNT];
 
 	UIRect			m_rcNotice;							// Region of notice
 	UIRect			m_rcGMNotice;						// Region of notice
-	TIME			m_tmGMNoticeTime;					// ë³´ì´ê¸° ì‹œìž‘ í•œ ì‹œê°„
+	TIME			m_tmGMNoticeTime;					// º¸ÀÌ±â ½ÃÀÛ ÇÑ ½Ã°£
 
-	UIRectUV		m_rtNoticeL;						// UV of notice left region
-	UIRectUV		m_rtNoticeC;						// UV of notice center region
-	UIRectUV		m_rtNoticeR;						// UV of notice right region
-	
+#if	defined(IMPROV1107_NOTICESYSTEM)
+	std::vector<SGMNotice>	m_vGMNotice;
+	BOOL					m_bmovGMNotice;
+	__int64					m_i64movGMNotice;
+#endif
 	CTString		m_strGMNotice;
-	BOOL			m_bShowGMNotice;
 	COLOR			m_colGMTextColor;
+	BOOL			m_bShowGMNotice;
+	BOOL			m_bShowClassification;				//µî±ÞÇ¥½Ã
+	UIRect			m_rcClassification;
+	UIRectUV		m_rtClassification;					//µî±ÞÇ¥½Ã
 	
 	int				m_nKillMobIndex;
 	BOOL			m_RndHelp;
+
+#if		!defined(_UI_LIB_RENEWAL_)
+	UIRectUV		m_rtNoticeL;						// UV of notice left region
+	UIRectUV		m_rtNoticeC;						// UV of notice center region
+	UIRectUV		m_rtNoticeR;						// UV of notice right region
+#else	// _UI_LIB_RENEWAL_
+	CUIImage*		m_pImgNotice[3];					// left, center, right
+#endif	// _UI_LIB_RENEWAL_
 
 public:
 
@@ -158,6 +193,7 @@ public:
 	// Render
 	void Render();
 	void RenderGMNotice ();
+	void ClassificationShowRender();
 
 	void ShowAutoHelp ( int nIndex );
 	void SetInfo ( DWORD dwAutoHelpInfo );
@@ -165,6 +201,7 @@ public:
 	void SetGMNotice ( CTString strGMNotice, COLOR colText = 0xFFBA13FF );
 	COLOR GetGMNoticeColor(){ return m_colGMTextColor;	}
 	BOOL IsShowGMNotice()	{ return m_bShowGMNotice;	}
+	void ClearGMNNotice();
 
 	void SetKillMonIndex ( int nIndex )
 	{
@@ -176,6 +213,14 @@ public:
 		return m_nKillMobIndex;
 	}
 
+	void GetLvGuidString(int lv);
+	void LearnTheSkill(int lv);
+	void SetStatpoint(int old, int cur);
+	int  GetUpStatpoint()	{ return m_nUpStat;	}
+	void initialize();
+
+private:
+	int m_nUpStat;
 };
 
 ENGINE_API extern CUIAutoHelp*	_UIAutoHelp;

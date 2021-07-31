@@ -2,7 +2,6 @@
 
 #include <Engine/Base/Console.h>
 #include <Engine/Base/MemoryTracking.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Math/Vector.h>
 #include <Engine/Graphics/GfxLibrary.h>
 #include <Engine/Graphics/ViewPort.h>
@@ -209,8 +208,8 @@ extern void D3D_CheckError(HRESULT hr)
 
 // TEXTURE MANAGEMENT
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
-//d3dì˜ SetTextureStageStateë¥¼ wrappingí•œ ê²ƒìž„. íƒœí›ˆ
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
+//d3dÀÇ SetTextureStageState¸¦ wrappingÇÑ °ÍÀÓ. ÅÂÈÆ
 extern void gfxSetTextureSelectArg(INDEX iStage, GFX_TEXTURE_ARG argColor, GFX_TEXTURE_ARG argAlpha)
 {
 	// check API
@@ -228,7 +227,7 @@ extern void gfxSetTextureSelectArg(INDEX iStage, GFX_TEXTURE_ARG argColor, GFX_T
 	hr = _pGfx->gl_pd3dDevice->SetTextureStageState( iStage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
 	GFX_abTexture[GFX_iActiveTexUnit] = D3DTOP_SELECTARG1;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 
 // update texture LOD bias
@@ -624,9 +623,9 @@ static const SLONG _aslVBTypeSizes[GFX_MAX_VBA] = {
 	GFX_POSSIZE, GFX_NORSIZE, GFX_WGHSIZE, GFX_COLSIZE,
 	GFX_TEXSIZE, GFX_TEXSIZE, GFX_TEXSIZE, GFX_TEXSIZE,
 	GFX_TEXSIZE, GFX_TEXSIZE, GFX_TEXSIZE, GFX_TEXSIZE,
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	GFX_TANSIZE,
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	};
 
 
@@ -655,10 +654,10 @@ extern void InitVertexBuffers(void)
 	// set one for dynamic array
 	VertexBuffer &vb  = _avbVertexBuffers.Push();
 	vb.vb_ulLockMask  = NONE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
-//	vb.vb_ulArrayMask = GFX_VBM_POS|GFX_VBM_NOR|GFX_VBM_WGH|GFX_VBM_COL|GFX_VBM_TEX; //ì›ë³¸
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+//	vb.vb_ulArrayMask = GFX_VBM_POS|GFX_VBM_NOR|GFX_VBM_WGH|GFX_VBM_COL|GFX_VBM_TEX; //¿øº»
 	vb.vb_ulArrayMask = GFX_VBM_POS|GFX_VBM_NOR|GFX_VBM_WGH|GFX_VBM_COL|GFX_VBM_TEX|GFX_VBM_TAN;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	vb.vb_eType       = GFX_DYNAMIC;
 }
 
@@ -671,7 +670,6 @@ extern INDEX gfxCreateVertexBuffer( const INDEX ctVertices, ULONG ulTypeMask, IN
 	const GfxAPIType eAPI = _pGfx->gl_eCurrentAPI;
 	ASSERT( eAPI==GAT_OGL || eAPI==GAT_D3D || eAPI==GAT_NONE);
 	ASSERT(eType==GFX_READWRITE || eType==GFX_WRITEONLY || eType==GFX_DYNAMIC);
-	CDisableAsyncProgress dap; // don't allow other threads to jump in
 
 	// check number of tex coord arrays and reconstruct mask
 	if( ctTexCoordArrays==-1) ctTexCoordArrays = (ulTypeMask&GFX_VBA_TEX) ? 1 : 0;
@@ -736,7 +734,7 @@ extern INDEX gfxCreateVertexBuffer( const INDEX ctVertices, ULONG ulTypeMask, IN
 		// if we ran out of memory, must delete created vertex buffers so far
 		if( iVA<GFX_MAX_VBA)
 		{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(DevPartner Bug Fix)(2005-01-10)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-10)
 			for( iVA=0; iVA<GFX_MAX_VBA; iVA++)
 			{
 				if((ulTypeMask>>iVA)&1)
@@ -751,7 +749,7 @@ extern INDEX gfxCreateVertexBuffer( const INDEX ctVertices, ULONG ulTypeMask, IN
 				D3DRELEASE( vb.vb_pavbWrite[iVA], TRUE);
 				vb.vb_pavbWrite[iVA] = NULL;
 			} // sorry, didn't make it
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-10)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-10)
 			return FALSE;
 		}
 		}//TRACKVB_HEAP();
@@ -783,7 +781,6 @@ extern void gfxDeleteVertexBuffer( const INDEX iBindNo)
 	// determine API
 	const GfxAPIType eAPI = _pGfx->gl_eCurrentAPI;
 	ASSERT( eAPI==GAT_OGL || eAPI==GAT_D3D || eAPI==GAT_NONE);
-	CDisableAsyncProgress dap; // don't allow other threads to jump in
 
 	ASSERT( iBindNo>0 && iBindNo<_avbVertexBuffers.Count());
 	VertexBuffer &vb = _avbVertexBuffers[iBindNo];
@@ -856,10 +853,10 @@ extern ULONG gfxGetVertexBufferMask( const INDEX iBindNo, INDEX &ctTexCoordArray
 {
 	ASSERT( iBindNo>0 && iBindNo<_avbVertexBuffers.Count());
 	VertexBuffer &vb = _avbVertexBuffers[iBindNo];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	ULONG ulMask    = vb.vb_ulArrayMask & GFX_ALL_VBM;
 	ULONG ulTexMask = ((vb.vb_ulArrayMask&(~(1<<GFX_VBA_TAN))) >> GFX_VBA_TEX);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	INDEX iTCA = 0;
 	while( ulTexMask>0) {
 		iTCA++;
@@ -901,7 +898,7 @@ static void FlushArrays( UWORD *puwElements, INDEX ctElements)
 	extern BOOL CVA_b2D;
 	gfxSetVertexArray( &_avtxCommon[0], ctVertices);
 	if(CVA_b2D) gfxLockArrays();
-	gfxSetTexCoordArray( &_atexCommon[0][0]);
+	gfxSetTexCoordArray( &_atexCommon[0][0], FALSE);
 	gfxSetColorArray( &_acolCommon[0]);
 	gfxDrawElements( ctElements, puwElements);
 	gfxUnlockArrays();
@@ -917,7 +914,7 @@ static void FlushTextArrays( UWORD *puwElements, INDEX ctElements, INDEX iBuffer
 	extern BOOL CVA_b2D;
 	gfxSetVertexArray( &_avtxText[iBuffer][0], ctVertices );
 	if( CVA_b2D ) gfxLockArrays();
-	gfxSetTexCoordArray( &_atexText[iBuffer][0] );
+	gfxSetTexCoordArray( &_atexText[iBuffer][0], FALSE );
 	gfxSetColorArray( &_acolText[iBuffer][0] );
 	gfxDrawElements( ctElements, puwElements );
 	gfxUnlockArrays();
@@ -932,7 +929,7 @@ static void FlushBtnArrays( UWORD *puwElements, INDEX ctElements, INDEX iBuffer 
 	extern BOOL CVA_b2D;
 	gfxSetVertexArray( &_avtxBtn[iBuffer][0], ctVertices );
 	if( CVA_b2D ) gfxLockArrays();
-	gfxSetTexCoordArray( &_atexBtn[iBuffer][0] );
+	gfxSetTexCoordArray( &_atexBtn[iBuffer][0], FALSE );
 	gfxSetColorArray( &_acolBtn[iBuffer][0] );
 	gfxDrawElements( ctElements, puwElements );
 	gfxUnlockArrays();

@@ -25,6 +25,7 @@ typedef union {
 #define	k_ANIMSPEED	275
 #define	k_COLOR	276
 #define	k_ANIMEFFECT	277
+#define	k_RIDING	278
 
 
 extern YYSTYPE syylval;

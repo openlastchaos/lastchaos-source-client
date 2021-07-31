@@ -1,4 +1,4 @@
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
 #ifndef _CNICEWATER_H_
 #define _CNICEWATER_H_
 #ifdef PRAGMA_ONCE
@@ -10,7 +10,7 @@
 #include <Engine/Math/AABBox.h>
 #include <Engine/Base/FileName.h>
 
-// Waterì˜ ì •ë³´ë¥¼ ì €ì¥í•˜ëŠ” í´ë˜ìŠ¤.
+// WaterÀÇ Á¤º¸¸¦ ÀúÀåÇÏ´Â Å¬·¡½º.
 class ENGINE_API CNiceWater
 {
 public:
@@ -18,36 +18,36 @@ public:
 	CNiceWater(CEntity* pEntity);
 	virtual			~CNiceWater();
 
-	void			Render();			// ëƒ‰ë¬´(SKA ë Œë”ë§ì‹œ ëŒ€ë¶€ë¶„ì´ ì²˜ë¦¬ë¨.)
+	void			Render();			// ³Ã¹«(SKA ·»´õ¸µ½Ã ´ëºÎºĞÀÌ Ã³¸®µÊ.)
 	void			Clear(void);
 
 public:
 	FLOATplane3D	m_plPlane;			// plane in absolute space
-	CEntity*		m_pWaterEntity;		// Waterì˜ ì—”í‹°í‹°.
+	CEntity*		m_pWaterEntity;		// WaterÀÇ ¿£Æ¼Æ¼.
 
 //protected:
 	BOOL			m_bWave;
-	BOOL			m_bReflection;		// ë°˜ì‚¬ ìœ ë¬´.
+	BOOL			m_bReflection;		// ¹İ»ç À¯¹«.
 	BOOL			m_bWireFrame;
-	BOOL			m_bRenderSky;		// ë°˜ì‚¬ì‹œ í•˜ëŠ˜ì„ ë Œë”ë§í•  ê²ƒì¸ê°€?
-	BOOL			m_bRenderModels;	// ë°˜ì‚¬ì‹œ í•˜ëŠ˜ì„ ë Œë”ë§í•  ê²ƒì¸ê°€?
+	BOOL			m_bRenderSky;		// ¹İ»ç½Ã ÇÏ´ÃÀ» ·»´õ¸µÇÒ °ÍÀÎ°¡?
+	BOOL			m_bRenderModels;	// ¹İ»ç½Ã ÇÏ´ÃÀ» ·»´õ¸µÇÒ °ÍÀÎ°¡?
 
-	FLOAT			m_fBumpMat11;		// ë²”í”„ ë§¤í•‘ í–‰ë ¬ê°’.
+	FLOAT			m_fBumpMat11;		// ¹üÇÁ ¸ÅÇÎ Çà·Ä°ª.
 	FLOAT			m_fBumpMat12;
 	FLOAT			m_fBumpMat21;
 	FLOAT			m_fBumpMat22;
 
-	FLOAT			m_fTexFlowX;		// í…ìŠ¤ì³ê°€ í˜ëŸ¬ê°€ëŠ” ì†ë„ ë° ë°©í–¥.
+	FLOAT			m_fTexFlowX;		// ÅØ½ºÃÄ°¡ Èê·¯°¡´Â ¼Óµµ ¹× ¹æÇâ.
 	FLOAT			m_fTexFlowY;
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.17
-	CTextureObject	m_toBump;			// ë²”í”„ë§µ í…ìŠ¤ì³1
-	CTextureObject	m_toWater;			// ë¬¼ í…ìŠ¤ì³.
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.17
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.17
+	CTextureObject	m_toBump;			// ¹üÇÁ¸Ê ÅØ½ºÃÄ1
+	CTextureObject	m_toWater;			// ¹° ÅØ½ºÃÄ.
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.17
 
 	CTFileName		m_fnBumpName;
 	CTFileName		m_fnWaterName;
 };
 
 #endif  /* include-once check. */
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22

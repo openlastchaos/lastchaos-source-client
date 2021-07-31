@@ -9,54 +9,51 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-
-
 // Define quick slot buttons
-//#define	QSLOT_BTN_COUNT					10
 #define	QSLOT_PAGE_COUNT				3
-//#define	QSLOT_BTN_SX				35
-//#define	QSLOT_BTN_SY				6
+
+// [12/10/2012 π⁄»∆] UI∞≥∆Ì¿∏∑Œ ¿Œ«— x,y  ∫Ø∞Ê
 #define	QSLOT_BTN_COUNT					12
-#define	QSLOT_BTN_SX					39
-#define	QSLOT_BTN_SY					34
+#define	QSLOT_BTN_SX					20
+#define	QSLOT_BTN_SY					7
 
-
+// [12/10/2012 π⁄»∆] UI∞≥∆Ì¿∏∑Œ ¿Œ«— x,y  ∫Ø∞Ê
 // Define outline of buttons
-#define	QSLOT_BTN_OUTLINE_SX			34
-#define	QSLOT_BTN_OUTLINE_SY			5
+#define	QSLOT_BTN_OUTLINE_SX			167
+#define	QSLOT_BTN_OUTLINE_SY			40
 #define	QSLOT_BTN_OUTLINE_SIZE			34
 
-
 // Define position of buttons
-//#define	QSLOT_PREV_BTN_SX			18
-//#define	QSLOT_PREV_BTN_SY			3
-//#define	QSLOT_NEXT_BTN_SX			18 
-//#define	QSLOT_NEXT_BTN_SY			27
-#define	QSLOT_PREV_BTN_SX				22
-#define	QSLOT_PREV_BTN_SY				33
-#define	QSLOT_NEXT_BTN_SX				22 
-#define	QSLOT_NEXT_BTN_SY				53
+#define	QSLOT_PREV_BTN_SX				440
+#define	QSLOT_PREV_BTN_SY				5
+#define	QSLOT_NEXT_BTN_SX				440 
+#define	QSLOT_NEXT_BTN_SY				31
+
+// [12/10/2012 π⁄»∆] Define position of Add, Delete Button
+#define QSLOT_ADD_BTN_SX				2
+#define QSLOT_ADD_BTN_SY				6
+#define QSLOT_DELETE_BTN_SX				2
+#define QSLOT_DELETE_BTN_SY				26
 
 #define	QSLOT_ROT_BTN_SX				460
 #define	QSLOT_ROT_BTN_SY				15
-
 
 // Define position of text
 #define	QSLOT_TAB_TEXT_CX				22
 #define	QSLOT_TAB_TEXT_SY				16
 
-
-// Define size of quick slot
-#define	QUICKSLOT_WIDTH					478 //wooss
+//  [12/10/2012 π⁄»∆] Define size of quick slot (∞≥∆ÌUI)
+#define	QUICKSLOT_WIDTH					457 //wooss
 //#define	QUICKSLOT_HEIGHT			44	
-#define	QUICKSLOT_HEIGHT				70	
+#define	QUICKSLOT_HEIGHT				44
 
 #define	QSLOT_GIFT_BTN_X				39
 #define	QSLOT_GIFT_BTN_Y				31
 #define	QSLOT_GIFT_BTN_ARROW			9
+
+//  [1/2/2013 Ranma]
+#define QSLOT_TAIL_SIZE					20
+#define QSLOT_RCSLOT_AREA				((QUICKSLOT_WIDTH) - (QSLOT_TAIL_SIZE))
 
 //Su-won
 enum eGiftPos
@@ -66,6 +63,28 @@ enum eGiftPos
 	GIFTPOS_RIGHT,
 	GIFTPOS_LEFT,
 };
+
+// ƒ¸ΩΩ∑‘ »Æ¿Â πˆ∆∞ [12/18/2012 Ranma]
+enum eQSlotEXBtn
+{
+	QSLOT_ADD,
+	QSLOT_DEL,
+	QSLOT_END,
+};
+
+enum eQUICKSLOT_TYPE
+{
+	QUICKSLOT_TYPE_EMPTY = -1,		// ΩΩ∑‘ ∫Òæ˙¿Ω
+	QUICKSLOT_TYPE_SKILL = 0,		// Ω∫≈≥≈∏¿‘
+	QUICKSLOT_TYPE_ACTION,			// æ◊º«≈∏¿‘
+	QUICKSLOT_TYPE_ITEM,			// æ∆¿Ã≈€≈∏¿‘
+	QUICKSLOT_TYPE_ITEM_WEAR,		// ¿Â¬¯ æ∆¿Ã≈€ ≈∏¿‘
+};
+
+typedef CUIIcon*	abtnItems[QSLOT_PAGE_COUNT][QSLOT_BTN_COUNT];	// Buttons of quick slot
+
+extern INDEX g_bQuickSlotEX1;
+extern INDEX g_bQuickSlotEX2;
 
 // ----------------------------------------------------------------------------
 // Name : CUIQuickSlot
@@ -77,18 +96,25 @@ protected:
 	// Controls
 	CUIButton			m_btnPrevSlot;									// Button for prev slot
 	CUIButton			m_btnNextSlot;									// Button for next slot
+	// [12/10/2012 π⁄»∆] ∞≥∆ÌUI 
+	enum QSLOT { QS_1 = 0, QS_2, QS_END };
+	CUIWindow*			m_pChildQuickSlot[QS_END];
+	// Add, Delete πˆ∆∞ √ﬂ∞°
+	CUIButton			m_btnAddSlot;									// Button for Add Slot
+	CUIButton			m_btnDeleteSlot;								// Button for Delete Slot
+
 	CUIButton			m_btnRotate;									// Button for rotating this UI
 	CUIButton			m_btnQuestBook;									// Button for Quest Book
 	//wooss
 	CUIButton			m_btnCashShop;									// Button for Cash Shop
-
 	//Su-won
-	CUIButton			m_btnGiftNotice;								//ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº
+	CUIButton			m_btnGiftNotice;								//º±π∞ µµ¬¯ æÀ∏≤ πˆ∆∞
 	
 	BOOL				m_bHorizontal;									// If quick slot is horizontal or vertical
-	CUIButtonEx			m_abtnItems[QSLOT_PAGE_COUNT][QSLOT_BTN_COUNT];	// Buttons of quick slot
+	abtnItems			m_abtnItems;									// Buttons of quick slot
 	int					m_nCurrentPage;									// Current quick slot page
 	CTString			m_strCurrentPage;								// Text of current quick slot page
+	CTString			m_strPageNumber;								// Text of quick slot pageNumber
 
 	// Slot information
 	int					m_nSelSlotBtnID;								// Selected button ID of quick slot
@@ -98,65 +124,72 @@ protected:
 	UIRect				m_rcSlotInfo;									// Slot information region
 
 	//Su-won
-	BOOL				m_bGiftRecv;									//ÏÑ†Î¨º ÎèÑÏ∞© Ïó¨Î∂Ä
-	CTextureData		*m_ptdGiftTexture;								//ÏÑ†Î¨º ÎèÑÏ∞© Î≤ÑÌäº ÌÖçÏä§Ï≥ê
-
+	BOOL				m_bGiftRecv;									//º±π∞ µµ¬¯ ø©∫Œ
+	CTextureData		*m_ptdGiftTexture;								//º±π∞ µµ¬¯ πˆ∆∞ ≈ÿΩ∫√ƒ
 
 	// Region of each part
 	UIRect				m_rcTitle1;										// Region of title1
 	UIRect				m_rcTitle2;										// Region of title2
 	UIRect				m_rcSlot;										// Region of slot
-	UIRect				m_rcHorzSlotText;								// Region of horizontal slot text
-	UIRect				m_rcVertSlotText;								// Region of vertical slot text
+	
+	// [12/10/2012 π⁄»∆] 1π¯ ƒ¸ΩΩ∑‘¿∫ Rotation±‚¥…¿Ã ªË¡¶ µ ¿∏∑Œ «œ≥™∑Œ ≈Î¿œ
+	UIRectUV				m_rtSlotNumberText;
+	UIRectUV				m_rtSlotNumberText1;
+	UIRectUV				m_rtSlotNumberText2;
+	UIRectUV				m_rtShop;
 
 	// UV of each part
 	UIRectUV			m_rtBackground;									// UV of background
-	UIRectUV			m_rtPrevHorzIdle;								// UV of horizontal prev button
-	UIRectUV			m_rtPrevHorzClick;								// UV of horizontal prev button
-	UIRectUV			m_rtPrevVertIdle;								// UV of vertical prev button
-	UIRectUV			m_rtPrevVertClick;								// UV of vertical prev button
-	UIRectUV			m_rtNextHorzIdle;								// UV of horizontal next button
-	UIRectUV			m_rtNextHorzClick;								// UV of horizontal next button
-	UIRectUV			m_rtNextVertIdle;								// UV of vertical next button
-	UIRectUV			m_rtNextVertClick;								// UV of vertical next button
-	UIRectUV			m_rtRotHorzIdle;								// UV of horizontal rotate button
-	UIRectUV			m_rtRotHorzClick;								// UV of horizontal rotate button
-	UIRectUV			m_rtRotVertIdle;								// UV of vertical rotate button
-	UIRectUV			m_rtRotVertClick;								// UV of vertical rotate button
+
+	// [12/10/2012 π⁄»∆] UI∞≥∆Ì πˆ∆∞
+	UIRectUV			m_rtNextOver;
+	UIRectUV			m_rtNextClick;
+	UIRectUV			m_rtPrevOver;
+	UIRectUV			m_rtPrevClick;
+	UIRectUV			m_rtAddSlotOver;
+	UIRectUV			m_rtAddSlotClick;
+	UIRectUV			m_rtDeleteSlotOver;
+	UIRectUV			m_rtDeleteSlotClick;
+
 	UIRectUV			m_rtSlotInfoL;									// UV of left region of slot information
 	UIRectUV			m_rtSlotInfoM;									// UV of middle region of slot information
 	UIRectUV			m_rtSlotInfoR;									// UV of right region of slot information
 	UIRectUV			m_rtBtnOutline;									// UV of outline of buttons
 	UIRectUV			m_rtHorzSlotText;								// UV of horizontal slot text
-	UIRectUV			m_rtVertSlotText;								// UV of vertical slot text
+	
 	UIRectUV			m_rtQuestBook;
 	UIRectUV			m_rtQuestBookDown;
-
-	UIRectUV			m_rtCashShop;									// UV of cash shop
+	
+	// [12/10/2012 π⁄»∆] UI∞≥∆Ì¿∏∑Œ ¿Œ«— ƒ≥Ω¨º• ºˆ¡§
+	UIRectUV			m_rtChashShopIdle;
+	UIRectUV			m_rtCashShopOver;
 	UIRectUV			m_rtCashShopDown;								// UV of cash shop button down
 
 	//Su-won
-	UIRectUV			m_rtGift[4][2];									//ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº UV
-	eGiftPos			m_eGiftPos;										//ÏÑ†Î¨º Î≤ÑÌäº ÏúÑÏπò
+	UIRectUV			m_rtGift[4][2];									//º±π∞ µµ¬¯ æÀ∏≤ πˆ∆∞ UV
+	eGiftPos			m_eGiftPos;										//º±π∞ πˆ∆∞ ¿ßƒ°
+	BOOL				m_bIsInside;
+
+	int		m_nCurChildSlot;
+
+	BOOL	m_bWearing;
 
 protected:
 	// Internal functions
-	void	RotateQuickSlot();
 	void	RenderBtns();
 	//Su-won
 	void	RenderGiftButton();
-	void	ShowSlotInfo( BOOL bShowInfo, int nSlotIndex = -1 );
 	void	ShowExSlotInfo( BOOL bShowInfo, int nSlotIndex = -1 );
 	//Su-won
 	void	SetGiftNoticePos();
-
+public:
 	// Command functions
-	void	AddBtnToQuickSlot( int nSlotIndex );
-	void	SwapBtnsInQuickSlot( int nSlot1, int nSlot2 );
+	void	AddBtnToQuickSlot( int nSlotIndex, int nCurrentPage );
+	void	SwapBtnsInQuickSlot(int nPage1, int nSlot1, int nPage2, int nSlot2);
 
 	// Network message functions ( send )
 	void	SendAddBtn( int nPage, int nSlotNum, int nSlotType = -1, int nData0 = -1, int nData1 = -1 );
-	void	SendSwapBtns( int nPage, int nSlotNum1, int nSlotNum2 );
+	void	SendSwapBtns( int nPage1, int nSlot1, int nPage2, int nSlot2 );
 
 public:
 	CUIQuickSlot();
@@ -176,10 +209,9 @@ public:
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
 	// Command functions
-	void	UseQuickSlot( int nSlotIndex );
+	void	UseQuickSlot( int nSlotIndex, int nCurrentPage = 0 );
 	void	ChangePage( int nPage );
-	void	RemoveBtn( int nBtnID );
-	void	UpdateSkillLevel( int nIndex, SBYTE sbLevel );
+	void	RemoveBtn(CUIIcon* pIcon);
 	BOOL	StartSkillDelay( int nIndex );
 	//Su-won
 	void	SetGiftRecv(BOOL bGiftRecv)	{ m_bGiftRecv =bGiftRecv; }
@@ -187,13 +219,38 @@ public:
 	// Network message functions ( receive )
 	void	AddBtn( int nPage, int nSlotNum, int nSlotType = -1, int nData0 = -1, int nData1 = -1 );
 	void	SwapBtns( int nPage, int nSlotNum1, int nSlotNum2 );
-	void	RefreshBtn( int nType, int nIndex );
 	void	ClearAllBtns( int nPage );
 
 	void	RemoveSummonSkill();
 	void	RemoveElementalSkill();
 	void	RemovePetSkill();
 	void	RemoveWildPetSkill();
+
+	// Ω∫≈≥ √ ±‚»≠ ªÁøÎΩ√ ƒ¸ΩΩ∑‘ø° µÓ∑œµ» ∏µÁ Ω∫≈≥µÈ¿ª ªË¡¶«—¥Ÿ.
+	void	ResetQuickSLotSKill();
+	
+	// [sora] 090731 ƒ¸ΩΩ∑‘ item count Update
+	void	UpdateItemCount(int nUinIndex, SQUAD llCount);
+
+	// ≥ª±∏µµ ¿€æ˜
+	void	UpdateItemDurability(int nUinIdx, UWORD now, UWORD max = 0);
+
+	// [12/14/2012 Ranma]
+	void	ToggleVisibleEXQuickSlot(BOOL bResultView);
+	BOOL	CheckSlotEXBtn(eQSlotEXBtn eBtn); // ¥ı«œ±‚ πˆ∆∞¿Œ¡ˆ ª©±‚ πˆ∆∞¿Œ¡ˆ
+	void	SetDisableCheckSlotEX();
+	BOOL	IsInQuickSolt(UIBtnExType BtnType, int nIndex); // ƒ¸ΩΩ∑‘ø° µÓ∑œµ«æÓ ¿÷¥¬¡ˆ∏¶ √£¥¬¥Ÿ.
+	BOOL	IsInQuickSlot(int nUinIndex);
+	int		GetPage() {return m_nCurrentPage;}
+
+	void	SetWearingLock(BOOL bLock)  { m_bWearing = bLock; }
+	BOOL	GetWearingLock()			{ return m_bWearing; }
+	ENGINE_API void	SetToggle( int nType, int nIndex, bool bToggle );
+
+	void	OnUpdate( float fDeltaTime, ULONG ElapsedTime );
+private:
+
+	void	setQuickSlotItemData(int nPage, int nSlot, int type, int idx, CItems* pItem, bool bWearTab, bool bItemRef = true);
 };
 
 

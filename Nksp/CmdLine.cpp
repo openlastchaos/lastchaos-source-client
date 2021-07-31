@@ -31,7 +31,8 @@ CTString GetNextParam(void)
   // if the first char is quote
   if (_strCmd[0]=='"') {
     // find first next quote
-    char *pchClosingQuote = strchr(_strCmd+1, '"');
+	const char* pCmd = _strCmd;
+    char *pchClosingQuote = strchr((char*)pCmd+1, '"');
     // if not found
     if (pchClosingQuote==NULL) {
       // error in command line

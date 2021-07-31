@@ -7,6 +7,14 @@
 uses "EntitiesMP/ModelHolder2";
 uses "EntitiesMP/Light";
 
+enum ChangeAnimType
+{
+	0 ACTION_NONE	"normal animation",
+	1 ACTION_SKILL	"skill animation",
+	2 ACTION_DISAPPEAR "disappear animation",
+	3 ACTION_APPEAR "appear animation",
+};
+
 // event sent to the entity that should change animation
 event EChangeAnim {
   INDEX iModelAnim,
@@ -21,6 +29,7 @@ event EChangeAnim {
   COLOR colDiffuse,
   CTString strAnimation,
   FLOAT fBlendTime,
+  ChangeAnimType AnimType,
 };
 
 class CAnimationChanger : CRationalEntity {

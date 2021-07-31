@@ -299,10 +299,10 @@ public:
 // flags 0-2 are used by CObjectPolygon, flags 3-31 are used by CBrushPolygon
 // OPOF_PORTAL  // set if the polygon is a portal - used for CSG in CObject3D
 #define BPOF_DOUBLESIDED            (1UL<< 3)    // polygon is renderable from both sides
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ ë¬¼ í¼í¬ë¨¼ìŠ¤ ìž‘ì—…
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
 //#define BPOF_SHOOTTHRU              (1UL<< 4)    // physical ray-casts can pass through the polygon, even if it is not passable
 #define BPOF_WATER					(1UL<< 4)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¬¼ í¼í¬ë¨¼ìŠ¤ ìž‘ì—…
+//°­µ¿¹Î ¼öÁ¤ ³¡ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
 #define BPOF_TRANSPARENT            (1UL<< 5)    // render with alpha-testing and write z-buffer
 #define BPOF_RENDERASPORTAL         (1UL<< 6)    // internal used in rendering
 #define BPOF_STAIRS                 (1UL<< 7)    // polygon is part of a staircase
@@ -409,7 +409,16 @@ struct CBrushPolygonProperties {
 #define	ATTC_UNWALKABLE				255
 #define ATTC_TOTAL_COUNT			9
 
-									// yjpark     -->|
+#define	MATT_WALKABLE			0x0001
+#define	MATT_PEACE				0x0002
+#define	MATT_PRODUCT_PUBLIC		0x0004
+#define	MATT_PRODUCT_PRIVATE	0x0008
+#define	MATT_STAIR_UP			0x0010
+#define	MATT_STAIR_DOWN			0x0020
+#define	MATT_WAR				0x0040
+#define	MATT_FREEPKZONE			0x0080
+
+#define	MATT_UNWALKABLE			0x8000
 
 class ENGINE_API CBrushPolygon {
 public:

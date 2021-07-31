@@ -16,57 +16,11 @@
 #include "EntitiesMP/PlayerWeapons.h"
 #include <Engine/SlaveInfo.h>
 #include <Engine/Interface/UIManager.h>
-#include <Engine/Interface/UIChatting.h>
+#include <Engine/Contents/Base/ChattingUI.h>
+#include <Engine/Contents/Base/UICharacterInfoNew.h>
+#include <Engine/Info/MyInfo.h>
 
 #define MOB_ATTACK_MOTION_NUM		(1)
-
-struct sSkillEffectInfo
-{
-	void InitForNormalAttack(CMobData &mob, INDEX aniID)
-	{
-		m_bSkillAttack = FALSE;
-		szEffectNameCast = mob.GetFireEffect0();
-		szEffectNameMissile = mob.GetFireEffect1();
-		szEffectNameHit = mob.GetFireEffect2();
-		iFireDelayCount = mob.GetDelayCount();
-		fFireDelay[0] = mob.GetDelay(0);
-		fFireDelay[1] = mob.GetDelay(1);
-		fFireDelay[2] = mob.GetDelay(2);
-		fFireDelay[3] = mob.GetDelay(3);
-		iMissileType = mob.GetMissileType();
-		fMissileSpeed = mob.GetMissileSpeed();
-		iAnimatioID = aniID;
-		dwValidValue = 0x00000000;
-	}
-	void InitForSkillAttack(CSkill &skill)
-	{
-		m_bSkillAttack = TRUE;
-		szEffectNameCast = skill.GetFireEffect1(0);
-		szEffectNameMissile = skill.GetFireEffect2(0);
-		szEffectNameHit = skill.GetFireEffect3(0);
-		iFireDelayCount = skill.GetDelayCount(0);
-		fFireDelay[0] = skill.GetDelay(0,0);
-		fFireDelay[1] = skill.GetDelay(1,0);
-		fFireDelay[2] = skill.GetDelay(2,0);
-		fFireDelay[3] = skill.GetDelay(3,0);
-		iMissileType = skill.GetMissileType(0);
-		fMissileSpeed = skill.GetMissileSpeed(0);
-		iAnimatioID = skill.idPlayer_Anim_Skill[0][2];
-		dwValidValue = 0x00000000;
-	}
-	
-	BOOL		m_bSkillAttack;
-	const char	*szEffectNameCast;
-	const char	*szEffectNameMissile;
-	const char	*szEffectNameHit;
-	int			iFireDelayCount;
-	FLOAT		fFireDelay[4];
-	int			iMissileType;
-	FLOAT		fMissileSpeed;
-	INDEX		iAnimatioID;
-	DWORD		dwValidValue;
-};
-#define SkillEffectInfo() ((sSkillEffectInfo*)m_pSkillEffectInfo)
 
 void ShotFallDown(FLOAT3D vStartPos, FLOAT3D vToTargetDir, FLOAT fMoveSpeed
 				 , const char *szHitEffectName, const char *szFallObjEffectName
@@ -110,7 +64,7 @@ void GetTargetDirection3(CEntity *penMe, CEntity *penTarget, FLOAT3D &vTargetPos
 	vDirection.Normalize(); 				
 };
 
-ENGINE_API void SetDropItemModel(CEntity *penEntity, const CItemData &ItemData, CItemTarget &it);
+ENGINE_API void SetDropItemModel(CEntity *penEntity, const CItemData &ItemData, CItemTarget* pTarget);
 %}
 
 uses "EntitiesMP/SlaveBase";
@@ -154,7 +108,7 @@ void ShotMissile(CEntity *penShoter, const char *szShotPosTagName
 				 , const char *szHitEffectName, const char *szArrowEffectName
 				 , bool bCritical
 				 , FLOAT fHorizonalOffset = 0.0f, FLOAT fVerticalOffset = 0.0f	//-1.0f ~ 1.0f
-				 , INDEX iArrowType = 0, const char *szMissileModel = NULL);
+				 , INDEX iArrowType = 0, const char *szMissileModel = NULL, CSelectedEntities* dcEntities = NULL);
 void ShotMagicContinued(CEntity *penShoter, FLOAT3D vStartPos, FLOATquat3D qStartRot
 				 , CEntity *penTarget, FLOAT fMoveSpeed
 				 , const char *szHitEffectName, const char *szMagicEffectName
@@ -194,7 +148,7 @@ properties:
 		INDEX					m_nEffectStep;	
 		CEffectGroup			*m_pSkillReadyEffect;
 		CStaticArray<TagInfo>	m_saLastEffectInfo;
-		void					*m_pSkillEffectInfo;								
+		sSkillEffectInfo		m_SkillEffectInfo;								
 		
 		//CSelectedEntities		m_dcEnemies;
 
@@ -276,6 +230,8 @@ functions:
 		}	
 		// 스킬 딜레이 적용하기.
 		CSkill &SkillData = _pNetwork->GetSkillData(iSkillIndex);
+		int lv = MY_INFO()->GetSkillLevel(iSkillIndex);
+
 		m_dcEnemies.Clear();
 
 		// 버프가 걸린 상태에서 스킬 사용 불가.
@@ -301,9 +257,8 @@ functions:
 					return FALSE;
 				}
 
-				SkillData.SetStartTime();
 				// 여기서 범위 공격 처리해줄것...
-				if( SkillData.GetTargetNum() > 1 )
+				if( SkillData.GetTargetNum(lv) > 1 )
 				{
 					if( _pNetwork->m_bSingleMode )
 					{
@@ -328,7 +283,7 @@ functions:
 					m_dcEnemies.Add(m_penEnemy);	// this need to fire status of target member.
 
 					_pNetwork->FindTargetsInRange(this, m_penEnemy, m_dcEnemies, 
-													SkillData.GetAppRange(), SkillData.GetTargetNum()-1, 360.0f, iSkillIndex, chTargetType );
+													SkillData.GetAppRange(), SkillData.GetTargetNum(lv)-1, 360.0f, iSkillIndex, chTargetType );
 					
 					_pNetwork->SendSlaveSkillMessageInContainer(iSkillIndex, this, m_dcEnemies, TRUE);
 				}
@@ -348,8 +303,7 @@ functions:
 		// 셀프 스킬
 		else
 		{
-			SkillData.SetStartTime();
-			if( SkillData.GetTargetNum() > 1 )
+			if( SkillData.GetTargetNum(lv) > 1 )
 			{
 				if( _pNetwork->m_bSingleMode )
 				{
@@ -369,7 +323,7 @@ functions:
 				if( chTargetType == CSkill::STT_SELF_RANGE )
 				{
 					_pNetwork->FindTargetsInRange(this, this, m_dcEnemies, 
-						SkillData.GetAppRange(), SkillData.GetTargetNum(), 360.0f, iSkillIndex );
+						SkillData.GetAppRange(), SkillData.GetTargetNum(lv), 360.0f, iSkillIndex );
 				}
 
 				_pNetwork->SendSlaveSkillMessageInContainer(iSkillIndex, this, m_dcEnemies, TRUE);
@@ -472,9 +426,7 @@ functions:
 	{
 		if(penToDamage)
 		{
-			_pUIMgr->ShowDamage( penToDamage->en_ulID );
-			// Date : 2005-11-16(오후 2:05:09), By Lee Ki-hwan
-			//_pUIMgr->SetDamageState();
+			SE_Get_UIManagerPtr()->ShowDamage( penToDamage->en_ulID );
 
 			if( !(penToDamage->GetFlags()&ENF_ALIVE ) )	{ return; }
 			INDEX preHealth, curHealth;
@@ -486,8 +438,66 @@ functions:
 				fDamageAmmount = 1;
 				((CUnit*)penToDamage)->m_nCurrentHealth = ((CUnit*)penToDamage)->m_nPreHealth;			
 			}
-			else fDamageAmmount = 0;
+			else 
+			{
+				fDamageAmmount = 0;
+			}
+
+			if(penToDamage ==INFO()->GetTargetEntity(eTARGET))
+			{
+				if( penToDamage->IsCharacter() )
+				{
+					penToDamage->UpdateTargetInfo(((CUnit*) penToDamage)->m_nMaxiHealth,((CUnit*) penToDamage)->m_nCurrentHealth,((CCharacter*) penToDamage)->m_nPkMode,((CCharacter*) penToDamage)->m_nPkState,((CCharacter*) penToDamage)->m_nLegit);		
+				}
+				else
+				{
+					penToDamage->UpdateTargetInfo(((CUnit*) penToDamage)->m_nMaxiHealth,((CUnit*) penToDamage)->m_nCurrentHealth);
+				}
+			}
 	
+	
+			if (penToDamage->IsEnemy() && preHealth >= 0) // ?? Slave가 Enemy(권좌)를 공격할 일이 있는가?
+			{
+				const INDEX iMobIndex = ((CEnemy*)penToDamage)->m_nMobDBIndex;
+
+				if (iMobIndex == LORD_SYMBOL_INDEX) // 메라크 공성 권좌 NPC(사이즈는 바뀌지 않고, 모델을 바꾼다)
+				{
+					CMobData* MD = CMobData::getData(iMobIndex);
+					FLOAT fMaxHealth = ((CUnit*)penToDamage)->m_nMaxiHealth;
+
+					if ((curHealth <= fMaxHealth * 0.25f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 0)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword04.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 0;
+						}
+					}
+					else if ((curHealth <= fMaxHealth * 0.50f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 1)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword03.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 1;
+						}
+					}
+					else if ((curHealth <= fMaxHealth * 0.75f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 2)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword02.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 2;
+						}
+					}
+				}
+			}
+
 			((CUnit*)penToDamage)->m_nPreHealth = -1; //1103
 		}
 		
@@ -498,55 +508,6 @@ functions:
 		}
 
 		//((CLiveEntity*)((CEntity*)penToDamage))->SetHealth(1000.0f);
-
-		if(penToDamage && penToDamage->IsEnemy())
-		{
-			const INDEX iMobIndex = ((CEnemy*)penToDamage)->m_nMobDBIndex;
-			// 성주의 권좌일때....
-			if( iMobIndex == LORD_SYMBOL_INDEX)
-			{
-				CMobData& MD = _pNetwork->GetMobData(iMobIndex);
-				INDEX iCurHealth = ((CUnit*)((CEntity*)penToDamage))->m_nCurrentHealth;
-				static INDEX iType = 0;
-				float fMaxHealth = MD.GetHealth();
-				if( iCurHealth <= fMaxHealth * 0.25f)
-				{
-					if(iType != 1 )
-					{
-						iType = 1;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword04.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else if( iCurHealth <= fMaxHealth * 0.50f)
-				{
-					if( iType != 2 )
-					{
-						iType = 2;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword03.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else if( iCurHealth <= fMaxHealth * 0.75f)
-				{
-					if( iType != 3 )
-					{
-						iType = 3;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword02.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else
-				{
-					if( iType != 0 )
-					{
-						iType = 0;
-						penToDamage->SetSkaModel(MD.GetMobSmcFileName());
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-			}
-		}	
 
 		if(penToDamage )
 		{
@@ -575,7 +536,7 @@ functions:
 			StartEffectGroup("Normal Hit"		//Hardcording
 				, _pTimer->GetLerpedCurrentTick(), vHitPoint, quat);
 		}
-		_pUIMgr->ShowDamage( en_ulID );
+		SE_Get_UIManagerPtr()->ShowDamage( en_ulID );
 		CSlaveBase::ReceiveDamage(penInflictor, dmtType, fDamageAmmount, vHitPoint, vDirection);
 	};
 
@@ -734,7 +695,7 @@ functions:
 		}
 
 		this->InflictDirectDamage(m_penEnemy, this, DMT_NONE, 1, FLOAT3D(0,0,0), FLOAT3D(0,0,0));
-		switch(SkillEffectInfo()->iMissileType)
+		switch(m_SkillEffectInfo.iMissileType)
 		{
 		case 0/*MT_NONE*/:
 			{
@@ -759,7 +720,7 @@ functions:
 				axis.Normalize();
 				FLOATquat3D quat;
 				quat.FromAxisAngle(axis, angle);
-				StartEffectGroup(SkillEffectInfo()->szEffectNameHit
+				StartEffectGroup(m_SkillEffectInfo.szEffectNameHit
 								, _pTimer->GetLerpedCurrentTick()
 								, vHitPoint, quat);
 			} break;
@@ -773,18 +734,18 @@ functions:
 						CEntity *pEn = (*it);
 						if(pEn != NULL && pEn->IsFlagOff(ENF_DELETED))
 						{
-							ShotMissile( this, "RHAND", pEn, SkillEffectInfo()->fMissileSpeed, "Normal Hit", "Normal Arrow Trace", false );
+							ShotMissile( this, "RHAND", pEn, m_SkillEffectInfo.fMissileSpeed, "Normal Hit", "Normal Arrow Trace", false );
 						}
 					}
 				}
 				else
 				{
-					ShotMissile( this, "RHAND", m_penEnemy, SkillEffectInfo()->fMissileSpeed, "Normal Hit", "Normal Arrow Trace", false );
+					ShotMissile( this, "RHAND", m_penEnemy, m_SkillEffectInfo.fMissileSpeed, "Normal Hit", "Normal Arrow Trace", false );
 				}
 			} break;
 		case 2/*MT_DIRECT*/:
 			{
-				StartEffectGroup(SkillEffectInfo()->szEffectNameHit
+				StartEffectGroup(m_SkillEffectInfo.szEffectNameHit
 					, &m_penEnemy->en_pmiModelInstance->m_tmSkaTagManager
 					, _pTimer->GetLerpedCurrentTick());
 			} break;
@@ -804,7 +765,7 @@ functions:
 							break;
 						}
 					}
-					if(num == SkillEffectInfo()->iFireDelayCount)
+					if(num == m_SkillEffectInfo.iFireDelayCount)
 					{
 						m_pSkillReadyEffect->Stop(0.04f);
 					}
@@ -818,8 +779,8 @@ functions:
 						if(pEn != NULL && pEn->IsFlagOff(ENF_DELETED))
 						{
 							ShotMagicContinued(this, lastEffectInfo, FLOATquat3D(1,0,0,0)
-										, pEn, SkillEffectInfo()->fMissileSpeed
-										, SkillEffectInfo()->szEffectNameHit, SkillEffectInfo()->szEffectNameMissile
+										, pEn, m_SkillEffectInfo.fMissileSpeed
+										, m_SkillEffectInfo.szEffectNameHit, m_SkillEffectInfo.szEffectNameMissile
 										, false, 3);
 						}
 					}
@@ -827,8 +788,8 @@ functions:
 				else
 				{
 					ShotMagicContinued(this, lastEffectInfo, FLOATquat3D(1,0,0,0)
-										, m_penEnemy, SkillEffectInfo()->fMissileSpeed
-										, SkillEffectInfo()->szEffectNameHit, SkillEffectInfo()->szEffectNameMissile
+										, m_penEnemy, m_SkillEffectInfo.fMissileSpeed
+										, m_SkillEffectInfo.szEffectNameHit, m_SkillEffectInfo.szEffectNameMissile
 										, false, 3);
 				}
 			} break;
@@ -838,7 +799,7 @@ functions:
 		case 7/*MT_MAGECUTTER*/:	{} break;//안쓰임, 캐릭 전용
 		case 8/*MT_DIRECTDAMAGE*/:
 			{
-				StartEffectGroup(SkillEffectInfo()->szEffectNameHit
+				StartEffectGroup(m_SkillEffectInfo.szEffectNameHit
 					, &m_penEnemy->en_pmiModelInstance->m_tmSkaTagManager
 					, _pTimer->GetLerpedCurrentTick());
 				if( m_dcEnemies.Count() > 0 )
@@ -867,7 +828,7 @@ functions:
 					pos(2) = CRandomTable::Instance().GetRndFactor() * s_fFallHeightVariation + s_fFallHeight;
 					pos += m_penEnemy->GetPlacement().pl_PositionVector;
 					ShotFallDown(pos, FLOAT3D(0,1,0), s_fSpeed + s_fSpeedVariation * CRandomTable::Instance().GetRndFactor()
-								, SkillEffectInfo()->szEffectNameHit, SkillEffectInfo()->szEffectNameMissile, FALSE);
+								, m_SkillEffectInfo.szEffectNameHit, m_SkillEffectInfo.szEffectNameMissile, FALSE);
 				}
 			} break;
 		//-----boss mob hardcoding area end-----//
@@ -879,6 +840,105 @@ functions:
 	}
 
 procedures:
+/************************************************************
+ *                       M  A  I  N                         *
+ ************************************************************/
+	Main(EVoid) 
+	{
+		CModelInstance *pMI = GetModelInstance();
+		if(pMI == NULL)
+		{ 
+			InitAsSkaEditorModel();
+			SetSkaModel("Models\\Editor\\Ska\\Axis.smc");			
+			return EEnd();
+		}
+//안태훈 수정 시작	//(Effect Add & Modify for Close Beta)(0.1)
+		if(pMI != NULL)
+		{
+			CSkaTag tag;
+			tag.SetName("__ROOT");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			pMI->m_tmSkaTagManager.Register(&tag);
+			FLOATaabbox3D aabb;
+			pMI->GetAllFramesBBox(aabb);
+			tag.SetName("CENTER");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			tag.SetOffsetPos(0, aabb.Size()(2) * 0.5f * pMI->mi_vStretch(2), 0);
+			pMI->m_tmSkaTagManager.Register(&tag);
+			tag.SetName("__TOP");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			tag.SetOffsetPos(0, aabb.Size()(2) * pMI->mi_vStretch(2), 0);
+			pMI->m_tmSkaTagManager.Register(&tag);
+		}
+//안태훈 수정 끝	//(Effect Add & Modify for Close Beta)(0.1)		
+		
+		SetFlags(GetFlags()|ENF_ALIVE);		
+		
+		en_sbNetworkType = MSG_CHAR_ELEMENTAL;
+
+		SetPhysicsFlags(EPF_ONBLOCK_CLIMBORSLIDE
+			| EPF_TRANSLATEDBYGRAVITY
+			//| EPF_PUSHABLE
+			| EPF_MOVABLE			
+			| EPF_ABSOLUTETRANSLATE );
+		//SetPhysicsFlags(GetPhysicsFlags() &~EPF_PUSHABLE);
+		SetCollisionFlags(ECF_MODEL_NO_COLLISION);
+		
+		// set initial vars
+		en_tmMaxHoldBreath = 60.0f;
+		en_fDensity = 1000.0f;    // same density as water - to be able to dive freely		
+
+		SetFlagOn(ENF_RENDERREFLECTION);
+
+		// setup moving speed
+		m_aWalkRotateSpeed		= AngleDeg(3600.0f);
+		m_aAttackRotateSpeed	= AngleDeg(3600.0f);				
+		m_aCloseRotateSpeed		= AngleDeg(3600.0f);
+
+		// setup attack distances
+		m_fAttackFireTime		= 2.0f;
+		m_fCloseFireTime		= 2.0f;
+		m_fBlowUpAmount			= 80.0f;
+		m_fBodyParts			= 4;
+		m_fDamageWounded		= 0.0f;
+		
+		// set stretch factors for height and width
+		pMI->StretchModel(FLOAT3D(m_fStretch, m_fStretch, m_fStretch));
+		pMI->mi_bRenderShadow = TRUE;
+
+		SetHealth(10000.0f);//0807 몹의 체력.
+		ModelChangeNotify();
+		//StandingAnim();
+
+		m_iCurrentCommand	= CSlaveInfo::COMMAND_PROTECTION;
+		m_bPlayAttackAnim	= FALSE;
+		
+//안태훈 수정 시작	//(Open beta)(2004-12-14)
+		if(pMI)
+		{
+			CSkaTag tag;
+			tag.SetName("__ROOT");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			pMI->m_tmSkaTagManager.Register(&tag);
+			tag.SetName("__TOP");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			FLOATaabbox3D aabb;
+			pMI->GetAllFramesBBox(aabb);
+			tag.SetOffsetPos(0, aabb.Size()(2), 0);
+			pMI->m_tmSkaTagManager.Register(&tag);
+		}
+//안태훈 수정 끝	//(Open beta)(2004-12-14)
+		
+		// 수호 모드의 경우.
+		if(m_bUseAI && m_iCurrentCommand == CSlaveInfo::COMMAND_PROTECTION)
+		{
+			SetTargetByCommand( m_iCurrentCommand );
+		}
+
+		// continue behavior in base class
+		jump CSlaveBase::MainLoop();
+	};
+
 /************************************************************
  *                A T T A C K   E N E M Y                   *
  ************************************************************/
@@ -916,8 +976,7 @@ procedures:
 		m_vDesiredPosition = PlayerDestinationPos();
 		
 		CSkill &skill = _pNetwork->GetSkillData(m_nCurrentSkillNum);
-		m_pSkillEffectInfo = new sSkillEffectInfo;
-		SkillEffectInfo()->InitForSkillAttack(skill);
+		m_SkillEffectInfo.InitForSkillAttack(skill);
 
 		autocall SkillAnimation() EReturn;
 	
@@ -1002,7 +1061,7 @@ procedures:
 							
 							if( m_penEnemy )
 							{
-								_pUIMgr->ShowDamage( m_penEnemy->en_ulID );
+								SE_Get_UIManagerPtr()->ShowDamage( m_penEnemy->en_ulID );
 							}
 						}
 						// 근거리로 공격하는 경우.
@@ -1010,7 +1069,7 @@ procedures:
 						{
 							if( m_penEnemy )
 							{
-								_pUIMgr->ShowDamage( m_penEnemy->en_ulID );
+								SE_Get_UIManagerPtr()->ShowDamage( m_penEnemy->en_ulID );
 							}
 							SendEvent(ESlaveAttackDamage());						
 						}
@@ -1507,11 +1566,9 @@ procedures:
 
 	SkillAndMagicAnimation(EVoid)
 	{
-		if(SkillEffectInfo()->dwValidValue != 0)
+		if(m_SkillEffectInfo.dwValidValue != 0)
 		{
-			SkillEffectInfo()->dwValidValue = 0xBAD0BEEF;
-			delete m_pSkillEffectInfo;
-			m_pSkillEffectInfo = NULL;
+			m_SkillEffectInfo.dwValidValue = 0xBAD0BEEF;
 			return EReturn();
 		}
 
@@ -1519,15 +1576,15 @@ procedures:
 		m_fAttackStartTime = _pTimer->GetLerpedCurrentTick();
 		m_fImpactTime = GetAnimLength(iAnimSlave_Attack)/3;
 
-		GetModelInstance()->AddAnimation(SkillEffectInfo()->iAnimatioID,AN_CLEAR,1.0f,0);	
+		GetModelInstance()->AddAnimation(m_SkillEffectInfo.iAnimatioID,AN_CLEAR,1.0f,0);	
 
 		m_nEffectStep = 1;
 		m_pSkillReadyEffect = NULL;
-		m_pSkillReadyEffect = StartEffectGroup(SkillEffectInfo()->szEffectNameCast
+		m_pSkillReadyEffect = StartEffectGroup(m_SkillEffectInfo.szEffectNameCast
 			, &en_pmiModelInstance->m_tmSkaTagManager
 			, _pTimer->GetLerpedCurrentTick());
 
-		while(_pTimer->GetLerpedCurrentTick() - m_fAttackStartTime < GetAnimLength(SkillEffectInfo()->iAnimatioID)*0.8f)
+		while(_pTimer->GetLerpedCurrentTick() - m_fAttackStartTime < GetAnimLength(m_SkillEffectInfo.iAnimatioID)*0.8f)
 		{
 			wait(m_fAttackFrequency) 
 			{
@@ -1538,9 +1595,7 @@ procedures:
 						DestroyEffectGroupIfValid(m_pSkillReadyEffect);
 						//GetModelInstance()->AddAnimation(iAnimSlave_Idle1,AN_LOOPING|AN_NORESTART|AN_CLEAR,1,0);							
 						StandingAnim();
-						SkillEffectInfo()->dwValidValue = 0xBAD0BEEF;
-						delete m_pSkillEffectInfo;
-						m_pSkillEffectInfo = NULL;
+						m_SkillEffectInfo.dwValidValue = 0xBAD0BEEF;
 						return EReturn();
 					}
 											
@@ -1551,22 +1606,22 @@ procedures:
 					}
 
 					FLOAT time = _pTimer->GetLerpedCurrentTick() - m_fAttackStartTime;
-					if(time >= SkillEffectInfo()->fFireDelay[0] && m_nEffectStep == 1 && SkillEffectInfo()->iFireDelayCount > 0)
+					if(time >= m_SkillEffectInfo.fFireDelay[0] && m_nEffectStep == 1 && m_SkillEffectInfo.iFireDelayCount > 0)
 					{
 						++m_nEffectStep;
 						SkillAndAttackFire(1);
 					}
-					if(time >= SkillEffectInfo()->fFireDelay[1] && m_nEffectStep == 2 && SkillEffectInfo()->iFireDelayCount > 1)
+					if(time >= m_SkillEffectInfo.fFireDelay[1] && m_nEffectStep == 2 && m_SkillEffectInfo.iFireDelayCount > 1)
 					{
 						++m_nEffectStep;
 						SkillAndAttackFire(2);
 					}
-					if(time >= SkillEffectInfo()->fFireDelay[2] && m_nEffectStep == 3 && SkillEffectInfo()->iFireDelayCount > 2)
+					if(time >= m_SkillEffectInfo.fFireDelay[2] && m_nEffectStep == 3 && m_SkillEffectInfo.iFireDelayCount > 2)
 					{
 						++m_nEffectStep;
 						SkillAndAttackFire(3);
 					}
-					if(time >= SkillEffectInfo()->fFireDelay[3] && m_nEffectStep == 4 && SkillEffectInfo()->iFireDelayCount > 3)
+					if(time >= m_SkillEffectInfo.fFireDelay[3] && m_nEffectStep == 4 && m_SkillEffectInfo.iFireDelayCount > 3)
 					{
 						++m_nEffectStep;
 						SkillAndAttackFire(4);
@@ -1597,9 +1652,7 @@ procedures:
 		}
 
 		m_nEffectStep = 0;
-		SkillEffectInfo()->dwValidValue = 0xBAD0BEEF;
-		delete m_pSkillEffectInfo;
-		m_pSkillEffectInfo = NULL;
+		m_SkillEffectInfo.dwValidValue = 0xBAD0BEEF;
 		return EReturn();
 	};
 
@@ -1661,104 +1714,5 @@ procedures:
 		//autowait(0.60f);
 
 		return EReturn();
-	};
-
-/************************************************************
- *                       M  A  I  N                         *
- ************************************************************/
-	Main(EVoid) 
-	{
-		CModelInstance *pMI = GetModelInstance();
-		if(pMI == NULL)
-		{ 
-			InitAsSkaEditorModel();
-			SetSkaModel("Models\\Editor\\Ska\\Axis.smc");			
-			return EEnd();
-		}
-//안태훈 수정 시작	//(Effect Add & Modify for Close Beta)(0.1)
-		if(pMI != NULL)
-		{
-			CSkaTag tag;
-			tag.SetName("__ROOT");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			pMI->m_tmSkaTagManager.Register(&tag);
-			FLOATaabbox3D aabb;
-			pMI->GetAllFramesBBox(aabb);
-			tag.SetName("CENTER");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			tag.SetOffsetPos(0, aabb.Size()(2) * 0.5f * pMI->mi_vStretch(2), 0);
-			pMI->m_tmSkaTagManager.Register(&tag);
-			tag.SetName("__TOP");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			tag.SetOffsetPos(0, aabb.Size()(2) * pMI->mi_vStretch(2), 0);
-			pMI->m_tmSkaTagManager.Register(&tag);
-		}
-//안태훈 수정 끝	//(Effect Add & Modify for Close Beta)(0.1)		
-		
-		SetFlags(GetFlags()|ENF_ALIVE);		
-		
-		en_sbNetworkType = MSG_CHAR_ELEMENTAL;
-
-		SetPhysicsFlags(EPF_ONBLOCK_CLIMBORSLIDE
-			| EPF_TRANSLATEDBYGRAVITY
-			//| EPF_PUSHABLE
-			| EPF_MOVABLE			
-			| EPF_ABSOLUTETRANSLATE );
-		//SetPhysicsFlags(GetPhysicsFlags() &~EPF_PUSHABLE);
-		SetCollisionFlags(ECF_MODEL_NO_COLLISION);
-		
-		// set initial vars
-		en_tmMaxHoldBreath = 60.0f;
-		en_fDensity = 1000.0f;    // same density as water - to be able to dive freely		
-
-		SetFlagOn(ENF_RENDERREFLECTION);
-
-		// setup moving speed
-		m_aWalkRotateSpeed		= AngleDeg(3600.0f);
-		m_aAttackRotateSpeed	= AngleDeg(3600.0f);				
-		m_aCloseRotateSpeed		= AngleDeg(3600.0f);
-
-		// setup attack distances
-		m_fAttackFireTime		= 2.0f;
-		m_fCloseFireTime		= 2.0f;
-		m_fBlowUpAmount			= 80.0f;
-		m_fBodyParts			= 4;
-		m_fDamageWounded		= 0.0f;
-		
-		// set stretch factors for height and width
-		pMI->StretchModel(FLOAT3D(m_fStretch, m_fStretch, m_fStretch));
-		pMI->mi_bRenderShadow = TRUE;
-
-		SetHealth(10000.0f);//0807 몹의 체력.
-		ModelChangeNotify();
-		//StandingAnim();
-
-		m_iCurrentCommand	= CSlaveInfo::COMMAND_PROTECTION;
-		m_bPlayAttackAnim	= FALSE;
-		
-//안태훈 수정 시작	//(Open beta)(2004-12-14)
-		if(pMI)
-		{
-			CSkaTag tag;
-			tag.SetName("__ROOT");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			pMI->m_tmSkaTagManager.Register(&tag);
-			tag.SetName("__TOP");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			FLOATaabbox3D aabb;
-			pMI->GetAllFramesBBox(aabb);
-			tag.SetOffsetPos(0, aabb.Size()(2), 0);
-			pMI->m_tmSkaTagManager.Register(&tag);
-		}
-//안태훈 수정 끝	//(Open beta)(2004-12-14)
-		
-		// 수호 모드의 경우.
-		if(m_bUseAI && m_iCurrentCommand == CSlaveInfo::COMMAND_PROTECTION)
-		{
-			SetTargetByCommand( m_iCurrentCommand );
-		}
-
-		// continue behavior in base class
-		jump CSlaveBase::MainLoop();
 	};
 };

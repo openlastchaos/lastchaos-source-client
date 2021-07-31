@@ -6,19 +6,20 @@ $Header: //depot/3darg/Tools/NormalMapper/NmFileIO.cpp#15 $
 *  (C) 2000 ATI Research, Inc.  All rights reserved.
 ******************************************************************************/
 
-//ì•ˆíƒœí›ˆì´ ì¶”ê°€í•œ íŒŒì¼, ìœ—ë¶€ë¶„ì˜ Copyrightê´€ë ¨ ì£¼ì„ ì œê±° ë§ê²ƒ.
+//¾ÈÅÂÈÆÀÌ Ãß°¡ÇÑ ÆÄÀÏ, À­ºÎºĞÀÇ Copyright°ü·Ã ÁÖ¼® Á¦°Å ¸»°Í.
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #include <stdH.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 #include <stdarg.h>
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-#include <string>
+#include <string.h>
 #include <math.h>
 
 #include "NmFileIO.h"
+#include <Engine/Util.h>
 
 #define EPSILON 1.0e-5
 static const double ATI_VERT_TINY = EPSILON;
@@ -565,8 +566,8 @@ bool DcTangentSpace_ROTATE_METHOD(const float* v1, const float* v2, const float*
 	verts[2].t[0] = t3[0];
 	verts[2].t[1] = t3[1];
 
-	//ì•„ì§ êµ¬í˜„í•˜ì§€ ì•Šì•˜ìŒ.
-	ASSERTALWAYS("ë¯¸êµ¬í˜„");
+	//¾ÆÁ÷ ±¸ÇöÇÏÁö ¾Ê¾ÒÀ½.
+	ASSERTALWAYS("¹Ì±¸Çö");
 
 	return DC_OK;
 }
@@ -618,8 +619,8 @@ bool DcTangentSpace_SIMPLE_METHOD(const float* v1, const float* v2, const float*
 	verts[2].t[0] = t3[0];
 	verts[2].t[1] = t3[1];
 
-	//ì•„ì§ êµ¬í˜„í•˜ì§€ ì•Šì•˜ìŒ.
-	ASSERTALWAYS("ë¯¸êµ¬í˜„");
+	//¾ÆÁ÷ ±¸ÇöÇÏÁö ¾Ê¾ÒÀ½.
+	ASSERTALWAYS("¹Ì±¸Çö");
 
 	return DC_OK;
 }
@@ -671,8 +672,8 @@ bool DcTangentSpace_ANT_METHOD(const float* v1, const float* v2, const float* v3
 	verts[2].t[0] = t3[0];
 	verts[2].t[1] = t3[1];
 
-	//ì•„ì§ êµ¬í˜„í•˜ì§€ ì•Šì•˜ìŒ.
-	ASSERTALWAYS("ë¯¸êµ¬í˜„");
+	//¾ÆÁ÷ ±¸ÇöÇÏÁö ¾Ê¾ÒÀ½.
+	ASSERTALWAYS("¹Ì±¸Çö");
 
 	return DC_OK;
 }
@@ -835,6 +836,7 @@ NmCreateVertexBuffers (int numTris, NmRawTriangle* tris,
 	(*verts) = new NmTangentPointD [numTris*3]; // Brute force it
 	if ((*verts) == NULL)
 	{
+		SAFE_ARRAY_DELETE(sortIndex);
 		return false;
 	}
 	NmTangentPointD* point = (*verts);
@@ -870,6 +872,6 @@ NmCreateVertexBuffers (int numTris, NmRawTriangle* tris,
 	}
 	
 	// Success!
-	delete [] sortIndex;
+	SAFE_ARRAY_DELETE(sortIndex);
 	return true;
 } // end of NmCreateVertexBuffers

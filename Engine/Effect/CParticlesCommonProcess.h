@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLESCOMMONPROCESS_H__
 #define __CPARTICLESCOMMONPROCESS_H__
 
@@ -40,16 +40,16 @@ public:
 	
 	virtual INDEX GetWantTagCount()						{ return 0;		}
 	virtual const char *GetWantTagName(INDEX index)		{ return "";	}
-	virtual void SetWantTag(INDEX index, ptr_tag tag)	{ NULL;			}
+	virtual void SetWantTag(INDEX index, ptr_tag tag)	{}
 protected:
 	//content
 	PARTICLES_COMMON_PROCESS_TYPE m_eType;
 	//instance
-	FLOAT3D		m_vCenter;		//Processì˜ ì¤‘ì‹¬
-	FLOATquat3D	m_quatDir;		//Processì˜ ë°©í–¥
+	FLOAT3D		m_vCenter;		//ProcessÀÇ Áß½É
+	FLOATquat3D	m_quatDir;		//ProcessÀÇ ¹æÇâ
 };
 
 typedef CRefCountPtr<CParticlesCommonProcess> ptr_common_process;
 
 #endif //__CPARTICLESCOMMONPROCESS_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

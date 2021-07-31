@@ -1,11 +1,15 @@
 #include "stdh.h"
-#include <Engine/Interface/UIExchange.h>
+// «Ï¥ı ¡§∏Æ. [12/1/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIExchange.h>
 #include <Engine/Interface/UIPetInfo.h>
+#include <Engine/Interface/UIWareHouse.h>
 #include <Engine/Interface/UIInventory.h>
-#include <Engine/PetInfo.h>
-#include <Engine/LocalDefine.h>
-
+#include <Engine/Interface/UIRadar.h>
+#include <Engine/Contents/function/WildPetInfoUI.h>
+#include <Engine/Object/ActorMgr.h>
+#include <Engine/Contents/Base/UIMsgBoxNumeric_only.h>
+#include <Engine/Contents/Base/PersonalshopUI.h>
 
 extern INDEX g_iCountry;
 extern INDEX g_iRejectExchange;	// [7/13/2009 rumist] reject request of exchange message.
@@ -13,9 +17,25 @@ extern INDEX g_iRejectExchange;	// [7/13/2009 rumist] reject request of exchange
 // Name : CUIExchange()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
+
+class CmdExChangeAddItem : public Command
+{
+public:
+	CmdExChangeAddItem() : m_pWnd(NULL)	{}
+	void setData(CUIExchange* pWnd)	{ m_pWnd = pWnd;	}
+	void execute() 
+	{
+		if (m_pWnd != NULL)
+			m_pWnd->AddItemCallback();
+	}
+private:
+	CUIExchange* m_pWnd;
+};
+
 CUIExchange::CUIExchange()
 {
 	m_nSelMyItemID = -1;
+	m_nSelITab = -1;
 	m_nSelInvenItemID = -1;
 	m_bShowItemInfo = FALSE;
 	m_bDetailItemInfo = FALSE;
@@ -39,7 +59,18 @@ CUIExchange::CUIExchange()
 // ----------------------------------------------------------------------------
 CUIExchange::~CUIExchange()
 {
-	Destroy();
+	int		i;
+
+	for (i = 0; i < EXCH_EXCH_SLOT_TOTAL; ++i)
+	{
+		SAFE_DELETE(m_pIconsOppItems[i]);
+		SAFE_DELETE(m_pIconsMyItems[i]);
+	}
+
+	for (i = 0; i < DEF_INVENTORY_MAX; ++i)
+	{
+		SAFE_DELETE(m_pIconsInvenItems[i]);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -48,16 +79,14 @@ CUIExchange::~CUIExchange()
 // ----------------------------------------------------------------------------
 void CUIExchange::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 216, 22 );
 	m_rcOppSlot.SetRect( 6, 27, 191, 142 );
 	m_rcMySlot.SetRect( 6, 149, 191, 245 );
 	m_rcInvenSlot.SetRect( 6, 253, 192, 417 );
-
+	m_rtTouchNas.SetRect( 75, 385, 190, 405);
 	// Create exchange texture
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Exchange.tex" ) );
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
@@ -95,21 +124,21 @@ void CUIExchange::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Ready button
-	m_btnReady.Create( this, _S( 148, "Ï§ÄÎπÑ ÏôÑÎ£å" ), 11, 420, 63, 21 );
+	m_btnReady.Create( this, _S( 148, "¡ÿ∫Ò øœ∑·" ), 11, 420, 63, 21 );
 	m_btnReady.SetUV( UBS_IDLE, 0, 454, 63, 475, fTexWidth, fTexHeight );
 	m_btnReady.SetUV( UBS_CLICK, 64, 454, 127, 475, fTexWidth, fTexHeight );
 	m_btnReady.SetUV( UBS_DISABLE, 128, 454, 191, 475, fTexWidth, fTexHeight );
 	m_btnReady.CopyUV( UBS_IDLE, UBS_ON );	
 
 	// Exchange button
-	m_btnExchange.Create( this, _S( 149, "ÍµêÌôò" ), 76, 420, 63, 21 );
+	m_btnExchange.Create( this, _S( 149, "±≥»Ø" ), 76, 420, 63, 21 );
 	m_btnExchange.SetUV( UBS_IDLE, 0, 454, 63, 475, fTexWidth, fTexHeight );
 	m_btnExchange.SetUV( UBS_CLICK, 64, 454, 127, 475, fTexWidth, fTexHeight );
 	m_btnExchange.SetUV( UBS_DISABLE, 128, 454, 191, 475, fTexWidth, fTexHeight );
 	m_btnExchange.CopyUV( UBS_IDLE, UBS_ON );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 141, 420, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 141, 420, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 454, 63, 475, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 64, 454, 127, 475, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -119,8 +148,8 @@ void CUIExchange::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_sbScrollBar.Create( this, 195, 249, 9, 137 );
 	m_sbScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
 	m_sbScrollBar.SetScrollPos( 0 );
-	m_sbScrollBar.SetScrollRange( EXCH_INVEN_SLOT_ROW_TOTAL );
-	m_sbScrollBar.SetCurItemCount( EXCH_INVEN_SLOT_ROW_TOTAL );
+	m_sbScrollBar.SetScrollRange( DEF_INVENTORY_MAX / EXCH_EXCH_SLOT_COL );
+	m_sbScrollBar.SetCurItemCount( DEF_INVENTORY_MAX / EXCH_EXCH_SLOT_COL );
 	m_sbScrollBar.SetItemsPerPage( EXCH_INVEN_SLOT_ROW );
 	// Up button
 	m_sbScrollBar.SetUpUV( UBS_IDLE, 219, 62, 228, 69, fTexWidth, fTexHeight );
@@ -151,7 +180,9 @@ void CUIExchange::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 			nBtnX = EXCH_SLOT_SX;	nBtnY += 35;
 		}
 
-		m_abtnOppItems[iBtn].Create( this, nBtnX, nBtnY, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM );
+		//m_pIconsOppItems[iBtn].Create( this, nBtnX, nBtnY, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM );
+		m_pIconsOppItems[iBtn] = new CUIIcon();
+		m_pIconsOppItems[iBtn]->Create(this, nBtnX, nBtnY, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM);
 		nBtnX += 35;
 	}
 
@@ -165,17 +196,18 @@ void CUIExchange::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 			nBtnX = EXCH_SLOT_SX;	nBtnY += 35;
 		}
 
-		m_abtnMyItems[iBtn].Create( this, nBtnX, nBtnY, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM );
+		//m_pIconsMyItems[iBtn].Create( this, nBtnX, nBtnY, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM );
+		m_pIconsMyItems[iBtn] = new CUIIcon();
+		m_pIconsMyItems[iBtn]->Create(this, nBtnX, nBtnY, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM);
 		nBtnX += 35;
 	}
 
 	// Slot items
-	for( int iRow = 0; iRow < EXCH_INVEN_SLOT_ROW_TOTAL ; iRow++ )
+	for (int i = 0; i < DEF_INVENTORY_MAX; ++i)
 	{
-		for( int iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
-		{
-			m_abtnInvenItems[iRow][iCol].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM, 0, iRow, iCol );
-		}
+		//m_pIconsInvenItems[i].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM, 0, i );
+		m_pIconsInvenItems[i] = new CUIIcon();
+		m_pIconsInvenItems[i]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_EXCHANGE, UBET_ITEM);
 	}
 }
 
@@ -205,43 +237,50 @@ void CUIExchange::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 // ----------------------------------------------------------------------------
 void CUIExchange::PrepareExchange()
 {
-	if(_pUIMgr->IsCSFlagOn(CSF_WAREHOUSE))
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->IsCSFlagOn(CSF_WAREHOUSE))
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S(1890 ,"Ï∞ΩÍ≥† ÏÇ¨Ïö©Ï§ëÏóêÎäî ÍµêÌôòÏùÑ Ìï†Ïàò ÏóÜÏäµÎãàÎã§." ) );	
-		_pUIMgr->GetWareHouse()->ResetWareHouse();
+		pUIManager->GetChattingUI()->AddSysMessage( _S(1890 ,"√¢∞Ì ªÁøÎ¡ﬂø°¥¬ ±≥»Ø¿ª «“ºˆ æ¯Ω¿¥œ¥Ÿ." ) );	
+		pUIManager->GetWareHouse()->ResetWareHouse();
 	}
 
 	// Close message box of inventory
-	_pUIMgr->CloseMessageBox( MSGCMD_DROPITEM );
+	pUIManager->CloseMessageBox( MSGCMD_DROPITEM );
 
 	// Lock inventory
-	_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_EXCHANGE );
+	pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_EXCHANGE );
 
 	// Initialize inventory items of exchange
-	int		iRow, iCol;
-	for( iRow = 0; iRow < EXCH_INVEN_SLOT_ROW_TOTAL; iRow++ )
-	{
-		for( iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
-		{
-			CItems	&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-			if( rItems.Item_Sum > 0 )
-			{
-				m_abtnInvenItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, rItems.Item_Index,
-															rItems.Item_UniIndex, rItems.Item_Wearing );
-				m_abtnInvenItems[iRow][iCol].SetItemCount( rItems.Item_Sum );
-				m_abtnInvenItems[iRow][iCol].SetItemPlus( rItems.Item_Plus );
-				m_abtnInvenItems[iRow][iCol].SetItemFlag( rItems.Item_Flag );
-				m_abtnInvenItems[iRow][iCol].SetItemUsed( rItems.Item_Used );
-				m_abtnInvenItems[iRow][iCol].SetItemUsed2( rItems.Item_Used2 );
-				m_abtnInvenItems[iRow][iCol].SetItemRareIndex( rItems.Item_RareIndex);
+	int		i;
+	int		tab, idx;
 
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-				{
-					m_abtnInvenItems[iRow][iCol].SetItemOptionData( sbOption,
-																	rItems.GetOptionType( sbOption ),
-																	rItems.GetOptionLevel( sbOption ) );
-				}
-			}
+	for (i = 0; i < DEF_INVENTORY_MAX; ++i)
+	{
+		if (i >= (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1))
+		{
+			tab = INVENTORY_TAB_CASH_2;
+			idx = i - (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1);
+		}
+		else if (i >= ITEM_COUNT_IN_INVENTORY_NORMAL)
+		{
+			tab = INVENTORY_TAB_CASH_1;
+			idx = i - ITEM_COUNT_IN_INVENTORY_NORMAL;
+		}
+		else
+		{
+			tab = INVENTORY_TAB_NORMAL;
+			idx = i;
+		}
+
+		CItems*		pItems = &_pNetwork->MySlotItem[tab][idx];
+
+		if( pItems->Item_Sum > 0 )
+		{
+			CItems* pClone = new CItems;
+			memcpy(pClone, pItems, sizeof(CItems));
+			m_pIconsInvenItems[i]->setData(pClone, false);
+			m_pIconsInvenItems[i]->setCount(pItems->Item_Sum);
 		}
 	}
 
@@ -249,14 +288,14 @@ void CUIExchange::PrepareExchange()
 	if( _pNetwork->MyCharacterInfo.money > 0 )
 	{
 		m_strMyCurMoney.PrintF( "%I64d", _pNetwork->MyCharacterInfo.money );
-		_pUIMgr->InsertCommaToString( m_strMyCurMoney );
+		pUIManager->InsertCommaToString( m_strMyCurMoney );
 	}
 
 	// Set state of controls
 	m_btnReady.SetEnable( TRUE );
 	m_btnExchange.SetEnable( FALSE );
 
-	_pUIMgr->RearrangeOrder( UI_EXCHANGE, TRUE );
+	pUIManager->RearrangeOrder( UI_EXCHANGE, TRUE );
 }
 
 // ----------------------------------------------------------------------------
@@ -281,938 +320,37 @@ void CUIExchange::ResetExchange()
 	m_strMyCurMoney = CTString( "0" );
 	m_strOppExchMoney = CTString( "0" );
 	m_strMyExchMoney = CTString( "0" );
+	m_nMyNas = 0;
+	m_nTradeNas = 0;
 
 	m_sbScrollBar.SetScrollPos( 0 );
 
 	// Initialize buttons
 	for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 	{
-		m_abtnOppItems[iItem].InitBtn();
-		m_abtnMyItems[iItem].InitBtn();
+		m_pIconsOppItems[iItem]->clearIconData();
+		m_pIconsMyItems[iItem]->clearIconData();
 	}
-	for( int iRow = 0; iRow < EXCH_INVEN_SLOT_ROW_TOTAL; iRow++ )
+	for (int i = 0; i < DEF_INVENTORY_MAX; ++i)
 	{
-		for( int iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
-			m_abtnInvenItems[iRow][iCol].InitBtn();
+		m_pIconsInvenItems[i]->clearIconData();
 	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
 	// Unlock inventory
-	_pUIMgr->GetInventory()->Lock( FALSE, FALSE, LOCK_EXCHANGE );
+	pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_EXCHANGE );
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOff( CSF_EXCHANGE );
+	pUIManager->SetCSFlagOff( CSF_EXCHANGE );
 
 	// Close message box of exchange
-	_pUIMgr->CloseMessageBox( MSGCMD_EXCH_ADD_ITEM );
-	_pUIMgr->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
-	_pUIMgr->CloseMessageBox( MSGCMD_EXCH_REQ_SRC );
-	_pUIMgr->CloseMessageBox( MSGCMD_EXCH_REQ_DEST );
-
-	_pUIMgr->RearrangeOrder( UI_EXCHANGE, FALSE );
-}
-
-// ----------------------------------------------------------------------------
-// Name : AddItemInfoString()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIExchange::AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo )
-{
-	if( m_nCurInfoLines >= MAX_ITEMINFO_LINE )
-		return;
-
-	// Get length of string
-	INDEX	nLength = strItemInfo.Length();
-	if( nLength <= 0 )
-		return;
-
-	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strItemInfo);
-		INDEX	nChatMax= (MAX_ITEMINFO_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strItemInfo,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; iPos++ )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= MAX_ITEMINFO_CHAR )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strItemInfo[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; iPos++ )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-		}
-	}
-}
-
-extern tm* g_tv_t; // Í∏∞Í∞Ñ ÌëúÏãúÏö© Ï†ÑÏó≠ Ìè¨Ïù∏ÌÑ∞ Î≥ÄÏàò
-
-#define IN_VALIDTM(a) if (a) {delete a; a=NULL;}
-
-// ----------------------------------------------------------------------------
-// Name : GetItemInfo()
-// Desc : nWhichSlot - 0: opposite slot, 1: my slot, 2: inventory slot
-// ----------------------------------------------------------------------------
-// FIXME : Ï§ëÎ≥µÎêòÎäî ÏΩîÎìúÍ∞Ä ÎÑàÎ¨¥ ÎßéÏùå.
-void CUIExchange::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight,
-								int nOppItem, int nMyItem, int nRow, int nCol )
-{
-	CTString	strTemp;
-	m_nCurInfoLines = 0;
-
-	int			nIndex;
-	SQUAD		llCount;
-	ULONG		ulPlus, ulFlag;
-	LONG		ulUsed;
-	LONG		lRareIndex;
-	SBYTE		sbOptionType[MAX_ITEM_OPTION], sbOptionLevel[MAX_ITEM_OPTION];
-
-	switch( nWhichSlot )
-	{
-	case 0:
-		{
-			nIndex = m_abtnOppItems[nOppItem].GetItemIndex();
-			llCount = m_abtnOppItems[nOppItem].GetItemCount();
-			ulPlus = m_abtnOppItems[nOppItem].GetItemPlus();
-			ulFlag = m_abtnOppItems[nOppItem].GetItemFlag();
-			ulUsed = m_abtnOppItems[nOppItem].GetItemUsed();
-			lRareIndex = m_abtnOppItems[nOppItem].GetItemRareIndex();
-
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-			{
-				sbOptionType[sbOption] = m_abtnOppItems[nOppItem].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnOppItems[nOppItem].GetItemOptionLevel( sbOption );
-			}
-		}
-		break;
-
-	case 1:
-		{
-			nIndex = m_abtnMyItems[nMyItem].GetItemIndex();
-			llCount = m_abtnMyItems[nMyItem].GetItemCount();
-			ulPlus = m_abtnMyItems[nMyItem].GetItemPlus();
-			ulFlag = m_abtnMyItems[nMyItem].GetItemFlag();
-			ulUsed = m_abtnMyItems[nMyItem].GetItemUsed();
-			lRareIndex = m_abtnMyItems[nMyItem].GetItemRareIndex();
-
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-			{
-				sbOptionType[sbOption] = m_abtnMyItems[nMyItem].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnMyItems[nMyItem].GetItemOptionLevel( sbOption );
-			}
-		}
-		break;
-
-	case 2:
-		{
-			nIndex = m_abtnInvenItems[nRow][nCol].GetItemIndex();
-			llCount = m_abtnInvenItems[nRow][nCol].GetItemCount();
-			ulPlus = m_abtnInvenItems[nRow][nCol].GetItemPlus();
-			ulFlag = m_abtnInvenItems[nRow][nCol].GetItemFlag();
-			ulUsed = m_abtnInvenItems[nRow][nCol].GetItemUsed();
-			lRareIndex = m_abtnInvenItems[nRow][nCol].GetItemRareIndex();
-
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-			{
-				sbOptionType[sbOption] = m_abtnInvenItems[nRow][nCol].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnInvenItems[nRow][nCol].GetItemOptionLevel( sbOption );
-			}
-		}
-		break;
-	}
-
-	CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-	CItemRareOption rItemRareOption =_pNetwork->GetRareOptionData(0);
-
-	if(  rItemData.GetFlag() & ITEM_FLAG_RARE )
-	{
-		m_bRareItem =TRUE;
-		rItemRareOption =_pNetwork->GetRareOptionData(lRareIndex);
-		m_iRareGrade =rItemRareOption.GetGrade();
-	}
-	else
-	{
-		m_bRareItem =FALSE;
-		m_iRareGrade =-1;
-	}
-
-	const CTString strItemName =_pNetwork->GetItemName( nIndex );
-
-	CTString szItemName =strItemName;
-	if( m_bRareItem )
-	{
-		CTString strPrefix = rItemRareOption.GetPrefix();
-		if( strPrefix.Length() >0 )
-			szItemName.PrintF("%s %s", strPrefix, strItemName);
-	}
-	
-	COLOR colNas = 0xF2F2F2FF;
-
-	// Get item name
-	if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
-	{
-		CTString	strCount;
-
-		strCount.PrintF( "%I64d", llCount );
-		_pUIMgr->InsertCommaToString( strCount );		
-		strTemp.PrintF( "%s(%s)", szItemName, strCount );
-		
-		colNas = _pUIMgr->GetNasColor( llCount );
-	}
-	else
-	{
-		if( ( rItemData.GetType() == CItemData::ITEM_WEAPON ||
-			rItemData.GetType() == CItemData::ITEM_SHIELD ) &&
-			ulPlus > 0 )
-			strTemp.PrintF( "%s +%d", szItemName, ulPlus );
-#ifdef Pet_IMPROVEMENT_1ST
-		// [070604: Su-won] 1Ï∞® Ìé´ Í∏∞Îä• Í∞úÏÑ†
-		// Ìé´Ïùò ÏßÑÌôîÎã®Í≥Ñ ÌëúÏãú
-		else if( _pUIMgr->IsPet(rItemData) )
-		{
-			const INDEX iPetIndex = ulPlus;
-			SBYTE sbPetTypeGrade =_pUIMgr->GetPetInfo()->GetPetTypeGrade( iPetIndex );
-
-			if( sbPetTypeGrade >0 )
-			{
-				INDEX iPetType;
-				INDEX iPetAge;
-				_pNetwork->CheckPetType( sbPetTypeGrade, iPetType, iPetAge );
-				strTemp = szItemName +CTString(" - ")+PetInfo().GetName(iPetType, iPetAge);
-			}
-			else
-				strTemp = szItemName;
-		}
-#endif
-		else
-			strTemp = szItemName;
-	}
-
-	AddItemInfoString( strTemp, colNas );
-	
-
-	// Get item information in detail
-	if( m_bDetailItemInfo )
-	{
-		COLOR colString =0xFFFFFFFF;
-		CTString strTime1, strTime2;
-
-		if(rItemData.IsFlag(ITEM_FLAG_CASH))
-		{
-
-			if (ulUsed > 0)
-			{
-				time_t tv_used = ulUsed - _pUIMgr->GetRadar()->GetStartTime();
-				g_tv_t = _pUIMgr->LClocaltime((time_t*)&tv_used);
-				strTemp.PrintF(  _S( 2525,"ÎßåÎ£å : %dÎÖÑ%dÏõî%dÏùº%dÏãú"),g_tv_t->tm_year+1,g_tv_t->tm_mon+1,g_tv_t->tm_yday+1,g_tv_t->tm_hour);
-				
-				AddItemInfoString( strTemp, 0xFFAA44FF );
-				IN_VALIDTM(g_tv_t)
-			}
-		}
-
-		switch( rItemData.GetType() )
-		{
-		case CItemData::ITEM_ACCESSORY:
-			{
-				if( rItemData.GetSubType() == CItemData::ACCESSORY_PET ) // Ìé´Ïù∏ Í≤ΩÏö∞ 
-				{
-					// ÏÑúÎ≤ÑÎ°ú Î∂ÄÌÑ∞ ÏùΩÏñ¥ ÎìúÎ¶∞ Ìé´ ÍµêÌôò Ï†ïÎ≥¥Î•º Ï∞æÏïÑÏÑú Ï∂úÎ†•
-					SPetExchangeInfoString pPetExchangeInfo;
-					// ÏÑúÎ≤ÑÎ°ú Î∂ÄÌÑ∞ ÏùΩÎìúÎ¶∞ Ìé´ Ï†ïÎ≥¥Í∞Ä ÏûàÎäîÏßÄ ÌôïÏù∏ ÏûàÎã§Î©¥ Ï∞∏Ï°∞Î°ú Îç∞Ïù¥ÌÑ∞ Ï†ÑÎã¨.
-					if( _pUIMgr->GetPetInfo()->GetPetExchangeInfo( ulPlus, pPetExchangeInfo ) )
-					{
-						if( pPetExchangeInfo.strNameCard.Length() >0)
-							AddItemInfoString( pPetExchangeInfo.strNameCard, 0xF2F2F2FF );
-						AddItemInfoString( pPetExchangeInfo.strLevel, 0xDEC05BFF );		
-						AddItemInfoString( pPetExchangeInfo.strHP, 0xDEC05BFF );		
-						AddItemInfoString( pPetExchangeInfo.strlExp, 0xDEC05BFF );		
-						AddItemInfoString( pPetExchangeInfo.strHungry, 0xDEC05BFF );		
-						AddItemInfoString( pPetExchangeInfo.strSympathy, 0xDEC05BFF );		
-						AddItemInfoString( pPetExchangeInfo.strAbility, 0xDEC05BFF );		
-#ifdef PET_SEAL_TIME
-						AddItemInfoString( pPetExchangeInfo.strRemainTime, 0xDEC05BFF );						
-#endif
-					}
-					
-				}
-				else if(rItemData.GetSubType() == CItemData::ACCESSORY_WILDPET)
-				{
-					sPetItem_Info pWildPetInfo;
-
-					if(_pUIMgr->GetWildPetInfo()->GetWildPetInfo(ulPlus,pWildPetInfo))
-					{
-						strTemp.PrintF(_S(4215, "Ïù¥Î¶Ñ: %s"),pWildPetInfo.pet_name);
-						AddItemInfoString(strTemp,  0xF2F2F2FF );
-						strTemp.PrintF(_S(4216, "Ìé´ Î†àÎ≤®: %d"),pWildPetInfo.pet_level);
-						AddItemInfoString(strTemp, 0xDEC05BFF);
-						strTemp.PrintF(_S(4217, "Ìûò: %d"),pWildPetInfo.pet_str);
-						AddItemInfoString(strTemp, 0xDEC05BFF);
-						strTemp.PrintF(_S(4218, "ÎØºÏ≤©: %d"),pWildPetInfo.pet_dex);
-						AddItemInfoString(strTemp, 0xDEC05BFF);
-						strTemp.PrintF(_S(4219, "ÏßÄÌòú: %d"),pWildPetInfo.pet_int);
-						AddItemInfoString(strTemp, 0xDEC05BFF);
-						strTemp.PrintF(_S(4220, "Ï≤¥Î†•: %d"),pWildPetInfo.pet_con);
-						AddItemInfoString(strTemp, 0xDEC05BFF);
-					}
-				}
-				/*****
-				else 
-				{
-					if(ulUsed > 0)
-					{
-						strTemp.PrintF(  _S( 510, "ÎÇ¥Íµ¨ÎèÑ : %ld" ), ulUsed);		
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-					}
-				}
-				*****/		
-			}
-			break;
-		case CItemData::ITEM_WEAPON:		// Weapon item
-			{
-				//Ï¥à Í≥†Í∏â Ï†úÎ†®ÏÑù Ïó¨Î∂Ä
-				if( rItemData.IsFlag( ITEM_FLAG_UPGRADE ) ) // ÏóÖ Í∑∏Î†àÏù¥Îìú Í∞ÄÎä• ÏïÑÏù¥ÌÖú 
-				{
-					BOOL bCanUseSuperGOJE = ( ulFlag & FLAG_ITEM_SUPER_STONE_USED ) ? FALSE : TRUE ;
-					CTString strCanUseSuperGOJE(_S( 1658, "Ï¥à Í≥†Í∏â Ï†úÎ†®ÏÑù ÏÇ¨Ïö© Í∞ÄÎä•" ));
-#ifdef RARE_ITEM
-					if( bCanUseSuperGOJE )
-						AddItemInfoString(strCanUseSuperGOJE, 0xFFFF40FF);
-#else
-					CTString strCanNotUseSuperGOJE(_S( 1659, "Ï¥à Í≥†Í∏â Ï†úÎ†®ÏÑù ÏÇ¨Ïö© Î∂àÍ∞ÄÎä•" ));
-					AddItemInfoString(bCanUseSuperGOJE ? strCanUseSuperGOJE : strCanNotUseSuperGOJE
-									, bCanUseSuperGOJE ? 0xFFFF40FF : 0xFF4040FF);
-#endif
-				}
-
-				// Class
-				CUIManager::GetClassOfItem( rItemData, strTemp );
-#ifdef RARE_ITEM
-				AddItemInfoString( strTemp, 0x9E9684FF );
-#else
-				AddItemInfoString( strTemp, 0xFFFFFFFF );
-#endif
-
-				// Level
-				int	nItemLevel = rItemData.GetLevel();
-				int nWearLevelReduction =0;
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; ++sbOption )
-				{
-					if( sbOptionType[sbOption] == -1 || sbOptionType[sbOption] == 0 )
-						break;
-
-					//Ï∞©Ïö©Ï†úÌïúÎ†àÎ≤® Îã§Ïö¥ ÏòµÏÖò
-					if( sbOptionType[sbOption]==49)
-					{
-						COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-						nWearLevelReduction = odItem.GetValue( sbOptionLevel[sbOption] - 1 );
-						break;
-					}
-				}
-				if( nWearLevelReduction >0 )
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ) +" (-%d)", nItemLevel, nWearLevelReduction );
-				else
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), nItemLevel );
-					
-#ifdef RARE_ITEM
-				AddItemInfoString( strTemp, 0xFFFFFFFF );
-#else
-				AddItemInfoString( strTemp,
-									nItemLevel > _pNetwork->MyCharacterInfo.level ? 0xD28060FF : 0x9E9684FF );
-#endif
-
-
-
-				int		nPlusValue;
-				int nBasePhysicalAttack =rItemData.GetPhysicalAttack() +rItemRareOption.GetPhysicalAttack();
-				int nBaseMagicAttack =rItemData.GetMagicAttack() +rItemRareOption.GetMagicAttack();
-
-#ifndef RARE_ITEM
-				colString = 0xDEC05BFF;
-#endif
-				if( ulPlus > 0 )
-				{
-					// Physical attack
-					if( rItemData.GetPhysicalAttack() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetPhysicalAttack() *
-						//					pow( ITEM_PLUS_COFACTOR, ulPlus ) ) - rItemData.GetPhysicalAttack();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetPhysicalAttack(), ulPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 355, "Í≥µÍ≤©Î†• : %d + %d" ), nBasePhysicalAttack, nPlusValue );
-						else
-							strTemp.PrintF( _S( 161, "Í≥µÍ≤©Î†• : %d" ), nBasePhysicalAttack );
-
-						AddItemInfoString( strTemp, colString );
-
-						if( ulPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1891, "Î¨ºÎ¶¨ Í≥µÍ≤©Î†• + 75" ));		
-							AddItemInfoString( strTemp, colString );
-						}
-					}
-
-					// Magic attack
-					if( rItemData.GetMagicAttack() )
-					{
-						//nPlusValue = (int)( rItemData.GetMagicAttack() *
-						//					pow( ITEM_PLUS_COFACTOR, ulPlus ) ) - rItemData.GetMagicAttack();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetMagicAttack(), ulPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 356, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d + %d" ), nBaseMagicAttack, nPlusValue );
-						else
-							strTemp.PrintF( _S( 162, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d" ), nBaseMagicAttack );
-															
-						AddItemInfoString( strTemp, colString );
-
-						if( ulPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1892, "ÎßàÎ≤ï Í≥µÍ≤©Î†• + 50" ));		
-							AddItemInfoString( strTemp, colString );
-						}
-					}
-				}
-				else
-				{
-					// Physical attack
-					if( rItemData.GetPhysicalAttack() > 0 )
-					{
-						strTemp.PrintF( _S( 161, "Í≥µÍ≤©Î†• : %d" ), nBasePhysicalAttack );
-						AddItemInfoString( strTemp, colString );
-					}
-
-					// Magic attack
-					if( rItemData.GetMagicAttack() )
-					{
-						strTemp.PrintF( _S( 162, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d" ), nBaseMagicAttack );
-						AddItemInfoString( strTemp, colString );
-					}
-				}
-
-				if(ulUsed > 0)
-				{
-					strTemp.PrintF( _S( 510, "ÎÇ¥Íµ¨ÎèÑ : %ld" ), ulUsed);		
-					AddItemInfoString( strTemp, 0xDEC05BFF );
-				}
-			}
-			break;
-
-		case CItemData::ITEM_SHIELD:		// Shield item
-			{
-				//Ï¥àÍ≥†Í∏â Ï†úÎ†®ÏÑù Ï†úÎ†®ÏÑù Ïó¨Î∂Ä
-				//TEMP : Ï¥àÍ≥†Í∏â Ï†úÎ†®ÏÑù Í¥ÄÎ†®
-				if( rItemData.IsFlag( ITEM_FLAG_UPGRADE ) ) // ÏóÖ Í∑∏Î†àÏù¥Îìú Í∞ÄÎä• ÏïÑÏù¥ÌÖú 
-				{
-					BOOL bCanUseSuperGOJE = ( ulFlag & FLAG_ITEM_SUPER_STONE_USED ) ? FALSE : TRUE ;
-					CTString strCanUseSuperGOJE(_S( 1658, "Ï¥à Í≥†Í∏â Ï†úÎ†®ÏÑù ÏÇ¨Ïö© Í∞ÄÎä•" ));
-#ifdef RARE_ITEM
-					if( bCanUseSuperGOJE )
-						AddItemInfoString(strCanUseSuperGOJE, 0xFFFF40FF);
-#else
-					CTString strCanNotUseSuperGOJE(_S( 1659, "Ï¥à Í≥†Í∏â Ï†úÎ†®ÏÑù ÏÇ¨Ïö© Î∂àÍ∞ÄÎä•" ));
-					AddItemInfoString(bCanUseSuperGOJE ? strCanUseSuperGOJE : strCanNotUseSuperGOJE
-									, bCanUseSuperGOJE ? 0xFFFF40FF : 0xFF4040FF);
-#endif
-				}
-
-				// Class
-				CUIManager::GetClassOfItem( rItemData, strTemp );
-#ifdef RARE_ITEM
-				AddItemInfoString( strTemp, 0x9E9684FF );
-#else
-				AddItemInfoString( strTemp, 0xFFFFFFFF );
-#endif
-
-				// Level
-				int	nItemLevel = rItemData.GetLevel();
-				int nWearLevelReduction =0;
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; ++sbOption )
-				{
-					if( sbOptionType[sbOption] == -1 || sbOptionType[sbOption] == 0 )
-						break;
-
-					//Ï∞©Ïö©Ï†úÌïúÎ†àÎ≤® Îã§Ïö¥ ÏòµÏÖò
-					if( sbOptionType[sbOption]==49)
-					{
-						COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-						nWearLevelReduction = odItem.GetValue( sbOptionLevel[sbOption] - 1 );
-						break;
-					}
-				}
-				if( nWearLevelReduction >0 )
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ) +" (-%d)", nItemLevel, nWearLevelReduction );
-				else
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), nItemLevel );
-					
-#ifdef RARE_ITEM
-				AddItemInfoString( strTemp, 0xFFFFFFFF);
-#else
-				AddItemInfoString( strTemp,
-									nItemLevel > _pNetwork->MyCharacterInfo.level ? 0xD28060FF : 0x9E9684FF );
-#endif
-
-				int	nPlusValue;
-				int nBasePhysicalDefence =rItemData.GetPhysicalDefence() +rItemRareOption.GetPhysicalDefence();
-				int nBaseMagicDefence =rItemData.GetMagicDefence() +rItemRareOption.GetMagicDefence();
-				
-#ifndef RARE_ITEM
-				colString = 0xDEC05BFF;
-#endif
-				if( ulPlus > 0 )
-				{
-					// Physical defense
-					if( rItemData.GetPhysicalDefence() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetPhysicalDefence() *
-						//					pow( ITEM_PLUS_COFACTOR, ulPlus ) ) - rItemData.GetPhysicalDefence();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetPhysicalDefence(), ulPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 357, "Î∞©Ïñ¥Î†• : %d + %d" ), nBasePhysicalDefence, nPlusValue );
-						else
-							strTemp.PrintF( _S( 163, "Î∞©Ïñ¥Î†• : %d" ), nBasePhysicalDefence );
-															
-						AddItemInfoString( strTemp, colString );
-
-						if( ulPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1893, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• + 100" ));		
-							AddItemInfoString( strTemp, colString );
-
-							strTemp.PrintF(_S( 1894, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• + 50" ));			
-							AddItemInfoString( strTemp, colString );
-						}
-					}
-
-					// Magic defense
-					if( rItemData.GetMagicDefence() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetMagicDefence() *
-						//					pow( ITEM_PLUS_COFACTOR, ulPlus ) ) - rItemData.GetMagicDefence();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetMagicDefence(), ulPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 358, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d + %d" ), nBaseMagicDefence, nPlusValue );
-						else
-							strTemp.PrintF( _S( 164, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d" ), nBaseMagicDefence );
-															
-						AddItemInfoString( strTemp, colString );
-
-						if( ulPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1893, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• + 100" ));		
-							AddItemInfoString( strTemp, colString );
-
-							strTemp.PrintF(_S( 1894, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• + 50" ));			
-							AddItemInfoString( strTemp, colString );
-						}
-					}
-				}
-				else
-				{
-					// Physical defense
-					if( rItemData.GetPhysicalDefence() > 0 )
-					{
-						strTemp.PrintF( _S( 163, "Î∞©Ïñ¥Î†• : %d" ), nBasePhysicalDefence );
-						AddItemInfoString( strTemp, colString);
-					}
-
-					// Magic defense
-					if( rItemData.GetMagicDefence() > 0 )
-					{
-						strTemp.PrintF( _S( 164, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d" ), nBaseMagicDefence );
-						AddItemInfoString( strTemp, colString );
-					}
-				}
-
-				if(ulUsed > 0)
-				{
-					strTemp.PrintF(  _S( 510, "ÎÇ¥Íµ¨ÎèÑ : %ld" ), ulUsed);		
-					AddItemInfoString( strTemp, 0xDEC05BFF );
-				}
-			}
-			break;
-
-				// ÏùºÌöåÏö©
-		case CItemData::ITEM_ONCEUSE:
-			{
-				// ÌÄòÏä§Ìä∏ Ï†ïÎ≥¥ ÌëúÏãú.
-				if ( rItemData.GetSubType() == CItemData::ITEM_SUB_QUEST_SCROLL )
-				{	
-					const int iQuestIndex = rItemData.GetNum0();
-
-					if( iQuestIndex != -1 )
-					{
-						// ÌÄòÏä§Ìä∏ Ïù¥Î¶Ñ Ï∂úÎ†•
-						strTemp.PrintF( "%s", CQuestSystem::Instance().GetQuestName( iQuestIndex ) );
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-						
-						const int iMinLevel = CQuestSystem::Instance().GetQuestMinLevel( iQuestIndex );
-						const int iMaxLevel = CQuestSystem::Instance().GetQuestMaxLevel( iQuestIndex );
-
-						// Î†àÎ≤® Ï†úÌïú Ï∂úÎ†•.
-						strTemp.PrintF( _S( 1660, "Î†àÎ≤® Ï†úÌïú : %d ~ %d" ), iMinLevel, iMaxLevel );		
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-					}
-				}
-			}
-			break;
-
-		case CItemData::ITEM_POTION:	// Date : 2005-01-07,   By Lee Ki-hwan
-			{
-
-				// Date : 2005-01-14,   By Lee Ki-hwan
-				
-				if ( rItemData.GetSubType() == CItemData::POTION_UP )
-				{
-					if( ulFlag > 0 )
-					{
-						// Level
-						strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), ulFlag );
-						AddItemInfoString( strTemp, 0xD28060FF );
-
-						// Ìñ•ÏÉÅ ÌÉÄÏûÖ
-						int nSkillType = rItemData.GetSkillType();
-						CSkill	&rSkill = _pNetwork->GetSkillData( nSkillType );
-						int Power = rSkill.GetPower( ulFlag - 1);
-
-						if(  rItemData.GetNum1() == CItemData::POTION_UP_PHYSICAL ) // Î¨ºÎ¶¨
-						{
-							if(  rItemData.GetNum2() == CItemData::POTION_UP_ATTACK ) // Í≥µÍ≤©
-							{
-								strTemp.PrintF ( _S( 790, "Î¨ºÎ¶¨ Í≥µÍ≤©Î†• +%d ÏÉÅÏäπ" ), Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-							else if( rItemData.GetNum2() == CItemData::POTION_UP_DEFENSE ) // Î∞©Ïñ¥
-							{
-								strTemp.PrintF ( _S( 791, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-
-						}
-						else if( rItemData.GetNum1() == CItemData::POTION_UP_MAGIC ) // ÎßàÎ≤ï
-						{
-							if(  rItemData.GetNum2() == CItemData::POTION_UP_ATTACK ) // Í≥µÍ≤©
-							{
-								strTemp.PrintF ( _S( 792, "ÎßàÎ≤ï Í≥µÍ≤©Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-							else if( rItemData.GetNum2() == CItemData::POTION_UP_DEFENSE ) // Î∞©Ïñ¥
-							{
-								strTemp.PrintF ( _S( 793, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-						}
-					}
-				}
-			}
-
-		case CItemData::ITEM_BULLET:		// Bullet item
-			{
-			}
-			break;
-
-		case CItemData::ITEM_ETC:			// Etc item
-			{
-				switch( rItemData.GetSubType() )
-				{
-				case CItemData::ITEM_ETC_REFINE:
-					{
-						// FIXME : Î†àÎ≤® ÌëúÏãúÍ∞Ä ÏïàÎêúÎã§Íµ¨ Ìï¥ÏÑú...
-						// Î∏îÎü¨ÎìúÎùºÍ≥† ÌëúÏãúÍ∞Ä ÎêòÏñ¥ÏûàÎã§Î©¥, ÌëúÏãúÎ•º ÏóÜÏï†Ï§ÄÎã§.
-						if(ulFlag & FLAG_ITEM_OPTION_ENABLE)
-						{
-							ulFlag ^= FLAG_ITEM_OPTION_ENABLE;
-						}
-
-						// Level
-						if( ulFlag > 0 )
-						{
-							strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), ulFlag );
-							AddItemInfoString( strTemp, 0xD28060FF );
-						}
-					}
-					break;
-					// Î∏îÎü¨Îìú ÏïÑÏù¥ÌÖú & Ï†ïÌôîÏÑù.
-				case CItemData::ITEM_ETC_OPTION:
-					{
-					}
-					break;
-				}
-			}
-			break;
-		}
-
-		// Weight
-		strTemp.PrintF( _S( 165, "Î¨¥Í≤å : %d" ), rItemData.GetWeight() );
-		AddItemInfoString( strTemp, 0xDEC05BFF );
-
-
-		const int iFame = rItemData.GetFame();
-		if( iFame > 0 )
-		{
-			strTemp.PrintF( _S( 1096, "Î™ÖÏÑ± %d ÌïÑÏöî" ), iFame );		
-			AddItemInfoString( strTemp, 0xDEC05BFF );
-		}
-
-		if( rItemData.IsFlag(ITEM_FLAG_RARE) )
-		{
-			//if( sbOptionType[0] == -1 || sbOptionLevel[0] == 0 )
-			if( m_iRareGrade <0)
-				AddItemInfoString( _S(3165, "<ÎØ∏Í≥µÍ∞ú ÏòµÏÖò>"), 0xFF4040FF );
-		}
-
-		// Options
-		switch( rItemData.GetType() )
-		{
-		case CItemData::ITEM_WEAPON:
-		case CItemData::ITEM_SHIELD:
-		case CItemData::ITEM_ACCESSORY:
-			{
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-				{
-					if( sbOptionType[sbOption] == -1 || sbOptionLevel[sbOption] == 0 )
-						break;
-
-					COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-					switch(sbOptionType[sbOption])
-					{
-					case 49:		//Ï∞©Ïö©Ï†úÌïúÎ†àÎ≤® Îã§Ïö¥
-						strTemp.PrintF( "%s : -%d", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) );
-						break;
-					case 50:		//ÏÜåÏßÄÎüâ Ï¶ùÍ∞Ä
-					case 51:		//ÎßàÎÇò Ìù°Ïàò
-					case 52:		//ÏÉùÎ™ÖÎ†• Ìù°Ïàò
-					case 55:		//ÌÅ¨Î¶¨Ìã∞Ïª¨ÌôïÎ•† Ï¶ùÍ∞Ä
-					case 56:		//HPÌöåÎ≥µÎ†• ÏÉÅÏäπ
-					case 57:		//MPÌöåÎ≥µÎ†• ÏÉÅÏäπ
-					case 58:		//Ïä§ÌÇ¨Ïø®ÌÉÄÏûÑ Í∞êÏÜå
-					case 59:		//MPÏÜåÎ™®Îüâ Í∞êÏÜå
-					case 60:		//Ïä§ÌÜ§ ÎÇ¥ÏÑ± Ï¶ùÍ∞Ä
-					case 61:		//Ïä§ÌÑ¥ ÎÇ¥ÏÑ± Ï¶ùÍ∞Ä
-					case 62:		//Ïπ®Î¨µ ÎÇ¥ÏÑ± Ï¶ùÍ∞Ä
-					case 63:		//Î∏îÎ°ùÎ•† Ï¶ùÍ∞Ä
-					case 64:		//Ïù¥ÎèôÏÜçÎèÑ Ìñ•ÏÉÅ
-						strTemp.PrintF( "%s : %d%%", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) );
-						break;
-					case 53:		//ÏïîÌùë Í≥µÍ≤©
-					case 54:		//ÎèÖ Í≥µÍ≤©
-					default:
-						strTemp.PrintF( "%s : %d", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) );
-					}
-					AddItemInfoString( strTemp, 0x94B7C6FF );
-				}
-				if( ulFlag & FLAG_ITEM_OPTION_ENABLE )
-				{
-					AddItemInfoString( _S( 511, "Î∏îÎü¨Îìú ÏòµÏÖò Í∞ÄÎä•" ), 0xE53535FF );		
-				}
-				if( ulFlag & FLAG_ITEM_SEALED )
-				{
-					AddItemInfoString( _S( 512, "Î¥âÏù∏Îêú ÏïÑÏù¥ÌÖú" ), 0xE53535FF );		
-				}
-			}
-			break;
-		}
-
-		// Description
-		const char	*pDesc = _pNetwork->GetItemDesc( nIndex );
-		if( pDesc[0] != NULL )
-		{
-			strTemp.PrintF( "%s", pDesc );
-			AddItemInfoString( strTemp, 0x9E9684FF );
-		}
-
-		nInfoWidth = 27 - _pUIFontTexMgr->GetFontSpacing() + MAX_ITEMINFO_CHAR *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	}
-	else
-	{
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strItemInfo[0]);				
-		} else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strItemInfo[0].Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 22;
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : RenderItems()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIExchange::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nOppItem, int nMyItem, int nRow, int nCol )
-{
-	static int	nOldUniIndex = -1;
-	int			nUniIndex;
-
-	m_bShowItemInfo = FALSE;
-
-	// Hide item information
-	if( !bShowInfo )
-	{
-		nOldUniIndex = -1;
-		return;
-	}
-
-	BOOL	bUpdateInfo = FALSE;
-	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
-
-	// Opposite items
-	if( nOppItem >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nUniIndex = m_abtnOppItems[nOppItem].GetItemUniIndex();
-
-		// Update item information
-		if( nOldUniIndex != nUniIndex || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldUniIndex = nUniIndex;
-			m_abtnOppItems[nOppItem].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-			m_bDetailItemInfo = TRUE;
-			GetItemInfo( 0, nInfoWidth, nInfoHeight, nOppItem );
-		}
-	}
-	// My items
-	else if( nMyItem >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nUniIndex = m_abtnMyItems[nMyItem].GetItemUniIndex();
-
-		// Update item information
-		if( nOldUniIndex != nUniIndex || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldUniIndex = nUniIndex;
-			m_abtnMyItems[nMyItem].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-			m_bDetailItemInfo = TRUE;	//m_nSelMyItemID == nMyItem;	// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
-			GetItemInfo( 1, nInfoWidth, nInfoHeight, -1, nMyItem );
-		}
-	}
-	// Inventory items of exchange
-	else if( nRow >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nUniIndex = m_abtnInvenItems[nRow][nCol].GetItemUniIndex();
-
-		// Update item information
-		if( nOldUniIndex != nUniIndex || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldUniIndex = nUniIndex;
-			m_abtnInvenItems[nRow][nCol].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-			m_bDetailItemInfo = m_nSelInvenItemID == ( nCol + nRow * EXCH_INVEN_SLOT_COL );
-			GetItemInfo( 2, nInfoWidth, nInfoHeight, -1, -1, nRow, nCol );
-		}
-	}
-
-	// Update item information box
-	if( bUpdateInfo )
-	{
-		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
-
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
-
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
-		{
-			nInfoPosY += BTN_SIZE;
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
-		}
-		else
-		{
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
-		}
-	}
-
-	if( !m_bShowItemInfo )
-	{
-		nOldUniIndex = -1;
-		m_bShowItemInfo = FALSE;
-	}
+	pUIManager->GetMsgBoxNumOnly()->CloseBox();
+	pUIManager->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
+	pUIManager->CloseMessageBox( MSGCMD_EXCH_REQ_SRC );
+	pUIManager->CloseMessageBox( MSGCMD_EXCH_REQ_DEST );
+
+	pUIManager->RearrangeOrder( UI_EXCHANGE, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -1221,51 +359,58 @@ void CUIExchange::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nOppItem, int n
 // ----------------------------------------------------------------------------
 void CUIExchange::RenderItems()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Opposite items
 	int	iItem;
 	for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 	{
-		if( m_abtnOppItems[iItem].IsEmpty() )
+		if (m_pIconsOppItems[iItem]->IsEmpty() == true)
 			continue;
 
-		m_abtnOppItems[iItem].Render();
+		m_pIconsOppItems[iItem]->Render(pDrawPort);
 	}
 
 	// My items
 	for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 	{
-		if( m_abtnMyItems[iItem].IsEmpty() )
+		if (m_pIconsMyItems[iItem]->IsEmpty() == true)
 			continue;
 
-		m_abtnMyItems[iItem].Render();
+		m_pIconsMyItems[iItem]->Render(pDrawPort);
 	}
 
 	// Inven items
 	int	nX = EXCH_SLOT_SX, nY = EXCH_INVEN_SLOT_SY;
-	int	iRow, iCol;
-	int	iRowS = m_sbScrollBar.GetScrollPos();
-	int	iRowE = iRowS + EXCH_INVEN_SLOT_ROW;
-	for( iRow = iRowS; iRow < iRowE; iRow++ )
+	int	nIdx;
+	int	iRowS = m_sbScrollBar.GetScrollPos() * EXCH_INVEN_SLOT_COL;
+	int	iRowE = (m_sbScrollBar.GetScrollPos() + EXCH_INVEN_SLOT_ROW) * EXCH_INVEN_SLOT_COL;
+	for (nIdx = iRowS; nIdx < iRowE; ++nIdx)
 	{
-		for( iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++, nX += 35 )
+		if ((nIdx % EXCH_INVEN_SLOT_COL) == 0)
 		{
-			m_abtnInvenItems[iRow][iCol].SetPos( nX, nY );
-
-			if( m_abtnInvenItems[iRow][iCol].IsEmpty() )
-				continue;
-
-			m_abtnInvenItems[iRow][iCol].Render();
+			nX = EXCH_SLOT_SX;	
+			if (nIdx > iRowS)	nY += 35;
 		}
-		nX = EXCH_SLOT_SX;	nY += 35;
+
+		m_pIconsInvenItems[nIdx]->SetPos( nX, nY );
+
+		nX += 35;
+
+		if (m_pIconsInvenItems[nIdx]->IsEmpty() == true)
+			continue;
+
+		m_pIconsInvenItems[nIdx]->Render(pDrawPort);
 	}
 
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+	pDrawPort->FlushBtnRenderingQueue( UBET_ITEM );
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Set exchange texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Outline of ready items ( not movable )
 	// Opposite items
@@ -1273,11 +418,11 @@ void CUIExchange::RenderItems()
 	{
 		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( m_abtnOppItems[iItem].IsEmpty() )
+			if (m_pIconsOppItems[iItem]->IsEmpty() == true)
 				continue;
 
-			m_abtnOppItems[iItem].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+			m_pIconsOppItems[iItem]->GetAbsPos( nX, nY );
+			pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 												m_rtWearingOutline.U0, m_rtWearingOutline.V0,
 												m_rtWearingOutline.U1, m_rtWearingOutline.V1,
 												0xFFFFFFFF );
@@ -1288,46 +433,75 @@ void CUIExchange::RenderItems()
 	{
 		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( m_abtnMyItems[iItem].IsEmpty() )
+			if (m_pIconsMyItems[iItem]->IsEmpty() == true)
 				continue;
 
-			m_abtnMyItems[iItem].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+			m_pIconsMyItems[iItem]->GetAbsPos( nX, nY );
+			pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 												m_rtWearingOutline.U0, m_rtWearingOutline.V0,
 												m_rtWearingOutline.U1, m_rtWearingOutline.V1,
 												0xFFFFFFFF );
 		}
 	}
 
+	int		tab, idx;
+
 	// Outline of items in inventory slot of exchange ( not exchangeable )
-	for( iRow = iRowS; iRow < iRowE; iRow++ )
+	for (nIdx = iRowS; nIdx < iRowE; ++nIdx)
 	{
-		for( iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
+		if (nIdx >= (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1))
 		{
-			// If button is empty or not weraing item
-			if( m_abtnInvenItems[iRow][iCol].IsEmpty() ||
-				m_abtnInvenItems[iRow][iCol].GetItemWearType() < 0 )
-				continue;
-
-			// Not exchangeable
-			CItems	&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-			CItemData	&rItemData = rItems.ItemData;
-			if( !( rItemData.GetFlag() & ITEM_FLAG_EXCHANGE ) )
-				continue;
-
-			m_abtnInvenItems[iRow][iCol].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtWearingOutline.U0, m_rtWearingOutline.V0,
-												m_rtWearingOutline.U1, m_rtWearingOutline.V1,
-												0xFFFFFFFF );
+			tab = INVENTORY_TAB_CASH_2;
+			idx = nIdx - (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1);
 		}
+		else if (nIdx >= ITEM_COUNT_IN_INVENTORY_NORMAL)
+		{
+			tab = INVENTORY_TAB_CASH_1;
+			idx = nIdx - ITEM_COUNT_IN_INVENTORY_NORMAL;
+		}
+		else
+		{
+			tab = INVENTORY_TAB_NORMAL;
+			idx = nIdx;
+		}
+
+		// Not exchangeable
+		CItems*		pItems = &_pNetwork->MySlotItem[tab][idx];
+		CItemData*	pItemData = pItems->ItemData;
+
+		// If button is empty or not weraing item
+		if (m_pIconsInvenItems[nIdx]->IsEmpty() == true)
+			continue;
+
+		if (!(pItems->Item_Flag& FLAG_ITEM_BELONG))
+		{
+#ifdef ADD_SUBJOB
+
+			if (pItemData != NULL && pItemData->IsFlag(ITEM_FLAG_SELLER))
+			{
+				if (pUIManager->CheckSellerItem(UI_EXCHANGE, pItemData->GetFlag()))
+					continue;
+			}
+			else
+#endif
+			{
+				if ((pItemData != NULL && pItemData->GetFlag() & ITEM_FLAG_EXCHANGE))
+					continue;
+			}
+		}
+
+		m_pIconsInvenItems[nIdx]->GetAbsPos( nX, nY );
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+											m_rtWearingOutline.U0, m_rtWearingOutline.V0,
+											m_rtWearingOutline.U1, m_rtWearingOutline.V1,
+											0xFFFFFFFF );
 	}
 
 	// Outline of selected item
 	if( m_nSelMyItemID >= 0 )
 	{
-		m_abtnMyItems[m_nSelMyItemID].GetAbsPos( nX, nY );
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+		m_pIconsMyItems[m_nSelMyItemID]->GetAbsPos( nX, nY );
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 											m_rtSelectOutline.U0, m_rtSelectOutline.V0,
 											m_rtSelectOutline.U1, m_rtSelectOutline.V1,
 											0xFFFFFFFF );
@@ -1337,108 +511,16 @@ void CUIExchange::RenderItems()
 		int	nSelRow = m_nSelInvenItemID / EXCH_EXCH_SLOT_COL;
 		if( nSelRow >= iRowS && nSelRow < iRowE )
 		{
-			int	nSelCol = m_nSelInvenItemID % EXCH_EXCH_SLOT_COL;
-
-			m_abtnInvenItems[nSelRow][nSelCol].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+			m_pIconsInvenItems[m_nSelInvenItemID]->GetAbsPos( nX, nY );
+			pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 												m_rtSelectOutline.U0, m_rtSelectOutline.V0,
 												m_rtSelectOutline.U1, m_rtSelectOutline.V1,
 												0xFFFFFFFF );
 		}
 	}
 
-	// Item information ( name and property etc... )
-	if( m_bShowItemInfo )
-	{
-		// Item information region
-		if( m_bDetailItemInfo )
-		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
-												m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-												m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
-												m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-												m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
-												m_rcItemInfo.Right, m_rcItemInfo.Top + 7,
-												m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
-												m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-												m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
-												m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-												m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
-												m_rcItemInfo.Right, m_rcItemInfo.Bottom - 7,
-												m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
-												m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom,
-												m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
-												m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom,
-												m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
-												m_rcItemInfo.Right, m_rcItemInfo.Bottom,
-												m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
-												0xFFFFFFFF );
-		}
-		else
-		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
-												m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom,
-												m_rtInfoL.U0, m_rtInfoL.V0, m_rtInfoL.U1, m_rtInfoL.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
-												m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom,
-												m_rtInfoM.U0, m_rtInfoM.V0, m_rtInfoM.U1, m_rtInfoM.V1,
-												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
-												m_rcItemInfo.Right, m_rcItemInfo.Bottom,
-												m_rtInfoR.U0, m_rtInfoR.V0, m_rtInfoR.U1, m_rtInfoR.V1,
-												0xFFFFFFFF );
-		}
-
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-		// Render item information
-		if( m_bDetailItemInfo )
-		{
-			int	nInfoX = m_rcItemInfo.Left + 12;
-			int	nInfoY = m_rcItemInfo.Top + 8;
-			for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
-			{
-				if(iInfo==0 && m_bRareItem && m_iRareGrade>=0)
-					_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, RareItem_Name_Color[m_iRareGrade] );
-				else
-					_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
-				nInfoY += _pUIFontTexMgr->GetLineHeight();
-			}
-		}
-		else
-		{
-			if(m_bRareItem && m_iRareGrade>=0)
-				_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[0], m_rcItemInfo.Left + 8, m_rcItemInfo.Top + 3, RareItem_Name_Color[m_iRareGrade] );
-			else
-				_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[0], m_rcItemInfo.Left + 8, m_rcItemInfo.Top + 3, m_colItemInfo[0] );
-		}
-
-		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
-	}
-	else
-	{
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	}
+	// Render all elements
+	pDrawPort->FlushRenderingQueue();
 }
 
 // ----------------------------------------------------------------------------
@@ -1447,12 +529,15 @@ void CUIExchange::RenderItems()
 // ----------------------------------------------------------------------------
 void CUIExchange::Render()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Set exchange texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
 										0xFFFFFFFF );
 
@@ -1472,44 +557,44 @@ void CUIExchange::Render()
 	m_sbScrollBar.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in exchange
 	// Title
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 149, "ÍµêÌôò" ), m_nPosX + EXCH_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( _S( 149, "±≥»Ø" ), m_nPosX + EXCH_TITLE_TEXT_OFFSETX,
 										m_nPosY + EXCH_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
 	// Opposite name
 	if( m_bAmISrc )
 	{
-		_pUIMgr->GetDrawPort()->PutTextExCX( m_strDestName, m_nPosX + EXCH_OPP_NAME_OFFSETX,
+		pDrawPort->PutTextExCX( m_strDestName, m_nPosX + EXCH_OPP_NAME_OFFSETX,
 												m_nPosY + EXCH_OPP_NAME_OFFSETY );
 	}
 	else
 	{
-		_pUIMgr->GetDrawPort()->PutTextExCX( m_strSrcName, m_nPosX + EXCH_OPP_NAME_OFFSETX,
+		pDrawPort->PutTextExCX( m_strSrcName, m_nPosX + EXCH_OPP_NAME_OFFSETX,
 												m_nPosY + EXCH_OPP_NAME_OFFSETY );
 	}
 
-	// Date : 2005-11-11(Ïò§Ï†Ñ 10:48:01), By Lee Ki-hwan 
-	// ÎÇòÏä§ ÏÉâ Ï∂îÍ∞Ä 
+	// Date : 2005-11-11(ø¿¿¸ 10:48:01), By Lee Ki-hwan 
+	// ≥™Ω∫ ªˆ √ﬂ∞° 
 	// Money
 	COLOR colNas = 0;
 
-	colNas = _pUIMgr->GetNasColor( m_strOppExchMoney );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strOppExchMoney, m_nPosX + EXCH_MONEY_OFFSETX,
+	colNas = pUIManager->GetNasColor( m_strOppExchMoney );
+	pDrawPort->PutTextExRX( m_strOppExchMoney, m_nPosX + EXCH_MONEY_OFFSETX,
 											m_nPosY + EXCH_OPP_MONEY_OFFSETY, colNas );
 	
-	colNas = _pUIMgr->GetNasColor( m_strMyExchMoney );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strMyExchMoney, m_nPosX + EXCH_MONEY_OFFSETX,
+	colNas = pUIManager->GetNasColor( m_strMyExchMoney );
+	pDrawPort->PutTextExRX( m_strMyExchMoney, m_nPosX + EXCH_MONEY_OFFSETX,
 											m_nPosY + EXCH_MY_MONEY_OFFSETY, colNas );
 
-	colNas = _pUIMgr->GetNasColor( m_strMyCurMoney );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strMyCurMoney, m_nPosX + EXCH_MONEY_OFFSETX,
+	colNas = pUIManager->GetNasColor( m_strMyCurMoney );
+	pDrawPort->PutTextExRX( m_strMyCurMoney, m_nPosX + EXCH_MONEY_OFFSETX,
 											m_nPosY + EXCH_MYCUR_MONEY_OFFSETY, colNas );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Items
 	RenderItems();
@@ -1539,49 +624,69 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 	{
 	case WM_MOUSEMOVE:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				pUIManager->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
 
 			// Hold item button
-			if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInItem && ( pMsg->wParam & MK_LBUTTON ) &&
+			if (pUIManager->GetDragIcon() == NULL && bLButtonDownInItem && ( pMsg->wParam & MK_LBUTTON ) &&
 				( ndX != 0 || ndY != 0 ) )
 			{
 				// My items
-				/*if( !m_bExchReady && m_nSelMyItemID >= 0 )		// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
+				/*if( !m_bExchReady && m_nSelMyItemID >= 0 )		// æ∆¿Ã≈€ ªË¡¶ ∏∑¿Ω
 				{
 					// Close message box of exchange
-					_pUIMgr->CloseMessageBox( MSGCMD_EXCH_ADD_ITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
+					pUIManager->CloseMessageBox( MSGCMD_EXCH_ADD_ITEM );
+					pUIManager->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
 
-					_pUIMgr->SetHoldBtn( m_abtnMyItems[m_nSelMyItemID] );
+					pUIManager->SetHoldBtn( m_abtnMyItems[m_nSelMyItemID] );
 					int	nOffset = BTN_SIZE / 2;
-					_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
+					pUIManager->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
 
 					m_abtnMyItems[m_nSelMyItemID].SetBtnState( UBES_IDLE );
 				}
 				// Inven items
 				else*/ if( !m_bExchReady && m_nSelInvenItemID >= 0 )
 				{
-					int	nSelRow = m_nSelInvenItemID / EXCH_INVEN_SLOT_COL;
-					int	nSelCol = m_nSelInvenItemID % EXCH_INVEN_SLOT_COL;
 
 					// Exchangeable
-					CItems	&rItems = _pNetwork->MySlotItem[0][nSelRow][nSelCol];
-					CItemData	&rItemData = rItems.ItemData;
-					if( rItemData.GetFlag() & ITEM_FLAG_EXCHANGE )
+					// [2010/10/20 : Sora] ªÁøÎ¡ﬂ¿Œ ∏ÛΩ∫≈Õ øÎ∫¥ ƒ´µÂ¥¬ ±≥»Ø ∫“∞°
+					CItems*		pItems = &_pNetwork->MySlotItem[m_nSelITab][m_nSelInvenItemID];
+					CItemData*	pItemData = pItems->ItemData;
+
+					if (pItemData == NULL)
+						return WMSG_FAIL;
+
+					if (pItems->IsFlag(FLAG_ITEM_BELONG))
+					{
+						bLButtonDownInItem = FALSE;
+						return WMSG_FAIL;
+					}
+#ifdef ADD_SUBJOB
+					if( pItemData->IsFlag( ITEM_FLAG_SELLER ) ? 
+						pUIManager->CheckSellerItem(UI_EXCHANGE, pItemData->GetFlag()) : 
+						( pItemData->GetFlag() & ITEM_FLAG_EXCHANGE || ( pItemData->GetType() == CItemData::ITEM_ETC && pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD &&
+						pItems->Item_Used <= 0 ) ) )
+#else
+					if( pItemData->GetFlag() & ITEM_FLAG_EXCHANGE || 
+						( pItemData->GetType() == CItemData::ITEM_ETC && 
+						  pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD &&
+						  pItems->Item_Used < 1 ) )
+#endif
 					{
 						// Close message box of exchange
-						_pUIMgr->CloseMessageBox( MSGCMD_EXCH_ADD_ITEM );
-						_pUIMgr->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
+						int idx = m_nSelInvenItemID;
 
-						_pUIMgr->SetHoldBtn( m_abtnInvenItems[nSelRow][nSelCol] );
-						int	nOffset = BTN_SIZE / 2;
-						_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
+						if (m_nSelITab >= INVENTORY_TAB_CASH_1)
+							idx += ITEM_COUNT_IN_INVENTORY_NORMAL;
+						if (m_nSelITab >= INVENTORY_TAB_CASH_2)
+							idx += ITEM_COUNT_IN_INVENTORY_CASH_1;
 
-						m_abtnInvenItems[nSelRow][nSelCol].SetBtnState( UBES_IDLE );
+						pUIManager->SetHoldBtn(m_pIconsInvenItems[idx]);
 					}
 				}
 
@@ -1612,8 +717,29 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 			// Scroll bar
 			else if( m_sbScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
+			else
+			{
+				int	iItem;
+				for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+				{
+					m_pIconsOppItems[iItem]->MouseMessage( pMsg );
+
+					m_pIconsMyItems[iItem]->MouseMessage( pMsg );
+				}
+
+				int	nIdx;
+				int	iRowS = m_sbScrollBar.GetScrollPos();
+				int	iRowE = iRowS + EXCH_INVEN_SLOT_ROW;
+				
+				for (nIdx = (iRowS * EXCH_INVEN_SLOT_COL); nIdx < (iRowE * EXCH_INVEN_SLOT_COL); ++nIdx)
+				{
+					m_pIconsInvenItems[nIdx]->MouseMessage( pMsg );
+				}
+
+				return WMSG_SUCCESS;
+			}
 			// Opposite items
-			else if( IsInsideRect( nX, nY, m_rcOppSlot ) )
+		/*	else if( IsInsideRect( nX, nY, m_rcOppSlot ) )
 			{
 				int	iItem;
 				int	nWhichItem = -1;
@@ -1669,7 +795,7 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 			}
 
 			// Hide tool tip
-			ShowItemInfo( FALSE );
+			ShowItemInfo( FALSE );*/
 		}
 		break;
 
@@ -1677,6 +803,8 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
 				nOldX = nX;		nOldY = nY;
 
 				// Close button
@@ -1692,11 +820,11 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 				// Opposite items
 				else if( IsInsideRect( nX, nY, m_rcOppSlot ) )
 				{
-					_pUIMgr->RearrangeOrder( UI_EXCHANGE, TRUE );
+					pUIManager->RearrangeOrder( UI_EXCHANGE, TRUE );
 					return WMSG_SUCCESS;
 				}
 				// My items
-				/*else if( IsInsideRect( nX, nY, m_rcMySlot ) )		// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
+				/*else if( IsInsideRect( nX, nY, m_rcMySlot ) )		// æ∆¿Ã≈€ ªË¡¶ ∏∑¿Ω
 				{
 					m_nSelMyItemID = -1;
 					m_nSelInvenItemID = -1;
@@ -1713,7 +841,7 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 
 							bLButtonDownInItem = TRUE;
 
-							_pUIMgr->RearrangeOrder( UI_EXCHANGE, TRUE );
+							pUIManager->RearrangeOrder( UI_EXCHANGE, TRUE );
 							return WMSG_SUCCESS;
 						}
 					}
@@ -1724,28 +852,40 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 					m_nSelInvenItemID = -1;
 					m_nSelMyItemID = -1;
 
-					int	iRow, iCol;
+					int	nIdx;
 					int	iRowS = m_sbScrollBar.GetScrollPos();
 					int	iRowE = iRowS + EXCH_INVEN_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					
+					for (nIdx = (iRowS * EXCH_INVEN_SLOT_COL); nIdx < (iRowE * EXCH_INVEN_SLOT_COL); ++nIdx)
 					{
-						for( iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
+						if( m_pIconsInvenItems[nIdx]->MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							if( m_abtnInvenItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
+							if (nIdx >= (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1))
 							{
-								// Update selected item
-								m_nSelInvenItemID = iCol + iRow * EXCH_INVEN_SLOT_COL;
-
-								// Show tool tup
-								ShowItemInfo( TRUE, TRUE, -1, -1, iRow, iCol );
-
-								bLButtonDownInItem = TRUE;
-
-								_pUIMgr->RearrangeOrder( UI_EXCHANGE, TRUE );
-								return WMSG_SUCCESS;
+								m_nSelITab = INVENTORY_TAB_CASH_2;
+								m_nSelInvenItemID = nIdx - (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1);
 							}
+							else if (nIdx >= ITEM_COUNT_IN_INVENTORY_NORMAL)
+							{
+								m_nSelITab = INVENTORY_TAB_CASH_1;
+								m_nSelInvenItemID = nIdx - ITEM_COUNT_IN_INVENTORY_NORMAL;
+							}
+							else
+							{
+								m_nSelITab = INVENTORY_TAB_NORMAL;
+								m_nSelInvenItemID = nIdx;
+							}
+
+							// Show tool tup
+							//ShowItemInfo( TRUE, TRUE, -1, -1, iRow, iCol );
+
+							bLButtonDownInItem = TRUE;
+
+							pUIManager->RearrangeOrder( UI_EXCHANGE, TRUE );
+							return WMSG_SUCCESS;
 						}
 					}
+
 				}
 				// Ready button
 				else if( m_btnReady.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -1768,7 +908,7 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 					// Nothing
 				}
 
-				_pUIMgr->RearrangeOrder( UI_EXCHANGE, TRUE );
+				pUIManager->RearrangeOrder( UI_EXCHANGE, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -1776,10 +916,11 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 			bLButtonDownInItem = FALSE;
 
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -1837,7 +978,7 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 				{
 					for( int iWear = 0; iWear < EXCH_EXCH_SLOT_TOTAL; iWear++ )
 					{
-						if( m_abtnMyItems[iWear].MouseMessage( pMsg ) != WMSG_FAIL )
+						if (m_pIconsMyItems[iWear]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
 							// Nothing
 							return WMSG_SUCCESS;
@@ -1847,20 +988,26 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 				// Inventory items of exchange
 				else if( IsInsideRect( nX, nY, m_rcInvenSlot ) )
 				{
-					int	iRow, iCol;
+					int	nIdx;
 					int	iRowS = m_sbScrollBar.GetScrollPos();
 					int	iRowE = iRowS + EXCH_INVEN_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					
+					for (nIdx = (iRowS * EXCH_INVEN_SLOT_COL); nIdx < (iRowE * EXCH_INVEN_SLOT_COL); ++nIdx)
 					{
-						for( iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
+						if (m_pIconsInvenItems[nIdx]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
-							if( m_abtnInvenItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Nothing
-								return WMSG_SUCCESS;
-							}
+							// Nothing
+							return WMSG_SUCCESS;
 						}
 					}
+				}
+				//2013/04/03 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
+				if( IsInsideRect( nX, nY, m_rtTouchNas ) )
+				{
+					if(!m_bExchReady)
+						ExchangeNas();
+
+					return WMSG_SUCCESS;
 				}
 			}
 			// If holding button exists
@@ -1869,43 +1016,46 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// If holding button is item and is from exchange
-					if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_EXCHANGE )
+					if (pUIManager->GetDragIcon()->getBtnType() == UBET_ITEM &&
+						pUIManager->GetDragIcon()->GetWhichUI() == UI_EXCHANGE)
 					{
 						// My items
 						if( IsInsideRect( nX, nY, m_rcMySlot ) )
 						{
+							CItems* pItems = pUIManager->GetDragIcon()->getItems();
+
+							if (pItems == NULL)
+								return WMSG_FAIL;
+
 							// If this item is moved from inventory slot of exchange
 							/*if( m_nSelMyItemID < 0 ||
-								m_abtnMyItems[m_nSelMyItemID].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )*/	// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
+								m_abtnMyItems[m_nSelMyItemID].GetBtnID() != pUIManager->GetHoldBtn().GetBtnID() )*/	// æ∆¿Ã≈€ ªË¡¶ ∏∑¿Ω
 							{
-								AddExchItem( _pUIMgr->GetHoldBtn().GetItemRow(),
-												_pUIMgr->GetHoldBtn().GetItemCol(),
-												_pUIMgr->GetHoldBtn().GetItemUniIndex(),
-												_pUIMgr->GetHoldBtn().GetItemCount() );
+								AddExchItem(pItems->Item_Tab, pItems->InvenIndex,
+									pItems->Item_UniIndex, pItems->Item_Sum);
 
 								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 
 								return WMSG_SUCCESS;
 							}
 						}
 						// Inventory items of exchange
-						/*else if( IsInsideRect( nX, nY, m_rcInvenSlot ) )		// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
+						/*else if( IsInsideRect( nX, nY, m_rcInvenSlot ) )		// æ∆¿Ã≈€ ªË¡¶ ∏∑¿Ω
 						{
 							int	nSelRow = m_nSelInvenItemID / EXCH_INVEN_SLOT_COL;
 							int	nSelCol = m_nSelInvenItemID % EXCH_INVEN_SLOT_COL;
 							// If this item is moved from my slot
 							if( m_nSelInvenItemID < 0 ||
-								m_abtnInvenItems[nSelRow][nSelCol].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
+								m_abtnInvenItems[nSelRow][nSelCol].GetBtnID() != pUIManager->GetHoldBtn().GetBtnID() )
 							{
-								DelExchItem( _pUIMgr->GetHoldBtn().GetItemRow(),
-												_pUIMgr->GetHoldBtn().GetItemCol(),
-												_pUIMgr->GetHoldBtn().GetItemUniIndex(),
-												_pUIMgr->GetHoldBtn().GetItemCount() );
+								DelExchItem( pUIManager->GetHoldBtn().GetInvenIndex(),
+												pUIManager->GetHoldBtn().GetItemCol(),
+												pUIManager->GetHoldBtn().GetItemUniIndex(),
+												pUIManager->GetHoldBtn().GetItemCount() );
 
 								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 
 								return WMSG_SUCCESS;
 							}
@@ -1913,7 +1063,7 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 					}
 
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -1926,7 +1076,7 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 			if( IsInside( nX, nY ) )
 			{
 				// My items
-				/*if( IsInsideRect( nX, nY, m_rcMySlot ) )		// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
+				/*if( IsInsideRect( nX, nY, m_rcMySlot ) )		// æ∆¿Ã≈€ ªË¡¶ ∏∑¿Ω
 				{
 					m_nSelMyItemID = -1;
 
@@ -1937,10 +1087,10 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 							if( !m_bExchReady )
 							{
 								// Close message box of exchange
-								_pUIMgr->CloseMessageBox( MSGCMD_EXCH_ADD_ITEM );
-								_pUIMgr->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
+								pUIManager->CloseMessageBox( MSGCMD_EXCH_ADD_ITEM );
+								pUIManager->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
 
-								DelExchItem( m_abtnMyItems[iItem].GetItemRow(),
+								DelExchItem( m_abtnMyItems[iItem].GetInvenIndex(),
 												m_abtnMyItems[iItem].GetItemCol(),
 												m_abtnMyItems[iItem].GetItemUniIndex(),
 												m_abtnMyItems[iItem].GetItemCount() );
@@ -1958,37 +1108,70 @@ WMSG_RESULT CUIExchange::MouseMessage( MSG *pMsg )
 				{
 					m_nSelInvenItemID = -1;
 
-					int	iRow, iCol;
+					int tab, idx;
+					int	nIdx;
 					int	iRowS = m_sbScrollBar.GetScrollPos();
 					int	iRowE = iRowS + EXCH_INVEN_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					
+					for (nIdx = (iRowS * EXCH_INVEN_SLOT_COL); nIdx < (iRowE * EXCH_INVEN_SLOT_COL); ++nIdx)
 					{
-						for( iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
+						if( m_pIconsInvenItems[nIdx]->MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							if( m_abtnInvenItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
+							if (m_pIconsInvenItems[nIdx]->IsEmpty() == true)
+								return WMSG_FAIL;
+
+							if (m_pIconsInvenItems[nIdx]->getItems()->GetToggle() == true)
+								return WMSG_FAIL;
+
+							if( !m_bExchReady )
 							{
-								if( !m_bExchReady )
+								if (nIdx >= (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1))
 								{
-									// Exchangeable
-									CItems	&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-									CItemData	&rItemData = rItems.ItemData;
-									if( rItemData.GetFlag() & ITEM_FLAG_EXCHANGE )
-									{
-										// Close message box of exchange
-										_pUIMgr->CloseMessageBox( MSGCMD_EXCH_ADD_ITEM );
-										_pUIMgr->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
-
-										AddExchItem( iRow, iCol,
-														m_abtnInvenItems[iRow][iCol].GetItemUniIndex(),
-														m_abtnInvenItems[iRow][iCol].GetItemCount() );
-									}
+									tab = INVENTORY_TAB_CASH_2;
+									idx = nIdx - (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1);
 								}
+								else if (nIdx >= ITEM_COUNT_IN_INVENTORY_NORMAL)
+								{
+									tab = INVENTORY_TAB_CASH_1;
+									idx = nIdx - ITEM_COUNT_IN_INVENTORY_NORMAL;
+								}
+								else
+								{
+									tab = INVENTORY_TAB_NORMAL;
+									idx = nIdx;
+								}
+								
+								CUIManager* pUIManager = CUIManager::getSingleton();
 
-								// Show tool tup
-								ShowItemInfo( TRUE, TRUE, -1, -1, iRow, iCol );
+								// Exchangeable
+								CItems*		pItems = &_pNetwork->MySlotItem[tab][idx];
+								CItemData*	pItemData = pItems->ItemData;
 
-								return WMSG_SUCCESS;
+								if (pItemData == NULL)
+									continue;
+#ifdef ADD_SUBJOB
+								if( pItemData->IsFlag( ITEM_FLAG_SELLER ) ? 
+									pUIManager->CheckSellerItem(UI_EXCHANGE, pItemData->GetFlag()) : 
+								( pItemData->GetFlag() & ITEM_FLAG_EXCHANGE || 
+									( pItemData->GetType() == CItemData::ITEM_ETC && pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD &&
+									pItems->Item_Used <= 0 ) ) )
+#else
+								if( pItemData->GetFlag() & ITEM_FLAG_EXCHANGE || 
+									( pItemData->GetType() == CItemData::ITEM_ETC && 
+									pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD &&
+									pItems->Item_Used < 1 ))
+#endif
+								{
+									// Close message box of exchange
+									pUIManager->GetMsgBoxNumOnly()->CloseBox();
+									pUIManager->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
+
+									AddExchItem( tab, idx, m_pIconsInvenItems[nIdx]->getItems()->Item_UniIndex,
+										m_pIconsInvenItems[nIdx]->getItems()->Item_Sum);
+								}
 							}
+
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -2029,61 +1212,37 @@ static SQUAD	llTempCount;
 // Name : AddExchItem()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIExchange::AddExchItem( int nRow, int nCol, int nUniIndex, SQUAD llCount )
+void CUIExchange::AddExchItem( int nTab, int inven_idx, int nUniIndex, SQUAD llCount )
 {
+	if(nUniIndex == 19)
+	{
+		SendExchangeItem_Add( nUniIndex, llCount );
+		return;
+	}
+
 	nTempUniIndex = nUniIndex;
 	llTempCount = llCount;
 
-	CItems	&rItems = _pNetwork->MySlotItem[0][nRow][nCol];
-	CItemData	&rItemData = rItems.ItemData;
+	CItems*		pItems = &_pNetwork->MySlotItem[nTab][inven_idx];
+	CItemData*	pItemData = pItems->ItemData;
 
-	// Ask quantity
-	if( ( rItemData.GetFlag() & ITEM_FLAG_COUNT ) && llTempCount > 1 )
+	if (pItemData == NULL)
+		return;
+
+	if( ( pItemData->GetFlag() & ITEM_FLAG_COUNT ) && llTempCount > 1 )
 	{
 		CTString		strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 149, "ÍµêÌôò" ), UMBS_OKCANCEL | UMBS_INPUTBOX,
-									UI_EXCHANGE, MSGCMD_EXCH_ADD_ITEM );
-		const char	*szItemName = _pNetwork->GetItemName(rItemData.GetItemIndex());
-		strMessage.PrintF( _S2( 150, szItemName, "Î™á Í∞úÏùò %s<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName );
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		const char	*szItemName = _pNetwork->GetItemName(pItemData->GetItemIndex());
+		strMessage.PrintF( _S2( 150, szItemName, "∏Ó ∞≥¿« %s<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ), szItemName );
+
+		CmdExChangeAddItem* pCmd = new CmdExChangeAddItem;
+		pCmd->setData(this);
+		UIMGR()->GetMsgBoxNumOnly()->SetInfo(pCmd, _S( 149, "±≥»Ø" ), strMessage, 1, pItems->Item_Sum);
 	}
 	else
 	{
-		SendExchangeItem_Add( nTempUniIndex, llTempCount );
+		SendExchangeItem_Add( nTempUniIndex, llTempCount);
 	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : DelExchItem()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIExchange::DelExchItem( int nRow, int nCol, int nUniIndex, SQUAD llCount )
-{
-	/*nTempUniIndex = nUniIndex;		// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
-	llTempCount = llCount;
-
-	CItems	&rItems = _pNetwork->MySlotItem[0][nRow][nCol];
-	CItemData	&rItemData = rItems.ItemData;
-
-	// Ask quantity
-	if( llTempCount > 1 )
-	{
-		CTString		strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 149, "ÍµêÌôò" ), UMBS_OKCANCEL | UMBS_INPUTBOX,
-									UI_EXCHANGE, MSGCMD_EXCH_DEL_ITEM );
-		//const char	*szItemName = rItemData.GetName();
-		const char	*szItemName = _pNetwork->GetItemName(rItemData.GetItemIndex());
-		strMessage.PrintF( _S2( 150, szItemName, "Î™á Í∞úÏùò %s<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName );
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-	}
-	else
-	{
-		SendExchangeItem_Del( nTempUniIndex, llTempCount );
-	}*/
 }
 
 // ----------------------------------------------------------------------------
@@ -2112,44 +1271,39 @@ void CUIExchange::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 
 		break;
 
-	case MSGCMD_EXCH_ADD_ITEM:
-		if( bOK )
+	case MSGCMD_EXCH_ADD_NAS:
 		{
-			char	*pcInput = strInput.str_String;
-			int		nLength = strInput.Length();
-			for( int iChar = 0; iChar < nLength; iChar++ )
+			char	*pcInput	= strInput.str_String;
+			int		nLength		= strInput.Length();
+			int		iChar;
+			for( iChar = 0; iChar < nLength; iChar++ )
 			{
 				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
 					break;
 			}
-
+			
 			if( iChar == nLength )
 			{
 				SQUAD	llCount = _atoi64( pcInput );
-				if( llCount > 0 && llCount <= llTempCount )
-					SendExchangeItem_Add( nTempUniIndex, llCount );
+				//if( llCount > 0 && llCount <= llTempCount )
+				if( (llCount+m_nMyNas) > 0 && (llCount+m_nMyNas) <= _pNetwork->MyCharacterInfo.money)
+				{
+					m_nMyNas		+= llCount;
+					m_strMyExchMoney.PrintF( "%I64d", m_nMyNas );
+					CUIManager::getSingleton()->InsertCommaToString( m_strMyExchMoney );
+
+					AddExchItem(-1, -1, 19, m_nMyNas);
+					
+				}
+				else
+				{
+					CTString strInNasError;
+					strInNasError.PrintF( _S( 5902, "«ˆ¿Á ∞°¡ˆ∞Ì ¿÷¥¬ ≥™Ω∫ ∫∏¥Ÿ ∏π¿∫ ≥™Ω∫∏¶ ±≥»Ø «“ ºˆ æ¯Ω¿¥œ¥Ÿ." ));		
+					_pNetwork->ClientSystemMessage( strInNasError );
+				}
 			}
 		}
-		break;
-
-	case MSGCMD_EXCH_DEL_ITEM:
-		/*if( bOK )		// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
-		{
-			char	*pcInput = strInput.str_String;
-			int		nLength = strInput.Length();
-			for( int iChar = 0; iChar < nLength; iChar++ )
-			{
-				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
-					break;
-			}
-
-			if( iChar == nLength )
-			{
-				SQUAD	llCount = _atoi64( pcInput );
-				if( llCount > 0 && llCount <= llTempCount )
-					SendExchangeItem_Del( nTempUniIndex, llCount );
-			}
-		}*/
+		
 		break;
 	}
 }
@@ -2165,51 +1319,64 @@ void CUIExchange::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 // ----------------------------------------------------------------------------
 void CUIExchange::SendExchangeReq_Req( CTString &strDestName )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Already exchange
 	if( m_nSrcIndex != -1 && m_nDestIndex != -1 )
 	{
 		CTString	strSysMessage;
 		if( m_bAmISrc )
-			strSysMessage.PrintF( _S2( 422, m_strDestName, "Ïù¥ÎØ∏ %s<Í≥º> ÍµêÌôòÏ§ëÏûÖÎãàÎã§." ), m_strDestName );
+			strSysMessage.PrintF( _S2( 422, m_strDestName, "¿ÃπÃ %s<∞˙> ±≥»Ø¡ﬂ¿‘¥œ¥Ÿ." ), m_strDestName );
 		else
-			strSysMessage.PrintF( _S2( 422, m_strSrcName, "Ïù¥ÎØ∏ %s<Í≥º> ÍµêÌôòÏ§ëÏûÖÎãàÎã§." ), m_strSrcName );
+			strSysMessage.PrintF( _S2( 422, m_strSrcName, "¿ÃπÃ %s<∞˙> ±≥»Ø¡ﬂ¿‘¥œ¥Ÿ." ), m_strSrcName );
 
-		_pUIMgr->GetChatting()->AddSysMessage( strSysMessage, SYSMSG_ERROR );
+		pUIManager->GetChattingUI()->AddSysMessage( strSysMessage, SYSMSG_ERROR );
 
 		return;
 	}
 	
 	// Find index of dest character
-	SLONG	slDestIndex = -1;
-	INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
-	for( INDEX iPlyaer = 0; iPlyaer < ctCha; iPlyaer++ ) 
+	SLONG	slDestIndex = -1;	
+	INDEX	iSyndicateType = 0;
+
+
+	ObjectBase* pObject = ACTORMGR()->GetObjectByName(strDestName.str_String, eOBJ_CHARACTER);
+
+	if (pObject != NULL)
 	{
-		CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[iPlyaer];
-		if( ct.cha_strName == strDestName )
+		CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+		if (pTarget->cha_sbShopType != PST_NOSHOP)
 		{
-// Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë		// Í∞úÏù∏ÏÉÅÏ†ê
-			if( ct.cha_sbShopType != PST_NOSHOP )
+			pUIManager->GetChattingUI()->AddSysMessage( _S( 737, "∞≥¿Œ ªÛ¡°∞˙¥¬ ±≥»Ø¿ª «“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
+			return;
+		}
+
+		slDestIndex = pTarget->m_nIdxServer;
+		iSyndicateType = pTarget->cha_iSyndicateType;
+
+		if (_pNetwork->IsRvrZone() == TRUE)
+		{
+			if (iSyndicateType != _pNetwork->MyCharacterInfo.iSyndicateType)
 			{
-				_pUIMgr->GetChatting()->AddSysMessage( _S( 737, "Í∞úÏù∏ ÏÉÅÏ†êÍ≥ºÎäî ÍµêÌôòÏùÑ Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+				pUIManager->GetChattingUI()->AddSysMessage( _S( 6090, "∫–¿Ô ¡ˆø™ø°º≠ ¿˚¥Î ∞¸∞Ë¿Œ ∞ÊøÏ ªÁøÎ«“ ºˆ æ¯¥¬ ±‚¥…¿‘¥œ¥Ÿ."), SYSMSG_ERROR);
 				return;
 			}
-// Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù		// Í∞úÏù∏ÏÉÅÏ†ê
-			slDestIndex = ct.cha_Index;
-			break;
 		}
 	}
 
 	// If dest character doesn't exist
 	if( slDestIndex == -1 )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 151, "ÍµêÌôò ÎåÄÏÉÅÏùÑ Ï∞æÏùÑ Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 151, "±≥»Ø ¥ÎªÛ¿ª √£¿ª ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 		return ;
 	}
 
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if( pUIManager->GetInventory()->IsLocked() == TRUE ||
+		pUIManager->GetInventory()->IsLockedArrange() == TRUE)
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
@@ -2222,19 +1389,19 @@ void CUIExchange::SendExchangeReq_Req( CTString &strDestName )
 	m_strDestName = strDestName;
 
 	// Close message box
-	_pUIMgr->CloseMessageBox( MSGCMD_EXCH_REQ_SRC );
+	pUIManager->CloseMessageBox( MSGCMD_EXCH_REQ_SRC );
 
 	// Create message box
 	CTString		strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 149, "ÍµêÌôò" ), UMBS_CANCEL,
+	MsgBoxInfo.SetMsgBoxInfo( _S( 149, "±≥»Ø" ), UMBS_CANCEL,
 								UI_EXCHANGE, MSGCMD_EXCH_REQ_SRC );
-	strMessage.PrintF( _S( 152, "%sÏóêÍ≤å ÍµêÌôòÏùÑ Ïã†Ï≤≠Ï§ëÏûÖÎãàÎã§. Ï∑®ÏÜåÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), m_strDestName );
+	strMessage.PrintF( _S( 152, "%sø°∞‘ ±≥»Ø¿ª Ω≈√ª¡ﬂ¿‘¥œ¥Ÿ. √Îº“«œΩ√∞⁄Ω¿¥œ±Ó?" ), m_strDestName );
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOn( CSF_EXCHANGE );
+	pUIManager->SetCSFlagOn( CSF_EXCHANGE );
 }
 
 // ----------------------------------------------------------------------------
@@ -2243,10 +1410,13 @@ void CUIExchange::SendExchangeReq_Req( CTString &strDestName )
 // ----------------------------------------------------------------------------
 void CUIExchange::SendExchangeReq_Rep()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if( pUIManager->GetInventory()->IsLocked() == TRUE ||
+		pUIManager->GetInventory()->IsLockedArrange() == TRUE )
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		_pNetwork->ExchangeReq_Rej();
 		return;
 	}
@@ -2269,11 +1439,13 @@ void CUIExchange::SendExchangeReq_Rej()
 // ----------------------------------------------------------------------------
 void CUIExchange::SendExchangeReq_Ready()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Close message box of exchange
-	_pUIMgr->CloseMessageBox( MSGCMD_EXCH_ADD_ITEM );
-	_pUIMgr->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
+	pUIManager->CloseMessageBox( MSGCMD_EXCH_DEL_ITEM );
 
 	_pNetwork->ExchangeReq_Ready();
+	pUIManager->GetMsgBoxNumOnly()->CloseBox();
 }
 
 // ----------------------------------------------------------------------------
@@ -2289,21 +1461,11 @@ void CUIExchange::SendExchangeReq_Ok()
 // Name : SendExchangeItem_Add()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIExchange::SendExchangeItem_Add( int nUniIndex, SQUAD llCount )
+void CUIExchange::SendExchangeItem_Add( int nUniIndex, SQUAD llCount)
 {
+
 	_pNetwork->ExchangeItem_Add( nUniIndex, llCount );
 }
-
-// ----------------------------------------------------------------------------
-// Name : SendExchangeItem_Del()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIExchange::SendExchangeItem_Del( int nUniIndex, SQUAD llCount )
-{
-	//_pNetwork->ExchangeItem_Del( nUniIndex, llCount );		// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
-}
-
-
 // ========================================================================= //
 //                         Receive message functions                         // 
 // ========================================================================= //
@@ -2321,9 +1483,11 @@ void CUIExchange::ExchangeReq_Req( int nSrcIndex, CTString &strSrcName,
 	m_strSrcName = strSrcName;
 	m_strDestName = strDestName;
 
-	// Close message box
-	_pUIMgr->CloseMessageBox( MSGCMD_EXCH_REQ_DEST );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
+	// Close message box
+	pUIManager->CloseMessageBox( MSGCMD_EXCH_REQ_DEST );
+	// rejection bug fix [8/5/2010 rumist]
 	if( g_iRejectExchange )
 	{
 		// [7/13/2009 rumist] if i want reject request message, 
@@ -2335,14 +1499,14 @@ void CUIExchange::ExchangeReq_Req( int nSrcIndex, CTString &strSrcName,
 	// Create message box
 	CTString		strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 149, "ÍµêÌôò" ), UMBS_YESNO,
+	MsgBoxInfo.SetMsgBoxInfo( _S( 149, "±≥»Ø" ), UMBS_YESNO,
 								UI_EXCHANGE, MSGCMD_EXCH_REQ_DEST );
-	strMessage.PrintF( _S2( 153, m_strSrcName, "%s<Í∞Ä> ÍµêÌôòÏùÑ Ïã†Ï≤≠ÌñàÏäµÎãàÎã§. ÏàòÎùΩÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), m_strSrcName );
+	strMessage.PrintF( _S2( 153, m_strSrcName, "%s<∞°> ±≥»Ø¿ª Ω≈√ª«ﬂΩ¿¥œ¥Ÿ. ºˆ∂Ù«œΩ√∞⁄Ω¿¥œ±Ó?" ), m_strSrcName );
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOn( CSF_EXCHANGE );
+	pUIManager->SetCSFlagOn( CSF_EXCHANGE );
 }
 
 // ----------------------------------------------------------------------------
@@ -2351,17 +1515,28 @@ void CUIExchange::ExchangeReq_Req( int nSrcIndex, CTString &strSrcName,
 // ----------------------------------------------------------------------------
 void CUIExchange::ExchangeReq_Rep()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
 	CTString	strMessage;
+
+	if (pUIManager->GetInventory()->IsLocked() == TRUE ||
+		pUIManager->GetInventory()->IsLockedArrange() == TRUE)
+	{
+		pUIManager->GetInventory()->ShowLockErrorMessage();
+
+		SendExchangeReq_Rej();
+		return;
+	}
+
 	if( m_bAmISrc )
 	{
-		_pUIMgr->CloseMessageBox( MSGCMD_EXCH_REQ_SRC );
-		strMessage.PrintF( _S2( 154, m_strDestName, "%s<Í≥º> ÍµêÌôòÏùÑ ÏãúÏûëÌï©ÎãàÎã§." ), m_strDestName );
+		pUIManager->CloseMessageBox( MSGCMD_EXCH_REQ_SRC );
+		strMessage.PrintF( _S2( 154, m_strDestName, "%s<∞˙> ±≥»Ø¿ª Ω√¿€«’¥œ¥Ÿ." ), m_strDestName );
 	}
 	else
-		strMessage.PrintF( _S2( 154, m_strSrcName, "%s<Í≥º> ÍµêÌôòÏùÑ ÏãúÏûëÌï©ÎãàÎã§." ), m_strSrcName );
+		strMessage.PrintF( _S2( 154, m_strSrcName, "%s<∞˙> ±≥»Ø¿ª Ω√¿€«’¥œ¥Ÿ." ), m_strSrcName );
 
 	// Add system message
-	_pUIMgr->GetChatting()->AddSysMessage( strMessage );
+	pUIManager->GetChattingUI()->AddSysMessage( strMessage );
 
 	// Prepare exchange
 	PrepareExchange();
@@ -2373,30 +1548,32 @@ void CUIExchange::ExchangeReq_Rep()
 // ----------------------------------------------------------------------------
 void CUIExchange::ExchangeReq_Rej( BOOL bSrcReject )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
 	CTString	strMessage;
+
 	if( m_bAmISrc )
 	{
 		if( bSrcReject )
-			strMessage.PrintF( _S2( 155, m_strDestName, "%s<Í≥º>Ïùò ÍµêÌôòÏùÑ Ï∑®ÏÜåÌïòÏÖ®ÏäµÎãàÎã§." ), m_strDestName );
+			strMessage.PrintF( _S2( 155, m_strDestName, "%s<∞˙>¿« ±≥»Ø¿ª √Îº“«œºÃΩ¿¥œ¥Ÿ." ), m_strDestName );
 		else
 		{
-			_pUIMgr->CloseMessageBox( MSGCMD_EXCH_REQ_SRC );
-			strMessage.PrintF( _S2( 156, m_strDestName, "%s<Í∞Ä> ÍµêÌôòÏùÑ Ï∑®ÏÜåÌñàÏäµÎãàÎã§." ), m_strDestName );
+			pUIManager->CloseMessageBox( MSGCMD_EXCH_REQ_SRC );
+			strMessage.PrintF( _S2( 156, m_strDestName, "%s<∞°> ±≥»Ø¿ª √Îº“«ﬂΩ¿¥œ¥Ÿ." ), m_strDestName );
 		}
 	}
 	else
 	{
 		if( bSrcReject )
 		{
-			_pUIMgr->CloseMessageBox( MSGCMD_EXCH_REQ_DEST );
-			strMessage.PrintF( _S2( 156, m_strSrcName, "%s<Í∞Ä> ÍµêÌôòÏùÑ Ï∑®ÏÜåÌñàÏäµÎãàÎã§." ), m_strSrcName );
+			pUIManager->CloseMessageBox( MSGCMD_EXCH_REQ_DEST );
+			strMessage.PrintF( _S2( 156, m_strSrcName, "%s<∞°> ±≥»Ø¿ª √Îº“«ﬂΩ¿¥œ¥Ÿ." ), m_strSrcName );
 		}
 		else
-			strMessage.PrintF( _S2( 155, m_strSrcName, "%s<Í≥º>Ïùò ÍµêÌôòÏùÑ Ï∑®ÏÜåÌïòÏÖ®ÏäµÎãàÎã§." ), m_strSrcName );
+			strMessage.PrintF( _S2( 155, m_strSrcName, "%s<∞˙>¿« ±≥»Ø¿ª √Îº“«œºÃΩ¿¥œ¥Ÿ." ), m_strSrcName );
 	}
 
 	// Add system message
-	_pUIMgr->GetChatting()->AddSysMessage( strMessage );
+	pUIManager->GetChattingUI()->AddSysMessage( strMessage );
 
 	// Reset exchange
 	ResetExchange();
@@ -2435,7 +1612,7 @@ void CUIExchange::ExchangeReq_BothReady()
 	m_btnExchange.SetEnable( TRUE );
 
 	// Add system message
-	_pUIMgr->GetChatting()->AddSysMessage( _S( 157, "ÍµêÌôò Ï§ÄÎπÑÍ∞Ä ÏôÑÎ£åÎêòÏóàÏäµÎãàÎã§." ), SYSMSG_ERROR );
+	CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 157, "±≥»Ø ¡ÿ∫Ò∞° øœ∑·µ«æ˙Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 }
 
 // ----------------------------------------------------------------------------
@@ -2449,16 +1626,16 @@ void CUIExchange::ExchangeReq_Full( BOOL bSrcFull )
 	if( m_bAmISrc )
 	{
 		if( bSrcFull )
-			strMessage = _S( 265, "Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." );
+			strMessage = _S( 265, "¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );
 		else
-			strMessage.PrintF( _S( 158, "%sÏùò Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), m_strDestName );
+			strMessage.PrintF( _S( 158, "%s¿« ¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ), m_strDestName );
 	}
 	else
 	{
 		if( bSrcFull )
-			strMessage.PrintF( _S( 158, "%sÏùò Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), m_strSrcName );
+			strMessage.PrintF( _S( 158, "%s¿« ¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ), m_strSrcName );
 		else
-			strMessage = _S( 265, "Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." );
+			strMessage = _S( 265, "¿Œ∫•≈‰∏Æ ∞¯∞£¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );
 	}
 
 	m_bExchReady = FALSE;
@@ -2471,7 +1648,7 @@ void CUIExchange::ExchangeReq_Full( BOOL bSrcFull )
 	m_btnExchange.SetEnable( FALSE );
 
 	// Add system message
-	_pUIMgr->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+	CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_ERROR );
 }
 
 // ----------------------------------------------------------------------------
@@ -2502,7 +1679,7 @@ void CUIExchange::ExchangeReq_BothOk()
 	m_btnExchange.SetEnable( FALSE );
 
 	// Add system message
-	_pUIMgr->GetChatting()->AddSysMessage( _S( 159, "ÍµêÌôòÏù¥ ÏÑ±Í≥µÏ†ÅÏúºÎ°ú Ïù¥Î£®Ïñ¥Ï°åÏäµÎãàÎã§." ) );
+	CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 159, "±≥»Ø¿Ã º∫∞¯¿˚¿∏∑Œ ¿Ã∑ÁæÓ¡≥Ω¿¥œ¥Ÿ." ) );
 
 	ResetExchange();
 }
@@ -2514,17 +1691,19 @@ void CUIExchange::ExchangeReq_BothOk()
 // ----------------------------------------------------------------------------
 void CUIExchange::ExchangeReq_Pet_Err(BOOL petErr)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Disable exchange button
 	m_btnExchange.SetEnable( FALSE );
 
 	if(!petErr){
 		// Add system message
-		_pUIMgr->GetChatting()->AddSysMessage( _S(2221, "Ìé´ÏùÑ Îçî Ïù¥ÏÉÅ ÏÜåÏú†Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ),SYSMSG_ERROR );
+		pUIManager->GetChattingUI()->AddSysMessage( _S(2221, "∆Í¿ª ¥ı ¿ÃªÛ º“¿Ø«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ),SYSMSG_ERROR );
 	}
 	else{
 		CTString	strMessage;
-		strMessage.PrintF(_S(2555, "%sÎãòÏùÄ Ìé´ÏùÑ Îçî Ïù¥ÏÉÅ ÏÜåÏú†Ìï† Ïàò ÏóÜÎäî ÏÉÅÌÉú ÏûÖÎãàÎã§." ) ,m_strDestName);
-		_pUIMgr->GetChatting()->AddSysMessage(strMessage,SYSMSG_ERROR); 
+		strMessage.PrintF(_S(2555, "%s¥‘¿∫ ∆Í¿ª ¥ı ¿ÃªÛ º“¿Ø«“ ºˆ æ¯¥¬ ªÛ≈¬ ¿‘¥œ¥Ÿ." ) ,m_strDestName);
+		pUIManager->GetChattingUI()->AddSysMessage(strMessage,SYSMSG_ERROR); 
 	}
 		
 	ResetExchange();
@@ -2538,101 +1717,112 @@ void CUIExchange::ExchangeItem_Add( BOOL bSrcAdd, int nUniIndex, SQUAD llCount,
 									int nIndex, ULONG ulPlus, ULONG ulFlag, LONG ulUsed, LONG ulUsed2, LONG lRareIndex )
 {
 	// My items
-	if( ( m_bAmISrc && bSrcAdd ) || ( !m_bAmISrc && !bSrcAdd ) )
+	int		iItem;
+
+	if ((m_bAmISrc && bSrcAdd) || (!m_bAmISrc && !bSrcAdd))
 	{
-		for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( m_abtnMyItems[iItem].IsEmpty() )
+			if( m_pIconsMyItems[iItem]->IsEmpty() )
 				break;
 		}
+		
+		CItems* pItems = new CItems;
+		pItems->Item_Index = nIndex;
+		pItems->Item_UniIndex = nUniIndex;
+		pItems->Item_Sum = llCount;
+		pItems->Item_Plus = ulPlus;
+		pItems->Item_Used = ulUsed;
+		pItems->Item_Used2 = ulUsed2;
+		pItems->Item_Flag = ulFlag;
+		pItems->SetRareIndex(lRareIndex);
+		pItems->ItemData = CItemData::getData(nIndex);
 
-		m_abtnMyItems[iItem].SetItemInfo( 0, 0, 0, nIndex, nUniIndex, -1 );
-		m_abtnMyItems[iItem].SetItemCount( llCount );
-		m_abtnMyItems[iItem].SetItemPlus( ulPlus );
-		m_abtnMyItems[iItem].SetItemUsed( ulUsed );
-		m_abtnMyItems[iItem].SetItemUsed2( ulUsed2 );
-		m_abtnMyItems[iItem].SetItemFlag( ulFlag );
-		m_abtnMyItems[iItem].SetItemRareIndex( lRareIndex );
+		m_pIconsMyItems[iItem]->setData(pItems, false);
 
-		if( m_abtnMyItems[iItem].GetItemFlag()&FLAG_ITEM_SEALED){
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 1079, "Î¥âÏù∏Îêú ÏïÑÏù¥ÌÖúÏùÄ ÍµêÏ≤¥Ìï† Ïàò ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
-			m_abtnMyItems[iItem].InitBtn();
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		if (ulFlag & FLAG_ITEM_SEALED)
+		{
+			pUIManager->GetChattingUI()->AddSysMessage( _S( 1079, "∫¿¿Œµ» æ∆¿Ã≈€¿∫ ±≥√º«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
+			m_pIconsMyItems[iItem]->clearIconData();
 			return;
 		}
 
 		// Update inventory of exchange
-		for( int iRow = 0; iRow < EXCH_INVEN_SLOT_ROW_TOTAL; iRow++ )
+		for (int nIdx = 0; nIdx < DEF_INVENTORY_MAX; ++nIdx)
 		{
-			for( int iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
+			if (m_pIconsInvenItems[nIdx]->getItems() != NULL && 
+				m_pIconsInvenItems[nIdx]->getItems()->Item_UniIndex == nUniIndex)
 			{
-				if( m_abtnInvenItems[iRow][iCol].GetItemUniIndex() == nUniIndex )
+				// Set item location of my item
+				pItems->Item_Tab = 0;
+				pItems->InvenIndex = nIdx;
+
+				// Update count
+				SQUAD	llNewCount = m_pIconsInvenItems[nIdx]->getItems()->Item_Sum;
+				llNewCount -= llCount;
+				m_pIconsInvenItems[nIdx]->setCount(llNewCount);
+				
+				if( llNewCount <= 0 )
 				{
-					// Set item location of my item
-					m_abtnMyItems[iItem].SetItemLocation( 0, iRow, iCol );
-					m_abtnMyItems[iItem].SetItemRareIndex( lRareIndex );
+					m_pIconsInvenItems[nIdx]->clearIconData();
 
-					// Update count
-					SQUAD	llNewCount = m_abtnInvenItems[iRow][iCol].GetItemCount();
-					llNewCount -= llCount;
-					m_abtnInvenItems[iRow][iCol].SetItemCount( llNewCount );
-					if( llNewCount <= 0 )
-					{
-						m_abtnInvenItems[iRow][iCol].SetEmpty( TRUE );
-
-						// Unselect item
-						if( m_nSelInvenItemID == ( iCol + iRow * EXCH_INVEN_SLOT_COL ) )
-							m_nSelInvenItemID = -1;
-					}
-
-					// If item is money
-					CItemData	&ItemData = _pNetwork->GetItemData( nIndex );
-					if( ItemData.GetType() == CItemData::ITEM_ETC &&
-						ItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
-					{
-						m_strMyExchMoney.PrintF( "%I64d", llCount );
-						_pUIMgr->InsertCommaToString( m_strMyExchMoney );
-					}
-
-					if(ItemData.GetType() == CItemData::ITEM_ACCESSORY &&
-					ItemData.GetSubType() == CItemData::ACCESSORY_WILDPET)
-					{
-						_pNetwork->SendPetitemInfo(_pNetwork->MyCharacterInfo.index,ulPlus);
-					}
-
-					return;
+					// Unselect item
+					if( m_nSelInvenItemID == nIdx )
+						m_nSelInvenItemID = -1;
 				}
+
+				// If item is money
+				CItemData* pItemData = pItems->ItemData;
+
+				if( pItemData->GetType() == CItemData::ITEM_ETC &&
+					pItemData->GetSubType() == CItemData::ITEM_ETC_MONEY )
+				{
+					m_strMyExchMoney.PrintF( "%I64d", llCount );
+					pUIManager->InsertCommaToString( m_strMyExchMoney );
+				}
+
+				if(pItemData->GetType() == CItemData::ITEM_ACCESSORY &&
+				pItemData->GetSubType() == CItemData::ACCESSORY_WILDPET)
+				{
+					_pNetwork->SendPetitemInfo(_pNetwork->MyCharacterInfo.index,ulPlus);
+				}
+
+				return;
 			}
 		}
 	}
 	// Opposite items
 	else
 	{
-		for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		int		iItem;
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( m_abtnOppItems[iItem].IsEmpty() )
+			if( m_pIconsOppItems[iItem]->IsEmpty() )
 				break;
 		}
 
-		m_abtnOppItems[iItem].SetItemInfo( 0, 0, 0, nIndex, nUniIndex, 0 );
-		m_abtnOppItems[iItem].SetItemCount( llCount );
-		m_abtnOppItems[iItem].SetItemPlus( ulPlus );
-		m_abtnOppItems[iItem].SetItemFlag( ulFlag );
-		m_abtnOppItems[iItem].SetItemUsed( ulUsed );
-		m_abtnOppItems[iItem].SetItemUsed2( ulUsed2 );
-		m_abtnOppItems[iItem].SetItemRareIndex( lRareIndex );
+		CItems* pItems = new CItems;
+		pItems->Item_Index = nIndex;
+		pItems->Item_UniIndex = nUniIndex;
+		pItems->Item_Sum = llCount;
+		pItems->Item_Plus = ulPlus;
+		pItems->Item_Used = ulUsed;
+		pItems->Item_Used2 = ulUsed2;
+		pItems->Item_Flag = ulFlag;
+		pItems->SetRareIndex(lRareIndex);
+		pItems->ItemData = CItemData::getData(nIndex);
+
+		m_pIconsOppItems[iItem]->setData(pItems, false);
 
 		// If item is money
-		CItemData	&ItemData = _pNetwork->GetItemData( nIndex );
-		if( ItemData.GetType() == CItemData::ITEM_ETC &&
-			ItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
+		CItemData* pItemData = _pNetwork->GetItemData( nIndex );
+
+		if(pItemData->GetType() == CItemData::ITEM_ACCESSORY &&
+			pItemData->GetSubType() == CItemData::ACCESSORY_WILDPET)
 		{
-			m_strOppExchMoney.PrintF( "%I64d", llCount );
-			_pUIMgr->InsertCommaToString( m_strOppExchMoney );
-		}
-		if(ItemData.GetType() == CItemData::ITEM_ACCESSORY &&
-			ItemData.GetSubType() == CItemData::ACCESSORY_WILDPET)
-		{
-			_pNetwork->SendPetitemInfo(m_nSrcIndex,ulPlus);
+			_pNetwork->SendPetitemInfo(m_bAmISrc ? m_nDestIndex : m_nSrcIndex, ulPlus);
 		}
 	}
 }
@@ -2642,37 +1832,42 @@ void CUIExchange::ExchangeItem_Add( BOOL bSrcAdd, int nUniIndex, SQUAD llCount,
 // Desc :
 // ----------------------------------------------------------------------------
 void CUIExchange::ExchangeItem_SetOptionData( BOOL bSrcAdd, int nUniIndex, SBYTE sbOption,
-												SBYTE sbOptionType, SBYTE sbOptionLevel, LONG lRareIndex )
+												SBYTE sbOptionType, LONG lOptionLevel, LONG lRareIndex, LONG lOriginOptionVar )
 {
 	// My items
+	int		iItem;
 	if( ( m_bAmISrc && bSrcAdd ) || ( !m_bAmISrc && !bSrcAdd ) )
 	{
-		for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( m_abtnMyItems[iItem].GetItemUniIndex() == nUniIndex )
+			if (m_pIconsMyItems[iItem]->getItems()->Item_UniIndex == nUniIndex)
 				break;
 		}
 
 		if( iItem == EXCH_EXCH_SLOT_TOTAL )
 			return;
 
-		m_abtnMyItems[iItem].SetItemOptionData( sbOption, sbOptionType, sbOptionLevel );
-		m_abtnMyItems[iItem].SetItemRareIndex( lRareIndex);
+		CItems* pItems = m_pIconsMyItems[iItem]->getItems();
+
+		pItems->SetOptionData(sbOption, sbOptionType, lOptionLevel, lOriginOptionVar);
+		pItems->SetRareIndex(lRareIndex);
 	}
 	// Opposite items
 	else
 	{
-		for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( m_abtnOppItems[iItem].GetItemUniIndex() == nUniIndex )
+			if( m_pIconsOppItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
 				break;
 		}
 
 		if( iItem == EXCH_EXCH_SLOT_TOTAL )
 			return;
 
-		m_abtnOppItems[iItem].SetItemOptionData( sbOption, sbOptionType, sbOptionLevel );
-		m_abtnOppItems[iItem].SetItemRareIndex( lRareIndex);
+		CItems* pItems = m_pIconsOppItems[iItem]->getItems();
+
+		pItems->SetOptionData(sbOption, sbOptionType, lOptionLevel, lOriginOptionVar);
+		pItems->SetRareIndex(lRareIndex);
 	}
 }
 
@@ -2682,7 +1877,7 @@ void CUIExchange::ExchangeItem_SetOptionData( BOOL bSrcAdd, int nUniIndex, SBYTE
 // ----------------------------------------------------------------------------
 void CUIExchange::ExchangeItem_Del( BOOL bSrcDel, int nUniIndex )
 {
-	// My items			// ÏïÑÏù¥ÌÖú ÏÇ≠Ï†ú ÎßâÏùå
+	// My items			// æ∆¿Ã≈€ ªË¡¶ ∏∑¿Ω
 	/*if( ( m_bAmISrc && bSrcDel ) || ( !m_bAmISrc && !bSrcDel ) )
 	{
 		for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
@@ -2735,8 +1930,8 @@ void CUIExchange::ExchangeItem_Del( BOOL bSrcDel, int nUniIndex )
 					// If item is money
 					int			nIndex = m_abtnInvenItems[iRow][iCol].GetItemIndex();
 					CItemData	&ItemData = _pNetwork->GetItemData( nIndex );
-					if( ItemData.GetType() == CItemData::ITEM_ETC &&
-						ItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
+					if( pItemData->GetType() == CItemData::ITEM_ETC &&
+						pItemData->GetSubType() == CItemData::ITEM_ETC_MONEY )
 					{
 						m_strMyExchMoney.PrintF( "%d", 0 );
 					}
@@ -2758,8 +1953,8 @@ void CUIExchange::ExchangeItem_Del( BOOL bSrcDel, int nUniIndex )
 		// If item is money
 		int			nIndex = m_abtnOppItems[iItem].GetItemIndex();
 		CItemData	&ItemData = _pNetwork->GetItemData( nIndex );
-		if( ItemData.GetType() == CItemData::ITEM_ETC &&
-			ItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
+		if( pItemData->GetType() == CItemData::ITEM_ETC &&
+			pItemData->GetSubType() == CItemData::ITEM_ETC_MONEY )
 		{
 			m_strOppExchMoney.PrintF( "%d", 0 );
 		}
@@ -2772,58 +1967,167 @@ void CUIExchange::ExchangeItem_Del( BOOL bSrcDel, int nUniIndex )
 // Name : ExchangeItem_Update()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIExchange::ExchangeItem_Update( BOOL bSrcUpdate, int nUniIndex, SQUAD llCount )
+void CUIExchange::ExchangeItem_Update( BOOL bSrcUpdate, int nUniIndex, SQUAD llCount,SQUAD llNas )
 {
 	// My items
+	int		iItem;
+	SQUAD	llCountDiff;
+
 	if( ( m_bAmISrc && bSrcUpdate ) || ( !m_bAmISrc && !bSrcUpdate ) )
 	{
-		for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( m_abtnMyItems[iItem].GetItemUniIndex() == nUniIndex )
+			if (m_pIconsMyItems[iItem]->IsEmpty() == false && 
+				m_pIconsMyItems[iItem]->getItems()->Item_UniIndex == nUniIndex)
 				break;
 		}
 
-		SQUAD	llCountDiff = m_abtnMyItems[iItem].GetItemCount() - llCount;
-		m_abtnMyItems[iItem].SetItemCount( llCount );
+		if (iItem < EXCH_EXCH_SLOT_TOTAL)
+		{
+			llCountDiff = m_pIconsMyItems[iItem]->getItems()->Item_Sum - llCount;
+			m_pIconsMyItems[iItem]->setCount(llCount);
+		}
 
 		// Update inventory of exchange
-		for( int iRow = 0; iRow < EXCH_INVEN_SLOT_ROW_TOTAL; iRow++ )
+		for (int nIdx = 0; nIdx < DEF_INVENTORY_MAX; ++nIdx)
 		{
-			for( int iCol = 0; iCol < EXCH_INVEN_SLOT_COL; iCol++ )
+			if (m_pIconsInvenItems[nIdx]->getItems() == NULL)
+				continue;
+
+			if( m_pIconsInvenItems[nIdx]->getItems()->Item_UniIndex == nUniIndex )
 			{
-				if( m_abtnInvenItems[iRow][iCol].GetItemUniIndex() == nUniIndex )
+				SQUAD	llNewCount = m_pIconsInvenItems[nIdx]->getItems()->Item_Sum + llCountDiff;
+				m_pIconsInvenItems[nIdx]->setCount(llNewCount);
+				
+				if( llNewCount <= 0 )
 				{
-					SQUAD	llNewCount = m_abtnInvenItems[iRow][iCol].GetItemCount() + llCountDiff;
-					m_abtnInvenItems[iRow][iCol].SetItemCount( llNewCount );
-					if( llNewCount <= 0 )
-					{
-						m_abtnInvenItems[iRow][iCol].SetEmpty( TRUE );
+					m_pIconsInvenItems[nIdx]->clearIconData();
 
-						// Unselect item
-						if( m_nSelInvenItemID == ( iCol + iRow * EXCH_INVEN_SLOT_COL ) )
-							m_nSelInvenItemID = -1;
-					}
-					else
-						m_abtnInvenItems[iRow][iCol].SetEmpty( FALSE );
-
-					// If item is money
-					int			nIndex = m_abtnInvenItems[iRow][iCol].GetItemIndex();
-					CItemData	&ItemData = _pNetwork->GetItemData( nIndex );
-					if( ItemData.GetType() == CItemData::ITEM_ETC &&
-						ItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
-					{
-						m_strMyExchMoney.PrintF( "%I64d", llCount );
-						_pUIMgr->InsertCommaToString( m_strMyExchMoney );
-					}
-					if(ItemData.GetType() == CItemData::ITEM_ACCESSORY &&
-						ItemData.GetSubType() == CItemData::ACCESSORY_WILDPET)
-					{
-						_pNetwork->SendPetitemInfo(_pNetwork->MyCharacterInfo.index,m_abtnMyItems[iItem].GetItemPlus());
-					}
-
-					return;
+					// Unselect item
+					if( m_nSelInvenItemID == nIdx )
+						m_nSelInvenItemID = -1;
 				}
+
+				// If item is money
+				int			nIndex = m_pIconsInvenItems[nIdx]->getIndex();
+				CItemData* pItemData = _pNetwork->GetItemData( nIndex );
+				if( pItemData->GetType() == CItemData::ITEM_ETC &&
+					pItemData->GetSubType() == CItemData::ITEM_ETC_MONEY )
+				{
+					m_strMyExchMoney.PrintF( "%I64d", llCount );
+					CUIManager::getSingleton()->InsertCommaToString( m_strMyExchMoney );
+				}
+				if(pItemData->GetType() == CItemData::ITEM_ACCESSORY &&
+					pItemData->GetSubType() == CItemData::ACCESSORY_WILDPET)
+				{
+					_pNetwork->SendPetitemInfo(_pNetwork->MyCharacterInfo.index, m_pIconsMyItems[iItem]->getItems()->Item_Plus);
+				}
+
+				return;
 			}
+		}
+	}
+	// Opposite items
+	else
+	{
+		m_nTradeNas = llNas;
+		m_strOppExchMoney.PrintF( "%I64d", m_nTradeNas );
+		CUIManager::getSingleton()->InsertCommaToString( m_strOppExchMoney );
+
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		{
+			if (m_pIconsOppItems[iItem]->IsEmpty() == false && 
+				m_pIconsOppItems[iItem]->getItems()->Item_UniIndex == nUniIndex)
+				break;
+		}
+
+		if (iItem >= EXCH_EXCH_SLOT_TOTAL)
+			return;
+		
+		SQUAD	llCountDiff = m_pIconsOppItems[iItem]->getItems()->Item_Sum - llCount;
+		m_pIconsOppItems[iItem]->setCount(llCount);
+
+		// If item is money
+		int			nIndex = m_pIconsOppItems[iItem]->getIndex();
+		CItemData* pItemData = _pNetwork->GetItemData( nIndex );
+
+		if(pItemData->GetType() == CItemData::ITEM_ACCESSORY &&
+			pItemData->GetSubType() == CItemData::ACCESSORY_WILDPET)
+		{
+			_pNetwork->SendPetitemInfo(_pNetwork->MyCharacterInfo.index, m_pIconsOppItems[iItem]->getItems()->Item_Plus);
+		}
+	}
+}
+
+void CUIExchange::ExchangeItem_SetRareOption( CNetworkMessage *istr, BOOL bSrcAdd, int nUniIndex)
+	{
+		SBYTE	sbOptionType;
+		LONG	lOptionLevel;
+
+		//∑πæÓ ø…º« ¿Œµ¶Ω∫
+		(*istr) >> sbOptionType;
+		(*istr) >> lOptionLevel;
+		UWORD iRareIndex = lOptionLevel;
+
+		//∑πæÓ ø…º« ¡æ∑˘
+		(*istr) >> sbOptionType;
+		(*istr) >> lOptionLevel;
+	
+		WORD iRareOption = lOptionLevel;
+		WORD wCBit =1;
+		SBYTE sbOption =-1;
+		for(int iBit=0; iBit<10; ++iBit)
+		{
+			if( iRareOption & wCBit)
+			{
+				CItemRareOption* pItem = CItemRareOption::getData(iRareIndex);
+
+				if (pItem == NULL)
+					continue;
+
+				if (pItem->GetIndex() < 0)
+					continue;
+
+				int OptionType = pItem->rareOption[iBit].OptionIdx;
+				int OptionLevel = pItem->rareOption[iBit].OptionLevel;
+
+				this->ExchangeItem_SetOptionData(bSrcAdd, nUniIndex, ++sbOption, OptionType, OptionLevel, iRareIndex, ORIGIN_VAR_DEFAULT );
+			}
+			wCBit <<=1;
+	}
+}
+
+void CUIExchange::ExchangeItem_SetSkill( CNetworkMessage *istr, BOOL bSrcAdd, int nUniIndex)
+{
+	SBYTE sbBelong, sbSkillcont;
+	LONG lSkillIndex,lplus;
+	SBYTE sbSkillLevel;
+
+	// My items
+	if( ( m_bAmISrc && bSrcAdd ) || ( !m_bAmISrc && !bSrcAdd ) )
+	{
+		for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		{
+			if( m_pIconsMyItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+			{
+				(*istr) >> sbBelong;
+				(*istr) >> sbSkillcont;
+
+				m_pIconsMyItems[iItem]->getItems()->Item_Belong = sbBelong;
+
+				for (SBYTE sbSkillpos = 0; sbSkillpos < sbSkillcont; sbSkillpos++)
+				{
+					(*istr) >> lSkillIndex;
+					(*istr) >> sbSkillLevel;
+
+					m_pIconsMyItems[iItem]->getItems()->SetItemSkill(sbSkillpos, lSkillIndex, sbSkillLevel);
+				}
+
+				(*istr) >> lplus;
+				m_pIconsMyItems[iItem]->getItems()->SetItemPlus2(lplus);
+				break;
+			}
+				
 		}
 	}
 	// Opposite items
@@ -2831,54 +2135,222 @@ void CUIExchange::ExchangeItem_Update( BOOL bSrcUpdate, int nUniIndex, SQUAD llC
 	{
 		for( int iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( m_abtnOppItems[iItem].GetItemUniIndex() == nUniIndex )
+			if( m_pIconsOppItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+			{
+				(*istr) >> sbBelong;
+				(*istr) >> sbSkillcont;
+
+				m_pIconsOppItems[iItem]->getItems()->Item_Belong = sbBelong;
+
+				for (SBYTE sbSkillpos = 0; sbSkillpos < sbSkillcont; sbSkillpos++)
+				{
+					(*istr) >> lSkillIndex;
+					(*istr) >> sbSkillLevel;
+
+					m_pIconsOppItems[iItem]->getItems()->SetItemSkill(sbSkillpos, lSkillIndex, sbSkillLevel);
+				}
+
+				(*istr) >> lplus;
+				m_pIconsOppItems[iItem]->getItems()->SetItemPlus2(lplus);
+				break;
+			}
+		}
+	}
+
+}
+
+// ----------------------------------------------------------------------------
+// Name : ExchangeItem_SetSocketData()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIExchange::ExchangeItem_InitSocket(BOOL bSrcAdd, int nUniIndex )
+{
+	// My items
+	int		iItem;
+	if( ( m_bAmISrc && bSrcAdd ) || ( !m_bAmISrc && !bSrcAdd ) )
+	{
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		{
+			if( m_pIconsMyItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
 				break;
 		}
 
-		SQUAD	llCountDiff = m_abtnOppItems[iItem].GetItemCount() - llCount;
-		m_abtnOppItems[iItem].SetItemCount( llCount );
+		if( iItem == EXCH_EXCH_SLOT_TOTAL )
+			return;
+		m_pIconsMyItems[iItem]->getItems()->InitSocketInfo();
+	}
+	// Opposite items
+	else
+	{
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		{
+			if( m_pIconsOppItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+				break;
+		}
 
-		// If item is money
-		int			nIndex = m_abtnOppItems[iItem].GetItemIndex();
-		CItemData	&ItemData = _pNetwork->GetItemData( nIndex );
-		if( ItemData.GetType() == CItemData::ITEM_ETC &&
-			ItemData.GetSubType() == CItemData::ITEM_ETC_MONEY )
+		if( iItem == EXCH_EXCH_SLOT_TOTAL )
+			return;
+
+		m_pIconsOppItems[iItem]->getItems()->InitSocketInfo();
+	}
+		
+}
+
+// ----------------------------------------------------------------------------
+// Name : ExchangeItem_SetSocketData()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUIExchange::ExchangeItem_SetSocketData( BOOL bSrcAdd, int nUniIndex, SBYTE sbSocketCreateCount,
+												SBYTE sbSlotIndex, LONG lJewelIndex )
+{
+	// My items
+	int		iItem;
+	if( ( m_bAmISrc && bSrcAdd ) || ( !m_bAmISrc && !bSrcAdd ) )
+	{
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			m_strOppExchMoney.PrintF( "%I64d", llCount );
-			_pUIMgr->InsertCommaToString( m_strOppExchMoney );
+			if( m_pIconsMyItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+				break;
 		}
-		if(ItemData.GetType() == CItemData::ITEM_ACCESSORY &&
-			ItemData.GetSubType() == CItemData::ACCESSORY_WILDPET)
+
+		if( iItem == EXCH_EXCH_SLOT_TOTAL )
+			return;
+		m_pIconsMyItems[iItem]->getItems()->SetSocketCount(sbSocketCreateCount);
+		m_pIconsMyItems[iItem]->getItems()->SetSocketOption( sbSlotIndex, lJewelIndex );
+	}
+	// Opposite items
+	else
+	{
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			_pNetwork->SendPetitemInfo(_pNetwork->MyCharacterInfo.index,m_abtnOppItems[iItem].GetItemPlus());
+			if( m_pIconsOppItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+				break;
 		}
+
+		if( iItem == EXCH_EXCH_SLOT_TOTAL )
+			return;
+
+		m_pIconsOppItems[iItem]->getItems()->SetSocketCount( sbSocketCreateCount );
+		m_pIconsOppItems[iItem]->getItems()->SetSocketOption( sbSlotIndex, lJewelIndex );
 	}
 }
 
-void CUIExchange::ExchangeItem_SetRareOption( CNetworkMessage *istr, BOOL bSrcAdd, int nUniIndex)
+// ----------------------------------------------------------------------------
+// Name : ExchangeItem_SetPlus2()
+// Desc : // [2010/12/16 : Sora] æ∆¿Ã≈€ plus2º≥¡§
+// ----------------------------------------------------------------------------
+void CUIExchange::ExchangeItem_SetPlus2( BOOL bSrcAdd, int nUniIndex, LONG plus2 )
+{
+	// My items
+	int		iItem;
+	if( ( m_bAmISrc && bSrcAdd ) || ( !m_bAmISrc && !bSrcAdd ) )
 	{
-		SBYTE	sbOptionType, sbOptionLevel;
-
-		//Î†àÏñ¥ ÏòµÏÖò Ïù∏Îç±Ïä§
-		(*istr) >> sbOptionType;
-		(*istr) >> sbOptionLevel;
-		UWORD iRareIndex = (static_cast<WORD>(sbOptionType) <<8) +sbOptionLevel;
-
-		//Î†àÏñ¥ ÏòµÏÖò Ï¢ÖÎ•ò
-		(*istr) >> sbOptionType;
-		(*istr) >> sbOptionLevel;
-	
-		WORD iRareOption = (static_cast<WORD>(sbOptionType) <<8) +sbOptionLevel;
-		WORD wCBit =1;
-		SBYTE sbOption =-1;
-		for(int iBit=0; iBit<10; ++iBit)
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
 		{
-			if( iRareOption & wCBit)
-			{
-				int OptionType =_pNetwork->wo_vecItemRareOption[iRareIndex].m_Option[iBit].index;
-				int OptionLevel =_pNetwork->wo_vecItemRareOption[iRareIndex].m_Option[iBit].level;
-				this->ExchangeItem_SetOptionData(bSrcAdd, nUniIndex, ++sbOption, OptionType, OptionLevel, iRareIndex );
-			}
-			wCBit <<=1;
+			if( m_pIconsMyItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+				break;
+		}
+
+		if( iItem == EXCH_EXCH_SLOT_TOTAL )
+			return;
+		m_pIconsMyItems[iItem]->getItems()->SetItemPlus2( plus2 );
+	}
+	// Opposite items
+	else
+	{
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		{
+			if( m_pIconsOppItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+				break;
+		}
+
+		if( iItem == EXCH_EXCH_SLOT_TOTAL )
+			return;
+
+		m_pIconsOppItems[iItem]->getItems()->SetItemPlus2( plus2 );
+	}	
+}
+
+void CUIExchange::SetDurability( BOOL bSrcAdd, int nUniIndex, LONG nDuraNow, LONG nDuraMax )
+{
+	// My items
+	int			iItem;
+	CItems*		pItems = NULL;
+
+	if( ( m_bAmISrc && bSrcAdd ) || ( !m_bAmISrc && !bSrcAdd ) )
+	{
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		{
+			if( m_pIconsMyItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+				break;
+		}
+
+		if( iItem == EXCH_EXCH_SLOT_TOTAL )
+			return;
+
+		pItems = m_pIconsMyItems[iItem]->getItems();
+
+		if (pItems != NULL)
+			pItems->SetDurability(nDuraNow, nDuraMax);
+
+	}
+	// Opposite items
+	else
+	{
+		for( iItem = 0; iItem < EXCH_EXCH_SLOT_TOTAL; iItem++ )
+		{
+			if( m_pIconsOppItems[iItem]->getItems()->Item_UniIndex == nUniIndex )
+				break;
+		}
+
+		if( iItem == EXCH_EXCH_SLOT_TOTAL )
+			return;
+
+		pItems = m_pIconsOppItems[iItem]->getItems();
+
+		if (pItems != NULL)
+			pItems->SetDurability(nDuraNow, nDuraMax);
+	}	
+}
+
+//2013/04/03 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
+//≥™Ω∫ ±≥»Ø ∆Àæ˜ 
+void CUIExchange::ExchangeNas()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CTString	strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;
+	if(pUIManager->DoesMessageBoxExist(MSGCMD_EXCH_ADD_NAS))
+		return;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 149, "±≥»Ø" ), UMBS_OKCANCEL | UMBS_INPUTBOX,	
+		UI_EXCHANGE, MSGCMD_EXCH_ADD_NAS );
+	strMessage.PrintF( _S( 5903, "∏Ó ∞≥¿« ≥™Ω∫∏¶ ±≥»Ø «œΩ√∞⁄Ω¿¥œ±Ó?" ) );		
+	MsgBoxInfo.AddString( strMessage );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+	return;
+
+}
+
+void CUIExchange::AddItemCallback()
+{
+	if (UIMGR()->GetMsgBoxNumOnly()->GetData() > 0)
+		SendExchangeItem_Add( nTempUniIndex, UIMGR()->GetMsgBoxNumOnly()->GetData());
+}
+
+void CUIExchange::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
+{
+	int i;
+	for (i = 0; i < EXCH_EXCH_SLOT_TOTAL; ++i)
+	{
+		if (m_pIconsOppItems[i]->IsEmpty() == false)
+			m_pIconsOppItems[i]->Update(fDeltaTime, ElapsedTime);
+		if (m_pIconsMyItems[i]->IsEmpty() == false)
+			m_pIconsMyItems[i]->Update(fDeltaTime, ElapsedTime);
+	}
+
+	for (i = 0; i < DEF_INVENTORY_MAX; ++i)
+	{
+		if (m_pIconsInvenItems[i]->IsEmpty() == false)
+			m_pIconsInvenItems[i]->Update(fDeltaTime, ElapsedTime);
 	}
 }

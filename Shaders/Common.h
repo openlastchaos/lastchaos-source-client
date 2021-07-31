@@ -20,11 +20,11 @@ Shading:
 	c7.z     - 2.0f
 	c7.w     - 0.5f
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 NormalMap:
 	c8     - viewer position          
 	c9     - model*light rgb & model a
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 Reflection:
 	c8       - mObjToAbs
@@ -65,12 +65,12 @@ Ska:
 	r1    - vertex normal
 	r4.w  - light dot normal
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 /* Normal Map
 	r0    - Vertex Position
 	r1    - Light Direction
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 /* Input registers: */
 /*
@@ -83,9 +83,9 @@ Ska:
 	v6    - TexCoord1
 	v7    - TexCoord2
 	v8    - TexCoord3
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	v9    - tangent
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 */
 
 
@@ -95,7 +95,7 @@ Ska:
 */
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Sam's Old Shaders)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Sam's Old Shaders)(0.1)
 #define CALCULATE_SHADING_VP \
 /* Normal dot light                 */               "dp3  r4.w,   r1,      c4       \n" \
 /* ClampUp output of dp3 to 1.0f    */               "min  r4.w,   r4.w,    c7.y     \n" \
@@ -104,7 +104,7 @@ Ska:
 /* Add ambient                      */               "add  r5.xyz, r5.xyz,  c6.xyz   \n" \
 /* Set color alpha as surface color */               "mov  r5.w,   c7.y              \n" \
 /* Clamp output color to 1.0f       */               "mul  oD0,    r5,      c7.yyyy  \n"
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Sam's Old Shaders)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Sam's Old Shaders)(0.1)
 
 
 #define STANDARD_OUTPUT_VP \

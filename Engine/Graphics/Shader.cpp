@@ -11,9 +11,9 @@
 #include <Engine/Templates/Stock_CShader.h>
 #include <Engine/Base/MemoryTracking.h>
 #include <Engine/Base/ObjectRestore.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #include <Engine/Math/Geometry.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 #pragma message(">> Remove include to d3d")
 #undef new
@@ -57,15 +57,15 @@ static GFXNormal   *_paNormals  = NULL;   // array of normals
 static GFXWeight   *_paWeights  = NULL;   // array of weights
 static GFXTexCoord **_paUVMaps  = NULL;   // array of uvmaps to chose from
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 extern BOOL _bRenderProjectionShadow;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 
 static INDEX _iVertexBufferID   = -1;     // current vertex buffer ID
 static INDEX _iNormalBufferID   = -1;     // current normal buffer ID
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 static INDEX _iTangentBufferID   = -1;     // current tangent buffer ID
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 static INDEX _iWeightBufferID   = -1;     // current weight buffer ID
 static INDEX _iTexCoordBufferID = -1;     // current texcoord buffer ID
 static INDEX *_paiUVMapBufferIDs = NULL;   // array of uvmap IDs to chose from
@@ -100,20 +100,20 @@ static BOOL  _bOpaqueSurface = TRUE;
 // Used texture units
 static ULONG _ulUsedTextureUnits = 0;
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
 extern Matrix16 _matWaterProj;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 extern BOOL GFX_bClipping;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
 inline DWORD F2DW( FLOAT f ) { return *((DWORD*)&f); }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 //static CNiceWater* _pWaterInformation = NULL;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
 extern CNiceWater _WaterInformation;
 
 // TEMP!!!!
@@ -145,10 +145,11 @@ static CStaticStackArray<struct GFXColor>    _acolHaze; // haze colors
 static CStaticStackArray<struct GFXTexCoord> _atcHaze;  // haze tex coords
 static CStaticStackArray<UBYTE> _aubshdHaze;
 static CStaticStackArray<UBYTE> _aubshdFog;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ 2ì°¨ ì‘ì—…			05.14
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ 2Â÷ ÀÛ¾÷			05.14
 static D3DXPLANE	_plOld;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë 2ì°¨ ì‘ì—…			05.14
+//°­µ¿¹Î ¼öÁ¤ ³¡ 2Â÷ ÀÛ¾÷			05.14
 
+static INDEX tempFileNameCount = 0;	// ½¦ÀÌ´õ ÄÚµå ÃßÃâÀ» À§ÇÑ º¯¼ö
 
 // Begin shader using
 extern void shaBegin(CAnyProjection3D &aprProjection,CShader *pShader)
@@ -168,28 +169,28 @@ extern void shaEnd(void)
 {
 	ASSERT(_pShader!=NULL);
 	ASSERT(_pShader->ShaderFunc!=NULL);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…	07.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷	07.10
 	extern INDEX gfx_bRenderReflection;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…		07.10
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ 2ì°¨ ì‘ì—…			05.14	
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷		07.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ 2Â÷ ÀÛ¾÷			05.14	
 	const BOOL bHardwareShader	= shaUseHWShaders();
 	if(bHardwareShader)
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 		if(_bRenderProjectionShadow)
 		{
 			gfxDisableClipPlane();
 		}
 		else if(!_bRenderProjectionShadow)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 		{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.16
 			// if custom clip plane supported
 			if((_pGfx->gl_ulFlags&GLF_D3D_CLIPPLANE) && gfx_bRenderReflection)
 			{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.16
 			//gfxEnableClipPlane();
-			// NOTE : ì´ì „ì— ì €ì¥ëœ í´ë¦¬í•‘ í‰ë©´ì˜ ë°©ì •ì‹ì€ ì›”ë“œ ê³µê°„ìƒì˜ í‰ë©´ì˜ ë°©ì •ì‹ì´ë‹¤.
+			// NOTE : ÀÌÀü¿¡ ÀúÀåµÈ Å¬¸®ÇÎ Æò¸éÀÇ ¹æÁ¤½ÄÀº ¿ùµå °ø°£»óÀÇ Æò¸éÀÇ ¹æÁ¤½ÄÀÌ´Ù.
 			D3DXPLANE	plNew;
 			HRESULT		hr;
 			hr = _pGfx->gl_pd3dDevice->GetClipPlane( 0, (float*)&_plOld);			D3D_CHECKERROR(hr);
@@ -202,28 +203,28 @@ extern void shaEnd(void)
 			hr = _pGfx->gl_pd3dDevice->GetTransform( D3DTS_VIEW, &matView);			D3D_CHECKERROR(hr);
 			D3DXMatrixMultiply(&matClip, &matView, &matProj);
 			
-			// Normalê°’ì„ ë³€í™˜í•¨.
+			// Normal°ªÀ» º¯È¯ÇÔ.
 			D3DXMatrixInverse(&matClip, NULL, &matClip);
 			D3DXMatrixTranspose(&matClip, &matClip);
 			
 			D3DXPlaneTransform(&plNew, &_plOld, &matClip);
 			hr = _pGfx->gl_pd3dDevice->SetClipPlane( 0, &plNew[0]);					D3D_CHECKERROR(hr);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.16
 			}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.16
 		}
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë 2ì°¨ ì‘ì—…			05.14
+//°­µ¿¹Î ¼öÁ¤ ³¡ 2Â÷ ÀÛ¾÷			05.14
 
 	// Call shader function
 	_pShader->ShaderFunc();
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ 2ì°¨ ì‘ì—…			05.14
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ 2Â÷ ÀÛ¾÷			05.14
 	//if(bClipping)
 	//{
 	if(bHardwareShader)
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 		/*
 		if(_bRenderProjectionShadow)
 		{
@@ -232,29 +233,29 @@ extern void shaEnd(void)
 		else 
 		*/
 			if(!_bRenderProjectionShadow)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.31
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.31
 		{
-			// NOTE : ì´ ë£¨í‹´ì„ íƒ€ê¸°ì „ì— ì´ë¯¸ SetClipPlane()ì´ ì„¤ì •ë˜ì–´ ìˆìŒ.
+			// NOTE : ÀÌ ·çÆ¾À» Å¸±âÀü¿¡ ÀÌ¹Ì SetClipPlane()ÀÌ ¼³Á¤µÇ¾î ÀÖÀ½.
 			// if custom clip plane supported.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.16
 			if((_pGfx->gl_ulFlags&GLF_D3D_CLIPPLANE) && gfx_bRenderReflection)
 			{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.16
 			HRESULT hr;
 			hr = _pGfx->gl_pd3dDevice->SetClipPlane( 0, &_plOld[0]);				D3D_CHECKERROR(hr);
 			//gfxDisableClipPlane();
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.16
 			}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.16
 		}
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë 2ì°¨ ì‘ì—…			05.14
+//°­µ¿¹Î ¼öÁ¤ ³¡ 2Â÷ ÀÛ¾÷			05.14
 	// No active shader
 	_pShader = NULL;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
-/*ì•ˆíƒœí›ˆ ì£¼ì„ : í•„ìš”ì—†ìŒ.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+/*¾ÈÅÂÈÆ ÁÖ¼® : ÇÊ¿ä¾øÀ½.
 static void SetConstantRegisters(void)
 {
 	#pragma message(">> Prepare projection*view matrix")
@@ -298,9 +299,9 @@ static void SetConstantRegisters(void)
 	}
 }
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 extern void shaSetDefaultConstantRegisters(void)
 {
 	if( !( (_pGfx->gl_ulFlags & GLF_VERTEXPROGRAM)
@@ -346,18 +347,18 @@ extern void shaSetDefaultConstantRegisters(void)
 	}
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.19
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.19
 extern void shaSetPixelProgramConst_WaterColor()
 {
 		//GFXColor colWater = _pWaterInformation->m_colWater;		
 		GFXColor colWater = shaGetModelColor();		
-		// ë°˜ì‚¬ ìƒ‰ìƒ.
+		// ¹İ»ç »ö»ó.
 		ShaderRegister srWaterColor(colWater);
 		shaSetPixelProgramConst( 3, &srWaterColor, 1);		// c3
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.19
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.19
 
-//Transform Matrixë¥¼ ìƒìˆ˜ë ˆì§€ìŠ¤í„° c0~c3ì— ì„¸íŒ…í•œë‹¤.
+//Transform Matrix¸¦ »ó¼ö·¹Áö½ºÅÍ c0~c3¿¡ ¼¼ÆÃÇÑ´Ù.
 extern void shaSetVertexProgramConst_TransformMatrix()
 {
 	D3DXMATRIX mat;
@@ -370,14 +371,14 @@ extern void shaSetVertexProgramConst_TransformMatrix()
 	shaSetVertexProgramConst( 0, (Matrix16*)&mat, 4);
 }
 
-//Lightì˜ ë°©í–¥ê³¼ boneì„ ìœ„í•œ ê°’ì„ ìƒìˆ˜ë ˆì§€ìŠ¤í„° c4.xyz, c4.wì— ì„¸íŒ…í•œë‹¤.
+//LightÀÇ ¹æÇâ°ú boneÀ» À§ÇÑ °ªÀ» »ó¼ö·¹Áö½ºÅÍ c4.xyz, c4.w¿¡ ¼¼ÆÃÇÑ´Ù.
 extern void shaSetVertexProgramConst_LightDir()
 {
 	const ShaderRegister srLightDir(_vLightDir(1), _vLightDir(2), _vLightDir(3), 765.01f);
 	shaSetVertexProgramConst( 4, &srLightDir,     1);
 }
 
-//Lightì˜ Diffuse Colorì™€ Ambient Colorë¥¼ ìƒìˆ˜ë ˆì§€ìŠ¤í„° c5, c6ì— ì„¸íŒ…í•œë‹¤.
+//LightÀÇ Diffuse Color¿Í Ambient Color¸¦ »ó¼ö·¹Áö½ºÅÍ c5, c6¿¡ ¼¼ÆÃÇÑ´Ù.
 extern void shaSetVertexProgramConst_LightColor(GFXColor colDiffuseColor, GFXColor colAmbientColor, BOOL bFullBright /*= bFullBright*/)
 {
 	GFXColor colLight   = _colLight;
@@ -400,7 +401,7 @@ extern void shaSetVertexProgramConst_LightColor(GFXColor colDiffuseColor, GFXCol
 	shaSetVertexProgramConst(6, &srAmbientColor, 1);
 }
 
-//Shaderì—ì„œ ë‚´ë¶€ì—ì„œ ê³±ì…ˆì—ì„œ ì‚¬ìš©í•  ìˆ˜ë¥¼ ì„¸íŒ…í•œë‹¤. 0, 1, 2, 0.5
+//Shader¿¡¼­ ³»ºÎ¿¡¼­ °ö¼À¿¡¼­ »ç¿ëÇÒ ¼ö¸¦ ¼¼ÆÃÇÑ´Ù. 0, 1, 2, 0.5
 extern void shaSetVertexProgramConst_Multiply()
 {
 	const ShaderRegister srConstants(0.0f, 1.0f, 2.0f, 0.5f);
@@ -408,8 +409,8 @@ extern void shaSetVertexProgramConst_Multiply()
 }
 
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.17
-// í…ìŠ¤ì³ íˆ¬ì˜í–‰ë ¬... c20~c23
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.17
+// ÅØ½ºÃÄ Åõ¿µÇà·Ä... c20~c23
 extern void shaSetVertexProgramConst_ProjectionMatrix()
 {
 //	if(_pWaterInformation)
@@ -421,9 +422,9 @@ extern void shaSetVertexProgramConst_ProjectionMatrix()
 		D3DXMatrixIdentity(&matView);
 		D3DXMatrixIdentity(&matProj);			
 		_pGfx->gl_pd3dDevice->GetTransform(D3DTS_VIEW, &matView);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
-		//_pGfx->gl_pd3dDevice->GetTransform(D3DTS_PROJECTION, &matProj);		// ì›ë³¸.
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
+		//_pGfx->gl_pd3dDevice->GetTransform(D3DTS_PROJECTION, &matProj);		// ¿øº».
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 		
 		Matrix16 matScaleOffset;
 		memset(&matScaleOffset, 0, sizeof(float)*16);
@@ -441,10 +442,10 @@ extern void shaSetVertexProgramConst_ProjectionMatrix()
 		matScaleOffset[15] = 1.0f;		
 
 		//D3DXMatrixIdentity((D3DXMATRIX*)&_matWaterProj);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
-		//D3DXMatrixMultiply(&matProj, (D3DXMATRIX*)&matProj, (D3DXMATRIX*)&matScaleOffset);		// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
+		//D3DXMatrixMultiply(&matProj, (D3DXMATRIX*)&matProj, (D3DXMATRIX*)&matScaleOffset);		// ¿øº».
 		D3DXMatrixMultiply(&matProj, (D3DXMATRIX*)&_matWaterProj, (D3DXMATRIX*)&matScaleOffset);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 
 		D3DXMatrixMultiply( &mat, &matView, (D3DXMATRIX*)&matProj);	// mat = matView * matProj;		
 		//D3DXMatrixMultiply( &mat, &matView, (D3DXMATRIX*)&_matWaterProj);	// mat = matView * matProj;		
@@ -454,27 +455,27 @@ extern void shaSetVertexProgramConst_ProjectionMatrix()
 		shaSetVertexProgramConst( 21, (Matrix16*)&mat, 4);
 	//}
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.17
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.17
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.17
-// Water êµ¬í˜„ì„ ìœ„í•´ì„œ...Shaderì—ì„œ ì‚¬ìš©í•  ìƒìˆ˜ë¥¼ ì„¤ì •í•¨.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.17
+// Water ±¸ÇöÀ» À§ÇØ¼­...Shader¿¡¼­ »ç¿ëÇÒ »ó¼ö¸¦ ¼³Á¤ÇÔ.
 extern void shaSetVertexProgramConst_WaterInformation()
 {
 //	if(_pWaterInformation)
 //	{
 		shaSetVertexProgramConst_Sine();			//c8
 		shaSetVertexProgramConst_CoSine();			//c9	
-		shaSetVertexProgramConst_EyePos();			//c19					// ì¹´ë©”ë¼ ìœ„ì¹˜.
+		shaSetVertexProgramConst_EyePos();			//c19					// Ä«¸Ş¶ó À§Ä¡.
 
 		// c10 -> LightPos
-		shaSetVertexProgramConst_Fixup();			//c11					// í…Œì¼ëŸ¬ ê¸‰ìˆ˜ ì „ê°œì˜ ë¶€ì •í™•ì„±ì„ ë³´ì •í•˜ê¸° ìœ„í•œ ê³„ìˆ˜ c11		
+		shaSetVertexProgramConst_Fixup();			//c11					// Å×ÀÏ·¯ ±Ş¼ö Àü°³ÀÇ ºÎÁ¤È®¼ºÀ» º¸Á¤ÇÏ±â À§ÇÑ °è¼ö c11		
 		if(_WaterInformation.m_bWave)
 		{
 			shaSetVertexProgramConst_Timer();								//c17
 		}
 		else
 		{
-			const ShaderRegister srTimeSine(0.0f, 0.0f, 0.0f, 0.0f);			// ì‹œê°„, Sin(ì‹œê°„)
+			const ShaderRegister srTimeSine(0.0f, 0.0f, 0.0f, 0.0f);			// ½Ã°£, Sin(½Ã°£)
 			shaSetVertexProgramConst( 17, &srTimeSine,    1);			
 		}
 		shaSetVertexProgramConst_PI();						//c20
@@ -483,17 +484,17 @@ extern void shaSetVertexProgramConst_WaterInformation()
 		// WaveSpeed										c14
 		// WaveDirX											c15
 		// WaveDirY											c16
-		// ì‹œê°„, sin(ì‹œê°„)									c17		
-		// í…ìŠ¤ì³ ë³´ì •										c18		
+		// ½Ã°£, sin(½Ã°£)									c17		
+		// ÅØ½ºÃÄ º¸Á¤										c18		
 
-		// ê¸°ë°˜ í…ìŠ¤ì³ ì¢Œí‘œ ìˆ˜ì •ê°’.							c18	
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
+		// ±â¹İ ÅØ½ºÃÄ ÁÂÇ¥ ¼öÁ¤°ª.							c18	
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
 		//const ShaderRegister srBaseTexFix(_WaterInformation.m_fTexFlowX, _WaterInformation.m_fTexFlowY, 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 		//	-0.03f, 0.02f);			// BaseTexFix
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
 		//_pWaterInformation->m_fTexFlowX2, _pWaterInformation->m_fTexFlowY2);			// BaseTexFix
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 		//shaSetVertexProgramConst( 18, &srBaseTexFix,    1);
 		//_pWaterInformation = NULL;
 	//}
@@ -505,8 +506,8 @@ extern void shaSetVertexProgramConst_PI()
 	shaSetVertexProgramConst( 20, &srPI,    1);
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.17
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.17
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
 extern void shaSetEMBM()
 {
 	//if(_pWaterInformation)
@@ -529,14 +530,14 @@ extern void shaSetEMBM()
 		matBumpMat._22 =  r * cosf( tvNow.GetSeconds() * 4.0f );
 		*/
 		
-		// EMBM ì„¤ì •.
+		// EMBM ¼³Á¤.
 		hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 1, D3DTSS_BUMPENVMAT00,   F2DW(matBumpMat._11));	D3D_CHECKERROR(hr);
 		hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 1, D3DTSS_BUMPENVMAT01,   F2DW(matBumpMat._12));	D3D_CHECKERROR(hr);
 		hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 1, D3DTSS_BUMPENVMAT10,   F2DW(matBumpMat._21));	D3D_CHECKERROR(hr);
 		hr = _pGfx->gl_pd3dDevice->SetTextureStageState( 1, D3DTSS_BUMPENVMAT11,   F2DW(matBumpMat._22));	D3D_CHECKERROR(hr);
 	//}
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 
 
 
@@ -549,16 +550,16 @@ extern void shaSetVertexProgramConst_Sine()
 extern void shaSetVertexProgramConst_Timer()
 {
 	TIME tmNow	= _pTimer->GetLerpedCurrentTick();
-	tmNow		= fmod(tmNow, 600.0);
+	tmNow		= fmod(tmNow, 600.0f);
 	
 	//TIME tmSin = Sin( tmNow*22)/40;
 	//TIME tmCos = Cos( tmNow*26)/45;
-	// FIXME : ì„ì˜ì ìœ¼ë¡œ ì„¤ì •í•œ ê°’.
-	// FIXME : ì›”ë“œ ì—ë””í„°ë¥¼ ìˆ˜ì •í•´ì„œ ì²˜ë¦¬í• ê²ƒ.
+	// FIXME : ÀÓÀÇÀûÀ¸·Î ¼³Á¤ÇÑ °ª.
+	// FIXME : ¿ùµå ¿¡µğÅÍ¸¦ ¼öÁ¤ÇØ¼­ Ã³¸®ÇÒ°Í.
 	TIME tmSin = 0.0f;
 	//TIME tmCos = 8192/1024.0f * tmNow * 0.001f;
 	TIME tmCos = 8192/1024.0f * tmNow * _WaterInformation.m_fTexFlowX;
-	const ShaderRegister srTimeSine(tmNow, tmSin, tmCos, 0.0f);			// ì‹œê°„, Sin(ì‹œê°„)
+	const ShaderRegister srTimeSine(tmNow, tmSin, tmCos, 0.0f);			// ½Ã°£, Sin(½Ã°£)
 	shaSetVertexProgramConst( 17, &srTimeSine,    1);
 }
 
@@ -574,23 +575,23 @@ extern void shaSetVertexProgramConst_Fixup()
 	shaSetVertexProgramConst( 11, &srConstants,    1);
 }
 
-// ê´‘ì›ì˜ ìœ„ì¹˜.
+// ±¤¿øÀÇ À§Ä¡.
 extern void shaSetVertexProgramConst_LightPos()
 {
 	const ShaderRegister srLightPos(-10000.0f, -25000.0f, 2000.0f, 1.0f);
 	shaSetVertexProgramConst( 10, &srLightPos,     1);
 }
 
-// ì¹´ë©”ë¼ ìœ„ì¹˜
+// Ä«¸Ş¶ó À§Ä¡
 extern void shaSetVertexProgramConst_EyePos()
 {
 	const ShaderRegister srEyePos(_vViewer(1), _vViewer(2), _vViewer(3), 1.0f);
 	shaSetVertexProgramConst( 19, &srEyePos,     1);
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö		04.13
 
 #define FLOAT_SAME_M6(f1, f2) (fabs((f1) - (f2)) < 1e-6f)
-//bone blendë¥¼ ìœ„í•œ Matrixë¥¼ ìƒìˆ˜ë ˆì§€ìŠ¤í„° c21~...ì— ì„¸íŒ…í•œë‹¤. c4.wì— 765.01fê°€ ì„¸íŒ…ë˜ì–´ ìˆì–´ì•¼í•œë‹¤.
+//bone blend¸¦ À§ÇÑ Matrix¸¦ »ó¼ö·¹Áö½ºÅÍ c21~...¿¡ ¼¼ÆÃÇÑ´Ù. c4.w¿¡ 765.01f°¡ ¼¼ÆÃµÇ¾î ÀÖ¾î¾ßÇÑ´Ù.
 extern void shaSetVertexProgramConst_BoneMatrix()
 {
 #ifdef _DEBUG
@@ -598,7 +599,7 @@ extern void shaSetVertexProgramConst_BoneMatrix()
 	shaGetVertexProgramConst(4, srValue);
 	ASSERT( FLOAT_SAME_M6(srValue.sr_fw, 765.01f) );
 #endif //_DEBUG
-	//ì†ë„ë¬¸ì œê°€ ìˆì„ê¹Œë´ ì œê±°í•˜ì˜€ìŒ.
+	//¼Óµµ¹®Á¦°¡ ÀÖÀ»±îºÁ Á¦°ÅÇÏ¿´À½.
 //	ShaderRegister srValue(0,0,0,0);
 //	shaGetVertexProgramConst(4, srValue);
 //	srValue.sr_fw = 765.01f;
@@ -620,13 +621,13 @@ extern void shaPrepareForBillboard(BOOL bCylinderType/* = FALSE*/, BOOL bNeedCal
 	D3DXMATRIX matView, matNewView, matInvViewRot, matViewRot;
 	D3DXMATRIX matProj;
 	
-	//í˜„ì¬ì˜ modelViewí–‰ë ¬ì„ ê°€ì ¸ì˜¨ë‹¤.
+	//ÇöÀçÀÇ modelViewÇà·ÄÀ» °¡Á®¿Â´Ù.
 	_pGfx->gl_pd3dDevice->GetTransform(D3DTS_VIEW,&matView);
-	//í˜„ì¬ì˜ modelViewí–‰ë ¬ì˜ 4ë²ˆì§¸ì¤„ì„ ê¸°ì–µí•œë‹¤.
+	//ÇöÀçÀÇ modelViewÇà·ÄÀÇ 4¹øÂ°ÁÙÀ» ±â¾ïÇÑ´Ù.
 	D3DXVECTOR3 viewRow4(matView._41, matView._42, matView._43);
-	//í˜„ì¬ì˜ modelViewì˜ ìœ„ì¹˜ë¥¼ ê¸°ì–µí•œë‹¤.
+	//ÇöÀçÀÇ modelViewÀÇ À§Ä¡¸¦ ±â¾ïÇÑ´Ù.
 	D3DXVECTOR3 pos(matView._14, matView._24, matView._34);
-	//modelViewí–‰ë ¬ì˜ íšŒì „ë§Œì„ ë‚¨ê¸´ë‹¤.
+	//modelViewÇà·ÄÀÇ È¸Àü¸¸À» ³²±ä´Ù.
 	matView._14 = matView._24 = matView._34 = 
 	matView._41 = matView._42 = matView._43 = 0;
 	matView._44 = 1;
@@ -640,7 +641,7 @@ extern void shaPrepareForBillboard(BOOL bCylinderType/* = FALSE*/, BOOL bNeedCal
 		FLOATmatrix3D matRot;
 		MakeRotationMatrixFast(matRot, a3dModel);
 /*
-		//Viewì˜ íšŒì „ì„ ê°–ê³ ì™€ì„œ cylinder billboardí–‰ë ¬ì„ ê³„ì‚°í•œë‹¤.
+		//ViewÀÇ È¸ÀüÀ» °®°í¿Í¼­ cylinder billboardÇà·ÄÀ» °è»êÇÑ´Ù.
 		ANGLE3D angle(
 			(*_paprProjection)->pr_ViewerPlacement.pl_OrientationAngle(1)
 			, (*_paprProjection)->pr_ViewerPlacement.pl_OrientationAngle(2)
@@ -651,7 +652,7 @@ extern void shaPrepareForBillboard(BOOL bCylinderType/* = FALSE*/, BOOL bNeedCal
 		//angle(3) = 0;
 		FLOATmatrix3D matRot;
 		MakeInverseRotationMatrixFast(matRot, angle);
-		//modelViewí–‰ë ¬ì— ê³„ì‚°í•œ í–‰ë ¬ì„ ê³±í•œë‹¤.
+		//modelViewÇà·Ä¿¡ °è»êÇÑ Çà·ÄÀ» °öÇÑ´Ù.
 		matViewRot._11 = matRot(1,1); matViewRot._12 = matRot(1,2); matViewRot._13 = matRot(1,3); matViewRot._14 = 0;
 		matViewRot._21 = matRot(2,1); matViewRot._22 = matRot(2,2); matViewRot._23 = matRot(2,3); matViewRot._24 = 0;
 		matViewRot._31 = matRot(3,1); matViewRot._32 = matRot(3,2); matViewRot._33 = matRot(3,3); matViewRot._34 = 0;
@@ -663,7 +664,7 @@ extern void shaPrepareForBillboard(BOOL bCylinderType/* = FALSE*/, BOOL bNeedCal
 		matViewRot._41 = 0;           matViewRot._42 = 0;           matViewRot._43 = 0;           matViewRot._44 = 1;
 		D3DXMatrixMultiply(&matNewView, &matView, &matViewRot);
 		//matNewView = matViewRot; 
-		//col 4ì™€ row 4ë¥¼ ë‹¤ì‹œ ì„¸íŒ…í•œë‹¤.
+		//col 4¿Í row 4¸¦ ´Ù½Ã ¼¼ÆÃÇÑ´Ù.
 		matNewView._41 = viewRow4.x;
 		matNewView._42 = viewRow4.y;
 		matNewView._43 = viewRow4.z;
@@ -674,15 +675,15 @@ extern void shaPrepareForBillboard(BOOL bCylinderType/* = FALSE*/, BOOL bNeedCal
 	}
 	else
 	{
-		//Viewí–‰ë ¬ì˜ íšŒì „ì„ ê°–ê³ ì™€ì„œ billboardí–‰ë ¬ì„ ê³„ì‚°í•œë‹¤.
+		//ViewÇà·ÄÀÇ È¸ÀüÀ» °®°í¿Í¼­ billboardÇà·ÄÀ» °è»êÇÑ´Ù.
 		//memset(&matViewRot, 0, sizeof(matViewRot));
 		FLOATmatrix3D &mView = (*_paprProjection)->pr_ViewerRotationMatrix;
 		matViewRot._11 = -mView(1,1); matViewRot._12 = mView(1,2); matViewRot._13 = -mView(1,3);
 		matViewRot._21 = -mView(2,1); matViewRot._22 = mView(2,2); matViewRot._23 = -mView(2,3);
 		matViewRot._31 = -mView(3,1); matViewRot._32 = mView(3,2); matViewRot._33 = -mView(3,3);
-		//modelViewí–‰ë ¬ì— ê³„ì‚°í•œ í–‰ë ¬ì„ ê³±í•œë‹¤.
+		//modelViewÇà·Ä¿¡ °è»êÇÑ Çà·ÄÀ» °öÇÑ´Ù.
 		D3DXMatrixMultiply(&matNewView, &matView, &matViewRot);
-		//col 4ì™€ row 4ë¥¼ ë‹¤ì‹œ ì„¸íŒ…í•œë‹¤.
+		//col 4¿Í row 4¸¦ ´Ù½Ã ¼¼ÆÃÇÑ´Ù.
 		matNewView._41 = viewRow4.x;
 		matNewView._42 = viewRow4.y;
 		matNewView._43 = viewRow4.z;
@@ -694,9 +695,9 @@ extern void shaPrepareForBillboard(BOOL bCylinderType/* = FALSE*/, BOOL bNeedCal
 
 	if(bNeedCalcLight)
 	{
-		//í˜„ì¬ modelViewê³µê°„ì— ìˆëŠ” lightì˜ ë°©í–¥ì„ ì¬ì¡°ì •í•œë‹¤.
+		//ÇöÀç modelView°ø°£¿¡ ÀÖ´Â lightÀÇ ¹æÇâÀ» ÀçÁ¶Á¤ÇÑ´Ù.
 		D3DXVECTOR3 lightDir(_vLightDir(1), _vLightDir(2), _vLightDir(3)), lightNewDir;
-//		float det;	//ì´ìƒí•˜ê²Œë„ ì—­í–‰ë ¬ì€ í•„ìš”ì—†ì—ˆìŒ.-_-;
+//		float det;	//ÀÌ»óÇÏ°Ôµµ ¿ªÇà·ÄÀº ÇÊ¿ä¾ø¾úÀ½.-_-;
 //		D3DXMATRIX *ret = D3DXMatrixInverse(&matInvViewRot, &det, &matViewRot);
 		D3DXVec3TransformNormal(&lightNewDir, &lightDir, &matViewRot);
 		_vLightDir.vector[0] = -lightNewDir.x;
@@ -704,10 +705,10 @@ extern void shaPrepareForBillboard(BOOL bCylinderType/* = FALSE*/, BOOL bNeedCal
 		_vLightDir.vector[2] = lightNewDir.z;
 	}
 
-	//ìµœì¢…ì ìœ¼ë¡œ SetTransformí•œë‹¤.
+	//ÃÖÁ¾ÀûÀ¸·Î SetTransformÇÑ´Ù.
 	_pGfx->gl_pd3dDevice->SetTransform(D3DTS_VIEW, &matNewView);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 // Set const vertex program register
 extern void shaSetVertexProgramConst(INDEX iRegister, const ShaderRegister *srData, INDEX ctRegisters)
@@ -727,7 +728,7 @@ extern void shaSetVertexProgramConst(INDEX iRegister, const Matrix16 *pmData, IN
 	gfxSetVertexProgramConst(iRegister, pmData, ctRegisters);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 // Set const vertex program register
 extern void shaGetVertexProgramConst(INDEX iRegister, ShaderRegister &pData)
 {
@@ -746,7 +747,7 @@ extern void shaGetPixelProgramConst(INDEX iRegister, ShaderRegister &pData)
 {
 	_pGfx->gl_pd3dDevice->GetPixelShaderConstant(iRegister, &pData, 1);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 // Set const pixel program register
 extern void shaSetPixelProgramConst(INDEX iRegister, const ShaderRegister *pData, INDEX ctRegisters)
@@ -754,10 +755,10 @@ extern void shaSetPixelProgramConst(INDEX iRegister, const ShaderRegister *pData
 	gfxSetPixelProgramConst(iRegister, pData, ctRegisters);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
-//ì•ˆíƒœí›ˆì´ ì´ ë¶€ë¶„ì˜ ì½”ë“œë¥¼ ShaderCode.hìª½ìœ¼ë¡œ ë¹¼ì„œ ì •ë¦¬í–ˆìŒ.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆÀÌ ÀÌ ºÎºĞÀÇ ÄÚµå¸¦ ShaderCode.hÂÊÀ¸·Î »©¼­ Á¤¸®ÇßÀ½.
 #include <Engine/Graphics/ShaderCode.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 // Generate code for vertex program for given fog tex unit
 static CTString GenerateVertexProgramFogCode(INDEX iFogTexUnit)
@@ -772,13 +773,13 @@ static CTString GenerateVertexProgramFogCode(INDEX iFogTexUnit)
 static CTString AssembleVertexProgram(const char *strAdditionalCode, ULONG ulStreamFlags)
 {
 	CTString strEndCode;
-	extern INDEX sha_bColorizeShaders;	//í˜„ì¬ëŠ” ì½˜ì†”ì—ì„œ ìˆ˜ì •í•˜ì§€ ì•ŠëŠ” í•œì€ í•­ìƒ FALSEì„.
+	extern INDEX sha_bColorizeShaders;	//ÇöÀç´Â ÄÜ¼Ö¿¡¼­ ¼öÁ¤ÇÏÁö ¾Ê´Â ÇÑÀº Ç×»ó FALSEÀÓ.
 	if( sha_bColorizeShaders) {
 		strEndCode   = "mov  oD0,    r1                \n";
 	}
 
 	CTString strNormalize;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Shadow Util)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Shadow Util)(0.1)
 	if(ulStreamFlags&GFX_NORMAL_STREAM)
 	{
 		extern INDEX dbg_bNormalizeShaderNormals;
@@ -802,7 +803,7 @@ static CTString AssembleVertexProgram(const char *strAdditionalCode, ULONG ulStr
 			break;
 		}
 	}
-	//Normalì„ ì“°ì§€ ì•ŠëŠ” ê²½ìš°ì˜ ì²˜ë¦¬.
+	//NormalÀ» ¾²Áö ¾Ê´Â °æ¿ìÀÇ Ã³¸®.
 	else
 	{
 		ASSERT(_ctWeightsPerVertex<5 && _ctWeightsPerVertex>=0);
@@ -818,13 +819,17 @@ static CTString AssembleVertexProgram(const char *strAdditionalCode, ULONG ulStr
 			break;
 		}
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Shadow Util)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Shadow Util)(0.1)
 	return "";
 }
 
-static CTString AssemblePixelProgram(CTString strAdditionalCode, INDEX iFogTexUnit=-1)
+static CTString AssemblePixelProgram(CTString strAdditionalCode, DWORD PixelShaderVersion, INDEX iFogTexUnit=-1)
 {
-	return strPixelProgramPrefix + strAdditionalCode;
+	if (PixelShaderVersion == D3DPS_VERSION(1,1))
+		return strPixelProgramPrefix11 + strAdditionalCode;
+	//else if (PixelShaderVersion == D3DPS_VERSION(1,4))
+
+	return strPixelProgramPrefix14 + strAdditionalCode;
 }
 
 
@@ -846,17 +851,17 @@ extern void shaRender(void)
 		gfxDisableColorArray();
 	}
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 //	if(bUseVertexProgram) {
 //		SetConstantRegisters();
 //	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 	if(bUseVertexBuffers) {
 		ASSERT(_iVertexBufferID>=0); // Vertices must be set 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Shadow Util)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Shadow Util)(0.1)
 		//ASSERT(_iNormalBufferID>=0); // Normals must be set
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Shadow Util)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Shadow Util)(0.1)
 	} else {
 		ASSERT(_paVertices!=NULL);   // Vertices must be set before rendering
 	}
@@ -1133,7 +1138,7 @@ extern void shaDoFogAndHazePass(void)
 		gfxEnableBlend();
 		gfxDisableAlphaTest();
 		gfxSetTexture( _haze_ulTexture, _haze_tpLocal);
-		gfxSetTexCoordArray( &_atcHaze[0]);
+		gfxSetTexCoordArray( &_atcHaze[0], FALSE);
 		gfxSetColorArray(&_acolHaze[0]);
 		_pGfx->gl_pd3dDevice->GetTextureStageState(GFX_iActiveTexUnit, D3DTSS_COLOROP, &op);
 		_pGfx->gl_pd3dDevice->GetTextureStageState(GFX_iActiveTexUnit, D3DTSS_COLORARG1, &arg1);
@@ -1156,7 +1161,7 @@ extern void shaDoFogAndHazePass(void)
 		gfxEnableBlend();
 		gfxDisableAlphaTest();
 		gfxSetTexture( _fog_ulTexture, _fog_tpLocal);
-		gfxSetTexCoordArray(&_atcFog[0]);
+		gfxSetTexCoordArray(&_atcFog[0], FALSE);
 		gfxSetColorArray(&_acolFog[0]);
 		if(!(_ulRenFlags&SHA_RMF_HAZE))
 		{
@@ -1679,10 +1684,10 @@ extern void shaSetNormalBufferID(INDEX iNormalBufferID)
 	_iNormalBufferID = iNormalBufferID;
 
 	// Set normal buffer ID
-	gfxSetNormalSubBuffer(_iNormalBufferID);
+	gfxSetNormalSubBuffer(_iNormalBufferID, -1);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 extern void shaSetTangentBufferID(INDEX iTagentBufferID)
 {
 	ASSERT(_bUseHWVertexBuffers); // must use hardware shaders
@@ -1691,9 +1696,9 @@ extern void shaSetTangentBufferID(INDEX iTagentBufferID)
 	_iTangentBufferID = iTagentBufferID;
 
 	// Set tangent buffer ID
-	gfxSetTangentSubBuffer(_iTangentBufferID);
+	gfxSetTangentSubBuffer(_iTangentBufferID, -1);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 extern void shaSetWeightBufferID(INDEX iWeightBufferID)
 {
@@ -1703,7 +1708,7 @@ extern void shaSetWeightBufferID(INDEX iWeightBufferID)
 	_iWeightBufferID = iWeightBufferID;
 
 	// Set weight buffer ID
-	gfxSetWeightSubBuffer(_iWeightBufferID);
+	gfxSetWeightSubBuffer(_iWeightBufferID, -1);
 }
 
 extern void shaSetTexCoordBufferID(INDEX iTexCoordBufferID, INDEX iTextureUnit/*=0*/)
@@ -1812,7 +1817,7 @@ extern void shaSetLightColor( COLOR colAmbient, COLOR colLight)
 	_colAmbient = colAmbient; // |0xFF ?
 
 	// prepare HW light
-	//gfxSetLightColor( 0, colLight, colAmbient);
+	//gfxSetLightColor( 0, colLight, colAmbient, 0);
 }
 
 
@@ -1944,7 +1949,7 @@ extern void shaSetTextureUnit(INDEX iTextureUnit)
 	gfxSetTextureUnit(iTextureUnit);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 static void shaSetVertexProgram_Default(INDEX iVertexProgram)
 {
 	ASSERT(_pShader!=NULL);
@@ -1974,11 +1979,11 @@ static void shaSetVertexProgram_Default(INDEX iVertexProgram)
 		MEMTRACK_SETFLAGS(mem,MTF_EOLIST|MTF_NOSTACKTRACE);
 		// if handle is invalid and shaders arn't precaching now
 		if(0 && !_bPrecachingShaders) {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 			ShaderDesc *pshd;
 			_pShader->GetShaderDesc(pshd);
 			CPrintF("Shader %s is not precached!\n",(const char*)pshd->sd_strShaderInfo);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 		}
 		// Create new vertex program
 		ULONG ulStreamFlags = vph.vph_ulStreamFlags;
@@ -1994,7 +1999,7 @@ static void shaSetVertexProgram_Default(INDEX iVertexProgram)
 		CTString strUserProgram;
 		CTString strFullProgram;
 
-		const BOOL bNaked = ulStreamFlags&SHA_NAKED_CODE;	//Terrainìª½ì—ì„œ ì“°ê¸° ìœ„í•´ ë§Œë“  í”Œë˜ê·¸ì¸ë“¯...
+		const BOOL bNaked = ulStreamFlags&SHA_NAKED_CODE;	//TerrainÂÊ¿¡¼­ ¾²±â À§ÇØ ¸¸µç ÇÃ·¡±×ÀÎµí...
 		// if naked code 
 		if(bNaked) {
 			// Get full program code
@@ -2010,7 +2015,16 @@ static void shaSetVertexProgram_Default(INDEX iVertexProgram)
 				strFullProgram+=GenerateVertexProgramFogCode(_iFogTexUnit);
 			}
 		}
+/*		if (!_pShader->m_TestShaderLog.IsEmptyqueBuffer())
+		{ // Vertex Shader¸¸ º¯ÇÒ¶§
+			CTString tempFileName;
+			tempFileName.PrintF(("ShdaerCodeExport_%d.txt"), tempFileNameCount);
+			_pShader->m_TestShaderLog.WriteBin((const char*)tempFileName.str_String);
+			tempFileNameCount++;
+		}
 
+		_pShader->m_TestShaderLog.AddString((const char*)strFullProgram.str_String);
+*/
 		// Compile vertex program with provided code
 		// extern ULONG shaCompileVertexProgram(const char *pstrCode, ULONG ulStreamFlags);
 		// ulHandle = shaCompileVertexProgram((const char*)strFullProgram,ulStreamFlags);
@@ -2028,7 +2042,7 @@ static void shaSetVertexProgram_Default(INDEX iVertexProgram)
 
 static void shaSetVertexProgram_NMMObjSpace(INDEX iVertexProgram)
 {
-	ASSERT(FALSE && "ì•„ì§ êµ¬í˜„ë˜ì§€ ì•Šì€ ë¶€ë¶„ì„");
+	ASSERT(FALSE && "¾ÆÁ÷ ±¸ÇöµÇÁö ¾ÊÀº ºÎºĞÀÓ");
 }
 
 static void shaSetVertexProgram_NMMTanSpace(INDEX iVertexProgram)
@@ -2040,7 +2054,7 @@ static void shaSetVertexProgram_NMMTanSpace(INDEX iVertexProgram)
 
 	//--- Block A Begin ---//
 	INDEX ivp = iVertexProgram;
-	//NotYet : ì•„ì§ í¬ê·¸ì™€ ì—°ë™ë˜ëŠ” ë¶€ë¶„ì€ ì‘ì„±í•˜ì§€ ì•Šì•˜ìŒ.
+	//NotYet : ¾ÆÁ÷ Æ÷±×¿Í ¿¬µ¿µÇ´Â ºÎºĞÀº ÀÛ¼ºÇÏÁö ¾Ê¾ÒÀ½.
 	const BOOL bHasFog = (_ulRenFlags & SHA_RMF_HAZE || _ulRenFlags & SHA_RMF_FOG) && _iFogTexUnit >= 0;
 	// if in fog or haze
 	if(bHasFog)
@@ -2053,10 +2067,10 @@ static void shaSetVertexProgram_NMMTanSpace(INDEX iVertexProgram)
 	VertexProgramHandle &vph = _pShader->sh_aVPHandles[ivp];
 	ULONG &ulHandle = vph.vph_ulHandles[_ctWeightsPerVertex];
 	//--- Block A End ---//
-	//--- Block A í•´ì„¤ ---//
-	//CShaderì—ì„œ GetDescë¡œ Shaderì‘ì„±ìê°€ ì„¤ì •í•œ VPì˜ ê°œìˆ˜ë¥¼ ë°›ì•„ *2ë¥¼ í•œí›„ sha_aVPHandlesë¥¼ ë§Œë“ ë‹¤.
-	//ê·¸ë¦¬ê³  í¬ê·¸ë‚˜ í—¤ì´ì¦ˆê°€ ìˆìœ¼ë©´ ì›ë˜ì˜ VPì˜ indexì— ê°œìˆ˜ë¥¼ ë”í•´ *2ë¡œ ì¸í•´ ì¶”ê°€ëœ ë¶€ë¶„ì˜ VPë¥¼ ì‚¬ìš©í•œë‹¤.
-	//ê·¸ê²ƒì€ ì´ ë’·ë¶€ë¶„ì— AssembleShaderProgramë’¤ì— ì²˜ë¦¬ëœë‹¤.
+	//--- Block A ÇØ¼³ ---//
+	//CShader¿¡¼­ GetDesc·Î ShaderÀÛ¼ºÀÚ°¡ ¼³Á¤ÇÑ VPÀÇ °³¼ö¸¦ ¹Ş¾Æ *2¸¦ ÇÑÈÄ sha_aVPHandles¸¦ ¸¸µç´Ù.
+	//±×¸®°í Æ÷±×³ª ÇìÀÌÁî°¡ ÀÖÀ¸¸é ¿ø·¡ÀÇ VPÀÇ index¿¡ °³¼ö¸¦ ´õÇØ *2·Î ÀÎÇØ Ãß°¡µÈ ºÎºĞÀÇ VP¸¦ »ç¿ëÇÑ´Ù.
+	//±×°ÍÀº ÀÌ µŞºÎºĞ¿¡ AssembleShaderProgramµÚ¿¡ Ã³¸®µÈ´Ù.
 	
 	// if handle is invalid
 	if(ulHandle==NONE) {
@@ -2087,13 +2101,15 @@ static void shaSetVertexProgram_NMMTanSpace(INDEX iVertexProgram)
 			case 3: strFullProgram = CTString(strThreeWeights_NMTangentSpaceB) + strUserProgram; break;
 			case 4: strFullProgram = CTString(strFourWeights_NMTangentSpaceB ) + strUserProgram; break;
 			default:
-				ASSERTALWAYS("ì–´ë? ë²„í…ìŠ¤ë‹¹ ë¼ˆë‹¤ê·€ì˜ ìˆ˜ê°€ ë„ˆë¬´ ë§ê±°ë‚˜ ì½”ë“œì— ë²„ê·¸ê°€ ìˆì†Œ. ì£¼ì˜í•˜ì‹œì˜¤.");
+				ASSERTALWAYS("¾î¶ù? ¹öÅØ½º´ç »À´Ù±ÍÀÇ ¼ö°¡ ³Ê¹« ¸¹°Å³ª ÄÚµå¿¡ ¹ö±×°¡ ÀÖ¼Ò. ÁÖÀÇÇÏ½Ã¿À.");
 			break;
 		}
 		
 		// if this is vertex program for fog, add fog code to vertex program
-		//TODO : ì•„ì§ í¬ê·¸ì™€ ì—°ë™ë˜ëŠ” ë¶€ë¶„ì€ ì‘ì„±í•˜ì§€ ì•Šì•˜ìŒ.
+		//TODO : ¾ÆÁ÷ Æ÷±×¿Í ¿¬µ¿µÇ´Â ºÎºĞÀº ÀÛ¼ºÇÏÁö ¾Ê¾ÒÀ½.
 		if(bHasFog) strFullProgram+=GenerateVertexProgramFogCode(_iFogTexUnit);
+
+		//_pShader->m_TestShaderLog.AddString((const char*)strFullProgram.str_String);
 
 		// Compile vertex program with provided code
 		// extern ULONG shaCompileVertexProgram(const char *pstrCode, ULONG ulStreamFlags);
@@ -2128,10 +2144,10 @@ extern void shaSetVertexProgram(INDEX iVertexProgram, NormalMapMeshType nmmType/
 			shaSetVertexProgram_NMMTanSpace(iVertexProgram);
 		} break;
 	default:
-		{ ASSERT(FALSE && "ì˜ëª»ëœ Normal map Mesh Typeì…ë‹ˆë‹¤. ëŒ€ëµ ì¦..."); }
+		{ ASSERT(FALSE && "Àß¸øµÈ Normal map Mesh TypeÀÔ´Ï´Ù. ´ë·« Áñ..."); }
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 extern void shaSetPixelProgram(INDEX iPixelProgram)
 {
@@ -2170,12 +2186,20 @@ extern void shaSetPixelProgram(INDEX iPixelProgram)
 		// Get pixel program code from shader
 		CTString strUserProgram;
 		_pShader->GetShaderPPCode(strUserProgram,iPixelProgram,eFogType);
+		ShaderDesc *pshDesc;
+		_pShader->GetShaderDesc(pshDesc);
 		// Assamble full pixel program code
-		CTString strFullProgram = AssemblePixelProgram(strUserProgram,iFogTexUnit);
+		CTString strFullProgram = AssemblePixelProgram(strUserProgram,pshDesc->PixelShaderVersion,iFogTexUnit);
 		// Compile pixel program with provided code
 		ulHandle = gfxCreatePixelProgram((const char*)strFullProgram);
 		// Must not be null
 		ASSERT(ulHandle!=NONE);
+/*		_pShader->m_TestShaderLog.AddString("\n");
+		_pShader->m_TestShaderLog.AddString((const char*)strFullProgram.str_String);
+		CTString tempFileName;
+		tempFileName.PrintF(("ShdaerCodeExport_%d.txt"), tempFileNameCount);
+		_pShader->m_TestShaderLog.WriteBin((const char*)tempFileName.str_String);
+		tempFileNameCount++;*/
 	}
 	// if handle is still invalid
 	if(ulHandle!=NONE) {
@@ -2189,7 +2213,7 @@ extern void shaSetTexCoordArray(GFXTexCoord *uvNewMap, INDEX iTextureUnit/*=0*/)
 {
 	_pCurrentUVMap = uvNewMap;
 	shaSetTextureUnit(iTextureUnit);
-	gfxSetTexCoordArray(_pCurrentUVMap);
+	gfxSetTexCoordArray(_pCurrentUVMap, FALSE);
 }
 
 // Set array of vertex colors
@@ -2225,7 +2249,7 @@ extern void shaClearTextureMatrix(INDEX iTextureUnit/*=-1*/)
 	if(iTextureUnit!=(-1)) {
 		shaSetTextureUnit(iTextureUnit);
 	}
-	gfxSetTextureMatrix();
+	gfxSetTextureMatrix(NULL);
 }
 
 /*
@@ -2407,7 +2431,7 @@ extern ULONG shaGetRenFlags(void)
 	return _ulRenFlags;
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.17
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.17
 /*
 extern void shaSetWaterInformation(CNiceWater* pInfo)
 {
@@ -2415,7 +2439,7 @@ extern void shaSetWaterInformation(CNiceWater* pInfo)
 	_pWaterInformation = pInfo;
 }
 */
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.17
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.17
 
 
 
@@ -2691,14 +2715,31 @@ void CShader::Read_t(CTStream *istrFile)
 	strShaderPPCode.ReadFromText_t(*istrFile, "PPCode: ");
 
 	// create name of dll
-	#ifndef NDEBUG
+#ifndef NDEBUG
+		//fnmDLL = fnmDLL.FileDir()+"Debug\\"+fnmDLL.FileName()+/*_strModExt+*/"D"+fnmDLL.FileExt();
+#	if		defined(_MSC_VER) && (_MSC_VER >= 1600)
+#		ifdef	WORLD_EDITOR
+			fnmDLL = fnmDLL.FileName() + "D" + fnmDLL.FileExt();
+#		else	// WORLD_EDITOR
+			fnmDLL = fnmDLL.FileDir()+"Debug2010\\"+fnmDLL.FileName()+/*_strModExt+*/"D"+fnmDLL.FileExt();
+#		endif	// WORLD_EDITOR
+
+#	else
 		fnmDLL = fnmDLL.FileDir()+"Debug\\"+fnmDLL.FileName()+/*_strModExt+*/"D"+fnmDLL.FileExt();
-	#else
-		fnmDLL = fnmDLL.FileDir()+fnmDLL.FileName()+/*_strModExt+*/fnmDLL.FileExt();
-	#endif
+#	endif
+
+#else
+	fnmDLL = fnmDLL.FileDir()+fnmDLL.FileName()+/*_strModExt+*/fnmDLL.FileExt();
+#endif
 
 	CTFileName fnmExpanded;
+
+#ifndef	WORLD_EDITOR
 	ExpandFilePath(EFP_READ | EFP_NOZIPS,fnmDLL,fnmExpanded);
+#else	// WORLD_EDITOR
+	fnmExpanded = _fnmApplicationPath + _fnmApplicationExe.FileDir() + fnmDLL.FileName() + fnmDLL.FileExt();
+#endif // WORLD_EDITOR
+	
 	// set new error mode
 	UINT iOldErrorMode = SetErrorMode(SEM_NOOPENFILEERRORBOX|SEM_FAILCRITICALERRORS);
 	// load dll
@@ -2719,9 +2760,9 @@ void CShader::Read_t(CTStream *istrFile)
 		istrFile->Throw_t("GetProcAddress 'ShaderFunc' Error");
 	}
 	// get pointer to shader info function
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 	GetShaderDesc = (void(*)(ShaderDesc*&))GetProcAddress(hLibrary,(const char*)strShaderInfo);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 	// if error accured
 	if(GetShaderDesc==NULL) {
 		// report error

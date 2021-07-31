@@ -1,5 +1,6 @@
 #include "stdh.h"
 
+#include <Engine/Network/EMsgBuffer.h>
 #include <Engine/Network/cmd.h>
 #include <Engine/Network/SessionState.h>
 
@@ -12,7 +13,7 @@ char g_Buf2[256];
 char g_Buf3[256];
 char g_Buf4[256];
 
-// ëª…ë ¹ì–´ ì²˜ë¦¬ í•¨ìˆ˜..
+// ¸í·É¾î Ã³¸® ÇÔ¼ö..
 void CmdIn(char *arg, CSessionState *pSession);
 
 void CmdExist(char *arg, CSessionState *pSession);
@@ -29,7 +30,7 @@ CCmd::CCmd(CSessionState *pSession)
 	m_pSession = pSession;
 
 	m_Count = 0;
-	// ì´ë™ ëª…ë ¹
+	// ÀÌµ¿ ¸í·É
 	AddCmd("in",			CmdIn);
 	
 	AddCmd("chars_exist",	CmdExist);
@@ -55,7 +56,7 @@ CCmd::~CCmd()
 BOOL CCmd::AddCmd(char *cmd, void cmd_p(char *, CSessionState *))
 {
 	if (m_Count >= CMD_NUM) {
-	//	MessageBox(NULL, "ëª…ë ¹ì–´ ê°¯ìˆ˜ê°€ ì´ˆê³¼ë˜ì—ˆìŒ!!", "ì—ëŸ¬!", MB_OK);
+	//	MessageBox(NULL, "¸í·É¾î °¹¼ö°¡ ÃÊ°úµÇ¾úÀ½!!", "¿¡·¯!", MB_OK);
 		return FALSE;
 	}
 
@@ -87,7 +88,7 @@ void CmdIn(char *arg, CSessionState *pSession)
 		
 }
 
-//ì„œë²„ì—ì„œ ìºë¦­í„° ì •ë³´ë“¤ì„ ë³´ëƒˆêµ°...
+//¼­¹ö¿¡¼­ Ä³¸¯ÅÍ Á¤º¸µéÀ» º¸³Â±º...
 void CmdExist(char *arg, CSessionState *pSession)
 {
 	
@@ -110,7 +111,7 @@ void CmdExist(char *arg, CSessionState *pSession)
 
 }
 
-//(ìž„ì‹œ)ì„œë²„ì—ì„œ char_endë¥¼ ë°›ìœ¼ë©´ 0ë²ˆì§¸ ìºë¦­í„°ë¡œ ìŠ¤íƒ€íŠ¸í•œë‹¤ëŠ” ë©”ì‹œì§€ë¥¼ ì„œë²„ë¡œ ë³´ëƒ„
+//(ÀÓ½Ã)¼­¹ö¿¡¼­ char_end¸¦ ¹ÞÀ¸¸é 0¹øÂ° Ä³¸¯ÅÍ·Î ½ºÅ¸Æ®ÇÑ´Ù´Â ¸Þ½ÃÁö¸¦ ¼­¹ö·Î º¸³¿
 void CmdCharEnd(char *arg, CSessionState *pSession)
 {
    pSession->StartGame();
@@ -257,7 +258,7 @@ void CmdSay(char *arg, CSessionState *pSession)
 /*
 	sprintf(Buf, "say %s\n", buf);
 	_tcpip.SendNetMessage(Buf, TRUE);
-ì„ ì´ìš©í•˜ì—¬ ì„œë²„ë¡œ ë©”ì‹œì§€ë¥¼ ë³´ë‚´ë©´ ì´ê³³ì—ì„œ ë°›ëŠ”ë‹¤.
+À» ÀÌ¿ëÇÏ¿© ¼­¹ö·Î ¸Þ½ÃÁö¸¦ º¸³»¸é ÀÌ°÷¿¡¼­ ¹Þ´Â´Ù.
   */
 
 	arg = pSession->AnyOneArg(arg, g_Buf);

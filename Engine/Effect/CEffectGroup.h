@@ -1,5 +1,5 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CEFFECTGROUP_H__
 #define __CEFFECTGROUP_H__
 
@@ -20,29 +20,38 @@ class ENGINE_API CEffectGroup
 protected:
 	struct EffectKey
 	{
-		//ì´ ì´í™íŠ¸ ê·¸ë£¹ë‚´ì—ì„œ effectë¥¼ êµ¬ë¶„í•˜ëŠ” ê³ ìœ  key value
+		//ÀÌ ÀÌÆåÆ® ±×·ì³»¿¡¼­ effect¸¦ ±¸ºĞÇÏ´Â °íÀ¯ key value
 		INDEX		m_iKeyValue;
-		//ì‹œì‘ì‹œê°„, CEffectGroupì˜ ì‹œì‘ì‹œê°„ìœ¼ë¡œë¶€í„°ì˜ offset time.
+		//½ÃÀÛ½Ã°£, CEffectGroupÀÇ ½ÃÀÛ½Ã°£À¸·ÎºÎÅÍÀÇ offset time.
 		FLOAT		m_fStartTime;
-		//ì´í™íŠ¸ ì´ë¦„. ì´ ì´ë¦„ì„ ê°€ì§€ê³  ì´í™íŠ¸ë§¤ë‹ˆí„°ë¡œë¶€í„° ì‹¤ì œ ì´í™íŠ¸ë¥¼ ê°€ì ¸ì˜¨ë‹¤.
+		//ÀÌÆåÆ® ÀÌ¸§. ÀÌ ÀÌ¸§À» °¡Áö°í ÀÌÆåÆ®¸Å´ÏÅÍ·ÎºÎÅÍ ½ÇÁ¦ ÀÌÆåÆ®¸¦ °¡Á®¿Â´Ù.
 		std::string	m_strEffectName;
-		//ì´í™íŠ¸ì˜ ì´ë¦„ì„ ê°€ì§€ê³  ì´í™íŠ¸ë§¤ë‹ˆì ¸ì— ìš”ì²­í•´ì„œ ë§Œë“¤ì–´ì§„ ì´í™íŠ¸.
+		//ÀÌÆåÆ®ÀÇ ÀÌ¸§À» °¡Áö°í ÀÌÆåÆ®¸Å´ÏÁ®¿¡ ¿äÃ»ÇØ¼­ ¸¸µé¾îÁø ÀÌÆåÆ®.
 		CEffect		*m_pCreatedEffect;
+	};
+
+	template <class Type>
+	struct FindKeyValue
+	{
+		FindKeyValue(INDEX keyValue) : CompareKeyValue(keyValue) {}
+		bool operator() (const Type& effectkey) { return effectkey.m_iKeyValue == CompareKeyValue; }
+		INDEX CompareKeyValue;
 	};
 	
 	struct TagKey
 	{
-		//ì´ ì´í™íŠ¸ ê·¸ë£¹ë‚´ì—ì„œ tagë¥¼ êµ¬ë¶„í•˜ëŠ” ê³ ìœ  key value
+		//ÀÌ ÀÌÆåÆ® ±×·ì³»¿¡¼­ tag¸¦ ±¸ºĞÇÏ´Â °íÀ¯ key value
 		INDEX		m_iKeyValue;
-		//ì„¸íŒ…í•  EFFECT_KEYì— ëŒ€í•œ effect key value
+		//¼¼ÆÃÇÒ EFFECT_KEY¿¡ ´ëÇÑ effect key value
 		INDEX		m_iEffectKeyValue;
-		//ì„¸íŒ… ì‹œê°„, CEffectGroupì˜ ì‹œì‘ì‹œê°„ìœ¼ë¡œë¶€í„°ì˜ offset time
+		//¼¼ÆÃ ½Ã°£, CEffectGroupÀÇ ½ÃÀÛ½Ã°£À¸·ÎºÎÅÍÀÇ offset time
 		FLOAT		m_fSettingTime;
-		//ì„¸íŒ…í•  tagë¥¼ ê°€ë¥´í‚¤ëŠ” ì´ë¦„.
+		//¼¼ÆÃÇÒ tag¸¦ °¡¸£Å°´Â ÀÌ¸§.
 		std::string	m_strTagName;
-		//ì„¸íŒ…í•  ì‹¤ì œ tagë¥¼ ê°€ë¥´í‚¤ëŠ” ptr_tag
+		//¼¼ÆÃÇÒ ½ÇÁ¦ tag¸¦ °¡¸£Å°´Â ptr_tag
 		ptr_tag		m_ptrReserveTag;
 	};
+
 public:
 	typedef	CRefCountPtr< CTag >		ptr_tag;
 	typedef std::vector< EffectKey >	vector_effect_key;
@@ -54,38 +63,24 @@ public:
 
 	//NEW_DELETE_DEFINITION(CEffectGroup);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	void Read(CTStream *istrFile);
 	void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 	//content fill function
 	INDEX AddEffect(FLOAT fStartTimeFromStart, std::string strEffectName);
 	INDEX AddTagForEffect(FLOAT fSettingTimeFromStart, INDEX iEffectKeyValue, std::string tagName);
-	//AddTagForAllEffectí•¨ìˆ˜ë¡œ tagë¥¼ ì¶”ê°€í• ë•ŒëŠ” effectì˜ ì¶”ê°€ê°€ ëë‚¬ë‹¤ê³  ë³¸ë‹¤. ì•ˆê·¸ëŸ´ê²½ìš° ë™ì‘ì„ ë³´ì¥í•  ìˆ˜ ì—†ë‹¤.
+	//AddTagForAllEffectÇÔ¼ö·Î tag¸¦ Ãß°¡ÇÒ¶§´Â effectÀÇ Ãß°¡°¡ ³¡³µ´Ù°í º»´Ù. ¾È±×·²°æ¿ì µ¿ÀÛÀ» º¸ÀåÇÒ ¼ö ¾ø´Ù.
 	void  AddTagForAllEffect(FLOAT fSettingTimeFromStart, std::string tagName);
 
 	void GetEffectKeyInfo(INDEX index, FLOAT &fStartTimeFromStart, std::string &effectName);
 	void GetTagKeyInfo(INDEX index, FLOAT &fSettingTimeFromStart, INDEX &iAddedEffectKeyValue, std::string &TagName);
 
-	//key valueë¥¼ ì´ìš©í•˜ì—¬ vectorì˜ indexë¥¼ ë¦¬í„´í•œë‹¤.
-	INDEX FindEffectIndex(INDEX keyValue)
-	{
-		for(INDEX i=0; i<m_vectorEffectKey.size(); ++i)
-		{
-			if(m_vectorEffectKey[i].m_iKeyValue == keyValue) return i;
-		}
-		return -1;
-	}
-	INDEX FindTagIndex(INDEX keyValue)
-	{
-		for(INDEX i=0; i<m_vectorTagKey.size(); ++i)
-		{
-			if(m_vectorTagKey[i].m_iKeyValue == keyValue) return i;
-		}
-		return -1;
-	}
-	//vectorì˜ indexë¥¼ ì´ìš©í•˜ì—¬ key valueë¥¼ ë¦¬í„´í•œë‹¤.
+	EffectKey* FindEffectKey(INDEX keyValue);
+	TagKey* FindTagKey(INDEX keyValue);
+
+	//vectorÀÇ index¸¦ ÀÌ¿ëÇÏ¿© key value¸¦ ¸®ÅÏÇÑ´Ù.
 	INDEX FindEffectKeyValue(INDEX index)	{ return m_vectorEffectKey[index].m_iKeyValue;	}
 	INDEX FindTagKeyValue(INDEX index)		{ return m_vectorTagKey[index].m_iKeyValue;		}
 
@@ -99,7 +94,7 @@ public:
 	void Start(FLOAT time);
 	BOOL Process(FLOAT time);
 	CEffectGroup *Copy();
-	void Stop(FLOAT leftTime = FLT_MAX);	//FLT_MAXëŠ” ê¸°ë‹¤ë¦´ë§Œí¼ ê¸°ë‹¤ë¦° í›„ stop.
+	void Stop(FLOAT leftTime = FLT_MAX);	//FLT_MAX´Â ±â´Ù¸±¸¸Å­ ±â´Ù¸° ÈÄ stop.
 
 	//access function
 	inline void SetName(std::string &name) { m_strName = name; }
@@ -119,23 +114,28 @@ public:
 	
 	inline FLOAT GetStartTime()								{ return m_fStartTime;		}
 
-	//lifeë“±ì— ì´ ê°’ì´ ê³±í•´ì§„ë‹¤.
+	//lifeµî¿¡ ÀÌ °ªÀÌ °öÇØÁø´Ù.
 	inline void SetSpeedMul(FLOAT fSpeedMul)	{ if(fSpeedMul > 0) m_fSpeedMul = fSpeedMul; else m_fSpeedMul = 1.0f;	}
-	inline FLOAT GetSpeedMul()					{ return m_fSpeedMul;		}
+	inline FLOAT GetSpeedMul()					{ return m_fSpeedMul; }
 
+	inline void SetgERType(EFF_RENDER_TYPE gERType) { m_gERType = gERType; }
+	inline EFF_RENDER_TYPE GetgERType(void)		{ return m_gERType; }
+
+	inline void SetgERSubType(EFF_RENDER_SUB_TYPE gERSubType)		{ m_gERSubType = gERSubType; }
+	inline EFF_RENDER_SUB_TYPE GetgERSubType(void)				{ return m_gERSubType; }
 protected:
 	CEffectGroup(const CEffectGroup &other ) {}
 	CEffectGroup &operator =(CEffectGroup &other) {return *this;}
 
 protected:
-	//keyê´€ë ¨
+	//key°ü·Ã
 	vector_effect_key	m_vectorEffectKey;
 	vector_tag_key		m_vectorTagKey;
 
-	//CEffectGroupìì²´ì— ê´€ë ¨ëœ ê²ƒë“¤.
+	//CEffectGroupÀÚÃ¼¿¡ °ü·ÃµÈ °Íµé.
 	//content variable
 	std::string		m_strName;
-	//EFFECT_KEYì˜ m_fStartTime, m_pCreatedEffect->GetName()
+	//EFFECT_KEYÀÇ m_fStartTime, m_pCreatedEffect->GetName()
 
 	//instance variable
 	CTagManager		*m_pTagManager;
@@ -149,9 +149,11 @@ protected:
 	ptr_tag			m_ptrDirectTag;
 	CAnyProjection3D	*m_pProjection;
 	FLOAT			m_fSpeedMul;
-	//EFFECT_KEYì˜ m_pCreatedEffect, TAG_KEYëŠ” instance variableì„.
+	EFF_RENDER_TYPE	m_gERType;
+	EFF_RENDER_SUB_TYPE m_gERSubType;
+	//EFFECT_KEYÀÇ m_pCreatedEffect, TAG_KEY´Â instance variableÀÓ.
 };
 
 #endif //__CEFFECTGROUP_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

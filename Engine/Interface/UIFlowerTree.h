@@ -9,22 +9,22 @@
 #endif
 
 #include <Engine/Network/MobTarget.h>
-#include <Engine/Effect/CEffectGroup.h>
-#include <Engine/Effect/CEffectGroupManager.h>
-#include <Engine/Entities/EntityClass.h>
-#include <Engine/Entities/EntityProperties.h>
-#include <Engine/Ska/StringTable.h>
-#include <Engine/Ska/ModelInstance.h>
-#include <Engine/Base/FileName.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <vector>
+// #include <Engine/Effect/CEffectGroup.h>
+// #include <Engine/Effect/CEffectGroupManager.h>
+// #include <Engine/Entities/EntityClass.h>
+// #include <Engine/Entities/EntityProperties.h>
+// #include <Engine/Ska/StringTable.h>
+// #include <Engine/Ska/ModelInstance.h>
+// #include <Engine/Base/FileName.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <vector>
 
 #define FLOWERTREE_WIDTH	164
 #define FLOWERTREE_HEIGHT	213
 
-// ê½ƒë‚˜ë¬´ì˜ ê°œí™” ë‹¨ê³„
+// ²É³ª¹«ÀÇ °³È­ ´Ü°è
 enum eOpenFlowerStep
 {							// POINT
 	OP_FLOWERSTEP0 = 0,		// 0
@@ -47,8 +47,8 @@ struct FlowerTreeMeshInfo
 		MeshID = -1;
 	}
 
-	CTFileName MeshBM; // Bm íŒŒì¼ ì •ë³´
-	CTFileName MeshTex; // Tex íŒŒì¼ ì •ë³´
+	CTFileName MeshBM; // Bm ÆÄÀÏ Á¤º¸
+	CTFileName MeshTex; // Tex ÆÄÀÏ Á¤º¸
 	INDEX	MeshID;		// Mesh ID
 };
 
@@ -67,9 +67,9 @@ protected: // variable
 			slGroup = 0;
 		}
 
-		CTString strServerName; // ì„œë²„ ì´ë¦„
-		ULONG	ulScore;		// ì„œë²„ ì ìˆ˜
-		SLONG	slGroup;		// ì„œë²„ êµ° ë²ˆí˜¸
+		CTString strServerName; // ¼­¹ö ÀÌ¸§
+		ULONG	ulScore;		// ¼­¹ö Á¡¼ö
+		SLONG	slGroup;		// ¼­¹ö ±º ¹øÈ£
 	};
 
 	struct FindServerGroup
@@ -87,10 +87,10 @@ protected: // variable
 	};
 	
 	CUIButton		m_btnClose;
-	CUIButton		m_btnOK; // ê°œí™” ë•ê¸°
-	CUIButton		m_btnRefresh; // ê°±ì‹ 
+	CUIButton		m_btnOK; // °³È­ µ½±â
+	CUIButton		m_btnRefresh; // °»½Å
 
-	std::vector<sServerScoreList> m_vecSvScoreList; // í‘œì‹œ ëª©ë¡
+	std::vector<sServerScoreList> m_vecSvScoreList; // Ç¥½Ã ¸ñ·Ï
 	
 	UIRect		m_rcTitle;
 	
@@ -109,16 +109,18 @@ protected: // variable
 	UIRectUV	m_rtScoreM;
 	UIRectUV	m_rtScoreR;
 
-	eOpenFlowerStep		m_CurFlowerStep; // í˜„ì¬ ì ‘ì†ëœ ì„œë²„ì˜ ê°œí™” ë‹¨ê³„
-	FlowerTreeMeshInfo	m_FlowerMeshInfo[OP_FLOWERSTEP8]; // ê° ë‹¨ê³„ë³„ ë©”ì‰¬ ì •ë³´
-	FlowerTreeMeshInfo	m_XMASTREEMeshInfo[3]; // X-MAS2007 íŠ¸ë¦¬ 3ë‹¨ê³„
+	eOpenFlowerStep		m_CurFlowerStep; // ÇöÀç Á¢¼ÓµÈ ¼­¹öÀÇ °³È­ ´Ü°è
+	FlowerTreeMeshInfo	m_FlowerMeshInfo[OP_FLOWERSTEP8]; // °¢ ´Ü°èº° ¸Ş½¬ Á¤º¸
+	FlowerTreeMeshInfo	m_XMASTREEMeshInfo[3]; // X-MAS2007 Æ®¸® 3´Ü°è
 
-	CMobTarget	m_MobFlowerTree; // ê½ƒë‚˜ë¬´ëŠ” NPC . NPC ì •ë³´
-	CEffectGroup	*m_pEG[5]; // ê½ƒë‚˜ë¬´ ì´í™íŠ¸ 3ì¢…
+	FlowerTreeMeshInfo	m_GamigoCakeMeshInfo[3]; // [ldy1978220 2011/5/31] °¡¹Ì°í 10ÁÖ³â ÄÉÀÍ 3´Ü°è
+
+	CMobTarget*	m_pMobFlowerTree; // ²É³ª¹«´Â NPC . NPC Á¤º¸
+	CEffectGroup	*m_pEG[5]; // ²É³ª¹« ÀÌÆåÆ® 3Á¾
 	
 protected: // Function
-	void ReFresh(); // ê°±ì‹ 
-	void BtnOK(); // ê°œí™” ë•ê¸°
+	void ReFresh(); // °»½Å
+	void BtnOK(); // °³È­ µ½±â
 
 public:
 	CUIFlowerTree();
@@ -139,12 +141,17 @@ public:
 	void MsgBoxCommand(int nCommandCode, BOOL bOK, CTString &strInput);
 
 	void ClearList();
-	void AddServerNameList(ULONG ulScore, SLONG slGroup); // ì„œë²„ì´ë¦„ì€ êµ° ë²ˆí˜¸ë¡œ ì•Œ ìˆ˜ ìˆë‹¤.
+	void AddServerNameList(ULONG ulScore, SLONG slGroup); // ¼­¹öÀÌ¸§Àº ±º ¹øÈ£·Î ¾Ë ¼ö ÀÖ´Ù.
 	ENGINE_API void FlowerTreeUpdate(ULONG ulPoint);
 	void AddFlowerTreeMesh(CModelInstance *pMI, int nFlowerStep);
 
-	ENGINE_API void SetMobFlowerTree(CMobTarget mt) { m_MobFlowerTree = mt; }
+	ENGINE_API void SetMobFlowerTree(CMobTarget* mt)	{ m_pMobFlowerTree = mt; }
 	void ClearEffect();
+
+public : 
+
+protected :
+	void initialize();
 };
 
 #endif

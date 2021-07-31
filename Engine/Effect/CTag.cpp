@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 // CTag.cpp
 //
 
@@ -28,7 +28,7 @@ CTag::CTag()
 	m_tiTagInfo.m_qRot = m_qOffsetRot;
 }
 
-// ìˆœìˆ˜ê°€ìƒí•¨ìˆ˜ì§€ë§Œ ì†Œë©¸ìì¸ ê²½ìš°ëŠ” ì •ì˜í•´ ì£¼ì–´ì•¼í•¨.
+// ¼ø¼ö°¡»óÇÔ¼öÁö¸¸ ¼Ò¸êÀÚÀÎ °æ¿ì´Â Á¤ÀÇÇØ ÁÖ¾î¾ßÇÔ.
 CTag::~CTag()
 {
 }
@@ -68,20 +68,20 @@ void CTag::AddNewTagInfo(FLOAT time, const FLOATquat3D &rot, const FLOAT3D &pos,
 {
 	if(!Active()) return;
 
-	//ìƒˆë¡œìš´ íƒœê·¸ì •ë³´ ì¶”ê°€
+	//»õ·Î¿î ÅÂ±×Á¤º¸ Ãß°¡
 	TagInfo &info = m_tiTagInfo;
 	info.m_fTime = time;
 	FLOATquat3D	&infoQRot = info.m_qRot;
 	FLOAT3D		&infoVPos = info.m_vPos;
 	FLOAT3D		infoVStrech = stretch;;
 
-	//íšŒì „ì²˜ë¦¬
+	//È¸ÀüÃ³¸®
 	FLOATmatrix3D matOriginalRot;
 	infoQRot = rot;
 	infoQRot *= m_qOffsetRot;
 	rot.ToMatrix(matOriginalRot);
 
-	//ìœ„ì¹˜ ì²˜ë¦¬
+	//À§Ä¡ Ã³¸®
 	FLOATmatrix3D m;
 	m(1,1) = infoVStrech(1);	m(1,2) = 0;					m(1,3) = 0;
 	m(2,1) = 0;					m(2,2) = infoVStrech(2);	m(2,3) = 0;
@@ -94,7 +94,7 @@ void CTag::AddNewTagInfo(FLOAT time, const Matrix12 &mInfo, const Matrix12 &mStr
 {
 	if(!Active()) return;
 
-	//ìƒˆë¡œìš´ íƒœê·¸ì •ë³´ ì¶”ê°€
+	//»õ·Î¿î ÅÂ±×Á¤º¸ Ãß°¡
 	TagInfo &info = m_tiTagInfo;
 	info.m_fTime = time;
 	FLOATquat3D	&infoQRot = info.m_qRot;
@@ -102,14 +102,14 @@ void CTag::AddNewTagInfo(FLOAT time, const Matrix12 &mInfo, const Matrix12 &mStr
 	FLOATmatrix3D	rot;
 	FLOAT3D			pos;
 
-	//íšŒì „ì²˜ë¦¬
+	//È¸ÀüÃ³¸®
 	rot(1,1) = mInfo[ 0]; rot(1,2) = mInfo[ 1]; rot(1,3) = mInfo[ 2];
 	rot(2,1) = mInfo[ 4]; rot(2,2) = mInfo[ 5]; rot(2,3) = mInfo[ 6];
 	rot(3,1) = mInfo[ 8]; rot(3,2) = mInfo[ 9]; rot(3,3) = mInfo[10];
 	infoQRot.FromMatrix(rot);
 	infoQRot *= m_qOffsetRot;
 
-	//ìœ„ì¹˜ì²˜ë¦¬
+	//À§Ä¡Ã³¸®
 	rot(1,1) = mStrInfo[ 0]; rot(1,2) = mStrInfo[ 1]; rot(1,3) = mStrInfo[ 2];
 	rot(2,1) = mStrInfo[ 4]; rot(2,2) = mStrInfo[ 5]; rot(2,3) = mStrInfo[ 6];
 	rot(3,1) = mStrInfo[ 8]; rot(3,2) = mStrInfo[ 9]; rot(3,3) = mStrInfo[10];
@@ -129,4 +129,4 @@ void CTag::AddNewTagInfo(const TagInfo &info)
 	m_tiTagInfo = info;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

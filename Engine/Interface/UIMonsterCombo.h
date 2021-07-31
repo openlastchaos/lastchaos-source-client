@@ -4,16 +4,6 @@
 	#pragma once
 #endif
 
-#include <vector>
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIDrawFigure.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIHelp.h>
-#include <Engine/Entities/MissionCase.h>
-
-
 #define UI_MONSTERCOMBO_WIDTH	600
 #define UI_MONSTERCOMBO_HEIGHT	400
 
@@ -33,6 +23,12 @@ enum TexType
 	SYS_TOTAL, 
 };
 
+enum CountType
+{
+	COMBO_TYPE = 0,
+	CUBE_TYPE,
+};
+
 class CUIMonsterCombo : public CUIWindow
 {
 protected:
@@ -44,42 +40,44 @@ protected:
 	CUIButton	m_btnClose;
 	CUIDrawBox	m_bxMissionSlot;
 	CUIDrawBox	m_bxHelpSlot;
-	CUIButton	m_btnDel;			// ì§€ìš°ê¸°
-	CUIButton	m_btnMakeView;		// ì½¤ë³´ ê³µìœ 
-	CUIButton	m_btnAdmission;		// ì…ì¥
-	UIRect		m_rcCombo;			// ì½¤ë³´ ìŠ¬ë¡¯
-	UIRect		m_rcCase;			// ì¼€ì´ìŠ¤ ìŠ¬ë¡¯
+	CUIButton	m_btnDel;			// Áö¿ì±â
+	CUIButton	m_btnMakeView;		// ÄŞº¸ °øÀ¯
+	CUIButton	m_btnAdmission;		// ÀÔÀå
+	UIRect		m_rcCombo;			// ÄŞº¸ ½½·Ô
+	UIRect		m_rcCase;			// ÄÉÀÌ½º ½½·Ô
 	UIRectUV	m_rtSysView[SYS_TOTAL];
 	UIRectUV	m_rtStagenum[2];
-	CUIListBox	m_lbComboHelp;
+	CUIListBox*	m_plbComboHelp;
 
-	BOOL		m_bCaseView;		// ë¯¸ì…˜ ì¼€ì´ìŠ¤ ì—´ëŒ (íŒŒì¥ì´ë‚˜ ì‹±ê¸€ í”Œë ˆì´ì–´)
-	BOOL		m_bComboComplete;	// ë¯¸ì…˜ ì¼€ì´ìŠ¤ í¸ì§‘ ì™„ë£Œ
+	BOOL		m_bCaseView;		// ¹Ì¼Ç ÄÉÀÌ½º ¿­¶÷ (ÆÄÀåÀÌ³ª ½Ì±Û ÇÃ·¹ÀÌ¾î)
+	BOOL		m_bComboComplete;	// ¹Ì¼Ç ÄÉÀÌ½º ÆíÁı ¿Ï·á
 	BOOL		m_bShowSysImage;
-	BOOL		m_bActionChack;			// ì•¡ì…˜ë²„íŠ¼ìœ¼ë¡œ ë“¤ì–´ì˜¤ëŠ”ê²½ìš°
+	BOOL		m_bActionChack;			// ¾×¼Ç¹öÆ°À¸·Î µé¾î¿À´Â°æ¿ì
 	CHAR		m_bStageClear;
 	INDEX		m_nSysType;
-	INDEX		m_nCombo[MAX_COMBO_COUNT];		// ëª¬ìŠ¤í„° ì½¤ë³´ Index ì €ì¥
-	INDEX		m_nCase[CASE_SLOT_COUNT];		// ëª¬ìŠ¤í„° ì½¤ë³´ Index ì €ì¥
-	INDEX		m_nComboCount;					// ëª¬ìŠ¤í„° ì½¤ë³´ ì¹´ìš´íŠ¸
-	INDEX		m_nCurComboNum;				// ëª¬ìŠ¤í„° ì½¤ë³´ ìŠ¤í¬ë¡¤ ì¹´ìš´íŠ¸
-	INDEX		m_nCurMissionNum;			// ë¯¸ì…˜ ì¼€ì´ìŠ¤ ìŠ¤í¬ë¡¤ ì¹´ìš´íŠ¸
-	INDEX		m_nCurItem;					// ì„ íƒëœ ì•„ì´í…œ
+	INDEX		m_nCombo[MAX_COMBO_COUNT];		// ¸ó½ºÅÍ ÄŞº¸ Index ÀúÀå
+	INDEX		m_nCase[CASE_SLOT_COUNT];		// ¸ó½ºÅÍ ÄŞº¸ Index ÀúÀå
+	INDEX		m_nComboCount;					// ¸ó½ºÅÍ ÄŞº¸ Ä«¿îÆ®
+	INDEX		m_nCurComboNum;				// ¸ó½ºÅÍ ÄŞº¸ ½ºÅ©·Ñ Ä«¿îÆ®
+	INDEX		m_nCurMissionNum;			// ¹Ì¼Ç ÄÉÀÌ½º ½ºÅ©·Ñ Ä«¿îÆ®
+	INDEX		m_nCurItem;					// ¼±ÅÃµÈ ¾ÆÀÌÅÛ
 
 	// Set detail
-	CUIButtonEx		m_abtnSetCase[CASE_SLOT_COUNT];		// set Mission case arrayz
-	CUIButtonEx		m_abtnSetCombo[MAX_COMBO_COUNT];	// set Mission Combo arrayz
+	CUIIcon*		m_pIconsSetCase[CASE_SLOT_COUNT];		// set Mission case arrayz
+	CUIIcon*		m_pIconsSetCombo[MAX_COMBO_COUNT];	// set Mission Combo arrayz
 	
-	CUIScrollBar	m_sbMissionCaseList;	//ë¯¸ì…˜ ì¼€ì´ìŠ¤ ë¦¬ìŠ¤íŠ¸ 
-	CUIScrollBar	m_sbComboList;			//ì½¤ë³´ ë¦¬ìŠ¤íŠ¸ (ë¯¸ì…˜ ì¼€ì´ìŠ¤ ë¦¬ìŠ¤íŠ¸ì—ì„œ ì•„ì´í…œ ë°›ì•„ì˜¤ëŠ” ê³³)
+	CUIScrollBar	m_sbMissionCaseList;	//¹Ì¼Ç ÄÉÀÌ½º ¸®½ºÆ® 
+	CUIScrollBar	m_sbComboList;			//ÄŞº¸ ¸®½ºÆ® (¹Ì¼Ç ÄÉÀÌ½º ¸®½ºÆ®¿¡¼­ ¾ÆÀÌÅÛ ¹Ş¾Æ¿À´Â °÷)
 
-	INDEX		m_nBossIdx;					// ì´ë™ ë©”ì‹œì§€ ì „ë‹¬ ì‹œ í•„ìš”
+	INDEX		m_nBossIdx;					// ÀÌµ¿ ¸Ş½ÃÁö Àü´Ş ½Ã ÇÊ¿ä
 	SQUAD		m_nAdmissionPay;
 	INDEX		m_nComboPoint;
-	INDEX		m_nStageCount;				// ìŠ¤í…Œì´ì§€ ë„˜ë²„ ì €ì¥
+	INDEX		m_nStageCount;				// ½ºÅ×ÀÌÁö ³Ñ¹ö ÀúÀå
 	__int64		m_tmStartTime;
 	__int64		m_tmStageview;
 	FLOAT		m_fNpcX, m_fNpcZ;
+	int			m_nNpcVirIdx;
+	INDEX		m_nCountType;
 	
 
 public:
@@ -93,11 +91,11 @@ public:
 	void RenderComboList(int nCurScrollNum,int nX, int nY);
 	void MissionCaseRender(int iX, int iY);
 	void RenderMissionList(int nCurScrollNum,int nX, int nY);
-	void OpenMonsterCombo(BOOL bChack,FLOAT fX, FLOAT fZ);
+	void OpenMonsterCombo(BOOL bChack,FLOAT fX, FLOAT fZ, int nNpcVirIdx = -1);
 	void CloseMonsterCombo();
 	void MissionCaseEnable(BOOL bEnable) {m_bCaseView = bEnable;}
 	void AddCombo(int nIndex,int nslot);
-	void SendComboMessage(LONG comboMessage,BOOL bYesNo = FALSE);
+	void SendComboMessage(LONG comboMessage,BOOL bYesNo = FALSE, int nNpcVirIdx = -1);
 	void RecComboErrorMessage(UBYTE comboMessage);
 	void SetComboList(int num, INDEX nIndex); 
 	void SetBossIndex(int nIndex) {m_nBossIdx = nIndex;}
@@ -108,12 +106,15 @@ public:
 	int	 GetComboStage() {return m_nStageCount;}
 	BOOL GetComboClear() {return m_bStageClear;}
 	void SetStageNum(int stagenum) {m_nStageCount = stagenum;}
-	void SetSysImage(int systype, BOOL bView = FALSE);
+	void SetSysImage(int systype, BOOL bView = FALSE, int counttype = COMBO_TYPE);
 	void SetActionChack(BOOL chack) {m_bActionChack = chack;}
 	void ComboListRefresh();
 
+private:
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
+
+	void UpdateSetCase();
 };
 
 #endif

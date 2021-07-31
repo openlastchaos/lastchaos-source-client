@@ -9,14 +9,6 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Entities/Items.h>
-
-#include <vector>
-
 // Define text position
 #define	UI_PETFREE_TITLE_TEXT_OFFSETX		25
 #define	UI_PETFREE_TITLE_TEXT_OFFSETY		5
@@ -35,13 +27,13 @@
 class CUIPetFree : public CUIWindow
 {
 protected:
-	CItems 	m_selItem;
+	CItems* 			m_pSelItem;
 
 	// Controls
 	CUIButton			m_btnClose;							// Close button
 	CUIButton			m_btnOK;							// OK button
 	CUIButton			m_btnCancel;						// Cancel button
-	CUIButtonEx			m_btnSlotItem;						// Slot item button
+	CUIIcon*			m_pIconSlotItem;						// Slot item button
 
 	// Strings
 	int					m_nStringCount;						// Count of string	
@@ -52,7 +44,9 @@ protected:
 	int					m_nMoneyPosY;						// Position y of refine money text
 	int					m_nTextRegionHeight;				// Height of text region
 	int					m_nPettype;
-
+	float				m_fNpcPosX, m_fNpcPosZ;
+	int					m_nNpcIndex;
+	bool				m_bPremiumChar;
 	// Region of each part
 	UIRect				m_rcTitle;							// Region of title
 	UIRect				m_rcItemSlot;						// Region of item slot
@@ -89,7 +83,7 @@ public:
 	void	Render();
 
 	// Open & close refine
-	ENGINE_API	void	OpenPetFree( void );
+	ENGINE_API	void	OpenPetFree(float fX, float fZ, int nIdex);
 	void	ClosePetFree();
 
 	// Adjust position
@@ -104,6 +98,9 @@ public:
 
 	// recevie
 	void	PetFreeError( SLONG PetIndex, SBYTE sbResult );
+
+	// 프리미엄 캐릭터
+	void	SetPremiumBenefit(bool bUse) { m_bPremiumChar = bUse; }
 };
 
 

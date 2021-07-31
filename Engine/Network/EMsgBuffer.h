@@ -168,14 +168,14 @@ public:
 
 };
 
-//! ì´ êµ¬ì¡°ì²´ì—ëŠ” Tickì— ëŒ€í•œ ì •ë³´ê°€ ë‹´ê²¨ìˆë‹¤. 
+//! ÀÌ ±¸Á¶Ã¼¿¡´Â Tick¿¡ ´ëÇÑ Á¤º¸°¡ ´ã°ÜÀÖ´Ù. 
 // this struct contains information about a tick - marks it's starting position in the buffer, tick time
 // for which it was creted, number of acknowledges it is to receive and the number of messages it contains
 struct TickMarker {
 	TIME  tm_tmTickTime; 
 	SLONG tm_slTickOffset;
-	UBYTE tm_ubAcknowledgesExpected; //ì•„í¬íŒ¨í‚·ì´ ëŒì•„ì˜¤ëŠ”ë° ì˜ˆìƒë˜ëŠ” ì‹œê°„.
-  UWORD tm_uwNumMessages; //! ë©”ì‹œì§€ ê°¯ìˆ˜
+	UBYTE tm_ubAcknowledgesExpected; //¾ÆÅ©ÆĞÅ¶ÀÌ µ¹¾Æ¿À´Âµ¥ ¿¹»óµÇ´Â ½Ã°£.
+  UWORD tm_uwNumMessages; //! ¸Ş½ÃÁö °¹¼ö
 
   TickMarker() {
     tm_tmTickTime = -1;

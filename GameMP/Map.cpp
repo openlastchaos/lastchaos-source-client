@@ -1,78 +1,34 @@
 #include "stdafx.h"
 #include "LCDDrawing.h"
-#include <Engine/Interface/UIManager.h>
 #include <Engine/Interface/UITextureManager.h>
-
+#include <Engine/GlobalDefinition.h>
+#include <Engine/GameStageManager/StageMgr.h>
+#ifdef KALYDO
+#include <Kalydo/KRFReadLib/Include/KRFReadLib.h>
+#endif
 
 // Define
-#define LOADING_IMAGE_COUNT		33 //23
 #define	ROUND					0.005f
-#define FIRST_INTO_WORLD		LOADING_IMAGE_COUNT - 1
+#define FIRST_INTO_WORLD		MAX_ZONE_COUNT - 1
 
 //Text Pos
 #define PIX_TEXT				18
 #define PIY_TEXT				18
 
-ENGINE_API extern INDEX g_iCountry;
 // static Variable
-static CTextureObject	atoIcons[LOADING_IMAGE_COUNT][2];
+static CTextureObject	g_CTexCurLoading[2];
 static CTextureObject	ptoProgressBar;
 static CTextureObject	ptoLoadingBar;
 static CTextureObject	toText;
-static CTextureObject	toClassification;
+static CTextureObject	toClassification;	//°ÔÀÓµî±ÞÇ¥½Ã
 static CTextureData*	ptdProgressBar = NULL;
 static CTextureData*	ptdLoadingBar = NULL;
 static UIRectUV			rtProgressBar[3];
 static UIRectUV			rtLoadingBar[3];
+static UIRectUV			rtClassification;
 
 static int nLoadingStep = 0;
-
-extern ENGINE_API INDEX g_iCountry;
-
-float afMaxStep[LOADING_IMAGE_COUNT] = { 16.0f, // First Start
-						13.0f, // ì£¼ë…¸ 0
-						13.0f, // ë²¨í”¼ìŠ¤íŠ¸ 1
-						13.0f, // ìŠ¤íŠ¸ë ˆì´ì•„ 2 
-						13.0f, // í”„ë¦¬í‚¤ì˜¨ 3
-						13.0f, // ë“œë¼íƒ„ 4 
-						16.0f, // ë¯¸ë…¸í¬ íƒ„ê´‘ 5
-						13.0f, // ë“€í† ë¦¬ì–¼ 6
-						13.0f, // ë©”ë¼í¬ 7
-						13.0f, // ê¸¸ë“œ ì „ìš©ë°© 8
-						13.0f, // ë©”ë¼í¬ ë˜ì „ 9 
-						13.0f, // ì•„ìžì¹´ í˜‘ê³¡ 10
-						13.0f, // ì°¨ì›ì˜ ë¬¸ 11
-						13.0f, // ë§ê°ì˜ ì‹ ì „ 12
-						13.0f, // íƒœêµ­ í”„ë¦¬PKì¡´ 13
-						13.0f, // ì´ë²¤íŠ¸ ì¡´....
-						13.0f, // ì—ê²Œí•˜ 15
-						13.0f, // ì—ê²Œí•˜ PKì¡´
-						13.0f, // ì—ê²Œí•˜ ë˜ì „ 1~7F
-						13.0f, // ì—ê²Œí•˜ ë˜ì „ 8F
-						13.0f, // ì—ê²Œí•˜ ë˜ì „ 9F
-						13.0f, // ì—ê²Œí•˜ ë˜ì „ 10F
-						13.0f, // ë“œë¼íƒ„ ê³µì„± ë˜ì „ 21
-						13.0f, // ëª¬ìŠ¤í„° ì½¤ë³´ ì¡´ 22
-						13.0f, // ìŠ¤íŠ¸ë ˆì´ì•„ë‚˜ 23
-						13.0f, // PK í† ë„ˆë¨¼íŠ¸ 24
-						13.0f, // íë¸Œ 25
-						13.0f, // ì˜í˜¼ì˜ ë™êµ´ 26
-						13.0f, // ì½°ë‹ˆì•ˆ ë™êµ´ 27
-						13.0f, // ê³¨ëž¨ ë™êµ´ 28
-						13.0f, // ì—ë³´ë‹ˆ íƒ„ê´‘ (Ebony mine) 29
-						13.0f, // ë¯¸ìŠ¤í‹° í˜‘ê³¡(Misty Canyon) 30
-						13.0f, // í”Œë¡œë¼ìž„ ë™êµ´ 31
-						 };	// Into the World, Start LastChaos ëŠ” ì œì™¸ 
-
-
-// ----------------------------------------------------------------------------
-// Name : GetLoadingCount()
-// Desc : written by seo 40815
-// ----------------------------------------------------------------------------
-float GetLoadingCount ( )
-{
-	return afMaxStep[g_slZone+1];
-}
+float g_fCurLoadingStep = 0.f;
 
 // ----------------------------------------------------------------------------
 // Name : ObtainLoadingData()
@@ -83,123 +39,32 @@ BOOL ObtainLoadingData( void )
 	nLoadingStep = 0;
 
 	try 
-	{		
-		// Load Back Image
-		atoIcons[0][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_1_1.tex" ) );	// ì¥¬ë…¸ í•„ë“œ
-		atoIcons[0][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_1_2.tex" ) );
-    
-		atoIcons[1][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_1_1.tex" ) );	// ë²¨í”¼ìŠ¤íŠ¸ ì‹ ì „ ë˜ì ¼
-		atoIcons[1][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_1_2.tex" ) );
-
-		atoIcons[2][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_1_1.tex" ) );	// ìŠ¤íŠ¸ë ˆì´ì•„ ì‹ ì „ ì‹±ê¸€ ë˜ì ¼
-		atoIcons[2][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_1_2.tex" ) );    
-
-		atoIcons[3][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_2_1.tex" ) );	// í”„ë¡œí‚¤ì˜¨ ì‹ ì „ ë˜ì ¼
-		atoIcons[3][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_2_2.tex" ) );
-
-		atoIcons[4][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_2_1.tex" ) );	// ë“œë¼íƒ„ í•„ë“œ
-		atoIcons[4][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_2_2.tex" ) );
-
-		atoIcons[5][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_2_1.tex" ) );	// ë¯¸ë…¸í¬ íƒ„ê´‘ ì‹±ê¸€ ë˜ì ¼
-		atoIcons[5][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_2_2.tex" ) );
-
-		atoIcons[6][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_1_1.tex" ) );	// ìŠ¤íŠ¸ë ˆì´ì•„ ì‹ ì „ ì‹±ê¸€ ë˜ì ¼
-		atoIcons[6][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_1_2.tex" ) );
-
-		atoIcons[7][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_3_1.tex" ) );	// ë©”ë¼í¬ í•„ë“œ
-		atoIcons[7][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_3_2.tex" ) );
-
-		atoIcons[8][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\g_1_1.tex" ) );	// ê¸¸ë“œ ì „ìš© ë°©
-		atoIcons[8][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\g_1_2.tex" ) );
-
-		atoIcons[9][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_3_1.tex" ) );	// ë§ˆë¥´ê°€ë‘  ë˜ì ¼
-		atoIcons[9][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_3_2.tex" ) );
-
-		atoIcons[10][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_3_1.tex" ) );	// ì•„ìžì¹´ í˜‘ê³¡ ì‹±ê¸€ ë˜ì ¼
-		atoIcons[10][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_3_2.tex" ) );
-
-		atoIcons[11][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_4_1.tex" ) );	// ì°¨ì›ì˜ ë¬¸ ì‹±ê¸€ ë˜ì ¼
-		atoIcons[11][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_4_2.tex" ) );
-
-		atoIcons[12][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_4_1.tex" ) );	// ë§ê°ì˜ ì‹ ì „ ë˜ì ¼
-		atoIcons[12][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_4_2.tex" ) );
-
-		atoIcons[13][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_3_1.tex" ) );	// ë§ˆë¥´ê°€ë‘  pkì¡´ ë˜ì ¼
-		if(g_iCountry == HONGKONG)
-		{	atoIcons[13][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_3_2_pk.tex" ) );}	//ttos_080506 : í™ì½©ë§Œ ì²˜ë¦¬
-		else atoIcons[13][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_3_2.tex" ) );
-		
-
-		atoIcons[14][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\Loading00_1.tex" ) );	// OX ì´ë²¤íŠ¸ ì¡´
-		atoIcons[14][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\Loading00_2.tex" ) );
-
-		atoIcons[15][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_4_1.tex" ) );	// ì—ê²Œí•˜ ì„¤ì •....
-		atoIcons[15][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_4_2.tex" ) );
-		
-		atoIcons[16][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_4_1.tex" ) );	// ì—ê²Œí•˜ PKì¡´ ìž„ì‹œì„¤ì •....
-		atoIcons[16][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_4_2.tex" ) );
-
-		atoIcons[17][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_17_1.tex" ) );	// ì—ê²Œí•˜ë˜ì „ 1ì¸µ....
-		atoIcons[17][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_17_2.tex" ) );
-		
-		atoIcons[18][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_17_1.tex" ) );	// ì—ê²Œí•˜ë˜ì „ 8ì¸µ....
-		atoIcons[18][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_17_2.tex" ) );
-
-		atoIcons[19][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_17_1.tex" ) );  // ì—ê²Œí•˜ë˜ì „ 9ì¸µ....
-		atoIcons[19][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_17_2.tex" ) );  // ì—ê²Œí•˜ë˜ì „ 9ì¸µ....
-    
-		atoIcons[20][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_17_1.tex" ) );  // ì—ê²Œí•˜ë˜ì „ 10ì¸µ....
-		atoIcons[20][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_17_2.tex" ) );  // ì—ê²Œí•˜ë˜ì „ 10ì¸µ....
-
-		atoIcons[21][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_21_1.tex" ) );
-		atoIcons[21][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_21_2.tex" ) );
-
-		atoIcons[22][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_22_1.tex" ) );	// ëª¬ìŠ¤í„° ì½¤ë³´ ì¡´
-		atoIcons[22][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_22_2.tex" ) );	// ëª¬ìŠ¤í„° ì½¤ë³´ ì¡´
-
-		if (g_iCountry == USA || g_iCountry == BRAZIL || g_iCountry == HONGKONG || g_iCountry == MALAYSIA || g_iCountry == GERMANY)
+	{
+		if (g_slZone >= 0)
 		{
-			atoIcons[23][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_5_1.tex") ); // ìŠ¤íŠ¸ë ˆì´ì•„ë‚˜
-			atoIcons[23][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\f_5_2.tex") ); // ìŠ¤íŠ¸ë ˆì´ì•„ë‚˜
-	
-		
-			atoIcons[24][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_24_1.tex" ) );	// PKí† ë„ˆë¨¼íŠ¸ì¡´
-			atoIcons[24][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_24_2.tex" ) );	// PKí† ë„ˆë¨¼íŠ¸ì¡´
-
-			atoIcons[25][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_25_1.tex" ) );	// íë¸Œ
-			atoIcons[25][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_25_2.tex" ) );	// íë¸Œ
-
-			atoIcons[26][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_26_1.tex" ) );	// íë¸Œ
-			atoIcons[26][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_26_2.tex" ) );	// íë¸Œ
-
-			atoIcons[27][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_27_1.tex" ) );	// ì½°ë‹ˆì•ˆ ë™êµ´
-			atoIcons[27][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_27_2.tex" ) );	// ì½°ë‹ˆì•ˆ ë™êµ´
-
-			atoIcons[28][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_28_1.tex" ) );	// ê³¨ë ˜ ë™êµ´
-			atoIcons[28][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\s_28_2.tex" ) );	// ê³¨ë ˜ ë™êµ´	
-		}
-
-		if (g_iCountry == USA || g_iCountry == GERMANY)
-		{
+			CTString strLoadingTex1;
+			CTString strLoadingTex2;
+			float	 fStep;
+			CZoneInfo* pZoneInfo = CZoneInfo::getSingleton();
 			
-			atoIcons[29][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_29_1.tex" ) );	// ì—ë³´ë‹ˆ íƒ„ê´‘
-			atoIcons[29][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_29_2.tex" ) );	// ì—ë³´ë‹ˆ íƒ„ê´‘
-
-			atoIcons[30][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_30_1.tex" ) );	// ë¯¸ìŠ¤í‹° í˜‘ê³¡
-			atoIcons[30][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_30_2.tex" ) );	// ë¯¸ìŠ¤í‹° í˜‘ê³¡
-
-			atoIcons[31][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_31_1.tex" ) );	// ë¯¸ìŠ¤í‹° í˜‘ê³¡
-			atoIcons[31][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\d_31_2.tex" ) );	// ë¯¸ìŠ¤í‹° í˜‘ê³¡			
+			pZoneInfo->GetLoadingInfo(g_slZone, fStep, strLoadingTex1, strLoadingTex2);
+			
+			g_CTexCurLoading[0].SetData_t(strLoadingTex1);
+			g_CTexCurLoading[1].SetData_t(strLoadingTex2);
+			g_fCurLoadingStep = fStep;
 		}
-
-		// Load First into world
-		atoIcons[FIRST_INTO_WORLD][0].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\Loading00_1.tex" ) );
-		atoIcons[FIRST_INTO_WORLD][1].SetData_t( CTFILENAME( "Data\\Interface\\Loading\\Loading00_2.tex" ) );    
-
-		// Load Classification 
-		toClassification.SetData_t( CTFILENAME( "Data\\Interface\\Loading\\Classification_15.tex" ) );
-		toText.SetData_t( CTFILENAME( "Data\\Interface\\Loading\\Text.tex" ) );
+		else
+		{
+			g_CTexCurLoading[0].SetData_t(CTFILENAME( "Data\\Interface\\Loading\\Loading00_1.tex" ));
+			g_CTexCurLoading[1].SetData_t(CTFILENAME( "Data\\Interface\\Loading\\Loading00_2.tex" ));
+			g_fCurLoadingStep = 16.f;
+		}
 		
+		toClassification.SetData_t( CTFILENAME( "Data\\Interface\\Loading\\Classification_15.tex" ) );
+		rtClassification.SetUV(0,0,64,64,toClassification.GetWidth(),toClassification.GetHeight());
+
+		toText.SetData_t( CTFILENAME( "Data\\Interface\\Loading\\Text.tex" ) );
+
 		// Load Progress Bar
 		ptoProgressBar.SetData_t( CTFILENAME ( "Data\\Interface\\Loading\\ProgressBar.tex" ) );
 		ptoLoadingBar.SetData_t( CTFILENAME ( "Data\\Interface\\Loading\\LoadingBar.tex" ) );
@@ -235,17 +100,12 @@ BOOL ObtainLoadingData( void )
 // ----------------------------------------------------------------------------
 // Name : ReleaseLoadingData()
 // Desc : 
-// Last Edit : ì´ê¸°í™˜ ( 12. 10 )
+// Last Edit : ÀÌ±âÈ¯ ( 12. 10 )
 // ----------------------------------------------------------------------------
 void ReleaseLoadingData( void )
 {
-	int nCount = LOADING_IMAGE_COUNT;
-
-	while( nCount-- )
-	{
-		atoIcons[nCount][1].SetData(NULL);
-		atoIcons[nCount][0].SetData(NULL);
-	}
+	g_CTexCurLoading[0].SetData(NULL);
+	g_CTexCurLoading[1].SetData(NULL);
 
 	ptoProgressBar.SetData ( NULL );
 	ptdProgressBar = NULL;
@@ -262,14 +122,13 @@ void ReleaseLoadingData( void )
 // ----------------------------------------------------------------------------
 // Name : RenderLoading()
 // Desc : 
-// Last Edit : ì´ê¸°í™˜ ( 12. 10 )
+// Last Edit : ÀÌ±âÈ¯ ( 12. 10 )
 // ----------------------------------------------------------------------------
 void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi)
 {
 	static float fMaxStep = 0.0f;
-	static int nLoadingImage = FIRST_INTO_WORLD;
 
-	// ìµœì´ˆ ì‹¤í–‰
+	// ÃÖÃÊ ½ÇÇà
 	if( pphi->phi_phsStatus == PHS_INIT )	
 	{
 		if( !ObtainLoadingData() )
@@ -278,143 +137,95 @@ void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi)
 			return;
 		}
 		
-		fMaxStep = GetLoadingCount();
-
-		if ( g_slZone == -1 )	// Start
-		{
-			nLoadingImage = FIRST_INTO_WORLD;
-		}
-		else
-		{
-			if ( !g_bFirstIntoWorld )
-			{
-				// Render Back Image Number
-				//nLoadingImage = ( ZoneInfo().GetZoneType( g_slZone ) + 1 ); // í•„ë“œ íƒ€ìž… +1 (startì¶”ê°€) ìž…ë‹ˆë‹¤.
-				nLoadingImage = g_slZone;
-			}
-			else // ì²˜ìŒ ì›”ë“œë¡œ ì§„ìž…í•  ë•ŒëŠ” ë‹¤ë¥¸ ì´ë¯¸ì§€ ì¶œë ¥
-			{
-				nLoadingImage = g_slZone;
-				g_bFirstIntoWorld = FALSE;
-			}
-		}
+		fMaxStep = g_fCurLoadingStep;
 	}
-
-	
 	// Render Back Image ==============================================================================
 	
   	PIX pixdpw = pdp->GetWidth();
 	PIX pixdph = pdp->GetHeight();
 
-	FLOAT fPointStretch	= 0.0f;;	// ì¶•ì†Œ ì‹œ ì•„ëž˜ ìª½ ê·¸ë¦¼ì´ ì¶œë ¥ë  ìœ„ì¹˜
-	FLOAT fStretch		= 1.0f;	// ê°€ë¡œëŒ€ ì„¸ë¡œ ì¶•ì†Œ ë¹„ìœ¨ ( 800/600, 1024/768 ... )
+	FLOAT fPointStretch	= 0.0f;;	// Ãà¼Ò ½Ã ¾Æ·¡ ÂÊ ±×¸²ÀÌ Ãâ·ÂµÉ À§Ä¡
+	FLOAT fStretch		= 1.0f;	// °¡·Î´ë ¼¼·Î Ãà¼Ò ºñÀ² ( 800/600, 1024/768 ... )
 			
-	PIX pixOriginalX	= 1024;		// ì›ë³¸ ì´ë¯¸ì§€ì˜ í¬ê¸°
+	PIX pixOriginalX	= 1024;		// ¿øº» ÀÌ¹ÌÁöÀÇ Å©±â
 	PIX pixOriginalY	= 768;
 
-	PIX ImageSizeY512	= 512;		// ì»¤íŒ… ëœ ì´ë¯¸ì§€ ì‹¸ì´ì¦ˆ
+	PIX ImageSizeY512	= 512;		// Ä¿ÆÃ µÈ ÀÌ¹ÌÁö ½ÎÀÌÁî
 	PIX ImageSizeY256	= 256;
 
-	PIX pixSX			= 0;		// ì´ë¯¸ì§€ ì¶œë ¥ ìœ„ì¹˜
+	PIX pixSX			= 0;		// ÀÌ¹ÌÁö Ãâ·Â À§Ä¡
 	PIX pixSY			= 0;
 
 	float fPersent		= 1.0f;
 	
-	if( pixdpw == 1024 && pixdph == 768 )	// 1024 x 768 : ê·¸ëƒ¥ ë¿ŒëŸ¬ ì£¼ìž
+	if( pixdpw == 1024 && pixdph == 768 )	// 1024 x 768 : ±×³É »Ñ·¯ ÁÖÀÚ
 	{
-		pdp->PutTexture( &atoIcons[nLoadingImage][0], PIXaabbox2D( PIX2D(pixSX,pixSY), PIX2D(pixOriginalX,ImageSizeY512)), C_WHITE|255 );
-		pdp->PutTexture( &atoIcons[nLoadingImage][1], PIXaabbox2D( PIX2D(pixSX,ImageSizeY512), PIX2D(pixOriginalX,pixOriginalY)), C_WHITE|255 );
+ 		pdp->PutTexture( &g_CTexCurLoading[0], PIXaabbox2D( PIX2D(pixSX,pixSY), PIX2D(pixOriginalX,ImageSizeY512)), C_WHITE|255 );
+ 		pdp->PutTexture( &g_CTexCurLoading[1], PIXaabbox2D( PIX2D(pixSX,ImageSizeY512), PIX2D(pixOriginalX,pixOriginalY)), C_WHITE|255 );
 	}
-	else if ( pixdph < 768 ) // 1024 x 768 ë³´ë‹¤ ìž‘ì„ ë•Œ ( 800 x 600 ) : ì„¸ë¡œ í¬ê¸°ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ì¶•ì†Œ í•œë‘ ê°€ìš´ë° ì •ë ¬
+	else if ( pixdph < 768 ) // 1024 x 768 º¸´Ù ÀÛÀ» ¶§ ( 800 x 600 ) : ¼¼·Î Å©±â¸¦ ±âÁØÀ¸·Î Ãà¼Ò ÇÑµÎ °¡¿îµ¥ Á¤·Ä
 	{
 		fStretch		= 1.3333f;
 		
 		fPersent = (float)pixdph / (float)pixOriginalY;
 		
-		// ì¶•ì†Œ
+		// Ãà¼Ò
 		fPointStretch	= (FLOAT)ImageSizeY512 / (FLOAT)pixOriginalY;
 		PIX	pixPointY	= ( pixdph * fPointStretch );
 
-		// ë¹„ìœ¨ë¡œ ì¡°ì •ëœ ê°€ë¡œ ìœ„ì¹˜ ( ì†Œìˆ˜ì  3ì§¸ ìžë¦¬ì—ì„œ ë°˜ì˜¬ë¦¼ )
+		// ºñÀ²·Î Á¶Á¤µÈ °¡·Î À§Ä¡ ( ¼Ò¼öÁ¡ 3Â° ÀÚ¸®¿¡¼­ ¹Ý¿Ã¸² )
 		pixOriginalX	= pixdph *  fStretch + ROUND;
 		
-		// ê°€ë¡œ ê°€ìš´ë° ì •ë ¬
+		// °¡·Î °¡¿îµ¥ Á¤·Ä
 		pixSX			= ( pixdpw - pixOriginalX ) / 2;
 		
-		pdp->PutTexture( &atoIcons[nLoadingImage][0], PIXaabbox2D( PIX2D(pixSX,pixSY), PIX2D(pixdpw-pixSX,pixPointY)), C_WHITE|255);
-		pdp->PutTexture( &atoIcons[nLoadingImage][1], PIXaabbox2D( PIX2D(pixSX,pixPointY), PIX2D(pixdpw-pixSX,pixdph)), C_WHITE|255);
+ 		pdp->PutTexture( &g_CTexCurLoading[0], PIXaabbox2D( PIX2D(pixSX,pixSY), PIX2D(pixdpw-pixSX,pixPointY)), C_WHITE|255);
+ 		pdp->PutTexture( &g_CTexCurLoading[1], PIXaabbox2D( PIX2D(pixSX,pixPointY), PIX2D(pixdpw-pixSX,pixdph)), C_WHITE|255);
 
 	}
-	else // 1024 x 768 ë³´ë‹¤ í´ ë•Œ	// ê°€ìš´ëŒ€ë¡œ ë„ìš°ìž
+	else // 1024 x 768 º¸´Ù Å¬ ¶§	// °¡¿î´ë·Î ¶ç¿ìÀÚ
 	{
-		// ì¶œë ¥ ìœ„ì¹˜ë¥¼ ê°€ìš´ë°ë¡œ ë³´ì •
+		// Ãâ·Â À§Ä¡¸¦ °¡¿îµ¥·Î º¸Á¤
 		pixSX = ( pixdpw - pixOriginalX ) / 2;
 		pixSY = ( pixdph - pixOriginalY ) / 2;
 		
-		pdp->PutTexture( &atoIcons[nLoadingImage][0], PIXaabbox2D( PIX2D(pixSX, pixSY), PIX2D(pixSX+pixOriginalX,pixSY+ImageSizeY512)), C_WHITE|255);
-		pdp->PutTexture( &atoIcons[nLoadingImage][1], PIXaabbox2D( PIX2D(pixSX, pixSY+ImageSizeY512), PIX2D(pixSX+pixOriginalX, pixSY+pixOriginalY)), C_WHITE|255);
-	}
-	
-	
-	
-	
-
-	// Render Classification ============================================================================ FRANCE_SPAIN_CLOSEBETA_NA_20081124
-	if ( nLoadingImage == 0 && g_iCountry != BRAZIL && g_iCountry != GERMANY && g_iCountry != SPAIN && g_iCountry != FRANCE && g_iCountry != POLAND) // start í™”ë©´
-	{
-		float fWidth = toClassification.GetWidth();		// * fPersent;	// ë“±ê¸‰í‘œì‹œëŠ” ì¶•ì†Œ ì•ˆí•¨
-		float fHeight = toClassification.GetHeight();	// * fPersent;		
-			
-		// ì¶œë ¥ ìœ„ì¹˜ : ë°°ê²½ ì´ë¯¸ì§€ì— ìƒê´€ ì—†ì´ í™”ë©´ ìš°ì¸¡ ìƒë‹¨
-		// PIX	pixX = pixdpw - ( fWidth + fWidth / 2 );
-		// PIX	pixY = ( fHeight / 2 );
-
-		// ë°°ê²½ ì´ë¯¸ì§€ì˜ ìš°ì¸¡ ìƒë‹¨
-		PIX	pixX = pixSX + pixOriginalX - ( fWidth + fWidth / 4 );
-		PIX	pixY = pixSY + ( fHeight / 4 );
-				
-		pdp->PutTexture( &toClassification, PIXaabbox2D( PIX2D(pixX, pixY), PIX2D(pixX+fWidth,pixY+fHeight)), C_WHITE|255);	
+ 		pdp->PutTexture( &g_CTexCurLoading[0], PIXaabbox2D( PIX2D(pixSX, pixSY), PIX2D(pixSX+pixOriginalX,pixSY+ImageSizeY512)), C_WHITE|255);
+ 		pdp->PutTexture( &g_CTexCurLoading[1], PIXaabbox2D( PIX2D(pixSX, pixSY+ImageSizeY512), PIX2D(pixSX+pixOriginalX, pixSY+pixOriginalY)), C_WHITE|255);
 	}
 
 	// Render Text
-	if ( nLoadingImage == FIRST_INTO_WORLD ) // ì²˜ìŒ ì›”ë“œë¡œ ë“¤ì–´ê°ˆ ë•Œ í™”ë©´
+	if ( g_slZone == -1 ) // Ã³À½ ¿ùµå·Î µé¾î°¥ ¶§ È­¸é
 	{
-		float fWidth = toText.GetWidth();	// * fPersent;	// ë“±ê¸‰í‘œì‹œëŠ” ì¶•ì†Œ ì•ˆí•¨
+		float fWidth = toText.GetWidth();	// * fPersent;	// µî±ÞÇ¥½Ã´Â Ãà¼Ò ¾ÈÇÔ
 		float fHeight = toText.GetHeight();	// * fPersent;		
 			
-		// ì¶œë ¥ ìœ„ì¹˜ : ë°°ê²½ ì´ë¯¸ì§€ì— ìƒê´€ ì—†ì´ í™”ë©´ ìš°ì¸¡ ìƒë‹¨
-		// PIX	pixX = pixdpw - ( fWidth + fWidth / 2 );
-		// PIX	pixY = ( fHeight / 2 );
-
-		// ë°°ê²½ ì´ë¯¸ì§€ì˜ ìš°ì¸¡ ìƒë‹¨
+		// ¹è°æ ÀÌ¹ÌÁöÀÇ ¿ìÃø »ó´Ü
 		PIX	pixX = pixSX + PIX_TEXT;
 		PIX	pixY = pixSY + PIY_TEXT;
 				
 		pdp->PutTexture( &toText, PIXaabbox2D( PIX2D(pixX, pixY), PIX2D(pixX+fWidth,pixY+fHeight)), C_WHITE|255);	
-
-
 	}
 
-	if ( nLoadingImage == FIRST_INTO_WORLD || nLoadingImage == 14) 
+	if ( g_slZone == -1 || g_slZone == 14 ) // ÀÓ½Ã 14:OXÁ¸,¸¶Áö¸·Á¸ ±âº» ·ÎµùÀÌ¹ÌÁö·Î...
 	{
 		
 		// Render Progress Bar ==============================================================================
-		float m_pX				= pixSX + 49 * fPersent;		// ì´ë¯¸ì§€ ì¶œë ¥ ìœ„ì¹˜
+		float m_pX				= pixSX + 49 * fPersent;		// ÀÌ¹ÌÁö Ãâ·Â À§Ä¡
 		float m_pY				= pixSY + 736 * fPersent - ROUND;
 		
-		float fUniStepWidth		= 0.0f;							// ë‹¨ê³„ í•˜ë‚˜ê°€ ì°¨ì§€ í•˜ëŠ” ì´ë¯¸ì§€ ê¸¸ì´
+		float fUniStepWidth		= 0.0f;							// ´Ü°è ÇÏ³ª°¡ Â÷Áö ÇÏ´Â ÀÌ¹ÌÁö ±æÀÌ
 		
-		float fSideImageWidth	= 12.0f * fPersent;				// ì‹œìž‘ ì´ë¯¸ì§€ì˜ í¬ê¸°
+		float fSideImageWidth	= 12.0f * fPersent;				// ½ÃÀÛ ÀÌ¹ÌÁöÀÇ Å©±â
 		float fSideImageHeight	= 16.0f * fPersent; 
 		
-		float fProgressLength	= 902.0f / fMaxStep * fPersent;	// í•œë‹¨ê³„ì˜ ë¡œë”©ì´ ì´ë™í•´ì•¼ í•˜ëŠ” ê¸¸ì´
+		float fProgressLength	= 902.0f / fMaxStep * fPersent;	// ÇÑ´Ü°èÀÇ ·ÎµùÀÌ ÀÌµ¿ÇØ¾ß ÇÏ´Â ±æÀÌ
 		
 		float m_eX = 0.0f;
 		
 		// Render Start ...
-		pdp->InitTextureData( ptdProgressBar );
-		
-		// Render Start Image
+ 		pdp->InitTextureData( ptdProgressBar );
+ 		
+// 		// Render Start Image
 		pdp->AddTexture( m_pX, m_pY, m_pX + fSideImageWidth, m_pY + fSideImageHeight,
 			rtProgressBar[0].U0, rtProgressBar[0].V0, rtProgressBar[0].U1, rtProgressBar[0].V1,
 			0xFFFFFFFF );
@@ -454,8 +265,13 @@ void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi)
 		
 		// Render Text ( Description ) =========================================================================
 		float fFontSize = fPersent / 2 - 0.05;
+#if defined G_RUSSIA
+		pdp->SetFont( _pfdDefaultFont );
+		pdp->SetTextScaling( fFontSize * 2.5 );
+#else
 		pdp->SetFont( _pfdDisplayFont );
 		pdp->SetTextScaling( fFontSize );
+#endif
 		pdp->SetTextAspect( 1.0f );
 		pdp->SetTextShadow( +2 );
 		
@@ -466,15 +282,16 @@ void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi)
 	else
 	{			
 		// Render Progress Bar ==============================================================================
-		float m_pX				= pixSX + 149 * fPersent;		// ì´ë¯¸ì§€ ì¶œë ¥ ìœ„ì¹˜
+		float m_pX				= pixSX + 149 * fPersent;		// ÀÌ¹ÌÁö Ãâ·Â À§Ä¡
 		float m_pY				= pixSY + 612 * fPersent - ROUND;
 		
-		float fUniStepWidth		= 0.0f;							// ë‹¨ê³„ í•˜ë‚˜ê°€ ì°¨ì§€ í•˜ëŠ” ì´ë¯¸ì§€ ê¸¸ì´
+		float fUniStepWidth		= 0.0f;							// ´Ü°è ÇÏ³ª°¡ Â÷Áö ÇÏ´Â ÀÌ¹ÌÁö ±æÀÌ
 		
-		float fSideImageWidth	= 11.0f * fPersent;				// ì‹œìž‘ ì´ë¯¸ì§€ì˜ í¬ê¸°
+		float fSideImageWidth	= 11.0f * fPersent;				// ½ÃÀÛ ÀÌ¹ÌÁöÀÇ Å©±â
 		float fSideImageHeight	= 11.0f * fPersent; 
 		
-		float fLoadingLength	= 716.0f / fMaxStep * fPersent;	// í•œë‹¨ê³„ì˜ ë¡œë”©ì´ ì´ë™í•´ì•¼ í•˜ëŠ” ê¸¸ì´
+		// [2012/01/19 : Sora] ·Îµù ¹Ù ±æÀÌ°¡ 727ÀÎµ¥ 11(½ÃÀÛ ÀÌ¹ÌÁö) + 716(Áß°£ ÀÌ¹ÌÁö) + 11(³¡)À¸·Î °è»êÇØ¼­ ¹þ¾î³ª°í ÀÖ¾úÀ½(716 -> 704·Î ¼öÁ¤)
+		float fLoadingLength	= 704.0f / fMaxStep * fPersent;	// ÇÑ´Ü°èÀÇ ·ÎµùÀÌ ÀÌµ¿ÇØ¾ß ÇÏ´Â ±æÀÌ
 		
 		float m_eX = 0.0f;
 		
@@ -496,14 +313,19 @@ void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi)
 				nLoadingStep++;
 			}
 		}
+// [2012/01/10 : Sora] ±»ÀÌ ´õÇÒ ÇÊ¿ä ¾øÀ»µí;; ÀÏ´Ü ·¯½Ã¾Æ¸¸ ÅÐ¾î º»´Ù
+#if !defined(G_RUSSIA)
 		else 
 		{
-			fUniStepWidth = fLoadingLength * ( ( pphi->phi_phsStatus == PHS_WORKING)?pphi->phi_fCompleted:0 );
+			if ( nLoadingStep < fMaxStep ) 
+			{
+				fUniStepWidth = fLoadingLength * ( ( pphi->phi_phsStatus == PHS_WORKING)?pphi->phi_fCompleted:0 );
+			}
 		}
+#endif
 		
 		// Loading End Position
 		m_eX  = m_pX + ( nLoadingStep * fLoadingLength ) + fUniStepWidth;
-		
 		
 		// Render Middle Image
 		pdp->AddTexture(  m_pX, m_pY, m_eX, m_pY + fSideImageHeight,
@@ -521,8 +343,13 @@ void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi)
 		
 		// Render Text ( Description ) =========================================================================
 		float fFontSize = fPersent / 2 - 0.05;
+#if defined G_RUSSIA
+		pdp->SetFont( _pfdDefaultFont );
+		pdp->SetTextScaling( fFontSize * 2.5 );
+#else
 		pdp->SetFont( _pfdDisplayFont );
 		pdp->SetTextScaling( fFontSize );
+#endif
 		pdp->SetTextAspect( 1.0f );
 		pdp->SetTextShadow( +2 );
 		
@@ -534,12 +361,10 @@ void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi)
 	if( pphi->phi_phsStatus == PHS_END )
 	{
 		ReleaseLoadingData();
-		
-		// Date : 2005-11-03(ì˜¤í›„ 1:46:43), By Lee Ki-hwan
-		// ë¡œë”©ì´ ëë‚¬ìœ¼ë©´ ì„œë²„ì— ê²Œìž„ ì‹œìž‘ ë©”ì„¸ì§€ ì „ì†¡ 
-		if( _pNetwork->GetLoadingZone() == g_slZone && g_slZone != -1 ) 
+
+		// ·ÎµùÀÌ ¿Ï·áµÇ¸é, Stage ÀüÈ¯
+		if (STAGEMGR()->GetCurStage() == eSTAGE_ZONELOADING)
 		{
-			_pUIMgr->SetUIGameState( UGS_GAMELOADING );
 			_pNetwork->SendGameStart();
 		}
 	}

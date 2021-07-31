@@ -180,7 +180,19 @@ public:
   // array for holding edges that proceed with testing
   CDynamicArray<DOUBLEbspedge3D> oc_abedProceeding;
 
-  CObjectCSG(void) {
+  CObjectCSG(void) 
+	  : oc_poscSectorA(NULL)
+	  , oc_poscSectorB(NULL)
+	  , oc_popoA(NULL)
+	  , oc_popoWallA1(NULL)
+	  , oc_popoWallA1_2(NULL)
+	  , oc_popoPortalA1A2(NULL)
+	  , oc_popoPortalA1A2_2(NULL)
+	  , oc_popoPortalA1B1(NULL)
+	  , oc_popoWallB1(NULL)
+	  , oc_popoPortalB1A1(NULL)
+	  , oc_popoPortalB1B2(NULL)
+  {
     oc_bCSGIngoringEnabled = FALSE;
     oc_bSkipObjectB = FALSE;
   }

@@ -32,9 +32,9 @@ public:
 	__forceinline Type ManhattanNorm(void) const;
 	/* Conversion into scalar -- Max norm of vector. */
 	__forceinline Type MaxNorm(void) const;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	__forceinline Type Magnitude(void) const;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 	/* Reference vector member by it's index (1-based indices!). */
 	__forceinline Type &operator()(int i);
@@ -153,7 +153,7 @@ __forceinline Type Vector<Type, iDimensions>::Length(void) const
 	return (Type)sqrt((DOUBLE)result);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 __forceinline FLOAT Vector<FLOAT,3>::Magnitude(void) const
 {
 	return (FLOAT)((*this)(1)*(*this)(1) + (*this)(2)*(*this)(2) + (*this)(3)*(*this)(3));
@@ -169,7 +169,7 @@ __forceinline Type Vector<Type, iDimensions>::Magnitude(void) const
 	for(int i=1; i<=iDimensions; i++) result += (*this)(i) * (*this)(i);
 	return (Type)result;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 /*
  * Conversion into scalar -- Manhattan norm of vector.

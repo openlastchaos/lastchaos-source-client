@@ -77,13 +77,13 @@ class CUIGroup : public CUIWindow
 public:
 	
 	// Control
-	CUIButton					m_btnExtension;		// í™•ì¥ ë²„íŠ¼ 
-	CUIButton					m_btnReduction;		// ì¶•ì†Œ ë²„íŠ¼ 
+	CUIButton					m_btnExtension;		// È®Àå ¹öÆ° 
+	CUIButton					m_btnReduction;		// Ãà¼Ò ¹öÆ° 
 
-	CTString					m_strGroupName;		// ê·¸ë£¹ì´ë¦„ 
-	std::vector<CMemberInfo>	m_vecMember;		// ê·¸ë£¹ì› ë¦¬ìŠ¤íŠ¸ 
-	bool						m_bExtension;		// í™•ì¥ì—¬ë¶€
-	//int							m_nScrollPos;		// ìƒìœ„ ì›ë„ìš°ì˜ ìŠ¤í¬ë¡¤ ë°” ìœ„ì¹˜ 
+	CTString					m_strGroupName;		// ±×·ìÀÌ¸§ 
+	std::vector<CMemberInfo>	m_vecMember;		// ±×·ì¿ø ¸®½ºÆ® 
+	bool						m_bExtension;		// È®Àå¿©ºÎ
+	//int							m_nScrollPos;		// »óÀ§ ¿øµµ¿ìÀÇ ½ºÅ©·Ñ ¹Ù À§Ä¡ 
 	bool						m_bShowGroupName;
 	int							m_nLineHeight;
 	int							m_nSelectLine;
@@ -130,11 +130,11 @@ public :
 	CMemberInfo GetMemberInfo( CTString strName );
 	*****/
 
-	// í™•ì¥, ì¶•ì†Œ
+	// È®Àå, Ãà¼Ò
 	void SetExtension( bool bExtension );
 	bool IsExtension() const { return m_bExtension; }
 	
-	// ìŠ¤í¬ë¡¤ ë°”ì˜ ìœ„ì¹˜ì— ì˜í•œ ìœ„ì¹˜ ì„¤ì •
+	// ½ºÅ©·Ñ ¹ÙÀÇ À§Ä¡¿¡ ÀÇÇÑ À§Ä¡ ¼³Á¤
 	int SetScrollPos( int nPos );
 	int GetShowRange();
 	

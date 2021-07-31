@@ -10,14 +10,14 @@
 #endif
 
 
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIEditBox.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIEditBox.h>
 #include <Engine/Interface/UIComboBox.h>
-#include <Engine/Interface/UIMultiEditBox.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
-#include <string>
-#include <vector>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+// #include <Engine/Interface/UIMultiEditBox.h>
+// //¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+// #include <string>
+// #include <vector>
+// //¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 
 // Section of web board
@@ -40,7 +40,7 @@ enum UIWebBoardType
 	UWT_MODIFY,
 };
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 // Type of modify mode
 enum UIWebBoardModifyType
 {
@@ -49,15 +49,16 @@ enum UIWebBoardModifyType
 	UWM_MODIFY,
 	UWM_DELETE,
 };
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 class CUIWebBoardDelayCommand
 {
 public:
-	virtual BOOL ClearOldCommand();
-	virtual BOOL ExecuteImmediate(class CUIWebBoard &rUIWebBoard) = 0;
-	virtual BOOL ExecuteDelay(class CUIWebBoard &rUIWebBoard, BOOL &bRender) = 0;
+	virtual BOOL	ClearOldCommand();
+	virtual BOOL	ExecuteImmediate(class CUIWebBoard &rUIWebBoard) = 0;
+	virtual BOOL	ExecuteDelay(class CUIWebBoard &rUIWebBoard, BOOL &bRender) = 0;
+	void			ConvertStringToWebParameter(const char *szParam, std::string& strOutput);
 };
 
 class CCommandOpen : public CUIWebBoardDelayCommand
@@ -89,7 +90,7 @@ public:
 	virtual BOOL ExecuteDelay(CUIWebBoard &rUIWebBoard, BOOL &bRender);
 };
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 #define	WBOARD_TAB_WIDTH					95
 
@@ -133,7 +134,7 @@ public:
 #define	WBOARD_WRITE_TITLE_SUBJECT_SY		97
 #define	WBOARD_WRITE_TITLE_CONTENT_SY		247
 
-#define WBOARD_WRITE_NAME_SX				83 // ì´ê¸°í™˜ ì¶”ê°€ (05.01.01) : ê²Œì‹œíŒ ì“°ê¸° 
+#define WBOARD_WRITE_NAME_SX				83 // ÀÌ±âÈ¯ Ãß°¡ (05.01.01) : °Ô½ÃÆÇ ¾²±â 
 #define WBOARD_WRITE_SUBJECT_SX				83
 #define WBOARD_WRITE_CONTENT_SX				80
 
@@ -164,18 +165,18 @@ public:
 class CUIWebBoard : public CUIWindow
 {
 protected:
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	class cWeb			&m_web;
 	BOOL				m_bWaitResponseMode;
 	BOOL				m_bVisible;
 	std::vector<CUIWebBoardDelayCommand *>
 						m_vectorDelayCommand;
-	BOOL				m_bAuthorIsMe;						//í˜„ì¬ viewì— ë³´ì´ëŠ” ê¸€ì´ ë‚´ê¸€ì¸ê°€?
-	int					m_nCurrentViewWriteIndex;			//í˜„ì¬ ë³´ì´ëŠ” ììœ ê²Œì‹œíŒ ê¸€ì˜ index
-	int					m_nWantPage;						//CCommandListì—ì„œ ì‚¬ìš©
-	int					m_nWantWrite;						//CCommandViewì—ì„œ ì‚¬ìš©
+	BOOL				m_bAuthorIsMe;						//ÇöÀç view¿¡ º¸ÀÌ´Â ±ÛÀÌ ³»±ÛÀÎ°¡?
+	int					m_nCurrentViewWriteIndex;			//ÇöÀç º¸ÀÌ´Â ÀÚÀ¯°Ô½ÃÆÇ ±ÛÀÇ index
+	int					m_nWantPage;						//CCommandList¿¡¼­ »ç¿ë
+	int					m_nWantWrite;						//CCommandView¿¡¼­ »ç¿ë
 	int					m_nWantModifyMode;					//CCommandModify
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	int					m_nCurSection;						// Section of web board
 	int					m_nCurBoardType;					// Type of web board
 
@@ -258,26 +259,34 @@ protected:
 	UIRectUV			m_rtEditBoxLR;						// UV of lower right region of edit box
 	
 	// Write ...
-	CUIMultiEditBox		m_mebContent;						// ì“°ê¸° ë‚´ìš©
+	CUIMultiEditBox		m_mebContent;						// ¾²±â ³»¿ë
 
 protected:
+	enum AuthorityLevel
+	{
+		AL_NONE = 0,
+		AL_AUTHORISME = 1,
+		AL_BBSMANAGER = 2,
+	};
+
 	// Internal functions
 	void	RenderListCommon();
 	void	RenderReadCommon();
 	void	RenderWriteCommon();
 	void	AdjustListColumnPos();
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	void	DelayCommandPrepare(CUIWebBoardDelayCommand *pCommand);
 	BOOL	DelayCommandExecute();
 	void	SetListContent(std::string &szContent);
 	void	SetViewContent(std::string &szContent);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	void	SetPageButtons( int nTotalWrite, int nCurPage );
 
 	void	AddListSubjectString( CTString &strSubject );
 	void	AddReadingString( CTString &strContent );
 
+	void ChangeBlockWriteInfo(BOOL bBlock, AuthorityLevel authorityLevel);
 public:
 	CUIWebBoard();
 	~CUIWebBoard();
@@ -326,26 +335,19 @@ public:
 	WMSG_RESULT	IMEMessage( MSG *pMsg );
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	friend class CCommandOpen;
 	friend class CCommandList;
 	friend class CCommandView;
 	friend class CCommandModify;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	// WSS_NEW_GUILD_SYSTEM 070719
 	friend class CUIGuild;
 
-	//ë‚´ ê¸¸ë“œê°€ ì‚­ì œë˜ê±°ë‚˜, ê¸¸ë“œë¥¼ íƒˆí‡´í•˜ê±°ë‚˜, ê¸¸ë“œì—ì„œ ê°•í‡´ë‹¹í•˜ê±°ë‚˜ í˜¸ì¶œë¨
+	//³» ±æµå°¡ »èÁ¦µÇ°Å³ª, ±æµå¸¦ Å»ÅğÇÏ°Å³ª, ±æµå¿¡¼­ °­Åğ´çÇÏ°Å³ª È£ÃâµÊ
 	void NotifyGuildChange();
-
-protected:
-	enum AuthorityLevel
-	{
-		AL_NONE = 0,
-		AL_AUTHORISME = 1,
-		AL_BBSMANAGER = 2,
-	};
-	void ChangeBlockWriteInfo(BOOL bBlock, AuthorityLevel authorityLevel);
+	// esc closing support [5/30/2011 rumist]
+	BOOL	CloseWindowByEsc()				{ ToggleVisible();	return TRUE;			}
 };
 
 

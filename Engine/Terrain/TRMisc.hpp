@@ -24,7 +24,7 @@ extern void TR_ExtractVertices(CTerrainImp *ptr, CTRect rcSource,
 
 extern void TR_ExtractAttrPoligonsInRect( CTerrainImp *ptrTerrain, CTRect &rcExtract, 
 											FLOAT3D **pavRetVtx, INDEX &ctRetVertices, GFXColor **pacolRetCol,
-											UWORD **puwRetInd, INDEX &ctRetIndices, UBYTE ubAttr );
+											UWORD **puwRetInd, INDEX &ctRetIndices, UWORD ubAttr );
 
 // [070705: Su-won] ATTRIBUTEMAP_BLOCK
 extern void TR_ExtractAttrBlockPolygonsInRect( CTerrainImp *ptr, CTRect &rcExtract, 

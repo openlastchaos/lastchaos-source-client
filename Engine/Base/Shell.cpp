@@ -14,7 +14,7 @@
 #include <Engine/Templates/DynamicArray.cpp>
 #include <Engine/Templates/DynamicStackArray.cpp>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Taiwan Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Taiwan Closed beta)(0.2)
 #include <Engine/Base/PersistentSymbolsEncode.h>
 CTString OpenPersistentSymbolFile(const CTFileName &fnmPS)
 {
@@ -27,7 +27,7 @@ CTString OpenPersistentSymbolFile(const CTFileName &fnmPS)
 	memset(bufferDecoded, 0, len+1);
 	fs.Read_t(bufferSrc, len);
 
-	DecodePersistentSymbols((UBYTE*)bufferDecoded, bufferSrc, len);
+	DecodePersistentSymbols((UBYTE*)bufferDecoded, len*2, bufferSrc, len);
 
 	CTString strContents = bufferDecoded;
 	delete[] bufferSrc;
@@ -47,14 +47,14 @@ void SavePersistentSymbolFile(const CTFileName &fnmPS, CTString strContents)
 	memset(bufferSrc, 0, len);
 	for(INDEX i=0; i<len; ++i) bufferSrc[i] = UBYTE(strContents[i]);
 
-	EncodePersistentSymbols(bufferEncoded, bufferSrc, len);
+	EncodePersistentSymbols(bufferEncoded, len*2, bufferSrc, len);
 
 	fs << len;
 	fs.Write_t(bufferEncoded, len);
 	delete[] bufferEncoded;
 	delete[] bufferSrc;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Taiwan Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Taiwan Closed beta)(0.2)
 
 template CDynamicArray<CShellSymbol>;
 
@@ -262,7 +262,7 @@ extern void FCPrintF(CTFileStream *pstrm,const char *strFormat, ...)
 	}
 }
 
-// <-- ErrorLog.txtì— ë””ìŠ¤í”Œë ˆì´ ì •ë³´ë¥¼ ê¸°ë¡í•˜ê¸° ìœ„í•œ ë¶€ë¶„
+// <-- ErrorLog.txt¿¡ µğ½ºÇÃ·¹ÀÌ Á¤º¸¸¦ ±â·ÏÇÏ±â À§ÇÑ ºÎºĞ
 extern ENGINE_API CTString _strTotalMemory;
 // -->
 
@@ -276,7 +276,7 @@ extern void ReportGlobalMemoryStatus(CTFileStream *pstrm)
 #define KB (1024.0f)
 #define MB (KB*KB)
 	 FCPrintF(pstrm,TRANS("  Physical memory used: %6.2f/%6.2fMB\t(%d B)\t(%6.2f KB)\n"), (ms.dwTotalPhys-ms.dwAvailPhys )/MB, ms.dwTotalPhys/MB,ms.dwTotalPhys-ms.dwAvailPhys, (ms.dwTotalPhys-ms.dwAvailPhys)/KB);
-	 // <-- ErrorLog.txtì— ë””ìŠ¤í”Œë ˆì´ ì •ë³´ë¥¼ ê¸°ë¡í•˜ê¸° ìœ„í•œ ë¶€ë¶„
+	 // <-- ErrorLog.txt¿¡ µğ½ºÇÃ·¹ÀÌ Á¤º¸¸¦ ±â·ÏÇÏ±â À§ÇÑ ºÎºĞ
 	 _strTotalMemory.PrintF( TRANS("%6.2fMB\n"), ms.dwTotalPhys/MB );
 	 // -->
 	 FCPrintF(pstrm,TRANS("  Page file used:       %6.2f/%6.2fMB\n"), (ms.dwTotalPageFile-ms.dwAvailPageFile)/MB, ms.dwTotalPageFile/MB);
@@ -1055,7 +1055,7 @@ void CShell::StorePersistentSymbols(const CTFileName &fnScript)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Taiwan Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Taiwan Closed beta)(0.2)
 void CShell::StoreEncodePersistentSymbols(const CTFileName &fnScript)
 {
 	// synchronize access to global shell
@@ -1132,7 +1132,7 @@ void CShell::StoreEncodePersistentSymbols(const CTFileName &fnScript)
 		WarningMessage(TRANS("Cannot save persistent symbols:\n%s"), strError);
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Taiwan Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Taiwan Closed beta)(0.2)
 
 // Callback function for symbol comparing in hash table
 static BOOL CompareSymbols(INDEX iSymbol, const void *pSymbol)

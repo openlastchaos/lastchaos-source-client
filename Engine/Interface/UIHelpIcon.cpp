@@ -1,7 +1,12 @@
 #include "stdh.h"
-#include <Engine/Interface/UIHelpIcon.h>
+
+// ��� ����. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIHelpIcon.h>
 #include <Engine/LocalDefine.h>
+#include <Engine/Interface/UIRadar.h>
+#include <Engine/Interface/UIHelp.h>
+#include <Engine/Contents/function/HelpWebUI.h>
 
 extern INDEX g_iShowHelp1Icon;
 
@@ -20,7 +25,6 @@ CUIHelpIcon::CUIHelpIcon()
 // ----------------------------------------------------------------------------
 CUIHelpIcon::~CUIHelpIcon()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -29,9 +33,7 @@ CUIHelpIcon::~CUIHelpIcon()
 // ----------------------------------------------------------------------------
 void CUIHelpIcon::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 14, 44 );
@@ -92,21 +94,10 @@ void CUIHelpIcon::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 // ----------------------------------------------------------------------------
 void CUIHelpIcon::Render()
 {	
-#ifdef	HELP_SYSTEM_1
 	if( g_iShowHelp1Icon)
 	{
 		RenderIcon();
 	}
-#else
-	// [070619: Su-won] TargetInfo창이 나타나지 않는 버그 수정
-	// UIHelpIcon을 Disable을 시키고 RearrangeOrder 하지 않아서
-	// 다른 UI가 RearrangeOrder 되면서 UITargetInfo 자리에 들어가서
-	// UITargetInfo가 UI목록에서 없어져버렸음.
-	//SetEnable(FALSE);
-	//SetVisible(FALSE);
-	if( this->IsEnabled() )
-		_pUIMgr->RearrangeOrder( UI_HELP_ICON, FALSE );
-#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -115,33 +106,34 @@ void CUIHelpIcon::Render()
 // ----------------------------------------------------------------------------
 void CUIHelpIcon::RenderIcon()
 {
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	if(m_bShowBack)
 	{
 	// Title region
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTitle.Left, m_nPosY +m_rcTitle.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcTitle.Left, m_nPosY +m_rcTitle.Top,
 										m_nPosX + m_rcTitle.Right, m_nPosY +m_rcTitle.Bottom,
 										m_rtTitle.U0, m_rtTitle.V0, m_rtTitle.U1, m_rtTitle.V1,
 										0xFFFFFFFF );
 	// Background region
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcBack.Left, m_nPosY + m_rcBack.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcBack.Left, m_nPosY + m_rcBack.Top,
 										m_nPosX + m_rcBack.Right, m_nPosY + m_rcBack.Bottom,
 										m_rtBack.U0, m_rtBack.V0, m_rtBack.U1, m_rtBack.V1,
 										0xFFFFFFFF );
 	// Vertical Line
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcLineV.Left, m_nPosY + m_rcLineV.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcLineV.Left, m_nPosY + m_rcLineV.Top,
 										m_nPosX + m_rcLineV.Right, m_nPosY + m_rcLineV.Bottom,
 										m_rtLineV.U0, m_rtLineV.V0, m_rtLineV.U1, m_rtLineV.V1,
 										0xFFFFFFFF );
 	}
-	
 
 	m_btnHelp.Render();
-	
+
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -150,6 +142,10 @@ void CUIHelpIcon::RenderIcon()
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIHelpIcon::MouseMessage( MSG *pMsg )
 {
+	if (!g_iShowHelp1Icon)
+	{
+		return WMSG_FAIL;
+	}
 	// Title bar
 	static BOOL bTitleBarClick = FALSE;
 
@@ -165,12 +161,11 @@ WMSG_RESULT CUIHelpIcon::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
-				_pUIMgr->SetMouseCursorInsideUIs();
-				_pUIMgr->RearrangeOrder( UI_HELP_ICON, TRUE );				
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 			}
 
 			m_bShowBack = IsInsideRect(nX,nY,m_rcMark);
-
+			
 			// Move target information
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
 			{
@@ -182,6 +177,8 @@ WMSG_RESULT CUIHelpIcon::MouseMessage( MSG *pMsg )
 				
 				return WMSG_SUCCESS;
 			}
+
+			m_btnHelp.MouseMessage(pMsg);
 		}
 		break;
 
@@ -201,7 +198,7 @@ WMSG_RESULT CUIHelpIcon::MouseMessage( MSG *pMsg )
 					// TODO : Nothing
 				};
 
-				_pUIMgr->RearrangeOrder( UI_HELP_ICON, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_HELP_ICON, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -209,17 +206,19 @@ WMSG_RESULT CUIHelpIcon::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
 
 				if( IsInside( nX, nY ) )
 				{
-					if(m_btnHelp.MouseMessage(pMsg) != WMSG_FAIL && g_iShowHelp1Icon)
+					if(m_btnHelp.MouseMessage(pMsg) == WMSG_COMMAND)
 					{
-						_pUIMgr->GetHelp()->OpenHelp();						
+						pUIManager->GetHelpWebUI()->OpenUI();
 					};
 					return WMSG_SUCCESS;
 				}
@@ -233,7 +232,7 @@ WMSG_RESULT CUIHelpIcon::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}

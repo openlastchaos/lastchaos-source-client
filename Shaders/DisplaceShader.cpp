@@ -255,7 +255,7 @@ SHADER_MAIN(LavaDisplace)
 	#endif
 }
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(LavaDisplace, ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -285,7 +285,7 @@ SHADER_DESC(LavaDisplace, ShaderDesc *&pshDesc)
 		shDescMe.sd_strShaderInfo = "Detail shader";
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
  
 SHADER_VCODE(LavaDisplace, CTString &strVPCode, INDEX iVertexProgram)

@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #include "stdH.h"
 
@@ -13,7 +13,7 @@ UINT	CParticles::m_uiAllCount = 0;
 UINT CParticles::AddNew(UINT wantAddCount)
 {
 	m_vectorParticle.resize(m_vectorParticle.size() + wantAddCount);
-	return wantAddCount;	//Temp : ì„ì‹œ ì½”ë“œ, ì „ì²´ íŒŒí‹°í´ ê°œìˆ˜ì— ì œí•œì„ ë‘˜ í•„ìš”ëŠ” ë¶„ëª…íˆ ìˆìŒ.
+	return wantAddCount;	//Temp : ÀÓ½Ã ÄÚµå, ÀüÃ¼ ÆÄÆ¼Å¬ °³¼ö¿¡ Á¦ÇÑÀ» µÑ ÇÊ¿ä´Â ºĞ¸íÈ÷ ÀÖÀ½.
 	if(m_uiAllCount + wantAddCount <= MAX_PARTICLE_COUNT)
 	{
 		m_uiAllCount += wantAddCount;
@@ -31,8 +31,8 @@ void CParticles::RenderQuad(MEX mexWidth, MEX mexHeight)
 {
 	UBYTE lastRow = 0xFF, lastCol = 0xFF;
 	UINT count = m_vectorParticle.size();
-	UINT count2 = count >> 12;	//4096ìœ¼ë¡œ ë‚˜ëˆ„ê¸°
-	count -= count2 << 12; //4096ìœ¼ë¡œ ë‚˜ëˆˆ ë‚˜ë¨¸ì§€
+	UINT count2 = count >> 12;	//4096À¸·Î ³ª´©±â
+	count -= count2 << 12; //4096À¸·Î ³ª´« ³ª¸ÓÁö
 	for(UINT i2=0; i2<count2; ++i2)
 	{
 		for(UINT i=0; i<4096; ++i)
@@ -71,8 +71,8 @@ void CParticles::RenderLine(MEX mexWidth, MEX mexHeight)
 {
 	UBYTE lastRow = 0xFF, lastCol = 0xFF;
 	UINT count = m_vectorParticle.size();
-	UINT count2 = count >> 12;	//4096ìœ¼ë¡œ ë‚˜ëˆ„ê¸°
-	count -= count2 << 12; //4096ìœ¼ë¡œ ë‚˜ëˆˆ ë‚˜ë¨¸ì§€
+	UINT count2 = count >> 12;	//4096À¸·Î ³ª´©±â
+	count -= count2 << 12; //4096À¸·Î ³ª´« ³ª¸ÓÁö
 	for(UINT i2=0; i2<count2; ++i2)
 	{
 		for(UINT i=0; i<4096; ++i)
@@ -111,8 +111,8 @@ void CParticles::RenderTrail(MEX mexWidth, MEX mexHeight)
 {
 	UBYTE lastRow = 0xFF, lastCol = 0xFF;
 	UINT count = m_vectorParticle.size();
-	UINT count2 = count >> 12;	//4096ìœ¼ë¡œ ë‚˜ëˆ„ê¸°
-	count -= count2 << 12; //4096ìœ¼ë¡œ ë‚˜ëˆˆ ë‚˜ë¨¸ì§€
+	UINT count2 = count >> 12;	//4096À¸·Î ³ª´©±â
+	count -= count2 << 12; //4096À¸·Î ³ª´« ³ª¸ÓÁö
 	for(UINT i2=0; i2<count2; ++i2)
 	{
 		for(UINT i=0; i<4096; ++i)
@@ -151,8 +151,8 @@ void CParticles::RenderTrailVelocity(MEX mexWidth, MEX mexHeight)
 {
 	UBYTE lastRow = 0xFF, lastCol = 0xFF;
 	UINT count = m_vectorParticle.size();
-	UINT count2 = count >> 12;	//4096ìœ¼ë¡œ ë‚˜ëˆ„ê¸°
-	count -= count2 << 12; //4096ìœ¼ë¡œ ë‚˜ëˆˆ ë‚˜ë¨¸ì§€
+	UINT count2 = count >> 12;	//4096À¸·Î ³ª´©±â
+	count -= count2 << 12; //4096À¸·Î ³ª´« ³ª¸ÓÁö
 	for(UINT i2=0; i2<count2; ++i2)
 	{
 		for(UINT i=0; i<4096; ++i)
@@ -186,4 +186,4 @@ void CParticles::RenderTrailVelocity(MEX mexWidth, MEX mexHeight)
 		}
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

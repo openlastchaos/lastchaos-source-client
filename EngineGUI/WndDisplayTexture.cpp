@@ -91,10 +91,10 @@ void CWndDisplayTexture::OnPaint()
 			} else {
 				m_fWndTexRatio = FLOAT(m_pDrawPort->GetHeight()) /pixHeight;
 			}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Taiwan Closed beta)(2004-11-22)
-			//Texture ìƒì„±ì°½ì—ì„œ Textureê°€ í™•ëŒ€ë˜ì§€ ì•Šê²Œ.(ì¶•ì†ŒëŠ” ê°€ëŠ¥) 512*512ê¹Œì§€ëŠ” 1:1ë¡œ ë³´ì„.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Taiwan Closed beta)(2004-11-22)
+			//Texture »ı¼ºÃ¢¿¡¼­ Texture°¡ È®´ëµÇÁö ¾Ê°Ô.(Ãà¼Ò´Â °¡´É) 512*512±îÁö´Â 1:1·Î º¸ÀÓ.
 			if(m_fWndTexRatio > 1.0f) m_fWndTexRatio = 1.0f;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Taiwan Closed beta)(2004-11-22)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Taiwan Closed beta)(2004-11-22)
 			// get width and height of texture window
 			m_pixWinWidth   = pixWidth *m_fWndTexRatio;
 			m_pixWinHeight  = pixHeight*m_fWndTexRatio;

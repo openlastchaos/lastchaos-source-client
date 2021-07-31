@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #include "stdH.h"
 
@@ -67,12 +67,12 @@ void CParticlesProcessDynamicState::Process(CParticles &particles, const FLOAT f
 		FLOAT3D vDeltaPos;
 		ANGLE3D a3dAngle;
 
-		//color ì²˜ë¦¬, ìˆë‹¤ë©´ ê¸°ì¡´ ì»¬ëŸ¬ ë¬´ì‹œ
+		//color Ã³¸®, ÀÖ´Ù¸é ±âÁ¸ ÄÃ·¯ ¹«½Ã
 		if(m_bDynamicColor)
 			ptcColor = m_ssColor.Value(ptc.GetAge());
 		else ptcColor = ptc.GetColor() & C_WHITE;
 		ptc.SetColorNoAlpha(ptcColor);
-		//ì•ŒíŒŒ ì²˜ë¦¬, ìˆë‹¤ë©´ ê¸°ì¡´ ì•ŒíŒŒ ë¬´ì‹œ
+		//¾ËÆÄ Ã³¸®, ÀÖ´Ù¸é ±âÁ¸ ¾ËÆÄ ¹«½Ã
 		BOOL alphaProcess = FALSE;
 		if(m_bDynamicAlpha)
 		{
@@ -87,7 +87,7 @@ void CParticlesProcessDynamicState::Process(CParticles &particles, const FLOAT f
 			if(m_ssAlpha.GetSampleCount() <= 1) cnt = 0;
 			ptcAlpha = m_ssAlpha.Value(ptc.GetAge() - cnt * life);
 		}
-		//twinkle ì²˜ë¦¬
+		//twinkle Ã³¸®
 		FLOAT fTwinkleValue = 1.0f;
 		if(m_fTwinklePeriod > 0.0001f)
 		{
@@ -96,7 +96,7 @@ void CParticlesProcessDynamicState::Process(CParticles &particles, const FLOAT f
 			if(value & 0x00000001) fTwinkleValue = ( ptc.GetAge() - m_fTwinklePeriod * value ) / m_fTwinklePeriod;
 			else fTwinkleValue = ( m_fTwinklePeriod * (value + 1) - ptc.GetAge() ) / m_fTwinklePeriod;
 		}
-		//fade ì²˜ë¦¬
+		//fade Ã³¸®
 		FLOAT fFadeValue = 1.0f;
 		if(ptc.GetAge() < m_fFadeInTime)
 		{
@@ -108,14 +108,14 @@ void CParticlesProcessDynamicState::Process(CParticles &particles, const FLOAT f
 			alphaProcess = TRUE;
 			fFadeValue = (ptc.GetLifeTime() - ptc.GetAge()) / m_fFadeOutTime;
 		}
-		//alpha ì„¸íŒ…
+		//alpha ¼¼ÆÃ
 		if(alphaProcess)
 		{
 			ptcAlpha = UBYTE(ptcAlpha * (fTwinkleValue * fFadeValue));
 		}
 		else ptcAlpha = ptc.GetColor() & CT_OPAQUE;
 		ptc.SetColorOnlyAlpha(ptcAlpha);
-		//TexPos ì²˜ë¦¬
+		//TexPos Ã³¸®
 		if(m_bDynamicTexPos)
 		{
 			FLOAT len = m_ssTexPos.GetKey(m_ssTexPos.GetSampleCount()-1) - m_ssTexPos.GetKey(0);
@@ -123,13 +123,14 @@ void CParticlesProcessDynamicState::Process(CParticles &particles, const FLOAT f
 			if(m_ssTexPos.GetSampleCount() <= 1) cnt = 0;
 			//texPos = m_ssTexPos.Value(ptc.GetAge() - cnt * len);
 			FLOAT key = ptc.GetAge() - cnt * len;
-			for(int  i=0; i<m_ssTexPos.GetSampleCount(); ++i)
+			int i;
+			for(i = 0; i < m_ssTexPos.GetSampleCount(); ++i)
 				if(m_ssTexPos.GetKey(i) >= key)
 					break;
 			texPos = m_ssTexPos.GetValue(i);
 			ptc.SetTexPos(texPos.GetRow(), texPos.GetCol());
 		}
-		//size ì²˜ë¦¬
+		//size Ã³¸®
 		if(m_bDynamicSize)
 		{
 			FLOAT life = m_ssSize.GetKey(m_ssSize.GetSampleCount()-1) - m_ssSize.GetKey(0);
@@ -139,13 +140,13 @@ void CParticlesProcessDynamicState::Process(CParticles &particles, const FLOAT f
 			ptc.SetWidth(size.GetWidth());
 			ptc.SetHeight(size.GetHeight());
 		}
-		//Mass ì²˜ë¦¬
+		//Mass Ã³¸®
 		if(m_bDynamicMass)
 		{
 			mass = m_ssMass.Value(ptc.GetAge());
 			ptc.SetMass(mass);
 		}
-		//DeltaPos ì²˜ë¦¬
+		//DeltaPos Ã³¸®
 		if(m_bDynamicDeltaPos)
 		{
 			vDeltaPos = ptc.GetPosition()
@@ -153,7 +154,7 @@ void CParticlesProcessDynamicState::Process(CParticles &particles, const FLOAT f
 				- m_ssDeltaPos.Value(ptc.GetAge()-fDeltaTime);
 			ptc.SetPosition( vDeltaPos );
 		}
-		//Angle ì²˜ë¦¬
+		//Angle Ã³¸®
 		if(m_bDynamicAngle)
 		{
 			FLOATquat3D quatAngle;
@@ -375,4 +376,4 @@ void CParticlesProcessDynamicState::Write(CTStream *pOS)
 	WriteToStream(os, Angle);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

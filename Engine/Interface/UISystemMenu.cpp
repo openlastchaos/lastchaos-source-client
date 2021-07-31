@@ -1,28 +1,71 @@
 #include "stdh.h"
+
+// Çì´õ Á¤¸®. [12/3/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/GameState.h>
-
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Sound/SoundLibrary.h>
-#include <Engine/Interface/UINotice.h>
+#include <Engine/Contents/Base/UINoticeNew.h>
 #include <Engine/SlaveInfo.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
-
-#include <Engine/Entities/QuestSystem.h>
 #include <Engine/Interface/UISummon.h>
+#include <Engine/Interface/UITeleport.h>
+#include <Engine/Interface/UIRadar.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/Base/ExpressSystem.h>
+#include <Engine/Contents/Base/Auction.h>
+#include <Engine/Contents/Base/PetStash.h>
+#include <Engine/Contents/Base/UISkillNew.h>
+#include <Engine/Contents/Login/UIServerSelect.h>
+#include <engine/Contents/Login/UILoginNew.h>
+#include <Engine/Interface/UISystemMenu.h>
+#include <Engine/Contents/Base/UIAuctionNew.h>
+#include <Engine/Interface/UIOption.h>
+#include <Engine/Contents/Base/UICharacterInfoNew.h>
+#include <Engine/Interface/UIHelp.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Interface/UIQuickSlot.h>
+#include <Engine/Contents/Base/UIPartyNew.h>
+#include <Engine/Interface/UIMonsterMercenary.h>
+#include <Engine/Interface/UIHelp.h>
+#include <Engine/Interface/UIPlayerInfo.h>
+#include <Engine/Interface/UISiegeWarfare.h>
+#include <Engine/Interface/UIHelper.h>
+#include <Engine/Contents/function/TargetInfoNewUI.h>
+#include <Engine/Contents/function/WildPetInfoUI.h>
+#include <Engine/Interface/UIInitJob.h>
+#include <Engine/Contents/function/AffinityInfoUI.h>
+#include <Engine/Interface/UIFlowerTree.h>
+#include <Engine/Interface/UIWareHouse.h>
+#include <Engine/Contents/Login/UICharacterSelect.h>
+#include <Engine/Contents/Base/Syndicate.h>
+#include <Engine/GameStageManager/StageMgr.h>
+#include <Engine/Contents/Base/Quest.h>
+#include <Engine/Interface/UIAutoHelp.h>
+#include <Engine/Contents/function/ItemCollectionData.h>
+#include <Engine/Contents/function/SimplePlayerInfoUI.h>
+#include <Engine/Contents/function/HelpWebUI.h>
+extern INDEX g_iXPosInSystemMenu;
+extern INDEX g_iYPosInSystemMenu;
 
+extern CDrawPort* _pdpMain;
+extern BOOL g_bAutoRestart;
+
+// À¯¹° ¾ÆÀÌÅÛ ÀÎµ¦½º
+#define	DEF_RELIC_ITEM1 10951
+#define	DEF_RELIC_ITEM2 10952
+#define	DEF_RELIC_ITEM3 10953
 
 // ----------------------------------------------------------------------------
 // Name : CUISystemMenu()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 #ifdef RESTART_GAME
-CUISystemMenu::CUISystemMenu() : m_bRestartGame(FALSE), m_llStartTime(0)
+CUISystemMenu::CUISystemMenu() : m_bCharacterMove(FALSE), m_llStartTime(0)
 #else
 CUISystemMenu::CUISystemMenu()
 #endif
 {
+	m_ptdButtonTexture = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -32,6 +75,8 @@ CUISystemMenu::CUISystemMenu()
 CUISystemMenu::~CUISystemMenu()
 {
 	Destroy();
+
+	STOCK_RELEASE(m_ptdButtonTexture);
 }
 
 // ----------------------------------------------------------------------------
@@ -40,9 +85,7 @@ CUISystemMenu::~CUISystemMenu()
 // ----------------------------------------------------------------------------
 void CUISystemMenu::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 216, 22 );
@@ -74,20 +117,20 @@ void CUISystemMenu::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Option button
-	//m_btnOption.Create( this, _S( 283, "ì˜µì…˜" ), 31, 39, 63, 21 );
+	//m_btnOption.Create( this, _S( 283, "¿É¼Ç" ), 31, 39, 63, 21 );
 	//m_btnOption.SetUV( UBS_IDLE, 0, 117, 63, 138, fTexWidth, fTexHeight );
 	//m_btnOption.SetUV( UBS_CLICK, 66, 117, 129, 138, fTexWidth, fTexHeight );
-	m_btnOption.Create( this, _S( 283, "ì˜µì…˜" ), 9, 44, 78, 22);
+	m_btnOption.Create( this, _S( 283, "¿É¼Ç" ), 9, 44, 78, 22);
 	m_btnOption.SetUV( UBS_IDLE, 113, 0, 182, 22, fTexWidth, fTexHeight );
 	m_btnOption.SetUV( UBS_CLICK, 186, 0, 256, 22, fTexWidth, fTexHeight );
 	m_btnOption.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOption.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Help button
-	//m_btnHelp.Create( this, _S( 284, "ë„ì›€ë§" ), 121, 39, 63, 21 );
+	//m_btnHelp.Create( this, _S( 284, "µµ¿ò¸»" ), 121, 39, 63, 21 );
 	//m_btnHelp.SetUV( UBS_IDLE, 0, 117, 63, 138, fTexWidth, fTexHeight );
 	//m_btnHelp.SetUV( UBS_CLICK, 66, 117, 129, 138, fTexWidth, fTexHeight );
-	m_btnHelp.Create( this, _S( 284, "ë„ì›€ë§" ), 91, 44, 78, 22 );
+	m_btnHelp.Create( this, _S( 284, "µµ¿ò¸»" ), 91, 44, 78, 22 );
 	m_btnHelp.SetUV( UBS_IDLE, 113, 0, 182, 22, fTexWidth, fTexHeight );
 	m_btnHelp.SetUV( UBS_CLICK, 186, 0, 256, 22, fTexWidth, fTexHeight );
 	m_btnHelp.CopyUV( UBS_IDLE, UBS_ON );
@@ -104,10 +147,10 @@ void CUISystemMenu::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	rtClickBtn.SetUV3(187, 0, 201, 22, 201, 0, 242, 22, 242, 0, 256, 22, fTexWidth, fTexHeight);
 
 	// Restart button
-	//m_btnRestart.Create( this, _S( 285, "ë¦¬ìŠ¤íƒ€íŠ¸" ), 31, 73, 63, 21 );
+	//m_btnRestart.Create( this, _S( 285, "¸®½ºÅ¸Æ®" ), 31, 73, 63, 21 );
 	//m_btnRestart.SetUV( UBS_IDLE, 0, 117, 63, 138, fTexWidth, fTexHeight );
 	//m_btnRestart.SetUV( UBS_CLICK, 66, 117, 129, 138, fTexWidth, fTexHeight );
-	m_btnRestart.Create( this, _S(4195, "ì„œë²„ ì„ íƒ ì°½ìœ¼ë¡œ"), 9, 130, 160, 22);
+	m_btnRestart.Create( this, _S(6104, "Ä³¸¯ÅÍ ¼±ÅÃ È­¸éÀ¸·Î"), 9, 130, 160, 22);
 	m_btnRestart.SetRTSurface( UBS_IDLE, rcLeft, rtIdleBtn.rtL );
 	m_btnRestart.SetRTSurface( UBS_IDLE, rcMiddel, rtIdleBtn.rtM );
 	m_btnRestart.SetRTSurface( UBS_IDLE, rcRight, rtIdleBtn.rtR );
@@ -119,10 +162,14 @@ void CUISystemMenu::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	m_btnRestart.SetNewType(TRUE);
 
 	// Exit button
-	//m_btnExit.Create( this, _S( 286, "ê²Œì„ì¢…ë£Œ" ), 121, 73, 63, 21 );
+	//m_btnExit.Create( this, _S( 286, "°ÔÀÓÁ¾·á" ), 121, 73, 63, 21 );
 	//m_btnExit.SetUV( UBS_IDLE, 0, 117, 63, 138, fTexWidth, fTexHeight );
 	//m_btnExit.SetUV( UBS_CLICK, 66, 117, 129, 138, fTexWidth, fTexHeight );
-	m_btnExit.Create( this, _S( 286, "ê²Œì„ì¢…ë£Œ" ), 9, 158, 160, 22 );
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+	m_btnExit.Create( this, _S( 5778, "·Î±×ÀÎ È­¸éÀ¸·Î" ), 9, 158, 160, 22 );
+#else
+	m_btnExit.Create( this, _S( 286, "°ÔÀÓÁ¾·á" ), 9, 158, 160, 22 );
+#endif
 	m_btnExit.SetRTSurface( UBS_IDLE, rcLeft, rtIdleBtn.rtL );
 	m_btnExit.SetRTSurface( UBS_IDLE, rcMiddel, rtIdleBtn.rtM );
 	m_btnExit.SetRTSurface( UBS_IDLE, rcRight, rtIdleBtn.rtR );
@@ -140,8 +187,18 @@ void CUISystemMenu::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 // ----------------------------------------------------------------------------
 void CUISystemMenu::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
-	SetPos( pixMaxI - _pUIMgr->GetRadar()->GetWidth() - GetWidth(),
-			pixMinJ + _pUIMgr->GetRadar()->GetHeight() + GetHeight() );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	SetPos( pixMaxI - pUIManager->GetRadar()->GetWidth() - GetWidth(),
+			pixMinJ + pUIManager->GetRadar()->GetHeight() + GetHeight() );
+}
+
+void CUISystemMenu::ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
+
+	g_iXPosInSystemMenu = GetPosX();
+	g_iYPosInSystemMenu = GetPosY();
 }
 
 // ----------------------------------------------------------------------------
@@ -161,20 +218,23 @@ void CUISystemMenu::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX p
 // ----------------------------------------------------------------------------
 void CUISystemMenu::Render()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Set system menu texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
 										0xFFFFFFFF );
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Set Button texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 
 	// Close button
 	m_btnClose.Render();
@@ -192,25 +252,25 @@ void CUISystemMenu::Render()
 	m_btnExit.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in system menu
-	//_pUIMgr->GetDrawPort()->PutTextEx( _S( 287, "ì‹œìŠ¤í…œ ë©”ë‰´" ), m_nPosX + SYSMENU_TITLE_TEXT_OFFSETX,
+	//pDrawPort->PutTextEx( _S( 287, "½Ã½ºÅÛ ¸Ş´º" ), m_nPosX + SYSMENU_TITLE_TEXT_OFFSETX,
 	//									m_nPosY + SYSMENU_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 287, "ì‹œìŠ¤í…œ ë©”ë‰´" ), m_nPosX + m_nWidth/2,
+	pDrawPort->PutTextExCX( _S( 287, "½Ã½ºÅÛ ¸Ş´º" ), m_nPosX + m_nWidth/2,
 										m_nPosY + 18, 0xFFFFFFFF );
 
 
 	CTString strServerInfo;
-	strServerInfo.PrintF("%s - %d", _pUIMgr->GetSelServer()->GetServerGroupName(_pNetwork->m_iServerGroup), _pNetwork->m_iServerCh );
+	strServerInfo.PrintF("%s - %d", pUIManager->GetServerSelect()->GetServerName(_pNetwork->m_iServerGroup), _pNetwork->m_iServerCh );
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(4167, "ì ‘ì†ì¤‘ì¸ ì„œë²„"), m_nPosX + m_nWidth/2,
+	pDrawPort->PutTextExCX( _S(4167, "Á¢¼ÓÁßÀÎ ¼­¹ö"), m_nPosX + m_nWidth/2,
 										m_nPosY + 82, 0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( strServerInfo, m_nPosX +m_nWidth/2,
+	pDrawPort->PutTextExCX( strServerInfo, m_nPosX +m_nWidth/2,
 										m_nPosY +99 , 0xFFFFFFFF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -220,7 +280,10 @@ void CUISystemMenu::Render()
 void CUISystemMenu::ToggleVisible()
 {
 	BOOL	bVisible = !IsVisible();
-	_pUIMgr->RearrangeOrder( UI_SYSTEMMENU, bVisible );
+	ResetPosition( _pdpMain->dp_MinI, _pdpMain->dp_MinJ,
+					_pdpMain->dp_MaxI, _pdpMain->dp_MaxJ );
+
+	CUIManager::getSingleton()->RearrangeOrder( UI_SYSTEMMENU, bVisible );
 }
 
 // ----------------------------------------------------------------------------
@@ -245,7 +308,7 @@ WMSG_RESULT CUISystemMenu::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move system menu
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -313,7 +376,7 @@ WMSG_RESULT CUISystemMenu::MouseMessage( MSG *pMsg )
 					// Nothing
 				}
 
-				_pUIMgr->RearrangeOrder( UI_SYSTEMMENU, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_SYSTEMMENU, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -321,8 +384,10 @@ WMSG_RESULT CUISystemMenu::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -335,7 +400,7 @@ WMSG_RESULT CUISystemMenu::MouseMessage( MSG *pMsg )
 				if( ( wmsgResult = m_btnClose.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
 					if( wmsgResult == WMSG_COMMAND )
-						_pUIMgr->RearrangeOrder( UI_SYSTEMMENU, FALSE );
+						pUIManager->RearrangeOrder( UI_SYSTEMMENU, FALSE );
 
 					return WMSG_SUCCESS;
 				}
@@ -364,6 +429,7 @@ WMSG_RESULT CUISystemMenu::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
+						m_bCharacterMove = TRUE;
 						Restart();
 					}
 
@@ -374,7 +440,12 @@ WMSG_RESULT CUISystemMenu::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
+						m_bCharacterMove = FALSE;
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+						Restart();
+#else
 						Exit();
+#endif
 					}
 
 					return WMSG_SUCCESS;
@@ -386,7 +457,7 @@ WMSG_RESULT CUISystemMenu::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -418,20 +489,16 @@ WMSG_RESULT CUISystemMenu::MouseMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 void CUISystemMenu::OpenOption()
 {
-	_pUIMgr->GetOption()->OpenOption();
+	CUIManager::getSingleton()->GetOption()->ToggleOption();
 }
 
 // ----------------------------------------------------------------------------
 // Name : OpenHelp()
-// Desc : ë„ì›€ë§ ì—´ê¸°.
+// Desc : µµ¿ò¸» ¿­±â.
 // ----------------------------------------------------------------------------
 void CUISystemMenu::OpenHelp()
-{	
-#ifdef HELP_SYSTEM_1
-	_pUIMgr->GetHelp()->OpenHelp();		
-#else
-	_pUIMgr->GetHelpOld()->OpenHelp();
-#endif
+{
+	UIMGR()->GetHelpWebUI()->OpenUI();
 }
 
 // ----------------------------------------------------------------------------
@@ -440,17 +507,23 @@ void CUISystemMenu::OpenHelp()
 // ----------------------------------------------------------------------------
 void CUISystemMenu::Restart()
 {
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_SYSMENU_RESTART ) )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_SYSMENU_RESTART ) )
 		return;
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 287, "ì‹œìŠ¤í…œ ë©”ë‰´" ), UMBS_YESNO,
+	MsgBoxInfo.SetMsgBoxInfo( _S( 287, "½Ã½ºÅÛ ¸Ş´º" ), UMBS_YESNO,
 								UI_SYSTEMMENU, MSGCMD_SYSMENU_RESTART );
-	MsgBoxInfo.AddString( _S( 451, "ê²Œì„ì„ ì¬ì‹œì‘ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ) );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
-}
 
-extern BOOL bCalcNotChecked;
+	if( _pUIBuff->IsBuffBySkill( 1060 ) != NULL )	// Ãâ¼®´ë±â ¹öÇÁ index°¡ 1060ÀÓ
+	{
+		MsgBoxInfo.AddString( _S( 5592, "Ãâ¼®Ã¼Å©¸¦ ÇÏÁö ¾ÊÀº »óÅÂÀÔ´Ï´Ù." ) );
+	}
+
+	MsgBoxInfo.AddString( _S( 451, "°ÔÀÓÀ» Àç½ÃÀÛ ÇÏ½Ã°Ú½À´Ï±î?" ) );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+}
 
 // ----------------------------------------------------------------------------
 // Name : Restart_Internal()
@@ -458,121 +531,122 @@ extern BOOL bCalcNotChecked;
 // ----------------------------------------------------------------------------
 void CUISystemMenu::Restart_Internal()
 {
-	_pUIMgr->SetUIGameState( UGS_GAMELOADING );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	// Reset chatting
-	_pUIMgr->GetChatting()->ResetChatting();
+	m_btnRestart.SetBtnState(UBS_IDLE);
+	m_btnExit.SetBtnState(UBS_IDLE);
+
+	pUIManager->GetChattingUI()->ResetChatting();
 
 	// Character state flags
-	_pUIMgr->ResetCSFlag();
+	pUIManager->ResetCSFlag();
 
-	_pNetwork->MyCharacterInfo.money = 0;
-	_pNetwork->MyCharacterInfo.bExtension = FALSE;
-	_pNetwork->MyCharacterInfo.sbEvocationType = -1;
+	_pNetwork->RestartGame();
+	
+	// ¼±¹°½Ã½ºÅÛ ¼±¹°¹ŞÀ½ ÃÊ±âÈ­
+	pUIManager->GetQuickSlot()->SetGiftRecv(FALSE);
 
-	// Reset inventory
-	for( int i = 0; i < WEAR_TOTAL; ++i )
-		_pNetwork->pMyCurrentWearing[i] = NULL;
-
-	for(int tab = 0; tab < INVEN_SLOT_TAB; ++tab )
-	{
-		for(int row = 0; row < INVEN_SLOT_ROW_TOTAL; ++row )
-		{
-			for( int col = 0; col < INVEN_SLOT_COL; ++col )
-			{
-				_pNetwork->MySlotItem[tab][row][col].Init();
-				_pUIMgr->GetInventory()->InitInventory( tab, row, col, -1, -1, -1 );
-			}
-		}
-	}
-
-	// ì„ ë¬¼ì‹œìŠ¤í…œ ì„ ë¬¼ë°›ìŒ ì´ˆê¸°í™”
-	_pUIMgr->GetQuickSlot()->SetGiftRecv(FALSE);
-
-	_pUIMgr->GetPersonalShop()->ResetShop();
-	_pUIMgr->SetCSFlagOff( CSF_PERSONALSHOP );
-	_pUIMgr->SetCSFlagOff( CSF_MOONSTONE );
-	_pUIMgr->SetCSFlagOff( CSF_MOUNT_HUNGRY );
-
-	_pUIMgr->GetSummonFirst()->ResetSummon();
-	_pUIMgr->GetSummonSecond()->ResetSummon();
 	SlaveInfo().InitSkillIndex();
 
 	// Reset buff
 	_pUIBuff->ResetMyBuff();
 
-	// Reset party
-	_pUIMgr->GetParty()->Init();
-
 	// Reset quest
 	CQuestSystem::Instance().ClearAllDynamicData();
 	CQuestSystem::Instance().ClearAllAllowList();
 	//TODO : NewQuestSystem
-	_pUIMgr->GetQuestBookNew()->ClearQuestList();
-	_pUIMgr->GetQuestBookList()->ClearQuestList();
-	_pUIMgr->GetQuestBookComplete()->ClearQuestList();
-	_pUIMgr->GetQuestBookContent()->ClearQuestList();
+	GAMEDATAMGR()->GetQuest()->ClearQuest();
+	GAMEDATAMGR()->GetQuest()->ClearQuestList();
+		
+	// [090803 sora] ¸®½ºÅ¸Æ®ÇÒ¶§ ¼±ÅÃÇß´ø Äù½ºÆ® ¸®½º¸¦ Áö¿öÁØ´Ù
+	pUIManager->GetPlayerInfo()->ClearSelectedQuest();
 
 	// Reset Notice
-	_pUIMgr->GetNotice()->Clear();
+	pUIManager->GetNotice()->Clear();
+	GAMEDATAMGR()->GetNotice()->clear();
 
-	// Reset Guild
-	_pUIMgr->GetGuild()->ResetGuild();
-	_pUIMgr->GetGuild()->ClearMemberList();
-	_pUIMgr->GetSiegeWarfare()->CloseSiegeWarfare();
+	pUIManager->GetSiegeWarfare()->CloseSiegeWarfare();
 
-	_pUIMgr->GetHelper()->ResetHelper();
-	_pUIMgr->GetHelper()->ClearHelperList();
-	_pUIMgr->GetWildPetInfo()->AIClear();
+	// Æê AI Å¬¸®¾î
+	pUIManager->GetWildPetInfoUI()->AIClear();
+	
+	// Reset Memory Scroll
+	pUIManager->GetTeleport()->ClearTeleportList();
+	pUIManager->GetTeleport()->SetUseTime(0);
+	pUIManager->GetTeleportPrimium()->ClearTeleportList();
 
-	_pNetwork->LeavePet( (CPlayerEntity*)CEntity::GetPlayerEntity(0) );
-	_pNetwork->ClearPetList();	
-	_pNetwork->_PetTargetInfo.Init();
-	_pNetwork->_SlaveTargetInfo[0].Init();
-	_pNetwork->_SlaveTargetInfo[1].Init();
-	_pNetwork->_WildPetInfo.Init();
+	
+	pUIManager->GetAffinityInfo()->AffinityReset();
 
-	((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ClearMultiTargets();
+	// clear all data in lacaball. [1/25/2011 rumist]
+	pUIManager->GetLacaBall()->InitLacaballData();
+
+	pUIManager->GetMonsterMercenary()->ToggleMonsterMercenary(-1);	
+
+	// [11/3/2010 kiny8216] Face Change ¸ğµå ÃÊ±âÈ­
+	pUIManager->GetInitJob()->SetFaceDecoMode( FALSE );	
+
 	((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ReturnSorcerer();
+
+	// ²É³îÀÌ ³ª¹« ÃÊ±âÈ­
+	pUIManager->GetFlowerTree()->ClearList();
+	pUIManager->GetTargetInfoUI()->ShowPKTargetHP(FALSE);
 
 	extern BOOL	_bLoginProcess;
 	_bLoginProcess = TRUE;
 	_pGameState->GetGameMode() = CGameState::GM_NONE;
-	_pUIMgr->GetGame()->StopGame();
+	pUIManager->GetGame()->StopGame();
 
-	// ì´ê¸°í™˜ ìˆ˜ì • ( 12. 1 ) : ë¡œë”©í™”ë©´ ë³€ê²½ì— ë”°ë¼ ì¡´ ê°’ ë³€ê²½ ( -1 : [re]start )
-	g_slZone = -1; 
-	g_bFirstIntoWorld = TRUE;
-	// ... cpp2angel End 
+	pUIManager->GetSimplePlayerInfo()->StopDungeonTime();
 
-	_pUIMgr->GetGame()->LoginGame( LOGIN_WORLD );
+	GameDataManager* pGameData = GameDataManager::getSingleton();
 
-	_pGameState->SelectedSlot()		= 0;
-	_pGameState->m_pEntModels[0]	= NULL;
-	_pGameState->m_pEntModels[1]	= NULL;
-	_pGameState->m_pEntModels[2]	= NULL;
-	_pGameState->m_pEntModels[2]	= NULL;
-	_pNetwork->m_ubGMLevel			= 0;
-	_pNetwork->m_bSingleMode		= FALSE;
+	pGameData->GetExpressData()->ClearNPCInfo();
+	pGameData->GetExpressData()->SetNoticeFlag(0);
 	
-	const int	iCameraEntityID	= 1628;
-	CEntity		*pCameraEntity = NULL;
-	CEntity		*pEntity = NULL;
-	BOOL bExist = _pNetwork->ga_World.EntityExists( iCameraEntityID, pCameraEntity );
-	if(bExist)
+	if (pUIManager->GetRadar())
+		pUIManager->GetRadar()->OffExpressNotice();
+
+	// ±¸¸Å´ëÇà ÃÊ±âÈ­
+	pUIManager->GetAuction()->reset();
+	pUIManager->GetAuction()->CloseAuction();
+	pGameData->GetAuction()->reset();
+
+	// New skill tree UI reset
+	pUIManager->GetSkillNew()->InitArrayData();
+
+	// °³ÀÎ Ã¢°í
+	pUIManager->GetWareHouse()->SetUseTime(0);
+
+	pUIManager->GetHelper()->Clear();
+
+	pGameData->GetSyndicate()->ResetSyndiInfo();
+
+	// Ä³¸¯ÅÍ ¼±ÅÃÃ¢ ÃÊ±âÈ­ (°£Ç÷ÀûÀ¸·Î ÃÊ±âÈ­ ¾ÈµÇ´Â ¹®Á¦°¡ º¸°íµÊ. ¹æ¾îÄÚµå·Î Ãß°¡)
+	if (_pNetwork->bMoveCharacterSelectUI == FALSE)
 	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->StartCamera(pCameraEntity, FALSE);
+		_pGameState->ClearCharacterSlot();
+		_pGameState->SetCreatableNightShadow( FALSE );
 	}
 
-	// ê½ƒë†€ì´ ë‚˜ë¬´ ì´ˆê¸°í™”
-	_pUIMgr->GetFlowerTree()->ClearList();
-	_pUIMgr->GetTargetInfo()->ShowPKTargetHP(FALSE);
-	
-	_pUIMgr->SetUIGameState( UGS_LOGIN );	
-	_pUIMgr->GetLogin()->SetPWFocus();
+	pUIManager->ResetHoldBtn();
 
-	//êµ¬ë§¤ ëŒ€í–‰ ì •ì‚° ë¦¬ìŠ¤íŠ¸ ì²´í¬ í”Œë˜ê·¸
-	bCalcNotChecked = TRUE;
+	for (int i = 0; i < _pNetwork->wo_iNumOfSkill; ++i)
+	{
+		CSkill* pSkill = &_pNetwork->GetSkillData(i);
+
+		if (pSkill == NULL)
+			continue;
+
+		if (pSkill->GetFlag() & SF_TOGGLE)
+			pSkill->SetToggle(false);
+	}
+
+	CItemCollectionData::ClearData();
+	TOOLTIPMGR()->clearTooltip();
+
+	// Ä¿½ºÅÒ Å¸ÀÌÆ² Á¤º¸ »èÁ¦
+	CustomTitleData::clearCustomItemInfo();
 }
 
 // ----------------------------------------------------------------------------
@@ -581,14 +655,24 @@ void CUISystemMenu::Restart_Internal()
 // ----------------------------------------------------------------------------
 void CUISystemMenu::Exit()
 {
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_SYSMENU_EXIT ) )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_SYSMENU_EXIT ) )
 		return;
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 287, "ì‹œìŠ¤í…œ ë©”ë‰´" ), UMBS_YESNO,
+	MsgBoxInfo.SetMsgBoxInfo( _S( 287, "½Ã½ºÅÛ ¸Ş´º" ), UMBS_YESNO,
 								UI_SYSTEMMENU, MSGCMD_SYSMENU_EXIT );
-	MsgBoxInfo.AddString( _S( 288, "ê²Œì„ì„ ì¢…ë£Œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ) );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+// [2011/09/22 : Sora] °ÔÀÓ Á¾·á½Ã Ãâ¼®È®ÀÎ ¸Ş½ÃÁö Ãß°¡ Gamigo·ÎÄÃ Àû¿ëÈÄ Àü·ÎÄÃ Àû¿ë ¿¹Á¤
+	if( _pUIBuff->IsBuffBySkill( 1060 ) != NULL )	// Ãâ¼®´ë±â ¹öÇÁ index°¡ 1060ÀÓ
+	{
+		MsgBoxInfo.AddString( _S( 5592, "Ãâ¼®Ã¼Å©¸¦ ÇÏÁö¾ÊÀº »óÅÂÀÔ´Ï´Ù." ) );
+	}
+	MsgBoxInfo.AddString( _S( 288, "°ÔÀÓÀ» Á¾·áÇÏ½Ã°Ú½À´Ï±î?" ) );
+#if defined G_JAPAN
+	MsgBoxInfo.AddString( _S(3166, "°ÔÀÓ Á¢¼Ó Á¾·á ÈÄ ¼­¹ö¿¡´Â 15ÃÊ°£ ´ë±â½Ã°£ÀÌ ÀÖ½À´Ï´Ù. ¾ÈÀüÇÑ °÷¿¡¼­ Á¢¼Ó Á¾·á¸¦ ÇØÁÖ¼¼¿ä." ) );
+#endif
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
@@ -602,7 +686,17 @@ void CUISystemMenu::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInpu
 	case MSGCMD_SYSMENU_EXIT:
 		if( bOK )
 		{
+			if(IsHaveRelic() == true)
+			{
+				LogoutRelicWarring();
+				return;
+			}
+			g_iXPosInSystemMenu = GetPosX();
+			g_iYPosInSystemMenu = GetPosY();
+			
+			_pNetwork->SendClickObject(-1);
 			_pNetwork->LeavePet( (CPlayerEntity*)CEntity::GetPlayerEntity(0) );
+
 			_pGameState->Running() = FALSE;
 			_pGameState->QuitScreen() = FALSE;	
 		}
@@ -611,13 +705,120 @@ void CUISystemMenu::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInpu
 	case MSGCMD_SYSMENU_RESTART:
 		if( bOK )
 		{
-#ifdef RESTART_GAME
-			SetRestartGameValue(TRUE);
+			if(IsHaveRelic() == true)
+			{
+				LogoutRelicWarring();
+				return;
+			}
+
+			g_iXPosInSystemMenu = GetPosX();
+			g_iYPosInSystemMenu = GetPosY();
+
+			_pNetwork->SendClickObject(-1);
+			_pGameState->SetRestartGameValue(TRUE);
 			m_llStartTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-#else
-			Restart_Internal();
-#endif
+
+			m_btnRestart.SetBtnState(UBS_DISABLE);
+			m_btnExit.SetBtnState(UBS_DISABLE);
+		}
+		else
+		{
+			g_bAutoRestart = FALSE;
+		}
+		break;
+
+	case MSGCMD_LOGOUT_RELIC_WARRING:
+		{
+			if (bOK)
+			{
+				if (m_bCharacterMove == TRUE)
+				{
+					g_iXPosInSystemMenu = GetPosX();
+					g_iYPosInSystemMenu = GetPosY();
+
+					_pNetwork->SendClickObject(-1);
+					_pGameState->SetRestartGameValue(TRUE);
+					m_llStartTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+				}
+				else
+				{
+					g_iXPosInSystemMenu = GetPosX();
+					g_iYPosInSystemMenu = GetPosY();
+
+					_pNetwork->SendClickObject(-1);
+					_pNetwork->LeavePet( (CPlayerEntity*)CEntity::GetPlayerEntity(0) );
+
+					_pGameState->Running() = FALSE;
+					_pGameState->QuitScreen() = FALSE;	
+				}
+			}
+			else
+			{
+				m_btnRestart.SetBtnState(UBS_IDLE);
+				m_btnExit.SetBtnState(UBS_IDLE);
+			}
 		}
 		break;
 	}
+}
+
+void CUISystemMenu::ReStartNow()
+{
+	if ( m_bCharacterMove == FALSE)
+	{
+		STAGEMGR()->SetNextStage(eSTAGE_GAMEEND);
+		return;
+	}
+	
+	_pNetwork->SendRestartGame();	
+}
+
+void CUISystemMenu::CancelRestart()
+{
+	_UIAutoHelp->ClearGMNNotice();
+	ResetRestartTime();
+	_pGameState->SetRestartGameValue(FALSE);
+	m_btnRestart.SetBtnState(UBS_IDLE);
+	m_btnExit.SetBtnState(UBS_IDLE);
+}
+
+bool CUISystemMenu::IsHaveRelic()
+{
+	CUIInventory* pInven = UIMGR()->GetInventory();
+
+	// ÀÎº¥Åä¸®¿¡ °¡Áö°í ÀÖ´ÂÁö Ã¼Å©
+	int nTab, nInvenIdx;
+	if (pInven->GetItemSlotInfo(DEF_RELIC_ITEM1, nTab, nInvenIdx) ||
+		pInven->GetItemSlotInfo(DEF_RELIC_ITEM2, nTab, nInvenIdx) ||
+		pInven->GetItemSlotInfo(DEF_RELIC_ITEM3, nTab, nInvenIdx) )
+	{
+		return true;
+	}
+
+	// ÀåÂøÇÑ ¾ÆÀÌÅÛÁß À¯¹°À» °¡Áö°í ÀÖ´ÂÁö Ã¼Å©
+	if (pInven->IsWearingItem(DEF_RELIC_ITEM1) ||
+		pInven->IsWearingItem(DEF_RELIC_ITEM2) ||
+		pInven->IsWearingItem(DEF_RELIC_ITEM3))
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+void CUISystemMenu::LogoutRelicWarring()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_LOGOUT_RELIC_WARRING ) )
+		return;
+
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 287, "½Ã½ºÅÛ ¸Ş´º" ), UMBS_YESNO,
+		UI_SYSTEMMENU, MSGCMD_LOGOUT_RELIC_WARRING );
+	MsgBoxInfo.AddString( _S( 6411, "·Î±×¾Æ¿ô ÇÏ°Å³ª Ä³¸¯ÅÍ º¯°æ ½Ã À¯¹° ¾ÆÀÌÅÛÀº »ç¶óÁı´Ï´Ù. ±×·¡µµ ³ª°¡½Ã°Ú½À´Ï±î??" ) );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+
+	m_btnRestart.SetBtnState(UBS_DISABLE);
+	m_btnExit.SetBtnState(UBS_DISABLE);
 }

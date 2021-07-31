@@ -4,11 +4,14 @@
 #include <Engine/Interface/UIEditBox.h>
 #include <Engine/Interface/UIManager.h>
 #include <Engine/Interface/UITextureManager.h>
-#include <Engine/Interface/UIIME.h>			// Ïù¥Í∏∞Ìôò Ï∂îÍ∞Ä (11.16)
+#include <Engine/Interface/UIIME.h>			// ¿Ã±‚»Ø √ﬂ∞° (11.16)
 
 #include <Engine/Base/KeyNames.h>//ADD_CHAT_SPECIALCHAR_DISABLE_NA_20090210
 #include <Engine/Base/Input.h>
-
+#include <Engine/Help/UISupport.h>
+#include <Engine/GameStageManager/StageMgr.h>
+#include <Engine/Help/Util_Help.h>
+#include <Engine/Interface/UIImage.h>
 
 // External variables
 extern HWND	_hwndMain;
@@ -17,18 +20,31 @@ extern INDEX g_iCountry;
 // cpp2angel Edit (11.17)
 // Static variables
 BOOL		CUIEditBox::s_bShowReadingWindow;
-char		CUIEditBox::s_szReadingString[32];	
+// connie [2009/11/2] - ¿œ∫ª æ∆¿Ãµ/∆–Ω∫øˆµÂ 16¿⁄±Ó¡ˆ 
+char		CUIEditBox::s_szReadingString[34];	
 int			CUIEditBox::s_nReadingStringLength;
 CCandList	CUIEditBox::s_CandList;
 BOOL		bSecondComposition = false;
+int			CUIEditBox::s_nRefCount = 0;
+
+CUIEditBox*	CUIEditBox::s_FocusingEditBox = NULL;
+
+CUIEditBox*	CUIEditBox::s_PrevFocus = NULL;
 
 // cppangel Edit End
+
+#if defined(G_RUSSIA)
+	ENGINE_API extern CFontData *_pfdDefaultFont;
+#endif	//	defined(G_RUSSIA)
 
 // ----------------------------------------------------------------------------
 // Name : CUIEditBox()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIEditBox::CUIEditBox()
+	: m_pInputCallback(NULL)
+	, m_pBackground(NULL)
+	, m_nCursorSX(0)
 {
 	m_bIsPWEditBox = FALSE;
 	m_pInputBuffer = NULL;
@@ -45,10 +61,22 @@ CUIEditBox::CUIEditBox()
 	m_dOldPromptTime = 0.0;
 	m_bMsgInput = FALSE;
 	m_InValidEditBox = FALSE;
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11. 15)
+	m_bOnlyInteger = FALSE;
+
+	// [2011/11/02 : Sora] ƒøº≠ ¿Ãµø ∫“∞°«√∑°±◊
+	m_bMoveCursor = TRUE;
+	// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11. 15)
 	//s_bShowReadingWindow = FALSE;
 	//memset ( s_szReadingString, 0, sizeof( s_szReadingString ) );
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù 
+	// ¿Ã±‚»Ø ºˆ¡§ ≥° 
+	m_nTextColor = 0xF2F2F2FF;
+	m_nShowCharCount = 0;
+
+	m_bCopyAndPaste = false;
+	m_pImgSelText = NULL;
+	m_nCopyStartPos = -1;
+
+	setType(eUI_CONTROL_EDIT);
 }
 
 // ----------------------------------------------------------------------------
@@ -57,8 +85,10 @@ CUIEditBox::CUIEditBox()
 // ----------------------------------------------------------------------------
 CUIEditBox::~CUIEditBox()
 {
-	CUIWindow::Destroy();
 	Destroy();
+
+	s_PrevFocus = NULL;
+	s_FocusingEditBox = NULL;
 }
 
 void CUIEditBox::ResetShowCount()
@@ -68,16 +98,13 @@ void CUIEditBox::ResetShowCount()
 }
 
 
-
 // ----------------------------------------------------------------------------
 // Name : Destroy()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIEditBox::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight, int nMaxChar, BOOL bIsPWBox )
+void CUIEditBox::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight, int nMaxChar, BOOL bIsPWBox, int color )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	m_nTextSY = ( nHeight - _pUIFontTexMgr->GetFontHeight() ) / 2;
 	m_nMaxCharCount = nMaxChar;
@@ -101,6 +128,49 @@ void CUIEditBox::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 			m_pPWBuffer[0] = NULL;
 		}
 	}
+	m_nTextColor = color;
+}
+
+void CUIEditBox::initialize()
+{
+	m_nTextSY = ( m_nHeight - _pUIFontTexMgr->GetFontHeight() ) / 2;
+
+	m_nShowCharCount = ( m_nWidth + _pUIFontTexMgr->GetFontSpacing() ) /
+		( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+	
+	m_nShowCharSize = m_nWidth;
+
+	if (m_nMaxCharCount > 0)
+	{
+		SAFE_ARRAY_DELETE(m_pInputBuffer);
+		SAFE_ARRAY_DELETE(m_pTempBuffer);
+
+		m_pInputBuffer = new char[m_nMaxCharCount + 1];
+		m_pInputBuffer[0] = NULL;
+		m_pTempBuffer = new char[m_nMaxCharCount + 1];
+		m_pTempBuffer[0] = NULL;
+
+		if (m_bIsPWEditBox)
+		{
+			SAFE_ARRAY_DELETE(m_pPWBuffer);
+			m_pPWBuffer = new char[m_nShowCharCount + 1];
+			m_pPWBuffer[0] = NULL;
+		}
+	}
+
+#ifdef VER_TEST
+	m_bCopyAndPaste = true;
+#endif // VER_TEST
+
+	m_pImgSelText = new CUIImage;
+	addChild((CUIBase*)m_pImgSelText);
+	
+	m_pImgSelText->setTexString("CommonBtn.tex");
+	UIRectUV uv;
+	uv.SetUV(158, 59, 165, 66);
+	m_pImgSelText->SetUV(uv);
+	m_pImgSelText->SetColor(0x0000FFCC);
+	m_pImgSelText->Hide(TRUE);
 }
 
 // ----------------------------------------------------------------------------
@@ -117,17 +187,8 @@ void CUIEditBox::SetMaxChar( int nMaxChar )
 	ResetString();
 
 	// Release memory of input & temporary buffer
-	if( m_pInputBuffer )
-	{
-		delete [] m_pInputBuffer;
-		m_pInputBuffer = NULL;
-	}
-
-	if( m_pTempBuffer )
-	{
-		delete [] m_pTempBuffer;
-		m_pTempBuffer = NULL;
-	}
+	SAFE_ARRAY_DELETE(m_pInputBuffer);
+	SAFE_ARRAY_DELETE(m_pTempBuffer);
 
 	m_nMaxCharCount = nMaxChar;
 
@@ -147,24 +208,16 @@ void CUIEditBox::SetMaxChar( int nMaxChar )
 // ----------------------------------------------------------------------------
 void CUIEditBox::Destroy()
 {
+	CUIWindow::Destroy();
+
 	// Release memory of input & temporary buffer
-	if( m_pInputBuffer )
-	{
-		delete [] m_pInputBuffer;
-		m_pInputBuffer = NULL;
-	}
+	SAFE_ARRAY_DELETE( m_pInputBuffer );
+	SAFE_ARRAY_DELETE( m_pTempBuffer );
+	SAFE_ARRAY_DELETE( m_pPWBuffer );
 
-	if( m_pTempBuffer )
-	{
-		delete [] m_pTempBuffer;
-		m_pTempBuffer = NULL;
-	}
+	SAFE_DELETE(m_pInputCallback);
 
-	if( m_pPWBuffer )
-	{
-		delete [] m_pPWBuffer;
-		m_pPWBuffer = NULL;
-	}
+	SAFE_DELETE(m_pBackground);
 }
 
 // ----------------------------------------------------------------------------
@@ -174,6 +227,9 @@ void CUIEditBox::Destroy()
 void CUIEditBox::SetReadingWindowUV( FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT fTy1,
 										FLOAT fTexWidth, FLOAT fTexHeight )
 {
+#ifdef UI_TOOL
+	m_ReadingWindowUV.U0 = fTx0; m_ReadingWindowUV.V0 = fTy0; m_ReadingWindowUV.U1 = fTx1; m_ReadingWindowUV.V1 = fTy1;
+#endif // UI_TOOL
 	m_rtReadWndL.SetUV( fTx0, fTy0, fTx0 + 6.0f, fTy1, fTexWidth, fTexHeight );
 	m_rtReadWndM.SetUV( fTx0 + 7.0f, fTy0, fTx1 - 7.0f, fTy1, fTexWidth, fTexHeight );
 	m_rtReadWndR.SetUV( fTx1 - 6.0f, fTy0, fTx1, fTy1, fTexWidth, fTexHeight );
@@ -186,6 +242,9 @@ void CUIEditBox::SetReadingWindowUV( FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT f
 void CUIEditBox::SetCandidateUV( FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT fTy1,
 									FLOAT fTexWidth, FLOAT fTexHeight )
 {
+#ifdef UI_TOOL
+	m_CandidateUV.U0 = fTx0; m_CandidateUV.V0 = fTy0; m_CandidateUV.U1 = fTx1; m_CandidateUV.V1 = fTy1;
+#endif // UI_TOOL
 	m_rtCandUL.SetUV( fTx0, fTy0, fTx0 + 6.0f, fTy0 + 6.0f, fTexWidth, fTexHeight );
 	m_rtCandUM.SetUV( fTx0 + 7.0f, fTy0, fTx1 - 7.0f, fTy0 + 6.0f, fTexWidth, fTexHeight );
 	m_rtCandUR.SetUV( fTx1 - 6.0f, fTy0, fTx1, fTy0 + 6.0f, fTexWidth, fTexHeight );
@@ -210,29 +269,44 @@ void CUIEditBox::Render()
 
 	// Length of shown characters
 	int	nLength = m_nCurCharCount - m_nFirstShowChar;
+
 	// wooss 051002
-	if(g_iCountry == THAILAND) {
-		int tv_Len=FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
-		if(((m_nShowCharCount)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing())) < tv_Len) {
-			m_nFirstShowChar++;
-		}
-	}else if( nLength > m_nShowCharCount )	nLength = m_nShowCharCount;
-	
+#if defined(G_THAI)
+	int tv_Len=FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
+	if(((m_nShowCharCount)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing())) < tv_Len)
+		m_nFirstShowChar++;
+#else
+	if( nLength > m_nShowCharCount )	nLength = m_nShowCharCount;
+#endif
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Render text
 	if( m_bIsPWEditBox )
 	{
-		for( int iChar = 0; iChar < nLength; iChar++ )
+		int iChar;
+		for( iChar = 0; iChar < nLength; iChar++ )
 			m_pPWBuffer[iChar] = '*';
 		m_pPWBuffer[iChar] = NULL;
-		_pUIMgr->GetDrawPort()->PutTextCharEx( m_pPWBuffer, nLength, nX, nY );
+		pDrawPort->PutTextCharEx( m_pPWBuffer, nLength, nX, nY );
 	}
 	else
-		_pUIMgr->GetDrawPort()->PutTextCharEx( &m_pInputBuffer[m_nFirstShowChar], nLength, nX, nY );
+	{
+#ifdef G_RUSSIA
+		int nShowCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
+		std::string strTemp = &m_pInputBuffer[m_nFirstShowChar];
+		strTemp = strTemp.substr(0, nShowCnt);
+		pDrawPort->PutTextCharEx( (char*)strTemp.c_str(), nLength, nX + m_nCursorSX, nY );
+#else // G_RUSSIA
+		pDrawPort->PutTextCharEx( &m_pInputBuffer[m_nFirstShowChar], nLength, nX + m_nCursorSX, nY );
+#endif // G_RUSSIA
+		
+	}
 
 	// Render cursor
 	if( IsFocused() )
 	{
-		if( m_pParentWnd != NULL && !m_pParentWnd->IsFocused() )
+		if( m_pParent != NULL && !m_pParent->IsFocused() )		
 			SetFocus( FALSE );
 
 		DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
@@ -248,33 +322,41 @@ void CUIEditBox::Render()
 			while( m_dElapsedTime > 0.5 );
 		}
 
-		int	nCursorX = nX + ( m_nCursorIndex - m_nFirstShowChar ) *
-							( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+		int nCursorX = 0;
+#if defined(G_RUSSIA)
+		std::string strTemp = m_pInputBuffer;
+		strTemp = strTemp.substr(m_nFirstShowChar, m_nCursorIndex - m_nFirstShowChar);
+		nCursorX = m_nCursorSX + nX + UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, (char*)strTemp.c_str());
+#else
+		nCursorX = m_nCursorSX + nX + ( m_nCursorIndex - m_nFirstShowChar ) *
+			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
+		
 
 		// Date : 2005-03-09,   By Lee Ki-hwan
 		/*
-			!!Î¨∏Ï†ú : Ïª§ÏÑúÏùò ÏúÑÏπòÍ∞Ä Í∏ÄÏûêÏùò ÏúÑÏπòÏôÄ ÎßûÏßÄ ÏïäÏùå 
+			!!πÆ¡¶ : ƒøº≠¿« ¿ßƒ°∞° ±€¿⁄¿« ¿ßƒ°øÕ ∏¬¡ˆ æ ¿Ω 
 
-			Î¨∏ÏûêÎÇ¥Ïóê 2Byte Î¨∏ÏûêÍ∞Ä Î™áÍ∞úÏù∏ ÏßÄ ÌåêÎã®Ìï¥ÏÑú Ïó¨Î∞± ÏßÄÏõåÏ§å 
-			CursorIndexÎäî 2ByteÎ¨∏ÏûêÎ•º 2Í∞úÏùò 1ByteÎ¨∏ÏûêÎ°ú ÌåêÎã®Ìï¥ÏÑú Ïó¨Î∞±Ï≤òÎ¶¨ÏÑú 1Í∞úÏùò Ïó¨Î∞±Ïù¥ Ï¶ùÍ∞ÄÌïúÎã§. 
+			πÆ¿⁄≥ªø° 2Byte πÆ¿⁄∞° ∏Ó∞≥¿Œ ¡ˆ ∆«¥‹«ÿº≠ ø©πÈ ¡ˆøˆ¡‹ 
+			CursorIndex¥¬ 2ByteπÆ¿⁄∏¶ 2∞≥¿« 1ByteπÆ¿⁄∑Œ ∆«¥‹«ÿº≠ ø©πÈ√≥∏Æº≠ 1∞≥¿« ø©πÈ¿Ã ¡ı∞°«—¥Ÿ. 
 			 
-			* Ï†ïÏÉÅÏ≤òÎ¶¨ 
-				2ByteÎ¨∏Ïûêsize (12) + Ïó¨Î∞± (1) * Î¨∏Ïûê Í∞ØÏàò = 13 * Î¨∏Ïûê Í∞ØÏàò 
+			* ¡§ªÛ√≥∏Æ 
+				2ByteπÆ¿⁄size (12) + ø©πÈ (1) * πÆ¿⁄ ∞πºˆ = 13 * πÆ¿⁄ ∞πºˆ 
 			
-			* CursorIndexÏùò Í≤ΩÏö∞ ( 1ByteÎ¨∏Ïûê2Í∞úÎ°ú Ï≤òÎ¶¨) 
-				1Byte Î¨∏Ïûê Size ( 6 ) + Ïó¨Î∞± (1) * 2 * Î¨∏Ïûê Í∞ØÏàò = 14 * Î¨∏Ïûê Í∞ØÏàò 
+			* CursorIndex¿« ∞ÊøÏ ( 1ByteπÆ¿⁄2∞≥∑Œ √≥∏Æ) 
+				1Byte πÆ¿⁄ Size ( 6 ) + ø©πÈ (1) * 2 * πÆ¿⁄ ∞πºˆ = 14 * πÆ¿⁄ ∞πºˆ 
 
-			@Ìï¥Í≤∞Î∞©Î≤ï : ÌòÑÏû¨ÍπåÏßÄÏôÄ Í∞ôÏùÄ Î∞©Î≤ïÏúºÎ°ú Ïª§ÏÑúÏùò ÏúÑÏπòÎ•º Í≥ÑÏÇ∞Ìïú ÌõÑ 2ByteÎ¨∏ÏûêÏùò Í∞ØÏàòÎ•º ÌååÏïÖÌï¥ 
-			Í∞ØÏàò ÎßåÏùò Ï∂îÍ∞Ä Ï†ÅÏö©Îêú Ïó¨Î∞±ÏùÑ ÎπºÏ§ÄÎã§.
+			@«ÿ∞·πÊπ˝ : «ˆ¿Á±Ó¡ˆøÕ ∞∞¿∫ πÊπ˝¿∏∑Œ ƒøº≠¿« ¿ßƒ°∏¶ ∞ËªÍ«— »ƒ 2ByteπÆ¿⁄¿« ∞πºˆ∏¶ ∆ƒæ««ÿ 
+			∞πºˆ ∏∏¿« √ﬂ∞° ¿˚øÎµ» ø©πÈ¿ª ª©¡ÿ¥Ÿ.
 		*/
-		if(g_iCountry == THAILAND ){			
-			nCursorX = nX + FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
-		}else{			
-			int n2ByteChar = Get2ByteCharCount ( m_pInputBuffer, m_nCursorIndex );
-			nCursorX -= n2ByteChar * _pUIFontTexMgr->GetFontSpacing(); 
-		}
-		
-
+#if defined(G_THAI)
+		nCursorX = nX + FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
+#else
+#if !defined(G_RUSSIA)
+		int n2ByteChar = Get2ByteCharCount ( m_pInputBuffer, m_nCursorIndex );
+		nCursorX -= n2ByteChar * _pUIFontTexMgr->GetFontSpacing(); 
+#endif
+#endif
 		int	nCursorY = nY;
 
 		if( m_bShowCursor )
@@ -286,26 +368,192 @@ void CUIEditBox::Render()
 					char	cCursor = 31;
 					int		nOldFontWidth = _pUIFontTexMgr->GetFontWidth();
 					_pUIFontTexMgr->SetFontWidth( _pUIFontTexMgr->GetFontWidth2Byte() );
-					_pUIMgr->GetDrawPort()->PutTextCharEx( &cCursor, 1, nCursorX, nCursorY, 0xFFFFFFFF );
+					//pDrawPort->PutTextCharEx( &cCursor, 1, nCursorX, nCursorY, 0x00FF00FF ); // ∆˘∆Æ ≈◊Ω∫∆Æ
+					pDrawPort->PutTextCharEx( &cCursor, 1, nCursorX, nCursorY, m_nTextColor );
 					_pUIFontTexMgr->SetFontWidth( nOldFontWidth );
 
-					_pUIMgr->GetDrawPort()->PutTextCharEx( &m_pInputBuffer[m_nCursorIndex], 2,
+					//pDrawPort->PutTextCharEx( &m_pInputBuffer[m_nCursorIndex], 2,	// ∆˘∆Æ ≈◊Ω∫∆Æ
+															//nCursorX, nCursorY, 0xFFFFFFFF );
+
+					pDrawPort->PutTextCharEx( &m_pInputBuffer[m_nCursorIndex], 2,
 															nCursorX, nCursorY, 0x000000FF );
 				}
 				else
 				{
 					char	cCursor = 30;
-					_pUIMgr->GetDrawPort()->PutTextCharEx( &cCursor, 1, nCursorX - 1, nCursorY, 0xFFFFFFFF );
+					pDrawPort->PutTextCharEx( &cCursor, 1, nCursorX - 1, nCursorY, 0xFFFFFFFF );
 				}
 			}
 			else
 			{
-				char	cCursor = 30;
-				_pUIMgr->GetDrawPort()->PutTextCharEx( &cCursor, 1, nCursorX - 1, nCursorY, 0xFFFFFFFF );
+#if defined(G_RUSSIA)
+					pDrawPort->PutTextEx( CTString("|"), nCursorX, nCursorY-2, m_nTextColor );
+#else
+					char	cCursor = 30;
+					pDrawPort->PutTextCharEx( &cCursor, 1, nCursorX - 1, nCursorY, m_nTextColor );
+#endif
 			}
 		}
 	}
 	
+}
+
+void CUIEditBox::OnRender( CDrawPort* pDraw )
+{
+	// Get position
+	int	nX, nY;
+	GetAbsPos( nX, nY );
+	nY += m_nTextSY;
+
+	if (m_pTexData != NULL)
+	{
+		// ≈ÿΩ∫√ƒ∞° ¿÷¿ª ∞ÊøÏø°∏∏ πË∞Ê¿ª ±◊∏∞¥Ÿ.
+		pDraw->InitTextureData( m_pTexData );
+		if( m_pBackground != NULL )
+		{
+			m_pBackground->SetPos(nX, nY);
+			m_pBackground->RenderRectSurface( pDraw, DEF_UI_COLOR_WHITE );
+	
+			pDraw->FlushRenderingQueue();
+		}
+	}
+
+	// Length of shown characters
+	int	nLength = m_nCurCharCount - m_nFirstShowChar;
+
+	// wooss 051002
+#if defined(G_THAI)
+	int tv_Len=FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
+	if(((m_nShowCharCount)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing())) < tv_Len)
+		m_nFirstShowChar++;
+#else
+	if( nLength > m_nShowCharCount )	nLength = m_nShowCharCount;
+#endif
+
+	// Render text
+	if ( m_bIsPWEditBox )
+	{
+		if( m_pPWBuffer != NULL )
+		{
+			int iChar;
+			for( iChar = 0; iChar < nLength; iChar++ )
+				m_pPWBuffer[iChar] = '*';
+			m_pPWBuffer[iChar] = NULL;
+			pDraw->PutTextCharEx( m_pPWBuffer, nLength, nX, nY );
+		}
+	}
+	
+	else
+	{
+		if (m_pInputBuffer != NULL)
+		{
+#ifdef G_RUSSIA
+			int nShowCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
+			std::string strTemp = &m_pInputBuffer[m_nFirstShowChar];
+			strTemp = strTemp.substr(0, nShowCnt);
+			pDraw->PutTextCharEx( (char*)strTemp.c_str(), nLength, nX + m_nCursorSX, nY );
+#else // G_RUSSIA
+			pDraw->PutTextCharEx( &m_pInputBuffer[m_nFirstShowChar], nLength, nX + m_nCursorSX, nY );
+#endif // G_RUSSIA
+		}
+	}
+
+	// Render cursor
+	if (IsFocused())
+	{
+// 		if( m_pParent != NULL && !m_pParent->IsFocused() )		
+// 			SetFocus( FALSE );
+
+		DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+		m_dElapsedTime += dCurTime - m_dOldPromptTime;
+		m_dOldPromptTime = dCurTime;
+		if( m_dElapsedTime > 0.5 )
+		{
+			m_bShowCursor = !m_bShowCursor;
+			do
+			{
+				m_dElapsedTime -= 0.5;
+			}
+			while( m_dElapsedTime > 0.5 );
+		}
+
+		int nCursorX = 0;
+#if defined(G_RUSSIA)
+		std::string strTemp = m_pInputBuffer;
+
+		if (m_bIsPWEditBox)
+		{
+			int nMax = strTemp.size();
+			strTemp = "";
+			
+			for (int c = 0; c < nMax; ++c)
+			{
+				strTemp += "*";
+			}
+		}
+
+		strTemp = strTemp.substr(m_nFirstShowChar, m_nCursorIndex - m_nFirstShowChar);
+		nCursorX = m_nCursorSX + nX + UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, (char*)strTemp.c_str());
+#else	// G_RUSSIA
+		nCursorX = m_nCursorSX + nX + ( m_nCursorIndex - m_nFirstShowChar ) *
+			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif	// G_RUSSIA
+
+#if defined(G_THAI)
+		nCursorX = m_nCursorSX + nX + FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
+#else
+#if !defined(G_RUSSIA)
+		int n2ByteChar = Get2ByteCharCount ( m_pInputBuffer, m_nCursorIndex );
+		nCursorX -= n2ByteChar * _pUIFontTexMgr->GetFontSpacing(); 
+#endif
+#endif
+		int	nCursorY = nY;
+
+		if( m_bShowCursor )
+		{
+			if( m_bOnComposition )
+			{
+				if( _pUIFontTexMgr->GetLanguage() == FONT_KOREAN )
+				{
+					char	cCursor = 31;
+					int		nOldFontWidth = _pUIFontTexMgr->GetFontWidth();
+					_pUIFontTexMgr->SetFontWidth( _pUIFontTexMgr->GetFontWidth2Byte() );
+					//pDraw->PutTextCharEx( &cCursor, 1, nCursorX, nCursorY, 0x00FF00FF ); // ∆˘∆Æ ≈◊Ω∫∆Æ
+					pDraw->PutTextCharEx( &cCursor, 1, nCursorX, nCursorY, m_nTextColor );
+					_pUIFontTexMgr->SetFontWidth( nOldFontWidth );
+
+					//pDraw->PutTextCharEx( &m_pInputBuffer[m_nCursorIndex], 2,	// ∆˘∆Æ ≈◊Ω∫∆Æ
+															//nCursorX, nCursorY, 0xFFFFFFFF );
+
+					pDraw->PutTextCharEx( &m_pInputBuffer[m_nCursorIndex], 2,
+															nCursorX, nCursorY, 0x000000FF );
+				}
+				else
+				{
+					char	cCursor = 30;
+					pDraw->PutTextCharEx( &cCursor, 1, nCursorX - 1, nCursorY, 0xFFFFFFFF );
+					nLength += 1;
+				}
+			}
+			else
+			{
+#if defined(G_RUSSIA)
+					pDraw->PutTextEx( CTString("|"), nCursorX, nCursorY-2, m_nTextColor );
+#else
+					char	cCursor = 30;
+					pDraw->PutTextCharEx( &cCursor, 1, nCursorX - 1, nCursorY, m_nTextColor );
+					nLength += 1;
+#endif
+			}
+		}
+	}
+
+	if (nLength > 0)
+		pDraw->EndTextEx();
+
+#ifdef UI_TOOL
+	RenderBorder(pDraw);
+#endif // UI_TOOL
 }
 
 // ----------------------------------------------------------------------------
@@ -314,7 +562,7 @@ void CUIEditBox::Render()
 // ----------------------------------------------------------------------------
 void CUIEditBox::RenderReadingWindow()
 {
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11.17)
+	// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11.17)
 	int	nX, nY;
 	GetAbsPos( nX, nY );
 	int	nCursorX = nX + ( m_nCursorIndex - m_nFirstShowChar ) *
@@ -350,21 +598,23 @@ void CUIEditBox::RenderReadingWindow()
 		m_rcCand.Bottom -= nReadHeight;
 	}
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Adjust position of reading and candidate window
-	if( m_rcCand.Left < _pUIMgr->GetMinI() )
+	if( m_rcCand.Left < pUIManager->GetMinI() )
 	{
-		int	nOffset = _pUIMgr->GetMinI() - m_rcCand.Left;
+		int	nOffset = pUIManager->GetMinI() - m_rcCand.Left;
 		m_rcReadWnd.Left += nOffset;		m_rcReadWnd.Right += nOffset;
 		m_rcCand.Left += nOffset;			m_rcCand.Right += nOffset;
 	}
-	else if( m_rcCand.Right > _pUIMgr->GetMaxI() )
+	else if( m_rcCand.Right > pUIManager->GetMaxI() )
 	{
-		int	nOffset = _pUIMgr->GetMinI() - m_rcCand.Right;
+		int	nOffset = pUIManager->GetMinI() - m_rcCand.Right;
 		m_rcReadWnd.Left += nOffset;		m_rcReadWnd.Right += nOffset;
 		m_rcCand.Left += nOffset;			m_rcCand.Right += nOffset;
 	}
 
-	if( m_rcCand.Bottom > _pUIMgr->GetMaxJ() )
+	if( m_rcCand.Bottom > pUIManager->GetMaxJ() )
 	{
 		nCursorY -= 17;
 		m_rcReadWnd.SetRect( nCursorX, nCursorY - nReadWndHeight, nCursorX + nReadWndWidth, nCursorY );
@@ -379,23 +629,25 @@ void CUIEditBox::RenderReadingWindow()
 		}
 	}
 
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Render reading window
 	if( s_bShowReadingWindow )
 	{
 		// Left
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcReadWnd.Left, m_rcReadWnd.Top,
+		pDrawPort->AddTexture( m_rcReadWnd.Left, m_rcReadWnd.Top,
 											m_rcReadWnd.Left + 6, m_rcReadWnd.Bottom,
 											m_rtReadWndL.U0, m_rtReadWndL.V0,
 											m_rtReadWndL.U1, m_rtReadWndL.V1,
 											0xFFFFFFFF );
 		// Middle
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcReadWnd.Left + 6, m_rcReadWnd.Top,
+		pDrawPort->AddTexture( m_rcReadWnd.Left + 6, m_rcReadWnd.Top,
 											m_rcReadWnd.Right - 6, m_rcReadWnd.Bottom,
 											m_rtReadWndM.U0, m_rtReadWndM.V0,
 											m_rtReadWndM.U1, m_rtReadWndM.V1,
 											0xFFFFFFFF );
 		// Right
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcReadWnd.Right - 6, m_rcReadWnd.Top,
+		pDrawPort->AddTexture( m_rcReadWnd.Right - 6, m_rcReadWnd.Top,
 											m_rcReadWnd.Right, m_rcReadWnd.Bottom,
 											m_rtReadWndR.U0, m_rtReadWndR.V0,
 											m_rtReadWndR.U1, m_rtReadWndR.V1,
@@ -404,62 +656,62 @@ void CUIEditBox::RenderReadingWindow()
 		nX = m_rcReadWnd.Left + 6;
 		nY = m_rcReadWnd.Top + 3;
 
-		_pUIMgr->GetDrawPort()->PutTextCharEx( s_szReadingString, 0, nX, nY );
+		pDrawPort->PutTextCharEx( s_szReadingString, 0, nX, nY);
 	}
 
 	// Render candidate window
 	if( s_CandList.bShowWindow )
 	{
 		// Upper left
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Left, m_rcCand.Top,
+		pDrawPort->AddTexture( m_rcCand.Left, m_rcCand.Top,
 											m_rcCand.Left + 6, m_rcCand.Top + 6,
 											m_rtCandUL.U0, m_rtCandUL.V0,
 											m_rtCandUL.U1, m_rtCandUL.V1,
 											0xFFFFFFFF );
 		// Upper middle
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Left + 6, m_rcCand.Top,
+		pDrawPort->AddTexture( m_rcCand.Left + 6, m_rcCand.Top,
 											m_rcCand.Right - 6, m_rcCand.Top + 6,
 											m_rtCandUM.U0, m_rtCandUM.V0,
 											m_rtCandUM.U1, m_rtCandUM.V1,
 											0xFFFFFFFF );
 		// Upper right
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Right - 6, m_rcCand.Top,
+		pDrawPort->AddTexture( m_rcCand.Right - 6, m_rcCand.Top,
 											m_rcCand.Right, m_rcCand.Top + 6,
 											m_rtCandUR.U0, m_rtCandUR.V0,
 											m_rtCandUR.U1, m_rtCandUR.V1,
 											0xFFFFFFFF );
 		// Middle left
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Left, m_rcCand.Top + 6,
+		pDrawPort->AddTexture( m_rcCand.Left, m_rcCand.Top + 6,
 											m_rcCand.Left + 6, m_rcCand.Bottom - 6,
 											m_rtCandML.U0, m_rtCandML.V0,
 											m_rtCandML.U1, m_rtCandML.V1,
 											0xFFFFFFFF );
 		// Middle middle
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Left + 6, m_rcCand.Top + 6,
+		pDrawPort->AddTexture( m_rcCand.Left + 6, m_rcCand.Top + 6,
 											m_rcCand.Right - 6, m_rcCand.Bottom - 6,
 											m_rtCandMM.U0, m_rtCandMM.V0,
 											m_rtCandMM.U1, m_rtCandMM.V1,
 											0xFFFFFFFF );
 		// Middle right
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Right - 6, m_rcCand.Top + 6,
+		pDrawPort->AddTexture( m_rcCand.Right - 6, m_rcCand.Top + 6,
 											m_rcCand.Right, m_rcCand.Bottom - 6,
 											m_rtCandMR.U0, m_rtCandMR.V0,
 											m_rtCandMR.U1, m_rtCandMR.V1,
 											0xFFFFFFFF );
 		// Lower left
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Left, m_rcCand.Bottom - 6,
+		pDrawPort->AddTexture( m_rcCand.Left, m_rcCand.Bottom - 6,
 											m_rcCand.Left + 6, m_rcCand.Bottom,
 											m_rtCandLL.U0, m_rtCandLL.V0,
 											m_rtCandLL.U1, m_rtCandLL.V1,
 											0xFFFFFFFF );
 		// Lower middle
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Left + 6, m_rcCand.Bottom - 6,
+		pDrawPort->AddTexture( m_rcCand.Left + 6, m_rcCand.Bottom - 6,
 											m_rcCand.Right - 6, m_rcCand.Bottom,
 											m_rtCandLM.U0, m_rtCandLM.V0,
 											m_rtCandLM.U1, m_rtCandLM.V1,
 											0xFFFFFFFF );
 		// Lower right
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCand.Right - 6, m_rcCand.Bottom - 6,
+		pDrawPort->AddTexture( m_rcCand.Right - 6, m_rcCand.Bottom - 6,
 											m_rcCand.Right, m_rcCand.Bottom,
 											m_rtCandLR.U0, m_rtCandLR.V0,
 											m_rtCandLR.U1, m_rtCandLR.V1,
@@ -469,11 +721,11 @@ void CUIEditBox::RenderReadingWindow()
 		nY = m_rcCand.Top + 6;
 		for( int i = 0; i < s_CandList.dwPageSize; i++ )
 		{
-			_pUIMgr->GetDrawPort()->PutTextCharEx( s_CandList.szCandidate[i], 0, nX, nY );
+			pDrawPort->PutTextCharEx( s_CandList.szCandidate[i], 0, nX, nY);
 			nY += 15;
 		}
 	}
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù 
+	// ¿Ã±‚»Ø ºˆ¡§ ≥° 
 }
 
 // ----------------------------------------------------------------------------
@@ -483,7 +735,8 @@ void CUIEditBox::RenderReadingWindow()
 void CUIEditBox::ResetString()
 {
 	//m_pInputBuffer[0] = NULL;
-	ZeroMemory(m_pInputBuffer, strlen(m_pInputBuffer)+1);
+	if( m_pInputBuffer )
+		ZeroMemory(m_pInputBuffer, strlen(m_pInputBuffer)+1);
 
 	m_nCurCharCount = 0;
 	m_nCursorIndex = 0;
@@ -498,7 +751,10 @@ void CUIEditBox::SetString( char *pcString )
 {
 	int	nLength = strlen( pcString );
 	if( nLength <= 0 )
+	{
+		ResetString();
 		return;
+	}
 
 	// Resize buffer
 	if( nLength > m_nMaxCharCount )
@@ -506,9 +762,47 @@ void CUIEditBox::SetString( char *pcString )
 
 	// Copy string
 	memcpy( m_pInputBuffer, pcString, nLength );
+
+	if (nLength >= 2)
+	{
+		if (m_pInputBuffer[nLength-2] == '\r' && m_pInputBuffer[nLength-1] == '\n')
+		{
+			m_pInputBuffer[nLength-2] = '\0';
+			m_pInputBuffer[nLength-1] = '\0';
+			nLength -= 2;
+		}
+	}
+
 	m_pInputBuffer[nLength] = NULL;
 	m_nCurCharCount = nLength;
+	m_nCursorIndex = m_nCurCharCount;
 
+	if( m_nFirstShowChar + m_nShowCharCount < m_nCursorIndex )
+	{
+		m_nFirstShowChar = m_nCursorIndex - m_nShowCharCount;
+
+		if( Is2ByteChar( m_nFirstShowChar ) )
+			m_nFirstShowChar++;
+	}
+
+	// [091104] ∫∏¿Ã¥¬ πÆ¿⁄ºˆ ¥ŸΩ√ √º≈©
+#if defined(G_RUSSIA)
+	m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, pcString, m_nWidth);
+#endif
+}
+
+void CUIEditBox::ClearInputBuffer()
+{
+	if (m_pInputBuffer == NULL)
+		return;
+
+	int	nLength = strlen( m_pInputBuffer );
+
+	memset(m_pInputBuffer, 0, nLength);
+
+	m_nCurCharCount = 0;
+	m_nCursorIndex = m_nCurCharCount;
+	m_nFirstShowChar = 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -522,13 +816,16 @@ BOOL CUIEditBox::Is2ByteChar( int nCharIndex, int nFirstCheck )
 
 	// wooss 070313 -------------------------------------------------------->><<
 	// SingleByte CodeSet
-	if( g_iCountry ==THAILAND || g_iCountry == BRAZIL  || g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+	// connie [2009/9/11] - 
+	if( g_iCountry ==THAILAND || g_iCountry == BRAZIL  || g_iCountry == GERMANY || g_iCountry == SPAIN
+		|| g_iCountry == FRANCE || g_iCountry == POLAND || g_iCountry == RUSSIA || g_iCountry == TURKEY || g_iCountry == MEXICO
+		|| g_iCountry == USA_SPAIN || g_iCountry == ITALY || g_iCountry == NETHERLANDS)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	{
 		return b2ByteChar;
 	}
 	for( int iPos = nFirstCheck; iPos < nCharIndex; iPos++, pcTemp++ )
 	{
-		if( (*pcTemp & 0x80) ){
+		if( (*pcTemp & 0x80) && (g_iCountry !=THAILAND) ){
 			if( _pUIFontTexMgr->GetLanguage() == FONT_JAPANESE && ((UCHAR)*pcTemp >= 0xa1 && (UCHAR)*pcTemp <= 0xdf) ) 
 				b2ByteChar = FALSE;
 			else b2ByteChar = !b2ByteChar;
@@ -536,6 +833,7 @@ BOOL CUIEditBox::Is2ByteChar( int nCharIndex, int nFirstCheck )
 		else
 			b2ByteChar = FALSE;
 	}
+
 	return b2ByteChar;
 }
 
@@ -615,10 +913,19 @@ void CUIEditBox::MoveCursor( MoveDirection mdDirection )
 // ----------------------------------------------------------------------------
 void CUIEditBox::InsertChar( int nInsertPos, char cInsert )
 {
+	if (m_bOnlyInteger == TRUE && nInsertPos == 0)
+	{
+		if (cInsert == '0')
+			return;
+	}
+
 	// If input buffer is not enough
 	if( m_nCurCharCount >= m_nMaxCharCount )
 		return;
-
+#if defined(G_RUSSIA)
+	if( nInsertPos >= m_nMaxCharCount )
+		return;
+#endif
 	// If cursor locates in last position of input string
 	if( nInsertPos == m_nCurCharCount )
 	{
@@ -644,17 +951,21 @@ void CUIEditBox::InsertChar( int nInsertPos, char cInsert )
 	m_nCursorIndex++;
 	m_nCurCharCount++;
 
+#if defined(G_RUSSIA)
+	m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
+#endif
 	// Adjust position of first shown character
 	if( m_nCursorIndex > m_nFirstShowChar + m_nShowCharCount )
 	{
 		// wooss 051002
-		if(g_iCountry ==THAILAND) {
-			int tv_Len=FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
-			if(((m_nShowCharCount)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing())) < tv_Len) {
-				m_nFirstShowChar++;
-			}
-		} else m_nFirstShowChar = m_nCursorIndex - m_nShowCharCount;
-
+#if defined(G_THAI)
+		int tv_Len=FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
+		if(((m_nShowCharCount)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing())) < tv_Len) {
+			m_nFirstShowChar++;
+		} 
+#else
+		m_nFirstShowChar = m_nCursorIndex - m_nShowCharCount;
+#endif
 		if( Is2ByteChar( m_nFirstShowChar ) )
 			m_nFirstShowChar++;
 	}
@@ -700,6 +1011,9 @@ void CUIEditBox::InsertChars( int nInsertPos, char *pcInsert )
 	m_nCursorIndex += nLength;
 	m_nCurCharCount += nLength;
 
+#if defined(G_RUSSIA)
+	m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
+#endif
 	// Adjust position of first shown character
 	if( m_nCursorIndex > m_nFirstShowChar + m_nShowCharCount )
 	{
@@ -794,6 +1108,7 @@ void CUIEditBox::InsertIMEChar( char *pcInsert, BOOL bOnComposition )
 			m_nCurCharCount -= 2;
 
 			m_bOnComposition = FALSE;
+			
 		}
 		else
 		{
@@ -805,14 +1120,55 @@ void CUIEditBox::InsertIMEChar( char *pcInsert, BOOL bOnComposition )
 	// Complete composition
 	else if( m_bOnComposition && !bOnComposition )
 	{
-		// Insert characters
-		m_pInputBuffer[m_nCursorIndex] = pcInsert[0];
-		m_pInputBuffer[m_nCursorIndex + 1] = pcInsert[1];
-
-		// Increase cursor index
-		m_nCursorIndex += 2;
-
-		m_bOnComposition = FALSE;
+#if !defined(G_JAPAN)
+		{
+			// «—¿⁄∏¶ « ≈Õ∏µ «—¥Ÿ.
+			const unsigned char tmpChar = 0xC9;
+			unsigned char cmpChar = static_cast<unsigned char>(pcInsert[0]);
+			
+			if( cmpChar >= tmpChar )
+			{
+				HWND hWnd = ImmGetDefaultIMEWnd( _hwndMain );
+				HIMC hImc = ImmGetContext( hWnd );
+				
+				ImmNotifyIME( hImc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0 );
+				
+				ImmReleaseContext ( hWnd, hImc );
+				
+				s_bShowReadingWindow = FALSE;
+				ZeroMemory ( s_szReadingString, sizeof ( s_szReadingString ) );
+				s_nReadingStringLength = 0;
+				ZeroMemory ( &s_CandList, sizeof ( s_CandList ) );
+				
+				pcInsert[0] = 0;
+				pcInsert[1] = 0;
+				
+				m_bOnComposition = FALSE;
+				bSecondComposition = FALSE;
+				bOnComposition = false;
+			}
+			else
+			{
+				// Insert characters
+				m_pInputBuffer[m_nCursorIndex] = pcInsert[0];
+				m_pInputBuffer[m_nCursorIndex + 1] = pcInsert[1];
+				
+				// Increase cursor index
+				m_nCursorIndex += 2;
+				
+				m_bOnComposition = FALSE;
+			}
+		}
+#else	// g_iCountry == JAPAN
+		{
+			// Insert characters
+			m_pInputBuffer[m_nCursorIndex] = pcInsert[0];
+			m_pInputBuffer[m_nCursorIndex + 1] = pcInsert[1];
+			// Increase cursor index
+			m_nCursorIndex += 2;
+			m_bOnComposition = FALSE;
+		}
+#endif
 	}
 }
 
@@ -823,9 +1179,11 @@ void CUIEditBox::InsertIMEChar( char *pcInsert, BOOL bOnComposition )
 void CUIEditBox::DeleteChar( int nDeletePos )
 {
 	// If current character is 2 byte character
-//	if(Is2ByteChar(nDeletePos))			//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+//	if(Is2ByteChar(nDeletePos))
+	// connie [2009/9/11] - 
 	if( (m_pInputBuffer[nDeletePos] & 0x80)  && (g_iCountry != THAILAND ) && (g_iCountry != BRAZIL ) && (g_iCountry != GERMANY ) 
-		&& (g_iCountry != SPAIN) && (g_iCountry != FRANCE) && (g_iCountry != POLAND)
+		&& (g_iCountry != USA_SPAIN) && (g_iCountry != SPAIN) && (g_iCountry != MEXICO) && (g_iCountry != FRANCE) && (g_iCountry != POLAND)
+		&& (g_iCountry != TURKEY) && (g_iCountry != RUSSIA) && (g_iCountry != ITALY) && (g_iCountry != NETHERLANDS)
 		&& !(g_iCountry == JAPAN && ((UCHAR)m_pInputBuffer[nDeletePos] >= 0xa1 && (UCHAR)m_pInputBuffer[nDeletePos] <= 0xdf)) )
 		{
 			if( m_nCurCharCount < 2 || m_nCurCharCount == nDeletePos )
@@ -930,12 +1288,18 @@ WMSG_RESULT CUIEditBox::MouseMessage( MSG *pMsg )
 		if( IsInside( nX, nY ) )
 		{
 			SetFocus( TRUE );
-			
-			if( m_nCurCharCount > 0 )
+
+			// [2011/11/02 : Sora] ƒøº≠ ¿Ãµø ∫“∞°«√∑°±◊
+			if( m_nCurCharCount > 0 && m_bMoveCursor )
 			{
+				int	nPos = 0;
+#ifdef G_RUSSIA
+				nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], nX - GetAbsPosX());
+#else
 				int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
 				int	nAbsX = GetAbsPosX() - nFontWidth / 2;
-				int	nPos = ( nX - nAbsX ) / nFontWidth;
+				nPos = ( nX - nAbsX ) / nFontWidth;
+#endif // G_RUSSIA
 				if( nPos >= 0 )
 				{
 					 if( nPos > m_nShowCharCount )
@@ -971,8 +1335,11 @@ WMSG_RESULT CUIEditBox::KeyMessage( MSG *pMsg )
 		return WMSG_FAIL;
 	}
 
+	// [2011/11/02 : Sora] ƒøº≠ ¿Ãµø ∫“∞°«√∑°±◊
 	if( pMsg->wParam == VK_RETURN )
 	{
+		ResetSelArea();
+
 		if( m_pInputBuffer[0] )
 			return WMSG_COMMAND;
 		else
@@ -980,47 +1347,115 @@ WMSG_RESULT CUIEditBox::KeyMessage( MSG *pMsg )
 	}
 	else if( pMsg->wParam == VK_LEFT )
 	{
-		MoveCursor( MD_LEFT );
+		if( m_bMoveCursor )
+		{
+			SetCopyStartPos();
+			MoveCursor( MD_LEFT );
+			SetCopyPos();
+		}
 		return WMSG_SUCCESS;
 	}
 	else if( pMsg->wParam == VK_RIGHT )
 	{
-		MoveCursor( MD_RIGHT );
+		if( m_bMoveCursor )
+		{
+			SetCopyStartPos();
+			MoveCursor( MD_RIGHT );
+			SetCopyPos();
+		}
 		return WMSG_SUCCESS;
 	}
 	else if( pMsg->wParam == VK_HOME )
 	{
-		MoveCursor( MD_HOME );
+		if( m_bMoveCursor )
+		{
+			SetCopyStartPos();
+			MoveCursor( MD_HOME );
+			SetCopyPos();
+		}
 		return WMSG_SUCCESS;
 	}
 	else if( pMsg->wParam == VK_END )
 	{
-		MoveCursor( MD_END );
-			
+		if( m_bMoveCursor )
+		{
+			SetCopyStartPos();
+			MoveCursor( MD_END );	
+			SetCopyPos();
+		}
 		return WMSG_SUCCESS;
 
 	}
 	else if( pMsg->wParam == VK_DELETE )
 	{
-		DeleteChar( m_nCursorIndex );
+		if( m_bMoveCursor )
+		{
+			if (m_bCopyAndPaste == false || m_nCopyStartPos < 0)
+				DeleteChar( m_nCursorIndex );
+			else
+				DelChars();
+		}
+
+		ResetSelArea();
 		return WMSG_SUCCESS;
 	}
 	else if( pMsg->wParam == VK_BACK )
 	{
 		if( m_nCursorIndex > 0 )
 		{
-			MoveCursor( MD_LEFT );
-			DeleteChar( m_nCursorIndex );
+			if (m_bCopyAndPaste == false || m_nCopyStartPos < 0)
+			{
+				MoveCursor( MD_LEFT );
+				DeleteChar( m_nCursorIndex );
+			}
+			else
+			{
+				DelChars();
+			}		
 		}
+		else
+		{
+			if (m_bCopyAndPaste == true && m_nCopyStartPos >= 0)
+				DelChars();
+		}
+
+		SetCopyPos();
 		return WMSG_SUCCESS;
 	}
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11. 15) : ÌïúÍ∏Ä Ï°∞Ìï©Ï∞Ω Î≥¥Ïù¥ÏßÄ ÏïäÎèÑÎ°ù
+
+	if ((GetKeyState(VK_CONTROL) & 0x8000))
+	{
+		if (pMsg->wParam == 'V' || pMsg->wParam == 'v')
+		{
+			if (Paste(pMsg->hwnd) == true)
+			{
+				ResetSelArea();
+				return WMSG_SUCCESS;
+			}
+		}
+		else if (pMsg->wParam == 'C' || pMsg->wParam == 'c')
+		{
+			if (Copy(pMsg->hwnd) == true)
+				return WMSG_SUCCESS;
+		}
+		else if (pMsg->wParam == 'X' || pMsg->wParam == 'x')
+		{
+			if (Copy(pMsg->hwnd) == true)
+			{
+				DelChars();
+				ResetSelArea();
+				return WMSG_SUCCESS;
+			}
+		}
+	}
+
+	// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11. 15) : «—±€ ¡∂«’√¢ ∫∏¿Ã¡ˆ æ µµ∑œ
 	/*else if ( pMsg->wParam == VK_PROCESSKEY )
 	{
 		return WMSG_SUCCESS;
 	}
 	*/
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù (11.15)
+	// ¿Ã±‚»Ø ºˆ¡§ ≥° (11.15)
 	return WMSG_FAIL;
 }
 
@@ -1030,11 +1465,28 @@ WMSG_RESULT CUIEditBox::KeyMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::CharMessage( MSG *pMsg )
 {
+	extern UBYTE	_abKeysPressed[256];
+
 	// If editbox is not focused
 	if( !IsFocused() || m_InValidEditBox )
 		return WMSG_FAIL;
 
+	if (m_bCopyAndPaste)
+	{
+		DelChars();
+		ResetSelArea();
+	}
+
+	if(m_bOnlyInteger && (pMsg->wParam < 48 || pMsg->wParam > 57))
+	{
+		return WMSG_SUCCESS;
+	}
+
 	if (g_iCountry == THAILAND) {
+
+		if(_abKeysPressed[KID_LCONTROL] || _abKeysPressed[KID_RCONTROL] || _abKeysPressed[KID_ESCAPE])
+			return WMSG_FAIL;
+
 		unsigned char cInsert = (unsigned char)(pMsg->wParam);
 		unsigned char pre_cInsert = NULL;
 		// wooss 051001
@@ -1061,18 +1513,55 @@ WMSG_RESULT CUIEditBox::CharMessage( MSG *pMsg )
 		}
 		InsertChar( m_nCursorIndex, pMsg->wParam );
 	}
-	else if(g_iCountry == BRAZIL || g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND && (pMsg->wParam & 0x80))//FRANCE_SPAIN_CLOSEBETA_NA_20081124 
+	// connie [2009/9/11] - 
+	else if(g_iCountry == BRAZIL || g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == MEXICO || g_iCountry == FRANCE || g_iCountry == POLAND
+			|| g_iCountry == USA_SPAIN || g_iCountry == TURKEY || g_iCountry == ITALY || g_iCountry == NETHERLANDS)//FRANCE_SPAIN_CLOSEBETA_NA_20081124 
 #ifdef ADD_CHAT_SPECIALCHAR_DISABLE_NA_20090210
 	{
-		if (g_iCountry == GERMANY)
+		if ( IsGamigo( g_iCountry ) )
 		{
 // 			if ( (_pInput->GetInputDevice(1)->id_aicControls[KID_LSHIFT].ic_fValue == 1.0f ) 
 // 				|| (_pInput->GetInputDevice(1)->id_aicControls[KID_RSHIFT].ic_fValue == 1.0f) );
-			extern UBYTE	_abKeysPressed[256];
+			
+			INDEX	iScanCode = ( pMsg->lParam >> 16 ) & 0x1FF;
 			if (( _abKeysPressed[KID_LSHIFT] && _abKeysPressed[KID_LCONTROL]) 
 				|| (_abKeysPressed[KID_RSHIFT] && _abKeysPressed[KID_RCONTROL])
 				|| (_abKeysPressed[KID_LSHIFT] && _abKeysPressed[KID_RCONTROL])
-				|| (_abKeysPressed[KID_RSHIFT] && _abKeysPressed[KID_LCONTROL]) );			
+				|| (_abKeysPressed[KID_RSHIFT] && _abKeysPressed[KID_LCONTROL]) );
+			else if( g_iCountry == ITALY )
+			{
+				if(_abKeysPressed[KID_LCONTROL] || _abKeysPressed[KID_RCONTROL])
+				{
+					if(iScanCode == 38) // iScanCode ==  'l'
+					{
+						InsertChar(m_nCursorIndex, (char)243);
+					}
+					else if(iScanCode == 36 || iScanCode == 37)
+					{
+						InsertChar(m_nCursorIndex, (char)(iScanCode+174));
+					}
+					else if(iScanCode == 50) // iScanCode == 'M'
+					{
+						InsertChar(m_nCursorIndex, (char)109);
+					}
+				}
+				else
+				{
+					InsertChar(m_nCursorIndex, pMsg->wParam);
+				}
+			}
+			else if ( g_iCountry == FRANCE && (_abKeysPressed[KID_LCONTROL] || _abKeysPressed[KID_RCONTROL]) && iScanCode == 39)
+			{	// «¡∂˚Ω∫¥¬ m¿« Ω∫ƒµƒ⁄µÂ ∞™¿Ã 39∑Œ µ«æÓ¿÷¿Ω.
+				InsertChar(m_nCursorIndex, (char)109);
+			}
+			else if ((_abKeysPressed[KID_LCONTROL] || _abKeysPressed[KID_RCONTROL]) && iScanCode == 50 ) // iScanCode == 'M'
+			{
+				InsertChar(m_nCursorIndex, (char)109);
+			}
+			else if ((_abKeysPressed[KID_LCONTROL] || _abKeysPressed[KID_RCONTROL]) && iScanCode == 36 ) // iScanCode == 'J'
+			{
+				InsertChar(m_nCursorIndex, (char)106);
+			}		
 			else
 				InsertChar(m_nCursorIndex, pMsg->wParam);
 		}
@@ -1080,31 +1569,60 @@ WMSG_RESULT CUIEditBox::CharMessage( MSG *pMsg )
 			InsertChar(m_nCursorIndex, pMsg->wParam);
 	}
 #else
-		InsertChar(m_nCursorIndex, pMsg->wParam);
+		if(g_iCountry == ITALY)
+		{
+			extern UBYTE	_abKeysPressed[256];
+
+			if(_abKeysPressed[KID_LCONTROL])
+			{
+				INDEX	iScanCode = ( pMsg->lParam >> 16 ) & 0x1FF;
+				if(iScanCode == 38) // iScanCode ==  'l'
+				{
+					InsertChar(m_nCursorIndex, (char)243);
+				}
+				else if(iScanCode == 36 || iScanCode == 37)
+				{
+					InsertChar(m_nCursorIndex, (char)(iScanCode+174));
+				}
+			}
+			else
+			{
+				InsertChar(m_nCursorIndex, pMsg->wParam);
+			}
+		}
+		else
+		{
+			InsertChar(m_nCursorIndex, pMsg->wParam);
+		}
 #endif
 	else if(g_iCountry == JAPAN && ( pMsg->wParam >= 0xa1 && pMsg->wParam <=0xdf ))
 		InsertChar( m_nCursorIndex, pMsg->wParam );
-	else if(pMsg->wParam & 0x80) 
-		m_b2ByteChar  = !m_b2ByteChar;
-	else if( m_b2ByteChar ) 
-		m_b2ByteChar = FALSE;
-	else if( pMsg->wParam >= 32 && pMsg->wParam < 128 )	
-		InsertChar( m_nCursorIndex, pMsg->wParam );
+	else if( g_iCountry == RUSSIA )
+	{
+		if( ( pMsg->wParam >= 32 && pMsg->wParam < 128 ) || ( pMsg->wParam >= 192 && pMsg->wParam <= 255 ) || 
+			( pMsg->wParam == 168 || pMsg->wParam == 184 ) )
+		{
+			InsertChar( m_nCursorIndex, pMsg->wParam );
+		}
+	}
+	else if(pMsg->wParam & 0x80) m_b2ByteChar  = !m_b2ByteChar;
+	else if( m_b2ByteChar ) m_b2ByteChar = FALSE;
+	else if( pMsg->wParam >= 32 && pMsg->wParam < 128 )	InsertChar( m_nCursorIndex, pMsg->wParam );
 
 	return WMSG_SUCCESS;
 }
 
 // ----------------------------------------------------------------------------
 // Name : IMEMessage() 
-// Desc : ÌòÑÏû¨ ÏÑ§Ï†ïÎêú Íµ≠Í∞ÄÎ≥ÑÎ°ú Í¥ÄÎ†® Ìï®Ïàò Ìò∏Ï∂ú 
-//		- Ïù¥Í∏∞Ìôò ÏàòÏ†ï (11. 15) - IME Í¥ÄÎ†® ÏûëÏóÖ
+// Desc : «ˆ¿Á º≥¡§µ» ±π∞°∫∞∑Œ ∞¸∑√ «‘ºˆ »£√‚ 
+//		- ¿Ã±‚»Ø ºˆ¡§ (11. 15) - IME ∞¸∑√ ¿€æ˜
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::IMEMessage( MSG *pMsg )
 {
 	if (m_InValidEditBox) return WMSG_FAIL;
 
-// Ïù¥Í∏∞Ìôò Ï∂îÍ∞Ä (11.18) : Ìå®Ïä§ÏõåÎìú Î∞è EnterChatting Ïù¥ ÏïÑÎãê Îïå composition Ï§ëÏßÄ
-	if( m_bIsPWEditBox && !m_bMsgInput )
+// ¿Ã±‚»Ø √ﬂ∞° (11.18) : ∆–Ω∫øˆµÂ π◊ EnterChatting ¿Ã æ∆¥“ ∂ß composition ¡ﬂ¡ˆ
+	if( m_bOnlyInteger || m_bIsPWEditBox && !m_bMsgInput )
 	{
 		SetEngMode( _hwndMain );	// Date : 2005-01-17,   By Lee Ki-hwan
 		StopComposition();
@@ -1112,8 +1630,8 @@ WMSG_RESULT CUIEditBox::IMEMessage( MSG *pMsg )
 	}
 	
 		
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù 
-	// _pUIFontTexMgr->GetLanguage() ==> g_iCountryÎ°ú ÏàòÏ†ï wooss 051107
+	// ¿Ã±‚»Ø ºˆ¡§ ≥° 
+	// _pUIFontTexMgr->GetLanguage() ==> g_iCountry∑Œ ºˆ¡§ wooss 051107
 	switch ( g_iCountry)
 	{
 	case KOREA : 
@@ -1123,12 +1641,11 @@ WMSG_RESULT CUIEditBox::IMEMessage( MSG *pMsg )
 	case TAIWAN2 :
 	case HONGKONG :
 		// If editbox is not focused
-		// Ïù¥Í∏∞Ìôò Ï£ºÏÑù Ï≤òÎ¶¨(05.01.04): ÌïúÍµ≠Ïñ¥ Î≤ÑÏ†ºÏóêÏÑú Î©ÄÌã∞ ÏóêÎîîÌä∏ Î∞ïÏä§ÏóêÏÑú Ï§ëÏßÄ ÏãúÏºú Î≤ÑÎ¶¨Îäî Í≤ΩÏö∞Í∞Ä ÏûàÏùå 
-		//                           Ï§ëÍµ≠Ïñ¥ Î≤ÑÏ†º Í∞úÎ∞ú Ïãú Ï∞∏Í≥†....
+		// ¿Ã±‚»Ø ¡÷ºÆ √≥∏Æ(05.01.04): «—±πæÓ πˆ¡Øø°º≠ ∏÷∆º ø°µ∆Æ π⁄Ω∫ø°º≠ ¡ﬂ¡ˆ Ω√ƒ— πˆ∏Æ¥¬ ∞ÊøÏ∞° ¿÷¿Ω 
+		//                           ¡ﬂ±πæÓ πˆ¡Ø ∞≥πﬂ Ω√ ¬¸∞Ì....
 		extern INDEX	g_iEnterChat;
 		if( !IsFocused() && g_iEnterChat )
 		{
-			
 			StopComposition ();	
 			m_bOnComposition = FALSE;
 			return WMSG_FAIL;
@@ -1157,6 +1674,8 @@ WMSG_RESULT CUIEditBox::IMEMessage( MSG *pMsg )
 
 	case MALAYSIA:
 		// If editbox is not focused
+		// ¿Ã±‚»Ø ¡÷ºÆ √≥∏Æ(05.01.04): «—±πæÅEπˆ¡Øø°º≠ ∏÷∆º ø°µ∆Æ π⁄Ω∫ø°º≠ ¡ﬂ¡ÅEΩ√ƒ— πˆ∏Æ¥¬ ∞ÊøÅE?¿÷¿Ω 
+		//                           ¡ﬂ±πæÅEπˆ¡Ø ∞≥πﬂ Ω√ ¬ÅEÅE...
 		extern INDEX	g_iEnterChat;
 		if( !IsFocused() && g_iEnterChat )
 		{
@@ -1167,25 +1686,31 @@ WMSG_RESULT CUIEditBox::IMEMessage( MSG *pMsg )
 		}
 
 		return IMEMessageCHT ( pMsg );
-
 	case USA:
-		return IMEMessageUSA ( pMsg );
+		return IMEMessageUSA ( pMsg );	
 	case BRAZIL:
 	case GERMANY:
+	case RUSSIA:
 	case SPAIN://FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	case FRANCE:
 	case POLAND:
 	case TURKEY:
+	case MEXICO:
+	case ITALY:
+	case USA_FRANCE:
+	case USA_SPAIN:
+	case NETHERLANDS:
 		return IMEMessageBRZ ( pMsg );
 	}
+	
 
 	return WMSG_FAIL;
 }
 
 // ----------------------------------------------------------------------------
 // Name : IMEMessage()
-// Desc : ÌïúÍµ≠Ïñ¥ Î≤ÑÏ†Ñ IMEMessage 
-//		- Ïù¥Í∏∞Ìôò ÏàòÏ†ï (11.15)
+// Desc : «—±πæÓ πˆ¿¸ IMEMessage 
+//		- ¿Ã±‚»Ø ºˆ¡§ (11.15)
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::IMEMessageKOR( MSG *pMsg )
 {
@@ -1203,6 +1728,7 @@ WMSG_RESULT CUIEditBox::IMEMessageKOR( MSG *pMsg )
 	case WM_SYSKEYDOWN :
 		if ( pMsg->wParam == VK_MENU && m_bOnComposition )
 		{
+			
 			InsertIMEChar( cString );
 
 			HWND hWnd = ImmGetDefaultIMEWnd( _hwndMain );
@@ -1251,9 +1777,9 @@ WMSG_RESULT CUIEditBox::IMEMessageKOR( MSG *pMsg )
 					ImmGetCompositionString( hImc, GCS_RESULTSTR, cString, nLength );
 					cString[nLength] = NULL;
 				
-					// Date : 2005-06-03(Ïò§Ï†Ñ 11:39:38), By Lee Ki-hwan
-					/*	3Î≤åÏãù Ïà´Ïûê ÏûÖÎ†• Î¨∏Ï†ú Ï≤òÎ¶¨ 
-						2ByteÍ∞Ä ÏïÑÎãêÎïåÎäî Ï°∞Ìï©ÌïòÏßÄ ÎßêÍ≥† Í∑∏ÎÉ• ÏûÖÎ†•ÌïòÏãúÏò§
+					// Date : 2005-06-03(ø¿¿¸ 11:39:38), By Lee Ki-hwan
+					/*	3π˙Ωƒ º˝¿⁄ ¿‘∑¬ πÆ¡¶ √≥∏Æ 
+						2Byte∞° æ∆¥“∂ß¥¬ ¡∂«’«œ¡ˆ ∏ª∞Ì ±◊≥… ¿‘∑¬«œΩ√ø¿
 					*/
 					if( nLength <= 1 ) 
 					{
@@ -1297,21 +1823,29 @@ WMSG_RESULT CUIEditBox::IMEMessageKOR( MSG *pMsg )
 				else 	
 					strcpy ( cOldString, cString );
 
+				
 				InsertIMEChar( cString );
 			}
 
 			ImmReleaseContext( _hwndMain, hImc );
 		}
+
+		if (m_bCopyAndPaste)
+		{
+			DelChars();
+			ResetSelArea();
+		}
+
 		return WMSG_SUCCESS;
 
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11. 17) : Ïñ∏Ïñ¥ Î≥ÄÍ≤Ω Ïãú 
+	// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11. 17) : ææÓ ∫Ø∞Ê Ω√ 
 	case WM_INPUTLANGCHANGE :	
 	case WM_INPUTLANGCHANGEREQUEST :
 		{
-		//	CheckInputLocal ();		// Ïñ∏Ïñ¥ Ï≤¥ÌÅ¨
+		//	CheckInputLocal ();		// ææÓ √º≈©
 		}
 		break;	
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù (11. 17) 
+	// ¿Ã±‚»Ø ºˆ¡§ ≥° (11. 17) 
 
 	case WM_IME_ENDCOMPOSITION:	
 		bSecondComposition = false;
@@ -1322,14 +1856,17 @@ WMSG_RESULT CUIEditBox::IMEMessageKOR( MSG *pMsg )
 		{
 			switch( pMsg->wParam )
 			{
+				case NI_CHANGECANDIDATELIST:
 				case IMN_OPENCANDIDATE:	
 				case IMN_CHANGECANDIDATE:
-					{	
-						// Í∞úÎ™ÖÏπ¥Îìú ÏÇ¨Ïö©ÏãúÏóêÎèÑ ÌäπÏàò Î¨∏ÏûêÎ•º ÎÑ£ÏßÄ Î™ªÌïòÍ≤å ÏàòÏ†ïÌïúÎã§. 060217 wooss
-						if ( bSecondComposition || ( _pUIMgr->GetUIGameState() == UGS_CREATECHAR )
-								|| _pUIMgr->DoesMessageBoxExist(MSGCMD_USE_CHANGE_MY_NAME_ITEM) )
+					{
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
+						// ∞≥∏Ìƒ´µÂ ªÁøÎΩ√ø°µµ ∆Øºˆ πÆ¿⁄∏¶ ≥÷¡ˆ ∏¯«œ∞‘ ºˆ¡§«—¥Ÿ. 060217 wooss
+						if ( bSecondComposition || ( STAGEMGR()->GetCurStage() == eSTAGE_CREATECHAR )
+								|| pUIManager->DoesMessageBoxExist(MSGCMD_USE_CHANGE_MY_NAME_ITEM) )
 						{
-							// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11.23) : ÌïúÍ∏Ä ÌäπÏàò Î¨∏Ïûê ÏûÖÎ†• ÎßâÍ∏∞ ( Í∏ÄÏûê ÏûÖÎ†• Ï∑®ÏÜåÎê® )
+							// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11.23) : «—±€ ∆Øºˆ πÆ¿⁄ ¿‘∑¬ ∏∑±‚ ( ±€¿⁄ ¿‘∑¬ √Îº“µ  )
 							HWND hWnd = ImmGetDefaultIMEWnd( _hwndMain );
 							HIMC hImc = ImmGetContext( hWnd );
 						
@@ -1346,6 +1883,7 @@ WMSG_RESULT CUIEditBox::IMEMessageKOR( MSG *pMsg )
 							cString[1] = 0;
 
 							InsertIMEChar( cString );
+							
 							bSecondComposition = FALSE;
 							bOnComposition = false;
 						}
@@ -1355,7 +1893,7 @@ WMSG_RESULT CUIEditBox::IMEMessageKOR( MSG *pMsg )
 							SendMessage( _hwndMain, IMN_CLOSECANDIDATE, 0, 0 );
 						}
 
-						// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏôÑÎ£å (11.23)
+						// ¿Ã±‚»Ø ºˆ¡§ øœ∑· (11.23)
 					}
 					break;
 				
@@ -1385,8 +1923,8 @@ WMSG_RESULT CUIEditBox::IMEMessageKOR( MSG *pMsg )
 
 // ----------------------------------------------------------------------------
 // Name : IMEMessageCHT()
-// Desc : ÎåÄÎßåÏñ¥ Î≤ÑÏ†º IMEMessage  
-//		- Ïù¥Í∏∞Ìôò ÏûëÏÑ± (11.15)
+// Desc : ¥Î∏∏æÓ πˆ¡Ø IMEMessage  
+//		- ¿Ã±‚»Ø ¿€º∫ (11.15)
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::IMEMessageCHT( MSG *pMsg )
 {	
@@ -1402,7 +1940,7 @@ WMSG_RESULT CUIEditBox::IMEMessageCHT( MSG *pMsg )
 			}
 			return WMSG_SUCCESS;
 
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11. 17) : Ïñ∏Ïñ¥ Î≥ÄÍ≤Ω Ïãú 
+		// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11. 17) : ææÓ ∫Ø∞Ê Ω√ 
 		case WM_INPUTLANGCHANGE :	
 		case WM_INPUTLANGCHANGEREQUEST :
 			{
@@ -1414,16 +1952,23 @@ WMSG_RESULT CUIEditBox::IMEMessageCHT( MSG *pMsg )
 				{
 					ZeroMemory( s_CandList.szCandidate, sizeof(s_CandList.szCandidate) );
 				}
-				//	CheckInputLocal ();		// Ïñ∏Ïñ¥ Ï≤¥ÌÅ¨
+				//	CheckInputLocal ();		// ææÓ √º≈©
 			}
 			break;	
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù (11. 17) 
+		// ¿Ã±‚»Ø ºˆ¡§ ≥° (11. 17) 
 
 		case WM_IME_COMPOSITION:
 			{
 				HIMC	hImc;
 				char	cString[256] = { 0 };
 				int		nLength;
+				// hongkong new changjie IME ∞¸∑√ πˆ±◊ ºˆ¡§. [9/29/2010 rumist]
+				/*	IME¥¬ º¯º≠ªÛ WM_IME_STARTCOMPOSITION -> WM_IME_COMPOSITION -> WM_IME_ENDCOMPOSITION
+					∑Œ √≥∏Æµ«æÓæﬂ «œ¥¬µ• new changjie¿« ∞ÊøÏ ¿œπ› asciiƒ⁄µÂ¿« ∞ÊøÏø°µµ WM_IME_COMPOSITION
+					∞° »£√‚µ ¿∏∑Œº≠ ¿œπ› asciiƒ⁄µÂ∞° µŒπ¯ ¿‘∑¬µ«¥¬ «ˆªÛ πﬂª˝. ¿Ãø° 
+					WM_IME_STARTCOMPOSITION¿« »£√‚ ø©∫Œ∏¶ ∆«¥‹«œø© «ˆ¿Á ±€¿Ã IME¿Œ¡ˆ æ∆¥—¡ˆ∏¶ ∆«¥‹«œµµ∑œ ∏∏µÎ. */
+				if( !m_bOnComposition )
+					return WMSG_FAIL;
 
 				hImc = ImmGetContext( _hwndMain );
 				
@@ -1464,7 +2009,7 @@ WMSG_RESULT CUIEditBox::IMEMessageCHT( MSG *pMsg )
 			switch( pMsg->wParam )
 			{
 						
-				// IME ÏÑ†ÌÉù Ï∞Ω
+				// IME º±≈√ √¢
 				case IMN_OPENCANDIDATE:	
 				case IMN_CHANGECANDIDATE:
 					{
@@ -1516,11 +2061,11 @@ WMSG_RESULT CUIEditBox::IMEMessageCHT( MSG *pMsg )
 
 // ----------------------------------------------------------------------------
 // Name : IMEMessageCHS()
-// Desc : Ï§ëÍµ≠Ïñ¥ Î≤ÑÏ†Ñ IMEMessage 
-//		- 05. 2. 23 : Ïö∞ÏÑ†ÏùÄ ÎåÄÎßå Î≤ÑÏ†ÑÍ≥º ÎèôÏùºÌïòÍ≤å Ï≤òÎ¶¨ 
-//		- 05. 3. 08 : ÏõêÎèÑÏö∞ÏóêÏÑú Í∏∞Î≥∏ÏúºÎ°ú ÏßÄÏõêÌïòÎäî Î™®Îì† IME Ï†ÅÏö© 
-//					ReadingWindow ÌëúÍ∏∞Î•º StartCompositionÍ≥º EndCompositionÏóêÏÑú 
-//					Ï°∞Ï†ï ( Í∏∞Ï°¥Ïùò Î∞©ÏãùÏùÄ WM_IME_COMPOSITIONÏóêÏÑú Ï≤òÎ¶¨ )
+// Desc : ¡ﬂ±πæÓ πˆ¿¸ IMEMessage 
+//		- 05. 2. 23 : øÏº±¿∫ ¥Î∏∏ πˆ¿¸∞˙ µø¿œ«œ∞‘ √≥∏Æ 
+//		- 05. 3. 08 : ø¯µµøÏø°º≠ ±‚∫ª¿∏∑Œ ¡ˆø¯«œ¥¬ ∏µÁ IME ¿˚øÎ 
+//					ReadingWindow «•±‚∏¶ StartComposition∞˙ EndCompositionø°º≠ 
+//					¡∂¡§ ( ±‚¡∏¿« πÊΩƒ¿∫ WM_IME_COMPOSITIONø°º≠ √≥∏Æ )
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::IMEMessageCHS( MSG *pMsg )
 {
@@ -1537,7 +2082,7 @@ WMSG_RESULT CUIEditBox::IMEMessageCHS( MSG *pMsg )
 			}
 			return WMSG_SUCCESS;
 
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11. 17) : Ïñ∏Ïñ¥ Î≥ÄÍ≤Ω Ïãú 
+		// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11. 17) : ææÓ ∫Ø∞Ê Ω√ 
 		case WM_INPUTLANGCHANGE :	
 		case WM_INPUTLANGCHANGEREQUEST :
 			{
@@ -1549,10 +2094,10 @@ WMSG_RESULT CUIEditBox::IMEMessageCHS( MSG *pMsg )
 				{
 					ZeroMemory( s_CandList.szCandidate, sizeof(s_CandList.szCandidate) );
 				}
-				//	CheckInputLocal ();		// Ïñ∏Ïñ¥ Ï≤¥ÌÅ¨
+				//	CheckInputLocal ();		// ææÓ √º≈©
 			}
 			break;	
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù (11. 17) 
+		// ¿Ã±‚»Ø ºˆ¡§ ≥° (11. 17) 
 
 		case WM_IME_COMPOSITION:
 			{
@@ -1602,7 +2147,7 @@ WMSG_RESULT CUIEditBox::IMEMessageCHS( MSG *pMsg )
 			switch( pMsg->wParam )
 			{
 						
-				// IME ÏÑ†ÌÉù Ï∞Ω
+				// IME º±≈√ √¢
 				case IMN_OPENCANDIDATE:	
 				case IMN_CHANGECANDIDATE:
 					{
@@ -1656,7 +2201,7 @@ WMSG_RESULT CUIEditBox::IMEMessageCHS( MSG *pMsg )
 
 // ----------------------------------------------------------------------------
 // Name : IMEMessageJPN()
-// Desc : ÏùºÎ≥∏Ïñ¥ Î≤ÑÏ†Ñ IMEMessage 
+// Desc : ¿œ∫ªæÓ πˆ¿¸ IMEMessage 
 //	
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::IMEMessageJPN( MSG *pMsg )
@@ -1675,7 +2220,7 @@ WMSG_RESULT CUIEditBox::IMEMessageJPN( MSG *pMsg )
 			}
 			return WMSG_SUCCESS;
 
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11. 17) : Ïñ∏Ïñ¥ Î≥ÄÍ≤Ω Ïãú 
+		// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11. 17) : ææÓ ∫Ø∞Ê Ω√ 
 		case WM_INPUTLANGCHANGE :	
 		case WM_INPUTLANGCHANGEREQUEST :
 			{
@@ -1687,10 +2232,10 @@ WMSG_RESULT CUIEditBox::IMEMessageJPN( MSG *pMsg )
 				{
 					ZeroMemory( s_CandList.szCandidate, sizeof(s_CandList.szCandidate) );
 				}
-				//	CheckInputLocal ();		// Ïñ∏Ïñ¥ Ï≤¥ÌÅ¨
+				//	CheckInputLocal ();		// ææÓ √º≈©
 			}
 			break;	
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù (11. 17) 
+		// ¿Ã±‚»Ø ºˆ¡§ ≥° (11. 17) 
 
 		case WM_IME_COMPOSITION:
 			{
@@ -1737,7 +2282,7 @@ WMSG_RESULT CUIEditBox::IMEMessageJPN( MSG *pMsg )
 			switch( pMsg->wParam )
 			{
 						
-				// IME ÏÑ†ÌÉù Ï∞Ω
+				// IME º±≈√ √¢
 				case IMN_OPENCANDIDATE:	
 				case IMN_CHANGECANDIDATE:
 					{
@@ -1789,41 +2334,41 @@ WMSG_RESULT CUIEditBox::IMEMessageJPN( MSG *pMsg )
 
 // ----------------------------------------------------------------------------
 // Name : IMEMessageTHAI()
-// Desc : ÌÉúÍµ≠Ïñ¥ Î≤ÑÏ†Ñ IMEMessage 
+// Desc : ≈¬±πæÓ πˆ¿¸ IMEMessage 
 // Date : 050914 wooss		
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::IMEMessageTHAI( MSG *pMsg )
 {
-	// IMEÍ∞Ä ÌïÑÏöîÏóÜÏùå
+	// IME∞° « ø‰æ¯¿Ω
 	return WMSG_FAIL;
 }
 
 // ----------------------------------------------------------------------------
 // Name : IMEMessageUSA()
-// Desc : ÎØ∏Íµ≠ Î≤ÑÏ†Ñ IMEMessage 
+// Desc : πÃ±π πˆ¿¸ IMEMessage 
 // Date : 061017 eons
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::IMEMessageUSA( MSG *pMsg )
 {
-	// IMEÍ∞Ä ÌïÑÏöîÏóÜÏùå
+	// IME∞° « ø‰æ¯¿Ω
 	return WMSG_FAIL;
 }
 
 // ----------------------------------------------------------------------------
 // Name : IMEMessageBRZ()
-// Desc : Î∏åÎùºÏßà Î≤ÑÏ†Ñ IMEMessage
+// Desc : ∫Í∂Û¡˙ πˆ¿¸ IMEMessage
 // Date : 061102 eons
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::IMEMessageBRZ( MSG *pMsg )
 {
-	// IMEÍ∞Ä ÌïÑÏöî ÏóÜÏùå
+	// IME∞° « ø‰ æ¯¿Ω
 	return WMSG_FAIL;
 }
 
 // ----------------------------------------------------------------------------
 // Name : GetCand()
-// Desc : ÌòÑÏû¨ CandidateÏùò Ï†ïÎ≥¥Î•º ÏñªÏñ¥ÏôÄ Ï†ÄÏû•
-//		- Ïù¥Í∏∞Ìôò ÏûëÏÑ± (11.15)
+// Desc : «ˆ¿Á Candidate¿« ¡§∫∏∏¶ æÚæÓøÕ ¿˙¿Â
+//		- ¿Ã±‚»Ø ¿€º∫ (11.15)
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIEditBox::GetCand()
 {
@@ -1840,7 +2385,7 @@ WMSG_RESULT CUIEditBox::GetCand()
 
 	if( dwLenRequired ) 
 	{
-		// Î¶¨Ïä§Ìä∏Ïùò Í∏∏Ïù¥ ÎåÄÎ°ú Î©îÎ™®Î¶¨ Ìï†Îãπ
+		// ∏ÆΩ∫∆Æ¿« ±Ê¿Ã ¥Î∑Œ ∏ﬁ∏∏Æ «“¥Á
 		lpCandList = (LPCANDIDATELIST) new char[dwLenRequired];
 		dwLenRequired = ImmGetCandidateList ( hImc, 0, lpCandList, dwLenRequired );
 	}
@@ -1923,6 +2468,7 @@ void CUIEditBox::StopComposition ()
 	HIMC hImc = ImmGetContext( _hwndMain );
 	ImmNotifyIME( hImc, NI_COMPOSITIONSTR, CPS_CANCEL, 0 );
 	ImmReleaseContext ( _hwndMain, hImc );
+	m_bOnComposition = FALSE;
 
 	s_bShowReadingWindow = FALSE;
 	ZeroMemory ( s_szReadingString, sizeof ( s_szReadingString ) );
@@ -1934,31 +2480,39 @@ void CUIEditBox::SetFocus( BOOL bVisible )
 {
 	if (m_InValidEditBox) return;
 
-	CUIWindow::SetFocus ( bVisible );
+	if (s_PrevFocus != NULL && s_PrevFocus != this && bVisible == TRUE)
+		s_PrevFocus->SetFocus(FALSE);
+
+	CUIWindow::SetFocus( bVisible );
 
 	extern INDEX	g_iEnterChat;
 	
 	if ( bVisible )
 	{
-		// Date : 2005-01-18,   By Lee Ki-hwan : ÌÇ§ ÏûÖÎ†•Ïãú Îã§Î•∏ UIÏóêÏÑú KillFocusEditBox()Î•º Í∞Ä Ïã§Ìñâ ÎêòÍ≥† 
-		// SetFocus ( FALSE )Î•º Ìò∏Ï∂ú ÌïòÍ∏∞ ÎïåÎ¨∏Ïóê Í≥ÑÏÜç ÏòÅÎ¨∏ÏúºÎ°ú Î∞îÎÄåÎäî ÌòÑÏÉÅÏù¥ ÏùºÏñ¥ ÎÇúÎã§.
-		// Í∑∏ÎûòÏÑú SetFocus ( TRUE )Ïùº ÎïåÎßå ÏòÅÎ¨∏ Î™®Îìú Ï†ÑÌôò ÌïúÎã§.
-		if( m_bIsPWEditBox && m_bMsgInput )	// ÏòÅÎ¨∏ Î™®ÎìúÎ°ú Ï†ÑÌôò 
+		// Date : 2005-01-18,   By Lee Ki-hwan : ≈∞ ¿‘∑¬Ω√ ¥Ÿ∏• UIø°º≠ KillFocusEditBox()∏¶ ∞° Ω««‡ µ«∞Ì 
+		// SetFocus ( FALSE )∏¶ »£√‚ «œ±‚ ∂ßπÆø° ∞Ëº” øµπÆ¿∏∑Œ πŸ≤Ó¥¬ «ˆªÛ¿Ã ¿œæÓ ≥≠¥Ÿ.
+		// ±◊∑°º≠ SetFocus ( TRUE )¿œ ∂ß∏∏ øµπÆ ∏µÂ ¿¸»Ø «—¥Ÿ.
+		CUIEditBox::s_FocusingEditBox = this;
+		if( m_bIsPWEditBox && m_bMsgInput )	// øµπÆ ∏µÂ∑Œ ¿¸»Ø 
 		{	
 			SetEngMode( _hwndMain );	// Date : 2005-01-17,   By Lee Ki-hwan
 		}
+
+		s_PrevFocus = this;
 	}
 	else
 	{
+		if (CUIEditBox::s_FocusingEditBox == this)
+			CUIEditBox::s_FocusingEditBox = NULL;
 		if ( g_iEnterChat )
 		{
 			StopComposition ();
-			m_bOnComposition = false;
 		}
-
 	}
+	//m_bOnComposition ¥¬ ∆˜ƒøΩ∫∞° ≥™∞°¥¯ µÈæÓø¿¥¯ ø£µÂªÛ≈¬ø°º≠ Ω√¿€≥°≥™æﬂ «‘.
+	m_bOnComposition = false;
 
-	m_dOldPromptTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	m_dOldPromptTime = _pTimer->GetHighPrecisionTimer().GetSeconds();	
 }
 
 
@@ -1966,7 +2520,7 @@ void CUIEditBox::SetFocus( BOOL bVisible )
 //------------------------------------------------------------------------------
 // CUIEditBox::Get2ByteCharCount
 // Explain:  
-// Date : 2005-03-09(Ïò§ÌõÑ 2:27:04) Lee Ki-hwan
+// Date : 2005-03-09(ø¿»ƒ 2:27:04) Lee Ki-hwan
 //------------------------------------------------------------------------------
 int CUIEditBox::Get2ByteCharCount ( char* szBuffer, int nPos )
 {
@@ -1995,7 +2549,7 @@ int CUIEditBox::Get2ByteCharCount ( char* szBuffer, int nPos )
 //------------------------------------------------------------------------------
 // CUIEditBox::SetCursorIndex
 // Explain:  
-// Date : 2005-03-09(Ïò§ÌõÑ 2:28:59) Lee Ki-hwan
+// Date : 2005-03-09(ø¿»ƒ 2:28:59) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIEditBox::SetCursorIndex( int nIndex )
 {
@@ -2007,4 +2561,359 @@ void CUIEditBox::SetCursorIndex( int nIndex )
 	}
 	
 	m_nCursorIndex = nIndex;
+}
+
+//------------------------------------------------------------------------------
+// CUIEditBox::IsFocused
+// Explain:  
+// Date : [11/23/2009 rumist]
+//------------------------------------------------------------------------------
+void CUIEditBox::SetOnlyIntegerMode(BOOL mode)
+{
+	m_bOnlyInteger = mode;
+
+}
+BOOL CUIEditBox::GetOnlyIntegerMode()
+{
+	return m_bOnlyInteger;
+}
+void CUIEditBox::SetTextColor(int color)
+{
+	m_nTextColor = color;
+
+}
+int  CUIEditBox::GetTextColor()
+{
+	return m_nTextColor;
+}
+
+void CUIEditBox::setBackGround( UIRect rect, UIRectUV uv )
+{
+	if( m_pBackground == NULL )
+		m_pBackground = new CUIRectSurface;
+
+	m_rcBackGround = rect;
+	m_uvBackGround = uv;
+	
+	UISUPPORT()->DivideTexUV(m_pTexData, uv);
+
+	m_pBackground->AddRectSurface(rect, uv);
+}
+
+CUIBase* CUIEditBox::Clone()
+{
+	CUIEditBox* pEdit = new CUIEditBox(*this);
+
+	pEdit->initialize();
+
+	CUIRectSurface* pRS = NULL;
+	pRS = GetRectSurface();
+
+	if( pRS != NULL )
+	{
+		{
+			CUIRectSurface* pCopy = new CUIRectSurface;
+			pCopy->CopyRectSurface(pRS);
+
+			pEdit->SetRectSurface(pCopy);
+		}		
+	}
+
+	CUIBase::CloneChild(pEdit);
+
+	return pEdit;
+}
+
+WMSG_RESULT CUIEditBox::OnCharMessage( MSG* pMsg )
+{
+	WMSG_RESULT wmsg_ret = CharMessage(pMsg);
+
+	if (wmsg_ret == WMSG_SUCCESS)
+	{
+		if (m_pInputCallback)
+			m_pInputCallback->execute();
+	}
+
+	return wmsg_ret;
+}
+
+WMSG_RESULT CUIEditBox::OnIMEMessage( MSG* pMsg )
+{
+	WMSG_RESULT wmsg_ret = IMEMessage(pMsg);
+
+	if (wmsg_ret == WMSG_COMMAND)
+	{
+		if (m_pInputCallback)
+			m_pInputCallback->execute();
+	}
+
+	return wmsg_ret;
+}
+
+WMSG_RESULT CUIEditBox::OnLButtonDown( UINT16 x, UINT16 y )
+{
+	ResetSelArea();
+
+	if (m_bHide)
+		return WMSG_FAIL;
+
+	if (IsInside(x, y) == FALSE)
+		return WMSG_FAIL;
+
+	SetFocus( TRUE );
+
+	// [2011/11/02 : Sora] ƒøº≠ ¿Ãµø ∫“∞°«√∑°±◊
+	if( m_nCurCharCount > 0 && m_bMoveCursor )
+	{
+		int	nPos = 0;
+#ifdef G_RUSSIA
+		nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], x - GetAbsPosX());
+#else
+		int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
+		int	nAbsX = GetAbsPosX() - nFontWidth / 2;
+		nPos = ( x - nAbsX ) / nFontWidth;
+#endif // G_RUSSIA
+		if( nPos >= 0 )
+		{
+			if( nPos > m_nShowCharCount )
+				nPos = m_nShowCharCount;
+			if( nPos + m_nFirstShowChar > m_nCurCharCount )
+				nPos = m_nCurCharCount - m_nFirstShowChar;
+
+			m_nCursorIndex = nPos + m_nFirstShowChar;
+			if( Is2ByteChar( m_nCursorIndex, m_nFirstShowChar ) )
+				m_nCursorIndex++;
+		}
+	}
+
+	return WMSG_SUCCESS;
+}
+
+WMSG_RESULT CUIEditBox::OnLButtonUp( UINT16 x, UINT16 y )
+{
+	if (IsFocused() == FALSE)
+		ResetSelArea();
+
+	return WMSG_FAIL;
+}
+
+WMSG_RESULT CUIEditBox::OnMouseMove( UINT16 x, UINT16 y, MSG* pMsg )
+{
+	if (m_bCopyAndPaste == false || IsFocused() == FALSE)
+		return WMSG_FAIL;
+
+	if (!(GetKeyState(VK_LBUTTON) & 0x8000) || m_bHide)
+		return WMSG_FAIL;
+
+	// [2011/11/02 : Sora] ƒøº≠ ¿Ãµø ∫“∞°«√∑°±◊
+	if( m_nCurCharCount > 0 && m_bMoveCursor )
+	{
+		if ( IsInside(x, y) == FALSE )
+		{
+			int nMin, nMax;
+			nMin = GetAbsPosX() + m_nCursorSX;
+			nMax = nMin + m_nWidth;
+
+			if (nMin > x && m_nCursorIndex > 0)
+				MoveCursor(MD_LEFT);
+			else if (nMax < x && m_nCursorIndex < m_nMaxCharCount)
+				MoveCursor(MD_RIGHT);
+		}
+
+		int	nPos = 0;
+#ifdef G_RUSSIA
+		nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], x - GetAbsPosX());
+#else
+		int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
+		int	nAbsX = GetAbsPosX() - nFontWidth / 2;
+		nPos = ( x - nAbsX ) / nFontWidth;
+#endif // G_RUSSIA
+
+		if( nPos >= 0 )
+		{
+			if( nPos > m_nShowCharCount )
+				nPos = m_nShowCharCount;
+			if( nPos + m_nFirstShowChar > m_nCurCharCount )
+				nPos = m_nCurCharCount - m_nFirstShowChar;
+
+			m_nCursorIndex = nPos + m_nFirstShowChar;
+			if( Is2ByteChar( m_nCursorIndex, m_nFirstShowChar ) )
+				m_nCursorIndex++;
+
+			if (m_bCopyAndPaste == true && m_nCopyStartPos < 0)
+				m_nCopyStartPos = m_nCursorIndex;
+		}
+
+		SetCopyPos();
+	}
+
+	return WMSG_SUCCESS;
+
+
+}
+
+WMSG_RESULT CUIEditBox::OnKeyMessage( MSG* pMsg )
+{
+	return KeyMessage(pMsg);
+}
+
+WMSG_RESULT CUIEditBox::OnCloseProc()
+{
+	if (s_PrevFocus != NULL && s_PrevFocus == this)
+		s_PrevFocus->SetFocus(FALSE);
+
+	// ¥Ÿ∏• ƒ¡∆Æ∑—ø°µµ √≥∏Æµ«µµ∑œ FAIL ∏Æ≈œ
+	return WMSG_FAIL;
+}
+
+bool CUIEditBox::Paste( HWND hWnd )
+{
+	if (m_bCopyAndPaste == false || IsFocused() == FALSE)
+		return false;
+
+	if (::OpenClipboard(hWnd))
+	{
+		HGLOBAL hGlobal = ::GetClipboardData(CF_TEXT);
+		char szData[1024];
+
+		if (hGlobal)
+		{
+			DelChars();
+
+			PTSTR pGlobal = (char*)::GlobalLock(hGlobal);
+			lstrcpy(szData, pGlobal);
+
+			::GlobalUnlock(hGlobal);
+
+			if (strlen(szData) <= m_nMaxCharCount)
+				InsertChars(m_nCursorIndex, szData);
+		}
+
+		::CloseClipboard();
+	
+		return true;
+	}
+
+	return false;
+}
+
+bool CUIEditBox::Copy( HWND hWnd )
+{
+	if (m_bCopyAndPaste == false || IsFocused() == FALSE)
+		return false;
+
+	if (m_nCopyStartPos < 0)
+		return false;
+
+	if (::OpenClipboard(hWnd))
+	{
+		int nStart = m_nCopyStartPos;
+		int nSize = m_nCursorIndex - m_nCopyStartPos;
+
+		if (nStart > m_nCursorIndex)
+		{
+			nStart = m_nCursorIndex;
+			nSize = m_nCopyStartPos - m_nCursorIndex;
+		}
+		
+		std::string strTemp = m_pInputBuffer;
+		strTemp = strTemp.substr(nStart, nSize);
+
+		if (strTemp.empty() == false)
+		{
+			HGLOBAL hGlobal = ::GlobalAlloc(GHND | GMEM_SHARE, nSize + 1);
+	
+			PTSTR pGlobal = (char*)::GlobalLock(hGlobal);
+			lstrcpy(pGlobal, strTemp.c_str());
+			GlobalUnlock(hGlobal);
+	
+			::EmptyClipboard();
+			::SetClipboardData(CF_TEXT, hGlobal);
+			::CloseClipboard();
+	
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void CUIEditBox::SetCopyPos()
+{
+	if (m_bCopyAndPaste == false || m_pImgSelText == NULL || IsFocused() == FALSE)
+		return;
+
+	if ((GetKeyState(VK_SHIFT) & 0x8000) || GetKeyState(VK_LBUTTON) & 0x8000)
+	{
+		m_pImgSelText->Hide(FALSE);
+		
+		int	nStartPos = m_nCursorSX + ( m_nCopyStartPos - m_nFirstShowChar ) *
+			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+
+		int	nEndPos = m_nCursorSX + ( m_nCursorIndex - m_nFirstShowChar ) *
+			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+
+		if (nStartPos < m_nCursorSX)
+			nStartPos = m_nCursorSX;
+		else if (nStartPos > m_nWidth)
+			nStartPos = m_nWidth;
+
+		if (nEndPos - nStartPos > m_nWidth)
+			nEndPos = m_nWidth - m_nCursorSX;
+		else if (nEndPos - nStartPos < -m_nWidth)
+			nEndPos = -(m_nWidth - nEndPos);
+		else
+			nEndPos -= nStartPos;
+
+		m_pImgSelText->SetPos(nStartPos, m_nTextSY);
+		m_pImgSelText->SetSize(nEndPos, 12);
+	}
+	else
+	{
+		m_nCopyStartPos = -1;
+		m_pImgSelText->Hide(TRUE);
+	}
+}
+
+void CUIEditBox::DelChars()
+{
+	if (m_bCopyAndPaste == false || IsFocused() == FALSE)
+		return;
+
+	int nCount = 0;
+	int nStart = 0;
+
+	if (m_nCursorIndex < m_nCopyStartPos)
+	{
+		nCount = m_nCopyStartPos - m_nCursorIndex;
+		nStart = m_nCursorIndex;
+	}
+	else
+	{
+		nCount = m_nCursorIndex - m_nCopyStartPos;
+		nStart = m_nCopyStartPos;
+	}
+
+	if (nStart >= 0 && nCount > 0)
+		DeleteChars(nStart, nCount);
+}
+
+void CUIEditBox::ResetSelArea()
+{
+	if (m_pImgSelText == NULL)
+		return;
+
+	m_nCopyStartPos = -1;
+	m_pImgSelText->Hide(TRUE);
+}
+
+void CUIEditBox::SetCopyStartPos()
+{
+	if (m_nCopyStartPos < 0 && (GetKeyState(VK_SHIFT) & 0x8000))
+	{
+		if (m_bOnComposition)
+			m_nCopyStartPos = m_nCursorIndex + 2;
+		else
+			m_nCopyStartPos = m_nCursorIndex;
+	}
 }

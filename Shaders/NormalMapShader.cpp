@@ -1,5 +1,5 @@
-//ÏïàÌÉúÌõàÏù¥ ÏÉàÎ°ú Ï∂îÍ∞ÄÌïú ÌååÏùºÏûÑ.
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Add Tagent-space Normal Map)(0.1)
+//æ»≈¬»∆¿Ã ªı∑Œ √ﬂ∞°«— ∆ƒ¿œ¿”.
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Add Tagent-space Normal Map)(0.1)
 
 #include "StdH.h"
 #include <Shaders/Common.h>
@@ -136,10 +136,10 @@ static void PixelShaderProcess(BOOL bFullBright, COLOR colModelColor, BOOL bUseS
 	// Set texture wrapping
 	shaSetTextureWrapping(GFX_REPEAT, GFX_REPEAT, 0);
 	shaSetTextureWrapping(GFX_REPEAT, GFX_REPEAT, 1);
-	//ÏÇ¨Ïö©Ìï† TextureÏßÄÏ†ï
+	//ªÁøÎ«“ Texture¡ˆ¡§
 	shaSetTexture(iNormalMapTexture, 0);
 	shaSetTexture(iBaseTexture, 1);
-	//ÏÇ¨Ïö©Ìï† UVÏ¢åÌëúÏÖã
+	//ªÁøÎ«“ UV¡¬«•º¬
 	shaSetUVMap(iBaseUVMap);
 	
 	//Ambient color setting
@@ -148,7 +148,7 @@ static void PixelShaderProcess(BOOL bFullBright, COLOR colModelColor, BOOL bUseS
 	else colAmbient = shaGetAmbientColor();
 	colAmbient.MultiplyRGBCopyA1( (GFXColor)colModelColor, colAmbient );
 	ShaderRegister srAmbientColor(colAmbient);
-	//Pixel ShaderÏóê x2Í∞Ä ÎêòÍ∏∞ ÎïåÎ¨∏Ïóê /2ÌïúÎã§.
+	//Pixel Shaderø° x2∞° µ«±‚ ∂ßπÆø° /2«—¥Ÿ.
 	//srAmbientColor.sr_fx *= 0.5f;
 	//srAmbientColor.sr_fy *= 0.5f;
 	//srAmbientColor.sr_fz *= 0.5f;
@@ -161,16 +161,16 @@ static void PixelShaderProcess(BOOL bFullBright, COLOR colModelColor, BOOL bUseS
 
 static void FogProcess(BOOL bOpaque)
 {
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë
-	// ÏàúÏÑú Î≥ÄÍ≤Ω.
+//∞≠µøπŒ ºˆ¡§ Ω√¿€
+	// º¯º≠ ∫Ø∞Ê.
 
-	//fogÍ∞Ä ÏûàÏùÑÎïå ÏÇ¨Ïö©Ìï† ÌÖçÏä§Ï≥ê Ïä§ÌÖåÏù¥ÏßÄÏùò ÏßÄÏ†ï
+	//fog∞° ¿÷¿ª∂ß ªÁøÎ«“ ≈ÿΩ∫√ƒ Ω∫≈◊¿Ã¡ˆ¿« ¡ˆ¡§
 	shaSetFogTextureUnit(2, bOpaque);
 	// Set texture wrapping
 	shaSetTextureWrapping(GFX_CLAMP, GFX_CLAMP, 2);
 	// prepare fog and haze
 	shaPrepareFogAndHaze(bOpaque);	
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù
+//∞≠µøπŒ ºˆ¡§ ≥°
 }
 
 static void Render(BOOL bOpaque, BOOL bDoubleSided, BOOL bFlip)
@@ -204,10 +204,10 @@ static void Render(BOOL bOpaque, BOOL bDoubleSided, BOOL bFlip)
 SHADER_MAIN(NormalMap)
 {
 	const COLOR colModelColor = MulColors(shaGetModelColor(), shaGetColor(iDiffuseColor));
-	//ÏôÑÏ†Ñ Î∂àÌà¨Î™ÖÏù¥ ÏïÑÎãàÎ©¥ Î∞òÌà¨Î™ÖÏûÑ, ÌòπÏùÄ Î∂àÌà¨Î™Ö ÌîåÎûòÍ∑∏Í∞Ä ÏÑ§Ï†ïÎêòÏñ¥ ÏûàÏúºÎ©¥ Î∂àÌà¨Î™Ö.
+	//øœ¿¸ ∫“≈ı∏Ì¿Ã æ∆¥œ∏È π›≈ı∏Ì¿”, »§¿∫ ∫“≈ı∏Ì «√∑°±◊∞° º≥¡§µ«æÓ ¿÷¿∏∏È ∫“≈ı∏Ì.
 	const BOOL bOpaque = ((colModelColor&0xFF) == 0xFF)
 						|| ((shaGetFlags() & NORMAL_ALWAYS_OPAQUE)==NORMAL_ALWAYS_OPAQUE);
-	if((colModelColor&0xFF) == 0x00) return;	//ÏôÑÏ†Ñ Ìà¨Î™Ö.
+	if((colModelColor&0xFF) == 0x00) return;	//øœ¿¸ ≈ı∏Ì.
 	const BOOL bDoubleSided = shaGetFlags() & BASE_DOUBLE_SIDED;
 	const BOOL bFullBright = shaGetFlags() & BASE_FULL_BRIGHT;
 	const BOOL bUseSpecular = shaGetFlags() & NORMAL_USE_SPECULAR;
@@ -226,7 +226,7 @@ SHADER_MAIN(NormalMap)
 		PixelShaderProcess(bFullBright, colModelColor, bUseSpecular);
 		Render(bOpaque, bDoubleSided, bFlip);
 	}
-	//ÏùºÎã® SWÎ™®ÎìúÏóêÏÑúÎäî NormalÎßµÏùÑ Í≥†Î†§ÌïòÏßÄ ÏïäÏùå.
+	//¿œ¥‹ SW∏µÂø°º≠¥¬ Normal∏ ¿ª ∞Ì∑¡«œ¡ˆ æ ¿Ω.
 	else	//USE VS(SOFT or HARD), NON-PS
 	{
 		// Set texture wrapping
@@ -240,7 +240,7 @@ SHADER_MAIN(NormalMap)
 		shaEnableOverBrightning();
 		if(bUseSpecular)
 		{
-			//ÏùºÎã® SWÎ™®ÎìúÏóêÏÑú SpecaularÎäî Í≥†Î†§ÌïòÏßÄ ÏïäÏùå.
+			//¿œ¥‹ SW∏µÂø°º≠ Specaular¥¬ ∞Ì∑¡«œ¡ˆ æ ¿Ω.
 			//shaSetTexture(iNormalMapTexture, 1);
 		}
 		else
@@ -317,7 +317,7 @@ SHADER_MAIN(NormalMap)
 	}
 }
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(For Performance)(0.1)
 SHADER_DESC(NormalMap, ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -353,13 +353,13 @@ SHADER_DESC(NormalMap, ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[1] = GFX_POSITION_STREAM|GFX_TEXCOORD0|GFX_NORMAL_STREAM|GFX_TANGENT_STREAM;
 	}
 	pshDesc = &shDescMe;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(NormalMap, CTString &strVPCode, INDEX iVertexProgram)
 {
-	//ÏÉÅÏàòÎì±Î°ù c8 ~ c17 ÏÇ¨Ïö©Í∞ÄÎä•
-	//vertex blending Ï™ΩÏóêÏÑú ÏµúÍ≥† 66 command slotÍπåÏßÄ ÏÇ¨Ïö©Îê† Ïàò ÏûàÏùå.
+	//ªÛºˆµÓ∑œ c8 ~ c17 ªÁøÎ∞°¥…
+	//vertex blending ¬ ø°º≠ √÷∞Ì 66 command slot±Ó¡ˆ ªÁøÎµ… ºˆ ¿÷¿Ω.
 	//--------------- Tagent Space Normal Map Vertex Shader --------------//
 	//--------------- Input ---------------------//
 	//--- v5     - tex coord                  ---//
@@ -382,44 +382,44 @@ SHADER_VCODE(NormalMap, CTString &strVPCode, INDEX iVertexProgram)
 	//--- oD0    - Model*Light rgb & model a  ---//
 	//--- oD1    - Light Dir. & Specular val. ---//
 
-	//viewer position ÎåÄÏã† viewer directionÏùÑ ÏÇ¨Ïö©ÌïòÎ©¥ command slot -2 Í∞ÄÎä•(-3~4ÍπåÏßÄÎèÑ Í∞ÄÎä•Ìï†ÏàòÎèÑ litÏó∞ÏÇ∞Ï™Ω)
-	//ÎåÄÏã† ÏßàÏ†ÄÌïò(vertexÎã®ÏúÑ ÏÇ¨Ïö©Ïûê ÏãúÏ†êÏù¥ Î¨ºÏ≤¥ Îã®ÏúÑÎ°ú Î∞îÎÄåÎäî Í≤ÉÏûÑ.) ÌÅ∞ Î¨ºÏ≤¥Ïùò Í≤ΩÏö∞ Ìã∞Í∞Ä ÎÇ®.
+	//viewer position ¥ÎΩ≈ viewer direction¿ª ªÁøÎ«œ∏È command slot -2 ∞°¥…(-3~4±Ó¡ˆµµ ∞°¥…«“ºˆµµ litø¨ªÍ¬ )
+	//¥ÎΩ≈ ¡˙¿˙«œ(vertex¥‹¿ß ªÁøÎ¿⁄ Ω√¡°¿Ã π∞√º ¥‹¿ß∑Œ πŸ≤Ó¥¬ ∞Õ¿”.) ≈´ π∞√º¿« ∞ÊøÏ ∆º∞° ≥≤.
 	if(iVertexProgram == iNonSpecularVP)
 	{
 		//--- Over Burning, None Specular ---//
-		strVPCode = "m4x4 oPos,    r0,      c0                  \n"	//Ïä§ÌÅ¨Î¶∞ Ï¢åÌëúÎ°ú Ï∂úÎ†•
-					"mov  oT0,     v5                           \n"	//ÌÖçÏä§Ï≥ê Ï¢åÌëúÎ•º Ï∂úÎ†•, normal map
-					"mov  oT1,     v5                           \n"	//ÌÖçÏä§Ï≥ê Ï¢åÌëúÎ•º Ï∂úÎ†•, normal map
+		strVPCode = "m4x4 oPos,    r0,      c0                  \n"	//Ω∫≈©∏∞ ¡¬«•∑Œ √‚∑¬
+					"mov  oT0,     v5                           \n"	//≈ÿΩ∫√ƒ ¡¬«•∏¶ √‚∑¬, normal map
+					"mov  oT1,     v5                           \n"	//≈ÿΩ∫√ƒ ¡¬«•∏¶ √‚∑¬, normal map
 					"mov  oD0,     c5                           \n"	//diffuse color
-					//"mul  oD0,     r9,      c7.wwwy             \n"	//Pixel ShaderÏóê x2Í∞Ä ÎêòÍ∏∞ ÎïåÎ¨∏Ïóê /2ÌïúÎã§.
- 					"mad  oD1.xyz, r1.xyz,  c7.www,  c7.www     \n"	//ÎπõÏùò Î∞©Ìñ•ÏùÑ specularÏª¨Îü¨Î°ú Ï∂úÎ†•
+					//"mul  oD0,     r9,      c7.wwwy             \n"	//Pixel Shaderø° x2∞° µ«±‚ ∂ßπÆø° /2«—¥Ÿ.
+ 					"mad  oD1.xyz, r1.xyz,  c7.www,  c7.www     \n"	//∫˚¿« πÊ«‚¿ª specularƒ√∑Ø∑Œ √‚∑¬
 					;
 	}
 	else if(iVertexProgram == iUseSpecularVP)
 	{
 		//--- Over Burning, Use Specular ---//
-		strVPCode = "m4x4 oPos,    r0,      c0                  \n"	//Ïä§ÌÅ¨Î¶∞ Ï¢åÌëúÎ°ú Ï∂úÎ†•
-					"mov  oT0,     v5                           \n"	//ÌÖçÏä§Ï≥ê Ï¢åÌëúÎ•º Ï∂úÎ†•, normal map
-					"mov  oT1,     v5                           \n"	//ÌÖçÏä§Ï≥ê Ï¢åÌëúÎ•º Ï∂úÎ†•, diffuse map
+		strVPCode = "m4x4 oPos,    r0,      c0                  \n"	//Ω∫≈©∏∞ ¡¬«•∑Œ √‚∑¬
+					"mov  oT0,     v5                           \n"	//≈ÿΩ∫√ƒ ¡¬«•∏¶ √‚∑¬, normal map
+					"mov  oT1,     v5                           \n"	//≈ÿΩ∫√ƒ ¡¬«•∏¶ √‚∑¬, diffuse map
 					"mov  oD0,     c5                           \n"	//diffuse color
-//					"mul  oD0,     r9,      c7.wwwy             \n"	//Pixel ShaderÏóê x2Í∞Ä ÎêòÍ∏∞ ÎïåÎ¨∏Ïóê /2ÌïúÎã§.
- 					"mad  oD1.xyz, r1.xyz,  c7.www,  c7.www     \n"	//ÎπõÏùò Î∞©Ìñ•ÏùÑ specularÏª¨Îü¨Î°ú Ï∂úÎ†•
+//					"mul  oD0,     r9,      c7.wwwy             \n"	//Pixel Shaderø° x2∞° µ«±‚ ∂ßπÆø° /2«—¥Ÿ.
+ 					"mad  oD1.xyz, r1.xyz,  c7.www,  c7.www     \n"	//∫˚¿« πÊ«‚¿ª specularƒ√∑Ø∑Œ √‚∑¬
 
-					//specular Ï≤òÎ¶¨ Í¥ÄÎ†® Î∂ÄÎ∂Ñ ÏãúÏûë
+					//specular √≥∏Æ ∞¸∑√ ∫Œ∫– Ω√¿€
 					"sub  r2.xyz,  c8.xyz,  r0.xyz              \n"	//make view direction, No need Normalize
 					"dp3  r2.w,    r2.xyz,  r2.xyz              \n"	//normalize view direction
 					"rsq  r2.w,    r2.w                         \n"
-//					"mul  r2.xyz,  r2.xyz,  r2.www              \n"	//normalize ÎßàÎ¨¥Î¶¨
-//					"add  r2.xyz,  r2.xyz,  c4.xyz              \n"	//half vector ÎßåÎì§Í∏∞ //->madÎ°ú ÏµúÏ†ÅÌôî
+//					"mul  r2.xyz,  r2.xyz,  r2.www              \n"	//normalize ∏∂π´∏Æ
+//					"add  r2.xyz,  r2.xyz,  c4.xyz              \n"	//half vector ∏∏µÈ±‚ //->mad∑Œ √÷¿˚»≠
 					"mad  r2.xyz,  r2.xyz,  r2.www, c4.xyz      \n"	//make half vector
 					"dp3  r2.w,    r2.xyz,  r2.xyz              \n"	//normalize half vector
 					"rsq  r2.w,    r2.w                         \n"
 					"mul  r2.xyz,  r2.xyz,  r2.www              \n"
 					"dp3  r3.xyz,  r8.xyz,  r2.xyz              \n"	//Normal dot HalfVector
 					"mov  r3.w,    c8.w                         \n"	//specular power for lit command
-					"lit  r3.z,    r3                           \n"	//lighting Ïó∞ÏÇ∞
-					"mul  oD1.w,   r3.z,    c9.w                \n"	//oD1.wÏóê specular value Ï∂úÎ†•
-					//specular Ï≤òÎ¶¨ Í¥ÄÎ†® Î∂ÄÎ∂Ñ ÎÅù
+					"lit  r3.z,    r3                           \n"	//lighting ø¨ªÍ
+					"mul  oD1.w,   r3.z,    c9.w                \n"	//oD1.wø° specular value √‚∑¬
+					//specular √≥∏Æ ∞¸∑√ ∫Œ∫– ≥°
 					;
 	}
 	return;
@@ -427,17 +427,17 @@ SHADER_VCODE(NormalMap, CTString &strVPCode, INDEX iVertexProgram)
 
 SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 {
-	//ÏÉÅÏàòÎì±Î°ù c0Îßå Í∞ÄÎä•(PSÍ∞Ä ÏóÜÎäî Ïπ¥ÎìúÏôÄÏùò Ìò∏ÌôòÏÑ±ÏùÑ Í≥†Î†§Ìï† Í≤ΩÏö∞)
+	//ªÛºˆµÓ∑œ c0∏∏ ∞°¥…(PS∞° æ¯¥¬ ƒ´µÂøÕ¿« »£»Øº∫¿ª ∞Ì∑¡«“ ∞ÊøÏ)
 	//--------------- Tagent Space Normal Map Pixel Shader --------------//
 	//--------------- Input ---------------------//
 	//--- t0     - Normal map & Specular map  ---//
 	//--- t1     - Diffuse map                ---//
-	//--- t2     - Fog map                    ---// ->FogÍ∞Ä ÏûàÏùÑÎïåÎßå ÏÇ¨Ïö©Îê®.
+	//--- t2     - Fog map                    ---// ->Fog∞° ¿÷¿ª∂ß∏∏ ªÁøÎµ .
 	//--- v0     - diffuse color              ---//
 	//--- v1.rgb - light direction            ---//
-	//--- v1.a   - Specular Value             ---// ->bUseSpecularÍ∞Ä ÏûàÏùÑÎïåÎßå ÏÇ¨Ïö©Îê®.
+	//--- v1.a   - Specular Value             ---// ->bUseSpecular∞° ¿÷¿ª∂ß∏∏ ªÁøÎµ .
 	//--- c0     - Ambient Color              ---//
-	//--- c7     - Fog color                  ---// ->FogÍ∞Ä ÏûàÏùÑÎïåÎßå ÏÇ¨Ïö©Îê®.
+	//--- c7     - Fog color                  ---// ->Fog∞° ¿÷¿ª∂ß∏∏ ªÁøÎµ .
 	//-------------- Output ---------------------//
 	//--- r0     - Output Pixel COLOR & Alpha ---//
 
@@ -446,20 +446,27 @@ SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTy
 		if(iPixelProgram == iNonSpecularPP)
 		{
 			//--- Over Burning, None Specular ---//
-			//	TextureÎäî 2Ïû•, Texture StageÎäî 3Í∞úÍπåÏßÄ ÏÇ¨Ïö©
-			strPPCode = "tex         t0                                   \n"	//normal map & specular map
+			//	Texture¥¬ 2¿Â, Texture Stage¥¬ 3∞≥±Ó¡ˆ ªÁøÎ
+/*			strPPCode = "tex         t0                                   \n"	//normal map & specular map
 						"tex         t1                                   \n"	//base(diffuse) map
 						"dp3_sat     r1.rgb,  t0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
 						"mad_sat     r1.rgb,  r1,      v0,      c0        \n"	//diffuse shade * diffuse RGB + ambient RGB
 						"mul_x2_sat  r0.rgb,  t1,      r1                 \n"	//prev result * diffuse map
 						"+mul         r0.a,    t1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
+						;*/
+			strPPCode = "texld  r0,		t0								\n"	//normal map & specular map
+						"texld	r1,		t1								\n"	//base(diffuse) map
+						"dp3_sat     r2.rgb,  r0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
+						"mad_sat     r2.rgb,  r2,      v0,      c0        \n"	//diffuse shade * diffuse RGB + ambient RGB
+						"mul_x2_sat  r0.rgb,  r1,      r2                 \n"	//prev result * diffuse map
+						"+mul         r0.a,    r1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
 						;
 		}
 		else if(iPixelProgram == iUseSpecularPP)
 		{
 			//--- Over Burning, Use Specular ---//
-			//	TextureÎäî 2Ïû•, Texture StageÎäî 4Í∞úÍπåÏßÄ ÏÇ¨Ïö©
-			strPPCode = "tex         t0                                   \n"	//normal map & specular map
+			//	Texture¥¬ 2¿Â, Texture Stage¥¬ 4∞≥±Ó¡ˆ ªÁøÎ
+/*			strPPCode = "tex         t0                                   \n"	//normal map & specular map
 						"tex         t1                                   \n"	//base(diffuse) map
 						"dp3_sat     r1.rgb,  t0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
 						"+mul        r1.a,    t0.a,    v1.a               \n"	//r1.a   - specular pixel value
@@ -467,6 +474,15 @@ SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTy
 						"mul_x2_sat  r0.rgb,  t1,      r1                 \n"	//prev result * diffuse map
 						"+mul         r0.a,    t1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
 						"add_sat     r0.rgb,  r0,      r1.a               \n"	//Output RGB = prev result + specular value
+						;*/
+			strPPCode = "texld	r0,		t0								\n"	//normal map & specular map
+						"texld	r1,		t1								\n"	//base(diffuse) map
+						"dp3_sat     r2.rgb,  r0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
+						"+mul        r2.a,    r0.a,    v1.a               \n"	//r1.a   - specular pixel value
+						"mad_sat     r2.rgb,  r2,      v0,      c0        \n"	//diffuse shade * diffuse RGB + ambient RGB
+						"mul_x2_sat  r0.rgb,  r1,      r2                 \n"	//prev result * diffuse map
+						"+mul         r0.a,    r1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
+						"add_sat     r0.rgb,  r0,      r2.a               \n"	//Output RGB = prev result + specular value
 						;
 		}
 	}
@@ -474,7 +490,7 @@ SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTy
 	{
 		if(iPixelProgram == iNonSpecularPP)
 		{
-			strPPCode = "tex         t0                                   \n"	//normal map & specular map
+/*			strPPCode = "tex         t0                                   \n"	//normal map & specular map
 						"tex         t1                                   \n"	//base(diffuse) map
 						"tex         t2                                   \n"	//fog map
 						"dp3_sat     r1.rgb,  t0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
@@ -483,11 +499,21 @@ SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTy
 						"+mul         r0.a,    t1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
 						"mul         t2,      t2,      c7                 \n"	// mul fog texture with fog color
 						"lrp         r0.rgb,  t2.a,    t2,      r0        \n"	// Add fog
+						;*/
+			strPPCode = "texld	r0,		t0								\n"	//normal map & specular map
+						"texld	r1,		t1								\n"	//base(diffuse) map
+						"texld	r2,		t2								\n"	//fog map
+						"dp3_sat     r3.rgb,  r0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
+						"mad_sat     r3.rgb,  r3,      v0,      c0        \n"	//diffuse shade * diffuse RGB + ambient RGB
+						"mul_x2_sat  r0.rgb,  r1,      r3                 \n"	//prev result * diffuse map
+						"+mul         r0.a,    r1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
+						"mul         r2,      r2,      c7                 \n"	// mul fog texture with fog color
+						"lrp         r0.rgb,  r2.a,    r2,      r0        \n"	// Add fog
 						;
 		}
 		else if(iPixelProgram == iUseSpecularPP)
 		{
-			strPPCode = "tex         t0                                   \n"	//normal map & specular map
+/*			strPPCode = "tex         t0                                   \n"	//normal map & specular map
 						"tex         t1                                   \n"	//base(diffuse) map
 						"tex         t2                                   \n"	//fog map
 						"dp3_sat     r1.rgb,  t0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
@@ -498,6 +524,18 @@ SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTy
 						"add_sat     r0.rgb,  r0,      r1.a               \n"	//Output RGB = prev result + specular value
 						"mul         t2,      t2,      c7                 \n"	// mul fog texture with fog color
 						"lrp         r0.rgb,  t2.a,    t2,      r0        \n"	// Add fog
+						;*/
+			strPPCode = "texld  r0,			t0							\n"	//normal map & specular map
+						"texld	r1,			t1							\n"	//base(diffuse) map
+						"texld  r2,			t2							\n"	//fog map
+						"dp3_sat     r3.rgb,  r0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
+						"+mul        r3.a,    r0.a,    v1.a               \n"	//r1.a   - specular pixel value
+						"mad_sat     r3.rgb,  r3,      v0,      c0        \n"	//diffuse shade * diffuse RGB + ambient RGB
+						"mul_x2_sat  r0.rgb,  r1,      r3                 \n"	//prev result * diffuse map
+						"+mul         r0.a,    r1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
+						"add_sat     r0.rgb,  r0,      r3.a               \n"	//Output RGB = prev result + specular value
+						"mul         r2,      r2,      c7                 \n"	// mul fog texture with fog color
+						"lrp         r0.rgb,  r2.a,    r2,      r0        \n"	// Add fog
 						;
 		}
 	}
@@ -505,7 +543,7 @@ SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTy
 	{
 		if(iPixelProgram == iNonSpecularPP)
 		{
-			strPPCode = "tex         t0                                   \n"	//normal map & specular map
+/*			strPPCode = "tex         t0                                   \n"	//normal map & specular map
 						"tex         t1                                   \n"	//base(diffuse) map
 						"tex         t2                                   \n"	//fog map
 						"mul         t2,      t2,      c7                 \n"	// mul fog texture with fog color
@@ -514,11 +552,21 @@ SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTy
 						"mad_sat     r1.rgb,  r1,      v0,      c0        \n"	//diffuse shade * diffuse RGB + ambient RGB
 						"mul_x2_sat  r0.rgb,  t1,      r1                 \n"	//prev result * diffuse map
 						"+mul         r0.a,    t1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
+						;*/
+			strPPCode = "texld		r0,       t0						\n"	//normal map & specular map
+						"texld		r1,       t1						\n"	//base(diffuse) map
+						"texld		r2,       t2						\n"	//fog map
+						"mul         r2,      r2,      c7                 \n"	// mul fog texture with fog color
+						"mul         r0.a,    r0,      1-r2.a             \n"	// attenuate base tex with fog alpha
+						"dp3_sat     r3.rgb,  r0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
+						"mad_sat     r3.rgb,  r3,      v0,      c0        \n"	//diffuse shade * diffuse RGB + ambient RGB
+						"mul_x2_sat  r0.rgb,  r1,      r3                 \n"	//prev result * diffuse map
+						"+mul         r0.a,    r1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
 						;
 		}
 		else if(iPixelProgram == iUseSpecularPP)
 		{
-			strPPCode = "tex         t0                                   \n"	//normal map & specular map
+/*			strPPCode = "tex         t0                                   \n"	//normal map & specular map
 						"tex         t1                                   \n"	//base(diffuse) map
 						"tex         t2                                   \n"	//fog map
 						"mul         t2,      t2,      c7                 \n"	// mul fog texture with fog color
@@ -529,9 +577,21 @@ SHADER_PCODE(NormalMap, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTy
 						"mul_x2_sat  r0.rgb,  t1,      r1                 \n"	//prev result * diffuse map
 						"+mul         r0.a,    t1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
 						"add_sat     r0.rgb,  r0,      r1.a               \n"	//Output RGB = prev result + specular value
+						;*/
+			strPPCode = "texld		r0,         t0						\n"	//normal map & specular map
+						"texld		r1,         t1						\n"	//base(diffuse) map
+						"texld		r2,         t2						\n"	//fog map
+						"mul         r2,      r2,      c7                 \n"	// mul fog texture with fog color
+						"mul         r0.a,    r0,      1-r2.a             \n"	// attenuate base tex with fog alpha
+						"dp3_sat     r3.rgb,  r0_bx2,  v1_bx2             \n"	//r1.rgb - diffuse shade
+						"+mul        r3.a,    r0.a,    v1.a               \n"	//r1.a   - specular pixel value
+						"mad_sat     r3.rgb,  r3,      v0,      c0        \n"	//diffuse shade * diffuse RGB + ambient RGB
+						"mul_x2_sat  r0.rgb,  r1,      r3                 \n"	//prev result * diffuse map
+						"+mul         r0.a,    r1.a,    v0.a              \n"	//Output A = diffuse map A * diffuse color A
+						"add_sat     r0.rgb,  r0,      r1.a               \n"	//Output RGB = prev result + specular value
 						;
 		}
 	}
 	return;
 }
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Add Tagent-space Normal Map)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Add Tagent-space Normal Map)(0.1)

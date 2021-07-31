@@ -10,18 +10,13 @@
 #endif
 
 
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIInventory.h>
-#include <vector>
 class CItems;
-
 
 // Column & Row
 #define WAREHOUSE_WAREHOUSE_SLOT_COL		5
 #define WAREHOUSE_WAREHOUSE_SLOT_ROW		5
-#define WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL	20	 // wooss 050817 10 -> 20 050917 20 -> 10 Ïú†Î£åÌôîÏãú Î≥µÍµ¨
-												 // 051208 -> Ïú†Î£åÌôî ÏûëÏóÖÏúºÎ°ú 
+#define WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL	60	 // wooss 050817 10 -> 20 050917 20 -> 10 ¿Ø∑·»≠Ω√ ∫π±∏
+												 // 051208 -> ¿Ø∑·»≠ ¿€æ˜¿∏∑Œ 
 #define WAREHOUSE_TRADE_SLOT_COL			5
 #define	WAREHOUSE_TRADE_SLOT_TOTAL			10
 
@@ -40,8 +35,13 @@ class CItems;
 
 // Define size of warehouse
 #define WAREHOUSE_WIDTH						216
-#define	WAREHOUSE_HEIGHT					369		// wooss 050811 338 -> 369
+#define	WAREHOUSE_HEIGHT					392	// wooss 050811 338 -> 369 //jeil -> 369->392
 
+enum ErrCode 
+{
+	eERR_KEEP_FAIL_EMPTY,
+	eERR_TAKE_FAIL_EMPTY
+};
 
 // ----------------------------------------------------------------------------
 // Name : CUIWareHouse
@@ -49,28 +49,135 @@ class CItems;
 // ----------------------------------------------------------------------------
 class CUIWareHouse : public CUIWindow
 {
+public:
+	CUIWareHouse();
+	~CUIWareHouse();
+
+	// Create
+	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+	void	OpenWareHouse( SBYTE sbSetPW, bool bCashRemoteOpen = false );
+	void	SetNPCPos(int nNPCIdx, FLOAT fX, FLOAT fZ);
+
+	BOOL	CloseWindowByEsc()	{ ResetWareHouse(); return TRUE; }
+
+	// Add & Remove Item
+	void	AddItemToList( int iUniIndex, SQUAD llCount );
+	void	DelItemFromList( int iUniIndex, SQUAD llCount );
+
+	inline bool HasPassword() const		{ return m_bHasPassword; }
+	void	SetHasPassword(bool bVal)	{ m_bHasPassword = bVal; }
+
+	// Render
+	void	Render();
+
+	// Adjust position
+	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	
+	// Clear
+	void	ClearItems();
+	void	ResetWareHouse();
+
+	// WareHouse -> Inventory
+	void	DelWareHouseItemToInventory();
+
+	// Refresh
+	void	RefreshWareHouse();
+	// Messages
+	WMSG_RESULT	MouseMessage( MSG *pMsg );
+
+	// Command functions
+	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
+	void	MsgBoxLCommand( int nCommandCode, int nResult );
+
+	// Network functions
+	void	ReceiveNas(CNetworkMessage *istr);
+	void	ReceiveList(CNetworkMessage *istr);
+
+	// GetItemInfo
+	int			GetWareHouseItemIndex( int nInvenIdx );
+	LONGLONG	GetWareHouseItemCount( int nInvenIdx );
+
+	// set,get use time
+	void SetUseTime(int t){m_useTime=t;}
+	int GetUseTime(){return m_useTime;}
+
+	float GetNpcPosX() { return m_fNpcX; }
+	float GetNpcPosZ() { return m_fNpcZ; }
+
+	bool GetUseCashRemote() { return m_bCashRemote; }
+
+	void	SendListReq(CTString& strPW);
+
+	void	AddItemCallback();
+	void	DelItemCallback();
+
 protected:
+	// Internal functions
+	void	RenderWareHouseItems();
+
+	void	PrepareWareHouse();
+	void	TradeToWareHouse(SQUAD llCount = 1);
+	void	WareHouseToTrade(SQUAD llCount = 1);
+	void	PrepareBuyWareHouse();
+	void	PrepareSellWareHouse();	
+	SQUAD	CalculateStoragePrice();
+
+	// Command functions
+	void	AddWareHouseItem(int nIndex);
+	void	DelWareHouseItem();
+	void	AddWareHouseItemFromInventory();	
+	void	KeepItems();
+	void	TakeItems();
+
+	// Network functions
+// ∞≠µøπŒ ºˆ¡§ Ω√¿€		// √¢∞Ì
+	void	SendWareHouseIsSetPassword();
+	void	SendWareHouseListReq( const CTString& strPW );
+	void	SendWareHouseKeepReq();
+	void	SendWareHouseTakeReq();
+// ∞≠µøπŒ ºˆ¡§ ≥°		// √¢∞Ì
+
+
+	//2013/04/02 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
+	void	InNas();
+	void	OutNas();
+
+	// Err Msg
+	void	ErrMessage( int nErr );	
+
+private:
 	BOOL				m_bStorageWareHouse;
-	BOOL				m_bSealed;
-	BOOL				m_bHasPassword;
+	bool				m_bHasPassword;
 	int					m_nCurRow;
 	int					m_nNpcIndex;				// For showing name of npc
+	int					m_nNPCVIdx;
 	BOOL				m_bHasQuest;
 
 	int					m_nSelWareHouseItemID;
 	int					m_nSelTradeItemID;
 	int					m_nSelectedWareHouseID;		// WareHouse ID
 	int					m_nTex;
-	
+
 	BOOL				m_bRareItem;
 	int					m_iRareGrade;
-	
-	CTString			m_strTotalPrice;
+
+	CTString			m_strTotalPrice;	//∫∏∞¸∑· 
+	//2013/04/02 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈ 
+	CTString			m_strInNas;	//¿‘±› ±›æ◊
+	CTString			m_strOutNas;	//√‚±› ±›æ◊ 
+	CTString			m_strTotalNas;	//∫∏∞¸ ±›æ◊ 
+
 	CTString			m_strPW;
 
 	__int64				m_nTotalPrice;
+	//2013/04/03 jeil ≥™Ω∫ æ∆¿Ã≈€ ¡¶∞≈
+	__int64				m_nInNas;
+	__int64				m_nOutNas;
+	__int64				m_nTotalNas;
+
 	int					m_nNumOfItem;
-	
+
 	//cash item remain time
 	int					m_useTime;				// wooss 050817	
 	// Region
@@ -103,24 +210,7 @@ protected:
 	UIRectUV			m_rtPriceInven;
 
 	// Item Info
-	UIRectUV			m_rtInfoUL;								// UV of upper left region of information
-	UIRectUV			m_rtInfoUM;								// UV of upper middle region of information
-	UIRectUV			m_rtInfoUR;								// UV of upper right region of information
-	UIRectUV			m_rtInfoML;								// UV of middle left region of information
-	UIRectUV			m_rtInfoMM;								// UV of middle middle region of information
-	UIRectUV			m_rtInfoMR;								// UV of middle right region of information
-	UIRectUV			m_rtInfoLL;								// UV of lower left region of information
-	UIRectUV			m_rtInfoLM;								// UV of lower middle region of information
-	UIRectUV			m_rtInfoLR;								// UV of lower right region of information
-	UIRectUV			m_rtUnmovableOutline;					// UV of outline of unmovable items
 	UIRectUV			m_rtSelectOutline;						// UV of outline of selected items
-
-	BOOL				m_bShowItemInfo;						// If item tool tip is shown or not
-	BOOL				m_bDetailItemInfo;						// If item informaion is shown in detail or not
-	int					m_nCurInfoLines;						// Count of current item information lines
-	CTString			m_strItemInfo[MAX_ITEMINFO_LINE];		// Item information string
-	COLOR				m_colItemInfo[MAX_ITEMINFO_LINE];		// Color of item information string
-	UIRect				m_rcItemInfo;							// Item information region	
 
 	// Buttons
 	CUIButton			m_btnClose;								// Close button of WareHouse
@@ -128,93 +218,26 @@ protected:
 	CUIButton			m_btnWareHouseTake;						// Take button of WareHouse
 	CUIButton			m_btnWareHouseCancel;					// Cancel button of WareHouse	
 	CUIScrollBar		m_sbTopScrollBar;						// Scroll bar of warehouse
+	//2013/04/02 jeil ≥™Ω∫ æ∆¿Ã≈∆ ¡¶∞≈ 
+	CUIButton			m_btnInNas;								//¿‘±› πˆ∆∞
+	CUIButton			m_btnOutNas;							//√‚±› πˆ∆∞
 
 	// Storage Items
-	std::vector<CItems>	m_vectorStorageItems;
-
+	typedef		std::vector< CItems* >		vec_Items;
+	typedef		vec_Items::iterator			vec_Items_iter;
+	
+	vec_Items			m_vectorStorageItems;
+	vec_Items			m_vecTradeItems;
+	CItems*				m_pItemsTemp;
+	int					m_nTempTradeIdx;
+	SQUAD				m_nTempMax;
+	int					m_nTempStorageIdx;
 	// Items	
-	CUIButtonEx			m_abtnTradeItems[WAREHOUSE_TRADE_SLOT_TOTAL];								// Player Slot items
-	CUIButtonEx			m_abtnWareHouseItems[WAREHOUSE_WAREHOUSE_SLOT_ROW_TOTAL][WAREHOUSE_WAREHOUSE_SLOT_COL];			// WareHouse Slot items
+	CUIIcon*			m_pIconTradeItems[WAREHOUSE_TRADE_SLOT_TOTAL];			// Player Slot items
+	CUIIcon* 			m_pIconWareHouseItems[ITEM_COUNT_IN_INVENTORY_STASH];	// WareHouse Slot items
 
-public:
-	CUIWareHouse();
-	~CUIWareHouse();
-
-	// Create
-	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
-	void	OpenWareHouse( SBYTE sbSetPW );
-	void	CheckHasPassWord( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ );
-
-	// Add & Remove Item
-	void	AddItemToList( int iUniIndex, SQUAD llCount );
-	void	DelItemFromList( int iUniIndex, SQUAD llCount );
-
-	inline BOOL HasPassword() const
-	{	return m_bHasPassword; }
-
-	// Render
-	void	Render();
-
-	// Adjust position
-	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-	
-	// Clear
-	void	ClearItems();
-	void	ResetWareHouse();
-
-	// WareHouse -> Inventory
-	void	DelWareHouseItemToInventory( );
-
-	// Refresh
-	void	RefreshWareHouse();
-	// Messages
-	WMSG_RESULT	MouseMessage( MSG *pMsg );
-
-	// Command functions
-	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
-	void	MsgBoxLCommand( int nCommandCode, int nResult );
-
-	// Network functions
-	void	ReceiveWareHouseListRep(CNetworkMessage *istr);
-
-	// set,get use time
-	void SetUseTime(int t){m_useTime=t;}
-	int GetUseTime(){return m_useTime;}
-
-
-protected:
-	// Internal functions
-	void	AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo = 0xF2F2F2FF );
-	BOOL	GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight,
-							int nTradeItem = -1, int nRow = -1, int nCol = -1 );
-	void	ShowItemInfo( BOOL bShowInfo, BOOL bRenew = FALSE, int nTradeItem = -1, int nRow = -1, int nCol = -1 );
-	void	RenderWareHouseItems();
-
-	void	PrepareWareHouse();
-	void	TradeToWareHouse( SQUAD llCount, ULONG ulPlus, ULONG ulFlag, LONG lUsed );
-	void	WareHouseToTrade( SQUAD llCount, ULONG ulPlus, ULONG ulFlag, LONG lUsed, LONG lRareIndex);
-	void	PrepareBuyWareHouse();
-	void	PrepareSellWareHouse();	
-	SQUAD	CalculateStoragePrice();
-
-	// Command functions
-	void	AddWareHouseItem( int nRow, int nCol, int nUniIndex, SQUAD llCount );
-	void	DelWareHouseItem( int nRow, int nCol, int nUniIndex, SQUAD llCount, int nTradeItemID );
-	void	AddWareHouseItemFromInventory( );	
-	void	KeepItems();
-	void	TakeItems();
-
-	// Network functions
-// Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë		// Ï∞ΩÍ≥†
-	void	SendWareHouseIsSetPassword();
-	void	SendWareHouseListReq( const CTString& strPW );
-	void	SendWareHouseKeepReq();
-	void	SendWareHouseTakeReq();
-// Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù		// Ï∞ΩÍ≥†
-
-
-	
+	bool				m_bCashRemote;
+	int					m_nTmpUniIndex; 
 };
 
 #endif // UIWAREHOUSE_H_

@@ -1,10 +1,13 @@
 // WSS_MINIGAME 070422 --------------------------------------------->>
-// Í≥∞ÎèåÏù¥ Ïù¥Î≤§Ìä∏ ÎØ∏ÎãàÍ≤åÏûÑ UI
+// ∞ıµπ¿Ã ¿Ã∫•∆Æ πÃ¥œ∞‘¿” UI
 // -----------------------------------------------------------------<<
 
 #include "stdh.h"
-#include <Engine/Interface/UIMinigame.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIMinigame.h>
+#include <Engine/Interface/UIMap.h>
 
 #define MINIGAME_BUTTON_SIZE 47
 #define MINIGAME_BUTTON_POS_Y 125
@@ -17,13 +20,15 @@ CUIMinigame::CUIMinigame()
 {
 	// wooss 060515 
 	m_npcIdx =-1;
-	m_npcChoice =0; // Í∏∞Î≥∏ Í∞ÄÏúÑ ÏÑ†ÌÉù
+	m_npcChoice =0; // ±‚∫ª ∞°¿ß º±≈√
 	m_userChoice =-1;
 	m_iWinNum =0;
 	m_iWinNumOld =0;
 	m_whowin =-1;
 	m_bTalkOnce =FALSE;
 	m_npcState = MINIGAME_NPC_NOTHING;
+	m_ptdAddTexture = NULL;
+	m_dwTimePass = 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -32,7 +37,11 @@ CUIMinigame::CUIMinigame()
 // ----------------------------------------------------------------------------
 CUIMinigame::~CUIMinigame()
 {
-	Destroy();
+	if (m_ptdAddTexture)
+	{
+		_pTextureStock->Release(m_ptdAddTexture);
+		m_ptdAddTexture = NULL;
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -42,7 +51,7 @@ CUIMinigame::~CUIMinigame()
 void CUIMinigame::InitData()
 {
 	m_npcIdx =-1;
-	m_npcChoice =0; // Í∏∞Î≥∏ Í∞ÄÏúÑ ÏÑ†ÌÉù
+	m_npcChoice =0; // ±‚∫ª ∞°¿ß º±≈√
 	m_userChoice =-1;
 	m_iWinNum =0;
 	m_iWinNumOld =0;
@@ -65,17 +74,17 @@ void CUIMinigame::InitData()
 // ----------------------------------------------------------------------------
 void CUIMinigame::SetButtonState(UBYTE iState)
 {
-	// 0 :	Î™®Îëê ÎπÑÌôúÏÑ±
-	// 1 :	m_btnScissors, m_btnStone, m_btnPaper, m_btnKeepGoing   - disable   Ï∞Ω Ïò§ÌîàÏãú
+	// 0 :	∏µŒ ∫Ò»∞º∫
+	// 1 :	m_btnScissors, m_btnStone, m_btnPaper, m_btnKeepGoing   - disable   √¢ ø¿«¬Ω√
 	//		m_btnReceiveItem, m_btnStartGame						- enable
-	// 2 :  m_btnScissors, m_btnStone, m_btnPaper, m_btnStartGame   - disable   ÏäπÎ¶¨/ÎπÑÍ∏¥ ÌõÑ 
+	// 2 :  m_btnScissors, m_btnStone, m_btnPaper, m_btnStartGame   - disable   Ω¬∏Æ/∫Ò±‰ »ƒ 
 	//		m_btnReceiveItem, m_btnKeepGoing						- enable
-	// 3 :  m_btnReceiveItem, m_btnKeepGoing, m_btnStartGame		- disable   Í≤åÏûÑÏãúÏûë/Í≥ÑÏÜçÌïòÍ∏∞  ÎàÑÎ•∏ ÌõÑ
+	// 3 :  m_btnReceiveItem, m_btnKeepGoing, m_btnStartGame		- disable   ∞‘¿”Ω√¿€/∞Ëº”«œ±‚  ¥©∏• »ƒ
 	//		m_btnScissors, m_btnStone, m_btnPaper					- enable 
-	// 4 :	m_btnScissors, m_btnStone, m_btnPaper, m_btnKeepGoing, m_btnStartGame   - disable   Ìå®Î∞∞ ÌõÑ
+	// 4 :	m_btnScissors, m_btnStone, m_btnPaper, m_btnKeepGoing, m_btnStartGame   - disable   ∆–πË »ƒ
 	//		m_btnReceiveItem				 										- enable
 
-	// Í∞ÄÏúÑÎ∞îÏúÑÎ≥¥ ÌÅ¥Î¶≠ÏãúÎäî bit flagÎ°ú Ï≤òÎ¶¨
+	// ∞°¿ßπŸ¿ß∫∏ ≈¨∏ØΩ√¥¬ bit flag∑Œ √≥∏Æ
 
 	// 0x80 -> bit check
 	// m_btnReceiveItem m_btnStartGame m_btnKeepGoing m_btnScissors m_btnStone m_btnPaper
@@ -100,7 +109,7 @@ void CUIMinigame::SetButtonState(UBYTE iState)
 	m_btnPaper.SetEnable(tState&0x20);
 
 
-	// ÏûÑÏãúÎ°ú 
+	// ¿”Ω√∑Œ 
 	m_btnReceiveItem.SetVisible(tState&0x01);
 	m_btnStartGame.SetVisible(tState&0x02);
 	m_btnKeepGoing.SetVisible(tState&0x04);
@@ -117,9 +126,7 @@ void CUIMinigame::SetButtonState(UBYTE iState)
 // ----------------------------------------------------------------------------
 void CUIMinigame::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Create Minigame texture ----------------------------------->><<
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\MessageBox.tex" ) );
@@ -153,27 +160,27 @@ void CUIMinigame::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	// m_ptdBaseTexture ==>
 
 	// Receive Button
-	m_btnReceiveItem.Create( this, _S(3453, "Í∑∏ÎßåÌïòÍ≥† ÏÉÅÌíàÎ∞õÍ∏∞" ), 280, 300, 125, 21 );
+	m_btnReceiveItem.Create( this, _S(3453, "±◊∏∏«œ∞Ì ªÛ«∞πﬁ±‚" ), 280, 300, 125, 21 );
 	m_btnReceiveItem.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnReceiveItem.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnReceiveItem.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnReceiveItem.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Start Button
-	m_btnStartGame.Create( this, _S(239, "Í≤åÏûÑ ÏãúÏûë" ), 30, 300, 95, 21 );
+	m_btnStartGame.Create( this, _S(239, "∞‘¿” Ω√¿€" ), 30, 300, 95, 21 );
 	m_btnStartGame.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnStartGame.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnStartGame.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnStartGame.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// KeepGoing Button
-	m_btnKeepGoing.Create( this, _S(3454, "Í≥ÑÏÜç ÎèÑÏ†ÑÌïòÍ∏∞" ), 130, 300, 95, 21 );
+	m_btnKeepGoing.Create( this, _S(3454, "∞Ëº” µµ¿¸«œ±‚" ), 130, 300, 95, 21 );
 	m_btnKeepGoing.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnKeepGoing.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnKeepGoing.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnKeepGoing.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	// FIX ME : Ï∂îÌõÑ Ïù¥ÎØ∏ÏßÄ ÏàòÏ†ï...
+	// FIX ME : √ﬂ»ƒ ¿ÃπÃ¡ˆ ºˆ¡§...
 	
 	// m_ptdAddTexture ==>
 
@@ -278,15 +285,17 @@ void CUIMinigame::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 // Name : OpenMinigame()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIMinigame::OpenMinigame()
+void CUIMinigame::OpenMinigame(UBYTE eventType)
 {
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
-	int	nX = ( pdp->dp_MinI + pdp->dp_MaxI ) / 2 - m_nWidth / 2;
-	int	nY = ( pdp->dp_MinJ + pdp->dp_MaxJ ) / 2 - m_nHeight / 2;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+	int	nX = ( pDrawPort->dp_MinI + pDrawPort->dp_MaxI ) / 2 - m_nWidth / 2;
+	int	nY = ( pDrawPort->dp_MinJ + pDrawPort->dp_MaxJ ) / 2 - m_nHeight / 2;
 
 	SetPos( nX, nY );	
 	SetButtonState(BTN_STATE_OPEN);
-	// Í≤åÏûÑ Î∞∞Í≤Ω ÏÉâ Î≥ÄÍ≤Ω 
+	// ∞‘¿” πË∞Ê ªˆ ∫Ø∞Ê 
 
 	
 	// set random seed 
@@ -300,22 +309,56 @@ void CUIMinigame::OpenMinigame()
 	
 	m_bxBack2.SetBoxUV( m_ptdBaseTexture, 2, rtBack );
 
+	m_ubEventType   = eventType;
+
 	// set npc talk
-	m_strNpcTalk[MINIGAME_START] = _S(3409, "9Í∞úÏùò Í≥∞ÎèåÏù¥ Ïõ¨Îîî Ï°∞Í∞ÅÏùÑ Î™®Îëê Ï∞æÏúºÏÖ®Íµ∞Ïöî. Í∑∏Î†áÎã§Î©¥ Í∞ÄÏúÑÎ∞îÏúÑÎ≥¥Î•º ÏãúÏûëÌï¥Ïöî, Ï§ÄÎπÑ ÎêêÏúºÎ©¥ ~Í∞ÄÏúÑÎ∞îÏúÑ~Í∞ÄÏúÑ!Î∞îÏúÑ!Î≥¥!");
-	m_strNpcTalk[MINIGAME_LOSE]	 = _S(3410, "ÎÇòÏùò ÏäπÎ¶¨ÎÑ§Ïöî~~! ÎÉêÌïòÌïòÌïò! Ïûê, ÏïÑÏâΩÏßÄÎßå Ïó¨Í∏∞ÍπåÏßÄÏûÖÎãàÎã§~ ÏÉàÎ°ú Í≥∞ÎèåÏù¥Î•º Î™®ÏïÑ Ïò§Î©¥ Ïû¨ÎèÑÏ†ÑÏùÑ Î∞õÏïÑ Ï£ºÍ≤†ÏäµÎãàÎã§. ÏïÑ, Ï∞∏. Í∑∏ÎûòÎèÑ ÏßÄÍ∏àÍπåÏßÄ ÎÖ∏Î†•Ìïú Í±¥ Î¨¥ÏãúÌïòÏßÄ ÏïäÏïÑÏöî. ÏõêÌïòÎçò Í≤ÉÏóî Î™ª ÎØ∏ÏπòÍ≤†ÏßÄÎßå, Í∑∏ÎûòÎèÑ Ïù¥Í±∞ÎùºÎèÑ Î∞õÏïÑÏ£ºÏÑ∏Ïöî.");
-	m_strNpcTalk[MINIGAME_DRAW] = _S(3411, "Ïù¥Îü∞~ ÎπÑÍ≤ºÎÑ§Ïöî! Ïûê, Îã§Ïãú ÌïúÎ≤à, Í∞ÄÏúÑ Î∞îÏúÑ~  Í∞ÄÏúÑ!    Î∞îÏúÑ!   Î≥¥!");
-	m_strNpcTalk[MINIGAME_WIN_1] = _S(3412, "ÏäπÎ¶¨ ÌïòÏÖ®ÎÑ§Ïöî! Ïó¨Í∏∞ÏÑú Í∑∏Îßå ÎëêÍ≥† Î¨ºÏïΩÏùÑ Î∞õÏúºÏãúÍ≤†Ïñ¥Ïöî?  ÏïÑÎãàÎ©¥ ÌïúÎ≤à Îçî Ìï¥ÏÑú Îçî ÌÅ∞ ÏÉÅÌíàÏùÑ ÎÖ∏Î†§Î≥¥ÏãúÍ≤†Ïñ¥Ïöî?");
-	m_strNpcTalk[MINIGAME_WIN_2] = _S(3413, "Ïù¥Î≤àÏóêÎèÑ Ïù¥Í∏∞ÏÖ®ÎÑ§Ïöî. Ïó¨Í∏∞ÏÑú Í∑∏Îßå ÎëêÏãúÍ≤†Ïñ¥Ïöî? ÏïÑÎãàÎ©¥ ÌïúÎ≤à Îçî Ìï¥ÏÑú Îçî ÌÅ∞ ÏÉÅÌíàÏùÑ ÎÖ∏Î†§Î≥¥ÏãúÍ≤†Ïñ¥Ïöî? Îã§Ïùå ÌåêÏóêÏÑú ÏäπÎ¶¨ÌïúÎã§Î©¥, 3Ïäπ ÏÉÅÌíàÏùÑ Î∞õÏùÑ Ïàò ÏûàÏñ¥Ïöî!");
-	m_strNpcTalk[MINIGAME_WIN_3] = _S(3414, "ÏäπÎ¶¨ÌïòÏÖ®Íµ∞Ïöî! ÏÇ¨Î°úÏñÄÏùÄ ÏÑ∏ Î≤àÏù¥ÎÇò ÎÇ¥Î¶¨ ÏßÄÍ≥† ÎßêÏïòÏñ¥Ïöî! ÌòÑÏû¨ 3ÏäπÏù¥Ïù¥ÎÑ§Ïöî. Ïó¨Í∏∞ÏÑú Í∑∏Îßå ÎëêÍ≥† ÏùÑ Î∞õÏïÑÍ∞ÄÏãúÍ≤†Ïñ¥Ïöî? ÏïÑÎãàÎ©¥ 4ÏäπÏùÑ ÎÖ∏Î†§Î≥¥ÏãúÍ≤†Ïñ¥Ïöî?");
-	m_strNpcTalk[MINIGAME_WIN_4] = _S(3415, "Ïù¥Î≤àÏóêÎèÑ ÏäπÎ¶¨Î•º ÌïòÏÖ®Íµ∞Ïöî! Î∞îÎ≥¥Í∞ôÏùÄ ÏÇ¨Î°úÏñÄ! ÎÑ§ Î≤àÏù¥ÎÇò ÏßÄÍ≥† ÎßêÏïòÎÑ§Ïöî. ÌòÑÏû¨ 4ÏäπÏûÖÎãàÎã§. Ïó¨Í∏∞ÏÑú Í∑∏Îßå ÎëêÏãúÍ≤†Ïñ¥Ïöî? ÏïÑÎãàÎ©¥ Ïó¨Í∏∞ÍπåÏßÄ ÏôîÎäîÎç∞ ÏßÑÏßú Í≥†Í∏â ÏÉÅÌíàÎì§ÏùÑ ÎÖ∏Î†§Î≥¥Í≤†ÎÉêÏòπ?  Îã§Ïùå ÌåêÎèÑ Ïù¥Í∏∞Î©¥ 5ÏäπÏù¥ÏóêÏöî!");
-	m_strNpcTalk[MINIGAME_WIN_5] = _S(3416, "Îòê Ï°åÎÑ§Ïöî! ÏûàÎäî Í≤É ÏóÜÎäî Í≤É Îã§ ÌÑ∏Ïñ¥ Í∞àÍ±¥Í∞ÄÏöî? ÏßÄÍ∏à 5ÏäπÏù¥ÏóêÏöî! Ïó¨Í∏∞ÏØ§ÏóêÏÑú Í∑∏Îßå ÎëêÏãúÍ≤†Ïñ¥Ïöî? ÏïÑÎãàÎ©¥ ÌïúÎ≤à Îçî Ìï¥Î≥¥ÏãúÍ≤†Ïñ¥Ïöî?");
-	m_strNpcTalk[MINIGAME_WIN_6] = _S(3417, "Îã§ÏùåÏóêÎèÑ ÏßÄÎ©¥ ÏÇ¨Î°úÏñÄ, ÏùºÍ≥± Î≤àÏùÑ ÎÇ¥Î¶¨ÏßÄÎäî Í≤å ÎêòÎäîÎç∞ Ïñ¥ÎñªÍ≤å ÌïòÏãúÍ≤†Ïñ¥Ïöî? ");
-	m_strNpcTalk[MINIGAME_WIN_7] = _S(3418, "7Ïó∞Ìå®ÎÑ§Ïöî. ÏäπÎ¶¨ÌïòÏÖ®ÏäµÎãàÎã§. Ïù¥ÎåÄÎ°ú ÎèåÏïÑÍ∞ÄÎ©¥ Ï†ïÎßêÏ†ïÎßê ÌÅ∞ÏùºÎÇòÍ≤†ÎÑ§Ïöî. ÏïÑÎ¨¥ÎûòÎèÑ Ïù¥Í∏∞Í∏¥ ÌûòÎì§ Í≤É Í∞ôÎÑ§Ïöî. Îã§Î•∏ ÏÇ¨ÎûåÎì§ÌïúÌÖå ÎßéÏù¥ ÎßéÏù¥ Ïù¥Í≤®Ïïº Ìï† Í≤É Í∞ôÏïÑÏöî. ÏÑ§Îßà, Îçî ÌïòÍ≤†Îã§Îäî Ïù¥ÏïºÍ∏∞Î•º ÌïòÏßÑ ÏïäÏùÑ Í±∞ÏßÄÏöî? Í∑∏ÎßåÎëêÍ≥† 7Ïäπ ÏÉÅÌíàÏùÑ Î∞õÏúºÏãúÍ≤†Ïñ¥Ïöî?");
-	m_strNpcTalk[MINIGAME_WIN_8] = _S(3419, "Ïù¥Î≤àÏóêÎèÑ ÏÇ¨Î°úÏñÄÏùÄ ÏßÄÍ≥† ÎßêÏïòÎÑ§Ïöî! Í∞ÄÏúÑÎ∞îÏúÑÎ≥¥Ïùò Ïã†Ïù¥ÏãúÎÑ§Ïöî!  ÏÇ¨Î°úÏñÄÏù¥ Ï§Ñ Ïàò ÏûàÎäî Í∞ÄÏû• ÌÅ∞ Î≥¥ÏÉÅÏù¥ÏóêÏöî. Ï∂ïÌïòÌï©ÎãàÎã§.");
+	if (m_ubEventType == MSG_EVENT_GOMDORI_2007)
+	{
+		m_strNpcTalk[MINIGAME_START] = _S(3409, "9∞≥¿« ∞ıµπ¿Ã ¿¢µ ¡∂∞¢¿ª ∏µŒ √£¿∏ºÃ±∫ø‰. ±◊∑∏¥Ÿ∏È ∞°¿ßπŸ¿ß∫∏∏¶ Ω√¿€«ÿø‰, ¡ÿ∫Ò µ∆¿∏∏È ~∞°¿ßπŸ¿ß~∞°¿ß!πŸ¿ß!∫∏!");
+		m_strNpcTalk[MINIGAME_LOSE]	 = _S(3410, "≥™¿« Ω¬∏Æ≥◊ø‰~~! ≥ƒ«œ«œ«œ! ¿⁄, æ∆Ω±¡ˆ∏∏ ø©±‚±Ó¡ˆ¿‘¥œ¥Ÿ~ ªı∑Œ ∞ıµπ¿Ã∏¶ ∏æ∆ ø¿∏È ¿Áµµ¿¸¿ª πﬁæ∆ ¡÷∞⁄Ω¿¥œ¥Ÿ. æ∆, ¬¸. ±◊∑°µµ ¡ˆ±›±Ó¡ˆ ≥Î∑¬«— ∞« π´Ω√«œ¡ˆ æ æ∆ø‰. ø¯«œ¥¯ ∞Õø£ ∏¯ πÃƒ°∞⁄¡ˆ∏∏, ±◊∑°µµ ¿Ã∞≈∂Ûµµ πﬁæ∆¡÷ººø‰.");
+	}
+	else if (m_ubEventType == MSG_EVENT_XMAS_2007)
+	{
+		m_strNpcTalk[MINIGAME_START] = _S(5799, "9∞≥¿« ªÍ≈∏≈¨∑ŒΩ∫ ¿Œ«¸ ¡∂∞¢¿ª ∏µŒ √£¿∏ºÃ±∫ø‰. ±◊∑∏¥Ÿ∏È ∞°¿ßπŸ¿ß∫∏∏¶ Ω√¿€«ÿø‰. ¡ÿ∫Ò µ∆¿∏∏È ~∞°¿ßπŸ¿ß~∞°¿ß! πŸ¿ß! ∫∏!");
+		m_strNpcTalk[MINIGAME_LOSE]	 = _S(5800, "≥™¿« Ω¬∏Æ≥◊ø‰~~! ≥ƒ«œ«œ«œ! ¿⁄, æ∆Ω±¡ˆ∏∏ ø©±‚±Ó¡ˆ¿‘¥œ¥Ÿ~ ªı∑Œ ªÍ≈∏≈¨∑ŒΩ∫ ¿Œ«¸¿ª ∏æ∆ ø¿∏È ¿Áµµ¿¸¿ª πﬁæ∆ ¡÷∞⁄Ω¿¥œ¥Ÿ. æ∆, ¬¸. ±◊∑°µµ ¡ˆ±›±Ó¡ˆ ≥Î∑¬«— ∞« π´Ω√«œ¡ˆ æ æ∆ø‰. ø¯«œ¥¯ ∞Õø£ ∏¯ πÃƒ°∞⁄¡ˆ∏∏, ±◊∑°µµ ¿Ã∞≈∂Ûµµ πﬁæ∆¡÷ººø‰.");
+	}
+	m_strNpcTalk[MINIGAME_DRAW] = _S(3411, "¿Ã∑±~ ∫Ò∞Â≥◊ø‰! ¿⁄, ¥ŸΩ√ «—π¯, ∞°¿ß πŸ¿ß~  ∞°¿ß!    πŸ¿ß!   ∫∏!");
+	m_strNpcTalk[MINIGAME_WIN_1] = _S(3412, "Ω¬∏Æ «œºÃ≥◊ø‰! ø©±‚º≠ ±◊∏∏ µŒ∞Ì π∞æ‡¿ª πﬁ¿∏Ω√∞⁄æÓø‰?  æ∆¥œ∏È «—π¯ ¥ı «ÿº≠ ¥ı ≈´ ªÛ«∞¿ª ≥Î∑¡∫∏Ω√∞⁄æÓø‰?");
+	m_strNpcTalk[MINIGAME_WIN_2] = _S(3413, "¿Ãπ¯ø°µµ ¿Ã±‚ºÃ≥◊ø‰. ø©±‚º≠ ±◊∏∏ µŒΩ√∞⁄æÓø‰? æ∆¥œ∏È «—π¯ ¥ı «ÿº≠ ¥ı ≈´ ªÛ«∞¿ª ≥Î∑¡∫∏Ω√∞⁄æÓø‰? ¥Ÿ¿Ω ∆«ø°º≠ Ω¬∏Æ«—¥Ÿ∏È, 3Ω¬ ªÛ«∞¿ª πﬁ¿ª ºˆ ¿÷æÓø‰!");
+	m_strNpcTalk[MINIGAME_WIN_3] = _S(3414, "Ω¬∏Æ«œºÃ±∫ø‰! ªÁ∑Œæ·¿∫ ºº π¯¿Ã≥™ ≥ª∏Æ ¡ˆ∞Ì ∏ªæ“æÓø‰! «ˆ¿Á 3Ω¬¿Ã¿Ã≥◊ø‰. ø©±‚º≠ ±◊∏∏ µŒ∞Ì ¿ª πﬁæ∆∞°Ω√∞⁄æÓø‰? æ∆¥œ∏È 4Ω¬¿ª ≥Î∑¡∫∏Ω√∞⁄æÓø‰?");
+	m_strNpcTalk[MINIGAME_WIN_4] = _S(3415, "¿Ãπ¯ø°µµ Ω¬∏Æ∏¶ «œºÃ±∫ø‰! πŸ∫∏∞∞¿∫ ªÁ∑Œæ·! ≥◊ π¯¿Ã≥™ ¡ˆ∞Ì ∏ªæ“≥◊ø‰. «ˆ¿Á 4Ω¬¿‘¥œ¥Ÿ. ø©±‚º≠ ±◊∏∏ µŒΩ√∞⁄æÓø‰? æ∆¥œ∏È ø©±‚±Ó¡ˆ ø‘¥¬µ• ¡¯¬• ∞Ì±ﬁ ªÛ«∞µÈ¿ª ≥Î∑¡∫∏∞⁄≥ƒøÀ?  ¥Ÿ¿Ω ∆«µµ ¿Ã±‚∏È 5Ω¬¿Ãø°ø‰!");
+	m_strNpcTalk[MINIGAME_WIN_5] = _S(3416, "∂« ¡≥≥◊ø‰! ¿÷¥¬ ∞Õ æ¯¥¬ ∞Õ ¥Ÿ ≈–æÓ ∞•∞«∞°ø‰? ¡ˆ±› 5Ω¬¿Ãø°ø‰! ø©±‚¬Îø°º≠ ±◊∏∏ µŒΩ√∞⁄æÓø‰? æ∆¥œ∏È «—π¯ ¥ı «ÿ∫∏Ω√∞⁄æÓø‰?");
+	m_strNpcTalk[MINIGAME_WIN_6] = _S(3417, "¥Ÿ¿Ωø°µµ ¡ˆ∏È ªÁ∑Œæ·, ¿œ∞ˆ π¯¿ª ≥ª∏Æ¡ˆ¥¬ ∞‘ µ«¥¬µ• æÓ∂ª∞‘ «œΩ√∞⁄æÓø‰? ");
+	m_strNpcTalk[MINIGAME_WIN_7] = _S(3418, "7ø¨∆–≥◊ø‰. Ω¬∏Æ«œºÃΩ¿¥œ¥Ÿ. ¿Ã¥Î∑Œ µπæ∆∞°∏È ¡§∏ª¡§∏ª ≈´¿œ≥™∞⁄≥◊ø‰. æ∆π´∑°µµ ¿Ã±‚±‰ »˚µÈ ∞Õ ∞∞≥◊ø‰. ¥Ÿ∏• ªÁ∂˜µÈ«—≈◊ ∏π¿Ã ∏π¿Ã ¿Ã∞‹æﬂ «“ ∞Õ ∞∞æ∆ø‰. º≥∏∂, ¥ı «œ∞⁄¥Ÿ¥¬ ¿Ãæﬂ±‚∏¶ «œ¡¯ æ ¿ª ∞≈¡ˆø‰? ±◊∏∏µŒ∞Ì 7Ω¬ ªÛ«∞¿ª πﬁ¿∏Ω√∞⁄æÓø‰?");
+	m_strNpcTalk[MINIGAME_WIN_8] = _S(3419, "¿Ãπ¯ø°µµ ªÁ∑Œæ·¿∫ ¡ˆ∞Ì ∏ªæ“≥◊ø‰! ∞°¿ßπŸ¿ß∫∏¿« Ω≈¿ÃΩ√≥◊ø‰!  ªÁ∑Œæ·¿Ã ¡Ÿ ºˆ ¿÷¥¬ ∞°¿Â ≈´ ∫∏ªÛ¿Ãø°ø‰. √‡«œ«’¥œ¥Ÿ.");
 
 	SetNpcTalk(MINIGAME_START);
+
+	// Setup minigame network messages
+	if (m_ubEventType == MSG_EVENT_GOMDORI_2007)
+	{
+		m_ubMsgStart    = MSG_EVENT_GOMDORI_2007_START;
+		m_ubMsgSelect   = MSG_EVENT_GOMDORI_2007_SELECT;
+		m_ubMsgContinue = MSG_EVENT_GOMDORI_2007_CONTINUE;
+		m_ubMsgEnd      = MSG_EVENT_GOMDORI_2007_END;
+	}
+	else if (m_ubEventType == MSG_EVENT_XMAS_2007)
+	{
+		m_ubMsgStart    = MSG_EVENT_XMAS_PUZZLE_START_REQ;
+		m_ubMsgSelect   = MSG_EVENT_XMAS_PUZZLE_SELECT_REQ;
+		m_ubMsgContinue = MSG_EVENT_XMAS_PUZZLE_CONTINUE_REQ;
+		m_ubMsgEnd      = MSG_EVENT_XMAS_PUZZLE_END_REQ;
+	}
+	else
+	{
+		m_ubEventType   = 0;
+		m_ubMsgStart    = 0;
+		m_ubMsgSelect   = 0;
+		m_ubMsgContinue = 0;
+		m_ubMsgEnd      = 0;
+	}
 	
-	_pUIMgr->RearrangeOrder( UI_MINIGAME, TRUE );
+	pUIManager->RearrangeOrder( UI_MINIGAME, TRUE );
 	
 	InitData();
 
@@ -327,11 +370,16 @@ void CUIMinigame::OpenMinigame()
 // ----------------------------------------------------------------------------
 void CUIMinigame::SetMinigameWinMark()
 {
-	// ÎπÑÍ≤ºÏùÑ Í≤ΩÏö∞
+	// ∫Ò∞Â¿ª ∞ÊøÏ
 	if( m_whowin == 1 || m_whowin ==-1) return ;
 
-	// Ïù¥Í≤ºÏùÑ Í≤ΩÏö∞
+	// ¡≥¿ª ∞ÊøÏ
 	if( m_whowin == 2)
+	{
+		m_rtSelBtn.SetRect(186, MINIGAME_BUTTON_POS_Y,186+MINIGAME_BUTTON_SIZE, MINIGAME_BUTTON_POS_Y+MINIGAME_BUTTON_SIZE); 
+	}
+	// ¿Ã∞Â¿ª ∞ÊøÏ
+	else if( m_whowin == 0)
 	{
 		if(m_userChoice==0)
 			m_rtSelBtn.SetRect( 97, MINIGAME_BUTTON_POS_Y + 94, 97+MINIGAME_BUTTON_SIZE, MINIGAME_BUTTON_POS_Y + MINIGAME_BUTTON_SIZE +94);
@@ -339,11 +387,6 @@ void CUIMinigame::SetMinigameWinMark()
 			m_rtSelBtn.SetRect(186, MINIGAME_BUTTON_POS_Y + 94, 186+MINIGAME_BUTTON_SIZE, MINIGAME_BUTTON_POS_Y + MINIGAME_BUTTON_SIZE +94);
 		else if(m_userChoice==2)
 			m_rtSelBtn.SetRect(275, MINIGAME_BUTTON_POS_Y + 94, 275+MINIGAME_BUTTON_SIZE, MINIGAME_BUTTON_POS_Y + MINIGAME_BUTTON_SIZE +94);
-	}
-	// Ï°åÏùÑ Í≤ΩÏö∞
-	else if( m_whowin == 0)
-	{
-		m_rtSelBtn.SetRect(186, MINIGAME_BUTTON_POS_Y,186+MINIGAME_BUTTON_SIZE, MINIGAME_BUTTON_POS_Y+MINIGAME_BUTTON_SIZE); 
 	}
 }
 
@@ -369,7 +412,7 @@ void CUIMinigame::SetNpcTalk(int iTalkIdx)
 	ASSERT(iTalkIdx<MINIGAME_STATE_END);
 
 	m_listNpcTalk.ResetAllStrings();
-	_pUIMgr->AddStringToList( &m_listNpcTalk ,m_strNpcTalk[iTalkIdx],48);
+	CUIManager::getSingleton()->AddStringToList( &m_listNpcTalk ,m_strNpcTalk[iTalkIdx],48);
 }
 
 // ----------------------------------------------------------------------------
@@ -379,7 +422,7 @@ void CUIMinigame::SetNpcTalk(int iTalkIdx)
 void CUIMinigame::RenderNpcSlot(INDEX npcState)
 {
 	static int tRoll=0;
-	static DWORD tTimeOld=timeGetTime();
+	static DWORD tTimeOld= (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();
 	DWORD tTimeNew;
 
 	switch(npcState)
@@ -391,7 +434,7 @@ void CUIMinigame::RenderNpcSlot(INDEX npcState)
 		{
 			m_btnNpcChoice[tRoll].Render();
 
-			tTimeNew = timeGetTime();
+			tTimeNew = (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();
 
 			if( tTimeOld + 300 < tTimeNew)
 			{
@@ -405,10 +448,9 @@ void CUIMinigame::RenderNpcSlot(INDEX npcState)
 		{
 			FLOAT	fTexWidth = m_ptdAddTexture->GetPixWidth();
 			FLOAT	fTexHeight = m_ptdAddTexture->GetPixHeight();
-
-			static DWORD tTimePass=0;
-			if(tTimePass==0) tTimePass=timeGetTime();
-			tTimeNew = timeGetTime();
+			
+			//if(tTimePass==0) tTimePass=timeGetTime();
+			tTimeNew = (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();
 		
 			if( tTimeOld +50< tTimeNew)
 			{
@@ -421,11 +463,11 @@ void CUIMinigame::RenderNpcSlot(INDEX npcState)
 			m_btnNpcChoiceMove.SetUV( UBS_IDLE, tRoll, 137,tRoll+MINIGAME_BUTTON_SIZE, 184, fTexWidth, fTexHeight );
 			m_btnNpcChoiceMove.Render();	
 			
-			// 2Ï¥àÍ∞Ä Í≤ΩÍ≥º ÌñàÏúºÎ©¥ Í≤∞Í≥º Ï∂úÎ†•
-			if ((tTimePass + 2000 < tTimeNew) && m_whowin >=0)
+			// 2√ ∞° ∞Ê∞˙ «ﬂ¿∏∏È ∞·∞˙ √‚∑¬
+			if ((m_dwTimePass + 2000 < tTimeNew) && m_whowin >=0)
 			{
 				m_npcState = MINIGAME_NPC_RESULT;
-				tTimePass =0;
+				m_dwTimePass =0;
 			}
 		}
 		break;
@@ -436,21 +478,21 @@ void CUIMinigame::RenderNpcSlot(INDEX npcState)
 
 			if( !m_bTalkOnce )
 			{
-				if( m_whowin == 0) // Ï°åÏùÑ Îïå
+				if (m_whowin == 2) // ¡≥¿ª ∂ß
 				{			
 					SetButtonState(BTN_STATE_DEFEAT);
 					SetNpcTalk(MINIGAME_LOSE);
 				}
-				else if(m_whowin == 1) // ÎπÑÍ≤ºÏùÑ Îïå
+				else if (m_whowin == 1) // ∫Ò∞Â¿ª ∂ß
 				{
 					SetButtonState(BTN_STATE_WIN_DRAW);	
 					SetNpcTalk(MINIGAME_DRAW);
 				}
-				else if( m_whowin ==2) // Ïù¥Í≤ºÏùÑ Îïå
+				else if (m_whowin == 0) // ¿Ã∞Â¿ª ∂ß
 				{
-					if(m_iWinNum>=8 )
+					if (m_iWinNum >= 8)
 					{
-						// 8Ïäπ Ïù¥ÏÉÅÏùº Îïå Í∑∏ÎßåÌïòÍ≥† ÏÉÅÌíàÎ∞õÍ∏∞Îßå ÌôúÏÑ±Ìôî
+						// 8Ω¬ ¿ÃªÛ¿œ ∂ß ±◊∏∏«œ∞Ì ªÛ«∞πﬁ±‚∏∏ »∞º∫»≠
 						SetButtonState(0x81);	
 					}
 					else 
@@ -483,10 +525,10 @@ void CUIMinigame::Render()
 	if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
 		Close();
 */
-	CDrawPort *pdp = _pUIMgr->GetDrawPort();
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 	
 	// Set Minigame texture
-	pdp->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	// Add render regions
 	// Background
 	m_bxTitle.Render(m_nPosX,m_nPosY);
@@ -505,9 +547,9 @@ void CUIMinigame::Render()
 	m_listNpcTalk.Render();
 
 	// Render all elements
-	pdp->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	pdp->InitTextureData( m_ptdAddTexture );
+	pDrawPort->InitTextureData( m_ptdAddTexture );
 
 	// Render Buttons
 	m_btnScissors.Render();
@@ -520,7 +562,7 @@ void CUIMinigame::Render()
 	// Render Select Mark 
 //	if(m_npcState==MINIGAME_NPC_START)
 	{
-		_pUIMgr->GetDrawPort()->AddTexture(
+		pDrawPort->AddTexture(
 		m_nPosX+m_rtSelBtn2.Left,m_nPosY+m_rtSelBtn2.Top,m_nPosX+m_rtSelBtn2.Right,m_nPosY+m_rtSelBtn2.Bottom,
 		m_rcSelBtn2.U0,m_rcSelBtn2.V0,m_rcSelBtn2.U1,m_rcSelBtn2.V1,
 		0xFFFFFFFF);
@@ -531,37 +573,37 @@ void CUIMinigame::Render()
 	{
 		SetMinigameWinMark();
 
-		_pUIMgr->GetDrawPort()->AddTexture(
+		pDrawPort->AddTexture(
 		m_nPosX+m_rtSelBtn.Left,m_nPosY+m_rtSelBtn.Top,m_nPosX+m_rtSelBtn.Right,m_nPosY+m_rtSelBtn.Bottom,
 		m_rcSelBtn.U0,m_rcSelBtn.V0,m_rcSelBtn.U1,m_rcSelBtn.V1,
 		0xFFFFFFFF);
 	}
 
 	// Render VS mark
-	pdp->AddTexture(
+	pDrawPort->AddTexture(
 		m_nPosX+m_rtVS.Left,m_nPosY+m_rtVS.Top,
 		m_nPosX+m_rtVS.Right,m_nPosY+m_rtVS.Bottom,
 		m_rcVS.U0,m_rcVS.V0,m_rcVS.U1,m_rcVS.V1,
 		0xFFFFFFFF);
 
 	// Render all elements
-	pdp->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render Text
 	CTString tStr;
-	tStr=_S(3455, "ÏäπÏàò" );
-	pdp->PutTextEx(tStr, m_nPosX + 351, m_nPosY + 48, 0xFFFFFFFF );
+	tStr=_S(3455, "Ω¬ºˆ" );
+	pDrawPort->PutTextEx(tStr, m_nPosX + 351, m_nPosY + 48, 0xFFFFFFFF );
 	
 	if(m_npcState == MINIGAME_NPC_RESULT) 
 		m_iWinNumOld = m_iWinNum;
 
 	tStr.PrintF("%d", m_iWinNumOld);
-	pdp->PutTextEx( tStr, m_nPosX + 387, m_nPosY + 60, 0xFFFFFFFF );
-	tStr=_S(3456, "Í∞ÄÏúÑÎ∞îÏúÑÎ≥¥ Í≤åÏûÑ" );
-	pdp->PutTextEx(tStr, m_nPosX +25, m_nPosY + 5, 0xFFFFFFFF );
+	pDrawPort->PutTextEx( tStr, m_nPosX + 387, m_nPosY + 60, 0xFFFFFFFF );
+	tStr=_S(3456, "∞°¿ßπŸ¿ß∫∏ ∞‘¿”" );
+	pDrawPort->PutTextEx(tStr, m_nPosX +25, m_nPosY + 5, 0xFFFFFFFF );
 
 	// Flush all render text queue
-	pdp->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -589,7 +631,7 @@ WMSG_RESULT CUIMinigame::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
 			{
@@ -623,7 +665,7 @@ WMSG_RESULT CUIMinigame::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDOWN:
 		{
-		/*	if( !IsInside( nX, nY ) )	//Îî¥Îç∞ Ï∞çÏóàÏùÑ Í≤ΩÏö∞,
+		/*	if( !IsInside( nX, nY ) )	//µ˝µ• ¬Ôæ˙¿ª ∞ÊøÏ,
 			{
 				Close();
 				break;
@@ -656,15 +698,17 @@ WMSG_RESULT CUIMinigame::MouseMessage( MSG *pMsg )
 				bTitleBarClick = TRUE;
 			}			
 
-			_pUIMgr->RearrangeOrder( UI_MINIGAME, TRUE );
+			CUIManager::getSingleton()->RearrangeOrder( UI_MINIGAME, TRUE );
 			return WMSG_SUCCESS;
 		}
 		break;
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				bTitleBarClick = FALSE;
 
@@ -673,15 +717,16 @@ WMSG_RESULT CUIMinigame::MouseMessage( MSG *pMsg )
 
 				if( m_btnReceiveItem.MouseMessage( pMsg ) != WMSG_FAIL)
 				{
-					// TODO : Í∑∏ÎßåÌïòÍ≥† ÏïÑÏù¥ÌÖú Î∞õÍ∏∞
-					_pNetwork->SendMinigameDefaultMessage(MSG_EVENT_GOMDORI_2007_END);
-
+					// TODO : ±◊∏∏«œ∞Ì æ∆¿Ã≈€ πﬁ±‚
+					if (m_ubEventType)
+						_pNetwork->SendMinigameDefaultMessage(m_ubEventType, m_ubMsgEnd);
 				}
 				if( m_btnStartGame.MouseMessage( pMsg ) != WMSG_FAIL)
 				{
-					// Í≤åÏûÑ ÏãúÏûëÌïòÍ∏∞ 
-					_pNetwork->SendMinigameDefaultMessage(MSG_EVENT_GOMDORI_2007_START);
-					// ÏäπÏàò Ï¥àÍ∏∞Ìôî
+					// ∞‘¿” Ω√¿€«œ±‚ 
+					if (m_ubEventType)
+						_pNetwork->SendMinigameDefaultMessage(m_ubEventType, m_ubMsgStart);
+					// Ω¬ºˆ √ ±‚»≠
 					m_iWinNum = 0;
 					// Win Mark Disable
 					m_whowin = -1;
@@ -692,8 +737,9 @@ WMSG_RESULT CUIMinigame::MouseMessage( MSG *pMsg )
 				}
 				if( m_btnKeepGoing.MouseMessage( pMsg ) != WMSG_FAIL)
 				{
-					// TODO : Í≥ÑÏÜç ÌïòÍ∏∞
-					_pNetwork->SendMinigameDefaultMessage(MSG_EVENT_GOMDORI_2007_CONTINUE);
+					// TODO : ∞Ëº” «œ±‚
+					if (m_ubEventType)
+						_pNetwork->SendMinigameDefaultMessage(m_ubEventType, m_ubMsgContinue);
 					// Win Mark Disable
 					m_whowin = -1;
 					// set npc state
@@ -703,30 +749,36 @@ WMSG_RESULT CUIMinigame::MouseMessage( MSG *pMsg )
 				else if( m_btnScissors.MouseMessage( pMsg ) == WMSG_COMMAND )				
 				{
 					m_btnScissors.SetSize(MINIGAME_BUTTON_SIZE,MINIGAME_BUTTON_SIZE);
-					// Î™®Îëê ÎπÑÌôúÏÑ±Ìôî
+					// ∏µŒ ∫Ò»∞º∫»≠
 					SetButtonState(0x80);
-					_pNetwork->SendMinigameSelect(0);
+					if (m_ubEventType)
+						_pNetwork->SendMinigameSelect(m_ubEventType, m_ubMsgSelect, 0);
 					// set npc state
 					m_npcState = MINIGAME_NPC_START;
+					m_dwTimePass = (unsigned int(_pTimer->GetLerpedCurrentTick()*1000));
 					
 				}
 				else if( m_btnStone.MouseMessage( pMsg ) == WMSG_COMMAND )				
 				{
 					m_btnStone.SetSize(MINIGAME_BUTTON_SIZE,MINIGAME_BUTTON_SIZE);
-					// Î™®Îëê ÎπÑÌôúÏÑ±Ìôî 
+					// ∏µŒ ∫Ò»∞º∫»≠ 
 					SetButtonState(0x80);
-					_pNetwork->SendMinigameSelect(1);
+					if (m_ubEventType)
+						_pNetwork->SendMinigameSelect(m_ubEventType, m_ubMsgSelect, 1);
 					// set npc state
 					m_npcState = MINIGAME_NPC_START;
+					m_dwTimePass = (unsigned int(_pTimer->GetLerpedCurrentTick()*1000));
 				}
 				else if( m_btnPaper.MouseMessage( pMsg ) == WMSG_COMMAND )
 				{
 					m_btnPaper.SetSize(MINIGAME_BUTTON_SIZE,MINIGAME_BUTTON_SIZE);
-					// Î™®Îëê ÎπÑÌôúÏÑ±Ìôî
+					// ∏µŒ ∫Ò»∞º∫»≠
 					SetButtonState(0x80);
-					_pNetwork->SendMinigameSelect(2);
+					if (m_ubEventType)
+						_pNetwork->SendMinigameSelect(m_ubEventType, m_ubMsgSelect, 2);
 					// set npc state
 					m_npcState = MINIGAME_NPC_START;
+					m_dwTimePass = (unsigned int(_pTimer->GetLerpedCurrentTick()*1000));
 				}
 				else if( m_listNpcTalk.MouseMessage( pMsg ) != WMSG_FAIL ) 
 				{
@@ -741,7 +793,7 @@ WMSG_RESULT CUIMinigame::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -769,5 +821,222 @@ WMSG_RESULT CUIMinigame::MouseMessage( MSG *pMsg )
 void CUIMinigame::Close()
 {
 	InitData();
-	_pUIMgr->RearrangeOrder( UI_MINIGAME, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_MINIGAME, FALSE );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// 2011-04-22 ∫∏π∞ ¡ˆµµ
+//////////////////////////////////////////////////////////////////////////
+
+CUITreasureMap::CUITreasureMap()
+{
+	m_nZoneIndex = -1;
+	m_fposX = 0.0;
+	m_fposY = 0.0;
+	m_ptdWorldMapTexture = NULL;
+}
+
+CUITreasureMap::~CUITreasureMap()
+{
+
+	InitData();
+}
+
+void CUITreasureMap::InitData()
+{
+	m_nZoneIndex = -1;
+	m_fposX = 0.0;
+	m_fposY = 0.0;
+	
+	if (m_ptdWorldMapTexture)
+	{
+		_pTextureStock->Release(m_ptdWorldMapTexture);
+		m_ptdWorldMapTexture = NULL;
+	}
+}
+
+void CUITreasureMap::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
+{
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+
+	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Map.tex" ) );
+	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
+	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
+	m_bxBack.SetBoxUV(m_ptdBaseTexture, 30, 24, WRect(0,0,84,48));
+	m_bxBack.SetBoxPos(WRect(0, 0, nWidth, nHeight));
+
+	m_btnClose.Create(this, CTString( "" ), 338, 4, 14, 14);
+	m_btnClose.SetUV(UBS_IDLE, 46, 97, 59, 110, fTexWidth, fTexHeight);
+	m_btnClose.SetUV(UBS_CLICK, 31, 97, 44, 110, fTexWidth, fTexHeight);
+	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
+
+	m_rvTreasureMark.SetUV(0, 130, 38, 168, fTexWidth, fTexHeight);
+}
+
+void CUITreasureMap::OpenMap(INDEX ZoneIndex, FLOAT fPosX, FLOAT fPosY)
+{
+	m_nZoneIndex = ZoneIndex;
+	m_fposX = fPosX;
+	m_fposY = fPosY;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	BOOL bChackMap = FALSE;
+	bChackMap = pUIManager->GetMap()->GetWorldToMapPos(ZoneIndex, m_fposX, m_fposY, 0.73f);
+
+	if (!bChackMap)
+	{
+		return;
+	}
+
+	// Create map texture
+	CTString	strFileName;
+	strFileName.PrintF( "Data\\Interface\\Map_World%d%d.tex", ZoneIndex, 0 );
+	m_ptdWorldMapTexture = CreateTexture(strFileName);
+
+	FLOAT	fTexWidth = m_ptdWorldMapTexture->GetPixWidth();
+	FLOAT	fTexHeight = m_ptdWorldMapTexture->GetPixHeight();
+
+	m_rtWorldMap.SetRect( 0, 0, 359, 359);
+	m_rtWorldMap.Offset(3,22);
+	m_rvWorldMap.SetUV(0, 0, 512, 512, fTexWidth, fTexHeight);
+	m_rtTreasureMark.SetRect(0, 0, 38, 38);
+	m_rtTreasureMark.Offset(m_fposX-15, m_fposY);
+
+	pUIManager->RearrangeOrder(UI_TREASUREMAP,TRUE);
+
+}
+
+void CUITreasureMap::Close()
+{
+	InitData();
+	CUIManager::getSingleton()->RearrangeOrder(UI_TREASUREMAP,FALSE);
+}
+
+// ----------------------------------------------------------------------------
+// Name : ResetPosition()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUITreasureMap::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	SetPos( ( pixMaxI + pixMinI - GetWidth() ) / 2, ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
+}
+
+// ----------------------------------------------------------------------------
+// Name : AdjustPosition()
+// Desc :
+// ----------------------------------------------------------------------------
+void CUITreasureMap::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	if( m_nPosX < pixMinI || m_nPosX + GetWidth() > pixMaxI ||
+		m_nPosY < pixMinJ || m_nPosY + GetHeight() > pixMaxJ )
+		ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
+}
+
+void CUITreasureMap::Render()
+{
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData(m_ptdWorldMapTexture);
+	pDrawPort->AddTexture(m_nPosX+m_rtWorldMap.Left, m_nPosY+m_rtWorldMap.Top, m_nPosX+m_rtWorldMap.Right, m_nPosY+m_rtWorldMap.Bottom,
+					m_rvWorldMap.U0, m_rvWorldMap.V0, m_rvWorldMap.U1, m_rvWorldMap.V1, 0xFFFFFFFF);
+
+	pDrawPort->FlushRenderingQueue();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	m_bxBack.Render(m_nPosX, m_nPosY);
+	m_btnClose.Render();
+
+	pDrawPort->AddTexture(m_nPosX+m_rtTreasureMark.Left, m_nPosY+m_rtTreasureMark.Top, m_nPosX+m_rtTreasureMark.Right, m_nPosY+m_rtTreasureMark.Bottom,
+					m_rvTreasureMark.U0, m_rvTreasureMark.V0, m_rvTreasureMark.U1, m_rvTreasureMark.V1, 0xFFFFFFFF);
+
+	pDrawPort->FlushRenderingQueue();
+
+	CTString tStr;
+	tStr = _S(5440, "∫∏π∞ ¡ˆµµ");
+	pDrawPort->PutTextExCX(tStr, m_nPosX +182, m_nPosY + 5, 0xFFFFFFFF );
+
+	// Flush all render text queue
+	pDrawPort->EndTextEx();
+
+
+}
+
+WMSG_RESULT	CUITreasureMap::MouseMessage( MSG *pMsg )
+{
+	WMSG_RESULT	wmsgResult;
+	// Mouse point
+	static int	nOldX, nOldY;
+	int	nX = LOWORD( pMsg->lParam );
+	int	nY = HIWORD( pMsg->lParam );
+
+	// Title bar
+	static BOOL bTitleBarClick = FALSE;
+	UIRect tTitle(0, 0, 324, 21);
+
+	// Mouse message
+	switch(pMsg->message)
+	{
+	case WM_MOUSEMOVE:
+		{
+			if( !IsFocused() )
+				return WMSG_FAIL;
+
+			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
+			{
+				int	ndX = nX - nOldX;
+				int	ndY = nY - nOldY;
+				nOldX = nX;	nOldY = nY;
+
+				Move( ndX, ndY );
+
+				return WMSG_SUCCESS;
+			}
+			// Close Button
+			if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
+				return WMSG_SUCCESS;
+		}break;
+	case WM_LBUTTONDOWN:
+		{
+			if(IsInside(nX,nY))
+			{
+				nOldX = nX;		nOldY = nY;
+
+				// Close button
+				if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
+				{
+				}
+
+				if( IsInsideRect( nX, nY, tTitle ) )
+				{
+					bTitleBarClick = TRUE;
+					
+				}
+				
+				CUIManager::getSingleton()->RearrangeOrder( UI_TREASUREMAP, TRUE );
+				return WMSG_SUCCESS;
+			}
+		}break;
+	case WM_LBUTTONUP:
+		{
+			// Title bar
+			bTitleBarClick = FALSE;
+
+			if( !IsFocused() )
+					return WMSG_FAIL;
+
+			if( (wmsgResult = m_btnClose.MouseMessage( pMsg ) ) != WMSG_FAIL )
+			{
+				if( wmsgResult == WMSG_COMMAND )
+				{
+					Close();
+				}
+				return WMSG_SUCCESS;
+			}
+		}
+	}
+	return WMSG_FAIL;
 }

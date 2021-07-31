@@ -3277,6 +3277,194 @@ void ReceiveDamage(CEntity *penInflictor, enum DamageType dmtType,
  *                   P R O C E D U R E S                    *
  ************************************************************/
 procedures:
+	// --->>> MAIN
+	Main(ELaunchProjectile eLaunch) {
+		// remember the initial parameters
+		m_penLauncher = eLaunch.eidLauncher;
+		if (m_penLauncher == NULL) {
+			en_RenderType = RT_NONE;
+			Destroy(FALSE);
+			return;
+		}
+		ASSERT(((CEntity*)eLaunch.eidLauncher)!=NULL);
+		m_iLauncherID = m_penLauncher->en_ulID;
+		m_prtType = eLaunch.prtType;
+		m_fSpeed = eLaunch.fSpeed;
+		m_fStretch=eLaunch.fStretch;
+
+		// remember lauching time
+		m_fIgnoreTime = _pTimer->CurrentTick() + 1.0f;
+		m_penLastDamaged = NULL;
+
+		SetFlagOn(ENF_CLIENTHANDLING);
+
+			/*
+		switch (m_prtType) 
+		{
+			case PRT_DEVIL_ROCKET:
+			case PRT_WALKER_ROCKET:
+			case PRT_ROCKET:
+			case PRT_SHOOTER_WOODEN_DART:
+				{
+					Particles_RocketTrail_Prepare(this);
+					break;
+				}
+			case PRT_GUFFY_PROJECTILE: break; //Particles_RocketTrail_Prepare(this); break;
+			case PRT_GRENADE: Particles_GrenadeTrail_Prepare(this); break;
+			case PRT_CATMAN_FIRE: Particles_RocketTrail_Prepare(this); break;
+			case PRT_HEADMAN_FIRECRACKER: Particles_FirecrackerTrail_Prepare(this); break;
+			case PRT_HEADMAN_ROCKETMAN: Particles_Fireball01Trail_Prepare(this); break;
+			case PRT_HEADMAN_BOMBERMAN: Particles_BombTrail_Prepare(this); break;
+			case PRT_LAVA_COMET: Particles_LavaTrail_Prepare(this); break;
+			case PRT_LAVAMAN_BIG_BOMB: Particles_LavaBombTrail_Prepare(this); break;
+			case PRT_LAVAMAN_BOMB: Particles_LavaBombTrail_Prepare(this); break;
+			case PRT_BEAST_PROJECTILE: Particles_Fireball01Trail_Prepare(this); break;
+			case PRT_BEAST_BIG_PROJECTILE:
+			case PRT_DEVIL_GUIDED_PROJECTILE:
+			case PRT_DEMON_FIREBALL:
+			case PRT_METEOR:
+				 Particles_FirecrackerTrail_Prepare(this);
+				 break;
+			case PRT_SHOOTER_FIREBALL: Particles_Fireball01Trail_Prepare(this); break;
+		}
+		// projectile initialization
+		switch (m_prtType)
+		{
+			case PRT_WALKER_ROCKET: WalkerRocket(); break;
+			case PRT_ROCKET: PlayerRocket(); break;
+			case PRT_GRENADE: PlayerGrenade(); break;
+			case PRT_FLAME: PlayerFlame(); break;
+			case PRT_LASER_RAY: PlayerLaserRay(); break;
+			case PRT_CATMAN_FIRE: CatmanProjectile(); break;
+			case PRT_HEADMAN_FIRECRACKER: HeadmanFirecracker(); break;
+			case PRT_HEADMAN_ROCKETMAN: HeadmanRocketman(); break;
+			case PRT_HEADMAN_BOMBERMAN: HeadmanBomberman(); break;
+			case PRT_BONEMAN_FIRE: BonemanProjectile(); break;
+			case PRT_WOMAN_FIRE: WomanProjectile(); break;
+			case PRT_DRAGONMAN_FIRE: DragonmanProjectile(DRAGONMAN_NORMAL); break;
+			case PRT_DRAGONMAN_STRONG_FIRE: DragonmanProjectile(DRAGONMAN_STRONG); break;
+			case PRT_STONEMAN_FIRE: ElementalRock(ELEMENTAL_NORMAL, ELEMENTAL_STONEMAN); break;
+			case PRT_STONEMAN_BIG_FIRE: ElementalRock(ELEMENTAL_BIG, ELEMENTAL_STONEMAN); break;
+			case PRT_STONEMAN_LARGE_FIRE: ElementalRock(ELEMENTAL_LARGE, ELEMENTAL_STONEMAN); break;
+			case PRT_LAVAMAN_BIG_BOMB: LavaManBomb(); break;
+			case PRT_LAVAMAN_BOMB: LavaManBomb(); break;
+			case PRT_LAVAMAN_STONE: ElementalRock(ELEMENTAL_NORMAL, ELEMENTAL_LAVAMAN); break;
+			case PRT_ICEMAN_FIRE: ElementalRock(ELEMENTAL_NORMAL, ELEMENTAL_ICEMAN); break;
+			case PRT_ICEMAN_BIG_FIRE: ElementalRock(ELEMENTAL_BIG, ELEMENTAL_ICEMAN); break;
+			case PRT_ICEMAN_LARGE_FIRE: ElementalRock(ELEMENTAL_LARGE, ELEMENTAL_ICEMAN); break;
+			case PRT_HUANMAN_FIRE: HuanmanProjectile(); break;
+			case PRT_FISHMAN_FIRE: FishmanProjectile(); break;
+			case PRT_MANTAMAN_FIRE: MantamanProjectile(); break;
+			case PRT_CYBORG_LASER: CyborgLaser(); break;
+			case PRT_CYBORG_BOMB: CyborgBomb(); break;
+			case PRT_LAVA_COMET: LavaBall(); break;
+			case PRT_BEAST_PROJECTILE: BeastProjectile(); break;
+			case PRT_BEAST_BIG_PROJECTILE: BeastBigProjectile(); break;
+			case PRT_BEAST_DEBRIS: BeastDebris(); break;
+			case PRT_BEAST_BIG_DEBRIS: BeastBigDebris(); break;
+			case PRT_DEVIL_LASER: DevilLaser(); break;
+			case PRT_DEVIL_ROCKET: DevilRocket(); break;
+			case PRT_DEVIL_GUIDED_PROJECTILE: DevilGuidedProjectile(); break;
+			case PRT_GRUNT_PROJECTILE_SOL: GruntSoldierLaser(); break;
+			case PRT_GRUNT_PROJECTILE_COM: GruntCommanderLaser(); break;
+			case PRT_GUFFY_PROJECTILE: GuffyProjectile(); break;
+			case PRT_DEMON_FIREBALL: DemonFireball(); break;
+			case PRT_LARVA_PLASMA: LarvaPlasma(); break;
+			case PRT_LARVA_TAIL_PROJECTILE: LarvaTail(); break;
+			case PRT_SHOOTER_WOODEN_DART: ShooterWoodenDart(); break;
+			case PRT_SHOOTER_FIREBALL: ShooterFireball(); break;
+			case PRT_SHOOTER_FLAME: ShooterFlame(); break;
+			case PRT_AFTERBURNER_DEBRIS: AfterburnerDebris(); break;
+			case PRT_AIRELEMENTAL_WIND: WindBlast(); break;
+			case PRT_METEOR: Meteor(); break;
+			default: ASSERTALWAYS("Unknown projectile type");
+		}
+		*/
+
+		// setup light source
+		if (m_bLightSource) { SetupLightSource(TRUE); }
+
+		// fly
+		m_fStartTime = _pTimer->CurrentTick();
+
+		wait() {
+			on (EBegin) : {
+				if (_pNetwork->IsServer()) {
+					if( m_pmtMove == PMT_GUIDED) {
+						call ProjectileGuidedFly();
+					} else if (m_pmtMove==PMT_GUIDED_FAST) {
+						call ProjectileGuidedFastFly();
+					} else if (m_pmtMove==PMT_FLYING) {
+						call ProjectileFly();
+					} else if (m_pmtMove==PMT_SLIDING) {
+						call ProjectileSlide();
+					} else if (m_pmtMove==PMT_FLYING_REBOUNDING) {
+						call ProjectileFlyRebounding();
+					} else if (m_pmtMove==PMT_GUIDED_SLIDING) {
+						call ProjectileGuidedSlide();
+					}
+				} else {
+					resume;
+				}
+			}
+			on (EExplode eexpl) : { 
+				CPlacement3D plPlacement;
+				plPlacement.pl_OrientationAngle = ANGLE3D(0.0f,0.0f,0.0f);
+				plPlacement.pl_PositionVector = eexpl.vPosition;
+				SetPlacement(plPlacement);
+				stop; 
+			};
+			on (ESpawnFlame eFlame) : {
+				CEntity* penLauncher = (CEntity*)eFlame.eidLauncher;
+				CEntity* penAttach = (CEntity*)eFlame.eidAttach;
+				if ((penLauncher == NULL) || (penAttach == NULL)) {resume; }
+				SpawnFlame((CEntity*)eFlame.eidLauncher,(CEntity*)eFlame.eidAttach,eFlame.vPos);      
+				resume;
+			}
+		}
+
+
+		// projectile explosion
+		//switch (m_prtType) {
+			//case PRT_WALKER_ROCKET: WalkerRocketExplosion(); break;
+			//case PRT_ROCKET: PlayerRocketExplosion(); break;
+			//case PRT_GRENADE: PlayerGrenadeExplosion(); break;
+			//case PRT_LASER_RAY: PlayerLaserWave(); break;
+			//case PRT_HEADMAN_BOMBERMAN: HeadmanBombermanExplosion(); break;
+			//case PRT_CYBORG_BOMB: CyborgBombExplosion(); break;
+			//case PRT_LAVA_COMET: LavamanBombDebrisExplosion(); break;
+			//case PRT_LAVAMAN_BIG_BOMB: LavamanBombExplosion(); break;
+			//case PRT_LAVAMAN_BOMB: LavamanBombDebrisExplosion(); break;
+			//case PRT_BEAST_BIG_PROJECTILE: BeastBigProjectileExplosion(); break;
+			//case PRT_BEAST_PROJECTILE: BeastProjectileExplosion(); break;
+			//case PRT_BEAST_DEBRIS: BeastDebrisExplosion(); break;      
+			//case PRT_BEAST_BIG_DEBRIS: BeastBigDebrisExplosion(); break;      
+			//case PRT_DEVIL_ROCKET: DevilRocketExplosion(); break;
+			//case PRT_DEVIL_GUIDED_PROJECTILE: DevilGuidedProjectileExplosion(); break;
+			//case PRT_GUFFY_PROJECTILE: GuffyProjectileExplosion(); break;
+			//case PRT_DEMON_FIREBALL: DemonFireballExplosion(); break;  
+			//case PRT_LARVA_PLASMA: LarvaPlasmaExplosion(); break;
+			//case PRT_LARVA_TAIL_PROJECTILE: LarvaTailExplosion(); break;
+			//case PRT_SHOOTER_WOODEN_DART: ShooterWoodenDartExplosion(); break;
+			//case PRT_SHOOTER_FIREBALL: ShooterFireballExplosion(); break;
+			//case PRT_METEOR: MeteorExplosion(); break;
+		//}
+
+		// wait after death
+		if (m_fWaitAfterDeath>0.0f) {
+			SwitchToEditorModel();
+			ForceFullStop();
+			SetCollisionFlags(ECF_IMMATERIAL);
+			// kill light source
+			if (m_bLightSource) { SetupLightSource(FALSE); }
+			autowait(m_fWaitAfterDeath);
+		}
+
+		Destroy(FALSE);
+
+		return;
+	}
+
 	// --->>> PROJECTILE FLY IN SPACE
 	ProjectileFly(EVoid) {
 		// if already inside some entity
@@ -3899,192 +4087,4 @@ procedures:
 		SendEvent(eexpl, TRUE);
 		return;
 	};
-
-	// --->>> MAIN
-	Main(ELaunchProjectile eLaunch) {
-		// remember the initial parameters
-		m_penLauncher = eLaunch.eidLauncher;
-		if (m_penLauncher == NULL) {
-			en_RenderType = RT_NONE;
-			Destroy(FALSE);
-			return;
-		}
-		ASSERT(((CEntity*)eLaunch.eidLauncher)!=NULL);
-		m_iLauncherID = m_penLauncher->en_ulID;
-		m_prtType = eLaunch.prtType;
-		m_fSpeed = eLaunch.fSpeed;
-		m_fStretch=eLaunch.fStretch;
-
-		// remember lauching time
-		m_fIgnoreTime = _pTimer->CurrentTick() + 1.0f;
-		m_penLastDamaged = NULL;
-
-		SetFlagOn(ENF_CLIENTHANDLING);
-
-			/*
-		switch (m_prtType) 
-		{
-			case PRT_DEVIL_ROCKET:
-			case PRT_WALKER_ROCKET:
-			case PRT_ROCKET:
-			case PRT_SHOOTER_WOODEN_DART:
-				{
-					Particles_RocketTrail_Prepare(this);
-					break;
-				}
-			case PRT_GUFFY_PROJECTILE: break; //Particles_RocketTrail_Prepare(this); break;
-			case PRT_GRENADE: Particles_GrenadeTrail_Prepare(this); break;
-			case PRT_CATMAN_FIRE: Particles_RocketTrail_Prepare(this); break;
-			case PRT_HEADMAN_FIRECRACKER: Particles_FirecrackerTrail_Prepare(this); break;
-			case PRT_HEADMAN_ROCKETMAN: Particles_Fireball01Trail_Prepare(this); break;
-			case PRT_HEADMAN_BOMBERMAN: Particles_BombTrail_Prepare(this); break;
-			case PRT_LAVA_COMET: Particles_LavaTrail_Prepare(this); break;
-			case PRT_LAVAMAN_BIG_BOMB: Particles_LavaBombTrail_Prepare(this); break;
-			case PRT_LAVAMAN_BOMB: Particles_LavaBombTrail_Prepare(this); break;
-			case PRT_BEAST_PROJECTILE: Particles_Fireball01Trail_Prepare(this); break;
-			case PRT_BEAST_BIG_PROJECTILE:
-			case PRT_DEVIL_GUIDED_PROJECTILE:
-			case PRT_DEMON_FIREBALL:
-			case PRT_METEOR:
-				 Particles_FirecrackerTrail_Prepare(this);
-				 break;
-			case PRT_SHOOTER_FIREBALL: Particles_Fireball01Trail_Prepare(this); break;
-		}
-		// projectile initialization
-		switch (m_prtType)
-		{
-			case PRT_WALKER_ROCKET: WalkerRocket(); break;
-			case PRT_ROCKET: PlayerRocket(); break;
-			case PRT_GRENADE: PlayerGrenade(); break;
-			case PRT_FLAME: PlayerFlame(); break;
-			case PRT_LASER_RAY: PlayerLaserRay(); break;
-			case PRT_CATMAN_FIRE: CatmanProjectile(); break;
-			case PRT_HEADMAN_FIRECRACKER: HeadmanFirecracker(); break;
-			case PRT_HEADMAN_ROCKETMAN: HeadmanRocketman(); break;
-			case PRT_HEADMAN_BOMBERMAN: HeadmanBomberman(); break;
-			case PRT_BONEMAN_FIRE: BonemanProjectile(); break;
-			case PRT_WOMAN_FIRE: WomanProjectile(); break;
-			case PRT_DRAGONMAN_FIRE: DragonmanProjectile(DRAGONMAN_NORMAL); break;
-			case PRT_DRAGONMAN_STRONG_FIRE: DragonmanProjectile(DRAGONMAN_STRONG); break;
-			case PRT_STONEMAN_FIRE: ElementalRock(ELEMENTAL_NORMAL, ELEMENTAL_STONEMAN); break;
-			case PRT_STONEMAN_BIG_FIRE: ElementalRock(ELEMENTAL_BIG, ELEMENTAL_STONEMAN); break;
-			case PRT_STONEMAN_LARGE_FIRE: ElementalRock(ELEMENTAL_LARGE, ELEMENTAL_STONEMAN); break;
-			case PRT_LAVAMAN_BIG_BOMB: LavaManBomb(); break;
-			case PRT_LAVAMAN_BOMB: LavaManBomb(); break;
-			case PRT_LAVAMAN_STONE: ElementalRock(ELEMENTAL_NORMAL, ELEMENTAL_LAVAMAN); break;
-			case PRT_ICEMAN_FIRE: ElementalRock(ELEMENTAL_NORMAL, ELEMENTAL_ICEMAN); break;
-			case PRT_ICEMAN_BIG_FIRE: ElementalRock(ELEMENTAL_BIG, ELEMENTAL_ICEMAN); break;
-			case PRT_ICEMAN_LARGE_FIRE: ElementalRock(ELEMENTAL_LARGE, ELEMENTAL_ICEMAN); break;
-			case PRT_HUANMAN_FIRE: HuanmanProjectile(); break;
-			case PRT_FISHMAN_FIRE: FishmanProjectile(); break;
-			case PRT_MANTAMAN_FIRE: MantamanProjectile(); break;
-			case PRT_CYBORG_LASER: CyborgLaser(); break;
-			case PRT_CYBORG_BOMB: CyborgBomb(); break;
-			case PRT_LAVA_COMET: LavaBall(); break;
-			case PRT_BEAST_PROJECTILE: BeastProjectile(); break;
-			case PRT_BEAST_BIG_PROJECTILE: BeastBigProjectile(); break;
-			case PRT_BEAST_DEBRIS: BeastDebris(); break;
-			case PRT_BEAST_BIG_DEBRIS: BeastBigDebris(); break;
-			case PRT_DEVIL_LASER: DevilLaser(); break;
-			case PRT_DEVIL_ROCKET: DevilRocket(); break;
-			case PRT_DEVIL_GUIDED_PROJECTILE: DevilGuidedProjectile(); break;
-			case PRT_GRUNT_PROJECTILE_SOL: GruntSoldierLaser(); break;
-			case PRT_GRUNT_PROJECTILE_COM: GruntCommanderLaser(); break;
-			case PRT_GUFFY_PROJECTILE: GuffyProjectile(); break;
-			case PRT_DEMON_FIREBALL: DemonFireball(); break;
-			case PRT_LARVA_PLASMA: LarvaPlasma(); break;
-			case PRT_LARVA_TAIL_PROJECTILE: LarvaTail(); break;
-			case PRT_SHOOTER_WOODEN_DART: ShooterWoodenDart(); break;
-			case PRT_SHOOTER_FIREBALL: ShooterFireball(); break;
-			case PRT_SHOOTER_FLAME: ShooterFlame(); break;
-			case PRT_AFTERBURNER_DEBRIS: AfterburnerDebris(); break;
-			case PRT_AIRELEMENTAL_WIND: WindBlast(); break;
-			case PRT_METEOR: Meteor(); break;
-			default: ASSERTALWAYS("Unknown projectile type");
-		}
-		*/
-
-		// setup light source
-		if (m_bLightSource) { SetupLightSource(TRUE); }
-
-		// fly
-		m_fStartTime = _pTimer->CurrentTick();
-
-		wait() {
-			on (EBegin) : {
-				if (_pNetwork->IsServer()) {
-					if( m_pmtMove == PMT_GUIDED) {
-						call ProjectileGuidedFly();
-					} else if (m_pmtMove==PMT_GUIDED_FAST) {
-						call ProjectileGuidedFastFly();
-					} else if (m_pmtMove==PMT_FLYING) {
-						call ProjectileFly();
-					} else if (m_pmtMove==PMT_SLIDING) {
-						call ProjectileSlide();
-					} else if (m_pmtMove==PMT_FLYING_REBOUNDING) {
-						call ProjectileFlyRebounding();
-					} else if (m_pmtMove==PMT_GUIDED_SLIDING) {
-						call ProjectileGuidedSlide();
-					}
-				} else {
-					resume;
-				}
-			}
-			on (EExplode eexpl) : { 
-				CPlacement3D plPlacement;
-				plPlacement.pl_OrientationAngle = ANGLE3D(0.0f,0.0f,0.0f);
-				plPlacement.pl_PositionVector = eexpl.vPosition;
-				SetPlacement(plPlacement);
-				stop; 
-			};
-			on (ESpawnFlame eFlame) : {
-				CEntity* penLauncher = (CEntity*)eFlame.eidLauncher;
-				CEntity* penAttach = (CEntity*)eFlame.eidAttach;
-				if ((penLauncher == NULL) || (penAttach == NULL)) {resume; }
-				SpawnFlame((CEntity*)eFlame.eidLauncher,(CEntity*)eFlame.eidAttach,eFlame.vPos);      
-				resume;
-			}
-		}
-
-
-		// projectile explosion
-		//switch (m_prtType) {
-			//case PRT_WALKER_ROCKET: WalkerRocketExplosion(); break;
-			//case PRT_ROCKET: PlayerRocketExplosion(); break;
-			//case PRT_GRENADE: PlayerGrenadeExplosion(); break;
-			//case PRT_LASER_RAY: PlayerLaserWave(); break;
-			//case PRT_HEADMAN_BOMBERMAN: HeadmanBombermanExplosion(); break;
-			//case PRT_CYBORG_BOMB: CyborgBombExplosion(); break;
-			//case PRT_LAVA_COMET: LavamanBombDebrisExplosion(); break;
-			//case PRT_LAVAMAN_BIG_BOMB: LavamanBombExplosion(); break;
-			//case PRT_LAVAMAN_BOMB: LavamanBombDebrisExplosion(); break;
-			//case PRT_BEAST_BIG_PROJECTILE: BeastBigProjectileExplosion(); break;
-			//case PRT_BEAST_PROJECTILE: BeastProjectileExplosion(); break;
-			//case PRT_BEAST_DEBRIS: BeastDebrisExplosion(); break;      
-			//case PRT_BEAST_BIG_DEBRIS: BeastBigDebrisExplosion(); break;      
-			//case PRT_DEVIL_ROCKET: DevilRocketExplosion(); break;
-			//case PRT_DEVIL_GUIDED_PROJECTILE: DevilGuidedProjectileExplosion(); break;
-			//case PRT_GUFFY_PROJECTILE: GuffyProjectileExplosion(); break;
-			//case PRT_DEMON_FIREBALL: DemonFireballExplosion(); break;  
-			//case PRT_LARVA_PLASMA: LarvaPlasmaExplosion(); break;
-			//case PRT_LARVA_TAIL_PROJECTILE: LarvaTailExplosion(); break;
-			//case PRT_SHOOTER_WOODEN_DART: ShooterWoodenDartExplosion(); break;
-			//case PRT_SHOOTER_FIREBALL: ShooterFireballExplosion(); break;
-			//case PRT_METEOR: MeteorExplosion(); break;
-		//}
-
-		// wait after death
-		if (m_fWaitAfterDeath>0.0f) {
-			SwitchToEditorModel();
-			ForceFullStop();
-			SetCollisionFlags(ECF_IMMATERIAL);
-			// kill light source
-			if (m_bLightSource) { SetupLightSource(FALSE); }
-			autowait(m_fWaitAfterDeath);
-		}
-
-		Destroy(FALSE);
-
-		return;
-	}
 };

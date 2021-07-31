@@ -9,9 +9,7 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIInventory.h>
-
+//#include <Engine/Interface/UIInventory.h>
 
 // Exchange request type
 enum ExchangeReq
@@ -73,6 +71,8 @@ enum ExchangeItemAction
 #define	EXCHANGE_WIDTH				216
 #define	EXCHANGE_HEIGHT				452
 
+#define	DEF_INVENTORY_MAX			(ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1 + ITEM_COUNT_IN_INVENTORY_CASH_2)
+
 
 // ----------------------------------------------------------------------------
 // Name : CUIExchange
@@ -89,18 +89,17 @@ protected:
 	CUIScrollBar		m_sbScrollBar;							// Scroll bar
 
 	// Exchange items
-	CUIButtonEx			m_abtnOppItems[EXCH_EXCH_SLOT_TOTAL];	// Items of opposite slot
-	CUIButtonEx			m_abtnMyItems[EXCH_EXCH_SLOT_TOTAL];	// Items of my slot
-	CUIButtonEx			m_abtnInvenItems[EXCH_INVEN_SLOT_ROW_TOTAL][EXCH_INVEN_SLOT_COL];	// Items of inventory slot
+	CUIIcon*			m_pIconsOppItems[EXCH_EXCH_SLOT_TOTAL];	// Items of opposite slot
+	CUIIcon*			m_pIconsMyItems[EXCH_EXCH_SLOT_TOTAL];	// Items of my slot
+	CUIIcon*			m_pIconsInvenItems[DEF_INVENTORY_MAX];	// Items of inventory slot
 
 	// Item information
 	int					m_nSelMyItemID;							// Selected item ID of my slot
+	int					m_nSelITab;
 	int					m_nSelInvenItemID;						// Selected item ID of inventory slot
 	BOOL				m_bShowItemInfo;						// If item tool tip is shown or not
 	BOOL				m_bDetailItemInfo;						// If item informaion is shown in detail or not
 	int					m_nCurInfoLines;						// Count of current item information lines
-	CTString			m_strItemInfo[MAX_ITEMINFO_LINE];		// Item information string
-	COLOR				m_colItemInfo[MAX_ITEMINFO_LINE];		// Color of item information string
 	UIRect				m_rcItemInfo;							// Item information region
 
 	BOOL				m_bRareItem;
@@ -141,28 +140,28 @@ protected:
 	UIRectUV			m_rtWearingOutline;						// UV of outline of wearing items
 	UIRectUV			m_rtSelectOutline;						// UV of outline of selected items
 
+	//2013/04/03 jeil 나스 아이템 제거
+	UIRect			m_rtTouchNas;							//터치했을때 나스 입력창을 열어주는 부분 
+	
+	__int64				m_nMyNas;
+	__int64				m_nTradeNas;
+
 protected:
 	// Internal functions
-	void	PrepareExchange();	
-	void	AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo = 0xF2F2F2FF );
-	void	GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight,
-							int nOppItem = -1, int nMyItem = -1, int nRow = -1, int nCol = -1 );
-	void	ShowItemInfo( BOOL bShowInfo, BOOL bRenew = FALSE, int nOppItem = -1, int nMyItem = -1,
-							int nRow = -1, int nCol = -1 );
+	void	PrepareExchange();
 	void	RenderItems();
 
 	// Command functions
-	void	AddExchItem( int nRow, int nCol, int nUniIndex, SQUAD llCount );
-	void	DelExchItem( int nRow, int nCol, int nUniIndex, SQUAD llCount );
+	void	AddExchItem( int nTab, int inven_idx, int nUniIndex, SQUAD llCount );
 
 	// Network message functions ( send )
 	void	SendExchangeReq_Rep();
 	void	SendExchangeReq_Rej();
 	void	SendExchangeReq_Ready();
 	void	SendExchangeReq_Ok();
-	void	SendExchangeItem_Add( int nUniIndex, SQUAD llCount );
-	void	SendExchangeItem_Del( int nUniIndex, SQUAD llCount );
 
+	//2013/04/09 jeil 나스 아이템 제거 
+	void	SendExchangeItem_Add( int nUniIndex, SQUAD llCount = 0 );
 public:
 	CUIExchange();
 	~CUIExchange();
@@ -197,16 +196,30 @@ public:
 
 	void	ExchangeItem_Add( BOOL bSrcAdd, int nUniIndex, SQUAD llCount,
 								int nIndex, ULONG ulPlus, ULONG ulFlag, LONG ulUsed, LONG ulUsed2, LONG lRareIndex =0 );
+	void	SetDurability( BOOL bSrcAdd, int nUniIndex, LONG nDuraNow, LONG nDuraMax );
 	void	ExchangeItem_SetOptionData( BOOL bSrcAdd, int nUniIndex, SBYTE sbOption,
-										SBYTE sbOptionType, SBYTE sbOptionLevel, LONG lRareIndex =0 );
+										SBYTE sbOptionType, LONG lOptionLevel, LONG lRareIndex, LONG lOriginOptionVar );
 	void	ExchangeItem_SetRareOption( CNetworkMessage *istr, BOOL bSrcAdd, int nUniIndex);
 	void	ExchangeItem_Del( BOOL bSrcDel, int nUniIndex );
-	void	ExchangeItem_Update( BOOL bSrcUpdate, int nUniIndex, SQUAD llCount );
+	// by jeil Delete nas item
+	void	ExchangeItem_Update( BOOL bSrcUpdate, int nUniIndex, SQUAD llCount , SQUAD llNas = 0);
 
 	void	ResetExchange();
 
+	void	ExchangeItem_SetSkill( CNetworkMessage *istr, BOOL bSrcAdd, int nUniIndex);
+	void	ExchangeItem_InitSocket( BOOL bSrcAdd, int nUniIndex );
+	void	ExchangeItem_SetSocketData( BOOL bSrcAdd, int nUniIndex, SBYTE sbSocketCreateCount,
+												SBYTE sbSlotIndex, LONG lJewelIndex );
+	void	ExchangeItem_SetPlus2( BOOL bSrcAdd, int nUniIndex, LONG plus2 );
+
 	// Command functions
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
+
+	//2013/04/03 jeil 나스 아이템 제거
+	void	ExchangeNas();
+
+	void	AddItemCallback();
+	void	OnUpdate( float fDeltaTime, ULONG ElapsedTime );
 };
 
 

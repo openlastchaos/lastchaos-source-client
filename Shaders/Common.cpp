@@ -7,6 +7,7 @@ void DoSpecularLayer(const INDEX iSpecularTexture, const INDEX iSpecularColor,co
 	{
 		return;
 	}
+	INDEX ivx;
 	const INDEX ctVertices = shaGetVertexCount();
 	const COLOR colLight = shaGetLightColor();
 	const COLOR colAmbient = shaGetAmbientColor();
@@ -27,7 +28,7 @@ void DoSpecularLayer(const INDEX iSpecularTexture, const INDEX iSpecularColor,co
 	
 	
 	// for each vertex
-	for(INDEX ivx=0;ivx<ctVertices;ivx++) 
+	for( ivx = 0; ivx < ctVertices; ivx++ )
 	{
 		// reflect light vector around vertex normal in object space
 		GFXNormal &nor = paNormals[ivx];
@@ -55,7 +56,7 @@ void DoSpecularLayer(const INDEX iSpecularTexture, const INDEX iSpecularColor,co
 	GFXColor *pcolBase = shaGetColorArray();
 	
 	// for each vertex in the surface
-	for(ivx=0;ivx<ctVertices;ivx++) 
+	for( ivx=0; ivx < ctVertices; ivx++ )
 	{
 		// set specular color
 		pcolSpec[ivx] = colSrfSpec;

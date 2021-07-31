@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #ifndef __CGROUPTAG_H__
 #define __CGROUPTAG_H__
@@ -32,8 +32,8 @@ public:
 	inline bool Empty()				{ return m_vectorTag.empty(); }
 	inline INDEX Count()			{ return m_vectorTag.size(); }
 protected:
-	my_vector		m_vectorTag;	//deleteì˜ ê²½ìš° ë§ì´ ì•ˆì“°ì¼í…Œë‹ˆ vectorë¡œ
+	my_vector		m_vectorTag;	//deleteÀÇ °æ¿ì ¸¹ÀÌ ¾È¾²ÀÏÅ×´Ï vector·Î
 };
 
 #endif /* __CGROUPTAG_H__ */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

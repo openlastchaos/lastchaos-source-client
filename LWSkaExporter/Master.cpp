@@ -597,6 +597,8 @@ XCALL_(int) Activate_ModelerSurfaceToWeights( long version, GlobalFunc *global, 
   // get surfaces
   asurSurfaces = _srf->byObject(strFileName);
 
+  free(strFileName);
+
   // count the surfaces
   ctSurfs = 0;
   while(asurSurfaces[ctSurfs]!=NULL) {

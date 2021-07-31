@@ -63,8 +63,7 @@ void COrbitEffect::Start(FLOAT time, BOOL restart)
 	for(INDEX i=0; i<cnt; ++i)
 	{
 		if(m_vectorOrbit[i].strEffectName == m_strName) continue;
-		CEffect *pEffect = 
-			CEffectManager::Instance().Create(m_vectorOrbit[i].strEffectName);
+		CEffect *pEffect = CEffectManager::Instance().Create(m_vectorOrbit[i].strEffectName);
 		if(pEffect == NULL) continue;
 		m_vectorEffect.push_back( pEffect );
 		tag_ptr ptrTag(new CWorldTag);
@@ -72,6 +71,8 @@ void COrbitEffect::Start(FLOAT time, BOOL restart)
 		ptrTag->SetOffsetRot(m_ptrAttachTag->CurrentTagInfo().m_qRot);
 		pEffect->AttachToTag(ptrTag);
 		m_vectorTag.push_back(ptrTag);
+		pEffect->SetERType(GetERType());
+		pEffect->SetERSubType(GetERSubType());
 		pEffect->Start(time + m_vectorOrbit[i].fTimeBeforeStart, restart);
 	}
 	PostStart();
@@ -82,8 +83,8 @@ void COrbitEffect::Stop(FLOAT leftTime)
 	CEffect::Stop(leftTime);
 }
 
-//ì£¼ì˜ : í˜„ì¬ orbit effectëŠ” ì¼ë‹¨ createëœ effectê°€ createëœ ìˆœì„œëŒ€ë¡œ processëœë‹¤ê³  ê°€ì •í•˜ê³  ìˆë‹¤.
-//ì¶”í›„ ìˆ˜ì •ì— ì˜í•´ ì´ ê°€ì •ì´ ê¹¨ì§€ê²Œ ë˜ë©´ ì •ìƒë™ì‘ì„ ë³´ì¥í•  ìˆ˜ ì—†ê²Œ ëœë‹¤.
+//ÁÖÀÇ : ÇöÀç orbit effect´Â ÀÏ´Ü createµÈ effect°¡ createµÈ ¼ø¼­´ë·Î processµÈ´Ù°í °¡Á¤ÇÏ°í ÀÖ´Ù.
+//ÃßÈÄ ¼öÁ¤¿¡ ÀÇÇØ ÀÌ °¡Á¤ÀÌ ±úÁö°Ô µÇ¸é Á¤»óµ¿ÀÛÀ» º¸ÀåÇÒ ¼ö ¾ø°Ô µÈ´Ù.
 BOOL COrbitEffect::Process(FLOAT time)
 {
 	if(time - m_fLastProcessTime > 0.1f)
@@ -195,9 +196,9 @@ CEffect *COrbitEffect::Copy()
 {
 	COrbitEffect *pRet = new COrbitEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//COrbitEffectì˜ content
+	//COrbitEffectÀÇ content
 	INDEX cnt = m_vectorOrbit.size();
 	for(INDEX i=0; i<cnt; ++i)
 	{
@@ -394,7 +395,7 @@ void COrbitEffect::Read(CTStream *pIS)
 			is >> m_fFadeOutDestPhaseMul;
 		}
 	}
-*/	//ë³„ë¬¸ì œ ì—†ìœ¼ë©´ ì‚­ì œí•´ë„ ë˜ëŠ” ì½”ë“œì„.
+*/	//º°¹®Á¦ ¾øÀ¸¸é »èÁ¦ÇØµµ µÇ´Â ÄÚµåÀÓ.
 	else
 	{
 		ASSERTALWAYS("Version Error, Effect");
@@ -453,7 +454,7 @@ const char *COrbitEffect::GetWantTagName(INDEX index)
 
 void COrbitEffect::SetWantTag(INDEX index, ptr_tag tag)
 {
-	if(index < 0 && index >= WANT_TAG_COUNT) return;
+	if(index < 0 || index >= WANT_TAG_COUNT) return;
 	m_ptrGoalTag = tag;
 }
 

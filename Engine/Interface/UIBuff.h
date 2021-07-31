@@ -11,8 +11,10 @@
 
 
 #include <Engine/Interface/UIWindow.h>
+#include <Engine/Effect/CEffectGroupManager.h>
 #include <Engine/Effect/CEffectGroup.h >
-
+#include <Engine/Effect/TimerItem.h>
+#include <Engine/Interface/UICommon.h>
 
 // ----------------------------------------------------------------------------
 // Name : BuffInfo
@@ -27,7 +29,7 @@ public:
 	SBYTE		m_sbLevel;
 	__int64		m_llStartTime;
 	CEffectGroup * m_pEG;
-
+	SLONG		m_slRemainCount;			//2012/11/12 jeil ½ºÅ³È®Àå °ü·Ã Ãß°¡
 
 	void	Init()
 	{
@@ -36,7 +38,14 @@ public:
 		m_sbLevel = -1;
 		m_slRemain = 0;
 		m_pEG = NULL;
+		m_slRemainCount = -1;			//2012/11/12 jeil ½ºÅ³È®Àå °ü·Ã Ãß°¡
 	}
+
+	void	Destroy_pEG()
+	{
+		DestroyEffectGroup(m_pEG);
+	}
+
 } BuffInfo;
 
 
@@ -57,8 +66,8 @@ enum BuffType
 
 
 // Buff count
-#define	BUFF_MAX_COUNT				38
-#define	BUFF_GOOD_COUNT				30				//Buffì˜ì—­ í™•ìž¥ 22 - > 30
+#define	BUFF_MAX_COUNT				56
+#define	BUFF_GOOD_COUNT				48				//Buff¿µ¿ª È®Àå 22 - > 30 // ÀÏ´Ü Å©·¡½Ã¸¸ ³ªÁö ¾Ê°Ô 30--> 40À¸·Î ´Ã¸²
 #define	BUFF_BAD_COUNT				8
 
 
@@ -66,7 +75,7 @@ enum BuffType
 #define	MAX_BUFFINFO_CHAR			30  // 26 -> 30 wooss 060622
 #define	MAX_BUFFINFO_LINE			20
 #define	MAX_BUFF_COL				8
-#define	MAX_BUFF_ROW				5				//Buffì˜ì—­ í™•ìž¥ 4 - > 5
+#define	MAX_BUFF_ROW				7				//Buff¿µ¿ª È®Àå 4 - > 5 // [2012/03/02 : Sora] ¹öÇÁ ÃÖ´ë °³¼ö ¼öÁ¤ 6 -> 7
 
 // world time multiple
 #define WORLDTIME_MUL				(24) 
@@ -106,8 +115,11 @@ public:
 	int			GetTextureID() const { return m_nTextureID; }
 	SBYTE		GetLevel() const { return m_sbLevel; }
 	UIRectUV	&GetUV() { return m_rtBuff; }
-	__int64		GetRemainTime( __int64 llCurTime ) { return m_llRemain - ( llCurTime - m_llStartTime ); }
+	// RemainTime °è»ê½Ä. remain 10ÀÌ 1ÃÊ.
+	__int64		GetRemainTime( __int64 llCurTime ) { return ((m_llStartTime / 1000) + (m_llRemain / 10)) - llCurTime; }
 	bool		IsUpSkill() const;
+
+	void		SetTime(__int64 llStartTime, SLONG slRemain);
 };
 
 
@@ -130,6 +142,7 @@ protected:
 	UIRect			m_rcMyGoodBuff;
 	UIRect			m_rcMyGoodBuffRow[MAX_BUFF_ROW];
 	UIRect			m_rcMyBadBuff;
+	TimerItem		m_MyTimerItemBuff;
 
 	// Party buff
 	int				m_nPartyBuffSX;
@@ -178,6 +191,8 @@ protected:
 	UIRectUV		m_rtInfoLM;								// UV of lower middle region of information
 	UIRectUV		m_rtInfoLR;								// UV of lower right region of information
 
+	int				m_nMSGID;
+
 protected:
 	void	AdjustMyBuffRegion( BOOL bGoodBuff );
 	void	AdjustPartyBuffRegion();
@@ -202,18 +217,22 @@ public:
 	// Reset
 	void	ResetMyBuff()
 	{
+		int		i;
 		m_ubMyGoodCount = 0;
 		m_ubMyBadCount = 0;
 		m_rcMyGoodBuff.SetRect( -1, -1, -1, -1 );
-		for(int i =0 ;i< MAX_BUFF_ROW;i++){
+		for(i =0 ;i< MAX_BUFF_ROW;i++){
 			m_rcMyGoodBuffRow[i].SetRect(-1,-1,-1,-1);
 		}
-		for(i=0; i<MAX_BUFF_ROW ;i++){
+		for(i = 0; i < BUFF_MAX_COUNT; i++){
+			m_aMyBuffInfo[i].Destroy_pEG();
 			m_aMyBuffInfo[i].Init();
+			m_aMyBuff[i].Init();
 		}
 		
-		
 		m_rcMyBadBuff.SetRect( -1, -1, -1, -1 );
+
+		m_MyTimerItemBuff.ClearTimerItemList();
 	}
 	void	ResetPartyBuff()
 	{
@@ -240,6 +259,9 @@ public:
 	void	RemovePartyBuff( SLONG slPartyIndex, SLONG slItemIndex, SLONG slSkillIndex );
 	void	RemoveTargetBuff( SLONG slItemIndex, SLONG slSkillIndex );
 
+	void	ChangeMyBuffRemain(SLONG slItemIndex, SLONG slSkillIndex, __int64 llStart, SLONG slRemain);
+	void	ChangeTargetBuffRemain(SLONG slItemIndex, SLONG slSkillIndex, __int64 llStart, SLONG slRemain);
+
 	// Position
 	void	SetMyGoodBuffPos( int nX, int nY )
 	{
@@ -261,12 +283,23 @@ public:
 	// Info
 	void	SetPartyIndex( SLONG slPartyIndex ) { m_slPartyIndex = slPartyIndex; }
 	SLONG	GetPartyIndex() const { return m_slPartyIndex; }
+
+	bool	GetMyTimerItemBuffExist( int nTimerType )
+	{
+		return m_MyTimerItemBuff.GetTimerItemExist( nTimerType );
+	}
+
+	int		GetMyTimerItemBuffExpireTime( int nTimerType )
+	{
+		return m_MyTimerItemBuff.GetTimerItemExpireTime( nTimerType );
+	}
 	
 	// wooss 050802
 	// -->
 	BuffInfo* GetBuffArray() { return m_aMyBuffInfo; }		// : insert get info method 
 															//   for buff check	
 	BOOL	ENGINE_API IsBuff(SLONG itemIndex) ;						// : find some buff in Buff Array
+	BOOL	IsSkillBuff(SLONG skillIndex);
 	// wooss 070310 ------------------------------>><<
 	// kw : WSS_WHITEDAY_2007
 	CEffectGroup* IsBuffBySkill(SLONG skillIndex) ;						// : find some buff in Buff Array by Skill index
@@ -276,12 +309,19 @@ public:
 	UBYTE	ENGINE_API IsMyBadBuffCount() { return m_ubMyBadCount; }		//
 	
 	// <--
-
+	// NetWork
+	void		RecvTimerItemBuff( CNetworkMessage* istr )
+	{
+		m_MyTimerItemBuff.RecvTimerItemMessage(&(*istr));
+	}
 
 	// Messages
 	WMSG_RESULT	MouseMessageMyBuff( MSG *pMsg );
 	WMSG_RESULT	MouseMessagePartyBuff( MSG *pMsg );
 	WMSG_RESULT	MouseMessageTargetBuff( MSG *pMsg );
+
+private:
+	void	checkBuffRemove(SLONG slItemIndex, SLONG slSkillIndex);
 };
 
 extern ENGINE_API CUIBuff	*_pUIBuff;

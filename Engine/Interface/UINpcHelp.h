@@ -4,15 +4,15 @@
 	#pragma once
 #endif
 
-#include <vector>
-#include <Engine/Interface/UIDrawFigure.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIListBoxEx.h>
-#include <Engine/Interface/UISlideBar.h>
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/LocalDefine.h>
-#include <Engine/Entities/NpcHelp.h>
+// #include <vector>
+// #include <Engine/Interface/UIDrawFigure.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIListBoxEx.h>
+// #include <Engine/Interface/UISlideBar.h>
+// #include <Engine/Interface/UIScrollBar.h>
+// #include <Engine/LocalDefine.h>
+// #include <Engine/Entities/NpcHelp.h>
 
 #define UI_NPCHELP_WIDTH	236
 #define UI_NPCHELP_HEIGHT	354
@@ -30,8 +30,8 @@ protected:
 
 	enum eRenderType
 	{
-		NPC_LIST	= 0, // Î™©Î°ù ÌëúÏãú
-		NPC_EXPLAN	= 1, // ÏÑ§Î™Ö ÌëúÏãú
+		NPC_LIST	= 0, // ∏Ò∑œ «•Ω√
+		NPC_EXPLAN	= 1, // º≥∏Ì «•Ω√
 	};
 
 
@@ -61,7 +61,7 @@ protected:
 	CUIListBox			m_lbNpcList;
 	CUIListBox			m_lbNpcExplan;
 	CUIListBox			m_lbNpcDesc;
-	std::vector<CNpcHelp>	m_vectorNpclist;
+	std::vector<int>	m_vectorNpclist;
 
 	int					m_nCurRow;
 	int					m_nCurZone;

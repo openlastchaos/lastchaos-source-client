@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CEFFECT_H__
 #define __CEFFECT_H__
 
@@ -16,6 +16,20 @@
 
 class CTag;
 
+enum EFF_RENDER_TYPE
+{
+	ER_NORMAL = 0,	// CRenderer::RenderEffects() ¿¡¼­ ±×·ÁÁö´Â Effect
+	ER_IN_UI,		// UI ³»ºÎ¿¡¼­ ±×·ÁÁú Effect -- HUD_DrawSkaModel()
+	ER_COUNT,
+};
+
+enum EFF_RENDER_SUB_TYPE
+{
+	ERS_NORMAL		= 0,
+	ERS_CASHSHOP,
+	ERS_MATRYOSHKA,
+	ERS_MAKETITLE,
+};
 enum EFFECT_TYPE
 {
 	ET_NOTHING			= 0,
@@ -35,12 +49,12 @@ enum EFFECT_TYPE
 	ET_COUNT,
 };
 
-//effectì˜ play ìƒíƒœ ì •ë³´
+//effectÀÇ play »óÅÂ Á¤º¸
 enum EFFECT_STATE
 {
-	ES_NOT_STARTED	= 0,	//ì•„ì§ ì‹œì‘í•˜ì§€ ì•Šì€ ìƒíƒœ, ì´ˆê¸° ìƒíƒœì„.
-	ES_PLAYING		= 1,	//í”Œë ˆì´ ì¤‘, í•œë²ˆë§Œ playí•¨.
-	ES_PLAY_END		= 3,	//í”Œë ˆì´ê°€ ëë‚œ ìƒíƒœ.
+	ES_NOT_STARTED	= 0,	//¾ÆÁ÷ ½ÃÀÛÇÏÁö ¾ÊÀº »óÅÂ, ÃÊ±â »óÅÂÀÓ.
+	ES_PLAYING		= 1,	//ÇÃ·¹ÀÌ Áß, ÇÑ¹ø¸¸ playÇÔ.
+	ES_PLAY_END		= 3,	//ÇÃ·¹ÀÌ°¡ ³¡³­ »óÅÂ.
 };
 
 enum EFFECT_OF_TAG_TYPE
@@ -58,10 +72,10 @@ public:
 	CEffect();
 	virtual ~CEffect() = 0;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	virtual void Read(CTStream *istrFile) = 0;
 	virtual void Write(CTStream *ostrFile) = 0;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	
 	virtual void Start(FLOAT time, BOOL restart = FALSE) = 0;
 	virtual BOOL Process(FLOAT time) = 0;
@@ -85,14 +99,15 @@ public:
 	inline EFFECT_STATE GetState()		{ return m_eState;					}
 	inline EFFECT_TYPE GetType()		{ return m_eType;					}
 	inline FLOAT GetLastProcessedTime()	{ return m_fLastProcessTime;		}
+	inline void SetLastProcessedTime(FLOAT time)	{ m_fLastProcessTime = time; }
 
 	inline FLOAT GetLeftTime()			{ return m_fLeftTime; }
 
-	//Fadeë¥¼ ì“°ì§€ ì•ŠëŠ” ê²½ìš°. fade íƒ€ì„ë„ Setting
+	//Fade¸¦ ¾²Áö ¾Ê´Â °æ¿ì. fade Å¸ÀÓµµ Setting
 	inline void SetLifeTime(FLOAT time) { m_fLifeTime = time; m_fFadeInTime = 0; m_fFadeOutTime = 0; }
 	inline FLOAT GetLifeTime()			{ return m_fLifeTime; }
 
-	//Fadeë¥¼ ì“°ëŠ” ê²½ìš°. Life Timeë„ Setting.
+	//Fade¸¦ ¾²´Â °æ¿ì. Life Timeµµ Setting.
 	inline void SetFadeTime(FLOAT fadeInTime, FLOAT noFadeTime, FLOAT fadeOutTime)
 	{
 		m_fLifeTime = fadeInTime + noFadeTime + fadeOutTime;
@@ -102,11 +117,11 @@ public:
 	inline FLOAT GetFadeInTime()					{ return m_fFadeInTime; }
 	inline FLOAT GetFadeOutTime()					{ return m_fFadeOutTime; }
 
-	//ë°”ìš´ë”©êµ¬ ê´€ë ¨
+	//¹Ù¿îµù±¸ °ü·Ã
 	inline void SetBoundingSphereRadius(FLOAT radius)	{ m_fBoundingSphereRadius = radius;	}
 	inline FLOAT GetBoundingSphereRadius()				{ return m_fBoundingSphereRadius;	}
 
-	//ë°˜ë³µíšŒìˆ˜ ì„¤ì •, Fadeì™€ ê°™ì´ ì“¸ ê²½ìš° glittering(ë°˜ì§ì„)ë„ ê°€ëŠ¥.
+	//¹İº¹È¸¼ö ¼³Á¤, Fade¿Í °°ÀÌ ¾µ °æ¿ì glittering(¹İÂ¦ÀÓ)µµ °¡´É.
 	inline SLONG GetRepeatCount()					{ return m_slRepeat;	}
 	inline void SetRepeatCount(SLONG cnt)			{ m_slRepeat = cnt;		}
 	
@@ -117,7 +132,7 @@ public:
 	inline BOOL IsNotRenderAtThisFrame()			{ return m_bNotRenderAtThisFrame; }
 	virtual void SetNotRenderAtThisFrame();
 
-	//lifeë“±ì— ì´ ê°’ì´ ê³±í•´ì§„ë‹¤.
+	//lifeµî¿¡ ÀÌ °ªÀÌ °öÇØÁø´Ù.
 	inline void SetSpeedMul(FLOAT fSpeedMul)	{ m_fSpeedMul = fSpeedMul;	}
 	inline FLOAT GetSpeedMul()					{ return m_fSpeedMul;		}
 
@@ -125,21 +140,27 @@ public:
 	inline void SetOwner(CEntity *pen)			{ m_penOwner = pen;			}
 	inline CEntity *GetOwner()					{ return m_penOwner.ep_pen;	}
 
+	inline void SetERType(EFF_RENDER_TYPE erType) { m_ERType = erType; }
+	inline EFF_RENDER_TYPE GetERType(void)		{ return m_ERType; }
+
+	inline void SetERSubType(EFF_RENDER_SUB_TYPE ersType )		{ m_ERSubType = ersType; }
+	inline EFF_RENDER_SUB_TYPE GetERSubType(void)				{ return m_ERSubType; }
+
 protected:
 	CEffect( CEffect &other ) {}
 	CEffect &operator =(CEffect &other) {return *this;}
 
-	//ìì‹ë“¤ì—ì„œ ê³µí†µì ìœ¼ë¡œ ì“°ì´ëŠ” ë¶€ë¶„ë“¤.
-	BOOL PreStart(FLOAT time, BOOL bRestart);		//Startì˜ êµ¬í˜„ì—ì„œ ì•ë¶€ë¶„ì— ì“°ì„.
-	void PostStart() { m_eState = ES_PLAYING; } //Startì˜ êµ¬í˜„ì—ì„œ ë’·ë¶€ë¶„ì— ì“°ì„.
+	//ÀÚ½Äµé¿¡¼­ °øÅëÀûÀ¸·Î ¾²ÀÌ´Â ºÎºĞµé.
+	BOOL PreStart(FLOAT time, BOOL bRestart);		//StartÀÇ ±¸Çö¿¡¼­ ¾ÕºÎºĞ¿¡ ¾²ÀÓ.
+	void PostStart() { m_eState = ES_PLAYING; } //StartÀÇ ±¸Çö¿¡¼­ µŞºÎºĞ¿¡ ¾²ÀÓ.
 	
-	BOOL PreProcess(FLOAT time, BOOL &bRetValue, BOOL &bRenderInThisFrame, FLOAT &retDeltaTime, FLOAT &retProcessedTime);	//Processì˜ êµ¬í˜„ì—ì„œ ì•ë¶€ë¶„ì— ì“°ì„
-	void PostProcess() {}	//Processì˜ êµ¬í˜„ì—ì„œ ë’·ë¶€ë¶„ì— ì“°ì„
+	BOOL PreProcess(FLOAT time, BOOL &bRetValue, BOOL &bRenderInThisFrame, FLOAT &retDeltaTime, FLOAT &retProcessedTime);	//ProcessÀÇ ±¸Çö¿¡¼­ ¾ÕºÎºĞ¿¡ ¾²ÀÓ
+	void PostProcess() {}	//ProcessÀÇ ±¸Çö¿¡¼­ µŞºÎºĞ¿¡ ¾²ÀÓ
 	
 	BOOL PreRender();
 	void PostRender() {}
 
-	void SetContent(const CEffect *pEffect);	//CEffectì˜ Contentë¥¼ Settingí•¨.
+	void SetContent(const CEffect *pEffect);	//CEffectÀÇ Content¸¦ SettingÇÔ.
 
 	inline FLOAT GetFadeValue(FLOAT fProcessedTime)
 	{
@@ -168,23 +189,26 @@ protected:
 	}
 protected:
 	//content variable
-	EFFECT_TYPE		m_eType;				//íƒ€ì…, ìƒì†ë°›ì€ ê°ì²´ë¥¼ ë‚˜íƒ€ëƒ„.
-	std::string		m_strName;				//ì´ë¦„. ë“±ë¡ë˜ëŠ” ì´ë¦„ì„ ë‚˜íƒ€ëƒ„
-	FLOAT			m_fLifeTime;			//ìƒëª…ì˜ ê¸¸ì´, í•­ìƒ ì–‘ì´ì–´ì•¼ í•¨.
-	SLONG			m_slRepeat;				//ëª‡ ë²ˆ ë°˜ë³µí• ê²ƒì¸ê°€ë¥¼ ë‚˜íƒ€ëƒ„. life time * íšŸìˆ˜ ë§Œí¼ì˜ ì‹œê°„ë™ì•ˆ effect ìœ ì§€, -1ì´ë©´ ë¬´í•œë°˜ë³µ
-	FLOAT			m_fFadeInTime;			//Fade-inë˜ëŠ” ì‹œê°„
-	FLOAT			m_fFadeOutTime;			//Fade-Outë˜ëŠ” ì‹œê°„
-	FLOAT			m_fBoundingSphereRadius;//Bounding-Sphereì˜ ë°˜ì§€ë¦„.
+	EFFECT_TYPE		m_eType;				//Å¸ÀÔ, »ó¼Ó¹ŞÀº °´Ã¼¸¦ ³ªÅ¸³¿.
+	std::string		m_strName;				//ÀÌ¸§. µî·ÏµÇ´Â ÀÌ¸§À» ³ªÅ¸³¿
+	FLOAT			m_fLifeTime;			//»ı¸íÀÇ ±æÀÌ, Ç×»ó ¾çÀÌ¾î¾ß ÇÔ.
+	SLONG			m_slRepeat;				//¸î ¹ø ¹İº¹ÇÒ°ÍÀÎ°¡¸¦ ³ªÅ¸³¿. life time * È½¼ö ¸¸Å­ÀÇ ½Ã°£µ¿¾È effect À¯Áö, -1ÀÌ¸é ¹«ÇÑ¹İº¹
+	FLOAT			m_fFadeInTime;			//Fade-inµÇ´Â ½Ã°£
+	FLOAT			m_fFadeOutTime;			//Fade-OutµÇ´Â ½Ã°£
+	FLOAT			m_fBoundingSphereRadius;//Bounding-SphereÀÇ ¹İÁö¸§.
 	//instance variable
-	EFFECT_STATE	m_eState;				//í˜„ì¬ì˜ í”Œë ˆì´ ìƒíƒœ
-	FLOAT			m_fLeftTime;			//ë‚¨ì€ í”Œë ˆì´ ì‹œê°„
-	FLOAT			m_fStartTime;			//ì‹œì‘ë˜ì—ˆë‹¤ë©´ ê·¸ ì‹œì‘ì‹œê°„
-	FLOAT			m_fLastProcessTime;		//ë§ˆì§€ë§‰ìœ¼ë¡œ Processê°€ í˜¸ì¶œëœ ì‹œê°„
-	ptr_tag			m_ptrAttachTag;			//ë¶™ì–´ìˆëŠ” Tag
-	BOOL			m_bNotRenderAtThisFrame;//ì°¸ì´ë©´ í•œ í”„ë ˆì„ë™ì•ˆ Renderingí•˜ì§€ ì•ŠìŒ.
-	FLOAT			m_fSpeedMul;			//ìˆ˜ëª…ë“±ì— ê³±í•´ì§.
-	CEntityPointer	m_penOwner;			//ì´ Effectê°€ ë¶™ì—¬ì§€ëŠ” Entity, Nullë„ ìƒê´€ì—†ìŒ.
+	EFFECT_STATE	m_eState;				//ÇöÀçÀÇ ÇÃ·¹ÀÌ »óÅÂ
+	FLOAT			m_fLeftTime;			//³²Àº ÇÃ·¹ÀÌ ½Ã°£
+	FLOAT			m_fStartTime;			//½ÃÀÛµÇ¾ú´Ù¸é ±× ½ÃÀÛ½Ã°£
+	FLOAT			m_fLastProcessTime;		//¸¶Áö¸·À¸·Î Process°¡ È£ÃâµÈ ½Ã°£
+	ptr_tag			m_ptrAttachTag;			//ºÙ¾îÀÖ´Â Tag
+	BOOL			m_bNotRenderAtThisFrame;//ÂüÀÌ¸é ÇÑ ÇÁ·¹ÀÓµ¿¾È RenderingÇÏÁö ¾ÊÀ½.
+	FLOAT			m_fSpeedMul;			//¼ö¸íµî¿¡ °öÇØÁü.
+	CEntityPointer	m_penOwner;			//ÀÌ Effect°¡ ºÙ¿©Áö´Â Entity, Nullµµ »ó°ü¾øÀ½.
+
+	EFF_RENDER_TYPE m_ERType;				// ÀÌÆåÆ®°¡ ±×·ÁÁö´Â °ø°£ º°·Î Å¸ÀÔ ÁöÁ¤
+	EFF_RENDER_SUB_TYPE m_ERSubType;
 };
 
 #endif //__CEFFECT_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CCYLINDERSPACE_H__
 #define __CCYLINDERSPACE_H__
 
@@ -122,4 +122,4 @@ bool CCylinderDoubleSpace::IsInThis(const FLOAT3D &point)
 }
 
 #endif //__CCYLINDERSPACE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

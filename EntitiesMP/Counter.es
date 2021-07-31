@@ -66,23 +66,6 @@ functions:
   }
 
 procedures:
-  CountDown()
-  {
-    while( TRUE)
-    {
-      autowait(_pTimer->TickQuantum);
-      FLOAT tmNow = _pTimer->CurrentTick();
-      FLOAT tmDelta = tmNow-m_tmStart;
-      FLOAT fSub = Clamp( tmDelta/m_fCountdownSpeed, 0.01f, 1.0f);
-      m_fNumber = Clamp( m_fNumber-fSub, 0.0f, FLOAT(m_iCountFrom));
-      DisplayNumber();
-      if( m_fNumber==0)
-      {
-        return EReturn();
-      }
-    }
-  }
-
 /************************************************************
  *                       M  A  I  N                         *
  ************************************************************/
@@ -120,5 +103,22 @@ procedures:
     }
 
     return;
+  }
+
+  CountDown()
+  {
+    while( TRUE)
+    {
+      autowait(_pTimer->TickQuantum);
+      FLOAT tmNow = _pTimer->CurrentTick();
+      FLOAT tmDelta = tmNow-m_tmStart;
+      FLOAT fSub = Clamp( tmDelta/m_fCountdownSpeed, 0.01f, 1.0f);
+      m_fNumber = Clamp( m_fNumber-fSub, 0.0f, FLOAT(m_iCountFrom));
+      DisplayNumber();
+      if( m_fNumber==0)
+      {
+        return EReturn();
+      }
+    }
   }
 };

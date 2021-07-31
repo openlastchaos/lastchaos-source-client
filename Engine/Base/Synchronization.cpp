@@ -2,7 +2,7 @@
 
 #include <Engine/Base/Synchronization.h>
 
- 
+
 /*
 This is implementation of OPTEX (optimized mutex), 
 originally from MSDN Periodicals 1996, by Jeffrey Richter.
@@ -29,7 +29,8 @@ typedef struct {
    HANDLE hEvent;
 } OPTEX, *POPTEX;
 
-_declspec(thread) INDEX _iLastLockedMutex = 0;
+//_declspec(thread) INDEX _iLastLockedMutex = 0;
+TLVar<INDEX> _iLastLockedMutex = 0;
 
 BOOL OPTEX_Initialize (POPTEX poptex) {
   
@@ -243,8 +244,9 @@ void CTSingleLock::Lock(void)
     if (ctLocks==1) {
       // check that locking in given order
       if (sl_cs.cs_iIndex!=-1) {
-        ASSERT(_iLastLockedMutex<sl_cs.cs_iIndex);
-        sl_iLastLockedIndex = _iLastLockedMutex;
+        long assertAlert = (long)_iLastLockedMutex;
+          ASSERT(assertAlert<sl_cs.cs_iIndex);
+        sl_iLastLockedIndex = (long)_iLastLockedMutex;
         _iLastLockedMutex = sl_cs.cs_iIndex;
       }
     }
@@ -267,8 +269,9 @@ BOOL CTSingleLock::TryToLock(void)
       if (ctLocks==1) {
         // check that locking in given order
         if (sl_cs.cs_iIndex!=-1) {
-          ASSERT(_iLastLockedMutex<sl_cs.cs_iIndex);
-          sl_iLastLockedIndex = _iLastLockedMutex;
+			long assertAlert = (long)_iLastLockedMutex;
+          ASSERT(assertAlert<sl_cs.cs_iIndex);
+          sl_iLastLockedIndex = (long)_iLastLockedMutex;
           _iLastLockedMutex = sl_cs.cs_iIndex;
         }
       }
@@ -301,3 +304,5 @@ void CTSingleLock::Unlock(void)
   }
   sl_bLocked = FALSE;
 }
+
+

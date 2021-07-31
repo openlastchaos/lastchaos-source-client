@@ -10,7 +10,7 @@
 #endif
 
 
-#include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIButton.h>
 
 
 // Define text position
@@ -46,20 +46,16 @@ protected:
 	UIRectUV			m_rtBackground;							// UV of background
 
 	CTextureData		*m_ptdButtonTexture;		// Texture of Button
-
-#ifdef RESTART_GAME
-	BOOL				m_bRestartGame;							// Game restart reserve value
+	
+	BOOL				m_bCharacterMove;
 	__int64				m_llStartTime;							// restart start time attack
-#endif	
+
 
 protected:
 	// Command functions
 	void	OpenOption();
 	void	OpenHelp();
 	void	Restart();
-#ifndef RESTART_GAME
-	void	Restart_Internal();
-#endif
 	void	Exit();
 
 public:
@@ -74,6 +70,7 @@ public:
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Toggle visible
@@ -85,15 +82,16 @@ public:
 	// Command functions
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 
-#ifdef RESTART_GAME
-	void	Restart_Internal();
+	void	ResetRestartTime(void)				{ m_llStartTime = 0;		}	
+	__int64	GetRestartTime()					{ return m_llStartTime;		}
+	BOOL	GetMoveCharSel()					{ return m_bCharacterMove;	}
 
-	void	SetRestartGameValue(BOOL bSet)		{ m_bRestartGame = bSet; }
-	BOOL	GetRestartGameValue()				{ return m_bRestartGame; }
-	void	ResetRestartTime(void)				{ m_llStartTime = 0; }
-	BOOL	IsRestartGame()						{ return (m_bRestartGame ? TRUE : FALSE); }
-	__int64	GetRestartTime()					{ return m_llStartTime; }
-#endif
+	ENGINE_API void	Restart_Internal();
+	ENGINE_API void	CancelRestart();
+	void	ReStartNow();
+	bool	IsHaveRelic(); // 유물 아이템을 가지고 있는지 검사
+	void	LogoutRelicWarring(); // 유물 아이템을 가지고 있다면 경고
+	
 };
 
 

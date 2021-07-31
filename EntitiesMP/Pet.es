@@ -10,60 +10,14 @@
 #include <Engine/Graphics/Color.h>
 #include <Engine/Entities/ItemData.h>
 #include <Engine/Network/ItemTarget.h>
+#include <Engine/Object/ActorMgr.h>
 #include <deque>
 #include <Engine/Entities/Skill.h>
 #include <Engine/Network/MessageDefine.h>
 #include "EntitiesMP/Common/CharacterDefinition.h"
+#include <Engine/Info/MyInfo.h>
 
 #define MOB_ATTACK_MOTION_NUM		(1)
-
-struct sSkillEffectInfo
-{
-	void InitForNormalAttack(CMobData &mob, INDEX aniID)
-	{
-		m_bSkillAttack = FALSE;
-		szEffectNameCast = mob.GetFireEffect0();
-		szEffectNameMissile = mob.GetFireEffect1();
-		szEffectNameHit = mob.GetFireEffect2();
-		iFireDelayCount = mob.GetDelayCount();
-		fFireDelay[0] = mob.GetDelay(0);
-		fFireDelay[1] = mob.GetDelay(1);
-		fFireDelay[2] = mob.GetDelay(2);
-		fFireDelay[3] = mob.GetDelay(3);
-		iMissileType = mob.GetMissileType();
-		fMissileSpeed = mob.GetMissileSpeed();
-		iAnimatioID = aniID;
-		dwValidValue = 0x00000000;
-	}
-	void InitForSkillAttack(CSkill &skill)
-	{
-		m_bSkillAttack = TRUE;
-		szEffectNameCast = skill.GetFireEffect1(0);
-		szEffectNameMissile = skill.GetFireEffect2(0);
-		szEffectNameHit = skill.GetFireEffect3(0);
-		iFireDelayCount = skill.GetDelayCount(0);
-		fFireDelay[0] = skill.GetDelay(0,0);
-		fFireDelay[1] = skill.GetDelay(1,0);
-		fFireDelay[2] = skill.GetDelay(2,0);
-		fFireDelay[3] = skill.GetDelay(3,0);
-		iMissileType = skill.GetMissileType(0);
-		fMissileSpeed = skill.GetMissileSpeed(0);
-		iAnimatioID = skill.idPlayer_Anim_Skill[0][2];
-		dwValidValue = 0x00000000;
-	}
-	
-	BOOL		m_bSkillAttack;
-	const char	*szEffectNameCast;
-	const char	*szEffectNameMissile;
-	const char	*szEffectNameHit;
-	int			iFireDelayCount;
-	FLOAT		fFireDelay[4];
-	int			iMissileType;
-	FLOAT		fMissileSpeed;
-	INDEX		iAnimatioID;
-	DWORD		dwValidValue;
-};
-#define SkillEffectInfo() ((sSkillEffectInfo*)m_pSkillEffectInfo)
 
 //-----------------------------------------------------------------------------
 // Purpose: 컨테이너 내의 모든 엔티티에 한번에 데미지를 줍니다.
@@ -116,7 +70,7 @@ void GetTargetDirection2(CEntity *penMe, CEntity *penTarget, FLOAT3D &vTargetPos
 	vDirection.Normalize(); 				
 };
 
-ENGINE_API void SetDropItemModel(CEntity *penEntity, CItemData &ItemData, CItemTarget &it);
+ENGINE_API void SetDropItemModel(CEntity *penEntity, CItemData *pItemData, CItemTarget* pTarget);
 %}
 
 uses "EntitiesMP/PetBase";
@@ -151,14 +105,14 @@ void ShotMissile(CEntity *penShoter, const char *szShotPosTagName
 				 , const char *szHitEffectName, const char *szArrowEffectName
 				 , bool bCritical
 				 , FLOAT fHorizonalOffset = 0.0f, FLOAT fVerticalOffset = 0.0f	//-1.0f ~ 1.0f
-				 , INDEX iArrowType = 0, const char *szMissileModel = NULL);
+				 , INDEX iArrowType = 0, const char *szMissileModel = NULL, CSelectedEntities* dcEntities = NULL);
 void ShotMagicContinued(CEntity *penShoter, FLOAT3D vStartPos, FLOATquat3D qStartRot
 				 , CEntity *penTarget, FLOAT fMoveSpeed
 				 , const char *szHitEffectName, const char *szMagicEffectName
 				 , bool bCritical, INDEX iOrbitType, BOOL bDirectTag = FALSE);
 %}
 
-class export CPet: CPetBase {
+class CPet: CPetBase {
 name      "Pet";
 thumbnail "Mods\\test.tbn";
 features  "ImplementsOnInitClass", "HasName", "IsTargetable";
@@ -198,10 +152,10 @@ properties:
 	{
 		CEffectGroup *m_pSkillReadyEffect;
 		CStaticArray<FLOAT3D> m_aDeathItemPosDrop;
-		CStaticArray<CItemTarget> m_aDeathItemTargetDrop;
+		CStaticArray< CItemTarget* > m_aDeathItemTargetDrop;
 		CStaticArray<void *> m_aDeathItemDataDrop;
 		INDEX	m_nMagicAttackSequence;
-		void	*m_pSkillEffectInfo;
+		sSkillEffectInfo	m_SkillEffectInfo;
 		INDEX	m_nEffectStep;
 		CPetAnimation	m_PetAnimationIndices;
 		FLOAT	m_fprevStretch;
@@ -248,10 +202,14 @@ functions:
 	virtual BOOL IsMovable()
 	{
 		// 플레이어의 펫이고, 혼자서 이동 가능한 펫일경우...
+
 		if(m_bUseAI)
 		{
+			ObjInfo* pInfo = ObjInfo::getSingleton();
+			CPetTargetInfom* pPetInfo = pInfo->GetMyPetInfo();
+
 			// 배고픔이 0이라면 못움직임.
-			if(	( _pNetwork->_PetTargetInfo.bIsActive && ( _pNetwork->_PetTargetInfo.fHungry <= 0 || _pNetwork->_PetTargetInfo.fHealth <= 0 ) ) 
+			if(	( pPetInfo->bIsActive && ( pPetInfo->fHungry <= 0 || pPetInfo->fHealth <= 0 ) ) 
 				|| m_bStuned || m_bHold )
 			{
 				return FALSE;
@@ -314,62 +272,71 @@ functions:
 				fDamageAmmount = 1;
 				((CUnit*)penToDamage)->m_nCurrentHealth = ((CUnit*)penToDamage)->m_nPreHealth;			
 			}
-			else fDamageAmmount = 0;
+			else 
+			{
+				fDamageAmmount = 0;
+			}
+
+			if(penToDamage ==INFO()->GetTargetEntity(eTARGET))
+			{
+				if( penToDamage->IsCharacter() )
+				{
+					penToDamage->UpdateTargetInfo(((CUnit*) penToDamage)->m_nMaxiHealth,((CUnit*) penToDamage)->m_nCurrentHealth,((CCharacter*) penToDamage)->m_nPkMode,((CCharacter*) penToDamage)->m_nPkState,((CCharacter*) penToDamage)->m_nLegit);		
+				}
+				else
+				{
+					penToDamage->UpdateTargetInfo(((CUnit*) penToDamage)->m_nMaxiHealth,((CUnit*) penToDamage)->m_nCurrentHealth);
+				}
+			}
 	
+	
+			if (penToDamage->IsEnemy() && preHealth >= 0) // ?? Pet이 Enemy(권좌)를 공격할 일이 있는가?
+			{
+				const INDEX iMobIndex = ((CEnemy*)penToDamage)->m_nMobDBIndex;
+
+				if (iMobIndex == LORD_SYMBOL_INDEX) // 메라크 공성 권좌 NPC(사이즈는 바뀌지 않고, 모델을 바꾼다)
+				{
+					CMobData* MD = CMobData::getData(iMobIndex);
+					FLOAT fMaxHealth = ((CUnit*)penToDamage)->m_nMaxiHealth;
+
+					if ((curHealth <= fMaxHealth * 0.25f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 0)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword04.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 0;
+						}
+					}
+					else if ((curHealth <= fMaxHealth * 0.50f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 1)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword03.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 1;
+						}
+					}
+					else if ((curHealth <= fMaxHealth * 0.75f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 2)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword02.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 2;
+						}
+					}
+				}
+			}
+
 			((CUnit*)penToDamage)->m_nPreHealth = -1; //1103
 		}
 
 		CEntity::InflictDirectDamage(penToDamage, penInflictor, dmtType,
 			fDamageAmmount,vHitPoint, vDirection);	
-
-		if(penToDamage && penToDamage->IsEnemy())
-		{
-			const INDEX iMobIndex = ((CEnemy*)penToDamage)->m_nMobDBIndex;
-			// 성주의 권좌일때....
-			if( iMobIndex == LORD_SYMBOL_INDEX)
-			{
-				CMobData& MD = _pNetwork->GetMobData(iMobIndex);
-				INDEX iCurHealth = ((CUnit*)((CEntity*)penToDamage))->m_nCurrentHealth;
-				static INDEX iType = 0;
-				float fMaxHealth = MD.GetHealth();
-				if( iCurHealth <= fMaxHealth * 0.25f)
-				{
-					if(iType != 1 )
-					{
-						iType = 1;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword04.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else if( iCurHealth <= fMaxHealth * 0.50f)
-				{
-					if( iType != 2 )
-					{
-						iType = 2;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword03.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else if( iCurHealth <= fMaxHealth * 0.75f)
-				{
-					if( iType != 3 )
-					{
-						iType = 3;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword02.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else
-				{
-					if( iType != 0 )
-					{
-						iType = 0;
-						penToDamage->SetSkaModel(MD.GetMobSmcFileName());
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-			}
-		}	
 
 		if(penToDamage )
 		{
@@ -419,9 +386,9 @@ functions:
 	BOOL TransformPetModel(INDEX iMobIndex, FLOAT fStretch)
 	{
 		SetPhysicsFlags(GetPhysicsFlags() & ~(EPF_TRANSLATEDBYGRAVITY|EPF_ORIENTEDBYGRAVITY));
-		CMobData &MD = _pNetwork->GetMobData( iMobIndex );
+		CMobData* MD = CMobData::getData( iMobIndex );
 	
-		SetSkaModel( MD.GetMobSmcFileName() );
+		SetSkaModel( MD->GetMobSmcFileName() );
 		
 		m_fprevStretch = m_fStretch;
 		m_fStretch = fStretch;
@@ -439,15 +406,15 @@ functions:
 		m_PetAnimationIndices.m_iAnimation[PET_ANIM_LEVELUP] = iAnimPet_LevelUp;
 		m_PetAnimationIndices.m_iAnimation[PET_ANIM_ATTACK] = iAnimPet_Attack;
 		// new ani index
-		iAnimPet_Walk = ska_GetIDFromStringTable(MD.GetAnimWalkName());
-		iAnimPet_Idle1 = ska_GetIDFromStringTable(MD.GetAnimDefaultName());
-		iAnimPet_Idle2 = ska_GetIDFromStringTable(MD.GetAnimDefault2Name());
-		iAnimPet_Run = ska_GetIDFromStringTable(MD.GetAnimRunName());
-		iAnimPet_Pick = ska_GetIDFromStringTable(MD.GetAnimAttackName());
-		iAnimPet_Attack = ska_GetIDFromStringTable(MD.GetAnimAttackName());
-		iAnimPet_Death = ska_GetIDFromStringTable(MD.GetAnimDeathName());
-		iAnimPet_LevelUp = ska_GetIDFromStringTable(MD.GetAnimWoundName());
-		iAnimPet_Wound = ska_GetIDFromStringTable(MD.GetAnimWoundName());
+		iAnimPet_Walk = ska_GetIDFromStringTable(MD->GetAnimWalkName());
+		iAnimPet_Idle1 = ska_GetIDFromStringTable(MD->GetAnimDefaultName());
+		iAnimPet_Idle2 = ska_GetIDFromStringTable(MD->GetAnimDefault2Name());
+		iAnimPet_Run = ska_GetIDFromStringTable(MD->GetAnimRunName());
+		iAnimPet_Pick = ska_GetIDFromStringTable(MD->GetAnimAttackName());
+		iAnimPet_Attack = ska_GetIDFromStringTable(MD->GetAnimAttackName());
+		iAnimPet_Death = ska_GetIDFromStringTable(MD->GetAnimDeathName());
+		iAnimPet_LevelUp = ska_GetIDFromStringTable(MD->GetAnimWoundName());
+		iAnimPet_Wound = ska_GetIDFromStringTable(MD->GetAnimWoundName());
 
 		AddAnimation(iAnimPet_Idle1, AN_LOOPING|AN_NORESTART|AN_CLEAR, 1.0f, 0x03, ESKA_MASTER_MODEL_INSTANCE);
 		//GetModelInstance()->AddAnimation(m_AnimationIndices.m_iAnimation[ANIM_IDLE],AN_LOOPING|AN_NORESTART|AN_CLEAR,1,0);
@@ -674,7 +641,7 @@ functions:
 		m_aDeathItemPosDrop.Expand(cnt + 1);
 		m_aDeathItemPosDrop[cnt] = pos;
 		m_aDeathItemTargetDrop.Expand(cnt + 1);
-		m_aDeathItemTargetDrop[cnt] = *pItemTarget;
+		m_aDeathItemTargetDrop[cnt] = pItemTarget;
 		m_aDeathItemDataDrop.Expand(cnt + 1);
 		m_aDeathItemDataDrop[cnt] = pItemData;
 	}
@@ -683,36 +650,32 @@ functions:
 	{
 		for(INDEX i = 0; i < m_aDeathItemTargetDrop.Count(); ++i )
 		{
-			CItemTarget *pItem = NULL;
-			for(int iItem=0; iItem<_pNetwork->ga_srvServer.srv_aitItem.Count(); ++iItem)
-			{
-				if(m_aDeathItemTargetDrop[i].item_Index == _pNetwork->ga_srvServer.srv_aitItem[iItem].item_Index)
-				{
-					pItem = &(_pNetwork->ga_srvServer.srv_aitItem[iItem]);
-				}
-			}
-			if(pItem == NULL) {continue;}	//이미 떨어지기 전에 누가 주워버렸음
+			CItemTarget *pTarget = NULL;
+			pTarget = m_aDeathItemTargetDrop[i];
 
-			CItemTarget &it = *pItem;
-			it = m_aDeathItemTargetDrop[i];
-			CItemData &ItemData = *((CItemData*)m_aDeathItemDataDrop[i]);
-			const char* szItemData = _pNetwork->GetItemName( ItemData.GetItemIndex() );
+			CItemData* pItemData = (CItemData*)m_aDeathItemDataDrop[i];
+			const char* szItemData = _pNetwork->GetItemName( pItemData->GetItemIndex() );
 			CEntity* penEntity = NULL;
 			CPlacement3D plPlacement;
 			plPlacement.pl_PositionVector = m_aDeathItemPosDrop[i];
 			plPlacement.pl_OrientationAngle = ANGLE3D(0.0f,0.0f,0.0f);
-			ASSERT(it.item_pEntity == NULL);
-			penEntity = _pNetwork->ga_World.CreateEntity_t(plPlacement, CLASS_ITEM,-1,TRUE);
+			ASSERT(pTarget->m_pEntity == NULL);
+			penEntity = _pNetwork->ga_World.CreateEntity_t(plPlacement, CLASS_ITEM,-1,TRUE);			
+			
 			if(penEntity == NULL) {continue;}
 
-			it.item_pEntity = penEntity;
-			it.item_iClientIndex = penEntity->en_ulID;						
+			penEntity->SetNetworkID(pTarget->GetSIndex());
+
+			pTarget->m_pEntity = penEntity;
+			pTarget->m_nIdxClient = penEntity->en_ulID;
 			penEntity->en_strItemName = szItemData;
-			SetDropItemModel(penEntity, ItemData, it);
+			SetDropItemModel(penEntity, pItemData, pTarget);
+
+			ACTORMGR()->AddObject(pTarget);
 
 			//드랍 사운드 플레이
-			if( ItemData.GetType() == CItemData::ITEM_ETC
-			&& ItemData.GetType() == CItemData::ITEM_ETC_MONEY )
+			if( pItemData->GetType() == CItemData::ITEM_ETC
+			&& pItemData->GetType() == CItemData::ITEM_ETC_MONEY )
 			{
 				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->PlayItemSound(FALSE, TRUE);
 			}
@@ -721,6 +684,7 @@ functions:
 				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->PlayItemSound(FALSE, FALSE);
 			}
 		}
+
 		m_aDeathItemPosDrop.Clear();
 		m_aDeathItemTargetDrop.Clear();
 		m_aDeathItemDataDrop.Clear();
@@ -734,7 +698,7 @@ functions:
 		{
 			return;
 		}
-		switch(SkillEffectInfo()->iMissileType)
+		switch(m_SkillEffectInfo.iMissileType)
 		{
 		case 0/*MT_NONE*/:
 			{
@@ -759,7 +723,7 @@ functions:
 				axis.Normalize();
 				FLOATquat3D quat;
 				quat.FromAxisAngle(axis, angle);
-				StartEffectGroup(SkillEffectInfo()->szEffectNameHit
+				StartEffectGroup(m_SkillEffectInfo.szEffectNameHit
 								, _pTimer->GetLerpedCurrentTick()
 								, vHitPoint, quat);
 			} break;
@@ -773,18 +737,18 @@ functions:
 						CEntity *pEn = (*it);
 						if(pEn != NULL && pEn->IsFlagOff(ENF_DELETED))
 						{
-							ShotMissile( this, "RHAND", pEn, SkillEffectInfo()->fMissileSpeed, "Normal Hit", "Normal Arrow Trace", false );
+							ShotMissile( this, "RHAND", pEn, m_SkillEffectInfo.fMissileSpeed, "Normal Hit", "Normal Arrow Trace", false );
 						}
 					}
 				}
 				else
 				{
-					ShotMissile( this, "RHAND", m_penEnemy, SkillEffectInfo()->fMissileSpeed, "Normal Hit", "Normal Arrow Trace", false );
+					ShotMissile( this, "RHAND", m_penEnemy, m_SkillEffectInfo.fMissileSpeed, "Normal Hit", "Normal Arrow Trace", false );
 				}
 			} break;
 		case 2/*MT_DIRECT*/:
 			{
-				StartEffectGroup(SkillEffectInfo()->szEffectNameHit
+				StartEffectGroup(m_SkillEffectInfo.szEffectNameHit
 					, &m_penEnemy->en_pmiModelInstance->m_tmSkaTagManager
 					, _pTimer->GetLerpedCurrentTick());
 			} break;
@@ -804,7 +768,7 @@ functions:
 							break;
 						}
 					}
-					if(num == SkillEffectInfo()->iFireDelayCount)
+					if(num == m_SkillEffectInfo.iFireDelayCount)
 					{
 						m_pSkillReadyEffect->Stop(0.04f);
 					}
@@ -818,8 +782,8 @@ functions:
 						if(pEn != NULL && pEn->IsFlagOff(ENF_DELETED))
 						{
 							ShotMagicContinued(this, lastEffectInfo, FLOATquat3D(1,0,0,0)
-										, pEn, SkillEffectInfo()->fMissileSpeed
-										, SkillEffectInfo()->szEffectNameHit, SkillEffectInfo()->szEffectNameMissile
+										, pEn, m_SkillEffectInfo.fMissileSpeed
+										, m_SkillEffectInfo.szEffectNameHit, m_SkillEffectInfo.szEffectNameMissile
 										, false, 3);
 						}
 					}
@@ -827,8 +791,8 @@ functions:
 				else
 				{
 					ShotMagicContinued(this, lastEffectInfo, FLOATquat3D(1,0,0,0)
-										, m_penEnemy, SkillEffectInfo()->fMissileSpeed
-										, SkillEffectInfo()->szEffectNameHit, SkillEffectInfo()->szEffectNameMissile
+										, m_penEnemy, m_SkillEffectInfo.fMissileSpeed
+										, m_SkillEffectInfo.szEffectNameHit, m_SkillEffectInfo.szEffectNameMissile
 										, false, 3);
 				}
 			} break;
@@ -838,7 +802,7 @@ functions:
 		case 7/*MT_MAGECUTTER*/:	{} break;//안쓰임, 캐릭 전용
 		case 8/*MT_DIRECTDAMAGE*/:
 			{
-				StartEffectGroup(SkillEffectInfo()->szEffectNameHit
+				StartEffectGroup(m_SkillEffectInfo.szEffectNameHit
 					, &m_penEnemy->en_pmiModelInstance->m_tmSkaTagManager
 					, _pTimer->GetLerpedCurrentTick());
 				if( m_dcEnemies.Count() > 0 )
@@ -867,7 +831,7 @@ functions:
 					pos(2) = CRandomTable::Instance().GetRndFactor() * s_fFallHeightVariation + s_fFallHeight;
 					pos += m_penEnemy->GetPlacement().pl_PositionVector;
 					ShotFallDown(pos, FLOAT3D(0,1,0), s_fSpeed + s_fSpeedVariation * CRandomTable::Instance().GetRndFactor()
-								, SkillEffectInfo()->szEffectNameHit, SkillEffectInfo()->szEffectNameMissile, FALSE);
+								, m_SkillEffectInfo.szEffectNameHit, m_SkillEffectInfo.szEffectNameMissile, FALSE);
 				}
 			} break;
 		//-----boss mob hardcoding area end-----//
@@ -879,6 +843,113 @@ functions:
 	}
 
 procedures:
+/************************************************************
+ *                       M  A  I  N                         *
+ ************************************************************/
+	Main(EVoid) 
+	{
+		if(GetModelInstance() == NULL)
+		{ 
+			InitAsSkaEditorModel();
+			SetSkaModel("Models\\Editor\\Ska\\Axis.smc");			
+			return EEnd();
+		}
+//안태훈 수정 시작	//(Effect Add & Modify for Close Beta)(0.1)
+		if(GetModelInstance() != NULL)
+		{
+			CSkaTag tag;
+			tag.SetName("__ROOT");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+			FLOATaabbox3D aabb;
+			GetModelInstance()->GetAllFramesBBox(aabb);
+			tag.SetName("CENTER");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			tag.SetOffsetPos(0, aabb.Size()(2) * 0.5f * GetModelInstance()->mi_vStretch(2), 0);
+			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+			tag.SetName("__TOP");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			tag.SetOffsetPos(0, aabb.Size()(2) * GetModelInstance()->mi_vStretch(2), 0);
+			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+		}
+//안태훈 수정 끝	//(Effect Add & Modify for Close Beta)(0.1)		
+		
+		SetFlags(GetFlags()|ENF_ALIVE);		
+		
+		en_sbNetworkType = MSG_CHAR_PET;
+
+		// 탈것이 아닐때...
+		if(m_iPetAge != 2)
+		{
+			SetPhysicsFlags(EPF_ONBLOCK_CLIMBORSLIDE
+				| EPF_TRANSLATEDBYGRAVITY
+				//| EPF_PUSHABLE
+				| EPF_MOVABLE				
+				| EPF_ABSOLUTETRANSLATE );
+			//SetPhysicsFlags(GetPhysicsFlags() &~EPF_PUSHABLE);
+			SetCollisionFlags(ECF_MODEL_NO_COLLISION);
+		}
+		else
+		{
+			// 탈것일때...
+			// declare yourself as a model		
+			SetPhysicsFlags(EPF_MODEL_WALKING|EPF_HASLUNGS);		
+			SetPhysicsFlags(EPF_MOVABLE);
+			SetPhysicsFlags(GetPhysicsFlags() & ~EPF_TRANSLATEDBYGRAVITY);
+			SetPhysicsFlags(EPF_MODEL_WALKING);
+		}
+		
+		// set initial vars
+		en_tmMaxHoldBreath = 60.0f;
+		en_fDensity = 1000.0f;    // same density as water - to be able to dive freely		
+
+		SetFlagOn(ENF_RENDERREFLECTION);
+
+		// setup moving speed
+		m_aWalkRotateSpeed		= AngleDeg(1800.0f);
+		m_aAttackRotateSpeed	= AngleDeg(1800.0f);				
+		m_aCloseRotateSpeed		= AngleDeg(1800.0f);
+
+		// setup attack distances
+		m_fAttackFireTime		= 2.0f;
+		m_fCloseFireTime		= 2.0f;
+		m_fBlowUpAmount			= 80.0f;
+		m_fBodyParts			= 4;
+		m_fDamageWounded		= 0.0f;
+		
+		// set stretch factors for height and width
+		GetModelInstance()->StretchModel(FLOAT3D(m_fStretch, m_fStretch, m_fStretch));
+		GetModelInstance()->mi_bRenderShadow = TRUE;
+
+		SetHealth(10000.0f);//0807 몹의 체력.
+		ModelChangeNotify();
+		//StandingAnim();
+		
+//안태훈 수정 시작	//(Open beta)(2004-12-14)
+		if(GetModelInstance())
+		{
+			CSkaTag tag;
+			tag.SetName("__ROOT");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+			tag.SetName("__TOP");
+			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
+			FLOATaabbox3D aabb;
+			GetModelInstance()->GetAllFramesBBox(aabb);
+			tag.SetOffsetPos(0, aabb.Size()(2), 0);
+			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+		}
+//안태훈 수정 끝	//(Open beta)(2004-12-14)
+		
+		if(m_bUseAI)
+		{
+			SetTargetEntity(CEntity::GetPlayerEntity(0));
+		}
+
+		// continue behavior in base class
+		jump CPetBase::MainLoop();
+	};
+
 /************************************************************
  *                A T T A C K   E N E M Y                   *
  ************************************************************/
@@ -904,15 +975,14 @@ procedures:
 		{
 			attackAnimID = iAnimPet_Attack;
 		}		
-		m_pSkillEffectInfo = new sSkillEffectInfo;
-		SkillEffectInfo()->InitForNormalAttack(_pNetwork->GetMobData(0), attackAnimID);
+		m_SkillEffectInfo.InitForNormalAttack(CMobData::getData(0), attackAnimID);
 
-		if(strlen(SkillEffectInfo()->szEffectNameHit) == 0) {SkillEffectInfo()->szEffectNameHit = "Normal Hit";}
-		if(SkillEffectInfo()->iFireDelayCount == 0)
+		if(strlen(m_SkillEffectInfo.szEffectNameHit) == 0) {m_SkillEffectInfo.szEffectNameHit = "Normal Hit";}
+		if(m_SkillEffectInfo.iFireDelayCount == 0)
 		{
-			SkillEffectInfo()->iMissileType = CSkill::MT_NONE;
-			SkillEffectInfo()->iFireDelayCount = 1;
-			SkillEffectInfo()->fFireDelay[0] = GetAnimLength(iAnimPet_Attack)/3;
+			m_SkillEffectInfo.iMissileType = CSkill::MT_NONE;
+			m_SkillEffectInfo.iFireDelayCount = 1;
+			m_SkillEffectInfo.fFireDelay[0] = GetAnimLength(iAnimPet_Attack)/3;
 		}
 		autocall SkillAndMagicAnimation() EReturn;
 
@@ -932,8 +1002,8 @@ procedures:
 */
 		
 		CSkill &skill = _pNetwork->GetSkillData(m_nCurrentSkillNum);
-		m_pSkillEffectInfo = new sSkillEffectInfo;
-		SkillEffectInfo()->InitForSkillAttack(skill);
+
+		m_SkillEffectInfo.InitForSkillAttack(skill);
 		autocall SkillAndMagicAnimation() EReturn;
 	
 		return EReturn();
@@ -1127,11 +1197,9 @@ procedures:
 
 	SkillAndMagicAnimation(EVoid)
 	{
-		if(SkillEffectInfo()->dwValidValue != 0)
+		if(m_SkillEffectInfo.dwValidValue != 0)
 		{
-			SkillEffectInfo()->dwValidValue = 0xBAD0BEEF;
-			delete m_pSkillEffectInfo;
-			m_pSkillEffectInfo = NULL;
+			m_SkillEffectInfo.dwValidValue = 0xBAD0BEEF;
 			return EReturn();
 		}
 
@@ -1139,15 +1207,15 @@ procedures:
 		m_fAttackStartTime = _pTimer->GetLerpedCurrentTick();
 		m_fImpactTime = GetAnimLength(iAnimPet_Attack)/3;
 
-		GetModelInstance()->AddAnimationChild(SkillEffectInfo()->iAnimatioID,AN_CLEAR,1.0f,0);	
+		GetModelInstance()->AddAnimationChild(m_SkillEffectInfo.iAnimatioID,AN_CLEAR,1.0f,0);	
 
 		m_nEffectStep = 1;
 		m_pSkillReadyEffect = NULL;
-		m_pSkillReadyEffect = StartEffectGroup(SkillEffectInfo()->szEffectNameCast
+		m_pSkillReadyEffect = StartEffectGroup(m_SkillEffectInfo.szEffectNameCast
 			, &en_pmiModelInstance->m_tmSkaTagManager
 			, _pTimer->GetLerpedCurrentTick());
 
-		while(_pTimer->GetLerpedCurrentTick() - m_fAttackStartTime < GetAnimLength(SkillEffectInfo()->iAnimatioID)*0.8f)
+		while(_pTimer->GetLerpedCurrentTick() - m_fAttackStartTime < GetAnimLength(m_SkillEffectInfo.iAnimatioID)*0.8f)
 		{
 			wait(m_fAttackFrequency) 
 			{
@@ -1157,9 +1225,7 @@ procedures:
 					{
 						DestroyEffectGroupIfValid(m_pSkillReadyEffect);
 						GetModelInstance()->AddAnimationChild(iAnimPet_Idle1,AN_LOOPING|AN_NORESTART|AN_CLEAR,1,0);							
-						SkillEffectInfo()->dwValidValue = 0xBAD0BEEF;
-						delete m_pSkillEffectInfo;
-						m_pSkillEffectInfo = NULL;
+						m_SkillEffectInfo.dwValidValue = 0xBAD0BEEF;
 						return EReturn();
 					}
 											
@@ -1170,22 +1236,22 @@ procedures:
 					}
 
 					FLOAT time = _pTimer->GetLerpedCurrentTick() - m_fAttackStartTime;
-					if(time >= SkillEffectInfo()->fFireDelay[0] && m_nEffectStep == 1 && SkillEffectInfo()->iFireDelayCount > 0)
+					if(time >= m_SkillEffectInfo.fFireDelay[0] && m_nEffectStep == 1 && m_SkillEffectInfo.iFireDelayCount > 0)
 					{
 						++m_nEffectStep;
 						SkillAndAttackFire(1);
 					}
-					if(time >= SkillEffectInfo()->fFireDelay[1] && m_nEffectStep == 2 && SkillEffectInfo()->iFireDelayCount > 1)
+					if(time >= m_SkillEffectInfo.fFireDelay[1] && m_nEffectStep == 2 && m_SkillEffectInfo.iFireDelayCount > 1)
 					{
 						++m_nEffectStep;
 						SkillAndAttackFire(2);
 					}
-					if(time >= SkillEffectInfo()->fFireDelay[2] && m_nEffectStep == 3 && SkillEffectInfo()->iFireDelayCount > 2)
+					if(time >= m_SkillEffectInfo.fFireDelay[2] && m_nEffectStep == 3 && m_SkillEffectInfo.iFireDelayCount > 2)
 					{
 						++m_nEffectStep;
 						SkillAndAttackFire(3);
 					}
-					if(time >= SkillEffectInfo()->fFireDelay[3] && m_nEffectStep == 4 && SkillEffectInfo()->iFireDelayCount > 3)
+					if(time >= m_SkillEffectInfo.fFireDelay[3] && m_nEffectStep == 4 && m_SkillEffectInfo.iFireDelayCount > 3)
 					{
 						++m_nEffectStep;
 						SkillAndAttackFire(4);
@@ -1216,9 +1282,7 @@ procedures:
 		}
 
 		m_nEffectStep = 0;
-		SkillEffectInfo()->dwValidValue = 0xBAD0BEEF;
-		delete m_pSkillEffectInfo;
-		m_pSkillEffectInfo = NULL;
+		m_SkillEffectInfo.dwValidValue = 0xBAD0BEEF;
 		return EReturn();
 	};
 
@@ -1243,112 +1307,5 @@ procedures:
 		//autowait(0.60f);
 
 		return EEnd();
-	};
-
-/************************************************************
- *                       M  A  I  N                         *
- ************************************************************/
-	Main(EVoid) 
-	{
-		if(GetModelInstance() == NULL)
-		{ 
-			InitAsSkaEditorModel();
-			SetSkaModel("Models\\Editor\\Ska\\Axis.smc");			
-			return EEnd();
-		}
-//안태훈 수정 시작	//(Effect Add & Modify for Close Beta)(0.1)
-		if(GetModelInstance() != NULL)
-		{
-			CSkaTag tag;
-			tag.SetName("__ROOT");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-			FLOATaabbox3D aabb;
-			GetModelInstance()->GetAllFramesBBox(aabb);
-			tag.SetName("CENTER");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			tag.SetOffsetPos(0, aabb.Size()(2) * 0.5f * GetModelInstance()->mi_vStretch(2), 0);
-			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-			tag.SetName("__TOP");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			tag.SetOffsetPos(0, aabb.Size()(2) * GetModelInstance()->mi_vStretch(2), 0);
-			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-		}
-//안태훈 수정 끝	//(Effect Add & Modify for Close Beta)(0.1)		
-		
-		SetFlags(GetFlags()|ENF_ALIVE);		
-		
-		en_sbNetworkType = MSG_CHAR_PET;
-
-		// 탈것이 아닐때...
-		if(m_iPetAge != 2)
-		{
-			SetPhysicsFlags(EPF_ONBLOCK_CLIMBORSLIDE
-				| EPF_TRANSLATEDBYGRAVITY
-				//| EPF_PUSHABLE
-				| EPF_MOVABLE				
-				| EPF_ABSOLUTETRANSLATE );
-			//SetPhysicsFlags(GetPhysicsFlags() &~EPF_PUSHABLE);
-			SetCollisionFlags(ECF_MODEL_NO_COLLISION);
-		}
-		else
-		{
-			// 탈것일때...
-			// declare yourself as a model		
-			SetPhysicsFlags(EPF_MODEL_WALKING|EPF_HASLUNGS);		
-			SetPhysicsFlags(EPF_MOVABLE);
-			SetPhysicsFlags(GetPhysicsFlags() & ~EPF_TRANSLATEDBYGRAVITY);
-			SetPhysicsFlags(EPF_MODEL_WALKING);
-		}
-		
-		// set initial vars
-		en_tmMaxHoldBreath = 60.0f;
-		en_fDensity = 1000.0f;    // same density as water - to be able to dive freely		
-
-		SetFlagOn(ENF_RENDERREFLECTION);
-
-		// setup moving speed
-		m_aWalkRotateSpeed		= AngleDeg(1800.0f);
-		m_aAttackRotateSpeed	= AngleDeg(1800.0f);				
-		m_aCloseRotateSpeed		= AngleDeg(1800.0f);
-
-		// setup attack distances
-		m_fAttackFireTime		= 2.0f;
-		m_fCloseFireTime		= 2.0f;
-		m_fBlowUpAmount			= 80.0f;
-		m_fBodyParts			= 4;
-		m_fDamageWounded		= 0.0f;
-		
-		// set stretch factors for height and width
-		GetModelInstance()->StretchModel(FLOAT3D(m_fStretch, m_fStretch, m_fStretch));
-		GetModelInstance()->mi_bRenderShadow = TRUE;
-
-		SetHealth(10000.0f);//0807 몹의 체력.
-		ModelChangeNotify();
-		//StandingAnim();
-		
-//안태훈 수정 시작	//(Open beta)(2004-12-14)
-		if(GetModelInstance())
-		{
-			CSkaTag tag;
-			tag.SetName("__ROOT");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-			tag.SetName("__TOP");
-			tag.SetOffsetRot(GetEulerAngleFromQuaternion(en_pmiModelInstance->mi_qvOffset.qRot));
-			FLOATaabbox3D aabb;
-			GetModelInstance()->GetAllFramesBBox(aabb);
-			tag.SetOffsetPos(0, aabb.Size()(2), 0);
-			GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-		}
-//안태훈 수정 끝	//(Open beta)(2004-12-14)
-		
-		if(m_bUseAI)
-		{
-			SetTargetEntity(CEntity::GetPlayerEntity(0));
-		}
-
-		// continue behavior in base class
-		jump CPetBase::MainLoop();
 	};
 };

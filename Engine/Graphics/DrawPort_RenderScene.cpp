@@ -48,8 +48,8 @@ CStaticStackArray<GFXVertex> _avtxScene;
 // vertex coordinates and elements used by one pass of polygons
 static CStaticStackArray<UWORD> _auwElements;
 
-// ì›”ë“œ ì—ë””í„°ì—ì„œ ì†ì„±ë§µì„ ë³´ì—¬ì£¼ê¸° ìœ„í•œ ì„ì‹œìš©..
-// í”„ë¡œì íŠ¸ë¥¼ ë”°ë¡œ ì¶”ê°€í•  ì˜ˆì •..
+// ¿ùµå ¿¡µğÅÍ¿¡¼­ ¼Ó¼º¸ÊÀ» º¸¿©ÁÖ±â À§ÇÑ ÀÓ½Ã¿ë..
+// ÇÁ·ÎÁ§Æ®¸¦ µû·Î Ãß°¡ÇÒ ¿¹Á¤..
 //#define	WORLD_EDITOR
 
 // group flags (single-texturing)
@@ -141,13 +141,13 @@ static void FlushElements(void)
 	const INDEX ctElements = _auwElements.Count();
 	if( ctElements<3) return;
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.29
 	extern INDEX gfx_bRenderReflection;
 	if(gfx_bRenderReflection)
 	{
 		_sfStats.IncrementCounter( CStatForm::SCI_REFLECTION_TRI, ctElements);
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.29
 	// draw
 	_sfStats.IncrementCounter( CStatForm::SCI_SCENE_TRIANGLEPASSES, ctElements);
 	_pGfx->gl_ctWorldElements += ctElements; 
@@ -662,7 +662,7 @@ static void RSSetTextureParameters( ULONG ulFlags)
 			gfxEnableBlend();
 			gfxBlendFunc( GFX_ONE, GFX_ONE); 
 			break;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Worldbase Overbright to NonOver)(0.1)
 		case STXF_BLEND_SHADE: // screen*texture*2
 			gfxEnableBlend();
 			gfxBlendFunc( GFX_DST_COLOR, GFX_SRC_COLOR); 
@@ -674,8 +674,8 @@ static void RSSetTextureParameters( ULONG ulFlags)
 			//gfxBlendFunc( GFX_ZERO, GFX_SRC_COLOR); 
 			break;
 		default:
-			ASSERTALWAYS("ë¸”ë Œë“œëª¨ë“œê°€ ì´ìƒí•¨ ì´ìª½ ë£¨í‹´ì„ íƒ€ë©´ ì•ˆë¨");
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Worldbase Overbright to NonOver)(0.1)
+			ASSERTALWAYS("ºí·»µå¸ğµå°¡ ÀÌ»óÇÔ ÀÌÂÊ ·çÆ¾À» Å¸¸é ¾ÈµÊ");
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Worldbase Overbright to NonOver)(0.1)
 			break;
 		}
 		// remember new flags
@@ -699,10 +699,10 @@ static void RSSetInitialTextureParametersMT(void)
 	gfxDisableBlend();
 	for( i=1; i<_ctUsableTexUnits; i++) {
 		gfxSetTextureUnit(i);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Worldbase Overbright to NonOver)(0.1)
 		gfxSetTextureModulation(2);
 		//gfxSetTextureModulation(1);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Worldbase Overbright to NonOver)(0.1)
 	}
 	gfxSetTextureUnit(0);
 	gfxSetTextureModulation(1);
@@ -733,7 +733,7 @@ static void RSSetTextureParametersMT( ULONG ulFlags)
 static void RSMakeVertexCoordinates( ScenePolygon *pspoGroup)
 {
 	ASSERT( _ctGroupVtx>0);
-	GFXVertex *pvtxPass = (GFXVertex*)gfxLockSubBuffer( GFX_VBA_POS, 0, _ctGroupVtx);
+	GFXVertex *pvtxPass = (GFXVertex*)gfxLockSubBuffer( GFX_VBA_POS, 0, _ctGroupVtx, GFX_WRITE);
 
 	// for all scene polygons in list
 	INDEX ctLastVtx = 0;
@@ -749,29 +749,29 @@ static void RSMakeVertexCoordinates( ScenePolygon *pspoGroup)
 	}
 	// check and unlock
 	ASSERT( _ctGroupVtx == ctLastVtx); 
-	gfxUnlockSubBuffer(GFX_VBA_POS);
+	gfxUnlockSubBuffer(GFX_VBA_POS, 0);
 }
 
 
 static void RSSetPolygonColors( ScenePolygon *pspoGroup, UBYTE ubAlpha)
 {
-	GFXColor *pcolPass = (GFXColor*)gfxLockSubBuffer( GFX_VBA_COL, 0, _ctGroupVtx);
+	GFXColor *pcolPass = (GFXColor*)gfxLockSubBuffer( GFX_VBA_COL, 0, _ctGroupVtx, GFX_WRITE);
 	for( ScenePolygon *pspo = pspoGroup; pspo != NULL; pspo = pspo->spo_pspoSucc) {
 		const INDEX iFirstVtx = pspo->spo_iVtx0Pass;
 		const INDEX iLastVtx  = iFirstVtx + pspo->spo_ctVtx;
 		const ULONG ulCol = ColorAPI(pspo->spo_cColor|ubAlpha);
 		for( INDEX iVtx=iFirstVtx; iVtx<iLastVtx; iVtx++) pcolPass[iVtx].abgr = ulCol;
 	} // done
-	gfxUnlockSubBuffer(GFX_VBA_COL);
+	gfxUnlockSubBuffer(GFX_VBA_COL, 0);
 }
 
 
 static void RSSetConstantColors( COLOR col)
 {
-	GFXColor *pcolPass = (GFXColor*)gfxLockSubBuffer( GFX_VBA_COL, 0, _ctGroupVtx);
+	GFXColor *pcolPass = (GFXColor*)gfxLockSubBuffer( GFX_VBA_COL, 0, _ctGroupVtx, GFX_WRITE);
 	const ULONG ulCol = ColorAPI(col);
 	for( INDEX i=0; i<_ctGroupVtx; i++) pcolPass[i].abgr = ulCol;
-	gfxUnlockSubBuffer(GFX_VBA_COL);
+	gfxUnlockSubBuffer(GFX_VBA_COL, 0);
 }
 
 
@@ -783,7 +783,7 @@ static void RSSetTextureColors( ScenePolygon *pspoGroup, ULONG ulLayerMask)
 	ASSERT( !(ulLayerMask & (GF_TA1|GF_TA2|GF_FOG|GF_HAZE)));
 #endif	// WORLD_EDITOR			// yjpark     -->|
 	ASSERT( _ctGroupVtx>0);
-	GFXColor *pcolPass = (GFXColor*)gfxLockSubBuffer( GFX_VBA_COL, 0, _ctGroupVtx);
+	GFXColor *pcolPass = (GFXColor*)gfxLockSubBuffer( GFX_VBA_COL, 0, _ctGroupVtx, GFX_WRITE);
 
 	// for all scene polygons in list
 	COLOR colLayer, colTotal;
@@ -813,7 +813,7 @@ static void RSSetTextureColors( ScenePolygon *pspoGroup, ULONG ulLayerMask)
 		for( INDEX iVtx=iFirstVtx; iVtx<iLastVtx; iVtx++) pcolPass[iVtx].abgr = colTotal;
 	}
 	// done
-	gfxUnlockSubBuffer(GFX_VBA_COL);
+	gfxUnlockSubBuffer(GFX_VBA_COL, 0);
 }
 
 
@@ -830,7 +830,7 @@ static void RSSetTextureCoords( ScenePolygon *pspoGroup, INDEX iLayer, INDEX iUn
 
 	// lock the texture coordinates array
 	ASSERT( _ctGroupVtx>0);
-	GFXTexCoord *ptexPass = (GFXTexCoord*)gfxLockSubBuffer( GFX_VBA_TEX, 0, _ctGroupVtx);
+	GFXTexCoord *ptexPass = (GFXTexCoord*)gfxLockSubBuffer( GFX_VBA_TEX, 0, _ctGroupVtx, GFX_WRITE);
 
 	// generate tex coord for all scene polygons in list
 	const FLOATmatrix3D &mViewer = _ppr->pr_ViewerRotationMatrix;
@@ -921,7 +921,7 @@ vtxLoop:
 	}
 
 	// done
-	gfxUnlockSubBuffer(GFX_VBA_TEX);
+	gfxUnlockSubBuffer(GFX_VBA_TEX, 0);
 }
 
 
@@ -931,7 +931,7 @@ static void RSSetFogCoordinates( ScenePolygon *pspoGroup)
 {
 	// lock the texture coordinates array
 	ASSERT( _ctGroupVtx>0);
-	GFXTexCoord *ptexPass = (GFXTexCoord*)gfxLockSubBuffer( GFX_VBA_TEX, 0, _ctGroupVtx);
+	GFXTexCoord *ptexPass = (GFXTexCoord*)gfxLockSubBuffer( GFX_VBA_TEX, 0, _ctGroupVtx, GFX_WRITE);
 
 	// for all scene polygons in list
 	for( ScenePolygon *pspo=pspoGroup; pspo!=NULL; pspo=pspo->spo_pspoSucc)
@@ -951,7 +951,7 @@ static void RSSetFogCoordinates( ScenePolygon *pspoGroup)
 		if( !bHasFog) pspo->spo_ulFlags &= ~SPOF_RENDERFOG;
 	}
 	// done
-	gfxUnlockSubBuffer(GFX_VBA_TEX);
+	gfxUnlockSubBuffer(GFX_VBA_TEX, 0);
 }
 
 
@@ -960,7 +960,7 @@ static void RSSetHazeCoordinates( ScenePolygon *pspoGroup)
 {
 	// lock the texture coordinates array
 	ASSERT( _ctGroupVtx>0);
-	GFXTexCoord *ptexPass = (GFXTexCoord*)gfxLockSubBuffer( GFX_VBA_TEX, 0, _ctGroupVtx);
+	GFXTexCoord *ptexPass = (GFXTexCoord*)gfxLockSubBuffer( GFX_VBA_TEX, 0, _ctGroupVtx, GFX_WRITE);
 
 	// for all scene polygons in list
 	for( ScenePolygon *pspo=pspoGroup; pspo!=NULL; pspo=pspo->spo_pspoSucc)
@@ -979,7 +979,7 @@ static void RSSetHazeCoordinates( ScenePolygon *pspoGroup)
 		if( !bHasHaze) pspo->spo_ulFlags &= ~SPOF_RENDERHAZE;
 	}
 	// done
-	gfxUnlockSubBuffer(GFX_VBA_TEX);
+	gfxUnlockSubBuffer(GFX_VBA_TEX, 0);
 }
 
 

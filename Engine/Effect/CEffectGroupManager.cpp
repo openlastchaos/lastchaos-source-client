@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #include "stdH.h"
 #include "CEffectGroupManager.h"
@@ -59,8 +59,8 @@ BOOL CEffectGroupManager::Register(CEffectGroup *protoCEffectGroup)
 	if(protoCEffectGroup == NULL) return FALSE;
 	if( protoCEffectGroup->GetName() == "" || IsRegistered(protoCEffectGroup->GetName()) ) return FALSE;
 
-	my_map::value_type registerTri( protoCEffectGroup->GetName(), protoCEffectGroup->Copy() );
-	//ë“±ë¡ ì„±ê³µ or ì‹¤íŒ¨ ì •ë³´ë¥¼ ë¦¬í„´
+	my_map::value_type registerTri( protoCEffectGroup->GetName(), protoCEffectGroup );
+	//µî·Ï ¼º°ø or ½ÇÆÐ Á¤º¸¸¦ ¸®ÅÏ
 	return m_mapRegistered.insert( registerTri ).second;
 }
 
@@ -92,27 +92,17 @@ CEffectGroup *CEffectGroupManager::Create(const std::string name)
 void CEffectGroupManager::Destroy(CEffectGroup *&obj)
 {
 	if(obj == NULL) return;
-	for(my_list::iterator iter = m_listCreated.begin(); iter != m_listCreated.end(); )
-	{
-		if ( (*iter) == obj)
-		{
-			m_listCreated.erase(iter);
-//			m_listCreated.remove((*iter));
-			delete obj;
-			obj = NULL;
-			return;
-		}
-		else ++iter;
-	}
-/*
-	my_list::iterator iter = std::find(m_listCreated.begin(), m_listCreated.end(), obj);
-	if(iter != m_listCreated.end())
+	
+	my_list::iterator tmpItr;
+	
+	tmpItr = std::find(m_listCreated.begin(), m_listCreated.end(), obj);
+
+	if (tmpItr != m_listCreated.end())
 	{
 		m_listCreated.remove(obj);
 		delete obj;
+		obj = NULL;
 	}
-	obj = NULL;
-*/
 }
 
 bool CEffectGroupManager::IsValidCreated(CEffectGroup *obj)
@@ -133,7 +123,7 @@ void CEffectGroupManager::StopAll()
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #include <Engine/Base/Stream.h>
 #define CURRENT_VERSION 1
 
@@ -152,9 +142,12 @@ void CEffectGroupManager::Read(CTStream *pIS)
 		is >> dwSize;
 		for(DWORD i=0; i<dwSize; ++i)
 		{
-			CEffectGroup eg;
-			eg.Read(&is);
-			Register(&eg);
+			CEffectGroup* eg = new CEffectGroup;
+			eg->Read(&is);
+			if (!Register(eg))
+			{
+				if (eg) delete eg;
+			}
 		}
 	}
 	//old version
@@ -184,12 +177,11 @@ CEffectGroup*	CEffectGroupManager::GetEffectGroup( const std::string name , CEnt
 {
 	CEntity* pRegEntity;
 	my_list::iterator	EGstart,EGend;
-	EGstart = Instance().GetCreatedList().begin();
-	EGend	= Instance().GetCreatedList().end();
+	EGstart = m_listCreated.begin();
+	EGend	= m_listCreated.end();
 	
-	for( ;EGstart != EGend; EGstart++ )
+	for( ;EGstart != EGend; ++EGstart )
 	{
-		
 		if ((*EGstart)->GetName() == name )
 		{			
 			CTagManager * tTagMgr = (*EGstart)->GetTagManager();

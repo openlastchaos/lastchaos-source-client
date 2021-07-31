@@ -5,13 +5,13 @@
 #endif
 
 // Include Files
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIEditBox.h>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIEditBox.h>
 
 // Define size of Tatoo
-// í…ìŠ¤ì³ ì™¼ìª½ ìœ„ (254, 609)
+// ÅØ½ºÃÄ ¿ŞÂÊ À§ (254, 609)
 #define	TATOO_WIDTH						256
 #define	TATOO_HEIGHT					352
 
@@ -20,7 +20,7 @@
 
 //------------------------------------------------------------------------------
 // CUISingleBattle
-// Explain:  ê¸¸ë“œ ì „íˆ¬ 
+// Explain:  ±æµå ÀüÅõ 
 //------------------------------------------------------------------------------
 class ENGINE_API CUITatoo : public CUIWindow
 {
@@ -54,12 +54,15 @@ protected:
 	CUIButton			m_btnOK;							
 	CUIButton			m_btnCancel;	
 	
+	CTextureData*		m_ptdCommonBtnTexture;
+	CTextureData*		m_ptdNewInventoryTexture;
+	
 	sTatooButton		m_btnColor[TATOO_TOTAL_ROW][TATOO_TOTAL_COL];
 	sTatooButton		m_btnShape[TATOO_TOTAL_ROW][TATOO_TOTAL_COL];
 
 	// Properties
-	int					m_iSelectedColorIndex;		// ì„ íƒëœ ìƒ‰ìƒ ì¸ë±ìŠ¤
-	int					m_iSelectedShapeIndex;		// ì„ íƒëœ ë¬¸ì–‘ ì¸ë±ìŠ¤
+	int					m_iSelectedColorIndex;		// ¼±ÅÃµÈ »ö»ó ÀÎµ¦½º
+	int					m_iSelectedShapeIndex;		// ¼±ÅÃµÈ ¹®¾ç ÀÎµ¦½º
 
 public:
 
@@ -69,7 +72,7 @@ public:
 	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
 	void	Clear();	//
-	void	Close();	// ì¢…ë£Œ
+	void	Close();	// Á¾·á
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
@@ -77,7 +80,7 @@ public:
 
 	void	SetFocus( BOOL bVisible );
 	void	OpenTatoo();
-	void	SendItemUse();				// ì„ íƒí•œ ìƒ‰ìƒ ë° ë¬¸ì–‘ì„ ë³´ë‚¸ë‹¤
+	void	SendItemUse();				// ¼±ÅÃÇÑ »ö»ó ¹× ¹®¾çÀ» º¸³½´Ù
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );	
@@ -92,13 +95,13 @@ public:
 	void	RenderSelectedShapeOutline();
 
 private:
-	void	AddColorButton(int iRow, int iCol, COLOR color);				// ìƒ‰ìƒ ë²„íŠ¼ ì¶”ê°€
-	void	AddShapeButton(int iRow, int iCol, int texLeft, int texTop);	// ëª¨ì–‘ ë²„íŠ¼ ì¶”ê°€
+	void	AddColorButton(int iRow, int iCol, COLOR color);				// »ö»ó ¹öÆ° Ãß°¡
+	void	AddShapeButton(int iRow, int iCol, int texLeft, int texTop);	// ¸ğ¾ç ¹öÆ° Ãß°¡
 
-	void	CheckShowShape();			// í˜„ì¬ ì„ íƒí•œ ìƒ‰ìƒì—ì„œ ë¬¸ì–‘ì„ ì„ íƒ í•  ìˆ˜ ìˆëŠ”ì§€ ì²´í¬	
+	void	CheckShowShape();			// ÇöÀç ¼±ÅÃÇÑ »ö»ó¿¡¼­ ¹®¾çÀ» ¼±ÅÃ ÇÒ ¼ö ÀÖ´ÂÁö Ã¼Å©	
 	
-	int		GetColorAndShapeIndex();	// ì„œë²„ë¡œ ë³´ë‚¼ ë¬¸ì–‘ ì¸ë±ìŠ¤ë¥¼ ì–»ëŠ”ë‹¤.
-	void	MakeMessageBox();			// ë©”ì‹œì§€ ë°•ìŠ¤ë¥¼ ë§Œë“ ë‹¤
+	int		GetColorAndShapeIndex();	// ¼­¹ö·Î º¸³¾ ¹®¾ç ÀÎµ¦½º¸¦ ¾ò´Â´Ù.
+	void	MakeMessageBox();			// ¸Ş½ÃÁö ¹Ú½º¸¦ ¸¸µç´Ù
 };
 
 #endif	// UIGB_H_

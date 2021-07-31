@@ -36,7 +36,7 @@ public:
   BOOL IsValid(void) const;
 
   // return length of the string
-  INDEX Length(void) const { return wcslen(strw_String); };
+  INDEX Length(void) const { return wcslen((const wchar_t *)strw_String); };
 
   /* Equality comparison. */
   BOOL operator==(const CTWString &strOther) const;

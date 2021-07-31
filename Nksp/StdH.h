@@ -1,3 +1,23 @@
+
+#pragma warning(disable : 4996)
+
+//#define CKBANG_UI_TWITTER
+#ifdef CKBANG_UI_TWITTER
+
+extern "C"
+{
+    #include <Engine/lua/lua.h>
+    #include <Engine/lua/lualib.h>
+    #include <Engine/lua/lauxlib.h>
+};
+
+#endif
+
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#endif 
+
+#include <boost/function.hpp>
 #include <Engine/Engine.h>
 #include <Engine/Templates/Stock_CTextureData.h>
 #include <Engine/Templates/Stock_CModelData.h>
@@ -23,3 +43,5 @@
 #include "Nksp.h"
 //#include "Menu.h"
 //#include "MenuGadgets.h"
+
+#pragma warning(disable : 4996)

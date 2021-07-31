@@ -6,37 +6,58 @@
 
 #include <Engine/Interface/UITrackPopup.h>
 
+// [sora] ¿øÁ¤´ë command Ãß°¡
 typedef enum _SimplePopState
 {
-	SPSO_NAME				= 0,			// ìœ ì €ì´ë¦„
-	SPSO_WHISPER			= 1,			// ê·“ì†ë§
-	SPSO_FRIEND				= 2,			// ì¹œêµ¬ ë“±ë¡
-	SPSO_TRADE				= 3,			// êµí™˜ ì‹ ì²­
-	SPSO_PARTY				= 4,			// íŒŒí‹° ì‹ ì²­ (ì¼ë°˜ / ì…ìˆ˜ìš°ì„  / ì „íˆ¬í˜•)
-	SPSO_PARTY_OUT			= 5,			// íŒŒí‹° ê°•í‡´
-	SPSO_PARTY_JANG			= 6,			// íŒŒí‹°ì¥ ìœ„ì„
-	SPSO_GUILD_IN			= 7,			// ê¸¸ë“œ ê°€ì…
-	SPSO_GUILD_WAR_START	= 8,			// ê¸¸ë“œì „íˆ¬ ì‹ ì²­
-	SPSO_GUILD_WAR_END		= 9,			// ê¸¸ë“œì „íˆ¬ ì¤‘ë‹¨
-	SPSO_CANCEL				= 10,			// ì·¨ì†Œ
-	SPSO_END				= 11,			// SimplePopStateOne End
+	SPSO_NAME				= 0,			// À¯ÀúÀÌ¸§
+	SPSO_WHISPER			= 1,			// ±Ó¼Ó¸»
+	SPSO_FRIEND				= 2,			// Ä£±¸ µî·Ï
+	SPSO_TRADE				= 3,			// ±³È¯ ½ÅÃ»
+	SPSO_PARTY				= 4,			// ÆÄÆ¼ ½ÅÃ» (ÀÏ¹İ / ÀÔ¼ö¿ì¼± / ÀüÅõÇü)
+	SPSO_PARTY_OUT			= 5,			// ÆÄÆ¼ °­Åğ
+	SPSO_PARTY_JANG			= 6,			// ÆÄÆ¼Àå À§ÀÓ
+	SPSO_GUILD_IN			= 7,			// ±æµå °¡ÀÔ
+	SPSO_GUILD_WAR_START	= 8,			// ±æµåÀüÅõ ½ÅÃ»
+	SPSO_GUILD_WAR_END		= 9,			// ±æµåÀüÅõ Áß´Ü
+	SPSO_SETLABEL			= 10,
+	SPSO_RESETLABEL			= 11,
+	SPSO_CANCEL				= 12,			// Ãë¼Ò
+	SPSO_END				= 13,			// SimplePopStateOne End
 
-	SPST_START				= 12,			// SimplePopStateTwo End
-	SPST_PARTY_JOIN_A		= SPST_START,	// ì¼ë°˜ íŒŒí‹° ì‹ ì²­
-	SPST_PARTY_JOIN_B		= 13,			// ì…ìˆ˜ìš°ì„  íŒŒí‹° ì‹ ì²­
-	SPST_PARTY_JOIN_C		= 14,			// ì „íˆ¬í˜• íŒŒí‹° ì‹ ì²­
+	SPST_START				= 14,			// SimplePopStateTwo End
+	SPST_PARTY_JOIN_A		= SPST_START,	// ÀÏ¹İ ÆÄÆ¼ ½ÅÃ»
+	SPST_PARTY_JOIN_B		= 15,			// ÀÔ¼ö¿ì¼± ÆÄÆ¼ ½ÅÃ»
+	SPST_PARTY_JOIN_C		= 16,			// ÀüÅõÇü ÆÄÆ¼ ½ÅÃ»
+
+	SPST2_START				= 17,
+	SPST2_SETLABEL1			= SPST2_START,
+	SPST2_SETLABEL2			= 18,
+	SPST2_SETLABEL3			= 19,
+	SPST2_SETLABEL4			= 20,
+	SPST2_SETLABEL5			= 21,
+	SPST2_SETLABEL6			= 22,
+	SPST2_SETLABEL7			= 23,
+	SPSO_EXPEDITION_INVITE	= 24,			// ¿øÁ¤´ë ÃÊ´ë
+	SPSO_EXPEDITION_KICK	= 25,			// ¿øÁ¤´ë °­Åğ
+	// brazil ¿äÃ» ½ÉÇÃ ÆË¾÷À» ÅëÇÑ Ã¤ÆÃ ºí·°. [3/9/2011 rumist]
+	SPSO_MUTE_CHARACTER		= 26,
 } SIMPLE_POP_STATE;
 
 class CUISimplePop : public CUITrackPopup
 {
 public:
-	INDEX m_iExeNum[SPSO_END];
+//	INDEX m_iExeNum[SPSO_END];
 
 	CUITrackPopup m_tpList;
 
-	CTextureData*			m_ptdMenuTexture;			//íˆ´íŒì— ì‚¬ìš©ë  í™”ì‚´í‘œë¥¼ ìœ„í•œ í…ìŠ¤ì³
-	UIRectUV				m_rtArrow;					//í™”ì‚´í‘œ í…ìŠ¤ì³ ì¢Œí‘œ
-
+	CTextureData*			m_ptdMenuTexture;			//ÅøÆÁ¿¡ »ç¿ëµÉ È­»ìÇ¥¸¦ À§ÇÑ ÅØ½ºÃÄ
+	CTextureData*			m_ptdExpeditionTexture;
+	UIRectUV				m_rtArrow;					//È­»ìÇ¥ ÅØ½ºÃÄ ÁÂÇ¥
+// [sora] RAID_SYSTEM	
+	UIRectUV				m_rtLabelIcon[7];	// Ç¥½ÄÁöÁ¤ 0 µµ³¢, 1 À¯·É, 2 ¹ß¹Ù´Ú, 3 Á¶°¢Ä®, 4 ¶Ë, 5 ¾Ç¸¶, 6 ÇØ°ñ 			
+	bool					m_bTarget;
+	CTString				m_strNoTargetName;
+	int						m_nNoTargetCharIndex;
 public:
 	CUISimplePop();
 	~CUISimplePop();
@@ -44,11 +65,14 @@ public:
 	void Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight);
 
 	ENGINE_API void OpenPop(CTString strName, BOOL bParty, BOOL bGuild, INDEX ixPos, INDEX iyPos);
+	ENGINE_API void OpenPopNoTarget(CTString strName, int nCharIndex, bool bParty, INDEX ixPos, INDEX iyPos); // Å¸°Ù¾øÀÌ ÆË¾÷Ã¢ ¿­±â
 	void ClosePop();
 
 	void Render();
 
 	void SetExeList(CTString strUserName, BOOL bParty, BOOL bGuild);
+	void SetExeListNoTarget(CTString strUserName, bool bParty);
+	void SetSubExeList( INDEX iCommandNum );
 
 	void Execution(INDEX exeNum);
 

@@ -11,14 +11,14 @@
 #include <Engine/Templates/StaticStackArray.h>
 #include <Engine/Templates/StaticArray.h>
 #include <Engine/Templates/DynamicContainer.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include <Engine/Effect/CSkaTag.h>
 #include <Engine/Effect/CTagManager.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
 //#include <Engine/Effect/CNiceWater.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22
 
 // nubers are same as in models.h
 #define SKA_HEIGHT_EQ_WIDTH 0
@@ -113,16 +113,16 @@ struct PlayedAnim
 	INDEX pa_GroupID;    // Group ID
 };
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 #include <vector>
 #include <Engine/Effect/CEffectGroupManager.h>
 #include <Engine/Effect/CEffectGroup.h>
 
 
 #define REF_NOTHING			(0UL)
-#define REF_SYNCANIMLENGTH	(1UL<<0)	//effect groupì˜ ê¸¸ì´ë¥¼ animê°€ í”Œë ˆì´ë˜ëŠ” ì‹œê°„ë³´ë‹¤ ê¸¸ì§€ ì•Šê²Œ ë§Œë“ ë‹¤.
-#define REF_SYNCANIMLOOP	(1UL<<1)	//animì´ loopë ë•Œ effectë„ ê°™ì´ ì¬ì‹œì‘í•¨. ë‹¨ ì „ì˜ effectëŠ” stopí•¨.
-#define REF_SYNCANIMSPEED	(1UL<<2)	//animì˜ speedì™€ effectì˜ ê¸¸ì´ì˜ ë¹„ìœ¨ì„ ìœ ì§€í•œë‹¤.
+#define REF_SYNCANIMLENGTH	(1UL<<0)	//effect groupÀÇ ±æÀÌ¸¦ anim°¡ ÇÃ·¹ÀÌµÇ´Â ½Ã°£º¸´Ù ±æÁö ¾Ê°Ô ¸¸µç´Ù.
+#define REF_SYNCANIMLOOP	(1UL<<1)	//animÀÌ loopµÉ¶§ effectµµ °°ÀÌ Àç½ÃÀÛÇÔ. ´Ü ÀüÀÇ effect´Â stopÇÔ.
+#define REF_SYNCANIMSPEED	(1UL<<2)	//animÀÇ speed¿Í effectÀÇ ±æÀÌÀÇ ºñÀ²À» À¯ÁöÇÑ´Ù.
 
 #define ANIMEFFECT_VERSION 1
 class ENGINE_API CAnimEffect
@@ -228,7 +228,7 @@ protected:
 	void Write(CTStream *pOS);
 };
 #undef ANIMEFFECT_VERSION
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 
 class ENGINE_API CModelInstance
 {
@@ -288,14 +288,20 @@ public:
 
 	// Set model instance offset (position,rotation)
 	void SetOffset(FLOAT fOffset[6]);
+	// 
+	void SetRideOffset(FLOAT fOffset[6]);
 	// Set model instance position offset
 	void SetOffsetPos(FLOAT3D vPos);
+	void SetRideOffsetPos(FLOAT3D vPos);
 	// Set model instance rotation offset
 	void SetOffsetRot(ANGLE3D aRot);
+	void SetRideOffsetRot(ANGLE3D aRot);
 	// Get model instance position offset
 	FLOAT3D GetOffsetPos();
+	FLOAT3D GetRideOffsetPos();
 	// Get model instance rotation offset
 	ANGLE3D GetOffsetRot();
+	ANGLE3D GetRideOffsetRot();
 
 	// Stretch model instance
 	void StretchModel(FLOAT3D &vStretch);
@@ -394,7 +400,7 @@ public:
 	SLONG GetUsedMemory(void);
 //0220 kwon
 	void DeleteMesh(CTString strName);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	void ReadAnimEffectFile(const CTFileName &fnm);
 	void WriteAnimEffectFile(const CTFileName &fnm);
 	void AddAnimEffect(const CTString &strAnimName, const CTString &strEGName, FLOAT fStartTime, ULONG ulFlags = REF_NOTHING);
@@ -411,7 +417,7 @@ public:
 
 	CTFileName m_fnmAnimEffectFile;
 	std::vector<CAnimEffect> m_vectorAnimEffect;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 public:
 	CSkeleton *mi_psklSkeleton;                     // pointer to skeleton object
@@ -420,13 +426,15 @@ public:
 	CDynamicContainer<class CAnimSet> mi_aAnimSet;  // array of animsets
 	CDynamicContainer<class CModelInstance> mi_cmiChildren; // array of child model instances
 	class CModelInstanceSerial *mi_pmisSerial;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	CTagManager		m_tmSkaTagManager;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 	AnimQueue mi_aqAnims;   // current animation queue for this model instance
 	QVect mi_qvOffset;      // current offset from parent model instance
+	QVect mi_qvRideOffset;	// pet rinding offset from child model instance(dummy)
 	INDEX mi_iParentBoneID; // ID of parent bone in parent model instance
+	INDEX mi_iRideParentBoneID; //ID of pet riding parent bone for child model instance
 	INDEX mi_iCurentBBox;   // index of current colision box in colision box array
 	COLOR mi_colModelColor; // color of this model instance
 	FLOAT3D mi_vStretch;    // stretch of this model instance
@@ -437,7 +445,9 @@ public:
 	BOOL			mi_bRenderShadow;	// 03.02
 	INDEX			mi_iFaceMesh;
 	INDEX			mi_iHairMesh;
-
+	
+	BOOL			mi_bDummyModel;
+	EFF_RENDER_SUB_TYPE			mi_ERType;
 private:
 	INDEX mi_iModelID; // ID of this model instance (this is ID for mi_strName)
 	CTString mi_strName;    // name of this model instance

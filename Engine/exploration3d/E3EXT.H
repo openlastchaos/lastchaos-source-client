@@ -401,7 +401,7 @@ E3_ACCESS
 // You can delete stream, created by function CreateStream
  E3_METHOD(DWORD  ,CopyTo(e3_STREAM*dst,int from=0,int size=-1))
 // copy size bytes to other stream
- inline Ok(){return (GetStatus()==0);}
+ inline int Ok(){return (GetStatus()==0);}
 };
 
 

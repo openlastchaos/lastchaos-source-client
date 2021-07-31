@@ -9,16 +9,19 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIButton.h>
+// 
+// #include <Engine/Interface/UIButton.h>
+#include <Engine/Interface/UITrackPopup.h>
+// #include <Engine/Network/CNetwork.h>
+// #include <vector>
 
 
 // Party type
 enum PartyType
 {
-	PT_PEACEEVER = 0,	// ê· ë“± ë¶„ë°°
-	PT_SURVIVAL = 1,	// ì…ìˆ˜ìš°ì„  
-	PT_ATTACK = 2,		// ê³µê²©ìê²½í—˜ì¹˜ ìš°ì„ 
+	PT_PEACEEVER = 0,	// ±Õµî ºĞ¹è
+	PT_SURVIVAL = 1,	// ÀÔ¼ö¿ì¼± 
+	PT_ATTACK = 2,		// °ø°İÀÚ°æÇèÄ¡ ¿ì¼±
 };
 
 
@@ -44,6 +47,136 @@ enum PartyType
 #define	PARTY_HEIGHT				57
 #define	PARTY_STRETCH_HEIGHT		58
 #define	PARTY_BAR_WIDTH				99
+
+
+//////////////////////////////////////////////////////////////////////////
+//  [sora] RAID_SYSTEM 
+//////////////////////////////////////////////////////////////////////////
+#define EXPEDITION_GROUP_MAX 4
+#define EXPEDITION_MEMBER_PER_GROUP 8
+#define EXPEDITION_MEMBER_MAX 32
+
+
+//¿øÁ¤´ë ±×·ì Ã¢
+class CUIExpGroup : public CUIWindow
+{
+protected:
+	int	m_nGroupNum;
+
+	int m_nOldX;
+	int m_nOldY;
+
+	BOOL m_bTitleBarClick;
+
+	UIRectUV	m_rtBackground;
+	UIRect		m_rcTitle;
+
+	CUIButton	m_btnClose;
+	CUIButtonEx m_btnExpeditionMember[EXPEDITION_MEMBER_PER_GROUP];
+
+public:
+	CUIExpGroup();
+	~CUIExpGroup();
+
+	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+	void	Render();
+	WMSG_RESULT	MouseMessage( MSG *pMsg );
+
+	void	SetGroupNum(int nGroupNum) { m_nGroupNum = nGroupNum; }
+	int		GetMemberCount();
+
+	void	ClearExpeditionGroup();
+
+	CUIButtonEx &GetMemberBtn(SLONG slPos) { return m_btnExpeditionMember[slPos]; }
+};
+
+//¿øÁ¤´ë °ü¸® Ã¢
+class CUIExpManage : public CUIWindow
+{
+protected:
+
+	//°ü¸® Ã¢ POPUP COMMAND
+	enum eManageCommandList
+	{
+		MANAGE_CONNAMD_CHANGE_LEADER = 0,
+		MANAGE_CONNAMD_SET_SUBLEADER,
+		MANAGE_CONNAMD_RESET_SUBLEADER,
+		MANAGE_CONNAMD_KICK_MEMBER,
+		MANAGE_CONNAMD_VIEW_MEMBER,
+	};
+
+	CTextureData	*m_ptdCommonBtnTexture;
+	CTextureData	*m_ptdMessageBoxTexture;
+
+	UIRectUV	m_rtBackground;
+	UIRect		m_rcTitle;
+
+	CUIButton	m_btnClose;
+	CUIButton	m_btnInvite;
+	CUIButton	m_btnCancel;
+	CUIButtonEx m_btnExpeditionMember[EXPEDITION_GROUP_MAX][EXPEDITION_MEMBER_PER_GROUP];
+
+	CUITrackPopup		m_tpList;
+
+	BOOL SetCommand(SLONG slPosition, BOOL bIsMyGroup = FALSE, BOOL bIsExpeditionLeader = FALSE);
+	void RunCommand(INDEX iCommand);
+
+public:
+
+	SLONG		m_slDestIndex;					// ¼±ÅÃµÈ ¸â¹ö index
+	SLONG		m_slSeletedBtnGroup;
+	SLONG		m_slSeletedBtnPos;
+
+	CTString	m_strDestName;
+
+	BOOL		m_bCanUseBtn;
+
+	CUIExpManage();
+	~CUIExpManage();
+
+	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+	void	Render();
+	WMSG_RESULT	MouseMessage( MSG *pMsg );
+
+	void SetButton(SLONG slGroup, SLONG slPos, CUIButtonEx btnExpMember) { m_btnExpeditionMember[slGroup][slPos].Copy(btnExpMember); }
+	CUIButtonEx &GetMemberBtn(SLONG slGroup, SLONG slPos) { return m_btnExpeditionMember[slGroup][slPos]; }
+
+	void ClearExpManage();
+
+};
+
+// »ìÆìº¸±â Ã¢(¿äÃ» ÇßÀ» ´ç½ÃÀÇ Á¤º¸¸¦ º¸¿©ÁÜ( ½Ç½Ã°£ º¯°æX ))
+class CUIViewDetail : public CUIWindow
+{
+protected:
+	int			m_nShownItem;					// ¾ÆÀÌÅÛ Á¤º¸¸¦ Ç¥½ÃÇÏ°í ÀÕ´Â ½½·Ô ¹øÈ£
+
+	CTextureData	*m_ptdCommonBtnTexture;
+
+	CTString	m_strCharInfo;
+	UIRectUV	m_rtBackground;
+	UIRect		m_rcTitle;
+
+	CUIButton	m_btnClose;
+	CUIButtonEx m_btnViewDetail[VIEW_DETAIL_BTN_MAX];
+	CNetworkLibrary::sPetInfo			m_sPetInfo;									// »ìÆìº¸±â Æê Á¤º¸
+	sPetItem_Info					m_sWildPetInfo;									// »ìÆìº¸±â °ø°İÇü Æê Á¤º¸
+
+public:
+	CUIViewDetail();
+	~CUIViewDetail();
+
+	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+	void	Render();
+	WMSG_RESULT	MouseMessage( MSG *pMsg );
+
+	void	SetCharInfo(CTString strCharInfo) { m_strCharInfo = strCharInfo; }
+	void	SetPetInfo( CNetworkLibrary::sPetInfo petInfo ) { m_sPetInfo = petInfo; }
+	void	SetWildPetInfo( sPetItem_Info wildPetInfo )  { m_sWildPetInfo = wildPetInfo; }
+	CUIButtonEx	&GetViewDetailBtn( SLONG slWearPos) { return m_btnViewDetail[slWearPos]; }
+	void	ClearViewDetail();
+};
+//////////////////////////////////////////////////////////////////////////
 
 
 // ----------------------------------------------------------------------------
@@ -78,10 +211,11 @@ protected:
 	FLOAT				m_afPosZ[PARTY_MAX_MEMBER];					// Position z of members
 	SBYTE				m_asbLayer[PARTY_MAX_MEMBER];				// Layer of members
 	UBYTE				m_aubBuff[PARTY_MAX_MEMBER];				// If buff is shown or not
+	bool				m_bOnline[PARTY_MAX_MEMBER];				// is online 
 	BOOL				m_bShowBuff;								// iF buff is shown or not
 
-	ULONG				m_ultargetID[PARTY_MAX_MEMBER];				// íŒŒí‹°ì›ì´ ê³µê²©í•˜ê³  ìˆëŠ” íƒ€ê²Ÿ ID
-	SBYTE				m_sbtargetType[PARTY_MAX_MEMBER];			// íŒŒí‹°ì›ì´ ê³µê²©í•˜ê³  ìˆëŠ” íƒ€ê²Ÿ Type
+	ULONG				m_ultargetID[PARTY_MAX_MEMBER];				// ÆÄÆ¼¿øÀÌ °ø°İÇÏ°í ÀÖ´Â Å¸°Ù ID
+	SBYTE				m_sbtargetType[PARTY_MAX_MEMBER];			// ÆÄÆ¼¿øÀÌ °ø°İÇÏ°í ÀÖ´Â Å¸°Ù Type
 
 	// Region
 	UIRect				m_rcTitle;
@@ -96,7 +230,109 @@ protected:
 	UIRectUV			m_rtHP;										// UV of HP
 	UIRectUV			m_rtMP;										// UV of MP
 	UIRectUV			m_rtBuff[2];								// UV of buff toggling icon
-	CTString			m_strMandateCharName ;						// ìœ„ì„í•˜ë ¤ëŠ” ì¼€ë¦­í„°ì˜ Index
+	CTString			m_strMandateCharName ;						// À§ÀÓÇÏ·Á´Â ÄÉ¸¯ÅÍÀÇ Index
+
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM 
+//////////////////////////////////////////////////////////////////////////
+	CTextureData		*m_ptdExpeditionTexture;	
+
+	//¿øÁ¤´ë ¸â¹ö Á¤º¸
+	struct stExpeditionMember
+	{
+		SLONG		m_slIndex;								// Ä³¸¯ÅÍ ÀÎµ¦½º
+		SLONG		m_slZone;								// Á¸¹øÈ£
+		CTString	m_strName;								// ÀÌ¸§
+		SBYTE		m_nPosition;							// Á÷Ã¥
+		SBYTE		m_sbJob;								// Á÷¾÷
+		int			m_nLevel;								// ·¹º§
+		int			m_nHP;									// HP
+		int			m_nMaxHP;								// MAX HP
+		int			m_nMP;									// MP
+		int			m_nMaxMP;								// MAX MP
+		FLOAT		m_fPosX;								// À§Ä¡(X)
+		FLOAT		m_fPosZ;								// À§Ä¡(Z)
+		SBYTE		m_sbLayer;								// Layer
+		FLOAT		m_fHPBarRate;							
+		FLOAT		m_fMPBarRate;							
+		BOOL		m_bOnline;								// Á¢¼Ó »óÅÂ
+
+		stExpeditionMember()
+		{
+			Init();
+		}
+
+		void Init()
+		{
+			m_slIndex = -1;		
+			m_slZone = -1;	
+			m_strName = "";	
+			m_nPosition = -1;
+			m_sbJob = -1;	
+			m_nLevel = -1;	
+			m_nHP = -1;		
+			m_nMaxHP = -1;	
+			m_nMP = -1;		
+			m_nMaxMP = -1;	
+			m_fPosX = -1;	
+			m_fPosZ = -1;	
+			m_sbLayer = -1;	
+			m_fHPBarRate = 0.0f;
+			m_fMPBarRate = 0.0f;
+			m_bOnline = FALSE;
+		}
+
+		BOOL IsEmpty()
+		{
+			return m_slIndex == -1 ? TRUE : FALSE;
+		}
+
+		//HP,MP ³²Àº ºñÀ² °è»ê
+		void UpdateBarRate()
+		{
+			FLOAT	fRatio = (FLOAT)m_nHP / (FLOAT)m_nMaxHP;
+			if( fRatio > 1.0f ) fRatio = 1.0f;	
+
+			m_fHPBarRate =  fRatio;
+
+			fRatio = (FLOAT)m_nMP / (FLOAT)m_nMaxMP;
+			if( fRatio > 1.0f ) fRatio = 1.0f;	
+			
+			m_fMPBarRate =  fRatio;
+		}
+
+		//ÁÖ¾îÁø ±æÀÌ¸¦ ÅëÇØ ºñ·ÊÇÑ ±æÀÌ °è»ê
+		int CalcHPBarWidth(int nTotalBarWidth)
+		{
+			return nTotalBarWidth * m_fHPBarRate;
+		}
+
+		int CalcMPBarWIdth(int nTotalBarWidth)
+		{
+			return nTotalBarWidth * m_fMPBarRate;
+		}
+	};
+
+	stExpeditionMember m_ExpeditionGroup[EXPEDITION_GROUP_MAX][EXPEDITION_MEMBER_PER_GROUP];
+
+	CUIExpGroup m_UIExpGroup[EXPEDITION_GROUP_MAX];						// ¿øÁ¤´ë Á¤º¸UI
+
+	CUIExpManage m_UIExpManage;														// ¿øÁ¤´ë °ü¸®UI
+
+	CUIViewDetail m_UIViewDetail;													// »ìÆìº¸±â UI
+
+	int			m_nMyGroupNum;														// ³» ±×·ì¹øÈ£
+	int			m_nGroupPos;														// ±×·ì ³» À§Ä¡
+	SBYTE		m_sbDivisionTypeEXP;												// °æÇèÄ¡ ºĞ¹è Å¸ÀÔ
+ 	SBYTE		m_sbDivisionTypeITEM;												// ¾ÆÀÌÅÛ ºĞ¹è Å¸ÀÔ
+	SBYTE		m_sbDivisionTypeSPITEM;												// ½ºÆä¼È ¾ÆÀÌÅÛºĞ¹è Å¸ÀÔ
+
+	UIRectUV	m_rtExpPosition[2];													// ¿øÁ¤´ë Á÷Ã¥UV
+	
+	// [091119: selo] ÇöÀç ÆÄÆ¼ ÁßÀÎÁö ÆÄ¾Ç
+	BOOL		m_bIsPartyPlay;
+
+//////////////////////////////////////////////////////////////////////////
 
 protected:
 	// Internal functions
@@ -112,6 +348,19 @@ protected:
 	// Network message functions ( send )
 	void	SendPartyAllow();
 	void	SendPartyReject();
+
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM 
+//////////////////////////////////////////////////////////////////////////
+
+	void	RenderExpedition();
+
+	// Network message functions ( send )
+	void	SendExpeditionAllow();															// ¿øÁ¤´ë ¼ö¶ô ¸Ş½ÃÁö Àü¼Û
+	void	SendExpeditionReject();															// ¿øÁ¤´ë °ÅÀı ¸Ş½ÃÁö Àü¼Û
+
+	void	PartyData2Expedition(SLONG slIndex, int nPos);									// ¿øÁ¤´ë º¯È¯½Ã ÆÄÆ¼¿¡ ÀÖ´ø¼öÄ¡¸¦ ¿øÁ¤´ë¿¡ Àû¿ë
+//////////////////////////////////////////////////////////////////////////
 
 public:
 	CUIParty();
@@ -140,6 +389,8 @@ public:
 	FLOAT	GetPosX( int nIndex ) const { return m_afPosX[nIndex]; }
 	FLOAT	GetPosZ( int nIndex ) const { return m_afPosZ[nIndex]; }
 	SBYTE	GetLayer( int nIndex ) const { return m_asbLayer[nIndex]; }
+	int		GetLevel( int nIndex ) const { return m_aswLevels[nIndex]; }
+	CTString	GetMemberName( int nIndex ) const { return m_astrNames[nIndex]; }				// [2012/10/11 : Sora] ¿ùµå¸Ê °³Æí
 
 	// 051203
 	// ENGINE_API bool IsPartyMember( CEntity *pEntity );
@@ -166,7 +417,7 @@ public:
 	void	SendPartyKick( CTString &strDestName );
 
 	// Network message functions ( receive )
-	void	PartyInvite( SBYTE sbType, SLONG slSrcIndex, CTString &strSrcName );
+	void	PartyInvite( SBYTE sbType, SLONG slSrcIndex, CTString &strSrcName, SBYTE sbPartyTypeItem = -1, SBYTE sbPartyTypeSPItem = -1);
 	void	PartyReject( BOOL bLeader );
 	void	PartyAddMember( SBYTE sbLeader, SLONG slIndex, CTString &strName, SBYTE sbJob, SBYTE sbJob2,
 							int iLevel, int iHP, int iMaxHP, int iMP, int iMaxMP,
@@ -175,14 +426,14 @@ public:
 	void	PartyKick( SLONG slIndex );
 	void	PartyEnd();
 	void	PartyMemberInfo( SLONG slIndex, int iLevel, int iHP, int iMaxHP,
-								int iMP, int iMaxMP, FLOAT fX, FLOAT fZ, SBYTE sbLayer, SLONG slZone );
+							int iMP, int iMaxMP, FLOAT fX, FLOAT fZ, SBYTE sbLayer, SLONG slZone, bool bOnline = true);
 	void	MandateBossReq( CTString strManadateChaName );
 	void	MandateBoss( CTString strBossName, SLONG nManadateChaIndex, CTString strManadateChaName, SBYTE sbMandate );
 	void	PartyError( SBYTE sbError );
-	bool	IsOurParty( CTString strName );		// ì´ë¦„ìœ¼ë¡œ íŒŒí‹°ì› ê²€ìƒ‰
-	int		IsOurPartyPos( CTString strName );	// ì´ë¦„ìœ¼ë¡œ ê²€ìƒ‰ 
-	int		IsOurParty( SLONG slCharIndex );	// ì‹ë³„ìë¡œ íŒŒí‹°ì› ê²€ìƒ‰
-	void	SetPartyLeader();					// íŒŒí‹° ë¦¬ë” ì„¤ì •
+	bool	IsOurParty( CTString strName );		// ÀÌ¸§À¸·Î ÆÄÆ¼¿ø °Ë»ö
+	int		IsOurPartyPos( CTString strName );	// ÀÌ¸§À¸·Î °Ë»ö 
+	int		IsOurParty( SLONG slCharIndex );	// ½Äº°ÀÚ·Î ÆÄÆ¼¿ø °Ë»ö
+	void	SetPartyLeader();					// ÆÄÆ¼ ¸®´õ ¼³Á¤
 	BOOL	AmILeader() { return m_bAmILeader; }
 	void	SetDestName( CTString strDest ) { m_strDestName = strDest; }
 	BOOL	IsPartyRequested() { return m_bIsPartyRequested; }
@@ -191,6 +442,98 @@ public:
 	ENGINE_API void	SetPartyTarget(ULONG partyID, ULONG targetID, SBYTE sbtargetType);
 
 	void	SetPartyType( SBYTE sbPartyType) { m_nType = sbPartyType; }
+
+	// [091119: selo] ÇöÀç ÆÄÆ¼ÁßÀÎÁö¸¦ ¾Æ´Â ÇÃ·¡±×
+	BOOL	GetIsPartyPlay(void) { return m_bIsPartyPlay; }
+	void	SetIsPartyPlay(BOOL bIsPartyPlay) { m_bIsPartyPlay = bIsPartyPlay; }
+
+//////////////////////////////////////////////////////////////////////////
+// [sora] RAID_SYSTEM 
+//////////////////////////////////////////////////////////////////////////
+
+	void	InitExpedition();																// ¿øÁ¤´ë ÃÊ±âÈ­
+
+	// Network message functions ( send )
+	void	SendChangeExpedition();																	// ¿øÁ¤´ë·Î ÀüÈ¯ ¸Ş½ÃÁö Àü¼Û
+	void	SendExpeditionInvite( CTString &strDestName );											// ¿øÁ¤´ë ÃÊ´ë ¸Ş½ÃÁö Àü¼Û
+	void	SendDivisionType(SBYTE sbDivisionType, SBYTE sbType);									// ºĞ¹èÅ¸ÀÔ º¯°æ ¸Ş½ÃÁö Àü¼Û 
+	void	SendExpeditionQuit();																	// ¿øÁ¤´ë Å»Åğ ¸Ş½ÃÁö Àü¼Û
+	void	SendExpeditionKick( SLONG slIndex );													// ¿øÁ¤´ë °­Åğ ¸Ş½ÃÁö Àü¼Û
+	void	SendExpeditionEnd();																	// ¿øÁ¤´ë Á¾·á ¸Ş½ÃÁö Àü¼Û
+	void	SendChangeGroup(int nSrcGroupNum, int nSrcPosNum, int nDestGroupNum, int nDestPosNum);	// ¿øÁ¤´ë¿ø ±×·ì º¯°æ
+	void	SendExpeditionViewDetail(SLONG slIndex, CTString strCharName);							// »ìÆìº¸±â ¿äÃ»
+	void	SendChangeSubLeader(SLONG slIndex);														// ºÎ´ëÀå º¯°æ ¿äÃ»
+	void	SendTargetLabelSet(SBYTE sbTargetType, SLONG slIndex, SLONG slLabelIndex);				// Ç¥½Ä ¼³Á¤¿äÃ»
+	void	SendTargetLabelReSet(SBYTE sbTargetType, SLONG slIndex);								// Ç¥½Ä ÇØÁ¦ ¿äÃ»
+
+	void	SendPartyEnd();																			// ÆÄÆ¼ ÇØÃ¼ ¿äÃ»
+	void	SendInitInZone();																		// ÀÎ´ø ÃÊ±âÈ­ ¿äÃ»
+
+	// Network message functions ( receive )
+	void	ChangeExpedition( CNetworkMessage *istr );
+	void	ExpeditionInvite( CNetworkMessage *istr );								// ¿øÁ¤´ë ÃÊ´ë ¸Ş½ÃÁö ¼ö½Å
+	void	ExpeditionError( CNetworkMessage *istr );								// ¿øÁ¤´ë ¿¡·¯ ¼ö½Å
+	void	ExpeditionReject( BOOL bIsSrc );										// ¿øÁ¤´ë °ÅÀı ¸Ş½ÃÁö ¼ö½Å
+	void	ExpeditionQuit( SLONG slType, SLONG slIndex );										// ¿øÁ¤´ë Å»Åğ ¸Ş½ÃÁö ¼ö½Å
+	void	ExpeditionKick( SLONG slIndex );										// ¿øÁ¤´ë °­Åğ ¸Ş½ÃÁö ¼ö½Å
+	void	ExpeditionEnd();														// ¿øÁ¤´ë Á¾·á ¸Ş½ÃÁö ¼ö½Å
+	void	ChangeGroup(SLONG slIndex, int nGroupNum, int nPosNum);					// ¿øÁ¤´ë¿ø ±×·ì º¯°æ ¼ö½Å
+	void	SetDivisionType(SBYTE sbDivisionType, SBYTE sbType, BOOL bFirst = FALSE); // ºĞ¹è¹æ½Ä ÁöÁ¤
+	void	SetDivisionType(SBYTE sbDivisionTypeEXP, SBYTE sbDivisionTypeITEM, SBYTE sbDivisionTypeSPITEM);
+
+	// Set Expedition Info
+	void	AddExpeditionMember( int nGroupNum, int nPos, int nPosition, SLONG slIndex,			// ¿øÁ¤´ë¿ø Ãß°¡
+						CTString &strName, SBYTE sbJob, SBYTE sbJob2, 
+						int iLevel, int iHP, int iMaxHP, int iMP, int iMaxMP,
+						FLOAT fX, FLOAT fZ, SBYTE sbLayer, SLONG slZone );
+
+	void	AddExpeditionMember( int nGroupNum, int nPos, stExpeditionMember expMember);
+
+	void	RemoveExpeditionMember( int nGroup, int nPos );										// ¿øÁ¤´ë¿ø »èÁ¦
+
+	void	ExpeditionMemberInfo( SLONG slIndex, SLONG slGroup, int iLevel, int iHP, int iMaxHP,			// ¿øÁ¤´ë¿ø Á¤º¸ ¼³Á¤
+								int iMP, int iMaxMP, FLOAT fX, FLOAT fZ, SBYTE sbLayer, 
+								SLONG slZone, bool bOnline = true );
+	void	ExpeditionMemberOnline( SLONG slIndex, BOOL bOnline );
+	void	SetExpeditionPosition(SLONG slIndex, SLONG slPosition);
+	void	ChangeExpeditionLeader( SLONG slIndexSrc, SLONG slIndexDesc, SLONG slChangeMode );
+
+	void	OpenExpeditionMemberWindow();													// ¿øÁ¤´ë¿ø Á¤º¸Ã¢ OPEN
+	void	OpenExpeditionManageWindow();													// ¿øÁ¤´ë¿ø °ü¸®Ã¢ OPEN
+
+	// Get Expedition Info
+	int		GetExpeditionMyPosition();
+	SLONG	GetExpeditionMemberIndex(int nGroup, int nPos);									// ¿øÁ¤´ë index
+	SLONG	GetExpeditionMemberIndex(CTString strName);										// ÀÌ¸§À¸·Î °Ë»ö
+	SLONG	GetExpeditionMemberZone(int nGroup, int nPos);									// Zone
+	FLOAT	GetExpeditionMemberPosX(int nGroup, int nPos);									// X
+	FLOAT	GetExpeditionMemberPosZ(int nGroup, int nPos);									// Z
+	SBYTE	GetExpeditionMemberLayer(int nGroup, int nPos);									// Layer
+	BOOL	GetExpeditionMemberOnline(int nGroup, int nPos);								// Á¢¼Ó»óÅÂ
+	bool	SearchExpeditionMember(SLONG slIndex, int &nGroup, int &nPos);					// ÀÎµ¦½º·Î ¿øÁ¤´ë¿øÀÇ ±×·ì, À§Ä¡¸¦ °Ë»ö
+	ENGINE_API bool IsExpedetionMember( INDEX iChaIndex );									// ÇØ´ç ÀÎµ¦½º°¡ ¿øÁ¤´ë¿øÀÎÁö Ã¼Å© 	
+	bool	IsExpedetionDataExist(int nGroup, int nPos);									// ÇØ´ç À§Ä¡¿¡ ¿øÁ¤´ë¿ø Á¤º¸°¡ ÀÖ´Â°¡ Ã¼Å©
+	COLOR	GetJobStringColor(SBYTE sbJob);													// Á÷¾÷º° ÅØ½ºÆ® »ö»ó°ª ¹İÈ¯
+	SBYTE	GetPartyType() { return m_nType; }
+	SBYTE	GetDivisionType(int nType);
+	CTString	GetExpeditionMemberName(int nGroup, int nPos);								// [2012/10/11 : Sora] ¿ùµå¸Ê °³Æí
+
+	void	OpenDivisionInfoWindow();														// ºĞ¹è Á¤º¸Ã¢À» ¶ç¿î´Ù
+
+	void	SetExpeditionKickTargetIndex(SLONG slIndex) { m_UIExpManage.m_slDestIndex = slIndex; }	// ¿øÁ¤´ë °­Åğ¸â¹öÀÎµ¦½º ¼³Á¤(simplepop¿¡¼­ ¿øÁ¤´ë°­Åğ¸Ş´º¿¡ »ç¿ë)
+
+	void	SetTargetLabel(SLONG slType, SLONG slMode, SLONG slLabel, SLONG slIndex);		// Ç¥½Ä ¼³Á¤
+	void	SetViewDetail( SBYTE sbType, CNetworkMessage *istr );							// »ìÆìº¸±â Á¤º¸ ¼ö½Å
+	void	ClearTargetMark();																// Ç¥½Ä reset
+
+	int		IsLabeled(SLONG slTargetType, SLONG slIndex);									// ÀÎµ¦½º¿Í Å¸°ÙÁ¾·ù·Î ¶óº§ÀÌ Ã¼Å©µÇ¾î ÀÖ³ª È®ÀÎ
+
+	void	RaidError( CNetworkMessage *istr );												// ·¹ÀÌµå ¿¡·¯ ¼ö½Å
+
+	BOOL	IsExistOfflineMember();															// ¿ÀÇÁ¶óÀÎ ¸â¹öÃ¼Å©
+	
+	ENGINE_API void	ClearPartyTarget( SLONG slTargetIndex );										// [2010/08/31 : Sora]
+//////////////////////////////////////////////////////////////////////////
 };
 
 

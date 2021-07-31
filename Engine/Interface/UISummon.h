@@ -10,8 +10,8 @@
 #endif
 
 
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIButton.h>
 
 
 // Define position
@@ -22,6 +22,8 @@
 #define	SUMMON_WIDTH				178
 #define	SUMMON_HEIGHT				44
 #define	SUMMON_BAR_WIDTH			107
+
+#define SUMMON_START_X_GAP			105 // uiÇÃ·¹ÀÌ¾î ÀÎÆ÷ÀÇ ÃÊ»óÈ­ ºÎºĞ ºÎÅÍ ½ÃÀÛ ÇØ¾ß µÇ¹Ç·Î ÃÊ»óÈ­ÀÇ ³ĞÀÌ¸¦ ¼öµ¿À¸·Î °¡Áö°í ÀÖ´Â´Ù.
 
 class CEntity;
 
@@ -56,7 +58,7 @@ protected:
 	UIRectUV			m_rtSummon[5];
 	CUIButton			m_btnCommand[4];
 	
-	CUIButtonEx			m_btnSkill;
+	CUIIcon*			m_pIconSkill;
 	
 	int					m_nSummonType;
 	INDEX				m_nOldCommand;
@@ -67,10 +69,10 @@ protected:
 	
 	CEntity*			m_penEntity;
 	int					m_nIndex;	
-	int					m_nLeftTime;					// ë‚¨ì€ ì‹œê°„
-	int					m_nMaxTime;						// ìµœëŒ€ ì‹œê°„
-	TIME				m_tmLeftTime;					// íƒ€ì´ë¨¸ ìš© ì„ì‹œ ë³€ìˆ˜
-	BOOL				m_bSetMaxTime;					// ìµœëŒ€ ì‹œê°„ ì„¤ì • ìœ ë¬´.
+	int					m_nLeftTime;					// ³²Àº ½Ã°£
+	int					m_nMaxTime;						// ÃÖ´ë ½Ã°£
+	TIME				m_tmLeftTime;					// Å¸ÀÌ¸Ó ¿ë ÀÓ½Ã º¯¼ö
+	BOOL				m_bSetMaxTime;					// ÃÖ´ë ½Ã°£ ¼³Á¤ À¯¹«.
 
 	const	int			m_nUIIndex;
 	

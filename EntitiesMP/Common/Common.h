@@ -1,5 +1,5 @@
 // common headers for flesh entity classes
-
+#include <Engine/GameState.h>
 
 // yjpark |<--
 #define LC_SURFACE_MARBLE_IN			0
@@ -131,6 +131,53 @@ struct EntityStats {
   //INDEX es_iScore;
 };
 
+struct sSkillEffectInfo
+{
+	void InitForNormalAttack(CMobData* mob, INDEX aniID)
+	{
+		m_bSkillAttack = FALSE;
+		szEffectNameCast = mob->GetFireEffect0();
+		szEffectNameMissile = mob->GetFireEffect1();
+		szEffectNameHit = mob->GetFireEffect2();
+		iFireDelayCount = mob->GetDelayCount();
+		fFireDelay[0] = mob->GetDelay(0);
+		fFireDelay[1] = mob->GetDelay(1);
+		fFireDelay[2] = mob->GetDelay(2);
+		fFireDelay[3] = mob->GetDelay(3);
+		iMissileType = mob->GetMissileType();
+		fMissileSpeed = mob->GetMissileSpeed();
+		iAnimatioID = aniID;
+		dwValidValue = 0x00000000;
+	}
+	void InitForSkillAttack(CSkill &skill)
+	{
+		m_bSkillAttack = TRUE;
+		szEffectNameCast = skill.GetFireEffect1(0);
+		szEffectNameMissile = skill.GetFireEffect2(0);
+		szEffectNameHit = skill.GetFireEffect3(0);
+		iFireDelayCount = skill.GetDelayCount(0);
+		fFireDelay[0] = skill.GetDelay(0,0);
+		fFireDelay[1] = skill.GetDelay(1,0);
+		fFireDelay[2] = skill.GetDelay(2,0);
+		fFireDelay[3] = skill.GetDelay(3,0);
+		iMissileType = skill.GetMissileType(0);
+		fMissileSpeed = skill.GetMissileSpeed(0);
+		iAnimatioID = skill.idPlayer_Anim_Skill[0][2];
+		dwValidValue = 0x00000000;
+	}
+	
+	BOOL		m_bSkillAttack;
+	const char	*szEffectNameCast;
+	const char	*szEffectNameMissile;
+	const char	*szEffectNameHit;
+	int			iFireDelayCount;
+	FLOAT		fFireDelay[4];
+	int			iMissileType;
+	FLOAT		fMissileSpeed;
+	INDEX		iAnimatioID;
+	DWORD		dwValidValue;
+};
+
 extern INDEX dbg_bEnemyKillTest;
 class EnemyKillData {
 public:
@@ -194,7 +241,7 @@ DECL_DLL void GetPositionCastRay(CEntity *penSource, CEntity *penTarget, FLOAT3D
 // set bool from bool enum type
 DECL_DLL void SetBoolFromBoolEType(BOOL &bSet, BoolEType bet);
 // send event to target
-DECL_DLL void SendToTarget(CEntity *penSendEvent, EventEType eetEventType, CEntity *penCaused = NULL);
+DECL_DLL void SendToTarget(CEntity *penSendEvent, EventEType eetEventType, CEntity *penCaused = NULL, CEntityEvent* peeEvent = NULL);
 // send event in range
 DECL_DLL void SendInRange(CEntity *penSource, EventEType eetEventType, const FLOATaabbox3D &boxRange);
 
@@ -513,3 +560,389 @@ void  ScaleEntityInfo(EntityInfo *eiInfo, FLOAT fScale);
 BOOL RotateSkaChild(CEntity *penParent, CTString strChildName);
 
 extern BOOL plr_bSamForSequences;
+
+class HUD_MLData 
+{
+public:
+	HUD_MLData()
+	{
+		bEnable = FALSE;
+		bHud_Use = FALSE;
+		Init();
+	}
+
+	~HUD_MLData()
+	{
+		HUD_DeleteMI();
+		HUD_DeleteBG();
+	}
+
+public:
+	//CModelInstance*	hud_MI;
+	CEntity		hud_MI;
+	CEntity		hud_BG;
+	CItemEffect	hud_ItemEffect;
+	CEffectGroupManager::my_list listProcess;
+	BOOL bEnable;
+	INDEX iWearingItems[8]; // 0 Weapon // 7 등장비
+	INDEX iAnim;
+	INDEX iRenderType;
+	BOOL bHud_Use; // Hud 데이타가 이미 사용중인지
+
+	void Init()
+	{
+		hud_MI.en_EntityUseType = CEntity::EU_DUMMY;
+		hud_BG.en_EntityUseType = CEntity::EU_DUMMY;
+
+		hud_MI.InitAsSkaModel();
+		hud_BG.InitAsSkaModel();
+
+		hud_ItemEffect.SetItemERType(ER_IN_UI);
+		HUD_CreateMI();
+		HUD_CreateBG();
+		iRenderType = 0;
+
+		for (int i =0 ; i < 8; ++i)
+		{
+			iWearingItems[i] = 0;
+		}
+		iAnim = 0;
+	}
+
+	void SetWearingItems(INDEX iRef, INDEX iType, INDEX iJob, INDEX iItem)
+	{
+		CJobInfo* pInfo = CJobInfo::getSingleton();
+
+		if (iWearingItems[iRef] > 0)
+		{
+			_pGameState->TakeOffArmorTest(hud_MI.GetModelInstance(),iWearingItems[iRef]);
+			CItemData*	pItemData = _pNetwork->GetItemData(iWearingItems[iRef]);
+			hud_ItemEffect.Change(iJob, pItemData, iType, -1, &hud_MI.GetModelInstance()->m_tmSkaTagManager, 1, pItemData->GetSubType());
+		}
+		else
+		{
+			if (iRef > 0 && iItem > 0)
+			{
+				CItemData* pItemData = _pNetwork->GetItemData(iItem);
+				CTString strItemSmc = pItemData->GetItemSmcFileName();
+
+				if (strItemSmc == MODEL_TREASURE)
+				{
+					return;
+				}
+
+				_pGameState->DeleteDefaultArmor(hud_MI.GetModelInstance(), iType, iJob);
+			}
+		}
+
+		if (iItem > 0)
+		{
+			_pGameState->WearingArmorTest(hud_MI.GetModelInstance(), iItem);
+			CItemData* pItemData = _pNetwork->GetItemData(iItem);
+			hud_ItemEffect.Change(iJob, pItemData, iType, 0, &hud_MI.GetModelInstance()->m_tmSkaTagManager, 1, pItemData->GetSubType());
+			iWearingItems[iRef] = iItem;
+			if (iWearingItems[0] > 0)
+			{
+				CItemData* pItemData = _pNetwork->GetItemData(iWearingItems[0]);
+
+				if (pItemData->GetSubType() == pInfo->GetSkillWeponType(_pNetwork->MyCharacterInfo.job, 1))
+				{
+					hud_MI.AddAnimation(ska_GetIDFromStringTable(pInfo->GetAnimationName(_pNetwork->MyCharacterInfo.job, ANIM_EXT_ATTACK_IDLE)),
+					AN_LOOPING|AN_CLEAR, 1.0f, 0x03, ESKA_MASTER_MODEL_INSTANCE);
+				}
+				else
+				{
+					hud_MI.AddAnimation(ska_GetIDFromStringTable(pInfo->GetAnimationName(_pNetwork->MyCharacterInfo.job, ANIM_ATTACK_IDLE)),
+					AN_LOOPING|AN_CLEAR, 1.0f, 0x03, ESKA_MASTER_MODEL_INSTANCE);
+				}
+			}
+			else
+			{
+				hud_MI.AddAnimation(ska_GetIDFromStringTable(pInfo->GetAnimationName(_pNetwork->MyCharacterInfo.job, ANIM_IDLE)),
+				AN_LOOPING|AN_CLEAR, 1.0f, 0x03, ESKA_MASTER_MODEL_INSTANCE);
+			}
+		}
+		else
+		{
+			if (iType == WEAR_WEAPON)
+			{
+				hud_MI.AddAnimation(ska_GetIDFromStringTable(pInfo->GetAnimationName(_pNetwork->MyCharacterInfo.job, ANIM_IDLE)),
+				AN_LOOPING|AN_CLEAR, 1.0f, 0x03, ESKA_MASTER_MODEL_INSTANCE);
+			}
+			else if (iWearingItems[iRef] > 0)
+			{
+				CTFileName fnFileName;
+				MeshInstance *mi;
+
+				int iWearPos = -1;
+				switch( iType )
+				{
+				case WEAR_HELMET:
+					iWearPos = HEAD;
+					break;
+				case WEAR_JACKET:
+					iWearPos = BODYUP;
+					break;
+				case WEAR_PANTS:
+					iWearPos = BODYDOWN;
+					break;
+				case WEAR_GLOVES:
+					iWearPos = HAND;
+					break;
+				case WEAR_BOOTS:
+					iWearPos = FOOT;
+					break;
+				}
+
+				if( iWearPos == -1 )
+				{
+					return;
+				}
+
+				if( iType == WEAR_PANTS )
+				{
+					// Mesh
+					fnFileName = pInfo->GetMeshName( iJob, SKIRT );
+					if(strlen( fnFileName ) > 0)
+					{			
+						mi = hud_MI.GetModelInstance()->AddArmor( fnFileName );
+
+						// Texture
+						fnFileName = pInfo->GetTextureName( iJob, SKIRT );
+						hud_MI.GetModelInstance()->AddTexture_t( fnFileName, fnFileName.FileName(), mi );	
+
+						// NormalMap
+						fnFileName = pInfo->GetTexNormalName( iJob, SKIRT );
+						if(strcmp(fnFileName, ""))
+						{					
+							hud_MI.GetModelInstance()->AddTexture_t(fnFileName, fnFileName.FileName(), mi);
+						}
+					}
+				}
+
+				if (iType == WEAR_HELMET )// 헬멧 이외 장비 처리
+				{
+					((CPlayerEntity*)CEntity::GetPlayerEntity(0))->ChangeHairMesh(hud_MI.GetModelInstance(), iJob, _pNetwork->MyCharacterInfo.hairStyle - 1);
+				}else{									
+					// Mesh
+					fnFileName = pInfo->GetMeshName( iJob, iWearPos );
+					mi = hud_MI.GetModelInstance()->AddArmor( fnFileName );
+
+					// Texture
+					fnFileName = pInfo->GetTextureName( iJob, iWearPos );
+					hud_MI.GetModelInstance()->AddTexture_t( fnFileName, fnFileName.FileName(), mi );
+
+					// NormalMap
+					fnFileName = pInfo->GetTexNormalName( iJob, iWearPos );
+					if(strcmp(fnFileName, ""))
+					{
+						hud_MI.GetModelInstance()->AddTexture_t(fnFileName, fnFileName.FileName(), mi);
+					}
+				}
+			}
+
+			iWearingItems[iRef] = 0;
+			hud_ItemEffect.Refresh(&hud_MI.GetModelInstance()->m_tmSkaTagManager, 1);
+		}
+	}
+
+	void SetLoginWearingItems(INDEX iRef, INDEX iType, INDEX iJob, INDEX iItem)
+	{
+		CJobInfo* pInfo = CJobInfo::getSingleton();
+
+		if (pInfo == NULL)
+		{
+			return;
+		}
+
+		if (iWearingItems[iRef] > 0)
+		{
+			_pGameState->TakeOffArmorTest(hud_MI.GetModelInstance(),iWearingItems[iRef]);
+			CItemData*	pItemData = _pNetwork->GetItemData(iWearingItems[iRef]);
+			hud_ItemEffect.Change(iJob, pItemData, iType, -1, &hud_MI.GetModelInstance()->m_tmSkaTagManager, 1, pItemData->GetSubType());
+		}
+		else
+		{
+			if (iRef > 0 && iItem > 0)
+			{
+				CItemData* pItemData = _pNetwork->GetItemData(iItem);
+				CTString strItemSmc = pItemData->GetItemSmcFileName();
+
+				if (strItemSmc == MODEL_TREASURE)
+				{
+					return;
+				}
+
+				_pGameState->DeleteDefaultArmor(hud_MI.GetModelInstance(), iType, iJob);
+			}
+		}
+
+		if (iItem > 0)
+		{
+			_pGameState->WearingArmorTest(hud_MI.GetModelInstance(), iItem);
+			CItemData* pItemData = _pNetwork->GetItemData(iItem);
+			hud_ItemEffect.Change(iJob, pItemData, iType, 0, &hud_MI.GetModelInstance()->m_tmSkaTagManager, 1, pItemData->GetSubType());
+			iWearingItems[iRef] = iItem;
+		}
+		else
+		{
+			if (iType != WEAR_WEAPON)
+			{
+				CTFileName fnFileName;
+				MeshInstance *mi;
+
+				int iWearPos = -1;
+				switch( iType )
+				{
+				case WEAR_HELMET:
+					iWearPos = HEAD;
+					break;
+
+				case WEAR_JACKET:
+					iWearPos = BODYUP;
+					break;
+				case WEAR_PANTS:
+					iWearPos = BODYDOWN;
+					break;
+				case WEAR_GLOVES:
+					iWearPos = HAND;
+					break;
+				case WEAR_BOOTS:
+					iWearPos = FOOT;
+					break;
+				}
+
+				if( iWearPos == -1 )
+				{
+					return;
+				}
+
+				if( iType == WEAR_PANTS )
+				{
+					// Mesh
+					fnFileName = pInfo->GetMeshName( iJob, SKIRT );
+					if(strlen( fnFileName ) > 0)
+					{			
+						mi = hud_MI.GetModelInstance()->AddArmor( fnFileName );
+
+						// Texture
+						fnFileName = pInfo->GetTextureName( iJob, SKIRT );
+						hud_MI.GetModelInstance()->AddTexture_t( fnFileName, fnFileName.FileName(), mi );	
+
+						// NormalMap
+						fnFileName = pInfo->GetTexNormalName( iJob, SKIRT );
+						if(strcmp(fnFileName, ""))
+						{					
+							hud_MI.GetModelInstance()->AddTexture_t(fnFileName, fnFileName.FileName(), mi);
+						}
+					}
+				}
+
+				if(iType != WEAR_HELMET )
+				{									
+					// Mesh
+					fnFileName = pInfo->GetMeshName( iJob, iWearPos );
+					mi = hud_MI.GetModelInstance()->AddArmor( fnFileName );
+
+					// Texture
+					fnFileName = pInfo->GetTextureName( iJob, iWearPos );
+					hud_MI.GetModelInstance()->AddTexture_t( fnFileName, fnFileName.FileName(), mi );
+
+					// NormalMap
+					fnFileName = pInfo->GetTexNormalName( iJob, iWearPos );
+					if(strcmp(fnFileName, ""))
+					{
+						hud_MI.GetModelInstance()->AddTexture_t(fnFileName, fnFileName.FileName(), mi);
+					}
+				}
+			}
+
+			iWearingItems[iRef] = 0;
+			hud_ItemEffect.Refresh(&hud_MI.GetModelInstance()->m_tmSkaTagManager, 1);
+		}
+	}
+	
+	void HUD_CreateMI()
+	{
+		hud_MI.en_pmiModelInstance = CreateModelInstance("");
+		hud_MI.en_pmiModelInstance->mi_bDummyModel = TRUE;
+	}
+
+	void HUD_DeleteMI()
+	{
+		hud_MI.End();
+		bEnable = FALSE;
+	}
+
+	void HUD_CreateBG()
+	{
+		hud_BG.en_pmiModelInstance = CreateModelInstance("");
+		hud_BG.en_pmiModelInstance->mi_bDummyModel = TRUE;
+	}
+
+	void HUD_DeleteBG()
+	{
+		hud_BG.End();
+	}
+
+	void HUD_CopyMI(CModelInstance* copyMI)
+	{
+		hud_MI.GetModelInstance()->Copy((*copyMI));
+		hud_MI.GetModelInstance()->m_tmSkaTagManager.SetOwner(&hud_MI);
+		CSkaTag tag;
+		tag.SetName("__ROOT");
+		tag.SetOffsetRot(GetEulerAngleFromQuaternion(hud_MI.GetModelInstance()->mi_qvOffset.qRot));
+		hud_MI.GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+		tag.SetName("__TOP");
+		tag.SetOffsetRot(GetEulerAngleFromQuaternion(hud_MI.GetModelInstance()->mi_qvOffset.qRot));
+		FLOATaabbox3D aabb;
+		hud_MI.GetModelInstance()->GetAllFramesBBox(aabb);
+		tag.SetOffsetPos(0, aabb.Size()(2) * hud_MI.GetModelInstance()->mi_vStretch(2), 0);
+		hud_MI.GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+		bEnable = TRUE;
+	}
+
+	void HUD_CopyItemEffect(CItemEffect* copyItemEffect)
+	{
+		hud_ItemEffect.Clear();
+		hud_ItemEffect = (*copyItemEffect);
+		hud_ItemEffect.DeleteEffect(WEAR_WEAPON, TRUE);
+		hud_ItemEffect.Refresh(&hud_MI.GetModelInstance()->m_tmSkaTagManager, 1);
+	}
+
+	void HUD_SetItemEffect()
+	{
+		hud_ItemEffect.Clear();
+		hud_ItemEffect.DeleteEffect(WEAR_WEAPON, TRUE);
+		hud_ItemEffect.AddLoginEffect(&hud_MI.GetModelInstance()->m_tmSkaTagManager);
+		//hud_ItemEffect.AddPetStashEffect(0,&hud_MI.GetModelInstance()->m_tmSkaTagManager);
+		hud_ItemEffect.Refresh(&hud_MI.GetModelInstance()->m_tmSkaTagManager, 1);
+	}
+
+	void HUD_RenderUIType(INDEX iUIType)
+	{
+		iRenderType = iUIType;
+	}
+
+	void HUD_SetTitleEffect(const char* strEffectName)
+	{
+		hud_ItemEffect.AddNickEffect(strEffectName, &hud_MI.GetModelInstance()->m_tmSkaTagManager);
+		hud_ItemEffect.SetItemERSubType(ERS_MAKETITLE);
+		hud_ItemEffect.Refresh(&hud_MI.GetModelInstance()->m_tmSkaTagManager, 1);
+	}
+
+	void HUD_DeleteTitleEffect()
+	{
+		hud_ItemEffect.DeleteNickEffect();
+	}
+
+	BOOL IsHudModelUsed()
+	{
+		return bHud_Use;
+	}
+
+	void SetHUDModelUse(BOOL bUse)
+	{
+		bHud_Use = bUse;
+	}
+};

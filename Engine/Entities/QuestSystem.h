@@ -5,178 +5,175 @@
 #include <vector>
 #include <map>
 #include <Engine/Base/Types.h>
+#include <Engine/LocalDefine.h>
+#include <Engine/Interface/UIDefine.h>
 
-#define QUEST_FLAG_NOT_LEVEL	0		// ìˆ˜í–‰ ë¶ˆê°€ëŠ¥ : ë ˆë²¨
-#define QUEST_FLAG_NOT_JOB		1		// ìˆ˜í–‰ ë¶ˆê°€ëŠ¥ : ì§ì—…
-#define QUEST_FLAG_NOT_ITEM		2		// ìˆ˜í–‰ ë¶ˆê°€ëŠ¥ : ì•„ì´í…œ
-#define QUEST_FLAG_CAN			3		// ìˆ˜í–‰ ê°€ëŠ¥
-#define QUEST_FLAG_ING			4		// ìˆ˜í–‰ ì¤‘
-#define QUEST_FLAG_COMPLETE		5		// í€˜ìŠ¤íŠ¸ ì™„ë£Œ.
-#define QUEST_FLAG_NOT_EXP		6		//ìˆ˜í–‰ ë¶ˆê°€ëŠ¥ : ê²½í—˜ì¹˜ ë¶€ì¡±.
-#define QUEST_FLAG_NOT_PREQUEST	7		//ìˆ˜í–‰ ë¶ˆê°€ëŠ¥ : ì„ í–‰ í€˜ìŠ¤íŠ¸ ë¯¸ì™„ë£Œ.
+#include <Engine/Help/LoadLod.h>
+#include <common/header/def_quest.h>
 
-//ì„œë²„ì—ì„œ ê°–ê³ ì˜¨ Define
-#define		MAX_MAX_NEED_ITEM			5		// í•„ìš”ì•„ì´í…œ ìµœëŒ€ 5
-#define		QUEST_MAX_CONDITION			3		// ìˆ˜í–‰ì¡°ê±´ ìµœëŒ€ 3
-#define		QUEST_MAX_PRIZE				5		// ë³´ìƒ ìµœëŒ€ 5
-#define		QUEST_MAX_CONDITION_DATA	4		// ìˆ˜í–‰ì¡°ê±´ í•˜ë‚˜ë‹¹ ë¶€ê°€ ë°ì´íƒ€ 4
-#define		MAX_PC_QUEST				10		// ìºë¦­í„° ë©€í‹° í€˜ìŠ¤íŠ¸ 10
+#define QUEST_FLAG_NOT_LEVEL	0		// ¼öÇà ºÒ°¡´É : ·¹º§
+#define QUEST_FLAG_NOT_JOB		1		// ¼öÇà ºÒ°¡´É : Á÷¾÷
+#define QUEST_FLAG_NOT_ITEM		2		// ¼öÇà ºÒ°¡´É : ¾ÆÀÌÅÛ
+#define QUEST_FLAG_CAN			3		// ¼öÇà °¡´É
+#define QUEST_FLAG_ING			4		// ¼öÇà Áß
+#define QUEST_FLAG_COMPLETE		5		// Äù½ºÆ® ¿Ï·á.
+#define QUEST_FLAG_NOT_EXP		6		//¼öÇà ºÒ°¡´É : °æÇèÄ¡ ºÎÁ·.
+#define QUEST_FLAG_NOT_PREQUEST	7		//¼öÇà ºÒ°¡´É : ¼±Çà Äù½ºÆ® ¹Ì¿Ï·á.
 
-// í€˜ìŠ¤íŠ¸ ë¶„ë¥˜ [090603: selo]
-#define		QCATEGORY_NORMAL			0		// ì¼ë°˜
-#define		QCATEGORY_SCENARIO			1		// ì‹œë‚˜ë¦¬ì˜¤
-#define		QCATEGORY_SUPPLEMENT		2		// ì™¸ì „
-#define		QCATEGORY_NIGHTSHADOW		3		// ë‚˜ì´íŠ¸ ì‰ë„ìš°
-#define		QCATEGORY_END				QCATEGORY_NIGHTSHADOW + 1
+//¼­¹ö¿¡¼­ °®°í¿Â Define
+#define		MAX_MAX_NEED_ITEM			5		// ÇÊ¿ä¾ÆÀÌÅÛ ÃÖ´ë 5
+#define		QUEST_MAX_CONDITION			3		// ¼öÇàÁ¶°Ç ÃÖ´ë 3
+#define		QUEST_MAX_PRIZE				5		// º¸»ó ÃÖ´ë 5
+#define		QUEST_MAX_OPTION_PRIZE		7		// ¿É¼Ç º¸»ó ÃÖ´ë 7 [090728: selo]
+#define		QUEST_MAX_CONDITION_DATA	4		// ¼öÇàÁ¶°Ç ÇÏ³ª´ç ºÎ°¡ µ¥ÀÌÅ¸ 4
+#define		MAX_PC_QUEST				10		// Ä³¸¯ÅÍ ¸ÖÆ¼ Äù½ºÆ® 10
 
-// í€˜ìŠ¤íŠ¸ ê·œëª¨ [090603: selo]
-#define		QSCALE_SINGLE				0		// ì¼ë°˜
-#define		QSCALE_PARTY				1		// íŒŒí‹°
-#define		QSCALE_EXPEDITION			2		// ì›ì •ëŒ€
+// Äù½ºÆ® ºĞ·ù [090603: selo]
+#define		QCATEGORY_NORMAL			0		// ÀÏ¹İ
+#define		QCATEGORY_SCENARIO			1		// ½Ã³ª¸®¿À
+#define		QCATEGORY_SUPPLEMENT		2		// ¿ÜÀü
+//#define		QCATEGORY_NIGHTSHADOW		3		// ³ªÀÌÆ® ½¦µµ¿ì
+#define		QCATEGORY_END				QCATEGORY_SUPPLEMENT + 1
 
-// ì¢…ë¥˜ë³„ íƒ€ì…(Type1)
-#define		QTYPE_KIND_REPEAT					0  // ë°˜ë³µí˜• í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_COLLECTION				1  // ìˆ˜ì§‘í˜• í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_DELIVERY					2  // ì „ë‹¬í˜• í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_DEFEAT					3  // ê²©íŒŒ í€˜ìŠ¤íŠ¸(ì‹±ê¸€ë˜ì „1)
-#define		QTYPE_KIND_SAVE						4  // êµ¬ì¶œ í€˜ìŠ¤íŠ¸(ì‹±ê¸€ë˜ì „2)
-#define		QTYPE_KIND_MINING_EXPERIENCE		5  // ì±„êµ´ ì²´í—˜ í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_GATHERING_EXPERIENCE		6  // ì±„ì§‘ ì²´í—˜ í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_CHARGE_EXPERIENCE		7  // ì°¨ì§€ ì²´í—˜ í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_PROCESS_EXPERIENCE		8  // ê°€ê³µ ì²´í—˜ í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_MAKE_EXPERIENCE			9  // ì œì‘ ì²´í—˜ í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_TUTORIAL					10 // íŠœí† ë¦¬ì–¼ í€˜ìŠ¤íŠ¸
-#define		QTYPE_KIND_PC						11 // PK í€˜ìŠ¤íŠ¸ 
-#define		QTYPE_KIND_SEARCH					12 // íƒìƒ‰ í€˜ìŠ¤íŠ¸
+// Äù½ºÆ® ±Ô¸ğ [090603: selo]
+#define		QSCALE_SINGLE				0		// ÀÏ¹İ
+#define		QSCALE_PARTY				1		// ÆÄÆ¼
+#define		QSCALE_EXPEDITION			2		// ¿øÁ¤´ë
 
-// ìˆ˜í–‰ë³„ íƒ€ì…(Type2)
-#define		QTYPE_REPEAT_ONCE			0		// 1íšŒìš© í€˜ìŠ¤íŠ¸
-#define		QTYPE_REPEAT_UNLIMITED		1		// ë¬´í•œ í€˜ìŠ¤íŠ¸
-#define		QTYPE_REPEAT_DAY			2		// ì¼ì¼ í€˜ìŠ¤íŠ¸
+// Á¾·ùº° Å¸ÀÔ(Type1)
+#define		QTYPE_KIND_REPEAT					0  // ¹İº¹Çü Äù½ºÆ®
+#define		QTYPE_KIND_COLLECTION				1  // ¼öÁıÇü Äù½ºÆ®
+#define		QTYPE_KIND_DELIVERY					2  // Àü´ŞÇü Äù½ºÆ®
+#define		QTYPE_KIND_DEFEAT					3  // °İÆÄ Äù½ºÆ®(½Ì±Û´øÀü1)
+#define		QTYPE_KIND_SAVE						4  // ±¸Ãâ Äù½ºÆ®(½Ì±Û´øÀü2)
+#define		QTYPE_KIND_MINING_EXPERIENCE		5  // Ã¤±¼ Ã¼Çè Äù½ºÆ®
+#define		QTYPE_KIND_GATHERING_EXPERIENCE		6  // Ã¤Áı Ã¼Çè Äù½ºÆ®
+#define		QTYPE_KIND_CHARGE_EXPERIENCE		7  // Â÷Áö Ã¼Çè Äù½ºÆ®
+#define		QTYPE_KIND_PROCESS_EXPERIENCE		8  // °¡°ø Ã¼Çè Äù½ºÆ®
+#define		QTYPE_KIND_MAKE_EXPERIENCE			9  // Á¦ÀÛ Ã¼Çè Äù½ºÆ®
+#define		QTYPE_KIND_TUTORIAL					10 // Æ©Åä¸®¾ó Äù½ºÆ®
+#define		QTYPE_KIND_SEARCH					11 // Å½»ö Äù½ºÆ®
 
-// ì‹œì‘ íƒ€ì…
-#define		QSTART_NPC					0		// NPCë¥¼ í†µí•œ ì‹œì‘
-#define		QSTART_LEVEL				1		// ë ˆë²¨ ì—…ì— ì˜í•´ ì‹œì‘
-#define		QSTART_ITEM					2		// ì•„ì´í…œì„ í†µí•œ ì‹œì‘
-#define		QSTART_AREA					3		// íŠ¹ì •ì§€ì—­ì— ë„ë‹¬í•˜ì—¬ ì‹œì‘
+// ¼öÇàº° Å¸ÀÔ(Type2)
+#define		QTYPE_REPEAT_ONCE			0		// 1È¸¿ë Äù½ºÆ®
+#define		QTYPE_REPEAT_UNLIMITED		1		// ¹«ÇÑ Äù½ºÆ®
+#define		QTYPE_REPEAT_DAY			2		// ÀÏÀÏ Äù½ºÆ®
 
-// í€˜ìŠ¤íŠ¸ ìˆ˜í–‰ ì¡°ê±´
+// ½ÃÀÛ Å¸ÀÔ
+#define		QSTART_NPC					0		// NPC¸¦ ÅëÇÑ ½ÃÀÛ
+#define		QSTART_LEVEL				1		// ·¹º§ ¾÷¿¡ ÀÇÇØ ½ÃÀÛ
+#define		QSTART_ITEM					2		// ¾ÆÀÌÅÛÀ» ÅëÇÑ ½ÃÀÛ
+#define		QSTART_AREA					3		// Æ¯Á¤Áö¿ª¿¡ µµ´ŞÇÏ¿© ½ÃÀÛ
+
+// Äù½ºÆ® ¼öÇà Á¶°Ç
 #define		QCONDITION_NPC				0		// NPC
-#define		QCONDITION_ITEM				1		// ì•„ì´í…œ
-#define		QCONDITION_ITEM_NORMAL		2		// ì•„ì´í…œ(ì¼ë°˜)
-#define		QCONDITION_PC				3		// PC (ìºë¦­í„° PK)
-#define		QCONDITION_AREA				4		// ì˜ì—­ ë„ë‹¬
-#define		QCONDITION_ITEMUSE			5		// ì•„ì´í…œ ì‚¬ìš©
+#define		QCONDITION_ITEM				1		// ¾ÆÀÌÅÛ
+#define		QCONDITION_ITEM_NORMAL		2		// ¾ÆÀÌÅÛ(ÀÏ¹İ)
+#define		QCONDITION_PC				3		// PC (Ä³¸¯ÅÍ PK)
+#define		QCONDITION_AREA				4		// ¿µ¿ª µµ´Ş
+#define		QCONDITION_ITEMUSE			5		// ¾ÆÀÌÅÛ »ç¿ë
 
-// í€˜ìŠ¤íŠ¸ ë³´ìƒ ì¢…ë¥˜
-#define		QPRIZE_ITEM					0		// ì•„ì´í…œ (ëˆí¬í•¨)
-#define		QPRIZE_MONEY				1		// ì•„ì´í…œ (ëˆí¬í•¨)
-#define		QPRIZE_EXP					2		// ê²½í—˜ì¹˜
-#define		QPRIZE_SP					3		// ìŠ¤í‚¬í¬ì¸íŠ¸
-#define		QPRIZE_SKILL				4		// ìŠ¤í‚¬
-#define		QPRIZE_SSKILL				5		// íŠ¹ìˆ˜ìŠ¤í‚¬
+// Äù½ºÆ® º¸»ó Á¾·ù
+#define		QPRIZE_ITEM					0		// ¾ÆÀÌÅÛ (µ·Æ÷ÇÔ)
+#define		QPRIZE_MONEY				1		// ¾ÆÀÌÅÛ (µ·Æ÷ÇÔ)
+#define		QPRIZE_EXP					2		// °æÇèÄ¡
+#define		QPRIZE_SP					3		// ½ºÅ³Æ÷ÀÎÆ®
+#define		QPRIZE_SKILL				4		// ½ºÅ³
+#define		QPRIZE_SSKILL				5		// Æ¯¼ö½ºÅ³
+#define		QPRIZE_RVR_POINT			7		// °á»ç´ë Æ÷ÀÎÆ®.
 
-#define		QUEST_MAX_NPC				50		// npc í•˜ë‚˜ë‹¹ ìµœëŒ€ í€˜ìŠ¤íŠ¸ ë³´ìœ  ìˆ˜ 50
-#define		QUEST_MAX_PC_COMPLETE		100		// pcê°€ ì™„ë£Œí•œ 1íšŒìš© í€˜ìŠ¤íŠ¸ ìµœëŒ€ ìˆ˜
+#define		QUEST_MAX_NPC				50		// npc ÇÏ³ª´ç ÃÖ´ë Äù½ºÆ® º¸À¯ ¼ö 50
+#define		QUEST_MAX_PC_COMPLETE		100		// pc°¡ ¿Ï·áÇÑ 1È¸¿ë Äù½ºÆ® ÃÖ´ë ¼ö
 
 // Line count of description
 #define	QUEST_TITLE_DESC				4
 #define	QUEST_STATUS_DESC				QUEST_MAX_CONDITION * 2
 #define	QUEST_PRIZE_DESC				QUEST_MAX_PRIZE + 1
+#define QUEST_OPTION_PRIZE_DESC			QUEST_MAX_OPTION_PRIZE + 1	// [090728: selo] ¿É¼Ç º¸»ó °³¼ö°¡ º¯°æ µÇ¾úÀ½ (5°³ -> 7°³)
 #define	QUEST_NEED_DESC					MAX_MAX_NEED_ITEM + 1
 
-// quest ê´€ë ¨ ë°ì´í„°, DBì—ì„œ ë½‘ì€ Dataë¡œ íŒŒì¼ì—ì„œ ì½ì–´ë“¤ì„. ì„œë²„ ë§˜ëŒ€ë¡œì„.
-class CQuestStaticData
+// [100119: selo] º¸»óÀÇ ¿É¼Ç Ã³¸®¸¦ À§ÇÑ ±¸Á¶Ã¼
+struct stOptionPrizeTemp
 {
-protected:
-	CQuestStaticData();
-	~CQuestStaticData();
-
-	friend class CQuestSystem;
-	friend class CQuestDynamicData;
-
-	CQuestStaticData(const CQuestStaticData &other);
-	CQuestStaticData &operator = (const CQuestStaticData &other);
-
-	INDEX	m_iIndex;
-	char	m_szName[50];
-	INDEX	m_iCategory;		// í€˜ìŠ¤íŠ¸ ë¶„ë¥˜ [090603: selo]
-	INDEX	m_iPartyScale;		// í€˜ìŠ¤íŠ¸ ê·œëª¨ [090603: selo]
-	INDEX	m_iType1;
-	INDEX	m_iType2;
-	INDEX	m_iStartType;
-	INDEX	m_iStartData;
-	//INDEX	m_iGiveNPCIndex;	// í€˜ìŠ¤íŠ¸ ì£¼ëŠ” NPC
-	INDEX	m_iPrizeNPCIndex;	// ë³´ìƒí•´ì£¼ëŠ” NPC
-
-	INDEX	m_iPreQuestIndex;	//ì„ í–‰ í€˜ìŠ¤íŠ¸ ì¸ë±ìŠ¤
-	INDEX	m_iStartNPCZoneIndex;//í€˜ìŠ¤íŠ¸ ì£¼ëŠ” npcì˜ zone index
-	INDEX	m_iPrizeNPCZoneIndex;//ë³´ìƒí•´ì£¼ëŠ” npcì˜ zone index
-	
-	INDEX	m_iNeedEXP;
-	INDEX	m_iNeedMinLevel;
-	INDEX	m_iNeedMaxLevel;
-	INDEX	m_iNeedJob;
-	INDEX	m_iMinPenalty;
-	INDEX	m_iMaxPenalty;
-	INDEX	m_iNeedItemIndex[MAX_MAX_NEED_ITEM];
-	INDEX	m_iNeedItemCount[MAX_MAX_NEED_ITEM];
-	
-	INDEX	m_iConditionType[QUEST_MAX_CONDITION];
-	INDEX	m_iConditionIndex[QUEST_MAX_CONDITION];
-	INDEX	m_iConditionNum[QUEST_MAX_CONDITION];
-	INDEX	m_iConditionData[QUEST_MAX_CONDITION][QUEST_MAX_CONDITION_DATA];
-	
-	INDEX	m_iPrizeType[QUEST_MAX_PRIZE];
-	INDEX	m_iPrizeIndex[QUEST_MAX_PRIZE];
-	INDEX	m_iPrizeData[QUEST_MAX_PRIZE];
-	
-	INDEX	m_bOptionPrize;
-	INDEX	m_iOptionPrizeType[QUEST_MAX_PRIZE];
-	INDEX	m_iOptionPrizeIndex[QUEST_MAX_PRIZE];
-	INDEX	m_iOptionPrizeData[QUEST_MAX_PRIZE];
-	INDEX	m_iOptionPrizePlus[QUEST_MAX_PRIZE];
-
-	char	m_szDesc[2048];
-	char	m_szDesc2[2048];
-	char	m_szDesc3[2048];
+	INDEX	m_iOptionPrizeType[QUEST_MAX_OPTION_PRIZE];
+	INDEX	m_iOptionPrizeIndex[QUEST_MAX_OPTION_PRIZE];
+	INDEX	m_iOptionPrizeData[QUEST_MAX_OPTION_PRIZE];
+	INDEX	m_iOptionPrizePlus[QUEST_MAX_OPTION_PRIZE];
 };
 
-// quest ê´€ë ¨ ë°ì´í„°, ì„œë²„ê°€ ë³´ë‚´ì£¼ëŠ” Dataì™€ íŒŒì¼ì—ì„œ ì½ì€ Dataë¥¼ ì§¬ë½•í•´ì„œ ë§Œë“œëŠ” ë°ì´íƒ€
-// ë³´ê¸° ì¢‹ìœ¼ë¼ê³  ë§Œë“œëŠ” Dataë¡œ í˜„ì¬ í”Œë ˆì´ ì¤‘ì¸ ìºë¦­í„°ì˜ Dataì„. String ìœ„ì£¼ì„.
+// quest °ü·Ã µ¥ÀÌÅÍ, DB¿¡¼­ »ÌÀº Data·Î ÆÄÀÏ¿¡¼­ ÀĞ¾îµéÀÓ. ¼­¹ö ¸¾´ë·ÎÀÓ.
+class CQuestStaticData : public stQuest, public LodLoader<CQuestStaticData>
+{
+protected:
+	INDEX	m_iCategory;		// Äù½ºÆ® ºĞ·ù [090603: selo]
+	int		transFlag;	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+
+	std::string	m_szName;
+	std::string	m_szDesc;
+	std::string	m_szDesc2;
+	std::string	m_szDesc3;
+
+public:
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslate();
+	void ClearNoTranslate();
+	INDEX GetIndex()	{ return index; }
+
+	void SetCategory(INDEX iCategory) { m_iCategory = iCategory; }
+	void SetTitle(const char* str)	{ m_szName = str; }
+	void SetDesc1(const char* str)	{ m_szDesc = str; }
+	void SetDesc2(const char* str)	{ m_szDesc2 = str; }
+	void SetDesc3(const char* str)	{ m_szDesc3 = str; }
+
+	INDEX GetCategory() { return m_iCategory; }
+	const char* GetTitle()	{ return m_szName.c_str(); }
+	const char* GetDesc1()	{ return m_szDesc.c_str(); }
+	const char* GetDesc2()	{ return m_szDesc2.c_str(); }
+	const char* GetDesc3()	{ return m_szDesc3.c_str(); }
+
+	static bool loadEx(const char* fileName);
+};
+
+// quest °ü·Ã µ¥ÀÌÅÍ, ¼­¹ö°¡ º¸³»ÁÖ´Â Data¿Í ÆÄÀÏ¿¡¼­ ÀĞÀº Data¸¦ Â«»ÍÇØ¼­ ¸¸µå´Â µ¥ÀÌÅ¸
+// º¸±â ÁÁÀ¸¶ó°í ¸¸µå´Â Data·Î ÇöÀç ÇÃ·¹ÀÌ ÁßÀÎ Ä³¸¯ÅÍÀÇ DataÀÓ. String À§ÁÖÀÓ.
 class ENGINE_API CQuestDynamicData
 {
+private:
+	CQuestStaticData* m_pStaticData;
 public:
-	CQuestDynamicData(const CQuestStaticData &data);
+	CQuestDynamicData(CQuestStaticData* data);
 	~CQuestDynamicData();
 
 	// from quest static data
 	INDEX GetQuestIndex()	{ return m_iQuestIndex; }
-	const char *GetName()	{ return &m_rStaticData.m_szName[0]; }
-	INDEX GetQuestCategory() { return m_rStaticData.m_iCategory;	}   const		// í€˜ìŠ¤íŠ¸ ë¶„ë¥˜ [090603: selo]
-	INDEX GetQuestPartyScale() { return m_rStaticData.m_iPartyScale; }	const		// í€˜ìŠ¤íŠ¸ ê·œëª¨ [090603: selo]
-	INDEX GetQuestType1()	{ return m_rStaticData.m_iType1;		}	const		// Type1
-	INDEX GetQuestType2()	{ return m_rStaticData.m_iType2;		}	const		// Type2
+	const char *GetName()	{ return m_pStaticData->GetTitle(); }
+	INDEX GetQuestCategory() { return m_pStaticData->GetCategory();	}   const		// Äù½ºÆ® ºĞ·ù [090603: selo]
+	INDEX GetQuestPartyScale() { return m_pStaticData->partyscale; }	const		// Äù½ºÆ® ±Ô¸ğ [090603: selo]
+	INDEX GetQuestType1()	{ return m_pStaticData->type1;		}	const		// Type1
+	INDEX GetQuestType2()	{ return m_pStaticData->type2;		}	const		// Type2
 
-	INDEX GetStartType()	{ return m_rStaticData.m_iStartType;	}	const
-	INDEX GetStartData()	{ return m_rStaticData.m_iStartData;	}	const
+	INDEX GetStartType()	{ return m_pStaticData->startType;	}	const
+	INDEX GetStartData()	{ return m_pStaticData->startData;	}	const
 	//INDEX GetGiveNPCIndex()	{ return m_rStaticData.m_iGiveNPCIndex; }	const
-	INDEX GetPrizeNPCIndex(){ return m_rStaticData.m_iPrizeNPCIndex; }	const
-	INDEX GetPreQuestIndex(){ return m_rStaticData.m_iPreQuestIndex; }	const
-	INDEX GetStartNPCZoneIndex(){ return m_rStaticData.m_iStartNPCZoneIndex; }	const
-	INDEX GetPrizeNPCZoneIndex(){ return m_rStaticData.m_iPrizeNPCZoneIndex; }	const
+	INDEX GetPrizeNPCIndex(){ return m_pStaticData->prizeNPC; }	const
+	INDEX GetPreQuestIndex(){ return m_pStaticData->preQuestNo; }	const
+	INDEX GetStartNPCZoneIndex(){ return m_pStaticData->startNpcZoneNo; }	const
+	INDEX GetPrizeNPCZoneIndex(){ return m_pStaticData->prizeNpcZoneNo; }	const
 
-	INDEX GetNeedMinLevel()	{ return m_rStaticData.m_iNeedMinLevel;	}	const
-	INDEX GetNeedMaxLevel()	{ return m_rStaticData.m_iNeedMaxLevel;	}	const
-	INDEX GetNeedJob()		{ return m_rStaticData.m_iNeedJob;	}	const
-	INDEX GetNeedItemIndex(INDEX i)		{ ASSERT(i < MAX_MAX_NEED_ITEM); return m_rStaticData.m_iNeedItemIndex[i]; }
-	INDEX GetNeedItemCount(INDEX i)		{ ASSERT(i < MAX_MAX_NEED_ITEM); return m_rStaticData.m_iNeedItemCount[i]; }
+	INDEX GetNeedMinLevel()	{ return m_pStaticData->needMinLevel;	}	const
+	INDEX GetNeedMaxLevel()	{ return m_pStaticData->needMaxLevel;	}	const
+	INDEX GetNeedJob()		{ return m_pStaticData->needJob;	}	const
+	INDEX GetNeedItemIndex(INDEX i)		{ ASSERT(i < MAX_MAX_NEED_ITEM); return m_pStaticData->needItemIndex[i]; }
+	INDEX GetNeedItemCount(INDEX i)		{ ASSERT(i < MAX_MAX_NEED_ITEM); return m_pStaticData->needItemCount[i]; }
 
-	INDEX GetConditionType(INDEX i)		{ ASSERT(i < QUEST_MAX_CONDITION); return m_rStaticData.m_iConditionType[i]; }
-	INDEX GetConditionIndex(INDEX i)	{ ASSERT(i < QUEST_MAX_CONDITION); return m_rStaticData.m_iConditionIndex[i]; }
-	INDEX GetConditionNum(INDEX i)		{ ASSERT(i < QUEST_MAX_CONDITION); return m_rStaticData.m_iConditionNum[i]; }
+	INDEX GetConditionType(INDEX i)		{ ASSERT(i < QUEST_MAX_CONDITION); return m_pStaticData->conditionType[i]; }
+	INDEX GetConditionIndex(INDEX i)	{ ASSERT(i < QUEST_MAX_CONDITION); return m_pStaticData->conditionIndex[i]; }
+	INDEX GetConditionNum(INDEX i)		{ ASSERT(i < QUEST_MAX_CONDITION); return m_pStaticData->conditionNum[i]; }
 	INDEX GetConditionData(INDEX i, INDEX j)		
-	{ ASSERT(i < QUEST_MAX_CONDITION); ASSERT(j < QUEST_MAX_CONDITION_DATA); return m_rStaticData.m_iConditionData[i][j]; }
+	{ ASSERT(i < QUEST_MAX_CONDITION); ASSERT(j < QUEST_MAX_CONDITION_DATA); return m_pStaticData->conditionData[i][j]; }
+
+	INDEX		GetSyndicateType()	{ return m_pStaticData->rvr_type;	}
+	INDEX		GetSyndicateGrade()	{ return m_pStaticData->rvr_grade;	}
 	
 	//INDEX GetPrizeType(INDEX i)			{ ASSERT(i < QUEST_MAX_PRIZE); return m_rStaticData.m_iPrizeType[i]; }
 	//INDEX GetPrizeIndex(INDEX i)		{ ASSERT(i < QUEST_MAX_PRIZE); return m_rStaticData.m_iPrizeIndex[i]; }
@@ -188,16 +185,17 @@ public:
 	INDEX IsPrizeExist()				{ return m_bPrize;	}
 	INDEX GetPrizeType(INDEX i)			{ ASSERT(i < QUEST_MAX_PRIZE); return m_iPrizeType[i]; }
 	INDEX GetPrizeIndex(INDEX i)		{ ASSERT(i < QUEST_MAX_PRIZE); return m_iPrizeIndex[i]; }
-	INDEX GetPrizeData(INDEX i)			{ ASSERT(i < QUEST_MAX_PRIZE); return m_iPrizeData[i]; }
-	INDEX IsOptionPrizeExist()			{ return m_bOptionPrize;	}
-	INDEX GetOptionPrizeType(INDEX i)	{ ASSERT(i < QUEST_MAX_PRIZE); return m_iOptionPrizeType[i]; }
-	INDEX GetOptionPrizeIndex(INDEX i)	{ ASSERT(i < QUEST_MAX_PRIZE); return m_iOptionPrizeIndex[i]; }
-	INDEX GetOptionPrizeData(INDEX i)	{ ASSERT(i < QUEST_MAX_PRIZE); return m_iOptionPrizeData[i]; }
-	INDEX GetOptionPrizePlus(INDEX i)	{ ASSERT(i < QUEST_MAX_PRIZE); return m_iOptionPrizePlus[i]; }
+	__int64 GetPrizeData(INDEX i)			{ ASSERT(i < QUEST_MAX_PRIZE); return m_iPrizeData[i]; }
 
-	const char *GetDesc()	{ return &m_rStaticData.m_szDesc[0]; }
-	const char *GetDesc2()	{ return &m_rStaticData.m_szDesc2[0]; }
-	const char *GetDesc3()	{ return &m_rStaticData.m_szDesc3[0]; }
+	INDEX IsOptionPrizeExist()			{ return m_bOptionPrize;	}
+	INDEX GetOptionPrizeType(INDEX i)	{ ASSERT(i < QUEST_MAX_OPTION_PRIZE); return m_iOptionPrizeType[i]; }
+	INDEX GetOptionPrizeIndex(INDEX i)	{ ASSERT(i < QUEST_MAX_OPTION_PRIZE); return m_iOptionPrizeIndex[i]; }
+	INDEX GetOptionPrizeData(INDEX i)	{ ASSERT(i < QUEST_MAX_OPTION_PRIZE); return m_iOptionPrizeData[i]; }
+	INDEX GetOptionPrizePlus(INDEX i)	{ ASSERT(i < QUEST_MAX_OPTION_PRIZE); return m_iOptionPrizePlus[i]; }
+
+	const char *GetDesc()	{ return m_pStaticData->GetDesc1(); }
+	const char *GetDesc2()	{ return m_pStaticData->GetDesc2(); }
+	const char *GetDesc3()	{ return m_pStaticData->GetDesc3(); }		
 
 	// myself
 	void SetCurrentConditionValueStatus(INDEX current[QUEST_MAX_CONDITION]);
@@ -237,7 +235,7 @@ public:
 	
 protected:
 	CQuestDynamicData(const CQuestDynamicData &other);
-	CQuestDynamicData &operator = (const CQuestDynamicData &other);
+	CQuestDynamicData &operator = (CQuestDynamicData &other);
 
 	void	MakeQuestFirstDesc();
 	void	MakeQuestTitleDesc();
@@ -248,20 +246,22 @@ protected:
 
 	INDEX	FindItemForPrize(INDEX type, INDEX index);
 
-	const CQuestStaticData &m_rStaticData;
 	INDEX		m_iQuestIndex;
 	BOOL		m_bQuestComplete;
 
 	BOOL		m_bPrize;
 	INDEX		m_iPrizeType[QUEST_MAX_PRIZE];
 	INDEX		m_iPrizeIndex[QUEST_MAX_PRIZE];
-	INDEX		m_iPrizeData[QUEST_MAX_PRIZE];
+	__int64		m_iPrizeData[QUEST_MAX_PRIZE];
 	
 	INDEX		m_bOptionPrize;
-	INDEX		m_iOptionPrizeType[QUEST_MAX_PRIZE];
-	INDEX		m_iOptionPrizeIndex[QUEST_MAX_PRIZE];
-	INDEX		m_iOptionPrizeData[QUEST_MAX_PRIZE];
-	INDEX		m_iOptionPrizePlus[QUEST_MAX_PRIZE];
+	INDEX		m_iOptionPrizeType[QUEST_MAX_OPTION_PRIZE];
+	INDEX		m_iOptionPrizeIndex[QUEST_MAX_OPTION_PRIZE];
+	INDEX		m_iOptionPrizeData[QUEST_MAX_OPTION_PRIZE];
+	INDEX		m_iOptionPrizePlus[QUEST_MAX_OPTION_PRIZE];
+
+	// [090728: selo] ¿É¼Ç º¸»ó Ä«¿îÆ®
+	INDEX		m_iOptionPrizeCount;
 
 	INDEX		m_iCurrentConditionValueStatus[QUEST_MAX_CONDITION];
 	CTString	m_strIntroDesc;
@@ -276,14 +276,14 @@ protected:
 	CTString	m_strPrizeDesc[QUEST_PRIZE_DESC];
 	COLOR		m_colPrizeDesc[QUEST_PRIZE_DESC];
 	INDEX		m_ctOptionPrizeDesc;
-	CTString	m_strOptionPrizeDesc[QUEST_PRIZE_DESC];
-	COLOR		m_colOptionPrizeDesc[QUEST_PRIZE_DESC];
+	CTString	m_strOptionPrizeDesc[QUEST_OPTION_PRIZE_DESC];
+	COLOR		m_colOptionPrizeDesc[QUEST_OPTION_PRIZE_DESC];
 	INDEX		m_ctNeedDesc;
 	CTString	m_strNeedDesc[QUEST_NEED_DESC];
 	COLOR		m_colNeedDesc[QUEST_PRIZE_DESC];
 };
 
-// Questê´€ë ¨ ì „ë°˜ì ì¸ ê´€ë¦¬ë¥¼ ë‹´ë‹¹í•œë‹¤. ì‹±ê¸€í„´ íŒ¨í„´.
+// Quest°ü·Ã Àü¹İÀûÀÎ °ü¸®¸¦ ´ã´çÇÑ´Ù. ½Ì±ÛÅÏ ÆĞÅÏ.
 class ENGINE_API CQuestSystem
 {
 public:
@@ -299,13 +299,11 @@ public:
 		QAT_ALLOW,
 		QAT_ALREADY_DONE,
 		QAT_GIVEUP,
-		QAT_DOING,//í˜„ì¬ ìˆ˜í–‰ì¤‘.
+		QAT_DOING,//ÇöÀç ¼öÇàÁß.
 	};
 public:
 	static CQuestSystem &Instance()	{ return m_instance; }
-	void Load( const CTFileName &fnm, void (*progress)(FLOAT) );
-
-	INDEX GetStaticDataLastIndex()		{ return m_iQuestStaticDataLastIndex; }
+	bool Load();
 
 	CQuestDynamicData *GetDynamicDataByVectorIndex(INDEX idx)
 	{
@@ -328,17 +326,16 @@ public:
 
 	~CQuestSystem();
 	
-	const CQuestStaticData &GetStaticData(INDEX idxQuest)
+	CQuestStaticData* GetStaticData(INDEX idxQuest)
 	{
-		ASSERT(idxQuest <= m_iQuestStaticDataLastIndex);
-		return m_aQuestStaticData[idxQuest];
+		return CQuestStaticData::getData(idxQuest);
 	}
 
 	void SetQuestAllow(INDEX iQuestIndex, eQuestAllowType qat)
 	{
 		if(iQuestIndex==-1) return;
 		if((qat == QAT_ALREADY_DONE || qat == QAT_GIVEUP)
-		&& m_aQuestStaticData[iQuestIndex].m_iType2 == QTYPE_REPEAT_UNLIMITED)
+		&& CQuestStaticData::getData(iQuestIndex)->type2 == QTYPE_REPEAT_UNLIMITED)
 		{
 			m_vectorQuestAllowList[iQuestIndex] = QAT_ALLOW;
 			return;
@@ -352,43 +349,30 @@ public:
 	}
 	const char *GetQuestName(int iQuestIndex)
 	{
-		if(iQuestIndex > 0 && iQuestIndex <= m_iQuestStaticDataLastIndex && m_aQuestStaticData != NULL)
-		{
-			return m_aQuestStaticData[iQuestIndex].m_szName;
-		}
-		return "";
+		return CQuestStaticData::getData(iQuestIndex)->GetTitle();
 	}
 	const int GetQuestMinLevel(int iQuestIndex)
 	{
-		if(iQuestIndex > 0 && iQuestIndex <= m_iQuestStaticDataLastIndex && m_aQuestStaticData != NULL)
-		{
-			return m_aQuestStaticData[iQuestIndex].m_iNeedMinLevel;
-		}
-		return -1;
+		return CQuestStaticData::getData(iQuestIndex)->needMinLevel;
 	}
 	const int GetQuestMaxLevel(int iQuestIndex)
 	{
-		if(iQuestIndex > 0 && iQuestIndex <= m_iQuestStaticDataLastIndex && m_aQuestStaticData != NULL)
-		{
-			return m_aQuestStaticData[iQuestIndex].m_iNeedMaxLevel;
-		}
-		return -1;
+		return CQuestStaticData::getData(iQuestIndex)->needMaxLevel;
 	}
 
-	INDEX SearchContactQuestIndex(INDEX iQuestIndex); // í€˜ìŠ¤íŠ¸ ì¸ë±ìŠ¤ì™€ ì—°ê³„ ë˜ëŠ” í€˜ìŠ¤íŠ¸ ê²€ìƒ‰ ë¦¬í„´ ê°’ì€ ì—°ê³„ë˜ëŠ” npc Index
-	void RefreshNPCQuestMark(INDEX iNPCIndex);
+	INDEX SearchContactQuestIndex(INDEX iQuestIndex); // Äù½ºÆ® ÀÎµ¦½º¿Í ¿¬°è µÇ´Â Äù½ºÆ® °Ë»ö ¸®ÅÏ °ªÀº ¿¬°èµÇ´Â npc Index
 	BOOL CanIDoQuest(INDEX iQuestIndex);
 	CTString MakeInfoForCondition(int iQuestIndex, int iConditionType, int iConditionIndex, int iCurrentCnt, int iConditionCnt);
 	eNpcQuestType TestNPCForQuest(INDEX iNPCIndex);
+
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslate( std::vector<INDEX> transList );
+	void ClearNoTranslate( std::vector<INDEX> transList );
 	
 protected:
 	CQuestSystem();
-	
-		
 
 	static CQuestSystem m_instance;
-	INDEX	m_iQuestStaticDataLastIndex;
-	CQuestStaticData *m_aQuestStaticData;
 	CQuestDynamicData *m_pCurrentRequest;
 	std::vector<CQuestDynamicData*> m_vectorCurrentUserQuest;
 	std::vector<eQuestAllowType>	m_vectorQuestAllowList;

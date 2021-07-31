@@ -61,7 +61,7 @@ double adCosQuadrants[6][2] =
 
 FLOAT Sin(ANGLE a)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	double aWrapped = WrapAngle(a);
 	int iQuadrant = int(aWrapped / 90.0);
 	double aIn90 = aWrapped - iQuadrant * 90.0;
@@ -76,11 +76,11 @@ FLOAT Sin(ANGLE a)
 		sin((aIn90+adSinQuadrants[iQuadrant][1])*PI/ANGLE_180);
 	return FLOAT (fSin);
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 }
 FLOAT Cos(ANGLE a)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	double aWrapped = WrapAngle(a);
 	int iQuadrant = int(aWrapped / 90.0);
 	double aIn90 = aWrapped - iQuadrant * 90.0;
@@ -95,7 +95,7 @@ FLOAT Cos(ANGLE a)
 		sin((aIn90+adCosQuadrants[iQuadrant][1])*PI/ANGLE_180);
 	return FLOAT (fCos);
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 }
 FLOAT Tan(ANGLE a)
 {

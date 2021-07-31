@@ -93,7 +93,7 @@ inline void AABBox<Type, iDimensions>::SetToNormalizedEmpty(void) {
  * Constructor for empty bounding box.
  */
 template<class Type, int iDimensions>
-inline AABBox<Type, iDimensions>::AABBox<Type, iDimensions>() {
+inline AABBox<Type, iDimensions>::AABBox() {
   SetToNormalizedEmpty();
 }
 
@@ -101,7 +101,7 @@ inline AABBox<Type, iDimensions>::AABBox<Type, iDimensions>() {
  * Constructor for one-point bounding box.
  */
 template<class Type, int iDimensions>
-inline AABBox<Type, iDimensions>::AABBox<Type, iDimensions>(const Vector<Type, iDimensions> &vPoint) {
+inline AABBox<Type, iDimensions>::AABBox(const Vector<Type, iDimensions> &vPoint) {
   for ( int i=1; i<=iDimensions; i++ ) {
     minvect(i) = maxvect(i) = vPoint(i);
   }
@@ -111,7 +111,7 @@ inline AABBox<Type, iDimensions>::AABBox<Type, iDimensions>(const Vector<Type, i
  * Constructor for one-point and radius bounding box.
  */
 template<class Type, int iDimensions>
-inline AABBox<Type, iDimensions>::AABBox<Type, iDimensions>(const Vector<Type, iDimensions> &vPoint, const Type radius) {
+inline AABBox<Type, iDimensions>::AABBox(const Vector<Type, iDimensions> &vPoint, const Type radius) {
   for ( int i=1; i<=iDimensions; i++ ) {
     minvect(i) = vPoint(i)-radius;
     maxvect(i) = vPoint(i)+radius;

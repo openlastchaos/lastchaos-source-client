@@ -921,7 +921,8 @@ YY_RULE_SETUP
 	if (strParam.FindSubstr(strParamNo)!=-1) {
 		_pShell->ErrorF("Parameter substitution recursion detected!");
 	} else {
-		for(INDEX ctFound=0;; ctFound++) {
+		INDEX ctFound;
+		for(ctFound=0;; ctFound++) {
 			if (!_strCmd.ReplaceSubstr(strParamNo, strParam)) {
 				break;
 			}
@@ -937,7 +938,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 158 ".\\Base\\Scanner.l"
+#line 159 ".\\Base\\Scanner.l"
 { 
 									// at the end of the command
 
@@ -952,7 +953,7 @@ case YY_STATE_EOF(DUMMYBLOCK):
 case YY_STATE_EOF(INCLUDE):
 case YY_STATE_EOF(DECODE):
 case YY_STATE_EOF(COMMAND):
-#line 166 ".\\Base\\Scanner.l"
+#line 167 ".\\Base\\Scanner.l"
 {
 	if (ShellPopBuffer()) {
 		yyterminate();
@@ -962,146 +963,146 @@ case YY_STATE_EOF(COMMAND):
 /* special data types */
 case 11:
 YY_RULE_SETUP
-#line 173 ".\\Base\\Scanner.l"
+#line 174 ".\\Base\\Scanner.l"
 { return(k_FLOAT);}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 174 ".\\Base\\Scanner.l"
+#line 175 ".\\Base\\Scanner.l"
 { return(k_INDEX);}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 175 ".\\Base\\Scanner.l"
+#line 176 ".\\Base\\Scanner.l"
 { return(k_CTString);}
 	YY_BREAK
 /* keywords */
 case 14:
 YY_RULE_SETUP
-#line 178 ".\\Base\\Scanner.l"
+#line 179 ".\\Base\\Scanner.l"
 { return(k_void); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 179 ".\\Base\\Scanner.l"
+#line 180 ".\\Base\\Scanner.l"
 { return(k_const); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 180 ".\\Base\\Scanner.l"
+#line 181 ".\\Base\\Scanner.l"
 { return(k_user); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 181 ".\\Base\\Scanner.l"
+#line 182 ".\\Base\\Scanner.l"
 { return(k_persistent); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 182 ".\\Base\\Scanner.l"
+#line 183 ".\\Base\\Scanner.l"
 { return(k_extern); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 183 ".\\Base\\Scanner.l"
+#line 184 ".\\Base\\Scanner.l"
 { return(k_pre); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 184 ".\\Base\\Scanner.l"
+#line 185 ".\\Base\\Scanner.l"
 { return(k_post); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 185 ".\\Base\\Scanner.l"
+#line 186 ".\\Base\\Scanner.l"
 { return(k_help); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 186 ".\\Base\\Scanner.l"
+#line 187 ".\\Base\\Scanner.l"
 { return(k_if); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 187 ".\\Base\\Scanner.l"
+#line 188 ".\\Base\\Scanner.l"
 { return(k_else); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 188 ".\\Base\\Scanner.l"
+#line 189 ".\\Base\\Scanner.l"
 { return(k_else_if); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 190 ".\\Base\\Scanner.l"
+#line 191 ".\\Base\\Scanner.l"
 { return (LEQ); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 191 ".\\Base\\Scanner.l"
+#line 192 ".\\Base\\Scanner.l"
 { return (GEQ); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 192 ".\\Base\\Scanner.l"
+#line 193 ".\\Base\\Scanner.l"
 { return (EQ);  }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 193 ".\\Base\\Scanner.l"
+#line 194 ".\\Base\\Scanner.l"
 { return (NEQ); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 195 ".\\Base\\Scanner.l"
+#line 196 ".\\Base\\Scanner.l"
 { return (SHR); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 196 ".\\Base\\Scanner.l"
+#line 197 ".\\Base\\Scanner.l"
 { return (SHL); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 198 ".\\Base\\Scanner.l"
+#line 199 ".\\Base\\Scanner.l"
 { return (LOGAND); }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 199 ".\\Base\\Scanner.l"
+#line 200 ".\\Base\\Scanner.l"
 { return (LOGOR); }
 	YY_BREAK
 /* single character operators and punctuations */
 case 33:
 YY_RULE_SETUP
-#line 202 ".\\Base\\Scanner.l"
+#line 203 ".\\Base\\Scanner.l"
 {
 	return(yytext[0]);}
 	YY_BREAK
 /* constants */
 case 34:
 YY_RULE_SETUP
-#line 206 ".\\Base\\Scanner.l"
+#line 207 ".\\Base\\Scanner.l"
 { yylval.val.iIndex = atoi(yytext); return(c_int); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 207 ".\\Base\\Scanner.l"
+#line 208 ".\\Base\\Scanner.l"
 { yylval.val.iIndex = strtoul(yytext+2, NULL, 16); return(c_int); }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 208 ".\\Base\\Scanner.l"
+#line 209 ".\\Base\\Scanner.l"
 { yylval.val.fFloat = (float) atof(yytext); return(c_float); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 209 ".\\Base\\Scanner.l"
+#line 210 ".\\Base\\Scanner.l"
 { yylval.val.fFloat = (float) atof(yytext); return(c_float); }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 210 ".\\Base\\Scanner.l"
+#line 211 ".\\Base\\Scanner.l"
 { 
 	CTString &strNew = _shell_astrTempStrings.Push();
 	// remove double-quotes
@@ -1114,13 +1115,13 @@ YY_RULE_SETUP
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 219 ".\\Base\\Scanner.l"
+#line 220 ".\\Base\\Scanner.l"
 { return(c_char); }
 	YY_BREAK
 /* identifier */
 case 40:
 YY_RULE_SETUP
-#line 222 ".\\Base\\Scanner.l"
+#line 223 ".\\Base\\Scanner.l"
 { 
 	// get the symbol
 	yylval.pssSymbol =  _pShell->GetSymbol(yytext, FALSE);
@@ -1147,7 +1148,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 245 ".\\Base\\Scanner.l"
+#line 246 ".\\Base\\Scanner.l"
 { // special case of identifier, used to bypass command parsing
 	// get the symbol
 	yylval.pssSymbol =  _pShell->GetSymbol(yytext+1, FALSE);
@@ -1157,7 +1158,7 @@ YY_RULE_SETUP
 /* eat up or execute blocks */
 case 42:
 YY_RULE_SETUP
-#line 252 ".\\Base\\Scanner.l"
+#line 253 ".\\Base\\Scanner.l"
 { 
 	_iBlockDepth++;
 	if (!_bExecNextBlock) {
@@ -1169,7 +1170,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 261 ".\\Base\\Scanner.l"
+#line 262 ".\\Base\\Scanner.l"
 { 
 	_iBlockDepth--;
 	if (_iBlockDepth<0) {
@@ -1180,7 +1181,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 268 ".\\Base\\Scanner.l"
+#line 269 ".\\Base\\Scanner.l"
 {
 	_iBlockDepth++;
 	_iDummyDepth++;
@@ -1188,7 +1189,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 272 ".\\Base\\Scanner.l"
+#line 273 ".\\Base\\Scanner.l"
 { 
 	_iBlockDepth--;
 	_iDummyDepth--;
@@ -1200,41 +1201,41 @@ YY_RULE_SETUP
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 280 ".\\Base\\Scanner.l"
+#line 281 ".\\Base\\Scanner.l"
 {}
 	YY_BREAK
 /* eat up comments */
 case 47:
 YY_RULE_SETUP
-#line 283 ".\\Base\\Scanner.l"
+#line 284 ".\\Base\\Scanner.l"
 { BEGIN(COMMENT); }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 284 ".\\Base\\Scanner.l"
+#line 285 ".\\Base\\Scanner.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 285 ".\\Base\\Scanner.l"
+#line 286 ".\\Base\\Scanner.l"
 {}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 286 ".\\Base\\Scanner.l"
+#line 287 ".\\Base\\Scanner.l"
 { ShellCountOneLine(); }
 	YY_BREAK
 /* eat up whitespace */
 case 51:
 YY_RULE_SETUP
-#line 290 ".\\Base\\Scanner.l"
+#line 291 ".\\Base\\Scanner.l"
 {
 }
 	YY_BREAK
 /* eat up linefeeds and count lines in all conditions */
 case 52:
 YY_RULE_SETUP
-#line 293 ".\\Base\\Scanner.l"
+#line 294 ".\\Base\\Scanner.l"
 {
 	ShellCountOneLine();
 }
@@ -1242,7 +1243,7 @@ YY_RULE_SETUP
 /* for all unrecognized characters */
 case 53:
 YY_RULE_SETUP
-#line 298 ".\\Base\\Scanner.l"
+#line 299 ".\\Base\\Scanner.l"
 {
 	// report an error
 	_pShell->ErrorF("Unrecognized character '%c' (ASCII 0x%02x)", yytext[0], yytext[0] );
@@ -1250,10 +1251,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 303 ".\\Base\\Scanner.l"
+#line 304 ".\\Base\\Scanner.l"
 ECHO;
 	YY_BREAK
-#line 1257 ".\\Base\\Scanner.cpp"
+#line 1258 ".\\Base\\Scanner.cpp"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2101,6 +2102,6 @@ int main()
 	return 0;
 	}
 #endif
-#line 303 ".\\Base\\Scanner.l"
+#line 304 ".\\Base\\Scanner.l"
 
 

@@ -12,65 +12,65 @@ enum UPGRADE_TYPE {
 	SWUT_GATE,
 };
 
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIDrawFigure.h>
-#include <Engine/Interface/UICheckButton.h>
-#include <Engine/Interface/UISpinButton.h>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIDrawFigure.h>
+// #include <Engine/Interface/UICheckButton.h>
+// #include <Engine/Interface/UISpinButton.h>
 
 class CUISiegeWarfareNew : public CUIWindow
 {
-	// Í≥µÌÜµ ----------------------------------------------------------------->>
-	BOOL					m_bOnWar;						// Í≥µÏÑ± Ï§ë
-	// ÌÉÄÏù¥ÌãÄ
+	// ∞¯≈Î ----------------------------------------------------------------->>
+	BOOL					m_bOnWar;						// ∞¯º∫ ¡ﬂ
+	// ≈∏¿Ã∆≤
 	UIRect					m_rcTitle;						// Title Rect
-	CUIDrawBox				m_bxBox1;						// Box(1) - ÏòÖÏùÄ ÏÉâ Î∞ïÏä§
-	CUIDrawBox				m_bxBox2;						// Box(2) - ÏßôÏùÄ ÏÉâ Î∞ïÏä§
+	CUIDrawBox				m_bxBox1;						// Box(1) - ø∂¿∫ ªˆ π⁄Ω∫
+	CUIDrawBox				m_bxBox2;						// Box(2) - ¬£¿∫ ªˆ π⁄Ω∫
 	CUIDrawBox				m_bxBackGroundBox;				// Box of Top Background
 	CUIDrawBox				m_bxBackGroundBox2;				// Box of Bottom Background	
 	// ----------------------------------------------------------------------<<
 
-	// ÌÉÄÏõå Í∞ÄÎèôÌïòÍ∏∞ -------------------------------------------------------->>
-	// Î≤ÑÌäº	
-	CUIButton				m_btnApply;													// Í∞ÄÎèôÌïòÍ∏∞
-	CUIButton				m_btnReturn;												// ÎèåÏïÑÍ∞ÄÍ∏∞
-	CUICheckButton			m_cbtnTowerOn[DRATAN_TOWER_KIND_MAX][DRATAN_TOWER_MAX];		// Í∞ÄÎèô Ïó¨Î∂Ä Î≤ÑÌäº
-	CHAR					m_cTowerSet[DRATAN_TOWER_KIND_MAX];							// Í∞ÄÎèô Ïó¨Î∂Ä ¬ôV( ÌÉÄÏõå Ï¢ÖÎ•òÎ≥Ñ ÏàúÏÑúÎåÄÎ°ú )
+	// ≈∏øˆ ∞°µø«œ±‚ -------------------------------------------------------->>
+	// πˆ∆∞	
+	CUIButton				m_btnApply;													// ∞°µø«œ±‚
+	CUIButton				m_btnReturn;												// µπæ∆∞°±‚
+	CUICheckButton			m_cbtnTowerOn[DRATAN_TOWER_KIND_MAX][DRATAN_TOWER_MAX];		// ∞°µø ø©∫Œ πˆ∆∞
+	CHAR					m_cTowerSet[DRATAN_TOWER_KIND_MAX];							// ∞°µø ø©∫Œ ôV( ≈∏øˆ ¡æ∑˘∫∞ º¯º≠¥Î∑Œ )
 	// UV of Lines
 	UIRectUV				m_uvLineV;						// UV of vertical line
 	UIRectUV				m_uvLineH;						// UV of Horizon line
 	// ----------------------------------------------------------------------<<
 	
-	// ÌÉÄÏõå Í∞ïÌôîÌïòÍ∏∞ -------------------------------------------------------->>
-	INDEX					m_iUpgradeLevelOld;				// Ïù¥ÎØ∏ Í∞ïÌôîÎêú Î†àÎ≤®
-	INDEX					m_iUpgradeLevel;				// Í∞ïÌôî Î†àÎ≤®
-	INDEX					m_iUpgradeType;					// Í∞ïÌôî ÌòïÌÉú
-	CUISpinButton			m_sbtnUpgrade;					// Í∞ïÌôî Ïä§ÌïÄ Î≤ÑÌäº
-	CUIButton				m_btnOK;						// ÌôïÏù∏
-	CUIButton				m_btnCancel;					// Ï∑®ÏÜå
+	// ≈∏øˆ ∞≠»≠«œ±‚ -------------------------------------------------------->>
+	INDEX					m_iUpgradeLevelOld;				// ¿ÃπÃ ∞≠»≠µ» ∑π∫ß
+	INDEX					m_iUpgradeLevel;				// ∞≠»≠ ∑π∫ß
+	INDEX					m_iUpgradeType;					// ∞≠»≠ «¸≈¬
+	CUISpinButton			m_sbtnUpgrade;					// ∞≠»≠ Ω∫«… πˆ∆∞
+	CUIButton				m_btnOK;						// »Æ¿Œ
+	CUIButton				m_btnCancel;					// √Îº“
 	// ----------------------------------------------------------------------<<
 
-	// ÌÉÄÏõå ÏàòÎ¶¨ÌïòÍ∏∞ -------------------------------------------------------->>
+	// ≈∏øˆ ºˆ∏Æ«œ±‚ -------------------------------------------------------->>
 	SQUAD					m_iRepairMoney;
 	INDEX					m_iRepairTowerIndex;
 
-	// ÍµêÍ∞ê ÌïòÍ∏∞ ------------------------------------------------------------>>
-	DWORD					m_tmStartTime;					// ÍµêÍ∞ê ÏãúÏûë ÏãúÍ∞Ñ	
-	INDEX					m_iConsensusBarSize;			// ÏßÑÌñâ Ï†ïÎèÑ
-	WRect					m_rcPuple;						// ÏßÑÌñâ ÏÉÅÌÉú Î∞î(Í∞ÄÎ≥ÄÏ†Å)
-	CUIDrawBox				m_bxPurple;						// ÍµêÍ∞ê Î≥¥Îùº Î∞ïÏä§
+	// ±≥∞® «œ±‚ ------------------------------------------------------------>>
+	DWORD					m_tmStartTime;					// ±≥∞® Ω√¿€ Ω√∞£	
+	INDEX					m_iConsensusBarSize;			// ¡¯«‡ ¡§µµ
+	WRect					m_rcPuple;						// ¡¯«‡ ªÛ≈¬ πŸ(∞°∫Ø¿˚)
+	CUIDrawBox				m_bxPurple;						// ±≥∞® ∫∏∂Û π⁄Ω∫
 
 	// ----------------------------------------------------------------------<<
 
-	// Î∂ÄÌôú ÏßÑÏßÄ ------------------------------------------------------------>>
-	INDEX					m_iNpcIdx;						// Î∂ÄÌôú ÏßÑÏßÄ NPC
+	// ∫Œ»∞ ¡¯¡ˆ ------------------------------------------------------------>>
+	INDEX					m_iNpcIdx;						// ∫Œ»∞ ¡¯¡ˆ NPC
 	// ----------------------------------------------------------------------<<
 
-	// Î∂ÄÌôú ÎåÄÍ∏∞ ------------------------------------------------------------>>
-	BOOL					m_bReceivedTime;				// ÏÑúÎ≤Ñ ÏùëÎãµ ÎåÄÍ∏∞ // WSS_DRATAN_SIEGEWARFARE 2007/10/16
-	INDEX					m_iWaitTime;					// ÎåÄÍ∏∞ ÏãúÍ∞Ñ(sec)	
-	INDEX					m_iWaitTime_const;				// ÎåÄÍ∏∞ ÏãúÍ∞Ñ(sec) - Í≥†Ï†ï	
-	DWORD					m_tmInitTime;					// ÎåÄÍ∏∞ Ï≤òÏùå ÏãúÍ∞Ñ
-	UIRect					m_rcWaitTime;					// ÏãúÍ∞Ñ Ï∂úÎ†• ÏúÑÏπò
+	// ∫Œ»∞ ¥Î±‚ ------------------------------------------------------------>>
+	BOOL					m_bReceivedTime;				// º≠πˆ ¿¿¥‰ ¥Î±‚ // WSS_DRATAN_SIEGEWARFARE 2007/10/16
+	INDEX					m_iWaitTime;					// ¥Î±‚ Ω√∞£(sec)	
+	INDEX					m_iWaitTime_const;				// ¥Î±‚ Ω√∞£(sec) - ∞Ì¡§	
+	DWORD					m_tmInitTime;					// ¥Î±‚ √≥¿Ω Ω√∞£
+	UIRect					m_rcWaitTime;					// Ω√∞£ √‚∑¬ ¿ßƒ°
 	// ----------------------------------------------------------------------<<
 	
 public:	
@@ -107,7 +107,7 @@ public:
 	void	RenderWaitTime();
 	
 	// MessageBox	
-	void	Message( int nCommandCode, CTString strMessage, DWORD dwStyle );	// Î©îÏÑ∏ÏßÄ Î∞ïÏä§
+	void	Message( int nCommandCode, CTString strMessage, DWORD dwStyle );	// ∏ﬁºº¡ˆ π⁄Ω∫
 	
 	// Etc	
 	ENGINE_API void	StartConsensusAni(int charIdx);
@@ -131,7 +131,7 @@ public:
 
 	inline void SetTimeReply(BOOL bReceived) { m_bReceivedTime = bReceived; } // WSS_DRATAN_SIEGEWARFARE 2007/10/16
 	inline BOOL GetTimeReply() { return m_bReceivedTime; }
-	inline void SetWaitTime(int tWaitTime) { m_iWaitTime_const = m_iWaitTime = tWaitTime , m_tmStartTime = timeGetTime();}
+	inline void SetWaitTime(int tWaitTime) { m_iWaitTime_const = m_iWaitTime = tWaitTime , m_tmStartTime = (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); /*timeGetTime();*/}
 	inline int	GetWaitTime() { return m_iWaitTime;}
 	inline void SetWarState(BOOL bOnWar) { m_bOnWar = bOnWar; }
 	inline BOOL GetWarState() { return m_bOnWar; }
@@ -162,8 +162,9 @@ public:
 
 	// Rebirth Quarter
 	void SendBuyQuarter(int iNpcIdx);
-      
-
+     
+	// [2011/07/13 : Sora] ∫Œ»∞¥Î±‚√¢ ø©¥¬ «‘ºˆ √ﬂ∞°
+	ENGINE_API void	OpenWaitTime();
 };
 
 

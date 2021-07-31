@@ -1,17 +1,123 @@
 #include "stdh.h"
-#include <Engine/Interface/UIWebBoard.h>
-#include <Engine/Interface/UIInternalClasses.h>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
-#include <Engine/Interface/UILogin.h>
+// Çì´õ Á¤¸®. [12/3/2009 rumist]
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+#include <string>
+#include <vector>
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
+#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIWebBoard.h>
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 #include <Engine/Network/Web.h>
-#include <Engine/Network/NetworkMessage.h>
+#include <Engine/Network/WebAddress.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Interface/UIOption.h>
 
 extern cWeb g_web;
 extern INDEX g_iCountry;
 BOOL CUIWebBoardDelayCommand::ClearOldCommand()
 {
 	return FALSE;
+}
+
+
+void CUIWebBoardDelayCommand::ConvertStringToWebParameter(const char *szParam, std::string& strOutput)
+{
+	if( szParam == NULL )
+		return;
+
+	size_t nLength = strlen(szParam);
+	for( int i=0; i<nLength; ++i )
+	{
+		if(szParam[i] == '\n')		strOutput += "%0a";
+		else if(szParam[i] == '\r')	strOutput += "%0d";
+		else if(szParam[i] == '+')	strOutput += "%2b";
+		else if(szParam[i] == '&')	strOutput += "error_andchar";
+		else if(szParam[i] == ' ')	strOutput += "%20";
+		else strOutput += szParam[i];
+	}
+}
+
+
+// html tag Á¦°Å
+void HtmlTagParsing(std::string& strContent)
+{
+	// Angle Braket  < >
+	const char* Abraket_front = "<";
+	const char* Abraket_back = ">";
+	const char* Keyword_br = "br";
+	const char* Keyword_span = "span";
+	const char* Keyword_nbsp = "nbsp";
+	const char* Keyword_lt = "lt"; // <
+	const char* Keyword_gt = "gt"; // >
+
+	const char* strEnter = "\n";
+	const char* strSpace = " ";
+	int tok_pos_front = 0;
+	int tok_pos_back = 0;
+
+	std::string strTemp;
+
+	do 
+	{
+		// find angle-braket front and back
+		tok_pos_front = strContent.find(Abraket_front, tok_pos_back);
+		if (tok_pos_front == std::string::npos)
+			break;
+		tok_pos_back = strContent.find(Abraket_back, tok_pos_front);
+
+		strTemp = strContent.substr(tok_pos_front, tok_pos_back - tok_pos_front);
+
+		if (strTemp.find(Keyword_br) != std::string::npos)
+		{ // <br /> ÁÙ¹Ù²Ş
+			strContent.erase(tok_pos_front, tok_pos_back-tok_pos_front+1);
+			strContent.insert(tok_pos_front, strEnter);
+			tok_pos_back -= (tok_pos_back - tok_pos_front - strlen(strEnter));
+		}
+/*		else if (strTemp.find(Keyword_span) != std::string::npos)
+		{ // ³ª¸ÓÁö <>´Â Á¦°Å
+			strContent.erase(tok_pos_front, tok_pos_back-tok_pos_front+1);
+			tok_pos_back -= (tok_pos_back - tok_pos_front);
+		}*/
+		else
+		{ // ³ª¸ÓÁö <>´Â Á¦°Å
+			strContent.erase(tok_pos_front, tok_pos_back-tok_pos_front+1);
+			tok_pos_back -= (tok_pos_back - tok_pos_front);
+		}
+	} while(1);
+
+	tok_pos_front = 0;
+	tok_pos_back = 0;
+
+	do 
+	{
+		tok_pos_front = strContent.find("&", tok_pos_back);
+		if (tok_pos_front == std::string::npos)
+			break;
+		tok_pos_back = strContent.find(";", tok_pos_front);
+
+		strTemp = strContent.substr(tok_pos_front, tok_pos_back - tok_pos_front);
+
+		if (strTemp.find(Keyword_nbsp) != std::string::npos)
+		{
+			strContent.erase(tok_pos_front, tok_pos_back-tok_pos_front+1);
+			strContent.insert(tok_pos_front, strSpace);
+			tok_pos_back -= (tok_pos_back - tok_pos_front - strlen(strEnter));
+		}
+		else if (strTemp.find(Keyword_lt) != std::string::npos)
+		{
+			strContent.erase(tok_pos_front, tok_pos_back-tok_pos_front+1);
+			strContent.insert(tok_pos_front, "<");
+			tok_pos_back -= (tok_pos_back - tok_pos_front - strlen("<"));
+		}
+		else if (strTemp.find(Keyword_gt) != std::string::npos)
+		{
+			strContent.erase(tok_pos_front, tok_pos_back-tok_pos_front+1);
+			strContent.insert(tok_pos_front, ">");
+			tok_pos_back -= (tok_pos_back - tok_pos_front - strlen(">"));
+		}
+
+	} while(1);
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +169,7 @@ BOOL CUIWebBoard::DelayCommandExecute()
 
 
 //----------------------------------//
-//ê²Œì‹œíŒì´ ì²˜ìŒ ì—´ë¦´ë•Œ ì‚¬ìš©í•  command
+//°Ô½ÃÆÇÀÌ Ã³À½ ¿­¸±¶§ »ç¿ëÇÒ command
 
 BOOL CCommandOpen::ClearOldCommand()
 {
@@ -72,7 +178,7 @@ BOOL CCommandOpen::ClearOldCommand()
 BOOL CCommandOpen::ExecuteImmediate(CUIWebBoard &rUIWebBoard)
 {
 	char szURL[1024] = {0};
-	sprintf(szURL, "%s?pageNo=1", WebAddress("help_list"));	//HardCoding
+	sprintf(szURL, "%s?pageNo=1", CWebAddress::getSingleton()->get("help_list"));	//HardCoding
 	rUIWebBoard.m_web.Request(szURL);
 
 	rUIWebBoard.OpenWebBoard();
@@ -94,17 +200,17 @@ BOOL CCommandOpen::ExecuteDelay(CUIWebBoard &rUIWebBoard, BOOL &bRender)
 		}
 
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 385, "ê²Œì‹œíŒ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
+		MsgBoxInfo.SetMsgBoxInfo( _S( 385, "°Ô½ÃÆÇ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
 		MsgBoxInfo.AddString( CTString( strError.c_str() ) );
 
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 	}
 	bRender = FALSE;
 	return FALSE;
 }
 
 //----------------------------------//
-//ê²Œì‹œíŒì˜ ì„¹ì…˜(ê³µì§€, ììœ  ë“±)ì„ ë°”ê¿€ë•Œ ì‚¬ìš©í•  command
+//°Ô½ÃÆÇÀÇ ¼½¼Ç(°øÁö, ÀÚÀ¯ µî)À» ¹Ù²Ü¶§ »ç¿ëÇÒ command
 
 BOOL CCommandList::ExecuteImmediate(CUIWebBoard &rUIWebBoard)
 {
@@ -113,27 +219,36 @@ BOOL CCommandList::ExecuteImmediate(CUIWebBoard &rUIWebBoard)
 	if(rUIWebBoard.m_cmbSearch.GetCurSel() == 0) sprintf(szSearchType, "title");
 	else if(rUIWebBoard.m_cmbSearch.GetCurSel() == 1) sprintf(szSearchType, "author");
 
+	CWebAddress* pWebAddress = CWebAddress::getSingleton();
 	BOOL request = TRUE;
 	if(rUIWebBoard.m_nCurSection == UWS_HELP)
-		sprintf(szURL, "%s?pageNo=%d", WebAddress("help_list"), rUIWebBoard.m_nWantPage);//HardCoding
+		sprintf(szURL, "%s?pageNo=%d", pWebAddress->get("help_list"), rUIWebBoard.m_nWantPage);//HardCoding
 	else if(rUIWebBoard.m_nCurSection == UWS_NOTICE)
-		sprintf(szURL, "%s?pageNo=%d", WebAddress("notice_list"), rUIWebBoard.m_nWantPage);//HardCoding
+		sprintf(szURL, "%s?pageNo=%d", pWebAddress->get("notice_list"), rUIWebBoard.m_nWantPage);//HardCoding
 	else if(rUIWebBoard.m_nCurSection == UWS_FREEBOARD)
+	{
+		std::string strWebParameter = "";
+		ConvertStringToWebParameter(rUIWebBoard.m_ebSearch.GetString(), strWebParameter);
 		sprintf(szURL, "%s?pageNo=%d&type=%s&stext=%s"
-				, WebAddress("freebbs_list")
+				, pWebAddress->get("freebbs_list")
 				, rUIWebBoard.m_nWantPage
 				, szSearchType
-				, ConvertStringToWebParameter(rUIWebBoard.m_ebSearch.GetString()).c_str()
+				, strWebParameter.c_str()
 				);//HardCoding
+	}
 	else if(rUIWebBoard.m_nCurSection == UWS_GUILD)
+	{
+		std::string strWebParameter = "";
+		ConvertStringToWebParameter(rUIWebBoard.m_ebSearch.GetString(), strWebParameter);
 		sprintf(szURL, "%s?pageNo=%d&type=%s&stext=%s&guildno=%d&server=%d"
-				, WebAddress("guildbbs_list")
+				, pWebAddress->get("guildbbs_list")
 				, rUIWebBoard.m_nWantPage
 				, szSearchType
-				, ConvertStringToWebParameter(rUIWebBoard.m_ebSearch.GetString()).c_str()
+				, strWebParameter.c_str()
 				, _pNetwork->MyCharacterInfo.lGuildIndex
 				, _pNetwork->m_iServerGroup
 				);
+	}
 	else request = FALSE;
 
 	if(request) rUIWebBoard.m_web.Request(szURL);
@@ -149,59 +264,72 @@ BOOL CCommandList::ExecuteDelay(CUIWebBoard &rUIWebBoard, BOOL &bRender)
 	{
 		if(strError.size() == 0)
 		{
-			rUIWebBoard.SetListContent(strContent);
+			if (!strContent.empty())
+			{
+				rUIWebBoard.SetListContent(strContent);
+			}
 			return TRUE;
 		}
 
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 385, "ê²Œì‹œíŒ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
+		MsgBoxInfo.SetMsgBoxInfo( _S( 385, "°Ô½ÃÆÇ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
 		MsgBoxInfo.AddString( CTString( strError.c_str() ) );
 
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 	}
 	return FALSE;
 }
 
 //----------------------------------//
-//ê²Œì‹œíŒì˜ ê¸€ì„ ì½ì„ë•Œ ì‚¬ìš©í•  command
+//°Ô½ÃÆÇÀÇ ±ÛÀ» ÀĞÀ»¶§ »ç¿ëÇÒ command
 
 BOOL CCommandView::ExecuteImmediate(CUIWebBoard &rUIWebBoard)
 {
+	CWebAddress* pWebAddress = CWebAddress::getSingleton();
+
 	BOOL request = TRUE;
 	char szURL[1024] = {0};
 	if(rUIWebBoard.m_nCurSection == UWS_HELP)
 		sprintf(szURL, "%s?indexNo=%d&noticeNo=%s&pageNo=%d"
-				, WebAddress("help_view")
+				, pWebAddress->get("help_view")
 				, rUIWebBoard.m_nListIndex[rUIWebBoard.m_nWantWrite]
 				, rUIWebBoard.m_lbListContent.GetString( 0, rUIWebBoard.m_nWantWrite )		// No
 				, rUIWebBoard.m_nCurrentPage);	//HardCoding
 	else if(rUIWebBoard.m_nCurSection == UWS_NOTICE)
 		sprintf(szURL, "%s?indexNo=%d&noticeNo=%s&pageNo=%d"
-				, WebAddress("notice_view")
+				, pWebAddress->get("notice_view")
 				, rUIWebBoard.m_nListIndex[rUIWebBoard.m_nWantWrite]
 				, rUIWebBoard.m_lbListContent.GetString( 0, rUIWebBoard.m_nWantWrite )		// No
 				, rUIWebBoard.m_nCurrentPage);	//HardCoding
 	else if(rUIWebBoard.m_nCurSection == UWS_FREEBOARD)
+	{
+		std::string strWebParameter = "";
+		ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String, strWebParameter);
 		sprintf(szURL, "%s?indexNo=%d&bbsNo=%s&pageNo=%d&charIndex=%d&UserId=%s"
-				, WebAddress("freebbs_view")
+				, pWebAddress->get("freebbs_view")
 				, rUIWebBoard.m_nListIndex[rUIWebBoard.m_nWantWrite]
 				, rUIWebBoard.m_lbListContent.GetString( 0, rUIWebBoard.m_nWantWrite )		// No
 				, rUIWebBoard.m_nCurrentPage
 				, _pNetwork->MyCharacterInfo.index
-				, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
+				, strWebParameter.c_str()
 				);	//HardCoding
+	}
 	else if(rUIWebBoard.m_nCurSection == UWS_GUILD)
+	{
+		std::string strWebParameter = "";
+		ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String, strWebParameter);
 		sprintf(szURL, "%s?indexNo=%d&bbsNo=%s&pageNo=%d&charIndex=%d&UserId=%s&guildno=%d&server=%d&master=%d"
-				, WebAddress("guildbbs_view")
+				, pWebAddress->get("guildbbs_view")
 				, rUIWebBoard.m_nListIndex[rUIWebBoard.m_nWantWrite]
 				, rUIWebBoard.m_lbListContent.GetString( 0, rUIWebBoard.m_nWantWrite )		// No
 				, rUIWebBoard.m_nCurrentPage
 				, _pNetwork->MyCharacterInfo.index
-				, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
+				, strWebParameter.c_str()
 				, _pNetwork->MyCharacterInfo.lGuildIndex
 				, _pNetwork->m_iServerGroup
 				, INDEX(_pNetwork->MyCharacterInfo.lGuildPosition == MSG_GUILD_POSITION_BOSS)
 				);
+	}
 	else request = FALSE;
 
 	if(request) rUIWebBoard.m_web.Request(szURL);
@@ -223,161 +351,137 @@ BOOL CCommandView::ExecuteDelay(CUIWebBoard &rUIWebBoard, BOOL &bRender)
 		}
 
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 385, "ê²Œì‹œíŒ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
+		MsgBoxInfo.SetMsgBoxInfo( _S( 385, "°Ô½ÃÆÇ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
 		MsgBoxInfo.AddString( CTString( strError.c_str() ) );
 
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 	}
 	return FALSE;
 }
 
 //----------------------------------//
-//ê²Œì‹œíŒì— ê¸€ì„ ì“°ê±°ë‚˜ ìˆ˜ì •, ë‹µê¸€, ì‚­ì œí•  ë•Œ ì‚¬ìš©í•  command
+//°Ô½ÃÆÇ¿¡ ±ÛÀ» ¾²°Å³ª ¼öÁ¤, ´ä±Û, »èÁ¦ÇÒ ¶§ »ç¿ëÇÒ command
 
 BOOL CCommandModify::ExecuteImmediate(CUIWebBoard &rUIWebBoard)
 {
+	CWebAddress* pWebAddress = CWebAddress::getSingleton();
+
 	BOOL request = TRUE;
-	char szURL[1024] = {0};
+	char szURL[2048] = {0, };
+
 	if(rUIWebBoard.m_nCurSection == UWS_FREEBOARD)
 	{
+		char szTarget[256] = {0, };
+
 		switch(rUIWebBoard.m_nWantModifyMode)
 		{
 		case UWM_WRITE:
-			{
-				sprintf(szURL, "%s?Mode=write&server=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s"
-						, WebAddress("freebbs_modify")
-						, _pNetwork->m_iServerGroup						//serverêµ° index
-						, _pNetwork->MyCharacterInfo.index				//ìºë¦­í„° ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.userIndex			//ìœ ì € ì¸ë±ìŠ¤
-						, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
-																		//ìœ ì € ì•„ì´ë””
-						, ConvertStringToWebParameter(rUIWebBoard.m_ebWriteSubject.GetString()).c_str()
-																		//íƒ€ì´í‹€
-						, ConvertStringToWebParameter(rUIWebBoard.m_mebContent.GetString().str_String).c_str()
-																		//í…ìŠ¤íŠ¸
-						);	//HardCoding
-			} break;
+				strcpy(szTarget, "%s?Mode=write&server=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s");
+				break;
 		case UWM_REPLY:
-			{
-				sprintf(szURL, "%s?Mode=reply&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s"
-						, WebAddress("freebbs_modify")
-						, _pNetwork->m_iServerGroup						//serverêµ° index
-						, rUIWebBoard.m_nCurrentViewWriteIndex			//ì›ë³¸ê¸€ ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.index				//ìºë¦­í„° ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.userIndex			//ìœ ì € ì¸ë±ìŠ¤
-						, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
-																		//ìœ ì € ì•„ì´ë””
-						, ConvertStringToWebParameter(rUIWebBoard.m_ebWriteSubject.GetString()).c_str()
-																		//íƒ€ì´í‹€
-						, ConvertStringToWebParameter(rUIWebBoard.m_mebContent.GetString().str_String).c_str()
-																		//í…ìŠ¤íŠ¸
-						);	//HardCoding
-			} break;
+				strcpy(szTarget, "%s?Mode=reply&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s");
+				break;
 		case UWM_MODIFY:
-			{
-				sprintf(szURL, "%s?Mode=modify&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s"
-						, WebAddress("freebbs_modify")
-						, _pNetwork->m_iServerGroup						//serverêµ° index
-						, rUIWebBoard.m_nCurrentViewWriteIndex			//ì›ë³¸ê¸€ ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.index				//ìºë¦­í„° ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.userIndex			//ìœ ì € ì¸ë±ìŠ¤
-						, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
-																		//ìœ ì € ì•„ì´ë””
-						, ConvertStringToWebParameter(rUIWebBoard.m_ebWriteSubject.GetString()).c_str()
-																		//íƒ€ì´í‹€
-						, ConvertStringToWebParameter(rUIWebBoard.m_mebContent.GetString().str_String).c_str()
-																		//í…ìŠ¤íŠ¸
-						);	//HardCoding
-			} break;
-		case UWM_DELETE:
-			{
-				//ì‚­ì œ ì—¬ë¶€ ë¬¼ì–´ë³´ê¸°
-				sprintf(szURL, "%s?Mode=delete&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&"
-						, WebAddress("freebbs_modify")
-						, _pNetwork->m_iServerGroup						//serverêµ° index
-						, rUIWebBoard.m_nCurrentViewWriteIndex			//ì›ë³¸ê¸€ ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.index				//ìºë¦­í„° ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.userIndex			//ìœ ì € ì¸ë±ìŠ¤
-						, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
-																		//ìœ ì € ì•„ì´ë””
-						);	//HardCoding
-			} break;
+				strcpy(szTarget, "%s?Mode=modify&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s");
+				break;
+		case UWM_DELETE:	//»èÁ¦ ¿©ºÎ ¹°¾îº¸±â
+				strcpy(szTarget, "%s?Mode=delete&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&");
+				break;
+		}
+
+		std::string strUserID	= "";
+		ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String, strUserID);
+
+		if( rUIWebBoard.m_nWantModifyMode == UWM_DELETE )
+		{
+			sprintf(szURL, szTarget ,pWebAddress->get("freebbs_modify")
+				, _pNetwork->m_iServerGroup						//server±º index
+				, rUIWebBoard.m_nCurrentViewWriteIndex			//¿øº»±Û ÀÎµ¦½º
+				, _pNetwork->MyCharacterInfo.index				//Ä³¸¯ÅÍ ÀÎµ¦½º
+				, _pNetwork->MyCharacterInfo.userIndex			//À¯Àú ÀÎµ¦½º
+				, strUserID.c_str()								//À¯Àú ¾ÆÀÌµğ
+			);	//HardCoding
+		}
+		else
+		{
+			std::string strTitle	= "";
+			std::string strText		= "";
+			ConvertStringToWebParameter(rUIWebBoard.m_ebWriteSubject.GetString(), strTitle);
+			ConvertStringToWebParameter(rUIWebBoard.m_mebContent.GetString().str_String, strText);
+
+			sprintf(szURL, szTarget ,pWebAddress->get("freebbs_modify")
+				, _pNetwork->m_iServerGroup						//server±º index
+				, rUIWebBoard.m_nCurrentViewWriteIndex			//¿øº»±Û ÀÎµ¦½º
+				, _pNetwork->MyCharacterInfo.index				//Ä³¸¯ÅÍ ÀÎµ¦½º
+				, _pNetwork->MyCharacterInfo.userIndex			//À¯Àú ÀÎµ¦½º
+				, strUserID.c_str()								//À¯Àú ¾ÆÀÌµğ
+				, strTitle.c_str()								//Å¸ÀÌÆ²
+				, strText.c_str()								//ÅØ½ºÆ®
+			);	//HardCoding
 		}
 	}
 	else if(rUIWebBoard.m_nCurSection == UWS_GUILD)
 	{
+		char szTarget[256] = {0, };
+
 		switch(rUIWebBoard.m_nWantModifyMode)
 		{
 		case UWM_WRITE:
-			{
-				sprintf(szURL, "%s?Mode=write&server=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s&guildno=%d"
-						, WebAddress("guildbbs_modify")
-						, _pNetwork->m_iServerGroup						//serverêµ° index
-						, _pNetwork->MyCharacterInfo.index				//ìºë¦­í„° ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.userIndex			//ìœ ì € ì¸ë±ìŠ¤
-						, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
-																		//ìœ ì € ì•„ì´ë””
-						, ConvertStringToWebParameter(rUIWebBoard.m_ebWriteSubject.GetString()).c_str()
-																		//íƒ€ì´í‹€
-						, ConvertStringToWebParameter(rUIWebBoard.m_mebContent.GetString().str_String).c_str()
-																		//í…ìŠ¤íŠ¸
-						, _pNetwork->MyCharacterInfo.lGuildIndex
-						);	//HardCoding
-			} break;
+			strcpy(szTarget, "%s?Mode=write&server=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s&guildno=%d");
+			break;
 		case UWM_REPLY:
-			{
-				sprintf(szURL, "%s?Mode=reply&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s&guildno=%d"
-						, WebAddress("guildbbs_modify")
-						, _pNetwork->m_iServerGroup						//serverêµ° index
-						, rUIWebBoard.m_nCurrentViewWriteIndex			//ì›ë³¸ê¸€ ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.index				//ìºë¦­í„° ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.userIndex			//ìœ ì € ì¸ë±ìŠ¤
-						, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
-																		//ìœ ì € ì•„ì´ë””
-						, ConvertStringToWebParameter(rUIWebBoard.m_ebWriteSubject.GetString()).c_str()
-																		//íƒ€ì´í‹€
-						, ConvertStringToWebParameter(rUIWebBoard.m_mebContent.GetString().str_String).c_str()
-																		//í…ìŠ¤íŠ¸
-						, _pNetwork->MyCharacterInfo.lGuildIndex
-						);	//HardCoding
-			} break;
+			strcpy(szTarget, "%s?Mode=reply&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s&guildno=%d");
+			break;
 		case UWM_MODIFY:
-			{
-				sprintf(szURL, "%s?Mode=modify&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s&guildno=%d&master=%d"
-						, WebAddress("guildbbs_modify")
-						, _pNetwork->m_iServerGroup						//serverêµ° index
-						, rUIWebBoard.m_nCurrentViewWriteIndex			//ì›ë³¸ê¸€ ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.index				//ìºë¦­í„° ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.userIndex			//ìœ ì € ì¸ë±ìŠ¤
-						, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
-																		//ìœ ì € ì•„ì´ë””
-						, ConvertStringToWebParameter(rUIWebBoard.m_ebWriteSubject.GetString()).c_str()
-																		//íƒ€ì´í‹€
-						, ConvertStringToWebParameter(rUIWebBoard.m_mebContent.GetString().str_String).c_str()
-																		//í…ìŠ¤íŠ¸
-						, _pNetwork->MyCharacterInfo.lGuildIndex
-						, INDEX(_pNetwork->MyCharacterInfo.lGuildPosition == MSG_GUILD_POSITION_BOSS)
-						);	//HardCoding
-			} break;
-		case UWM_DELETE:
-			{
-				//ì‚­ì œ ì—¬ë¶€ ë¬¼ì–´ë³´ê¸°
-				sprintf(szURL, "%s?Mode=delete&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&guildno=%d&master=%d"
-						, WebAddress("guildbbs_modify")
-						, _pNetwork->m_iServerGroup						//serverêµ° index
-						, rUIWebBoard.m_nCurrentViewWriteIndex			//ì›ë³¸ê¸€ ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.index				//ìºë¦­í„° ì¸ë±ìŠ¤
-						, _pNetwork->MyCharacterInfo.userIndex			//ìœ ì € ì¸ë±ìŠ¤
-						, ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String).c_str()
-																		//ìœ ì € ì•„ì´ë””
-						, _pNetwork->MyCharacterInfo.lGuildIndex
-						, INDEX(_pNetwork->MyCharacterInfo.lGuildPosition == MSG_GUILD_POSITION_BOSS)
-						);	//HardCoding
-			} break;
+			strcpy(szTarget, "%s?Mode=modify&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&Title=%s&text=%s&guildno=%d&master=%d");
+			break;
+		case UWM_DELETE:	//»èÁ¦ ¿©ºÎ ¹°¾îº¸±â
+			strcpy(szTarget, "%s?Mode=delete&server=%d&Index=%d&charIndex=%d&userIndex=%d&userId=%s&guildno=%d&master=%d");
+			break;
+		}
+
+		std::string strUserID	= "";
+		ConvertStringToWebParameter(_pNetwork->m_strUserID.str_String, strUserID);
+
+		if( rUIWebBoard.m_nWantModifyMode == UWM_DELETE )
+		{
+			sprintf(szURL, szTarget, pWebAddress->get("guildbbs_modify")
+				, _pNetwork->m_iServerGroup						//server±º index
+				, rUIWebBoard.m_nCurrentViewWriteIndex			//¿øº»±Û ÀÎµ¦½º
+				, _pNetwork->MyCharacterInfo.index				//Ä³¸¯ÅÍ ÀÎµ¦½º
+				, _pNetwork->MyCharacterInfo.userIndex			//À¯Àú ÀÎµ¦½º
+				, strUserID.c_str()								//À¯Àú ¾ÆÀÌµğ
+				, _pNetwork->MyCharacterInfo.lGuildIndex
+				, INDEX(_pNetwork->MyCharacterInfo.lGuildPosition == MSG_GUILD_POSITION_BOSS)
+				);	//HardCoding
+		}
+		else
+		{
+			std::string strTitle	= "";
+			std::string strText		= "";
+			ConvertStringToWebParameter(rUIWebBoard.m_ebWriteSubject.GetString(), strTitle);
+			ConvertStringToWebParameter(rUIWebBoard.m_mebContent.GetString().str_String, strText);
+
+			sprintf(szURL, szTarget, pWebAddress->get("guildbbs_modify")
+				, _pNetwork->m_iServerGroup						//server±º index
+				, rUIWebBoard.m_nCurrentViewWriteIndex			//¿øº»±Û ÀÎµ¦½º
+				, _pNetwork->MyCharacterInfo.index				//Ä³¸¯ÅÍ ÀÎµ¦½º
+				, _pNetwork->MyCharacterInfo.userIndex			//À¯Àú ÀÎµ¦½º
+				, strUserID.c_str()								//À¯Àú ¾ÆÀÌµğ
+				, strTitle.c_str()								//Å¸ÀÌÆ²
+				, strText.c_str()								//ÅØ½ºÆ®
+				, _pNetwork->MyCharacterInfo.lGuildIndex
+				, INDEX(_pNetwork->MyCharacterInfo.lGuildPosition == MSG_GUILD_POSITION_BOSS)
+				);	//HardCoding
 		}
 	}
-	else request = FALSE;
-	if(request) rUIWebBoard.m_web.Request(szURL);
+	else
+	{
+		request = FALSE;
+	}
+
+	if( request == TRUE )
+		rUIWebBoard.m_web.Request(szURL);
 
 	return TRUE;
 }
@@ -387,59 +491,64 @@ BOOL CCommandModify::ExecuteDelay(CUIWebBoard &rUIWebBoard, BOOL &bRender)
 
 	std::string strContent;
 	std::string strError;
-	if(rUIWebBoard.m_web.Read(strContent, strError))
+	if( rUIWebBoard.m_web.Read(strContent, strError) == FALSE )
+		return FALSE;
+
+	if(strError.size() == 0)
 	{
-		if(strError.size() == 0)
+		int temp=0, tempOld=0;
+		temp = strContent.find(" ", tempOld);
+		int retCode = atoi( strContent.substr(tempOld, temp - tempOld).c_str() );
+		tempOld = temp + 1;
+		if(retCode == 1)	//¼º°ø
 		{
-			int temp=0, tempOld=0;
-			temp = strContent.find(" ", tempOld);
-			int retCode = atoi( strContent.substr(tempOld, temp - tempOld).c_str() );
-			tempOld = temp + 1;
-			if(retCode == 1)	//ì„±ê³µ
-			{
-				//ë¬´ì¡°ê±´ 1 page listë¡œ ê°„ë‹¤.
-				rUIWebBoard.m_nWantPage = 1;
-				rUIWebBoard.m_ebSearch.ResetString();
-				rUIWebBoard.m_cmbSearch.SetCurSel(0);
-				rUIWebBoard.DelayCommandPrepare(new CCommandList);
-				return TRUE;		//ì—°ì†í•´ì„œ listìƒíƒœë¡œ ê°€ì•¼í•¨.
-			}
-			else if(retCode == 0)
-			{
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 385, "ê²Œì‹œíŒ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
-				MsgBoxInfo.AddString( CTString( strContent.substr(tempOld, strContent.size() - tempOld).c_str() ) );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
-			}
-			else ASSERTALWAYS("ë¦¬í„´ì •ë³´ê´€ë ¨í•´ì„œ ë¬¸ì œìˆìŒ. ì›¹íŒ€ê³¼ ì˜ë…¼í•  ê²ƒ");
-			return TRUE;
+			//¹«Á¶°Ç 1 page list·Î °£´Ù.
+			rUIWebBoard.m_nWantPage = 1;
+			rUIWebBoard.m_ebSearch.ResetString();
+			rUIWebBoard.m_cmbSearch.SetCurSel(0);
+			rUIWebBoard.DelayCommandPrepare(new CCommandList);
+			return TRUE;		//¿¬¼ÓÇØ¼­ list»óÅÂ·Î °¡¾ßÇÔ.
+		}
+		else if(retCode == 0)
+		{
+			CUIMsgBox_Info	MsgBoxInfo;
+			MsgBoxInfo.SetMsgBoxInfo( _S( 385, "°Ô½ÃÆÇ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
+			MsgBoxInfo.AddString( CTString( strContent.substr(tempOld, strContent.size() - tempOld).c_str() ) );
+			CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+		}
+		else
+		{
+			ASSERTALWAYS("¸®ÅÏÁ¤º¸°ü·ÃÇØ¼­ ¹®Á¦ÀÖÀ½. À¥ÆÀ°ú ÀÇ³íÇÒ °Í");
 		}
 
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 385, "ê²Œì‹œíŒ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
-		MsgBoxInfo.AddString( CTString( strError.c_str() ) );
-
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		return TRUE;
 	}
+	
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 385, "°Ô½ÃÆÇ" ), UMBS_OK, UI_WEBBOARD, MSGCMD_WEBBOARD_ERROR );
+	MsgBoxInfo.AddString( CTString( strError.c_str() ) );
+	
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+
 	return FALSE;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 // ----------------------------------------------------------------------------
 // Name : CUIWebBoard()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIWebBoard::CUIWebBoard()
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 : m_web( g_web )
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 {
 	m_nCurSection = UWS_HELP;
 	m_nCurBoardType = UWT_LIST;
 	m_nCurrentPage = 0;
 	m_nValidPageBtnCount = 0;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	m_bWaitResponseMode = FALSE;
 	m_nWantPage = 1;
 	m_nWantWrite = 0;
@@ -447,7 +556,7 @@ CUIWebBoard::CUIWebBoard()
 	m_bAuthorIsMe = FALSE;
 	m_nCurrentViewWriteIndex = -1;
 	m_bVisible = FALSE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 }
 
 // ----------------------------------------------------------------------------
@@ -456,14 +565,13 @@ CUIWebBoard::CUIWebBoard()
 // ----------------------------------------------------------------------------
 CUIWebBoard::~CUIWebBoard()
 {
-	Destroy();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	for(int i=0; i<m_vectorDelayCommand.size(); ++i)
 	{
 		delete m_vectorDelayCommand[i];
 	}
 	m_vectorDelayCommand.clear();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 }
 
 // ------------------------------- ---------------------------------------------
@@ -472,9 +580,7 @@ CUIWebBoard::~CUIWebBoard()
 // ----------------------------------------------------------------------------
 void CUIWebBoard::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 600, 22 );
@@ -550,42 +656,42 @@ void CUIWebBoard::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_btnNext.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Search button
-	m_btnSearch.Create( this, _S( 386, "ê²€ìƒ‰" ), 379, 407, 63, 21 );
+	m_btnSearch.Create( this, _S( 386, "°Ë»ö" ), 379, 407, 63, 21 );
 	m_btnSearch.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
 	m_btnSearch.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
 	m_btnSearch.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
 	m_btnSearch.CopyUV( UBS_IDLE, UBS_ON );
 
 	// List button
-	m_btnList.Create( this, _S( 313, "ëª©ë¡" ), 23, 407, 63, 21 );
+	m_btnList.Create( this, _S( 313, "¸ñ·Ï" ), 23, 407, 63, 21 );
 	m_btnList.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
 	m_btnList.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
 	m_btnList.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
 	m_btnList.CopyUV( UBS_IDLE, UBS_ON ); 
 
 	// Write button
-	m_btnWrite.Create( this, _S( 314, "ì“°ê¸°" ), 515, 407, 63, 21 );
+	m_btnWrite.Create( this, _S( 314, "¾²±â" ), 515, 407, 63, 21 );
 	m_btnWrite.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
 	m_btnWrite.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
 	m_btnWrite.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
 	m_btnWrite.CopyUV( UBS_IDLE, UBS_ON );
 
 	// Reply button
-	m_btnReply.Create( this, _S( 321, "ë‹µê¸€" ), 377, 407, 63, 21 );
+	m_btnReply.Create( this, _S( 321, "´ä±Û" ), 377, 407, 63, 21 );
 	m_btnReply.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
 	m_btnReply.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
 	m_btnReply.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
 	m_btnReply.CopyUV( UBS_IDLE, UBS_ON );
 
 	// Delete button
-	m_btnDelete.Create( this, _S( 338, "ì‚­ì œ" ), 446, 407, 63, 21 );
+	m_btnDelete.Create( this, _S( 338, "»èÁ¦" ), 446, 407, 63, 21 );
 	m_btnDelete.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
 	m_btnDelete.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
 	m_btnDelete.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
 	m_btnDelete.CopyUV( UBS_IDLE, UBS_ON );
 
 	// Modify button
-	m_btnModify.Create( this, _S( 339, "ìˆ˜ì •" ), 515, 407, 63, 21 );
+	m_btnModify.Create( this, _S( 339, "¼öÁ¤" ), 515, 407, 63, 21 );
 	m_btnModify.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
 	m_btnModify.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
 	m_btnModify.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
@@ -632,8 +738,8 @@ void CUIWebBoard::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_cmbSearch.SetDownBtnUV( 124, 0, 137, 13, fTexWidth, fTexHeight );
 	m_cmbSearch.SetUpBtnUV( 124, 14, 137, 27, fTexWidth, fTexHeight );	
 	m_cmbSearch.SetDropListUV( 115, 60, 192, 75, fTexWidth, fTexHeight );
-	m_cmbSearch.AddString( _S( 341, "ì œëª©" ) );
-	m_cmbSearch.AddString( _S( 244, "ì‘ì„±ì" ) );
+	m_cmbSearch.AddString( _S( 341, "Á¦¸ñ" ) );
+	m_cmbSearch.AddString( _S( 244, "ÀÛ¼ºÀÚ" ) );
 	m_cmbSearch.SetCurSel( 0 );
 
 	// Search edit box
@@ -646,7 +752,7 @@ void CUIWebBoard::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_ebWriteSubject.SetReadingWindowUV( 153, 98, 170, 114, fTexWidth, fTexHeight );
 	m_ebWriteSubject.SetCandidateUV( 153, 98, 170, 114, fTexWidth, fTexHeight );
 
-	m_mebContent.Create ( this, WBOARD_WRITE_CONTENT_SX, 139, 492, 234, 1 );
+	m_mebContent.Create ( this, WBOARD_WRITE_CONTENT_SX, 139, 492, 234, 20);
 }
 
 // ----------------------------------------------------------------------------
@@ -675,7 +781,40 @@ void CUIWebBoard::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 // ----------------------------------------------------------------------------
 void CUIWebBoard::ToggleVisible()
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+#if defined G_GERMAN
+	extern ENGINE_API INDEX sam_bFullScreenActive;	
+	if ( IsFullScreen( sam_bFullScreenActive))
+	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		 pUIManager->GetOption()->ChangeWindowMode();
+		 pUIManager->DestroyRenderTarget();
+		 pUIManager->InitRenderTarget();
+	}
+
+	switch (g_iCountry)
+	{
+	case GERMANY:
+		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/de/forum/", NULL, NULL, SW_SHOWNORMAL);
+		break;
+	case SPAIN:
+		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/es/forum/", NULL, NULL, SW_SHOWNORMAL);
+		break;
+	case FRANCE:
+		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/fr/forum/", NULL, NULL, SW_SHOWNORMAL);
+		break;
+	case POLAND:
+		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/pl/forum/", NULL, NULL, SW_SHOWNORMAL);
+		break;
+	case ITALY:
+		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/it/forum/", NULL, NULL, SW_SHOWNORMAL);
+		break;
+	}
+#endif
+#if !defined G_KOR
+	return;
+#endif
 	if( IsVisible() )
 	{
 		CloseWebBoard();
@@ -686,22 +825,22 @@ void CUIWebBoard::ToggleVisible()
 		m_nWantPage = 1;
 		DelayCommandPrepare(new CCommandOpen);
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 }
 
 // ----------------------------------------------------------------------------
 // Name : OpenWebBoard()
 // Desc :
 // ----------------------------------------------------------------------------
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 void CUIWebBoard::OpenWebBoard()
 {
 	m_nCurSection = UWS_HELP;
 	m_nCurBoardType = UWT_LIST;
 
-	_pUIMgr->RearrangeOrder( UI_WEBBOARD, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_WEBBOARD, TRUE );
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 // ----------------------------------------------------------------------------
 // Name : CloseWebBoard()
@@ -709,7 +848,9 @@ void CUIWebBoard::OpenWebBoard()
 // ----------------------------------------------------------------------------
 void CUIWebBoard::CloseWebBoard()
 {
-	_pUIMgr->RearrangeOrder( UI_WEBBOARD, FALSE );
+	m_ebSearch.SetFocus(FALSE);
+	m_ebWriteSubject.SetFocus(FALSE);
+	CUIManager::getSingleton()->RearrangeOrder( UI_WEBBOARD, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -739,8 +880,8 @@ void CUIWebBoard::SetPageButtons( int nTotalWrite, int nCurPage )
 	else
 		m_btnNext.SetEnable( TRUE );
 
-	int	nLength, nTotalLength = 0;
-	for( int iPage = m_nCurrentFirstPage; iPage <= m_nCurrentLastPage; iPage++ )
+	int	nLength, nTotalLength = 0, iPage;
+	for( iPage = m_nCurrentFirstPage; iPage <= m_nCurrentLastPage; iPage++ )
 	{
 		if( iPage > 99999 )		nLength = 6;
 		else if( iPage > 9999 )	nLength = 5;
@@ -825,201 +966,201 @@ void CUIWebBoard::AddReadingString( CTString &strContent )
 	if( nLength == 0 )
 		return;
 
+	int		iPos;
 	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strContent);
-		INDEX	nChatMax= (WBOARD_READ_MAX_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
+#if defined G_THAI
+	// Get length of string
+	INDEX	nThaiLen = FindThaiLen(strContent);
+	INDEX	nChatMax= (WBOARD_READ_MAX_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
+	if( nLength == 0 )
+		return;
+	// If length of string is less than max char
+	if( nThaiLen <= nChatMax )
+	{
+		// Check line character
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strContent[iPos] == '\n' || strContent[iPos] == '\r' )
-					break;	
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbReadContent.AddString( 0, strContent, 0xE6E6E6FF );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strContent.Split( iPos, strTemp2, strTemp );
-				m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddReadingString( strTemp );
-			}
+			if( strContent[iPos] == '\n' || strContent[iPos] == '\r' )
+				break;	
 		}
-		// Need multi-line
+
+		// Not exist
+		if( iPos == nLength )
+		{
+			m_lbReadContent.AddString( 0, strContent, 0xE6E6E6FF );
+		}
 		else
 		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = WBOARD_READ_MAX_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strContent,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
+			// Split string
+			CTString	strTemp, strTemp2;
+			strContent.Split( iPos, strTemp2, strTemp );
+			m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
 
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strContent[iPos] == '\n' || strContent[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strContent.Split( nSplitPos, strTemp2, strTemp );
-				m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddReadingString( strTemp );
-			}
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
 			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strContent.Split( iPos, strTemp2, strTemp );
-				m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
+				strTemp.TrimLeft( strTemp.Length() - 1 );
 
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddReadingString( strTemp );
-			}
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= WBOARD_READ_MAX_CHAR )
-		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strContent[iPos] == '\n' || strContent[iPos] == '\r' )
-					break;	
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbReadContent.AddString( 0, strContent, 0xE6E6E6FF );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strContent.Split( iPos, strTemp2, strTemp );
-				m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddReadingString( strTemp );
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = WBOARD_READ_MAX_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strContent[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strContent[iPos] == '\n' || strContent[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strContent.Split( nSplitPos, strTemp2, strTemp );
-				m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddReadingString( strTemp );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strContent.Split( iPos, strTemp2, strTemp );
-				m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddReadingString( strTemp );
-			}
+			AddReadingString( strTemp );
 		}
 	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = WBOARD_READ_MAX_CHAR;
+		BOOL	b2ByteChar = FALSE;
+		for( iPos = 0; iPos < nLength; iPos++ )
+		{
+			if(nChatMax < FindThaiLen(strContent,0,iPos))
+				break;
+		}
+		nSplitPos = iPos;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strContent[iPos] == '\n' || strContent[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strContent.Split( nSplitPos, strTemp2, strTemp );
+			m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+
+			AddReadingString( strTemp );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strContent.Split( iPos, strTemp2, strTemp );
+			m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddReadingString( strTemp );
+		}
+
+	}
+#else	
+	// If length of string is less than max char
+	if( nLength <= WBOARD_READ_MAX_CHAR )
+	{
+		// Check line character
+		for( iPos = 0; iPos < nLength; iPos++ )
+		{
+			if( strContent[iPos] == '\n' || strContent[iPos] == '\r' )
+				break;	
+		}
+
+		// Not exist
+		if( iPos == nLength )
+		{
+			m_lbReadContent.AddString( 0, strContent, 0xE6E6E6FF );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strContent.Split( iPos, strTemp2, strTemp );
+			m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddReadingString( strTemp );
+		}
+	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = WBOARD_READ_MAX_CHAR;
+		BOOL	b2ByteChar = FALSE;
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strContent[iPos] & 0x80 )
+				b2ByteChar = !b2ByteChar;
+			else
+				b2ByteChar = FALSE;
+		}
+
+		if( b2ByteChar )
+			nSplitPos--;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strContent[iPos] == '\n' || strContent[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strContent.Split( nSplitPos, strTemp2, strTemp );
+			m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+
+			AddReadingString( strTemp );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strContent.Split( iPos, strTemp2, strTemp );
+			m_lbReadContent.AddString( 0, strTemp2, 0xE6E6E6FF );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddReadingString( strTemp );
+		}
+	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -1030,8 +1171,10 @@ void CUIWebBoard::RenderListCommon()
 {
 	int	nX, nY;
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Title region of list
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcListTitle.Left, m_nPosY + m_rcListTitle.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcListTitle.Left, m_nPosY + m_rcListTitle.Top,
 										m_nPosX + m_rcListTitle.Right, m_nPosY + m_rcListTitle.Bottom,
 										m_rtBackSub.U0, m_rtBackSub.V0, m_rtBackSub.U1, m_rtBackSub.V1,
 										0xFFFFFFFF );
@@ -1042,7 +1185,7 @@ void CUIWebBoard::RenderListCommon()
 	for( int iList = 0; iList < WBOARD_MAX_LIST - 1; iList++ )
 	{
 		
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 1,
+		pDrawPort->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 1,
 											m_rtSplitterS.U0, m_rtSplitterS.V0, m_rtSplitterS.U1, m_rtSplitterS.V1,
 											0xFFFFFFFF );
 		nY += WBOARD_LIST_MAIN_OFFSETY;
@@ -1050,7 +1193,7 @@ void CUIWebBoard::RenderListCommon()
 
 	// Splitter - large
 	nY = m_nPosY + WBOARD_LIST_SPLITL_SY;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 2,
+	pDrawPort->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 2,
 										m_rtSplitterL.U0, m_rtSplitterL.V0, m_rtSplitterL.U1, m_rtSplitterL.V1,
 										0xFFFFFFFF );
 
@@ -1070,24 +1213,24 @@ void CUIWebBoard::RenderListCommon()
 	m_lbListContent.Render();
 
 	// Text in list type
-	_pUIMgr->GetDrawPort()->PutTextEx( CTString( "No" ), m_nPosX + WBOARD_LIST_TITLE_NO_SX,
+	pDrawPort->PutTextEx( CTString( "No" ), m_nPosX + WBOARD_LIST_TITLE_NO_SX,
 										m_nPosY + WBOARD_LIST_TITLE_SY, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 341, "ì œëª©" ), m_nPosX + WBOARD_LIST_TITLE_SUBJECT_SX,
+	pDrawPort->PutTextEx( _S( 341, "Á¦¸ñ" ), m_nPosX + WBOARD_LIST_TITLE_SUBJECT_SX,
 										m_nPosY + WBOARD_LIST_TITLE_SY, 0xFFFFCAFF );
 	if( m_nCurSection == UWS_HELP || m_nCurSection == UWS_NOTICE )
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 244, "ì‘ì„±ì" ), m_nPosX + WBOARD_LIST_TITLE_NOTICE_NAME_SX,
+		pDrawPort->PutTextEx( _S( 244, "ÀÛ¼ºÀÚ" ), m_nPosX + WBOARD_LIST_TITLE_NOTICE_NAME_SX,
 											m_nPosY + WBOARD_LIST_TITLE_SY, 0xFFFFCAFF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 398, "ì‘ì„±ì¼" ), m_nPosX + WBOARD_LIST_TITLE_NOTICE_DATE_SX,
+		pDrawPort->PutTextEx( _S( 398, "ÀÛ¼ºÀÏ" ), m_nPosX + WBOARD_LIST_TITLE_NOTICE_DATE_SX,
 											m_nPosY + WBOARD_LIST_TITLE_SY, 0xFFFFCAFF );
 	}
 	else if( m_nCurSection == UWS_FREEBOARD || m_nCurSection == UWS_GUILD )
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 244, "ì‘ì„±ì" ), m_nPosX + WBOARD_LIST_TITLE_NAME_SX,
+		pDrawPort->PutTextEx( _S( 244, "ÀÛ¼ºÀÚ" ), m_nPosX + WBOARD_LIST_TITLE_NAME_SX,
 											m_nPosY + WBOARD_LIST_TITLE_SY, 0xFFFFCAFF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 398, "ì‘ì„±ì¼" ), m_nPosX + WBOARD_LIST_TITLE_DATE_SX,
+		pDrawPort->PutTextEx( _S( 398, "ÀÛ¼ºÀÏ" ), m_nPosX + WBOARD_LIST_TITLE_DATE_SX,
 											m_nPosY + WBOARD_LIST_TITLE_SY, 0xFFFFCAFF );
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 399, "ì¡°íšŒ" ), m_nPosX + WBOARD_LIST_TITLE_HIT_SX,
+		pDrawPort->PutTextEx( _S( 399, "Á¶È¸" ), m_nPosX + WBOARD_LIST_TITLE_HIT_SX,
 											m_nPosY + WBOARD_LIST_TITLE_SY, 0xFFFFCAFF );
 	}
 }
@@ -1100,52 +1243,54 @@ void CUIWebBoard::RenderReadCommon()
 {
 	int	nX, nY, nX2, nY2;
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Content region
 	nX = m_nPosX + m_rcReadContent.Left;
 	nX2 = m_nPosX + m_rcReadContent.Right;
 	// Upper left
 	nY = m_nPosY + m_rcReadContent.Top;
 	nY2 = nY + 3;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 3, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 3, nY2,
 										m_rtEditBoxUL.U0, m_rtEditBoxUL.V0, m_rtEditBoxUL.U1, m_rtEditBoxUL.V1,
 										0xFFFFFFFF );
 	// Upper middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY, nX2 - 3, nY2,
+	pDrawPort->AddTexture( nX + 3, nY, nX2 - 3, nY2,
 										m_rtEditBoxUM.U0, m_rtEditBoxUM.V0, m_rtEditBoxUM.U1, m_rtEditBoxUM.V1,
 										0xFFFFFFFF );
 	// Upper right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 3, nY, nX2, nY2,
 										m_rtEditBoxUR.U0, m_rtEditBoxUR.V0, m_rtEditBoxUR.U1, m_rtEditBoxUR.V1,
 										0xFFFFFFFF );
 	// Middle left
 	nY = m_nPosY + m_rcReadContent.Bottom - 3;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY2, nX + 3, nY,
+	pDrawPort->AddTexture( nX, nY2, nX + 3, nY,
 										m_rtEditBoxML.U0, m_rtEditBoxML.V0, m_rtEditBoxML.U1, m_rtEditBoxML.V1,
 										0xFFFFFFFF );
 	// Middle middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY2, nX2 - 3, nY,
+	pDrawPort->AddTexture( nX + 3, nY2, nX2 - 3, nY,
 										m_rtEditBoxMM.U0, m_rtEditBoxMM.V0, m_rtEditBoxMM.U1, m_rtEditBoxMM.V1,
 										0xFFFFFFFF );
 	// Middle right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY2, nX2, nY,
+	pDrawPort->AddTexture( nX2 - 3, nY2, nX2, nY,
 										m_rtEditBoxMR.U0, m_rtEditBoxMR.V0, m_rtEditBoxMR.U1, m_rtEditBoxMR.V1,
 										0xFFFFFFFF );
 	// Lower left
 	nY2 = m_nPosY + m_rcReadContent.Bottom;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 3, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 3, nY2,
 										m_rtEditBoxLL.U0, m_rtEditBoxLL.V0, m_rtEditBoxLL.U1, m_rtEditBoxLL.V1,
 										0xFFFFFFFF );
 	// Lower middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY, nX2 - 3, nY2,
+	pDrawPort->AddTexture( nX + 3, nY, nX2 - 3, nY2,
 										m_rtEditBoxLM.U0, m_rtEditBoxLM.V0, m_rtEditBoxLM.U1, m_rtEditBoxLM.V1,
 										0xFFFFFFFF );
 	// Lower right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 3, nY, nX2, nY2,
 										m_rtEditBoxLR.U0, m_rtEditBoxLR.V0, m_rtEditBoxLR.U1, m_rtEditBoxLR.V1,
 										0xFFFFFFFF );
 
 	// Subject region of read
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcReadSubject.Left, m_nPosY + m_rcReadSubject.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcReadSubject.Left, m_nPosY + m_rcReadSubject.Top,
 										m_nPosX + m_rcReadSubject.Right, m_nPosY + m_rcReadSubject.Bottom,
 										m_rtBackSub.U0, m_rtBackSub.V0, m_rtBackSub.U1, m_rtBackSub.V1,
 										0xFFFFFFFF );
@@ -1153,34 +1298,34 @@ void CUIWebBoard::RenderReadCommon()
 	// Splitter - small
 	nX = m_nPosX + WBOARD_READ_SPLIT_SX;
 	nY = m_nPosY + WBOARD_READ_SPLITS_SY;	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 1,
+	pDrawPort->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 1,
 										m_rtSplitterS.U0, m_rtSplitterS.V0, m_rtSplitterS.U1, m_rtSplitterS.V1,
 										0xFFFFFFFF );
 	// Splitter - large
 	nY = m_nPosY + WBOARD_READ_SPLITL_SY;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 2,
+	pDrawPort->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 2,
 										m_rtSplitterL.U0, m_rtSplitterL.V0, m_rtSplitterL.U1, m_rtSplitterL.V1,
 										0xFFFFFFFF );
 
 	// Text in read type
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strReadNo, m_nPosX + WBOARD_READ_NO_SX,
+	pDrawPort->PutTextEx( m_strReadNo, m_nPosX + WBOARD_READ_NO_SX,
 											m_nPosY + WBOARD_READ_SUBJECT_SY, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strReadSubject, m_nPosX + WBOARD_READ_SUBJECT_SX,
+	pDrawPort->PutTextEx( m_strReadSubject, m_nPosX + WBOARD_READ_SUBJECT_SX,
 											m_nPosY + WBOARD_READ_SUBJECT_SY, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strReadName, m_nPosX + WBOARD_READ_NAME_RX,
+	pDrawPort->PutTextExRX( m_strReadName, m_nPosX + WBOARD_READ_NAME_RX,
 											m_nPosY + WBOARD_READ_SUBJECT_SY, 0xFFFFCAFF );
 	// Notice
 	if( m_nCurSection == UWS_HELP || m_nCurSection == UWS_NOTICE )
 	{
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strReadDate, m_nPosX + WBOARD_READ_HIT_RX,
+		pDrawPort->PutTextExRX( m_strReadDate, m_nPosX + WBOARD_READ_HIT_RX,
 												m_nPosY + WBOARD_READ_DATE_SY, 0xFFFFCAFF );
 	}
 	// Freeboard
 	else if( m_nCurSection == UWS_FREEBOARD || m_nCurSection == UWS_GUILD )
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strReadDate, m_nPosX + WBOARD_READ_DATE_SX,
+		pDrawPort->PutTextEx( m_strReadDate, m_nPosX + WBOARD_READ_DATE_SX,
 												m_nPosY + WBOARD_READ_DATE_SY, 0xFFFFCAFF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strReadHit, m_nPosX + WBOARD_READ_HIT_RX,
+		pDrawPort->PutTextExRX( m_strReadHit, m_nPosX + WBOARD_READ_HIT_RX,
 												m_nPosY + WBOARD_READ_DATE_SY, 0xFFFFCAFF );
 	}
 
@@ -1196,20 +1341,22 @@ void CUIWebBoard::RenderWriteCommon()
 {
 	int	nX, nY, nX2, nY2;
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Writer region of read
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWriteWriter.Left, m_nPosY + m_rcWriteWriter.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcWriteWriter.Left, m_nPosY + m_rcWriteWriter.Top,
 										m_nPosX + m_rcWriteWriter.Right, m_nPosY + m_rcWriteWriter.Bottom,
 										m_rtBackSub.U0, m_rtBackSub.V0, m_rtBackSub.U1, m_rtBackSub.V1,
 										0xFFFFFFFF );
 
 	// Subject region of read
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWriteSubject.Left, m_nPosY + m_rcWriteSubject.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcWriteSubject.Left, m_nPosY + m_rcWriteSubject.Top,
 										m_nPosX + m_rcWriteSubject.Right, m_nPosY + m_rcWriteSubject.Bottom,
 										m_rtBackSub.U0, m_rtBackSub.V0, m_rtBackSub.U1, m_rtBackSub.V1,
 										0xFFFFFFFF );
 
 	// Content region of read
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWriteContent.Left, m_nPosY + m_rcWriteContent.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcWriteContent.Left, m_nPosY + m_rcWriteContent.Top,
 										m_nPosX + m_rcWriteContent.Right, m_nPosY + m_rcWriteContent.Bottom,
 										m_rtBackSub.U0, m_rtBackSub.V0, m_rtBackSub.U1, m_rtBackSub.V1,
 										0xFFFFFFFF );
@@ -1219,13 +1366,13 @@ void CUIWebBoard::RenderWriteCommon()
 	nY = m_nPosY + m_rcWriteWriterMain.Top;
 	nX2 = m_nPosX + m_rcWriteWriterMain.Right;
 	nY2 = m_nPosY + m_rcWriteWriterMain.Bottom;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 3, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 3, nY2,
 										m_rtEditBoxL.U0, m_rtEditBoxL.V0, m_rtEditBoxL.U1, m_rtEditBoxL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY, nX2 - 3, nY2,
+	pDrawPort->AddTexture( nX + 3, nY, nX2 - 3, nY2,
 										m_rtEditBoxM.U0, m_rtEditBoxM.V0, m_rtEditBoxM.U1, m_rtEditBoxM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 3, nY, nX2, nY2,
 										m_rtEditBoxR.U0, m_rtEditBoxR.V0, m_rtEditBoxR.U1, m_rtEditBoxR.V1,
 										0xFFFFFFFF );
 
@@ -1234,13 +1381,13 @@ void CUIWebBoard::RenderWriteCommon()
 	nY = m_nPosY + m_rcWriteSubjectMain.Top;
 	nX2 = m_nPosX + m_rcWriteSubjectMain.Right;
 	nY2 = m_nPosY + m_rcWriteSubjectMain.Bottom;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 3, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 3, nY2,
 										m_rtEditBoxL.U0, m_rtEditBoxL.V0, m_rtEditBoxL.U1, m_rtEditBoxL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY, nX2 - 3, nY2,
+	pDrawPort->AddTexture( nX + 3, nY, nX2 - 3, nY2,
 										m_rtEditBoxM.U0, m_rtEditBoxM.V0, m_rtEditBoxM.U1, m_rtEditBoxM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 3, nY, nX2, nY2,
 										m_rtEditBoxR.U0, m_rtEditBoxR.V0, m_rtEditBoxR.U1, m_rtEditBoxR.V1,
 										0xFFFFFFFF );
 
@@ -1250,77 +1397,77 @@ void CUIWebBoard::RenderWriteCommon()
 	// Upper left
 	nY = m_nPosY + m_rcWriteContentMain.Top;
 	nY2 = nY + 3;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 3, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 3, nY2,
 										m_rtEditBoxUL.U0, m_rtEditBoxUL.V0, m_rtEditBoxUL.U1, m_rtEditBoxUL.V1,
 										0xFFFFFFFF );
 	// Upper middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY, nX2 - 3, nY2,
+	pDrawPort->AddTexture( nX + 3, nY, nX2 - 3, nY2,
 										m_rtEditBoxUM.U0, m_rtEditBoxUM.V0, m_rtEditBoxUM.U1, m_rtEditBoxUM.V1,
 										0xFFFFFFFF );
 	// Upper right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 3, nY, nX2, nY2,
 										m_rtEditBoxUR.U0, m_rtEditBoxUR.V0, m_rtEditBoxUR.U1, m_rtEditBoxUR.V1,
 										0xFFFFFFFF );
 	// Middle left
 	nY = m_nPosY + m_rcWriteContentMain.Bottom - 3;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY2, nX + 3, nY,
+	pDrawPort->AddTexture( nX, nY2, nX + 3, nY,
 										m_rtEditBoxML.U0, m_rtEditBoxML.V0, m_rtEditBoxML.U1, m_rtEditBoxML.V1,
 										0xFFFFFFFF );
 	// Middle middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY2, nX2 - 3, nY,
+	pDrawPort->AddTexture( nX + 3, nY2, nX2 - 3, nY,
 										m_rtEditBoxMM.U0, m_rtEditBoxMM.V0, m_rtEditBoxMM.U1, m_rtEditBoxMM.V1,
 										0xFFFFFFFF );
 	// Middle right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY2, nX2, nY,
+	pDrawPort->AddTexture( nX2 - 3, nY2, nX2, nY,
 										m_rtEditBoxMR.U0, m_rtEditBoxMR.V0, m_rtEditBoxMR.U1, m_rtEditBoxMR.V1,
 										0xFFFFFFFF );
 	// Lower left
 	nY2 = m_nPosY + m_rcWriteContentMain.Bottom;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 3, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 3, nY2,
 										m_rtEditBoxLL.U0, m_rtEditBoxLL.V0, m_rtEditBoxLL.U1, m_rtEditBoxLL.V1,
 										0xFFFFFFFF );
 	// Lower middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY, nX2 - 3, nY2,
+	pDrawPort->AddTexture( nX + 3, nY, nX2 - 3, nY2,
 										m_rtEditBoxLM.U0, m_rtEditBoxLM.V0, m_rtEditBoxLM.U1, m_rtEditBoxLM.V1,
 										0xFFFFFFFF );
 	// Lower right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 3, nY, nX2, nY2,
 										m_rtEditBoxLR.U0, m_rtEditBoxLR.V0, m_rtEditBoxLR.U1, m_rtEditBoxLR.V1,
 										0xFFFFFFFF );
 
 	// Splitter - small
 	nX = m_nPosX + WBOARD_WRITE_SPLIT_SX;
 	nY = m_nPosY + WBOARD_WRITE_SPLITS_SY;	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 1,
+	pDrawPort->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 1,
 										m_rtSplitterS.U0, m_rtSplitterS.V0, m_rtSplitterS.U1, m_rtSplitterS.V1,
 										0xFFFFFFFF );
 	// Splitter - large
 	nY = m_nPosY + WBOARD_WRITE_SPLITL_SY;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 2,
+	pDrawPort->AddTexture( nX, nY, nX + WBOARD_SPLIT_WIDTH, nY + 2,
 										m_rtSplitterL.U0, m_rtSplitterL.V0, m_rtSplitterL.U1, m_rtSplitterL.V1,
 										0xFFFFFFFF );
 
 	// Text in write type
 	nX = m_nPosX + WBOARD_WRITE_TITLE_CX;
 	
-	_pUIMgr->GetDrawPort()->PutTextEx ( _pNetwork->MyCharacterInfo.name, m_nPosX + WBOARD_WRITE_NAME_SX,
+	pDrawPort->PutTextEx ( _pNetwork->MyCharacterInfo.name, m_nPosX + WBOARD_WRITE_NAME_SX,
 										m_nPosY + WBOARD_WRITE_TITLE_NAME_SY, 0xFFFFCAFF ); 
 	
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 244, "ì‘ì„±ì" ), nX,
+	pDrawPort->PutTextExCX( _S( 244, "ÀÛ¼ºÀÚ" ), nX,
 										m_nPosY + WBOARD_WRITE_TITLE_NAME_SY, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 195, "ì œ  ëª©" ), nX,
+	pDrawPort->PutTextExCX( _S( 195, "Á¦  ¸ñ" ), nX,
 										m_nPosY + WBOARD_WRITE_TITLE_SUBJECT_SY, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 418, "ë‚´  ìš©" ), nX,
+	pDrawPort->PutTextExCX( _S( 418, "³»  ¿ë" ), nX,
 										m_nPosY + WBOARD_WRITE_TITLE_CONTENT_SY, 0xFFFFCAFF );
 
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	m_mebContent.Render ();
 
 	// Set web board texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 }
 
 // ----------------------------------------------------------------------------
@@ -1329,12 +1476,12 @@ void CUIWebBoard::RenderWriteCommon()
 // ----------------------------------------------------------------------------
 void CUIWebBoard::Render()
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
-	if(!DelayCommandExecute()) return;
 	m_bVisible = TRUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set web board texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY, nX2, nY2;
@@ -1344,43 +1491,43 @@ void CUIWebBoard::Render()
 	nY = m_nPosY;
 	nX2 = m_nPosX + m_nWidth;
 	nY2 = m_nPosY + 52;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 49, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 49, nY2,
 										m_rtBackUL.U0, m_rtBackUL.V0, m_rtBackUL.U1, m_rtBackUL.V1,
 										0xFFFFFFFF );
 	// Upper middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 49, nY, nX2 - 32, nY2,
+	pDrawPort->AddTexture( nX + 49, nY, nX2 - 32, nY2,
 										m_rtBackUM.U0, m_rtBackUM.V0, m_rtBackUM.U1, m_rtBackUM.V1,
 										0xFFFFFFFF );
 	// Upper right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 32, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 32, nY, nX2, nY2,
 										m_rtBackUR.U0, m_rtBackUR.V0, m_rtBackUR.U1, m_rtBackUR.V1,
 										0xFFFFFFFF );
 
 	// Middle left
 	nY = m_nPosY + m_nHeight - 15;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY2, nX + 49, nY,
+	pDrawPort->AddTexture( nX, nY2, nX + 49, nY,
 										m_rtBackML.U0, m_rtBackML.V0, m_rtBackML.U1, m_rtBackML.V1,
 										0xFFFFFFFF );
 	// Middle middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 49, nY2, nX2 - 32, nY,
+	pDrawPort->AddTexture( nX + 49, nY2, nX2 - 32, nY,
 										m_rtBackMM.U0, m_rtBackMM.V0, m_rtBackMM.U1, m_rtBackMM.V1,
 										0xFFFFFFFF );
 	// Middle right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 32, nY2, nX2, nY,
+	pDrawPort->AddTexture( nX2 - 32, nY2, nX2, nY,
 										m_rtBackMR.U0, m_rtBackMR.V0, m_rtBackMR.U1, m_rtBackMR.V1,
 										0xFFFFFFFF );
 
 	// Lower left
 	nY2 = m_nPosY + m_nHeight;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 49, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + 49, nY2,
 										m_rtBackLL.U0, m_rtBackLL.V0, m_rtBackLL.U1, m_rtBackLL.V1,
 										0xFFFFFFFF );
 	// Lower middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + 49, nY, nX2 - 32, nY2,
+	pDrawPort->AddTexture( nX + 49, nY, nX2 - 32, nY2,
 										m_rtBackLM.U0, m_rtBackLM.V0, m_rtBackLM.U1, m_rtBackLM.V1,
 										0xFFFFFFFF );
 	// Lower right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - 32, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - 32, nY, nX2, nY2,
 										m_rtBackLR.U0, m_rtBackLR.V0, m_rtBackLR.U1, m_rtBackLR.V1,
 										0xFFFFFFFF );
 
@@ -1391,7 +1538,7 @@ void CUIWebBoard::Render()
 	nY2 = m_nPosY + m_rcTab.Bottom;
 	for( int iTab = 0; iTab < UWS_TOTAL; iTab++ )
 	{
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX, nY, nX2, nY2,
 											m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 											0xFFFFFFFF );
 		nX += WBOARD_TAB_WIDTH;
@@ -1420,13 +1567,13 @@ void CUIWebBoard::Render()
 			nY = m_nPosY + m_rcSearchEditBox.Top;
 			nX2 = m_nPosX + m_rcSearchEditBox.Right;
 			nY2 = m_nPosY + m_rcSearchEditBox.Bottom;
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 3, nY2,
+			pDrawPort->AddTexture( nX, nY, nX + 3, nY2,
 												m_rtEditBoxL.U0, m_rtEditBoxL.V0, m_rtEditBoxL.U1, m_rtEditBoxL.V1,
 												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( nX + 3, nY, nX2 - 3, nY2,
+			pDrawPort->AddTexture( nX + 3, nY, nX2 - 3, nY2,
 												m_rtEditBoxM.U0, m_rtEditBoxM.V0, m_rtEditBoxM.U1, m_rtEditBoxM.V1,
 												0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( nX2 - 3, nY, nX2, nY2,
+			pDrawPort->AddTexture( nX2 - 3, nY, nX2, nY2,
 												m_rtEditBoxR.U0, m_rtEditBoxR.V0, m_rtEditBoxR.U1, m_rtEditBoxR.V1,
 												0xFFFFFFFF );
 
@@ -1478,29 +1625,29 @@ void CUIWebBoard::Render()
 	}
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in web board
 	// Title
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 385, "ê²Œì‹œíŒ" ), m_nPosX + WBOARD_TITLE_OFFSETX,
+	pDrawPort->PutTextEx( _S( 385, "°Ô½ÃÆÇ" ), m_nPosX + WBOARD_TITLE_OFFSETX,
 										m_nPosY + WBOARD_TITLE_OFFSETY, 0xFFFFFFFF );
 	// Tab
 	nY = m_nPosY + WBOARD_TAB_TEXT_OFFSETY;
 	nX = m_nPosX + m_rcTab.Left + WBOARD_TAB_WIDTH / 2;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 284, "ë„ì›€ë§" ), nX, nY,	
+	pDrawPort->PutTextExCX( _S( 284, "µµ¿ò¸»" ), nX, nY,	
 											m_nCurSection == UWS_HELP ? 0xE1B300FF : 0x6B6B6BFF );
 	nX += WBOARD_TAB_WIDTH;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 252, "ê³µì§€ì‚¬í•­" ), nX, nY,
+	pDrawPort->PutTextExCX( _S( 252, "°øÁö»çÇ×" ), nX, nY,
 											m_nCurSection == UWS_NOTICE ? 0xE1B300FF : 0x6B6B6BFF );
 	nX += WBOARD_TAB_WIDTH;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 262, "ê²Œì‹œíŒ" ), nX, nY,
+	pDrawPort->PutTextExCX( _S( 262, "°Ô½ÃÆÇ" ), nX, nY,
 											m_nCurSection == UWS_FREEBOARD ? 0xE1B300FF : 0x6B6B6BFF );
 	nX += WBOARD_TAB_WIDTH;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 865, "ê¸¸ë“œ" ), nX, nY,	
+	pDrawPort->PutTextExCX( _S( 865, "±æµå" ), nX, nY,	
 											m_nCurSection == UWS_GUILD ? 0xE1B300FF : 0x6B6B6BFF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Reading window
 	// List
@@ -1511,16 +1658,16 @@ void CUIWebBoard::Render()
 			if( m_ebSearch.DoesShowReadingWindow() )
 			{
 				// Set web board texture
-				_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+				pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 				// Reading window
 				m_ebSearch.RenderReadingWindow();
 
 				// Render all elements
-				_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+				pDrawPort->FlushRenderingQueue();
 
 				// Flush all render text queue
-				_pUIMgr->GetDrawPort()->EndTextEx();
+				pDrawPort->EndTextEx();
 			}
 		}
 	}
@@ -1530,16 +1677,16 @@ void CUIWebBoard::Render()
 		if ( m_ebWriteSubject.DoesShowReadingWindow () )
 		{
 			// Set web board texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 			// Reading window
 			m_ebWriteSubject.RenderReadingWindow();
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 
 			// Flush all render text queue
-			_pUIMgr->GetDrawPort()->EndTextEx();
+			pDrawPort->EndTextEx();
 		}
 	}
 }
@@ -1548,7 +1695,7 @@ void CUIWebBoard::Render()
 // Name : SetListContent()
 // Desc :
 // ----------------------------------------------------------------------------
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 void CUIWebBoard::SetListContent(std::string &strContent)
 {
 	m_nCurrentViewWriteIndex = -1;
@@ -1566,7 +1713,7 @@ void CUIWebBoard::SetListContent(std::string &strContent)
 		m_lbListContent.SetColumnPosX( 2, WBOARD_LIST_MAIN_NOTICE_NAME_CX, TEXT_CENTER );		// Name
 		m_lbListContent.SetColumnPosX( 3, WBOARD_LIST_MAIN_NOTICE_DATE_SX );					// Date
 
-		// ê²€ìƒ‰ ë‹¨ì–´ ì—†ìŒ.
+		// °Ë»ö ´Ü¾î ¾øÀ½.
 		m_ebSearch.ResetString();
 		m_cmbSearch.SetCurSel(0);
 
@@ -1616,7 +1763,7 @@ void CUIWebBoard::SetListContent(std::string &strContent)
 
 			//hit count
 			temp = strContent.find(" ", tempOld);
-			//m_lbListContent.AddString( 4, CTString( strContent.substr(tempOld, temp - tempOld).c_str() ), 0xE6E6E6FF );	// ê³µì§€ì—ì„œ ì¡°íšŒìˆ˜ëŠ” ì•ˆë³´ì—¬ ì¤€ë°ìš”..
+			//m_lbListContent.AddString( 4, CTString( strContent.substr(tempOld, temp - tempOld).c_str() ), 0xE6E6E6FF );	// °øÁö¿¡¼­ Á¶È¸¼ö´Â ¾Èº¸¿© ÁØµ¥¿ä..
 			tempOld = temp + 1;
 
 			//title
@@ -1625,7 +1772,7 @@ void CUIWebBoard::SetListContent(std::string &strContent)
 			tempOld = temp + 2;
 
 			//author
-			m_lbListContent.AddString( 2, _S( 401, "ìš´ì˜ì" ), 0xE6E6E6FF );	//HardCoding
+			m_lbListContent.AddString( 2, _S( 401, "¿î¿µÀÚ" ), 0xE6E6E6FF );	//HardCoding
 		}
 		SetPageButtons( nTotalWrite, nCurPageNo );
 	}
@@ -1746,10 +1893,13 @@ void CUIWebBoard::SetViewContent(std::string &strContent)
 
 		//content
 		m_lbReadContent.ResetAllStrings();
-		AddReadingString( CTString( strContent.substr(tempOld, strContent.size() - tempOld).c_str() ) );
+		std::string strParse = strContent.substr(tempOld, strContent.size() - tempOld);
+		HtmlTagParsing(strParse);
+		//AddReadingString( CTString( strContent.substr(tempOld, strContent.size() - tempOld).c_str() ) );
+		AddReadingString( CTString( strParse.c_str() ) );
 
 		//author
-		m_strReadName = _S( 401, "ìš´ì˜ì" );	//HardCoding
+		m_strReadName = _S( 401, "¿î¿µÀÚ" );	//HardCoding
 	}
 	else if(m_nCurSection == UWS_FREEBOARD || m_nCurSection == UWS_GUILD)
 	{
@@ -1781,7 +1931,7 @@ void CUIWebBoard::SetViewContent(std::string &strContent)
 
 		//hit count
 		temp = strContent.find(" ", tempOld);
-		m_strReadHit = _S( 400, "ì¡°íšŒìˆ˜ : " );
+		m_strReadHit = _S( 400, "Á¶È¸¼ö : " );
 		m_strReadHit += strContent.substr(tempOld, temp - tempOld).c_str();
 		tempOld = temp + 1;
 
@@ -1810,7 +1960,7 @@ void CUIWebBoard::SetViewContent(std::string &strContent)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 // ----------------------------------------------------------------------------
 // Name : KeyMessage()
@@ -1822,9 +1972,9 @@ WMSG_RESULT CUIWebBoard::KeyMessage( MSG *pMsg )
 	if( !IsFocused() )
 		return WMSG_FAIL;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	if(m_bWaitResponseMode) return WMSG_FAIL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	// Freeboard
 	if( m_nCurSection == UWS_FREEBOARD || m_nCurSection == UWS_GUILD)
 	{
@@ -1846,7 +1996,7 @@ WMSG_RESULT CUIWebBoard::KeyMessage( MSG *pMsg )
 		}
 		else if( m_nCurBoardType >= UWT_WRITE && m_nCurBoardType <= UWT_MODIFY )
 		{
-			// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘(05.01.01) : ì œëª©ê³¼ ë‚´ìš© ì‚¬ì´ì— TABí‚¤ë¡œ í¬ì»¤ìŠ¤ ì´ë™
+			// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ(05.01.01) : Á¦¸ñ°ú ³»¿ë »çÀÌ¿¡ TABÅ°·Î Æ÷Ä¿½º ÀÌµ¿
 			if( pMsg->wParam == VK_TAB )
 			{
 				if( m_ebWriteSubject.IsFocused() )
@@ -1862,10 +2012,10 @@ WMSG_RESULT CUIWebBoard::KeyMessage( MSG *pMsg )
 				}
 				return WMSG_SUCCESS;
 			}
-			// ì´ê¸°í™˜ ìˆ˜ì • ë : 
+			// ÀÌ±âÈ¯ ¼öÁ¤ ³¡ : 
 				
 			
-			// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘(05.01.01) : ë©€í‹° ì—ë””íŠ¸ ë°•ìŠ¤ ë£¨í‹´ ì¶”ê°€ 
+			// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ(05.01.01) : ¸ÖÆ¼ ¿¡µğÆ® ¹Ú½º ·çÆ¾ Ãß°¡ 
 			// Subject edit box
 			if ( m_ebWriteSubject.KeyMessage ( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
@@ -1874,7 +2024,7 @@ WMSG_RESULT CUIWebBoard::KeyMessage( MSG *pMsg )
 			{
 				return WMSG_SUCCESS;
 			}
-			// ì´ê¸°í™˜ ìˆ˜ì • ë
+			// ÀÌ±âÈ¯ ¼öÁ¤ ³¡
 		}
 	}
 
@@ -1887,9 +2037,9 @@ WMSG_RESULT CUIWebBoard::KeyMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIWebBoard::CharMessage( MSG *pMsg )
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	if(m_bWaitResponseMode) return WMSG_FAIL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	// Freeboard
 	if( m_nCurSection == UWS_FREEBOARD || m_nCurSection == UWS_GUILD)
 	{
@@ -1905,9 +2055,15 @@ WMSG_RESULT CUIWebBoard::CharMessage( MSG *pMsg )
 			// Subject edit box
 			if( m_ebWriteSubject.CharMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
-			// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘(05.01.01) : ë©€í‹° ì—ë””íŠ¸ ë°•ìŠ¤ ë£¨í‹´ ì¶”ê°€ 
+			// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ(05.01.01) : ¸ÖÆ¼ ¿¡µğÆ® ¹Ú½º ·çÆ¾ Ãß°¡ 
+			
+			if (m_mebContent.GetAllStringLength() >= 1024)
+			{
+				return WMSG_FAIL;
+			}
+
 			// Content multi-edit box
-			else if ( m_mebContent.CharMessage ( pMsg ) != WMSG_FAIL )
+			if ( m_mebContent.CharMessage ( pMsg ) != WMSG_FAIL )
 			{
 				return WMSG_SUCCESS;
 			}
@@ -1924,23 +2080,23 @@ WMSG_RESULT CUIWebBoard::CharMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 WMSG_RESULT	CUIWebBoard::IMEMessage( MSG *pMsg )
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	if(m_bWaitResponseMode) return WMSG_FAIL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	// Freeboard
 	if( m_nCurSection == UWS_FREEBOARD || m_nCurSection == UWS_GUILD)
 	{
 		// List
 		if( m_nCurBoardType == UWT_LIST )
 		{
-			// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (11.17) : IME ë£¨í‹´ ìˆ˜ì •
+			// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11.17) : IME ·çÆ¾ ¼öÁ¤
 			// Search edit box
 			return m_ebSearch.IMEMessage( pMsg );
-			// ì´ê¸°í™˜ ìˆ˜ì • ë 	
+			// ÀÌ±âÈ¯ ¼öÁ¤ ³¡ 	
 		}
 		else if( m_nCurBoardType >= UWT_WRITE && m_nCurBoardType <= UWT_MODIFY )
 		{
-			// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (11.17) : IME ë£¨í‹´ ìˆ˜ì •
+			// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11.17) : IME ·çÆ¾ ¼öÁ¤
 			// Subject edit box
 			WMSG_RESULT wmsgResult;
 			if ( ( wmsgResult = m_ebWriteSubject.IMEMessage( pMsg ) ) != WMSG_FAIL ) 
@@ -1948,9 +2104,15 @@ WMSG_RESULT	CUIWebBoard::IMEMessage( MSG *pMsg )
 				return wmsgResult;
 			}
 			// Content multi-edit box
+			
+			if (m_mebContent.GetAllStringLength() >= 1024)
+			{
+				return WMSG_FAIL;
+			}
+
 			return m_mebContent.IMEMessage ( pMsg );
 					
-			// ì´ê¸°í™˜ ìˆ˜ì • ë 	
+			// ÀÌ±âÈ¯ ¼öÁ¤ ³¡ 	
 	
 		}
 	}
@@ -1974,7 +2136,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	if(m_bWaitResponseMode && !m_bVisible) return WMSG_FAIL;
 	if(m_bWaitResponseMode && m_bVisible)
 	{
@@ -1983,7 +2145,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 		case WM_MOUSEMOVE:
 			{
 				if( IsInside( nX, nY ) )
-					_pUIMgr->SetMouseCursorInsideUIs();
+					CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 				// Move web board
 				if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -2009,7 +2171,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 					{
 						bTitleBarClick = TRUE;
 					}
-					_pUIMgr->RearrangeOrder( UI_WEBBOARD, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_WEBBOARD, TRUE );
 					return WMSG_SUCCESS;
 				}
 			}
@@ -2017,8 +2179,10 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 
 		case WM_LBUTTONUP:
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
 				// If holding button doesn't exist
-				if( _pUIMgr->GetHoldBtn().IsEmpty() )
+				if (pUIManager->GetDragIcon() == NULL)
 				{
 					// Title bar
 					bTitleBarClick = FALSE;
@@ -2035,7 +2199,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 					if( IsInside( nX, nY ) )
 					{
 						// Reset holding button
-						_pUIMgr->ResetHoldBtn();
+						pUIManager->ResetHoldBtn();
 
 						return WMSG_SUCCESS;
 					}
@@ -2053,7 +2217,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 
 		return WMSG_FAIL;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 	// Mouse message
 	switch( pMsg->message )
@@ -2061,7 +2225,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			// Move web board
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
@@ -2216,8 +2380,8 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
 				SetFocus ( TRUE );
-				//_pUIMgr->RearrangeOrder( UI_WEBBOARD, TRUE );
 				nOldX = nX;		nOldY = nY;
 
 				// Close button
@@ -2236,29 +2400,27 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 					int	nOldTab = m_nCurSection;
 					int	nCurTab = ( nX - m_nPosX - m_rcTab.Left ) / WBOARD_TAB_WIDTH;
 					if(nCurTab == UWS_GUILD && _pNetwork->MyCharacterInfo.lGuildIndex == -1)
-						return WMSG_SUCCESS;	//ê¸¸ë“œì—†ìŒ.
+						return WMSG_SUCCESS;	//±æµå¾øÀ½.
 					if(nCurTab == UWS_FREEBOARD) ChangeBlockWriteInfo(TRUE, AL_NONE);
 					else if(nCurTab == UWS_GUILD) ChangeBlockWriteInfo(FALSE, AL_NONE);
 
 					if( nCurTab >= 0 && nCurTab < UWS_TOTAL )
-					{
-#ifdef NEW_GUILD_SYSTEM						
+					{					
 						if(nCurTab==UWS_GUILD && _pNetwork->MyCharacterInfo.lGuildLevel >= LIMIT_GUILD_LEVEL )
 						{
-							_pUIMgr->GetChatting()->AddSysMessage( _S(3883, "ê¸¸ë“œ ê´€ë¦¬ë‚´ ê¸¸ë“œ ê²Œì‹œíŒì„ ì´ìš©í•´ ì£¼ì‹­ì‹œì˜¤." ) );
+							pUIManager->GetChattingUI()->AddSysMessage( _S(3883, "±æµå °ü¸®³» ±æµå °Ô½ÃÆÇÀ» ÀÌ¿ëÇØ ÁÖ½Ê½Ã¿À." ) );
 						}
 						else 
-#endif
 							m_nCurSection = nCurTab;
 						
 					}
 
 					if( nOldTab != m_nCurSection )
 					{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 						m_nWantPage = 1;
 						DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 					}
 				}
 				// Notice
@@ -2272,12 +2434,12 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 								m_nWantWrite = m_lbListContent.GetCurSel();
 
-								// ê³µì§€ ë‚´ìš© ìš”ì²­..
+								// °øÁö ³»¿ë ¿äÃ»..
 								DelayCommandPrepare(new CCommandView);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 							}
 						}
 						// Prev button
@@ -2348,12 +2510,12 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 								m_nWantWrite = m_lbListContent.GetCurSel();
 
-								// ê³µì§€ ë‚´ìš© ìš”ì²­..
+								// °øÁö ³»¿ë ¿äÃ»..
 								DelayCommandPrepare(new CCommandView);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 							}
 						}
 						// Prev button
@@ -2423,7 +2585,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 							m_mebContent.SetFocus ( FALSE );
 						//	return WMSG_SUCCESS;
 						}
-						// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (05.01.01) : ë©€í‹° ì—ë””íŠ¸ ë°•ìŠ¤ ë£¨í‹´ ì¶”ê°€
+						// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (05.01.01) : ¸ÖÆ¼ ¿¡µğÆ® ¹Ú½º ·çÆ¾ Ãß°¡
 						else if ( m_mebContent.MouseMessage ( pMsg ) != WMSG_FAIL )
 						{
 							m_ebWriteSubject.SetFocus( FALSE );
@@ -2448,7 +2610,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 							m_mebContent.SetFocus ( FALSE );
 						//	return WMSG_SUCCESS;
 						}
-						// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (05.01.01) : ë©€í‹° ì—ë””íŠ¸ ë°•ìŠ¤ ë£¨í‹´ ì¶”ê°€
+						// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (05.01.01) : ¸ÖÆ¼ ¿¡µğÆ® ¹Ú½º ·çÆ¾ Ãß°¡
 						else if ( m_mebContent.MouseMessage ( pMsg ) != WMSG_FAIL )
 						{
 							m_ebWriteSubject.SetFocus( FALSE );
@@ -2473,7 +2635,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 							m_mebContent.SetFocus ( FALSE );
 						//	return WMSG_SUCCESS;
 						}
-						// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (05.01.01) : ë©€í‹° ì—ë””íŠ¸ ë°•ìŠ¤ ë£¨í‹´ ì¶”ê°€
+						// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (05.01.01) : ¸ÖÆ¼ ¿¡µğÆ® ¹Ú½º ·çÆ¾ Ãß°¡
 						else if ( m_mebContent.MouseMessage ( pMsg ) != WMSG_FAIL )
 						{
 							m_ebWriteSubject.SetFocus( FALSE );
@@ -2482,7 +2644,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 					}
 				}
 
-				_pUIMgr->RearrangeOrder( UI_WEBBOARD, TRUE );
+				pUIManager->RearrangeOrder( UI_WEBBOARD, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -2490,8 +2652,10 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -2522,12 +2686,12 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// í˜ì´ì§€ ì¬ì„¤ì •
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+								// ÆäÀÌÁö Àç¼³Á¤
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 								m_nWantPage = m_nCurrentFirstPage - 10;
 								if(m_nWantPage < 1) m_nWantPage = 1;
 								DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 							}
 							return WMSG_SUCCESS;
 						}
@@ -2536,12 +2700,12 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// í˜ì´ì§€ ì¬ì„¤ì •
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+								// ÆäÀÌÁö Àç¼³Á¤
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 								m_nWantPage = m_nCurrentPage + 10;
 								if(m_nWantPage > m_nTotalPage) m_nWantPage = m_nTotalPage;
 								DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 							}
 							return WMSG_SUCCESS;
 						}
@@ -2554,11 +2718,11 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 								{
 									if( wmsgResult == WMSG_COMMAND )
 									{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
-										// í˜ì´ì§€ ë³€ê²½ ì²˜ë¦¬
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+										// ÆäÀÌÁö º¯°æ Ã³¸®
 										m_nWantPage = m_nCurrentFirstPage + iPage;
 										DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 									}
 									return WMSG_SUCCESS;
 								}
@@ -2573,11 +2737,11 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ëª©ë¡ ìš”ì²­
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+								// ¸ñ·Ï ¿äÃ»
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 								m_nWantPage = m_nCurrentPage;
 								DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 							}
 							return WMSG_SUCCESS;
 						}
@@ -2614,10 +2778,10 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 							if( wmsgResult == WMSG_COMMAND )
 							{
 								// user name input ...
-								// ê¸€ì“°ê¸° ìš”ì²­
+								// ±Û¾²±â ¿äÃ»
 								m_nCurBoardType = UWT_WRITE;
 								m_ebWriteSubject.ResetString();
-								//!!TODO:ë‚´ìš©ë„ ë¦¬ì…‹.
+								//!!TODO:³»¿ëµµ ¸®¼Â.
 								m_ebWriteSubject.SetFocus ( TRUE );
 								m_mebContent.ResetString ();
 								m_mebContent.SetFocus ( FALSE );
@@ -2630,12 +2794,12 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// í˜ì´ì§€ ì¬ì„¤ì •
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+								// ÆäÀÌÁö Àç¼³Á¤
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 								m_nWantPage = m_nCurrentPage - 10;
 								if(m_nWantPage < 1) m_nWantPage = 1;
 								DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 							}
 							return WMSG_SUCCESS;
 						}
@@ -2644,12 +2808,12 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// í˜ì´ì§€ ì¬ì„¤ì •
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+								// ÆäÀÌÁö Àç¼³Á¤
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 								m_nWantPage = m_nCurrentPage + 10;
 								if(m_nWantPage > m_nTotalPage) m_nWantPage = m_nTotalPage;
 								DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 							}
 							return WMSG_SUCCESS;
 						}
@@ -2662,11 +2826,11 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 								{
 									if( wmsgResult == WMSG_COMMAND )
 									{
-										// í˜ì´ì§€ ë³€ê²½ ì²˜ë¦¬
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+										// ÆäÀÌÁö º¯°æ Ã³¸®
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 										m_nWantPage = m_nCurrentFirstPage + iPage;
 										DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 									}
 									return WMSG_SUCCESS;
 								}
@@ -2681,11 +2845,11 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ëª©ë¡ ìš”ì²­
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+								// ¸ñ·Ï ¿äÃ»
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 								m_nWantPage = m_nCurrentPage;
 								DelayCommandPrepare(new CCommandList);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 							}
 							return WMSG_SUCCESS;
 						}
@@ -2694,16 +2858,16 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ë‹µê¸€ í˜ì´ì§€ë¡œ
+								// ´ä±Û ÆäÀÌÁö·Î
 								m_nCurBoardType = UWT_REPLY;
 								CTString strTemp;
 								strTemp.PrintF("Re: %s", m_strReadSubject);
 								m_ebWriteSubject.ResetString();
 								m_ebWriteSubject.InsertChars(0, strTemp.str_String);
-								//ë©€í‹°ì—ë””í„°ì— ë‚´ìš© ì‚½ì…. ë‚´ìš©ì´ ì•„ë˜ì™€ ê°™ì´ ìˆ˜ì •ë¨.
-								//ê³µë°±ë¼ì¸
-								//----<í”¼ë‹µê¸€ì˜ ì‘ì„±ì>ì´ ì“°ì‹  ê¸€ì…ë‹ˆë‹¤ -----
-								//ëª¨ë“  ì¤„ ì•ì— '>' ì‚½ì….
+								//¸ÖÆ¼¿¡µğÅÍ¿¡ ³»¿ë »ğÀÔ. ³»¿ëÀÌ ¾Æ·¡¿Í °°ÀÌ ¼öÁ¤µÊ.
+								//°ø¹é¶óÀÎ
+								//----<ÇÇ´ä±ÛÀÇ ÀÛ¼ºÀÚ>ÀÌ ¾²½Å ±ÛÀÔ´Ï´Ù -----
+								//¸ğµç ÁÙ ¾Õ¿¡ '>' »ğÀÔ.
 									
 								CTString strContent;
 								
@@ -2724,12 +2888,12 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ìˆ˜ì • í˜ì´ì§€ë¡œ
+								// ¼öÁ¤ ÆäÀÌÁö·Î
 								m_nCurBoardType = UWT_MODIFY;
 								m_ebWriteSubject.ResetString();
 								m_ebWriteSubject.InsertChars(0, m_strReadSubject.str_String);
 
-								//ë©€í‹°ì—ë””í„°ì— ë‚´ìš© ì‚½ì….
+								//¸ÖÆ¼¿¡µğÅÍ¿¡ ³»¿ë »ğÀÔ.
 								m_mebContent.ResetString();
 								
 								CTString strContent;
@@ -2750,8 +2914,8 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ì‚­ì œ ìš”ì²­
-								//TODO : ì˜ˆì˜ìƒ í•œë²ˆ ë¬¼ì–´ë³´ì.
+								// »èÁ¦ ¿äÃ»
+								//TODO : ¿¹ÀÇ»ó ÇÑ¹ø ¹°¾îº¸ÀÚ.
 								m_nWantModifyMode = UWM_DELETE;
 								DelayCommandPrepare(new CCommandModify);
 							}
@@ -2771,7 +2935,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ëª©ë¡ ìš”ì²­
+								// ¸ñ·Ï ¿äÃ»
 								m_nCurBoardType = UWT_LIST;
 								m_nWantPage = m_nCurrentPage;
 								DelayCommandPrepare(new CCommandList);
@@ -2783,7 +2947,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ì“°ê¸° ìš”ì²­
+								// ¾²±â ¿äÃ»
 								m_nWantModifyMode = UWM_WRITE;
 								DelayCommandPrepare(new CCommandModify);
 							}
@@ -2799,7 +2963,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ëª©ë¡ ìš”ì²­
+								// ¸ñ·Ï ¿äÃ»
 								m_nCurBoardType = UWT_LIST;
 								m_nWantPage = m_nCurrentPage;
 								DelayCommandPrepare(new CCommandList);
@@ -2811,7 +2975,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ì“°ê¸° ìš”ì²­
+								// ¾²±â ¿äÃ»
 								m_nWantModifyMode = UWM_REPLY;
 								DelayCommandPrepare(new CCommandModify);
 							}
@@ -2827,7 +2991,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ëª©ë¡ ìš”ì²­
+								// ¸ñ·Ï ¿äÃ»
 								m_nCurBoardType = UWT_LIST;
 								m_nWantPage = m_nCurrentPage;
 								DelayCommandPrepare(new CCommandList);
@@ -2839,7 +3003,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 						{
 							if( wmsgResult == WMSG_COMMAND )
 							{
-								// ìˆ˜ì • ìš”ì²­
+								// ¼öÁ¤ ¿äÃ»
 								m_nWantModifyMode = UWM_MODIFY;
 								DelayCommandPrepare(new CCommandModify);
 							}
@@ -2855,7 +3019,7 @@ WMSG_RESULT CUIWebBoard::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}

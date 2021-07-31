@@ -58,7 +58,7 @@ ULONG PrepareTexture( const UBYTE *pubTexture, const PIX pixTexSize)
 		jz      rest1
 		movq    mm7,Q [mmWhiteMask]
 pixLoop8:
-//		prefetchnta [esi+16]
+		prefetchnta [esi+16]
 		movq    mm0,Q [esi]
 	punpcklbw mm1,mm0
 	punpckhbw mm2,mm0
@@ -285,15 +285,16 @@ void StartFog( CFogParameters &fp, const FLOAT3D &vViewPosAbs, const FLOATmatrix
 	// determine where fog starts and ends
 	_fog_fStart = LowerLimit(0.0f);
 	_fog_fEnd   = UpperLimit(0.0f);
+	INDEX pix;
 	if( _fog_pubTable[pixSizeL-1]) {
 		// going from bottom
-		for( INDEX pix=pixSizeH-1; pix>0; pix--) {
+		for( pix = pixSizeH - 1; pix > 0; pix--) {
 			if( (_fog_pubTable[(pix+1)*pixSizeL-1]*_fog_ulAlpha)>>8) break;
 		}
 		if( pix<(pixSizeH-1)) _fog_fEnd = (FLOAT)(pix+1) / (FLOAT)(pixSizeH-1);
 	} else {
 		// going from top
-		for( INDEX pix=0; pix<pixSizeH; pix++) {
+		for( pix = 0; pix < pixSizeH; pix++) {
 			if( (_fog_pubTable[(pix+1)*pixSizeL-1]*_fog_ulAlpha)>>8) break;
 		}
 		if( pix>0) _fog_fStart = (FLOAT)(pix-1) / (FLOAT)(pixSizeH-1);

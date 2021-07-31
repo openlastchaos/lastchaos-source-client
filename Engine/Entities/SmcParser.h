@@ -6,6 +6,24 @@
 #include <string>
 #include <queue>
 #include <Engine/Entities/SmcInfo.h>
+#include <Engine/Entities/ItemData.h>
+
+struct DeleteEntity
+{
+	template<typename T>
+	void operator()(const T* ptr) const
+	{
+		delete ptr;
+	}
+};
+/*template<typename T>
+struct DeleteEntity : public std::unary_function<const T*, void> 
+{
+	void operator()(const T* ptr) const
+	{
+		delete ptr;
+	}
+};*/
 
 class CSmcParser : public CSmcInfo
 {
@@ -85,15 +103,44 @@ typedef std::vector<CSmcParser>::iterator	vec_SmcParserItor;
 typedef std::vector<CSmcParser>		vec_SmcParser;
 typedef std::queue<unsigned char>	ByteQueue;
 
+class ENGINE_API ByteQueueData : public ByteQueue
+{
+public:
+	ByteQueueData();
+	virtual ~ByteQueueData();
+
+	// Write Basics types
+	void WriteString(std::string sData);
+	void WriteDword(DWORD dwData);
+	void WriteWord(WORD wData);
+	void WriteByte(BYTE byteData);
+	void WriteFloat(float floatData);
+	void WriteDouble(double dData);
+	
+	// Read Basic types
+	std::string ReadString(void);
+	DWORD ReadDword(void);
+	WORD ReadWord(void);
+	BYTE ReadByte(void);
+	float ReadFloat(void);
+	double ReadDouble(void);
+
+	void WriteDocString(std::string sData);
+
+	void ClearQueue(void);
+};
+
 class CSmcParserList : public std::vector<CSmcParser>
 {
 public:
-	bool SmcInfoWriteBin(std::string sFilename);	// í˜„ì¬ ëª©ë¡ì˜ ëª¨ë“  Smcì •ë³´ ì €ì¥
+	bool SmcInfoWriteBin(std::string sFilename);	// ÇöÀç ¸ñ·ÏÀÇ ¸ğµç SmcÁ¤º¸ ÀúÀå
 	bool SmcInfoWriteBin(std::ostream& Output);
-	bool SmcInfoReadBin(std::string sFilename);		// íŒŒì¼ì—ì„œ ëª¨ë“  Smcì •ë³´ë¥¼ ëª©ë¡ì— ê¸°ë¡
+	bool SmcInfoReadBin(std::string sFilename);		// ÆÄÀÏ¿¡¼­ ¸ğµç SmcÁ¤º¸¸¦ ¸ñ·Ï¿¡ ±â·Ï
 	bool SmcInfoReadBin(std::istream& Input);
 
-	bool SmcParsingLogWritetxt(std::string sFilename); // íŒŒì‹± ë¡œê·¸ ì •ë³´ ê¸°ë¡
+	bool SmcParsingLogWritetxt(std::string sFilename); // ÆÄ½Ì ·Î±× Á¤º¸ ±â·Ï
+
+	bool CheckItemExist(const CStaticArray<CItemData>& arrItemList, const char* saveFileName);
 
 	void ClearLogList() { m_strLogList.clear(); }
 	std::vector<std::string>* GetstrLogList() { return &m_strLogList; }
@@ -102,26 +149,11 @@ public:
 	bool IsEmptyqueBuffer(void) { return m_queBuffer.empty(); }
 
 protected:
-	// Write Basic types
-	void WriteString(std::string sData);
-	void WriteDword(DWORD dwData);
-	void WriteWord(WORD wData);
-	void WriteByte(BYTE byteData);
-	void WriteDouble(double dData);	
-
-	// Read Basic types
-	std::string ReadString();
-	DWORD ReadDword();
-	WORD ReadWord();
-	BYTE ReadByte();
-	double ReadDouble();
-
 	void WriteSmcInfo();
 	void ReadSmcInfo();
-
-	ByteQueue	m_queBuffer;
-	ByteQueue	m_queLogBuffer;	// ë¡œê·¸ ì •ë³´ ì €ì¥ìš©
-	std::vector<std::string> m_strLogList; // ë¡œê·¸ ì •ë³´ ê¸°ë¡
+	
+	ByteQueueData	m_queBuffer;
+	std::vector<std::string> m_strLogList; // ·Î±× Á¤º¸ ±â·Ï
 };
 
 #endif

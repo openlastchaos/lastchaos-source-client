@@ -1,10 +1,16 @@
 #include "stdh.h"
-#include <Engine/Interface/UIPortal.h>
+
+// Çì´õ Á¤¸®. [12/3/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <vector>
+#include <Engine/Interface/UIPortal.h>
 #include <Engine/World/World.h>
 #include <algorithm>
+#include <Engine/Contents/Base/UIQuestNew.h>
+#include <Engine/Contents/Base/UIQuestBookNew.h>
 
-ENGINE_API extern INDEX g_iCountry;
+// [KH_07044] 3Â÷ µµ¿ò¸» °ü·Ã Ãß°¡
+extern INDEX g_iShowHelp1Icon;
 
 // ----------------------------------------------------------------------------
 // Name : CUIPortal()
@@ -24,7 +30,6 @@ CUIPortal::CUIPortal()
 // ----------------------------------------------------------------------------
 CUIPortal::~CUIPortal()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -33,15 +38,13 @@ CUIPortal::~CUIPortal()
 // ----------------------------------------------------------------------------
 void CUIPortal::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 301, 22 );
 
 	// Create portal texture
-	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Potal.tex" ) );
+	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Portal.tex" ) );
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
@@ -52,7 +55,7 @@ void CUIPortal::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_rtBackBottom.SetUV( 0, 71, 301, 101, fTexWidth, fTexHeight );
 
 	// Ok button
-	m_btnOK.Create( this, _S( 221, "ì´ë™" ), 161, 171, 63, 21 );
+	m_btnOK.Create( this, _S( 221, "ÀÌµ¿" ), 161, 171, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 360, 2, 423, 23, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 426, 2, 489, 23, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
@@ -60,7 +63,7 @@ void CUIPortal::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 	m_btnOK.SetEnable(FALSE);
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), 227, 171, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), 227, 171, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 360, 2, 423, 23, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 426, 2, 489, 23, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -124,9 +127,11 @@ void CUIPortal::OpenPortal( FLOAT fX, FLOAT fZ )
 {
 	if (IsVisible()) return;
 
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
-	int	nX = ( pdp->dp_MinI + pdp->dp_MaxI ) / 2 - m_nWidth / 2;
-	int	nY = ( pdp->dp_MinJ + pdp->dp_MaxJ ) / 2 - m_nHeight / 2;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+	int	nX = ( pDrawPort->dp_MinI + pDrawPort->dp_MaxI ) / 2 - m_nWidth / 2;
+	int	nY = ( pDrawPort->dp_MinJ + pDrawPort->dp_MaxJ ) / 2 - m_nHeight / 2;
 
 	SetPos( nX, nY );
 
@@ -136,12 +141,12 @@ void CUIPortal::OpenPortal( FLOAT fX, FLOAT fZ )
 
 	for( int i = 0; i < m_vectorListInfo.size(); i++ )
 	{
-		m_lbZoneList.AddString( 0, ZoneInfo().GetZoneName( m_vectorListInfo[i].zone ), 0xC0C0C0FF );
-		m_lbZoneList.AddString( 1, ZoneInfo().GetExtraName( m_vectorListInfo[i].zone, m_vectorListInfo[i].extra ),
+		m_lbZoneList.AddString( 0, CZoneInfo::getSingleton()->GetZoneName( m_vectorListInfo[i].zone ), 0xC0C0C0FF );
+		m_lbZoneList.AddString( 1, CZoneInfo::getSingleton()->GetExtraName( m_vectorListInfo[i].zone, m_vectorListInfo[i].extra ),
 								0xC0C0C0FF );
 	}
 
-	_pUIMgr->RearrangeOrder( UI_PORTAL, TRUE );
+	pUIManager->RearrangeOrder( UI_PORTAL, TRUE );
 }
 
 // ----------------------------------------------------------------------------
@@ -156,21 +161,23 @@ void CUIPortal::Render()
 	if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
 		Close();
 
-	CDrawPort *pdp = _pUIMgr->GetDrawPort();
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Set portal texture
-	pdp->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
 	int	nY = m_nPosY + 47;
 	int	nY2 = m_nPosY + m_nHeight - 30;
-	pdp->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, nY,
 						m_rtBackTop.U0, m_rtBackTop.V0, m_rtBackTop.U1, m_rtBackTop.V1,
 						0xFFFFFFFF );
-	pdp->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY2,
+	pDrawPort->AddTexture( m_nPosX, nY, m_nPosX + m_nWidth, nY2,
 						m_rtBackMiddle.U0, m_rtBackMiddle.V0, m_rtBackMiddle.U1, m_rtBackMiddle.V1,
 						0xFFFFFFFF );
-	pdp->AddTexture( m_nPosX, nY2, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY2, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 						m_rtBackBottom.U0, m_rtBackBottom.V0, m_rtBackBottom.U1, m_rtBackBottom.V1,
 						0xFFFFFFFF );
 
@@ -187,18 +194,18 @@ void CUIPortal::Render()
 	m_lbZoneList.Render();
 
 	// Render all elements
-	pdp->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// text render
-	pdp->PutTextEx( _S( 222, "í¬íƒˆ" ),
+	pDrawPort->PutTextEx( _S( 222, "Æ÷Å»" ),
 					m_nPosX + PORTAL_TITLE_TEXT_OFFSETX, m_nPosY + PORTAL_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-	pdp->PutTextEx( _S( 223, "ì¡´" ),
+	pDrawPort->PutTextEx( _S( 223, "Á¸" ),
 					m_nPosX + PORTAL_ZONE_TEXT_POSX, m_nPosY + PORTAL_ZONE_TEXT_POSY, 0xFFB500FF );
-	pdp->PutTextEx( _S( 224, "ì¥ì†Œ" ),
+	pDrawPort->PutTextEx( _S( 224, "Àå¼Ò" ),
 					m_nPosX + PORTAL_PLACE_TEXT_POSX, m_nPosY + PORTAL_PLACE_TEXT_POSY, 0xFFB500FF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -223,7 +230,7 @@ WMSG_RESULT CUIPortal::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
 			{
@@ -248,7 +255,7 @@ WMSG_RESULT CUIPortal::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDOWN:
 		{
-			if( !IsInside( nX, nY ) )	//ë”´ë° ì°ì—ˆì„ ê²½ìš°,
+			if( !IsInside( nX, nY ) )	//µıµ¥ Âï¾úÀ» °æ¿ì,
 			{
 				Close();
 				break;
@@ -271,15 +278,17 @@ WMSG_RESULT CUIPortal::MouseMessage( MSG *pMsg )
 					m_btnOK.SetEnable( TRUE );
 			}
 
-			_pUIMgr->RearrangeOrder( UI_PORTAL, TRUE );
+			CUIManager::getSingleton()->RearrangeOrder( UI_PORTAL, TRUE );
 			return WMSG_SUCCESS;
 		}
 		break;
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				bTitleBarClick = FALSE;
 
@@ -308,26 +317,25 @@ WMSG_RESULT CUIPortal::MouseMessage( MSG *pMsg )
 							}
 							else
 							{
-								//ë§ë ˆì´ì‹œì•„
-								//ì—ê²Œí•˜ ë˜ì „ ì´ì™¸ì˜ ì§€ì—­ì—ì„œ ì—ê²Œí•˜ë¡œ ì´ë™í•  ë•Œ ë©”ì„¸ì§€ì°½ ìƒì„±		FRANCE_SPAIN_CLOSEBETA_NA_20081124
-								if( (g_iCountry == MALAYSIA || g_iCountry == USA || g_iCountry == GERMANY 
-									|| g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND) 
-									&& m_vectorListInfo[nSel].zone ==15 && _pNetwork->MyCharacterInfo.zoneNo !=17
+								//¸»·¹ÀÌ½Ã¾Æ
+								//¿¡°ÔÇÏ ´øÀü ÀÌ¿ÜÀÇ Áö¿ª¿¡¼­ ¿¡°ÔÇÏ·Î ÀÌµ¿ÇÒ ¶§ ¸Ş¼¼ÁöÃ¢ »ı¼º		FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#if !defined(G_HONGKONG) && !defined(G_KOR) && !defined(G_THAI)
+								if( m_vectorListInfo[nSel].zone ==15 && _pNetwork->MyCharacterInfo.zoneNo !=17
 									&& _pNetwork->MyCharacterInfo.zoneNo != 31)
 								{
 									CUIMsgBox_Info	MsgBoxInfo;
-									CTString strTitle	=_S( 221, 	"ì´ë™" );	
-									CTString strMessage	=_S(3223, "ì—ê²Œí•˜ ì§€ì—­ìœ¼ë¡œ ì´ë™í•˜ê¸° ìœ„í•´ 10,000,000 ë‚˜ìŠ¤ê°€ ì†Œë¹„ë©ë‹ˆë‹¤. ì´ë™í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" );
+									CTString strTitle	=_S( 221, 	"ÀÌµ¿" );	
+									CTString strMessage	=_S(3223, "¿¡°ÔÇÏ Áö¿ªÀ¸·Î ÀÌµ¿ÇÏ±â À§ÇØ 10,000,000 ³ª½º°¡ ¼ÒºñµË´Ï´Ù. ÀÌµ¿ÇÏ½Ã°Ú½À´Ï±î?" );
 									MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_YESNO,UI_NONE, MSGCMD_GOTO_EGEHA);
 									MsgBoxInfo.AddString(strMessage);
-									_pUIMgr->CreateMessageBox(MsgBoxInfo);
+									pUIManager->CreateMessageBox(MsgBoxInfo);
 									
 									return WMSG_SUCCESS;
-								}						
-
+								}	
+#endif
 								_pNetwork->GoZone( m_vectorListInfo[nSel].zone, m_vectorListInfo[nSel].extra ,m_npcIdx);
 							}
-
+							
 							Close();
 						}
 					}
@@ -344,7 +352,7 @@ WMSG_RESULT CUIPortal::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -411,7 +419,7 @@ void CUIPortal::Close()
 {
 	ResetZoneList();
 	m_bUseItem = FALSE;
-	_pUIMgr->RearrangeOrder( UI_PORTAL, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_PORTAL, FALSE );
 }
 
 // ----------------------------------------------------------------------------
@@ -426,9 +434,14 @@ int CUIPortal::GetZoneListCount()
 void CUIPortal::GotoCurSelZone()
 {
 	int	nSel = m_lbZoneList.GetCurSel();
+
+	if (nSel < 0)
+		return;
+
 	_pNetwork->GoZone( m_vectorListInfo[nSel].zone, m_vectorListInfo[nSel].extra ,m_npcIdx);
 	Close();
 }
+
 ///////////////////////////////////////////////////////////////////////////
 // [071115: Su-won] DRATAN_SIEGE_DUNGEON
 void CUIPortal::MsgBoxLCommand( int nCommandCode, int nResult )
@@ -439,6 +452,14 @@ void CUIPortal::MsgBoxLCommand( int nCommandCode, int nResult )
 	{
 	case MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ:
 		{
+			// [090527: selo] È®ÀåÆÑ Äù½ºÆ® ÀÌ¾ß±â ÇÑ´Ù Ã³¸® ¼öÁ¤À» À§ÇÑ ·çÆ¾
+			int iQuestIndex = -1;
+			if( ciQuestClassifier < nResult )	
+			{
+				iQuestIndex = nResult;
+				nResult = ciQuestClassifier;
+			}
+
 			switch( nResult )
 			{
 			case DRATAN_SIEGE_DUNGEON_ENTER:
@@ -454,6 +475,12 @@ void CUIPortal::MsgBoxLCommand( int nCommandCode, int nResult )
 			case DRATAN_SIEGE_DUNGEON_CONTROL:
 				{
 					_pNetwork->SendDratanSiegeDungeonMSG(MSG_MANAGEMENT, MSG_MANAGEMENT_MANAGER_CONFIRM);
+				}
+				break;
+			case ciQuestClassifier:
+				{
+					// ¼±ÅÃÇÑ Äù½ºÆ®¿¡ ´ëÇØ ¼ö¶ô ¶Ç´Â º¸»ó Ã¢À» ¿¬´Ù.
+					CUIQuestBook::SelectQuestFromMessageBox( iQuestIndex );
 				}
 				break;
 			}
@@ -491,25 +518,31 @@ void CUIPortal::MsgBoxLCommand( int nCommandCode, int nResult )
 
 void CUIPortal::OpenDratanDungeonMsgBox()
 {
-	if (_pUIMgr->DoesMessageBoxLExist(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ))
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if (pUIManager->DoesMessageBoxLExist(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ))
 		return;
 
-	_pUIMgr->CreateMessageBoxL( _S(3901, "ë“œë¼íƒ„ ì¹´ì˜¤ìŠ¤ ê³µì„± ë˜ì „ ê´€ë¦¬ì¸"),UI_PORTAL, MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ);
-	_pUIMgr->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ,TRUE, _S(3902, "ì–´ì„œì˜¤ì„¸ìš”. ì „ ì¹´ì˜¤ìŠ¤ì„±ì˜ ë˜ì „ ê´€ë¦¬ì¸ì…ë‹ˆë‹¤."),-1,0xa3a1a3ff);
-	_pUIMgr->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ,TRUE, _S(3903, "ì´ê³³ ë˜ì „ì€ í¬ë¦¬ìŠ¤íƒˆì˜ í˜ì´ ì¶©ë§Œí•œ ê³³ìœ¼ë¡œ ê·¸ í˜ì— ì´ëŒë ¤ ê³ ëŒ€ì—ì„œë¶€í„° ë¯¸ì§€ì˜ ê°•ë ¥í•œ ëª¬ìŠ¤í„°ë“¤ì´ ëŠì„ì—†ì´ ìƒê²¨ë‚˜ê³  ìˆìŠµë‹ˆë‹¤."),-1,0xa3a1a3ff);
-	_pUIMgr->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ,TRUE, _S(3904, "í¥ë¯¸ë¡œìš´ ë³´ë¬¼ì´ ìˆë‹¤ê³ ë„ í•˜ì§€ë§Œ ì–´ë– í•œ ì¼ì´ ì¼ì–´ë‚ ì§€ ì¥ë‹´í•  ìˆ˜ ì—†ìœ¼ë¯€ë¡œ ìì‹ ì´ ì—†ë‹¤ë©´ ì ‘ê·¼í•˜ì§€ ì•ŠëŠ” ê²ƒì´ ì¢‹ìŠµë‹ˆë‹¤."),-1,0xa3a1a3ff);
-	_pUIMgr->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ,TRUE, _S(3905, "ì, ì–´ë–»ê²Œ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?"),-1,0xa3a1a3ff);
+	pUIManager->CreateMessageBoxL( _S(3901, "µå¶óÅº Ä«¿À½º °ø¼º ´øÀü °ü¸®ÀÎ"),UI_PORTAL, MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ);
+	pUIManager->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ,TRUE, _S(3902, "¾î¼­¿À¼¼¿ä. Àü Ä«¿À½º¼ºÀÇ ´øÀü °ü¸®ÀÎÀÔ´Ï´Ù."),-1,0xa3a1a3ff);
+	pUIManager->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ,TRUE, _S(3903, "ÀÌ°÷ ´øÀüÀº Å©¸®½ºÅ»ÀÇ ÈûÀÌ Ãæ¸¸ÇÑ °÷À¸·Î ±× Èû¿¡ ÀÌ²ø·Á °í´ë¿¡¼­ºÎÅÍ ¹ÌÁöÀÇ °­·ÂÇÑ ¸ó½ºÅÍµéÀÌ ²÷ÀÓ¾øÀÌ »ı°Ü³ª°í ÀÖ½À´Ï´Ù."),-1,0xa3a1a3ff);
+	pUIManager->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ,TRUE, _S(3904, "Èï¹Ì·Î¿î º¸¹°ÀÌ ÀÖ´Ù°íµµ ÇÏÁö¸¸ ¾î¶°ÇÑ ÀÏÀÌ ÀÏ¾î³¯Áö Àå´ãÇÒ ¼ö ¾øÀ¸¹Ç·Î ÀÚ½ÅÀÌ ¾ø´Ù¸é Á¢±ÙÇÏÁö ¾Ê´Â °ÍÀÌ ÁÁ½À´Ï´Ù."),-1,0xa3a1a3ff);
+	pUIManager->AddMessageBoxLString(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ,TRUE, _S(3905, "ÀÚ, ¾î¶»°Ô ÇÏ½Ã°Ú½À´Ï±î?"),-1,0xa3a1a3ff);
 
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, FALSE, _S(3906, "ë˜ì „ ì…ì¥í•˜ê¸°" ), DRATAN_SIEGE_DUNGEON_ENTER);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, FALSE, _S(3907, "ë˜ì „ ìƒíƒœí™•ì¸" ), DRATAN_SIEGE_DUNGEON_STATE);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, FALSE, _S(3908, "ë˜ì „ ê´€ë¦¬" ), DRATAN_SIEGE_DUNGEON_CONTROL);			
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, FALSE, _S( 1220, "ì·¨ì†Œí•œë‹¤." ) );		
+	CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ);
+
+	pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, FALSE, _S(3906, "´øÀü ÀÔÀåÇÏ±â" ), DRATAN_SIEGE_DUNGEON_ENTER);
+	pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, FALSE, _S(3907, "´øÀü »óÅÂÈ®ÀÎ" ), DRATAN_SIEGE_DUNGEON_STATE);
+	pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, FALSE, _S(3908, "´øÀü °ü¸®" ), DRATAN_SIEGE_DUNGEON_CONTROL);			
+	pUIManager->AddMessageBoxLString( MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, FALSE, _S( 1220, "Ãë¼ÒÇÑ´Ù." ) );		
 
 	return;
 }
 
 void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch( nCommandCode )
 	{
 	case MSGCMD_SIEGE_DUNGEON_ENTER:
@@ -524,23 +557,23 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			if( bOK )
 			{
-				if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CHANGE) )
-					_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CHANGE);
+				if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CHANGE) )
+					pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CHANGE);
 
 				CUIMsgBox_Info MsgBoxInfo;
 				CTString strMessage;
-				int nRate =_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->GetSpinButton().GetDataToNumber();
+				int nRate =pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->GetSpinButton().GetDataToNumber();
 				
-				strMessage.PrintF( _S( 191, "í™•ì¸" ) );
+				strMessage.PrintF( _S( 191, "È®ÀÎ" ) );
 				MsgBoxInfo.SetMsgBoxInfo(strMessage,UMBS_YESNO,UI_PORTAL,MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CHANGE);
-				strMessage.PrintF( _S(3909, "í˜„ì¬ ìƒíƒœì—ì„œ %d%%ë§Œí¼ ë” ì¾Œì í•˜ê²Œ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), nRate );
+				strMessage.PrintF( _S(3909, "ÇöÀç »óÅÂ¿¡¼­ %d%%¸¸Å­ ´õ ÄèÀûÇÏ°Ô ÇÏ½Ã°Ú½À´Ï±î?" ), nRate );
 				MsgBoxInfo.AddString(strMessage);
-				_pUIMgr->CreateMessageBox(MsgBoxInfo);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
 			}
 			else
 			{
-				_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL);
-				_pUIMgr->GetPortal()->MsgBoxLCommand(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, DRATAN_SIEGE_DUNGEON_CONTROL);
+				pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL);
+				pUIManager->GetPortal()->MsgBoxLCommand(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, DRATAN_SIEGE_DUNGEON_CONTROL);
 			}
 		}
 		break;
@@ -548,23 +581,23 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			if( bOK )
 			{
-				if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_MONSTER_CHANGE) )
-					_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CHANGE);
+				if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_MONSTER_CHANGE) )
+					pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CHANGE);
 
 				CUIMsgBox_Info MsgBoxInfo;
 				CTString strMessage;
-				int nRate =_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->GetSpinButton().GetDataToNumber();
+				int nRate =pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->GetSpinButton().GetDataToNumber();
 				
-				strMessage.PrintF( _S( 191, "í™•ì¸" ) );
+				strMessage.PrintF( _S( 191, "È®ÀÎ" ) );
 				MsgBoxInfo.SetMsgBoxInfo(strMessage,UMBS_YESNO,UI_PORTAL,MSGCMD_SIEGE_DUNGEON_MONSTER_CHANGE);
-				strMessage.PrintF( _S(3910, "í˜„ì¬ ìƒíƒœì—ì„œ %d%%ë§Œí¼ ë” ì˜¨ìˆœí•˜ê²Œ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), nRate );
+				strMessage.PrintF( _S(3910, "ÇöÀç »óÅÂ¿¡¼­ %d%%¸¸Å­ ´õ ¿Â¼øÇÏ°Ô ÇÏ½Ã°Ú½À´Ï±î?" ), nRate );
 				MsgBoxInfo.AddString(strMessage);
-				_pUIMgr->CreateMessageBox(MsgBoxInfo);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
 			}
 			else
 			{
-				_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL);
-				_pUIMgr->GetPortal()->MsgBoxLCommand(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, DRATAN_SIEGE_DUNGEON_CONTROL);
+				pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL);
+				pUIManager->GetPortal()->MsgBoxLCommand(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, DRATAN_SIEGE_DUNGEON_CONTROL);
 			}
 		}
 		break;
@@ -572,23 +605,23 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			if( bOK )
 			{
-				if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CHANGE) )
-					_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CHANGE);
+				if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CHANGE) )
+					pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CHANGE);
 
 				CUIMsgBox_Info MsgBoxInfo;
 				CTString strMessage;
-				int nFee =_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL)->GetSpinButton().GetDataToNumber();
+				int nFee =pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL)->GetSpinButton().GetDataToNumber();
 				
-				strMessage.PrintF( _S( 191, "í™•ì¸" ) );
+				strMessage.PrintF( _S( 191, "È®ÀÎ" ) );
 				MsgBoxInfo.SetMsgBoxInfo(strMessage,UMBS_YESNO,UI_PORTAL,MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CHANGE);
-				strMessage.PrintF( _S(3911, "ì…ì¥ë£Œë¥¼ %d%%ë¡œ ì„¤ì •í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), nFee );
+				strMessage.PrintF( _S(3911, "ÀÔÀå·á¸¦ %d%%·Î ¼³Á¤ÇÏ½Ã°Ú½À´Ï±î?" ), nFee );
 				MsgBoxInfo.AddString(strMessage);
-				_pUIMgr->CreateMessageBox(MsgBoxInfo);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
 			}
 			else
 			{
-				_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL);
-				_pUIMgr->GetPortal()->MsgBoxLCommand(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, DRATAN_SIEGE_DUNGEON_CONTROL);
+				pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL);
+				pUIManager->GetPortal()->MsgBoxLCommand(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, DRATAN_SIEGE_DUNGEON_CONTROL);
 			}
 		}
 		break;
@@ -596,23 +629,23 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			if( bOK )
 			{
-				if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CHANGE) )
-					_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CHANGE);
+				if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CHANGE) )
+					pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CHANGE);
 
 				CUIMsgBox_Info MsgBoxInfo;
 				CTString strMessage;
-				int nFee =_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL)->GetSpinButton().GetDataToNumber();
+				int nFee =pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL)->GetSpinButton().GetDataToNumber();
 				
-				strMessage.PrintF( _S( 191, "í™•ì¸" ) );
+				strMessage.PrintF( _S( 191, "È®ÀÎ" ) );
 				MsgBoxInfo.SetMsgBoxInfo(strMessage,UMBS_YESNO,UI_PORTAL,MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CHANGE);
-				strMessage.PrintF( _S(3912, "ìˆ˜ë µì„¸ìœ¨ì„ %d%%ë¡œ ì„¤ì •í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), nFee );
+				strMessage.PrintF( _S(3912, "¼ö·Æ¼¼À²À» %d%%·Î ¼³Á¤ÇÏ½Ã°Ú½À´Ï±î?" ), nFee );
 				MsgBoxInfo.AddString(strMessage);
-				_pUIMgr->CreateMessageBox(MsgBoxInfo);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
 			}
 			else
 			{
-				_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL);
-				_pUIMgr->GetPortal()->MsgBoxLCommand(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, DRATAN_SIEGE_DUNGEON_CONTROL);
+				pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL);
+				pUIManager->GetPortal()->MsgBoxLCommand(MSGLCMD_DRATAN_SIEGE_DUNGEON_REQ, DRATAN_SIEGE_DUNGEON_CONTROL);
 			}
 		}
 		break;
@@ -621,8 +654,8 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			if( bOK )
 			{
-				int nRate =_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->GetSpinButton().GetDataToNumber();
-				_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL);
+				int nRate =pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->GetSpinButton().GetDataToNumber();
+				pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL);
 
 				_pNetwork->SendDratanSiegeDungeonMSG(MSG_MANAGEMENT, MSG_MANAGEMENT_MANAGER_ENV_CHANGE, nRate);
 			}
@@ -632,8 +665,8 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			if( bOK )
 			{
-				int nRate =_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->GetSpinButton().GetDataToNumber();
-				_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL);
+				int nRate =pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->GetSpinButton().GetDataToNumber();
+				pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL);
 
 				_pNetwork->SendDratanSiegeDungeonMSG(MSG_MANAGEMENT, MSG_MANAGEMENT_MANAGER_MONSTER_CHANGE, nRate);
 			}
@@ -643,8 +676,8 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			if( bOK )
 			{
-				int nFee =_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL)->GetSpinButton().GetDataToNumber();
-				_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL);
+				int nFee =pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL)->GetSpinButton().GetDataToNumber();
+				pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL);
 
 				_pNetwork->SendDratanSiegeDungeonMSG(MSG_MANAGEMENT, MSG_MANAGEMENT_MANAGER_TAX_CHANGE, nFee);
 			}
@@ -654,8 +687,8 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			if( bOK )
 			{
-				int nFee =_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL)->GetSpinButton().GetDataToNumber();
-				_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL);
+				int nFee =pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL)->GetSpinButton().GetDataToNumber();
+				pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL);
 
 				_pNetwork->SendDratanSiegeDungeonMSG(MSG_MANAGEMENT, MSG_MANAGEMENT_MANAGER_HUNTER_TAX_CHANGE, nFee);
 			}
@@ -666,34 +699,36 @@ void CUIPortal::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 
 void CUIPortal::Create_SiegeDungeon_State_MsgBox(int nEnvRate, int nMonRate)
 {
-	if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_STATE) )
-		_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_STATE);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_STATE) )
+		pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_STATE);
 
 	CTString strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
 
-	MsgBoxInfo.SetMsgBoxInfo( _S(3907, "ë˜ì „ ìƒíƒœí™•ì¸" ), UMBS_OK | UMBS_INPUTBOX | UMBS_SECOND_INPUTBOX , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_STATE, 400 );
+	MsgBoxInfo.SetMsgBoxInfo( _S(3907, "´øÀü »óÅÂÈ®ÀÎ" ), UMBS_OK | UMBS_INPUTBOX | UMBS_SECOND_INPUTBOX , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_STATE, 400 );
 	
-	MsgBoxInfo.AddString( _S(3913, "â–¶ ë˜ì „ ë‚´ë¶€ í™˜ê²½") );
+	MsgBoxInfo.AddString( _S(3913, "¢º ´øÀü ³»ºÎ È¯°æ") );
 	MsgBoxInfo.m_nMaxRow +=1;
-	MsgBoxInfo.AddString( _S(3914, "ì˜¤ì—¼ë¨") );
+	MsgBoxInfo.AddString( _S(3914, "¿À¿°µÊ") );
 	--MsgBoxInfo.m_nMaxRow;
 	MsgBoxInfo.AddString( _s("50%"), 0xF2F2F2FF, TEXT_CENTER );
 	--MsgBoxInfo.m_nMaxRow;
-	MsgBoxInfo.AddString( _S(3915, "ì¾Œì í•¨"), 0xF2F2F2FF, TEXT_RIGHT );
+	MsgBoxInfo.AddString( _S(3915, "ÄèÀûÇÔ"), 0xF2F2F2FF, TEXT_RIGHT );
 	MsgBoxInfo.m_nMaxRow +=2;
-	MsgBoxInfo.AddString( _S(3916, "(ì¾Œì í• ìˆ˜ë¡ ìºë¦­í„°ì˜ ê³µê²©ë ¥&ë°©ì–´ë ¥ì´ ìƒìŠ¹ë©ë‹ˆë‹¤.)") );
+	MsgBoxInfo.AddString( _S(3916, "(ÄèÀûÇÒ¼ö·Ï Ä³¸¯ÅÍÀÇ °ø°İ·Â&¹æ¾î·ÂÀÌ »ó½ÂµË´Ï´Ù.)") );
 	MsgBoxInfo.m_nMaxRow +=2;
 
-	MsgBoxInfo.AddString( _S(3917, "â–¶ ëª¬ìŠ¤í„°ì˜ í‰í­í•¨") );
+	MsgBoxInfo.AddString( _S(3917, "¢º ¸ó½ºÅÍÀÇ ÈäÆøÇÔ") );
 	MsgBoxInfo.m_nMaxRow +=1;
-	MsgBoxInfo.AddString( _S(3918, "ë§¤ìš° í‰í­í•¨") );
+	MsgBoxInfo.AddString( _S(3918, "¸Å¿ì ÈäÆøÇÔ") );
 	--MsgBoxInfo.m_nMaxRow;
 	MsgBoxInfo.AddString( _s("50%"), 0xF2F2F2FF, TEXT_CENTER );
 	--MsgBoxInfo.m_nMaxRow;
-	MsgBoxInfo.AddString( _S(3919, "ì˜¨ìˆœí•¨"), 0xF2F2F2FF, TEXT_RIGHT );
+	MsgBoxInfo.AddString( _S(3919, "¿Â¼øÇÔ"), 0xF2F2F2FF, TEXT_RIGHT );
 	MsgBoxInfo.m_nMaxRow +=2;
-	MsgBoxInfo.AddString( _S(3920, "(ì˜¨ìˆœí• ìˆ˜ë¡ ëª¬ìŠ¤í„°ì˜ ê³µê²©ë ¥&ë°©ì–´ë ¥ì´ í•˜ë½í•©ë‹ˆë‹¤.)") );
+	MsgBoxInfo.AddString( _S(3920, "(¿Â¼øÇÒ¼ö·Ï ¸ó½ºÅÍÀÇ °ø°İ·Â&¹æ¾î·ÂÀÌ ÇÏ¶ôÇÕ´Ï´Ù.)") );
 	MsgBoxInfo.m_nMaxRow +=1;
 
 	MsgBoxInfo.SetInputBox( 3, 0, 0, 370 );
@@ -703,12 +738,12 @@ void CUIPortal::Create_SiegeDungeon_State_MsgBox(int nEnvRate, int nMonRate)
 
 	MsgBoxInfo.m_nColorBoxCount =2;
 
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->GetInputBox().SetFocus(FALSE);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->GetInputBox().SetInValidEditBox(TRUE);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->GetSEInputBox().SetFocus(FALSE);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->GetSEInputBox().SetInValidEditBox(TRUE);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->GetInputBox().SetFocus(FALSE);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->GetInputBox().SetInValidEditBox(TRUE);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->GetSEInputBox().SetFocus(FALSE);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->GetSEInputBox().SetInValidEditBox(TRUE);
 
 
 	float fEnvRate =nEnvRate/100.0f;
@@ -743,35 +778,39 @@ void CUIPortal::Create_SiegeDungeon_State_MsgBox(int nEnvRate, int nMonRate)
 	if( nMonRate <=10 )
 		ubMonCol =6;
 
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->SetColorBox(0, ubEnvCol, rcBox_Environment);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->SetColorBox(1, ubMonCol, rcBox_Monster);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->SetColorBox(0, ubEnvCol, rcBox_Environment);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_STATE)->SetColorBox(1, ubMonCol, rcBox_Monster);
 }
 
 void CUIPortal::Create_SiegeDungeon_EnvCtr_MsgBox(int nCurRate)
 {
-	if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL) )
-		_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL) )
+		pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL);
 
 	CTString strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
 
-	MsgBoxInfo.SetMsgBoxInfo( _S(3921, "ë˜ì „ ë‚´ë¶€ í™˜ê²½ ì œì–´" ), UMBS_OKCANCEL | UMBS_SPINBUTTON , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL, 400 );
+	MsgBoxInfo.SetMsgBoxInfo( _S(3921, "´øÀü ³»ºÎ È¯°æ Á¦¾î" ), UMBS_OKCANCEL | UMBS_SPINBUTTON , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL, 400 );
 	
-	MsgBoxInfo.AddString( _S(3922, "í¬ë¦¬ìŠ¤íƒˆì˜ ê¸°ìš´ì„ ëŒì–´ì™€ ë˜ì „ì˜ ë‚´ë¶€ í™˜ê²½ì„ ì¾Œì í•˜ê²Œ ë§Œë“¤ ìˆ˜ ìˆìŠµë‹ˆë‹¤. ë˜ì „ì˜ í™˜ê²½ì´ ì¾Œì í•´ì§€ë©´ ìºë¦­í„°ì˜ ê³µê²©ë ¥ê³¼ ë°©ì–´ë ¥ì´ ìƒìŠ¹ë©ë‹ˆë‹¤.") );
-	MsgBoxInfo.AddString( _S(3923, "ë‹¨, ì¾Œì í•¨ì„ ìƒìŠ¹ ì‹œí‚¤ê¸° ìœ„í•´ì„œëŠ” ë‚˜ìŠ¤ê°€ í•„ìš”í•˜ë©°, ì¾Œì í•¨ì€ 1ì‹œê°„(í˜„ì¬ ì‹œê°„)ì— 10%ì”© í•˜ë½ë©ë‹ˆë‹¤.") );
+	MsgBoxInfo.AddString( _S(3922, "Å©¸®½ºÅ»ÀÇ ±â¿îÀ» ²ø¾î¿Í ´øÀüÀÇ ³»ºÎ È¯°æÀ» ÄèÀûÇÏ°Ô ¸¸µé ¼ö ÀÖ½À´Ï´Ù. ´øÀüÀÇ È¯°æÀÌ ÄèÀûÇØÁö¸é Ä³¸¯ÅÍÀÇ °ø°İ·Â°ú ¹æ¾î·ÂÀÌ »ó½ÂµË´Ï´Ù.") );
+	MsgBoxInfo.AddString( _S(3923, "´Ü, ÄèÀûÇÔÀ» »ó½Â ½ÃÅ°±â À§ÇØ¼­´Â ³ª½º°¡ ÇÊ¿äÇÏ¸ç, ÄèÀûÇÔÀº 1½Ã°£(ÇöÀç ½Ã°£)¿¡ 10%¾¿ ÇÏ¶ôµË´Ï´Ù.") );
 	++MsgBoxInfo.m_nMaxRow;
-	MsgBoxInfo.AddString( _S(3924, "ì–´ëŠ ì •ë„ë‚˜ ì¾Œì í•˜ê²Œ ë§Œë“œì‹œê² ìŠµë‹ˆê¹Œ?") );
+	MsgBoxInfo.AddString( _S(3924, "¾î´À Á¤µµ³ª ÄèÀûÇÏ°Ô ¸¸µå½Ã°Ú½À´Ï±î?") );
 	MsgBoxInfo.m_nMaxRow +=2;
 
-	strMessage.PrintF( _s("%s: %d %s%s"), _S(1058, "í•„ìš”ë‚˜ìŠ¤"), 10*50000, _S(1762, "ë‚˜ìŠ¤"), _s("   ") );
+	int nNeedNas = 50000*10;
+		
+	strMessage.PrintF( _s("%s: %d %s%s"), _S(1058, "ÇÊ¿ä³ª½º"), nNeedNas, _S(1762, "³ª½º"), _s("   ") );
 	MsgBoxInfo.AddString( strMessage, 0xF2F2F2FF, TEXT_RIGHT );
 
 	
 	MsgBoxInfo.m_nColorBoxCount =4;
 
-	MsgBoxInfo.SetSpinButton(MsgBoxInfo.m_nMaxRow-2, 1, 200, _S(3925, "ì¾Œì í•¨ ìƒìŠ¹%") + _s("   "));
+	MsgBoxInfo.SetSpinButton(MsgBoxInfo.m_nMaxRow-2, 1, 230, _S(3925, "ÄèÀûÇÔ »ó½Â%") + _s("   "));
 
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 	int iPosX[4], iPosY[4];
 	int iWidth[4], iHeight[4];
@@ -804,10 +843,10 @@ void CUIPortal::Create_SiegeDungeon_EnvCtr_MsgBox(int nCurRate)
 	rcBox[2].SetRect( iPosX[2], iPosY[2], iPosX[2]+iWidth[2], iPosY[2]+iHeight[2]);
 	rcBox[3].SetRect( iPosX[3], iPosY[3], iPosX[3]+iWidth[3], iPosY[3]+iHeight[3]);
 
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->SetColorBox(0, 0, rcBox[0]);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->SetColorBox(1, 0, rcBox[1]);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->SetColorBox(2, 0, rcBox[2]);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->SetColorBox(3, 0, rcBox[3]);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->SetColorBox(0, 0, rcBox[0]);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->SetColorBox(1, 0, rcBox[1]);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->SetColorBox(2, 0, rcBox[2]);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->SetColorBox(3, 0, rcBox[3]);
 	
 	for(int i=1; i<=10; ++i)
 	{
@@ -816,34 +855,38 @@ void CUIPortal::Create_SiegeDungeon_EnvCtr_MsgBox(int nCurRate)
 		
 		CTString strData;
 		strData.PrintF("%d", i*10);
-		_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->GetSpinButton().AddData(strData);
+		pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ENVIRONMENT_CONTROL)->GetSpinButton().AddData(strData);
 	}
 }
 
 void CUIPortal::Create_SiegeDungeon_MonCtr_MsgBox(int nCurRate)
 {
-	if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL) )
-		_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL) )
+		pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL);
 
 	CTString strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
 
-	MsgBoxInfo.SetMsgBoxInfo( _S(3926, "ë˜ì „ ë‚´ë¶€ ëª¬ìŠ¤í„° ì œì–´" ), UMBS_OKCANCEL | UMBS_SPINBUTTON , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL, 400 );
+	MsgBoxInfo.SetMsgBoxInfo( _S(3926, "´øÀü ³»ºÎ ¸ó½ºÅÍ Á¦¾î" ), UMBS_OKCANCEL | UMBS_SPINBUTTON , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL, 400 );
 	
-	MsgBoxInfo.AddString( _S(3927, "í¬ë¦¬ìŠ¤íƒˆì˜ ê¸°ìš´ìœ¼ë¡œ ë˜ì „ì— ìˆëŠ” ëª¬ìŠ¤í„°ë“¤ì„ ì˜¨ìˆœí•˜ê²Œ ë§Œë“¤ ìˆ˜ ìˆìŠµë‹ˆë‹¤. ë˜ì „ì˜ ëª¬ìŠ¤í„°ê°€ ì˜¨ìˆœí•´ì§€ë©´ ëª¬ìŠ¤í„°ì˜ ê³µê²©ë ¥ê³¼ ë°©ì–´ë ¥, ìµœëŒ€ HPê°€ í•˜ë½í•©ë‹ˆë‹¤.") );
-	MsgBoxInfo.AddString( _S(3928, "ë‹¨, ëª¬ìŠ¤í„°ì˜ ì˜¨ìˆœí•¨ì„ ìƒìŠ¹ ì‹œí‚¤ê¸° ìœ„í•´ì„œëŠ” ë‚˜ìŠ¤ê°€ í•„ìš”í•˜ë©°, ì˜¨ìˆœí•¨ì€ 1ì‹œê°„(í˜„ì¬ì‹œê°„)ì— 10%ì”© í•˜ë½ë©ë‹ˆë‹¤.") );
+	MsgBoxInfo.AddString( _S(3927, "Å©¸®½ºÅ»ÀÇ ±â¿îÀ¸·Î ´øÀü¿¡ ÀÖ´Â ¸ó½ºÅÍµéÀ» ¿Â¼øÇÏ°Ô ¸¸µé ¼ö ÀÖ½À´Ï´Ù. ´øÀüÀÇ ¸ó½ºÅÍ°¡ ¿Â¼øÇØÁö¸é ¸ó½ºÅÍÀÇ °ø°İ·Â°ú ¹æ¾î·Â, ÃÖ´ë HP°¡ ÇÏ¶ôÇÕ´Ï´Ù.") );
+	MsgBoxInfo.AddString( _S(3928, "´Ü, ¸ó½ºÅÍÀÇ ¿Â¼øÇÔÀ» »ó½Â ½ÃÅ°±â À§ÇØ¼­´Â ³ª½º°¡ ÇÊ¿äÇÏ¸ç, ¿Â¼øÇÔÀº 1½Ã°£(ÇöÀç½Ã°£)¿¡ 10%¾¿ ÇÏ¶ôµË´Ï´Ù.") );
 	++MsgBoxInfo.m_nMaxRow;
-	MsgBoxInfo.AddString( _S(3929, "ì–´ëŠ ì •ë„ë‚˜ ì˜¨ìˆœí•˜ê²Œ ë§Œë“œì‹œê² ìŠµë‹ˆê¹Œ?") );
+	MsgBoxInfo.AddString( _S(3929, "¾î´À Á¤µµ³ª ¿Â¼øÇÏ°Ô ¸¸µå½Ã°Ú½À´Ï±î?") );
 	MsgBoxInfo.m_nMaxRow +=2;
 
-	strMessage.PrintF( _s("%s: %d %s%s"), _S(1058, "í•„ìš”ë‚˜ìŠ¤"), 10*100000, _S(1762, "ë‚˜ìŠ¤"), _s("   ") );
+	int nNeedNas = 100000*10;
+		
+	strMessage.PrintF( _s("%s: %d %s%s"), _S(1058, "ÇÊ¿ä³ª½º"), nNeedNas, _S(1762, "³ª½º"), _s("   ") );
 	MsgBoxInfo.AddString( strMessage, 0xF2F2F2FF, TEXT_RIGHT );
 	
 	MsgBoxInfo.m_nColorBoxCount =4;
 
-	MsgBoxInfo.SetSpinButton(MsgBoxInfo.m_nMaxRow-2, 1, 200, _S(3930, "ì˜¨ìˆœí•¨ ìƒìŠ¹%") + _s("   "));
+	MsgBoxInfo.SetSpinButton(MsgBoxInfo.m_nMaxRow-2, 1, 200, _S(3930, "¿Â¼øÇÔ »ó½Â%") + _s("   "));
 
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 	int iPosX[4], iPosY[4];
 	int iWidth[4], iHeight[4];
@@ -876,10 +919,10 @@ void CUIPortal::Create_SiegeDungeon_MonCtr_MsgBox(int nCurRate)
 	rcBox[2].SetRect( iPosX[2], iPosY[2], iPosX[2]+iWidth[2], iPosY[2]+iHeight[2]);
 	rcBox[3].SetRect( iPosX[3], iPosY[3], iPosX[3]+iWidth[3], iPosY[3]+iHeight[3]);
 
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->SetColorBox(0, 0, rcBox[0]);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->SetColorBox(1, 0, rcBox[1]);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->SetColorBox(2, 0, rcBox[2]);
-	_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->SetColorBox(3, 0, rcBox[3]);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->SetColorBox(0, 0, rcBox[0]);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->SetColorBox(1, 0, rcBox[1]);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->SetColorBox(2, 0, rcBox[2]);
+	pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->SetColorBox(3, 0, rcBox[3]);
 	
 	for(int i=1; i<=10; ++i)
 	{
@@ -888,66 +931,70 @@ void CUIPortal::Create_SiegeDungeon_MonCtr_MsgBox(int nCurRate)
 
 		CTString strData;
 		strData.PrintF("%d", i*10);
-		_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->GetSpinButton().AddData(strData);
+		pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_MONSTER_CONTROL)->GetSpinButton().AddData(strData);
 	}
 }
 
 void CUIPortal::Create_SiegeDungeon_AdmissionCtr_MsgBox(int nCurFree)
 {
-	if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL) )
-		_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL) )
+		pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL);
 
 	CTString strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
 
-	MsgBoxInfo.SetMsgBoxInfo( _S(3931, "ë˜ì „ ì…ì¥ë£Œ ì¡°ì •" ), UMBS_OKCANCEL | UMBS_SPINBUTTON , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL, 300 );
+	MsgBoxInfo.SetMsgBoxInfo( _S(3931, "´øÀü ÀÔÀå·á Á¶Á¤" ), UMBS_OKCANCEL | UMBS_SPINBUTTON , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL, 300 );
 	
-	MsgBoxInfo.AddString( _S(3932, "ë˜ì „ì˜ ì…ì¥ë£Œ ì„¸ìœ¨ì„ ì„¤ì •í•´ì£¼ì„¸ìš”.") );
+	MsgBoxInfo.AddString( _S(3932, "´øÀüÀÇ ÀÔÀå·á ¼¼À²À» ¼³Á¤ÇØÁÖ¼¼¿ä.") );
 
 	CTString strMsg;
-	strMsg.PrintF(_S(3933, "í˜„ì¬ ì…ì¥ë£Œ ì„¸ìœ¨ì€ %d%%ì…ë‹ˆë‹¤."), nCurFree);
+	strMsg.PrintF(_S(3933, "ÇöÀç ÀÔÀå·á ¼¼À²Àº %d%%ÀÔ´Ï´Ù."), nCurFree);
 	MsgBoxInfo.AddString(strMsg);
 	++MsgBoxInfo.m_nMaxRow;
 
-	MsgBoxInfo.SetSpinButton(MsgBoxInfo.m_nMaxRow, 1, 200, _S(3934, "ì…ì¥ë£Œ ì„¸ìœ¨%") + _s("   "));
+	MsgBoxInfo.SetSpinButton(MsgBoxInfo.m_nMaxRow, 1, 200, _S(3934, "ÀÔÀå·á ¼¼À²%") + _s("   "));
 
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 	for(int i=0; i<17; ++i)
 	{
 		CTString strData;
 		strData.PrintF("%d", 70+i*5);
-		_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL)->GetSpinButton().AddData(strData);
+		pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_ADMISSION_FEE_CONTROL)->GetSpinButton().AddData(strData);
 	}
 
 }
 
 void CUIPortal::Create_SiegeDungeon_HuntingCtr_MsgBox(int nCurFree)
 {
-	if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL) )
-		_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL) )
+		pUIManager->CloseMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL);
 
 	CTString strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
 
-	MsgBoxInfo.SetMsgBoxInfo( _S(3935, "ë˜ì „ ìˆ˜ë µì„¸ìœ¨ ì¡°ì •" ), UMBS_OKCANCEL | UMBS_SPINBUTTON , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL, 300 );
+	MsgBoxInfo.SetMsgBoxInfo( _S(3935, "´øÀü ¼ö·Æ¼¼À² Á¶Á¤" ), UMBS_OKCANCEL | UMBS_SPINBUTTON , UI_PORTAL, MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL, 300 );
 	
-	MsgBoxInfo.AddString( _S(3936, "ë˜ì „ ë‚´ì˜ ëª¬ìŠ¤í„°ê°€ ë“œë¡­í•˜ëŠ” ë‚˜ìŠ¤ ì¤‘ ìˆ˜ë µì„¸ìœ¨ë§Œí¼ì˜ ë‚˜ìŠ¤ê°€ ì„±ì£¼ê¸¸ë“œì˜ ì„¸ê¸ˆìœ¼ë¡œ ì§€ê¸‰ë©ë‹ˆë‹¤.") );
-	MsgBoxInfo.AddString( _S(3937, "ë˜ì „ì˜ ìˆ˜ë µì„¸ìœ¨ì„ ì„¤ì •í•´ì£¼ì„¸ìš”.") );
+	MsgBoxInfo.AddString( _S(3936, "´øÀü ³»ÀÇ ¸ó½ºÅÍ°¡ µå·ÓÇÏ´Â ³ª½º Áß ¼ö·Æ¼¼À²¸¸Å­ÀÇ ³ª½º°¡ ¼ºÁÖ±æµåÀÇ ¼¼±İÀ¸·Î Áö±ŞµË´Ï´Ù.") );
+	MsgBoxInfo.AddString( _S(3937, "´øÀüÀÇ ¼ö·Æ¼¼À²À» ¼³Á¤ÇØÁÖ¼¼¿ä.") );
 	CTString strMsg;
-	strMsg.PrintF(_S(3938, "í˜„ì¬ ìˆ˜ë µì„¸ìœ¨ì€ %d%%ì…ë‹ˆë‹¤."), nCurFree);
+	strMsg.PrintF(_S(3938, "ÇöÀç ¼ö·Æ¼¼À²Àº %d%%ÀÔ´Ï´Ù."), nCurFree);
 	MsgBoxInfo.AddString(strMsg);
 	++MsgBoxInfo.m_nMaxRow;
 
-	MsgBoxInfo.SetSpinButton(MsgBoxInfo.m_nMaxRow, 1, 200, _S(3939, "ìˆ˜ë µì„¸ìœ¨%") + _s("   "));
+	MsgBoxInfo.SetSpinButton(MsgBoxInfo.m_nMaxRow, 1, 200, _S(3939, "¼ö·Æ¼¼À²%") + _s("   "));
 
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 	for(int i=0; i<5; ++i)
 	{
 		CTString strData;
 		strData.PrintF("%d", i*5);
-		_pUIMgr->GetMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL)->GetSpinButton().AddData(strData);
+		pUIManager->GetMessageBox(MSGCMD_SIEGE_DUNGEON_HUNTING_FEE_CONTROL)->GetSpinButton().AddData(strData);
 	}
 }
 // [071115: Su-won] DRATAN_SIEGE_DUNGEON
@@ -957,11 +1004,11 @@ BOOL CUIPortal::IsWarpItem(int nItemIndex)
 {
 	switch (nItemIndex)
 	{
-	case 2860: // ë²¨í”¼ìŠ¤íŠ¸ ì‹ ì „ ì´ë™ ì£¼ë¬¸ì„œ
-	case 2861: // í”„ë¡œí‚¤ì˜¨ ì‹ ì „ ì´ë™ ì£¼ë¬¸ì„œ
-	case 2862: // ë§ê°ì˜ ì‹ ì „ ì´ë™ ì£¼ë¬¸ì„œ
-	case 2863: // ë§ˆë¥´ê°€ë‘  ì§€í•˜ê°ì˜¥ ì´ë™ ì£¼ë¬¸ì„œ
-	case 2864: // ë£¨ìŠ¤íŠ¸ íŠ¸ë£¸ ì´ë™ ì£¼ë¬¸ì„œ
+	case 2860: // º§ÇÇ½ºÆ® ½ÅÀü ÀÌµ¿ ÁÖ¹®¼­
+	case 2861: // ÇÁ·ÎÅ°¿Â ½ÅÀü ÀÌµ¿ ÁÖ¹®¼­
+	case 2862: // ¸Á°¢ÀÇ ½ÅÀü ÀÌµ¿ ÁÖ¹®¼­
+	case 2863: // ¸¶¸£°¡µÒ ÁöÇÏ°¨¿Á ÀÌµ¿ ÁÖ¹®¼­
+	case 2864: // ·ç½ºÆ® Æ®·ë ÀÌµ¿ ÁÖ¹®¼­
 		return TRUE;
 	}
 

@@ -5,7 +5,6 @@
 
 // External variables
 extern HWND	_hwndMain;
-extern INDEX g_iCountry;
 
 
 // ----------------------------------------------------------------------------
@@ -85,6 +84,15 @@ void WRect::Offset( int nX, int nY )
 	Left += nX;		Top += nY;		Right += nX;		Bottom += nY;
 }
 
+UIRect WRect::GetUIRect()
+{
+	UIRect temRect;
+	temRect.Left = Left;
+	temRect.Top = Top;
+	temRect.Right = Right;
+	temRect.Bottom = Bottom;
+	return temRect;
+}
 // ----------------------------------------------------------------------------
 // Name : CUIDrawBox()
 // Desc : Constructor
@@ -198,10 +206,10 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 	int nYT = nY + m_rcBoxRT.Top;
 	int nYB = nY + m_rcBoxRT.Bottom;
 
-
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// Upper left
-	_pUIMgr->GetDrawPort()->AddTexture( nXL, nYT,
+	pDrawPort->AddTexture( nXL, nYT,
 										nXL + m_iThickX, nYT + m_iThickY,
 										m_rtCandUL.U0, m_rtCandUL.V0,
 										m_rtCandUL.U1, m_rtCandUL.V1,
@@ -209,7 +217,7 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 	if( (m_iThickX) <  m_rcBoxRT.GetWidth()/2 )
 	{
 		// Upper middle
-		_pUIMgr->GetDrawPort()->AddTexture( nXL + m_iThickX, nYT,
+		pDrawPort->AddTexture( nXL + m_iThickX, nYT,
 											nXR - m_iThickX, nYT + m_iThickY,
 											m_rtCandUM.U0, m_rtCandUM.V0,
 											m_rtCandUM.U1, m_rtCandUM.V1,
@@ -218,7 +226,7 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 	if( (m_iThickX) <  m_rcBoxRT.GetWidth() )
 	{
 		// Upper right
-		_pUIMgr->GetDrawPort()->AddTexture( nXR - m_iThickX, nYT,
+		pDrawPort->AddTexture( nXR - m_iThickX, nYT,
 											nXR, nYT + m_iThickY,
 											m_rtCandUR.U0, m_rtCandUR.V0,
 											m_rtCandUR.U1, m_rtCandUR.V1,
@@ -228,7 +236,7 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 	if(  m_iThickY <  m_rcBoxRT.GetHeight()/2 )
 	{
 		// Middle left
-		_pUIMgr->GetDrawPort()->AddTexture( nXL, nYT + m_iThickY,
+		pDrawPort->AddTexture( nXL, nYT + m_iThickY,
 											nXL + m_iThickX, nYB - m_iThickY,
 											m_rtCandML.U0, m_rtCandML.V0,
 											m_rtCandML.U1, m_rtCandML.V1,
@@ -236,7 +244,7 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 		if(  m_iThickX <  m_rcBoxRT.GetWidth()/2 )
 		{
 			// Middle middle
-			_pUIMgr->GetDrawPort()->AddTexture( nXL + m_iThickX, nYT + m_iThickY,
+			pDrawPort->AddTexture( nXL + m_iThickX, nYT + m_iThickY,
 												nXR - m_iThickX, nYB - m_iThickY,
 												m_rtCandMM.U0, m_rtCandMM.V0,
 												m_rtCandMM.U1, m_rtCandMM.V1,
@@ -245,7 +253,7 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 		if( m_iThickX <  m_rcBoxRT.GetWidth() )
 		{
 			// Middle right
-			_pUIMgr->GetDrawPort()->AddTexture( nXR - m_iThickX, nYT + m_iThickY,
+			pDrawPort->AddTexture( nXR - m_iThickX, nYT + m_iThickY,
 												nXR, nYB - m_iThickY,
 												m_rtCandMR.U0, m_rtCandMR.V0,
 												m_rtCandMR.U1, m_rtCandMR.V1,
@@ -257,7 +265,7 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 	if(  m_iThickY <  m_rcBoxRT.GetHeight() )
 	{
 		// Lower left
-		_pUIMgr->GetDrawPort()->AddTexture( nXL, nYB - m_iThickY,
+		pDrawPort->AddTexture( nXL, nYB - m_iThickY,
 											nXL + m_iThickX, nYB,
 											m_rtCandLL.U0, m_rtCandLL.V0,
 											m_rtCandLL.U1, m_rtCandLL.V1,
@@ -265,7 +273,7 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 		if(  m_iThickX <  m_rcBoxRT.GetWidth()/2 )
 		{
 			// Lower middle
-			_pUIMgr->GetDrawPort()->AddTexture( nXL + m_iThickX, nYB - m_iThickY,
+			pDrawPort->AddTexture( nXL + m_iThickX, nYB - m_iThickY,
 												nXR - m_iThickX, nYB,
 												m_rtCandLM.U0, m_rtCandLM.V0,
 												m_rtCandLM.U1, m_rtCandLM.V1,
@@ -274,7 +282,7 @@ void CUIDrawBox::Render(int nX,int nY,const COLOR nCol,FLOAT fDepth)
 		if( m_iThickX <  m_rcBoxRT.GetWidth() )
 		{
 			// Lower right
-			_pUIMgr->GetDrawPort()->AddTexture( nXR - m_iThickX, nYB - m_iThickY,
+			pDrawPort->AddTexture( nXR - m_iThickX, nYB - m_iThickY,
 												nXR, nYB,
 												m_rtCandLR.U0, m_rtCandLR.V0,
 												m_rtCandLR.U1, m_rtCandLR.V1,

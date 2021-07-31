@@ -12,7 +12,10 @@
 #include <Engine/Base/Statistics.h>
 #include <Engine/CurrentVersion.h>
 #include <Engine/GlobalDefinition.h>
-//#include <Engine/Interface/UIManager.h>
+#include <Engine/Network/Web.h>
+#include <tlhelp32.h>
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Object/ActorMgr.h>
 #include "LCDDrawing.h"
 
 extern FLOAT con_fHeightFactor = 0.5f;
@@ -21,9 +24,13 @@ extern FLOAT con_tmLastLines   = 5.0f;
 //CTimerValue _tvMenuQuickSave(0I64);
 
 // used filenames
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
+#ifdef KALYDO
+CTFileName fnmPersistentSymbols = CTString("ps.dat");
+#else
 CTFileName fnmPersistentSymbols = CTString("Data\\etc\\ps.dat");
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+#endif
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 //CTFileName fnmStartupScript     = CTString("Data\\Etc\\Game_startup.ini");
 //CTFileName fnmConsoleHistory    = CTString("Data\\Etc\\ConsoleHistory.txt");
 //CTFileName fnmCommonControls    = CTString("Data\\Etc\\Common.ctl");
@@ -123,19 +130,18 @@ extern INDEX gam_iJpgScreenShot = 1;	// 0 = TGA, 1 = JPG
 
 extern INDEX gam_bUseExtraEnemies = TRUE;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.2)
-#ifdef DEBUG
-static INDEX hud_iStats = 3;
+#ifdef _SHOW_DEBUG_STATUS
+INDEX hud_iStats = 3;
 static INDEX hud_iFPSGraphSpeed = 1;
 static INDEX hud_iFPSGraphMax = 400;
 static INDEX hud_bShowTime = TRUE;
 #else
-static INDEX hud_iStats = 0;
+INDEX hud_iStats = 0;
 static INDEX hud_iFPSGraphSpeed = 4;
-static INDEX hud_iFPSGraphMax = 100;
+static INDEX hud_iFPSGraphMax = 400;
 static INDEX hud_bShowTime = FALSE;
-#endif	//DEBUG
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.2)
+#endif	// _SHOW_DEBUG_STATUS
+
 static INDEX hud_bShowClock = FALSE;
 static INDEX hud_bShowNetGraph = FALSE;
 static INDEX hud_bShowResolution = FALSE;
@@ -159,7 +165,6 @@ extern BOOL _bUserBreakEnabled = FALSE;
 // for motion blur animation capturing
 static UWORD *_puwAccBuffer = NULL;
 static PIX _pixAccSize = 0;
-
 
 void AccumulateFrame( CImageInfo *pii, const INDEX ctInterFrames, const BOOL bRootFrame)
 {
@@ -209,6 +214,85 @@ void MaybeDiscardLastLines(void)
 	}
 }
 
+// [100122: selo] À©µµ¿ì ÇÚµéÀ» Ã£¾Æ ÇÁ·Î¼¼½º Ã£±â ·çÆ¾
+ULONG ProcIDFromWnd(HWND hwnd) // À©µµ¿ì ÇÚµé·Î ÇÁ·Î¼¼½º ¾ÆÀÌµğ ¾ò±â  
+{  
+  ULONG idProc;  
+  GetWindowThreadProcessId( hwnd, &idProc );  
+  return idProc;  
+}
+
+// [100122: selo] À§ ÇÔ¼ö¿Í ¿¬°èµÇ´Â ÇÔ¼ö 
+HWND GetInputH(ULONG pid) // ÇÁ·Î¼¼½º ¾ÆÀÌµğ·Î À©µµ¿ì ÇÚµé ¾ò±â  
+{  
+  HWND tempHwnd = FindWindow(NULL,NULL); // ÃÖ»óÀ§ À©µµ¿ì ÇÚµé Ã£±â  
+  
+  while( tempHwnd != NULL )  
+  {  
+    if( GetParent(tempHwnd) == NULL ) // ÃÖ»óÀ§ ÇÚµéÀÎÁö Ã¼Å©, ¹öÆ° µîµµ ÇÚµéÀ» °¡Áú ¼ö ÀÖÀ¸¹Ç·Î ¹«½ÃÇÏ±â À§ÇØ  
+      if( pid == ProcIDFromWnd(tempHwnd) )  
+        return tempHwnd;  
+    tempHwnd = GetWindow(tempHwnd, GW_HWNDNEXT); // ´ÙÀ½ À©µµ¿ì ÇÚµé Ã£±â  
+  }  
+  return NULL;  
+}
+
+// [100122: selo] ÇØÅ· ÇÁ·Î¼¼½º Ã£±â
+BOOL InputState(void)
+{
+	HANDLE      hInputSnap = NULL;
+	BOOL		Return       = FALSE;
+	
+	PROCESSENTRY32 pe32         = {0};
+	
+	char buf[256];
+	
+	hInputSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);    
+	
+	if (hInputSnap == INVALID_HANDLE_VALUE)
+	{
+		return FALSE;
+	}
+	
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+	
+	if (Process32First(hInputSnap, &pe32))
+	{   
+		do
+		{
+			HANDLE hInput;                        
+			// Get the actual priority class.            
+			hInput = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+			
+			if( hInput != NULL )
+			{
+				HWND hWnd = GetInputH(pe32.th32ProcessID); // GetWinHandle --> GetInputH
+
+#if !defined (G_RUSSIA)
+				GetClassName((HWND)hWnd, buf, 256);	
+				if( 0 == strncmp(buf, "AutoIt", 6) )
+				{
+					Return = TRUE;	
+					CPrintF("³ª´Â ÇàÀ¯Á®");
+				}	
+#else
+				GetWindowText((HWND)hWnd, buf, 256);
+				if( 0 == strncmp(buf, "LastChaos-Bot -", 15) )
+				{
+					Return = TRUE;	
+					CPrintF("³ª´Â ÇàÀ¯Á®");
+				}	
+#endif			
+				CloseHandle (hInput);
+			}
+		}
+		while (Process32Next(hInputSnap, &pe32));		
+	}	
+	
+	CloseHandle (hInputSnap);
+
+	return Return;
+}
 
 /*
 class CEnableUserBreak {
@@ -335,7 +419,7 @@ static void SayFromTo(INDEX ulFrom, INDEX ulTo, const CTString &strText)
 // create name for a new screenshot
 static CTFileName MakeScreenShotName(void)
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	09.06
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	09.06
 	/*
 	// create base name from the world name
 	CTFileName fnmBase = CTString("Shots\\")+_pNetwork->GetCurrentWorld().FileName();
@@ -359,8 +443,8 @@ static CTFileName MakeScreenShotName(void)
 		iShot++;
 	}
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		09.06
-	// ì˜¤ëŠ˜ ë‚ ì§œ í˜„ì¬ ì‹œê°„ì´ íŒŒì¼ì´ë¦„ëœë‹¤.
+//°­µ¿¹Î ¼öÁ¤ ³¡ ´ÙÁß °ø°İ ÀÛ¾÷		09.06
+	// ¿À´Ã ³¯Â¥ ÇöÀç ½Ã°£ÀÌ ÆÄÀÏÀÌ¸§µÈ´Ù.
 	char szDate[9];
 	char szTime[9];
 	_strdate( szDate );
@@ -429,6 +513,7 @@ void CControls::DoControlActions(void)
 	{
 		// test if first button is pressed
 		BOOL bFirstPressed = _pInput->GetControlValue(itButtonAction->ba_ulFirstControl)>0.0f;
+
 		// remember control value
 		ctl_fInputValue = _pInput->GetControlValue(itButtonAction->ba_ulFirstControl);
 
@@ -451,6 +536,7 @@ void CControls::DoControlActions(void)
 
 		// test if second button is pressed
 		BOOL bSecondPressed = _pInput->GetControlValue(itButtonAction->ba_ulSecondControl)>0.0f;
+
 		// remember control value
 		ctl_fInputValue = _pInput->GetControlValue(itButtonAction->ba_ulSecondControl);
 
@@ -481,9 +567,13 @@ void CControls::CreateAction(const CPlayerCharacter &pc, CPlayerAction &paAction
 	DoControlActions();
 //  CPlayerSettings *pps = (CPlayerSettings *)pc.pc_aubAppearance;
 //  pps->ps_iSensitivity = NormFloatToByte(_pGame->gm_ctrlControlsExtra.ctrl_fSensitivity/100 - 0.5);
-	//CPrintF("creating: prescan %d, x:%g\n", bPreScan, paAction.pa_aRotation(1));
 	// make the player class create the action packet
 	ctl_ComposeActionPacket(pc, paAction, bPreScan);
+
+/*	if (paAction.pa_aRotation(1) != 0.0f)
+	{
+		CPrintF("creating: prescan %d, x:%g\n", bPreScan, paAction.pa_aRotation(1));
+	}*/
 }
 
 CButtonAction &CControls::AddButtonAction(void)
@@ -580,6 +670,20 @@ static void CalcDemoProfile( INDEX ctFrames, INDEX &ctFramesNoPeaks,
 		if( tmLowPeak  < tmCurrent) tmLowPeak  = tmCurrent;
 	}
 	tmSigma = Sqrt( dSigmaSum/ctFramesNoPeaks);
+}
+
+CGame::CGame()
+	: m_oldTime(0)
+{
+	gmUpdateInputState = NULL;
+}
+
+CGame::~CGame()
+{
+	if (gmUpdateInputState)
+	{
+		delete gmUpdateInputState;
+	}
 }
 
 
@@ -811,10 +915,10 @@ void CGame::GameHandleTimer(void)
 		if( gm_bGameOn && !_pNetwork->IsPaused() && !_pNetwork->GetLocalPause() )
 		{
 			// for all possible local players
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ º¯°æ ÀÛ¾÷	08.10
 			//for( INDEX iPlayer = 0; iPlayer < 4; iPlayer++ )
 			for( INDEX iPlayer = 0; iPlayer < NET_MAXGAMEPLAYERS; iPlayer++ )
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ º¯°æ ÀÛ¾÷		08.10
 			{
 				// if this player exist
 				if( gm_lpLocalPlayers[iPlayer].lp_pplsPlayerSource != NULL )
@@ -822,7 +926,7 @@ void CGame::GameHandleTimer(void)
 					// publish player index to console
 					ctl_iCurrentPlayerLocal = iPlayer;
 					ctl_iCurrentPlayer = gm_lpLocalPlayers[iPlayer].lp_pplsPlayerSource->pls_Index;
-
+					
 					// copy its local controls to current controls
 					memcpy(	ctl_pvPlayerControls, gm_lpLocalPlayers[ iPlayer].lp_ubPlayerControlsState,
 							ctl_slPlayerControlsSize );
@@ -831,6 +935,7 @@ void CGame::GameHandleTimer(void)
 					CPlayerAction paAction;
 					INDEX iCurrentPlayer = gm_lpLocalPlayers[iPlayer].lp_iPlayer;
 					CControls &ctrls = gm_actrlControls[iCurrentPlayer];
+
 					ctrls.CreateAction( gm_apcPlayers[iCurrentPlayer], paAction, FALSE );
 					// set the action in the client source object
 					gm_lpLocalPlayers[iPlayer].lp_pplsPlayerSource->SetAction( paAction );
@@ -854,10 +959,10 @@ void CGame::GameHandleTimer(void)
 	else if( gm_bGameOn )
 	{
 		// for all possible local players
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ º¯°æ ÀÛ¾÷	08.10
 		//for( INDEX iPlayer = 0; iPlayer < 4; iPlayer++ )
 		for( INDEX iPlayer = 0; iPlayer < NET_MAXGAMEPLAYERS; iPlayer++ )
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ º¯°æ ÀÛ¾÷		08.10
 		{
 			// if this player exist
 			if( gm_lpLocalPlayers[iPlayer].lp_pplsPlayerSource != NULL )
@@ -877,6 +982,50 @@ void CGame::GameHandleTimer(void)
 			}
 		}
 	}
+	static DWORD dwWhat = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+	if (gm_bGameOn && !_pNetwork->IsDisconnected())
+	{
+		if (_pTimer->GetHighPrecisionTimer().GetMilliseconds() - dwWhat >= 60000)
+		{
+			SetEvent(gmUpdateHandle);
+			dwWhat = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+		}
+	}
+}
+
+UINT WINAPI CGame::UpdateThreadFunction(void *parameter)
+{
+	while (1)
+	{
+		if (WAIT_OBJECT_0 == WaitForSingleObject(_pGame->GetUpdateHandle(), INFINITE))
+		{
+			BOOL bState = FALSE;
+			// IDA µî µğ¹ö±ë Åø¿¡¼­ÀÇ ³­µ¶Ã³¸®. ´Ü ¿Ã¸®µğ¹ö±× 2.0 ÀÌ»ó ¹öÀü¿¡¼­´Â ³­µ¶Ã³¸® µÇÁö ¾ÊÀ½. [3/2/2011 rumist]
+			__asm
+			{
+				push	eax
+				mov		eax,	1
+				cmp		eax,	0			// Ç×»ó ½ÇÆĞÇÏµµ·Ï ÄÚµå°¡ µÇ¾îÀÖÀ½. ¶§¹®¿¡ ±âº»ÀûÀ¸·Î tagJunk·Î ÀÌµ¿ÇÔ.
+				je		[tagOriginal]
+				jmp		[tagJunk]
+			tagOriginal:				
+				_emit	0xE8				// check Jmp short pos.  ¿©±â¼­´Â ±×³É ¾ÈÆ¼ µğ¹ö°Å¿¡¼­ À§Ä¡ÁÂÇ¥ ÀĞ±â ¹æÇØ¿ëÀÓ.
+											// _emit°¡ ÇÑ ¹ÙÀÌÆ®ÀÇ ¼öÁ¤ÀÌ¹Ç·Î ½ÇÁ¦·Î tagJunk Æ÷ÀÎÅÍ¸¦ Ã£À» ¼ö ¾øµµ·Ï º¯°æÇÔ.
+			tagJunk:
+				call	InputState
+				mov		bState, eax
+				pop		eax
+			}
+			// if detected hack user, request disconnect.
+			if (bState)
+			{
+				_pNetwork->SendInput();
+			}
+		}
+	}
+
+	return 0;
 }
 
 /*
@@ -1028,9 +1177,9 @@ void CGame::InitInternal( void)
 
 	// load persistent symbols
 	if (!_bDedicatedServer) {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Taiwan Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Taiwan Closed beta)(0.2)
 		_pShell->Execute(CTString("decode \"")+fnmPersistentSymbols+"\";");
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Taiwan Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Taiwan Closed beta)(0.2)
 	}
 	// execute the startup script
 	// deleted by seo
@@ -1049,6 +1198,10 @@ void CGame::InitInternal( void)
 	} catch (char *strError) {
 		FatalError(TRANS("Cannot load common controls: %s\n"), strError);
 	}
+	// ÇÁ·Î¼¼½º °Ë»ç¿ë ÀÌº¥Æ® ÇÚµé ¹× ½º·¹µå
+	gmUpdateHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
+	gmUpdateInputState = new cThreadWrapper(UpdateThreadFunction);
+	gmUpdateInputState->Start(NULL);
 
 	// init LCD textures/fonts
 	LCDInit();
@@ -1080,6 +1233,12 @@ void CGame::EndInternal(void)
 {
 	// stop game if eventually started
 	StopGame();
+
+	// ÇÁ·Î¼¼½º °Ë»ç¿ë ÀÌº¥Æ® ÇÚµé ¹× ½º·¹µå
+	delete gmUpdateInputState;
+	gmUpdateInputState = NULL;
+	CloseHandle(gmUpdateHandle);
+
 	// remove game timer handler
 	_pTimer->RemHandler( &m_gthGameTimerHandler);
 	// save persistent symbols
@@ -1115,16 +1274,16 @@ void CGame::EndInternal(void)
 	}
 }
 
-//0524 kwon í•¨ìˆ˜ì¶”ê°€.
+//0524 kwon ÇÔ¼öÃß°¡.
 BOOL CGame::PreNewGame()
 {
 	gam_iObserverConfig = 0;
 	gam_iObserverOffset = 0;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 	extern BOOL _bLoginProcess;
 	// stop eventually running game
 	if(!_bLoginProcess)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 		StopGame();
 
 	/*
@@ -1145,7 +1304,7 @@ BOOL CGame::PreNewGame()
 	return TRUE;
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &strSessionName - 
@@ -1169,7 +1328,7 @@ BOOL CGame::NewGame(const CTString &strSessionName,
 		return FALSE;              
 	}
 #endif
-/* //0524 kwon ì‚­ì œ.
+/* //0524 kwon »èÁ¦.
 	gam_iObserverConfig = 0;
 	gam_iObserverOffset = 0;
 	// stop eventually running game
@@ -1193,7 +1352,7 @@ BOOL CGame::NewGame(const CTString &strSessionName,
 	// start the new session
 	try 
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 		/*
 		if( dem_bPlay) 
 		{
@@ -1208,7 +1367,7 @@ BOOL CGame::NewGame(const CTString &strSessionName,
 		} 
 		else
 		*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 		{
 			BOOL bWaitAllPlayers = sp.sp_bWaitAllPlayers && _pNetwork->IsNetworkEnabled();
 			_pNetwork->StartPeerToPeer_t( strSessionName, fnWorld, 
@@ -1229,7 +1388,7 @@ BOOL CGame::NewGame(const CTString &strSessionName,
 	// setup players from given indices
 	SetupLocalPlayers();
 
-	// í”Œë ˆì´ì–´ê°€ ì—†ë‹¤ë©´???  ê·¸ë¦¬ê³  ë°ëª¨ í”Œë ˆì´ ì¤‘?
+	// ÇÃ·¹ÀÌ¾î°¡ ¾ø´Ù¸é???  ±×¸®°í µ¥¸ğ ÇÃ·¹ÀÌ Áß?
 	if( !dem_bPlay && !AddPlayers()) 
 	{
 		_pNetwork->StopGame();
@@ -1238,13 +1397,13 @@ BOOL CGame::NewGame(const CTString &strSessionName,
 		return FALSE;
 	}
 	gm_bFirstLoading = FALSE;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 	extern BOOL	_bWorldEditorApp;
 	//if(_bWorldEditorApp)
-	{
-		gm_bGameOn = TRUE;
-	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+	//{
+	gm_bGameOn = TRUE;
+	//}
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 	gm_CurrentSplitScreenCfg = gm_StartSplitScreenCfg;
 	// clear last set highscore
 //	gm_iLastSetHighScore = -1;
@@ -1252,58 +1411,6 @@ BOOL CGame::NewGame(const CTString &strSessionName,
 	MaybeDiscardLastLines();
 	return TRUE;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
 BOOL CGame::JoinGame(CNetworkSession &session)
@@ -1322,9 +1429,9 @@ BOOL CGame::JoinGame(CNetworkSession &session)
 	try 
 	{
 		INDEX ctLocalPlayers = 0;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 		if (gm_StartSplitScreenCfg>=SSC_PLAY1) 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 		{
 			ctLocalPlayers = (gm_StartSplitScreenCfg-SSC_PLAY1)+1;
 		}
@@ -1342,7 +1449,7 @@ BOOL CGame::JoinGame(CNetworkSession &session)
 	// setup players from given indices
 	SetupLocalPlayers();
 
-	// í”Œë ˆì´ì–´ê°€ ì—†ë‹¤ë©´???
+	// ÇÃ·¹ÀÌ¾î°¡ ¾ø´Ù¸é???
 	if( !AddPlayers())
 	{
 		_pNetwork->StopGame();
@@ -1380,7 +1487,7 @@ BOOL CGame::LoadGame(const CTFileName &fnGame)
 	// setup players from given indices
 	SetupLocalPlayers();
 
-	// í”Œë ˆì´ì–´ê°€ ì—†ë‹¤ë©´???
+	// ÇÃ·¹ÀÌ¾î°¡ ¾ø´Ù¸é???
 	if( !AddPlayers())
 	{
 		_pNetwork->StopGame();
@@ -1526,12 +1633,15 @@ void CGame::StopGame(void)
 	// stop the game
 	_pNetwork->StopGame();
 	// stop the provider
-	_pNetwork->StopProvider();
+	if (_pNetwork->bMoveCharacterSelectUI == FALSE)
+	{
+		_pNetwork->StopProvider();
+	}	
 	// for all four local players
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ º¯°æ ÀÛ¾÷	08.10
 	//for( INDEX iPlayer=0; iPlayer<4; iPlayer++)
 	for( INDEX iPlayer=0; iPlayer<NET_MAXGAMEPLAYERS; iPlayer++)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ º¯°æ ÀÛ¾÷		08.10
 	{
 		// mark that current player does not exist any more
 		gm_lpLocalPlayers[ iPlayer].lp_bActive = FALSE;
@@ -1775,15 +1885,15 @@ void LoadPlayer(CPlayerCharacter &pc, INDEX i)
  */
 void CGame::LoadPlayersAndControls( void)
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 	for (INDEX iControls=0; iControls<1; iControls++) {
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 		LoadControls(gm_actrlControls[iControls], iControls);
 	}
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 	for (INDEX iPlayer=0; iPlayer<1; iPlayer++) {
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 		LoadPlayer(gm_apcPlayers[iPlayer], iPlayer);
 	}
 
@@ -1826,10 +1936,10 @@ void CGame::SavePlayersAndControls( void)
 	if( !gm_bGameOn) return;
 
 	// for each local player
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ º¯°æ ÀÛ¾÷	08.10
 	//for( INDEX i=0; i<4; i++) 
 	for( INDEX i=0; i<NET_MAXGAMEPLAYERS; i++) 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ º¯°æ ÀÛ¾÷		08.10
 	{		
 		CLocalPlayer &lp = gm_lpLocalPlayers[i];
 		// if active
@@ -1856,16 +1966,16 @@ void CGame::SetupLocalPlayers( void)
 {
 	// setup local players and their controls
 	gm_lpLocalPlayers[0].lp_iPlayer = gm_aiStartLocalPlayers[0];
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ º¯°æ ÀÛ¾÷	08.10
 	//gm_lpLocalPlayers[1].lp_iPlayer = gm_aiStartLocalPlayers[1];
 	//gm_lpLocalPlayers[2].lp_iPlayer = gm_aiStartLocalPlayers[2];
 	//gm_lpLocalPlayers[3].lp_iPlayer = gm_aiStartLocalPlayers[3];
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ º¯°æ ÀÛ¾÷		08.10
 	if (gm_StartSplitScreenCfg < CGame::SSC_PLAY1) 
 	{
 		gm_lpLocalPlayers[0].lp_iPlayer = -1;
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ º¯°æ ÀÛ¾÷	08.10
 	/*
 	if (gm_StartSplitScreenCfg < CGame::SSC_PLAY2) {
 		gm_lpLocalPlayers[1].lp_iPlayer = -1;
@@ -1877,7 +1987,7 @@ void CGame::SetupLocalPlayers( void)
 		gm_lpLocalPlayers[3].lp_iPlayer = -1;
 	}
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ë³€ê²½ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ º¯°æ ÀÛ¾÷		08.10
 }
 
 //-----------------------------------------------------------------------------
@@ -1955,7 +2065,7 @@ static void PrintStats( CDrawPort *pdpDrawPort)
 
 	// if required, print elapsed playing time
 	if( hud_bShowTime) {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.2)
 		// set font, spacing and scale
 		pdpDrawPort->SetFont( _pfdDisplayFont);
 		pdpDrawPort->SetTextScaling( fTextScale * 0.5 );
@@ -1967,7 +2077,7 @@ static void PrintStats( CDrawPort *pdpDrawPort)
 		CTString strTime;
 		strTime.PrintF( "GameWorldTime : %02d:%02d:%02d\nGWTimeMul : %6.2f\nRWT2GWT : %6.2f", currentHour, currentMinute, currentSecond, _pShell->GetFLOAT("g_fGWTimeMul"), RWTOneSec2GWTSec);
 		pdpDrawPort->PutTextC( strTime, slDPWidth*0.5f, slDPHeight*0.03f, C_WHITE|CT_OPAQUE);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.2)
 	}
 
 	// if required, print real time
@@ -2023,8 +2133,8 @@ static void PrintStats( CDrawPort *pdpDrawPort)
 	hud_iFPSGraphSpeed = Clamp( hud_iFPSGraphSpeed, 0L, 50L);
 	hud_iFPSGraphMax   = Clamp( hud_iFPSGraphMax, 50L, 500L);
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‚¬ë‚´ í…ŒìŠ¤íŠ¸ ì‘ì—…	08.10
-	// NOTE : FRAMEì„ ì•ˆë³´ì´ê²Œ í•˜ê¸° ìœ„í•œ ë¶€ë¶„.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ »ç³» Å×½ºÆ® ÀÛ¾÷	08.10
+	// NOTE : FRAMEÀ» ¾Èº¸ÀÌ°Ô ÇÏ±â À§ÇÑ ºÎºĞ.
 	// if stats aren't required
 	if( hud_iStats==0 ) {
 		// display nothing
@@ -2032,7 +2142,7 @@ static void PrintStats( CDrawPort *pdpDrawPort)
 		_iCheckMax = 0;
 		return;
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‚¬ë‚´ í…ŒìŠ¤íŠ¸ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ »ç³» Å×½ºÆ® ÀÛ¾÷		08.10
 
 	// calculate FPS
 	FLOAT fFPS = 0.0f;
@@ -2341,12 +2451,12 @@ static BOOL _bPlayerViewRendered = FALSE;
 //-----------------------------------------------------------------------------
 // Purpose: redraw all game views (for case of split-screens and such)
 // Input  : *pdpDrawPort - 
-//			ulFlags - ë Œë”ë§ ê´€ë ¨ í”Œë˜ê·¸.
+//			ulFlags - ·»´õ¸µ °ü·Ã ÇÃ·¡±×.
 //-----------------------------------------------------------------------------
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
-// ì¸ìë¡œ ë„˜ê²¨ì§€ëŠ” ì—”í‹°í‹°ê°€ ë°˜ë“œì‹œ Playerì´ì–´ì•¼ í•¨.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
+// ÀÎÀÚ·Î ³Ñ°ÜÁö´Â ¿£Æ¼Æ¼°¡ ¹İµå½Ã PlayerÀÌ¾î¾ß ÇÔ.
 void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penViewer)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 {
 	// if thumbnail saving has been required
 	if( _fnmThumb!="")
@@ -2395,10 +2505,10 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 	BOOL bClientJoined = FALSE;
 	if( gm_bGameOn && gm_CurrentSplitScreenCfg != SSC_DEDICATED )		// yjpark
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹±ê¸€ ë˜ì ¼ ì‘ì—…	07.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ì±Û ´øÁ¯ ÀÛ¾÷	07.29
 		//INDEX ctObservers = Clamp(gam_iObserverConfig, 0L, 4L);
 		INDEX ctObservers = Clamp(gam_iObserverConfig, 0L, 1L);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ ë˜ì ¼ ì‘ì—…		07.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û ´øÁ¯ ÀÛ¾÷		07.29
 		INDEX iObserverOffset = ClampDn(gam_iObserverOffset, 0L);
 		if (gm_CurrentSplitScreenCfg==SSC_OBSERVER) {
 			ctObservers = ClampDn(ctObservers, 1L);
@@ -2413,7 +2523,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 		MakeSplitDrawports(gm_CurrentSplitScreenCfg, ctObservers, pdpDrawPort);
 
 		// get number of local players
-		// ê²Œì„ ì‹œì‘í›„ í”Œë ˆì´ì–´ê°€ ì„¤ì •ë˜ì—ˆë‹¤ë©´, ctLocals = 1ì´ ë˜ê² ì§€?
+		// °ÔÀÓ ½ÃÀÛÈÄ ÇÃ·¹ÀÌ¾î°¡ ¼³Á¤µÇ¾ú´Ù¸é, ctLocals = 1ÀÌ µÇ°ÚÁö?
 		INDEX ctLocals = 0;
 		{for (INDEX i=0; i<NET_MAXGAMEPLAYERS; i++) 
 		{
@@ -2423,7 +2533,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 			}
 		}}
 
-		// ë·°ì‰ ì‹œì ì´ ë˜ëŠ” ì—”í‹°í‹°.
+		// ºäÀ× ½ÃÁ¡ÀÌ µÇ´Â ¿£Æ¼Æ¼.
 		CEntity *apenViewers[7];
 		INDEX ctViewers = 0;
 		if(penViewer != NULL)
@@ -2454,11 +2564,11 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 		// timer must not occur during prescanning
 		{ CTSingleLock csTimer(&_pTimer->tm_csHooks, TRUE);
 		// for each local player
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹±ê¸€ ë˜ì ¼ ì‘ì—…	07.29
-		// ê²Œì„ ì‹œì‘í›„ì—ëŠ” í”Œë ˆì´ì–´ ì—”í‹°í‹°ê°€ 1ì´ ë˜ê² ì§€?
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ì±Û ´øÁ¯ ÀÛ¾÷	07.29
+		// °ÔÀÓ ½ÃÀÛÈÄ¿¡´Â ÇÃ·¹ÀÌ¾î ¿£Æ¼Æ¼°¡ 1ÀÌ µÇ°ÚÁö?
 		for( INDEX i=0; i<NET_MAXGAMEPLAYERS; i++) 
 		{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ ë˜ì ¼ ì‘ì—…		07.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û ´øÁ¯ ÀÛ¾÷		07.29
 			// if local player
 			CPlayerSource *ppls = gm_lpLocalPlayers[i].lp_pplsPlayerSource;
 			if( ppls!=NULL) 
@@ -2491,16 +2601,16 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 
 		// fill in all players that are not local
 		INDEX ctNonlocals = 0;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹±ê¸€ ë˜ì ¼ ì‘ì—…	07.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ì±Û ´øÁ¯ ÀÛ¾÷	07.29
 		CEntity *apenNonlocals[NET_MAXGAMEPLAYERS];
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ ë˜ì ¼ ì‘ì—…		07.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û ´øÁ¯ ÀÛ¾÷		07.29
 		memset(apenNonlocals, 0, sizeof(apenNonlocals));
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹±ê¸€ ë˜ì ¼ ì‘ì—…	07.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ì±Û ´øÁ¯ ÀÛ¾÷	07.29
 		{for (INDEX i=0; i<NET_MAXGAMEPLAYERS; i++) 
 		{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ ë˜ì ¼ ì‘ì—…		07.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û ´øÁ¯ ÀÛ¾÷		07.29
 
-			// í”Œë ˆì´ì–´ ì—”í‹°í‹°ì˜ í¬ì¸í„°ë¥¼ ì–»ì–´ì„œ...
+			// ÇÃ·¹ÀÌ¾î ¿£Æ¼Æ¼ÀÇ Æ÷ÀÎÅÍ¸¦ ¾ò¾î¼­...
 			CEntity *pen = CEntity::GetPlayerEntity(i);
 			if (pen!=NULL && !_pNetwork->IsPlayerLocal(pen)) 
 			{
@@ -2508,7 +2618,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 			}
 		}}
 
-		// Local Playerê°€ ìˆì„ê²½ìš°...
+		// Local Player°¡ ÀÖÀ»°æ¿ì...
 		if (ctNonlocals>0) 
 		{
 			// for each observer
@@ -2517,13 +2627,13 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 				// get the given player with given offset that is not local
 				INDEX iPlayer = (i+iObserverOffset)%ctNonlocals;
 
-				// ë·°ì–´ì— Non Local Playerë¥¼ ë„£ì–´ì¤Œ.
+				// ºä¾î¿¡ Non Local Player¸¦ ³Ö¾îÁÜ.
 				apenViewers[ctViewers++] = apenNonlocals[iPlayer];
 			}}
 		}
 
 		// for each view
-		// ê°ê°ì˜ ë·°ì— ëŒ€í•´ì„œ...
+		// °¢°¢ÀÇ ºä¿¡ ´ëÇØ¼­...
 		BOOL bHadViewers = FALSE;
 		for (INDEX i=0; i<ctViewers; i++) 
 		{
@@ -2533,18 +2643,15 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 				pdp->SetAsCurrent();
 
 				// if there is a viewer
-				// ë·°ì–´ê°€ ìˆì„ë•Œë©´, í™”ë©´ì„ ë Œë”ë§ í•´ì¤Œ.
+				// ºä¾î°¡ ÀÖÀ»¶§¸é, È­¸éÀ» ·»´õ¸µ ÇØÁÜ.
 				if (apenViewers[i]!=NULL) 
 				{
 					bHadViewers = TRUE;
 
 					_bPlayerViewRendered = TRUE;
 					// render it
-					// ê²°êµ­ì€ RenderView()ë¥¼ í˜¸ì¶œí•¨.
+					// °á±¹Àº RenderView()¸¦ È£ÃâÇÔ.
 					apenViewers[i]->RenderGameView(pdp, (void*)ulFlags);
-
-					// Render UIs
-					//_pUIMgr->Render( pdp );		// yjpark
 				} 
 				else 
 				{
@@ -2559,7 +2666,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 			pdpDrawPort->Fill( C_BLACK|CT_OPAQUE);
 		}
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 		// create drawport for messages (left on DH)
 		CDrawPort dpMsg(pdpDrawPort, 0);
 		if ((ulFlags&GRV_SHOWEXTRAS)) 
@@ -2567,11 +2674,11 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 			dpMsg.SetAsCurrent();
 			// print pause indicators
 			CTString strIndicator;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	08.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	08.22
 			/*
 			if (_pNetwork->IsDisconnected()) 
 			{
-				//0611 kwon ìˆ˜ì •.
+				//0611 kwon ¼öÁ¤.
 				strIndicator.PrintF(TRANS("Disconnected: %s\n"), (const char *)_pNetwork->WhyDisconnected());
 				//strIndicator.PrintF(TRANS("Disconnected: %s\nPress F9 to reconnect"), (const char *)_pNetwork->WhyDisconnected());
 			} 
@@ -2597,7 +2704,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 				hud_bShowPauseText = 1; // clamp
 			} 
 			*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		08.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ ´ÙÁß °ø°İ ÀÛ¾÷		08.22
 
 			extern INDEX net_bLocalPrediction;      
 			if (strIndicator!="") 
@@ -2657,7 +2764,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 	
 			/*
 			// print last few lines from console to top of screen
-			// ìŠ¤í¬ë¦°ì˜ ê¼­ëŒ€ê¸°ì— ì½˜ì†”ì°½ì˜ ë§ˆì§€ë§‰ ë¼ì¸ì„ ì¶œë ¥í•©ë‹ˆë‹¤.
+			// ½ºÅ©¸°ÀÇ ²À´ë±â¿¡ ÄÜ¼ÖÃ¢ÀÇ ¸¶Áö¸· ¶óÀÎÀ» Ãâ·ÂÇÕ´Ï´Ù.
 			if (_pGame->gm_csConsoleState==CS_OFF) 
 				ConsolePrintLastLines( &dpMsg);				
 
@@ -2673,9 +2780,9 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 			}
 			*/
 		}		
-//ê°•ë™ë¯¼/ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î/ ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî ÁØºñ ÀÛ¾÷	08.10
 		/*
 		// keep frames' time if required
 		if( gm_bProfileDemo)
@@ -2703,7 +2810,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 		// execute cvar after demoplay
 		if( _pNetwork->IsDemoPlayFinished() && dem_strPostExec!="") _pShell->Execute(dem_strPostExec);
 		*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî ÁØºñ ÀÛ¾÷		08.10
 	}
 	// if no game is active
 	else
@@ -2727,7 +2834,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 	_pSound->UpdateSounds();
 	_pGfx->gl_bAllowProbing = FALSE;
 
-	// í™”ë©´ ìº¡ì³ì‹œ ì²˜ë¦¬ ë£¨í‹´.
+	// È­¸é Ä¸ÃÄ½Ã Ã³¸® ·çÆ¾.
 	if( bSaveScreenShot || dem_iAnimFrame>=0)
 	{
 		// make the screen shot directory if it doesn't already exist
@@ -2738,13 +2845,13 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 
 		// create a name for screenshot
 		CTFileName fnmScreenShot;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	09.06
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	09.06
 		//if( dem_iAnimFrame<0) 
 		//{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		09.06
-			// fnmScreenShot = MakeScreenShotName();			// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ³¡ ´ÙÁß °ø°İ ÀÛ¾÷		09.06
+			// fnmScreenShot = MakeScreenShotName();			// ¿øº».
 			fnmScreenShot = fnmExpanded + "\\" + MakeScreenShotName();
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	09.06
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	09.06
 			//}
 		/*
 		else 
@@ -2756,7 +2863,7 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 			dem_iAnimFrame+=1;
 		}
 		*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		09.06
+//°­µ¿¹Î ¼öÁ¤ ³¡ ´ÙÁß °ø°İ ÀÛ¾÷		09.06
 		// grab screen creating image info
 		CImageInfo iiImageInfo;
 		pdpDrawPort->SetAsCurrent();
@@ -2770,7 +2877,9 @@ void CGame::GameRedrawView( CDrawPort *pdpDrawPort, ULONG ulFlags, CEntity* penV
 			// save screen shot as TGA
 			else
 				iiImageInfo.SaveTGA_t( fnmScreenShot);
-			if( dem_iAnimFrame<0) CPrintF( TRANS("screen shot: %s\n"), (CTString&)fnmScreenShot);
+
+			if( dem_iAnimFrame<0) 
+				CPrintF( TRANS("screen shot: %s\n"), (CTString&)fnmScreenShot);
 		}
 		// if failed
 		catch (char *strError) 
@@ -2795,7 +2904,7 @@ void CGame::GameRedrawCursor(CDrawPort *pdpDrawPort, ULONG ulFlags)
 
 	BOOL bHadViewers = FALSE;
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Bug Fix)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Bug Fix)(0.1)
 	CDrawPort *pdp = pdpDrawPort;
 	if (pdp!=NULL) {
 		pdp->SetAsCurrent();
@@ -2804,11 +2913,17 @@ void CGame::GameRedrawCursor(CDrawPort *pdpDrawPort, ULONG ulFlags)
 		if (apenViewers != NULL) {
 			bHadViewers = TRUE;			
 			_bPlayerViewRendered = TRUE;
-			// render it
-			apenViewers->RenderCursor(pdp, (void*)ulFlags);
+			
+			extern ENGINE_API cWeb g_web;
+
+			if (!g_web.IsWebHandle())
+			{
+				// render it
+				apenViewers->RenderCursor(pdp, (void*)ulFlags);
+			}
 		}
 	}	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Bug Fix)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Bug Fix)(0.1)
 }
 
 /*
@@ -2994,12 +3109,12 @@ INDEX FixQuicksaveDir(const CTFileName &fnmDir, INDEX ctMax)
 }
 */
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	08.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	08.22
 void CGame::CaptureScreen()
 {	
 	SaveScreenShot();
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		08.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ ´ÙÁß °ø°İ ÀÛ¾÷		08.22
 
 /*
 CTFileName CGame::GetQuickSaveName(BOOL bSave)
@@ -3037,100 +3152,17 @@ CTFileName CGame::GetQuickSaveName(BOOL bSave)
 
 void CGame::GameMainLoop(void)
 {
-/*	
-	if (gam_bQuickSave && GetSP()->sp_gmGameMode!=CSessionProperties::GM_FLYOVER) {
-		if (gam_bQuickSave==2) {
-			_tvMenuQuickSave = _pTimer->GetHighPrecisionTimer();
-		}
-		gam_bQuickSave = FALSE;
-		CTFileName fnm = GetQuickSaveName(TRUE);
-		CTString strDes = GetDefaultGameDescription(TRUE);
-		SaveGame(fnm);
-		SaveStringVar(fnm.NoExt()+".des", strDes);
-	}
-*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…	08.10
-	/*
-	// if quickload invoked
-	if (gam_bQuickLoad && GetSP()->sp_gmGameMode!=CSessionProperties::GM_FLYOVER) 
-	{
-		gam_bQuickLoad = FALSE;
-		// if no game active, or this computer is server
-		if (!gm_bGameOn || _pNetwork->IsServer()) 
-		{
-			// do a quickload
-			LoadGame(GetQuickSaveName(FALSE));
-		// otherwise
-		} else {
-			// rejoin current section
-			JoinGame(CNetworkSession(gam_strJoinAddress));
-		}
-	}
-	if (gam_iRecordHighScore>=0) {
-		RecordHighScore();
-		gam_iRecordHighScore = -1.0f;
-	}
-	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ ì¤€ë¹„ ì‘ì—…		08.10
-	/*
-	// if server was restarted
-	if (gm_bGameOn && !_pNetwork->IsServer() && _pNetwork->IsGameFinished() && _pNetwork->IsDisconnected()) 
-	{
-		Sleep(1000);
-		// automatically reconnect
-		JoinGame(CNetworkSession(gam_strJoinAddress));
-	}
-
-	if (_bStartProfilingNextTime) 
-	{
-		_bStartProfilingNextTime = FALSE;
-		_bProfiling = TRUE;
-		_ctProfileRecording = 50;
-		// reset the profiles
-		_pfNetworkProfile.Reset();
-	} 
-	else if (_bProfiling) 
-	{
-		_ctProfileRecording--;
-		if (_ctProfileRecording<=0) 
-		{
-			_bProfiling = FALSE;
-			_bDumpNextTime = TRUE;
-			_strProfile = "===========================================================\n";
-
-			CTString strNetworkReport;
-			_pfNetworkProfile.Report(strNetworkReport);
-			_strProfile+=strNetworkReport;
-			_pfNetworkProfile.Reset();
-
-			CPrintF( TRANS("Profiling done.\n"));
-		}
-	}
-
-	if (_bDumpNextTime) 
-	{
-		_bDumpNextTime = FALSE;
-		try 
-		{
-			// create a file for profile
-			CTFileStream strmProfile;
-			strmProfile.Create_t(CTString("Game.profile"));
-			strmProfile.Write_t(_strProfile, strlen(_strProfile));
-		} 
-		catch (char *strError) 
-		{
-			CPutString(strError);
-		}
-	}
-	*/
-	// ì´ ìœ—ë¶€ë¶„ì€ ê±°ì˜ë‹¤ ì“¸ëª¨ì—†ìŒ.
-
-	// if game is started
-	// ì‹¤ì§ˆì ìœ¼ë¡œ ê²Œì„ì˜ ë£¨í‹´.
+	// ½ÇÁúÀûÀ¸·Î °ÔÀÓÀÇ ·çÆ¾.
 	if (gm_bGameOn) 
 	{
 		// do main loop procesing
 		_pNetwork->MainLoop();
+
+		ULONG	cur = (ULONG)_pTimer->GetHighPrecisionTimer().GetMilliseconds();
+		float	delta = (float)(cur - m_oldTime) * 0.001f;
+		ActorMgr::getSingleton()->Update(delta, cur);
+		SE_Get_UIManagerPtr()->Update(delta, cur);
+		m_oldTime = cur;
 	}
 }
 
@@ -3252,7 +3284,7 @@ void CGame::LCDRenderClouds1(void)
 	_pdp_SE->PutTexture(&_toBackdrop, _boxScreen_SE, C_WHITE|255);
 
 	if (!_bPopup) {
-//0214 ë°±ê·¸ë¼ìš´ë“œì— ìƒ˜ ì•ˆë‚˜ì˜¤ê²Œ í•˜ê¸°.
+//0214 ¹é±×¶ó¿îµå¿¡ »ù ¾È³ª¿À°Ô ÇÏ±â.
 /*    
 		PIXaabbox2D box;
 				
@@ -3418,4 +3450,9 @@ void CGame::MenuPreRenderMenu(const char *strMenuName)
 }
 void CGame::MenuPostRenderMenu(const char *strMenuName)
 {
+}
+
+void CGame::SetHud_Stats( INDEX stats )
+{
+	hud_iStats = stats;
 }

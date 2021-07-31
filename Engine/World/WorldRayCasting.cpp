@@ -73,10 +73,10 @@ void CCastRay::Init(CEntity *penOrigin, const FLOAT3D &vOrigin, const FLOAT3D &v
 	cr_iBoneHit	 = -1;
 
 	cl_plRay.pl_PositionVector = vOrigin;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	DirectionVectorToAnglesNoSnap((vTarget-vOrigin).Normalize(), cl_plRay.pl_OrientationAngle);
 	//DirectionVectorToAngles((vTarget-vOrigin).Normalize(), cl_plRay.pl_OrientationAngle);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 }
 
 /*
@@ -108,27 +108,28 @@ CCastRay::~CCastRay(void)
 
 void CCastRay::ClearSectorList(void)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	// for each active sector
-	//loop unrolling, íš¨ê³¼ëŠ” ë¯¸ì§€ìˆ˜.
+	//loop unrolling, È¿°ú´Â ¹ÌÁö¼ö.
 	INDEX cnt = _aas.Count();
 	INDEX cnt16 = cnt & 0xFFFFFFF0;
-#define INNER_LOOP {_aas[ias++].as_pbsc->bsc_ulFlags&=~BSCF_RAYTESTED;} 0
+	INDEX ias;
+#define INNER_LOOP {_aas[ias++].as_pbsc->bsc_ulFlags&=~BSCF_RAYTESTED;}
 	// mark it as inactive
-	for(INDEX ias=0; ias<cnt16;)
+	for( ias=0; ias<cnt16;)
 	{
 		INNER_LOOP; INNER_LOOP; INNER_LOOP; INNER_LOOP;
 		INNER_LOOP; INNER_LOOP; INNER_LOOP; INNER_LOOP;
 		INNER_LOOP; INNER_LOOP; INNER_LOOP; INNER_LOOP;
 		INNER_LOOP; INNER_LOOP; INNER_LOOP; INNER_LOOP;
 	}
-	for(ias=cnt16; ias<cnt;)
+	for( ias = cnt16; ias < cnt; )
 	{
 		INNER_LOOP;
 	}
 #undef INNER_LOOP
 	_aas.PopAll();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 }
 
 void CCastRay::TestModelSimple(CEntity *penModel, CModelObject &mo)
@@ -253,7 +254,7 @@ void CCastRay::TestModel(CEntity *penModel)
 	// if hidden model
 	if (penModel->IsFlagOn(ENF_HIDDEN)&&
 		(CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-		(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!penModel->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npcëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+		(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!penModel->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc´Â º¼ ¼ö ÀÖ´Ù.
 		return;
 
 	// get its model
@@ -296,28 +297,28 @@ void CCastRay::TestSkaModel(CEntity *penModel)
 	
 	switch (g_bSlaveNoTarget)
 	{
-	case 2: // ìºë¦­í„° 
+	case 2: // Ä³¸¯ÅÍ 
 		{
 			if (penModel->IsCharacter())
 			{
 				return;
 			}
 		}
-	case 1: // ì†Œí™˜ìˆ˜ ë° í« 
+	case 1: // ¼ÒÈ¯¼ö ¹× Æê (ÅäÅÛ, ¸ó½ºÅÍ ¿ëº´ Ãß°¡)
 		{
-			if (penModel->IsSlave() || penModel->IsSlave() || penModel->IsWildPet())
+			if (penModel->IsSlave() || penModel->IsPet() || penModel->IsWildPet() || penModel->GetFirstExFlags()&ENF_EX1_TOTEM || penModel->GetFirstExFlags()&ENF_EX1_MONSTER_MERCENARY)
 			{
 				return;
 			}
 		}
-	default: // ëª¨ë‘ í—ˆê°€
+	default: // ¸ğµÎ Çã°¡
 		break;
 	}
 
 	// if hidden model
 	if (penModel->IsFlagOn(ENF_HIDDEN)&&
 		(CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-		(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!penModel->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npcëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+		(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!penModel->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc´Â º¼ ¼ö ÀÖ´Ù.
 		return;
 
 	if( penModel->GetFirstExFlags() &  (ENF_EX1_CURRENT_PET | ENF_EX1_CURRENT_SLAVE) )
@@ -459,19 +460,23 @@ void CCastRay::TestBrushSector(CBrushSector *pbscSector)
 		if (cr_penOrigin==NULL) {
 			// if the polygon is portal
 			if (ulFlags&BPOF_PORTAL) {
+				extern BOOL _bShowPortalPolygon;
+
 				// if it is translucent or selected
 				if (ulFlags&(BPOF_TRANSLUCENT|BPOF_TRANSPARENT|BPOF_SELECTED)) {
 					// if translucent portals should be passed through
 					if (!cr_bHitTranslucentPortals) {
 						// skip this polygon
-						continue;
+						if( !_bShowPortalPolygon )
+							continue;
 					}
 				// if it is not translucent
 				} else {
 					 // if portals should be passed through
 					if (!cr_bHitPortals) {
 						// skip this polygon
-						continue;
+						if( !_bShowPortalPolygon )
+							continue;
 					}
 				}
 			}
@@ -482,13 +487,13 @@ void CCastRay::TestBrushSector(CBrushSector *pbscSector)
 				continue;
 			}
 		}
-// ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		// ê°€ë” NULLë¡œ ë“¤ì–´ì˜¤ëŠ”ë“¯...
-// FIXME : ì›ì¸ì„ ì°¾ì•„ì„œ ìˆ˜ì •í•  ê²ƒ.
+// °­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		// °¡²û NULL·Î µé¾î¿À´Âµí...
+// FIXME : ¿øÀÎÀ» Ã£¾Æ¼­ ¼öÁ¤ÇÒ °Í.
 		if( !bpoPolygon.bpo_pbplPlane )
 		{
 			continue;
 		}
-// ê°•ë™ë¯¼ ìˆ˜ì • ë		// ê°€ë” NULLë¡œ ë“¤ì–´ì˜¤ëŠ”ë“¯...
+// °­µ¿¹Î ¼öÁ¤ ³¡		// °¡²û NULL·Î µé¾î¿À´Âµí...
 		// get distances of ray points from the polygon plane
 		FLOAT fDistance0 = bpoPolygon.bpo_pbplPlane->bpl_plAbsolute.PointDistance(cr_vOrigin);
 		FLOAT fDistance1 = bpoPolygon.bpo_pbplPlane->bpl_plAbsolute.PointDistance(cr_vTarget);
@@ -770,10 +775,10 @@ void CCastRay::Cast(CWorld *pwoWorld)
 	cr_penHit = NULL;
 	if (cr_bPhysical) 
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¬¼ í¼í¬ë¨¼ìŠ¤ ì‘ì—…
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
 		//cr_ulPassablePolygons = BPOF_PASSABLE|BPOF_SHOOTTHRU;
 		cr_ulPassablePolygons = BPOF_PASSABLE;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¬¼ í¼í¬ë¨¼ìŠ¤ ì‘ì—…
+//°­µ¿¹Î ¼öÁ¤ ³¡ ¹° ÆÛÆ÷¸Õ½º ÀÛ¾÷
 	} 
 	else 
 	{

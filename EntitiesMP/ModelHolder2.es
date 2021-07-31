@@ -672,108 +672,6 @@ functions:
 
 
 procedures:
-	Die()
-	{
-		// for each child of this entity
-		{FOREACHINLIST(CEntity, en_lnInParent, en_lhChildren, itenChild) {
-			// send it destruction event
-			itenChild->SendEvent(ERangeModelDestruction(),TRUE);
-		}}
-
-		// spawn debris 
-		CModelDestruction *pmd=GetDestruction();
-		pmd->SpawnDebris(this);
-		// if there is another phase in destruction
-		CEntity *penNext = pmd->GetNextPhase();    
-		if( penNext!=NULL) {
-			// copy it here
-			CEntity *penNew = GetWorld()->CopyEntityInWorld( *penNext, GetPlacement() );
-			if( IsOfClass( penNew, &CModelHolder2_DLLClass)) {
-				penNew->GetModelObject()->StretchModel(GetModelObject()->mo_Stretch);
-				penNew->ModelChangeNotify();
-				((CModelHolder2 *)penNew)->m_colBurning=m_colBurning;
-				((CModelHolder2 *)penNew)->m_fChainSawCutDamage=m_fChainSawCutDamage;
-				
-				if( pmd->m_iStartAnim!=-1)
-				{
-					penNew->GetModelObject()->PlayAnim(pmd->m_iStartAnim, 0);
-				}
-				
-				// copy custom shading parameters
-				CModelHolder2 &mhNew=*((CModelHolder2 *)penNew);
-				mhNew.m_cstCustomShading=m_cstCustomShading;
-				mhNew.m_colLight=m_colLight;
-				mhNew.m_colAmbient=m_colAmbient;
-				mhNew.m_fMipFadeDist = m_fMipFadeDist;
-				mhNew.m_fMipFadeLen  = m_fMipFadeLen;
-				mhNew.m_fMipAdd = m_fMipAdd;
-				mhNew.m_fMipMul = m_fMipMul;
-				// domino death for chainsaw
-				if(m_dmtLastDamageType==DMT_CHAINSAW)
-				{
-					EDeath eDeath;  // we don't need any extra parameters
-					mhNew.m_fChainSawCutDamage=0.0f;
-					mhNew.m_dmtLastDamageType=DMT_CHAINSAW;
-					penNew->SendEvent(eDeath);
-				}
-			} else if( IsOfClass( penNew, "ModelHolder3")) {
-				penNew->GetModelInstance()->StretchModel(GetModelObject()->mo_Stretch);
-				penNew->ModelChangeNotify();
-				((CModelHolder3 *)penNew)->m_colBurning=m_colBurning;
-				((CModelHolder3 *)penNew)->m_fChainSawCutDamage=m_fChainSawCutDamage;
-				
-				if( pmd->m_strStartAnim != "")
-
-				{
-					INDEX iAnim = ska_GetIDFromStringTable(pmd->m_strStartAnim);
-					INDEX iDummy1, iDummy2;
-					if (GetModelInstance()->FindAnimationByID(iAnim, &iDummy1, &iDummy2)) { 
-						penNew->NewClearState(0.05f);
-						penNew->AddAnimation(iAnim, 0, 1, 1);            
-					}
-				}
-				
-				// copy custom shading parameters
-				CModelHolder3 &mhNew=*((CModelHolder3 *)penNew);
-				mhNew.m_cstCustomShading=m_cstCustomShading;
-				mhNew.m_colLight=m_colLight;
-				mhNew.m_colAmbient=m_colAmbient;        
-				{ mhNew.m_rMipFadeDistMetric = MipFactor_LogToMetric(m_fMipFadeDist);
-					mhNew.m_fMipFadeLenMetric  = MipFactor_LogToMetric(m_fMipFadeLen + m_fMipFadeDist)
-																			 - mhNew.m_rMipFadeDistMetric;
-					/*mhNew.m_fMipAdd = m_fMipAdd;*/
-					/*mhNew.m_fMipMul = m_fMipMul;*/ }
-				// domino death for chainsaw
-				if(m_dmtLastDamageType==DMT_CHAINSAW)
-				{
-					EDeath eDeath;  // we don't need any extra parameters
-					mhNew.m_fChainSawCutDamage=0.0f;
-					mhNew.m_dmtLastDamageType=DMT_CHAINSAW;
-					penNew->SendEvent(eDeath);
-				}
-			}      
-		}
-
-/* currently, environment destruction does not yield score.
-	update statistics, if score is re-enabled!
-		// send score to who killed you
-		if (m_penLastDamager!=NULL) {
-			EReceiveScore eScore;
-			eScore.fPoints = 10.0f;
-			m_penLastDamager->SendEvent(eScore);
-		}*/
-
-		// if there is a destruction target
-		if (m_penDestroyTarget!=NULL) {
-			// notify it
-			SendToTarget(m_penDestroyTarget, EET_TRIGGER, m_penLastDamager);
-		}
-
-		// destroy yourself
-		Destroy(FALSE);
-		return;
-	}
-
 	Main()
 	{
 		SetFlagOn(ENF_MARKDESTROY);
@@ -916,5 +814,107 @@ procedures:
 				resume;
 			}
 		};
+	}
+
+	Die()
+	{
+		// for each child of this entity
+		{FOREACHINLIST(CEntity, en_lnInParent, en_lhChildren, itenChild) {
+			// send it destruction event
+			itenChild->SendEvent(ERangeModelDestruction(),TRUE);
+		}}
+
+		// spawn debris 
+		CModelDestruction *pmd=GetDestruction();
+		pmd->SpawnDebris(this);
+		// if there is another phase in destruction
+		CEntity *penNext = pmd->GetNextPhase();    
+		if( penNext!=NULL) {
+			// copy it here
+			CEntity *penNew = GetWorld()->CopyEntityInWorld( *penNext, GetPlacement() );
+			if( IsOfClass( penNew, &CModelHolder2_DLLClass)) {
+				penNew->GetModelObject()->StretchModel(GetModelObject()->mo_Stretch);
+				penNew->ModelChangeNotify();
+				((CModelHolder2 *)penNew)->m_colBurning=m_colBurning;
+				((CModelHolder2 *)penNew)->m_fChainSawCutDamage=m_fChainSawCutDamage;
+				
+				if( pmd->m_iStartAnim!=-1)
+				{
+					penNew->GetModelObject()->PlayAnim(pmd->m_iStartAnim, 0);
+				}
+				
+				// copy custom shading parameters
+				CModelHolder2 &mhNew=*((CModelHolder2 *)penNew);
+				mhNew.m_cstCustomShading=m_cstCustomShading;
+				mhNew.m_colLight=m_colLight;
+				mhNew.m_colAmbient=m_colAmbient;
+				mhNew.m_fMipFadeDist = m_fMipFadeDist;
+				mhNew.m_fMipFadeLen  = m_fMipFadeLen;
+				mhNew.m_fMipAdd = m_fMipAdd;
+				mhNew.m_fMipMul = m_fMipMul;
+				// domino death for chainsaw
+				if(m_dmtLastDamageType==DMT_CHAINSAW)
+				{
+					EDeath eDeath;  // we don't need any extra parameters
+					mhNew.m_fChainSawCutDamage=0.0f;
+					mhNew.m_dmtLastDamageType=DMT_CHAINSAW;
+					penNew->SendEvent(eDeath);
+				}
+			} else if( IsOfClass( penNew, "ModelHolder3")) {
+				penNew->GetModelInstance()->StretchModel(GetModelObject()->mo_Stretch);
+				penNew->ModelChangeNotify();
+				((CModelHolder3 *)penNew)->m_colBurning=m_colBurning;
+				((CModelHolder3 *)penNew)->m_fChainSawCutDamage=m_fChainSawCutDamage;
+				
+				if( pmd->m_strStartAnim != "")
+
+				{
+					INDEX iAnim = ska_GetIDFromStringTable(pmd->m_strStartAnim);
+					INDEX iDummy1, iDummy2;
+					if (GetModelInstance()->FindAnimationByID(iAnim, &iDummy1, &iDummy2)) { 
+						penNew->NewClearState(0.05f);
+						penNew->AddAnimation(iAnim, 0, 1, 1);            
+					}
+				}
+				
+				// copy custom shading parameters
+				CModelHolder3 &mhNew=*((CModelHolder3 *)penNew);
+				mhNew.m_cstCustomShading=m_cstCustomShading;
+				mhNew.m_colLight=m_colLight;
+				mhNew.m_colAmbient=m_colAmbient;        
+				{ mhNew.m_rMipFadeDistMetric = MipFactor_LogToMetric(m_fMipFadeDist);
+					mhNew.m_fMipFadeLenMetric  = MipFactor_LogToMetric(m_fMipFadeLen + m_fMipFadeDist)
+																			 - mhNew.m_rMipFadeDistMetric;
+					/*mhNew.m_fMipAdd = m_fMipAdd;*/
+					/*mhNew.m_fMipMul = m_fMipMul;*/ }
+				// domino death for chainsaw
+				if(m_dmtLastDamageType==DMT_CHAINSAW)
+				{
+					EDeath eDeath;  // we don't need any extra parameters
+					mhNew.m_fChainSawCutDamage=0.0f;
+					mhNew.m_dmtLastDamageType=DMT_CHAINSAW;
+					penNew->SendEvent(eDeath);
+				}
+			}      
+		}
+
+/* currently, environment destruction does not yield score.
+	update statistics, if score is re-enabled!
+		// send score to who killed you
+		if (m_penLastDamager!=NULL) {
+			EReceiveScore eScore;
+			eScore.fPoints = 10.0f;
+			m_penLastDamager->SendEvent(eScore);
+		}*/
+
+		// if there is a destruction target
+		if (m_penDestroyTarget!=NULL) {
+			// notify it
+			SendToTarget(m_penDestroyTarget, EET_TRIGGER, m_penLastDamager);
+		}
+
+		// destroy yourself
+		Destroy(FALSE);
+		return;
 	}
 };

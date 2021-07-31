@@ -8,7 +8,7 @@
 //#include <Engine/SlaveInfo.h>
 #include <Engine/Entities/MobData.h>
 
-// ìºë¦­í„° ì• ë‹ˆë©”ì´ì…˜.
+// Ä³¸¯ÅÍ ¾Ö´Ï¸ŞÀÌ¼Ç.
 class ENGINE_API CCharacterAnimation
 {
 public:
@@ -22,14 +22,14 @@ public:
 };
 
 
-// ì• ì™„ë™ë¬¼ ì• ë‹ˆë©”ì´ì…˜.
+// ¾Ö¿Ïµ¿¹° ¾Ö´Ï¸ŞÀÌ¼Ç.
 class ENGINE_API CPetAnimation
 {
 public:
 	INDEX	m_iAnimation[PET_ANIM_TOTAL];
 };
 /*
-// ì†Œí™˜ìˆ˜ ì• ë‹ˆë©”ì´ì…˜
+// ¼ÒÈ¯¼ö ¾Ö´Ï¸ŞÀÌ¼Ç
 class ENGINE_API CSlaveAnimation
 {
 public:

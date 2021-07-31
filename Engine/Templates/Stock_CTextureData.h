@@ -21,6 +21,7 @@
 
 ENGINE_API extern CStock_CTextureData *_pTextureStock;
 
+#define STOCK_RELEASE(p) { if(p){ _pTextureStock->Release(p); p = NULL; } }
 
 #endif  /* include-once check. */
 

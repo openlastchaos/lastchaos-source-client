@@ -187,7 +187,7 @@ BOOL CModelerApp::SubInitInstance()
 #endif
 
   // settings will be saved into registry instead of ini file
-  SetRegistryKey( "CroTeam");
+  SetRegistryKey( "LastChaos");
 
 	LoadStdProfileSettings(8);  // Load standard INI file options (including MRU)
 
@@ -231,10 +231,10 @@ BOOL CModelerApp::SubInitInstance()
   // load startup script
   _pShell->Execute( "include \"Scripts\\Modeler_startup.ini\"");
   
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Modify Default API to D3D)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Default API to D3D)(0.1)
   m_iApi=GAT_D3D;
   m_iApi=GetProfileInt("Display modes", "SED Gfx API", GAT_D3D);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Default API to D3D)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Default API to D3D)(0.1)
   // (re)set default display mode
   _pGfx->ResetDisplayMode((enum GfxAPIType) m_iApi);
 

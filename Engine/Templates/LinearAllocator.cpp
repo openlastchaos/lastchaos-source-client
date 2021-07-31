@@ -154,9 +154,9 @@ inline void CLinearAllocator<Type>::Reset(void)
 }
 
 // make 'for' construct for walking all objects in a linear allocator
-#define FOREACHINLINEARALLOCATOR(allocator, type, pt) \
+#define FOREACHINLINEARALLOCATOR(allocator, flag, pt) \
 FOREACHINLIST(CLABlockInfo, bi_lnNode, allocator.la_lhBlocks, pt##itBlock) { \
-    for(type *pt = (type *)pt##itBlock->bi_pvMemory; pt<(type *)pt##itBlock->bi_pvEnd; pt++)
+    for(flag *pt = (flag *)pt##itBlock->bi_pvMemory; pt<(flag *)pt##itBlock->bi_pvEnd; pt++)
 
 
 #endif  /* include-once check. */

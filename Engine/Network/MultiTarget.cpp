@@ -39,7 +39,7 @@ void CSelectedEntities::Clear()
 		for( ENTITIES_ITERATOR it = vectorSelectedEntities.begin();
 			it != vectorSelectedEntities.end(); )
 		{
-			vectorSelectedEntities.erase( it );			
+			it = vectorSelectedEntities.erase( it );			
 		}
 		//vectorSelectedEntities.clear();			
 	}
@@ -63,5 +63,5 @@ void CSelectedEntities::SelectedEntitiesSort(void)
 		std::sort(vectorSelectedEntities.begin(), vectorSelectedEntities.end(), EntSelectedCompare);
 	}
 
-	g_EntSelectedCompareEntity = NULL; // ì‚¬ìš©í›„ ì´ˆê¸°í™”
+	g_EntSelectedCompareEntity = NULL; // »ç¿ëÈÄ ÃÊ±âÈ­
 }

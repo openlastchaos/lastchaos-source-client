@@ -1,7 +1,7 @@
 
 // ----------------------------------------------------------------------------
 //  File : UIProcess.h
-//  Desc : Created by ì´ê¸°í™˜
+//  Desc : Created by ÀÌ±âÈ¯
 // ----------------------------------------------------------------------------
 
 #ifndef	UIProcess_H
@@ -10,11 +10,7 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
 #include <Engine/Interface/UIListBox.h>
-#include <Engine/Entities/Itemdata.h>
-#include <Engine/Interface/UIInventory.h>
 
 // Define max char and line of strings
 #define	MAX_PROCESS_STRING			4
@@ -37,21 +33,22 @@
 #define PROCESS_SLOT_ROW_TOTAL		30
 
 
-// ë„¤íŠ¸ì›Œí¬ ë©”ì„¸ì§€ë¥¼ ìœ„í•œ ë°ì´í„° êµ¬ì¡°ì²´ 
+// ³×Æ®¿öÅ© ¸Ş¼¼Áö¸¦ À§ÇÑ µ¥ÀÌÅÍ ±¸Á¶Ã¼ 
 struct CNeedItems 
 {	
-	CItemData	ItemData;
-	SBYTE		sbMatTab;
-	SBYTE		sbMatRow;
-	SBYTE		sbMatCol;
+	CItemData*	ItemData;
+	SWORD		MatTab;
+	SWORD		inven_idx;
 	__int64		llCount;
+
+	CNeedItems() : ItemData(NULL) {}
 };
 
 
 
 // ----------------------------------------------------------------------------
 // Name : CUIProcess
-// Desc : ì œì¡° 
+// Desc : Á¦Á¶ 
 // ----------------------------------------------------------------------------
 class CUIProcess : public CUIWindow
 {
@@ -60,33 +57,33 @@ protected:
 // Controls...
 	
 	// Button
-	CUIButton				m_btnClose;							// ë‹«ê¸° ë²„íŠ¼ 
-	CUIButton				m_btnOK;							// ê°€ê³µ ë²„íŠ¼ 
-	CUIButton				m_btnCancel;						// ì·¨ì†Œ ë²„íŠ¼ 
+	CUIButton				m_btnClose;							// ´İ±â ¹öÆ° 
+	CUIButton				m_btnOK;							// °¡°ø ¹öÆ° 
+	CUIButton				m_btnCancel;						// Ãë¼Ò ¹öÆ° 
 	
 	// Skill buttons
-	std::vector<CUIButtonEx> m_btnProcessItems;					// ê°€ê³µ ì•„ì´í…œ
+	std::vector< CUIIcon* > m_vecIcons;							// °¡°ø ¾ÆÀÌÅÛ
 
 	// Etc ...
-	CUIScrollBar			m_sbProcessItem;					// ê°€ê³µ ì•„ì´í…œ ì°½ ìŠ¤í¬ë¡¤ ë°”
-	CUIListBox				m_lbPreconditionDesc;				// í•„ìš” ì¡°ê±´ ì„¤ëª… ë¦¬ìŠ¤íŠ¸ ë°•ìŠ¤
+	CUIScrollBar			m_sbProcessItem;					// °¡°ø ¾ÆÀÌÅÛ Ã¢ ½ºÅ©·Ñ ¹Ù
+	CUIListBox				m_lbPreconditionDesc;				// ÇÊ¿ä Á¶°Ç ¼³¸í ¸®½ºÆ® ¹Ú½º
 	
 	
 //	Process Item Info
 
-	int						m_nProcessText;						// ê°€ê³µ ë¬¸ì„œ ì•„ì´í…œ ì¸ë±ìŠ¤
-	SBYTE					m_nRow;
-	SBYTE					m_nCol;
+	int						m_nProcessText;						// °¡°ø ¹®¼­ ¾ÆÀÌÅÛ ÀÎµ¦½º
+	SWORD					m_nTab;
+	SLONG					m_nInvenIdx;
 
-	int						m_nSelectProcessItem;				// í˜„ì¬ ì„ íƒëœ ê°€ê³µë¬¼
-	CTString				m_StrProcessType;					// ê°€ê³µ íƒ€ì…
-	int						m_nProcessItemCount;				// ê°€ê³µë¬¸ì„œì— ë§ëŠ” ê°€ê³µí’ˆ ê°¯ìˆ˜
+	int						m_nSelectProcessItem;				// ÇöÀç ¼±ÅÃµÈ °¡°ø¹°
+	CTString				m_StrProcessType;					// °¡°ø Å¸ÀÔ
+	int						m_nProcessItemCount;				// °¡°ø¹®¼­¿¡ ¸Â´Â °¡°øÇ° °¹¼ö
 	
-	BOOL					m_bSatisfied;						// ì¡°ê±´ì´ ì¶©ë¶„í•œê°€?
+	BOOL					m_bSatisfied;						// Á¶°ÇÀÌ ÃæºĞÇÑ°¡?
 	
-	CNeedItems				m_NeedItems[MAX_MAKE_ITEM_MATERIAL];// í•„ìš” ì•„ì´í…œ ì •ë³´
+	CNeedItems				m_NeedItems[MAX_MAKE_ITEM_MATERIAL];// ÇÊ¿ä ¾ÆÀÌÅÛ Á¤º¸
 
-	int						m_nNeedItemCount;					// í•„ìš”í•œ ì•„ì´í…œ ì¢…ë¥˜ì˜ ìˆ˜
+	int						m_nNeedItemCount;					// ÇÊ¿äÇÑ ¾ÆÀÌÅÛ Á¾·ùÀÇ ¼ö
 		
 // Region of each part
 	UIRect					m_rcTitle;							// Region of title bar
@@ -102,27 +99,6 @@ protected:
 
 // Network ...
 	BOOL					m_bWaitProcessResult;				// Wait Message
-	
-// ToolTip
-
-	UIRectUV				m_rtInfoUL;								// UV of upper left region of information
-	UIRectUV				m_rtInfoUM;								// UV of upper middle region of information
-	UIRectUV				m_rtInfoUR;								// UV of upper right region of information
-	UIRectUV				m_rtInfoML;								// UV of middle left region of information
-	UIRectUV				m_rtInfoMM;								// UV of middle middle region of information
-	UIRectUV				m_rtInfoMR;								// UV of middle right region of information
-	UIRectUV				m_rtInfoLL;								// UV of lower left region of information
-	UIRectUV				m_rtInfoLM;								// UV of lower middle region of information
-	UIRectUV				m_rtInfoLR;								// UV of lower right region of information
-
-	BOOL					m_bShowItemInfo;
-
-	UIRect					m_rcItemInfo;
-	int						m_nCurInfoLines;
-
-	CTString				m_strItemInfo[MAX_ITEMINFO_LINE];		// Item information string
-	COLOR					m_colItemInfo[MAX_ITEMINFO_LINE];		// Color of item information string
-	BOOL					m_bDetailItemInfo;
 
 public:
 	CUIProcess();
@@ -143,7 +119,7 @@ public:
 	void	Clear ();
 	void	InitProcess();
 
-	ENGINE_API	void	OpenProcess( int nItemIndex, int nRow, int nCol );
+	ENGINE_API	void	OpenProcess( int nItemIndex, int nTab, int inven_idx );
 	void				CloseProcess();
 
 // Messages
@@ -155,17 +131,13 @@ public:
 // Send ...
 	void	SendProcessReq();
 
-// RenderItemInfo ...
-	void	AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo = 0xF2F2F2FF );
-	BOOL	GetItemInfo( int nItemIndex, int &nInfoWidth, int &nInfoHeight );
-	void	ShowItemInfo( BOOL bShowInfo, int nItemIndex, BOOL bRenew = FALSE );
-	void	RenderItemInfo ();
 // etc ...
 	void	SelectItem ( int nIndex = -1 );
 	void	AddString ( CTString& strText, COLOR colText = 0xffffffff );
 
+private:
 	
-	
+	void	clearIcon();
 };
 
 

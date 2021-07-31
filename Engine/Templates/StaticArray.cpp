@@ -4,8 +4,8 @@
   #pragma once
 #endif
 
-#define FOREACHINSTATICARRAY(array, type, iter) \
-  for(CStaticArrayIterator<type> iter(array); !iter.IsPastEnd(); iter.MoveToNext() )
+#define FOREACHINSTATICARRAY(array, flag, iter) \
+  for(CStaticArrayIterator<flag> iter(array); !iter.IsPastEnd(); iter.MoveToNext() )
 
 #include <Engine/Templates/StaticArray.h>
 
@@ -63,24 +63,28 @@ inline void CStaticArray<Type>::Expand(INDEX iNewCount)
 {
   ASSERT(this!=NULL && iNewCount>sa_Count);
   // if not already allocated
-  if (sa_Count==0) {
+  if (sa_Count==0 || iNewCount < sa_Count) {
     // just allocate
     New(iNewCount);
     return;
   // if already allocated
   } else {
     ASSERT(sa_Count!=0 && sa_Array!=NULL);
-    // allocate new array with more space
-    Type *ptNewArray = new Type[iNewCount+1]; //(+1 for cache-prefetch opt)
-    // copy old objects
-    for (INDEX iOld=0; iOld<sa_Count; iOld++) {
-      ptNewArray[iOld] = sa_Array[iOld];
-    }
-    // free old array
-    delete[] sa_Array;
-    // remember the new array
-    sa_Count = iNewCount;
-    sa_Array = ptNewArray;
+
+	if (iNewCount > sa_Count)
+	{
+		// allocate new array with more space
+		Type *ptNewArray = new Type[iNewCount+1]; //(+1 for cache-prefetch opt)
+		// copy old objects
+		for (INDEX iOld=0; iOld<sa_Count; iOld++) {
+		  ptNewArray[iOld] = sa_Array[iOld];
+		}
+		// free old array
+		delete[] sa_Array;
+		// remember the new array
+		sa_Count = iNewCount;
+		sa_Array = ptNewArray;
+	}
   }
 }
 

@@ -271,9 +271,9 @@ static FLOAT GetExactHitLocation(CTerrainImp *ptr, const FLOAT3D &vHitBegin,
 	}
 
 	// for each iteration
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	INDEX ctit = ceil(fIterator);
-	//loop unrolling, íš¨ê³¼ëŠ” ë¯¸ì§€ìˆ˜.
+	//loop unrolling, È¿°ú´Â ¹ÌÁö¼ö.
 #	define INNER_LOOP \
 	{\
 		PIX pixX(fX);\
@@ -306,24 +306,24 @@ static FLOAT GetExactHitLocation(CTerrainImp *ptr, const FLOAT3D &vHitBegin,
 		fX+=fStepX;\
 		fY+=fStepY;\
 		fH+=fStepH;\
-	} 0
+	}
 /* define INNER_LOOP() end */
-	NULL;
 
-	INDEX ctit16 = ctit & 0xFFFFFFF0;;
-	for(INDEX iit=0; iit<ctit16; iit+=16)
+	INDEX ctit16 = ctit & 0xFFFFFFF0;
+	INDEX	iit;
+	for( iit = 0; iit < ctit16; iit+=16 )
 	{
 		INNER_LOOP; INNER_LOOP; INNER_LOOP; INNER_LOOP;
 		INNER_LOOP; INNER_LOOP; INNER_LOOP; INNER_LOOP;
 		INNER_LOOP; INNER_LOOP; INNER_LOOP; INNER_LOOP;
 		INNER_LOOP; INNER_LOOP; INNER_LOOP; INNER_LOOP;
 	}
-	for(iit=ctit16; iit<ctit; ++iit)
+	for( iit = ctit16; iit < ctit; ++iit )
 	{
 		INNER_LOOP;
 	}
 #undef INNER_LOOP
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 
 	// Chech quad where ray ends
 	_fMinHeight = vHitEnd(2)-fEpsilonH;

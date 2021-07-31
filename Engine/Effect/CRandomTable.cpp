@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #include "StdH.h"
 #include "CRandomTable.h"
@@ -15,7 +15,7 @@ CRandomTable::CRandomTable()
 {
 	srand( GetTickCount() );
 
-	//table ìƒì„±
+	//table »ı¼º
 	for(int i=0; i<RANDOM_COUNT; ++i)
 	{
 		static const FLOAT inv_rand_max = 1.0f / (FLOAT)RAND_MAX;
@@ -52,4 +52,4 @@ CRandomTable::~CRandomTable()
 {
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

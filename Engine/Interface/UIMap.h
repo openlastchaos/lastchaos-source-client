@@ -10,11 +10,9 @@
 #endif
 
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIComboBox.h>
+//#include <Engine/Interface/UIButton.h>
+//#include <Engine/Interface/UIComboBox.h>
 #include <Engine/Interface/UISlideBar.h>
-#include <vector>
-#include <deque>
 
 
 // Sub zone tyoe
@@ -28,20 +26,27 @@ enum SubZoneType
 	MINE_PUBLIC,
 	GATHER_PRIVATE,
 	GATHER_PUBLIC,
-	CASTLE_GATE,		// ÏÑ±Î¨∏
+	CASTLE_GATE,		// º∫πÆ
 	SUBZONE_TOTAL,
 };
 
 enum CastleType
 {
-	// Í≥µÏÑ± Í¥ÄÎ†® 
-	CASTLE_LORD,		// Í∂åÏ¢å
-	CASTLE_REGEN,		// Î¶¨Ï†† Ìè¨Ïù∏Ìä∏ 
-	CASTLE_TOWER,		// ÏàòÌò∏ÌÉë
-	CASTLE_SIGNAL,		// ÏãúÍ∑∏ÎÑê 
+	// ∞¯º∫ ∞¸∑√ 
+	CASTLE_LORD,		// ±«¡¬
+	CASTLE_REGEN,		// ∏Æ¡® ∆˜¿Œ∆Æ 
+	CASTLE_TOWER,		// ºˆ»£≈æ
+	CASTLE_SIGNAL,		// Ω√±◊≥Œ 
 	CASTLE_TOTAL,
 };
 
+enum eMAP_STATE
+{
+	eMS_NONE	= 0,
+	eMS_VILLAGE,
+	eMS_ZONE,
+	eMS_WORLD,
+};
 
 // Define text position
 #define	MAP_TITLE_TEXT_OFFSETX		25
@@ -52,6 +57,7 @@ enum CastleType
 #define	MAP_FRAME_BLENDTIME			200
 #define	MAP_DETAIL_BLENDTIME		500
 #define	MAP_LAYER_BLENDTIME			500
+#define MAP_CHAR_BLENDTIME			1000
 
 
 // Define size of map
@@ -72,8 +78,13 @@ enum CastleType
 
 
 // Define position of map region
-#define	MAP_SX						3
-#define	MAP_SY						22
+#ifdef NEW_WORLD_MAP		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	#define	MAP_SX						0
+	#define	MAP_SY						0
+#else
+	#define	MAP_SX						3
+	#define	MAP_SY						22
+#endif
 
 typedef struct _CastleData
 {
@@ -85,54 +96,57 @@ typedef struct _CastleData
 	DOUBLE	dStartTime;
 } CastleData;
 
+typedef struct _WorldMapData
+{
+	int							nZoneIndex;
+	SBYTE						sbLayer;
+	UIRect						rcMapSize;
+	FLOAT						fRatio;
+	LONG						lOffsetX, lOffsetZ;
+	CTString					strName;
+} WorldMapData;
+
+typedef struct _DetailMapData
+{
+	UIRect						rcSelRegion;
+	UIRect						rcMapSize;
+	FLOAT						fRatio;
+	FLOAT						fOffsetX, fOffsetZ;
+} DetailMapData;
+
+typedef struct _SubZoneData
+{
+	int							nSubZoneIndex;
+	FLOAT						fX, fZ;
+	SBYTE						sbType;
+} SubZoneData;
+
+typedef struct _NpcData
+{
+	int							nIndex;
+	LONG						nYLayer;
+	FLOAT						fX, fZ;
+} NpcData;
+
+typedef struct _MapData
+{
+	WorldMapData				World;
+	std::vector<DetailMapData>	vecDetail;
+	std::vector<SubZoneData>	vecSubZone;
+	std::vector<NpcData>		vecNpc;
+	std::vector<CastleData>		vecCastleData;
+} MapData;
+
 // ----------------------------------------------------------------------------
 // Name : CUIMap
 // Desc :
 // ----------------------------------------------------------------------------
+class CUIMapOption;
+class CPlayerEntity;
+
 class CUIMap : public CUIWindow
 {
 protected:
-	typedef struct _WorldMapData
-	{
-		int							nZoneIndex;
-		SBYTE						sbLayer;
-		UIRect						rcMapSize;
-		FLOAT						fRatio;
-		LONG						lOffsetX, lOffsetZ;
-		CTString					strName;
-	} WorldMapData;
-
-	typedef struct _DetailMapData
-	{
-		UIRect						rcSelRegion;
-		UIRect						rcMapSize;
-		FLOAT						fRatio;
-		FLOAT						fOffsetX, fOffsetZ;
-	} DetailMapData;
-
-	typedef struct _SubZoneData
-	{
-		int							nSubZoneIndex;
-		FLOAT						fX, fZ;
-		SBYTE						sbType;
-	} SubZoneData;
-
-	typedef struct _NpcData
-	{
-		int							nIndex;
-		LONG						nYLayer;
-		FLOAT						fX, fZ;
-	} NpcData;
-
-	typedef struct _MapData
-	{
-		WorldMapData				World;
-		std::vector<DetailMapData>	vecDetail;
-		std::vector<SubZoneData>	vecSubZone;
-		std::vector<NpcData>		vecNpc;
-		std::vector<CastleData>		vecCastleData;
-	} MapData;
-
 	std::deque<CastleData>		m_qSignalData;
 
 	// Control
@@ -156,6 +170,7 @@ protected:
 	__int64					m_llMapBlendTimeForDetail;				// Map blending start time for detail
 	__int64					m_llMapBlendTimeForLayer;				// Map blending start time for layer
 	__int64					m_llMapBlendElapsedTimeForLayer;		// Map blending elasped time of layer
+	__int64					m_llMapBlendTimeForCharPos;				// Map blending start time for char position.
 
 	// Map data
 	std::vector<MapData>	m_vecMapData;							// Map data
@@ -215,9 +230,15 @@ protected:
 	UIRect					m_rcParty;								// Region of party
 	UIRect					m_rcCompass;							// Regino of compass
 	UIRect					m_rcToolTip;							// Region of tool tip
-	UIRect					m_rcHelpNpc;							// NPC ÏïàÎÇ¥ÏãúÏä§ÌÖú
-	UIRect					m_rcQuestNpc;							// ÌÄòÏä§Ìä∏ NPC
-	UIRect					m_rcSuccessNpc;							// ÌÄòÏä§Ìä∏ NPC
+	UIRect					m_rcHelpNpc;							// NPC æ»≥ªΩ√Ω∫≈€
+	// connie [2009/9/18] - NPC √£±‚
+	UIRectUV				m_rtHelpMob;				
+	UIRect					m_rcHelpMob;
+
+	//RAID_SYSTEM
+	UIRect					m_rcExpedition;							// [sora] ø¯¡§¥ÎRegion
+	UIRect					m_rcGPS;
+	UIRect					m_rcRelic; // ¿Øπ∞ √÷¥Î ∞πºˆ 3
 
 	// UV of each part
 	UIRectUV				m_rtBackUL;								// UV of upper left background
@@ -233,10 +254,8 @@ protected:
 	UIRectUV				m_rtPC;									// UV of PC
 	UIRectUV				m_rtSubZone[SUBZONE_TOTAL];				// UV of sub zone
 	UIRectUV				m_rtCastle[CASTLE_TOTAL];				// UV of sub zone
-	UIRectUV				m_rtNPC;								// UV of NPC
-	UIRectUV				m_rtHelpNpc;							// NPC ÏïàÎÇ¥ ÏãúÏä§ÌÖú
-	UIRectUV				m_rtQuestNpc;							// ÌÄòÏä§Ìä∏ NPC
-	UIRectUV				m_rtSuccessNpc;							// ÌÄòÏä§Ìä∏ NPC
+	UIRectUV				m_rtHelpNpc;							// NPC æ»≥ª Ω√Ω∫≈€
+	UIRectUV				m_rtQuestNpc;							// ƒ˘Ω∫∆Æ NPC
 	UIRectUV				m_rtParty;								// UV of party
 	UIRectUV				m_rtCompass;							// UV of compass
 	UIRectUV				m_rtWorld;								// UV of world map
@@ -244,9 +263,20 @@ protected:
 	UIRectUV				m_rtToolTipL;							// UV of left region of tool tip
 	UIRectUV				m_rtToolTipM;							// UV of middle region of tool tip
 	UIRectUV				m_rtToolTipR;							// UV of right region of tool tip
+	//RAID_SYSTEM
+	UIRectUV				m_rtExpedition[4];						// [sora] ø¯¡§¥ÎUV
+	UIRectUV				m_uvGPS;
+	UIRectUV				m_uvRelic; // B07 ¿Øπ∞ «•Ω√ uv
 
 	BOOL					m_bSignalBtnOn;
 	BOOL					m_bInsideMouse;
+	BOOL					m_bDetailMapClick;
+	FLOAT					m_fMapSizeRevision;					// Revise map size. revise the map size of draw map size error.
+
+	CUIButton				m_btnGoTop;								// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	UBYTE					m_ubOldAttribute;
+	eMAP_STATE				m_eMapState;
+	FLOAT					m_fCharRatio;
 protected:
 	// Internal functions
 	void	ReadMapData();
@@ -257,10 +287,12 @@ protected:
 	void	AdjustViewport( int nSelRegion );
 
 	void	ResizeMapFrame( int nSelRegion, int ndX, int ndY );
+	void	SetSizeMapFrame( int nSelRegion, int ndX, int ndY );
 	void	ChangeMap();
-	void	OpenDetailMap( int nIndex );
+	// TO-KR-T20091204-008 [12/4/2009 rumist]
+	void	OpenDetailMap( int nIndex = 0 );
 	void	CloseDetailMap();
-	BOOL	IsInsideMap( BOOL bWinPos, BOOL bWorldMap, int nX, int nY, BOOL bZoomRect, UIRect &rcRect );
+	BOOL	IsInsideMap( BOOL bWinPos, BOOL bWorldMap, int nX, int nY, BOOL bZoomRect, UIRect& rcRect );
 
 	void	UpdateOpacityRatio();
 	void	UpdateZoomRatio( BOOL bWorldMap );
@@ -270,6 +302,15 @@ protected:
 	void	ZoomMap( BOOL bWorldMap );
 
 	void	ShowToolTip( BOOL bShow, CTString &strName, int nX = 0, int nY = 0 );
+	
+	BOOL	IsDetailMap(BOOL IsNpcScrollDefined = FALSE);
+	void	ResizeMapFrame( BOOL bSign );
+	void	SetMapData();
+
+	void	SetDetailMap( BOOL bOpen, int mapIndex = 0 );
+
+	CTString GetZoneName( int zone, int layer );	// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	void	GoTopMap();								// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
 
 public:
 
@@ -282,9 +323,12 @@ public:
 
 	// Render
 	void	Render();
+	void	RenderGPS(CDrawPort* pDraw);
+	void	RenderRelic(CDrawPort* pDraw); // B07 ¿Øπ∞ ¿ßƒ°
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Set map of current world
@@ -292,7 +336,7 @@ public:
 
 	// Toggle visible
 	void	ToggleVisible();
-
+	void	ManipulateNpcScroll(BOOL IsNpcScrollVisible = FALSE);
 	void	MapToWorld( float& fX, float& fY );
 	void	WorldToMap( float& fX, float& fY );
 	void	InitCastleData();
@@ -310,36 +354,40 @@ public:
 	bool	IsPossibleCastleMap();
 	bool	IsPossibleSignal();
 	void	SetSignalOn( bool bOn );
+	BOOL	IsNpcInField(INDEX nZoneNum, INDEX nNpcIndex);
+	BOOL    IsPlayerInPeaceArea();
+	BOOL	GetWorldToMapPos(INDEX nZoneNum, float& fX, float& fY, float fZoomRatio );
 	
+
+	BOOL	IsMapExist( int nZoneIndex, SBYTE sbLayer );				// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	MapData* GetCurMapData( int nZoneIndex );
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 	WMSG_RESULT KeyMessage( MSG *pMsg );
 
+	bool	Goto(int x, int y);
+	void	OnUpdate( float fDeltaTime, ULONG ElapsedTime );
+
+	// «√∑π¿ÃæÓ∞° ∏ ¿« æÓ¥¿¡ˆø™ø° ¿÷¥¬¡ˆ ø©∫Œ. (zone or sub_zone)
+	eMAP_STATE	GetPlayerInArea(int &nSubIndex);
+	void		ClearPlayerEntity()		{ m_penPlayerEntity = NULL;	}
+private:
+
+	bool	_bDetail;
+	void	RenderNpc(CDrawPort* pDraw, int nIndex, int nX, int nY, BOOL bHighlight = false);
+	void	UpdateMap(bool bUpdate = false);
+
+	FLOAT3D m_lastPos;
+	CPlayerEntity* m_penPlayerEntity;
+
+	int m_nNpcHighlightPosX;
+	int m_nNpcHighlightPosY;
+	int m_nNpcHighlightIdx;
+	BOOL m_bHighlight;
 };
 
 
 
 #endif	// UIMAP_H_
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

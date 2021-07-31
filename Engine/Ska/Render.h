@@ -16,12 +16,12 @@
 #define RMF_SHOWNORMALS     (1UL<<2)  // show normalas  
 #define RMF_SHOWSKELETON    (1UL<<3)  // show skeleton
 #define RMF_SHOWACTIVEBONES (1UL<<4)  // show active bones
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 #define RMF_SHOWSHADOW		(1UL<<5)  // show shadow
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 #define RMF_SHOWNICEWATER	(1UL<<6)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
                                       
 // !!! THESE FLAGS MUST BE THE SAME AS RMF_ FLAGS FOR OLD MODELS !!!
 #define SRMF_ATTACHMENT (1UL<<0)  // set for attachment render models
@@ -135,7 +135,7 @@ ENGINE_API void RM_BeginModelRenderingMask( CAnyProjection3D &prProjection,
 ENGINE_API void RM_EndRenderingView( BOOL bRestoreOrtho=TRUE);
 ENGINE_API void RM_EndModelRenderingMask(void);
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 //-----------------------------------------------------------------------------
 // Name: 
 // Desc: 
@@ -144,34 +144,34 @@ ENGINE_API void RM_SetRenderingType(INDEX iRenderingType);
 
 //-----------------------------------------------------------------------------
 // Name: CreateShadowMatrix()
-// Desc: í…ìŠ¤ì³ íˆ¬ì˜ í–‰ë ¬ì„ ìƒì„±í•©ë‹ˆë‹¤.
+// Desc: ÅØ½ºÃÄ Åõ¿µ Çà·ÄÀ» »ý¼ºÇÕ´Ï´Ù.
 //-----------------------------------------------------------------------------
 //ENGINE_API void CreateShadowMatrix(CModelInstance *pMI, CPlacement3D &plModel, Matrix16& matShadowUV, FLOAT fTextureSize, CPlacement3D &plLight, CPlacement3D &plViewer);
 //ENGINE_API void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D &plModel, Matrix16& matShadowUV, FLOAT fTextureSize, const CPlacement3D &plViewer);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘		03.05
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.05
 //ENGINE_API void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D &plModel, Matrix16& matShadowUV, Matrix12& matWorldToLight, Matrix16& matShadowProj,
 //								   FLOAT fTextureSize, const CPlacement3D &plViewer);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.05
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘	04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.05
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ	04.13
 ENGINE_API void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D &plModel, Matrix16& matShadowUV, const Matrix12& matWorldToLight, const Matrix16& matShadowProj,
 								   const FLOAT fTextureSize, const CPlacement3D &plViewer);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë	04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡	04.13
 
 //-----------------------------------------------------------------------------
 // Name: GetWorldMatrix()
-// Desc: ì£¼ì–´ì§„ ìœ„ì¹˜ê°’ì„ ë°”íƒ•ìœ¼ë¡œ ì›”ë“œ í–‰ë ¬ì„ ê³„ì‚°í•©ë‹ˆë‹¤.
+// Desc: ÁÖ¾îÁø À§Ä¡°ªÀ» ¹ÙÅÁÀ¸·Î ¿ùµå Çà·ÄÀ» °è»êÇÕ´Ï´Ù.
 //-----------------------------------------------------------------------------
 ENGINE_API void GetWorldMatrix(const CPlacement3D &plPosition, Matrix12& matObjToAbs);
 
 //-----------------------------------------------------------------------------
 // Name: GetViewMatrix()
-// Desc: ì£¼ì–´ì§„ ì¹´ë©”ë¼ì˜ ìœ„ì¹˜ë¥¼ ë°”íƒ•ìœ¼ë¡œ ë·° í–‰ë ¬ì„ ê³„ì‚°í•©ë‹ˆë‹¤.
+// Desc: ÁÖ¾îÁø Ä«¸Þ¶óÀÇ À§Ä¡¸¦ ¹ÙÅÁÀ¸·Î ºä Çà·ÄÀ» °è»êÇÕ´Ï´Ù.
 //-----------------------------------------------------------------------------
 ENGINE_API void GetViewMatrix(const CPlacement3D &plEye, Matrix12& matAbsToEye);
 
 //-----------------------------------------------------------------------------
 // Name: FindBestFOV()
-// Desc: ë¬¼ì²´ì˜ ì „ì²´ê°€ ë‹¤ ë³´ì´ëŠ” ìµœì ì˜ FOVë¥¼ ì°¾ìŠµë‹ˆë‹¤.
+// Desc: ¹°Ã¼ÀÇ ÀüÃ¼°¡ ´Ù º¸ÀÌ´Â ÃÖÀûÀÇ FOV¸¦ Ã£½À´Ï´Ù.
 //-----------------------------------------------------------------------------
 ENGINE_API void FindBestFOV(const FLOATaabbox3D& aabbBox, const Matrix12& matLocalToLight, FLOAT& fX, FLOAT& fY);
 
@@ -186,7 +186,7 @@ ENGINE_API HRESULT SetAdjustedProjectionMatrix( Matrix16& mat, FLOAT fFOV, FLOAT
 
 //-----------------------------------------------------------------------------
 // Name: SetFrustumMatrix()
-// Desc: ì ˆë‘ì²´ì˜ Dimension ì¸ìžë¥¼ ë°”íƒ•ìœ¼ë¡œ íˆ¬ì˜í–‰ë ¬ì„ ìƒì„±í•©ë‹ˆë‹¤.
+// Desc: ÀýµÎÃ¼ÀÇ Dimension ÀÎÀÚ¸¦ ¹ÙÅÁÀ¸·Î Åõ¿µÇà·ÄÀ» »ý¼ºÇÕ´Ï´Ù.
 //-----------------------------------------------------------------------------
 ENGINE_API void SetFrustumMatrix( Matrix16& mat, 
 								 FLOAT fLeft, FLOAT fRight, FLOAT fTop, 
@@ -194,7 +194,7 @@ ENGINE_API void SetFrustumMatrix( Matrix16& mat,
 
 //-----------------------------------------------------------------------------
 // Name: SetOrthoMatrix()
-// Desc: ì§êµ íˆ¬ì˜í–‰ë ¬ ìƒì„±.
+// Desc: Á÷±³ Åõ¿µÇà·Ä »ý¼º.
 //-----------------------------------------------------------------------------
 ENGINE_API void SetOrthoMatrix( Matrix16& mat, 
 							   FLOAT fLeft, FLOAT fRight, FLOAT fTop, 
@@ -205,7 +205,7 @@ ENGINE_API void SetOrthoMatrix( Matrix16& mat,
 // Desc: 
 //-----------------------------------------------------------------------------
 ENGINE_API void RM_SetAbsToView(const Matrix12 &matAbsToView);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 // setup light parameters
 ENGINE_API void RM_SetLightColor(COLOR colAmbient, COLOR colLight);
@@ -231,14 +231,14 @@ ENGINE_API void RM_PreviewSKA(CModelInstance &mi, CDrawPort *pdp, SkaPreviewFlag
 ENGINE_API void RM_RenderBone(CModelInstance &mi,INDEX iBoneID);
 ENGINE_API void RM_RenderColisionBox(CModelInstance &mi,ColisionBox &cb, COLOR col);
 ENGINE_API void RM_RenderCross(FLOAT3D &vPosition, COLOR col);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 ENGINE_API void RM_RenderSpline(SINT uiCount, FLOAT3D *pvPosition, SINT selIndex, COLOR col);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 ENGINE_API void RM_RenderGround(CTextureObject &to, COLOR color);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 ENGINE_API void RM_RenderGround(CTextureData &td, COLOR color);
 ENGINE_API void RM_RenderQuad(CPlacement3D& plPosition, FLOAT fWidth = 10.0f);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 // Returns specified renbone
 ENGINE_API RenBone *RM_FindRenBone(INDEX iBoneID);
@@ -268,9 +268,9 @@ ENGINE_API void RM_SetBoneAdjustCallback(void (*pAdjustBones)(void *pData), void
 ENGINE_API void RM_SetShaderParamsAdjustCallback(void (*pAdjustShaderParams)(void *pData, INDEX iSurfaceID, CShader *pShader,ShaderParams &shParams),void *pData);
 
 ENGINE_API void Matrix12ToQVect(QVect &qv,const Matrix12 &m12);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œìž‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 ENGINE_API void TransformVertex( GFXVertex &v, const Matrix12 &m);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 /*
 // Matrix12 operations
 ENGINE_API void MatrixVectorToMatrix12(Matrix12 &m12,const FLOATmatrix3D &m, const FLOAT3D &v);

@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CMDLEFFECT_H__
 #define __CMDLEFFECT_H__
 
@@ -23,10 +23,10 @@ public:
 
 	//NEW_DELETE_DEFINITION(CMdlEffect);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	virtual void Read(CTStream *istrFile);
 	virtual void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 	
 	virtual void Start(FLOAT time, BOOL restart = FALSE);
 	virtual BOOL Process(FLOAT time);
@@ -58,7 +58,7 @@ public:
 	inline void SetOverDraw(BOOL overDraw)	{ m_bOverDraw = overDraw;	}
 	inline BOOL GetOverDraw()				{ return m_bOverDraw;		}
 
-	//ë‚˜ì¤‘ì—” í•„ìš” ì—†ì–´ì§ˆ ê²ƒ ê°™ë‹¤.(GUIì™„ì„±ì‹œ)
+	//³ªÁß¿£ ÇÊ¿ä ¾ø¾îÁú °Í °°´Ù.(GUI¿Ï¼º½Ã)
 	inline FLOAT GetMdlAnimLength() { if(m_pModelObject) return m_pModelObject->GetAnimLength(0); else return 0.0f; }
 
 	virtual BOOL BeginRender(CAnyProjection3D &apr, CDrawPort *pdp);
@@ -70,24 +70,24 @@ protected:
 	
 protected:
 	//content variable
-	CTFileName			m_strMdlFileName;		//MDLíŒŒì¼ì´ë¦„
-	CTFileName			m_strTextureFileName;	//MDLì—ì„œ ì“°ëŠ” Textureì˜ íŒŒì¼ì´ë¦„
-	COLOR				m_colModel;				//MDLì˜ ìƒ‰ê¹”.
-	FLOAT3D				m_vStretch;				//MDLì˜ í¬ê¸°.
-	EFFECT_OF_TAG_TYPE	m_eRotation;			//tagì˜ íšŒì „ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
-	EFFECT_OF_TAG_TYPE	m_ePosition;			//tagì˜ ì´ë™ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
-	CEffectControl		*m_pEffectControl;		//effect control ì—†ì„ë•ŒëŠ” NULL
-	BOOL				m_bOverDraw;			//Depth testë¥¼ ë„ê³  ê·¸ë¦´ê²ƒì¸ê°€?
+	CTFileName			m_strMdlFileName;		//MDLÆÄÀÏÀÌ¸§
+	CTFileName			m_strTextureFileName;	//MDL¿¡¼­ ¾²´Â TextureÀÇ ÆÄÀÏÀÌ¸§
+	COLOR				m_colModel;				//MDLÀÇ »ö±ò.
+	FLOAT3D				m_vStretch;				//MDLÀÇ Å©±â.
+	EFFECT_OF_TAG_TYPE	m_eRotation;			//tagÀÇ È¸Àü¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
+	EFFECT_OF_TAG_TYPE	m_ePosition;			//tagÀÇ ÀÌµ¿¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
+	CEffectControl		*m_pEffectControl;		//effect control ¾øÀ»¶§´Â NULL
+	BOOL				m_bOverDraw;			//Depth test¸¦ ²ô°í ±×¸±°ÍÀÎ°¡?
 	//instance variable
-	CModelObject		*m_pModelObject;		//ì‹¤ì œ ë¡œë”©í•œ MDL
-	CTextureData		*m_pModelTextureData;	//ì‹¤ì œ ë¡œë””ì•ˆ Texture
-	FLOAT3D				m_vStartPosition;		//ì‹œì‘ì‹œ ìœ„ì¹˜
-	FLOATmatrix3D		m_matStartRotation;		//ì‹œì‘ì‹œ ë°©í–¥
-	FLOAT3D				m_vPostion;				//dynamic posì‹œ ì‚¬ìš©
-	ANGLE3D				m_vAngle;				//dynamic angleì‹œ ì‚¬ìš©
-	ptr_tag				m_ptrPosTag;			//dynamic posì‹œ ë§ˆì§€ë§‰ì— ë”°ë¼ê°ˆ Tag, ì—†ìœ¼ë©´ ì œìë¦¬
+	CModelObject		*m_pModelObject;		//½ÇÁ¦ ·ÎµùÇÑ MDL
+	CTextureData		*m_pModelTextureData;	//½ÇÁ¦ ·Îµğ¾È Texture
+	FLOAT3D				m_vStartPosition;		//½ÃÀÛ½Ã À§Ä¡
+	FLOATmatrix3D		m_matStartRotation;		//½ÃÀÛ½Ã ¹æÇâ
+	FLOAT3D				m_vPostion;				//dynamic pos½Ã »ç¿ë
+	ANGLE3D				m_vAngle;				//dynamic angle½Ã »ç¿ë
+	ptr_tag				m_ptrPosTag;			//dynamic pos½Ã ¸¶Áö¸·¿¡ µû¶ó°¥ Tag, ¾øÀ¸¸é Á¦ÀÚ¸®
 	BOOL				m_bOnlyStart;
 };
 
 #endif //__CMDLEFFECT_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

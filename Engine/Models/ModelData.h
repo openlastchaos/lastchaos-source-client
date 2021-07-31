@@ -109,7 +109,8 @@ public:
   // returns HEIGHT_EQ_WIDTH, LENGTH_EQ_WIDTH or LENGTH_EQ_HEIGHT
   INDEX GetCollisionBoxDimensionEquality(INDEX iCollisionBox);
   ULONG GetFlags(void);
-	void Clear(void);
+  void Clear(void);
+
   // check if this kind of objects is auto-freed
   virtual BOOL IsAutoFreed(void);
 

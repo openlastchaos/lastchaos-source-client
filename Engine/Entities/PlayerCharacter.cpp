@@ -4,6 +4,8 @@
 #include <Engine/Base/Timer.h>
 #include <Engine/Base/Stream.h>
 #include <Engine/Network/NetworkMessage.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/function/News.h>
 
 typedef HRESULT __stdcall CoCreateGuid_t(UBYTE *pguid);
 
@@ -51,6 +53,7 @@ CPlayerCharacter::CPlayerCharacter(void)
   memset(pc_aubGUID, 0, PLAYERGUIDSIZE);
   memset(pc_aubAppearance, 0, MAX_PLAYERAPPEARANCE);
   pc_iPlayerIndex = -1;
+  pc_iNoticeRevision = 0;
 }
 
 /*
@@ -68,8 +71,9 @@ CPlayerCharacter::CPlayerCharacter(const CTString &strName)
   GetGUID(pc_aubGUID);
   memset(pc_aubAppearance, 0, MAX_PLAYERAPPEARANCE);
   pc_iPlayerIndex = -1;
-//0217 ìºë¦­í„° ì¢…ë¥˜
+//0217 Ä³¸¯ÅÍ Á¾·ù
   pc_iPlayerType = -1;
+  pc_iNoticeRevision = 0;
 }
 
 void CPlayerCharacter::Load_t( const CTFileName &fnFile) // throw char *
@@ -102,6 +106,12 @@ void CPlayerCharacter::Read_t(CTStream *pstr) // throw char *
   //0217
   (*pstr)>>pc_iPlayerType;
 
+  if (GAMEDATAMGR() != NULL && GAMEDATAMGR()->GetNews() != NULL)
+  {
+	  (*pstr)>>pc_iNoticeRevision;
+	  GAMEDATAMGR()->GetNews()->LoadRevision(pc_iNoticeRevision);
+  }
+
 }
 
 /*
@@ -117,6 +127,12 @@ void CPlayerCharacter::Write_t(CTStream *pstr) // throw char *
   (*pstr)<<pc_iPlayerIndex;
   //0217
   (*pstr)<<pc_iPlayerType;
+  if (GAMEDATAMGR() != NULL && GAMEDATAMGR()->GetNews() != NULL)
+  {
+	  pc_iNoticeRevision = GAMEDATAMGR()->GetNews()->GetRevision();
+	  (*pstr)<<pc_iNoticeRevision;
+  }
+  
 }
 
 /* Get character name. */
@@ -146,6 +162,7 @@ CPlayerCharacter &CPlayerCharacter::operator=(const CPlayerCharacter &pcOther)
   pc_iPlayerIndex = pcOther.pc_iPlayerIndex;
 //0217
   pc_iPlayerType = pcOther.pc_iPlayerType;
+  pc_iNoticeRevision = pcOther.pc_iNoticeRevision;
   return *this;
 };
 
@@ -180,6 +197,7 @@ CNetworkMessage &operator<<(CNetworkMessage &nm, CPlayerCharacter &pc)
   nm<<pc.pc_iPlayerIndex;
 //0217
   nm<<pc.pc_iPlayerType;
+  nm<<pc.pc_iNoticeRevision;
   return nm;
 };
 CNetworkMessage &operator>>(CNetworkMessage &nm, CPlayerCharacter &pc)
@@ -190,5 +208,6 @@ CNetworkMessage &operator>>(CNetworkMessage &nm, CPlayerCharacter &pc)
   nm>>pc.pc_iPlayerIndex;
 //0217
   nm>>pc.pc_iPlayerType;
+  nm>>pc.pc_iNoticeRevision;
   return nm;
 };

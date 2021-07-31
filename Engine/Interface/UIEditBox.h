@@ -12,12 +12,13 @@
 #include <Engine/Interface/UIIME.h>
 #include <Engine/Interface/UIWindow.h>
 
+class CUIImage;
  
 // ----------------------------------------------------------------------------
 // Name : CUIEditBox
 // Desc :
 // ----------------------------------------------------------------------------
-class CUIEditBox : public CUIWindow
+class ENGINE_API CUIEditBox : public CUIWindow
 {
 protected:
 	BOOL		m_bIsPWEditBox;				// If this is password box or not
@@ -36,14 +37,24 @@ protected:
 	BOOL		m_bShowCursor;				// If cursor is shown now or not
 	DOUBLE		m_dElapsedTime;				// Elapsed time for cursor blinking
 	DOUBLE		m_dOldPromptTime;			// Prompt time for cursor blinking
-	BOOL		m_bMsgInput;				// ë©”ì„¸ì§€ ë°•ìŠ¤ì—ì„œ ìž…ë ¥ ë˜ëŠ” ì•”í˜¸
+	BOOL		m_bMsgInput;				// ¸Þ¼¼Áö ¹Ú½º¿¡¼­ ÀÔ·Â µÇ´Â ¾ÏÈ£
 
-	// ì´ê¸°í™˜ ìˆ˜ì • ì‹œìž‘ (11. 17) : IME ìž‘ì—…
+	BOOL		m_bOnlyInteger;				// ¿À·ÎÁö ¼ýÀÚ¸¸ ÀÔ·Â °¡´ÉÇÑ ¸ðµå
+	int			m_nTextColor;
+
+	// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11. 17) : IME ÀÛ¾÷
 	static		BOOL		s_bShowReadingWindow;
-	static		char		s_szReadingString[32];
+	static		char		s_szReadingString[34];
 	static		int			s_nReadingStringLength;
 	static		CCandList	s_CandList;
-	// ì´ê¸°í™˜ ìˆ˜ì • ë (11. 17)
+//	ENGINE_API static		int			s_nRefCount;
+
+//	ENGINE_API	static CUIEditBox*	s_FocusingEditBox;
+	static		int			s_nRefCount;
+	static CUIEditBox*	s_FocusingEditBox;
+	static CUIEditBox*	s_PrevFocus;			// ±âÁ¸ ½Ã½ºÅÛ°ú °ãÄ¡±â ¶§¹®¿¡ »õ·Î¿î UILib ¿¡¼­ »ç¿ë
+
+	// ÀÌ±âÈ¯ ¼öÁ¤ ³¡ (11. 17)
 
 	// Region of each part
 	UIRect		m_rcReadWnd;				// Regin of reading window
@@ -63,40 +74,71 @@ protected:
 	UIRectUV	m_rtCandLM;					// UV of lower middle background
 	UIRectUV	m_rtCandLR;					// UV of lower right background
 
-	BOOL		m_InValidEditBox;			
+	BOOL		m_InValidEditBox;		
+	// [2011/11/02 : Sora] Ä¿¼­ ÀÌµ¿ ºÒ°¡ÇÃ·¡±×
+	BOOL		m_bMoveCursor;
 
+	CUIRectSurface* m_pBackground;
+	Command*	m_pInputCallback;
+	int			m_nCursorSX;
+#ifdef UI_TOOL
+	UIRectUV m_ReadingWindowUV;
+	UIRectUV m_CandidateUV;
+#endif // UI_TOOL
+	UIRectUV m_uvBackGround;
+	UIRect	 m_rcBackGround;
+
+	CUIImage* m_pImgSelText;
+	bool	m_bCopyAndPaste;
+	int		m_nCopyStartPos;
 protected:
 	// Internal functions for edit box
 	BOOL	Is2ByteChar( int nCharIndex, int nFirstCheck = 0 );
 	void	MoveCursor( MoveDirection mdDirection );
 	void	InsertIMEChar( char *pcInsert, BOOL bOnComposition = TRUE );
-
+	inline void	IncRef()					{ s_nRefCount = 1; }
+	inline void	DecRef()					{ s_nRefCount = 0; }
+	inline void	AutoRef( BOOL Ref )			{ Ref ? IncRef() : DecRef();	}
 public:
 	CUIEditBox();
 	~CUIEditBox();
 
 	// Create & destroy
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight,
-					int nMaxChar, BOOL bIsPWBox = FALSE );
+					int nMaxChar, BOOL bIsPWBox = FALSE , int color = 0xF2F2F2FF);
 	void	Destroy();
+
+	void	initialize();
 
 	// Render
 	void	Render();
 	void	RenderReadingWindow();
 
+	void	OnRender(CDrawPort* pDraw);
+
 	// Set UV
 	void	SetReadingWindowUV( FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT fTy1, FLOAT fTexWidth, FLOAT fTexHeight );
 	void	SetCandidateUV( FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT fTy1, FLOAT fTexWidth, FLOAT fTexHeight );
-
+#ifdef UI_TOOL
+	UIRectUV getReadingWindowUV()	{ return m_ReadingWindowUV; }
+	UIRectUV getCandidateUV()		{ return m_CandidateUV;		}
+#endif // UI_TOOL
+	void	 setBackGroundUV(UIRectUV uv) { m_uvBackGround = uv; }
+	void	 setBackGroundRect(UIRect rc) { m_rcBackGround = rc; }
+	UIRectUV getBackGroundUV()		{ return m_uvBackGround;	}
+	UIRect	 getBackGroundRect()	{ return m_rcBackGround;	}
+	
+	void	 SetCursorSX(int sx)	{	m_nCursorSX = sx;	}
+	int		 GetCursorSX()			{	return m_nCursorSX;	}
 	// Set focus
 	void	SetFocus( BOOL bVisible );
-	
 
 	// Show reading and candidate window
 	BOOL	DoesShowReadingWindow() { return IsFocused() && ( s_bShowReadingWindow || s_CandList.bShowWindow ); }
 
 	// Set count of max characters
 	void	SetMaxChar( int nMaxChar );
+	int		GetMaxChar() { return m_nMaxCharCount; }
 
 	// String
 	void	InsertChar( int nInsertPos, char cInsert );
@@ -106,11 +148,23 @@ public:
 	void	ResetString();
 	void	SetString( char *pcString );
 	char	*GetString() const { return m_pInputBuffer; }
+	void	ClearInputBuffer();
 
 	void	SetPassWord(BOOL bPassWord, BOOL bMsgInput = FALSE )
 	{
 		m_bIsPWEditBox = bPassWord;
 		m_bMsgInput = bMsgInput;
+
+		if (m_pPWBuffer == NULL)
+		{
+			if (m_nShowCharCount > 0)
+				m_pPWBuffer = new char[m_nShowCharCount + 1];
+		}
+	}
+	void	GetPassWord( BOOL& bPassWord, BOOL& bMsgInput )
+	{
+		bPassWord = m_bIsPWEditBox;
+		bMsgInput = m_bMsgInput;
 	}
 
 	// Messages
@@ -119,18 +173,18 @@ public:
 	WMSG_RESULT	IMEMessage( MSG *pMsg );
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
-	// ì´ê¸°í™˜ ìˆ˜ì • ì‹œìž‘ (11. 15) : IME ìž‘ì—… 
-	WMSG_RESULT	IMEMessageKOR( MSG *pMsg ); // í•œêµ­ì–´
-	WMSG_RESULT	IMEMessageCHT( MSG *pMsg ); // ëŒ€ë§Œì–´
-	WMSG_RESULT	IMEMessageCHS( MSG *pMsg );	// ì¤‘êµ­ì–´(PRC)
-	WMSG_RESULT	IMEMessageJPN( MSG *pMsg ); // ì¼ë³¸ì–´
-	WMSG_RESULT	IMEMessageTHAI( MSG *pMsg ); // íƒœêµ­ì–´
-	WMSG_RESULT IMEMessageUSA( MSG *pMsg ); // ë¯¸êµ­
-	WMSG_RESULT IMEMessageBRZ( MSG *pMsg ); // ë¸Œë¼ì§ˆ
+	// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11. 15) : IME ÀÛ¾÷ 
+	WMSG_RESULT	IMEMessageKOR( MSG *pMsg ); // ÇÑ±¹¾î
+	WMSG_RESULT	IMEMessageCHT( MSG *pMsg ); // ´ë¸¸¾î
+	WMSG_RESULT	IMEMessageCHS( MSG *pMsg );	// Áß±¹¾î(PRC)
+	WMSG_RESULT	IMEMessageJPN( MSG *pMsg ); // ÀÏº»¾î
+	WMSG_RESULT	IMEMessageTHAI( MSG *pMsg ); // ÅÂ±¹¾î
+	WMSG_RESULT IMEMessageUSA( MSG *pMsg ); // ¹Ì±¹
+	WMSG_RESULT IMEMessageBRZ( MSG *pMsg ); // ºê¶óÁú
 
 	// IME
 	WMSG_RESULT GetCand();
-	void StopComposition ();	// ì´ê¸°í™˜ ì¶”ê°€ (11.18) : Password ì™€ ìž…ë ¥ í¬ì»¤ìŠ¤ê°€ ì—†ì„ ì‹œ Composition ì¤‘ì§€ 
+	void StopComposition ();	// ÀÌ±âÈ¯ Ãß°¡ (11.18) : Password ¿Í ÀÔ·Â Æ÷Ä¿½º°¡ ¾øÀ» ½Ã Composition ÁßÁö 
 	
 	// Cursor
 	void SetCursorIndex ( int nIndex );
@@ -143,8 +197,51 @@ public:
 
 	void SetInValidEditBox(BOOL bValid) { m_InValidEditBox = bValid; }
 	BOOL GetInValidEditBox() { return m_InValidEditBox; }
-};
 
+	inline const BOOL IsFocusedInAll() { return s_nRefCount; }
+	// [2011/11/02 : Sora] Ä¿¼­ ÀÌµ¿ ºÒ°¡ÇÃ·¡±×
+	void SetCursorMove( BOOL bMove ) { m_bMoveCursor = bMove; }
+	BOOL GetCursorMove() { return m_bMoveCursor; }
+
+
+	void SetOnlyIntegerMode(BOOL mode);
+	BOOL GetOnlyIntegerMode();
+
+	void SetTextColor(int color);
+	int  GetTextColor();
+
+	static const BOOL IsFocusingEditBox(void) {
+		if (s_FocusingEditBox && s_FocusingEditBox->IsFocused())
+			return TRUE;
+		
+		return FALSE;
+	}
+
+	void setBackGround( UIRect rect, UIRectUV uv );
+
+	void setInputCallback(Command* pCmd)	{ m_pInputCallback = pCmd; }
+
+	void SetRectSurface(CUIRectSurface* pRS)	{ m_pBackground = pRS;	}
+	CUIRectSurface* GetRectSurface()			{ return m_pBackground;	}
+
+	CUIBase* Clone();
+	WMSG_RESULT OnCharMessage(MSG* pMsg);
+	WMSG_RESULT OnKeyMessage(MSG* pMsg);
+	WMSG_RESULT OnIMEMessage(MSG* pMsg);
+
+	WMSG_RESULT OnLButtonDown(UINT16 x, UINT16 y);
+	WMSG_RESULT OnLButtonUp(UINT16 x, UINT16 y);
+	WMSG_RESULT OnMouseMove(UINT16 x, UINT16 y, MSG* pMsg);
+
+	WMSG_RESULT OnCloseProc();
+
+	bool Paste(HWND hWnd);
+	bool Copy(HWND hWnd);
+	void SetCopyStartPos();
+	void SetCopyPos();
+	void DelChars();
+	void ResetSelArea();
+};
 
 #endif	// UIEDITBOX_H_
 

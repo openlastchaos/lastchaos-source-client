@@ -4,85 +4,198 @@
 #pragma once
 #endif
 
-#define		OPTION_STR_UP				0		// íž˜ ìƒìŠ¹
-#define		OPTION_DEX_UP				1		// ë¯¼ì²© ìƒìŠ¹
-#define		OPTION_INT_UP				2		// ì§€í˜œ ìƒìŠ¹
-#define		OPTION_CON_UP				3		// ì²´ì§ˆ ìƒìŠ¹
-#define		OPTION_HP_UP				4		// ìƒëª…ë ¥ ìƒìŠ¹
-#define		OPTION_MP_UP				5		// ë§ˆë‚˜ ìƒìŠ¹
+#include <Engine/LocalDefine.h>
+#include <Engine/Help/LoadLod.h>
+#include <common/header/def_option.h>
+#include <common/header/def_title.h>
+#include <vector>
 
-#define		OPTION_DAMAGE_UP			6		// ë¬¼ë¦¬ ê³µê²©ë ¥ ìƒìŠ¹
-#define		OPTION_MELEE_DAMAGE_UP		7		// ë¬¼ë¦¬ ê·¼ê±°ë¦¬ ê³µê²©ë ¥ ìƒìŠ¹
-#define		OPTION_RANGE_DAMAGE_UP		8		// ë¬¼ë¦¬ ì›ê±°ë¦¬ ê³µê²©ë ¥ ìƒìŠ¹
-#define		OPTION_MELEE_HIT_UP			9		// ë¬¼ë¦¬ ê·¼ì ‘ ëª…ì¤‘ë¥  ìƒìŠ¹
-#define		OPTION_RANGE_HIT_UP			10		// ë¬¼ë¦¬ ì›ê±°ë¦¬ ëª…ì¤‘ë¥  ìƒìŠ¹
+#define		OPTION_STR_UP				0		// Èû »ó½Â
+#define		OPTION_DEX_UP				1		// ¹ÎÃ¸ »ó½Â
+#define		OPTION_INT_UP				2		// ÁöÇý »ó½Â
+#define		OPTION_CON_UP				3		// Ã¼Áú »ó½Â
+#define		OPTION_HP_UP				4		// »ý¸í·Â »ó½Â
+#define		OPTION_MP_UP				5		// ¸¶³ª »ó½Â
 
-#define		OPTION_DEFENSE_UP			11		// ë¬¼ë¦¬ ë°©ì–´ë ¥ ìƒìŠ¹
-#define		OPTION_MELEE_DEFENSE_UP		12		// ë¬¼ë¦¬ ê·¼ê±°ë¦¬ ë°©ì–´ë ¥ ìƒìŠ¹
-#define		OPTION_RANGE_DEFENSE_UP		13		// ë¬¼ë¦¬ ì›ê±°ë¦¬ ë°©ì–´ë ¥ ìƒìŠ¹
-#define		OPTION_MELEE_AVOID_UP		14		// ë¬¼ë¦¬ ê·¼ì ‘ íšŒí”¼ìœ¨ ìƒìŠ¹
-#define		OPTION_RANGE_AVOID_UP		15		// ë¬¼ë¦¬ ì›ê±°ë¦¬ íšŒí”¼ìœ¨ ìƒìŠ¹
+#define		OPTION_DAMAGE_UP			6		// ¹°¸® °ø°Ý·Â »ó½Â
+#define		OPTION_MELEE_DAMAGE_UP		7		// ¹°¸® ±Ù°Å¸® °ø°Ý·Â »ó½Â
+#define		OPTION_RANGE_DAMAGE_UP		8		// ¹°¸® ¿ø°Å¸® °ø°Ý·Â »ó½Â
+#define		OPTION_MELEE_HIT_UP			9		// ¹°¸® ±ÙÁ¢ ¸íÁß·ü »ó½Â
+#define		OPTION_RANGE_HIT_UP			10		// ¹°¸® ¿ø°Å¸® ¸íÁß·ü »ó½Â
 
-#define		OPTION_MAGIC_UP				16		// ë§ˆë²• ê³µê²©ë ¥ ìƒìŠ¹
-#define		OPTION_MAGIC_HIT_UP			17		// ë§ˆë²• ëª…ì¤‘ë¥  ìƒìŠ¹
-#define		OPTION_RESIST_UP			18		// ë§ˆë²• ë°©ì–´ë ¥ ìƒìŠ¹
-#define		OPTION_RESIST_AVOID_UP		19		// ë§ˆë²• íšŒí”¼ìœ¨ ìƒìŠ¹
+#define		OPTION_DEFENSE_UP			11		// ¹°¸® ¹æ¾î·Â »ó½Â
+#define		OPTION_MELEE_DEFENSE_UP		12		// ¹°¸® ±Ù°Å¸® ¹æ¾î·Â »ó½Â
+#define		OPTION_RANGE_DEFENSE_UP		13		// ¹°¸® ¿ø°Å¸® ¹æ¾î·Â »ó½Â
+#define		OPTION_MELEE_AVOID_UP		14		// ¹°¸® ±ÙÁ¢ È¸ÇÇÀ² »ó½Â
+#define		OPTION_RANGE_AVOID_UP		15		// ¹°¸® ¿ø°Å¸® È¸ÇÇÀ² »ó½Â
 
-#define		OPTION_ALL_DAMAGE_UP		20		// ì „ì²´ ê³µê²©ë ¥ ìƒìŠ¹ (ê·¼ì ‘ë¬¼ë¦¬, ì›ê²©ë¬¼ë¦¬, ë§ˆë²•)
-#define		OPTION_ALL_HIT_UP			21		// ì „ì²´ ëª…ì¤‘ë¥  ìƒìŠ¹ (ê·¼ì ‘ë¬¼ë¦¬, ì›ê²©ë¬¼ë¦¬, ë§ˆë²•)
+#define		OPTION_MAGIC_UP				16		// ¸¶¹ý °ø°Ý·Â »ó½Â
+#define		OPTION_MAGIC_HIT_UP			17		// ¸¶¹ý ¸íÁß·ü »ó½Â
+#define		OPTION_RESIST_UP			18		// ¸¶¹ý ¹æ¾î·Â »ó½Â
+#define		OPTION_RESIST_AVOID_UP		19		// ¸¶¹ý È¸ÇÇÀ² »ó½Â
 
-#define		OPTION_ALL_DEFENSE_UP		22		// ì „ì²´ ë°©ì–´ë ¥ ìƒìŠ¹ (ê·¼ì ‘ë¬¼ë¦¬, ì›ê²©ë¬¼ë¦¬, ë§ˆë²•)
-#define		OPTION_ALL_AVOID_UP			23		// ì „ì²´ íšŒí”¼ìœ¨ ìƒìŠ¹ (ê·¼ì ‘ë¬¼ë¦¬, ì›ê²©ë¬¼ë¦¬, ë§ˆë²•)
+#define		OPTION_ALL_DAMAGE_UP		20		// ÀüÃ¼ °ø°Ý·Â »ó½Â (±ÙÁ¢¹°¸®, ¿ø°Ý¹°¸®, ¸¶¹ý)
+#define		OPTION_ALL_HIT_UP			21		// ÀüÃ¼ ¸íÁß·ü »ó½Â (±ÙÁ¢¹°¸®, ¿ø°Ý¹°¸®, ¸¶¹ý)
 
-#define		OPTION_MP_STILL				24		// ë§ˆë‚˜ ìŠ¤í‹¸
-#define		OPTION_HP_STILL				25		// ìƒëª…ë ¥ ìŠ¤í‹¸
+#define		OPTION_ALL_DEFENSE_UP		22		// ÀüÃ¼ ¹æ¾î·Â »ó½Â (±ÙÁ¢¹°¸®, ¿ø°Ý¹°¸®, ¸¶¹ý)
+#define		OPTION_ALL_AVOID_UP			23		// ÀüÃ¼ È¸ÇÇÀ² »ó½Â (±ÙÁ¢¹°¸®, ¿ø°Ý¹°¸®, ¸¶¹ý)
 
-#define		OPTION_ATT_FIRE_UP			26		// í™”ì—¼ ì†ì„± í™•ë¥  ìƒìŠ¹
-#define		OPTION_ATT_WATER_UP			27		// ë¹™ì • ì†ì„± í™•ë¥  ìƒìŠ¹
-#define		OPTION_ATT_WIND_UP			28		// í­í’ ì†ì„± í™•ë¥  ìƒìŠ¹
-#define		OPTION_ATT_EARTH_UP			29		// ëŒ€ì§€ ì†ì„± í™•ë¥  ìƒìŠ¹
-#define		OPTION_ALL_ATT_UP			30		// ëª¨ë“  ì†ì„± í™•ë¥  ìƒìŠ¹
+#define		OPTION_NOT_USED_24			24		// »ç¿ë ¾ÈÇÔ
+#define		OPTION_NOT_USED_25			25		// »ç¿ë ¾ÈÇÔ
 
-#define		OPTION_ATT_FIRE_DOWN		31		// í™”ì—¼ ì†ì„± í™•ë¥  ê°ì†Œ
-#define		OPTION_ATT_WATER_DOWN		32		// ë¹™ì • ì†ì„± í™•ë¥  ê°ì†Œ
-#define		OPTION_ATT_WIND_DOWN		33		// í­í’ ì†ì„± í™•ë¥  ê°ì†Œ
-#define		OPTION_ATT_EARTH_DOWN		34		// ëŒ€ì§€ ì†ì„± í™•ë¥  ê°ì†Œ
-#define		OPTION_ALL_ATT_DOWN			35		// ëª¨ë“  ì†ì„± í™•ë¥  ê°ì†Œ
+#define		OPTION_ATTR_FIRE			26
+#define		OPTION_ATTR_WATER			27
+#define		OPTION_ATTR_WIND			28
+#define		OPTION_ATTR_EARTH			29
+#define		OPTION_ATTR_DARK			30
+#define		OPTION_ATTR_LIGHT			31
 
-#define		MAX_NUM_OPTION				36		// ì˜µì…˜ ì´ ìˆ«ìž
-#define		MAX_ITEM_OPTION				6		// ì•„ì´í…œì— ë¶™ì„ ìˆ˜ ìžˆëŠ” ìµœëŒ€ ì˜µì…˜ ìˆ˜
-#define		OPTION_VALUE_SHIFT			8		// 2byte ê°’ì¤‘ ì™¼ìª½ 1Byte ì˜µì…˜ ë²ˆí˜¸ ì˜¤ë¥¸ìª½ 1Byte ì˜µì…˜ ë ˆë²¨
+// °ø¼º Á¶ÇÕ ¾ÆÀÌÅÛ¿ë ¿É¼Ç
+#define		OPTION_MIX_STR				36		// Èû
+#define		OPTION_MIX_DEX				37		// ¹ÎÃ¸
+#define		OPTION_MIX_INT				38		// ÁöÇý
+#define		OPTION_MIX_CON				39		// Ã¼Áú
+
+#define		OPTION_MIX_ATTACK			40		// ¹°°ø
+#define		OPTION_MIX_MAGIC			41		// ¸¶°ø
+#define		OPTION_MIX_DEFENSE			42		// ¹°¹æ
+#define		OPTION_MIX_RESIST			43		// ¸¶¹æ
+
+#define		OPTION_MIX_STURN			44		// ½ºÅÏ
+#define		OPTION_MIX_BLOOD			45		// ºí·¯µå
+#define		OPTION_MIX_MOVE				46		// ¹«ºê
+#define		OPTION_MIX_POISON			47		// Æ÷ÀÌÁð
+#define		OPTION_MIX_SLOW				48		// ½½·Î¿ì
+// -- °ø¼º Á¶ÇÕ ¾ÆÀÌÅÛ¿ë ¿É¼Ç
+
+// 2006 ÇÏ¹Ý±â ½Å±Ô ¿É¼Ç
+#define		OPTION_DOWN_LIMITLEVEL		49		// Âø¿ëÁ¦ÇÑ ·¹º§ ´Ù¿î
+#define		OPTION_STEAL_MP				51		// ¸¶³ª Èí¼ö
+#define		OPTION_STEAL_HP				52		// »ý¸í·Â Èí¼ö
+#define		OPTION_ATTACK_BLIND			53		// ¾ÏÈæ °ø°Ý
+#define		OPTION_ATTACK_POISON		54		// µ¶ °ø°Ý
+#define		OPTION_ATTACK_CRITICAL		55		// Å©¸®Æ¼ÄÃ È®·ü Áõ°¡
+#define		OPTION_RECOVER_HP			56		// HP È¸º¹·Â »ó½Â
+#define		OPTION_RECOVER_MP			57		// MP È¸º¹·Â »ó½Â
+#define		OPTION_DECREASE_SKILL_DELAY	58		// ½ºÅ³ ÄðÅ¸ÀÓ °¨¼Ò
+#define		OPTION_DECREASE_SKILL_MP	59		// MP ¼Ò¸ð·® °¨¼Ò
+#define		OPTION_RESIST_STONE			60		// ½ºÅæ ³»¼º Áõ°¡
+#define		OPTION_RESIST_STURN			61		// ½ºÅÏ ³»¼º Áõ°¡
+#define		OPTION_RESIST_SILENT		62		// Ä§¹¬ ³»¼º Áõ°¡
+#define		OPTION_BLOCKING				63		// ºí·°·ü Áõ°¡
+#define		OPTION_MOVESPEED			64		// ÀÌµ¿ ¼Óµµ Çâ»ó
+// --- 2006 ÇÏ¹Ý±â ½Å±Ô ¿É¼Ç
+#define		OPTION_FLYSPEED				65		// ºñÇà ¼Óµµ Çâ»ó
+#define     OPTION_ATTACK_DEADLY        66      // µ¥µé¸® È®·ü Áõ°¡
+
+#define		OPTION_STR_UP_RATE			67
+#define		OPTION_DEX_UP_RATE			68
+#define		OPTION_INT_UP_RATE			69
+#define		OPTION_CON_UP_RATE			70
+#define		OPTION_HP_UP_RATE			71
+#define		OPTION_MP_UP_RATE			72
+#define		OPTION_WEAPON_UP_RATE		73
+#define		OPTION_ARMOR_UP_RATE		74
+#define		OPTION_MELEE_HIT_UP_RATE	75
+#define		OPTION_MAGIC_HIT_UP_RATE	76
+#define		OPTION_MELEE_AVOID_RATE		77
+#define		OPTION_MAGIC_AVOID_RATE		78
+#define		OPTION_RECOVER_HP_RATE		79
+#define		OPTION_RECOVER_MP_RATE		80
+#define		OPTION_TEST_QUEST			81
+#define		OPTION_EXP_UP_RATE			82
+#define		OPTION_SP_UP_RATE			83
+#define		OPTION_APET_TRANS_END		84		// º¯½Å Á¾·á ½Ã°£
+#define		OPTION_APET_OWNER_HPUP		85
+#define		OPTION_APET_OWNER_ATTUP		86
+#define		OPTION_ATT_FIRE_UP			87		// È­¿°¼Ó¼º °ø°Ý ·¹º§»ó½Â
+#define		OPTION_ATT_WATER_UP			88		// ºùÁ¤¼Ó¼º °ø°Ý ·¹º§»ó½Â
+#define		OPTION_ATT_WIND_UP			89		// ÆøÇ³¼Ó¼º °ø°Ý ·¹º§»ó½Â
+#define		OPTION_ATT_EARTH_UP			90		// ´ëÁö¼Ó¼º °ø°Ý ·¹º§»ó½Â
+#define		OPTION_ATT_DARK_UP			91		// ¾îµÒ¼Ó¼º °ø°Ý ·¹º§»ó½Â
+#define		OPTION_ATT_LIGHT_UP			92		// ºû¼Ó¼º °ø°Ý ·¹º§»ó½Â
+#define		OPTION_DEF_FIRE_UP			93		// È­¿°¼Ó¼º ¹æ¾î ·¹º§»ó½Â
+#define		OPTION_DEF_WATER_UP			94		// ºùÁ¤¼Ó¼º ¹æ¾î ·¹º§»ó½Â
+#define		OPTION_DEF_WIND_UP			95		// ÆøÇ³¼Ó¼º ¹æ¾î ·¹º§»ó½Â
+#define		OPTION_DEF_EARTH_UP			96		// ´ëÁö¼Ó¼º ¹æ¾î ·¹º§»ó½Â
+#define		OPTION_DEF_DARK_UP			97		// ¾îµÒ¼Ó¼º ¹æ¾î ·¹º§»ó½Â
+#define		OPTION_DEF_LIGHT_UP			98		// ºû¼Ó¼º ¹æ¾î ·¹º§»ó½Â
+#define		OPTION_ALL_STAT_UP			99		// ¸ðµç½ºÅÝ(4Á¾) »ó½Â
+#define		OPTION_PVP_DAMAGE_ABSOLB	100		// PVP µ¥¹ÌÁö Èí¼ö(%)
+#define		OPTION_DEBUF_DECR_TIME		101		// µð¹öÇÁ½Ã°£ °¨¼Ò(%)
+#define		OPTION_RECOVER_HP_NOTRATE	102		// HPÈ¸º¹ Á¤¼ö°ª
+#define		OPTION_RECOVER_MP_NOTRATE	103		// MPÈ¸º¹ Á¤¼ö°ª
+#define		OPTION_INCREASE_STRONG		104		// °­ÀÎÇÔÁõ°¡ (Á¤¼ö)
+#define		OPTION_INCREASE_HARD		105		// ÇÏµå ÀûÁßµµ Áõ°¡ (Á¤¼ö)
+#define		OPTION_INCREASE_HP			106		// hp È¸º¹·Â »ó½Â (Á¤¼ö)
+#define		OPTION_PERSONAL_ALL_STAT_UP	107		// [°³ÀÎ] ÀüÃ¼ ½ºÅÝ »ó½Â
+#define		OPTION_PERSONAL_EXP_UP		108		// [°³ÀÎ] ÀüÃ¼ ½ºÅÝ »ó½Â
+#define		OPTION_PERSONAL_GOLD_UP		109		// [°³ÀÎ] ÀüÃ¼ ½ºÅÝ »ó½Â
+#define		OPTION_PARTY_ALL_STAT_UP	110		// [ÆÄÆ¼] ÀüÃ¼ ½ºÅÝ »ó½Â
+#define		OPTION_PARTY_EXP_UP			111		// [ÆÄÆ¼] ÀüÃ¼ ½ºÅÝ »ó½Â
+#define		OPTION_PARTY_GOLD_UP		112		// [ÆÄÆ¼] ÀüÃ¼ ½ºÅÝ »ó½Â
+
+#define		MAX_NUM_OPTION				120		// ¿É¼Ç ÃÑ ¼ýÀÚ
+
+#define		MAX_OPTION_INC_ORIGIN		6		// ¿À¸®Áö³Î Æ÷ÇÔ ÃÖ´ë ¿É¼Ç ¼ö
+
+#define		MAX_SOCKET_OPTION			7		// socket system : max count about socket hole [5/10/2010 rumist]
+#define		OPTION_VALUE_SHIFT			8		// 2byte °ªÁß ¿ÞÂÊ 1Byte ¿É¼Ç ¹øÈ£ ¿À¸¥ÂÊ 1Byte ¿É¼Ç ·¹º§
 #define		OPTION_VALUE_AND			0x11111111
-#define		OPTION_MAX_LEVEL			7		// ì˜µì…˜ ìµœëŒ€ ë ˆë²¨ í˜„ìž¬ 7
+#define		OPTION_MAX_LEVEL			7		// ¿É¼Ç ÃÖ´ë ·¹º§ ÇöÀç 7
 
-class ENGINE_API COptionData
+#define		ORIGIN_VAR_DEFAULT			100
+
+enum eJewel_OptionType
+{
+	JEWEL_OPTION_PACIVE = 0,
+	JEWEL_OPTION_ACTIVE_SKILL_ATT = 1,
+	JEWEL_OPTION_ACTIVE_SKILL_DEF = 2,
+};
+
+class ENGINE_API COptionData : public stOption, public LodLoader<COptionData>
 {
 private:
-	struct _tOptionStat
-	{
-		char	name[50];
-		int		value[OPTION_MAX_LEVEL];
-	};
-	_tOptionStat	Option_Data;
-
+	std::vector<int> optionVal;
+	std::string	name;
 public:
-	/* Default constructor. */
-	COptionData(void);
-	/* Destructor. */
-	~COptionData(void);	
-
+	inline int GetIndex()			
+	{	return getindex(); 	}
+	void SetName(const char* str)	{ name = str; }
 	inline const char* GetName() const
-	{	return Option_Data.name; }
+	{	return name.c_str(); }
 
 	inline int GetValue(int iLevel) const
-	{	return Option_Data.value[iLevel];	}
+	{
+		if (iLevel >= 0 && iLevel < DEF_OPTION_MAX_LEVEL)
+			return value[iLevel];
+
+		return 0;
+	}
 
 	//-----------------------------------------------------------------------------
-	// Purpose: ì˜µì…˜ ë°ì´í„°ë¥¼ í™”ì¼ë¡œë¶€í„° ì½ì–´ë“¤ìž…ë‹ˆë‹¤.
-	// Input  : &apOptionData - ì €ìž¥ë  ë°°ì—´.
-	//			FileName - íŒŒì¼ëª…
+	// Purpose: ¿É¼Ç µ¥ÀÌÅÍ¸¦ È­ÀÏ·ÎºÎÅÍ ÀÐ¾îµéÀÔ´Ï´Ù.
+	// Input  : &apOptionData - ÀúÀåµÉ ¹è¿­.
+	//			FileName - ÆÄÀÏ¸í
 	// Output : 	static int
 	//-----------------------------------------------------------------------------
-	static int LoadOptionDataFromFile(CStaticArray<COptionData> &apOptionData, const char* FileName);
+	static bool loadEx(const char* FileName);
+
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslate()
+	{
+		char buff[MAX_PATH] = {0,};
+		sprintf( buff, "[%d] : option", getindex() );
+		name = buff;
+	}
+
+	void ClearNoTranslate()
+	{
+		name = "";
+	}
 };
+
 #endif
+
+
+

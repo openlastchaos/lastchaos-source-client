@@ -565,7 +565,7 @@ static void FixBorderCracks(CTerrainImp *ptr, INDEX iTerrainTile)
 		const INDEX ittNB = ttTile.tt_aiNeighbours[inb];
 		if(ittNB>=0) {
 			const CTerrainTile &tt = ptr->tr_attTiles[ittNB];
-			const iNeighbourLOD = tt.tt_iRequestedLOD;
+			const int iNeighbourLOD = tt.tt_iRequestedLOD;
 			// if neighbour is in higher LOD
 			if(iNeighbourLOD<iLOD) {
 				// neighbour vertex isn't border
@@ -932,7 +932,8 @@ static void GenerateTileGeometry(CTerrainImp *ptr, INDEX iTerrainTile)
 		ivx++;
 		ivxZ+=ivxStepZ;
 		if(ivxZ<ctvxZ) {
-			for(INDEX ivxX=0;ivxX<ctvxX-2;ivxX+=ivxStepX*2) {
+			INDEX ivxX;
+			for(ivxX = 0; ivxX < ctvxX-2; ivxX += ivxStepX * 2) {
 				// Lerp left vertical vertex
 				TerrainVertex &tvxV1 = avxVertices[ivx+0];
 				tvxV1.tv_uwY2 = LERP_HEIGHT(ivxX,ivxZ-ivxStepZ,ivxX,ivxZ+ivxStepZ);
@@ -1164,9 +1165,10 @@ static void GenerateTerrainQuadTreeNodes(CTerrainImp *ptr)
 	QuadTreeLevel &qtl = ptr->tr_aqtlQuadTreeLevels[0];
 	const INDEX ctqtn = qtl.qtl_ctNodes;
 	const INDEX iqtnFirst = qtl.qtl_iFirstNode;
+	INDEX iqtn;
 
 	// for each node
-	for(INDEX iqtn=0;iqtn<ctqtn;iqtn++) {
+	for( iqtn = 0; iqtn < ctqtn; iqtn++ ) {
 		QuadTreeNode &qtn = aqtnNodes.Push();
 		// Fill node data
 		qtn.qtn_iTileIndex = iqtn;
@@ -1227,7 +1229,7 @@ static void GenerateTerrainQuadTreeNodes(CTerrainImp *ptr)
 	ptr->tr_aqtnQuadTreeNodes.New(ctqtnCopy);
 
 	// Copy qtn array in terrain
-	for(iqtn=0;iqtn<ctqtnCopy;iqtn++) {
+	for( iqtn = 0; iqtn < ctqtnCopy; iqtn++ ) {
 		ptr->tr_aqtnQuadTreeNodes[iqtn] = aqtnNodes[iqtn];
 	}
 }
@@ -1655,7 +1657,10 @@ extern void TR_MarkTextureUnused(CTextureData *ptd)
 	if(ptd->ser_ctUsed==0) {
 		_ctTexturesCreated--;
 		ptd->Clear();
-		delete ptd;
+	// WSS_BUGFIX 070510
+	// Top Map 관련 수정 사항 처리 
+	// 여기서 Delete를 하면 이후 ptd->ser_ctUsed를 다시 참조하는 곳이 있어 문제 발생 주석 처리
+	// delete ptd;
 	}
 }
 
@@ -2166,7 +2171,15 @@ extern void TR_SetAttributeMapSize( CTerrain *ptrTerrain )
 
 	ASSERT( ptr->tr_vMetricSize( 1 ) == ptr->tr_vMetricSize( 3 ) );
 	const PIX	pixMapWidth = ptr->tr_pixHeightMapWidth - 1;
-	ptr->tr_slAttributeMapSizeAspect = ptr->tr_vMetricSize( 1 ) / pixMapWidth;
+
+	if (ptr->tr_vMetricSize(1) > pixMapWidth)
+	{
+		ptr->tr_slAttributeMapSizeAspect = ptr->tr_vMetricSize( 1 ) / pixMapWidth;
+	}
+	else
+	{
+		ptr->tr_slAttributeMapSizeAspect = 1;
+	}
 
 	if( ptr->tr_pubAttributeMap != NULL )
 	{
@@ -2174,8 +2187,8 @@ extern void TR_SetAttributeMapSize( CTerrain *ptrTerrain )
 		ptr->tr_pubAttributeMap = NULL;
 	}
 
-	const SLONG	slAttributeMapSize = ptr->tr_vMetricSize( 1 ) * ptr->tr_vMetricSize( 3 );
-	ptr->tr_pubAttributeMap = (UBYTE*)AllocMemory( slAttributeMapSize );
+	const SLONG	slAttributeMapSize = ptr->tr_vMetricSize( 1 ) * ptr->tr_vMetricSize( 3 ) * sizeof(UWORD);
+	ptr->tr_pubAttributeMap = (UWORD*)AllocMemory( slAttributeMapSize );
 }
 
 // Import height map from targa file
@@ -2362,7 +2375,7 @@ extern void TR_ClearAttributeMap( CTerrain *ptrTerrain )
 	const PIX	pixAttributeMapWidth  = ( ptr->tr_pixHeightMapWidth - 1 ) * slSizeAspect;
 	const PIX	pixAttributeMapHeight = ( ptr->tr_pixHeightMapHeight - 1 ) * slSizeAspect;
 
-	memset( ptr->tr_pubAttributeMap, 0, pixAttributeMapWidth * pixAttributeMapHeight );
+	memset( ptr->tr_pubAttributeMap, 0, pixAttributeMapWidth * pixAttributeMapHeight * sizeof(UWORD));
 }
 
 extern void TR_ImportAttributeMap_t( CTerrain *ptrTerrain, CTFileName &fnm )
@@ -2375,7 +2388,7 @@ extern void TR_ImportAttributeMap_t( CTerrain *ptrTerrain, CTFileName &fnm )
 	const PIX	pixAttributeMapWidth  = ( ptr->tr_pixHeightMapWidth - 1 ) * slSizeAspect;
 	const PIX	pixAttributeMapHeight = ( ptr->tr_pixHeightMapHeight - 1 ) * slSizeAspect;
 	const PIX	pixAttributeMapSize = pixAttributeMapWidth * pixAttributeMapHeight;
-	UBYTE		*pubTemp = ptr->tr_pubAttributeMap;
+	UWORD		*pubTemp = ptr->tr_pubAttributeMap;
 
 	CTFileStream	strmFile;
 	strmFile.Open_t( fnm );
@@ -2399,7 +2412,7 @@ extern void TR_ExportAttributeMap_t( CTerrain *ptrTerrain, CTFileName &fnm )
 	const PIX	pixAttributeMapWidth  = ( ptr->tr_pixHeightMapWidth - 1 ) * slSizeAspect;
 	const PIX	pixAttributeMapHeight = ( ptr->tr_pixHeightMapHeight - 1 ) * slSizeAspect;
 	const PIX	pixAttributeMapSize = pixAttributeMapWidth * pixAttributeMapHeight;
-	UBYTE		*pubTemp = ptr->tr_pubAttributeMap;
+	UWORD		*pubTemp = ptr->tr_pubAttributeMap;
 
 	CTFileName	fnmAttributeMap;
 	if( fnm.FindSubstr( CTString( "_" ) ) == -1 )
@@ -2413,11 +2426,11 @@ extern void TR_ExportAttributeMap_t( CTerrain *ptrTerrain, CTFileName &fnm )
 
 	CTFileStream	strmFile;
 	strmFile.Create_t( fnmAttributeMap, CTStream::CM_BINARY );
-	strmFile.Write_t( pubTemp, pixAttributeMapSize );
+	strmFile.Write_t( pubTemp, pixAttributeMapSize * sizeof(UWORD));
 	strmFile.Close();
 }
 
-static void TR_DrawMapAttrLine( int nSX, int nSY, int nEX, int nEY, UBYTE aTempAttrMap[][512], UBYTE ubAttr )
+static void TR_DrawMapAttrLine( int nSX, int nSY, int nEX, int nEY, UBYTE aTempAttrMap[][512], UWORD ubAttr )
 {
 	// Starting point of line
 	int	x = nSX;
@@ -2488,7 +2501,7 @@ static void TR_DrawMapAttrLine( int nSX, int nSY, int nEX, int nEY, UBYTE aTempA
 }
 
 static void TR_DrawAttributeMap( POINT ptLB, POINT ptLT, POINT ptRT, POINT ptRB,
-									UBYTE *pubAttr, PIX pixAttrMapWidth, UBYTE ubAttr )
+									UWORD *pubAttr, PIX pixAttrMapWidth, UWORD ubAttr )
 {
 	// Get min & max box
 	POINT	ptMin = ptLB;
@@ -2505,6 +2518,18 @@ static void TR_DrawAttributeMap( POINT ptLB, POINT ptLT, POINT ptRT, POINT ptRB,
 	else if( ptRB.x > ptMax.x ) ptMax.x = ptRB.x;
 	if( ptRB.y < ptMin.y ) ptMin.y = ptRB.y;
 	else if( ptRB.y > ptMax.y ) ptMax.y = ptRB.y;
+
+	//****************************************************************************//
+	// [070620: Su-won] Attribute 맵을 생성할 때 에러 발생 -> 수정
+	// 모델이 위치한 지역에 맵을 그릴 때 모델의 범위가 Terrain의 범위를 넘어가 있을 경우
+	// 에러가 발생하기 때문에 맵을 그릴 범위를 Terrain의 범위에 한정시킴.
+
+	ptMin.x = Clamp(ptMin.x, 0L, pixAttrMapWidth);
+	ptMin.y = Clamp(ptMin.y, 0L, pixAttrMapWidth);
+	ptMax.x = Clamp(ptMax.x, 0L, pixAttrMapWidth);
+	ptMax.y = Clamp(ptMax.y, 0L, pixAttrMapWidth);
+	
+	//****************************************************************************//
 
 	// Get width/height of temp attribute map
 	int	nWidth = ptMax.x - ptMin.x;
@@ -2562,7 +2587,7 @@ static void TR_DrawAttributeMap( POINT ptLB, POINT ptLT, POINT ptRT, POINT ptRB,
 	}
 
 	// Copy temp attribute valuse to attribute map
-	UBYTE	*pTemp;
+	UWORD	*pTemp;
 	for( nY = 0; nY <= nHeight; nY++ )
 	{
 		pTemp = &pubAttr[ptMin.x + ( ptMin.y + nY ) * pixAttrMapWidth];
@@ -2575,7 +2600,7 @@ static void TR_DrawAttributeMap( POINT ptLB, POINT ptLT, POINT ptRT, POINT ptRB,
 	}
 }
 
-static void TR_DrawSlopAttribute( CTerrainImp *ptr, UBYTE *pubAttr, PIX pixAttrMapWidth )
+static void TR_DrawSlopAttribute( CTerrainImp *ptr, UWORD *pubAttr, PIX pixAttrMapWidth )
 {
 	FLOAT	fX, fY, fZ, fMinY, fMaxY, fSize;
 	DOUBLE	dPi = atan( 1.0 ) * 4.0;
@@ -2639,7 +2664,7 @@ static void TR_DrawSlopAttribute( CTerrainImp *ptr, UBYTE *pubAttr, PIX pixAttrM
 
 			// Steep slope
 			if( ( fMaxY - fMinY ) / fSize >= fMaxSlope )
-				pubAttr[pixAttr] = ATTC_UNWALKABLE;
+				pubAttr[pixAttr] |= MATT_UNWALKABLE;
 		}
 	}
 }
@@ -2659,15 +2684,16 @@ extern void TR_GenerateAttributeMap( CTerrain *ptrTerrain, CWorld *pWorld )
 	const PIX	pixAttributeMapWidth  = ( ptr->tr_pixHeightMapWidth - 1 ) * slSizeAspect;
 	const PIX	pixAttributeMapHeight = ( ptr->tr_pixHeightMapHeight - 1 ) * slSizeAspect;
 	const PIX	pixAttributeMapSize = pixAttributeMapWidth * pixAttributeMapHeight;
-	UBYTE		*pubTemp = ptr->tr_pubAttributeMap;
-	UBYTE		ubAttr = ATTC_UNWALKABLE;		// can't walk
+	UWORD		*pubTemp = ptr->tr_pubAttributeMap;
+	UWORD		ubAttr = MATT_UNWALKABLE;		// can't walk
 
 	// Clear the attribute map
-	memset( pubTemp, ATTC_WALKABLE, pixAttributeMapSize * sizeof(UBYTE) );
+	memset(pubTemp, 0x00, pixAttributeMapSize* sizeof(UWORD));
 
 	// Slop attribute ( maximum slope angle is 45 degree )
 	TR_DrawSlopAttribute( ptr, pubTemp, pixAttributeMapWidth );
 
+	/*******
 	// Each entities...
 	FOREACHINDYNAMICCONTAINER( pWorld->wo_cenAllEntities, CEntity, iten )
 	{
@@ -2738,6 +2764,8 @@ extern void TR_GenerateAttributeMap( CTerrain *ptrTerrain, CWorld *pWorld )
 		// Draw attribute map
 		TR_DrawAttributeMap( ptLB, ptLT, ptRT, ptRB, pubTemp, pixAttributeMapWidth, ubAttr );
 	}
+	***********/
+	TR_DrawModelAttribute(pWorld, pubTemp, pixAttributeMapWidth);
 }
 
 extern void TR_ExportServerHeightMap_t( CTerrain *ptrTerrain, CTFileName &fnm )
@@ -2793,6 +2821,86 @@ extern void TR_ExportServerHeightMap_t( CTerrain *ptrTerrain, CTFileName &fnm )
 	strmFile.Write_t( puwHeightMap, pixHeightMapSize );
 	strmFile.Close();
 }
+
+void TR_DrawModelAttribute( CWorld *pWorld, UWORD* pbMap, PIX pixAttributeMapWidth )
+{
+	UWORD ubAttr = MATT_UNWALKABLE;		// can't walk
+
+	// Each entities...
+	FOREACHINDYNAMICCONTAINER( pWorld->wo_cenAllEntities, CEntity, iten )
+	{
+		CEntity	*penEntity = iten;
+
+		if( penEntity->en_RenderType != CEntity::RT_MODEL && penEntity->en_RenderType != CEntity::RT_SKAMODEL )
+			continue;
+
+		// Skip
+		if( ( penEntity->en_ulFlags & ENF_BACKGROUND ) ||
+			( penEntity->en_ulFlags & ENF_INVISIBLE ) ||
+			( penEntity->en_ulCollisionFlags == 0 ) )
+			continue;
+
+		FLOAT3D	vMin, vMax, vStretch;
+		// If the entity is a mdl model...
+		if( penEntity->en_RenderType == CEntity::RT_MODEL )
+		{
+			CModelObject	*pmo = penEntity->en_pmoModelObject;
+			vStretch = pmo->mo_Stretch;
+			FOREACHINDYNAMICARRAY( pmo->GetData()->md_acbCollisionBox, CModelCollisionBox, itcb )
+			{
+				vMin = itcb->mcb_vCollisionBoxMin;
+				vMax = itcb->mcb_vCollisionBoxMax;
+				break;
+			}
+		}
+		// If the entity is a ska model...
+		else
+		{
+			CModelInstance	*pmi = penEntity->en_pmiModelInstance;
+			vStretch = pmi->mi_vStretch;
+			vMin = pmi->GetCollisionBoxMin( 0 );
+			vMax = pmi->GetCollisionBoxMax( 0 );
+		}
+
+		// Get real size of bounding box
+		vMin( 1 ) *= vStretch( 1 );
+		vMin( 2 ) *= vStretch( 2 );
+		vMin( 3 ) *= vStretch( 3 );
+		vMax( 1 ) *= vStretch( 1 );
+		vMax( 2 ) *= vStretch( 2 );
+		vMax( 3 ) *= vStretch( 3 );
+
+		// Translation & rotation
+		FLOAT3D			vTranslation = penEntity->en_plPlacement.pl_PositionVector;
+		FLOATmatrix3D	matRotation = penEntity->en_mRotation;
+		FLOAT3D			vLB = FLOAT3D( vMin( 1 ), vMin( 2 ), vMin( 3 ) );
+		FLOAT3D			vLT = FLOAT3D( vMin( 1 ), vMin( 2 ), vMax( 3 ) );
+		FLOAT3D			vRT = FLOAT3D( vMax( 1 ), vMin( 2 ), vMax( 3 ) );
+		FLOAT3D			vRB = FLOAT3D( vMax( 1 ), vMin( 2 ), vMin( 3 ) );
+		vLB = vTranslation + vLB * matRotation;
+		vLT = vTranslation + vLT * matRotation;
+		vRT = vTranslation + vRT * matRotation;
+		vRB = vTranslation + vRB * matRotation;
+
+		// Get points
+		POINT	ptLB, ptLT, ptRT, ptRB;
+		ptLB.x = vLB( 1 );
+		ptLB.y = vLB( 3 );
+		ptLT.x = vLT( 1 );
+		ptLT.y = vLT( 3 );
+		ptRT.x = vRT( 1 );
+		ptRT.y = vRT( 3 );
+		ptRB.x = vRB( 1 );
+		ptRB.y = vRB( 3 );
+
+		// Draw attribute map
+		TR_DrawAttributeMap( ptLB, ptLT, ptRT, ptRB, pbMap, pixAttributeMapWidth, ubAttr );
+	}
+
+}
+
+
+
 // yjpark     -->|
 
 #endif	// FINALVERSION

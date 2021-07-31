@@ -1,43 +1,128 @@
 #include "stdh.h"
-#include <Engine/Interface/UIRadar.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIRadar.h>
 #include <Engine/Interface/UISiegeWarfareDoc.h>
-#include <Engine/LocalDefine.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/Base/ExpressSystem.h>
+#include <Engine/Contents/Base/PetStash.h>
+
+#include <Engine/Contents/Base/UIPetStash.h>
+#include <Engine/Contents/Login/UIServerSelect.h>
+#include <Engine/Contents/Base/UIMapOption.h>
+#include <Engine/Contents/Base/UIPartyNew.h>
+#include <Engine/Contents/function/ItemCollectionUI.h>
+#include <Engine/Interface/UIMap.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Object/ActorMgr.h>
+#include <Engine/Contents/function/gps.h>
+#include <Engine/Contents/Base/Party.h>
+#include <Engine/Contents/function/PremiumChar.h>
+#include <Engine/Contents/function/PremiumCharUI.h>
+#include <Engine/Info/MyInfo.h>
 
 #define RADIAN	(ANGLE_180 / PI)
+
+// Define position
+#define	RADAR_CENTER_OFFSETX			71
+#define	RADAR_CENTER_OFFSETY			115
+#define	RADAR_COORD_TEXT_CX				70
+#define	RADAR_COORD_TEXT_SY				35
+// #else
+// 	#define	RADAR_COORD_TEXT_CX				90
+// 	#define	RADAR_COORD_TEXT_SY				4
+// #endif
+#define	RADAR_OPTION_BASE_WIDTH			35
+#define	RADAR_OPTION_SY					2
+#define	RADAR_OPTION_BTN_SX				-15
+#define	RADAR_OPTION_BTN_SY				14
+#define	RADAR_OPTION_ICON_SY			20
+#define	RADAR_OPTION_OFFSETY			16
+
+
+// Define size of radar
+#define	RADAR_COMPASS_RADIUS			50.0f
+#define	RADAR_VIEW_RADIUS				55.0f
+#define	RADAR_VIEW_DISTANCE				70.0f
+#define DEF_SHOW_DISTANCE				47.f
+
 
 // Show ToolTip
 #define STT_OPTION		0
 #define STT_MAP			1
 #define STT_SIGNAL		2
-#define WORLD_TIME_FONT_SIZE  7
-extern INDEX g_iCountry;
+#define STT_EXPRESSREMOTE	3
+#define STT_PETSTASH 4
+#define STT_ITEMCOLLECTION	5
+#define STT_PREMIUMCHAR 6
 
+#define WORLD_TIME_FONT_SIZE  7
+#define RADAR_OPTION_TOTAL_EX RADAR_OPTION_TOTAL
+#define NOTICE_TICK 800
+
+#ifdef PREMIUM_CHAR
+	#define DEF_EMPTY_MENU_MAX	(1)
+#else	//	PREMIUM_CHAR
+	#define DEF_EMPTY_MENU_MAX	(2)
+#endif	//	PREMIUM_CHAR
+
+#define DEF_LOCALTIME_YGAP	(14)
+
+enum __tagRoyalrumbleMsg
+{
+	ROYALRUMBLE_SCHEDULE,
+	ROYALRUMBLE_REJECT,
+	ROYALRUMBLE_REWARD,
+	ROYALRUMBLE_POINT,
+};
 
 // ----------------------------------------------------------------------------
 // Name : CUIRadar()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIRadar::CUIRadar()
+	: m_nLocalTimeY(0)
 {
 	m_szCoord[0] = NULL;
 	m_bShowOptionPopup = FALSE;
 	m_bShowToolTip = FALSE;
 	m_strToolTip = CTString( "" );
+	m_strTimer = CTString( "" );
 	m_bInsideMouse = FALSE;
 	m_bSignalBtnOn = FALSE;
 	m_year = m_month = m_hour = m_day= 0;
-	m_cipher = 1;
-	
+	m_ptdButtonTexture = NULL;
+	m_ptdRoyalRumbleTexture = NULL;
+	m_ptdMapTexture = NULL;	// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_ptdMapObjTexture = NULL;	// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_bEnableRR = FALSE;
+	// trophy texture init. [5/31/2011 rumist]
+	m_ptdTrophyTexture = NULL;
+	m_bRenderTrophy = FALSE;
+	m_nZone = -1;	// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_nLayer = -1;	// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_fZoomRate = 3.0f;	// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	m_nSelectedIcon = -1; // [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
 }
 
 // ----------------------------------------------------------------------------
 // Name : ~CUIRadar()
-// Desc : Destructor„Ñ±„Ñ±„Ñ±
+// Desc : Destructor§°§°§°
 // ----------------------------------------------------------------------------
 CUIRadar::~CUIRadar()
 {
 	Destroy();
+
+	_destroyTrophy();
+	STOCK_RELEASE( m_ptdRoyalRumbleTexture );
+	m_bEnableRR = FALSE;
+	
+	STOCK_RELEASE(m_ptdButtonTexture);
+	STOCK_RELEASE( m_ptdMapTexture );		// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+	STOCK_RELEASE( m_ptdMapObjTexture );	// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+
+	SAFE_DELETE(m_pMapOption);
 }
 
 // ----------------------------------------------------------------------------
@@ -48,79 +133,38 @@ void CUIRadar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 {
 	nWidth = RADAR_WIDTH;
 	nHeight = 200;
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
-	m_rcTop.SetRect( 0, 0, 140, 53 );
-	m_rcCompassIn.SetRect( -52, -52, 52, 52 ); 
+	m_rcTop.SetRect( 0, 0, 141, 57 );
+	m_rcCompassIn.SetRect( -47, -47, 47, 47 );
 	m_rcCompassOut.SetRect( -76, -76, 76, 76 );
-	m_rcOption.SetRect( 0, 3, 18, 130 );
-	
+
 	m_rcPoint[RADAR_PARTY].SetRect( -5, -5, 6, 6 );
 	m_rcPoint[RADAR_GUILD].SetRect( -5, -5, 6, 6 );
-	m_rcPoint[RADAR_NPC].SetRect( -4, -5, 5, 6 );
-	m_rcPoint[RADER_QUESTSUCCESS].SetRect( -8, -8, 8, 8 );
-	m_rcPoint[RADER_QUESTNPC].SetRect( -8, -8, 8, 8 );
-	m_rcPoint[RADAR_HELPNPC].SetRect(-4, -5, 5, 6);
+	m_rcPoint[RADAR_NPC].SetRect( -11, -11, 11, 11 );
+	m_rcPoint[RADER_QUESTSUCCESS].SetRect( -11, -11, 11, 11 );
+	m_rcPoint[RADER_QUESTNPC].SetRect( -11, -11, 11, 11 );
 	m_rcPoint[RADAR_MOB].SetRect( -2, -2, 2, 2 );
 	m_rcMyPoint.SetRect( -6, -11, 7, 8 );
 	m_rcTarget.SetRect( -2, -2, 3, 3 );
 	m_rcSignal.SetRect( -12, -12, 12, 12 );
 	m_rcOutSignal.SetRect( -10, -5, 11, 5 );
 
-	if(g_iCountry == BRAZIL)				// 070531 ttos : Î∏åÎùºÏßà ÎÇ†Ïßú ÌëúÍ∏∞ ÏàòÏ†ï (Ïùº/Ïõî/ÎÖÑ Ïãú)
-	{
-		m_rcYear.SetRect(88,32,94,42);
-		m_rcMonth.SetRect(66,32,72,42);
-		m_rcDay.SetRect(45,32,51,42);
-		m_rcTime.SetRect(116,32,122,42);
-
-	}else
-	{
-		// world time wooss ---------------------------->> 060415
-		m_rcYear.SetRect(54,32,61,42);
-		m_rcMonth.SetRect(71,32,78,42);
-		m_rcDay.SetRect(88,32,94,42);
-		m_rcTime.SetRect(120,32,126,42);
-		// ---------------------------------------------<<
-	}
-
-	
 	// Create radar texture
-	//m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Radar.tex" ) );
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\TopUI.tex" ) );
 	m_ptdButtonTexture =CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
-	// UV Coordinate of each part
-	// Background
-	/***
-	m_rtBackTop.SetUV( 0, 0, 140, 53, fTexWidth, fTexHeight );
-	m_rtCompassIn.SetUV( 152, 143, 256, 247, fTexWidth, fTexHeight );
-	m_rtCompassOut.SetUV( 0, 54, 152, 206, fTexWidth, fTexHeight );
-	m_rtPoint[RADAR_PARTY].SetUV( 178, 23, 189, 34, fTexWidth, fTexHeight );
-	m_rtPoint[RADAR_GUILD].SetUV( 178, 39, 189, 50, fTexWidth, fTexHeight );
-	m_rtPoint[RADAR_NPC].SetUV( 179, 55, 188, 66, fTexWidth, fTexHeight );
-	m_rtPoint[RADAR_HELPNPC].SetUV(163, 52, 174,66,fTexWidth, fTexHeight);
-	m_rtPoint[RADER_QUESTNPC].SetUV(159, 67, 175,84,fTexWidth, fTexHeight);
-	m_rtPoint[RADER_QUESTSUCCESS].SetUV(158, 85, 174,102,fTexWidth, fTexHeight);
-	m_rtPoint[RADAR_MOB].SetUV( 182, 75, 186, 79, fTexWidth, fTexHeight );
-	m_rtMyPoint.SetUV( 177, 2, 190, 21, fTexWidth, fTexHeight );
-	m_rtTarget.SetUV( 189, 74, 194, 79, fTexWidth, fTexHeight );
-	m_rtSignal.SetUV( 176, 86, 200, 110, fTexWidth, fTexHeight );
-	m_rtOutSignal.SetUV( 194, 45, 215, 55, fTexWidth, fTexHeight );
-	m_rtTargetAni.SetUV( 194, 2, 215, 23, fTexWidth, fTexHeight );
-	***/
-	m_rtBackTop.SetUV( 360, 248, 499, 304, fTexWidth, fTexHeight );
+	m_rtBackTop.SetUV( 144, 963, 285, 1020, fTexWidth, fTexHeight );
+
 	m_rtCompassIn.SetUV( 517, 376, 623, 481, fTexWidth, fTexHeight );
-	m_rtCompassOut.SetUV( 337, 340, 495, 497, fTexWidth, fTexHeight );
+	m_rtCompassOut.SetUV( 337, 340, 495, 498, fTexWidth, fTexHeight );
 	m_rtPoint[RADAR_PARTY].SetUV( 663, 408, 674, 419, fTexWidth, fTexHeight );
 	m_rtPoint[RADAR_GUILD].SetUV( 648, 408, 659, 419, fTexWidth, fTexHeight );
 	m_rtPoint[RADAR_NPC].SetUV( 665, 427, 674, 438, fTexWidth, fTexHeight );
-	m_rtPoint[RADAR_HELPNPC].SetUV( 650, 427, 659, 438,fTexWidth, fTexHeight);
 	m_rtPoint[RADER_QUESTNPC].SetUV( 649, 448, 663, 463,fTexWidth, fTexHeight);
 	m_rtPoint[RADER_QUESTSUCCESS].SetUV( 649, 467, 663, 481,fTexWidth, fTexHeight);
 	m_rtPoint[RADAR_MOB].SetUV( 654, 395, 658, 399, fTexWidth, fTexHeight );
@@ -128,108 +172,159 @@ void CUIRadar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	m_rtTarget.SetUV( 661, 395, 666, 400, fTexWidth, fTexHeight );
 	m_rtSignal.SetUV( 682, 447, 706, 471, fTexWidth, fTexHeight );
 	m_rtOutSignal.SetUV( 683, 427, 704, 437, fTexWidth, fTexHeight );
-	//m_rtTargetAni.SetUV( 194, 2, 215, 23, fTexWidth, fTexHeight );
 	m_rtTargetAni.SetUV( 684, 481, 703, 500, fTexWidth, fTexHeight );
 
-
-	// Tool tip
-	//m_rtToolTipL.SetUV( 219, 0, 226, 22, fTexWidth, fTexHeight );
-	//m_rtToolTipM.SetUV( 229, 0, 231, 22, fTexWidth, fTexHeight );
-	//m_rtToolTipR.SetUV( 234, 0, 241, 22, fTexWidth, fTexHeight );
 	m_rtToolTipL.SetUV( 239, 253, 246, 270, fTexWidth, fTexHeight );
 	m_rtToolTipM.SetUV( 246, 253, 328, 270, fTexWidth, fTexHeight );
 	m_rtToolTipR.SetUV( 328, 253, 335, 270, fTexWidth, fTexHeight );
 
 	// Option popup
-	//m_rtOptionL.SetUV( 219, 24, 226, 96, fTexWidth, fTexHeight );
-	//m_rtOptionM.SetUV( 229, 24, 231, 96, fTexWidth, fTexHeight );
-	//m_rtOptionR.SetUV( 234, 24, 241, 96, fTexWidth, fTexHeight );
 	m_rtOptionL.SetUV( 239, 253, 246, 270, fTexWidth, fTexHeight );
 	m_rtOptionM.SetUV( 246, 253, 328, 270, fTexWidth, fTexHeight );
 	m_rtOptionR.SetUV( 328, 253, 335, 270, fTexWidth, fTexHeight );
 
+	int nPosX = 646;
+	for(int j=0; j<EXPEDITION_GROUP_MAX; j++)
+	{
+		m_rtPointExpedition[j].SetUV( nPosX, 347, nPosX + 11, 358, fTexWidth, fTexHeight );
+		nPosX += 15;
+	}
+	
+	m_rcPoint[RADAR_EXPEDITION].SetRect( -5, -5, 6, 6 );
+
 	// Option button
-	//m_btnOption.Create( this, CTString( "" ), 19, 4, 14, 13 );
-	//m_btnOption.SetUV( UBS_IDLE, 143, 13, 157, 26, fTexWidth, fTexHeight );
-	//m_btnOption.SetUV( UBS_CLICK, 158, 13, 172, 26, fTexWidth, fTexHeight );
-	m_btnOption.Create( this, CTString( "" ), 13, 6, 14, 13 );
-	m_btnOption.SetUV( UBS_IDLE, 451, 215, 465, 228, fTexWidth, fTexHeight );
-	m_btnOption.SetUV( UBS_CLICK, 466, 215, 480, 228, fTexWidth, fTexHeight );
-	m_btnOption.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnOption.Create( this, CTString( "" ), 3, 129, 25, 25 );
+	m_btnOption.SetUV( UBS_IDLE, 791, 711, 816, 736, fTexWidth, fTexHeight );
+	m_btnOption.SetUV( UBS_CLICK, 819, 711, 844, 736, fTexWidth, fTexHeight );
+	m_btnOption.SetUV( UBS_ON, 847, 711, 872, 736, fTexWidth, fTexHeight );
 	m_btnOption.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Map button
-	//m_btnMap.Create( this, CTString( "" ), 38, 4, 14, 13 );
-	//m_btnMap.SetUV( UBS_IDLE, 143, 28, 157, 41, fTexWidth, fTexHeight );
-	//m_btnMap.SetUV( UBS_CLICK, 158, 28, 172, 41, fTexWidth, fTexHeight );
-	m_btnMap.Create( this, CTString( "" ), 32, 6, 14, 13 );
-	m_btnMap.SetUV( UBS_IDLE, 451, 230, 465, 243, fTexWidth, fTexHeight );
-	m_btnMap.SetUV( UBS_CLICK, 466, 230, 480, 243, fTexWidth, fTexHeight );
-	m_btnMap.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnMap.Create( this, CTString( "" ), -2, 100, 25, 25 );
+	m_btnMap.SetUV( UBS_IDLE, 791, 683, 816, 708, fTexWidth, fTexHeight );
+	m_btnMap.SetUV( UBS_CLICK, 819, 683, 844, 708, fTexWidth, fTexHeight );
+	m_btnMap.SetUV( UBS_ON, 847, 683, 872, 708, fTexWidth, fTexHeight );
 	m_btnMap.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	m_btnSignal.Create( this, CTString( "" ), 9, 27, 19, 19 );
-	//m_btnSignal.SetUV( UBS_IDLE, 212, 95, 231, 114, fTexWidth, fTexHeight );
-	//m_btnSignal.SetUV( UBS_CLICK, 232, 95, 251, 114, fTexWidth, fTexHeight );
-	m_btnSignal.SetUV( UBS_IDLE, 488, 226, 505, 243, fTexWidth, fTexHeight );
-	m_btnSignal.SetUV( UBS_CLICK, 508, 226, 525, 243, fTexWidth, fTexHeight );
-	m_btnSignal.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnSignal.Create( this, CTString( "" ), 24, 152, 25, 25 );
+	m_btnSignal.SetUV( UBS_IDLE, 791, 739, 816, 764, fTexWidth, fTexHeight );
+	m_btnSignal.SetUV( UBS_CLICK, 819, 739, 844, 764, fTexWidth, fTexHeight );
+	m_btnSignal.SetUV( UBS_ON, 847, 739, 872, 764, fTexWidth, fTexHeight );
 	m_btnSignal.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// world time wooss --------------------------------------->> 060415
-	//int tv_size = 0;
 	int tv_size = 655;
-	for(int i=0; i<10; i++){
-		//m_rtFigure[i].SetUV(tv_size,214,tv_size+WORLD_TIME_FONT_SIZE,224,fTexWidth,fTexHeight);
+	for(int i=0; i<10; i++)
+	{
 		m_rtFigure[i].SetUV(tv_size,367,tv_size+WORLD_TIME_FONT_SIZE,377,fTexWidth,fTexHeight);
 		tv_size += WORLD_TIME_FONT_SIZE+1;
 	}
 
 	// --------------------------------------------------------<<
 	
-	// Calcluate size of option popup
-	int	nMaxSize = _S( 444, "ÌååÌã∞" ).Length();
-	int	nSize = _S( 445, "Í∏∏Îìú" ).Length();
-	if( nMaxSize < nSize ) nMaxSize = nSize;
-	nSize = _S( 446, "NPC" ).Length();
-	if( nMaxSize < nSize ) nMaxSize = nSize;
-	nSize = _S( 448, "Î™¨Ïä§ÌÑ∞" ).Length();
-	if( nMaxSize < nSize ) nMaxSize = nSize;
-	nMaxSize *= _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
+	m_ExpressIcon.Create(this, CTString(""), 7, 6, 25, 25);
+	m_ExpressIcon.SetUV( UBS_IDLE, 650, 679, 675, 704, fTexWidth, fTexHeight );
+	m_ExpressIcon.SetUV( UBS_CLICK, 678, 679, 703, 704, fTexWidth, fTexHeight );
+	m_ExpressIcon.SetUV( UBS_ON, 678, 707, 703, 732, fTexWidth, fTexHeight );
+	m_ExpressIcon.CopyUV( UBS_IDLE, UBS_DISABLE );
+	m_ExpressIcon.SetEnable(TRUE);
+
+	m_ExpressNotice.SetUV(678, 707, 703, 732, fTexWidth, fTexHeight );
+
+	m_bNotice = false;
+	m_bRemote = false;
+	m_bNoticeRenderFlag = false;
+	m_nStartTime = 0;
+
+	m_PetStashIcon.Create(this, CTString(""), 32, 6, 25, 25);
+	m_PetStashIcon.SetUV( UBS_IDLE, 734, 683, 759, 708, fTexWidth, fTexHeight );
+	m_PetStashIcon.SetUV( UBS_ON, 762, 711, 787, 736, fTexWidth, fTexHeight );
+	m_PetStashIcon.SetUV( UBS_CLICK, 762, 683, 787, 708, fTexWidth, fTexHeight );
+	m_PetStashIcon.CopyUV(UBS_IDLE, UBS_DISABLE);
+	m_PetStashIcon.SetEnable(TRUE);
+
+	m_ItemCollectionIcon.Create(this, CTString(""), 57, 6, 25, 25);
+	m_ItemCollectionIcon.SetUV( UBS_IDLE, 650, 737, 650 + 25, 737 + 25, fTexWidth, fTexHeight );
+	m_ItemCollectionIcon.SetUV( UBS_ON, 678, 765, 678 + 25, 765 + 25, fTexWidth, fTexHeight );
+	m_ItemCollectionIcon.SetUV( UBS_CLICK, 678, 737, 678 + 25, 737 + 25, fTexWidth, fTexHeight );
+	m_ItemCollectionIcon.SetUV( UBS_DISABLE, 650, 765, 650 + 25, 765 + 25, fTexWidth, fTexHeight );
+	m_ItemCollectionIcon.SetEnable(TRUE);
+
+	int nEmptyPosX, nEmptyPosY;
+#ifdef PREMIUM_CHAR
+	m_PremiumCharIcon.Create(this, CTString(""), 82, 6, 25, 25);
+	m_PremiumCharIcon.SetUV( UBS_IDLE, 734, 739, 734 + 25, 739 + 25, fTexWidth, fTexHeight );
+	m_PremiumCharIcon.SetUV( UBS_ON, 762, 767, 762 + 25, 767 + 25, fTexWidth, fTexHeight );
+	m_PremiumCharIcon.SetUV( UBS_CLICK, 762, 739, 762 + 25, 739 + 25, fTexWidth, fTexHeight );
+	m_PremiumCharIcon.SetUV( UBS_DISABLE, 734, 767, 734 + 25, 767 + 25, fTexWidth, fTexHeight );
+	m_PremiumCharIcon.SetEnable(TRUE);
+
+	m_PremiumCharIcon.SetBtnState(UBS_DISABLE);
+
+	nEmptyPosX = m_PremiumCharIcon.GetPosX() + m_PremiumCharIcon.GetWidth();
+	nEmptyPosY = m_PremiumCharIcon.GetPosY();
+#else	//	PREMIUM_CHAR
+	nEmptyPosX = m_ItemCollectionIcon.GetPosX() + m_ItemCollectionIcon.GetWidth();
+	nEmptyPosY = m_ItemCollectionIcon.GetPosY();
+#endif	//	PREMIUM_CHAR
+
+	m_uvEmptyMenu.SetUV(650, 707, 675, 732, fTexWidth, fTexHeight);
+	m_rcEmptyMenu.SetRect(nEmptyPosX, nEmptyPosY, 25, 25);
 
 	// Option check buttons
 	fTexWidth = m_ptdButtonTexture->GetPixWidth();
 	fTexHeight = m_ptdButtonTexture->GetPixHeight();
 
-	int	nPosY = RADAR_OPTION_BTN_SY;
-	nSize = nMaxSize + 10;
-	for( int iOpt = 0; iOpt < RADAR_OPTION_TOTAL; iOpt++ )
-	{
-		m_cbtnOption[iOpt].Create( this, RADAR_OPTION_BTN_SX, nPosY, 11, 11, CTString( "" ), TRUE, nSize, nSize + 17 );
-		//m_cbtnOption[iOpt].SetUV( UCBS_CHECK, 143, 0, 154, 11, fTexWidth, fTexHeight );
-		//m_cbtnOption[iOpt].SetUV( UCBS_NONE, 156, 0, 167, 11, fTexWidth, fTexHeight );
-		m_cbtnOption[iOpt].SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
-		m_cbtnOption[iOpt].SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
-		m_cbtnOption[iOpt].CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
-		m_cbtnOption[iOpt].CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
-		m_cbtnOption[iOpt].SetCheck( TRUE );
-		m_cbtnOption[iOpt].SetTextColor( 0, 0xC5C5C5FF );
-		m_cbtnOption[iOpt].SetTextColor( 1, 0xC5C5C5FF );
-		nPosY += RADAR_OPTION_OFFSETY;
-	}
+	// trophy data ∞° æ¯¿ª ∞ÊøÏ crash πÆ¡¶ «ÿ∞·¿ª ¿ß«ÿº≠ [5/25/2011 rumist]
+	_royalrumbleCreate();
+	fTexWidth = m_ptdBaseTexture->GetPixWidth();
+	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
-	m_cbtnOption[RADAR_PARTY].SetText( _S( 444, "ÌååÌã∞" ) );
-	m_cbtnOption[RADAR_GUILD].SetText( _S( 445, "Í∏∏Îìú" ) );
-	m_cbtnOption[RADAR_NPC].SetText( _S( 446, "NPC" ) );
-	m_cbtnOption[RADAR_HELPNPC].SetText( _S(1748,"ÏïàÎÇ¥"));
-	m_cbtnOption[RADER_QUESTNPC].SetText(_S(106,"ÌÄòÏä§Ìä∏"));
-	m_cbtnOption[RADER_QUESTSUCCESS].SetText(_S(106,"ÌÄòÏä§Ìä∏"));
-	m_cbtnOption[RADAR_MOB].SetText( _S( 448, "Î™¨Ïä§ÌÑ∞" ) );
+	m_btnZoomIn.Create( this, CTString( "" ), 92, 54, 25, 25 );
+	m_btnZoomIn.SetUV( UBS_IDLE, 548, 484, 573, 509, fTexWidth, fTexHeight );
+	m_btnZoomIn.SetUV( UBS_CLICK, 490, 484, 515, 509, fTexWidth, fTexHeight );
+	m_btnZoomIn.SetUV( UBS_DISABLE, 606, 484, 631, 509, fTexWidth, fTexHeight );
+	m_btnZoomIn.CopyUV( UBS_IDLE, UBS_ON );
 
-	// Calcluate size of option popup
-	nSize += 22;
-	m_nOptionIconSX = 10 - nSize;
-	m_rcOption.Left = -nSize;
+	m_btnZoomOut.Create( this, CTString( "" ), 113, 78, 25, 25 );
+	m_btnZoomOut.SetUV( UBS_IDLE, 577, 484, 602, 509, fTexWidth, fTexHeight );
+	m_btnZoomOut.SetUV( UBS_CLICK, 519, 484, 544, 509, fTexWidth, fTexHeight );
+	m_btnZoomOut.SetUV( UBS_DISABLE, 635, 484, 660, 509, fTexWidth, fTexHeight );
+	m_btnZoomOut.CopyUV( UBS_IDLE, UBS_ON );
+
+	m_iconVec.reserve(50);
+
+	m_ptdMapObjTexture = CreateTexture( CTString( "Data\\Interface\\Map.tex" ) );
+	fTexWidth = m_ptdMapObjTexture->GetPixWidth();
+	fTexHeight = m_ptdMapObjTexture->GetPixHeight();
+
+	m_rcSubZone[VILLAGE].SetRect( -17, -18, 17, 18 );
+	m_rcSubZone[DUNGEON].SetRect( -16, -18, 16, 18 );
+	m_rcSubZone[CHARGE_PRIVATE].SetRect( -13, -23, 13, 23 );
+	m_rcSubZone[CHARGE_PUBLIC].SetRect( -13, -23, 13, 23 );
+	m_rcSubZone[MINE_PRIVATE].SetRect( -17, -20, 17, 20 );
+	m_rcSubZone[MINE_PUBLIC].SetRect( -17, -20, 17, 20 );
+	m_rcSubZone[GATHER_PRIVATE].SetRect( -17, -19, 17, 19 );
+	m_rcSubZone[GATHER_PUBLIC].SetRect( -17, -19, 17, 19 );
+	m_rcSubZone[CASTLE_GATE].SetRect( -9, -9, 9, 9 );//!!
+
+	m_rtSubZone[VILLAGE].SetUV( 217, 205, 251, 241, fTexWidth, fTexHeight );
+	m_rtSubZone[DUNGEON].SetUV( 67, 91, 99, 127, fTexWidth, fTexHeight );
+	m_rtSubZone[CHARGE_PRIVATE].SetUV( 108, 82, 134, 128, fTexWidth, fTexHeight );
+	m_rtSubZone[CHARGE_PUBLIC].SetUV( 108, 82, 134, 128, fTexWidth, fTexHeight );
+	m_rtSubZone[MINE_PRIVATE].SetUV( 135, 88, 169, 128, fTexWidth, fTexHeight );
+	m_rtSubZone[MINE_PUBLIC].SetUV( 135, 88, 169, 128, fTexWidth, fTexHeight );
+	m_rtSubZone[GATHER_PRIVATE].SetUV( 131, 6, 165, 44, fTexWidth, fTexHeight );
+	m_rtSubZone[GATHER_PUBLIC].SetUV( 131, 6, 165, 44, fTexWidth, fTexHeight );
+	m_rtSubZone[CASTLE_GATE].SetUV( 170, 10, 188, 28, fTexWidth, fTexHeight );
+
+	m_rcGPS.SetRect(-13, -13, 13, 13);
+	m_uvGPS.SetUV(210, 258, 236, 284, fTexWidth, fTexHeight);
+
+	m_pMapOption = new CUIMapOption;
+	UIMGR()->LoadXML("UIMap_Option.xml", m_pMapOption);
+
+	m_pMapOption->SetPos(m_nPosX - m_pMapOption->GetWidth(),(m_nPosY + m_rcOption.Top));
 }
 
 // ----------------------------------------------------------------------------
@@ -240,6 +335,15 @@ void CUIRadar::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ
 {
 	SetPos( pixMaxI - GetWidth(), pixMinJ );
 	_pUIBuff->SetMyBadBuffPos( m_nPosX - 2, 2 );
+
+	PIX pixCenterI = (pixMaxI - pixMinI)/2;
+	PIX pixCenterJ = (pixMaxJ - pixMinJ)/2;
+	UIRect rcTrophy;
+	rcTrophy.SetRect( 0, 0, 332, 312 );
+	m_rcTrophy.SetRect( pixCenterI - rcTrophy.GetCenterX(), pixCenterJ - rcTrophy.GetCenterY()-200, 
+						pixCenterI + rcTrophy.GetCenterX(), pixCenterJ + rcTrophy.GetCenterY()-200 );
+
+	m_pMapOption->SetPos(m_nPosX - m_pMapOption->GetWidth(),(m_nPosY + m_rcOption.Top));
 }
 
 // ----------------------------------------------------------------------------
@@ -258,274 +362,228 @@ void CUIRadar::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMax
 static FLOAT	fSin, fCos;
 void CUIRadar::Render()
 {
-	FLOAT	fLeftCos, fLeftSin, fRightCos, fRightSin;
-	FLOAT	fTopSin, fTopCos, fBottomSin, fBottomCos;
-	FLOAT	fX1, fY1, fX2, fY2, fX3, fY3, fX4, fY4;
+	int i;
 	int	nX = m_nPosX + RADAR_CENTER_OFFSETX;
 	int	nY = m_nPosY + RADAR_CENTER_OFFSETY;
 	fSin = Sin( _pNetwork->MyCharacterInfo.camera_angle );
 	fCos = Cos( _pNetwork->MyCharacterInfo.camera_angle );
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Set radar texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
 	// Top
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY,
 										m_nPosX + m_rcTop.Right, m_nPosY + m_rcTop.Bottom,
 										m_rtBackTop.U0, m_rtBackTop.V0, m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
-	// Inner Compass
-	fLeftCos = m_rcCompassIn.Left * fCos;
-	fLeftSin = m_rcCompassIn.Left * fSin;
-	fRightCos = m_rcCompassIn.Right * fCos;
-	fRightSin = m_rcCompassIn.Right * fSin;
-	fTopSin = m_rcCompassIn.Top * fSin;
-	fTopCos = m_rcCompassIn.Top * fCos;
-	fBottomSin = m_rcCompassIn.Bottom * fSin;
-	fBottomCos = m_rcCompassIn.Bottom * fCos;
 
-	fX1 = fLeftCos - fTopSin;
-	fY1 = fLeftSin + fTopCos;
-	fX2 = fLeftCos - fBottomSin;
-	fY2 = fLeftSin + fBottomCos;
-	fX3 = fRightCos - fBottomSin;
-	fY3 = fRightSin + fBottomCos;
-	fX4 = fRightCos - fTopSin;
-	fY4 = fRightSin + fTopCos;
-	_pUIMgr->GetDrawPort()->AddTexture( nX + fX1, nY + fY1, m_rtCompassIn.U0, m_rtCompassIn.V0, 0xFFFFFFFF,
-										nX + fX2, nY + fY2, m_rtCompassIn.U0, m_rtCompassIn.V1, 0xFFFFFFFF,
-										nX + fX3, nY + fY3, m_rtCompassIn.U1, m_rtCompassIn.V1, 0xFFFFFFFF,
-										nX + fX4, nY + fY4, m_rtCompassIn.U1, m_rtCompassIn.V0, 0xFFFFFFFF );
-
-	// My point
-	_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcMyPoint.Left, nY + m_rcMyPoint.Top,
-										nX + m_rcMyPoint.Right, nY + m_rcMyPoint.Bottom,
-										m_rtMyPoint.U0, m_rtMyPoint.V0, m_rtMyPoint.U1, m_rtMyPoint.V1,
-										0xFFFFFFFF );
+	if( IsRadarUse() )
+	{
+		pDrawPort->FlushRenderingQueue();
+		
+		RenderCurrentMap();
 	
-	// Render location of objects
-	RenderObjectLocation();
+		// Render location of objects
+		RenderObjectLocation();
 
-	// Outer Compass
-	fLeftCos = m_rcCompassOut.Left * fCos;
-	fLeftSin = m_rcCompassOut.Left * fSin;
-	fRightCos = m_rcCompassOut.Right * fCos;
-	fRightSin = m_rcCompassOut.Right * fSin;
-	fTopSin = m_rcCompassOut.Top * fSin;
-	fTopCos = m_rcCompassOut.Top * fCos;
-	fBottomSin = m_rcCompassOut.Bottom * fSin;
-	fBottomCos = m_rcCompassOut.Bottom * fCos;
+		RenderGPS(pDrawPort);
 
-	fX1 = fLeftCos - fTopSin;
-	fY1 = fLeftSin + fTopCos;
-	fX2 = fLeftCos - fBottomSin;
-	fY2 = fLeftSin + fBottomCos;
-	fX3 = fRightCos - fBottomSin;
-	fY3 = fRightSin + fBottomCos;
-	fX4 = fRightCos - fTopSin;
-	fY4 = fRightSin + fTopCos;
-	// wooss 060413 move down radarY 
-	_pUIMgr->GetDrawPort()->AddTexture( nX + fX1, nY + fY1, m_rtCompassOut.U0, m_rtCompassOut.V0, 0xFFFFFFFF,
-										nX + fX2, nY + fY2, m_rtCompassOut.U0, m_rtCompassOut.V1, 0xFFFFFFFF,
-										nX + fX3, nY + fY3, m_rtCompassOut.U1, m_rtCompassOut.V1, 0xFFFFFFFF,
-										nX + fX4, nY + fY4, m_rtCompassOut.U1, m_rtCompassOut.V0, 0xFFFFFFFF );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-	// Render Signal 
-	RenderSignal();
+		pDrawPort->AddTexture( nX + m_rcCompassOut.Left, nY + m_rcCompassOut.Top, nX + m_rcCompassOut.Right, nY + m_rcCompassOut.Bottom,
+								   m_rtCompassOut.U0, m_rtCompassOut.V0, m_rtCompassOut.U1, m_rtCompassOut.V1, 0xFFFFFFFF);
+		// Render Signal 
+		RenderSignal();
+		RenderMyPosition();
+		
+		// Option button
+		m_btnOption.Render();
 	
-	// Option button
-	m_btnOption.Render();
-
-	// Map button
-	m_btnMap.Render();
-
-	// Signal Button 
-	m_btnSignal.Render();
-
+		// Map button
+		m_btnMap.Render();
 	
+		// Signal Button 
+		m_btnSignal.Render();
 
+		m_btnZoomIn.Render();
+		m_btnZoomOut.Render();
+
+		pDrawPort->FlushRenderingQueue();
+
+		m_nLocalTimeY = m_nPosY + this->GetHeight() - DEF_LOCALTIME_YGAP, DEF_UI_COLOR_WHITE;
+	}
+	else
+	{
+		m_nLocalTimeY = m_rcTop.Top + m_rcTop.Bottom + 4, DEF_UI_COLOR_WHITE;
+	}
 	// Option popup
 	if( m_bShowOptionPopup )
 	{
-		// Background
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Left, m_nPosY + m_rcOption.Top,
-											m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Bottom,
-											m_rtOptionL.U0, m_rtOptionL.V0, m_rtOptionL.U1, m_rtOptionL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Top,
-											m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Bottom,
-											m_rtOptionM.U0, m_rtOptionM.V0, m_rtOptionM.U1, m_rtOptionM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Top,
-											m_nPosX + m_rcOption.Right, m_nPosY + m_rcOption.Bottom,
-											m_rtOptionR.U0, m_rtOptionR.V0, m_rtOptionR.U1, m_rtOptionR.V1,
-											0xFFFFFFFF );
-
-		// Icons
-		nX = m_nPosX + m_nOptionIconSX;
-		nY = m_nPosY + RADAR_OPTION_ICON_SY;
-		for( int i = 0; i < RADAR_OPTION_TOTAL; i++ )
+		if (m_pMapOption != NULL)
 		{
-			_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[i].Left, nY + m_rcPoint[i].Top,
-												nX + m_rcPoint[i].Right, nY + m_rcPoint[i].Bottom,
-												m_rtPoint[i].U0, m_rtPoint[i].V0, m_rtPoint[i].U1, m_rtPoint[i].V1,
-												0xFFFFFFFF );
-			nY += RADAR_OPTION_OFFSETY;
+			m_pMapOption->Hide(FALSE);
+			m_pMapOption->Render(pDrawPort);
 		}
-
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-		// Set radar texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
-
-		// Check buttons
-		for( int iOption = 0; iOption < RADAR_OPTION_TOTAL; iOption++ )
-			m_cbtnOption[iOption].Render();
-
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-		// Set radar texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	}
+	else
+	{
+		if (m_pMapOption != NULL)
+			m_pMapOption->Hide(TRUE);
 	}
 
 	// Text in radar
 	sprintf( m_szCoord, "%4d,%-4d", int(_pNetwork->MyCharacterInfo.x), int(_pNetwork->MyCharacterInfo.z) );
-	_pUIMgr->GetDrawPort()->PutTextCharExCX( m_szCoord, 9, m_nPosX + RADAR_COORD_TEXT_CX,
+	pDrawPort->PutTextCharExCX( m_szCoord, 9, m_nPosX + RADAR_COORD_TEXT_CX,
 												m_nPosY + RADAR_COORD_TEXT_SY, 0x72D02EFF );
 
-#ifdef DISPLAY_SERVER_INFO
+	time_t tmt;
+	tmt = (ULONG)time(NULL) - _pNetwork->slServerTimeGap;
+
+	struct tm* pTime = localtime(&tmt);
+
+	if (pTime != NULL)
+	{
+		m_strLocalDay.PrintF("%d.%02d.%02d", pTime->tm_year + 1900, pTime->tm_mon + 1, pTime->tm_mday);
+		m_strLocalTime.PrintF(" %02d:%02d", pTime->tm_hour, pTime->tm_min);
+	
+		pDrawPort->PutTextExCX(m_strLocalDay + m_strLocalTime, m_nPosX +this->GetWidth()/2, m_nLocalTimeY);
+	}
+
 	CTString strServerInfo;
-	strServerInfo.PrintF("%s Ch. %d", _pUIMgr->GetSelServer()->GetServerGroupName(_pNetwork->m_iServerGroup), _pNetwork->m_iServerCh );
-	_pUIMgr->GetDrawPort()->PutTextExCX( strServerInfo, m_nPosX +this->GetWidth()/2, m_nPosY + this->GetHeight() -5, 0xF2F2F2B2 );
-#endif
+	strServerInfo.PrintF("%s Ch. %d", pUIManager->GetServerSelect()->GetServerName(_pNetwork->m_iServerGroup), _pNetwork->m_iServerCh );
+	pDrawPort->PutTextExCX( strServerInfo, m_nPosX +this->GetWidth()/2, m_nLocalTimeY + 17, 0xF2F2F2B2 );
 	
-
-	// Display LC Time 
-	if(m_year>=0){
-		DisplayNum(m_year+1,m_rcYear);
-	}
-	if(m_month>=0){
-		DisplayNum(m_month+1,m_rcMonth);
-	}
-	if(m_day>=0){
-		DisplayNum(m_day+1,m_rcDay);
-	}
-	if(m_hour>=0){
-		DisplayNum(m_hour,m_rcTime);
-	}
-
-
-/*
-	if(m_year>=0){
-		m_cipher = 1;
-		tv_c = CountCipher(m_year);
-		char *tv_str;
-		tv_str = new(char[40]);
-		itoa(m_year,tv_str,10);
-		for(tv_i = 0; tv_i < tv_c ; tv_i++ ){
-			tv_num=tv_str[tv_c-tv_i-1]-'0';
-				_pUIMgr->GetDrawPort()->AddTexture( m_nPosX+m_rcYear.Left -6*tv_i, m_nPosY+m_rcYear.Top,
-											m_nPosX+m_rcYear.Right -6*tv_i, m_nPosY+m_rcYear.Bottom,
-											m_rtFigure[tv_num].U0, m_rtFigure[tv_num].V0, m_rtFigure[tv_num].U1, m_rtFigure[tv_num].V1,
-											0xFFFFFFFF );			
-		}
-				
-	}
-	*/
-/*	if(m_month>=0){
-		tv_c = CountCipher(m_month);
-		char *tv_str;
-		tv_str = new(char[40]);
-		itoa(m_month,tv_str,10);
-		for(tv_i = 0; tv_i < tv_c ; tv_i++ ){
-			tv_num=tv_str[tv_c-tv_i]-'0';
-				_pUIMgr->GetDrawPort()->AddTexture( m_nPosX+m_rcMonth.Left -6*tv_i, m_nPosY+m_rcMonth.Top,
-											m_nPosX+m_rcMonth.Right -6*tv_i, m_nPosY+m_rcMonth.Bottom,
-											m_rtFigure[tv_num].U0, m_rtFigure[tv_num].V0, m_rtFigure[tv_num].U1, m_rtFigure[tv_num].V1,
-											0xFFFFFFFF );			
-		}
-				
-	}
-	if(m_day>=0){
-		tv_c = CountCipher(m_day);
-		char *tv_str;
-		tv_str = new(char[40]);
-		itoa(m_day,tv_str,10);
-		for(tv_i = 0; tv_i < tv_c ; tv_i++ ){
-			tv_num=tv_str[tv_c-tv_i]-'0';
-				_pUIMgr->GetDrawPort()->AddTexture( m_nPosX+m_rcDay.Left -6*tv_i , m_nPosY+m_rcDay.Top,
-											m_nPosX+m_rcDay.Right-6*tv_i, m_nPosY+m_rcDay.Bottom,
-											m_rtFigure[tv_num].U0, m_rtFigure[tv_num].V0, m_rtFigure[tv_num].U1, m_rtFigure[tv_num].V1,
-											0xFFFFFFFF );			
-		}
-				
-	}
-	if(m_hour>=0){
-		tv_c = CountCipher(m_hour);
-		char *tv_str;
-		tv_str = new(char[40]);
-		itoa(m_hour,tv_str,10);
-		for(tv_i = 0; tv_i < tv_c ; tv_i++ ){
-			tv_num=tv_str[tv_c-tv_i]-'0';
-				_pUIMgr->GetDrawPort()->AddTexture( m_nPosX+m_rcTime.Left -6*tv_i, m_nPosY+m_rcTime.Top,
-											m_nPosX+m_rcTime.Right -6*tv_i, m_nPosY+m_rcTime.Bottom,
-											m_rtFigure[tv_num].U0, m_rtFigure[tv_num].V0, m_rtFigure[tv_num].U1, m_rtFigure[tv_num].V1,
-											0xFFFFFFFF );			
-		}
-				
-	}*/
-
-//	_pUIMgr->GetDrawPort()->AddTexture(   m_nPosX+m_rcYear.Left , m_nPosY+m_rcYear.Top,
-//											  m_nPosX+m_rcYear.Right , m_nPosY+m_rcYear.Bottom,
-//											m_rtFigure[tv_num].U0, m_rtFigure[tv_num].V0, m_rtFigure[tv_num].U1, m_rtFigure[tv_num].V1,
-//											0xFFFFFFFF );			
-
-	
-/*	
-	CTString tv_time;
-	tv_time.PrintF("%d.%d.%d    %d",m_year,m_month,m_day,m_hour);
-	_pUIMgr->GetDrawPort()->PutTextCharExCX( tv_time, tv_time.Length(), m_nPosX + RADAR_COORD_TEXT_CX,
-												m_nPosY + RADAR_COORD_TEXT_SY + 25, 0xFFFFFFFF );
-*/
-  
-
-
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	m_ExpressIcon.Render();
+	if ( m_bNotice )
+	{
+		DWORD nCurrent = timeGetTime();
+		if ( nCurrent > (m_nStartTime + NOTICE_TICK) )
+		{				
+			m_nStartTime = nCurrent;
+			m_bNoticeRenderFlag = !m_bNoticeRenderFlag;
+		}
+	}		
+
+	if ( m_bNoticeRenderFlag )
+	{
+		pDrawPort->AddTexture(m_nPosX + m_ExpressIcon.GetPosX(), m_nPosY + m_ExpressIcon.GetPosY(),
+			m_nPosX + m_ExpressIcon.GetPosX() + 25, m_nPosY + m_ExpressIcon.GetPosY() + 25,
+			m_ExpressNotice.U0, m_ExpressNotice.V0,
+			m_ExpressNotice.U1, m_ExpressNotice.V1, 0xFFFFFFFF);
+	}
+
+	m_PetStashIcon.Render();
+	m_ItemCollectionIcon.Render();
+
+#ifdef PREMIUM_CHAR
+	m_PremiumCharIcon.Render();
+#endif	//	PREMIUM_CHAR
+
+	int nEmptyPosX;
+	for( i = 0; i < DEF_EMPTY_MENU_MAX; ++i )
+	{
+		nEmptyPosX = m_nPosX + m_rcEmptyMenu.Left + ( i * m_rcEmptyMenu.Right );
+
+		pDrawPort->AddTexture(nEmptyPosX, m_nPosY + m_rcEmptyMenu.Top,
+			nEmptyPosX + m_rcEmptyMenu.Right, m_nPosY + m_rcEmptyMenu.Top + m_rcEmptyMenu.Bottom,
+			m_uvEmptyMenu.U0, m_uvEmptyMenu.V0,	m_uvEmptyMenu.U1, m_uvEmptyMenu.V1, 0xFFFFFFFF);
+	}
+
+	pDrawPort->FlushRenderingQueue();
 
 	// Tool tip
 	if( m_bShowToolTip )
 	{
 		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
 											m_rcToolTip.Left + 7, m_rcToolTip.Bottom,
 											m_rtToolTipL.U0, m_rtToolTipL.V0, m_rtToolTipL.U1, m_rtToolTipL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
 											m_rcToolTip.Right - 7, m_rcToolTip.Bottom,
 											m_rtToolTipM.U0, m_rtToolTipM.V0, m_rtToolTipM.U1, m_rtToolTipM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
+		pDrawPort->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
 											m_rcToolTip.Right, m_rcToolTip.Bottom,
 											m_rtToolTipR.U0, m_rtToolTipR.V0, m_rtToolTipR.U1, m_rtToolTipR.V1,
 											0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Text in tool tip
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 3 );
+		pDrawPort->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 4 , m_colTooltip);
 
+		if (m_bRemote)
+		{
+			pDrawPort->PutTextEx( m_strTimer, m_rcToolTip.Left + 8, m_rcToolTip.Top + 22, m_colTooltipTimer);
+		}
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
+
+	if( (m_nSelectedIcon > 0 && m_nSelectedIcon < m_iconVec.size()) && IsRadarUse() )
+	{
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 6,
+							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
+							   m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 1,
+							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
+							   m_rtToolTipL.U0,
+							   m_rtToolTipL.V0,
+							   m_rtToolTipL.U1,
+							   m_rtToolTipL.V1,
+							   0xFFFFFFFF );
+		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 1,
+							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
+							   m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 1,
+							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
+							   m_rtToolTipM.U0,
+							   m_rtToolTipM.V0,
+							   m_rtToolTipM.U1,
+							   m_rtToolTipM.V1,
+							   0xFFFFFFFF );
+		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 1,
+							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
+							   m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 6,
+							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
+							   m_rtToolTipR.U0,
+							   m_rtToolTipR.V0,
+							   m_rtToolTipR.U1,
+							   m_rtToolTipR.V1,
+							   0xFFFFFFFF );
+
+		pDrawPort->FlushRenderingQueue();
+
+		pDrawPort->PutTextEx( m_iconVec[m_nSelectedIcon].name,
+							  m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2),
+							  m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14 );
+		pDrawPort->EndTextEx();
+	}
+
+//	m_bEnableRR = TRUE;
+	if( m_bEnableRR )
+	{
+		_royalrumbleButtonRender();
+	}
+	_royalrumbleTimeRender();
+	_renderTrophy();
 }
 
 // ----------------------------------------------------------------------------
@@ -534,280 +592,288 @@ void CUIRadar::Render()
 // ----------------------------------------------------------------------------
 void CUIRadar::RenderObjectLocation()
 {
-	CEntity			*penObject;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+	m_iconVec.clear();
+
+	//CEntity			*penObject;
 	FLOAT3D			vObjectPos;
 	FLOAT			fX, fZ;
 	int				nX, nY;
 	SBYTE			sbLayerDiff;
 
-	static FLOAT	fSqrDist = RADAR_VIEW_DISTANCE * RADAR_VIEW_DISTANCE;
-	static FLOAT	fRatio = RADAR_VIEW_RADIUS / RADAR_VIEW_DISTANCE;
+	MapData* md;
+	CMobData* pMobData = NULL;
+	CTString strTemp;
+	md = pUIManager->GetMap()->GetCurMapData( m_nZone );
+	FLOAT	fSqrDist = RADAR_VIEW_DISTANCE * RADAR_VIEW_DISTANCE / m_fZoomRate;
+	FLOAT	fRatio = md->World.fRatio * m_fZoomRate;
 	FLOAT			fXpc = _pNetwork->MyCharacterInfo.x;
 	FLOAT			fZpc = _pNetwork->MyCharacterInfo.z;
 	int				nCX = m_nPosX + RADAR_CENTER_OFFSETX;
 	int				nCY = m_nPosY + RADAR_CENTER_OFFSETY;
 	SBYTE			sbLayerpc = _pNetwork->MyCharacterInfo.yLayer;
 
-	// Mob
-	if( m_cbtnOption[RADAR_MOB].IsChecked() )
+	pDrawPort->InitTextureData( m_ptdMapObjTexture );
+
+	int		i;
+	for (i = 0; i < md->vecSubZone.size(); i++)
 	{
-		INDEX	ctMob = _pNetwork->ga_srvServer.srv_amtMob.Count();
-		for( INDEX iObj = 0; iObj < ctMob; iObj++ )
+		SBYTE	sbSubType = md->vecSubZone[i].sbType;
+		// revision map size. [10/20/2009 rumist]
+
+		if( sbSubType == VILLAGE )
+			continue;
+
+		fX = md->vecSubZone[i].fX - fXpc;
+		fZ = md->vecSubZone[i].fZ - fZpc;
+
+		fX *= fRatio;
+		fZ *= fRatio;
+
+		if( fX > DEF_SHOW_DISTANCE || fX < -DEF_SHOW_DISTANCE || fZ > DEF_SHOW_DISTANCE || fZ < -DEF_SHOW_DISTANCE )
+			continue;
+
+		nX = nCX + fX;
+		nY = nCY + fZ;
+
+		if( sbSubType == CHARGE_PRIVATE || sbSubType == MINE_PRIVATE || sbSubType == GATHER_PRIVATE )
 		{
-			// Get target mob
-			CMobTarget	&mt = _pNetwork->ga_srvServer.srv_amtMob[iObj];
-			penObject = mt.mob_pEntity;
-
-			if( mt.IsNPC() )
-				continue;
-
-			sbLayerDiff = mt.mob_yLayer - sbLayerpc;
-			if( sbLayerDiff < -1 || sbLayerDiff > 1 )
-				continue;
-
-			vObjectPos = penObject->en_plPlacement.pl_PositionVector;
-
-			// Test distance
-			fX = vObjectPos(1) - fXpc;
-			fZ = vObjectPos(3) - fZpc;
-			if( fX * fX + fZ * fZ > fSqrDist )
-				continue;
-
-			fX *= fRatio;
-			fZ *= fRatio;
-
-			nX = nCX + ( fX * fCos - fZ * fSin );
-			nY = nCY + ( fX * fSin + fZ * fCos );
-
-			_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[RADAR_MOB].Left,  nY + m_rcPoint[RADAR_MOB].Top,
-												nX + m_rcPoint[RADAR_MOB].Right, nY + m_rcPoint[RADAR_MOB].Bottom,
-												m_rtPoint[RADAR_MOB].U0, m_rtPoint[RADAR_MOB].V0,
-												m_rtPoint[RADAR_MOB].U1, m_rtPoint[RADAR_MOB].V1,
-												0xFFFFFFFF );
+			strTemp.PrintF( _S( 549, "%s(ªÁ¿Ø¡ˆ)" ), CZoneInfo::getSingleton()->GetExtraName( md->World.nZoneIndex, md->vecSubZone[i].nSubZoneIndex ) );
 		}
+		else
+		{
+			strTemp = CZoneInfo::getSingleton()->GetExtraName( md->World.nZoneIndex, md->vecSubZone[i].nSubZoneIndex );
+		}
+
+		AddIconName( nX + m_rcPoint[RADAR_MOB].Left,  nY + m_rcPoint[RADAR_MOB].Top,
+					 nX + m_rcPoint[RADAR_MOB].Right, nY + m_rcPoint[RADAR_MOB].Bottom, strTemp);
+
+
+
+		pDrawPort->AddTexture( nX + m_rcSubZone[sbSubType].Left, nY + m_rcSubZone[sbSubType].Top,
+											nX + m_rcSubZone[sbSubType].Right, nY + m_rcSubZone[sbSubType].Bottom,
+											m_rtSubZone[sbSubType].U0, m_rtSubZone[sbSubType].V0,
+											m_rtSubZone[sbSubType].U1, m_rtSubZone[sbSubType].V1,
+											0xFFFFFFFF );
+
 	}
 
+	if (m_pMapOption == NULL)
+		return;
+
 	// Npc
-	if( m_cbtnOption[RADAR_NPC].IsChecked() )
+	for (i = 0; i < md->vecNpc.size(); i++ )
 	{
-		INDEX	ctMob = _pNetwork->ga_srvServer.srv_amtMob.Count();
-		for( INDEX iObj = 0; iObj < ctMob; iObj++ ) 
+		sbLayerDiff = md->vecNpc[i].nYLayer - sbLayerpc;
+		if( sbLayerDiff < -1 || sbLayerDiff > 1 )
+			continue;
+
+		if (IS_EVENT_ON(A_EVENT_HOLLOWEEN) == 0)
 		{
-			// Get target mob
-			CMobTarget	&mt = _pNetwork->ga_srvServer.srv_amtMob[iObj];
-			penObject = mt.mob_pEntity;
-
-			if( !mt.IsNPC() )
+			if (md->vecNpc[i].nIndex == 454 ||
+				md->vecNpc[i].nIndex == 455)
 				continue;
-
-			sbLayerDiff = mt.mob_yLayer - sbLayerpc;
-			if( sbLayerDiff < -1 || sbLayerDiff > 1 )
-				continue;
-
-			vObjectPos = penObject->en_plPlacement.pl_PositionVector;
-
-			// Test distance
-			fX = vObjectPos(1) - fXpc;
-			fZ = vObjectPos(3) - fZpc;
-			if( fX * fX + fZ * fZ > fSqrDist )
-				continue;
-
-			fX *= fRatio;
-			fZ *= fRatio;
-
-			nX = nCX + ( fX * fCos - fZ * fSin );
-			nY = nCY + ( fX * fSin + fZ * fCos );
-
-			if (mt.mob_iType == _pUIMgr->m_nHelpNpc_Index) // NPC ÏïàÎÇ¥ ÏãúÏä§ÌÖú Î†àÏù¥Îçî ÌëúÏãú
-			{
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[RADAR_HELPNPC].Left,  nY + m_rcPoint[RADAR_HELPNPC].Top,
-												nX + m_rcPoint[RADAR_HELPNPC].Right, nY + m_rcPoint[RADAR_HELPNPC].Bottom,
-												m_rtPoint[RADAR_HELPNPC].U0, m_rtPoint[RADAR_HELPNPC].V0,
-												m_rtPoint[RADAR_HELPNPC].U1, m_rtPoint[RADAR_HELPNPC].V1,
-												0xFFFFFFFF );
-			}else if(CQuestSystem::Instance().TestNPCForQuest(mt.mob_iType) == CQuestSystem::NQT_HAVE_QUEST)
-			{
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[RADER_QUESTNPC].Left,  nY + m_rcPoint[RADER_QUESTNPC].Top,
-												nX + m_rcPoint[RADER_QUESTNPC].Right, nY + m_rcPoint[RADER_QUESTNPC].Bottom,
-												m_rtPoint[RADER_QUESTNPC].U0, m_rtPoint[RADER_QUESTNPC].V0,
-												m_rtPoint[RADER_QUESTNPC].U1, m_rtPoint[RADER_QUESTNPC].V1,
-												0xFFFFFFFF );
-					
-
-			}else if(CQuestSystem::Instance().TestNPCForQuest(mt.mob_iType) == CQuestSystem::NQT_CAN_PRIZE)
-			{
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[RADER_QUESTSUCCESS].Left,  nY + m_rcPoint[RADER_QUESTSUCCESS].Top,
-												nX + m_rcPoint[RADER_QUESTSUCCESS].Right, nY + m_rcPoint[RADER_QUESTSUCCESS].Bottom,
-												m_rtPoint[RADER_QUESTSUCCESS].U0, m_rtPoint[RADER_QUESTSUCCESS].V0,
-												m_rtPoint[RADER_QUESTSUCCESS].U1, m_rtPoint[RADER_QUESTSUCCESS].V1,
-												0xFFFFFFFF );
-				
-			}else
-			{
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[RADAR_NPC].Left,  nY + m_rcPoint[RADAR_NPC].Top,
-												nX + m_rcPoint[RADAR_NPC].Right, nY + m_rcPoint[RADAR_NPC].Bottom,
-												m_rtPoint[RADAR_NPC].U0, m_rtPoint[RADAR_NPC].V0,
-												m_rtPoint[RADAR_NPC].U1, m_rtPoint[RADAR_NPC].V1,
-												0xFFFFFFFF );
-			}
-
-			
 		}
+		
+		pMobData = CMobData::getData(md->vecNpc[i].nIndex);
+
+		if (pMobData != NULL)
+		{
+			if (pMobData->IsChannelFlag(_pNetwork->m_iServerCh) == false)
+				continue;
+		}
+
+		fX = (md->vecNpc[i].fX);
+		fZ = (md->vecNpc[i].fZ);
+
+		fX -= fXpc;
+		fZ -= fZpc;
+
+		fX *= fRatio;
+		fZ *= fRatio;
+
+		int left = fX + m_rcPoint[RADAR_NPC].Left;
+		int top = fZ + m_rcPoint[RADAR_NPC].Top;
+		int right = fX + m_rcPoint[RADAR_NPC].Right;
+		int bottom = fZ + m_rcPoint[RADAR_NPC].Bottom;
+
+		if( left < m_rcCompassIn.Left || top < m_rcCompassIn.Top ||
+			right > m_rcCompassIn.Right || bottom > m_rcCompassIn.Bottom )
+			continue;
+
+		nX = nCX + fX;
+		nY = nCY + fZ;
+
+		int nShowIcon = -1;
+
+		if (m_pMapOption->IsCheck(eNT_QUEST_Q) == true && 
+			CQuestSystem::Instance().TestNPCForQuest(md->vecNpc[i].nIndex) == CQuestSystem::NQT_HAVE_QUEST)
+		{
+			nShowIcon = eNT_QUEST_Q;
+		}
+		else if (m_pMapOption->IsCheck(eNT_QUEST_A) == true &&
+				 CQuestSystem::Instance().TestNPCForQuest(md->vecNpc[i].nIndex) == CQuestSystem::NQT_CAN_PRIZE)
+		{
+			nShowIcon = eNT_QUEST_A;
+		}
+		else
+		{
+			for (int j = eNT_SHOP; j < eNT_MONSTER; ++j)
+			{
+				if (m_pMapOption->IsCheck((eNPC_TYPE)j) == false)
+					continue;
+
+				if (m_pMapOption->IsFlag(j, md->vecNpc[i].nIndex) != FALSE)
+				{
+					nShowIcon = j;
+					break;
+				}
+			}
+		}
+
+		if (nShowIcon >= 0)
+		{
+			UIRectUV uv = m_pMapOption->GetUV((eNPC_TYPE)nShowIcon);
+	
+			AddIconName( nX + m_rcPoint[RADAR_NPC].Left,  nY + m_rcPoint[RADAR_NPC].Top,
+				nX + m_rcPoint[RADAR_NPC].Right, nY +m_rcPoint[RADAR_NPC].Bottom,
+				CMobData::getData(md->vecNpc[i].nIndex)->GetName());
+	
+			pDrawPort->AddTexture( nX + m_rcPoint[RADAR_NPC].Left,  nY + m_rcPoint[RADAR_NPC].Top,
+				nX + m_rcPoint[RADAR_NPC].Right, nY + m_rcPoint[RADAR_NPC].Bottom,
+				uv.U0, uv.V0, uv.U1, uv.V1, 0xFFFFFFFF );
+		}
+	}
+	
+	//pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	// Mob
+	if( m_pMapOption->IsCheck(eNT_MONSTER) == true)
+	{
+		UIRectUV uv = m_pMapOption->GetUV(eNT_MONSTER);
+		ACTORMGR()->DrawMobRadar(nCX, nCY, fRatio, pDrawPort, m_rcPoint[RADAR_MOB], uv);
 	}
 
 	// Guild
-	if( m_cbtnOption[RADAR_GUILD].IsChecked() )
+	if( m_pMapOption->IsCheck(eNT_GUILD_GROUP) == true )
 	{
-		INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
-		for( INDEX iObj = 0; iObj < ctCha; iObj++ ) 
-		{
-			// Get target player
-			CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[iObj];
-
-			if( ct.cha_lGuildIndex != GUILD_MEMBER_NOMEMBER && 
-				ct.cha_lGuildIndex == _pNetwork->MyCharacterInfo.lGuildIndex )
-			{
-				sbLayerDiff = ct.cha_yLayer - sbLayerpc;
-				if( sbLayerDiff < -1 || sbLayerDiff > 1 )
-					continue;
-
-				penObject = ct.cha_pEntity;
-				vObjectPos = penObject->en_plPlacement.pl_PositionVector;
-
-				// Test distance
-				fX = vObjectPos(1) - fXpc;
-				fZ = vObjectPos(3) - fZpc;
-				if( fX * fX + fZ * fZ > fSqrDist )
-					continue;
-
-				fX *= fRatio;
-				fZ *= fRatio;
-
-				nX = nCX + ( fX * fCos - fZ * fSin );
-				nY = nCY + ( fX * fSin + fZ * fCos );
-
-				_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[RADAR_GUILD].Left,  nY + m_rcPoint[RADAR_GUILD].Top,
-													nX + m_rcPoint[RADAR_GUILD].Right, nY + m_rcPoint[RADAR_GUILD].Bottom,
-													m_rtPoint[RADAR_GUILD].U0, m_rtPoint[RADAR_GUILD].V0,
-													m_rtPoint[RADAR_GUILD].U1, m_rtPoint[RADAR_GUILD].V1,
-													0xFFFFFFFF );
-			}
-		}
+		UIRectUV uv = m_pMapOption->GetUV(eNT_GUILD_GROUP);
+		ACTORMGR()->DrawCharRadar(nCX, nCY, fRatio, pDrawPort, m_rcPoint[RADAR_GUILD], uv, true);
 	}
+
+	Party* pParty = GAMEDATAMGR()->GetPartyInfo();
 
 	// Party
-	if( m_cbtnOption[RADAR_PARTY].IsChecked() )
+	if( m_pMapOption->IsCheck(eNT_PARTY) == true )
 	{
-		for( int iParty = 0; iParty < _pUIMgr->GetParty()->GetMemberCount(); iParty++ )
+		if (pParty == NULL)
+			return;
+
+		UIRectUV uv = m_pMapOption->GetUV(eNT_PARTY);
+		
+		for( int iParty = 0; iParty < pParty->GetMemberCount(); iParty++ )
 		{
-			sbLayerDiff = _pUIMgr->GetParty()->GetLayer( iParty ) - sbLayerpc;
+			if(pParty->GetLevel( iParty ) == 0)	// ∑π∫ß¿Ã 0¿Œ ∏‚πˆ¥¬ ø¿«¡∂Û¿Œ ªÛ≈¬¿Ãπ«∑Œ ±◊∏Æ¡ˆ æ ¥¬¥Ÿ.
+				continue;
+
+			if (pParty->GetMemberZone(iParty) != _pNetwork->MyCharacterInfo.zoneNo) // ∆ƒ∆ºø¯¿Ã ¥Ÿ∏•¡∏ø° ¿÷¿ª ∞ÊøÏ
+				continue;
+
+			sbLayerDiff = pParty->GetLayer( iParty ) - sbLayerpc;
 			if( sbLayerDiff < -1 || sbLayerDiff > 1 )
 				continue;
 
 			// Test distance
-			fX = _pUIMgr->GetParty()->GetPosX( iParty ) - fXpc;
-			fZ = _pUIMgr->GetParty()->GetPosZ( iParty ) - fZpc;
-			if( fX * fX + fZ * fZ > fSqrDist )
-			{
-				FLOAT	fResizeRatio = RADAR_VIEW_DISTANCE / sqrtf( fX * fX + fZ * fZ );
-				fX *= fResizeRatio;
-				fZ *= fResizeRatio;
-			}
+			fX = pParty->GetPosX( iParty ) - fXpc;
+			fZ = pParty->GetPosZ( iParty ) - fZpc;
 
 			fX *= fRatio;
 			fZ *= fRatio;
 
-			nX = nCX + ( fX * fCos - fZ * fSin );
-			nY = nCY + ( fX * fSin + fZ * fCos );
+			if( fX > DEF_SHOW_DISTANCE || fX < -DEF_SHOW_DISTANCE || fZ > DEF_SHOW_DISTANCE || fZ < -DEF_SHOW_DISTANCE )
+				continue;
 
-			_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[RADAR_PARTY].Left,  nY + m_rcPoint[RADAR_PARTY].Top,
+			nX = nCX + fX;
+			nY = nCY + fZ;
+
+			AddIconName( nX + m_rcPoint[RADAR_PARTY].Left,  nY + m_rcPoint[RADAR_PARTY].Top,
+						 nX + m_rcPoint[RADAR_PARTY].Right, nY + m_rcPoint[RADAR_PARTY].Bottom, pParty->GetMemberName(iParty));
+
+			pDrawPort->AddTexture( nX + m_rcPoint[RADAR_PARTY].Left,  nY + m_rcPoint[RADAR_PARTY].Top,
 												nX + m_rcPoint[RADAR_PARTY].Right, nY + m_rcPoint[RADAR_PARTY].Bottom,
-												m_rtPoint[RADAR_PARTY].U0, m_rtPoint[RADAR_PARTY].V0,
-												m_rtPoint[RADAR_PARTY].U1, m_rtPoint[RADAR_PARTY].V1,
-												0xFFFFFFFF );
+												uv.U0, uv.V0, uv.U1, uv.V1, 0xFFFFFFFF );
 		}
 	}
 
-#define RADAR_DEFENSE_COLOR 0x0000FFFF		// ÏàòÏÑ±Ï∏° Point ÏÉâ
-#define	RADAR_ATTACK_COLOR	0xFF0000FF		// Í≥µÏÑ±Ï∏° Point ÏÉâ
+	if( m_pMapOption->IsCheck(eNT_FELLOWSHIP) == true )
+	{
+		if (pParty == NULL)
+			return;
 
-	// Í≥µÏÑ±
-	// ÌòÑÏû¨ Í≥µÏÑ±Ï§ëÏù¥Í≥† ÎÇ¥Í∞Ä Í≥µÏÑ±Ïóê Ï∞∏Ïó¨Ï§ëÏù¥ÎùºÎ©¥
+		UIRectUV uv = m_pMapOption->GetUV(eNT_FELLOWSHIP);
+
+		for(int i=0; i<EXPEDITION_GROUP_MAX; i++)
+		{
+			for( int j = 0; j < EXPEDITION_MEMBER_PER_GROUP; j++ )
+			{
+				if(pParty->IsExpedetionDataExist(i, j))
+				{
+					if(!pParty->GetExpeditionMemberOnline(i,j))	// ø¬∂Û¿Œ ∏‚πˆ∞° æ∆¥œ∏È ±◊∏Æ¡ˆ æ ¥¬¥Ÿ.
+						continue;
+					
+					if(pParty->GetExpeditionMemberIndex(i,j) == _pNetwork->MyCharacterInfo.index)	// [090729 sora] ø¯¡§¥Î ∏‚πˆ∏ÆΩ∫∆Æø° ¿⁄Ω≈µµ ∆˜«‘µ«æÓ¿÷¿∏π«∑Œ ¿⁄Ω≈¿∫ «•Ω√«œ¡ˆ æ ¥¬¥Ÿ
+						continue;
+
+					if (pParty->GetExpeditionMemberZone(i, j) != _pNetwork->MyCharacterInfo.zoneNo) // ø¯¡§¥Î ∏‚πˆ¡ﬂ ∞∞¿∫ ¡∏¿Ã æ∆¥“∞ÊøÏ
+						continue;
+
+					sbLayerDiff = pParty->GetExpeditionMemberLayer(i, j) - sbLayerpc;
+					if( sbLayerDiff < -1 || sbLayerDiff > 1 )
+						continue;
+
+					// Test distance
+					fX = pParty->GetExpeditionMemberPosX(i, j) - fXpc;
+					fZ = pParty->GetExpeditionMemberPosZ(i, j) - fZpc;
+
+					fX *= fRatio;
+					fZ *= fRatio;
+
+					if( fX > DEF_SHOW_DISTANCE || fX < -DEF_SHOW_DISTANCE || fZ > DEF_SHOW_DISTANCE || fZ < -DEF_SHOW_DISTANCE )
+						continue;
+
+					nX = nCX + fX;
+					nY = nCY + fZ;
+
+					AddIconName( nX + m_rcPoint[RADAR_EXPEDITION].Left,  nY + m_rcPoint[RADAR_EXPEDITION].Top,
+								 nX + m_rcPoint[RADAR_EXPEDITION].Right, nY + m_rcPoint[RADAR_EXPEDITION].Bottom, pParty->GetExpeditionMemberName(i, j));
+
+					pDrawPort->AddTexture( nX + m_rcPoint[RADAR_EXPEDITION].Left,  nY + m_rcPoint[RADAR_EXPEDITION].Top,
+														nX + m_rcPoint[RADAR_EXPEDITION].Right, nY + m_rcPoint[RADAR_EXPEDITION].Bottom,
+														uv.U0, uv.V0, uv.U1, uv.V1, 0xFFFFFFFF );
+				}
+			}
+		}
+	}
+
+	// ∞¯º∫
+	// «ˆ¿Á ∞¯º∫¡ﬂ¿Ã∞Ì ≥ª∞° ∞¯º∫ø° ¬¸ø©¡ﬂ¿Ã∂Û∏È
 	if( _pUISWDoc->IsWar() && _pNetwork->MyCharacterInfo.sbJoinFlagMerac != WCJF_NONE ) 
 	{
-		COLOR colRenderType = 0xFFFFFFFF;
-		INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
-		for( INDEX iObj = 0; iObj < ctCha; iObj++ ) 
-		{
-			// Get target player
-			CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[iObj];
-			
-			switch( ct.cha_sbJoinFlagMerac )
-			{
-			// Ï∞∏Ïó¨ÌïòÍ≥† ÏûàÏßÄ ÏïäÏùå
-			case WCJF_NONE: 
-				continue;
-				break;
-		
-			// ÏàòÏÑ±
-			case WCJF_OWNER:
-			case WCJF_DEFENSE_GUILD:
-			case WCJF_DEFENSE_CHAR:
-				colRenderType = RADAR_DEFENSE_COLOR;
-				break;
+		UIRectUV uv = m_pMapOption->GetUV(eNT_MONSTER);
+		ACTORMGR()->DrawCharRadar(nCX, nCY, fRatio, pDrawPort, m_rcPoint[RADAR_MOB], uv);
+	}
 
-			// Í≥µÏÑ±Ï∏°
-			case WCJF_ATTACK_GUILD:
-			case WCJF_ATTACK_CHAR:
-				colRenderType = RADAR_ATTACK_COLOR;
-				break;
-			default :
-				continue;
-			}
+	pDrawPort->FlushRenderingQueue();
 
-// ! Í∏∏ÎìúÎäî Îî∞Î°ú Ï≤òÎ¶¨ 			
-//			if( m_cbtnOption[RADAR_GUILD].IsChecked() ) // Í∏∏ÎìúÏõêÏù¥Î©¥ Í∏∏ÎìúÏõê Ïö∞ÏÑ† ÌëúÏãú
-//			{
-//				if( ct.cha_lGuildIndex != GUILD_MEMBER_NOMEMBER && 
-//					ct.cha_lGuildIndex == _pNetwork->MyCharacterInfo.lGuildIndex )
-//				{
-//					bRenderGuild = TRUE;
-//				}
-//			}
-
-			sbLayerDiff = ct.cha_yLayer - sbLayerpc;
-			if( sbLayerDiff < -1 || sbLayerDiff > 1 )
-				continue;
-
-			penObject = ct.cha_pEntity;
-			vObjectPos = penObject->en_plPlacement.pl_PositionVector;
-
-			// Test distance
-			fX = vObjectPos(1) - fXpc;
-			fZ = vObjectPos(3) - fZpc;
-			if( fX * fX + fZ * fZ > fSqrDist )
-				continue;
-
-			fX *= fRatio;
-			fZ *= fRatio;
-
-			nX = nCX + ( fX * fCos - fZ * fSin );
-			nY = nCY + ( fX * fSin + fZ * fCos );
-
-		
-			_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcPoint[RADAR_MOB].Left,  nY + m_rcPoint[RADAR_MOB].Top,
-											nX + m_rcPoint[RADAR_MOB].Right, nY + m_rcPoint[RADAR_MOB].Bottom,
-											m_rtPoint[RADAR_MOB].U0, m_rtPoint[RADAR_MOB].V0,
-											m_rtPoint[RADAR_MOB].U1, m_rtPoint[RADAR_MOB].V1,
-											colRenderType );
-		} // GuildWar for
-	} // GuildWar if			
-
+	CEntity* penObject = NULL;
+	ObjInfo* pInfo = ObjInfo::getSingleton();
 	// Target
-	if( _pNetwork->_TargetInfo.bIsActive )
+	if( pInfo->IsTargetActive(eTARGET) )
 	{
 		// Get target
-		penObject = _pNetwork->_TargetInfo.pen_pEntity;
+		penObject = pInfo->GetTargetEntity(eTARGET);
 
 		if( penObject == NULL ) return;
 
@@ -816,18 +882,21 @@ void CUIRadar::RenderObjectLocation()
 		// Test distance
 		fX = vObjectPos(1) - fXpc;
 		fZ = vObjectPos(3) - fZpc;
-		if( fX * fX + fZ * fZ <= fSqrDist )
+
+		fX *= fRatio;
+		fZ *= fRatio;
+
+		if (fX < DEF_SHOW_DISTANCE || fX > -DEF_SHOW_DISTANCE || fZ < DEF_SHOW_DISTANCE || fZ > -DEF_SHOW_DISTANCE)
 		{
-			fX *= fRatio;
-			fZ *= fRatio;
+			nX = nCX + fX;
+			nY = nCY + fZ;
 
-			nX = nCX + ( fX * fCos - fZ * fSin );
-			nY = nCY + ( fX * fSin + fZ * fCos );
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-			_pUIMgr->GetDrawPort()->AddTexture( nX + m_rcTarget.Left,  nY + m_rcTarget.Top,
-												nX + m_rcTarget.Right, nY + m_rcTarget.Bottom,
-												m_rtTarget.U0, m_rtTarget.V0, m_rtTarget.U1, m_rtTarget.V1,
-												0xFFFFFFFF );
+			pDrawPort->AddTexture( nX + m_rcTarget.Left,  nY + m_rcTarget.Top,
+				nX + m_rcTarget.Right, nY + m_rcTarget.Bottom,
+				m_rtTarget.U0, m_rtTarget.V0, m_rtTarget.U1, m_rtTarget.V1,
+				0xFFFFFFFF );
 
 			static __int64	llOldTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
 			static __int64	llElapsedTime = 0;
@@ -847,9 +916,9 @@ void CUIRadar::RenderObjectLocation()
 					FLOAT	fSin = sinf( 3.141592f * fAniRatio );
 					FLOAT	fSize = 2.0f + 11.0f * fSin;
 					UBYTE	ubAlpha = 0xFF * ( 1.0f - fSin );
-					_pUIMgr->GetDrawPort()->AddTexture( nX - fSize,  nY - fSize, nX + fSize, nY + fSize,
-														m_rtTargetAni.U0, m_rtTargetAni.V0, m_rtTargetAni.U1, m_rtTargetAni.V1,
-														0xFFFFFF00 | ubAlpha );
+					pDrawPort->AddTexture( nX - fSize,  nY - fSize, nX + fSize, nY + fSize,
+						m_rtTargetAni.U0, m_rtTargetAni.V0, m_rtTargetAni.U1, m_rtTargetAni.V1,
+						0xFFFFFF00 | ubAlpha );
 				}
 
 				if( fAniRatio > 0.15f )
@@ -857,14 +926,15 @@ void CUIRadar::RenderObjectLocation()
 					FLOAT	fSin = sinf( 3.141592f * ( fAniRatio - 0.15f ) );
 					FLOAT	fSize = 2.0f + 11.0f * fSin;
 					UBYTE	ubAlpha = 0xFF * ( 1.0f - fSin );
-					_pUIMgr->GetDrawPort()->AddTexture( nX - fSize,  nY - fSize, nX + fSize, nY + fSize,
-														m_rtTargetAni.U0, m_rtTargetAni.V0, m_rtTargetAni.U1, m_rtTargetAni.V1,
-														0xFFFFFF00 | ubAlpha );
+					pDrawPort->AddTexture( nX - fSize,  nY - fSize, nX + fSize, nY + fSize,
+						m_rtTargetAni.U0, m_rtTargetAni.V0, m_rtTargetAni.U1, m_rtTargetAni.V1,
+						0xFFFFFF00 | ubAlpha );
 				}
 			}
+
+			pDrawPort->FlushRenderingQueue();
 		}
 	} // Target
-
 }
 
 // ----------------------------------------------------------------------------
@@ -886,6 +956,7 @@ void CUIRadar::ShowToolTip( BOOL bShow, int nToolTipID )
 
 	if( nOldToolTipID != nToolTipID )
 	{
+		m_bRemote = false;
 		extern INDEX	g_iEnterChat;
 		int	nInfoX, nInfoY, nWidth, nHeight;
 
@@ -893,43 +964,176 @@ void CUIRadar::ShowToolTip( BOOL bShow, int nToolTipID )
 		switch( nToolTipID )
 		{
 		case STT_OPTION:		// Option
-			m_strToolTip = _S( 442, "Ï†ïÎ≥¥ÌëúÏãú ÏòµÏÖò" );
-			m_btnOption.GetAbsPos( nInfoX, nInfoY );
-			nWidth = m_btnOption.GetWidth();
-			nHeight = m_btnOption.GetHeight();
+			{
+				m_strToolTip = _S( 442, "¡§∫∏«•Ω√ ø…º«" );
+				m_colTooltip = 0xF2F2F2FF;
+				m_btnOption.GetAbsPos( nInfoX, nInfoY );
+				nWidth = m_btnOption.GetWidth();
+				nHeight = m_btnOption.GetHeight();
+			}
 			break;
 
 		case STT_MAP:		// Map
-			if( g_iEnterChat )
-				m_strToolTip.PrintF( "%s %s", _S( 190, "ÏßÄÎèÑ" ), CTString( "(Alt+W)" ) );
-			else
-				m_strToolTip.PrintF( "%s %s", _S( 190, "ÏßÄÎèÑ" ), CTString( "(W,Alt+W)" ) );
-			m_btnMap.GetAbsPos( nInfoX, nInfoY );
-			nWidth = m_btnMap.GetWidth();
-			nHeight = m_btnMap.GetHeight();
+			{
+				if( g_iEnterChat )
+					m_strToolTip.PrintF( "%s %s", _S( 190, "¡ˆµµ" ), CTString( "(Alt+M)" ) );
+				else
+					m_strToolTip.PrintF( "%s %s", _S( 190, "¡ˆµµ" ), CTString( "(M,Alt+M)" ) );
+
+				m_colTooltip = 0xF2F2F2FF;
+				m_btnMap.GetAbsPos( nInfoX, nInfoY );
+				nWidth = m_btnMap.GetWidth();
+				nHeight = m_btnMap.GetHeight();
+			}
 			break;
+
 		case STT_SIGNAL:		// Signal
-			m_strToolTip = _S(2222, "ÏãúÍ∑∏ÎÑê" );
-			m_btnOption.GetAbsPos( nInfoX, nInfoY );
-			nWidth = m_btnOption.GetWidth();
-			nHeight = m_btnOption.GetHeight();
-			nHeight = m_btnMap.GetHeight();
+			{
+				m_strToolTip = _S(2222, "Ω√±◊≥Œ" );
+				m_colTooltip = 0xF2F2F2FF;
+				m_btnSignal.GetAbsPos( nInfoX, nInfoY );
+				nWidth = m_btnSignal.GetWidth();
+				nHeight = m_btnSignal.GetHeight();
+			}
+			break;
+
+		case STT_EXPRESSREMOTE:
+			{
+				if ( _pUIBuff->GetMyTimerItemBuffExist(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM) == true)
+				{
+					tm*	pTimeEnd = NULL;
+					int	nTime	= _pUIBuff->GetMyTimerItemBuffExpireTime(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM);
+					char expire[25] = {0,};
+
+					pTimeEnd = localtime((time_t*)&nTime);
+					if (pTimeEnd)
+					{
+						strftime(expire, sizeof(expire), "%Y/%m/%d %I:%M:%S", pTimeEnd);
+						m_strToolTip.PrintF( _S( 6023, "ø¯∞› ªÁøÎ ∞°¥…") );
+						m_strTimer = expire;
+						m_colTooltip = 0x00FA00FF;
+						m_colTooltipTimer = 0x00FA00FF;
+						m_bRemote = true;
+					}
+				}
+				else if ( GAMEDATAMGR()->GetExpressData() != NULL && GAMEDATAMGR()->GetExpressData()->GetPremiumBenefit() == true)
+				{
+					m_strToolTip.PrintF( _S( 6023, "ø¯∞› ªÁøÎ ∞°¥…") );
+					m_strTimer.PrintF( _S( 6328, "«¡∏ÆπÃæˆ ƒ≥∏Ø≈Õ «˝≈√ ¿˚øÎ ¡ﬂ") );
+					m_colTooltip = 0x00FA00FF;
+					m_colTooltipTimer = 0xD67FFFFF;
+					m_bRemote = true;
+				}
+				else
+				{
+					m_strToolTip = _S( 6022, "ø¯∞› ªÁøÎ ∫“∞°¥…" );
+					m_colTooltip = 0xFA0000FF;
+					m_bRemote = false;
+				}			
+				m_ExpressIcon.GetAbsPos( nInfoX, nInfoY );
+				nWidth = m_ExpressIcon.GetWidth();
+				nHeight = m_ExpressIcon.GetHeight();
+			}			
+			break;
+
+		case STT_PETSTASH:
+			{
+				m_strToolTip = _S(5954, "∆Í √¢∞Ì" );
+				m_colTooltip = 0xF2F2F2FF;
+				m_PetStashIcon.GetAbsPos( nInfoX, nInfoY );
+				nWidth = m_PetStashIcon.GetWidth();
+				nHeight = m_PetStashIcon.GetHeight();
+			}
+			break;
+		case STT_ITEMCOLLECTION:
+			{
+				m_strToolTip = _S(7036, "æ∆¿Ã∏ÆΩ∫ æ∆¿Ã≈€ µµ∞®" );
+				m_colTooltip = 0xF2F2F2FF;
+				m_ItemCollectionIcon.GetAbsPos( nInfoX, nInfoY );
+				nWidth = m_ItemCollectionIcon.GetWidth();
+				nHeight = m_ItemCollectionIcon.GetHeight();
+			}
+			break;
+		case STT_PREMIUMCHAR:
+			{
+#ifdef PREMIUM_CHAR
+				CPremiumChar* pChar = GAMEDATAMGR()->GetPremiumChar();
+
+				if (pChar == NULL)
+					return;
+
+				if (pChar->getType() != PREMIUM_CHAR_TYPE_NONE)
+				{
+					tm*	pTimeEnd = NULL;
+					int	nTime	= pChar->getExpireTime();
+					char expire[25] = {0,};
+
+					pTimeEnd = localtime((time_t*)&nTime);
+
+					if (pTimeEnd)
+					{
+						m_strToolTip = _S(6328, "«¡∏ÆπÃæˆ ƒ≥∏Ø≈Õ «˝≈√ ¿˚øÎ ¡ﬂ" );
+						m_strTimer.PrintF( _S( 6070, "∏∏∑· : %d≥‚%dø˘%d¿œ%dΩ√%d∫–"), pTimeEnd->tm_year + 1900, pTimeEnd->tm_mon + 1, pTimeEnd->tm_mday, pTimeEnd->tm_hour, pTimeEnd->tm_min );
+						m_colTooltip = 0x00FA00FF;
+						m_colTooltipTimer = 0x00FA00FF;
+						m_bRemote = true;
+					}
+				}
+				else
+				{
+					m_strToolTip = _S( 6327, "«¡∏ÆπÃæˆ ƒ≥∏Ø≈Õ «˝≈√ æ¯¿Ω" );
+					m_colTooltip = 0xFA0000FF;
+					m_bRemote = false;
+				}
+
+				m_PremiumCharIcon.GetAbsPos( nInfoX, nInfoY );
+				nWidth = m_PremiumCharIcon.GetWidth();
+				nHeight = m_PremiumCharIcon.GetHeight();
+#else
+				return;
+#endif	//	PREMIUM_CHAR
+			}
 			break;
 		}
 
 		int nInfoWidth;
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);				
-		} else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strToolTip.Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		int	nInfoHeight = 22;
+		int nInfoHeight;
+
+		int _MaxString = m_strTimer.Length() + 1;
+
+		if ( _MaxString < m_strToolTip.Length() )
+		{
+			_MaxString = m_strToolTip.Length() + 1;
+		}
+		int _nLine = 2;
+		if (m_bRemote)
+		{
+#if defined G_THAI
+			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);
+#else	//	if defined G_THAI
+			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + _MaxString *
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif	//	if defined G_THAI
+			nInfoHeight = 20 * _nLine;
+		}
+		else
+		{
+#if defined G_THAI
+			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);
+#else	//	if defined G_THAI
+			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strToolTip.Length() *
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif	//	if defined G_THAI
+			nInfoHeight = 22;
+		}
 
 		nInfoX += ( nWidth - nInfoWidth ) / 2;
 		nInfoY += nHeight + 2;
 
-		if( nInfoX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoX += _pUIMgr->GetMaxI() - ( nInfoX + nInfoWidth );
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		if( nInfoX + nInfoWidth > pUIManager->GetMaxI() )
+			nInfoX += pUIManager->GetMaxI() - ( nInfoX + nInfoWidth );
 
 		m_rcToolTip.SetRect( nInfoX, nInfoY, nInfoX + nInfoWidth, nInfoY + nInfoHeight );
 	}
@@ -949,42 +1153,88 @@ WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
 
+	if (m_pMapOption != NULL && m_pMapOption->IsInside(nX, nY))
+	{
+		if (m_pMapOption->GetHide() == FALSE)
+		{
+			if (m_bShowOptionPopup == TRUE)
+				bInOptionPopup = TRUE;
+	
+			return m_pMapOption->MouseMessage(pMsg);
+		}
+	}
+
 	// Mouse message
 	switch( pMsg->message )
 	{
 	case WM_MOUSEMOVE:
 		{
+			m_bShowLeftTimeTooltip = FALSE;
 			// Popup of option
-			if( m_bShowOptionPopup && IsInsideRect( nX, nY, m_rcOption ) )
+			// Close option popup
+			if( bInOptionPopup )
 			{
-				bInOptionPopup = TRUE;
+				bInOptionPopup = FALSE;
+				m_bShowOptionPopup = FALSE;
 			}
-			else
+			// Option button
+			if( m_btnRR.MouseMessage( pMsg ) != WMSG_FAIL ||
+				m_btnZoomIn.MouseMessage( pMsg ) != WMSG_FAIL ||
+				m_btnZoomOut.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				// Close option popup
-				if( bInOptionPopup )
-				{
-					bInOptionPopup = FALSE;
-					m_bShowOptionPopup = FALSE;
-				}
-				// Option button
-				else if( m_btnOption.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					ShowToolTip( TRUE, STT_OPTION );
-					return WMSG_SUCCESS;
-				}
-				// Map button
-				else if( m_btnMap.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
+				return WMSG_SUCCESS;
+			}
+			if( IsInsideRect( nX, nY, m_rcSandglassRR ) )
+			{
+				m_bShowLeftTimeTooltip = TRUE;
+				return WMSG_SUCCESS;
+			}
+			if( m_btnMap.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				if (IsRadarUse())
 					ShowToolTip( TRUE, STT_MAP );
-					return WMSG_SUCCESS;
-				}
-				else if( m_btnSignal.MouseMessage( pMsg ) != WMSG_FAIL ) 
-				{
-					ShowToolTip( TRUE, STT_SIGNAL );
-					return WMSG_SUCCESS;
-				}
+				return WMSG_SUCCESS;
 			}
+			if( m_btnOption.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				if (IsRadarUse())
+					ShowToolTip( TRUE, STT_OPTION );
+				return WMSG_SUCCESS;
+			}
+			if( m_btnSignal.MouseMessage( pMsg ) != WMSG_FAIL ) 
+			{
+				if (IsRadarUse())
+					ShowToolTip( TRUE, STT_SIGNAL );
+				return WMSG_SUCCESS;
+			}
+
+			bool bToolTip = false;
+			if ( m_ExpressIcon.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				ShowToolTip( TRUE, STT_EXPRESSREMOTE );
+				bToolTip = true;
+			}
+			if ( m_PetStashIcon.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				ShowToolTip( TRUE, STT_PETSTASH );
+				bToolTip = true;
+			}
+			if (m_ItemCollectionIcon.MouseMessage( pMsg ) != WMSG_FAIL)
+			{
+				ShowToolTip(TRUE, STT_ITEMCOLLECTION);
+				bToolTip = true;
+			}
+#ifdef PREMIUM_CHAR
+			if ( m_PremiumCharIcon.MouseMessage( pMsg ) != WMSG_FAIL || 
+				(m_PremiumCharIcon.GetBtnState() == UBS_DISABLE && m_PremiumCharIcon.IsInside(nX, nY) ) )
+			{
+				ShowToolTip( TRUE, STT_PREMIUMCHAR );
+				bToolTip = true;
+			}
+#endif	// PREMIUM_CHAR
+
+			if (bToolTip == true)
+				return WMSG_SUCCESS;
 		
 			if( IsInside( nX, nY ) )
 			{
@@ -997,15 +1247,24 @@ WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
 				}
 				else
 				{
-					_pUIMgr->SetMouseCursorInsideUIs();
+					CUIManager::getSingleton()->SetMouseCursorInsideUIs();
+				}
+
+				m_nSelectedIcon = -1;
+				for( int i = 0; i < m_iconVec.size(); ++i )
+				{
+					if( IsInsideRect( nX, nY, m_iconVec[i].rc ) )
+					{
+						m_nSelectedIcon = i;
+						break;
+					}
 				}
 			}
-			else // Î†àÏù¥Îçî ÏòÅÏó≠ Î∞ñÏúºÎ°ú ÎÇòÍ∞ÄÎ©¥ Ï∑®ÏÜåÎê®.
+			else // ∑π¿Ã¥ı øµø™ π€¿∏∑Œ ≥™∞°∏È √Îº“µ .
 			{
 				SetSignalOn( FALSE );
 				m_bInsideMouse = FALSE;
-			}
-			
+			}			
 			// Hide tool tip
 			ShowToolTip( FALSE );
 		}
@@ -1013,88 +1272,174 @@ WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDOWN:
 		{
-			// Popup of option
-			if( m_bShowOptionPopup && IsInsideRect( nX, nY, m_rcOption ) )
+			if( m_bEnableRR && IsInsideRect( nX, nY, m_rcBtnRR) )
 			{
-				for( int iOption = 0; iOption < RADAR_OPTION_TOTAL; iOption++ )
-				{
-					if( m_cbtnOption[iOption].MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						_pUIMgr->RearrangeOrder( UI_RADAR, TRUE );
-						return WMSG_SUCCESS;
-					}
-				}
-
+				if( m_btnRR.MouseMessage( pMsg ) != WMSG_FAIL )	{}
 				return WMSG_SUCCESS;
 			}
 			else if( IsInside( nX, nY ) )
 			{
 				// Option button
-				if( m_btnOption.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
+				m_btnOption.MouseMessage( pMsg );
 				// Map button
-				else if( m_btnMap.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				else if( m_btnSignal.MouseMessage( pMsg ) != WMSG_FAIL ) 
-				{
-					// Nothing
-				}
+				m_btnMap.MouseMessage( pMsg );	
+				m_btnSignal.MouseMessage( pMsg );
+				m_btnZoomIn.MouseMessage( pMsg );
+				m_btnZoomOut.MouseMessage( pMsg );
+				m_ExpressIcon.MouseMessage( pMsg );
+				m_PetStashIcon.MouseMessage( pMsg );
+				m_ItemCollectionIcon.MouseMessage(pMsg);
+#ifdef PREMIUM_CHAR
+				m_PremiumCharIcon.MouseMessage( pMsg );
+#endif	//	PREMIUM_CHAR
 
-				_pUIMgr->RearrangeOrder( UI_RADAR, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_RADAR, TRUE );
 				return WMSG_SUCCESS;
-			}
+			}	
 		}
 		break;
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
+				if( m_bEnableRR && ( wmsgResult = m_btnRR.MouseMessage( pMsg ) ) != WMSG_FAIL )
+				{
+					if( wmsgResult == WMSG_COMMAND )
+					{
+						RoyalRumbleJoinReqMsgBox();
+					}
+
+					return WMSG_SUCCESS;
+				}
 				// If radar isn't focused
 				if( !IsFocused() )
 					return WMSG_FAIL;
 
-				// Option button
-				if( ( wmsgResult = m_btnOption.MouseMessage( pMsg ) ) != WMSG_FAIL )
+				if (IsRadarUse())
 				{
-					if( wmsgResult == WMSG_COMMAND )
+					// Option button
+					if( ( wmsgResult = m_btnOption.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
-						m_bShowOptionPopup = !m_bShowOptionPopup;
+						if( wmsgResult == WMSG_COMMAND )
+						{
+							m_bShowOptionPopup = !m_bShowOptionPopup;
+						}
+	
+						return WMSG_SUCCESS;
 					}
-
+					
+					// Map button
+					else if( ( wmsgResult = m_btnMap.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					{
+						if( wmsgResult == WMSG_COMMAND )
+						{
+							pUIManager->GetMap()->ToggleVisible();
+						}
+	
+						return WMSG_SUCCESS;
+					}
+					else if( ( wmsgResult = m_btnSignal.MouseMessage( pMsg ) ) != WMSG_FAIL ) 
+					{
+						if( wmsgResult == WMSG_COMMAND )
+						{
+							if( !IsPossibleSignal() ) return WMSG_SUCCESS;
+							// Ω√±◊≥Œ πˆ∆∞¿ª ¥©∏£∏È ∑π¿Ã¥ıªÛø° √÷¡æ ¿ßƒ° «•Ω√«ÿ¡‹
+							m_Signal.dStartTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+							m_Signal.bVisible = TRUE;
+	
+							// Signal º¬∆√
+							SetSignalOn( TRUE );
+						}
+	
+						return WMSG_SUCCESS;
+					}
+					else if( ( wmsgResult = m_btnZoomIn.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					{
+						if( wmsgResult == WMSG_COMMAND )
+						{
+							if( m_fZoomRate < 5.0f )
+							{
+								m_fZoomRate += 1.0f;
+							}
+						}
+	
+						return WMSG_SUCCESS;
+					}
+					else if( ( wmsgResult = m_btnZoomOut.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					{
+						if( wmsgResult == WMSG_COMMAND )
+						{
+							if( m_fZoomRate > 1.0f )
+							{
+								m_fZoomRate -= 1.0f;
+							}
+						}
+	
+						return WMSG_SUCCESS;
+					}
+				}
+				if ( m_ExpressIcon.MouseMessage( pMsg ) != WMSG_FAIL )
+				{
+					ExpressSystem* pData = GAMEDATAMGR()->GetExpressData();
+					
+					if(_pUIBuff->GetMyTimerItemBuffExist(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM) == true ||
+						( pData != NULL && pData->GetPremiumBenefit() == true))
+					{
+						GameDataManager* pGameData = GameDataManager::getSingleton();
+						if (pGameData)
+						{
+							ExpressSystem* pExpress = pGameData->GetExpressData();
+							
+							if (pExpress)
+							{
+								pExpress->RemoteitemUse();
+							}
+						}
+					}
+					else
+					{
+						if ( pUIManager->DoesMessageBoxExist(MSGCMD_EXPRESS_REMOTE_ERROR) )
+						{
+							pUIManager->CloseMessageBox( MSGCMD_EXPRESS_REMOTE_ERROR );
+						}
+						CTString strMessage, strTitle;
+						CUIMsgBox_Info msgBoxInfo;						
+						strTitle.PrintF(_S( 191, "»Æ¿Œ" ));
+						msgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK, UI_RADAR ,MSGCMD_EXPRESS_REMOTE_ERROR);
+						strMessage.PrintF( _S( 6025, "Ω≈∫Ò«— ºÆªÛ¿ª √£æ∆ ∞°Ω√∞≈≥™, LCE ø¯∞› ¿ÃøÎ±«¿ª ≈Î«ÿ ¿ÃøÎ«œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ.") );
+						msgBoxInfo.AddString(strMessage);	
+						if ( pUIManager )
+							pUIManager->CreateMessageBox( msgBoxInfo );
+					}
 					return WMSG_SUCCESS;
 				}
-				// Map button
-				else if( ( wmsgResult = m_btnMap.MouseMessage( pMsg ) ) != WMSG_FAIL )
+				else if ( m_PetStashIcon.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
-					if( wmsgResult == WMSG_COMMAND )
-					{
-						_pUIMgr->GetMap()->ToggleVisible();
-					}
-
+					if (pUIManager->GetPetStash()->IsVisible() == FALSE)
+						pUIManager->GetPetStash()->OpenPetStash();
 					return WMSG_SUCCESS;
 				}
-				else if( ( wmsgResult = m_btnSignal.MouseMessage( pMsg ) ) != WMSG_FAIL ) 
+				else if (m_ItemCollectionIcon.MouseMessage( pMsg )!= WMSG_FAIL)
 				{
-					if( wmsgResult == WMSG_COMMAND )
-					{
-						if( !IsPossibleSignal() ) return WMSG_SUCCESS;
-						// ÏãúÍ∑∏ÎÑê Î≤ÑÌäºÏùÑ ÎàÑÎ•¥Î©¥ Î†àÏù¥ÎçîÏÉÅÏóê ÏµúÏ¢Ö ÏúÑÏπò ÌëúÏãúÌï¥Ï§å
-						m_Signal.dStartTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
-						m_Signal.bVisible = TRUE;
-
-						// Signal ÏÖãÌåÖ
-						SetSignalOn( TRUE );
-					}
-
+					if (pUIManager->GetItemCollection()->IsVisible() == FALSE)
+						pUIManager->GetItemCollection()->OpenUI();
 					return WMSG_SUCCESS;
 				}
-				
+#ifdef PREMIUM_CHAR
+				else if (m_PremiumCharIcon.MouseMessage( pMsg )!= WMSG_FAIL)
+				{
+					if (m_PremiumCharIcon.GetBtnState() == UBS_DISABLE)
+						return WMSG_SUCCESS;
+
+					if (pUIManager->GetPremiumChar()->IsVisible() == FALSE)
+						pUIManager->GetPremiumChar()->OpenUI();
+					return WMSG_SUCCESS;
+				}
+#endif	//	PREMIUM_CHAR
 				if( IsInside( nX, nY ) )
 				{
 					if( !m_bSignalBtnOn )
@@ -1110,7 +1455,7 @@ WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
 					if( RadarToWorld( fX, fY ) )
 					{
 						SendSignal( fX, fY );
-						_pUIMgr->RearrangeOrder( UI_RADAR, TRUE );
+						pUIManager->RearrangeOrder( UI_RADAR, TRUE );
 					}
 					return WMSG_SUCCESS;
 				}
@@ -1122,7 +1467,7 @@ WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
 				{
 					SetSignalOn( FALSE );
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				}
@@ -1132,8 +1477,16 @@ WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDBLCLK:
 		{
-			if( m_bShowOptionPopup && IsInsideRect( nX, nY, m_rcOption ) )
+			if( m_btnZoomIn.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				// Nothing.
 				return WMSG_SUCCESS;
+			}
+			else if( m_btnZoomOut.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				// Nothing.
+				return WMSG_SUCCESS;
+			}
 			else if( IsInsideRect( nX, nY, m_rcTop ) )
 				return WMSG_SUCCESS;
 		}
@@ -1143,9 +1496,9 @@ WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
 	return WMSG_FAIL;
 }
 
-#define SIGNAL_TIME				5.0f								// ÏãúÍ∑∏ÎÑê ÌëúÏãú ÏãúÍ∞Ñ 
-#define SIGNAL_COUNT			5.0f								// ÏãúÍ∑∏ÎÑê ÌëúÏãú ÌöüÏàò 
-#define SIGNAL_UNITTIME			( SIGNAL_TIME / SIGNAL_COUNT )		// ÌïúÎ≤à ÌëúÏãúÍ∞Ä Ìï†Îïå Í±∏Î¶¨Îäî ÏãúÍ∞Ñ
+#define SIGNAL_TIME				5.0f								// Ω√±◊≥Œ «•Ω√ Ω√∞£ 
+#define SIGNAL_COUNT			5.0f								// Ω√±◊≥Œ «•Ω√ »Ωºˆ 
+#define SIGNAL_UNITTIME			( SIGNAL_TIME / SIGNAL_COUNT )		// «—π¯ «•Ω√∞° «“∂ß ∞…∏Æ¥¬ Ω√∞£
 #define SIGNAL_UNITTIME_HALF	( SIGNAL_UNITTIME / 2 ) 
 
 //------------------------------------------------------------------------------
@@ -1155,13 +1508,15 @@ WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
 //------------------------------------------------------------------------------
 void CUIRadar::RenderSignal()
 {
-	static FLOAT fAngleOffSet = 270.0f; // Î∞©Ìñ• ÌëúÏãúÍ∏∞Í∞Ä ^Î•º Ìñ•ÌïòÍ∏∞ ÏûàÎèÑÎ°ù ÌïòÍ∏∞ÏúÑÌï¥ÏÑú 270ÎèÑÎ•º Í∫ΩÏñ¥Ï§ÄÎã§.
-	static FLOAT fSqrDist = RADAR_VIEW_DISTANCE * RADAR_VIEW_DISTANCE;
-	static FLOAT fRatio = RADAR_VIEW_RADIUS / RADAR_VIEW_DISTANCE;
+	static FLOAT fAngleOffSet = 270.0f; // πÊ«‚ «•Ω√±‚∞° ^∏¶ «‚«œ±‚ ¿÷µµ∑œ «œ±‚¿ß«ÿº≠ 270µµ∏¶ ≤©æÓ¡ÿ¥Ÿ.
+	MapData* md;
+	md = CUIManager::getSingleton()->GetMap()->GetCurMapData( m_nZone );
+	FLOAT	fSqrDist = RADAR_VIEW_DISTANCE * RADAR_VIEW_DISTANCE / m_fZoomRate;
+	FLOAT	fRatio = md->World.fRatio * m_fZoomRate;
 
 	if( !m_Signal.bVisible ) return;
 
-	// ÌëúÏãú ÏãúÍ∞Ñ Î∞è 2d Ìö®Í≥º Ï°∞Ï†ï
+	// «•Ω√ Ω√∞£ π◊ 2d »ø∞˙ ¡∂¡§
 	DOUBLE dElapsedTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
 	DOUBLE dDealy		= dElapsedTime - m_Signal.dStartTime;
 
@@ -1178,7 +1533,7 @@ void CUIRadar::RenderSignal()
 	COLOR	colOriBlend = 0xFFFFFFFF;
 	int		nCount = SIGNAL_COUNT-1;
 			
-	// signalÏùò Alpha & Size Ï°∞Ï†ï 
+	// signal¿« Alpha & Size ¡∂¡§ 
 	while( dDealy  > SIGNAL_UNITTIME )
 	{
 		nCount--;
@@ -1213,7 +1568,7 @@ void CUIRadar::RenderSignal()
 	FLOAT	fXpc = _pNetwork->MyCharacterInfo.x;
 	FLOAT	fZpc = _pNetwork->MyCharacterInfo.z;
 
-	// ÏºÄÎ¶≠ÌÑ∞Ïùò ÏúÑÏπòÎ•º ÏõêÏ†êÏúºÎ°ú Ìïú ÏãúÍ∑∏ÎÑêÏùò ÏúÑÏπò
+	// ƒ…∏Ø≈Õ¿« ¿ßƒ°∏¶ ø¯¡°¿∏∑Œ «— Ω√±◊≥Œ¿« ¿ßƒ°
 	FLOAT fX = m_Signal.fX - fXpc;
 	FLOAT fZ = m_Signal.fZ - fZpc;
 	
@@ -1223,14 +1578,14 @@ void CUIRadar::RenderSignal()
 	FLOAT	fSin = Sin( _pNetwork->MyCharacterInfo.camera_angle );
 	FLOAT	fCos = Cos( _pNetwork->MyCharacterInfo.camera_angle );
 
-	// Render Signal ( Î†àÏù¥ÎçîÏùò Î≤îÏúÑÏïàÏóê ÏûàÎäî Í≤ΩÏö∞ ) 
+	// Render Signal ( ∑π¿Ã¥ı¿« π¸¿ßæ»ø° ¿÷¥¬ ∞ÊøÏ ) 
 	if( fDist <= fSqrDist ) 
 	{
 		fX *= fRatio;
 		fZ *= fRatio;
 
-		nX += ( fX * fCos - fZ * fSin );
-		nY += ( fX * fSin + fZ * fCos );
+		nX += fX;
+		nY += fZ;
 
 		FLOAT fWidth = (  m_rcSignal.Right - m_rcSignal.Left ) / 2;
 		FLOAT fHeight = ( m_rcSignal.Bottom - m_rcSignal.Top ) / 2;
@@ -1238,24 +1593,26 @@ void CUIRadar::RenderSignal()
 		FLOAT	fOriWidth = fWidth;
 		FLOAT	fOriHeight = fHeight;
 
-		if( bFirst ) // Îß® Ï≤òÏùåÏóêÎäî ÌÅ¨Í≤å ~
+		if( bFirst ) // ∏« √≥¿Ωø°¥¬ ≈©∞‘ ~
 		{
 			fWidth = fWidth + (fWidth + fWidth) * dDealy;
 			fHeight = fHeight + (fHeight + fHeight) * dDealy;
 		}
-		else // Í∏∞Î≥∏ ÌÅ¨Í∏∞Î°ú 
+		else // ±‚∫ª ≈©±‚∑Œ 
 		{
 			fWidth = fWidth + fWidth * dDealy;
 			fHeight = fHeight + fHeight * dDealy;
 		}
 
-		_pUIMgr->GetDrawPort()->AddTexture( nX - fWidth,  nY - fHeight,
+		CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+		pDrawPort->AddTexture( nX - fWidth,  nY - fHeight,
 											nX + fWidth, nY + fHeight,
 											m_rtSignal.U0, m_rtSignal.V0,
 											m_rtSignal.U1, m_rtSignal.V1,
 											colBlend );
 	
-		_pUIMgr->GetDrawPort()->AddTexture( nX - fOriWidth,  nY - fOriHeight,
+		pDrawPort->AddTexture( nX - fOriWidth,  nY - fOriHeight,
 											nX + fOriWidth, nY + fOriHeight,
 											m_rtSignal.U0, m_rtSignal.V0,
 											m_rtSignal.U1, m_rtSignal.V1,
@@ -1263,18 +1620,18 @@ void CUIRadar::RenderSignal()
 		return;
 	}
 
-	// Î†àÏù¥ÎçîÏùò ÌëúÏãú Î≤îÏúÑÏïàÏóê ÏûàÏßÄ ÏïäÎäîÎã§Î©¥ Î†àÏù¥Îçî Ïô∏Í∞ÅÏóê Î∞©Ìñ•ÏúºÎ°ú ÌëúÏãú
+	// ∑π¿Ã¥ı¿« «•Ω√ π¸¿ßæ»ø° ¿÷¡ˆ æ ¥¬¥Ÿ∏È ∑π¿Ã¥ı ø‹∞¢ø° πÊ«‚¿∏∑Œ «•Ω√
 	
-	// ÏºÄÎ¶≠ÌÑ∞Ïùò XÏ∂ïÏùÑ Ï§ëÏã¨ÏúºÎ°ú ÏãúÍ∑∏ÎÑêÏùò Í∞ÅÎèÑ Íµ¨ÌïòÍ∏∞
-	FLOAT	angle = GetAngle( fX, fZ, 1.0f, 0.0f );	 // X Ï∂ï Ï§ëÏã¨
+	// ƒ…∏Ø≈Õ¿« X√‡¿ª ¡ﬂΩ…¿∏∑Œ Ω√±◊≥Œ¿« ∞¢µµ ±∏«œ±‚
+	FLOAT	angle = GetAngle( fX, fZ, 1.0f, 0.0f );	 // X √‡ ¡ﬂΩ…
 	angle *= RADIAN;
 
-	if( fZ < 0 ) // 360ÎèÑ 
+	if( fZ < 0 ) // 360µµ 
 	{
 		angle = 360 - angle;
 	}
 
-	angle -= fAngleOffSet;  // Î∞©Ìñ• ÌëúÏãúÍ∏∞Í∞Ä ^Î•º Ìñ•ÌïòÍ∏∞ ÏûàÎèÑÎ°ù ÌïòÍ∏∞ÏúÑÌï¥ÏÑú 90ÎèÑÎ•º Í∫ΩÏñ¥Ï§ÄÎã§.
+	angle -= fAngleOffSet;  // πÊ«‚ «•Ω√±‚∞° ^∏¶ «‚«œ±‚ ¿÷µµ∑œ «œ±‚¿ß«ÿº≠ 90µµ∏¶ ≤©æÓ¡ÿ¥Ÿ.
 
 	FLOAT	fSin2 = Sin( _pNetwork->MyCharacterInfo.camera_angle + angle );
 	FLOAT	fCos2 = Cos( _pNetwork->MyCharacterInfo.camera_angle + angle );
@@ -1305,10 +1662,12 @@ void CUIRadar::RenderSignal()
 	fX *= fRatio;
 	fZ *= fRatio;
 
-	nX += ( fX * fCos - fZ * fSin );
-	nY += ( fX * fSin + fZ * fCos );
+	nX += fX;
+	nY += fZ;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX + fX1, nY + fY1, m_rtOutSignal.U0, m_rtOutSignal.V0, colBlend,
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->AddTexture( nX + fX1, nY + fY1, m_rtOutSignal.U0, m_rtOutSignal.V0, colBlend,
 										nX + fX2, nY + fY2, m_rtOutSignal.U0, m_rtOutSignal.V1, colBlend,
 										nX + fX3, nY + fY3, m_rtOutSignal.U1, m_rtOutSignal.V1, colBlend,
 										nX + fX4, nY + fY4, m_rtOutSignal.U1, m_rtOutSignal.V0, colBlend );
@@ -1316,7 +1675,7 @@ void CUIRadar::RenderSignal()
 
 //------------------------------------------------------------------------------
 // CUIRadar::SetSignal
-// Explain:  Î†àÏù¥ÎçîÏùò ÏãúÍ∑∏ÎÑêÏùò Ìï≠ÏÉÅ ÏµúÏã† Í≤ÉÏùÑ Í∏∞Ï§ÄÏúºÎ°ú 1Í∞úÎßå ÌëúÏãúÎêúÎã§.
+// Explain:  ∑π¿Ã¥ı¿« Ω√±◊≥Œ¿« «◊ªÛ √÷Ω≈ ∞Õ¿ª ±‚¡ÿ¿∏∑Œ 1∞≥∏∏ «•Ω√µ»¥Ÿ.
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIRadar::SetSignal( float fX, float fZ )
@@ -1331,46 +1690,45 @@ void CUIRadar::SetSignal( float fX, float fZ )
 
 //------------------------------------------------------------------------------
 // CUIRadar::SendSignal
-// Explain: ÏÑúÎ≤ÑÏóê ÏãúÍ∑∏ÎÑêÏùÑ Î≥¥ÎÉÑ
-// ÎßµÏùò ÏãúÍ∑∏ÎÑê Ï∂îÍ∞Ä Î£®Ìã¥ÏùÑ ÌÜµÌï¥ÏÑú Ï†ïÏÜ°Îê®.
+// Explain: º≠πˆø° Ω√±◊≥Œ¿ª ∫∏≥ø
+// ∏ ¿« Ω√±◊≥Œ √ﬂ∞° ∑Á∆æ¿ª ≈Î«ÿº≠ ¡§º€µ .
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIRadar::SendSignal( float fX, float fZ )
 {
 	if( IsPossibleSignal() )
 	{
-		_pUIMgr->GetMap()->SendSignal( fX, fZ );
+		CUIManager::getSingleton()->GetMap()->SendSignal( fX, fZ );
 	}
-
-	// ÏûÑÏãú ÏΩîÎî© Î∞îÎ°ú ÏûêÏã†Ïùò ÏãúÍ∑∏ÎÑêÎ°ú Î≥¥ÎÇ¥ÎèÑÎ°ù
-	//SetSignal( fX, fZ );
 }
 		
 
 //------------------------------------------------------------------------------
 // CUIRadar::RadarToWorld
-// Explain:  Î†àÏù¥Îçî ÏÉÅÏùò Ï¢åÌëúÎ•º World Ï¢åÌëúÎ°ú Î≥ÄÍ≤Ω 
-// * Return Value : ÏûÖÎ†•Îêú ÏûêÌëúÍ∞Ä Î†àÏù¥Îçî ÏÉÅÏóê ÏûàÎäîÏßÄ
+// Explain:  ∑π¿Ã¥ı ªÛ¿« ¡¬«•∏¶ World ¡¬«•∑Œ ∫Ø∞Ê 
+// * Return Value : ¿‘∑¬µ» ¿⁄«•∞° ∑π¿Ã¥ı ªÛø° ¿÷¥¬¡ˆ
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 bool CUIRadar::RadarToWorld( float& fX, float& fZ )
 {
-	static FLOAT fRatio = RADAR_VIEW_RADIUS / RADAR_VIEW_DISTANCE;
-	static FLOAT fSqrDist = RADAR_VIEW_DISTANCE * RADAR_VIEW_DISTANCE;
+	MapData* md;
+	md = CUIManager::getSingleton()->GetMap()->GetCurMapData( m_nZone );
+	FLOAT	fSqrDist = RADAR_VIEW_DISTANCE * RADAR_VIEW_DISTANCE / m_fZoomRate;
+	FLOAT	fRatio = md->World.fRatio * m_fZoomRate;
 
 	double nTempX;
 	double nTempZ;
 	
-	double	fSin = Sin( -_pNetwork->MyCharacterInfo.camera_angle ); // ÌòÑÏû¨ ÏºÄÎ¶≠Ïùò Í∞ÅÎèÑÏóê Ïó≠ ÌöåÏ†Ñ Î∞©Ìñ•
+	double	fSin = Sin( -_pNetwork->MyCharacterInfo.camera_angle ); // «ˆ¿Á ƒ…∏Ø¿« ∞¢µµø° ø™ »∏¿¸ πÊ«‚
 	double	fCos = Cos( -_pNetwork->MyCharacterInfo.camera_angle );
 	
-	fX -= m_nPosX + RADAR_CENTER_OFFSETX; // Î†àÏù¥Îçî Ï§ëÏã¨ Ï¢åÌëúÎ•º Í∏∞Ï§Ä( Î†àÏù¥ÌÑ∞ ÏÉÅÏùò ÏºÄÎ¶≠ÌÑ∞Ïùò ÏúÑÏπò )
+	fX -= m_nPosX + RADAR_CENTER_OFFSETX; // ∑π¿Ã¥ı ¡ﬂΩ… ¡¬«•∏¶ ±‚¡ÿ( ∑π¿Ã≈Õ ªÛ¿« ƒ…∏Ø≈Õ¿« ¿ßƒ° )
 	fZ -= m_nPosY + RADAR_CENTER_OFFSETY;
 
-	fX /= fRatio;	// Ï∂ïÏ≤ô 
+	fX /= fRatio;	// √‡√¥ 
 	fZ /= fRatio;
 
-	nTempX = ( fX * fCos - fZ * fSin ); // ÌöåÏ†Ñ 
+	nTempX = ( fX * fCos - fZ * fSin ); // »∏¿¸ 
 	nTempZ = ( fX * fSin + fZ * fCos );
 
 	fX = nTempX;
@@ -1382,7 +1740,7 @@ bool CUIRadar::RadarToWorld( float& fX, float& fZ )
 	
 	if( ( fX * fX + fZ * fZ ) <= fSqrDist )
 	{
-		fX += fXpc; // ÏºÄÎ¶≠ÌÑ∞Ïùò ÏúÑÏπòÍ∞Ä Ï§ëÏã¨Ïù¥Í∏∞ ÎïåÎ¨∏Ïóê Offset Ï°∞Ï†ï
+		fX += fXpc; // ƒ…∏Ø≈Õ¿« ¿ßƒ°∞° ¡ﬂΩ…¿Ã±‚ ∂ßπÆø° Offset ¡∂¡§
 		fZ += fZpc;
 	
 		return true;
@@ -1393,13 +1751,13 @@ bool CUIRadar::RadarToWorld( float& fX, float& fZ )
 
 //------------------------------------------------------------------------------
 // CUIRadar::IsPossibleSignal
-// Explain:  ÏãúÍ∑∏ÎÑêÏùÑ Î≥¥ÎÇº Ïàò ÏûàÎäîÏßÄ ÌôïÏù∏
+// Explain:  Ω√±◊≥Œ¿ª ∫∏≥æ ºˆ ¿÷¥¬¡ˆ »Æ¿Œ
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 bool CUIRadar::IsPossibleSignal()
 {
-	// Í∏∏ÎìúÏû•, Î∂ÄÏû•Ïù∏Í≤ΩÏö∞ 
-	// Í≥µÏÑ± ÎßµÏù∏ Í≤ΩÏö∞ 
+	// ±ÊµÂ¿Â, ∫Œ¿Â¿Œ∞ÊøÏ 
+	// ∞¯º∫ ∏ ¿Œ ∞ÊøÏ 
 	LONG nRanking = _pNetwork->MyCharacterInfo.lGuildPosition;
 
 	if( nRanking != GUILD_MEMBER_BOSS && nRanking != GUILD_MEMBER_VICE_BOSS )
@@ -1413,7 +1771,7 @@ bool CUIRadar::IsPossibleSignal()
 
 //------------------------------------------------------------------------------
 // IsPossibleCastleRadar
-// Explain: Í≥µÏÑ± Î†àÏù¥ÎçîÎ•º ÏÇ¨Ïö©Ìï† Ïàò ÏûàÎäî ÏÉÅÌô©Ïù∏ÏßÄ ÌôïÏù∏ ( Î≤ÑÌäº ÌôúÏÑ±Ìôî Ïó¨Î∂Ä )
+// Explain: ∞¯º∫ ∑π¿Ã¥ı∏¶ ªÁøÎ«“ ºˆ ¿÷¥¬ ªÛ»≤¿Œ¡ˆ »Æ¿Œ ( πˆ∆∞ »∞º∫»≠ ø©∫Œ )
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 bool CUIRadar::IsPossibleCastleRadar()
@@ -1429,7 +1787,7 @@ bool CUIRadar::IsPossibleCastleRadar()
 
 //------------------------------------------------------------------------------
 // CUIMap::SetSignalOn
-// Explain:  ÏãúÍ∑∏ÎÑê Î≥ÄÏàòÎ•º ÏÖãÌåÖÌïòÍ≥† ÎßàÏö∞Ïä§ Ïª§ÏÑúÎ•º Î≥ÄÍ≤Ω Ìï©ÎãàÎã§.
+// Explain:  Ω√±◊≥Œ ∫Øºˆ∏¶ º¬∆√«œ∞Ì ∏∂øÏΩ∫ ƒøº≠∏¶ ∫Ø∞Ê «’¥œ¥Ÿ.
 // Date : 2005-11-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIRadar::SetSignalOn( bool bOn ) 
@@ -1439,7 +1797,7 @@ void CUIRadar::SetSignalOn( bool bOn )
 		if( m_bSignalBtnOn ) 
 		{
 			m_bSignalBtnOn = FALSE; 
-			_pUIMgr->SetMouseCursorInsideUIs();
+			CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 		}	
 	}
 	else
@@ -1447,7 +1805,7 @@ void CUIRadar::SetSignalOn( bool bOn )
 		if( !IsPossibleSignal() ) return;
 
 		m_bSignalBtnOn = TRUE;
-		_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIGNAL );
+		CUIManager::getSingleton()->SetMouseCursorInsideUIs( UMCT_SIGNAL );
 	}
 
 }
@@ -1455,9 +1813,9 @@ void CUIRadar::SetSignalOn( bool bOn )
 
 //------------------------------------------------------------------------------
 //  CUIRadar::KeyMessage
-// Explain: CtrlÌÇ§Î•º ÎàåÎ†ÄÏùÑ Îïå ÏãúÍ∑∏ÎÑêÏùÑ Î≥¥ÎÇº Ïàò ÏûàÎèÑÎ°ù KeyMessageÎ•º Î∞õÎäîÎã§ 
-// * ÏùºÎ∞òÏ†ÅÏù∏ UIWindowÎäî KEYUP Î©îÏÑ∏ÏßÄÎ•º Î∞õÏßÄ ÏïäÎäîÎã§. ( Ï°∞Ìï©ÌÇ§Î•º ÏÇ¨Ïö©ÌïòÎäî Í≥≥Ïù¥ ÏóÜÏùå)
-// *  UIMgrÏóêÏÑú MAPÍ≥º RarÎßå ÏòàÏô∏ Ï≤òÎ¶¨Ìï¥ÏÑú KEYUPÎ©îÏÑ∏ÏßÄÎ•º Î∞õÎèÑÎ°ù ÌïòÏòÄÏùå
+// Explain: Ctrl≈∞∏¶ ¥≠∑∂¿ª ∂ß Ω√±◊≥Œ¿ª ∫∏≥æ ºˆ ¿÷µµ∑œ KeyMessage∏¶ πﬁ¥¬¥Ÿ 
+// * ¿œπ›¿˚¿Œ UIWindow¥¬ KEYUP ∏ﬁºº¡ˆ∏¶ πﬁ¡ˆ æ ¥¬¥Ÿ. ( ¡∂«’≈∞∏¶ ªÁøÎ«œ¥¬ ∞˜¿Ã æ¯¿Ω)
+// *  UIMgrø°º≠ MAP∞˙ Rar∏∏ øπø‹ √≥∏Æ«ÿº≠ KEYUP∏ﬁºº¡ˆ∏¶ πﬁµµ∑œ «œø¥¿Ω
 // Date : 2005-10-24,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 WMSG_RESULT CUIRadar::KeyMessage( MSG *pMsg )
@@ -1465,13 +1823,13 @@ WMSG_RESULT CUIRadar::KeyMessage( MSG *pMsg )
 	if( !IsFocused() )
 		return WMSG_FAIL;
 	
-	// ÎßàÏö∞Ïä§Í∞Ä ÏßÄÎèÑÏïàÏóê ÏûàÏùÑ ÎïåÎßå Ï≤òÎ¶¨ÌïúÎã§.
+	// ∏∂øÏΩ∫∞° ¡ˆµµæ»ø° ¿÷¿ª ∂ß∏∏ √≥∏Æ«—¥Ÿ.
 	if( !m_bInsideMouse ) 
 	{
 		return WMSG_FAIL;
 	}
 
-	/* UPÌÇ§Î•º ÏòàÏô∏ Ï≤òÎ¶¨ÌïòÏßÄ ÏïäÍ≥† F1ÌÇ§ ÎàåÎØºÎ©¥ Í∑∏ÎÉ• Í∞ÄÎäîÎ∞©Ïãù
+	/* UP≈∞∏¶ øπø‹ √≥∏Æ«œ¡ˆ æ ∞Ì F1≈∞ ¥≠πŒ∏È ±◊≥… ∞°¥¬πÊΩƒ
 	if( pMsg->wParam == VK_F1 )
 	{
 		SetSignalOn( true );
@@ -1479,7 +1837,7 @@ WMSG_RESULT CUIRadar::KeyMessage( MSG *pMsg )
 	}
 	*/
 	
-	// ÏãúÍ∑∏ÎÑêÏùÑ ÏÇ¨Ïö©Ìï† Ïàò ÏûàÎäîÏßÄ Ï≤¥ÌÅ¨ 
+	// Ω√±◊≥Œ¿ª ªÁøÎ«“ ºˆ ¿÷¥¬¡ˆ √º≈© 
 	if( !IsPossibleSignal() ) 
 	{
 		return WMSG_FAIL;
@@ -1506,29 +1864,105 @@ WMSG_RESULT CUIRadar::KeyMessage( MSG *pMsg )
 	return WMSG_FAIL;
 }
 
+// ----------------------------------------------------------------------------
+// Name : MsgBoxLCommand(int nCommandCode, int nResult )
+// Desc : l-type message box event catcher.
+// ----------------------------------------------------------------------------
+void CUIRadar::MsgBoxLCommand(int nCommandCode, int nResult )
+{
+	switch( nCommandCode )
+	{
+	case MSGLCMD_ROYALRUMBLE_MANAGER:
+		{
+			if( ROYALRUMBLE_SCHEDULE == nResult )
+			{
+				_pNetwork->SendRoyalRumbleNextTimeReq();
+			}
+			else if( ROYALRUMBLE_REJECT == nResult )
+			{
+				CUIMsgBox_Info	MsgBoxInfo;
+				MsgBoxInfo.SetMsgBoxInfo( _S(5405, "∑Œæ‚∑≥∫Ì ¬¸∞°Ω≈√ª √Îº“"), UMBS_YESNO, UI_RADAR, MSGCMD_ROYALRUMBLE_REJECT_REQ);
+											
+				MsgBoxInfo.AddString( _S(5406, "∑Œæ‚∑≥∫Ì ¬¸∞°Ω≈√ª¿ª √Îº“«œΩ√∏È ¬¸∞°Ω≈√ª ∫ÒøÎ¿∫ µπ∑¡πﬁ¿ª ºˆ æ¯Ω¿¥œ¥Ÿ. ∑Œæ‚∑≥∫Ì ¬¸∞°Ω≈√ª¿ª √Îº“«œΩ√∞⁄Ω¿¥œ±Ó?") );
+				CUIManager::getSingleton()->CreateMessageBox(MsgBoxInfo);
+			}
+			else if( ROYALRUMBLE_REWARD == nResult )
+			{
+				_pNetwork->SendRoyalRumbleRewardReq();
+			}
+			else if( ROYALRUMBLE_POINT == nResult )
+			{
+				_pNetwork->SendRoyalRumblePointReq();
+			}
+			else
+			{
+				// nothing.
+			}
 
+		}
+		break;
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : MsgBoxCommand(int nCommandCode, BOOL bOK, CTString &strInput )
+// Desc : normal-type message box event catcher.
+// ----------------------------------------------------------------------------
+void CUIRadar::MsgBoxCommand(int nCommandCode, BOOL bOK, CTString &strInput )
+{
+	switch( nCommandCode )
+	{
+		case MSGCMD_ROYALRUMBLE_JOIN_REQ:
+			{
+				if( bOK )
+				{
+					_pNetwork->SendRoyalRumbleJoinReq();
+				}
+			}
+			break;
+		case MSGCMD_ROYALRUMBLE_REJECT_REQ:
+			{
+				if( bOK )
+				{
+					_pNetwork->SendRoyalRumbleRejectReq();
+				}
+			}
+			break;
+		case MSGCMD_ROYALRUMBLE_GO_ZONE:
+			{
+				if( bOK )
+				{
+					_pNetwork->SendRoyalRumbleStartReq();
+				}	
+			}
+			break;
+		case MSGCMD_ROYALRUMBLE_WINNER_OUT:
+			{
+				if( bOK )
+				{
+					_pNetwork->GoZone( 0, 0 );
+				}
+				m_bShowTrophy = FALSE;
+				m_bRenderTrophy = FALSE;
+				m_ubTrophyAlpha = 0;
+			}
+			break;
+	}
+}
 // ----------------------------------------------------------------------------
 // Name : CountCipher()
 // Desc : return their cipher
 // ----------------------------------------------------------------------------
-int CUIRadar::CountCipher( int tv_time)
+int CUIRadar::CountCipher(int tv_time, int tv_cipher /* = 1  */)
 {
-	CTString str;
-	int tv_sum = tv_time/pow(10,m_cipher);
-	if( tv_sum ) {
-		m_cipher ++;
-		str.PrintF("%d %d ",tv_sum,m_cipher);
-		CountCipher(tv_sum);
-	}
-	str.PrintF("%d %d %d ",tv_time,tv_sum,m_cipher);
-	return m_cipher;
-	
+	// [2011/09/16 : Sora] ±‚¡∏ ¿⁄∏Æºˆ∞ËªÍºˆΩƒø° πÆ¡¶∞° ¿÷æÓº≠  «—¡ˆ∏Æ ∫Œ¡∑«œ∞‘ ∞ËªÍµ«æÓº≠ ∞¯Ωƒºˆ¡§ π◊ ¡§∏Æ
+	int tv_sum = tv_time/ 10;	
+	return tv_sum>0 ? CountCipher( tv_sum, tv_cipher+1 ) : tv_cipher;
 }
 
 void CUIRadar::DisplayNum( int tv_time,UIRect tv_rect)
 {
 	int tv_c,tv_i,tv_num;
-	m_cipher = 1;
 	tv_c = CountCipher(tv_time);
 	char *tv_str;
 	tv_str = new(char[40]);
@@ -1536,12 +1970,654 @@ void CUIRadar::DisplayNum( int tv_time,UIRect tv_rect)
 
 	CTString str;
 	str.PrintF("%d %d ",tv_c,tv_time);
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 	for(tv_i = 0; tv_i < tv_c ; tv_i++ ){
 		tv_num=tv_str[tv_c-tv_i-1]-'0';
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX+tv_rect.Left -WORLD_TIME_FONT_SIZE*tv_i, m_nPosY+tv_rect.Top,
+		pDrawPort->AddTexture( m_nPosX+tv_rect.Left -WORLD_TIME_FONT_SIZE*tv_i, m_nPosY+tv_rect.Top,
 										m_nPosX+tv_rect.Right -WORLD_TIME_FONT_SIZE*tv_i, m_nPosY+tv_rect.Bottom,
 										m_rtFigure[tv_num].U0, m_rtFigure[tv_num].V0, m_rtFigure[tv_num].U1, m_rtFigure[tv_num].V1,
 										0xFFFFFFFF );			
 	}
+	delete [] tv_str;
+}
+
+
+void CUIRadar::_royalrumbleCreate()
+{
+	m_ptdRoyalRumbleTexture = CreateTexture( CTString("Data\\Interface\\Map.tex") );
+	FLOAT fTexWidth = m_ptdRoyalRumbleTexture->GetPixWidth();
+	FLOAT fTexHeight = m_ptdRoyalRumbleTexture->GetPixHeight();
+
+	UIRectUV rtRRIdle, rtRRClick;
+	rtRRIdle.SetUV( 52, 136, 136, 183, fTexWidth, fTexHeight );
+	rtRRClick.SetUV( 145, 136, 229, 183, fTexWidth, fTexHeight );
+
+	//m_btnRR.Create( this, CTString(""), 33, 193, 84, 47 );
+	m_btnRR.Create( this, CTString(""), 6, 230, 84, 47 );
+	m_btnRR.CopyUV( UBS_IDLE, rtRRIdle );
+	m_btnRR.CopyUV( UBS_CLICK, rtRRClick );
+	m_btnRR.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnRR.CopyUV( UBS_IDLE, UBS_DISABLE );
+
+	//m_rcRR.SetRect( 33, 193, 84, 47 );
+	m_rcBtnRR.SetRect( 6, 230, 92, 277 );
+	m_rcSandglassRR.SetRect( 95, 230, 119, 277 );
+	m_rtSandglassRR[0].SetUV( 184, 198, 208, 245, fTexWidth, fTexHeight );	// green
+	m_rtSandglassRR[1].SetUV( 155, 198, 179, 245, fTexWidth, fTexHeight );	// yellow
+	m_rtSandglassRR[2].SetUV( 126, 198, 150, 245, fTexWidth, fTexHeight );	// red
+
+	m_btSandlassStat = 3;		// default : don't render.
+	m_liEndTime = 0;
+	m_bShowLeftTimeTooltip = FALSE;
+
+	_createTrophyData();
+}
+
+void CUIRadar::_royalrumbleButtonRender()
+{
+	// Timer for highlight buttons
+	static BOOL		bHighlight = FALSE;
+	static DOUBLE	dElapsedTime = 0.0;
+	static DOUBLE	dOldTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	dElapsedTime += dCurTime - dOldTime;
+	dOldTime = dCurTime;
+	if( dElapsedTime > 0.5 )
+	{
+		bHighlight = !bHighlight;
+		do
+		{
+			dElapsedTime -= 0.5;
+		}
+		while( dElapsedTime > 0.5 );
+	}	
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdRoyalRumbleTexture );
+	m_btnRR.Render();
+	pDrawPort->FlushRenderingQueue();
+
+	pDrawPort->InitTextureData( m_ptdRoyalRumbleTexture, FALSE, PBT_ADD );
+	if( bHighlight )
+			m_btnRR.RenderHighlight( 0x404040FF );
+	pDrawPort->FlushRenderingQueue();
+}
+
+void CUIRadar::_royalrumbleTimeRender()
+{
+	if( m_btSandlassStat > 2 )
+		return;
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdRoyalRumbleTexture );
+	pDrawPort->AddTexture( m_nPosX + m_rcSandglassRR.Left, m_nPosY + m_rcSandglassRR.Top, m_nPosX + m_rcSandglassRR.Right, m_nPosY + m_rcSandglassRR.Bottom,
+										m_rtSandglassRR[m_btSandlassStat].U0, m_rtSandglassRR[m_btSandlassStat].V0, m_rtSandglassRR[m_btSandlassStat].U1, m_rtSandglassRR[m_btSandlassStat].V1,
+										0xFFFFFFFF );
+	pDrawPort->FlushRenderingQueue();
+	if( m_bShowLeftTimeTooltip )
+		_showRemainTime();
+}
+
+void CUIRadar::RoyalRumbleJoinReqMsgBox()
+{
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S(5407, "∑Œæ‚∑≥∫Ì ¬¸∞°Ω≈√ª"), UMBS_YESNO, UI_RADAR, MSGCMD_ROYALRUMBLE_JOIN_REQ);
+								
+	MsgBoxInfo.AddString( _S(5408, "æ»≥Á«œΩ ¥œ±Ó? ∑Œæ‚∑≥∫Ì ∞¸∏Æ»∏¿‘¥œ¥Ÿ. ∑Œæ‚∑≥∫Ìø° ¬¸∞°«œ±‚ ¿ß«ÿº≠¥¬ 10,000,000 ≥™Ω∫¿« ¬¸∞°∫Ò∞° « ø‰«’¥œ¥Ÿ. ∑Œæ‚∑≥∫Ìø° ¬¸∞°«œΩ√∞⁄Ω¿¥œ±Ó?") );
+	CUIManager::getSingleton()->CreateMessageBox(MsgBoxInfo);
+}
+
+void CUIRadar::OpenRoyalrumbleMgrMenu( const INDEX iMobIndex )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBoxL(MSGLCMD_ROYALRUMBLE_MANAGER);
+	
+	CMobData* MD = CMobData::getData( iMobIndex );
+
+	// Create refine message box.
+	pUIManager->CreateMessageBoxL( _S( 5404, "∑Œæ‚∑≥∫Ì" ), UI_RADAR, MSGLCMD_ROYALRUMBLE_MANAGER );
+	CTString strNpcName = CMobData::getData( iMobIndex )->GetName();
+	pUIManager->AddMessageBoxLString( MSGLCMD_ROYALRUMBLE_MANAGER, TRUE, strNpcName, -1, 0xE18600FF );
+	pUIManager->AddMessageBoxLString( MSGLCMD_ROYALRUMBLE_MANAGER, TRUE, _S(5409,	"æ»≥Á«œΩ ¥œ±Ó." 
+																			"¿˙¥¬ ¿Ã ∞˜ø°º≠ ∑Œæ‚∑≥∫Ì ∞¸∏Æ∏¶ ∏√∞Ì¿÷Ω¿¥œ¥Ÿ."
+																			"øÎªÁ¥‘¿« ∞≠«‘¿ª ¡ı∏Ì«œ∞Ì ΩÕ¡ˆ æ ¿∏Ω ¥œ±Ó?"
+																			"±◊∑∏¥Ÿ∏È ∑Œæ‚∑≥∫Ìø° «—π¯ µµ¿¸«ÿ ∫∏Ω Ω√ø¿."
+																			"\n"
+																			"»§Ω√ ±√±›«œΩ≈ ∞Õ¿Ã ¿÷¿∏Ω ¥œ±Ó?" ), -1, 0xA3A1A3FF );
+
+	pUIManager->AddMessageBoxLString( MSGLCMD_ROYALRUMBLE_MANAGER, TRUE, _s(	"" ), -1, 0xA3A1A3FF );
+	CTString strMessage;
+	strMessage.PrintF( _S( 5410, "∑Œæ‚∑≥∫Ì ¿œ¡§ »Æ¿Œ" ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_ROYALRUMBLE_MANAGER, FALSE, strMessage, ROYALRUMBLE_SCHEDULE );
+	strMessage.PrintF( _S( 5405, "∑Œæ‚∑≥∫Ì ¬¸∞°Ω≈√ª √Îº“" ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_ROYALRUMBLE_MANAGER, FALSE, strMessage, ROYALRUMBLE_REJECT );
+	strMessage.PrintF( _S( 5411, "∑Œæ‚∑≥∫Ì ∫∏ªÛ«∞ ¡ˆ±ﬁ" ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_ROYALRUMBLE_MANAGER, FALSE, strMessage, ROYALRUMBLE_REWARD );
+	strMessage.PrintF( _S( 5412, "¿¸¿Â ∆˜¿Œ∆Æ ¡∂»∏" ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_ROYALRUMBLE_MANAGER, FALSE, strMessage, ROYALRUMBLE_POINT );
+	
+	// cancel
+	strMessage.PrintF( _S( 1220, "√Îº“«—¥Ÿ." ) );
+	pUIManager->AddMessageBoxLString( MSGLCMD_ROYALRUMBLE_MANAGER, FALSE, strMessage );
+}
+
+void CUIRadar::_createTrophyData()
+{
+	m_ptdTrophyTexture = CreateTexture( CTString("Data\\Interface\\trophy.tex") );
+	FLOAT fTexWidth = m_ptdTrophyTexture->GetPixWidth();
+	FLOAT fTexHeight = m_ptdTrophyTexture->GetPixHeight();
+	m_bShowTrophy = FALSE;
+	m_rtTrophy.SetUV( 20, 18, 352, 330, fTexWidth, fTexHeight );
+	m_rtTrophyEffect.SetUV( 396, 0, 636, 248, fTexWidth, fTexHeight );
+	m_rcTrophy.SetRect( 0, 0, 332, 312 );
+	_initTrophyData();
+}
+
+void CUIRadar::_renderTrophy()
+{
+	if( !m_bRenderTrophy )
+		return;
+	COLOR colBaseCol = 0xFFFFFF00;
+	static BOOL bReverse = FALSE;
+
+	TIME currentTime  = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+	// step 1
+	if( currentTime - m_tStartTime > 50 )
+	{
+		m_tStartTime = currentTime;
+		if( bReverse )
+		{
+			int iAlpha = m_ubTrophyEffectAlpha;
+			iAlpha -= 10;
+			if( iAlpha < 0x00 )
+			{	m_ubTrophyEffectAlpha = 0x00; bReverse = FALSE;	_showWinnerMsgBox(); }
+			else
+				m_ubTrophyEffectAlpha = iAlpha;
+		}
+		else 
+		{
+			int iAlpha = m_ubTrophyEffectAlpha;
+			iAlpha += 10;
+			if( iAlpha > 0xFF )
+				m_ubTrophyEffectAlpha = 0xFF;
+			else
+				m_ubTrophyEffectAlpha = iAlpha;
+		}
+
+		if( m_ubTrophyEffectAlpha > 200 || m_bShowTrophy )
+		{
+			m_bShowTrophy = TRUE;
+			int iAlpha = m_ubTrophyAlpha;
+			iAlpha += 20;
+			if( iAlpha > 0xFF )
+			{
+				m_ubTrophyAlpha = 0xFF;
+				bReverse = TRUE;
+			}
+			else
+				m_ubTrophyAlpha = iAlpha;
+		}
+	}
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdTrophyTexture );
+
+	pDrawPort->AddTexture( m_rcTrophy.Left-50, m_rcTrophy.Top-50, m_rcTrophy.Right+50, m_rcTrophy.Bottom+50,
+										m_rtTrophyEffect.U0, m_rtTrophyEffect.V0, m_rtTrophyEffect.U1, m_rtTrophyEffect.V1, (colBaseCol|m_ubTrophyEffectAlpha) );
+	pDrawPort->AddTexture( m_rcTrophy.Left, m_rcTrophy.Top, m_rcTrophy.Right, m_rcTrophy.Bottom,
+										m_rtTrophy.U0, m_rtTrophy.V0, m_rtTrophy.U1, m_rtTrophy.V1, (colBaseCol|m_ubTrophyAlpha) );
+	pDrawPort->FlushRenderingQueue();
 	
 }
+
+void CUIRadar::_destroyTrophy()
+{
+	STOCK_RELEASE( m_ptdTrophyTexture );
+	m_bRenderTrophy = FALSE;
+}
+
+void CUIRadar::_initTrophyData()
+{
+	m_bRenderTrophy = FALSE;
+	m_bShowTrophy = FALSE;
+	m_tStartTime = 0;
+	m_ubTrophyAlpha = 0;
+	m_ubTrophyEffectAlpha = 0;
+}
+
+void CUIRadar::_showWinnerMsgBox()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_ROYALRUMBLE_WINNER_OUT ) )
+		return;
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S(5424, "¥Î±‚Ω« ¿Ãµø"), UMBS_OK|UMBS_USE_TIMER, UI_RADAR, MSGCMD_ROYALRUMBLE_WINNER_OUT);
+									
+	MsgBoxInfo.AddString( _S(5426,	"øÏΩ¬¿ª √‡«œµÂ∏≥¥œ¥Ÿ."
+									"¡Í≥Î¡∏¿∏∑Œ ¿Ãµø«’¥œ¥Ÿ.") );
+
+	MsgBoxInfo.SetMsgBoxTimer( 30, TRUE );			// 30 seconds.
+	pUIManager->CreateMessageBox(MsgBoxInfo);
+}
+
+void CUIRadar::_showRemainTime()
+{
+	CTString strTitle = _S( 5579, "≥≤¿∫ Ω√∞£" );
+	CTString strTime;
+	UIRect rcTitle;
+	__int64 curTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	int LeftTime = (m_liEndTime - curTime) / 1000;
+	strTime.PrintF( _s("%d : %d"), LeftTime/60, LeftTime%60 );
+
+	int nInfoWidth;
+#if defined G_THAI
+		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(strTitle);
+#else
+		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + strTitle.Length() *
+						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
+	rcTitle.SetRect( m_nPosX + m_rcSandglassRR.Right - nInfoWidth,
+					 m_nPosY + m_rcSandglassRR.Bottom + 3,
+					 m_nPosX + m_rcSandglassRR.Right,
+					 m_nPosY + m_rcSandglassRR.Bottom + 3 + 3 + 12 + 12 + 3 );
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	// Set texture
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	pDrawPort->AddTexture( rcTitle.Left, rcTitle.Top, rcTitle.Left + 7, rcTitle.Bottom,
+										m_rtToolTipL.U0, m_rtToolTipL.V0, m_rtToolTipL.U1, m_rtToolTipL.V1,
+										0xFFFFFFFF );
+	pDrawPort->AddTexture( rcTitle.Left + 7, rcTitle.Top, rcTitle.Right - 7, rcTitle.Bottom,
+										m_rtToolTipM.U0, m_rtToolTipM.V0, m_rtToolTipM.U1, m_rtToolTipM.V1,
+										0xFFFFFFFF );
+	pDrawPort->AddTexture( rcTitle.Right - 7, rcTitle.Top, rcTitle.Right, rcTitle.Bottom,
+										m_rtToolTipR.U0, m_rtToolTipR.V0, m_rtToolTipR.U1, m_rtToolTipR.V1,
+										0xFFFFFFFF );
+	// Render all elements
+	pDrawPort->FlushRenderingQueue();
+
+	// Text in tool tip
+	pDrawPort->PutTextExCX( strTitle, rcTitle.Left + rcTitle.GetWidth()/2, rcTitle.Top + 3, 0xFF8000FF );
+	pDrawPort->PutTextExCX( strTime, rcTitle.Left + rcTitle.GetWidth()/2,rcTitle.Top + 3 + 12, 0xFF8000FF );
+
+	// Flush all render text queue
+	pDrawPort->EndTextEx();
+}
+
+void CUIRadar::ShowRoyalRumbleTrophy()
+{
+	m_bShowTrophy = FALSE;
+	m_bRenderTrophy = TRUE;
+	m_ubTrophyAlpha = 0;
+	m_ubTrophyEffectAlpha = 0;
+	m_tStartTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+}
+
+
+CUIRoyalRumbleIcon::CUIRoyalRumbleIcon() :
+	m_ptdRoyalRumbleNumberTexture(NULL),
+	m_iLeftCount(0),
+	m_bPickTitle(FALSE),
+	m_colShowColor(0xFFFFFFFF)		// white.
+{
+	
+}
+
+CUIRoyalRumbleIcon::~CUIRoyalRumbleIcon()
+{
+	STOCK_RELEASE( m_ptdRoyalRumbleNumberTexture );
+}
+
+void		CUIRoyalRumbleIcon::ShowRoyalRumbleIcon(BOOL bShow )
+{ 
+	CUIManager::getSingleton()->RearrangeOrder( UI_ROYALRUMBLE_ICON, bShow );	
+}
+
+void		CUIRoyalRumbleIcon::_setShowColor()
+{
+	if( m_iLeftCount < 10 )
+	{
+		m_colShowColor = 0xAA0000FF;
+	}
+	else
+	{
+		m_colShowColor = 0xFFFFFFFF;
+	}
+}
+
+void		CUIRoyalRumbleIcon::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
+{
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+	
+	m_ptdBaseTexture = CreateTexture( CTString("Data\\Interface\\Map.tex") );
+	FLOAT fTexWidth = m_ptdBaseTexture->GetPixWidth();
+	FLOAT fTexHeight = m_ptdBaseTexture->GetPixHeight();
+
+
+	m_rtBackground.SetUV( 8, 195, 120, 243, fTexWidth, fTexHeight );
+	m_rcTitle.SetRect( 0, 13, 112, 48 );
+
+	m_ptdRoyalRumbleNumberTexture = CreateTexture( CTString("Data\\Interface\\NamePopup.tex") );
+}
+
+void		CUIRoyalRumbleIcon::Render()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX+RRUI_WIDTH, m_nPosY+RRUI_HEIGHT,
+										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
+										0xFFFFFFFF );
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->InitTextureData( m_ptdRoyalRumbleNumberTexture );
+	pUIManager->DrawNumber( m_nPosX+50, m_nPosY+20, m_iLeftCount, m_colShowColor );
+	pDrawPort->FlushRenderingQueue();
+
+}
+
+void		CUIRoyalRumbleIcon::ResetPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	SetPos( RRUI_POS_X, RRUI_POS_Y );
+}
+
+void		CUIRoyalRumbleIcon::AdjustPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
+}
+
+WMSG_RESULT	CUIRoyalRumbleIcon::MouseMessage(MSG *pMsg )
+{
+	//WMSG_RESULT	wmsgResult;
+
+	// Title bar
+	static BOOL bTitleBarClick = FALSE;
+	// Extended button clicked
+	static BOOL	bLButtonDownInBtn = FALSE;
+
+	// Mouse point
+	static int	nOldX, nOldY;
+	int	nX = LOWORD( pMsg->lParam );
+	int	nY = HIWORD( pMsg->lParam );
+
+	switch( pMsg->message )
+	{
+		case WM_MOUSEMOVE:
+		{
+			if( IsInside( nX, nY ) )
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
+
+			int	ndX = nX - nOldX;
+			int	ndY = nY - nOldY;
+
+			// Move UI window.
+			if( m_bPickTitle && ( pMsg->wParam & MK_LBUTTON ) )
+			{
+				nOldX = nX;	nOldY = nY;
+
+				Move( ndX, ndY );
+
+				return WMSG_SUCCESS;
+			}
+		}
+		break;
+		case WM_LBUTTONDOWN:
+		{
+			if( IsInside( nX, nY ) )
+			{
+				nOldX = nX;		nOldY = nY;
+
+				if( IsInsideRect( nX, nY, m_rcTitle ) )
+				{
+					m_bPickTitle = TRUE;
+				}
+				
+				CUIManager::getSingleton()->RearrangeOrder( UI_ROYALRUMBLE_ICON, TRUE );
+				return WMSG_SUCCESS;
+			}
+		}
+		break;
+		case WM_LBUTTONUP:
+		{
+			m_bPickTitle = FALSE;
+			CUIManager::getSingleton()->ResetHoldBtn();
+		}
+		break;
+		case WM_LBUTTONDBLCLK:
+		{
+		}
+		break;
+		case WM_MOUSEWHEEL:
+		{
+		}
+		break;
+	}
+	return WMSG_FAIL;
+}
+
+// [2012/10/11 : Sora] ø˘µÂ∏  ∞≥∆Ì
+// «ˆ¿Á πË∞Ê¡ˆµµ∏¶ ±◊∏∞¥Ÿ
+void CUIRadar::RenderCurrentMap()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+	int	nX = m_nPosX + RADAR_CENTER_OFFSETX;
+	int	nY = m_nPosY + RADAR_CENTER_OFFSETY;
+
+	if( CUIManager::getSingleton()->GetMap()->IsMapExist( _pNetwork->MyCharacterInfo.zoneNo,_pNetwork->MyCharacterInfo.yLayer ) )
+	{
+		if( _pNetwork->MyCharacterInfo.zoneNo != m_nZone || _pNetwork->MyCharacterInfo.yLayer != m_nLayer )
+		{
+			if( m_ptdMapTexture )
+			{
+				_pTextureStock->Release(m_ptdMapTexture);	
+			}
+			// Create map texture
+			CTString	strFileName;
+			strFileName.PrintF( "Data\\Interface\\Map_World%d%d.tex",
+								_pNetwork->MyCharacterInfo.zoneNo, _pNetwork->MyCharacterInfo.yLayer );
+			m_ptdMapTexture = CreateTexture( strFileName );
+
+			m_nZone = _pNetwork->MyCharacterInfo.zoneNo;
+			m_nLayer = _pNetwork->MyCharacterInfo.yLayer;
+		}
+
+
+		FLOAT	fSin = Sin( -_pNetwork->MyCharacterInfo.r );
+		FLOAT	fCos = Cos( -_pNetwork->MyCharacterInfo.r );
+		FLOAT	fLeftCos = m_rcMyPoint.Left * fCos;
+		FLOAT	fLeftSin = m_rcMyPoint.Left * fSin;
+		FLOAT	fRightCos = m_rcMyPoint.Right * fCos;
+		FLOAT	fRightSin = m_rcMyPoint.Right * fSin;
+		FLOAT	fTopSin = m_rcMyPoint.Top * fSin;
+		FLOAT	fTopCos = m_rcMyPoint.Top * fCos;
+		FLOAT	fBottomSin = m_rcMyPoint.Bottom * fSin;
+		FLOAT	fBottomCos = m_rcMyPoint.Bottom * fCos;
+
+		FLOAT	fX1 = fLeftCos - fTopSin;
+		FLOAT	fY1 = fLeftSin + fTopCos;
+		FLOAT	fX2 = fLeftCos - fBottomSin;
+		FLOAT	fY2 = fLeftSin + fBottomCos;
+		FLOAT	fX3 = fRightCos - fBottomSin;
+		FLOAT	fY3 = fRightSin + fBottomCos;
+		FLOAT	fX4 = fRightCos - fTopSin;
+		FLOAT	fY4 = fRightSin + fTopCos;
+
+
+		FLOAT	fX = _pNetwork->MyCharacterInfo.x;
+		FLOAT	fZ = _pNetwork->MyCharacterInfo.z ;
+
+		pDrawPort->InitTextureData( m_ptdMapTexture );
+
+		MapData* md;
+		md = pUIManager->GetMap()->GetCurMapData( m_nZone );
+
+		fX -= md->World.lOffsetX;	
+		fZ -= md->World.lOffsetZ;
+
+		// ¡ˆµµø° ¥Î«— √‡√¥∞˙ ¡ˆµµ Zoom∫Ò¿≤
+		fX = fX * md->World.fRatio / m_fZoomRate;	
+		fZ = fZ * md->World.fRatio / m_fZoomRate;
+
+		FLOAT widthRate = ((FLOAT)m_rcCompassIn.GetWidth() / 2.0f) / (FLOAT)m_ptdMapTexture->GetPixWidth();
+		FLOAT heightRate = ((FLOAT)m_rcCompassIn.GetHeight() / 2.0f) / (FLOAT)m_ptdMapTexture->GetPixHeight();
+
+		widthRate /= m_fZoomRate;
+		heightRate /= m_fZoomRate;
+
+		m_rtCompassIn.U0 = ( fX / ((FLOAT)m_ptdMapTexture->GetPixWidth() / m_fZoomRate) ) - widthRate;
+		m_rtCompassIn.V0 = ( fZ / ((FLOAT)m_ptdMapTexture->GetPixHeight() / m_fZoomRate) ) - heightRate;
+
+		m_rtCompassIn.U1 = ( fX / ((FLOAT)m_ptdMapTexture->GetPixWidth() / m_fZoomRate) ) + widthRate;
+		m_rtCompassIn.V1 = ( fZ / ((FLOAT)m_ptdMapTexture->GetPixHeight() / m_fZoomRate) ) + heightRate;
+
+		pDrawPort->AddTexture( nX + m_rcCompassIn.Left, nY + m_rcCompassIn.Top,
+							   nX + m_rcCompassIn.Right, nY + m_rcCompassIn.Bottom,
+							   m_rtCompassIn.U0, m_rtCompassIn.V0,
+							   m_rtCompassIn.U1, m_rtCompassIn.V1,0xFFFFFFFF );
+
+		pDrawPort->FlushRenderingQueue();
+	}
+	
+}
+
+void CUIRadar::AddIconName(int left, int top, int right, int bottom, CTString name)
+{
+	CIconName icon;
+	icon.SetIconName(left - m_nPosX, top - m_nPosY, right - m_nPosX, bottom - m_nPosY, name);
+
+	m_iconVec.push_back(icon);
+}
+
+BOOL CUIRadar::IsRadarUse()
+{
+	if( CZoneInfo::getSingleton()->GetZoneType( g_slZone ) == ZONE_SDUNGEON ||
+		CZoneInfo::getSingleton()->GetZoneType( g_slZone ) == ZONE_DUNGEON )
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void CUIRadar::RenderMyPosition()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+	int	nX = m_nPosX + RADAR_CENTER_OFFSETX;
+	int	nY = m_nPosY + RADAR_CENTER_OFFSETY;
+
+	FLOAT	fSin = Sin( -_pNetwork->MyCharacterInfo.r );
+	FLOAT	fCos = Cos( -_pNetwork->MyCharacterInfo.r );
+	FLOAT	fLeftCos = m_rcMyPoint.Left * fCos;
+	FLOAT	fLeftSin = m_rcMyPoint.Left * fSin;
+	FLOAT	fRightCos = m_rcMyPoint.Right * fCos;
+	FLOAT	fRightSin = m_rcMyPoint.Right * fSin;
+	FLOAT	fTopSin = m_rcMyPoint.Top * fSin;
+	FLOAT	fTopCos = m_rcMyPoint.Top * fCos;
+	FLOAT	fBottomSin = m_rcMyPoint.Bottom * fSin;
+	FLOAT	fBottomCos = m_rcMyPoint.Bottom * fCos;
+
+	FLOAT	fX1 = fLeftCos - fTopSin;
+	FLOAT	fY1 = fLeftSin + fTopCos;
+	FLOAT	fX2 = fLeftCos - fBottomSin;
+	FLOAT	fY2 = fLeftSin + fBottomCos;
+	FLOAT	fX3 = fRightCos - fBottomSin;
+	FLOAT	fY3 = fRightSin + fBottomCos;
+	FLOAT	fX4 = fRightCos - fTopSin;
+	FLOAT	fY4 = fRightSin + fTopCos;
+
+
+	FLOAT	fX = _pNetwork->MyCharacterInfo.x;
+	FLOAT	fZ = _pNetwork->MyCharacterInfo.z ;
+
+
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+
+	pDrawPort->AddTexture( nX + fX1, nY + fY1, m_rtMyPoint.U0, m_rtMyPoint.V0, 0xFFFFFFFF,
+										nX + fX2, nY + fY2, m_rtMyPoint.U0, m_rtMyPoint.V1, 0xFFFFFFFF,
+										nX + fX3, nY + fY3, m_rtMyPoint.U1, m_rtMyPoint.V1, 0xFFFFFFFF,
+										nX + fX4, nY + fY4, m_rtMyPoint.U1, m_rtMyPoint.V0, 0xFFFFFFFF );
+
+	pDrawPort->FlushRenderingQueue();
+}
+
+void CUIRadar::RenderGPS(CDrawPort* pDraw)
+{
+	if (GAMEDATAMGR()->GetGPS()->IsPosition() == false)
+		return;
+
+	UpdateClient::GPSTargetMoveInfo* pInfo = GAMEDATAMGR()->GetGPS()->getInfo();
+
+	MapData* md;
+	CTString strTemp;
+	md = UIMGR()->GetMap()->GetCurMapData( m_nZone );
+	FLOAT	fSqrDist = RADAR_VIEW_DISTANCE * RADAR_VIEW_DISTANCE / m_fZoomRate;
+	FLOAT	fRatio = md->World.fRatio * m_fZoomRate;
+	FLOAT			fXpc = _pNetwork->MyCharacterInfo.x;
+	FLOAT			fZpc = _pNetwork->MyCharacterInfo.z;
+
+	float fX, fZ;
+	int nX, nY;
+
+	int		nCX = m_nPosX + RADAR_CENTER_OFFSETX;
+	int		nCY = m_nPosY + RADAR_CENTER_OFFSETY;
+
+	fX = pInfo->x - fXpc;
+	fZ = pInfo->z - fZpc;
+
+	fX *= fRatio;
+	fZ *= fRatio;
+
+	if (fX > DEF_SHOW_DISTANCE || fX < -DEF_SHOW_DISTANCE || fZ > DEF_SHOW_DISTANCE || fZ < -DEF_SHOW_DISTANCE)
+		return;
+
+	nX = nCX + fX;
+	nY = nCY + fZ;
+
+	pDraw->InitTextureData(m_ptdMapObjTexture);
+
+	pDraw->AddTexture(m_rcGPS.Left + nX, m_rcGPS.Top + nY, m_rcGPS.Right + nX, m_rcGPS.Bottom + nY, m_uvGPS, DEF_UI_COLOR_WHITE);
+
+	pDraw->FlushRenderingQueue();
+}
+
+void CUIRadar::OnExpressNotice()
+{
+	m_bNotice = true;
+	m_bNoticeRenderFlag = true;
+	m_nStartTime = timeGetTime();	
+}
+void CUIRadar::OffExpressNotice()
+{
+	m_bNotice = false;
+	m_bNoticeRenderFlag = false;
+}
+
+void CUIRadar::FocusLeave()
+{
+	m_PetStashIcon.SetBtnState(UBS_IDLE);
+	ShowToolTip( FALSE );
+}
+
+void CUIRadar::SetPremiumCharBenefit( bool bPremiumChar )
+{
+	if ( bPremiumChar == true)
+		m_PremiumCharIcon.SetBtnState(UBS_IDLE);
+	else
+		m_PremiumCharIcon.SetBtnState(UBS_DISABLE);
+}
+
+

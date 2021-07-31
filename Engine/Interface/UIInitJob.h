@@ -9,9 +9,6 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-
 // Define size of refine
 #define	INITJOB_WIDTH					216
 #define	INITJOB_HEIGHT					251
@@ -30,8 +27,10 @@ protected:
 	enum eInitJobState
 	{
 		INITJOB_REQ,		
-		INITJOB_STAT,		// ÏÉùÏÑ±
-		INITJOB_GIVEUP,		// ÏäπÍ∏â
+		INITJOB_STAT,		// ª˝º∫
+		INITJOB_GIVEUP,		// Ω¬±ﬁ
+		INITJOB_RESETQUEST,	// [100208: selo] ƒ˘Ω∫∆Æ ∫π±∏ 
+		INITJOB_CHANGEFACE,	// [11/23/2010 kiny8216] ø‹«¸ ∫Ø∞Ê
 	};
 
 	// Controls
@@ -44,7 +43,8 @@ protected:
 	CTString			m_strInitJobDesc[MAX_INITJOB_STRING];		// Strings of refine description
 	CTString			m_strInitJobMoney;						// String of refine money
 	CTString			m_strGivePrice;
-	int					m_iRestoreStatPoint;					// ÌôòÏõê Ìè¨Ïù∏Ìä∏.
+	CTString			m_strResetQuestPrice;					// [100208: selo] ƒ˘Ω∫∆Æ ∫π±∏ ∫ÒøÎ 
+	int					m_iRestoreStatPoint;					// »Øø¯ ∆˜¿Œ∆Æ.
 	CTString			m_strRestoreStatPoint;
 	SQUAD				m_llInitJobMoney;						// InitJob money
 
@@ -63,6 +63,7 @@ protected:
 
 	// Position of target npc
 	FLOAT				m_fNpcX, m_fNpcZ;
+	int					m_nVirNpcIdx;
 
 	// Region of each part
 	UIRect				m_rcTitle;								// Region of title
@@ -86,9 +87,22 @@ protected:
 
 	eInitJobState		m_eInitJobState;
 
+	// [11/23/2010 kiny8216] ø‹«¸ ∫Ø∞Ê
+	BOOL				m_bFaceDecoMode;						// Face Deco Mode (TRUE : On, FALSE : OFF)
+	CUIButton			m_btnNextFace;							// Button of Face Type (Next)
+	CUIButton			m_btnPrevFace;							// Button of Face Type (Previous)
+	CUIButton			m_btnNextHair;							// Button of Hair Type (Next)
+	CUIButton			m_btnPrevHair;							// Button of Hair Type (Previous)
+	int					m_nFaceType;							// Selected Face Type
+	int					m_nHairType;							// Selected Hair Type
+	CTextureData*		m_ptdDecoTexture;						// Face Deco Mode Texture (CreateCharacter.tex)
+	UIRect				m_rcDecoBack;							// Face Deco Mode Background Rect
+	UIRectUV			m_rtDecoBack;							// Face Deco Mode Background UV Rect
+	CPlacement3D		plLastViewPoint;						// Last View Point : µ•ƒ⁄ ∏µÂ ¡¯¿‘ ¡˜¿¸ ∫‰ ∆˜¿Œ∆Æ
 protected:
 	// Internal functions
 	void	AddString( CTString &strDesc );
+	void	ResetString();	// [100208: selo] Ω∫∆Æ∏µ √ ±‚»≠
 
 	// Command functions
 	void	SetInitJobItem();
@@ -104,12 +118,11 @@ public:
 	void	Render();
 
 	// Open & close refine
-	ENGINE_API	void	OpenInitJob(int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ );
+	ENGINE_API	void	OpenInitJob(int iMobIndex, int iMobVirIdx, BOOL bHasQuest, FLOAT fX, FLOAT fZ );
 	void	CloseInitJob();
 
-	// Calculate Price
-	SQUAD	CalculateGiveUpPrice( int iTotalStat, int iCharLevel );
 	SQUAD	CalculateStatPrice( int iStatPoint );
+	SQUAD	CalculateResetQuestPrice( int iCharLevel );
 
 	void	RestoreStatPoint( SBYTE sbStatType );
 
@@ -123,6 +136,24 @@ public:
 	// Command functions
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 	void	MsgBoxLCommand( int nCommandCode, int nResult );
+
+	// [11/23/2010 kiny8216] ø‹«¸ ∫Ø∞Ê
+	void	RenderDecoMode();		// Render Deco Mode
+
+	void	InitDecoMode();			// Init Deco Mode
+
+	void	SetCameraForDecoMode( FLOAT fCameraDistance, FLOAT fCameraHeight );	// Set Camera Distance, Height For Deco Mode
+	void	SetFaceDecoMode( BOOL bMode );		// Set Deco Mode
+	void	SetChangeHair( int nType );			// Change Hair
+	void	SetChangeFace( int nType );			// Change Face
+
+	ENGINE_API BOOL	IsFaceDecoMode();			// Is Deco Mode?
+	
+	BOOL	CheckFaceDecoMode();				// µ•ƒ⁄ ∏µÂ ¡¯¿‘ ¡∂∞« ∞ÀªÁ
+	void	RefreshEffect();					// Refresh Effect
+	CPlacement3D GetLastViewPoint();			// Last View Point æÚ±‚
+
+	void WearingHelmet();	// «Ô∏‰ ¥ŸΩ√ ¬¯øÎ.
 };
 
 

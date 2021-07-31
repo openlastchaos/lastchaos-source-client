@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #ifndef __ADDITIONALFUNCTION_H__
 #define __ADDITIONALFUNCTION_H__
@@ -97,12 +97,12 @@ inline ANGLE3D GetEulerAngleFromDir(FLOAT3D &vDir)
 	//head
 	FLOAT fLenYPrj = vDir(1) * vDir(1) + vDir(3) * vDir(3);
 	FLOAT fLen = sqrtf(fLenYPrj + vDir(2) * vDir(2));
-	aRetAngle(2) = fLen != 0 ? AngleRad( acos(vDir(2) / fLen) ) : 0;	//0~180, 180ì´ ë„˜ì–´ê°€ë©´ Headì—ì„œ ì²˜ë¦¬ëœë‹¤.
+	aRetAngle(2) = fLen != 0 ? AngleRad( acos(vDir(2) / fLen) ) : 0;	//0~180, 180ÀÌ ³Ñ¾î°¡¸é Head¿¡¼­ Ã³¸®µÈ´Ù.
 
 	//pitch
 	fLenYPrj = sqrtf(fLenYPrj);
 	aRetAngle(1) = fLenYPrj != 0 ? AngleRad( acos(vDir(3)/fLenYPrj) ) : 0;	//0~360
-	//Temp: ì´ìƒí•˜ê²Œ 6ë„ ì°¨ì´ë‚¨. ë‚˜ì¤‘ì— ìˆ˜ì • í•„ìš”í• ì§€ë„
+	//Temp: ÀÌ»óÇÏ°Ô 6µµ Â÷ÀÌ³². ³ªÁß¿¡ ¼öÁ¤ ÇÊ¿äÇÒÁöµµ
 	aRetAngle(1) = vDir(1) < 0 ? 2 * PI - aRetAngle(1) - 6.0f : aRetAngle(1);
 
 	//banking
@@ -122,4 +122,4 @@ inline ANGLE3D GetEulerAngleFromQuaternion(const FLOATquat3D &quat)
 
 
 #endif //__ADDITIONALFUNCTION_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

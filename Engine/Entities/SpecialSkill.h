@@ -4,103 +4,96 @@
 #pragma once
 #endif
 
-// Special Skill íƒ€ì…
-#define		SSKILL_MINING		0	// ì±„êµ´
-#define		SSKILL_GATHERING	1	// ì±„ì§‘
-#define		SSKILL_CHARGE		2	// ì°¨ì§€
-#define		SSKILL_STONE		3	// ê´‘ì„ì •ë ¨ìˆ 
-#define		SSKILL_PLANT		4	// ì‹ë¬¼ê°€ê³µìˆ 
-#define		SSKILL_ELEMENT		5	// ì›ì†Œì •ì œìˆ 
+#include <Engine/Help/LoadLod.h>
+#include <common/header/def_skill.h>
 
-#define		SSKILL_MAKE_WEAPON	6	// ë¬´ê¸° ì œì‘ ê¸°ìˆ 
-#define		SSKILL_MAKE_WEAR	7	// ë°©ì–´êµ¬ ì œì‘ ê¸°ìˆ 
-#define		SSKILL_MAKE_G_B		8	// ì¥ê°‘ ë¶€ì¸  ì œì‘ ê¸°ìˆ 
-#define		SSKILL_MAKE_ARMOR	9	// ê°‘ë°” ë°”ì§€ ì œì‘ ê¸°ìˆ 
-#define		SSKILL_MAKE_H_S		10	// íˆ¬êµ¬ ë°©íŒ¨ ì œì‘ ê¸°ìˆ 
-#define		SSKILL_MAKE_POTINO	11  // í¬ì…˜ ì œì‘ // Date : 2005-01-07,   By Lee Ki-hwan
-#define		SSKILL_PROCESS_NPC	12	// ê°€ê³µ NPC
+// Special Skill Å¸ÀÔ
+#define		SSKILL_MINING		0	// Ã¤±¼
+#define		SSKILL_GATHERING	1	// Ã¤Áı
+#define		SSKILL_CHARGE		2	// Â÷Áö
+#define		SSKILL_STONE		3	// ±¤¼®Á¤·Ã¼ú
+#define		SSKILL_PLANT		4	// ½Ä¹°°¡°ø¼ú
+#define		SSKILL_ELEMENT		5	// ¿ø¼ÒÁ¤Á¦¼ú
 
-#define		SSKILL_STONE_0		3	// ìŠ¤í†¤ ì˜¨ ì •ë ¨ìˆ 
-#define		SSKILL_STONE_1		4	// ìŠ¤í†¤ ë¦¬ìŠ¤ ì •ë ¨ìˆ 
-#define		SSKILL_STONE_2		5	// ìŠ¤í†¤ ì›¨ë²„ ì •ë ¨ìˆ 
-#define		SSKILL_STONE_3		6	// ìŠ¤í†¤ ë¹„ìŠ¤íŠ¸ ì •ë ¨ìˆ 
-#define		SSKILL_STONE_4		7	// ìŠ¤í†¤ ì›°ìŠ¤ë˜ ì •ë ¨ìˆ 
+#define		SSKILL_MAKE_WEAPON	6	// ¹«±â Á¦ÀÛ ±â¼ú
+#define		SSKILL_MAKE_WEAR	7	// ¹æ¾î±¸ Á¦ÀÛ ±â¼ú
+#define		SSKILL_MAKE_G_B		8	// Àå°© ºÎÃ÷ Á¦ÀÛ ±â¼ú
+#define		SSKILL_MAKE_ARMOR	9	// °©¹Ù ¹ÙÁö Á¦ÀÛ ±â¼ú
+#define		SSKILL_MAKE_H_S		10	// Åõ±¸ ¹æÆĞ Á¦ÀÛ ±â¼ú
+#define		SSKILL_MAKE_POTINO	11  // Æ÷¼Ç Á¦ÀÛ // Date : 2005-01-07,   By Lee Ki-hwan
+#define		SSKILL_PROCESS_NPC	12	// °¡°ø NPC
 
-#define		SSKILL_PLANT_0		8	// í¬ë½ì˜ ë…¸ë€ì ê°€ê³µìˆ 
-#define		SSKILL_PLANT_1		9	// í¬ë½ì˜ ì¤„ê¸° ê°€ê³µìˆ 
-#define		SSKILL_PLANT_2		10	// í¬ë½ì˜ íŒŒë€ì ê°€ê³µìˆ 
-#define		SSKILL_PLANT_3		11	// í¬ë½ì˜ ê°€ì‹œ ê°€ê³µìˆ 
-#define		SSKILL_PLANT_4		12	// í¬ë½ì˜ ê½ƒ ê°€ê³µìˆ 
+#define		SSKILL_STONE_0		3	// ½ºÅæ ¿Â Á¤·Ã¼ú
+#define		SSKILL_STONE_1		4	// ½ºÅæ ¸®½º Á¤·Ã¼ú
+#define		SSKILL_STONE_2		5	// ½ºÅæ ¿ş¹ö Á¤·Ã¼ú
+#define		SSKILL_STONE_3		6	// ½ºÅæ ºñ½ºÆ® Á¤·Ã¼ú
+#define		SSKILL_STONE_4		7	// ½ºÅæ À£½º´ø Á¤·Ã¼ú
 
-#define		SSKILL_ELEMENT_0	13	// ì›ì†Œ Eë“±ê¸‰ ì •ì œìˆ 
-#define		SSKILL_ELEMENT_1	14	// ì›ì†Œ Dë“±ê¸‰ ì •ì œìˆ 
-#define		SSKILL_ELEMENT_2	15	// ì›ì†Œ Cë“±ê¸‰ ì •ì œìˆ 
-#define		SSKILL_ELEMENT_3	16	// ì›ì†Œ Bë“±ê¸‰ ì •ì œìˆ 
-#define		SSKILL_ELEMENT_4	17	// ì›ì†Œ Aë“±ê¸‰ ì •ì œìˆ 
+#define		SSKILL_PLANT_0		8	// Å©¶ôÀÇ ³ë¶õÀÙ °¡°ø¼ú
+#define		SSKILL_PLANT_1		9	// Å©¶ôÀÇ ÁÙ±â °¡°ø¼ú
+#define		SSKILL_PLANT_2		10	// Å©¶ôÀÇ ÆÄ¶õÀÙ °¡°ø¼ú
+#define		SSKILL_PLANT_3		11	// Å©¶ôÀÇ °¡½Ã °¡°ø¼ú
+#define		SSKILL_PLANT_4		12	// Å©¶ôÀÇ ²É °¡°ø¼ú
 
-#define		SSKILL_MAX_LEVEL	5	// Special Skill ìµœëŒ€ ë ˆë²¨
+#define		SSKILL_ELEMENT_0	13	// ¿ø¼Ò Eµî±Ş Á¤Á¦¼ú
+#define		SSKILL_ELEMENT_1	14	// ¿ø¼Ò Dµî±Ş Á¤Á¦¼ú
+#define		SSKILL_ELEMENT_2	15	// ¿ø¼Ò Cµî±Ş Á¤Á¦¼ú
+#define		SSKILL_ELEMENT_3	16	// ¿ø¼Ò Bµî±Ş Á¤Á¦¼ú
+#define		SSKILL_ELEMENT_4	17	// ¿ø¼Ò Aµî±Ş Á¤Á¦¼ú
 
-class CSpecialSkill
+class CSpecialSkill : public stSpecailSkill, public LodLoader<CSpecialSkill>
 {
 public:
-	struct _SSkillData
-	{
-		int		index;
-		char	name[50];
-		int		type;
-		int		maxLevel;
-		int		preference;
-		
-		int		needLevel[SSKILL_MAX_LEVEL];
-		int		needSP[SSKILL_MAX_LEVEL];
-		int		needSSkill;
-		int		needSSkillLevel;
-		int		textureID;
-		int		textureRow;
-		int		textureCol;
-		
-		char	desc[255];
-	};
-
-	CSpecialSkill();
-	~CSpecialSkill();
+	static bool loadEx(const char* str_path);
+	std::string name;
+	std::string	desc;
+	int		transFlag;	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã	
 
 	inline int GetIndex()			const
-	{	return SSkill_Data.index;	}
+	{	return index;	}
 
 	inline const char* GetName()	const
-	{	return SSkill_Data.name;	}
+	{	return name.c_str();	}
 
 	inline int GetType()			const
-	{	return SSkill_Data.type;	}
+	{	return type;	}
 
 	inline int GetLearnLevel( int iIndex) const
-	{	return SSkill_Data.needLevel[iIndex];	}
+	{	return needLevel[iIndex];	}
 
 	inline int GetLearnSP( int iIndex) const
-	{	return SSkill_Data.needSP[iIndex];	}
+	{	return needSP[iIndex];	}
 
 	inline int GetLearnSkillIndex()		const
-	{	return SSkill_Data.needSSkill;		}
+	{	return needSSkill;		}
 
 	inline int GetLearnSkillLevel()	const
-	{	return SSkill_Data.needSSkillLevel;	}
+	{	return needSSkillLevel;	}
 
 	inline int GetMaxLevel()	const
-	{	return SSkill_Data.maxLevel;	}
+	{	return maxLevel;	}
 
 	inline int GetPreference()	const
-	{	return SSkill_Data.preference;	}
+	{	return preference;	}
 
-	inline int	GetIconTexID()	const { return SSkill_Data.textureID; }
-	inline int	GetIconTexRow() const { return SSkill_Data.textureRow; }
-	inline int	GetIconTexCol() const { return SSkill_Data.textureCol; }	
+	inline int	GetIconTexID()	const { return textureID; }
+	inline int	GetIconTexRow() const { return textureRow; }
+	inline int	GetIconTexCol() const { return textureCol; }	
 
 	inline const char* GetDescription()	const
-	{	return SSkill_Data.desc;	}
+	{	return desc.c_str();	}
+	
+//	static int LoadSSkillDataFromFile(CStaticArray<CSpecialSkill> &apSkillData, const char* FileName);
 
-	_SSkillData							SSkill_Data;
+	//[sora] ¹Ì¹ø¿ª ½ºÆ®¸µ index Ç¥½Ã
+	void SetNoTranslate();
+	void ClearNoTranslate();
 
-	static int LoadSSkillDataFromFile(CStaticArray<CSpecialSkill> &apSkillData, const char* FileName);
+	void SetName(const char* str)		{name = str; }
+	void SetDesc(const char* str)		{desc = str; }
+	int& GetTransFlag()					{ return transFlag; }
+
+//	static CSpecialSkill* m_pCont;
 };
+
 #endif

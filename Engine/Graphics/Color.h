@@ -173,12 +173,12 @@ ENGINE_API extern COLOR AdjustGamma( COLOR const col, FLOAT const fGamma);
 ENGINE_API extern COLOR LerpColor( COLOR col0, COLOR col1, FLOAT fRatio);
 ENGINE_API extern void  LerpColor( COLOR col0, COLOR col1, FLOAT fRatio, UBYTE &ubR, UBYTE &ubG, UBYTE &ubB);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 inline COLOR LerpColorInline( COLOR col0, COLOR col1, FLOAT fRatio )
 {
 	return LerpColor(col0, col1, fRatio);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 // some fast color manipulation functions
 ENGINE_API extern COLOR MulColors( COLOR col1, COLOR col2); // fast color multiply function - RES = 1ST * 2ND /255

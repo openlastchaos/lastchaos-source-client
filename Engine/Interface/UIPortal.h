@@ -10,8 +10,8 @@
 #endif
 
 
-#include <Engine/Interface/UIListBox.h>
-#include <vector>
+// #include <Engine/Interface/UIListBox.h>
+// #include <vector>
 
 
 // Define text position
@@ -32,16 +32,16 @@ enum eSelectionCommand
 {
 	///////////////////////////////////////////////////////////////////////////
 	// [071115: Su-won] DRATAN_SIEGE_DUNGEON
-	DRATAN_SIEGE_DUNGEON_REQ,						//ë“œë¼íƒ„ ê³µì„± ë˜ì „ 
+	DRATAN_SIEGE_DUNGEON_REQ,						//µå¶óÅº °ø¼º ´øÀü 
 
-	DRATAN_SIEGE_DUNGEON_ENTER,						//ë˜ì „ ìž…ìž¥í•˜ê¸°
-	DRATAN_SIEGE_DUNGEON_STATE,						//ë˜ì „ ìƒíƒœí™•ì¸
-	DRATAN_SIEGE_DUNGEON_CONTROL,					//ë˜ì „ ê´€ë¦¬í•˜ê¸°
+	DRATAN_SIEGE_DUNGEON_ENTER,						//´øÀü ÀÔÀåÇÏ±â
+	DRATAN_SIEGE_DUNGEON_STATE,						//´øÀü »óÅÂÈ®ÀÎ
+	DRATAN_SIEGE_DUNGEON_CONTROL,					//´øÀü °ü¸®ÇÏ±â
 
-	DRATAN_SIEGE_DUNGEON_CONTROL_ENVIRONMENT,		//ë˜ì „ ë‚´ë¶€ í™˜ê²½ ì œì–´
-	DRATAN_SIEGE_DUNGEON_CONTROL_MONSTER,			//ë˜ì „ ë‚´ë¶€ ëª¬ìŠ¤í„° ì œì–´
-	DRATAN_SIEGE_DUNGEON_CONTROL_ADMISSION_FEE,		//ë˜ì „ ìž…ìž¥ë£Œ ì¡°ì •
-	DRATAN_SIEGE_DUNGEON_CONTROL_HUNTING_FEE,		//ë˜ì „ ìˆ˜ë µì„¸ ì„¸ìœ¨ ì¡°ì •
+	DRATAN_SIEGE_DUNGEON_CONTROL_ENVIRONMENT,		//´øÀü ³»ºÎ È¯°æ Á¦¾î
+	DRATAN_SIEGE_DUNGEON_CONTROL_MONSTER,			//´øÀü ³»ºÎ ¸ó½ºÅÍ Á¦¾î
+	DRATAN_SIEGE_DUNGEON_CONTROL_ADMISSION_FEE,		//´øÀü ÀÔÀå·á Á¶Á¤
+	DRATAN_SIEGE_DUNGEON_CONTROL_HUNTING_FEE,		//´øÀü ¼ö·Æ¼¼ ¼¼À² Á¶Á¤
 	// [071115: Su-won] DRATAN_SIEGE_DUNGEON
 	///////////////////////////////////////////////////////////////////////////
 };
@@ -73,8 +73,8 @@ protected:
 	//----- wooss 060515 ------------------------------------------>>
 	int					m_npcIdx;
 	// ------------------------------------------------------------<<
-	int					m_UniItemIdx;				// ë˜ì „ ì´ë™ ì£¼ë¬¸ì„œ Unique Index
-	BOOL				m_bUseItem;				// ë˜ì „ ì´ë™ ì£¼ë¬¸ì„œ ì‚¬ìš© ìœ ë¬´
+	int					m_UniItemIdx;				// ´øÀü ÀÌµ¿ ÁÖ¹®¼­ Unique Index
+	BOOL				m_bUseItem;				// ´øÀü ÀÌµ¿ ÁÖ¹®¼­ »ç¿ë À¯¹«
 
 
 	struct sZoneExtraIndex

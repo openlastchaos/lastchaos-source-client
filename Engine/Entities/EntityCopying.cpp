@@ -213,9 +213,9 @@ void CEntity::CopyOneProperty( CEntityProperty &epPropertySrc, CEntityProperty &
                                CEntity &enOther, ULONG ulFlags)
 {
 // a helper macro
-#define COPYPROPERTY(type)                                            \
-  (type &)ENTITYPROPERTY(this, epPropertyDest.ep_slOffset, type)      \
-    = (type &)ENTITYPROPERTY(&enOther, epPropertySrc.ep_slOffset, type)
+#define COPYPROPERTY(flag)                                            \
+  (flag &)ENTITYPROPERTY(this, epPropertyDest.ep_slOffset, flag)      \
+    = (flag &)ENTITYPROPERTY(&enOther, epPropertySrc.ep_slOffset, flag)
 
   // depending on the property type
   switch (epPropertySrc.ep_eptType) {

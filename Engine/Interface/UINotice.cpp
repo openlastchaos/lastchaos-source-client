@@ -1,26 +1,38 @@
 #include "stdh.h"
-#include <Engine/Interface/UINotice.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
+#include <vector>
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Entities/InternalClasses.h>
+#include <Engine/GlobalDefinition.h>
+#include <Engine/Interface/UINotice.h>
 #include <Engine/Entities/QuestSystem.h>
 #include <Engine/Interface/UIQuickSlot.h>
+#include <Engine/Interface/UIChildQuickSlot.h>
+#include <Engine/Interface/UIAutoHelp.h>
 #include <algorithm>
-#include <Engine/LocalDefine.h>
+#include <Engine/Interface/UIQuest.h>
 
-const int iStopChangeItem		= 521;		// Î≥ÄÏã† Ï∑®ÏÜå.
-const int iStopTransformItem	= 522;		// Í∞ïÏã† Ï∑®ÏÜå.
+
+const int iStopChangeItem		= 521;		// ∫ØΩ≈ √Îº“.
+const int iStopTransformItem	= 522;		// ∞≠Ω≈ √Îº“.
+const int iAffinityRewardNotice = 47;		// [100322: selo] ƒ£»≠µµ ∫∏ªÛ æÀ∏≤
 
 #define CHARGE_BTN_X			0
 #define CHARGE_BTN_Y			104
 #define CHARGE_BTN_INDEX		1000
-#define EVENT_START_INDEX		2000		// Ïù¥Î≤§Ìä∏ Ïù∏Îç±Ïä§Ïùò ÏãúÏûë ÏúÑÏπò.
-#define PET_QUEST_HORSE_INDEX	4000		// Ìé´ Í¥ÄÎ†® ÌÄòÏä§Ìä∏...
+#define EVENT_START_INDEX		2000		// ¿Ã∫•∆Æ ¿Œµ¶Ω∫¿« Ω√¿€ ¿ßƒ°.
+#define PET_QUEST_HORSE_INDEX	4000		// ∆Í ∞¸∑√ ƒ˘Ω∫∆Æ...
 #define PET_QUEST_DRAGON_INDEX	4001
-#define EVENT_NETCAFE_INDEX		4002		// (ÏùºÎ≥∏, ÌÉúÍµ≠) netcafeÏ∫†ÌéòÏù∏ Ïù¥Î≤§Ìä∏
+#define EVENT_NETCAFE_INDEX		4002		// (¿œ∫ª, ≈¬±π) netcafeƒ∑∆‰¿Œ ¿Ã∫•∆Æ
 // wooss 060809 add rare item
 #define PET_QUEST_BLUE_HORSE_INDEX		4003
 #define PET_QUEST_PINK_DRAGON_INDEX		4004
 #define PET_QUEST_MYSTERY_HORSE_INDEX	4005
 #define PET_QUEST_MYSTERY_DRAGON_INDEX	4006
+
+// [091013: selo] ∞¯∞›«¸ ∆Í ¡¯»≠ ∞°¥… ∑π∫ß æÀ∏≤
+#define PET_NOTICE_EVOLUTION_ENABLE		4020
 
 enum eEvent_Index
 {
@@ -33,11 +45,14 @@ enum eEvent_Index
 //#define PANDORA_EVENT_INDEX		26
 //#define	CHILDREN_DAY_EVENT_INDEX	28
 
-extern INDEX	g_iCountry;
 extern UINT g_uiEngineVersion;
 
 int nMaxNotice = 4;
 int nChargeBtnPos = 0;
+
+// [2011/01/18 : Sora] √‚ºÆ ¿Ã∫•∆Æ
+const int colorBarWidth = 290;
+const int attendanceMsgBoxWidth = 350;
 
 // ----------------------------------------------------------------------------
 // Name : CUINotice()
@@ -59,8 +74,6 @@ CUINotice::~CUINotice()
 {
 	if( !m_vectorNoticeList.empty() )
 		m_vectorNoticeList.clear();
-
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -69,16 +82,13 @@ CUINotice::~CUINotice()
 // ----------------------------------------------------------------------------
 void CUINotice::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	if( g_iCountry == TAIWAN || g_iCountry == TAIWAN2 || g_iCountry == HONGKONG ) //wooss 050929
-	{
-		nMaxNotice = 3;
-		nChargeBtnPos = BTN_SIZE+10; // wooss 050926 
-		nHeight = BTN_SIZE * 3;
-	}
+#if (defined(G_THAI) || defined(G_HONGKONG))
+	//nMaxNotice = 3;             //∫Ø∞Ê ø‰√ª¿∏∑Œ 4∞≥∑Œ ±◊¥Î∑Œ µ–¥Ÿ. modified by sam 101021
+	nChargeBtnPos = BTN_SIZE+10; // wooss 050926 
+	nHeight = BTN_SIZE * 3;
+#endif
 	
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Create quick slot texture
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Buff.tex" ) );
@@ -104,6 +114,8 @@ void CUINotice::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 		m_abtnItems[i].Create( this, nTempX, nTempY, BTN_SIZE, BTN_SIZE, UI_NOTICE, UBET_QUEST );
 	}	
 
+	// [2011/01/18 : Sora] √‚ºÆ ¿Ã∫•∆Æ
+	m_bAttendanceEvent = FALSE;
 }
 
 // ----------------------------------------------------------------------------
@@ -112,7 +124,7 @@ void CUINotice::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 // ----------------------------------------------------------------------------
 void CUINotice::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
-	SetPos( pixMaxI - m_nWidth, pixMaxJ - m_nHeight - QUICKSLOT_HEIGHT - nChargeBtnPos ); // ÏßÄÎ∂à Î≤ÑÌäº Ï∂îÍ∞Ä 
+	SetPos( pixMaxI - m_nWidth, pixMaxJ - m_nHeight - QUICKSLOT_HEIGHT - NOTICE_HEIGHT_GAP - nChargeBtnPos ); // ¡ˆ∫“ πˆ∆∞ √ﬂ∞° 
 }
 
 // ----------------------------------------------------------------------------
@@ -138,95 +150,111 @@ void CUINotice::ShowSlotInfo( BOOL bShowInfo, int nSlotIndex )
 	}
 	
 	BOOL	bUpdateInfo = FALSE;
-	int		nInfoPosX, nInfoPosY;
+	int		nInfoPosX = 0, nInfoPosY = 0;
 
-		CUIButtonEx	& rbtnSelect = m_abtnItems[nSlotIndex];
+	CUIButtonEx	& rbtnSelect = m_abtnItems[nSlotIndex];
 		
-		if( rbtnSelect.IsEmpty() )
-		{
-			m_bShowSlotInfo = FALSE;
-		}
-		else
-		{
-			m_bShowSlotInfo = TRUE;
-			bUpdateInfo = TRUE;
+	if( rbtnSelect.IsEmpty() )
+	{
+		m_bShowSlotInfo = FALSE;
+	}
+	else
+	{
+		m_bShowSlotInfo = TRUE;
+		bUpdateInfo = TRUE;
 			
-			rbtnSelect.GetAbsPos( nInfoPosX, nInfoPosY );
+		rbtnSelect.GetAbsPos( nInfoPosX, nInfoPosY );
 
-			const UIBtnExType btnType = rbtnSelect.GetBtnType();
-			switch( btnType )
+		const UIBtnExType btnType = rbtnSelect.GetBtnType();
+		switch( btnType )
+		{
+		case UBET_QUEST:
 			{
-			case UBET_QUEST:
+				// NOTE : æ÷øœµøπ∞ »πµÊ ∞¸∑√µ«º≠ «œµÂƒ⁄µ˘µ» ∫Œ∫–.
+				if( rbtnSelect.GetQuestIndex() == PET_QUEST_HORSE_INDEX
+					||rbtnSelect.GetQuestIndex() == PET_QUEST_BLUE_HORSE_INDEX
+					||rbtnSelect.GetQuestIndex() == PET_QUEST_MYSTERY_HORSE_INDEX)
 				{
-					// NOTE : Ïï†ÏôÑÎèôÎ¨º ÌöçÎìù Í¥ÄÎ†®ÎêòÏÑú ÌïòÎìúÏΩîÎî©Îêú Î∂ÄÎ∂Ñ.
-					if( rbtnSelect.GetQuestIndex() == PET_QUEST_HORSE_INDEX
-						||rbtnSelect.GetQuestIndex() == PET_QUEST_BLUE_HORSE_INDEX
-						||rbtnSelect.GetQuestIndex() == PET_QUEST_MYSTERY_HORSE_INDEX)
-					{
-						m_strSlotInfo = _S(2160,"Ïï†ÏôÑÎèôÎ¨º ÌöçÎìù Í¥ÄÎ†® ÌÄòÏä§Ìä∏ (Î¨¥ÌïúÎ∞òÎ≥µ ÌÄòÏä§Ìä∏)");
-					}
-					else if( rbtnSelect.GetQuestIndex() == PET_QUEST_DRAGON_INDEX
-						|| rbtnSelect.GetQuestIndex() == PET_QUEST_PINK_DRAGON_INDEX
-						|| rbtnSelect.GetQuestIndex() == PET_QUEST_MYSTERY_DRAGON_INDEX)
-					{
-						m_strSlotInfo = _S(2161,"Ïï†ÏôÑÎèôÎ¨º ÌöçÎìù Í¥ÄÎ†® ÌÄòÏä§Ìä∏ (Î¨¥ÌïúÎ∞òÎ≥µ ÌÄòÏä§Ìä∏)");
-					}
-					else if( rbtnSelect.GetQuestIndex() >= EVENT_START_INDEX )
-					{
-						m_strSlotInfo = _S( 100, "Ïù¥Î≤§Ìä∏" );
-					}
-					else
-					{
-						CQuestDynamicData QuestDD(CQuestSystem::Instance().GetStaticData(rbtnSelect.GetQuestIndex()));
-						m_strSlotInfo.PrintF( _S( 559, "%s ÌÄòÏä§Ìä∏(1ÌöåÎßå ÏàòÌñâÍ∞ÄÎä•)" ), QuestDD.GetName());		
-					}
+					m_strSlotInfo = _S(2160,"æ÷øœµøπ∞ »πµÊ ∞¸∑√ ƒ˘Ω∫∆Æ (π´«—π›∫π ƒ˘Ω∫∆Æ)");
 				}
-				break;
-			case UBET_ITEM:
+				else if( rbtnSelect.GetQuestIndex() == PET_QUEST_DRAGON_INDEX
+					|| rbtnSelect.GetQuestIndex() == PET_QUEST_PINK_DRAGON_INDEX
+					|| rbtnSelect.GetQuestIndex() == PET_QUEST_MYSTERY_DRAGON_INDEX)
 				{
-					const int iStopChangeItem		= 521;
-					const int iStopTransformItem	= 522;
-					const int iIndex				= rbtnSelect.GetIndex();
+					m_strSlotInfo = _S(2161,"æ÷øœµøπ∞ »πµÊ ∞¸∑√ ƒ˘Ω∫∆Æ (π´«—π›∫π ƒ˘Ω∫∆Æ)");
+				}
 					
-					// Í∞ïÏã† Ï§ëÏßÄ Î≤ÑÌäº.
-					if( iIndex == iStopTransformItem )
-					{
-						UpdateTimeInfo();						
-					}
-					// Î≥ÄÏã† Ï§ëÏßÄ Î≤ÑÌäº.
-					else if( iIndex == iStopChangeItem )
-					{
-						m_bShowSlotInfo = FALSE;
-						const char* szDesc = _pNetwork->GetItemDesc( iStopChangeItem );
-						m_strSlotInfo.PrintF( szDesc );
-					}
+				// [091013: selo] ∆Í ¡¯»≠ ∞°¥… ∑π∫ß¿œ ∂ß
+				else if( rbtnSelect.GetQuestIndex() == PET_NOTICE_EVOLUTION_ENABLE )
+				{
+					m_strSlotInfo = _S(4727,"∆Í ¡¯»≠");
 				}
-				break;		
-			case UBET_AUCTION:
-				m_strSlotInfo = _S(4355, "Ï†ïÏÇ∞ ÏïåÎ¶º");
-				break;
+
+				else if( rbtnSelect.GetQuestIndex() >= EVENT_START_INDEX )
+				{
+					m_strSlotInfo = _S( 100, "¿Ã∫•∆Æ" );
+				}
+				else
+				{
+					CQuestDynamicData QuestDD(CQuestSystem::Instance().GetStaticData(rbtnSelect.GetQuestIndex()));
+					m_strSlotInfo.PrintF( _S( 559, "%s ƒ˘Ω∫∆Æ(1»∏∏∏ ºˆ«‡∞°¥…)" ), QuestDD.GetName());		
+				}
 			}
+			break;
+		case UBET_ITEM:
+			{
+				const int iStopChangeItem		= 521;
+				const int iStopTransformItem	= 522;
+				const int iIndex				= rbtnSelect.GetIndex();
+					
+				// ∫ØΩ≈ ¡ﬂ¡ˆ πˆ∆∞.
+				if( iIndex == iStopChangeItem )
+				{
+					m_bShowSlotInfo = FALSE;
+					const char* szDesc = _pNetwork->GetItemDesc( iStopChangeItem );
+					m_strSlotInfo.PrintF( szDesc );
+				}
+			}
+			break;		
+		case UBET_AUCTION:
+			m_strSlotInfo = _S(4355, "¡§ªÍ æÀ∏≤");
+			break;				
+		case UBET_ACTION:
+			{
+				// [100330: selo] ƒ£»≠µµ º±π∞ æÀ∏≤
+				const int iIndex = rbtnSelect.GetActionIndex();
+				if( iIndex == iAffinityRewardNotice )
+				{
+					m_strSlotInfo = _S(4842, "ƒ£»≠µµ æÀ∏≤");
+				}
+			}
+			break;
 		}
-//	}
+	}
+
 	// Update slot information box
 	if( bUpdateInfo )
 	{
-		int nInfoWidth;
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strSlotInfo);				
-		} else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strSlotInfo.Length() *
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+#if defined (G_THAI)
+		int nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strSlotInfo);
+#elif defined (G_RUSSIA)
+		int nInfoWidth = pUIManager->GetDrawPort()->GetTextWidth( m_strSlotInfo ) + 19;
+#else
+		int nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strSlotInfo.Length() *
 			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 		int	nInfoHeight = 22;
 		
 		nInfoPosX += ( BTN_SIZE - nInfoWidth ) / 2;
 		
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX += _pUIMgr->GetMaxI() - ( nInfoPosX + nInfoWidth );
+		if( nInfoPosX < pUIManager->GetMinI() )
+			nInfoPosX = pUIManager->GetMinI();
+		else if( nInfoPosX + nInfoWidth > pUIManager->GetMaxI() )
+			nInfoPosX += pUIManager->GetMaxI() - ( nInfoPosX + nInfoWidth );
 		
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
+		if( nInfoPosY - nInfoHeight < pUIManager->GetMinJ() )
 		{
 			nInfoPosY += BTN_SIZE + 2;
 			m_rcSlotInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
@@ -266,10 +294,10 @@ void CUINotice::RenderBtns()
 		while( dElapsedTime > 0.5 );
 	}	
 
-	// ÌÄòÏä§Ìä∏ Î≤ÑÌäº Î†åÎçîÎßÅ.
+	// ƒ˘Ω∫∆Æ πˆ∆∞ ∑ª¥ı∏µ.
 	// Quest Buttons
-	int	nX = 0, nY = 0;
-	for(int i = 0; i < nMaxNotice; ++i, nY += 35)
+	int	nX = 0, nY = 0, i;
+	for( i = 0; i < nMaxNotice; ++i, nY += 35)
 	{
 		//m_abtnItems[i].SetPos( nX, nY );
 		if( m_abtnItems[i].IsEmpty() || m_abtnItems[i].GetBtnType() != UBET_QUEST )
@@ -280,10 +308,12 @@ void CUINotice::RenderBtns()
 			m_abtnItems[i].RenderHighlight( 0xFFFFFFFF );
 	}
 
-	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_QUEST );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	// ÏïÑÏù¥ÌÖú Î≤ÑÌäº Î†åÎçîÎßÅ.		
+	// Render all button elements
+	pUIManager->GetDrawPort()->FlushBtnRenderingQueue( UBET_QUEST );
+
+	// æ∆¿Ã≈€ πˆ∆∞ ∑ª¥ı∏µ.		
 	for( i = 0; i < nMaxNotice; ++i, nY += 35)
 	{
 		//m_abtnItems[i].SetPos( nX, nY );
@@ -297,7 +327,7 @@ void CUINotice::RenderBtns()
 	}
 
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+	pUIManager->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
 
 
 	for( i = 0; i < nMaxNotice; ++i, nY += 35)
@@ -310,65 +340,77 @@ void CUINotice::RenderBtns()
 
 		if( bHighlight )
 			m_abtnItems[i].RenderHighlight( 0xFFFFFFFF );
+	}	
+
+	pUIManager->GetDrawPort()->FlushBtnRenderingQueue( UBET_AUCTION );
+
+	// [100330: selo] Render Action button
+	for( i = 0; i < nMaxNotice; ++i, nY += 35)
+	{
+		//m_abtnItems[i].SetPos( nX, nY );
+		if( m_abtnItems[i].IsEmpty() || m_abtnItems[i].GetBtnType() != UBET_ACTION )
+			continue;
+
+		m_abtnItems[i].Render();
 	}
 
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_AUCTION );
+	pUIManager->GetDrawPort()->FlushBtnRenderingQueue( UBET_ACTION );
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pUIManager->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
 
 	// Slot information
 	if( m_bShowSlotInfo )
 	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Left, m_rcSlotInfo.Top,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Left, m_rcSlotInfo.Top,
 			m_rcSlotInfo.Left + 7, m_rcSlotInfo.Top + 7,
 			m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
 			0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Left + 7, m_rcSlotInfo.Top,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Left + 7, m_rcSlotInfo.Top,
 			m_rcSlotInfo.Right - 7, m_rcSlotInfo.Top + 7,
 			m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
 			0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Right - 7, m_rcSlotInfo.Top,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Right - 7, m_rcSlotInfo.Top,
 			m_rcSlotInfo.Right, m_rcSlotInfo.Top + 7,
 			m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
 			0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Left, m_rcSlotInfo.Top + 7,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Left, m_rcSlotInfo.Top + 7,
 			m_rcSlotInfo.Left + 7, m_rcSlotInfo.Bottom - 7,
 			m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
 			0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Left + 7, m_rcSlotInfo.Top + 7,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Left + 7, m_rcSlotInfo.Top + 7,
 			m_rcSlotInfo.Right - 7, m_rcSlotInfo.Bottom - 7,
 			m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
 			0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Right - 7, m_rcSlotInfo.Top + 7,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Right - 7, m_rcSlotInfo.Top + 7,
 			m_rcSlotInfo.Right, m_rcSlotInfo.Bottom - 7,
 			m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
 			0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Left, m_rcSlotInfo.Bottom - 7,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Left, m_rcSlotInfo.Bottom - 7,
 			m_rcSlotInfo.Left + 7, m_rcSlotInfo.Bottom,
 			m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
 			0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Left + 7, m_rcSlotInfo.Bottom - 7,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Left + 7, m_rcSlotInfo.Bottom - 7,
 			m_rcSlotInfo.Right - 7, m_rcSlotInfo.Bottom,
 			m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
 			0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Right - 7, m_rcSlotInfo.Bottom - 7,
+		pUIManager->GetDrawPort()->AddTexture( m_rcSlotInfo.Right - 7, m_rcSlotInfo.Bottom - 7,
 			m_rcSlotInfo.Right, m_rcSlotInfo.Bottom,
 			m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
 			0xFFFFFFFF );
 		
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pUIManager->GetDrawPort()->FlushRenderingQueue();
 
 		// Render item information
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strSlotInfo, m_rcSlotInfo.Left + 8, m_rcSlotInfo.Top + 4 );
+		pUIManager->GetDrawPort()->PutTextEx( m_strSlotInfo, m_rcSlotInfo.Left + 8, m_rcSlotInfo.Top + 4 );
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pUIManager->GetDrawPort()->EndTextEx();
 	}
 	else
 	{
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pUIManager->GetDrawPort()->FlushRenderingQueue();
 	}
 }
 
@@ -400,43 +442,41 @@ void CUINotice::PressOK( int iSlotIndex )
 	{
 		return;
 	}
-	
-	UIBtnExType btnType = rbtnSelect.GetBtnType();	
 
-	// Temp String
-	CTString strMsg;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CTString strMsg;	// Temp String
+	UIBtnExType btnType = rbtnSelect.GetBtnType();
 
 	switch( btnType )
 	{
-	case UBET_QUEST:		// ÌÄòÏä§Ìä∏ Î≤ÑÌäº
+	case UBET_QUEST:		// ƒ˘Ω∫∆Æ πˆ∆∞
 		{
 			const int iNoticeIndex	= rbtnSelect.GetQuestIndex();
 
-			// NOTE : Ïï†ÏôÑÎèôÎ¨º ÌöçÎìù ÌÄòÏä§Ìä∏ Í¥ÄÎ†® ÌïòÎìúÏΩîÎî©Îêú Î∂ÄÎ∂Ñ.
+			// NOTE : æ÷øœµøπ∞ »πµÊ ƒ˘Ω∫∆Æ ∞¸∑√ «œµÂƒ⁄µ˘µ» ∫Œ∫–.
 			if( iNoticeIndex == PET_QUEST_HORSE_INDEX
 				|| iNoticeIndex == PET_QUEST_BLUE_HORSE_INDEX 
 				|| iNoticeIndex == PET_QUEST_MYSTERY_HORSE_INDEX	)
 			{
-				CTString strMessage;				
-				_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+				pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 				
-				strMessage = _S(2162, "Ïï†ÏôÑÎèôÎ¨º ÌöçÎìù ÌÄòÏä§Ìä∏" );
-				_pUIMgr->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+				CTString strMessage = _S(2162, "æ÷øœµøπ∞ »πµÊ ƒ˘Ω∫∆Æ" );
+				pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 				
 				if(iNoticeIndex == PET_QUEST_BLUE_HORSE_INDEX )
-					strMessage =_S(3350, "ÌååÎûÄ ÌåêÏùò ÌîºÎ¶¨Î•º Í∞ÄÏßÄÍ≥† Î°úÎ†àÏù∏ÏùÑ Ï∞æÏïÑÍ∞ÄÎ©¥ ÌååÎûÄ Ïï†ÏôÑÎèôÎ¨º Ìè¨ÎãàÎ•º ÏñªÏùÑ Ïàò ÏûàÎäî ÌÄòÏä§Ìä∏Î•º ÏßÑÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§.");
+					strMessage =_S(3350, "∆ƒ∂ı ∆«¿« ««∏Æ∏¶ ∞°¡ˆ∞Ì ∑Œ∑π¿Œ¿ª √£æ∆∞°∏È ∆ƒ∂ı æ÷øœµøπ∞ ∆˜¥œ∏¶ æÚ¿ª ºˆ ¿÷¥¬ ƒ˘Ω∫∆Æ∏¶ ¡¯«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
 				else if(iNoticeIndex == PET_QUEST_MYSTERY_HORSE_INDEX )
 					
-					strMessage =_S(3351, "Î∂àÍ∞ÄÏÇ¨ÏùòÌïú ÌåêÏùò ÌîºÎ¶¨Î•º Í∞ÄÏßÄÍ≥† Î°úÎ†àÏù∏ÏùÑ Ï∞æÏïÑÍ∞ÄÎ©¥ Î∂àÍ∞ÄÏÇ¨ÏùòÌïú Ïï†ÏôÑÎèôÎ¨º Ìè¨ÎãàÎ•º ÏñªÏùÑ Ïàò ÏûàÎäî ÌÄòÏä§Ìä∏Î•º ÏßÑÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§.");
-				else strMessage =_S(2163,"ÌåêÏùò ÌîºÎ¶¨Î•º Í∞ÄÏßÄÍ≥† Î°úÎ†àÏù∏ÏùÑ Ï∞æÏïÑÍ∞ÄÎ©¥ ÍπúÏ∞çÌïú Ïï†ÏôÑÎèôÎ¨º Ìè¨ÎãàÎ•º ÏñªÏùÑ Ïàò ÏûàÎäî ÌÄòÏä§Ìä∏Î•º ÏßÑÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§.");
+					strMessage =_S(3351, "∫“∞°ªÁ¿««— ∆«¿« ««∏Æ∏¶ ∞°¡ˆ∞Ì ∑Œ∑π¿Œ¿ª √£æ∆∞°∏È ∫“∞°ªÁ¿««— æ÷øœµøπ∞ ∆˜¥œ∏¶ æÚ¿ª ºˆ ¿÷¥¬ ƒ˘Ω∫∆Æ∏¶ ¡¯«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
+				else strMessage =_S(2163,"∆«¿« ««∏Æ∏¶ ∞°¡ˆ∞Ì ∑Œ∑π¿Œ¿ª √£æ∆∞°∏È ±Ù¬Ô«— æ÷øœµøπ∞ ∆˜¥œ∏¶ æÚ¿ª ºˆ ¿÷¥¬ ƒ˘Ω∫∆Æ∏¶ ¡¯«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
 				
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
 				
-				strMessage = _S( 191, "ÌôïÏù∏" );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+				strMessage = _S( 191, "»Æ¿Œ" );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 
-				// NOTE : Ïì∞Î©¥ Î∞îÎ°ú ÏßÄÏõåÏ†∏Ïïº Ìï©ÎãàÎã§.
+				// NOTE : æ≤∏È πŸ∑Œ ¡ˆøˆ¡Ææﬂ «’¥œ¥Ÿ.
 				DelNoticeBySlotIndex( iSlotIndex );
 				RefreshNoticeList();
 				//break;
@@ -446,1088 +486,1339 @@ void CUINotice::PressOK( int iSlotIndex )
 				|| iNoticeIndex == PET_QUEST_MYSTERY_DRAGON_INDEX )
 			{
 				CTString strMessage;				
-				_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+				pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 				
-				strMessage = _S(2164, "Ïï†ÏôÑÎèôÎ¨º ÌöçÎìù ÌÄòÏä§Ìä∏" );
-				_pUIMgr->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+				strMessage = _S(2164, "æ÷øœµøπ∞ »πµÊ ƒ˘Ω∫∆Æ" );
+				pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 
 				// wooss 060810
-				// Î†àÏñ¥ ÏïÑÏù¥ÌÖú Ï∂îÍ∞Ä 
+				// ∑πæÓ æ∆¿Ã≈€ √ﬂ∞° 
 				if( iNoticeIndex == PET_QUEST_PINK_DRAGON_INDEX )
-					strMessage = _S(3352, "ÌïëÌÅ¨ ÎìúÎ†àÏù¥ÌÅ¨Ïùò ÏïåÏùÑ Í∞ÄÏßÄÍ≥† Î°úÎ†àÏù∏ÏùÑ Ï∞æÏïÑÍ∞ÄÎ©¥ ÌïëÌÅ¨ÏÉâÏùò Ïï†ÏôÑÎèôÎ¨º Ìó§Ï∏®ÎßÅÏùÑ ÏñªÏùÑ Ïàò ÏûàÎäî ÌÄòÏä§Ìä∏Î•º ÏßÑÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§.");
+					strMessage = _S(3352, "«Œ≈© µÂ∑π¿Ã≈©¿« æÀ¿ª ∞°¡ˆ∞Ì ∑Œ∑π¿Œ¿ª √£æ∆∞°∏È «Œ≈©ªˆ¿« æ÷øœµøπ∞ «Ï√˙∏µ¿ª æÚ¿ª ºˆ ¿÷¥¬ ƒ˘Ω∫∆Æ∏¶ ¡¯«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
 				if( iNoticeIndex == PET_QUEST_MYSTERY_DRAGON_INDEX )
-					strMessage = _S(3353, "Î∂àÍ∞ÄÏÇ¨ÏùòÌïú ÎìúÎ†àÏù¥ÌÅ¨Ïùò ÏïåÏùÑ Í∞ÄÏßÄÍ≥† Î°úÎ†àÏù∏ÏùÑ Ï∞æÏïÑÍ∞ÄÎ©¥ Î∂àÍ∞ÄÏÇ¨ÏùòÌïú Ïï†ÏôÑÎèôÎ¨º Ìó§Ï∏®ÎßÅÏùÑ ÏñªÏùÑ Ïàò ÏûàÎäî ÌÄòÏä§Ìä∏Î•º ÏßÑÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§.");
-				else strMessage = _S(2165,"ÎìúÎ†àÏù¥ÌÅ¨Ïùò ÏïåÏùÑ Í∞ÄÏßÄÍ≥† Î°úÎ†àÏù∏ÏùÑ Ï∞æÏïÑÍ∞ÄÎ©¥ ÍπúÏ∞çÌïú Ïï†ÏôÑÎèôÎ¨º Ìó§Ï∏®ÎßÅÏùÑ ÏñªÏùÑ Ïàò ÏûàÎäî ÌÄòÏä§Ìä∏Î•º ÏßÑÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§.");
+					strMessage = _S(3353, "∫“∞°ªÁ¿««— µÂ∑π¿Ã≈©¿« æÀ¿ª ∞°¡ˆ∞Ì ∑Œ∑π¿Œ¿ª √£æ∆∞°∏È ∫“∞°ªÁ¿««— æ÷øœµøπ∞ «Ï√˙∏µ¿ª æÚ¿ª ºˆ ¿÷¥¬ ƒ˘Ω∫∆Æ∏¶ ¡¯«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
+				else strMessage = _S(2165,"µÂ∑π¿Ã≈©¿« æÀ¿ª ∞°¡ˆ∞Ì ∑Œ∑π¿Œ¿ª √£æ∆∞°∏È ±Ù¬Ô«— æ÷øœµøπ∞ «Ï√˙∏µ¿ª æÚ¿ª ºˆ ¿÷¥¬ ƒ˘Ω∫∆Æ∏¶ ¡¯«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
 
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
 
-				strMessage = _S( 191, "ÌôïÏù∏" );
-				_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+				strMessage = _S( 191, "»Æ¿Œ" );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 
-				// NOTE : Ïì∞Î©¥ Î∞îÎ°ú ÏßÄÏõåÏ†∏Ïïº Ìï©ÎãàÎã§.
+				// NOTE : æ≤∏È πŸ∑Œ ¡ˆøˆ¡Ææﬂ «’¥œ¥Ÿ.
 				DelNoticeBySlotIndex( iSlotIndex );
 				RefreshNoticeList();
 			}
-			// Ïù¥Î≤§Ìä∏Ïù∏ Í≤ΩÏö∞.
+			
+			// [091013: selo] ∞¯∞›«¸ ∆Í¿Ã ¡¯»≠ ∞°¥…«— ∑π∫ß¿Ã µ«æ˙¿ª ∂ß
+			else if( iNoticeIndex == PET_NOTICE_EVOLUTION_ENABLE )
+			{
+				CTString strMessage;				
+				pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+
+				strMessage = _S(4727,"∆Í ¡¯»≠");
+				pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+
+				strMessage = _S(4728,"√‡«œ «’¥œ¥Ÿ. ∆Í¿« ∑π∫ß¿Ã ¡¯»≠∏¶ «“ ºˆ ¿÷¥¬ ∑π∫ß¿Ã µ«æ˙Ω¿¥œ¥Ÿ. æ÷øœµøπ∞ ¡∂∑√ªÁ∏¶ ≈Î«ÿº≠ ¡¯»≠∏¶ «ÿ∫∏ººø‰. ¡¯»≠∏¶ «œ∞‘ µ«∏È ∆Í¿Ã ∫Ø«œ∞‘ µ«¥œ Ω≈¡ﬂ«œ∞‘ ª˝∞¢«œ∞Ì ∞·¡§«œººø‰.");
+
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+
+				strMessage = _S( 191, "»Æ¿Œ" );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+
+				// NOTE : æ≤∏È πŸ∑Œ ¡ˆøˆ¡Ææﬂ «’¥œ¥Ÿ.
+				DelNoticeBySlotIndex( iSlotIndex );
+				RefreshNoticeList();
+			}
+#ifdef NETCAFE_CAMPAIGN
+			else if( iNoticeIndex >= EVENT_NETCAFE_INDEX )
+			{
+				CTString strMessage;				
+				pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+				
+				strMessage = _S(2744, "NetCafe ƒ∑∆‰¿Œ" );
+				pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+				strMessage = _S(2745, "∞¯Ωƒ ¡ˆ¡§ ¿Œ≈Õ≥› ƒ´∆‰ø°º≠ ∂ÛΩ∫∆Æ ƒ´ø¿Ω∫∏¶ «√∑π¿Ã«œ¥¬ ¿Ø¿˙ø°∞‘¥¬ ¡¢º” Ω√∞£ø° µ˚∏• ∫∏πÆªÛ¿⁄∞° ¡ˆ±ﬁµÀ¥œ¥Ÿ." );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+				strMessage = _S(2746, "¡ˆ±ﬁ πﬁ¿∫ ∫∏π∞ ªÛ¿⁄∏¶ ∞°¡ˆ∞Ì ∑Œ∑π¿Œ¿ª √£æ∆∞°∏È ¥ŸæÁ«— ∫∏ªÛ«∞ ¡ﬂ «—∞≥∏¶ »πµÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+				strMessage = _S(2747, "∂««— 10%¿« ∫∏≥ Ω∫ ∞Ê«Ëƒ°øÕ 5%¿« SP∏¶ √ﬂ∞°∑Œ »πµÊ «œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ." );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));
+
+				strMessage = _S(2748, "1Ω√∞£ «√∑π¿ÃΩ√  «‡øÓ¿« ∫∏π∞ªÛ¿⁄ ¡ˆ±ﬁ" );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+				strMessage = _S(2749, "2Ω√∞£ «√∑π¿ÃΩ√  √‡∫π¿« ∫∏π∞ªÛ¿⁄ ¡ˆ±ﬁ" );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+				strMessage = _S(2750, "3Ω√∞£ «√∑π¿ÃΩ√  ¿∫√—¿« ∫∏π∞ªÛ¿⁄ ¡ˆ±ﬁ" );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+				strMessage = _S(2751, "4Ω√∞£¿ÃªÛ «√∑π¿ÃΩ√  ¿Œ≥ª¿« ∫∏π∞ªÛ¿⁄ ¡ˆ±ﬁ" );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+
+				strMessage = _S( 191, "»Æ¿Œ" );
+				pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+
+				// NOTE : æ≤∏È πŸ∑Œ ¡ˆøˆ¡Ææﬂ «’¥œ¥Ÿ.
+				DelNoticeBySlotIndex( iSlotIndex );
+				RefreshNoticeList();
+			}
+#endif
+			// ¿Ã∫•∆Æ¿Œ ∞ÊøÏ.
 			else if( iNoticeIndex >= EVENT_START_INDEX )
 			{
 				//const int iEventIndex	= rbtnSelect.GetEventIndex();
 				int iEventIndex = iNoticeIndex - EVENT_START_INDEX;
 
-				// Î≥¥Î¨º ÏÉÅÏûê.	TEVENT_TREASUREBOX
-				if( iEventIndex == 1 )
-				{					
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					// Date : 2005-07-05(Ïò§ÌõÑ 4:26:58), By Lee Ki-hwan
-					// Ìï¥Ïô∏ ÏûëÏóÖÏãú Í≥†Î†§ÏÇ¨Ìï≠ (Ïù¥Î≤§Ìä∏Ï∂îÍ∞Ä)
+				// ∫∏π∞ ªÛ¿⁄.
+				if( iEventIndex == TEVENT_TREASUREBOX || iEventIndex == TEVENT_JPN_2007_NEWSERVER )
+				{
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					// Date : 2005-07-05(ø¿»ƒ 4:26:58), By Lee Ki-hwan
+					// «ÿø‹ ¿€æ˜Ω√ ∞Ì∑¡ªÁ«◊ (¿Ã∫•∆Æ√ﬂ∞°)
 					// Create event message box
-					//_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );							
-					_pUIMgr->CreateMessageBoxL( _S( 1940,"Î≥¥Î¨ºÏÉÅÏûê ÌÄòÏä§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
+					//pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );							
+					pUIManager->CreateMessageBoxL( _S( 1940,"∫∏π∞ªÛ¿⁄ ƒ˘Ω∫∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1940, "Î≥¥Î¨ºÏÉÅÏûê ÌÄòÏä§Ìä∏" ), -1, 0xE18600FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1940, "∫∏π∞ªÛ¿⁄ ƒ˘Ω∫∆Æ" ), -1, 0xE18600FF );	
 					
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1676, "Ï∫êÎ¶≠ÌÑ∞Î•º ÏÉùÏÑ±ÌïòÎ©¥ ÏÉùÏÑ±Îêú Ï∫êÎ¶≠ÌÑ∞Ïùò Ïù∏Î≤§ÌÜ†Î¶¨Ïóê Î≥¥Î¨ºÏÉÅÏûêÎ•º 1Í∞ú ÏßÄÍ∏âÎê©ÎãàÎã§." ));		
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(1941,"Ï∫êÎ¶≠ÌÑ∞Î•º ÏÉùÏÑ±ÌïòÎ©¥ ÏÉùÏÑ±Îêú Ï∫êÎ¶≠ÌÑ∞ Ïù∏Î≤§ÌÜ†Î¶¨Ïùò Ïù¥Î≤§Ìä∏ ÌÉ≠Ïóê Î≥¥Î¨ºÏÉÅÏûêÍ∞Ä 1Í∞ú ÏßÄÍ∏âÎê©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1677, "ÏÉùÏÑ±ÏãúÏóê ÏßÄÍ∏âÎêòÎäî Î≥¥Î¨ºÏÉÅÏûêÎäî Ï∫êÎ¶≠ÌÑ∞Ïùò Î†àÎ≤®Ïù¥ 10LvÏù¥ ÎêòÏóàÏùÑ Îïå Í∑∏ Î≥¥Î¨ºÏÉÅÏûêÎ•º Ï•¨ÎÖ∏ ÏßÄÏó≠ ÎûÄÎèåÎßàÏùÑÏùò Î°úÎ†àÏù∏ÏùÑ ÌÜµÌï¥ÏÑú Ïó¥Ïñ¥Î≥º ÏàòÍ∞Ä ÏûàÏäµÎãàÎã§." ));	
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1678, "Î≥¥Î¨º ÏÉÅÏûêÎ•º Ïó¥ Í≤ΩÏö∞ Ìï¥Îãπ Î≥¥Î¨ºÏÉÅÏûêÍ∞Ä ÏßÄÍ∏âÌï† Ïàò ÏûàÎäî ÌíàÎ™©Ï§ëÏóêÏÑú ÎûúÎç§ÏúºÎ°ú ÏïÑÏù¥ÌÖúÏùÑ ÏßÄÍ∏âÎê©ÎãàÎã§." ));	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1942, "Î≥¥Î¨º ÏÉÅÏûêÎ•º Ïó¥ Í≤ΩÏö∞ Ìï¥Îãπ Î≥¥Î¨ºÏÉÅÏûêÍ∞Ä ÏßÄÍ∏âÌï† Ïàò ÏûàÎäî ÌíàÎ™©Ï§ëÏóêÏÑú ÎûúÎç§ÏúºÎ°ú ÏïÑÏù¥ÌÖúÏù¥ ÏßÄÍ∏âÎê©ÎãàÎã§." ));		
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1679, "10Lv Î≥¥Î¨ºÏÉÅÏûêÎ•º Ïó¥Î©¥ Îã§Ïùå Îã®Í≥ÑÏùò Î≥¥Î¨ºÏÉÅÏûêÏù∏ 14Lv Î≥¥Î¨ºÏÉÅÏûêÎ•º Î°úÎ†àÏù∏Ïù¥ ÏßÄÍ∏âÌïòÍ≤åÎêòÍ≥† 10Lv, 14Lv, 18Lv, 22Lv, 26Lv, 30Lv Ï¥ù 6Í∞úÏùò Î≥¥Î¨ºÏÉÅÏûêÎ•º Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà ÏßÄÍ∏âÎê©ÎãàÎã§." ));	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(1943,"10Lv Î≥¥Î¨ºÏÉÅÏûêÎ•º Ïó¥Î©¥ Îã§Ïùå Îã®Í≥ÑÏùò Î≥¥Î¨ºÏÉÅÏûêÏù∏ 14Lv Î≥¥Î¨ºÏÉÅÏûêÎ•º Î°úÎ†àÏù∏Ïù¥ ÏßÄÍ∏âÌïòÍ≤å ÎêòÍ≥† 10Lv, 14Lv, 18Lv, 22Lv, 26Lv, 30Lv Ï¥ù 6Í∞úÏùò Î≥¥Î¨ºÏÉÅÏûêÎ•º Îã®Í≥ÑÏ†ÅÏúºÎ°ú ÏßÄÍ∏âÌï©ÎãàÎã§." ));	
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ) );
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1680, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ" ), -1, 0xFFCB00FF );	
-					//_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1681, "7Ïõî 19ÏùºÍπåÏßÄ" ) );	
+					//pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1676, "ƒ≥∏Ø≈Õ∏¶ ª˝º∫«œ∏È ª˝º∫µ» ƒ≥∏Ø≈Õ¿« ¿Œ∫•≈‰∏Æø° ∫∏π∞ªÛ¿⁄∏¶ 1∞≥ ¡ˆ±ﬁµÀ¥œ¥Ÿ." ));		
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(1941,"ƒ≥∏Ø≈Õ∏¶ ª˝º∫«œ∏È ª˝º∫µ» ƒ≥∏Ø≈Õ ¿Œ∫•≈‰∏Æ¿« ¿Ã∫•∆Æ ≈«ø° ∫∏π∞ªÛ¿⁄∞° 1∞≥ ¡ˆ±ﬁµÀ¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1677, "ª˝º∫Ω√ø° ¡ˆ±ﬁµ«¥¬ ∫∏π∞ªÛ¿⁄¥¬ ƒ≥∏Ø≈Õ¿« ∑π∫ß¿Ã 10Lv¿Ã µ«æ˙¿ª ∂ß ±◊ ∫∏π∞ªÛ¿⁄∏¶ ¡Í≥Î ¡ˆø™ ∂ıµπ∏∂¿ª¿« ∑Œ∑π¿Œ¿ª ≈Î«ÿº≠ ø≠æÓ∫º ºˆ∞° ¿÷Ω¿¥œ¥Ÿ." ));	
+					//pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1678, "∫∏π∞ ªÛ¿⁄∏¶ ø≠ ∞ÊøÏ «ÿ¥Á ∫∏π∞ªÛ¿⁄∞° ¡ˆ±ﬁ«“ ºˆ ¿÷¥¬ «∞∏Ò¡ﬂø°º≠ ∑£¥˝¿∏∑Œ æ∆¿Ã≈€¿ª ¡ˆ±ﬁµÀ¥œ¥Ÿ." ));	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1942, "∫∏π∞ ªÛ¿⁄∏¶ ø≠ ∞ÊøÏ «ÿ¥Á ∫∏π∞ªÛ¿⁄∞° ¡ˆ±ﬁ«“ ºˆ ¿÷¥¬ «∞∏Ò¡ﬂø°º≠ ∑£¥˝¿∏∑Œ æ∆¿Ã≈€¿Ã ¡ˆ±ﬁµÀ¥œ¥Ÿ." ));		
+					//pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1679, "10Lv ∫∏π∞ªÛ¿⁄∏¶ ø≠∏È ¥Ÿ¿Ω ¥‹∞Ë¿« ∫∏π∞ªÛ¿⁄¿Œ 14Lv ∫∏π∞ªÛ¿⁄∏¶ ∑Œ∑π¿Œ¿Ã ¡ˆ±ﬁ«œ∞‘µ«∞Ì 10Lv, 14Lv, 18Lv, 22Lv, 26Lv, 30Lv √— 6∞≥¿« ∫∏π∞ªÛ¿⁄∏¶ ¿Ã∫•∆Æ ±‚∞£µøæ» ¡ˆ±ﬁµÀ¥œ¥Ÿ." ));	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(1943,"10Lv ∫∏π∞ªÛ¿⁄∏¶ ø≠∏È ¥Ÿ¿Ω ¥‹∞Ë¿« ∫∏π∞ªÛ¿⁄¿Œ 14Lv ∫∏π∞ªÛ¿⁄∏¶ ∑Œ∑π¿Œ¿Ã ¡ˆ±ﬁ«œ∞‘ µ«∞Ì 10Lv, 14Lv, 18Lv, 22Lv, 26Lv, 30Lv √— 6∞≥¿« ∫∏π∞ªÛ¿⁄∏¶ ¥‹∞Ë¿˚¿∏∑Œ ¡ˆ±ﬁ«’¥œ¥Ÿ." ));	
+					//pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ) );
+					//pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1680, "¿Ã∫•∆Æ ±‚∞£" ), -1, 0xFFCB00FF );	
+					//pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1681, "7ø˘ 19¿œ±Ó¡ˆ" ) );	
 					
 					CTString strMessage;				
-					strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				// ÌõÑÍ≤¨Ïù∏ Î≥¥ÎÑàÏä§ Ïù¥Î≤§Ìä∏
-				else if( iEventIndex == 2 )
+				// »ƒ∞ﬂ¿Œ ∫∏≥ Ω∫ ¿Ã∫•∆Æ
+				else if( iEventIndex == TEVENT_TEACH )
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S(1944,"ÌõÑÍ≤¨Ïù∏ Î≥¥ÎÑàÏä§ Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1944, "ÌõÑÍ≤¨Ïù∏ Î≥¥ÎÑàÏä§ Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1945, "Ïù¥Î≤§Ìä∏Í∏∞Í∞Ñ ÎèôÏïà ÌõÑÍ≤¨Ïù∏Ïù¥ ÌõÑÍ≤¨Ïù∏ ÏãúÏä§ÌÖúÏùÑ ÌÜµÌï¥ Ïã†Í∑úÏú†Ï†ÄÎ•º ÏñëÏÑ±ÌïòÎäîÎç∞ ÏÑ±Í≥µÌïòÎ©¥ Î™ÖÏÑ± Ìè¨Ïù∏Ìä∏Î•º ÌèâÏÜåÏùò 2Î∞∞Ïù∏ 20Ìè¨Ïù∏Ìä∏Î•º ÏßÄÍ∏âÌï©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1946, "Ïù¥Î≤§Ìä∏Í∏∞Í∞Ñ ÎèôÏïà Í≤¨ÏäµÏÉùÏù¥ ÌõÑÍ≤¨Ïù∏ ÏãúÏä§ÌÖúÏùÑ ÌÜµÌï¥ 20Î†àÎ≤®Ïóê ÎèÑÎã¨Ìï† Í≤ΩÏö∞ Í∞ÅÏûê ÏûêÏã†Ïùò ÌÅ¥ÎûòÏä§Ïóê ÎßûÎäî '25Lv + 3' Î¨¥Í∏∞Î•º ÏßÄÍ∏âÌï©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1947, "Ïù¥Î≤§Ìä∏Í∏∞Í∞Ñ ÎèôÏïà Í≤¨ÏäµÏÉùÏù¥ ÌõÑÍ≤¨Ïù∏ ÏãúÏä§ÌÖúÏùÑ Ïù¥Ïö©Ìï¥ ÏÑ±Ïû•Ìï† Í≤ΩÏö∞ 10Î†àÎ≤®Î∂ÄÌÑ∞ 19Î†àÎ≤®ÍπåÏßÄ Î†àÎ≤® ÏóÖÏùÑ Ìï† ÎïåÎßàÎã§ 10,000ÎÇòÏä§Ïî© Í≤©Î†§Í∏àÏù¥ ÏßÄÍ∏âÎê©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1948, "Í∏∞Í∞Ñ : 7Ïõî 29Ïùº 10:00 ~ 8Ïõî 12Ïùº 9:00ÍπåÏßÄ" ), -1, 0xE18600FF );			
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S(1944,"»ƒ∞ﬂ¿Œ ∫∏≥ Ω∫ ¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1944, "»ƒ∞ﬂ¿Œ ∫∏≥ Ω∫ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1945, "¿Ã∫•∆Æ±‚∞£ µøæ» »ƒ∞ﬂ¿Œ¿Ã »ƒ∞ﬂ¿Œ Ω√Ω∫≈€¿ª ≈Î«ÿ Ω≈±‘¿Ø¿˙∏¶ æÁº∫«œ¥¬µ• º∫∞¯«œ∏È ∏Ìº∫ ∆˜¿Œ∆Æ∏¶ ∆Úº“¿« 2πË¿Œ 20∆˜¿Œ∆Æ∏¶ ¡ˆ±ﬁ«’¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1946, "¿Ã∫•∆Æ±‚∞£ µøæ» ∞ﬂΩ¿ª˝¿Ã »ƒ∞ﬂ¿Œ Ω√Ω∫≈€¿ª ≈Î«ÿ 20∑π∫ßø° µµ¥ﬁ«“ ∞ÊøÏ ∞¢¿⁄ ¿⁄Ω≈¿« ≈¨∑°Ω∫ø° ∏¬¥¬ '25Lv + 3' π´±‚∏¶ ¡ˆ±ﬁ«’¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1947, "¿Ã∫•∆Æ±‚∞£ µøæ» ∞ﬂΩ¿ª˝¿Ã »ƒ∞ﬂ¿Œ Ω√Ω∫≈€¿ª ¿ÃøÎ«ÿ º∫¿Â«“ ∞ÊøÏ 10∑π∫ß∫Œ≈Õ 19∑π∫ß±Ó¡ˆ ∑π∫ß æ˜¿ª «“ ∂ß∏∂¥Ÿ 10,000≥™Ω∫æø ∞›∑¡±›¿Ã ¡ˆ±ﬁµÀ¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1948, "±‚∞£ : 7ø˘ 29¿œ 10:00 ~ 8ø˘ 12¿œ 9:00±Ó¡ˆ" ), -1, 0xE18600FF );			
 					
 					CTString strMessage;				
-					strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				else if( iEventIndex == 3 )
+				else if( iEventIndex == TEVENT_FRUIT )
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S(1949,"Ïó¨Î¶Ñ Í≥ºÏùº Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1949, "Ïó¨Î¶Ñ Í≥ºÏùº Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1950 , "Ïù¥Î≤§Ìä∏Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ ÏùºÏ†ï ÌôïÎ•†Î°ú Î™¨Ïä§ÌÑ∞Í∞Ä ÎÇ†ÏßúÏóê Îî∞Îùº 'ÏàòÎ∞ï', 'Ï∞∏Ïô∏', 'ÏûêÎëê' ÏïÑÏù¥ÌÖúÏùÑ ÎìúÎ°≠Ìï©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1951, "ÏàòÎ∞ï" ), -1, 0xE18600FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1952, "ÏàòÎ∞ï ÏïÑÏù¥ÌÖúÏùÑ ÏÇ¨Ïö©Ìï† Í≤ΩÏö∞ 10Î∂ÑÍ∞Ñ Í≤ΩÌóòÏπò ÏäµÎìùÎ•†Ïù¥ 1.5Î∞∞ ÏÉÅÏäπÌï©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1953, "Í∏∞Í∞Ñ : 8Ïõî 2Ïùº ~ 5Ïùº Ïò§Ï†Ñ Ï†ïÍ∏∞Ï†êÍ≤ÄÍπåÏßÄ" ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1954, "Ï∞∏Ïô∏" ), -1, 0xE18600FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1955, "Ï∞∏Ïô∏ ÏïÑÏù¥ÌÖúÏùÑ ÏÇ¨Ïö©Ìï† Í≤ΩÏö∞ 10Î∂ÑÍ∞Ñ ÏàôÎ†®ÎèÑ ÏäµÎìùÎ•†Ïù¥ 2Î∞∞ ÏÉÅÏäπÌï©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1956, "Í∏∞Í∞Ñ : 8Ïõî 5Ïùº ~ 9Ïùº Ïò§Ï†Ñ Ï†ïÍ∏∞Ï†êÍ≤ÄÍπåÏßÄ" ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1957, "ÏûêÎëê" ), -1, 0xE18600FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1958, "ÏûêÎëê ÏïÑÏù¥ÌÖúÏùÑ ÏÇ¨Ïö©Ìï† Í≤ΩÏö∞ 10Î∂ÑÍ∞Ñ ÏïÑÏù¥ÌÖú ÎìúÎ°≠Î•†Ïù¥ 2Î∞∞ ÏÉÅÏäπÌï©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1959, "Í∏∞Í∞Ñ : 8Ïõî 9Ïùº ~ 12Ïùº Ïò§Ï†Ñ Ï†ïÍ∏∞Ï†êÍ≤ÄÍπåÏßÄ" ));			
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S(1949,"ø©∏ß ∞˙¿œ ¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1949, "ø©∏ß ∞˙¿œ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1950 , "¿Ã∫•∆Æ±‚∞£ µøæ» ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È ¿œ¡§ »Æ∑¸∑Œ ∏ÛΩ∫≈Õ∞° ≥Ø¬•ø° µ˚∂Û 'ºˆπ⁄', '¬¸ø‹', '¿⁄µŒ' æ∆¿Ã≈€¿ª µÂ∑”«’¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1951, "ºˆπ⁄" ), -1, 0xE18600FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1952, "ºˆπ⁄ æ∆¿Ã≈€¿ª ªÁøÎ«“ ∞ÊøÏ 10∫–∞£ ∞Ê«Ëƒ° Ω¿µÊ∑¸¿Ã 1.5πË ªÛΩ¬«’¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1953, "±‚∞£ : 8ø˘ 2¿œ ~ 5¿œ ø¿¿¸ ¡§±‚¡°∞À±Ó¡ˆ" ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1954, "¬¸ø‹" ), -1, 0xE18600FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1955, "¬¸ø‹ æ∆¿Ã≈€¿ª ªÁøÎ«“ ∞ÊøÏ 10∫–∞£ º˜∑√µµ Ω¿µÊ∑¸¿Ã 2πË ªÛΩ¬«’¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1956, "±‚∞£ : 8ø˘ 5¿œ ~ 9¿œ ø¿¿¸ ¡§±‚¡°∞À±Ó¡ˆ" ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1957, "¿⁄µŒ" ), -1, 0xE18600FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1958, "¿⁄µŒ æ∆¿Ã≈€¿ª ªÁøÎ«“ ∞ÊøÏ 10∫–∞£ æ∆¿Ã≈€ µÂ∑”∑¸¿Ã 2πË ªÛΩ¬«’¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1959, "±‚∞£ : 8ø˘ 9¿œ ~ 12¿œ ø¿¿¸ ¡§±‚¡°∞À±Ó¡ˆ" ));			
 					
 					CTString strMessage;				
-					strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				// Ï∂îÏÑùÎßûÏù¥ Ïù¥Î≤§Ìä∏ // Date : 2005-09-08(Ïò§ÌõÑ 2:28:22), By Lee Ki-hwan
-				else if( iEventIndex == 4 )
+				// √ﬂºÆ∏¬¿Ã ¿Ã∫•∆Æ // Date : 2005-09-08(ø¿»ƒ 2:28:22), By Lee Ki-hwan
+				else if( iEventIndex == TEVENT_CHUSEOK )
 				{
 					CTString strMessage;				
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 					
-					strMessage = _S( 1960, "Ï∂îÏÑùÎßûÏù¥ Ïù¥Î≤§Ìä∏" );
-					_pUIMgr->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );			
+					strMessage = _S( 1960, "√ﬂºÆ∏¬¿Ã ¿Ã∫•∆Æ" );
+					pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );			
 					
-					strMessage = _S( 1961, "ÎØºÏ°±Ïùò Î™ÖÏ†à Ï∂îÏÑùÏùÑ ÎßûÏù¥ÌïòÏó¨ Ï∂îÏÑùÎßûÏù¥ Ïù¥Î≤§Ìä∏Î•º ÏßÑÌñâÌï©ÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = _S( 1961, "πŒ¡∑¿« ∏Ì¿˝ √ﬂºÆ¿ª ∏¬¿Ã«œø© √ﬂºÆ∏¬¿Ã ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
 					
-					strMessage =_S( 1962,  "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎÇ¥Ïóê Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ Ïî®Ïïó ÏïÑÏù¥ÌÖúÏùÑ ÏñªÏùÑ Ïàò ÏûàÏúºÎ©∞, Ïî®ÏïóÏùÄ Î™¨Ïä§ÌÑ∞ ÏÇ¨ÎÉ•ÏùÑ ÌÜµÌïòÏó¨ ÏñªÏùÑ Ïàò ÏûàÎäî 'Î∞∞ÏñëÌÜ†'Î°ú ÏóÖÍ∑∏Î†àÏù¥ÎìúÍ∞Ä Í∞ÄÎä•ÌïòÎ©∞, ÏóÖÍ∑∏Î†àÏù¥ÎìúÎäî Î°úÎ†àÏù∏ÏùÑ ÌÜµÌïòÏó¨ ÌïòÏã§ Ïàò ÏûàÏäµÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage =_S( 1962,  "¿Ã∫•∆Æ ±‚∞£ ≥ªø° ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È æææ— æ∆¿Ã≈€¿ª æÚ¿ª ºˆ ¿÷¿∏∏Á, æææ—¿∫ ∏ÛΩ∫≈Õ ªÁ≥…¿ª ≈Î«œø© æÚ¿ª ºˆ ¿÷¥¬ 'πËæÁ≈‰'∑Œ æ˜±◊∑π¿ÃµÂ∞° ∞°¥…«œ∏Á, æ˜±◊∑π¿ÃµÂ¥¬ ∑Œ∑π¿Œ¿ª ≈Î«œø© «œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 					
-					strMessage = _S( 1963, "Ïî®ÏïóÏùÄ Ïî®Ïïó, Î¨òÎ™©, Î∂ÑÏû¨, ÎÇòÎ¨¥, Ïó¥Îß§ Îã®Í≥ÑÎ°ú ÏóÖÍ∑∏Î†àÏù¥Îìú Ìï† Ïàò ÏûàÏúºÎ©∞ Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎÇ¥ÏóêÎÇò Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ Ï¢ÖÎ£å ÌõÑ ÏóÖÍ∑∏Î†àÏù¥ÎìúÌïú Ïî®ÏïóÏùÑ Î°úÎ†àÏù∏ÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÎ©¥ Î≥¥ÏÉÅÎ¨ºÌíàÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S( 1963, "æææ—¿∫ æææ—, π¶∏Ò, ∫–¿Á, ≥™π´, ø≠∏≈ ¥‹∞Ë∑Œ æ˜±◊∑π¿ÃµÂ «“ ºˆ ¿÷¿∏∏Á ¿Ã∫•∆Æ ±‚∞£ ≥ªø°≥™ ¿Ã∫•∆Æ ±‚∞£ ¡æ∑· »ƒ æ˜±◊∑π¿ÃµÂ«— æææ—¿ª ∑Œ∑π¿Œø°∞‘ ∞°¡Æ∞°∏È ∫∏ªÛπ∞«∞¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 					
-					strMessage =_S(1964 ,  "Î≥¥ÏÉÅ Î¨ºÌíàÏùÄ ÌôàÌéòÏù¥ÏßÄ Í≥µÏßÄÏÇ¨Ìï≠ÏùÑ Ï∞∏Ï°∞ÌïòÏãúÍ∏∞ Î∞îÎûçÎãàÎã§." );	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage =_S(1964 ,  "∫∏ªÛ π∞«∞¿∫ »®∆‰¿Ã¡ˆ ∞¯¡ˆªÁ«◊¿ª ¬¸¡∂«œΩ√±‚ πŸ∂¯¥œ¥Ÿ." );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 					
-					strMessage = _S( 191, "ÌôïÏù∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );	
+					strMessage = _S( 191, "»Æ¿Œ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );	
 
 				}
-				// Date : 2005-09-08(Ïò§ÌõÑ 3:38:14), By Lee Ki-hwan Í∞ÄÏùÑ ÎßûÏù¥ Ïù¥Î≤§Ìä∏ 
-				else if( iEventIndex == 5 )
+				// Date : 2005-09-08(ø¿»ƒ 3:38:14), By Lee Ki-hwan ∞°¿ª ∏¬¿Ã ¿Ã∫•∆Æ 
+				else if( iEventIndex == TEVENT_SEPTEMBER )
 				{
 					CTString strMessage;				
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 					
-					strMessage =_S( 1965,  "Í∞ÄÏùÑÎßûÏù¥ Ïù¥Î≤§Ìä∏" );
-					_pUIMgr->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );			
+					strMessage =_S( 1965,  "∞°¿ª∏¬¿Ã ¿Ã∫•∆Æ" );
+					pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );			
 					
-					strMessage = _S( 1966, "Í∞ÄÏùÑÎßûÏù¥ Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÏãúÎ©¥ ÏùºÏ†ïÌôïÎ•†Î°ú ÌäπÎ≥ÑÌïú ÏïÑÏù¥ÌÖú Í≤ΩÌóòÏπò Ï¶ùÌè≠Ï†ú, ÏàôÎ†®ÎèÑ Ï¶ùÌè≠Ï†ú, ÎìúÎ°≠Î•† Ï¶ùÌè≠Ï†ú, ÎÇòÏä§ Ï¶ùÌè≠Ï†úÎ•º ÏñªÏùÑ Ïàò ÏûàÏäµÎãàÎã§." ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = _S( 1967, "4Í∞ÄÏßÄ Ï¶ùÌè≠Ï†ú Ï§ë ÏûêÏã†Ïù¥ ÏõêÌïòÎäî Ï¶ùÌè≠Ï†úÎ•º Î≥µÏö©ÌïòÍ≥† Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•Ìï† Í≤ΩÏö∞ Ï¶ùÌè≠Ï†ú Ìö®Í≥ºÏóê Îî∞Îùº ÏùºÏ†ï ÌôïÎ•†Î°ú Î™¨Ïä§ÌÑ∞Ïùò Î≥¥ÏÉÅÏù¥ ÎÜíÏïÑÏßëÎãàÎã§." ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = _S( 1968, "ÏûêÏÑ∏Ìïú ÏÇ¨Ìï≠ÏùÄ ÌôàÌéòÏù¥ÏßÄ Í≥µÏßÄÏÇ¨Ìï≠ÏùÑ Ï∞∏Ï°∞ÌïòÏãúÍ∏∞ Î∞îÎûçÎãàÎã§." ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = _S( 1966, "∞°¿ª∏¬¿Ã ¿Ã∫•∆Æ ±‚∞£ µøæ» ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œΩ√∏È ¿œ¡§»Æ∑¸∑Œ ∆Ø∫∞«— æ∆¿Ã≈€ ∞Ê«Ëƒ° ¡ı∆¯¡¶, º˜∑√µµ ¡ı∆¯¡¶, µÂ∑”∑¸ ¡ı∆¯¡¶, ≥™Ω∫ ¡ı∆¯¡¶∏¶ æÚ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = _S( 1967, "4∞°¡ˆ ¡ı∆¯¡¶ ¡ﬂ ¿⁄Ω≈¿Ã ø¯«œ¥¬ ¡ı∆¯¡¶∏¶ ∫πøÎ«œ∞Ì ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«“ ∞ÊøÏ ¡ı∆¯¡¶ »ø∞˙ø° µ˚∂Û ¿œ¡§ »Æ∑¸∑Œ ∏ÛΩ∫≈Õ¿« ∫∏ªÛ¿Ã ≥Ùæ∆¡˝¥œ¥Ÿ." ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = _S( 1968, "¿⁄ºº«— ªÁ«◊¿∫ »®∆‰¿Ã¡ˆ ∞¯¡ˆªÁ«◊¿ª ¬¸¡∂«œΩ√±‚ πŸ∂¯¥œ¥Ÿ." ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = _S( 1969, "Í∏∞Í∞Ñ : 9Ïõî 17Ïùº ~ 30Ïùº ÍπåÏßÄ" ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = _S( 1969, "±‚∞£ : 9ø˘ 17¿œ ~ 30¿œ ±Ó¡ˆ" ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
 					
-					strMessage = _S( 191, "ÌôïÏù∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );	
+					strMessage = _S( 191, "»Æ¿Œ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );	
 
 				}
-				else if( iEventIndex == 6 ) // Î¶¨Îâ¥Ïñº Ïù¥Î≤§Ìä∏ 
+				else if( iEventIndex == TEVENT_2PAN4PAN1 ) // ∏Æ¥∫æÛ ¿Ã∫•∆Æ 
 				{
 					CTString strMessage;				
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 					
-					strMessage = _S(2166, "Í≤åÏûÑ Ìè¨ÌÉà 2pan4pan Ïò§Ìîà Ïù¥Î≤§Ìä∏" );
-					_pUIMgr->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+					strMessage = _S(2166, "∞‘¿” ∆˜≈ª 2pan4pan ø¿«¬ ¿Ã∫•∆Æ" );
+					pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = "ÌïòÎÇò!  ÎÇ±Îßê ÎßûÏ∂îÍ∏∞ Ïù¥Î≤§Ìä∏";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = "Î™¨Ïä§ÌÑ∞Í∞Ä ÎìúÎ°≠ÌïòÎäî ÎÇ±Îßê ÏïÑÏù¥ÌÖúÏùÑ Í∞ÄÏßÄÍ≥† ÌäπÏ†ï Î¨∏ÏûêÎ•º Ï°∞Ìï©ÌïòÏó¨ Î°úÎ†àÏù∏ÏóêÍ≤åÏÑú Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÎäî Ïù¥Î≤§Ìä∏ ÏûÖÎãàÎã§.";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = "«œ≥™!  ≥π∏ª ∏¬√ﬂ±‚ ¿Ã∫•∆Æ";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = "∏ÛΩ∫≈Õ∞° µÂ∑”«œ¥¬ ≥π∏ª æ∆¿Ã≈€¿ª ∞°¡ˆ∞Ì ∆Ø¡§ πÆ¿⁄∏¶ ¡∂«’«œø© ∑Œ∑π¿Œø°∞‘º≠ ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷¥¬ ¿Ã∫•∆Æ ¿‘¥œ¥Ÿ.";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );	
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = "Îëò!  Î¨¥Í∏∞ÍµêÏ≤¥ Ïù¥Î≤§Ìä∏";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = "Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà Ïú†Ï†ÄÎì§ÏùÄ Î¨¥Î£åÎ°ú ÏûêÏã†Ïù¥ ÏÇ¨Ïö©ÌïòÎçò Î¨¥Í∏∞Î•º Í∞ôÏùÄ Î†àÎ≤® ÎåÄ Îã§Î•∏ ÌÅ¥ÎûòÏä§Ïùò Î¨¥Í∏∞Î°ú ÍµêÏ≤¥ Ìï† Ïàò ÏûàÎäî Ïù¥Î≤§Ìä∏ ÏûÖÎãàÎã§. ÎûÄÎèåÎßàÏùÑ ÏàòÏßëÍ∞Ä Î¶¥ÏóêÍ≤åÏÑú ÍµêÏ≤¥Ìï† Ïàò ÏûàÏäµÎãàÎã§.";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = "µ—!  π´±‚±≥√º ¿Ã∫•∆Æ";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = "¿Ã∫•∆Æ ±‚∞£µøæ» ¿Ø¿˙µÈ¿∫ π´∑·∑Œ ¿⁄Ω≈¿Ã ªÁøÎ«œ¥¯ π´±‚∏¶ ∞∞¿∫ ∑π∫ß ¥Î ¥Ÿ∏• ≈¨∑°Ω∫¿« π´±‚∑Œ ±≥√º «“ ºˆ ¿÷¥¬ ¿Ã∫•∆Æ ¿‘¥œ¥Ÿ. ∂ıµπ∏∂¿ª ºˆ¡˝∞° ∏±ø°∞‘º≠ ±≥√º«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );	
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = "ÏÖã!  Î¨∏Ïä§ÌÜ§ Î≥¥ÏÉÅ Ïù¥Î≤§Ìä∏";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = "Ïú†Ï†Ä Ïó¨Îü¨Î∂ÑÏùò ÏùòÍ≤¨ÏùÑ ÏàòÎ†¥ÌïòÏó¨ Î¨∏Ïä§ÌÜ§ Î≥¥ÏÉÅ Î¨ºÌíàÏùÑ ÏùºÎ∂Ä ÏàòÏ†ïÌïòÏó¨ Î≥¥ÏÉÅÌï¥ ÎìúÎ¶ΩÎãàÎã§.";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = "º¬!  πÆΩ∫≈Ê ∫∏ªÛ ¿Ã∫•∆Æ";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = "¿Ø¿˙ ø©∑Ø∫–¿« ¿«∞ﬂ¿ª ºˆ∑≈«œø© πÆΩ∫≈Ê ∫∏ªÛ π∞«∞¿ª ¿œ∫Œ ºˆ¡§«œø© ∫∏ªÛ«ÿ µÂ∏≥¥œ¥Ÿ.";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );	
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = "ÎÑ∑!  ÌõÑÍ≤¨Ïù∏ Î™ÖÏÑ±Î≥¥ÏÉÅ Ïù¥Î≤§Ìä∏";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = "Í≤¨ÏäµÏÉùÏùò Î†àÎ≤®Ïù¥ 20Ïù¥ ÎêòÏóàÏùÑÍ≤ΩÏö∞ Í≤¨ÏäµÏÉùÏóêÍ≤å Ïù¥Î≤§Ìä∏ Í≤ÄÏùÑ ÏßÄÍ∏âÌïòÍ≥† ÌõÑÍ≤¨Ïù∏ÏùÄ 2Î∞∞Ïùò Î™ÖÏÑ±ÏπòÎ•º ÏñªÏäµÎãàÎã§";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = "≥›!  »ƒ∞ﬂ¿Œ ∏Ìº∫∫∏ªÛ ¿Ã∫•∆Æ";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = "∞ﬂΩ¿ª˝¿« ∑π∫ß¿Ã 20¿Ã µ«æ˙¿ª∞ÊøÏ ∞ﬂΩ¿ª˝ø°∞‘ ¿Ã∫•∆Æ ∞À¿ª ¡ˆ±ﬁ«œ∞Ì »ƒ∞ﬂ¿Œ¿∫ 2πË¿« ∏Ìº∫ƒ°∏¶ æÚΩ¿¥œ¥Ÿ";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );	
 
-					strMessage = _S( 191, "ÌôïÏù∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );	
+					strMessage = _S( 191, "»Æ¿Œ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );	
 
 				}
-				else if( iEventIndex == 8 ) // ÎπºÎπºÎ°ú Ïù¥Î≤§Ìä∏.
+				else if( iEventIndex == TEVENT_PEPERO ) // ª©ª©∑Œ ¿Ã∫•∆Æ.
 				{
 					CTString strMessage;				
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 					
-					strMessage = _S(2326, "ÎπºÎπºÎ°ú Îç∞Ïù¥ Ïù¥Î≤§Ìä∏" );
-					_pUIMgr->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+					strMessage = _S(2326, "ª©ª©∑Œ µ•¿Ã ¿Ã∫•∆Æ" );
+					pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S(2327,"Î™®ÎëêÍ∞Ä Ìï®ÍªòÌïòÎäî ÎπºÎπºÎ°ú Îç∞Ïù¥Î•º ÎßûÏù¥ÌïòÏó¨ 'ÎπºÎπºÎ°ú Îç∞Ïù¥ Ïù¥Î≤§Ìä∏'Î•º ÏßÑÌñâ Ìï©ÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2328,"Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎÇ¥Ïóê Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ ÏùºÏ†ïÌôïÎ•†Î°ú Ïù¥Î≤§Ìä∏ ÏïÑÏù¥ÌÖúÏù∏ 'ÎπºÎπºÎ°ú'ÏôÄ 'ÏïÑÎ™¨Îìú ÎπºÎπºÎ°ú'Î•º ÌöçÎìùÌï† Ïàò ÏûàÏäµÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2329,"'ÎπºÎπºÎ°ú'ÏôÄ 'ÏïÑÎ™¨Îìú ÎπºÎπºÎ°ú'Îäî Í∞ÅÍ∞Å HPÏôÄ MPÎ•º ÎèôÏãúÏóê ÌöåÎ≥µ ÏãúÏºú Ï£ºÎ©∞ 'ÏïÑÎ™¨Îìú ÎπºÎπºÎ°ú'Ïùò Í≤ΩÏö∞ ÏùºÏãúÏ†ÅÏúºÎ°ú ÌöåÎ≥µÏãúÏºúÏ£ºÎäî Î¨ºÏïΩÏûÖÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S(2327,"∏µŒ∞° «‘≤≤«œ¥¬ ª©ª©∑Œ µ•¿Ã∏¶ ∏¬¿Ã«œø© 'ª©ª©∑Œ µ•¿Ã ¿Ã∫•∆Æ'∏¶ ¡¯«‡ «’¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2328,"¿Ã∫•∆Æ ±‚∞£ ≥ªø° ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È ¿œ¡§»Æ∑¸∑Œ ¿Ã∫•∆Æ æ∆¿Ã≈€¿Œ 'ª©ª©∑Œ'øÕ 'æ∆∏ÛµÂ ª©ª©∑Œ'∏¶ »πµÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2329,"'ª©ª©∑Œ'øÕ 'æ∆∏ÛµÂ ª©ª©∑Œ'¥¬ ∞¢∞¢ HPøÕ MP∏¶ µøΩ√ø° »∏∫π Ω√ƒ— ¡÷∏Á 'æ∆∏ÛµÂ ª©ª©∑Œ'¿« ∞ÊøÏ ¿œΩ√¿˚¿∏∑Œ »∏∫πΩ√ƒ—¡÷¥¬ π∞æ‡¿‘¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S(2330,"Í∏∞Í∞Ñ : 2005ÎÖÑ 11Ïõî 11Ïùº(Í∏à)" ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = _S(2331, "     ~ 2005ÎÖÑ 11Ïõî 15Ïùº(Ìôî) ÏÑúÎ≤Ñ Ï†ïÍ∏∞Ï†êÍ≤Ä Ï†Ñ" ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S(2330,"±‚∞£ : 2005≥‚ 11ø˘ 11¿œ(±›)" ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = _S(2331, "     ~ 2005≥‚ 11ø˘ 15¿œ(»≠) º≠πˆ ¡§±‚¡°∞À ¿¸" ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
 
-					strMessage = _S( 191, "ÌôïÏù∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage = _S( 191, "»Æ¿Œ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				else if( iEventIndex == 9 )
+				else if( iEventIndex == TEVENT_XMAS )
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 				
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );							
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );							
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2286, "2005 ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2286, "2005 ≈©∏ÆΩ∫∏∂Ω∫ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );	
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2297, "Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ ÏùºÏ†ïÌïú ÌôïÎ•†Î°ú [Íøà],[Ìù¨Îßù] ÏïÑÏù¥ÌÖúÏù¥ ÎìúÎ°≠Ïù¥ Îê©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2298, "Ïù¥ ÏïÑÏù¥ÌÖúÏùÑ Í∞ÄÏßÄÍ≥† Ï•¨ÎÖ∏ ÎßàÏùÑÏùò ÎûúÎîîÎ•º Ï∞æÏïÑÍ∞Ä Ï°∞Ìï©ÏùÑ ÏãúÌÇ§Î©¥ Î≥¥ÏÉÅÏùÑ ÏñªÏùÑ Ïàò ÏûàÎäî Ïù¥Î≤§Ìä∏ ÏûÖÎãàÎã§." ));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2299, "ÏûêÏÑ∏Ìïú Î≥¥ÏÉÅ Î¨ºÌíàÏùÄ ÌôàÌéòÏù¥ÏßÄ Í≥µÏßÄ ÏÇ¨Ìï≠ÏùÑ Ï∞∏Ï°∞ÌïòÏãúÍ∏∞ Î∞îÎûçÎãàÎã§."));	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2300, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ : 2005.12.23 ~ 2005.12.30" ));	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2297, "∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È ¿œ¡§«— »Æ∑¸∑Œ [≤ﬁ],[»Ò∏¡] æ∆¿Ã≈€¿Ã µÂ∑”¿Ã µÀ¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2298, "¿Ã æ∆¿Ã≈€¿ª ∞°¡ˆ∞Ì ¡Í≥Î ∏∂¿ª¿« ∑£µ∏¶ √£æ∆∞° ¡∂«’¿ª Ω√≈∞∏È ∫∏ªÛ¿ª æÚ¿ª ºˆ ¿÷¥¬ ¿Ã∫•∆Æ ¿‘¥œ¥Ÿ." ));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2299, "¿⁄ºº«— ∫∏ªÛ π∞«∞¿∫ »®∆‰¿Ã¡ˆ ∞¯¡ˆ ªÁ«◊¿ª ¬¸¡∂«œΩ√±‚ πŸ∂¯¥œ¥Ÿ."));	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2300, "¿Ã∫•∆Æ ±‚∞£ : 2005.12.23 ~ 2005.12.30" ));	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ) );
 									
 					CTString strMessage;				
-					strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				else if( iEventIndex == 10 )
+				else if( iEventIndex == TEVENT_NEWYEAR )
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 				
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );							
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );							
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2287, "2006 Ïã†ÎÖÑ Ïù∏ÎÇ¥Ïùò Ïó¥Îß§ Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2287, "2006 Ω≈≥‚ ¿Œ≥ª¿« ø≠∏≈ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );	
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2301, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà Ïú†Ï†ÄÎäî ÏûêÏã†Ïùò Ï∫êÎ¶≠Ïùò ÏÇ¨ÎÉ• ÏãúÍ∞ÑÏóê Îî∞Îùº Í∑∏Ïóê Îî∞Î•∏ Î≥¥ÏÉÅÏùÑ ÏñªÏúºÏã§ Ïàò ÏûàÎäî Ïù¥Î≤§Ìä∏ÏûÖÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2302, "Î≥¥ÏÉÅÌíàÏùÄ Ïù¥Î≤§Ìä∏Í∞Ä ÎÅùÎÇúÌõÑ Ï•¨ÎÖ∏ ÎßàÏùÑÏùò ÎûúÎîîÎ•º Ï∞æÏïÑÍ∞ÄÎ©¥ Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà ÏÇ¨ÎÉ•ÏãúÍ∞ÑÏóê Îî∞Î•∏ Î≥¥ÏÉÅÌíàÏù¥ Ï£ºÏñ¥ÏßëÎãàÎã§." ));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2299, "ÏûêÏÑ∏Ìïú Î≥¥ÏÉÅ Î¨ºÌíàÏùÄ ÌôàÌéòÏù¥ÏßÄ Í≥µÏßÄ ÏÇ¨Ìï≠ÏùÑ Ï∞∏Ï°∞ÌïòÏãúÍ∏∞ Î∞îÎûçÎãàÎã§."));	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2303, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ : 2005.12.30 ~ 2006.1.3" ));	
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2301, "¿Ã∫•∆Æ ±‚∞£µøæ» ¿Ø¿˙¥¬ ¿⁄Ω≈¿« ƒ≥∏Ø¿« ªÁ≥… Ω√∞£ø° µ˚∂Û ±◊ø° µ˚∏• ∫∏ªÛ¿ª æÚ¿∏Ω« ºˆ ¿÷¥¬ ¿Ã∫•∆Æ¿‘¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2302, "∫∏ªÛ«∞¿∫ ¿Ã∫•∆Æ∞° ≥°≥≠»ƒ ¡Í≥Î ∏∂¿ª¿« ∑£µ∏¶ √£æ∆∞°∏È ¿Ã∫•∆Æ ±‚∞£µøæ» ªÁ≥…Ω√∞£ø° µ˚∏• ∫∏ªÛ«∞¿Ã ¡÷æÓ¡˝¥œ¥Ÿ." ));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2299, "¿⁄ºº«— ∫∏ªÛ π∞«∞¿∫ »®∆‰¿Ã¡ˆ ∞¯¡ˆ ªÁ«◊¿ª ¬¸¡∂«œΩ√±‚ πŸ∂¯¥œ¥Ÿ."));	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2303, "¿Ã∫•∆Æ ±‚∞£ : 2005.12.30 ~ 2006.1.3" ));	
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ) );
 									
 					CTString strMessage;				
-					strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				else if(iEventIndex == 11 ) // Î¨¥Í∏∞ÍµêÏ≤¥ Ïù¥Î≤§Ìä∏
+				else if(iEventIndex == TEVENT_CHANGE_ARMOR ) // π´±‚±≥√º ¿Ã∫•∆Æ
 				{
 					CTString strMessage;				
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
 					
-					strMessage = _S(2332, "Î¨¥Í∏∞&Î∞©Ïñ¥Íµ¨ ÍµêÏ≤¥ Ïù¥Î≤§Ìä∏" );
-					_pUIMgr->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+					strMessage = _S(2332, "π´±‚&πÊæÓ±∏ ±≥√º ¿Ã∫•∆Æ" );
+					pUIManager->CreateMessageBoxL( strMessage, UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S(2333,"29LvÏù¥ÏÉÅÏùò Î¨¥Í∏∞, Î∞©Ïñ¥Íµ¨Î•º ÌÉÄ ÌÅ¥ÎûòÏä§Ïùò Ïû•ÎπÑÎ°ú Î¨¥Î£åÎ°ú ÍµêÏ≤¥Ìï¥ Ï£ºÎäî Ïù¥Î≤§Ìä∏ ÏûÖÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2334,"Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïàÏóêÎäî Ï•¨ÎÖ∏ÎßàÏùÑÏùò ÏàòÏßëÍ∞Ä Î¶¥ÏóêÍ≤å Ï∞æÏïÑÍ∞ÄÎ©¥ Î¨¥Î£åÎ°ú Ïû•ÎπÑÎ•º ÍµêÏ≤¥Ìï¥ Ï£ºÏßÄÎßå Ïù¥Î≤§Ìä∏Í∞Ä ¬ÉPÎÇòÎ©¥ ÏùºÏ†ïÎüâÏùò NasÎ•º Î∞õÍ≥† Ïû•ÎπÑÎ•º ÍµêÏ≤¥Ìï¥ Ï§çÎãàÎã§. ");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2335,"Ï£ºÏùò : Ïû•ÎπÑÍ∞Ä ÍµêÏ≤¥Îê† Îïå Ï†úÎ†®Í∞íÏùÄ ÍµêÏ≤¥Í∞Ä ÎêòÏßÄÎßå Î∏îÎü¨Îìú ÏòµÏÖòÍ∞íÏùÄ ÏÇ≠Ï†úÍ∞Ä Îê©ÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S(2333,"29Lv¿ÃªÛ¿« π´±‚, πÊæÓ±∏∏¶ ≈∏ ≈¨∑°Ω∫¿« ¿Â∫Ò∑Œ π´∑·∑Œ ±≥√º«ÿ ¡÷¥¬ ¿Ã∫•∆Æ ¿‘¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2334,"¿Ã∫•∆Æ ±‚∞£ µøæ»ø°¥¬ ¡Í≥Î∏∂¿ª¿« ºˆ¡˝∞° ∏±ø°∞‘ √£æ∆∞°∏È π´∑·∑Œ ¿Â∫Ò∏¶ ±≥√º«ÿ ¡÷¡ˆ∏∏ ¿Ã∫•∆Æ∞° ÉP≥™∏È ¿œ¡§∑Æ¿« Nas∏¶ πﬁ∞Ì ¿Â∫Ò∏¶ ±≥√º«ÿ ¡›¥œ¥Ÿ. ");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2335,"¡÷¿« : ¿Â∫Ò∞° ±≥√ºµ… ∂ß ¡¶∑√∞™¿∫ ±≥√º∞° µ«¡ˆ∏∏ ∫Ì∑ØµÂ ø…º«∞™¿∫ ªË¡¶∞° µÀ¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S(2336, "Í∏∞Í∞Ñ : 2005ÎÖÑ 12Ïõî 20Ïùº(Ìôî)" ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = _S(2337, "     ~ 2005ÎÖÑ 12Ïõî 23Ïùº(Í∏à) ÏÑúÎ≤Ñ Ï†ïÍ∏∞Ï†êÍ≤Ä Ï†Ñ" ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S(2336, "±‚∞£ : 2005≥‚ 12ø˘ 20¿œ(»≠)" ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = _S(2337, "     ~ 2005≥‚ 12ø˘ 23¿œ(±›) º≠πˆ ¡§±‚¡°∞À ¿¸" ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
 
-					strMessage = _S( 191, "ÌôïÏù∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage = _S( 191, "»Æ¿Œ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 
 				}
-				else if(iEventIndex == 12 ) // ÏπúÍµ¨ Ï∞æÍ∏∞ Ïù¥Î≤§Ìä∏
+				else if(iEventIndex == TEVENT_SEARCHFRIEND ) // ƒ£±∏ √£±‚ ¿Ã∫•∆Æ
 				{
 					CTString strMessage;				
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );		
-					strMessage = _S( 2433, "ÏπúÍµ¨Ï∞æÍ∏∞ Ïù¥Î≤§Ìä∏ " );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );		
+					strMessage = _S( 2433, "ƒ£±∏√£±‚ ¿Ã∫•∆Æ " );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S( 2434, "ÌòÑÏû¨ ÏÇ¨Ïö©ÏûêÍ∞Ä ÌäπÏ†ï NPCÎ•º ÌÜµÌï¥ ÏµúÏÜå 1Í∞úÏõî Ïù¥ÏÉÅ Ìú¥Î©¥ ÏÉÅÌÉúÏù∏ Ï∫êÎ¶≠ÌÑ∞Î•º Îì±Î°ù Ìï©ÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S( 2435, "Í∑∏Îü∞ ÌõÑÏóê Í∑∏ Ìú¥Î©¥ ÏÉÅÌÉú Ï∫êÎ¶≠ÌÑ∞Í∞Ä Í≤åÏûÑÏóê Ï∞∏Ïó¨ÌïòÏó¨ ÏùºÏ†ï ÏãúÍ∞Ñ ÌîåÎ†àÏù¥Î•º ÌïòÍ≤å ÎêòÎ©¥ Ìú¥Î©¥ ÏÉÅÌÉú Ï∫êÎ¶≠ÌÑ∞Îäî Î≥¥ÌÜµ Ï∫êÎ¶≠ÌÑ∞Î≥¥Îã§ Í≤ΩÌóòÏπòÎ•º Îçî ÎßéÏù¥ ÏñªÍ≤å Îê©ÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S( 2436, "ÎòêÌïú, ÏùºÏ†ï ÏãúÍ∞Ñ Ï†ÑÌà¨Ïóê Ï∞∏Ïó¨ÌïòÎ©¥ ÏûêÏã†ÏùÑ Îì±Î°ùÌïú ÏπúÍµ¨ÏôÄ Í∞ôÏù¥ Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÎäî Ïù¥Î≤§Ìä∏ ÏûÖÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S( 2437, "Îã®, ÎèôÏùº Í≥ÑÏ†ï Ï∫êÎ¶≠ÌÑ∞ÎÇò ÎèôÏùº Ï£ºÎØºÎ≤àÌò∏Î°ú Îì±Î°ùÎêú Í≥ÑÏ†ïÏùò Ï∫êÎ¶≠ÌÑ∞Îäî ÏπúÍµ¨Î°ú Îì±Î°ùÌï† Ïàò ÏóÜÏäµÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S( 2434, "«ˆ¿Á ªÁøÎ¿⁄∞° ∆Ø¡§ NPC∏¶ ≈Î«ÿ √÷º“ 1∞≥ø˘ ¿ÃªÛ »ﬁ∏È ªÛ≈¬¿Œ ƒ≥∏Ø≈Õ∏¶ µÓ∑œ «’¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S( 2435, "±◊∑± »ƒø° ±◊ »ﬁ∏È ªÛ≈¬ ƒ≥∏Ø≈Õ∞° ∞‘¿”ø° ¬¸ø©«œø© ¿œ¡§ Ω√∞£ «√∑π¿Ã∏¶ «œ∞‘ µ«∏È »ﬁ∏È ªÛ≈¬ ƒ≥∏Ø≈Õ¥¬ ∫∏≈Î ƒ≥∏Ø≈Õ∫∏¥Ÿ ∞Ê«Ëƒ°∏¶ ¥ı ∏π¿Ã æÚ∞‘ µÀ¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S( 2436, "∂««—, ¿œ¡§ Ω√∞£ ¿¸≈ıø° ¬¸ø©«œ∏È ¿⁄Ω≈¿ª µÓ∑œ«— ƒ£±∏øÕ ∞∞¿Ã ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷¥¬ ¿Ã∫•∆Æ ¿‘¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S( 2437, "¥‹, µø¿œ ∞Ë¡§ ƒ≥∏Ø≈Õ≥™ µø¿œ ¡÷πŒπ¯»£∑Œ µÓ∑œµ» ∞Ë¡§¿« ƒ≥∏Ø≈Õ¥¬ ƒ£±∏∑Œ µÓ∑œ«“ ºˆ æ¯Ω¿¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S( 2438, "Í∏∞Í∞Ñ : 2006ÎÖÑ 2Ïõî 14Ïùº" ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
-					strMessage = _S( 2439, "     ~ 2006ÎÖÑ 3Ïõî 14Ïùº " ); 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S( 2438, "±‚∞£ : 2006≥‚ 2ø˘ 14¿œ" ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
+					strMessage = _S( 2439, "     ~ 2006≥‚ 3ø˘ 14¿œ " ); 
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );			
 
-					strMessage = _S( 191, "ÌôïÏù∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage = _S( 191, "»Æ¿Œ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 
 				}
-				else if( iEventIndex == 13 ) // Î∞úÎ†å ÌÉÄÏù∏ Îç∞Ïù¥ Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_VALENTINE_2006 ) // πﬂ∑ª ≈∏¿Œ µ•¿Ã ¿Ã∫•∆Æ
 				{
 					CTString strMessage;
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					strMessage = _S(2418, "Î∞úÎ†åÌÉÄÏù∏ Îç∞Ïù¥ Ïù¥Î≤§Ìä∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					strMessage = _S(2418, "πﬂ∑ª≈∏¿Œ µ•¿Ã ¿Ã∫•∆Æ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S(2419, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïàÏóê Î™¨Ïä§ÌÑ∞Îì§ÏùÄ Îπ®Í∞Ñ Ï¥àÏΩîÎ†õÍ≥º ÌïòÏñÄ Ï¥àÏΩîÎ†õÏùÑ ÎìúÎ°≠Ìï©ÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2420, "Îπ®Í∞Ñ Ï¥àÏΩîÎ†õ Ìö®Í≥º: 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨,ÎßàÎ≤ï Í≥µÍ≤©Î†• 65Ï¶ùÍ∞Ä, Ïù¥ÎèôÏÜçÎèÑ Ìñ•ÏÉÅÏùò Ìö®Í≥ºÎ•º ÎÉÖÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2421, "ÌïòÏñÄ Ï¥àÏΩîÎ†õ Ìö®Í≥º: 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨,ÎßàÎ≤ï Î∞©Ïñ¥Î†• 125Ï¶ùÍ∞Ä, Ïù¥ÎèôÏÜçÎèÑ Ìñ•ÏÉÅÏùò Ìö®Í≥ºÎ•º ÎÉÖÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S(2419, "¿Ã∫•∆Æ ±‚∞£µøæ»ø° ∏ÛΩ∫≈ÕµÈ¿∫ ª°∞£ √ ƒ⁄∑ø∞˙ «œæ· √ ƒ⁄∑ø¿ª µÂ∑”«’¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2420, "ª°∞£ √ ƒ⁄∑ø »ø∞˙: 5∫–∞£ π∞∏Æ,∏∂π˝ ∞¯∞›∑¬ 65¡ı∞°, ¿Ãµøº”µµ «‚ªÛ¿« »ø∞˙∏¶ ≥¿¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2421, "«œæ· √ ƒ⁄∑ø »ø∞˙: 5∫–∞£ π∞∏Æ,∏∂π˝ πÊæÓ∑¬ 125¡ı∞°, ¿Ãµøº”µµ «‚ªÛ¿« »ø∞˙∏¶ ≥¿¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2422, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2006. 2. 10 ~ 2006. 2. 17" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2422, "¿Ã∫•∆Æ ±‚∞£: 2006. 2. 10 ~ 2006. 2. 17" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 
-					strMessage = _S( 1220, "Ï∑®ÏÜåÌïúÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage = _S( 1220, "√Îº“«—¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				else if( iEventIndex == 14 )
+				else if( iEventIndex == TEVENT_WHITEDAY )
 				{
 					CTString strMessage;
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					strMessage = _S( 2520, "ÌôîÏù¥Ìä∏ Îç∞Ïù¥ Ïù¥Î≤§Ìä∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					strMessage = _S( 2520, "»≠¿Ã∆Æ µ•¿Ã ¿Ã∫•∆Æ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 					strMessage = " ";//A3A1A3
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S( 2521, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Îì§Ïù¥ ÏÇ¨ÌÉïÍ≥º ÏïåÏÇ¨ÌÉïÏùÑ ÎìúÎ°≠Ìï©ÎãàÎã§. Îã¨ÏΩ§Ìïú ÏÇ¨ÌÉïÏúºÎ°ú Î∂ÄÏ°±Ìïú Ï≤¥Î†•ÏùÑ Î≥¥Í∞ïÌïòÏãúÍ∏∞ Î∞îÎûçÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S( 2522, "ÏÇ¨ÌÉïÌö®Í≥º : Î≥µÏö©Ìï† Í≤ΩÏö∞ HPÏôÄ MPÎ•º Í∞Å 600Ïî© 15Ï¥à ÎèôÏïà ÌöåÎ≥µÏãúÏºú Ï§çÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S( 2523, "ÏïåÏÇ¨ÌÉïÌö®Í≥º : Î≥µÏö©Ìï† Í≤ΩÏö∞ 15Î∂ÑÍ∞Ñ ÏµúÎåÄHP 300Í≥º ÏµúÎåÄMP 200Ïù¥ Ï¶ùÍ∞ÄÎê©ÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S( 2521, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏ÛΩ∫≈ÕµÈ¿Ã ªÁ≈¡∞˙ æÀªÁ≈¡¿ª µÂ∑”«’¥œ¥Ÿ. ¥ﬁƒﬁ«— ªÁ≈¡¿∏∑Œ ∫Œ¡∑«— √º∑¬¿ª ∫∏∞≠«œΩ√±‚ πŸ∂¯¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S( 2522, "ªÁ≈¡»ø∞˙ : ∫πøÎ«“ ∞ÊøÏ HPøÕ MP∏¶ ∞¢ 600æø 15√  µøæ» »∏∫πΩ√ƒ— ¡›¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S( 2523, "æÀªÁ≈¡»ø∞˙ : ∫πøÎ«“ ∞ÊøÏ 15∫–∞£ √÷¥ÎHP 300∞˙ √÷¥ÎMP 200¿Ã ¡ı∞°µÀ¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S( 2524, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2006. 3. 10 ~ 2006. 3. 17" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S( 2524, "¿Ã∫•∆Æ ±‚∞£: 2006. 3. 10 ~ 2006. 3. 17" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 
-					strMessage = _S( 1220, "Ï∑®ÏÜåÌïúÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage = _S( 1220, "√Îº“«—¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				else if( iEventIndex == 15 )
+				else if( iEventIndex == TEVENT_OLD_SERVER )
 				{
 					CTString strMessage;
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					strMessage = _S(2598, "Ïã†ÏÑúÎ≤Ñ Ïò§Ìîà Ïù¥Î≤§Ìä∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					strMessage = _S(2598, "Ω≈º≠πˆ ø¿«¬ ¿Ã∫•∆Æ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S( 2599, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà ÏÑúÎ≤ÑÎÇ¥ Î™®Îì† Î™¨Ïä§ÌÑ∞Í∞Ä Î∂ÄÏä§ÌÑ∞Î•º ÎìúÎ°≠Ìï† ÌôïÎ•†Ïù¥ 2Î∞∞ ÏÉÅÏäπÎê©ÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S( 2600,"ÎòêÌïú ÏûêÏã†Ïùò Î†àÎ≤® Ïù¥ÏÉÅÏùò Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ ÏùºÏ†ïÌôïÎ•†Î°ú Í≤ΩÌóòÏπò Ìè¨ÏÖòÍ≥º Í≥µÍ≤©Î†•, Î∞©Ïñ¥Î†• Ìñ•ÏÉÅÌè¨ÏÖòÏùÑ ÌöçÎìùÌïòÏã§ Ïàò ÏûàÏäµÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S( 2599, "¿Ã∫•∆Æ ±‚∞£µøæ» º≠πˆ≥ª ∏µÁ ∏ÛΩ∫≈Õ∞° ∫ŒΩ∫≈Õ∏¶ µÂ∑”«“ »Æ∑¸¿Ã 2πË ªÛΩ¬µÀ¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S( 2600,"∂««— ¿⁄Ω≈¿« ∑π∫ß ¿ÃªÛ¿« ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È ¿œ¡§»Æ∑¸∑Œ ∞Ê«Ëƒ° ∆˜º«∞˙ ∞¯∞›∑¬, πÊæÓ∑¬ «‚ªÛ∆˜º«¿ª »πµÊ«œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );					
-					strMessage = _S(2560, "Í≥µÍ≤©Î†• Ìñ•ÏÉÅÏ†ú(ÏÜå) : 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨Í≥µÍ≤©Î†• 35,ÎßàÎ≤ïÍ≥µÍ≤©Î†• 30 Ï¶ùÍ∞Ä" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S(2561, "Î∞©Ïñ¥Î†• Ìñ•ÏÉÅÏ†ú(ÏÜå) : 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨Î∞©Ïñ¥Î†• 55 ÏÉÅÏäπ" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S(2562, "Í≥µÍ≤©Î†• Ìñ•ÏÉÅÏ†ú(ÎåÄ) : 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨Í≥µÍ≤©Î†• 100,ÎßàÎ≤ïÍ≥µÍ≤©Î†• 80 Ï¶ùÍ∞Ä" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S(2563, "Î∞©Ïñ¥Î†• Ìñ•ÏÉÅÏ†ú(ÎåÄ) : 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨Î∞©Ïñ¥Î†• 95 ÏÉÅÏäπ" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S( 2601,"Í≤ΩÌóòÏπò Ìñ•ÏÉÅÏ†ú: 20Î∂Ñ ÎèôÏïà ÏäµÎìùÍ≤ΩÌóòÏπò 1.5Î∞∞ Ìñ•ÏÉÅ" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );					
+					strMessage = _S(2560, "∞¯∞›∑¬ «‚ªÛ¡¶(º“) : 5∫–∞£ π∞∏Æ∞¯∞›∑¬ 35,∏∂π˝∞¯∞›∑¬ 30 ¡ı∞°" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S(2561, "πÊæÓ∑¬ «‚ªÛ¡¶(º“) : 5∫–∞£ π∞∏ÆπÊæÓ∑¬ 55 ªÛΩ¬" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S(2562, "∞¯∞›∑¬ «‚ªÛ¡¶(¥Î) : 5∫–∞£ π∞∏Æ∞¯∞›∑¬ 100,∏∂π˝∞¯∞›∑¬ 80 ¡ı∞°" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S(2563, "πÊæÓ∑¬ «‚ªÛ¡¶(¥Î) : 5∫–∞£ π∞∏ÆπÊæÓ∑¬ 95 ªÛΩ¬" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S( 2601,"∞Ê«Ëƒ° «‚ªÛ¡¶: 20∫– µøæ» Ω¿µÊ∞Ê«Ëƒ° 1.5πË «‚ªÛ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
 					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S( 2602, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2006. 4. 20 ~ 2006. 4. 28" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S( 2602, "¿Ã∫•∆Æ ±‚∞£: 2006. 4. 20 ~ 2006. 4. 28" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 
-					strMessage = _S( 191, "ÌôïÏù∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
-				}else if( iEventIndex == 16 )
-				{
-						CTString strMessage;
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100," Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					strMessage = _S(2557, "ÌòºÎèàÏùò Í∂åÏ¢å Ïù¥Î≤§Ìä∏ ");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
-					strMessage = " ";//A3A1A3
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
-					strMessage = _S(2566, "Ïã†Í∑ú ÏÑúÎ≤Ñ Ïò§ÌîàÎ∞è ÌòºÎèàÏùò Í∂åÏ¢å ÏóÖÎç∞Ïù¥Ìä∏ Í¥ÄÎ†® Ï∂ïÌïò Ïù¥Î≤§Ìä∏Î°ú Î∂ÄÏä§ÌÑ∞ Ïù¥Î≤§Ìä∏, Í≤ΩÌóòÏπò Ìè¨ÏÖò Ïù¥Î≤§Ìä∏ÏôÄ Ìè¨ÏÖò Ïù¥Î≤§Ìä∏Í∞Ä ÏßÑÌñâÎê©ÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2567, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà Î™®Îì† Î™¨Ïä§ÌÑ∞Ïùò Î∂ÄÏä§ÌÑ∞ ÎìúÎûçÌôïÎ•†Ïù¥ 2Î∞∞Í∞Ä ÏÉÅÏäπÎêòÏñ¥ ÏÜêÏâΩÍ≤å Î∂ÄÏä§ÌÑ∞Î•º ÏäµÎìùÌï† Ïàò ÏûàÏäµÎãàÎã§.");
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2568, "ÎòêÌïú ÏûêÏã†Ïùò Î†àÎ≤® Ïù¥ÏÉÅÏùò Î™¨Ïä§ÌÑ∞ÏóêÍ≤åÏÑú ÏùºÏ†ïÌôïÎ•†Î°ú Í≤ΩÌóòÏπò Ï¶ùÍ∞Ä Ìè¨ÏÖòÍ≥º Í≥µ,Î∞© Ìñ•ÏÉÅ Ìè¨ÏÖòÏù¥ ÎìúÎ°≠Îê©ÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage);
-					strMessage = _S(2569, "Í≤ΩÌóòÏπò Ìè¨ÏÖò : 20Î∂ÑÍ∞Ñ Í≤ΩÌóòÏπò 1.5Î∞∞ ÌöçÎìù" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S(2560, "Í≥µÍ≤©Î†• Ìñ•ÏÉÅÏ†ú(ÏÜå) : 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨Í≥µÍ≤©Î†• 35,ÎßàÎ≤ïÍ≥µÍ≤©Î†• 30 Ï¶ùÍ∞Ä" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S(2561, "Î∞©Ïñ¥Î†• Ìñ•ÏÉÅÏ†ú(ÏÜå) : 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨Î∞©Ïñ¥Î†• 55 ÏÉÅÏäπ" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S(2562, "Í≥µÍ≤©Î†• Ìñ•ÏÉÅÏ†ú(ÎåÄ) : 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨Í≥µÍ≤©Î†• 100,ÎßàÎ≤ïÍ≥µÍ≤©Î†• 80 Ï¶ùÍ∞Ä" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = _S(2563, "Î∞©Ïñ¥Î†• Ìñ•ÏÉÅÏ†ú(ÎåÄ) : 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨Î∞©Ïñ¥Î†• 95 ÏÉÅÏäπ" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
-					strMessage = " ";
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					strMessage = _S(2564, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2006. 3. 30 ~ 2006. 4. 7" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-
-					strMessage = _S( 191, "ÌôïÏù∏" );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage = _S( 191, "»Æ¿Œ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				else if( iEventIndex == 17 ) // ÏùºÎ≥∏ ÏÇ¨Ïø†Îùº Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_NEW_SERVER )
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					CTString strMessage;
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100," ¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					strMessage = _S(2557, "»•µ∑¿« ±«¡¬ ¿Ã∫•∆Æ ");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xE18600FF );
+					strMessage = " ";//A3A1A3
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0xA3A1A3FF );
+					strMessage = _S(2566, "Ω≈±‘ º≠πˆ ø¿«¬π◊ »•µ∑¿« ±«¡¬ æ˜µ•¿Ã∆Æ ∞¸∑√ √‡«œ ¿Ã∫•∆Æ∑Œ ∫ŒΩ∫≈Õ ¿Ã∫•∆Æ, ∞Ê«Ëƒ° ∆˜º« ¿Ã∫•∆ÆøÕ ∆˜º« ¿Ã∫•∆Æ∞° ¡¯«‡µÀ¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2567, "¿Ã∫•∆Æ ±‚∞£µøæ» ∏µÁ ∏ÛΩ∫≈Õ¿« ∫ŒΩ∫≈Õ µÂ∂¯»Æ∑¸¿Ã 2πË∞° ªÛΩ¬µ«æÓ º’Ω±∞‘ ∫ŒΩ∫≈Õ∏¶ Ω¿µÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.");
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2568, "∂««— ¿⁄Ω≈¿« ∑π∫ß ¿ÃªÛ¿« ∏ÛΩ∫≈Õø°∞‘º≠ ¿œ¡§»Æ∑¸∑Œ ∞Ê«Ëƒ° ¡ı∞° ∆˜º«∞˙ ∞¯,πÊ «‚ªÛ ∆˜º«¿Ã µÂ∑”µÀ¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage);
+					strMessage = _S(2569, "∞Ê«Ëƒ° ∆˜º« : 20∫–∞£ ∞Ê«Ëƒ° 1.5πË »πµÊ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S(2560, "∞¯∞›∑¬ «‚ªÛ¡¶(º“) : 5∫–∞£ π∞∏Æ∞¯∞›∑¬ 35,∏∂π˝∞¯∞›∑¬ 30 ¡ı∞°" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S(2561, "πÊæÓ∑¬ «‚ªÛ¡¶(º“) : 5∫–∞£ π∞∏ÆπÊæÓ∑¬ 55 ªÛΩ¬" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S(2562, "∞¯∞›∑¬ «‚ªÛ¡¶(¥Î) : 5∫–∞£ π∞∏Æ∞¯∞›∑¬ 100,∏∂π˝∞¯∞›∑¬ 80 ¡ı∞°" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = _S(2563, "πÊæÓ∑¬ «‚ªÛ¡¶(¥Î) : 5∫–∞£ π∞∏ÆπÊæÓ∑¬ 95 ªÛΩ¬" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage, -1, 0x6BD2FFFF );
+					strMessage = " ";
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage = _S(2564, "¿Ã∫•∆Æ ±‚∞£: 2006. 3. 30 ~ 2006. 4. 7" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2530, "ÏÇ¨Ïø†Îùº Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2531, "Î¥ÑÎßûÏù¥ ÏÇ¨Ïø†Îùº Ïù¥Î≤§Ìä∏Îäî ÏÇ¨Ïø†Îùº ÍΩÉ Ïù¥Î≤§Ìä∏ÏôÄ ÏùºÎ≥∏ Ï†ÑÌÜµÏùòÏÉÅ ÏßÄÍ∏â Ïù¥Î≤§Ìä∏Í∞Ä ÎèôÏãúÏóê ÏßÑÌñâÎê©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2532, "ÏÇ¨Ïø†Îùº ÍΩÉ Ïù¥Î≤§Ìä∏: Î™¨Ïä§ÌÑ∞ ÏÇ¨ÎÉ•Ïãú ÏùºÏ†ïÌôïÎ•†Î°ú Í≥µÍ≤©Î†•Í≥º Î∞©Ïñ¥Î†•ÏùÑ Ìñ•ÏÉÅÏãúÏºúÏ£ºÎäî ÏûëÏùÄ Î∂ÑÌôç Î≤öÍΩÉ, ÏûëÏùÄ Ìù∞ Î≤öÍΩÉ, Î∂ÑÌôç Î≤öÍΩÉ, Ìù∞ Î≤öÍΩÉÏù¥ ÎìúÎ°≠Îê©ÎãàÎã§." ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2533, "ÏùºÎ≥∏ Ï†ÑÌÜµÏùòÏÉÅ ÏßÄÍ∏â Ïù¥Î≤§Ìä∏: ÏÇ¨ÎÉ•ÏùÑ ÌÜµÌïòÏó¨ Î≤öÍΩÉ Î¥âÏö∞Î¶¨Î•º Î™®ÏïÑÏÑú Ï•¨ÎÖ∏ÎßàÏùÑÏùò Î°úÎ†àÏù∏ÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÎ©¥ ÏùºÎ≥∏ Ï†ÑÌÜµÏùòÏÉÅÏúºÎ°ú ÍµêÌôò ÌïòÏã§Ïàò ÏûàÏäµÎãàÎã§." ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2534, "Îã®, Ï∫êÎ¶≠ÌÑ∞Ïùò Î†àÎ≤®Ïù¥ÏÉÅÏùò Î™¨Ïä§ÌÑ∞ÏóêÍ≤åÏÑúÎßå ÏïÑÏù¥ÌÖúÏù¥ ÎìúÎ°≠Îê©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2535, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2006ÎÖÑ 3Ïõî 23Ïùº ~ 2006ÎÖÑ 4Ïõî 6Ïùº" ) );
+					strMessage = _S( 191, "»Æ¿Œ" );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+				}
+				else if( iEventIndex == TEVENT_SAKURA ) // ¿œ∫ª ªÁƒÌ∂Û ¿Ã∫•∆Æ
+				{
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2530, "ªÁƒÌ∂Û ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2531, "∫Ω∏¬¿Ã ªÁƒÌ∂Û ¿Ã∫•∆Æ¥¬ ªÁƒÌ∂Û ≤… ¿Ã∫•∆ÆøÕ ¿œ∫ª ¿¸≈Î¿«ªÛ ¡ˆ±ﬁ ¿Ã∫•∆Æ∞° µøΩ√ø° ¡¯«‡µÀ¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2532, "ªÁƒÌ∂Û ≤… ¿Ã∫•∆Æ: ∏ÛΩ∫≈Õ ªÁ≥…Ω√ ¿œ¡§»Æ∑¸∑Œ ∞¯∞›∑¬∞˙ πÊæÓ∑¬¿ª «‚ªÛΩ√ƒ—¡÷¥¬ ¿€¿∫ ∫–»´ ∫¢≤…, ¿€¿∫ »Ú ∫¢≤…, ∫–»´ ∫¢≤…, »Ú ∫¢≤…¿Ã µÂ∑”µÀ¥œ¥Ÿ." ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2533, "¿œ∫ª ¿¸≈Î¿«ªÛ ¡ˆ±ﬁ ¿Ã∫•∆Æ: ªÁ≥…¿ª ≈Î«œø© ∫¢≤… ∫¿øÏ∏Æ∏¶ ∏æ∆º≠ ¡Í≥Î∏∂¿ª¿« ∑Œ∑π¿Œø°∞‘ ∞°¡Æ∞°∏È ¿œ∫ª ¿¸≈Î¿«ªÛ¿∏∑Œ ±≥»Ø «œΩ«ºˆ ¿÷Ω¿¥œ¥Ÿ." ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2534, "¥‹, ƒ≥∏Ø≈Õ¿« ∑π∫ß¿ÃªÛ¿« ∏ÛΩ∫≈Õø°∞‘º≠∏∏ æ∆¿Ã≈€¿Ã µÂ∑”µÀ¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2535, "¿Ã∫•∆Æ ±‚∞£: 2006≥‚ 3ø˘ 23¿œ ~ 2006≥‚ 4ø˘ 6¿œ" ) );
 
 					CTString strMessage;				
-					strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
-				else if( iEventIndex == 18 ) // O.X Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_OX_QUIZ ) // O.X ¿Ã∫•∆Æ
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2603,"O.X ÌÄ¥Ï¶à Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S(2604, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà ÎùºÏä§Ìä∏ Ïπ¥Ïò§Ïä§Í¥ÄÎ†® Í≤åÏûÑ ÏÉÅÏãùÍ≥º ÏùºÎ∞ò ÏÉÅÏãùÏùÑ Î™®Îëê Ï≤¥ÌÅ¨Ìï† Ïàò ÏûàÎäî Í∏∞ÌöåÎ°ú O.X Ïù¥Î≤§Ìä∏Î•º ÏßÑÌñâÌï©ÎãàÎã§."));
-					 _pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S(2605, "ÎòêÌïú, Î¨∏Ï†úÎ•º ÎßéÏù¥ ÎßûÏ∂ú ÏàòÎ°ù Îã§ÏñëÌïú Î≥¥ÏÉÅÌíàÏù¥ ÏßÄÍ∏âÎê©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S(2606, "ÏßÑÌñâ Î∞©Ïãù : Ïù¥Î≤§Ìä∏ Ï°¥ÏóêÏÑú ÏùºÏ†ïÍ∞úÏàòÏùò Î¨∏Ï†úÎ•º ÎßûÏ∂îÎ©¥ Ï°¥ÏïàÏóê ÏÉùÏ°¥Ìï¥ Î≥¥ÏÉÅÌíàÏùÑ Î∞õÏùÑ Ïàò ÏûàÏßÄÎßå, ÌãÄÎ¶¥ Í≤ΩÏö∞ Ï•¨ÎÖ∏ÏßÄÏó≠ ÎûÄÎèå ÎßàÏùÑÎ°ú Ï∂îÎ∞©ÏùÑ ÎãπÌï©ÎãàÎã§." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2603,"O.X ƒ˚¡Ó ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S(2604, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∂ÛΩ∫∆Æ ƒ´ø¿Ω∫∞¸∑√ ∞‘¿” ªÛΩƒ∞˙ ¿œπ› ªÛΩƒ¿ª ∏µŒ √º≈©«“ ºˆ ¿÷¥¬ ±‚»∏∑Œ O.X ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ."));
+					 pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S(2605, "∂««—, πÆ¡¶∏¶ ∏π¿Ã ∏¬√‚ ºˆ∑œ ¥ŸæÁ«— ∫∏ªÛ«∞¿Ã ¡ˆ±ﬁµÀ¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S(2606, "¡¯«‡ πÊΩƒ : ¿Ã∫•∆Æ ¡∏ø°º≠ ¿œ¡§∞≥ºˆ¿« πÆ¡¶∏¶ ∏¬√ﬂ∏È ¡∏æ»ø° ª˝¡∏«ÿ ∫∏ªÛ«∞¿ª πﬁ¿ª ºˆ ¿÷¡ˆ∏∏, ∆≤∏± ∞ÊøÏ ¡Í≥Î¡ˆø™ ∂ıµπ ∏∂¿ª∑Œ √ﬂπÊ¿ª ¥Á«’¥œ¥Ÿ." ) );
 
-					if( g_uiEngineVersion < 10000 )	// Î≥∏ÏÑ≠Ïùº Í≤ΩÏö∞
+					if( g_uiEngineVersion < 10000 )	// ∫ªº∑¿œ ∞ÊøÏ
 					{
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-							_S(2607, "Ïù¥Î≤§Ìä∏Îäî Í∞Å ÏÑúÎ≤ÑÍµ∞Ïùò 2Ï±ÑÎÑêÏóêÏÑúÎßå ÏßÑÌñâ Îê©ÎãàÎã§." ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+							_S(2607, "¿Ã∫•∆Æ¥¬ ∞¢ º≠πˆ±∫¿« 2√§≥Œø°º≠∏∏ ¡¯«‡ µÀ¥œ¥Ÿ." ) );
 						
-						_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+						pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
 						
 						if( _pNetwork->m_iServerGroup < 4 )
 						{
-							_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-								_S(2608, "Í∏∞Í∞Ñ: 2006ÎÖÑ 4Ïõî 18Ïùº ~ 2006ÎÖÑ 4Ïõî 24Ïùº(Ïò§ÌõÑ 8Ïãú)" ), -1, 0x6BD2FFFF );
+							pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+								_S(2608, "±‚∞£: 2006≥‚ 4ø˘ 18¿œ ~ 2006≥‚ 4ø˘ 24¿œ(ø¿»ƒ 8Ω√)" ), -1, 0x6BD2FFFF );
 						}
 						else
 						{
-							_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-								_S(2609, "Í∏∞Í∞Ñ: 2006ÎÖÑ 4Ïõî 20Ïùº ~ 2006ÎÖÑ 4Ïõî 24Ïùº(Ïò§ÌõÑ 8Ïãú)" ), -1, 0x6BD2FFFF );
+							pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+								_S(2609, "±‚∞£: 2006≥‚ 4ø˘ 20¿œ ~ 2006≥‚ 4ø˘ 24¿œ(ø¿»ƒ 8Ω√)" ), -1, 0x6BD2FFFF );
 						}
 					}
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(2610, "Î≥¥ÏÉÅ: 10Î¨∏Ï†ú: Î∂ÄÏä§ÌÑ∞ 10Í∞ú" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(2611, "      15Î¨∏Ï†ú: Î¨∏Ïä§ÌÜ§ 10Í∞ú" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(2612, "      18Î¨∏Ï†ú: Í≥†Í∏âÏ†úÎ†®ÏÑù 5Í∞ú" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(2613, "      20Î¨∏Ï†ú: Í≥†Í∏âÏ†úÎ†®ÏÑù 10Í∞ú" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(2610, "∫∏ªÛ: 10πÆ¡¶: ∫ŒΩ∫≈Õ 10∞≥" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(2611, "      15πÆ¡¶: πÆΩ∫≈Ê 10∞≥" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(2612, "      18πÆ¡¶: ∞Ì±ﬁ¡¶∑√ºÆ 5∞≥" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(2613, "      20πÆ¡¶: ∞Ì±ﬁ¡¶∑√ºÆ 10∞≥" ) );
 
 					CTString strMessage;				
-					strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
 				
 				// ---------- WORLDCUP EVENT wooss 060530 --------------------------------------------------->>
-				else if( iEventIndex == 19 ) // ÏõîÎìúÏªµ Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_WORLDCUP ) // ø˘µÂƒ≈ ¿Ã∫•∆Æ
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2771, "Ï∂ïÍµ¨ Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2772, "Ï∂ïÍµ¨ ÎåÄÌöå Í∏∞Í∞Ñ ÎèôÏïà Îëê Í∞ÄÏßÄ Ïù¥Î≤§Ìä∏Í∞Ä ÏßÑÌñâÎê©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2773, "1. Ïö∞ÏäπÏªµÏùÑ Î™®ÏïÑÎùº" ), -1, 0xFF44AAFF );
-					strMsg = _S( 2774, "Ï∂ïÍµ¨ ÎåÄÌöå Í∏∞Í∞ÑÎèôÏïà Î™¨Ïä§ÌÑ∞ÏóêÍ≤å ÎìúÎ°≠ÎêòÎäî FIFAÏªµÏùÑ Î™®ÏïÑ ÏõîÎìúÏªµ Ïö∞ÏäπÏù¥ ÏòàÏÉÅÎêòÎäî Ï∞∏Í∞ÄÍµ≠Ïùò Íµ≠Í∏∞ÏôÄ ÍµêÌôòÌïòÍ≥†" );
-					strMsg+= _S( 2775, "ÍµêÌôòÎêú Íµ≠Í∞ÄÏùò ÎåÄÌöå ÏàúÏúÑÏóê Îî∞Îùº Î≥¥ÏÉÅÏùÑ Î∞õÎäî Ïù¥Î≤§Ìä∏ ÏûÖÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMsg , -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2776, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ" ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2777, "‚ë† Ïö∞ÏäπÏªµ ÎìúÎ°≠&Íµ≠Í∏∞ ÍµêÌôò : 2006.06.09(Ìôî) ~ 06.30(Í∏à) Ï†êÍ≤Ä Ï†ÑÍπåÏßÄ" ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2778, "‚ë° Í≤∞Í≥º Î≥¥ÏÉÅ : 2006.07.10 Ïù¥ÌõÑ" ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2779, "2. Í≥®Îì†Î≥º Ïù¥Î≤§Ìä∏" ) ,-1,0xFF44AAFF);
-					strMsg = _S( 2780, "ÌäπÏ†ï Í≤ΩÍ∏∞Ïùò Í≤∞Í≥ºÎ•º ÏòàÏÉÅÌï¥ÏÑú ÏùëÎ™®ÌïòÎäî Ïù¥Î≤§Ìä∏Î°ú Ïù¥Î≤§Ìä∏Í∞Ä ÏãúÏûëÎêòÎ©¥ Î™¨Ïä§ÌÑ∞ÏóêÍ≤åÏÑú ÎìúÎ°≠ÎêòÎäî Í≥®Îì†Î≥ºÏùÑ 10Í∞ú Î™®ÏïÑ" ) ;
-					strMsg += _S( 2781, "ÏäπÎ¶¨Íµ≠Í≥º Ï†êÏàòÎ•º ÏùëÎ™®ÌïòÍ≥† Í≥®Îì†Î≥º Ïπ¥ÎìúÎ•º Î∞õÏäµÎãàÎã§. Í≤ΩÍ∏∞Í∞Ä Ï¢ÖÎ£åÎêú ÌõÑ Í≤∞Í≥ºÍ∞Ä ÎßûÏúºÎ©¥ Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§." ) ;
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMsg , -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-						_S( 2782, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ : 2006.06.09 ~ 07.10" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2771, "√‡±∏ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2772, "√‡±∏ ¥Î»∏ ±‚∞£ µøæ» µŒ ∞°¡ˆ ¿Ã∫•∆Æ∞° ¡¯«‡µÀ¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2773, "1. øÏΩ¬ƒ≈¿ª ∏æ∆∂Û" ), -1, 0xFF44AAFF );
+					strMsg = _S( 2774, "√‡±∏ ¥Î»∏ ±‚∞£µøæ» ∏ÛΩ∫≈Õø°∞‘ µÂ∑”µ«¥¬ FIFAƒ≈¿ª ∏æ∆ ø˘µÂƒ≈ øÏΩ¬¿Ã øπªÛµ«¥¬ ¬¸∞°±π¿« ±π±‚øÕ ±≥»Ø«œ∞Ì" );
+					strMsg+= _S( 2775, "±≥»Øµ» ±π∞°¿« ¥Î»∏ º¯¿ßø° µ˚∂Û ∫∏ªÛ¿ª πﬁ¥¬ ¿Ã∫•∆Æ ¿‘¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMsg , -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2776, "¿Ã∫•∆Æ ±‚∞£" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2777, "®Á øÏΩ¬ƒ≈ µÂ∑”&±π±‚ ±≥»Ø : 2006.06.09(»≠) ~ 06.30(±›) ¡°∞À ¿¸±Ó¡ˆ" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2778, "®Ë ∞·∞˙ ∫∏ªÛ : 2006.07.10 ¿Ã»ƒ" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2779, "2. ∞ÒµÁ∫º ¿Ã∫•∆Æ" ) ,-1,0xFF44AAFF);
+					strMsg = _S( 2780, "∆Ø¡§ ∞Ê±‚¿« ∞·∞˙∏¶ øπªÛ«ÿº≠ ¿¿∏«œ¥¬ ¿Ã∫•∆Æ∑Œ ¿Ã∫•∆Æ∞° Ω√¿€µ«∏È ∏ÛΩ∫≈Õø°∞‘º≠ µÂ∑”µ«¥¬ ∞ÒµÁ∫º¿ª 10∞≥ ∏æ∆" ) ;
+					strMsg += _S( 2781, "Ω¬∏Æ±π∞˙ ¡°ºˆ∏¶ ¿¿∏«œ∞Ì ∞ÒµÁ∫º ƒ´µÂ∏¶ πﬁΩ¿¥œ¥Ÿ. ∞Ê±‚∞° ¡æ∑·µ» »ƒ ∞·∞˙∞° ∏¬¿∏∏È ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ) ;
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMsg , -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+						_S( 2782, "¿Ã∫•∆Æ ±‚∞£ : 2006.06.09 ~ 07.10" ), -1, 0x6BD2FFFF );
 
 					CTString strMessage;				
-					strMessage.PrintF( _S( 191, "ÌôïÏù∏" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
+					strMessage.PrintF( _S( 191, "»Æ¿Œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, strMessage );
 				}
 				// ---------- WORLDCUP EVENT wooss 060530 ---------------------------------------------------<<
-				else if( iEventIndex == 100 ) // Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏ ( ÎÑ§Ìä∏ÏõåÌÅ¨ÏóêÏÑú Ïù∏Îç±Ïä§Î•º Î∞õÏßÄÎäî ÏïäÎäîÎã§. )
+				else if( iEventIndex == 100 ) // ∞ÒµÁ ∫º ¿Ã∫•∆Æ ( ≥◊∆Æøˆ≈©ø°º≠ ¿Œµ¶Ω∫∏¶ πﬁ¡ˆ¥¬ æ ¥¬¥Ÿ. )
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2783, "Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );
-					strMsg = _S( 2784, "Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏ ÏùëÎ™®Í∞Ä ÏãúÏûë ÎêòÏóàÏäµÎãàÎã§. ÌåÄÍ∞ÄÏù¥Ïä§Ìä∏ Ï∂ïÍµ¨Í≥µ 10Í∞úÎ•º ÏàòÏßëÌïòÏó¨ Ï•¨ÎÖ∏Ïùò ÎûÄÎèåÎßàÏùÑ ÎûúÎîîÏóêÍ≤å Ï∞æÏïÑÍ∞Ä" );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2783, "∞ÒµÁ ∫º ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					strMsg = _S( 2784, "∞ÒµÁ ∫º ¿Ã∫•∆Æ ¿¿∏∞° Ω√¿€ µ«æ˙Ω¿¥œ¥Ÿ. ∆¿∞°¿ÃΩ∫∆Æ √‡±∏∞¯ 10∞≥∏¶ ºˆ¡˝«œø© ¡Í≥Î¿« ∂ıµπ∏∂¿ª ∑£µø°∞‘ √£æ∆∞°" );
 					
 					CTString strMessage;
-					strMessage.PrintF( _S( 2785, " %s VS %s Ï∂ïÍµ¨Í≤ΩÍ∏∞Ïùò Í≤∞Í≥ºÎ•º ÎßûÏ∂∞ Î≥¥ÏãúÍ∏∞ Î∞îÎûçÎãàÎã§." ),
-						_pUIMgr->GetQuest()->GetStrTeamA(), _pUIMgr->GetQuest()->GetStrTeamB() );
+					strMessage.PrintF( _S( 2785, " %s VS %s √‡±∏∞Ê±‚¿« ∞·∞˙∏¶ ∏¬√Á ∫∏Ω√±‚ πŸ∂¯¥œ¥Ÿ." ),
+						pUIManager->GetQuest()->GetStrTeamA(), pUIManager->GetQuest()->GetStrTeamB() );
 
 					strMsg += strMessage;
-					strMsg += _S( 2786, "Ïù¥Î≤§Ìä∏ Ï¢ÖÎ£å ÌõÑ Í≤ΩÍ∏∞ Í≤∞Í≥ºÏóê Îî∞Îùº ÏïÑÏù¥ÌÖúÍ≥º ÎÇòÏä§Î•º ÏßÄÍ∏âÌï©ÎãàÎã§." );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMsg );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2787, "Í≥®Îì†Î≥º ÏùëÎ™® Í∞ÄÎä• ÏãúÍ∞Ñ" ), -1, 0x6BD2FFFF );
+					strMsg += _S( 2786, "¿Ã∫•∆Æ ¡æ∑· »ƒ ∞Ê±‚ ∞·∞˙ø° µ˚∂Û æ∆¿Ã≈€∞˙ ≥™Ω∫∏¶ ¡ˆ±ﬁ«’¥œ¥Ÿ." );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMsg );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2787, "∞ÒµÁ∫º ¿¿∏ ∞°¥… Ω√∞£" ), -1, 0x6BD2FFFF );
 					
-					SYSTEMTIME GoldenTime = _pUIMgr->GetQuest()->GetGoldenTime();
-					strMessage.PrintF( _S( 2788, "%dÎÖÑ %dÏõî %dÏùº %dÏãú %dÎ∂Ñ ÍπåÏßÄ" ), 
+					SYSTEMTIME GoldenTime = pUIManager->GetQuest()->GetGoldenTime();
+					strMessage.PrintF( _S( 2788, "%d≥‚ %dø˘ %d¿œ %dΩ√ %d∫– ±Ó¡ˆ" ), 
 						GoldenTime.wYear, GoldenTime.wMonth, GoldenTime.wDay, GoldenTime.wHour, GoldenTime.wMinute );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
-				else if( iEventIndex == 101 )// Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏ Î≥¥ÏÉÅ( ÎÑ§Ìä∏ÏõåÌÅ¨ÏóêÏÑú Ïù∏Îç±Ïä§Î•º Î∞õÏßÄÎäî ÏïäÎäîÎã§. )
+				else if( iEventIndex == 101 )// ∞ÒµÁ ∫º ¿Ã∫•∆Æ ∫∏ªÛ( ≥◊∆Æøˆ≈©ø°º≠ ¿Œµ¶Ω∫∏¶ πﬁ¡ˆ¥¬ æ ¥¬¥Ÿ. )
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2789, "Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏ Î≥¥ÏÉÅ" ), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2789, "∞ÒµÁ ∫º ¿Ã∫•∆Æ ∫∏ªÛ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2790, "Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏ Î≥¥ÏÉÅÏù¥ ÏãúÏûë ÎêòÏóàÏäµÎãàÎã§." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2790, "∞ÒµÁ ∫º ¿Ã∫•∆Æ ∫∏ªÛ¿Ã Ω√¿€ µ«æ˙Ω¿¥œ¥Ÿ." ) );
 
 					CTString strMessage;
-					strMessage.PrintF( _S( 2791, "%s VS %s Ï∂ïÍµ¨Í≤ΩÍ∏∞Ïùò Í≤∞Í≥ºÎäî %d : %d ÏûÖÎãàÎã§." ),
-						_pUIMgr->GetQuest()->GetStrTeamA(), _pUIMgr->GetQuest()->GetStrTeamB(),
-						_pUIMgr->GetQuest()->GetScoreTeamA(), _pUIMgr->GetQuest()->GetScoreTeamB() );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					strMessage.PrintF( _S( 2791, "%s VS %s √‡±∏∞Ê±‚¿« ∞·∞˙¥¬ %d : %d ¿‘¥œ¥Ÿ." ),
+						pUIManager->GetQuest()->GetStrTeamA(), pUIManager->GetQuest()->GetStrTeamB(),
+						pUIManager->GetQuest()->GetScoreTeamA(), pUIManager->GetQuest()->GetScoreTeamB() );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2792, "Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏Ïóê ÏùëÎ™® ÌïòÏã† Î∂ÑÏùÄ Ï•¨ÎÖ∏ ÎûÄÎèå ÎßàÏùÑÏùò ÎûúÎîîÎ•º Ï∞æÏïÑÍ∞ÄÏÑú Ïù¥Î≤§Ìä∏Ïóê ÎåÄÌïú Î≥¥ÏÉÅÏùÑ Î∞õÏúºÏãúÍ∏∞ Î∞îÎûçÎãàÎã§." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2792, "∞ÒµÁ ∫º ¿Ã∫•∆Æø° ¿¿∏ «œΩ≈ ∫–¿∫ ¡Í≥Î ∂ıµπ ∏∂¿ª¿« ∑£µ∏¶ √£æ∆∞°º≠ ¿Ã∫•∆Æø° ¥Î«— ∫∏ªÛ¿ª πﬁ¿∏Ω√±‚ πŸ∂¯¥œ¥Ÿ." ) );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2793, "Í≥®Îì†Î≥º Î≥¥ÏÉÅ ÏãúÍ∞Ñ" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2793, "∞ÒµÁ∫º ∫∏ªÛ Ω√∞£" ), -1, 0x6BD2FFFF );
 					
-					SYSTEMTIME GoldenTime = _pUIMgr->GetQuest()->GetGoldenTime();
-					strMessage.PrintF( _S( 2788, "%dÎÖÑ %dÏõî %dÏùº %dÏãú %dÎ∂Ñ ÍπåÏßÄ" ), 
+					SYSTEMTIME GoldenTime = pUIManager->GetQuest()->GetGoldenTime();
+					strMessage.PrintF( _S( 2788, "%d≥‚ %dø˘ %d¿œ %dΩ√ %d∫– ±Ó¡ˆ" ), 
 						GoldenTime.wYear, GoldenTime.wMonth, GoldenTime.wDay, GoldenTime.wHour, GoldenTime.wMinute );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, strMessage );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
-				else if( iEventIndex == TEVENT_RAIN ) // ÎπóÎ∞©Ïö∏ Ïù¥Î≤§Ìä∏  -> Ïñ¥Î®∏ÎãàÎÇ† Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_RAIN ) // ∫¯πÊøÔ ¿Ã∫•∆Æ  -> æÓ∏”¥œ≥Ø ¿Ã∫•∆Æ
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2753, "Ïñ¥Î®∏ÎãàÎÇ† Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2753, "æÓ∏”¥œ≥Ø ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2892, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ ÏùºÏ†ïÌôïÎ•†Î°ú ÎπóÎ∞©Ïö∏, ÎπóÎ¨ºÎ≥ë 2Ï¢ÖÎ•òÏùò ÏïÑÏù¥ÌÖúÏùÑ ÎìúÎ°≠ Ìï©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2893, "Ïù¥Í≤ÉÏùÑ Ï•¨ÎÖ∏ÏßÄÏó≠Ïùò ÎûúÎîîÏóêÍ≤å Í∞ÄÏßÄÍ≥† Í∞ÄÎ©¥, ÎπóÎ∞©Ïö∏ 10Í∞ú ÎòêÎäî ÎπóÎ¨ºÎ≥ë 2Í∞úÎ•º 1ÌöåÏóê ÌïúÌï¥ Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§. (Î∞òÎ≥µÏàòÌñâÍ∞ÄÎä•)" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
-									_S( 2894, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ : 2006ÎÖÑ 8Ïõî 9Ïùº ~ 2006ÎÖÑ 8Ïõî 30Ïùº" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2892, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È ¿œ¡§»Æ∑¸∑Œ ¿Ω∫πŒ≤…, ¿Ω∫πŒ≤… ∫Í∑Œƒ° 2¡æ∑˘¿« æ∆¿Ã≈€¿ª µÂ∑” «’¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2893, "¿Ã∞Õ¿ª ¡Í≥Î¡ˆø™¿« ∑£µø°∞‘ ∞°¡ˆ∞Ì ∞°∏È, ¿Ω∫πŒ≤… 10∞≥ ∂«¥¬ ¿Ω∫πŒ≤… ∫Í∑Œƒ° 2∞≥∏¶ 1»∏ø° «—«ÿ ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ.(π›∫πºˆ«‡∞°¥…)" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,
+									_S( 2894, "¿Ã∫•∆Æ ±‚∞£ : 2006≥‚ 8ø˘ 9¿œ ~ 2006≥‚ 8ø˘ 30¿œ" ), -1, 0x6BD2FFFF );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
-				else if( iEventIndex == TEVENT_BUDDHIST ) // Î∂àÍµê Ï¥õÎ∂à Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_BUDDHIST ) // ∫“±≥ √–∫“ ¿Ã∫•∆Æ
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2913, "Î∂àÍµê Ï¥õÎ∂à Ï∂ïÏ†ú Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2914, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™®Îì† Î™¨Ïä§ÌÑ∞Îì§Î°ú Î∂ÄÌÑ∞ Í∞ÅÏ¢Ö ÏÉâÍπî(Ï†Å, ÎÖπ, Ìô©, ÎÇ®ÏÉâ)Ïùò Î™®ÎûòÍ∞Ä Îã¥Í∏¥ Î¥âÌà¨ ÏïÑÏù¥ÌÖúÏù¥ ÎìúÎ°≠Îê©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2915, "Î™®ÎûòÎ¥âÌà¨Î•º Î™®ÏïÑ ÎûúÎîîÎ•º Ï∞æÏïÑÍ∞ÄÎ©¥ Î≥¥ÏÉÅÏïÑÏù¥ÌÖúÏúºÎ°ú ÍµêÌôòÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2916, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2006ÎÖÑ 7Ïõî 11Ïùº ~ 7Ïõî 26Ïùº" ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2917, "ÏûêÏÑ∏Ìïú ÎÇ¥Ïö©ÏùÄ ÏõπÏÇ¨Ïù¥Ìä∏Î•º Ï∞∏Í≥†ÌïòÏÑ∏Ïöî." ) );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2913, "∫“±≥ √–∫“ √‡¡¶ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2914, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏µÁ ∏ÛΩ∫≈ÕµÈ∑Œ ∫Œ≈Õ ∞¢¡æ ªˆ±Ú(¿˚, ≥Ï, »≤, ≥≤ªˆ)¿« ∏∑°∞° ¥„±‰ ∫¿≈ı æ∆¿Ã≈€¿Ã µÂ∑”µÀ¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2915, "∏∑°∫¿≈ı∏¶ ∏æ∆ ∑£µ∏¶ √£æ∆∞°∏È ∫∏ªÛæ∆¿Ã≈€¿∏∑Œ ±≥»Ø¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " " ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2916, "¿Ã∫•∆Æ ±‚∞£: 2006≥‚ 7ø˘ 11¿œ ~ 7ø˘ 26¿œ" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2917, "¿⁄ºº«— ≥ªøÎ¿∫ ¿•ªÁ¿Ã∆Æ∏¶ ¬¸∞Ì«œººø‰." ) );
 
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}				
-				else if( iEventIndex == TEVENT_COLLECT_BUG )
-				{	// Ïó¨Î¶Ñ Ïù¥Î≤§Ìä∏ - Í≥§Ï∂© Ï±ÑÏßë
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2940, "Í≥§Ï∂© Ï±ÑÏßë Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2941, "Ïó¨Î¶ÑÏùÑ ÎßûÏïÑ Ïñ¥Î¶∞ ÏãúÏ†àÏùÑ ÌöåÏÉÅÌï¥ Î≥º Ïàò ÏûàÎäî Í≥§Ï∂©Ï±ÑÏßë Ïù¥Î≤§Ìä∏Î•º ÏßÑÌñâÌï©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2942, "Ïù¥Î≤§Ìä∏Í∏∞Í∞Ñ ÎèôÏïà Î°úÎ†àÏù∏ÏóêÍ≤å Í≥§Ï∂©Ï±ÑÏßëÏÉÅÏûêÎ•º Íµ¨ÏûÖÌïòÎ©¥ Î™¨Ïä§ÌÑ∞Í∞Ä ÎìúÎ°≠ÌïòÎäî Ïó¨Î¶Ñ Í≥§Ï∂©ÏùÑ Î™®ÏïÑÏÑú Ï±ÑÏßëÏÉÅÏûêÏóê ÏàòÏßëÌï† Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2943, "Ï±ÑÏßëÏÉÅÏûêÍ∞Ä Í∞ÄÎìù Ï∞®Î©¥ Î°úÎ†àÏù∏ÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÏÑú Ï±ÑÏßëÌïú Í≥§Ï∂©Ïóê Îî∞ÎùºÏÑú Îã§ÏñëÌïú Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2944, "Ï±ÑÏßëÏÉÅÏûêÎäî Î≥¥ÏÉÅ ÌõÑ ÏÇ¨ÎùºÏßÄÎÇò Ïû¨ Íµ¨ÏûÖÏù¥ Í∞ÄÎä•ÌïòÏó¨ Í≥ÑÏÜçÌï¥ÏÑú Ïù¥Î≤§Ìä∏Ïóê Ï∞∏Í∞ÄÌï† Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2945, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ:2006ÎÖÑ 7Ïõî 20Ïùº ~ 8Ïõî 31Ïùº" ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+				else if( iEventIndex == A_EVENT_COLLECT_BUG )
+				{	// ø©∏ß ¿Ã∫•∆Æ - ∞Ô√Ê √§¡˝
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2940, "∞Ô√Ê √§¡˝ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2941, "ø©∏ß¿ª ∏¬æ∆ æÓ∏∞ Ω√¿˝¿ª »∏ªÛ«ÿ ∫º ºˆ ¿÷¥¬ ∞Ô√Ê√§¡˝ ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2942, "¿Ã∫•∆Æ±‚∞£ µøæ» ∑Œ∑π¿Œø°∞‘ ∞Ô√Ê√§¡˝ªÛ¿⁄∏¶ ±∏¿‘«œ∏È ∏ÛΩ∫≈Õ∞° µÂ∑”«œ¥¬ ø©∏ß ∞Ô√Ê¿ª ∏æ∆º≠ √§¡˝ªÛ¿⁄ø° ºˆ¡˝«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2943, "√§¡˝ªÛ¿⁄∞° ∞°µÊ ¬˜∏È ∑Œ∑π¿Œø°∞‘ ∞°¡Æ∞°º≠ √§¡˝«— ∞Ô√Êø° µ˚∂Ûº≠ ¥ŸæÁ«— ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2944, "√§¡˝ªÛ¿⁄¥¬ ∫∏ªÛ »ƒ ªÁ∂Û¡ˆ≥™ ¿Á ±∏¿‘¿Ã ∞°¥…«œø© ∞Ëº”«ÿº≠ ¿Ã∫•∆Æø° ¬¸∞°«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 2945, "¿Ã∫•∆Æ ±‚∞£:2012≥‚ 7ø˘ 20¿œ ~ 8ø˘ 31¿œ" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
-				else if( iEventIndex == 23 )
-				{	// Ïã†ÏÑ≠ Î∞îÏä§ÌÉÄÎìú Ïò§Ìîà Ïù¥Î≤§Ìä∏ : Ïã†ÏÑ≠
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "ÏóÖÎç∞Ïù¥Ìä∏Î∞è ÏÑúÎ≤Ñ Ïò§Ìîà Í∏∞ÎÖê Ïù¥Î≤§Ìä∏") , -1, 0xE18600FF );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ïù¥Î≤§Ìä∏1. Ï∂ïÎ≥µÏùò Î¨ºÎ≥ëÏùÑ Î™®ÏïÑÎùº"),-1,0xF9E061FF  );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà ÏûêÏã†Ïùò Î†àÎ≤®Ïóê ÎßûÎäî Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ Ï∂ïÎ≥µÏùò Î¨ºÎ≥ëÏù¥ ÎìúÎ°≠Îê©ÎãàÎã§." ) );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ï∂ïÎ≥µÏùò Î¨ºÎ≥ë Ìö®Í≥º : Î≥µÏö©ÌïòÎ©¥ 20Î∂ÑÍ∞Ñ Î™¨Ïä§ÌÑ∞Ïùò Í≤ΩÌóòÏπò 20%Î•º Ï∂îÍ∞Ä ÌöçÎìùÌï®." ) );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ïù¥Î≤§Ìä∏2. 100Îßå ÎÇòÏä§Î•¥ Ïû°ÏïÑÎùº!"),-1, 0xF9E061FF  );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà 35Î†àÎ≤®Ïóê ÎèÑÎã¨Ìïú Î™®Îì† Ï∫êÎ¶≠ÌÑ∞ÏóêÍ≤å 100Îßå ÎÇòÏä§Î•º ÏßÄÍ∏âÌï©ÎãàÎã§." ) );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ:2006ÎÖÑ 7Ïõî 21Ïùº ~ 8Ïõî 4Ïùº" ), -1, 0x6BD2FFFF );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+				else if( iEventIndex == TEVENT_NEWSERVER_BASTARD )
+				{	// Ω≈º∑ πŸΩ∫≈∏µÂ ø¿«¬ ¿Ã∫•∆Æ : Ω≈º∑
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "æ˜µ•¿Ã∆Æπ◊ º≠πˆ ø¿«¬ ±‚≥‰ ¿Ã∫•∆Æ") , -1, 0xE18600FF );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "¿Ã∫•∆Æ1. √‡∫π¿« π∞∫¥¿ª ∏æ∆∂Û"),-1,0xF9E061FF  );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "¿Ã∫•∆Æ ±‚∞£ µøæ» ¿⁄Ω≈¿« ∑π∫ßø° ∏¬¥¬ ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È √‡∫π¿« π∞∫¥¿Ã µÂ∑”µÀ¥œ¥Ÿ." ) );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "√‡∫π¿« π∞∫¥ »ø∞˙ : ∫πøÎ«œ∏È 20∫–∞£ ∏ÛΩ∫≈Õ¿« ∞Ê«Ëƒ° 20%∏¶ √ﬂ∞° »πµÊ«‘." ) );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "¿Ã∫•∆Æ2. 100∏∏ ≥™Ω∫∏£ ¿‚æ∆∂Û!"),-1, 0xF9E061FF  );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "¿Ã∫•∆Æ ±‚∞£µøæ» 35∑π∫ßø° µµ¥ﬁ«— ∏µÁ ƒ≥∏Ø≈Õø°∞‘ 100∏∏ ≥™Ω∫∏¶ ¡ˆ±ﬁ«’¥œ¥Ÿ." ) );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "¿Ã∫•∆Æ ±‚∞£:2006≥‚ 7ø˘ 21¿œ ~ 8ø˘ 4¿œ" ), -1, 0x6BD2FFFF );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
-				else if( iEventIndex == 24 )
-				{	// Ïã†ÏÑ≠ Î∞îÏä§ÌÉÄÎìú Ïò§Ìîà Ïù¥Î≤§Ìä∏ : Íµ¨ÏÑ≠
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "ÏÑúÎìú ÏûÑÌéôÌä∏ 'ÌòºÎèàÏùò ÏãúÎåÄ' ÏóÖÎç∞Ïù¥Ìä∏ Í∏∞ÎÖê Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà ÏûêÏã†Ïùò Î†àÎ≤®Ïóê ÎßûÎäî Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ Ï∂ïÎ≥µÏùò Î¨ºÎ≥ëÏù¥ ÎìúÎ°≠Îê©ÎãàÎã§." ) );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ï∂ïÎ≥µÏùò Î¨ºÎ≥ë Ìö®Í≥º : Î≥µÏö©ÌïòÎ©¥ 20Î∂ÑÍ∞Ñ Î™¨Ïä§ÌÑ∞Ïùò Í≤ΩÌóòÏπò 20%Î•º Ï∂îÍ∞Ä ÌöçÎìùÌï®." ) );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ:2006ÎÖÑ 7Ïõî 21Ïùº ~ 8Ïõî 4Ïùº" ), -1, 0x6BD2FFFF );//TRNS
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+				else if( iEventIndex == TEVENT_NEWSERVER_BASTARD_OLD )
+				{	// Ω≈º∑ πŸΩ∫≈∏µÂ ø¿«¬ ¿Ã∫•∆Æ : ±∏º∑
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "º≠µÂ ¿”∆Â∆Æ '»•µ∑¿« Ω√¥Î' æ˜µ•¿Ã∆Æ ±‚≥‰ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "¿Ã∫•∆Æ ±‚∞£ µøæ» ¿⁄Ω≈¿« ∑π∫ßø° ∏¬¥¬ ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È √‡∫π¿« π∞∫¥¿Ã µÂ∑”µÀ¥œ¥Ÿ." ) );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "√‡∫π¿« π∞∫¥ »ø∞˙ : ∫πøÎ«œ∏È 20∫–∞£ ∏ÛΩ∫≈Õ¿« ∞Ê«Ëƒ° 20%∏¶ √ﬂ∞° »πµÊ«‘." ) );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "¿Ã∫•∆Æ ±‚∞£:2006≥‚ 7ø˘ 21¿œ ~ 8ø˘ 4¿œ" ), -1, 0x6BD2FFFF );//TRNS
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
 				else if( iEventIndex == TEVENT_CHUSEOK_2006 )
-				{	// 2006 Ï∂îÏÑù Ïù¥Î≤§Ìä∏	:Su-won
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3114, "Ï∂îÏÑùÎßûÏù¥ ÏÜ°Ìé∏ ÎßåÎì§Í∏∞ Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3115, "ÎØºÏ°±Ïùò Î™ÖÏ†à Ï∂îÏÑùÏùÑ ÎßûÏù¥ÌïòÏó¨ ÏÜ°Ìé∏ÎßåÎì§Í∏∞ Ïù¥Î≤§Ìä∏Î•º ÏßÑÌñâÌï©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3116, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎÇ¥Ïóê Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ ÏÜ°Ìé∏Ïùò Ïû¨Î£åÏù∏ ÏåÄÍ∞ÄÎ£®, ÍøÄ, ÏÜîÏûéÏùÑ Î™®ÏùÑ Ïàò ÏûàÎäîÎç∞, ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3117, "Í∞Å 1Í∞úÏî© Î™®ÏïÑ Î°úÎ†àÏù∏ÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÎ©¥ ÏùºÏ†ïÌôïÎ•†Î°ú ÏÜ°Ìé∏ÏùÑ ÎßåÎì§Ïñ¥ Ï§çÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3118, "ÏÜ°Ìé∏ÏùÑ Î®πÏúºÎ©¥ 5Î∂ÑÍ∞Ñ Ïù¥ÎèôÏÜçÎèÑ, Í≥µÍ≤©ÏÜçÎèÑÍ∞Ä Ìñ•ÏÉÅÎêòÎ©∞, ÏÜ°Ìé∏ 10Í∞úÎ•º Î™®ÏïÑÏÑú Ïò§ÏÉâÏÜ°Ìé∏ÏùÑ ÎßåÎì§Ïñ¥" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3119, "ÎûúÎîîÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÎ©¥ ÎÇòÏä§ÏôÄ Í≥†Í∏âÏ†úÎ†®ÏÑùÎì±ÏúºÎ°ú Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3120, "ÏÜ°Ìé∏ÎßåÎì§Í∏∞ Ïù¥Î≤§Ìä∏Îäî Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà Î∞òÎ≥µÌï¥ÏÑú ÏàòÌñâÌï† Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3121, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ:2006ÎÖÑ 9Ïõî 26Ïùº ~ 10Ïõî 10Ïùº" ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+				{	// 2006 √ﬂºÆ ¿Ã∫•∆Æ	:Su-won
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3114, "√ﬂºÆ∏¬¿Ã º€∆Ì ∏∏µÈ±‚ ¿Ã∫•∆Æ"), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3115, "πŒ¡∑¿« ∏Ì¿˝ √ﬂºÆ¿ª ∏¬¿Ã«œø© º€∆Ì∏∏µÈ±‚ ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3116, "¿Ã∫•∆Æ ±‚∞£ ≥ªø° ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È º€∆Ì¿« ¿Á∑·¿Œ Ω“∞°∑Á, ≤‹, º÷¿Ÿ¿ª ∏¿ª ºˆ ¿÷¥¬µ•, ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3117, "∞¢ 1∞≥æø ∏æ∆ ∑Œ∑π¿Œø°∞‘ ∞°¡Æ∞°∏È ¿œ¡§»Æ∑¸∑Œ º€∆Ì¿ª ∏∏µÈæÓ ¡›¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3118, "º€∆Ì¿ª ∏‘¿∏∏È 5∫–∞£ ¿Ãµøº”µµ, ∞¯∞›º”µµ∞° «‚ªÛµ«∏Á, º€∆Ì 10∞≥∏¶ ∏æ∆º≠ ø¿ªˆº€∆Ì¿ª ∏∏µÈæÓ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3119, "∑£µø°∞‘ ∞°¡Æ∞°∏È ≥™Ω∫øÕ ∞Ì±ﬁ¡¶∑√ºÆµÓ¿∏∑Œ ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( " ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3120, "º€∆Ì∏∏µÈ±‚ ¿Ã∫•∆Æ¥¬ ¿Ã∫•∆Æ ±‚∞£µøæ» π›∫π«ÿº≠ ºˆ«‡«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3121, "¿Ã∫•∆Æ ±‚∞£:2006≥‚ 9ø˘ 26¿œ ~ 10ø˘ 10¿œ" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
 				else if( iEventIndex == TEVENT_HALLOWEEN )
 				{
-					// ÎπºÎπºÎ°ú Îç∞Ïù¥ Ïù¥Î≤§Ìä∏( == ÌåêÎèÑÎùº ÏÉÅÏûê )
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3154, "ÌåêÎèÑÎùºÏùò ÏÉÅÏûê Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3155, "ÌåêÎèÑÎùºÏùò ÏÉÅÏûê Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà Ï•¨ÎÖ∏, ÎìúÎùºÌÉÑ, Î©îÎùºÌÅ¨ ÏßÄÏó≠Ïóê Í∞ÅÍ∞Å 15Í∞úÏî© ÌåêÎèÑÎùºÏùò ÏÉÅÏûêÍ∞Ä ÎÇòÌÉÄÎÇ©ÎãàÎã§. ÌåêÎèÑÎùºÏùò ÏÉÅÏûêÎ•º Ïò§Ìîà Ïãú ÏùºÏ†ï ÌôïÎ•†Î°ú ÎπºÎπºÎ°ú Ïù¥Î≤§Ìä∏ ÏïÑÏù¥ÌÖú ÌòπÏùÄ Í≥†Ï†úÍ∞Ä ÎìúÎ°≠ÎêòÍ±∞ÎÇò ÌåêÎèÑÎùºÏùò Ï†ÄÏ£ºÎ•º Î∞õÏùÄ Î™¨Ïä§ÌÑ∞Í∞Ä Ï∂úÌòÑÌïòÍ≤å Îê©ÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3156, "ÌåêÎèÑÎùºÏùò ÏÉÅÏûêÎäî ÏùºÏ†ïÏãúÍ∞Ñ Í≥µÍ≤©ÏùÑ Î∞õÏßÄ ÏïäÏùÑÍ≤ΩÏö∞ ÎûúÎç§ÏúºÎ°ú Îã§Î•∏ ÏúÑÏπòÎ°ú ÌÖîÎ†àÌè¨Ìä∏ Îê©ÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3157, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ:2006ÎÖÑ 11Ïõî 7Ïùº ~ 11Ïõî 14Ïùº" ), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					// ª©ª©∑Œ µ•¿Ã ¿Ã∫•∆Æ( == ∆«µµ∂Û ªÛ¿⁄ )
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3154, "ª©ª©∑Œµ•¿Ã ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3155, "ª©ª©∑Œµ•¿Ã ¿Ã∫•∆Æ ±‚∞£µøæ» ¡Í≥Î, µÂ∂Û≈∫, ∏ﬁ∂Û≈© ¡ˆø™ø° ∞¢∞¢ 15∞≥æø ∆«µµ∂Û¿« ªÛ¿⁄∞° ≥™≈∏≥≥¥œ¥Ÿ. ∆«µµ∂Û¿« ªÛ¿⁄∏¶ ø¿«¬ Ω√ ¿œ¡§ »Æ∑¸∑Œ ª©ª©∑Œ ¿Ã∫•∆Æ æ∆¿Ã≈€ »§¿∫ ∞Ì¡¶∞° µÂ∑”µ«∞≈≥™ ∆«µµ∂Û¿« ¿˙¡÷∏¶ πﬁ¿∫ ∏ÛΩ∫≈Õ∞° √‚«ˆ«œ∞‘ µÀ¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3156, "∆«µµ∂Û¿« ªÛ¿⁄¥¬ ¿œ¡§Ω√∞£ ∞¯∞›¿ª πﬁ¡ˆ æ ¿ª∞ÊøÏ ∑£¥˝¿∏∑Œ ¥Ÿ∏• ¿ßƒ°∑Œ ≈⁄∑π∆˜∆Æ µÀ¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3157, "¿Ã∫•∆Æ ±‚∞£:2006≥‚ 11ø˘ 7¿œ ~ 11ø˘ 14¿œ" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
 				else if( iEventIndex == TEVENT_XMAS_2006 )
 				{
 					// 2006 X-MAS Event [12/11/2006 Theodoric]
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3169, "ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  CTString(" "));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3170, "ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Ïù¥Î≤§Ìä∏ Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ Ïó¨Îü¨ Í∞ÄÏßÄ Ïú†Ïö©Ìïú ÏïÑÏù¥ÌÖúÏùÑ ÏñªÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3171, "ÏñªÏùÄ ÏïÑÏù¥ÌÖú Ï§ë ÏºÄÏù¥ÌÅ¨ ÏïÑÏù¥ÌÖúÏùÑ 3Í∞ú Î™®ÏïÑÏÑú ÎßàÏùÑÏóê ÏúÑÏπòÌïú ÎààÏÇ¨ÎûåÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÏãúÎ©¥ Î≥¥ÏÉÅÏúºÎ°ú ÎààÏÇ¨Îûå Ïù∏Ìòï ÏïÑÏù¥ÌÖúÏùÑ Î∞õÏúºÏã§ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3172, "Í∏∞ÏÅ®Ïù¥ Í∞ÄÎìùÌïú ÌÅ¨Î¶¨Ïä§ÎßàÏä§Î•º ÎùºÏä§Ìä∏ Ïπ¥Ïò§Ïä§ ÏôÄ Ìï®Íªò ÎçîÏö± Ï¶êÍ≤ÅÍ≤å Î≥¥ÎÇ¥ÏÑ∏Ïöî."));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  CTString(" "));
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(1680, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ"), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3173, "2006ÎÖÑ 11Ïõî 21Ïùº ~ 2007ÎÖÑ 1Ïõî 10Ïùº"), -1, 0x6BD2FFFF );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));									
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3169, "≈©∏ÆΩ∫∏∂Ω∫ ¿Ã∫•∆Æ"), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  CTString(" "));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3170, "≈©∏ÆΩ∫∏∂Ω∫ ¿Ã∫•∆Æ ±‚∞£ µøæ» ¿Ã∫•∆Æ ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È ø©∑Ø ∞°¡ˆ ¿ØøÎ«— æ∆¿Ã≈€¿ª æÚ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3171, "æÚ¿∫ æ∆¿Ã≈€ ¡ﬂ ƒ…¿Ã≈© æ∆¿Ã≈€¿ª 3∞≥ ∏æ∆º≠ ∏∂¿ªø° ¿ßƒ°«— ¥´ªÁ∂˜ø°∞‘ ∞°¡Æ∞°Ω√∏È ∫∏ªÛ¿∏∑Œ ¥´ªÁ∂˜ ¿Œ«¸ æ∆¿Ã≈€¿ª πﬁ¿∏Ω« ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3172, "±‚ª›¿Ã ∞°µÊ«— ≈©∏ÆΩ∫∏∂Ω∫∏¶ ∂ÛΩ∫∆Æ ƒ´ø¿Ω∫ øÕ «‘≤≤ ¥ıøÌ ¡Ò∞Ã∞‘ ∫∏≥ªººø‰."));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  CTString(" "));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(1680, "¿Ã∫•∆Æ ±‚∞£"), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE,  _S(3173, "2006≥‚ 11ø˘ 21¿œ ~ 2007≥‚ 1ø˘ 10¿œ"), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));									
 				}
 				else if( iEventIndex == CHILDREN_DAY_EVENT_INDEX )
 				{
-					//ÌÉúÍµ≠: Ïñ¥Î¶∞Ïù¥ÎÇ† Ïù¥Î≤§Ìä∏
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 3184, "Ïñ¥Î¶∞Ïù¥ÎÇ† Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3184, "Ïñ¥Î¶∞Ïù¥ÎÇ† Ïù¥Î≤§Ìä∏" ), -1, 0xE18600FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1945, "Ïù¥Î≤§Ìä∏Í∏∞Í∞Ñ ÎèôÏïà ÌõÑÍ≤¨Ïù∏Ïù¥ ÌõÑÍ≤¨Ïù∏ ÏãúÏä§ÌÖúÏùÑ ÌÜµÌï¥ Ïã†Í∑úÏú†Ï†ÄÎ•º ÏñëÏÑ±ÌïòÎäîÎç∞ ÏÑ±Í≥µÌïòÎ©¥ Î™ÖÏÑ± Ìè¨Ïù∏Ìä∏Î•º ÌèâÏÜåÏùò 2Î∞∞Ïù∏ 20Ìè¨Ïù∏Ìä∏Î•º ÏßÄÍ∏âÌï©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3185, "Ïù¥Î≤§Ìä∏Í∏∞Í∞Ñ ÎèôÏïà Í≤¨ÏäµÏÉùÏù¥ ÌõÑÍ≤¨Ïù∏ ÏãúÏä§ÌÖúÏùÑ ÌÜµÌï¥ 20Î†àÎ≤®Ïóê ÎèÑÎã¨Ìï† Í≤ΩÏö∞ Í∏∞Ï°¥Ïùò Ïù¥Î≤§Ìä∏ Î¨¥Í∏∞ Ïù¥Ïô∏Ïóê 500,000ÎÇòÏä§Í∞Ä Í≤©Î†§Í∏àÏúºÎ°ú ÏßÄÍ∏âÎê©ÎãàÎã§." ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3186, "Í∏∞Í∞Ñ: 2007ÎÖÑ 1Ïõî 10Ïùº ~ 2007ÎÖÑ 1Ïõî 24Ïùº" ), -1, 0xE18600FF );			
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ));
+					//≈¬±π: æÓ∏∞¿Ã≥Ø ¿Ã∫•∆Æ
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 3184, "æÓ∏∞¿Ã≥Ø ¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE );					
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3184, "æÓ∏∞¿Ã≥Ø ¿Ã∫•∆Æ" ), -1, 0xE18600FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 1945, "¿Ã∫•∆Æ±‚∞£ µøæ» »ƒ∞ﬂ¿Œ¿Ã »ƒ∞ﬂ¿Œ Ω√Ω∫≈€¿ª ≈Î«ÿ Ω≈±‘¿Ø¿˙∏¶ æÁº∫«œ¥¬µ• º∫∞¯«œ∏È ∏Ìº∫ ∆˜¿Œ∆Æ∏¶ ∆Úº“¿« 2πË¿Œ 20∆˜¿Œ∆Æ∏¶ ¡ˆ±ﬁ«’¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3185, "¿Ã∫•∆Æ±‚∞£ µøæ» ∞ﬂΩ¿ª˝¿Ã »ƒ∞ﬂ¿Œ Ω√Ω∫≈€¿ª ≈Î«ÿ 20∑π∫ßø° µµ¥ﬁ«“ ∞ÊøÏ ±‚¡∏¿« ¿Ã∫•∆Æ π´±‚ ¿Ãø‹ø° 500,000≥™Ω∫∞° ∞›∑¡±›¿∏∑Œ ¡ˆ±ﬁµÀ¥œ¥Ÿ." ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString( "  " ));			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3186, "±‚∞£: 2007≥‚ 1ø˘ 10¿œ ~ 2007≥‚ 1ø˘ 24¿œ" ), -1, 0xE18600FF );			
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ));
 				}
-				else if( iEventIndex == 29 )
+				else if( iEventIndex == A_EVENT_VALENTINE_DAY )
 				{
-					// Îü¨Î∏å Îü¨Î∏å Ïù¥Î≤§Ìä∏
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3203, "Îü¨Î∏åÎü¨Î∏å Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3204, "Î∞úÎ†åÌÉÄÏù∏Îç∞Ïù¥ÏôÄ ÎØºÏ†ÅÏùò Î™ÖÏ†àÏù∏ ÏÑ§ÎÇ†ÏùÑ ÎßûÏù¥ ÌïòÏó¨ Îü¨Î∏åÎü¨Î∏å Ïù¥Î≤§Ìä∏Î•º Ïã§ÏãúÌï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3205, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Îì§Ïù¥ Ïπ¥Ïπ¥Ïò§ Ìï®Ïú†ÎüâÏù¥ Îã§Î•∏ 3Ï¢ÖÎ•òÏùò Ï¥àÏΩîÎ†õÏùÑ ÎìúÎ°≠Ìï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3206, "Ï¥àÏΩîÎ†õÏùÄ Í∑∏ÎÉ• ÏÇ¨Ïö©Ìï† ÏàòÎèÑ ÏûàÍ≥†, ÎßàÎ≤ïÏÉÅÏ†êÏóêÏÑú ÌåêÎß§ÌïòÎäî Ï¥àÏΩîÏÉÅÏûêÎ•º Íµ¨ÏûÖÌïòÏó¨ ÎπôÍ≥†Í≤åÏûÑÏóê Ï∞∏Ïó¨ Ìï† ÏàòÎèÑ ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3207, "Ï¥àÏΩîÏÉÅÏûêÏóê Ï¥àÏΩîÎ†õÏùÑ ÎÑ£Í∏∞ ÏúÑÌï¥ÏÑúÎäî ÎßàÎ≤ïÏÉÅÏ†êÏóêÏÑú Ï¥àÏΩîÌè¨Ïû•ÏßÄÎ•º Íµ¨ÏûÖÌïòÏó¨ Ï¥àÏΩîÎ†õÏùÑ Îã¥ÏïÑÏïºÎßå Ï¥àÏΩîÏÉÅÏûêÏóê ÎÑ£ÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3208, "ÎπôÍ≥†Í∞Ä ÏôÑÏÑ±Îêú Ï¥àÏΩîÏÉÅÏûêÎäî Ïù¥Î≤§Ìä∏ NPC ÎûúÎîîÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÎ©¥ ÎπôÍ≥†Ïóê Îî∞Îùº ÏÉÅÌíàÏùÑ ÎìúÎ¶ΩÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3209, "Ïπ¥Ïπ¥Ïò§ Ìï®Ïú†ÎüâÏù¥ ÎÜíÏùÄ Ï¥àÏΩîÎ†õÏúºÎ°ú ÎπôÍ≥†Î•º ÎßåÎì§ Í≤ΩÏö∞ Îçî Ï¢ãÏùÄ ÏÉÅÌíàÏùÑ Î∞õÏùÑ ÌôïÎ•†Ïù¥ ÎÜíÏïÑÏßëÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3210, "Ï¥àÏΩîÏÉÅÏûêÎäî Ïù¥Î≤§Ìä∏ Ï¢ÖÎ£å ÌõÑ 1Ï£ºÏùºÍ∞Ñ Ï°¥Ïû¨ÌïòÎ©∞ Ïù¥ÌõÑÏóêÎäî ÏÇ¨ÎùºÏßëÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3211, "Ïπ¥Ïπ¥Ïò§ Ï¥àÏΩîÎ†õ Ìö®Í≥º"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3212, "Ïπ¥Ïπ¥Ïò§ Ìï®Ïú†ÎüâÏù¥ 30,60,70Ïù∏ 3Ï¢ÖÎ•òÏùò Ï¥àÏΩîÎ†õÏùÑ ÏÇ¨Ïö©Ìï† Í≤ΩÏö∞ ÎßàÎ≤ï, Î¨ºÎ¶¨ Í≥µÍ≤©Î†•ÏùÑ 5%,7%,10% 5Î∂ÑÍ∞Ñ ÏÉÅÏäπÏãúÏºú Ï§çÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3213, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007.02.13 ~ 2007.02.20"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					// ∑Ø∫Í ∑Ø∫Í ¿Ã∫•∆Æ
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3203, "∑Ø∫Í∑Ø∫Í ¿Ã∫•∆Æ"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3204, "πﬂ∑ª≈∏¿Œµ•¿ÃøÕ πŒ¿˚¿« ∏Ì¿˝¿Œ º≥≥Ø¿ª ∏¬¿Ã «œø© ∑Ø∫Í∑Ø∫Í ¿Ã∫•∆Æ∏¶ Ω«Ω√«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3205, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏ÛΩ∫≈ÕµÈ¿Ã ƒ´ƒ´ø¿ «‘¿Ø∑Æ¿Ã ¥Ÿ∏• 3¡æ∑˘¿« √ ƒ⁄∑ø¿ª µÂ∑”«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3206, "√ ƒ⁄∑ø¿∫ ±◊≥… ªÁøÎ«“ ºˆµµ ¿÷∞Ì, ∏∂π˝ªÛ¡°ø°º≠ ∆«∏≈«œ¥¬ √ ƒ⁄ªÛ¿⁄∏¶ ±∏¿‘«œø© ∫˘∞Ì∞‘¿”ø° ¬¸ø© «“ ºˆµµ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3207, "√ ƒ⁄ªÛ¿⁄ø° √ ƒ⁄∑ø¿ª ≥÷±‚ ¿ß«ÿº≠¥¬ ∏∂π˝ªÛ¡°ø°º≠ √ ƒ⁄∆˜¿Â¡ˆ∏¶ ±∏¿‘«œø© √ ƒ⁄∑ø¿ª ¥„æ∆æﬂ∏∏ √ ƒ⁄ªÛ¿⁄ø° ≥÷¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3208, "∫˘∞Ì∞° øœº∫µ» √ ƒ⁄ªÛ¿⁄¥¬ ¿Ã∫•∆Æ NPC ∑£µø°∞‘ ∞°¡Æ∞°∏È ∫˘∞Ìø° µ˚∂Û ªÛ«∞¿ª µÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3209, "ƒ´ƒ´ø¿ «‘¿Ø∑Æ¿Ã ≥Ù¿∫ √ ƒ⁄∑ø¿∏∑Œ ∫˘∞Ì∏¶ ∏∏µÈ ∞ÊøÏ ¥ı ¡¡¿∫ ªÛ«∞¿ª πﬁ¿ª »Æ∑¸¿Ã ≥Ùæ∆¡˝¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3210, "√ ƒ⁄ªÛ¿⁄¥¬ ¿Ã∫•∆Æ ¡æ∑· »ƒ 1¡÷¿œ∞£ ¡∏¿Á«œ∏Á ¿Ã»ƒø°¥¬ ªÁ∂Û¡˝¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3211, "ƒ´ƒ´ø¿ √ ƒ⁄∑ø »ø∞˙"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3212, "ƒ´ƒ´ø¿ «‘¿Ø∑Æ¿Ã 30,60,70¿Œ 3¡æ∑˘¿« √ ƒ⁄∑ø¿ª ªÁøÎ«“ ∞ÊøÏ ∏∂π˝, π∞∏Æ ∞¯∞›∑¬¿ª 5%,7%,10% 5∫–∞£ ªÛΩ¬Ω√ƒ— ¡›¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3213, "¿Ã∫•∆Æ ±‚∞£: 2012.02.13 ~ 2012.02.20"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}
-				else if( iEventIndex == 31 )
+				else if( iEventIndex == A_EVENT_WHITE_DAY )
 				{
-					// ÌôîÏù¥Ìä∏Îç∞Ïù¥ Ïù¥Î≤§Ìä∏
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3227, "2007 ÌôîÏù¥Ìä∏Îç∞Ïù¥ Îü¨Î∏åÎß§ÏßÅ Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3228, "ÌôîÏù¥Ìä∏Îç∞Ïù¥Î•º ÎßûÏïÑ Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà Î™¨Ïä§ÌÑ∞Í∞Ä ÌïòÎäòÏÉâÍ≥º Î∂ÑÌôçÏÉâ ÏÇ¨ÌÉïÏùÑ ÎìúÎ°≠Ìï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3229, "Î™¨Ïä§ÌÑ∞Í∞Ä ÎìúÎ°≠Ìïú ÌïòÎäòÏÉâ ÏÇ¨ÌÉïÏùÄ ÎÇ®ÏÑ± Ï∫êÎ¶≠ÌÑ∞, Î∂ÑÌôçÏÉâ ÏÇ¨ÌÉïÏùÄ Ïó¨ÏÑ± Ï∫êÎ¶≠ÌÑ∞Îßå ÌöçÎìùÌï† Ïàò ÏûáÏßÄÎßå,"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3230, "ÌöçÎìùÌïú Ïù¥ÌõÑÏóêÎäî Ï∫êÎ¶≠ÌÑ∞Í∞Ñ ÍµêÌôòÏù¥ÎÇò Í∞úÏù∏ÏÉÅÏ†êÏùÑ ÌÜµÌï¥ÏÑú ÏàòÏßëÌïòÏã§ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3231, "ÌïòÎäòÏÉâ ÏÇ¨ÌÉïÍ≥º Î∂ÑÌôçÏÉâ ÏÇ¨ÌÉïÏùÑ Î™®ÏïÑ Ï•¨ÎÖ∏ÎûÄÎèå ÎßàÏùÑÏóê ÏûàÎäî Î°úÎ†àÏù∏ÏóêÍ≤å Í∞ÄÏ†∏Îã§ Ï£ºÎ©¥"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3232, "Ï∫êÎ¶≠ÌÑ∞Ïùò Îä•Î†•ÏùÑ ÎÜíÏó¨ Ï£ºÎäî Îü¨Î∏åÎß§ÏßÅ Ï£ºÎ¨∏Í≥º Í≤åÏûÑ Ï†ÑÏ≤¥Ïóê Í≥µÍ∞úÏ†ÅÏúºÎ°ú ÏÇ¨ÎûëÏùò Î©îÏãúÏßÄÎ•º Ï†ÑÌï† Ïàò ÏûàÎäî Ìé∏ÏßÄÏßÄÎ•º ÎìúÎ¶ΩÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3233, "‚óàÌïòÎäòÏÉâÏÇ¨ÌÉï 5Í∞ú + Î∂ÑÌôçÏÉâÏÇ¨ÌÉï 5Í∞ú : 6Í∞ÄÏßÄ Îü¨Î∏åÎß§ÏßÅ Ï§ë ÎûúÎç§ÏúºÎ°ú ÌïòÎÇòÏùò Ìò∏Í≥ºÎ•º Ï¶âÏãú Î∞õÍ≤å Îê©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3234, "‚óàÌïòÎäòÏÉâÏÇ¨ÌÉï 20Í∞ú : ÌïòÎäòÏÉâ Ìé∏ÏßÄÏßÄ 1Ïû•"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3235, "‚óàÎ∂ÑÌôçÏÉâÏÇ¨ÌÉï 20Í∞ú : Î∂ÑÌôçÏÉâ Ìé∏ÏßÄÏßÄ 1Ïû•"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3236, "!Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà ÏÇ¨ÌÉïÏùÑ Î™®ÏïÑ Î∞òÎ≥µÌï¥ÏÑú Î≥¥ÏÉÅ Î∞õÏùÑ Ïàò ÏûàÏßÄÎßå Í∞ôÏùÄ Ï¢ÖÎ•òÏùò Ìé∏ÏßÄÏßÄÎäî ÏµúÎåÄ 5Ïû•ÍπåÏßÄÎßå ÏÜåÏú† Í∞ÄÎä•Ìï©ÎãàÎã§."), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3237, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007.03.13 ~ 2007.03.27"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					// »≠¿Ã∆Æµ•¿Ã ¿Ã∫•∆Æ
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3227, "2012 »≠¿Ã∆Æµ•¿Ã ∑Ø∫Í∏≈¡˜ ¿Ã∫•∆Æ"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3228, "»≠¿Ã∆Æµ•¿Ã∏¶ ∏¬æ∆ ¿Ã∫•∆Æ ±‚∞£µøæ» ∏ÛΩ∫≈Õ∞° «œ¥√ªˆ∞˙ ∫–»´ªˆ ªÁ≈¡¿ª µÂ∑”«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3229, "∏ÛΩ∫≈Õ∞° µÂ∑”«— «œ¥√ªˆ ªÁ≈¡¿∫ ≥≤º∫ ƒ≥∏Ø≈Õ, ∫–»´ªˆ ªÁ≈¡¿∫ ø©º∫ ƒ≥∏Ø≈Õ∏∏ »πµÊ«“ ºˆ ¿’¡ˆ∏∏,"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3230, "»πµÊ«— ¿Ã»ƒø°¥¬ ƒ≥∏Ø≈Õ∞£ ±≥»Ø¿Ã≥™ ∞≥¿ŒªÛ¡°¿ª ≈Î«ÿº≠ ºˆ¡˝«œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3231, "«œ¥√ªˆ ªÁ≈¡∞˙ ∫–»´ªˆ ªÁ≈¡¿ª ∏æ∆ ¡Í≥Î∂ıµπ ∏∂¿ªø° ¿÷¥¬ ∑Œ∑π¿Œø°∞‘ ∞°¡Æ¥Ÿ ¡÷∏È"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3232, "ƒ≥∏Ø≈Õ¿« ¥…∑¬¿ª ≥Ùø© ¡÷¥¬ ∑Ø∫Í∏≈¡˜ ¡÷πÆ∞˙ ∞‘¿” ¿¸√ºø° ∞¯∞≥¿˚¿∏∑Œ ªÁ∂˚¿« ∏ﬁΩ√¡ˆ∏¶ ¿¸«“ ºˆ ¿÷¥¬ ∆Ì¡ˆ¡ˆ∏¶ µÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3233, "¢¬«œ¥√ªˆªÁ≈¡ 5∞≥ + ∫–»´ªˆªÁ≈¡ 5∞≥ : 6∞°¡ˆ ∑Ø∫Í∏≈¡˜ ¡ﬂ ∑£¥˝¿∏∑Œ «œ≥™¿« »£∞˙∏¶ ¡ÔΩ√ πﬁ∞‘ µÀ¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3234, "¢¬«œ¥√ªˆªÁ≈¡ 20∞≥ : «œ¥√ªˆ ∆Ì¡ˆ¡ˆ 1¿Â"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3235, "¢¬∫–»´ªˆªÁ≈¡ 20∞≥ : ∫–»´ªˆ ∆Ì¡ˆ¡ˆ 1¿Â"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3236, "!¿Ã∫•∆Æ ±‚∞£µøæ» ªÁ≈¡¿ª ∏æ∆ π›∫π«ÿº≠ ∫∏ªÛ πﬁ¿ª ºˆ ¿÷¡ˆ∏∏ ∞∞¿∫ ¡æ∑˘¿« ∆Ì¡ˆ¡ˆ¥¬ √÷¥Î 5¿Â±Ó¡ˆ∏∏ º“¿Ø ∞°¥…«’¥œ¥Ÿ."), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3237, "¿Ã∫•∆Æ ±‚∞£: 2012.03.13 ~ 2012.03.27"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}
-				// [KH_070326] Î∂ÄÌôúÏ†à Ïù¥Î≤§Ìä∏
-				else if( iEventIndex == 33 )
+				// [KH_070326] ∫Œ»∞¿˝ ¿Ã∫•∆Æ
+				else if( iEventIndex == A_EVENT_EGGS_HUNT )
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3268, "Multiple Easter Eggs Hunt"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3269, "4Ïõî8Ïùº Î∂ÄÌôúÏ†àÏùÑ ÎßûÏïÑ Î∂ÄÌôúÏ†à Îã¨Í±Ä ÏÇ¨ÎÉ• Ïù¥Î≤§Ìä∏Î•º ÏßÑÌñâÌï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3270, "Ïù¥Î≤§Ìä∏Í∏∞Í∞Ñ ÎèôÏïà Í≤åÏûÑ ÎÇ¥ Í≥≥Í≥≥Ïóê GMÏù¥ Î∂ÄÌôúÏ†à Îã¨Í±ÄÏùÑ Îñ®Ïñ¥Ìä∏Î¶ΩÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3271, "Î∞îÎã•Ïóê ÏûàÎäî Îã¨Í±ÄÏùÑ Ï£ºÏõå Í∞úÎ¥âÌïòÎ©¥ ÎûúÎç§ÌïòÍ≤å Îã§ÏñëÌïú Î≥¥ÏÉÅÌíàÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3272, "‚óàÎ∂ÄÌôúÏ†à Îã¨Í±ÄÏùÄ ÎèôÏãúÏóê 1Í∞ú Ïù¥ÏÉÅ ÌöçÎìùÌï† Ïàò ÏóÜÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3273, "‚óàÌù¨Í∑ÄÌïú ÌôïÎ•†Î°ú Î™¨Ïä§ÌÑ∞ÎèÑ Î∂ÄÌôúÏ†à Îã¨Í±ÄÏùÑ Îñ®Ïñ¥Ìä∏Î¶¥ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3274, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007.04.04 ~ "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3268, "Multiple Easter Eggs Hunt"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3269, "4ø˘8¿œ ∫Œ»∞¿˝¿ª ∏¬æ∆ ∫Œ»∞¿˝ ¥ﬁ∞ø ªÁ≥… ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3270, "¿Ã∫•∆Æ±‚∞£ µøæ» ∞‘¿” ≥ª ∞˜∞˜ø° GM¿Ã ∫Œ»∞¿˝ ¥ﬁ∞ø¿ª ∂≥æÓ∆Æ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3271, "πŸ¥⁄ø° ¿÷¥¬ ¥ﬁ∞ø¿ª ¡÷øˆ ∞≥∫¿«œ∏È ∑£¥˝«œ∞‘ ¥ŸæÁ«— ∫∏ªÛ«∞¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3272, "¢¬∫Œ»∞¿˝ ¥ﬁ∞ø¿∫ µøΩ√ø° 1∞≥ ¿ÃªÛ »πµÊ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3273, "¢¬»Ò±Õ«— »Æ∑¸∑Œ ∏ÛΩ∫≈Õµµ ∫Œ»∞¿˝ ¥ﬁ∞ø¿ª ∂≥æÓ∆Æ∏± ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3274, "¿Ã∫•∆Æ ±‚∞£: 2012.04.04 ~ "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if( iEventIndex == SONGKRAN_EVENT_INDEX )
+				{
+					// ≈¬±π º€≈©∂ı ¿Ã∫•∆Æ
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3275, "º€≈©∂ı ∏Ì¿˝ ¿Ã∫•∆Æ" ), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3276, "¿Ã∫•∆Æ±‚∞£ µøæ» 3∞°¡ˆ¿« ∆Ø∫∞«— ¿œ¿Ã ¿œæÓ≥≥¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3277, "1. ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ¥Ÿ ∫∏∏È ±›±◊∏©∞˙ ¿∫±◊∏©¿Ã µÂ∑”µÀ¥œ¥Ÿ."),-1, 0xF9E061FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3278, "»πµÊ«— ±›±◊∏©∞˙ ¿∫±◊∏©¿ª ¥ı∫Ì ≈¨∏Ø«ÿº≠ ∞≥∫¿«œ∏È ∫∏ªÛ«∞¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3279, "2. π∞ ª—∏Æ±‚ ∆Øºˆ∏º« √ﬂ∞°"),-1, 0xF9E061FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3280, "º“º» æ◊º«(ALT+C)√¢ø°º≠ »Æ¿Œ«œΩ« ºˆ ¿÷¿∏∏Á, π∞¿ª ∏¬¿∫ ƒ≥∏Ø≈Õ¥¬ πÊæÓ∑¬¿Ã ¿œΩ√¿˚¿∏∑Œ ªÛΩ¬µÀ¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3281, "3. ºˆ¡˝∞° ∏±¿« ±Õ»Ø"),-1, 0xF9E061FF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3282, "º€≈©∂ı¿ª ∏¬æ∆ ºˆ¡˝∞° ∏±¿Ã ¡Í≥Îø° µÓ¿Â«œø© ¿Â∫Ò∏¶ ±≥»Ø«ÿ¡›¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S( 3283, "¿Ã∫•∆Æ ±‚∞£:2007≥‚ 4ø˘ 11¿œ ~ 4ø˘ 25¿œ" ), -1, 0x6BD2FFFF );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
 				else if( iEventIndex == TEVENT_GOMDOLI )	
 				{
-					// Í≥∞ÎèåÏù¥ Ïù¥Î≤§Ìä∏  35
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3457, "Í≥∞ÎèåÏù¥ Ïõ¨ÎîîÎ•º Ï∞æÏïÑÎùº!"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3458, "ÍµêÎ≥µ ÏÖãÌä∏ÏôÄ ÏóΩÍ∏∞Î¨¥Í∏∞Î•º Ï≤¥ÌóòÌïòÍ≥† Ïñ¥Î¶∞Ïù¥Îì§ÏóêÍ≤å ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§ Í≥†Í∞ùÎ∂ÑÎì§Ïùò ÎúªÏùÑ Î™®ÏïÑ ÏÑ†Î¨ºÏùÑ Ï†ÑÌï† Ïàò ÏûàÎäî Îúª ÍπäÏùÄ Í∏∞Ìöå!!!"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3459, "ÎπõÏùò ÎåÄÌòÑÏûê 'Ïä§ÌÉÄÎãàÏä¨ÎùºÎÇò'Îäî ÏïÑÏù¥Î¶¨Ïä§ ÎåÄÎ•ôÏùò Í∞Å ÎßàÏùÑÏóê ÏÇ¥Í≥† ÏûàÎäî Ïñ¥Î¶∞ÏïÑÏù¥Îì§ÏóêÍ≤å ÏÑ†Î¨ºÌï¥Ï§Ñ Í≥∞ÎèåÏù¥ 'Ïõ¨Îîî'Î•º ÎßåÎì§Í≥† ÏûàÏóàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3460, "Í∑∏ Í≥ºÏ†ï Ï§ë 'Ïä§ÌÉÄÎãàÏä¨ÎùºÎÇò'Ïùò ÏàôÏ†ÅÏù∏ Ïñ¥Îë†Ïùò ÎßàÎèÑÏÇ¨' ÌîÑÎùºÏö∞Î°†'Ïùò ÌùëÎßàÎ≤ïÏóê ÏùòÌï¥ Ïõ¨ÎîîÍ∞Ä Í∑∏Îßå Ï°∞Í∞ÅÎÇò ÏÇ¨ÏïÖÌïú Î™¨Ïä§ÌÑ∞ÏóêÍ≤å ÎÑòÏñ¥Í∞Ä Î≤ÑÎ¶¨Í≥† ÎßêÏïòÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3461, "[Ïä§ÌÉÄÎãàÏä¨ÎùºÎÇò]Ïùò Ï∂©Ïã§Ìïú Ï¢Ö 'ÏÇ¨Î°úÏñÄ'ÏùÄ ÏïÑÏù¥Î¶¨Ïä§ ÎåÄÎ•ôÏùò Î™¨Ïä§ÌÑ∞ÏóêÍ≤åÏÑú Í≥∞ÎèåÏù¥ Ï°∞Í∞ÅÏùÑ Ï∞æÏïÑÏ§Ñ Ïö©ÏÇ¨Î•º Ï∞æÍ≥† ÏûàÎã§Í≥† Ìï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3462, "Ï∫êÎ¶≠ÌÑ∞Ïùò Îä•Î†•ÏùÑ ÎÜíÏó¨ Ï£ºÎäî Îü¨Î∏åÎß§ÏßÅ Ï£ºÎ¨∏Í≥º Í≤åÏûÑ Ï†ÑÏ≤¥Ïóê Í≥µÍ∞úÏ†ÅÏúºÎ°ú ÏÇ¨ÎûëÏùò Î©îÏãúÏßÄÎ•º Ï†ÑÌï† Ïàò ÏûàÎäî Ìé∏ÏßÄÏßÄÎ•º ÎìúÎ¶ΩÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3463, "‚óàÏõ¨Îîî Ï°∞Í∞Å 9Í∞úÎ•º Î™®Îëê Î™®ÏïÑ [ÏÇ¨Î°úÏñÄ]ÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÎ©¥ Í∞ÄÏúÑÎ∞îÏúÑÎ≥¥ Í≤åÏûÑÏùÑ ÌÜµÌï¥ Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÏúºÎ©∞ Ï∞∏Ïó¨Ìïú 1Ïù∏ Ï∫êÎ¶≠ÌÑ∞Ïóê ÌïúÌï¥ Îã® ÌïúÎ≤àÎßå [Ï≤¥ÌóòÏö© ÍµêÎ≥µ ÏÑ∏Ìä∏]ÏôÄ [ÏóΩÍ∏∞Î¨¥Í∏∞]Î•º ÎìúÎ¶ΩÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3464, "‚óàÏôÑÏÑ±Îêú Í≥∞ÎèåÏù¥ Ïõ¨ÎîîÏùò Ï†ÑÏ≤¥ ÎàÑÏ†Å ÏàòÏóê Îî∞Îùº Ïã§Ï†ú Í≥∞ Ïù∏ÌòïÍ≥º ÌïôÏö©Ìíà ÏÖãÌä∏Î•º Ïñ¥Î¶∞Ïù¥ÎÇ† Ï≤úÏÇ¨Ïùò Ïßë Ïñ¥Î¶∞Ïù¥Îì§ÏóêÍ≤å ÏÑ†Î¨ºÌïòÍ≤å Îê©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3465, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 4Ïõî 24Ïùº ~ 2007ÎÖÑ 4Ïõî 30Ïùº"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					// ∞ıµπ¿Ã ¿Ã∫•∆Æ  35
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3457, "∞ıµπ¿Ã ¿¢µ∏¶ √£æ∆∂Û!"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3458, "±≥∫π º¬∆ÆøÕ ø±±‚π´±‚∏¶ √º«Ë«œ∞Ì æÓ∏∞¿ÃµÈø°∞‘ ∂ÛΩ∫∆Æƒ´ø¿Ω∫ ∞Ì∞¥∫–µÈ¿« ∂Ê¿ª ∏æ∆ º±π∞¿ª ¿¸«“ ºˆ ¿÷¥¬ ∂Ê ±Ì¿∫ ±‚»∏!!!"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3459, "∫˚¿« ¥Î«ˆ¿⁄ 'Ω∫≈∏¥œΩΩ∂Û≥™'¥¬ æ∆¿Ã∏ÆΩ∫ ¥Î∑˙¿« ∞¢ ∏∂¿ªø° ªÏ∞Ì ¿÷¥¬ æÓ∏∞æ∆¿ÃµÈø°∞‘ º±π∞«ÿ¡Ÿ ∞ıµπ¿Ã '¿¢µ'∏¶ ∏∏µÈ∞Ì ¿÷æ˙Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3460, "±◊ ∞˙¡§ ¡ﬂ 'Ω∫≈∏¥œΩΩ∂Û≥™'¿« º˜¿˚¿Œ æÓµ“¿« ∏∂µµªÁ' «¡∂ÛøÏ∑–'¿« »Ê∏∂π˝ø° ¿««ÿ ¿¢µ∞° ±◊∏∏ ¡∂∞¢≥™ ªÁæ««— ∏ÛΩ∫≈Õø°∞‘ ≥—æÓ∞° πˆ∏Æ∞Ì ∏ªæ“Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3461, "[Ω∫≈∏¥œΩΩ∂Û≥™]¿« √ÊΩ««— ¡æ 'ªÁ∑Œæ·'¿∫ æ∆¿Ã∏ÆΩ∫ ¥Î∑˙¿« ∏ÛΩ∫≈Õø°∞‘º≠ ∞ıµπ¿Ã ¡∂∞¢¿ª √£æ∆¡Ÿ øÎªÁ∏¶ √£∞Ì ¿÷¥Ÿ∞Ì «’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3462, "ƒ≥∏Ø≈Õ¿« ¥…∑¬¿ª ≥Ùø© ¡÷¥¬ ∑Ø∫Í∏≈¡˜ ¡÷πÆ∞˙ ∞‘¿” ¿¸√ºø° ∞¯∞≥¿˚¿∏∑Œ ªÁ∂˚¿« ∏ﬁΩ√¡ˆ∏¶ ¿¸«“ ºˆ ¿÷¥¬ ∆Ì¡ˆ¡ˆ∏¶ µÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3463, "¢¬¿¢µ ¡∂∞¢ 9∞≥∏¶ ∏µŒ ∏æ∆ [ªÁ∑Œæ·]ø°∞‘ ∞°¡Æ∞°∏È ∞°¿ßπŸ¿ß∫∏ ∞‘¿”¿ª ≈Î«ÿ ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷¿∏∏Á ¬¸ø©«— 1¿Œ ƒ≥∏Ø≈Õø° «—«ÿ ¥‹ «—π¯∏∏ [√º«ËøÎ ±≥∫π ºº∆Æ]øÕ [ø±±‚π´±‚]∏¶ µÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3464, "¢¬øœº∫µ» ∞ıµπ¿Ã ¿¢µ¿« ¿¸√º ¥©¿˚ ºˆø° µ˚∂Û Ω«¡¶ ∞ı ¿Œ«¸∞˙ «–øÎ«∞ º¬∆Æ∏¶ æÓ∏∞¿Ã≥Ø √µªÁ¿« ¡˝ æÓ∏∞¿ÃµÈø°∞‘ º±π∞«œ∞‘ µÀ¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3465, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 4ø˘ 24¿œ ~ 2007≥‚ 4ø˘ 30¿œ"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}
-// [KH_070425] Ïù¥Î≤§Ìä∏ Í¥ÄÎ†® Í≥µÏßÄ Ï∂îÍ∞Ä(TEVENT_PARENTS_2007, TEVENT_CHILDREN_2007, TEVENT_TEACHER_2007, TEVENT_UCC_2007)
+// [KH_070425] ¿Ã∫•∆Æ ∞¸∑√ ∞¯¡ˆ √ﬂ∞°(TEVENT_PARENTS_2007, TEVENT_CHILDREN_2007, TEVENT_TEACHER_2007, TEVENT_UCC_2007)
 				else if(iEventIndex == TEVENT_PARENTS_2007)
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3362, "Ïπ¥ÎÑ§Ïù¥ÏÖòÏùÑ Î™®ÏïÑÎùº~"), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3362, "ƒ´≥◊¿Ãº«¿ª ∏æ∆∂Û~"), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3363, "Ïñ¥Î≤ÑÏù¥ÎÇ†ÏùÑ ÎßûÏïÑ ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§Ïùò Ïñ¥Î≤ÑÏù¥ Í≤©Ïù∏ Í∏∏ÎìúÎßàÏä§ÌÑ∞Î•º ÏúÑÌïú Ïù¥Î≤§Ìä∏Î•º Ï§ÄÎπÑÌñàÏäµÎãàÎã§." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3363, "æÓπˆ¿Ã≥Ø¿ª ∏¬æ∆ ∂ÛΩ∫∆Æƒ´ø¿Ω∫¿« æÓπˆ¿Ã ∞›¿Œ ±ÊµÂ∏∂Ω∫≈Õ∏¶ ¿ß«— ¿Ã∫•∆Æ∏¶ ¡ÿ∫Ò«ﬂΩ¿¥œ¥Ÿ." ) );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3364, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Í∞Ä ÎìúÎûç Ìïú Îπ®Í∞Ñ Ïπ¥ÎÑ§Ïù¥ÏÖòÏùÑ Ïú†Ï†ÄÍ∞ÑÏùò ÍµêÌôòÏù¥ÎÇò Í∞úÏù∏ÏÉÅÏ†êÏùÑ ÌÜµÌï¥ÏÑú ÏàòÏßëÌï† Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3365, "Îπ®Í∞Ñ Ïπ¥ÎÑ§Ïù¥ÏÖòÏùÄ Ïò§ÏßÅ Í∏∏Îìú ÎßàÏä§ÌÑ∞ÏôÄ Î∂Ä Í∏∏Îìú ÎßàÏä§ÌÑ∞ÎßåÏù¥ NPCÎ•º ÌÜµÌï¥ÏÑú Í∏∏Îìú Ìè¨Ïù∏Ìä∏ÏôÄ Î≥¥ÏÉÅ ÌíàÏùÑ ÌöçÎìùÌï† Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3366, "Í∏∏ÎìúÏùò Ïù¥Î¶ÑÏùÑ ÎÑêÎ¶¨ ÏïåÎ¶¨Í≥† ÏßÑÍ∑ÄÌïú Î≥¥ÏÉÅÏïÑÏù¥ÌÖúÎèÑ Î∞õÏùÑ Ïàò ÏûàÎäî Ïù¥Î≤§Ìä∏Ïóê ÎßéÏùÄ Ï∞∏Ïó¨ Î∞îÎûçÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3364, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏ÛΩ∫≈Õ∞° µÂ∂¯ «— ª°∞£ ƒ´≥◊¿Ãº«¿ª ¿Ø¿˙∞£¿« ±≥»Ø¿Ã≥™ ∞≥¿ŒªÛ¡°¿ª ≈Î«ÿº≠ ºˆ¡˝«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3365, "ª°∞£ ƒ´≥◊¿Ãº«¿∫ ø¿¡˜ ±ÊµÂ ∏∂Ω∫≈ÕøÕ ∫Œ ±ÊµÂ ∏∂Ω∫≈Õ∏∏¿Ã NPC∏¶ ≈Î«ÿº≠ ±ÊµÂ ∆˜¿Œ∆ÆøÕ ∫∏ªÛ «∞¿ª »πµÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3366, "±ÊµÂ¿« ¿Ã∏ß¿ª ≥Œ∏Æ æÀ∏Æ∞Ì ¡¯±Õ«— ∫∏ªÛæ∆¿Ã≈€µµ πﬁ¿ª ºˆ ¿÷¥¬ ¿Ã∫•∆Æø° ∏π¿∫ ¬¸ø© πŸ∂¯¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3367, "‚Äª Í∏∏Îìú ÎßàÏä§ÌÑ∞ÏôÄ Î∂Ä Í∏∏Îìú ÎßàÏä§ÌÑ∞ÎßåÏù¥ Îπ®Í∞Ñ Ïπ¥ÎÑ§Ïù¥ÏÖòÏùÑ ÏÇ¨Ïö©Ìï† Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3368, "‚Äª Í∏∏Îìú ÏõêÎì§Í≥º ÌååÌã∞ÏÇ¨ÎÉ•ÏùÑ ÌïòÎ©¥ Îπ®Í∞Ñ Ïπ¥ÎÑ§Ïù¥ÏÖòÏùÑ ÎçîÏö± ÎßéÏù¥ Íµ¨Ìï† Ïàò ÏûàÏäµÎãàÎã§." ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3367, "°ÿ ±ÊµÂ ∏∂Ω∫≈ÕøÕ ∫Œ ±ÊµÂ ∏∂Ω∫≈Õ∏∏¿Ã ª°∞£ ƒ´≥◊¿Ãº«¿ª ªÁøÎ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3368, "°ÿ ±ÊµÂ ø¯µÈ∞˙ ∆ƒ∆ºªÁ≥…¿ª «œ∏È ª°∞£ ƒ´≥◊¿Ãº«¿ª ¥ıøÌ ∏π¿Ã ±∏«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3369, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 5Ïõî 8Ïùº ~ 2007ÎÖÑ 5Ïõî 15Ïùº" ) );
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3369, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 5ø˘ 8¿œ ~ 2007≥‚ 5ø˘ 15¿œ" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
 				else if(iEventIndex == TEVENT_CHILDREN_2007)
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3370, "Ï†Ä Î†àÎ≤® ÌÉàÏ∂úÏûëÏ†Ñ"), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3370, "¿˙ ∑π∫ß ≈ª√‚¿€¿¸"), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3371, "Ïñ¥Î¶∞Ïù¥ÎÇ†ÏùÑ ÎßûÏïÑ ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§Ïùò Ïñ¥Î¶∞Ïù¥ Í≤©Ïù∏ Ï†Ä Î†àÎ≤®ÏùÑ ÏúÑÌïú Ïù¥Î≤§Ìä∏Î•º Ï§ÄÎπÑÌñàÏäµÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3372, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Í∞Ä ÎìúÎûç Ìïú ÎÖ∏ÎûÄ Í∞úÎÇòÎ¶¨ÍΩÉÏùÑ Ïú†Ï†ÄÍ∞ÑÏùò ÍµêÌôòÏù¥ÎÇò Í∞úÏù∏ÏÉÅÏ†êÏùÑ ÌÜµÌï¥ÏÑú ÏàòÏßëÌï† Ïàò ÏûàÏäµÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3373, "ÎÖ∏ÎûÄ Í∞úÎÇòÎ¶¨ÍΩÉÏùÑ Î™®ÏïÑ Ïù¥Î≤§Ìä∏ NPCÏóêÍ≤å Í∞ÄÏ†∏Îã§ Ï£ºÎ©¥ Î™®ÌóòÏóê ÌïÑÏöîÌïú +3Ïû•ÎπÑÎ•º ÎìúÎ¶ΩÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3371, "æÓ∏∞¿Ã≥Ø¿ª ∏¬æ∆ ∂ÛΩ∫∆Æƒ´ø¿Ω∫¿« æÓ∏∞¿Ã ∞›¿Œ ¿˙ ∑π∫ß¿ª ¿ß«— ¿Ã∫•∆Æ∏¶ ¡ÿ∫Ò«ﬂΩ¿¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3372, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏ÛΩ∫≈Õ∞° µÂ∂¯ «— ≥Î∂ı ∞≥≥™∏Æ≤…¿ª ¿Ø¿˙∞£¿« ±≥»Ø¿Ã≥™ ∞≥¿ŒªÛ¡°¿ª ≈Î«ÿº≠ ºˆ¡˝«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3373, "≥Î∂ı ∞≥≥™∏Æ≤…¿ª ∏æ∆ ¿Ã∫•∆Æ NPCø°∞‘ ∞°¡Æ¥Ÿ ¡÷∏È ∏«Ëø° « ø‰«— +3¿Â∫Ò∏¶ µÂ∏≥¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3374, "‚Äª Ïù¥Î≤§Ìä∏ Ï°∞Í±¥: 1Î†àÎ≤®Î∂ÄÌÑ∞ 24Î†àÎ≤® Ï∫êÎ¶≠ÌÑ∞") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3375, "‚Äª ÌïúÎ≤à Î∞õÏùÄ Ïû•ÎπÑÎäî Îëê Î≤à Î∞õÏúºÏã§ Ïàò ÏóÜÏäµÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3376, "‚Äª Îã§Î•∏ ÏßÅÏóÖÏùò Ïû•ÎπÑÎäî Î∞õÏùÑ Ïàò ÏóÜÍ≥† ÏûêÏã†Ïùò Ï∫êÎ¶≠ÌÑ∞Ïóê ÎßûÎäî Ïû•ÎπÑÎßå ÌöçÎìùÌï† Ïàò ÏûàÏäµÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3377, "‚Äª Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ Ï¢ÖÎ£å ÏãúÍπåÏßÄ ÏÇ¨Ïö©ÌïòÏßÄ ÏïäÎäî ÎÖ∏ÎûÄ Í∞úÎÇòÎ¶¨ÍΩÉÏùÄ ÏùºÍ¥Ñ ÏÇ≠Ï†úÎê©ÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3374, "°ÿ ¿Ã∫•∆Æ ¡∂∞«: 1∑π∫ß∫Œ≈Õ 24∑π∫ß ƒ≥∏Ø≈Õ") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3375, "°ÿ «—π¯ πﬁ¿∫ ¿Â∫Ò¥¬ µŒ π¯ πﬁ¿∏Ω« ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3376, "°ÿ ¥Ÿ∏• ¡˜æ˜¿« ¿Â∫Ò¥¬ πﬁ¿ª ºˆ æ¯∞Ì ¿⁄Ω≈¿« ƒ≥∏Ø≈Õø° ∏¬¥¬ ¿Â∫Ò∏∏ »πµÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3377, "°ÿ ¿Ã∫•∆Æ ±‚∞£ ¡æ∑· Ω√±Ó¡ˆ ªÁøÎ«œ¡ˆ æ ¥¬ ≥Î∂ı ∞≥≥™∏Æ≤…¿∫ ¿œ∞˝ ªË¡¶µÀ¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3378, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 4Ïõî 30Ïùº ~ 2007ÎÖÑ 5Ïõî 15Ïùº") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3378, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 4ø˘ 30¿œ ~ 2007≥‚ 5ø˘ 15¿œ") );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
 				else if(iEventIndex == TEVENT_TEACHER_2007)
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3379, "Ïä§ÏäπÏùò ÏùÄÌòú"), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3379, "Ω∫Ω¬¿« ¿∫«˝"), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3380, "Ïä§ÏäπÏùò ÎÇ†ÏùÑ ÎßûÏïÑ ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§Ïùò Ïä§Ïäπ Í≤©Ïù∏ ÌõÑÍ≤¨Ïù∏ÏùÑ ÏúÑÌïú Ïù¥Î≤§Ìä∏Î•º Ï§ÄÎπÑÌñàÏäµÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3381, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Í≤¨ÏäµÏÉù ÏñëÏÑ±ÏùÑ ÏÑ±Í≥µÌïòÏòÄÏùÑ Í≤ΩÏö∞ Ï∂îÍ∞Ä Î≥¥ÏÉÅÏù¥ Ï£ºÏñ¥ÏßëÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3382, "ÌõÑÍ≤¨Ïù∏Í≥º Í≤¨ÏäµÏÉù Îëò Îã§ Ï∂îÍ∞Ä Î≥¥ÏÉÅÏù¥ Ï£ºÏñ¥ÏßÄÎãà Ïù¥Î≤à Ïù¥Î≤§Ìä∏Ïóê ÎßéÏùÄ Ï∞∏Ïó¨ Î∂ÄÌÉÅ ÎìúÎ¶¨Í≤†ÏäµÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3380, "Ω∫Ω¬¿« ≥Ø¿ª ∏¬æ∆ ∂ÛΩ∫∆Æƒ´ø¿Ω∫¿« Ω∫Ω¬ ∞›¿Œ »ƒ∞ﬂ¿Œ¿ª ¿ß«— ¿Ã∫•∆Æ∏¶ ¡ÿ∫Ò«ﬂΩ¿¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3381, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∞ﬂΩ¿ª˝ æÁº∫¿ª º∫∞¯«œø¥¿ª ∞ÊøÏ √ﬂ∞° ∫∏ªÛ¿Ã ¡÷æÓ¡˝¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3382, "»ƒ∞ﬂ¿Œ∞˙ ∞ﬂΩ¿ª˝ µ— ¥Ÿ √ﬂ∞° ∫∏ªÛ¿Ã ¡÷æÓ¡ˆ¥œ ¿Ãπ¯ ¿Ã∫•∆Æø° ∏π¿∫ ¬¸ø© ∫Œ≈π µÂ∏Æ∞⁄Ω¿¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3383, "‚Äª Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà ÌõÑÍ≤¨Ïù∏Í≥º Í≤¨ÏäµÏÉùÍ∞ÑÏùò ÌååÌã∞Ïùò ÌéòÎÑêÌã∞Í∞Ä ÏóÜÏñ¥ÏßëÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3384, "‚Äª Ïù¥Î≤§Ìä∏ ÏïÑÏù¥ÌÖúÏùÄ Ïù∏Î≤§ÏóêÏÑú Ïù¥Î≤§Ìä∏ ÏïÑÏù¥ÌÖú Ïπ∏Ïóê Îì§Ïñ¥Í∞ÄÍ≤å Îê©ÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3383, "°ÿ ¿Ã∫•∆Æ ±‚∞£ µøæ» »ƒ∞ﬂ¿Œ∞˙ ∞ﬂΩ¿ª˝∞£¿« ∆ƒ∆º¿« ∆‰≥Œ∆º∞° æ¯æÓ¡˝¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3384, "°ÿ ¿Ã∫•∆Æ æ∆¿Ã≈€¿∫ ¿Œ∫•ø°º≠ ¿Ã∫•∆Æ æ∆¿Ã≈€ ƒ≠ø° µÈæÓ∞°∞‘ µÀ¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3385, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 4Ïõî 30Ïùº ~ 2007ÎÖÑ 5Ïõî 15Ïùº") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3385, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 4ø˘ 30¿œ ~ 2007≥‚ 5ø˘ 15¿œ") );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
 				else if(iEventIndex == TEVENT_UCC_2007)
 				{
-					_pUIMgr->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
-					_pUIMgr->CreateMessageBoxL( _S( 100, "Ïù¥Î≤§Ìä∏" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
+					pUIManager->CloseMessageBoxL( MSGLCMD_EVENT_NOTICE );
+					pUIManager->CreateMessageBoxL( _S( 100, "¿Ã∫•∆Æ" ), UI_NOTICE, MSGLCMD_EVENT_NOTICE );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3386, "ÎÇ¥Í∞Ä ÎßåÎì† ÎùºÏπ¥"), -1, 0xE18600FF );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, TRUE, _S(3386, "≥ª∞° ∏∏µÁ ∂Ûƒ´"), -1, 0xE18600FF );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3387, "ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§Î•º Ï¶êÍ∏∞Î©¥ÏÑú Ïû¨ÎØ∏ÏûàÏóàÎçò ÏóêÌîºÏÜåÎìú Î∞è Ïó¨Îü¨ Í∞ÄÏßÄ Ï£ºÏ†úÏÉÅÍ¥Ä ÏóÜÏù¥") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3388, "ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§Ïóê Í¥ÄÌïú Î™®Îì† ÏÜåÏû¨Î°ú UCCÎ•º Ï†úÏûëÌïòÏó¨") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3389, "ÌôàÌéòÏù¥ÏßÄÎ•º ÌÜµÌï¥ÏÑú Ïò¨Î†§Ï£ºÏãúÎ©¥ Ïú†Ï†ÄÏã¨ÏÇ¨ 50% ÏûêÏ≤¥Ïã¨ÏÇ¨ 50%Ïùò Ïã¨ÏÇ¨Î•º ÌÜµÌï¥ÏÑú ÏãúÏÉÅÏùÑ Ìï† ÏòàÏ†ïÏûÖÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3390, "Ìë∏ÏßêÌïú ÏÉÅÌíàÎì§Ïù¥ Í∏∞Îã§Î¶¨Í≥† ÏûàÏúºÎãà ÎßéÏùÄ Ï∞∏Ïó¨ Î∂ÄÌÉÅ ÎìúÎ¶¨Í≤†ÏäµÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3387, "∂ÛΩ∫∆Æƒ´ø¿Ω∫∏¶ ¡Ò±‚∏Èº≠ ¿ÁπÃ¿÷æ˙¥¯ ø°««º“µÂ π◊ ø©∑Ø ∞°¡ˆ ¡÷¡¶ªÛ∞¸ æ¯¿Ã") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3388, "∂ÛΩ∫∆Æƒ´ø¿Ω∫ø° ∞¸«— ∏µÁ º“¿Á∑Œ UCC∏¶ ¡¶¿€«œø©") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3389, "»®∆‰¿Ã¡ˆ∏¶ ≈Î«ÿº≠ ø√∑¡¡÷Ω√∏È ¿Ø¿˙Ω…ªÁ 50% ¿⁄√ºΩ…ªÁ 50%¿« Ω…ªÁ∏¶ ≈Î«ÿº≠ Ω√ªÛ¿ª «“ øπ¡§¿‘¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3390, "«™¡¸«— ªÛ«∞µÈ¿Ã ±‚¥Ÿ∏Æ∞Ì ¿÷¿∏¥œ ∏π¿∫ ¬¸ø© ∫Œ≈π µÂ∏Æ∞⁄Ω¿¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3391, "‚Äª UCC (ÎèôÏòÅÏÉÅ, ÏùºÎü¨Ïä§Ìä∏, Ïπ¥Ìà∞, ÏóêÌîºÏÜåÎìú Í∏Ä)") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3392, "‚Äª Ï£ºÏ†úÎäî ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§Ïóê Í¥ÄÌïú Î™®Îì† ÏÜåÏû¨Î°ú Ï†úÏûëÌïòÏó¨ Ï£ºÏãúÎ©¥ Îê©ÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3393, "‚Äª Ïù¥Î≤§Ìä∏Ïóê Ï∞∏Ïó¨Ìïú ÏûëÌíàÏùò Ï†ÄÏûëÍ∂åÏùÄ Ï†ÄÌù¨ „àúÌã∞ ÏóîÌÑ∞ÌÖåÏù∏Î®ºÌä∏Ïóê Í∑ÄÏÜçÎê®ÏùÑ ÏïåÎ†§ÎìúÎ¶ΩÎãàÎã§.") );
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3391, "°ÿ UCC (µøøµªÛ, ¿œ∑ØΩ∫∆Æ, ƒ´≈˜, ø°««º“µÂ ±€)") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3392, "°ÿ ¡÷¡¶¥¬ ∂ÛΩ∫∆Æƒ´ø¿Ω∫ø° ∞¸«— ∏µÁ º“¿Á∑Œ ¡¶¿€«œø© ¡÷Ω√∏È µÀ¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3393, "°ÿ ¿Ã∫•∆Æø° ¬¸ø©«— ¿€«∞¿« ¿˙¿€±«¿∫ ¿˙»Ò ¢ﬂ∆º ø£≈Õ≈◊¿Œ∏’∆Æø° ±Õº”µ ¿ª æÀ∑¡µÂ∏≥¥œ¥Ÿ.") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" ") );
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3394, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 4Ïõî 30Ïùº ~ 2007ÎÖÑ 5Ïõî 31Ïùº") );
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3394, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 4ø˘ 30¿œ ~ 2007≥‚ 5ø˘ 31¿œ") );
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "ÌôïÏù∏" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_EVENT_NOTICE, FALSE, _S( 191, "»Æ¿Œ" ) );
 				}
 				else if(iEventIndex == TEVENT_FLOWERTREE)
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3504, "ÍΩÉÎÜÄÏù¥ Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3504, "≤…≥Ó¿Ã ¿Ã∫•∆Æ"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3505, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ ÍΩÉÎÇòÎ¨¥Î•º ÌÇ§Ïö∏ Ïàò ÏûàÎäî [Ìá¥ÎπÑ]ÏôÄ [Ï†ïÌôîÏàò]Í∞Ä ÎìúÎ°≠Îê©ÎãàÎã§"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3506, "[Ìá¥ÎπÑ]ÏôÄ [Ï†ïÌôîÏàò]Î•º Î™®ÏïÑ Ï•¨ÎÖ∏ Î∂ÅÎ¨∏Ïóê ÏûàÎäî Ï†ïÏõêÏÇ¨ÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÎ©¥ Ï†ïÏõêÏÇ¨ ÏòÜÏóê ÏûàÎäî ÏïôÏÉÅÌïú ÎÇòÎ¨¥Ïóê ÍΩÉÏùÑ ÌîºÏö∞ÎäîÎç∞ ÎèÑÏõÄÏùÑ Ï§Ñ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3505, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È ≤…≥™π´∏¶ ≈∞øÔ ºˆ ¿÷¥¬ [≈∫Ò]øÕ [¡§»≠ºˆ]∞° µÂ∑”µÀ¥œ¥Ÿ"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3506, "[≈∫Ò]øÕ [¡§»≠ºˆ]∏¶ ∏æ∆ ¡Í≥Î ∫œπÆø° ¿÷¥¬ ¡§ø¯ªÁø°∞‘ ∞°¡Æ∞°∏È ¡§ø¯ªÁ ø∑ø° ¿÷¥¬ æ”ªÛ«— ≥™π´ø° ≤…¿ª ««øÏ¥¬µ• µµøÚ¿ª ¡Ÿ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3509, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 5Ïõî 15Ïùº ~ 2007ÎÖÑ 5Ïõî 29Ïùº"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3507, "‚Äª Ïù¥Î≤§Ìä∏ Ï∞∏Ïó¨Î∞©Î≤ï: ÏÇ¨ÎÉ•ÏùÑ ÌÜµÌï¥ [Ìá¥ÎπÑ]ÏôÄ [Ï†ïÌôîÏàò]Î•º ÌöçÎìùÌïòÏó¨ Ï†ïÏõêÏÇ¨ÏóêÍ≤å Í∞ÄÏ†∏Í∞Ä Í∞úÌôîÎ•º ÎèÑÏö∞Î©¥, Í∞ÄÏ†∏Í∞Ñ [Ìá¥ÎπÑ]ÏôÄ [Ï†ïÌôîÏàò]Ïùò Ïà´ÏûêÎßåÌÅº Í∏∞Ïó¨ÎèÑÍ∞Ä Ï¶ùÍ∞ÄÎêòÎ©∞, Ï†ÑÏ≤¥ ÏÑúÎ≤ÑÏùò Ï¥ù Í∏∞Ïó¨ÎèÑÍ∞Ä Ï¶ùÍ∞ÄÎê®Ïóê Îî∞Îùº Ï¥ù 10Îã®Í≥ÑÎ°ú ÍΩÉÎÇòÎ¨¥Í∞Ä Í∞úÌôîÌïòÍ≤å Îê©ÎãàÎã§."), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3508, "‚Äª Ïù¥Î≤§Ìä∏ Î≥¥ÏÉÅ1: ÏûêÏã†Ïùò Í∏∞Ïó¨ÎèÑ 100Îãπ ÍΩÉÎÜÄÏù¥ ÍµêÌôòÍ∂å 1Ïû•ÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§. Î∞õÏùÄ ÍµêÌôòÍ∂åÏùÑ ÌôïÏù∏ÌïòÎ©¥ Í≥†Í∏âÏ†úÎ†®ÏÑùÏùÑ Ìè¨Ìï®Ìïú Í∞ÅÏ¢Ö Î≥¥ÏÉÅÌíàÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3524, "Îã® ÍµêÌôòÍ∂åÏùÑ Î∞õÏïÑÎèÑ Í∏∞Ïó¨ÎèÑÎäî Í≥ÑÏÜç ÎàÑÏ†ÅÎêòÏñ¥ ÌëúÏãúÎê©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3525, "‚Äª Ïù¥Î≤§Ìä∏ ÏÉÅÌíà2: Ïù¥Î≤§Ìä∏Í∞Ä Ï¢ÖÎ£å Îêú ÌõÑ Í∞ÄÏû• ÎÜíÏùÄ Í∏∞Ïó¨ÎèÑÎ•º Îã¨ÏÑ±Ìïú ÏÑúÎ≤Ñ Íµ∞ÏóêÎäî ÌïúÎã¨ ÎèôÏïà Ï∂îÏ≤ú ÏÑúÎ≤Ñ Ïù¥Î≤§Ìä∏Í∞Ä ÏßÑÌñâÎê©ÎãàÎã§."), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3509, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 5ø˘ 15¿œ ~ 2007≥‚ 5ø˘ 29¿œ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3507, "°ÿ ¿Ã∫•∆Æ ¬¸ø©πÊπ˝: ªÁ≥…¿ª ≈Î«ÿ [≈∫Ò]øÕ [¡§»≠ºˆ]∏¶ »πµÊ«œø© ¡§ø¯ªÁø°∞‘ ∞°¡Æ∞° ∞≥»≠∏¶ µµøÏ∏È, ∞°¡Æ∞£ [≈∫Ò]øÕ [¡§»≠ºˆ]¿« º˝¿⁄∏∏≈≠ ±‚ø©µµ∞° ¡ı∞°µ«∏Á, ¿¸√º º≠πˆ¿« √— ±‚ø©µµ∞° ¡ı∞°µ ø° µ˚∂Û √— 10¥‹∞Ë∑Œ ≤…≥™π´∞° ∞≥»≠«œ∞‘ µÀ¥œ¥Ÿ."), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3508, "°ÿ ¿Ã∫•∆Æ ∫∏ªÛ1: ¿⁄Ω≈¿« ±‚ø©µµ 100¥Á ≤…≥Ó¿Ã ±≥»Ø±« 1¿Â¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ. πﬁ¿∫ ±≥»Ø±«¿ª »Æ¿Œ«œ∏È ∞Ì±ﬁ¡¶∑√ºÆ¿ª ∆˜«‘«— ∞¢¡æ ∫∏ªÛ«∞¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3524, "¥‹ ±≥»Ø±«¿ª πﬁæ∆µµ ±‚ø©µµ¥¬ ∞Ëº” ¥©¿˚µ«æÓ «•Ω√µÀ¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3525, "°ÿ ¿Ã∫•∆Æ ªÛ«∞2: ¿Ã∫•∆Æ∞° ¡æ∑· µ» »ƒ ∞°¿Â ≥Ù¿∫ ±‚ø©µµ∏¶ ¥ﬁº∫«— º≠πˆ ±∫ø°¥¬ «—¥ﬁ µøæ» √ﬂ√µ º≠πˆ ¿Ã∫•∆Æ∞° ¡¯«‡µÀ¥œ¥Ÿ."), -1, 0xE18600FF);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}
 				// [070705: Su-won] EVENT_SUMMER_2007
 				else if( iEventIndex == TEVENT_SUMMER_2007)
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3561, "Ï¢ÖÏù¥Ï†ëÍ∏∞ Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3561, "¡æ¿Ã¡¢±‚ ¿Ã∫•∆Æ"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3562, "Ïó¨Î¶ÑÏùÑ ÎßûÏïÑ Ïñ¥Î¶∞ ÏãúÏ†àÏùÑ ÌöåÏÉÅÌï¥ Î≥º Ïàò ÏûàÎäî Ï¢ÖÏù¥Ï†ëÍ∏∞ Ïù¥Î≤§Ìä∏Î•º ÏßÑÌñâÌï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3563, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÎèôÏïà Î™¨Ïä§ÌÑ∞ ÏÇ¨ÎÉ• ÏãúÏóê ÎìúÎ°≠ÎêòÎäî Ïó¨Îü¨Í∞ÄÏßÄ ÏÉâÏ¢ÖÏù¥Î•º Î™®ÏïÑÏÑú Î°úÎ†àÏù∏ÏóêÍ≤å Ï∞æÏïÑÍ∞Ä Î∂ÄÌÉÅÌïòÏó¨ ÏÉâÏ¢ÖÏù¥Î•º Ïù¥Ïö©Ìïú Ï¢ÖÏù¥ Ï†ëÍ∏∞Î•º ÌïòÏó¨ ÎÇòÏò§Îäî Í≤∞Í≥ºÏóê Îî∞Îùº Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3564, "Ïù¥Î≤§Ìä∏ Ï¢ÖÎ£å ÌõÑ Ï¢ÖÏù¥Îäî ÎìúÎ°≠ÎêòÏßÄ ÏïäÏúºÎÇò Î≥¥ÏÉÅÏùÄ ÌïúÎã¨ ÌõÑÍπåÏßÄ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3562, "ø©∏ß¿ª ∏¬æ∆ æÓ∏∞ Ω√¿˝¿ª »∏ªÛ«ÿ ∫º ºˆ ¿÷¥¬ ¡æ¿Ã¡¢±‚ ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3563, "¿Ã∫•∆Æ ±‚∞£µøæ» ∏ÛΩ∫≈Õ ªÁ≥… Ω√ø° µÂ∑”µ«¥¬ ø©∑Ø∞°¡ˆ ªˆ¡æ¿Ã∏¶ ∏æ∆º≠ ∑Œ∑π¿Œø°∞‘ √£æ∆∞° ∫Œ≈π«œø© ªˆ¡æ¿Ã∏¶ ¿ÃøÎ«— ¡æ¿Ã ¡¢±‚∏¶ «œø© ≥™ø¿¥¬ ∞·∞˙ø° µ˚∂Û ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3564, "¿Ã∫•∆Æ ¡æ∑· »ƒ ¡æ¿Ã¥¬ µÂ∑”µ«¡ˆ æ ¿∏≥™ ∫∏ªÛ¿∫ «—¥ﬁ »ƒ±Ó¡ˆ πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3565, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 7Ïõî 10Ïùº(Ìôî) ~ 2007ÎÖÑ 8Ïõî 24Ïùº(Ìôî)"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3565, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 8ø˘ 16¿œ(∏Ò) ~ 2007≥‚ 8ø˘ 28¿œ(»≠)"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}
 				else if (iEventIndex == TEVENT_INDEPENDENCEDAY)
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3547, "ÎèÖÎ¶ΩÍ∏∞ÎÖêÏùº Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3547, "µ∂∏≥±‚≥‰¿œ ¿Ã∫•∆Æ"), -1, 0xE18600FF);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3548, "ÎØ∏Íµ≠Ïùò ÎèÖÎ¶ΩÍ∏∞ÎÖêÏùºÏùÑ ÎßûÏïÑ Ïù¥Î≤§Ìä∏Î•º ÏßÑÌñâÌï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3549, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨Ïä§ÌÑ∞Î•º ÏÇ¨ÎÉ•ÌïòÎ©¥ ÏÇ¨ÎÉ•Ïóê ÎèÑÏõÄÏùÑ Ï£ºÎäî Ï§ÑÎ¨¥Îä¨, Î≥ÑÎ¨¥Îä¨ ÏÑ±Ï°∞Í∏∞ÏôÄ Í∞Å ÌÅ¥ÎûòÏä§Ïùò ÏóâÌÅ¥ ÏÉò Î™®ÏûêÎ•º ÌöçÎìùÌï† Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3548, "πÃ±π¿« µ∂∏≥±‚≥‰¿œ¿ª ∏¬æ∆ ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3549, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏ÛΩ∫≈Õ∏¶ ªÁ≥…«œ∏È ªÁ≥…ø° µµøÚ¿ª ¡÷¥¬ ¡Ÿπ´¥Ã, ∫∞π´¥Ã º∫¡∂±‚øÕ ∞¢ ≈¨∑°Ω∫¿« æ˚≈¨ ª˘ ∏¿⁄∏¶ »πµÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3550, "ÏïÑÏù¥ÌÖú Ìö®Í≥º"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3551, "* Ï§ÑÎ¨¥Îä¨ ÏÑ±Ï°∞Í∏∞: ÏÇ¨Ïö© Ïãú 5Î∂ÑÍ∞Ñ ÌöçÎìù Í≤ΩÌóòÏπò Î∞è SPÎ•º 50% ÏÉÅÏäπ ÏãúÏºúÏ§ÄÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3552, "* Î≥ÑÎ¨¥Îä¨ ÏÑ±Ï°∞Í∏∞: ÏÇ¨Ïö© Ïãú 5Î∂ÑÍ∞Ñ Î¨ºÎ¶¨&ÎßàÎ≤ï Í≥µÍ≤©Î†•, Î¨ºÎ¶¨Î∞©Ïñ¥Î†•Ïù¥ 50Ïù¥ Ï¶ùÍ∞ÄÎêúÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3550, "æ∆¿Ã≈€ »ø∞˙"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3551, "* ¡Ÿπ´¥Ã º∫¡∂±‚: ªÁøÎ Ω√ 5∫–∞£ »πµÊ ∞Ê«Ëƒ° π◊ SP∏¶ 50% ªÛΩ¬ Ω√ƒ—¡ÿ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3552, "* ∫∞π´¥Ã º∫¡∂±‚: ªÁøÎ Ω√ 5∫–∞£ π∞∏Æ&∏∂π˝ ∞¯∞›∑¬, π∞∏ÆπÊæÓ∑¬¿Ã 50¿Ã ¡ı∞°µ»¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3553, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 7Ïõî 3Ïùº ~2007ÎÖÑ 7Ïõî 4Ïùº"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3553, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 7ø˘ 3¿œ ~2007≥‚ 7ø˘ 4¿œ"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 
 				}
-				else if( iEventIndex == TEVENT_TG2007_1000DAYS || iEventIndex == TEVENT_TG2007_FRUITFULL ) // WSS_TG2007 2007/09/17 ÌíçÎÖÑ Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_ADULT_OPEN )
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3761, "ÌíçÎÖÑ Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3762, "ÏàòÌôïÏùò Í∏∞ÏÅ®ÏùÑ ÎàÑÎ¶¨Í∏∞ ÏúÑÌï¥ ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§Ïî®ÏïóÏùÑ ÌÇ§Ïõå [Í¥ÄÏã¨, Í¥ÄÏö©, ÏÇ¨Îûë, ÏßàÌÉÄ]Î•º Ïù¥Ïö©Ìï¥ÏÑú Îã§ÏùåÎã®Í≥ÑÎ°ú ÏóÖÍ∑∏Î†àÏù¥ÎìúÌïòÎ©¥ Î≥¥Îã§ Ï¢ãÏùÄ Î≥¥ÏÉÅÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3763, "ÏµúÏ¢ÖÎã®Í≥ÑÍπåÏßÄ ÌÇ§Ïö∞Î©¥ ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§Î°úÍ≥†Î•º ÌöçÎìùÌïòÏó¨ Ïù¥Î≤§Ìä∏ ÏßÑÌñâÏöîÏõêÏóêÍ≤å Í≥†Í∏âÏùò ÏïÑÏù¥ÌÖúÏùÑ Î≥¥ÏÉÅÎ∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3764, "(Ïù¥Î≤§Ìä∏ ÏïÑÏù¥ÌÖúÏùÄ Ïù¥Î≤§Ìä∏ Í∏∞Í∞ÑÏù¥ ÏßÄÎÇòÎ©¥ ÏùºÍ≥ºÏ†ÅÏúºÎ°ú ÏÇ≠Ï†úÎê©ÎãàÎã§)"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3655, "¿Ã∫•∆Æ 1. ∞≈ƒßæ¯¿Ã Ω¥Ÿ!"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3656, "¿Ã∫•∆Æ ±‚∞£µøæ» ¡¢º”«œ¥¬ ∏µÁ ƒ≥∏Ø≈Õø°∞‘, ∑Œ∑π¿Œ¿ª √£æ∆∞° ¥Î»≠∏¶ «œ∏È ¿Ã∫•∆Æ ƒ≥Ω√ ªÛ«∞ ∆–≈∞¡ˆ ºº∆Æ(º“«¸ HP/MP »Æ¿Â∆˜º«, ∞≥¿Œ√¢∞Ì »Æ¿Âƒ´µÂ, ∆ƒ∆º∏Æƒ› 3Ω√∞£ ¡§æ◊±«, ∞ÒµÂ∫ŒΩ∫≈Õ)∏¶ ¿¸ø¯ ¡ı¡§«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3605, "¿Ã∫•∆Æ 2. ∏≈¡˜ƒ´µÂ∏¶ √£æ∆∂Û!"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3657, "∑Œ∑π¿Œ¿« ¿“æÓπˆ∏∞ ƒ´µÂ∏¶ ∏æ∆¡÷ººø‰. ¥…∑¬¿ª ¥Î∆¯ ªÛΩ¬Ω√ƒ—¡÷¥¬ ∏∂π˝¿ª ∞…æÓµÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 
-
-
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(1680, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3765, "2007ÎÖÑ 9Ïõî 20Ïùº ~ 2007ÎÖÑ 10Ïõî 4Ïùº"));
-
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3565, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 8ø˘ 16¿œ(∏Ò) ~ 2007≥‚ 8ø˘ 28¿œ(»≠)"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 					
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 
 				}
-				else if (iEventIndex == TEVENT_HOLLOWEEN2007) // Ìï†Î°úÏúà Ïù¥Î≤§Ìä∏2007
+				else if( iEventIndex == TEVENT_TG2007_1000DAYS || iEventIndex == TEVENT_TG2007_FRUITFULL ) // WSS_TG2007 2007/09/17 «≥≥‚ ¿Ã∫•∆Æ
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3797, "Ìï†Î°úÏúà Ïù¥Î≤§Ìä∏"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3798, "1. Ìï†Î°úÏúà Ïù¥Î≤§Ìä∏ ÏΩîÏä§Ï∏î ÏùòÏÉÅ Î∞õÍ∏∞"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3799, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Ìò∏Î∞ïÍ¥ëÎåÄ ÌóàÏàòÏïÑÎπÑÎ•º Ï∞æÏïÑÍ∞Ä ÎßêÏùÑ Í±∏Î©¥ ""ÏïÖÎßà ÎÇ†Í∞ú Î®∏Î¶¨Îù†""Î•º Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3800, "2. Ìò∏Î∞ï Î®∏Î¶¨ ÌÉà Î∞õÍ∏∞"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3801, "ÏÇ¨ÎÉ• Ï§ë ÎìúÎ°≠ÎêòÎäî ""Îπà ÏÇ¨ÌÉï Î∞îÍµ¨Îãà""Î•º Í∞ÄÏßÄÍ≥† Ìò∏Î∞ïÍ¥ëÎåÄ ÌóàÏàòÏïÑÎπÑÎ•º Ï∞æÏïÑÍ∞Ä ÎßêÏùÑ Í±∏Î©¥ ÎûúÎç§ÏúºÎ°ú 6Ï¢ÖÏùò ""ÏÇ¨ÌÉï"" Ï§ë 1Í∞ÄÏßÄÎ•º ÏñªÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3802, "6Ï¢Ö Î™®ÎëêÎ•º ÏñªÏùÄ ÌõÑ Ìò∏Î∞ïÍ¥ëÎåÄ ÌóàÏàòÏïÑÎπÑÎ•º ÌÜµÌï¥ ""Ìò∏Î∞ï Î®∏Î¶¨ ÌÉà""ÏùÑ ÍµêÌôò Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3803, "3. ÎßàÎÖÄÎ™®Ïûê Î∞è ÎßàÎ≤ïÏÇ¨ Î™®Ïûê Î∞õÍ∏∞"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3804, "ÍµêÌôòÌïú ""ÏÇ¨ÌÉï""ÏùÑ ÏÇ¨Ïö©ÌïòÎ©¥ ÎûúÎç§ÏúºÎ°ú ""ÏµúÏÉÅÏùò Îßõ Ï¶ùÌëú""ÏôÄ ""ÏµúÏïÖÏùò Îßõ Ï¶ùÌëú""Î•º ÏñªÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3805, "Ïù¥ 2Ï¢ÖÏùò Ï¶ùÌëúÎ•º Ïù¥Î≤§Ìä∏NPCÎ•º ÌÜµÌï¥ ""ÎßàÎÖÄÎ™®Ïûê Î∞è ÎßàÎ≤ïÏÇ¨Î™®Ïûê""Î°ú ÍµêÌôò Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3806, "4. Ìò∏Î∞ïÎ®∏Î¶¨ Í∑ÄÏã† Ïû°Í∏∞"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3807, "ÌïÑÎìúÏóê Ïà®Ïñ¥ ÏûàÎäî ""Ìò∏Î∞ï Î®∏Î¶¨ Í∑ÄÏã†""ÏùÑ ÍµêÌôò Î∞õÏùÄ ""Ìò∏Î∞ï Î®∏Î¶¨ ÌÉà""ÏùÑ Ïì∞Í≥† Ï∞æÏïÑ ÏÇ¨ÎÉ• Ìï† Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3808, "ÎìúÎ°≠ÎêòÎäî ""Ìò∏Î∞ï"" ÏïÑÏù¥ÌÖúÏùÄ Ìò∏Î∞ïÍ¥ëÎåÄ ÌóàÏàòÏïÑÎπÑÎ•º ÌÜµÌïòÏó¨ Îã§ÏñëÌïú ÏïÑÏù¥ÌÖúÏúºÎ°ú ÍµêÌôò Í∞ÄÎä•Ìï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(1680, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3809, "2007ÎÖÑ 10Ïõî 23Ïùº ~ 2007ÎÖÑ 11Ïõî 6Ïùº"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3761, "«≥≥‚ ¿Ã∫•∆Æ"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3762, "ºˆ»Æ¿« ±‚ª›¿ª ¥©∏Æ±‚ ¿ß«ÿ ∂ÛΩ∫∆Æƒ´ø¿Ω∫æææ—¿ª ≈∞øˆ [∞¸Ω…, ∞¸øÎ, ªÁ∂˚, ¡˙≈∏]∏¶ ¿ÃøÎ«ÿº≠ ¥Ÿ¿Ω¥‹∞Ë∑Œ æ˜±◊∑π¿ÃµÂ«œ∏È ∫∏¥Ÿ ¡¡¿∫ ∫∏ªÛ¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3763, "√÷¡æ¥‹∞Ë±Ó¡ˆ ≈∞øÏ∏È ∂ÛΩ∫∆Æƒ´ø¿Ω∫∑Œ∞Ì∏¶ »πµÊ«œø© ¿Ã∫•∆Æ ¡¯«‡ø‰ø¯ø°∞‘ ∞Ì±ﬁ¿« æ∆¿Ã≈€¿ª ∫∏ªÛπﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3764, "(¿Ã∫•∆Æ æ∆¿Ã≈€¿∫ ¿Ã∫•∆Æ ±‚∞£¿Ã ¡ˆ≥™∏È ¿œ∞˙¿˚¿∏∑Œ ªË¡¶µÀ¥œ¥Ÿ)"));
+
+
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(1680, "¿Ã∫•∆Æ ±‚∞£"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 3765, "2007≥‚ 9ø˘ 20¿œ ~ 2007≥‚ 10ø˘ 4¿œ"));
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+
 				}
-				else if (iEventIndex == TEVENT_XMAS_2007) // ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ïù¥Î≤§Ìä∏ 2007
+				else if (iEventIndex == A_EVENT_HOLLOWEEN) // «“∑Œ¿© ¿Ã∫•∆Æ2007
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3169, "ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ïù¥Î≤§Ìä∏"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3957, "Îã§Í∞ÄÏò§Îäî 2007 ÌÅ¨Î¶¨Ïä§ÎßàÏä§ÏôÄ 2008 Ïã†ÎÖÑÏùÑ ÎßûÏù¥ ÌïòÏó¨ Îëê Í∞ÄÏßÄ Ïù¥Î≤§Ìä∏Í∞Ä ÏãúÏûëÎê©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3958, "1. ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ìä∏Î¶¨Ïû•Ïãù"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3959, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà ÏÇ¨ÎÉ•ÏùÑ ÌÜµÌï¥ÏÑú ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ïû•Ïãù 6Ï¢ÖÏùÑ ÌöçÎìùÌï† Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3960, "ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ïû•ÏãùÏùÑ Ï•¨ÎÖ∏ÎßàÏùÑ Í¥ëÏû•Ïóê ÏûàÎäî ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ìä∏Î¶¨Ïóê Í∞ÄÏ†∏Í∞ÄÎ©¥ Ïû•ÏãùÏùò Í∞úÏàòÏóê Îî∞ÎùºÏÑú Ìä∏Î¶¨Ïùò Î™®ÏäµÏù¥ Îã®Í≥ÑÏ†ÅÏúºÎ°ú Î≥ÄÌïòÎ©∞ ÌÅ¨Î¶¨Ïä§ÎßàÏä§ ÏÑ†Î¨º ÏïÑÏù¥ÌÖú Î∞è Í∞ÅÏ¢Ö ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ï∂ïÎ≥µÎ≤ÑÌîÑÎ•º Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3961, "2. ÌÅ¨Î¶¨Ïä§ÎßàÏä§ ÏÑ†Î¨º ÏÉÅÏûê"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3962, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Í≤åÏûÑÏóê Ï†ëÏÜçÌïòÏó¨ 1ÏãúÍ∞ÑÏù¥ ÏßÄÎÇòÎ©¥ ÌÅ¨Î¶¨Ïä§ÎßàÏä§ ÏÑ†Î¨º ÏÉÅÏûêÍ∞Ä ÏÜåÌôòÎêòÍ≥†, ÏÜåÌôòÎêú ÌÅ¨Î¶¨Ïä§ÎßàÏä§ ÏÑ†Î¨ºÏÉÅÏûêÎ•º ÏÇ¨ÎÉ•ÌïòÎ©¥ Î£®ÎèåÌîÑ Ìé´ Î≥ÄÏã† ÏïÑÏù¥ÌÖú Îì± Ïù¥Î≤§Ìä∏ ÏïÑÏù¥ÌÖúÏù¥ ÎìúÎ°≠Îê©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(1680, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ"), -1, 0xE18600FF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3963, "2007ÎÖÑ 12Ïõî 11Ïùº ~ 2008ÎÖÑ 1Ïõî 8Ïùº"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3797, "«“∑Œ¿© ¿Ã∫•∆Æ"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3800, "1. »£π⁄ ∏”∏Æ ≈ª πﬁ±‚"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3801, "ªÁ≥… ¡ﬂ µÂ∑”µ«¥¬ ""∫Û ªÁ≈¡ πŸ±∏¥œ""∏¶ ∞°¡ˆ∞Ì »£π⁄±§¥Î «„ºˆæ∆∫Ò∏¶ √£æ∆∞° ∏ª¿ª ∞…∏È ∑£¥˝¿∏∑Œ 6¡æ¿« ""ªÁ≈¡"" ¡ﬂ 1∞°¡ˆ∏¶ æÚ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3802, "6¡æ ∏µŒ∏¶ æÚ¿∫ »ƒ »£π⁄±§¥Î «„ºˆæ∆∫Ò∏¶ ≈Î«ÿ ""»£π⁄ ∏”∏Æ ≈ª""¿ª ±≥»Ø πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3806, "2. »£π⁄∏”∏Æ ±ÕΩ≈ ¿‚±‚"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3807, "« µÂø° º˚æÓ ¿÷¥¬ ""»£π⁄ ∏”∏Æ ±ÕΩ≈""¿ª ±≥»Ø πﬁ¿∫ ""»£π⁄ ∏”∏Æ ≈ª""¿ª æ≤∞Ì √£æ∆ ªÁ≥… «“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3808, "µÂ∑”µ«¥¬ ""»£π⁄"" æ∆¿Ã≈€¿∫ »£π⁄±§¥Î «„ºˆæ∆∫Ò∏¶ ≈Î«œø© ¥ŸæÁ«— æ∆¿Ã≈€¿∏∑Œ ±≥»Ø ∞°¥…«’¥œ¥Ÿ."));
+#ifndef NEW_HOLLOWEEN_EVENT
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3803, "3. ∏∂≥‡∏¿⁄ π◊ ∏∂π˝ªÁ ∏¿⁄ πﬁ±‚"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3804, "±≥»Ø«— ""ªÁ≈¡""¿ª ªÁøÎ«œ∏È ∑£¥˝¿∏∑Œ ""√÷ªÛ¿« ∏¿ ¡ı«•""øÕ ""√÷æ«¿« ∏¿ ¡ı«•""∏¶ æÚ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3805, "¿Ã 2¡æ¿« ¡ı«•∏¶ ¿Ã∫•∆ÆNPC∏¶ ≈Î«ÿ ""∏∂≥‡∏¿⁄ π◊ ∏∂π˝ªÁ∏¿⁄""∑Œ ±≥»Ø πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3798, "4. «“∑Œ¿© ¿Ã∫•∆Æ ƒ⁄Ω∫√ı ¿«ªÛ πﬁ±‚"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3799, "¿Ã∫•∆Æ ±‚∞£ µøæ» »£π⁄±§¥Î «„ºˆæ∆∫Ò∏¶ √£æ∆∞° ∏ª¿ª ∞…∏È ""æ«∏∂ ≥Ø∞≥ ∏”∏Æ∂Ï""∏¶ πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+#else
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(5112, "3. «“∑Œ¿© Ω∫≈©∏≤ ∞°∏È πﬁ±‚"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3804, "±≥»Ø«— ""ªÁ≈¡""¿ª ªÁøÎ«œ∏È ∑£¥˝¿∏∑Œ ""√÷ªÛ¿« ∏¿ ¡ı«•""øÕ ""√÷æ«¿« ∏¿ ¡ı«•""∏¶ æÚ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(5113, "¿Ã 2¡æ¿« ¡ı«•∏¶ ¿Ã∫•∆ÆNPC∏¶ ≈Î«ÿ ""«“∑Œ¿© Ω∫≈©∏≤ ∞°∏È""¿∏∑Œ ±≥»Ø πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+#endif
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(1680, "¿Ã∫•∆Æ ±‚∞£"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3809, "2007≥‚ 10ø˘ 23¿œ ~ 2007≥‚ 11ø˘ 6¿œ"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}
-				else if( iEventIndex == TEVENT_NEWYEAR_2008) //2008ÎÖÑ Ïã†ÎÖÑ Ïù¥Î≤§Ìä∏ 
+				else if (iEventIndex == TEVENT_XMAS_2007) // ≈©∏ÆΩ∫∏∂Ω∫ ¿Ã∫•∆Æ 2007
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3969, "Ïã†ÎÖÑ Ïù¥Î≤§Ìä∏"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3970, "Ïã†ÎÖÑÏùÑ ÎßûÏù¥ÌïòÏó¨ ÏÉàÌï¥Ïù∏ÏÇ¨Î•º ÌïòÎ©¥ÏÑú Ìï¥ÎßûÏù¥Î≤ÑÌîÑÎ•º Ìï† ÏàòÏûàÎäî Ïù¥Î≤§Ìä∏Î•º ÎßàÎ†®ÌïòÏòÄÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3971, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2007ÎÖÑ 12Ïõî 27Ïùº(Î™©) ~ 2008ÎÖÑ 1Ïõî 15Ïùº(Ìôî)"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3972, "Ïù¥Î≤§Ìä∏ Î∞©Î≤ï: Ìï¥ÎßûÏù¥ Ïù∏ÏÇ¨Ìï† Ïú†Ï†ÄÎ•º ÏÑ†ÌÉùÌïòÍ≥† ÏÜåÏÖúÏ∞ΩÏóêÏÑú Ïù∏ÏÇ¨Î•º ÌïòÎ©¥ Ìï¥ÎßûÏù¥ Î≤ÑÌîÑÏôÄ ÏÉàÌï¥Ïù∏ÏÇ¨Î•º ÌïòÍ≤å Îê©ÎãàÎã§."), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3973, "ÏÉàÌï¥Ïù∏ÏÇ¨Îäî Ï†úÌïúÏóÜÏù¥ Í≥ÑÏÜçÌï† Ïàò ÏûàÏúºÎÇò Î≤ÑÌîÑÎäî 1ÏãúÍ∞ÑÎßàÎã§ ÌïúÎ≤àÏî© Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§. Îã®, Ìï¥ÎßûÏù¥Î≤ÑÌîÑ Î∞õÍ∏∞Îäî ÏàòÎùΩÏó¨Î∂ÄÎ•º Í≤∞Ï†ïÌï† Ïàò ÏûàÏäµÎãàÎã§."), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(5808, "ªÍ≈∏≈¨∑ŒΩ∫∏¶ √£æ∆∂Û!"), -1, 0xE18600FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(5809, "∫˚¿« ¥Î«ˆ¿⁄ 'Ω∫≈∏¥œΩΩ∂Û≥™'¥¬ æ∆¿Ã∏ÆΩ∫ ¥Î∑˙¿« ∞¢ ∏∂¿ªø° ªÏ∞Ì ¿÷¥¬ æÓ∏∞æ∆¿ÃµÈø°∞‘ º±π∞«ÿ¡Ÿ ªÍ≈∏≈¨∑ŒΩ∫ ¿Œ«¸¿ª ∏∏µÈ∞Ì ¿÷æ˙Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(5810, "±◊ ∞˙¡§ ¡ﬂ 'Ω∫≈∏¥œΩΩ∂Û≥™'¿« º˜¿˚¿Œ æÓµ“¿« ∏∂µµªÁ' «¡∂ÛøÏ∑–'¿« »Ê∏∂π˝ø° ¿««ÿ ªÍ≈∏≈¨∑ŒΩ∫ ¿Œ«¸¿Ã ±◊∏∏ ¡∂∞¢≥™ ªÁæ««— ∏ÛΩ∫≈Õø°∞‘ ≥—æÓ∞° πˆ∏Æ∞Ì ∏ªæ“Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(5811, "'Ω∫≈∏¥œΩΩ∂Û≥™'¿« √ÊΩ««— ¡æ 'ªÁ∑Œæ·'¿∫ æ∆¿Ã∏ÆΩ∫ ¥Î∑˙¿« ∏ÛΩ∫≈Õø°∞‘º≠ ªÍ≈∏≈¨∑ŒΩ∫ ¿Œ«¸ ¡∂∞¢¿ª √£æ∆¡Ÿ øÎªÁ∏¶ √£∞Ì ¿÷¥Ÿ∞Ì «’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}
-				else if (iEventIndex == TEVENT_LUNARNEWYEAR_2008) // 2008 Íµ¨Ï†ï Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_NEWYEAR_2008) //2008≥‚ Ω≈≥‚ ¿Ã∫•∆Æ 
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3996, "2008 ÏÑ§ÎÇ† Î≥µÏ£ºÎ®∏Îãà Ïù¥Î≤§Ìä∏"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3997, "ÎØºÏ°±Ïùò Î™ÖÏ†àÏù∏ ÏÑ§ÎÇ†ÏùÑ ÎßûÏù¥ ÌïòÏó¨ 2007ÎÖÑ Îü¨Î∏åÎü¨Î∏å Ïù¥Î≤§Ìä∏ 2ÌÉÑ ÏÑ§ÎÇ† ÎßûÏù¥ Î≥µÏ£ºÎ®∏Îãà Ïù¥Î≤§Ìä∏Î•º Ïã§ÏãúÌï©ÎãàÎã§"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3998, "3Ï¢ÖÎ•òÏùò Î≥µÏ£ºÎ®∏ÎãàÎäî Í∞úÎ¥â Ïãú Í∞ÅÍ∏∞ Îã§Î•∏ Ìö®Í≥ºÎ•º Ï£ºÎäîÎç∞, Ïù¥ Î≥µÏ£ºÎ®∏ÎãàÎ•º Î™®ÏïÑÏÑú ÎπôÍ≥†Í≤åÏûÑÏùÑ ÏúÑÌïú ÏàòÏßëÏùÑ Ìï† ÏàòÎèÑ ÏûàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3999, "ÎπôÍ≥†Í≤åÏûÑÏóê Ï∞∏Ïó¨ÌïòÍ∏∞ ÏúÑÌï¥ÏÑúÎäî ÏÉÅÏ†êÏóêÏÑú ÌåêÎß§ÌïòÎäî ÏÜåÎßùÏÉÅÏûêÎ•º Íµ¨ÏûÖÌïòÏó¨Ïïº ÌïòÎ©∞, Î≥µÏ£ºÎ®∏ÎãàÎäî ÏÉÅÏ†êÏóêÏÑú ÌåêÎß§ÌïòÎäî ÎÖ∏ÎÅàÏúºÎ°ú Î¨∂Ïñ¥ÏÑú ÏÜåÎßùÏÉÅÏûêÏóê ÎÑ£ÏùÑ Ïàò ÏûàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4000, "ÏÉàÌï¥ ÏÜåÎßùÏÉÅÏûêÎäî 1Ï∫êÎ¶≠ÌÑ∞Îãπ 1Í∞úÏùò ÏÉÅÏûêÎ•º ÏÜåÏßÄÌï† Ïàò ÏûàÏúºÎ©∞, ÏÉÅÏûêÎäî Ï∞ΩÍ≥†Î≥¥Í¥ÄÏù¥ ÎêòÏßà ÏïäÎäîÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4001, "ÏÉÅÏûêÏóêÎäî 3 * 3 Ï¥ù 9Í∞úÏùò Î≥µÏ£ºÎ®∏ÎãàÎ•º Îã¥ÏùÑ Ïàò ÏûàÏúºÎ©∞, Í∞ôÏùÄ ÏÉâÍπîÏùò Î≥µÏ£ºÎ®∏ÎãàÎ•º Í∞ôÏùÄ Ï§ÑÏóê Î∞∞ÏπòÌïòÏó¨ ÎπôÍ≥†Î•º ÎßåÎì§ Ïàò ÏûàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4002, "ÏÜåÎßùÏÉÅÏûêÎ•º Î™®Îëê Ï±ÑÏö∞Î©¥ Ïù¥Î≤§Ìä∏ NPCÎ•º Ï∞æÏïÑÍ∞Ä ÏÉÅÌíàÏúºÎ°ú ÍµêÌôòÌï† Ïàò ÏûàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4003, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2008ÎÖÑ 2Ïõî 5Ïùº(Ìôî) ~ 2008ÎÖÑ 2Ïõî 19Ïùº(Ìôî)"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3969, "Ω≈≥‚ ¿Ã∫•∆Æ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3970, "Ω≈≥‚¿ª ∏¬¿Ã«œø© ªı«ÿ¿ŒªÁ∏¶ «œ∏Èº≠ «ÿ∏¬¿Ãπˆ«¡∏¶ «“ ºˆ¿÷¥¬ ¿Ã∫•∆Æ∏¶ ∏∂∑√«œø¥Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3971, "¿Ã∫•∆Æ ±‚∞£: 2007≥‚ 12ø˘ 27¿œ(∏Ò) ~ 2008≥‚ 1ø˘ 15¿œ(»≠)"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3972, "¿Ã∫•∆Æ πÊπ˝: «ÿ∏¬¿Ã ¿ŒªÁ«“ ¿Ø¿˙∏¶ º±≈√«œ∞Ì º“º»√¢ø°º≠ ¿ŒªÁ∏¶ «œ∏È «ÿ∏¬¿Ã πˆ«¡øÕ ªı«ÿ¿ŒªÁ∏¶ «œ∞‘ µÀ¥œ¥Ÿ."), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3973, "ªı«ÿ¿ŒªÁ¥¬ ¡¶«—æ¯¿Ã ∞Ëº”«“ ºˆ ¿÷¿∏≥™ πˆ«¡¥¬ 1Ω√∞£∏∂¥Ÿ «—π¯æø πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ. ¥‹, «ÿ∏¬¿Ãπˆ«¡ πﬁ±‚¥¬ ºˆ∂Ùø©∫Œ∏¶ ∞·¡§«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if (iEventIndex == TEVENT_LUNARNEWYEAR_2008) // 2008 ±∏¡§ ¿Ã∫•∆Æ
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3996, "2008 º≥≥Ø ∫π¡÷∏”¥œ ¿Ã∫•∆Æ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3997, "πŒ¡∑¿« ∏Ì¿˝¿Œ º≥≥Ø¿ª ∏¬¿Ã «œø© 2007≥‚ ∑Ø∫Í∑Ø∫Í ¿Ã∫•∆Æ 2≈∫ º≥≥Ø ∏¬¿Ã ∫π¡÷∏”¥œ ¿Ã∫•∆Æ∏¶ Ω«Ω√«’¥œ¥Ÿ"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3998, "3¡æ∑˘¿« ∫π¡÷∏”¥œ¥¬ ∞≥∫¿ Ω√ ∞¢±‚ ¥Ÿ∏• »ø∞˙∏¶ ¡÷¥¬µ•, ¿Ã ∫π¡÷∏”¥œ∏¶ ∏æ∆º≠ ∫˘∞Ì∞‘¿”¿ª ¿ß«— ºˆ¡˝¿ª «“ ºˆµµ ¿÷¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3999, "∫˘∞Ì∞‘¿”ø° ¬¸ø©«œ±‚ ¿ß«ÿº≠¥¬ ªÛ¡°ø°º≠ ∆«∏≈«œ¥¬ º“∏¡ªÛ¿⁄∏¶ ±∏¿‘«œø©æﬂ «œ∏Á, ∫π¡÷∏”¥œ¥¬ ªÛ¡°ø°º≠ ∆«∏≈«œ¥¬ ≥Î≤ˆ¿∏∑Œ π≠æÓº≠ º“∏¡ªÛ¿⁄ø° ≥÷¿ª ºˆ ¿÷¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4000, "ªı«ÿ º“∏¡ªÛ¿⁄¥¬ 1ƒ≥∏Ø≈Õ¥Á 1∞≥¿« ªÛ¿⁄∏¶ º“¡ˆ«“ ºˆ ¿÷¿∏∏Á, ªÛ¿⁄¥¬ √¢∞Ì∫∏∞¸¿Ã µ«¡˙ æ ¥¬¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4001, "ªÛ¿⁄ø°¥¬ 3 * 3 √— 9∞≥¿« ∫π¡÷∏”¥œ∏¶ ¥„¿ª ºˆ ¿÷¿∏∏Á, ∞∞¿∫ ªˆ±Ú¿« ∫π¡÷∏”¥œ∏¶ ∞∞¿∫ ¡Ÿø° πËƒ°«œø© ∫˘∞Ì∏¶ ∏∏µÈ ºˆ ¿÷¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4002, "º“∏¡ªÛ¿⁄∏¶ ∏µŒ √§øÏ∏È ¿Ã∫•∆Æ NPC∏¶ √£æ∆∞° ªÛ«∞¿∏∑Œ ±≥»Ø«“ ºˆ ¿÷¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4003, "¿Ã∫•∆Æ ±‚∞£: 2008≥‚ 2ø˘ 5¿œ(»≠) ~ 2008≥‚ 2ø˘ 19¿œ(»≠)"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}				
-				else if( iEventIndex == TEVENT_SAKURA_2008 ) //2008 Î≤öÍΩÉ Ïù¥Î≤§Ìä∏
+				else if (iEventIndex == TEVENT_RED_TREASUREBOX) // 2008 ±∏¡§ ¿Ã∫•∆Æ
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4104, "Î≤öÍΩÉ Ïù¥Î≤§Ìä∏"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4105, "ÌôîÏ∞ΩÌïú Î¥ÑÎÇ† Î≤öÍΩÉ Ïù¥Î≤§Ìä∏Î•º Ïã§ÏãúÌï©ÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4106, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ ÎèôÏïà Î™¨ÏÑúÌÑ∞Îì§ÏóêÍ≤åÏÑú Ìá¥ÎπÑÎ•º ÌöçÎìùÌïòÏó¨ Ïù¥Î≤§Ìä∏ NPCÏù∏ Ï†ïÏõêÏÇ¨Î•º Ï∞æÏïÑÍ∞ÄÎ©¥ Î≤öÍΩÉ ÏÑ†Î¨ºÏÉÅÏûêÎ°ú ÍµêÌôòÎ∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4107, "Î≤öÍΩÉ ÏÑ†Î¨ºÏÉÅÏûêÎäî ÎçîÎ∏îÌÅ¥Î¶≠ÌïòÏó¨ Ïó¥Î©¥ Î≥¥ÏÉÅÌíàÏùÑ Î∞õÏùÑ Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4108, "Í≥†Í∏âÏ†úÎ†®ÏÑù, Ï¥§ÏÉÅÍ∏â Î¨∏Ïä§ÌÜ§, ÏÉÅÍ∏â Î¨∏Ïä§ÌÜ§, ÎìúÎ°≠Ïú® Ï¶ùÌè≠Ï†ú, Î∂ÄÏä§ÌÑ∞, Î∂ÑÌôç Î≤öÍΩÉ, Ìù∞ Î≤öÍΩÉ, ÏûëÏùÄ Î∂ÑÌôç Î≤öÍΩÉ, ÏûëÏùÄ Ìù∞ Î≤öÍΩÉ, ÏÜçÎèÑÌñ•ÏÉÅ Î¨ºÏïΩÏùÑ Î≥¥ÏÉÅÌíàÏúºÎ°ú ÌöçÎìùÌï† Ïàò ÏûàÏäµÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4109, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2008ÎÖÑ 3Ïõî 27Ïùº ~ 2008ÎÖÑ 4Ïõî 10Ïùº"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4010, "∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄ ¿Ã∫•∆Æ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4011, "¿Ã∫•∆Æ ±‚∞£µøæ» Ω≈±‘ ƒ≥∏Ø≈Õ∏¶ ª˝º∫«œ∏È 1»∏ø° «—«œø© ±‚¡∏¿« ∫∏π∞ªÛ¿⁄øÕ ¥ı∫“æÓ ∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄∏¶ πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4012, "√≥¿Ω ¡ˆ±ﬁ«œ¥¬ 5Lv ∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄¥¬ ƒ≥∏Ø≈Õ ∑π∫ß¿Ã 5∑π∫ß¿Ã µ«æ˙¿ª ∂ß, ¡Í≥Î ∂ıµπ∏∂¿ª ∑Œ∑π¿Œø°∞‘ √£æ∆∞°∏È ø≠ ºˆ ¿÷¿∏∏Á, ¿˚¿˝«— ¡ˆ±ﬁπ∞«∞¿ª ∫∏ªÛπﬁ∞‘ µÀ¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4013, "5Lv ∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄∏¶ ø≠∏È ¥Ÿ¿Ω ¥‹∞Ë¿Œ 12Lv ∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄∏¶ πﬁ∞‘ µ«∏Á, ∞∞¿∫ πÊπ˝¿∏∑Œ 16∑π∫ß¿Ã µ… ∂ß±Ó¡ˆ √— 3∞≥¿« ∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄∏¶ πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S( 1866, "∫∏ªÛ«∞" ), -1, 0xA3A1A3FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4014, "«√∑°∆º¥Ω æ∆¿Ã∏ÆΩ∫¿« √‡∫π (35∑π∫ß ¿Ã«œøÎ)"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4015, "«√∑°∆º¥Ω º˜∑√¿« ∏æ‡ (35∑π∫ß ¿Ã«œøÎ)"));
+					
+					CTString str1, str2;
+					str1.PrintF( _S(4016, "±≥∫πºº∆Æ(%d¿œ)"), 7);
+					str2.PrintF( "%s + %s", str1, _pNetwork->GetItemName(2664));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, str2);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4017, "¿Ã∫•∆Æ ±‚∞£: 2008≥‚ 2ø˘ 14¿œ(∏Ò) ~"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if( iEventIndex == TEVENT_SAKURA_2008 ) //2008 ∫¢≤… ¿Ã∫•∆Æ
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4104, "∫¢≤… ¿Ã∫•∆Æ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4105, "»≠√¢«— ∫Ω≥Ø ∫¢≤… ¿Ã∫•∆Æ∏¶ Ω«Ω√«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4106, "¿Ã∫•∆Æ ±‚∞£ µøæ» ∏Ûº≠≈ÕµÈø°∞‘º≠ ≈∫Ò∏¶ »πµÊ«œø© ¿Ã∫•∆Æ NPC¿Œ ¡§ø¯ªÁ∏¶ √£æ∆∞°∏È ∫¢≤… º±π∞ªÛ¿⁄∑Œ ±≥»Øπﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4107, "∫¢≤… º±π∞ªÛ¿⁄¥¬ ¥ı∫Ì≈¨∏Ø«œø© ø≠∏È ∫∏ªÛ«∞¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4108, "∞Ì±ﬁ¡¶∑√ºÆ, √“ªÛ±ﬁ πÆΩ∫≈Ê, ªÛ±ﬁ πÆΩ∫≈Ê, µÂ∑”¿≤ ¡ı∆¯¡¶, ∫ŒΩ∫≈Õ, ∫–»´ ∫¢≤…, »Ú ∫¢≤…, ¿€¿∫ ∫–»´ ∫¢≤…, ¿€¿∫ »Ú ∫¢≤…, º”µµ«‚ªÛ π∞æ‡¿ª ∫∏ªÛ«∞¿∏∑Œ »πµÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4109, "¿Ã∫•∆Æ ±‚∞£: 2008≥‚ 3ø˘ 27¿œ ~ 2008≥‚ 4ø˘ 10¿œ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 				}
 				// [080422: Su-won] EVENT_CHAOSBALL
-				else if( iEventIndex == TEVENT_CHAOSBALL) //Ïπ¥Ïò§Ïä§Î≥º Ïù¥Î≤§Ìä∏
+				else if( iEventIndex == TEVENT_CHAOSBALL) //ƒ´ø¿Ω∫∫º ¿Ã∫•∆Æ
 				{
-					_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-					_pUIMgr->CreateMessageBoxL(_S(100, "Ïù¥Î≤§Ìä∏"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
 					CTString strReward;
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4118, "ÏïÑÏù¥Î¶¨Ïä§ ÏÉÅÏ†ê Ïù¥Î≤§Ìä∏ [Ïπ¥Ïò§Ïä§ Î≥ºÏùÑ Ïó¥Ïñ¥Îùº!]"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4119, "ÏïÑÏù¥Î¶¨Ïä§ ÏÉÅÏ†êÏóêÏÑú Ï∂îÏ≤úÌïòÎäî ÏÉÅÌíàÏùÑ Íµ¨ÏûÖÌïòÏãúÎ©¥ Îòê ÌïòÎÇòÏùò Ï∞¨Ïä§! Ïπ¥Ïò§Ïä§ Î≥ºÏùÑ ÎìúÎ¶ΩÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4120, "Í∞ÄÏßÄÍ≥† Í≥ÑÏã† Ïπ¥Ïò§Ïä§ Î≥ºÏùÄ Ï•¨ÎÖ∏ ÎûÄÎèåÎßàÏùÑÏóê ÌååÍ≤¨ÎêòÏñ¥ ÏûàÎäî Ïù¥Î≤§Ìä∏ ÏßÑÌñâÏöîÏõêÏóêÍ≤å Í∞ÄÏ†∏Í∞ÄÏÑ∏Ïöî."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4121, "Ïπ¥Ïò§Ïä§ Î≥ºÏóê Ïà®Í≤®Ï†∏ ÏûàÎäî Í∞ÅÏ¢Ö Î≥¥Î¨ºÏùÑ ÎìúÎ¶ΩÎãàÎã§."));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4122, "Ïà®Í≤®ÏßÑ Î≥¥Î¨º Î™©Î°ù"), -1, 0xA3A1A3FF);
-					strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(2844), 1);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					if (g_iCountry == GERMANY)
-					{
-						strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(974), 1);
-						_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					}
-					strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(1416), 1);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(1288), 1);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(85), 1);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4123, "Ïä§ÌÅ¨Î°§ 3Ï¢Ö(Í≤ΩÌóò/ÎÖ∏Î†•/ÌñâÏö¥) 1ÏÑ∏Ìä∏"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4124, "Ï¶ùÌè≠Ï†ú 3Ï¢Ö(Í≤ΩÌóòÏπò/ÎÖ∏Î†•ÎèÑ/ÎìúÎ°≠Ïú®) 1ÏÑ∏Ìä∏"));
-					strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(45), 10);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(724), 10);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4125, "12Î†àÎ≤® Î∂âÏùÄ ÏºÄÎ•¥/Ìë∏Î•∏ ÏºÄÎ•¥ Í∞Å 5Í∞ú"));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4126, "12Î†àÎ≤® Î∂âÏùÄ ÎÑ®/Ìë∏Î•∏ ÎÑ® Í∞Å 5Í∞ú"));
-					strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(786), 3);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					strReward.PrintF(_S(61, "%s %dÍ∞ú"), _pNetwork->GetItemName(556), 10);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					strReward.PrintF(_S(836, "%d ÎÇòÏä§"), 10000);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4118, "æ∆¿Ã∏ÆΩ∫ ªÛ¡° ¿Ã∫•∆Æ [ƒ´ø¿Ω∫ ∫º¿ª ø≠æÓ∂Û!]"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4119, "æ∆¿Ã∏ÆΩ∫ ªÛ¡°ø°º≠ √ﬂ√µ«œ¥¬ ªÛ«∞¿ª ±∏¿‘«œΩ√∏È ∂« «œ≥™¿« ¬˘Ω∫! ƒ´ø¿Ω∫ ∫º¿ª µÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4120, "∞°¡ˆ∞Ì ∞ËΩ≈ ƒ´ø¿Ω∫ ∫º¿∫ ¡Í≥Î ∂ıµπ∏∂¿ªø° ∆ƒ∞ﬂµ«æÓ ¿÷¥¬ ¿Ã∫•∆Æ ¡¯«‡ø‰ø¯ø°∞‘ ∞°¡Æ∞°ººø‰."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4121, "ƒ´ø¿Ω∫ ∫ºø° º˚∞‹¡Æ ¿÷¥¬ ∞¢¡æ ∫∏π∞¿ª µÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4122, "º˚∞‹¡¯ ∫∏π∞ ∏Ò∑œ"), -1, 0xA3A1A3FF);
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(2844), 1);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+#ifdef G_GERMAN
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(974), 1);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+#endif
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(1416), 1);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(1288), 1);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(85), 1);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4123, "Ω∫≈©∑— 3¡æ(∞Ê«Ë/≥Î∑¬/«‡øÓ) 1ºº∆Æ"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4124, "¡ı∆¯¡¶ 3¡æ(∞Ê«Ëƒ°/≥Î∑¬µµ/µÂ∑”¿≤) 1ºº∆Æ"));
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(45), 10);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(724), 10);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4125, "12∑π∫ß ∫”¿∫ ƒ…∏£/«™∏• ƒ…∏£ ∞¢ 5∞≥"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4126, "12∑π∫ß ∫”¿∫ ≥Ÿ/«™∏• ≥Ÿ ∞¢ 5∞≥"));
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(786), 3);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+					strReward.PrintF(_S(61, "%s %d∞≥"), _pNetwork->GetItemName(556), 10);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+					strReward.PrintF(_S(836, "%d ≥™Ω∫"), 10000);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, strReward);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4127, "Ïù¥Î≤§Ìä∏ Í∏∞Í∞Ñ: 2008ÎÖÑ 4Ïõî 29Ïùº ~"), -1, 0x6BD2FFFF);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
-				}				
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4127, "¿Ã∫•∆Æ ±‚∞£: 2008≥‚ 4ø˘ 29¿œ ~"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if (iEventIndex == TEVENT_SUMMER_2008)
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4153, "¿Ã∫•∆Æ 1. √ﬂ√µº≠πˆ »Æ¿Â"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4154, "ø©∏ß¿Ã∫•∆Æ ±‚∞£ µøæ» √ﬂ√µº≠πˆ ∑•«¡∞° 60Lv ƒ≥∏Ø≈Õø°∞‘ ±Ó¡ˆ √£æ∆ ø…¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4155, "¿Ã∫•∆Æ 2. ∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4156, "¿Ã∫•∆Æ ±‚∞£ µøæ» Ω≈±‘ ƒ≥∏Ø≈Õ¥¬ ∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄∏¶ µÂ∏≥¥œ¥Ÿ. ªÛ¿⁄∏¶ ¿Ã∫•∆Æ ¡¯«‡ø‰ø¯ø°∞‘ ∞°¡Æ∞°∏È √ ∫∏ø°∞‘ ¿ØøÎ«— ∫∏ªÛ«∞¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4157, "¿Ã∫•∆Æ 3. π´±‚¥Îø© «“¿Œ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4158, "¿Ã∫•∆Æ ±‚∞£ µøæ» π´±‚ ¥Îø©ªÛ¿Œ¿Ã 100≥™Ω∫ø° ¥Îø©«ÿ µÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4159, "¿Ã∫•∆Æ 4. ∏≈¡˜ƒ´µÂ∏¶ √£æ∆∂Û"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(3606, "¿Ã∫•∆Æ ¡¯«‡ø‰ø¯¿Ã ¿“æÓπˆ∏∞ ƒ´µÂ∏¶ ∏æ∆¡÷ººø‰. ¥…∑¬¿ª ¥Î∆¯ ªÛΩ¬Ω√ƒ—¡÷¥¬ ∏∂π˝¿ª ∞…æÓµÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4162, "¿Ã∫•∆Æ ±‚∞£: 2008≥‚ 8ø˘ 7¿œ ~ 8ø˘ 28¿œ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if (iEventIndex == TEVENT_HANARO)
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4731, "[∂Ûƒ´∞° 22,000 ƒ≥Ω¨∏¶ Ω¥Ÿ!]"),-1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4732, "Ω≈±‘ ∞°¿‘¿⁄ø°∞‘ 22,000ƒ≥Ω¨ ªÛ¥Á¿« '√ ∫∏ ¡ˆø¯ º¬∆Æ' ∆–≈∞¡ˆ∏¶ µÂ∏≥¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4733, "'ALT + E'¿ª ¥≠∑Ø ¿Œ∫•≈‰∏Æ∏¶ »Æ¿Œ«œΩ√∏È ¡ˆ±› πŸ∑Œ ¿Ã∫•∆Æ æ∆¿Ã≈€¿ª »Æ¿Œ«œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4734, "* ªı∑ŒøÓ ƒ≥∏Ø≈Õ∑Œ ¿Á Ω√¿€ Ω√ø°µµ ¡ﬂ∫π ¡ˆ±ﬁµÀ¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4735, "* «ÿ¥Á ¿Ã∫•∆Æ æ∆¿Ã≈€¿∫ 35Lv ±Ó¡ˆ∏∏ ªÁøÎ ∞°¥…«œ∏Á ∞≈∑° π◊ √¢∞Ì∫∏∞¸ ∫“∞°¿‘¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if (iEventIndex == TEVENT_ADD_UP_AFRON_2009)
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4766, "πˆ¿¸ ≈Î«’ ¿Ã∫•∆Æ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4767, "1. ∏µÁ º≠πˆ ∞Ê«Ëƒ° 2πË ¿Ã∫•∆Æ"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4768, "πˆ¿¸ ≈Î«’¿ª ±‚≥‰«œø© ∫Ì∏ÆΩ∫øÕ æ∆«¡∑– º≠πˆø°º≠ 2¡÷∞£ ∞Ê«Ëƒ° 2πË ¿Ã∫•∆Æ∏¶ Ω«Ω√«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4769, "2. æ∆«¡∑–º≠πˆ πˆ¿¸ ≈Î«’±‚≥‰«∞"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4770, "¿Ãπ¯ πˆ¿¸≈Î«’¿ª ±‚≥‰«œø© æ∆«¡∑– ∏µÁ ƒ≥∏Ø≈Õø°∞‘ ∑∞≈∞ æ∆¿Ã∏ÆΩ∫ √‡∫π 5∞≥∏¶ ¡ˆ±ﬁ«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4771, "±‚≥‰«∞¿∫ ¿Ã∫•∆Æ ¡¯«‡ø‰ø¯¿ª ≈Î«ÿº≠ «—π¯∏∏ ¡ˆ±ﬁπﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4772, "¿Ã∫•∆Æ ±‚∞£: 2009≥‚ 11ø˘ 12¿œ ~ 11ø˘ 26¿œ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if (iEventIndex == TEVENT_QUARTER_FINAL_TOUR)
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("∂ÛΩ∫∆Æƒ´ø¿Ω∫ ø˘µÂ ≈‰≥ ∏’∆Æ, ¥Î«—πŒ±π 16∞≠ √‚¿¸ ±‚≥‰ ¿Ã∫•∆Æ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("¥Î«—πŒ±π ±π∞°¥Î«•∆¿¿∏∑Œ ¬¸ø©«— æ∆«¡∑–º≠πˆ¿« ""«—∞…¿Ω∏∏¥ı"" ±ÊµÂ∞° 8∞≠ø°º≠ æ∆Ω±∞‘ ∞Ê±‚∏¶ ∏∂π´∏Æ «œø¥Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("∫Ò∑œ 4∞≠ ¡¯√‚ø° Ω«∆–«ﬂ¡ˆ∏∏ √÷º±¿ª ¥Ÿ«— ±π∞°¥Î«•∆¿¿« º±¿¸¿ª ±‚≥‰«œ∏Á ¥Î«—πŒ±π ∂Ûƒ´ ∞°¡∑ ∏µÁ ∫–µÈø°∞‘ ¿€¿∫ º±π∞¿ª ¡ÿ∫Ò«ﬂΩ¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("∆Ø∫∞«— º±π∞ πﬁ¿∏Ω√∞Ì, ¥Î«—πŒ±π ±π∞°¥Î«•∆¿ ""«—∞…¿Ω∏∏¥ı"" ±ÊµÂ∏¶ ∫Ò∑‘«ÿ ø˘µÂ ≈‰≥ ∏’∆Æ ∞Ê±‚µµ ∞Ëº”«ÿº≠ ¡ˆƒ—∫¡ ¡÷ººø‰~!"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("°ÿ º±π∞¿∫ ¡Í≥Î ∂ıµπ∏∂¿ª ∑Œ∑π¿Œ¿ª ≈Î«ÿ 12ø˘ 17¿œ∫Œ≈Õ 1¡÷¿œ∞£ 1»∏∏∏ ¡ˆ±ﬁπﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ.(ƒ˘Ω∫∆Æ)"), -1, 0xA3A1A3FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("°ÿ ¡ı¡§µ«¥¬ ∏µÁ æ∆¿Ã≈€µÈ¿ª ¿Ã∫•∆Æ øÎ¿∏∑Œ ∞≈∑°/±≥»Ø/√¢∞Ì ∫∏∞¸¿Ã µ«¡ˆ æ Ω¿¥œ¥Ÿ."), -1, 0xA3A1A3FF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("¿Ã∫•∆Æ ±‚∞£: 2009≥‚ 12ø˘ 17¿œ ~ 12ø˘ 24¿œ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if (iEventIndex == TEVENT_GOLDWEEK)	// ¿œ∫ª ∞ÒµÂ¿ß≈© ¿Ã∫•∆Æ
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4844, "Golden Week Event"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4845, "∞ÒµÁ¿ß≈©∏¶ ∏¬¿Ã«œø© '∞ÒµÁ¿ß≈© ªÛ¿⁄∏¶ √£æ∆∂Û' ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4846, "¿Ã∫•∆Æ ±‚∞£ µøæ»ø°¥¬ æ∆¿Ã∏ÆΩ∫ ¥Î∑˙¿« ∏µÁ ∏ÛΩ∫≈ÕµÈ¿Ã ∞ÒµÁ¿ß≈© ±‚≥‰ ªÛ¿⁄∏¶ µÂ∂¯«’¥œ¥Ÿ. (∆€Ω∫≥Œ ¥¯¿¸ ¡¶ø‹)"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4847, "»πµÊ«— ªÛ¿⁄∏¶ ∞≥∫¿«œ∏È ∑£¥˝«œ∞‘ æ∆¿Ã≈€¿ª »πµÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4848, "¢¬∞ÒµÁ¿ß≈© ªÛ¿⁄¥¬ ∞≈∑°¥Î«‡/±≥»Ø/∞≥¿ŒªÛ¡°/µÂ∑”/√¢∞Ì∫∏∞¸¿Ã ∫“∞°¥…«’¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4849, "¿Ã∫•∆Æ ±‚∞£: 2010.04.22 ~ 2010.05.13"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
 
-				// NOTE : Ïì∞Î©¥ Î∞îÎ°ú ÏßÄÏõåÏ†∏Ïïº Ìï©ÎãàÎã§.
+				// ($E_WC2010) [100513: selo] 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event1 »≤±› √‡±∏∞¯¿ª ∏æ∆∂Û
+				else if (iEventIndex == TEVENT_WORLDCUP_2010)
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4883, "ø˘µÂ √‡¡¶ ¿Ã∫•∆Æ - Event1. »≤±› √‡±∏∞¯¿ª ∏æ∆∂Û!"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4884, "¿¸ ºº∞Ë¿Œ¿« √‡¡¶ ""2010≥‚µµ ≥≤æ∆∞¯ ø˘µÂƒ≈""¿ª ±‚≥‰«œø© ∂ÛΩ∫∆Æ ƒ´ø¿Ω∫ ¿Ø¿˙∏¶ ¿ß«— ""2010 ø˘µÂ √‡¡¶ ¿Ã∫•∆Æ""∏¶ ¡¯«‡«’¥œ¥Ÿ. "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4885, "¿Ã∫•∆Æ ±‚∞£ø°¥¬ æ∆¿Ã∏ÆΩ∫ ¥Î∑˙ ∞˜∞˜ø°º≠ '∆Æ∂Û¿Ãæﬁ±€ ∫º' NPC∞° √‚«ˆ«œ∏Á, ¿Ã∫•∆Æ NPC∏¶ ªÁ≥…«œ∏È '√‡±∏∞¯' æ∆¿Ã≈€¿ª »πµÊ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4886, "»πµÊ«— '√‡±∏∞¯' æ∆¿Ã≈€¿∫ ∞¢ ∏∂¿ªø° ¿÷¥¬ πÊæÓ±∏ ªÛ¿Œø°∞‘ ∞°¡Æ∞°∏È ¿Ã∫•∆Æ ∫∏ªÛ æ∆¿Ã≈€¿∏∑Œ ±≥»Ø«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4887, "√÷¥Î«— ∏π¿∫ √‡±∏∞¯¿ª »πµÊ«œø© ø˘µÂ √‡¡¶ ¿Ã∫•∆Æ∏¶ ∏∏≥£«œΩ√±‚ πŸ∂¯¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4888, "¿Ã∫•∆Æ ±‚∞£: 2010.06.10 ~ 2010.07.01"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));					
+				}
+				// ($E_WC2010) [100514: selo] 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event2 øÏΩ¬±π øπªÛ«œ±‚
+				else if (iEventIndex == TEVNET_WORLDCUP_2010_TOTO || iEventIndex == TEVNET_WORLDCUP_2010_TOTO_STATUS || iEventIndex == TEVNET_WORLDCUP_2010_TOTO_GIFT)
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4916, "ø˘µÂ √‡¡¶ ¿Ã∫•∆Æ - Event2. øÏΩ¬±π øπªÛ«œ±‚!"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4884, "¿¸ ºº∞Ë¿Œ¿« √‡¡¶ ""2010≥‚µµ ≥≤æ∆∞¯ ø˘µÂƒ≈""¿ª ±‚≥‰«œø© ∂ÛΩ∫∆Æ ƒ´ø¿Ω∫ ¿Ø¿˙∏¶ ¿ß«— ""2010 ø˘µÂ √‡¡¶ ¿Ã∫•∆Æ""∏¶ ¡¯«‡«’¥œ¥Ÿ. "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4917, "'ø˘µÂ √‡¡¶ ªÛ¿⁄'ø°º≠ »πµÊ«— ∞¢ ≥™∂Û∫∞ ±π±‚ æ∆¿Ã≈€¿ª ∞°¡ˆ∞Ì ¡Í≥Î ∏∂¿ªø° ¿÷¥¬ ¿Ã∫•∆Æ ¡¯«‡ ø‰ø¯¿ª √£æ∆∞° ∫∏ººø‰."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4918, "±◊∏Æ∞Ì, øµ±§¿« øÏΩ¬ƒ≈¿ª ¬˜¡ˆ«“ ±π∞°∏¶ øπªÛ«œø© ¿¿∏«œΩ√±‚ πŸ∂¯¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4919, "øÏΩ¬±π∞°∏¶ øπªÛ«œΩ≈ »ƒ ƒ≥∏Ø≈Õ ∫∞∑Œ «œ≥™¿« ±π∞°∏∏ ¿¿∏«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4920, "¿⁄ºº«— ªÁ«◊¿∫ ¿Ã∫•∆Æ ¡¯«‡ ø‰ø¯ NPC∏¶ ≈Î«ÿ »Æ¿Œ«œΩ√±‚ πŸ∂¯¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4888, "¿Ã∫•∆Æ ±‚∞£: 2010.06.10 ~ 2010.07.01"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				else if (iEventIndex == TEVENT_OCEANS_PROMOTION)
+				{
+					pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+					pUIManager->CreateMessageBoxL(_S(100, "¿Ã∫•∆Æ"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("æ∆ƒ≠ ªÁø¯ ¿Ã∫•∆Æ"));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("æ∆ƒ≠ ªÁø¯ø°º≠ øµ»•¿« ¬°«•∏¶ ∏æ∆∂Û!"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("æ∆ƒ≠ªÁø¯¿« ∫Òπ–¿Ã ¡∂±›æø π˛∞‹¡ˆ∞Ì ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("æ∆ƒ≠ªÁø¯¿∫ 8¿Œ ø¯¡§¥Î ¥¯¿¸¿‘¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("µø∑·µÈ¿ª ∏æ∆º≠ æ∆ƒ≠ªÁø¯ø°º≠ »Òª˝µ» øµ»•µÈ¿ª ±∏ø¯«ÿ ¡÷ººø‰."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("øµ»•¿« ¬°«•∏¶ ±∏«ÿøÕ ¡Í≥Î ∏∂¿ªø° ¿÷¥¬ ¿Ã∫•∆Æ ¡¯«‡ ø‰ø¯ø°∞‘ ±≥»Ø πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("øµ»•¿« ¬°«•¥¬ æ∆ƒ≠ªÁø¯¿« ∫∏Ω∫±ﬁ ∏ÛΩ∫≈Õø°∞‘º≠ æÚ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "));
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _s("¿Ã∫•∆Æ ±‚∞£: 2010≥‚ 9ø˘ 16¿œ ~ 2010≥‚ 9ø˘ 30¿œ"), -1, 0x6BD2FFFF);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
+				}
+				// ($ TODO : selo)
+				// ($E_WC2010) [100513: selo] 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event3 ∏≈¿œ ∏≈¿œ ¿¿ø¯«œ±‚
+				else if (iEventIndex == TEVNET_WORLDCUP_2010_ATTENDANCE)
+				{
+					
+				}
+
+				// NOTE : æ≤∏È πŸ∑Œ ¡ˆøˆ¡Ææﬂ «’¥œ¥Ÿ.
 				DelNoticeBySlotIndex( iSlotIndex );
 				RefreshNoticeList();
 			
@@ -1537,50 +1828,110 @@ void CUINotice::PressOK( int iSlotIndex )
 				//TODO : NewQuestSystem
 				/*
 				CQuestDynamicData	*pQuestDD = CQuestSystem::Instance().Create( iNoticeIndex );
-				_pUIMgr->GetCharacterInfo()->OpenQuestIntro( pQuestDD );
+				pUIManager->GetCharacterInfo()->OpenQuestIntro( pQuestDD );
 				*/
-				_pUIMgr->GetQuestBookNew()->OpenQuestBook( iNoticeIndex );
+				pUIManager->GetQuestBookNew()->OpenQuestBook( iNoticeIndex );
 				
-			 	// NOTE : Ïì∞Î©¥ Î∞îÎ°ú ÏßÄÏõåÏ†∏Ïïº Ìï©ÎãàÎã§.
+			 	// NOTE : æ≤∏È πŸ∑Œ ¡ˆøˆ¡Ææﬂ «’¥œ¥Ÿ.
 				DelNoticeBySlotIndex( iSlotIndex );
 				RefreshNoticeList();
 			}
 		}
 		break;
 
-	case UBET_ITEM:		// Î≥ÄÏã† Ï§ëÏßÄ Î≤ÑÌäº.
+	case UBET_ITEM:		// ∫ØΩ≈ ¡ﬂ¡ˆ πˆ∆∞.
 		{
 			const int iStopChangeItem = 521;
 			const int iStopTransformItem = 522;
 			const int iIndex = rbtnSelect.GetIndex();
 
-			// Í∞ïÏã† Ï§ëÏßÄ Î≤ÑÌäº.
-			if( iIndex == iStopTransformItem )
+			// ∫ØΩ≈ ¡ﬂ¡ˆ πˆ∆∞.
+			if( iIndex == iStopChangeItem && _pNetwork->MyCharacterInfo.eMorphStatus == CNetworkLibrary::MyChaInfo::eMORPH_TRANSFORMATION)
 			{
-				_pNetwork->SendStopEvocation();
-			}
-			// Î≥ÄÏã† Ï§ëÏßÄ Î≤ÑÌäº.
-			else if( iIndex == iStopChangeItem )
-			{
+				_pNetwork->MyCharacterInfo.eMorphStatus	= CNetworkLibrary::MyChaInfo::eMORPH_TRANSFORMATION_CONVERTING;
 				_pNetwork->SendStopChange();
 			}
 		}
 		break;
 	case UBET_AUCTION:
 		{
-			_pUIMgr->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
-			_pUIMgr->CreateMessageBoxL(_S(4356, "Í±∞Îûò ÎåÄÌñâ ÏÑúÎπÑÏä§ ÏïåÎ¶º"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
+			pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_NOTICE);
+			pUIManager->CreateMessageBoxL(_S(4356, "∞≈∑° ¥Î«‡ º≠∫ÒΩ∫ æÀ∏≤"), UI_NOTICE, MSGLCMD_EVENT_NOTICE);
 
-			_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4356, "Í±∞Îûò ÎåÄÌñâ ÏÑúÎπÑÏä§ ÏïåÎ¶º"), -1, 0xE18600FF);
-			_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4357, "Í∑ÄÌïòÍªòÏÑú Îß°Í∏∞Ïã† Í±∞Îûò Î¨ºÌíàÏùÑ Ï†ïÏÇ∞Ìï† Ïàò ÏûàÍ≤åÎêòÏñ¥ ÏïåÎ†§ ÎìúÎ¶ΩÎãàÎã§."), -1, 0xE18600FF);
-			_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4358, "ÎßàÏùÑÏóê ÏúÑÏπòÌïú Ï†ÄÌù¨ ÏÉÅÏù∏Ïùò ÌõÑÏòà Í∏∏ÎìúÏõêÏùÑ ÌÜµÌï¥ Î¨ºÌíàÏùÑ Ï∞æÏúºÏã§ Ïàò ÏûàÏúºÎãà Íº≠ Í∏∏ÎìúÏõêÏùÑ Î∞©Î¨∏ÌïòÏÖîÏÑú Î¨ºÌíàÏùÑ ÏàòÎ†πÌïòÏãúÍ∏∏ Î∞îÎûçÎãàÎã§."), -1, 0xE18600FF);
-			_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4359, "15Ïùº Ïù¥ÎÇ¥Ïóê Î¨ºÌíàÏùÑ Ï∞æÏïÑÍ∞ÄÏãúÏßÄ ÏïäÎäî Í≤ΩÏö∞ Î¨ºÌíàÎì§ÏùÄ ÏûêÎèôÏúºÎ°ú ÌèêÍ∏∞ÎêòÎãà Ïù¥ Ï†ê ÌïÑÌûà Ïú†ÎÖêÌïòÏãúÍ∏∏ Î∞îÎûçÎãàÎã§."), -1, 0xE18600FF);
-			_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "), -1, 0xE18600FF);
+			pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4356, "∞≈∑° ¥Î«‡ º≠∫ÒΩ∫ æÀ∏≤"), -1, 0xE18600FF);
+			pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4357, "±Õ«œ≤≤º≠ ∏√±‚Ω≈ ∞≈∑° π∞«∞¿ª ¡§ªÍ«“ ºˆ ¿÷∞‘µ«æÓ æÀ∑¡ µÂ∏≥¥œ¥Ÿ."), -1, 0xE18600FF);
+			pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4358, "∏∂¿ªø° ¿ßƒ°«— ¿˙»Ò ªÛ¿Œ¿« »ƒøπ ±ÊµÂø¯¿ª ≈Î«ÿ π∞«∞¿ª √£¿∏Ω« ºˆ ¿÷¿∏¥œ ≤¿ ±ÊµÂø¯¿ª πÊπÆ«œº≈º≠ π∞«∞¿ª ºˆ∑…«œΩ√±Ê πŸ∂¯¥œ¥Ÿ."), -1, 0xE18600FF);
+			pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, _S(4359, "15¿œ ¿Ã≥ªø° π∞«∞¿ª √£æ∆∞°Ω√¡ˆ æ ¥¬ ∞ÊøÏ π∞«∞µÈ¿∫ ¿⁄µø¿∏∑Œ ∆Û±‚µ«¥œ ¿Ã ¡° « »˜ ¿Ø≥‰«œΩ√±Ê πŸ∂¯¥œ¥Ÿ."), -1, 0xE18600FF);
+			pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, TRUE, CTString(" "), -1, 0xE18600FF);
 			
-			_pUIMgr->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "ÌôïÏù∏"));
+			pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_NOTICE, FALSE, _S(191, "»Æ¿Œ"));
 
 			DelNoticeBySlotIndex( iSlotIndex );
 			RefreshNoticeList();
+		}
+		break;
+	case UBET_ACTION:	// [100322: selo] æ◊º« πˆ∆∞
+		{
+			const int iAffinity = 47;
+			const int iIndex = rbtnSelect.GetIndex();
+
+			// ƒ£»≠µµ πˆ∆∞¿Œ ∞ÊøÏ ƒ£»≠µµ ∫∏ªÛ¿∏∑Œ √≥∏Æ«—¥Ÿ.
+			if( iIndex == iAffinity )
+			{
+				// ∏ﬁΩ√¡ˆ π⁄Ω∫ ∏∏µÁ¥Ÿ.				
+				pUIManager->CloseMessageBox(MSGCMD_AFFINITY_REWARD_NOTICE);
+				
+				int iNpcIndex = -1;
+				CTString strMessage;
+				CTString strAffinityList = "";
+				CTString strNPCList = "";
+				std::vector<int> vectorAffinityIndex;
+				std::list<int>::const_iterator iter = _pNetwork->GetAffinityRewardNPCList().begin();
+
+				CUIMsgBox_Info	MsgBoxInfo;
+				MsgBoxInfo.SetMsgBoxInfo( _S(4842, "ƒ£»≠µµ æÀ∏≤"), UMBS_OK, UI_NOTICE, MSGCMD_AFFINITY_REWARD_NOTICE ); 
+
+				while( iter != _pNetwork->GetAffinityRewardNPCList().end() )
+				{
+					iNpcIndex = *iter;
+					CMobData& mob = _pNetwork->GetMobData(iNpcIndex);
+					strMessage.PrintF(_S(4843, "[%s] (¿∏)∑Œ∫Œ≈Õ ƒ£»≠µµ º±π∞¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ."), mob.GetName() );
+					MsgBoxInfo.AddString(strMessage);
+
+					++iter;
+				}
+
+				/*while( iter != _pNetwork->GetAffinityRewardNPCList().end() )
+				{
+					iNpcIndex = *iter;
+					CMobData &mob = _pNetwork->GetMobData(iNpcIndex);
+					strMessage.PrintF(_s("[%s] "), mob.GetName());
+					strNPCList.InsertSubString(strNPCList.Length(), strMessage);
+					
+					// ƒ£»≠µµ ¿Ã∏ß æ»∞„ƒ°∞‘ ∏ÆΩ∫∆Æ ∏∏µÈæÓ ≥ı¥¬¥Ÿ.
+					if( 0 == std::count(vectorAffinityIndex.begin(), vectorAffinityIndex.end(), iNpcIndex) )
+					{
+						vectorAffinityIndex.push_back(iNpcIndex);
+					}
+
+					++iter;
+				}
+
+				for( int i = 0; i < vectorAffinityIndex.size(); i++ )
+				{
+					strMessage.PrintF(_s("[%s] "), _pNetwork->GetAffinityData()->GetAffinityNameByIndex(vectorAffinityIndex[i]));
+					strAffinityList.InsertSubString(strAffinityList.Length(), strMessage);
+				}
+
+				strMessage.PrintF(_s("%s (¿∏)∑Œ∫Œ≈Õ º±π∞¿Ã µµ¬¯«ﬂΩ¿¥œ¥Ÿ."), strAffinityList);
+				MsgBoxInfo.AddString(strAffinityList);
+
+				strMessage.PrintF(_s("%s ¿ª(∏¶) πÊπÆ«ÿ ¡÷Ω√±‚ πŸ∂¯¥œ¥Ÿ."), strNPCList);
+				MsgBoxInfo.AddString(strMessage);
+				*/
+				
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+			}
 		}
 		break;
 	}
@@ -1619,14 +1970,16 @@ WMSG_RESULT CUINotice::MouseMessage( MSG *pMsg )
 	static int	nOldX, nOldY;
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
-	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// Mouse message
 	switch( pMsg->message )
 	{
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				pUIManager->SetMouseCursorInsideUIs();
 			
 		
 			// Move remission
@@ -1685,12 +2038,12 @@ WMSG_RESULT CUINotice::MouseMessage( MSG *pMsg )
 						{							
 							m_nSelNoticeID = i;
 							bLButtonDownInBtn = TRUE;
-							_pUIMgr->RearrangeOrder( UI_NOTICE, TRUE );
+							pUIManager->RearrangeOrder( UI_NOTICE, TRUE );
 							return WMSG_SUCCESS;
 						}
 					}
 				}
-				_pUIMgr->RearrangeOrder( UI_NOTICE, TRUE );
+				pUIManager->RearrangeOrder( UI_NOTICE, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -1702,7 +2055,7 @@ WMSG_RESULT CUINotice::MouseMessage( MSG *pMsg )
 					
 			
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if( pUIManager->GetHoldBtn().IsEmpty() )
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -1732,7 +2085,7 @@ WMSG_RESULT CUINotice::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 					
 					return WMSG_SUCCESS;
 				}
@@ -1752,7 +2105,8 @@ void CUINotice::AddBtnNotice(int iNoticeIndex, eNoticeType iNoticeType)
 	int k = nMaxNotice;
 	
 	// Find empty slot
-	for( int iItem = 0; iItem < nMaxNotice; ++iItem )
+	int iItem;
+	for( iItem = 0; iItem < nMaxNotice; ++iItem )
 	{
 		if( m_abtnItems[iItem].IsEmpty() )
 			break;
@@ -1763,7 +2117,7 @@ void CUINotice::AddBtnNotice(int iNoticeIndex, eNoticeType iNoticeType)
 	
 	switch(iNoticeType)
 	{
-	case NOTICE_QUEST:			// ÌÄòÏä§Ìä∏ ÌÉÄÏûÖÏùºÎïå...	
+	case NOTICE_QUEST:			// ƒ˘Ω∫∆Æ ≈∏¿‘¿œ∂ß...	
 		{	
 			CQuestDynamicData *pQuestDD = NULL;
 			CQuestDynamicData QuestDD(CQuestSystem::Instance().GetStaticData( iNoticeIndex ));
@@ -1772,26 +2126,21 @@ void CUINotice::AddBtnNotice(int iNoticeIndex, eNoticeType iNoticeType)
 		}
 		break;
 
-	case NOTICE_POLYMOPH:		// Î≥ÄÏã†ÏóêÏÑú ÎêòÎèåÏïÑÏò¥.
+	case NOTICE_POLYMOPH:		// ∫ØΩ≈ø°º≠ µ«µπæ∆ø».
 		{			
-			m_abtnItems[iItem].SetItemInfo( -1, -1, -1, iStopChangeItem, -1, -1 );
+			m_abtnItems[iItem].SetItemInfo( -1, -1, iStopChangeItem, -1, -1 );
 		}
 		break;
 
-	case NOTICE_TRANSFORM:		// Î≥ÄÏã†Ï≤¥ÏóêÏÑú ÎêòÎèåÏïÑÏò¥.
-		{
-			m_abtnItems[iItem].SetItemInfo( -1, -1, -1, iStopTransformItem, -1, -1 );
-		}
-		break;
-
-	case NOTICE_EVENT:			// Ïù¥Î≤§Ìä∏ ÏïåÎ¶º.
+	case NOTICE_EVENT:			// ¿Ã∫•∆Æ æÀ∏≤.
 		{			
 			m_abtnItems[iItem].SetQuestInfo( iNoticeIndex, -1, 0 );
 		}
 		break;
-	case NOTICE_AUCTION:
+	case NOTICE_AFFINITY:		// [100322: selo] ƒ£»≠µµ ∫∏ªÛ æÀ∏≤
 		{
-			m_abtnItems[iItem].SetAuctionNotice(iNoticeIndex);
+			// ƒ£»≠µµ æ∆¿Ãƒ‹¿∏∑Œ «œµÂ ƒ⁄µ˘
+			m_abtnItems[iItem].SetActionInfo(iAffinityRewardNotice);			
 		}
 		break;
 	}
@@ -1808,6 +2157,10 @@ void CUINotice::AddToNoticeList( int iNoticeIndex, eNoticeType iNoticeType )
 		return;
 
 //	ASSERT( iNoticeIndex >= EVENT_START_INDEX && iNoticeType == NOTICE_EVENT && "Invalid Event Index" );
+	if (iNoticeIndex == 2030)
+	{ // ¿œ∫ª ∫∏π∞ªÛ¿⁄ √ﬂ∞° ¡ˆ±ﬁ∏∏
+		CUIManager::getSingleton()->m_JapanTempEvent = 1;
+	}
 
 	sNoticeInfo TempInfo;
 	TempInfo.iIndex = iNoticeIndex;
@@ -1848,12 +2201,19 @@ void CUINotice::DelNoticeBySlotIndex( int iSlotIndex )
 			{
 				TempInfo.iType	= NOTICE_EVENT;
 			}
+		    
+			// [091013: selo] ∞¯∞›∆Í¿Ã ¡¯»≠ ∞°¥… ∑π∫ß¿Ã µ«æ˙¿ª ∂ß
+			else if( TempInfo.iIndex == PET_NOTICE_EVOLUTION_ENABLE )
+			{
+				TempInfo.iType = NOTICE_EVENT;
+			}
+
 			else if( TempInfo.iIndex >= EVENT_START_INDEX )
 			{
 				TempInfo.iType	= NOTICE_EVENT;
 			}
 		}
-		// Î≥ÄÏã†Ï≤¥ Î∞è Î™¨Ïä§ÌÑ∞ Î≥ÄÏã† Ï≤òÎ¶¨...
+		// ∫ØΩ≈√º π◊ ∏ÛΩ∫≈Õ ∫ØΩ≈ √≥∏Æ...
 		else if( m_abtnItems[iSlotIndex].GetBtnType() == UBET_ITEM )
 		{
 			const int iIndex = m_abtnItems[iSlotIndex].GetItemIndex(); 
@@ -1861,17 +2221,19 @@ void CUINotice::DelNoticeBySlotIndex( int iSlotIndex )
 			{
 				TempInfo.iType	= NOTICE_POLYMOPH;
 			}
-			else if( iIndex == iStopTransformItem )
-			{
-				TempInfo.iType	= NOTICE_TRANSFORM;
-			}
 			TempInfo.iIndex = iIndex;
 		}
-		else if( m_abtnItems[iSlotIndex].GetBtnType() == UBET_AUCTION )
+		// [100322: selo] ƒ£»≠µµ ∫∏ªÛ æÀ∏≤ √≥∏Æ
+		else if( m_abtnItems[iSlotIndex].GetBtnType() == UBET_ACTION )
 		{
-			TempInfo.iIndex = m_abtnItems[iSlotIndex].GetAuctionIndex();
-			TempInfo.iType	= NOTICE_AUCTION;
+			const int iIndex = m_abtnItems[iSlotIndex].GetActionIndex();
+			if( iIndex == iAffinityRewardNotice )
+			{
+				TempInfo.iType	= NOTICE_AFFINITY;
+			}
+			TempInfo.iIndex = 0;
 		}
+
 
 		std::vector<sNoticeInfo>::iterator iter = 
 			std::find_if(m_vectorNoticeList.begin(), m_vectorNoticeList.end(), FindNotice(TempInfo) );
@@ -1956,27 +2318,9 @@ void CUINotice::Clear()
 
 	m_nLeftTime		= 0;
 	m_tmLeftTime	= 0;
-}
 
-// ----------------------------------------------------------------------------
-// Name : UpdateTimeInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUINotice::UpdateTimeInfo()
-{
-	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds(); // ÌòÑÏû¨ ÏãúÍ∞Ñ ÏñªÍ∏∞
-	__int64	llCurDelay = llCurTime - m_tmLeftTime;
-
-	int lLeftTime = m_nLeftTime - (llCurDelay/1000);
-
-	if ( lLeftTime < 0 ) lLeftTime = 0;
-
-	int iSec = lLeftTime % 60;
-	lLeftTime /= 60;
-
-	int iMin = lLeftTime % 60;	
-
-	m_strSlotInfo.PrintF(_S(2338,"Í∞ïÏã† Ï∑®ÏÜå[%dÎ∂Ñ %dÏ¥à ÎÇ®Ïùå]"), iMin, iSec);
+	// [2011/01/18 : Sora] √‚ºÆ ¿Ã∫•∆Æ
+	m_bAttendanceEvent = FALSE;
 }
 
 // ----------------------------------------------------------------------------
@@ -1987,4 +2331,137 @@ void CUINotice::SetLeftTime( int nLeftTime )
 {
 	m_nLeftTime		= nLeftTime;
 	m_tmLeftTime	= _pTimer->GetHighPrecisionTimer().GetMilliseconds ();
+}
+
+// [2011/01/18 : Sora] √‚ºÆ ¿Ã∫•∆Æ
+// ----------------------------------------------------------------------------
+// Name : ShowAttendanceMessage()
+// Desc : √‚ºÆ ¿Ã∫•∆Æ ∞¯¡ˆ (MessageBox)
+// ----------------------------------------------------------------------------
+void CUINotice::ShowAttendanceMessage( SLONG attendanceRate )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox(MSGCMD_ATTENDANCE);
+
+	CUIMsgBox_Info	MsgBoxInfo;
+	CTString strTemp;
+
+	MsgBoxInfo.m_nColorBoxCount =1;
+
+	MsgBoxInfo.SetMsgBoxInfo( _S( 100, "¿Ã∫•∆Æ" ), UMBS_OK , UI_NOTICE, MSGCMD_ATTENDANCE, attendanceMsgBoxWidth );
+
+	MsgBoxInfo.AddString( _S( 5334, "√‚ºÆ √º≈©«œ∞Ì! πˆ«¡ πﬁ∞Ì!" ), 0xE18600FF ,TEXT_CENTER);
+	MsgBoxInfo.AddString( _s( " " ));
+	MsgBoxInfo.AddString( _S( 5335, "2011≥‚ ªı∑ŒøÓ ªı«ÿ∏¶ ∏¬æ∆ ¿¸≥Ø ¥Î∫Ò √‚ºÆ ¿Ã∫•∆Æ∏¶ ¡¯«‡«’¥œ¥Ÿ." ));
+	MsgBoxInfo.AddString( _S( 5336, "¿Ã∫•∆Æ ±‚∞£ µøæ» ≥™(∞Ì∞¥¥‘)∏¶ ∆˜«‘«— ∏µÁ ƒ≥∏Ø≈Õ∞° ¥Ÿ¿Ω≥Ø ø¨º” √‚ºÆ Ω√ ≈´ «˝≈√¿ª πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ));
+	MsgBoxInfo.AddString( _S( 5337, "∞≥¿Œ√‚ºÆ¿∏∑Œµµ ≈´ «˝≈√¿ª πﬁ¿ª ºˆ ¿÷¿∏¥œ ∞≥¿Œ √‚ºÆ ¿Ã∫•∆Æø°µµ ¿¸«ÿ ∫∏Ω Ω√ø¿." ));
+	MsgBoxInfo.AddString( _s( " " ));
+	MsgBoxInfo.AddString( _S( 5338, "°ÿ ¥Ÿ¿Ω≥Ø ¿¸√º √‚ºÆ∑¸ø° µ˚∂Ûº≠ «˝≈√¿Ã ¥ﬁ∂Û¡˝¥œ¥Ÿ." ));
+	MsgBoxInfo.AddString( _S( 5339, "√‚ºÆ√º≈© ±‚¡°ø°¥¬ ¿Œ√æ∆Æ »Æ∑¸∞˙ πˆ«¡ »ø∞˙∏¶ πﬁ¿ª ºˆ ¿÷Ω¿¥œ¥Ÿ." ));
+	MsgBoxInfo.AddString( _s( " " ));
+	MsgBoxInfo.AddString( _S( 5340, "«˝≈√ ¿˚øÎ Ω√∞£: PM 19:00∫Œ≈Õ" ), 0xF2F2F2FF, TEXT_CENTER);
+	MsgBoxInfo.AddString( _S( 5341, "¿Ã∫•∆Æ ±‚∞£: 2011≥‚ 2ø˘ ¿œ ~ 2ø˘ ¿œ±Ó¡ˆ" ), 0xF2F2F2FF, TEXT_CENTER);
+	MsgBoxInfo.AddString( _s( " " ));
+	
+	strTemp.PrintF(_S( 5342, "¿¸√º √‚ºÆ∑¸ %d%" ), attendanceRate);
+	MsgBoxInfo.AddString( strTemp, 0xF2F2F2FF, TEXT_CENTER);
+	MsgBoxInfo.m_nMaxRow +=1;
+
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+
+	float fEnvRate = attendanceRate / 100.0f;
+	int iPosY = MSGBOX_MESSAGE_OFFSETY + MsgBoxInfo.m_nMaxRow * _pUIFontTexMgr->GetLineHeight();
+
+	pUIManager->GetMessageBox(MSGCMD_ATTENDANCE)->SetColorBox(0, 5, WRect(30, iPosY, 30 + ( colorBarWidth * fEnvRate ), iPosY+9));	
+	
+	m_bAttendanceEvent = TRUE;
+}
+
+// ----------------------------------------------------------------------------
+// Name : ShowAttendanceNotice()
+// Desc : √‚ºÆ ¿Ã∫•∆Æ ∞¯¡ˆ (GM & Sys Message)
+// ----------------------------------------------------------------------------
+void CUINotice::ShowAttendanceNotice( SLONG attendanceRate, SLONG enchantRate, SLONG expSpRate )
+{
+	CTString strTemp;
+	strTemp.PrintF( _S(5343, "¿Ã∫•∆Æø° µ˚∏• ±›¿œ ¿Œ√æ∆Æ »Æ∑¸¿∫ %d%, º˜∑√µµøÕ ∞Ê«Ëƒ°¥¬ %d%√ﬂ∞° »πµÊ«œΩ« ºˆ ¿÷Ω¿¥œ¥Ÿ."),
+					enchantRate, expSpRate );
+
+	_UIAutoHelp->SetGMNotice ( strTemp, 0xFFFF40FF );
+	_pNetwork->ClientSystemMessage( strTemp, SYSMSG_NOTIFY );
+
+	// ∆¯¡◊...
+	PCStartEffectGroup("squid", _pNetwork->MyCharacterInfo.index);
+}
+
+// ----------------------------------------------------------------------------
+// Name : ShowAttendanceNotice()
+// Desc : √‚ºÆ ¿Ã∫•∆Æ ∞¯¡ˆ (GM & Sys Message)
+// ----------------------------------------------------------------------------
+void CUINotice::ShowUsedPartyItemNotice( const INDEX& nItemIdx, const CTString& strNickName )
+{
+	CTString strTemp;
+	strTemp.PrintF( _S( 5395, "%s¥‘≤≤º≠ %s∂Û∞Ì ø‹ƒ®¥œ¥Ÿ."), strNickName, _pNetwork->GetItemDesc( nItemIdx ) );
+	_UIAutoHelp->SetGMNotice ( strTemp, 0xA8A8F8FF );
+}
+
+// ----------------------------------------------------------------------------
+// Name : ShowRoyalRumbleNotice(const UBYTE uType )
+// Desc : Ω≈√ª ∞¯¡ˆ.
+// ----------------------------------------------------------------------------
+void CUINotice::ShowRoyalRumbleNotice(const UBYTE uType )
+{
+	CTString strTemp;
+	if( uType == 0 )
+	{
+		strTemp.PrintF( _S( 5396, "∑Œæ‚∑≥∫Ì Ω≈√ª¿Ã Ω√¿€µ«æ˙Ω¿¥œ¥Ÿ.") );
+	}
+	else if( uType == 1 )
+	{
+		strTemp.PrintF( _S( 5397, "∑Œæ‚∑≥∫Ì Ω≈√ªΩ√∞£¿Ã 5∫– ≥≤æ“Ω¿¥œ¥Ÿ.") );
+	}
+	else if( uType == 2 )
+	{
+		strTemp.PrintF( _S(5398, "∑Œæ‚∑≥∫Ì Ω≈√ª¿Ã ¡æ∑·µ«æ˙Ω¿¥œ¥Ÿ.") );
+	}
+	
+	_UIAutoHelp->SetGMNotice( strTemp, 0xFFFF40FF );
+	_pNetwork->ClientSystemMessage( strTemp, SYSMSG_NOTIFY );
+}
+
+// ----------------------------------------------------------------------------
+// Name : ShowRoyalRumbleWinner(const INDEX& iLevel, const CTString& strNickName )
+// Desc : øÏΩ¬¿⁄ ∞¯¡ˆ.
+// ----------------------------------------------------------------------------
+void CUINotice::ShowRoyalRumbleWinner(const INDEX& iLevel, const CTString& strNickName )
+{
+	CTString strTemp;
+	CTString strType;
+	if( iLevel == 0 )
+	{
+		strType = _S(5399, "ºˆΩ¿ ∞À≈ıªÁ");
+	}
+	else if( iLevel == 1 )
+	{
+		strType = _S(5400, "¿¸πÆ ∞À≈ıªÁ");
+	}
+	else if( iLevel == 2 )
+	{
+		strType = _S(5401, "∞Ì±ﬁ ∞À≈ıªÁ");
+	}
+
+	strTemp.PrintF( _S( 5402, "%s¥‘≤≤º≠ %s ¥Î¿¸ø°º≠ øÏΩ¬«œºÃΩ¿¥œ¥Ÿ!" ), strNickName, strType );
+	_UIAutoHelp->SetGMNotice( strTemp, 0xFFFF40FF );
+}
+
+// ----------------------------------------------------------------------------
+// Name : ShowRoyalRumbleNextPlayerTime( const INDEX iLeftTime )
+// Desc : ¥Ÿ¿Ω «√∑π¿ÃæÓ ¿‘¿Â Ω√∞£ «•Ω√
+// ----------------------------------------------------------------------------
+void CUINotice::ShowRoyalRumbleNextPlayerTime( const INDEX iLeftTime )
+{
+	CTString strTemp;
+	strTemp.PrintF( _S( 5403, "¥Ÿ¿Ω º±ºˆ ¿‘¿ÂΩ√∞£¿Ã %d√  ≥≤æ“Ω¿¥œ¥Ÿ." ), iLeftTime );
+	_UIAutoHelp->SetGMNotice( strTemp, 0xFFFF40FF );
 }

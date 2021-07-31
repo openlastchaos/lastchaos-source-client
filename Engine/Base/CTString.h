@@ -5,6 +5,9 @@
 #endif
 
 #include <Engine/Base/Types.h>
+#ifdef KALYDO
+#include <Engine/Base/TLVar.h>
+#endif
 
 /*
  * Main string class
@@ -38,6 +41,7 @@ public:
 
 	/* Check if string data is valid. */
 	BOOL IsValid(void) const;
+	BOOL IsEmpty(void) const;
 
 	// return length of the string
 	inline INDEX Length(void) const 
@@ -90,11 +94,11 @@ public:
 	// wild card comparison (other string may contain wildcards)
 	BOOL Matches(const CTString &strOther) const;
 	BOOL Matches(const char *strOther) const;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Fix Bug)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Fix Bug)(0.1)
 	BOOL IsEqualCaseSensitive(const CTString &strOther) const;
 	BOOL IsEqualCaseSensitive(const char *strOther) const;
 	ENGINE_API friend BOOL IsEqualCaseSensitive(const char *strThis, const CTString &strOther);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Fix Bug)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Fix Bug)(0.1)
 
 	/* String concatenation. */
 	CTString operator+(const CTString &strSecond) const;

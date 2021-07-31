@@ -141,29 +141,6 @@ functions:
 
 
 procedures:
-  
-  WaitAndFadeOut(EVoid)
-  {
-    autowait( m_tmAutoFadeOut);
-    jump ApplyFadeOut();
-  }
-
-  ApplyFadeOut(EVoid)
-  {
-    m_tmFadeOutStart = _pTimer->CurrentTick();
-    CWorldSettingsController *pwsc = GetWSC(this);
-    if( pwsc!=NULL)
-    {
-      autowait(m_tmFadeOutLen);
-      CWorldSettingsController *pwsc = GetWSC(this);
-      ETextFX etfx;
-      etfx.bStart=FALSE;
-      etfx.penSender=this;
-      pwsc->SendEvent(etfx);
-    }
-    return EReturn();
-  }
-
   Main()
   {
     InitAsEditorModel();
@@ -217,6 +194,28 @@ procedures:
     }
     Picture_Off();
     return;
+  }
+
+  WaitAndFadeOut(EVoid)
+  {
+    autowait( m_tmAutoFadeOut);
+    jump ApplyFadeOut();
+  }
+
+  ApplyFadeOut(EVoid)
+  {
+    m_tmFadeOutStart = _pTimer->CurrentTick();
+    CWorldSettingsController *pwsc = GetWSC(this);
+    if( pwsc!=NULL)
+    {
+      autowait(m_tmFadeOutLen);
+      CWorldSettingsController *pwsc = GetWSC(this);
+      ETextFX etfx;
+      etfx.bStart=FALSE;
+      etfx.penSender=this;
+      pwsc->SendEvent(etfx);
+    }
+    return EReturn();
   }
 };
 

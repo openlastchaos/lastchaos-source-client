@@ -45,24 +45,24 @@ enum ePetAttackType
 
 enum ePetAge
 {
-	HORSE_CHILD	= 0,	// ë§
+	HORSE_CHILD	= 0,	// ¸»
 	HORSE_BOY,
 	HORSE_ADULT,	
-	DRAGON_CHILD,		// ìš©
+	DRAGON_CHILD,		// ¿ë
 	DRAGON_BOY,
 	DRAGON_ADULT,
 	
-	BLUE_HORSE_CHILD	= 6,	// íŒŒëž€ ë§
+	BLUE_HORSE_CHILD	= 6,	// ÆÄ¶õ ¸»
 	BLUE_HORSE_BOY,
 	BLUE_HORSE_ADULT,	
-	PINK_DRAGON_CHILD,			// í•‘í¬ ìš©
+	PINK_DRAGON_CHILD,			// ÇÎÅ© ¿ë
 	PINK_DRAGON_BOY,
 	PINK_DRAGON_ADULT,
 
-	MISTERY_HORSE_CHILD	= 12,	// ë¶ˆê°€ì‚¬ì˜í•œ ë§
+	MISTERY_HORSE_CHILD	= 12,	// ºÒ°¡»çÀÇÇÑ ¸»
 	MISTERY_HORSE_BOY,
 	MISTERY_HORSE_ADULT,	
-	MISTERY_DRAGON_CHILD,		// ë¶ˆê°€ì‚¬ì˜í•œ ìš©
+	MISTERY_DRAGON_CHILD,		// ºÒ°¡»çÀÇÇÑ ¿ë
 	MISTERY_DRAGON_BOY,
 	MISTERY_DRAGON_ADULT,
 
@@ -87,9 +87,9 @@ private:
 		{
 		};
 
-		CTString		strName;									// ì´ë¦„ ì •ë³´.
-		CTString		strFileName;								// íŒŒì¼ëª….
-		CTString		aStrAnimationName[PET_ANIM_TOTAL];			// ì• ë‹ˆë©”ì´ì…˜ ì´ë¦„.		
+		CTString		strName;									// ÀÌ¸§ Á¤º¸.
+		CTString		strFileName;								// ÆÄÀÏ¸í.
+		CTString		aStrAnimationName[PET_ANIM_TOTAL];			// ¾Ö´Ï¸ÞÀÌ¼Ç ÀÌ¸§.		
 		BOOL			bRide;
 		FLOAT			fWalkSpeed;
 		FLOAT			fRunSpeed;

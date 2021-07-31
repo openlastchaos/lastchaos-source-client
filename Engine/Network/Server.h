@@ -19,15 +19,6 @@ public:
 
 	CStaticArray<CSessionSocket> srv_assoSessions;  // client computers in game
 	CStaticArray<CPlayerTarget> srv_apltPlayers;  // player buffers for all clients in game
-//0325 kwon  
-//안태훈 수정 시작	//(5th Closed beta)(0.2)
-	CStaticStackArray<CMobTarget>		srv_amtMob;
-	CStaticStackArray<CCharacterTarget> srv_actCha;
-	CStaticStackArray<CPetTarget>		srv_actPet;
-	CStaticStackArray<CItemTarget>		srv_aitItem;
-	CStaticStackArray<CSlaveTarget>		srv_actSlave;
-	CStaticStackArray<CWildPetInfo>		srv_actWildPet;
-//안태훈 수정 끝	//(5th Closed beta)(0.2)
 
 	TIME srv_tmLastProcessedTick;            // last tick when all actions have been resent
 	INDEX srv_iLastProcessedSequence;        // sequence of last sent game stream block
@@ -46,13 +37,6 @@ public:
 	CEntityMessage  srv_emEntityMessage;    // a temp message 
 	CEMsgBuffer     srv_embOutgoingBuffer;  // a temp buffer used to compile data for a client
 	BOOL            srv_bRunning;           // is the message gathering/sending process active
-
-	const int		srv_iMaxMobNum;
-	const int		srv_iMaxChaNum;
-	const int		srv_iMaxPetNum;
-	const int		srv_iMaxSlaveNum;
-	const int		srv_iMaxItemNum;
-	const int		srv_iMaxWildPetNum;
 
 public:
 	/* Send disconnect message to some client. */
@@ -129,9 +113,6 @@ public:
 	void StopNetProcess();
 	/* run updates for all remote clients */
 	void ServerNetProcess();
-
-	void ReAllocEntities();
-
 
 public:
 	/* Constructor. */

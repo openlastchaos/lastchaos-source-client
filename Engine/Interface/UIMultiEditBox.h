@@ -15,14 +15,14 @@
 #include <Engine/Interface/UIEditBox.h>
 #include <Engine/Interface/UIScrollBar.h>
 #include <vector>
- 
+
 // ----------------------------------------------------------------------------
 // Name : CUIMultiEditBox
 // Desc : Multi EditBox Control
-//      - ì´ë¯¸ êµ¬í˜„ëœ EditBoxë¥¼ ì´ìš©í•´ì„œ MultiEditBox êµ¬í˜„
-//		- ì„¸ë¡œ ë¬´í•œ í™•ì¥ ( Use Vector, Scroll Bar )
-//      - ê°€ë¡œ ìµœëŒ€ ë¼ì¸ìˆ˜ê°€ ë„˜ì–´ ê°€ë©´ NewLine.
-//		- ê²Œì‹œíŒì— ê¸€ì“°ê¸°ìš©ìœ¼ë¡œ ì´ˆê¸° ì‘ì„± ë˜ì—ˆìŒ.
+//      - ÀÌ¹Ì ±¸ÇöµÈ EditBox¸¦ ÀÌ¿ëÇØ¼­ MultiEditBox ±¸Çö
+//		- ¼¼·Î ¹«ÇÑ È®Àå ( Use Vector, Scroll Bar )
+//      - °¡·Î ÃÖ´ë ¶óÀÎ¼ö°¡ ³Ñ¾î °¡¸é NewLine.
+//		- °Ô½ÃÆÇ¿¡ ±Û¾²±â¿ëÀ¸·Î ÃÊ±â ÀÛ¼º µÇ¾úÀ½.
 // ----------------------------------------------------------------------------
 class CUIMultiEditBox : public CUIWindow
 {
@@ -32,15 +32,22 @@ protected:
 	CUIScrollBar			m_sbScrollBar;	// Scroll Bar	
 
 	// Properties
-	std::vector<CTString>	m_strTexts;		// í™”ë©´ì— ì¶œë ¥ë˜ëŠ” í…ìŠ¤íŠ¸
+	std::vector<CTString>	m_strTexts;		// È­¸é¿¡ Ãâ·ÂµÇ´Â ÅØ½ºÆ®
 	int						m_nCurrentLine;	// Current Line
+	int						m_nMaxLine;
 	int						m_nFontWidth;	// Font Width	( Use Set m_nMaxChar and Render )
 	int						m_nFontHeight;	// Font Height  ( Use Set m_nLineHeight and Render )
 	int						m_nMaxChar;		// Max Charactor Count
 	int						m_nLineHeight;	// Max Line Height
 	int						m_nBlankSpaceLeft;
 	int						m_nBlankSpaceTop;
+	BOOL					m_bNotEditBox;
+	ENGINE_API static int	s_nRefCount;
 
+protected:
+	void	IncRef()			{ s_nRefCount = 1;	}
+	void	DecRef()			{ s_nRefCount = 0;	}
+	void	AutoRef( BOOL ref )	{ ref ? IncRef() : DecRef();	}
 public:
 	CUIMultiEditBox();
 	virtual ~CUIMultiEditBox();
@@ -63,15 +70,20 @@ public:
 	
 	// String
 	CTString GetString();
+	CTString GetString( unsigned int nIndex );
 	int GetAllStringLength();
 	void ResetString();
 	void SetString( char* strString, char* strHead = NULL );
-	void SetString( char* strString, char* Writer, char* strHead = NULL ); // ë°©ëª…ë¡ ë¦¬í”Œìš©
+	void SetString( char* strString, char* Writer, char* strHead = NULL ); // ¹æ¸í·Ï ¸®ÇÃ¿ë
 		
 	// String Control
 	void SetString ( char* strString, int nPos );
 	void AddString( char* strString, int nPos = -1 );
 	void DeleteString( int nPos = -1 );
+	BOOL AddEOLTokenString( CTString& strString, char* pstrToken );
+	BOOL AddEOLTokenString( char* pstrToken );
+	BOOL RemoveEOLTokenString( CTString& strString, char* pstrToken );
+	BOOL RemoveEOLTokenString( char *pstrToken );
 
 	void SplitLine( int nIndex  = -1 );
 	void Cutting();
@@ -84,16 +96,19 @@ public:
 	void ResizeScrollBar();
 	void SetScrollBarPos();
 
+	int GetLineCount()	{	 return m_strTexts.size();	}
+
 	// Cursor Control
 	void MoveCursorUp();
 	void MoveCursorDown();
 	void MoveCursorFirst();
 	void MoveCursorEnd();
 	
-	// í¸ì§‘ ì¤‘ì¸ EditBoxì— ìŠ¤íŠ¸ë§ ì…‹íŒ…
+	// ÆíÁı ÁßÀÎ EditBox¿¡ ½ºÆ®¸µ ¼ÂÆÃ
 	void SetStringToEditBox();
 
-	
+	BOOL	IsFocusedInAll() { return s_nRefCount;	}
+	void	SetEnableInput(BOOL benable) { m_bNotEditBox = benable; }
 };
 
 

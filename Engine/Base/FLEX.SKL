@@ -9,16 +9,20 @@
 #define YY_FLEX_MINOR_VERSION 5
 
 %-
+#include "StdH.h"
 #include <stdio.h>
 %*
 
+#ifndef	yyconst
+#define	yyconst const
+#endif	// yyconst
 
 /* cfront 1.2 defines "c_plusplus" instead of "__cplusplus" */
-//#ifdef c_plusplus
-//#ifndef __cplusplus
-//#define __cplusplus
-//#endif
-//#endif
+// #ifdef c_plusplus
+// #	ifndef __cplusplus
+// #		define __cplusplus
+// #	endif
+// #endif
 
 
 #ifdef __cplusplus

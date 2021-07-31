@@ -1,5 +1,5 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "StdH.h"
 
 #include <Engine/Base/Stream.h>
@@ -26,6 +26,8 @@ CEffectGroup::CEffectGroup()
 , m_pProjection( NULL )
 , m_fSpeedMul( 1 )
 , m_pWantTagManager( NULL )
+, m_gERType(ER_NORMAL)
+, m_gERSubType(ERS_NORMAL)
 {
 }
 
@@ -66,12 +68,12 @@ INDEX CEffectGroup::AddEffect(FLOAT fStartTimeFromStart, std::string strEffectNa
 
 	if(!CEffectManager::Instance().IsRegistered(strEffectName)) return -1;
 
-	//EFFECT_KEYë¥¼ ë§Œë“¤ì–´ì„œ ë²¡í„°ì— ì¶”ê°€í•œë‹¤.
+	//EFFECT_KEY¸¦ ¸¸µé¾î¼­ º¤ÅÍ¿¡ Ãß°¡ÇÑ´Ù.
 	INDEX index = m_vectorEffectKey.size();
 	m_vectorEffectKey.push_back(EffectKey());
 	EffectKey &effectKey = m_vectorEffectKey[index];
-	//í”„ë¡œí† íƒ€ì…ì˜ ì´ë¦„ê³¼ ê·¸ê²ƒì˜ ì‹œì‘ ì‹œê°„ì„ ì €ì¥í•œë‹¤.
-	//ì‹œì‘ ì‹œê°„ì€ ì´ skill effectê°€ ì‹œì‘í•œ ì‹œê°„ìœ¼ë¡œ ë¶€í„°ì˜ ì˜¤í”„ì…‹ ì‹œê°„ì„.
+	//ÇÁ·ÎÅäÅ¸ÀÔÀÇ ÀÌ¸§°ú ±×°ÍÀÇ ½ÃÀÛ ½Ã°£À» ÀúÀåÇÑ´Ù.
+	//½ÃÀÛ ½Ã°£Àº ÀÌ skill effect°¡ ½ÃÀÛÇÑ ½Ã°£À¸·Î ºÎÅÍÀÇ ¿ÀÇÁ¼Â ½Ã°£ÀÓ.
 	effectKey.m_iKeyValue = m_iNextEffectKeyValue++;
 	effectKey.m_fStartTime = fStartTimeFromStart;
 	effectKey.m_strEffectName = strEffectName;
@@ -84,15 +86,15 @@ INDEX CEffectGroup::AddTagForEffect(FLOAT fSettingTimeFromStart, INDEX iAddedEff
 {
 	ASSERT(fSettingTimeFromStart >= 0.0f);
 
-	INDEX idxEffect = FindEffectIndex(iAddedEffect);
-	if(idxEffect == -1) return -1;
+	EffectKey* effectkey = FindEffectKey(iAddedEffect);
+	if(effectkey == NULL) return -1;
 
-	//TAG_KEYë¥¼ ìƒì„±í•œë‹¤.
+	//TAG_KEY¸¦ »ı¼ºÇÑ´Ù.
 	INDEX index = m_vectorTagKey.size();
 	m_vectorTagKey.push_back(TagKey());
 	TagKey &tagKey = m_vectorTagKey[index];
 
-	//TAG_KEYì˜ ì •ë³´ë¥¼ ì±„ìš´ë‹¤.
+	//TAG_KEYÀÇ Á¤º¸¸¦ Ã¤¿î´Ù.
 	tagKey.m_iKeyValue = m_iNextTagKeyValue++;
 	tagKey.m_fSettingTime = fSettingTimeFromStart;
 	tagKey.m_iEffectKeyValue = iAddedEffect;
@@ -106,10 +108,10 @@ void CEffectGroup::AddTagForAllEffect(FLOAT fSettingTimeFromStart, std::string t
 	for(INDEX i=0; i<m_vectorEffectKey.size(); ++i)
 	{
 		INDEX index = m_vectorTagKey.size();
-		//TAG_KEYë¥¼ ìƒì„±í•œë‹¤.
+		//TAG_KEY¸¦ »ı¼ºÇÑ´Ù.
 		m_vectorTagKey.push_back(TagKey());
 		TagKey &tagKey = m_vectorTagKey[index];
-		//TAG_KEYì˜ ì •ë³´ë¥¼ ì±„ìš´ë‹¤.
+		//TAG_KEYÀÇ Á¤º¸¸¦ Ã¤¿î´Ù.
 		tagKey.m_iKeyValue = m_iNextTagKeyValue++;
 		tagKey.m_fSettingTime = fSettingTimeFromStart;
 		tagKey.m_iEffectKeyValue = m_vectorEffectKey[i].m_iKeyValue;
@@ -119,7 +121,7 @@ void CEffectGroup::AddTagForAllEffect(FLOAT fSettingTimeFromStart, std::string t
 
 BOOL CEffectGroup::RemoveEffect(INDEX keyValue)
 {
-	//effectê°€ ì§€ì›Œì§ˆë•ŒëŠ” ê·¸ì— í•´ë‹¹í•˜ëŠ” tagë„ ì§€ì›€.
+	//effect°¡ Áö¿öÁú¶§´Â ±×¿¡ ÇØ´çÇÏ´Â tagµµ Áö¿ò.
 	INDEX cnt = m_vectorTagKey.size();
 	for(INDEX i=0; i<cnt; ++i)
 	{
@@ -130,7 +132,7 @@ BOOL CEffectGroup::RemoveEffect(INDEX keyValue)
 			--i;
 		}
 	}
-	//effect ì§€ì›€.
+	//effect Áö¿ò.
 	for(vector_effect_key::iterator iter=m_vectorEffectKey.begin(); iter!=m_vectorEffectKey.end(); ++iter)
 	{
 		if((*iter).m_iKeyValue == keyValue)
@@ -160,12 +162,15 @@ CEffectGroup *CEffectGroup::Copy()
 	CEffectGroup *pEffectGroup = new CEffectGroup;
 	if(pEffectGroup == NULL) return NULL;
 	pEffectGroup->m_strName = m_strName;
-	for(INDEX i=0; i<m_vectorEffectKey.size(); ++i)
+	pEffectGroup->m_gERType = m_gERType;
+	pEffectGroup->m_gERSubType = m_gERSubType;
+	INDEX i;
+	for( i = 0; i < m_vectorEffectKey.size(); ++i )
 	{
 		EffectKey &effectKey = m_vectorEffectKey[i];
 		pEffectGroup->AddEffect(effectKey.m_fStartTime, effectKey.m_strEffectName);
 	}
-	for(i=0; i<m_vectorTagKey.size(); ++i)
+	for( i = 0; i < m_vectorTagKey.size(); ++i )
 	{
 		TagKey &tagKey = m_vectorTagKey[i];
 		pEffectGroup->AddTagForEffect(tagKey.m_fSettingTime, tagKey.m_iEffectKeyValue, tagKey.m_strTagName);
@@ -176,18 +181,20 @@ CEffectGroup *CEffectGroup::Copy()
 void CEffectGroup::Start(FLOAT time)
 {
 	if(m_bActive) return;
-	if(m_pTagManager == NULL) return;	//tag managerê°€ ì—†ìœ¼ë©´ ì˜ë¯¸ ì—†ìŒ.
+	if(m_pTagManager == NULL) return;	//tag manager°¡ ¾øÀ¸¸é ÀÇ¹Ì ¾øÀ½.
 	if(m_vectorEffectKey.empty() || m_vectorTagKey.empty()) return;
 
-	//effectë¥¼ ìƒì„±í•œë‹¤.
+	//effect¸¦ »ı¼ºÇÑ´Ù.
 	for(INDEX i=0; i<m_vectorEffectKey.size(); ++i)
 	{
 		CEffect *pEffect = CEffectManager::Instance().Create(m_vectorEffectKey[i].m_strEffectName);
-		//if(pEffect == NULL) ASSERTALWAYS("ì´í™íŠ¸ ì´ë¦„ìœ¼ë¡œë¶€í„° ì´í™íŠ¸ì˜ ìƒì„±ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
+		//if(pEffect == NULL) ASSERTALWAYS("ÀÌÆåÆ® ÀÌ¸§À¸·ÎºÎÅÍ ÀÌÆåÆ®ÀÇ »ı¼º¿¡ ½ÇÆĞÇß½À´Ï´Ù.");
 		if(pEffect == NULL) return;
-		if(m_pTagManager) pEffect->SetOwner(m_pTagManager->GetOwner());
 		m_vectorEffectKey[i].m_pCreatedEffect = pEffect;
-		
+
+		pEffect->SetERType(m_gERType);
+		pEffect->SetERSubType(m_gERSubType);
+
 		if(m_pWantTagManager != NULL)
 		{
 			for(INDEX iwt=0; iwt<pEffect->GetWantTagCount(); ++iwt)
@@ -205,11 +212,19 @@ void CEffectGroup::Start(FLOAT time)
 				pEffect->SetWantTag(iwt, tag);
 			}
 		}
+
+
+		if(m_pTagManager)
+		{
+			CEntity* pEntity = m_pTagManager->GetOwner();
+			if (pEntity != NULL)
+				pEffect->SetOwner(pEntity);
+		}
 	}
-	//ëª¨ë“  Tagë¥¼ ì°¾ëŠ”ë‹¤.
+	//¸ğµç Tag¸¦ Ã£´Â´Ù.
 	if(m_pTagManager != NULL)
 	{
-		for(i=0; i<m_vectorTagKey.size(); ++i)
+		for(INDEX i = 0; i < m_vectorTagKey.size(); ++i)
 		{
 			m_vectorTagKey[i].m_ptrReserveTag = NULL;
 			CTag *pTag = m_pTagManager->Find(m_vectorTagKey[i].m_strTagName, TRUE);
@@ -222,7 +237,7 @@ void CEffectGroup::Start(FLOAT time)
 	m_bActive = TRUE;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 void CEffectGroup::Start(FLOAT time, const ptr_tag &ptrTag)
 {
 	if(m_bActive) return;
@@ -231,14 +246,16 @@ void CEffectGroup::Start(FLOAT time, const ptr_tag &ptrTag)
 	m_bDirectTag = TRUE;
 	m_ptrDirectTag = ptrTag;
 
-	//effectë¥¼ ìƒì„±í•œë‹¤. ìƒì„±ëœ ì´í™íŠ¸ë¥¼ ì„ì‹œ Tagì— ë¶™ì¸ë‹¤.
+	//effect¸¦ »ı¼ºÇÑ´Ù. »ı¼ºµÈ ÀÌÆåÆ®¸¦ ÀÓ½Ã Tag¿¡ ºÙÀÎ´Ù.
 	for(INDEX i=0; i<m_vectorEffectKey.size(); ++i)
 	{
 		CEffect *pEffect = CEffectManager::Instance().Create(m_vectorEffectKey[i].m_strEffectName);
-		//if(pEffect == NULL) ASSERTALWAYS("ì´í™íŠ¸ ì´ë¦„ìœ¼ë¡œë¶€í„° ì´í™íŠ¸ì˜ ìƒì„±ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
+		//if(pEffect == NULL) ASSERTALWAYS("ÀÌÆåÆ® ÀÌ¸§À¸·ÎºÎÅÍ ÀÌÆåÆ®ÀÇ »ı¼º¿¡ ½ÇÆĞÇß½À´Ï´Ù.");
 		if(pEffect == NULL) return;
 		if(m_pTagManager) pEffect->SetOwner(m_pTagManager->GetOwner());
 		m_vectorEffectKey[i].m_pCreatedEffect = pEffect;
+		pEffect->SetERType(m_gERType);
+		pEffect->SetERSubType(m_gERSubType);
 		pEffect->AttachToTag(ptrTag);
 		pEffect->SetSpeedMul(m_fSpeedMul);
 		
@@ -269,6 +286,7 @@ void CEffectGroup::Start(FLOAT time, const ptr_tag &ptrTag)
 
 void CEffectGroup::Stop(FLOAT leftTime)
 {
+	//CPrintF("Stop Effect: %s\n", m_strName.c_str());
 	for(INDEX i=0; i<m_vectorEffectKey.size(); ++i)
 	{
 		if(m_vectorEffectKey[i].m_pCreatedEffect)
@@ -276,8 +294,10 @@ void CEffectGroup::Stop(FLOAT leftTime)
 			m_vectorEffectKey[i].m_pCreatedEffect->SetRepeatCount(0);
 			if(m_vectorEffectKey[i].m_pCreatedEffect->Playing())
 			{
-				if(leftTime < 0) m_vectorEffectKey[i].m_pCreatedEffect->Stop( m_vectorEffectKey[i].m_pCreatedEffect->GetFadeOutTime() );
-				else m_vectorEffectKey[i].m_pCreatedEffect->Stop(leftTime);
+				if(leftTime < 0)
+					m_vectorEffectKey[i].m_pCreatedEffect->Stop( m_vectorEffectKey[i].m_pCreatedEffect->GetFadeOutTime() );
+				else
+					m_vectorEffectKey[i].m_pCreatedEffect->Stop(leftTime);
 			}
 			else
 			{
@@ -296,7 +316,7 @@ BOOL CEffectGroup::Process(FLOAT time)
 {
 	if(!m_bActive) return FALSE;
 
-	// 1/50ì˜ ì •í™•ë„ë¥¼ ê°–ëŠ”ë‹¤.
+	// 1/50ÀÇ Á¤È®µµ¸¦ °®´Â´Ù.
 	//if( time - m_fLastProcessedTime < 0.02f ) return TRUE;
 
 	FLOAT fProcessedTime = time - m_fStartTime;
@@ -304,20 +324,21 @@ BOOL CEffectGroup::Process(FLOAT time)
 
 	if(!m_bDirectTag)
 	{
-		//tag change ì²˜ë¦¬
+		//tag change Ã³¸®
 		for(INDEX i=0; i<m_vectorTagKey.size(); ++i)
 		{
 			if(m_vectorTagKey[i].m_fSettingTime * m_fSpeedMul > fProcessedTime) continue;
 
-			INDEX effectIndex = FindEffectIndex(m_vectorTagKey[i].m_iEffectKeyValue);
-			//indexê°€ ë°°ì—´ ë²”ìœ„ë¥¼ ë„˜ì§€ ì•Šê²Œ
-			if(effectIndex < 0 || effectIndex >= m_vectorEffectKey.size()) continue;
-			//tagë¥¼ ë¶™ì„. ë§¤í”„ë ˆì„ë§ˆë‹¤ ì²˜ë¦¬ë¨. (ê³„ì† ë¶™ìŒ)
-			CEffect *pEffect = m_vectorEffectKey[effectIndex].m_pCreatedEffect;
-			pEffect->AttachToTag(m_vectorTagKey[i].m_ptrReserveTag);
+			//tag¸¦ ºÙÀÓ. ¸ÅÇÁ·¹ÀÓ¸¶´Ù Ã³¸®µÊ. (°è¼Ó ºÙÀ½)
+			EffectKey* effectkey = FindEffectKey(m_vectorTagKey[i].m_iEffectKeyValue);
+			
+			if (effectkey && effectkey->m_pCreatedEffect)
+			{
+				effectkey->m_pCreatedEffect->AttachToTag(m_vectorTagKey[i].m_ptrReserveTag);
+			}
 		}
 	}
-	//effect ì²˜ë¦¬
+	//effect Ã³¸®
 	CAnyProjection3D &apr = *m_pProjection;
 	BOOL bTestCulling = m_pProjection != NULL && apr.ap_CurrentProjection != NULL;
 	BOOL ret = FALSE;
@@ -325,18 +346,19 @@ BOOL CEffectGroup::Process(FLOAT time)
 	{
 		EffectKey &effectKey = m_vectorEffectKey[ i ];
 
-		//ì‹œì‘ ì‹œê°„ì„ ì§€ë‚¬ìœ¼ë¯€ë¡œ ì‹œì‘í•œë‹¤. ì‹œê°„ì€ ì •í•´ì§„ ì‹œì‘ì‹œê°„ìœ¼ë¡œ ì„¸íŒ…í•œë‹¤.
+		//½ÃÀÛ ½Ã°£À» Áö³µÀ¸¹Ç·Î ½ÃÀÛÇÑ´Ù. ½Ã°£Àº Á¤ÇØÁø ½ÃÀÛ½Ã°£À¸·Î ¼¼ÆÃÇÑ´Ù.
 		if(effectKey.m_pCreatedEffect->GetState() == ES_NOT_STARTED
-			&& time >= effectKey.m_fStartTime / m_fSpeedMul + m_fStartTime)
+			&& time >= effectKey.m_fStartTime * m_fSpeedMul + m_fStartTime)
 		{
 			effectKey.m_pCreatedEffect->Start( m_fStartTime + effectKey.m_fStartTime * m_fSpeedMul );
-			if(effectKey.m_pCreatedEffect->GetTag().NotNull()
-			&& !effectKey.m_pCreatedEffect->GetTag()->Active()
-			&& effectKey.m_pCreatedEffect->Playing())
+
+			if(effectKey.m_pCreatedEffect->GetTag().NotNull() &&
+			!effectKey.m_pCreatedEffect->GetTag()->Active() &&
+			effectKey.m_pCreatedEffect->Playing())
 				effectKey.m_pCreatedEffect->SetNotRenderAtThisFrame();
 		}
 
-		//í”Œë ˆì´ ìƒíƒœê°€ ì•„ë‹ˆë©´ ë‹¤ìŒìœ¼ë¡œ ë„˜ì–´ê°
+		//ÇÃ·¹ÀÌ »óÅÂ°¡ ¾Æ´Ï¸é ´ÙÀ½À¸·Î ³Ñ¾î°¨
 		if(effectKey.m_pCreatedEffect->Playing() == FALSE)
 		{
 			if(effectKey.m_pCreatedEffect->GetState() == ES_NOT_STARTED)
@@ -364,7 +386,7 @@ BOOL CEffectGroup::Process(FLOAT time)
 		{
 			BOOL bNoPassTest = FALSE;
 
-			//ê±°ë¦¬ í…ŒìŠ¤íŠ¸, ë¨¼ì € í•œë‹¤.
+			//°Å¸® Å×½ºÆ®, ¸ÕÀú ÇÑ´Ù.
 			CTag *pTagTest = NULL;
 			if(effectKey.m_pCreatedEffect->GetTag()->GetType() != TT_GROUP)
 			{
@@ -377,7 +399,7 @@ BOOL CEffectGroup::Process(FLOAT time)
 			bNoPassTest = (g_fEffectDistance < fabs(apr->GetDistance( pTagTest->CurrentTagInfo().m_vPos )));
 			if(!bNoPassTest)
 			{
-				//Frustum í…ŒìŠ¤íŠ¸
+				//Frustum Å×½ºÆ®
 				FLOAT fPerspectiveFactor = 1.0f;
 				if( apr.IsPerspective())
 					fPerspectiveFactor = ((CPerspectiveProjection3D*)&*apr)->ppr_PerspectiveRatios(1);
@@ -397,24 +419,44 @@ BOOL CEffectGroup::Process(FLOAT time)
 			if(bNoPassTest)
 			{
 				effectKey.m_pCreatedEffect->SetNotRenderAtThisFrame();
-				if(effectKey.m_pCreatedEffect->GetType() == ET_SPLINEBILLBOARD
-				|| effectKey.m_pCreatedEffect->GetType() == ET_ORBIT)
-				{
-					effectKey.m_pCreatedEffect->Stop(0);
-				}
 			}
 		}
+
 		if(!effectKey.m_pCreatedEffect->IsNotRenderAtThisFrame())
 		{
-			//Processing, ë‚´ë¶€ì ìœ¼ë¡œ ìƒíƒœê°€ ë³€í•  ìˆ˜ ìˆìŒ.
+			if (time - effectKey.m_pCreatedEffect->GetLastProcessedTime() > 0.3f)
+				effectKey.m_pCreatedEffect->SetLastProcessedTime(time);
+			//Processing, ³»ºÎÀûÀ¸·Î »óÅÂ°¡ º¯ÇÒ ¼ö ÀÖÀ½.
 			BOOL processRet = effectKey.m_pCreatedEffect->Process(time);
 			ret = ret || processRet;
 		}
-		else ret = TRUE;
+		else
+		{
+ 			if (effectKey.m_pCreatedEffect->GetType() == ET_PARTICLE)
+ 				effectKey.m_pCreatedEffect->SetLastProcessedTime(time);
+
+			ret = TRUE;
+		}
 	}
 	return ret;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
+
+CEffectGroup::EffectKey* CEffectGroup::FindEffectKey(INDEX keyValue)
+{
+	vector_effect_key::iterator FindItr = std::find_if(m_vectorEffectKey.begin(), m_vectorEffectKey.end(), FindKeyValue<EffectKey>(keyValue));
+	if (FindItr != m_vectorEffectKey.end())
+	{
+		return &(*FindItr);
+	}
+
+	return NULL;
+}
+// »ç¿ëÇÏÁö ¾Ê´Â´Ù.
+CEffectGroup::TagKey* CEffectGroup::FindTagKey(INDEX keyValue)
+{
+	return NULL;
+}
 
 #define CURRENT_VERSION 1
 
@@ -433,7 +475,7 @@ void CEffectGroup::Read(CTStream *pIS)
 		is.GetLine_t(strTemp);
 		SetName(strTemp.str_String);
 
-		//effect keyë¥¼ read
+		//effect key¸¦ read
 		is.ExpectID_t("EGEK");
 		DWORD count;
 		is >> count;
@@ -445,7 +487,7 @@ void CEffectGroup::Read(CTStream *pIS)
 
 			AddEffect(fStartTime, strTemp.str_String);
 		}
-		//tag keyë¥¼ read
+		//tag key¸¦ read
 		is.ExpectID_t("EGTK");
 		is >> count;
 		for(int itk=0; itk<count; ++itk)
@@ -477,7 +519,7 @@ void CEffectGroup::Write(CTStream *pOS)
 
 	os.PutLine_t(m_strName.c_str());
 
-	//effect keyë¥¼ write
+	//effect key¸¦ write
 	os.WriteID_t("EGEK");
 	os << (DWORD)m_vectorEffectKey.size();
 	for(int iek=0; iek<m_vectorEffectKey.size(); ++iek)
@@ -485,7 +527,7 @@ void CEffectGroup::Write(CTStream *pOS)
 		os << m_vectorEffectKey[iek].m_fStartTime;
 		os.PutLine_t(m_vectorEffectKey[iek].m_strEffectName.c_str());
 	}
-	//tag keyë¥¼ write
+	//tag key¸¦ write
 	os.WriteID_t("EGTK");
 	os << (DWORD)m_vectorTagKey.size();
 	for(int itk=0; itk<m_vectorTagKey.size(); ++itk)
@@ -497,6 +539,5 @@ void CEffectGroup::Write(CTStream *pOS)
 	os.WriteID_t("EGEN");
 }
 
-
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

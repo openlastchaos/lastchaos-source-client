@@ -11,16 +11,19 @@
 
 #include <Engine/Interface/UIWindow.h>
 #include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIButtonEx.h>
+#include <Engine/Interface/UIIcon.h>
+#include <Engine/Interface/UIEventPopup.h>
 #include <Engine/GlobalDefinition.h>
+#include <Engine/Help/Util_Help.h>
 
+typedef CUIIcon*	btnAllItems[INVENTORY_TAB_MAX][ITEM_COUNT_IN_INVENTORY_NORMAL];	// Slot items
 
 // Define item type tab
 enum ItemTab
 {
 	ITEM_TAB_NORMAL	= 0,
-	ITEM_TAB_QUEST,
-	ITEM_TAB_EVENT,
+	ITEM_TAB_CASH1,
+	ITEM_TAB_CASH2,
 	ITEM_TAB_TOTAL,
 };
 
@@ -31,15 +34,22 @@ enum InventoryTab
 	INVEN_TAB_NORMAL2,
 	INVEN_TAB_NORMAL3,
 	INVEN_TAB_NORMAL4,
-	INVEN_TAB_QUEST,
-	INVEN_TAB_EVENT,
+	INVEN_TAB_CASH1,		// ªÛøÎ»≠ ¿Œ∫•≈‰∏Æ
+	INVEN_TAB_CASH2,		// ªÛøÎ»≠ ¿Œ∫•≈‰∏Æ
 	INVEN_TAB_TOTAL,
+};
+
+enum eNewItemTex
+{
+	NEW_EFFECT_ITEM = 0,
+	NEW_EFFECT_BAG,
+	NEW_EFFECT_BAG_CASH,
+	NEW_EFFECT_TOTAL,
 };
 
 #define	ITEM_TAB_HEIGHT				58
 #define	ITEM_TAB_WIDTH				21
 #define	ITEM_TAB_GAP				3
-
 
 // Define process requesting to lock inventory
 enum InvenLockProcess
@@ -52,8 +62,10 @@ enum InvenLockProcess
 	LOCK_GW_MIX,
 	LOCK_MIX,
 	LOCK_MIXNEW,
+	LOCK_MASTERSTONE,
 	LOCK_PROCESS,
 	LOCK_PRODUCT,
+	LOCK_PRODUCT_ITEM,
 	LOCK_REMISSION,
 	LOCK_EXCHANGE,
 	LOCK_SHOP,
@@ -63,18 +75,32 @@ enum InvenLockProcess
 	LOCK_QUEST,
 	LOCK_WARP,
 	LOCK_PRESSCORPS,
+	LOCK_SOCKETSYSTEM,
+	LOCK_SENDMAIL,
+	LOCK_REFORMSYSTEM,
+	LOCK_GUILDSTASH,
+	LOCK_AFFINITY_DONATION,
+	LOCK_MYSTERIOUSBEAD,
+	LOCK_AUCTION,
+	LOCK_PET_STASH,
+	LOCK_MESSAGEBTN,
+#ifdef DURABILITY
+	LOCK_DURABILITY,
+#endif	//	DURABILITY
+	LOCK_TRADE,
+	LOCK_EXP_PET,
+	LOCK_PET_TRAINING,
+	LOCK_GPS,
+	LOCK_ITEMCOLLECTION,
+	LOCK_PET_FREE,
+	LOCK_ITEM_COMPOSE,
+	LOCK_INVEN_ARRANGE,
+	LOCK_INVEN_ITEM_DEL,
+	LOCK_MAKE_TITLE
 };
-
-
-// Define item slot
-#define	ITEM_SLOT_SX				29
-#define	ITEM_SLOT_SY				204
-
 
 // Define max char and line of item informaion 
 #define	MAX_ITEMINFO_CHAR			26
-#define	MAX_ITEMINFO_LINE			20
-
 
 // Define text position
 #define	INVEN_TITLE_TEXT_OFFSETX	25
@@ -86,35 +112,89 @@ enum InvenLockProcess
 #define	LEASE_INFO_TEXT_OFFSETX		180
 
 // Define size of inventory
-//#define	INVENTORY_WIDTH				230
-//#define	INVENTORY_HEIGHT			385
 #define	INVENTORY_WIDTH				256
 #define	INVENTORY_HEIGHT			408
 #define	INVENTORY_WEIGHT_WIDTH		62
+
+// define Ineventory Type Tab(General/Costume)
+#define INVEN_TAB_GENERNAL			0
+#define INVEN_TAB_COSTUME			1
+
+// Inventroy Type Tab Size
+#define INVENTORY_TYPE_TAP_WIDTH	34
+#define INVENTORY_TYPE_TAP_HEIGHT	22
+
+enum eInvenSlot
+{
+	INVENSLOT_NUM1 = 0,
+	INVENSLOT_NUM2,
+	INVENSLOT_NUM3,
+	INVENSLOT_CASH1,
+	INVENSLOT_CASH2,
+	INVENSLOT_MAX,
+};
+
+enum eERR_MSG
+{
+	eERR_NONE = 0,
+	eERR_NOT_OPEN_CASH_BAG,
+	eERR_FLAG_COMPOSITION,
+	eERR_MAX
+};
 
 // ----------------------------------------------------------------------------
 // Name : CUIInventory
 // Desc :
 // ----------------------------------------------------------------------------
+
 class CUIInventory : public CUIWindow
 {
 protected:
+	struct INVEN_LOCK_ITEMINFO
+	{
+		SWORD	TargetTab;
+		SWORD	TargetInvenIdx;
+		SWORD	UseInvenTab;
+		SWORD	UseInvenIdx;
+		SBYTE	TargetWear_Pos;
+		INDEX	TargetItem_Plus;
+		INDEX	UseItem_Level;
+		SLONG	TartetWearPos;
+		SLONG	TartetVirIdx;
+		SLONG	UseVirIdx;
+	};
+
+	enum IN_LOCK_ITEMINFO_TYPE
+	{
+		IN_LOCK_REFINE,
+		IN_LOCK_OPTION_ADD,
+		IN_LOCK_OPTION_DEL,
+		IN_LOCK_DIVIDE,
+		IN_LOCK_NONE,
+	};
+
 	// Controls
 	CUIButton			m_btnClose;								// Close button
 	BOOL				m_bLockInven;							// If inventory is locked or not
 	BOOL				m_bLockArrange;							// If arrange button is locked or not
+	bool				m_bLockSelect;							// æ∆¿Ã≈€ º±≈√ ∏∑±‚.
 	InvenLockProcess	m_eLockInvenProcess;					// Process requesting to lock inventory
 	BOOL				m_bShowToolTip;							// If tool tip is shown or not
+	BOOL				m_bShowWearSlotToolTip;
 	CTString			m_strToolTip;							// String of tool tip
+	CTString			m_strWearSlotToolTip;
 
 	// Items
 	InventoryTab		m_InvenCurrentTab;						//
-	CUIButtonEx			m_abtnWearing[WEAR_TOTAL];				// Wearing items
-	CUIButtonEx			m_abtnItems[INVEN_SLOT_TAB][INVEN_SLOT_ROW_TOTAL][INVEN_SLOT_COL];	// Slot items
-	// wooss 050807
+	CUIIcon*			m_pIconsWearing[WEAR_TOTAL];				// Wearing items
+	// UI∞≥∆Ì  [10/10/2012 Ranma]	
+	btnAllItems			m_abtnItems;
+	BOOL				m_bSlot[INVENSLOT_MAX];
+	CUIWindow*			m_pInvenSlot[INVENSLOT_MAX];
+
 	// Items info add	
-	int					m_col;
-	int					m_row;
+	int					m_nUseTab;
+	int					m_InvenIndex;
 
 	// Item information
 	int					m_nSelWearItemID;						// Selected weating item
@@ -122,8 +202,6 @@ protected:
 	BOOL				m_bShowItemInfo;						// If item tool tip is shown or not
 	BOOL				m_bDetailItemInfo;						// If item informaion is shown in detail or not
 	int					m_nCurInfoLines;						// Count of current item information lines
-	CTString			m_strItemInfo[MAX_ITEMINFO_LINE];		// Item information string
-	COLOR				m_colItemInfo[MAX_ITEMINFO_LINE];		// Color of item information string
 	UIRect				m_rcItemInfo;							// Item information region
 	CTString			m_strMyMoney;							// String of current money
 	CTString			m_strWeight;							// String of current weight
@@ -134,47 +212,83 @@ protected:
 	BOOL				m_bRareItem;
 	int					m_iRareGrade;
 
+	SLONG				m_slCompositeUniIdx;					// ¡∂«’µ» ¿«ªÛ æ∆¿Ã≈€ Uniidx
+	SLONG				m_slCompositePlus;						// ¡∂«’µ» ¿«ªÛ æ∆¿Ã≈€ Plus
+	SBYTE				m_sbCompositeRow;						// ¡∂«’µ» ¿«ªÛ æ∆¿Ã≈€ Row
+	SBYTE				m_sbCompositeCol;						// ¡∂«’µ» ¿«ªÛ æ∆¿Ã≈€ Col
+
 	// Region of each part
 	UIRect				m_rcTitle;								// Region of title
 	UIRect				m_rcWearing;							// Region of wearing
 	UIRect				m_rcItemTypeTab[2];						// Region of item type tab
-	UIRect				m_rcItemSlot;							// Region of item slot
+	UIRect				m_rcItemSlot;							// Region of item slot0
 	UIRect				m_rcToolTip;							// Region of tool tip
+	UIRect				m_rcWearSlotToolTip;
 
 	CUIRectSurface		m_NewInvenSurface;
+	CUIRectSurface		m_WearInvenSurface;						// ¿Â∫Ò√¢ πË∞Ê
+	CUIRectSurface		m_NewItemEffectSurface;					// ªı∑Œ æÚ¿∫ æ∆¿Ã≈€ ±Ù∫˝¿Ã ¿Ã∆Â∆Æ¿« ¿ÃπÃ¡ˆ
+	CTextureData		*m_ptdWearBackTexture;					// ¿Â∫Ò√¢ ≈ÿΩ∫√ƒ
 
+	BOOL				m_bNewItem[INVEN_ONE_BAG];
+	BOOL				m_bStartEffectItem[INVEN_ONE_BAG];
+	int					m_nPlayCount[INVEN_ONE_BAG];
+
+	BOOL				m_bNewItemBag[INVENSLOT_MAX];
+	BOOL				m_bStartEffectBag[INVENSLOT_MAX];
+	int					m_nBagPlayCount[INVENSLOT_MAX];
+
+	DWORD				m_nEffectTime;		// æ˜µ•¿Ã∆Æ∏¶ ¿ß«— ≈∏¿”
+	
 	CUIButton			m_btnTab[INVEN_TAB_TOTAL];
-	CUIButton			m_btnTrashcan;							// Ìú¥ÏßÄÌÜµ Î≤ÑÌäº
+	CUIButton			m_btnTrashcan;							// »ﬁ¡ˆ≈Î πˆ∆∞
+	CUIButton			m_btnArrange;							// ¡§∑ƒ πˆ∆∞
+	
+	std::vector<CTString>	m_vecItemName;						// [090701: selo] æ∆¿Ã≈€¿« ¿Ã∏ß¿ª ¿˙¿Â«—¥Ÿ(æ∆¿Ã≈€¿« ¿Ã∏ß¿Ã «—¡Ÿ¿ª ≥—æÓ∞°¥¬ ∞Õ ∂ßπÆø° ¿Ã∞Õ¿Ã ¡∏¿Á)
 
-	CUIButtonEx			m_abtnDestroyItem;						// ÌååÍ¥¥Ìï† ÏïÑÏù¥ÌÖú Ï†ïÎ≥¥
+	INVEN_LOCK_ITEMINFO	m_InLockItemInfo[IN_LOCK_NONE];
+
+	CTextureData		*m_ptdCostumeTexture;						// ƒ⁄Ω∫∆¨2 ¿Œ∫•≈‰∏Æ πË∞Ê ≈ÿΩ∫√ƒ
+	int					m_iInventoryType;							// «ˆ¿Á º±≈√µ» ¿Œ∫•≈‰∏Æ ≈« ≈∏¿‘ (General : 0 / Costume : 1)
+	CUIIcon*			m_pIconsCostumeWearing[WEAR_COSTUME_TOTAL];	// ƒ⁄Ω∫∆¨2 Wearing Item Button
+	UIRect				m_rcInventoryTab[2];						// ƒ⁄Ω∫∆¨2 ≈« øµø™
+	UIRectUV			m_rcCostumeTab;								// ƒ⁄Ω∫∆¨2 ≈« UV øµø™
+	CUIButton			m_btnInvenTab[2];							// ƒ⁄Ω∫∆¨2 ≈« πˆ∆∞
+	CUIRectSurface		m_kRSCostumeBackground;
+
+	// [2011/01/18 : Sora] √‚ºÆ ¿Ã∫•∆Æ
+	CUIEventPopUp	m_EventPopUp;
+
+	CUIIcon*			m_pIconCurSelectItem;
+	CUIImage*			m_pImgSelect;
 
 protected:
 	// Internal functions
-	void	AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo = 0xF2F2F2FF );
-	void	GetItemInfo( int nTab, int nRow, int nCol, int &nInfoWidth, int &nInfoHeight );
-	void	ShowItemInfo( BOOL bShowInfo, BOOL bRenew = FALSE, int nWear = -1, int nRow = -1, int nCol = -1 );
 	void	RenderItems();
 	void	ShowToolTip( BOOL bShow, int nToolTipID = -1 );
-	void	UpdateWeight();
+	void	ShowWearGuideToolTip( BOOL bShow, eWEAR_TYPE eType = WEAR_TYPE_NONE, int WearPos = -1 );
+	void	ShowWearTabToolTip( BOOL bShow, int nToolTipID = -1 );
+	void	ShowArrangeToolTip( BOOL bShow );
 
 	// Command functions
-	void	UpgradeItem( SBYTE sbWearPos, SLONG slIndex, SLONG slUniIndex
-		, SBYTE sbRefineRow, SBYTE sbRefineCol, SLONG slRefineLevel );
+	void	UpgradeItem(SLONG nTargetPos, SLONG nTargetVirIndex, SWORD nRefineTab, SWORD nRefineIndex);
 
-	void	OptionAddItem( SBYTE sbWearPos, SLONG slIndex, SBYTE sbItemRow,
-							SBYTE sbItemCol );
-	void	OptionDelItem( SBYTE sbWearPos, SLONG slIndex, SBYTE sbItemRow,
-							SBYTE sbItemCol );
-
+	void	OptionAddItem( SBYTE sbWearPos, SLONG slIndex, SWORD nTab, SWORD inven_idx, SLONG VirIdx );
+	void	OptionDelItem( SBYTE sbWearPos, SLONG slIndex, SWORD nTab, SWORD inven_idx, SLONG VirIdx );
+public:
 	// Network message functions ( send )
 	void	SendArrangeItem();
-	void	SendSwapSlotItems( int nTab0, int nRow0, int nCol0, int nRow1, int nCol1 );
+	void	SendSwapSlotItems( int nTab0, int inven_idx0, int nTab1, int inven_idx1 );
 	void	SendUpgradeItem( INDEX iProtect =-1);
 	void	SendItemLvDown();
 
 	void	SendOptionAddItem();
 	void	SendOptionDelItem();
 
+	void	SetCashBagExpireTime( int type );
+	int		IsCashInvenMoveItem( int inven_tab, int inven_idx = -1, int target_tab = -1, int target_idx = -1);
+	void	ErrMessage(int errCode);
+	void	CashInvenLockOn();
 public:
 	CUIInventory();
 	~CUIInventory();
@@ -184,24 +298,27 @@ public:
 
 	// Render
 	void	Render();
+	void	FocusLeave();
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Get row, col of warehouse item
-	void	GetLocationOfNormalItem( int nUniIndex, int &nRow, int &nCol );
+	void	GetLocationOfNormalItem( int nUniIndex, SWORD& nTab, SWORD& inven_idx );
 
-	//wooss 050807
-	//Get item info(tab,row,col) of DoubleClicked item
-	void	GetUseItemSlotInfo(int &nTab,int &nRow, int &nCol) ;
-	void	SetUseItemSlotInfo(int nTab,int nRow, int nCol) ;
+	//Get item info(tab,indenIdx) of DoubleClicked item
+	void	GetUseItemSlotInfo(int &nTab, int &inven_idx);
+	void	SetUseItemSlotInfo(int nTab, int inven_idx);
 	
 	// find
-	SQUAD	GetItemCount(int iItemIndex);
-	CTString GetItemName(int iItemIndex);
+	SQUAD	GetItemCount(int iItemIndex, bool bCompositionItem = true);
 	SQUAD	GetItemAll();
 
+	// find function. [9/22/2009 rumist]
+	BOOL	GetItemSlotInfo( int iItemIndex, int &nTab, int &inven_idx );
+	
 	// Lock
 	void	Lock( BOOL bLock, BOOL bOnlyArrange, InvenLockProcess eWhichProcess )
 	{
@@ -215,6 +332,10 @@ public:
 		bLock ? m_eLockInvenProcess = eWhichProcess : m_eLockInvenProcess = LOCK_NONE;
 	}
 	BOOL	IsLocked() const { return m_bLockInven; }
+	BOOL	IsLockedArrange() const { return m_bLockArrange; }
+	bool	IsLockSelect()	{ return m_bLockSelect;	}
+	void	SetLockSelect(bool bLock)	{ m_bLockSelect = bLock;	}
+	InvenLockProcess getLocked()		{ return m_eLockInvenProcess; }
 	void	ShowLockErrorMessage();
 
 	// Toggle visible
@@ -224,35 +345,112 @@ public:
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
 	// Network message functions ( send )
-	void	SendUseSlotItem( int nTab, int nRow, int nCol, SBYTE sbWearType = -1 );
+	void	SendUseSlotItem( int nTab, int inven_idx, SBYTE sbWearType = -1 );
 
 	// Network message functions ( receive )
-	void	InitInventory( int nTab, int nRow, int nCol, int nUniIndex, int nIndex, int nWearingType );
-	void	SwapSlotItems( int nTab0, int nRow0, int nCol0, int nTab1, int nRow1, int nCol1 );
+	void	InitInventory( int nTab, int inven_idx, int nUniIndex, int nIndex, int nWearingType );
+	void	InitWearBtn(int nIndex, int nUniIdex, int nWearingType);
 	void	UpgradeItem( SBYTE sbResult );
+	void	UpgradeItem( SBYTE sbResult, SBYTE sbplus );
 	void	ClearAllItems( SBYTE sbTab );
 	void	OptionAddRep( SBYTE sbResult );
 	void	OptionDelRep( SBYTE sbResult );
-	void	SetPetItem(int nTab, int nRow, int nCol); 
 	
 	// Command functions
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 	BOOL	StartSkillDelay( int nIndex );
 	BOOL	GetSkillDelay( int nIndex );
 	
-	LONG	GetItemIndex( int nTab, int nRow, int nCol );
+	LONG	GetItemIndex( int nTab, int inven_idx );
+	LONG	GetItemUniIndex( int nTab, int inven_idx );
 
 	// [070824: Su-won] REFINE_PROTECT
-	// Ï†úÎ†®ÏùÑ ÏãúÎèÑÌï† ÏïÑÏù¥ÌÖúÏùò +ÏàòÏπòÎ•º ÏñªÏùå
+	// ¡¶∑√¿ª Ω√µµ«“ æ∆¿Ã≈€¿« +ºˆƒ°∏¶ æÚ¿Ω
 	SLONG	GetUpgradeItemPlus();
 
 	INDEX	GetMySlotItemsCount(void);
 
-	void	ShowItemDestroyMessage(CUIButtonEx& abtn);
-	BOOL	FindEmptyabtnItem(int nTab, int &nRow, int &nCol);
+	void	ShowItemDestroyMessage();
+	BOOL	FindEmptyabtnItem(int nTab, int &inven_idx);
 	
-	// [090608: selo] ÌÄòÏä§Ìä∏ ÏïÑÏù¥ÌÖú ÏÇ¨Ïö©Ï†úÌïú Ï≤¥ÌÅ¨
-	BOOL	IsRestritionItem(int nTab, int nRow, int nCol);
+	// [090608: selo] ƒ˘Ω∫∆Æ æ∆¿Ã≈€ ªÁøÎ¡¶«— √º≈©
+	BOOL	IsRestritionItem(int nTab, int inven_idx);
+	
+	// [091028 sora] æ∆¿Ã≈€ æ˜±◊∑π¿ÃµÂ √ﬂ∞°
+	void	UpgradeCompositedItem(int inven_idx);
+
+	BOOL	IsCostumeInventory()	//«ˆ¿Á º±≈√µ» ¿Œ∫•≈‰∏Æ∞° ¿œπ› ¿Œ∫•≈‰∏Æ¿Œ¡ˆ ƒ⁄Ω∫∆¨ ¿Œ∫•≈‰∏Æ¿Œ¡ˆ √º≈© ( return value : TRUE->ƒ⁄Ω∫∆¨¿Œ∫•, FALSE->¿œπ›¿Œ∫•)
+	{ 
+		return (m_iInventoryType == INVEN_TAB_COSTUME);
+	}
+
+	void	SetInventoryType(int iType);	// ¿Œ∫•≈‰∏Æ ≈« ≈∏¿‘ º≥¡§ (General/Costume)
+	void	InitCostumeInventory(INDEX iUni_index, INDEX iDB_index, SBYTE sbWear_type);
+	
+	CUIIcon*		GetItemIcon(int nUniqueIndex);
+	CItems*			GetItems(int nUniqueIndex);
+
+	// æ∆¿Ã≈€¿Ã ¿Œ∫•≈‰∏Æ ≥ª ¡∏¿Á «œ¥¬¡ˆ ∞ÀªÁ
+	BOOL			GetItemVisble( int nUniqueIndex );
+	// ¿Œ∫•≈‰∏Æø° ∫Û ΩΩ∑‘¿Ã ¿÷¥¬¡ˆ ∞ÀªÁ
+	BOOL			IsInventoryFull();
+
+	// [2011/01/18 : Sora] √‚ºÆ ¿Ã∫•∆Æ
+	CUIEventPopUp* GetEventPopUp() { return &m_EventPopUp; }
+
+	// get pet info in wearing m_abtnCostumeWearing
+	const bool		IsWearing( const eEquipment _wearPos )			{ return m_pIconsWearing[_wearPos]->IsEmpty(); }
+	bool			IsWearingItem(int nDBIndex);	// æ∆¿Ã≈€¿ª ¿Â∫Ò«œ∞Ì ¿÷¥¬¡ˆ ∞ÀªÁ
+	CUIIcon*		GetWearingBtn( const eEquipment _wearPos )		{ return m_pIconsWearing[_wearPos];				}
+	CUIIcon*		GetWearingBtnforSlot( const int _wearPos )		{ return m_pIconsWearing[_wearPos];				}
+	CUIIcon*		GetCostumeWearingBtnforSlot( const int _wearPos )		{ return m_pIconsCostumeWearing[_wearPos];				}
+	
+	//added by sam 11/02/01 
+	void InitOneSuitItemInfo ( int nTab, int inven_idx, INDEX iDB_index, INDEX iUni_index, INDEX sbWear_type );
+
+	void SetTabSlotInfo(BOOL bSlot, int nSlotID) { m_bSlot[nSlotID] = bSlot; }
+	
+	CUIRectSurface* GetInvenSurface() { return &m_NewInvenSurface; }
+
+	int		GetSelWearItemID() { return m_nSelWearItemID; }	
+	void	SetSelWearItemID(int nWearID)	{ m_nSelWearItemID = nWearID; }
+	void	SetCurSelectItem(CUIIcon* abtn);
+	void	UpdateSelectItem();
+	CUIIcon*	GetCurSelectItem() { return m_pIconCurSelectItem; }
+
+	void	ShowDivideMsgBox(SWORD nTab, SWORD nInvenIdx);
+	bool	IsDivideItem(SWORD nTabS, SWORD nIdxS, SWORD nTabT, SWORD nIdxT);
+	
+	// ±Ù∫˝¿Ã ¿Ã∆Â∆Æ
+	void	UpdateNewItemEffect();
+
+	void	ClearNewItemEffect();
+	void	ClearNewBagEffect();
+
+	void	SetNewItemBagEffect(BOOL bShowEffect, eInvenSlot eBagPos);
+	void	SetNewItemEffect(BOOL bShowEffect, int InvenIdx);
+
+	void	SetStartEffectItem(int InvenIdx);
+	void	SetStartEffectBag(eInvenSlot eBagPos);
+
+	BOOL	IsPlayNewItemEffect(int InvenIdx);
+	BOOL	IsCheckNewItemEffectPlayCount(int InvenIdx);
+	BOOL	IsPlayNewBagEffect(eInvenSlot eBagPos);
+	BOOL	IsCheckNewBagEffectPlayCount(eInvenSlot eBagPos);
+	void	DivideItemCallback();
+	void	SetIconNewItem(int nTab, int idx, bool bOn);
+
+	__int64 GetItemCountByUniIdx( int nUniqueIndex );
+	
+	// ¿Œµ¶Ω∫ø° «ÿ¥Á«œ¥¬ µø¿œ«— æ∆¿Ã≈€¡ﬂ ∞·«’µ«¡ˆ æ ¿∫ æ∆¿Ã≈€¿Ã ¿÷¥¬¡ˆ ∞ÀªÁ
+	bool	IsNotCompositionItem( int nItemDBIdx);
+private:
+	int		GetCurTabSlotCount(int tab);	// ƒ≥Ω√ ¿Œ∫• √ﬂ∞°∑Œ ¿Œ«ÿ normal≈«¿∫ ΩΩ∑‘¿Ã 100∞≥, ƒ≥Ω√¥¬ 25∞≥∏∏ ªÁøÎ
+
+	// ¿Â¬¯ √¢ πË∞Ê ±◊∏Æ±‚ (¡˜æ˜∫∞∑Œ ¥Ÿ∏£∞‘ ≥™øÕæﬂ «‘)
+	void	SendSortInventory();
+
+	void	OnUpdate( float fDeltaTime, ULONG ElapsedTime );
 };
 
 

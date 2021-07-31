@@ -1,44 +1,50 @@
-
 #include "stdh.h"
-#include <Engine/Interface/UIGuildBattle.h>
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <map>
+#include <Engine/Effect/CEffectGroupManager.h>
+#include <Engine/Interface/UIGuildBattle.h>
+#include <Engine/Ska/Render.h>
+#include <Engine/Interface/UIAutoHelp.h>
+#include <Engine/Object/ActorMgr.h>
 
 static int	_iMaxMsgStringChar = 0;
 
 // Define text position
-#define	GB_TITLE_TEXT_OFFSETX		25		// íƒ€ì´í‹€ ë°” ìŠ¤íŠ¸ë§ 
+#define	GB_TITLE_TEXT_OFFSETX		25		// Å¸ÀÌÆ² ¹Ù ½ºÆ®¸µ 
 #define	GB_TITLE_TEXT_OFFSETY		5
 
-#define GB_TITLE_HEIGHT				26		// íƒ€ì´í‹€ ë°” ë†’ì´
-#define START_BOTTOM_BUTTON_Y		(GB_HEIGHT - 29)	// ë²„íŠ¼ì˜ ì‹œì‘ ë†’ì´
+#define GB_TITLE_HEIGHT				26		// Å¸ÀÌÆ² ¹Ù ³ôÀÌ
+#define START_BOTTOM_BUTTON_Y		(GB_HEIGHT - 29)	// ¹öÆ°ÀÇ ½ÃÀÛ ³ôÀÌ
 
-#define	GB_DESC_CHAR_WIDTH			(168	 + 95)	// ì„¤ëª… ê¸€ ë„ˆë¹„
-#define DESC_LIST_BOX_HEIGHT		135		// ì„¤ëª… ê¸€ ë†’ì´
+#define	GB_DESC_CHAR_WIDTH			(168	 + 95)	// ¼³¸í ±Û ³Êºñ
+#define DESC_LIST_BOX_HEIGHT		135		// ¼³¸í ±Û ³ôÀÌ
 
-#define GB_REQ_NAS_EDIT_POS_X		80		// ë‚˜ìŠ¤ ì…ë ¥ ì—ë””ìŠ¤ ë°•ìŠ¤ ë†’ì´
+#define GB_REQ_NAS_EDIT_POS_X		80		// ³ª½º ÀÔ·Â ¿¡µğ½º ¹Ú½º ³ôÀÌ
 #define GB_REQ_NAS_EDIT_POS_Y		166
 #define GB_REQ_NAS_EDIT_WIDTH		60
 #define GB_REQ_NAS_EDIT_HEIGHT		16
 #define EDITBOX_OFFSETX				4
 
 
-#define GB_REQ_TIME_EDIT_POS_X		200		// ì‹œê°„ ì…ë ¥ ì—ë””ìŠ¤ ë°•ìŠ¤ ë†’ì´
+#define GB_REQ_TIME_EDIT_POS_X		200		// ½Ã°£ ÀÔ·Â ¿¡µğ½º ¹Ú½º ³ôÀÌ
 #define GB_REQ_TIME_EDIT_POS_Y		166
 #define GB_REQ_TIME_EDIT_WIDTH		60
 #define GB_REQ_TIME_EDIT_HEIGHT		16
 #define EDITBOX_OFFSETX				4
 
 
-// ìµœëŒ€ ìµœì†Œ ì‚¬ìš© ë‚˜ìŠ¤
-#define GB_MAX_NAS					100			// ë‹¨ìœ„	: ë§Œ ë‚˜ìŠ¤
+// ÃÖ´ë ÃÖ¼Ò »ç¿ë ³ª½º
+#define GB_MAX_NAS					100			// ´ÜÀ§	: ¸¸ ³ª½º
 #define GB_MIN_NAS					10
-#define GB_COMMISSION				5			// ë‹¨ìœ„ : %
+#define GB_COMMISSION				5			// ´ÜÀ§ : %
 
-//ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œì‹œ ìˆ˜ì •
-#define GB_MAX_NAS_EX				"1,000,000"			// ë‹¨ìœ„	: ë‚˜ìŠ¤
+//ºê¶óÁú ³ª½º Ç¥½Ã ¼öÁ¤
+#define GB_MAX_NAS_EX				"1,000,000"			// ´ÜÀ§	: ³ª½º
 #define GB_MIN_NAS_EX				"100,000"
 
-// ì „íˆ¬ ì‹œê°„ ( ë¶„ë‹¨ìœ„ )
+// ÀüÅõ ½Ã°£ ( ºĞ´ÜÀ§ )
 #define GB_MIN_TIME					10
 #define GB_MAX_TIME					300
 
@@ -48,25 +54,25 @@ static int	_iMaxMsgStringChar = 0;
 #define LARGE_NUMBER_HEIGHT			27
 
 #define LEFT_TIME_X					922
-#define LEFT_TIME_Y					198
+#define LEFT_TIME_Y					259
 
 #define RIGHT_SPACE					12
 #define BOX_WIDTH					118
 #define BOX_HEIGHT					61
 
-#define BLUE_BOX_Y					241
-#define RED_BOX_Y					308
+#define BLUE_BOX_Y					302
+#define RED_BOX_Y					369
 
-#define GUILD_NAME_Y				247
-#define GUILD_NAME2_Y				310
+#define GUILD_NAME_Y				308
+#define GUILD_NAME2_Y				371
 
 #define BATTLE_ZONE_NAME_Y			LEFT_TIME_Y + SMALL_NUMBER_HEIGHT + 2		
 
-#define BOX_Y						195
+#define BOX_Y						256
 #define BASE_BOX_HEIHGT				42
 
-#define RED_KILL_POINT_Y			332
-#define BLUE_KILL_POINT_Y			268
+#define RED_KILL_POINT_Y			393
+#define BLUE_KILL_POINT_Y			329
 
 #define GB_MIN_MEMBER				10
 #define COLON_WIDTH					9
@@ -74,64 +80,65 @@ static int	_iMaxMsgStringChar = 0;
 #define GB_LEFT_TIME				( 30 * 60 )
 #define GB_START_MINUTE				1
 	
-// Macro Func ì¢€ í¸í•´ ë³´ê³ ì ë§Œë“  ê²ƒë“¤...
-#define SYSERROR_MSG(X)	_pUIMgr->GetChatting()->AddSysMessage( CTString (X), SYSMSG_ERROR );
+// Macro Func Á» ÆíÇØ º¸°íÀÚ ¸¸µç °Íµé...
+#define SYSERROR_MSG(X)	CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( CTString (X), SYSMSG_ERROR );
 
-extern INDEX g_iCountry;
-extern BOOL g_bNasTrans; //ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œì‹œ ìˆ˜ì •
+extern BOOL g_bNasTrans; //ºê¶óÁú ³ª½º Ç¥½Ã ¼öÁ¤
 //------------------------------------------------------------------------------
 // CUIGuildBattle::CloseAllMsgBox
 // Explain:  
-// Date : 2005-03-22(ì˜¤ì „ 11:29:42) Lee Ki-hwan
+// Date : 2005-03-22(¿ÀÀü 11:29:42) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::CloseAllMsgBox()
 {
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_BATTLE_ERROR);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_BATTLE_REQ);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_BATTLE_ACCEPT);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_BATTLE_STOP_REQ);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_BATTLE_STOP_ACCEPT);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_BATTLE_STOP_REQ_REP);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_BATTLE_MESSAGE);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_BATTLE_ERROR);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_BATTLE_REQ);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_BATTLE_ACCEPT);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_BATTLE_STOP_REQ);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_BATTLE_STOP_ACCEPT);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_BATTLE_STOP_REQ_REP);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_BATTLE_MESSAGE);
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::SetNotice
 // Explain:  
-// Date : 2005-03-21(ì˜¤í›„ 9:53:57) Lee Ki-hwan
+// Date : 2005-03-21(¿ÀÈÄ 9:53:57) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::SetNotice ( CTString strNoticeMessage, CTString strNoticeMessage2 )
 {
-	int nWidth;
-	
-	CDrawPort	*pdp	= _pUIMgr->GetDrawPort();
-	int			nCX		= pdp->dp_MinI + ( pdp->dp_MaxI - pdp->dp_MinI ) / 2;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+	int nCX = pDrawPort->dp_MinI + ( pDrawPort->dp_MaxI - pDrawPort->dp_MinI ) / 2;
 
 	CloseAllMsgBox();
 
-	_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+	pUIManager->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 	m_bShowNotice = TRUE;
 	
 	m_strNoticeMessage = strNoticeMessage;
 	m_strNoticeMessage2 = strNoticeMessage2;
 
-	// ìœ„ìª½ì— ì¶œë ¥ ë  ê³µì§€
-	nWidth = ( m_strNoticeMessage.Length() ) * 
+	// À§ÂÊ¿¡ Ãâ·Â µÉ °øÁö
+	int nWidth = ( m_strNoticeMessage.Length() ) * 
 			 ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) - 1;
 		
 	m_rcNotice1.Left = nCX - nWidth / 2;
 	m_rcNotice1.Right = m_rcNotice1.Left + nWidth;
 
 
-	// ì•„ë˜ìª½ì— ì¶œë ¥ë  ê³µì§€
+	// ¾Æ·¡ÂÊ¿¡ Ãâ·ÂµÉ °øÁö
 	nWidth = ( strNoticeMessage2.Length() ) *
 			 ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) - 1;
 		
 	m_rcNotice2.Left = nCX - nWidth / 2;
 	m_rcNotice2.Right = m_rcNotice2.Left + nWidth;
 
-	// ì‹œê°„ ì…‹íŒ…
+	// ½Ã°£ ¼ÂÆÃ
 	m_tmNoticeTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds ();
 
 }
@@ -141,19 +148,19 @@ void CUIGuildBattle::SetNotice ( CTString strNoticeMessage, CTString strNoticeMe
 //------------------------------------------------------------------------------
 // CUIGuildBattle::CUIGuildBattle()
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:53) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:53) Lee Ki-hwan
 //------------------------------------------------------------------------------
 CUIGuildBattle::CUIGuildBattle()
 {
 //	Clear();
-	
+	m_ptdStateTexture = NULL;
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::~CUIGuildBattle()
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:51) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:51) Lee Ki-hwan
 //------------------------------------------------------------------------------
 CUIGuildBattle::~CUIGuildBattle()
 {
@@ -170,12 +177,12 @@ CUIGuildBattle::~CUIGuildBattle()
 //------------------------------------------------------------------------------
 // CUIGuildBattle::Clear
 // Explain:  
-// Date : 2005-03-17(ì˜¤í›„ 4:33:11) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÈÄ 4:33:11) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::Clear()
 {
 	// Controls	
-	//m_ebGuildReqNas.ResetString();				// ê¸¸ë“œ ì‹ ì²­ ê¸ˆì•¡ ì…ë ¥
+	//m_ebGuildReqNas.ResetString();				// ±æµå ½ÅÃ» ±İ¾× ÀÔ·Â
 	m_lbGBReqdDesc.ResetAllStrings();
 
 	m_tmNoticeTime	= 0;	
@@ -183,7 +190,7 @@ void CUIGuildBattle::Clear()
 	m_strNoticeMessage.Clear();
 	m_strNoticeMessage2.Clear();
 		
-	//ìƒëŒ€ í¸ ê¸¸ë“œì˜ ì •ë³´
+	//»ó´ë Æí ±æµåÀÇ Á¤º¸
 	m_strTargetGuildName.Clear();
 	m_nTargetCharIndex = -1;
 	m_nTargetGuildIndex = -1;
@@ -210,20 +217,18 @@ void CUIGuildBattle::Clear()
 //------------------------------------------------------------------------------
 // CUIGuildBattle::Create
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:46) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:46) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
 	Clear();
-	m_strTitle = _S( 1097, "ê¸¸ë“œì „íˆ¬" ); 
+	m_strTitle = _S( 1097, "±æµåÀüÅõ" ); 
 
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	_iMaxMsgStringChar = GB_DESC_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
-	// ê¸¸ë“œ ìš”ì²­
+	// ±æµå ¿äÃ»
 	// Region of each part
 	m_rcTitle.SetRect( 0, 0, 216, 22 );
 	
@@ -255,14 +260,14 @@ void CUIGuildBattle::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, 
 
 
 	// OK button
-	m_btnOK.Create( this, _S( 191, "í™•ì¸" ), 164, START_BOTTOM_BUTTON_Y, 63, 21 );
+	m_btnOK.Create( this, _S( 191, "È®ÀÎ" ), 164, START_BOTTOM_BUTTON_Y, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), 234, START_BOTTOM_BUTTON_Y, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), 234, START_BOTTOM_BUTTON_Y, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -331,13 +336,13 @@ void CUIGuildBattle::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::Close
 // Explain:  
-// Date : 2005-03-21(ì˜¤í›„ 5:13:24) Lee Ki-hwan
+// Date : 2005-03-21(¿ÀÈÄ 5:13:24) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::Close()
 {
 
 	CloseAllMsgBox();
-	_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, FALSE );
 
 	Clear();
 }
@@ -350,7 +355,7 @@ void CUIGuildBattle::Close()
 //------------------------------------------------------------------------------
 // CUIGuildBattle::Render
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:28:56) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:28:56) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::Render()
 {
@@ -363,97 +368,96 @@ void CUIGuildBattle::Render()
 		RenderGBStatus();
 	}
 
-	if ( m_bShowNotice )
+	if( m_bShowNotice == FALSE )
+		return;
+
+	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	__int64	llCurDelay = llCurTime - m_tmNoticeTime;
+	if( llCurDelay < CHATMSG_NOTICE_DELAY )
 	{
-		__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-		__int64	llCurDelay = llCurTime - m_tmNoticeTime;
-		if( llCurDelay < CHATMSG_NOTICE_DELAY )
+		COLOR	colBackground = 0xFFFFFFFF;
+		COLOR	colText = 0x18ff00ff;
+		if( llCurDelay > NOTICE_FADEOUT )
 		{
-			COLOR	colBackground = 0xFFFFFFFF;
-			COLOR	colText = 0x18ff00ff;
-			if( llCurDelay > NOTICE_FADEOUT )
-			{
-				FLOAT	fFadeRatio = (FLOAT)( NOTICE_DELAY - llCurDelay ) / (FLOAT)NOTICE_FADETIME;
-				COLOR	colBlend = 0xFF * fFadeRatio;
+			FLOAT	fFadeRatio = (FLOAT)( NOTICE_DELAY - llCurDelay ) / (FLOAT)NOTICE_FADETIME;
+			COLOR	colBlend = 0xFF * fFadeRatio;
+			
+			colBackground &= 0xFFFFFF00;
+			colBackground |= colBlend;
+			colText &= 0xFFFFFF00;
+			colText |= colBlend;
+		}
 
-				colBackground &= 0xFFFFFF00;
-				colBackground |= colBlend;
-				colText &= 0xFFFFFF00;
-				colText |= colBlend;
-			}
+		CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
+		pDrawPort->InitTextureData( m_ptdStateTexture );
 
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdStateTexture );
-
-			// Add render regions
-			// Background
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice1.Left - 32, m_rcNotice1.Top,
+		// Add render regions
+		// Background
+		pDrawPort->AddTexture( m_rcNotice1.Left - 32, m_rcNotice1.Top,
 												m_rcNotice1.Left, m_rcNotice1.Bottom,
 												m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
 												colBackground );
 
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice1.Left, m_rcNotice1.Top,
+		pDrawPort->AddTexture( m_rcNotice1.Left, m_rcNotice1.Top,
 												m_rcNotice1.Right, m_rcNotice1.Bottom,
 												m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
 												colBackground );
 
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice1.Right, m_rcNotice1.Top,
+		pDrawPort->AddTexture( m_rcNotice1.Right, m_rcNotice1.Top,
 												m_rcNotice1.Right + 32, m_rcNotice1.Bottom,
 												m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
 												colBackground );
 
-			// bottom
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice2.Left - 32, m_rcNotice2.Top,
+		// bottom
+		pDrawPort->AddTexture( m_rcNotice2.Left - 32, m_rcNotice2.Top,
 												m_rcNotice2.Left, m_rcNotice2.Bottom,
 												m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
 												colBackground );
 
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice2.Left, m_rcNotice2.Top,
+		pDrawPort->AddTexture( m_rcNotice2.Left, m_rcNotice2.Top,
 												m_rcNotice2.Right, m_rcNotice2.Bottom,
 												m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
 												colBackground );
 
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice2.Right, m_rcNotice2.Top,
+		pDrawPort->AddTexture( m_rcNotice2.Right, m_rcNotice2.Top,
 												m_rcNotice2.Right + 32, m_rcNotice2.Bottom,
 												m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
 												colBackground );
 
-			
-			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		// Render all elements
+		pDrawPort->FlushRenderingQueue();
 
+		pDrawPort->PutTextEx( m_strNoticeMessage, m_rcNotice1.Left, m_rcNotice1.Top + 4, colText );
+		pDrawPort->PutTextEx( m_strNoticeMessage2, m_rcNotice2.Left, m_rcNotice2.Top + 4, colText );
 
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strNoticeMessage, m_rcNotice1.Left, m_rcNotice1.Top + 4, colText );
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strNoticeMessage2, m_rcNotice2.Left, m_rcNotice2.Top + 4, colText );
+		// Flush all render text queue
+		pDrawPort->EndTextEx();
+	}
+	else
+	{
+		m_bShowNotice = FALSE;
 
-			// Flush all render text queue
-			_pUIMgr->GetDrawPort()->EndTextEx();
-		}
-		else
+		// Á¾·á »óÅÂ¿¡¼­ °øÁö°¡ ¶ç¿ö Á³´Ù¸é ±æµåÀüÀº Á¾·á µÈ´Ù.
+		if ( m_eGBState == GBS_END ) 
 		{
-			m_bShowNotice = FALSE;
-			
-			// ì¢…ë£Œ ìƒíƒœì—ì„œ ê³µì§€ê°€ ë„ì›Œ ì¡Œë‹¤ë©´ ê¸¸ë“œì „ì€ ì¢…ë£Œ ëœë‹¤.
-			if ( m_eGBState == GBS_END ) 
-			{
-				Close();
-			}
-			
+			Close();
 		}
 	}
-
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::RenderGBReq 
-// Explain: ê¸¸ë“œ ì‹ ì²­ í™”ë©´
-// Date : 2005-03-17(ì˜¤í›„ 4:29:46) Lee Ki-hwan
+// Explain: ±æµå ½ÅÃ» È­¸é
+// Date : 2005-03-17(¿ÀÈÄ 4:29:46) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::RenderGBReq()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY, nX2, nY2;
@@ -464,13 +468,13 @@ void CUIGuildBattle::RenderGBReq()
 	nY = m_nPosY + GB_TITLE_HEIGHT;
 
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
 										m_rtBackTop.U0, m_rtBackTop.V0,
 										m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
 		
 	// Not Manager
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + DESC_LIST_BOX_HEIGHT+ 2,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, nY + DESC_LIST_BOX_HEIGHT+ 2,
 											m_rtBackMiddle1.U0, m_rtBackMiddle1.V0,
 											m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 											0xFFFFFFFF );
@@ -478,7 +482,7 @@ void CUIGuildBattle::RenderGBReq()
 	nY += DESC_LIST_BOX_HEIGHT+ 2;
 
 	// Middle 2
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
 										m_rtBackMiddle2.U0, m_rtBackMiddle2.V0,
 										m_rtBackMiddle2.U1, m_rtBackMiddle2.V1,
 										0xFFFFFFFF );
@@ -486,7 +490,7 @@ void CUIGuildBattle::RenderGBReq()
 
 	// Bottom
 	nY = m_nPosY + m_nHeight - 7;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
 										m_rtBackBottom.U0, m_rtBackBottom.V0,
 										m_rtBackBottom.U1, m_rtBackBottom.V1,
 										0xFFFFFFFF );
@@ -501,15 +505,15 @@ void CUIGuildBattle::RenderGBReq()
 	nY	= m_nPosY + GB_REQ_NAS_EDIT_POS_Y;
 	nY2 = nY + GB_REQ_NAS_EDIT_HEIGHT;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + EDITBOX_OFFSETX, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + EDITBOX_OFFSETX, nY2,
 		m_rtInputBoxL.U0, m_rtInputBoxL.V0, m_rtInputBoxL.U1, m_rtInputBoxL.V1,
 		0xFFFFFFFF );
 	// Lower middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + EDITBOX_OFFSETX, nY, nX2 - EDITBOX_OFFSETX, nY2,
+	pDrawPort->AddTexture( nX + EDITBOX_OFFSETX, nY, nX2 - EDITBOX_OFFSETX, nY2,
 		m_rtInputBoxM.U0, m_rtInputBoxM.V0, m_rtInputBoxM.U1, m_rtInputBoxM.V1,
 		0xFFFFFFFF );
 	// Lower right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - EDITBOX_OFFSETX, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - EDITBOX_OFFSETX, nY, nX2, nY2,
 		m_rtInputBoxR.U0, m_rtInputBoxR.V0, m_rtInputBoxR.U1, m_rtInputBoxR.V1,
 		0xFFFFFFFF );
 
@@ -521,15 +525,15 @@ void CUIGuildBattle::RenderGBReq()
 	nY	= m_nPosY + GB_REQ_TIME_EDIT_POS_Y;
 	nY2 = nY + GB_REQ_TIME_EDIT_HEIGHT;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + EDITBOX_OFFSETX, nY2,
+	pDrawPort->AddTexture( nX, nY, nX + EDITBOX_OFFSETX, nY2,
 		m_rtInputBoxL.U0, m_rtInputBoxL.V0, m_rtInputBoxL.U1, m_rtInputBoxL.V1,
 		0xFFFFFFFF );
 	// Lower middle
-	_pUIMgr->GetDrawPort()->AddTexture( nX + EDITBOX_OFFSETX, nY, nX2 - EDITBOX_OFFSETX, nY2,
+	pDrawPort->AddTexture( nX + EDITBOX_OFFSETX, nY, nX2 - EDITBOX_OFFSETX, nY2,
 		m_rtInputBoxM.U0, m_rtInputBoxM.V0, m_rtInputBoxM.U1, m_rtInputBoxM.V1,
 		0xFFFFFFFF );
 	// Lower right
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - EDITBOX_OFFSETX, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - EDITBOX_OFFSETX, nY, nX2, nY2,
 		m_rtInputBoxR.U0, m_rtInputBoxR.V0, m_rtInputBoxR.U1, m_rtInputBoxR.V1,
 		0xFFFFFFFF );
 
@@ -539,20 +543,20 @@ void CUIGuildBattle::RenderGBReq()
 	m_btnCancel.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strTitle, m_nPosX + GB_TITLE_TEXT_OFFSETX,		
+	pDrawPort->PutTextEx( m_strTitle, m_nPosX + GB_TITLE_TEXT_OFFSETX,		
 										m_nPosY + GB_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1098, "ë§Œ ë‚˜ìŠ¤" ), m_nPosX + GB_REQ_NAS_EDIT_POS_X + GB_REQ_NAS_EDIT_WIDTH + 4,		
+	pDrawPort->PutTextEx( _S( 1098, "¸¸ ³ª½º" ), m_nPosX + GB_REQ_NAS_EDIT_POS_X + GB_REQ_NAS_EDIT_WIDTH + 4,		
 										m_nPosY + GB_REQ_NAS_EDIT_POS_Y + 3, 0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S ( 1902, "ë¶„" ), m_nPosX + GB_REQ_TIME_EDIT_POS_X + GB_REQ_TIME_EDIT_WIDTH + 4,		
+	pDrawPort->PutTextEx( _S ( 1902, "ºĞ" ), m_nPosX + GB_REQ_TIME_EDIT_POS_X + GB_REQ_TIME_EDIT_WIDTH + 4,		
 										m_nPosY + GB_REQ_TIME_EDIT_POS_Y + 3, 0xFFFFFFFF );  
 
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 }
 
@@ -560,80 +564,77 @@ void CUIGuildBattle::RenderGBReq()
 //------------------------------------------------------------------------------
 // CUIGuildBattle::RenderGBStatus
 // Explain:  
-// Date : 2005-03-17(ì˜¤í›„ 4:29:57) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÈÄ 4:29:57) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::RenderGBStatus()
 {
-	int nX;
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdStateTexture );
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
-	// ë‚¨ì€ ì‹œê°„ í‘œì‹œ ( ImageFont );
+	pDrawPort->InitTextureData( m_ptdStateTexture );
+
+	// ³²Àº ½Ã°£ Ç¥½Ã ( ImageFont );
 	
 
-	int nOffsetX = _pUIMgr->GetDrawPort()->GetWidth() - RIGHT_SPACE - BOX_WIDTH;
+	int nOffsetX = pDrawPort->GetWidth() - RIGHT_SPACE - BOX_WIDTH;
 
 	m_rcBox.Left = m_rcBlueBox.Left = m_rcRedBox.Left = nOffsetX;
 	m_rcBox.Right = m_rcBlueBox.Right = m_rcRedBox.Right = nOffsetX + BOX_WIDTH;
 
-	// Ren, Blue Box í‘œì‹œ
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBox.Left, m_rcBox.Top, m_rcBox.Right, m_rcBox.Bottom,
+	// Ren, Blue Box Ç¥½Ã
+	pDrawPort->AddTexture( m_rcBox.Left, m_rcBox.Top, m_rcBox.Right, m_rcBox.Bottom,
 									m_rtBox.U0, m_rtBox.V0,
 									m_rtBox.U1, m_rtBox.V1,
 									0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcBlueBox.Left, m_rcBlueBox.Top, m_rcBlueBox.Right, m_rcBlueBox.Bottom,
+	pDrawPort->AddTexture( m_rcBlueBox.Left, m_rcBlueBox.Top, m_rcBlueBox.Right, m_rcBlueBox.Bottom,
 									m_rtBlueBox.U0, m_rtBlueBox.V0,
 									m_rtBlueBox.U1, m_rtBlueBox.V1,
 									0xFFFFFFFF );
 	
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcRedBox.Left, m_rcRedBox.Top, m_rcRedBox.Right, m_rcRedBox.Bottom,
+	pDrawPort->AddTexture( m_rcRedBox.Left, m_rcRedBox.Top, m_rcRedBox.Right, m_rcRedBox.Bottom,
 									m_rtRedBox.U0, m_rtRedBox.V0,
 									m_rtRedBox.U1, m_rtRedBox.V1,
 									0xFFFFFFFF );
 
-	// ë‚¨ì€ ì‹œê°„ í‘œì‹œ ( Image Font : Small )
+	// ³²Àº ½Ã°£ Ç¥½Ã ( Image Font : Small )
 	RenderLeftTime();
 
-	// Kill Point í‘œì‹œ ( ImageFont : Large);
+	// Kill Point Ç¥½Ã ( ImageFont : Large);
 	RenderKillPoint();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	CTString strMessage;
 	
-	strMessage.PrintF ( _S( 1099, "ì „íˆ¬ì§€ì—­ : %s" ), ZoneInfo().GetZoneName( m_nBattleZone ) ); 	
+	strMessage.PrintF ( _S( 1099, "ÀüÅõÁö¿ª : %s" ), CZoneInfo::getSingleton()->GetZoneName( m_nBattleZone ) ); 	
 	
-	nX = m_rcRedBox.Left + ( m_rcRedBox.Right - m_rcRedBox.Left ) / 2;
+	int nX = m_rcRedBox.Left + ( m_rcRedBox.Right - m_rcRedBox.Left ) / 2;
 
-	// ì¡´ í‘œì‹œ (for TEXT)
-	_pUIMgr->GetDrawPort()->PutTextExCX( strMessage, nX, BATTLE_ZONE_NAME_Y, 0xFFFFFFE5, TRUE, 0x181818FF );
+	// Á¸ Ç¥½Ã (for TEXT)
+	pDrawPort->PutTextExCX( strMessage, nX, BATTLE_ZONE_NAME_Y, 0xFFFFFFE5, TRUE, 0x181818FF );
 
-	// ê¸¸ë“œëª… í‘œì‹œ (for TEXT)
-	_pUIMgr->GetDrawPort()->PutTextExCX( m_strGuildName, nX, GUILD_NAME_Y, 0xA6C0FFE5 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( m_strTargetGuildName, nX, GUILD_NAME2_Y, 0xFF7E6EE5 );
+	// ±æµå¸í Ç¥½Ã (for TEXT)
+	pDrawPort->PutTextExCX( m_strGuildName, nX, GUILD_NAME_Y, 0xA6C0FFE5 );
+	pDrawPort->PutTextExCX( m_strTargetGuildName, nX, GUILD_NAME2_Y, 0xFF7E6EE5 );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-	
-		
+	pDrawPort->EndTextEx();
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::DrawNumber 
 // Explain:  
-// Date : 2005-03-22(ì˜¤í›„ 7:54:56) Lee Ki-hwan
-// bool bLarge : í° ìˆ«ì
-// bool bRight : ì˜¤ë¥¸ìª½ ì •ë ¬
+// Date : 2005-03-22(¿ÀÈÄ 7:54:56) Lee Ki-hwan
+// bool bLarge : Å« ¼ıÀÚ
+// bool bRight : ¿À¸¥ÂÊ Á¤·Ä
 //------------------------------------------------------------------------------
 void CUIGuildBattle::DrawNumber ( int x, int y, int nNumber, bool bLarge )
 {
-	
 	UIRectUV rtNumber	= m_rtSmallNumber[nNumber];
 	int nWidth			= SMALL_NUMBER_WIDTH;
 	int nHeight			= SMALL_NUMBER_HEIGHT;
-
 
 	if ( bLarge )
 	{
@@ -641,18 +642,17 @@ void CUIGuildBattle::DrawNumber ( int x, int y, int nNumber, bool bLarge )
 		nWidth		= LARGE_NUMBER_WIDTH;	
 		nHeight		= LARGE_NUMBER_HEIGHT;
 	}
-	
-	_pUIMgr->GetDrawPort()->AddTexture( x, y, x + nWidth, y + nHeight,
+
+	CUIManager::getSingleton()->GetDrawPort()->AddTexture( x, y, x + nWidth, y + nHeight,
 							rtNumber.U0, rtNumber.V0, rtNumber.U1, rtNumber.V1,
 							0xFFFFFFFF );
-
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::RenderLeftTime
 // Explain:  
-// Date : 2005-03-22(ì˜¤í›„ 8:44:31) Lee Ki-hwan
+// Date : 2005-03-22(¿ÀÈÄ 8:44:31) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::RenderLeftTime()
 {
@@ -669,11 +669,11 @@ void CUIGuildBattle::RenderLeftTime()
 	int iMin = lLeftTime % 60;
 	int iTime = lLeftTime /= 60;
 
-	int nX = _pUIMgr->GetDrawPort()->GetWidth() - RIGHT_SPACE - ( SMALL_NUMBER_WIDTH * 6 + COLON_WIDTH * 2 );
+	int nX = CUIManager::getSingleton()->GetDrawPort()->GetWidth() - RIGHT_SPACE - ( SMALL_NUMBER_WIDTH * 6 + COLON_WIDTH * 2 );
 	int nY = LEFT_TIME_Y;
 
 	int t10;
-	// ì‹œê°„ ì¶œë ¥
+	// ½Ã°£ Ãâ·Â
 	
 	t10 = iTime / 10;
 	iTime %= 10;
@@ -683,7 +683,7 @@ void CUIGuildBattle::RenderLeftTime()
 
 	DrawColon( nX, nY );		nX += COLON_WIDTH;
 
-	// ë¶„ ì¶œë ¥ 
+	// ºĞ Ãâ·Â 
 	t10 = iMin / 10;
 	iMin %= 10;
 
@@ -692,7 +692,7 @@ void CUIGuildBattle::RenderLeftTime()
 
 	DrawColon ( nX, nY );		nX += COLON_WIDTH;
 
-	// ì´ˆ ì¶œë ¥ 
+	// ÃÊ Ãâ·Â 
 	t10 = iSec / 10;
 	iSec %= 10;
 
@@ -705,11 +705,13 @@ void CUIGuildBattle::RenderLeftTime()
 //------------------------------------------------------------------------------
 // CUIGuildBattle::RenderKillPoint
 // Explain:  
-// Date : 2005-03-23(ì˜¤í›„ 3:02:24) Lee Ki-hwan
+// Date : 2005-03-23(¿ÀÈÄ 3:02:24) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::RenderKillPoint()
 {
-	int nOffsetX = _pUIMgr->GetDrawPort()->GetWidth() - RIGHT_SPACE - BOX_WIDTH/2;
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	int nOffsetX = pDrawPort->GetWidth() - RIGHT_SPACE - BOX_WIDTH/2;
 	
 	int nKillPoint = m_nKillPoint;
 	int nTargetKillPoint = m_nTargetKillPoint;
@@ -754,7 +756,7 @@ void CUIGuildBattle::RenderKillPoint()
 	}
 
 	// Red Kill Point
-	nOffsetX = _pUIMgr->GetDrawPort()->GetWidth() - RIGHT_SPACE - BOX_WIDTH/2;
+	nOffsetX = pDrawPort->GetWidth() - RIGHT_SPACE - BOX_WIDTH/2;
 
 	for( i = 1;  ; i *= 10 )
 	{
@@ -795,11 +797,11 @@ void CUIGuildBattle::RenderKillPoint()
 //------------------------------------------------------------------------------
 // CUIGuildBattle::DrawColon
 // Explain:  
-// Date : 2005-03-22(ì˜¤í›„ 9:57:29) Lee Ki-hwan
+// Date : 2005-03-22(¿ÀÈÄ 9:57:29) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::DrawColon( int x, int y )
 {
-	_pUIMgr->GetDrawPort()->AddTexture( x, y, x + COLON_WIDTH, y + SMALL_NUMBER_HEIGHT,
+	CUIManager::getSingleton()->GetDrawPort()->AddTexture( x, y, x + COLON_WIDTH, y + SMALL_NUMBER_HEIGHT,
 							m_rtColon.U0, m_rtColon.V0, m_rtColon.U1, m_rtColon.V1,
 							0xFFFFFFFF );	
 }
@@ -808,7 +810,7 @@ void CUIGuildBattle::DrawColon( int x, int y )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::AddGBReqdDescString
 // Explain:  
-// Date : 2005-03-17(ì˜¤í›„ 5:03:57) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÈÄ 5:03:57) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::AddGBReqdDescString( CTString &strDesc, COLOR colDesc )
 {
@@ -817,228 +819,230 @@ void CUIGuildBattle::AddGBReqdDescString( CTString &strDesc, COLOR colDesc )
 	if( nLength == 0 )
 		return;
 
-	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strDesc);
-		INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
+#if defined (THAI)
+	// Get length of string
+	INDEX	nThaiLen = FindThaiLen(strDesc);
+	INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
+	if( nLength == 0 )
+		return;
+	// If length of string is less than max char
+	if( nThaiLen <= nChatMax )
+	{
+		// Check line character
+		for( int iPos = 0; iPos < nLength; iPos++ )
 		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbGBReqdDesc.AddString( 0, strDesc, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddGBReqdDescString( strTemp, colDesc );
-			}
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
 		}
-		// Need multi-line
+
+		// Not exist
+		if( iPos == nLength )
+		{
+			m_lbGBReqdDesc.AddString( 0, strDesc, colDesc );
+		}
 		else
 		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strDesc,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
 
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddGBReqdDescString( strTemp, colDesc );
-			}
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
 			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
+				strTemp.TrimLeft( strTemp.Length() - 1 );
 
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddGBReqdDescString( strTemp, colDesc );
-			}
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= _iMaxMsgStringChar )
-		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbGBReqdDesc.AddString( 0, strDesc, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddGBReqdDescString( strTemp, colDesc );
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddGBReqdDescString( strTemp, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddGBReqdDescString( strTemp, colDesc );
-			}
+			AddGBReqdDescString( strTemp, colDesc );
 		}
 	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = _iMaxMsgStringChar;
+		BOOL	b2ByteChar = FALSE;
+		for( int iPos = 0; iPos < nLength; iPos++ )
+		{
+			if(nChatMax < FindThaiLen(strDesc,0,iPos))
+				break;
+		}
+		nSplitPos = iPos;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( nSplitPos, strTemp2, strTemp );
+			m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+
+			AddGBReqdDescString( strTemp, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddGBReqdDescString( strTemp, colDesc );
+		}
+
+	}
+#else		
+	// If length of string is less than max char
+	if( nLength <= _iMaxMsgStringChar )
+	{
+		// Check line character
+		int iPos;
+		for( iPos = 0; iPos < nLength; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nLength )
+		{
+			m_lbGBReqdDesc.AddString( 0, strDesc, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddGBReqdDescString( strTemp, colDesc );
+		}
+	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = _iMaxMsgStringChar;
+		BOOL	b2ByteChar = FALSE;
+		int		iPos;
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] & 0x80 )
+				b2ByteChar = !b2ByteChar;
+			else
+				b2ByteChar = FALSE;
+		}
+
+		if( b2ByteChar )
+			nSplitPos--;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( nSplitPos, strTemp2, strTemp );
+			m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+
+			AddGBReqdDescString( strTemp, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbGBReqdDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddGBReqdDescString( strTemp, colDesc );
+		}
+	}
+#endif
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::OpenGB
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:39:11) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:39:11) Lee Ki-hwan
 //
 //------------------------------------------------------------------------------
 void CUIGuildBattle::OpenGBReq( int nTargetCharIndex, CTString strGuildName )
 {
-	
-	if( IsVisible() ) return;
-	
+	if( IsVisible() == TRUE )
+		return;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if( m_eGBState == GBS_IN_REQ_ACCEPT )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1100, "ì´ë¯¸ ê¸¸ë“œ ì „íˆ¬ê°€ ì„±ë¦½ë˜ì—ˆìŠµë‹ˆë‹¤."), SYSMSG_ERROR ); 	
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 1100, "ÀÌ¹Ì ±æµå ÀüÅõ°¡ ¼º¸³µÇ¾ú½À´Ï´Ù."), SYSMSG_ERROR ); 	
 		return;
 	}
 	else if( m_eGBState == GBS_IN_BATTLE )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1101, "ì´ë¯¸ ê¸¸ë“œ ì „íˆ¬ê°€ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤."), SYSMSG_ERROR );  	
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 1101, "ÀÌ¹Ì ±æµå ÀüÅõ°¡ ½ÃÀÛµÇ¾ú½À´Ï´Ù."), SYSMSG_ERROR );  	
 		return;
 	}
 	else if( m_eGBState == GBS_IN_REQ )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1102, "ì´ë¯¸ ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­ ì¤‘ì…ë‹ˆë‹¤."), SYSMSG_ERROR ); 	
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 1102, "ÀÌ¹Ì ±æµå ÀüÅõ ½ÅÃ» ÁßÀÔ´Ï´Ù."), SYSMSG_ERROR ); 	
 		return;
 	}
 	
@@ -1046,42 +1050,42 @@ void CUIGuildBattle::OpenGBReq( int nTargetCharIndex, CTString strGuildName )
 	m_ebGuildReqNas.ResetString();
 	m_ebGuildReqTime.ResetString();
 
-	// ê¸¸ë“œë¥¼ ì‹ ì²­í•œ ìºë¦­í„°ì˜ IndexëŠ” ì €ì¥í•´ì„œ ë‚˜ì¤‘ì— ì„œë²„ì— ì‹ ì²­ ë©”ì„¸ì§€ë¥¼ ë³´ë‚¼ ë•Œ ì‚¬ìš© í•œë‹¤.
+	// ±æµå¸¦ ½ÅÃ»ÇÑ Ä³¸¯ÅÍÀÇ Index´Â ÀúÀåÇØ¼­ ³ªÁß¿¡ ¼­¹ö¿¡ ½ÅÃ» ¸Ş¼¼Áö¸¦ º¸³¾ ¶§ »ç¿ë ÇÑ´Ù.
 	m_nTargetCharIndex = nTargetCharIndex;
 	m_strTargetGuildName = strGuildName;
 		
 	CTString strMessage;
 
-	strMessage.PrintF( _S( 1103, "[%s]ê¸¸ë“œì—ê²Œ ê¸¸ë“œ ì „íˆ¬ë¥¼ ì‹ ì²­í•©ë‹ˆë‹¤." ), m_strTargetGuildName ); 	
+	strMessage.PrintF( _S( 1103, "[%s]±æµå¿¡°Ô ±æµå ÀüÅõ¸¦ ½ÅÃ»ÇÕ´Ï´Ù." ), m_strTargetGuildName ); 	
 	AddGBReqdDescString ( strMessage );
 
-	strMessage.PrintF( _S( 1386, "ì „íˆ¬ ì‹ ì²­ê¸ˆê³¼ ì „íˆ¬ì‹œê°„ì„ ì…ë ¥í•˜ì„¸ìš”." ), m_strTargetGuildName ); 	
+	strMessage.PrintF( _S( 1386, "ÀüÅõ ½ÅÃ»±İ°ú ÀüÅõ½Ã°£À» ÀÔ·ÂÇÏ¼¼¿ä." ), m_strTargetGuildName ); 	
 	AddGBReqdDescString ( strMessage );
 	
-	strMessage.PrintF( _S( 1387, "ê¸¸ë“œì „íˆ¬ì—ì„œ ìŠ¹ë¦¬í•˜ê²Œ ë˜ë©´ %d%%ì˜ ìˆ˜ìˆ˜ë£Œë¥¼ ì œì™¸í•œ ì–‘ìª½ ê¸¸ë“œì˜ ëª¨ë“  ì‹ ì²­ê¸ˆì„ ê°–ìŠµë‹ˆë‹¤." ), GB_COMMISSION ); 	
+	strMessage.PrintF( _S( 1387, "±æµåÀüÅõ¿¡¼­ ½Â¸®ÇÏ°Ô µÇ¸é %d%%ÀÇ ¼ö¼ö·á¸¦ Á¦¿ÜÇÑ ¾çÂÊ ±æµåÀÇ ¸ğµç ½ÅÃ»±İÀ» °®½À´Ï´Ù." ), GB_COMMISSION ); 	
 	AddGBReqdDescString( strMessage );
 	strMessage = " ";
 	AddGBReqdDescString( strMessage );
 
-	if(g_bNasTrans)// ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œì‹œ ìˆ˜ì •
+	if(g_bNasTrans)// ºê¶óÁú ³ª½º Ç¥½Ã ¼öÁ¤
 	{
-		strMessage.PrintF( _S( 1388, "ì „íˆ¬ ì‹ ì²­ê¸ˆ : %s ë‚˜ìŠ¤ ~ %s ë‚˜ìŠ¤" ),GB_MIN_NAS_EX, GB_MAX_NAS_EX); //í…ŒìŠ¤íŠ¸ ë²ˆì—­ ìš”ì²­
+		strMessage.PrintF( _S( 1388, "ÀüÅõ ½ÅÃ»±İ : %s ³ª½º ~ %s ³ª½º" ),GB_MIN_NAS_EX, GB_MAX_NAS_EX); //Å×½ºÆ® ¹ø¿ª ¿äÃ»
 	}else
 	{
-		strMessage.PrintF( _S( 1388, "ì „íˆ¬ ì‹ ì²­ê¸ˆ : %dë§Œë‚˜ìŠ¤ ~ %dë§Œë‚˜ìŠ¤" ), GB_MIN_NAS, GB_MAX_NAS ); 	
+		strMessage.PrintF( _S( 1388, "ÀüÅõ ½ÅÃ»±İ : %d¸¸³ª½º ~ %d¸¸³ª½º" ), GB_MIN_NAS, GB_MAX_NAS ); 	
 	}	
 	AddGBReqdDescString( strMessage );
 
-	strMessage.PrintF( _S( 1389, "ì „íˆ¬ ì‹œê°„ : %dë¶„ ~ %dë¶„" ), GB_MIN_TIME, GB_MAX_TIME ); 	
+	strMessage.PrintF( _S( 1389, "ÀüÅõ ½Ã°£ : %dºĞ ~ %dºĞ" ), GB_MIN_TIME, GB_MAX_TIME ); 	
 	AddGBReqdDescString( strMessage );
 
 	m_ebGuildReqNas.SetFocus( TRUE );
-	m_ebGuildReqNas.SetString( "10" );	// 10ë§Œ ë‚˜ìŠ¤ ê¸°ë³¸ ì…‹íŒ…
+	m_ebGuildReqNas.SetString( "10" );	// 10¸¸ ³ª½º ±âº» ¼ÂÆÃ
 
 	m_ebGuildReqTime.SetFocus( FALSE );
-	m_ebGuildReqTime.SetString( "30" );	// 30ë¶„ ê¸°ë³¸ ì…‹íŒ…
+	m_ebGuildReqTime.SetString( "30" );	// 30ºĞ ±âº» ¼ÂÆÃ
 
-	_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+	pUIManager->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 
 	m_eGBState = GBS_REQ;
 }
@@ -1090,7 +1094,7 @@ void CUIGuildBattle::OpenGBReq( int nTargetCharIndex, CTString strGuildName )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::ResetPosition
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:41) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:41) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
@@ -1101,7 +1105,7 @@ void CUIGuildBattle::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX p
 //------------------------------------------------------------------------------
 // CUIGuildBattle::AdjustPosition
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:34) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:34) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
@@ -1115,7 +1119,7 @@ void CUIGuildBattle::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::SetFocus
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:29) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:29) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::SetFocus( BOOL bVisible )
 {
@@ -1135,7 +1139,7 @@ void CUIGuildBattle::SetFocus( BOOL bVisible )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::MouseMessage
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:22) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:22) Lee Ki-hwan
 //------------------------------------------------------------------------------
 WMSG_RESULT	CUIGuildBattle::MouseMessage( MSG *pMsg )
 {
@@ -1156,7 +1160,7 @@ WMSG_RESULT	CUIGuildBattle::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -1171,7 +1175,7 @@ WMSG_RESULT	CUIGuildBattle::MouseMessage( MSG *pMsg )
 				return WMSG_SUCCESS;
 			}
 
-			// ê¸¸ë“œ ì‹ ì²­ ì›ë„ìš° 
+			// ±æµå ½ÅÃ» ¿øµµ¿ì 
 			if ( IsGBReq() )
 			{
 				// OK Button
@@ -1192,6 +1196,7 @@ WMSG_RESULT	CUIGuildBattle::MouseMessage( MSG *pMsg )
 			{
 				if( IsInside( nX, nY ) )
 				{
+					CUIManager* pUIManager = CUIManager::getSingleton();
 					nOldX = nX;		nOldY = nY;
 				
 					// Title bar
@@ -1204,7 +1209,7 @@ WMSG_RESULT	CUIGuildBattle::MouseMessage( MSG *pMsg )
 					// OK Button
 					if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
 					{
-						GBReq();	// ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­
+						GBReq();	// ±æµå ÀüÅõ ½ÅÃ»
 						return WMSG_SUCCESS;
 					}
 					else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -1214,17 +1219,17 @@ WMSG_RESULT	CUIGuildBattle::MouseMessage( MSG *pMsg )
 					else if( m_ebGuildReqNas.MouseMessage( pMsg ) != WMSG_FAIL )
 					{
 						m_ebGuildReqTime.SetFocus ( FALSE );
-						_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+						pUIManager->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 						return WMSG_SUCCESS;
 					}
 					else if( m_ebGuildReqTime.MouseMessage( pMsg ) != WMSG_FAIL )
 					{
 						m_ebGuildReqNas.SetFocus ( FALSE );
-						_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+						pUIManager->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 						return WMSG_SUCCESS;
 					}
 				
-					_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+					pUIManager->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 					return WMSG_SUCCESS;
 				}
 			}
@@ -1248,13 +1253,13 @@ WMSG_RESULT	CUIGuildBattle::MouseMessage( MSG *pMsg )
 				else if( m_ebGuildReqNas.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
 					m_ebGuildReqTime.SetFocus ( FALSE );
-					_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 					return WMSG_SUCCESS;
 				}
 				else if( m_ebGuildReqTime.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
 					m_ebGuildReqNas.SetFocus ( FALSE );
-					_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 					return WMSG_SUCCESS;
 				}
 			}
@@ -1278,7 +1283,7 @@ WMSG_RESULT	CUIGuildBattle::MouseMessage( MSG *pMsg )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::KeyMessage
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:17) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:17) Lee Ki-hwan
 //------------------------------------------------------------------------------
 WMSG_RESULT	CUIGuildBattle::KeyMessage( MSG *pMsg )
 {
@@ -1289,7 +1294,7 @@ WMSG_RESULT	CUIGuildBattle::KeyMessage( MSG *pMsg )
 	{
 		if ( pMsg->wParam == VK_RETURN )
 		{
-			GBReq();// ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­
+			GBReq();// ±æµå ÀüÅõ ½ÅÃ»
 			return WMSG_SUCCESS; 
 		}
 		if( m_ebGuildReqNas.KeyMessage( pMsg ) != WMSG_FAIL )
@@ -1309,7 +1314,7 @@ WMSG_RESULT	CUIGuildBattle::KeyMessage( MSG *pMsg )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::IMEMessage
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:16) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:16) Lee Ki-hwan
 //------------------------------------------------------------------------------
 WMSG_RESULT	CUIGuildBattle::IMEMessage( MSG *pMsg )
 {
@@ -1333,7 +1338,7 @@ WMSG_RESULT	CUIGuildBattle::IMEMessage( MSG *pMsg )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::CharMessage
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:14) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:14) Lee Ki-hwan
 //------------------------------------------------------------------------------
 WMSG_RESULT	CUIGuildBattle::CharMessage( MSG *pMsg )
 {
@@ -1355,7 +1360,7 @@ WMSG_RESULT	CUIGuildBattle::CharMessage( MSG *pMsg )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::MsgBoxCommand
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:26) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:26) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 {
@@ -1371,34 +1376,34 @@ void CUIGuildBattle::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInp
 		break;
 	case MSGCMD_GUILD_BATTLE_STOP_REQ_REP:
 		{
-			if ( bOK )	// ê¸¸ë“œ ì¤‘ë‹¨ ìš”ì²­ ìˆ˜ë½ 
+			if ( bOK )	// ±æµå Áß´Ü ¿äÃ» ¼ö¶ô 
 				_pNetwork->GBStopReqAccept();
-			else		// ê¸¸ë“œ ì¤‘ë‹¨ ìš”ì²­ ê±°ì ˆ
+			else		// ±æµå Áß´Ü ¿äÃ» °ÅÀı
 				_pNetwork->GBStopReqReject();						
 		}
 		break;
 	case MSGCMD_GUILD_BATTLE_REQ:
 		{
-			// ê¸¸ë“œ ìš”ì²­ ì·¨ì†Œ
+			// ±æµå ¿äÃ» Ãë¼Ò
 			if( !bOK )	return;
 			else _pNetwork->GBReqReject();
 		}
 		break;
 	case MSGCMD_GUILD_BATTLE_ACCEPT:
 		{
-			if ( bOK )	// ê¸¸ë“œ ìš”ì²­ ìˆ˜ë½ 
+			if ( bOK )	// ±æµå ¿äÃ» ¼ö¶ô 
 				_pNetwork->GBReqAccept();
-			else		// ê¸¸ë“œ ìš”ì²­ ê±°ì ˆ
+			else		// ±æµå ¿äÃ» °ÅÀı
 				_pNetwork->GBReqReject();			
 		}
 		break;
-	case MSGCMD_GUILD_BATTLE_ERROR:	// ì—ëŸ¬ ë°œìƒ
+	case MSGCMD_GUILD_BATTLE_ERROR:	// ¿¡·¯ ¹ß»ı
 		{
 			if( !bOK )	return;
 			else Close();			
 		}
 		break;
-	case MSGCMD_GUILD_BATTLE_MESSAGE: //ì¼ë°˜ ì•Œë¦¼ ë©”ì„¸ì§€
+	case MSGCMD_GUILD_BATTLE_MESSAGE: //ÀÏ¹İ ¾Ë¸² ¸Ş¼¼Áö
 		{
 			if( !bOK )	return;
 		}
@@ -1410,7 +1415,7 @@ void CUIGuildBattle::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInp
 //------------------------------------------------------------------------------
 // CUIGuildBattle::MsgBoxLCommand
 // Explain:  
-// Date : 2005-03-17(ì˜¤ì „ 11:24:24) Lee Ki-hwan
+// Date : 2005-03-17(¿ÀÀü 11:24:24) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::MsgBoxLCommand( int nCommandCode, int nResult )
 {
@@ -1428,24 +1433,24 @@ void CUIGuildBattle::MsgBoxLCommand( int nCommandCode, int nResult )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBReq
 // Explain:  
-// Date : 2005-03-18(ì˜¤í›„ 4:48:09) Lee Ki-hwan
+// Date : 2005-03-18(¿ÀÈÄ 4:48:09) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBReq()
 {
 	CloseAllMsgBox();
 	CTString strMessage;
 	
-	// ì—ëŸ¬ ì²´í¬ 
-	// 1. ë‚˜ìŠ¤ê°€ ë²”ìœ„ ë‚´ì— ìˆëŠ”ê°€ 
+	// ¿¡·¯ Ã¼Å© 
+	// 1. ³ª½º°¡ ¹üÀ§ ³»¿¡ ÀÖ´Â°¡ 
 	int nGuildReqNas = atoi( m_ebGuildReqNas.GetString() );
 	if( nGuildReqNas > GB_MAX_NAS || nGuildReqNas < GB_MIN_NAS )
 	{
-		if(g_bNasTrans)//ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œì‹œ ìˆ˜ì •
+		if(g_bNasTrans)//ºê¶óÁú ³ª½º Ç¥½Ã ¼öÁ¤
 		{
-			strMessage.PrintF( _S( 1106, "%sì—ì„œ %s ë‚˜ìŠ¤ì˜ ê¸ˆì•¡ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), GB_MIN_NAS_EX, GB_MAX_NAS_EX );	
+			strMessage.PrintF( _S( 1106, "%s¿¡¼­ %s ³ª½ºÀÇ ±İ¾×À» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), GB_MIN_NAS_EX, GB_MAX_NAS_EX );	
 		}else
 		{
-			strMessage.PrintF( _S( 1106, "%dë§Œì—ì„œ %dë§Œ ë‚˜ìŠ¤ì˜ ê¸ˆì•¡ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), GB_MIN_NAS, GB_MAX_NAS );	
+			strMessage.PrintF( _S( 1106, "%d¸¸¿¡¼­ %d¸¸ ³ª½ºÀÇ ±İ¾×À» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), GB_MIN_NAS, GB_MAX_NAS );	
 		}
 		
 
@@ -1454,30 +1459,30 @@ void CUIGuildBattle::GBReq()
 		return;
 	}
 
-	// 1.5 ì‹œê°„ì´ ë²”ìœ„ ë‚´ì— ìˆëŠ”ê°€ 
+	// 1.5 ½Ã°£ÀÌ ¹üÀ§ ³»¿¡ ÀÖ´Â°¡ 
 	int nGuildReqTime = atoi ( m_ebGuildReqTime.GetString() );
 	if( nGuildReqTime > GB_MAX_TIME || nGuildReqTime < GB_MIN_TIME )
 	{
-		strMessage.PrintF( _S ( 1903, "%dë¶„ì—ì„œ %dë¶„ ì‚¬ì´ì˜ ì‹œê°„ì„ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ), GB_MIN_TIME, GB_MAX_TIME );	
+		strMessage.PrintF( _S ( 1903, "%dºĞ¿¡¼­ %dºĞ »çÀÌÀÇ ½Ã°£À» ÀÔ·ÂÇÏ¿© ÁÖ½Ê½Ã¿À." ), GB_MIN_TIME, GB_MAX_TIME );	
 
 		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, strMessage );
 		m_ebGuildReqTime.ResetString();
 		return;
 	}
 	
-	nGuildReqTime *= 60; // ì´ˆë‹¨ìœ„ë¡œ ë³€í™˜
+	nGuildReqTime *= 60; // ÃÊ´ÜÀ§·Î º¯È¯
 
-	// 2. ì†Œì§€ê¸ˆì´ ì¶©ë¶„í•œê°€?
+	// 2. ¼ÒÁö±İÀÌ ÃæºĞÇÑ°¡?
 	if( _pNetwork->MyCharacterInfo.money/10000 < nGuildReqNas )
 	{
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1107, "ì†Œìœ  ë‚˜ìŠ¤ê°€ ë¶€ì¡±í•˜ì—¬ ì „íˆ¬ì‹ ì²­ì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) ); 	
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1107, "¼ÒÀ¯ ³ª½º°¡ ºÎÁ·ÇÏ¿© ÀüÅõ½ÅÃ»À» ÇÒ ¼ö ¾ø½À´Ï´Ù." ) ); 	
 		m_ebGuildReqNas.ResetString();
 		return;
 	}
 	
 	_pNetwork->GBReq ( m_nTargetCharIndex, nGuildReqNas, nGuildReqTime );
 		
-	GBMessage ( MSGCMD_GUILD_BATTLE_REQ, _S( 1108, "ê¸¸ë“œ ì „íˆ¬ë¥¼ ì‹ ì²­ ì¤‘ì…ë‹ˆë‹¤.\nì·¨ì†Œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), UMBS_OK ); 	
+	GBMessage ( MSGCMD_GUILD_BATTLE_REQ, _S( 1108, "±æµå ÀüÅõ¸¦ ½ÅÃ» ÁßÀÔ´Ï´Ù.\nÃë¼ÒÇÏ½Ã°Ú½À´Ï±î?" ), UMBS_OK ); 	
 	
 	m_eGBState = GBS_IN_REQ;	
 }
@@ -1485,23 +1490,24 @@ void CUIGuildBattle::GBReq()
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBReg
-// Explain: ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­ ë°›ìŒ 
-// Date : 2005-03-18(ì˜¤í›„ 2:26:10) Lee Ki-hwan
+// Explain: ±æµå ÀüÅõ ½ÅÃ» ¹ŞÀ½ 
+// Date : 2005-03-18(¿ÀÈÄ 2:26:10) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBReq( int nGuildIndex, CTString strGuildName, int nPrize, int nTime )
 {
 	CloseAllMsgBox();
 	CTString strMessage;
-	if (g_bNasTrans)//ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œì‹œ ìˆ˜ì •ã…‡
+	if (g_bNasTrans)//ºê¶óÁú ³ª½º Ç¥½Ã ¼öÁ¤¤·
 	{
 		CTString strTempNas;
 		strTempNas.PrintF("%d0000",nPrize);
-		_pUIMgr->InsertCommaToString( strTempNas ); 
-		strMessage.PrintF( _S( 1904, "[%s]ê¸¸ë“œê°€ ê¸¸ë“œ ì „íˆ¬ë¥¼ ì‹ ì²­í•˜ì˜€ìŠµë‹ˆë‹¤. ì „íˆ¬ ì‹ ì²­ê¸ˆì€ %s ë‚˜ìŠ¤ ì „íˆ¬ ì‹œê°„ì€ %dë¶„ì…ë‹ˆë‹¤.\nìˆ˜ë½ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), 
+
+		CUIManager::getSingleton()->InsertCommaToString( strTempNas ); 
+		strMessage.PrintF( _S( 1904, "[%s]±æµå°¡ ±æµå ÀüÅõ¸¦ ½ÅÃ»ÇÏ¿´½À´Ï´Ù. ÀüÅõ ½ÅÃ»±İÀº %s ³ª½º ÀüÅõ ½Ã°£Àº %dºĞÀÔ´Ï´Ù.\n¼ö¶ô ÇÏ½Ã°Ú½À´Ï±î?" ), 
 			strGuildName.str_String, strTempNas,(nTime/60) ); 	
 	}else
 	{
-		strMessage.PrintF( _S( 1904, "[%s]ê¸¸ë“œê°€ ê¸¸ë“œ ì „íˆ¬ë¥¼ ì‹ ì²­í•˜ì˜€ìŠµë‹ˆë‹¤. ì „íˆ¬ ì‹ ì²­ê¸ˆì€ %dë§Œë‚˜ìŠ¤ ì „íˆ¬ ì‹œê°„ì€ %dë¶„ì…ë‹ˆë‹¤.\nìˆ˜ë½ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), strGuildName.str_String, nPrize, (nTime/60) ); 	
+		strMessage.PrintF( _S( 1904, "[%s]±æµå°¡ ±æµå ÀüÅõ¸¦ ½ÅÃ»ÇÏ¿´½À´Ï´Ù. ÀüÅõ ½ÅÃ»±İÀº %d¸¸³ª½º ÀüÅõ ½Ã°£Àº %dºĞÀÔ´Ï´Ù.\n¼ö¶ô ÇÏ½Ã°Ú½À´Ï±î?" ), strGuildName.str_String, nPrize, (nTime/60) ); 	
 	}
 	GBMessage ( MSGCMD_GUILD_BATTLE_ACCEPT, strMessage, UMBS_YESNO );
 
@@ -1510,20 +1516,20 @@ void CUIGuildBattle::GBReq( int nGuildIndex, CTString strGuildName, int nPrize, 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBReqReject
-// Explain:  ê¸¸ë“œ ì „íˆ¬ ìš”ì²­ì„ ê±°ì ˆë‹¹í•¨ 
-// Date : 2005-03-18(ì˜¤í›„ 2:53:16) Lee Ki-hwan
+// Explain:  ±æµå ÀüÅõ ¿äÃ»À» °ÅÀı´çÇÔ 
+// Date : 2005-03-18(¿ÀÈÄ 2:53:16) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBReqReject( int nRejectCharIndex )
 {
 	CloseAllMsgBox();
 		
-	if( nRejectCharIndex == _pNetwork->MyCharacterInfo.index ) // ì·¨ì†Œ í•œ ìºë¦­í„°ê°€ ìì‹ ì´ë©´
+	if( nRejectCharIndex == _pNetwork->MyCharacterInfo.index ) // Ãë¼Ò ÇÑ Ä³¸¯ÅÍ°¡ ÀÚ½ÅÀÌ¸é
 	{
-		SYSERROR_MSG( _S( 1110, "ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­ì´ ì¤‘ë‹¨ë˜ì—ˆìŠµë‹ˆë‹¤." ) ); 	
+		SYSERROR_MSG( _S( 1110, "±æµå ÀüÅõ ½ÅÃ»ÀÌ Áß´ÜµÇ¾ú½À´Ï´Ù." ) ); 	
 	}
-	else // ì·¨ì†Œ í•œ ìºë¦­í„°ê°€ ìƒëŒ€ í¸ì´ë¼ë©´
+	else // Ãë¼Ò ÇÑ Ä³¸¯ÅÍ°¡ »ó´ë ÆíÀÌ¶ó¸é
 	{
-		SYSERROR_MSG( _S( 1110, "ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­ì´ ì¤‘ë‹¨ë˜ì—ˆìŠµë‹ˆë‹¤." ) );	
+		SYSERROR_MSG( _S( 1110, "±æµå ÀüÅõ ½ÅÃ»ÀÌ Áß´ÜµÇ¾ú½À´Ï´Ù." ) );	
 	}
 
 	Close();
@@ -1532,16 +1538,16 @@ void CUIGuildBattle::GBReqReject( int nRejectCharIndex )
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBReqAccept
-// Explain:  ê¸¸ë“œ ì „íˆ¬ ìš”ì²­ì„ ìˆ˜ë½ ë°›ìŒ ALL
-// Date : 2005-03-18(ì˜¤í›„ 2:53:22) Lee Ki-hwan
+// Explain:  ±æµå ÀüÅõ ¿äÃ»À» ¼ö¶ô ¹ŞÀ½ ALL
+// Date : 2005-03-18(¿ÀÈÄ 2:53:22) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBReqAccept( int nGuildIndex1, CTString strGuildName1, int nGuildIndex2, CTString strGuildName2, int nPrize, int nZone, int nTime )
 {
 	CloseAllMsgBox();
 
 	// DATA Settting....
-	// ë°ì´í„° ì…‹íŒ…
-	// ë‚´ê¸¸ë“œ
+	// µ¥ÀÌÅÍ ¼ÂÆÃ
+	// ³»±æµå
 	if ( _pNetwork->MyCharacterInfo.lGuildIndex == nGuildIndex1 )
 	{
 		m_nGuildIndex			= nGuildIndex1;
@@ -1562,10 +1568,10 @@ void CUIGuildBattle::GBReqAccept( int nGuildIndex1, CTString strGuildName1, int 
 	
 	m_lLeftTime				= nTime;
 
-	//ê¸¸ë“œì „ ê³µí‘œ ë©”ì„¸ì§€ ì¶œë ¥	
+	//±æµåÀü °øÇ¥ ¸Ş¼¼Áö Ãâ·Â	
 	CTString strMessage, strMessage2;
-	strMessage.PrintF( _S( 1111, "[%s]ê¸¸ë“œì™€ [%s]ê¸¸ë“œê°„ì˜ ê¸¸ë“œ ì „íˆ¬ê°€ ì„±ë¦½ ë˜ì—ˆìŠµë‹ˆë‹¤." ), strGuildName1, strGuildName2 ); 	
-	strMessage2.PrintF( _S( 1112, "%dë¶„ í›„ë¶€í„° %dë¶„ ë™ì•ˆ ë‘ ê¸¸ë“œëŠ” ì ëŒ€ ìƒíƒœê°€ ë©ë‹ˆë‹¤." ), GB_START_MINUTE, (m_lLeftTime/60) ); 	
+	strMessage.PrintF( _S( 1111, "[%s]±æµå¿Í [%s]±æµå°£ÀÇ ±æµå ÀüÅõ°¡ ¼º¸³ µÇ¾ú½À´Ï´Ù." ), strGuildName1, strGuildName2 ); 	
+	strMessage2.PrintF( _S( 1112, "%dºĞ ÈÄºÎÅÍ %dºĞ µ¿¾È µÎ ±æµå´Â Àû´ë »óÅÂ°¡ µË´Ï´Ù." ), GB_START_MINUTE, (m_lLeftTime/60) ); 	
 	
 	SetNotice ( strMessage, strMessage2 );
 
@@ -1575,12 +1581,12 @@ void CUIGuildBattle::GBReqAccept( int nGuildIndex1, CTString strGuildName1, int 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBStart
-// Explain:  ê¸¸ë“œ ì „íˆ¬ ì‹œì‘
-// Date : 2005-03-18(ì˜¤í›„ 2:53:39) Lee Ki-hwan
+// Explain:  ±æµå ÀüÅõ ½ÃÀÛ
+// Date : 2005-03-18(¿ÀÈÄ 2:53:39) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBStart( int nGuildIndex1, CTString strGuildName1, int nGuildIndex2, CTString strGuildName2, int nPrize, int nZone, int nTime )
 {
-	// ë°ì´í„° ì…‹íŒ…
+	// µ¥ÀÌÅÍ ¼ÂÆÃ
 	if ( _pNetwork->MyCharacterInfo.lGuildIndex == nGuildIndex1 )
 	{
 		m_nGuildIndex			= nGuildIndex1;
@@ -1601,26 +1607,26 @@ void CUIGuildBattle::GBStart( int nGuildIndex1, CTString strGuildName1, int nGui
 
 	m_lLeftTime				= nTime;
 		
-	// ê¸¸ë“œì „ ì‹œì‘ ë©”ì„¸ì§€ ì¶œë ¥ // Dealy Time ì„ ì •í•´ ì£¼ì—¬ì•¼ í•œë‹¤!!!
+	// ±æµåÀü ½ÃÀÛ ¸Ş¼¼Áö Ãâ·Â // Dealy Time À» Á¤ÇØ ÁÖ¿©¾ß ÇÑ´Ù!!!
 	CTString strMessage, strMessage2;
-	strMessage.PrintF( _S( 1116, "[%s]ê¸¸ë“œì™€ [%s]ê¸¸ë“œê°„ì˜ ê¸¸ë“œ ì „íˆ¬ê°€ ì‹œì‘ ë˜ì—ˆìŠµë‹ˆë‹¤." ), strGuildName1, strGuildName2 );
-	if (g_bNasTrans)//ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œì‹œ ìˆ˜ì •
+	strMessage.PrintF( _S( 1116, "[%s]±æµå¿Í [%s]±æµå°£ÀÇ ±æµå ÀüÅõ°¡ ½ÃÀÛ µÇ¾ú½À´Ï´Ù." ), strGuildName1, strGuildName2 );
+	if (g_bNasTrans)//ºê¶óÁú ³ª½º Ç¥½Ã ¼öÁ¤
 	{
 		CTString strTempNas;
-		strTempNas.PrintF("%d0000",nPrize); 
-		_pUIMgr->InsertCommaToString( strTempNas ); 
-		strMessage2.PrintF( _S( 1117, "ì–‘ ê¸¸ë“œì˜ ì „íˆ¬ ì‹ ì²­ê¸ˆ ì´ í•©ì€ %s ë‚˜ìŠ¤ ì…ë‹ˆë‹¤." ), strTempNas ); 	
+		strTempNas.PrintF("%d0000",nPrize);
+
+		CUIManager::getSingleton()->InsertCommaToString( strTempNas );
+		strMessage2.PrintF( _S( 1117, "¾ç ±æµåÀÇ ÀüÅõ ½ÅÃ»±İ ÃÑ ÇÕÀº %s ³ª½º ÀÔ´Ï´Ù." ), strTempNas );
 	}else
 	{
-		strMessage2.PrintF( _S( 1117, "ì–‘ ê¸¸ë“œì˜ ì „íˆ¬ ì‹ ì²­ê¸ˆ ì´ í•©ì€ %dë§Œ ë‚˜ìŠ¤ ì…ë‹ˆë‹¤." ), nPrize ); 	
+		strMessage2.PrintF( _S( 1117, "¾ç ±æµåÀÇ ÀüÅõ ½ÅÃ»±İ ÃÑ ÇÕÀº %d¸¸ ³ª½º ÀÔ´Ï´Ù." ), nPrize );
 	}
-	
-	
+
 	SetNotice ( strMessage, strMessage2 );
-	
+
 	//!! Start Effect
 	StartEffect();
-	
+
 	m_eGBState = GBS_IN_BATTLE;
 
 	m_tmLeftTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds ();
@@ -1629,10 +1635,10 @@ void CUIGuildBattle::GBStart( int nGuildIndex1, CTString strGuildName1, int nGui
 
 //------------------------------------------------------------------------------
 // CUIGuildbattle::GBStatue
-// Explain:  ê¸¸ë“œ ì „íˆ¬ ìƒíƒœ í‘œì‹œ 
-// Date : 2005-03-18(ì˜¤í›„ 4:31:27) Lee Ki-hwan
-// - 1ë¶„ë§ˆë‹¤ í•œë²ˆì”© ê°±ì‹±, ë°ì´í„° ë³€ê²½ì‹œ ê°±ì‹  
-// - int Time; // ì´ˆë‹¨ìœ„ (ë‚¨ì€ì‹œê°„)
+// Explain:  ±æµå ÀüÅõ »óÅÂ Ç¥½Ã 
+// Date : 2005-03-18(¿ÀÈÄ 4:31:27) Lee Ki-hwan
+// - 1ºĞ¸¶´Ù ÇÑ¹ø¾¿ °»½Ì, µ¥ÀÌÅÍ º¯°æ½Ã °»½Å 
+// - int Time; // ÃÊ´ÜÀ§ (³²Àº½Ã°£)
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBStatus( int nGuildIndex1, CTString strGuildName1, int nCount1, int nGuildIndex2, CTString strGuildName2, int nCount2, int Time, int nZone )
 {
@@ -1658,17 +1664,17 @@ void CUIGuildBattle::GBStatus( int nGuildIndex1, CTString strGuildName1, int nCo
 	m_nBattleZone			= nZone;
 	m_lLeftTime				= Time;
 
-	// ì¢…ë£Œí›„ ë‹¤ì‹œ ì ‘ì†í–ˆì„ ë•Œ ì²˜ë¦¬
+	// Á¾·áÈÄ ´Ù½Ã Á¢¼ÓÇßÀ» ¶§ Ã³¸®
 	if ( m_eGBState != GBS_IN_BATTLE && g_slZone == m_nBattleZone )
 	{
 		m_eGBState = GBS_IN_BATTLE; 	
 		SetEnable( TRUE );
 		SetVisible ( TRUE );
 		StartEffect();
-		_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+		CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 	}
 	else if (m_eGBState == GBS_IN_BATTLE && g_slZone != m_nBattleZone)
-	{ // ì¡´ ì´ë™ ì‹œ ì²˜ë¦¬
+	{ // Á¸ ÀÌµ¿ ½Ã Ã³¸®
 		m_eGBState = GBS_BATTILE_NOT_ZONE;
 		StopGuildEffect(_pNetwork->MyCharacterInfo.index);
 	}
@@ -1679,8 +1685,8 @@ void CUIGuildBattle::GBStatus( int nGuildIndex1, CTString strGuildName1, int nCo
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBStopReq
-// Explain: ê¸¸ë“œ ì „íˆ¬ ì¤‘ë‹¨ ìš”ì²­
-// Date : 2005-03-21(ì˜¤í›„ 7:58:07) Lee Ki-hwan
+// Explain: ±æµå ÀüÅõ Áß´Ü ¿äÃ»
+// Date : 2005-03-21(¿ÀÈÄ 7:58:07) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBStopReq( int nTargetCharIndex, CTString strGuildName )
 {
@@ -1689,7 +1695,7 @@ void CUIGuildBattle::GBStopReq( int nTargetCharIndex, CTString strGuildName )
 	m_nTargetCharIndex = nTargetCharIndex;
 	
 	CTString strMessage;
-	strMessage.PrintF( _S( 1118, "[%s]ê¸¸ë“œì—ê²Œ ê¸¸ë“œ ì „íˆ¬ì¤‘ë‹¨ ì‹ ì²­ì„ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), strGuildName ); 	
+	strMessage.PrintF( _S( 1118, "[%s]±æµå¿¡°Ô ±æµå ÀüÅõÁß´Ü ½ÅÃ»À» ÇÏ½Ã°Ú½À´Ï±î?" ), strGuildName ); 	
 
 	GBMessage ( MSGCMD_GUILD_BATTLE_STOP_REQ, strMessage, UMBS_YESNO );	
 
@@ -1698,15 +1704,15 @@ void CUIGuildBattle::GBStopReq( int nTargetCharIndex, CTString strGuildName )
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBStopReq
-// Explain: ê¸¸ë“œ ì „íˆ¬ ì¤‘ë‹¨ ìš”ì²­ì„ ë°›ìŒ
-// Date : 2005-03-18(ì˜¤í›„ 2:53:27) Lee Ki-hwan
+// Explain: ±æµå ÀüÅõ Áß´Ü ¿äÃ»À» ¹ŞÀ½
+// Date : 2005-03-18(¿ÀÈÄ 2:53:27) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBStopReqRev( int nGuildIndex, CTString strGuildName )
 {
 	CloseAllMsgBox();
 
 	CTString strMessage;
-	strMessage.PrintF( _S( 1119, "[%s]ê¸¸ë“œê°€ ê¸¸ë“œ ì „íˆ¬ì¤‘ë‹¨ ì‹ ì²­ì„ í•˜ì˜€ìŠµë‹ˆë‹¤. ìˆ˜ë½í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), strGuildName ); 	
+	strMessage.PrintF( _S( 1119, "[%s]±æµå°¡ ±æµå ÀüÅõÁß´Ü ½ÅÃ»À» ÇÏ¿´½À´Ï´Ù. ¼ö¶ôÇÏ½Ã°Ú½À´Ï±î?" ), strGuildName ); 	
 	
 	GBMessage ( MSGCMD_GUILD_BATTLE_STOP_REQ_REP, strMessage, UMBS_YESNO );
 }
@@ -1714,40 +1720,40 @@ void CUIGuildBattle::GBStopReqRev( int nGuildIndex, CTString strGuildName )
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBStopReqReject
-// Explain:  ê¸¸ë“œ ì „íˆ¬ ì¤‘ë‹¨ ìš”ì²­ì„ ê±°ì ˆ ë‹¹í•¨
-// Date : 2005-03-18(ì˜¤í›„ 2:53:33) Lee Ki-hwan
+// Explain:  ±æµå ÀüÅõ Áß´Ü ¿äÃ»À» °ÅÀı ´çÇÔ
+// Date : 2005-03-18(¿ÀÈÄ 2:53:33) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBStopReqReject( int nRejectCharIndex )
 {
 	CloseAllMsgBox();
 	
-	if( nRejectCharIndex == _pNetwork->MyCharacterInfo.index ) // ê±¸ì ˆìê°€ ìê¸° ìì‹ 
+	if( nRejectCharIndex == _pNetwork->MyCharacterInfo.index ) // °ÉÀıÀÚ°¡ ÀÚ±â ÀÚ½Å
 	{
-		SYSERROR_MSG( _S( 1120, "ê¸¸ë“œ ì „íˆ¬ ì¤‘ë‹¨ ìš”ì²­ì´ ì·¨ì†Œë˜ì—ˆìŠµë‹ˆë‹¤." ) ); 	
+		SYSERROR_MSG( _S( 1120, "±æµå ÀüÅõ Áß´Ü ¿äÃ»ÀÌ Ãë¼ÒµÇ¾ú½À´Ï´Ù." ) ); 	
 	}
-	else  // ìƒëŒ€ í¸ì´ ê±°ì ˆ
+	else  // »ó´ë ÆíÀÌ °ÅÀı
 	{
-		SYSERROR_MSG( _S( 1120, "ê¸¸ë“œ ì „íˆ¬ ì¤‘ë‹¨ ìš”ì²­ì´ ì·¨ì†Œë˜ì—ˆìŠµë‹ˆë‹¤." ) ); 	
+		SYSERROR_MSG( _S( 1120, "±æµå ÀüÅõ Áß´Ü ¿äÃ»ÀÌ Ãë¼ÒµÇ¾ú½À´Ï´Ù." ) ); 	
 	}
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBStopReqAccept
-// Explain: ê¸¸ë“œ ì „íˆ¬ ì¤‘ë‹¨ ìš”ì²­ì„ ìˆ˜ë½ ë°›ìŒ
-// Date : 2005-03-18(ì˜¤í›„ 3:27:01) Lee Ki-hwan
+// Explain: ±æµå ÀüÅõ Áß´Ü ¿äÃ»À» ¼ö¶ô ¹ŞÀ½
+// Date : 2005-03-18(¿ÀÈÄ 3:27:01) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBStopReqAccept()
 {
 	CloseAllMsgBox();
 
-	GBMessage ( MSGCMD_GUILD_BATTLE_MESSAGE, _S ( 1121, "ê¸¸ë“œ ì „íˆ¬ê°€ ì¤‘ë‹¨ ë˜ì—ˆìŠµë‹ˆë‹¤." ), UMBS_OK );	
+	GBMessage ( MSGCMD_GUILD_BATTLE_MESSAGE, _S ( 1121, "±æµå ÀüÅõ°¡ Áß´Ü µÇ¾ú½À´Ï´Ù." ), UMBS_OK );	
 }
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBEnd
-// Explain: ê¸¸ë“œ ì „íˆ¬ ì¢…ë£Œ
-// Date : 2005-03-18(ì˜¤í›„ 2:53:46) Lee Ki-hwan
+// Explain: ±æµå ÀüÅõ Á¾·á
+// Date : 2005-03-18(¿ÀÈÄ 2:53:46) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBEnd( int nWinnerGuildIndex, int nGuildIndex1, CTString strGuildName1, int nGuildIndex2, CTString strGuildName2, int nPrize )
 {
@@ -1761,30 +1767,30 @@ void CUIGuildBattle::GBEnd( int nWinnerGuildIndex, int nGuildIndex1, CTString st
 
 	if ( nWinnerGuildIndex == -1 )
 	{
-		strMessage.PrintF( _S( 1122, "[%s]ê¸¸ë“œì™€ [%s]ê¸¸ë“œê°„ì˜ ê¸¸ë“œì „íˆ¬ê°€ ë¬´ìŠ¹ë¶€ê°€ ë˜ì—ˆìŠµë‹ˆë‹¤." ), strGuildName1, strGuildName2 );
-		if(g_bNasTrans)//ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œì‹œ ìˆ˜ì • 
+		strMessage.PrintF( _S( 1122, "[%s]±æµå¿Í [%s]±æµå°£ÀÇ ±æµåÀüÅõ°¡ ¹«½ÂºÎ°¡ µÇ¾ú½À´Ï´Ù." ), strGuildName1, strGuildName2 );
+		if(g_bNasTrans)//ºê¶óÁú ³ª½º Ç¥½Ã ¼öÁ¤ 
 		{
 			CTString strTempNas;
 			strTempNas.PrintF("%d",nPrize);
-			_pUIMgr->InsertCommaToString( strTempNas );
-			strMessage2.PrintF( _S( 1123, "ì„¸ê¸ˆ %d%%ë¥¼ ì œì™¸í•œ ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­ê¸ˆ %së‚˜ìŠ¤ëŠ” ê° ê¸¸ë“œì¥ì—ê²Œ ë˜ëŒì•„ ê°‘ë‹ˆë‹¤." ), GB_COMMISSION, strTempNas ); 	
+			CUIManager::getSingleton()->InsertCommaToString( strTempNas );
+			strMessage2.PrintF( _S( 1123, "¼¼±İ %d%%¸¦ Á¦¿ÜÇÑ ±æµå ÀüÅõ ½ÅÃ»±İ %s³ª½º´Â °¢ ±æµåÀå¿¡°Ô µÇµ¹¾Æ °©´Ï´Ù." ), GB_COMMISSION, strTempNas ); 	
 		}else{
-			strMessage2.PrintF( _S( 1123, "ì„¸ê¸ˆ %d%%ë¥¼ ì œì™¸í•œ ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­ê¸ˆ %dë‚˜ìŠ¤ëŠ” ê° ê¸¸ë“œì¥ì—ê²Œ ë˜ëŒì•„ ê°‘ë‹ˆë‹¤." ), GB_COMMISSION, nPrize ); 	
+			strMessage2.PrintF( _S( 1123, "¼¼±İ %d%%¸¦ Á¦¿ÜÇÑ ±æµå ÀüÅõ ½ÅÃ»±İ %d³ª½º´Â °¢ ±æµåÀå¿¡°Ô µÇµ¹¾Æ °©´Ï´Ù." ), GB_COMMISSION, nPrize ); 	
 		}
 
 	}
 	else
 	{
 		strWinnerGuildName = (nGuildIndex1 == nWinnerGuildIndex)?strGuildName1:strGuildName2;
-		strMessage.PrintF( _S( 1124, "[%s]ê¸¸ë“œì™€ [%s]ê¸¸ë“œê°„ì˜ ê¸¸ë“œì „íˆ¬ì—ì„œ [%s]ê¸¸ë“œê°€ ìŠ¹ë¦¬í•˜ì˜€ìŠµë‹ˆë‹¤." ), strGuildName1, strGuildName2, strWinnerGuildName ); 	
-		if(g_bNasTrans)//ë¸Œë¼ì§ˆ ë‚˜ìŠ¤ í‘œì‹œ ìˆ˜ì • 
+		strMessage.PrintF( _S( 1124, "[%s]±æµå¿Í [%s]±æµå°£ÀÇ ±æµåÀüÅõ¿¡¼­ [%s]±æµå°¡ ½Â¸®ÇÏ¿´½À´Ï´Ù." ), strGuildName1, strGuildName2, strWinnerGuildName ); 	
+		if(g_bNasTrans)//ºê¶óÁú ³ª½º Ç¥½Ã ¼öÁ¤ 
 		{
 			CTString strTempNas;
 			strTempNas.PrintF("%d",nPrize);
-			_pUIMgr->InsertCommaToString( strTempNas );
-			strMessage2.PrintF( _S( 1125, "[%s]ê¸¸ë“œì—ê²Œ ì„¸ê¸ˆ %d%%ë¥¼ ì œì™¸í•œ ì „íˆ¬ ì‹ ì²­ê¸ˆ %së‚˜ìŠ¤ë¥¼ ì§€ê¸‰í•©ë‹ˆë‹¤." ), strWinnerGuildName, GB_COMMISSION, strTempNas ); 	
+			CUIManager::getSingleton()->InsertCommaToString( strTempNas );
+			strMessage2.PrintF( _S( 1125, "[%s]±æµå¿¡°Ô ¼¼±İ %d%%¸¦ Á¦¿ÜÇÑ ÀüÅõ ½ÅÃ»±İ %s³ª½º¸¦ Áö±ŞÇÕ´Ï´Ù." ), strWinnerGuildName, GB_COMMISSION, strTempNas ); 	
 		}else{
-			strMessage2.PrintF( _S( 1125, "[%s]ê¸¸ë“œì—ê²Œ ì„¸ê¸ˆ %d%%ë¥¼ ì œì™¸í•œ ì „íˆ¬ ì‹ ì²­ê¸ˆ %dë‚˜ìŠ¤ë¥¼ ì§€ê¸‰í•©ë‹ˆë‹¤." ), strWinnerGuildName, GB_COMMISSION, nPrize ); 	
+			strMessage2.PrintF( _S( 1125, "[%s]±æµå¿¡°Ô ¼¼±İ %d%%¸¦ Á¦¿ÜÇÑ ÀüÅõ ½ÅÃ»±İ %d³ª½º¸¦ Áö±ŞÇÕ´Ï´Ù." ), strWinnerGuildName, GB_COMMISSION, nPrize ); 	
 		}
 	}
 
@@ -1795,33 +1801,37 @@ void CUIGuildBattle::GBEnd( int nWinnerGuildIndex, int nGuildIndex1, CTString st
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBErrorMessage
 // Explain:  
-// Date : 2005-03-19(ì˜¤í›„ 12:28:10) Lee Ki-hwan
+// Date : 2005-03-19(¿ÀÈÄ 12:28:10) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBErrorMessage( int nCommandCode, CTString strErrorMessage )
 {
-	_pUIMgr->CloseMessageBox(nCommandCode);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox(nCommandCode);
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( m_strTitle, UMBS_OK, UI_GUILD_BATTLE, nCommandCode );
 	MsgBoxInfo.AddString( strErrorMessage );	
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+	pUIManager->CreateMessageBox( MsgBoxInfo );		
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBMessage
 // Explain:  
-// Date : 2005-03-21(ì˜¤í›„ 4:46:32) Lee Ki-hwan
+// Date : 2005-03-21(¿ÀÈÄ 4:46:32) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::GBMessage( int nCommandCode, CTString strMessage, DWORD dwStyle )
 {
-	if( _pUIMgr->DoesMessageBoxExist( nCommandCode ) )
-	return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( nCommandCode ) )
+		return;
 
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( m_strTitle, dwStyle, UI_GUILD_BATTLE, nCommandCode );
 	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 
@@ -1836,38 +1846,40 @@ void CUIGuildBattle::GBErrorProcess( int nErrorCode )
 	CloseAllMsgBox();
 	switch ( nErrorCode )
 	{
-	case MSG_GUILD_ERROR_BATTLE_NOGUILD:			// ê¸¸ë“œì „ - ê´€ë ¨ ê¸¸ë“œê°€ ì—†ìŒ
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1126, "ê´€ë ¨ ê¸¸ë“œê°€ ì—†ìŠµë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_BATTLE_NOGUILD:			// ±æµåÀü - °ü·Ã ±æµå°¡ ¾øÀ½
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1126, "°ü·Ã ±æµå°¡ ¾ø½À´Ï´Ù." ) ); 	
 		break;
-	case MSG_GUILD_ERROR_BATTLE_NOTBOSS:			// ê¸¸ë“œì „ - ê¸¸ë“œì¥ì´ ì—†ìŒ
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1127, "ê¸¸ë“œì¥ì´ ì¡´ì¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_BATTLE_NOTBOSS:			// ±æµåÀü - ±æµåÀåÀÌ ¾øÀ½
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1127, "±æµåÀåÀÌ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù." ) ); 	
 		break;
-	case MSG_GUILD_ERROR_BATTLE_MEMBERCOUNT:		// ê¸¸ë“œì „ - ì¸ì› ìˆ˜ ë¶€ì¡±
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1128, "ê¸¸ë“œ ì¸ì›ì´ ë¶€ì¡±í•˜ì—¬ ê¸¸ë“œ ì „íˆ¬ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_BATTLE_MEMBERCOUNT:		// ±æµåÀü - ÀÎ¿ø ¼ö ºÎÁ·
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1128, "±æµå ÀÎ¿øÀÌ ºÎÁ·ÇÏ¿© ±æµå ÀüÅõ¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù." ) ); 	
 		break;
-	case MSG_GUILD_ERROR_BATTLE_ZONE:				// ê¸¸ë“œì „ - ê°€ëŠ¥ ì¡´ì´ ì•„ë‹˜
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1129, "ê¸¸ë“œ ì „íˆ¬ê°€ ê°€ëŠ¥í•œ ì¡´ì´ ì•„ë‹™ë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_BATTLE_ZONE:				// ±æµåÀü - °¡´É Á¸ÀÌ ¾Æ´Ô
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1129, "±æµå ÀüÅõ°¡ °¡´ÉÇÑ Á¸ÀÌ ¾Æ´Õ´Ï´Ù." ) ); 	
 		break;
-	case MSG_GUILD_ERROR_ALREADY_BATTLE:			// ê¸¸ë“œì „ - ì´ë¯¸ ê¸¸ë“œì „ ì¤‘
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1130, "ì´ë¯¸ ê¸¸ë“œ ì „íˆ¬ê°€ ì§„í–‰ ì¤‘ì…ë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_ALREADY_BATTLE:			// ±æµåÀü - ÀÌ¹Ì ±æµåÀü Áß
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1130, "ÀÌ¹Ì ±æµå ÀüÅõ°¡ ÁøÇà ÁßÀÔ´Ï´Ù." ) ); 	
 		break;
-	case MSG_GUILD_ERROR_BATTLE_PRIZE:				// ê¸¸ë“œì „ - ë°°íŒ…ê¸ˆì•¡ ìì²´ ì˜¤ë¥˜ (ê¸¸ë“œì „ ë°°íŒ… í—ˆìš©ê¸ˆì•¡ì´ ì•„ë‹˜)
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S ( 1131, "ì‹ ì²­ ê¸ˆì•¡ì´ ë„ˆë¬´ ì‘ê±°ë‚˜ í½ë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_BATTLE_PRIZE:				// ±æµåÀü - ¹èÆÃ±İ¾× ÀÚÃ¼ ¿À·ù (±æµåÀü ¹èÆÃ Çã¿ë±İ¾×ÀÌ ¾Æ´Ô)
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S ( 1131, "½ÅÃ» ±İ¾×ÀÌ ³Ê¹« ÀÛ°Å³ª Å®´Ï´Ù." ) ); 	
 		break;
-	case MSG_GUILD_ERROR_BATTLE_NOT_REQ:			// ê¸¸ë“œì „ - ì‹ ì²­í•œì  ì—†ìŒ
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1132, "ê¸¸ë“œ ì „íˆ¬ë¥¼ ì‹ ì²­í•œ ì ì´ ì—†ìŠµë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_BATTLE_NOT_REQ:			// ±æµåÀü - ½ÅÃ»ÇÑÀû ¾øÀ½
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1132, "±æµå ÀüÅõ¸¦ ½ÅÃ»ÇÑ ÀûÀÌ ¾ø½À´Ï´Ù." ) ); 	
 		break;
-	case MSG_GUILD_ERROR_BATTLE_SHORT_PRIZE:		// ê¸¸ë“œì „ - ë°°íŒ…ê¸ˆì•¡ ëª¨ì§ˆë¼
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1133, "ë‚˜ìŠ¤ê°€ ë¶€ì¡±í•˜ì—¬ ê¸¸ë“œ ì „íˆ¬ë¥¼ ì§„í–‰í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_BATTLE_SHORT_PRIZE:		// ±æµåÀü - ¹èÆÃ±İ¾× ¸ğÁú¶ó
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1133, "³ª½º°¡ ºÎÁ·ÇÏ¿© ±æµå ÀüÅõ¸¦ ÁøÇàÇÒ ¼ö ¾ø½À´Ï´Ù." ) ); 	
 		break;
-	case MSG_GUILD_ERROR_BATTLE_NOT_BATTLE:			// ê¸¸ë“œì „ = ê¸¸ë“œì „ ì¤‘ì´ ì•„ë‹˜
-		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1134, "ì§„íˆ¬ ì „íˆ¬ ì¤‘ì´ ì•„ë‹™ë‹ˆë‹¤." ) ); 	
+	case MSG_GUILD_ERROR_BATTLE_NOT_BATTLE:			// ±æµåÀü = ±æµåÀü ÁßÀÌ ¾Æ´Ô
+		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, _S( 1134, "ÁøÅõ ÀüÅõ ÁßÀÌ ¾Æ´Õ´Ï´Ù." ) ); 	
 		break;
 	}
 	
-	// Date : 2005-04-06(ì˜¤í›„ 5:08:43), By Lee Ki-hwan
-	// ì—ëŸ¬ ë©”ì„¸ì§€ í›„ì—ëŠ” ë¬´ì¡°ê±´ ìƒí™© ì¢…ë£Œ...
-	Close();
+	// Date : 2005-04-06(¿ÀÈÄ 5:08:43), By Lee Ki-hwan
+	// ¿¡·¯ ¸Ş¼¼Áö ÈÄ¿¡´Â ¹«Á¶°Ç »óÈ² Á¾·á...
+	//Close();
+	CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, FALSE );
+	Clear();
 }
 
 
@@ -1878,7 +1890,7 @@ void CUIGuildBattle::GBErrorProcess( int nErrorCode )
 //------------------------------------------------------------------------------
 void CUIGuildBattle::StartGuildEffect( SLONG slCharIndex, CEntity* penEntity, BOOL bEnemy )
 {
-	// ì´ë¯¸ ì¡´ì¬ í•˜ëŠ”ì§€ í™•ì¸ í•´ì„œ ì¡´ì¬í•˜ë©´ return 
+	// ÀÌ¹Ì Á¸Àç ÇÏ´ÂÁö È®ÀÎ ÇØ¼­ Á¸ÀçÇÏ¸é return 
 	if( m_mapEG.find( slCharIndex ) != m_mapEG.end() ) return;
 		
 	CEffectGroup *pEG = StartEffectGroup( bEnemy?"cpp_gb_red":"cpp_gb_blue"
@@ -1897,7 +1909,7 @@ void CUIGuildBattle::StartGuildEffect( SLONG slCharIndex, CEntity* penEntity, BO
 //------------------------------------------------------------------------------
 void CUIGuildBattle::StopGuildEffect( SLONG slCharIndex )
 {
-	// ì´í™í„°ê°€ í™œì„±í™” ë˜ì–´ ìˆì§€ ì•Šë‹¤ë©´ ëë‚´ë¼..
+	// ÀÌÆåÅÍ°¡ È°¼ºÈ­ µÇ¾î ÀÖÁö ¾Ê´Ù¸é ³¡³»¶ó..
 	if( m_mapEG.find( slCharIndex ) == m_mapEG.end() ) return;
 
 	if( m_mapEG[slCharIndex] != NULL && CEffectGroupManager::Instance().IsValidCreated( m_mapEG[slCharIndex] ) )
@@ -1910,7 +1922,7 @@ void CUIGuildBattle::StopGuildEffect( SLONG slCharIndex )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::StartEffect
 // Explain:  
-// Date : 2005-03-22(ì˜¤ì „ 11:16:10) Lee Ki-hwan
+// Date : 2005-03-22(¿ÀÀü 11:16:10) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::StartEffect()
 {
@@ -1918,29 +1930,13 @@ void CUIGuildBattle::StartEffect()
 	StartGuildEffect ( _pNetwork->MyCharacterInfo.index, CEntity::GetPlayerEntity(0), FALSE );
 
 	// Start My Guild, Enemy Guild Effect Start
-	INDEX cnt = _pNetwork->ga_srvServer.srv_actCha.Count();
-	
-	for( INDEX i = 0; i < cnt; ++i )
-	{
-		CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[i];
-
-		if( ct.cha_pEntity != NULL
-			&& ct.cha_pEntity->en_pmiModelInstance != NULL
-			&& ct.cha_pEntity->en_pmiModelInstance->GetName() != "")
-		{
-			int bEnmeyGuild = IsEnemyGuild ( ct.cha_lGuildIndex );
-			if ( bEnmeyGuild == 1 ) 
-				StartGuildEffect ( ct.cha_Index, ct.cha_pEntity, TRUE );
-			else if ( bEnmeyGuild == -1 ) 
-				StartGuildEffect ( ct.cha_Index, ct.cha_pEntity, FALSE );
-		}		
-	}
+	ACTORMGR()->StartGuildEffect();
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::StopEffect
-// Explain:  ëª¨ë“  ìºë¦­í„°ì˜ Effectë¥¼ ì¤‘ì§€ì‹œí‚¨ë‹¤.
+// Explain:  ¸ğµç Ä³¸¯ÅÍÀÇ Effect¸¦ ÁßÁö½ÃÅ²´Ù.
 // Date : 2005-04-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUIGuildBattle::StopEffect()
@@ -1960,26 +1956,24 @@ void CUIGuildBattle::StopEffect()
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::IsEnemy
-// Explain:  ì ì¸ì§€ í™•ì¸ (ê³µê²©ì‹œ ì‚¬ìš©)
+// Explain:  ÀûÀÎÁö È®ÀÎ (°ø°İ½Ã »ç¿ë)
 // Date : 2005-04-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 BOOL ENGINE_API CUIGuildBattle::IsEnemy( unsigned long ulID )
 {
 	if ( !IsInBattle() ) return FALSE;
 
-	for(INDEX ipl=0; ipl<_pNetwork->ga_srvServer.srv_actCha.Count(); ++ipl) 
+	ObjectBase* pObject = ACTORMGR()->GetObjectByCIndex(eOBJ_CHARACTER, ulID);
+
+	if (pObject != NULL)
 	{
-		CCharacterTarget &ct = _pNetwork->ga_srvServer.srv_actCha[ipl];
-		
-		if (ct.cha_iClientIndex == ulID) 
-		{		
-			// Guild Indexx Check
-			if( (ct.cha_lGuildIndex == m_nTargetGuildIndex)  )
-			{
-				return TRUE;
-			}
-			else return FALSE;
-		}
+		CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+		// Guild Indexx Check
+		if (pTarget->cha_lGuildIndex == m_nTargetGuildIndex)
+		{
+			return TRUE;
+		}		
 	}
 
 	return FALSE;
@@ -1988,18 +1982,18 @@ BOOL ENGINE_API CUIGuildBattle::IsEnemy( unsigned long ulID )
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::IsEnemyGuild
-// Explain: ì  ê¸¸ë“œ ì¸ì§€ í™•ì¸ (Effect í‘œì‹œ í• ë•Œ ì‚¬ìš©)
+// Explain: Àû ±æµå ÀÎÁö È®ÀÎ (Effect Ç¥½Ã ÇÒ¶§ »ç¿ë)
 // Date : 2005-04-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 int ENGINE_API CUIGuildBattle::IsEnemyGuild( unsigned long ulGuildIndex )
 {
 	if( ulGuildIndex == _pNetwork->MyCharacterInfo.lGuildIndex )
 	{
-		return -1; // ì•„êµ°
+		return -1; // ¾Æ±º
 	}
 	else if( ulGuildIndex == m_nTargetGuildIndex )
 	{
-		return 1; // ì êµ° 
+		return 1; // Àû±º 
 	}
 	return 0;
 }
@@ -2008,7 +2002,7 @@ int ENGINE_API CUIGuildBattle::IsEnemyGuild( unsigned long ulGuildIndex )
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::IsInBattle
-// Explain: ì „íˆ¬ ì¤‘ì¸ì§€ í™•ì¸ 
+// Explain: ÀüÅõ ÁßÀÎÁö È®ÀÎ 
 // Date : 2005-04-06,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 BOOL CUIGuildBattle::IsInBattle()

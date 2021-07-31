@@ -1,4 +1,7 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
+#ifdef PRAGMA_ONCE
+  #pragma once
+#endif
 
 class CAnyProjection;
 class CDrawPort;
@@ -10,24 +13,25 @@ extern CTextureObject g_toLightMap;
 #include "CEffect.h"
 
 ENGINE_API extern FLOAT g_fEffectDistance;
-
-//ì´í™íŠ¸ ê´€ë ¨ ì´ˆê¸°í™” ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
-ENGINE_API extern BOOL Initialize_EffectSystem();
-//ì´í™íŠ¸ ê´€ë ¨ ë§ˆë¬´ë¦¬ ì‘ì—…ì„ ìˆ˜í–‰í•œë‹¤.
+ENGINE_API extern void FinalizeShaders(void);
+ENGINE_API extern void InitializeShaders(void);
+//ÀÌÆåÆ® °ü·Ã ÃÊ±âÈ­ ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
+ENGINE_API extern BOOL Initialize_EffectSystem(const CTFileName *fnm = NULL);
+//ÀÌÆåÆ® °ü·Ã ¸¶¹«¸® ÀÛ¾÷À» ¼öÇàÇÑ´Ù.
 ENGINE_API extern BOOL Finalize_EffectSystem();
-//ì´í™íŠ¸ ë Œë”ë§ ê´€ë ¨ ì •ë³´ ì„¸íŒ…
+//ÀÌÆåÆ® ·»´õ¸µ °ü·Ã Á¤º¸ ¼¼ÆÃ
 ENGINE_API extern BOOL PrepareRender_EffectSystem(CTerrain *pTerrain, CWorld *pWorld);
-//ì´í™íŠ¸ ë Œë”ë§ ì‹œì‘
+//ÀÌÆåÆ® ·»´õ¸µ ½ÃÀÛ
 ENGINE_API extern BOOL BeginRender_EffectSystem(EFFECT_TYPE effectType, CAnyProjection3D &apr, CDrawPort *pdp);
-//ì´í™íŠ¸ ë Œë”ë§ ë
+//ÀÌÆåÆ® ·»´õ¸µ ³¡
 ENGINE_API extern BOOL EndRender_EffectSystem(EFFECT_TYPE effectType, BOOL bRestoreOrtho);
-//ì´í™íŠ¸ ë¦¬ì…‹
+//ÀÌÆåÆ® ¸®¼Â
 ENGINE_API extern void Reset_EffectSystem();
-//ì´í™íŠ¸ íŒŒì¼ ë¡œë”©
+//ÀÌÆåÆ® ÆÄÀÏ ·Îµù
 ENGINE_API extern BOOL Open_EffectSystem(const CTFileName &fnm);
-//ì´í™íŠ¸ íŒŒì¼ ì €ì¥
+//ÀÌÆåÆ® ÆÄÀÏ ÀúÀå
 ENGINE_API extern BOOL Save_EffectSystem(const CTFileName &fnm);
 
 CEffect *CreateFromType(EFFECT_TYPE et);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

@@ -19,6 +19,7 @@ CFG=Modeler - Win32 Release
 !MESSAGE 
 !MESSAGE "Modeler - Win32 Release" (based on "Win32 (x86) Application")
 !MESSAGE "Modeler - Win32 Debug" (based on "Win32 (x86) Application")
+!MESSAGE "Modeler - Win32 WORLDEDITOR" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
@@ -104,12 +105,54 @@ SOURCE="$(InputPath)"
 	
 # End Custom Build
 
+!ELSEIF  "$(CFG)" == "Modeler - Win32 WORLDEDITOR"
+
+# PROP BASE Use_MFC 6
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "WORLDEDITOR"
+# PROP BASE Intermediate_Dir "WORLDEDITOR"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 6
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "WORLDEDITOR"
+# PROP Intermediate_Dir "WORLDEDITOR"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Yu"stdafx.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /Yu"stdafx.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+# ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 htmlhelp.lib /nologo /subsystem:windows /profile /map /debug /machine:I386 /out:"Release/SeriousModeler.exe"
+# SUBTRACT BASE LINK32 /nodefaultlib
+# ADD LINK32 htmlhelp.lib /nologo /subsystem:windows /profile /map /debug /machine:I386 /out:"WORLDEDITOR/SeriousModeler.exe"
+# SUBTRACT LINK32 /nodefaultlib
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin
+InputPath=.\WORLDEDITOR\SeriousModeler.exe
+InputName=SeriousModeler
+SOURCE="$(InputPath)"
+
+"$(ENGINE_DIR)\Bin\$(InputName).exe" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy WORLDEDITOR\$(InputName).exe $(ENGINE_DIR)\Bin >nul 
+	copy WORLDEDITOR\$(InputName).map $(ENGINE_DIR)\Bin >nul 
+	
+# End Custom Build
+
 !ENDIF 
 
 # Begin Target
 
 # Name "Modeler - Win32 Release"
 # Name "Modeler - Win32 Debug"
+# Name "Modeler - Win32 WORLDEDITOR"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"

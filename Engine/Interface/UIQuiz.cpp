@@ -1,7 +1,9 @@
 #include "stdh.h"
-#include <Engine/Interface/UIQuiz.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
+#include <vector>
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Entities/Items.h>
+#include <Engine/Interface/UIQuiz.h>
 #include <Engine/Interface/UIInventory.h>
 
 #define QUIZ_SELL_TOP_SLOT_SX			11		// Sell Mode(Top)
@@ -9,11 +11,10 @@
 #define QUIZ_SELL_BOTTOM_SLOT_SX		11		// (Bottom)
 #define QUIZ_SELL_BOTTOM_SLOT_SY		142
 
-extern INDEX g_iCountry;
 
-// FIXME : ÏÑúÎ≤ÑÏóêÏÑú ÌïòÎìú ÏΩîÎî©ÌïòÍ∏∏Îûò, Í∞ôÏù¥ ÌïòÎìú ÏΩîÎî©Ìïú Î∂ÄÎ∂Ñ....
-// FIXME : ÏïÑÏù¥ÌÖú Îç∞Ïù¥ÌÑ∞ Î°úÎî©ÌõÑÏóê Î∞îÎ°ú ÌåêÎ≥Ñ ÌïòÎäîÍ≤å Ï¢ãÏùÑÍ±∞ Í∞ôÏùÄÎç∞...
-// NOTE : ÎÇ±Îßê Ï°∞Ìï© Ïù¥Î≤§Ìä∏ Ïö© ÏïÑÏù¥ÌÖú Ïù∏Îç±Ïä§.
+// FIXME : º≠πˆø°º≠ «œµÂ ƒ⁄µ˘«œ±Ê∑°, ∞∞¿Ã «œµÂ ƒ⁄µ˘«— ∫Œ∫–....
+// FIXME : æ∆¿Ã≈€ µ•¿Ã≈Õ ∑Œµ˘»ƒø° πŸ∑Œ ∆«∫∞ «œ¥¬∞‘ ¡¡¿ª∞≈ ∞∞¿∫µ•...
+// NOTE : ≥π∏ª ¡∂«’ ¿Ã∫•∆Æ øÎ æ∆¿Ã≈€ ¿Œµ¶Ω∫.
 static int _aiWordItem[] =
 {
 	646,
@@ -55,7 +56,6 @@ CUIQuiz::CUIQuiz()
 // ----------------------------------------------------------------------------
 CUIQuiz::~CUIQuiz()
 {
-	Destroy();
 }
 
 // ----------------------------------------------------------------------------
@@ -64,9 +64,7 @@ CUIQuiz::~CUIQuiz()
 // ----------------------------------------------------------------------------
 void CUIQuiz::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	//m_nBackSplitHeight = 50;
 	m_rcMainTitle.SetRect( 0, 0, 216, 22 );
@@ -89,9 +87,9 @@ void CUIQuiz::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHe
 	m_rtBlank.SetUV( 0, 120, 216, 130, fTexWidth, fTexHeight );
 
 	// Inventory
-	m_rtUserInven.SetUV( 0, 131, 216, 282, fTexWidth, fTexHeight );				// ÏïÑÎûòÏ™Ω
-	m_rtQuizInven.SetUV( 0, 283, 216, 358, fTexWidth, fTexHeight );			// 381 - 358 = 23	ÏúÑÏ™ΩÏù∏Î≤§.
-	m_rtSeperatorInven.SetUV( 0, 382, 216, 385, fTexWidth, fTexHeight );		// Ïù∏Î≤§ Î∂ÑÎ¶¨.
+	m_rtUserInven.SetUV( 0, 131, 216, 282, fTexWidth, fTexHeight );				// æ∆∑°¬ 
+	m_rtQuizInven.SetUV( 0, 283, 216, 358, fTexWidth, fTexHeight );			// 381 - 358 = 23	¿ß¬ ¿Œ∫•.
+	m_rtSeperatorInven.SetUV( 0, 382, 216, 385, fTexWidth, fTexHeight );		// ¿Œ∫• ∫–∏Æ.
 
 	// Outline of unmovable item
 	m_rtUnmovableOutline.SetUV( 218, 86, 250, 118, fTexWidth, fTexHeight );
@@ -119,14 +117,14 @@ void CUIQuiz::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHe
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Sell button of shop
-	m_btnOK.Create( this, _S( 191, "ÌôïÏù∏" ), 30, 106, 62, 21 );
+	m_btnOK.Create( this, _S( 191, "»Æ¿Œ" ), 30, 106, 62, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 25, 476, 88, 496, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 89, 476, 152, 496, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button of shop
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 124, 106, 62, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 124, 106, 62, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 25, 476, 88, 496, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 89, 476, 152, 496, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -158,12 +156,9 @@ void CUIQuiz::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHe
 
 	// Slot items
 	// Quiz Slot(5x4)
-	for( int iRow = 0; iRow < QUIZ_USER_SLOT_ROW_TOTAL; iRow++ )
+	for( int i = 0; i < QUIZ_USER_SLOT_MAX; i++ )
 	{
-		for( int iCol = 0; iCol < QUIZ_USER_SLOT_COL; iCol++ )
-		{			
-			m_abtnUserItems[iRow][iCol].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_QUIZ, UBET_ITEM, 0, iRow, iCol );
-		}
+		m_abtnUserItems[i].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_QUIZ, UBET_ITEM, 0, i );
 	}
 
 	// Trade Slot(5x2)
@@ -197,22 +192,24 @@ void CUIQuiz::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ
 // ----------------------------------------------------------------------------
 void CUIQuiz::OpenQuiz( )
 {
-	if( IsVisible() )
+	if( IsVisible() == TRUE )
 		return;
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if( pUIManager->GetInventory()->IsLocked() )
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
 	ResetQuiz();
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOn( CSF_SHOP );
+	pUIManager->SetCSFlagOn( CSF_SHOP );
 
-	_pUIMgr->CloseMessageBox( MSGCMD_DROPITEM );
+	pUIManager->CloseMessageBox( MSGCMD_DROPITEM );
 
 	PrepareUserItems();
 }
@@ -222,21 +219,23 @@ void CUIQuiz::OpenQuiz( )
 //-----------------------------------------------------------------------------
 void CUIQuiz::PrepareUserItems()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if( pUIManager->GetInventory()->IsLocked() )
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
 	// Lock inventory
-	_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_SHOP );
+	pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_SHOP );
 	
 	RefreshPlayerItem();
 
 	// Set size & position
 	//SetSize( QUIZ_MAIN_WIDTH, QUIZ_MAIN_HEIGHT );
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
+	CDrawPort	*pdp = pUIManager->GetDrawPort();
 	int	nX = ( pdp->dp_MinI + pdp->dp_MaxI ) / 2 - GetWidth() / 2;
 	int	nY = ( pdp->dp_MinJ + pdp->dp_MaxJ ) / 2 - GetHeight() / 2;
 	SetPos( nX, nY );
@@ -254,7 +253,7 @@ void CUIQuiz::PrepareUserItems()
 		nX += 35;
 	}
 
-	_pUIMgr->RearrangeOrder( UI_QUIZ, TRUE );
+	pUIManager->RearrangeOrder( UI_QUIZ, TRUE );
 }
 
 //-----------------------------------------------------------------------------
@@ -262,25 +261,25 @@ void CUIQuiz::PrepareUserItems()
 //-----------------------------------------------------------------------------
 void CUIQuiz::RefreshPlayerItem()
 {
-	int		iRow, iCol;
-	for( iRow = 0; iRow < QUIZ_USER_SLOT_ROW_TOTAL; iRow++ )
-	{
-		for( iCol = 0; iCol < QUIZ_USER_SLOT_COL; iCol++ )
-		{
-			CItems	&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-			if( rItems.Item_Sum > 0 )
-			{
-				m_abtnUserItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, rItems.Item_Index,
-															rItems.Item_UniIndex, rItems.Item_Wearing );
-				m_abtnUserItems[iRow][iCol].SetItemPlus( rItems.Item_Plus );
-				m_abtnUserItems[iRow][iCol].SetItemCount( rItems.Item_Sum );
+	int		i;
 
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-				{
-					m_abtnUserItems[iRow][iCol].SetItemOptionData( sbOption,
-																	rItems.GetOptionType( sbOption ),
-																	rItems.GetOptionLevel( sbOption ) );
-				}
+	for( i = 0; i < QUIZ_USER_SLOT_MAX; i++ )
+	{
+
+		CItems*	pItems = &_pNetwork->MySlotItem[0][i];
+		if( pItems->Item_Sum > 0 )
+		{
+				m_abtnUserItems[i].SetItemInfo( 0, i, pItems->Item_Index,
+															pItems->Item_UniIndex, pItems->Item_Wearing );
+				m_abtnUserItems[i].SetItemPlus( pItems->Item_Plus );
+				m_abtnUserItems[i].SetItemCount( pItems->Item_Sum );
+
+			for( SBYTE sbOption = 0; sbOption < MAX_OPTION_INC_ORIGIN; sbOption++ )
+			{
+				m_abtnUserItems[i].SetItemOptionData( sbOption,
+																	pItems->GetOptionType( sbOption ),
+																	pItems->GetOptionLevel( sbOption ),
+																	pItems->GetOriginOptionVar( sbOption ));
 			}
 		}
 	}
@@ -297,20 +296,18 @@ void CUIQuiz::ResetQuiz()
 
 	ClearItems();
 
-	_pUIMgr->RearrangeOrder( UI_QUIZ, FALSE );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->RearrangeOrder( UI_QUIZ, FALSE );
 
 	// Unlock inventory
-	_pUIMgr->GetInventory()->Lock( FALSE, FALSE, LOCK_SHOP );
-
-	// Close message box of shop
-	//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_ADD_ITEM );
-	//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_DEL_ITEM );
+	pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_SHOP );
 
 	m_nCurRow = 0;
 	m_sbScrollBar.SetScrollPos( 0 );
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOff( CSF_SHOP );
+	pUIManager->SetCSFlagOff( CSF_SHOP );
 }
 
 //-----------------------------------------------------------------------------
@@ -318,15 +315,13 @@ void CUIQuiz::ResetQuiz()
 //-----------------------------------------------------------------------------
 void CUIQuiz::ClearItems()
 {
-	for(int i = 0; i < QUIZ_QUIZ_SLOT_TOTAL; i++)
+	int		i;
+	for( i = 0; i < QUIZ_QUIZ_SLOT_TOTAL; i++)
 		m_abtnQuizItems[i].InitBtn();			
 
-	for(i = 0; i < QUIZ_USER_SLOT_ROW_TOTAL; i++)
+	for( i = 0; i < QUIZ_USER_SLOT_MAX; i++)
 	{
-		for(int j = 0; j < QUIZ_USER_SLOT_COL; j++)
-		{
-			m_abtnUserItems[i][j].InitBtn();
-		}
+		m_abtnUserItems[i].InitBtn();
 	}
 }
 
@@ -345,126 +340,108 @@ void CUIQuiz::AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo )
 		return;
 
 	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strItemInfo);
-		INDEX	nChatMax= (MAX_ITEMINFO_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
+#if defined(G_THAI)
+	int		iPos;
+	// Get length of string
+	INDEX	nThaiLen = FindThaiLen(strItemInfo);
+	INDEX	nChatMax= (MAX_ITEMINFO_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
+	if( nLength == 0 )
+		return;
+	// If length of string is less than max char
+	if( nThaiLen <= nChatMax )
+	{
+		m_strItemInfo[m_nCurInfoLines] = strItemInfo;
+		m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = MAX_ITEMINFO_CHAR;
+		BOOL	b2ByteChar = FALSE;
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+			if(nChatMax < FindThaiLen(strItemInfo,0,iPos))
+				break;
 		}
-		// Need multi-line
-		else
+		nSplitPos = iPos;
+		
+		// Split string
+		CTString	strTemp;
+		strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
+		m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+		
+		// Trim space
+		if( strTemp[0] == ' ' )
 		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			int	nTempLength = strTemp.Length();
+			for( iPos = 1; iPos < nTempLength; ++iPos )
 			{
-				if(nChatMax < FindThaiLen(strItemInfo,0,iPos))
+				if( strTemp[iPos] != ' ' )
 					break;
 			}
-			nSplitPos = iPos;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; ++iPos )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-
+			
+			strTemp.TrimLeft( strTemp.Length() - iPos );
 		}
 		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= MAX_ITEMINFO_CHAR )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strItemInfo[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; iPos++ )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-		}
+		AddItemInfoString( strTemp, colItemInfo );
+		
 	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : GetClassOfItem()
-// Desc :
-// ----------------------------------------------------------------------------
-static void GetClassOfItem( CItemData & rItemData, CTString &strClass )
-{
-	CTString	strTemp = CTString( "" );
 	
-	for(int i = 0; i < TOTAL_JOB; ++i)
+#else
+	// If length of string is less than max char
+	if( nLength <= MAX_ITEMINFO_CHAR )
 	{
-		if(rItemData.CanUse(i))
-		{
-			strTemp += JobInfo().GetName(i);
-			strTemp += CTString(" ");
-		}
+		m_strItemInfo[m_nCurInfoLines] = strItemInfo;
+		m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
 	}
-
-	strClass = strTemp;
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = MAX_ITEMINFO_CHAR;
+		BOOL	b2ByteChar = FALSE;
+		for( int iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strItemInfo[iPos] & 0x80 )
+				b2ByteChar = !b2ByteChar;
+			else
+				b2ByteChar = FALSE;
+		}
+		
+		if( b2ByteChar )
+			nSplitPos--;
+		
+		// Split string
+		CTString	strTemp;
+		strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
+		m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+		
+		// Trim space
+		if( strTemp[0] == ' ' )
+		{
+			int	nTempLength = strTemp.Length();
+			int iPos;
+			for( iPos = 1; iPos < nTempLength; iPos++ )
+			{
+				if( strTemp[iPos] != ' ' )
+					break;
+			}
+			
+			strTemp.TrimLeft( strTemp.Length() - iPos );
+		}
+		
+		AddItemInfoString( strTemp, colItemInfo );
+	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
 // Name : GetItemInfo()
 // Desc : nWhichSlot - 0: opposite slot, 1: my slot, 2: inventory slot
 // ----------------------------------------------------------------------------
-// FIXME : Ï§ëÎ≥µÎêòÎäî ÏΩîÎìúÍ∞Ä ÎÑàÎ¨¥ ÎßéÏùå.
-BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, int nTradeItem, int nRow, int nCol )
+// FIXME : ¡ﬂ∫πµ«¥¬ ƒ⁄µÂ∞° ≥ π´ ∏π¿Ω.
+BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, int nTradeItem, int inven_idx )
 {
 	CTString	strTemp;
 	m_nCurInfoLines = 0;
@@ -472,7 +449,8 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 	int			nIndex;
 	SQUAD		llCount;
 	ULONG		ulItemPlus, ulFlag;
-	SBYTE		sbOptionType[MAX_ITEM_OPTION], sbOptionLevel[MAX_ITEM_OPTION];
+	SBYTE		sbOptionType[MAX_OPTION_INC_ORIGIN];
+	LONG		lOptionLevel[MAX_OPTION_INC_ORIGIN];
 
 	switch( nWhichSlot )
 	{
@@ -483,25 +461,25 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 			ulItemPlus	= m_abtnQuizItems[nTradeItem].GetItemPlus();
 			ulFlag		= m_abtnQuizItems[nTradeItem].GetItemFlag();
 
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
+			for( SBYTE sbOption = 0; sbOption < MAX_OPTION_INC_ORIGIN; sbOption++ )
 			{
 				sbOptionType[sbOption] = m_abtnQuizItems[nTradeItem].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnQuizItems[nTradeItem].GetItemOptionLevel( sbOption );
+				lOptionLevel[sbOption] = m_abtnQuizItems[nTradeItem].GetItemOptionLevel( sbOption );
 			}
 		}
 		break;
 
 	case 1:
 		{
-			nIndex		= m_abtnUserItems[nRow][nCol].GetItemIndex();
-			llCount		= m_abtnUserItems[nRow][nCol].GetItemCount();
-			ulItemPlus	= m_abtnUserItems[nRow][nCol].GetItemPlus();
-			ulFlag		= m_abtnUserItems[nRow][nCol].GetItemFlag();
+			nIndex		= m_abtnUserItems[inven_idx].GetItemIndex();
+			llCount		= m_abtnUserItems[inven_idx].GetItemCount();
+			ulItemPlus	= m_abtnUserItems[inven_idx].GetItemPlus();
+			ulFlag		= m_abtnUserItems[inven_idx].GetItemFlag();
 
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
+			for( SBYTE sbOption = 0; sbOption < MAX_OPTION_INC_ORIGIN; sbOption++ )
 			{
-				sbOptionType[sbOption] = m_abtnUserItems[nRow][nCol].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnUserItems[nRow][nCol].GetItemOptionLevel( sbOption );
+				sbOptionType[sbOption] = m_abtnUserItems[inven_idx].GetItemOptionType( sbOption );
+				lOptionLevel[sbOption] = m_abtnUserItems[inven_idx].GetItemOptionLevel( sbOption );
 			}
 		}
 		break;
@@ -510,15 +488,15 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 	if( nIndex < 0 )
 		return FALSE;
 
-	CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
+	CItemData	*pItemData = _pNetwork->GetItemData( nIndex );
 	const char* szItemName = _pNetwork->GetItemName( nIndex );
 
 	// Get item name
-	if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
+	if( pItemData->GetFlag() & ITEM_FLAG_COUNT )
 	{
 		CTString	strCount;
 		strCount.PrintF( "%I64d", llCount );
-		_pUIMgr->InsertCommaToString( strCount );		
+		CUIManager::getSingleton()->InsertCommaToString( strCount );		
 		strTemp.PrintF( "%s(%s)", szItemName, strCount );
 	}
 	else
@@ -527,11 +505,11 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 			strTemp.PrintF( "%s +%d", szItemName, ulItemPlus );
 		else
 		{
-			if( nWhichSlot == 0 && rItemData.GetFlag() & ITEM_FLAG_COUNT )
+			if( nWhichSlot == 0 && pItemData->GetFlag() & ITEM_FLAG_COUNT )
 			{
 				CTString	strCount;
 				strCount.PrintF( "%I64d", llCount );
-				_pUIMgr->InsertCommaToString( strCount );
+				CUIManager::getSingleton()->InsertCommaToString( strCount );
 				strTemp.PrintF( "%s(%s)", szItemName, strCount );
 			}
 			else
@@ -546,62 +524,62 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 	if( m_bDetailItemInfo )
 	{
 
-		switch( rItemData.GetType() )
+		switch( pItemData->GetType() )
 		{
 		case CItemData::ITEM_WEAPON:		// Weapon item
 			{
 				// Level
-				int	nItemLevel = rItemData.GetLevel();
+				int	nItemLevel = pItemData->GetLevel();
 				if( nItemLevel > 0 )
 				{
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), nItemLevel );
+					strTemp.PrintF( _S( 160, "∑π∫ß: %d" ), nItemLevel );
 					AddItemInfoString( strTemp,
 										nItemLevel > _pNetwork->MyCharacterInfo.level ? 0xD28060FF : 0x9E9684FF );
 				}
 
 				// Class
-				CUIManager::GetClassOfItem( rItemData, strTemp );
+				CUIManager::GetClassOfItem( pItemData, strTemp );
 				AddItemInfoString( strTemp, 0x9E9684FF );
 
 				int	nPlusValue;
 				if( ulItemPlus > 0 )
 				{
 					// Physical attack
-					if( rItemData.GetPhysicalAttack() > 0 )
+					if( pItemData->GetPhysicalAttack() > 0 )
 					{
-						//nPlusValue = (int)( rItemData.GetPhysicalAttack() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetPhysicalAttack();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetPhysicalAttack(), ulItemPlus );
+						//nPlusValue = (int)( pItemData->GetPhysicalAttack() *
+						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - pItemData->GetPhysicalAttack();
+						nPlusValue = CItems::CalculatePlusDamage( pItemData->GetPhysicalAttack(), ulItemPlus, pItemData->GetLevel() >= 146 ? TRUE : FALSE );
 						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 355, "Í≥µÍ≤©Î†• : %d + %d" ), rItemData.GetPhysicalAttack(), nPlusValue );
+							strTemp.PrintF( _S( 355, "∞¯∞›∑¬ : %d + %d" ), pItemData->GetPhysicalAttack(), nPlusValue );
 						else
-							strTemp.PrintF( _S( 161, "Í≥µÍ≤©Î†• : %d" ), rItemData.GetPhysicalAttack() );
+							strTemp.PrintF( _S( 161, "∞¯∞›∑¬ : %d" ), pItemData->GetPhysicalAttack() );
 															
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 
 						if( ulItemPlus >= 15 )
 						{
-							strTemp.PrintF(_S( 1891, "Î¨ºÎ¶¨ Í≥µÍ≤©Î†• + 75" ));		
+							strTemp.PrintF(_S( 1891, "π∞∏Æ ∞¯∞›∑¬ + 75" ));		
 							AddItemInfoString( strTemp, 0xDEC05BFF );
 						}
 					}
 
 					// Magic attack
-					if( rItemData.GetMagicAttack() > 0 )
+					if( pItemData->GetMagicAttack() > 0 )
 					{
-						//nPlusValue = (int)( rItemData.GetMagicAttack() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetMagicAttack();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetMagicAttack(), ulItemPlus );
+						//nPlusValue = (int)( pItemData->GetMagicAttack() *
+						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - pItemData->GetMagicAttack();
+						nPlusValue = CItems::CalculatePlusDamage( pItemData->GetMagicAttack(), ulItemPlus, pItemData->GetLevel() >= 146 ? TRUE : FALSE);
 						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 356, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d + %d" ), rItemData.GetMagicAttack(), nPlusValue );
+							strTemp.PrintF( _S( 356, "∏∂π˝ ∞¯∞›∑¬ : %d + %d" ), pItemData->GetMagicAttack(), nPlusValue );
 						else
-							strTemp.PrintF( _S( 162, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d" ), rItemData.GetMagicAttack() );
+							strTemp.PrintF( _S( 162, "∏∂π˝ ∞¯∞›∑¬ : %d" ), pItemData->GetMagicAttack() );
 															
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 
 						if( ulItemPlus >= 15 )
 						{
-							strTemp.PrintF(_S( 1892, "ÎßàÎ≤ï Í≥µÍ≤©Î†• + 50" ));		
+							strTemp.PrintF(_S( 1892, "∏∂π˝ ∞¯∞›∑¬ + 50" ));		
 							AddItemInfoString( strTemp, 0xDEC05BFF );
 						}
 					}
@@ -609,16 +587,16 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 				else
 				{
 					// Physical attack
-					if( rItemData.GetPhysicalAttack() > 0 )
+					if( pItemData->GetPhysicalAttack() > 0 )
 					{
-						strTemp.PrintF( _S( 161, "Í≥µÍ≤©Î†• : %d" ), rItemData.GetPhysicalAttack() );
+						strTemp.PrintF( _S( 161, "∞¯∞›∑¬ : %d" ), pItemData->GetPhysicalAttack() );
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 					}
 
 					// Magic attack
-					if( rItemData.GetMagicAttack() > 0 )
+					if( pItemData->GetMagicAttack() > 0 )
 					{
-						strTemp.PrintF( _S( 162, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d" ), rItemData.GetMagicAttack() );
+						strTemp.PrintF( _S( 162, "∏∂π˝ ∞¯∞›∑¬ : %d" ), pItemData->GetMagicAttack() );
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 					}
 				}
@@ -628,63 +606,63 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 		case CItemData::ITEM_SHIELD:		// Shield item
 			{
 				// Level
-				int	nItemLevel = rItemData.GetLevel();
+				int	nItemLevel = pItemData->GetLevel();
 				if( nItemLevel > 0 )
 				{
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), nItemLevel );
+					strTemp.PrintF( _S( 160, "∑π∫ß: %d" ), nItemLevel );
 					AddItemInfoString( strTemp,
 										nItemLevel > _pNetwork->MyCharacterInfo.level ? 0xD28060FF : 0x9E9684FF );
 				}
 
 				// Class
-				CUIManager::GetClassOfItem( rItemData, strTemp );
+				CUIManager::GetClassOfItem( pItemData, strTemp );
 				AddItemInfoString( strTemp, 0x9E9684FF );
 
 				int	nPlusValue;
 				if( ulItemPlus > 0 )
 				{
 					// Physical defense
-					if( rItemData.GetPhysicalDefence() > 0 )
+					if( pItemData->GetPhysicalDefence() > 0 )
 					{
-						//nPlusValue = (int)( rItemData.GetPhysicalDefence() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetPhysicalDefence();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetPhysicalDefence(), ulItemPlus );
+						//nPlusValue = (int)( pItemData->GetPhysicalDefence() *
+						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - pItemData->GetPhysicalDefence();
+						nPlusValue = CItems::CalculatePlusDamage( pItemData->GetPhysicalDefence(), ulItemPlus, pItemData->GetLevel() >= 146 ? TRUE : FALSE );
 						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 357, "Î∞©Ïñ¥Î†• : %d + %d" ), rItemData.GetPhysicalDefence(), nPlusValue );
+							strTemp.PrintF( _S( 357, "πÊæÓ∑¬ : %d + %d" ), pItemData->GetPhysicalDefence(), nPlusValue );
 						else
-							strTemp.PrintF( _S( 163, "Î∞©Ïñ¥Î†• : %d" ), rItemData.GetPhysicalDefence() );
+							strTemp.PrintF( _S( 163, "πÊæÓ∑¬ : %d" ), pItemData->GetPhysicalDefence() );
 															
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 
 						if( ulItemPlus >= 15 )
 						{
-							strTemp.PrintF(_S( 1893, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• + 100" ));		
+							strTemp.PrintF(_S( 1893, "π∞∏Æ πÊæÓ∑¬ + 100" ));		
 							AddItemInfoString( strTemp, 0xDEC05BFF );
 
-							strTemp.PrintF(_S( 1894, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• + 50" ));		
+							strTemp.PrintF(_S( 1894, "∏∂π˝ πÊæÓ∑¬ + 50" ));		
 							AddItemInfoString( strTemp, 0xDEC05BFF );
 						}
 					}
 
 					// Magic defense
-					if( rItemData.GetMagicDefence() > 0 )
+					if( pItemData->GetMagicDefence() > 0 )
 					{
-						//nPlusValue = (int)( rItemData.GetMagicDefence() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetMagicDefence();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetMagicDefence(), ulItemPlus );
+						//nPlusValue = (int)( pItemData->GetMagicDefence() *
+						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - pItemData->GetMagicDefence();
+						nPlusValue = CItems::CalculatePlusDamage( pItemData->GetMagicDefence(), ulItemPlus, pItemData->GetLevel() >= 146 ? TRUE : FALSE );
 						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 358, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d + %d" ), rItemData.GetMagicDefence(), nPlusValue );
+							strTemp.PrintF( _S( 358, "∏∂π˝ πÊæÓ∑¬ : %d + %d" ), pItemData->GetMagicDefence(), nPlusValue );
 						else
-							strTemp.PrintF( _S( 164, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d" ), rItemData.GetMagicDefence() );
+							strTemp.PrintF( _S( 164, "∏∂π˝ πÊæÓ∑¬ : %d" ), pItemData->GetMagicDefence() );
 															
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 
 						if( ulItemPlus >= 15 )
 						{
-							strTemp.PrintF(_S( 1893, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• + 100" ));		
+							strTemp.PrintF(_S( 1893, "π∞∏Æ πÊæÓ∑¬ + 100" ));		
 							AddItemInfoString( strTemp, 0xDEC05BFF );
 
-							strTemp.PrintF(_S( 1894, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• + 50" ));		
+							strTemp.PrintF(_S( 1894, "∏∂π˝ πÊæÓ∑¬ + 50" ));		
 							AddItemInfoString( strTemp, 0xDEC05BFF );
 						}
 					}
@@ -692,16 +670,16 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 				else
 				{
 					// Physical defense
-					if( rItemData.GetPhysicalDefence() > 0 )
+					if( pItemData->GetPhysicalDefence() > 0 )
 					{
-						strTemp.PrintF( _S( 163, "Î∞©Ïñ¥Î†• : %d" ), rItemData.GetPhysicalDefence() );
+						strTemp.PrintF( _S( 163, "πÊæÓ∑¬ : %d" ), pItemData->GetPhysicalDefence() );
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 					}
 
 					// Magic defense
-					if( rItemData.GetMagicDefence() > 0 )
+					if( pItemData->GetMagicDefence() > 0 )
 					{
-						strTemp.PrintF( _S( 164, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d" ), rItemData.GetMagicDefence() );
+						strTemp.PrintF( _S( 164, "∏∂π˝ πÊæÓ∑¬ : %d" ), pItemData->GetMagicDefence() );
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 					}
 				}
@@ -713,25 +691,25 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 			}
 			break;
 
-				// ÏùºÌöåÏö©
+				// ¿œ»∏øÎ
 		case CItemData::ITEM_ONCEUSE:
 			{
-				// ÌÄòÏä§Ìä∏ Ï†ïÎ≥¥ ÌëúÏãú.
-				if ( rItemData.GetSubType() == CItemData::ITEM_SUB_QUEST_SCROLL )
+				// ƒ˘Ω∫∆Æ ¡§∫∏ «•Ω√.
+				if ( pItemData->GetSubType() == CItemData::ITEM_SUB_QUEST_SCROLL )
 				{	
-					const int iQuestIndex = rItemData.GetNum0();
+					const int iQuestIndex = pItemData->GetNum0();
 
 					if( iQuestIndex != -1 )
 					{
-						// ÌÄòÏä§Ìä∏ Ïù¥Î¶Ñ Ï∂úÎ†•
+						// ƒ˘Ω∫∆Æ ¿Ã∏ß √‚∑¬
 						strTemp.PrintF( "%s", CQuestSystem::Instance().GetQuestName( iQuestIndex ) );
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 						
 						const int iMinLevel = CQuestSystem::Instance().GetQuestMinLevel( iQuestIndex );
 						const int iMaxLevel = CQuestSystem::Instance().GetQuestMaxLevel( iQuestIndex );
 
-						// Î†àÎ≤® Ï†úÌïú Ï∂úÎ†•.
-						strTemp.PrintF( _S( 1660, "Î†àÎ≤® Ï†úÌïú : %d ~ %d" ), iMinLevel, iMaxLevel );		
+						// ∑π∫ß ¡¶«— √‚∑¬.
+						strTemp.PrintF( _S( 1660, "∑π∫ß ¡¶«— : %d ~ %d" ), iMinLevel, iMaxLevel );		
 						AddItemInfoString( strTemp, 0xDEC05BFF );
 					}
 				}
@@ -742,43 +720,43 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 			{
 				// Date : 2005-01-14,   By Lee Ki-hwan
 				
-				if ( rItemData.GetSubType() == CItemData::POTION_UP )
+				if ( pItemData->GetSubType() == CItemData::POTION_UP )
 				{
 					if( ulFlag > 0 )
 					{
 						// Level
-						strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), ulFlag );
+						strTemp.PrintF( _S( 160, "∑π∫ß: %d" ), ulFlag );
 						AddItemInfoString( strTemp, 0xD28060FF );
 
-						// Ìñ•ÏÉÅ ÌÉÄÏûÖ
-						int nSkillType = rItemData.GetSkillType();
+						// «‚ªÛ ≈∏¿‘
+						int nSkillType = pItemData->GetSkillType();
 						CSkill	&rSkill = _pNetwork->GetSkillData( nSkillType );
 						int Power = rSkill.GetPower( ulFlag - 1);
 
-						if(  rItemData.GetNum1() == CItemData::POTION_UP_PHYSICAL ) // Î¨ºÎ¶¨
+						if(  pItemData->GetNum1() == CItemData::POTION_UP_PHYSICAL ) // π∞∏Æ
 						{
-							if(  rItemData.GetNum2() == CItemData::POTION_UP_ATTACK ) // Í≥µÍ≤©
+							if(  pItemData->GetNum2() == CItemData::POTION_UP_ATTACK ) // ∞¯∞›
 							{
-								strTemp.PrintF ( _S( 790, "Î¨ºÎ¶¨ Í≥µÍ≤©Î†• +%d ÏÉÅÏäπ" ), Power );
+								strTemp.PrintF ( _S( 790, "π∞∏Æ ∞¯∞›∑¬ +%d ªÛΩ¬" ), Power );
 								AddItemInfoString( strTemp, 0xDEC05BFF );
 							}
-							else if( rItemData.GetNum2() == CItemData::POTION_UP_DEFENSE ) // Î∞©Ïñ¥
+							else if( pItemData->GetNum2() == CItemData::POTION_UP_DEFENSE ) // πÊæÓ
 							{
-								strTemp.PrintF ( _S( 791, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• +%d ÏÉÅÏäπ" ),  Power );
+								strTemp.PrintF ( _S( 791, "π∞∏Æ πÊæÓ∑¬ +%d ªÛΩ¬" ),  Power );
 								AddItemInfoString( strTemp, 0xDEC05BFF );
 							}
 
 						}
-						else if( rItemData.GetNum1() == CItemData::POTION_UP_MAGIC ) // ÎßàÎ≤ï
+						else if( pItemData->GetNum1() == CItemData::POTION_UP_MAGIC ) // ∏∂π˝
 						{
-							if(  rItemData.GetNum2() == CItemData::POTION_UP_ATTACK ) // Í≥µÍ≤©
+							if(  pItemData->GetNum2() == CItemData::POTION_UP_ATTACK ) // ∞¯∞›
 							{
-								strTemp.PrintF ( _S( 792, "ÎßàÎ≤ï Í≥µÍ≤©Î†• +%d ÏÉÅÏäπ" ),  Power );
+								strTemp.PrintF ( _S( 792, "∏∂π˝ ∞¯∞›∑¬ +%d ªÛΩ¬" ),  Power );
 								AddItemInfoString( strTemp, 0xDEC05BFF );
 							}
-							else if( rItemData.GetNum2() == CItemData::POTION_UP_DEFENSE ) // Î∞©Ïñ¥
+							else if( pItemData->GetNum2() == CItemData::POTION_UP_DEFENSE ) // πÊæÓ
 							{
-								strTemp.PrintF ( _S( 793, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• +%d ÏÉÅÏäπ" ),  Power );
+								strTemp.PrintF ( _S( 793, "∏∂π˝ πÊæÓ∑¬ +%d ªÛΩ¬" ),  Power );
 								AddItemInfoString( strTemp, 0xDEC05BFF );
 							}
 						}
@@ -793,27 +771,27 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 
 		case CItemData::ITEM_ETC:			// Etc item
 			{
-				switch( rItemData.GetSubType() )
+				switch( pItemData->GetSubType() )
 				{
 				case CItemData::ITEM_ETC_REFINE:
 					{
-						// FIXME : Î†àÎ≤® ÌëúÏãúÍ∞Ä ÏïàÎêúÎã§Íµ¨ Ìï¥ÏÑú...
-						// Î∏îÎü¨ÎìúÎùºÍ≥† ÌëúÏãúÍ∞Ä ÎêòÏñ¥ÏûàÎã§Î©¥, ÌëúÏãúÎ•º ÏóÜÏï†Ï§ÄÎã§.
-						if(ulFlag & FLAG_ITEM_OPTION_ENABLE)
+						// FIXME : ∑π∫ß «•Ω√∞° æ»µ»¥Ÿ±∏ «ÿº≠...
+						// ∫Ì∑ØµÂ∂Û∞Ì «•Ω√∞° µ«æÓ¿÷¥Ÿ∏È, «•Ω√∏¶ æ¯æ÷¡ÿ¥Ÿ.
+						/*if(ulFlag & FLAG_ITEM_OPTION_ENABLE)
 						{
 							ulFlag ^= FLAG_ITEM_OPTION_ENABLE;
-						}
+						}*/
 
 						// Level
 						if( ulFlag > 0 )
 						{
-							strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), ulFlag );
+							strTemp.PrintF( _S( 160, "∑π∫ß: %d" ), ulFlag );
 							AddItemInfoString( strTemp, 0xD28060FF );
 						}
 					}
 					break;
 
-				// Î∏îÎü¨Îìú ÏïÑÏù¥ÌÖú & Ï†ïÌôîÏÑù.
+				// ∫Ì∑ØµÂ æ∆¿Ã≈€ & ¡§»≠ºÆ.
 				case CItemData::ITEM_ETC_OPTION:
 					{
 					}
@@ -823,42 +801,41 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 			break;
 		}
 
-		// Weight
-		strTemp.PrintF( _S( 165, "Î¨¥Í≤å : %d" ), rItemData.GetWeight() );
-		AddItemInfoString( strTemp, 0xDEC05BFF );
-
-		
-		const int iFame = rItemData.GetFame();
+		const int iFame = pItemData->GetFame();
 		if( iFame > 0 )
 		{
-			strTemp.PrintF( _S( 1096, "Î™ÖÏÑ± %d ÌïÑÏöî" ), iFame );		
+			strTemp.PrintF( _S( 1096, "∏Ìº∫ %d « ø‰" ), iFame );		
 			AddItemInfoString( strTemp, 0xDEC05BFF );
 		}
 
 
 		// Options
-		switch( rItemData.GetType() )
+		switch( pItemData->GetType() )
 		{
 		case CItemData::ITEM_WEAPON:
 		case CItemData::ITEM_SHIELD:
 		case CItemData::ITEM_ACCESSORY:
 			{
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
+				for( SBYTE sbOption = 0; sbOption < MAX_OPTION_INC_ORIGIN; sbOption++ )
 				{
-					if( sbOptionType[sbOption] == -1 || sbOptionLevel[sbOption] == 0 )
+					if( sbOptionType[sbOption] == -1 || lOptionLevel[sbOption] == 0 )
 						break;
 
-					COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-					strTemp.PrintF( "%s : %d", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) ); 
+					COptionData* odItem = COptionData::getData( sbOptionType[sbOption] );
+
+					if (odItem == NULL)
+						continue;
+
+					strTemp.PrintF( "%s : %d", odItem->GetName(), odItem->GetValue( lOptionLevel[sbOption] - 1 ) ); 
 					AddItemInfoString( strTemp, 0x94B7C6FF );
 				}
 				if( ulFlag & FLAG_ITEM_OPTION_ENABLE )
 				{
-					AddItemInfoString( _S( 511, "Î∏îÎü¨Îìú ÏòµÏÖò Í∞ÄÎä•" ), 0xE53535FF );		
+					AddItemInfoString( _S( 511, "∫Ì∑ØµÂ ø…º« ∞°¥…" ), 0xE53535FF );		
 				}
 				if( ulFlag & FLAG_ITEM_SEALED )
 				{
-					AddItemInfoString( _S( 512, "Î¥âÏù∏Îêú ÏïÑÏù¥ÌÖú" ), 0xE53535FF );		
+					AddItemInfoString( _S( 512, "∫¿¿Œµ» æ∆¿Ã≈€" ), 0xE53535FF );		
 				}
 			}
 			break;
@@ -891,7 +868,7 @@ BOOL CUIQuiz::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, in
 // Name : ShowItemInfo()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIQuiz::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nTradeItem, int nRow, int nCol )
+void CUIQuiz::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nTradeItem, int inven_idx )
 {
 	static int	nOldBtnID = -1;
 	int			nBtnID;
@@ -907,7 +884,7 @@ void CUIQuiz::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nTradeItem, int nRo
 
 	BOOL	bUpdateInfo = FALSE;
 	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
+	int		nInfoPosX = 0, nInfoPosY = 0;
 
 	// Trade
 	if( nTradeItem >= 0 )
@@ -929,21 +906,21 @@ void CUIQuiz::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nTradeItem, int nRo
 		}
 	}
 	// Quiz
-	else if( nRow >= 0 )
+	else if( inven_idx >= 0 )
 	{
 		m_bShowItemInfo = TRUE;
-		nBtnID = m_abtnUserItems[nRow][nCol].GetBtnID();
+		nBtnID = m_abtnUserItems[inven_idx].GetBtnID();
 
 		// Update item information
 		if( nOldBtnID != nBtnID || bRenew )
 		{
 			bUpdateInfo = TRUE;
 			nOldBtnID = nBtnID;
-			m_abtnUserItems[nRow][nCol].GetAbsPos( nInfoPosX, nInfoPosY );
+			m_abtnUserItems[inven_idx].GetAbsPos( nInfoPosX, nInfoPosY );
 
 			// Get item information
-			m_bDetailItemInfo = m_nSelUserItemID == ( nCol + nRow * QUIZ_USER_SLOT_COL );;
-			if( !GetItemInfo( 1, nInfoWidth, nInfoHeight, -1, nRow, nCol ) )
+			m_bDetailItemInfo = m_nSelUserItemID == inven_idx;
+			if( !GetItemInfo( 1, nInfoWidth, nInfoHeight, -1, inven_idx ) )
 				m_bShowItemInfo = FALSE;
 		}
 	}
@@ -953,12 +930,14 @@ void CUIQuiz::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nTradeItem, int nRo
 	{
 		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
 
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
+		CUIManager* pUIManager = CUIManager::getSingleton();
+		
+		if( nInfoPosX < pUIManager->GetMinI() )
+			nInfoPosX = pUIManager->GetMinI();
+		else if( nInfoPosX + nInfoWidth > pUIManager->GetMaxI() )
+			nInfoPosX = pUIManager->GetMaxI() - nInfoWidth;
 
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
+		if( nInfoPosY - nInfoHeight < pUIManager->GetMinJ() )
 		{
 			nInfoPosY += BTN_SIZE;
 			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
@@ -975,7 +954,7 @@ void CUIQuiz::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nTradeItem, int nRo
 
 // ----------------------------------------------------------------------------
 // Name : RenderItems()
-// Desc : Íµ¨ÏûÖÎ™®Îìú...
+// Desc : ±∏¿‘∏µÂ...
 // ----------------------------------------------------------------------------
 void CUIQuiz::RenderItems()
 {
@@ -984,23 +963,26 @@ void CUIQuiz::RenderItems()
 	iQuizY = QUIZ_SELL_BOTTOM_SLOT_SY;
 	
 
-	int	iRow, iCol;
+	int	i;
 	int	nX = iQuizX;
 	int	nY = iQuizY;
-	int	iRowS = m_nCurRow;
-	int	iRowE = iRowS + QUIZ_USER_SLOT_ROW;
-	for( iRow = iRowS; iRow < iRowE; iRow++ )
+	int	iRowS = m_nCurRow * QUIZ_USER_SLOT_COL;
+	int	iRowE = (iRowS + QUIZ_USER_SLOT_ROW) * QUIZ_USER_SLOT_COL;
+	
+	for( i = iRowS; i < iRowE; i++ )
 	{
-		for( iCol = 0; iCol < QUIZ_USER_SLOT_COL; iCol++, nX += 35 )
-		{
-			m_abtnUserItems[iRow][iCol].SetPos( nX, nY );
+		m_abtnUserItems[i].SetPos( nX, nY );
+		nX += 35;
 
-			if( m_abtnUserItems[iRow][iCol].IsEmpty() )
-				continue;
+		if( m_abtnUserItems[i].IsEmpty() )
+			continue;
 			
-			m_abtnUserItems[iRow][iCol].Render();
+		m_abtnUserItems[i].Render();
+
+		if (i > iRowS && (i % QUIZ_USER_SLOT_COL) == 0)
+		{
+			nX = iQuizX;	nY += 35;
 		}
-		nX = iQuizX;	nY += 35;
 	}
 
 	// ---Trade slot items---
@@ -1012,59 +994,52 @@ void CUIQuiz::RenderItems()
 		m_abtnQuizItems[iItem].Render();
 	}
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+	pDrawPort->FlushBtnRenderingQueue( UBET_ITEM );
 
 	// Set shop texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Outline of items in shop slot ( unmovable )	
-	for( iRow = iRowS; iRow < iRowE; iRow++ )
+	for( i = iRowS; i < iRowE; i++ )
 	{
-		for( iCol = 0; iCol < QUIZ_USER_SLOT_COL; iCol++ )
-		{
-			// If button is empty
-			if( m_abtnUserItems[iRow][iCol].IsEmpty() )
-				continue;
+		// If button is empty
+		if( m_abtnUserItems[i].IsEmpty() )
+			continue;
 			
-			// Not wearing, not refine stone, can trade
-			int			nIndex = m_abtnUserItems[iRow][iCol].GetItemIndex();
-			CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-			if( m_abtnUserItems[iRow][iCol].GetItemWearType() < 0 &&
-				( rItemData.GetType() != CItemData::ITEM_ETC || rItemData.GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
-				rItemData.GetFlag() & ITEM_FLAG_TRADE )
-				continue;
+		// Not wearing, not refine stone, can trade
+		int			nIndex = m_abtnUserItems[i].GetItemIndex();
+		CItemData*	pItemData = _pNetwork->GetItemData( nIndex );
+		if( m_abtnUserItems[i].GetItemWearType() < 0 &&
+				( pItemData->GetType() != CItemData::ITEM_ETC || pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
+				pItemData->GetFlag() & ITEM_FLAG_TRADE )
+			continue;
 			
-			m_abtnUserItems[iRow][iCol].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-				m_rtUnmovableOutline.U0, m_rtUnmovableOutline.V0,
-				m_rtUnmovableOutline.U1, m_rtUnmovableOutline.V1,
-				0xFFFFFFFF );
-		}
+		m_abtnUserItems[i].GetAbsPos( nX, nY );
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+			m_rtUnmovableOutline.U0, m_rtUnmovableOutline.V0,
+			m_rtUnmovableOutline.U1, m_rtUnmovableOutline.V1,
+			0xFFFFFFFF );
 	}	
 
 	// Outline of selected item
 	if( m_nSelQuizItemID >= 0 )
 	{
 		m_abtnQuizItems[m_nSelQuizItemID].GetAbsPos( nX, nY );
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 											m_rtSelectOutline.U0, m_rtSelectOutline.V0,
 											m_rtSelectOutline.U1, m_rtSelectOutline.V1,
 											0xFFFFFFFF );
 	}
 	if( m_nSelUserItemID >= 0 )
 	{
-		int	nSelRow = m_nSelUserItemID / QUIZ_USER_SLOT_COL;
-		if( nSelRow >= iRowS && nSelRow < iRowE )
-		{
-			int	nSelCol = m_nSelUserItemID % QUIZ_USER_SLOT_COL;
-
-			m_abtnUserItems[nSelRow][nSelCol].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtSelectOutline.U0, m_rtSelectOutline.V0,
-												m_rtSelectOutline.U1, m_rtSelectOutline.V1,
-												0xFFFFFFFF );
-		}
+		m_abtnUserItems[m_nSelUserItemID].GetAbsPos( nX, nY );
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+						m_rtSelectOutline.U0, m_rtSelectOutline.V0,
+						m_rtSelectOutline.U1, m_rtSelectOutline.V1,
+						0xFFFFFFFF );
 	}
 
 	// ----------------------------------------------------------------------------
@@ -1072,62 +1047,62 @@ void CUIQuiz::RenderItems()
 	if( m_bShowItemInfo )
 	{
 		// Item information region
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
+		pDrawPort->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
 											m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
 											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
+		pDrawPort->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
 											m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
 											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
+		pDrawPort->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
 											m_rcItemInfo.Right, m_rcItemInfo.Top + 7,
 											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
 											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
 											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
 											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
 											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
 											m_rcItemInfo.Right, m_rcItemInfo.Bottom - 7,
 											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
 											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom,
 											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
 											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom,
 											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
 											m_rcItemInfo.Right, m_rcItemInfo.Bottom,
 											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
 											0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Render item information
 		int	nInfoX = m_rcItemInfo.Left + 12;
 		int	nInfoY = m_rcItemInfo.Top + 8;
 		for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
 		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
+			pDrawPort->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
 			nInfoY += _pUIFontTexMgr->GetLineHeight();
 		}
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 	else
 	{
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 	}
 }
 
@@ -1137,54 +1112,55 @@ void CUIQuiz::RenderItems()
 // ----------------------------------------------------------------------------
 void CUIQuiz::Render()
 {
-	// Set shop texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
-	int	nX, nY;
+	// Set shop texture
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + 24,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + 24,
 										m_rtBackTop.U0, m_rtBackTop.V0,
 										m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + 24,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY + 24,
 										m_nPosX + m_nWidth, m_nPosY + m_nHeight - 3,
 										m_rtBackMiddle.U0, m_rtBackMiddle.V0,
 										m_rtBackMiddle.U1, m_rtBackMiddle.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + m_nHeight - 3,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY + m_nHeight - 3,
 										m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackBottom.U0, m_rtBackBottom.V0,
 										m_rtBackBottom.U1, m_rtBackBottom.V1,
 										0xFFFFFFFF );
 	
 	
-	nX = m_nPosX;
-	nY = m_nPosY + 22;
-	// ÏúÑÏ™Ω Ïù∏Î≤§.
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	int nX = m_nPosX;
+	int nY = m_nPosY + 22;
+
+	// ¿ß¬  ¿Œ∫•.
+	pDrawPort->AddTexture( nX, nY,
 										nX + QUIZ_QUIZ_WIDTH, nY + QUIZ_TRADE_HEIGHT,
 										m_rtQuizInven.U0, m_rtQuizInven.V0,
 										m_rtQuizInven.U1, m_rtQuizInven.V1,
 										0xFFFFFFFF );
 
 	nY += QUIZ_TRADE_HEIGHT;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 										nX + QUIZ_QUIZ_WIDTH, nY + 38,
 										m_rtBlank.U0, m_rtBlank.V0,
 										m_rtBlank.U1, m_rtBlank.V1,
 										0xFFFFFFFF );
 
 	nY += 38;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 										nX + QUIZ_QUIZ_WIDTH, nY + 1,
 										m_rtSeperatorInven.U0, m_rtSeperatorInven.V0,
 										m_rtSeperatorInven.U1, m_rtSeperatorInven.V1,
 										0xFFFFFFFF );
 
-	// ÏïÑÎûòÏ™Ω Ïù∏Î≤§.
+	// æ∆∑°¬  ¿Œ∫•.
 	nY += 1;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+	pDrawPort->AddTexture( nX, nY,
 										nX + QUIZ_QUIZ_WIDTH, nY + QUIZ_QUIZ_HEIGHT,
 										m_rtUserInven.U0, m_rtUserInven.V0,
 										m_rtUserInven.U1, m_rtUserInven.V1,
@@ -1203,14 +1179,14 @@ void CUIQuiz::Render()
 	m_btnCancel.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render item information
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1214,  "ÎÇ±Îßê ÎßûÏ∂îÍ∏∞"  ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX,		
+	pDrawPort->PutTextEx( _S( 1214,  "≥π∏ª ∏¬√ﬂ±‚"  ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX,		
 										m_nPosY + INVEN_TITLE_TEXT_OFFSETY );	
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Render Items
 	RenderItems();
@@ -1240,8 +1216,10 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 	{
 	case WM_MOUSEMOVE:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				pUIManager->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -1257,43 +1235,32 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 			}
 
 			// Hold item button
-			if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInItem && ( pMsg->wParam & MK_LBUTTON ) &&
+			if( pUIManager->GetHoldBtn().IsEmpty() && bLButtonDownInItem && ( pMsg->wParam & MK_LBUTTON ) &&
 				( ndX != 0 || ndY != 0 ) )
 			{
 				// Quiz items
 				if( m_nSelUserItemID >= 0 )
-				{
-					int	nSelRow = m_nSelUserItemID / QUIZ_USER_SLOT_COL;
-					int	nSelCol = m_nSelUserItemID % QUIZ_USER_SLOT_COL;
-					
+				{				
 					// Not wearing, not refine stone, can trade
-					CItems		&rItems = _pNetwork->MySlotItem[0][nSelRow][nSelCol];
-					CItemData	&rItemData = rItems.ItemData;
-					if( rItems.Item_Wearing == -1 &&
-						( rItemData.GetType() != CItemData::ITEM_ETC || rItemData.GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
-						rItemData.GetFlag() & ITEM_FLAG_TRADE )
+					CItems		*pItems = &_pNetwork->MySlotItem[0][m_nSelUserItemID];
+					CItemData*	pItemData = pItems->ItemData;
+					if( pItems->Item_Wearing == -1 &&
+						( pItemData->GetType() != CItemData::ITEM_ETC || pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
+						pItemData->GetFlag() & ITEM_FLAG_TRADE )
 					{
-						// Close message box of shop
-						//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_ADD_ITEM );
-						//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_DEL_ITEM );
-
-						_pUIMgr->SetHoldBtn( m_abtnUserItems[nSelRow][nSelCol] );
+						pUIManager->SetHoldBtn( m_abtnUserItems[m_nSelUserItemID] );
 						int	nOffset = BTN_SIZE / 2;
-						_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
+						pUIManager->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
 
-						m_abtnUserItems[nSelRow][nSelCol].SetBtnState( UBES_IDLE );
+						m_abtnUserItems[m_nSelUserItemID].SetBtnState( UBES_IDLE );
 					}
 				}
 				// Trade items
 				else if( m_nSelQuizItemID >= 0 )
 				{
-					// Close message box of shop
-					//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_ADD_ITEM );
-					//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_DEL_ITEM );
-
-					_pUIMgr->SetHoldBtn( m_abtnQuizItems[m_nSelQuizItemID] );
+					pUIManager->SetHoldBtn( m_abtnQuizItems[m_nSelQuizItemID] );
 					int	nOffset = BTN_SIZE / 2;
-					_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
+					pUIManager->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
 
 					m_abtnQuizItems[m_nSelQuizItemID].SetBtnState( UBES_IDLE );
 				}
@@ -1321,24 +1288,21 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 			// Quiz
 			else if( IsInsideRect( nX, nY, m_rcTop ) )
 			{
-				int	iRow, iCol;
-				int	iRowS = m_nCurRow;							// Start Row
-				int	iRowE = iRowS + QUIZ_USER_SLOT_ROW;			// End Row
-				int	nWhichRow = -1, nWhichCol = -1;
-				for( iRow = iRowS; iRow < iRowE; iRow++ )
+				int	i;
+				int	iRowS = m_nCurRow * QUIZ_USER_SLOT_COL;						// Start Row
+				int	iRowE = (iRowS + QUIZ_USER_SLOT_ROW) * QUIZ_USER_SLOT_COL;	// End Row
+				int	nWhichIdx = -1;
+				
+				for( i = iRowS; i < iRowE; ++i )
 				{
-					for( iCol = 0; iCol < QUIZ_USER_SLOT_COL; iCol++ )
+					if( m_abtnUserItems[i].MouseMessage( pMsg ) != WMSG_FAIL )
 					{
-						if( m_abtnUserItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							nWhichRow = iRow;	
-							nWhichCol = iCol;
-						}
+						nWhichIdx = i;
 					}
 				}
 
 				// Show tool tip
-				ShowItemInfo( TRUE, FALSE, -1, nWhichRow, nWhichCol );
+				ShowItemInfo( TRUE, FALSE, -1, nWhichIdx );
 
 				return WMSG_SUCCESS;
 			}
@@ -1368,6 +1332,8 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
 				nOldX = nX;		nOldY = nY;
 
 				// Close button
@@ -1396,26 +1362,24 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 					m_nSelUserItemID = -1;
 					m_nSelQuizItemID = -1;
 
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + QUIZ_USER_SLOT_ROW;			// 4Ï§Ñ~
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * QUIZ_USER_SLOT_COL;
+					int	iRowE = (iRowS + QUIZ_USER_SLOT_ROW) * QUIZ_USER_SLOT_COL;	// 4¡Ÿ~
+					
+					for( i = iRowS; i < iRowE; ++i )
 					{
-						for( iCol = 0; iCol < QUIZ_USER_SLOT_COL; iCol++ )
+						if( m_abtnUserItems[i].MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							if( m_abtnUserItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected item
-								m_nSelUserItemID = iCol + iRow * QUIZ_USER_SLOT_COL;	// ÏÑ†ÌÉùÎêú Ïä¨Î°ØÏùò ÏïÑÏù¥ÌÖú ID
+							// Update selected item
+							m_nSelUserItemID = i;	// º±≈√µ» ΩΩ∑‘¿« æ∆¿Ã≈€ ID
 
-								// Show tool tup
-								ShowItemInfo( TRUE, TRUE, -1, iRow, iCol );
+							// Show tool tup
+							ShowItemInfo( TRUE, TRUE, -1, i );
 
-								bLButtonDownInItem	= TRUE;
+							bLButtonDownInItem	= TRUE;
 
-								_pUIMgr->RearrangeOrder( UI_QUIZ, TRUE );
-								return WMSG_SUCCESS;
-							}
+							pUIManager->RearrangeOrder( UI_QUIZ, TRUE );
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -1430,14 +1394,14 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 						if( m_abtnQuizItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
 						{
 							// Update selected item
-							m_nSelQuizItemID = iItem;			// ÏÑ†ÌÉùÎêú Ïä¨Î°ØÏùò ÏïÑÏù¥ÌÖú ID
+							m_nSelQuizItemID = iItem;			// º±≈√µ» ΩΩ∑‘¿« æ∆¿Ã≈€ ID
 
 							// Show tool tup
 							ShowItemInfo( TRUE, TRUE, iItem );
 
 							bLButtonDownInItem	= TRUE;
 
-							_pUIMgr->RearrangeOrder( UI_QUIZ, TRUE );
+							pUIManager->RearrangeOrder( UI_QUIZ, TRUE );
 							return WMSG_SUCCESS;
 						}
 					}
@@ -1449,7 +1413,7 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 						m_nCurRow = m_sbScrollBar.GetScrollPos();
 				}				
 
-				_pUIMgr->RearrangeOrder( UI_QUIZ, TRUE );
+				pUIManager->RearrangeOrder( UI_QUIZ, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -1457,10 +1421,12 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			bLButtonDownInItem = FALSE;
 
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if( pUIManager->GetHoldBtn().IsEmpty() )
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -1512,18 +1478,16 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 				// Quiz items
 				else if( IsInsideRect( nX, nY, m_rcTop ) )
 				{
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + QUIZ_USER_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * QUIZ_USER_SLOT_COL;
+					int	iRowE = (iRowS + QUIZ_USER_SLOT_ROW) * QUIZ_USER_SLOT_COL;
+
+					for (i = iRowS; i < iRowE; ++i)
 					{
-						for( iCol = 0; iCol < QUIZ_USER_SLOT_COL; iCol++ )
+						if( m_abtnUserItems[i].MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							if( m_abtnUserItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Nothing
-								return WMSG_SUCCESS;
-							}
+							// Nothing
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -1546,23 +1510,22 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 				if( IsInside( nX, nY ) )
 				{
 					// If holding button is item and is from shop
-					if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_QUIZ )
+					if( pUIManager->GetHoldBtn().GetBtnType() == UBET_ITEM &&
+						pUIManager->GetHoldBtn().GetWhichUI() == UI_QUIZ )
 					{
 						// Trade items
 						if( IsInsideRect( nX, nY, m_rcBottom ) )
 						{
 							// If this item is moved from shop slot
 							if( m_nSelQuizItemID < 0 ||
-								m_abtnQuizItems[m_nSelQuizItemID].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
+								m_abtnQuizItems[m_nSelQuizItemID].GetBtnID() != pUIManager->GetHoldBtn().GetBtnID() )
 							{
-								AddQuizItem( _pUIMgr->GetHoldBtn().GetItemRow(),
-												_pUIMgr->GetHoldBtn().GetItemCol(),
-												_pUIMgr->GetHoldBtn().GetItemUniIndex(),
+								AddQuizItem( pUIManager->GetHoldBtn().GetInvenIndex(),
+												pUIManager->GetHoldBtn().GetItemUniIndex(),
 												1 );
 
 								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 
 								return WMSG_SUCCESS;
 							}
@@ -1570,20 +1533,17 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 						// Quiz items
 						else if( IsInsideRect( nX, nY, m_rcTop ) )
 						{
-							int	nSelRow = m_nSelUserItemID / QUIZ_USER_SLOT_COL;
-							int	nSelCol = m_nSelUserItemID % QUIZ_USER_SLOT_COL;
 							// If this item is moved from trade slot
 							if( m_nSelUserItemID < 0 ||
-								m_abtnUserItems[nSelRow][nSelCol].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
+								m_abtnUserItems[m_nSelUserItemID].GetBtnID() != pUIManager->GetHoldBtn().GetBtnID() )
 							{
-								DelQuizItem( _pUIMgr->GetHoldBtn().GetItemRow(),
-												_pUIMgr->GetHoldBtn().GetItemCol(),
-												_pUIMgr->GetHoldBtn().GetItemUniIndex(),
+								DelQuizItem( pUIManager->GetHoldBtn().GetInvenIndex(),
+												pUIManager->GetHoldBtn().GetItemUniIndex(),
 												1,
 												m_nSelQuizItemID );
 
 								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 
 								return WMSG_SUCCESS;
 							}
@@ -1591,7 +1551,7 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 					} // If - If holding button is item
 
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				} // If - IsInside
@@ -1614,12 +1574,7 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 					{
 						if( m_abtnQuizItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							// Close message box of shop
-							//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_ADD_ITEM );
-							//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_DEL_ITEM );
-
-							DelQuizItem( m_abtnQuizItems[iItem].GetItemRow(),
-											m_abtnQuizItems[iItem].GetItemCol(),
+							DelQuizItem( m_abtnQuizItems[iItem].GetInvenIndex(),
 											m_abtnQuizItems[iItem].GetItemUniIndex(),
 											1,
 											nTradeItemID );
@@ -1636,36 +1591,29 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 				{
 					m_nSelUserItemID = -1;
 
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + QUIZ_USER_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * QUIZ_USER_SLOT_COL;
+					int	iRowE = (iRowS + QUIZ_USER_SLOT_ROW) * QUIZ_USER_SLOT_COL;
+					
+					for (i = iRowS; i < iRowE; ++i)
 					{
-						for( iCol = 0; iCol < QUIZ_USER_SLOT_COL; iCol++ )
-						{
-							if( m_abtnUserItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-							{								
-								// Not wearing, not refine stone, can trade
-								CItems		&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-								CItemData	&rItemData = rItems.ItemData;
-								if( rItems.Item_Wearing == -1 &&
-									( rItemData.GetType() != CItemData::ITEM_ETC || rItemData.GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
-									rItemData.GetFlag() & ITEM_FLAG_TRADE )
-								{
-									// Close message box of shop
-									//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_ADD_ITEM );
-									//_pUIMgr->CloseMessageBox( MSGCMD_QUIZ_DEL_ITEM );
+						if( m_abtnUserItems[i].MouseMessage( pMsg ) != WMSG_FAIL )
+						{								
+							// Not wearing, not refine stone, can trade
+								CItems		*pItems = &_pNetwork->MySlotItem[0][i];
+								CItemData	*pItemData = pItems->ItemData;
+								if( pItems->Item_Wearing == -1 &&
+									( pItemData->GetType() != CItemData::ITEM_ETC || 
+									pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
+									pItemData->GetFlag() & ITEM_FLAG_TRADE )
+							{
+								AddQuizItem( i, m_abtnUserItems[i].GetItemUniIndex(), 1 );
+							}							
 
-									AddQuizItem( iRow, iCol,
-													m_abtnUserItems[iRow][iCol].GetItemUniIndex(),
-													1 );
-								}							
+							// Show tool tup
+							ShowItemInfo( TRUE, TRUE, -1, i );
 
-								// Show tool tup
-								ShowItemInfo( TRUE, TRUE, -1, iRow, iCol );
-
-								return WMSG_SUCCESS;
-							}
+							return WMSG_SUCCESS;
 						}
 					}
 				}				
@@ -1704,7 +1652,7 @@ WMSG_RESULT CUIQuiz::MouseMessage( MSG *pMsg )
 // ========================================================================= //
 static int		nTempIndex;
 static int		nTempUniIndex;
-static int		nTempRow, nTempCol;
+static int		nTempIdx;
 static SQUAD	llTempCount;
 static int		nTempTradeItemID;
 
@@ -1712,17 +1660,14 @@ static int		nTempTradeItemID;
 // Name : AddQuizItem()
 // Desc : From shop to trade
 // ----------------------------------------------------------------------------
-void CUIQuiz::AddQuizItem( int nRow, int nCol, int nUniIndex, SQUAD llCount )
+void CUIQuiz::AddQuizItem( int nIdx, int nUniIndex, SQUAD llCount )
 {
-	nTempRow		= nRow;
-	nTempCol		= nCol;
+	nTempIdx		= nIdx;
 	nTempUniIndex	= nUniIndex;
 	llTempCount		= llCount;
-	nTempIndex		= m_abtnUserItems[nTempRow][nTempCol].GetItemIndex();
-	ULONG ulItemPlus= m_abtnUserItems[nTempRow][nTempCol].GetItemPlus();
+	nTempIndex		= m_abtnUserItems[nTempIdx].GetItemIndex();
+	ULONG ulItemPlus= m_abtnUserItems[nTempIdx].GetItemPlus();
 
-	CItemData&	rItemData = _pNetwork->GetItemData( nTempIndex );
-	const char* szItemName = _pNetwork->GetItemName( nTempIndex );
 	UserToQuiz( llTempCount );	
 }
 
@@ -1730,16 +1675,13 @@ void CUIQuiz::AddQuizItem( int nRow, int nCol, int nUniIndex, SQUAD llCount )
 // Name : DelQuizItem()
 // Desc : From trade to shop
 // ----------------------------------------------------------------------------
-void CUIQuiz::DelQuizItem( int nRow, int nCol, int nUniIndex, SQUAD llCount, int nTradeItemID )
+void CUIQuiz::DelQuizItem( int nIdx, int nUniIndex, SQUAD llCount, int nTradeItemID )
 {
-	nTempRow		= nRow;
-	nTempCol		= nCol;
+	nTempIdx		= nIdx;
 	nTempUniIndex	= nUniIndex;
 	llTempCount		= llCount;
 	nTempTradeItemID= nTradeItemID;
 	nTempIndex		= m_abtnQuizItems[nTempTradeItemID].GetItemIndex();
-
-	CItemData	&rItemData = _pNetwork->GetItemData( nTempIndex );	
 	
 	QuizToUser( llTempCount );	
 }
@@ -1751,7 +1693,8 @@ void CUIQuiz::DelQuizItem( int nRow, int nCol, int nUniIndex, SQUAD llCount, int
 void CUIQuiz::SendBingo()
 {
 	LONG lItemCount = 0;
-	for( int iItem = 0; iItem < QUIZ_QUIZ_SLOT_TOTAL; iItem++ )
+	int iItem;
+	for( iItem = 0; iItem < QUIZ_QUIZ_SLOT_TOTAL; iItem++ )
 	{
 		if( m_abtnQuizItems[iItem].IsEmpty() )
 			continue;
@@ -1780,7 +1723,7 @@ void CUIQuiz::SendBingo()
 //-----------------------------------------------------------------------------
 void CUIQuiz::UserToQuiz( SQUAD llCount )
 {
-	// FIXME : Î≤°ÌÑ∞Î°ú Í≥†Ï≥êÏÑú Ï≤òÎ¶¨ÌïòÎäîÍ≤å Ï¢ãÏßÄ ÏïäÏùÑÍπå???
+	// FIXME : ∫§≈Õ∑Œ ∞Ì√ƒº≠ √≥∏Æ«œ¥¬∞‘ ¡¡¡ˆ æ ¿ª±Ó???
 	BOOL bSatisfied = FALSE;
 	for(int i = 0; i < (sizeof(_aiWordItem) / sizeof(int)); ++i )
 	{
@@ -1793,12 +1736,13 @@ void CUIQuiz::UserToQuiz( SQUAD llCount )
 
 	if( !bSatisfied )
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1215, "ÎÇ±Îßê ÏïÑÏù¥ÌÖúÎßå Îì±Î°ùÌï† Ïàò ÏûàÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+		CUIManager::getSingleton()->GetChatting()->AddSysMessage( _S( 1215, "≥π∏ª æ∆¿Ã≈€∏∏ µÓ∑œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 		return;
 	}
 
 	// Find same item in trade slot
-	for( int iItem = 0; iItem < QUIZ_QUIZ_SLOT_TOTAL; iItem++ )
+	int iItem ;
+	for( iItem = 0; iItem < QUIZ_QUIZ_SLOT_TOTAL; iItem++ )
 	{
 		if( m_abtnQuizItems[iItem].GetItemIndex() == nTempIndex )
 			break;
@@ -1808,8 +1752,8 @@ void CUIQuiz::UserToQuiz( SQUAD llCount )
 	if( iItem < QUIZ_QUIZ_SLOT_TOTAL )
 	{
 		// Check if item is countable
-		CItemData&	rItemData = _pNetwork->GetItemData( nTempIndex );
-		if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
+		CItemData*	pItemData = _pNetwork->GetItemData( nTempIndex );
+		if( pItemData->GetFlag() & ITEM_FLAG_COUNT )
 		{
 			// Update count of trade item
 			SQUAD	llNewCount = m_abtnQuizItems[iItem].GetItemCount();
@@ -1819,15 +1763,15 @@ void CUIQuiz::UserToQuiz( SQUAD llCount )
 			//if( !m_bBuyQuiz )
 			{
 				// Update count of shop item
-				llNewCount = m_abtnUserItems[nTempRow][nTempCol].GetItemCount();
+				llNewCount = m_abtnUserItems[nTempIdx].GetItemCount();
 				llNewCount -= llCount;
-				m_abtnUserItems[nTempRow][nTempCol].SetItemCount( llNewCount );
+				m_abtnUserItems[nTempIdx].SetItemCount( llNewCount );
 				if( llNewCount <= 0 )
 				{
-					m_abtnUserItems[nTempRow][nTempCol].SetEmpty( TRUE );
+					m_abtnUserItems[nTempIdx].SetEmpty( TRUE );
 
 					// Unselect item
-					if( m_nSelUserItemID == ( nTempCol + nTempRow * QUIZ_USER_SLOT_COL ) )
+					if( m_nSelUserItemID == nTempIdx )
 						m_nSelUserItemID = -1;
 				}
 			}
@@ -1846,26 +1790,26 @@ void CUIQuiz::UserToQuiz( SQUAD llCount )
 	if( iItem == QUIZ_QUIZ_SLOT_TOTAL )
 	{
 		// Add system message		
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 1216, "ÏµúÎåÄ 10Í∞úÏùò ÎÇ±ÎßêÏùÑ Îì±Î°ùÌï† Ïàò ÏûàÏäµÎãàÎã§." ), SYSMSG_ERROR );		
+		CUIManager::getSingleton()->GetChatting()->AddSysMessage( _S( 1216, "√÷¥Î 10∞≥¿« ≥π∏ª¿ª µÓ∑œ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );		
 
 		return;
 	}
 
-	m_abtnQuizItems[iItem].SetItemInfo( 0, nTempRow, nTempCol, nTempIndex, nTempUniIndex, -1 );
+	m_abtnQuizItems[iItem].SetItemInfo( 0, nTempIdx, nTempIndex, nTempUniIndex, -1 );
 	m_abtnQuizItems[iItem].SetItemCount( llCount );
 	
 	//if( !m_bBuyQuiz )
 	{												
 		// Update count of shop item
-		SQUAD	llNewCount = m_abtnUserItems[nTempRow][nTempCol].GetItemCount();
+		SQUAD	llNewCount = m_abtnUserItems[nTempIdx].GetItemCount();
 		llNewCount -= llCount;
-		m_abtnUserItems[nTempRow][nTempCol].SetItemCount( llNewCount );
+		m_abtnUserItems[nTempIdx].SetItemCount( llNewCount );
 		if( llNewCount <= 0 )
 		{
-			m_abtnUserItems[nTempRow][nTempCol].SetEmpty( TRUE );
+			m_abtnUserItems[nTempIdx].SetEmpty( TRUE );
 
 			// Unselect item
-			if( m_nSelUserItemID == ( nTempCol + nTempRow * QUIZ_USER_SLOT_COL ) )
+			if( m_nSelUserItemID == nTempIdx )
 				m_nSelUserItemID = -1;
 		}
 	}
@@ -1900,8 +1844,7 @@ void CUIQuiz::QuizToUser( SQUAD llCount )
 			}
 
 			m_abtnQuizItems[iArrItem].SetItemInfo( 0,
-													m_abtnQuizItems[iArrItem + 1].GetItemRow(),
-													m_abtnQuizItems[iArrItem + 1].GetItemCol(),
+													m_abtnQuizItems[iArrItem + 1].GetInvenIndex(),
 													m_abtnQuizItems[iArrItem + 1].GetItemIndex(),
 													m_abtnQuizItems[iArrItem + 1].GetItemUniIndex(),
 													-1 );
@@ -1916,10 +1859,10 @@ void CUIQuiz::QuizToUser( SQUAD llCount )
 	//if( !m_bBuyQuiz )
 	{
 		// Update count of shop item
-		llNewCount = m_abtnUserItems[nTempRow][nTempCol].GetItemCount();
+		llNewCount = m_abtnUserItems[nTempIdx].GetItemCount();
 		llNewCount += llCount;
-		m_abtnUserItems[nTempRow][nTempCol].SetItemCount( llNewCount );
+		m_abtnUserItems[nTempIdx].SetItemCount( llNewCount );
 		if( llNewCount > 0 )
-			m_abtnUserItems[nTempRow][nTempCol].SetEmpty( FALSE );
+			m_abtnUserItems[nTempIdx].SetEmpty( FALSE );
 	}
 }

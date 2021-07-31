@@ -9,13 +9,11 @@
 	#pragma once
 #endif
 
-#include <vector>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIButtonEx.h>
+// #include <vector>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIButtonEx.h>
 
-#define	QUEST_TAB_WIDTH					96
 
-// Define remission slot
 #define	QUEST_SLOT_SX					18
 #define	QUEST_SLOT_SY					56
 #define	QUEST_SLOT_OFFSETY				37
@@ -23,7 +21,6 @@
 #define	QUESTLIST_SLOT_ROW				4
 #define	QUESTLIST_SLOT_ROW_TOTAL		30
 
-// Define text
 #define	QUEST_NAME_CX					122
 #define	QUEST_NAME_SY					58
 #define	QUEST_NEED_RX					184
@@ -34,127 +31,169 @@
 #define	QUEST_TAB_SY					34
 #define	MAX_QUEST_DESC_CHAR				28
 
-// Define text position
 #define	QUEST_TITLE_TEXT_OFFSETX		25
 #define	QUEST_TITLE_TEXT_OFFSETY		5
 
 #define	QUEST_TOP_HEIGHT				339
 #define	QUEST_BOTTOM_HEIGHT				41
 
-// Define size of remission learn
 #define	QUEST_WIDTH						216
 #define	QUEST_HEIGHT					380
 
-// Define max char and line of action informaion 
 #define	QUESTINFO_CHAR_WIDTH			170
 #define	MAX_QUESTINFO_LINE				10
 
-// ÏõîÎìúÏªµÏù¥Î≤§Ìä∏
+// ø˘µÂƒ≈¿Ã∫•∆Æ
 #define WORLDCUP_MAX_COUNTRY 32
 
-// 2009. 05. 27 ÍπÄÏ†ïÎûò
-// ÌÄòÏä§Ìä∏Ïùò Î≤àÌò∏ Íµ¨Î∂ÑÏûê
+enum e24Event
+{
+	EXCH_FIVE,						// ∏¬∞Ì ∏”¥œ ±≥»Ø
+	EXCH_FOUR,						// ∆˜ƒø ∏”¥œ ±≥»Ø 
+	OPEN_TREA,						// ∫∏π∞ ªÛ¿⁄ ø≠±‚
+};
+
 const int ciQuestClassifier			=	1000;
 
 enum eSelectionQuest
 {
 	QUEST_TALK,
 	QUEST_EVENT,
-	QUEST_TREASURE_BOX,				// Î≥¥Î¨º ÏÉÅÏûê.
+	QUEST_TREASURE_BOX,				// ∫∏π∞ ªÛ¿⁄.
 	QUEST_CHANGEWEAPON,
-	QUEST_KILL_BOSS,				// Î∞úÎ°ù Í≤©Ìåå
-	QUEST_SAVE_PRINCESS,			// Í≥µÏ£º Íµ¨Ï∂ú
-	QUEST_AZAKA_RAVINE,				// ÏïÑÏûêÏπ¥ ÌòëÍ≥°
-	QUEST_GATE_OF_DIMENSION,		// Ï∞®ÏõêÏùò Î¨∏
-	QUEST_HARVEST_MOON_DAY_EVENT,	// Ï∂îÏÑùÏù¥Î≤§Ìä∏
-	QUEST_HARVEST_MOON_DAY_EVENT1,	// 2006 Ï∂îÏÑùÏù¥Î≤§Ìä∏(ÏÜ°Ìé∏ ÎßåÎì§Í∏∞)
-	QUEST_HARVEST_MOON_DAY_EVENT2,	// 2006 Ï∂îÏÑùÏù¥Î≤§Ìä∏(Ïò§ÏÉâÏÜ°Ìé∏ Î≥¥ÏÉÅÌíàÍ≥º ÍµêÌôòÌïòÍ∏∞)
-	QUEST_HARVEST_MOON_DAY_EVENT_UPGRADE1,	// 2006 Ï∂îÏÑùÏù¥Î≤§Ìä∏(ÏÜ°Ìé∏ ÎßåÎì§Í∏∞)
-	QUEST_HARVEST_MOON_DAY_EVENT_UPGRADE2,	// 2006 Ï∂îÏÑùÏù¥Î≤§Ìä∏(Ïò§ÏÉâÏÜ°Ìé∏ ÎßåÎì§Í∏∞)
-	QUEST_HARVEST_MOON_DAY_EVENT_GIVE_ITEM,	// Î≥¥ÏÉÅÌíàÏùÑ ÏßÄÍ∏âÎ∞õÎäîÎã§.
+	QUEST_KILL_BOSS,				// πﬂ∑œ ∞›∆ƒ
+	QUEST_SAVE_PRINCESS,			// ∞¯¡÷ ±∏√‚
+	QUEST_AZAKA_RAVINE,				// æ∆¿⁄ƒ´ «˘∞Ó
+	QUEST_GATE_OF_DIMENSION,		// ¬˜ø¯¿« πÆ
+	QUEST_HARVEST_MOON_DAY_EVENT,	// √ﬂºÆ¿Ã∫•∆Æ
+	QUEST_HARVEST_MOON_DAY_EVENT1,	// 2006 √ﬂºÆ¿Ã∫•∆Æ(º€∆Ì ∏∏µÈ±‚)
+	QUEST_HARVEST_MOON_DAY_EVENT2,	// 2006 √ﬂºÆ¿Ã∫•∆Æ(ø¿ªˆº€∆Ì ∫∏ªÛ«∞∞˙ ±≥»Ø«œ±‚)
+	QUEST_HARVEST_MOON_DAY_EVENT_UPGRADE1,	// 2006 √ﬂºÆ¿Ã∫•∆Æ(º€∆Ì ∏∏µÈ±‚)
+	QUEST_HARVEST_MOON_DAY_EVENT_UPGRADE2,	// 2006 √ﬂºÆ¿Ã∫•∆Æ(ø¿ªˆº€∆Ì ∏∏µÈ±‚)
+	QUEST_HARVEST_MOON_DAY_EVENT_GIVE_ITEM,	// ∫∏ªÛ«∞¿ª ¡ˆ±ﬁπﬁ¥¬¥Ÿ.
 	QUEST_RENUAL_EVENT,
 	QUEST_RENUAL_EVENT_OK,
-	QUEST_EXCHANGE_MONEY,			// ÎûúÎîî Ïù¥ÌåêÏÇ¨Ìåê Î®∏Îãà ÍµêÌôò wooss 051031
-	QUEST_OPEN_TREASURE,			// ÎûúÎîî Ïù¥ÌåêÏÇ¨Ìåê Î≥¥Î¨ºÏÉÅÏûê Ïó¥Í∏∞
+	QUEST_EXCHANGE_MONEY,			// ∑£µ ¿Ã∆«ªÁ∆« ∏”¥œ ±≥»Ø wooss 051031
+	QUEST_OPEN_TREASURE,			// ∑£µ ¿Ã∆«ªÁ∆« ∫∏π∞ªÛ¿⁄ ø≠±‚
 	QUEST_CHARACTER_CARD,			// 
-	EVENT_NEWYEAR1,					// 2006 ÍøàÍ≥º Ìù¨Îßù Ïù¥Î≤§Ìä∏
-	EVENT_NEWYEAR2,					// Ïù∏ÎÇ¥Ïùò Ïó¥Îß§ Ïù¥Î≤§Ìä∏ 
+	EVENT_NEWYEAR1,					// 2006 ≤ﬁ∞˙ »Ò∏¡ ¿Ã∫•∆Æ
+	EVENT_NEWYEAR2,					// ¿Œ≥ª¿« ø≠∏≈ ¿Ã∫•∆Æ 
 	EVENT_FIND_FRIEND,
-	EVENT_COUPON ,					// ÏùºÎ≥∏ Ïø†Ìè∞ Ïù¥Î≤§Ìä∏ 
-	EVENT_CONNECT,					// ÏùºÎ≥∏ Ï†ëÏÜçÏûê Ïù¥Î≤§Ìä∏	
+	EVENT_COUPON ,					// ¿œ∫ª ƒÌ∆˘ ¿Ã∫•∆Æ 
+	EVENT_CONNECT,					// ¿œ∫ª ¡¢º”¿⁄ ¿Ã∫•∆Æ	
 
-	EVENT_CLOTHES_EXCHANGE,			// ÏùºÎ≥∏ Ï†ÑÌÜµ ÏùòÏÉÅ ÍµêÌôò
-	EVENT_OX_GOZONE,				// O.XÏù¥Î≤§Ìä∏ Ï°¥ ÏûÖÏû•
+	EVENT_CLOTHES_EXCHANGE,			// ¿œ∫ª ¿¸≈Î ¿«ªÛ ±≥»Ø
+	EVENT_OX_GOZONE,				// O.X¿Ã∫•∆Æ ¡∏ ¿‘¿Â
 
-	PLATINUM_EXCHANGE_STONE,        // ÌîåÎûòÌã∞ÎäÑ Ï†úÎ†®ÏÑù ÍµêÌôò
-	WIN_SELECT,						// Ïö∞ÏäπÍµ≠ ÏïåÏïÑ ÎßûÏ∂îÍ∏∞
-	EVENT_GOLDENBALL,				// Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏	
-	EVENT_OPENBETAITEMGIFT,			// ÎØ∏Íµ≠ Ïù¥Î≤§Ìä∏ Î¨¥Í∏∞ ÏßÄÍ∏â
-	EVENT_NETCAFE_BOX,				// net cafe Ï∫†ÌéòÏù∏
+	PLATINUM_EXCHANGE_STONE,        // «√∑°∆º¥Ω ¡¶∑√ºÆ ±≥»Ø
+	WIN_SELECT,						// øÏΩ¬±π æÀæ∆ ∏¬√ﬂ±‚
+	EVENT_GOLDENBALL,				// ∞ÒµÁ ∫º ¿Ã∫•∆Æ	
+	EVENT_OPENBETAITEMGIFT,			// πÃ±π ¿Ã∫•∆Æ π´±‚ ¡ˆ±ﬁ
+	EVENT_NETCAFE_BOX,				// net cafe ƒ∑∆‰¿Œ
 	EVENT_RAINYDAY,
-	EVENT_BUDDHISM,					// Î∂àÍµê Ï¥õÎ∂à Ï∂ïÏ†ú Ïù¥Î≤§Ìä∏( ÌÉúÍµ≠ )
-	EVENT_COLLECTBUGS,				// Ïó¨Î¶Ñ Í≥§Ï∂© Ï±ÑÏßë Ïù¥Î≤§Ìä∏
-	EVENT_PROMOPACK,				// ÌîÑÎ°úÎ™® Ìå®ÌÇ§ÏßÄ Ïù¥Î≤§Ìä∏ ( ÎßêÎ†àÏÉ§ )
-	EVENT_PROMO_KEY_ENTER,			// ÌîÑÎ°úÎ™® Ìå®ÌÇ§ÏßÄ Ïù∏Ï¶ùÌÇ§ ÏûÖÎ†•
-	
+	EVENT_BUDDHISM,					// ∫“±≥ √–∫“ √‡¡¶ ¿Ã∫•∆Æ( ≈¬±π )
+	EVENT_COLLECTBUGS,				// ø©∏ß ∞Ô√Ê √§¡˝ ¿Ã∫•∆Æ
+	EVENT_MOTHERDAY,					// ≈¬±π æÓ∏”¥œ≥Ø ¿Ã∫•∆Æ
+	EVENT_PROMOPACK,				// «¡∑Œ∏ ∆–≈∞¡ˆ ¿Ã∫•∆Æ ( ∏ª∑πª˛ )
+	EVENT_PROMO_KEY_ENTER,			// «¡∑Œ∏ ∆–≈∞¡ˆ ¿Œ¡ı≈∞ ¿‘∑¬
+
 	EVENT_XMAS_2006,				// 2006 X-MAS Event [12/11/2006 Theodoric]
-	EVENT_LOVE_LOVE,				// 2007Î∞úÎ†åÌÉÄÏù∏'s Îç∞Ïù¥(Îü¨Î∏åÎü¨Î∏å Ïù¥Î≤§Ìä∏)
+	EVENT_LOVE_LOVE,				// 2007πﬂ∑ª≈∏¿Œ's µ•¿Ã(∑Ø∫Í∑Ø∫Í ¿Ã∫•∆Æ)
 	EVENT_WHITEDAY_2007,			// 2007 WhiteDay Event
-	NPC_HELP,						// NPC ÏïàÎÇ¥ ÏãúÏä§ÌÖú
+	NPC_HELP,						// NPC æ»≥ª Ω√Ω∫≈€
 	
 	EVENT_MAY,						// WSS_GUILD_MASTER 070411 -->><<
-	EVENT_MINIGAME,					// WSS_MINIGAE 070420 Í≥∞ÎèåÏù¥ Ïù¥Î≤§Ìä∏
-	EVENT_FLOWERS_SUPPORT,			// ÍΩÉÎÜÄÏù¥ Ïù¥Î≤§Ìä∏ Í∞úÌôî ÎèïÍ∏∞
-	EVENT_SUPPORT_EXCHANGE,			// ÍΩÉÎÜÄÏù¥ Ïù¥Î≤§Ìä∏ Í∏∞Ïó¨ÎèÑÏôÄ ÍµêÌôòÍ∂å
+	EVENT_MINIGAME,					// WSS_MINIGAE 070420 ∞ıµπ¿Ã ¿Ã∫•∆Æ
+	EVENT_FLOWERS_SUPPORT,			// ≤…≥Ó¿Ã ¿Ã∫•∆Æ ∞≥»≠ µΩ±‚
+	EVENT_SUPPORT_EXCHANGE,			// ≤…≥Ó¿Ã ¿Ã∫•∆Æ ±‚ø©µµøÕ ±≥»Ø±«
 	EVENT_SUMMER_2007,				// [070705: Su-won] EVENT_SUMMER_2007
-	SIEGEWARFARE_MASTERTOWER1,		// WSS_DRATAN_SEIGEWARFARE 2007/07/30 // Í∞ÄÎèôÌïòÍ∏∞
-	SIEGEWARFARE_MASTERTOWER2,		// ÌÉÄÏõå Í∞ïÌôîÌïòÍ∏∞ 
-	SIEGEWARFARE_MASTERTOWER3,		// ÏÑ±Î¨∏ Í∞ïÌôîÌïòÍ∏∞
-	SIEGEWARFARE_MASTERTOWER4,		// ÎßàÏä§ÌÑ∞ ÌÉÄÏõå ÏàòÎ¶¨ÌïòÍ∏∞
+	SIEGEWARFARE_MASTERTOWER1,		// WSS_DRATAN_SEIGEWARFARE 2007/07/30 // ∞°µø«œ±‚
+	SIEGEWARFARE_MASTERTOWER2,		// ≈∏øˆ ∞≠»≠«œ±‚ 
+	SIEGEWARFARE_MASTERTOWER3,		// º∫πÆ ∞≠»≠«œ±‚
+	SIEGEWARFARE_MASTERTOWER4,		// ∏∂Ω∫≈Õ ≈∏øˆ ºˆ∏Æ«œ±‚
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// [070708: Su-won] EVENT_ADULT_OPEN
-	EVENT_ADULT_MAGICCARD,					// ÏÑ±Ïù∏ÏÑúÎ≤Ñ Ïò§Ìîà Ïù¥Î≤§Ìä∏(Îß§ÏßÅÏπ¥ÎìúÎ•º Ï∞æÏïÑÎùº!)
-	EVENT_ADULT_CHANGEJOB,					// ÏÑ±Ïù∏ÏÑúÎ≤Ñ Ïò§Ìîà Ïù¥Î≤§Ìä∏(Ï†ÑÏßÅÎã¨ÏÑ±!Ï†àÎßùÏùòÎ∂ÄÏ†ÅÏùÑ Î∞õÏïÑÎùº!)
-	EVENT_ADULT_ALCHEMIST,					// ÏÑ±Ïù∏ÏÑúÎ≤Ñ Ïò§Ìîà Ïù¥Î≤§Ìä∏(Ïû•ÎπÑ Ï°∞Ìï© Ïó∞Í∏àÏà† Ïù¥Î≤§Ìä∏)
-	EVENT_SHOOT,							// ÏÑ±Ïù∏ÏÑúÎ≤Ñ Ïò§Ìîà Ïù¥Î≤§Ìä∏(ÏÑ±Ïù∏Îì§ÎßåÏùò ÌäπÍ∂å)
+	EVENT_ADULT_MAGICCARD,					// º∫¿Œº≠πˆ ø¿«¬ ¿Ã∫•∆Æ(∏≈¡˜ƒ´µÂ∏¶ √£æ∆∂Û!)
+	EVENT_ADULT_CHANGEJOB,					// º∫¿Œº≠πˆ ø¿«¬ ¿Ã∫•∆Æ(¿¸¡˜¥ﬁº∫!¿˝∏¡¿«∫Œ¿˚¿ª πﬁæ∆∂Û!)
+	EVENT_ADULT_ALCHEMIST,					// º∫¿Œº≠πˆ ø¿«¬ ¿Ã∫•∆Æ(¿Â∫Ò ¡∂«’ ø¨±›º˙ ¿Ã∫•∆Æ)
+	EVENT_SHOOT,							// º∫¿Œº≠πˆ ø¿«¬ ¿Ã∫•∆Æ(º∫¿ŒµÈ∏∏¿« ∆Ø±«)
 	// [070708: Su-won] EVENT_ADULT_OPEN
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
-	EVENT_BJMONO_2007_REQ,					// SK BJ MONO ÏùëÎ™®Í∂å Î∞õÍ∏∞
-	EVENT_BJMONO_2007_CHANGE_REQ,			// SK BJ MONO ÏùëÎ™®Í∂å ÍµêÌôò
+	EVENT_BJMONO_2007_REQ,					// SK BJ MONO ¿¿∏±« πﬁ±‚
+	EVENT_BJMONO_2007_CHANGE_REQ,			// SK BJ MONO ¿¿∏±« ±≥»Ø
 	
-	EVENT_TG2007_1000DAYS_CAP,				// ÎùºÏä§Ìä∏Ïπ¥Ïò§Ïä§ 1000Ïùº Í∏∞ÎÖêÎ™®Ïûê Î∞õÍ∏∞
-	EVENT_TG2007_1000DAYS_CAP_UPGRADE,		// Í∏∞ÎÖêÎ™®Ïûê ÏóÖÍ∑∏Î†àÏù¥Îìú
-	EVENT_TG2007_1000DAYS_FIRECRACKER,		// Ìè≠Ï£Ω Î∞õÍ∏∞ Ïù¥Î≤§Ìä∏
-	EVENT_TG2007_FRUITFULL,					// ÌíçÎÖÑÏù¥Î≤§Ìä∏  	
-	EVENT_TG2007_SCREENSHOT,				// Ïä§ÌÅ¨Î¶∞ÏÉ∑ Ïù¥Î≤§Ìä∏
+	EVENT_TG2007_1000DAYS_CAP,				// ∂ÛΩ∫∆Æƒ´ø¿Ω∫ 1000¿œ ±‚≥‰∏¿⁄ πﬁ±‚
+	EVENT_TG2007_1000DAYS_CAP_UPGRADE,		// ±‚≥‰∏¿⁄ æ˜±◊∑π¿ÃµÂ
+	EVENT_TG2007_1000DAYS_FIRECRACKER,		// ∆¯¡◊ πﬁ±‚ ¿Ã∫•∆Æ
+	EVENT_TG2007_FRUITFULL,					// «≥≥‚¿Ã∫•∆Æ  	
+	EVENT_TG2007_SCREENSHOT,				// Ω∫≈©∏∞º¶ ¿Ã∫•∆Æ
 	
-	EVENT_HALLOWEEN2007_DEVILHAIR,			// ÏïÖÎßàÎÇ†Í∞ú Î®∏Î¶¨Îù† ÏßÄÍ∏â Î∞õÍ∏∞
-	EVENT_HALLOWEEN2007_CANDYBASKET,		// ÏÇ¨ÌÉïÎ∞îÍµ¨ÎãàÏóê ÏÇ¨ÌÉï Î∞õÍ∏∞
-	EVENT_HALLOWEEN2007_PUMKINHEAD,			// Ìò∏Î∞ïÎ®∏Î¶¨ ÌÉà ÍµêÌôò Î∞õÍ∏∞
-	EVENT_HALLOWEEN2007_WITCHHAT,			// ÎßàÎÖÄÎ™®Ïûê ÍµêÌôò Î∞õÍ∏∞
-	EVENT_HALLOWEEN2007_PUMKIN,				// Ìò∏Î∞ïÍµêÌôò Î∞õÍ∏∞
+	EVENT_HALLOWEEN2007_DEVILHAIR,			// æ«∏∂≥Ø∞≥ ∏”∏Æ∂Ï ¡ˆ±ﬁ πﬁ±‚
+	EVENT_HALLOWEEN2007_CANDYBASKET,		// ªÁ≈¡πŸ±∏¥œø° ªÁ≈¡ πﬁ±‚
+	EVENT_HALLOWEEN2007_PUMKINHEAD,			// »£π⁄∏”∏Æ ≈ª ±≥»Ø πﬁ±‚
+	EVENT_HALLOWEEN2007_WITCHHAT,			// ∏∂≥‡∏¿⁄ ±≥»Ø πﬁ±‚
+	EVENT_HALLOWEEN2007_PUMKIN,				// »£π⁄±≥»Ø πﬁ±‚
 	
-	// 071129_ttos: ÌåêÎß§ ÎåÄÌñâÌòëÌöå ÌöåÏû•
-	CASH_PERSONSHOP_CLOSE,					// ÏïÑÏù¥ÌÖú ÌåêÎß§ ÎåÄÌñâ Ï¢ÖÎ£å
-	CASH_PERSONSHOP_ITEM,					// Î≥¥Í¥ÄÎêú Î¨ºÌíà ÌöåÏàò
-	CASH_PERSONSHOP_NAS,					// Î≥¥Í¥ÄÎêú ÎÇòÏä§ ÌöåÏàò
+	// 071129_ttos: ∆«∏≈ ¥Î«‡«˘»∏ »∏¿Â
+	CASH_PERSONSHOP_CLOSE,					// æ∆¿Ã≈€ ∆«∏≈ ¥Î«‡ ¡æ∑·
+	CASH_PERSONSHOP_ITEM,					// ∫∏∞¸µ» π∞«∞ »∏ºˆ
+	CASH_PERSONSHOP_NAS,					// ∫∏∞¸µ» ≥™Ω∫ »∏ºˆ
 
-	EVENT_XMAS2007_DECO,					// ÌÅ¨Î¶¨Ïä§ÎßàÏä§Ìä∏Î¶¨ Ïû•ÏãùÌïòÍ∏∞
-	EVENT_XMAS2007_BLESSEDNESS,				// ÌÅ¨Î¶¨Ïä§ÎßàÏä§ Ï∂ïÎ≥µ Î∞õÍ∏∞
+	EVENT_XMAS2007_DECO,					// ≈©∏ÆΩ∫∏∂Ω∫∆Æ∏Æ ¿ÂΩƒ«œ±‚
+	EVENT_XMAS2007_BLESSEDNESS,				// ≈©∏ÆΩ∫∏∂Ω∫ √‡∫π πﬁ±‚
 
-	EVENT_RED_TREASUREBOX,					//Î∂âÏùÄÏÉâ Î≥¥Î¨ºÏÉÅÏûê Ïù¥Î≤§Ìä∏
+	EVENT_RED_TREASUREBOX,					//∫”¿∫ªˆ ∫∏π∞ªÛ¿⁄ ¿Ã∫•∆Æ
 
-	EVENT_SAKURA_2008,						//2008ÎÖÑ Î≤öÍΩÉ Ïù¥Î≤§Ìä∏
+	EVENT_SAKURA_2008,						//2008≥‚ ∫¢≤… ¿Ã∫•∆Æ
 
-	EVENT_CHAOSBALL,						//Ïπ¥Ïò§Ïä§Î≥º Ïù¥Î≤§Ìä∏
+	EVENT_CHAOSBALL,						//ƒ´ø¿Ω∫∫º ¿Ã∫•∆Æ
 
-	EVENT_PHOENIX_REQ,							//ÌîºÎãâÏä§ Ïù¥Î≤§Ìä∏
-
-	USE_AUCTION,
+	EVENT_PHOENIX_REQ,							//««¥–Ω∫ ¿Ã∫•∆Æ
 	
-	EVENT_HANAPOS_SK_EVENT,					//[ttos_2009_3_18]: ÌïòÎÇòÌè¨Ïä§ Î∞è SKÎ∏åÎ°úÎìúÎ∞¥Îìú Í∞ÄÏûÖÏûê Ïù¥Î≤§Ìä∏
+	EVENT_HANAPOS_SK_EVENT,					//[ttos_2009_3_18]: «œ≥™∆˜Ω∫ π◊ SK∫Í∑ŒµÂπÍµÂ ∞°¿‘¿⁄ ¿Ã∫•∆Æ
+	
+	MIDLEVEL_SUPPORT_REQ,					// ¡ﬂ¿˙∑π∫ß ¡ˆø¯ªÁ Ω∫≈≥ ø‰√ª
+	
+	EVENT_REQUITAL_1,						//[ttos_2009_4_13]: º≠πˆ ø¿∑˘ ∫∏ªÛ¿Ã∫•∆Æ
+	EVENT_REQUITAL_2,						//[ttos_2009_4_13]: √‚ºÆ √º≈© ∫∏ªÛ
+	EVENT_ADD_UP_NEW_AFRON,					// æ∆«¡∑– , ∫Ì∏ÆΩ∫ º≠πˆ ≈Î«’¿Ã∫•∆Æ±‚≥‰«∞ ¡ˆ±ﬁ(æ∆«¡∑– ¥ŸøÓ)
+	
+	QUEST_RESTORE_ITEM,						// [100208: selo] ƒ˘Ω∫∆Æ æ∆¿Ã≈€ ¥ŸΩ√ πﬁ±‚
+	
+	EVENT_WOLRDCUP_2010_EVENT2,				// ($E_WC2010) [100514: selo] 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event2 ¿¿∏, «ˆ»≤
+	EVENT_WOLRDCUP_2010_EVENT2_STATUS,		// ($E_WC2010) [100524: selo] 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event2 «ˆ»≤
+	EVENT_WOLRDCUP_2010_EVENT2_GIFT,		// ($E_WC2010) [100517: selo] 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event2 «ˆ»≤, ∫∏ªÛ
+	EVENT_WOLRDCUP_2010_EVENT3,				// ($E_WC2010) [100514: selo] 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event3 ∏≈¿œ ∏≈¿œ ¿¿ø¯«œ±‚
+
+	ATTENDANT_DATE_REQ,						// [7/2/2010 kiny8216] √‚ºÆ Ω√Ω∫≈€ (ø¨º” √‚ºÆ¿œ ø‰√ª)
+	DUNGEON_DIFFICULTY_NORMAL,				// æ∆ƒ≠ªÁø¯ Normal
+	DUNGEON_DIFFICULTY_HARD,				// æ∆ƒ≠ªÁø¯ Hard
+	EVENT_TEMP,								// ¥‹πﬂº∫ ¿Ã∫•∆Æ øÎ(100907 æ∆ƒ≠ ªÁø¯ ¿Ã∫•∆Æ)
+	
+	REGISTER_MERCHANT,						// [2010/08/25 : Sora] ADD_SUBJOB ªÛ¿Œ µÓ∑œ
+
+	EVENT_PROMOTION2,						// [10/6/2010 kiny8216] ƒÌ∆˘ «¡∑Œ∏º« ¿Ã∫•∆Æ
+
+	EVENT_ATTENDANCE_2011,					// [2011/01/18 : Sora] √‚ºÆ ¿Ã∫•∆Æ
+
+	EVENT_COMEBACK,							// »ﬁ∏È ∞Ë¡§ ∫∏ªÛ ¿Ã∫•∆Æ
+
+	EVENT_BIRTHDAY_GIFT,					// ª˝¿œ ¿Ã∫•∆Æ : º±π∞ ø‰√ª
+	EVENT_BIRTHDAY_INFO,					// ª˝¿œ ¿Ã∫•∆Æ : ª˝¿œ ¡§∫∏ ø‰√ª
+
+	EVENT_TREASURE_MAP,						// ∫∏π∞√£±‚ ¿Ã∫•∆Æ¿« [≥™π´]∫∏π∞ ø≠ºË ±≥»Ø ø‰√ª
+
+	EVENT_LOI_KRATHONG,						// ≈¬±π ≈©∂Û≈Î ¿Ã∫•∆Æ ¿Á∑·æ∆¿Ã≈€ ±≥»Ø ø‰√ª
+
+	EVENT_KB_EXCHAGE_HEART,					// [2011/11/14 : Sora] ≈¬±π ±πø’ ≈∫ª˝¿œ ¿Ã∫•∆Æ º±π∞ªÛ¿⁄ ±≥»Ø
+	EVENT_KB_EXCHAGE_FLAG,					// [2011/11/14 : Sora] ≈¬±π ±πø’ ≈∫ª˝¿œ ¿Ã∫•∆Æ ¿Ã∫•∆Æ¿«ªÛ ±≥»Ø
+
+	EVENT_SONGKRAN,							// º€≈©∂ı ¿Ã∫•∆Æ.
+
+	SYNDICATE_JEWEL_GIVE,
+	SYNDICATE_SECESSION,
 };
 
 enum eEvent
@@ -176,18 +215,21 @@ enum eEvent
 	EVENT_MAY_PARENTS,
 	EVENT_MAY_MASTER,
 
+	EVENT_WORLDCUP_2010_EVENT2_SEL1,		// ($E_WC2010) [100514: selo] øÏΩ¬ ±π∞° ¿¿∏	
+	EVENT_WORLDCUP_2010_EVENT2_SEL2,		// ($E_WC2010) [100514: selo] ≥ª ¿¿∏ «ˆ»≤
+	EVENT_WORLDCUP_2010_EVENT2_SEL3,		// ($E_WC2010) [100517: selo] ¥Á√∑ ∫∏ªÛ πﬁ±‚
+
+	EVENT_WORLDCUP_2010_EVENT3_SEL1,		// ($E_WC2010) [100518: selo] ¿¿ø¯ƒ´µÂ πﬁ±‚
+	EVENT_WORLDCUP_2010_EVENT3_SEL2,		// ($E_WC2010) [100518: selo] ∏≈¿œ∏≈¿œ ¿¿ø¯ ∫∏ªÛ πﬁ±‚
+	EVENT_WORLDCUP_2010_EVENT3_GIFT1,		// ($E_WC2010) [100518: selo] ∞·Ω¬ ±‚ø¯ ªÛ¿⁄ πﬁ±‚
+	EVENT_WORLDCUP_2010_EVENT3_GIFT2,		// ($E_WC2010) [100518: selo] 4∞≠ ±‚ø¯ ªÛ¿⁄ πﬁ±‚
+	EVENT_WORLDCUP_2010_EVENT3_GIFT3,		// ($E_WC2010) [100518: selo] 8∞≠ ±‚ø¯ ªÛ¿⁄ πﬁ±‚
+	EVENT_WORLDCUP_2010_EVENT3_GIFT4,		// ($E_WC2010) [100518: selo] 16∞≠ ±‚ø¯ ªÛ¿⁄ πﬁ±‚
 };
 
-// ------------------------------------------------------------<<
-
-// ----------------------------------------------------------------------------
-// Name : CUIQuest
-// Desc :
-// ----------------------------------------------------------------------------
 class CUIQuest : public CUIWindow
 {
 protected:
-	// ÏÑúÎ≤Ñ.
 	struct sQuestList
 	{		
 		INDEX	iQuestIndex;
@@ -248,6 +290,7 @@ protected:
 
 	// FIXME : 
 	int						m_iNpcIndex;
+	int						m_iNpcVirIdx;
 	int						m_iCurQuestIndex;
 	BOOL					m_bLockQuest;
 
@@ -255,14 +298,18 @@ protected:
 	std::vector<sQuestList>		m_vectorQuestList;
 
 	// Event save data
-	CTString				m_strTeamA, m_strTeamB;			// Í≥®Îì† Î≥º Ïù¥Î≤§Ìä∏ Ïö©
+	CTString				m_strTeamA, m_strTeamB;			// ∞ÒµÁ ∫º ¿Ã∫•∆Æ øÎ
 	int						m_ScoreTeamA, m_ScoreTeamB;		
 	SYSTEMTIME				m_GoldenEndTime;
-	BOOL					m_bGoldenBallEntry;				// ÏùëÎ™® Í∞ÄÎä•
-	BOOL					m_bGoldenBallRequital;			// Î≥¥ÏÉÅ Í∞ÄÎä•
+	BOOL					m_bGoldenBallEntry;				// ¿¿∏ ∞°¥…
+	BOOL					m_bGoldenBallRequital;			// ∫∏ªÛ ∞°¥…
 	BOOL					m_bStartGoldenBall;
 	CTString				m_strCountry[WORLDCUP_MAX_COUNTRY];
+	std::map<INDEX, BYTE>	m_mapNationFlag;				// ($E_WC2010) [100517: selo] ±π±‚ æ∆¿Ã≈€ »Æ¿ŒøÎ(map¿Ã ∞Àªˆø°º≠ ∫¸∏£¥Ÿ)
 	
+	// [2011/02/09 : Sora]	ƒ˘Ω∫∆Ææ∆¿Ã≈€ ¥ŸΩ√ πﬁ±‚
+	int						m_restoreQuestIndex;
+	SLONG					m_restoreQuestItemIndex;
 protected:
 	// Internal functions	
 	void	RenderQuestBtns();
@@ -287,44 +334,32 @@ public:
 	// Render
 	void	Render();
 
-	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
-	// Open remission learn
-	ENGINE_API void	OpenQuest( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ );
-	ENGINE_API void	OpenQuest( int iMobIndex, FLOAT fX, FLOAT fZ );
-
-	// Messages
+	ENGINE_API void	OpenQuest( int iMobIndex, int iMobVirIdx, BOOL bHasQuest, FLOAT fX, FLOAT fZ );
+	
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
-	// Command functions
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 	void	MsgBoxLCommand( int nCommandCode, int nResult );
 
-	// Network message functions ( receive )	
 	void	QuestError( UBYTE ubError );
 
-	// Init & Close
 	BOOL	InitQuest( );
 	void	CloseQuest();
 
-	// Add & Clear Quest List
 	void	AddToQuestList(INDEX iQuestIndex, SBYTE sbQuestFlag);
 	void	ClearQuestList();
 
 	void	LockQuest(BOOL bLock);
 	void	SetCurQuest(int iQuestIndex) { m_iCurQuestIndex = iQuestIndex; }
-	
-	// Get npc_pos 
-	// ÏÉùÏÑ±Îêú Ï∞ΩÏùÑ ÏßÄÏõåÏ£ºÍ∏∞ ÏúÑÌï¥ UIManagerÏóêÏÑú Ï≤òÎ¶¨ÌïúÎã§ 
+
 	int 	GetNpcPosX(){ return m_fNpcX;}
 	int		GetNpcPosZ(){ return m_fNpcZ;}
 	
 	int		GetNpcIndex(){ return m_iNpcIndex; }
-	
-	// event data function
-	//------------- Í≥®Îì†Î≥º Ïù¥Î≤§Ìä∏ Ïö©-----------//
+
 	void	SetStrTeamName( CTString strTeamA, CTString strTeamB, SYSTEMTIME GoldenEndTime, BOOL bFlag )
 	{ 
 		m_strTeamA = strTeamA; m_strTeamB = strTeamB;
@@ -348,8 +383,13 @@ public:
 	int			GetScoreTeamB( void ) { return m_ScoreTeamB; }
 
 	SYSTEMTIME	GetGoldenTime( void ) { return m_GoldenEndTime; }
-	//-----------------------------------------//
 
+	void	CreateMessageBox_WorldCup2010_Event2( INDEX nType );
+	void	InitNationFlag();
+	BOOL	IsNationFlag(INDEX nItemIndex)
+	{
+		return m_mapNationFlag.find(nItemIndex) == m_mapNationFlag.end() ? FALSE : TRUE;
+	}
 };
 
 

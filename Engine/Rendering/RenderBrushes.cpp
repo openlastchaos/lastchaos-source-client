@@ -224,7 +224,7 @@ void CRenderer::PrepareBrush(CEntity *penBrush)
 	if( brBrush.br_lnInActiveBrushes.IsLinked()) return;
 
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
 	/*
 	extern INDEX gfx_bRenderReflection;
 	if(gfx_bRenderReflection)
@@ -233,7 +233,7 @@ void CRenderer::PrepareBrush(CEntity *penBrush)
 			return;
 	}
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 	
 	brBrush.br_ulFlags&=~BRF_DRAWFIRSTMIP;
 

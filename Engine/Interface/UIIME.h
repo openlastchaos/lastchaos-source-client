@@ -1,6 +1,6 @@
 
 
-// ì´ê¸°í™˜ ìµœì´ˆ ì‘ì„± ( 2004. 11. 11 ) 
+// ÀÌ±âÈ¯ ÃÖÃÊ ÀÛ¼º ( 2004. 11. 11 ) 
 
 #ifndef _UIIME_H_
 #define _UIIME_H_
@@ -26,7 +26,7 @@ struct CCandList
 	int		nReadingError;						// Index of the error character
     bool	bShowWindow;						// Whether the candidate list window is visible
     RECT	rcCandidate;						// Candidate rectangle computed and filled each time before rendered
-	bool	bVerticalCand;						// ê°€ë¡œ í˜•íƒœì˜ Candidate			
+	bool	bVerticalCand;						// °¡·Î ÇüÅÂÀÇ Candidate			
 
 	CCandList ()
 	{
@@ -55,11 +55,11 @@ struct CCandList
 
 // extern 
 extern HKL			_hKL;				// keyboard Layout
-extern DWORD		_dwLocalLanguage;	// ì§€ì—­ ì–¸ì–´ ( ì»´íŒŒì¼ì‹œ ì§€ì—­ë³„ë¡œ í•˜ë“œ ì½”ë”© )
+extern DWORD		_dwLocalLanguage;	// Áö¿ª ¾ğ¾î ( ÄÄÆÄÀÏ½Ã Áö¿ªº°·Î ÇÏµå ÄÚµù )
 extern BOOL			_bIMEProc;
 
 
-// ì–¸ì–´ ì¢…ë¥˜ ë° ë²„ì ¼ ì„¤ì •
+// ¾ğ¾î Á¾·ù ¹× ¹öÁ¯ ¼³Á¤
 #define LANG_CHT            MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL)
 #define LANG_CHS            MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED)
 
@@ -70,9 +70,8 @@ inline DWORD GetLanguage ()		{ return LOWORD( _hKL ); }
 void SetEngMode ( HWND hWnd );
 
 char*	GetNationName ( DWORD dwNations );
-bool	CheckInputLocal ();
 
-// IME ì–¸ì–´ ë³„ ì¢…ë¥˜ ë° ë²„ì ¼
+// IME ¾ğ¾î º° Á¾·ù ¹× ¹öÁ¯
 #define LANG_CHT            MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL)
 #define LANG_CHS            MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED)
 #define _CHT_HKL            ( (HKL)(INT_PTR)0xE0080404 ) // New Phonetic
@@ -84,4 +83,4 @@ bool	CheckInputLocal ();
 
 #endif // _UIIME_H_
 
-// ì´ê¸°í™˜ ì‘ì„± ë ( 2004. 11. 11 )
+// ÀÌ±âÈ¯ ÀÛ¼º ³¡ ( 2004. 11. 11 )

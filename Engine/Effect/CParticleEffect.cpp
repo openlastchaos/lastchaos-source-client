@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "StdH.h"
 
 #include <Engine/Math/Functions.h>
@@ -35,7 +35,7 @@ CParticleEffect::~CParticleEffect()
 
 BOOL CParticleEffect::SetParticleGroup(std::string name)
 {
-	//ì´ë¯¸ ìžˆìœ¼ë©´ ë½€ê°œê³  ì´ˆê¸°í™”.
+	//ÀÌ¹Ì ÀÖÀ¸¸é »Ç°³°í ÃÊ±âÈ­.
 	if(!m_strParticleGroupName.empty() && m_pParticleGroup != NULL)
 	{
 		CParticleGroupManager::Instance().Destroy(m_pParticleGroup);
@@ -68,9 +68,9 @@ CEffect *CParticleEffect::Copy()
 {
 	CParticleEffect *pRet = new CParticleEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CParticleEffectì˜ content
+	//CParticleEffectÀÇ content
 	pRet->SetParticleGroup(m_strParticleGroupName);
 	pRet->m_eRotation =	 m_eRotation;
 	return pRet;
@@ -150,7 +150,7 @@ BOOL CParticleEffect::Process(FLOAT time)
 	}
 	if(m_bOnlyStart)
 	{
-		if(m_ptrAttachTag->GetType() == TT_GROUP && ((CGroupTag*)m_ptrAttachTag.GetNative())->Count())
+		if(m_ptrAttachTag->GetType() == TT_GROUP && ((CGroupTag*)m_ptrAttachTag.GetNative())->Count() > 1)
 		{
 			ptr_tag tag0 = ((CGroupTag*)m_ptrAttachTag.GetNative())->GetTag(0);
 			ptr_tag tag1 = ((CGroupTag*)m_ptrAttachTag.GetNative())->GetTag(1);
@@ -159,7 +159,10 @@ BOOL CParticleEffect::Process(FLOAT time)
 			if(tag0->GetName().at(2) == '0') m_ptrTag = tag0;
 			else m_ptrTag = tag1;
 		}
-		else m_ptrTag = m_ptrAttachTag;
+		else 
+		{
+			m_ptrTag = m_ptrAttachTag;
+		}
 	}
 	m_ptrAttachTag = m_ptrTag;
 
@@ -206,13 +209,13 @@ void CParticleEffect::Render()
 	}
 
 	if (GetOwner() != NULL)
-	{ // HIDDEN ì†ì„±ì˜ NPCì˜ ì´íŽ™íŠ¸ë¥¼ ë³´ê¸° ìœ„í•´ì„œëŠ” ìºë¦­í„°ê°€ ENF_SHOWHIDDENì„ ê°€ì§€ê³  ìžˆì–´ì•¼ í•œë‹¤.
+	{ // HIDDEN ¼Ó¼ºÀÇ NPCÀÇ ÀÌÆåÆ®¸¦ º¸±â À§ÇØ¼­´Â Ä³¸¯ÅÍ°¡ ENF_SHOWHIDDENÀ» °¡Áö°í ÀÖ¾î¾ß ÇÑ´Ù.
 		if (GetOwner()->IsFlagOn(ENF_HIDDEN) && (CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npc effectëŠ” ë³¼ ìˆ˜ ìžˆë‹¤.
+			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc effect´Â º¼ ¼ö ÀÖ´Ù.
 			return;
 	}	
 
-	//ë Œë”ë§ 
+	//·»´õ¸µ 
 	m_pParticleGroup->Render();
 
 	PostRender();
@@ -264,4 +267,4 @@ void CParticleEffect::Write(CTStream *pOS)
 	os << (DWORD)m_eRotation;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

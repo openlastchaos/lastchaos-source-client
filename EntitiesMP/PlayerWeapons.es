@@ -10,7 +10,8 @@
 // [KH_070420] 심플 팝업 관련 추가
 #include <Engine/Interface/UISimplePop.h>
 #include <Engine/GlobalDefinition.h>
-
+#include <Engine/Network/Web.h>
+#include <Engine/Help/Util_Help.h>
 
 #include "EntitiesMP/Player.h"
 #include "EntitiesMP/Bullet.h"
@@ -74,11 +75,11 @@
 #include "ModelsMP/Player/SeriousSam/Body.h"
 #include "ModelsMP/Player/SeriousSam/Player.h"
 
+ENGINE_API extern cWeb g_web;
 extern INDEX hud_bShowWeapon;
 
 extern const INDEX aiWeaponsRemap[19] = { 0,  1,  10,  2,  3,  4,  5,  6,  7,
                                           8,  9,  11, 13, 12, 14, 15, 16, 17, 18 };
-
 %}
 
 uses "EntitiesMP/Player";
@@ -926,7 +927,7 @@ BOOL CheckCharacterMove(CCastRay crRay)
 	BOOL bMoveCheck = TRUE;	
 				
 	// 싱글던전은 체크 제외 시킴(클라이언트 자체 충돌 체크 하므로)
-	if ( ZoneInfo().GetZoneType( g_slZone ) != ZONE_SDUNGEON )
+	if ( CZoneInfo::getSingleton()->GetZoneType( g_slZone ) != ZONE_SDUNGEON )
 	{
 		// TODO : 터레인 체크 추가要	
 		
@@ -1515,9 +1516,16 @@ void PlayAttackSound(CSoundObject &so, int what_sound, SLONG slPlayType){
   // Render Crosshair
   void RenderCrosshair( CProjection3D &prProjection, CDrawPort *pdp, CPlacement3D &plViewSource)
   {
+	  CUIManager* pUIManager = SE_Get_UIManagerPtr();
+
     INDEX iCrossHair = GetPlayer()->GetSettings()->ps_iCrossHairType+1;
 
-	if(_pUIMgr->IsMouseInsideUIs())
+	if(pUIManager->IsMouseInsideUIs() || g_web.GetWebHandle())
+	{
+		return;
+	}
+
+	if (pUIManager->getCursorInGame() == false)
 	{
 		return;
 	}
@@ -1527,56 +1535,45 @@ void PlayAttackSound(CSoundObject &so, int what_sound, SLONG slPlayType){
 	// FIXME : 이쪽도 좀 깔끔하게 정리할것...
 	if( GetPlayer()->m_bWaitForSkillTarget)
 	{
-		_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_ATT_SKILL);
+		pUIManager->GetMouseCursor()->SetCursorType(UMCT_ATT_SKILL);
 	}
 	else if(pEntity!=NULL && pEntity->GetFlags()&ENF_ITEM)
-	{	
-		_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_PICK);
+	{
+		pUIManager->GetMouseCursor()->SetCursorType(UMCT_PICK);
 	}
 	else if(pEntity!=NULL && pEntity->GetFlags()&ENF_ALIVE)
 	{
 		if(pEntity->IsFirstExtraFlagOn(ENF_EX1_NPC))
 		{
-			_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_TALK);
+			pUIManager->GetMouseCursor()->SetCursorType(UMCT_TALK);
 		}
 		else if(pEntity->IsFirstExtraFlagOn(ENF_EX1_PRODUCTION))
 		{
-			_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_PRODUCE);
+			pUIManager->GetMouseCursor()->SetCursorType(UMCT_PRODUCE);
+		}
+		else if (pEntity->IsFirstExtraFlagOn(ENF_EX1_CLICK_OBJECT))
+		{ // 오브젝트(ModelHolder3) 클릭.. 그냥 Talk
+			pUIManager->GetMouseCursor()->SetCursorType(UMCT_TALK);
 		}
 		else
 		{
 			const BOOL bAttack = GetPlayer()->CheckAttackTarget( -1, pEntity, 0.0f );
 			if( bAttack )
 			{
-				if(GetPlayer()->en_pcCharacter.pc_iPlayerType==HEALER)
-				{
-					if( !_pNetwork->MyCharacterInfo.bExtension )
-					{
-						_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_ATT_BOW);
-					}
-					else
-					{
-						_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_ATT_MAGIC);
-					}
-				}
-				else if(GetPlayer()->en_pcCharacter.pc_iPlayerType == MAGE)
-				{
-					_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_ATT_MAGIC);
-				}
-				else
-				{
-					_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_ATT_NORMAL);
-				}
+				INDEX pc_Type = GetPlayer()->en_pcCharacter.pc_iPlayerType;
+				BOOL bExtension = _pNetwork->MyCharacterInfo.bExtension;
+				UIMCType cursorType = SE_Get_UtilHelpPtr()->GetPlayerAttackCursor(pc_Type, bExtension);
+				pUIManager->GetMouseCursor()->SetCursorType(cursorType);
 			}
 			else
 			{
-				_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_TALK);				
+				pUIManager->GetMouseCursor()->SetCursorType(UMCT_TALK);				
 			}
 		}
 	}
 	else
 	{
-		_pUIMgr->GetMouseCursor()->SetCursorType(UMCT_NORMAL);		
+		pUIManager->GetMouseCursor()->SetCursorType(UMCT_NORMAL);		
 	}	
 
 //0312 kwon
@@ -1833,7 +1830,7 @@ CPlacement3D GetMouseHitInformation( POINT point, CAnyProjection3D  prProjection
 }
 //..
 */
-CPlacement3D GetMouseHitInformation( POINT point, CAnyProjection3D  prProjection , BOOL bClick)
+CPlacement3D GetMouseHitInformation( POINT point, CAnyProjection3D  prProjection, UINT& nStartTime, BOOL bClick)
 {
 	
  // CAnyProjection3D prProjection;
@@ -1889,13 +1886,31 @@ CPlacement3D GetMouseHitInformation( POINT point, CAnyProjection3D  prProjection
 				{
 					CPlayer &pl = (CPlayer&)*m_penPlayer;
 					CEntity *penEnt = m_penRayHitTmp;
-					if(penEnt != NULL && penEnt->GetFlags()&ENF_ALIVE)
+// WSS_WALLMOVE_BUGFIX 070612
+					BOOL m_bMoveCheck = TRUE;
+
+					if (m_penRayHitTmp != NULL)
 					{
-						pl.m_vDesiredPosition  = penEnt->en_plPlacement.pl_PositionVector;
+						if( m_penRayHitTmp->GetRenderType() == RT_BRUSH
+							|| m_penRayHitTmp->GetRenderType() == RT_FIELDBRUSH
+							&& m_bPickConditionOk)
+						{
+							m_bMoveCheck = CheckCharacterMove(crRay);
+						}
 					}
-					else
+
+					if(m_bMoveCheck)
 					{
-						pl.m_vDesiredPosition  = FLOAT3D(crRay.cr_vHit(1),crRay.cr_vHit(2),crRay.cr_vHit(3));
+						if(penEnt != NULL && penEnt->GetFlags()&ENF_ALIVE)
+						{
+							pl.m_vDesiredPosition  = penEnt->en_plPlacement.pl_PositionVector;
+						}
+						else
+						{
+							pl.m_vDesiredPosition  = FLOAT3D(crRay.cr_vHit(1),crRay.cr_vHit(2),crRay.cr_vHit(3));
+						}
+
+						nStartTime = 0;
 					}
 				}
 			}
@@ -1940,18 +1955,7 @@ CPlacement3D GetMouseHitInformation( POINT point, CAnyProjection3D  prProjection
 		}
 		if(crRay.cr_penHit->GetFlags()&ENF_ALIVE || crRay.cr_penHit->IsCharacter())//1209 시체도 찍히게..
 		{
-			m_penReservedTarget = crRay.cr_penHit;				
-// [KH_070419] 심플 팝업 관련 추가 : 나중에 수원씨가 추가
-/*			if(crRay.cr_penHit->IsCharacter() && _pInput->IsRMousePressed())
-			{
-				CPlayer &pl = (CPlayer&)*m_penPlayer;
-				CEntity *penEnt = crRay.cr_penHit;
-				
-				_pUIMgr->GetSimplePop()->OpenPop(crRay.cr_penHit->GetName(),
-					( _pUIMgr->GetParty()->GetMemberCount() > 0 && _pUIMgr->GetParty()->AmILeader() ) ? TRUE : FALSE,	// 파티장이면 TRUE
-					_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS ? TRUE : FALSE,						// 내가 길드장일때만 TRUE
-					_pInput->inp_ptMousePos.x, _pInput->inp_ptMousePos.y);
-			} */
+			m_penReservedTarget = crRay.cr_penHit;
 		}
 		else //이동해야지...
 		{
@@ -1978,10 +1982,10 @@ CPlacement3D GetMouseHitInformation( POINT point, CAnyProjection3D  prProjection
 	//전사의 축복일 경우 타켓팅하지 않음...
 	if( m_penRayHitNow )
 	{
-		if( m_penRayHitNow->GetName() == _pNetwork->GetMobName(310) ||
-			m_penRayHitNow->GetName() == _pNetwork->GetMobName(311) ||
-			m_penRayHitNow->GetName() == _pNetwork->GetMobName(312) ||
-			m_penRayHitNow->GetName() == _pNetwork->GetMobName(313) )
+		if( m_penRayHitNow->GetName() == CMobData::getData(310)->GetName() ||
+			m_penRayHitNow->GetName() == CMobData::getData(311)->GetName() ||
+			m_penRayHitNow->GetName() == CMobData::getData(312)->GetName() ||
+			m_penRayHitNow->GetName() == CMobData::getData(313)->GetName() )
 		{
 			m_penRayHitNow =NULL;
 			//m_penReservedTarget =NULL;
@@ -2038,6 +2042,14 @@ CPlacement3D GetMouseHitInformationReserve( POINT point, CAnyProjection3D  prPro
 			{
 				if(bReserve)
 				{
+// WSS_WALLMOVE_BUGFIX 070612									
+					BOOL m_bMoveCheck = TRUE;
+					m_bMoveCheck = CheckCharacterMove(crRay);
+					if(!m_bMoveCheck)
+					{
+						((CPlayer&)*m_penPlayer).m_bReserveMove = FALSE;								
+						return plRay;								
+					}
 					m_vRayHitReserve = crRay.cr_vHit;	
 					m_penRayHitReserve = crRay.cr_penHit;
 					m_fRayHitDistanceReserve = crRay.cr_fHitDistance; 
@@ -4035,6 +4047,103 @@ CPlacement3D GetMouseHitInformationReserve( POINT point, CAnyProjection3D  prPro
   */
 
 procedures:
+  /*
+   *  >>>---   M  A  I  N   ---<<<
+   */
+  Main(EWeaponsInit eInit) {
+    // remember the initial parameters
+    ASSERT((CEntity*)eInit.eidOwner!=NULL);
+    m_penPlayer = eInit.eidOwner;
+    m_iPlayerID = ((CEntity*)m_penPlayer)->en_ulID;
+
+    // declare yourself as a void
+    InitAsVoid();
+    SetFlags(GetFlags()|ENF_CROSSESLEVELS|ENF_NOTIFYLEVELCHANGE);
+    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+    SetCollisionFlags(ECF_IMMATERIAL);
+    SetFlagOn(ENF_CLIENTHANDLING);
+
+    // set weapon model for current weapon
+    //SetCurrentWeaponModel();
+
+    // play default anim
+    PlayDefaultAnim();    
+
+    wait() {
+      on (EBegin) : { call Idle(); }
+      // select weapon - send the event through the network
+      on (ESelectWeapon eSelect) : 
+	  {
+        if (_pNetwork->IsServer()) {
+          SelectWeaponChange(eSelect.iWeapon);
+          if (m_bChangeWeapon) {
+            ENetSelectWeapon eNetSelect;
+            eNetSelect.iWeapon = m_iWantedWeapon;
+            SendEvent(eNetSelect,TRUE);
+          }
+        }
+        resume;
+      }
+      // select weapon
+      on (ENetSelectWeapon eNetSelect) : {
+	  /* //0610 kwon 삭제.
+        m_tmWeaponChangeRequired = ((CPlayerEntity*)(CEntity*)m_penPlayer)->en_tmEntityTime;
+        m_iWantedWeapon = (WeaponType) eNetSelect.iWeapon;
+        m_bChangeWeapon = TRUE;
+        if (!(_pNetwork->IsServer())) {
+          call ChangeWeapon();
+        }
+        */
+        // try to change weapon
+        //SelectWeaponChange(eNetSelect.iWeapon);
+        resume;
+      }
+      // before level change
+      on (EPreLevelChange) : { 
+        // stop everything
+        m_bFireWeapon = FALSE;
+        call Stopped();
+        resume;
+      }
+      on (EFireWeapon) : {
+        if (_pNetwork->IsServer()) {
+          SendEvent(ENetFireWeapon(),TRUE);
+        }
+        resume;
+      }
+      on (ENetFireWeapon) : {
+        // start firing
+        m_bFireWeapon = TRUE;
+        resume;
+      }
+
+      on (EReleaseWeapon) : {
+        // stop firing
+        SendEvent(ENetReleaseWeapon(),TRUE);
+        resume;
+      }
+      on (ENetReleaseWeapon) : {
+        m_bFireWeapon = FALSE;
+        resume;
+      }
+       // reload pressed
+      on (EReloadWeapon) : {
+        SendEvent(ENetReloadWeapon(),TRUE);
+        resume;
+      }
+      on (ENetReloadWeapon) : {
+        m_bReloadWeapon = TRUE;
+        resume;
+      }
+      on (EStop) : { call Stopped(); }
+      on (EEnd) : { stop; }
+    }
+
+    // cease to exist
+    Destroy(FALSE);
+    return;
+  };
+
   /*
    *  >>>---   WEAPON CHANGE PROCEDURE  ---<<<
    */
@@ -6034,103 +6143,4 @@ procedures:
       otherwise() : { resume; };
     }
   }
-
-
-
-  /*
-   *  >>>---   M  A  I  N   ---<<<
-   */
-  Main(EWeaponsInit eInit) {
-    // remember the initial parameters
-    ASSERT((CEntity*)eInit.eidOwner!=NULL);
-    m_penPlayer = eInit.eidOwner;
-    m_iPlayerID = ((CEntity*)m_penPlayer)->en_ulID;
-
-    // declare yourself as a void
-    InitAsVoid();
-    SetFlags(GetFlags()|ENF_CROSSESLEVELS|ENF_NOTIFYLEVELCHANGE);
-    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-    SetCollisionFlags(ECF_IMMATERIAL);
-    SetFlagOn(ENF_CLIENTHANDLING);
-
-    // set weapon model for current weapon
-    //SetCurrentWeaponModel();
-
-    // play default anim
-    PlayDefaultAnim();    
-
-    wait() {
-      on (EBegin) : { call Idle(); }
-      // select weapon - send the event through the network
-      on (ESelectWeapon eSelect) : 
-	  {
-        if (_pNetwork->IsServer()) {
-          SelectWeaponChange(eSelect.iWeapon);
-          if (m_bChangeWeapon) {
-            ENetSelectWeapon eNetSelect;
-            eNetSelect.iWeapon = m_iWantedWeapon;
-            SendEvent(eNetSelect,TRUE);
-          }
-        }
-        resume;
-      }
-      // select weapon
-      on (ENetSelectWeapon eNetSelect) : {
-	  /* //0610 kwon 삭제.
-        m_tmWeaponChangeRequired = ((CPlayerEntity*)(CEntity*)m_penPlayer)->en_tmEntityTime;
-        m_iWantedWeapon = (WeaponType) eNetSelect.iWeapon;
-        m_bChangeWeapon = TRUE;
-        if (!(_pNetwork->IsServer())) {
-          call ChangeWeapon();
-        }
-        */
-        // try to change weapon
-        //SelectWeaponChange(eNetSelect.iWeapon);
-        resume;
-      }
-      // before level change
-      on (EPreLevelChange) : { 
-        // stop everything
-        m_bFireWeapon = FALSE;
-        call Stopped();
-        resume;
-      }
-      on (EFireWeapon) : {
-        if (_pNetwork->IsServer()) {
-          SendEvent(ENetFireWeapon(),TRUE);
-        }
-        resume;
-      }
-      on (ENetFireWeapon) : {
-        // start firing
-        m_bFireWeapon = TRUE;
-        resume;
-      }
-
-      on (EReleaseWeapon) : {
-        // stop firing
-        SendEvent(ENetReleaseWeapon(),TRUE);
-        resume;
-      }
-      on (ENetReleaseWeapon) : {
-        m_bFireWeapon = FALSE;
-        resume;
-      }
-       // reload pressed
-      on (EReloadWeapon) : {
-        SendEvent(ENetReloadWeapon(),TRUE);
-        resume;
-      }
-      on (ENetReloadWeapon) : {
-        m_bReloadWeapon = TRUE;
-        resume;
-      }
-      on (EStop) : { call Stopped(); }
-      on (EEnd) : { stop; }
-    }
-
-    // cease to exist
-    Destroy(FALSE);
-    return;
-  };
 };

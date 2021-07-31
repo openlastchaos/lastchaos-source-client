@@ -68,6 +68,16 @@ enum AnimatorAction {
 #define FLARE_ADD 2
 
 //#define	WEAPON	3
+#ifdef CHAR_EX_ROGUE	// [2012/08/27 : Sora] EX로그 추가
+	const BOOL charEXRogue = TRUE;
+#else
+	const BOOL charEXRogue = FALSE;
+#endif
+#ifdef CHAR_EX_MAGE	//2013/01/08 jeil EX메이지 추가 
+	const BOOL charEXMage = TRUE;
+#else
+	const BOOL charEXMage = FALSE;
+#endif
 
 extern FLOAT plr_fBreathingStrength;
 extern FLOAT plr_fViewDampFactor;
@@ -1047,22 +1057,37 @@ functions:
   void WalkAnim()
   {
 	CPlayer &pl = (CPlayer&)*m_penPlayer;
-	if(!_pNetwork->pMyCurrentWearing[WEAR_WEAPON])	
+	if (_pNetwork->MyWearItem[WEAR_WEAPON].IsEmptyItem() == TRUE)	
 	{
 		if(pl.m_bRide)
 		{
-			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			if(pl.m_bWildRide)
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				if( pl.m_nWildPetType == 2 )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+				}
+			}
+			else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}			
+		}
+		else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+		{// 날고 있는 중
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_MOVE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 		}
 		else
 		{
-			SetWholeAnimation(idPlayerWhole_Animation[ANIM_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 		}
 	}
 	else
@@ -1071,36 +1096,66 @@ functions:
 		{
 			if(pl.m_bRide)
 			{
-				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				if(pl.m_bWildRide)
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					if( pl.m_nWildPetType == 2 )
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+					}
+					else
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+					}
+				}
+				else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 				}
 				else
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 				}				
+			}
+			else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+			{// 날고 있는 중
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_MOVE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_WALK_2], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_WALK_2], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 		}
 		else
 		{
 			if(pl.m_bRide)
 			{
-				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				if(pl.m_bWildRide)
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					if( pl.m_nWildPetType == 2 )
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+					}
+					else
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+					}
+				}
+				else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 				}
 				else
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 				}				
+			}
+			else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+			{// 날고 있는 중
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_MOVE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_WALK_2], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_WALK_2], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 		}
 	}
@@ -1109,22 +1164,37 @@ functions:
   void RunAnim(float fRunSpeedMul)
   {
 	CPlayer &pl = (CPlayer&)*m_penPlayer;
-	if( !_pNetwork->pMyCurrentWearing[WEAR_WEAPON] )					
+	if (_pNetwork->MyWearItem[WEAR_WEAPON].IsEmptyItem() == TRUE)
 	{
 		if( pl.m_bRide )
 		{
-			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			if(pl.m_bWildRide)
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+				if( pl.m_nWildPetType == 2 )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+				}
+			}
+			else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 			}			
+		}
+		else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+		{// 날고 있는 중
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_MOVE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, TRUE);
 		}
 		else
 		{
-			SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 		}
 	}
 	else
@@ -1133,37 +1203,67 @@ functions:
 		{
 			if( pl.m_bRide )
 			{
-				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				if(pl.m_bWildRide)
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+					if( pl.m_nWildPetType == 2 )
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+					}
+					else
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+					}
+				}
+				else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 				}
 				else
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 				}
+			}
+			else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+			{// 날고 있는 중
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_MOVE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, TRUE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_2], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_2], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 			}
 		}
 		else
 		{
 			if( pl.m_bRide )
 			{
-				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				if(pl.m_bWildRide)
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+					if( pl.m_nWildPetType == 2 )
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+					}
+					else
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+					}
+				}
+				else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 				}
 				else
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 				}			
 				
 			}
+			else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+			{// 날고 있는 중
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_MOVE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, TRUE);
+			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_RUN_2], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_RUN_2], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul, TRUE);
 			}
 		}
 	}								
@@ -1176,18 +1276,29 @@ functions:
 	{
 		if( pl.m_bRide )
 		{
-			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			if(pl.m_bWildRide)
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_PICK], AN_NORESTART, 0.2f, 1.0f);
+				if( pl.m_nWildPetType == 2 )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_PICK], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_PICK], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+				}
+			}
+			else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_PICK], AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_PICK], AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_PICK], AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}		
 		}
 		else
 		{
-			SetWholeAnimation(idPlayerWhole_Animation[ANIM_PICK], AN_NORESTART, 0.2f, 1.0f);
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_PICK], AN_NORESTART, 0.2f, 1.0f, FALSE);
 		}
 	}
 	// 로그 및 전직...
@@ -1195,18 +1306,29 @@ functions:
 	{
 		if( pl.m_bRide )
 		{
-			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			if(pl.m_bWildRide)
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_PICK], AN_NORESTART, 0.2f, 1.0f);
+				if( pl.m_nWildPetType == 2 )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_PICK], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_PICK], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+				}
+			}
+			else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_PICK], AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_PICK], AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_PICK], AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}			
 		}
 		else
 		{
-			SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_PICK], AN_NORESTART, 0.2f, 1.0f);
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_PICK], AN_NORESTART, 0.2f, 1.0f, FALSE);
 		}
 	}
   };
@@ -1214,63 +1336,116 @@ functions:
   void IdleAnim()
   {
 	CPlayer &pl = (CPlayer&)*m_penPlayer;
-	if( _pNetwork->pMyCurrentWearing[WEAR_WEAPON] )
-	{						
-		pl.DeleteWearingWeapon(TRUE);
+	if (_pNetwork->MyWearItem[WEAR_WEAPON].IsEmptyItem() == FALSE)
+	{
+		if (!(_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING))
+		{
+			pl.DeleteWearingWeapon(TRUE, FALSE);
+		}
+
 		if( !_pNetwork->MyCharacterInfo.bExtension || pl.m_bMobChange )
 		{
 			if(pl.m_bRide)
 			{
-				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				if(pl.m_bWildRide)
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					if( pl.m_nWildPetType == 2 )
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+					}
+					else
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+					}
+				}
+				else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 				}
 				else
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 				}
+			}
+			else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+			{// 날고 있는 중
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_READY], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 		}
 		else
 		{
 			if(pl.m_bRide)
 			{
-				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				if(pl.m_bWildRide)
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					if( pl.m_nWildPetType == 2 )
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+					}
+					else
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+					}
+				}
+				else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 				}
 				else
 				{
-					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 				}
+			}
+			else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+			{// 날고 있는 중
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_READY], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 			}
 		}
 	}
 	else
 	{
-		pl.DeleteWearingWeapon(TRUE);
+		if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+		{
+			pl.DeleteWearingWeapon(TRUE, FALSE);
+		}
+
 		if(pl.m_bRide)
 		{
-			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			if(pl.m_bWildRide)
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				if( pl.m_nWildPetType == 2 )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+				}
+			}
+			else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 			}						
+		}
+		else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+		{// 날고 있는 중
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_READY], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 		}
 		else
 		{
-			SetWholeAnimation(idPlayerWhole_Animation[ANIM_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 		}
 	}
   };
@@ -1282,36 +1457,66 @@ functions:
 	{
 		if(pl.m_bRide)
 		{
-			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			if(pl.m_bWildRide)
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+				if( pl.m_nWildPetType == 2 )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_DAMAGE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_DAMAGE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+				}
+			}
+			else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_DAMAGE], AN_NORESTART, 0.2f, 1.0f,FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_DAMAGE], AN_NORESTART, 0.2f, 1.0f,FALSE);
 			}						
+		}
+		else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+		{// 날고 있는 중
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_READY], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 		}
 		else
 		{
-			SetWholeAnimation(idPlayerWhole_Animation[ANIM_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_DAMAGE], AN_NORESTART, 0.2f, 1.0f,FALSE);
 		}
 	}
 	else
 	{
 		if(pl.m_bRide)
 		{
-			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			if(pl.m_bWildRide)
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+				if( pl.m_nWildPetType == 2 )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_DAMAGE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_DAMAGE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+				}
+			}
+			else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_DAMAGE], AN_NORESTART, 0.2f, 1.0f,FALSE);
 			}
 			else
 			{
-				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_DAMAGE], AN_NORESTART, 0.2f, 1.0f,FALSE);
 			}
 		}
+		else if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+		{// 날고 있는 중
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_FLYING_READY], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
+		}		
 		else
 		{
-			SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_DAMAGE], AN_NORESTART, 0.2f, 1.0f,FALSE);
 		}
 	}
   };
@@ -1353,8 +1558,9 @@ functions:
 					extern FLOAT _fAttackLengthMul;
 					extern FLOAT _fAttackSpeedMul;
 
-					int Speed = _pNetwork->MyCharacterInfo.attackspeed;
 					CPlayer &pl = (CPlayer&)*m_penPlayer;
+					// [100107: selo] MyCharacterInfo.attackspeed 대치
+					int Speed = pl.GetAttackspeed();
 
 					// 해당하는 에너미가 권좌라면... 공속 1.2초
 					if( pl.m_penAttackingEnemy != NULL )
@@ -1369,16 +1575,57 @@ functions:
 							}
 						}
 					}
-
 					CModelInstance* pMI = GetPlayer()->GetModelInstance();
-					float fLength		= pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1]) * 10;
-					
-					if( _pNetwork->pMyCurrentWearing[WEAR_WEAPON] && _pNetwork->MyCharacterInfo.bExtension )
-					{
-						fLength = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1]) * 10;
-					}					
 
-					_fAttackSpeedMul	= (float)fLength / Speed;
+					// 공격 타입을 결정한 랜덤 변수
+					// frandom : 0.33, 0.66...
+					float frandom = FRnd();
+					INDEX iPlayingAni_AttackType = -1; // -1은 동작중인것이 없는것
+					INDEX iRandom_AttackType = 0;
+					FLOAT fPlayingAniTime[4];
+					INDEX AcessNum = ANIM_ATTACK_1;
+					INDEX i;
+
+					// 어쩔수 없다.
+					if (_pNetwork->MyCharacterInfo.bExtension)
+					{
+						fPlayingAniTime[0] = m_fExtAttack1AnimTime;
+						fPlayingAniTime[1] = m_fExtAttack2AnimTime;
+						fPlayingAniTime[2] = m_fExtAttack3AnimTime;
+						fPlayingAniTime[3] = m_fExtAttack4AnimTime;
+						AcessNum = ANIM_EXT_ATTACK_1;
+					}
+					else
+					{
+						fPlayingAniTime[0] = m_fAttack1AnimTime;
+						fPlayingAniTime[1] = m_fAttack2AnimTime;
+						fPlayingAniTime[2] = m_fAttack3AnimTime;
+						fPlayingAniTime[3] = m_fAttack4AnimTime;
+					}
+					
+					// 현재 플레이 중인 공격애니메이션 검색
+					// AttackType 과 ExtendAttackType을 구분하여 처리(전직 하셨소?)
+					for (i=0; i<4; ++i)
+					{
+						if (pMI->IsAnimationPlaying(idPlayerWhole_Animation[AcessNum+i]))
+						{ // 동작중인 애니메이션을 찾았다.
+							iPlayingAni_AttackType = AcessNum+i;
+							iRandom_AttackType = i;
+							break;
+						}
+					}
+
+					// 여기까지 iPlayingAni_AttackType에 동작중인 애니메이션이 결정되었다.
+
+					float fLength = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1]) * 10.0f;
+					
+					if( _pNetwork->MyWearItem[WEAR_WEAPON].IsEmptyItem() == FALSE && 
+						_pNetwork->MyCharacterInfo.bExtension )
+					{
+						fLength = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1]) * 10.0f;
+					}
+
+					_fAttackSpeedMul	= 1.0f / (fLength / Speed);
 					_fAttackLengthMul	= (float)Speed / fLength;
 					
 ///////////////////////////////////////////////////////////////
@@ -1388,361 +1635,195 @@ functions:
 						iJob == KNIGHT || 
 						iJob == MAGE || 
 						iJob == ROGUE ||
-						iJob == SORCERER )//0722
+						iJob == SORCERER ||
+						iJob == NIGHTSHADOW||
+						IsEXRogue(iJob)|| //0722	// [2012/08/27 : Sora] EX로그 추가
+						IsEXMage(iJob))	//2013/01/08 jeil EX메이지 추가 
 					{
-						//0611 kwon 추가.
-//						extern FLOAT _fAttackLengthMul;//1009
-//						extern FLOAT _fAttackSpeedMul;
-					
 						CModelInstance* pMI = GetPlayer()->GetModelInstance();
 						ASSERT( pMI != NULL && "Invalid Model Instance!" );
-
-						float frandom = FRnd();
 						
-						// FIXME : 무슨 루틴인지 파악이 안됨.
-						// FIXME : 아래 코드는 매우 많이 정리가 필요한 부분.
-						if( !_pNetwork->MyCharacterInfo.bExtension )
-						{
-							if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_1])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_3])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_4])
-								&& (m_fAttack2AnimTime != 0.0f) && (m_fAttack2AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+						// FIXME : 일단 나름 정리 하였다.
+						if (iPlayingAni_AttackType == -1 && !GetPlayer()->m_bLockMove)
+						{ // 동작중인것이 없을때
+							if (_pNetwork->MyCharacterInfo.bExtension)
 							{
-								//attack1이 애니메이션중이 아니고, attack2가 실행중인데 끝났다면...
-								if(frandom < 0.33f)
-								{
-									m_fAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1])*_fAttackLengthMul;//0.8f;//1009
-									m_fAttack2AnimTime = 0.0f;
-									m_fAttack3AnimTime = 0.0f;
-									m_fAttack4AnimTime = 0.0f;
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = 0.0f;
-									m_fAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_3])*_fAttackLengthMul;							
-									m_fAttack4AnimTime = 0.0f;					
-								}								
-								else
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = 0.0f;					
-									m_fAttack3AnimTime = 0.0f;					
-									m_fAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_4])*_fAttackLengthMul;			
-								}
-								startTime = _pTimer->CurrentTick();
+								m_fExtAttack1AnimTime = 0.0f;
+								m_fExtAttack2AnimTime = 0.0f;
+								m_fExtAttack3AnimTime = 0.0f;
+								m_fExtAttack4AnimTime = 0.0f;
 							}
-							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_2]) 
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_3])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_4])
-								&& (m_fAttack1AnimTime != 0.0f) &&(m_fAttack1AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+							else
 							{
-								if(frandom < 0.33f)
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_2])*_fAttackLengthMul;
-									m_fAttack3AnimTime = 0.0f;					
-									m_fAttack4AnimTime = 0.0f;					
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = 0.0f;
-									m_fAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_3])*_fAttackLengthMul;							
-									m_fAttack4AnimTime = 0.0f;					
-								}								
-								else
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = 0.0f;					
-									m_fAttack3AnimTime = 0.0f;					
-									m_fAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_4])*_fAttackLengthMul;			
-								}
-								
-								startTime = _pTimer->CurrentTick();							
-							}
-							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_1]) 
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_2])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_4])
-								&& (m_fAttack3AnimTime != 0.0f) &&(m_fAttack3AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
-							{
-								if(frandom < 0.33f)
-								{
-									m_fAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1])*_fAttackLengthMul;				
-									m_fAttack2AnimTime = 0.0f;	
-									m_fAttack3AnimTime = 0.0f;					
-									m_fAttack4AnimTime = 0.0f;					
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_2])*_fAttackLengthMul;				
-									m_fAttack3AnimTime = 0.0f;							
-									m_fAttack4AnimTime = 0.0f;					
-								}								
-								else
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = 0.0f;					
-									m_fAttack3AnimTime = 0.0f;					
-									m_fAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_4])*_fAttackLengthMul;			
-								}
-							
-								startTime = _pTimer->CurrentTick();							
-							}
-							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_1]) 
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_2])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_3])
-								&& (m_fAttack4AnimTime != 0.0f) &&(m_fAttack4AnimTime-0.1f < _pTimer->CurrentTick() - startTime) && !GetPlayer()->m_bLockMove)
-							{
-								if(frandom < 0.33f)
-								{
-									m_fAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1])*_fAttackLengthMul;				
-									m_fAttack2AnimTime = 0.0f;	
-									m_fAttack3AnimTime = 0.0f;					
-									m_fAttack4AnimTime = 0.0f;					
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_2])*_fAttackLengthMul;				
-									m_fAttack3AnimTime = 0.0f;							
-									m_fAttack4AnimTime = 0.0f;					
-								}								
-								else
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = 0.0f;					
-									m_fAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_3])*_fAttackLengthMul;								
-									m_fAttack4AnimTime = 0.0f;
-								}							
-								startTime = _pTimer->CurrentTick();							
-							}
-							else if( m_fAttack1AnimTime == -1.0f && m_fAttack2AnimTime == -1.0f && m_fAttack3AnimTime == -1.0f && m_fAttack4AnimTime == -1.0f )
-							{
-								if(frandom < 0.33f)
-								{
-									m_fAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1])*_fAttackLengthMul;
-									m_fAttack2AnimTime = 0.0f;	
-									m_fAttack3AnimTime = 0.0f;					
-									m_fAttack4AnimTime = 0.0f;					
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_2])*_fAttackLengthMul;				
-									m_fAttack3AnimTime = 0.0f;
-									m_fAttack4AnimTime = 0.0f;
-								}								
-								else
-								{
-									m_fAttack1AnimTime = 0.0f;
-									m_fAttack2AnimTime = 0.0f;					
-									m_fAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_3])*_fAttackLengthMul;								
-									m_fAttack4AnimTime = 0.0f;
-								}								
-								startTime = _pTimer->CurrentTick();							
+								m_fAttack1AnimTime = 0.0f;
+								m_fAttack2AnimTime = 0.0f;
+								m_fAttack3AnimTime = 0.0f;
+								m_fAttack4AnimTime = 0.0f;
 							}
 
-							if(m_fAttack1AnimTime != 0.0f)
+							if (frandom < 0.25f) { iRandom_AttackType = 0; }
+							else if (frandom < 0.50f) { iRandom_AttackType = 1; }
+							else if (frandom < 0.75f) { iRandom_AttackType = 2; }
+							else { iRandom_AttackType = 3; }
+
+							FLOAT fLength = pMI->GetAnimLength(idPlayerWhole_Animation[AcessNum+iRandom_AttackType]) * 10.0f;
+							_fAttackSpeedMul	= 1.0f / (fLength / Speed);
+							_fAttackLengthMul	= Speed / fLength;
+							FLOAT tmpAniTime = fLength * _fAttackLengthMul;
+
+							switch(iRandom_AttackType)
 							{
-								SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_1],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);//1009
-							}
-							else if(m_fAttack2AnimTime != 0.0f)
-							{
-								SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_2],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
-							}															
-							else if(m_fAttack3AnimTime != 0.0f)
-							{
-								SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_3],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
-							}		
-							else if(m_fAttack4AnimTime != 0.0f)
-							{
-								SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_4],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							case 0:
+								{
+									if (_pNetwork->MyCharacterInfo.bExtension) {
+										m_fExtAttack1AnimTime = tmpAniTime;
+									} else {
+										m_fAttack1AnimTime = tmpAniTime;
+									}
+								}
+								break;
+							case 1:
+								{
+									if (_pNetwork->MyCharacterInfo.bExtension) {
+										m_fExtAttack2AnimTime = tmpAniTime;
+									} else {
+										m_fAttack2AnimTime = tmpAniTime;
+									}
+								}
+								break;
+							case 2:
+								{
+									if (_pNetwork->MyCharacterInfo.bExtension) {
+										m_fExtAttack3AnimTime = tmpAniTime;
+									} else {
+										m_fAttack3AnimTime = tmpAniTime;
+									}
+								}
+								break;
+							case 3:
+								{
+									if (_pNetwork->MyCharacterInfo.bExtension) {
+										m_fExtAttack4AnimTime = tmpAniTime;
+									} else {
+										m_fAttack4AnimTime = tmpAniTime;
+									}
+								}
+								break;
 							}
 						}
-						else
-						{						
-							if( !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])
-								&& (m_fExtAttack2AnimTime != 0.0f) && (m_fExtAttack2AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+						else if (iPlayingAni_AttackType >= 0 && // 동작중인 애니메이션이 있고
+							fPlayingAniTime[iRandom_AttackType] > 0.0f && // 시간이 남았고,
+							(fPlayingAniTime[iRandom_AttackType] - 0.1f < _pTimer->CurrentTick() - startTime) &&// 끝나갈때
+							!GetPlayer()->m_bLockMove)
+						{
+							if (_pNetwork->MyCharacterInfo.bExtension)
 							{
-								//attack1이 애니메이션중이 아니고, attack2가 실행중인데 끝났다면...
-								if(frandom < 0.33f)
-								{
-									m_fExtAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])*_fAttackLengthMul;//0.8f;//1009
-									m_fExtAttack2AnimTime = 0.0f;
-									m_fExtAttack3AnimTime = 0.0f;
-									m_fExtAttack4AnimTime = 0.0f;
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = 0.0f;
-									m_fExtAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])*_fAttackLengthMul;							
-									m_fExtAttack4AnimTime = 0.0f;					
-								}								
-								else
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = 0.0f;					
-									m_fExtAttack3AnimTime = 0.0f;					
-									m_fExtAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])*_fAttackLengthMul;			
-								}
-								startTime = _pTimer->CurrentTick();
+								m_fExtAttack1AnimTime = 0.0f;
+								m_fExtAttack2AnimTime = 0.0f;
+								m_fExtAttack3AnimTime = 0.0f;
+								m_fExtAttack4AnimTime = 0.0f;
 							}
-							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2]) 
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])
-								&& (m_fExtAttack1AnimTime != 0.0f) &&(m_fExtAttack1AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+							else
 							{
-								if(frandom < 0.33f)
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])*_fAttackLengthMul;
-									m_fExtAttack3AnimTime = 0.0f;					
-									m_fExtAttack4AnimTime = 0.0f;					
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = 0.0f;
-									m_fExtAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])*_fAttackLengthMul;
-									m_fExtAttack4AnimTime = 0.0f;					
-								}								
-								else
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = 0.0f;
-									m_fExtAttack3AnimTime = 0.0f;
-									m_fExtAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])*_fAttackLengthMul;
-								}
-								
-								startTime = _pTimer->CurrentTick();							
+								m_fAttack1AnimTime = 0.0f;
+								m_fAttack2AnimTime = 0.0f;
+								m_fAttack3AnimTime = 0.0f;
+								m_fAttack4AnimTime = 0.0f;
 							}
-							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1]) 
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])
-								&& (m_fExtAttack3AnimTime != 0.0f) &&(m_fExtAttack3AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
-							{
-								if(frandom < 0.33f)
-								{
-									m_fExtAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])*_fAttackLengthMul;				
-									m_fExtAttack2AnimTime = 0.0f;
-									m_fExtAttack3AnimTime = 0.0f;
-									m_fExtAttack4AnimTime = 0.0f;
+						
+							if (frandom < 0.33f) { // 0번? 
+								if (iRandom_AttackType != 0) {
+									iRandom_AttackType = 0;
+								} else { // 이미 ANIM_ATTACK1를 하고있었다면
+									iRandom_AttackType = 1;
 								}
-								else if(frandom < 0.66f)
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])*_fAttackLengthMul;				
-									m_fExtAttack3AnimTime = 0.0f;
-									m_fExtAttack4AnimTime = 0.0f;
+							} else if (frandom < 0.66f) {
+								if (iRandom_AttackType != 1) {
+									iRandom_AttackType = 1;
+								} else { // 이미 ANIM_ATTACK2를 하고있었다면
+									iRandom_AttackType = 2;
 								}
-								else
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = 0.0f;
-									m_fExtAttack3AnimTime = 0.0f;
-									m_fExtAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])*_fAttackLengthMul;
+							} else {
+								if (iRandom_AttackType != 2) {
+									iRandom_AttackType = 2;
+								} else { // 이미 ANIM_ATTACK3를 하고있었다면
+									iRandom_AttackType = 3;
 								}
-							
-								startTime = _pTimer->CurrentTick();
-							}
-							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2]) 
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])
-								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])
-								&& (m_fExtAttack4AnimTime != 0.0f) &&(m_fExtAttack4AnimTime-0.1f < _pTimer->CurrentTick() - startTime) && !GetPlayer()->m_bLockMove)
-							{
-								if(frandom < 0.33f)
-								{
-									m_fExtAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])*_fAttackLengthMul;
-									m_fExtAttack2AnimTime = 0.0f;	
-									m_fExtAttack3AnimTime = 0.0f;					
-									m_fExtAttack4AnimTime = 0.0f;					
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])*_fAttackLengthMul;
-									m_fExtAttack3AnimTime = 0.0f;
-									m_fExtAttack4AnimTime = 0.0f;
-								}								
-								else
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = 0.0f;					
-									m_fExtAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])*_fAttackLengthMul;
-									m_fExtAttack4AnimTime = 0.0f;
-								}							
-								startTime = _pTimer->CurrentTick();							
-							}
-							else if( m_fExtAttack1AnimTime == -1.0f && m_fExtAttack2AnimTime == -1.0f && m_fExtAttack3AnimTime == -1.0f && m_fExtAttack4AnimTime == -1.0f )
-							{
-								if(frandom < 0.33f)
-								{
-									m_fExtAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])*_fAttackLengthMul;
-									m_fExtAttack2AnimTime = 0.0f;
-									m_fExtAttack3AnimTime = 0.0f;
-									m_fExtAttack4AnimTime = 0.0f;
-								}
-								else if(frandom < 0.66f)
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])*_fAttackLengthMul;
-									m_fExtAttack3AnimTime = 0.0f;							
-									m_fExtAttack4AnimTime = 0.0f;					
-								}								
-								else
-								{
-									m_fExtAttack1AnimTime = 0.0f;
-									m_fExtAttack2AnimTime = 0.0f;					
-									m_fExtAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])*_fAttackLengthMul;
-									m_fExtAttack4AnimTime = 0.0f;
-								}								
-								startTime = _pTimer->CurrentTick();							
 							}
 
-							//--------------------- 전직 및 로그 ---------------------------
-							if(m_fExtAttack1AnimTime != 0.0f)
+							FLOAT fLength = pMI->GetAnimLength(idPlayerWhole_Animation[AcessNum+iRandom_AttackType]) * 10.0f;
+							_fAttackSpeedMul	= 1.0f / (fLength / Speed);
+							_fAttackLengthMul	= Speed / fLength;
+							FLOAT tmpAniTime = fLength * _fAttackLengthMul;
+
+							switch(iRandom_AttackType)
 							{
-								SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							case 0:
+								{
+									if (_pNetwork->MyCharacterInfo.bExtension) {
+										m_fExtAttack1AnimTime = tmpAniTime;
+									} else {
+										m_fAttack1AnimTime = tmpAniTime;
+									}
+								}
+								break;
+							case 1:
+								{
+									if (_pNetwork->MyCharacterInfo.bExtension) {
+										m_fExtAttack2AnimTime = tmpAniTime;
+									} else {
+										m_fAttack2AnimTime = tmpAniTime;
+									}
+								}
+								break;
+							case 2:
+								{
+									if (_pNetwork->MyCharacterInfo.bExtension) {
+										m_fExtAttack3AnimTime = tmpAniTime;
+									} else {
+										m_fAttack3AnimTime = tmpAniTime;
+									}
+								}
+								break;
+							case 3:
+								{
+									if (_pNetwork->MyCharacterInfo.bExtension) {
+										m_fExtAttack4AnimTime = tmpAniTime;
+									} else {
+										m_fAttack4AnimTime = tmpAniTime;
+									}
+								}
+								break;
 							}
-							else if(m_fExtAttack2AnimTime != 0.0f)
-							{
-								SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
-							}
-							else if(m_fExtAttack3AnimTime != 0.0f)
-							{
-								SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
-							}
-							else if(m_fExtAttack4AnimTime != 0.0f)
-							{
-								SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
-							}
+						}
+
+						if(m_fAttack1AnimTime > 0.0f || m_fExtAttack1AnimTime > 0.0f)
+						{ // ANIM_EXT_ATTACK_1, ANIM_ATTACK_1
+							SetWholeAnimation(idPlayerWhole_Animation[AcessNum],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul,FALSE);
+						}
+						else if(m_fAttack2AnimTime > 0.0f || m_fExtAttack2AnimTime > 0.0f)
+						{ // ANIM_EXT_ATTACK_2, ANIM_ATTACK_2
+							SetWholeAnimation(idPlayerWhole_Animation[AcessNum+1],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul,FALSE);
+						}															
+						else if(m_fAttack3AnimTime > 0.0f || m_fExtAttack3AnimTime > 0.0f)
+						{ // ANIM_EXT_ATTACK_3, ANIM_ATTACK_3
+							SetWholeAnimation(idPlayerWhole_Animation[AcessNum+2],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul,FALSE);
+						}		
+						else if(m_fAttack4AnimTime > 0.0f || m_fExtAttack4AnimTime > 0.0f)
+						{ // ANIM_EXT_ATTACK_4, ANIM_ATTACK_4
+							SetWholeAnimation(idPlayerWhole_Animation[AcessNum+3],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul,FALSE);
 						}
 					}
 					else
 					{
-						SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_1],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_1],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 					}
 					m_fLastActionTime = _pTimer->CurrentTick();
 				}
 				// running anim
 				else if (vDesiredTranslation.Length() > 3.0f && vCurrentTranslation.Length() > 3.0f) 
 				{
-					FLOAT fRunSpeedMul =1.0f;
-
-					const int iJob = pl.en_pcCharacter.pc_iPlayerType;
-
-					BOOL bSpeedUp = FALSE;
-					if(_pNetwork->MyCharacterInfo.runspeed >= 8.0f)
-					{
-						// FIXME : 왜 갑자기 1.3이 나온건지 모르겠음...-_-;
-						fRunSpeedMul = 1.3f;
-					}					
-					RunAnim( fRunSpeedMul );					
+					RunAnim( _pNetwork->MyCharacterInfo.runspeed );					
 					m_fLastActionTime = _pTimer->CurrentTick();
 				// walking anim
 				}
@@ -1776,19 +1857,30 @@ functions:
 								case 1:
 									{
 										if( pl.m_bRide )
-										{											
-											if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+										{
+											if(pl.m_bWildRide)
 											{
-												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_SIT], AN_NORESTART, 0.2f, 1.0f);
+												if( pl.m_nWildPetType == 2 )
+												{
+													SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_SIT], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+												}
+												else
+												{
+													SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_SIT], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+												}
+											}											
+											else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_SIT], AN_NORESTART, 0.2f, 1.0f,FALSE);
 											}
 											else
 											{
-												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_SIT], AN_NORESTART, 0.2f, 1.0f);
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_SIT], AN_NORESTART, 0.2f, 1.0f,FALSE);
 											}
 										}
 										else
 										{
-											SetWholeAnimation(idPlayerWhole_Animation[ANIM_SIT], AN_NORESTART, 0.2f, 1.0f);
+											SetWholeAnimation(idPlayerWhole_Animation[ANIM_SIT], AN_NORESTART, 0.2f, 1.0f,FALSE);
 										}
 										break;
 									}
@@ -1796,18 +1888,29 @@ functions:
 									{
 										if( pl.m_bRide )
 										{
-											if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+											if(pl.m_bWildRide)
 											{
-												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_STANDUP], AN_NORESTART, 0.2f, 1.0f);
+												if( pl.m_nWildPetType == 2 )
+												{
+													SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_STANDUP], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+												}
+												else
+												{
+													SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_STANDUP], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+												}
+											}	
+											else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_STANDUP], AN_NORESTART, 0.2f, 1.0f,FALSE);
 											}
-											else 
+											else
 											{
-												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_STANDUP], AN_NORESTART, 0.2f, 1.0f);
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_STANDUP], AN_NORESTART, 0.2f, 1.0f,FALSE);
 											}											
 										}
 										else
 										{
-											SetWholeAnimation(idPlayerWhole_Animation[ANIM_STANDUP], AN_NORESTART, 0.2f, 1.0f);							
+											SetWholeAnimation(idPlayerWhole_Animation[ANIM_STANDUP], AN_NORESTART, 0.2f, 1.0f,FALSE);							
 										}
 										break;
 									}
@@ -1815,18 +1918,29 @@ functions:
 									{
 										if( pl.m_bRide )
 										{
-											if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+											if(pl.m_bWildRide)
 											{
-												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f);
+												if( pl.m_nWildPetType == 2 )
+												{
+													SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_SIT_CONTINUE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
+												}
+												else
+												{
+													SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DEMONBAT_SIT_CONTINUE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);	
+												}
 											}
-											else 
+											else if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
 											{
-												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f);
-											}											
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f,FALSE);
+											}
+											else
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f,FALSE);
+											}
 										}
 										else
 										{
-											SetWholeAnimation(idPlayerWhole_Animation[ANIM_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f);							
+											SetWholeAnimation(idPlayerWhole_Animation[ANIM_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f,FALSE);							
 										}
 										break;
 									}
@@ -1839,52 +1953,52 @@ functions:
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_GREET)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_0], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_0], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_SMILE)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_1], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_1], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_CRY)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_2], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_2], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_NUMBER_ONE)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_3], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_3], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_HANDCLAP)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_4], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_4], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_REFUSE)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_5], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_5], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if( pl.m_nPlayActionNum == ACTION_NUM_GOOD_LOOKS || 
 								pl.m_nPlayActionNum == ACTION_NUM_GOOD_LOOKS2 )
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_6], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_6], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_BANTER)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_7], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_7], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_CHEER)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_8], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_8], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_COMBAT)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_9], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_9], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 						else if(pl.m_nPlayActionNum == ACTION_NUM_SUBMISSION)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_10], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_10], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}							
 						else if(pl.m_nPlayActionNum == ACTION_NUM_WATER_SPREAD)
 						{
-							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_11], AN_NORESTART, 0.2f, 1.0f);
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_11], AN_NORESTART, 0.2f, 1.0f,FALSE);
 						}
 					}
 					else if(!pl.m_bRide && pl.m_bProduction && pl.m_nProductionNum != -1)//1128
@@ -1894,16 +2008,16 @@ functions:
 							switch(pl.m_nProductionNum)
 							{
 								case 1://채굴
-									SetWholeAnimation(idPlayerWhole_Animation[ANIM_MINE],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+									SetWholeAnimation(idPlayerWhole_Animation[ANIM_MINE],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 									break;
 								case 2://채집
-									SetWholeAnimation(idPlayerWhole_Animation[ANIM_COLLECT],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+									SetWholeAnimation(idPlayerWhole_Animation[ANIM_COLLECT],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 									break;
 								case 3://차지
-									SetWholeAnimation(idPlayerWhole_Animation[ANIM_GATHER],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+									SetWholeAnimation(idPlayerWhole_Animation[ANIM_GATHER],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 									break;
 								case 4://수집
-									SetWholeAnimation(idPlayerWhole_Animation[ANIM_COLLECT],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+									SetWholeAnimation(idPlayerWhole_Animation[ANIM_COLLECT],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 									break;
 								//break;
 							}
@@ -1912,7 +2026,7 @@ functions:
 					// WSS_DRATAN_SEIGEWARFARE 2007/08/01
 					else if( _pNetwork->MyCharacterInfo.bConsensus)
 					{
-						SetWholeAnimation(idPlayerWhole_Animation[ANIM_GATHER],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_GATHER],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f,FALSE);
 					}
 					else
 					{
@@ -2027,7 +2141,7 @@ functions:
 	  }
 	  else
 	  {
-		SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+		SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f, FALSE);
 	}
 	  //..
 	  // 쓸모없는 부분.
@@ -2107,7 +2221,15 @@ functions:
     m_bAttacking = FALSE;
   };
 
+BOOL IsEXRogue( int job )	// [2012/08/27 : Sora] EX로그 추가
+{
+	return (charEXRogue && (job == 7));
+}
 
+BOOL IsEXMage( int job)		//2013/01/08 jeil EX메이지 추가 
+{
+	return (charEXMage && (job ==8));
+}
   
 /************************************************************
  *                  CHANGE BODY ANIMATION                   *
@@ -2174,7 +2296,7 @@ functions:
 
 //0105 함수추가
   // set player body animation
-  void SetWholeAnimation(INDEX iAnimation, ULONG ulFlags, FLOAT fBlendTime, FLOAT fSpeed) 
+  void SetWholeAnimation(INDEX iAnimation, ULONG ulFlags, FLOAT fBlendTime, FLOAT fSpeed, BOOL bRun) // Run Anim는 speed가 value가 클수록 빠르고, 그외에 스피드는 작을 수록 빠르다.
   {
 
     // on weapon change skip anim
@@ -2182,6 +2304,21 @@ functions:
     // on firing skip anim
     if (m_bAttacking) { return; }
     // play body anim
+
+	if (bRun)
+	{
+		float fLength = GetPlayer()->GetModelInstance()->GetAnimLength(iAnimation) * 10.0f;
+		FLOAT fTmpSpeed = 1.0f;
+
+		if (fSpeed >= (fLength * 1.3f)) // 최대 30% 속도 애니메이션 처리
+		{
+			fSpeed = fLength * 1.3f;
+		}
+
+		fTmpSpeed = fSpeed / fLength;
+		fSpeed = 1.0f / fTmpSpeed;
+	}
+
     GetPlayer()->ChangeWholeAnim(iAnimation, ulFlags, 1.0f, fBlendTime, fSpeed);
     m_fBodyAnimTime = GetPlayer()->GetModelInstance()->GetAnimLength(iAnimation); // anim length		
   };  
@@ -2451,6 +2588,33 @@ functions:
  *                      PROCEDURES                          *
  ************************************************************/
 procedures:
+  Main(EAnimatorInit eInit) {
+    // remember the initial parameters
+    ASSERT((CEntity*)eInit.eidPlayer!=NULL);
+    m_penPlayer = eInit.eidPlayer;
+    m_iPlayerID = ((CEntity*)m_penPlayer)->en_ulID;
+
+    // declare yourself as a void
+    InitAsVoid();
+    SetFlags(GetFlags()|ENF_CROSSESLEVELS);
+    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+    SetCollisionFlags(ECF_IMMATERIAL);
+
+    // last action time for boring weapon animation
+    m_fLastActionTime = _pTimer->CurrentTick();
+
+    wait() {
+      on (EBegin) : { resume; }
+      on (EReminder er) : { call ReminderAction(er); }
+      on (EEnd) : { stop; }
+    }
+
+    // cease to exist
+    Destroy(FALSE);
+
+    return;
+  };
+
   ReminderAction(EReminder er) 
   {
     switch (er.iValue) 
@@ -2486,33 +2650,6 @@ procedures:
       default: ASSERTALWAYS("Animator - unknown reminder action.");
     }
     return EBegin();
-  };
-
-  Main(EAnimatorInit eInit) {
-    // remember the initial parameters
-    ASSERT((CEntity*)eInit.eidPlayer!=NULL);
-    m_penPlayer = eInit.eidPlayer;
-    m_iPlayerID = ((CEntity*)m_penPlayer)->en_ulID;
-
-    // declare yourself as a void
-    InitAsVoid();
-    SetFlags(GetFlags()|ENF_CROSSESLEVELS);
-    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-    SetCollisionFlags(ECF_IMMATERIAL);
-
-    // last action time for boring weapon animation
-    m_fLastActionTime = _pTimer->CurrentTick();
-
-    wait() {
-      on (EBegin) : { resume; }
-      on (EReminder er) : { call ReminderAction(er); }
-      on (EEnd) : { stop; }
-    }
-
-    // cease to exist
-    Destroy(FALSE);
-
-    return;
   };
 };
 

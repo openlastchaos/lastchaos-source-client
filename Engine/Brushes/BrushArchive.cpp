@@ -7,7 +7,6 @@
 #include <Engine/World/WorldEditingProfile.h>
 #include <Engine/World/World.h>
 #include <Engine/Math/Float.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Base/Stream.h>
 #include <Engine/Entities/Entity.h>
 #include <Engine/Base/ListIterator.inl>
@@ -16,7 +15,7 @@
 #include <Engine/Templates/BSP_internal.h>
 #include <Engine/Templates/DynamicArray.cpp>
 #include <Engine/Templates/StaticArray.cpp>
-
+#include <Engine/Loading.h>
 template CDynamicArray<CBrush3D>;
 
 extern BOOL _bPortalSectorLinksPreLoaded = FALSE;
@@ -78,9 +77,9 @@ void CBrushArchive::MakeIndices(void)
   {FOREACHINDYNAMICARRAY(ba_abrBrushes, CBrush3D, itbr) {
     FOREACHINLIST(CBrushMip, bm_lnInBrush, itbr->br_lhBrushMips, itbm) {
       FOREACHINDYNAMICARRAY(itbm->bm_abscSectors, CBrushSector, itbsc) {
-        ba_apbsc[itbsc->bsc_iInWorld] = itbsc; // ì„¹í„°
+        ba_apbsc[itbsc->bsc_iInWorld] = itbsc; // ¼½ÅÍ
         FOREACHINSTATICARRAY(itbsc->bsc_abpoPolygons, CBrushPolygon, itbpo) {
-          ba_apbpo[itbpo->bpo_iInWorld] = itbpo; // í´ë¦¬ê³¤
+          ba_apbpo[itbpo->bpo_iInWorld] = itbpo; // Æú¸®°ï
         }
       }
     }
@@ -191,7 +190,6 @@ void CBrushArchive::CacheAllShadowmaps(void)
   }}
 
   try {
-    SetProgressDescription( TRANS("caching shadowmaps"));
     CallProgressHook_t(0.0f);
     // for each brush
     INDEX iCurrentShadowMap=0;
@@ -498,9 +496,9 @@ void CBrushArchive::Write_t( CTStream *ostrFile) // throw char *
 
 // yjpark |<--
 #ifndef	FINALVERSION
-static void BR_DrawMapAttrLine( int nSX, int nSY, int nEX, int nEY, UBYTE* aTempAttrMap, int nWidth, UBYTE ubAttr )
+static void BR_DrawMapAttrLine( int nSX, int nSY, int nEX, int nEY, UWORD* aTempAttrMap, int nWidth, UWORD ubAttr )
 {
-	if( nSX < 0 || nSY < 0 || nEX < 0 || nEY < 0 )		// ë¦´ë¦¬ì¦ˆì—ì„œ ìŒìˆ˜ ê°’ì´ ëª‡ê°œ ë“¤ì–´ì˜¬ë•Œê°€ ìžˆìŒ.. ì–¸ì  ê°€ ì²˜ë¦¬í•´ì•¼ì§€..
+	if( nSX < 0 || nSY < 0 || nEX < 0 || nEY < 0 )		// ¸±¸®Áî¿¡¼­ À½¼ö °ªÀÌ ¸î°³ µé¾î¿Ã¶§°¡ ÀÖÀ½.. ¾ðÁ¨°¡ Ã³¸®ÇØ¾ßÁö..
 		return;
 
 	// Starting point of line
@@ -572,12 +570,13 @@ static void BR_DrawMapAttrLine( int nSX, int nSY, int nEX, int nEY, UBYTE* aTemp
 }
 
 static void BR_DrawAttributeMap( POINT ptStart[], POINT ptEnd[], INDEX ctPoints,
-									UBYTE *pubAttr, PIX pixWidth, PIX pixHeight, UBYTE ubAttr )
+								UWORD *pubAttr, PIX pixWidth, PIX pixHeight, UWORD ubAttr )
 {
 	// Get min & max box
 	POINT	ptMin = ptStart[0];
 	POINT	ptMax = ptStart[0];
-	for( INDEX iPoint = 1; iPoint < ctPoints; iPoint++ )
+	INDEX	iPoint;
+	for( iPoint = 1; iPoint < ctPoints; iPoint++ )
 	{
 		if( ptStart[iPoint].x < ptMin.x ) ptMin.x = ptStart[iPoint].x;
 		else if( ptStart[iPoint].x > ptMax.x ) ptMax.x = ptStart[iPoint].x;
@@ -598,8 +597,8 @@ static void BR_DrawAttributeMap( POINT ptStart[], POINT ptEnd[], INDEX ctPoints,
 	int	nWidth = ptMax.x - ptMin.x;
 	int	nHeight = ptMax.y - ptMin.y;
 	//UBYTE	aTempAttrMap[512][512];
-	UBYTE*	aTempAttrMap =new UBYTE[(nWidth+1)*(nHeight+1)];
-	memset( aTempAttrMap, 0, (nWidth+1)*(nHeight+1));
+	UWORD*	aTempAttrMap =new UWORD[(nWidth+1)*(nHeight+1)];
+	memset( aTempAttrMap, 0, (nWidth+1)*(nHeight+1) * sizeof(UWORD));
 
 	int	nX, nY;
 	/*****
@@ -651,7 +650,7 @@ static void BR_DrawAttributeMap( POINT ptStart[], POINT ptEnd[], INDEX ctPoints,
 	}
 
 	// Copy temp attribute valuse to attribute map
-	UBYTE	*pTemp;
+	UWORD	*pTemp;
 	for( nY = 0; nY <= nHeight; nY++ )
 	{
 		pTemp = &pubAttr[ptMin.x + ( ptMin.y + nY ) * pixWidth];
@@ -813,14 +812,14 @@ static BOOL BR_FindBelowPolygonBySector( CStaticArray<CBrushSector *> &apbsc,
 #include <Engine/Models/ModelObject.h>
 #include <Engine/Ska/ModelInstance.h>
 #include <Engine/Templates/DynamicContainer.cpp>
-void CBrushArchive::MakeAttributeMap( INDEX iType, UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+void CBrushArchive::MakeAttributeMap( INDEX iType, UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
-	// ì†ì„±ë§µì— ì“°ëŠ” ìˆœì„œ~!!!
+	// ¼Ó¼º¸Ê¿¡ ¾²´Â ¼ø¼­~!!!
 	//{ _T("Walkable"), _T("Unwalkable"), _T("Stair"), _T("Wall of stair"), _T("Peace"), 
 	//_T("Product Public"), _T("Product Private"), _T("War Area"), _T("Free PK") };
 
-	// NOTE : ì†ì„±ë§µì— ì“°ëŠ” ìˆœì„œ ì£¼ì˜.
-	// FIXME : ë§˜ì— ì•ˆë“¬!!!!
+	// NOTE : ¼Ó¼º¸Ê¿¡ ¾²´Â ¼ø¼­ ÁÖÀÇ.
+	// FIXME : ¸¾¿¡ ¾Èµë!!!!
 	switch( iType )
 	{
 	case 0:	// Walkable
@@ -853,8 +852,8 @@ void CBrushArchive::MakeAttributeMap( INDEX iType, UBYTE *pAttrBuffer, INDEX iFl
 	};
 }
 
-// FIXME : ì•„ëž˜ í•¨ìˆ˜ë“¤ì˜ ì½”ë“œ ì¤‘ë³µì´ ë„ˆë¬´ ì‹¬ê°í•¨.
-void CBrushArchive::MakeWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+// FIXME : ¾Æ·¡ ÇÔ¼öµéÀÇ ÄÚµå Áßº¹ÀÌ ³Ê¹« ½É°¢ÇÔ.
+void CBrushArchive::MakeWalkableAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
 	FLOATaabbox3D	aabBox;
 	FLOAT			fMinX, fMaxX, fMinZ, fMaxZ, fMaxY;
@@ -862,10 +861,11 @@ void CBrushArchive::MakeWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, 
 	FLOAT3D			vOrig, vHit;
 	FLOAT3D			vDir = FLOAT3D( 0, -1, 0 );
 	FLOAT3D			vVertex0, vVertex1;
-	UBYTE			ubAttr, ubPolygonAttr;
+	UBYTE			ubPolygonAttr;
+	UWORD			usAttr;
 	CBrushPolygon	*pBpo;
 
-	ubAttr = ATTC_WALKABLE;		// Walkable
+	usAttr = MATT_WALKABLE;		// Walkable
 	FOREACHINSTATICARRAY( ba_apbpo, CBrushPolygon *, itBpo )
 	{
 		pBpo = *itBpo;
@@ -920,6 +920,12 @@ void CBrushArchive::MakeWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, 
 			iSX = (INDEX)fMinX;		iEX = (INDEX)( fMaxX + 0.99999f );
 			iSZ = (INDEX)fMinZ;		iEZ = (INDEX)( fMaxZ + 0.99999f );
 
+			if (iEX > pixWidth)
+				iEX = pixWidth;
+
+			if (iEZ > pixHeight)
+				iEZ = pixHeight;
+
 			FLOAT	fT;
 			for( iZ = iSZ; iZ < iEZ; iZ++ )
 			{
@@ -927,27 +933,42 @@ void CBrushArchive::MakeWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, 
 				{
 					vOrig = FLOAT3D( iX, fMaxY, iZ );
 					if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
-						pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+					{
+						pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+						pAttrBuffer[iX + iZ * pixWidth] &= ~(MATT_UNWALKABLE);
+					}
 					else
 					{
 						vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ );
 						if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
-							pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+						{
+							pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+							pAttrBuffer[iX + iZ * pixWidth] &= ~(MATT_UNWALKABLE);
+						}
 						else
 						{
 							vOrig = FLOAT3D( iX, fMaxY, iZ + 1.0f );
 							if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
-								pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+							{
+								pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+								pAttrBuffer[iX + iZ * pixWidth] &= ~(MATT_UNWALKABLE);
+							}
 							else
 							{
 								vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ + 1.0f );
 								if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
-									pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+								{
+									pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+									pAttrBuffer[iX + iZ * pixWidth] &= ~(MATT_UNWALKABLE);
+								}
 								else
 								{
 									vOrig = FLOAT3D( iX + 0.5f, fMaxY, iZ + 0.5f );
 									if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
-										pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+									{
+										pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+										pAttrBuffer[iX + iZ * pixWidth] &= ~(MATT_UNWALKABLE);
+									}
 								}
 							}
 						}
@@ -958,7 +979,7 @@ void CBrushArchive::MakeWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, 
 	}
 }
 
-void CBrushArchive::MakePeaceAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+void CBrushArchive::MakePeaceAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
 	FLOATaabbox3D	aabBox;
 	FLOAT			fMinX, fMaxX, fMinZ, fMaxZ, fMaxY;
@@ -966,10 +987,11 @@ void CBrushArchive::MakePeaceAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX
 	FLOAT3D			vOrig, vHit;
 	FLOAT3D			vDir = FLOAT3D( 0, -1, 0 );
 	FLOAT3D			vVertex0, vVertex1;
-	UBYTE			ubAttr, ubPolygonAttr;
+	UBYTE			ubPolygonAttr;
+	UWORD			usAttr;
 	CBrushPolygon	*pBpo;
 
-	ubAttr = ATTC_PEACE;		// Peace zone
+	usAttr = MATT_PEACE;		// Peace zone
 	FOREACHINSTATICARRAY( ba_apbpo, CBrushPolygon *, itBpo1 )
 	{
 		pBpo = *itBpo1;
@@ -1024,6 +1046,12 @@ void CBrushArchive::MakePeaceAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX
 			iSX = (INDEX)fMinX;		iEX = (INDEX)( fMaxX + 0.99999f );
 			iSZ = (INDEX)fMinZ;		iEZ = (INDEX)( fMaxZ + 0.99999f );
 
+			if (iEX > pixWidth)
+				iEX = pixWidth;
+
+			if (iEZ > pixHeight)
+				iEZ = pixHeight;
+
 			FLOAT	fT;
 			for( iZ = iSZ; iZ < iEZ; iZ++ )
 			{
@@ -1032,40 +1060,40 @@ void CBrushArchive::MakePeaceAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX
 					vOrig = FLOAT3D( iX, fMaxY, iZ );
 					if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 					{
-						if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-							pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+						//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+							pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 					}
 					else
 					{
 						vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ );
 						if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 						{
-							if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-								pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+							//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+								pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 						}
 						else
 						{
 							vOrig = FLOAT3D( iX, fMaxY, iZ + 1.0f );
 							if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 							{
-								if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-									pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+								//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+									pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 							}
 							else
 							{
 								vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ + 1.0f );
 								if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 								{
-									if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-										pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+									//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+										pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 								}
 								else
 								{
 									vOrig = FLOAT3D( iX + 0.5f, fMaxY, iZ + 0.5f );
 									if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 									{
-										if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-											pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+										//if( !bField || !(pAttrBuffer[iX + iZ * pixWidth] & MATT_UNWALKABLE) )
+											pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 									}
 								}
 							}
@@ -1077,7 +1105,7 @@ void CBrushArchive::MakePeaceAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX
 	}
 }
 
-void CBrushArchive::MakeProductPublicAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+void CBrushArchive::MakeProductPublicAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
 	FLOATaabbox3D	aabBox;
 	FLOAT			fMinX, fMaxX, fMinZ, fMaxZ, fMaxY;
@@ -1085,10 +1113,11 @@ void CBrushArchive::MakeProductPublicAttributeMap( UBYTE *pAttrBuffer, INDEX iFl
 	FLOAT3D			vOrig, vHit;
 	FLOAT3D			vDir = FLOAT3D( 0, -1, 0 );
 	FLOAT3D			vVertex0, vVertex1;
-	UBYTE			ubAttr, ubPolygonAttr;
+	UBYTE			ubPolygonAttr;
+	UWORD			usAttr;
 	CBrushPolygon	*pBpo;
 
-	ubAttr = ATTC_PRODUCT_PUBLIC;		// Production zone - public
+	usAttr = MATT_PRODUCT_PUBLIC;		// Production zone - public
 	FOREACHINSTATICARRAY( ba_apbpo, CBrushPolygon *, itBpo2 )
 	{
 		pBpo = *itBpo2;
@@ -1151,40 +1180,40 @@ void CBrushArchive::MakeProductPublicAttributeMap( UBYTE *pAttrBuffer, INDEX iFl
 					vOrig = FLOAT3D( iX, fMaxY, iZ );
 					if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 					{
-						if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-							pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+						//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+							pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 					}
 					else
 					{
 						vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ );
 						if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 						{
-							if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-								pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+							//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+								pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 						}
 						else
 						{
 							vOrig = FLOAT3D( iX, fMaxY, iZ + 1.0f );
 							if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 							{
-								if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-									pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+								//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+									pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 							}
 							else
 							{
 								vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ + 1.0f );
 								if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 								{
-									if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-										pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+									//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+										pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 								}
 								else
 								{
 									vOrig = FLOAT3D( iX + 0.5f, fMaxY, iZ + 0.5f );
 									if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 									{
-										if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-											pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+										//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+											pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 									}
 								}
 							}
@@ -1196,7 +1225,7 @@ void CBrushArchive::MakeProductPublicAttributeMap( UBYTE *pAttrBuffer, INDEX iFl
 	}
 }
 
-void CBrushArchive::MakeProductPrivateAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+void CBrushArchive::MakeProductPrivateAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
 	FLOATaabbox3D	aabBox;
 	FLOAT			fMinX, fMaxX, fMinZ, fMaxZ, fMaxY;
@@ -1204,10 +1233,11 @@ void CBrushArchive::MakeProductPrivateAttributeMap( UBYTE *pAttrBuffer, INDEX iF
 	FLOAT3D			vOrig, vHit;
 	FLOAT3D			vDir = FLOAT3D( 0, -1, 0 );
 	FLOAT3D			vVertex0, vVertex1;
-	UBYTE			ubAttr, ubPolygonAttr;
+	UBYTE			ubPolygonAttr;
+	UWORD			usAttr;
 	CBrushPolygon	*pBpo;
 
-	ubAttr = ATTC_PRODUCT_PRIVATE;		// Production zone - private
+	usAttr = MATT_PRODUCT_PRIVATE;		// Production zone - private
 	FOREACHINSTATICARRAY( ba_apbpo, CBrushPolygon *, itBpo3 )
 	{
 		pBpo = *itBpo3;
@@ -1215,7 +1245,7 @@ void CBrushArchive::MakeProductPrivateAttributeMap( UBYTE *pAttrBuffer, INDEX iF
 			continue;
 
 		ubPolygonAttr = pBpo->bpo_ubPolygonAttribute;
-		if( ubPolygonAttr < BPOA_PRODUCTZONE_PRIVATE1F )
+		if (ubPolygonAttr < BPOA_PRODUCTZONE_PRIVATE1F || ubPolygonAttr > BPOA_PRODUCTZONE_PRIVATE5F)
 			continue;
 		if( ( ubPolygonAttr % 10 ) != iFloor )
 			continue;
@@ -1270,40 +1300,40 @@ void CBrushArchive::MakeProductPrivateAttributeMap( UBYTE *pAttrBuffer, INDEX iF
 					vOrig = FLOAT3D( iX, fMaxY, iZ );
 					if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 					{
-						if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-							pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+						//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+							pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 					}
 					else
 					{
 						vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ );
 						if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 						{
-							if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-								pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+							//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+								pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 						}
 						else
 						{
 							vOrig = FLOAT3D( iX, fMaxY, iZ + 1.0f );
 							if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 							{
-								if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-									pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+								//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+									pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 							}
 							else
 							{
 								vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ + 1.0f );
 								if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 								{
-									if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-										pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+									//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+										pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 								}
 								else
 								{
 									vOrig = FLOAT3D( iX + 0.5f, fMaxY, iZ + 0.5f );
 									if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 									{
-										if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-											pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+										//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+											pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 									}
 								}
 							}
@@ -1315,7 +1345,7 @@ void CBrushArchive::MakeProductPrivateAttributeMap( UBYTE *pAttrBuffer, INDEX iF
 	}
 }
 
-void CBrushArchive::MakeWarAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+void CBrushArchive::MakeWarAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
 	FLOATaabbox3D	aabBox;
 	FLOAT			fMinX, fMaxX, fMinZ, fMaxZ, fMaxY;
@@ -1323,10 +1353,11 @@ void CBrushArchive::MakeWarAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX p
 	FLOAT3D			vOrig, vHit;
 	FLOAT3D			vDir = FLOAT3D( 0, -1, 0 );
 	FLOAT3D			vVertex0, vVertex1;
-	UBYTE			ubAttr, ubPolygonAttr;
+	UBYTE			ubPolygonAttr;
+	UWORD			usAttr;
 	CBrushPolygon	*pBpo;
 
-	ubAttr = ATTC_WAR;		// War Zone
+	usAttr = MATT_WAR;		// War Zone
 	FOREACHINSTATICARRAY( ba_apbpo, CBrushPolygon *, itBpo7 )
 	{
 		pBpo = *itBpo7;
@@ -1389,40 +1420,40 @@ void CBrushArchive::MakeWarAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX p
 					vOrig = FLOAT3D( iX, fMaxY, iZ );
 					if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 					{
-						if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-							pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+						//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+							pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 					}
 					else
 					{
 						vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ );
 						if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 						{
-							if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-								pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+							//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+								pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 						}
 						else
 						{
 							vOrig = FLOAT3D( iX, fMaxY, iZ + 1.0f );
 							if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 							{
-								if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-									pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+								//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+									pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 							}
 							else
 							{
 								vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ + 1.0f );
 								if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 								{
-									if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-										pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+									//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+										pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 								}
 								else
 								{
 									vOrig = FLOAT3D( iX + 0.5f, fMaxY, iZ + 0.5f );
 									if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 									{
-										if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-											pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+										//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+											pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 									}
 								}
 							}
@@ -1434,7 +1465,7 @@ void CBrushArchive::MakeWarAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX p
 	}
 }
 
-void CBrushArchive::MakeFreePKAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+void CBrushArchive::MakeFreePKAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
 	FLOATaabbox3D	aabBox;
 	FLOAT			fMinX, fMaxX, fMinZ, fMaxZ, fMaxY;
@@ -1442,10 +1473,11 @@ void CBrushArchive::MakeFreePKAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PI
 	FLOAT3D			vOrig, vHit;
 	FLOAT3D			vDir = FLOAT3D( 0, -1, 0 );
 	FLOAT3D			vVertex0, vVertex1;	
-	UBYTE			ubAttr, ubPolygonAttr;
+	UBYTE			ubPolygonAttr;
+	UWORD			usAttr;
 	CBrushPolygon	*pBpo;
 	// Free PK Zone
-	ubAttr = ATTC_FREEPKZONE;		// Free PK Zone
+	usAttr = MATT_FREEPKZONE;		// Free PK Zone
 	FOREACHINSTATICARRAY( ba_apbpo, CBrushPolygon *, itBpo8 )
 	{
 		pBpo = *itBpo8;
@@ -1508,40 +1540,45 @@ void CBrushArchive::MakeFreePKAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PI
 					vOrig = FLOAT3D( iX, fMaxY, iZ );
 					if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 					{
-						if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-							pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+						//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+							pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+							pAttrBuffer[iX + iZ * pixWidth] &= ~MATT_PEACE;
 					}
 					else
 					{
 						vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ );
 						if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 						{
-							if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-								pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+							//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+								pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+								pAttrBuffer[iX + iZ * pixWidth] &= ~MATT_PEACE;
 						}
 						else
 						{
 							vOrig = FLOAT3D( iX, fMaxY, iZ + 1.0f );
 							if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 							{
-								if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-									pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+								//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+									pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+									pAttrBuffer[iX + iZ * pixWidth] &= ~MATT_PEACE;
 							}
 							else
 							{
 								vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ + 1.0f );
 								if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 								{
-									if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-										pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+									//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+										pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+										pAttrBuffer[iX + iZ * pixWidth] &= ~MATT_PEACE;
 								}
 								else
 								{
 									vOrig = FLOAT3D( iX + 0.5f, fMaxY, iZ + 0.5f );
 									if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 									{
-										if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-											pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+										//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+											pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
+											pAttrBuffer[iX + iZ * pixWidth] &= ~MATT_PEACE;
 									}
 								}
 							}
@@ -1553,7 +1590,7 @@ void CBrushArchive::MakeFreePKAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PI
 	}
 }
 
-void CBrushArchive::MakeStairAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+void CBrushArchive::MakeStairAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
 	FLOATaabbox3D	aabBox;
 	FLOAT			fMinX, fMaxX, fMinZ, fMaxZ, fMaxY;
@@ -1561,7 +1598,8 @@ void CBrushArchive::MakeStairAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX
 	FLOAT3D			vOrig, vHit;
 	FLOAT3D			vDir = FLOAT3D( 0, -1, 0 );
 	FLOAT3D			vVertex0, vVertex1;
-	UBYTE			ubAttr, ubPolygonAttr;
+	UBYTE			ubPolygonAttr;
+	UWORD			usAttr;
 	CBrushPolygon	*pBpo;
 
 	// Stair
@@ -1580,9 +1618,9 @@ void CBrushArchive::MakeStairAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX
 			continue;
 
 		if( ubPolygonAttr == ( iFloor + 19 ) )
-			ubAttr = ATTC_STAIR_DOWN;		// Down stair
+			usAttr = MATT_STAIR_DOWN;		// Down stair
 		else
-			ubAttr = ATTC_STAIR_UP;			// Up stair
+			usAttr = MATT_STAIR_UP;			// Up stair
 
 		aabBox = pBpo->bpo_boxBoundingBox;
 		vOrig = FLOAT3D( ( aabBox.minvect( 1 ) + aabBox.maxvect( 1 ) ) / 2,
@@ -1634,40 +1672,40 @@ void CBrushArchive::MakeStairAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX
 					vOrig = FLOAT3D( iX, fMaxY, iZ );
 					if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 					{
-						if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-							pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+						//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+							pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 					}
 					else
 					{
 						vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ );
 						if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 						{
-							if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-								pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+							//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+								pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 						}
 						else
 						{
 							vOrig = FLOAT3D( iX, fMaxY, iZ + 1.0f );
 							if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 							{
-								if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-									pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+								//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+									pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 							}
 							else
 							{
 								vOrig = FLOAT3D( iX + 1.0f, fMaxY, iZ + 1.0f );
 								if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 								{
-									if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-										pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+									//if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
+										pAttrBuffer[iX + iZ * pixWidth] |= usAttr;
 								}
 								else
 								{
 									vOrig = FLOAT3D( iX + 0.5f, fMaxY, iZ + 0.5f );
 									if( RayHitsTriangle( vOrig, vDir, vP0, vP1, vP2, &fT ) )
 									{
-										if( !bField || pAttrBuffer[iX + iZ * pixWidth] != ATTC_UNWALKABLE )
-											pAttrBuffer[iX + iZ * pixWidth] = ubAttr;
+										if( !bField || pAttrBuffer[iX + iZ * pixWidth] != MATT_UNWALKABLE )
+											pAttrBuffer[iX + iZ * pixWidth] = usAttr;
 									}
 								}
 							}
@@ -1679,7 +1717,7 @@ void CBrushArchive::MakeStairAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX
 	}
 }
 
-void CBrushArchive::MakeUnWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
+void CBrushArchive::MakeUnWalkableAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField )
 {
 	FLOATaabbox3D	aabBox;
 	FLOAT3D			vOrig, vHit;
@@ -1687,10 +1725,11 @@ void CBrushArchive::MakeUnWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor
 	FLOAT3D			vVertex0, vVertex1;
 	POINT			ptStart[255], ptEnd[255];
 	INDEX			iPoints, iVert;
-	UBYTE			ubAttr, ubPolygonAttr;
+	UBYTE			ubPolygonAttr;
+	UWORD			usAttr;
 	CBrushPolygon	*pBpo;
 
-	ubAttr = ATTC_UNWALKABLE;		// Unwalkable
+	usAttr = MATT_UNWALKABLE;		// Unwalkable
 	FOREACHINSTATICARRAY( ba_apbpo, CBrushPolygon *, itBpo5 )
 	{
 		pBpo = *itBpo5;
@@ -1733,11 +1772,11 @@ void CBrushArchive::MakeUnWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor
 			ptEnd[iPoints].x = vVertex1( 1 );
 			ptEnd[iPoints++].y = vVertex1( 3 );
 
-			BR_DrawAttributeMap( ptStart, ptEnd, iPoints, pAttrBuffer, pixWidth, pixHeight, ubAttr );
+			BR_DrawAttributeMap( ptStart, ptEnd, iPoints, pAttrBuffer, pixWidth, pixHeight, usAttr );
 		}
 	}
 
-	ubAttr = ATTC_UNWALKABLE;		// Wall of stair
+	usAttr = MATT_UNWALKABLE;		// Wall of stair
 	FOREACHINSTATICARRAY( ba_apbpo, CBrushPolygon *, itBpo6 )
 	{
 		pBpo = *itBpo6;
@@ -1780,12 +1819,12 @@ void CBrushArchive::MakeUnWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor
 			ptEnd[iPoints].x = vVertex1( 1 );
 			ptEnd[iPoints++].y = vVertex1( 3 );
 
-			BR_DrawAttributeMap( ptStart, ptEnd, iPoints, pAttrBuffer, pixWidth, pixHeight, ubAttr );
+			BR_DrawAttributeMap( ptStart, ptEnd, iPoints, pAttrBuffer, pixWidth, pixHeight, usAttr );
 		}
 	}
 
 	// Each models...
-	ubAttr = ATTC_UNWALKABLE;
+	usAttr = MATT_UNWALKABLE;
 	FOREACHINDYNAMICCONTAINER( pWorld->wo_cenAllEntities, CEntity, iten )
 	{
 		CEntity	*penEntity = iten;
@@ -1879,7 +1918,7 @@ void CBrushArchive::MakeUnWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor
 		ptEnd[2].y = ptStart[3].y = vRB( 3 );
 
 		// Draw attribute map
-		BR_DrawAttributeMap( ptStart, ptEnd, 4, pAttrBuffer, pixWidth, pixHeight, ubAttr );
+		BR_DrawAttributeMap( ptStart, ptEnd, 4, pAttrBuffer, pixWidth, pixHeight, usAttr );
 	}
 }
 

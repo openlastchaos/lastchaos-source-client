@@ -1,21 +1,17 @@
 
 // ----------------------------------------------------------------------------
 //  File : UIProcessNPC.h
-//  Desc : Created by ì´ê¸°í™˜
+//  Desc : Created by ÀÌ±âÈ¯
 // ----------------------------------------------------------------------------
 
 #ifndef	UIProcessNPC_H_
-#define	UIProcessNPC_H
+#define	UIProcessNPC_H_
 #ifdef	PRAGMA_ONCE 
 #pragma once
 #endif
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIProcessNPC.h>
+#include <Engine/Entities/ItemData.h>
 #include <Engine/Interface/UIProcess.h>
-#include <Engine/Interface/UIInventory.h>
 
 // Define max char and line of strings
 #define	MAX_PROCESSNPC_STRING			4
@@ -40,7 +36,7 @@
 
 // ----------------------------------------------------------------------------
 // Name : CUIProcessNPC
-// Desc : ì œì¡° 
+// Desc : Á¦Á¶ 
 // ----------------------------------------------------------------------------
 class CUIProcessNPC : public CUIWindow
 {
@@ -49,33 +45,34 @@ protected:
 	// Controls...
 	
 	// Button
-	CUIButton				m_btnClose;							// ë‹«ê¸° ë²„íŠ¼ 
-	CUIButton				m_btnOK;							// ê°€ê³µ ë²„íŠ¼ 
-	CUIButton				m_btnCancel;						// ì·¨ì†Œ ë²„íŠ¼ 
-	CUIButton				m_btnUP;							// ê°¯ìˆ˜ ì¦ê°€
-	CUIButton				m_btnDown;							// ê°¯ìˆ˜ ê°ì†Œ.
+	CUIButton				m_btnClose;							// ´İ±â ¹öÆ° 
+	CUIButton				m_btnOK;							// °¡°ø ¹öÆ° 
+	CUIButton				m_btnCancel;						// Ãë¼Ò ¹öÆ° 
+	CUIButton				m_btnUP;							// °¹¼ö Áõ°¡
+	CUIButton				m_btnDown;							// °¹¼ö °¨¼Ò.
 	
 	// Skill buttons
-	std::vector<CUIButtonEx> m_btnProcessNPCItems;				// ê°€ê³µ ì•„ì´í…œ
-	int						m_nProcessItemCount;				// ë§Œë“¤ê³ ì í•˜ëŠ” ìˆ˜.
+	typedef std::vector< CUIIcon* >::iterator		vecBtnEX_Iter;
+	std::vector< CUIIcon* > m_vecIcons;							// °¡°ø ¾ÆÀÌÅÛ
+	int						m_nProcessItemCount;				// ¸¸µé°íÀÚ ÇÏ´Â ¼ö.
 	
 	// Etc ...
-	CUIScrollBar			m_sbProcessNPCItem;					// ê°€ê³µ ì•„ì´í…œ ì°½ ìŠ¤í¬ë¡¤ ë°”
-	CUIListBox				m_lbPreconditionDesc;				// í•„ìš” ì¡°ê±´ ì„¤ëª… ë¦¬ìŠ¤íŠ¸ ë°•ìŠ¤
+	CUIScrollBar			m_sbProcessNPCItem;					// °¡°ø ¾ÆÀÌÅÛ Ã¢ ½ºÅ©·Ñ ¹Ù
+	CUIListBox				m_lbPreconditionDesc;				// ÇÊ¿ä Á¶°Ç ¼³¸í ¸®½ºÆ® ¹Ú½º
 	
 	
 	//	ProcessNPC Item Info	
-	//int						m_nProcessNPCText;					// ê°€ê³µ ë¬¸ì„œ ì•„ì´í…œ ì¸ë±ìŠ¤	
+	//int						m_nProcessNPCText;					// °¡°ø ¹®¼­ ¾ÆÀÌÅÛ ÀÎµ¦½º	
 	
-	int						m_nSelectProcessNPCItem;			// í˜„ì¬ ì„ íƒëœ ê°€ê³µë¬¼
-	CTString				m_StrProcessNPCType;				// ê°€ê³µ íƒ€ì…
-	int						m_nProcessNPCItemCount;				// ê°€ê³µë¬¸ì„œì— ë§ëŠ” ê°€ê³µí’ˆ ê°¯ìˆ˜
+	int						m_nSelectProcessNPCItem;			// ÇöÀç ¼±ÅÃµÈ °¡°ø¹°
+	CTString				m_StrProcessNPCType;				// °¡°ø Å¸ÀÔ
+	int						m_nProcessNPCItemCount;				// °¡°ø¹®¼­¿¡ ¸Â´Â °¡°øÇ° °¹¼ö
 	
-	BOOL					m_bSatisfied;						// ì¡°ê±´ì´ ì¶©ë¶„í•œê°€?
+	BOOL					m_bSatisfied;						// Á¶°ÇÀÌ ÃæºĞÇÑ°¡?
 	
-	CNeedItems				m_NeedItems[MAX_MAKE_ITEM_MATERIAL];// í•„ìš” ì•„ì´í…œ ì •ë³´
+	CNeedItems				m_NeedItems[MAX_MAKE_ITEM_MATERIAL];// ÇÊ¿ä ¾ÆÀÌÅÛ Á¤º¸
 	
-	int						m_nNeedItemCount;					// í•„ìš”í•œ ì•„ì´í…œ ì¢…ë¥˜ì˜ ìˆ˜
+	int						m_nNeedItemCount;					// ÇÊ¿äÇÑ ¾ÆÀÌÅÛ Á¾·ùÀÇ ¼ö
 	
 	// Region of each part
 	UIRect					m_rcTitle;							// Region of title bar
@@ -92,27 +89,6 @@ protected:
 	
 	// Network ...
 	BOOL					m_bWaitProcessNPCResult;				// Wait Message
-	
-	// ToolTip
-	
-	UIRectUV				m_rtInfoUL;								// UV of upper left region of information
-	UIRectUV				m_rtInfoUM;								// UV of upper middle region of information
-	UIRectUV				m_rtInfoUR;								// UV of upper right region of information
-	UIRectUV				m_rtInfoML;								// UV of middle left region of information
-	UIRectUV				m_rtInfoMM;								// UV of middle middle region of information
-	UIRectUV				m_rtInfoMR;								// UV of middle right region of information
-	UIRectUV				m_rtInfoLL;								// UV of lower left region of information
-	UIRectUV				m_rtInfoLM;								// UV of lower middle region of information
-	UIRectUV				m_rtInfoLR;								// UV of lower right region of information
-	
-	BOOL					m_bShowItemInfo;
-	
-	UIRect					m_rcItemInfo;
-	int						m_nCurInfoLines;
-	
-	CTString				m_strItemInfo[MAX_ITEMINFO_LINE];		// Item information string
-	COLOR					m_colItemInfo[MAX_ITEMINFO_LINE];		// Color of item information string
-	BOOL					m_bDetailItemInfo;
 
 	int						m_iResourceType;
 	int						m_iResourceSubType;
@@ -151,17 +127,15 @@ public:
 	// Send ...
 	void	SendProcessNPCReq();
 	
-	// RenderItemInfo ...
-	void	AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo = 0xF2F2F2FF );
-	BOOL	GetItemInfo( int nItemIndex, int &nInfoWidth, int &nInfoHeight );
-	void	ShowItemInfo( BOOL bShowInfo, int nItemIndex, BOOL bRenew = FALSE );
-	void	RenderItemInfo ();
 	// etc ...
 	void	SelectItem ( int nIndex = -1 );
 	void	AddString ( CTString& strText, COLOR colText = 0xffffffff );
 
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 	void	MsgBoxLCommand( int nCommandCode, int nResult );
+
+private:
+	void	clearVecBtnEX();
 };
 
 

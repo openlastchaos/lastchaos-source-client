@@ -1,52 +1,35 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 #include "StdH.h"
-
 #include "Web.h"
 #include <WinInet.h>
 #include <assert.h>
-
 #include "ThreadWrapper.h"
 #include <Engine/Interface/UIManager.h>
+#include <Engine/Interface/UIMouseCursor.h>
 
-void WebAddressInit()
-{
-	// Date : 2005-01-19,   By Lee Ki-hwan : string ìœ¼ë¡œ ë³€ê²½
-	WebAddressRegister("help_list",		_S( 117, "http://222.122.55.241/game/help/game_help_list.asp" ) );
-	WebAddressRegister("help_view",		_S( 118, "http://222.122.55.241/game/help/game_help_view.asp" ) );
+extern HWND	_hDlgWeb;
 
-	WebAddressRegister("notice_list",	_S( 119, "http://222.122.55.241/game/notice/game_notice_list.asp" ) );
-	WebAddressRegister("notice_view",	_S( 120, "http://222.122.55.241/game/notice/game_notice_view.asp" ) );
-
-	WebAddressRegister("freebbs_list",	_S( 121, "http://222.122.55.241/game/bbs/game_bbs_list.asp" ) );
-	WebAddressRegister("freebbs_view",	_S( 122, "http://222.122.55.241/game/bbs/game_bbs_view.asp" ) );
-	WebAddressRegister("freebbs_modify",_S( 123, "http://222.122.55.241/game/bbs/game_bbs_modify.asp" ) );
-
-	WebAddressRegister("guildbbs_list",	_S( 1008, "http://lastchaos.2pan4pan.com/game/guildbbs/game_bbs_list.asp" ) ); // wooss ì›¹ì£¼ì†Œ ìˆ˜ì • 
-	WebAddressRegister("guildbbs_view",	_S( 1009, "http://lastchaos.2pan4pan.com/game/guildbbs/game_bbs_view.asp" ) );
-	WebAddressRegister("guildbbs_modify", _S( 1010, "http://lastchaos.2pan4pan.com/game/guildbbs/game_bbs_modify.asp" ) );
-}
 
 /**
-ë¦¬í„´ê°’
-0 : ì´ìƒ ì—†ìŒ
-1 : ìì²´ ë³µêµ¬ê°€ ê°€ëŠ¥í•œ ìˆ˜ì¤€ì˜ ì˜¤ë¥˜
-2 : ìœ ì €ì—ê²Œ ì•Œë ¤ì•¼í•  ì˜¤ë¥˜
-3 : ê°œë°œì ìˆ˜ì¤€ì˜ ì˜¤ë¥˜
+¸®ÅÏ°ª
+0 : ÀÌ»ó ¾øÀ½
+1 : ÀÚÃ¼ º¹±¸°¡ °¡´ÉÇÑ ¼öÁØÀÇ ¿À·ù
+2 : À¯Àú¿¡°Ô ¾Ë·Á¾ßÇÒ ¿À·ù
+3 : °³¹ßÀÚ ¼öÁØÀÇ ¿À·ù
 **/
-//DWORD WINAPI WebThreadFunction(void *parameter)
 UINT WINAPI WebThreadFunction(void *parameter)
 {
 	ASSERT(parameter != NULL);
 	if(parameter == NULL) return 3;
-	cSharedWebData &shared = *(cSharedWebData*)parameter;
+	CSharedWebData &shared = *(CSharedWebData*)parameter;
 
-	///internet ì—°ê²°ì„ ì´ˆê¸°í™”í•œë‹¤.
+	///internet ¿¬°áÀ» ÃÊ±âÈ­ÇÑ´Ù.
 	HINTERNET hInternet = InternetOpen( "Web Board Browser", 
 										INTERNET_OPEN_TYPE_PRECONFIG, // Use registry settings. 
 										NULL, // Proxy name. NULL indicates use default.
 										NULL, // List of local servers. NULL indicates default. 
 										0 );
-	if(hInternet == NULL)	//internet ì—°ê²°ì„ ì—¬ëŠ”ë° ì‹¤íŒ¨í–ˆë‹¤. IEê°€ ì—†ë‚˜?
+	if(hInternet == NULL)	//internet ¿¬°áÀ» ¿©´Âµ¥ ½ÇÆĞÇß´Ù. IE°¡ ¾ø³ª?
 	{
 		return 3;
 	}
@@ -54,24 +37,24 @@ UINT WINAPI WebThreadFunction(void *parameter)
 
 	for(;;)
 	{
-		///ì…ë ¥ì´ ë“¤ì–´ì˜¤ê¸°ë¥¼ ë¬´í•œì • ê¸°ë‹¤ë¦¼.
+		///ÀÔ·ÂÀÌ µé¾î¿À±â¸¦ ¹«ÇÑÁ¤ ±â´Ù¸².
 		if(WAIT_OBJECT_0 != WaitForSingleObject(shared.GetSendReadEventHandle(), INFINITE)) {exitCode = 3; break;}
 		if(shared.GetExit()) break;
 
-		///URLì„ ì €ì¥í•˜ê³  Send Bufferë¥¼ ì§€ìš°ê³  Send Write Eventë¥¼ Setí•œë‹¤.
+		///URLÀ» ÀúÀåÇÏ°í Send Buffer¸¦ Áö¿ì°í Send Write Event¸¦ SetÇÑ´Ù.
 		if(shared.GetSendMsgBuffer() == NULL) continue;
 		std::string strURL = shared.GetSendMsgBuffer();
 		shared.FreeSendMsgBuffer();
 		SetEvent(shared.GetSendWriteEventHandle());
 
-		///httpì—°ê²°ì„ ë§Œë“ ë‹¤.
+		///http¿¬°áÀ» ¸¸µç´Ù.
 		HINTERNET hHttpFile = InternetOpenUrl(	hInternet
 												, strURL.c_str()
 												, NULL
 												, 0
 												, 0
 												, 0 );
-		if(hHttpFile == NULL) //urlì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.
+		if(hHttpFile == NULL) //urlÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù.
 		{
 			DWORD dwError = GetLastError();
 			//exitCode = 2;
@@ -80,7 +63,7 @@ UINT WINAPI WebThreadFunction(void *parameter)
 		}
 
 
-		///http fileì˜ ì‚¬ì´ì¦ˆë¥¼ ì–»ì–´ì˜¨ë‹¤.
+		///http fileÀÇ »çÀÌÁî¸¦ ¾ò¾î¿Â´Ù.
 		char szSizeBuffer[128] = {0};
 		DWORD dwLengthSizeBuffer = sizeof(szSizeBuffer);
 		BOOL bQuery = HttpQueryInfo( hHttpFile
@@ -91,12 +74,12 @@ UINT WINAPI WebThreadFunction(void *parameter)
 		DWORD dwFileSize = 0;
 		if(bQuery)
 		{
-			//http fileì„ ì €ì¥í•  ì ë‹¹í•œ í¬ê¸°ì˜ ë©”ëª¨ë¦¬ë¥¼ í• ë‹¹í•œë‹¤.
+			//http fileÀ» ÀúÀåÇÒ Àû´çÇÑ Å©±âÀÇ ¸Ş¸ğ¸®¸¦ ÇÒ´çÇÑ´Ù.
 			dwFileSize = atol(szSizeBuffer);
 		}
 		else
 		{
-			//ì ë‹¹í•œ í¬ê¸°ë¥¼ ì¡ëŠ”ë‹¤.
+			//Àû´çÇÑ Å©±â¸¦ Àâ´Â´Ù.
 			dwFileSize = 1024*1024; //1 mega bytes
 		}
 		ResetEvent(shared.GetReceiveWriteEventHandle());
@@ -104,8 +87,8 @@ UINT WINAPI WebThreadFunction(void *parameter)
 		shared.AllocReceiveMsgBuffer(dwFileSize+1);
 		char *szReceiveBuffer = shared.GetReceiveMsgBuffer();
 
-		///http fileì„ webì—ì„œ ì½ì–´ì˜¨ë‹¤.
-		DWORD dwBytesRead = 0;	//ì½íŒ íŒŒì¼ì˜ í¬ê¸°
+		///http fileÀ» web¿¡¼­ ÀĞ¾î¿Â´Ù.
+		DWORD dwBytesRead = 0;	//ÀĞÈù ÆÄÀÏÀÇ Å©±â
 		BOOL bRead = InternetReadFile( hHttpFile
 									, szReceiveBuffer
 									, dwFileSize
@@ -116,7 +99,7 @@ UINT WINAPI WebThreadFunction(void *parameter)
 			szReceiveBuffer[dwBytesRead] = '\0';
 			SetEvent(shared.GetReceiveReadEventHandle());
 		}
-		else	//web pageë¥¼ ì½ëŠ”ë° ì‹¤íŒ¨í–ˆë‹¤.
+		else	//web page¸¦ ÀĞ´Âµ¥ ½ÇÆĞÇß´Ù.
 		{
 			shared.FreeReceiveMsgBuffer();
 			//exitCode = 3;
@@ -125,63 +108,41 @@ UINT WINAPI WebThreadFunction(void *parameter)
 			continue;
 		}
 
-		///http ì—°ê²°ì„ ë‹«ëŠ”ë‹¤.
+		///http ¿¬°áÀ» ´İ´Â´Ù.
 		InternetCloseHandle(hHttpFile);
 	}
 
-	///internet ì—°ê²°ì„ ì¢…ë£Œí•œë‹¤.
+	///internet ¿¬°áÀ» Á¾·áÇÑ´Ù.
 	InternetCloseHandle(hInternet);
 
 	return exitCode;
 }
 
-std::string ConvertStringToWebParameter(const char *szParam)
-{
-	if(szParam == NULL) return "";
-	int strLen = strlen(szParam);
-	if(strLen == 0) return "";
-
-	std::string strRet;
-	for(int i=0; i<strLen; ++i)
-	{
-		if(szParam[i] == '\n') strRet += "%0a";
-		else if(szParam[i] == '\r') strRet += "%0d";
-		else if(szParam[i] == '+') strRet += "%2b";
-		else if(szParam[i] == '&') strRet += "error_andchar";
-		else if(szParam[i] == ' ') strRet += "%20";
-		else strRet += szParam[i];
-	}
-	return strRet;
-}
-
-//-------------- cWebAddress --------------//
-cWebAddress cWebAddress::m_instance;
-
-cWebAddress::cWebAddress()		{}
-cWebAddress::~cWebAddress()		{}
-
-BOOL cWebAddress::RegisterAddress(const char *alias, const char *address)
-{
-	web_map::value_type temp(alias, address);
-	return m_mapAddressAlias.insert(temp).second;
-}
-
-const char *cWebAddress::Address(const char *alias)
-{
-	return m_mapAddressAlias[std::string(alias)].c_str();
-}
-
-//-------------- cWeb --------------//
 cWeb::cWeb()
 : m_eStatus( WS_PREBEGIN )
 {
 	m_sharedData.ResetAll();
 	m_pThread = new cThreadWrapper(WebThreadFunction);
+	m_hWebPage = ::LoadLibrary("cwebpage.dll");
+
+	m_hWebWnd = NULL;
+
+	// It's linking web embed functions
+	EmbedBrowserObject = (long (WINAPI *)(HWND hwnd))GetProcAddress(m_hWebPage, "EmbedBrowserObject");
+	UnEmbedBrowserObject = (void (WINAPI *)(HWND hwnd))GetProcAddress(m_hWebPage, "UnEmbedBrowserObject");
+	DisplayHTMLPage = (long (WINAPI *)(HWND hwnd, const char *webPageName))GetProcAddress(m_hWebPage, "DisplayHTMLPage");
+	WebDialogProc = NULL;
+	m_fnWebCallBack = NULL;
 }
 
 cWeb::~cWeb()
 {
 	if(m_pThread) delete m_pThread;
+
+	if (m_hWebPage)
+	{
+		::FreeLibrary(m_hWebPage);
+	}
 }
 
 BOOL cWeb::Begin()
@@ -198,7 +159,7 @@ BOOL cWeb::Begin()
 BOOL cWeb::End()
 {
 	if(!IsBegin()) return TRUE;
-	m_sharedData.SetExit(TRUE);
+	m_sharedData.SetExit(true);
 	SetEvent(m_sharedData.GetSendReadEventHandle());
 	Sleep(0);
 	m_sharedData.ResetAll();
@@ -206,31 +167,7 @@ BOOL cWeb::End()
 	return TRUE;
 }
 
-/*
-BOOL cWeb::Refresh()
-{
-	if(m_pThread->GetExitCode() == STILL_ACTIVE)
-	{
-		return TRUE;
-	}
-	else if(m_pThread->GetExitCode() == 3)
-	{
-		return TRUE;
-	}
-	else if(m_pThread->GetExitCode() == 0xFFFFFFFF)
-	{
-		return TRUE;
-	}
-	else
-	{
-		End();
-		Begin();
-		return TRUE;
-	}
-}
-*/
-
-void cWeb::Request(const char *szURL)	//web page ìš”ì²­
+void cWeb::Request(const char *szURL)	//web page ¿äÃ»
 {
 	ResetEvent(m_sharedData.GetSendWriteEventHandle());
 	int lenURL = strlen(szURL);
@@ -241,9 +178,9 @@ void cWeb::Request(const char *szURL)	//web page ìš”ì²­
 	SetEvent(m_sharedData.GetSendReadEventHandle());
 }
 
-BOOL cWeb::Read(std::string &strContent, std::string &strError)		//ìš”ì²­í–ˆë˜ web page ì½ê¸°
+BOOL cWeb::Read(std::string &strContent, std::string &strError)		//¿äÃ»Çß´ø web page ÀĞ±â
 {
-	DWORD waitRet = WaitForSingleObject(m_sharedData.GetReceiveReadEventHandle(), 0);
+	DWORD waitRet = WaitForSingleObject(m_sharedData.GetReceiveReadEventHandle(), 1000/*INFINITE*/);
 	if(WAIT_OBJECT_0 == waitRet)
 	{
 		if(m_sharedData.GetReceiveMsgBuffer() != NULL)
@@ -262,81 +199,110 @@ BOOL cWeb::Read(std::string &strContent, std::string &strError)		//ìš”ì²­í–ˆë˜ 
 	return FALSE;
 }
 
-//-------------- cSharedWebData --------------//
-cSharedWebData::cSharedWebData()
-: m_hSendWriteEvent( NULL )
-, m_hSendReadEvent( NULL )
-, m_szSendMsgBuffer( NULL )
-, m_hReceiveWriteEvent( NULL )
-, m_hReceiveReadEvent( NULL )
-, m_szReceiveMsgBuffer( NULL )
-, m_szErrorMsgBuffer( NULL )
+BOOL cWeb::OpenWebPage(HWND hDlg)
 {
-	m_hSendWriteEvent = CreateEvent(NULL, TRUE, TRUE, "Web Thread Send Buffer Write");
-	m_hSendReadEvent = CreateEvent(NULL, FALSE, FALSE, "Web Thread Send Buffer Read");
-	m_hReceiveWriteEvent = CreateEvent(NULL, TRUE, TRUE, "Web Thread Receive Buffer Write");
-	m_hReceiveReadEvent = CreateEvent(NULL, FALSE, FALSE, "Web Thread Receive Buffer Read");
+	m_hWebWnd = hDlg;
+	EmbedBrowserObject(hDlg);
+	CUIManager::getSingleton()->GetMouseCursor()->SetCursorNULL();
+	
+	return TRUE;
 }
 
-cSharedWebData::~cSharedWebData()
+void cWeb::SetWebMoveWindow(void)
 {
-	CloseHandle(m_hSendWriteEvent);
-	CloseHandle(m_hSendReadEvent);
-	CloseHandle(m_hReceiveWriteEvent);
-	CloseHandle(m_hReceiveReadEvent);
-
-	FreeSendMsgBuffer();
-	FreeReceiveMsgBuffer();
+	if (_hDlgWeb != NULL)
+	{
+		SetWebPosition(500, 400);
+		BOOL bSuccess = MoveWindow(_hDlgWeb, m_nPosX, m_nPosY, m_nWidth, m_nHeight, FALSE);
+	}
 }
 
-///ì´ˆê¸°ìƒíƒœë¡œ ë³µêµ¬. ë³´í†µ ì˜¤ë¥˜ê°€ ë‚¬ì„ ê²½ìš° ì´ˆê¸°ìƒíƒœë¡œ ë˜ëŒë¦¬ê¸° ìœ„í•œ ìˆ˜ë‹¨ì„.
-void cSharedWebData::ResetAll()
+BOOL cWeb::SendWebPageOpenMsg(BOOL bShow)
 {
-	ResetEvent(m_hSendReadEvent);
-	ResetEvent(m_hSendWriteEvent);
-	FreeSendMsgBuffer();
-	SetEvent(m_hSendWriteEvent);
+	if (_hDlgWeb!=NULL)
+	{
+		if (bShow)	{
+			ShowWindow(_hDlgWeb, SW_SHOWNORMAL);
+		} else {
+			ShowWindow(_hDlgWeb, SW_HIDE);
+		}
 
-	ResetEvent(m_hReceiveReadEvent);
-	ResetEvent(m_hReceiveWriteEvent);
-	FreeReceiveMsgBuffer();
-	SetEvent(m_hReceiveWriteEvent);
+		UpdateWindow(_hDlgWeb);
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
-void cSharedWebData::AllocSendMsgBuffer(int size)
+BOOL cWeb::CloseWebPage(HWND hDlg)
 {
-	FreeSendMsgBuffer();
-	m_szSendMsgBuffer = new char[size];
+	if (m_hWebWnd)
+	{
+		UnEmbedBrowserObject(m_hWebWnd);
+		m_hWebWnd = NULL;
+		
+		CUIManager::getSingleton()->GetMouseCursor()->SetCursorType();
+
+		return TRUE;
+	}
+	return FALSE;
 }
 
-void cSharedWebData::FreeSendMsgBuffer()
+void cWeb::SetWebPosition(INDEX nWidth, INDEX nHeight)
 {
-	delete[] m_szSendMsgBuffer;
-	m_szSendMsgBuffer = NULL;
+	extern ENGINE_API HWND	_hwndMain;
+	extern INDEX	sam_bFullScreenActive;
+	RECT	rtMain;
+	GetWindowRect(_hwndMain, &rtMain);
+
+	if (IsFullScreen(sam_bFullScreenActive))
+	{
+		m_nPosX = (m_pixMaxI+m_pixMinI - nWidth) / 2; m_nPosY = ( m_pixMaxJ + m_pixMinJ - nHeight ) / 2;
+	}
+	else
+	{
+		m_nPosX = (rtMain.right+rtMain.left - nWidth) / 2; m_nPosY = ( rtMain.bottom+rtMain.top - nHeight ) / 2;
+	}
+	//m_nPosX = (m_pixMaxI+m_pixMinI - nWidth) / 2; m_nPosY = ( m_pixMaxJ + m_pixMinJ - nHeight ) / 2;
+
+	m_nWidth = nWidth; m_nHeight = nHeight;
 }
 
-void cSharedWebData::AllocReceiveMsgBuffer(int size)
+void cWeb::SetPos( int x, int y )
 {
-	FreeReceiveMsgBuffer();
-	m_szReceiveMsgBuffer = new char[size];
+	m_nPosX = x;
+	m_nPosY = y;
+
+	UpdatePos();
 }
 
-void cSharedWebData::FreeReceiveMsgBuffer()
+void cWeb::SetSize( int width, int height )
 {
-	delete[] m_szReceiveMsgBuffer;
-	m_szReceiveMsgBuffer = NULL;
+	m_nWidth = width;
+	m_nHeight = height;
 }
 
-void cSharedWebData::AllocErrorMsgBuffer(int size)
+void cWeb::UpdatePos()
 {
-	FreeErrorMsgBuffer();
-	m_szErrorMsgBuffer = new char[size];
+	if (_hDlgWeb == NULL)
+		return;
+
+	extern ENGINE_API HWND	_hwndMain;
+	RECT	rcMain;
+	int nOffY = GetSystemMetrics(SM_CYCAPTION);
+	nOffY += GetSystemMetrics(SM_CYDLGFRAME);
+	int nOffX = GetSystemMetrics(SM_CXDLGFRAME);
+
+	GetWindowRect(_hwndMain, &rcMain);
+
+	MoveWindow(_hDlgWeb, rcMain.left + nOffX + m_nPosX, rcMain.top + nOffY + m_nPosY, m_nWidth, m_nHeight, FALSE);
+	UpdateWindow(_hDlgWeb);
 }
 
-void cSharedWebData::FreeErrorMsgBuffer()
+void cWeb::SetWebUrl( std::string& url )
 {
-	delete[] m_szErrorMsgBuffer;
-	m_szErrorMsgBuffer = NULL;
-}
+	if (m_hWebWnd == NULL)
+		return;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+	DisplayHTMLPage(m_hWebWnd, CTString(url.c_str()));
+}

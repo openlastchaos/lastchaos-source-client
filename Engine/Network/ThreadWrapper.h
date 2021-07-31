@@ -1,10 +1,10 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 #ifndef __THREADWRAPPER_H__
 #define __THREADWRAPPER_H__
 
 #include <windows.h>
 
-class cThreadWrapper
+class ENGINE_API cThreadWrapper
 {
 public:
 	//cThreadWrapper(LPTHREAD_START_ROUTINE pRunningFunction);
@@ -32,4 +32,4 @@ private:
 };
 
 #endif //__THREADWRAPPER_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)

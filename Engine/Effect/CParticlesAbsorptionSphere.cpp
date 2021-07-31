@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #include "stdH.h"
 
@@ -34,10 +34,10 @@ void CParticlesAbsorptionSphere::Process(CParticles &particles, const FLOAT fDel
 	{
 		MoveProcess( particles[i], fDeltaTime );
 		if( !LifeProcess( particles[i], fDeltaTime )
-		 || m_sphere.IsInThis(particles[i].GetPosition() - m_vCenter) )//ì£½ì—ˆìŒ.
+		 || m_sphere.IsInThis(particles[i].GetPosition() - m_vCenter) )//Á×¾úÀ½.
 		{
-			//endë¥¼ ì•ìœ¼ë¡œ ë•¡ê¸°ë©´ì„œ endì•ì˜ ê°’ìœ¼ë¡œ í˜„ì¬ê°’ì„ ë®ì–´ì”€.
-			//ì´ ìë¦¬ì˜ ê°’ì´ ë§¨ë’¤ì˜ ê°’ìœ¼ë¡œ ë°”ê¼ˆìœ¼ë¯€ë¡œ ì—¬ê¸°ì—ì„œ ë£¨í”„ ë‹¤ì‹œ ì²˜ë¦¬.
+			//end¸¦ ¾ÕÀ¸·Î ¶¯±â¸é¼­ end¾ÕÀÇ °ªÀ¸·Î ÇöÀç°ªÀ» µ¤¾î¾¸.
+			//ÀÌ ÀÚ¸®ÀÇ °ªÀÌ ¸ÇµÚÀÇ °ªÀ¸·Î ¹Ù²¼À¸¹Ç·Î ¿©±â¿¡¼­ ·çÇÁ ´Ù½Ã Ã³¸®.
 			++eraseCount;
 			particles[i] = particles[count-eraseCount];
 			--i;
@@ -81,4 +81,4 @@ void CParticlesAbsorptionSphere::Write(CTStream *pOS)
 
 	m_sphere.Write(&os);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

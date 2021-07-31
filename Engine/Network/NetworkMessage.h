@@ -19,13 +19,12 @@
 #include <Engine/Math/Vector.h>
 #include <Engine/Base/Console.h>
 #include <Engine/Base/Translation.h>
-
   // maximum server buffer size is 256k
   #define SERVER_MAX_BUFFER_SIZE  256*1024
 // maximum size of message the server is allowed to send
 #define SERVER_MAX_MESSAGE_SIZE (SERVER_MAX_BUFFER_SIZE/3)
-// EDIT : BS : 070413 : ì‹ ê·œ íŒ¨í‚· ì•”í˜¸í™”
-#define MAX_MESSAGE_DATA		(1000 - 1)
+// EDIT : BS : 070413 : ½Å±Ô ÆÐÅ¶ ¾ÏÈ£È­
+#define MAX_MESSAGE_DATA		(10000 - 1)
 
 ///////
 
@@ -56,7 +55,8 @@ public:
   void operator=(const CNetworkMessage &nmOriginal);
   /* Destructor. */
   ~CNetworkMessage(void);
-  
+
+  void *GetBuffer()		{ return this->nm_pubMessage; }
   // Network message initialization
   void Initialize(void);
   void Initialize(const CNetworkMessage &nmOriginal);
@@ -71,7 +71,7 @@ public:
   void Dump(void);
 
   /* Get the type of this message. */
-  inline UBYTE GetType(void) const { ASSERT(this!=NULL); return UBYTE(nm_mtType&0x3F); };
+  inline UBYTE GetType(void) const { ASSERT(this!=NULL); return UBYTE(nm_mtType&0x7F); }; // sora ³×Æ®¿öÅ© ¸Þ½ÃÁö Ã³Å©½Ã 0x3F¸¦ »ç¿ëÇÏ¸é 64ÀÌ»óÀÇ °ª(64 & 0x3F = 0)¿¡¼­ ¹®Á¦°¡ ¹ß»ýÇØ¼­ ¹üÀ§ ¼öÁ¤
   /* Check if end of message. */
   BOOL EndOfMessage(void);
   // rewind message to start, so that written message can be read again
@@ -90,6 +90,7 @@ public:
   void ReadBits(void *pvBuffer, INDEX ctBits);
   void WriteBits(const void *pvBuffer, INDEX ctBits);
 
+  inline void setSize(int size) { this->nm_slSize = size; }
  // LONGLONG ntohll(LONGLONG n);
 
   inline LONGLONG ntohll3(LONGLONG n)
@@ -107,24 +108,25 @@ public:
 #endif
   }
 
- inline LONGLONG htonll3(LONGLONG n)
-{
+  inline LONGLONG htonll3(LONGLONG n)
+  {
 #ifdef BIG_ENDIAN
-	return n;
+	  return n;
 #else
-	char* p = (char*)&n;
-	char ch;
-	ch = p[0];	p[0] = p[7];	p[7] = ch;
-	ch = p[1];	p[1] = p[6];	p[6] = ch;
-	ch = p[2];	p[2] = p[5];	p[5] = ch;
-	ch = p[3];	p[3] = p[4];	p[4] = ch;
-	return n;
+	  char* p = (char*)&n;
+	  char ch;
+	  ch = p[0];	p[0] = p[7];	p[7] = ch;
+	  ch = p[1];	p[1] = p[6];	p[6] = ch;
+	  ch = p[2];	p[2] = p[5];	p[5] = ch;
+	  ch = p[3];	p[3] = p[4];	p[4] = ch;
+	  return n;
 #endif
-}
+  }
  
   /* Read an object from message. */
   inline CNetworkMessage &operator>>(float  &f) { Read(&f,  sizeof(f)); return *this;}
   inline CNetworkMessage &operator>>(double &d) { Read(&d,  sizeof(d)); return *this; }
+  inline CNetworkMessage &operator>>(int &n) { Read(&n, sizeof(n)); NTOHL(n); return *this; }
   inline CNetworkMessage &operator>>(ULONG &ul) { Read(&ul, sizeof(ul)); NTOHL(ul);  return *this; }
   inline CNetworkMessage &operator>>(UWORD &uw) { Read(&uw, sizeof(uw)); NTOHS(uw); return *this; }
   inline CNetworkMessage &operator>>(UBYTE &ub) { Read(&ub, sizeof(ub)); return *this; }
@@ -181,7 +183,7 @@ inline void CNetworkMessage::Read(void *pvBuffer, SLONG slSize)
 {
   if (nm_pubPointer+slSize > nm_pubMessage+nm_slSize) {
     CPrintF(TRANS("Warning: Message over-reading!\n"));
-    ASSERT(FALSE);
+ //   ASSERT(FALSE);
     memset(pvBuffer, 0, slSize);
     return;
   }

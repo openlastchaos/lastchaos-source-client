@@ -9,11 +9,11 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <vector>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <vector>
 
 // Define text position
 #define	HELPER_TITLE_TEXT_OFFSETX		25
@@ -23,10 +23,18 @@
 #define	HELPER_WIDTH					250
 #define	HELPER_HEIGHT					335
 
+// [8/31/2010 kiny8216] ÈÄ°ßÀÎ ½Ã½ºÅÛ °³Æí
+#define NEW_HELPER_WIDTH				434
+#define NEW_TAB_CLASS					50
+#define NEW_TAB_NAME					114
+#define NEW_TAB_TIME					114
+#define NEW_TAB_COUNT					80
+#define NEW_TAB_INFO					46
+
 //toop-tip
 #define HELPER_MAX_INFO_LINE 20
 
-#define	HELPER_MAX_STUDENTS					(20)		// ìµœëŒ€ ê°€ì… ì‹ ì²­ì.
+#define	HELPER_MAX_STUDENTS					(20)		// ÃÖ´ë °¡ÀÔ ½ÅÃ»ÀÚ.
 
 // ----------------------------------------------------------------------------
 // Name : CUIHelper
@@ -39,8 +47,8 @@ protected:
 	enum eHelperState
 	{
 		HELPER_MENU_REQ,
-		HELPER_MENU_TEACHER,			// ê²¬ìŠµìƒ ê´€ë¦¬
-		HELPER_MENU_STUDENT,			// í›„ê²¬ì¸ ê´€ë¦¬
+		HELPER_MENU_TEACHER,			// °ß½À»ı °ü¸®
+		HELPER_MENU_STUDENT,			// ÈÄ°ßÀÎ °ü¸®
 	};	
 
 	// internal structure
@@ -71,7 +79,7 @@ protected:
 		}
 
 		SLONG			lIndex;
-		CTString		strName;			// ë©¤ë²„ëª…?		
+		CTString		strName;			// ¸â¹ö¸í?		
 		int				iLevel;
 		int				iJob;
 		int				iJob2;
@@ -95,11 +103,23 @@ protected:
 
 	struct sTeacherInfo
 	{
+		bool operator<(const sTeacherInfo &other) const
+		{
+			if( index < other.index )
+				return true;
+			return false;
+		}
+		bool operator>(const sTeacherInfo &other) const
+		{			
+			return other.operator < (*this);
+		}
 		LONG index;
 		SLONG nFame;
 		SLONG nCntTeachingStudent;
 		SLONG nCntCompleteStudent;
 		SLONG nCntFailStudent;
+		SBYTE sbStartPlayTime;
+		SBYTE sbEndPlayTime;
 	};
 	struct sStudentInfo
 	{
@@ -108,20 +128,20 @@ protected:
 		char szFinalDate[50];
 	};
 
-	std::vector<sHelperMember>	m_vectorHelperList;			// ë‹¨ì› ëª©ë¡
-	std::vector<sTeacherInfo>	m_vectorTeacherInfoList;	// ì„ ìƒë“¤ì˜ ì •ë³´ ëª©ë¡
-	std::vector<sStudentInfo>	m_vectorStudentInfoList;	// í•™ìƒë“¤ì˜ ì •ë³´ ëª©ë¡
+	std::vector<sHelperMember>	m_vectorHelperList;			// ´Ü¿ø ¸ñ·Ï
+	std::vector<sTeacherInfo>	m_vectorTeacherInfoList;	// ¼±»ıµéÀÇ Á¤º¸ ¸ñ·Ï
+	std::vector<sStudentInfo>	m_vectorStudentInfoList;	// ÇĞ»ıµéÀÇ Á¤º¸ ¸ñ·Ï
 
 	// Controls
 	CUIButton				m_btnClose;						// Close button
 
-	CUIButton				m_btnRefreshTeacher;			// í›„ê²¬ì¸ ëª©ë¡ ê°±ì‹ 
-	CUIButton				m_btnRegisterTeacher;			// í›„ê²¬ì¸ ë“±ë¡
-	CUIButton				m_btnBeMyTeacher;				// ê²¬ìŠµìƒ
-	CUIButton				m_btnFireMyTeacher;				// ê²¬ìŠµìƒ í¬ê¸°
-	CUIButton				m_btnCancelRegister;			// í›„ê²¬ì¸ ë“±ë¡ ì·¨ì†Œ
+	CUIButton				m_btnRefreshTeacher;			// ÈÄ°ßÀÎ ¸ñ·Ï °»½Å
+	CUIButton				m_btnRegisterTeacher;			// ÈÄ°ßÀÎ µî·Ï
+	CUIButton				m_btnBeMyTeacher;				// °ß½À»ı
+	CUIButton				m_btnFireMyTeacher;				// °ß½À»ı Æ÷±â
+	CUIButton				m_btnCancelRegister;			// ÈÄ°ßÀÎ µî·Ï Ãë¼Ò
 
-	CUIButton				m_btnExit;						// ë‹«ê¸°
+	CUIButton				m_btnExit;						// ´İ±â
 
 	// Region of each part
 	UIRect					m_rcTitle;						// Region of title bar
@@ -163,10 +183,34 @@ protected:
 	UIRectUV				m_rtInfoMarkUV;
 	UIRect					m_rcInfoMark[HELPER_MAX_STUDENTS];
 
+	// [8/31/2010 kiny8216] ÈÄ°ßÀÎ ½Ã½ºÅÛ °³Æí
+	BOOL					m_bShowClass;
+	SLONG					m_nMyCurTeachCnt;						// ³ªÀÇ ÇöÀç ¾ç¼º ¼ö
+	SLONG					m_nMyCompleteTeachCnt;					// ³ªÀÇ ¿Ï·á ¾ç¼º ¼ö
+	SLONG					m_nMyFailTeachCnt;						// ³ªÀÇ ½ÇÆĞ ¾ç¼º ¼ö
+	CTString				m_strClassName;							// Popup Class Name
+
+	CUIButton				m_btnGift;								// Button : º¸»ó ¹Ş±â
+	CUIButton				m_btnFireMyStudent;						// Button : ÈÄ°ßÀÎ Æ÷±â
+
+	UIRect					m_rtNewBack[9];							// New BackGround Rect
+	UIRect					m_rcClass[HELPER_MAX_STUDENTS];			// Job Image Rect
+	UIRect					m_rtStudentBack[6];						// Sub BackGround Rect : Student
+	UIRect					m_rtTeacherBack[6];						// Sub BackGround Rect : Teacher
+	UIRect					m_rtStudentInfo[6];						// Info BackGround Rect : Student
+	UIRect					m_rtTeacherInfo[6];						// Info BackGround Rect : Teacher
+	UIRect					m_rtTabLine;							// ListBox Line Rect
+	UIRectUV				m_rtClass[TOTAL_JOB];					// Class Image Rect UV
+	UIRectUV				m_rcTabLineUV;							// ListBox Line Rect UV
+	CTextureData			*m_ptdSubTexture;						// New_Interface.tex
+	CTextureData			*m_ptdBtnTexture;						// CommonBtn.tex
+	CUIRectSurface			m_NewBack;								// New BackGround
+	CUIRectSurface			m_NewSubBack;							// Sub BackGround
+	CUIRectSurface			m_NewInfoBack;							// Info BackGround
 protected:
 	eHelperState			m_eHelperMenuState;
 	BOOL					m_bRegistredTeacher;
-	int						m_iLimitLevel;					// ìµœëŒ€ ë ˆë²¨
+	int						m_iLimitLevel;					// ÃÖ´ë ·¹º§
 public:
 	CUIHelper();
 	~CUIHelper();
@@ -189,25 +233,25 @@ public:
 	void	OpenHelper( );
 	void	ResetHelper();	
 
-	// ì„ ìƒ & í•™ìƒ ëª©ë¡ ê´€ë¦¬	
-	void	AddToHelperList( LONG lIndex, const CTString& strName, int iLevel, int iJob, int iJob2 );		// ë©¤ë²„ ëª©ë¡ì— ì¶”ê°€
-	void	AddToTeacherInfoList(LONG lIndex, SLONG fame, SLONG cntTeaching, SLONG cntComplete, SLONG cntFail);
+	// ¼±»ı & ÇĞ»ı ¸ñ·Ï °ü¸®	
+	void	AddToHelperList( LONG lIndex, const CTString& strName, int iLevel, int iJob, int iJob2);		// ¸â¹ö ¸ñ·Ï¿¡ Ãß°¡
+	void	AddToTeacherInfoList(LONG lIndex, SLONG fame, SLONG cntTeaching, SLONG cntComplete, SLONG cntFail, SBYTE StartPlayTime = -1, SBYTE EndPlayTime = -1 );
 	void	AddToStudentInfoList(LONG lIndex, const char *szFirstDate, const char *szFinalDate);
 	void	DelFromHelperList( LONG lIndex );
 	void	ClearHelperList();	
 	void	ChangeHelperLevel( LONG lIndex, int iLevel );		
 
 	// Command
-	void	RegisterTeacher( );					// í›„ê²¬ì¸ ë“±ë¡
-	void	CancelRegisterTeacher( );			// í›„ê²¬ì¸ ë“±ë¡ ì·¨ì†Œ
-	void	BeMyTeacher( );						// ê²¬ìŠµìƒ ì‹ ì²­
-	void	FireMyTeacher();					// ê²¬ìŠµìƒ í¬ê¸°	
-	void	TeacherAccept( LONG lIndex, const CTString& strStudentName );		// í•™ìƒì´ í›„ê²¬ì¸ì´ ë˜ì–´ë‹¬ë¼ê³  ìš”ì²­í–ˆì–´ìš”.
+	void	RegisterTeacher( );					// ÈÄ°ßÀÎ µî·Ï
+	void	CancelRegisterTeacher( );			// ÈÄ°ßÀÎ µî·Ï Ãë¼Ò
+	void	BeMyTeacher( );						// °ß½À»ı ½ÅÃ»
+	void	FireMyTeacher();					// °ß½À»ı Æ÷±â	
+	void	TeacherAccept( LONG lIndex, const CTString& strStudentName );		// ÇĞ»ıÀÌ ÈÄ°ßÀÎÀÌ µÇ¾î´Ş¶ó°í ¿äÃ»Çß¾î¿ä.
 
-	// í›„ê²¬ì¸ìœ¼ë¡œ ë“±ë¡ë˜ì–´ ìˆëŠ”ì§€ ì—¬ë¶€ë¥¼ ì„¤ì •í•¨.
+	// ÈÄ°ßÀÎÀ¸·Î µî·ÏµÇ¾î ÀÖ´ÂÁö ¿©ºÎ¸¦ ¼³Á¤ÇÔ.
 	void	SetRegistredTeacher( BOOL bRegistered );
 
-	// ë©¤ë²„ ëª©ë¡ ê°±ì‹ 	
+	// ¸â¹ö ¸ñ·Ï °»½Å	
 	void	RefreshTeacherList( BOOL bInit = FALSE );
 	void	RefreshStudentList( BOOL bInit = FALSE);
 
@@ -218,10 +262,23 @@ public:
 
 	// Command functions
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
+	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput, CTString &strSEInput );
 	void	MsgBoxLCommand( int nCommandCode, int nResult );
 
 	// Set focus
 	void	SetFocus( BOOL bVisible );
+
+	// [8/31/2010 kiny8216] ÈÄ°ßÀÎ ½Ã½ºÅÛ °³Æí
+	void	RenderNew();			// ÈÄ°ßÀÎ °³Æí Render ÇÔ¼ö
+	void	RenderStudent();		// °ß½À»ı UI Render
+	void	RenderTeacher();		// ÈÄ°ßÀÎ UI Render
+	void	PrepareOpen();			// UI ¼¼ÆÃ
+	void	ShowClass(int line);	// Å¬·¡½º ÀÌ¸§ ÆË¾÷
+	void	RenderPopUpClass();
+	void	FireMyStudent();
+	void	SetMyTeachInfo( SLONG CurTeachCnt, SLONG CompleteTeachCnt, SLONG FailTeachCnt );
+
+	void	Clear();
 };
 
 #endif	// UIHELPER_H_

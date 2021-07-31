@@ -9,8 +9,8 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIButton.h>
 
 // Define size of player information
 #define	HELPICON_WIDTH				50

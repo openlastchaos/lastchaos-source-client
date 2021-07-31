@@ -74,9 +74,9 @@ extern ENGINE_API void EndModelRenderingMask(void);
 #define RMF_INSIDE     (1UL<<7)  // doesn't need clipping to frustum
 #define RMF_INMIRROR   (1UL<<8)  // doesn't need clipping to mirror/warp plane
 #define RMF_WEAPON     (1UL<<9)  // TEMP: weapon model is rendering so don't use ATI's Truform!
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 #define RMF_OVERDRAW   (1UL<<10) //no depth test, & write
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
 class ENGINE_API CRenderModel {
 public:

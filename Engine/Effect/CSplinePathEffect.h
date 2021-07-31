@@ -10,12 +10,12 @@
 enum SplinePathDirType
 {
 	SPDT_NONE = 0,
-	SPDT_MOVEDIR,		//zì¶•ì„ quaternionìœ¼ë¡œ íšŒì „ ì‹œí‚¨ê²ƒ.
-	SPDT_INVMOVEDIR,	//MOVEDIRì˜ ë°˜ëŒ€ë°©í–¥
-	SPDT_TANGENT,		//yì¶•ì„ quaternionìœ¼ë¡œ íšŒì „ ì‹œí‚¨ê²ƒ.
-	SPDT_INVTANGENT,	//TANGENTì˜ ë°˜ëŒ€ë°©í–¥
-	SPDT_BINORMAL,		//xì¶•ì„ quaternionìœ¼ë¡œ íšŒì „ ì‹œí‚¨ê²ƒ.
-	SPDT_INVBINORMAL,	//BINORMALì˜ ë°˜ëŒ€ë°©í–¥
+	SPDT_MOVEDIR,		//zÃàÀ» quaternionÀ¸·Î È¸Àü ½ÃÅ²°Í.
+	SPDT_INVMOVEDIR,	//MOVEDIRÀÇ ¹İ´ë¹æÇâ
+	SPDT_TANGENT,		//yÃàÀ» quaternionÀ¸·Î È¸Àü ½ÃÅ²°Í.
+	SPDT_INVTANGENT,	//TANGENTÀÇ ¹İ´ë¹æÇâ
+	SPDT_BINORMAL,		//xÃàÀ» quaternionÀ¸·Î È¸Àü ½ÃÅ²°Í.
+	SPDT_INVBINORMAL,	//BINORMALÀÇ ¹İ´ë¹æÇâ
 };
 
 class ENGINE_API CSplinePathEffect : public CEffect
@@ -55,6 +55,8 @@ public:
 	sSplinePathInfo *GetSplinePath(INDEX index);
 	INDEX GetSplinePathCount()	{ return m_vectorSplinePath.size();	}
 	void ClearSplinePath()		{ m_vectorSplinePath.clear();		}
+	
+	effect_vector& GetvectorEffect(void) { return m_vectorEffect; }
 
 	inline void SetRotationType(EFFECT_OF_TAG_TYPE eott)	{ m_eRotation = eott;	}
 	inline EFFECT_OF_TAG_TYPE GetRotationType()				{ return m_eRotation;	}
@@ -72,8 +74,8 @@ protected:
 protected:
 	//contents
 	pathinfo_vector			m_vectorSplinePath;
-	EFFECT_OF_TAG_TYPE		m_eRotation;			//tagì˜ íšŒì „ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
-	EFFECT_OF_TAG_TYPE		m_ePosition;			//tagì˜ ì´ë™ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
+	EFFECT_OF_TAG_TYPE		m_eRotation;			//tagÀÇ È¸Àü¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
+	EFFECT_OF_TAG_TYPE		m_ePosition;			//tagÀÇ ÀÌµ¿¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
 	FLOAT3D					m_vOffsetPos;
 	//instance
 	effect_vector	m_vectorEffect;

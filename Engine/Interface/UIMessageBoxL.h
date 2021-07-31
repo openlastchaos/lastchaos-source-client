@@ -44,8 +44,8 @@ protected:
 
 	typedef struct tagSelTable
 	{
-		int			iIndex;		// Å”ÃŽÂµÂ¦ËÅŸ
-		int			iValue;		// Â°Åž.
+		int			iIndex;		// ÀÎµ¦½º
+		int			iValue;		// °ª.
 	}sSelTable;
 
 	int						m_nUIIndex;								// Index of message box
@@ -85,6 +85,10 @@ protected:
 
 	int						m_nCurNum;
 
+	__int64					m_nStartTime;							// [sora] ½ÃÀÛ ½Ã°£
+	__int64					m_nTime;								// [sora] ´ë±â ½Ã°£
+	int						m_nTimeOutBtnMessage;					// [sora] ½ÇÇà ¸Þ½ÃÁö
+
 protected:
 	// Internal functions
 	void	ReturnCommand( int nResult );
@@ -114,6 +118,16 @@ public:
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
+	// Key Messages.
+	WMSG_RESULT KeyMessage(MSG *pMsg );
+
+	void	SetMsgBoxLTimer(__int64 nTime, int nMessage)	// [sora] µ¿ÀÛ ½Ã°£ ¼³Á¤
+	{
+		m_nStartTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+		m_nTime = nTime;
+		m_nTimeOutBtnMessage = nMessage;
+	}
 };
 
 

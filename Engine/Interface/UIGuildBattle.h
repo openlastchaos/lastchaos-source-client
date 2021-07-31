@@ -6,24 +6,24 @@
 #endif
 
 // Include Files
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <algorithm>
-#include <map>
-#include <Engine/Effect/CEffectGroupManager.h>
-#include <Engine/Effect/CEffectGroup.h>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <algorithm>
+// #include <map>
+// #include <Engine/Effect/CEffectGroupManager.h>
+// #include <Engine/Effect/CEffectGroup.h>
 
 // Define size of Guild Battle
-#define	GB_WIDTH						311		// size of Guild Battle ì‹ ì²­ì°½ì˜ ë„ˆë¹„
-#define	GB_HEIGHT						220		// size of Guild Battle ì‹ ì²­ì°½ì˜ ë†’ì´
+#define	GB_WIDTH						311		// size of Guild Battle ½ÅÃ»Ã¢ÀÇ ³Êºñ
+#define	GB_HEIGHT						220		// size of Guild Battle ½ÅÃ»Ã¢ÀÇ ³ôÀÌ
 
-#define GB_MIN_MEMBER					10		// ê¸¸ë“œ ì „íˆ¬ ìµœì†Œ ì¸ì›
+#define GB_MIN_MEMBER					10		// ±æµå ÀüÅõ ÃÖ¼Ò ÀÎ¿ø
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle
-// Explain:  ê¸¸ë“œ ì „íˆ¬ 
+// Explain:  ±æµå ÀüÅõ 
 // Date : 2005-03-17,Author: Lee Ki-hwan
 // History: 2005. 4. 4	: Test Server Open
 //------------------------------------------------------------------------------
@@ -31,27 +31,27 @@ class ENGINE_API CUIGuildBattle : public CUIWindow
 {
 protected:	
 
-	// Guild Battle State : ê¸¸ë“œ ì „íˆ¬ì˜ ìƒíƒœ 
+	// Guild Battle State : ±æµå ÀüÅõÀÇ »óÅÂ 
 	enum eGBState
 	{
-		GBS_NONE,			// ì´ˆê¸° ìƒíƒœ
-		GBS_REQ,			// ê¸¸ë“œ ì „íˆ¬ ìš”ì²­
-		GBS_IN_REQ,			// ê¸¸ë“œ ì „íˆ¬ ìš”ì²­ ì¤‘( ìš”ì²­í›„ ì‘ë‹µì„ ê¸°ë‹¤ë¦¬ëŠ” ìƒíƒœ )
-		GBS_IN_REQ_ACCEPT,	// ê¸¸ë“œ ì „íˆ¬ ìˆ˜ë½ ì¤‘( ê¸¸ë“œì „ ì„±ë¦½ í›„ ëŒ€ê¸° ìƒíƒœ : 5ë¶„ ) 		
-		GBS_IN_BATTLE,		// ê¸¸ë“œ ì „íˆ¬ ì¤‘
-		GBS_BATTILE_NOT_ZONE, // ê¸¸ë“œ ì „íˆ¬ ì¡´ì´ ì•„ë‹ˆë‹¤.
-		GBS_END				// ê¸¸ë“œ ì „íˆ¬ ì¢…ë£Œ 
+		GBS_NONE,			// ÃÊ±â »óÅÂ
+		GBS_REQ,			// ±æµå ÀüÅõ ¿äÃ»
+		GBS_IN_REQ,			// ±æµå ÀüÅõ ¿äÃ» Áß( ¿äÃ»ÈÄ ÀÀ´äÀ» ±â´Ù¸®´Â »óÅÂ )
+		GBS_IN_REQ_ACCEPT,	// ±æµå ÀüÅõ ¼ö¶ô Áß( ±æµåÀü ¼º¸³ ÈÄ ´ë±â »óÅÂ : 5ºĞ ) 		
+		GBS_IN_BATTLE,		// ±æµå ÀüÅõ Áß
+		GBS_BATTILE_NOT_ZONE, // ±æµå ÀüÅõ Á¸ÀÌ ¾Æ´Ï´Ù.
+		GBS_END				// ±æµå ÀüÅõ Á¾·á 
 	};
 	eGBState				m_eGBState;
 
-// ê¸¸ë“œ ì‹ ì²­
+// ±æµå ½ÅÃ»
 	// Use m_ptdBaseTexture
 	// Controls	
 	CUIButton				m_btnOK;						// OK button
 	CUIButton				m_btnCancel;					// Cancel button
-	CUIListBox				m_lbGBReqdDesc;					// ê¸¸ë“œ ì‹ ì²­ì— ê´€í•œ ì„¤ëª…
-	CUIEditBox				m_ebGuildReqNas;				// ê¸¸ë“œ ì‹ ì²­ ê¸ˆì•¡ ì…ë ¥ ( ë§Œ ë‚˜ìŠ¤ ë‹¨ìœ„ )
-	CUIEditBox				m_ebGuildReqTime;				// ê¸¸ë“œ ì‹ ì²­ ì‹œê°„ ( ë¶„ë‹¨ìœ„ )
+	CUIListBox				m_lbGBReqdDesc;					// ±æµå ½ÅÃ»¿¡ °üÇÑ ¼³¸í
+	CUIEditBox				m_ebGuildReqNas;				// ±æµå ½ÅÃ» ±İ¾× ÀÔ·Â ( ¸¸ ³ª½º ´ÜÀ§ )
+	CUIEditBox				m_ebGuildReqTime;				// ±æµå ½ÅÃ» ½Ã°£ ( ºĞ´ÜÀ§ )
 		
 	// Region of each part
 	UIRect					m_rcTitle;						// Region of title bar
@@ -67,10 +67,10 @@ protected:
 	UIRectUV				m_rtInputBoxM;					// UV of middle region of input box
 	UIRectUV				m_rtInputBoxR;					// UV of right region of input box
 
-// ê¸¸ë“œ ìƒíƒœ í‘œì‹œ 
+// ±æµå »óÅÂ Ç¥½Ã 
 	CTextureData*			m_ptdStateTexture;
 	
-	UIRect					m_rcBox;						// ì‹œê°„ í‘œì‹œ ì°½ (ë°°ê²½)
+	UIRect					m_rcBox;						// ½Ã°£ Ç¥½Ã Ã¢ (¹è°æ)
 	UIRect					m_rcRedBox;						// RedBox : KillCount
 	UIRect					m_rcBlueBox;					// BlueBox : KillCount
 		
@@ -78,13 +78,13 @@ protected:
 	UIRectUV				m_rtBlueBox;					// BlueBox : KillCount
 	UIRectUV				m_rtRedBox;						// RedBox : KillCount
 	
-	UIRectUV				m_rtSmallNumber[10];			// ì‹œê°„ í‘œì‹œ ìš© ìˆ«ì
-	UIRectUV				m_rtLargeNumber[10];			// KillCount í‘œì‹œ ìš© ìˆ«ì 
-	UIRectUV				m_rtColon;						// ì‹œê°„ í‘œì‹œ ìš© :(ì½œë¡ )
+	UIRectUV				m_rtSmallNumber[10];			// ½Ã°£ Ç¥½Ã ¿ë ¼ıÀÚ
+	UIRectUV				m_rtLargeNumber[10];			// KillCount Ç¥½Ã ¿ë ¼ıÀÚ 
+	UIRectUV				m_rtColon;						// ½Ã°£ Ç¥½Ã ¿ë :(Äİ·Ğ)
 	
 // Notice 
-	UIRect					m_rcNotice1;					// Region of notice1 (ìœ„ ìª½)
-	UIRect					m_rcNotice2;					// Region of notice2 (ì•„ë« ìª½)
+	UIRect					m_rcNotice1;					// Region of notice1 (À§ ÂÊ)
+	UIRect					m_rcNotice2;					// Region of notice2 (¾Æ·§ ÂÊ)
 	
 	UIRectUV				m_rtNoticeL;					// UV of notice left region
 	UIRectUV				m_rtNoticeC;					// UV of notice center region
@@ -92,31 +92,31 @@ protected:
 	
 // Info 
 	//Notice
-	TIME					m_tmNoticeTime;					// ê³µì§€ ì‚¬í•­ í‘œì‹œ ì‹œê°„
-	BOOL					m_bShowNotice;					// ê³µì§€ ì‚¬í•­ì„ ë³´ì—¬ì£¼ê³  ìˆëŠ” ê°€
-	CTString				m_strNoticeMessage;				// ê³µì ì‚¬í•­ 1 ìŠ¤íŠ¸ë§ (ìœ„)
-	CTString				m_strNoticeMessage2;			// ê³µì§€ ì‚¬í•­ 2 ìŠ¤íŠ¸ë§ (ì•„ë˜)
+	TIME					m_tmNoticeTime;					// °øÁö »çÇ× Ç¥½Ã ½Ã°£
+	BOOL					m_bShowNotice;					// °øÁö »çÇ×À» º¸¿©ÁÖ°í ÀÖ´Â °¡
+	CTString				m_strNoticeMessage;				// °øÀÚ »çÇ× 1 ½ºÆ®¸µ (À§)
+	CTString				m_strNoticeMessage2;			// °øÁö »çÇ× 2 ½ºÆ®¸µ (¾Æ·¡)
 	
-	// ë‚´ ê¸¸ë“œ ì •ë³´ ( Guildì—ë„ ì €ì¥ë˜ì–´ ìˆì§€ë§Œ.. ê·¸ëƒ¥ ì²˜ìŒì— ì €ì¥í•´ì„œ ì“°ì )
-	CTString				m_strGuildName;					// ê¸¸ë“œ ì´ë¦„
-	int						m_nCharIndex;					// ê¸¸ë“œì¥ì˜ ìºë¦­í„° Index (ê¸¸ë“œì¥ë§Œì´ ê°€ì§€ê³  ìˆìŒ)
-	int						m_nGuildIndex;					// ê¸¸ë“œ Index 
+	// ³» ±æµå Á¤º¸ ( Guild¿¡µµ ÀúÀåµÇ¾î ÀÖÁö¸¸.. ±×³É Ã³À½¿¡ ÀúÀåÇØ¼­ ¾²ÀÚ )
+	CTString				m_strGuildName;					// ±æµå ÀÌ¸§
+	int						m_nCharIndex;					// ±æµåÀåÀÇ Ä³¸¯ÅÍ Index (±æµåÀå¸¸ÀÌ °¡Áö°í ÀÖÀ½)
+	int						m_nGuildIndex;					// ±æµå Index 
 	int						m_nKillPoint;					// Kill Point
 	
-	//ìƒëŒ€ í¸ ê¸¸ë“œì˜ ì •ë³´
-	CTString				m_strTargetGuildName;			// ìƒëŒ€í¸ ê¸¸ë“œ ì´ë¦„
-	int						m_nTargetCharIndex;				// ìƒëŒ€í¸ ê¸¸ë“œì¥ì˜ Index (ê¸¸ë“œì¥ë§Œì´ ê°€ì§€ê³  ìˆìŒ)
-	int						m_nTargetGuildIndex;			// ìƒëŒ€í¸ ê¸¸ë“œ Index 
-	int						m_nTargetKillPoint;				// ìƒëŒ€í¸ì˜ KillPoint
+	//»ó´ë Æí ±æµåÀÇ Á¤º¸
+	CTString				m_strTargetGuildName;			// »ó´ëÆí ±æµå ÀÌ¸§
+	int						m_nTargetCharIndex;				// »ó´ëÆí ±æµåÀåÀÇ Index (±æµåÀå¸¸ÀÌ °¡Áö°í ÀÖÀ½)
+	int						m_nTargetGuildIndex;			// »ó´ëÆí ±æµå Index 
+	int						m_nTargetKillPoint;				// »ó´ëÆíÀÇ KillPoint
 	
 	// Battle Status
-	LONG					m_lLeftTime;					// í˜„ì¬ ë‚¨ì€ ì‹œê°„ (1ë¶„ë§ˆë‹¤, í˜¹ì€ KillPointë³€ê²½ì‹œ ê°±ì‹ )
-	int						m_nBattleZone;					// ê¸¸ë“œ ì „íˆ¬ ì§€ì—­ 
-	int						m_nPrize;						// ë°°íŒ… ë‚˜ìŠ¤
+	LONG					m_lLeftTime;					// ÇöÀç ³²Àº ½Ã°£ (1ºĞ¸¶´Ù, È¤Àº KillPointº¯°æ½Ã °»½Å)
+	int						m_nBattleZone;					// ±æµå ÀüÅõ Áö¿ª 
+	int						m_nPrize;						// ¹èÆÃ ³ª½º
 
 	// etc
-	CTString				m_strTitle;						// íƒ€ì´í‹€ ì´ë¦„ (ê¸¸ë“œì „íˆ¬ ê´€ë ¨ ë©”ì„¸ì§€ ë¿Œë¦´ë•Œ ì‚¬ìš©)
-	TIME					m_tmLeftTime;					// íƒ€ì´ë¨¸ ìš© ì„ì‹œ ë³€ìˆ˜
+	CTString				m_strTitle;						// Å¸ÀÌÆ² ÀÌ¸§ (±æµåÀüÅõ °ü·Ã ¸Ş¼¼Áö »Ñ¸±¶§ »ç¿ë)
+	TIME					m_tmLeftTime;					// Å¸ÀÌ¸Ó ¿ë ÀÓ½Ã º¯¼ö
 	
 	std::map<SLONG, CEffectGroup *> m_mapEG;
 public:
@@ -126,8 +126,8 @@ public:
 
 	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
-	void	Clear();	// All Data Clear ( EditBoxëŠ” ì œì™¸ : ì©.. ì—ëŸ¬ë‚œë‹¹.. )
-	void	Close();	// ì¢…ë£Œ
+	void	Clear();	// All Data Clear ( EditBox´Â Á¦¿Ü : ÂÁ.. ¿¡·¯³­´ç.. )
+	void	Close();	// Á¾·á
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
@@ -152,18 +152,18 @@ public:
 
 	// Render
 	void	Render();					// Render
-	void	RenderGBReq();				// ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­ì°½ 
-	void	RenderGBStatus();			// ê¸¸ë“œ ì „íˆ¬ ìƒíƒœì°½
-	void	DrawNumber( int x, int y, int nNumber, bool bLarge = false );	// ìˆ«ì
-	void	RenderLeftTime();			// ë‚¨ì€ ì‹œê°„
+	void	RenderGBReq();				// ±æµå ÀüÅõ ½ÅÃ»Ã¢ 
+	void	RenderGBStatus();			// ±æµå ÀüÅõ »óÅÂÃ¢
+	void	DrawNumber( int x, int y, int nNumber, bool bLarge = false );	// ¼ıÀÚ
+	void	RenderLeftTime();			// ³²Àº ½Ã°£
 	void	DrawColon( int x, int y );	// Colon Render
 
 	void	RenderKillPoint();			// Render Kill Point
-	void	RenderKillPointRed();		// ìƒëŒ€ í¸ 
-	void	RenderKillPointBlue();		// ìš°ë¦¬ í¸
+	void	RenderKillPointRed();		// »ó´ë Æí 
+	void	RenderKillPointBlue();		// ¿ì¸® Æí
 		
-	// ê¸¸ë“œ ì „íˆ¬ ì‹ ì²­
-	void	OpenGBReq( int nTargetCharIndex, CTString strGuildName ); // ê¸¸ë“œ ì‹ ì²­ ì°½
+	// ±æµå ÀüÅõ ½ÅÃ»
+	void	OpenGBReq( int nTargetCharIndex, CTString strGuildName ); // ±æµå ½ÅÃ» Ã¢
 	void	AddGBReqdDescString( CTString &strDesc, COLOR colDesc = 0xF2F2F2FF );
 			
 	// NetWork Message
@@ -179,18 +179,18 @@ public:
 	void	GBStatus( int nGuildIndex1, CTString strGuildName1, int nCount1, int nGuildIndex2, CTString strGuildName2, int nCount2, int Time, int nZone );
 	void	GBEnd( int nWinnerGuildIndex, int nGuildIndex1, CTString strGuildName1, int nGuildIndex2, CTString strGuildName2, int nPrize );
 	
-	// ì—ëŸ¬ ì²˜ë¦¬
+	// ¿¡·¯ Ã³¸®
 	void	GBErrorProcess ( int nErrorCode ); 
 
 	// MessageBox
-	void	CloseAllMsgBox();	// ëª¨ë“  ë©”ì„¸ì§€ ì°½ ì œê±°
-	void	GBErrorMessage( int nCommandCode, CTString strErrorMessage );	// ì—ëŸ¬ ì—ë””íŠ¸ ë°•ìŠ¤
-	void	GBMessage( int nCommandCode, CTString strMessage, DWORD dwStyle ); // ë©”ì„¸ì§€ ë°•ìŠ¤
+	void	CloseAllMsgBox();	// ¸ğµç ¸Ş¼¼Áö Ã¢ Á¦°Å
+	void	GBErrorMessage( int nCommandCode, CTString strErrorMessage );	// ¿¡·¯ ¿¡µğÆ® ¹Ú½º
+	void	GBMessage( int nCommandCode, CTString strMessage, DWORD dwStyle ); // ¸Ş¼¼Áö ¹Ú½º
 		
 	BOOL	IsInBattle();
 	BOOL	IsGBReq()	{ if( m_eGBState == GBS_REQ )	return TRUE; return FALSE; }
 		
-	// ê³µì§€ ì°½ ë¿Œë¦¬ê¸°
+	// °øÁö Ã¢ »Ñ¸®±â
 	void	SetNotice ( CTString strNoticeMessage, CTString m_strNoticeMessage2 );
 
 	// Guild Battle Effect
@@ -199,7 +199,7 @@ public:
 	void	StartEffect();
 	void	StopEffect();
 	
-	// ì ì¸ì§€ í™•ì¸ ( ì „íˆ¬ ì¡´ ì¸ì§€ë„ í™•ì¸ í•©ë‹ˆë‹¤. )
+	// ÀûÀÎÁö È®ÀÎ ( ÀüÅõ Á¸ ÀÎÁöµµ È®ÀÎ ÇÕ´Ï´Ù. )
 	BOOL	IsEnemy( unsigned long ulID );
 	int		IsEnemyGuild ( unsigned long ulGuildIndex );
 	

@@ -222,10 +222,10 @@ void CSoundDecoder::InitPlugins(void)
     // load vorbis
     if (_hOV==NULL) {
 #ifndef NDEBUG
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Exception Check & Fix)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Exception Check & Fix)(0.1)
   #define VORBISLIB "vorbisfile.dll"
 //  #define VORBISLIB "vorbisfile_d.dll"
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Exception Check & Fix)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Exception Check & Fix)(0.1)
 #else
   #define VORBISLIB "vorbisfile.dll"
 #endif

@@ -2,14 +2,6 @@
 //
 #include "resource.h"
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// 24
-//
-
-MANIFEST_RESOURCE_ID    24      MOVEABLE PURE   "Nksp.exe.manifest"
-/////////////////////////////////////////////////////////////////////////////
-
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -45,7 +37,105 @@ IDC_ZOOMIN_CURSOR       CURSOR  DISCARDABLE     "res\\cur_07.cur"
 IDC_SIZE_CURSOR         CURSOR  DISCARDABLE     "res\\cur_08.cur"
 IDC_PRODUCE_CURSOR      CURSOR  DISCARDABLE     "res\\cur_09.cur"
 IDC_SIGNAL_CURSOR       CURSOR  DISCARDABLE     "res\\cur_10.cur"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_WEBPAGE DIALOG DISCARDABLE  0, 0, 187, 94
+STYLE WS_POPUP
+FONT 10, "System"
+BEGIN
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_WEBPAGE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 180
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 87
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,2,1
+ PRODUCTVERSION 1,0,2,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Barunsongames Inc.\0"
+            VALUE "FileDescription", "LastChaos Runner\0"
+            VALUE "FileVersion", "1, 0, 2, 1\0"
+            VALUE "InternalName", "Nksp\0"
+            VALUE "LegalCopyright", "Copyright ¨Ï 2003-2011 Barunsongames Inc.\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "Nksp.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "LastChaos\0"
+            VALUE "ProductVersion", "1, 0, 2, 1\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
+
+#endif    // !_MAC
+
 #endif    // Korean resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Chinese (Hong Kong) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ZHH)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_HONGKONG
+#pragma code_page(950)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_FUNMILY             ICON    DISCARDABLE     "res\\shadow.ico"
+#endif    // Chinese (Hong Kong) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -64,6 +154,16 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 IDC_NOCURSOR            CURSOR  DISCARDABLE     "nocursor.cur"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_ICON_BLUE           ICON    DISCARDABLE     "res\\test_exe_blue.ico"
+IDR_MAINFRAME           ICON    DISCARDABLE     "res\\Nksp.ico"
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -90,15 +190,6 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDR_MAINFRAME           ICON    DISCARDABLE     "res\\Nksp.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //

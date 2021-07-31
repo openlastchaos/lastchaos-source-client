@@ -9,9 +9,9 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIDrawFigure.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIDrawFigure.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIListBox.h>
 
 // Define size of MINIGAME
 #define	MINIGAME_WIDTH				428
@@ -19,36 +19,36 @@
 
 enum _btnState 
 {
-	BTN_STATE_DISABLE_ALL = 0,	//ì „ì²´ ë²„íŠ¼ disable
-	BTN_STATE_OPEN ,			//ì°½ ì˜¤í”ˆì‹œ 
-	BTN_STATE_WIN_DRAW,			//ìŠ¹ë¦¬ ë¹„ê¸´ í›„	
-	BTN_STATE_START_CONTINUE,	//ê²Œì„ì‹œì‘/ê³„ì†í•˜ê¸° ëˆ„ë¥¸ í›„ 
-	BTN_STATE_DEFEAT,			//íŒ¨ë°° í›„ 
-	BTN_STATE_ENABEL_ALL,		//ì „ì²´ ë²„íŠ¼ enable
+	BTN_STATE_DISABLE_ALL = 0,	//ÀüÃ¼ ¹öÆ° disable
+	BTN_STATE_OPEN ,			//Ã¢ ¿ÀÇÂ½Ã 
+	BTN_STATE_WIN_DRAW,			//½Â¸® ºñ±ä ÈÄ	
+	BTN_STATE_START_CONTINUE,	//°ÔÀÓ½ÃÀÛ/°è¼ÓÇÏ±â ´©¸¥ ÈÄ 
+	BTN_STATE_DEFEAT,			//ÆĞ¹è ÈÄ 
+	BTN_STATE_ENABEL_ALL,		//ÀüÃ¼ ¹öÆ° enable
 };
 
 enum _gameState
 {
-	MINIGAME_START =0 ,			//ê²Œì„ ì‹œì‘ ì‹œ 
-	MINIGAME_LOSE,				//ì¡Œì„ ë•Œ 	
-	MINIGAME_DRAW,				//ë¹„ê²¼ì„ ë•Œ
-	MINIGAME_WIN_1 =3,				//1ìŠ¹
-	MINIGAME_WIN_2,				//2ìŠ¹
-	MINIGAME_WIN_3,				//3ìŠ¹
-	MINIGAME_WIN_4,				//4ìŠ¹
-	MINIGAME_WIN_5,				//5ìŠ¹
-	MINIGAME_WIN_6,				//6ìŠ¹
-	MINIGAME_WIN_7,				//7ìŠ¹
-	MINIGAME_WIN_8,				//8ìŠ¹	
+	MINIGAME_START =0 ,			//°ÔÀÓ ½ÃÀÛ ½Ã 
+	MINIGAME_LOSE,				//Á³À» ¶§ 	
+	MINIGAME_DRAW,				//ºñ°åÀ» ¶§
+	MINIGAME_WIN_1 =3,				//1½Â
+	MINIGAME_WIN_2,				//2½Â
+	MINIGAME_WIN_3,				//3½Â
+	MINIGAME_WIN_4,				//4½Â
+	MINIGAME_WIN_5,				//5½Â
+	MINIGAME_WIN_6,				//6½Â
+	MINIGAME_WIN_7,				//7½Â
+	MINIGAME_WIN_8,				//8½Â	
 	MINIGAME_STATE_END,			
 };
 
 enum _npcState
 {
-	MINIGAME_NPC_NOTHING =0,	//ê¸°ë³¸ ìƒíƒœ
-	MINIGAME_NPC_READY,			//ê²Œì„ì‹œì‘
-	MINIGAME_NPC_START,			//ìœ ì €ì„ íƒì‹œ(ì„œë²„ì—ì„œ ì‘ë‹µì˜¤ê¸°ì „)
-	MINIGAME_NPC_RESULT,		//ê²°ê³¼(ì„œë²„ë¡œ ë¶€í„° ê²°ê³¼)
+	MINIGAME_NPC_NOTHING =0,	//±âº» »óÅÂ
+	MINIGAME_NPC_READY,			//°ÔÀÓ½ÃÀÛ
+	MINIGAME_NPC_START,			//À¯Àú¼±ÅÃ½Ã(¼­¹ö¿¡¼­ ÀÀ´ä¿À±âÀü)
+	MINIGAME_NPC_RESULT,		//°á°ú(¼­¹ö·Î ºÎÅÍ °á°ú)
 };
 
 
@@ -68,14 +68,14 @@ protected:
 	CUIDrawBox			m_bxWinNum;
 	
 	// Buttones
-	CUIButton			m_btnReceiveItem;		// ê·¸ë§Œí•˜ê³  ìƒí’ˆ ë°›ê¸°
-	CUIButton			m_btnStartGame;			// ê²Œì„ ì‹œì‘
-	CUIButton			m_btnKeepGoing;			// ê²Œì„ ê³„ì†
-	CUIButton			m_btnScissors;			// ê°€ìœ„ ì´ë¯¸ì§€
-	CUIButton			m_btnStone;				// ë°”ìœ„ ì´ë¯¸ì§€
-	CUIButton			m_btnPaper;				// ë³´ ì´ë¯¸ì§€
-	CUIButton			m_btnNpcChoice[3];		// NPC ì„ íƒ ì´ë¯¸ì§€
-	CUIButton			m_btnNpcChoiceMove;		// NPC ì„ íƒ ì›€ì§ì„ ì´ë¯¸ì§€
+	CUIButton			m_btnReceiveItem;		// ±×¸¸ÇÏ°í »óÇ° ¹Ş±â
+	CUIButton			m_btnStartGame;			// °ÔÀÓ ½ÃÀÛ
+	CUIButton			m_btnKeepGoing;			// °ÔÀÓ °è¼Ó
+	CUIButton			m_btnScissors;			// °¡À§ ÀÌ¹ÌÁö
+	CUIButton			m_btnStone;				// ¹ÙÀ§ ÀÌ¹ÌÁö
+	CUIButton			m_btnPaper;				// º¸ ÀÌ¹ÌÁö
+	CUIButton			m_btnNpcChoice[3];		// NPC ¼±ÅÃ ÀÌ¹ÌÁö
+	CUIButton			m_btnNpcChoiceMove;		// NPC ¼±ÅÃ ¿òÁ÷ÀÓ ÀÌ¹ÌÁö
 
 	// Other Images
 	UIRect				m_rtVS;					// VS Image
@@ -96,6 +96,15 @@ protected:
 	CTString			m_strNpcTalk[MINIGAME_STATE_END];	
 	CUIListBox			m_listNpcTalk;
 	BOOL				m_bTalkOnce;
+
+	// Minigame network messages
+	UBYTE m_ubEventType;
+	UBYTE m_ubMsgStart;
+	UBYTE m_ubMsgSelect;
+	UBYTE m_ubMsgContinue;
+	UBYTE m_ubMsgEnd;
+
+	DWORD m_dwTimePass;
 
 public:
 	CUIMinigame();
@@ -128,7 +137,7 @@ public:
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Open portal
-	void	OpenMinigame();
+	void	OpenMinigame(UBYTE eventType);
 
 	// Set data
 	void	SetMinigameResult(int wincount,int usersel,int npcsel,int whowin);
@@ -143,6 +152,45 @@ public:
 	
 };
 
+#define TREASUREMAP_WIDTH				365
+#define TREASUREMAP_HEIGHT				384
+
+class CUITreasureMap : public CUIWindow
+{
+protected:
+	// Addtional Texture
+	CTextureData		*m_ptdWorldMapTexture;			// Texture of event image
+	CUIDrawBox			m_bxBack;
+	UIRect				m_rtTreasureMark;
+	UIRect				m_rtWorldMap;
+	UIRectUV			m_rvTreasureMark;
+	UIRectUV			m_rvWorldMap;
+	CUIButton			m_btnClose;
+
+	INDEX				m_nZoneIndex;
+	FLOAT				m_fposX;
+	FLOAT				m_fposY;
+public:
+	CUITreasureMap();
+	~CUITreasureMap();
+
+	// close
+	void	Close();
+
+	void	InitData();
+	// Create
+	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+
+	// Adjust position
+	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	OpenMap(INDEX ZoneIndex, FLOAT fPosX, FLOAT fPosY);
+
+	// Render
+	void	Render();
+	// Messages
+	WMSG_RESULT	MouseMessage( MSG *pMsg );
+};
 
 #endif	// UIMinigame_H_
 

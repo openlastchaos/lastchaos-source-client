@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #include "stdH.h"
 
@@ -31,10 +31,10 @@ void CParticlesAbsorptionDefault::Process(CParticles &particles, const FLOAT fDe
 	for(UINT i=0; i<count-eraseCount; ++i)
 	{
 		MoveProcess( particles[i], fDeltaTime );
-		if( !LifeProcess( particles[i], fDeltaTime ) )//ì£½ì—ˆìŒ.
+		if( !LifeProcess( particles[i], fDeltaTime ) )//Á×¾úÀ½.
 		{
-			//endë¥¼ ì•žìœ¼ë¡œ ë•¡ê¸°ë©´ì„œ endì•žì˜ ê°’ìœ¼ë¡œ í˜„ìž¬ê°’ì„ ë®ì–´ì”€.
-			//ì´ ìžë¦¬ì˜ ê°’ì´ ë§¨ë’¤ì˜ ê°’ìœ¼ë¡œ ë°”ê¼ˆìœ¼ë¯€ë¡œ ì—¬ê¸°ì—ì„œ ë£¨í”„ ë‹¤ì‹œ ì²˜ë¦¬.
+			//end¸¦ ¾ÕÀ¸·Î ¶¯±â¸é¼­ end¾ÕÀÇ °ªÀ¸·Î ÇöÀç°ªÀ» µ¤¾î¾¸.
+			//ÀÌ ÀÚ¸®ÀÇ °ªÀÌ ¸ÇµÚÀÇ °ªÀ¸·Î ¹Ù²¼À¸¹Ç·Î ¿©±â¿¡¼­ ·çÇÁ ´Ù½Ã Ã³¸®.
 			++eraseCount;
 			particles[i] = particles[count-eraseCount];
 			--i;
@@ -75,4 +75,4 @@ void CParticlesAbsorptionDefault::Write(CTStream *pOS)
 	os.WriteID_t("PADF");
 	os << (UBYTE)CURRENT_VERSION;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

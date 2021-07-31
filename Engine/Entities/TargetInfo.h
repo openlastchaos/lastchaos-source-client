@@ -8,32 +8,21 @@
 #include <Engine/Math/Vector.h>
 #include <Engine/Base/CTString.h>
 
-class  CTargetInfom
+typedef enum _tagTargetType
 {
-public:
-	BOOL	bIsActive;
-	SBYTE	TargetType;
-	char	TargetName[30];
-	FLOAT	fMaxHealth;
-	FLOAT	fHealth;
-	int		iLevel;
-	CEntity	*pen_pEntity;
-	int		PkMode;
-	int		PkState;
-	int     PkTitle;
-	int		Legit;
-	int		dbIdx;
+	CHARACTER,
+	MOB,
+	ITEM,
+	NPC,
+	PRODUCTION,
+	P1PET,	
+	SUMMON,
+	WILDPET,
+} TARGET_TYPE;
 
-public:
-	CTargetInfom(void);
-	~CTargetInfom(void);
 
-	ENGINE_API void	Init();
-};
-
-class  CTargetInfomReal
+struct stTargetBase
 {
-public:
 	BOOL	bIsActive;
 	SBYTE	TargetType;
 	char	TargetName[50];
@@ -44,31 +33,53 @@ public:
 	int		PkMode;
 	int		PkState;
 	int     PkTitle;
-	SQUAD   llCount;
 	int		Legit;
-	LONG		lGuildIndex;	// Í∏∏Îìú Ïù∏Îç±Ïä§
-	CTString	strGuildName;	// Í∏∏ÎìúÎ™Ö
-	SBYTE	sbGuildRank;		// WSS_GUILDMASTER 070517
-	UBYTE	ubGuildNameColor;	//[071123: Su-won] DRATAN_SIEGE_DUNGEON
+	int		dbIdx;
 
+	void Init()
+	{
+		fMaxHealth = 0;
+		fHealth = 0;
+		bIsActive = FALSE;
+		iLevel = 0;
+		TargetName[0] = NULL;
+		pen_pEntity = NULL;
+		PkMode = 0;
+		PkState = 0;
+		PkTitle = 0;
+		dbIdx = 0;		
+	}
+};
+
+class  CTargetInfom : public stTargetBase
+{
+public:
+	BOOL	bPkHideState;
+	int		nSyndicateType;		// ∞·ªÁ¥Î ≈∏¿‘
+	int		nSyndicateGrade;	// ∞·ªÁ¥Î ¡˜¿ß
+
+public:
+	CTargetInfom(void);
+	~CTargetInfom(void);
+
+	ENGINE_API void	Init();
+};
+
+class  CTargetInfomReal : public stTargetBase
+{
+public:
+	SQUAD		llCount;
+	LONG		lGuildIndex;	// ±ÊµÂ ¿Œµ¶Ω∫
+	CTString	strGuildName;	// ±ÊµÂ∏Ì
+	SBYTE		sbGuildRank;		// WSS_GUILDMASTER 070517
+	UBYTE		ubGuildNameColor;	//[071123: Su-won] DRATAN_SIEGE_DUNGEON
+	INDEX		iNickIndex;			// »£ƒ™ ¿Œµ¶Ω∫
+	
 public:
 	CTargetInfomReal(void);
 	~CTargetInfomReal(void);
 
 	ENGINE_API void	Init();
 };
-
-typedef enum _tagTargetType
-{
-	CHARACTER,
-	MOB,
-	ITEM,
-	NPC,
-	PRODUCTION,
-	PET,	
-	SUMMON,
-	WILDPET,
-} TARGET_TYPE;
-//extern CTargetInfom _TargetInfo;
 
 #endif

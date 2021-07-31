@@ -20,9 +20,13 @@ FLOAT ifeel_fGain = 1.0f;
 INDEX ifeel_bEnabled = FALSE;
 
 #ifndef NDEBUG
-  #define IFEEL_DLL_NAME "Bin/Debug/ImmWrapper.dll"
+#	if		defined(_MSC_VER) && (_MSC_VER >= 1600)
+#		define IFEEL_DLL_NAME "Bin\\Debug2010\\ImmWrapper.dll"
+#	else
+#		define IFEEL_DLL_NAME "Bin\\Debug\\ImmWrapper.dll"
+#	endif
 #else
-  #define IFEEL_DLL_NAME "Bin/ImmWrapper.dll"
+  #define IFEEL_DLL_NAME "Bin\\ImmWrapper.dll"
 #endif
 
 void ifeel_GainChange(void *ptr)
@@ -98,7 +102,11 @@ BOOL IFeel_InitDevice(HINSTANCE &hInstance, HWND &hWnd)
 
   // load iFeel lib 
   CTFileName fnmExpanded;
+#ifndef	WORLD_EDITOR
   ExpandFilePath(EFP_READ | EFP_NOZIPS,(CTString)IFEEL_DLL_NAME,fnmExpanded);
+#else	// WORLD_EDITOR
+  fnmExpanded = _fnmApplicationPath + _fnmApplicationExe.FileDir() + "ImmWrapper.dll";
+#endif	// WORLD_EDITOR
   if(_hLib!=NULL) return FALSE;
 
   UINT iOldErrorMode = SetErrorMode( SEM_NOOPENFILEERRORBOX|SEM_FAILCRITICALERRORS);

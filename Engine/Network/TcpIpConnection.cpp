@@ -10,10 +10,10 @@
 #include "stdh.h"
 #include <Engine/Network/tcpipconnection.h>
 #include <Engine/Network/TxtQueue.h>
+#include <Engine/Network/CNetwork.h>
 
 
 #define IS_NEWLINE(c)	(c == '\n' || c == '\r')
-#define SAFE_DELETE(p)  { if(p) { delete (p);     (p)=NULL; } }
 
 #define MAX_INPUT_LENGTH 1024
 #define MAX_RAW_INPUT_LENGTH 512
@@ -96,13 +96,13 @@ void* CTcpIpConnection::GetConnectionMessage(DWORD portNo, DWORD& length)
 }
 
 
-//ì„œë²„ì— ì—°ê²°í•˜ê¸°.
+//¼­¹ö¿¡ ¿¬°áÇÏ±â.
 BOOL CTcpIpConnection::ConnectToServer(char* serverName, int _port)
 {
 #ifndef _DEBUG
 	try{
 #endif
-		ResetConnection();// ì†Œì¼“ì„ ë‹«ëŠ”ë‹¤.
+		ResetConnection();// ¼ÒÄÏÀ» ´İ´Â´Ù.
 
 		SOCKET ServerSock = INVALID_SOCKET;
 		int tryCount = 3;
@@ -173,7 +173,9 @@ BOOL CTcpIpConnection::ConnectToServer(char* serverName, int _port)
 
 //	Sleep(1000);
 
-		InitConnection(ServerSock);	// ì†Œì¼“ ìƒˆë¡œ ìƒì„±ë° ì´ˆê¸°í™”
+		InitConnection(ServerSock);	// ¼ÒÄÏ »õ·Î »ı¼º¹× ÃÊ±âÈ­
+
+		_pNetwork->resetSeq();
 
 	return TRUE;
 #ifndef _DEBUG
@@ -181,7 +183,7 @@ BOOL CTcpIpConnection::ConnectToServer(char* serverName, int _port)
 #endif
 }
 
-// ë¡œê·¸ì¸ ì„œë²„ì™€ ì—°ê²°ì´ ë˜ì—ˆëŠ”ì§€ í™•ì¸í•©ë‹ˆë‹¤.
+// ·Î±×ÀÎ ¼­¹ö¿Í ¿¬°áÀÌ µÇ¾ú´ÂÁö È®ÀÎÇÕ´Ï´Ù.
 BOOL CTcpIpConnection::IsConnected(SOCKET sock)
 {	
 	fd_set	fsExcept;	
@@ -195,7 +197,7 @@ BOOL CTcpIpConnection::IsConnected(SOCKET sock)
 		// TIME_OUT
 		return TRUE;
 	}
-	// ì˜ˆì™¸ ìƒí™©ì´ë¯€ë¡œ ì†Œì¼“ì„ ë‹«ìŒ.
+	// ¿¹¿Ü »óÈ²ÀÌ¹Ç·Î ¼ÒÄÏÀ» ´İÀ½.
 	closesocket(sock);
 	return FALSE;
 }
@@ -240,8 +242,8 @@ BOOL CTcpIpConnection::SendNetMessage(void* msg, BOOL bForce, BOOL bSecure)
 	int msg_size = strlen((char *)msg);
 	int l;
 	int TickCount = 0;
-	//char* tempbuf = (char*)msg; // ì•”í˜¸í™” ì•ˆí•œê±°...
-	// í—ˆì ‘ ì•”í˜¸í™”...
+	//char* tempbuf = (char*)msg; // ¾ÏÈ£È­ ¾ÈÇÑ°Å...
+	// ÇãÁ¢ ¾ÏÈ£È­...
 //	char msg_buf[1024];	
 	char* tempbuf = msg_buf;
 	for (int msg_idx = 0; msg_idx < msg_size; msg_idx++) {
@@ -294,12 +296,12 @@ BOOL CTcpIpConnection::SendNetMessage(void* msg, BOOL bForce, BOOL bSecure)
 				memcpy(m_strSendingBuf, m_strSendingBuf+sentl, m_nSendingLen-sentl);
 				m_nSendingLen -= sentl;
 			} else {
-				// ì†Œì¼“ ë‹«ì•„ë²„ë ·!
+				// ¼ÒÄÏ ´İ¾Æ¹ö·Ç!
 				m_nSendingLen = 0;
 				return FALSE;
 			}
 		} else {
-			// ì‹œê°„ì€ ê±¸ë ¸ì§€ë§Œ, ë‹¤ ë³´ëƒˆêµ¬ë¨¼...
+			// ½Ã°£Àº °É·ÈÁö¸¸, ´Ù º¸³Â±¸¸Õ...
 			m_nSendingLen = 0;
 		}
 	} else {
@@ -400,16 +402,16 @@ int CTcpIpConnection::CompressData (char *des, char * src, int size)
 	index = 0;
 	memset (subit, '0', size);
 	subit[size] = '\0';
-	// ë¨¼ì € ì••ì¶•í•  ë¬¸ìì™€ ì••ì¶•ì•ˆí•  ë¬¸ìë¥¼ ë‚˜ëˆˆë‹¤..
+	// ¸ÕÀú ¾ĞÃàÇÒ ¹®ÀÚ¿Í ¾ĞÃà¾ÈÇÒ ¹®ÀÚ¸¦ ³ª´«´Ù..
 	for (index=0; (ch=src[index]) != '\0'; index ++) {
 		if ((ch >= '0' && ch <= '9') ||	ch=='-' || ch=='.' || ch==' ' || ch=='\n') 
 			subit[index] = '1';
 	}
 		
 	index = 0;
-	// ì••ì¶• í–¥ìƒì„ ìœ„í•´ì„œ ì••ì¶•í•  ë¬¸ìê°€ 3ê°œ ì´ë‚´ì´ë©´ ì••ì¶•ì„ í•˜ì§€ ì•ŠëŠ”ê±¸ë¡œ ì„ íƒí•œë‹¤.
+	// ¾ĞÃà Çâ»óÀ» À§ÇØ¼­ ¾ĞÃàÇÒ ¹®ÀÚ°¡ 3°³ ÀÌ³»ÀÌ¸é ¾ĞÃàÀ» ÇÏÁö ¾Ê´Â°É·Î ¼±ÅÃÇÑ´Ù.
 	while (index < size) {
-		while (subit[index] == '0')	index++;	// '0'ì´ë©´ ì••ì¶•ì•ˆí•¨ì´ë¯€ë¡œ ìŠ¤í‚µ..
+		while (subit[index] == '0')	index++;	// '0'ÀÌ¸é ¾ĞÃà¾ÈÇÔÀÌ¹Ç·Î ½ºÅµ..
 		for (count=0; subit[index] == '1'; index++, count++)
 			if (index >= size) break;
 		if (count < 3) {
@@ -541,8 +543,8 @@ int CTcpIpConnection::ProcessInput()
 			return (0);
 		else {
 		//	char szMsg[80];
-		//	sprintf( szMsg, "ì˜ ëŒì•„ê°‘ë‹ˆë‹¤."); 
-		//	MessageBox( NULL, szMsg, "ë©”ì‹œì§€", MB_OK );
+		//	sprintf( szMsg, "Àß µ¹¾Æ°©´Ï´Ù."); 
+		//	MessageBox( NULL, szMsg, "¸Ş½ÃÁö", MB_OK );
 		}
 
 		/* at this point, we know we got some data from the read */
@@ -649,9 +651,9 @@ int CTcpIpConnection::ReadMessage(char *buf, int buf_len, BOOL bSecure)
 		return -1;
 	};
 
-	//  í—ˆì ‘ ì•”í˜¸í™”...
+	//  ÇãÁ¢ ¾ÏÈ£È­...
 	if (bSecure) {
-// mainì˜ ë³€ìˆ˜. í™•ì¸í•´ì•¼í•¨.
+// mainÀÇ º¯¼ö. È®ÀÎÇØ¾ßÇÔ.
 	//	if (!g_bCompressMsg) {
 			for (int buf_idx = 0; buf_idx < l; buf_idx++) {
 				buf[buf_idx] = (buf[buf_idx] - 15) ^ 0xC3;

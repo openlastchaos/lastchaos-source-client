@@ -38,6 +38,9 @@
  * Bitmap data for a class of texture objects
  */
 class ENGINE_API CTextureData : public CAnimData {
+#ifdef KALYDO
+  static CTString strDefaultTexturePath;
+#endif
 public:
 // implementation:
   ULONG td_ulFlags;             // see defines
@@ -117,9 +120,18 @@ public:
   void Unbind(void);
   // free memory allocated for texture
   void Clear(void);
+#ifdef	KALYDO
+  void Load_t(const CTFileName &fnFileName);
+  void Load_Delay_t(const CTFileName &fnFileName);
+  void Reload();
+#else	// KALYDO
+  void Reload();
+#endif	// KALYDO
 
   // read texture from file
   void Read_t( CTStream *inFile);
+  // read pnk
+  void Read_PNG( CTStream* inFile );
   // write texture to file
   void Write_t( CTStream *outFile);
   // force texture to be re-loaded (if needed) in corresponding manner
@@ -188,32 +200,32 @@ ENGINE_API extern void ProcessScript_t( const CTFileName &inFileName);
  * Render-to-texture class
  */
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add CRenderTexture class for Render to Texture)(0.1)
 class ENGINE_API CRenderTexture
 {
 public:
 	CRenderTexture();
 	~CRenderTexture();
 
-	// sehan D3DFORMAT fmt = D3DFMT_A8R8G8B8 ì¶”ê°€ // sehan end
+	// sehan D3DFORMAT fmt = D3DFMT_A8R8G8B8 Ãß°¡ // sehan end
 	BOOL Init(INDEX width, INDEX height, ULONG flag = TEX_32BIT, D3DFORMAT fmt = D3DFMT_A8R8G8B8);
 	void Begin();	// SetRenderTarget current
 	// Must be call this func in begin-end block
 	void Clear(COLOR colClear=0xFFFFFFFF, FLOAT fZVal=ZBUF_BACK);
 	void End();		// SetRenderTarget old
 
-	//ê¸°ë³¸ ì •ë³´ë“¤
+	//±âº» Á¤º¸µé
 	IDirect3DSurface8 *rt_pSurface;	// IDirect3DSurface8* in IDirect3DTexture8
 	CTextureData rt_tdTexture;
 
 protected:
-	//begin, end blockì—ì„œ ì‚¬ìš©ë˜ëŠ” ë³€ìˆ˜ë“¤, ì™¸ë¶€ë¡œ ë“¤ì–´ë‚˜ì„œ ì¢‹ì„ê±° ì—†ë‹¤.
+	//begin, end block¿¡¼­ »ç¿ëµÇ´Â º¯¼öµé, ¿ÜºÎ·Î µé¾î³ª¼­ ÁÁÀ»°Å ¾ø´Ù.
 	IDirect3DSurface8 *m_pOldRenderTarget;
 	IDirect3DSurface8 *m_pOldDepthStencil;
 	IDirect3DSurface8 *m_pDepthStencil;
 	BOOL m_bOldZEnable;
 };
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add CRenderTexture class for Render to Texture)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add CRenderTexture class for Render to Texture)(0.1)
 
 /*
 class ENGINE_API CRenderTexture

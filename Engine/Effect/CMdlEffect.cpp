@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "StdH.h"
 
 #include <Engine/Math/Functions.h>
@@ -50,12 +50,12 @@ BOOL CMdlEffect::SetModelObject(const CTFileName &strMdlFileName, const CTFileNa
 
 	try
 	{
-		//ëª¨ë¸ì„ ìƒì„±í•˜ê³  ë¡œë“œí•œë‹¤.
+		//¸ğµ¨À» »ı¼ºÇÏ°í ·ÎµåÇÑ´Ù.
 		m_pModelObject = new CModelObject;
 		m_strMdlFileName = strMdlFileName;
 		m_pModelObject->SetData_t(m_strMdlFileName);
 		m_strTextureFileName = strTexFileName;
-		//í…ìŠ¤ì³ë¥¼ ìƒì„±í•˜ê³  ë¡œë“œí•œë‹¤.
+		//ÅØ½ºÃÄ¸¦ »ı¼ºÇÏ°í ·ÎµåÇÑ´Ù.
 		m_pModelTextureData = _pTextureStock->Obtain_t(m_strTextureFileName);
 		//m_pModelTextureData = new CTextureData;
 		//m_pModelTextureData->Load_t(m_strTextureFileName);
@@ -84,9 +84,9 @@ CEffect *CMdlEffect::Copy()
 {
 	CMdlEffect *pRet = new CMdlEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CMdlEffectì˜ content
+	//CMdlEffectÀÇ content
 	if(m_strMdlFileName!="" && m_strTextureFileName!="") pRet->SetModelObject(m_strMdlFileName, m_strTextureFileName);
 	pRet->SetColor(this->GetColor());
 	pRet->SetStretch(m_vStretch);
@@ -138,9 +138,9 @@ BOOL CMdlEffect::Process(FLOAT time)
 
 	if(m_pEffectControl == NULL)
 	{
-		//Alphaì˜ ë³€í™”ë¥¼ ì²˜ë¦¬
+		//AlphaÀÇ º¯È­¸¦ Ã³¸®
 		COLOR colModel = m_colModel & C_WHITE;
-		colModel |= ((m_colModel & 0x000000FF) * NormFloatToByte( GetFadeValue(fProcessedTime) )) >> 8; //model instanceì˜ color
+		colModel |= ((m_colModel & 0x000000FF) * NormFloatToByte( GetFadeValue(fProcessedTime) )) >> 8; //model instanceÀÇ color
 		//color setting
 		m_pModelObject->mo_colBlendColor = colModel;
 	}
@@ -179,9 +179,9 @@ void CMdlEffect::Render()
 	if(m_pModelObject == NULL) return;
 	
 	if (GetOwner() != NULL)
-	{ // HIDDEN ì†ì„±ì˜ NPCì˜ ì´í™íŠ¸ë¥¼ ë³´ê¸° ìœ„í•´ì„œëŠ” ìºë¦­í„°ê°€ ENF_SHOWHIDDENì„ ê°€ì§€ê³  ìˆì–´ì•¼ í•œë‹¤.
+	{ // HIDDEN ¼Ó¼ºÀÇ NPCÀÇ ÀÌÆåÆ®¸¦ º¸±â À§ÇØ¼­´Â Ä³¸¯ÅÍ°¡ ENF_SHOWHIDDENÀ» °¡Áö°í ÀÖ¾î¾ß ÇÑ´Ù.
 		if (GetOwner()->IsFlagOn(ENF_HIDDEN) && (CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npc effectëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc effect´Â º¼ ¼ö ÀÖ´Ù.
 			return;
 	}
 
@@ -231,7 +231,7 @@ void CMdlEffect::Render()
 	{
 		rm.rm_ulFlags |= RMF_OVERDRAW;
 	}
-	//ì¼ë‹¨ ë§‰ì•„ë‘ . z testë¥¼ ì•ˆí•˜ë©´ ì„±ë²½ì´ë‚˜ ë‹¤ë¥¸ ìºë¦­ìœ„ì— ì´í™íŠ¸ê°€ ë‚˜ì˜¬ìˆ˜ê°€ ìˆìŒ.
+	//ÀÏ´Ü ¸·¾ÆµÒ. z test¸¦ ¾ÈÇÏ¸é ¼ºº®ÀÌ³ª ´Ù¸¥ Ä³¸¯À§¿¡ ÀÌÆåÆ®°¡ ³ª¿Ã¼ö°¡ ÀÖÀ½.
 
 	// set tesselation level of models
 	rm.rm_iTesselationLevel = 0.0f;
@@ -336,4 +336,4 @@ void CMdlEffect::Write(CTStream *pOS)
 	os << m_bOverDraw;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

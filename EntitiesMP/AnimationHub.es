@@ -63,6 +63,29 @@ functions:
   }
 
 procedures:
+  Main()
+  {
+    InitAsEditorModel();
+    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+    SetCollisionFlags(ECF_IMMATERIAL);
+
+    // set appearance
+    SetModel(MODEL_HUB);
+    SetModelMainTexture(TEXTURE_HUB);
+
+    // check target types
+    for (INDEX i=0; i<10; i++) {
+      CEntityPointer &penTarget = (&m_penTarget0)[i];
+      if (penTarget!=NULL && 
+        !IsOfClass( penTarget, &CModelHolder2_DLLClass) &&
+        !IsOfClass( penTarget, &CLight_DLLClass)) {
+        WarningMessage("All targets must be ModelHolder2 or Light!");
+        penTarget=NULL;
+      }
+    }
+    jump WaitChange();
+  }
+
   RelayEvents()
   {
     // for each target
@@ -119,29 +142,6 @@ procedures:
         }
       }
     }
-  }
-
-  Main()
-  {
-    InitAsEditorModel();
-    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-    SetCollisionFlags(ECF_IMMATERIAL);
-
-    // set appearance
-    SetModel(MODEL_HUB);
-    SetModelMainTexture(TEXTURE_HUB);
-
-    // check target types
-    for (INDEX i=0; i<10; i++) {
-      CEntityPointer &penTarget = (&m_penTarget0)[i];
-      if (penTarget!=NULL && 
-        !IsOfClass( penTarget, &CModelHolder2_DLLClass) &&
-        !IsOfClass( penTarget, &CLight_DLLClass)) {
-        WarningMessage("All targets must be ModelHolder2 or Light!");
-        penTarget=NULL;
-      }
-    }
-    jump WaitChange();
   }
 };
 

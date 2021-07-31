@@ -1,16 +1,25 @@
-
 #include "stdh.h"
-#include <Engine/Interface/UITatoo.h>
-#include <Engine/Interface/UIInternalClasses.h>
 
-// Define text position
+// Çì´õ Á¤¸®. [12/3/2009 rumist]
+#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UITatoo.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Info/MyInfo.h>
+
+const int ct_iColorShapeIndex[9][5] = { {26, 27, 28, 29, 30}, {31, 32, 33, 34, 35},
+										{13, 22, 23, 24, 25}, {36, 37, 38, 39, 40},
+										{41, 42, 43, 44, 45}, {46, 47, 48, 49, 50},	
+										{51, 52, 53, 54, 55}, {11, 14, 15, 16, 17},
+										{12, 18, 19, 20, 21} };
+
 
 //------------------------------------------------------------------------------
 // CUITatoo::CUITatoo()
 // Explain:  
 //------------------------------------------------------------------------------
 CUITatoo::CUITatoo() : m_iSelectedColorIndex(-1), m_iSelectedShapeIndex(-1)
-{	
+{
+	m_ptdCommonBtnTexture = NULL;
 }
 
 
@@ -21,7 +30,11 @@ CUITatoo::CUITatoo() : m_iSelectedColorIndex(-1), m_iSelectedShapeIndex(-1)
 CUITatoo::~CUITatoo()
 {
 	Clear ();
+
 	Destroy();
+
+	STOCK_RELEASE(m_ptdCommonBtnTexture);
+	STOCK_RELEASE(m_ptdNewInventoryTexture);
 }
 
 //------------------------------------------------------------------------------
@@ -40,9 +53,7 @@ void CUITatoo::Clear()
 //------------------------------------------------------------------------------
 void CUITatoo::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	m_rcTitle.SetRect( 0, 0, TATOO_WIDTH, 22 );	
 
@@ -54,39 +65,40 @@ void CUITatoo::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 
 	// Color buttons
 	{
-		AddColorButton(0, 0, 0xFF0000FF);	// ë¹¨ê°•
-		AddColorButton(0, 1, 0xFFA500FF);	// ì£¼í™©
-		AddColorButton(1, 0, 0xFFFF00FF);	// ë…¸ëž‘
-		AddColorButton(1, 1, 0x00FF00FF);   // ì´ˆë¡
-		AddColorButton(2, 0, 0x0000FFFF);	// íŒŒëž‘
-		AddColorButton(2, 1, 0x000080FF);	// ë‚¨ìƒ‰
-		AddColorButton(3, 0, 0x800080FF);	// ë³´ë¼
-		AddColorButton(3, 1, 0x000000FF);	// ê²€ì •
-		AddColorButton(4, 0, 0xFFFFFFFF);	// í•˜ì–‘
+		AddColorButton(0, 0, 0xFF0000FF);	// »¡°­
+		AddColorButton(0, 1, 0xFFA500FF);	// ÁÖÈ²
+		AddColorButton(1, 0, 0xFFFF00FF);	// ³ë¶û
+		AddColorButton(1, 1, 0x00FF00FF);   // ÃÊ·Ï
+		AddColorButton(2, 0, 0x0000FFFF);	// ÆÄ¶û
+		AddColorButton(2, 1, 0x000080FF);	// ³²»ö
+		AddColorButton(3, 0, 0x800080FF);	// º¸¶ó
+		AddColorButton(3, 1, 0x000000FF);	// °ËÁ¤
+		AddColorButton(4, 0, 0xFFFFFFFF);	// ÇÏ¾ç
 	}
 
 	// Shape buttons
 	{
-		AddShapeButton(0, 0, 287, 967);		// í•˜íŠ¸
-		AddShapeButton(0, 1, 319, 967);		// í´ë¡œë²„
-		AddShapeButton(1, 0, 351, 967);		// ë‹¤ì´ì•„
-		AddShapeButton(1, 1, 383, 967);		// ìŠ¤íŽ˜ì´ë“œ
-		AddShapeButton(2, 0, 255, 967);		// í•´ê³¨
+		AddShapeButton(0, 0, 287, 967);		// ÇÏÆ®
+		AddShapeButton(0, 1, 319, 967);		// Å¬·Î¹ö
+		AddShapeButton(1, 0, 351, 967);		// ´ÙÀÌ¾Æ
+		AddShapeButton(1, 1, 383, 967);		// ½ºÆäÀÌµå
+		AddShapeButton(2, 0, 255, 967);		// ÇØ°ñ
 	}
 
-	CTextureData* pTexture = CreateTexture( "Data\\Interface\\CommonBtn.tex" );
-	fTexWidth = pTexture->GetPixWidth();
-	fTexHeight = pTexture->GetPixHeight();
+	m_ptdNewInventoryTexture = CreateTexture(CTString("Data\\Interface\\NewInventory.tex"));
+	m_ptdCommonBtnTexture = CreateTexture( "Data\\Interface\\CommonBtn.tex" );
+	fTexWidth = m_ptdCommonBtnTexture->GetPixWidth();
+	fTexHeight = m_ptdCommonBtnTexture->GetPixHeight();
 
 	// OK button
-	m_btnOK.Create( this, _S( 191, "í™•ì¸" ), TATOO_WIDTH - 180, TATOO_HEIGHT - 30, 78, 22 );
+	m_btnOK.Create( this, _S( 191, "È®ÀÎ" ), TATOO_WIDTH - 180, TATOO_HEIGHT - 30, 78, 22 );
 	m_btnOK.SetUV( UBS_IDLE, 113, 0, 182, 22, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 186, 0, 256, 22, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// cancel button
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), TATOO_WIDTH - 90, TATOO_HEIGHT - 30, 78, 22 );
+	m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), TATOO_WIDTH - 90, TATOO_HEIGHT - 30, 78, 22 );
 	m_btnCancel.SetUV( UBS_IDLE, 113, 0, 182, 22, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 186, 0, 256, 22, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -109,7 +121,7 @@ void CUITatoo::Close()
 {
 	if( IsVisible() )
 	{
-		_pUIMgr->RearrangeOrder( UI_TATOO, FALSE );
+		CUIManager::getSingleton()->RearrangeOrder( UI_TATOO, FALSE );
 		Clear();
 	}
 }
@@ -129,52 +141,53 @@ void CUITatoo::SetFocus( BOOL bVisible )
 //------------------------------------------------------------------------------
 void CUITatoo::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + TATOO_WIDTH, m_nPosY + TATOO_HEIGHT,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + TATOO_WIDTH, m_nPosY + TATOO_HEIGHT,
 										m_rtMain.U0, m_rtMain.V0, m_rtMain.U1, m_rtMain.V1,
 										0xFFFFFFFF );
 	// Render color and shape buttons
 	RenderColorButtons();
 	RenderShapeButtons();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
 	// render selected outline
-	_pUIMgr->GetDrawPort()->InitTextureData( CreateTexture( CTString("Data\\Interface\\NewInventory.tex") ) );
+	pDrawPort->InitTextureData(m_ptdNewInventoryTexture);
 
 	RenderSelectedColorOutline();
 	RenderSelectedShapeOutline();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// render general buttons
-	CTextureData* pTexture = CreateTexture( "Data\\Interface\\CommonBtn.tex" );
-	_pUIMgr->GetDrawPort()->InitTextureData( pTexture );	
+	pDrawPort->InitTextureData( m_ptdCommonBtnTexture );	
 	
 	m_btnOK.Render();
 	m_btnClose.Render();
 	m_btnCancel.Render();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	// íƒ€ì´í‹€ ë¿Œë¦°ë‹¤
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(4430, "ë¬¸ì–‘ ë³€ê²½"), m_nPosX + 128, m_nPosY + 15, 0xDED9A0FF );
-	// ìƒ‰ìƒ ì„ íƒ (69, 47)
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(4431, "ìƒ‰ìƒ ì„ íƒ"), m_nPosX + 69, m_nPosY + 47, 0xDED9A0FF );
-	// ë¬¸ì–‘ ì„ íƒ (187, 47)
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(4432, "ë¬¸ì–‘ ì„ íƒ"), m_nPosX + 187, m_nPosY + 47, 0xDED9A0FF );
+	// Å¸ÀÌÆ² »Ñ¸°´Ù
+	pDrawPort->PutTextExCX( _S(4430, "¹®¾ç º¯°æ"), m_nPosX + 128, m_nPosY + 15, 0xDED9A0FF );
+	// »ö»ó ¼±ÅÃ (69, 47)
+	pDrawPort->PutTextExCX( _S(4431, "»ö»ó ¼±ÅÃ"), m_nPosX + 69, m_nPosY + 47, 0xDED9A0FF );
+	// ¹®¾ç ¼±ÅÃ (187, 47)
+	pDrawPort->PutTextExCX( _S(4432, "¹®¾ç ¼±ÅÃ"), m_nPosX + 187, m_nPosY + 47, 0xDED9A0FF );
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 //==============================================================================
 //  [7/10/2009 selo]
 // Name : RenderColorButtons
-// Desc : ìƒ‰ìƒ ë²„íŠ¼ë“¤ì„ ëžœë”í•œë‹¤
+// Desc : »ö»ó ¹öÆ°µéÀ» ·£´õÇÑ´Ù
 //==============================================================================
 void CUITatoo::RenderColorButtons()
 {
@@ -196,7 +209,7 @@ void CUITatoo::RenderColorButtons()
 //==============================================================================
 //  [7/10/2009 selo]
 // Name : RenderShapeButtons
-// Desc : ë¬¸ì–‘ ë²„íŠ¼ë“¤ì„ ëžœë”í•œë‹¤
+// Desc : ¹®¾ç ¹öÆ°µéÀ» ·£´õÇÑ´Ù
 //==============================================================================
 void CUITatoo::RenderShapeButtons()
 {
@@ -229,12 +242,12 @@ void CUITatoo::RenderSelectedColorOutline()
 
 	m_btnColor[0][m_iSelectedColorIndex].btnButton.GetPos(iX, iY);
 
-	CTextureData* pTexture = CreateTexture( CTString("Data\\Interface\\NewInventory.tex") );
-	FLOAT	fTexWidth = pTexture->GetPixWidth();
-	FLOAT	fTexHeight = pTexture->GetPixHeight();
+	FLOAT	fTexWidth = m_ptdNewInventoryTexture->GetPixWidth();
+	FLOAT	fTexHeight = m_ptdNewInventoryTexture->GetPixHeight();
 	UIRectUV rtSelect(3,441,36,474,fTexWidth,fTexHeight);
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + iX, m_nPosY + iY, m_nPosX + iX+32, m_nPosY + iY+32, rtSelect.U0, rtSelect.V0, rtSelect.U1, rtSelect.V1, 0xFFFFFFFF);
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	pDrawPort->AddTexture( m_nPosX + iX, m_nPosY + iY, m_nPosX + iX+32, m_nPosY + iY+32, rtSelect.U0, rtSelect.V0, rtSelect.U1, rtSelect.V1, 0xFFFFFFFF);
 }
 
 //
@@ -250,12 +263,12 @@ void CUITatoo::RenderSelectedShapeOutline()
 
 	m_btnShape[0][m_iSelectedShapeIndex].btnButton.GetPos(iX, iY);
 
-	CTextureData* pTexture = CreateTexture( CTString("Data\\Interface\\NewInventory.tex") );
-	FLOAT	fTexWidth = pTexture->GetPixWidth();
-	FLOAT	fTexHeight = pTexture->GetPixHeight();
+	FLOAT	fTexWidth = m_ptdNewInventoryTexture->GetPixWidth();
+	FLOAT	fTexHeight = m_ptdNewInventoryTexture->GetPixHeight();
 	UIRectUV rtSelect(3,441,36,474,fTexWidth,fTexHeight);
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + iX, m_nPosY + iY, m_nPosX + iX+32, m_nPosY + iY+32, rtSelect.U0, rtSelect.V0, rtSelect.U1, rtSelect.V1, 0xFFFFFFFF);
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	pDrawPort->AddTexture( m_nPosX + iX, m_nPosY + iY, m_nPosX + iX+32, m_nPosY + iY+32, rtSelect.U0, rtSelect.V0, rtSelect.U1, rtSelect.V1, 0xFFFFFFFF);
 }
 
 //------------------------------------------------------------------------------
@@ -266,7 +279,7 @@ void CUITatoo::OpenTatoo()
 {
 	if( IsVisible() )
 		return;
-	_pUIMgr->RearrangeOrder( UI_TATOO, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_TATOO, TRUE );
 
 	m_iSelectedColorIndex = 0;
 	CheckShowShape();
@@ -296,7 +309,7 @@ void CUITatoo::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMax
 //==============================================================================
 //  [7/10/2009 selo]
 // Name : AddColorButton
-// Desc : ìƒ‰ìƒ ë²„íŠ¼ì„ ì¶”ê°€í•œë‹¤
+// Desc : »ö»ó ¹öÆ°À» Ãß°¡ÇÑ´Ù
 //==============================================================================
 void CUITatoo::AddColorButton(int iRow, int iCol, COLOR color)
 {
@@ -307,8 +320,8 @@ void CUITatoo::AddColorButton(int iRow, int iCol, COLOR color)
 	m_btnColor[iRow][iCol].exist = true;
 	CUIButton& btnColor = m_btnColor[iRow][iCol].btnButton;
 	
-	// 0row 0col ì¢Œí‘œ (25, 72)
-	// 0row 1col ì¢Œí‘œ (64, 72)	
+	// 0row 0col ÁÂÇ¥ (25, 72)
+	// 0row 1col ÁÂÇ¥ (64, 72)	
 	int iX = 25 + (iCol * 39);
 	int iY = 72 + (iRow * 40);
 
@@ -322,7 +335,7 @@ void CUITatoo::AddColorButton(int iRow, int iCol, COLOR color)
 //==============================================================================
 //  [7/10/2009 selo]
 // Name : AddShapeButton
-// Desc : ë¬¸ì–‘ ë²„íŠ¼ì„ ì¶”ê°€í•œë‹¤
+// Desc : ¹®¾ç ¹öÆ°À» Ãß°¡ÇÑ´Ù
 //==============================================================================
 void CUITatoo::AddShapeButton(int iRow, int iCol, int texLeft, int texTop)
 {
@@ -333,7 +346,7 @@ void CUITatoo::AddShapeButton(int iRow, int iCol, int texLeft, int texTop)
 	m_btnShape[iRow][iCol].exist = true;
 	CUIButton& btnShape = m_btnShape[iRow][iCol].btnButton;
 
-	// 0row 0col ì¢Œí‘œ (146, 72)
+	// 0row 0col ÁÂÇ¥ (146, 72)
 	int iX = 146 + (iCol * 39);
 	int iY = 72 + (iRow * 40);
 
@@ -351,21 +364,22 @@ void CUITatoo::CheckShowShape()
 {
 	int iSel = m_iSelectedColorIndex;
 	BOOL bEnable = TRUE;
-	if( false == (iSel == 2 || iSel == 7 || iSel == 8) )
-	{
-		bEnable = FALSE;		
-	}
 
-	int iType = _pNetwork->_PetTargetInfo.iType % 2;
-	int iAge = _pNetwork->_PetTargetInfo.iAge;
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+	CPetTargetInfom* pPetInfo = pInfo->GetMyPetInfo();
 
-	if( 0 == iType && (iAge < 2) )		// ë§ì´ê³  íƒ€ëŠ”ê±° ì•„ë‹ ë•Œ
+	int iType = pPetInfo->iType % 2;
+	int iAge = pPetInfo->iAge;
+
+	// [090831: selo] Å¸´Â °Í ¾Æ´Ï¸é ¹®¾ç ¼±ÅÃ ¸øÇÏ°Ô º¯°æ
+
+	if( iAge < 2 )		// Å¸´Â°Å ¾Æ´Ò ¶§
 	{
 		bEnable = FALSE;
-	}
-	else if( 1 == iType && (iAge < 2) )	// ìš©ì´ê³  íƒ€ëŠ”ê±° ì•„ë‹ ë•Œ
+	}	
+	else if( iAge >= 2 ) // Å¸´Â°Å ÀÏ ¶§
 	{
-		bEnable = FALSE;
+		bEnable = TRUE;
 	}
 
 	bool bBreak = false;
@@ -383,14 +397,6 @@ void CUITatoo::CheckShowShape()
 		if( bBreak )
 			break;
 	}
-	
-	if( 0 == iType && (iAge < 2) )		// ë§ì´ê³  íƒ€ëŠ”ê±° ì•„ë‹ ë•Œ
-	{
-		if( iSel == 2 || iSel == 7 || iSel == 8 )
-		{
-			m_btnShape[0][0].btnButton.SetEnable(TRUE);
-		}
-	}
 }
 
 //
@@ -398,11 +404,11 @@ void CUITatoo::CheckShowShape()
 //
 void CUITatoo::SendItemUse()
 {
-	int tv_tab, tv_row, tv_col;
-	_pUIMgr->GetInventory()->GetUseItemSlotInfo(tv_tab,tv_row,tv_col);
-	CItems& Items = _pNetwork->MySlotItem[tv_tab][tv_row][tv_col];
+	int tv_tab, tv_idx;
+	CUIManager::getSingleton()->GetInventory()->GetUseItemSlotInfo(tv_tab,tv_idx);
+	CItems& Items = _pNetwork->MySlotItem[tv_tab][tv_idx];
 	int iItemIndex = Items.Item_UniIndex;
-	_pNetwork->SendItemUse(tv_tab, tv_row, tv_col, iItemIndex, GetColorAndShapeIndex());
+	_pNetwork->SendItemUse(tv_tab, tv_idx, iItemIndex, GetColorAndShapeIndex());
 }
 
 //
@@ -413,56 +419,7 @@ int	CUITatoo::GetColorAndShapeIndex()
 	if( 0 > m_iSelectedShapeIndex )
 		return m_iSelectedColorIndex + 1;
 
-	if( 7 == m_iSelectedColorIndex )	// ê²€ì€ìƒ‰
-	{
-		switch( m_iSelectedShapeIndex )
-		{
-		case 0:		// í•˜íŠ¸
-			return 11;
-		case 1:		// ë‹¤ì´ì•„
-			return 14;
-		case 2:		// í´ë¡œë²„
-			return 15;
-		case 3:		// ìŠ¤íŽ˜ì´ë“œ
-			return 16;
-		case 4:		// í•´ê³¨
-			return 17;
-		}
-	}
-	if( 8 == m_iSelectedColorIndex )	// í°ìƒ‰
-	{
-		switch( m_iSelectedShapeIndex )
-		{
-		case 0:		// í•˜íŠ¸
-			return 12;
-		case 1:		// ë‹¤ì´ì•„
-			return 18;
-		case 2:		// í´ë¡œë²„
-			return 19;
-		case 3:		// ìŠ¤íŽ˜ì´ë“œ
-			return 20;
-		case 4:		// í•´ê³¨
-			return 21;
-		}
-	}
-	if( 2 == m_iSelectedColorIndex )	// ë…¸ëž€ìƒ‰
-	{
-		switch( m_iSelectedShapeIndex )
-		{
-		case 0:		// í•˜íŠ¸
-			return 13;
-		case 1:		// ë‹¤ì´ì•„
-			return 22;
-		case 2:		// í´ë¡œë²„
-			return 23;
-		case 3:		// ìŠ¤íŽ˜ì´ë“œ
-			return 24;
-		case 4:		// í•´ê³¨
-			return 25;
-		}
-	}
-
-	return m_iSelectedColorIndex + 1;
+	return ct_iColorShapeIndex[m_iSelectedColorIndex][m_iSelectedShapeIndex];	
 }
 
 //
@@ -471,64 +428,64 @@ int	CUITatoo::GetColorAndShapeIndex()
 void CUITatoo::MakeMessageBox()
 {
 	CTString strColor ="";
-	CTString strShape =_S(4448, "ë¯¼");
+	CTString strShape =_S(4448, "¹Î");
 
 	switch(m_iSelectedColorIndex)
 	{
 	case 0:
-		strColor = _S(4434, "ë¹¨ê°•");
+		strColor = _S(4434, "»¡°­");
 		break;
 	case 1:
-		strColor = _S(4435, "ì£¼í™©");
+		strColor = _S(4435, "ÁÖÈ²");
 		break;
 	case 2:
-		strColor = _S(4436, "ë…¸ëž‘");
+		strColor = _S(4436, "³ë¶û");
 		break;
 	case 3:
-		strColor = _S(4437, "ì´ˆë¡");
+		strColor = _S(4437, "ÃÊ·Ï");
 		break;
 	case 4:
-		strColor = _S(4438, "íŒŒëž‘");
+		strColor = _S(4438, "ÆÄ¶û");
 		break;
 	case 5:
-		strColor = _S(4439, "ë‚¨ìƒ‰");
+		strColor = _S(4439, "³²»ö");
 		break;
 	case 6:
-		strColor = _S(4440, "ë³´ë¼");
+		strColor = _S(4440, "º¸¶ó");
 		break;
 	case 7:
-		strColor = _S(4441, "ê²€ì •");
+		strColor = _S(4441, "°ËÁ¤");
 		break;
 	case 8:
-		strColor = _S(4442, "í•˜ì–‘");
+		strColor = _S(4442, "ÇÏ¾ç");
 		break;
 	}
 	switch(m_iSelectedShapeIndex)
 	{
 	case 0:
-		strShape = _S(4443, "í•˜íŠ¸");		
+		strShape = _S(4443, "ÇÏÆ®");		
 		break;
 	case 1:
-		strShape = _S(4445, "í´ë¡œë²„");		
+		strShape = _S(4445, "Å¬·Î¹ö");				
 		break;
 	case 2:		
-		strShape = _S(4444, "ë‹¤ì´ì•„ëª¬ë“œ");
+		strShape = _S(4444, "´ÙÀÌ¾Æ¸óµå");		
 		break;
 	case 3:
-		strShape = _S(4446, "ìŠ¤íŽ˜ì´ë“œ");		
+		strShape = _S(4446, "½ºÆäÀÌµå");		
 		break;
 	case 4:		
-		strShape = _S(4447, "í•´ê³¨");
+		strShape = _S(4447, "ÇØ°ñ");
 		break;
 	}
 
 
 	CUIMsgBox_Info	MsgBoxInfo;
 	CTString		strMessage;
-	strMessage.PrintF(_S(4433, "%sìƒ‰ìƒ %së¬¸ì–‘ì„ ì„ íƒí•˜ì…¨ìŠµë‹ˆë‹¤. ì´ëŒ€ë¡œ ì§„í–‰í•˜ì‹œê² ìŠµë‹ˆê¹Œ?"), strColor, strShape);
-	MsgBoxInfo.SetMsgBoxInfo(_S(4430, "ë¬¸ì–‘ ë³€ê²½"), UMBS_YESNO, UI_NONE, MSGCMD_PET_TATOOCHANGE_USE);
+	strMessage.PrintF(_S(4433, "%s»ö»ó %s¹®¾çÀ» ¼±ÅÃÇÏ¼Ì½À´Ï´Ù. ÀÌ´ë·Î ÁøÇàÇÏ½Ã°Ú½À´Ï±î?"), strColor, strShape);
+	MsgBoxInfo.SetMsgBoxInfo(_S(4430, "¹®¾ç º¯°æ"), UMBS_YESNO, UI_NONE, MSGCMD_PET_TATOOCHANGE_USE);
 	MsgBoxInfo.AddString(strMessage);
-	_pUIMgr->CreateMessageBox(MsgBoxInfo);
+	CUIManager::getSingleton()->CreateMessageBox(MsgBoxInfo);
 }
 
 //------------------------------------------------------------------------------
@@ -547,7 +504,9 @@ WMSG_RESULT	CUITatoo::MouseMessage( MSG *pMsg )
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
 
-	if( _pUIMgr->DoesMessageBoxExist(MSGCMD_PET_TATOOCHANGE_USE) )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_PET_TATOOCHANGE_USE) )
 		return WMSG_SUCCESS;
 	
 	// Mouse message
@@ -556,7 +515,7 @@ WMSG_RESULT	CUITatoo::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				pUIManager->SetMouseCursorInsideUIs();
 
 			// If message box isn't focused
 			if( !IsFocused() )
@@ -579,6 +538,15 @@ WMSG_RESULT	CUITatoo::MouseMessage( MSG *pMsg )
 				return WMSG_SUCCESS;
 			else if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
+
+			for( int i = 0; i < TATOO_TOTAL_ROW; ++i )
+			{
+				for( int j = 0; j < TATOO_TOTAL_COL; ++j )
+				{
+					m_btnColor[i][j].btnButton.MouseMessage( pMsg );
+					m_btnShape[i][j].btnButton.MouseMessage( pMsg );
+				}					
+			}
 		}
 		break;
 
@@ -633,7 +601,7 @@ WMSG_RESULT	CUITatoo::MouseMessage( MSG *pMsg )
 					}					
 				}
 
-				_pUIMgr->RearrangeOrder( UI_TATOO, TRUE );
+				pUIManager->RearrangeOrder( UI_TATOO, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -642,7 +610,7 @@ WMSG_RESULT	CUITatoo::MouseMessage( MSG *pMsg )
 		case WM_LBUTTONUP:
 		{
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;

@@ -1,39 +1,53 @@
 #include "stdh.h"
-#include <Engine/Interface/UIShop.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/network/MobTarget.h>
-#include <Engine/Entities/Items.h>
+#include <Engine/Entities/InternalClasses.h>
+#include <Engine/Interface/UIShop.h>
+#include <Engine/Help/Util_Help.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Interface/UIMonsterCombo.h>
+#include <Engine/Interface/UIHelp.h>
+#include <Engine/Interface/UIMonsterMercenary.h>
+#include <Engine/Contents/Base/UIQuestNew.h>
+#include <Engine/Contents/Base/UIQuestBookNew.h>
+#include <Engine/Interface/UIGWMix.h>
+#include <Engine/Contents/Base/UIMsgBoxNumeric_only.h>
+#include <Engine/info/MyInfo.h>
 
-
-extern INDEX g_iCountry;
 #define ENABLE_GUILD_CUBE
 
-// [KH_07044] 3Ï∞® ÎèÑÏõÄÎßê Í¥ÄÎ†® Ï∂îÍ∞Ä
+#define EVENT_MAY_LEVELMIN	5
+#define EVENT_MAY_LEVELMAX	32
+
+// [KH_07044] 3¬˜ µµøÚ∏ª ∞¸∑√ √ﬂ∞°
 extern INDEX g_iShowHelp1Icon;
+extern INDEX g_iCountry;
 
 enum eSelection
 {
-	SHOP_BUY,		// ÏÉÅÏ†ê Íµ¨Îß§
-	SHOP_SELL,		// ÏÉÅÏ†ê ÌåêÎß§
-	SHOP_TALK,		// Ïù¥ÏïºÍ∏∞ ÌïòÍ∏∞
-	SHOP_EVENT,		// Ïù¥Î≤§Ìä∏.
-	SHOP_GW_MIX,	// Í≥µÏÑ± Ï°∞Ìï© 
-	SHOP_SUPERGOJE,	// Ï¥àÍ≥†Í∏â Ï†úÎ†®ÏÑù Î∞õÍ∏∞, ÌäπÏ†ï NPC ÌïòÎìúÏΩîÎî©
+	SHOP_BUY,		// ªÛ¡° ±∏∏≈
+	SHOP_SELL,		// ªÛ¡° ∆«∏≈
+	SHOP_TALK,		// ¿Ãæﬂ±‚ «œ±‚
+	SHOP_EVENT,		// ¿Ã∫•∆Æ.
+	SHOP_GW_MIX,	// ∞¯º∫ ¡∂«’ 
+	SHOP_SUPERGOJE,	// √ ∞Ì±ﬁ ¡¶∑√ºÆ πﬁ±‚, ∆Ø¡§ NPC «œµÂƒ⁄µ˘
 
-#ifdef HELP_SYSTEM_1
-	SHOP_NPC_HELP,		//NPC ÏïàÎÇ¥ ÏãúÏä§ÌÖú
-#endif
+	SHOP_NPC_HELP,		//NPC æ»≥ª Ω√Ω∫≈€
 
-	LEASE_WEAPON_TITAN,			// Î¨¥Í∏∞ ÎåÄÏó¨ÏÉÅ
+	SHOP_NPC_AFFINITY,			// [6/1/2009 rumist] npc affinity system. ƒ£»≠µµ. 
+
+	LEASE_WEAPON_TITAN,			// π´±‚ ¥Îø©ªÛ
 	LEASE_WEAPON_KNIGHT,
 	LEASE_WEAPON_HEALER,
 	LEASE_WEAPON_MAGE,
 	LEASE_WEAPON_ROGUE,
 	LEASE_WEAPON_SOCERER,
+	LEASE_WEAPON_EXROGUE = 15,
+	LEASE_WEAPON_EXMAGE,		//2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° 
 
-	//ttos: Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥
+	//ttos: ∏ÛΩ∫≈Õ ƒﬁ∫∏
 	COMBO_MAKE,
-	COMBO_MOVE_LOBBY,
 	COMBO_MOVE_STAGE,
 	COMBO_MOVE_GO_LOBBY,
 	COMBO_RECALL_LOBBY,
@@ -51,6 +65,42 @@ enum eSelection
 	CUBE_GUILD_ENTRANCE,
 	CUBE_PLAYER_STATE,
 	CUBE_GUILD_STATE,
+	CUBE_PLAYER_REWARD,
+
+	// ($E_WC2010) [100511: selo] 2010 ø˘µÂƒ≈ ¿Ã∫•∆Æ
+	EVENT_WORLDCUP_2010_INFO,				// ø˘µÂƒ≈ 2010 ¿Ã∫•∆Æ æ»≥ª
+	EVENT_WORLDCUP_2010_BALL,				// ø˘µÂƒ≈ 2010 √‡±∏∞¯ ±≥»Ø
+	EVENT_WORLDCUP_2010_BALL_GIFT,			// ø˘µÂƒ≈ 2010 √‡±∏∞¯ ∫∏ªÛ
+	EVENT_WORLDCUP_2010_GOLDENBALL,			// ø˘µÂƒ≈ 2010 »≤±›√‡±∏∞¯ ±≥»Ø
+	EVENT_WORLDCUP_2010_GOLDENBALL_GIFT,	// ø˘µÂƒ≈ 2010 »≤±›√‡±∏∞¯ ∫∏ªÛ
+};
+
+class CmdShopAddItem : public Command
+{
+public:
+	CmdShopAddItem() : m_pWnd(NULL)	{}
+	void setData(CUIShop* pWnd)	{ m_pWnd = pWnd;	}
+	void execute() 
+	{
+		if (m_pWnd != NULL)
+			m_pWnd->AddItemCallback();
+	}
+private:
+	CUIShop* m_pWnd;
+};
+
+class CmdShopDelItem : public Command
+{
+public:
+	CmdShopDelItem() : m_pWnd(NULL)	{}
+	void setData(CUIShop* pWnd)	{ m_pWnd = pWnd;	}
+	void execute() 
+	{
+		if (m_pWnd != NULL)
+			m_pWnd->DelItemCallback();
+	}
+private:
+	CUIShop* m_pWnd;
 };
 
 // ----------------------------------------------------------------------------
@@ -66,15 +116,25 @@ CUIShop::CUIShop()
 	m_nCurRow			= 0;
 	m_nNumOfItem		= 0;
 	m_nTotalPrice		= 0;
+	m_nSendTotalPrice	= 0;
 	m_bShowItemInfo		= FALSE;
 	m_bDetailItemInfo	= FALSE;
 	m_nCurInfoLines		= 0;
 	m_strPlayerMoney	= CTString( "0" );
 	m_strTotalPrice		= CTString( "0" );
 	m_bIsLease			= FALSE;
-	m_bIsEvent			= FALSE; //ttos : 2007 Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏
+	m_bIsEvent			= FALSE; //ttos : 2007 ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ
 	m_iEventjob			= -1;
 	m_bIsFieldShop		= FALSE;
+	m_nNpcVirIdx		= -1;
+
+	int		i;
+
+	for (i = 0; i < SHOP_SLOT_BUY_MAX; ++i)
+		m_pIconsShop[i] = NULL;
+
+	for(i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i)
+		m_pIconsTrade[i] = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -83,7 +143,15 @@ CUIShop::CUIShop()
 // ----------------------------------------------------------------------------
 CUIShop::~CUIShop()
 {
-	Destroy();
+	int		i;
+
+	for (i = 0; i < SHOP_SLOT_BUY_MAX; ++i)
+		SAFE_DELETE(m_pIconsShop[i]);
+
+	for(i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i)
+		SAFE_DELETE(m_pIconsTrade[i]);
+
+	clearTrade();
 }
 
 // ----------------------------------------------------------------------------
@@ -92,9 +160,7 @@ CUIShop::~CUIShop()
 // ----------------------------------------------------------------------------
 void CUIShop::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	//m_nBackSplitHeight = 50;
 	m_rcMainTitle.SetRect( 0, 0, 216, 22 );
@@ -154,35 +220,35 @@ void CUIShop::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHe
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Buy button of shop
-	m_btnShopBuy.Create( this, _S( 253, "Íµ¨Îß§" ), 105, 277, 51, 21 );
+	m_btnShopBuy.Create( this, _S( 253, "±∏∏≈" ), 105, 277, 51, 21 );
 	m_btnShopBuy.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
 	m_btnShopBuy.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
 	m_btnShopBuy.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnShopBuy.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Sell button of shop
-	m_btnShopSell.Create( this, _S( 254, "ÌåêÎß§" ), 105, 277, 51, 21 );
+	m_btnShopSell.Create( this, _S( 254, "∆«∏≈" ), 105, 277, 51, 21 );
 	m_btnShopSell.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
 	m_btnShopSell.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
 	m_btnShopSell.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnShopSell.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button of shop
-	m_btnShopCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 159, 277, 51, 21 );
+	m_btnShopCancel.Create( this, _S( 139, "√Îº“" ), 159, 277, 51, 21 );
 	m_btnShopCancel.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
 	m_btnShopCancel.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
 	m_btnShopCancel.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnShopCancel.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Event_Weapon button of shop
-	m_btnEvent_weapon.Create( this, _S( 2375, "Î¨¥Í∏∞" ), 24, 328, 51, 21 );
+	m_btnEvent_weapon.Create( this, _S( 2375, "π´±‚" ), 24, 328, 51, 21 );
 	m_btnEvent_weapon.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
 	m_btnEvent_weapon.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
 	m_btnEvent_weapon.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnEvent_weapon.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Event_Shild button of shop
-	m_btnEvent_shield.Create( this, _S( 2376, "Î∞©Ïñ¥Íµ¨" ), 141, 328, 51, 21 );
+	m_btnEvent_shield.Create( this, _S( 2376, "πÊæÓ±∏" ), 141, 328, 51, 21 );
 	m_btnEvent_shield.SetUV( UBS_IDLE, 0, 454, 51, 474, fTexWidth, fTexHeight );
 	m_btnEvent_shield.SetUV( UBS_CLICK, 53, 454, 104, 474, fTexWidth, fTexHeight );
 	m_btnEvent_shield.CopyUV( UBS_IDLE, UBS_ON );
@@ -193,9 +259,9 @@ void CUIShop::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHe
 	m_sbTopScrollBar.Create( this, 194, 28, 9, 137 );
 	m_sbTopScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
 	m_sbTopScrollBar.SetScrollPos( 0 );
-	m_sbTopScrollBar.SetScrollRange( SHOP_SHOP_SLOT_ROW_TOTAL );
-	m_sbTopScrollBar.SetCurItemCount( SHOP_SHOP_SLOT_ROW_TOTAL );
-	m_sbTopScrollBar.SetItemsPerPage( SHOP_SHOP_SLOT_ROW );
+	m_sbTopScrollBar.SetScrollRange( SHOP_SLOT_ROW_BUY_TOTAL );
+	m_sbTopScrollBar.SetCurItemCount( SHOP_SLOT_ROW_BUY_TOTAL );
+	m_sbTopScrollBar.SetItemsPerPage( SHOP_SLOT_ROW );
 	// Up button
 	m_sbTopScrollBar.SetUpUV( UBS_IDLE, 228, 16, 237, 22, fTexWidth, fTexHeight );
 	m_sbTopScrollBar.SetUpUV( UBS_CLICK, 228, 33, 237, 39, fTexWidth, fTexHeight );
@@ -217,9 +283,9 @@ void CUIShop::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHe
 	m_sbBottomScrollBar.Create( this, 194, 128, 9, 137 );
 	m_sbBottomScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10);
 	m_sbBottomScrollBar.SetScrollPos( 0 );
-	m_sbBottomScrollBar.SetScrollRange( SHOP_SHOP_SLOT_ROW_TOTAL );
-	m_sbBottomScrollBar.SetCurItemCount( SHOP_SHOP_SLOT_ROW_TOTAL );
-	m_sbBottomScrollBar.SetItemsPerPage( SHOP_SHOP_SLOT_ROW );
+	m_sbBottomScrollBar.SetScrollRange( SHOP_SLOT_ROW_BUY_TOTAL );
+	m_sbBottomScrollBar.SetCurItemCount( SHOP_SLOT_ROW_BUY_TOTAL );
+	m_sbBottomScrollBar.SetItemsPerPage( SHOP_SLOT_ROW );
 	// Up button
 	m_sbBottomScrollBar.SetUpUV( UBS_IDLE, 228, 16, 237, 22, fTexWidth, fTexHeight );
 	m_sbBottomScrollBar.SetUpUV( UBS_CLICK, 228, 33, 237, 39, fTexWidth, fTexHeight );
@@ -240,17 +306,18 @@ void CUIShop::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHe
 
 	// Slot items
 	// Shop Slot(5x4)
-	for( int iRow = 0; iRow < SHOP_SHOP_SLOT_ROW_TOTAL; iRow++ )
+	for( int i = 0; i < SHOP_SLOT_BUY_MAX; i++ )
 	{
-		for( int iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++ )
-		{			
-			m_abtnShopItems[iRow][iCol].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_SHOP, UBET_ITEM, 0, iRow, iCol );
-		}
+		m_pIconsShop[i] = new CUIIcon;
+		m_pIconsShop[i]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_SHOP, UBET_ITEM);
 	}
 
 	// Trade Slot(5x2)
 	for( int iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
-		m_abtnTradeItems[iItem].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_SHOP, UBET_ITEM );
+	{
+		m_pIconsTrade[iItem] = new CUIIcon;
+		m_pIconsTrade[iItem]->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_SHOP, UBET_ITEM);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -277,15 +344,19 @@ void CUIShop::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ
 // Name : OpenShop()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIShop::OpenShop( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
+void CUIShop::OpenShop( int iMobIndex, int iMobVirIdx, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
 {
-	if(_pUIMgr->DoesMessageBoxLExist( MSGLCMD_SHOP_REQ ))
+	OBFUSCATE();
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->DoesMessageBoxLExist( MSGLCMD_SHOP_REQ ))
 		return;
 
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if( pUIManager->GetInventory()->IsLocked() )
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
@@ -295,29 +366,30 @@ void CUIShop::OpenShop( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
 	m_fNpcX = fX;
 	m_fNpcZ = fZ;
 
-	CMobData& MD = _pNetwork->GetMobData(iMobIndex);
+	m_nNpcVirIdx = iMobVirIdx;
+
+	CMobData* MD = CMobData::getData(iMobIndex);
 	CShopData &SD = _pNetwork->GetShopData(iMobIndex);	
-	//_pUIMgr->GetShop()->OpenShop( SD.GetIndex(), bHasQuest );
 	const int iShopID = SD.GetIndex();
 
 
 	switch( _pNetwork->MyCharacterInfo.sbJoinFlagMerac )
 	{
-		// ÏàòÏÑ±Í∏∏Îìú
+		// ºˆº∫±ÊµÂ
 	case WCJF_OWNER:
 	case WCJF_DEFENSE_GUILD:
 	case WCJF_DEFENSE_CHAR:
 		{
-			if( iMobIndex == 234 || iMobIndex == 235 ) // Í≥µÏÑ±Ï∏° ÏÉÅÏù∏Ïù¥Î©¥ Ï¢ÖÎ£å
+			if( iMobIndex == 234 || iMobIndex == 235 ) // ∞¯º∫√¯ ªÛ¿Œ¿Ã∏È ¡æ∑·
 				return;
 		}
 		break;
 		
-		// Í≥µÏÑ±Ï∏° Í∏∏Îìú
+		// ∞¯º∫√¯ ±ÊµÂ
 	case WCJF_ATTACK_GUILD:
 	case WCJF_ATTACK_CHAR:
 		{
-			if( iMobIndex == 232 || iMobIndex == 233 ) // ÏàòÏÑ±Ï∏° ÏÉÅÏù∏Ïù¥Î©¥ Ï¢ÖÎ£å 
+			if( iMobIndex == 232 || iMobIndex == 233 ) // ºˆº∫√¯ ªÛ¿Œ¿Ã∏È ¡æ∑· 
 				return;
 		}
 		break;
@@ -326,86 +398,88 @@ void CUIShop::OpenShop( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
 	ASSERT(iShopID != -1 && "Invalid Shop ID");
 	m_nSelectedShopID = iShopID;
 
-	// Character state flags
-	_pUIMgr->SetCSFlagOn( CSF_SHOP );
-
-	_pUIMgr->CloseMessageBox( MSGCMD_DROPITEM );
+	pUIManager->CloseMessageBox( MSGCMD_DROPITEM );
 
 	// Create refine message box
-	_pUIMgr->CreateMessageBoxL( _S( 263, "ÏÉÅÏ†ê" ) , UI_SHOP, MSGLCMD_SHOP_REQ );
+	pUIManager->CreateMessageBoxL( _S( 263, "ªÛ¡°" ) , UI_SHOP, MSGLCMD_SHOP_REQ );
 
-	CTString	strNpcName = _pNetwork->GetMobName(iMobIndex);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+	CTString	strNpcName = CMobData::getData(iMobIndex)->GetName();
+	pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, strNpcName, -1, 0xE18600FF );
 
-	if( iMobIndex == 272 ) // Î¨¥Í∏∞ ÎåÄÏó¨ÏÉÅ
+	if( iMobIndex == 272 ) // π´±‚ ¥Îø©ªÛ
 	{
 		CTString tv_str;
-		tv_str = _S(3054,"ÌóòÎÇúÌïòÍ≥† ÏúÑÌóòÌïú ÏïÑÏù¥Î¶¨Ïä§Î•º Ïó¨ÌñâÌïòÎ†§Î©¥ Ïù¥Ï†ïÎèÑ Î¨¥Í∏∞ ÌïòÎÇòÏØ§ÏùÄ Í∞ÄÏßÄÍ≥† Í≥ÑÏÖîÏïº Ìï† Í≤ÅÎãàÎã§.");
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S(3055, "Î¨¥Í∏∞Í∞Ä ÌïÑÏöîÌïòÏãúÎã§Í≥†Ïöî? ÌååÎäîÍ±¥ ÏïÑÎãàÏßÄÎßå Ï¢ãÏùÄ Î¨¥Í∏∞Î•º Î©∞Ïπ†Í∞Ñ ÎπåÎ†§ÎìúÎ¶¥ Ïàú ÏûàÎäîÎç∞ Ïñ¥Îñ†ÏÑ∏Ïöî?" ) , -1, 0xA3A1A3FF );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, tv_str,-1, 0xA3A1A3FF );
-		tv_str = _S(3056,"ÎåÄÏó¨Ìï¥ ÎìúÎ¶¨Îäî Î¨¥Í∏∞Îäî +6ÏúºÎ°ú Ï†úÎ†®Îêú Í≤ÉÏúºÎ°ú Îçî Ïù¥ÏÉÅÏùÄ Ï†úÎ†®ÏùÑ Î™ªÌïòÎ©∞ 1ÏùºÍ∞Ñ ÏÇ¨Ïö©Ìï† Ïàò ÏûàÏäµÎãàÎã§.");
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, tv_str,-1, 0xA3A1A3FF );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S(3057, "Î¨¥Í∏∞ Ï¢ÖÎ•òÎ•º Í≥®ÎùºÎ≥¥ÏÑ∏Ïöî." ) , -1, 0xA3A1A3FF );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3058,"ÌÉÄÏù¥ÌÉÑ Î¨¥Í∏∞Î•ò" ), LEASE_WEAPON_TITAN );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3059,"ÎÇòÏù¥Ìä∏ Î¨¥Í∏∞Î•ò" ), LEASE_WEAPON_KNIGHT  );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3060,"ÌûêÎü¨ Î¨¥Í∏∞Î•ò" ), LEASE_WEAPON_HEALER  );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3061,"Î©îÏù¥ÏßÄ Î¨¥Í∏∞Î•ò" ), LEASE_WEAPON_MAGE  );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3062,"Î°úÍ∑∏ Î¨¥Í∏∞Î•ò" ), LEASE_WEAPON_ROGUE  );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3063,"ÏÜåÏÑúÎü¨ Î¨¥Í∏∞Î•ò" ), LEASE_WEAPON_SOCERER  );
+		tv_str = _S(3054,"«Ë≥≠«œ∞Ì ¿ß«Ë«— æ∆¿Ã∏ÆΩ∫∏¶ ø©«‡«œ∑¡∏È ¿Ã¡§µµ π´±‚ «œ≥™¬Î¿∫ ∞°¡ˆ∞Ì ∞Ëº≈æﬂ «“ ∞Ã¥œ¥Ÿ.");
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S(3055, "π´±‚∞° « ø‰«œΩ√¥Ÿ∞Ìø‰? ∆ƒ¥¬∞« æ∆¥œ¡ˆ∏∏ ¡¡¿∫ π´±‚∏¶ ∏Áƒ•∞£ ∫Ù∑¡µÂ∏± º¯ ¿÷¥¬µ• æÓ∂∞ººø‰?" ) , -1, 0xA3A1A3FF );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, tv_str,-1, 0xA3A1A3FF );
+		tv_str = _S(3056,"¥Îø©«ÿ µÂ∏Æ¥¬ π´±‚¥¬ +12¿∏∑Œ ¡¶∑√µ» ∞Õ¿∏∑Œ ¥ı ¿ÃªÛ¿∫ ¡¶∑√¿ª ∏¯«œ∏Á 1¿œ∞£ ªÁøÎ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."); // (+6ø°º≠ +12∑Œ ∫Ø∞Ê)
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, tv_str,-1, 0xA3A1A3FF );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S(3057, "π´±‚ ¡æ∑˘∏¶ ∞Ò∂Û∫∏ººø‰." ) , -1, 0xA3A1A3FF );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3058,"≈∏¿Ã≈∫ π´±‚∑˘" ), LEASE_WEAPON_TITAN );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3059,"≥™¿Ã∆Æ π´±‚∑˘" ), LEASE_WEAPON_KNIGHT  );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3060,"»˙∑Ø π´±‚∑˘" ), LEASE_WEAPON_HEALER  );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3061,"∏ﬁ¿Ã¡ˆ π´±‚∑˘" ), LEASE_WEAPON_MAGE  );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3062,"∑Œ±◊ π´±‚∑˘" ), LEASE_WEAPON_ROGUE  );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(3063,"º“º≠∑Ø π´±‚∑˘" ), LEASE_WEAPON_SOCERER  );
+#ifdef CHAR_EX_ROGUE
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(5738,"EX∑Œ±◊ π´±‚∑˘" ), LEASE_WEAPON_EXROGUE  );	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+#endif
+#ifdef CHAR_EX_MAGE
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(5826,"æ∆≈©∏ﬁ¿Ã¡ˆ π´±‚∑˘" ), LEASE_WEAPON_EXMAGE  );	// 2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° Ω∫∆Æ∏µ πﬁ¿∏∏È √ﬂ∞° ºˆ¡§ « ø‰ 
+#endif
 		
-		//ÎåÄÏó¨ÏÉÅÏ†êÏúºÎ°ú...
+		//¥Îø©ªÛ¡°¿∏∑Œ...
 		m_bIsLease = TRUE;
 		SetHeight(m_nHeight+ 77);
-		m_btnShopBuy.SetText(_S(3046,"ÎåÄÏó¨"));
+		m_btnShopBuy.SetText(_S(3046,"¥Îø©"));
 		m_btnShopBuy.SetPosY(m_btnShopBuy.GetPosY()+77);
 		m_btnShopCancel.SetPosY(m_btnShopCancel.GetPosY()+77);
 
 	}
-	//------ Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ NPC
+	//------ ∏ÛΩ∫≈Õ ƒﬁ∫∏ NPC
 	else if(iMobIndex == 488)
 	{
 
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4036, "ÏïàÎÖïÌïòÏÑ∏Ïöî ÏûêÏã†Ïùò Îä•Î†•ÏùÑ Ïã§ÌóòÌïòÍ∏∞ ÏúÑÌïòÏó¨ Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ÎßåÌÅº ÌôïÏã§Ìïú Í≤ÉÎèÑ ÏóÜÏ£†"),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4037, "ÏûêÏã†Ïùò Îä•Î†•ÏùÑ ÏïåÏßÄ Î™ªÌïòÍ≥† ÏûêÎßåÌïòÎã§Í∞Ñ Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥Î•º ÌÅ¥Î¶¨Ïñ¥ ÌïòÍ∏∞Îäî ÌûòÎì§Í≤†Ï£†."),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4038, "Ïûê Ïù¥Ï†ú ÏûêÏã†Ïùò Îä•Î†•ÏùÑ Ïã§ÌóòÌï¥ Î≥¥ÏãúÏ£†"),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4036, "æ»≥Á«œººø‰ ¿⁄Ω≈¿« ¥…∑¬¿ª Ω««Ë«œ±‚ ¿ß«œø© ∏ÛΩ∫≈Õ ƒﬁ∫∏∏∏≈≠ »ÆΩ««— ∞Õµµ æ¯¡“"),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4037, "¿⁄Ω≈¿« ¥…∑¬¿ª æÀ¡ˆ ∏¯«œ∞Ì ¿⁄∏∏«œ¥Ÿ∞£ ∏ÛΩ∫≈Õ ƒﬁ∫∏∏¶ ≈¨∏ÆæÓ «œ±‚¥¬ »˚µÈ∞⁄¡“."),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4038, "¿⁄ ¿Ã¡¶ ¿⁄Ω≈¿« ¥…∑¬¿ª Ω««Ë«ÿ ∫∏Ω√¡“"),-1,0xa3a1a3ff);
 		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4039, "Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ ÎßåÎì§Í∏∞" ), COMBO_MAKE );
-	//	_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _s( "ÎåÄÍ∏∞Î∞© Ïù¥Îèô" ), COMBO_MOVE_LOBBY );			
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4040, "ÏÉÅÏ†ê Ïù¥Ïö©ÌïòÍ∏∞" ), SHOP_BUY );			
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4039, "∏ÛΩ∫≈Õ ƒﬁ∫∏ ∏∏µÈ±‚" ), COMBO_MAKE );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4040, "ªÛ¡° ¿ÃøÎ«œ±‚" ), SHOP_BUY );			
 		
 	}
 	else if(iMobIndex == 489)
 	{
 
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4036, "ÏïàÎÖïÌïòÏÑ∏Ïöî ÏûêÏã†Ïùò Îä•Î†•ÏùÑ Ïã§ÌóòÌïòÍ∏∞ ÏúÑÌïòÏó¨ Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ÎßåÌÅº ÌôïÏã§Ìïú Í≤ÉÎèÑ ÏóÜÏ£†"),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4037, "ÏûêÏã†Ïùò Îä•Î†•ÏùÑ ÏïåÏßÄ Î™ªÌïòÍ≥† ÏûêÎßåÌïòÎã§Í∞Ñ Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥Î•º ÌÅ¥Î¶¨Ïñ¥ ÌïòÍ∏∞Îäî ÌûòÎì§Í≤†Ï£†."),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4038, "Ïûê Ïù¥Ï†ú ÏûêÏã†Ïùò Îä•Î†•ÏùÑ Ïã§ÌóòÌï¥ Î≥¥ÏãúÏ£†"),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4036, "æ»≥Á«œººø‰ ¿⁄Ω≈¿« ¥…∑¬¿ª Ω««Ë«œ±‚ ¿ß«œø© ∏ÛΩ∫≈Õ ƒﬁ∫∏∏∏≈≠ »ÆΩ««— ∞Õµµ æ¯¡“"),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4037, "¿⁄Ω≈¿« ¥…∑¬¿ª æÀ¡ˆ ∏¯«œ∞Ì ¿⁄∏∏«œ¥Ÿ∞£ ∏ÛΩ∫≈Õ ƒﬁ∫∏∏¶ ≈¨∏ÆæÓ «œ±‚¥¬ »˚µÈ∞⁄¡“."),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4038, "¿⁄ ¿Ã¡¶ ¿⁄Ω≈¿« ¥…∑¬¿ª Ω««Ë«ÿ ∫∏Ω√¡“"),-1,0xa3a1a3ff);
 		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4041, "Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ Ïä§ÌÖåÏù¥ÏßÄ Ïù¥Îèô" ), COMBO_MOVE_STAGE );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4042, "ÌååÌã∞Ïõê ÏÜåÌôòÌïòÍ∏∞" ), COMBO_RECALL_LOBBY );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4043, "Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ ÎÇòÍ∞ÄÍ∏∞" ), COMBO_GIVEUP );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4040, "ÏÉÅÏ†ê Ïù¥Ïö©ÌïòÍ∏∞" ), SHOP_BUY );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4041, "∏ÛΩ∫≈Õ ƒﬁ∫∏ Ω∫≈◊¿Ã¡ˆ ¿Ãµø" ), COMBO_MOVE_STAGE );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4042, "∆ƒ∆ºø¯ º“»Ø«œ±‚" ), COMBO_RECALL_LOBBY );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4043, "∏ÛΩ∫≈Õ ƒﬁ∫∏ ≥™∞°±‚" ), COMBO_GIVEUP );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4040, "ªÛ¡° ¿ÃøÎ«œ±‚" ), SHOP_BUY );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1220, "√Îº“«—¥Ÿ." ) );
 		return;
 		
 	}
 	else if(iMobIndex == 490)
 	{
 
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4036, "ÏïàÎÖïÌïòÏÑ∏Ïöî ÏûêÏã†Ïùò Îä•Î†•ÏùÑ Ïã§ÌóòÌïòÍ∏∞ ÏúÑÌïòÏó¨ Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ÎßåÌÅº ÌôïÏã§Ìïú Í≤ÉÎèÑ ÏóÜÏ£†"),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4037, "ÏûêÏã†Ïùò Îä•Î†•ÏùÑ ÏïåÏßÄ Î™ªÌïòÍ≥† ÏûêÎßåÌïòÎã§Í∞Ñ Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥Î•º ÌÅ¥Î¶¨Ïñ¥ ÌïòÍ∏∞Îäî ÌûòÎì§Í≤†Ï£†."),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4038, "Ïûê Ïù¥Ï†ú ÏûêÏã†Ïùò Îä•Î†•ÏùÑ Ïã§ÌóòÌï¥ Î≥¥ÏãúÏ£†"),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4036, "æ»≥Á«œººø‰ ¿⁄Ω≈¿« ¥…∑¬¿ª Ω««Ë«œ±‚ ¿ß«œø© ∏ÛΩ∫≈Õ ƒﬁ∫∏∏∏≈≠ »ÆΩ««— ∞Õµµ æ¯¡“"),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4037, "¿⁄Ω≈¿« ¥…∑¬¿ª æÀ¡ˆ ∏¯«œ∞Ì ¿⁄∏∏«œ¥Ÿ∞£ ∏ÛΩ∫≈Õ ƒﬁ∫∏∏¶ ≈¨∏ÆæÓ «œ±‚¥¬ »˚µÈ∞⁄¡“."),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4038, "¿⁄ ¿Ã¡¶ ¿⁄Ω≈¿« ¥…∑¬¿ª Ω««Ë«ÿ ∫∏Ω√¡“"),-1,0xa3a1a3ff);
 		
-		if(_pUIMgr->GetCombo()->GetComboClear() == 1)
+		if(pUIManager->GetCombo()->GetComboClear() == 1)
 		{	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4044, "Îã§Ïùå Ïä§ÌÖåÏù¥ÏßÄÎ°ú Ïù¥Îèô" ), COMBO_MOVE_STAGE );
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4044, "¥Ÿ¿Ω Ω∫≈◊¿Ã¡ˆ∑Œ ¿Ãµø" ), COMBO_MOVE_STAGE );
 		}
 
-		if(_pUIMgr->GetCombo()->GetComboClear() == 2)
+		if(pUIManager->GetCombo()->GetComboClear() == 2)
 		{
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4045, "ÏΩ§Î≥¥ ÏôÑÎ£å ÌïÑÎìúÎ°ú ÎèåÏïÑÍ∞ÄÍ∏∞" ), COMBO_COMPLETE );
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4045, "ƒﬁ∫∏ øœ∑· « µÂ∑Œ µπæ∆∞°±‚" ), COMBO_COMPLETE );
 		}else{
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4046, "Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥ ÎåÄÍ∏∞Î∞© Ïù¥Îèô" ), COMBO_MOVE_GO_LOBBY );
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4046, "∏ÛΩ∫≈Õ ƒﬁ∫∏ ¥Î±‚πÊ ¿Ãµø" ), COMBO_MOVE_GO_LOBBY );
 		}
 		
 		return;
@@ -413,96 +487,104 @@ void CUIShop::OpenShop( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ )
 	}
 	else if(iMobIndex >= 521 && iMobIndex <= 525)			//Cube NPCs
 	{
-		if( _pUIMgr->DoesMessageBoxLExist(MSGLCMD_CUBE_PARTY_ENTRANCE) )
-			_pUIMgr->CloseMessageBoxL(MSGLCMD_CUBE_PARTY_ENTRANCE);
+		if( pUIManager->DoesMessageBoxLExist(MSGLCMD_CUBE_PARTY_ENTRANCE) )
+			pUIManager->CloseMessageBoxL(MSGLCMD_CUBE_PARTY_ENTRANCE);
 
-		if( _pUIMgr->DoesMessageBoxLExist(MSGLCMD_CUBE_PARTY_ENTRANCE) )
-			_pUIMgr->CloseMessageBoxL(MSGLCMD_CUBE_GUILD_ENTRANCE);	
-		
-		if( _pUIMgr->DoesMessageBoxExist(MSGCMD_CUBE_STATE) )
-			_pUIMgr->CloseMessageBox(MSGCMD_CUBE_STATE);
+		if( pUIManager->DoesMessageBoxLExist(MSGLCMD_CUBE_PARTY_ENTRANCE) )
+			pUIManager->CloseMessageBoxL(MSGLCMD_CUBE_GUILD_ENTRANCE);
+
+		if( pUIManager->DoesMessageBoxExist(MSGCMD_CUBE_STATE) )
+			pUIManager->CloseMessageBox(MSGCMD_CUBE_STATE);
 			
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4321, "Ïù¥ ÌÅêÎ∏åÏóê Îì§Ïñ¥Í∞ÄÍ∏∞ ÏúÑÌï¥ÏÑúÎäî ÏûÖÏû•Í∂åÏù¥ ÌïÑÏöîÌï©ÎãàÎã§."),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4322, "Íº≠ ÌååÌã∞Î•º Ìï¥ÏÑú Îì§Ïñ¥Í∞ÄÏïº Ìï©ÎãàÎã§. ÌååÌã∞Ïóê ÏÜçÌï¥ ÏûàÏßÄ ÏïäÏúºÎ©¥ Îì§Ïñ¥Í∞à Ïàò ÏóÜÏäµÎãàÎã§."),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4323, "Îã®Ï≤¥ ÏûÖÏû•ÏùÑ ÌïòÍ≤å ÎêòÎ©¥ ÌååÌã∞ÏõêÏù¥ Í∞ïÏ†úÎ°ú Ïù¥ÎèôÌïòÍ≤å Îê©ÎãàÎã§."),-1,0xa3a1a3ff);
-		_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4324, "Í∑∏Îüº ÌñâÏö¥ÏùÑ ÎπïÎãàÎã§."),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4321, "¿Ã ≈•∫Íø° µÈæÓ∞°±‚ ¿ß«ÿº≠¥¬ ¿‘¿Â±«¿Ã « ø‰«’¥œ¥Ÿ."),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4322, "≤¿ ∆ƒ∆º∏¶ «ÿº≠ µÈæÓ∞°æﬂ «’¥œ¥Ÿ. ∆ƒ∆ºø° º”«ÿ ¿÷¡ˆ æ ¿∏∏È µÈæÓ∞• ºˆ æ¯Ω¿¥œ¥Ÿ."),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4323, "¥‹√º ¿‘¿Â¿ª «œ∞‘ µ«∏È ∆ƒ∆ºø¯¿Ã ∞≠¡¶∑Œ ¿Ãµø«œ∞‘ µÀ¥œ¥Ÿ."),-1,0xa3a1a3ff);
+		pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ,TRUE, _S(4324, "±◊∑≥ «‡øÓ¿ª ∫˜¥œ¥Ÿ."),-1,0xa3a1a3ff);
 		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4325, "ÏûÖÏû•ÌÅêÎ∏å Íµ¨ÏûÖ" ), SHOP_BUY );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4326, "ÌååÌã∞ÌÅêÎ∏åÏûÖÏû• Ïã†Ï≤≠" ), CUBE_PARTY_ENTRANCE);
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4325, "¿‘¿Â≈•∫Í ±∏¿‘" ), SHOP_BUY );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4326, "∆ƒ∆º≈•∫Í¿‘¿Â Ω≈√ª" ), CUBE_PARTY_ENTRANCE);
 #ifdef ENABLE_GUILD_CUBE
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4394, "Í∏∏ÎìúÌÅêÎ∏åÏûÖÏû• Ïã†Ï≤≠" ), CUBE_GUILD_ENTRANCE);
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4390, "Í∞úÏù∏ ÌÅêÎ∏å Ìè¨Ïù∏Ìä∏ ÌòÑÌô©" ), CUBE_PLAYER_STATE);
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4388, "Í∏∏Îìú ÌÅêÎ∏å Ìè¨Ïù∏Ìä∏ ÌòÑÌô©" ), CUBE_GUILD_STATE);
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4394, "±ÊµÂ≈•∫Í¿‘¿Â Ω≈√ª" ), CUBE_GUILD_ENTRANCE);
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(5441, "∞≥¿Œ ≈•∫Í ∫∏ªÛ Ω≈√ª" ), CUBE_PLAYER_REWARD);
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4390, "∞≥¿Œ ≈•∫Í ∆˜¿Œ∆Æ «ˆ»≤" ), CUBE_PLAYER_STATE);
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4388, "±ÊµÂ ≈•∫Í ∆˜¿Œ∆Æ «ˆ»≤" ), CUBE_GUILD_STATE);
 #endif
 	}
 	else
 	{
-		if( iMobIndex == 233 || iMobIndex == 235 ) // Í≥µÏÑ± Ï°∞Ìï©ÏÉÅÏù∏
+		if( iMobIndex == 233 || iMobIndex == 235 ) // ∞¯º∫ ¡∂«’ªÛ¿Œ
 		{
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 1975, "Ï†ÑÏû•ÏóêÏÑú Ïû•ÏÇ¨Î•º ÌïúÎã§Îäî Í±¥ Î™©Ïà®ÏùÑ ÎÇ¥Í±∏Í≥† ÌïòÎäî ÏùºÏù¥ÏßÄ." ) , -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 1976, "Í∑∏ÎßåÌÅº ÌûòÎì† Ïùº Ïù¥Í∏∞ÎèÑ ÌïòÍ≥† Í∑∏Î†áÎã§Í≥† Î∞îÍ∞ÄÏßÄÎ•º ÏîåÏö∞Í±∞ÎÇò ÌïòÏßÄÎäî ÏïäÎÑ§..." ) , -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, CTString( " " ) , -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 1977, "ÏßÑÍ∑ÄÌïú Î¨ºÍ±¥Îì§Ïù¥ ÎßéÏù¥ ÏûàÏúºÎãà Í≥®ÎùºÎ≥¥Í≤å.." ) , -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, CTString( " " ) , -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 1978, "ÎÇú Ï°∞Ìï© ÏïÑÏù¥ÌÖúÎßå Ï∑®Í∏âÌïòÎãà ÏóºÎëêÌï¥ ÎëêÍ≤å. Î¨ºÎ°† ÏïÑÏù¥ÌÖú Ï°∞Ìï©ÏùÄ ÏÑúÎπÑÏä§Î°ú Ìï¥Ï£ºÍ≥† ÏûàÏßÄ. " ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 1975, "¿¸¿Âø°º≠ ¿ÂªÁ∏¶ «—¥Ÿ¥¬ ∞« ∏Òº˚¿ª ≥ª∞…∞Ì «œ¥¬ ¿œ¿Ã¡ˆ." ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 1976, "±◊∏∏≈≠ »˚µÁ ¿œ ¿Ã±‚µµ «œ∞Ì ±◊∑∏¥Ÿ∞Ì πŸ∞°¡ˆ∏¶ æ∫øÏ∞≈≥™ «œ¡ˆ¥¬ æ ≥◊..." ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, CTString( " " ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 1977, "¡¯±Õ«— π∞∞«µÈ¿Ã ∏π¿Ã ¿÷¿∏¥œ ∞Ò∂Û∫∏∞‘.." ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, CTString( " " ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 1978, "≥≠ ¡∂«’ æ∆¿Ã≈€∏∏ √Î±ﬁ«œ¥œ ø∞µŒ«ÿ µŒ∞‘. π∞∑– æ∆¿Ã≈€ ¡∂«’¿∫ º≠∫ÒΩ∫∑Œ «ÿ¡÷∞Ì ¿÷¡ˆ. " ) , -1, 0xA3A1A3FF );	
 		}
 		else
 		{
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 621, "Ïñ¥ÏÑú Ïò§ÏãúÍ≤å." ) , -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 622, "Ïù¥ Í∑ºÎ∞©ÏóêÏÑúÎäî Í∑∏ÎûòÎèÑ Ïó¨Í∏∞Í∞Ä Ï†úÏùº Í∞ÄÍ≤©ÎèÑ Ïã∏Í≥† Ï¢ÖÎ•òÎèÑ Îã§Ïñë Ìï† Í∫ºÏïº." ) , -1, 0xA3A1A3FF );	
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 623, "Î®∏, ÏòÅ Í≥†Î•º Î¨ºÍ±¥Ïù¥ ÏóÜÎã§Î©¥ Ìï† Ïàò ÏóÜÏßÄÎßå Îã§Î•∏ Í≥≥ÏùÑ Í∞ÄÎèÑ ÎßàÏ∞¨Í∞ÄÏßÄÏïº." ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 621, "æÓº≠ ø¿Ω√∞‘." ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 622, "¿Ã ±ŸπÊø°º≠¥¬ ±◊∑°µµ ø©±‚∞° ¡¶¿œ ∞°∞›µµ ΩŒ∞Ì ¡æ∑˘µµ ¥ŸæÁ «“ ≤®æﬂ." ) , -1, 0xA3A1A3FF );	
+			pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, _S( 623, "∏”, øµ ∞Ì∏¶ π∞∞«¿Ã æ¯¥Ÿ∏È «“ ºˆ æ¯¡ˆ∏∏ ¥Ÿ∏• ∞˜¿ª ∞°µµ ∏∂¬˘∞°¡ˆæﬂ." ) , -1, 0xA3A1A3FF );	
 		}
 
 
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 624, "Íµ¨Îß§ÌïúÎã§." ), SHOP_BUY  );		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 625, "ÌåêÎß§ÌïúÎã§." ), SHOP_SELL  );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 624, "±∏∏≈«—¥Ÿ." ), SHOP_BUY  );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 625, "∆«∏≈«—¥Ÿ." ), SHOP_SELL  );		
 	}
 	
-	if( iMobIndex == 233 || iMobIndex == 235 ) // Í≥µÏÑ± Ï°∞Ìï©ÏÉÅÏù∏
+	if( iMobIndex == 233 || iMobIndex == 235 ) // ∞¯º∫ ¡∂«’ªÛ¿Œ
 	{	
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1979, "ÏïÑÏù¥ÌÖúÏùÑ Ï°∞Ìï©ÌïúÎã§." ), SHOP_GW_MIX );	
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1979, "æ∆¿Ã≈€¿ª ¡∂«’«—¥Ÿ." ), SHOP_GW_MIX );	
 	}
 
 	if(bHasQuest)
 	{
-#ifdef	NEW_QUESTBOOK
-		// 2009. 05. 27 ÍπÄÏ†ïÎûò
-		// Ïù¥ÏïºÍ∏∞ÌïúÎã§ Î≥ÄÍ≤Ω Ï≤òÎ¶¨
+		// 2009. 05. 27 ±Ë¡§∑°
+		// ¿Ãæﬂ±‚«—¥Ÿ ∫Ø∞Ê √≥∏Æ
 		CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_SHOP_REQ);				
-#else		
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1053, "Ïù¥ÏïºÍ∏∞ÌïúÎã§." ), SHOP_TALK  );		
-#endif
 	}
 
-	// FIXME : ÌÄòÏä§Ìä∏Í∞Ä ÏóÜÏùÑ Í≤ΩÏö∞Ïóê Î¨∏Ï†úÍ∞Ä Îê®.
-	// FIXME : Í≥†Î°ú, Ïù¥Î≤§Ìä∏ NPCÎäî ÎêòÎèÑÎ°ù ÌÄòÏä§Ìä∏Î•º Í∞ñÍ≥† ÏûàÎäî ÌòïÌÉúÎ°ú???
-	if(MD.IsEvent())
+	// FIXME : ƒ˘Ω∫∆Æ∞° æ¯¿ª ∞ÊøÏø° πÆ¡¶∞° µ .
+	// FIXME : ∞Ì∑Œ, ¿Ã∫•∆Æ NPC¥¬ µ«µµ∑œ ƒ˘Ω∫∆Æ∏¶ ∞Æ∞Ì ¿÷¥¬ «¸≈¬∑Œ???
+	if(MD->IsEvent())
 	{
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 100, "Ïù¥Î≤§Ìä∏" ), SHOP_EVENT  );		
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 100, "¿Ã∫•∆Æ" ), SHOP_EVENT  );		
+	}
+
+	// ($E_WC2010) [100511: selo] 2010 ≥≤æ∆∞¯ ø˘µÂƒ≈ Event1.
+	// «ÿ¥Á ¿Ã∫•∆Æ∞° ¡¯«‡ ¡ﬂ¿Ã∞Ì πÊæÓ±∏ ªÛ¿Œ¿œ ∂ß ∏ﬁ¥∫∏¶ ∫∏¿Œ¥Ÿ
+	if(IS_EVENT_ON(TEVENT_WORLDCUP_2010) &&
+		(iMobIndex == 90 || iMobIndex == 129 || iMobIndex == 169 || iMobIndex == 279 || iMobIndex == 508 || iMobIndex == 1029) )
+	{
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4889, "ø˘µÂ √‡¡¶ ¿Ã∫•∆Æ æ»≥ª"), EVENT_WORLDCUP_2010_INFO );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4890, "»≤±› √‡±∏∞¯¿∏∑Œ ±≥»Ø"), EVENT_WORLDCUP_2010_BALL );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S(4881, "ø˘µÂ √‡¡¶ ªÛ¿⁄∑Œ ±≥»Ø"), EVENT_WORLDCUP_2010_GOLDENBALL );
 	}
 
 	if(iMobIndex == 226)
 	{
-		_pUIMgr->CloseMessageBox( MSGCMD_SUPERGOJE_REQUEST );
-		_pUIMgr->CloseMessageBox( MSGCMD_SUPERGOJE_NOTIFY );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1782, "Ï¥à Í≥†Í∏â Ï†úÎ†®ÏÑù Î∞õÍ∏∞" ), SHOP_SUPERGOJE  );
+		pUIManager->CloseMessageBox( MSGCMD_SUPERGOJE_REQUEST );
+		pUIManager->CloseMessageBox( MSGCMD_SUPERGOJE_NOTIFY );
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1782, "√  ∞Ì±ﬁ ¡¶∑√ºÆ πﬁ±‚" ), SHOP_SUPERGOJE  );
 	}
-#ifdef HELP_SYSTEM_1
-	_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ, FALSE, _S( 1748, "NPC ÏïàÎÇ¥" ), SHOP_NPC_HELP); //ttos : ÏïàÎÇ¥ÏãúÏä§ÌÖú Ï∂îÍ∞ÄÏãú
-#endif
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );	
+
+	pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ, FALSE, _S( 1748, "NPC æ»≥ª" ), SHOP_NPC_HELP); //ttos : æ»≥ªΩ√Ω∫≈€ √ﬂ∞°Ω√
+	pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1220, "√Îº“«—¥Ÿ." ) );	
 }
 
-// ttos : Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏(Ïñ¥Î¶∞Ïù¥ÎÇ†) Ï∂îÍ∞Ä
+// ttos : ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ(æÓ∏∞¿Ã≥Ø) √ﬂ∞°
 void CUIShop::EventOpenShop( int iMobIndex, BOOL bHasQuest,FLOAT fX, FLOAT fZ )
 {
-	if(_pUIMgr->DoesMessageBoxLExist( MSGLCMD_SHOP_REQ ))
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->DoesMessageBoxLExist( MSGLCMD_SHOP_REQ ))
 		return;
 
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if( pUIManager->GetInventory()->IsLocked() )
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
@@ -512,48 +594,53 @@ void CUIShop::EventOpenShop( int iMobIndex, BOOL bHasQuest,FLOAT fX, FLOAT fZ )
 
 	ResetShop();
 
-	_pUIMgr->SetCSFlagOn( CSF_SHOP );
+	pUIManager->CloseMessageBox( MSGCMD_DROPITEM );
 
-	_pUIMgr->CloseMessageBox( MSGCMD_DROPITEM );
-
-	_pUIMgr->CreateMessageBoxL(_S(169,"Ïù¥Î≤§Ìä∏"), UI_SHOP, MSGLCMD_SHOP_REQ ); // ÎûúÎîî Ïù¥Î≤§Ìä∏ ÌÉÄÏù¥ÌãÄÎ∞î
+	pUIManager->CreateMessageBoxL(_S(169,"¿Ã∫•∆Æ"), UI_SHOP, MSGLCMD_SHOP_REQ ); // ∑£µ ¿Ã∫•∆Æ ≈∏¿Ã∆≤πŸ
 	
-	CTString	strNpcName = _pNetwork->GetMobName(iMobIndex);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+	CTString	strNpcName = CMobData::getData(iMobIndex)->GetName();
+	pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, strNpcName, -1, 0xE18600FF );
 
 	if( iMobIndex == 254 /*&& IS_EVENT_ON(TEVENT_MAY)*/)
 	{
 		CTString tv_str;
-		tv_str = _S(3401, "ÏïÑÏßÅ ÎßéÏùÄ Î™®ÌóòÏùÑ ÌïòÍ∏∞ÏóêÎäî Ïû•ÎπÑÍ∞Ä Î∂ÄÏ°±Ìïú Í≤É Í∞ôÏùÄÎç∞ Ï†úÍ∞Ä +3Ïû•ÎπÑÎì§ÏùÑ ÏÑ†Î¨ºÎ°ú ÎìúÎ¶¥ Ïàò ÏûàÎäîÎç∞Ïöî Ï†à Ï¢Ä ÎèÑÏôÄÏ£ºÏã§ÎûòÏöî?");
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, tv_str,-1, 0xA3A1A3FF );
-		tv_str = _S(3402, "Ï†úÍ∞Ä ÏöîÏ¶ò ÎÑàÎ¨¥ Î∞îÎπ†ÏÑú Ï¢ãÏïÑÌïòÎäî ÎÖ∏ÎûÄ Í∞úÎÇòÎ¶¨ÍΩÉÏùÑ Íµ¨Ìï¥Îã§ Ï£ºÏãúÎ©¥ Ï†úÍ∞Ä Ïû•ÎπÑÎ•º ÎìúÎ¶¥ÍªòÏöî ÌïúÎ≤à Î∞õÏùÄ Ïû•ÎπÑÎäî Îòê Îã§Ïãú Ï£ºÏñ¥ÏßÄÏßÄ ÏïäÏäµÎãàÎã§.");
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, tv_str,-1, 0xA3A1A3FF );
-		tv_str.PrintF("%s %s",_S(43,"ÌÉÄÏù¥ÌÉÑ"),_S(2736,"Ïû•ÎπÑ ÏïÑÏù¥ÌÖú"));
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_TITAN );
-		tv_str.PrintF("%s %s",_S(44,"Í∏∞ÏÇ¨"),_S(2736,"Ïû•ÎπÑ ÏïÑÏù¥ÌÖú"));
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_KNIGHT  );
-		tv_str.PrintF("%s %s",_S(45,"ÌûêÎü¨"),_S(2736,"Ïû•ÎπÑ ÏïÑÏù¥ÌÖú"));
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_HEALER  );
-		tv_str.PrintF("%s %s",_S(46,"Î©îÏù¥ÏßÄ"),_S(2736,"Ïû•ÎπÑ ÏïÑÏù¥ÌÖú"));
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_MAGE  );
-		tv_str.PrintF("%s %s",_S(47,"Î°úÍ∑∏"),_S(2736,"Ïû•ÎπÑ ÏïÑÏù¥ÌÖú"));
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_ROGUE  );
-		tv_str.PrintF("%s %s",_S(48,"ÏÜåÏÑúÎü¨"),_S(2736,"Ïû•ÎπÑ ÏïÑÏù¥ÌÖú"));
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_SOCERER  );
+		tv_str = _S(3401, "æ∆¡˜ ∏π¿∫ ∏«Ë¿ª «œ±‚ø°¥¬ ¿Â∫Ò∞° ∫Œ¡∑«— ∞Õ ∞∞¿∫µ• ¡¶∞° +3¿Â∫ÒµÈ¿ª º±π∞∑Œ µÂ∏± ºˆ ¿÷¥¬µ•ø‰ ¿˝ ¡ª µµøÕ¡÷Ω«∑°ø‰?");
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, tv_str,-1, 0xA3A1A3FF );
+		tv_str = _S(3402, "¡¶∞° ø‰¡Ú ≥ π´ πŸ∫¸º≠ ¡¡æ∆«œ¥¬ ≥Î∂ı ∞≥≥™∏Æ≤…¿ª ±∏«ÿ¥Ÿ ¡÷Ω√∏È ¡¶∞° ¿Â∫Ò∏¶ µÂ∏±≤≤ø‰ «—π¯ πﬁ¿∫ ¿Â∫Ò¥¬ ∂« ¥ŸΩ√ ¡÷æÓ¡ˆ¡ˆ æ Ω¿¥œ¥Ÿ.");
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, TRUE, tv_str,-1, 0xA3A1A3FF );
+		tv_str.PrintF("%s %s",_S(43,"≈∏¿Ã≈∫"),_S(2736,"¿Â∫Ò æ∆¿Ã≈€"));
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_TITAN );
+		tv_str.PrintF("%s %s",_S(44,"±‚ªÁ"),_S(2736,"¿Â∫Ò æ∆¿Ã≈€"));
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_KNIGHT  );
+		tv_str.PrintF("%s %s",_S(45,"»˙∑Ø"),_S(2736,"¿Â∫Ò æ∆¿Ã≈€"));
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_HEALER  );
+		tv_str.PrintF("%s %s",_S(46,"∏ﬁ¿Ã¡ˆ"),_S(2736,"¿Â∫Ò æ∆¿Ã≈€"));
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_MAGE  );
+		tv_str.PrintF("%s %s",_S(47,"∑Œ±◊"),_S(2736,"¿Â∫Ò æ∆¿Ã≈€"));
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_ROGUE  );
+		tv_str.PrintF("%s %s",_S(48,"º“º≠∑Ø"),_S(2736,"¿Â∫Ò æ∆¿Ã≈€"));
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_SOCERER  );
+#ifdef CHAR_EX_ROGUE
+		tv_str.PrintF("%s %s",_S(5732,"EX∑Œ±◊"),_S(2736,"¿Â∫Ò æ∆¿Ã≈€"));	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_ROGUE  );
+#endif
+#ifdef CHAR_EX_MAGE		//2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° Ω∫∆Æ∏µ ≥™ø¿∏È √ﬂ∞° ºˆ¡§ « ø‰ 
+		tv_str.PrintF("%s %s",_S(5820,"æ∆≈©∏ﬁ¿Ã¡ˆ"),_S(2736,"¿Â∫Ò æ∆¿Ã≈€"));	
+		pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, tv_str, LEASE_WEAPON_MAGE  );
+#endif
 		
-		//ÎåÄÏó¨ÏÉÅÏ†êÍ≥º Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏Î°ú...
+		//¥Îø©ªÛ¡°∞˙ ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ∑Œ...
 		m_bIsLease = TRUE;
 		m_bIsEvent = TRUE;
 		SetHeight(m_nHeight+ 77);
-		m_btnShopBuy.SetText(_S(191,"ÌôïÏù∏"));
+		m_btnShopBuy.SetText(_S(191,"»Æ¿Œ"));
 		m_btnShopBuy.SetPosY(m_btnShopBuy.GetPosY()+77);
 		m_btnShopCancel.SetPosY(m_btnShopCancel.GetPosY()+77);
 
 	}
-#ifdef HELP_SYSTEM_1
-	_pUIMgr->AddMessageBoxLString(MSGLCMD_SHOP_REQ, FALSE, _S( 1748, "NPC ÏïàÎÇ¥" ), SHOP_NPC_HELP); //ttos : ÏïàÎÇ¥ÏãúÏä§ÌÖú Ï∂îÍ∞ÄÏãú
-#endif
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1220, "Ï∑®ÏÜåÌïúÎã§." ) );
+
+	pUIManager->AddMessageBoxLString(MSGLCMD_SHOP_REQ, FALSE, _S( 1748, "NPC æ»≥ª" ), SHOP_NPC_HELP); //ttos : æ»≥ªΩ√Ω∫≈€ √ﬂ∞°Ω√
+	pUIManager->AddMessageBoxLString( MSGLCMD_SHOP_REQ, FALSE, _S( 1220, "√Îº“«—¥Ÿ." ) );
 
 }
 
@@ -564,16 +651,21 @@ void CUIShop::EventOpenShop( int iMobIndex, BOOL bHasQuest,FLOAT fX, FLOAT fZ )
 //----------------------------------------------------------------------<<
 void CUIShop::PrepareLeaseShop(int jobIdx, int iType)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if( pUIManager->GetInventory()->IsLocked() )
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
+	// Character state flags
+	pUIManager->SetCSFlagOn( CSF_SHOP );
+
 	// Lock inventory
 	if(!m_bIsEvent)
-		_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_SHOP );
+		pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_SHOP );
 
 	// Set region
 	m_rcTop.CopyRect( m_rcBuyShopSlot );
@@ -582,30 +674,30 @@ void CUIShop::PrepareLeaseShop(int jobIdx, int iType)
 	m_bBuyShop			= TRUE;
 
 	int	ctShopItems;
-	if(m_bIsEvent) // ttos : Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏
+	if(m_bIsEvent) // ttos : ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ
 	{
 		ClearItems();
 		m_iEventjob = jobIdx;
-		ctShopItems = _pNetwork->RefreshEventItem( m_iEventjob , iType); // ttos : Ïù¥Î≤§Ìä∏ ÏïÑÏù¥ÌÖú Ï†ÅÏö©
+		ctShopItems = RefreshEventItem( m_iEventjob , iType); // ttos : ¿Ã∫•∆Æ æ∆¿Ã≈€ ¿˚øÎ
 	}else
 	{
-		ctShopItems = _pNetwork->RefreshLeaseItem( jobIdx ); // ÎåÄÏó¨ ÏïÑÏù¥ÌÖú Ï†ÅÏö©
+		ctShopItems = RefreshLeaseItem( jobIdx ); // ¥Îø© æ∆¿Ã≈€ ¿˚øÎ
 	}
 	
 	
-	int	nScrollItem = ( ctShopItems + SHOP_SHOP_SLOT_COL - 1 ) / SHOP_SHOP_SLOT_COL;
+	int	nScrollItem = ( ctShopItems + SHOP_SLOT_COL - 1 ) / SHOP_SLOT_COL;
 	m_sbTopScrollBar.SetCurItemCount( nScrollItem );
 
 	// Set money
 	if( _pNetwork->MyCharacterInfo.money > 0 )
 	{
 		m_strPlayerMoney.PrintF( "%I64d", _pNetwork->MyCharacterInfo.money );
-		_pUIMgr->InsertCommaToString( m_strPlayerMoney );
+		pUIManager->InsertCommaToString( m_strPlayerMoney );
 	}
 
 	// Set size & position
 	//SetSize( SHOP_MAIN_WIDTH, SHOP_MAIN_HEIGHT );
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
+	CDrawPort	*pdp = pUIManager->GetDrawPort();
 	int	nX = ( pdp->dp_MinI + pdp->dp_MaxI ) / 2 - GetWidth() / 2;
 	int	nY = ( pdp->dp_MinJ + pdp->dp_MaxJ ) / 2 - GetHeight() / 2;
 	SetPos( nX, nY );
@@ -619,11 +711,11 @@ void CUIShop::PrepareLeaseShop(int jobIdx, int iType)
 		{
 			nY += 35;	nX = SHOP_BUY_BOTTOM_SLOT_SX;
 		}
-		m_abtnTradeItems[nItem].SetPos( nX, nY );
+		m_pIconsTrade[nItem]->SetPos( nX, nY );
 		nX += 35;
 	}
 
-	_pUIMgr->RearrangeOrder( UI_SHOP, TRUE );
+	pUIManager->RearrangeOrder( UI_SHOP, TRUE );
 }
 
 
@@ -632,35 +724,42 @@ void CUIShop::PrepareLeaseShop(int jobIdx, int iType)
 //-----------------------------------------------------------------------------
 void CUIShop::PrepareBuyShop()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if (pUIManager->GetInventory()->IsLocked() == TRUE ||
+		pUIManager->GetInventory()->IsLockedArrange() == TRUE)
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		// ¿ÃπÃ Lock ¿Œ √¢¿Ã ¿÷¿ª ∞ÊøÏ ø≠¡ˆ ∏¯«—¥Ÿ.
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
 	// Lock inventory
-	_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_SHOP );
+	pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_SHOP );
+
+	// Character state flags
+	pUIManager->SetCSFlagOn( CSF_SHOP );
 
 	// Set region
 	m_rcTop.CopyRect( m_rcBuyShopSlot );
 	m_rcBottom.CopyRect( m_rcBuyTradeSlot );
 
 	m_bBuyShop			= TRUE;
-	int	ctShopItems = _pNetwork->RefreshShopItem( m_nSelectedShopID );
-	int	nScrollItem = ( ctShopItems + SHOP_SHOP_SLOT_COL - 1 ) / SHOP_SHOP_SLOT_COL;
+	int	ctShopItems = RefreshShopItem( m_nSelectedShopID );
+	int	nScrollItem = ( ctShopItems + SHOP_SLOT_COL - 1 ) / SHOP_SLOT_COL;
 	m_sbTopScrollBar.SetCurItemCount( nScrollItem );
 
 	// Set money
 	if( _pNetwork->MyCharacterInfo.money > 0 )
 	{
 		m_strPlayerMoney.PrintF( "%I64d", _pNetwork->MyCharacterInfo.money );
-		_pUIMgr->InsertCommaToString( m_strPlayerMoney );
+		pUIManager->InsertCommaToString( m_strPlayerMoney );
 	}
 
 	// Set size & position
 	//SetSize( SHOP_MAIN_WIDTH, SHOP_MAIN_HEIGHT );
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
+	CDrawPort	*pdp = pUIManager->GetDrawPort();
 	int	nX = ( pdp->dp_MinI + pdp->dp_MaxI ) / 2 - GetWidth() / 2;
 	int	nY = ( pdp->dp_MinJ + pdp->dp_MaxJ ) / 2 - GetHeight() / 2;
 	SetPos( nX, nY );
@@ -674,22 +773,24 @@ void CUIShop::PrepareBuyShop()
 		{
 			nY += 35;	nX = SHOP_BUY_BOTTOM_SLOT_SX;
 		}
-		m_abtnTradeItems[nItem].SetPos( nX, nY );
+		m_pIconsTrade[nItem]->SetPos( nX, nY );
 		nX += 35;
 	}
 
-	_pUIMgr->RearrangeOrder( UI_SHOP, TRUE );
-	
-#ifdef HELP_SYSTEM_1
-	if(g_iShowHelp1Icon)
+	pUIManager->RearrangeOrder( UI_SHOP, TRUE );
+
+	// does not used help system in russia [9/1/2010 rumist]
+	if (g_iCountry != RUSSIA)
 	{
-		_pUIMgr->GetHelp3()->ClearHelpString();
-		_pUIMgr->GetHelp3()->AddHelpString(_S(3301, "ÏÉÅÎã®Ïùò ÏÉÅÌíà Ï§ë Íµ¨ÏûÖÏùòÏÇ¨Í∞Ä ÏûàÎäî ÏÉÅÌíàÏùÑ ÎçîÎ∏î ÌÅ¥Î¶≠ÌïòÍ±∞ÎÇò ÌïòÎã®Ïùò ÎπàÏπ∏Ïóê ÎìúÎûòÍ∑∏ Ìïú ÌõÑ Íµ¨Îß§ Î≤ÑÌäºÏùÑ ÌÅ¥Î¶≠ÌïòÎ©¥ Íµ¨Îß§Í∞Ä Ïù¥Î£®Ïñ¥ ÏßëÎãàÎã§."));
-		_pUIMgr->GetHelp3()->AddHelpString(_S(3302, "‚Äª ÏµúÎåÄ 10Í∞úÏùò ÏïÑÏù¥ÌÖúÏùÑ ÌïúÎ≤àÏóê Íµ¨Îß§Ìï† Ïàò ÏûàÏäµÎãàÎã§."));
-		_pUIMgr->GetHelp3()->AddHelpString(_S(3303, "‚Äª ÏïÑÏù¥ÌÖú Íµ¨Îß§ Ïãú ÏûêÎèôÏúºÎ°ú ÌëúÏãú Îêú ÎÇòÏä§Í∞Ä ÏßÄÎ∂àÎêòÍ≥† Íµ¨ÏûÖÌïú ÏïÑÏù¥ÌÖúÏùÄ Ï∫êÎ¶≠ÌÑ∞Ïùò Ïù∏Î≤§ÌÜ†Î¶¨Î°ú Îì§Ïñ¥ÏòµÎãàÎã§."));
-		_pUIMgr->GetHelp3()->OpenHelp(this);
+		if(g_iShowHelp1Icon)
+		{
+			pUIManager->GetHelp3()->ClearHelpString();
+			pUIManager->GetHelp3()->AddHelpString(_S(3301, "ªÛ¥‹¿« ªÛ«∞ ¡ﬂ ±∏¿‘¿«ªÁ∞° ¿÷¥¬ ªÛ«∞¿ª ¥ı∫Ì ≈¨∏Ø«œ∞≈≥™ «œ¥‹¿« ∫Ûƒ≠ø° µÂ∑°±◊ «— »ƒ ±∏∏≈ πˆ∆∞¿ª ≈¨∏Ø«œ∏È ±∏∏≈∞° ¿Ã∑ÁæÓ ¡˝¥œ¥Ÿ."));
+			pUIManager->GetHelp3()->AddHelpString(_S(3302, "°ÿ √÷¥Î 10∞≥¿« æ∆¿Ã≈€¿ª «—π¯ø° ±∏∏≈«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+			pUIManager->GetHelp3()->AddHelpString(_S(3303, "°ÿ æ∆¿Ã≈€ ±∏∏≈ Ω√ ¿⁄µø¿∏∑Œ «•Ω√ µ» ≥™Ω∫∞° ¡ˆ∫“µ«∞Ì ±∏¿‘«— æ∆¿Ã≈€¿∫ ƒ≥∏Ø≈Õ¿« ¿Œ∫•≈‰∏Æ∑Œ µÈæÓø…¥œ¥Ÿ."));
+			pUIManager->GetHelp3()->OpenHelp(this);
+		}
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -697,15 +798,22 @@ void CUIShop::PrepareBuyShop()
 //-----------------------------------------------------------------------------
 void CUIShop::PrepareSellShop()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// If inventory is already locked
-	if( _pUIMgr->GetInventory()->IsLocked() )
+	if (pUIManager->GetInventory()->IsLocked() == TRUE ||
+		pUIManager->GetInventory()->IsLockedArrange() == TRUE)
 	{
-		_pUIMgr->GetInventory()->ShowLockErrorMessage();
+		// ¿ÃπÃ Lock ¿Œ √¢¿Ã ¿÷¿ª ∞ÊøÏ ø≠¡ˆ ∏¯«—¥Ÿ.
+		pUIManager->GetInventory()->ShowLockErrorMessage();
 		return;
 	}
 
 	// Lock inventory
-	_pUIMgr->GetInventory()->Lock( TRUE, FALSE, LOCK_SHOP );
+	pUIManager->GetInventory()->Lock( TRUE, FALSE, LOCK_SHOP );
+
+	// Character state flags
+	pUIManager->SetCSFlagOn( CSF_SHOP );
 
 	// Set region
 	m_rcTop.CopyRect( m_rcSellShopSlot );
@@ -718,12 +826,12 @@ void CUIShop::PrepareSellShop()
 	if( _pNetwork->MyCharacterInfo.money > 0 )
 	{
 		m_strPlayerMoney.PrintF( "%I64d", _pNetwork->MyCharacterInfo.money );
-		_pUIMgr->InsertCommaToString( m_strPlayerMoney );
+		pUIManager->InsertCommaToString( m_strPlayerMoney );
 	}
 
 	// Set size & position
 	//SetSize( SHOP_MAIN_WIDTH, SHOP_MAIN_HEIGHT );
-	CDrawPort	*pdp = _pUIMgr->GetDrawPort();
+	CDrawPort	*pdp = pUIManager->GetDrawPort();
 	int	nX = ( pdp->dp_MinI + pdp->dp_MaxI ) / 2 - GetWidth() / 2;
 	int	nY = ( pdp->dp_MinJ + pdp->dp_MaxJ ) / 2 - GetHeight() / 2;
 	SetPos( nX, nY );
@@ -737,24 +845,22 @@ void CUIShop::PrepareSellShop()
 		{
 			nY += 35;	nX = SHOP_SELL_BOTTOM_SLOT_SX;
 		}
-		m_abtnTradeItems[nItem].SetPos( nX, nY );
+		m_pIconsTrade[nItem]->SetPos( nX, nY );
 		nX += 35;
 	}
 
-	_pUIMgr->RearrangeOrder( UI_SHOP, TRUE );
+	pUIManager->RearrangeOrder( UI_SHOP, TRUE );
 
-#ifdef HELP_SYSTEM_1
-// [KH_07044] 3Ï∞® ÎèÑÏõÄÎßê Í¥ÄÎ†® Ï∂îÍ∞Ä
+// [KH_07044] 3¬˜ µµøÚ∏ª ∞¸∑√ √ﬂ∞°
 	if(g_iShowHelp1Icon)
 	{
-		_pUIMgr->GetHelp3()->ClearHelpString();
-		_pUIMgr->GetHelp3()->AddHelpString(_S(3304, "ÌïòÎã®Ïùò ÎÇ¥ Ïù∏Î≤§ÌÜ†Î¶¨ÏóêÏÑú ÏÉÅÏ†êÏóê ÌåêÎß§ÌïòÎ†§Îäî Î¨ºÌíàÏùÑ ÎçîÎ∏îÌÅ¥Î¶≠ ÌïòÍ±∞ÎÇò ÏÉÅÎã®Ïùò ÎπàÏπ∏Ïóê ÎìúÎûòÍ∑∏ Ìïú ÌõÑ ÌåêÎß§ Î≤ÑÌäºÏùÑ ÌÅ¥Î¶≠ÌïòÎ©¥ ÌåêÎß§Í∞Ä Ïù¥Î£®Ïñ¥ ÏßëÎãàÎã§."));
-		_pUIMgr->GetHelp3()->AddHelpString(_S(3305, "‚Äª ÏµúÎåÄ 10Í∞úÏùò ÏïÑÏù¥ÌÖúÏùÑ ÌïúÎ≤àÏóê ÌåêÎß§Ìï† Ïàò ÏûàÏäµÎãàÎã§."));
-		_pUIMgr->GetHelp3()->AddHelpString(_S(3306, "‚Äª Ìù∞ÏÉâÌÖåÎëêÎ¶¨Í∞Ä ÎëòÎü¨ÏßÑ ÏïÑÏù¥ÌÖúÏùÄ ÏÉÅÏù∏ÏóêÍ≤å ÌåêÎß§Ìï† Ïàò ÏóÜÎäî ÏïÑÏù¥ÌÖúÏûÖÎãàÎã§."));
-		_pUIMgr->GetHelp3()->AddHelpString(_S(3307, "‚Äª Ìïú Î≤à ÌåêÎß§Ìïú ÏïÑÏù¥ÌÖúÏùÄ Îã§Ïãú Î≥µÍµ¨ÎêòÏßÄ ÏïäÏúºÎãà Ï£ºÏùòÌïòÏãúÍ∏∞ Î∞îÎûçÎãàÎã§."));
-		_pUIMgr->GetHelp3()->OpenHelp(this);
+		pUIManager->GetHelp3()->ClearHelpString();
+		pUIManager->GetHelp3()->AddHelpString(_S(3304, "«œ¥‹¿« ≥ª ¿Œ∫•≈‰∏Æø°º≠ ªÛ¡°ø° ∆«∏≈«œ∑¡¥¬ π∞«∞¿ª ¥ı∫Ì≈¨∏Ø «œ∞≈≥™ ªÛ¥‹¿« ∫Ûƒ≠ø° µÂ∑°±◊ «— »ƒ ∆«∏≈ πˆ∆∞¿ª ≈¨∏Ø«œ∏È ∆«∏≈∞° ¿Ã∑ÁæÓ ¡˝¥œ¥Ÿ."));
+		pUIManager->GetHelp3()->AddHelpString(_S(3305, "°ÿ √÷¥Î 10∞≥¿« æ∆¿Ã≈€¿ª «—π¯ø° ∆«∏≈«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."));
+		pUIManager->GetHelp3()->AddHelpString(_S(3306, "°ÿ »Úªˆ≈◊µŒ∏Æ∞° µ—∑Ø¡¯ æ∆¿Ã≈€¿∫ ªÛ¿Œø°∞‘ ∆«∏≈«“ ºˆ æ¯¥¬ æ∆¿Ã≈€¿‘¥œ¥Ÿ."));
+		pUIManager->GetHelp3()->AddHelpString(_S(3307, "°ÿ «— π¯ ∆«∏≈«— æ∆¿Ã≈€¿∫ ¥ŸΩ√ ∫π±∏µ«¡ˆ æ ¿∏¥œ ¡÷¿««œΩ√±‚ πŸ∂¯¥œ¥Ÿ."));
+		pUIManager->GetHelp3()->OpenHelp(this);
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -762,26 +868,37 @@ void CUIShop::PrepareSellShop()
 //-----------------------------------------------------------------------------
 void CUIShop::RefreshPlayerItem()
 {
-	int		iRow, iCol;
-	for( iRow = 0; iRow < SHOP_SHOP_SLOT_ROW_TOTAL; iRow++ )
-	{
-		for( iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++ )
-		{
-			CItems	&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-			if( rItems.Item_Sum > 0 )
-			{
-				m_abtnShopItems[iRow][iCol].SetItemInfo( 0, iRow, iCol, rItems.Item_Index,
-															rItems.Item_UniIndex, rItems.Item_Wearing );
-				m_abtnShopItems[iRow][iCol].SetItemPlus( rItems.Item_Plus );
-				m_abtnShopItems[iRow][iCol].SetItemCount( rItems.Item_Sum );
+	// ∆«∏≈∏Ò∑œ¿Ãπ«∑Œ Inventory ∞πºˆ∏∏≈≠∏∏ æ˜µ•¿Ã∆Æ «—¥Ÿ.
 
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-				{
-					m_abtnShopItems[iRow][iCol].SetItemOptionData( sbOption,
-																	rItems.GetOptionType( sbOption ),
-																	rItems.GetOptionLevel( sbOption ) );
-				}
-			}
+	int		t, i, idx;
+	for (i = 0; i < SHOP_SLOT_SELL_MAX; ++i)
+	{
+
+		if (i >= (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1))
+		{
+			t = INVENTORY_TAB_CASH_2;
+			idx = i - (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1);
+		}
+		else if (i >= ITEM_COUNT_IN_INVENTORY_NORMAL)
+		{
+			t = INVENTORY_TAB_CASH_1;
+			idx = i - ITEM_COUNT_IN_INVENTORY_NORMAL;
+		}
+		else
+		{
+			t = INVENTORY_TAB_NORMAL;
+			idx = i;
+		}
+
+		CItems*	pItems = &_pNetwork->MySlotItem[t][idx];
+		if (pItems->Item_Sum > 0)
+		{
+			// ¿Œ∫•≈‰∏Æ ¡¢±Ÿ Ω√ø°∏∏ t, idx ∫Ø»Ø«œ∞Ì, shop ø° ªÁøÎµ»¥¿ ∞Õ¿∫ º¯¬˜ ¿Œµ¶Ω∫ ªÁøÎ
+			CItems* pCopy = new CItems;
+			memcpy(pCopy, pItems, sizeof(CItems));
+			m_pIconsShop[i]->setData(pCopy, false);
+			m_pIconsShop[i]->setCount(pItems->Item_Sum);		// BtnEx ∞ªΩ≈øÎ
+			m_pIconsShop[i]->Hide(FALSE);
 		}
 	}
 }
@@ -789,15 +906,21 @@ void CUIShop::RefreshPlayerItem()
 // WSS_SHOP_BUGFIX 070530 -------------------------------------->>
 void CUIShop::CloseShop()
 {
-	_pUIMgr->RearrangeOrder( UI_SHOP, FALSE );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->RearrangeOrder( UI_SHOP, FALSE );
 
 	// Unlock inventory
-	_pUIMgr->GetInventory()->Lock( FALSE, FALSE, LOCK_SHOP );
+	pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_SHOP );
+
+	// Character state flags
+	pUIManager->SetCSFlagOff( CSF_SHOP );
 
 	// Close message box of shop
-	_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_ITEM );
-	_pUIMgr->CloseMessageBox( MSGCMD_SHOP_DEL_ITEM );
-	_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+	pUIManager->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+	pUIManager->GetMsgBoxNumOnly()->CloseBox();
+
+	m_nNpcVirIdx = -1;
 }
 // -------------------------------------------------------------<<
 
@@ -812,6 +935,7 @@ void CUIShop::ResetShop()
 	m_strTotalPrice = CTString( "0" );
 	m_strPlayerMoney = CTString( "0" );
 	m_nTotalPrice = 0;
+	m_nSendTotalPrice = 0;
 	m_nNumOfItem = 0;
 	
 	ClearItems();	
@@ -821,19 +945,20 @@ void CUIShop::ResetShop()
 	m_sbTopScrollBar.SetScrollPos( 0 );
 
 	// Character state flags
-	_pUIMgr->SetCSFlagOff( CSF_SHOP );
+	CUIManager::getSingleton()->SetCSFlagOff( CSF_SHOP );
 
 	// Lease shop 
 	if(m_bIsLease)
 	{
 		m_bIsLease	= FALSE;
-		m_bIsEvent	= FALSE; // ttos : 2007 Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏
+		m_bIsEvent	= FALSE; // ttos : 2007 ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ
 		SetHeight(m_nHeight - 77);
-		m_btnShopBuy.SetText(_S(253,"Íµ¨Îß§"));
+		m_btnShopBuy.SetText(_S(253,"±∏∏≈"));
 		m_btnShopBuy.SetPosY(m_btnShopBuy.GetPosY()-77);
 		m_btnShopCancel.SetPosY(m_btnShopCancel.GetPosY()-77);
 	}
 
+	clearTrade();
 }
 
 //-----------------------------------------------------------------------------
@@ -841,689 +966,27 @@ void CUIShop::ResetShop()
 //-----------------------------------------------------------------------------
 void CUIShop::ClearItems()
 {
-	for(int i = 0; i < SHOP_TRADE_SLOT_TOTAL; i++)
-		m_abtnTradeItems[i].InitBtn();			
+	int		i;
+	for( i = 0; i < SHOP_TRADE_SLOT_TOTAL; i++)
+		m_pIconsTrade[i]->clearIconData();
 
-	for(i = 0; i < SHOP_SHOP_SLOT_ROW_TOTAL; i++)
+	for( i = 0; i < SHOP_SLOT_BUY_MAX; i++)
 	{
-		for(int j = 0; j < SHOP_SHOP_SLOT_COL; j++)
-		{
-			m_abtnShopItems[i][j].InitBtn();
-		}
+		m_pIconsShop[i]->clearIconData();
 	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : AddItemInfoString()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIShop::AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo )
-{
-	if( m_nCurInfoLines >= MAX_ITEMINFO_LINE )
-		return ;
-
-	// Get length of string
-	INDEX	nLength = strItemInfo.Length();
-	if( nLength <= 0 )
-		return;
-
-	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strItemInfo);
-		INDEX	nChatMax= (MAX_ITEMINFO_CHAR-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strItemInfo,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; ++iPos )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= MAX_ITEMINFO_CHAR )
-		{
-			m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_ITEMINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strItemInfo[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Split string
-			CTString	strTemp;
-			strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-			m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-				for( iPos = 1; iPos < nTempLength; iPos++ )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-
-			AddItemInfoString( strTemp, colItemInfo );
-		}
-	}
-}
-
-
-
-// ----------------------------------------------------------------------------
-// Name : GetItemInfo()
-// Desc : nWhichSlot - 0: opposite slot, 1: my slot, 2: inventory slot
-// ----------------------------------------------------------------------------
-BOOL CUIShop::GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight, int nTradeItem, int nRow, int nCol )
-{
-	CTString	strTemp;
-	m_nCurInfoLines = 0;
-
-	int			nIndex;
-	SQUAD		llCount;
-	ULONG		ulItemPlus, ulFlag;
-	SBYTE		sbOptionType[MAX_ITEM_OPTION], sbOptionLevel[MAX_ITEM_OPTION];
-
-	switch( nWhichSlot )
-	{
-	case 0:
-		{
-			nIndex		= m_abtnTradeItems[nTradeItem].GetItemIndex();
-			llCount		= m_abtnTradeItems[nTradeItem].GetItemCount();
-			ulItemPlus	= m_abtnTradeItems[nTradeItem].GetItemPlus();
-			ulFlag		= m_abtnTradeItems[nTradeItem].GetItemFlag();
-
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-			{
-				sbOptionType[sbOption] = m_abtnTradeItems[nTradeItem].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnTradeItems[nTradeItem].GetItemOptionLevel( sbOption );
-			}
-		}
-		break;
-
-	case 1:
-		{
-			nIndex		= m_abtnShopItems[nRow][nCol].GetItemIndex();
-			llCount		= m_abtnShopItems[nRow][nCol].GetItemCount();
-			ulItemPlus	= m_abtnShopItems[nRow][nCol].GetItemPlus();
-			ulFlag		= m_abtnShopItems[nRow][nCol].GetItemFlag();
-
-			for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-			{
-				sbOptionType[sbOption] = m_abtnShopItems[nRow][nCol].GetItemOptionType( sbOption );
-				sbOptionLevel[sbOption] = m_abtnShopItems[nRow][nCol].GetItemOptionLevel( sbOption );
-			}
-		}
-		break;
-	}
-	
-	if( nIndex < 0 )
-		return FALSE;
-
-	CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-	const char* szItemName = _pNetwork->GetItemName( nIndex );
-
-	COLOR colNas = 0xF2F2F2FF;
-
-	// Get item name
-	if( !m_bBuyShop && ( rItemData.GetFlag() & ITEM_FLAG_COUNT ) )
-	{
-		CTString	strCount;
-		
-		strCount.PrintF( "%I64d", llCount );
-		_pUIMgr->InsertCommaToString( strCount );		
-		strTemp.PrintF( "%s(%s)", szItemName, strCount );
-		colNas = _pUIMgr->GetNasColor( llCount );
-	}
-	else
-	{
-		if( !m_bBuyShop && ulItemPlus > 0 )
-		{
-			if (rItemData.GetType() == CItemData::ITEM_ONCEUSE &&
-				rItemData.GetSubType() == CItemData::ITEM_SUB_BOX)
-			{
-				strTemp = szItemName;
-			}
-			else
-			{
-				strTemp.PrintF( "%s +%d", szItemName, ulItemPlus );
-			}
-		}
-		else
-		{
-			if( nWhichSlot == 0 && rItemData.GetFlag() & ITEM_FLAG_COUNT )
-			{
-				CTString	strCount;
-				strCount.PrintF( "%I64d", llCount );
-				_pUIMgr->InsertCommaToString( strCount );
-				strTemp.PrintF( "%s(%s)", szItemName, strCount );
-				colNas = _pUIMgr->GetNasColor( llCount );
-			}
-			else
-			{
-				strTemp = szItemName;
-			}
-		}		
-	}
-	
-	AddItemInfoString( strTemp, colNas );
-
-	const __int64	iPrice = CalculateItemPrice( m_nSelectedShopID, rItemData, 1, m_bBuyShop );
-
-	// Get item information in detail
-	if( m_bDetailItemInfo )
-	{
-		// Price - except money
-		if( rItemData.GetType() != CItemData::ITEM_ETC ||
-			rItemData.GetSubType() != CItemData::ITEM_ETC_MONEY )
-		{
-			CTString	strMoney;
-			strMoney.PrintF( "%I64d", iPrice );
-			_pUIMgr->InsertCommaToString( strMoney );
-			strTemp.PrintF( _S( 255, "Í∞ÄÍ≤© : %I64d" ), strMoney );
-			AddItemInfoString( strTemp, _pUIMgr->GetNasColor( iPrice ) );
-		}
-		//AddItemInfoString( CTString( " " ) );
-
-		switch( rItemData.GetType() )
-		{
-		case CItemData::ITEM_WEAPON:		// Weapon item
-			{
-				// Level
-				int	nItemLevel = rItemData.GetLevel();
-				if( nItemLevel > 0 )
-				{
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), nItemLevel );
-					AddItemInfoString( strTemp,
-										nItemLevel > _pNetwork->MyCharacterInfo.level ? 0xD28060FF : 0x9E9684FF );
-				}
-
-				// Class
-				CUIManager::GetClassOfItem( rItemData, strTemp );
-				AddItemInfoString( strTemp, 0x9E9684FF );
-
-				int	nPlusValue;
-				if( ulItemPlus > 0 )
-				{
-					// Physical attack
-					if( rItemData.GetPhysicalAttack() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetPhysicalAttack() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetPhysicalAttack();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetPhysicalAttack(), ulItemPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 355, "Í≥µÍ≤©Î†• : %d + %d" ), rItemData.GetPhysicalAttack(), nPlusValue );
-						else
-							strTemp.PrintF( _S( 161, "Í≥µÍ≤©Î†• : %d" ), rItemData.GetPhysicalAttack() );
-															
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-
-						if( ulItemPlus >= 15 )
-						{
-							strTemp.PrintF(_S( 1891, "Î¨ºÎ¶¨ Í≥µÍ≤©Î†• + 75" ));		
-							AddItemInfoString( strTemp, 0xDEC05BFF );
-						}
-					}
-
-					// Magic attack
-					if( rItemData.GetMagicAttack() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetMagicAttack() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetMagicAttack();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetMagicAttack(), ulItemPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 356, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d + %d" ), rItemData.GetMagicAttack(), nPlusValue );
-						else
-							strTemp.PrintF( _S( 162, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d" ), rItemData.GetMagicAttack() );
-															
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-
-						if( ulItemPlus >= 15 )
-						{
-							strTemp.PrintF(_S(1892 , "ÎßàÎ≤ï Í≥µÍ≤©Î†• + 50" ));		
-							AddItemInfoString( strTemp, 0xDEC05BFF );
-						}
-					}
-				}
-				else
-				{
-					// Physical attack
-					if( rItemData.GetPhysicalAttack() > 0 )
-					{
-						strTemp.PrintF( _S( 161, "Í≥µÍ≤©Î†• : %d" ), rItemData.GetPhysicalAttack() );
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-					}
-
-					// Magic attack
-					if( rItemData.GetMagicAttack() > 0 )
-					{
-						strTemp.PrintF( _S( 162, "ÎßàÎ≤ï Í≥µÍ≤©Î†• : %d" ), rItemData.GetMagicAttack() );
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-					}
-				}
-			}
-			break;
-
-		case CItemData::ITEM_SHIELD:		// Shield item
-			{
-				// Level
-				int	nItemLevel = rItemData.GetLevel();
-				if( nItemLevel > 0 )
-				{
-					strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), nItemLevel );
-					AddItemInfoString( strTemp,
-										nItemLevel > _pNetwork->MyCharacterInfo.level ? 0xD28060FF : 0x9E9684FF );
-				}
-
-				// Class
-				CUIManager::GetClassOfItem( rItemData, strTemp );
-				AddItemInfoString( strTemp, 0x9E9684FF );
-
-				int	nPlusValue;
-				if( ulItemPlus > 0 )
-				{
-					// Physical defense
-					if( rItemData.GetPhysicalDefence() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetPhysicalDefence() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetPhysicalDefence();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetPhysicalDefence(), ulItemPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 357, "Î∞©Ïñ¥Î†• : %d + %d" ), rItemData.GetPhysicalDefence(), nPlusValue );
-						else
-							strTemp.PrintF( _S( 163, "Î∞©Ïñ¥Î†• : %d" ), rItemData.GetPhysicalDefence() );
-															
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-
-						if( ulItemPlus >= 15 )
-						{
-							strTemp.PrintF(_S(1893 , "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• + 100" ));		
-							AddItemInfoString( strTemp, 0xDEC05BFF );
-
-							strTemp.PrintF(_S(1894 , "ÎßàÎ≤ï Î∞©Ïñ¥Î†• + 50" ));			
-							AddItemInfoString( strTemp, 0xDEC05BFF );
-						}
-					}
-
-					// Magic defense
-					if( rItemData.GetMagicDefence() > 0 )
-					{
-						//nPlusValue = (int)( rItemData.GetMagicDefence() *
-						//					pow( ITEM_PLUS_COFACTOR, ulItemPlus ) ) - rItemData.GetMagicDefence();
-						nPlusValue = CItems::CalculatePlusDamage( rItemData.GetMagicDefence(), ulItemPlus );
-						if( nPlusValue > 0 )
-							strTemp.PrintF( _S( 358, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d + %d" ), rItemData.GetMagicDefence(), nPlusValue );
-						else
-							strTemp.PrintF( _S( 164, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d" ), rItemData.GetMagicDefence() );
-															
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-
-						if( ulItemPlus >= 15 )
-						{
-							strTemp.PrintF(_S(1893 , "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• + 100" ));		
-							AddItemInfoString( strTemp, 0xDEC05BFF );
-
-							strTemp.PrintF(_S(1894 , "ÎßàÎ≤ï Î∞©Ïñ¥Î†• + 50" ));			
-							AddItemInfoString( strTemp, 0xDEC05BFF );
-						}
-					}
-				}
-				else
-				{
-					// Physical defense
-					if( rItemData.GetPhysicalDefence() > 0 )
-					{
-						strTemp.PrintF( _S( 163, "Î∞©Ïñ¥Î†• : %d" ), rItemData.GetPhysicalDefence() );
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-					}
-
-					// Magic defense
-					if( rItemData.GetMagicDefence() > 0 )
-					{
-						strTemp.PrintF( _S( 164, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• : %d" ), rItemData.GetMagicDefence() );
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-					}
-				}
-			}
-			break;
-
-		case CItemData::ITEM_ACCESSORY:		// Accessory
-			{
-			}
-			break;
-				// ÏùºÌöåÏö©
-		case CItemData::ITEM_ONCEUSE:
-			{
-				// ÌÄòÏä§Ìä∏ Ï†ïÎ≥¥ ÌëúÏãú.
-				if ( rItemData.GetSubType() == CItemData::ITEM_SUB_QUEST_SCROLL )
-				{	
-					const int iQuestIndex = rItemData.GetNum0();
-
-					if( iQuestIndex != -1 )
-					{
-						// ÌÄòÏä§Ìä∏ Ïù¥Î¶Ñ Ï∂úÎ†•
-						strTemp.PrintF( "%s", CQuestSystem::Instance().GetQuestName( iQuestIndex ) );
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-						
-						const int iMinLevel = CQuestSystem::Instance().GetQuestMinLevel( iQuestIndex );
-						const int iMaxLevel = CQuestSystem::Instance().GetQuestMaxLevel( iQuestIndex );
-
-						// Î†àÎ≤® Ï†úÌïú Ï∂úÎ†•.
-						strTemp.PrintF( _S( 1660, "Î†àÎ≤® Ï†úÌïú : %d ~ %d" ), iMinLevel, iMaxLevel );		
-						AddItemInfoString( strTemp, 0xDEC05BFF );
-					}
-				}
-			}
-			break;
-
-		case CItemData::ITEM_POTION:	// Date : 2005-01-07,   By Lee Ki-hwan
-			{
-				// Date : 2005-01-14,   By Lee Ki-hwan
-				
-				if ( rItemData.GetSubType() == CItemData::POTION_UP )
-				{
-					if( ulFlag > 0 )
-					{
-						// Level
-						strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), ulFlag );
-						AddItemInfoString( strTemp, 0xD28060FF );
-
-						// Ìñ•ÏÉÅ ÌÉÄÏûÖ
-						int nSkillType = rItemData.GetSkillType();
-						CSkill	&rSkill = _pNetwork->GetSkillData( nSkillType );
-						int Power = rSkill.GetPower( ulFlag - 1);
-
-						if(  rItemData.GetNum1() == CItemData::POTION_UP_PHYSICAL ) // Î¨ºÎ¶¨
-						{
-							if(  rItemData.GetNum2() == CItemData::POTION_UP_ATTACK ) // Í≥µÍ≤©
-							{
-								strTemp.PrintF ( _S( 790, "Î¨ºÎ¶¨ Í≥µÍ≤©Î†• +%d ÏÉÅÏäπ" ), Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-							else if( rItemData.GetNum2() == CItemData::POTION_UP_DEFENSE ) // Î∞©Ïñ¥
-							{
-								strTemp.PrintF ( _S( 791, "Î¨ºÎ¶¨ Î∞©Ïñ¥Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-
-						}
-						else if( rItemData.GetNum1() == CItemData::POTION_UP_MAGIC ) // ÎßàÎ≤ï
-						{
-							if(  rItemData.GetNum2() == CItemData::POTION_UP_ATTACK ) // Í≥µÍ≤©
-							{
-								strTemp.PrintF ( _S( 792, "ÎßàÎ≤ï Í≥µÍ≤©Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-							else if( rItemData.GetNum2() == CItemData::POTION_UP_DEFENSE ) // Î∞©Ïñ¥
-							{
-								strTemp.PrintF ( _S( 793, "ÎßàÎ≤ï Î∞©Ïñ¥Î†• +%d ÏÉÅÏäπ" ),  Power );
-								AddItemInfoString( strTemp, 0xDEC05BFF );
-							}
-						}
-					}
-				}
-			}
-
-		case CItemData::ITEM_BULLET:		// Bullet item
-			{
-			}
-			break;
-
-		case CItemData::ITEM_ETC:			// Etc item
-			{
-				switch( rItemData.GetSubType() )
-				{
-				case CItemData::ITEM_ETC_REFINE:
-					{
-						// FIXME : Î†àÎ≤® ÌëúÏãúÍ∞Ä ÏïàÎêúÎã§Íµ¨ Ìï¥ÏÑú...
-						// Î∏îÎü¨ÎìúÎùºÍ≥† ÌëúÏãúÍ∞Ä ÎêòÏñ¥ÏûàÎã§Î©¥, ÌëúÏãúÎ•º ÏóÜÏï†Ï§ÄÎã§.
-						if(ulFlag & FLAG_ITEM_OPTION_ENABLE)
-						{
-							ulFlag ^= FLAG_ITEM_OPTION_ENABLE;
-						}
-
-						// Level
-						if( ulFlag > 0 )
-						{
-							strTemp.PrintF( _S( 160, "Î†àÎ≤®: %d" ), ulFlag );
-							AddItemInfoString( strTemp, 0xD28060FF );
-						}
-					}
-					break;
-
-				// Î∏îÎü¨Îìú ÏïÑÏù¥ÌÖú & Ï†ïÌôîÏÑù.
-				case CItemData::ITEM_ETC_OPTION:
-					{
-					}
-					break;
-				}
-			}
-			break;
-		}
-
-		// Weight
-		strTemp.PrintF( _S( 165, "Î¨¥Í≤å : %d" ), rItemData.GetWeight() );
-		AddItemInfoString( strTemp, 0xDEC05BFF );
-
-		
-		const int iFame = rItemData.GetFame();
-		if( iFame > 0 )
-		{
-			strTemp.PrintF( _S( 1096, "Î™ÖÏÑ± %d ÌïÑÏöî" ), iFame );		
-			AddItemInfoString( strTemp, 0xDEC05BFF );
-		}
-
-
-		// Options
-		switch( rItemData.GetType() )
-		{
-		case CItemData::ITEM_WEAPON:
-		case CItemData::ITEM_SHIELD:
-		case CItemData::ITEM_ACCESSORY:
-			{
-				for( SBYTE sbOption = 0; sbOption < MAX_ITEM_OPTION; sbOption++ )
-				{
-					if( sbOptionType[sbOption] == -1 || sbOptionLevel[sbOption] == 0 )
-						break;
-
-					COptionData	&odItem = _pNetwork->GetOptionData( sbOptionType[sbOption] );
-					strTemp.PrintF( "%s : %d", odItem.GetName(), odItem.GetValue( sbOptionLevel[sbOption] - 1 ) ); 
-					AddItemInfoString( strTemp, 0x94B7C6FF );
-				}
-				if( ulFlag & FLAG_ITEM_OPTION_ENABLE )
-				{
-					AddItemInfoString( _S( 511, "Î∏îÎü¨Îìú ÏòµÏÖò Í∞ÄÎä•" ), 0xE53535FF );		
-				}
-				if( ulFlag & FLAG_ITEM_SEALED )
-				{
-					AddItemInfoString( _S( 512, "Î¥âÏù∏Îêú ÏïÑÏù¥ÌÖú" ), 0xE53535FF );		
-				}
-			}
-			break;
-		}
-
-		// Description
-		const char	*pDesc = _pNetwork->GetItemDesc( nIndex );
-		if( pDesc[0] != NULL )
-		{
-			//AddItemInfoString( CTString( " " ) );
-			strTemp.PrintF( "%s", pDesc );
-			AddItemInfoString( strTemp, 0x9E9684FF );
-		}
-
-		nInfoWidth = 27 - _pUIFontTexMgr->GetFontSpacing() + MAX_ITEMINFO_CHAR *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	}
-	else
-	{
-		// Price - except money
-		CItemData	&ItemData = _pNetwork->GetItemData( nIndex );
-		if( ItemData.GetType() != CItemData::ITEM_ETC ||
-			ItemData.GetSubType() != CItemData::ITEM_ETC_MONEY )
-		{
-			CTString	strMoney;
-			strMoney.PrintF( "%I64d", iPrice );
-			_pUIMgr->InsertCommaToString( strMoney );
-			strTemp.PrintF( _S( 255, "Í∞ÄÍ≤© : %I64d" ), strMoney );
-			AddItemInfoString( strTemp, _pUIMgr->GetNasColor( iPrice ) );
-		}
-
-		nInfoWidth = 27 - _pUIFontTexMgr->GetFontSpacing() + MAX_ITEMINFO_CHAR *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		nInfoHeight = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	}
-
-	return TRUE;
-}
-
-// ----------------------------------------------------------------------------
-// Name : ShowItemInfo()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIShop::ShowItemInfo( BOOL bShowInfo, BOOL bRenew, int nTradeItem, int nRow, int nCol )
-{
-	static int	nOldBtnID = -1;
-	int			nBtnID;
-
-	m_bShowItemInfo = FALSE;
-
-	// Hide item information
-	if( !bShowInfo )
-	{
-		nOldBtnID = -1;
-		return;
-	}
-
-	BOOL	bUpdateInfo = FALSE;
-	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
-
-	// Trade
-	if( nTradeItem >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nBtnID		= m_abtnTradeItems[nTradeItem].GetBtnID();
-
-		// Update item information
-		if( nOldBtnID != nBtnID || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldBtnID = nBtnID;
-			m_abtnTradeItems[nTradeItem].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-			m_bDetailItemInfo = m_nSelTradeItemID == nTradeItem;
-			if( !GetItemInfo( 0, nInfoWidth, nInfoHeight, nTradeItem ) )
-				m_bShowItemInfo = FALSE;
-		}
-	}
-	// Shop
-	else if( nRow >= 0 )
-	{
-		m_bShowItemInfo = TRUE;
-		nBtnID = m_abtnShopItems[nRow][nCol].GetBtnID();
-
-		// Update item information
-		if( nOldBtnID != nBtnID || bRenew )
-		{
-			bUpdateInfo = TRUE;
-			nOldBtnID = nBtnID;
-			m_abtnShopItems[nRow][nCol].GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get item information
-			m_bDetailItemInfo = m_nSelShopItemID == ( nCol + nRow * SHOP_SHOP_SLOT_COL );;
-			if( !GetItemInfo( 1, nInfoWidth, nInfoHeight, -1, nRow, nCol ) )
-				m_bShowItemInfo = FALSE;
-		}
-	}
-
-	// Update item information box
-	if( m_bShowItemInfo && bUpdateInfo )
-	{
-		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
-
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
-
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
-		{
-			nInfoPosY += BTN_SIZE;
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
-		}
-		else
-		{
-			m_rcItemInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
-		}
-	}
-
-	if( !m_bShowItemInfo )
-		nOldBtnID = -1;
 }
 
 // ----------------------------------------------------------------------------
 // Name : RenderSellItems()
-// Desc : Íµ¨ÏûÖÎ™®Îìú...
+// Desc : ±∏¿‘∏µÂ...
 // ----------------------------------------------------------------------------
 void CUIShop::RenderShopItems()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	int iShopX, iShopY;
+	
 	if(m_bBuyShop)
 	{
 		iShopX = SHOP_BUY_TOP_SLOT_SX;
@@ -1535,103 +998,100 @@ void CUIShop::RenderShopItems()
 		iShopY = SHOP_SELL_BOTTOM_SLOT_SY;
 	}
 
-	int	iRow, iCol;
+	int	i;
 	int	nX = iShopX;
 	int	nY = iShopY;
-	int	iRowS = m_nCurRow;
-	int	iRowE = iRowS + SHOP_SHOP_SLOT_ROW;
+	int	iRowS = m_nCurRow * SHOP_SLOT_COL;
+	int	iRowE = (m_nCurRow + SHOP_SLOT_ROW) * SHOP_SLOT_COL;
 
-	for( iRow = iRowS; iRow < iRowE; iRow++ )
+	for( i = iRowS; i < iRowE; i++ )
 	{
-		for( iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++, nX += 35 )
+		if ((i % SHOP_SLOT_COL) == 0)
 		{
-			m_abtnShopItems[iRow][iCol].SetPos( nX, nY );
-
-			if( m_abtnShopItems[iRow][iCol].IsEmpty() )
-				continue;
-			
-			m_abtnShopItems[iRow][iCol].Render();
-
-/*			CItems rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-			if(m_bIsLease || rItems.IsFlag(FLAG_ITEM_LENT))
-			{
-				// Mark lease item
-				int tv_posX,tv_posY;
-				m_abtnShopItems[iRow][iCol].GetAbsPos( tv_posX, tv_posY );
-				_pUIMgr->GetDrawPort()->AddTexture( tv_posX+17, tv_posY+17, tv_posX+32, tv_posY+32,
-													m_rtleaseMark.U0, m_rtleaseMark.V0,
-													m_rtleaseMark.U1, m_rtleaseMark.V1,
-													0xFFFFFFFF );
-			}
-*/						
+			nX = iShopX;	
+			if (i > iRowS)	nY += 35;
 		}
-		nX = iShopX;	nY += 35;
+
+		m_pIconsShop[i]->SetPos( nX, nY );
+		nX += 35;
+
+		if( m_pIconsShop[i]->IsEmpty() )
+			continue;
+
+		m_pIconsShop[i]->Render(pDrawPort);
 	}
 
 	// ---Trade slot items---
 	for( int iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
 	{
-		if( m_abtnTradeItems[iItem].IsEmpty() )
+		if( m_pIconsTrade[iItem]->IsEmpty() )
 			continue;
 			
-		m_abtnTradeItems[iItem].Render();
-	}
+		m_pIconsTrade[iItem]->Render(pDrawPort);
+	}	
 
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
+	pDrawPort->FlushBtnRenderingQueue( UBET_ITEM );
 
 
 	// Set shop texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Outline of items in shop slot ( unmovable )
 	if( !m_bBuyShop )
 	{
-		for( iRow = iRowS; iRow < iRowE; iRow++ )
+		for( i = iRowS; i < iRowE; i++ )
 		{
-			for( iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++ )
-			{
-				// If button is empty
-				if( m_abtnShopItems[iRow][iCol].IsEmpty() )
-					continue;
+			// If button is empty
+			if( m_pIconsShop[i]->IsEmpty() )
+				continue;
 
-				// Not wearing, not refine stone, can trade
-				int			nIndex = m_abtnShopItems[iRow][iCol].GetItemIndex();
-				CItems		&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-				CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-				m_abtnShopItems[iRow][iCol].GetAbsPos( nX, nY );
-				if( m_abtnShopItems[iRow][iCol].GetItemWearType() < 0 &&
-					( rItemData.GetType() != CItemData::ITEM_ETC || rItemData.GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
-					rItemData.GetFlag() & ITEM_FLAG_TRADE &&!rItems.IsFlag(FLAG_ITEM_LENT))
+			// Not wearing, not refine stone, can trade
+			int			nIndex = m_pIconsShop[i]->getIndex();
+			CItems*		pItems = m_pIconsShop[i]->getItems();
+			CItemData*	pItemData = pItems->ItemData;
+
+			m_pIconsShop[i]->GetAbsPos( nX, nY );
+#ifdef ADD_SUBJOB
+			if (pItemData->IsFlag(ITEM_FLAG_SELLER))
+			{
+				if( pUIManager->CheckSellerItem(UI_SHOP, pItemData->GetFlag()) )
 					continue;
-				_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-													m_rtUnmovableOutline.U0, m_rtUnmovableOutline.V0,
-													m_rtUnmovableOutline.U1, m_rtUnmovableOutline.V1,
-													0xFFFFFFFF );
-				
 			}
+			else
+			{
+				if ((pItemData->GetType() != CItemData::ITEM_ETC || pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE) &&
+					(pItemData->GetFlag() & ITEM_FLAG_TRADE) && !pItems->IsFlag(FLAG_ITEM_LENT))
+					continue;
+			}
+#else
+			if ((pItemData->GetType() != CItemData::ITEM_ETC || pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE) &&
+				(pItemData->GetFlag() & ITEM_FLAG_TRADE) && !pItems->IsFlag(FLAG_ITEM_LENT))
+				continue;
+#endif
+			pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+												m_rtUnmovableOutline.U0, m_rtUnmovableOutline.V0,
+												m_rtUnmovableOutline.U1, m_rtUnmovableOutline.V1,
+												0xFFFFFFFF );
+				
 		}
 	}
 
 	// Mark Lease Items
-	for( iRow = iRowS; iRow < iRowE; iRow++ )
+	for( i = iRowS; i < iRowE; i++ )
 	{
-		for( iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++)
+		if (m_pIconsShop[i]->IsEmpty() || m_bIsEvent)
+			continue;
+		// Mark lease item
+			CItems*	pItems = &_pNetwork->MySlotItem[0][i];
+			if(m_bIsLease/*|| pItems->IsFlag(FLAG_ITEM_LENT)*/) //m_abtnShopItems[iRow][iCol].GetItemFlag()&FLAG_ITEM_LENT)
 		{
-			if( m_abtnShopItems[iRow][iCol].IsEmpty() || m_bIsEvent)
-				continue;
-			// Mark lease item
-			CItems	&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-			if(m_bIsLease|| rItems.IsFlag(FLAG_ITEM_LENT)) //m_abtnShopItems[iRow][iCol].GetItemFlag()&FLAG_ITEM_LENT)
-			{
-				int tv_posX,tv_posY;
-				m_abtnShopItems[iRow][iCol].GetAbsPos( tv_posX, tv_posY );
-				_pUIMgr->GetDrawPort()->AddTexture( tv_posX+17, tv_posY+17, tv_posX+32, tv_posY+32,
-													m_rtleaseMark.U0, m_rtleaseMark.V0,
-													m_rtleaseMark.U1, m_rtleaseMark.V1,
-													0xFFFFFFFF );
-			}
-										
+			int tv_posX,tv_posY;
+			m_pIconsShop[i]->GetAbsPos( tv_posX, tv_posY );
+			pDrawPort->AddTexture( tv_posX+17, tv_posY+17, tv_posX+32, tv_posY+32,
+												m_rtleaseMark.U0, m_rtleaseMark.V0,
+												m_rtleaseMark.U1, m_rtleaseMark.V1,
+												0xFFFFFFFF );
 		}
 	}
 
@@ -1639,8 +1099,8 @@ void CUIShop::RenderShopItems()
 	// Outline of selected item
 	if( m_nSelTradeItemID >= 0 )
 	{
-		m_abtnTradeItems[m_nSelTradeItemID].GetAbsPos( nX, nY );
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+		m_pIconsTrade[m_nSelTradeItemID]->GetAbsPos( nX, nY );
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
 											m_rtSelectOutline.U0, m_rtSelectOutline.V0,
 											m_rtSelectOutline.U1, m_rtSelectOutline.V1,
 											0xFFFFFFFF );
@@ -1648,17 +1108,11 @@ void CUIShop::RenderShopItems()
 	}
 	if( m_nSelShopItemID >= 0 )
 	{
-		int	nSelRow = m_nSelShopItemID / SHOP_SHOP_SLOT_COL;
-		if( nSelRow >= iRowS && nSelRow < iRowE )
-		{
-			int	nSelCol = m_nSelShopItemID % SHOP_SHOP_SLOT_COL;
-
-			m_abtnShopItems[nSelRow][nSelCol].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtSelectOutline.U0, m_rtSelectOutline.V0,
-												m_rtSelectOutline.U1, m_rtSelectOutline.V1,
-												0xFFFFFFFF );
-		}
+		m_pIconsShop[m_nSelShopItemID]->GetAbsPos( nX, nY );
+		pDrawPort->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
+											m_rtSelectOutline.U0, m_rtSelectOutline.V0,
+											m_rtSelectOutline.U1, m_rtSelectOutline.V1,
+											0xFFFFFFFF );
 	}
 
 	// ----------------------------------------------------------------------------
@@ -1666,61 +1120,50 @@ void CUIShop::RenderShopItems()
 	if( m_bShowItemInfo && !m_bIsLease)
 	{
 		// Item information region
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
+		pDrawPort->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top,
 											m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
 											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
+		pDrawPort->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top,
 											m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
 											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
+		pDrawPort->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top,
 											m_rcItemInfo.Right, m_rcItemInfo.Top + 7,
 											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Top + 7,
 											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
 											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Top + 7,
 											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
 											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Top + 7,
 											m_rcItemInfo.Right, m_rcItemInfo.Bottom - 7,
 											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Left, m_rcItemInfo.Bottom - 7,
 											m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom,
 											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Left + 7, m_rcItemInfo.Bottom - 7,
 											m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom,
 											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcItemInfo.Right - 7, m_rcItemInfo.Bottom - 7,
 											m_rcItemInfo.Right, m_rcItemInfo.Bottom,
 											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
 											0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-		// Render item information
-		int	nInfoX = m_rcItemInfo.Left + 12;
-		int	nInfoY = m_rcItemInfo.Top + 8;
-		for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
-		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
-			nInfoY += _pUIFontTexMgr->GetLineHeight();
-		}
-		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->FlushRenderingQueue();
 	}
 	else
 	{
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 	}
 }
 
@@ -1739,22 +1182,25 @@ void CUIShop::Render()
 		CloseShop();
 	}
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Set shop texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	int	nX, nY;
 
 	// Add render regions
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + 24,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + 24,
 										m_rtBackTop.U0, m_rtBackTop.V0,
 										m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + 24,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY + 24,
 										m_nPosX + m_nWidth, m_nPosY + m_nHeight - 33,
 										m_rtBackMiddle.U0, m_rtBackMiddle.V0,
 										m_rtBackMiddle.U1, m_rtBackMiddle.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY + m_nHeight - 33,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY + m_nHeight - 33,
 										m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtBackBottom.U0, m_rtBackBottom.V0,
 										m_rtBackBottom.U1, m_rtBackBottom.V1,
@@ -1766,14 +1212,14 @@ void CUIShop::Render()
 		// Buy
 		nX = m_nPosX;
 		nY = m_nPosY + 22;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+		pDrawPort->AddTexture( nX, nY,
 											nX + SHOP_SHOP_WIDTH, nY + SHOP_SHOP_HEIGHT,
 											m_rtTopInven.U0, m_rtTopInven.V0,
 											m_rtTopInven.U1, m_rtTopInven.V1,
 											0xFFFFFFFF );
 
 		nY += SHOP_SHOP_HEIGHT;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+		pDrawPort->AddTexture( nX, nY,
 											nX + SHOP_SHOP_WIDTH, nY + 1,
 											m_rtSeperatorInven.U0, m_rtSeperatorInven.V0,
 											m_rtSeperatorInven.U1, m_rtSeperatorInven.V1,
@@ -1782,13 +1228,13 @@ void CUIShop::Render()
 		nY += 1;
 		if(m_bIsLease)
 		{
-			// ÎåÄÏó¨ÏÉÅÏ†ê ÏïÑÎû´Î∂ÄÎ∂Ñ
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+			// ¥Îø©ªÛ¡° æ∆∑ß∫Œ∫–
+			pDrawPort->AddTexture( nX, nY,
 											nX + SHOP_SHOP_WIDTH, nY + SHOP_LEASE_HEIGHT+77 ,
 											m_rtBottom1.U0, m_rtBottom1.V0,
 											m_rtBottom1.U1, m_rtBottom1.V1,
 											0xFFFFFFFF );
-			_pUIMgr->GetDrawPort()->AddTexture( nX+7, nY+4,
+			pDrawPort->AddTexture( nX+7, nY+4,
 											nX + SHOP_SHOP_WIDTH -7, nY + SHOP_LEASE_HEIGHT+77-4,
 											m_rtBottom3.U0, m_rtBottom3.V0,
 											m_rtBottom3.U1, m_rtBottom3.V1,
@@ -1801,7 +1247,7 @@ void CUIShop::Render()
 				m_btnEvent_shield.Render();
 
 			}else{
-				_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+				pDrawPort->AddTexture( nX, nY,
 											nX + SHOP_SHOP_WIDTH, nY + 21,
 											m_rtBottom2.U0, m_rtBottom2.V0,
 											m_rtBottom2.U1, m_rtBottom2.V1,
@@ -1811,7 +1257,7 @@ void CUIShop::Render()
 		}
 		else 
 		{
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+			pDrawPort->AddTexture( nX, nY,
 											nX + SHOP_SHOP_WIDTH, nY + SHOP_TRADE_HEIGHT,
 											m_rtBottomInven.U0, m_rtBottomInven.V0,
 											m_rtBottomInven.U1, m_rtBottomInven.V1,
@@ -1825,21 +1271,21 @@ void CUIShop::Render()
 		// Sell
 		nX = m_nPosX;
 		nY = m_nPosY + 22;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+		pDrawPort->AddTexture( nX, nY,
 											nX + SHOP_SHOP_WIDTH, nY + SHOP_TRADE_HEIGHT,
 											m_rtBottomInven.U0, m_rtBottomInven.V0,
 											m_rtBottomInven.U1, m_rtBottomInven.V1,
 											0xFFFFFFFF );
 
 		nY += SHOP_TRADE_HEIGHT;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+		pDrawPort->AddTexture( nX, nY,
 											nX + SHOP_SHOP_WIDTH, nY + 1,
 											m_rtSeperatorInven.U0, m_rtSeperatorInven.V0,
 											m_rtSeperatorInven.U1, m_rtSeperatorInven.V1,
 											0xFFFFFFFF );
 
 		nY += 1;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
+		pDrawPort->AddTexture( nX, nY,
 											nX + SHOP_SHOP_WIDTH, nY + SHOP_SHOP_HEIGHT,
 											m_rtTopInven.U0, m_rtTopInven.V0,
 											m_rtTopInven.U1, m_rtTopInven.V1,
@@ -1862,23 +1308,23 @@ void CUIShop::Render()
 	m_btnShopCancel.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render item information
-	if(m_bIsEvent) // ttos : Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏
+	if(m_bIsEvent) // ttos : ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 100, "Ïù¥Î≤§Ìä∏" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX,
+		pDrawPort->PutTextEx( _S( 100, "¿Ã∫•∆Æ" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX,
 										m_nPosY + INVEN_TITLE_TEXT_OFFSETY );
 	}else
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 263, "ÏÉÅÏ†ê" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX,
+		pDrawPort->PutTextEx( _S( 263, "ªÛ¡°" ), m_nPosX + INVEN_TITLE_TEXT_OFFSETX,
 										m_nPosY + INVEN_TITLE_TEXT_OFFSETY );
 	}
 	
 
 	COLOR colNas,colNasP;
-	colNas = _pUIMgr->GetNasColor( m_strTotalPrice );
-	colNasP = _pUIMgr->GetNasColor( m_strPlayerMoney );
+	colNas = pUIManager->GetNasColor( m_strTotalPrice );
+	colNasP = pUIManager->GetNasColor( m_strPlayerMoney );
 	
 	if(m_bIsLease)
 	{
@@ -1892,123 +1338,139 @@ void CUIShop::Render()
 		tv_posY+= tv_gap;
 		if(m_nSelShopItemID < 0)
 		{
-			_pUIMgr->GetDrawPort()->PutTextEx( _S(3065, "Î¨¥Í∏∞Ïù¥Î¶Ñ" ), m_nPosX + 10, tv_posY,tv_clr);
+			pDrawPort->PutTextEx( _S(3065, "π´±‚¿Ã∏ß" ), m_nPosX + 10, tv_posY,tv_clr);
 		}
 		tv_posY+= tv_gap;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(3066, "Î¨¥Í∏∞Î†àÎ≤®" ), m_nPosX + 10, tv_posY ,tv_clr);
+		pDrawPort->PutTextEx( _S(3066, "π´±‚∑π∫ß" ), m_nPosX + 10, tv_posY ,tv_clr);
 		tv_posY+= tv_gap;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(3067, "ÏÇ¨Ïö©ÌÅ¥ÎûòÏä§" ), m_nPosX + 10,	tv_posY ,tv_clr);
+		pDrawPort->PutTextEx( _S(3067, "ªÁøÎ≈¨∑°Ω∫" ), m_nPosX + 10,	tv_posY ,tv_clr);
 		tv_posY+= tv_gap;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(85, "Í≥µÍ≤©Î†•" ), m_nPosX + 10,	tv_posY ,tv_clr);
+		pDrawPort->PutTextEx( _S(85, "∞¯∞›∑¬" ), m_nPosX + 10,	tv_posY ,tv_clr);
 		tv_posY+= tv_gap;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(86, "ÎßàÎ≤ïÍ≥µÍ≤©Î†•" ), m_nPosX + 10,	tv_posY ,tv_clr);
-		tv_posY+= tv_gap;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S(1070, "Î¨¥Í≤å" ), m_nPosX + 10, tv_posY,tv_clr );
+		pDrawPort->PutTextEx( _S(86, "∏∂π˝∞¯∞›∑¬" ), m_nPosX + 10,	tv_posY ,tv_clr);
 		tv_posY+= tv_gap;
 
-		if(m_bIsEvent) // ttos : Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏
+		if(m_bIsEvent) // ttos : ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ
 		{
-		//	tv_str = CTString("Í∞úÎÇòÎ¶¨ Í∞úÏàò ");
-			tv_str.PrintF("%s %s", _pNetwork->GetItemName(2344), _S(2396,"ÏàòÎüâ"));
-			_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 10, tv_posY ,tv_clr);
+		//	tv_str = CTString("∞≥≥™∏Æ ∞≥ºˆ ");
+			tv_str.PrintF("%s %s", _pNetwork->GetItemName(2344), _S(2396,"ºˆ∑Æ"));
+			pDrawPort->PutTextEx( tv_str, m_nPosX + 10, tv_posY ,tv_clr);
 		}else
 		{
-			_pUIMgr->GetDrawPort()->PutTextEx( _S(3071, "ÎåÄÏó¨Í∏∞Í∞Ñ" ), m_nPosX + 10, tv_posY ,tv_clr);
+			pDrawPort->PutTextEx( _S(3071, "¥Îø©±‚∞£" ), m_nPosX + 10, tv_posY ,tv_clr);
 		}
 		tv_posY+= tv_gap;
 		
 		if(m_nSelShopItemID >= 0)
 		{
 			//WSS_SHOP_BUGFIX_70530 --->><<
-			int tv_itemIdx = (m_abtnShopItems[0]+m_nSelShopItemID)->GetItemIndex();
-			CItemData	&rItemData = _pNetwork->GetItemData( tv_itemIdx );
+			int tv_itemIdx = m_pIconsShop[m_nSelShopItemID]->getIndex();
+			CItemData	*pItemData = _pNetwork->GetItemData( tv_itemIdx );
 
 			tv_posY = m_nPosY + LEASE_INFO_TEXT_OFFSETX + 10;
 			// Weapon Name
 			const char* szItemName = _pNetwork->GetItemName( tv_itemIdx );
 			
-			if(m_bIsEvent) tv_str = CTString("+3 ");
-			else tv_str = CTString("+6 ");
+			if(m_bIsEvent) 
+				tv_str = CTString("+3 ");
+			else if ( g_iCountry == KOREA || g_iCountry == USA || g_iCountry == RUSSIA || g_iCountry == THAILAND )
+				tv_str = CTString("+12 ");	// ±π≥ª π´±‚¥Îø©æ∆¿Ã≈€ ∑π∫ß +6 ø°º≠ +12∑Œ ∫Ø∞Ê
+			else
+				tv_str = CTString("+6 ");
 
 			tv_str +=szItemName;
-			_pUIMgr->GetDrawPort()->PutTextExCX( tv_str, m_nPosX + 108, tv_posY, tv_clr);
+			pDrawPort->PutTextExCX( tv_str, m_nPosX + 108, tv_posY, tv_clr);
 			tv_posY+= tv_gap*2;
 			
 			int iExtraPos =0;
-			if( g_iCountry ==THAILAND)
+			
+			if (g_iCountry == THAILAND)
+			{
 				iExtraPos =52;
-			if( g_iCountry == MALAYSIA)
-				iExtraPos = 82;
+			}			
 
 			// Weapon Level
-			tv_int =rItemData.GetLevel();
+			tv_int =pItemData->GetLevel();
 			tv_str.PrintF("%d",tv_int);
-			_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 80 +iExtraPos, tv_posY);
+			pDrawPort->PutTextEx( tv_str, m_nPosX + 80 +iExtraPos, tv_posY);
 			tv_posY+= tv_gap;
 			// Class 
-			tv_int = rItemData.GetJob();
+			tv_int = pItemData->GetJob();	//∑Œ±◊Ex∑Œ±◊ 144 ∏ﬁ¿Ã¡ˆ æ∆≈©∏ﬁ¿Ã¡ˆ264
 			switch(tv_int)
 			{
 			case 1:
-					tv_str = _S(43,"ÌÉÄÏù¥ÌÉÑ");
+					tv_str = _S(43,"≈∏¿Ã≈∫");
 					break;
 			case 2:
-					tv_str = _S(44,"Í∏∞ÏÇ¨");
+					tv_str = _S(44,"±‚ªÁ");
 					break;
 			case 4:
-					tv_str = _S(45,"ÌûêÎü¨");
+					tv_str = _S(45,"»˙∑Ø");
 					break;
 			case 8:
-					tv_str = _S(46,"Î©îÏù¥ÏßÄ");
+				tv_str = _S(46,"∏ﬁ¿Ã¡ˆ");
+				break;
+			case 264:	//2013/01/22 jeil π´±‚ ¥Îø©ªÛø°º≠ ªÁøÎ¡˜æ˜ ¡§∫∏ ¿ﬂ∏¯≥™ø¿¥¯∞Õ ºˆ¡§
+					tv_str = _S(46,"∏ﬁ¿Ã¡ˆ");
+#ifdef CHAR_EX_MAGE
+					tv_str += _S(5820,"æ∆≈©∏ﬁ¿Ã¡ˆ");	// 2013/01/08 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° Ω∫∆Æ∏µ ≥™ø¿∏È √ﬂ∞°ºˆ¡§ « ø‰ 
+#endif
 					break;
 			case 16:
-					tv_str = _S(47,"Î°úÍ∑∏");
+				tv_str = _S(47,"∑Œ±◊");
+				break;
+			case 144:	//2013/01/22 jeil π´±‚ ¥Îø©ªÛø°º≠ ªÁøÎ¡˜æ˜ ¡§∫∏ ¿ﬂ∏¯≥™ø¿¥¯∞Õ ºˆ¡§
+					tv_str = _S(47,"∑Œ±◊");
+#ifdef CHAR_EX_ROGUE
+					tv_str += _S(5732,"EX∑Œ±◊");	// [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+#endif
 					break;
 			case 32:
-					tv_str = _S(48,"ÏÜåÏÑúÎü¨");
+					tv_str = _S(48,"º“º≠∑Ø");
 					break;
 			default : 
 				tv_str = CTString("Alien");
 				break;
 			}		
-			_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 80 +iExtraPos, tv_posY);
+			pDrawPort->PutTextEx( tv_str, m_nPosX + 80 +iExtraPos, tv_posY);
 			tv_posY+= tv_gap;
+
+			int tv_plus = m_bIsEvent ? 3 : 6 ;  // ∑Œƒ√¿∫ +6¿∏∑Œ ∞Ì¡§
+
+			if (g_iCountry == KOREA || g_iCountry == USA || g_iCountry == RUSSIA || g_iCountry == THAILAND)
+			{
+				tv_plus = m_bIsEvent ? 3 : 12 ;  // +6¿∏∑Œ ∞Ì¡§(+6ø°º≠ +12∑Œ ∫Ø∞Ê)
+			}
 			
-			int tv_plus = m_bIsEvent ? 3 : 6 ;  // +6ÏúºÎ°ú Í≥†Ï†ï
 			// attack ability
-			tv_int = CItems::CalculatePlusDamage( rItemData.GetPhysicalAttack(), tv_plus );
+			tv_int = CItems::CalculatePlusDamage( pItemData->GetPhysicalAttack(), tv_plus, pItemData->GetLevel() >= 146 ? TRUE : FALSE );
 			if( tv_int > 0 )
-				tv_str.PrintF( CTString("%d + %d" ), rItemData.GetPhysicalAttack(), tv_int );
+				tv_str.PrintF( CTString("%d + %d" ), pItemData->GetPhysicalAttack(), tv_int );
 			else
-				tv_str.PrintF( CTString( "%d" ), rItemData.GetPhysicalAttack() );
-			_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 80+iExtraPos, tv_posY);
+				tv_str.PrintF( CTString( "%d" ), pItemData->GetPhysicalAttack() );
+			pDrawPort->PutTextEx( tv_str, m_nPosX + 80+iExtraPos, tv_posY);
 			tv_posY+= tv_gap;
 			// magic attack ability
-			tv_int = CItems::CalculatePlusDamage( rItemData.GetMagicAttack(), tv_plus );
+			tv_int = CItems::CalculatePlusDamage( pItemData->GetMagicAttack(), tv_plus, pItemData->GetLevel() >= 146 ? TRUE : FALSE );
 			if( tv_int > 0 )
-				tv_str.PrintF( CTString("%d+%d" ), rItemData.GetMagicAttack(), tv_int );
+				tv_str.PrintF( CTString("%d+%d" ), pItemData->GetMagicAttack(), tv_int );
 			else
-				tv_str.PrintF( CTString( "%d" ), rItemData.GetMagicAttack() );
-			_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 80 +iExtraPos, tv_posY);
+				tv_str.PrintF( CTString( "%d" ), pItemData->GetMagicAttack() );
+			pDrawPort->PutTextEx( tv_str, m_nPosX + 80 +iExtraPos, tv_posY);
 			tv_posY+= tv_gap;
-			// Weight
-			tv_int =rItemData.GetWeight();
-			tv_str.PrintF("%d",tv_int);
-			_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 80+iExtraPos, tv_posY);
-			tv_posY+= tv_gap;
-			// Lease period
-			if(m_bIsEvent) //ttos : Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏
+			
+			if(m_bIsEvent) //ttos : ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æ
 			{
 				tv_int = 1;
-				tv_str.PrintF(_S(766,"%d Í∞ú"),(int)((rItemData.GetLevel()/2.0f)+0.5f));
-				_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 80+iExtraPos, tv_posY);
+				tv_str.PrintF(_S(766,"%d ∞≥"),(int)((pItemData->GetLevel()/2.0f)+0.5f));
+				pDrawPort->PutTextEx( tv_str, m_nPosX + 80+iExtraPos, tv_posY);
 				tv_posY+= tv_gap;
 
 			}else
 			{
 				tv_int = 1;
-				tv_str.PrintF(_S(3079,"%dÏùº(Í≤åÏûÑÏãúÍ∞Ñ%dÏùº)"),tv_int,tv_int*24);
-				_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 80+iExtraPos, tv_posY);
+				tv_str.PrintF(_S(3079,"%d¿œ"),tv_int);
+				pDrawPort->PutTextEx( tv_str, m_nPosX + 80+iExtraPos, tv_posY);
 				tv_posY+= tv_gap;
 
 			}
@@ -2016,35 +1478,35 @@ void CUIShop::Render()
 			if(!m_bIsEvent)
 			{
 				// Lease Price
-				tv_int =(rItemData.GetPrice()*1.5) + 50000;
+				tv_int =(pItemData->GetPrice()*1.5) + 50000;
 				tv_str.PrintF("%d",tv_int);
-				_pUIMgr->InsertCommaToString( tv_str );
-	//			_pUIMgr->GetDrawPort()->PutTextEx( tv_str, m_nPosX + 80, tv_posY);
+				pUIManager->InsertCommaToString( tv_str );
+	//			pDrawPort->PutTextEx( tv_str, m_nPosX + 80, tv_posY);
 			}
 			
 		}
 		// Set Nas
-		if(!m_bIsEvent) // ttos : Í∞ÄÏ†ïÏùò Îã¨ Ïù¥Î≤§Ìä∏Ïóê Ï†ÅÏö© ÎêòÏßÄ ÏïäÏùå
+		if(!m_bIsEvent) // ttos : ∞°¡§¿« ¥ﬁ ¿Ã∫•∆Æø° ¿˚øÎ µ«¡ˆ æ ¿Ω
 		{
-			_pUIMgr->GetDrawPort()->PutTextExRX( tv_str, m_nPosX + SHOP_TRADEPRICE_POSX, m_nPosY + SHOP_BUY_TRADEPRICE_POSY + 77, colNas );
+			pDrawPort->PutTextExRX( tv_str, m_nPosX + SHOP_TRADEPRICE_POSX, m_nPosY + SHOP_BUY_TRADEPRICE_POSY + 77, colNas );
 		}		
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strPlayerMoney, m_nPosX + SHOP_MYMONEY_POSX, m_nPosY + SHOP_MYMONEY_POSY + 77, colNasP );
+		pDrawPort->PutTextExRX( m_strPlayerMoney, m_nPosX + SHOP_MYMONEY_POSX, m_nPosY + SHOP_MYMONEY_POSY + 77, colNasP );
 		
 	}
 	else
 	{
 		if(m_bBuyShop)
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strTotalPrice, m_nPosX + SHOP_TRADEPRICE_POSX, m_nPosY + SHOP_BUY_TRADEPRICE_POSY, colNas );
+			pDrawPort->PutTextExRX( m_strTotalPrice, m_nPosX + SHOP_TRADEPRICE_POSX, m_nPosY + SHOP_BUY_TRADEPRICE_POSY, colNas );
 		else
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strTotalPrice, m_nPosX + SHOP_TRADEPRICE_POSX, m_nPosY + SHOP_SELL_TRADEPRICE_POSY, colNas );
+			pDrawPort->PutTextExRX( m_strTotalPrice, m_nPosX + SHOP_TRADEPRICE_POSX, m_nPosY + SHOP_SELL_TRADEPRICE_POSY, colNas );
 
 		
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strPlayerMoney, m_nPosX + SHOP_MYMONEY_POSX, m_nPosY + SHOP_MYMONEY_POSY, colNasP );
+		pDrawPort->PutTextExRX( m_strPlayerMoney, m_nPosX + SHOP_MYMONEY_POSX, m_nPosY + SHOP_MYMONEY_POSY, colNasP );
 		
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Render Items
 	RenderShopItems();
@@ -2075,7 +1537,7 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -2088,72 +1550,9 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 				Move( ndX, ndY );
 				
 				return WMSG_SUCCESS;
-			}
+			}			
 
-			if(m_bIsLease) break;
-
-			// Hold item button
-			if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInItem && ( pMsg->wParam & MK_LBUTTON ) &&
-				( ndX != 0 || ndY != 0 ))
-			{
-				// Shop items
-				if( m_nSelShopItemID >= 0 )
-				{
-					int	nSelRow = m_nSelShopItemID / SHOP_SHOP_SLOT_COL;
-					int	nSelCol = m_nSelShopItemID % SHOP_SHOP_SLOT_COL;
-
-					if( m_bBuyShop )
-					{
-						// Close message box of shop
-						_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_ITEM );
-						_pUIMgr->CloseMessageBox( MSGCMD_SHOP_DEL_ITEM );
-						_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
-
-						_pUIMgr->SetHoldBtn( m_abtnShopItems[nSelRow][nSelCol] );
-						int	nOffset = BTN_SIZE / 2;
-						_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-						m_abtnShopItems[nSelRow][nSelCol].SetBtnState( UBES_IDLE );
-					}
-					else
-					{
-						// Not wearing, not refine stone, can trade
-						CItems		&rItems = _pNetwork->MySlotItem[0][nSelRow][nSelCol];
-						CItemData	&rItemData = rItems.ItemData;
-						if( rItems.Item_Wearing == -1 &&
-							( rItemData.GetType() != CItemData::ITEM_ETC || rItemData.GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
-							rItemData.GetFlag() & ITEM_FLAG_TRADE && !rItems.IsFlag(FLAG_ITEM_LENT))
-						{
-							// Close message box of shop
-							_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_ITEM );
-							_pUIMgr->CloseMessageBox( MSGCMD_SHOP_DEL_ITEM );
-							_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
-
-							_pUIMgr->SetHoldBtn( m_abtnShopItems[nSelRow][nSelCol] );
-							int	nOffset = BTN_SIZE / 2;
-							_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-							m_abtnShopItems[nSelRow][nSelCol].SetBtnState( UBES_IDLE );
-						}
-					}
-				}
-				// Trade items
-				else if( m_nSelTradeItemID >= 0 )
-				{
-					// Close message box of shop
-					_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_ITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_SHOP_DEL_ITEM );
-					_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
-
-					_pUIMgr->SetHoldBtn( m_abtnTradeItems[m_nSelTradeItemID] );
-					int	nOffset = BTN_SIZE / 2;
-					_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-					m_abtnTradeItems[m_nSelTradeItemID].SetBtnState( UBES_IDLE );
-				}
-
-				bLButtonDownInItem	= FALSE;
-			}
+			CUIManager* pUIManager = CUIManager::getSingleton();			
 
 			// Close button
 			if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -2183,49 +1582,119 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 
 				return WMSG_SUCCESS;
 			}
-			// Shop
-			else if( IsInsideRect( nX, nY, m_rcTop ) )
+			else if (pUIManager->GetDragIcon() == NULL && bLButtonDownInItem && 
+					 (pMsg->wParam& MK_LBUTTON) && (ndX != 0 || ndY != 0))
 			{
-				int	iRow, iCol;
-				int	iRowS = m_nCurRow;							// Start Row
-				int	iRowE = iRowS + SHOP_SHOP_SLOT_ROW;			// End Row
-				int	nWhichRow = -1, nWhichCol = -1;
-				for( iRow = iRowS; iRow < iRowE; iRow++ )
+				if(m_bIsLease) break;
+
+				// Shop items
+				if( m_nSelShopItemID >= 0 )
 				{
-					for( iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++ )
+					if( m_bBuyShop )
 					{
-						if( m_abtnShopItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
+						// Close message box of shop
+						pUIManager->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+						pUIManager->GetMsgBoxNumOnly()->CloseBox();
+
+						pUIManager->SetHoldBtn(m_pIconsShop[m_nSelShopItemID]);
+					}
+					else
+					{
+						int		t, idx;
+
+						if (m_nSelShopItemID >= (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1))
 						{
-							nWhichRow = iRow;	
-							nWhichCol = iCol;
+							t = INVENTORY_TAB_CASH_2;
+							idx = m_nSelShopItemID - (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1);
+						}
+						else if (m_nSelShopItemID >= ITEM_COUNT_IN_INVENTORY_NORMAL)
+						{
+							t = INVENTORY_TAB_CASH_1;
+							idx = m_nSelShopItemID - ITEM_COUNT_IN_INVENTORY_NORMAL;
+						}
+						else
+						{
+							t = INVENTORY_TAB_NORMAL;
+							idx = m_nSelShopItemID;
+						}
+
+
+						// Not wearing, not refine stone, can trade
+						CItems		*pItems = &_pNetwork->MySlotItem[t][idx];
+						CItemData	*pItemData = pItems->ItemData;
+
+						if (pItemData == NULL)
+							return WMSG_FAIL;
+
+#ifdef ADD_SUBJOB
+						if (pItemData->IsFlag( ITEM_FLAG_SELLER ) ? 
+							pUIManager->CheckSellerItem(UI_SHOP, pItemData->GetFlag()) : 
+							pItems->Item_Wearing == -1 && 
+							(pItemData->GetType() != CItemData::ITEM_ETC ||
+							 pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE) &&
+							pItemData->GetFlag() & ITEM_FLAG_TRADE && !pItems->IsFlag(FLAG_ITEM_LENT))
+#else
+						if (pItems->Item_Wearing == -1 &&
+							(pItemData->GetType() != CItemData::ITEM_ETC || 
+							 pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE) &&
+							pItemData->GetFlag() & ITEM_FLAG_TRADE && !pItems->IsFlag(FLAG_ITEM_LENT))
+#endif
+						{
+							// Close message box of shop
+							pUIManager->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+							pUIManager->GetMsgBoxNumOnly()->CloseBox();
+
+							pUIManager->SetHoldBtn(m_pIconsShop[m_nSelShopItemID]);
 						}
 					}
 				}
-
-				// Show tool tip
-				ShowItemInfo( TRUE, FALSE, -1, nWhichRow, nWhichCol );
-
-				return WMSG_SUCCESS;
-			}
-			// Trade
-			else if( IsInsideRect( nX, nY, m_rcBottom ) )
-			{
-				int	iItem;
-				int	nWhichItem = -1;
-				for( iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
+				// Trade items
+				else if( m_nSelTradeItemID >= 0 )
 				{
-					if( m_abtnTradeItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
-						nWhichItem = iItem;	
+					// Close message box of shop
+					pUIManager->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+					pUIManager->GetMsgBoxNumOnly()->CloseBox();
+
+					pUIManager->SetHoldBtn(m_pIconsTrade[m_nSelTradeItemID]);
 				}
 
-				// Show tool tip
-				ShowItemInfo( TRUE, FALSE, nWhichItem );
-
-				return WMSG_SUCCESS;
+				bLButtonDownInItem	= FALSE;
+				TOOLTIPMGR()->clearTooltip();
 			}
+			else if (pUIManager->GetDragIcon() == NULL)
+			{
+				// Shop
+				if (IsInsideRect(nX, nY, m_rcTop))
+				{
+					int	i;
+					int	iRowS = m_nCurRow * SHOP_SLOT_COL;							// Start Row
+					int	iRowE = (m_nCurRow + SHOP_SLOT_ROW) * SHOP_SLOT_COL;			// End Row
+					int	nWhichIdx = -1;
 
-			// Hide tool tip
-			ShowItemInfo( FALSE );
+					for( i = iRowS; i < iRowE; i++ )
+					{
+						if( m_pIconsShop[i]->MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							nWhichIdx = i;
+						}
+					}
+
+					return WMSG_SUCCESS;
+				}
+				// Trade
+				else if( IsInsideRect( nX, nY, m_rcBottom ) )
+				{
+					int	iItem;
+					int	nWhichItem = -1;
+					for( iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
+					{
+						if (m_pIconsTrade[iItem]->MouseMessage(pMsg) != WMSG_FAIL)
+							nWhichItem = iItem;	
+					}
+
+					return WMSG_SUCCESS;
+				}
+			}
 		}
 		break;
 
@@ -2233,6 +1702,7 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
 				nOldX = nX;		nOldY = nY;
 
 				// Close button
@@ -2266,26 +1736,21 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 					m_nSelShopItemID = -1;
 					m_nSelTradeItemID = -1;
 
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + SHOP_SHOP_SLOT_ROW;			// 4Ï§Ñ~
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * SHOP_SLOT_COL;
+					int	iRowE = (m_nCurRow + SHOP_SLOT_ROW) * SHOP_SLOT_COL;	// 4¡Ÿ~
+					
+					for( i = iRowS; i < iRowE; i++ )
 					{
-						for( iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++ )
+						if (m_pIconsShop[i]->MouseMessage( pMsg ) != WMSG_FAIL)
 						{
-							if( m_abtnShopItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected item
-								m_nSelShopItemID = iCol + iRow * SHOP_SHOP_SLOT_COL;	// ÏÑ†ÌÉùÎêú Ïä¨Î°ØÏùò ÏïÑÏù¥ÌÖú ID
+							// Update selected item
+							m_nSelShopItemID = i;	// º±≈√µ» ΩΩ∑‘¿« æ∆¿Ã≈€ ID
 
-								// Show tool tup
-								ShowItemInfo( TRUE, TRUE, -1, iRow, iCol );
+							bLButtonDownInItem	= TRUE;
 
-								bLButtonDownInItem	= TRUE;
-
-								_pUIMgr->RearrangeOrder( UI_SHOP, TRUE );
-								return WMSG_SUCCESS;
-							}
+							pUIManager->RearrangeOrder( UI_SHOP, TRUE );
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -2297,17 +1762,14 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 
 					for( int iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
 					{
-						if( m_abtnTradeItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
+						if (m_pIconsTrade[iItem]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
 							// Update selected item
-							m_nSelTradeItemID = iItem;			// ÏÑ†ÌÉùÎêú Ïä¨Î°ØÏùò ÏïÑÏù¥ÌÖú ID
-
-							// Show tool tup
-							ShowItemInfo( TRUE, TRUE, iItem );
+							m_nSelTradeItemID = iItem;			// º±≈√µ» ΩΩ∑‘¿« æ∆¿Ã≈€ ID
 
 							bLButtonDownInItem	= TRUE;
 
-							_pUIMgr->RearrangeOrder( UI_SHOP, TRUE );
+							pUIManager->RearrangeOrder( UI_SHOP, TRUE );
 							return WMSG_SUCCESS;
 						}
 					}
@@ -2325,7 +1787,7 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 						m_nCurRow = m_sbBottomScrollBar.GetScrollPos();
 				}
 
-				_pUIMgr->RearrangeOrder( UI_SHOP, TRUE );
+				pUIManager->RearrangeOrder( UI_SHOP, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -2333,10 +1795,11 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 			bLButtonDownInItem = FALSE;
 
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
@@ -2371,39 +1834,42 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 								CUIMsgBox_Info	MsgBoxInfo;
 								if(m_bIsEvent)
 								{
-									int iItemidx = (m_abtnShopItems[0]+m_nSelShopItemID)->GetItemIndex();
-									CItemData &ID = _pNetwork->GetItemData(iItemidx);
+									int iItemidx = m_pIconsShop[m_nSelShopItemID]->getIndex();
+									CItemData* pID = _pNetwork->GetItemData(iItemidx);
 
-									if( ID.GetJob()&(1<<_pNetwork->MyCharacterInfo.job))
+									if( pID->GetJob()&(1<<_pNetwork->MyCharacterInfo.job))
 									{
-										MsgBoxInfo.SetMsgBoxInfo( _S(169,"Ïù¥Î≤§Ìä∏"),UMBS_YESNO,UI_SHOP,MSGLCMD_EVENT_MAY);
-										strMessage.PrintF(_S(3403, "%s ÏïÑÏù¥ÌÖúÏùÑ ÏÑ†ÌÉùÌïòÏòÄÏäµÎãàÎã§."),ID.GetName());
+										MsgBoxInfo.SetMsgBoxInfo( _S(169,"¿Ã∫•∆Æ"),UMBS_YESNO,UI_SHOP,MSGLCMD_EVENT_MAY);
+										strMessage.PrintF(_S(3403, "%s æ∆¿Ã≈€¿ª º±≈√«œø¥Ω¿¥œ¥Ÿ."),pID->GetName());
 
 									}else
 									{
-										MsgBoxInfo.SetMsgBoxInfo( _S(169,"Ïù¥Î≤§Ìä∏"),UMBS_NO,UI_SHOP,MSGLCMD_EVENT_MAY);
-										strMessage = _S(3404, "ÏÑ†ÌÉùÌïòÏã† Ïû•ÎπÑÎäî ÏûêÏã†Ïóê ÎßûÎäî Ïû•ÎπÑÍ∞Ä ÏïÑÎãôÎãàÎã§. ÌôïÏù∏ÌïòÍ≥† Îã§Ïãú ÏãúÎèÑÌïòÏó¨ Ï£ºÏã≠ÏãúÏò§");
+										MsgBoxInfo.SetMsgBoxInfo( _S(169,"¿Ã∫•∆Æ"),UMBS_NO,UI_SHOP,MSGLCMD_EVENT_MAY);
+										strMessage = _S(3404, "º±≈√«œΩ≈ ¿Â∫Ò¥¬ ¿⁄Ω≈ø° ∏¬¥¬ ¿Â∫Ò∞° æ∆¥’¥œ¥Ÿ. »Æ¿Œ«œ∞Ì ¥ŸΩ√ Ω√µµ«œø© ¡÷Ω Ω√ø¿");
 									}
 									
 
 								}else
 								{
-									MsgBoxInfo.SetMsgBoxInfo( _S( 263, "ÏÉÅÏ†ê" ), UMBS_YESNO,
+									if (pUIManager->DoesMessageBoxExist(MSGCMD_SHOP_LEASE_ITEM))
+										pUIManager->CloseMessageBox(MSGCMD_SHOP_LEASE_ITEM);
+
+									MsgBoxInfo.SetMsgBoxInfo( _S( 263, "ªÛ¡°" ), UMBS_YESNO,
 															UI_SHOP, MSGCMD_SHOP_LEASE_ITEM );
-									strMessage = _S(3080, "ÎåÄÏó¨Ìïú Î¨¥Í∏∞Îäî ÎåÄÏó¨Ìïú ÎÇ†Î°úÎ∂ÄÌÑ∞ 1ÏùºÍ∞ÑÏùò ÎåÄÏó¨Í∏∞Í∞ÑÏù¥ ÎßåÎ£åÎêòÎ©¥ ÏûêÎèôÏúºÎ°ú ÏÜåÎ©∏Îê©ÎãàÎã§.")
-										+ _S(3081,"ÏÑ†ÌÉùÌïòÏã† Î¨¥Í∏∞Î•º ÎåÄÏó¨ÌïòÏãúÍ≤†ÏäµÎãàÍπå?");
+									strMessage = _S(3080, "¥Îø©«— π´±‚¥¬ ¥Îø©«— ≥Ø∑Œ∫Œ≈Õ 1¿œ∞£¿« ¥Îø©±‚∞£¿Ã ∏∏∑·µ«∏È ¿⁄µø¿∏∑Œ º“∏ÍµÀ¥œ¥Ÿ.")
+										+ _S(3081,"º±≈√«œΩ≈ π´±‚∏¶ ¥Îø©«œΩ√∞⁄Ω¿¥œ±Ó?");
 								}
 								
 								MsgBoxInfo.AddString( strMessage );
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );	
+								pUIManager->CreateMessageBox( MsgBoxInfo );	
 							}
 							return WMSG_SUCCESS;							
 						}
-						// NOTE : Í±∞Îûò Ïä¨Î°ØÏóê ÌïòÎÇòÎùºÎèÑ ÏïÑÏù¥ÌÖúÏù¥ ÏûàÏúºÎ©¥ Íµ¨ÏûÖÏùÑ ÌïòÎèÑÎ°ù ÌïòÍ≥†,
-						// NOTE : ÏóÜÏúºÎ©¥ Î©îÏÑ∏ÏßÄ ÏûêÏ≤¥Î•º ÏïàÎ≥¥ÎÇ¥ÎèÑÎ°ù Ìï®...
+						// NOTE : ∞≈∑° ΩΩ∑‘ø° «œ≥™∂Ûµµ æ∆¿Ã≈€¿Ã ¿÷¿∏∏È ±∏¿‘¿ª «œµµ∑œ «œ∞Ì,
+						// NOTE : æ¯¿∏∏È ∏ﬁºº¡ˆ ¿⁄√º∏¶ æ»∫∏≥ªµµ∑œ «‘...
 						for( int i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i )
 						{
-							if( !m_abtnTradeItems[i].IsEmpty() )
+							if (!m_pIconsTrade[i]->IsEmpty())
 							{
 								// Send Network Message
 								BuyItems();
@@ -2426,11 +1892,11 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
-						// NOTE : Í±∞Îûò Ïä¨Î°ØÏóê ÌïòÎÇòÎùºÎèÑ ÏïÑÏù¥ÌÖúÏù¥ ÏûàÏúºÎ©¥ Íµ¨ÏûÖÏùÑ ÌïòÎèÑÎ°ù ÌïòÍ≥†,
-						// NOTE : ÏóÜÏúºÎ©¥ Î©îÏÑ∏ÏßÄ ÏûêÏ≤¥Î•º ÏïàÎ≥¥ÎÇ¥ÎèÑÎ°ù Ìï®...
+						// NOTE : ∞≈∑° ΩΩ∑‘ø° «œ≥™∂Ûµµ æ∆¿Ã≈€¿Ã ¿÷¿∏∏È ±∏¿‘¿ª «œµµ∑œ «œ∞Ì,
+						// NOTE : æ¯¿∏∏È ∏ﬁºº¡ˆ ¿⁄√º∏¶ æ»∫∏≥ªµµ∑œ «‘...
 						for( int i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i )
 						{
-							if( !m_abtnTradeItems[i].IsEmpty() )
+							if (!m_pIconsTrade[i]->IsEmpty())
 							{
 								// Send Network Message
 								SellItems();
@@ -2487,18 +1953,15 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 				// Shop items
 				else if( IsInsideRect( nX, nY, m_rcTop ) )
 				{
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + SHOP_SHOP_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * SHOP_SLOT_COL;
+					int	iRowE = (m_nCurRow + SHOP_SLOT_ROW) * SHOP_SLOT_COL;
+					for (i = iRowS; i < iRowE; ++i)
 					{
-						for( iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++ )
+						if( m_pIconsShop[i]->MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							if( m_abtnShopItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Nothing
-								return WMSG_SUCCESS;
-							}
+							// Nothing
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -2507,7 +1970,7 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 				{
 					for( int iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
 					{
-						if( m_abtnTradeItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
+						if( m_pIconsTrade[iItem]->MouseMessage( pMsg ) != WMSG_FAIL )
 						{
 							// Nothing
 							return WMSG_SUCCESS;
@@ -2520,24 +1983,38 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 				//////////////////////////////////////////////////////////////////////////
 				if( IsInside( nX, nY ) )
 				{
+					CUIIcon* pDrag = pUIManager->GetDragIcon();
+
+					if (pDrag == NULL)
+						return WMSG_FAIL;
+
+					CItems* pItems = pDrag->getItems();
+
+					if (pItems == NULL)
+						return WMSG_FAIL;
+
 					// If holding button is item and is from shop
-					if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-						_pUIMgr->GetHoldBtn().GetWhichUI() == UI_SHOP )
+					if (pDrag->getBtnType() == UBET_ITEM &&
+						pDrag->GetWhichUI() == UI_SHOP)
 					{
 						// Trade items
 						if( IsInsideRect( nX, nY, m_rcBottom ) )
 						{
 							// If this item is moved from shop slot
-							if( m_nSelTradeItemID < 0 ||
-								m_abtnTradeItems[m_nSelTradeItemID].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
+							if (m_nSelTradeItemID < 0 ||
+								m_pIconsTrade[m_nSelTradeItemID]->getItems()->Item_UniIndex != pItems->Item_UniIndex)
 							{
-								AddShopItem( _pUIMgr->GetHoldBtn().GetItemRow(),
-												_pUIMgr->GetHoldBtn().GetItemCol(),
-												_pUIMgr->GetHoldBtn().GetItemUniIndex(),
-												_pUIMgr->GetHoldBtn().GetItemCount() );
+								int		nTab = 0;
+
+								if (pItems->Item_Tab > INVENTORY_TAB_NORMAL)
+									nTab += ITEM_COUNT_IN_INVENTORY_NORMAL;
+								if (pItems->Item_Tab > INVENTORY_TAB_CASH_1)
+									nTab += ITEM_COUNT_IN_INVENTORY_CASH_1;
+
+								AddShopItem(pItems->InvenIndex + nTab, pItems->Item_UniIndex, pItems->Item_Sum);
 
 								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 
 								return WMSG_SUCCESS;
 							}
@@ -2545,20 +2022,27 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 						// Shop items
 						else if( IsInsideRect( nX, nY, m_rcTop ) )
 						{
-							int	nSelRow = m_nSelShopItemID / SHOP_SHOP_SLOT_COL;
-							int	nSelCol = m_nSelShopItemID % SHOP_SHOP_SLOT_COL;
 							// If this item is moved from trade slot
-							if( m_nSelShopItemID < 0 ||
-								m_abtnShopItems[nSelRow][nSelCol].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
+							if (m_nSelShopItemID < 0 ||
+								m_pIconsShop[m_nSelShopItemID]->getItems()->Item_UniIndex != pItems->Item_UniIndex)
 							{
-								DelShopItem( _pUIMgr->GetHoldBtn().GetItemRow(),
-												_pUIMgr->GetHoldBtn().GetItemCol(),
-												_pUIMgr->GetHoldBtn().GetItemUniIndex(),
-												_pUIMgr->GetHoldBtn().GetItemCount(),
-												m_nSelTradeItemID );
+								int nInvenIdx = pItems->InvenIndex;
+
+								if (pItems->Item_Tab > INVENTORY_TAB_NORMAL)
+								{
+									nInvenIdx += ITEM_COUNT_IN_INVENTORY_NORMAL;
+								}
+
+								if (pItems->Item_Tab > INVENTORY_TAB_CASH_1)
+								{
+									nInvenIdx += ITEM_COUNT_IN_INVENTORY_CASH_1;
+								}
+
+								DelShopItem(nInvenIdx, pItems->Item_UniIndex, 
+									pItems->Item_Sum, m_nSelTradeItemID );
 
 								// Reset holding button
-								_pUIMgr->ResetHoldBtn();
+								pUIManager->ResetHoldBtn();
 
 								return WMSG_SUCCESS;
 							}
@@ -2566,7 +2050,7 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 					} // If - If holding button is item
 
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
+					pUIManager->ResetHoldBtn();
 
 					return WMSG_SUCCESS;
 				} // If - IsInside
@@ -2582,6 +2066,8 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
 				// Trade items
 				if( IsInsideRect( nX, nY, m_rcBottom ) )
 				{
@@ -2590,22 +2076,32 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 
 					for( int iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
 					{
-						if( m_abtnTradeItems[iItem].MouseMessage( pMsg ) != WMSG_FAIL )
+						if (m_pIconsTrade[iItem]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
 							// Close message box of shop
-							_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_ITEM );
-							_pUIMgr->CloseMessageBox( MSGCMD_SHOP_DEL_ITEM );
-							_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+							pUIManager->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+							pUIManager->GetMsgBoxNumOnly()->CloseBox();
 
-							DelShopItem( m_abtnTradeItems[iItem].GetItemRow(),
-											m_abtnTradeItems[iItem].GetItemCol(),
-											m_abtnTradeItems[iItem].GetItemUniIndex(),
-											m_abtnTradeItems[iItem].GetItemCount(),
-											nTradeItemID );
+							CItems* pItems = m_pIconsTrade[iItem]->getItems();
 
-							// Show tool tup
-							ShowItemInfo( TRUE, TRUE, iItem );
+							if (pItems != NULL)
+							{
+								int nInvenIdx = pItems->InvenIndex;
 
+								if (pItems->Item_Tab > INVENTORY_TAB_NORMAL)
+								{
+									nInvenIdx += ITEM_COUNT_IN_INVENTORY_NORMAL;
+								}
+
+								if (pItems->Item_Tab > INVENTORY_TAB_CASH_1)
+								{
+									nInvenIdx += ITEM_COUNT_IN_INVENTORY_CASH_1;
+								}
+
+								DelShopItem( nInvenIdx, pItems->Item_UniIndex,
+									pItems->Item_Sum, iItem );
+							}
+							
 							return WMSG_SUCCESS;
 						}
 					}
@@ -2615,52 +2111,78 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 				{
 					m_nSelShopItemID = -1;
 
-					int	iRow, iCol;
-					int	iRowS = m_nCurRow;
-					int	iRowE = iRowS + SHOP_SHOP_SLOT_ROW;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
+					int	i;
+					int	iRowS = m_nCurRow * SHOP_SLOT_COL;
+					int	iRowE = (m_nCurRow + SHOP_SLOT_ROW) * SHOP_SLOT_COL;
+					
+					for( i = iRowS; i < iRowE; i++ )
 					{
-						for( iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++ )
+						if (m_pIconsShop[i]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
-							if( m_abtnShopItems[iRow][iCol].MouseMessage( pMsg ) != WMSG_FAIL )
+							if( m_bBuyShop )
 							{
-								if( m_bBuyShop )
+								// Close message box of shop
+								pUIManager->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+								pUIManager->GetMsgBoxNumOnly()->CloseBox();
+
+								if (m_pIconsShop[i]->getItems() == NULL)
+									return WMSG_FAIL;
+
+								AddShopItem(i, m_pIconsShop[i]->getItems()->Item_UniIndex,
+									m_pIconsShop[i]->getItems()->Item_Sum);
+
+							}
+							else
+							{
+								int		t, idx;
+
+								if (i >= (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1))
 								{
-									// Close message box of shop
-									_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_ITEM );
-									_pUIMgr->CloseMessageBox( MSGCMD_SHOP_DEL_ITEM );
-									_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
-
-									AddShopItem( iRow, iCol,
-													m_abtnShopItems[iRow][iCol].GetItemUniIndex(),
-													m_abtnShopItems[iRow][iCol].GetItemCount() );
-
+									t = INVENTORY_TAB_CASH_2;
+									idx = i - (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1);
+								}
+								else if (i >= ITEM_COUNT_IN_INVENTORY_NORMAL)
+								{
+									t = INVENTORY_TAB_CASH_1;
+									idx = i - ITEM_COUNT_IN_INVENTORY_NORMAL;
 								}
 								else
 								{
-									// Not wearing, not refine stone, can trade
-									CItems		&rItems = _pNetwork->MySlotItem[0][iRow][iCol];
-									CItemData	&rItemData = rItems.ItemData;
-									if( rItems.Item_Wearing == -1 &&
-										( rItemData.GetType() != CItemData::ITEM_ETC || rItemData.GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
-										rItemData.GetFlag() & ITEM_FLAG_TRADE && !rItems.IsFlag(FLAG_ITEM_LENT))
-									{
-										// Close message box of shop
-										_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_ITEM );
-										_pUIMgr->CloseMessageBox( MSGCMD_SHOP_DEL_ITEM );
-										_pUIMgr->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
-
-										AddShopItem( iRow, iCol,
-														m_abtnShopItems[iRow][iCol].GetItemUniIndex(),
-														m_abtnShopItems[iRow][iCol].GetItemCount() );
-									}
+									t = INVENTORY_TAB_NORMAL;
+									idx = i;
 								}
 
-								// Show tool tup
-								ShowItemInfo( TRUE, TRUE, -1, iRow, iCol );
+								// Not wearing, not refine stone, can trade
+								CItems		*pItems = &_pNetwork->MySlotItem[t][idx];
+								CItemData	*pItemData = pItems->ItemData;
 
-								return WMSG_SUCCESS;
+								if (pItemData == NULL)
+									continue;
+#ifdef ADD_SUBJOB
+								if( pItemData->IsFlag( ITEM_FLAG_SELLER ) ? 
+									pUIManager->CheckSellerItem(UI_SHOP, pItemData->GetFlag()) : 
+									pItems->Item_Wearing == -1 && ( pItemData->GetType() != CItemData::ITEM_ETC ||
+									pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
+									pItemData->GetFlag() & ITEM_FLAG_TRADE && !pItems->IsFlag(FLAG_ITEM_LENT) )
+#else
+								if( pItems->Item_Wearing == -1 &&
+									( pItemData->GetType() != CItemData::ITEM_ETC || pItemData->GetSubType() != CItemData::ITEM_ETC_REFINE ) &&
+									pItemData->GetFlag() & ITEM_FLAG_TRADE && !pItems->IsFlag(FLAG_ITEM_LENT))
+#endif
+								{
+									// Close message box of shop
+									pUIManager->CloseMessageBox( MSGCMD_SHOP_ADD_PLUSITEM );
+									pUIManager->GetMsgBoxNumOnly()->CloseBox();
+
+									if (m_pIconsShop[i]->getItems()->GetToggle() == true)
+										return WMSG_FAIL;
+
+									AddShopItem(i, m_pIconsShop[i]->getItems()->Item_UniIndex,
+										m_pIconsShop[i]->getItems()->Item_Sum);
+								}												
 							}
+
+							return WMSG_SUCCESS;
 						}
 					}
 				}
@@ -2712,7 +2234,8 @@ WMSG_RESULT CUIShop::MouseMessage( MSG *pMsg )
 // ========================================================================= //
 static int		nTempIndex;
 static int		nTempUniIndex;
-static int		nTempRow, nTempCol;
+static int		nTempTab;
+static int		nTempIdx;
 static SQUAD	llTempCount;
 static int		nTempTradeItemID;
 
@@ -2720,49 +2243,72 @@ static int		nTempTradeItemID;
 // Name : AddShopItem()
 // Desc : From shop to trade
 // ----------------------------------------------------------------------------
-void CUIShop::AddShopItem( int nRow, int nCol, int nUniIndex, SQUAD llCount )
+void CUIShop::AddShopItem( int invenIdx, int nUniIndex, SQUAD llCount )
 {
-	nTempRow		= nRow;
-	nTempCol		= nCol;
-	nTempUniIndex	= nUniIndex;
-	llTempCount		= llCount;
-	nTempIndex		= m_abtnShopItems[nTempRow][nTempCol].GetItemIndex();
-	ULONG ulItemPlus= m_abtnShopItems[nTempRow][nTempCol].GetItemPlus();
-
-	CItemData&	rItemData = _pNetwork->GetItemData( nTempIndex );
-	const char* szItemName = _pNetwork->GetItemName( nTempIndex );
-
-	// Ask quantity
-	if( ( m_bBuyShop && ( rItemData.GetFlag() & ITEM_FLAG_COUNT ) ) ||
-		( !m_bBuyShop && ( rItemData.GetFlag() & ITEM_FLAG_COUNT ) && llTempCount > 1 ) )
+	if (m_bBuyShop == FALSE)
 	{
-		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 263, "ÏÉÅÏ†ê" ), UMBS_OKCANCEL | UMBS_INPUTBOX,
-									UI_SHOP, MSGCMD_SHOP_ADD_ITEM );
-		//const char	*szItemName = _pNetwork->GetItemName( nTempIndex );
-		strMessage.PrintF( _S2( 150, szItemName, "Î™á Í∞úÏùò %s<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName );
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-		if( !m_bBuyShop )
+		if (invenIdx >= (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1))
 		{
-			CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_SHOP_ADD_ITEM );
-			CTString strItemCount;
-			strItemCount.PrintF( "%I64d", m_abtnShopItems[nTempRow][nTempCol].GetItemCount() );
-			ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-			pMsgBox->GetInputBox().InsertChars( 0, strItemCount.str_String );
+			nTempTab		= INVENTORY_TAB_CASH_2;
+			nTempIdx		= invenIdx - (ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1);
+		}
+		else if (invenIdx >= ITEM_COUNT_IN_INVENTORY_NORMAL)
+		{
+			nTempTab		= INVENTORY_TAB_CASH_1;
+			nTempIdx		= invenIdx - ITEM_COUNT_IN_INVENTORY_NORMAL;
+		}
+		else
+		{
+			nTempTab		= INVENTORY_TAB_NORMAL;
+			nTempIdx		= invenIdx;
 		}
 	}
-	else if( ulItemPlus > 0 )
+	else
+	{
+		nTempTab = 0;
+		nTempIdx = invenIdx;
+	}
+
+	nTempUniIndex	= nUniIndex;
+	llTempCount		= llCount;
+	CItems*	pItems	= m_pIconsShop[invenIdx]->getItems();
+	nTempIndex		= pItems->Item_Index;
+	ULONG ulItemPlus= pItems->Item_Plus;
+
+	CItemData*	pItemData = pItems->ItemData;
+	const char* szItemName = pItemData->GetName();
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// Ask quantity
+	if( ( m_bBuyShop && ( pItemData->GetFlag() & ITEM_FLAG_COUNT ) ) ||
+		( !m_bBuyShop && ( pItemData->GetFlag() & ITEM_FLAG_COUNT ) && llTempCount > 1 ) )
+	{
+		CTString	strMessage;
+		strMessage.PrintF( _S2( 150, szItemName, "∏Ó ∞≥¿« %s<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ), szItemName );
+
+		CmdShopAddItem* pCmd = new CmdShopAddItem;
+		pCmd->setData(this);
+
+		int nMax = 0;
+
+		if( !m_bBuyShop )
+			nMax = pItems->Item_Sum;
+		else
+			nMax = pItemData->GetStack();
+
+		UIMGR()->GetMsgBoxNumOnly()->SetInfo(pCmd, _S( 263, "ªÛ¡°" ), strMessage, 1, nMax);
+	}
+	else if( ulItemPlus > 0 && !(pItemData->GetType() == CItemData::ITEM_ETC && (pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD || nTempIndex == 6941) ) )
 	{
 		CTString	strMessage;
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 263, "ÏÉÅÏ†ê" ), UMBS_YESNO,
+		MsgBoxInfo.SetMsgBoxInfo( _S( 263, "ªÛ¡°" ), UMBS_YESNO,
 									UI_SHOP, MSGCMD_SHOP_ADD_PLUSITEM );
-		//const char	*szItemName = rItemData.GetName();
-		strMessage.PrintF( _S2( 264, szItemName, "[%s +%d]<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName, ulItemPlus );
+		//const char	*szItemName = pItemData->GetName();
+		strMessage.PrintF( _S2( 264, szItemName, "[%s +%d]<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ), szItemName, ulItemPlus );
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 	}
 	else
 	{
@@ -2774,33 +2320,31 @@ void CUIShop::AddShopItem( int nRow, int nCol, int nUniIndex, SQUAD llCount )
 // Name : DelShopItem()
 // Desc : From trade to shop
 // ----------------------------------------------------------------------------
-void CUIShop::DelShopItem( int nRow, int nCol, int nUniIndex, SQUAD llCount, int nTradeItemID )
+void CUIShop::DelShopItem( int invenIdx, int nUniIndex, SQUAD llCount, int nTradeItemID )
 {
-	nTempRow		= nRow;
-	nTempCol		= nCol;
+	if (nTradeItemID < 0)
+		return;
+
+	nTempIdx		= invenIdx;
 	nTempUniIndex	= nUniIndex;
 	llTempCount		= llCount;
 	nTempTradeItemID= nTradeItemID;
-	nTempIndex		= m_abtnTradeItems[nTempTradeItemID].GetItemIndex();
+	nTempIndex		= m_pIconsTrade[nTempTradeItemID]->getIndex();
 
-	CItemData	&rItemData = _pNetwork->GetItemData( nTempIndex );
+	CItemData* pItemData = _pNetwork->GetItemData( nTempIndex );
 	
 	// Ask quantity
 	if( llTempCount > 1 )
 	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
 		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 263, "ÏÉÅÏ†ê" ), UMBS_OKCANCEL | UMBS_INPUTBOX,
-									UI_SHOP, MSGCMD_SHOP_DEL_ITEM );
 		const char	*szItemName = _pNetwork->GetItemName( nTempIndex );
-		strMessage.PrintF( _S2( 150, szItemName, "Î™á Í∞úÏùò %s<Î•º> ÏòÆÍ∏∞ÏãúÍ≤†ÏäµÎãàÍπå?" ), szItemName );
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-		CUIMessageBox* pMsgBox = _pUIMgr->GetMessageBox( MSGCMD_SHOP_DEL_ITEM );
-		CTString strItemCount;
-		strItemCount.PrintF( "%I64d", m_abtnTradeItems[nTempTradeItemID].GetItemCount() );
-		ASSERT( pMsgBox != NULL && "Invalid Message Box!!!" );
-		pMsgBox->GetInputBox().InsertChars( 0, strItemCount.str_String );
+		strMessage.PrintF( _S2( 150, szItemName, "∏Ó ∞≥¿« %s<∏¶> ø≈±‚Ω√∞⁄Ω¿¥œ±Ó?" ), szItemName );
+
+		CmdShopDelItem* pCmd = new CmdShopDelItem;
+		pCmd->setData(this);
+		UIMGR()->GetMsgBoxNumOnly()->SetInfo(pCmd, _S( 263, "ªÛ¡°" ), strMessage, 1, llTempCount);
 	}
 	else
 	{
@@ -2815,74 +2359,38 @@ void CUIShop::DelShopItem( int nRow, int nCol, int nUniIndex, SQUAD llCount, int
 void CUIShop::BuyItems()
 {
 	// Buy nothing
-	if( m_nTotalPrice < 0 )
+	if( m_nSendTotalPrice < 0 )
 		return;
 
 	// Not enough money
 	if(_pNetwork->MyCharacterInfo.money < m_nTotalPrice )
 	{
 		// Add system message
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 266, "ÏÜåÏßÄÍ∏àÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );
+		CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 266, "º“¡ˆ±›¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR );
 		return;
 	}
-
-	/*
-	// Check inventory space
-	int	ctEmptySlot = 0;
-	int	ctTradeItems = m_nNumOfItem;
-	for( int iRow = 0; iRow < SHOP_SHOP_SLOT_ROW_TOTAL; iRow++ )
-	{
-		for( int iCol = 0; iCol < SHOP_SHOP_SLOT_COL; iCol++ )
-		{
-			if( m_abtnShopItems[iRow][iCol].IsEmpty() )
-			{
-				ctEmptySlot++;
-				continue;
-			}
-
-			int	nIndex = m_abtnShopItems[iRow][iCol].GetItemIndex();
-			CItemData	&rItemData = _pNetwork->GetItemData( nIndex );
-			if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
-			{
-				for( int iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
-				{
-					if( nIndex == m_abtnTradeItems[iItem].GetItemIndex() )
-						ctTradeItems--;
-				}
-			}
-		}
-	}
-
-	// Not enough space
-	if( ctEmptySlot < ctTradeItems )
-	{
-		// Add system message
-		_pUIMgr->GetChatting()->AddSysMessage( _S( 265, "Ïù∏Î≤§ÌÜ†Î¶¨ Í≥µÍ∞ÑÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );
-		return;
-	}
-	*/
 
 	if(m_bIsLease)
 	{
 		if(m_bIsEvent)
 		{
-			int iItemidx = (m_abtnShopItems[0]+m_nSelShopItemID)->GetItemIndex();
-			CItemData &ID = _pNetwork->GetItemData(iItemidx);
-			_pNetwork->SendEventItem(iItemidx,(int)((ID.GetLevel()/2.0f)+0.5));
+			int iItemidx = m_pIconsShop[m_nSelShopItemID]->getIndex();
+			CItemData* pID = _pNetwork->GetItemData(iItemidx);
+			_pNetwork->SendEventItem(iItemidx,(int)((pID->GetLevel()/2.0f)+0.5));
 		}else
 		{
-			_pNetwork->SendLeaseItem( (m_abtnShopItems[0]+m_nSelShopItemID)->GetItemIndex());
+			_pNetwork->SendLeaseItem( m_pIconsShop[m_nSelShopItemID]->getIndex());
 		}			
 	}
 	else
 	{
 		if(m_bIsFieldShop)
 		{
-			_pNetwork->FieldShopBuyItem(m_nNumOfItem, m_nTotalPrice);
+			_pNetwork->FieldShopBuyItem(m_nNumOfItem, m_nSendTotalPrice);
 			m_bIsFieldShop = FALSE;
 		}else
 		{
-			_pNetwork->BuyItem( m_nSelectedShopID, m_nNumOfItem, m_nTotalPrice );
+			_pNetwork->BuyItem( m_nSelectedShopID, m_nNumOfItem, m_nSendTotalPrice );
 		}
 		
 	}
@@ -2895,16 +2403,19 @@ void CUIShop::BuyItems()
 void CUIShop::SellItems()
 {
 	// Sell nothing
-	if( m_nTotalPrice < 0 )
+	if( m_nSendTotalPrice < 0 )
+		return;
+
+	if (m_nNumOfItem <= 0)
 		return;
 
 	if(m_bIsFieldShop)
 	{
-		_pNetwork->FieldShopSellItem(m_nNumOfItem, m_nTotalPrice);
+		_pNetwork->FieldShopSellItem(m_nNumOfItem, m_nSendTotalPrice);
 		m_bIsFieldShop = FALSE;
 	}else
 	{
-		_pNetwork->SellItem( m_nSelectedShopID, m_nNumOfItem, m_nTotalPrice );
+		_pNetwork->SellItem( m_nSelectedShopID, m_nNumOfItem, m_nSendTotalPrice );
 	}
 		
 }
@@ -2916,11 +2427,13 @@ void CUIShop::SellItems()
 // ----------------------------------------------------------------------------
 void CUIShop::MsgBoxLCommand( int nCommandCode, int nResult )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch( nCommandCode )
 	{
 	case MSGLCMD_SHOP_REQ:
 		{
-			// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ Ïù¥ÏïºÍ∏∞ ÌïúÎã§ Ï≤òÎ¶¨ ÏàòÏ†ïÏùÑ ÏúÑÌïú Î£®Ìã¥
+			// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ¿Ãæﬂ±‚ «—¥Ÿ √≥∏Æ ºˆ¡§¿ª ¿ß«— ∑Á∆æ
 			int iQuestIndex = -1;
 			if( ciQuestClassifier < nResult )	
 			{
@@ -2941,40 +2454,40 @@ void CUIShop::MsgBoxLCommand( int nCommandCode, int nResult )
 					PrepareSellShop();
 				}
 				break;
-			case SHOP_GW_MIX: // Í≥µÏÑ± Ï°∞Ìï©
+			case SHOP_GW_MIX: // ∞¯º∫ ¡∂«’
 				{
-					_pUIMgr->GetGWMix()->OpenGWMix();
+					pUIManager->GetGWMix()->OpenGWMix();
 				}
 				break;
 			case SHOP_TALK :// Quest ...
 				{
 					// Character state flags
-					_pUIMgr->SetCSFlagOff( CSF_SHOP );
+					pUIManager->SetCSFlagOff( CSF_SHOP );
 
 					//TODO : NewQuestSystem
 					// Open quest
 					CUIQuestBook::TalkWithNPC();
 				}
 				break;
-				// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ ÏàòÏ†ï
+				// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ºˆ¡§
 			case ciQuestClassifier:
 				{
 					// Character state flags
-					_pUIMgr->SetCSFlagOff( CSF_SHOP );
+					pUIManager->SetCSFlagOff( CSF_SHOP );
 
-					// ÏÑ†ÌÉùÌïú ÌÄòÏä§Ìä∏Ïóê ÎåÄÌï¥ ÏàòÎùΩ ÎòêÎäî Î≥¥ÏÉÅ Ï∞ΩÏùÑ Ïó∞Îã§.
+					// º±≈√«— ƒ˘Ω∫∆Æø° ¥Î«ÿ ºˆ∂Ù ∂«¥¬ ∫∏ªÛ √¢¿ª ø¨¥Ÿ.
 					CUIQuestBook::SelectQuestFromMessageBox( iQuestIndex );					
 				}
 				break;
 			case SHOP_SUPERGOJE:
 				{
 					// Character state flags
-					_pUIMgr->SetCSFlagOff( CSF_SHOP );
+					pUIManager->SetCSFlagOff( CSF_SHOP );
 
 					CUIMsgBox_Info	MsgBoxInfo;
 					MsgBoxInfo.SetMsgBoxInfo(  CTString(""), UMBS_YESNO, UI_SHOP, MSGCMD_SUPERGOJE_REQUEST);
-					MsgBoxInfo.AddString( _S( 1739, "Ï¥àÍ≥†Í∏â Ï†úÎ†®ÏÑùÏùÑ ÏßÄÍ∏â Î∞õÍ≤†ÏäµÎãàÍπå?" ) );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					MsgBoxInfo.AddString( _S( 1739, "√ ∞Ì±ﬁ ¡¶∑√ºÆ¿ª ¡ˆ±ﬁ πﬁ∞⁄Ω¿¥œ±Ó?" ) );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 				} break;
 
 			case LEASE_WEAPON_TITAN:
@@ -2983,106 +2496,115 @@ void CUIShop::MsgBoxLCommand( int nCommandCode, int nResult )
 			case LEASE_WEAPON_MAGE:
 			case LEASE_WEAPON_ROGUE:
 			case LEASE_WEAPON_SOCERER:
+			case LEASE_WEAPON_EXROGUE:	
+			case LEASE_WEAPON_EXMAGE:	//2013/01/21 jeil EX∏ﬁ¿Ã¡ˆ √ﬂ∞° 
 				{
 					int tv_job = nResult - LEASE_WEAPON_TITAN;
 					PrepareLeaseShop( tv_job );
 				}
 				break;
-#ifdef HELP_SYSTEM_1
 			case SHOP_NPC_HELP:
 				{
-					_pUIMgr->RearrangeOrder( UI_NPCHELP, TRUE );
+					pUIManager->RearrangeOrder( UI_NPCHELP, TRUE );
 				}
 				break;
-#endif
 			case COMBO_MAKE:
 				{
-					//ÏΩ§Î≥¥ Ìé∏ÏßëÏúºÎ°ú Ïù¥ÎèôÏãú CSF_SHOP ÌîåÎûòÍ∑∏Î•º Ï†úÍ±∞ÌïúÎã§
-					_pUIMgr->SetCSFlagOff( CSF_SHOP );
+					//ƒﬁ∫∏ ∆Ì¡˝¿∏∑Œ ¿ÃµøΩ√ CSF_SHOP «√∑°±◊∏¶ ¡¶∞≈«—¥Ÿ
+					pUIManager->SetCSFlagOff( CSF_SHOP );
 					
-					_pUIMgr->GetCombo()->OpenMonsterCombo(TRUE,m_fNpcX,m_fNpcZ);
+					pUIManager->GetCombo()->OpenMonsterCombo(TRUE, m_fNpcX, m_fNpcZ, m_nNpcVirIdx);
 				}
 				break;
-			case COMBO_MOVE_LOBBY:
-				{
-					_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GOTO_COMBO);
-				}
+			
 			case COMBO_MOVE_STAGE:
 				{
-					_pUIMgr->GetCombo()->SendComboMessage( MSG_EX_MONSTERCOMBO_GOTO_STAGE);
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+
+					pUIManager->GetCombo()->SendComboMessage( MSG_EX_MONSTERCOMBO_GOTO_STAGE);
 				}
 				break;
 			case COMBO_MOVE_GO_LOBBY:
 				{
-					_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GOTO_WAITROOM);
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+
+					pUIManager->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GOTO_WAITROOM);
 
 				}
 				break;
 			case COMBO_RECALL_LOBBY:
 				{
-					_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_RECALL_TO_COMBO);
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+
+					pUIManager->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_RECALL_TO_COMBO);
 				}
 				break;
 			case COMBO_RECALL_STAGE:
 				{
-					_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_RECALL_TO_STAGE);
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+
+					pUIManager->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_RECALL_TO_STAGE);
 				}
 				break;
 			case COMBO_GIVEUP:
 				{
 					// Character state flags
-					_pUIMgr->SetCSFlagOff( CSF_SHOP );
+					pUIManager->SetCSFlagOff( CSF_SHOP );
 
 					CUIMsgBox_Info	MsgBoxInfo;
-					MsgBoxInfo.SetMsgBoxInfo(  _S(4047,"Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥"), UMBS_YESNO, UI_SHOP, MSGCMD_COMBO_GIVEUP);
-					MsgBoxInfo.AddString( _S(4048, "ÎìúÎùºÌÉÑÏúºÎ°ú Ïù¥ÎèôÎêòÎ©∞ Îã§Ïãú ÏûÖÏû•ÌïòÍ∏∞ ÏúÑÌï¥ÏÑúÎäî ÏûÖÏû•Î£åÎ•º ÏßÄÎ∂àÌï¥Ïïº Ìï©ÎãàÎã§. \n Í∑∏ÎûòÎèÑ Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥Î•º Ìè¨Í∏∞ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ) );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					MsgBoxInfo.SetMsgBoxInfo(  _S(4047,"∏ÛΩ∫≈Õ ƒﬁ∫∏"), UMBS_YESNO, UI_SHOP, MSGCMD_COMBO_GIVEUP);
+					MsgBoxInfo.AddString( _S(4048, "µÂ∂Û≈∫¿∏∑Œ ¿Ãµøµ«∏Á ¥ŸΩ√ ¿‘¿Â«œ±‚ ¿ß«ÿº≠¥¬ ¿‘¿Â∑·∏¶ ¡ˆ∫“«ÿæﬂ «’¥œ¥Ÿ. \n ±◊∑°µµ ∏ÛΩ∫≈Õ ƒﬁ∫∏∏¶ ∆˜±‚«œΩ√∞⁄Ω¿¥œ±Ó?" ) );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 
-				//	_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GIVEUP);
+				//	pUIManager->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GIVEUP);
 				}
 				break;
 			case COMBO_START:
 				{
-					_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_START);
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+
+					pUIManager->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_START);
 				}
 				break;
 			case COMBO_COMPLETE:
 				{
-					_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GIVEUP);
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+
+					pUIManager->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GIVEUP, FALSE, m_nNpcVirIdx);
 				}
 				break;
 			///////////////////////////////////////////////////////////////////////////////////
 			// Cube
 			case CUBE_PARTY_ENTRANCE:
 				{
-					_pUIMgr->CreateMessageBoxL( _S(4327, "ÌÅêÎ∏åÏûÖÏû•ÏÑ†ÌÉù" ) , UI_SHOP, MSGLCMD_CUBE_PARTY_ENTRANCE);
+					pUIManager->CreateMessageBoxL( _S(4327, "≈•∫Í¿‘¿Âº±≈√" ) , UI_SHOP, MSGLCMD_CUBE_PARTY_ENTRANCE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4328, "ÌÅêÎ∏åÏûÖÏû•Î∞©Î≤ïÏùÑ ÏÑ†ÌÉùÌïòÏó¨ Ï£ºÏã≠ÏãúÏò§."),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, CTString(" "),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4329, "Ï£ºÏùòÏÇ¨Ìï≠"),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4330, "Îã®Ï≤¥ÏûÖÏû•Ïãú ÌååÌã∞Ïõê Î™®ÎëêÍ∞Ä Í∞ïÏ†úÏù¥ÎèôÎê©ÎãàÎã§."),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4331, "Í∞úÏù∏ÏûÖÏû•Ïãú Ï°∞Í±¥Ïù¥ ÎßûÏïÑÏïº ÏûÖÏû•Ïù¥ Í∞ÄÎä•Ìï©ÎãàÎã§."),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4332, "Îã®Ï≤¥ÏûÖÏû•ÏùÑ Ï∂îÏ≤úÎìúÎ¶ΩÎãàÎã§."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4328, "≈•∫Í¿‘¿ÂπÊπ˝¿ª º±≈√«œø© ¡÷Ω Ω√ø¿."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, CTString(" "),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4329, "¡÷¿«ªÁ«◊"),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4330, "¥‹√º¿‘¿ÂΩ√ ∆ƒ∆ºø¯ ∏µŒ∞° ∞≠¡¶¿ÃµøµÀ¥œ¥Ÿ."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4331, "∞≥¿Œ¿‘¿ÂΩ√ ¡∂∞«¿Ã ∏¬æ∆æﬂ ¿‘¿Â¿Ã ∞°¥…«’¥œ¥Ÿ."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_PARTY_ENTRANCE,TRUE, _S(4332, "¥‹√º¿‘¿Â¿ª √ﬂ√µµÂ∏≥¥œ¥Ÿ."),-1,0xa3a1a3ff);
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CUBE_PARTY_ENTRANCE, FALSE, _S(4333, "Îã®Ï≤¥ÏûÖÏû•" ), CUBE_PARTY_GROUP_ENTRANCE);
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CUBE_PARTY_ENTRANCE, FALSE, _S(4334, "Í∞úÏù∏ÏûÖÏû•" ), CUBE_PARTY_PERSON_ENTRANCE);
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CUBE_PARTY_ENTRANCE, FALSE, _S(139, "Ï∑®ÏÜå" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CUBE_PARTY_ENTRANCE, FALSE, _S(4333, "¥‹√º¿‘¿Â" ), CUBE_PARTY_GROUP_ENTRANCE);
+					pUIManager->AddMessageBoxLString( MSGLCMD_CUBE_PARTY_ENTRANCE, FALSE, _S(4334, "∞≥¿Œ¿‘¿Â" ), CUBE_PARTY_PERSON_ENTRANCE);
+					pUIManager->AddMessageBoxLString( MSGLCMD_CUBE_PARTY_ENTRANCE, FALSE, _S(139, "√Îº“" ) );
 				}
 				break;
 			case CUBE_GUILD_ENTRANCE:
 				{
-					_pUIMgr->CreateMessageBoxL( _S(4327, "ÌÅêÎ∏åÏûÖÏû•ÏÑ†ÌÉù" ) , UI_SHOP, MSGLCMD_CUBE_GUILD_ENTRANCE);
+					pUIManager->CreateMessageBoxL( _S(4327, "≈•∫Í¿‘¿Âº±≈√" ) , UI_SHOP, MSGLCMD_CUBE_GUILD_ENTRANCE);
 
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4328, "ÌÅêÎ∏åÏûÖÏû•Î∞©Î≤ïÏùÑ ÏÑ†ÌÉùÌïòÏó¨ Ï£ºÏã≠ÏãúÏò§."),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, CTString(" "),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4329, "Ï£ºÏùòÏÇ¨Ìï≠"),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4335, "Í∏∏ÎìúÏûÖÏû•Ïãú Í∏∏ÎìúÏõê Î™®ÎëêÍ∞Ä Í∞ïÏ†úÏù¥ÎèôÎê©ÎãàÎã§."),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4331, "Í∞úÏù∏ÏûÖÏû•Ïãú Ï°∞Í±¥Ïù¥ ÎßûÏïÑÏïº ÏûÖÏû•Ïù¥ Í∞ÄÎä•Ìï©ÎãàÎã§."),-1,0xa3a1a3ff);
-					_pUIMgr->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4332, "Îã®Ï≤¥ÏûÖÏû•ÏùÑ Ï∂îÏ≤úÎìúÎ¶ΩÎãàÎã§."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4328, "≈•∫Í¿‘¿ÂπÊπ˝¿ª º±≈√«œø© ¡÷Ω Ω√ø¿."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, CTString(" "),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4329, "¡÷¿«ªÁ«◊"),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4335, "±ÊµÂ¿‘¿ÂΩ√ ±ÊµÂø¯ ∏µŒ∞° ∞≠¡¶¿ÃµøµÀ¥œ¥Ÿ."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4331, "∞≥¿Œ¿‘¿ÂΩ√ ¡∂∞«¿Ã ∏¬æ∆æﬂ ¿‘¿Â¿Ã ∞°¥…«’¥œ¥Ÿ."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_CUBE_GUILD_ENTRANCE,TRUE, _S(4332, "¥‹√º¿‘¿Â¿ª √ﬂ√µµÂ∏≥¥œ¥Ÿ."),-1,0xa3a1a3ff);
 					
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CUBE_GUILD_ENTRANCE, FALSE, _S(4336, "Í∏∏ÎìúÏûÖÏû•" ), CUBE_GUILD_GROUP_ENTRANCE);
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CUBE_GUILD_ENTRANCE, FALSE, _S(4334, "Í∞úÏù∏ÏûÖÏû•" ), CUBE_GUILD_PERSON_ENTRANCE);
-					_pUIMgr->AddMessageBoxLString( MSGLCMD_CUBE_GUILD_ENTRANCE, FALSE, _S(139, "Ï∑®ÏÜå" ) );
+					pUIManager->AddMessageBoxLString( MSGLCMD_CUBE_GUILD_ENTRANCE, FALSE, _S(4336, "±ÊµÂ¿‘¿Â" ), CUBE_GUILD_GROUP_ENTRANCE);
+					pUIManager->AddMessageBoxLString( MSGLCMD_CUBE_GUILD_ENTRANCE, FALSE, _S(4334, "∞≥¿Œ¿‘¿Â" ), CUBE_GUILD_PERSON_ENTRANCE);
+					pUIManager->AddMessageBoxLString( MSGLCMD_CUBE_GUILD_ENTRANCE, FALSE, _S(139, "√Îº“" ) );
 				}
 				break;
 			case CUBE_PLAYER_STATE:
@@ -3093,19 +2615,76 @@ void CUIShop::MsgBoxLCommand( int nCommandCode, int nResult )
 					nmMessage << (LONG)MSG_EX_EXTREME_CUBE;
 
 					if (nResult == CUBE_GUILD_STATE)
-						nmMessage << (UBYTE)MSG_EX_EXTREME_CUBE_STATE_REQ; // Í∏∏Îìú ÌÅêÎ∏å ÌòÑÌô©
+						nmMessage << (UBYTE)MSG_EX_EXTREME_CUBE_STATE_REQ; // ±ÊµÂ ≈•∫Í «ˆ»≤
 					else
-						nmMessage << (UBYTE)MSG_EX_EXTREME_CUBE_STATE_PERSONAL_REQ; // Í∞úÏù∏ ÌÅêÎ∏å ÌòÑÌô©
+						nmMessage << (UBYTE)MSG_EX_EXTREME_CUBE_STATE_PERSONAL_REQ; // ∞≥¿Œ ≈•∫Í «ˆ»≤
 
 					_pNetwork->SendToServerNew(nmMessage);
 				}
 				break;
+			case CUBE_PLAYER_REWARD:
+				{
+					CNetworkMessage nmMessage(MSG_EXTEND);
+					
+					nmMessage << (LONG)MSG_EX_EXTREME_CUBE;
+					nmMessage << (UBYTE)MSG_EX_EXTREME_CUBE_REWARD_PERSONAL_REQ;
+
+					_pNetwork->SendToServerNew(nmMessage);
+				}break;
 			// Cube
-			///////////////////////////////////////////////////////////////////////////////////			
+			///////////////////////////////////////////////////////////////////////////////////	
+				
+			//////////////////////////////////////////////////////////////////////////
+			// ($E_WC2010) [100511: selo] 2010 ø˘µÂƒ≈ ¿Ã∫•∆Æ
+			case EVENT_WORLDCUP_2010_INFO:
+				{
+					if( pUIManager->DoesMessageBoxLExist(MSGLCMD_EVENT_WORLDCUP_EVENT1) )
+						pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_WORLDCUP_EVENT1);
+					
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+					pUIManager->CreateMessageBoxL( _S(4889, "ø˘µÂ √‡¡¶ ¿Ã∫•∆Æ æ»≥ª" ) , UI_SHOP, MSGLCMD_EVENT_WORLDCUP_EVENT1);
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, TRUE, _S(4892, "∞ÌπŒ«œ¡ˆ ∏∂Ω√ø¿!! ≥ª∞‘ √‡±∏∞¯∏∏ ∞°¡Æø¬¥Ÿ∏È æÓµø°º≠µµ ∫º ºˆ æ¯¥¬ »≤±› √‡±∏∞¯¿ª µÂ∏Æ∏Æ¥Ÿ."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, TRUE, _S(4893, "√‡±∏∞¯¿∫ ∏∂¿ª π€ø° ¿÷¥¬ '∆Æ∂Û¿Ãæﬁ±€ ∫º'µÈ¿Ã ∞°¡ˆ∞Ì ¿÷º“."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, TRUE, _S(4894, "ø‰∏Æ¡∂∏Æ ¿ﬂ «««ÿ ¥Ÿ¥œ±‰ «ÿµµ ¥ÁΩ≈ ¡§µµ∏È æ∆¡÷ ∞°∫±∞‘ √≥∏Æ«“ ºˆ ¿÷¿ª∞‘ø‰."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, FALSE, _S( 191, "»Æ¿Œ" ) );
+				}
+				break;
+			case EVENT_WORLDCUP_2010_BALL:
+				{
+					if( pUIManager->DoesMessageBoxLExist(MSGLCMD_EVENT_WORLDCUP_EVENT1) )
+						pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_WORLDCUP_EVENT1);
+					
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+					pUIManager->CreateMessageBoxL( _S(4890, "»≤±› √‡±∏∞¯¿∏∑Œ ±≥»Ø"), UI_SHOP, MSGLCMD_EVENT_WORLDCUP_EVENT1);
+					
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, TRUE, _S(4895, "√‡±∏∞¯ 10∞≥∏∏ ∞°¡ˆ∞Ì ø¿∏È »≤±› √‡±∏∞¯ 1∞≥∑Œ πŸ≤„¡÷∞⁄º“."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, FALSE, _S( 149, "±≥»Ø" ), EVENT_WORLDCUP_2010_BALL_GIFT );
+
+				}
+				break;
+			case EVENT_WORLDCUP_2010_GOLDENBALL:
+				{
+					if( pUIManager->DoesMessageBoxLExist(MSGLCMD_EVENT_WORLDCUP_EVENT1) )
+						pUIManager->CloseMessageBoxL(MSGLCMD_EVENT_WORLDCUP_EVENT1);
+					
+					pUIManager->SetCSFlagOff( CSF_SHOP );
+					pUIManager->CreateMessageBoxL( _S(4881, "ø˘µÂ √‡¡¶ ªÛ¿⁄∑Œ ±≥»Ø"), UI_SHOP, MSGLCMD_EVENT_WORLDCUP_EVENT1);
+					
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, TRUE, _S(4896, "»≤±› √‡±∏∞¯ 50∞≥ ¡§µµ∏∏ ∞°¡ˆ∞Ì ø¬¥Ÿ∏È, ¥ÁΩ≈¿Ã ø¯«œ¥¬ ø˘µÂ √‡¡¶ ªÛ¿⁄∏¶ µÂ∏Æ∞⁄º“."),-1,0xa3a1a3ff);
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, TRUE, _S(4897, "Ω±¡ˆ æ ¿ª ∞Õ¿Ã¥œ ∫–πﬂ«œΩ√ø¿. «œ«œ... ∞Ìª˝«œΩ√ø¿."),-1,0xa3a1a3ff);
+
+					pUIManager->AddMessageBoxLString(MSGLCMD_EVENT_WORLDCUP_EVENT1, FALSE, _S( 149, "±≥»Ø" ), EVENT_WORLDCUP_2010_GOLDENBALL_GIFT );
+				}
+				break;
+			// 2010 ø˘µÂƒ≈ ¿Ã∫•∆Æ
+			//////////////////////////////////////////////////////////////////////////
+
+
 			default:
 				{
 					// Character state flags
-					_pUIMgr->SetCSFlagOff( CSF_SHOP );
+					pUIManager->SetCSFlagOff( CSF_SHOP );
 				}
 				break;
 		
@@ -3122,17 +2701,17 @@ void CUIShop::MsgBoxLCommand( int nCommandCode, int nResult )
 			case CUBE_PARTY_GROUP_ENTRANCE:
 				{
 					CUIMsgBox_Info	MsgBoxInfo;
-					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "ÌôïÏù∏" ), UMBS_OKCANCEL, UI_SHOP, MSGCMD_CUBE_PARTY_GROUP_ENTRANCE);
-					MsgBoxInfo.AddString( _S(4339, "Îã®Ï≤¥ÏûÖÏû•ÏùÑ ÌÜµÌï¥ÏÑú ÌÅêÎ∏åÏóê ÏûÖÏû•ÌïòÏãúÍ≤†ÏäµÎãàÍπå? ÌååÌã∞ÌÅêÎ∏åÍ∞Ä ÏóÜÏúºÎ©¥ ÏûÖÏû•Ìï† Ïàò ÏóÜÏäµÎãàÎã§.") );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OKCANCEL, UI_SHOP, MSGCMD_CUBE_PARTY_GROUP_ENTRANCE);
+					MsgBoxInfo.AddString( _S(4339, "¥‹√º¿‘¿Â¿ª ≈Î«ÿº≠ ≈•∫Íø° ¿‘¿Â«œΩ√∞⁄Ω¿¥œ±Ó? ∆ƒ∆º≈•∫Í∞° æ¯¿∏∏È ¿‘¿Â«“ ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 				}
 				break;
 			case CUBE_PARTY_PERSON_ENTRANCE:
 				{
 					CUIMsgBox_Info	MsgBoxInfo;
-					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "ÌôïÏù∏" ), UMBS_OKCANCEL, UI_SHOP, MSGCMD_CUBE_PARTY_PERSON_ENTRANCE);
-					MsgBoxInfo.AddString( _S(4338, "Í∞úÏù∏ÏûÖÏû•ÏùÑ ÌÜµÌï¥ÏÑú ÌÅêÎ∏åÏóê ÏûÖÏû•ÌïòÏãúÍ≤†ÏäµÎãàÍπå?") );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OKCANCEL, UI_SHOP, MSGCMD_CUBE_PARTY_PERSON_ENTRANCE);
+					MsgBoxInfo.AddString( _S(4338, "∞≥¿Œ¿‘¿Â¿ª ≈Î«ÿº≠ ≈•∫Íø° ¿‘¿Â«œΩ√∞⁄Ω¿¥œ±Ó?") );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 				}
 				break;
 			}
@@ -3145,17 +2724,17 @@ void CUIShop::MsgBoxLCommand( int nCommandCode, int nResult )
 			case CUBE_GUILD_GROUP_ENTRANCE:
 				{
 					CUIMsgBox_Info	MsgBoxInfo;
-					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "ÌôïÏù∏" ), UMBS_OKCANCEL, UI_SHOP, MSGCMD_CUBE_GUILD_GROUP_ENTRANCE);
-					MsgBoxInfo.AddString( _S(4337, "Í∏∏ÎìúÏûÖÏû•ÏùÑ ÌÜµÌï¥ÏÑú ÌÅêÎ∏åÏóê ÏûÖÏû•ÌïòÏãúÍ≤†ÏäµÎãàÍπå? Í∏∏ÎìúÌÅêÎ∏åÍ∞Ä ÏóÜÏúºÎ©¥ ÏûÖÏû•Ìï† Ïàò ÏóÜÏäµÎãàÎã§.") );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OKCANCEL, UI_SHOP, MSGCMD_CUBE_GUILD_GROUP_ENTRANCE);
+					MsgBoxInfo.AddString( _S(4337, "±ÊµÂ¿‘¿Â¿ª ≈Î«ÿº≠ ≈•∫Íø° ¿‘¿Â«œΩ√∞⁄Ω¿¥œ±Ó? ±ÊµÂ≈•∫Í∞° æ¯¿∏∏È ¿‘¿Â«“ ºˆ æ¯Ω¿¥œ¥Ÿ.") );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 				}
 				break;
 			case CUBE_GUILD_PERSON_ENTRANCE:
 				{
 					CUIMsgBox_Info	MsgBoxInfo;
-					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "ÌôïÏù∏" ), UMBS_OKCANCEL, UI_SHOP, MSGCMD_CUBE_GUILD_PERSON_ENTRANCE);
-					MsgBoxInfo.AddString( _S(4338, "Í∞úÏù∏ÏûÖÏû•ÏùÑ ÌÜµÌï¥ÏÑú ÌÅêÎ∏åÏóê ÏûÖÏû•ÌïòÏãúÍ≤†ÏäµÎãàÍπå?") );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					MsgBoxInfo.SetMsgBoxInfo( _S( 191, "»Æ¿Œ" ), UMBS_OKCANCEL, UI_SHOP, MSGCMD_CUBE_GUILD_PERSON_ENTRANCE);
+					MsgBoxInfo.AddString( _S(4338, "∞≥¿Œ¿‘¿Â¿ª ≈Î«ÿº≠ ≈•∫Íø° ¿‘¿Â«œΩ√∞⁄Ω¿¥œ±Ó?") );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 				}
 				break;
 			}
@@ -3163,6 +2742,28 @@ void CUIShop::MsgBoxLCommand( int nCommandCode, int nResult )
 		break;
 	// Cube
 	///////////////////////////////////////////////////////////////////////////////////	
+
+	//////////////////////////////////////////////////////////////////////////
+	// ($E_WC2010) [100511: selo] 2010 ø˘µÂƒ≈ ¿Ã∫•∆Æ
+	case MSGLCMD_EVENT_WORLDCUP_EVENT1:
+		{
+			switch( nResult )
+			{
+			case EVENT_WORLDCUP_2010_BALL_GIFT:
+				{
+					_pNetwork->SendWorldCup2010_Event(MSG_EVENT_WORLDCUP2010_TRADE_REQ, 1);
+				}
+				break;
+			case EVENT_WORLDCUP_2010_GOLDENBALL_GIFT:
+				{
+					_pNetwork->SendWorldCup2010_Event(MSG_EVENT_WORLDCUP2010_TRADE_REQ, 2);
+				}
+				break;
+			}
+		}
+		break;
+	// 2010 ø˘µÂƒ≈ ¿Ã∫•∆Æ
+	//////////////////////////////////////////////////////////////////////////
 	}// switch( nCommandCode )
 }
 
@@ -3180,57 +2781,12 @@ void CUIShop::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 
 	switch( nCommandCode )
 	{
-	case MSGCMD_SHOP_ADD_ITEM:
-		{
-			char	*pcInput = strInput.str_String;
-			int		nLength = strInput.Length();
-			for( int iChar = 0; iChar < nLength; iChar++ )
-			{
-				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
-					break;
-			}
-
-			if( iChar == nLength )
-			{
-				SQUAD	llCount = _atoi64( pcInput );
-				if( m_bBuyShop )
-				{
-					if( llCount > 0 )
-						ShopToTrade( llCount );
-				}
-				else
-				{
-					if( llCount > 0 && llCount <= llTempCount )
-						ShopToTrade( llCount );
-				}
-			}
-		}
-		break;
-
 	case MSGCMD_SHOP_ADD_PLUSITEM:
 		{
 			ShopToTrade( 1 );
 		}
 		break;
 
-	case MSGCMD_SHOP_DEL_ITEM:
-		{
-			char	*pcInput = strInput.str_String;
-			int		nLength = strInput.Length();
-			for( int iChar = 0; iChar < nLength; iChar++ )
-			{
-				if( pcInput[iChar] < '0' || pcInput[iChar] > '9' )
-					break;
-			}
-
-			if( iChar == nLength )
-			{
-				SQUAD	llCount = _atoi64( pcInput );
-				if( llCount > 0 && llCount <= llTempCount )
-					TradeToShop( llCount );
-			}
-		}
-		break;
 	case MSGCMD_SUPERGOJE_REQUEST:
 		{
 			_pNetwork->SendSuperStoneReq();			
@@ -3252,7 +2808,7 @@ void CUIShop::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		break;
 	case MSGCMD_COMBO_GIVEUP:
 		{
-			_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GIVEUP);
+			CUIManager::getSingleton()->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_GIVEUP, FALSE, m_nNpcVirIdx);
 		}
 		break;
 
@@ -3260,6 +2816,8 @@ void CUIShop::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 	// Cube
 	case MSGCMD_CUBE_PARTY_GROUP_ENTRANCE:
 		{
+			UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
 			CNetworkMessage nmMessage(MSG_EXTEND);
 
 			nmMessage << (LONG)MSG_EX_EXTREME_CUBE;
@@ -3270,6 +2828,8 @@ void CUIShop::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		break;
 	case MSGCMD_CUBE_PARTY_PERSON_ENTRANCE:
 		{
+			UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
 			CNetworkMessage nmMessage(MSG_EXTEND);
 
 			nmMessage << (LONG)MSG_EX_EXTREME_CUBE;
@@ -3280,6 +2840,8 @@ void CUIShop::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		break;
 	case MSGCMD_CUBE_GUILD_GROUP_ENTRANCE:
 		{
+			UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
 			CNetworkMessage nmMessage(MSG_EXTEND);
 
 			nmMessage << (LONG)MSG_EX_EXTREME_CUBE;
@@ -3290,6 +2852,8 @@ void CUIShop::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		break;
 	case MSGCMD_CUBE_GUILD_PERSON_ENTRANCE:
 		{
+			UIMGR()->SetCSFlagOn(CSF_TELEPORT);
+
 			CNetworkMessage nmMessage(MSG_EXTEND);
 			
 			nmMessage << (LONG)MSG_EX_EXTREME_CUBE;
@@ -3300,7 +2864,7 @@ void CUIShop::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		break;
 	case MSGCMD_CUBE_STATE:
 		{
-			_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->InitMessageBox();
+			CUIManager::getSingleton()->GetMessageBox(MSGCMD_CUBE_STATE)->InitMessageBox();
 		}
 		break;
 	}
@@ -3314,67 +2878,104 @@ void CUIShop::ShopToTrade( SQUAD llCount )
 {
 	if( m_bBuyShop )
 	{
-		CItemData	&rItemData = _pNetwork->GetItemData( nTempIndex );
-		SQUAD	llPrice = m_nTotalPrice +
-							CalculateItemPrice( m_nSelectedShopID, rItemData, llCount, m_bBuyShop );
+		CItemData	*pItemData = _pNetwork->GetItemData( nTempIndex );
+
+		MyInfo* pInfo = MY_INFO();
+		__int64 llitemPrice = CalculateItemPrice( m_nSelectedShopID, *pItemData, llCount, m_bBuyShop );
+		__int64 iAddPrice = pInfo->CalcPriceRate(llitemPrice, m_bBuyShop) + pInfo->CalcPriceAddition(m_bBuyShop);
+
+		SQUAD	llPrice = m_nTotalPrice + llitemPrice + iAddPrice;
 
 		// Not enough money
 		if(_pNetwork->MyCharacterInfo.money < llPrice )
 		{
 			// Add system message
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 266, "ÏÜåÏßÄÍ∏àÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );
+			CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 266, "º“¡ˆ±›¿Ã ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR );
 			return;
 		}
 
-		const int iFame = rItemData.GetFame();
+		const int iFame = pItemData->GetFame();
 
 		// Not enough fame
 		if( iFame > 0 && iFame > _pNetwork->MyCharacterInfo.fame )
 		{
 			// Add system message
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 1217, "Î™ÖÏÑ±ÏπòÍ∞Ä Î∂ÄÏ°±Ìï©ÎãàÎã§." ), SYSMSG_ERROR );		
+			CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 1217, "∏Ìº∫ƒ°∞° ∫Œ¡∑«’¥œ¥Ÿ." ), SYSMSG_ERROR );		
 			return;
 		}
 	}
 
 	// Find same item in trade slot
-	for( int iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
+	int iItem;
+
+	if (m_bBuyShop)
 	{
-		if( m_abtnTradeItems[iItem].GetItemIndex() == nTempIndex )
-			break;
+		for( iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
+		{
+			if (m_pIconsTrade[iItem]->getIndex() == nTempIndex)
+			{
+				CItemData	*pItemData = _pNetwork->GetItemData( nTempIndex );
+
+				if (m_pIconsTrade[iItem]->getItems()->Item_Sum + llCount <= pItemData->GetStack())
+					break;
+			}
+		}
+	}
+	else
+	{
+		for( iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
+		{
+			if (m_pIconsTrade[iItem]->getItems() != NULL &&  
+				m_pIconsTrade[iItem]->getItems()->Item_UniIndex == nTempUniIndex)
+			{
+				CItemData	*pItemData = _pNetwork->GetItemData( nTempIndex );
+
+				if (m_pIconsTrade[iItem]->getItems()->Item_Sum + llCount <= pItemData->GetStack())
+					break;
+			}
+		}
 	}
 
 	// If there is same item
 	if( iItem < SHOP_TRADE_SLOT_TOTAL )
 	{
 		// Check if item is countable
-		CItemData&	rItemData = _pNetwork->GetItemData( nTempIndex );
-		if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
+		CItemData*	pItemData = _pNetwork->GetItemData( nTempIndex );
+		if( pItemData->GetFlag() & ITEM_FLAG_COUNT )
 		{
 			// Update count of trade item
-			SQUAD	llNewCount = m_abtnTradeItems[iItem].GetItemCount();
+			SQUAD	llNewCount = m_pIconsTrade[iItem]->getItems()->Item_Sum;
 			llNewCount += llCount;
-			m_abtnTradeItems[iItem].SetItemCount( llNewCount );
+			m_pIconsTrade[iItem]->setCount(llNewCount);
 												
 			if( !m_bBuyShop )
 			{
+				if (nTempTab > INVENTORY_TAB_NORMAL)
+					nTempIdx += ITEM_COUNT_IN_INVENTORY_NORMAL;
+
+				if (nTempTab > INVENTORY_TAB_CASH_1)
+					nTempIdx += ITEM_COUNT_IN_INVENTORY_CASH_1;
+
 				// Update count of shop item
-				llNewCount = m_abtnShopItems[nTempRow][nTempCol].GetItemCount();
+				llNewCount = m_pIconsShop[nTempIdx]->getItems()->Item_Sum;
 				llNewCount -= llCount;
-				m_abtnShopItems[nTempRow][nTempCol].SetItemCount( llNewCount );
+
+				m_pIconsShop[nTempIdx]->setCount(llNewCount);
+
 				if( llNewCount <= 0 )
 				{
-					m_abtnShopItems[nTempRow][nTempCol].SetEmpty( TRUE );
+					m_pIconsShop[nTempIdx]->Hide(TRUE);
 
 					// Unselect item
-					if( m_nSelShopItemID == ( nTempCol + nTempRow * SHOP_SHOP_SLOT_COL ) )
+					if( m_nSelShopItemID == nTempIdx )
 						m_nSelShopItemID = -1;
 				}
 			}
 
 			m_nTotalPrice = CalculateTotalPrice( m_nSelectedShopID, m_nNumOfItem, m_bBuyShop );
+			m_nSendTotalPrice = CalculateTotalPrice( m_nSelectedShopID, m_nNumOfItem, m_bBuyShop, FALSE );
 			m_strTotalPrice.PrintF( "%I64d", m_nTotalPrice );
-			_pUIMgr->InsertCommaToString( m_strTotalPrice );
+			CUIManager::getSingleton()->InsertCommaToString( m_strTotalPrice );
 			return;
 		}
 	}
@@ -3382,7 +2983,7 @@ void CUIShop::ShopToTrade( SQUAD llCount )
 	// Find empty slot
 	for( iItem = 0; iItem < SHOP_TRADE_SLOT_TOTAL; iItem++ )
 	{
-		if( m_abtnTradeItems[iItem].IsEmpty() )
+		if (m_pIconsTrade[iItem]->IsEmpty())
 			break;
 	}
 
@@ -3391,35 +2992,53 @@ void CUIShop::ShopToTrade( SQUAD llCount )
 	{
 		// Add system message
 		if( m_bBuyShop )
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 267, "ÏµúÎåÄ 10Í∞úÏùò ÏïÑÏù¥ÌÖúÏùÑ Íµ¨Îß§Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), SYSMSG_ERROR );
+			CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 267, "√÷¥Î 10∞≥¿« æ∆¿Ã≈€¿ª ±∏∏≈«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 		else
-			_pUIMgr->GetChatting()->AddSysMessage( _S( 268, "ÏµúÎåÄ 10Í∞úÏùò ÏïÑÏù¥ÌÖúÏùÑ ÌåêÎß§Ìï† Ïàò ÏûàÏäµÎãàÎã§." ), SYSMSG_ERROR );
+			CUIManager::getSingleton()->GetChattingUI()->AddSysMessage( _S( 268, "√÷¥Î 10∞≥¿« æ∆¿Ã≈€¿ª ∆«∏≈«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
 
 		return;
 	}
 
-	m_abtnTradeItems[iItem].SetItemInfo( 0, nTempRow, nTempCol, nTempIndex, nTempUniIndex, -1 );
-	m_abtnTradeItems[iItem].SetItemCount( llCount );
+	if (m_bBuyShop == FALSE)
+	{
+		if (nTempTab > INVENTORY_TAB_NORMAL)
+			nTempIdx += ITEM_COUNT_IN_INVENTORY_NORMAL;
+
+		if (nTempTab >= INVENTORY_TAB_CASH_2)
+			nTempIdx += ITEM_COUNT_IN_INVENTORY_CASH_1;
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();	
+
+	CItems* pCopy = new CItems;
+	memcpy(pCopy, m_pIconsShop[nTempIdx]->getItems(), sizeof(CItems));
+	m_vecTrade.push_back(pCopy);
 	
-	if( !m_bBuyShop )
-	{												
+	m_pIconsTrade[iItem]->setData(m_vecTrade[iItem]);	
+	m_pIconsTrade[iItem]->setCount(llCount);	
+
+	m_nTotalPrice = CalculateTotalPrice( m_nSelectedShopID, m_nNumOfItem, m_bBuyShop );
+	m_nSendTotalPrice = CalculateTotalPrice( m_nSelectedShopID, m_nNumOfItem, m_bBuyShop, FALSE );
+	m_strTotalPrice.PrintF( "%I64d", m_nTotalPrice );
+	pUIManager->InsertCommaToString( m_strTotalPrice );
+
+	if (m_bBuyShop == FALSE)
+	{
 		// Update count of shop item
-		SQUAD	llNewCount = m_abtnShopItems[nTempRow][nTempCol].GetItemCount();
+		SQUAD	llNewCount = m_pIconsShop[nTempIdx]->getItems()->Item_Sum;
 		llNewCount -= llCount;
-		m_abtnShopItems[nTempRow][nTempCol].SetItemCount( llNewCount );
+
+		m_pIconsShop[nTempIdx]->setCount(llNewCount);
+
 		if( llNewCount <= 0 )
 		{
-			m_abtnShopItems[nTempRow][nTempCol].SetEmpty( TRUE );
+			m_pIconsShop[nTempIdx]->Hide(TRUE);
 
 			// Unselect item
-			if( m_nSelShopItemID == ( nTempCol + nTempRow * SHOP_SHOP_SLOT_COL ) )
+			if( m_nSelShopItemID == nTempIdx )
 				m_nSelShopItemID = -1;
 		}
 	}
-
-	m_nTotalPrice = CalculateTotalPrice( m_nSelectedShopID, m_nNumOfItem, m_bBuyShop );
-	m_strTotalPrice.PrintF( "%I64d", m_nTotalPrice );
-	_pUIMgr->InsertCommaToString( m_strTotalPrice );
 }
 
 //-----------------------------------------------------------------------------
@@ -3429,35 +3048,32 @@ void CUIShop::ShopToTrade( SQUAD llCount )
 void CUIShop::TradeToShop( SQUAD llCount )
 {
 	// Update count of trade item
-	SQUAD	llNewCount = m_abtnTradeItems[nTempTradeItemID].GetItemCount();
+	SQUAD	llNewCount = m_pIconsTrade[nTempTradeItemID]->getItems()->Item_Sum;
 	llNewCount -= llCount;
-	m_abtnTradeItems[nTempTradeItemID].SetItemCount( llNewCount );
+	m_pIconsTrade[nTempTradeItemID]->setCount(llNewCount);
 
 	if( llNewCount <= 0 )
 	{
 		// Rearrange buttons
 		for( int iArrItem = nTempTradeItemID; iArrItem < SHOP_TRADE_SLOT_TOTAL; iArrItem++ )
 		{
-			if( ( iArrItem + 1 ) == SHOP_TRADE_SLOT_TOTAL )
+			if ((iArrItem + 1) == SHOP_TRADE_SLOT_TOTAL)
 			{
-				m_abtnTradeItems[iArrItem].InitBtn();
+				m_pIconsTrade[iArrItem]->clearIconData();
 				break;
 			}
 
-			if( m_abtnTradeItems[iArrItem + 1].IsEmpty() )
+			if (m_pIconsTrade[iArrItem + 1]->IsEmpty())
 			{
-				m_abtnTradeItems[iArrItem].InitBtn();
+				m_pIconsTrade[iArrItem]->clearIconData();
 				break;
 			}
 
-			m_abtnTradeItems[iArrItem].SetItemInfo( 0,
-													m_abtnTradeItems[iArrItem + 1].GetItemRow(),
-													m_abtnTradeItems[iArrItem + 1].GetItemCol(),
-													m_abtnTradeItems[iArrItem + 1].GetItemIndex(),
-													m_abtnTradeItems[iArrItem + 1].GetItemUniIndex(),
-													-1 );
-			m_abtnTradeItems[iArrItem].SetItemCount( m_abtnTradeItems[iArrItem + 1].GetItemCount() );
+			m_pIconsTrade[iArrItem]->setData(m_vecTrade[iArrItem + 1]);
 		}
+
+		SAFE_DELETE(m_vecTrade[nTempTradeItemID]);
+		m_vecTrade.erase(m_vecTrade.begin() + nTempTradeItemID);
 
 		// Unselect item
 		if( nTempTradeItemID == m_nSelTradeItemID )
@@ -3466,47 +3082,57 @@ void CUIShop::TradeToShop( SQUAD llCount )
 
 	if( !m_bBuyShop )
 	{
+		m_pIconsShop[nTempIdx]->Hide(FALSE);
 		// Update count of shop item
-		llNewCount = m_abtnShopItems[nTempRow][nTempCol].GetItemCount();
+		llNewCount = m_pIconsShop[nTempIdx]->getItems()->Item_Sum;
 		llNewCount += llCount;
-		m_abtnShopItems[nTempRow][nTempCol].SetItemCount( llNewCount );
-		if( llNewCount > 0 )
-			m_abtnShopItems[nTempRow][nTempCol].SetEmpty( FALSE );
+		m_pIconsShop[nTempIdx]->setCount(llNewCount);
 	}
 
 	m_nTotalPrice = CalculateTotalPrice( m_nSelectedShopID, m_nNumOfItem, m_bBuyShop );
+	m_nSendTotalPrice = CalculateTotalPrice( m_nSelectedShopID, m_nNumOfItem, m_bBuyShop, FALSE );
 	m_strTotalPrice.PrintF( "%I64d", m_nTotalPrice );
-	_pUIMgr->InsertCommaToString( m_strTotalPrice );
+	CUIManager::getSingleton()->InsertCommaToString( m_strTotalPrice );
 }
 
 
 //-----------------------------------------------------------------------------
-// Purpose: Í∞ÄÍ≤©ÏùÑ Í≥ÑÏÇ∞Ìï©ÎãàÎã§.
+// Purpose: ∞°∞›¿ª ∞ËªÍ«’¥œ¥Ÿ.
 // Input  : iShopID - 
 //			bSell - 
 // Output : __int64
 //-----------------------------------------------------------------------------
-__int64 CUIShop::CalculateTotalPrice(int iShopID, int& iCount, BOOL bSell)
+__int64 CUIShop::CalculateTotalPrice(int iShopID, int& iCount, BOOL bSell, BOOL bRate)
 {
 	if(iShopID	<= 0)								return 0;
 
+	MyInfo* pInfo = MY_INFO();
 	__int64	iTotalPrice	= 0;
 	iCount				= 0;
 
 	for( int i = 0; i < SHOP_TRADE_SLOT_TOTAL; i++ )
 	{
-		if( m_abtnTradeItems[i].IsEmpty() )
+		if( m_pIconsTrade[i]->IsEmpty() )
 			continue;
 
-		const int iIndex		= m_abtnTradeItems[i].GetItemIndex();
-		SQUAD iItemCount		= m_abtnTradeItems[i].GetItemCount();
-		CItemData& ID			= _pNetwork->GetItemData(iIndex);
-		if( ID.GetItemIndex() == -1 )
+		const int iIndex		= m_pIconsTrade[i]->getIndex();
+		SQUAD iItemCount		= m_pIconsTrade[i]->getItems()->Item_Sum;
+		CItemData* pID			= _pNetwork->GetItemData(iIndex);
+		
+		if( pID->GetItemIndex() == -1 )
 			continue;
 
-		iTotalPrice				+= CalculateItemPrice( iShopID, ID, iItemCount, bSell );
+		
+		__int64 llitemPrice = CalculateItemPrice( iShopID, *pID, iItemCount, bSell );
+		__int64 iAddPrice = pInfo->CalcPriceRate(llitemPrice, bSell) + pInfo->CalcPriceAddition(bSell);
+
+		if (bRate == TRUE)
+			llitemPrice += iAddPrice;
+
+		iTotalPrice += llitemPrice;
 		iCount++;
 	}
+
 	return iTotalPrice;
 }
 
@@ -3524,39 +3150,52 @@ __int64	CUIShop::CalculateItemPrice(int iShopID, const CItemData &ID, int iNumOf
 	
 	const CShopData &SD = _pNetwork->GetShopData(iShopID);	
 	const int iShopSellRate	= SD.GetSellRate();
-	const int iShopBuyRate	= SD.GetBuyRate();
-	__int64	iPrice		= 0;
-
+	int iShopBuyRate	= SD.GetBuyRate();
+	__int64	iPrice		= ID.GetPrice();
 	if( bSell )
-		//iPrice = (ID.GetPrice() * iShopSellRate) / 100;
-		iPrice = (ID.GetPrice() * iShopBuyRate) / 100;
+		//iPrice = (pID->GetPrice() * iShopSellRate) / 100;
+		iPrice = (iPrice * iShopBuyRate) / 100;
 	else
 	{
-		//iPrice = (ID.GetPrice() * iShopBuyRate) / 100;
-		iPrice = (ID.GetPrice() * iShopSellRate) / 100;
-
-		// [090617: selo] ÎØ∏Íµ≠Ïùò Í≤ΩÏö∞ ÏïÑÏù¥ÌÖú Î†àÎ≤®Ïù¥ 97Ïù¥ÏÉÅÏù¥Î©¥ ÏïÑÏù¥ÌÖúÏùò Í∞ÄÍ≤©ÏùÑ Î∞òÍ∞íÏúºÎ°ú ÌïúÎã§.		
-		if( USA == g_iCountry )
+		//iPrice = (pID->GetPrice() * iShopBuyRate) / 100;
+		iPrice = (iPrice * iShopSellRate) / 100;
+		
+		// [090617: selo] πÃ±π¿« ∞ÊøÏ æ∆¿Ã≈€ ∑π∫ß¿Ã 97¿ÃªÛ¿Ã∏È æ∆¿Ã≈€¿« ∞°∞›¿ª π›∞™¿∏∑Œ «—¥Ÿ.
+		if (g_iCountry == USA)
 		{
 			if( 97 <= ID.GetLevel() )
 				iPrice /= 2;
-		}		
+		}
 	}
+
+#ifdef NEW_CHAO_SYS
+	int fpkpenalty = abs(_pNetwork->MyCharacterInfo.pkpenalty);
+	
+	if(_pNetwork->MyCharacterInfo.pkpenalty < 0 && bSell)
+	{
+		if (g_iCountry == RUSSIA)
+		{
+			iPrice = iPrice + (iPrice * fpkpenalty / 32000 * (20));
+		}
+	}
+#endif
 
 	iPrice *= iNumOfItem;
 	return iPrice;
 }
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù ÌÖåÏä§Ìä∏ ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ ÏûëÏóÖ		06.16
+//∞≠µøπŒ ºˆ¡§ ≥° ≈◊Ω∫∆Æ ≈¨∂Û¿Ãæ∆Æ ¿€æ˜		06.16
 
 void CUIShop::CreateCubeStateMsgBox(CNetworkMessage *istr, BOOL bGuild)
 {
-	if( _pUIMgr->DoesMessageBoxExist(MSGCMD_CUBE_STATE) )
-		_pUIMgr->CloseMessageBox(MSGCMD_CUBE_STATE);
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	LONG lMyPoint = 0, lInfoCubePoint = 0; // ÏûêÏã†Ïù¥ ÏÜåÏÜçÎêú Í∏∏Îìú Î∞è Í∞úÏù∏ Ìè¨Ïù∏Ìä∏ , Í∞Å Î¶¨Ïä§Ìä∏Ïùò ÌÅêÎ∏å Ìè¨Ïù∏Ìä∏
-	BYTE InfoCount = 0, InfoRank = 0; // Î¶¨Ïä§Ìä∏ Í∞ØÏàò, Îû≠ÌÅ¨ Ï†ïÎ≥¥
+	if( pUIManager->DoesMessageBoxExist(MSGCMD_CUBE_STATE) )
+		pUIManager->CloseMessageBox(MSGCMD_CUBE_STATE);
 
-	CTString strGuildName, strMyName; // Í∏∏Îìú Ïù¥Î¶Ñ, Í∏∏Îìú ÎßàÏä§ÌÑ∞ Î∞è Ï∫êÎ¶≠ÌÑ∞ Ïù¥Î¶Ñ
+	LONG lMyPoint = 0, lInfoCubePoint = 0; // ¿⁄Ω≈¿Ã º“º”µ» ±ÊµÂ π◊ ∞≥¿Œ ∆˜¿Œ∆Æ , ∞¢ ∏ÆΩ∫∆Æ¿« ≈•∫Í ∆˜¿Œ∆Æ
+	BYTE InfoCount = 0, InfoRank = 0; // ∏ÆΩ∫∆Æ ∞πºˆ, ∑©≈© ¡§∫∏
+
+	CTString strGuildName, strMyName; // ±ÊµÂ ¿Ã∏ß, ±ÊµÂ ∏∂Ω∫≈Õ π◊ ƒ≥∏Ø≈Õ ¿Ã∏ß
 
 	(*istr) >> lMyPoint;
 	(*istr) >> InfoCount;
@@ -3566,37 +3205,37 @@ void CUIShop::CreateCubeStateMsgBox(CNetworkMessage *istr, BOOL bGuild)
 
 	if (bGuild)
 	{
-		strMsg = _S(4388, "Í∏∏Îìú ÌÅêÎ∏å Ìè¨Ïù∏Ìä∏ ÌòÑÌô©");
-		strMsgEx = _S(4389, "ÏûêÏã†Ïù¥ ÏÜåÏÜçÎêú Í∏∏Îìú ÌÅêÎ∏å Ìè¨Ïù∏Ìä∏ : %d");
-		strGuildName = _S(3451,"Í∏∏ÎìúÎ™Ö");
-		strMyName = _S(4344, "Í∏∏Îìú ÎßàÏä§ÌÑ∞");
+		strMsg = _S(4388, "±ÊµÂ ≈•∫Í ∆˜¿Œ∆Æ «ˆ»≤");
+		strMsgEx = _S(4389, "¿⁄Ω≈¿Ã º“º”µ» ±ÊµÂ ≈•∫Í ∆˜¿Œ∆Æ : %d");
+		strGuildName = _S(3451,"±ÊµÂ∏Ì");
+		strMyName = _S(4344, "±ÊµÂ ∏∂Ω∫≈Õ");
 	}
 	else
 	{
-		strMsg = _S(4390, "Í∞úÏù∏ ÌÅêÎ∏å Ìè¨Ïù∏Ìä∏ ÌòÑÌô©");
-		strMsgEx = _S(4391, "ÏûêÏã†Ïùò Í∞úÏù∏ ÌÅêÎ∏å Ìè¨Ïù∏Ìä∏ : %d");
-		strGuildName = _S(4392, "ÏÜåÏÜç Í∏∏Îìú");
-		strMyName = _S(4393, "Ï∫êÎ¶≠ÌÑ∞ Ïù¥Î¶Ñ");
+		strMsg = _S(4390, "∞≥¿Œ ≈•∫Í ∆˜¿Œ∆Æ «ˆ»≤");
+		strMsgEx = _S(4391, "¿⁄Ω≈¿« ∞≥¿Œ ≈•∫Í ∆˜¿Œ∆Æ : %d");
+		strGuildName = _S(4392, "º“º” ±ÊµÂ");
+		strMyName = _S(4393, "ƒ≥∏Ø≈Õ ¿Ã∏ß");
 	}
 
 	MsgBoxInfo.SetMsgBoxInfo(strMsg, UMBS_OK | UMBS_LISTBOX, UI_SHOP, MSGCMD_CUBE_STATE);
 
 	strMsg.PrintF(strMsgEx, lMyPoint);
 	MsgBoxInfo.AddStringEx(strMsg, 0, 1);
-	MsgBoxInfo.AddStringEx(_S(4343, "ÌÅêÎ∏åÌè¨Ïù∏Ìä∏ ÌòÑÌô©"), 2, 1);
-	MsgBoxInfo.AddStringEx(_S(1714, "ÏàúÏúÑ"), 4, 1);
+	MsgBoxInfo.AddStringEx(_S(4343, "≈•∫Í∆˜¿Œ∆Æ «ˆ»≤"), 2, 1);
+	MsgBoxInfo.AddStringEx(_S(1714, "º¯¿ß"), 4, 1);
 	MsgBoxInfo.AddStringEx( strGuildName, 4, 9 );
 	MsgBoxInfo.AddStringEx( strMyName, 4, 28 );
-	MsgBoxInfo.AddStringEx( _S(4345, "ÌÅêÎ∏åÌè¨Ïù∏Ìä∏"), 4, 47 );
+	MsgBoxInfo.AddStringEx( _S(4345, "≈•∫Í∆˜¿Œ∆Æ"), 4, 47 );
 	MsgBoxInfo.SetListBoxPlacement(20, 113, 350, 84, 5, 4); // 173 - 118 = 55
 	MsgBoxInfo.m_nColorBoxCount = 9;
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetWidth(400);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().ResetAllStrings();
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().SetColumnPosX(0, 6);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().SetColumnPosX(1, 42);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().SetColumnPosX(2, 156);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().SetColumnPosX(3, 335, TEXT_RIGHT);
+	pUIManager->CreateMessageBox( MsgBoxInfo );
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetWidth(400);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().ResetAllStrings();
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().SetColumnPosX(0, 6);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().SetColumnPosX(1, 42);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().SetColumnPosX(2, 156);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().SetColumnPosX(3, 335, TEXT_RIGHT);
 
 	int i;
 
@@ -3605,34 +3244,291 @@ void CUIShop::CreateCubeStateMsgBox(CNetworkMessage *istr, BOOL bGuild)
 		(*istr) >> InfoRank >> strGuildName >> strMyName >> lInfoCubePoint;
 
 		strMsg.PrintF("%d", InfoRank);
-		_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().AddString(0, strMsg, 0xF2F2F2FF, FALSE);
-		_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().AddString(1, strGuildName, 0xF2F2F2FF, FALSE);
-		_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().AddString(2, strMyName, 0xF2F2F2FF, FALSE);
+		pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().AddString(0, strMsg, 0xF2F2F2FF, FALSE);
+		pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().AddString(1, strGuildName, 0xF2F2F2FF, FALSE);
+		pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().AddString(2, strMyName, 0xF2F2F2FF, FALSE);
 		strMsg.PrintF("%d", lInfoCubePoint);
-		_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().AddString(3, strMsg, 0xF2F2F2FF, FALSE );
+		pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->GetListBox().AddString(3, strMsg, 0xF2F2F2FF, FALSE );
 	}
 
 	WRect rcHorizonalLine, rcVerticalLine0, rcVerticalLine1;
-	// Ï†ÑÏ≤¥Ï†ÅÏúºÎ°ú ÎÜíÏù¥ -48 , Ï∂îÍ∞Ä -12
+	// ¿¸√º¿˚¿∏∑Œ ≥Ù¿Ã -48 , √ﬂ∞° -12
 	rcHorizonalLine.SetRect( 15, 58, 386, 58);
 	rcVerticalLine0.SetRect( 15, 58, 15, 204);
 	rcVerticalLine1.SetRect( 51, 82, 51, 204);
 
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(0, 0, rcHorizonalLine);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(0, 0, rcHorizonalLine);
 	rcHorizonalLine.Offset(0, 24);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(1, 0, rcHorizonalLine);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(1, 0, rcHorizonalLine);
 	rcHorizonalLine.Offset(0, 25);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(2, 0, rcHorizonalLine);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(2, 0, rcHorizonalLine);
 	rcHorizonalLine.Offset(0, 95);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(3, 0, rcHorizonalLine);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(3, 0, rcHorizonalLine);
 
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(4, 0, rcVerticalLine0);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(4, 0, rcVerticalLine0);
 	rcVerticalLine0.Offset(370, 0);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(5, 0, rcVerticalLine0);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(5, 0, rcVerticalLine0);
 
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(6, 0, rcVerticalLine1);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(6, 0, rcVerticalLine1);
 	rcVerticalLine1.Offset(114, 0);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(7, 0, rcVerticalLine1);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(7, 0, rcVerticalLine1);
 	rcVerticalLine1.Offset(114, 0);
-	_pUIMgr->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(8, 0, rcVerticalLine1);
+	pUIManager->GetMessageBox(MSGCMD_CUBE_STATE)->SetColorBox(8, 0, rcVerticalLine1);
+}
+
+void CUIShop::AddItemCallback()
+{
+	if (UIMGR()->GetMsgBoxNumOnly()->GetData() > 0)
+		ShopToTrade( UIMGR()->GetMsgBoxNumOnly()->GetData() );
+}
+
+void CUIShop::DelItemCallback()
+{
+	if (UIMGR()->GetMsgBoxNumOnly()->GetData() > 0)
+		TradeToShop( UIMGR()->GetMsgBoxNumOnly()->GetData() );
+}
+
+int CUIShop::RefreshShopItem(int iShopIndex)
+{
+	if(iShopIndex == -1)	return - 1;
+
+	CShopData &SD = _pNetwork->GetShopData(iShopIndex);
+	if(SD.GetIndex() == -1) return - 1;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	int t;
+	for(t = 0; t < SD.m_iNumOfItem; ++t)
+	{						
+		int iItemIndex = SD.m_vectorSellItems[t];
+		CItemData* pID = _pNetwork->GetItemData(iItemIndex);
+		if(pID->GetItemIndex() == -1) continue;
+
+		CItems* pItems = new CItems;
+		pItems->Item_Index = iItemIndex;
+		pItems->InvenIndex = t;
+		pItems->ItemData = pID;
+		m_pIconsShop[t]->setData(pItems, false);
+		m_pIconsShop[t]->setCount(1);
+		m_pIconsShop[t]->Hide(FALSE);
+	}
+
+	return t;
+}
+
+bool ItemLevelOfComp( const int& x, const int& y )
+{
+	CItemData*	pItemData[2];
+
+	pItemData[0] = _pNetwork->GetItemData(x);
+	pItemData[1] = _pNetwork->GetItemData(y);
+
+	return pItemData[0]->GetLevel() < pItemData[1]->GetLevel();
+}
+
+int CUIShop::RefreshLeaseItem(int iJobIndex)
+{
+	if(iJobIndex == -1)	return - 1;
+
+	CItemData*	pItemData[2];
+
+	int			tv_itemIdx;
+	int			tv_itemLevel;
+
+	std::vector<int> vecbtnItems;
+
+	int selNum;
+	int max = CItemData::getsize();
+
+	CItemData::_map::iterator	iter = CItemData::_mapdata.begin();
+	CItemData::_map::iterator	eiter = CItemData::_mapdata.end();
+
+	for (selNum = 0; iter != eiter; ++iter)
+	{	
+		CItemData* pData = (*iter).second;
+
+		if (pData == NULL)
+			continue;
+
+		if(	pData->GetJob() & 0x01 << iJobIndex &&
+			pData->GetType() == CItemData::ITEM_WEAPON )
+		{
+			tv_itemLevel = pData->GetLevel();
+			if(	tv_itemLevel >= LEASE_MIN_LEVEL &&
+				tv_itemLevel <= LEASE_MAX_LEVEL )
+			{
+				if(pData->IsFlag(ITEM_FLAG_LENT) )
+				{
+					tv_itemIdx = pData->GetItemIndex();
+
+					vecbtnItems.push_back(tv_itemIdx);
+
+					selNum++;
+				}
+			}
+		}
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// æ∆¿Ã≈€ ∑π∫ß∫∞ ¡§∑ƒ
+	std::sort(vecbtnItems.begin(), vecbtnItems.end(), ItemLevelOfComp );
+
+	std::vector<int>::iterator btnItr;
+	for ( btnItr = vecbtnItems.begin(), selNum = 0; btnItr != vecbtnItems.end(); btnItr++ )
+	{
+		tv_itemIdx = (*btnItr);
+
+		if (selNum != 0)
+		{
+			pItemData[0] = _pNetwork->GetItemData((*btnItr));
+			pItemData[1] = _pNetwork->GetItemData(m_pIconsShop[selNum - 1]->getIndex());
+
+			if(pItemData[1]->GetLevel() == pItemData[0]->GetLevel())
+			{
+				// ≥™¡ﬂø° º≠∫Í≈∏¿‘¿Ã ¿€¥Ÿ∏È πŸ≤„¡ÿ¥Ÿ.
+				if(pItemData[1]->GetSubType() > pItemData[0]->GetSubType())
+				{
+					CItems* pCopy = new CItems;
+					memcpy(pCopy, m_pIconsShop[selNum - 1]->getItems(), sizeof(CItems));
+					m_pIconsShop[selNum]->setData(pCopy, false);
+					
+					{
+						CItems* pItems = new CItems;
+						pItems->Item_Index = tv_itemIdx;
+						pItems->ItemData = CItemData::getData(tv_itemIdx);
+						m_pIconsShop[selNum - 1]->setData(pItems, false);
+						m_pIconsShop[selNum - 1]->setCount(1);
+
+						++selNum;
+
+						continue;
+					}					
+				}
+			}
+		}
+
+		// ¿Ã∫Œ∫–¿Ã Shop ¿Œ∫•≈‰∏Æ æ»¿∏∑Œ µÈæÓ∞•∞Õ...
+		CItems* pItems = new CItems;
+		pItems->Item_Index = tv_itemIdx;
+		pItems->ItemData = CItemData::getData(tv_itemIdx);
+		m_pIconsShop[selNum]->setData(pItems, false);
+		m_pIconsShop[selNum]->setCount(1);
+
+		selNum++;
+	}
+
+	return selNum;
+}
+
+int CUIShop::RefreshEventItem(int iJobIndex, int itype)
+{
+	if(iJobIndex == -1)	return - 1;
+
+	CItemData*	pItemData[2];
+
+	int			tv_itemIdx;
+	int			tv_itemLevel;
+
+	std::vector<int> vecbtnItems;
+
+	CShopData SD;
+
+	if(itype == CItemData::ITEM_SHIELD)		// ªÛ¡° NPC¿« æ∆¿Ã≈€¿ª ∞°¡Æø»
+	{
+		SD = (CShopData)_pNetwork->GetShopData(90);			// πÊæÓ±∏ ªÛ¿Œ
+	}else
+	{
+		SD = (CShopData)_pNetwork->GetShopData(33);			// π´±‚ªÛ¿Œ
+	}	
+
+	int t, selNum;
+	for( t = 0, selNum = 0; t < SD.m_iNumOfItem; ++t )
+	{	
+		int iItemIndex = SD.m_vectorSellItems[t];
+		CItemData* pID = _pNetwork->GetItemData(iItemIndex);
+
+		if( pID->GetJob() & 0x01 << iJobIndex &&	pID->GetType() == itype )
+		{
+			tv_itemLevel = pID->GetLevel();
+			if(	tv_itemLevel >= EVENT_MAY_LEVELMIN &&
+				tv_itemLevel <= EVENT_MAY_LEVELMAX )
+			{			
+				tv_itemIdx = pID->GetItemIndex();
+
+				vecbtnItems.push_back(tv_itemIdx);
+
+				selNum++;
+
+			}
+		}
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// æ∆¿Ã≈€ ∑π∫ß∫∞ ¡§∑ƒ
+	std::sort(vecbtnItems.begin(), vecbtnItems.end(), ItemLevelOfComp );
+
+	std::vector<int>::iterator btnItr;
+
+	for( btnItr=vecbtnItems.begin(), selNum = 0; btnItr!=vecbtnItems.end(); btnItr++ )
+	{
+		tv_itemIdx = (*btnItr);
+
+		if(selNum !=0)
+		{
+			pItemData[0] = _pNetwork->GetItemData((*btnItr));
+			pItemData[1] = _pNetwork->GetItemData(
+				m_pIconsShop[selNum - 1]->getIndex());
+
+			if(pItemData[1]->GetLevel() == pItemData[0]->GetLevel())
+			{
+				// ≥™¡ﬂø° º≠∫Í≈∏¿‘¿Ã ¿€¥Ÿ∏È πŸ≤„¡ÿ¥Ÿ.
+				if(pItemData[1]->GetSubType() > pItemData[0]->GetSubType())
+				{
+					CItems* pCopy = new CItems;
+					memcpy(pCopy, m_pIconsShop[selNum - 1]->getItems(), sizeof(CItems));
+					m_pIconsShop[selNum - 1]->setData(pCopy, false);
+					tv_itemIdx = pItemData[1]->GetItemIndex();																										 
+				}
+			}
+		}
+
+		// ¿Ã∫Œ∫–¿Ã Shop ¿Œ∫•≈‰∏Æ æ»¿∏∑Œ µÈæÓ∞•∞Õ...
+		CItems* pItems = new CItems;
+		pItems->Item_Index = tv_itemIdx;
+		pItems->ItemData = CItemData::getData(tv_itemIdx);
+		m_pIconsShop[selNum]->setData(pItems, false);
+		m_pIconsShop[selNum]->setCount(1);
+		selNum++;
+	}
+
+	return selNum;
+}
+
+CItems* CUIShop::GetTradeItem( int idx )
+{
+	if (idx < 0 || idx >= m_vecTrade.size())
+		return NULL;
+
+	return m_vecTrade[idx];
+}
+
+void CUIShop::clearTrade()
+{
+	for (int i = 0; i < m_vecTrade.size(); ++i)
+		SAFE_DELETE(m_vecTrade[i]);
+
+	m_vecTrade.clear();	
+}
+
+void CUIShop::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
+{
+	int		i;
+
+	for (i = 0; i < SHOP_SLOT_BUY_MAX; ++i)
+		m_pIconsShop[i]->Update(fDeltaTime, ElapsedTime);
+
+	for(i = 0; i < SHOP_TRADE_SLOT_TOTAL; ++i)
+		m_pIconsTrade[i]->Update(fDeltaTime, ElapsedTime);
 }

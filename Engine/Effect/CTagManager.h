@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #ifndef __CTAGMANAGER_H__
 #define __CTAGMANAGER_H__
@@ -24,25 +24,34 @@ public:
 	CTagManager();
 	~CTagManager();
 
-	//ë“±ë¡ì‹œ Copyë¥¼ ì‚¬ìš©í•œë‹¤.
-	BOOL Register(CTag *pTag);	//copyí•˜ë©´ì„œ ë“±ë¡
-	BOOL RegisterNoCopy(CTag *pTag);	//copyí•˜ì§€ ì•Šìœ¼ë©°ì„œ ë“±ë¡
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+	//µî·Ï½Ã Copy¸¦ »ç¿ëÇÑ´Ù.
+	BOOL Register(CTag *pTag);	//copyÇÏ¸é¼­ µî·Ï
+	BOOL RegisterNoCopy(CTag *pTag);	//copyÇÏÁö ¾ÊÀ¸¸ç¼­ µî·Ï
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	BOOL Unregister(std::string &name);
 	BOOL Unregister(const char *name);
 	BOOL IsRegister(std::string &name);
 	BOOL IsRegister(const char *name);
 	CTag *Find(std::string &name, BOOL bFindHierarchy = FALSE);
 	CTag *Find(const char *name, BOOL bFindHierarchy = FALSE);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 	void Clear();
-	BOOL Empty() { return m_mapRegistered.empty() && m_vectorChild.empty(); }	//ë¹„ì–´ìˆë‚˜?
+	BOOL Empty() { return m_mapRegistered.empty() && m_vectorChild.empty(); }	//ºñ¾îÀÖ³ª?
 
-	inline void AddChild(CTagManager *ptmChild)		{ m_vectorChild.push_back(ptmChild); }
+	inline void AddChild(CTagManager *ptmChild)		
+	{ 
+		m_vectorChild.push_back(ptmChild);
+	}
 	inline void RemoveChild(CTagManager *ptmChild)
 	{
 		std::vector<CTagManager*>::iterator iter = std::find(m_vectorChild.begin(), m_vectorChild.end(), ptmChild);
-		if(iter != m_vectorChild.end()) m_vectorChild.erase(iter);
+		if(iter != m_vectorChild.end()) 
+			m_vectorChild.erase(iter);
+	}
+
+	inline void ClearChild()
+	{
+		m_vectorChild.clear();
 	}
 
 	inline void SetOwner(CEntity *pen)	{ m_penOwner = pen;		}
@@ -68,4 +77,4 @@ ENGINE_API extern CTagManager g_tmWorld;
 
 #endif //__CTAGMANAGER_H__
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

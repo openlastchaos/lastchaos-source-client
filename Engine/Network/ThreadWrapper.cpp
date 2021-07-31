@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 #include "stdH.h"
 
 #include "ThreadWrapper.h"
@@ -36,7 +36,7 @@ DWORD cThreadWrapper::GetExitCode()
 BOOL cThreadWrapper::Start(void *parameter)
 {
 	if(m_hThreadHandle != NULL) CloseHandle(m_hThreadHandle);
-	//m_hThreadHandle = ::CreateThread(NULL, 0, m_pRunningFunction, parameter, 0, &m_dwThreadId); C RunTime Funcì‚¬ìš©ì‹œ ë©”ëª¨ë¦¬ ëˆ„ìˆ˜ê°€ ìˆë‹¤í•˜ì—¬ ì£¼ì„
+	//m_hThreadHandle = ::CreateThread(NULL, 0, m_pRunningFunction, parameter, 0, &m_dwThreadId); C RunTime Func»ç¿ë½Ã ¸Ş¸ğ¸® ´©¼ö°¡ ÀÖ´ÙÇÏ¿© ÁÖ¼®
 	m_hThreadHandle = (HANDLE)_beginthreadex(NULL, 0, m_pRunningFunction, parameter, 0, &m_uiThreadId);
 	if(m_hThreadHandle == NULL)
 	{
@@ -47,9 +47,9 @@ BOOL cThreadWrapper::Start(void *parameter)
 
 BOOL cThreadWrapper::Terminate(DWORD exitCode)
 {
-	BOOL bRet = ::TerminateThread(m_hThreadHandle, exitCode);
+	BOOL bRet = TerminateThread(m_hThreadHandle, exitCode);
 
-	// Threadê°€ ì¢…ë£Œë ë•Œ ê¹Œì§€ ê¸°ë‹¤ë¦°ë‹¤.(í˜„ì¬ëŠ” ë¬´í•œëŒ€ë¡œ ì²˜ë¦¬)
+	// Thread°¡ Á¾·áµÉ¶§ ±îÁö ±â´Ù¸°´Ù.(ÇöÀç´Â ¹«ÇÑ´ë·Î Ã³¸®)
 	WaitForSingleObject(m_hThreadHandle, INFINITE);
 
 	CloseHandle(m_hThreadHandle);
@@ -59,11 +59,11 @@ BOOL cThreadWrapper::Terminate(DWORD exitCode)
 
 void cThreadWrapper::Resume()
 {
-	m_dwThreadSuspendCount = ::ResumeThread(m_hThreadHandle);
+	m_dwThreadSuspendCount = ResumeThread(m_hThreadHandle);
 }
 
 void cThreadWrapper::Suspend()
 {
-	m_dwThreadSuspendCount = ::SuspendThread(m_hThreadHandle);
+	m_dwThreadSuspendCount = SuspendThread(m_hThreadHandle);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)

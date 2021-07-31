@@ -28,7 +28,7 @@ void CRenderer::AddModelEntity(CEntity *penModel)
 	if (penModel->IsFlagOn(ENF_INRENDERING)) return;
 	if (penModel->IsFlagOn(ENF_HIDDEN)&&
 		(CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-		(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!penModel->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npcëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+		(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!penModel->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc´Â º¼ ¼ö ÀÖ´Ù.
 		return;
 
 	// light source with a lens flare ?
@@ -157,17 +157,17 @@ void CRenderer::AddModelEntity(CEntity *penModel)
 /*
  * Add a ska model entity to rendering.
  */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 void CRenderer::AddSkaModelEntity(CEntity *penModel)
 {
 	// if the entity is currently active or hidden, don't add it again
 	if (penModel->IsFlagOn(ENF_INRENDERING)) return;
 	if (penModel->IsFlagOn(ENF_HIDDEN)&&
 		(CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-		(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!penModel->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npcëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+		(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!penModel->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc´Â º¼ ¼ö ÀÖ´Ù.
 		return;
 
-	// ë°˜ì‚¬ ë§µì„ ë Œë”ë§í•˜ëŠ” ë„ì¤‘ì—ëŠ” ë¬¼ ë¶€ë¶„ì€ ëª¨ë¸ì— ì¶”ê°€ë˜ì§€ ì•ŠìŒ.
+	// ¹İ»ç ¸ÊÀ» ·»´õ¸µÇÏ´Â µµÁß¿¡´Â ¹° ºÎºĞÀº ¸ğµ¨¿¡ Ãß°¡µÇÁö ¾ÊÀ½.
 	extern INDEX gfx_bRenderReflection;
 	if(gfx_bRenderReflection && (penModel->en_ulFlags & ENF_NICEWATER)) return;
 
@@ -184,9 +184,9 @@ void CRenderer::AddSkaModelEntity(CEntity *penModel)
 	// get its model object
 	CModelInstance *pmiModelInstance = penModel->GetModelInstance();
 	if( pmiModelInstance==NULL) return;  // safety check
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-13)
 	const BOOL bNoHasTag = penModel->en_pmiModelInstance->m_tmSkaTagManager.Empty();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-13)
 
 	// get proper projection for the entity
 	CProjection3D *pprProjection = re_prProjection;
@@ -239,7 +239,7 @@ void CRenderer::AddSkaModelEntity(CEntity *penModel)
 	if( bNiceWater && !bOutOfFrustum && gap_iOptimizeClipping>0) 
 	{
 		// test sphere against plane
-		// ê±°ìš¸ í‰ë©´ì— ëŒ€í•´ì„œ êµ¬ í…ŒìŠ¤íŠ¸...
+		// °Å¿ï Æò¸é¿¡ ´ëÇØ¼­ ±¸ Å×½ºÆ®...
 		const FLOAT fPlaneDistance = pprProjection->pr_plNiceWaterView.PointDistance(vHandle);
 		if( fPlaneDistance < -fR) iNiceWaterPlaneTest = -1;
 		else if( fPlaneDistance > +fR) iNiceWaterPlaneTest = +1;
@@ -254,11 +254,11 @@ void CRenderer::AddSkaModelEntity(CEntity *penModel)
 			iNiceWaterPlaneTest = boxEntity.TestAgainstPlane(pprProjection->pr_plNiceWaterView);
 		}
 		// skip if not in NiceWater
-		// NiceWaterë‚´ì— ì—†ë‹¤ë©´... ìŠ¤í‚µ.
+		// NiceWater³»¿¡ ¾ø´Ù¸é... ½ºÅµ.
 		if( iNiceWaterPlaneTest<0) bOutOfFrustum = FALSE;
 	}
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-13)
 	if(bOutOfFrustum)
 	{
 		CSkaTag *pRootTag = (CSkaTag *)penModel->en_pmiModelInstance->m_tmSkaTagManager.GetRootTag();
@@ -273,7 +273,7 @@ void CRenderer::AddSkaModelEntity(CEntity *penModel)
 			pRootTag->AddNewTagInfo(_pTimer->GetLerpedCurrentTick(), mObjToAbs, mObjToAbsStr);
 		}
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-13)
 	// don't add if not inside frustum
 	if( bOutOfFrustum && bNoParticles) return;
 
@@ -288,9 +288,9 @@ void CRenderer::AddSkaModelEntity(CEntity *penModel)
 
 	// if the object is not visible at its distance
 	const BOOL bInvisibleDistance = !pmiModelInstance->IsModelVisible(fMipFactor);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-13)
 	if( bInvisibleDistance && bNoParticles && bNoLensFlare && bNoHasTag) return;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-13)
 
 	// add it to container of all drawn entities and container for delayed rendering
 	re_cenDrawn.Add(penModel);
@@ -317,15 +317,15 @@ void CRenderer::AddSkaModelEntity(CEntity *penModel)
 	if( bMirror)            dm.dm_ulFlags |= DMF_MIRROR;    // mirrored/warped projection
 	if( iFrustumTest>0)     dm.dm_ulFlags |= DMF_INSIDE;    // need for clipping
 	if( iMirrorPlaneTest>0) dm.dm_ulFlags |= DMF_INMIRROR;  // need for clipping to mirror/warp plane
-	// NOTE: SKAëª¨ë¸ì— ëŒ€í•´ì„œ Clippingì„ í•˜ì§€ ì•Šë„ë¡ í•¨.
+	// NOTE: SKA¸ğµ¨¿¡ ´ëÇØ¼­ ClippingÀ» ÇÏÁö ¾Êµµ·Ï ÇÔ.
 	if( iNiceWaterPlaneTest>0) dm.dm_ulFlags |= DMF_INMIRROR;
 	if( Abs(fDistance)<fR)  dm.dm_ulFlags |= DMF_VERYNEAR;  // skip occlussion culling test
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-13)
 	if( !bNoHasTag && penModel->en_pmiModelInstance->m_tmSkaTagManager.HasActiveTag() )
 	{
 		dm.dm_ulFlags |= DMF_HASACTIVETAG;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-13)
 
 	// done if not visible at its distance
 	if( bInvisibleDistance) return;
@@ -339,7 +339,7 @@ void CRenderer::AddSkaModelEntity(CEntity *penModel)
 	// allow its rendering
 	dm.dm_ulFlags |= DMF_VISIBLE;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 
 
 /* Add a lens flare to rendering. */
@@ -595,13 +595,13 @@ void CRenderer::AddEntitiesInBox(const FLOATaabbox3D &boxNear)
 				continue;
 			}
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
 			extern INDEX gfx_bRenderReflection;
 			if(gfx_bRenderReflection)
 			{
 				if(!(iten->en_ulFlags & ENF_RENDERREFLECTION))	continue;
 			}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 			// if the first mip of the brush has contact with the box
 			CEntity *penBrush = iten;
 			CBrushMip *pbmFirst = penBrush->en_pbrBrush->GetFirstMip();
@@ -614,13 +614,13 @@ void CRenderer::AddEntitiesInBox(const FLOATaabbox3D &boxNear)
 		else if( iten->en_RenderType==CEntity::RT_MODEL
 					|| iten->en_RenderType==CEntity::RT_EDITORMODEL) 
 		{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
 			extern INDEX gfx_bRenderReflection;
 			if(gfx_bRenderReflection)
 			{
 				if(!(iten->en_ulFlags & ENF_RENDERREFLECTION))	continue;
 			}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 			// get model's bounding box for current frame
 			FLOATaabbox3D boxModel;
 			iten->en_pmoModelObject->GetCurrentFrameBBox(boxModel);
@@ -639,7 +639,7 @@ void CRenderer::AddEntitiesInBox(const FLOATaabbox3D &boxNear)
 		else if( iten->en_RenderType==CEntity::RT_SKAMODEL
 					|| iten->en_RenderType==CEntity::RT_SKAEDITORMODEL) 
 		{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
 			extern INDEX gfx_bRenderReflection;
 			if(gfx_bRenderReflection)
 			{
@@ -647,7 +647,7 @@ void CRenderer::AddEntitiesInBox(const FLOATaabbox3D &boxNear)
 			}
 			if( iten->GetModelInstance()->GetID() == -1 )
 				continue;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 			// get model's bounding box for current frame
 			FLOATaabbox3D boxModel;
 			iten->GetModelInstance()->GetCurrentColisionBox(boxModel);
@@ -662,14 +662,14 @@ void CRenderer::AddEntitiesInBox(const FLOATaabbox3D &boxNear)
 		// if this is terrain entity
 		else if( iten->en_RenderType==CEntity::RT_TERRAIN) 
 		{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.20
-			// NOTE : ì‹œì—°ì— ëŒ€ë¹„í•´ì„œ Terrainì˜ Entityì˜ ë°”ìš´ë”© ì²´í¬ë¥¼ í•˜ì§€ ì•ŠìŒ.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.20
+			// NOTE : ½Ã¿¬¿¡ ´ëºñÇØ¼­ TerrainÀÇ EntityÀÇ ¹Ù¿îµù Ã¼Å©¸¦ ÇÏÁö ¾ÊÀ½.
 			// get model's bounding box for current frame
-			// ì›ë³¸.
+			// ¿øº».
 			#pragma message(">> Is terrain visible")
 			const CTerrain *ptrTerrain = iten->GetTerrain();
 			FLOATaabbox3D boxTerrain = TR_GetStretchedTerrainBBox(ptrTerrain);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.16
 			/*
 			// get center and radius of the bounding sphere
 			FLOAT fSphereRadius = Max( boxTerrain.Min().Length(), boxTerrain.Max().Length() );
@@ -677,23 +677,23 @@ void CRenderer::AddEntitiesInBox(const FLOATaabbox3D &boxNear)
 			// create maximum box for the model (in cases of any rotation) from the sphere
 			FLOATaabbox3D boxMaxTerrain(vSphereCenter, fSphereRadius);
 			*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.16
 			// if the model box is near the given box
 			AddTerrainEntity(&iten.Current());			
 			/*
-			#pragma message(">> Terrain Entityê°€ í•˜ë‚˜ë¼ë„ ìˆìœ¼ë©´ ë¬´ì¡°ê±´ Bounding Box ì²´í¬ë¥¼ í•˜ì§€ ì•ŠìŒ.(03ì›” 20ì¼)")
+			#pragma message(">> Terrain Entity°¡ ÇÏ³ª¶óµµ ÀÖÀ¸¸é ¹«Á¶°Ç Bounding Box Ã¼Å©¸¦ ÇÏÁö ¾ÊÀ½.(03¿ù 20ÀÏ)")
 			const CTerrain *ptrTerrain = iten->GetTerrain();
 			ASSERT(ptrTerrain != NULL && "Invalid Terrain Entity Pointer");
 			AddTerrainEntity(&iten.Current());
 			*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.20
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.20
 		}
 	}
 }
 
 
 // update VisTweak flags with given zoning sector
-// ì£¼ì–´ì§„ Zoning ì„¹í„°ì˜ ê°€ì‹œì„± í”Œë˜ê·¸ë¥¼ ê°±ì‹ í•¨.
+// ÁÖ¾îÁø Zoning ¼½ÅÍÀÇ °¡½Ã¼º ÇÃ·¡±×¸¦ °»½ÅÇÔ.
 inline void CRenderer::UpdateVisTweaks(CBrushSector *pbsc)
 {
 	// if not showing vis tweaks
@@ -821,13 +821,13 @@ void CRenderer::AddZoningSectorsAroundBox(const FLOATaabbox3D &boxNear)
 			continue;
 		}
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
 		extern INDEX gfx_bRenderReflection;
 		if(gfx_bRenderReflection)
 		{
 			if(!(iten->en_ulFlags & ENF_RENDERREFLECTION))	continue;
 		}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 
 		CEntity *penBrush = &*iten;
 		// get its brush
@@ -984,7 +984,7 @@ void CRenderer::AddMirror(CScreenPolygon &spo)
 	}
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.16
 void CRenderer::AddWater(CEntity& ent)
 {
 	// if this is last renderer (no more recursion)
@@ -997,8 +997,8 @@ void CRenderer::AddWater(CEntity& ent)
 	CWaterEntity &water = re_amiWaters.Push();
 	water.Clear();	
 
-	// ObjToAbs í–‰ë ¬ì„ êµ¬í•¨.
-	CPlacement3D plModel = ent.GetLerpedPlacement();		// ëª¨ë¸ì˜ ìœ„ì¹˜.	
+	// ObjToAbs Çà·ÄÀ» ±¸ÇÔ.
+	CPlacement3D plModel = ent.GetLerpedPlacement();		// ¸ğµ¨ÀÇ À§Ä¡.	
 	FLOATmatrix3D m;
 	MakeRotationMatrixFast(m, plModel.pl_OrientationAngle);
 	Matrix12 matTemp;
@@ -1013,20 +1013,20 @@ void CRenderer::AddWater(CEntity& ent)
 	water.m_plPlane(1) = vNormal.x;
 	water.m_plPlane(2) = vNormal.y;
 	water.m_plPlane(3) = vNormal.z;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ 2ì°¨ ì‘ì—…			04.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ 2Â÷ ÀÛ¾÷			04.29
 	water.m_plPlane.Distance() = -plTemp.d;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë 2ì°¨ ì‘ì—…			04.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ 2Â÷ ÀÛ¾÷			04.29
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
 	water.m_pWaterEntity = &ent;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.16
-	// NOTE : ì²«ë²ˆì§¸ Waterì— í•´ë‹¹í•˜ëŠ” í‰ë©´ì„ ì „ì—­ìœ¼ë¡œ ì„¤ì •í•˜ë„ë¡ í•©ë‹ˆë‹¤.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.23
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.16
+	// NOTE : Ã¹¹øÂ° Water¿¡ ÇØ´çÇÏ´Â Æò¸éÀ» Àü¿ªÀ¸·Î ¼³Á¤ÇÏµµ·Ï ÇÕ´Ï´Ù.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.23
 	//CNiceWater &water = re_amiWaters[0];
 	//_plReflect = water.m_plPlane;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.23
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.16
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.23
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.16
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.160
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.160

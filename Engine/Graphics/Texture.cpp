@@ -4,7 +4,6 @@
 
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Timer.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Base/Console.h>
 #include <Engine/Base/MemoryTracking.h>
 #include <Engine/Math/Functions.h>
@@ -19,6 +18,12 @@
 
 #include <Engine/Base/Statistics_internal.h>
 
+#ifdef KALYDO
+#include <Kalydo/KRFReadLib/Include/KRFReadLib.h>
+#endif
+
+#include <3rdparty/lpng163/png.h>
+
 // track texture memory allocated in main heap
 #define TRACKTEX_HEAP() TRACKMEM(mem, "Textures (heap)")
 // track texture memory allocated in hardware
@@ -26,8 +31,10 @@
 
 
 // (texture compression needs this)
-#include <Engine/Graphics/dxtlib.h>
-#pragma comment(lib, "nvDXTlib.lib")
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
+#	include <Engine/Graphics/dxtlib.h>
+#	pragma comment(lib, "nvDXTlib.lib")
+#endif	// _MSC_VER
 
 
 // cvars
@@ -45,6 +52,10 @@ extern FLOAT gfx_tmProbeDecay;
 
 // singleton object for texture settings
 struct TextureSettings TS = {0};
+
+#ifdef KALYDO
+CTString CTextureData::strDefaultTexturePath = "data\\defaults\\default.tex";
+#endif
 
 #define TEXFMT_NONE 0
 
@@ -745,7 +756,7 @@ static void RemoveOversizedMipmaps( CTextureData *pTD)
 	pTD->td_ulFlags |= TEX_DISPOSED;
 }
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Encode Data)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Encode Data)(0.1)
 #define TEX_DATA_VER 1
 #define CODE_TEX_1 17
 #define CODE_TEX_2 02
@@ -809,7 +820,7 @@ inline Type DecodeSimpleTex(Type val, UBYTE &ubChecker)
 	else return val;
 }
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Encode Data)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Encode Data)(0.1)
 
 // reads 32/24-bit texture from file and eventually converts it to 8-bit pixel format
 void CTextureData::Read_t( CTStream *inFile)
@@ -825,15 +836,24 @@ void CTextureData::Read_t( CTStream *inFile)
 	
 	// determine driver context presence (must have at least 1 texture unit!)
 	const BOOL bHasContext = (_pGfx->gl_ctRealTextureUnits>0);
-	
+
+	CTString& strDesc = inFile->GetDescription();
+
 	// read version
 	INDEX iVersion;
 	inFile->ExpectID_t( "TVER");
+
+	if (inFile->is_png() == true)
+	{
+		Read_PNG(inFile);
+		return;
+	}
+
 	*inFile >> iVersion;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Encode Data)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Encode Data)(0.1)
 	INDEX iNewVer = (iVersion & 0xFFFF0000) >> 16;
 	iVersion &= 0x0000FFFF;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Encode Data)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Encode Data)(0.1)
 
 	if(iVersion == 5)
 	{
@@ -862,7 +882,7 @@ void CTextureData::Read_t( CTStream *inFile)
 		// if this is chunk containing texture data
 		if( idChunk == CChunkID("TDAT"))
 		{
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Encode Data)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Encode Data)(0.1)
 			if(iNewVer == TEX_DATA_VER || iNewVer == 5)
 			{
 				UBYTE checker = iNewVer;
@@ -912,7 +932,7 @@ void CTextureData::Read_t( CTStream *inFile)
 				td_ctFineMipLevels = ClampDn( td_ctFineMipLevels, 1L);
 				if( iVersion==4) td_slFrameSize = GetMipmapOffset( 15, GetPixWidth(), GetPixHeight()) * BYTES_PER_TEXEL;
 			}
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Encode Data)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Encode Data)(0.1)
 		}
 		// if this is chunk containing compressed frames
 		else if( idChunk == CChunkID("FRMC"))
@@ -1100,8 +1120,6 @@ void CTextureData::Read_t( CTStream *inFile)
 	}
 	// until we didn't reach end of file
 	while( !inFile->AtEOF());
-	
-	CDisableAsyncProgress dap;
 	
 	// if this is an effect texture
 	if( td_ptegEffect!=NULL) 
@@ -1302,7 +1320,99 @@ void CTextureData::Read_t( CTStream *inFile)
 	if( bHasContext && !(td_ulFlags&TEX_STATIC)) SetAsCurrent();
 }
 
+static void read_png_data_callback( png_structp png_ptr, png_byte* raw_data, png_size_t read_length) 
+{
+	CTStream* handle = (CTStream*)png_get_io_ptr(png_ptr);
+	handle->Read_t(raw_data, read_length);
+}
 
+void CTextureData::Read_PNG( CTStream* inFile )
+{
+//	png_byte color_type;
+	png_byte bit_depth;
+
+	png_structp png_ptr;
+	png_infop info_ptr;
+//	int number_of_passes;
+
+	char header[8];    // 8 is the maximum size that can be checked
+
+	/* open file and test for it being a png */
+	memcpy(header, inFile->strm_pubBufferBegin, 8);
+
+	if (png_sig_cmp((png_const_bytep)header, 0, 8))
+	{
+		CPrintF("[read_png_file] File %s is not recognized as a PNG file", inFile->GetDescription());
+		return;
+	}
+
+	/* initialize stuff */
+	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+	if (!png_ptr)
+	{
+		CPrintF("[read_png_file] png_create_read_struct failed");
+		return;
+	}
+
+	info_ptr = png_create_info_struct(png_ptr);
+	
+	if (!info_ptr)
+	{
+		CPrintF("[read_png_file] png_create_info_struct failed");
+		return;
+	}
+
+// 	if (setjmp(png_jmpbuf(png_ptr)))
+// 	{
+// 		CPrintF("[read_png_file] Error during init_io");
+// 		return;
+// 	}
+
+	inFile->SetPos_t(0);
+	png_set_read_fn(png_ptr, inFile, read_png_data_callback);
+
+//	png_set_sig_bytes(png_ptr, 8);
+
+	png_read_info(png_ptr, info_ptr);
+
+ 	td_mexWidth = png_get_image_width(png_ptr, info_ptr);
+ 	td_mexHeight = png_get_image_height(png_ptr, info_ptr);
+// 	color_type = png_get_color_type(png_ptr, info_ptr);
+ 	bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+// 
+// 	number_of_passes = png_set_interlace_handling(png_ptr);
+ 	png_read_update_info(png_ptr, info_ptr);
+
+	/* read file */
+	if (setjmp(png_jmpbuf(png_ptr)))
+	{
+		CPrintF("[read_png_file] Error during read_image");
+		return;
+	}
+
+	td_ulFlags = TEX_FILTERED | TEX_32BIT | TEX_ALPHACHANNEL;
+	td_ctFrames = 1;
+	td_ctFineMipLevels = 1;
+	td_iFirstMipLevel = 0;
+
+	SLONG slFrameSize = GetPixWidth() * GetPixHeight() * bit_depth;
+	td_pulFrames = (ULONG*)AllocMemory( slFrameSize);
+	
+	td_ulInternalFormat = DetermineInternalFormat(this);
+
+	const png_size_t row_size = png_get_rowbytes(png_ptr, info_ptr);
+	png_uint_32 i;
+	for (i = 0; i < td_mexHeight; i++) 
+	{
+		png_read_row(png_ptr, (png_bytep)(td_pulFrames + (i * td_mexWidth)), NULL);
+	}
+
+	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+
+	if (!(td_ulFlags&TEX_STATIC))
+		SetAsCurrent();
+}
 
 // writes texutre to file
 void CTextureData::Write_t( CTStream *outFile)   // throw char *
@@ -1322,7 +1432,7 @@ void CTextureData::Write_t( CTStream *outFile)   // throw char *
 		}
 	}
 	
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Encode Data)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Encode Data)(0.1)
 	// write version
 	INDEX iVersion = 4;
 	outFile->WriteID_t("TVER");
@@ -1349,7 +1459,7 @@ void CTextureData::Write_t( CTStream *outFile)   // throw char *
 	*outFile << EncodeSimpleTex(td_ctFineMipLevels, checker);
 	*outFile << EncodeSimpleTex(ulFlags, checker);
 	*outFile << EncodeSimpleTex(td_ctFrames, checker);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Encode Data)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Encode Data)(0.1)
 	
 	// if global effect struct exists in texture, don't save frames
 	if( td_ptegEffect==NULL)
@@ -1529,6 +1639,7 @@ static HRESULT MIPCallBack( void *data, int iMipLevel, DWORD dwSize)
 // compress texture (returns pointer to compressed frames)
 UBYTE *CTextureData::Compress( SLONG &slCompressedFrameSize, BOOL bCompressAlpha)
 {
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
 	TRACKTEX_HEAP();
 	
 	const PIX pixTexWidth  = GetPixWidth();
@@ -1588,7 +1699,9 @@ UBYTE *CTextureData::Compress( SLONG &slCompressedFrameSize, BOOL bCompressAlpha
 	// release temp frame memory
 	FreeMemory( pubFrameARGB);
 	return _pubDXTFrames;
-	
+#else	// _MSC_VER
+	return NULL;
+#endif	// _MSC_VER
 }
 
 
@@ -1759,12 +1872,12 @@ void CTextureData::SetAsCurrent( INDEX iFrameNo/*=0*/, BOOL bForceUpload/*=FALSE
 			td_ptegEffect->Animate();
 			bNeedUpload = TRUE;
 			// make sure that effect and base textures are static
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Create Effect Texture Bug Fix)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Create Effect Texture Bug Fix)(0.1)
 //			ASSERT( td_ulFlags & TEX_STATIC);
 //			ASSERT( td_ptdBaseTexture->td_ulFlags & TEX_STATIC);
 			Force(TEX_STATIC);
 			td_ptdBaseTexture->Force(TEX_STATIC);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Create Effect Texture Bug Fix)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Create Effect Texture Bug Fix)(0.1)
 			// copy some flags from base texture to effect texture
 			td_ulFlags |= td_ptdBaseTexture->td_ulFlags & (TEX_ALPHACHANNEL|TEX_TRANSPARENT|TEX_GRAY);
 			// render effect texture
@@ -2032,6 +2145,152 @@ void CTextureData::Clear(void)
 }
 
 
+#ifdef KALYDO
+static void KCPTextureDownloaded(const char* fileName, TKResult result, void* id)
+{
+	switch (result)
+	{
+	case KR_OK:
+		{
+			SLS* pSLS = new SLS();
+			pSLS->pTarget = reinterpret_cast<CSerial*>(id);
+			pSLS->pTargetFilePath = fileName;
+			g_deqLoadData.push_back( pSLS );
+		}
+		break;
+	case KR_DOWNLOAD_FAILED:
+	case KR_FILE_CORRUPT:
+		krfRequestKCPFile(fileName, &KCPTextureDownloaded, id);
+	//default:
+		// unknown error!
+	}
+}
+
+void CTextureData::Load_t(const CTFileName &fnFileName)
+{
+  ASSERT(!IsUsed());
+  // mark that you have changed
+  MarkChanged();
+  // ±Ÿµ• ¿Ã∞‘ »ÆΩ««—∞°?? »£√‚ ∏≈ƒø¥œ¡Ú¿« ¡§»Æ«— «ÿ∏Ì¿Ã « ø‰«“ ∞≈ ∞∞¥Ÿ.
+  TKResult tkResult = KR_OK;
+  tkResult = krfRequestKCPFile( fnFileName, NULL, NULL );
+  // if file exist in local disk.
+  if( KR_OK == tkResult )
+  {
+	// open a stream
+	CTFileStream istrFile;
+	istrFile.Open_t(fnFileName);
+	// read object from stream
+	Read_t(&istrFile);
+	// if still here (no exceptions raised)
+	// remember filename
+	ser_FileName = fnFileName;
+  }
+  else
+  {
+	CPrintF("Request file to kcp : %s\n", fnFileName );
+	//?????????????
+	CTFileStream istrFile;
+	istrFile.Open_t( strDefaultTexturePath );
+	Read_t(&istrFile);
+	ser_FileName = fnFileName;
+	if( tkResult == KR_FILE_NOT_AVAILABLE )
+	{
+		MarkUsed();
+	}
+	tkResult = krfRequestKCPFile(fnFileName, &KCPTextureDownloaded, this);
+	if( KR_FILE_NOT_FOUND == tkResult )
+	{
+		CPrintF("[Load_t] Texture File Not Found in kalydo...\n" );
+	}
+	else if( KR_IO_PENDING == tkResult )
+	{
+		CPrintF("[Load_t] Texture File already request...\n" );
+	}
+	else
+	{
+		;
+	}
+  }  
+}
+
+
+
+void CTextureData::Load_Delay_t(const CTFileName &fnFileName)
+{
+  // mark that you have changed
+  MarkChanged();
+  // ±Ÿµ• ¿Ã∞‘ »ÆΩ««—∞°?? »£√‚ ∏≈ƒø¥œ¡Ú¿« ¡§»Æ«— «ÿ∏Ì¿Ã « ø‰«“ ∞≈ ∞∞¥Ÿ.
+
+  //if( kfileExists( fnFileName ) )
+	// open a stream
+	CTFileStream istrFile;
+	istrFile.Open_t(fnFileName);
+	// read object from stream
+	Read_t(&istrFile);
+	// if still here (no exceptions raised)
+	// remember filename
+	ser_FileName = fnFileName;
+	MarkUnused();
+}
+
+
+void CTextureData::Reload(void)
+{
+	/* if not found, */
+	TRACKMEM(Mem, strrchr((const char*)ser_FileName, '.'));
+
+	// mark that you have changed
+	MarkChanged();
+
+	CTFileName fnmOldName = ser_FileName;
+	Clear();
+
+	TKResult tkResult = krfRequestKCPFile( fnmOldName, NULL, NULL );
+	if( KR_OK == tkResult )
+	{
+		// try to
+		try {
+		  // open a stream
+		  CTFileStream istrFile;
+		  istrFile.Open_t(fnmOldName);
+		  // read object from stream
+		  Read_t(&istrFile);
+
+		// if there is some error while reloading
+		} catch (char *strError) {
+		  // quit the application with error explanation
+		  FatalError(TRANS("Cannot reload file '%s':\n%s"), (CTString&)fnmOldName, strError);
+		}
+
+		// if still here (no exceptions raised)
+		// remember filename
+		ser_FileName = fnmOldName;
+	}
+	else
+	{
+		// it is already request in load_t()
+		CPrintF("Request file to kcp : %s\n", fnmOldName );
+		//?????????????
+		CTFileStream istrFile;
+		istrFile.Open_t( strDefaultTexturePath );
+		Read_t(&istrFile);
+		ser_FileName = fnmOldName;
+	}
+}
+
+#else	// KALYDO
+
+void CTextureData::Reload()
+{
+	CTFileName	strFile = ser_FileName;
+	Clear();
+	ser_FileName = strFile;
+	CSerial::Reload();
+}
+
+#endif	// KALYDO
+
 
 
 /*******************************************
@@ -2073,7 +2332,7 @@ void ProcessScript_t( const CTFileName &inFileName) // throw char *
 	char ld_line[128];
 	char err_str[256];
 	FLOAT fTextureWidthMeters = 2.0f;
-	INDEX TexMipmaps = MAX_MEX_LOG2;
+	INDEX TexMipmaps = (MAX_MEX_LOG2-2);
 	CTextureData tex;
 	CListHead FrameNamesList;
 	INDEX NoOfDataFound = 0;

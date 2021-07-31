@@ -65,9 +65,12 @@
 #include <Engine/Entities/MobData.h>
 #include <Engine/Entities/TargetInfo.h>
 #include <Engine/GlobalDefinition.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+#include <Engine/Contents/function/TargetInfoNewUI.h>
+#include <Engine/Info/MyInfo.h>
+#include <Engine/Object/ActorMgr.h>
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 #include <vector>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 
 // a reference to a void event for use as default parameter
 const EVoid _evVoid;
@@ -242,6 +245,7 @@ CEntity::CEntity(void)
 	en_ctReferences = 0;
 	en_ulID = 0;
 	en_RenderType = RT_NONE;
+	en_EntityUseType = EU_NORMAL;
 	en_fSpatialClassificationRadius = -1.0f;
 	en_penParent = NULL;
 	en_plpLastPositions = NULL;
@@ -251,9 +255,9 @@ CEntity::CEntity(void)
 	en_pMobTarget		= NULL;
 	en_pCharacterTarget	= NULL;
 	en_pPetTarget		= NULL;
-	en_pWildPetInfo		= NULL;
+	en_pWildPetTarget	= NULL;
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	m_plsLight = NULL;
 	en_vDesiredDirection = FLOAT3D(0,0,0);
 
@@ -266,19 +270,22 @@ CEntity::CEntity(void)
 	m_tmTagManager.Register(pTag);
 */
 	//m_ptmTagManager = new CTagManager;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 	SetFlagOn(ENF_PROPSCHANGED);
 }
 
 void CEntity::DeleteSelf(void)
 {
-	if (!(en_ulFlags&ENF_DELETED)) {
-		ASSERT(FALSE);
-		CPrintF("!!!!!ERROR: Deleting undestroyed entity!\n");
-		Destroy(FALSE);
+	if (en_EntityUseType == EU_NORMAL)
+	{
+		if (!(en_ulFlags&ENF_DELETED)) {
+			ASSERT(FALSE);
+			CPrintF("!!!!!ERROR: Deleting undestroyed entity!\n");
+			Destroy(FALSE);
+		}
+		delete this;
 	}
-	delete this;
 }
 
 /*
@@ -286,9 +293,14 @@ void CEntity::DeleteSelf(void)
  */
 CEntity::~CEntity(void)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-29)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-29)
 	//delete m_ptmTagManager;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-29)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-29)
+	if (en_EntityUseType == EU_DUMMY)
+	{
+		return;
+	}
+
 	ASSERT(en_ctReferences==0);
 	ASSERT(en_ulID!=0);
 	ASSERT(en_RenderType==RT_NONE);
@@ -374,9 +386,9 @@ INDEX CEntity::GetMaxPlayers(void) {
 /* Return Player Entity */
 CEntity *CEntity::GetPlayerEntity(INDEX iPlayer)
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹±ê¸€ ë˜ì ¼ ì‘ì—…	07.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ì±Û ´øÁ¯ ÀÛ¾÷	07.29
 	//ASSERT(iPlayer>=0 && iPlayer<GetMaxPlayers());
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ ë˜ì ¼ ì‘ì—…		07.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û ´øÁ¯ ÀÛ¾÷		07.29
 	// if the player target is inactive, return NULL
 	if (!_pNetwork->ga_srvServer.srv_apltPlayers[iPlayer].IsActive()) {
 		return NULL;
@@ -422,48 +434,52 @@ void CEntity::GetSize(FLOATaabbox3D &box)
 	}
 }
 
-//0724 kwon í•¨ìˆ˜ ì¶”ê°€.
+//0724 kwon ÇÔ¼ö Ãß°¡.
 //------------------------------------------------------------------------------
 // CEntity::SetTargetInfo
 // Explain:  
 //------------------------------------------------------------------------------
-void CEntity::SetTargetInfo(float fMaxHealth, float fHealth, BOOL bMe, int level, int Pk,int pkstate, int legit,int dbIdx)
+bool CEntity::SetTargetInfo(float fMaxHealth, float fHealth, BOOL bMe, int level, int Pk,int pkstate, int legit,int dbIdx)
 {
-	if( _pNetwork->_TargetInfo.pen_pEntity == this )
-		return;
+	CUIManager* pUIMgr = CUIManager::getSingleton();
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+	CTargetInfoUI* pTargetUI = pUIMgr->GetTargetInfoUI();
 
-	//if( !en_pPetTarget )
-	//	return;
+	if (pTargetUI == NULL)
+		return false;
 
-	//ì „ì‚¬ì˜ ì¶•ë³µì¼ ê²½ìš° íƒ€ê²Ÿ ì •ë³´ ì €ì¥í•˜ì§€ ì•ŠìŒ...
-	if( GetName() == _pNetwork->GetMobName(310) ||
-		GetName() == _pNetwork->GetMobName(311) ||
-		GetName() == _pNetwork->GetMobName(312) ||
-		GetName() == _pNetwork->GetMobName(313) )
+	if( pInfo->GetTargetEntity(eTARGET) == this )
+		return false;
+
+	//Àü»çÀÇ Ãàº¹ÀÏ °æ¿ì Å¸°Ù Á¤º¸ ÀúÀåÇÏÁö ¾ÊÀ½...
+	if( GetName() == CMobData::getData(310)->GetName() ||
+		GetName() == CMobData::getData(311)->GetName() ||
+		GetName() == CMobData::getData(312)->GetName() ||
+		GetName() == CMobData::getData(313)->GetName() )
 	{
-		_pNetwork->_TargetInfo.Init();
-		return;
+		pInfo->TargetClear(eTARGET);
+		return false;
 	}
-
-	_pNetwork->_TargetInfo.fMaxHealth	= fMaxHealth;
-	_pNetwork->_TargetInfo.fHealth		= fHealth;
-	_pNetwork->_TargetInfo.bIsActive	= TRUE;
-	_pNetwork->_TargetInfo.iLevel		= level;
-	_pNetwork->_TargetInfo.pen_pEntity	= this;
-	// NPCì˜ ê²½ìš°ë§Œ NPCì˜ flag êµ¬ë¶„ì˜ ì“°ê¸° ìœ„í•´
-	// wooss 060727
-	_pNetwork->_TargetInfo.dbIdx		= dbIdx;
+	
+	CTargetInfom TargetInfo;
+	TargetInfo.fMaxHealth	= fMaxHealth;
+	TargetInfo.fHealth		= fHealth;
+	TargetInfo.bIsActive	= TRUE;
+	TargetInfo.iLevel		= level;
+	TargetInfo.pen_pEntity	= this;
+	// NPCÀÇ °æ¿ì¸¸ NPCÀÇ flag ±¸ºĞÀÇ ¾²±â À§ÇØ
+	TargetInfo.dbIdx		= dbIdx;
 
 	if(Pk != -1)
 	{
-		_pNetwork->_TargetInfo.PkMode	= Pk;
-		_pNetwork->_TargetInfo.PkState	= pkstate;
-		_pNetwork->_TargetInfo.Legit	= legit;
+		TargetInfo.PkMode	= Pk;
+		TargetInfo.PkState	= pkstate;
+		TargetInfo.Legit	= legit;
 	}
 
 	if(bMe)
 	{
-		strcpy(_pNetwork->_TargetInfo.TargetName,_pNetwork->MyCharacterInfo.name);
+		strcpy(TargetInfo.TargetName, _pNetwork->MyCharacterInfo.name);
 	}
 	else
 	{
@@ -473,66 +489,77 @@ void CEntity::SetTargetInfo(float fMaxHealth, float fHealth, BOOL bMe, int level
 			if( en_pPetTarget )
 			{
 				if( en_pPetTarget->pet_strNameCard.Length() >0)
-					strcpy( _pNetwork->_TargetInfo.TargetName, en_pPetTarget->pet_strNameCard);
+					strcpy( TargetInfo.TargetName, en_pPetTarget->pet_strNameCard);
 				else
-					strcpy( _pNetwork->_TargetInfo.TargetName, en_pPetTarget->pet_Name );
+					strcpy( TargetInfo.TargetName, en_pPetTarget->m_strName.c_str() );
 			}
 		}
 		else if( IsSlave() )
 		{
 			if( en_pSlaveTarget )
-				strcpy( _pNetwork->_TargetInfo.TargetName, en_pSlaveTarget->slave_Name );
+				strcpy( TargetInfo.TargetName, en_pSlaveTarget->m_strName.c_str() );
 		}
 		else if( IsWildPet())
 		{
-			if( en_pWildPetInfo)
+			if (en_pWildPetTarget != NULL)
 			{
-				strcpy( _pNetwork->_TargetInfo.TargetName, en_pWildPetInfo->m_strName );
+				strcpy( TargetInfo.TargetName, en_pWildPetTarget->m_strName.c_str() );
 			}
 		}
 		else
-			strcpy( _pNetwork->_TargetInfo.TargetName, GetName() );
+			strcpy( TargetInfo.TargetName, GetName() );
 		// Modified by yjpark
 	}
+	BOOL bShowBuff = FALSE;
 
-	// FIXME : ì •ë¦¬ í•„ìš”.
 	if(IsEnemy())
 	{		
 		if(this->IsFirstExtraFlagOn(ENF_EX1_NPC))
 		{
-			_pNetwork->_TargetInfo.TargetType = NPC;
-			
+			TargetInfo.TargetType = NPC;
 		}
 		else if(this->IsFirstExtraFlagOn(ENF_EX1_PRODUCTION))
 		{
-			_pNetwork->_TargetInfo.TargetType = PRODUCTION;
+			TargetInfo.TargetType = PRODUCTION;
 		}
 		else
 		{
-			_pNetwork->_TargetInfo.TargetType = MOB;
+			TargetInfo.TargetType = MOB;
 		}
-		_pUIMgr->GetTargetInfo()->SetTargetBuff( FALSE );
 	}
 	else if(IsPet())
 	{
-		_pNetwork->_TargetInfo.TargetType = PET;
-		_pUIMgr->GetTargetInfo()->SetTargetBuff( FALSE );
+		TargetInfo.TargetType = P1PET;
 	}
 	else if(IsSlave())
 	{
-		_pNetwork->_TargetInfo.TargetType = SUMMON;
-		_pUIMgr->GetTargetInfo()->SetTargetBuff( FALSE );
+		TargetInfo.TargetType = SUMMON;
 	}
 	else if(IsCharacter() || bMe)
 	{
-		_pNetwork->_TargetInfo.TargetType = CHARACTER;
-		_pUIMgr->GetTargetInfo()->SetTargetBuff( bMe );
+		TargetInfo.TargetType = CHARACTER;
+		bShowBuff = bMe;
 	}
 	else if(IsWildPet())
 	{
-		_pNetwork->_TargetInfo.TargetType = WILDPET;
-		_pUIMgr->GetTargetInfo()->SetTargetBuff( FALSE );
+		TargetInfo.TargetType = WILDPET;
 	}
+	
+	int nNetworkID = -1;
+
+	// Å¸°Ù´ë»óÀÌ Ä³¸¯ÅÍ ÀÏ¶§¸¸ º¸³»ÁØ´Ù.
+	if (IsCharacter())
+		nNetworkID = GetNetworkID();
+		
+	_pNetwork->SendClickObject(nNetworkID);
+	pInfo->SetTargetInfo(TargetInfo);
+	pTargetUI->SetTargetBuff( bShowBuff );
+	return true;
+}
+
+void CEntity::SetTargetSyndicateInfo( int nType, int nGrade )
+{
+	INFO()->SetTargetSyndicate(nType, nGrade);
 }
 
 //------------------------------------------------------------------------------
@@ -541,15 +568,13 @@ void CEntity::SetTargetInfo(float fMaxHealth, float fHealth, BOOL bMe, int level
 //------------------------------------------------------------------------------
 void CEntity::UpdateTargetInfo( float fMaxHealth, float fHealth, int Pk,int pkstate,int Legit)
 {
-	_pNetwork->_TargetInfo.fMaxHealth = fMaxHealth;
-	_pNetwork->_TargetInfo.fHealth = fHealth;
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+	
+	pInfo->SetTargetHealth(fHealth, fMaxHealth);
 
 	if(Pk != -1)
 	{
-		_pNetwork->_TargetInfo.PkMode = Pk;
-		_pNetwork->_TargetInfo.PkState = pkstate;
-
-		_pNetwork->_TargetInfo.Legit = Legit;
+		pInfo->SetTargetPKMode(Pk, pkstate, Legit);
 	}
 }
 
@@ -559,7 +584,7 @@ void CEntity::UpdateTargetInfo( float fMaxHealth, float fHealth, int Pk,int pkst
 //------------------------------------------------------------------------------
 void CEntity::DelTargetInfo()
 {
-	_pNetwork->_TargetInfo.Init();	
+	INFO()->TargetClear(eTARGET);
 }
 //0824
 
@@ -567,114 +592,128 @@ void CEntity::DelTargetInfo()
 // CEntity::SetTargetInfoReal
 // Explain: 
 //------------------------------------------------------------------------------
-// FIXME : ë§ˆìš°ìŠ¤ ì˜¤ë²„ë§Œ ë˜ë©´ í˜¸ì¶œë˜ëŠ” ë“¯í•œí…Œ,
-// FIXME : íƒ€ ìºë¦­í„°ì™€ ì•„ì´í…œë§Œ ì •ë³´ ì¶œë ¥í•´ì£¼ë©´ ë˜ëŠ”ê±° ì•„ë‹Œê°€???
-void CEntity::SetTargetInfoReal( float fMaxHealth, float fHealth, int level,int Pk,int pkstate,SQUAD llCount,int pkLegit,CCharacterTarget* ct )
+// FIXME : ¸¶¿ì½º ¿À¹ö¸¸ µÇ¸é È£ÃâµÇ´Â µíÇÑÅ×,
+// FIXME : Å¸ Ä³¸¯ÅÍ¿Í ¾ÆÀÌÅÛ¸¸ Á¤º¸ Ãâ·ÂÇØÁÖ¸é µÇ´Â°Å ¾Æ´Ñ°¡???
+void CEntity::SetTargetInfoReal( float fMaxHealth, float fHealth, int level,int Pk,int pkstate,SQUAD llCount,int pkLegit,CCharacterTarget* ct, int nType )
 {
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
 	// Modified by yjpark
-	if( _pNetwork->_TargetInfoReal.pen_pEntity == this &&
-		( IsPet() || IsSlave() || IsEnemy() || ( GetFlags() & ENF_ITEM ) || Pk == _pNetwork->_TargetInfoReal.PkMode ) )
+	if( pInfo->GetTargetEntity(eTARGET_REAL) == this &&
+		( IsPet() || IsSlave() || IsEnemy() || ( GetFlags() & ENF_ITEM ) || Pk == pInfo->GetTargetPKMode(eTARGET_REAL) ) )
 		return;
-	// Modified by yjpark
 
-	//if( !en_pPetTarget )
-	//return;
-
-	_pNetwork->_TargetInfoReal.fMaxHealth	= fMaxHealth;
-	_pNetwork->_TargetInfoReal.fHealth		= fHealth;
-	_pNetwork->_TargetInfoReal.bIsActive	= TRUE;
-	_pNetwork->_TargetInfoReal.iLevel		= level;
-	_pNetwork->_TargetInfoReal.pen_pEntity	= this;
+	CTargetInfomReal targetInfo;
+	targetInfo.fMaxHealth	= fMaxHealth;
+	targetInfo.fHealth		= fHealth;
+	targetInfo.bIsActive	= TRUE;
+	targetInfo.iLevel		= level;
+	targetInfo.pen_pEntity	= this;
 
 	if(Pk != -1)
 	{
-		_pNetwork->_TargetInfoReal.PkMode= Pk;
-		_pNetwork->_TargetInfoReal.PkState = pkstate;
-		_pNetwork->_TargetInfoReal.Legit = pkLegit;
+		targetInfo.PkMode= Pk;
+		targetInfo.PkState = pkstate;
+		targetInfo.Legit = pkLegit;
 	}
 
 	if(GetFlags() & ENF_ITEM)
 	{
-		strcpy(_pNetwork->_TargetInfoReal.TargetName,en_strItemName);
-		_pNetwork->_TargetInfoReal.llCount = llCount;
+		strcpy(targetInfo.TargetName,en_strItemName);
+		targetInfo.llCount = llCount;
 	}
 	else if(IsPet())
 	{
 		if( en_pPetTarget )
 		{
 			if( en_pPetTarget->pet_strNameCard.Length() >0 )
-				strcpy(_pNetwork->_TargetInfoReal.TargetName, en_pPetTarget->pet_strNameCard);
+				strcpy(targetInfo.TargetName, en_pPetTarget->pet_strNameCard);
 			else
 				// Modified by yjpark
-				strcpy(_pNetwork->_TargetInfoReal.TargetName, en_pPetTarget->pet_Name);
+				strcpy(targetInfo.TargetName, en_pPetTarget->m_strName.c_str());
 				// Modified by yjpark
 		}
 	}
 	else if(IsSlave())
 	{
 		if( en_pSlaveTarget )
-			strcpy(_pNetwork->_TargetInfoReal.TargetName, en_pSlaveTarget->slave_Name);
+			strcpy(targetInfo.TargetName, en_pSlaveTarget->m_strName.c_str());
 	}
 	else if( IsWildPet())
 		{
-			if( en_pWildPetInfo)
+			if (en_pWildPetTarget != NULL)
 			{
-				strcpy( _pNetwork->_TargetInfoReal.TargetName, en_pWildPetInfo->m_strName );
+				strcpy( targetInfo.TargetName, en_pWildPetTarget->m_strName.c_str() );
 			}
 		}
 	else
 	{
-		strcpy(_pNetwork->_TargetInfoReal.TargetName,GetName());
+		ObjectBase* pObj = ACTORMGR()->GetObject(eOBJ_MOB, en_lNetworkID);
+
+		if (pObj != NULL)
+		{
+			CMobData* pMD = CMobData::getData(pObj->m_nType);
+
+			if (pMD != NULL && pMD->IsTotemItem())
+				strcpy(targetInfo.TargetName, pObj->m_strName.c_str());
+			else
+				strcpy(targetInfo.TargetName,GetName());
+		}
+		else
+		{
+			strcpy(targetInfo.TargetName,GetName());
+		}
 
 		if( ct != NULL)
 		{
-			_pNetwork->_TargetInfoReal.lGuildIndex	= ct->cha_lGuildIndex;
-			_pNetwork->_TargetInfoReal.strGuildName = ct->cha_strGuildName;
+			targetInfo.lGuildIndex	= ct->cha_lGuildIndex;
+			targetInfo.strGuildName = ct->cha_strGuildName;
 			// WSS_GUILDMASTER 070517
-			// ìºë¦­í„° í´ë¦­ì‹œ ìƒ‰ê¹”ì§€ì • ìœ„í•´
-#ifdef DISPLAY_GUILD_RANK
-			_pNetwork->_TargetInfoReal.sbGuildRank = ct->cha_sbGuildRank;
-#endif
-			_pNetwork->_TargetInfoReal.ubGuildNameColor = ct->cha_ubGuildNameColor;
+			// Ä³¸¯ÅÍ Å¬¸¯½Ã »ö±òÁöÁ¤ À§ÇØ
+			targetInfo.sbGuildRank = ct->cha_sbGuildRank;
+			targetInfo.ubGuildNameColor = ct->cha_ubGuildNameColor;
+			targetInfo.iNickIndex = ct->cha_NickType;
 		}
-
 	}
 
 	if(IsEnemy())
 	{
 		if(this->IsFirstExtraFlagOn(ENF_EX1_NPC))
 		{
-			_pNetwork->_TargetInfoReal.TargetType = NPC;
+			targetInfo.TargetType = NPC;
 		}
 		else if(this->IsFirstExtraFlagOn(ENF_EX1_PRODUCTION))
 		{
-			_pNetwork->_TargetInfoReal.TargetType = PRODUCTION;
+			targetInfo.TargetType = PRODUCTION;
 		}
 		else
 		{
-			_pNetwork->_TargetInfoReal.TargetType = MOB;
+			targetInfo.TargetType = MOB;
 		}
 	}
 	else if(IsPet())
 	{
-		_pNetwork->_TargetInfoReal.TargetType = PET;
+		targetInfo.TargetType = P1PET;
 	}
 	else if(IsCharacter())
 	{
-		_pNetwork->_TargetInfoReal.TargetType = CHARACTER;
+		targetInfo.TargetType = CHARACTER;
 	}
 	else if(IsSlave())
 	{
-		_pNetwork->_TargetInfoReal.TargetType = SUMMON;
+		targetInfo.TargetType = SUMMON;
 	}
 	else if(IsWildPet())
 	{
-		_pNetwork->_TargetInfoReal.TargetType = WILDPET;
+		targetInfo.TargetType = WILDPET;
 	}
 	else if(GetFlags() & ENF_ITEM)
 	{
-		_pNetwork->_TargetInfoReal.TargetType = ITEM;
+		targetInfo.TargetType	= ITEM;
+		targetInfo.dbIdx		= nType;		
 	}
+
+	pInfo->SetTargetRealInfo(targetInfo);
 }
 
 /* Get name of this entity. */
@@ -712,7 +751,7 @@ BOOL CEntity::IsMarker(void) const{
 	// cannot be marker unless this function is overridden
 	return FALSE;
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	08.27
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	08.27
 BOOL CEntity::IsEnemy(void) const
 {
 	return FALSE;
@@ -743,7 +782,12 @@ SBYTE CEntity::GetNetworkType()	const
 	return en_sbNetworkType;
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		08.27
+BOOL	CEntity::IsAvailableRide()
+{
+	return FALSE;
+}
+
+//°­µ¿¹Î ¼öÁ¤ ³¡ ´ÙÁß °ø°İ ÀÛ¾÷		08.27
 /* Check if entity is important */
 BOOL CEntity::IsImportant(void) const{
 	// cannot be important unless this function is overridden
@@ -761,16 +805,30 @@ BOOL CEntity::DropsMarker(CTFileName &fnmMarkerClass, CTString &strTargetPropert
 }
 
 /* Get light source information - return NULL if not a light source. */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 /*
 CLightSource *CEntity::GetLightSource(void)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	return m_plsLight;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 }
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
+BOOL CEntity::GetRaidObject(void) const
+{
+	return FALSE;
+}
+
+INDEX CEntity::GetRaidEvent(void) const
+{
+	return INDEX(0);
+}
+
+BOOL CEntity::GetAlBackground(void) const
+{
+	return FALSE;
+}
 
 BOOL CEntity::IsTargetValid(SLONG slPropertyOffset, CEntity *penTarget)
 {
@@ -1024,9 +1082,18 @@ void CEntity::Initialize(const CEntityEvent &eeInput,BOOL bNetwork)
 	// precache all other things
 	Precache();
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
-	if(GetLightSource()) this->en_pwoWorld->m_vectorLights.push_back(this);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
+	if(GetLightSource()) 
+	{
+		//[080109: Su-won] WORLDEDITOR_BUG_FIX
+		//Light entityÀÇ »óÅÂ°¡ º¯ÇÒ ¶§¸¶´Ù m_vectorLights¿¡ °°Àº entityÀÇ Æ÷ÀÎÅÍ¸¦ °è¼Ó ³ÖÀ½. 
+		//±×·¡¼­ entity°¡ »èÁ¦µÉ ¶§ ±× Áß¿¡ ÇÏ³ª¸¸ »èÁ¦µÇ¾î, vector¿¡¼­ »èÁ¦µÈ entity Æ÷ÀÎÅÍ¸¦ °¡Á®¿À¸é¼­ ¹®Á¦°¡ ¹ß»ı.
+		//=>m_vectorLights¿¡ Á¸ÀçÇÏÁö ¾Ê´Â entity¸¸ ³ÖÀ½.
+		std::vector<CEntity *>::iterator iter = std::find(en_pwoWorld->m_vectorLights.begin(), en_pwoWorld->m_vectorLights.end(), this);
+		if( iter == this->en_pwoWorld->m_vectorLights.end() )
+			this->en_pwoWorld->m_vectorLights.push_back(this); 
+	}
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 }
 
 void CEntity::InitializeFromNet()
@@ -1036,7 +1103,7 @@ void CEntity::InitializeFromNet()
 
 void CEntity::Initialize_internal(const CEntityEvent &eeInput)
 {
-	//0507 kwon ì‚­ì œ.
+	//0507 kwon »èÁ¦.
 	/*
 	#ifndef NDEBUG
 		// clear settings for debugging
@@ -1228,7 +1295,7 @@ void CEntity::Teleport(const CPlacement3D &plNew, BOOL bTelefrag /*=TRUE*/)
 	}
 /*	
 	//0322 kwon
-	if(en_plPlacement.pl_PositionVector(1)!=32000.0f)//ê¸°ë³¸ í…”ë ˆí¬íŠ¸ê°€ ì•„ë‹ˆë¼ë©´,
+	if(en_plPlacement.pl_PositionVector(1)!=32000.0f)//±âº» ÅÚ·¹Æ÷Æ®°¡ ¾Æ´Ï¶ó¸é,
 	{	
 	CNetworkMessage nmCharAdd(MSG_PLAYER_ADD); 		
 	nmCharAdd<< en_plPlacement.pl_PositionVector(1)<<en_plPlacement.pl_PositionVector(2)<<en_plPlacement.pl_PositionVector(3);		
@@ -1362,7 +1429,18 @@ void CEntity::FallDownToFloor( void)
 			bFloorHitted = TRUE;
 		}
 	}
-	if( bFloorHitted) plPlacement.pl_PositionVector(2) += fMaxY-plPlacement.pl_PositionVector(2)+en_FallingValue;//.01f;
+	if( bFloorHitted)
+	{
+		if (IsPlayer() && (g_slZone == 26 || g_slZone == 27 || g_slZone == 28)) // µ¿±¼ ´øÀü¿¡¼­¸¸
+		{
+			plPlacement.pl_PositionVector(2) += fMaxY-plPlacement.pl_PositionVector(2)+en_FallingValue;//.01f;
+		}
+		else
+		{
+			//plPlacement.pl_PositionVector(2) += fMaxY-plPlacement.pl_PositionVector(2)+0.01f;
+			plPlacement.pl_PositionVector(2) += fMaxY-plPlacement.pl_PositionVector(2)+0.1f;
+		}
+	}
 	SetPlacement( plPlacement);
 }
 
@@ -1644,13 +1722,13 @@ void CEntity::Destroy(BOOL bNetwork)
 	if (en_pwoWorld!=NULL) 
 	{
 		en_pwoWorld->wo_cenEntities.Remove(this);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 		std::vector<CEntity *>::iterator iter = std::find(en_pwoWorld->m_vectorLights.begin(), en_pwoWorld->m_vectorLights.end(), this);
 		if( iter != en_pwoWorld->m_vectorLights.end() )
 		{
 			en_pwoWorld->m_vectorLights.erase( iter );
 		}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 
 		if(_pNetwork->m_bSingleMode)
 		{
@@ -1762,8 +1840,6 @@ static void CheckTerrainForShadingInfo(CTerrain *ptrTerrain)
 /* Find and remember shading info for this entity if invalid. */
 void CEntity::FindShadingInfo(void)
 {
-
-
 	// if this entity can't even have shading info
 	if (en_psiShadingInfo==NULL) {
 		// do nothing
@@ -1803,27 +1879,27 @@ void CEntity::FindShadingInfo(void)
 	}
 
 	// for each sector that this entity is in
-	{FOREACHSRCOFDST(en_rdSectors, CBrushSector, bsc_rsEntities, pbsc)
+	FOREACHSRCOFDST(en_rdSectors, CBrushSector, bsc_rsEntities, pbsc)
 		// for each brush or terrain in this sector
-		{FOREACHDSTOFSRC(pbsc->bsc_rsEntities, CEntity, en_rdSectors, pen)
+		FOREACHDSTOFSRC(pbsc->bsc_rsEntities, CEntity, en_rdSectors, pen)
 			if(pen->en_RenderType==CEntity::RT_TERRAIN) {
 				CheckTerrainForShadingInfo(pen->GetTerrain());
 			} else if(pen->en_RenderType!=CEntity::RT_BRUSH && pen->en_RenderType!=CEntity::RT_FIELDBRUSH) {
 				break;
 			}
-		}}
-	ENDFOR}
+		ENDFOR
+	ENDFOR
 
 	// if this is non-movable entity, or no polygon or terrain found so far
 	if (_pbpoNear==NULL && _ptrTerrainNear==NULL) {
 		// for each sector that this entity is in
-		{FOREACHSRCOFDST(en_rdSectors, CBrushSector, bsc_rsEntities, pbsc)
+		FOREACHSRCOFDST(en_rdSectors, CBrushSector, bsc_rsEntities, pbsc)
 			// for each polygon in the sector
 			{FOREACHINSTATICARRAY(pbsc->bsc_abpoPolygons, CBrushPolygon, itbpo) {
 				CBrushPolygon &bpo = *itbpo;
 				CheckPolygonForShadingInfo(bpo);
 			}}
-		ENDFOR}
+		ENDFOR
 	}
 
 	// if there is some polygon found
@@ -1946,7 +2022,7 @@ void CCollisionInfo::FromModel(CEntity *penModel, INDEX iBox)
 	FLOAT fSphereCentersSpan = vBoxSize(iAxisMain)-fSphereRadius*2;
 	// calculate number of spheres to use
 	INDEX ctSpheres = INDEX(ceil(fSphereCentersSpan/(fSphereRadius*MIN_SPHEREDENSITY)))+1;
-	if (ctSpheres==0) {
+	if (ctSpheres <=0) {
 		ctSpheres=1;
 	}
 	// calculate how far from each other to set sphere centers
@@ -2893,14 +2969,106 @@ void CEntity::SetSkaModel_t(const CTString &fnmModel)
 	SetSkaColisionInfo();
 }
 
+void CEntity::DelSkaModel(const CTString &fnmModel)
+{
+	if (en_pmiModelInstance != NULL)
+	{
+		CTString strFullPath = _fnmApplicationPath.FileDir();
+		strFullPath += fnmModel;
+
+		CSmcParser tmpParser;
+		tmpParser.LoadSmcParse(std::string(strFullPath.str_String));
+
+		int iMeshCount = tmpParser.GetMeshInfoListSize();
+		int i;
+
+		for (i=0; i<iMeshCount; ++i)
+		{
+			CMeshInfo Mesh;
+			Mesh = tmpParser.GetMeshInfo(i);
+
+			en_pmiModelInstance->DeleteMesh(Mesh.GetMeshTFNM());
+		}	
+	}
+}
+
+void CEntity::AddSkaModel(const CTString &fnmModel)
+{
+	if (en_pmiModelInstance != NULL)
+	{
+		CTString strFullPath = _fnmApplicationPath.FileDir();
+		strFullPath += fnmModel;		
+
+		CSmcParser tmpParser;
+		tmpParser.LoadSmcParse(std::string(strFullPath.str_String));
+
+		int iMeshCount = tmpParser.GetMeshInfoListSize();
+		int i,j;
+		MeshInstance *mi;
+
+		for (i=0; i<iMeshCount; ++i)
+		{
+			CMeshInfo Mesh;
+			Mesh = tmpParser.GetMeshInfo(i);
+
+			INDEX nID = ska_GetIDFromStringTable(Mesh.GetMeshTFNM());
+
+			if (en_pmiModelInstance->FindMeshInstance(nID) != NULL)
+				continue;
+
+			mi = en_pmiModelInstance->AddArmor(Mesh.GetMeshTFNM());
+			int iSize = Mesh.GetTexInfoSize();
+			
+			for (j=0; j<iSize; ++j)
+			{
+				CTFileName fnFileName = (CTString)Mesh.GetTexInfoTFNM(j);
+				en_pmiModelInstance->AddTexture_t(fnFileName, fnFileName.FileName(), mi);
+			}
+		}
+	}
+}
+
+bool CEntity::HasSkaModel( const CTString &fnmModel )
+{
+	if (en_pmiModelInstance != NULL)
+	{
+		CTString strFullPath = _fnmApplicationPath.FileDir();
+		strFullPath += fnmModel;		
+
+		CSmcParser tmpParser;
+		tmpParser.LoadSmcParse(std::string(strFullPath.str_String));
+
+		int iMeshCount = tmpParser.GetMeshInfoListSize();
+		int i;
+
+		for (i=0; i<iMeshCount; ++i)
+		{
+			CMeshInfo Mesh;
+			Mesh = tmpParser.GetMeshInfo(i);
+
+			INDEX nID = ska_GetIDFromStringTable(Mesh.GetMeshTFNM());
+
+			if (en_pmiModelInstance->FindMeshInstance(nID) != NULL)
+				return true;
+		}
+	}
+
+	return false;
+}
+
 BOOL CEntity::SetSkaModel(const CTString &fnmModel)
 {
+	
+	
 	ASSERT(en_RenderType==RT_SKAMODEL || en_RenderType==RT_SKAEDITORMODEL);
 	// try to
 	try {
 		SetSkaModel_t(fnmModel);
 	// if failed
-	} catch(char *strError) {
+	} 
+	catch(char *strError) 
+	{
+#if		_USE_DEFAULT_MODEL_
 		WarningMessage("%s\n\rLoading default model.\n", (const char*)strError);
 		DECLARE_CTFILENAME(fnmDefault, "Data\\Models\\Editor\\Ska\\Axis.smc");
 		// try to
@@ -2912,6 +3080,10 @@ BOOL CEntity::SetSkaModel(const CTString &fnmModel)
 			FatalError(TRANS("Cannot load default model '%s':\n%s"),
 				(const char*)fnmDefault, (const char*)strErrorDefault);
 		}
+#else	// _USE_DEFAULT_MODEL_
+		FatalError(TRANS("Cannot load default model '%s':\n%s"),
+			(const char*)fnmModel, (const char*)strError);
+#endif	// _USE_DEFAULT_MODEL_
 		// set colision info for default model
 		SetSkaColisionInfo();
 		return FALSE;
@@ -2919,8 +3091,8 @@ BOOL CEntity::SetSkaModel(const CTString &fnmModel)
 	return TRUE;
 }
 
-//0601 kwon í•¨ìˆ˜ ì¶”ê°€
-// FIXME : ì´ê±° ì™œ ë§Œë“ ê±°ì•¼???
+//0601 kwon ÇÔ¼ö Ãß°¡
+// FIXME : ÀÌ°Å ¿Ö ¸¸µç°Å¾ß???
 CModelInstance* CEntity::SetSkaModelItem_t(const CTString &fnmModel)
 {
 	ASSERT(en_RenderType==RT_SKAMODEL || en_RenderType==RT_SKAEDITORMODEL);
@@ -2944,7 +3116,7 @@ CModelInstance* CEntity::SetSkaModelItem_t(const CTString &fnmModel)
 	return pmi;
 }
 
-// FIXME : ì´ê±° ì™œ ë§Œë“ ê±°ì•¼???
+// FIXME : ÀÌ°Å ¿Ö ¸¸µç°Å¾ß???
 CModelInstance* CEntity::SetSkaModelItem(const CTString &fnmModel)
 {
 	ASSERT(en_RenderType==RT_SKAMODEL || en_RenderType==RT_SKAEDITORMODEL);
@@ -2996,9 +3168,9 @@ void CEntity::SetSkaModel(SLONG idSkaModelComponent)
 // set/get model main blend color
 void CEntity::SetModelColor( const COLOR colBlend)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
-	//ASSERT(en_RenderType==RT_MODEL || en_RenderType==RT_EDITORMODEL);	//ì›ë³¸
-	//en_pmoModelObject->mo_colBlendColor = colBlend;					//ì›ë³¸
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
+	//ASSERT(en_RenderType==RT_MODEL || en_RenderType==RT_EDITORMODEL);	//¿øº»
+	//en_pmoModelObject->mo_colBlendColor = colBlend;					//¿øº»
 	if(en_RenderType==RT_MODEL || en_RenderType==RT_EDITORMODEL)
 	{
 		en_pmoModelObject->mo_colBlendColor = colBlend;
@@ -3007,12 +3179,12 @@ void CEntity::SetModelColor( const COLOR colBlend)
 	{
 		if(en_pmiModelInstance) en_pmiModelInstance->SetModelColor(colBlend);
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 }
 
 COLOR CEntity::GetModelColor(void) const
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	//ASSERT(en_RenderType==RT_MODEL || en_RenderType==RT_EDITORMODEL);
 	//return en_pmoModelObject->mo_colBlendColor;
 	if(en_RenderType==RT_MODEL || en_RenderType==RT_EDITORMODEL)
@@ -3024,7 +3196,7 @@ COLOR CEntity::GetModelColor(void) const
 		if(en_pmiModelInstance) return en_pmiModelInstance->GetModelColor();
 	}
 	return C_WHITE|CT_OPAQUE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 }
 
 
@@ -3086,7 +3258,7 @@ void CEntity::AddAnimation(INDEX iAnimID, ULONG ulFlags, FLOAT fStrength, INDEX 
 		pmiChild->AddAnimationChild(iAnimID,ulFlags,fStrength,iGroupID,fSpeedMul);
 	}
 	*/
-	en_pmiModelInstance->AddAnimation(iAnimID,ulFlags,1,0);
+	en_pmiModelInstance->AddAnimation(iAnimID,ulFlags,fStrength,iGroupID,fSpeedMul);
 
 	if (_pNetwork->IsServer() && IsSentOverNet()) {
 		SLONG slDataSize = sizeof(iAnimID) + sizeof(ulFlags) + sizeof(fStrength) + sizeof(iGroupID) + sizeof(iModelInstanceID) + sizeof(fSpeedMul);
@@ -3928,7 +4100,7 @@ void CEntity::ModelChangeNotify(void)
 		}
 	}
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 /*
 	if(en_RenderType == RT_SKAMODEL || en_RenderType == RT_SKAEDITORMODEL)
 	{
@@ -3938,7 +4110,7 @@ void CEntity::ModelChangeNotify(void)
 		}
 	}
 */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	UpdateSpatialRange();
 	FindCollisionInfo();
 }
@@ -4067,10 +4239,10 @@ static inline FLOAT IntensityAtDistance(
 	}
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹±ê¸€ ë˜ì ¼ ì‘ì—…	07.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ì±Û ´øÁ¯ ÀÛ¾÷	07.29
 // check if a range damage can hit given model entity
 BOOL CEntity::CheckModelRangeDamage(
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ ë˜ì ¼ ì‘ì—…		07.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û ´øÁ¯ ÀÛ¾÷		07.29
 	CEntity &en, const FLOAT3D &vCenter, FLOAT &fMinD, FLOAT3D &vHitPos)
 {
 	CCollisionInfo *pci = en.en_pciCollisionInfo;
@@ -4092,11 +4264,11 @@ BOOL CEntity::CheckModelRangeDamage(
 		return FALSE;
 	}
 
-	// ìƒëŒ€ì ì¸ ì¤‘ì ì„ ì–»ìŒ.
+	// »ó´ëÀûÀÎ ÁßÁ¡À» ¾òÀ½.
 	avPoints[1] = pci->ci_absSpheres[ctSpheres-1].ms_vCenter * mR + vO;
 	avPoints[2] = pci->ci_absSpheres[0].ms_vCenter * mR + vO;
 
-	// ë‘ Collision Sphereì˜ í‰ê· ê°’ì„ ì–»ì€ í›„.
+	// µÎ Collision SphereÀÇ Æò±Õ°ªÀ» ¾òÀº ÈÄ.
 	avPoints[0] = (avPoints[1] + avPoints[2]) * 0.5f;
 
 	// check if any point can be hit
@@ -4127,11 +4299,11 @@ BOOL CEntity::CheckModelRangeDamage(
 	vHitPos = vO;
 
 	// for each sphere
-	// ê°ê°ì˜ Collision Sphereì— ëŒ€í•´ì„œ...
+	// °¢°¢ÀÇ Collision Sphere¿¡ ´ëÇØ¼­...
 	FOREACHINSTATICARRAY(pci->ci_absSpheres, CMovingSphere, itms) 
 	{
 		// project it
-		// ìƒëŒ€ì ì¸ ì¤‘ì  ì¢Œí‘œë¡œ ë³€í™˜.
+		// »ó´ëÀûÀÎ ÁßÁ¡ ÁÂÇ¥·Î º¯È¯.
 		itms->ms_vRelativeCenter0 = itms->ms_vCenter * en.en_mRotation + vO;
 
 		// Get Distance
@@ -4160,7 +4332,7 @@ static BOOL CheckBrushRangeDamage(
 	return TRUE;
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹±ê¸€ ë˜ì ¼ ì‘ì—…	07.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ì±Û ´øÁ¯ ÀÛ¾÷	07.29
 /* Get relative angles from direction angles. */
 ANGLE CEntity::GetRelativeHeading(const FLOAT3D &vDirection) 
 {
@@ -4177,7 +4349,7 @@ ANGLE CEntity::GetRelativeHeading(const FLOAT3D &vDirection)
 	// relative heading is arctan of angle between front and left
 	return ATan2(fLeft, fFront);
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹±ê¸€ ë˜ì ¼ ì‘ì—…		07.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ì±Û ´øÁ¯ ÀÛ¾÷		07.29
 
 /* Apply some damage to all entities in some range. */
 void CEntity::InflictRangeDamage(CEntity *penInflictor, enum DamageType dmtType,
@@ -4337,7 +4509,7 @@ BOOL CEntity::FillEntityStatistics(struct EntityStats *pes)
  */
 void CEntity::Read_t( CTStream *istr, BOOL bNetwork) // throw char *
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
 	if(istr->PeekID_t()==CChunkID("ENT5")) { // entity v5
 		istr->ExpectID_t("ENT5");
 		ULONG ulID;
@@ -4352,7 +4524,7 @@ void CEntity::Read_t( CTStream *istr, BOOL bNetwork) // throw char *
 					 >>en_ulExtraFlags2;
 		(*istr).Read_t(&en_mRotation, sizeof(en_mRotation));
 	} else
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 	// read base class data from stream
 	if (istr->PeekID_t()==CChunkID("ENT4")) { // entity v4
 		istr->ExpectID_t("ENT4");
@@ -4474,9 +4646,9 @@ void CEntity::Read_t( CTStream *istr, BOOL bNetwork) // throw char *
 
 	SetFlagOff(ENF_PLACCHANGED);  
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	if(GetLightSource()) this->en_pwoWorld->m_vectorLights.push_back(this);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 }
 
 /*
@@ -4486,7 +4658,7 @@ void CEntity::Write_t( CTStream *ostr, BOOL bNetwork) // throw char *
 {
 
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
 	ostr->WriteID_t("ENT5");
 	SLONG slSize = 0;
 	(*ostr)<<en_ulID<<slSize;    // save id and keep space for size
@@ -4498,7 +4670,7 @@ void CEntity::Write_t( CTStream *ostr, BOOL bNetwork) // throw char *
 				 <<en_ulExtraFlags1
 				 <<en_ulExtraFlags2;
 	// write base class data to stream
-	// ì›ë³¸.
+	// ¿øº».
 	/*
 	ostr->WriteID_t("ENT4");
 	SLONG slSize = 0;
@@ -4509,7 +4681,7 @@ void CEntity::Write_t( CTStream *ostr, BOOL bNetwork) // throw char *
 				 <<en_ulSpawnFlags
 				 <<en_ulFlags;
 				 */
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 	(*ostr).Write_t(&en_mRotation, sizeof(en_mRotation));
 	// if this is a brush
 	if ( en_RenderType == RT_BRUSH || en_RenderType == RT_FIELDBRUSH) {
@@ -4758,9 +4930,9 @@ void CRationalEntity::Read_t( CTStream *istr, BOOL bNetwork) // throw char *
 	for (INDEX iState=0; iState<ctStates; iState++) {
 		(*istr)>>en_stslStateStack.Push();
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.02
-	// PROJECTION SHADOWë¥¼ ì„ íƒí–ˆì„ë•Œ, ê·¸ë¦¼ìë¥¼ ê·¸ë¦¬ë„ë¡ í•©ë‹ˆë‹¤.
-	// NOTE : ì´ ë¶€ë¶„ì„ ì œê±°í•˜ë©´ ê·¸ë¦¼ìê°€ ê²Œì„ì¤‘ì—ì„œ ì œëŒ€ë¡œ ë‚˜ì˜¤ì§€ ì•ŠìŒ.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.02
+	// PROJECTION SHADOW¸¦ ¼±ÅÃÇßÀ»¶§, ±×¸²ÀÚ¸¦ ±×¸®µµ·Ï ÇÕ´Ï´Ù.
+	// NOTE : ÀÌ ºÎºĞÀ» Á¦°ÅÇÏ¸é ±×¸²ÀÚ°¡ °ÔÀÓÁß¿¡¼­ Á¦´ë·Î ³ª¿ÀÁö ¾ÊÀ½.
 	if(GetFlags()&ENF_PROJECTIONSHADOWS)
 	{
 		if(en_RenderType == RT_SKAMODEL || en_RenderType == RT_SKAEDITORMODEL)
@@ -4772,7 +4944,7 @@ void CRationalEntity::Read_t( CTStream *istr, BOOL bNetwork) // throw char *
 			}
 		}
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.02
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.02
 }
 /* Write to stream. */
 void CRationalEntity::Write_t( CTStream *ostr, BOOL bNetwork) // throw char *
@@ -4797,8 +4969,8 @@ void CRationalEntity::Write_t( CTStream *ostr, BOOL bNetwork) // throw char *
 void CRationalEntity::SetTimerAt(TIME timeAbsolute)
 {
 	// must never set think back in time, except for special 'never' time
-	ASSERTMSG(timeAbsolute>_pTimer->CurrentTick() ||
-		timeAbsolute==THINKTIME_NEVER, "Do not SetThink() back in time!");
+/*	ASSERTMSG(timeAbsolute>_pTimer->CurrentTick() ||
+		timeAbsolute==THINKTIME_NEVER, "Do not SetThink() back in time!");*/ // eons ÀÓ½Ã ÁÖ¼® Ã³¸®
 	// set the timer
 	en_timeTimer = timeAbsolute;
 
@@ -4970,3 +5142,17 @@ void CRationalEntity::OnEnd(void)
 	UnsetTimer();
 }
 
+void CEntity::SetNickNameDamageEffect(INDEX iNickIndex, NickNameEffectType iType)
+{
+	// Nothing
+}
+
+void CEntity::ReleaseChche( EntityComponentType eType, SLONG slID )
+{
+	en_pecClass->ec_pdecDLLClass->ReleaseCache(eType, slID);		
+}
+
+void CEntity::SetCustomTitleEffect( CTString effectName )
+{
+	// Nothing
+}

@@ -1,5 +1,6 @@
 #include "stdh.h"
 
+#include <Engine/Interface/UIWindow.h>
 #include <Engine/Base/Memory.h>
 #include <Engine/Base/MemoryTracking.h>
 #include <Engine/Base/CRC.h>
@@ -15,14 +16,15 @@
 #include <Engine/Graphics/ViewPort.h>
 #include <Engine/Graphics/Font.h>
 #include <Engine/Interface/UITextureManager.h>		// yjpark
+#include <Engine/Interface/UICommon.h>
 
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Templates/StaticStackArray.cpp>
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…	07.10
-// FIXME : Clip Near Plane í…ŒìŠ¤íŠ¸ë¥¼ ìœ„í•œ...
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷	07.10
+// FIXME : Clip Near Plane Å×½ºÆ®¸¦ À§ÇÑ...
 #include <D3dx8.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…		07.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷		07.10
 
 extern INDEX gfx_bDecoratedText;
 extern INDEX ogl_iFinish;
@@ -32,7 +34,6 @@ extern INDEX d3d_iFinish;
 static CDrawPort *_pdpCurrent = NULL;
 
 // wooss 050915
-extern INDEX g_iCountry;
 // For malaysia  wooss 060330
 extern BOOL g_bIsMalEng;
 
@@ -48,42 +49,49 @@ extern BOOL g_bIsMalEng;
 #define GBK_LOW_END				0xfe	
 #define GBK_HI_BYTE_COUNT		(GBK_LOW_END - GBK_LOW_START + 1)
 #define GBK_LOW_BYTE_COUNT		(GBK_LOW_END - GBK_LOW_START + 1)
-#define GBK_PAGE_PER_CHARACTER	1764	// í°íŠ¸í˜ì´ì§€ë‚´ì— ì „ì²´ ë¬¸ì ìˆ˜
-#define GBK_COUNT				42		// ê°€ë¡œ ë¬¸ì í…Œì´ë¸” ìˆ˜
-const int cBrzFontOffsetV 	=	2;		// ë¸Œë¼ì§ˆ í°íŠ¸ ì¶œë ¥ì‹œ ë¬¸ì ë†’ì´ ì˜¤í”„ì…‹
+#define GBK_PAGE_PER_CHARACTER	1764
+#define GBK_COUNT				42
+const int cBrzFontOffsetV 	=	2;		// ºê¶óÁú ÆùÆ® Ãâ·Â½Ã ¹®ÀÚ ³ôÀÌ ¿ÀÇÁ¼Â
 
 int FindVowel(const char* strText)
 {
-	if(strText==NULL) return 0;
-	int len=strlen(strText);
-	int vowelNum=0;
-	for(int i=0;i<len;i++)
+	if (strText == NULL)
+		return 0;
+	int len = strlen(strText);
+	int vowelNum = 0;
+	for (int i = 0; i < len; i++)
 	{
-		unsigned char cInsert =strText[i];
+		unsigned char cInsert = strText[i];
 		// vowel display
-		if(cInsert==0xd1 || (cInsert>=0xd4 &&cInsert<=0xda)) vowelNum++;
-		else if((cInsert>=0xe7 &&cInsert<=0xee)) vowelNum++;
+		if (cInsert == 0xd1 || (cInsert >= 0xd4 && cInsert <= 0xda))
+			vowelNum++;
+		else if (cInsert >= 0xe7 && cInsert <= 0xee)
+			vowelNum++;
 	}
 	return vowelNum;
 }
 //wooss 051001
-int FindThaiLen(const char* strText,int fromText,int toText)
+int FindThaiLen(const char* strText, int fromText/*=0*/, int toText/*=-1*/)
 {
-	int len=strlen(strText);
-	int thaiLen=0;
-	if(toText==-1) toText = len;
-	for(int i=fromText;i<toText;i++)
+	int thaiLen = 0;
+	if (toText == -1)
+		toText = strlen(strText);
+	for (int i = fromText; i < toText; i++)
 	{
-		unsigned char cInsert =strText[i];
+		unsigned char cInsert = strText[i];
 		// vowel display
-		if(cInsert>=0x00 && cInsert <=0xa0) thaiLen+=_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing();
-		else if(cInsert==0xd1 || (cInsert>=0xd4 &&cInsert<=0xda)) continue;
-			else if((cInsert>=0xe7 &&cInsert<=0xee)) continue;
-				else if(cInsert == 0xd3) thaiLen+=_pUIFontTexMgr->GetFontWidthThai(cInsert)+_pUIFontTexMgr->GetFontSpacing() -4 ;
-					else thaiLen+=_pUIFontTexMgr->GetFontWidthThai(cInsert)+_pUIFontTexMgr->GetFontSpacing();
+		if (cInsert >= 0x00 && cInsert <= 0xa0)
+			thaiLen += _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
+		else if (cInsert == 0xd1 || (cInsert >= 0xd4 && cInsert <= 0xda))
+			continue;
+		else if (cInsert >= 0xe7 && cInsert <= 0xee)
+			continue;
+		else if (cInsert == 0xd3)
+			thaiLen += _pUIFontTexMgr->GetFontWidthThai(cInsert) + _pUIFontTexMgr->GetFontSpacing() - 4;
+		else
+			thaiLen += _pUIFontTexMgr->GetFontWidthThai(cInsert) + _pUIFontTexMgr->GetFontSpacing();
 	}
 	return thaiLen;
-	
 }
 
 static BOOL ClipToDrawPort( const CDrawPort *pdp, PIX &pixI, PIX &pixJ, PIX &pixW, PIX &pixH)
@@ -166,7 +174,6 @@ CDrawPort::CDrawPort(void)
 	dp_ulBlendingGA = 0;
 	dp_ulBlendingBA = 0;
 	dp_ulBlendingA  = 0;
-
 }
 // destructor
 CDrawPort::~CDrawPort(void)
@@ -480,7 +487,7 @@ void CDrawPort::SetOrtho(void) const
 	ogl_iFinish = Clamp( ogl_iFinish, 0L, 3L);
 	d3d_iFinish = Clamp( d3d_iFinish, 0L, 3L);
 	if( (ogl_iFinish==3 && _pGfx->gl_eCurrentAPI==GAT_OGL) 
-	 || (d3d_iFinish==3 && _pGfx->gl_eCurrentAPI==GAT_D3D)) gfxFinish();
+	 || (d3d_iFinish==3 && _pGfx->gl_eCurrentAPI==GAT_D3D)) gfxFinish(FALSE);
 
 	// prepare ortho dimensions with lowerleft origin
 	const PIX pixMinI  = dp_MinI;
@@ -493,7 +500,7 @@ void CDrawPort::SetOrtho(void) const
 	// init matrices (D3D needs sub-pixel adjustment)
 	gfxSetOrtho( pixMinSI-pixMinI, pixMaxSI-pixMinI, pixMaxJ-pixMaxSJ, pixMaxJ-pixMinSJ, 0.0f, -1.0f, TRUE);
 	gfxDepthRange(0,1);
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 	// disable face culling, custom clip plane and truform
 	gfxCullFace(GFX_NONE);
 	gfxDisableClipPlane();
@@ -508,7 +515,7 @@ void CDrawPort::SetProjection(CAnyProjection3D &apr)
 	ogl_iFinish = Clamp( ogl_iFinish, 0L, 3L);
 	d3d_iFinish = Clamp( d3d_iFinish, 0L, 3L);
 	if( (ogl_iFinish==3 && _pGfx->gl_eCurrentAPI==GAT_OGL) 
-	 || (d3d_iFinish==3 && _pGfx->gl_eCurrentAPI==GAT_D3D)) gfxFinish();
+	 || (d3d_iFinish==3 && _pGfx->gl_eCurrentAPI==GAT_D3D)) gfxFinish(FALSE);
 
 	// if projection is mirrored/warped and mirroring is allowed
 	if( apr->pr_bMirror || apr->pr_bWarp) 
@@ -522,11 +529,11 @@ void CDrawPort::SetProjection(CAnyProjection3D &apr)
 		adViewPlane[3] = -apr->pr_plMirrorView.Distance(); 
 		gfxClipPlane(adViewPlane); // NOTE: view clip plane is multiplied by inverse modelview matrix at time when specified
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13  
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13  
 	else if(apr->pr_bNiceWater)	
 	{
 		// set custom clip plane 0 to mirror plane
-		// ë°˜ì‚¬ í‰ë©´ì„ ìœ„í•œ í´ë¦¬í•‘ í‰ë©´ 0ì„ ì‚¬ìš©ì ì„¤ì •í•¨.		
+		// ¹İ»ç Æò¸éÀ» À§ÇÑ Å¬¸®ÇÎ Æò¸é 0À» »ç¿ëÀÚ ¼³Á¤ÇÔ.		
 		gfxEnableClipPlane();
 		DOUBLE adViewPlane[4];
 		adViewPlane[0] = +apr->pr_plNiceWaterView(1); 
@@ -535,7 +542,7 @@ void CDrawPort::SetProjection(CAnyProjection3D &apr)
 		adViewPlane[3] = -apr->pr_plNiceWaterView.Distance(); 
 		gfxClipPlane(adViewPlane); 
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
 
 	// if projection is not mirrored
 	else 
@@ -545,7 +552,7 @@ void CDrawPort::SetProjection(CAnyProjection3D &apr)
 	}
 
 	// if isometric projection
-	// BackGroundì—ì„œ ì“°ì„...
+	// BackGround¿¡¼­ ¾²ÀÓ...
 	if( apr.IsIsometric()) 
 	{
 		CIsometricProjection3D &ipr = (CIsometricProjection3D&)*apr;
@@ -560,7 +567,7 @@ void CDrawPort::SetProjection(CAnyProjection3D &apr)
 		// if far clip plane is not specified use maximum expected dimension of the world
 		FLOAT fFar = ipr.pr_FarClipDistance;
 		if( fFar<0) fFar = 1E5f;  // max size 32768, 3D (sqrt(3)), rounded up
-		gfxSetOrtho( fLeft, fRight, fTop, fBottom, fNear, fFar);
+		gfxSetOrtho( fLeft, fRight, fTop, fBottom, fNear, fFar, FALSE);
 	}
 	// if perspective projection
 	else 
@@ -583,14 +590,14 @@ void CDrawPort::SetProjection(CAnyProjection3D &apr)
 		FLOAT fFar = ppr.pr_FarClipDistance;
 		if( fFar<0) fFar = 1E5f;  // max size 32768, 3D (sqrt(3)), rounded up
 
-		// D3DTS_PROJECTION ì„¤ì •í•¨.
+		// D3DTS_PROJECTION ¼³Á¤ÇÔ.
 		gfxSetFrustum( fLeft, fRight, fTop, fBottom, fNear, fFar);
 	}
 	
 	// set some rendering params
 	gfxDepthRange( apr->pr_fDepthBufferNear, apr->pr_fDepthBufferFar);
 	gfxCullFace(GFX_BACK);
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////		
@@ -616,7 +623,7 @@ void CDrawPort::SetProjection(CAnyProjection3D &apr)
 		hr			= _pGfx->gl_pd3dDevice->GetTransform( D3DTS_VIEW, &matView);
 		D3DXMatrixMultiply(&matClip, &matView, &matProj);
 		
-		// Normalê°’ì„ ë³€í™˜í•¨.
+		// Normal°ªÀ» º¯È¯ÇÔ.
 		D3DXMatrixInverse(&matClip, NULL, &matClip);
 		D3DXMatrixTranspose(&matClip, &matClip);
 
@@ -1257,9 +1264,9 @@ void CDrawPort::GrabScreen( class CImageInfo &iiGrabbedImage, INDEX iGrabZBuffer
 }
 
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
-//BOOL CDrawPort::IsPointVisible(PIX pixI, PIX pixJ, FLOAT fOoK, INDEX iID, INDEX iMirrorLevel/*=0*/) const		// ì›ë³¸.
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
+//BOOL CDrawPort::IsPointVisible(PIX pixI, PIX pixJ, FLOAT fOoK, INDEX iID, INDEX iMirrorLevel/*=0*/) const		// ¿øº».
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22
 BOOL CDrawPort::IsPointVisible(CAnyProjection3D &apr, PIX pixI, PIX pixJ, FLOAT fOoK, INDEX iID, INDEX iMirrorLevel/*=0*/) const
 {
 	// must have raster!
@@ -1272,19 +1279,19 @@ BOOL CDrawPort::IsPointVisible(CAnyProjection3D &apr, PIX pixI, PIX pixJ, FLOAT 
 	const GfxAPIType eAPI = _pGfx->gl_eCurrentAPI;
 	ASSERT( eAPI==GAT_OGL || eAPI==GAT_D3D || eAPI==GAT_NONE);
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20	
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20	
 	if(!apr->pr_bNiceWater)
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 		// use delayed mechanism for checking
 		extern BOOL CheckDepthPoint( const CDrawPort *pdp, PIX pixI, PIX pixJ, FLOAT fOoK, INDEX iID, INDEX iMirrorLevel=0);
 		return CheckDepthPoint( this, pixI, pixJ, fOoK, iID, iMirrorLevel);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
 	return TRUE;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22
 }
 
 
@@ -1381,10 +1388,10 @@ void CDrawPort::SetFont( CFontData *pfd)
 
 }
 
-
-// returns width of the longest line in text string
-ULONG CDrawPort::GetTextWidth( const CTString &strText) const
+CTString CDrawPort::GetTextWidth(const CTString &strText, INDEX nWidth) const
 {
+	CTString strReturn;
+
 	// prepare scaling factors
 	const SLONG fixTextScalingX = FloatToInt(dp_fTextScaling*dp_fTextAspect*65536.0f);
 	const BOOL bFixedWidth = dp_FontData->fd_ulFlags & FNF_FIXED;
@@ -1433,7 +1440,79 @@ ULONG CDrawPort::GetTextWidth( const CTString &strText) const
 			pixCharStart = dp_FontData->fd_fcdFontCharData[chrCurrent].fcd_pixStart;
 			pixCharEnd   = dp_FontData->fd_fcdFontCharData[chrCurrent].fcd_pixEnd;
 		}
-		pixStringWidth += (((pixCharEnd-pixCharStart)*fixTextScalingX)>>16) +dp_pixTextCharSpacing;
+
+		if (pixStringWidth < nWidth)
+		{
+			pixStringWidth += (((pixCharEnd-pixCharStart)*fixTextScalingX)>>16) +dp_pixTextCharSpacing;
+			ctCharsPrinted++;
+		}
+		else
+		{
+			CTString tmpText = strText;
+			CTString tmpRight;
+
+			tmpText.Split(ctCharsPrinted, strReturn, tmpRight);
+			break;
+		}
+	}
+
+	return strReturn;
+}
+
+// returns width of the longest line in text string
+ULONG CDrawPort::GetTextWidth(const char* strText)
+{
+	// prepare scaling factors
+	const SLONG fixTextScalingX = FloatToInt(dp_fTextScaling*dp_fTextAspect*65536.0f);
+	const BOOL bFixedWidth = dp_FontData->fd_ulFlags & FNF_FIXED;
+
+	// calculate width of entire text line
+	PIX pixStringWidth=0, pixOldWidth=0;
+	PIX pixCharStart=0, pixCharEnd=dp_FontData->fd_pixCharWidth;
+	INDEX ctCharsPrinted=0;
+
+	int nLen = strlen(strText);
+	for( INDEX i=0; i < nLen; i++)
+	{ // get current letter
+		unsigned char chrCurrent = strText[i];
+		// next line situation?
+		if( chrCurrent == '\n') {
+			if( pixOldWidth < pixStringWidth) pixOldWidth = pixStringWidth;
+			pixStringWidth=0;
+			continue;
+		}
+		// special char encountered and allowed?
+		else if( chrCurrent=='^' && !(dp_ulTextFlags&DPTF_PRINTSPECIALCODES)) {
+			// get next char
+			chrCurrent = strText[++i];
+			switch( chrCurrent) {
+			// skip corresponding number of characters
+			case 'c':  i += FindByte( 0, (UBYTE*)&strText[i], 6);  continue;
+			case 'a':  i += FindByte( 0, (UBYTE*)&strText[i], 2);  continue;
+			case 'f':  i += 1;  continue;
+			case 'b':  case 'i':  case 'r':  case 'o':
+			case 'C':  case 'A':  case 'F':  case 'B':  case 'I':  i+=0;  continue;
+			default:   break; // if we get here this means that ^ or an unrecognized special code was specified
+			}
+		}
+		// ignore tab
+		else if( chrCurrent == '\t') continue;
+
+		// if character is not defined (could be missing small letters in font)
+		if( !dp_FontData->IsCharDefined(chrCurrent)) {
+			char chrUpper = _toupper(chrCurrent);
+			if( (UBYTE)chrUpper==0xFF) chrUpper=(char)0x9F;
+			// if its upper version is defined and font uses small caps
+			if( dp_FontData->IsCharDefined(chrUpper) && dp_FontData->fd_bSmallCaps) chrCurrent = chrUpper;
+		}
+
+		// add current letter's width to result width
+		if( !bFixedWidth) {
+			// proportional font case
+			pixCharStart = dp_FontData->fd_fcdFontCharData[chrCurrent].fcd_pixStart;
+			pixCharEnd   = dp_FontData->fd_fcdFontCharData[chrCurrent].fcd_pixEnd;
+		}
+		pixStringWidth += (((pixCharEnd-pixCharStart)*fixTextScalingX)>>16) + dp_pixTextCharSpacing;
 		ctCharsPrinted++;
 	}
 	// determine largest width
@@ -1441,6 +1520,16 @@ ULONG CDrawPort::GetTextWidth( const CTString &strText) const
 	return pixStringWidth;
 }
 
+ULONG CDrawPort::GetTextWidth2(const CTString &strText)
+{
+#if defined (G_THAI)
+	return FindThaiLen(strText);
+#elif defined(G_RUSSIA)
+	return GetTextSectionWidth(strText.str_String, strText.Length(), FALSE);
+#else
+	return strText.Length() * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing());
+#endif
+}
 
 // writes text string on drawport (left aligned if not forced otherwise)
 void CDrawPort::PutText( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend/*=0xFFFFFFFF*/) const
@@ -1455,6 +1544,7 @@ void CDrawPort::PutText( const CTString &strText, PIX pixX0, PIX pixY0, const CO
 	if( strText.Length()<=0) return;
 	char acTmp[7]; // needed for strtoul()
 	char *pcDummy; 
+//	int code;
 	INDEX iRet;
 
 	// cache char and texture dimensions
@@ -1589,7 +1679,12 @@ void CDrawPort::PutText( const CTString &strText, PIX pixX0, PIX pixY0, const CO
 			if( dp_FontData->IsCharDefined(chrUpper) && dp_FontData->fd_bSmallCaps) chrCurrent = chrUpper;
 		}
 
+		/*code = chrCurrent; // ÇÑ±Û
+		if (code & 0x80)
+			code = (code<<8) | (unsigned char)strText[++iChar];
+
 		// fetch char props
+		const CFontCharData &fcdCurrent = dp_FontData->fd_fcdFontCharData[dp_FontData->SearchIndex(code)];*/
 		const CFontCharData &fcdCurrent = dp_FontData->fd_fcdFontCharData[chrCurrent];
 		const PIX pixCharX = fcdCurrent.fcd_pixXOffset;
 		const PIX pixCharY = fcdCurrent.fcd_pixYOffset;
@@ -1683,13 +1778,13 @@ void CDrawPort::PutText( const CTString &strText, PIX pixX0, PIX pixY0, const CO
 
 
 // writes text string on drawport (centered arround X)
-void CDrawPort::PutTextC( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend/*=0xFFFFFFFF*/) const
+void CDrawPort::PutTextC( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend/*=0xFFFFFFFF*/)
 {
 	PutText( strText, pixX0-GetTextWidth(strText)/2, pixY0, colBlend);
 }
 
 // writes text string on drawport (centered arround X and Y)
-void CDrawPort::PutTextCXY( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend/*=0xFFFFFFFF*/) const
+void CDrawPort::PutTextCXY( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend/*=0xFFFFFFFF*/)
 {
 	PIX pixTextWidth  = GetTextWidth(strText);
 	PIX pixTextHeight = dp_FontData->fd_pixCharHeight * dp_fTextScaling;
@@ -1697,7 +1792,7 @@ void CDrawPort::PutTextCXY( const CTString &strText, PIX pixX0, PIX pixY0, const
 }
 
 // writes text string on drawport (right-aligned)
-void CDrawPort::PutTextR( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend/*=0xFFFFFFFF*/) const
+void CDrawPort::PutTextR( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend/*=0xFFFFFFFF*/)
 {
 	PutText( strText, pixX0-GetTextWidth(strText), pixY0, colBlend);
 }
@@ -1728,16 +1823,23 @@ void CDrawPort::PutTextEx( const CTString &strText, PIX pixX0, PIX pixY0, const 
 		PutTextExThai( strText, pixX0, pixY0, colBlend, fZ, bShadow, colShadow );
 		break;
 
-		
 	case FONT_PROTUGES:
 	case FONT_GERMAN:
 	case FONT_SPAIN://FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	case FONT_FRANCE:
 	case FONT_POLAND:
 	case FONT_TURKEY:
+	case FONT_MEXICO:
+	case FONT_ITALY:
+	case FONT_USA_FRANCE:
+	case FONT_USA_SPAIN:
+	case FONT_NETHERLANDS:
 		PutTextExBrz( strText, pixX0, pixY0, colBlend, fZ, bShadow, colShadow );
 		break;
-
+		
+	case FONT_RUSSIAN:
+		PutTextExRus( strText, pixX0, pixY0, colBlend, fZ, bShadow, colShadow );
+		break;
 	}
 }
 
@@ -1765,14 +1867,22 @@ void CDrawPort::PutTextCharEx( const char *pText, int nLength, PIX pixX0, PIX pi
 	case FONT_THAILAND:
 		PutTextCharExThai( pText, nLength, pixX0, pixY0, colBlend, fZ, bShadow, colShadow );
 		break;
-
 	case FONT_PROTUGES:
 	case FONT_GERMAN:
 	case FONT_SPAIN://FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	case FONT_FRANCE:
 	case FONT_POLAND:
 	case FONT_TURKEY:
+	case FONT_MEXICO:
+	case FONT_ITALY:
+	case FONT_USA_FRANCE:
+	case FONT_USA_SPAIN:
+	case FONT_NETHERLANDS:
 		PutTextCharExBrz( pText, nLength, pixX0, pixY0, colBlend, fZ, bShadow, colShadow );
+		break;
+		
+	case FONT_RUSSIAN:
+		PutTextCharExRus( pText, nLength, pixX0, pixY0, colBlend, fZ, bShadow, colShadow );
 		break;
 	}
 }
@@ -1902,6 +2012,7 @@ void CDrawPort::PutTextExKor( const CTString &strText, PIX pixX0, PIX pixY0, con
 			nV = ( ( cCurrent - 0x1e ) / 42 ) * pixFontUVOffset;
 			fU0 = nU * fInvU;
 			fV0 = nV * fInvV;
+			//fU1 = ( nU + pixFontWidth+1 ) * fInvU;
 			fU1 = ( nU + pixFontWidth ) * fInvU;
 			fV1 = ( nV + pixFontHeight ) * fInvV;
 
@@ -2172,7 +2283,7 @@ void CDrawPort::PutTextExCht( const CTString &strText, PIX pixX0, PIX pixY0, con
 //------------------------------------------------------------------------------
 // CDrawPort::PutTextCharExChs
 // Explain:  
-// Date : 2005-03-03(ì˜¤í›„ 1:51:55) Lee Ki-hwan
+// Date : 2005-03-03(¿ÀÈÄ 1:51:55) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CDrawPort::PutTextCharExChs( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
 									FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
@@ -2374,7 +2485,7 @@ void CDrawPort::PutTextCharExChs( const char *pText, int nLength, PIX pixX0, PIX
 //------------------------------------------------------------------------------
 // CDrawPort::PutTextExChs
 // Explain:  
-// Date : 2005-03-03(ì˜¤í›„ 1:49:37) Lee Ki-hwan
+// Date : 2005-03-03(¿ÀÈÄ 1:49:37) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CDrawPort::PutTextExChs( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend,
 								FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
@@ -2622,19 +2733,19 @@ void CDrawPort::PutTextExThai( const CTString &strText, PIX pixX0, PIX pixY0, co
 			if(cCurrent >= 0xa1 && cCurrent <= 0xfb){
 				pixFontAdvancer = _pUIFontTexMgr->GetFontWidthThai(cCurrent) +_pUIFontTexMgr->GetFontSpacing();
 				thai_Y0 = 2;
-				thai_fV1 = 4 ; //íƒœêµ­ì–´ Vê¸¸ì´ë¥¼ 3 ë”í•œë‹¤...( ë†’ì´ê°€ ë” ê¸¸ë‹¤...ì„±ì¡° ì²¨ê°€ë¡œ)				
+				thai_fV1 = 4 ; //ÅÂ±¹¾î V±æÀÌ¸¦ 3 ´õÇÑ´Ù...( ³ôÀÌ°¡ ´õ ±æ´Ù...¼ºÁ¶ Ã·°¡·Î)				
 				if(cCurrent == 0xd3){
 					if(iChar==0) continue;
 					pre_cCurrent = strText[iChar-1];
 					if((pre_cCurrent>=0xa1 && pre_cCurrent<=0xcf)||(pre_cCurrent>=0xe7 && pre_cCurrent <= 0xec)){ // pre_cCurrent 050924
-						pixX0-=4; // 4í”½ì…€ ì•ìœ¼ë¡œ
+						pixX0-=4; // 4ÇÈ¼¿ ¾ÕÀ¸·Î
 					} else continue; 
 					
 				}else if(cCurrent == 0xed ||cCurrent == 0xd1 || (cCurrent>=0xd4 && cCurrent<=0xda)){		// vowel display //wooss 050924 d3->d4
 					if(iChar==0) continue;
 					pre_cCurrent = strText[iChar-1];
 					if(pre_cCurrent>=0xa1 && pre_cCurrent <= 0xcf) {
-						pixX0-=7; // ê²¹ì¹˜ëŠ” ëª¨ìŒ ì¶œë ¥ì‹œ 7í”½ì…€ ì•ìœ¼ë¡œ
+						pixX0-=7; // °ãÄ¡´Â ¸ğÀ½ Ãâ·Â½Ã 7ÇÈ¼¿ ¾ÕÀ¸·Î
 						pixFontAdvancer = _pUIFontTexMgr->GetFontWidthThai(cCurrent);
 					} else continue;
 				} 
@@ -2654,7 +2765,7 @@ void CDrawPort::PutTextExThai( const CTString &strText, PIX pixX0, PIX pixY0, co
 								tv_height=(pixFontHeight/4);
 							//	pixY0-=tv_height;
 							}
-					pixX0-=7; // 7í”½ì…€ ë‹¹ê²¨ì„œ ì°ëŠ”ë‹¤
+					pixX0-=7; // 7ÇÈ¼¿ ´ç°Ü¼­ Âï´Â´Ù
 					pixFontAdvancer -= _pUIFontTexMgr->GetFontSpacing();
 					
 				}
@@ -2772,8 +2883,10 @@ void CDrawPort::PutTextExJap( const CTString &strText, PIX pixX0, PIX pixY0, con
 	_pUIFontTexMgr->GetInvUV( fInvU, fInvV );
 
 	// wooss 051102
+	// pageWords - ÀÌÀü ÆäÀÌÁöÀÇ ±ÛÀÚ ´©Àû¼ö
+	// markStart - ÇöÀç ÆäÀÌÁöÀÇ ½ÃÀÛ À§Ä¡(ÄÚµåÆäÀÌÁö»ó)
 //	int pageWords[9]	=	{189,652,803,930,0,0,1023,1117}; // 81 - alphabet_num 82 ~ 89 start pos 
-	int pageWords[8]	=	{0xbd,0x160,0x1e7,0x276,0,0,0x2d3,0x331}; // 81 - alphabet_num 82 ~ 89 start pos 
+	int pageWords[8]	=	{0xbd,0x160,0x1e7,0x276,0x276,0x276,0x2d3,0x331}; // 81 - alphabet_num 82 ~ 89 start pos 
 	int markStart[9]	=	{0x40,0x4f,0x40,0x40,0,0,0x40,0x9f,0x40}; 
 	int markEnd[9]		=	{0xfc,0xf1,0xd6,0xbe,0,0,0x9c,0xfc,0xfc};
 	//		End - Start +1 	 0xbd,0xa3,0x97,0x7f,0,0,0x5d,0x5e
@@ -2798,8 +2911,8 @@ void CDrawPort::PutTextExJap( const CTString &strText, PIX pixX0, PIX pixY0, con
 
 		if(cCurrent >= 0xa1 && cCurrent <= 0xdf){
 			// Texture coordinate
-			nU = ( ( cCurrent - 0x1e - 0x21) % 42 ) * pixFontUVOffset; // 0x21 : ê°€íƒ€ê°€ë‚˜ ì¤‘ê°„ì˜ 31ë¬¸ìì¹¸ì„ ë¹¼ì¤€ë‹¤. wooss 051028
-			nV = ( ( cCurrent - 0x1e - 0x21) / 42 ) * pixFontUVOffset; // 0x1e : textureìƒì—ì„œ 00~1Dê¹Œì§€ëŠ” ì¶œë ¥ì´ ì•ˆë˜ë¯€ë¡œ....
+			nU = ( ( cCurrent - 0x1e - 0x21) % 42 ) * pixFontUVOffset; // 0x21 : °¡Å¸°¡³ª Áß°£ÀÇ 31¹®ÀÚÄ­À» »©ÁØ´Ù. wooss 051028
+			nV = ( ( cCurrent - 0x1e - 0x21) / 42 ) * pixFontUVOffset; // 0x1e : texture»ó¿¡¼­ 00~1D±îÁö´Â Ãâ·ÂÀÌ ¾ÈµÇ¹Ç·Î....
 			fU0 = nU * fInvU;										   
 			fV0 = nV * fInvV;
 			fU1 = ( nU + pixFontWidth2Byte ) * fInvU;
@@ -3141,6 +3254,247 @@ void CDrawPort::PutTextExBrz(const CTString &strText, PIX pixX0, PIX pixY0, cons
 		}
 	}
 }
+//------------------------------------------------------------------------------
+// CDrawPort::PutTextExRus
+// Explain: display Russia font
+// Date : 
+//------------------------------------------------------------------------------
+void CDrawPort::PutTextExRus(const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend,
+							 FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
+{
+//	CDrawPort *pD = (CDrawPort *)this;
+//	pD->PutTextRus(strText, pixX0, pixY0, colBlend);
+
+	// check API and adjust position for D3D by half pixel
+	const GfxAPIType eAPI = _pGfx->gl_eCurrentAPI;
+	ASSERT( eAPI==GAT_OGL || eAPI==GAT_D3D || eAPI==GAT_NONE);
+
+	// skip drawing if text falls above or below draw port
+	if( pixY0>GetHeight() || pixX0>GetWidth()) return;
+	// check if string even exists
+	if( strText.Length()<=0) return;
+	char acTmp[7]; // needed for strtoul()
+	char *pcDummy; 
+	INDEX iRet;
+
+	// cache char and texture dimensions
+	const FLOAT fTextScalingX   = dp_fTextScaling*dp_fTextAspect;
+	const SLONG fixTextScalingX = FloatToInt(fTextScalingX  *65536.0f);
+	const SLONG fixTextScalingY = FloatToInt(dp_fTextScaling*65536.0f);
+	const PIX pixCharHeight     = dp_FontData->fd_pixCharHeight-1;
+	const PIX pixScaledHeight   = (pixCharHeight*fixTextScalingY)>>16;
+	const PIX pixShadowSpacing  = dp_FontData->fd_pixShadowSpacing;
+	const FLOAT fItalicAdjustX  = fTextScalingX * (pixScaledHeight)*0.2f;  // 20% slanted
+	const FLOAT fBoldAdjustX    = fTextScalingX * (dp_FontData->fd_pixCharWidth)*0.2f;  // 20% fat (extra light mayonnaise:)
+	const BOOL bFixedWidth = dp_FontData->fd_ulFlags & FNF_FIXED;
+	const BOOL bCellBased  = dp_FontData->fd_ulFlags & FNF_CELLBASED;
+	const FLOAT fDropShadowX = dp_fTextShadow * dp_fTextScaling*dp_fTextAspect;
+	const FLOAT fDropShadowY = dp_fTextShadow * dp_fTextScaling;
+
+	// prepare font texture
+	gfxSetTextureWrapping( GFX_REPEAT, GFX_REPEAT);
+	CTextureData &td = *dp_FontData->fd_ptdTextureData;
+	ASSERT( td.td_ctFineMipLevels<2);  // font texture cannot have mipmaps!
+
+	// calculate and apply correction factor
+	FLOAT fCorrectionU = 1.0f / td.GetPixWidth();
+	FLOAT fCorrectionV = 1.0f / td.GetPixHeight();
+	INDEX ctMaxChars = (INDEX)strlen(strText);
+	// determine text color
+	GFXColor glcolDefault(colBlend);
+	GFXColor glcol = glcolDefault;
+	ULONG ulAlphaDefault = (colBlend&CT_AMASK)>>CT_ASHIFT;;  // for flasher
+
+	// prepare some text control and output vars
+	FLOAT fBold   = (dp_ulTextFlags&DPTF_BOLD)   ? fBoldAdjustX   : 0;
+	FLOAT fItalic = (dp_ulTextFlags&DPTF_ITALIC) ? fItalicAdjustX : 0;
+	INDEX iFlash  = 0;
+	ULONG ulAlpha = ulAlphaDefault;
+	TIME  tmFrame = _pGfx->gl_tvFrameTime.GetSeconds();
+	BOOL  bParse  = !(dp_ulTextFlags&(DPTF_PRINTSPECIALCODES|DPTF_IGNORESPECIALCODES));
+
+	// cell/advancer for fixed width and old font (default)
+	PIX pixAdvancer  = ((dp_FontData->fd_pixCharWidth *fixTextScalingX)>>16) + dp_pixTextCharSpacing - pixShadowSpacing;
+	PIX pixCellWidth = dp_FontData->fd_pixCharWidth;
+
+	// loop thru chars
+	PIX pixStartX = pixX0;
+	INDEX ctCharsPrinted=0, ctShadowsPrinted=0;
+	for( INDEX iChar=0; iChar<ctMaxChars; iChar++)
+	{
+		// get current char
+		unsigned char chrCurrent = strText[iChar];
+
+		// if at end of current line
+		if( chrCurrent=='\n') {
+			// advance to next line
+			pixX0  = pixStartX;
+			pixY0 += pixScaledHeight + dp_pixTextLineSpacing - pixShadowSpacing;
+			if( pixY0>GetHeight()) break;
+			// skip to next char
+			continue;
+		}
+		// special char encountered and allowed?
+		else if( chrCurrent=='^' && !(dp_ulTextFlags&DPTF_PRINTSPECIALCODES)) {
+			// get next char
+			chrCurrent = strText[++iChar];
+			COLOR col;
+			switch( chrCurrent)
+			{
+			// color change?
+			case 'c':
+				strncpy( acTmp, &strText[iChar+1], 6);
+				iRet = FindByte( 0, (UBYTE*)&strText[iChar+1], 6);
+				iChar+=iRet;
+				if( !bParse || iRet<6) continue;
+				acTmp[6] = '\0'; // terminate string
+				col = strtoul( acTmp, &pcDummy, 16) <<8;
+				glcol.Set( col|glcol.a); // do color change but keep original alpha
+				continue;
+			// alpha change?
+			case 'a':
+				strncpy( acTmp, &strText[iChar+1], 2);
+				iRet = FindByte( 0, (UBYTE*)&strText[iChar+1], 2);
+				iChar+=iRet;
+				if( !bParse || iRet<2) continue;
+				acTmp[2] = '\0'; // terminate string
+				ulAlpha = strtoul( acTmp, &pcDummy, 16);
+				continue;
+			// flash?
+			case 'f':
+				chrCurrent = strText[++iChar];
+				if( bParse) iFlash = 1+ 2* Clamp( (INDEX)(chrCurrent-'0'), 0L, 9L);
+				continue;
+			// reset all?
+			case 'r':
+				fBold   = 0;
+				fItalic = 0;
+				iFlash  = 0;
+				glcol   = glcolDefault;
+				ulAlpha = ulAlphaDefault;
+				continue;
+			// simple codes ...
+			case 'o':  bParse = bParse && gfx_bDecoratedText;  continue;  // allow console override settings?
+			case 'b':  if( bParse) fBold   = fBoldAdjustX;     continue;  // bold?
+			case 'i':  if( bParse) fItalic = fItalicAdjustX;   continue;  // italic?
+			case 'C':  glcol   = glcolDefault;    continue;  // color reset?
+			case 'A':  ulAlpha = ulAlphaDefault;  continue;  // alpha reset?
+			case 'B':  fBold   = 0;  continue;  // no bold?
+			case 'I':  fItalic = 0;  continue;  // italic?
+			case 'F':  iFlash  = 0;  continue;  // no flash?
+			default:   break;
+			} // unrecognized special code or just plain ^
+			if( chrCurrent!='^') { iChar--; break; }
+		}
+		// ignore tab
+		else if( chrCurrent=='\t') continue;
+
+		// if character is not defined (could be missing small letters in font)
+		if( !dp_FontData->IsCharDefined(chrCurrent)) {
+			char chrUpper = _toupper(chrCurrent);
+			if( (UBYTE)chrUpper==0xFF) chrUpper = (char)0x9F;
+			// if its upper version is defined and font uses small caps
+			if( dp_FontData->IsCharDefined(chrUpper) && dp_FontData->fd_bSmallCaps) chrCurrent = chrUpper;
+		}
+
+		// fetch char props
+		const CFontCharData &fcdCurrent = dp_FontData->fd_fcdFontCharData[chrCurrent];
+		const PIX pixCharX = fcdCurrent.fcd_pixXOffset;
+		const PIX pixCharY = fcdCurrent.fcd_pixYOffset;
+		const PIX pixCharStart = fcdCurrent.fcd_pixStart;
+		const PIX pixCharEnd   = fcdCurrent.fcd_pixEnd;
+		if( !bCellBased) pixCellWidth = pixCharEnd;
+		const PIX pixScaledWidth = (pixCellWidth*fixTextScalingX)>>16;
+
+		// determine corresponding char width and position adjustments
+		PIX pixXA; // adjusted starting X location of printout
+		if( bFixedWidth) {
+			// for fixed font
+			pixXA = pixX0 - ((pixCharStart*fixTextScalingX)>>16)
+						+ (((pixScaledWidth<<16) - ((pixCharEnd-pixCharStart)*fixTextScalingX) +0x10000) >>17);
+		} else {
+			// for proportional font
+			pixXA = pixX0 - ((pixCharStart*fixTextScalingX)>>16);
+			pixAdvancer = (((pixCharEnd-pixCharStart)*fixTextScalingX)>>16) +dp_pixTextCharSpacing - pixShadowSpacing;
+		}
+		// out of screen (left) ?
+		if( pixXA>GetWidth() || (pixXA+pixCharEnd)<0) {
+			// skip to next char
+			pixX0 += pixAdvancer;
+			continue; 
+		}
+
+		// adjust alpha for flashing
+		if( iFlash>0) glcol.a = ulAlpha*(sin(iFlash*tmFrame)*0.5f+0.5f);
+		else glcol.a = ulAlpha; 
+
+		// prepare coordinates for screen and texture
+		const FLOAT fX0 = pixXA;  const FLOAT fX1 = fX0 +pixScaledWidth;
+		const FLOAT fY0 = pixY0;  const FLOAT fY1 = fY0 +pixScaledHeight;
+		const FLOAT fU0 = pixCharX *fCorrectionU;  const FLOAT fU1 = (pixCharX+pixCellWidth)  *fCorrectionU;
+		const FLOAT fV0 = pixCharY *fCorrectionV;  const FLOAT fV1 = (pixCharY+ ( chrCurrent != 'i' ? pixCharHeight : pixCharHeight - 1 ) ) *fCorrectionV;
+
+		// add drop shadow
+		if( fDropShadowX) {
+			GFXColor glShdCol = 0;
+			glShdCol.a = glcol.a;
+
+			INDEX		iStart = _avtxText[0].Count();
+			GFXVertex	*pvtx = _avtxText[0].Push( 4 );
+			GFXTexCoord	*ptex = _atexText[0].Push( 4 );
+			GFXColor	*pcol = _acolText[0].Push( 4 );
+			UWORD		*pelm = _auwText[0].Push( 6 );
+
+			pvtx[0].x = fX0 +fDropShadowX+fItalic;        pvtx[0].y = fY0 +fDropShadowY;  pvtx[0].z = fZ;
+			pvtx[1].x = fX0 +fDropShadowX;                pvtx[1].y = fY1 +fDropShadowY;  pvtx[1].z = fZ;
+			pvtx[2].x = fX1 +fDropShadowX+fBold;          pvtx[2].y = fY1 +fDropShadowY;  pvtx[2].z = fZ;
+			pvtx[3].x = fX1 +fDropShadowX+fBold+fItalic;  pvtx[3].y = fY0 +fDropShadowY;  pvtx[3].z = fZ;
+			ptex[0].s = fU0;  ptex[0].t = fV0;
+			ptex[1].s = fU0;  ptex[1].t = fV1;
+			ptex[2].s = fU1;  ptex[2].t = fV1;
+			ptex[3].s = fU1;  ptex[3].t = fV0;
+			pcol[0] = glShdCol;
+			pcol[1] = glShdCol;
+			pcol[2] = glShdCol;
+			pcol[3] = glShdCol;
+
+			(ULONG&)pelm[0] = ( ( iStart + 2 ) << 16 ) | ( iStart + 1 );
+			(ULONG&)pelm[2] = ( ( iStart + 0 ) << 16 ) | ( iStart + 0 );
+			(ULONG&)pelm[4] = ( ( iStart + 3 ) << 16 ) | ( iStart + 2 );
+			ctShadowsPrinted++;
+		}
+
+		INDEX		iStart = _avtxText[0].Count();
+		GFXVertex	*pvtx = _avtxText[0].Push( 4 );
+		GFXTexCoord	*ptex = _atexText[0].Push( 4 );
+		GFXColor	*pcol = _acolText[0].Push( 4 );
+		UWORD		*pelm = _auwText[0].Push( 6 );
+
+		// add char
+		pvtx[0].x = fX0+fItalic;        pvtx[0].y = fY0;  pvtx[0].z = fZ;
+		pvtx[1].x = fX0;                pvtx[1].y = fY1;  pvtx[1].z = fZ;
+		pvtx[2].x = fX1+fBold;          pvtx[2].y = fY1;  pvtx[2].z = fZ;
+		pvtx[3].x = fX1+fBold+fItalic;  pvtx[3].y = fY0;  pvtx[3].z = fZ;
+		ptex[0].s = fU0;  ptex[0].t = fV0;
+		ptex[1].s = fU0;  ptex[1].t = fV1;
+		ptex[2].s = fU1;  ptex[2].t = fV1;
+		ptex[3].s = fU1;  ptex[3].t = fV0;
+		pcol[0] = glcol;
+		pcol[1] = glcol;
+		pcol[2] = glcol;
+		pcol[3] = glcol;
+		(ULONG&)pelm[0] = ( ( iStart + 2 ) << 16 ) | ( iStart + 1 );
+		(ULONG&)pelm[2] = ( ( iStart + 0 ) << 16 ) | ( iStart + 0 );
+		(ULONG&)pelm[4] = ( ( iStart + 3 ) << 16 ) | ( iStart + 2 );
+
+		// advance to next char
+		pixX0 += pixAdvancer;
+		ctCharsPrinted++;
+	}
+
+	// adjust vertex arrays size according to chars that really got printed out
+	ctCharsPrinted += ctShadowsPrinted;
+}
 
 void CDrawPort::PutTextCharExKor( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
 									FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
@@ -3269,6 +3623,7 @@ void CDrawPort::PutTextCharExKor( const char *pText, int nLength, PIX pixX0, PIX
 			nV = ( ( cCurrent - 0x1e ) / 42 ) * pixFontUVOffset;
 			fU0 = nU * fInvU;
 			fV0 = nV * fInvV;
+			//fU1 = ( nU + pixFontWidth+1 ) * fInvU;
 			fU1 = ( nU + pixFontWidth ) * fInvU;
 			fV1 = ( nV + pixFontHeight ) * fInvV;
 
@@ -3588,19 +3943,19 @@ void CDrawPort::PutTextCharExThai( const char *pText, int nLength, PIX pixX0, PI
 			if(cCurrent >= 0xa1 && cCurrent <= 0xfb){
 				pixFontAdvancer = _pUIFontTexMgr->GetFontWidthThai(cCurrent) +_pUIFontTexMgr->GetFontSpacing();
 				thai_Y0	 = 2;
-				thai_fV1 = 4 ; //íƒœêµ­ì–´ Vê¸¸ì´ë¥¼ 3 ë”í•œë‹¤...( ë†’ì´ê°€ ë” ê¸¸ë‹¤...ì„±ì¡° ì²¨ê°€ë¡œ)
+				thai_fV1 = 4 ; //ÅÂ±¹¾î V±æÀÌ¸¦ 3 ´õÇÑ´Ù...( ³ôÀÌ°¡ ´õ ±æ´Ù...¼ºÁ¶ Ã·°¡·Î)
 				if(cCurrent == 0xd3){
 					if(iChar==0) continue;
 					pre_cCurrent = pText[iChar-1];
 					if((pre_cCurrent>=0xa1 && pre_cCurrent<=0xcf)||(pre_cCurrent>=0xe7 && pre_cCurrent <= 0xec)){ // pre_cCurrent 050924
-						pixX0-=4; // 4í”½ì…€ ì•ìœ¼ë¡œ
+						pixX0-=4; // 4ÇÈ¼¿ ¾ÕÀ¸·Î
 					} else continue; 
 					
 				}else if(cCurrent == 0xed || cCurrent == 0xd1 || (cCurrent>=0xd4 && cCurrent<=0xda)){		// vowel display //wooss 050924 d3->d4
 					if(iChar==0) continue;
 					pre_cCurrent = pText[iChar-1];
 					if(pre_cCurrent>=0xa0 && pre_cCurrent <= 0xcf){
-						pixX0-=7; // ê²¹ì¹˜ëŠ” ëª¨ìŒ ì¶œë ¥ì‹œ 7í”½ì…€ ì•ìœ¼ë¡œ
+						pixX0-=7; // °ãÄ¡´Â ¸ğÀ½ Ãâ·Â½Ã 7ÇÈ¼¿ ¾ÕÀ¸·Î
 						pixFontAdvancer = _pUIFontTexMgr->GetFontWidthThai(cCurrent);
 					} else continue;
 				} 
@@ -3619,7 +3974,7 @@ void CDrawPort::PutTextCharExThai( const char *pText, int nLength, PIX pixX0, PI
 								tv_height=(pixFontHeight/4);
 								//	pixY0-=tv_height;
 							}
-					pixX0-=7; // 7í”½ì…€ ë‹¹ê²¨ì„œ ì°ëŠ”ë‹¤
+					pixX0-=7; // 7ÇÈ¼¿ ´ç°Ü¼­ Âï´Â´Ù
 					pixFontAdvancer -= _pUIFontTexMgr->GetFontSpacing(); 
 				}
 				
@@ -3733,9 +4088,11 @@ void CDrawPort::PutTextCharExJap( const char *pText, int nLength, PIX pixX0, PIX
 
 	_pUIFontTexMgr->GetInvUV( fInvU, fInvV );
 
-		// wooss 051102
+		// wooss 051102 
+	// pageWords - ÀÌÀü ÆäÀÌÁöÀÇ ±ÛÀÚ ´©Àû¼ö
+	// markStart - ÇöÀç ÆäÀÌÁöÀÇ ½ÃÀÛ À§Ä¡(ÄÚµåÆäÀÌÁö»ó)
 //	int pageWords[9]	=	{189,652,803,930,0,0,1023,1117}; // 81 - alphabet_num 82 ~ 89 start pos 
-	int pageWords[8]	=	{0xbd,0x160,0x1e7,0x276,0,0,0x2d3,0x331}; // 81 - alphabet_num 82 ~ 89 start pos 
+	int pageWords[8]	=	{0xbd,0x160,0x1e7,0x276,0x276,0x276,0x2d3,0x331}; // 81 - alphabet_num 82 ~ 89 start pos 
 	int markStart[9]	=	{0x40,0x4f,0x40,0x40,0,0,0x40,0x9f,0x40}; 
 	int markEnd[9]		=	{0xfc,0xf1,0xd6,0xbe,0,0,0x9c,0xfc,0xfc};
 	//		End - Start +1 	 0xbd,0xa3,0x97,0x7f,0,0,0x5d,0x5e
@@ -3760,8 +4117,8 @@ void CDrawPort::PutTextCharExJap( const char *pText, int nLength, PIX pixX0, PIX
 
 		if(cCurrent >= 0xa1 && cCurrent <= 0xdf){
 			// Texture coordinate
-			nU = ( ( cCurrent - 0x1e - 0x21) % 42 ) * pixFontUVOffset; // 0x21 : ê°€íƒ€ê°€ë‚˜ ì¤‘ê°„ì˜ 31ë¬¸ìì¹¸ì„ ë¹¼ì¤€ë‹¤. wooss 051028
-			nV = ( ( cCurrent - 0x1e - 0x21) / 42 ) * pixFontUVOffset; // 0x1e : textureìƒì—ì„œ 00~1Dê¹Œì§€ëŠ” ì¶œë ¥ì´ ì•ˆë˜ë¯€ë¡œ....
+			nU = ( ( cCurrent - 0x1e - 0x21) % 42 ) * pixFontUVOffset; // 0x21 : °¡Å¸°¡³ª Áß°£ÀÇ 31¹®ÀÚÄ­À» »©ÁØ´Ù. wooss 051028
+			nV = ( ( cCurrent - 0x1e - 0x21) / 42 ) * pixFontUVOffset; // 0x1e : texture»ó¿¡¼­ 00~1D±îÁö´Â Ãâ·ÂÀÌ ¾ÈµÇ¹Ç·Î....
 			fU0 = nU * fInvU;										   
 			fV0 = nV * fInvV;
 			fU1 = ( nU + pixFontWidth2Byte ) * fInvU;
@@ -4094,76 +4451,67 @@ void CDrawPort::PutTextCharExBrz(const char *pText, int nLength, PIX pixX0, PIX 
 	}
 }
 
-
-void CDrawPort::PutTextExCX( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend,
+//------------------------------------------------------------------------------
+// CDrawPort::PutTextCharExRus
+// Explain: display Russia font
+// Date : 
+//------------------------------------------------------------------------------
+void CDrawPort::PutTextCharExRus(const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
 								FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
 {
-	int tv_len = strText.Length();
-	int vowelNum=0;
-	PIX pixOffset;
-	// wooss 050915
-	// for thai
-	if( g_iCountry == THAILAND){
-		pixOffset = FindThaiLen(strText) / 2;
-	//	pixY0+=2;
-//	}else if(g_iCountry == MALAYSIA && g_bIsMalEng == TRUE){
-//		pixOffset = tv_len * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) / 2 - _pUIFontTexMgr->GetFontWidth();
-	} 
-	else pixOffset = tv_len * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) / 2;
+	CTString strText = pText;
+	CDrawPort *pD = (CDrawPort *)this;
+	pD->PutTextExRus(strText, pixX0, pixY0, colBlend, fZ, bShadow, colShadow);
+//	pD->PutTextRus(strText, pixX0, pixY0, colBlend);
+}
+
+void CDrawPort::PutTextExCX( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend,
+								FLOAT fZ, BOOL bShadow, const COLOR colShadow )
+{
+	PIX pixOffset = GetTextWidth2(strText) / 2;
 	PutTextEx( strText, pixX0 - pixOffset, pixY0, colBlend, fZ, bShadow, colShadow );
 }
 
 void CDrawPort::PutTextExRX( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend,
-								FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
+								FLOAT fZ, BOOL bShadow, const COLOR colShadow )
 {
-	int tv_len = strText.Length();
-	int vowelNum=0;
-
-	// wooss 050915
-	// for thai
-	PIX pixOffset;
-	if( g_iCountry == THAILAND){
-	//	pixY0+=2;
-		pixOffset = FindThaiLen(strText) -1;
-		
-	} else pixOffset = tv_len * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) - 1;
+	PIX pixOffset = GetTextWidth2(strText) - 1;
 	PutTextEx( strText, pixX0 - pixOffset, pixY0, colBlend, fZ, bShadow, colShadow );
 }
 
 void CDrawPort::PutTextCharExCX( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
 									FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
 {
-	if( nLength == 0 )
-		nLength = strlen( pText );
-
-	// wooss 050915
-	// for thai
-	PIX pixOffset;
-	if( g_iCountry == THAILAND){
-	//	pixY0+=2;
-		pixOffset = FindThaiLen(pText) /2;
-	} else if( ( g_iCountry == MALAYSIA && g_bIsMalEng == TRUE ) || 
-		g_iCountry == USA || ( g_iCountry == HONGKONG && g_bIsMalEng == TRUE )){
-		pixOffset = nLength * ( _pUIFontTexMgr->GetFontWidth() ) / 2;
-	}
-	else pixOffset = nLength * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) / 2;
+	if (nLength == 0)
+		nLength = strlen(pText);
+#if defined (G_THAI)
+	PIX pixOffset = FindThaiLen(pText) / 2;
+#elif defined (G_RUSSA) 
+	PIX pixOffset = GetTextWidth(pText) / 2;
+#elif defined (G_MAL) || defined (G_HONGKONG) 
+	PIX pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) / 2;
+	if (g_bIsMalEng)
+		pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth()) / 2;
+#elif defined (G_USA) || defined (G_GERMAN)  || defined (G_EUROPE3) || defined (G_EUROPE2)
+	PIX pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth()) / 2;
+#else
+	PIX pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) / 2;
+#endif 
 	PutTextCharEx( pText, nLength, pixX0 - pixOffset, pixY0, colBlend, fZ, bShadow, colShadow );
 }
 
 void CDrawPort::PutTextCharExRX( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
-									FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
+									FLOAT fZ, BOOL bShadow, const COLOR colShadow )
 {
-	if( nLength == 0 )
-		nLength = strlen( pText );
-	PIX pixOffset;
-	int vowelNum=0;
-	// wooss 050915
-	// for thai
-	if( g_iCountry == THAILAND){
-	//	pixY0+=2;
-		pixOffset = FindThaiLen(pText) -1;
-
-	} else pixOffset = nLength * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() -vowelNum) - 1;
+	if (nLength == 0)
+		nLength = strlen(pText);
+#if defined (G_THAI)
+	PIX pixOffset = FindThaiLen(pText) - 1;
+#elif defined (G_RUSSIA)
+	PIX pixOffset = GetTextWidth(pText) - 1;
+#else
+	PIX pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) - 1;
+#endif
 	PutTextCharEx( pText, nLength, pixX0 - pixOffset, pixY0, colBlend, fZ, bShadow, colShadow );
 }
 
@@ -4173,15 +4521,22 @@ void CDrawPort::EndTextEx( BOOL bDepthTest )
 	const GfxAPIType eAPI = _pGfx->gl_eCurrentAPI;
 	ASSERT( eAPI==GAT_OGL || eAPI==GAT_D3D || eAPI==GAT_NONE );
 
+#if defined G_RUSSIA
+	CTextureData *ptd = (CTextureData*)dp_FontData->fd_ptdTextureData;
+	InitTextureData( ptd, FALSE, 203, bDepthTest );
+#endif
+
 	// Render all elements
 	for( INDEX iText = 0; iText < FONT_MAX; iText++ )
 	{
 		INDEX ctElements = _auwText[iText].Count();
 		if( ctElements > 0 )
 		{
-			_pUIFontTexMgr->InitTexture( iText, bDepthTest );
-			gfxFlushTextElements( ctElements, iText );
 
+#if !defined G_RUSSIA
+			_pUIFontTexMgr->InitTexture( iText, bDepthTest );
+#endif
+			gfxFlushTextElements( ctElements, iText );			
 			_avtxText[iText].PopAll();
 			_atexText[iText].PopAll();
 			_acolText[iText].PopAll();
@@ -4218,8 +4573,17 @@ void CDrawPort::AddBtnTexture( const int nTexID, const FLOAT fI0, const FLOAT fJ
 	(ULONG&)pelm[4] = ((iStart+3)<<16) | (iStart+2);
 }
 
+void CDrawPort::AddBtnTexture( const int nTexID, const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1, 
+								const UIRectUV uv, const COLOR col ) const
+{
+	AddBtnTexture(nTexID, fI0, fJ0, fI1, fJ1, uv.U0, uv.V0, uv.U1, uv.V1, col);
+}
+
 void CDrawPort::FlushBtnRenderingQueue( int nBtnType, const ULONG ulPBT )
 {
+	if(nBtnType == UBET_GUILD_MARK || nBtnType >= UBET_TYPE_MAX)
+		return;
+
 	// Check API
 	const GfxAPIType eAPI = _pGfx->gl_eCurrentAPI;
 	ASSERT( eAPI==GAT_OGL || eAPI==GAT_D3D || eAPI==GAT_NONE );
@@ -4348,7 +4712,7 @@ void CDrawPort::PutTexture( class CTextureObject *pTO,
 
 // prepares texture and rendering arrays
 void CDrawPort::InitTexture( class CTextureObject *pTO, const BOOL bClamp/*=FALSE*/,
-														 const ULONG ulPBT/*=PBT_BLEND*/) const
+														 const ULONG ulPBT/*=PBT_BLEND*/, const BOOL bDepthTest/*= FALSE*/) const
 {
 	// prepare
 	if( pTO!=NULL) {
@@ -4364,8 +4728,16 @@ void CDrawPort::InitTexture( class CTextureObject *pTO, const BOOL bClamp/*=FALS
 	}
 	// setup rendering mode and prepare arrays
 	const enum PredefinedBlendType pbt = (const enum PredefinedBlendType)ulPBT;
-	gfxDisableDepthTest();
 	gfxSetBlendType(pbt);
+
+	if( bDepthTest )
+	{
+		gfxEnableDepthWrite();
+		gfxEnableDepthTest();
+	}
+	else
+		gfxDisableDepthTest();
+
 	gfxResetArrays();
 }
 
@@ -4378,6 +4750,10 @@ void CDrawPort::InitTextureData( class CTextureData *pTD, const BOOL bClamp, con
 		if( bClamp) eWrap = GFX_CLAMP;
 		gfxSetTextureWrapping( eWrap, eWrap );
 		pTD->SetAsCurrent();
+#if defined (G_RUSSIA)
+		CDrawPort *pD = (CDrawPort *)this;
+		pD->StockCurrentTextureData(pTD);
+#endif	// end g_russia
 	}
 	else
 		gfxDisableTexture();
@@ -4451,11 +4827,16 @@ void CDrawPort::AddTexture( const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, c
 	(ULONG&)pelm[4] = ((iStart+3)<<16) | (iStart+2);
 }
 
+void CDrawPort::AddTexture( const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1, 
+							const UIRectUV uv, const COLOR col, FLOAT fZ /*= 0 */ ) const
+{
+	AddTexture(fI0, fJ0, fI1, fJ1, uv.U0, uv.V0, uv.U1, uv.V1, col, fZ);
+}
 
 // adds one triangle to rendering queue
 void CDrawPort::AddTriangle( const FLOAT fI0, const FLOAT fJ0,
 							 const FLOAT fI1, const FLOAT fJ1,
-							 const FLOAT fI2, const FLOAT fJ2, const COLOR col) const
+							 const FLOAT fI2, const FLOAT fJ2, const COLOR col, const float fz) const
 {
 	const GFXColor glCol(col);
 	const INDEX iStart = _avtxCommon.Count();
@@ -4463,9 +4844,9 @@ void CDrawPort::AddTriangle( const FLOAT fI0, const FLOAT fJ0,
 	GFXTexCoord *ptex = _atexCommon[0].Push(3);
 	GFXColor    *pcol = _acolCommon.Push(3);
 	UWORD       *pelm = _auwCommonElements.Push(3);
-	pvtx[0].x = fI0;  pvtx[0].y = fJ0;  pvtx[0].z = 0;
-	pvtx[1].x = fI1;  pvtx[1].y = fJ1;  pvtx[1].z = 0;
-	pvtx[2].x = fI2;  pvtx[2].y = fJ2;  pvtx[2].z = 0;
+	pvtx[0].x = fI0;  pvtx[0].y = fJ0;  pvtx[0].z = fz;
+	pvtx[1].x = fI1;  pvtx[1].y = fJ1;  pvtx[1].z = fz;
+	pvtx[2].x = fI2;  pvtx[2].y = fJ2;  pvtx[2].z = fz;
 	pcol[0] = glCol;
 	pcol[1] = glCol;
 	pcol[2] = glCol;
@@ -4473,6 +4854,36 @@ void CDrawPort::AddTriangle( const FLOAT fI0, const FLOAT fJ0,
 	pelm[2] = iStart+2;
 }
 
+void CDrawPort::AddQuadrangle( const FLOAT fI0, const FLOAT fJ0, const FLOAT fI1, const FLOAT fJ1, const COLOR col, const FLOAT fz /*= 0 */ ) const
+{
+	const GFXColor glCol(col);
+	const INDEX iStart = _avtxCommon.Count();
+	GFXVertex   *pvtx = _avtxCommon.Push(4);
+	GFXTexCoord *ptex = _atexCommon[0].Push(4);
+	GFXColor    *pcol = _acolCommon.Push(4);
+	UWORD       *pelm = _auwCommonElements.Push(6);
+
+	// left, top
+	pvtx[0].x = fI0;  pvtx[0].y = fJ0;  pvtx[0].z = fz;
+
+	// left, bottom
+	pvtx[1].x = fI0;  pvtx[1].y = fJ1;  pvtx[1].z = fz;
+
+	// right, bottom
+	pvtx[2].x = fI1;  pvtx[2].y = fJ1;  pvtx[2].z = fz;
+
+	// right, top
+	pvtx[3].x = fI1;  pvtx[3].y = fJ0;  pvtx[3].z = fz;
+
+	pcol[0] = glCol;
+	pcol[1] = glCol;
+	pcol[2] = glCol;
+	pcol[3] = glCol;
+
+	(ULONG&)pelm[0] = ((iStart+2)<<16) | (iStart+1);
+	(ULONG&)pelm[2] = ((iStart+0)<<16) | (iStart+0);
+	(ULONG&)pelm[4] = ((iStart+3)<<16) | (iStart+2);
+}
 
 // adds one textured quad (up-left start, counter-clockwise)
 void CDrawPort::AddTexture( const FLOAT fI0, const FLOAT fJ0, const FLOAT fU0, const FLOAT fV0, const COLOR col0,
@@ -4589,3 +5000,55 @@ void CDrawPort::BlendScreen(void)
 	dp_ulBlendingA  = 0;
 }
 
+int CDrawPort::GetTextSectionWidth(char* strString, int nSectionEnd, BOOL bIsPassWordBox)
+{
+	if(nSectionEnd > strlen(strString))
+		return -1;
+
+	std::string strText = "";
+
+	if(bIsPassWordBox)
+	{
+		for(int i=0; i<nSectionEnd; i++)
+		{
+			strText += "*";
+		}
+	}
+	else
+	{
+		strText = strString;
+	}
+
+	extern CFontData *_pfdDefaultFont;
+
+	if(dp_FontData != _pfdDefaultFont)
+		SetFont(_pfdDefaultFont);
+
+	return GetTextWidth(strText.c_str());
+}
+
+int CDrawPort::CheckShowCharLength(char* strString, int nWidth)
+{
+	int nStrLength = strlen(strString);
+	int nStrWidth = GetTextSectionWidth(strString, nStrLength, FALSE);
+	if(nStrWidth <= nWidth)
+		return nStrLength;
+
+	for(int i=nStrLength; i >= 0; i--)
+	{
+		if(nStrWidth - GetTextSectionWidth(&strString[i], strlen(&strString[i]), FALSE) <= nWidth )
+		{
+			return i;
+		}
+	}
+
+	return nStrLength;
+}
+
+void CDrawPort::PutTextRus(const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend)
+{
+	CTextureData* curTexture = stCurrentTextureData;
+	FlushRenderingQueue();
+	PutText(strText, pixX0, pixY0, colBlend);
+	InitTextureData(curTexture);
+}

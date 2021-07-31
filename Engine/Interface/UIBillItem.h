@@ -1,7 +1,7 @@
 
 // ----------------------------------------------------------------------------
 //  File : UIBILL_ITEM.h
-//  Desc : Created by ì´ê¸°í™˜
+//  Desc : Created by ÀÌ±âÈ¯
 // ----------------------------------------------------------------------------
 
 #ifndef	UIBILL_ITEM_H_
@@ -9,13 +9,6 @@
 #ifdef	PRAGMA_ONCE 
 	#pragma once
 #endif
-
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIInventory.h>
-#include <Engine/Interface/UISpinButton.h>	// wooss 050830
-
 
 #define	BILL_ITEM_WIDTH					216
 #define	BILL_ITEM_HEIGHT				380
@@ -60,12 +53,12 @@ protected:
 // Controls...
 	
 	// Button
-	CUIButton				m_btnClose;							// ë‹«ê¸° ë²„íŠ¼ 
-	CUIButton				m_btnOK;							// ê°€ê³µ ë²„íŠ¼ 
-	CUIButton				m_btnCancel;						// ì·¨ì†Œ ë²„íŠ¼ 
+	CUIButton				m_btnClose;							// ´İ±â ¹öÆ° 
+	CUIButton				m_btnOK;							// °¡°ø ¹öÆ° 
+	CUIButton				m_btnCancel;						// Ãë¼Ò ¹öÆ° 
 	
 	// Item buttons
-	std::vector<CUIButtonEx> m_btnItems;						// ê°€ê³µ ì•„ì´í…œ
+	std::vector<CUIButtonEx> m_btnItems;						// °¡°ø ¾ÆÀÌÅÛ
 
 	// spin buttons
 	std::vector<CUISpinButton> m_sbtnItemNum;					// wooss 050830 the number of items 
@@ -73,8 +66,8 @@ protected:
 	std::vector<int>		m_vSelected;						// selected item order					
 
 	// Etc ...
-	CUIScrollBar			m_sbBillItem;						// ê°€ê³µ ì•„ì´í…œ ì°½ ìŠ¤í¬ë¡¤ ë°”
-	CUIListBox				m_lbBillItemDesc;					// í•„ìš” ì¡°ê±´ ì„¤ëª… ë¦¬ìŠ¤íŠ¸ ë°•ìŠ¤
+	CUIScrollBar			m_sbBillItem;						// °¡°ø ¾ÆÀÌÅÛ Ã¢ ½ºÅ©·Ñ ¹Ù
+	CUIListBox				m_lbBillItemDesc;					// ÇÊ¿ä Á¶°Ç ¼³¸í ¸®½ºÆ® ¹Ú½º
 	
 	
 // Region of each part

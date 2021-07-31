@@ -654,7 +654,7 @@ extern void TR_RemoveTerrainLighting( CLightSource *plsTerrainLight )
 
 extern INDEX TR_GetTerrainLayerSound( FLOAT fX, FLOAT fZ )
 {
-	// ì›”ë“œë‚´ì— í„°ë ˆì¸ì´ í•˜ë‚˜ë¯€ë¡œ...
+	// ¿ùµå³»¿¡ ÅÍ·¹ÀÎÀÌ ÇÏ³ª¹Ç·Î...
 	CTerrain	*ptrTerrain = CTerrainEffect::GetTerrain();
 	if( ptrTerrain == NULL )
 		return -2;
@@ -665,22 +665,28 @@ extern INDEX TR_GetTerrainLayerSound( FLOAT fX, FLOAT fZ )
 	if( ptr == NULL )
 		return -1;
 
-	if( fX < 0.0f || fZ < 0.0f || fX > ptr->tr_vMetricSize(1) || fZ > ptr->tr_vMetricSize(3) )
-		return -1;
-
 	const PIX	pixMapWidth = ptr->tr_pixHeightMapWidth - 1;
+	const PIX	pixMapHeight = ptr->tr_pixHeightMapHeight - 1;
 	const INDEX	cttrl = ptr->tr_atlLayers.Count();
 	INDEX		iSelLayer = cttrl - 1;
 	UBYTE		ubMaxValue = 0;
 	ULONG		ulSumValue = 0;
+
 	for( INDEX itrl = cttrl - 1; itrl > 0; itrl-- )
 	{
 		const CTerrainLayer		*ptrLayer = &ptr->tr_atlLayers[itrl];
 		const PIX	pixMulStretch = 1 << ptrLayer->tl_slMaskStretch;
 		const PIX	pixLayerMaskWidth = pixMapWidth * pixMulStretch;
+		const PIX	pixLayerMaskHeight = pixMapHeight * pixMulStretch;
 		const FLOAT	fDiv = 1.0f / ( 6.0f / FLOAT(pixMulStretch) );
 		const PIX	pixX = fX * fDiv;
 		const PIX	pixY = fZ * fDiv;
+
+		if (pixX < 0 || pixY < 0 || pixX > pixLayerMaskWidth || pixY > pixLayerMaskHeight)
+		{
+			continue;
+		}
+
 		const UBYTE	ubCurValue = ptrLayer->trl_trlLayerImp->trl_pubLayerMask[pixX + pixY * pixLayerMaskWidth];
 		ulSumValue += ubCurValue;
 

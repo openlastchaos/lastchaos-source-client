@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 //  File : UIBilling.h
 //  Desc : Created by 
-//	Date : 2005-04-30(ì˜¤ì „ 11:05:33), By Lee Ki-hwan
+//	Date : 2005-04-30(¿ÀÀü 11:05:33), By Lee Ki-hwan
 // ----------------------------------------------------------------------------
 
 #ifndef	UIBILLING_H_
@@ -9,10 +9,6 @@
 #ifdef	PRAGMA_ONCE
 	#pragma once
 #endif
-
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <vector>
 
 // Define Size Of Billing
 #define	BILLING_WIDTH				311
@@ -58,9 +54,9 @@ public :
 enum CHARGE_TYPE 
 {
 	CHARGE_NONE = 0,
-	CHARGE_FREE = 2,		// 3ì‹œê°„ ë¬´ë£Œ
-	CHARGE_MONTHLY = 4,		// ì›”ì •ì œ 
-	CHARGE_TIME = 6,		// ì‹œê°„ì œ 
+	CHARGE_FREE = 2,		// 3½Ã°£ ¹«·á
+	CHARGE_MONTHLY = 4,		// ¿ùÁ¤Á¦ 
+	CHARGE_TIME = 6,		// ½Ã°£Á¦ 
 	
 };
 
@@ -72,7 +68,7 @@ enum CHARGE_TYPE
 // Date : 2005-05-06,Author: Lee Ki-hwan
 // History: 
 //------------------------------------------------------------------------------
-class CBillInfo		// ê²°ì • ë°©ì‹ì— ëŒ€í•­ ì •ë³´ 
+class CBillInfo		// °áÁ¤ ¹æ½Ä¿¡ ´ëÇ× Á¤º¸ 
 {
 public :
 	CTString	m_strGuid;
@@ -101,14 +97,14 @@ typedef std::vector<CBillInfo>		BILLINFO_VEC;
 
 enum BILLING_TYPE 
 {
-	BILLING_INFO,				// ê²°ì œì™€ ê´€ë ¨ëœ ì •ë³´ë¥¼ ë³´ì—¬ì£¼ëŠ” ì°½ (í™”ë©´1)
-	BILLING_TIME,				// ì‹œê°„ ë§Œë£Œì— ë”°ë¥¸ ê²°ìž¬ ì°½ (í™”ë©´2) 
-	BILLING_AUTO_CHARGE_INFO,	// ìžë™ ê²°ìž¬ ì •ë³´(í™”ë©´3)
-	BILLING_TIME_NOW,			// ì‹œê°„ ë§Œë£Œì— ë”°ë¥¸ ê²°ì œ ì°½ ë°”ë¡œ ê²°ìž¬ (í™”ë©´4)
-	BILLING_BEFORE_USE,			// ì´ì „ì— ì‚¬ìš©í•˜ë˜ ë°©ì‹ì—ì„œ ê³„ì‚°(í™”ë©´5)
-	BILLING_BEFORE_USE_NOW,		// ì´ì „ì— ì‚¬ìš©í•˜ë˜ ê²°ìž¬ ë°©ì‹ìœ¼ë¡œ ë°”ë¡œ ê²°ìž¬ (í™”ë©´6)
-	BILLING_DEFAULT,			// ê¸°ë³¸ì ì¸ ê²°ì œì°½	(í™”ë©´8)
-	BILLING_ALLOW_NOT_USE,		// ì‚¬ìš© ë¶ˆê°€
+	BILLING_INFO,				// °áÁ¦¿Í °ü·ÃµÈ Á¤º¸¸¦ º¸¿©ÁÖ´Â Ã¢ (È­¸é1)
+	BILLING_TIME,				// ½Ã°£ ¸¸·á¿¡ µû¸¥ °áÀç Ã¢ (È­¸é2) 
+	BILLING_AUTO_CHARGE_INFO,	// ÀÚµ¿ °áÀç Á¤º¸(È­¸é3)
+	BILLING_TIME_NOW,			// ½Ã°£ ¸¸·á¿¡ µû¸¥ °áÁ¦ Ã¢ ¹Ù·Î °áÀç (È­¸é4)
+	BILLING_BEFORE_USE,			// ÀÌÀü¿¡ »ç¿ëÇÏ´ø ¹æ½Ä¿¡¼­ °è»ê(È­¸é5)
+	BILLING_BEFORE_USE_NOW,		// ÀÌÀü¿¡ »ç¿ëÇÏ´ø °áÀç ¹æ½ÄÀ¸·Î ¹Ù·Î °áÀç (È­¸é6)
+	BILLING_DEFAULT,			// ±âº»ÀûÀÎ °áÁ¦Ã¢	(È­¸é8)
+	BILLING_ALLOW_NOT_USE,		// »ç¿ë ºÒ°¡
 };
 	
 //------------------------------------------------------------------------------
@@ -122,15 +118,15 @@ class CUIBilling : public CUIWindow
 
 	// UIControls
 	CUIButton		m_btnClose;
-	CUIButton		m_btnOK;			// í™•ì¸ 
-	CUIButton		m_btnCancel;		// ì·¨ì†Œ
-	CUIButton		m_btnBill;			// ê²°ì œì°½ ì˜¤ì¶œ 
-	CUIButton		m_btnCharge;		// ì¶©ì „
+	CUIButton		m_btnOK;			// È®ÀÎ 
+	CUIButton		m_btnCancel;		// Ãë¼Ò
+	CUIButton		m_btnBill;			// °áÁ¦Ã¢ ¿ÀÃâ 
+	CUIButton		m_btnCharge;		// ÃæÀü
 	CUIButton		m_btnItemList;
 
 
-	CUIListBox		m_lbInfo;			// ê²°ìž¬ ì •ë³´ (None Scrool Bar)
-	CUIListBox		m_lbBillList;		// ê²°ìž¬ ë°©ì‹ (Use Scrool Bar, Selection )	
+	CUIListBox		m_lbInfo;			// °áÀç Á¤º¸ (None Scrool Bar)
+	CUIListBox		m_lbBillList;		// °áÀç ¹æ½Ä (Use Scrool Bar, Selection )	
 
 	BOOL			m_bExVisible;
 
@@ -228,8 +224,8 @@ public :
 	void	ErrorProcess ( int nErrorCode ); 
 
 	// etc Command
-	void	OpenBilling();	// ê²°ì²´ì°½ìœ¼ë¡œ
-	void	OpenCharge();	// ì¶©ì „ì›¹ ì‹¸ì´íŠ¸ë¡œ ì´ë™
+	void	OpenBilling();	// °áÃ¼Ã¢À¸·Î
+	void	OpenCharge();	// ÃæÀüÀ¥ ½ÎÀÌÆ®·Î ÀÌµ¿
 	void	AddInfoDescString( CTString &strDesc, COLOR colDesc = 0xc2bac5FF );
 	void	AddBillListString( CTString &strDesc, COLOR colDesc = 0xc2bac5FF );
 	

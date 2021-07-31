@@ -1,5 +1,5 @@
-//ì•ˆíƒœí›ˆì´ ìƒˆë¡œ ì¶”ê°€í•œ íŒŒì¼ì„.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Shadow Util)(0.1)
+//¾ÈÅÂÈÆÀÌ »õ·Î Ãß°¡ÇÑ ÆÄÀÏÀÓ.
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Shadow Util)(0.1)
 
 #include "StdH.h"
 #include <Shaders/Common.h>
@@ -41,11 +41,11 @@ static void PixelShaderProcess(COLOR colShadowColor)
 	GFXColor colShadow = colShadowColor;
 	ShaderRegister srShadowColor(colShadow);
 	shaSetPixelProgramConst( 0, &srShadowColor, 1);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.22
 	GFXColor colPlane = 0xFFFFFF80;
 	ShaderRegister srPlaneColor(colPlane);
 	shaSetPixelProgramConst( 1, &srPlaneColor, 1);	// c1
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.22
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.22
 	//set pixel shader
 	shaSetPixelProgram(iShadowPP);
 }
@@ -58,33 +58,33 @@ static void Render()
 	shaRender();
 }
 
-// í…ìŠ¤ì³ ì—†ì´ ìƒ‰ìƒë§Œ ì¹ í•¨.
+// ÅØ½ºÃÄ ¾øÀÌ »ö»ó¸¸ Ä¥ÇÔ.
 SHADER_MAIN(NoShadow)
 {
 	const COLOR colShadowColor = shaGetColor(iShadowColor);
 	const BOOL bHardwareShader = shaUseHWShaders();
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.30	
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.30	
 	if(((shaGetModelColor()&CT_AMASK)>>CT_ASHIFT) >= 64)
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.30
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.30
 		
 		if(bHardwareShader)
 		{
 			SetRenderingState();
 			VertexShaderProcess();
-			//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+			//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 			PixelShaderProcess(colShadowColor);
-			//ê°•ë™ë¯¼ ìˆ˜ì • ë
+			//°­µ¿¹Î ¼öÁ¤ ³¡
 			Render();
 		}
 		else	//USE VS(SOFT or HARD), NON-PS
 		{
-			//TODO : ì•ˆíƒœí›ˆ
+			//TODO : ¾ÈÅÂÈÆ
 		}
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(NoShadow, ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -107,16 +107,16 @@ SHADER_DESC(NoShadow, ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(NoShadow, CTString &strVPCode, INDEX iVertexProgram)
 {
-	//ìƒìˆ˜ë“±ë¡ c0 ~ c20 ì‚¬ìš©ê°€ëŠ¥, c0 ~ c7ì€ ì™¸ë¶€ì—ì„œ ì…ë ¥ë¨.
+	//»ó¼öµî·Ï c0 ~ c20 »ç¿ë°¡´É, c0 ~ c7Àº ¿ÜºÎ¿¡¼­ ÀÔ·ÂµÊ.
 	//--------------- Input ---------------------//
 	//--- r0     - vertex position            ---//
 	//--- c0     - mProjection*mView          ---//
-	//--- c7     - (0.0f, 1.0f, 2.0f, 0.5f)   ---//ì—¬ê¸°ê¹Œì§€ê°€ ì™¸ë¶€ì—ì„œ ì„¸íŒ…
+	//--- c7     - (0.0f, 1.0f, 2.0f, 0.5f)   ---//¿©±â±îÁö°¡ ¿ÜºÎ¿¡¼­ ¼¼ÆÃ
 	//--- c4.w   - 765.01f                    ---//
 	//-------------- Output ---------------------//
 	//--- oPos   - Position Output            ---//
@@ -131,7 +131,7 @@ SHADER_VCODE(NoShadow, CTString &strVPCode, INDEX iVertexProgram)
 
 SHADER_PCODE(NoShadow, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 {
-	//ìƒìˆ˜ë“±ë¡ c0ë§Œ ê°€ëŠ¥(PSê°€ ì—†ëŠ” ì¹´ë“œì™€ì˜ í˜¸í™˜ì„±ì„ ê³ ë ¤í•  ê²½ìš°)
+	//»ó¼öµî·Ï c0¸¸ °¡´É(PS°¡ ¾ø´Â Ä«µå¿ÍÀÇ È£È¯¼ºÀ» °í·ÁÇÒ °æ¿ì)
 	//--------------- Input ---------------------//
 	//--- v0     - diffuse color              ---//
 	//--- c0     - Shadow color              ---//
@@ -139,15 +139,15 @@ SHADER_PCODE(NoShadow, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTyp
 	//--- r0     - Output Pixel COLOR & Alpha ---//
 
 	ASSERT(iPixelProgram == iShadowPP);
-	//ì•ˆê°œ ê³ ë ¤í•˜ì§€ ì•ŠìŒ.
+	//¾È°³ °í·ÁÇÏÁö ¾ÊÀ½.
 	if(iPixelProgram == iShadowPP)
 	{
 		strPPCode = "mov        r0,      c0                        \n"	//paint shadow color
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.22
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.22
 					"mul		r0, r0,  c1							\n"
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.22
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.22
 					;
 	}
 	return;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Shadow Util)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Shadow Util)(0.1)

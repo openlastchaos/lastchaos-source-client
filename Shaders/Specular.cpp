@@ -76,9 +76,9 @@ SHADER_MAIN(Specular)
 		shaSetPixelProgramConst(0,   &srBaseColor, 1);
 		// prepare fog and haze
 		shaPrepareFogAndHaze(bOpaque);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Add Tagent-space Normal Map)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Add Tagent-space Normal Map)(0.1)
 		shaSetDefaultConstantRegisters();
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Add Tagent-space Normal Map)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Add Tagent-space Normal Map)(0.1)
 	}
 	else 
 	{
@@ -158,7 +158,7 @@ SHADER_MAIN(Specular)
 	D3D_DISABLE_SPECULAR();
 }
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(For Performance)(0.1)
 SHADER_DESC(Specular,ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -187,7 +187,7 @@ SHADER_DESC(Specular,ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM|GFX_TEXCOORD0|GFX_NORMAL_STREAM;
 	}
 	pshDesc = &shDescMe;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(Specular, CTString &strVPCode, INDEX iVertexProgram)
@@ -208,7 +208,7 @@ SHADER_PCODE(Specular, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTyp
 	if(eFogType==FT_NONE) 
 	{
 		
-		strPPCode = "tex    t0                      \n" // load base texture
+/*		strPPCode = "tex    t0                      \n" // load base texture
 					"tex    t1                      \n" // load specular texture
 					"mul    t0,     t0,   c0        \n" // mul base texture with base color
 					"mul    r0.rgb, t0,   t0.a      \n" // Bc*Ba
@@ -216,11 +216,20 @@ SHADER_PCODE(Specular, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTyp
 					"+mov   r0.a,   1-t0.a          \n" // Fa = 1-Ba
 					"mad    r0.rgb, t1,   v1,  r0   \n" // Fc = Bc*Ba + Sc*Sa
 					D3D_DISABLE_SPECULAR_PS
+					;*/
+		strPPCode = "texld  r0,		t0              \n" // load base texture
+					"texld  r1,		t1              \n" // load specular texture
+					"mul    r2,     r0,   c0        \n" // mul base texture with base color
+					"mul    r2.rgb, r0,   r0.a      \n" // Bc*Ba
+					"mul_x2 r2.rgb, r0,   v0        \n" // Shade pixel
+					"+mov   r0.a,   1-r2.a          \n" // Fa = 1-Ba
+					"mad    r0.rgb, r1,   v1,  r2   \n" // Fc = Bc*Ba + Sc*Sa
+					D3D_DISABLE_SPECULAR_PS
 					;
 	}
 	else if(eFogType==FT_OPAQUE) 
 	{
-		strPPCode = "tex    t0                      \n" // load base texture
+/*		strPPCode = "tex    t0                      \n" // load base texture
 					"tex    t1                      \n" // load specular texture
 					"tex    t2                      \n" // load fog texture
 					"mul    t0,     t0,   c0        \n" // mul base texture with base color
@@ -231,11 +240,23 @@ SHADER_PCODE(Specular, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTyp
 					"mad    r0.rgb, t1,   v1,  r0   \n" // Fc = Bc*Ba + Sc*Sa
 					"lrp    r0.rgb, t2.a, t2,  r0   \n" // Add fog
 					D3D_DISABLE_SPECULAR_PS
+					;*/
+		strPPCode = "texld  r0,     t0              \n" // load base texture
+					"texld  r1,		t1              \n" // load specular texture
+					"texld	r2,		t2                      \n" // load fog texture
+					"mul    r3,     r0,   c0        \n" // mul base texture with base color
+					"mul    r2,     r2,   c7        \n" // mul fog texture with fog color
+					"mul    r0.rgb, r3,   r3.a      \n" // Bc*Ba
+					"mul_x2 r0.rgb, r0,   v0        \n" // Shade pixel
+					"+mov   r0.a,   1-r3.a          \n" // Fa = 1-Ba
+					"mad    r0.rgb, r1,   v1,  r0   \n" // Fc = Bc*Ba + Sc*Sa
+					"lrp    r0.rgb, r2.a, r2,  r0   \n" // Add fog
+					D3D_DISABLE_SPECULAR_PS
 					;
 	}
 	else if(eFogType==FT_NON_OPAQUE) 
 	{
-		strPPCode = "tex    t0                      \n" // load base texture
+/*		strPPCode = "tex    t0                      \n" // load base texture
 					"tex    t1                      \n" // load specular texture
 					"tex    t2                      \n" // load fog texture
 					"mul    t0,     t0,   c0        \n" // mul base texture with base color
@@ -246,6 +267,19 @@ SHADER_PCODE(Specular, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogTyp
 					"mul_x2 r0.rgb, r0,   v0        \n" // Shade pixel
 					"+mov   r0.a,   1-t0.a          \n" // Fa = 1-Ba
 					"mad    r0.rgb, t1,   v1,  r0   \n" // Fc = Bc*Ba + Sc*Sa
+					D3D_DISABLE_SPECULAR_PS
+					;*/
+		strPPCode = "texld	r0,		t0              \n" // load base texture
+					"texld  r1,		t1              \n" // load specular texture
+					"texld  r2,		t2              \n" // load fog texture
+					"mul    r3,     r0,   c0        \n" // mul base texture with base color
+					"mul    r2,     r2,   c7        \n" // mul fog texture with fog color
+					"mul    r1.rgb, r1,   1-r2.a    \n" // attenuate specular tex color with fog alpha
+					"+mul   r3.a,   r3.a, 1-r2.a    \n" // attenuate base tex alpha with fog alpha
+					"mul    r0.rgb, r3,   r3.a      \n" // Bc*Ba
+					"mul_x2 r0.rgb, r0,   v0        \n" // Shade pixel
+					"+mov   r0.a,   1-r3.a          \n" // Fa = 1-Ba
+					"mad    r0.rgb, r1,   v1,  r0   \n" // Fc = Bc*Ba + Sc*Sa
 					D3D_DISABLE_SPECULAR_PS
 					;
 	}

@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLESEMITTERSPHERE_H__
 #define __CPARTICLESEMITTERSPHERE_H__
 
@@ -40,11 +40,11 @@ public:
 	virtual void SetShapeSize(FLOAT size);
 protected:
 	//content
-	CForce	m_force;			//ì´ˆê¸° ì†ë„, ê°€ì†ë„ ê²°ì •.
-	FLOAT	m_fDelayTime;		//ì´ˆê¸° ì†ë„ ê²°ì •. ëª‡ì´ˆë™ì•ˆ íž˜ì„ ë°›ë‚˜ë¥¼ ê²°ì •.
-	CSphereDoubleSpace	m_cdsShape;	//íŒŒí‹°í´ì˜ ì´ˆê¸°ìœ„ì¹˜ ê²°ì •.
+	CForce	m_force;			//ÃÊ±â ¼Óµµ, °¡¼Óµµ °áÁ¤.
+	FLOAT	m_fDelayTime;		//ÃÊ±â ¼Óµµ °áÁ¤. ¸îÃÊµ¿¾È ÈûÀ» ¹Þ³ª¸¦ °áÁ¤.
+	CSphereDoubleSpace	m_cdsShape;	//ÆÄÆ¼Å¬ÀÇ ÃÊ±âÀ§Ä¡ °áÁ¤.
 	//instance
 };
 
 #endif //__CPARTICLESEMITTERSPHERE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

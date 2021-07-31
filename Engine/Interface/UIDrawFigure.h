@@ -1,7 +1,7 @@
 
 // WSS_DRAWFIGURE 070417 ------------------------------------------->><<
-// ë°•ìŠ¤,ì›, ë‹¤ê°í˜•ì„ ê·¸ë¦´ ìˆ˜ ìžˆëŠ” í´ëž˜ìŠ¤ë¥¼ ìœ„ì¹˜ ì‹œí‚¨ë‹¤.
-// í˜„ìž¬ëŠ” ë°•ìŠ¤ë§Œ...ì´í›„ í•„ìš”ì— ë”°ë¼ ì¶”ê°€è¦...
+// ¹Ú½º,¿ø, ´Ù°¢ÇüÀ» ±×¸± ¼ö ÀÖ´Â Å¬·¡½º¸¦ À§Ä¡ ½ÃÅ²´Ù.
+// ÇöÀç´Â ¹Ú½º¸¸...ÀÌÈÄ ÇÊ¿ä¿¡ µû¶ó Ãß°¡é©...
 
 #ifndef	UIDRAWFIGURE_H_
 #define	UIDRAWFIGURE_H_
@@ -13,7 +13,7 @@
 
 // ----------------------------------------------------------------------------
 // Name : WRect
-// Desc : Rect class <- UIRectì˜ struct êµ¬ì¡°ë¥¼ class êµ¬ì¡°ë¡œ ë³€ê²½í•¨
+// Desc : Rect class <- UIRectÀÇ struct ±¸Á¶¸¦ class ±¸Á¶·Î º¯°æÇÔ
 // ----------------------------------------------------------------------------
 class WRect
 {
@@ -34,6 +34,8 @@ public:
 	void	CopyRect( const UIRect &rcSrc );
 	void	Scale( FLOAT fScale );
 	void	Offset( int nX, int nY );
+
+	UIRect	GetUIRect();
 	
 	inline	int		GetCenterX() { return ( Left + Right ) / 2; }
 	inline	int		GetCenterY() { return ( Top + Bottom ) / 2; }
@@ -54,8 +56,8 @@ public :
 	CTextureData	*m_pTexture;
 
 	// Variables
-	int			m_iThickX;					// UV ì„ íƒì‹œ ì™¸ê³½ ë‘ê»˜
-	int			m_iThickY;					// UV ì„ íƒì‹œ ì™¸ê³½ ë‘ê»˜
+	int			m_iThickX;					// UV ¼±ÅÃ½Ã ¿Ü°û µÎ²²
+	int			m_iThickY;					// UV ¼±ÅÃ½Ã ¿Ü°û µÎ²²
 	WRect		m_rcBoxUV;					// Box UV 
 	WRect		m_rcBoxRT;					// Region of background
 	
@@ -83,6 +85,7 @@ public :
 	void	CopyUV(CUIDrawBox* pDrawBox);
 	// Render
 	void	Render(int nX=0,int nY=0,const COLOR nCol =0xFFFFFFFF,FLOAT fDepth =0);
+
 };
 
 

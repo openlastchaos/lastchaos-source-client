@@ -11,11 +11,12 @@
 #include <Engine/Base/CTString.h>
 #include <Engine/Base/FileName.h>
 #include <Engine/GlobalDefinition.h>
+#include <Engine/DesignClasses/Singleton/SingletonBase.h>
 
 enum eAnimation
 {
 	ANIM_START = 0,
-	ANIM_BASIC_BEGIN = ANIM_START,			// ê¸°ë³¸ ì• ë‹ˆë©”ì´ì…˜ ì‹œìž‘
+	ANIM_BASIC_BEGIN = ANIM_START,			// ±âº» ¾Ö´Ï¸ÞÀÌ¼Ç ½ÃÀÛ
 	ANIM_WALK_1 = ANIM_START,
 	ANIM_WALK_2,
 	ANIM_IDLE,
@@ -43,7 +44,7 @@ enum eAnimation
 	ANIM_EXT_PICK,
 	ANIM_EXT_DAMAGE,
 	ANIM_EXT_DIE,
-	ANIM_BASIC_END = ANIM_EXT_DIE,			// ê¸°ë³¸ ì• ë‹ˆë©”ì´ì…˜ ë
+	ANIM_BASIC_END = ANIM_EXT_DIE,			// ±âº» ¾Ö´Ï¸ÞÀÌ¼Ç ³¡
 	ANIM_BASIC_TOTAL = ANIM_BASIC_END,
 	ANIM_MINE,
 	ANIM_COLLECT,
@@ -61,7 +62,7 @@ enum eAnimation
 	ANIM_SOCIAL_10,
 	ANIM_SOCIAL_11,
 
-	// ì• ì™„ë™ë¬¼ì„ íƒ€ê³ ë‚˜ì„œ...
+	// ¾Ö¿Ïµ¿¹°À» Å¸°í³ª¼­...
 	ANIM_RIDE_HORSE_WALK_1,
 	ANIM_RIDE_HORSE_IDLE_1,
 	ANIM_RIDE_HORSE_IDLE_2,
@@ -78,7 +79,7 @@ enum eAnimation
 	ANIM_RIDE_HORSE_SIT,
 	ANIM_RIDE_HORSE_STANDUP,
 
-	// ì• ì™„ë™ë¬¼ì„ íƒ€ê³ ë‚˜ì„œ...
+	// ¾Ö¿Ïµ¿¹°À» Å¸°í³ª¼­...
 	ANIM_RIDE_DRAGON_WALK_1,
 	ANIM_RIDE_DRAGON_IDLE_1,
 	ANIM_RIDE_DRAGON_IDLE_2,
@@ -93,8 +94,33 @@ enum eAnimation
 	ANIM_RIDE_DRAGON_SKILL_3,
 	ANIM_RIDE_DRAGON_SKILL_4,
 	ANIM_RIDE_DRAGON_SIT,
-	ANIM_RIDE_DRAGON_STANDUP,	
-	ANIM_END = ANIM_RIDE_DRAGON_STANDUP,
+	ANIM_RIDE_DRAGON_STANDUP,
+	
+	// ¼­Å¥¹ö½º Ãß°¡
+	ANIM_RIDE_DEMONBAT_WALK_1,
+	ANIM_RIDE_DEMONBAT_IDLE_1,
+	ANIM_RIDE_DEMONBAT_IDLE_2,
+	ANIM_RIDE_DEMONBAT_RUN_1,
+	ANIM_RIDE_DEMONBAT_PICK,
+	ANIM_RIDE_DEMONBAT_DAMAGE,
+	ANIM_RIDE_DEMONBAT_DIE,
+	ANIM_RIDE_DEMONBAT_LEVELUP,
+	ANIM_RIDE_DEMONBAT_SIT_CONTINUE,
+	ANIM_RIDE_DEMONBAT_SKILL_1,
+	ANIM_RIDE_DEMONBAT_SKILL_2,
+	ANIM_RIDE_DEMONBAT_SKILL_3,
+	ANIM_RIDE_DEMONBAT_SKILL_4,
+	ANIM_RIDE_DEMONBAT_SIT,
+	ANIM_RIDE_DEMONBAT_STANDUP,
+	
+	// ³ªÀÌÆ® ½¦µµ¿ì ³¯±â µ¿ÀÛÀ» À§ÇØ
+	ANIM_FLYING_READY,
+	ANIM_FLYING_MOVE,
+	ANIM_END = ANIM_FLYING_MOVE,
+	// Ä³¸¯ÅÍ ¼±ÅÃ, »ý¼º Ã¢¿¡¼­¸¸ »ç¿ë
+	ANIM_LOGIN_GAMESTART,
+	ANIM_LOGIN_IDLE01,
+	ANIM_LOGIN_IDLE02,
 	ANIM_TOTAL,
 };
 
@@ -113,11 +139,7 @@ enum eAttackType
 
 enum eCharacterWearing 
 {
-#ifdef HEAD_CHANGE
 	HEAD		= 0,
-#else
-	HEAD		= -1,
-#endif
 	BODYDOWN	= HEAD+1,
 	BODYUP		= HEAD+2,
 	FOOT		= HEAD+3,
@@ -126,7 +148,7 @@ enum eCharacterWearing
 	WEARTOTAL	= HEAD+6,
 };	
 	
-class ENGINE_API CJobInfo
+class ENGINE_API CJobInfo : public CSingletonBase< CJobInfo >
 {
 private:
 	typedef struct _tagJobInfo
@@ -140,24 +162,22 @@ private:
 		{
 		};
 
-		CTString		strName;									// ì´ë¦„ ì •ë³´.
-		CTString		strExtensionName[2];						// ì „ì§ í´ëž˜ìŠ¤ ì´ë¦„.
-		CTString		strFileName;								// íŒŒì¼ëª….
-		CTString		aStrAnimationName[ANIM_TOTAL];				// ì• ë‹ˆë©”ì´ì…˜ ì´ë¦„.
-		int				iAttackSpeed;								// ê¸°ë³¸ ê³µì†
-		int				iSkillWeaponType[2];						// ìŠ¤í‚¬ ì‚¬ìš© ê°€ëŠ¥ ë¬´ê¸° ì¢…ë¥˜		
-		float			afImpactTimeTable[MAX_ATTACK];				// ì´íŽ™íŠ¸ì™€ ì‚¬ìš´ë“œ ë° ë°ë¯¸ì§€ê°€ ì ìš©ë˜ëŠ” íƒ€ì´ë°.
-		CTFileName		aStrMeshName[WEARTOTAL];					// ë©”ì‰¬ëª….
-		CTFileName		aStrTextureName[WEARTOTAL];					// í…ìŠ¤ì³ëª….
-		CTFileName		aStrTexNormalName[WEARTOTAL];				// ë…¸ë§ë§µ.
+		CTString		strName;									// ÀÌ¸§ Á¤º¸.
+		CTString		strExtensionName[2];						// ÀüÁ÷ Å¬·¡½º ÀÌ¸§.
+		CTString		strFileName;								// ÆÄÀÏ¸í.
+		CTString		aStrAnimationName[ANIM_TOTAL];				// ¾Ö´Ï¸ÞÀÌ¼Ç ÀÌ¸§.
+		int				iAttackSpeed;								// ±âº» °ø¼Ó
+		int				iSkillWeaponType[2];						// ½ºÅ³ »ç¿ë °¡´É ¹«±â Á¾·ù		
+		float			afImpactTimeTable[MAX_ATTACK];				// ÀÌÆåÆ®¿Í »ç¿îµå ¹× µ¥¹ÌÁö°¡ Àû¿ëµÇ´Â Å¸ÀÌ¹Ö.
+		CTFileName		aStrMeshName[WEARTOTAL];					// ¸Þ½¬¸í.
+		CTFileName		aStrTextureName[WEARTOTAL];					// ÅØ½ºÃÄ¸í.
+		CTFileName		aStrTexNormalName[WEARTOTAL];				// ³ë¸»¸Ê.
 		
 	}sJobInfo;
 
 public:
 	CJobInfo();
 	~CJobInfo();
-
-	static CJobInfo &Instance()			{ return m_instance;	}
 
 	// Set Properties
 	void		SetName( int iJob, const CTString& strName );
@@ -183,10 +203,7 @@ public:
 	//CTString	GetDamageAnim( int iJob );
 
 protected:
-	static CJobInfo m_instance;
 	sJobInfo		*m_pJobInfo;
 };
-
-inline CJobInfo &JobInfo()				{ return CJobInfo::Instance();	}
 
 #endif // JOBINFO_H_

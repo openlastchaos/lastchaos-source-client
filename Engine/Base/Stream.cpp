@@ -15,7 +15,6 @@
 #include <Engine/Base/Synchronization.h>
 #include <Engine/Base/ErrorReporting.h>
 #include <Engine/Base/ListIterator.inl>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Base/Unzip.h>
 #include <Engine/Base/CRC.h>
 #include <Engine/Base/Shell.h>
@@ -34,12 +33,13 @@
 #include <Engine/Templates/Stock_CEntityClass.h>
 #include <Engine/Templates/Stock_CShader.h>
 #include <Engine/Templates/Stock_CAnimData.h>
+#include <Loading.h>
 
 // default size of page used for stream IO operations (4Kb)
 ULONG _ulPageSize = 0;
 // maximum lenght of file that can be saved (default: 128Mb)
-// [070531: Su-won] íŒŒì¼ì„ ì—´ë•Œë§ˆë‹¤ 128MBì˜ ë©”ëª¨ë¦¬ë¥¼ ìš”ì²­í•˜ì—¬ ì—ë””í„° ì‘ì—…ì‹œ ë©”ëª¨ë¦¬ ë¶€ì¡± í˜„ìƒ ë°œìƒ.
-// ìµœëŒ€ íŒŒì¼ í¬ê¸°ë¥¼ 128MBë‚˜ ë  í•„ìš”ê°€ ì—†ì„ ë“¯ í•˜ì—¬ 64MBë¡œ ìˆ˜ì •. 
+// [070531: Su-won] ÆÄÀÏÀ» ¿­¶§¸¶´Ù 128MBÀÇ ¸Ş¸ğ¸®¸¦ ¿äÃ»ÇÏ¿© ¿¡µğÅÍ ÀÛ¾÷½Ã ¸Ş¸ğ¸® ºÎÁ· Çö»ó ¹ß»ı.
+// ÃÖ´ë ÆÄÀÏ Å©±â¸¦ 128MB³ª µÉ ÇÊ¿ä°¡ ¾øÀ» µí ÇÏ¿© 64MB·Î ¼öÁ¤. 
 //ULONG _ulMaxLenghtOfSavingFile = (1UL<<20)*128;
 ULONG _ulMaxLenghtOfSavingFile = (1UL<<20)*64;
 
@@ -52,7 +52,8 @@ extern INDEX _ctTotalFromDisk = 0;  // amount of data actually read from disk
 extern INDEX _ctTotalEffective = 0; // ammount of effective data loaded
 
 // set if current thread has currently enabled stream handling
-static _declspec(thread) BOOL _bThreadCanHandleStreams = FALSE;
+// static _declspec(thread) BOOL _bThreadCanHandleStreams = FALSE;
+static TLVar<BOOL> _bThreadCanHandleStreams(FALSE);
 // list of currently opened streams
 static CListHead *_plhOpenedStreams = NULL;
 static CTCriticalSection _csStreams;
@@ -349,7 +350,7 @@ void IgnoreApplicationPath(void)
 /* Static function enable stream handling. */
 void CTStream::EnableStreamHandling(void)
 {
-  ASSERT(!_bThreadCanHandleStreams);
+  ASSERT( 0 == _bThreadCanHandleStreams);
 
   _bThreadCanHandleStreams = TRUE;
   if (_plhOpenedStreams == NULL) {
@@ -360,13 +361,13 @@ void CTStream::EnableStreamHandling(void)
 /* Static function disable stream handling. */
 void CTStream::DisableStreamHandling(void)
 {
-  ASSERT(_bThreadCanHandleStreams);
+  ASSERT(0 != _bThreadCanHandleStreams );
 
   _bThreadCanHandleStreams = FALSE;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(DevPartner Bug Fix)(2005-01-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-13)
   //delete _plhOpenedStreams;
   //_plhOpenedStreams = NULL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-13)
 }
 
 void CTStream::ClearStreamHandling(void)
@@ -710,11 +711,17 @@ CChunkID CTStream::PeekID_t(void) // throw char *
 void CTStream::ExpectID_t(const CChunkID &cidExpected) // throws char *
 {
   CTSingleLock sl(&_csStreams, TRUE);
-	CChunkID cidToCompare;
+	CChunkID cidToCompare, cidpng;
 
 	Read_t( &cidToCompare.cid_ID[0], CID_LENGTH);
 	if( !(cidToCompare == cidExpected))
 	{
+		if (*(int*)(&cidToCompare.cid_ID[0]) == 0x474E5089)		// png signature
+		{
+			strm_bPNG = true;
+			return;
+		}
+
 		Throw_t(TRANS("Chunk ID validation failed.\nExpected ID \"%s\" but found \"%s\"\n"),
       cidExpected.cid_ID, cidToCompare.cid_ID);
 	}
@@ -1034,7 +1041,7 @@ void CTStream::DictionaryReadEnd_t(void)
       } else if (strExt==".smc") {
         _pModelInstanceStock->Release((CModelInstanceSerial*)fnm.fnm_pserPreloaded);
       }
-	  //0428 kwon ì§€ìš°ê¸°
+	  //0428 kwon Áö¿ì±â
 	  /* else if (strExt==".bm") {
         _pMeshStock->Release((CMesh*)fnm.fnm_pserPreloaded);
       } else if (strExt==".bs") {
@@ -1065,7 +1072,7 @@ static int qsortCompareCTFileName_ByIndex(const void *pv0, const void *pv1)
 void CTStream::DictionaryPreload_t(void)
 {
   CTSingleLock sl(&_csStreams, TRUE);
-  INDEX ctFileNames = strm_afnmDictionary.Count(); //0428 í˜„ì¬ 401ê°œ íŒŒì¼.
+  INDEX ctFileNames = strm_afnmDictionary.Count(); //0428 ÇöÀç 401°³ ÆÄÀÏ.
   
   // make a secondary container for the filenames
   CDynamicContainer<CTFileName> cfnmFiles;
@@ -1089,7 +1096,7 @@ void CTStream::DictionaryPreload_t(void)
     // preload it
     CTFileName &fnm = cfnmFiles[iFileName];
     CTString strExt = fnm.FileExt();
-    CallProgressHook_t(FLOAT(iFileName)/ctFileNames);
+    CallProgressHook_t((FLOAT)iFileName / ctFileNames);
     try {
       if (strExt==".tex") {
         fnm.fnm_pserPreloaded = _pTextureStock->Obtain_t(fnm);
@@ -1100,7 +1107,7 @@ void CTStream::DictionaryPreload_t(void)
       } else if (strExt==".smc") {
         fnm.fnm_pserPreloaded = _pModelInstanceStock->Obtain_t(fnm);
       }
-	   //0428 kwon ì§€ìš°ê¸°
+	   //0428 kwon Áö¿ì±â
 	  /* else if (strExt==".bm") {
         fnm.fnm_pserPreloaded = _pMeshStock->Obtain_t(fnm);
       } else if (strExt==".bs") {
@@ -1131,6 +1138,7 @@ void CTStream::DictionaryPreload_t(void)
 
 /* Default constructor. */
 CTStream::CTStream(void) : strm_ntDictionary(*new CNameTable_CTFileName)
+	, strm_bPNG(false)
 {
   CTSingleLock sl(&_csStreams, TRUE);
   strm_pubBufferBegin = NULL;
@@ -1290,7 +1298,7 @@ void CTFileStream::Open_t(const CTFileName &fnFileName, CTStream::OpenMode om/*=
 {
 	CTSingleLock sl(&_csStreams, TRUE);
 	// if current thread has not enabled stream handling
-	if (!_bThreadCanHandleStreams)
+	if (0 == _bThreadCanHandleStreams)
 	{
 		// error
 		::ThrowF_t(TRANS("Cannot open file `%s', stream handling is not enabled for this thread"),
@@ -1459,7 +1467,7 @@ void CTFileStream::Open_t(const CTFileName &fnFileName, CTStream::OpenMode om/*=
 	// add this newly opened file into opened stream list
 	_plhOpenedStreams->AddTail( strm_lnListNode);
 	// notify progress hook of new file
-	SetProgressFile(fnFileName);
+	//SetProgressFile(fnFileName);	// ·Îµù °³¼±
 }
 
 static BOOL CreateDirectoryPath(const CTFileName &fnFileName)
@@ -1512,7 +1520,7 @@ void CTFileStream::Create_t(const CTFileName &fnFileName,
   (void)cm; // OBSOLETE!
 
   // if current thread has not enabled stream handling
-  if (!_bThreadCanHandleStreams) {
+  if (0 == _bThreadCanHandleStreams) {
     // error
     ::ThrowF_t(TRANS("Cannot create file `%s', stream handling is not enabled for this thread"),
       (CTString&)fnFileName);
@@ -1836,7 +1844,7 @@ CTMemoryStream::CTMemoryStream(void)
 {
   CTSingleLock sl(&_csStreams, TRUE);
   // if current thread has not enabled stream handling
-  if (!_bThreadCanHandleStreams) {
+  if (0 == _bThreadCanHandleStreams) {
     // error
     ::FatalError(TRANS("Can create memory stream, stream handling is not enabled for this thread"));
   }
@@ -1860,7 +1868,7 @@ CTMemoryStream::CTMemoryStream(void *pvBuffer, SLONG slSize,
 {
   CTSingleLock sl(&_csStreams, TRUE);
   // if current thread has not enabled stream handling
-  if (!_bThreadCanHandleStreams) {
+  if (0 == _bThreadCanHandleStreams) {
     // error
     ::FatalError(TRANS("Can create memory stream, stream handling is not enabled for this thread"));
   }

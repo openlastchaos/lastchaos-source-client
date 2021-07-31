@@ -12,10 +12,10 @@
 #define	GUILD_NOTICE_WIDTH		212
 #define GUILD_NOTICE_HEIGHT		257
 
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIDrawFigure.h>
-#include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIWindow.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIDrawFigure.h>
+// #include <Engine/Interface/UIListBox.h>
 
 // ----------------------------------------------------------------------------
 // Name : CUIGuildNotice
@@ -25,7 +25,7 @@ class CUIGuildNotice : public CUIWindow
 {
 protected:
 	
-	// ê³µì§€ ì¶œë ¥ 
+	// °øÁö Ãâ·Â 
 	CTString				m_strGuildName;						// Guild Name
 	UIRect					m_rcTitle;							// Region of title bar
 	
@@ -34,7 +34,7 @@ protected:
 	CUIDrawBox				m_bxTopNotic;						// UV of Top
 	CUIDrawBox				m_bxBottomNotice;					// UV of Bottom 
 	CUIListBox				m_lbGuildNoticeStr;					// Notice String
-	CUIButton				m_btnCloseNotice;					// ë‹«ê¸° ë²„íŠ¼		
+	CUIButton				m_btnCloseNotice;					// ´Ý±â ¹öÆ°		
 	
 	
 public:

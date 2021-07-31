@@ -40,9 +40,9 @@
 #define STXF_BLEND_ALPHA    (0x10)    // alpha blend with screen
 #define STXF_BLEND_ADD      (0x20)    // add to screen
 #define STXF_BLEND_SHADE    (0x30)    // darken or brighten (same as used by shadow maps)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Worldbase Overbright to NonOver)(0.1)
-#define STXF_BLEND_MODIFIED_SHADE    (0x40)    // darken or brighten ì‹ ê²œìš©.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Worldbase Overbright to NonOver)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Worldbase Overbright to NonOver)(0.1)
+#define STXF_BLEND_MODIFIED_SHADE    (0x40)    // darken or brighten ½Å°×¿ë.
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Worldbase Overbright to NonOver)(0.1)
 
 #define STXF_BLEND_MASK     (0x70)
 

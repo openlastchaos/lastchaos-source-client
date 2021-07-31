@@ -73,8 +73,8 @@ BOOL CCameraEffect::Process(FLOAT time)
 		if(m_ssCameraShake.GetSampleCount() <= 1) cnt = 0;
 		cvShakeOld = m_ssCameraShake.Value(fProcessedTimeOld - cnt * m_fSampleSplineLife);
 	}
-	//processì˜ í˜¸ì¶œì‚¬ì´ì— í™”ë©´ íšŒì „ì´ ë  ìˆ˜ ìžˆìŒ.
-	//ì²˜ë¦¬ëŠ” ê°ê°ì˜ ì¹´ë©”ë¼ ë¶€ë¶„ì—ì„œ ì´ë£¨ì–´ì§.
+	//processÀÇ È£Ãâ»çÀÌ¿¡ È­¸é È¸ÀüÀÌ µÉ ¼ö ÀÖÀ½.
+	//Ã³¸®´Â °¢°¢ÀÇ Ä«¸Þ¶ó ºÎºÐ¿¡¼­ ÀÌ·ç¾îÁü.
 	cvShakeOld.m_fHorizonal = 0;
 	cvShakeOld.m_fVertical = 0;
 	cvShakeOld.m_vMoveByCharCoord = FLOAT3D(0,0,0);
@@ -108,7 +108,7 @@ CEffect *CCameraEffect::Copy()
 {
 	CCameraEffect *pRet = new CCameraEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
 	//CCameraEffect content
 	pRet->m_ssCameraShake = m_ssCameraShake;

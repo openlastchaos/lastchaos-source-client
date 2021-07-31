@@ -26,7 +26,7 @@ m_pSlaveInfo( NULL )
 {
 	m_pSlaveInfo					= new sSlaveInfo[SLAVE_TOTAL];
 	//-------------------------------------------------------
-	m_pSlaveInfo[SLAVE_FIRE].strName					= "ë¶ˆì˜ ì •ë ¹";
+	m_pSlaveInfo[SLAVE_FIRE].strName					= "ºÒÀÇ Á¤·É";
 	m_pSlaveInfo[SLAVE_FIRE].strFileName				= SLAVE_FIRE_SMC;
 
 	m_pSlaveInfo[SLAVE_FIRE].aStrAnimationName[SLAVE_ANIM_WALK_1]		= "summon_fire_run";
@@ -43,7 +43,7 @@ m_pSlaveInfo( NULL )
 	m_pSlaveInfo[SLAVE_FIRE].fRunSpeed		= 8.0f;
 
 	//-------------------------------------------------------
-	m_pSlaveInfo[SLAVE_WATER].strName					= "ë¬¼ì˜ ì •ë ¹";
+	m_pSlaveInfo[SLAVE_WATER].strName					= "¹°ÀÇ Á¤·É";
 	m_pSlaveInfo[SLAVE_WATER].strFileName				= SLAVE_WATER_SMC;
 
 	m_pSlaveInfo[SLAVE_WATER].aStrAnimationName[SLAVE_ANIM_WALK_1]		= "summon_water_walk";
@@ -60,7 +60,7 @@ m_pSlaveInfo( NULL )
 	m_pSlaveInfo[SLAVE_WATER].fRunSpeed		= 8.0f;
 
 	//-------------------------------------------------------
-	m_pSlaveInfo[SLAVE_WIND].strName					= "ë°”ëŒì˜ ì •ë ¹";
+	m_pSlaveInfo[SLAVE_WIND].strName					= "¹Ù¶÷ÀÇ Á¤·É";
 	m_pSlaveInfo[SLAVE_WIND].strFileName				= SLAVE_WIND_SMC;
 
 	m_pSlaveInfo[SLAVE_WIND].aStrAnimationName[SLAVE_ANIM_WALK_1]		= "summon_wind_walk";
@@ -77,7 +77,7 @@ m_pSlaveInfo( NULL )
 	m_pSlaveInfo[SLAVE_WIND].fRunSpeed		= 8.0f;
 
 	//-------------------------------------------------------
-	m_pSlaveInfo[SLAVE_LAND].strName					= "ëŒ€ì§€ì˜ ì •ë ¹";
+	m_pSlaveInfo[SLAVE_LAND].strName					= "´ëÁöÀÇ Á¤·É";
 	m_pSlaveInfo[SLAVE_LAND].strFileName				= SLAVE_LAND_SMC;
 
 	m_pSlaveInfo[SLAVE_LAND].aStrAnimationName[SLAVE_ANIM_WALK_1]		= "summon_earth_run";
@@ -93,7 +93,7 @@ m_pSlaveInfo( NULL )
 	m_pSlaveInfo[SLAVE_LAND].fWalkSpeed		= 5.0f;
 	m_pSlaveInfo[SLAVE_LAND].fRunSpeed		= 8.0f;
 	//-------------------------------------------------------------
-	m_pSlaveInfo[SLAVE_GUARD].strName					= "ê²½ë¹„ë³‘";
+	m_pSlaveInfo[SLAVE_GUARD].strName					= "°æºñº´";
 	m_pSlaveInfo[SLAVE_GUARD].strFileName				= SLAVE_GUARD_SMC;
 
 	m_pSlaveInfo[SLAVE_GUARD].aStrAnimationName[SLAVE_ANIM_WALK_1]		= "c_man_run";
@@ -260,10 +260,10 @@ void CSlaveInfo::SetSlaveDataToEntity( int iSlave, CEntity *pEntity, BOOL bUseAI
 
 	CDLLEntityClass *pdecDLLBaseBaseClass	= pdecDLLBaseClass->dec_pdecBase;
 
-	CEntityProperty &epPropertyUseAI	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_BOOL, 193);	// AI ì‚¬ìš© ìœ ë¬´.
+	CEntityProperty &epPropertyUseAI	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_BOOL, 193);	// AI »ç¿ë À¯¹«.
 	ENTITYPROPERTY( &*pEntity, epPropertyUseAI.ep_slOffset, INDEX)		= bUseAI;
 
-	// ì´ë™ ì†ë„...
+	// ÀÌµ¿ ¼Óµµ...
 	CEntityProperty &epPropertyWalkSpeed		= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 10);	// NPC Walk Speed
 	ENTITYPROPERTY( &*pEntity, epPropertyWalkSpeed.ep_slOffset, FLOAT)			= GetWalkSpeed(iSlaveType);	
 
@@ -273,7 +273,7 @@ void CSlaveInfo::SetSlaveDataToEntity( int iSlave, CEntity *pEntity, BOOL bUseAI
 	CEntityProperty &epPropertyCloseRunSpeed	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 14);	// NPC Close Run Speed
 	ENTITYPROPERTY( &*pEntity, epPropertyCloseRunSpeed.ep_slOffset, FLOAT)		= GetRunSpeed(iSlaveType);
 
-	// ê³µê²© ê±°ë¦¬...
+	// °ø°İ °Å¸®...
 	CEntityProperty &epPropertyAttackDistance	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 20);	// Attack Distance
 	ENTITYPROPERTY( &*pEntity, epPropertyAttackDistance.ep_slOffset, FLOAT)		= 4.0f;
 	
@@ -342,7 +342,7 @@ void CSlaveInfo::StopIdleEffect( SLONG slSlaveIndex,  bool bAllStop )
 	}
 	else
 	{
-		// ì´í™í„°ê°€ í™œì„±í™” ë˜ì–´ ìˆì§€ ì•Šë‹¤ë©´ ëë‚´ë¼..
+		// ÀÌÆåÅÍ°¡ È°¼ºÈ­ µÇ¾î ÀÖÁö ¾Ê´Ù¸é ³¡³»¶ó..
 		if( m_mapEG.find( slSlaveIndex ) == m_mapEG.end() ) return;
 		
 		if( m_mapEG[slSlaveIndex] != NULL && CEffectGroupManager::Instance().IsValidCreated( m_mapEG[slSlaveIndex] ) )

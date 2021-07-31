@@ -16,11 +16,11 @@
 #include <Engine/Graphics/Fog_internal.h>
 #include <Engine/Templates/Stock_CTextureData.h>
 
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë
+//∞≠µøπŒ ºˆ¡§ Ω√¿€
 #include <Engine/Rendering/Render_internal.h>
 #include <Engine/Ska/ModelInstance.h>
 #include <Engine/SKA/Render.h>
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù
+//∞≠µøπŒ ºˆ¡§ ≥°
 
 #include <Engine/Base/Console.h>
 
@@ -31,7 +31,7 @@ static CDrawPort *_pdp = NULL;
 #include <list>													// yjpark
 extern std::list<CLightSource *>	_lstTerrainLightSource;		// yjpark
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(For Performance)(0.1)
 EXTERN_SHADER_MAIN(TRShader_Base);
 EXTERN_SHADER_DESC(TRShader_Base, ShaderDesc *&pshDesc);
 EXTERN_SHADER_VCODE(TRShader_Base, CTString &strVPCode, INDEX iVertexProgram);
@@ -56,7 +56,7 @@ EXTERN_SHADER_MAIN(TRShader_Fog);
 EXTERN_SHADER_DESC(TRShader_Fog, ShaderDesc *&pshDesc);
 EXTERN_SHADER_VCODE(TRShader_Fog, CTString &strVPCode, INDEX iVertexProgram);
 EXTERN_SHADER_PCODE(TRShader_Fog, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(For Performance)(0.1)
 
 // terrain base shader
 static CShader _shTRShader_Base(FUNC_SHADER_MAIN(TRShader_Base), FUNC_SHADER_DESC(TRShader_Base),
@@ -528,9 +528,9 @@ static void UpdateQuadTreeNodeVisibility(CTerrainImp *ptr, INDEX iqtn)
 
 static void UpdateTilesVisibility(CTerrainImp *ptr)
 {
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë Water Íµ¨ÌòÑ		04.23
-	//const INDEX ctTiles = ptr->tr_ctTilesX * ptr->tr_ctTilesY;		// ÏõêÎ≥∏(Ïì∞Ïù¥ÏßÄ ÏïäÏùå.)
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù Water Íµ¨ÌòÑ			04.23
+//∞≠µøπŒ ºˆ¡§ Ω√¿€ Water ±∏«ˆ		04.23
+	//const INDEX ctTiles = ptr->tr_ctTilesX * ptr->tr_ctTilesY;		// ø¯∫ª(æ≤¿Ã¡ˆ æ ¿Ω.)
+//∞≠µøπŒ ºˆ¡§ ≥° Water ±∏«ˆ			04.23
 	_aiVisibleTiles.PopAll();
 	// _aiVisibleTiles.Push(ctTiles);
 	// memset(&_aiVisibleTiles[0],0,sizeof(INDEX)*ctTiles);
@@ -712,14 +712,14 @@ static void UpdateRenderingData(CTerrain *ptrTerrain)
 	gfxDisableAlphaTest();
 	gfxEnableDepthTest();
 	gfxEnableDepthWrite();
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù Water Íµ¨ÌòÑ			04.21	
+//∞≠µøπŒ ºˆ¡§ ≥° Water ±∏«ˆ			04.21	
 	if((_aprProjection->pr_bNiceWater == TRUE) 
 		|| _aprProjection->pr_bMirror == TRUE 
 		|| _aprProjection->pr_bWarp == TRUE)
 		gfxCullFace(GFX_FRONT);
 	else
 		gfxCullFace(GFX_BACK);
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù Water Íµ¨ÌòÑ			04.19
+//∞≠µøπŒ ºˆ¡§ ≥° Water ±∏«ˆ			04.19
 
 #pragma message(">> Den please check this")
 #pragma message(">> Change disabling of overbrightning")
@@ -1070,8 +1070,8 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 		if( _bUseHardwareShaders )
 		{
 			// set vertex and pixel programs
-			shaSetPixelProgram( 0 );
 			shaSetVertexProgram( 0 );
+			shaSetPixelProgram( 0 );
 			const INDEX	iRegister = 21;
 			const ShaderRegister	*psrMatrix = (ShaderRegister *)&ptr->tr_mTopMap;
 			shaSetVertexProgramConst(iRegister, psrMatrix, 3);
@@ -1106,8 +1106,8 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 			shaSetTexture( ptdEdgeMap, 0 );
 			if( _bUseHardwareShaders )
 			{
-				shaSetPixelProgram( 0 );
 				shaSetVertexProgram( 0 );
+				shaSetPixelProgram( 0 );
 				const ShaderRegister	*psrMatrix = (ShaderRegister *)&ptr->tr_mEdgeMap;
 				shaSetVertexProgramConst( iRegister, psrMatrix, 3 );
 			}
@@ -1185,8 +1185,8 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 				if( _bUseHardwareShaders )
 				{
 					// set vertex and pixel programs
-					shaSetPixelProgram( 0 );
 					shaSetVertexProgram( 0 );
+					shaSetPixelProgram( 0 );
 					// for each texture unit
 					for( INDEX itxu = 0; itxu < iUsedTXUs; itxu++ )
 					{
@@ -1266,8 +1266,8 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 			if( _bUseHardwareShaders )
 			{
 				// set vertex and pixel programs
-				shaSetPixelProgram( 0 );
 				shaSetVertexProgram( 0 );
+				shaSetPixelProgram( 0 );
 				// for each texture unit
 				for( INDEX itxu = 0; itxu < iUsedTXUs; itxu++ )
 				{
@@ -1345,8 +1345,8 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 
 			if( _bUseHardwareShaders )
 			{
-				shaSetPixelProgram( 0 );
 				shaSetVertexProgram( 0 );
+				shaSetPixelProgram( 0 );
 				const INDEX	iRegister = 21;
 				const ShaderRegister*	psrMatrix = (ShaderRegister*)&ptr->tr_mShadowMap;
 				shaSetVertexProgramConst( iRegister, psrMatrix, 3 );
@@ -1373,7 +1373,7 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 
 			extern COLOR g_colWeather;
 			GFXColor gcWeather(g_colWeather);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Terrain Render for No Shader)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Terrain Render for No Shader)(0.1)
 			DWORD dw_tss_top_value0 = 0;
 			DWORD dw_tss_top_value1 = 0;
 			DWORD dw_tss_aop_value0 = 0;
@@ -1385,11 +1385,11 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 			DWORD dw_tss_ta_value1_arg1 = 0;
 			DWORD dw_tss_ta_value1_arg2 = 0;
 			DWORD dw_tss_ta_value1_arg0 = 0;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Terrain Render for No Shader)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Terrain Render for No Shader)(0.1)
 			if( _bUseHardwareShaders )
 			{
-				shaSetPixelProgram( 0 );
 				shaSetVertexProgram( 0 );
+				shaSetPixelProgram( 0 );
 				const INDEX iShadow1Register = 21;
 				const INDEX iShadow2Register = 24;
 				const ShaderRegister*	psrMatrix = (ShaderRegister*)&ptr->tr_mShadowMap;
@@ -1401,7 +1401,7 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 				shaSetVertexProgramConst( iShadow1Register, psrMatrix, 3 );
 				shaSetVertexProgramConst( iShadow2Register, psrMatrix, 3 );
 			}
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Terrain Render for No Shader)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Terrain Render for No Shader)(0.1)
 			else
 			{
 				// save old
@@ -1453,7 +1453,7 @@ static void RenderTerrainViewBatched(CTerrain *ptrTerrain)
 				_pGfx->gl_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, dw_tss_aop_value0);
 				_pGfx->gl_pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, dw_tss_aop_value1);*/
 			}
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Terrain Render for No Shader)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Terrain Render for No Shader)(0.1)
 			TR_SETINFO( ti_ctVisibleTriangles += ctind / 3 );
 		}
 	}															// yjpark     -->|
@@ -1568,8 +1568,8 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 				if( _bUseHardwareShaders )
 				{
 					// set vertex and pixel programs
-					shaSetPixelProgram( 0 );
 					shaSetVertexProgram( 0 );
+					shaSetPixelProgram( 0 );
 					const INDEX	iRegister = 21;
 					const ShaderRegister	*psrMatrix = (ShaderRegister *)&tt.tt_mTopMap;
 					shaSetVertexProgramConst( iRegister, psrMatrix, 3 );
@@ -1605,8 +1605,8 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 					shaSetTexture( ptdEdgeMap, 0 );
 					if( _bUseHardwareShaders )
 					{
-						shaSetPixelProgram( 0 );
 						shaSetVertexProgram( 0 );
+						shaSetPixelProgram( 0 );
 						const ShaderRegister	*psrMatrix = (ShaderRegister *)&tt.tt_mEdgeMap;
 						shaSetVertexProgramConst( iRegister, psrMatrix, 3 );
 					}
@@ -1704,8 +1704,8 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 						if( _bUseHardwareShaders )
 						{
 							// set vertex and pixel programs
-							shaSetPixelProgram( 0 );
 							shaSetVertexProgram( 0 );
+							shaSetPixelProgram( 0 );
 							// for each texture unit
 							for( INDEX itxu = 0; itxu < iUsedTXUs; itxu++ )
 							{
@@ -1759,7 +1759,13 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 					MatrixMultiplyCP( mTransform, ptrl->trl_mTransform, mTileToTerrain ); 
 					shaSetTextureWrapping( GFX_REPEAT, GFX_REPEAT, iUsedTXUs );
 					shaSetTexture( ptdLayerTex, iUsedTXUs );
-		
+
+					if( ptrl->trl_ptoTexObj )
+					{
+						const INDEX iFrameNo = ptrl->trl_ptoTexObj->GetFrame();
+						ptdLayerTex->SetAsCurrent(iFrameNo);
+					}
+
 					// Remember texture matrix for this unit
 					MatrixCopy( mTexTransf[iUsedTXUs], mTransform );
 
@@ -1791,8 +1797,8 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 					if( _bUseHardwareShaders )
 					{
 						// set vertex and pixel programs
-						shaSetPixelProgram( 0 );
 						shaSetVertexProgram( 0 );
+						shaSetPixelProgram( 0 );
 						// for each texture unit
 						for( INDEX itxu = 0; itxu < iUsedTXUs; itxu++ )
 						{
@@ -1869,8 +1875,8 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 
 					if( _bUseHardwareShaders )
 					{
-						shaSetPixelProgram( 0 );
 						shaSetVertexProgram( 0 );
+						shaSetPixelProgram( 0 );
 						const INDEX iRegister = 21;
 						const ShaderRegister*	psrMatrix = (ShaderRegister*)&tt.tt_mShadowMap;
 						shaSetVertexProgramConst( iRegister, psrMatrix, 3 );
@@ -1897,7 +1903,7 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 
 					extern COLOR g_colWeather;
 					GFXColor gcWeather(g_colWeather);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Terrain Render for No Shader)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Terrain Render for No Shader)(0.1)
 					DWORD dw_tss_top_value0 = 0;
 					DWORD dw_tss_top_value1 = 0;
 					DWORD dw_tss_top_value2 = 0;
@@ -1910,11 +1916,11 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 					DWORD dw_tss_ta_value1_arg1 = 0;
 					DWORD dw_tss_ta_value1_arg2 = 0;
 					DWORD dw_tss_ta_value1_arg0 = 0;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Terrain Render for No Shader)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Terrain Render for No Shader)(0.1)
 					if( _bUseHardwareShaders )
 					{
-						shaSetPixelProgram( 0 );
 						shaSetVertexProgram( 0 );
+						shaSetPixelProgram( 0 );
 						const INDEX iShadow1Register = 21;
 						const INDEX iShadow2Register = 24;
 						const ShaderRegister*	psrMatrix = (ShaderRegister*)&tt.tt_mShadowMap;
@@ -1926,7 +1932,7 @@ static void RenderTerrainView(CTerrain *ptrTerrain)
 						shaSetVertexProgramConst( iShadow1Register, psrMatrix, 3 );
 						shaSetVertexProgramConst( iShadow2Register, psrMatrix, 3 );
 					}
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Terrain Render for No Shader)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Terrain Render for No Shader)(0.1)
 					else
 					{
 						// save old
@@ -2028,7 +2034,7 @@ static void RenderTerrainTriangles(CTerrainImp *ptr)
 	gfxEnableDepthTest();
 	gfxEnableDepthBias();
 	gfxPolygonMode(GFX_LINE);
-	gfxSetTextureMatrix();
+	gfxSetTextureMatrix(NULL);
 	gfxDisableTexture();
 
 	// for each terrain tile
@@ -2077,46 +2083,80 @@ static void RenderTerrainAttributeTriangles( CTerrainImp *ptr )
 	pt(2) = ptr->tr_vHitPoint(3) / ptr->tr_slAttributeMapSizeAspect;
 
 	// Calculate the region of drawn attribute triangles
-	CTRect	rcSource;
-	rcSource.rc_slLeft = pt(1) - 20;
-	rcSource.rc_slRight = pt(1) + 21;
-	rcSource.rc_slTop = pt(2) - 20;
-	rcSource.rc_slBottom = pt(2) + 21;
+	extern INDEX ter_iAttributeRange;
 
-	// Check valid region
 	const PIX	pixWidth = ptr->tr_pixHeightMapWidth - 1;
+
+	CTRect	rcSource;
+	if( ter_iAttributeRange ==0 || ter_iAttributeRange>=pixWidth )
+	{
+		rcSource.rc_slLeft = 0;
+ 		rcSource.rc_slRight = pixWidth;
+		rcSource.rc_slTop = 0;
+		rcSource.rc_slBottom = pixWidth;
+	}
+	else
+	{
+		rcSource.rc_slLeft = pt(1) - ter_iAttributeRange/2;
+ 		rcSource.rc_slRight = pt(1) + ter_iAttributeRange/2;
+		rcSource.rc_slTop = pt(2) - ter_iAttributeRange/2;
+		rcSource.rc_slBottom = pt(2) + ter_iAttributeRange/2;
+	}
+	// Check valid region
 	if( rcSource.rc_slLeft < 0 ) rcSource.rc_slLeft = 0;
 	if( rcSource.rc_slTop < 0 ) rcSource.rc_slTop = 0;
 	if( rcSource.rc_slRight > pixWidth ) rcSource.rc_slRight = pixWidth;
 	if( rcSource.rc_slBottom > pixWidth ) rcSource.rc_slBottom = pixWidth;
 
-	FLOAT3D		*pavVertices;
-	GFXColor	*pacColors;
-	UWORD		*puwIndices;
-	INDEX		ctVertices, ctIndices;
-
-	gfxEnableBlend();
-	gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA );
-	gfxDisableDepthWrite();
-	gfxEnableDepthTest();
-	gfxEnableDepthBias();
-	gfxSetTextureMatrix();
-	gfxDisableTexture();
-	SetViewMatrix( _mObjToView );
-
-	// Mouse point
-
-	// Unwalkable
-	TR_ExtractAttrPoligonsInRect( ptr, rcSource, &pavVertices, ctVertices, &pacColors, &puwIndices, ctIndices, 255 );
-	if( pavVertices && puwIndices )
+	for(int iY =rcSource.rc_slTop; iY<rcSource.rc_slBottom; iY+=40)
 	{
-		gfxSetVertexArray( (GFXVertex *)&pavVertices[0], ctVertices );
-		gfxSetColorArray( &pacColors[0] );
-		gfxDrawElements( ctIndices, puwIndices );
+		for(int iX =rcSource.rc_slLeft; iX<rcSource.rc_slRight; iX+=40)
+		{
+			CTRect rcTemp;
+			rcTemp.rc_slLeft = iX;
+ 			rcTemp.rc_slRight = iX + 40;
+			rcTemp.rc_slTop = iY;
+			rcTemp.rc_slBottom = iY + 40;
+
+			// Check valid region
+			if( rcTemp.rc_slRight > rcSource.rc_slRight ) rcTemp.rc_slRight = rcSource.rc_slRight;
+			if( rcTemp.rc_slBottom > rcSource.rc_slBottom ) rcTemp.rc_slBottom = rcSource.rc_slBottom;
+
+			FLOAT3D		*pavVertices;
+			GFXColor	*pacColors;
+			UWORD		*puwIndices;
+			INDEX		ctVertices, ctIndices;
+
+			gfxEnableBlend();
+			gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA );
+			gfxDisableDepthWrite();
+
+			extern BOOL _bAttributemap_DepthTest;
+
+			if(_bAttributemap_DepthTest)
+				gfxDisableDepthTest();
+			else
+				gfxEnableDepthTest();
+
+			gfxEnableDepthBias();
+			gfxSetTextureMatrix(NULL);
+			gfxDisableTexture();
+			SetViewMatrix( _mObjToView );
+
+			// Mouse point
+
+			// Unwalkable
+			TR_ExtractAttrPoligonsInRect( ptr, rcTemp, &pavVertices, ctVertices, &pacColors, &puwIndices, ctIndices, MATT_UNWALKABLE );
+			if( pavVertices && puwIndices )
+			{
+				gfxSetVertexArray( (GFXVertex *)&pavVertices[0], ctVertices );
+				gfxSetColorArray( &pacColors[0] );
+				gfxDrawElements( ctIndices, puwIndices );
+			}
+		}
 	}
 
 	// Water etc...
-
 	gfxDisableDepthBias();
 }
 
@@ -2185,7 +2225,7 @@ static void RenderTerrainPoints(CTerrainImp *ptr)
 static void RenderTerrainQuadTree(CTerrainImp *ptr)
 {
 	// No view matrix
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 
 	extern INDEX ter_iShowQuadTreeLev;
 	const INDEX ctqtls = ptr->tr_aqtlQuadTreeLevels.Count();
@@ -2369,7 +2409,7 @@ static void RenderSelectionTriangles(CTerrain *ptrTerrain)
 	gfxDisableDepthWrite();
 	gfxEnableDepthTest();
 	_ptrSelBrush->SetAsCurrent();
-	gfxSetTextureMatrix();
+	gfxSetTextureMatrix(NULL);
 	SetViewMatrix(_mObjToView);
 
 	gfxEnableDepthBias();
@@ -2377,7 +2417,7 @@ static void RenderSelectionTriangles(CTerrain *ptrTerrain)
 
 	gfxSetVertexArray((GFXVertex*)&pavVertices[0],ctVertices);
 	gfxSetColorArray(&_acolExtractedColors[0]);
-	gfxSetTexCoordArray(&_atcExtractedTexcoords[0]);
+	gfxSetTexCoordArray(&_atcExtractedTexcoords[0], FALSE);
 	gfxDrawElements(ctIndices, puwIndices);
 
 	// set fill mode
@@ -2399,8 +2439,8 @@ static void RenderDebugStuff(CTerrain *ptrTerrain)
 {
 #if TR_DEBUG_RAYCASTING
 	{
-	gfxSetViewMatrix(); // No view matrix
-	gfxSetTextureMatrix();
+	gfxSetViewMatrix(NULL); // No view matrix
+	gfxSetTextureMatrix(NULL);
 	CTerrainImp *ptr = ptrTerrain->tr_ptrTerrain;
 	extern CStaticStackArray<TerrainRay> _atrRays;
 	extern CStaticStackArray<SimpleTerrainTriangle> _asttRayTris;
@@ -2456,8 +2496,8 @@ static void RenderDebugStuff(CTerrain *ptrTerrain)
 
 #if TR_DEBUG_SHADOWMAP
 	{
-	gfxSetViewMatrix(); // No view matrix
-	gfxSetTextureMatrix();
+	gfxSetViewMatrix(NULL); // No view matrix
+	gfxSetTextureMatrix(NULL);
 	CTerrainImp *ptr = ptrTerrain->tr_ptrTerrain;
 	extern CStaticStackArray<FLOATaabbox3D> _abbLightRegion;
 	extern CStaticStackArray<FLOATaabbox3D> _abbUpdateShadowMap;
@@ -2498,8 +2538,8 @@ static void RenderDebugStuff(CTerrain *ptrTerrain)
 
 #if TR_DEBUG_NORMALS
 	{
-	gfxSetViewMatrix(); // No view matrix
-	gfxSetTextureMatrix();
+	gfxSetViewMatrix(NULL); // No view matrix
+	gfxSetTextureMatrix(NULL);
 	CTerrainImp *ptr = ptrTerrain->tr_ptrTerrain;
 	extern CStaticStackArray<FLOAT3D> _anxNormals;
 	extern CStaticStackArray<FLOAT3D> _avxVertices;
@@ -2516,8 +2556,8 @@ static void RenderDebugStuff(CTerrain *ptrTerrain)
 
 #if TR_DEBUG_EXTRACTPOLY
 	{
-	gfxSetViewMatrix(); // No view matrix
-	gfxSetTextureMatrix();
+	gfxSetViewMatrix(NULL); // No view matrix
+	gfxSetTextureMatrix(NULL);
 	CTerrainImp *ptr = ptrTerrain->tr_ptrTerrain;
 	extern CStaticStackArray<FLOAT3D> _avxExtractedPolys;
 	extern CStaticStackArray<UWORD>   _auwExtractedPolys;
@@ -2559,7 +2599,7 @@ static void RenderDebugStuff(CTerrain *ptrTerrain)
 	{
 
 	SetViewMatrix(_mObjToView);
-	gfxSetTextureMatrix();
+	gfxSetTextureMatrix(NULL);
 	CTerrainImp *ptr = ptrTerrain->tr_ptrTerrain;
 
 	extern CStaticStackArray<SimpleTerrainTriangle> _asttPlaneFromPt;
@@ -2608,15 +2648,15 @@ extern void TR_BeginRenderingView(CAnyProjection3D &apr, CDrawPort *pdp)
 	apr->ObjectPlacementL() = CPlacement3D(FLOAT3D(0,0,0), ANGLE3D(0,0,0));
 	apr->Prepare();
 
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë		03.11
+//∞≠µøπŒ ºˆ¡§ Ω√¿€		03.11
 	if( apr->pr_bMirror ) 
 		apr->pr_plMirrorView.pl_distance -= 0.06f; // -0.06 is because entire projection is offseted by +0.05
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù		03.11
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë Water Íµ¨ÌòÑ		04.22
-	// NOTE : Î≥ÑÎ°ú ÌïÑÏöîÌï¥ Î≥¥Ïù¥ÏßÄÎäî ÏïäÏßÄÎßå, MirrorÍ∞Ä ÎêòÏñ¥ÏûàÏúºÎØÄÎ°ú...„Ö°.„Ö°„ÜÄ
+//∞≠µøπŒ ºˆ¡§ ≥°		03.11
+//∞≠µøπŒ ºˆ¡§ Ω√¿€ Water ±∏«ˆ		04.22
+	// NOTE : ∫∞∑Œ « ø‰«ÿ ∫∏¿Ã¡ˆ¥¬ æ ¡ˆ∏∏, Mirror∞° µ«æÓ¿÷¿∏π«∑Œ...§—.§—§
 	if( apr->pr_bNiceWater ) 
 		apr->pr_plNiceWaterView.pl_distance -= 0.06f; // -0.06 is because entire projection is offseted by +0.05
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù Water Íµ¨ÌòÑ			04.22
+//∞≠µøπŒ ºˆ¡§ ≥° Water ±∏«ˆ			04.22
 
 	_aprProjection = apr;
 	_pdp->SetProjection( _aprProjection);
@@ -2636,7 +2676,7 @@ extern void TR_EndRenderingView(void)
 	_iForcedLOD = -1;
 }
 
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë
+//∞≠µøπŒ ºˆ¡§ Ω√¿€
 extern void TR_GetObjToViewMatrix(Matrix12& matObjToView)
 {
 	MatrixCopy(matObjToView, _mObjToView);
@@ -2646,7 +2686,7 @@ extern void TR_GetStretchMatrix(Matrix12& matStretch)
 {
 	MatrixCopy(matStretch, _mStretch);
 }
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù
+//∞≠µøπŒ ºˆ¡§ ≥°
 
 // setup terrain position
 extern void TR_SetTerrainPlacement(const CPlacement3D &pl)
@@ -2692,11 +2732,12 @@ extern void TR_RenderTerrain(CTerrain *ptrTerrain)
 	TR_SETINFO(Reset());
 
 	// select two shadow maps																	// yjpark |<--
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Add Sun Moon Entity and etc)(0.2)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Add Sun Moon Entity and etc)(0.2)
 	ULONG	ulWorldTime = g_fGWTime;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Add Sun Moon Entity and etc)(0.2)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Add Sun Moon Entity and etc)(0.2)
 	INDEX	ctShadows = ptr->tr_aptdShadowMaps.Count() - 1;
-	for( INDEX iShadow = 0; iShadow < ctShadows; iShadow++ )
+	INDEX iShadow;
+	for( iShadow = 0; iShadow < ctShadows; iShadow++ )
 	{
 		if( ulWorldTime >= ptr->tr_aulShadowTimes[iShadow] &&
 			ulWorldTime < ptr->tr_aulShadowTimes[iShadow + 1] )
@@ -2847,7 +2888,7 @@ extern void TR_RenderTerrainLighting( CTerrain *ptrTerrain, CTextureData* ptdTex
 	gfxDisableDepthWrite();
 	gfxEnableDepthTest();
 	gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP );
-	gfxSetTextureMatrix();
+	gfxSetTextureMatrix(NULL);
 	SetViewMatrix(_mObjToView);
 	gfxEnableDepthBias();
 
@@ -2905,7 +2946,7 @@ extern void TR_RenderTerrainLighting( CTerrain *ptrTerrain, CTextureData* ptdTex
 		// Render terrain lighting
 		gfxSetVertexArray( (GFXVertex *)&pavVertices[0], ctVertices );
 		gfxSetColorArray( &_acolExtractedColors[0] );
-		gfxSetTexCoordArray( &_atcExtractedTexcoords[0] );
+		gfxSetTexCoordArray( &_atcExtractedTexcoords[0], FALSE );
 		gfxDrawElements( ctIndices, puwIndices );		
 	}
 
@@ -2920,7 +2961,7 @@ extern void TR_CleanRender(CTerrain *ptrTerrain)
 
 	// Clear fog or haze flags on terrain
 	extern INDEX gfx_bRenderReflection;
-	// NOTE : Î∞òÏÇ¨ÎßµÏùÑ ÎßåÎì§Í≥† ÏûàÎäîÏ§ëÏóê FOGÏôÄ HazeÎ•º ÏóÜÏï†Î©¥, Ïã§Ï†ú TerrainÏùÑ Î†åÎçîÎßÅÌï†Îïå Fog & HazeÍ∞Ä ÎèôÏûëÌïòÏßÄ ÏïäÏùå.
+	// NOTE : π›ªÁ∏ ¿ª ∏∏µÈ∞Ì ¿÷¥¬¡ﬂø° FOGøÕ Haze∏¶ æ¯æ÷∏È, Ω«¡¶ Terrain¿ª ∑ª¥ı∏µ«“∂ß Fog & Haze∞° µø¿€«œ¡ˆ æ ¿Ω.
 	if(!gfx_bRenderReflection)
 	{
 	ptrTerrain->tr_ulTerrainFlags&=~TR_HAS_FOG;

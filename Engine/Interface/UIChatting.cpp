@@ -1,52 +1,162 @@
 #include "stdh.h"
+
+
+// «Ï¥ı ¡§∏Æ. [12/1/2009 rumist]
+#include <vector>
+#include <fstream>
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Interface/UIExchange.h>
-#include <Engine/Interface/UIFiltering.h> // Ïù¥Í∏∞Ìôò Ï∂îÍ∞Ä (11.25)
-#include <Engine/Interface/UISignBoard.h>
+#include <Engine/Interface/UIWindowDeclare.h>
+#include <Engine/Interface/UIChatting.h>
 #include <Engine/Interface/UIAutoHelp.h>
-
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Entities/EntityClass.h>
-#include <Engine/Entities/EntityProperties.h>
+#include <Engine/Entities/NoticeData.h>			// Noticesystem
 #include <Engine/GameState.h>
+#include <Engine/Base/DamageLogInfo.h>
+#include <Engine/Network/Web.h>
+#include <Engine/Base/Input.h>
+#include <Engine/Base/KeyNames.h>
+#include <Common/Packet/ptype_old_do_item.h>
+#include <Engine/Contents/Base/UIPartyNew.h>
+#include <Engine/Interface/UITargetInfo.h>
+#include <Engine/Interface/UIPlayerInfo.h>
+#include <Engine/Object/ActorMgr.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/Base/Party.h>
+//#include <Engine/Contents/Base/ChattingUI.h>
 
-// Date : 2005-11-18(Ïò§ÌõÑ 1:45:04), By Lee Ki-hwan
-//#define SHOW_DAMAGE_TEXT	// textÎ°ú ÌëúÏãúÎêòÎäî Îç∞ÎØ∏ÏßÄ 
+// Date : 2005-11-18(ø¿»ƒ 1:45:04), By Lee Ki-hwan
+//#define SHOW_DAMAGE_TEXT	// text∑Œ «•Ω√µ«¥¬ µ•πÃ¡ˆ 
+extern cWeb			g_web;
 
 extern INDEX	g_iCountry;
 
+//added by sam 11/02/24 Ω∫∆–∏” ¬˜¥‹ ƒ´øÓ∆Æ 
+const	int	   SPAM_CHAT_LENGTH				= 300;  //¿ÂπÆ¿ª ∆«¥‹«œ¥¬ ±‚¡ÿ ±Ê¿Ã 
+const   int	   SPAM_CHAT_BLOCK_INPUT_COUNT  = 30;	// 1∫–µøæ» ¿‘∑¬ «ﬂ¿ª ∂ß¿« ƒ´øÓ∆Æ 
+const	int	   SPAM_CHAT_INPUT_TIME			= 60000; // 1∫– 
+const	int	   SPAM_CHAT_LONG_SENT_TIME		= 5000; // 5√ 	
+
+const int CHANNEL_CHAT_NEEDLEVEL = 50;
+const int CHANNEL_TRADE_NEEDLEVEL = 10;
 #define SCROLLBAR_ADJUST_Y 2
+
+// [sora] ø¯¡§¥Î √§∆√ ƒ√∑Ø
+const COLOR colExpeditionGroupChat[EXPEDITION_GROUP_MAX] = { 0xFFFFFFFF, 0xFFFF3AFF, 0x00A170FF, 0xFFC000FF };
+
+#define AKAN_TEST_COMMAND // æ∆ƒ≠ªÁø¯ ≈◊Ω∫∆ÆøÎ ≈¨∂Û¿Ãæ∆Æ ∏Ì∑…æÓ
+#define is_space(c)		(c == 0x20 || (c >= 0x09 && c <= 0x0D))
+#define is_Char(c)		((c >= 0x41 && c <= 0x5A) || (c >= 0x61 && c<= 0x7A) || (c >= 0x80 && c<= 0xA5))
+
+#define CHANNELBTN_HEIGHT 46
+
+#ifdef	IMPROV1107_NOTICESYSTEM
+#define	CHATMSG_CMDECHO_LENGTH			100
+#define	CHATMSG_USERNOTICEINPUT_LENGTH	30
+#define	CHATMSG_USERNOTICE_LENGTH		48
+#define	CHATMSG_USERNOTICE_DELAY		10000
+#define	CHATMSG_USERNOTICE_FADEIN		100
+#define	CHATMSG_USERNOTICE_FADEOUT		200
+#define	CHATMSG_USERNOTICE_XPITCH		20
+#endif
+
+BOOL nearMyCharacter( FLOAT3D	vCharPos )
+{
+	FLOAT	fX = vCharPos(1) - _pNetwork->MyCharacterInfo.x;
+	FLOAT	fZ = vCharPos(3) - _pNetwork->MyCharacterInfo.z;	
+	if( fX * fX + fZ * fZ <= CHATMSG_SQRDIST )
+		return TRUE;
+
+	return FALSE;
+}
+
+void makeLowChar(char* tmpChar)
+{
+	if( *tmpChar >= 65 && *tmpChar <= 90)
+		*tmpChar += 32;
+	
+}
+
+CTString ArrangeCharString(const CTString& strChat)
+{
+	int i, pos=0;
+	
+	int len = strChat.Length();
+	if ( len <= 0 )
+	{
+		return "";		
+	}
+	
+	// add new temp val 060419--------------------<<
+	//	char *tv_syntax = new(char[len+1]);
+	//	strcpy(tv_syntax,syntax);
+	char chComp[256];
+	memcpy(chComp, strChat, len);
+	chComp[len] = '\0';
+	// ------------------------------------------->>
+	
+	// space ∏¶ ∏µŒ æ¯æ÷∞Ì, space ∞° ¿÷¥¯ 
+	for ( i = 0; i < len; i++ ) 
+	{
+		if ( is_space( chComp[i] ) || !is_Char(chComp[i]))
+		{
+#if !defined(USA)
+			{
+				for ( pos = i; pos < len; pos++ ) 
+				{
+					chComp[pos] = chComp[pos+1];
+				}
+				
+				len--;
+				i--;
+			}
+#endif
+		}
+		else {
+			
+			makeLowChar( &chComp[i] );
+		}
+	}
+	
+	CTString temString;
+	temString = chComp;
+	return temString;
+}
 
 // ----------------------------------------------------------------------------
 // Name : CUIChatting()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
-#ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
 CUIChatting::CUIChatting() : m_iCeilWritingMaxCnt(3)
-#else
-CUIChatting::CUIChatting()
-#endif
 {
 	m_colChatTypeColor[CHATMSG_NORMAL] = 0xCCCCCCFF;
 	m_colChatTypeColor[CHATMSG_PARTY] = 0x91A7EAFF;
 	m_colChatTypeColor[CHATMSG_GUILD] = 0xD6A6D6FF;
 	m_colChatTypeColor[CHATMSG_TRADE] = 0x50C800FF;
 	m_colChatTypeColor[CHATMSG_WHISPER] = 0xE1B300FF;
-	if(g_iCountry == THAILAND ) m_colChatTypeColor[CHATMSG_SHOUT] = 0xFF96BEFF;
-	else m_colChatTypeColor[CHATMSG_SHOUT] = 0xDF6900FF;
+#if defined(G_THAI)
+	m_colChatTypeColor[CHATMSG_SHOUT] = 0xFF96BEFF;
+#else 
+	m_colChatTypeColor[CHATMSG_SHOUT] = 0xDF6900FF;
+#endif
 	m_colChatTypeColor[CHATMSG_NOTICE] = 0xE18600FF;
 	
-	if( g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#if defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2) || defined(G_NETHERLANDS)
+//FRANCE_SPAIN_CLOSEBETA_NA_20081124
 		m_colChatTypeColor[CHATMSG_LORD] = 0x31CEC7FF;
-	else
+#else
 		m_colChatTypeColor[CHATMSG_LORD] = 0xf6f82dFF;
-
+#endif
+	
 	m_colChatTypeColor[CHATMSG_RANKER] = 0x00EDBDFF;
 	// WSS_GMTOOL 070517 ----------------------------->><<
 	m_colChatTypeColor[CHATMSG_GMTOOL] = 0xE18600FF;
+	m_colChatTypeColor[CHATMSG_EXPEDITION] = 0x91A7EAFF;	//[sora] ø¯¡§¥Î √§∆√ √ﬂ∞°
+	m_colChatTypeColor[CHATMSG_NPCNOTICE] = 0xFFFFFFFF;
+	m_colChatTypeColor[CHATMSG_CHANNEL_LEVEL] = 0xF0B80FFF/*0x35C235FF*//*0xBC031FFF*/;
+	m_colChatTypeColor[CHATMSG_CHANNEL_TRADE] = 0x35C235FF/*0xF0B80FFF*/;
 
-	// Date : 2005-04-14(Ïò§ÌõÑ 2:32:19), By Lee Ki-hwan
-	// Ï§ëÍµ≠ Î≤ÑÏ†ÑÏùò Í≤ΩÏö∞ÏóêÎßå gm Î©îÏÑ∏ÏßÄ Îπ®Í∞ïÏÉâÏúºÎ°ú ÌëúÏãú 
+	// Date : 2005-04-14(ø¿»ƒ 2:32:19), By Lee Ki-hwan
+	// ¡ﬂ±π πˆ¿¸¿« ∞ÊøÏø°∏∏ gm ∏ﬁºº¡ˆ ª°∞≠ªˆ¿∏∑Œ «•Ω√ 
 	if( g_iCountry == CHINA )
 	{
 		m_colChatTypeColor[CHATMSG_GM] = 0xFF0000FF;
@@ -55,17 +165,15 @@ CUIChatting::CUIChatting()
 	{
 		m_colChatTypeColor[CHATMSG_GM] = 0xE18600FF;
 	}
-	
-	m_colSysTypeColor[SYSMSG_NORMAL] = 0xC4D6A6FF;
-	m_colSysTypeColor[SYSMSG_ATTACK] = 0x92C253FF;
-	m_colSysTypeColor[SYSMSG_ATTACKED] = 0xE2BE69FF;
-	m_colSysTypeColor[SYSMSG_ERROR] = 0xE28769FF;
-	m_colSysTypeColor[SYSMSG_NOTIFY] = 0x6060FFFF;
-	m_colSysTypeColor[SYSMSG_USER] = m_colSysTypeColor[SYSMSG_NORMAL]; // wooss 070307 kw: WSS_WHITEDAY_2007
 
 	m_nCurSelTab = CHATTAB_ALL;
 	m_nOldSelTab = CHATTAB_ALL;
-	m_nCurChatShowLine = 0;
+	//[ttos_2009_12_21]: √§∆√√¢ √º≈© π⁄Ω∫ √ ±‚»≠ º≥¡§
+	//√÷√  ∑Œ±◊¿ŒΩ√ ¿œπ›√§∆√√¢ º≥¡§¿Ã ∞°¥…«ÿ¡≥¥¯ πÆ¡¶ ºˆ¡§ 
+	m_cbtnChatOption[CHATMSG_NORMAL].SetCheck(FALSE);
+	m_cbtnChatOption[CHATMSG_NORMAL].SetEnable(FALSE);
+	m_nCurChatShowLine = MIN_SHOW_CHATLINE;
+	m_nCurSysShowLine = SYSTEM_SHOW_LINE;
 	m_bShowWhisperHistory = FALSE;
 	m_nWhisperCount = 0;
 	m_nCurWhisper = 0;
@@ -76,7 +184,10 @@ CUIChatting::CUIChatting()
 	for( iChatTab = 0; iChatTab < CHATTAB_TOTAL; iChatTab++ )
 	{
 		for( iChatLine = 0; iChatLine < MAX_CHAT_LINE; iChatLine++ )
+		{
 			m_strChatString[iChatTab][iChatLine] = CTString( "" );
+			m_ChannelstrChatString[iChatTab][iChatLine] = CTString( "" ); // channel mode
+		}
 
 		for( iChatType = 0; iChatType < CHATOPT_TOTAL; iChatType++ )
 			m_bChatOption[iChatTab][iChatType] = TRUE;
@@ -84,6 +195,10 @@ CUIChatting::CUIChatting()
 		m_nCurChatCount[iChatTab] = 0;
 		m_nCurChatInsert[iChatTab] = 0;
 		m_nFirstChatRow[iChatTab] = 0;
+		// channel mode
+		m_nChannelCurChatCount[iChatTab] = 0;
+		m_nChannelCurChatInsert[iChatTab] = 0;
+		m_nChannelFirstChatRow[iChatTab] = 0;
 	}
 
 	for( iChatLine = 0; iChatLine < MAX_SYSTEM_LINE; iChatLine++ )
@@ -101,11 +216,10 @@ CUIChatting::CUIChatting()
 	// Date : 2005-02-16,   By Lee Ki-hwan
 	m_iCurrentMsgBuffer = 0;
 	m_strMsgBuffer.clear();
-#ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
+
 	m_sCeilWriting.clear();
 	m_bIsCeilWritingCheck = FALSE;
-#endif
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
+
 	m_sChatInfo.strMsg = CTString("");
 	m_sChatInfo.strName = CTString("");
 
@@ -121,7 +235,23 @@ CUIChatting::CUIChatting()
 	m_sChatInfo.colSendNameType[CHATMSG_TRADE] = 0x97FF93FF;
 	m_sChatInfo.colSendNameType[CHATMSG_WHISPER] = 0xFFE97FFF;
 	m_sChatInfo.colSendNameType[CHATMSG_SHOUT] = 0xFFB27FFF;
-#endif	
+	m_sChatInfo.colSendNameType[CHATMSG_EXPEDITION] = 0x91A7EAFF;	// [sora]ø¯¡§¥Î √§∆√ √ﬂ∞°
+	m_sChatInfo.colSendNameType[CHATMSG_NPCNOTICE] = 0xFFFFFFFF;
+	m_sChatInfo.colSendNameType[CHATMSG_CHANNEL_LEVEL] = 0xE8EC46FF/*0xF07DBAFF*/;
+	m_sChatInfo.colSendNameType[CHATMSG_CHANNEL_TRADE] = 0x00A1FFFF/*0xE8EC46FF*/;
+
+	// [090826: selo] Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ ¿˙¿Â
+	m_strSaveSysMsgFileName = "";
+	m_bSaveSysMsg = false;
+	m_fpSaveSysMsg = NULL;
+	m_ptdButtonTexture = NULL;
+
+	m_bChannelMode = FALSE;
+	m_bRevChannelMsg = FALSE;
+	memset(m_bRecvMessage, 0, sizeof(BOOL) * 2 * CHATMSG_TOTAL);
+
+	reg_gm_cmd();
+	SystemMessageColorInI();
 }
 
 // ----------------------------------------------------------------------------
@@ -131,6 +261,31 @@ CUIChatting::CUIChatting()
 CUIChatting::~CUIChatting()
 {
 	Destroy();
+
+	// [090826: selo] Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ ¿˙¿Â
+	End_SaveSysMessage(2);
+	
+	if (m_ptdButtonTexture)
+	{
+		_pTextureStock->Release(m_ptdButtonTexture);
+	}
+	// added by sam 11/03/02 
+	ClearSpamMap();
+
+#ifdef	IMPROV1107_NOTICESYSTEM
+	std::vector<SScheduleSystemMessage*>::iterator	it	= m_vScheduleSystemMessage.begin();
+	for(; it != m_vScheduleSystemMessage.end(); it++)
+	{
+		SScheduleSystemMessage*		pSysMessage	= (*it);
+
+		timeKillEvent(pSysMessage->dwTimerID);
+
+		delete pSysMessage;
+		pSysMessage		= NULL;
+	}
+
+	m_vScheduleSystemMessage.clear();
+#endif	// #ifdef	IMPROV1107_NOTICESYSTEM
 }
 
 // ----------------------------------------------------------------------------
@@ -139,9 +294,7 @@ CUIChatting::~CUIChatting()
 // ----------------------------------------------------------------------------
 void CUIChatting::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	m_nChatLineHeight = _pUIFontTexMgr->GetFontHeight() + CHAT_LINESPACING;
 	m_nMaxCharCount = ( nWidth - CHAT_STRING_OFFSETX - 9 ) /
@@ -152,9 +305,9 @@ void CUIChatting::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_rcInput.SetRect( 0, -22, nWidth, 0 );
 
 	// Tab
-	int	nPosX = 0;
+	int	nPosX = 0, i;
 	m_rcTab[CHATTAB_ALL].SetRect( nPosX, -42, nPosX + CHAT_TAB_SEL_WIDTH, -23 );
-	for( int i = CHATTAB_PARTY; i < CHATTAB_TOTAL; i++ )
+	for( i = CHATTAB_PARTY; i < CHATTAB_TOTAL; i++ )
 	{
 		nPosX = m_rcTab[i - 1].Right + CHAT_TAB_OFFSET;
 		m_rcTab[i].SetRect( nPosX, -42, nPosX + CHAT_TAB_WIDTH, -23 );
@@ -171,8 +324,8 @@ void CUIChatting::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_rcSystem.SetRect( 0, nBottom - nChatHeight, nWidth, nBottom );
 
 	// Resizing frame region
-	m_rcResizeFrame.SetRect( 0, m_rcSystem.Top, nWidth, m_rcSystem.Top + 10 );
-
+	m_rcResizeFrame.SetRect( 0, m_rcChatting.Top, nWidth, m_rcChatting.Top + 10 );
+	m_rcSysResizeFrame.SetRect(0, m_rcSystem.Top, nWidth, m_rcSystem.Top + 10);
 	// Whisper region
 	nPosX = 21 + 19 - _pUIFontTexMgr->GetFontSpacing() +
 			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) * 16;
@@ -339,24 +492,24 @@ void CUIChatting::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 	m_sbSysScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
 
 	// Option region
-	int	nMaxSize = _S( 452, "ÏùºÎ∞ò" ).Length();
+	int	nMaxSize = _S( 452, "¿œπ›" ).Length();
 
 #ifdef GER_MODIFY_PARTYCAHT_ABRIDGE_KEY_NA_20081224
- int nSize = _S( 453, "ÌååÌã∞(?)" ).Length();
+	int nSize = _S( 453, "∆ƒ∆º(?)" ).Length();
 #else
- int nSize = _S( 453, "ÌååÌã∞(@)" ).Length();
+	int nSize = _S( 453, "∆ƒ∆º(@)" ).Length();
 #endif
 
 	if( nMaxSize < nSize ) nMaxSize = nSize;
-	nSize = _S( 454, "Í∏∏Îìú(#)" ).Length();
+	nSize = _S( 454, "±ÊµÂ(#)" ).Length();
 	if( nMaxSize < nSize ) nMaxSize = nSize;
-	nSize = _S( 455, "Îß§Îß§($)" ).Length();
+	nSize = _S( 455, "∏≈∏≈($)" ).Length();
 	if( nMaxSize < nSize ) nMaxSize = nSize;
-	nSize = _S( 456, "Í∑ìÏÜçÎßê(%)" ).Length();
+	nSize = _S( 456, "±”º”∏ª(%)" ).Length();
 	if( nMaxSize < nSize ) nMaxSize = nSize;
-	nSize = strlen( _S( 459, "Ïô∏ÏπòÍ∏∞(%)" ) );
+	nSize = strlen( _S( 459, "ø‹ƒ°±‚(%)" ) );
 	if( nMaxSize < nSize ) nMaxSize = nSize;
-	nSize = _S( 457, "ÏãúÏä§ÌÖú" ).Length();
+	nSize = _S( 457, "Ω√Ω∫≈€" ).Length();
 	if( nMaxSize < nSize ) nMaxSize = nSize;
 	
 	nMaxSize *= _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
@@ -370,6 +523,36 @@ void CUIChatting::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 
 	fTexWidth = m_ptdButtonTexture ->GetPixWidth();
 	fTexHeight = m_ptdButtonTexture ->GetPixHeight();
+	// channel mode tab button.
+	// channel mode
+	m_ChannelModeTab_btn[0].Create(this, CTString(""), 322, m_rcChatting.Top, 19, 44);
+	m_ChannelModeTab_btn[0].SetNewType(TRUE);
+	m_ChannelModeTab_btn[0].SetRTSurface(UBS_IDLE,  UIRect(0,0,19,44), UIRectUV(289,116,308,160,fTexWidth,fTexHeight));
+	m_ChannelModeTab_btn[0].SetRTSurface(UBS_ON,  UIRect(0,0,19,44), UIRectUV(265,116,284,160,fTexWidth,fTexHeight));
+	m_ChannelModeTab_btn[0].CopyRTSurface(UBS_ON, UBS_CLICK);
+	m_ChannelModeTab_btn[0].CopyRTSurface(UBS_IDLE, UBS_DISABLE);
+	m_ChannelModeTab_btn[0].SetBtnState(UBS_IDLE);
+
+	// normal mode
+	m_ChannelModeTab_btn[1].Create(this, CTString(""), 322, m_rcChatting.Top+CHANNELBTN_HEIGHT, 19, 44);
+	m_ChannelModeTab_btn[1].SetNewType(TRUE);
+	m_ChannelModeTab_btn[1].SetRTSurface(UBS_IDLE,  UIRect(0,0,19,44), UIRectUV(337,116,356,160,fTexWidth,fTexHeight));
+	m_ChannelModeTab_btn[1].SetRTSurface(UBS_ON,  UIRect(0,0,19,44), UIRectUV(313,116,332,160,fTexWidth,fTexHeight));
+	m_ChannelModeTab_btn[1].CopyRTSurface(UBS_IDLE, UBS_CLICK);
+	m_ChannelModeTab_btn[1].CopyRTSurface(UBS_IDLE, UBS_DISABLE);
+	m_ChannelModeTab_btn[1].SetBtnState(UBS_ON);
+
+	m_UVbtnInfo[CUIManager::UV_UL].SetUV(0,229,7,236, fTexWidth, fTexHeight);
+	m_UVbtnInfo[CUIManager::UV_UM].SetUV(7,229,77,236, fTexWidth, fTexHeight);
+	m_UVbtnInfo[CUIManager::UV_UR].SetUV(77,229,84,236, fTexWidth, fTexHeight);
+
+	m_UVbtnInfo[CUIManager::UV_ML].SetUV(0,236,7,243, fTexWidth, fTexHeight);
+	m_UVbtnInfo[CUIManager::UV_MM].SetUV(7,236,77,243, fTexWidth, fTexHeight);
+	m_UVbtnInfo[CUIManager::UV_MR].SetUV(77,236,84,243, fTexWidth, fTexHeight);
+
+	m_UVbtnInfo[CUIManager::UV_LL].SetUV(0,243,7,250, fTexWidth, fTexHeight);
+	m_UVbtnInfo[CUIManager::UV_LM].SetUV(7,243,77,250, fTexWidth, fTexHeight);
+	m_UVbtnInfo[CUIManager::UV_LR].SetUV(77,243,84,250, fTexWidth, fTexHeight);
 
 	for( i = 0; i < CHATOPT_TOTAL; i++ )
 	{
@@ -384,21 +567,35 @@ void CUIChatting::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 		m_cbtnChatOption[i].SetCheck( TRUE );
 		nPosY += _pUIFontTexMgr->GetFontHeight() + 3;
 	}
-	m_cbtnChatOption[CHATOPT_NORMAL].SetText( _S( 452, "ÏùºÎ∞ò" ) );
+	m_cbtnChatOption[CHATOPT_NORMAL].SetText( _S( 452, "¿œπ›" ) );
 
 #ifdef GER_MODIFY_PARTYCAHT_ABRIDGE_KEY_NA_20081224
- m_cbtnChatOption[CHATOPT_PARTY].SetText( _S( 453, "ÌååÌã∞(?)" ) );
+	m_cbtnChatOption[CHATOPT_PARTY].SetText( _S( 453, "∆ƒ∆º(?)" ) );
 #else
- m_cbtnChatOption[CHATOPT_PARTY].SetText( _S( 453, "ÌååÌã∞(@)" ) );
+	m_cbtnChatOption[CHATOPT_PARTY].SetText( _S( 453, "∆ƒ∆º(@)" ) );
 #endif
-
-	m_cbtnChatOption[CHATOPT_GUILD].SetText( _S( 454, "Í∏∏Îìú(#)" ) );
-	m_cbtnChatOption[CHATOPT_TRADE].SetText( _S( 455, "Îß§Îß§($)" ) );
-	m_cbtnChatOption[CHATOPT_WHISPER].SetText( _S( 456, "Í∑ìÏÜçÎßê(%)" ) );
-	m_cbtnChatOption[CHATOPT_SHOUT].SetText( _S( 459, "Ïô∏ÏπòÍ∏∞(%)" ) );			
-	m_cbtnChatOption[CHATOPT_SYSTEM].SetText( _S( 457, "ÏãúÏä§ÌÖú" ) );
+	
+	m_cbtnChatOption[CHATOPT_GUILD].SetText( _S( 454, "±ÊµÂ(#)" ) );
+	m_cbtnChatOption[CHATOPT_TRADE].SetText( _S( 455, "∏≈∏≈($)" ) );
+	m_cbtnChatOption[CHATOPT_WHISPER].SetText( _S( 456, "±”º”∏ª(%)" ) );
+	m_cbtnChatOption[CHATOPT_SHOUT].SetText( _S( 459, "ø‹ƒ°±‚(%)" ) );			
+	m_cbtnChatOption[CHATOPT_SYSTEM].SetText( _S( 457, "Ω√Ω∫≈€" ) );
 	
 	//m_cbtnChatOption[CHATOPT_NORMAL].SetEnable( FALSE );
+
+#ifdef	IMPROV1107_NOTICESYSTEM
+	m_lbUserNoticeMessage.Create(this, m_rcSystem.Top - 44, m_nWidth, m_rcSystem.Top, _pUIFontTexMgr->GetLineHeight(), 13, 3, 10, 3, TRUE);
+	m_lbUserNoticeMessage.SetOverColor(0xF8E1B5FF);
+	m_lbUserNoticeMessage.SetSelectColor(0xF8E1B5FF);
+	m_lbUserNoticeMessage.SetColumnPosX(0, 27, TEXT_CENTER);
+	m_rtUserNoticeUV.SetUV(0, 260, 321, 347, fTexWidth, fTexHeight);
+	m_rcUserNotice.SetRect(0, m_rcSystem.Top - 87, m_nWidth, m_rcSystem.Top);
+	m_rcUserNoticeActiveArea.SetRect(0, m_rcSystem.Top - 40, m_nWidth, m_rcSystem.Top);
+	m_bActiveUserNotice		= FALSE;
+	m_bClickUserNotice		= FALSE;
+	m_bShowUserNotice		= FALSE;
+	m_timeUserNoticeDelay	= 0;
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -407,12 +604,13 @@ void CUIChatting::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int
 // ----------------------------------------------------------------------------
 void CUIChatting::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
+	int		i;
 	//SetPos( pixMinI, pixMaxJ );
 	SetPos( pixMinI, pixMaxJ -28 );
 
 	// Resize chatting region
 	int	nLineOffset = m_nCurChatShowLine - MIN_SHOW_CHATLINE;
-	for( int i = 0; i < CHATTAB_TOTAL; i++ )
+	for( i = 0; i < CHATTAB_TOTAL; i++ )
 	{
 		m_nFirstChatRow[i] += nLineOffset;
 
@@ -428,35 +626,73 @@ void CUIChatting::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixM
 		}
 	}
 
-	// Maximum chattine line
-	m_nMaxChatShowLine = ( pixMaxJ - pixMinJ - 160 - _pUIMgr->GetPlayerInfo()->GetHeight() ) /
-							( _pUIFontTexMgr->GetFontHeight() + CHAT_LINESPACING );
+	for( i = 0; i < CHATTAB_TOTAL; i++ )
+	{
+		m_nChannelFirstChatRow[i] += nLineOffset;
+
+		if( m_nChannelFirstChatRow[i] < 0 )
+			m_nChannelFirstChatRow[i] = 0;
+		else
+		{
+			int	nLimitRow = m_nChannelCurChatCount[i] - m_nCurChatShowLine;
+			if( nLimitRow < 0 )
+				nLimitRow = 0;
+			if( m_nChannelFirstChatRow[i] > nLimitRow )
+				m_nChannelFirstChatRow[i] = nLimitRow;
+		}
+	}	
 
 	// Chatting region
 	m_nCurChatShowLine = MIN_SHOW_CHATLINE;
 	int	nChatHeight = m_nChatLineHeight * MIN_SHOW_CHATLINE + CHAT_STRING_OFFSTY * 2 - CHAT_LINESPACING;
 	m_rcChatting.SetRect( 0, -44 - nChatHeight, m_nWidth, -44 );
 
-	// Scroll bar of chatting
+	// Scroll bar of chattingz
 	//m_sbChatScrollBar.SetPosY( m_rcChatting.Top + 3 );
 	m_sbChatScrollBar.SetPosY( m_rcChatting.Top + SCROLLBAR_ADJUST_Y );
 	m_sbChatScrollBar.SetItemsPerPage( m_nCurChatShowLine );
-	m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
+	m_sbChatScrollBar.ChangeSize(-(nLineOffset*m_nChatLineHeight));
+
+	if (m_bChannelMode)
+	{
+		m_sbChatScrollBar.SetScrollPos( m_nChannelFirstChatRow[m_nCurSelTab] );
+	}
+	else
+	{
+		m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
+	}
 
 	// System region
+/*	m_nCurSysShowLine = SYSTEM_SHOW_LINE; // RESIZING_CHAT_SYSMSG add source
 	int	nHeight = m_rcSystem.GetHeight();
 	int	nBottom = m_rcChatting.Top - 1;
 	m_rcSystem.SetRect( 0, nBottom - nHeight, m_nWidth, nBottom );
 
 	// Scroll bar of system
 	//m_sbSysScrollBar.SetPosY( m_rcSystem.Top + 3 );
-	m_sbSysScrollBar.SetPosY( m_rcSystem.Top + SCROLLBAR_ADJUST_Y );
+	m_sbSysScrollBar.SetPosY( m_rcSystem.Top + SCROLLBAR_ADJUST_Y );*/
 
 	// Resizing frame region
-	if( m_bChatOption[m_nCurSelTab][CHATOPT_SYSTEM] )
-		m_rcResizeFrame.SetRect( 0, m_rcSystem.Top, m_nWidth, m_rcSystem.Top + 10 );
-	else
-		m_rcResizeFrame.SetRect( 0, m_rcChatting.Top, m_nWidth, m_rcChatting.Top + 10 );
+	if ((m_nCurSysShowLine-SYSTEM_SHOW_LINE) > 0)
+	{
+		ChangeSystemBoxHeight(-(m_nCurSysShowLine-SYSTEM_SHOW_LINE), TRUE);
+	}
+	
+	if (nLineOffset > 0)
+	{
+		ChangeSystemBoxHeight(-nLineOffset);
+	}
+	m_rcResizeFrame.SetRect( 0, m_rcChatting.Top, m_nWidth, m_rcChatting.Top + 10 );
+	//m_rcSysResizeFrame.SetRect(0, m_rcSystem.Top, m_nWidth, m_rcSystem.Top + 10);
+
+	int nSize = /*m_rcSystem.GetHeight() +*/ 20/*Chat Tab Button height*/ + 20/*Chat edit box height*/ + TARGETINFO_HEIGHT/*UITargetInfo Height*/;
+
+	m_ChannelModeTab_btn[0].SetPosY(m_rcChatting.Top);
+	m_ChannelModeTab_btn[1].SetPosY(m_rcChatting.Top+CHANNELBTN_HEIGHT);
+
+	// Maximum chattine line
+	m_nMaxChatShowLine = ( pixMaxJ - pixMinJ - nSize - CUIManager::getSingleton()->GetPlayerInfo()->GetHeight() ) /
+							( _pUIFontTexMgr->GetFontHeight() + CHAT_LINESPACING );
 }
 
 // ----------------------------------------------------------------------------
@@ -468,15 +704,25 @@ void CUIChatting::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 	//SetPos( pixMinI, pixMaxJ );
 	SetPos( pixMinI, pixMaxJ -28 );
 
+	int nSize = /*m_rcSystem.GetHeight() +*/ 20/*Chat Tab Button height*/ + 20/*Chat edit box height*/ + TARGETINFO_HEIGHT/*UITargetInfo Height*/;
 	// Maximum chattine line
-	m_nMaxChatShowLine = ( pixMaxJ - pixMinJ - 160 - _pUIMgr->GetPlayerInfo()->GetHeight() ) /
+	m_nMaxChatShowLine = ( pixMaxJ - pixMinJ - nSize - CUIManager::getSingleton()->GetPlayerInfo()->GetHeight() ) /
 							( _pUIFontTexMgr->GetFontHeight() + CHAT_LINESPACING );
 
-	// Resize chatting region
-	if( m_nCurChatShowLine > m_nMaxChatShowLine )
+	AdjustChatPosition(m_nMaxChatShowLine);
+	AdjustSysPosition();
+}
+// ----------------------------------------------------------------------------
+// Name : AdjustChatPosition()
+// Desc : Resize chatting region
+// ----------------------------------------------------------------------------
+void CUIChatting::AdjustChatPosition(int nMaxChatShowLine)
+{
+	int		i;
+	if( m_nCurChatShowLine > nMaxChatShowLine )
 	{
-		int	nLineOffset = m_nCurChatShowLine - m_nMaxChatShowLine;
-		for( int i = 0; i < CHATTAB_TOTAL; i++ )
+		int	nLineOffset = m_nCurChatShowLine - nMaxChatShowLine;
+		for( i = 0; i < CHATTAB_TOTAL; i++ )
 		{
 			m_nFirstChatRow[i] += nLineOffset;
 
@@ -492,8 +738,24 @@ void CUIChatting::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 			}
 		}
 
+		for( i = 0; i < CHATTAB_TOTAL; i++ )
+		{
+			m_nChannelFirstChatRow[i] += nLineOffset;
+
+			if( m_nChannelFirstChatRow[i] < 0 )
+				m_nChannelFirstChatRow[i] = 0;
+			else
+			{
+				int	nLimitRow = m_nChannelCurChatCount[i] - m_nCurChatShowLine;
+				if( nLimitRow < 0 )
+					nLimitRow = 0;
+				if( m_nChannelFirstChatRow[i] > nLimitRow )
+					m_nChannelFirstChatRow[i] = nLimitRow;
+			}
+		}		
+
 		// Chatting region
-		m_nCurChatShowLine = m_nMaxChatShowLine;
+		m_nCurChatShowLine = nMaxChatShowLine;
 		int	nChatHeight = m_nChatLineHeight * m_nCurChatShowLine + CHAT_STRING_OFFSTY * 2 - CHAT_LINESPACING;
 		m_rcChatting.SetRect( 0, -44 - nChatHeight, m_nWidth, -44 );
 
@@ -501,23 +763,39 @@ void CUIChatting::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 		//m_sbChatScrollBar.SetPosY( m_rcChatting.Top + 3 );
 		m_sbChatScrollBar.SetPosY( m_rcChatting.Top + SCROLLBAR_ADJUST_Y );
 		m_sbChatScrollBar.SetItemsPerPage( m_nCurChatShowLine );
-		m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
-
-		// System region
-		int	nHeight = m_rcSystem.GetHeight();
-		int	nBottom = m_rcChatting.Top - 1;
-		m_rcSystem.SetRect( 0, nBottom - nHeight, m_nWidth, nBottom );
-
-		// Scroll bar of system
-		//m_sbSysScrollBar.SetPosY( m_rcSystem.Top + 3 );
-		m_sbSysScrollBar.SetPosY( m_rcSystem.Top + SCROLLBAR_ADJUST_Y );
-
-		// Resizing frame region
-		if( m_bChatOption[m_nCurSelTab][CHATOPT_SYSTEM] )
-			m_rcResizeFrame.SetRect( 0, m_rcSystem.Top, m_nWidth, m_rcSystem.Top + 10 );
+		
+		if (m_bChannelMode)
+		{
+			m_sbChatScrollBar.SetScrollPos( m_nChannelFirstChatRow[m_nCurSelTab] );
+		}
 		else
-			m_rcResizeFrame.SetRect( 0, m_rcChatting.Top, m_nWidth, m_rcChatting.Top + 10 );
+		{
+			m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
+		}
+
+		// Resizing frame region(Chat region)
+		m_rcResizeFrame.SetRect( 0, m_rcChatting.Top, m_nWidth, m_rcChatting.Top + 10 );
+
+		m_ChannelModeTab_btn[0].SetPosY(m_rcChatting.Top);
+		m_ChannelModeTab_btn[1].SetPosY(m_rcChatting.Top+CHANNELBTN_HEIGHT);
 	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : AdjustSysPosition()
+// Desc : relocation System region
+// ----------------------------------------------------------------------------
+void CUIChatting::AdjustSysPosition(void)
+{
+	// System region
+	int	nHeight = m_rcSystem.GetHeight();
+	int	nBottom = m_rcChatting.Top - 1;
+	m_rcSystem.SetRect( 0, nBottom - nHeight, m_nWidth, nBottom );
+
+	m_rcSysResizeFrame.SetRect(0, m_rcSystem.Top, m_nWidth, m_rcSystem.Top + 10);
+	// Scroll bar of system
+	//m_sbSysScrollBar.SetPosY( m_rcSystem.Top + 3 );
+	m_sbSysScrollBar.SetPosY( m_rcSystem.Top + SCROLLBAR_ADJUST_Y );
 }
 
 // ----------------------------------------------------------------------------
@@ -526,12 +804,20 @@ void CUIChatting::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 // ----------------------------------------------------------------------------
 void CUIChatting::ResetChatting()
 {
-	for( int i = 0; i < CHATTAB_TOTAL; i++ )
+	int		i;
+	for( i = 0; i < CHATTAB_TOTAL; i++ )
 	{
 		m_nCurChatCount[i] = 0;
 		m_nCurChatInsert[i] = 0;
 		m_nFirstChatRow[i] = 0;
 	}
+	for ( i = 0; i < CHATTAB_TOTAL; i++)
+	{
+		m_nChannelFirstChatRow[i] = 0;
+		m_nChannelCurChatInsert[i] = 0;
+		m_nChannelCurChatCount[i] = 0;
+	}
+
 	m_nCurSysCount = 0;
 	m_nCurSysInsert = 0;
 	m_nFirstSysRow = 0;
@@ -545,6 +831,8 @@ void CUIChatting::ResetChatting()
 
 	m_sbSysScrollBar.SetScrollPos( 0 );
 	m_sbSysScrollBar.SetCurItemCount( 0 );
+
+	ResetChattingAlert();
 }
 
 // ----------------------------------------------------------------------------
@@ -561,9 +849,10 @@ void CUIChatting::ChangeChattingBoxHeight( int ndLines )
 	//m_sbChatScrollBar.SetPosY( m_rcChatting.Top + 3 );
 	m_sbChatScrollBar.SetPosY( m_rcChatting.Top + SCROLLBAR_ADJUST_Y );
 	m_sbChatScrollBar.SetItemsPerPage( m_nCurChatShowLine );
-	m_sbChatScrollBar.ChangeSize( ndHeight );	
+	m_sbChatScrollBar.ChangeSize( ndHeight );
 
-	for( int i = 0; i < CHATTAB_TOTAL; i++ )
+	int		i;
+	for( i = 0; i < CHATTAB_TOTAL; i++ )
 	{
 		m_nFirstChatRow[i] -= ndLines;
 		if( m_nFirstChatRow[i] < 0 )
@@ -578,17 +867,159 @@ void CUIChatting::ChangeChattingBoxHeight( int ndLines )
 				m_nFirstChatRow[i] = nLimitRow;
 		}
 	}
-	m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
 
-	// Adjust system message box
-	m_rcSystem.Top -= ndHeight;
-	m_rcSystem.Bottom -= ndHeight;
-	//m_sbSysScrollBar.SetPosY( m_rcSystem.Top + 3 );
-	m_sbSysScrollBar.SetPosY( m_rcSystem.Top + SCROLLBAR_ADJUST_Y );
+	for( i = 0; i < CHATTAB_TOTAL; i++ )
+	{
+		m_nChannelFirstChatRow[i] -= ndLines;
+		if( m_nChannelFirstChatRow[i] < 0 )
+			m_nChannelFirstChatRow[i] = 0;
+		else
+		{
+			int	nLimitRow = m_nChannelCurChatCount[i] - m_nCurChatShowLine;
+			if( nLimitRow < 0 )
+				nLimitRow = 0;
 
+			if( m_nChannelFirstChatRow[i] > nLimitRow )
+				m_nChannelFirstChatRow[i] = nLimitRow;
+		}
+	}
+
+	if (m_bChannelMode)
+	{
+		m_sbChatScrollBar.SetScrollPos( m_nChannelFirstChatRow[m_nCurSelTab] );
+	}
+	else
+	{
+		m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
+	}
+
+	ChangeSystemBoxHeight(ndLines);
 	// Adjust resizing frame region
 	m_rcResizeFrame.Top -= ndHeight;
 	m_rcResizeFrame.Bottom -= ndHeight;
+	m_ChannelModeTab_btn[0].SetPosY(m_rcChatting.Top);
+	m_ChannelModeTab_btn[1].SetPosY(m_rcChatting.Top+CHANNELBTN_HEIGHT);
+
+#ifdef	IMPROV1107_NOTICESYSTEM
+	m_rcUserNotice.Top				-= ndHeight;
+	m_rcUserNotice.Bottom			-= ndHeight;
+	m_rcUserNoticeActiveArea.Top	-= ndHeight;
+	m_rcUserNoticeActiveArea.Bottom	-= ndHeight;
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// Name : ChangeSystemBoxHeight()
+// Desc : √§∆√ √¢ Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ π⁄Ω∫ ≥Ù¿Ã ∫Ø∞Ê
+// ----------------------------------------------------------------------------
+void CUIChatting::ChangeSystemBoxHeight(int nHorLine, BOOL bUpdate)
+{
+	int nHeight = nHorLine * m_nChatLineHeight;
+
+	m_rcSystem.Top -= nHeight;
+
+	if (!bUpdate)
+	{
+		m_rcSystem.Bottom -= nHeight;
+	}
+	m_rcSysResizeFrame.Top -= nHeight;
+	m_rcSysResizeFrame.Bottom -= nHeight;
+
+	m_sbSysScrollBar.SetPosY(m_rcSystem.Top + SCROLLBAR_ADJUST_Y);
+
+	if (bUpdate)
+	{
+		m_nCurSysShowLine += nHorLine;
+		m_sbSysScrollBar.SetItemsPerPage( m_nCurSysShowLine );
+		m_sbSysScrollBar.ChangeSize( nHeight );
+
+		m_nFirstSysRow -= nHorLine;
+		int nLimit = m_nCurSysCount - m_nCurSysShowLine;
+
+		if (m_nFirstSysRow > nLimit)
+		{
+			m_nFirstSysRow = nLimit;
+		}
+
+		if (m_nFirstSysRow < 0)
+		{
+			m_nFirstSysRow = 0;
+		}
+
+		m_sbSysScrollBar.SetScrollPos(m_nFirstSysRow);
+
+#ifdef	IMPROV1107_NOTICESYSTEM
+		m_rcUserNotice.Top				-= nHeight;
+		m_rcUserNotice.Bottom			-= nHeight;
+		m_rcUserNoticeActiveArea.Top	-= nHeight;
+		m_rcUserNoticeActiveArea.Bottom	-= nHeight;
+#endif
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : TopFrameMoving()
+// Desc : √§∆√ øµø™ π◊ Ω√Ω∫≈€ ∏ﬁºº¡ˆ øµø™ ¡∂¿˝
+// ----------------------------------------------------------------------------
+void CUIChatting::TopFrameMoving(int &nHeightStretch, int nCurrentShowLine, BOOL bSysMsg)
+{
+	int	ndLineCount;
+	
+	int nSubtractLine, nMinShowLine, nLineHeight;
+
+	if (bSysMsg)
+	{
+		nSubtractLine = m_nCurChatShowLine;
+		nMinShowLine = SYSTEM_SHOW_LINE;
+		nLineHeight = m_nChatLineHeight;
+	}
+	else
+	{
+		nSubtractLine = m_nCurSysShowLine;
+		nMinShowLine = MIN_SHOW_CHATLINE;
+		nLineHeight = m_nChatLineHeight;
+	}
+
+	if( nHeightStretch > 0 )
+	{
+		if( nHeightStretch >= nLineHeight && nCurrentShowLine < (m_nMaxChatShowLine - nSubtractLine))
+		{
+			ndLineCount = nHeightStretch / nLineHeight;
+			if( nCurrentShowLine + ndLineCount > (m_nMaxChatShowLine - nSubtractLine))
+				ndLineCount = m_nMaxChatShowLine - nCurrentShowLine - nSubtractLine;
+
+			nHeightStretch -= ndLineCount * nLineHeight;
+
+			if (bSysMsg)
+			{
+				ChangeSystemBoxHeight(ndLineCount, TRUE);
+			}
+			else
+			{
+				ChangeChattingBoxHeight( ndLineCount );
+			}
+		}
+	}
+	else
+	{
+		if( nHeightStretch <= -nLineHeight && nCurrentShowLine > nMinShowLine )
+		{
+			ndLineCount = nHeightStretch / nLineHeight;
+			if( nCurrentShowLine + ndLineCount < MIN_SHOW_CHATLINE )
+				ndLineCount = MIN_SHOW_CHATLINE - nCurrentShowLine;
+
+			nHeightStretch -= ndLineCount * nLineHeight;
+
+			if (bSysMsg)
+			{
+				ChangeSystemBoxHeight(ndLineCount, TRUE);
+			}
+			else
+			{
+				ChangeChattingBoxHeight( ndLineCount );
+			}
+		}
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -599,20 +1030,24 @@ void CUIChatting::RenderChatStringList()
 {
 	int	nFirstChat, nFirstChatLast, nSecondChat, nSecondChatLast;
 
+	int nCurChatCount = (m_bChannelMode) ? m_nChannelCurChatCount[m_nCurSelTab] : m_nCurChatCount[m_nCurSelTab];
+	int nFirstChatRow = (m_bChannelMode) ? m_nChannelFirstChatRow[m_nCurSelTab] : m_nFirstChatRow[m_nCurSelTab];
+	int nCurChatInsert = (m_bChannelMode) ? m_nChannelCurChatInsert[m_nCurSelTab] : m_nCurChatInsert[m_nCurSelTab];
+
 	// Just render in turn
-	if( m_nCurChatCount[m_nCurSelTab] < MAX_CHAT_LINE || m_nCurChatInsert[m_nCurSelTab] == MAX_CHAT_LINE )
+	if( nCurChatCount < MAX_CHAT_LINE || nCurChatInsert == MAX_CHAT_LINE )
 	{
-		nFirstChat = m_nFirstChatRow[m_nCurSelTab];
+		nFirstChat = nFirstChatRow;
 		nFirstChatLast = nFirstChat + m_nCurChatShowLine;
 		nSecondChat = nSecondChatLast = 0;
 
-		if( nFirstChatLast > m_nCurChatCount[m_nCurSelTab] )
-			nFirstChatLast = m_nCurChatCount[m_nCurSelTab];
+		if( nFirstChatLast > nCurChatCount )
+			nFirstChatLast = nCurChatCount;
 	}
 	// Split chatting list into two
 	else
 	{
-		nFirstChat = m_nFirstChatRow[m_nCurSelTab] + m_nCurChatInsert[m_nCurSelTab];
+		nFirstChat = nFirstChatRow + nCurChatInsert;
 		if( nFirstChat >= MAX_CHAT_LINE )
 			nFirstChat -= MAX_CHAT_LINE;
 		nFirstChatLast = nFirstChat + m_nCurChatShowLine;
@@ -627,56 +1062,65 @@ void CUIChatting::RenderChatStringList()
 			nSecondChat = nSecondChatLast = 0;
 	}
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Render chatting strings
 	int	nX = m_nPosX + m_rcChatting.Left + CHAT_STRING_OFFSETX;
 	int	nY = m_nPosY + m_rcChatting.Top + CHAT_STRING_OFFSTY;
-	for( int iChat = nFirstChat; iChat < nFirstChatLast; iChat++ )
+
+	int		iChat;
+	for( iChat = nFirstChat; iChat < nFirstChatLast; iChat++ )
 	{
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
 		RenderChatNameMsgString(nX, nY, iChat);
-#else
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strChatString[m_nCurSelTab][iChat], nX, nY,
-											m_colChatString[m_nCurSelTab][iChat], TRUE, 0x181818FF );
-#endif
 		nY += m_nChatLineHeight;
 	}
+
 	for( iChat = nSecondChat; iChat < nSecondChatLast; iChat++ )
 	{
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
 		RenderChatNameMsgString(nX, nY, iChat);
-#else
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strChatString[m_nCurSelTab][iChat], nX, nY,
-											m_colChatString[m_nCurSelTab][iChat], TRUE, 0x181818FF );
-#endif
 		nY += m_nChatLineHeight;
 	}
 }
 
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
-void
-CUIChatting::RenderChatNameMsgString(const int iPosX, const int iPosY, const int iChatLine)
+void CUIChatting::RenderChatNameMsgString(const int iPosX, const int iPosY, const int iChatLine)
 {
-		CTString	strTemp = m_strChatString[m_nCurSelTab][iChatLine];	
-		CTString	strCompare = CTString("  ");
-		int			istrCompareLen = strCompare.Length();
-		char		cFirstChar[2] = {strTemp.str_String[0], strTemp.str_String[1]};
-		int			nNameWid = (_pUIFontTexMgr->GetFontSpacing() + m_sChatInfo.strSendName[m_nCurSelTab][iChatLine].Length()) *
-								(_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing());
-		
-		if (strTemp.RemovePrefix(m_sChatInfo.strSendName[m_nCurSelTab][iChatLine]))
-			m_sChatInfo.strMsg = strTemp;					
-		else
-			m_sChatInfo.strMsg = strTemp;
+	CTString	strTemp = (m_bChannelMode) ? m_ChannelstrChatString[m_nCurSelTab][iChatLine] : m_strChatString[m_nCurSelTab][iChatLine];
+	COLOR	colChatString =  (m_bChannelMode) ? m_ChannelcolChatString[m_nCurSelTab][iChatLine] : m_colChatString[m_nCurSelTab][iChatLine];
 
-		if (strncmp(cFirstChar, strCompare, istrCompareLen) == 0)
-			_pUIMgr->GetDrawPort()->PutTextEx(m_sChatInfo.strMsg, iPosX, iPosY, m_colChatString[m_nCurSelTab][iChatLine], TRUE, 0x181818FF);//msg				
-		else
-		{
-			_pUIMgr->GetDrawPort()->PutTextEx(m_sChatInfo.strSendName[m_nCurSelTab][iChatLine], iPosX, iPosY, m_sChatInfo.colSendName[m_nCurSelTab][iChatLine]);//, TRUE, 0x181818FF);//name
-			_pUIMgr->GetDrawPort()->PutTextEx(m_sChatInfo.strMsg, iPosX+nNameWid, iPosY, m_colChatString[m_nCurSelTab][iChatLine], TRUE, 0x181818FF);//msg
-		}		
-}
+	CTString	strSendName = (m_bChannelMode) ? m_sChatInfo.strChannelSendName[m_nCurSelTab][iChatLine] : m_sChatInfo.strSendName[m_nCurSelTab][iChatLine];
+	COLOR	colSendName = (m_bChannelMode) ? m_sChatInfo.colChannelSendName[m_nCurSelTab][iChatLine] : m_sChatInfo.colSendName[m_nCurSelTab][iChatLine];
+	
+	int nstrLength = strSendName.Length();
+
+	CTString	strCompare = CTString("  ");
+	int			istrCompareLen = strCompare.Length();
+	char		cFirstChar[2] = {strTemp.str_String[0], strTemp.str_String[1]};
+	//modified by sam 11/03/04 ∑ØΩ√æ∆ √§∆√Ω√ ¿Ã∏ß∞˙ ∏ﬁΩ√¡ˆ∞° ∞„ƒß ±◊∑°º≠ ºˆ¡§
+	//int			nNameWid = (_pUIFontTexMgr->GetFontSpacing() + m_sChatInfo.strSendName[m_nCurSelTab][iChatLine].Length()) *
+	//						(_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing());
+	int			nNameWid = 0;
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+#if !defined G_RUSSIA
+	nNameWid = (_pUIFontTexMgr->GetFontSpacing() + nstrLength) *
+							(_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing());
+#else
+	nNameWid = pDrawPort->GetTextSectionWidth(strSendName.str_String, nstrLength, FALSE);
 #endif
+	if (strTemp.RemovePrefix(strSendName))
+		m_sChatInfo.strMsg = strTemp;
+	else
+		m_sChatInfo.strMsg = strTemp;
+
+	if (strncmp(cFirstChar, strCompare, istrCompareLen) == 0)
+		pDrawPort->PutTextEx(m_sChatInfo.strMsg, iPosX, iPosY, colChatString, TRUE, 0x181818FF);//msg
+	else
+	{
+		pDrawPort->PutTextEx(strSendName, iPosX, iPosY, colSendName);//, TRUE, 0x181818FF);//name
+		pDrawPort->PutTextEx(m_sChatInfo.strMsg, iPosX+nNameWid, iPosY, colChatString, TRUE, 0x181818FF);//msg
+	}		
+}
+//******************************************************************************************************************************
 
 // ----------------------------------------------------------------------------
 // Name : RenderSysStringList()
@@ -690,7 +1134,7 @@ void CUIChatting::RenderSysStringList()
 	if( m_nCurSysCount < MAX_SYSTEM_LINE || m_nCurSysInsert == MAX_SYSTEM_LINE )
 	{
 		nFirstChat = m_nFirstSysRow;
-		nFirstChatLast = nFirstChat + SYSTEM_SHOW_LINE;
+		nFirstChatLast = nFirstChat + m_nCurSysShowLine;//SYSTEM_SHOW_LINE;
 		nSecondChat = nSecondChatLast = 0;
 
 		if( nFirstChatLast > m_nCurSysCount )
@@ -702,7 +1146,7 @@ void CUIChatting::RenderSysStringList()
 		nFirstChat = m_nFirstSysRow + m_nCurSysInsert;
 		if( nFirstChat >= MAX_SYSTEM_LINE )
 			nFirstChat -= MAX_SYSTEM_LINE;
-		nFirstChatLast = nFirstChat + SYSTEM_SHOW_LINE;
+		nFirstChatLast = nFirstChat + m_nCurSysShowLine;//SYSTEM_SHOW_LINE;
 
 		if( nFirstChatLast > MAX_SYSTEM_LINE )
 		{
@@ -717,15 +1161,18 @@ void CUIChatting::RenderSysStringList()
 	// Render chatting strings
 	int	nX = m_nPosX + m_rcSystem.Left + CHAT_STRING_OFFSETX;
 	int	nY = m_nPosY + m_rcSystem.Top + CHAT_STRING_OFFSTY;
-	for( int iChat = nFirstChat; iChat < nFirstChatLast; iChat++ )
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	int	iChat;
+
+	for( iChat = nFirstChat; iChat < nFirstChatLast; iChat++ )
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strSysString[iChat], nX, nY,
+		pDrawPort->PutTextEx( m_strSysString[iChat], nX, nY,
 											m_colSysString[iChat], TRUE, 0x181818FF );
 		nY += m_nChatLineHeight;
 	}
 	for( iChat = nSecondChat; iChat < nSecondChatLast; iChat++ )
 	{
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strSysString[iChat], nX, nY,
+		pDrawPort->PutTextEx( m_strSysString[iChat], nX, nY,
 											m_colSysString[iChat], TRUE, 0x181818FF );
 		nY += m_nChatLineHeight;
 	}
@@ -737,47 +1184,50 @@ void CUIChatting::RenderSysStringList()
 // ----------------------------------------------------------------------------
 void CUIChatting::Render()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Set texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	// Background
 	// Input box
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcInput.Left, m_nPosY + m_rcInput.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcInput.Left, m_nPosY + m_rcInput.Top,
 										m_nPosX + m_rcInput.Left + 25, m_nPosY + m_rcInput.Bottom,
 										m_rtInputBoxL.U0, m_rtInputBoxL.V0, m_rtInputBoxL.U1, m_rtInputBoxL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcInput.Left + 25, m_nPosY + m_rcInput.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcInput.Left + 25, m_nPosY + m_rcInput.Top,
 										m_nPosX + m_rcInput.Right - 25, m_nPosY + m_rcInput.Bottom,
 										m_rtInputBoxM.U0, m_rtInputBoxM.V0, m_rtInputBoxM.U1, m_rtInputBoxM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcInput.Right - 25, m_nPosY + m_rcInput.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcInput.Right - 25, m_nPosY + m_rcInput.Top,
 										m_nPosX + m_rcInput.Right, m_nPosY + m_rcInput.Bottom,
 										m_rtInputBoxR.U0, m_rtInputBoxR.V0, m_rtInputBoxR.U1, m_rtInputBoxR.V1,
 										0xFFFFFFFF );
 
 	// Chatting message region
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Left, m_nPosY + m_rcChatting.Top + 14,
+	pDrawPort->AddTexture( m_nPosX + m_rcChatting.Left, m_nPosY + m_rcChatting.Top + 14,
 										m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Bottom - 14,
 										m_rtChatML.U0, m_rtChatML.V0, m_rtChatML.U1, m_rtChatML.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Top + 14,
+	pDrawPort->AddTexture( m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Top + 14,
 										m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Bottom - 14,
 										m_rtChatMM.U0, m_rtChatMM.V0, m_rtChatMM.U1, m_rtChatMM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Top + 14,
+	pDrawPort->AddTexture( m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Top + 14,
 										m_nPosX + m_rcChatting.Right, m_nPosY + m_rcChatting.Bottom - 14,
 										m_rtChatMR.U0, m_rtChatMR.V0, m_rtChatMR.U1, m_rtChatMR.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Left, m_nPosY + m_rcChatting.Bottom - 14,
+	pDrawPort->AddTexture( m_nPosX + m_rcChatting.Left, m_nPosY + m_rcChatting.Bottom - 14,
 										m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Bottom,
 										m_rtChatLL.U0, m_rtChatLL.V0, m_rtChatLL.U1, m_rtChatLL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Bottom - 14,
+	pDrawPort->AddTexture( m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Bottom - 14,
 										m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Bottom,
 										m_rtChatLM.U0, m_rtChatLM.V0, m_rtChatLM.U1, m_rtChatLM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Bottom - 14,
+	pDrawPort->AddTexture( m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Bottom - 14,
 										m_nPosX + m_rcChatting.Right, m_nPosY + m_rcChatting.Bottom,
 										m_rtChatLR.U0, m_rtChatLR.V0, m_rtChatLR.U1, m_rtChatLR.V1,
 										0xFFFFFFFF );
@@ -786,53 +1236,53 @@ void CUIChatting::Render()
 	if( m_bChatOption[m_nCurSelTab][CHATOPT_SYSTEM] )
 	{
 		// Chatting message region
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Left, m_nPosY + m_rcChatting.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcChatting.Left, m_nPosY + m_rcChatting.Top,
 											m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Top + 14,
 											m_rtChatUL2.U0, m_rtChatUL2.V0, m_rtChatUL2.U1, m_rtChatUL2.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Top,
 											m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Top + 14,
 											m_rtChatUM2.U0, m_rtChatUM2.V0, m_rtChatUM2.U1, m_rtChatUM2.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Top,
 											m_nPosX + m_rcChatting.Right, m_nPosY + m_rcChatting.Top + 14,
 											m_rtChatUR2.U0, m_rtChatUR2.V0, m_rtChatUR2.U1, m_rtChatUR2.V1,
 											0xFFFFFFFF );
 
 		// System message region
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Left, m_nPosY + m_rcSystem.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Left, m_nPosY + m_rcSystem.Top,
 											m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Top + 14,
 											m_rtChatUL.U0, m_rtChatUL.V0, m_rtChatUL.U1, m_rtChatUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Top,
 											m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Top + 14,
 											m_rtChatUM.U0, m_rtChatUM.V0, m_rtChatUM.U1, m_rtChatUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Top,
 											m_nPosX + m_rcSystem.Right, m_nPosY + m_rcSystem.Top + 14,
 											m_rtChatUR.U0, m_rtChatUR.V0, m_rtChatUR.U1, m_rtChatUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Left, m_nPosY + m_rcSystem.Top + 14,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Left, m_nPosY + m_rcSystem.Top + 14,
 											m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Bottom - 14,
 											m_rtChatML.U0, m_rtChatML.V0, m_rtChatML.U1, m_rtChatML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Top + 14,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Top + 14,
 											m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Bottom - 14,
 											m_rtChatMM.U0, m_rtChatMM.V0, m_rtChatMM.U1, m_rtChatMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Top + 14,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Top + 14,
 											m_nPosX + m_rcSystem.Right, m_nPosY + m_rcSystem.Bottom - 14,
 											m_rtChatMR.U0, m_rtChatMR.V0, m_rtChatMR.U1, m_rtChatMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Left, m_nPosY + m_rcSystem.Bottom - 14,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Left, m_nPosY + m_rcSystem.Bottom - 14,
 											m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Bottom,
 											m_rtChatLL.U0, m_rtChatLL.V0, m_rtChatLL.U1, m_rtChatLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Bottom - 14,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Left + 18, m_nPosY + m_rcSystem.Bottom - 14,
 											m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Bottom,
 											m_rtChatLM.U0, m_rtChatLM.V0, m_rtChatLM.U1, m_rtChatLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Bottom - 14,
+		pDrawPort->AddTexture( m_nPosX + m_rcSystem.Right - 18, m_nPosY + m_rcSystem.Bottom - 14,
 											m_nPosX + m_rcSystem.Right, m_nPosY + m_rcSystem.Bottom,
 											m_rtChatLR.U0, m_rtChatLR.V0, m_rtChatLR.U1, m_rtChatLR.V1,
 											0xFFFFFFFF );
@@ -846,15 +1296,15 @@ void CUIChatting::Render()
 	else
 	{
 		// Chatting message region
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Left, m_nPosY + m_rcChatting.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcChatting.Left, m_nPosY + m_rcChatting.Top,
 											m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Top + 14,
 											m_rtChatUL.U0, m_rtChatUL.V0, m_rtChatUL.U1, m_rtChatUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcChatting.Left + 18, m_nPosY + m_rcChatting.Top,
 											m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Top + 14,
 											m_rtChatUM.U0, m_rtChatUM.V0, m_rtChatUM.U1, m_rtChatUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcChatting.Right - 18, m_nPosY + m_rcChatting.Top,
 											m_nPosX + m_rcChatting.Right, m_nPosY + m_rcChatting.Top + 14,
 											m_rtChatUR.U0, m_rtChatUR.V0, m_rtChatUR.U1, m_rtChatUR.V1,
 											0xFFFFFFFF );
@@ -869,43 +1319,114 @@ void CUIChatting::Render()
 	// Option button
 	m_btnOption.Render();
 
+	// Render all elements
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->InitTextureData(m_ptdButtonTexture);
+
+	m_ChannelModeTab_btn[0].Render();
+	m_ChannelModeTab_btn[1].Render();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->InitTextureData(m_ptdButtonTexture, FALSE, PBT_ADD);
+
+	static BOOL		bHighlight = FALSE;
+	static DOUBLE	dElapsedTime = 0.0;
+	static DOUBLE	dOldTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	dElapsedTime += dCurTime - dOldTime;
+	dOldTime = dCurTime;
+
+	if (dElapsedTime > 0.5)
+	{
+		bHighlight = !bHighlight;
+
+		do 
+		{
+			dElapsedTime -= 0.5;
+		} while(dElapsedTime > 0.5);
+	}
+
+	if (m_bRevChannelMsg && bHighlight)
+	{
+		m_ChannelModeTab_btn[0].RenderHighlight(0xFFFFFFFF);
+	}
+	else if(m_bChannelMode && bHighlight)
+	{
+		for(int i = 0; i < CHATMSG_TOTAL; i++)
+		{
+			if(m_bRecvMessage[1][i] == TRUE)
+			{
+				m_ChannelModeTab_btn[1].RenderHighlight(0xFFFFFFFF);
+				break;
+			}
+		}
+
+	}
+
+	pDrawPort->FlushRenderingQueue();
+
+	CTString strChatMode;
+	pUIManager->InitCurInfoLines();
+	if (m_ChannelModeTab_btn[0].GetMouseOver())
+	{
+		strChatMode = _S(5393, "√§≥Œ√§∆√∏µÂ");
+		pUIManager->AddItemInfoString(strChatMode,0xFFFFFFFF,20,34);
+		pUIManager->RenderBtnInfo(m_ptdButtonTexture, m_ChannelModeTab_btn[0], m_UVbtnInfo, strChatMode.Length());
+	}
+	else if (m_ChannelModeTab_btn[1].GetMouseOver())
+	{
+		strChatMode = _S(5394, "¿œπ›√§∆√∏µÂ");
+		pUIManager->AddItemInfoString(strChatMode,0xFFFFFFFF,20,34);
+		pUIManager->RenderBtnInfo(m_ptdButtonTexture, m_ChannelModeTab_btn[1], m_UVbtnInfo, strChatMode.Length());
+	}
+
+	pDrawPort->InitTextureData(m_ptdBaseTexture);
+
 	// Option region
 	if( m_bShowOption )
 	{
+		// [sora] ø¯¡§¥Î √§∆√ √ﬂ∞°
+		if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+		{
+			m_cbtnChatOption[CHATOPT_PARTY].SetText(_S(4492, "ø¯¡§¥Î(@)" ));
+		}
+		else
+		{
+			m_cbtnChatOption[CHATOPT_PARTY].SetText( _S( 453, "∆ƒ∆º(@)" ) );
+		}
 		// Option region
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Left, m_nPosY + m_rcOption.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Left, m_nPosY + m_rcOption.Top,
 											m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Top + 7,
 											m_rtWhisperUL.U0, m_rtWhisperUL.V0, m_rtWhisperUL.U1, m_rtWhisperUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Top,
 											m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Top + 7,
 											m_rtWhisperUM.U0, m_rtWhisperUM.V0, m_rtWhisperUM.U1, m_rtWhisperUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Top,
 											m_nPosX + m_rcOption.Right, m_nPosY + m_rcOption.Top + 7,
 											m_rtWhisperUR.U0, m_rtWhisperUR.V0, m_rtWhisperUR.U1, m_rtWhisperUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Left, m_nPosY + m_rcOption.Top + 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Left, m_nPosY + m_rcOption.Top + 7,
 											m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Bottom - 7,
 											m_rtWhisperML.U0, m_rtWhisperML.V0, m_rtWhisperML.U1, m_rtWhisperML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Top + 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Top + 7,
 											m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Bottom - 7,
 											m_rtWhisperMM.U0, m_rtWhisperMM.V0, m_rtWhisperMM.U1, m_rtWhisperMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Top + 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Top + 7,
 											m_nPosX + m_rcOption.Right, m_nPosY + m_rcOption.Bottom - 7,
 											m_rtWhisperMR.U0, m_rtWhisperMR.V0, m_rtWhisperMR.U1, m_rtWhisperMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Left, m_nPosY + m_rcOption.Bottom - 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Left, m_nPosY + m_rcOption.Bottom - 7,
 											m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Bottom,
 											m_rtWhisperLL.U0, m_rtWhisperLL.V0, m_rtWhisperLL.U1, m_rtWhisperLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Bottom - 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Left + 7, m_nPosY + m_rcOption.Bottom - 7,
 											m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Bottom,
 											m_rtWhisperLM.U0, m_rtWhisperLM.V0, m_rtWhisperLM.U1, m_rtWhisperLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Bottom - 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcOption.Right - 7, m_nPosY + m_rcOption.Bottom - 7,
 											m_nPosX + m_rcOption.Right, m_nPosY + m_rcOption.Bottom,
 											m_rtWhisperLR.U0, m_rtWhisperLR.V0, m_rtWhisperLR.U1, m_rtWhisperLR.V1,
 											0xFFFFFFFF );
@@ -913,19 +1434,19 @@ void CUIChatting::Render()
 		for( int i = 0; i < CHATOPT_TOTAL; i++ )
 		{
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+			pDrawPort->InitTextureData( m_ptdButtonTexture );
 			m_cbtnChatOption[i].Render();
 			
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+			pDrawPort->FlushRenderingQueue();
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 		}
 	}
 
 	// Tab region
-	if( m_nCurSelTab != m_nOldSelTab )		// Animation
+	if( m_nCurSelTab != m_nOldSelTab)		// Animation
 	{
 		static int		nCurTab = m_nCurSelTab;
 		static BOOL		bFirstEntering = TRUE;
@@ -949,7 +1470,8 @@ void CUIChatting::Render()
 			fRatio = 1.0f;
 
 		int	nGoalWidth, nResize;
-		for( int i = 0; i < CHATTAB_TOTAL; i++ )
+		int	i;
+		for( i = 0; i < CHATTAB_TOTAL; i++ )
 		{
 			if( i == m_nCurSelTab )
 				nGoalWidth = CHAT_TAB_SEL_WIDTH;
@@ -981,22 +1503,54 @@ void CUIChatting::Render()
 	}
 
 	COLOR	colTab;
+
 	for( int iTab = 0; iTab < CHATTAB_TOTAL; iTab++ )
 	{
 		if( iTab == m_nCurSelTab )
 			colTab = 0xFFFFFFE5;
 		else
-			colTab = 0xFFFFFF9A;
+		{
+#ifdef	IMPROV1106_CHATALERT
+			BOOL	bRecvMessage	= FALSE;
+			if(m_bChannelMode)
+			{	// √§≥Œ ∏µÂ
+				if(m_bChatOption[iTab][CHATOPT_NORMAL] && m_bRecvMessage[0][CHATMSG_CHANNEL_LEVEL] && iTab == 0)
+					bRecvMessage	= TRUE;
+				else if(m_bChatOption[iTab][CHATOPT_TRADE] &&  m_bRecvMessage[0][CHATMSG_CHANNEL_TRADE] && iTab == 3)
+					bRecvMessage	= TRUE;
+			}
+			else
+			{	// ¿œπ› ∏µÂ
+				for(int iMsgType = 0; iMsgType <= CHATOPT_SHOUT; iMsgType++)	// CHATOPT_SHOUT ±Ó¡ˆ √º≈©
+				{
+					if(m_bChatOption[iTab][iMsgType] && m_bRecvMessage[1][iMsgType])
+					{
+						bRecvMessage	= TRUE;
+						break;
+					}
+				}
+			}
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab[iTab].Left, m_nPosY + m_rcTab[iTab].Top,
+			if(bHighlight && bRecvMessage)
+			{
+				colTab = 0xFFFFFFFF;
+			}
+			else
+#endif	// #ifdef	IMPROV1106_CHATALERT
+			{
+				colTab = 0xFFFFFF9A;
+			}
+		}
+
+		pDrawPort->AddTexture( m_nPosX + m_rcTab[iTab].Left, m_nPosY + m_rcTab[iTab].Top,
 											m_nPosX + m_rcTab[iTab].Left + 25, m_nPosY + m_rcTab[iTab].Bottom,
 											m_rtTabL.U0, m_rtTabL.V0, m_rtTabL.U1, m_rtTabL.V1,
 											colTab );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab[iTab].Left + 25, m_nPosY + m_rcTab[iTab].Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcTab[iTab].Left + 25, m_nPosY + m_rcTab[iTab].Top,
 											m_nPosX + m_rcTab[iTab].Right - 25, m_nPosY + m_rcTab[iTab].Bottom,
 											m_rtTabM.U0, m_rtTabM.V0, m_rtTabM.U1, m_rtTabM.V1,
 											colTab );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab[iTab].Right - 25, m_nPosY + m_rcTab[iTab].Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcTab[iTab].Right - 25, m_nPosY + m_rcTab[iTab].Top,
 											m_nPosX + m_rcTab[iTab].Right, m_nPosY + m_rcTab[iTab].Bottom,
 											m_rtTabR.U0, m_rtTabR.V0, m_rtTabR.U1, m_rtTabR.V1,
 											colTab );
@@ -1008,64 +1562,81 @@ void CUIChatting::Render()
 	// Tab text
 	int	nY = m_nPosY + m_rcTab[CHATTAB_ALL].Top + 3;
 	int	nX = m_nPosX + ( m_rcTab[CHATTAB_ALL].Left + m_rcTab[CHATTAB_ALL].Right ) / 2;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 506, "Ï†ÑÏ≤¥" ), nX, nY,								
+	pDrawPort->PutTextExCX( _S( 506, "¿¸√º" ), nX, nY,								
 											m_nCurSelTab == CHATTAB_ALL ? 0xF8F8F7FF : 0xAFACA6FF );
 	nX = m_nPosX + ( m_rcTab[CHATTAB_PARTY].Left + m_rcTab[CHATTAB_PARTY].Right ) / 2;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 507, "ÌååÌã∞" ), nX, nY,								
-											m_nCurSelTab == CHATTAB_PARTY ? 0xF8F8F7FF : 0xAFACA6FF );
+
+	// [sora] ø¯¡§¥Î √§∆√ √ﬂ∞°
+	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
+	{
+		pDrawPort->PutTextExCX( _S( 4493, "ø¯¡§¥Î" ), nX, nY,								
+												m_nCurSelTab == CHATTAB_PARTY ? 0xF8F8F7FF : 0xAFACA6FF );
+	}
+	else
+	{
+		pDrawPort->PutTextExCX( _S( 507, "∆ƒ∆º" ), nX, nY,								
+												m_nCurSelTab == CHATTAB_PARTY ? 0xF8F8F7FF : 0xAFACA6FF );
+	}
 	nX = m_nPosX + ( m_rcTab[CHATTAB_GUILD].Left + m_rcTab[CHATTAB_GUILD].Right ) / 2;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 508, "Í∏∏Îìú" ), nX, nY,								
+	pDrawPort->PutTextExCX( _S( 508, "±ÊµÂ" ), nX, nY,								
 											m_nCurSelTab == CHATTAB_GUILD ? 0xF8F8F7FF : 0xAFACA6FF );
 	nX = m_nPosX + ( m_rcTab[CHATTAB_TRADE].Left + m_rcTab[CHATTAB_TRADE].Right ) / 2;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 509, "Îß§Îß§" ), nX, nY,								
+	pDrawPort->PutTextExCX( _S( 509, "∏≈∏≈" ), nX, nY,								
 											m_nCurSelTab == CHATTAB_TRADE ? 0xF8F8F7FF : 0xAFACA6FF );
 
+#ifdef	IMPROV1107_NOTICESYSTEM
+	if(m_bShowUserNotice)
+	{
+		RenderUserNotice();
+	}
+#endif
+
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Whisper history region
 	if( m_bShowWhisperHistory )
 	{
 		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 		// Option region
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Left, m_nPosY + m_rcWhisper.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Left, m_nPosY + m_rcWhisper.Top,
 											m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Top + 7,
 											m_rtWhisperUL.U0, m_rtWhisperUL.V0, m_rtWhisperUL.U1, m_rtWhisperUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Top,
 											m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Top + 7,
 											m_rtWhisperUM.U0, m_rtWhisperUM.V0, m_rtWhisperUM.U1, m_rtWhisperUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Top,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Top,
 											m_nPosX + m_rcWhisper.Right, m_nPosY + m_rcWhisper.Top + 7,
 											m_rtWhisperUR.U0, m_rtWhisperUR.V0, m_rtWhisperUR.U1, m_rtWhisperUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Left, m_nPosY + m_rcWhisper.Top + 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Left, m_nPosY + m_rcWhisper.Top + 7,
 											m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Bottom - 7,
 											m_rtWhisperML.U0, m_rtWhisperML.V0, m_rtWhisperML.U1, m_rtWhisperML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Top + 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Top + 7,
 											m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Bottom - 7,
 											m_rtWhisperMM.U0, m_rtWhisperMM.V0, m_rtWhisperMM.U1, m_rtWhisperMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Top + 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Top + 7,
 											m_nPosX + m_rcWhisper.Right, m_nPosY + m_rcWhisper.Bottom - 7,
 											m_rtWhisperMR.U0, m_rtWhisperMR.V0, m_rtWhisperMR.U1, m_rtWhisperMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Left, m_nPosY + m_rcWhisper.Bottom - 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Left, m_nPosY + m_rcWhisper.Bottom - 7,
 											m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Bottom,
 											m_rtWhisperLL.U0, m_rtWhisperLL.V0, m_rtWhisperLL.U1, m_rtWhisperLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Bottom - 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Left + 7, m_nPosY + m_rcWhisper.Bottom - 7,
 											m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Bottom,
 											m_rtWhisperLM.U0, m_rtWhisperLM.V0, m_rtWhisperLM.U1, m_rtWhisperLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Bottom - 7,
+		pDrawPort->AddTexture( m_nPosX + m_rcWhisper.Right - 7, m_nPosY + m_rcWhisper.Bottom - 7,
 											m_nPosX + m_rcWhisper.Right, m_nPosY + m_rcWhisper.Bottom,
 											m_rtWhisperLR.U0, m_rtWhisperLR.V0, m_rtWhisperLR.U1, m_rtWhisperLR.V1,
 											0xFFFFFFFF );
@@ -1073,41 +1644,41 @@ void CUIChatting::Render()
 		// Selected region
 		nY = m_nPosY + m_rcWhisper.Bottom - 5;
 		nY -= m_nChatLineHeight * m_nCurWhisper;
-		//_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcSelWhisper.Left, nY + m_rcSelWhisper.Top,
+		//pDrawPort->AddTexture( m_nPosX + m_rcSelWhisper.Left, nY + m_rcSelWhisper.Top,
 		//									m_nPosX + m_rcSelWhisper.Right, nY + m_rcSelWhisper.Bottom,
 		//									m_rtSelWhisper.U0, m_rtSelWhisper.V0, m_rtSelWhisper.U1, m_rtSelWhisper.V1,
 		//									0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Text in whisper history
 		nX = m_nPosX + m_rcWhisper.Left + 8;
 		nY = m_nPosY + m_rcWhisper.Bottom - m_nChatLineHeight - 4;
 		for( int i = 0; i < m_nWhisperCount; i++ )
 		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strWhisper[i], nX, nY, 0xC5C5C5FF );
+			pDrawPort->PutTextEx( m_strWhisper[i], nX, nY, 0xC5C5C5FF );
 			nY -= m_nChatLineHeight;
 		}
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 
 	// Reading window
 	if( m_ebChatInput.DoesShowReadingWindow() )
 	{
 		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 		// Reading window
 		m_ebChatInput.RenderReadingWindow();
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 }
 
@@ -1115,15 +1686,24 @@ void CUIChatting::Render()
 // Name : AddChatString()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIChatting::AddChatString( CTString &strChatString, COLOR colChatString, int nCurTab, BOOL bNotice )
+
+void CUIChatting::AddChatString( CTString &strChatString, COLOR colChatString, int nCurTab, BOOL bNotice, BYTE Channel)
 {
 	// Get length of string
 	INDEX	nLength = strChatString.Length();
 	if( nLength <= 0 )
 		return;
 
+	// channel mode ∏Ò∑œ∞˙, normal mode ∏Ò∑œ¿ª ±∏∫–«œø© √ﬂ∞°«—¥Ÿ.
+	int &nCurChatCount = (Channel > 0) ? m_nChannelCurChatCount[nCurTab] : m_nCurChatCount[nCurTab]; // «ˆ¿Á √§∆√ ƒ´øÓ∆Æ
+	int &nCurChatInsert = (Channel > 0) ? m_nChannelCurChatInsert[nCurTab] : m_nCurChatInsert[nCurTab]; // «ˆ¿Á √§∆√ Insert ƒ´øÓ∆Æ
+	CTString *ArraystrChatString = (Channel > 0) ? &m_ChannelstrChatString[nCurTab][0] : &m_strChatString[nCurTab][0]; // √§∆√ ∏ÆΩ∫∆Æ
+	COLOR *ArraycolChatString = (Channel > 0) ? &m_ChannelcolChatString[nCurTab][0] : &m_colChatString[nCurTab][0];  // √§∆√ ƒ√∑Ø ∏ÆΩ∫∆Æ
+
 	// wooss 051002
-	if(g_iCountry == THAILAND){
+#if defined(G_THAI)
+	{
+		int		iPos;
 		// Get length of string
 		INDEX	nThaiLen = FindThaiLen(strChatString);
 		INDEX	nChatMax= (CHATMSG_CHAR_MAX-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
@@ -1132,16 +1712,16 @@ void CUIChatting::AddChatString( CTString &strChatString, COLOR colChatString, i
 		// If length of string is less than max char
 		if( nThaiLen <= nChatMax )
 		{
-			if( m_nCurChatCount[nCurTab] < MAX_CHAT_LINE )
-				m_nCurChatCount[nCurTab]++;
+			if( nCurChatCount < MAX_CHAT_LINE )
+				nCurChatCount++;
 
-			int	nInsertIndex = m_nCurChatInsert[nCurTab];
+			int	nInsertIndex = nCurChatInsert/*m_nCurChatInsert[nCurTab]*/;
 			if( nInsertIndex >= MAX_CHAT_LINE )
-				nInsertIndex = m_nCurChatInsert[nCurTab] = 0;
+				nInsertIndex = nCurChatInsert/*m_nCurChatInsert[nCurTab]*/ = 0;
 
-			m_strChatString[nCurTab][nInsertIndex] = strChatString;
-			m_colChatString[nCurTab][nInsertIndex] = colChatString;
-			m_nCurChatInsert[nCurTab]++;
+			ArraystrChatString[nInsertIndex] = strChatString;
+			ArraycolChatString[nInsertIndex] = colChatString;
+			nCurChatInsert++;//m_nCurChatInsert[nCurTab]++;
 		}
 		// Need multi-line
 		else
@@ -1149,7 +1729,7 @@ void CUIChatting::AddChatString( CTString &strChatString, COLOR colChatString, i
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = CHATMSG_CHAR_MAX;
 			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if(nChatMax < FindThaiLen(strChatString,0,iPos))
 					break;
@@ -1158,46 +1738,109 @@ void CUIChatting::AddChatString( CTString &strChatString, COLOR colChatString, i
 
 			// Split string
 			CTString	strTemp;
-			if( m_nCurChatCount[nCurTab] < MAX_CHAT_LINE )
-				m_nCurChatCount[nCurTab]++;
+			if( nCurChatCount/*m_nCurChatCount[nCurTab]*/ < MAX_CHAT_LINE )
+				nCurChatCount++;/*m_nCurChatCount[nCurTab]++;*/
 
-			int	nInsertIndex = m_nCurChatInsert[nCurTab];
+			int	nInsertIndex = nCurChatInsert/*m_nCurChatInsert[nCurTab]*/;
 			if( nInsertIndex >= MAX_CHAT_LINE )
-				nInsertIndex = m_nCurChatInsert[nCurTab] = 0;
-			strChatString.Split( nSplitPos, m_strChatString[nCurTab][nInsertIndex], strTemp );
-			m_colChatString[nCurTab][nInsertIndex] = colChatString;
-			m_nCurChatInsert[nCurTab]++;
+				nInsertIndex = nCurChatInsert/*m_nCurChatInsert[nCurTab]*/ = 0;
+			strChatString.Split( nSplitPos, ArraystrChatString[nInsertIndex]/*m_strChatString[nCurTab][nInsertIndex]*/, strTemp );
+			ArraycolChatString[nInsertIndex]/*m_colChatString[nCurTab][nInsertIndex]*/ = colChatString;
+			nCurChatInsert++;/*m_nCurChatInsert[nCurTab]++;*/
 
 			if( !bNotice )
 				strTemp = CTString( "  " ) + strTemp;
 
-			AddChatString( strTemp, colChatString, nCurTab, bNotice );
+			AddChatString( strTemp, colChatString, nCurTab, bNotice, Channel );
 		}
 		
-	} else{
+	}
+#else
+	{
 		// If length of string is less than max char
-		if( nLength <= m_nMaxCharCount )
+
+		BOOL bMultyLine = FALSE;
+
+#if defined(G_RUSSIA)
 		{
-			if( m_nCurChatCount[nCurTab] < MAX_CHAT_LINE )
-				m_nCurChatCount[nCurTab]++;
+			int		nSplitPos = m_nMaxCharCount;
+			//nSplitPos = strChatString.Length();
+			nSplitPos = CUIManager::getSingleton()->GetDrawPort()->CheckShowCharLength(strChatString.str_String, m_nWidth - 27);
+			if( nSplitPos == nLength )
+			{
+				if( nCurChatCount/*m_nCurChatCount[nCurTab]*/ < MAX_CHAT_LINE )
+					nCurChatCount++;/*m_nCurChatCount[nCurTab]++;*/
 
-			int	nInsertIndex = m_nCurChatInsert[nCurTab];
-			if( nInsertIndex >= MAX_CHAT_LINE )
-				nInsertIndex = m_nCurChatInsert[nCurTab] = 0;
+				int	nInsertIndex = nCurChatInsert/*m_nCurChatInsert[nCurTab]*/;
+				if( nInsertIndex >= MAX_CHAT_LINE )
+					nInsertIndex = nCurChatInsert/*m_nCurChatInsert[nCurTab]*/ = 0;
 
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
-			m_sChatInfo.strSendName[nCurTab][nInsertIndex] = m_sChatInfo.strName;
-			m_sChatInfo.colSendName[nCurTab][nInsertIndex] = m_sChatInfo.colName;
-#endif			
-			m_strChatString[nCurTab][nInsertIndex] = strChatString;
-			m_colChatString[nCurTab][nInsertIndex] = colChatString;
-			m_nCurChatInsert[nCurTab]++;
+				if (Channel > 0)
+				{
+					m_sChatInfo.strChannelSendName[nCurTab][nInsertIndex] = m_sChatInfo.strName;
+					m_sChatInfo.colChannelSendName[nCurTab][nInsertIndex] = m_sChatInfo.colName;
+				}
+				else
+				{
+					m_sChatInfo.strSendName[nCurTab][nInsertIndex] = m_sChatInfo.strName;
+					m_sChatInfo.colSendName[nCurTab][nInsertIndex] = m_sChatInfo.colName;
+				}
+
+				ArraystrChatString[nInsertIndex]/*m_strChatString[nCurTab][nInsertIndex]*/ = strChatString;
+				ArraycolChatString[nInsertIndex]/*m_colChatString[nCurTab][nInsertIndex]*/ = colChatString;
+				nCurChatInsert++;/*m_nCurChatInsert[nCurTab]++;*/
+			}
+			else
+				bMultyLine = TRUE;
 		}
+#else	//	defined(G_RUSSIA)
+		{
+			if( nLength <= m_nMaxCharCount )
+			{
+				if( nCurChatCount/*m_nCurChatCount[nCurTab]*/ < MAX_CHAT_LINE )
+					nCurChatCount++;/*m_nCurChatCount[nCurTab]++;*/
+
+				int	nInsertIndex = nCurChatInsert;/*m_nCurChatInsert[nCurTab]*/;
+				if( nInsertIndex >= MAX_CHAT_LINE )
+					nInsertIndex = nCurChatInsert/*m_nCurChatInsert[nCurTab]*/ = 0;
+
+				if (Channel > 0)
+				{
+					m_sChatInfo.strChannelSendName[nCurTab][nInsertIndex] = m_sChatInfo.strName;
+					m_sChatInfo.colChannelSendName[nCurTab][nInsertIndex] = m_sChatInfo.colName;
+				}
+				else
+				{
+					m_sChatInfo.strSendName[nCurTab][nInsertIndex] = m_sChatInfo.strName;
+					m_sChatInfo.colSendName[nCurTab][nInsertIndex] = m_sChatInfo.colName;
+				}
+
+				ArraystrChatString[nInsertIndex]/*m_strChatString[nCurTab][nInsertIndex]*/ = strChatString;
+				ArraycolChatString[nInsertIndex]/*m_colChatString[nCurTab][nInsertIndex]*/ = colChatString;
+				nCurChatInsert++;/*m_nCurChatInsert[nCurTab]++;*/
+			}
+			else
+				bMultyLine = TRUE;
+		}
+#endif	//	defined(G_RUSSIA)
 		// Need multi-line
-		else
+		if(bMultyLine)
 		{
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = m_nMaxCharCount;
+			// russia chatting bug fix. [7/23/2010 rumist]
+#if defined(G_RUSSIA )
+				nSplitPos = CUIManager::getSingleton()->GetDrawPort()->CheckShowCharLength(strChatString.str_String, m_nWidth - 27);
+
+			for( int iPos=nSplitPos; iPos >=nSplitPos-10; --iPos )
+			{
+				if( strChatString[iPos] == ' ' )
+				{
+					nSplitPos = iPos + 1;
+					break;
+				}
+			}
+#else
 			BOOL	b2ByteChar = FALSE;
 			for( int iPos = 0; iPos < nSplitPos; iPos++ )
 			{
@@ -1209,31 +1852,45 @@ void CUIChatting::AddChatString( CTString &strChatString, COLOR colChatString, i
 
 			if( b2ByteChar )
 				nSplitPos--;
-
+#endif
 			// Split string
 			CTString	strTemp;
-			if( m_nCurChatCount[nCurTab] < MAX_CHAT_LINE )
-				m_nCurChatCount[nCurTab]++;
+			if( nCurChatCount/*m_nCurChatCount[nCurTab]*/ < MAX_CHAT_LINE )
+				nCurChatCount++;/*m_nCurChatCount[nCurTab]++;*/
 
-			int	nInsertIndex = m_nCurChatInsert[nCurTab];
+			int	nInsertIndex = nCurChatInsert;/*m_nCurChatInsert[nCurTab]*/;
 			if( nInsertIndex >= MAX_CHAT_LINE )
-				nInsertIndex = m_nCurChatInsert[nCurTab] = 0;
+				nInsertIndex = nCurChatInsert/*m_nCurChatInsert[nCurTab]*/ = 0;
 
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
-			m_sChatInfo.strSendName[nCurTab][nInsertIndex] = m_sChatInfo.strName;
-			m_sChatInfo.colSendName[nCurTab][nInsertIndex] = m_sChatInfo.colName;
-#endif
-			strChatString.Split( nSplitPos, m_strChatString[nCurTab][nInsertIndex], strTemp );
-			m_colChatString[nCurTab][nInsertIndex] = colChatString;
-			m_nCurChatInsert[nCurTab]++;
+			if (Channel > 0)
+			{
+				m_sChatInfo.strChannelSendName[nCurTab][nInsertIndex] = m_sChatInfo.strName;
+				m_sChatInfo.colChannelSendName[nCurTab][nInsertIndex] = m_sChatInfo.colName;
+			}
+			else
+			{
+				m_sChatInfo.strSendName[nCurTab][nInsertIndex] = m_sChatInfo.strName;
+				m_sChatInfo.colSendName[nCurTab][nInsertIndex] = m_sChatInfo.colName;
+			}
+
+			strChatString.Split( nSplitPos, ArraystrChatString[nInsertIndex]/*m_strChatString[nCurTab][nInsertIndex]*/, strTemp );
+			ArraycolChatString[nInsertIndex]/*m_colChatString[nCurTab][nInsertIndex]*/ = colChatString;
+			nCurChatInsert++;/*m_nCurChatInsert[nCurTab]++;*/
 
 			if( !bNotice )
 				strTemp = CTString( "  " ) + strTemp;
+			
+#if defined(G_JAPAN)
+			if(bNotice)
+				strTemp = CTString( " > " ) + strTemp;
+#endif
 
-			AddChatString( strTemp, colChatString, nCurTab, bNotice );
+			AddChatString( strTemp, colChatString, nCurTab, bNotice, Channel );
 		}
 	}
+#endif
 }
+// ****************************************************************************************************************************
 
 // ----------------------------------------------------------------------------
 // Name : AddSysString()
@@ -1246,8 +1903,43 @@ void CUIChatting::AddSysString( CTString &strSysString, COLOR colSysString )
 	if( nLength <= 0 )
 		return;
 
+#if defined(G_RUSSIA)
+	{
+		INDEX iStrSub = strSysString.FindSubstr("\n");
+		if(iStrSub != -1)
+		{
+			CTString	strTemp, strTemp2;
+			strTemp = strSysString;
+			strTemp.str_String[iStrSub] = ' ';
+			// ITS#7563 AddSysString¿Ã ¿Á±Õ»£√‚µ«∏Èº≠ ≥ª∫Œ¿˚¿∏∑Œ ∂Û¿Œ¿ª πŸ≤„¡÷¥¬µ• [3/6/2012 rumist]
+			// µŒπ¯ πŸ≤„¡Ÿ « ø‰∞° æ¯¥Ÿ. ±◊∑±µ• ø©±‚º≠ ¡Ÿ¿ª √ﬂ∞°«œπ«∑Œ πÆ¡¶∞° πﬂª˝«—¥Ÿ.
+// 			if( m_nCurSysCount < MAX_SYSTEM_LINE )
+// 				m_nCurSysCount++;
+
+			int	nInsertIndex = m_nCurSysInsert;
+			if( nInsertIndex >= MAX_SYSTEM_LINE )
+				nInsertIndex = m_nCurSysInsert = 0;
+
+			strTemp.Split( iStrSub+1, strTemp, strTemp2 );
+// 			int nSplitPos = CUIManager::getSingleton()->GetDrawPort()->CheckShowCharLength(strTemp.str_String, m_nWidth - 27);
+// 			int strTempLength = strTemp.Length();
+			// ITS#7563 if(strTempLength > nSplitPos)∂Û¥¬ ¡∂∞«¿Ã « ø‰æ¯¿Ω.  [3/6/2012 rumist]
+			// Ω∫∆Æ∏µ¿ª ≥™¥≥¿∏∏È ¿ßæ∆∑° ¥Ÿ ª—∑¡¡‡æﬂ «œ¥¬∞‘ ∏¬¥Ÿ. ±◊∑±µ• ¡∂∞«¥Î∑Œ «œ∏È ªÛ¿ß Ω∫∆Æ∏µ¿∫ ª—∑¡¡ˆ¡ˆ æ ¿Ω.
+			// ∞≈¡ˆ∞∞¿∫ ƒ⁄µÂ.
+			//if(strTempLength > nSplitPos)
+			AddSysString(strTemp, colSysString);
+			AddSysString( strTemp2, colSysString );
+		
+			
+			
+			return;
+		}
+	}
+#endif	
 	// wooss 051002
-	if(g_iCountry == THAILAND){
+#if defined(G_THAI)
+	{
+		int		iPos;
 		// Get length of string
 		INDEX	nThaiLen = FindThaiLen(strSysString);
 		INDEX	nChatMax= (m_nMaxCharCount-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
@@ -1273,7 +1965,7 @@ void CUIChatting::AddSysString( CTString &strSysString, COLOR colSysString )
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = m_nMaxCharCount;
 			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if(nChatMax < FindThaiLen(strSysString,0,iPos) )
 					break;
@@ -1296,7 +1988,9 @@ void CUIChatting::AddSysString( CTString &strSysString, COLOR colSysString )
 			AddSysString( strTemp, colSysString );
 		}
 		
-	} else{
+	} 
+#else
+	{
 		// If length of string is less than max char
 		if( nLength <= m_nMaxCharCount )
 		{
@@ -1316,6 +2010,18 @@ void CUIChatting::AddSysString( CTString &strSysString, COLOR colSysString )
 		{
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = m_nMaxCharCount;
+#if defined(G_RUSSIA)
+			nSplitPos = CUIManager::getSingleton()->GetDrawPort()->CheckShowCharLength(strSysString.str_String, m_nWidth - 27);
+
+			for( int iPos=nSplitPos; iPos >= 1; --iPos )
+			{
+				if( strSysString[iPos] == ' ' )
+				{
+					nSplitPos = iPos;
+					break;
+				}
+			}
+#else
 			BOOL	b2ByteChar = FALSE;
 			for( int iPos = 0; iPos < nSplitPos; iPos++ )
 			{
@@ -1327,6 +2033,7 @@ void CUIChatting::AddSysString( CTString &strSysString, COLOR colSysString )
 
 			if( b2ByteChar )
 				nSplitPos--;
+#endif
 
 			// Split string
 			CTString	strTemp;
@@ -1344,6 +2051,7 @@ void CUIChatting::AddSysString( CTString &strSysString, COLOR colSysString )
 			AddSysString( strTemp, colSysString );
 		}
 	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -1354,7 +2062,8 @@ void CUIChatting::AddWhisperTarget( CTString &strWhisper )
 {
 	m_nCurWhisper = 0;
 
-	for( int i = 0; i < m_nWhisperCount; i++ )
+	int i;
+	for( i = 0; i < m_nWhisperCount; i++ )
 	{
 		if( strWhisper.IsEqualCaseSensitive( m_strWhisper[i] ) )
 			break;
@@ -1374,13 +2083,13 @@ void CUIChatting::AddWhisperTarget( CTString &strWhisper )
 	m_rcWhisper.Top = m_rcWhisper.Bottom - m_nWhisperCount * m_nChatLineHeight - 7; 
 }
 
-// [KH_070423] Ï∂îÍ∞Ä
+// [KH_070423] √ﬂ∞°
 void CUIChatting::OpenAndSetString(CTString strIn)
 {
 	m_ebChatInput.SetString(strIn.str_String);
 	m_ebChatInput.SetCursorIndex(strIn.Length());	
 	m_ebChatInput.SetFocus( TRUE );
-	_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_CHATTING, TRUE );
 }
 
 // ----------------------------------------------------------------------------
@@ -1400,7 +2109,7 @@ WMSG_RESULT CUIChatting::KeyMessage( MSG *pMsg )
 			if( !m_ebChatInput.IsFocused() )
 			{
 				m_ebChatInput.SetFocus( TRUE );
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_CHATTING, TRUE );
 
 				return WMSG_SUCCESS;
 			}
@@ -1500,12 +2209,18 @@ WMSG_RESULT CUIChatting::KeyMessage( MSG *pMsg )
 			if( !m_ebChatInput.IsFocused() )
 			{
 				m_ebChatInput.SetFocus( TRUE );
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_CHATTING, TRUE );
 			}
 
 			if( m_ebChatInput.KeyMessage( pMsg ) == WMSG_COMMAND )
+			{
 				SendChatMessage( m_ebChatInput.GetString() );
-
+#if defined(G_JAPAN)
+				{
+					m_ebChatInput.SetFocus( FALSE );
+				}
+#endif
+			}
 			return WMSG_SUCCESS;
 		}
 		else if( m_ebChatInput.KeyMessage( pMsg ) != WMSG_FAIL )
@@ -1597,6 +2312,29 @@ WMSG_RESULT CUIChatting::KeyMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUIChatting::CharMessage( MSG *pMsg )
 {
+#ifdef	IMPROV1107_NOTICESYSTEM
+	if ( _pNetwork->m_ubGMLevel >= 1 )
+	{	// /echo ? ... - ...∏ﬁºº¡ˆ 100 byte ¡¶«—
+		char*	pcChatInput		= m_ebChatInput.GetString();
+		if(pcChatInput && strlen(pcChatInput) > 0)
+		{
+			static char	strInput[255 + 1]	= { 0, };
+			strncpy(strInput, pcChatInput, 255);
+
+			char*		pcCmdToken			= strtok(strInput, " ");
+			if(pcCmdToken && (stricmp(pcCmdToken, "/echo") == 0))
+			{	// /echo ? <= /echo + ? ¥¬ ¡¶ø‹«œ∞Ì ±Ê¿Ã∏¶ √º≈©
+				pcCmdToken	= strtok(NULL, " ");
+				if(pcCmdToken)
+				{
+					char*	pcMessageToken	= strtok(NULL, "");
+					if(pcMessageToken && (strlen(pcMessageToken) >= CHATMSG_CMDECHO_LENGTH))
+						return WMSG_FAIL;
+				}
+			}
+		}
+	}
+#endif	// #ifdef	IMPROV1107_NOTICESYSTEM
 	if( m_ebChatInput.CharMessage( pMsg ) != WMSG_FAIL )
 	{
 		if( m_bShowWhisperHistory )
@@ -1627,12 +2365,38 @@ WMSG_RESULT CUIChatting::CharMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 WMSG_RESULT	CUIChatting::IMEMessage( MSG *pMsg )
 {
+#ifdef	IMPROV1107_NOTICESYSTEM
+	if ( _pNetwork->m_ubGMLevel >= 1 )
+	{	// /echo ? ... - ...∏ﬁºº¡ˆ 100 byte ¡¶«—
+		char*	pcChatInput		= m_ebChatInput.GetString();
+		if(pcChatInput && strlen(pcChatInput) > 0)
+		{
+			static char	strInput[255 + 1]	= { 0, };
+			strncpy(strInput, pcChatInput, 255);
+
+			char*		pcCmdToken			= strtok(strInput, " ");
+			if(pcCmdToken && (stricmp(pcCmdToken, "/echo") == 0))
+			{	// /echo ? <= /echo + ? ¥¬ ¡¶ø‹«œ∞Ì ±Ê¿Ã∏¶ √º≈©
+				pcCmdToken	= strtok(NULL, " ");
+				if(pcCmdToken)
+				{
+					char*	pcMessageToken	= strtok(NULL, "");
+					if(pcMessageToken && (strlen(pcMessageToken) >= CHATMSG_CMDECHO_LENGTH - 1)
+						&& (pMsg->message >= WM_IME_STARTCOMPOSITION)
+						&& (pMsg->message >= WM_IME_ENDCOMPOSITION))
+						return WMSG_FAIL;
+				}
+			}
+		}
+	}
+#endif	// #ifdef	IMPROV1107_NOTICESYSTEM
+
 	if( m_bShowWhisperHistory )
 		m_bShowWhisperHistory = FALSE;
 
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11. 15) : return Í∞í Ï°∞Ï†àÏùÑ ÏúÑÌï¥ Î°úÏßÅ Î≥ÄÍ≤Ω
+	// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11. 15) : return ∞™ ¡∂¿˝¿ª ¿ß«ÿ ∑Œ¡˜ ∫Ø∞Ê
 	return m_ebChatInput.IMEMessage( pMsg );
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù 
+	// ¿Ã±‚»Ø ºˆ¡§ ≥° 
 }
 
 // ----------------------------------------------------------------------------
@@ -1644,6 +2408,7 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 	WMSG_RESULT	wmsgResult;
 
 	static BOOL	bTopFrameClick = FALSE;
+	static BOOL bSysFrameClick = FALSE;
 	static int	nHeightStretch = 0;			// Stretched height of top frame
 	static BOOL	bInOptionPopup = FALSE;		// If mouse is in option popup or not
 
@@ -1656,20 +2421,26 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 	{
 	case WM_MOUSEMOVE:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// Popup of option
 			if( m_bShowOption && IsInsideRect( nX, nY, m_rcOption ) )
 			{
-				_pUIMgr->SetMouseCursorInsideUIs();
+				pUIManager->SetMouseCursorInsideUIs();
 				bInOptionPopup = TRUE;
 
 				return WMSG_SUCCESS;
 			}
 			else
 			{
+				m_ChannelModeTab_btn[0].SetMouseOver(FALSE);
+				m_ChannelModeTab_btn[1].SetMouseOver(FALSE);
+				m_bActiveUserNotice		= FALSE;
+
 				// Close option popup
 				if( bInOptionPopup )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs();
+					pUIManager->SetMouseCursorInsideUIs();
 					bInOptionPopup = FALSE;
 					m_bShowOption = FALSE;
 
@@ -1678,61 +2449,58 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 				// Edit box
 				else if( m_ebChatInput.IsInside( nX, nY ) )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs();
+					pUIManager->SetMouseCursorInsideUIs();
 
 					return WMSG_SUCCESS;
 				}
 				// Top frame moving
-				else if( bTopFrameClick && pMsg->wParam & MK_LBUTTON )
+				else if( (bTopFrameClick || bSysFrameClick) && pMsg->wParam & MK_LBUTTON )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
+					pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
 
-					int	ndLineCount;
 					int	ndY = nY - nOldY;
 					nOldY = nY;
 
 					nHeightStretch -= ndY;
-					if( nHeightStretch > 0 )
+
+					if (bTopFrameClick)
 					{
-						if( nHeightStretch >= m_nChatLineHeight && m_nCurChatShowLine < m_nMaxChatShowLine )
-						{
-							ndLineCount = nHeightStretch / m_nChatLineHeight;
-							if( m_nCurChatShowLine + ndLineCount > m_nMaxChatShowLine )
-								ndLineCount = m_nMaxChatShowLine - m_nCurChatShowLine;
-
-							nHeightStretch -= ndLineCount * m_nChatLineHeight;
-							ChangeChattingBoxHeight( ndLineCount );
-						}
+						TopFrameMoving(nHeightStretch, m_nCurChatShowLine);
 					}
-					else
+					else if (bSysFrameClick)
 					{
-						if( nHeightStretch <= -m_nChatLineHeight && m_nCurChatShowLine > MIN_SHOW_CHATLINE )
-						{
-							ndLineCount = nHeightStretch / m_nChatLineHeight;
-							if( m_nCurChatShowLine + ndLineCount < MIN_SHOW_CHATLINE )
-								ndLineCount = MIN_SHOW_CHATLINE - m_nCurChatShowLine;
-
-							nHeightStretch -= ndLineCount * m_nChatLineHeight;
-							ChangeChattingBoxHeight( ndLineCount );
-						}
+						TopFrameMoving(nHeightStretch, m_nCurSysShowLine, TRUE);
 					}
-
 					return WMSG_SUCCESS;
 				}
 				// Top frame
-				else if( IsInsideRect( nX, nY, m_rcResizeFrame ) && !_pUIMgr->IsInsideUpperUIs( UI_MAP, nX, nY ) )
+				else if( IsInsideRect( nX, nY, m_rcResizeFrame ) && !pUIManager->IsInsideUpperUIs( UI_CHATTING, nX, nY ) )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs( UMCT_SIZE );
+					pUIManager->SetMouseCursorInsideUIs( UMCT_SIZE );
 
+					return WMSG_SUCCESS;
+				}
+				else if (IsInsideRect(nX, nY, m_rcSysResizeFrame) && !pUIManager->IsInsideUpperUIs(UI_CHATTING, nX, nY))
+				{
+					pUIManager->SetMouseCursorInsideUIs(UMCT_SIZE);
 					return WMSG_SUCCESS;
 				}
 				// Scroll bar of chatting message
 				else if( ( wmsgResult = m_sbChatScrollBar.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs();
+					pUIManager->SetMouseCursorInsideUIs();
 
 					if( wmsgResult == WMSG_COMMAND )
-						m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+					{
+						if (m_bChannelMode)
+						{
+							m_nChannelFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+						}
+						else
+						{
+							m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+						}
+					}
 
 					return WMSG_SUCCESS;
 				}
@@ -1740,7 +2508,7 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 				else if( m_bChatOption[m_nCurSelTab][CHATOPT_SYSTEM] &&
 					( wmsgResult = m_sbSysScrollBar.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs();
+					pUIManager->SetMouseCursorInsideUIs();
 
 					if( wmsgResult == WMSG_COMMAND )
 						m_nFirstSysRow = m_sbSysScrollBar.GetScrollPos();
@@ -1750,9 +2518,29 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 				// Option button
 				else if( m_btnOption.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs();
+					pUIManager->SetMouseCursorInsideUIs();
 
 					return WMSG_SUCCESS;
+				}
+#ifdef	IMPROV1107_NOTICESYSTEM
+				else if(IsInsideRect( nX, nY, m_rcUserNoticeActiveArea ))
+				{
+					m_bActiveUserNotice		= TRUE;
+
+					return WMSG_SUCCESS;
+				}
+#endif
+				if (m_nCurSelTab == CHATMSG_NORMAL || m_nCurSelTab == CHATMSG_TRADE)
+				{
+					if (m_ChannelModeTab_btn[0].IsInside(nX, nY))
+					{
+						m_ChannelModeTab_btn[0].SetMouseOver(TRUE);
+					}
+				}
+
+				if (m_ChannelModeTab_btn[1].IsInside(nX, nY))
+				{
+					m_ChannelModeTab_btn[1].SetMouseOver(TRUE);
 				}
 			}
 		}
@@ -1760,22 +2548,34 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONDOWN:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
 			// Close whisper history popup
 			m_bShowWhisperHistory = FALSE;
+			m_bClickUserNotice	= FALSE;
 
 			// Chatting input box
 			if( m_ebChatInput.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				pUIManager->RearrangeOrder( UI_CHATTING, TRUE );
 				return WMSG_SUCCESS;
 			}
 			// Scroll bar of chatting message
 			else if( ( wmsgResult = m_sbChatScrollBar.MouseMessage( pMsg ) ) != WMSG_FAIL )
 			{
 				if( wmsgResult == WMSG_COMMAND )
-					m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+				{
+					if (m_bChannelMode)
+					{
+						m_nChannelFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+					}
+					else
+					{
+						m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+					}
+				}
 
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				pUIManager->RearrangeOrder( UI_CHATTING, TRUE );
 				return WMSG_SUCCESS;
 			}
 			// Scroll bar of system message
@@ -1785,7 +2585,7 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 				if( wmsgResult == WMSG_COMMAND )
 					m_nFirstSysRow = m_sbSysScrollBar.GetScrollPos();
 
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				pUIManager->RearrangeOrder( UI_CHATTING, TRUE );
 				return WMSG_SUCCESS;
 			}
 			// Top frame
@@ -1795,7 +2595,15 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 				nHeightStretch = 0;
 				nOldY = nY;
 
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				pUIManager->RearrangeOrder( UI_CHATTING, TRUE );
+				return WMSG_SUCCESS;
+			}
+			else if (IsInsideRect(nX, nY, m_rcSysResizeFrame))
+			{
+				bSysFrameClick = TRUE;
+				nHeightStretch = 0;
+				nOldY = nY;
+				pUIManager->RearrangeOrder( UI_CHATTING, TRUE );
 				return WMSG_SUCCESS;
 			}
 			// Tab region
@@ -1809,12 +2617,65 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 						{
 							m_nOldSelTab = m_nCurSelTab;
 							m_nCurSelTab = i;
+							m_sbChatScrollBar.SetCurItemCount( m_nCurChatCount[i] );
 							m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[i] );
+
+							if (i == CHATTAB_PARTY || i == CHATTAB_GUILD)
+							{
+								// Channel mode¥¬ π´¡∂∞« FALSE;
+								m_ChannelModeTab_btn[1].SetBtnState(UBS_ON);
+								m_ChannelModeTab_btn[0].SetBtnState(UBS_IDLE);
+								m_bChannelMode = FALSE;
+							}
+							else
+							{
+								if (m_bChannelMode)
+								{
+									RenderConditionsysMsg(ChattingMsgType(m_nCurSelTab)); // Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ∑Œ ªÁøÎ ¡∂∞« √‚∑¬
+								}
+							}
+
+							int	iChannel	= m_bChannelMode == FALSE ? 1 : 0;
+							for(int iMsgType = 0; iMsgType <= CHATOPT_SHOUT; iMsgType++)	// CHATOPT_SHOUT ±Ó¡ˆ √º≈©
+							{	// ∏µÁ √§∆√≈«¿« ∞∞¿∫ ∫∏ø©¡÷±‚ ø…º«¿Ã ¿÷¥¬ ∞ÊøÏ ∏µŒ ¿–¿Ω¿∏∑Œ ∏∂≈∑
+								if(m_bChatOption[i][iMsgType])
+									m_bRecvMessage[iChannel][iMsgType]	= FALSE;
+							}
+							// channel chatting  bug fix [10/4/2011 rumist]
+
+							if(m_bChannelMode && m_bChatOption[i][CHATOPT_NORMAL])
+								m_bRecvMessage[0][CHATMSG_CHANNEL_LEVEL]	= FALSE;		// √§≥Œ √§∆√
+							if(m_bChannelMode && m_bChatOption[i][CHATOPT_TRADE])
+								m_bRecvMessage[0][CHATMSG_CHANNEL_TRADE]	= FALSE;		// √§≥Œ √§∆√
+
+							if(!m_bChannelMode)
+							{
+								// √§≥Œ √§∆√ø° √§∆√¿Ã ≥≤æ∆¿÷¥¬¡ˆ ø©∫Œ √º≈©
+								for(int iMsgType = 0; iMsgType <= CHATMSG_TOTAL; iMsgType++)
+								{
+									if(m_bRecvMessage[0][iMsgType])
+									{
+										m_bRevChannelMsg	= TRUE;
+										break;
+									}
+								}
+							}
 
 							for( int j = 0; j < CHATOPT_TOTAL; j++ )
 							{
 								m_cbtnChatOption[j].SetCheck( m_bChatOption[i][j] );
 								m_cbtnChatOption[j].SetEnable( j != m_nCurSelTab );
+
+								// [091022: selo] ¿¸√º ≈«ø°º≠¥¬ ∏µÁ ø…º«¿Ã Enable ªÛ≈¬ø©æﬂ «—¥Ÿ.
+								if(0 == m_nCurSelTab)
+								{
+#if !defined(G_EUROPE2)
+									if (i > 0) // ¿¸√º ≈«ø°º≠¥¬ ¿œπ› √§∆√¿∫ »∞º∫»≠ «œ¡ˆ æ ¥¬¥Ÿ.
+									{
+										m_cbtnChatOption[i].SetEnable(TRUE);
+									}
+#endif
+								}
 							}
 
 							InsertChatPrefix( ChattingMsgType( i ) );
@@ -1823,15 +2684,89 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 					}
 				}
 
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				pUIManager->RearrangeOrder( UI_CHATTING, TRUE );
 				return WMSG_SUCCESS;
 			}
+#ifdef	IMPROV1107_NOTICESYSTEM
+			else if(m_bActiveUserNotice && m_bShowUserNotice && IsInsideRect( nX, nY, m_rcUserNoticeActiveArea ))
+			{
+				m_bClickUserNotice		= TRUE;
+
+				return WMSG_SUCCESS;
+			}
+#endif
 			// Option button
 			else if( m_btnOption.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				pUIManager->RearrangeOrder( UI_CHATTING, TRUE );
 				return WMSG_SUCCESS;
 			}
+			else if (!m_bShowOption && (m_nCurSelTab == CHATMSG_NORMAL || m_nCurSelTab == CHATMSG_TRADE))
+			{
+				wmsgResult = WMSG_FAIL;
+
+				if (m_ChannelModeTab_btn[0].MouseMessage(pMsg) != WMSG_FAIL) // channel mode
+				{
+					if (m_bChannelMode == FALSE)
+					{
+						RenderConditionsysMsg(ChattingMsgType(m_nCurSelTab)); // Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ∑Œ ªÁøÎ ¡∂∞« √‚∑¬
+					}
+					m_ChannelModeTab_btn[0].SetBtnState(UBS_ON);
+					m_ChannelModeTab_btn[1].SetBtnState(UBS_IDLE);
+					m_bChannelMode = TRUE;
+					m_sbChatScrollBar.SetCurItemCount( m_nChannelCurChatCount[m_nCurSelTab] );
+					m_sbChatScrollBar.SetScrollPos( m_nChannelFirstChatRow[m_nCurSelTab] );
+					wmsgResult = WMSG_SUCCESS;
+
+					if (m_bRevChannelMsg)
+					{
+						m_bRevChannelMsg = FALSE;
+					}
+
+					if(m_bChannelMode && m_bChatOption[m_nCurSelTab][CHATOPT_NORMAL])
+						m_bRecvMessage[0][CHATMSG_CHANNEL_LEVEL]	= FALSE;		// √§≥Œ √§∆√
+					if(m_bChannelMode && m_bChatOption[m_nCurSelTab][CHATOPT_TRADE])
+						m_bRecvMessage[0][CHATMSG_CHANNEL_TRADE]	= FALSE;		// √§≥Œ √§∆√
+
+					InsertChatPrefix(ChattingMsgType(m_nCurSelTab));
+				}
+				else if (m_ChannelModeTab_btn[1].MouseMessage(pMsg) != WMSG_FAIL) // normal mode
+				{
+					m_ChannelModeTab_btn[1].SetBtnState(UBS_ON);
+					m_ChannelModeTab_btn[0].SetBtnState(UBS_IDLE);
+					m_bChannelMode = FALSE;
+					m_sbChatScrollBar.SetCurItemCount( m_nCurChatCount[m_nCurSelTab] );
+					m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
+					wmsgResult = WMSG_SUCCESS;
+
+					if(!m_bChannelMode)
+					{
+						int	iMsgType;
+						for( iMsgType = 0; iMsgType <= CHATOPT_SHOUT; iMsgType++)	// CHATOPT_SHOUT ±Ó¡ˆ √º≈©
+						{	// ∏µÁ √§∆√≈«¿« ∞∞¿∫ ∫∏ø©¡÷±‚ ø…º«¿Ã ¿÷¥¬ ∞ÊøÏ ∏µŒ ¿–¿Ω¿∏∑Œ ∏∂≈∑
+							if(m_bChatOption[m_nCurSelTab][iMsgType])
+								m_bRecvMessage[1][iMsgType]	= FALSE;
+						}
+						// √§≥Œ √§∆√ø° √§∆√¿Ã ≥≤æ∆¿÷¥¬¡ˆ ø©∫Œ √º≈©
+						for( iMsgType = 0; iMsgType <= CHATMSG_TOTAL; iMsgType++)
+						{
+							if(m_bRecvMessage[0][iMsgType])
+							{
+								m_bRevChannelMsg	= TRUE;
+								break;
+							}
+						}
+					}
+
+					InsertChatPrefix(ChattingMsgType(m_nCurSelTab));
+				}
+
+				if (wmsgResult != WMSG_FAIL)
+				{
+					return wmsgResult;
+				}
+			}
+
 			// Option check buttons
 			else if( m_bShowOption && IsInsideRect( nX, nY, m_rcOption ) )
 			{
@@ -1843,17 +2778,14 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 						
 						if( i == CHATOPT_SYSTEM )
 						{
-							if( m_bChatOption[m_nCurSelTab][i] )
-								m_rcResizeFrame.SetRect( 0, m_rcSystem.Top, m_nWidth, m_rcSystem.Top + 10 );
-							else
-								m_rcResizeFrame.SetRect( 0, m_rcChatting.Top, m_nWidth, m_rcChatting.Top + 10 );
+							m_rcResizeFrame.SetRect( 0, m_rcChatting.Top, m_nWidth, m_rcChatting.Top + 10 );
 						}
 
 						break;
 					}
 				}
 
-				_pUIMgr->RearrangeOrder( UI_CHATTING, TRUE );
+				pUIManager->RearrangeOrder( UI_CHATTING, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -1861,12 +2793,30 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 
 	case WM_LBUTTONUP:
 		{
+			m_bClickUserNotice	= FALSE;
+
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (CUIManager::getSingleton()->GetDragIcon() == NULL)
 			{
 				// Top frame
 				bTopFrameClick = FALSE;
+				bSysFrameClick = FALSE;
+#ifdef	IMPROV1107_NOTICESYSTEM
+				// ∆˜ƒøΩ∫øÕ ªÛ∞¸æ¯¿Ã ¿€µø
+				if(m_bActiveUserNotice && m_bShowUserNotice && IsInsideRect( nX, nY, m_rcUserNoticeActiveArea ))
+				{
+					CTString		strUserNotice;
 
+					strUserNotice.PrintF("!%s ", m_strUserNoticeOwner);
+
+					m_ebChatInput.ResetString();
+					m_ebChatInput.SetString(strUserNotice.str_String);
+					m_ebChatInput.SetFocus(TRUE);
+					m_ebChatInput.SetCursorIndex(strlen(m_ebChatInput.GetString()));
+
+					return WMSG_SUCCESS;
+				}
+#endif
 				// If chatting box isn't focused
 				if( !IsFocused() )
 					return WMSG_FAIL;
@@ -1889,6 +2839,14 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 					if( wmsgResult == WMSG_COMMAND )
 						m_bShowOption = !m_bShowOption;
 
+					return WMSG_SUCCESS;
+				}
+				else if (!m_bShowOption && m_ChannelModeTab_btn[0].IsInside(nX, nY))
+				{
+					return WMSG_SUCCESS;
+				}
+				else if (!m_bShowOption && m_ChannelModeTab_btn[1].IsInside(nX, nY))
+				{
 					return WMSG_SUCCESS;
 				}
 			}
@@ -1916,7 +2874,16 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 			else if( ( wmsgResult = m_sbChatScrollBar.MouseMessage( pMsg ) ) != WMSG_FAIL )
 			{
 				if( wmsgResult == WMSG_COMMAND )
-					m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+				{
+					if (m_bChannelMode)
+					{
+						m_nChannelFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+					}
+					else
+					{
+						m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+					}
+				}
 
 				return WMSG_SUCCESS;
 			}
@@ -1929,6 +2896,10 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 
 				return WMSG_SUCCESS;
 			}
+			else if (m_ChannelModeTab_btn[0].IsInside(nX, nY) || m_ChannelModeTab_btn[1].IsInside(nX, nY))
+			{
+				return WMSG_SUCCESS;
+			}
 		}
 		break;
 
@@ -1937,7 +2908,15 @@ WMSG_RESULT CUIChatting::MouseMessage( MSG *pMsg )
 			// Scroll bar of chatting message
 			if( m_sbChatScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-				m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+				if (m_bChannelMode)
+				{
+					m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+				}
+				else
+				{
+					m_nFirstChatRow[m_nCurSelTab] = m_sbChatScrollBar.GetScrollPos();
+				}
+
 				return WMSG_SUCCESS;
 			}
 			// Scroll bar of system message
@@ -1962,9 +2941,9 @@ void CUIChatting::InsertChatPrefix( ChattingMsgType cmtType )
 {
 
 #ifdef GER_MODIFY_PARTYCAHT_ABRIDGE_KEY_NA_20081224 
- static const char cPrefix[5] = { '!', '?', '#', '$', '%' };
+	static const char cPrefix[7] = { '!', '?', '#', '$', '%', '&', '*' };
 #else
- static const char cPrefix[5] = { '!', '@', '#', '$', '%' };
+	static const char cPrefix[7] = { '!', '@', '#', '$', '%', '&', '*' };
 #endif
 
 	char				cFirstChar = m_ebChatInput.GetString()[0];
@@ -1974,10 +2953,25 @@ void CUIChatting::InsertChatPrefix( ChattingMsgType cmtType )
 	{
 	case CHATMSG_NORMAL:
 	case CHATMSG_RANKER:
-		if( nLength == 1 && ( cFirstChar == cPrefix[0] || cFirstChar == cPrefix[1] ||
-			cFirstChar == cPrefix[2] || cFirstChar == cPrefix[3] || cFirstChar == cPrefix[4] ) )
+		if (m_bChannelMode)
 		{
-			m_ebChatInput.DeleteChar( 0 );
+			if (cFirstChar != cPrefix[5])
+			{
+				if (cFirstChar != cPrefix[0] || nLength == 1)
+				{
+					m_ebChatInput.DeleteChar(0);
+					m_ebChatInput.InsertChar(0, cPrefix[5]);
+				}
+			}
+		}
+		else
+		{
+			if( nLength == 1 && ( cFirstChar == cPrefix[0] || cFirstChar == cPrefix[1] ||
+				cFirstChar == cPrefix[2] || cFirstChar == cPrefix[3] || cFirstChar == cPrefix[4] || cFirstChar == cPrefix[5] ||
+				cFirstChar == cPrefix[6]) )
+			{
+				m_ebChatInput.DeleteChar( 0 );
+			}
 		}
 		break;
 
@@ -1986,10 +2980,9 @@ void CUIChatting::InsertChatPrefix( ChattingMsgType cmtType )
 		{
 			if( cFirstChar != cPrefix[0] || nLength == 1 )
 			{
-				if( cFirstChar == cPrefix[0] || cFirstChar == cPrefix[2] || cFirstChar == cPrefix[3] ||
-					cFirstChar == cPrefix[4] )
-					m_ebChatInput.DeleteChar( 0 );
-
+				//if( cFirstChar == cPrefix[0] || cFirstChar == cPrefix[2] || cFirstChar == cPrefix[3] ||
+				//	cFirstChar == cPrefix[4] )
+				m_ebChatInput.DeleteChar( 0 );
 				m_ebChatInput.InsertChar( 0, cPrefix[1] );
 			}
 		}
@@ -2000,25 +2993,37 @@ void CUIChatting::InsertChatPrefix( ChattingMsgType cmtType )
 		{
 			if( cFirstChar != cPrefix[0] || nLength == 1 )
 			{
-				if( cFirstChar == cPrefix[0] || cFirstChar == cPrefix[1] || cFirstChar == cPrefix[3] ||
-					cFirstChar == cPrefix[4] )
-					m_ebChatInput.DeleteChar( 0 );
-
+				//if( cFirstChar == cPrefix[0] || cFirstChar == cPrefix[1] || cFirstChar == cPrefix[3] ||
+				//	cFirstChar == cPrefix[4] )
+				m_ebChatInput.DeleteChar( 0 );
 				m_ebChatInput.InsertChar( 0, cPrefix[2] );
 			}
 		}
 		break;
 
 	case CHATMSG_TRADE:
-		if( cFirstChar != cPrefix[3] )
+		if (m_bChannelMode)
 		{
-			if( cFirstChar != cPrefix[0] || nLength == 1 )
+			if (cFirstChar != cPrefix[6])
 			{
-				if( cFirstChar == cPrefix[0] || cFirstChar == cPrefix[1] || cFirstChar == cPrefix[2] ||
-					cFirstChar == cPrefix[4] )
+				if (cFirstChar != cPrefix[0] || nLength == 1)
+				{
+					m_ebChatInput.DeleteChar(0);
+					m_ebChatInput.InsertChar(0, cPrefix[6]);
+				}
+			}
+		}
+		else
+		{
+			if( cFirstChar != cPrefix[3] )
+			{
+				if( cFirstChar != cPrefix[0] || nLength == 1 )
+				{
+					//if( cFirstChar == cPrefix[0] || cFirstChar == cPrefix[1] || cFirstChar == cPrefix[2] ||
+					//	cFirstChar == cPrefix[4] )
 					m_ebChatInput.DeleteChar( 0 );
-
-				m_ebChatInput.InsertChar( 0, cPrefix[3] );
+					m_ebChatInput.InsertChar( 0, cPrefix[3] );
+				}
 			}
 		}
 		break;
@@ -2034,22 +3039,28 @@ void CUIChatting::ProcessParty( char *pcPartyString )
 	// Extract sub command name from string
 	int	nLength = strlen( pcPartyString );
 	CTString	strCommand, strOther;
-	for( int iChar = 0; iChar < nLength; iChar++ )
+	int iChar;
+	for( iChar = 0; iChar < nLength; iChar++ )
 	{
 		if( pcPartyString[iChar] == ' ' )
 			break;
 	}
 
+	Party* pParty = GAMEDATAMGR()->GetPartyInfo();
+
+	if (pParty == NULL)
+		return;
+
 	strOther = &pcPartyString[iChar + 1];
 	pcPartyString[iChar] = NULL;
 	strCommand = &pcPartyString[0];
 
-	if( !strcmp( strCommand, _S( 124, "Ïã†Ï≤≠" ) ) )
-		_pUIMgr->GetParty()->SendPartyInvite( 0, strOther );
-	else if( !strcmp( strCommand, _S( 125, "ÌÉàÌá¥" ) ) )
-		_pUIMgr->GetParty()->SendPartyQuit();
-	else if( !strcmp( strCommand, _S( 126, "Í∞ïÌá¥" ) ) )
-		_pUIMgr->GetParty()->SendPartyKick( strOther );
+	if( !strcmp( strCommand, _S( 124, "Ω≈√ª" ) ) )
+		pParty->SendPartyInvite( 0, strOther );
+	else if( !strcmp( strCommand, _S( 125, "≈ª≈" ) ) )
+		pParty->SendPartyQuit();
+	else if( !strcmp( strCommand, _S( 126, "∞≠≈" ) ) )
+		pParty->SendPartyKick( strOther );
 }
 
 
@@ -2095,6 +3106,7 @@ void CUIChatting::SendChatMessage( char *pcChatString, BOOL bLord )
 
 	// Find chatting message type
 	UBYTE	ubType = CHATMSG_NORMAL;	
+	int nChatType = -1;
 
 	switch( pcChatString[0] )
 	{
@@ -2103,7 +3115,17 @@ void CUIChatting::SendChatMessage( char *pcChatString, BOOL bLord )
 #else
 	case '@':
 #endif
-		ubType = CHATMSG_PARTY;
+		// [sora] ø¯¡§¥Î √§∆√ √ﬂ∞°
+		if(CUIManager::getSingleton()->IsCSFlagOn(CSF_EXPEDITION))
+		{
+			//ø¯¡§¥Î ≈∏¿‘
+			ubType = CHATMSG_EXPEDITION;
+			nChatType = CheckExpeditionChatGroup(pcChatString);
+		}
+		else
+		{
+			ubType = CHATMSG_PARTY;
+		}
 		break;
 	
 	case '#':
@@ -2130,6 +3152,12 @@ void CUIChatting::SendChatMessage( char *pcChatString, BOOL bLord )
 	case '^':
 		ubType = CHATMSG_GMTOOL;
 		break;
+	case '&':
+		ubType = CHATMSG_CHANNEL_LEVEL;
+		break;
+	case '*':
+		ubType = CHATMSG_CHANNEL_TRADE;
+		break;
 	}
 
 	if( bLord ) ubType = CHATMSG_LORD;	
@@ -2142,7 +3170,8 @@ void CUIChatting::SendChatMessage( char *pcChatString, BOOL bLord )
 		nStart = 1;
 
 	int	nLength = strlen( pcChatString );
-	for( int iChar = nStart; iChar < nLength; iChar++ )
+	int iChar;
+	for( iChar = nStart; iChar < nLength; iChar++ )
 	{
 		if( pcChatString[iChar] != ' ' )
 			break;
@@ -2181,30 +3210,46 @@ void CUIChatting::SendChatMessage( char *pcChatString, BOOL bLord )
 	}
 	else if( ubType == CHATMSG_NORMAL || ubType == CHATMSG_LORD || ubType == CHATMSG_RANKER )
 		strChatString = &pcChatString[0];
+	else if( ubType == CHATMSG_EXPEDITION )
+	{
+		if(nChatType == -1)	// [sora] ø¯¡§¥Î ¿¸√º √§∆√¿« ∞ÊøÏ
+		{
+			strChatString = &pcChatString[1];
+		}
+		else				// [sora] ±◊∑Ï √§∆√¿« ∞ÊøÏ @µ⁄¿« º˝¿⁄∞° ±◊∑Ï¿Ãπ«∑Œ 3π¯¬∞ πÆ¿⁄∫Œ≈Õ Ω√¿€
+		{
+			strChatString = &pcChatString[2];
+		}
+	}
 	else
 		strChatString = &pcChatString[1];
 
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11.29) : Î∂àÎüâ Îã®Ïñ¥ ÌïÑÌÑ∞ÎßÅ 
+	// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11.29) : ∫“∑Æ ¥‹æÓ « ≈Õ∏µ 
 	char szBuffer[256];
 	int nIndexBuffer[32];
 	strcpy ( szBuffer, strChatString.str_String );
 
 	// Date : 2005-01-10,   By Lee Ki-hwan
-	// Ïö¥ÏòÅÏûê Ïù∏ Í≤ΩÏö∞Ïóê ÌïÑÌÑ∞ÎßÅ ÏïàÌï®
+	// øÓøµ¿⁄ ¿Œ ∞ÊøÏø° « ≈Õ∏µ æ»«‘
 	if( _pNetwork->m_ubGMLevel > 1 )
 	{
-		// Date : 2005-04-08(Ïò§ÌõÑ 1:20:42), By Lee Ki-hwan
-		/* commnet : Ï§ëÍµ≠ Local GMÏùò Í≤ΩÏö∞ Ï≤¥ÌåÖ ÏÉâ Î≥ÄÍ≤Ω ÏöîÏ≤≠Ïóê ÏùòÌï¥ ÏàòÏ†ï */
+		// Date : 2005-04-08(ø¿»ƒ 1:20:42), By Lee Ki-hwan
+		/* commnet : ¡ﬂ±π Local GM¿« ∞ÊøÏ √º∆√ ªˆ ∫Ø∞Ê ø‰√ªø° ¿««ÿ ºˆ¡§ */
+		// [2012/04/20 : Sora]  ITS 7999 ≈¬±π GM∆˘∆Æ ªˆªÛ ø‰√ª ¿˚øÎ
+#if defined(G_THAI)
+		if( ubType == CHATMSG_NORMAL || ubType == CHATMSG_RANKER )
+#else 
 		if( (g_iCountry == CHINA) && (ubType == CHATMSG_NORMAL || ubType == CHATMSG_RANKER) )
+#endif
 		{
 			ubType = CHATMSG_GM;
 		}
 
-		_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString );
+		_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString, nChatType );
 	}
 	else
 	{
-//[ttos_2009_1_23]:Ï±ÑÌåÖ Í∏àÏßÄ
+//[ttos_2009_1_23]:√§∆√ ±›¡ˆ
 #ifdef CHATTING_BAN
 		if (_pNetwork->MyCharacterInfo.ChatFlag != 0 )
 		{
@@ -2217,7 +3262,7 @@ void CUIChatting::SendChatMessage( char *pcChatString, BOOL bLord )
 				(ubType == CHATMSG_SHOUT && _pNetwork->MyCharacterInfo.ChatFlag&CHAT_FLAG_NO_SHOUT)
 				)
 			{
-				AddSysMessage(_S(4320,"Ï±ÑÌåÖÍ∏∞Îä•Ïù¥ Í∏àÏßÄÎêòÏñ¥ ÎåÄÌôîÎ•º Ìï† Ïàò ÏóÜÎäî ÏÉÅÌÉúÏûÖÎãàÎã§. "));
+				AddSysMessage(_S(4320,"√§∆√±‚¥…¿Ã ±›¡ˆµ«æÓ ¥Î»≠∏¶ «“ ºˆ æ¯¥¬ ªÛ≈¬¿‘¥œ¥Ÿ. "));
 				m_ebChatInput.ResetString();
 				InsertChatPrefix( ChattingMsgType( m_nCurSelTab ) );
 				return;
@@ -2228,7 +3273,7 @@ void CUIChatting::SendChatMessage( char *pcChatString, BOOL bLord )
 		if ( _UIFiltering.Filtering ( szBuffer, nIndexBuffer ) == TRUE )
 		{
 			strChatString.Clear();
-			AddSysMessage ( _S( 437, "Î¨∏Ïû•Ïóê Í∏àÏßÄÎêú Îã®Ïñ¥Í∞Ä Ìè¨Ìï®ÎêòÏñ¥ ÏûàÏäµÎãàÎã§." ) );
+			AddSysMessage ( _S( 437, "πÆ¿Âø° ±›¡ˆµ» ¥‹æÓ∞° ∆˜«‘µ«æÓ ¿÷Ω¿¥œ¥Ÿ." ) );
 
 			strChatString.Clear();
 #ifndef FILTERING_WORD_VISIBLE_NA_20081013
@@ -2246,191 +3291,52 @@ void CUIChatting::SendChatMessage( char *pcChatString, BOOL bLord )
 		else 
 		{
 #ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
-			if (ubType == CHATMSG_NORMAL)
+			if (ubType == CHATMSG_NORMAL || ubType == CHATMSG_CHANNEL_LEVEL)
 			{
 				if(CeilWritingCut_CompareStr(strChatString))
 				{
-					strChatString = _S(4221, "1Î∂ÑÎÇ¥ Í∞ôÏùÄ Î¨∏Ïû•, Îã®Ïñ¥Î•º 2Ìöå Ïù¥ÏÉÅ ÏûÖÎ†• Ìï† Ïàò ÏóÜÏäµÎãàÎã§.");					
+					strChatString = _S(4221, "1∫–≥ª ∞∞¿∫ πÆ¿Â, ¥‹æÓ∏¶ 2»∏ ¿ÃªÛ ¿‘∑¬ «“ ºˆ æ¯Ω¿¥œ¥Ÿ.");					
 					AddSysMessage(strChatString);
 				}
 				else
-					_pNetwork->SendChatMessage(ubType, m_strWhisperTarget, strChatString);
+				{
+					if (ubType == CHATMSG_CHANNEL_LEVEL)
+					{
+						if (!CheckInputChannelChat(CHATMSG_CHANNEL_LEVEL, CTString(strChatString)))
+						{
+							return;
+						}
+					}
+					_pNetwork->SendChatMessage(ubType, m_strWhisperTarget, strChatString, nChatType );
+				}
 			}
 			else
-				_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString );
-#else
-			_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString );
-#endif	
+			{
+				if (ubType == CHATMSG_CHANNEL_TRADE)
+				{
+					if (!CheckInputChannelChat(CHATMSG_CHANNEL_TRADE, CTString(strChatString)))
+					{
+						return;
+					}
+				}
+				_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString, nChatType );
+			}
+#else	//	ADD_CHAT_CEILWRITING_CUT_NA_20081029
+			if (!CheckInputChannelChat(ChattingMsgType(ubType), CTString(strChatString)))
+			{
+				return;
+			}
+	
+			_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString, nChatType );
+#endif	//	ADD_CHAT_CEILWRITING_CUT_NA_20081029
 		}
 	}
-	// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù 
+	// ¿Ã±‚»Ø ºˆ¡§ ≥° 
 
 	// Reset string of input box
 	m_ebChatInput.ResetString();
 	InsertChatPrefix( ChattingMsgType( m_nCurSelTab ) );
 }
-
-// ----------------------------------------------------------------------------
-// Name : SendChatCommand()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIChatting::SendChatCommand( char *pcChatString, int nLength )
-{
-	// Extract command name from string
-	CTString	strCommand, strOther;
-
-	for( int iChar = 0; iChar < nLength; iChar++ )
-	{
-		if( pcChatString[iChar] == ' ' )
-			break;
-	}
-
-	strOther = &pcChatString[iChar + 1];
-	pcChatString[iChar] = NULL;
-	strCommand = &pcChatString[0];
-
-	// Send message
-	// Exchange
-	if( !strcmp( strCommand, _S( 127, "ÍµêÌôò" ) ) )
-	{
-		_pUIMgr->GetExchange()->SendExchangeReq_Req( strOther );
-	}
-	// Party
-	else if( !strcmp( strCommand, _S( 128, "ÌååÌã∞" ) ) )
-	{
-		ProcessParty( &pcChatString[iChar + 1] );
-	}
-	// Social action
-	/*else if( !strcmp( strCommand, "ÏïâÍ∏∞" ) )
-	{
-		//((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseAction( nIndex );
-	}
-	else if( !strcmp( strCommand, "ÏÑúÍ∏∞" ) )
-	{
-		//((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseAction( nIndex );
-	}
-	else if( !strcmp( strCommand, "Ïù∏ÏÇ¨" ) )
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseAction( 10 );
-	}
-	else if( !strcmp( strCommand, "ÏõÉÏùå" ) )
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseAction( 13 );
-	}
-	else if( !strcmp( strCommand, "Ïö∏Ïùå" ) )
-	{
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseAction( 14 );
-	}*/
-	// Guild
-	// Get gm level
-	else if( !strcmp( strCommand, "whoami" ) )
-	{
-		_pNetwork->SendWhoAmI();
-	}
- //0118 ÌîºÏºÄÏù¥ ÏùºÏãú ÎßâÏùå.
-	// PvP
-	else if( !strcmp( strCommand, "pvp" ) )
-	{
-		//_pNetwork->SetPvpMode();
-// KDM : BEGIN
-		int nPvPLv = 15;
-
-		if( g_iCountry == JAPAN ) { nPvPLv = 30; }
-
-		if( _pNetwork->MyCharacterInfo.sbAttributePos == ATTC_WAR ||	// Í≥µÏÑ± ÏßÄÏó≠Ïóê ÏûàÎã§Î©¥?
-				_pNetwork->MyCharacterInfo.level > nPvPLv )
-// KDM : END
-		{
-		
-			if(!((CPlayerEntity*)CEntity::GetPlayerEntity(0))->IsLegit())
-			//if(!penPlayerEntity->IsLegit())
-			{
-				_pNetwork->SendActionMessage(0, 23, 0);//ACTION_NUM_PK
-			}
-		}
-		else 
-		{
-			AddSysMessage( _S( 806, "15Î†àÎ≤® Ïù¥ÌïòÎäî PVPÎ•º Ìï† ÏàòÍ∞Ä ÏóÜÏäµÎãàÎã§." ), SYSMSG_ERROR );		
-		}
-
-	}
-
-	// Other GM commands
-	else if( _pNetwork->m_ubGMLevel > 1 )
-	{
-		// Show name type
-		if( !strcmp( strCommand, "nametype" ) )
-		{
-			extern INDEX	_iNameType;
-			if( !strcmp( strOther, "0" ) )			// Index
-				_iNameType = 0;
-			else if( !strcmp( strOther, "1" ) )		// Name
-				_iNameType = 1;
-		}	
-		else
-		{
-#ifdef GM_INVISIBLE_MODE
-			// WSS_VISIBLE 070510
-			// Ïö¥ÏòÅÏûê Î™®ÎìúÏóêÏÑú visible Ïã§ÌñâÏãú Ï∫êÎ¶≠ÌÑ∞Î•º Ïïà Î≥¥Ïù∏Í≤å ÌïúÎã§.
-			if( !strcmp( strCommand, "visible" ) && strOther.Length()>0 )
-			{
-				if( _pNetwork->MyCharacterInfo.m_ModelColor == NULL)
-				{				
-					// ÏûêÏã†Ïùò Ï∫êÎ¶≠ÏùÑ Ïïà Î≥¥Ïù¥Í≤å ÌïúÎã§.
-					COLOR tColor;
-					int tLevel;
-					_pNetwork->MyCharacterInfo.m_ModelColor = ((CPlayerEntity*)CEntity::GetPlayerEntity(0))->GetModelInstance()->GetModelColor();
-					tColor = _pNetwork->MyCharacterInfo.m_ModelColor&0xFFFFFF00;
-					tLevel = atoi(strOther.str_String);
-					switch(tLevel)
-					{
-
-					case 0:
-						tLevel=0xFF;
-						break;
-					case 1:
-						tLevel=0x4F;
-						break;
-					case 2:
-						tLevel=0x2F;
-						break;
-					case 3:
-						tLevel=0x0F;
-						break;
-					case 4:
-						tLevel=0x00;
-						break;
-											
-					default:
-						tLevel=0xFF;
-						break;
-					}
-					tColor |= tLevel;
-					((CPlayerEntity*)CEntity::GetPlayerEntity(0))->GetModelInstance()->mi_colModelColor = tColor;
-				}
-				else 
-				{
-					((CPlayerEntity*)CEntity::GetPlayerEntity(0))->GetModelInstance()->mi_colModelColor = _pNetwork->MyCharacterInfo.m_ModelColor;
-					_pNetwork->MyCharacterInfo.m_ModelColor = NULL;					
-				}
-
-				_pNetwork->SendGMCommand( strCommand.str_String );
-				return;
-			}
-			else if( iChar < nLength )
-#else 
-			// Echo, go_zone and goto etc...
-			if( iChar < nLength )
-#endif
-				pcChatString[iChar] = ' ';
-			_pNetwork->SendGMCommand( pcChatString );
-		}
-	}
-
-	// Reset string of input box
-	m_ebChatInput.ResetString();
-}
-
 
 // ========================================================================= //
 //                         Receive message functions                         // 
@@ -2441,42 +3347,39 @@ void CUIChatting::SendChatCommand( char *pcChatString, int nLength )
 // Desc :
 // ----------------------------------------------------------------------------
 void CUIChatting::AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString &strSendName,
-									CTString &strChatMessage )
+									CTString &strChatMessage , BYTE channelNumber, SLONG slGroup)
 {
 	CTString	strChatString;
 	COLOR		colChatString = m_colChatTypeColor[ubChatType];
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
 	COLOR		colSendName = m_sChatInfo.colSendNameType[ubChatType];
 	m_sChatInfo.colName = colSendName;
-#endif
-	
-//[ttos_2009_7_17]: CHARATER_CHAT_FILTER Ï∫êÎ¶≠ÌÑ∞ Ï±ÑÌåÖ ÌïÑÌÑ∞
-#ifdef CHARATER_CHAT_FILTER
-		if (_UICharacterChatFilter.Filtering(strSendName.str_String) == TRUE)
-		{
-			return;
-		}
-#endif // CHARATER_CHAT_FILTER	
+
+	//UIMGR()->GetChattingUIUI()->AddChatMessage(ubChatType, slSendIndex, strSendName, strChatMessage, channelNumber, slGroup);
+
+	if (_UICharacterChatFilter.Filtering(strSendName.str_String) == TRUE)
+	{
+		return;
+	}
 
 	char szBuffer[256];
 	int nIndexBuffer[32];
 	strcpy ( szBuffer, strChatMessage.str_String );
 	// Filtering
-	if ( _UIFiltering.Filtering ( szBuffer, nIndexBuffer ) == TRUE && ubChatType != CHATMSG_NOTICE && g_iCountry != KOREA 
-		&& ubChatType != CHATMSG_PRESSCORPS/*Í∏∞ÏûêÎã® ÌôïÏÑ±Í∏∞ Î©îÏÑ∏ÏßÄÎäî ÌïÑÌÑ∞ Ï†ÅÏö© ÏïàÌï®(ÏöïÌïòÎùºÍ≥†Ìï¥~!)*/) {
-		strChatString.Clear();
-		AddSysMessage ( _S( 437, "Î¨∏Ïû•Ïóê Í∏àÏßÄÎêú Îã®Ïñ¥Í∞Ä Ìè¨Ìï®ÎêòÏñ¥ ÏûàÏäµÎãàÎã§." ) );
-		return;
+	if ( _UIFiltering.Filtering ( szBuffer, nIndexBuffer ) == TRUE) 
+	{
+		if (ubChatType != CHATMSG_GM && ubChatType != CHATMSG_NOTICE && g_iCountry != KOREA && ubChatType != CHATMSG_PRESSCORPS)
+		{
+			strChatString.Clear();
+			AddSysMessage ( _S( 437, "πÆ¿Âø° ±›¡ˆµ» ¥‹æÓ∞° ∆˜«‘µ«æÓ ¿÷Ω¿¥œ¥Ÿ." ) );
+			return;
+		}
 	}
 	// WSS_GMTOOL 070517 -------------------->><<
 	if( ubChatType == CHATMSG_WHISPER || ubChatType == CHATMSG_GMTOOL)
 	{
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
 		m_sChatInfo.strName = strSendName + CTString(" -> ");		
 		strChatString = strSendName + CTString( " -> " ) + strChatMessage;
-#else
-		strChatString = strSendName + CTString( "-> " ) + strChatMessage;
-#endif
+
 		if( slSendIndex == _pNetwork->MyCharacterInfo.index )
 			AddWhisperTarget( m_strWhisperTarget );
 		else
@@ -2484,12 +3387,41 @@ void CUIChatting::AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString 
 	}
 	else 
 	{
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
-		m_sChatInfo.strName = strSendName + CTString(" > ");
-		strChatString = strSendName + CTString( " > " ) + strChatMessage;
-#else
-		strChatString = strSendName + CTString( "> " ) + strChatMessage;
-#endif
+		if(ubChatType == CHATMSG_EXPEDITION) // [sora] ø¯¡§¥Î √§∆√
+		{
+			if(slGroup == -1) // ø¯¡§¥Î ¿¸√º √§∆√
+			{
+				m_sChatInfo.strName =  "[" + _S(4493, "ø¯¡§¥Î") + "] " + strSendName + CTString(" > ");
+				strChatString = "[" + _S(4493, "ø¯¡§¥Î") + "] " + strSendName + CTString( " > " ) + strChatMessage;
+			}
+			else // ø¯¡§¥Î ±◊∑Ï √§∆√
+			{
+				CTString strTemp;
+				strTemp.PrintF(_S(4494, "±◊∑Ï%d"), slGroup+1);
+				strTemp =  "[" + strTemp + "] ";
+				m_sChatInfo.strName = strTemp + strSendName + CTString(" > ");
+				strChatString = strTemp + strSendName + CTString( " > " ) + strChatMessage;
+
+				// ø¯¡§¥Î √§∆√ ±◊∑Ï ƒ√∑Ø ¡ˆ¡§
+				colSendName = colExpeditionGroupChat[slGroup];
+				colChatString = colExpeditionGroupChat[slGroup];
+			}
+		}
+		else
+		{
+			if (channelNumber > 0)
+			{
+				CTString strTmp;
+				strTmp.PrintF(_s("[%s%d]%s > "), _S(5392, "√§≥Œ"), channelNumber, strSendName);
+				m_sChatInfo.strName = strTmp;
+				strChatString = strTmp + strChatMessage;
+			}
+			else
+			{
+				m_sChatInfo.strName = strSendName + CTString(" > ");
+				strChatString = strSendName + CTString( " > " ) + strChatMessage;
+			}
+		}
 	}
 
 	// Add chatting string to chatting list
@@ -2504,7 +3436,7 @@ void CUIChatting::AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString 
 		{
 			int tv_i = atoi(strChatMessage.str_String);
 			CTString tv_str;
-			tv_str.PrintF(_S(2573,"ÏÑúÎ≤Ñ Ï¢ÖÎ£åÍπåÏßÄ %dÏ¥à ÎÇ®ÏïòÏäµÎãàÎã§."),tv_i);
+			tv_str.PrintF(_S(2573,"º≠πˆ ¡æ∑·±Ó¡ˆ %d√  ≥≤æ“Ω¿¥œ¥Ÿ."),tv_i);
 			_UIAutoHelp->SetGMNotice ( tv_str );
 			return;
 		}
@@ -2526,7 +3458,7 @@ void CUIChatting::AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString 
 					int	nCurLineCount = m_nCurChatCount[i];
 
 					//AddChatString( strChatString, colChatString, i, TRUE );
-					AddChatString( strChatString, colChatString, i, FALSE );//ÏûÑÏãú MODIFY_CHATWORD_NOTICE_NA_2009_0219
+					AddChatString( strChatString, colChatString, i, FALSE );//¿”Ω√ MODIFY_CHATWORD_NOTICE_NA_2009_0219
 
 					if( m_nCurChatCount[i] > m_nCurChatShowLine )
 					{
@@ -2539,18 +3471,106 @@ void CUIChatting::AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString 
 				}
 			}
 	}
+	else if( ubChatType == CHATMSG_NPCNOTICE )
+	{	
+		bool bShowGMNotice = false;
+
+		bShowGMNotice = ACTORMGR()->CheckNPCNotice(slSendIndex, strChatMessage);
+		
+		// [2011/03/10 : Sora] ƒ≥∏Ø≈Õ∞° ¡÷∫Øø° ¿÷¿∏ ∞ÊøÏø°∏∏ ∏ﬁΩ√¡ˆ √‚∑¬
+		if( bShowGMNotice == true)
+			_UIAutoHelp->SetGMNotice ( strChatMessage, colChatString );
+
+		return;
+	}
 	else
 	{
-		// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (11.29) : Î∂àÎüâÎã®Ïñ¥ ÌïÑÌÑ∞ÎßÅ 
-		// Ï£ºÏÑù Ï≤òÎ¶¨ : ÎÇòÏ§ëÏóê Î¨∏Ï†ú ÏÉùÍ∏∞Î©¥ Ï∂îÍ∞Ä
-		//if( Filtering ( strChatString.str_String ) )
+#if defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2) || defined(G_USA)
+		if((ubChatType != CHATMSG_PARTY && ubChatType != CHATMSG_GUILD && slSendIndex != _pNetwork->MyCharacterInfo.index) 
+			&& CeilWritingCut_CompareStr(strChatMessage))
 		{
+			CUIManager::getSingleton()->GetChatFilter()->AddCharName(strSendName.str_String);
+			CTString temStr;
+			temStr.PrintF(_S(3006, "%s¥‘¿Ã ¬˜¥‹µ«æ˙Ω¿¥œ¥Ÿ."),strSendName);
+			AddSysMessage(temStr);
+			return;
+		}
+#endif
+	
+		// added by sam 11/02/24 sapmer ¬˜¥‹ 
+		#if defined SPAMER_BLOCK
+		if (ubChatType != CHATMSG_PARTY && ubChatType != CHATMSG_GUILD && slSendIndex != _pNetwork->MyCharacterInfo.index && CheckSpamCount( strSendName, strChatMessage ) )
+			return;			
+		#endif
+
+		// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€ (11.29) : ∫“∑Æ¥‹æÓ « ≈Õ∏µ 
+		// ¡÷ºÆ √≥∏Æ : ≥™¡ﬂø° πÆ¡¶ ª˝±‚∏È √ﬂ∞°
+		//if( Filtering ( strChatString.str_String ) )
+		if (ubChatType == CHATMSG_CHANNEL_LEVEL || ubChatType == CHATMSG_CHANNEL_TRADE)
+		{ // «ˆ¿Á¥¬ √§≥Œ ∏ﬁΩ√¡ˆ type∏∏ Add
+			//int nType = (ubChatType == CHATMSG_CHANNEL_LEVEL) ? CHATTAB_ALL : CHATTAB_TRADE;
+#ifdef	IMPROV1106_CHATALERT
+			// √§∆√¿« æÀ∏≤ π¸¿ß¥¬ CHATOPT_SHOUTøÕ √§≥Œ√§∆√ ±Ó¡ˆ¿Ã¥Ÿ.
+			if(ubChatType <= CHATOPT_SHOUT || ubChatType == CHATMSG_CHANNEL_LEVEL || ubChatType == CHATMSG_CHANNEL_TRADE)
+			{
+				if(!m_bChannelMode)
+					m_bRecvMessage[0][ubChatType]	= TRUE;
+				else if(ubChatType <= CHATOPT_SHOUT && !m_bChatOption[m_nCurSelTab][ubChatType])
+					m_bRecvMessage[0][ubChatType]	= TRUE;
+				else if(ubChatType == CHATMSG_CHANNEL_LEVEL && !m_bChatOption[m_nCurSelTab][CHATOPT_NORMAL])
+					m_bRecvMessage[0][ubChatType]	= TRUE;
+				else if(ubChatType == CHATMSG_CHANNEL_TRADE && !m_bChatOption[m_nCurSelTab][CHATOPT_TRADE])
+					m_bRecvMessage[0][ubChatType]	= TRUE;
+			}
+#endif	// #ifdef	IMPROV1106_CHATALERT
+
+			if (!m_bChannelMode)
+			{
+				m_bRevChannelMsg = TRUE; // √§≥Œ ∏ﬁΩ√¡ˆ∏¶ πﬁæ“¿ª ∞ÊøÏ!
+			}
+
+			for (int i=0; i<CHATTAB_TOTAL; i++)
+			{
+				if (i != CHATTAB_ALL && i != CHATTAB_TRADE)
+					continue;
+
+				if ((!m_bChatOption[i][CHATMSG_TRADE] && i == CHATTAB_ALL && ubChatType == CHATMSG_CHANNEL_TRADE) ||
+					(!m_bChatOption[i][CHATMSG_NORMAL] && i == CHATTAB_TRADE && ubChatType == CHATMSG_CHANNEL_LEVEL))
+				{
+					continue;
+				}
+
+				int nCurLineCount = m_nChannelCurChatCount[i];
+				AddChatString(strChatString, colChatString, i, FALSE, channelNumber);
+				
+				if (m_nChannelCurChatCount[i] > m_nCurChatShowLine)
+				{
+					ndLineCount = m_nChannelCurChatCount[i] - nCurLineCount;
+					m_nChannelFirstChatRow[i] += ndLineCount;
+
+					if( m_nChannelFirstChatRow[i] + m_nCurChatShowLine > MAX_CHAT_LINE )
+						m_nChannelFirstChatRow[i] = MAX_CHAT_LINE - m_nCurChatShowLine;
+				}
+			}
+		}
+		else
+
+		{
+#ifdef	IMPROV1106_CHATALERT
+			// √§∆√¿« æÀ∏≤ π¸¿ß¥¬ CHATOPT_SHOUT ±Ó¡ˆ¿Ã¥Ÿ.
+			if(ubChatType <= CHATOPT_SHOUT)
+			{
+				if(m_bChannelMode)
+					m_bRecvMessage[1][ubChatType]	= TRUE;
+				else if(!m_bChatOption[m_nCurSelTab][ubChatType])
+					m_bRecvMessage[1][ubChatType]	= TRUE;
+			}
+#endif	// #ifdef	IMPROV1106_CHATALERT
 			for( int i = 0; i < CHATTAB_TOTAL; i++ )
 			{
 				if( m_bChatOption[i][ubChatType] )
 				{
 					int	nCurLineCount = m_nCurChatCount[i];
-
 					AddChatString( strChatString, colChatString, i, FALSE );
 
 					if( m_nCurChatCount[i] > m_nCurChatShowLine )
@@ -2567,30 +3587,30 @@ void CUIChatting::AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString 
 	}
 
 	// Reset scroll bar
-	m_sbChatScrollBar.SetCurItemCount( m_nCurChatCount[m_nCurSelTab] );
-	m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
-
+	if (m_bChannelMode)
+	{
+		m_sbChatScrollBar.SetCurItemCount( m_nChannelCurChatCount[m_nCurSelTab] );
+		m_sbChatScrollBar.SetScrollPos( m_nChannelFirstChatRow[m_nCurSelTab] );
+	}
+	else
+	{
+		m_sbChatScrollBar.SetCurItemCount( m_nCurChatCount[m_nCurSelTab] );
+		m_sbChatScrollBar.SetScrollPos( m_nFirstChatRow[m_nCurSelTab] );
+	}
 	if( slSendIndex == _pNetwork->MyCharacterInfo.index )
 	{
 		_pNetwork->MyCharacterInfo.ChatMsg.SetChatMsg( strChatMessage );
 	}
 	else
 	{
-		INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
-		for( INDEX ipl = 0; ipl < ctCha; ipl++ ) 
-		{
-			CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[ipl];
-			if( ct.cha_Index == slSendIndex )
-			{
-				FLOAT3D	vCharPos = ct.cha_pEntity->en_plPlacement.pl_PositionVector;
-				FLOAT	fX = vCharPos(1) - _pNetwork->MyCharacterInfo.x;
-				FLOAT	fZ = vCharPos(3) - _pNetwork->MyCharacterInfo.z;
-				
-				if( fX * fX + fZ * fZ <= CHATMSG_SQRDIST )
-					ct.ChatMsg.SetChatMsg( strChatMessage );
+		ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_CHARACTER, slSendIndex);
 
-				break;
-			}
+		if (pObject != NULL)
+		{
+			CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+			if (nearMyCharacter( pTarget->GetEntity()->en_plPlacement.pl_PositionVector ))
+				pTarget->ChatMsg.SetChatMsg( strChatMessage );
 		}
 	}
 }
@@ -2601,21 +3621,29 @@ void CUIChatting::AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString 
 // ----------------------------------------------------------------------------
 void CUIChatting::AddSysMessage( CTString &strSysMessage, int nSysType ,COLOR colMsg )
 {
+	// [090826: selo] Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ ¿˙¿Â
+	if( m_bSaveSysMsg )
+		Write_SaveSysMessage(strSysMessage);
+
+	//UIMGR()->GetChattingUIUI()->AddSysMessage(strSysMessage, nSysType, colMsg);
+
 #ifndef SHOW_DAMAGE_TEXT 
-		// Date : 2005-11-17(Ïò§ÌõÑ 3:37:59), By Lee Ki-hwan
-		// Í≥µÍ≤©Í¥ÄÎ†® Î©îÏÑ∏ÏßÄÎäî ÌëúÏãúÌïòÏßÄ ÏïäÎäîÎã§.
-		// Ïö¥ÏòÅÏûê Ïù∏ Í≤ΩÏö∞ÏóêÎäî Ï∂îÍ∞Ä
-		if (( _pNetwork->m_ubGMLevel <= 0 ) && (g_iCountry != BRAZIL))
-		{
-			if( nSysType == SYSMSG_ATTACK || nSysType == SYSMSG_ATTACKED) return;
-		}
+		// Date : 2005-11-17(ø¿»ƒ 3:37:59), By Lee Ki-hwan
+		// ∞¯∞›∞¸∑√ ∏ﬁºº¡ˆ¥¬ «•Ω√«œ¡ˆ æ ¥¬¥Ÿ.
+		// øÓøµ¿⁄ ¿Œ ∞ÊøÏø°¥¬ √ﬂ∞°
+#if !defined(G_BRAZIL)
+	if (( _pNetwork->m_ubGMLevel <= 0 ))
+	{
+		if( nSysType == SYSMSG_ATTACK || nSysType == SYSMSG_ATTACKED) return;
+	}
+#endif
 #endif
 
 	COLOR	colSysString = m_colSysTypeColor[nSysType];
 
 	// wooss 070307 ----------------------->>
 	// kw : WSS_WHITEDAY_2007
-	if ( nSysType == SYSMSG_USER )
+	if ( nSysType == SYSMSG_USER && colMsg != DEF_UI_COLOR_WHITE)
 	{	
 		colSysString = colMsg;
 	}
@@ -2625,7 +3653,8 @@ void CUIChatting::AddSysMessage( CTString &strSysMessage, int nSysType ,COLOR co
 	int	ndLineCount;
 	int	nCurLineCount = m_nCurSysCount;
 	AddSysString( strSysMessage, colSysString );
-	if( m_nCurSysCount > SYSTEM_SHOW_LINE )
+
+	if( m_nCurSysCount > m_nCurSysShowLine )
 	{
 		ndLineCount = m_nCurSysCount - nCurLineCount;
 		m_nFirstSysRow += ndLineCount;
@@ -2643,7 +3672,7 @@ void CUIChatting::PetTransform(char *pet_changeString)
 {
 	int nLength = strlen(pet_changeString);
 	CTString strNpcIndex = CTString(""), strPetSize = CTString("");
-// Î≥ÄÏã† Î™¨Ïä§ÌÑ∞Ïùò Ïù∏Îç±Ïä§ÏôÄ ÏÇ¨Ïù¥Ï¶àÎ•º Í∞ÄÏ†∏ Ïò®Îã§.
+// ∫ØΩ≈ ∏ÛΩ∫≈Õ¿« ¿Œµ¶Ω∫øÕ ªÁ¿Ã¡Ó∏¶ ∞°¡Æ ø¬¥Ÿ.
 	int iChar;
 	for (iChar=0; iChar<nLength; iChar++)
 	{
@@ -2667,7 +3696,7 @@ void CUIChatting::PetTransform(char *pet_changeString)
 	}
 	else
 	{
-		AddSysMessage ( CTString("Npc IndexÎ•º Îã§Ïãú ÏûÖÎ†•ÌïòÏÑ∏Ïöî!") );
+		AddSysMessage ( CTString("Npc Index∏¶ ¥ŸΩ√ ¿‘∑¬«œººø‰!") );
 		return;
 	}
 
@@ -2713,12 +3742,13 @@ void CUIChatting::TakeOffArmortest(char *item_string)
 	_pGameState->TakeOffArmorTest(pEntity->GetModelInstance(), nItemIndex);
 }
 
-#ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
 BOOL CUIChatting::CeilWritingCut_CompareStr(const CTString& strChat)
 {
+	CTString temString;
+	temString = ArrangeCharString(strChat);
 	if (m_sCeilWriting.empty())
 	{
-		AddListCeilWriting(strChat);
+		AddListCeilWriting(temString);
 		SetIsCeilWritingCheck(TRUE);
 		return FALSE;
 	}
@@ -2728,8 +3758,8 @@ BOOL CUIChatting::CeilWritingCut_CompareStr(const CTString& strChat)
 	std::list<sCeilWriting>::iterator	iter = m_sCeilWriting.begin(), iterEnd = m_sCeilWriting.end();
 	for (; iter != iterEnd; ++iter)
 	{
-		if (iter == NULL)			continue;
-		if (strcmp(strChat, iter->strCeilWriting) == 0)
+//		if (iter == NULL)			continue;
+		if (strcmp(temString, iter->strCeilWriting) == 0)
 		{
 			iter->iCnt++;
 			if (iter->iCnt >= m_iCeilWritingMaxCnt)
@@ -2738,7 +3768,7 @@ BOOL CUIChatting::CeilWritingCut_CompareStr(const CTString& strChat)
 				return FALSE;
 		}
 	}
-	AddListCeilWriting(strChat);
+	AddListCeilWriting(temString);
 	return FALSE;
 }
 
@@ -2757,9 +3787,644 @@ void CUIChatting::EraseListCeilWriting()
 	std::list<sCeilWriting>::iterator	iter = m_sCeilWriting.begin(), iterEnd = m_sCeilWriting.end();
 	for (; iter != iterEnd; ++iter)
 	{
-		if (iter == NULL)			continue;
-		if ( llCurTime - iter->llStartTime > 60000 )//1Î∂Ñ
+//		if (iter == NULL)			continue;
+		if ( llCurTime - iter->llStartTime > 60000 )//1∫–
 			iter = m_sCeilWriting.erase(iter);
 	}
 }
-#endif//ADD_CHAT_CEILWRITING_CUT_NA_20081029
+
+// ----------------------------------------------------------------------------
+// Name : CheckExpeditionChatGroup
+// Desc : [sora] ø¯¡§¥Î √§∆√¿œ∂ß ±◊∑Ï √§∆√ ø©∫Œ º≥¡§
+// ----------------------------------------------------------------------------
+int CUIChatting::CheckExpeditionChatGroup(char* pcChatString)
+{
+	if( (pcChatString[1] >= '1') && (pcChatString[1] <= '4') )	//@µ⁄¿« ∞™¿Ã º˝¿⁄1~4¿œ ∞ÊøÏ ±◊∑Ï√§∆√¿∏∑Œ ¿ŒΩƒ
+	{
+		return pcChatString[1] - 49;							//±◊∑Ï √§∆√¿œ∞ÊøÏ 0~3 π›»Ø
+	}
+	else
+		return -1;												//ø¯¡§¥Î ¿¸√º √§∆√¿∏∑Œ ¿ŒΩƒ
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetChatWindowEndPos
+// Desc : [sora] √§∆√√¢ ¿ßƒ°(√¢¿« ø¿∏•¬  ¿ß)∏¶ ≥÷æÓº≠ ∫∏≥ø
+// ----------------------------------------------------------------------------
+void CUIChatting::GetChatWindowEndPos(int &nPosX, int &nPosY)
+{
+	if(m_bChatOption[m_nCurSelTab][CHATOPT_SYSTEM])
+	{
+		nPosX = m_nPosX + m_rcSystem.Right;
+		nPosY = m_nPosY + m_rcSystem.Top;
+	}
+	else
+	{
+		nPosX = m_nPosX + m_rcChatting.Right;
+		nPosY = m_nPosY + m_rcChatting.Top;		
+	}
+}
+
+// ----------------------------------------------------------------------------
+//  [8/26/2009 selo]
+// Name : Begin_SaveSysMessage
+// Desc : Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ ¿˙¿Â Ω√¿€
+// ----------------------------------------------------------------------------
+void CUIChatting::Begin_SaveSysMessage(void)
+{
+	// ¿ÃπÃ ¿˙¿Â«œ∞Ì ¿÷¥¯ ∞Õ¿Ã ¿÷¿∏∏È ±‚¡∏ ∞Õ ≥°≥ø
+	if( m_fpSaveSysMsg )
+	{
+		fprintf(m_fpSaveSysMsg, "\nunexpected end\n");
+		fclose(m_fpSaveSysMsg);
+		m_fpSaveSysMsg = NULL;
+	}
+
+	CTString strMsg;
+	strMsg.PrintF("Begin_SaveSysMessage at [%s] file", m_strSaveSysMsgFileName);
+	AddSysMessage(strMsg);
+
+	m_bSaveSysMsg = true;
+
+	m_fpSaveSysMsg = fopen(m_strSaveSysMsgFileName.str_String, "w");
+	
+	if( !m_fpSaveSysMsg )	// ∆ƒ¿œ ø≠±‚ Ω«∆– «œ∏È 	
+	{
+		m_bSaveSysMsg = false;
+		m_strSaveSysMsgFileName = "";
+
+		return;
+	}
+}
+
+// ----------------------------------------------------------------------------
+//  [8/26/2009 selo]
+// Name : End_SaveSysMessage
+// Desc : Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ ¿˙¿Â ≥°
+// ----------------------------------------------------------------------------
+void CUIChatting::End_SaveSysMessage(int iType)
+{
+	if( false == m_bSaveSysMsg )
+		return;	
+
+	if( !m_fpSaveSysMsg )
+	{
+		m_bSaveSysMsg = false;
+		m_strSaveSysMsgFileName = "";
+		return;
+	}
+
+	m_bSaveSysMsg = false;
+
+    CTString strMsg;
+	strMsg.PrintF("End_SaveSysMessage at [%s] file", m_strSaveSysMsgFileName);
+	AddSysMessage(strMsg);
+
+	m_strSaveSysMsgFileName = "";
+
+	// iType 
+	// 0 : /save_sysmsg_end ∏Ì∑…¿ª ªÁøÎ «œø© ¿˙¿Â
+	// 1 : ¡∏ ¿Ãµø«œø© ¿⁄µø ¿˙¿Â
+	// 2 : «¡∑Œ±◊∑• ¡æ∑· ¿⁄µø ¿˙¿Â
+
+	if( 1 == iType )
+	{
+		fprintf(m_fpSaveSysMsg, "\ngotoZone\n");
+	}
+	else if( 2 == iType )
+	{
+		fprintf(m_fpSaveSysMsg, "\nprogram terminated\n");
+	}
+
+	fclose(m_fpSaveSysMsg);	
+	m_fpSaveSysMsg = NULL;		
+}
+
+// ----------------------------------------------------------------------------
+//  [8/26/2009 selo]
+// Name : Write_SaveSysMessage
+// Desc : Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ ∆ƒ¿œø° æ≤±‚
+// ----------------------------------------------------------------------------
+void CUIChatting::Write_SaveSysMessage(const CTString& strSysMessage)
+{
+	if( !m_fpSaveSysMsg )
+		return;
+	
+    time_t rawtime;
+    struct tm* timeinfo;
+    time(&rawtime);
+    timeinfo = localtime( &rawtime );
+	fprintf(m_fpSaveSysMsg, "[%2d:%2d:%2d] %s\n",
+        timeinfo->tm_hour,
+        timeinfo->tm_min,
+        timeinfo->tm_sec,
+        strSysMessage.str_String);
+}
+
+// ----------------------------------------------------------------------------
+//  11/02/22 sam
+// Name : CheckSpamCount
+// Desc : Ω∫∆–∏” ¬˜¥‹
+// ----------------------------------------------------------------------------
+BOOL CUIChatting::CheckSpamCount ( CTString& strName, CTString& strChat )
+{
+	std::string strTemp			= strName.str_String;
+	__int64 llCurTime			= _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	MAP_CHAT_RECV_COUNT_IT it	= m_mapChatCount.find( strTemp );
+
+	if ( it == m_mapChatCount.end() )
+	{
+		sChatSpamCheck stTemp;
+		stTemp.llStartTime				= llCurTime;
+		stTemp.llCurTime				= llCurTime;
+		stTemp.nCount					= 1;	
+		stTemp.nStrLength				= strChat.Length();		 
+		stTemp.llLongSentenceCheckTime  = 0;
+		
+		m_mapChatCount.insert(MAP_CHAT_RECV_COUNT::value_type(strTemp, stTemp) );
+	}
+	else
+	{	
+		//¿ÃπÃ ∫Ì∑∞µ«æ˙¿∏∏È √≥∏Æ «œ¡ˆ æ ¥¬¥Ÿ. 
+		if ( it->second.bBlocked )
+			return TRUE;;
+
+		it->second.nStrLength				+= strChat.Length();		
+		it->second.nCount					+= 1;
+		it->second.llLongSentenceCheckTime	+= llCurTime - it->second.llCurTime;
+		it->second.llCurTime				= llCurTime;
+		
+	
+		if ( it->second.llLongSentenceCheckTime <= SPAM_CHAT_LONG_SENT_TIME )
+		{
+			if ( it->second.nStrLength > SPAM_CHAT_LENGTH )
+			{
+				it->second.bBlocked = true;
+				//∫Ì∑∞ Ω√≈≤¥Ÿ.
+				SpamerBlock( strName );
+				//m_mapChatCount.erase( it );
+				//RemoveSpamerFromMap( strName );
+				return TRUE;
+			}			
+		} 
+		else
+		{
+			it->second.llCurTime				= llCurTime;
+			it->second.llLongSentenceCheckTime	= 0;
+			it->second.nStrLength				= 0;
+		}
+		
+		if ( ( llCurTime - it->second.llStartTime ) <= SPAM_CHAT_INPUT_TIME )
+		{			
+			if ( it->second.nCount >= SPAM_CHAT_BLOCK_INPUT_COUNT )
+			{					
+				it->second.bBlocked = true;
+				//∫Ì∑∞ Ω√≈≤¥Ÿ.		 
+				SpamerBlock( strName );
+				//m_mapChatCount.erase( it );
+				//RemoveSpamerFromMap( strName );
+
+				return TRUE;
+			}
+		}
+		//1∫– ¡ˆ≥µ¥Ÿ.
+		else 
+		{	
+			it->second.llStartTime = llCurTime;
+			it->second.nCount	   = 0;
+			
+		}
+	}	
+	return FALSE;
+}
+
+
+void CUIChatting::SpamerBlock ( CTString& strName )
+{
+	CUIManager::getSingleton()->GetChatFilter()->AddCharName(strName.str_String);
+	CTString temStr;
+	temStr.PrintF(_S(3006, "%s¥‘¿Ã ¬˜¥‹µ«æ˙Ω¿¥œ¥Ÿ."),strName);
+	AddSysMessage(temStr);
+}
+
+void CUIChatting::SpamerLift ( CTString& strName )
+{	
+	std::string strTemp = strName.str_String;
+	RemoveSpamerFromMap	( strTemp );
+}
+
+void CUIChatting::RemoveSpamerFromMap ( std::string& strTemp )
+{
+	MAP_CHAT_RECV_COUNT_IT it	= m_mapChatCount.find( strTemp );
+	if ( it != m_mapChatCount.end() )
+		m_mapChatCount.erase( it );
+}
+
+void CUIChatting::ClearSpamMap (  )
+{
+	m_mapChatCount.clear();	
+}
+
+void CUIChatting::RenderConditionsysMsg(ChattingMsgType cmtType)
+{
+	CTString strMessage;
+
+	// AddSysMessage
+	switch(cmtType)
+	{
+	case CHATMSG_NORMAL:
+		{
+			strMessage.PrintF(_S(5386, "[%s] 50∑π∫ß ¿ÃªÛ ¿‘∑¬«“ ºˆ ¿÷Ω¿¥œ¥Ÿ."), _S(5390, "¿¸√º √§≥Œ∏µÂ"));
+			AddSysMessage(strMessage, SYSMSG_USER, 0x6BD2FFFF);
+		}
+		break;
+	case CHATMSG_TRADE:
+		{
+			strMessage.PrintF(_S(5387, "[%s] 10∑π∫ß ¿ÃªÛ ≥™Ω∫∏¶ º“∏«œ∏Èº≠ ªÁøÎ¿Ã ∞°¥…«’¥œ¥Ÿ."), _S(5391, "∏≈∏≈ √§≥Œ∏µÂ"));
+			AddSysMessage(strMessage, SYSMSG_USER, 0xE18600FF);
+		}
+		break;
+	}
+}
+
+BOOL CUIChatting::CheckInputChannelChat(ChattingMsgType cmtType, CTString strMessage)
+{
+	BOOL bResult = TRUE;
+	CTString strMoney;
+
+	switch(cmtType)
+	{
+	case CHATMSG_CHANNEL_LEVEL:
+		{
+			if (_pNetwork->MyCharacterInfo.level < CHANNEL_CHAT_NEEDLEVEL) // 50∑π∫ß ¿ÃªÛ ¿‘∑¬ ∞°¥…
+			{
+				strMoney.PrintF(_S(5388, "[%s] %d∑π∫ß ¿ÃªÛø°º≠∏∏ ¿ÃøÎ¿Ã ∞°¥…«’¥œ¥Ÿ."), _S(5390, "¿¸√º √§≥Œ∏µÂ"), CHANNEL_CHAT_NEEDLEVEL);
+				AddSysMessage(strMoney, SYSMSG_ERROR);
+				bResult = FALSE;
+			}
+		}
+		break;
+	case CHATMSG_CHANNEL_TRADE:
+		{
+			if (_pNetwork->MyCharacterInfo.level < CHANNEL_TRADE_NEEDLEVEL) // 10∑π∫ß ¿ÃªÛ ¿‘∑¬ ∞°¥…
+			{
+				strMoney.PrintF(_S(5388, "[%s] %d∑π∫ß ¿ÃªÛø°º≠∏∏ ¿ÃøÎ¿Ã ∞°¥…«’¥œ¥Ÿ."), _S(5391, "∏≈∏≈ √§≥Œ∏µÂ"), CHANNEL_TRADE_NEEDLEVEL);
+				AddSysMessage(strMoney, SYSMSG_ERROR);
+				bResult = FALSE;
+			}
+
+			int nNeedNas = strMessage.Length() * 10; // 1byte¥Á 10≥™Ω∫æø º“∫Ò
+
+			if (nNeedNas > _pNetwork->MyCharacterInfo.money)
+			{
+				strMoney.PrintF(_S(5389, "[%s] ≥™Ω∫∞° ∫Œ¡∑«’¥œ¥Ÿ.(%d ≥™Ω∫)"), _S(5391, "∏≈∏≈ √§≥Œ∏µÂ"), nNeedNas);
+				AddSysMessage(strMoney, SYSMSG_ERROR);
+				bResult = FALSE;
+			}
+		}
+		break;
+	}
+
+	return bResult;
+}
+
+
+void		CUIChatting::ShowNPCTalk(INDEX iMobIdx, INDEX iStrIndex )
+{
+	ObjectBase* pObject = ACTORMGR()->GetObjectByNPCIdx(iMobIdx);
+	
+	if (pObject != NULL)
+	{
+		CMobTarget* pTarget = static_cast< CMobTarget* >(pObject);
+
+		pTarget->ChatMsg.SetChatMsg( _S(iStrIndex, "NPC Say"), 0xC5C5C5FF, TRUE );
+	}
+}
+
+void CUIChatting::ResetChattingAlert()
+{
+	// √§∆√ æÀ∏≤ ∏Æº¬ [11/10/11 trylord]
+	memset(m_bRecvMessage, 0, sizeof(BOOL) * 2 * CHATMSG_TOTAL);
+	m_bRevChannelMsg		= FALSE;
+}
+
+void CUIChatting::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
+{
+	// WSS_GUILDMASTER 070416
+	CTString	strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;	
+
+	switch( nCommandCode )
+	{
+		case MSGCMD_USERNOTICE:
+			{
+				if(bOK)
+				{
+					char	szBuffer[256];
+					int		nIndexBuffer[32];
+
+					strcpy( szBuffer, strInput.str_String );
+					// Filtering
+					if ( _UIFiltering.Filtering ( szBuffer, nIndexBuffer ) == TRUE) {
+						strInput.Clear();
+						AddSysMessage ( _S( 437, "πÆ¿Âø° ±›¡ˆµ» ¥‹æÓ∞° ∆˜«‘µ«æÓ ¿÷Ω¿¥œ¥Ÿ." ) );
+						return;
+					}
+
+					// ##
+					_pNetwork->SendUserNotice(strInput);
+				}
+			}
+			break;
+
+		default: break;
+	}
+}
+
+#ifdef	IMPROV1107_NOTICESYSTEM
+
+void CUIChatting::LoadScheduleSystemMessage()
+{
+	if(m_vScheduleSystemMessage.size() != 0)
+		return;
+
+	int		nNotice	= CNoticeData::getSingleton()->GetNoticeDataCount();
+	for(int i = 0; i < nNotice; i++)
+	{
+		SNotice&	sNotice	= CNoticeData::getSingleton()->GetNoticeData(i);
+
+		AddScheduleSystemMessage(sNotice.timeDateStart, sNotice.timeDateEnd, sNotice.dwRepeatDelay, sNotice.strMessage, sNotice.colMessage);
+	}
+}
+
+void CUIChatting::AddScheduleSystemMessage(time_t timeStart, time_t timeEnd, DWORD dwRepeatDelday, CTString strMessage, COLOR colMessage)
+{
+	time_t		timeNow;
+
+	time(&timeNow);
+
+	if(timeStart <= timeNow && timeEnd >= timeNow)
+	{
+		SScheduleSystemMessage*	psTempMessage	= new SScheduleSystemMessage;
+
+		psTempMessage->pOwner			= this;
+		psTempMessage->idxEventID		= m_vScheduleSystemMessage.size();
+		psTempMessage->timeDateStart	= timeStart;
+		psTempMessage->timeDateEnd		= timeEnd;
+		psTempMessage->dwRepeatDelay	= dwRepeatDelday;
+		psTempMessage->strMessage		= strMessage;
+		psTempMessage->colMessage		= colMessage;
+		m_vScheduleSystemMessage.push_back(psTempMessage);
+
+/*
+// µπˆ±Î ≈◊Ω∫∆ÆøÎ
+#ifdef	_DEBUG
+		CTString	strTmpMessage;
+
+		strTmpMessage.PrintF("ID:%d System message scheduled (ms:%d msg:%s)", psTempMessage->idxEventID, dwRepeatDelday, strMessage.str_String);
+		AddSysMessage(strTmpMessage, SYSMSG_NOTIFY, 0xFFFF3AFF);
+#endif
+*/
+
+		psTempMessage->dwTimerID	= ::timeSetEvent(dwRepeatDelday, 0, (LPTIMECALLBACK)ScheduleSystemMessageCallback, (DWORD_PTR)psTempMessage, TIME_ONESHOT | TIME_CALLBACK_FUNCTION);
+	}
+}
+
+void CUIChatting::ScheduleSystemMessageCallback(UINT uTimerID, UINT uMsg, DWORD_PTR pdwUser, DWORD dw1, DWORD dw2)
+{
+	SScheduleSystemMessage*	psTempMessage	= (SScheduleSystemMessage*)pdwUser;
+	CUIChatting*			pCUIChatting	= (CUIChatting*)psTempMessage->pOwner;
+	time_t					timeNow;
+
+	time(&timeNow);
+
+	if(psTempMessage->timeDateStart <= timeNow && psTempMessage->timeDateEnd >= timeNow)
+	{
+		pCUIChatting->AddSysMessage(psTempMessage->strMessage, SYSMSG_USER, psTempMessage->colMessage);
+
+		psTempMessage->dwTimerID	= ::timeSetEvent(psTempMessage->dwRepeatDelay, 0, (LPTIMECALLBACK)ScheduleSystemMessageCallback, (DWORD_PTR)psTempMessage, TIME_ONESHOT | TIME_CALLBACK_FUNCTION);
+	}
+}
+
+void CUIChatting::StopScheduleSystemMessage(INDEX idxEventID)
+{
+	std::vector<SScheduleSystemMessage*>::iterator	it	= m_vScheduleSystemMessage.begin();
+
+	for(; it != m_vScheduleSystemMessage.end(); it++)
+	{
+		SScheduleSystemMessage*	psSysMessage	= (*it);
+
+		if(psSysMessage->idxEventID == idxEventID)
+		{
+			timeKillEvent(psSysMessage->dwTimerID);
+
+/*
+// µπˆ±Î ≈◊Ω∫∆ÆøÎ
+#ifdef	_DEBUG
+		CTString	strTmpMessage;
+
+		strTmpMessage.PrintF("ID:%d System message schedule canceled", psSysMessage->idxEventID);
+		AddSysMessage(strTmpMessage, SYSMSG_NOTIFY, 0xFFFF3AFF);
+#endif
+*/
+			return;
+		}
+	}
+}
+
+void CUIChatting::RenderUserNotice()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	time_t		timeNow		= _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	time_t		timeElapsed	= timeNow - m_timeUserNoticeDelay;
+
+	if(timeElapsed >= CHATMSG_USERNOTICE_DELAY + CHATMSG_USERNOTICE_FADEOUT)
+	{
+		m_bShowUserNotice	= FALSE;
+		return;
+	}
+
+	float		fAlphaRatio	= 1.0f;
+	if(timeElapsed < CHATMSG_USERNOTICE_FADEIN)
+	{
+		fAlphaRatio		= (float)timeElapsed / (float)CHATMSG_USERNOTICE_FADEIN;
+	}
+	else if(timeElapsed >= CHATMSG_USERNOTICE_DELAY)
+	{
+		fAlphaRatio		= 1.0f - ((float)(timeElapsed - CHATMSG_USERNOTICE_DELAY) / (float)CHATMSG_USERNOTICE_FADEOUT);
+	}
+
+	COLOR	colBackground	= 0xFFFFFFFF;
+	COLOR	colText			= 0xFFFF3AFF;
+	if(m_bClickUserNotice)
+		colText		= 0xFF9C0000;
+	else if(m_bActiveUserNotice)
+		colText		= 0xFF000000;	// 0x00A170FF;
+
+	{	// TextAlpha (¡§»Æ»˜¥¬ contrast)
+		// TEXT (æÀ∆ƒ∞° ∏‘¡ˆ∏¶ æ æ∆ ªˆ√§∏¶ ª≠.)
+		colText			= pUIManager->GetDrawPort()->GetColorContrast(fAlphaRatio, colText);
+		colText			= pUIManager->GetDrawPort()->GetColorAlpha(fAlphaRatio, colText);
+		colBackground	= pUIManager->GetDrawPort()->GetColorAlpha(fAlphaRatio, colBackground);
+	}
+
+	// Draw background
+	pUIManager->GetDrawPort()->FlushRenderingQueue();
+	pUIManager->GetDrawPort()->InitTextureData(m_ptdButtonTexture);
+
+	pUIManager->GetDrawPort()->AddTexture( m_nPosX + m_rcUserNotice.Left, m_nPosY + m_rcUserNotice.Top,
+											m_nPosX + m_rcUserNotice.Right, m_nPosY + m_rcUserNotice.Bottom,
+											m_rtUserNoticeUV.U0, m_rtUserNoticeUV.V0, m_rtUserNoticeUV.U1, m_rtUserNoticeUV.V1,
+											colBackground );
+
+	// Draw text
+	int		iTextCnt	= m_lbUserNoticeMessage.GetCurItemCount(0);
+	int		iTextHeight	= 16;
+	int		iY			= m_nPosY + m_rcUserNotice.Top + 62;
+	if(iTextCnt == 1)
+	{
+		//_pUIMgr->GetDrawPort()->PutTextExCX(m_lbUserNoticeMessage.GetString(0, 0), m_nPosX + (m_rcUserNotice.Right / 2), iY, colText);
+		pUIManager->GetDrawPort()->PutTextEx(m_lbUserNoticeMessage.GetString(0, 0), m_nPosX + CHATMSG_USERNOTICE_XPITCH, iY, colText);
+	}
+	else
+	{
+		iY		-= ((iTextCnt - 1) * (iTextHeight / 2));
+
+		for(int i = 0; i < iTextCnt; i++)
+		{
+			//_pUIMgr->GetDrawPort()->PutTextExCX(m_lbUserNoticeMessage.GetString(0, i), m_nPosX + (m_rcUserNotice.Right / 2), iY, colText);
+			if(i == 0)
+				pUIManager->GetDrawPort()->PutTextEx(m_lbUserNoticeMessage.GetString(0, i), m_nPosX + CHATMSG_USERNOTICE_XPITCH, iY, colText);
+			else
+				pUIManager->GetDrawPort()->PutTextEx(m_lbUserNoticeMessage.GetString(0, i), m_nPosX + (CHATMSG_USERNOTICE_XPITCH * 2), iY, colText);
+
+			iY		+= iTextHeight;
+		}
+	}
+
+	pUIManager->GetDrawPort()->FlushRenderingQueue();
+}
+
+void CUIChatting::PopupUserNotice()
+{
+	CUIManager::getSingleton()->CloseMessageBox(MSGCMD_USERNOTICE);
+
+	CUIMsgBox_Info MsgBoxInfo;
+
+	MsgBoxInfo.SetMsgBoxInfo( _S(5610, "¿Ø¿˙ ∞¯¡ˆ"), UMBS_USER_12 | UMBS_INPUT_MASK, UI_CHATTING, MSGCMD_USERNOTICE, 300);	// UMBS_USER_12 | UMBS_INPUT_MASK | UMBS_ALIGN_RIGHT
+	MsgBoxInfo.SetUserBtnName( _S(191, "»Æ¿Œ"), _S(139, "√Îº“") ); 
+	MsgBoxInfo.AddString(_S(5609, "∞¯¡ˆ «œ∞Ì¿⁄ «œ¥¬ ≥ªøÎ¿ª ¿‘∑¬«ÿ ¡÷ººø‰."), 0xF3F3F3FF, TEXT_CENTER);
+	MsgBoxInfo.AddString(_S(5630, "(¥‹, √÷¥Î 30¿⁄ ±Ó¡ˆ ¿‘∑¬¿Ã ∞°¥…«’¥œ¥Ÿ.)"), 0xF3F3F3FF, TEXT_CENTER);
+#ifdef G_KOR
+	MsgBoxInfo.SetInputBox( 3, 3, CHATMSG_USERNOTICEINPUT_LENGTH * 2, 235 );	
+#else
+	MsgBoxInfo.SetInputBox( 3, 3, CHATMSG_USERNOTICEINPUT_LENGTH, 235 );	
+#endif
+
+	CUIManager::getSingleton()->CreateMessageBox(MsgBoxInfo);
+}
+
+
+void CUIChatting::AddUserNotice(CTString strOwner, CTString strMessage)
+{
+	CTString	strGenerate;
+
+	m_bShowUserNotice		= TRUE;
+	m_timeUserNoticeDelay	= _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+
+	m_strUserNoticeOwner	= strOwner;
+	m_lbUserNoticeMessage.ResetAllStrings();
+
+	// ¿Ø¿˙∞¯¡ˆ «¸Ωƒ ª˝º∫ (√§∆√∞˙ ∞∞¥Ÿ)
+	strGenerate.PrintF("%s > %s", strOwner, strMessage);
+	CUIManager::getSingleton()->AddStringToList(&m_lbUserNoticeMessage, strGenerate, CHATMSG_USERNOTICE_LENGTH);
+}
+
+#endif	// #ifdef	IMPROV1107_NOTICESYSTEM
+
+/*
+void CUIChatting::CheckSpamCount ( int  nIndex, CTString& strName, CTString& strChat )
+{
+	__int64 llCurTime			= _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	MAP_CHAT_RECV_COUNT_IT it	= m_mapChatCount.find( nIndex );
+
+	if ( it == m_mapChatCount.end() )
+	{
+		sChatSpamCheck stTemp;
+		stTemp.llStartTime		= llCurTime;	
+		stTemp.nCount			= 1;
+		
+		
+		if ( strChat.Length() >= SPAM_CHAT_LENGTH )
+			stTemp.nStrLength    = 1;
+		else 
+			stTemp.nStrLength	 =  0;
+			 
+		stTemp.cstrName			= strName;
+		stTemp.nIndex			= nIndex;
+
+		m_mapChatCount.insert(make_pair(nIndex, stTemp) );
+	}
+	else
+	{
+		if ( strChat.Length() >= SPAM_CHAT_LENGTH )
+			it->second.nStrLength   += 1;		
+
+		it->second.nCount += 1;
+
+		// 1∫– ¡ˆ≥µ¿Ω 
+		if ( ( llCurTime - it->second.llStartTime ) >= 6000 )
+		{
+			if ( it->second.nCount >= SPAM_CHAT_BLOCK_INPUT_COUNT  )
+			{
+				//∫Ì∑∞ Ω√≈≤¥Ÿ.
+				SpamerBlock( it->second.cstrName );
+				m_mapChatCount.erase( it );
+			}			
+			else
+			{
+				it->second.llStartTime = llCurTime;	
+			}
+		}
+		else 
+		{
+			if ( it->second.nCount >= SPAM_CHAT_BLOCK_INPUT_COUNT )
+			{
+				//∫Ì∑∞ Ω√≈≤¥Ÿ.		 
+				SpamerBlock( it->second.cstrName );
+				m_mapChatCount.erase( it );
+			}			
+		}
+	}	
+}
+
+void CUIChatting::RemoveSpamerFromMap ( int nIndex )
+{
+	MAP_CHAT_RECV_COUNT_IT it	= m_mapChatCount.find( nIndex );
+	if ( it != m_mapChatCount.end() )
+		m_mapChatCount.erase( it );	
+}
+/**/
+
+
+void CUIChatting::SystemMessageColorInI()
+{
+	std::string strFullPath = _fnmApplicationPath.FileDir();
+	strFullPath += DEF_INI_PATH;
+
+	char szBuff[16];
+	std::string strTmp;
+
+	GetPrivateProfileString("SYSTEM_MSG", "NORMAL", "0xC4D6A6FF", szBuff, 16, strFullPath.c_str());
+	m_colSysTypeColor[SYSMSG_NORMAL] = (COLOR)strtoul(szBuff, NULL, 16);
+	GetPrivateProfileString("SYSTEM_MSG", "ATTACK", "0x92C253FF", szBuff, 16, strFullPath.c_str());
+	m_colSysTypeColor[SYSMSG_ATTACK] = (COLOR)strtoul(szBuff, NULL, 16);
+	GetPrivateProfileString("SYSTEM_MSG", "ATTACKED", "0xE2BE69FF", szBuff, 16, strFullPath.c_str());
+	m_colSysTypeColor[SYSMSG_ATTACKED] = (COLOR)strtoul(szBuff, NULL, 16);
+	GetPrivateProfileString("SYSTEM_MSG", "ERROR", "0xE28769FF", szBuff, 16, strFullPath.c_str());
+	m_colSysTypeColor[SYSMSG_ERROR] = (COLOR)strtoul(szBuff, NULL, 16);
+	GetPrivateProfileString("SYSTEM_MSG", "NOTIFY", "0x6060FFFF", szBuff, 16, strFullPath.c_str());
+	m_colSysTypeColor[SYSMSG_NOTIFY] = (COLOR)strtoul(szBuff, NULL, 16);
+	GetPrivateProfileString("SYSTEM_MSG", "USER", "0xC1FFEFFF", szBuff, 16, strFullPath.c_str());
+	m_colSysTypeColor[SYSMSG_USER] = (COLOR)strtoul(szBuff, NULL, 16);
+}

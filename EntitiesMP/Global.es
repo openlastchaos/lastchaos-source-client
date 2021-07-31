@@ -42,6 +42,10 @@ event EStopDeafness {  // make enemy not blind any more
 };
 event EAddHostile {
 };
+event EDoorControll {
+	BOOL bOpen,
+};
+
 //event EReceiveScore { // sent to player when enemy is killed
 //  INDEX iPoints
 //};
@@ -91,6 +95,7 @@ enum EventEType {
  11 EET_STOPDEAFNESS      "Stop deafness event",        // enemy stop being deaf
  12 EET_TELEPORTMOVINGBRUSH "Teleport moving brush",    // moving brush teleporting event
  13 EET_ADDHOSTILE		  "Add Hostile event",
+ 14 EET_DOORCONTROLL	"Door open or close event"		// door open or close
 };
 
 

@@ -1,11 +1,12 @@
-
 #include "stdh.h"
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UISignBoard.h>
 #include <Engine/Templates/Stock_CFontData.h>		// Font Use ...
 #include <Engine/Interface/UISiegeWarfareDoc.h>
 #include <Engine/World/World.h>
-#include <stdio.h>
+#include <Engine/Help/DefineHelp.h>
 
 CUISignBoard*	_UISignBoard = NULL;
 
@@ -38,13 +39,8 @@ CUISignBoard::CUISignBoard()
 // ----------------------------------------------------------------------------
 CUISignBoard::~CUISignBoard()
 {
-	if( m_ptdBaseTexture )
-	{
-		_pTextureStock->Release( m_ptdBaseTexture );
-		m_ptdBaseTexture = NULL;
-	}
-
 	Clear ();
+	STOCK_RELEASE(m_ptdBaseTexture);
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +51,7 @@ void CUISignBoard::Clear ()
 {
 
 	m_nTextureIndex = -1;
-	m_bStop			= FALSE;		// Ï†ïÏßÄ ÏÉÅÌÉúÏù∏Í∞ê?
+	m_bStop			= FALSE;		// ¡§¡ˆ ªÛ≈¬¿Œ∞®?
 	m_fShowTime		= 0;
 	m_iAlpha		= 0x01;
 	m_FadeInOp		= 64;
@@ -86,13 +82,13 @@ void CUISignBoard::ShowSingBoard ( int nIndex, SLONG slZoneIndex )
 {
 	SLONG	slIndex = g_slZone;
 
-	if ( nIndex < 0 ) 
+	if ( nIndex < -1 || g_slZone<0 ) 
 	{
 		return;
 	}
-	else if ( nIndex != -1 && m_nTextureIndex == nIndex )	// Í∞ôÏùÄ ÏßÄÏó≠ Ïùº Í≤ΩÏö∞
+	else if ( nIndex != -1 && m_nTextureIndex == nIndex )	// ∞∞¿∫ ¡ˆø™ ¿œ ∞ÊøÏ
 	{
-		// ÏßÄÏó≠ ÌëúÏãú ÏãúÍ∞ÑÎßå Îã§Ïãú ÏÑ§Ï†ï Ìï¥ Ï§ÄÎã§.
+		// ¡ˆø™ «•Ω√ Ω√∞£∏∏ ¥ŸΩ√ º≥¡§ «ÿ ¡ÿ¥Ÿ.
 		m_fShowTime	= SHOW_TIME;
 		return;
 	}
@@ -102,15 +98,15 @@ void CUISignBoard::ShowSingBoard ( int nIndex, SLONG slZoneIndex )
 		slIndex = slZoneIndex;
 	}
 
-	// Ï°¥Ïù¥Î¶ÑÍ≥º ÏßÄÏó≠ Ïù∏Îç±Ïä§Î°ú ÏßÄÏó≠ Ïù¥Î¶Ñ ÌååÏùºÏùÑ Î°úÎî©ÌïúÎã§.
+	// ¡∏¿Ã∏ß∞˙ ¡ˆø™ ¿Œµ¶Ω∫∑Œ ¡ˆø™ ¿Ã∏ß ∆ƒ¿œ¿ª ∑Œµ˘«—¥Ÿ.
 	if ( LoadSignBoardTexture ( slIndex, nIndex ) == FALSE )
 	{
 		return;
 	}
 	
-	// Îç∞Ïù¥ÌÑ∞ Ï¥àÍ∏∞Ìôî
+	// µ•¿Ã≈Õ √ ±‚»≠
 	m_bVisible = TRUE;
-	m_strLocalName	=_S( 2062,  "Îç∞Ïù¥ÌÑ∞" );		
+	m_strLocalName	=_S( 2062,  "µ•¿Ã≈Õ" );		
 	m_fShowTime		= SHOW_TIME;
 	m_op			= m_FadeInOp;
 }
@@ -123,7 +119,7 @@ void CUISignBoard::Render ()
 {
 	if ( !m_bVisible )	return;
 	
-	// ÌôîÎ©¥Ïóê Î≥¥Ïó¨ Ï£ºÍ≥† ÏûàÎã§Î©¥ Î†åÎçîÎßÅ ÏãúÍ∞ÑÏùÑ Ï≤¥ÌÅ¨ Ìï¥ÏÑú Î†åÎçîÎßÅÏùÑ Ï§ëÏßÄ Ìï† Í≤É Ïù∏ÏßÄ ÌôïÏù∏ ÌïúÎã§.
+	// »≠∏Èø° ∫∏ø© ¡÷∞Ì ¿÷¥Ÿ∏È ∑ª¥ı∏µ Ω√∞£¿ª √º≈© «ÿº≠ ∑ª¥ı∏µ¿ª ¡ﬂ¡ˆ «“ ∞Õ ¿Œ¡ˆ »Æ¿Œ «—¥Ÿ.
 	if ( m_bStop )	
 	{
 		if ( _pTimer->GetHighPrecisionTimer().GetMilliseconds() - m_tmStartTime >= m_fShowTime )
@@ -149,42 +145,24 @@ void CUISignBoard::Render ()
 		}
 	}
 
-	/*
-	if ( m_nTextureIndex == -1 )
-	{
-	// render ÌÖçÏä§Ìä∏ Ï∂úÎ†•
-		_pUIMgr->GetDrawPort()->SetFont( _pFontStock->Obtain_t( CTFILENAME( "Fonts\\Standard.fnt" ) ) );
-		_pUIMgr->GetDrawPort()->SetTextScaling( 1.0 );
-		_pUIMgr->GetDrawPort()->SetTextAspect( 1.0f );
-		_pUIMgr->GetDrawPort()->SetTextShadow( +2 );
-		
-		int iFontSize =  _pUIMgr->GetDrawPort()->dp_fTextScaling + _pUIMgr->GetDrawPort()->dp_pixTextCharSpacing;
-
-		int pX = _pUIMgr->GetDrawPort()->GetWidth() / 2 - m_strLocalName.Length() * iFontSize / 2;
-		int pY = 150;
-		
-		_pUIMgr->GetDrawPort()->PutTextC ( "No SignBoard Data", pX, pY, 0xffffff00 | m_iAlpha );
-		
-		_pUIMgr->GetDrawPort()->EndTextEx();
-	
-	}
-	*/
 	if( m_ptdBaseTexture == NULL )
 	{
 		return;
 	}
 
-	int pX = _pUIMgr->GetDrawPort()->GetWidth() / 2 - m_fTexWidth / 2;
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	int pX = pDrawPort->GetWidth() / 2 - m_fTexWidth / 2;
 	int pY = SIGNBOARD_SY;
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-	_pUIMgr->GetDrawPort()->AddTexture( pX, pY,	pX + m_fTexWidth , pY + m_fTexHeight, 
+	pDrawPort->AddTexture( pX, pY,	pX + m_fTexWidth , pY + m_fTexHeight, 
 										m_rtCurrent.U0, m_rtCurrent.V0, 
 										m_rtCurrent.U1, m_rtCurrent.V1,
 										0xffffff00 | m_iAlpha );
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
 }
@@ -192,117 +170,56 @@ void CUISignBoard::Render ()
 
 //------------------------------------------------------------------------------
 // CUISignBoard::LoadSignBoardTexture
-// Explain: Ï°¥Î≤àÌò∏(nZoneIndex)ÏôÄ ÏßÄÏó≠Î≤àÌò∏(nLocalIndex), Íµ≠Í∞Ä ÏÑ§Ï†ïÏúºÎ°ú 
-//          ÌååÏùºÎ™ÖÏùÑ ÏÉùÏÑ±ÌïòÏó¨ ÌÖåÏä§Ï≥ê ÌååÏùºÏùÑ Î°úÎî© ÌïúÎã§.
+// Explain: ¡∏π¯»£(nZoneIndex)øÕ ¡ˆø™π¯»£(nLocalIndex), ±π∞° º≥¡§¿∏∑Œ 
+//          ∆ƒ¿œ∏Ì¿ª ª˝º∫«œø© ≈◊Ω∫√ƒ ∆ƒ¿œ¿ª ∑Œµ˘ «—¥Ÿ.
 //
 // Date : 2005-01-13,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 BOOL CUISignBoard::LoadSignBoardTexture( int nZoneIndex, int nLocalIndex )
 {
-	CTString strSignBoardName;
-	CTString strDir = SIGNBOARD_DEFAULT_DIR;
+	extern INDEX	g_iCountry;
 
-	// Ïù¥ÎØ∏ ÌÖåÏä§Ï≥êÍ∞Ä Î°úÎî© ÎêòÏñ¥ ÏûàÏúºÎ©¥ Ìï¥Ï†ú
+	CTString strSignBoardName;
+	CTString strDir = "Local\\";
+	strDir += DefHelp::getNationPostfix(g_iCountry, true);
+	strDir += "\\SignBoard\\";
+
+	// ¿ÃπÃ ≈◊Ω∫√ƒ∞° ∑Œµ˘ µ«æÓ ¿÷¿∏∏È «ÿ¡¶
 	if( m_ptdBaseTexture != NULL )
 	{
 		_pTextureStock->Release( m_ptdBaseTexture );
 		m_ptdBaseTexture = NULL;
 	}
 
-	// += Ï°¥ Ïù¥Î¶Ñ += ÏßÄÏó≠ Î≤àÌò∏  
+	// += ¡∏ ¿Ã∏ß += ¡ˆø™ π¯»£  
 	strSignBoardName.PrintF ( "sb_%d_%d", nZoneIndex, nLocalIndex );
 	
-	// Í≥µÏÑ±ÏßÄÏó≠ (7Î≤à Ï°¥Ïùò 11Î≤à ÏßÄÏó≠) Ïù∏ Í≤ΩÏö∞ÏóêÎäî Í≥µÏÑ±Ï§ëÏù¥ÏßÄ ÏïÑÎãåÏßÄÏóê Îî∞ÎùºÏÑú ÌëúÏãúÍ∞Ä Îã§Î¶Ñ
+	// ∞¯º∫¡ˆø™ (7π¯ ¡∏¿« 11π¯ ¡ˆø™) ¿Œ ∞ÊøÏø°¥¬ ∞¯º∫¡ﬂ¿Ã¡ˆ æ∆¥—¡ˆø° µ˚∂Ûº≠ «•Ω√∞° ¥Ÿ∏ß
 	if( nZoneIndex == 7 && nLocalIndex == 11 )
 	{
 		if( _pUISWDoc->IsWar() )
 			strSignBoardName += "_war";
 	}
 
-	extern INDEX	g_iCountry;
-	
-	switch( g_iCountry )
+	strSignBoardName += ".tex";
+
+	//[090914 ªÁ¿Œ∫∏µÂ ∆ƒ¿œ¿Ã æ¯¿∏∏È Ω√Ω∫≈€ ∏ﬁΩ√¡ˆ∑Œ √‚∑¬«—¥Ÿ]
+	// ≈◊Ω∫√ƒ ∑Œµ˘
+	try
 	{
-	case KOREA:
-		strDir += "\\Korea\\";
-		strSignBoardName += ".tex";
-		break;
-	
-	case TAIWAN:
-	case TAIWAN2:
-		strDir += "\\Taiwan\\";
-		strSignBoardName += "_t.tex";
-		break;
-	
-	case CHINA: 
-		strDir += "\\China\\";
-		strSignBoardName += "_c.tex";
-		break;
-
-	case THAILAND:
-		strDir += "\\Thai\\";
-		strSignBoardName += ".tex";
-		break;
-	case JAPAN:
-		strDir += "\\Japan\\";
-		strSignBoardName += ".tex";
-		break;
-	
-	case MALAYSIA:
-		if(g_bIsMalEng){
-			strDir += "\\Malaysia_e\\";
-			strSignBoardName += ".tex";
-		}
-		else {
-			strDir += "\\Malaysia\\";
-			strSignBoardName += ".tex";
-		}
-		break;
-	case USA:
-		strDir += "\\USA\\";
-		strSignBoardName += ".tex";
-		break;
-	case BRAZIL:
-		strDir += "\\BRZ\\";
-		strSignBoardName += ".tex";
-		break;
-	case HONGKONG:
-		if(g_bIsMalEng)
-		{
-			strDir += "\\HK_e\\";
-			strSignBoardName += ".tex";
-		}
-		else
-		{
-			strDir += "\\HK\\";
-			strSignBoardName += ".tex";
-		}
-		break;
-	case GERMANY:
-		strDir += "\\GER\\";
-		strSignBoardName += ".tex";
-		break;
-	case SPAIN://FRANCE_SPAIN_CLOSEBETA_NA_20081124
-		strDir += "\\SPA\\";
-		strSignBoardName += ".tex";
-		break;
-	case FRANCE:
-		strDir += "\\FRA\\";
-		strSignBoardName += ".tex";
-		break;
-	case POLAND:
-		strDir += "\\POL\\";
-		strSignBoardName += ".tex";
-		break;
-
-	case TURKEY:
-		strDir += "\\TURKEY\\";
-		strSignBoardName += ".tex";
-		break;
+		m_ptdBaseTexture = _pTextureStock->Obtain_t ( strDir + strSignBoardName );
 	}
+	catch (char* strError)
+	{
+		if ( _pNetwork->m_ubGMLevel > 0 )
+		{	// GM¿œ∂ß∏∏ «•Ω√
+			//FatalError(strError);
+			CTString strtmpError = strError;
+			_pNetwork->ClientSystemMessage(strtmpError, SYSMSG_ERROR);
+		}
 
-	// ÌÖåÏä§Ï≥ê Î°úÎî©
-	m_ptdBaseTexture = _pTextureStock->Obtain_t ( strDir + strSignBoardName );
+		return FALSE;
+	}
 
 	if ( m_ptdBaseTexture == NULL )
 	{

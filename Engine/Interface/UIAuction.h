@@ -9,44 +9,37 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIComboBox.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UIRectString.h>
-#include <vector>
-
 #define AUCTION_WIDTH	644
 #define AUCTION_HEIGHT	510
 #define AUCTION_SLOT_MAX 10
 
-//íƒ­êµ¬ë¶„
+//ÅÇ±¸ºĞ
 enum eAuctionTab 
 {
-	AUCTION_TAB_REFER = 0,		//ì¡°íšŒ
-	AUCTION_TAB_REGISTER,		//ë“±ë¡
-	AUCTION_TAB_SETTLEMENT,		//ì •ì‚°
+	AUCTION_TAB_REFER = 0,		//Á¶È¸
+	AUCTION_TAB_REGISTER,		//µî·Ï
+	AUCTION_TAB_SETTLEMENT,		//Á¤»ê
 	AUCTION_TAB_TOTAL,
 };
 
-//ì •ë ¬ë°©ì‹
+//Á¤·Ä¹æ½Ä
 enum eSortType
 {
-	ITEM_SORT_INDEX = 0,		//ì¸ë±ìŠ¤
-	ITEM_SORT_COUNT,			//ê°œìˆ˜
-	ITEM_SORT_TOTALNAS,			//ë‚˜ìŠ¤
-	ITEM_SORT_LEVEL,			//ë ˆë²¨
-	ITEM_SORT_FINISHDAY,		//ì¢…ë£Œì¼
-	ITEM_SORT_PASSDAY,			//ê²½ê³¼
+	ITEM_SORT_INDEX = 0,		//ÀÎµ¦½º
+	ITEM_SORT_COUNT,			//°³¼ö
+	ITEM_SORT_TOTALNAS,			//³ª½º
+	ITEM_SORT_LEVEL,			//·¹º§
+	ITEM_SORT_FINISHDAY,		//Á¾·áÀÏ
+	ITEM_SORT_PASSDAY,			//°æ°ú
 	ITEM_SORT_TOTAL
 };
 
 typedef struct _AuctionItems
 {
-	int AuctionItemIndex; //ê±°ë˜ëŒ€í–‰ ì•„ì´í…œ ë²ˆí˜¸
-	int AuctionItemStatus; //ê±°ë˜ëŒ€í–‰ ì•„ì´í…œ ìƒíƒœ(ì¢…ë£Œì¼ë‹¨ìœ„, ì •ì‚° ìƒíƒœë“±)		
-	SQUAD llNasTotal;			//ì•„ì´í…œë“¤ ê¸ˆì•¡
-	int	nEtc;				//ë ˆë²¨, ë§ˆê°ì¼ì, ìƒíƒœë¥¼ í‘œì‹œ
+	int AuctionItemIndex; //°Å·¡´ëÇà ¾ÆÀÌÅÛ ¹øÈ£
+	int AuctionItemStatus; //°Å·¡´ëÇà ¾ÆÀÌÅÛ »óÅÂ(Á¾·áÀÏ´ÜÀ§, Á¤»ê »óÅÂµî)		
+	SQUAD llNasTotal;			//¾ÆÀÌÅÛµé ±İ¾×
+	int	nEtc;				//·¹º§, ¸¶°¨ÀÏÀÚ, »óÅÂ¸¦ Ç¥½Ã
 
 	_AuctionItems()
 	{
@@ -63,79 +56,77 @@ typedef struct _AuctionItems
 class CUIAuction : public CUIWindow
 {
 protected:
-	CStaticStackArray<AuctionItems> m_AuctionItemData; // í˜„ì¬ í˜ì´ì§€ ë‚´ì˜ ê±°ë˜ëŒ€í–‰ ì•„ì´í…œ ì •ë³´
+	CStaticStackArray<AuctionItems> m_AuctionItemData; // ÇöÀç ÆäÀÌÁö ³»ÀÇ °Å·¡´ëÇà ¾ÆÀÌÅÛ Á¤º¸
 
-	int m_nCurrentSelectedItem;							//í˜„ì¬ ì„ íƒëœ ì•„ì´í…œìŠ¬ë¡¯
-	int m_nCurrnetTab;									//í˜„ì¬ íƒ­
-	int m_nCurrentPage;									//í˜„ì¬ í˜ì´ì§€
-	int m_nMaxPage;										//ìµœëŒ€ í˜ì´ì§€
+	int m_nCurrentSelectedItem;							//ÇöÀç ¼±ÅÃµÈ ¾ÆÀÌÅÛ½½·Ô
+	int m_nCurrnetTab;									//ÇöÀç ÅÇ
+	int m_nCurrentPage;									//ÇöÀç ÆäÀÌÁö
+	int m_nMaxPage;										//ÃÖ´ë ÆäÀÌÁö
 
 	int m_nSearchedItemType;							//////////////////////////////////////////////////////////////////////////
-	int m_nSearchedItemSubType;							//ê²€ìƒ‰ ì¡°ê±´ ë³€ê²½í›„ í˜ì´ì§€ ì´ë™ì‹œ ì´ì „ì— ê²€ìƒ‰í–ˆë˜ ì¡°ê±´ì„
-	int m_nSearchedClass;								//ì €ì¥í•˜ê¸° ìœ„í•œ ê°’ë“¤
+	int m_nSearchedItemSubType;							//°Ë»ö Á¶°Ç º¯°æÈÄ ÆäÀÌÁö ÀÌµ¿½Ã ÀÌÀü¿¡ °Ë»öÇß´ø Á¶°ÇÀ»
+	int m_nSearchedClass;								//ÀúÀåÇÏ±â À§ÇÑ °ªµé
 	int m_nCurretnSorting;								//////////////////////////////////////////////////////////////////////////
+	int m_nSelectedItemCancel;							// µî·Ï Ãë¼ÒÇÒ ¾ÆÀÌÅÛ ¹öÆ° ÀÎµ¦½º
 
-	int m_nNpcIndex;									//npcì¸ë±ìŠ¤
-	int m_nSelectedItemCancel;							// ë“±ë¡ ì·¨ì†Œí•  ì•„ì´í…œ ë²„íŠ¼ ì¸ë±ìŠ¤
+	FLOAT m_fNpcX, m_fNpcZ;								//npcÀ§Ä¡(°Å¸® Ã¼Å©¿ë)
 
-	FLOAT m_fNpcX, m_fNpcZ;								//npcìœ„ì¹˜(ê±°ë¦¬ ì²´í¬ìš©)
+	CTString m_strSearched;								//À§ÀÇ °Ë»ö Á¶°Ç º¯°æ°ú °°Àº °æ¿ì¿¡ »ç¿ë(°Ë»ö¾î ÀúÀå)
 
-	CTString m_strSearched;								//ìœ„ì˜ ê²€ìƒ‰ ì¡°ê±´ ë³€ê²½ê³¼ ê°™ì€ ê²½ìš°ì— ì‚¬ìš©(ê²€ìƒ‰ì–´ ì €ì¥)
+	BOOL m_bReverse;									//Á¤·Ä½Ã ¿À¸§ ³»¸² Â÷¼ø¿©ºÎ
+	BOOL m_bRegister;									// µî·Ï ¿äÃ» ÁßÀÎ°¡?
+	BOOL m_bSettle;										// Á¤»êÇÒ ¾ÆÀÌÅÛÀÌ ÀÖ´Ù.
 
-	BOOL m_bReverse;									//ì •ë ¬ì‹œ ì˜¤ë¦„ ë‚´ë¦¼ ì°¨ìˆœì—¬ë¶€
-	BOOL m_bRegister;									// ë“±ë¡ ìš”ì²­ ì¤‘ì¸ê°€?
-	BOOL m_bSettle;										// ì •ì‚°í•  ì•„ì´í…œì´ ìˆë‹¤.
-	BOOL m_bSettleRequest;								// ì •ì‚° ìš”ì²­ ì¤‘ì¸ê°€?
+	SQUAD m_nRegisterItemCount;							//µî·ÏÇÒ ¾ÆÀÌÅÛ °³¼ö
+	SQUAD m_nRegisterItemPrice;							//µî·ÏÇÒ ¾ÆÀÌÅÛ °¡°İ
+	SQUAD m_nDepositMoney;								//µî·Ï ÇÒ ¶§ º¸Áõ±İ
 
-	SQUAD m_nRegisterItemCount;							//ë“±ë¡í•  ì•„ì´í…œ ê°œìˆ˜
-	SQUAD m_nRegisterItemPrice;							//ë“±ë¡í•  ì•„ì´í…œ ê°€ê²©
-	SQUAD m_nDepositMoney;								//ë“±ë¡ í•  ë•Œ ë³´ì¦ê¸ˆ
+	CTString			m_strTitleName;					//°Å·¡´ëÇàÃ¢ ÀÌ¸§
 
-	CTString			m_strTitleName;					//ê±°ë˜ëŒ€í–‰ì°½ ì´ë¦„
+	UIRect				m_rcTitle;						//¸¶¿ì½º µå·¡±×·Î ÀÌµ¿½ÃÅ³ ¼ö ÀÖ´Â ¿µ¿ª
+	UIRect				m_rcSelectArea;					//¾ÆÀÌÅÛ ¼±ÅÃ ¿µ¿ª
+	UIRect				m_rcRegisterArea;				//µî·Ï ¾ÆÀÌÅÛ µå·¡±×&µå·Ó ¿µ¿ª
+	UIRect				m_rcItemArea;					//°Å·¡´ëÇà ¾ÆÀÌÅÛµéÀÌ ¹èÄ¡µÇ´Â ¿µ¿ª
+	UIRect				m_rcTabArea[AUCTION_TAB_TOTAL];	//»ó´ÜÅÇ Å¬¸¯ ¿µ¿ª
 
-	UIRect				m_rcTitle;						//ë§ˆìš°ìŠ¤ ë“œë˜ê·¸ë¡œ ì´ë™ì‹œí‚¬ ìˆ˜ ìˆëŠ” ì˜ì—­
-	UIRect				m_rcSelectArea;					//ì•„ì´í…œ ì„ íƒ ì˜ì—­
-	UIRect				m_rcRegisterArea;				//ë“±ë¡ ì•„ì´í…œ ë“œë˜ê·¸&ë“œë¡­ ì˜ì—­
-	UIRect				m_rcItemArea;					//ê±°ë˜ëŒ€í–‰ ì•„ì´í…œë“¤ì´ ë°°ì¹˜ë˜ëŠ” ì˜ì—­
-	UIRect				m_rcTabArea[AUCTION_TAB_TOTAL];	//ìƒë‹¨íƒ­ í´ë¦­ ì˜ì—­
+	UIRectUV			m_rtSelectedTab;				//¼±ÅÃµÈ ÅÇ(texture)
+	UIRectUV			m_rtUnSelectedTab;				//¼±ÅÃµÇÁö¾ÊÀº ÅÇ(texture)
 
-	UIRectUV			m_rtSelectedTab;				//ì„ íƒëœ íƒ­(texture)
-	UIRectUV			m_rtUnSelectedTab;				//ì„ íƒë˜ì§€ì•Šì€ íƒ­(texture)
-
-	//ê±°ë˜ëŒ€í–‰ì— ì¶œë ¥í•  ì´ë¯¸ì§€ë“¤
-	//ì´ ìˆœì„œë¡œ ë“¤ì–´ê°
-	//ë©”ì¸ ìœˆë„ìš° 0
-	//ì—ë””íŠ¸ ë°•ìŠ¤ 1
-	//ë„ì›€ë§ ë°°ê²½ 2
-	//ì„ íƒì´ë¯¸ì§€ 3
+	//°Å·¡´ëÇà¿¡ Ãâ·ÂÇÒ ÀÌ¹ÌÁöµé
+	//ÀÌ ¼ø¼­·Î µé¾î°¨
+	//¸ŞÀÎ À©µµ¿ì 0
+	//¿¡µğÆ® ¹Ú½º 1
+	//µµ¿ò¸» ¹è°æ 2
+	//¼±ÅÃÀÌ¹ÌÁö 3
 	CUIRectSurface		m_AuctionSurface;				
+	CTextureData		*m_ptdButtonTexture;
 	
-	//ë²„íŠ¼ë“¤
-	CUIButton			m_btnClose;								//ë‹«ê¸°
-	CUIButton			m_btnSearch;							//ê²€ìƒ‰
-	CUIButton			m_btnFirst;								//ì²˜ìŒìœ¼ë¡œ
-	CUIButton			m_btnPrev;								//1í˜ì´ì§€ë’¤ë¡œ
-	CUIButton			m_btnNext;								//1í˜ì´ì§€ì•ìœ¼ë¡œ
-	CUIButton			m_btnLast;								//ë§¨ëìœ¼ë¡œ
-	CUIButton			m_btnBuy;								//êµ¬ë§¤
-	CUIButton			m_btnCancelRegister;					//ë“±ë¡ì·¨ì†Œ
-	CUIButton			m_btnExecuteSettlement;					//ì •ì‚°
-	CUIButton			m_btnSortItem;							//ì •ë ¬(ì¸ë±ìŠ¤)
-	CUIButton			m_btnSortCount;							//ì •ë ¬(ê°œìˆ˜)
-	CUIButton			m_btnSortTotalNas;						//ì •ë ¬(ë‚˜ìŠ¤)
-	CUIButton			m_btnSortLevel;							//ì •ë ¬(ë ˆë²¨)
-	CUIButton			m_btnSortFinishDay;						//ì •ë ¬(ì¢…ë£Œì¼)
-	CUIButton			m_btnSortPassDay;						//ì •ë ¬(ê²½ê³¼)
+	//¹öÆ°µé
+	CUIButton			m_btnClose;								//´İ±â
+	CUIButton			m_btnSearch;							//°Ë»ö
+	CUIButton			m_btnFirst;								//Ã³À½À¸·Î
+	CUIButton			m_btnPrev;								//1ÆäÀÌÁöµÚ·Î
+	CUIButton			m_btnNext;								//1ÆäÀÌÁö¾ÕÀ¸·Î
+	CUIButton			m_btnLast;								//¸Ç³¡À¸·Î
+	CUIButton			m_btnBuy;								//±¸¸Å
+	CUIButton			m_btnCancelRegister;					//µî·ÏÃë¼Ò
+	CUIButton			m_btnExecuteSettlement;					//Á¤»ê
+	CUIButton			m_btnSortItem;							//Á¤·Ä(ÀÎµ¦½º)
+	CUIButton			m_btnSortCount;							//Á¤·Ä(°³¼ö)
+	CUIButton			m_btnSortTotalNas;						//Á¤·Ä(³ª½º)
+	CUIButton			m_btnSortLevel;							//Á¤·Ä(·¹º§)
+	CUIButton			m_btnSortFinishDay;						//Á¤·Ä(Á¾·áÀÏ)
+	CUIButton			m_btnSortPassDay;						//Á¤·Ä(°æ°ú)
 
 	//////////////////////////////////////////////////////////////////////////
-	CUIComboBox			m_cmbItemType;							//ì•„ì´í…œ íƒ€ì…(ë¬´ê¸°,ë°©ì–´êµ¬...)
-	CUIComboBox			m_cmbItemSubType;						//ì•„ì´í…œ ì„œë¸Œíƒ€ì…(ì•„ì´í…œ íƒ€ì…ì— ë”°ë¼ ë‹¤ë¦„)
-	CUIComboBox			m_cmbClass;								//ì‚¬ìš©ê°€ëŠ¥ í´ë˜ìŠ¤
+	CUIComboBox			m_cmbItemType;							//¾ÆÀÌÅÛ Å¸ÀÔ(¹«±â,¹æ¾î±¸...)
+	CUIComboBox			m_cmbItemSubType;						//¾ÆÀÌÅÛ ¼­ºêÅ¸ÀÔ(¾ÆÀÌÅÛ Å¸ÀÔ¿¡ µû¶ó ´Ù¸§)
+	CUIComboBox			m_cmbClass;								//»ç¿ë°¡´É Å¬·¡½º
 
-	CUIEditBox			m_ebSearch;								//ê²€ìƒ‰ì–´ ì…ë ¥í•˜ëŠ” ê³³
+	CUIEditBox			m_ebSearch;								//°Ë»ö¾î ÀÔ·ÂÇÏ´Â °÷
 
-	CUIButtonEx			m_btnAuctionItem[AUCTION_SLOT_MAX];		//ì•„ì´í…œ í‘œì‹œë²„íŠ¼ë“¤
-	CUIButtonEx			m_btnRegisterItem;						//ë“±ë¡í•  ì•„ì´í…œ
+	CUIButtonEx			m_btnAuctionItem[AUCTION_SLOT_MAX];		//¾ÆÀÌÅÛ Ç¥½Ã¹öÆ°µé
+	CUIButtonEx			m_btnRegisterItem;						//µî·ÏÇÒ ¾ÆÀÌÅÛ
 
 public :
 	CUIAuction();
@@ -159,11 +150,14 @@ public :
 	// Command functions
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput ,CTString &strConfirm);
+	void	MsgBoxLCommand(int nCommandCode, int nResult );
+	BOOL	CloseWindowByEsc()	{ CloseAuction(); return TRUE; }
 
 	BOOL	IsEditBoxFocused() { return m_ebSearch.IsFocused(); }
 
-	// ê¸°íƒ€ í•¨ìˆ˜
+	// ±âÅ¸ ÇÔ¼ö
 	void	OpenAuction(int nNpcIndex, FLOAT fNpcPosX, FLOAT fNpcPosZ);
+	void	UseAuction();
 	void	CloseAuction();
 
 	void	CloseAuctionMessageBox();
@@ -177,30 +171,41 @@ public :
 	void	SetMaxPage(int nMaxPageNum){ m_nMaxPage = nMaxPageNum; }
 	void	SetDepositMoney(SQUAD nDepositMoney){ m_nDepositMoney = nDepositMoney; }
 	void	SetRegistering(BOOL bEnable) { m_bRegister = bEnable; }
-	void	SetSettling(BOOL bEnable) { m_bSettle = bEnable; }
-	void	SetSettleRequest(BOOL bEnable) { m_bSettleRequest = bEnable; }
+	void	SetSettling(BOOL bEnable) { m_bSettle = bEnable; m_btnExecuteSettlement.SetEnable(bEnable);}
 
-	void	GetRegisterItemData(CTString &strItemName, SQUAD& nItemCount, SQUAD& nItemPrice); // ì•„ì´í…œ ë“±ë¡ ì •ë³´
-	int		GetCurrentPage(){ return m_nCurrentPage; } // í˜„ì¬ í˜ì´ì§€
-	SQUAD	GetDepositMoney(){ return m_nDepositMoney; } // ë³´ì¦ê¸ˆ
-	int		GetCurrentTab(){ return m_nCurrnetTab;} // í˜„ì¬ íƒ­ ì •ë³´
-	int		GetCurrentAuctionItemCount(); // í˜„ì¬ í˜ì´ì§€ì˜ ìƒí’ˆ ê°œìˆ˜
+	void	GetRegisterItemData(CTString &strItemName, SQUAD& nItemCount, SQUAD& nItemPrice); // ¾ÆÀÌÅÛ µî·Ï Á¤º¸
+	int		GetCurrentPage(){ return m_nCurrentPage; } // ÇöÀç ÆäÀÌÁö
+	SQUAD	GetDepositMoney(){ return m_nDepositMoney; } // º¸Áõ±İ
+	int		GetCurrentTab(){ return m_nCurrnetTab;} // ÇöÀç ÅÇ Á¤º¸
+	int		GetCurrentAuctionItemCount(); // ÇöÀç ÆäÀÌÁöÀÇ »óÇ° °³¼ö
 	BOOL	GetRegistering() { return m_bRegister; }
 	BOOL	GetSettling() { return m_bSettle; }
-	BOOL	GetSettleRequest(void) { return m_bSettleRequest; }
 
-	BOOL	IsSearchConditionChanged(); // ê²€ìƒ‰ ì¡°ê±´ ë³€ê²½ ìœ ë¬´
-	void	SortItem(int nSortType, BOOL bReverse = FALSE); // ì •ë ¬ (ì„œë²„ ìš”ì²­)
+	BOOL	IsSearchConditionChanged(); // °Ë»ö Á¶°Ç º¯°æ À¯¹«
+	void	SortItem(int nSortType, BOOL bReverse = FALSE); // Á¤·Ä (¼­¹ö ¿äÃ»)
 	void	SearchItem(int nPageNum, int nAlignType);
-	void	EnableSortBtn(); // ì •ë ¬ í™œì„±í™”
-	void	EnableSearchBtn();	// [090611: selo] ê²€ìƒ‰ ë²„íŠ¼ í™œì„±í™”
-	void	BuyItem(); // ì•„ì´í…œ êµ¬ì…
+	void	EnableSortBtn(); // Á¤·Ä È°¼ºÈ­
+	void	BuyItem(); // ¾ÆÀÌÅÛ ±¸ÀÔ
 
-	void	CancelRegister(); // ë“±ë¡ ì·¨ì†Œ
-	void	RegisterItem(); // ì•„ì´í…œ ë“±ë¡
-	BOOL	CanRegister(); // ë“±ë¡ ê°€ëŠ¥ ìœ ë¬´
+	void	CancelRegister(); // µî·Ï Ãë¼Ò
+	void	RegisterItem(); // ¾ÆÀÌÅÛ µî·Ï
+	BOOL	CanRegister(); // µî·Ï °¡´É À¯¹«
 	
-	void	GoPage(int nPageNum); // í˜ì´ì§€ ì´ë™
+	void	GoPage(int nPageNum); // ÆäÀÌÁö ÀÌµ¿
 	CTString GetItemFullName(CUIButtonEx &btnItem);
+
+	BOOL	IsFarNPC();
+
+public :
+	
+protected:
+	void initialize();
+	void OnUpdate( float fElapsedTime );
+#ifdef UI_TEST
+// 	CUIComboBox*			m_cmbItemType;							//¾ÆÀÌÅÛ Å¸ÀÔ(¹«±â,¹æ¾î±¸...)
+// 	CUIComboBox*			m_cmbItemSubType;						//¾ÆÀÌÅÛ ¼­ºêÅ¸ÀÔ(¾ÆÀÌÅÛ Å¸ÀÔ¿¡ µû¶ó ´Ù¸§)
+// 	CUIComboBox*			m_cmbClass;								//»ç¿ë°¡´É Å¬·¡½º
+#endif //UI_TEST
+
 };
 #endif // UIAUCTION_H_

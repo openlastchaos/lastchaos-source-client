@@ -12,17 +12,53 @@
 #include <Engine/Network/CPacket.h>
 #include <Engine/Network/Inputbuffer.h> 
 
+struct LoginServer;
+
+struct sIPFilter
+{
+	unsigned char	chSB1;
+	unsigned char	chSB2;
+	unsigned char	chSB3;
+	unsigned char	chSB4;
+	INDEX			iCountry;	// ±¹°¡
+
+	sIPFilter()
+	{
+		chSB1		= -1;
+		chSB2		= -1;
+		chSB3		= -1;
+		chSB4		= -1;
+		iCountry	= -1;
+	}
+
+	void	SetIP( unsigned char SB1, unsigned char SB2, unsigned char SB3, unsigned char SB4, INDEX Country )
+	{
+		chSB1		= SB1;
+		chSB2		= SB2;
+		chSB3		= SB3;
+		chSB4		= SB4;
+		iCountry	= Country;
+	}
+
+	bool operator<(const sIPFilter &other) const
+	{
+		if( iCountry < other.iCountry )
+			return true;
+		return false;
+	}
+};
+
 // Communication class
 class ENGINE_API CCommunicationInterface 
 {
 public:
 	// Login Server Information
-	char	cci_szNick[100], cci_szAddr[100];
+	char	cci_szAddr[100];
 	int		cci_iPort;
 	int		cci_iSelectedServerNum;
 
-	// ì„œë²„ ì„ íƒ í˜ì´ì§€ì—ì„œ ì“°ê¸° ìœ„í•œ ë¶€ë¶„.
-	// NOTE : sl.dtaì—ì„œ ì½ì–´ë“¤ì´ê¸° ìœ„í•´ì„œ ë©¤ë²„ ë³€ìˆ˜ë¡œ ë„£ì—ˆìŒ.
+	// ¼­¹ö ¼±ÅÃ ÆäÀÌÁö¿¡¼­ ¾²±â À§ÇÑ ºÎºĞ.
+	// NOTE : sl.dta¿¡¼­ ÀĞ¾îµéÀÌ±â À§ÇØ¼­ ¸â¹ö º¯¼ö·Î ³Ö¾úÀ½.
 	int		cci_iFullUsers;
 	int		cci_iBusyUsers;
 public:
@@ -43,9 +79,15 @@ public:
 
 	CInputBuffer m_inbuf;
 
-	// Date : 2005-05-02(ì˜¤ì „ 10:11:01), By Lee Ki-hwan
-	BOOL	m_b2stLocal;				// 2ë²ˆì§¸ ì§€ì—­ì¸ì§€ í™•ì¸ (ì¤‘êµ­ Local )
-	
+	// Date : 2005-05-02(¿ÀÀü 10:11:01), By Lee Ki-hwan
+	BOOL	m_b2stLocal;				// 2¹øÂ° Áö¿ªÀÎÁö È®ÀÎ (Áß±¹ Local )
+
+protected:
+	// [2013/01/09] sykim70
+	CLCCRC32 m_crc;
+
+	// IP Filter ¸ñ·Ï.
+	std::vector<sIPFilter>	m_vecIPFilter;	
 public:
 	// client
 	void Client_OpenLocal(void);
@@ -61,10 +103,10 @@ public:
 	void Init(void);
 	void Close(void);
 	
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…	09.09
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷	09.09
 	void Disconnect(void);
 	void Reconnect(CTString strIP, ULONG ulPort);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…		09.09
+//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷		09.09
 	
 	void InitWinsock(void);
 	void EndWinsock(void);
@@ -139,7 +181,18 @@ public:
 	void EnableInitUpdateMasterBuffer(){cci_bInitUpdateMasterBuffer = TRUE;}
 	BOOL IsInitUpdateMasterBuffer(){return cci_bInitUpdateMasterBuffer;}
 
-	BOOL Is2rdLocal(); // Date : 2005-05-02(ì˜¤ì „ 10:11:01), By Lee Ki-hwan	// 2ë²ˆì§¸ ì§€ì—­ì¸ì§€ í™•ì¸ (ì¤‘êµ­ Local )
+	BOOL Is2rdLocal(); // Date : 2005-05-02(¿ÀÀü 10:11:01), By Lee Ki-hwan	// 2¹øÂ° Áö¿ªÀÎÁö È®ÀÎ (Áß±¹ Local )
+	
+	void attachCRC(CPacket* packet);
+
+protected:
+
+	int ReadInfo( LoginServer* stLogin );
+	void ShowDisconnMsg();
+	void SetIPFilter();
+	BOOL CheckIPFilter();
+	BOOL IsValidIP();
+	bool FindHosNameIP(const char* szHostName, sIPFilter &ip, INDEX iCountry);
 
 };
 

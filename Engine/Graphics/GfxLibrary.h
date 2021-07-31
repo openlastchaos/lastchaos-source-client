@@ -42,8 +42,9 @@ extern CStaticStackArray<GFXTexCoord>	_atexText[FONT_MAX];
 extern CStaticStackArray<UWORD>			_auwText[FONT_MAX];
 
 // Button element arrays
-#define	MAX_BTN		10			// WSS_MINIGAME 070423 [ 6->7 ]
-
+// item button image count. [3/15/2012 rumist]
+#define	MAX_BTN		20
+// NOTICE. 18 ¹ø Àº º¸¼®À¸·Î¸¸ ÇÏ±â·Î ÇùÀÇ, size 1024 x 1024
 extern CStaticStackArray<GFXVertex>		_avtxBtn[MAX_BTN];
 extern CStaticStackArray<GFXColor>		_acolBtn[MAX_BTN];
 extern CStaticStackArray<GFXTexCoord>	_atexBtn[MAX_BTN];
@@ -145,9 +146,9 @@ public:
 	// DirectX vertex/index buffers
 	LPDIRECT3DVERTEXBUFFER8 gl_pd3dVtx;
 	LPDIRECT3DVERTEXBUFFER8 gl_pd3dNor;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	LPDIRECT3DVERTEXBUFFER8 gl_pd3dTan;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	LPDIRECT3DVERTEXBUFFER8 gl_pd3dWgh;
 	LPDIRECT3DVERTEXBUFFER8 gl_pd3dCol[GFX_MAXLAYERS];
 	LPDIRECT3DVERTEXBUFFER8 gl_pd3dTex[GFX_MAXLAYERS];
@@ -165,7 +166,7 @@ public:
 	CTString go_strSupportedExtensions; // supported extensions
 
 	// D3DCAPSINFO
-	D3DCAPS8		gl_pd3dCaps;	// Date : 2006-05-16(ì˜¤í›„ 4:48:07), By eons
+	D3DCAPS8		gl_pd3dCaps;	// Date : 2006-05-16(¿ÀÈÄ 4:48:07), By eons
 
 	// common stuff
 	PIX   gl_pixMaxTextureDimension;  // maximum allowed texture dimension by driver
@@ -192,6 +193,8 @@ public:
 	INDEX gl_ctModelElements;      // how many model elements (triangle vertices) were rendered in last frame
 	INDEX gl_ctParticleTriangles;  // how many particle polygons were rendered in last frame
 	INDEX gl_ctTotalElements;      // total = (world & lensflares) + (model & shadows) + particle + 2D
+
+	DEVMODE gl_devmode;
 
 private:
 
@@ -307,7 +310,7 @@ public:
 	BOOL HasCompression(void);
 
 	// force GPU to finish all pending jobs right now (CPU is waiting)
-	inline void Flush(void) { gfxFinish(TRUE); };   //by kevin
+	inline void Flush(void) { gfxFinish(FALSE); };
 };
 
 

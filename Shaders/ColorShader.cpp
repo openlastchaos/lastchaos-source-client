@@ -51,9 +51,9 @@ SHADER_MAIN(Color)
 		shaSetPixelProgramConst( 0, &srBaseColor, 1);
 		// prepare fog and haze
 		shaPrepareFogAndHaze(TRUE);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		shaSetDefaultConstantRegisters();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	}
 	else 
 	{
@@ -72,7 +72,7 @@ SHADER_MAIN(Color)
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(Color,ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -97,7 +97,7 @@ SHADER_DESC(Color,ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM|GFX_NORMAL_STREAM;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(Color, CTString &strVPCode, INDEX iVertexProgram)
@@ -112,7 +112,7 @@ SHADER_VCODE(Color, CTString &strVPCode, INDEX iVertexProgram)
 SHADER_PCODE(Color, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 {
 	ASSERT(iPixelProgram==iBasePP);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Sam's Old Shaders)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Sam's Old Shaders)(0.1)
 	if(eFogType==FT_NONE) 
 	{
 		strPPCode = "mul_x2 r0,     c0,    v0      \n" // shade pixel
@@ -120,15 +120,20 @@ SHADER_PCODE(Color, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogType)
 	}
 	else if(eFogType==FT_OPAQUE) 
 	{
-		strPPCode = "tex    t0                     \n" // load fog texture
+/*		strPPCode = "tex    t0                     \n" // load fog texture
 					"mul    t0,     t0,    c7      \n" // mul fog texture with fog color
 					"mul_x2 r0,     c0,    v0      \n" // shade pixel
 					"lrp    r0.rgb, t0.a,  t0,  r0 \n" // Add fog
+					;*/
+		strPPCode = "texld	r0,    t0                     \n" // load fog texture
+					"mul    r1,     r0,    c7      \n" // mul fog texture with fog color
+					"mul_x2 r0,     c0,    v0      \n" // shade pixel
+					"lrp    r0.rgb, r1.a,  r1,  r0 \n" // Add fog
 					;
 	}
 	else 
 	{
 		ASSERTALWAYS("Color shader cant be non opaque");
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Sam's Old Shaders)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Sam's Old Shaders)(0.1)
 }

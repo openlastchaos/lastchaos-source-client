@@ -6,7 +6,7 @@
 #include <Engine/Entities/Entity.h>
 #include <vector>
 
-// Shopì˜ ì •ë³´ë¥¼ ê´€ë¦¬í•˜ëŠ” í´ë˜ìŠ¤.
+// ShopÀÇ Á¤º¸¸¦ °ü¸®ÇÏ´Â Å¬·¡½º.
 class ENGINE_API CShopData
 {
 private:
@@ -25,13 +25,13 @@ public:
 	inline	int		GetSellRate()		const	{	return	m_ShopData.iSellRate;	};
 	inline	int		GetBuyRate()		const	{	return	m_ShopData.iBuyRate;	};
 
-	// ì“¸ëª¨ì—†ëŠ” ë¶€ë¶„ìœ¼ë¡œ MobNameì´ ì¶œë ¥ë ê²ƒì„.
+	// ¾µ¸ğ¾ø´Â ºÎºĞÀ¸·Î MobNameÀÌ Ãâ·ÂµÉ°ÍÀÓ.
 	inline	const char*	GetShopName()	const	{	return	m_ShopData.szShopName;	};
 
-	int					m_iNumOfItem;			// íŒë§¤í•˜ëŠ” ì•„ì´í…œì˜ ê°¯ìˆ˜.
+	int					m_iNumOfItem;			// ÆÇ¸ÅÇÏ´Â ¾ÆÀÌÅÛÀÇ °¹¼ö.
 	std::vector<int>	m_vectorSellItems;
 private:
-	TShopData			m_ShopData;				// Shopì— ëŒ€í•œ ì •ë³´ë¥¼ ê°–ê³  ìˆëŠ” êµ¬ì¡°ì²´.
+	TShopData			m_ShopData;				// Shop¿¡ ´ëÇÑ Á¤º¸¸¦ °®°í ÀÖ´Â ±¸Á¶Ã¼.
 public:
 	void		SetData(int iKeeperIdx, const char* pszShopName, int iSellRate, int iBuyRate);
 	static int	LoadShopDataFromFile(CStaticArray<CShopData> &apShopData, const char* FileName);

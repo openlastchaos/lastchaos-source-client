@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #ifndef __CPARTICLEGROUPMANAGER_H__
 #define __CPARTICLEGROUPMANAGER_H__
@@ -33,10 +33,10 @@ public:
 	CParticleGroup *Create(const std::string name);
 	void Destroy(CParticleGroup *&obj);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	void Read(CTStream *istrFile);
 	void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 	my_vector &GetCreatedList()	{ return m_vectorCreated; }
 	my_map &GetRegisteredMap()	{ return m_mapRegistered;	}
@@ -52,4 +52,4 @@ protected:
 
 #endif //__CPARTICLEGROUPMANAGER_H__
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

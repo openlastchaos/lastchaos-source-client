@@ -1,25 +1,28 @@
 #include "stdh.h"
-#include <Engine/Interface/UiLogin.h>
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UiLogin.h>
 #include <Engine/GlobalDefinition.h>
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/GameState.h>
-#include <Engine/Rendering/Render.h>
 #include <Engine/Network/TcpIpConnection.h>
-#include <Engine/Network/CommunicationInterface.h>
-#include <Engine/Sound/SoundLibrary.h>		// ì„œì •ì› ë¡œê¸´ ê´€ë ¨ ì‚¬ìš´ë“œ ì²˜ë¦¬
+#include <Engine/Sound/SoundLibrary.h>		// ¼­Á¤¿ø ·Î±ä °ü·Ã »ç¿îµå Ã³¸®
+#include <Engine/Base/md5.h>
 
 // WSS_NPROTECT 070402 ------------------------------->>
 #ifndef NO_GAMEGUARD
-	#include <NPGameLib.h>
+//	#include <NPGameLib.h>
+	#include "Engine/GameGuardInterface.h"    
 #endif
 // ---------------------------------------------------<<
-
+#ifdef KALYDO
+#include <Kalydo/KRFReadLib/Include/KRFReadLib.h>
+#endif
 
 // External variables
 extern HWND	_hwndMain;
 extern INDEX login_bSkipSelect;
-extern INDEX g_iCountry;
 
 #define MAXLENGTH			(15)		// Max Length of ID & PW
 
@@ -41,15 +44,11 @@ CUILogin::CUILogin()
 // ----------------------------------------------------------------------------
 CUILogin::~CUILogin()
 {
-	
-	if( m_ptdClassification )
-	{
-		_pTextureStock->Release( m_ptdClassification );
-		m_ptdClassification = NULL;
-	}
-	
-
 	Destroy();
+
+	STOCK_RELEASE(m_ptdButtonTexture);
+
+	STOCK_RELEASE(m_ptdClassification);
 }
 
 // ----------------------------------------------------------------------------
@@ -58,19 +57,15 @@ CUILogin::~CUILogin()
 // ----------------------------------------------------------------------------
 void CUILogin::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Create inventory texture
-	if (g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
-	{
-		m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Login_ger.tex" ) );
-	}
-	else
-	{
-		m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Login.tex" ) );
-	}
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+	//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Login_ger.tex" ) );
+#else
+	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\Login.tex" ) );
+#endif
 
 	FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight	= m_ptdBaseTexture->GetPixHeight();
@@ -79,8 +74,9 @@ void CUILogin::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 
 	// UV Coordinate of each part
 	// Background
-	if (g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND) { ntmpX = 189; }//FRANCE_SPAIN_CLOSEBETA_NA_20081124
-	
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+	ntmpX = 189;//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#endif
 	m_rtLogin.SetUV( 0, 0, ntmpX, 116, fTexWidth, fTexHeight );
 
 	m_rtSecurityTop.SetUV( 0, 0, ntmpX, 36, fTexWidth, fTexHeight );
@@ -88,10 +84,12 @@ void CUILogin::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	m_rtSecurityBottom.SetUV( 0, 54, ntmpX, 116, fTexWidth, fTexHeight );
 
 	ntmpX = 39;
-	if (g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND) { ntmpX = 50; }//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+	ntmpX = 50;//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#endif
 
 	// OK button (connect)
-	m_btnOK.Create( this, _S( 180, "ì ‘ì†" ), ntmpX, 88, 63, 21 );
+	m_btnOK.Create( this, _S( 180, "Á¢¼Ó" ), ntmpX, 88, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 193, 4, 256, 25, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 193, 26, 256, 47, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
@@ -99,10 +97,12 @@ void CUILogin::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 
 	ntmpX = 105;
 
-	if (g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND) { ntmpX = 116; }//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+	ntmpX = 116;//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#endif
 
 	// Cancel button (exit)
-	m_btnCancel.Create( this, _S( 181, "ë‚˜ê°€ê¸°" ), ntmpX, 88, 63, 21 );
+	m_btnCancel.Create( this, _S( 181, "³ª°¡±â" ), ntmpX, 88, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 193, 4, 256, 25, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 193, 26, 256, 47, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -111,30 +111,36 @@ void CUILogin::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	// ID edit box
 	ntmpX = 75;
 
-	if ( g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND) { ntmpX = 84; }//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+	ntmpX = 84;//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#endif
 
+#if defined (G_JAPAN)
+	m_ebID.Create( this, ntmpX, 37, 91, 15, MAXLENGTH+1 );	// ÀÏº»Àº ID/PW 16ÀÚ¸®
+	m_ebPW.Create( this, ntmpX, 56, 91, 15, MAXLENGTH+1, TRUE );	// ÀÏº»Àº ID/PW 16ÀÚ¸®
+#else
 	m_ebID.Create( this, ntmpX, 37, 91, 15, MAXLENGTH );
+	m_ebPW.Create( this, ntmpX, 56, 91, 15, MAXLENGTH, TRUE );
+#endif
+		
 	m_ebID.SetFocus( TRUE );
 	m_ebID.SetReadingWindowUV( 239, 49, 256, 65, fTexWidth, fTexHeight );
 	m_ebID.SetCandidateUV( 239, 49, 256, 65, fTexWidth, fTexHeight );
-
-	// Password edit box
-	m_ebPW.Create( this, ntmpX, 56, 91, 15, MAXLENGTH, TRUE );
 	m_ebPW.SetFocus( FALSE );
 
 	m_ebSecurity.Create( this, ntmpX, 56, 91, 15, 4, TRUE );
 	m_ebSecurity.SetFocus( FALSE );
 
-	// [090715: selo] - check button ( ì¢Œí‘œì™€ ì²´í¬ë²„íŠ¼ í…ìŠ¤ì³ ì„¸íŒ…)
+	// [090715: selo] - check button ( ÁÂÇ¥¿Í Ã¼Å©¹öÆ° ÅØ½ºÃÄ ¼¼ÆÃ)
 	m_ptdButtonTexture =CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
 	fTexWidth	= m_ptdButtonTexture->GetPixWidth();
 	fTexHeight	= m_ptdButtonTexture->GetPixHeight();
 
 	extern INDEX g_iSaveID;
 
-	int nStrWidth = ( _S( 290, "ì €ì¥" ).Length() + 3 ) *
+	int nStrWidth = ( _S( 290, "ÀúÀå" ).Length() + 3 ) *
 					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
-	m_btnCheck.Create(this, 10, 74, 13, 13, _S( 290, "ì €ì¥"), FALSE, 15);
+	m_btnCheck.Create(this, 10, 74, 13, 13, _S( 290, "ÀúÀå"), FALSE, 15);
 	m_btnCheck.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
 	m_btnCheck.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
 	m_btnCheck.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
@@ -143,7 +149,30 @@ void CUILogin::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	m_btnCheck.SetTextColor( FALSE, 0xF2F2F2FF );
 	m_btnCheck.SetCheck( g_iSaveID );
 
+	// À¯·ÎÇÇ¾È ¼­¹ö Á¢¼Ó Ã¼Å©¹Ú½º [10/18/2012 Ranma]
+#ifdef EUROUPEAN_SERVER_LOGIN
+	
+	extern INDEX g_iConnectEuroupean;
+
+	nStrWidth = ( _S( 5777, "À¯·ÎÇÇ¾È ¼­¹ö·Î Á¢¼Ó" ).Length() + 3 ) *
+		( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
+	m_btnEuroupeanCheck.Create(this, EUROUPEAN_WIDTH_GAP, LOGIN_TITLE_HEIGHT, 13, 13,
+		_S( 5777, "À¯·ÎÇÇ¾È ¼­¹ö·Î Á¢¼Ó" ), FALSE, 15);							// Check button
+	m_btnEuroupeanCheck.SetUV( UCBS_NONE, 139, 75, 152, 88, fTexWidth, fTexHeight );
+	m_btnEuroupeanCheck.SetUV( UCBS_CHECK, 119, 75, 132, 88, fTexWidth, fTexHeight );
+	m_btnEuroupeanCheck.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
+	m_btnEuroupeanCheck.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
+	m_btnEuroupeanCheck.SetTextColor( TRUE, 0xF2F2F2FF );
+	m_btnEuroupeanCheck.SetTextColor( FALSE, 0xF2F2F2FF );
+	m_btnEuroupeanCheck.SetCheck( g_iConnectEuroupean );
+#endif
+
+#if defined (G_KOR)
+	m_ptdClassification = CreateTexture ( CTString ( "Data\\Interface\\Loading\\Classification_15_kor.tex" ) );
+#else 
 	m_ptdClassification = CreateTexture ( CTString ( "Data\\Interface\\Loading\\Classification_15.tex" ) );
+#endif
+
 	//1228
 	
 	CTString strFullPath = _fnmApplicationPath.FileDir();
@@ -163,15 +192,24 @@ void CUILogin::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 		g_iLocalVersion = 700;
 	}
 
-	_pUIMgr->SetVersion(g_iLocalVersion);
-
-	// [090715: selo] ì €ì¥ëœ ì•„ì´ë”” ì½ì–´ì˜¤ê¸°
-#ifdef LOGIN_SAVEID
+	CUIManager::getSingleton()->SetVersion(g_iLocalVersion);
+	
+	// [090715: selo] ÀúÀåµÈ ¾ÆÀÌµğ ÀĞ¾î¿À±â
 	extern INDEX g_iSaveID;
 
 	if(g_iSaveID)		
 		ReadPreviousId();
+
+#ifdef EUROUPEAN_SERVER_LOGIN	
+	if (g_iConnectEuroupean)
+	{
+		m_btnEuroupeanCheck.SetEnable(TRUE);
+	}
 #endif
+
+#ifdef	DEV_LOGIN
+	ReadTextDevPreviousIdPw();
+#endif	// DEV_LOGIN
 }
 
 //-----------------------------------------------------------------------------
@@ -182,19 +220,25 @@ void CUILogin::Reset()
 	m_strUserID		= "";
 	m_strUserPW		= "";
 
-	// NOTE : íŒ¨ìŠ¤ì›Œë“œ ì…ë ¥ ë¶€ë¶„ì— í¬ì»¤ìŠ¤ê°€ í™œì„±í™”ë˜ëŠ” ê²ƒ ë•Œë¬¸ì— ì£¼ì„ì²˜ë¦¬í•¨...
+	// NOTE : ÆĞ½º¿öµå ÀÔ·Â ºÎºĞ¿¡ Æ÷Ä¿½º°¡ È°¼ºÈ­µÇ´Â °Í ¶§¹®¿¡ ÁÖ¼®Ã³¸®ÇÔ...
 	//Lock(FALSE);
 	m_ebID.SetEnable(TRUE);
 	m_ebPW.SetEnable(TRUE);
+
+	ResetBtn();
+}
+
+void CUILogin::ResetBtn()
+{
 	m_btnOK.SetEnable(TRUE);
 
-	// [090715: selo] ì•„ì´ë”” ì €ì¥ ì²´í¬ë°•ìŠ¤ í™œì„±/ë¹„í™œì„±í™”
-#ifdef LOGIN_SAVEID
+	// [090715: selo] ¾ÆÀÌµğ ÀúÀå Ã¼Å©¹Ú½º È°¼º/ºñÈ°¼ºÈ­
 	m_btnCheck.SetEnable(TRUE);
-#else
-	m_btnCheck.SetEnable(FALSE);
+
+#ifdef EUROUPEAN_SERVER_LOGIN
+	m_btnEuroupeanCheck.SetEnable(TRUE);
 #endif
-	
+
 	m_bSecurity =FALSE;
 	m_ebSecurity.SetEnable(TRUE);
 }
@@ -205,8 +249,19 @@ void CUILogin::Reset()
 // ----------------------------------------------------------------------------
 void CUILogin::Render()
 {
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+	extern BOOL g_bAutoRestart;
+	if(g_bAutoRestart)
+	{
+		CUIManager::getSingleton()->RenderLoading();
+		return;
+	}
+#endif
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set login texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	if( m_bSecurity )
 		SecurityRender();
@@ -214,7 +269,7 @@ void CUILogin::Render()
 	{
 		// Add render regions
 		// Background
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY,
+		pDrawPort->AddTexture( m_nPosX, m_nPosY,
 											m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 											m_rtLogin.U0, m_rtLogin.V0, m_rtLogin.U1, m_rtLogin.V1,
 											0xFFFFFFFF );
@@ -230,63 +285,61 @@ void CUILogin::Render()
 		m_ebPW.Render();
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// [090715: selo] - check button
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
-		
+		pDrawPort->InitTextureData( m_ptdButtonTexture );
+
 		if( m_btnCheck.IsEnabled() )
 			m_btnCheck.Render();
 
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-		
+#ifdef EUROUPEAN_SERVER_LOGIN
+		if( m_btnEuroupeanCheck.IsEnabled() )
+			m_btnEuroupeanCheck.Render();
+#endif
+
+		pDrawPort->FlushRenderingQueue();
+
 		// Prepare Rendering Text
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 182, "ë¡œê·¸ì¸" ),
+		pDrawPort->PutTextEx( _S( 182, "·Î±×ÀÎ" ),
 							m_nPosX + LOGIN_TITLE_TEXT_OFFSETX, m_nPosY + LOGIN_TITLE_TEXT_OFFSETY );
 
 		int ntmpX = 9;
-		if (g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND) { ntmpX = 6; }//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+		ntmpX = 6;//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#endif
 		
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 183, "ì•„ì´ë””" ), m_nPosX + ntmpX, m_nPosY + 38 );
+		pDrawPort->PutTextEx( _S( 183, "¾ÆÀÌµğ" ), m_nPosX + ntmpX, m_nPosY + 38 );
 			
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 184, "íŒ¨ìŠ¤ì›Œë“œ" ), m_nPosX + ntmpX, m_nPosY + 57 );
+		pDrawPort->PutTextEx( _S( 184, "ÆĞ½º¿öµå" ), m_nPosX + ntmpX, m_nPosY + 57 );
+
+		// Version
+		if (m_strVersion.empty() == false)
+		{
+			pDrawPort->PutTextEx( CTString(m_strVersion.c_str()), 0, 0 );
+		}
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 
 		// Reading window
 		if( m_ebID.DoesShowReadingWindow() )
 		{
 			// Set login texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 			// Reading window
 			m_ebID.RenderReadingWindow();
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 
 			// Flush all render text queue
-			_pUIMgr->GetDrawPort()->EndTextEx();
+			pDrawPort->EndTextEx();
 		}
 	}
 
-	if(g_iCountry != BRAZIL && g_iCountry != GERMANY && g_iCountry != SPAIN && g_iCountry != FRANCE && g_iCountry != POLAND)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
-	{
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdClassification );
-
-		int nWidth = m_ptdClassification->GetPixWidth();
-		int nHeigth = m_ptdClassification->GetPixHeight();
-		
-		int nPosX = _pUIMgr->GetDrawPort()->GetWidth() - ( nWidth + nWidth / 4 ) ;
-		int nPosY = ( nHeigth / 4 );
-
-		_pUIMgr->GetDrawPort()->AddTexture( nPosX, nPosY,
-											nPosX + nWidth, nPosY + nHeigth, 0xFFFFFFFF );
-
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	}
-
+	pDrawPort->FlushRenderingQueue();	
 }
 
 //-----------------------------------------------------------------------------
@@ -320,18 +373,10 @@ void CUILogin::PressOKBtn()
 
 	m_ebSecurity.ResetString();
 
-
-	// [090715: selo] ì•„ì´ë”” ì €ì¥
-#ifdef LOGIN_SAVEID
 	extern INDEX g_iSaveID;
 
 	if(g_iSaveID && bLogin)		
 		WritePreviousId();	
-#endif
-
-	// ì ‘ì†ì— ì„±ê³µí–ˆë‹¤ë©´ ì„œë²„ ì„ íƒí™”ë©´ìœ¼ë¡œ...
-	//if( bUserLogin )
-	//	_pUIMgr->SetUIGameState( UGS_SELSERVER );
 }
 
 //-----------------------------------------------------------------------------
@@ -400,7 +445,7 @@ WMSG_RESULT CUILogin::KeyMessage( MSG *pMsg )
 WMSG_RESULT CUILogin::IMEMessage( MSG *pMsg )
 {
 
-	// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (11. 15) : return ê°’ ì¡°ì ˆì„ ìœ„í•´ ë¡œì§ ë³€ê²½
+	// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11. 15) : return °ª Á¶ÀıÀ» À§ÇØ ·ÎÁ÷ º¯°æ
 	WMSG_RESULT wmsgResult;
 
 	if( m_bSecurity )
@@ -422,7 +467,7 @@ WMSG_RESULT CUILogin::IMEMessage( MSG *pMsg )
 		}
 	}
 
-	// ì´ê¸°í™˜ ìˆ˜ì • ë
+	// ÀÌ±âÈ¯ ¼öÁ¤ ³¡
 	return WMSG_FAIL;
 }
 
@@ -464,6 +509,10 @@ WMSG_RESULT CUILogin::MouseMessage( MSG *pMsg )
 	WMSG_RESULT	wmsgResult;
 	extern INDEX g_iSaveID;
 
+#ifdef EUROUPEAN_SERVER_LOGIN
+	extern INDEX g_iConnectEuroupean;
+#endif
+
 	// Mouse point
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
@@ -477,10 +526,15 @@ WMSG_RESULT CUILogin::MouseMessage( MSG *pMsg )
 		// Cancel button
 		else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
 			return WMSG_SUCCESS;
-
 		// [090715: selo] 
 		else if( m_btnCheck.MouseMessage( pMsg ) != WMSG_FAIL )
 			return WMSG_SUCCESS;
+
+		// À¯·ÎÇÇ¾È ¼­¹ö Á¢¼Ó [10/18/2012 Ranma]
+#ifdef EUROUPEAN_SERVER_LOGIN
+		else if( m_btnEuroupeanCheck.MouseMessage( pMsg ) != WMSG_FAIL )
+			return WMSG_SUCCESS;
+#endif	
 	}
 	else if( pMsg->message == WM_LBUTTONDOWN )
 	{
@@ -488,7 +542,7 @@ WMSG_RESULT CUILogin::MouseMessage( MSG *pMsg )
 		{
 			if( m_bSecurity )
 			{
-				//ë³´ì•ˆì¹´ë“œ íŒ¨ìŠ¤ì›Œë“œ ì…ë ¥ ë°•ìŠ¤
+				//º¸¾ÈÄ«µå ÆĞ½º¿öµå ÀÔ·Â ¹Ú½º
 				if( m_ebSecurity.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
 					m_ebSecurity.SetFocus( TRUE );
@@ -521,7 +575,7 @@ WMSG_RESULT CUILogin::MouseMessage( MSG *pMsg )
 				// Nothing
 			}
 
-			// [090715: selo] ì•„ì´ë”” ì €ì¥ ì²´í¬ë°•ìŠ¤ ì²˜ë¦¬
+			// [090715: selo] ¾ÆÀÌµğ ÀúÀå Ã¼Å©¹Ú½º Ã³¸®
 			else if ( ( wmsgResult = m_btnCheck.MouseMessage( pMsg ) ) != WMSG_FAIL )
 			{
 				if ( wmsgResult == WMSG_SUCCESS )
@@ -534,8 +588,17 @@ WMSG_RESULT CUILogin::MouseMessage( MSG *pMsg )
 						g_strSaveID = "";
 				}
 			}
+#ifdef EUROUPEAN_SERVER_LOGIN	
+			else if ( ( wmsgResult = m_btnEuroupeanCheck.MouseMessage( pMsg ) ) != WMSG_FAIL )
+			{
+				if ( wmsgResult == WMSG_SUCCESS )
+				{
+					g_iConnectEuroupean = m_btnEuroupeanCheck.IsChecked() ? 1 : 0;
+ 				}
+			}
+#endif
 
-			_pUIMgr->RearrangeOrder( UI_LOGIN, TRUE );
+			CUIManager::getSingleton()->RearrangeOrder( UI_LOGIN, TRUE );
 			return WMSG_SUCCESS;
 		}
 	}
@@ -583,61 +646,52 @@ WMSG_RESULT CUILogin::MouseMessage( MSG *pMsg )
 //-----------------------------------------------------------------------------
 BOOL CUILogin::TryToLogin()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
 	CTString strMessage;
 
 	if( m_strUserID.Length() <= 0 )
 	{
-		_pUIMgr->CloseMessageBox( MSGCMD_LOGIN_ERROR );
+		pUIManager->CloseMessageBox( MSGCMD_LOGIN_ERROR );
 
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 182, "ë¡œê·¸ì¸" ), UMBS_OK,
+		MsgBoxInfo.SetMsgBoxInfo( _S( 182, "·Î±×ÀÎ" ), UMBS_OK,
 									UI_LOGIN, MSGCMD_LOGIN_ERROR );
-		strMessage = _S( 185, "ì•„ì´ë””ë¥¼ ì…ë ¥í•´ì£¼ì‹­ì‹œì˜¤." );
+		strMessage = _S( 185, "¾ÆÀÌµğ¸¦ ÀÔ·ÂÇØÁÖ½Ê½Ã¿À." );
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo, m_nLoginMsgPosX, m_nLoginMsgPosY );
+		pUIManager->CreateMessageBox( MsgBoxInfo, m_nLoginMsgPosX, m_nLoginMsgPosY );
 
 		return FALSE;
 	}
 	else if( m_strUserPW.Length() <= 0 )
 	{
-		_pUIMgr->CloseMessageBox( MSGCMD_LOGIN_ERROR );
+		pUIManager->CloseMessageBox( MSGCMD_LOGIN_ERROR );
 
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 182, "ë¡œê·¸ì¸" ), UMBS_OK,
+		MsgBoxInfo.SetMsgBoxInfo( _S( 182, "·Î±×ÀÎ" ), UMBS_OK,
 									UI_LOGIN, MSGCMD_LOGIN_ERROR );
-		strMessage = _S( 186, "íŒ¨ìŠ¤ì›Œë“œë¥¼ ì…ë ¥í•´ì£¼ì‹­ì‹œì˜¤." );
+		strMessage = _S( 186, "ÆĞ½º¿öµå¸¦ ÀÔ·ÂÇØÁÖ½Ê½Ã¿À." );
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo, m_nLoginMsgPosX, m_nLoginMsgPosY );
+		pUIManager->CreateMessageBox( MsgBoxInfo, m_nLoginMsgPosX, m_nLoginMsgPosY );
 
 		return FALSE;
 	}
 
-	CGame* _pGame		= _pUIMgr->GetGame();
-	//CTFileName fnWorld	= _pGame->gam_strCustomLevel;
-	
-	//extern BOOL _bUseSocket;
-	//_bUseSocket = TRUE;
-	
+	CGame* _pGame = pUIManager->GetGame();
 	_pGameState->ClearCharacterSlot();
 	
-	// NOTE : ì—¬ê¸°ì„œ ì†Œì¼“ì„ ìƒì„±í•˜ê³  ìˆìŒ.
+	// NOTE : ¿©±â¼­ ¼ÒÄÏÀ» »ı¼ºÇÏ°í ÀÖÀ½.
 	if(_pGame->PreNewGame())
 	{
-		//gm_bUseSocket = TRUE;
-		// ë¡œê·¸ì¸ ì„œë²„ì— ë¡œê·¸ì¸ì„ ì‹œë„í•©ë‹ˆë‹¤.
-// wooss 060209 TEST JAPAN
-//#define AUTO_LOGIN
-//#ifndef AUTO_LOGIN
 		extern BOOL g_bAutoLogin;
+		extern BOOL g_bAutoRestart;
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+		if(!g_bAutoLogin && !g_bAutoRestart)
+#else
 		if(!g_bAutoLogin)
+#endif
 			ConnectToLoginServer();
-//#endif
 	}
-	//_bUseSocket = FALSE;
 
-	//return m_bConnectToLoginServer;
-	
-	// [090715: selo] ì„±ê³µì‹œ TRUE ë¦¬í„´ 
 	return TRUE;
 }
 
@@ -664,7 +718,7 @@ void CUILogin::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMax
 
 // ----------------------------------------------------------------------------
 // Name : ReadPreviousId()
-// Desc : ì €ì¥ëœ ì•„ì´ë””ë¥¼ ì½ì–´ ì˜¨ë‹¤
+// Desc : ÀúÀåµÈ ¾ÆÀÌµğ¸¦ ÀĞ¾î ¿Â´Ù
 // ----------------------------------------------------------------------------
 void CUILogin::ReadPreviousId()
 {	
@@ -675,9 +729,53 @@ void CUILogin::ReadPreviousId()
 	m_ebPW.SetFocus(TRUE);
 }
 
+#ifdef DEV_LOGIN
+void CUILogin::ReadTextDevPreviousIdPw() // Login.txt ¿¡ ÀúÀåµÈ ¾ÆÀÌµğ ÆĞ½º¿öµå ¾ò¾î¿À±â
+{
+ 	CTString strFullPath = _fnmApplicationPath.FileDir();
+ 	CTString fileName = strFullPath + "Bin\\pass.txt";
+ 	
+ 	FILE *fp = NULL;
+ 	CTString fileTesx = CTString(" ");
+ 
+ 	if ((fp = fopen(fileName, "rt")) == NULL) 
+ 	{
+ 		return;
+ 	}
+
+	char buf[MAX_PATH] = {0,}; 
+ 	fread(buf, MAX_PATH, 1, fp);
+
+	fclose(fp);
+
+	std::string		str[2];
+	int		cur = 0;
+	{
+		char* sep = " \n";
+		char* token = NULL;
+
+		token = strtok( buf, sep );
+
+		while( token )
+		{
+			if( cur < 2 )
+				str[cur++] = token;
+
+			token = strtok( NULL, sep );
+		}
+	}
+
+	m_strUserID = str[0].c_str();
+	m_strUserPW = str[1].c_str();
+
+	m_ebID.SetString( (char*)str[0].c_str() );
+	m_ebPW.SetString( (char*)str[1].c_str() );
+}
+#endif // DEV_LOGIN
+
 // ----------------------------------------------------------------------------
 // Name : WritePreviousId()
-// Desc : ì•„ì´ë””ë¥¼ ì €ì¥í•œë‹¤
+// Desc : ¾ÆÀÌµğ¸¦ ÀúÀåÇÑ´Ù
 // ----------------------------------------------------------------------------
 void CUILogin::WritePreviousId()
 {
@@ -695,35 +793,55 @@ BOOL CUILogin::ConnectToLoginServer()
 	if(_pNetwork->m_bSendMessage)
 		return FALSE;
 
-	// ë¬¸ì œê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.
-/*	if( _tcpip.Socket == INVALID_SOCKET || !_tcpip.IsConnected(_tcpip.Socket) )
-	{
-		CPrintF("ë¡œê·¸ì¸ ì„œë²„ì™€ ì—°ê²°í• ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\n");
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-		_pUIMgr->CloseMessageBox(MSGCMD_CONNECT_ERROR);
+	// ¹®Á¦°¡ ¹ß»ıÇß½À´Ï´Ù.
+	if( _tcpip.Socket == INVALID_SOCKET || !_tcpip.IsConnected(_tcpip.Socket) )
+	{
+		CPrintF("·Î±×ÀÎ ¼­¹ö¿Í ¿¬°áÇÒ¼ö ¾ø½À´Ï´Ù.\n");
+
+		pUIManager->CloseMessageBox(MSGCMD_CONNECT_ERROR);
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 424, "ì ‘ì† ì˜¤ë¥˜" ), UMBS_OK, UI_LOGIN, MSGCMD_CONNECT_ERROR );
-		MsgBoxInfo.AddString( _S( 425, "ë¡œê·¸ì¸ ì„œë²„ì™€ ì—°ê²°í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		MsgBoxInfo.SetMsgBoxInfo( _S( 424, "Á¢¼Ó ¿À·ù" ), UMBS_OK, UI_LOGIN, MSGCMD_CONNECT_ERROR );
+		MsgBoxInfo.AddString( _S( 425, "·Î±×ÀÎ ¼­¹ö¿Í ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù." ) );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 
 		_pNetwork->m_bSendMessage = FALSE;
 		return FALSE;
-	}*/
-	// ì†Œì¼“ì˜ ì—°ê²°ì„ ëŠì—ˆë‹¤ê°€, ë‹¤ì‹œ ì—°ê²°í•¨.	
+	}
+	// ¼ÒÄÏÀÇ ¿¬°áÀ» ²÷¾ú´Ù°¡, ´Ù½Ã ¿¬°áÇÔ.	
 	//-------------------------------------------------
-	_pUIMgr->Lock(TRUE);
-	_pNetwork->SendLoginMessage(m_strUserID, m_strUserPW, _pUIMgr->GetVersion());		
+	pUIManager->Lock(TRUE);
+	
+	// [091119: selo] ¹Ì±¹¿¡ md5 Àû¿ëÇÔ
+#if defined (G_JAPAN)/* || defined (G_USA) */
+	// ÆĞ½º¿öµå MD5·Î ¾ÏÈ£È­
+	char tmpPass[1024];
+	char tmpResult[256];
+	md5_buffer(m_strUserPW, m_strUserPW.Length(), tmpPass);
+	md5_sig_to_string(tmpPass, tmpResult, sizeof(tmpResult));
+	CTString CT_tmpPass = tmpResult;
+	CT_tmpPass.ToUpper(); // MD5·Î ¾ÏÈ£È­µÈ ÆĞ½º¿öµå´Â ´ë¹®ÀÚ·Î Àü¼Û(¼­¹ö¿¡¼­ ´ë¹®ÀÚ·Î µÈ ÆĞ½º¿öµå·Î Ã³¸®)
+	_pNetwork->SendLoginMessage(m_strUserID, CT_tmpPass, pUIManager->GetVersion());
+#else
+	_pNetwork->SendLoginMessage(m_strUserID, m_strUserPW, pUIManager->GetVersion());		
+#endif
+
 	_pNetwork->m_strUserID = m_strUserID;
 	_pNetwork->m_strUserPW = m_strUserPW;
 
 
 	// WSS_NPROTECT 070402 ------------------------------->>
-	// ì‚¬ìš©ì ë¡œê·¸ì¸ì‹œ IDë¥¼ GameMonì— í†µë³´
+	// »ç¿ëÀÚ ·Î±×ÀÎ½Ã ID¸¦ GameMon¿¡ Åëº¸
 #ifndef NO_GAMEGUARD
-	extern ENGINE_API CNPGameLib npgl;
+	//extern ENGINE_API CNPGameLib npgl;
 //	CPrintF("[ ---->> GameGuard Send(gameID)...Start <<---- ] - %lu\n",timeGetTime());
-	npgl.Send(m_strUserID.str_String);
+	//npgl.Send(m_strUserID.str_String);
 //	CPrintF("[ ---->> GameGuard Send(gameID)...End <<---- ] - %lu\n",timeGetTime());
+	if ( g_pGameGuardSendUserID )
+	{
+		g_pGameGuardSendUserID( m_strUserID.str_String );
+	}
 #endif
 	// ---------------------------------------------------<<
 
@@ -755,7 +873,7 @@ void CUILogin::SecurityCardSet(UBYTE* SecurityNum)
 		m_bSecurity =TRUE;
 
 		m_strSecurityCode.PrintF( "%s: [%c,%d][%c,%d][%c,%d][%c,%d]", 
-											_S(3668, "ë³´ì•ˆ ì½”ë“œ"), 
+											_S(3668, "º¸¾È ÄÚµå"), 
 											'A'+SecurityNum[0]/8, SecurityNum[0]%8+1, 
 											'A'+SecurityNum[1]/8, SecurityNum[1]%8+1, 
 											'A'+SecurityNum[2]/8, SecurityNum[2]%8+1, 
@@ -765,15 +883,17 @@ void CUILogin::SecurityCardSet(UBYTE* SecurityNum)
 
 BOOL CUILogin::ConnectToSecurityCard()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	if( strlen(m_ebSecurity.GetString()) <= 0 )
 	{
-		_pUIMgr->CloseMessageBox( MSGCMD_LOGIN_ERROR );
+		pUIManager->CloseMessageBox( MSGCMD_LOGIN_ERROR );
 
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 3667, "ë³´ì•ˆ ì¹´ë“œ" ), UMBS_OK,
+		MsgBoxInfo.SetMsgBoxInfo( _S( 3667, "º¸¾È Ä«µå" ), UMBS_OK,
 									UI_LOGIN, MSGCMD_LOGIN_ERROR );
-		MsgBoxInfo.AddString( _S( 186, "íŒ¨ìŠ¤ì›Œë“œë¥¼ ì…ë ¥í•´ì£¼ì‹­ì‹œì˜¤." ) );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo, m_nLoginMsgPosX, m_nLoginMsgPosY );
+		MsgBoxInfo.AddString( _S( 186, "ÆĞ½º¿öµå¸¦ ÀÔ·ÂÇØÁÖ½Ê½Ã¿À." ) );
+		pUIManager->CreateMessageBox( MsgBoxInfo, m_nLoginMsgPosX, m_nLoginMsgPosY );
 
 		return FALSE;
 	}
@@ -781,7 +901,7 @@ BOOL CUILogin::ConnectToSecurityCard()
 	if(_pNetwork->m_bSendMessage)
 		return FALSE;
 
-	_pUIMgr->Lock(TRUE);
+	pUIManager->Lock(TRUE);
 	_pNetwork->SendSecurityMessage( CTString(m_ebSecurity.GetString()) );
 
 	return TRUE;
@@ -789,24 +909,26 @@ BOOL CUILogin::ConnectToSecurityCard()
 
 void CUILogin::SecurityRender()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Add render regions
 	// Background
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY,
 										m_nPosX + m_nWidth, m_nPosY + 36,
 										m_rtSecurityTop.U0, m_rtSecurityTop.V0, m_rtSecurityTop.U1, m_rtSecurityTop.V1,
 										0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY +36,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY +36,
 										m_nPosX + m_nWidth, m_nPosY + 36 +9,
 										m_rtSecurityMid.U0, m_rtSecurityMid.V0, m_rtSecurityMid.U1, m_rtSecurityMid.V1,
 										0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY +36 +9,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY +36 +9,
 										m_nPosX + m_nWidth, m_nPosY + 36 +9 +9,
 										m_rtSecurityMid.U0, m_rtSecurityMid.V0, m_rtSecurityMid.U1, m_rtSecurityMid.V1,
 										0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY +36 +9 +9,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY +36 +9 +9,
 										m_nPosX + m_nWidth, m_nPosY + m_nHeight,
 										m_rtSecurityBottom.U0, m_rtSecurityBottom.V0, m_rtSecurityBottom.U1, m_rtSecurityBottom.V1,
 										0xFFFFFFFF );
@@ -820,19 +942,42 @@ void CUILogin::SecurityRender()
 	m_ebSecurity.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 	
 	// Prepare Rendering Text
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3667, "ë³´ì•ˆ ì¹´ë“œ" ),
+	pDrawPort->PutTextEx( _S( 3667, "º¸¾È Ä«µå" ),
 						m_nPosX + LOGIN_TITLE_TEXT_OFFSETX, m_nPosY + LOGIN_TITLE_TEXT_OFFSETY );
 
 	int ntmpX = 9;
-	if (g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND) { ntmpX = 6; }//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+	ntmpX = 6;//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+#endif
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strSecurityCode, m_nPosX + ntmpX, m_nPosY + 39 );
+	pDrawPort->PutTextEx( m_strSecurityCode, m_nPosX + ntmpX, m_nPosY + 39 );
 		
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 184, "íŒ¨ìŠ¤ì›Œë“œ" ), m_nPosX + ntmpX, m_nPosY + 58 );
+	pDrawPort->PutTextEx( _S( 184, "ÆĞ½º¿öµå" ), m_nPosX + ntmpX, m_nPosY + 58 );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
+
+void CUILogin::initialize()
+{
+	//m_ebID = (CUIEditBox*)findUI("edit_id" );
+}
+
+void CUILogin::setVersion( const char* strVer )
+{
+	m_strVersion = strVer;
+
+	while (true)
+	{
+		int nFind = m_strVersion.find(", ");
+
+		if (nFind == std::string::npos)
+			break;
+
+		m_strVersion.replace(nFind, 2, ".");
+	}	
+}
+

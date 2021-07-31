@@ -1,25 +1,29 @@
 
-//ì•ˆíƒœí›ˆì´ ì¶”ê°€í•œ íŒŒì¼.
+//¾ÈÅÂÈÆÀÌ Ãß°¡ÇÑ ÆÄÀÏ.
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #ifndef __SHADER_CODE__
 #define __SAHDER_CODE__
 
-static char strPixelProgramPrefix[] = 
-	"ps.1.1                         \n"
+static char strPixelProgramPrefix14[] = 
+	"ps.1.4                         \n"
 	;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+
+static char strPixelProgramPrefix11[] =
+	"ps.1.1							\n"
+	;
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 //--------------- Default BOne-Blend Shader For fog, No shade, No Calculate Normal ---//
 //--- Normal Map Type, Object Space based ---//
 //--- Input ---------------------------------//
 //--- v0     - vertex position            ---//
 //--- Output --------------------------------//
 //--- r0     - vertex position            ---//
-//--- ìƒìˆ˜ì„¤ì •ì€ ê¸°ë³¸ê³¼ ë™ì¼í•˜ê²Œ ê°„ë‹¤.    ---//
+//--- »ó¼ö¼³Á¤Àº ±âº»°ú µ¿ÀÏÇÏ°Ô °£´Ù.    ---//
 static char strNoWeights_OnlyPosition[] =
 	"vs.1.1                         \n"  // vertex shader version
 	"mov  r0,     v0                \n"  // move vertex position to temp register r0
@@ -128,8 +132,8 @@ static char strFourWeights_OnlyPosition[] =
 //--- Output --------------------------------//
 //--- r0     - vertex position            ---//
 //--- r1     - vertex normal              ---//
-//--- ìƒìˆ˜ì„¤ì •ì€ ê¸°ë³¸ê³¼ ë™ì¼í•˜ê²Œ ê°„ë‹¤.    ---//
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//--- »ó¼ö¼³Á¤Àº ±âº»°ú µ¿ÀÏÇÏ°Ô °£´Ù.    ---//
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 // Empty vertex shader
 static char strNoWeights[] =
 	"vs.1.1                         \n"  // vertex shader version
@@ -264,7 +268,7 @@ static char strFogVP[] =
 	;//command slot : 4
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 //--------------- Object Space Normal Map Shader --------------//
 //--- Normal Map Type, Object Space based ---//
 //--- Input ---------------------------------//
@@ -273,7 +277,7 @@ static char strFogVP[] =
 //--- Output --------------------------------//
 //--- r0     - vertex position            ---//
 //--- r1     - light direction            ---//
-//--- ìƒìˆ˜ì„¤ì •ì€ ê¸°ë³¸ê³¼ ë™ì¼í•˜ê²Œ ê°„ë‹¤.    ---//
+//--- »ó¼ö¼³Á¤Àº ±âº»°ú µ¿ÀÏÇÏ°Ô °£´Ù.    ---//
 
 // Empty vertex shader
 static char strNoWeights_NMObjectSpace[] =
@@ -378,7 +382,7 @@ static char strFourWeights_NMObjectSpace[] =
 	// First weight
 	"mov  a0.x,   r3.x                      \n"  // move index of first matrix into address register
 	"m4x3 r0,     v0, c[a0.x + 21]          \n"  // transform vertex position with bone matrix
-	"mov	r2.xyz,	c4.xyz				    \n"  // í•œëª…ë ¹ì—ì„œ ì“°ì¼ ìˆ˜ ìˆëŠ” ìƒìˆ˜ ë ˆì§€ìŠ¤í„° ìˆ˜ì˜ ì œí•œë•Œë¬¸.
+	"mov	r2.xyz,	c4.xyz				    \n"  // ÇÑ¸í·É¿¡¼­ ¾²ÀÏ ¼ö ÀÖ´Â »ó¼ö ·¹Áö½ºÅÍ ¼öÀÇ Á¦ÇÑ¶§¹®.
 	"m3x3 r1,     r2, c[a0.x + 21]          \n"
 
 	"mul  r0.xyz, r0.xyz,  v2.zzz           \n"  // multiply vertex position with weight strength
@@ -426,8 +430,8 @@ static char strFourWeights_NMObjectSpace[] =
 //--- r6.xyz - tangent                    ---//
 //--- r7.xyz - binormal                   ---//
 //--- r8.xyz - normal                     ---//
-//--- ìƒìˆ˜ì„¤ì •ì€ ê¸°ë³¸ê³¼ ë™ì¼í•˜ê²Œ ê°„ë‹¤.    ---//
-//tangentë¥¼ ì‚¬ìš©í•œë‹¤.
+//--- »ó¼ö¼³Á¤Àº ±âº»°ú µ¿ÀÏÇÏ°Ô °£´Ù.    ---//
+//tangent¸¦ »ç¿ëÇÑ´Ù.
 //binormal = normal X binormal
 
 // Empty vertex shader
@@ -447,8 +451,8 @@ static char strNoWeights_NMTangentSpaceT[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world space -> tangent space transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
 	;// command slot -> 12
@@ -475,8 +479,8 @@ static char strOneWeight_NMTangentSpaceT[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world -> tangent transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 	"mov  r0.w,    c7.y                         \n"  // set vertex position w as 1.0f
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
@@ -520,8 +524,8 @@ static char strTwoWeights_NMTangentSpaceT[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world -> tangent transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 	"mov  r0.w,    c7.y                         \n"  // set vertex position w as 1.0f
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
@@ -576,8 +580,8 @@ static char strThreeWeights_NMTangentSpaceT[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world -> tangent transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 	"mov  r0.w,    c7.y                         \n"  // set vertex position w as 1.0f
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
@@ -643,8 +647,8 @@ static char strFourWeights_NMTangentSpaceT[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world -> tangent transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 	"mov  r0.w,    c7.y                         \n"  // set vertex position w as 1.0f
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
@@ -665,8 +669,8 @@ static char strFourWeights_NMTangentSpaceT[] =
 //--- r6.xyz - tangent                    ---//
 //--- r7.xyz - binormal                   ---//
 //--- r8.xyz - normal                     ---//
-//--- ìƒìˆ˜ì„¤ì •ì€ ê¸°ë³¸ê³¼ ë™ì¼í•˜ê²Œ ê°„ë‹¤.    ---//
-//tangentëŒ€ì‹ ì— binormalì„ ì‚¬ìš©í•œë‹¤.
+//--- »ó¼ö¼³Á¤Àº ±âº»°ú µ¿ÀÏÇÏ°Ô °£´Ù.    ---//
+//tangent´ë½Å¿¡ binormalÀ» »ç¿ëÇÑ´Ù.
 //tangent = binormal X normal
 
 static char strNoWeights_NMTangentSpaceB[] =
@@ -685,8 +689,8 @@ static char strNoWeights_NMTangentSpaceB[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world space -> tangent space transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
 	;// command slot -> 12
@@ -712,8 +716,8 @@ static char strOneWeight_NMTangentSpaceB[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world -> tangent transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 	"mov  r0.w,    c7.y                         \n"  // set vertex position w as 1.0f
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
@@ -757,8 +761,8 @@ static char strTwoWeights_NMTangentSpaceB[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world -> tangent transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 	"mov  r0.w,    c7.y                         \n"  // set vertex position w as 1.0f
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
@@ -813,8 +817,8 @@ static char strThreeWeights_NMTangentSpaceB[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world -> tangent transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 	"mov  r0.w,    c7.y                         \n"  // set vertex position w as 1.0f
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
@@ -880,8 +884,8 @@ static char strFourWeights_NMTangentSpaceB[] =
 	"m3x3 r1.xyz,  c4.xyz,  r6                  \n"  // world -> tangent transform
 
 //	"dp3  r2.w,    r1.xyz,  r1.xyz              \n"  //normalize
-//	"rsq  r2.w,    r2.w                         \n"  //ë³„ë¡œ í•„ìš” ì—†ì„ë“¯. íšŒì „ í–‰ë ¬ì´ë‹ˆ(í˜¹ì€ ëŒ€ì¹­ë³€í™˜í–‰ë ¬)
-//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ì¼ë‹¨ command slot ìˆ˜ì—ì„œ ëºìŒ.
+//	"rsq  r2.w,    r2.w                         \n"  //º°·Î ÇÊ¿ä ¾øÀ»µí. È¸Àü Çà·ÄÀÌ´Ï(È¤Àº ´ëÄªº¯È¯Çà·Ä)
+//	"mul  r1.xyz,  r1.xyz,  r2.www              \n"  //ÀÏ´Ü command slot ¼ö¿¡¼­ »°À½.
 
 	"mov  r0.w,    c7.y                         \n"  // set vertex position w as 1.0f
 //	"mov  r1.w,    c7.y                         \n"  // set w as 1.0f (NEEDED!)
@@ -890,4 +894,4 @@ static char strFourWeights_NMTangentSpaceB[] =
 
 
 #endif //__SHADER_CODE__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)

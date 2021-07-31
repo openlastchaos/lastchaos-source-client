@@ -56,7 +56,7 @@ CPacket::CPacket(CPacket &paOriginal)
 	ASSERT(paOriginal.pa_pubPacketData != NULL && paOriginal.pa_slSize > 0);
 
 	pa_slSize = paOriginal.pa_slSize;
-  pa_slTransferSize = paOriginal.pa_slTransferSize;
+	pa_slTransferSize = paOriginal.pa_slTransferSize;
 
 	pa_ulSequence = paOriginal.pa_ulSequence;
 	pa_uwReliable = paOriginal.pa_uwReliable;
@@ -75,7 +75,7 @@ void CPacket::Clear()
 {
 
 	pa_slSize = 0;
-  pa_slTransferSize = 0;
+	pa_slTransferSize = 0;
 	pa_uwReliable = 0;
 	pa_ubRetryNumber = 0;
 
@@ -98,9 +98,9 @@ void CPacket::operator delete(void *p)
       _asm int 3;
     }
   }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(DevPartner Bug Fix)(2005-01-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-13)
   ::operator delete(p);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-13)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-13)
 };
 
 void CPacket::operator=(const CPacket &paOriginal)
@@ -130,7 +130,7 @@ BOOL CPacket::WriteToPacket(void* pv,SLONG slSize,UWORD uwReliable,ULONG ulSeque
 
 	ASSERT(slSize <= net_iUDPBlockSize && slSize > 0);
 	ASSERT(pv != NULL);
-  ASSERT(slTransferSize >= slSize);
+	ASSERT(slTransferSize >= slSize);
 
 	// set packet properties to values received as parameters
 	pa_uwReliable = uwReliable;
@@ -144,7 +144,7 @@ BOOL CPacket::WriteToPacket(void* pv,SLONG slSize,UWORD uwReliable,ULONG ulSeque
 	*(UWORD*)pubData = pa_uwReliable;
 	pubData+=sizeof(pa_uwReliable);
 
-	*(ULONG*)pubData = pa_ulSequence;
+	*(ULONG*)pubData = htonl(pa_ulSequence);
 	pubData+=sizeof(pa_ulSequence);
 
 	*(UWORD*)pubData = pa_adrAddress.adr_uwID;
@@ -272,13 +272,13 @@ ULONG CPacket::GetSequence()
 // return the retry status of a packet - can retry now, later or not at all 
 UBYTE CPacket::CanRetry()
 {
-    //! ì´ íŒ¨í‚·ì˜ ì „ì†¡ ì¬ì‹œë„ê°€ ìµœëŒ€ì¹˜ë¥¼ ë„˜ì—ˆë‹¤ë©´, ë³´ë‚´ì§€ ë§ì•„ì•¼ì§€.
+    //! ÀÌ ÆĞÅ¶ÀÇ Àü¼Û Àç½Ãµµ°¡ ÃÖ´ëÄ¡¸¦ ³Ñ¾ú´Ù¸é, º¸³»Áö ¸»¾Æ¾ßÁö.
 	if (pa_ubRetryNumber >= net_iMaxSendRetries) {
 		return RS_NOTATALL;
 	}
 
 	CTimerValue tvNow = _pTimer->GetHighPrecisionTimer();
-    //! ì‹œê°„ì´ ì•ˆë˜ì—ˆìœ¼ë‹ˆ ì•„ì§ ë³´ë‚´ë©´ ì•ˆëœë‹¤.
+    //! ½Ã°£ÀÌ ¾ÈµÇ¾úÀ¸´Ï ¾ÆÁ÷ º¸³»¸é ¾ÈµÈ´Ù.
 	if (tvNow < (pa_tvSendWhen + CTimerValue(net_fSendRetryWait * (pa_ubRetryNumber + 1)))) {
 		return RS_NOTNOW;
 	}
@@ -776,8 +776,8 @@ BOOL CPacketBuffer::IsSequenceInBuffer(ULONG ulSequence)
 	return FALSE;
 };
 
-//! ë²„í¼ì˜ ì‹œì‘ì ì—ì„œ ì´ ë²„í¼ì— ì™„ì „í•œ ì‹œí€€ìŠ¤ì˜  (ë¦´ë¼ì´ì–´ë¸”)íŒ¨í‚·ì´ ë‹´ê²¨ìˆëŠ”ì§€ ì²´í¬í•œë‹¤.
-//! ë²„í¼ ì‹œì‘ì ì— (ë¦´ë¼ì´ì–´ë¸”) íŒ¨í‚·ì˜ í—¤ë”ê°€ ìˆë‹¤ë©´, ë°”ë””ì™€ í…Œì¼ì´ ê¼­ ì¡´ì¬í•´ì•¼ í•œë‹¤.
+//! ¹öÆÛÀÇ ½ÃÀÛÁ¡¿¡¼­ ÀÌ ¹öÆÛ¿¡ ¿ÏÀüÇÑ ½ÃÄö½ºÀÇ  (¸±¶óÀÌ¾îºí)ÆĞÅ¶ÀÌ ´ã°ÜÀÖ´ÂÁö Ã¼Å©ÇÑ´Ù.
+//! ¹öÆÛ ½ÃÀÛÁ¡¿¡ (¸±¶óÀÌ¾îºí) ÆĞÅ¶ÀÇ Çì´õ°¡ ÀÖ´Ù¸é, ¹Ùµğ¿Í Å×ÀÏÀÌ ²À Á¸ÀçÇØ¾ß ÇÑ´Ù.
 // Check if the buffer contains a complete sequence of reliable packets	at the start of the buffer
 BOOL CPacketBuffer::CheckSequence(SLONG &slSize,BOOL bReliable)
 {
@@ -803,35 +803,35 @@ BOOL CPacketBuffer::CheckSequence(SLONG &slSize,BOOL bReliable)
 	}
 
 	paPacket = LIST_HEAD(pb_lhPacketStorage,CPacket,pa_lnListNode);
-	//! ì²« íŒ¨í‚·ì´ íŒ¨í‚· í—¤ë”ê°€ ì•„ë‹ˆë¼ë©´ FALSE ë¦¬í„´.
+	//! Ã¹ ÆĞÅ¶ÀÌ ÆĞÅ¶ Çì´õ°¡ ¾Æ´Ï¶ó¸é FALSE ¸®ÅÏ.
 	// if the first packet is not the head of the reliable packet transfer
 	if (!(paPacket->pa_uwReliable & ulHead)) {
 		return FALSE;
 	}
 
 	ulSequence = paPacket->pa_ulSequence;
-	//!í—¤ë”ëŠ” ì°¾ì•˜ìœ¼ë‹ˆ ë‚˜ë¨¸ì§€ë¥¼ ë²„í¼ì•ˆì—ì„œ ì°¾ì•„ë³´ì.
-	//! head,body,tailì˜ ì‹œí€€ìŠ¤ëŠ” ì„œë¡œ ì—°ê²°ë˜ì–´ìˆë‹¤.
+	//!Çì´õ´Â Ã£¾ÒÀ¸´Ï ³ª¸ÓÁö¸¦ ¹öÆÛ¾È¿¡¼­ Ã£¾Æº¸ÀÚ.
+	//! head,body,tailÀÇ ½ÃÄö½º´Â ¼­·Î ¿¬°áµÇ¾îÀÖ´Ù.
 	// for each packet in the buffer
 	FOREACHINLIST(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {
 		// if it's out of order (there is a gap in the reliable sequence), the message is not complete
-		//! ì²«íŒ¨í‚·ì˜ ì‹œí€€ìŠ¤ê°€ ë‹¤ë¥´ë‹¤ë©´ False.
+		//! Ã¹ÆĞÅ¶ÀÇ ½ÃÄö½º°¡ ´Ù¸£´Ù¸é False.
 		if (litPacketIter->pa_ulSequence != ulSequence) {
 			return FALSE;
 		}
-		//! ì˜ëª»ëœ íƒ€ì…ì´ë¼ë©´,(ë°”ë””ê°€ ì•„ë‹ˆë¼ë©´) FALSE ë¦¬í„´.
+		//! Àß¸øµÈ Å¸ÀÔÀÌ¶ó¸é,(¹Ùµğ°¡ ¾Æ´Ï¶ó¸é) FALSE ¸®ÅÏ.
 		// if it's of a wrong type (unreliable/reliable)
 		if (!(litPacketIter->pa_uwReliable & ulBody)) {
 			return FALSE;
 		}
-		//! í…Œì¼ì´ ì¡´ì¬í•œë‹¤ë©´ TRUE ë¦¬í„´ 
+		//! Å×ÀÏÀÌ Á¸ÀçÇÑ´Ù¸é TRUE ¸®ÅÏ 
 		// if it's a tail of the reliable sequence the message is complete (all packets so far
 		// have been in order)
 		if (litPacketIter->pa_uwReliable & ulTail) {
 			return TRUE;
 		}
 		slSize += litPacketIter->pa_slSize - MAX_HEADER_SIZE;
-		//! ì‹œí€€ìŠ¤ ì¦ê°€.
+		//! ½ÃÄö½º Áõ°¡.
 		ulSequence++;
 	}
 

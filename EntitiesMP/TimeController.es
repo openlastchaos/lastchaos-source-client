@@ -27,6 +27,46 @@ functions:
 
 procedures:
   
+  Main(EVoid)
+  {
+    // set appearance
+    InitAsEditorModel();
+    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+    SetCollisionFlags(ECF_IMMATERIAL);
+
+    // set appearance
+    SetModel(MODEL_TIME_CONTROLLER);
+    SetModelMainTexture(TEXTURE_TIME_CONTROLLER);
+    
+    // spawn in world editor
+    autowait(0.1f);
+
+    wait()
+    {
+      on (EBegin) :
+      {
+        resume;
+      }
+      // immediate
+      on (EStart eStart) :
+      {
+        m_fOldTimeStretch=_pNetwork->GetRealTimeFactor();
+        m_fNewTimeStretch=m_fTimeStretch;
+        call ApplyTimeStretch();
+        resume;
+      }
+      on (EStop) :
+      {
+        _pNetwork->SetRealTimeFactor(1.0f);
+        resume;
+      }
+      on (EReturn) :
+      {
+        resume;
+      }
+    }
+  }
+
   ChangeTimeStretch(EVoid)
   {
     m_fMyTimer=0.0f;
@@ -68,45 +108,5 @@ procedures:
     m_fNewTimeStretch=1.0f;
     autocall ChangeTimeStretch(EVoid()) EReturn;
     return EReturn();
-  }
-
-  Main(EVoid)
-  {
-    // set appearance
-    InitAsEditorModel();
-    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-    SetCollisionFlags(ECF_IMMATERIAL);
-
-    // set appearance
-    SetModel(MODEL_TIME_CONTROLLER);
-    SetModelMainTexture(TEXTURE_TIME_CONTROLLER);
-    
-    // spawn in world editor
-    autowait(0.1f);
-
-    wait()
-    {
-      on (EBegin) :
-      {
-        resume;
-      }
-      // immediate
-      on (EStart eStart) :
-      {
-        m_fOldTimeStretch=_pNetwork->GetRealTimeFactor();
-        m_fNewTimeStretch=m_fTimeStretch;
-        call ApplyTimeStretch();
-        resume;
-      }
-      on (EStop) :
-      {
-        _pNetwork->SetRealTimeFactor(1.0f);
-        resume;
-      }
-      on (EReturn) :
-      {
-        resume;
-      }
-    }
   }
 };

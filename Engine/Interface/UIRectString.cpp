@@ -1,6 +1,11 @@
 #include "stdh.h"
+
+// 헤더 정리. [12/2/2009 rumist]
+#include <Engine/Interface/UIWindow.h>
+#include <vector>
 #include <Engine/Interface/UIRectString.h>
 #include <Engine/Interface/UITextureManager.h>
+#include <Engine/Help/Util_Help.h>
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -11,6 +16,9 @@ void CRectStringData::CalculateRect()
 	int nCharWidth = _pUIFontTexMgr->GetFontWidth();
 	int nFontSpace = _pUIFontTexMgr->GetFontSpacing();
 
+#if defined(G_THAI)
+	nTotalWidth = FindThaiLen(m_strData.str_String);
+#else
 	for(int i=0; i<m_strData.Length(); i++)
 	{
 		if( m_strData[i] & 0x80 )
@@ -24,6 +32,7 @@ void CRectStringData::CalculateRect()
 		}
 		nTotalWidth += nFontSpace;
 	}
+#endif
 
 	m_rcStrRect.Right = m_rcStrRect.Left + nTotalWidth;
 	m_rcStrRect.Bottom = m_rcStrRect.Top + _pUIFontTexMgr->GetLineHeight() + _pUIFontTexMgr->GetLineSpacing();
@@ -44,11 +53,16 @@ int CUIRectString::CheckSplitPos(CTString& strInput, int nWidth)
 	int nCharWidth = _pUIFontTexMgr->GetFontWidth();
 	int nFontSpace = _pUIFontTexMgr->GetFontSpacing();
 
-	for(int i=0; i<strInput.Length(); i++)
+	int i;
+	for(i = 0; i < strInput.Length(); i++)
 	{
 		if( strInput[i] & 0x80 )
 		{
+#if defined(G_THAI)
+			if(FindThaiLen(strInput.str_String, 0, i+1) > nWidth)
+#else
 			if(nTotalWidth + n2ByteCharWidth > nWidth)
+#endif
 			{
 				return i;
 			}
@@ -60,7 +74,11 @@ int CUIRectString::CheckSplitPos(CTString& strInput, int nWidth)
 		}
 		else
 		{
+#if defined(G_THAI)
+			if(FindThaiLen(strInput.str_String, 0, i+1) > nWidth)
+#else
 			if(nTotalWidth + nCharWidth > nWidth)
+#endif
 			{
 				return i;
 			}
@@ -69,7 +87,6 @@ int CUIRectString::CheckSplitPos(CTString& strInput, int nWidth)
 				nTotalWidth += nCharWidth;
 			}
 		}
-		nTotalWidth += nFontSpace;	
 	}
 
 	return i;
@@ -77,13 +94,7 @@ int CUIRectString::CheckSplitPos(CTString& strInput, int nWidth)
 
 void CUIRectString::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight)
 {
-	m_pParentWnd = pParentWnd;
-
-	m_nPosX = nX;
-	m_nPosY = nY;
-	
-	m_nWidth = nWidth;
-	m_nHeight = nHeight;
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 }
 
 void CUIRectString::Create(CUIWindow *pParentWnd, UIRect rcRect)
@@ -170,9 +181,37 @@ int CUIRectString::GetMaxStrHeight()
 
 void CUIRectString::AddString(CTString& strInput, COLOR color /* = 0xFFFFFFFF */)
 {
-	m_vecStringList.push_back(strInput);
-	m_vecColor.push_back(color);
-	AddCRectStringData(strInput, color);
+	INDEX	nLength = strInput.Length();
+
+	int iPos;
+	for( iPos = 0; iPos < nLength; iPos++ )
+	{
+		if( strInput[iPos] == '\n' || strInput[iPos] == '\r' )
+			break;	
+	}
+
+	// Not exist
+	if( iPos == nLength )
+	{
+		m_vecStringList.push_back(strInput); 
+		m_vecColor.push_back(color);
+		AddCRectStringData(strInput, color);
+	}
+	else
+	{
+		// Split string
+		CTString	strTemp, strTemp2;
+		strInput.Split( iPos, strTemp2, strTemp );
+
+		// Trim line character
+		if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+			strTemp.TrimLeft( strTemp.Length() - 2 );
+		else
+			strTemp.TrimLeft( strTemp.Length() - 1 );
+
+		AddString( strTemp2, color );
+		AddString( strTemp, color );
+	}
 }
 
 void CUIRectString::AddCRectStringData(CTString& strInput, COLOR color)
@@ -180,7 +219,64 @@ void CUIRectString::AddCRectStringData(CTString& strInput, COLOR color)
 	CRectStringData strCheck;
 	CTString strSplited1 = strInput;
 	CTString strSplited2;
+	BOOL bNotMultyLine = FALSE;
 
+#if defined G_RUSSIA
+	extern CFontData *_pfdDefaultFont;
+	int	nSplitPos = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, strInput.str_String, m_nWidth);
+	
+	if(nSplitPos < strInput.Length())
+	{
+		for( int iPos=nSplitPos; iPos >=0; --iPos )
+		{
+			if( strInput[iPos] == ' ' )
+			{
+				nSplitPos = iPos;
+				break;
+			}
+		}
+		strInput.Split(nSplitPos, strSplited1, strSplited2);
+		AddCRectStringData(strSplited1, color);
+		AddCRectStringData(strSplited2, color);
+	}
+	else
+		bNotMultyLine = TRUE;
+#else
+
+#if defined (G_THAI)
+	
+	int		iPos;
+	INDEX	nThaiWidth		= FindThaiLen(strInput);
+	INDEX	nThaiLen		= strInput.Length();
+
+	if(nThaiWidth > m_nWidth)
+	{
+		for(iPos = 0; iPos < nThaiLen; iPos++)
+		{
+			INDEX	nCurrentWidth	= FindThaiLen(strSplited1, 0, iPos);
+			if(nCurrentWidth >= m_nWidth)
+				break;
+		}
+
+		if(iPos < nThaiLen)
+		{
+			strInput.Split(iPos, strSplited1, strSplited2);
+			AddCRectStringData(strSplited1, color);
+			AddCRectStringData(strSplited2, color);
+		}
+		else
+		{
+			strCheck.SetString(strInput);
+			bNotMultyLine = TRUE;
+		}
+	}
+	else
+	{
+		strCheck.SetString(strInput);
+		bNotMultyLine = TRUE;
+	}
+
+#else
 	strCheck.SetString(strSplited1);
 
 	if(strCheck.GetWidth() > m_nWidth)
@@ -191,6 +287,13 @@ void CUIRectString::AddCRectStringData(CTString& strInput, COLOR color)
 		AddCRectStringData(strSplited2, color);
 	}
 	else
+		bNotMultyLine = TRUE;
+#endif
+
+#endif
+
+
+	if(bNotMultyLine)
 	{
 		int nPosX = 0;
 		int nPosY = 0;
@@ -271,29 +374,24 @@ void CUIRectString::Render()
 	int	nX, nY;
 	GetAbsPos( nX, nY );
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-//	_pUIMgr->GetDrawPort()->Fill(nX, nY, m_nWidth, m_nHeight, 0x00000099);
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->FlushRenderingQueue();
 
 	for(int i=0; i<m_vecRcStringData.size(); i++)
 	{
 		if(m_vecRcStringData[i].GetRect().Bottom <	nY + m_nHeight)
-		_pUIMgr->GetDrawPort()->PutTextEx( m_vecRcStringData[i].GetString(), nX + m_vecRcStringData[i].GetPosX(), 
+		pDrawPort->PutTextEx( m_vecRcStringData[i].GetString(), nX + m_vecRcStringData[i].GetPosX(), 
 										   nY + m_vecRcStringData[i].GetPosY(), m_vecRcStringData[i].GetColor() );
 	}
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 
 void CUIRectStringList::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	
-	m_nPosX = nX;
-	m_nPosY = nY;
-	
-	m_nWidth = nWidth;
-	m_nHeight = nHeight;
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	m_RectSeparate.SetRect(0, 0, 0, 0);
 }

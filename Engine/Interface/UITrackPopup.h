@@ -20,7 +20,7 @@ class CUITrackPopup : public CUIListBox
 {
 protected:
 	
-public : // 9ê°œë‚˜ ë§Œë“¤ í•„ìš”ê°€ ... êµ¬ì°®ë‹¤.. ë‚œì¤‘ì— ë§Œë“¤ì¥..~
+public : // 9°³³ª ¸¸µé ÇÊ¿ä°¡ ... ±¸Âú´Ù.. ³­Áß¿¡ ¸¸µéÀå..~
 	// Tool Tip	
 	UIRectUV		m_rtBackUL;				// UV of upper left region of Back				
 	UIRectUV		m_rtBackUM;				// UV of upper middle region of Back				
@@ -32,16 +32,19 @@ public : // 9ê°œë‚˜ ë§Œë“¤ í•„ìš”ê°€ ... êµ¬ì°®ë‹¤.. ë‚œì¤‘ì— ë§Œë“¤ì¥..~
 	UIRectUV		m_rtBackLM;				// UV of lower middle region of Back				
 	UIRectUV		m_rtBackLR;				// UV of lower right region of Back				
 	
-	int				m_nMaxCharCount; 
+	int				m_nMaxCharCount;														// [sora] ¼³Á¤µÈ command¼ö
+	std::vector<int> m_vecCommandList;														// [sora] ¼³Á¤ÇÑ command°ª list
+	CTString		m_strLongestStringInMenu;
 public:
 	CUITrackPopup();
 	virtual ~CUITrackPopup();
 	void Render();
 	
-	void AddMenuList( CTString strText, COLOR colText = 0xc2bac5FF );
+	void AddMenuList( CTString strText, COLOR colText = 0xc2bac5FF , int nCommandNum = -1);		// [sora] Ãß°¡ÇÏ´Â ¸Ş´ºÀÇ command°ªÀ» ÀÔ·ÂÇÒ ¼ö ÀÖµµ·Ï ¼öÁ¤
 	void DeleteMenuList( int nCol, int nIndex );
 	
-	void Resize();
+	// russia resizing [8/31/2010 rumist]
+	void Resize( int nStrLength = 0 );
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
@@ -49,6 +52,7 @@ public:
 
 	void Hide()	{	SetEnable( FALSE ); SetVisible( FALSE ); SetCurSel( -1 );	}
 	void Show()	{	SetEnable( TRUE ); SetVisible( TRUE );		}
+	int	 GetCommandNum(int nIndex);																// [sora] ÁöÁ¤ÇÑ ¸Ş´ºÀÇ commandnum°ªÀ» ¹İÈ¯
 	
 };
 

@@ -34,10 +34,10 @@ CWorldRenderPrefs::CWorldRenderPrefs(void)
 	wrp_ftPolygons = FT_TEXTURE;
 	wrp_colPolygons = C_WHITE;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	wrp_shtShadows = SHT_NOAUTOCALCULATE;
 	//wrp_shtShadows = SHT_FULL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 	wrp_lftLensFlares = LFT_REFLECTIONS_AND_GLARE;
 
 	wrp_abTextureLayers[0] = TRUE;

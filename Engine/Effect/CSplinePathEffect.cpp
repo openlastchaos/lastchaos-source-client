@@ -64,6 +64,9 @@ void CSplinePathEffect::Start(FLOAT time, BOOL restart)
 		CEffect *pEffect = 
 			CEffectManager::Instance().Create(m_vectorSplinePath[i].strEffectName);
 		if(pEffect == NULL) continue;
+
+		pEffect->SetERType(m_ERType);
+		pEffect->SetERSubType(m_ERSubType);
 		m_vectorEffect.push_back( pEffect );
 		tag_ptr ptrTag(new CWorldTag);
 		ptrTag->SetOffsetPos(m_vTagPos + m_vectorSplinePath[i].ssPath.GetValue(0));
@@ -82,8 +85,8 @@ void CSplinePathEffect::Stop(FLOAT leftTime)
 	ClearInstance();
 }
 
-//ì£¼ì˜ : í˜„ì¬ CSplinePathEffectëŠ” ì¼ë‹¨ createëœ effectê°€ createëœ ìˆœì„œëŒ€ë¡œ processëœë‹¤ê³  ê°€ì •í•˜ê³  ìˆë‹¤.
-//ì¶”í›„ ìˆ˜ì •ì— ì˜í•´ ì´ ê°€ì •ì´ ê¹¨ì§€ê²Œ ë˜ë©´ ì •ìƒë™ì‘ì„ ë³´ì¥í•  ìˆ˜ ì—†ê²Œ ëœë‹¤.
+//ÁÖÀÇ : ÇöÀç CSplinePathEffect´Â ÀÏ´Ü createµÈ effect°¡ createµÈ ¼ø¼­´ë·Î processµÈ´Ù°í °¡Á¤ÇÏ°í ÀÖ´Ù.
+//ÃßÈÄ ¼öÁ¤¿¡ ÀÇÇØ ÀÌ °¡Á¤ÀÌ ±úÁö°Ô µÇ¸é Á¤»óµ¿ÀÛÀ» º¸ÀåÇÒ ¼ö ¾ø°Ô µÈ´Ù.
 BOOL CSplinePathEffect::Process(FLOAT time)
 {
 	FLOAT fDeltaTime, fProcessedTime;
@@ -130,9 +133,9 @@ CEffect *CSplinePathEffect::Copy()
 {
 	CSplinePathEffect *pRet = new CSplinePathEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//COrbitEffectì˜ content
+	//COrbitEffectÀÇ content
 	INDEX cnt = m_vectorSplinePath.size();
 	for(INDEX i=0; i<cnt; ++i)
 	{

@@ -3,9 +3,9 @@
 #ifdef PRAGMA_ONCE
   #pragma once
 #endif
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…	07.07
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷	07.07
 #include <Engine/Base/Stream.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…		07.07
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷		07.07
 /*
  * Class responsible for describing player appearance/settings
  */
@@ -18,9 +18,9 @@ public:
 #define PS_WAS_NONE     1 // never autoselect
 #define PS_WAS_ALL      2 // always autoselect
 #define PS_WAS_BETTER   3 // only if the new weapon is 'better' than what you hold now
-	SBYTE ps_iWeaponAutoSelect;   // type of weapon autoselection(PlayerWeaponì—ì„œ ì“°ì„)
+	SBYTE ps_iWeaponAutoSelect;   // type of weapon autoselection(PlayerWeapon¿¡¼­ ¾²ÀÓ)
 
-	SBYTE ps_iCrossHairType;      // type of crosshair used(íƒ€ê²Ÿ ë§ˆí¬ë¥¼ ê·¸ë ¤ì¤Œ)
+	SBYTE ps_iCrossHairType;      // type of crosshair used(Å¸°Ù ¸¶Å©¸¦ ±×·ÁÁÜ)
 
 #define PSF_HIDEWEAPON      (1L<<0)   // don't render weapon in 1st person
 #define PSF_PREFER3RDPERSON (1L<<1)   // auto switch to 3rd person 
@@ -34,7 +34,7 @@ public:
 
   SBYTE ps_iSensitivity;
 
-	// get filename for model(SetAppear~ ìª½ì—ì„œ ì“°ì´ê³  ìˆìŒ)
+	// get filename for model(SetAppear~ ÂÊ¿¡¼­ ¾²ÀÌ°í ÀÖÀ½)
   CTFileName GetModelFilename(void) const
   {
     char achModelFile[MAX_PATH+1];
@@ -48,7 +48,7 @@ public:
   }
 };
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…	07.07
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷	07.07
 /*
 // NOTE: never instantiate CPlayerSettings, as its size is not fixed to the size defined in engine
 // use CUniversalPlayerSettings for instantiating an object
@@ -67,7 +67,7 @@ public:
   operator CPlayerSettings&(void) { return ups_ps; }
 };
 */
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë¡œê·¸ì¸ ì²˜ë¦¬ ì‘ì—…		07.07
+//°­µ¿¹Î ¼öÁ¤ ³¡ ·Î±×ÀÎ Ã³¸® ÀÛ¾÷		07.07
 
 
 #endif  /* include-once check. */

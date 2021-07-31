@@ -6,12 +6,13 @@
 
 #include <Engine/Base/Lists.h>
 #include <Engine/Base/Timer.h>
+#include <LCCRC32.h>
 
 
 // The total size of the UDP packet should be below 1450 bytes, to reduce the 
 // packet drop rate caused by routers dropping large UDP packets. UDP_BLOCK_SIZE is the
 // maximum length of real data, not counting the packet header (ulPacketSequence, bReliable,uwID)
-#define MAX_UDP_BLOCK_SIZE	1000
+#define MAX_UDP_BLOCK_SIZE	10000
 #define MAX_HEADER_SIZE (sizeof(UWORD) + sizeof(ULONG) + sizeof(UWORD) + sizeof(ULONG)) // pa_bReliable + pa_ulPacketSequence + pa_uwID + pa_ulTransferSize
 #define MAX_PACKET_SIZE (MAX_UDP_BLOCK_SIZE + MAX_HEADER_SIZE)
 
@@ -34,7 +35,6 @@ extern INDEX net_iMaxPacketSize;
 #define RS_NOTNOW		1		// the packet should be resent at a later time
 #define RS_NOTATALL 2		// the packet has reached the maximum number of retries - give up
 
-
 class CAddress {
 public:
   ULONG adr_ulAddress;   // host address
@@ -53,12 +53,12 @@ public:
  */
 class CPacket {
 public:
-	ULONG	pa_ulSequence;		// Sequence number of this packet
-	UWORD	pa_uwReliable;					// Is packet reliable or not
-	SLONG pa_slSize;							// Number of data bytes in packet (without header)
-  SLONG pa_slTransferSize;      // Number of data bytes in a data transfer unit this packet belongs to
+	ULONG	pa_ulSequence;			// Sequence number of this packet
+	UWORD	pa_uwReliable;			// Is packet reliable or not
+	SLONG	pa_slSize;				// Number of data bytes in packet (without header)
+	SLONG	pa_slTransferSize;      // Number of data bytes in a data transfer unit this packet belongs to
 
-	UBYTE pa_ubRetryNumber;			// How many retries so far for this packet
+	UBYTE	pa_ubRetryNumber;			// How many retries so far for this packet
 	CTimerValue pa_tvSendWhen;	// When to try sending this packet (includes latency bandwidth limitations 
 															// as well as retry intervals)
 
@@ -66,7 +66,7 @@ public:
 
 	CListNode pa_lnListNode;					// used to create a linked list of packets - buffer
 
-  CAddress pa_adrAddress;				// packet address, port and client ID
+	 CAddress pa_adrAddress;				// packet address, port and client ID
   																
 	// Constructors/destructors
 	CPacket() { Clear(); }					// Default Constructor

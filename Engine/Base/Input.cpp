@@ -9,7 +9,6 @@
 #include <Engine/Base/Console.h>
 #include <Engine/Base/Synchronization.h>
 #include <Engine/Base/Shell.h>
-
 #include <Engine/Base/ErrorReporting.h>
 #include <Engine/Templates/StaticStackArray.cpp>
 //#include <Engine/Interface/UIManager.h>			// yjpark
@@ -57,6 +56,14 @@ UBYTE _abKeysPressed[256];
 
 int _iMouseZ = 0;
 
+//#define	WORLD_EDITOR
+
+#ifdef WORLD_EDITOR
+typedef MSG MSGTYPE;
+#else
+typedef CWPSTRUCT MSGTYPE;
+#endif
+
 static void ReadDevice(CInputDevice &idDevice, BOOL bPreScane);
 
 #define XGP_ABUTTON_DEADZONE 0x20
@@ -75,6 +82,19 @@ static INDEX _iByteNum = 0;
 static UBYTE _aubComBytes[4] = {0,0,0,0};
 static INDEX _iLastPort = -1;
 
+#if	!defined(WINDOW_SDK_70A)
+/*
+ * Structure used by WH_MOUSE_LL
+ */
+typedef struct tagMSLLHOOKSTRUCT {
+    POINT   pt;
+    DWORD   mouseData;
+    DWORD   flags;
+    DWORD   time;
+    ULONG_PTR dwExtraInfo;
+} MSLLHOOKSTRUCT, FAR *LPMSLLHOOKSTRUCT, *PMSLLHOOKSTRUCT;
+
+#endif
 
 //#define XBGP_AXIS_DEAD_ZONE 7864 // 0.24f
 
@@ -173,6 +193,7 @@ static struct KeyConversion {
 	{ KID_F11             , VK_F11,  87, -1, -1, INTNAME("F11")},
 	{ KID_F12             , VK_F12,  88, -1, -1, INTNAME("F12")},
 											 
+	
 // extra keys               
 	{ KID_ESCAPE          , VK_ESCAPE,     1, 27, 27, TRANAME("Escape")},
 
@@ -287,7 +308,7 @@ CTCriticalSection csInput;
 
 // set a key according to a keydown/keyup message
 //static void SetKeyFromMsg(MSG *pMsg, BOOL bDown)
-static void SetKeyFromMsg(CWPSTRUCT* pMsg, BOOL bDown)
+static void SetKeyFromMsg(MSGTYPE* pMsg, BOOL bDown)
 {
 	INDEX iKID = -1;
 	// if capturing scan codes
@@ -323,19 +344,37 @@ static void SetKeyFromMsg(CWPSTRUCT* pMsg, BOOL bDown)
 }
 
 //static void CheckMessage(MSG *pMsg)
-static void CheckMouseMsg(MOUSEHOOKSTRUCT *pm, WPARAM wp)
+static void CheckMouseMsg(MSLLHOOKSTRUCT *pm, WPARAM wp)
 {
+#ifndef WM_MOUSEWHEEL
+	#define WM_MOUSEWHEEL 0x020A
+#endif
+
 	// Get current mouse position
-	if( wp >= WM_MOUSEFIRST && wp <= WM_MOUSELAST )
+	if( wp >= WM_MOUSEFIRST && wp <= WM_MOUSELAST || wp == WM_MOUSEWHEEL)
 	{
+		RECT rectClient;
+		POINT pt = pm->pt;
+		GetClientRect(_pInput->m_vphWnd, &rectClient);
+		ScreenToClient(_pInput->m_vphWnd, &pt);
+		
+		if (!PtInRect(&rectClient, pt))
+		{
+			return;
+		}
+
+		//OffsetRect(&rectClient, pt.x, pt.y);
+
 		if (_bWorldEditorApp) {
 //			_pInput->inp_ptMousePos.x = LOWORD(pMsg->lParam);
 //			_pInput->inp_ptMousePos.y = HIWORD(pMsg->lParam);
-			_pInput->inp_ptMousePos.x = pm->pt.x;
-			_pInput->inp_ptMousePos.y = pm->pt.y;
+			//_pInput->inp_ptMousePos.x = pm->pt.x;
+			//_pInput->inp_ptMousePos.y = pm->pt.y;
+			_pInput->inp_ptMousePos.x = pt.x;
+			_pInput->inp_ptMousePos.y = pt.y;
 		}
 	}
-/*
+
 	if ( wp == WM_LBUTTONUP) {
 		_abKeysPressed[KID_MOUSE1] = FALSE;
 	} else if ( wp == WM_LBUTTONDOWN || wp == WM_LBUTTONDBLCLK) {
@@ -348,7 +387,10 @@ static void CheckMouseMsg(MOUSEHOOKSTRUCT *pm, WPARAM wp)
 		_abKeysPressed[KID_MOUSE3] = FALSE;
 	} else if ( wp == WM_MBUTTONDOWN || wp == WM_MBUTTONDBLCLK) {
 		_abKeysPressed[KID_MOUSE3] = TRUE;
-
+	} else if ( wp == WM_MOUSEWHEEL) {
+		INDEX iWheelValue = SWORD(HIWORD(pm->mouseData));
+		_iMouseZ += iWheelValue;
+		_pInput->m_WheelPos = iWheelValue;
 	} else if ( wp == inp_iMButton4Dn) {
 		_abKeysPressed[KID_MOUSE4] = TRUE;
 	} else if ( wp == inp_iMButton4Up) {
@@ -360,10 +402,10 @@ static void CheckMouseMsg(MOUSEHOOKSTRUCT *pm, WPARAM wp)
 		_abKeysPressed[KID_MOUSE5] = FALSE;
 	} else if (inp_bMsgDebugger && wp >= 0x10000) {
 		CPrintF("%08x(%d)\n", wp, wp);
-	}*/
+	}
 }
 
-static void CheckKeyMsg(CWPSTRUCT *pMsg)
+static void CheckKeyMsg(MSGTYPE *pMsg)
 {
 	if (pMsg->message==WM_KEYUP || pMsg->message==WM_SYSKEYUP) {
 		SetKeyFromMsg(pMsg, FALSE);
@@ -379,7 +421,7 @@ LRESULT CALLBACK GetMsgProc(
 	LPARAM lParam)  // mouse coordinates
 {
 //	MSG *pMsg = (MSG*)lParam;
-	CWPSTRUCT *pMsg = (CWPSTRUCT*)lParam;
+	MSGTYPE *pMsg = (MSGTYPE*)lParam;
 
 	//CheckMessage(pMsg);
 	CheckKeyMsg(pMsg);
@@ -398,7 +440,7 @@ LRESULT CALLBACK SendMsgProc(
 	LPARAM lParam)  // mouse coordinates
 {
 //	MSG *pMsg = (MSG*)lParam;
-	CWPSTRUCT *pMsg = (CWPSTRUCT*)lParam;
+	MSGTYPE *pMsg = (MSGTYPE*)lParam;
 
 	CheckKeyMsg(pMsg);
 	//CheckMessage(pMsg);
@@ -409,30 +451,20 @@ LRESULT CALLBACK SendMsgProc(
 	return retValue;
 }
 
-LRESULT CALLBACK MouseMsgProc(
+LRESULT CALLBACK LowLevelMouseProc(
 	int nCode,
 	WPARAM wParam,
 	LPARAM lParam)
 {
-	MOUSEHOOKSTRUCT *pm = (MOUSEHOOKSTRUCT*)lParam;
+	MSLLHOOKSTRUCT *pm = (MSLLHOOKSTRUCT*)lParam;
 
 	CheckMouseMsg(pm, wParam);
 
 	LRESULT retValue = 0;
 	retValue = CallNextHookEx( _hSendMsgHook, nCode, wParam, lParam);
 
-#ifndef WM_MOUSEWHEEL
- #define WM_MOUSEWHEEL 0x020A
-#endif
-
 	if (wParam == PM_NOREMOVE) {
 		return retValue;
-	}
-
-	if ( wParam == WM_MOUSEWHEEL) {
-		INDEX iWheelValue = SWORD(UWORD(HIWORD(wParam)));
-		_iMouseZ += iWheelValue;
-		_pInput->m_WheelPos = iWheelValue;
 	}
 
 	return retValue;
@@ -580,6 +612,9 @@ CInput::CInput(void)
 	inp_bInputEnabled = FALSE;
 	inp_bPollJoysticks = FALSE;
 	inp_bLastPrescan = FALSE;
+	inp_bFreeMode = FALSE;
+
+	inp_fSpeedMultiplier = 1.0f;
 
 	// Allocate memory for devices
 	inp_aInputDevices.New(MAX_DEVICES);
@@ -594,11 +629,12 @@ CInput::CInput(void)
 	MakeConversionTables();
 
 //0105
+	m_bLMouse = FALSE;
 	nViewDistance = 0.0f;
 	m_bForward = FALSE;
 	m_bWheelDown = FALSE;
 	m_bRButtonDown = FALSE;
-	m_bTcpIp = FALSE;//TRUE;////Ïù¥Í±¥ TCPÏôÄ ÏÉÅÍ¥ÄÏóÜÏù¥ ÎßàÏö∞Ïä§ ÌöåÏ†ÑÏóê Í¥ÄÌï¥ÏÑú. ÏàòÏ†ïÎ£®Ìã¥Ïù¥ TRUE
+	m_bTcpIp = FALSE;//TRUE;////¿Ã∞« TCPøÕ ªÛ∞¸æ¯¿Ã ∏∂øÏΩ∫ »∏¿¸ø° ∞¸«ÿº≠. ºˆ¡§∑Á∆æ¿Ã TRUE
 	m_WheelPos = 0;
 	m_bLControlKey = FALSE;
 	m_bPressedLControlKey = FALSE;
@@ -660,6 +696,36 @@ CInput::~CInput()
 {
 	if( _h2ndMouse!=NONE) CloseHandle( _h2ndMouse);
 	_h2ndMouse = NONE;
+}
+
+BOOL CInput::SendIMEKeyInput(MSG* pMsg)
+{
+	switch(pMsg->wParam)
+	{
+	case VK_OEM_3: //'~' for US
+		{
+			pMsg->wParam = '~';
+		}
+		return TRUE;
+	}
+
+	for (INDEX iKey=0; iKey<ARRAYCOUNT(_akcKeys); iKey++)
+	{
+		struct KeyConversion &kc = _akcKeys[iKey];
+		
+		if (pMsg->wParam == kc.kc_iVirtKey)
+		{
+			if (_abKeysPressed[KID_LSHIFT] || _abKeysPressed[KID_RSHIFT])	{
+				pMsg->wParam = kc.kc_chShiftChar;
+			} else {
+				pMsg->wParam = kc.kc_chChar;
+			}
+
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
 void CInput::SetJoyPolling(BOOL bPoll)
@@ -737,6 +803,8 @@ void CInput::EnableInput(HWND hwnd)
 	// skip if already enabled
 	if( inp_bInputEnabled) return;
 
+	m_vphWnd = hwnd;
+
 	// get window rectangle
 	RECT rectClient;
 	GetClientRect(hwnd, &rectClient);
@@ -745,15 +813,18 @@ void CInput::EnableInput(HWND hwnd)
 	pt.y=0;
 	ClientToScreen(hwnd, &pt);
 	OffsetRect(&rectClient, pt.x, pt.y);
+	m_rectClient = rectClient;
 
 	// remember mouse pos
 	GetCursorPos( &inp_ptOldMousePos);
-	// set mouse clip region
-	
-	if (_bWorldEditorApp)
-	{ // ÏóêÎîîÌÑ∞ÏóêÏÑúÎßå
-		ClipCursor(&rectClient); // ÌôîÎ©¥ÏïàÏóêÏÑúÎßå Ïª§ÏÑúÍ∞Ä ÎèôÏûëÌïòÍ≤å ÌïúÎã§.
+
+	extern BOOL _bInTestGame;
+	if( !_bInTestGame )
+	{
+		// set mouse clip region
+		ClipCursor(&rectClient);
 	}
+
 	// determine screen center position
 	inp_slScreenCenterX = (rectClient.left + rectClient.right) / 2;
 	inp_slScreenCenterY = (rectClient.top + rectClient.bottom) / 2;
@@ -773,10 +844,15 @@ void CInput::EnableInput(HWND hwnd)
 
 	_hGetMsgHook  = SetWindowsHookEx(WH_GETMESSAGE, &GetMsgProc, NULL, GetCurrentThreadId());
 	_hSendMsgHook = SetWindowsHookEx(WH_CALLWNDPROC, &SendMsgProc, NULL, GetCurrentThreadId());
-	_hMouseHook = SetWindowsHookEx(WH_MOUSE, &MouseMsgProc, NULL, GetCurrentThreadId());
+#ifndef WH_MOUSE_LL
+#define WH_MOUSE_LL        14
+#endif
+	//_hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, &LowLevelMouseProc, NULL, GetCurrentThreadId());
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	_hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, &LowLevelMouseProc, hInstance, 0);
 
 	// if required, try to enable 2nd mouse
-	Shutdown2ndMouse();
+	Shutdown2ndMouse(); 
 	inp_i2ndMousePort = Clamp( inp_i2ndMousePort, 0L, 4L);
 	Startup2ndMouse(inp_i2ndMousePort);
 
@@ -997,7 +1073,7 @@ CTString CInput::GetInputDeviceShortName(INDEX iDevice)
 	return idDevice.id_strDeviceShortName;
 }
 
-//0601 kwon Ï∂îÍ∞Ä.
+//0601 kwon √ﬂ∞°.
 BOOL CInput::IsLControlKeyPressing()
 {
 	if(_abKeysPressed[KID_LCONTROL])
@@ -1377,7 +1453,9 @@ static void SetKeyboardControlNames(CInputDevice &idDevice)
 
 	// set name "None" for all keyboard controls , known controls will override this default name
 	INDEX ctct = CT_KEYBOARD_CONTROLS;
-	for(INDEX ict=0;ict<ctct;ict++) {
+	INDEX ict;
+	for( ict = 0; ict < ctct; ict++ ) 
+	{
 		InputControl &icControl = idDevice.id_aicControls[ict];
 		icControl.ic_strControlName = "None";
 		icControl.ic_strControlNameTrans = TRANS("None");
@@ -1385,7 +1463,8 @@ static void SetKeyboardControlNames(CInputDevice &idDevice)
 
 	// for each Key
 	ctct = ARRAYCOUNT(_akcKeys);
-	for(ict=0;ict<ctct;ict++) {
+	for( ict = 0; ict < ctct; ict++) 
+	{
 		struct KeyConversion &kc = _akcKeys[ict];
 		// set the name
 		if(kc.kc_strName!=NULL) {
@@ -1636,23 +1715,23 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 						//	_pInput->m_bForward = FALSE;
 						//		  return;
 					}
-				}//tcpÎÅù
+				}//tcp≥°
 
 				if (_abKeysPressed[KID_MOUSE2]) 
 				{ 
 					if(!_pInput->m_bPressedRMouse){
 						
-						_pInput->m_bPressedRMouse = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-						if(!_pInput->IsRMousePressed()){	//ÌÜ†Í∏Ä			
+						_pInput->m_bPressedRMouse = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+						if(!_pInput->IsRMousePressed()){	//≈‰±€			
 							_pInput->SetRMousePressed(TRUE);						
 						}else{
 							_pInput->SetRMousePressed(FALSE);	
 						}					  
-					}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+					}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 					{					  
 					}			  
 				}
-				else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+				else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 					_pInput->m_bPressedRMouse = FALSE;
 				}
 				
@@ -1660,17 +1739,17 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 				{ 
 					if(!_pInput->m_bPressedLMouse){
 						
-						_pInput->m_bPressedLMouse = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-						if(!_pInput->IsLMousePressed()){	//ÌÜ†Í∏Ä			
+						_pInput->m_bPressedLMouse = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+						if(!_pInput->IsLMousePressed()){	//≈‰±€			
 							_pInput->SetLMousePressed(TRUE);						
 						}else{
 							_pInput->SetLMousePressed(FALSE);	
 						}					  
-					}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+					}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 					{					  
 					}			  
 				}
-				else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+				else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 					_pInput->m_bPressedLMouse = FALSE;
 				}
 
@@ -1678,17 +1757,17 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 				{ 
 					if(!_pInput->m_bPressedHome){
 						
-						_pInput->m_bPressedHome = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-						if(!_pInput->IsHomePressed()){	//ÌÜ†Í∏Ä			
+						_pInput->m_bPressedHome = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+						if(!_pInput->IsHomePressed()){	//≈‰±€			
 							_pInput->SetHomePressed(TRUE);						
 						}else{
 							_pInput->SetHomePressed(FALSE);	
 						}					  
-					}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+					}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 					{					  
 					}			  
 				}
-				else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+				else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 					_pInput->m_bPressedHome = FALSE;
 				}
 
@@ -1696,7 +1775,7 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 				if(_abKeysPressed[KID_1]){//
 					if(!_pInput->m_bPressed1Key){
 						_pInput->m_bPressed1Key = TRUE;
-						if(!_pInput->IsNum1KeyPressed()){	//ÌÜ†Í∏Ä
+						if(!_pInput->IsNum1KeyPressed()){	//≈‰±€
 							_pInput->SetNum1KeyPressed(TRUE);
 						}else{
 							_pInput->SetNum1KeyPressed(FALSE);
@@ -1728,7 +1807,7 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 				if(_abKeysPressed[KID_2]){
 					if(!_pInput->m_bPressed2Key){
 						_pInput->m_bPressed2Key = TRUE;
-						if(!_pInput->IsNum2KeyPressed()){	//ÌÜ†Í∏Ä
+						if(!_pInput->IsNum2KeyPressed()){	//≈‰±€
 							_pInput->SetNum2KeyPressed(TRUE);
 						}else{
 							_pInput->SetNum2KeyPressed(FALSE);
@@ -1744,7 +1823,7 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 				if(_abKeysPressed[KID_3]){
 					if(!_pInput->m_bPressed3Key){
 						_pInput->m_bPressed3Key = TRUE;
-						if(!_pInput->IsNum3KeyPressed()){	//ÌÜ†Í∏Ä
+						if(!_pInput->IsNum3KeyPressed()){	//≈‰±€
 							_pInput->SetNum3KeyPressed(TRUE);
 						}else{
 							_pInput->SetNum3KeyPressed(FALSE);
@@ -1802,45 +1881,63 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 				if (_abKeysPressed[KID_PAGEDOWN]) {
 					idDevice.id_aicControls[KID_PAGEDOWN].ic_fValue = 1.0f;
 				}
+				if (_abKeysPressed[KID_W]) {
+					idDevice.id_aicControls[KID_W].ic_fValue = 1.0f;
+				}
+				if (_abKeysPressed[KID_S]) {
+					idDevice.id_aicControls[KID_S].ic_fValue = 1.0f;
+				}
+				if (_abKeysPressed[KID_Q]) {
+					idDevice.id_aicControls[KID_Q].ic_fValue = 1.0f;
+				}
+				if (_abKeysPressed[KID_E]) {
+					idDevice.id_aicControls[KID_E].ic_fValue = 1.0f;
+				}
+				if (_abKeysPressed[KID_A]) {
+					idDevice.id_aicControls[KID_A].ic_fValue = 1.0f;
+				}
+				if (_abKeysPressed[KID_D]) {
+					idDevice.id_aicControls[KID_D].ic_fValue = 1.0f;
+				}
 
 				/*
 				if(_pNetwork->m_ubGMLevel > 1)
 				{
 					
 					
-					if (_abKeysPressed[KID_LCONTROL]) { //LÏª®Ìä∏Î°§ ÌÇ§Í∞Ä ÎàåÎü¨Ï†∏ÏûàÎã§Î©¥,
-						if(!_pInput->m_bPressedLControlKey ){//unPressÏÉÅÌÉúÏóêÏÑú Ï≤òÏùå PressÎêúÍ±∞ÎùºÎ©¥,
+					if (_abKeysPressed[KID_LCONTROL]) { //Lƒ¡∆Æ∑— ≈∞∞° ¥≠∑Ø¡Æ¿÷¥Ÿ∏È,
+						if(!_pInput->m_bPressedLControlKey ){//unPressªÛ≈¬ø°º≠ √≥¿Ω Pressµ»∞≈∂Û∏È,
 							//_pInput->m_bLControlKey = TRUE; 
-							_pInput->m_bPressedLControlKey = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-							if(!_pInput->IsLControlKeyPressed()){	//ÌÜ†Í∏Ä			
+							_pInput->m_bPressedLControlKey = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+							if(!_pInput->IsLControlKeyPressed()){	//≈‰±€			
 								_pInput->SetLControlKeyPressed(TRUE);						
 							}else{
 								_pInput->SetLControlKeyPressed(FALSE);	
 							}					  
-						}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+						}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 						{					  
 						}			  
 					}
-					else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+					else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 						_pInput->m_bPressedLControlKey = FALSE;
 					}
 					
 					
 					if(_abKeysPressed[KID_R]){
-						if(!_pInput->m_bPressedRKey){//unPressÏÉÅÌÉúÏóêÏÑú Ï≤òÏùå PressÎêúÍ±∞ÎùºÎ©¥,
-							_pInput->m_bPressedRKey = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-							if(!_pInput->m_bRKey){	//ÌÜ†Í∏Ä
+						if(!_pInput->m_bPressedRKey){//unPressªÛ≈¬ø°º≠ √≥¿Ω Pressµ»∞≈∂Û∏È,
+							_pInput->m_bPressedRKey = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+							if(!_pInput->m_bRKey){	//≈‰±€
 								_pInput->m_bRKey =TRUE;
 								// _pInput->m_bTcpIp =TRUE;
 							}else{
 								_pInput->m_bRKey =FALSE;
 								//_pInput->m_bTcpIp = FALSE;
 							}
-						}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+						}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 						{
 						}
 					}
-					else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+					else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 						_pInput->m_bPressedRKey = FALSE;
 					}					
 					
@@ -1849,7 +1946,7 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 							_pInput->m_bPressedVKey = TRUE;
 							if(!_pInput->IsVKeyPressed()){
 								_pInput->SetVKeyPressed(TRUE);
-								//0605 kwon ÏÇ≠Ï†ú.
+								//0605 kwon ªË¡¶.
 								_pInput->m_bTcpIp =FALSE;
 								//		_pInput->m_bTcpIp =TRUE;
 							}else{
@@ -1865,7 +1962,7 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 						_pInput->m_bPressedVKey = FALSE;
 					}					
 					
-					if (_abKeysPressed[KID_LCONTROL]) { //LÏª®Ìä∏Î°§ ÌÇ§Í∞Ä ÎàåÎü¨Ï†∏ÏûàÎã§Î©¥,
+					if (_abKeysPressed[KID_LCONTROL]) { //Lƒ¡∆Æ∑— ≈∞∞° ¥≠∑Ø¡Æ¿÷¥Ÿ∏È,
 						if(_abKeysPressed[KID_M]){
 							if(!_pInput->m_bPressedMKey){
 								_pInput->m_bPressedMKey = TRUE;
@@ -1971,7 +2068,7 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 						if(_abKeysPressed[KID_4]){
 							if(!_pInput->m_bPressed4Key){
 								_pInput->m_bPressed4Key = TRUE;
-								if(!_pInput->IsNum4KeyPressed()){	//ÌÜ†Í∏Ä
+								if(!_pInput->IsNum4KeyPressed()){	//≈‰±€
 									_pInput->SetNum4KeyPressed(TRUE);
 								}else{
 									_pInput->SetNum4KeyPressed(FALSE);
@@ -2021,26 +2118,26 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 						}
 					}
 					if(_abKeysPressed[KID_I]){
-						if(!_pInput->m_bPressedIKey){//unPressÏÉÅÌÉúÏóêÏÑú Ï≤òÏùå PressÎêúÍ±∞ÎùºÎ©¥,
-							_pInput->m_bPressedIKey = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-							if(!_pInput->m_bIKey){	//ÌÜ†Í∏Ä
+						if(!_pInput->m_bPressedIKey){//unPressªÛ≈¬ø°º≠ √≥¿Ω Pressµ»∞≈∂Û∏È,
+							_pInput->m_bPressedIKey = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+							if(!_pInput->m_bIKey){	//≈‰±€
 								_pInput->m_bIKey =TRUE;
 							}else{
 								_pInput->m_bIKey =FALSE;
 							}
-						}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+						}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 						{
 						}
 					}
-					else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+					else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 						_pInput->m_bPressedIKey = FALSE;
 					}
 					
 					// sehan
 					if(_abKeysPressed[KID_L]){
-						if(!_pInput->m_bPressedLKey){//unPressÏÉÅÌÉúÏóêÏÑú Ï≤òÏùå PressÎêúÍ±∞ÎùºÎ©¥,
-							_pInput->m_bPressedLKey = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-							if(!_pInput->m_bLKey){	//ÌÜ†Í∏Ä
+						if(!_pInput->m_bPressedLKey){//unPressªÛ≈¬ø°º≠ √≥¿Ω Pressµ»∞≈∂Û∏È,
+							_pInput->m_bPressedLKey = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+							if(!_pInput->m_bLKey){	//≈‰±€
 								_pInput->m_bLKey =TRUE;
 								// _pInput->m_bTcpIp =TRUE;
 								//g_bUseBloom = TRUE;
@@ -2049,35 +2146,35 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 								//_pInput->m_bTcpIp = FALSE;
 								//g_bUseBloom = FALSE;
 							}
-						}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+						}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 						{
 						}
 					}
-					else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+					else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 						_pInput->m_bPressedLKey = FALSE;
 					}
 					// sehan end
 					
 					if(_abKeysPressed[KID_J]){
-						if(!_pInput->m_bPressedJKey){//unPressÏÉÅÌÉúÏóêÏÑú Ï≤òÏùå PressÎêúÍ±∞ÎùºÎ©¥,
-							_pInput->m_bPressedJKey = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-							if(!_pInput->m_bJKey){	//ÌÜ†Í∏Ä
+						if(!_pInput->m_bPressedJKey){//unPressªÛ≈¬ø°º≠ √≥¿Ω Pressµ»∞≈∂Û∏È,
+							_pInput->m_bPressedJKey = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+							if(!_pInput->m_bJKey){	//≈‰±€
 								_pInput->m_bJKey =TRUE;
 							}else{
 								_pInput->m_bJKey =FALSE;
 							}
-						}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+						}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 						{
 						}
 					}
-					else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+					else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 						_pInput->m_bPressedJKey = FALSE;
 					}
 					
 					if(_abKeysPressed[KID_K]){
-						if(!_pInput->m_bPressedKKey){//unPressÏÉÅÌÉúÏóêÏÑú Ï≤òÏùå PressÎêúÍ±∞ÎùºÎ©¥,
-							_pInput->m_bPressedKKey = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-							if(!_pInput->m_bKKey){	//ÌÜ†Í∏Ä
+						if(!_pInput->m_bPressedKKey){//unPressªÛ≈¬ø°º≠ √≥¿Ω Pressµ»∞≈∂Û∏È,
+							_pInput->m_bPressedKKey = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+							if(!_pInput->m_bKKey){	//≈‰±€
 								_pInput->m_bKKey =TRUE;
 							}else{
 								_pInput->m_bKKey =FALSE;
@@ -2087,35 +2184,35 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 							//if (g_iFilterNum > 1)
 							//	g_iFilterNum = 0;
 							// sehan end
-						}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+						}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 						{
 						}
 					}
-					else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+					else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 						_pInput->m_bPressedKKey = FALSE;
 					}
 					
 					if(_abKeysPressed[KID_P]){
-						if(!_pInput->m_bPressedPKey){//unPressÏÉÅÌÉúÏóêÏÑú Ï≤òÏùå PressÎêúÍ±∞ÎùºÎ©¥,
-							_pInput->m_bPressedPKey = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-							if(!_pInput->m_bPKey){	//ÌÜ†Í∏Ä
+						if(!_pInput->m_bPressedPKey){//unPressªÛ≈¬ø°º≠ √≥¿Ω Pressµ»∞≈∂Û∏È,
+							_pInput->m_bPressedPKey = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+							if(!_pInput->m_bPKey){	//≈‰±€
 								_pInput->m_bPKey =TRUE;
 							}else{
 								_pInput->m_bPKey =FALSE;
 							}
-						}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+						}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 						{
 						}
 					}
-					else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+					else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 						_pInput->m_bPressedPKey = FALSE;
 					}
 					
 					if(_abKeysPressed[KID_TAB]){
-						if(!_pInput->m_bPressedTabKey){//unPressÏÉÅÌÉúÏóêÏÑú Ï≤òÏùå PressÎêúÍ±∞ÎùºÎ©¥,
+						if(!_pInput->m_bPressedTabKey){//unPressªÛ≈¬ø°º≠ √≥¿Ω Pressµ»∞≈∂Û∏È,
 							//_pInput->m_bLControlKey = TRUE;
-							_pInput->m_bPressedTabKey = TRUE; //press ÏÉÅÌÉúÏù¥Îã§.
-							if(!_pInput->m_bTabKey){	//ÌÜ†Í∏Ä
+							_pInput->m_bPressedTabKey = TRUE; //press ªÛ≈¬¿Ã¥Ÿ.
+							if(!_pInput->m_bTabKey){	//≈‰±€
 								_pInput->m_bTabKey =TRUE;
 								//	  CPrintF(TRANS("Interface : ON\n"));
 							}else{
@@ -2123,13 +2220,13 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 								//	  CPrintF(TRANS("Interface : OFF\n"));
 							}
 							//		return;
-						}else //Í≥ÑÏÜç pressÏÉÅÌÉúÏù¥Îã§.
+						}else //∞Ëº” pressªÛ≈¬¿Ã¥Ÿ.
 						{
 							//	_pInput->m_bLControlKey = FALSE;
 							//		return;
 						}
 					}
-					else{ //unPressÏÉÅÌÉúÍ∞Ä ÎêòÏóàÎã§.
+					else{ //unPressªÛ≈¬∞° µ«æ˙¥Ÿ.
 						_pInput->m_bPressedTabKey = FALSE;
 					}
 					
@@ -2146,7 +2243,7 @@ static void ReadKeyboardDevice(CInputDevice &idDevice, BOOL bPreScan)
 	}
 }
 /*
-//0601 kwon Ï∂îÍ∞Ä.
+//0601 kwon √ﬂ∞°.
 static BOOL IsLControlKeyPressing()
 {
 	if(_abKeysPressed[KID_LCONTROL])
@@ -2167,14 +2264,27 @@ static void ReadMouseDevice(CInputDevice &idDevice, BOOL bPreScan)
 	POINT pntMouse;
 	static POINT pntOldMouse = {0, 0};
 
-	// start seo	
-	if (!_bWorldEditorApp) 
+	// start seo
+	extern BOOL _bInTestGame;
+	if (!_bWorldEditorApp || _bInTestGame)		//≈◊Ω∫∆Æ ∞‘¿”¿œ ∂ß æ∆∑° ∑Á∆æ¿ª µÈæÓ∞°∞‘ ºˆ¡§ :Su-won
 	//if (0) 
 	{
-		if(_pInput->m_bTcpIp && GetCursorPos(&pntMouse)&& _pInput->m_bRButtonDown) {
+		if(_pInput->m_bTcpIp && ((GetCursorPos(&pntMouse)&& _pInput->m_bRButtonDown) ||
+			(GetCursorPos(&pntMouse) && _pInput->inp_bFreeMode))) {
 	//..
-			FLOAT fDX = FLOAT( SLONG(pntMouse.x) - pntOldMouse.x);
-			FLOAT fDY = FLOAT( SLONG(pntMouse.y) - pntOldMouse.y);
+			FLOAT fDX;
+			FLOAT fDY;
+
+			if (_pInput->inp_bFreeMode)
+			{
+				fDX = FLOAT( SLONG(pntMouse.x) - _pInput->inp_slScreenCenterX);
+				fDY = FLOAT( SLONG(pntMouse.y) - _pInput->inp_slScreenCenterY);
+			}
+			else
+			{
+				fDX = FLOAT( SLONG(pntMouse.x) - pntOldMouse.x);
+				fDY = FLOAT( SLONG(pntMouse.y) - pntOldMouse.y);
+			}
 
 			pntOldMouse = pntMouse;
 
@@ -2225,7 +2335,8 @@ static void ReadMouseDevice(CInputDevice &idDevice, BOOL bPreScan)
 				}
 				FLOAT fMouseRelZ = _iMouseZ;
 		//0105
-				if(!_pInput->m_bTcpIp || (_pInput->m_bTcpIp &&_abKeysPressed[KID_MOUSE2])){//ÎßàÏö∞Ïä§ Ìú†Î≤ÑÌäº DOWN //1211
+				if(!_pInput->m_bTcpIp || _pInput->inp_bFreeMode ||
+					(_pInput->m_bTcpIp &&_abKeysPressed[KID_MOUSE2] && !_pInput->inp_bFreeMode)){//∏∂øÏΩ∫ »Ÿπˆ∆∞ DOWN //1211
 					idDevice.id_aicControls[0].ic_fValue =  Max(0.0f,fMouseRelX*3/4);
 					idDevice.id_aicControls[1].ic_fValue = -Min(0.0f,fMouseRelX*3/4);
 					idDevice.id_aicControls[2].ic_fValue =  Max(0.0f,fMouseRelY*3/4);
@@ -2276,9 +2387,14 @@ static void ReadMouseDevice(CInputDevice &idDevice, BOOL bPreScan)
 				}
 			}
 		}
-	//0105 Ìú†ÎßàÏö∞Ïä§ ÎàÑÎ•∏ÏÉÅÌÉúÏóêÏÑúÎäî ÎßàÏö∞Ïä§Í∞Ä Ï§ëÏïôÏúºÎ°ú...
+
+		if (_pInput->inp_bFreeMode && (pntMouse.x!=_pInput->inp_slScreenCenterX || pntMouse.y!=_pInput->inp_slScreenCenterY)) {
+			SetCursorPos(_pInput->inp_slScreenCenterX, _pInput->inp_slScreenCenterY);
+		}
+
+	//0105 »Ÿ∏∂øÏΩ∫ ¥©∏•ªÛ≈¬ø°º≠¥¬ ∏∂øÏΩ∫∞° ¡ﬂæ”¿∏∑Œ...
 		if(_pInput->m_bTcpIp){
-			if(_abKeysPressed[KID_MOUSE2]){//ÎßàÏö∞Ïä§ Ìú†Î≤ÑÌäº DOWN	
+			if(_abKeysPressed[KID_MOUSE2]){//∏∂øÏΩ∫ »Ÿπˆ∆∞ DOWN	
 				if(!_pInput->m_bRButtonDown){
 					//GetCursorPos(&_pInput->inp_ptOldMousePos);
 					_pInput->m_bRButtonDown = TRUE;
@@ -2343,7 +2459,7 @@ static void ReadMouseDevice(CInputDevice &idDevice, BOOL bPreScan)
 			}
 			FLOAT fMouseRelZ = _iMouseZ;
 	//0105
-			if(!_pInput->m_bTcpIp || (_pInput->m_bTcpIp &&_abKeysPressed[KID_MOUSE2])){//ÎßàÏö∞Ïä§ Ìú†Î≤ÑÌäº DOWN //1211
+			if(!_pInput->m_bTcpIp || (_pInput->m_bTcpIp &&_abKeysPressed[KID_MOUSE2])){//∏∂øÏΩ∫ »Ÿπˆ∆∞ DOWN //1211
 			idDevice.id_aicControls[0].ic_fValue =  Max(0.0f,fMouseRelX*3/4);
 			idDevice.id_aicControls[1].ic_fValue = -Min(0.0f,fMouseRelX*3/4);
 			idDevice.id_aicControls[2].ic_fValue =  Max(0.0f,fMouseRelY*3/4);
@@ -2394,9 +2510,9 @@ static void ReadMouseDevice(CInputDevice &idDevice, BOOL bPreScan)
 			}
 		}
 
-	//0105 Ïö∞Ï∏° ÎßàÏö∞Ïä§ ÎàÑÎ•∏ÏÉÅÌÉúÏóêÏÑúÎäî ÎßàÏö∞Ïä§Í∞Ä Ï§ëÏïôÏúºÎ°ú...
+	//0105 øÏ√¯ ∏∂øÏΩ∫ ¥©∏•ªÛ≈¬ø°º≠¥¬ ∏∂øÏΩ∫∞° ¡ﬂæ”¿∏∑Œ...
 		if(_pInput->m_bTcpIp){
-			if(_abKeysPressed[KID_MOUSE2]){//ÎßàÏö∞Ïä§ Ïö∞Ï∏° Î≤ÑÌäº DOWN	
+			if(_abKeysPressed[KID_MOUSE2]){//∏∂øÏΩ∫ øÏ√¯ πˆ∆∞ DOWN	
 				if(!_pInput->m_bWheelDown){
 					GetCursorPos(&_pInput->inp_ptOldMousePos);
 					_pInput->m_bWheelDown = TRUE;

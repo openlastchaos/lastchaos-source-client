@@ -9,14 +9,6 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Entities/Items.h>
-
-#include <vector>
-
 // Define text position
 #define	CHANGEWEAPON_TITLE_TEXT_OFFSETX		25
 #define	CHANGEWEAPON_TITLE_TEXT_OFFSETY		5
@@ -39,8 +31,8 @@ protected:
 	enum eChangeWeaponState
 	{
 		CHANGEWEAPON_REQ,		
-		CHANGEWEAPON_STAT,			// ÏÉùÏÑ±
-		CHANGEWEAPON_GIVEUP,		// ÏäπÍ∏â
+		CHANGEWEAPON_STAT,			// ª˝º∫
+		CHANGEWEAPON_GIVEUP,		// Ω¬±ﬁ
 		CHANGEWEAPON_SHIELD,
 	};
 
@@ -70,14 +62,14 @@ protected:
 		}
 
 		int				iIndex;
-		CTString		strName;			// Î©§Î≤ÑÎ™Ö?
+		CTString		strName;			// ∏‚πˆ∏Ì?
 		int				iJob;
 	};
 
 	std::vector<sWeaponInfo>		m_vectorWeaponInfo;
 	// wooss 051217
 	// selected item in inventory
-	CItems 	m_selItem;
+	CItems* 			m_pSelItem;
 
 	// Controls
 	CUIButton			m_btnClose;							// Close button
@@ -93,13 +85,13 @@ protected:
 	SLONG				m_slLevel;
 	int					m_nMoneyPosY;						// Position y of refine money text
 	int					m_nTextRegionHeight;				// Height of text region
-	CTString			m_strWeaponName;					// Î¨¥Í∏∞ Ïù¥Î¶Ñ
-	CTString			m_strWeaponLevel;					// Î¨¥Í∏∞ Î†àÎ≤®
-	CTString			m_strWeaponClass;					// ÏÇ¨Ïö© ÌÅ¥ÎûòÏä§
-	CTString			m_strWeaponAttack;					// Í≥µÍ≤©Î†•
-	CTString			m_strWeaponDefence;					// Î∞©Ïñ¥Î†• 
-	CTString			m_strWeaponMagicAttack;				// ÎßàÎ≤ï Í≥µÍ≤©Î†•
-	CTString			m_strWeight;						// Î¨¥Í≤å
+	CTString			m_strWeaponName;					// π´±‚ ¿Ã∏ß
+	CTString			m_strWeaponLevel;					// π´±‚ ∑π∫ß
+	CTString			m_strWeaponClass;					// ªÁøÎ ≈¨∑°Ω∫
+	CTString			m_strWeaponAttack;					// ∞¯∞›∑¬
+	CTString			m_strWeaponDefence;					// πÊæÓ∑¬ 
+	CTString			m_strWeaponMagicAttack;				// ∏∂π˝ ∞¯∞›∑¬
+	CTString			m_strWeight;						// π´∞‘
 
 	// Position of target npc
 	FLOAT				m_fNpcX, m_fNpcZ;
@@ -181,6 +173,12 @@ public:
 	void	SetCashItem(BOOL chk) {m_bCashItemChk=chk;} 
 	BOOL	GetCashItem() {return m_bCashItemChk;}
 	
+public :
+
+protected:
+	void initialize();
+	void OnUpdate( float fElapsedTime );
+	void OnRender( CDrawPort* pDraw );
 };
 
 

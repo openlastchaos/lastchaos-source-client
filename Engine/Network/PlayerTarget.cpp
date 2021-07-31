@@ -25,10 +25,16 @@ CPlayerTarget::CPlayerTarget(void) {
 /*
  *  Destructor.
  */
-CPlayerTarget::~CPlayerTarget(void) {
+CPlayerTarget::~CPlayerTarget(void) 
+{	
+	if (plt_penPlayerEntity != NULL)
+	{
+		plt_penPlayerEntity->Destroy(FALSE);
+		plt_penPlayerEntity = NULL;
+	}
 }
 
-//! ìŠ¤íŠ¸ë¦¼ìœ¼ë¡œë¶€í„° í”Œë ˆì´ì–´ ì •ë³´ë¥¼ ì½ëŠ”ë‹¤.
+//! ½ºÆ®¸²À¸·ÎºÎÅÍ ÇÃ·¹ÀÌ¾î Á¤º¸¸¦ ÀÐ´Â´Ù.
 /*
  * Read player information from a stream.
  */
@@ -43,12 +49,12 @@ void CPlayerTarget::Read_t(CTStream *pstr) // throw char *
   (*pstr) >> bActive;
   (*pstr) >> plt_Index >> plt_iClient;
 
-  //! ì´ í´ë¼ì´ì–¸íŠ¸ê°€ í™œì„±í™” ë˜ì–´ìžˆë‹¤ë©´,
+  //! ÀÌ Å¬¶óÀÌ¾ðÆ®°¡ È°¼ºÈ­ µÇ¾îÀÖ´Ù¸é,
   // if client is active
   if (bActive) {
     // set it up
     Activate(plt_iClient);
-	//! ì—”í‹°í‹° id, ë§ˆì§€ë§‰ ì•¡ì…˜,ì´ì „ ë§ˆì§€ë§‰ ì•¡ì…˜ì„ ì½ì–´ì˜¤ê³ , idë¡œ í”Œë ˆì´ì–´ ì—”í‹°í‹°ë¥¼ ì°¾ì•„ì„œ ì„¤ì •.
+	//! ¿£Æ¼Æ¼ id, ¸¶Áö¸· ¾×¼Ç,ÀÌÀü ¸¶Áö¸· ¾×¼ÇÀ» ÀÐ¾î¿À°í, id·Î ÇÃ·¹ÀÌ¾î ¿£Æ¼Æ¼¸¦ Ã£¾Æ¼­ ¼³Á¤.
     // read data
     (*pstr)>>ulEntityID>>plt_paLastAction>>plt_paPreLastAction;
     CPlayerEntity *penPlayer = (CPlayerEntity *)_pNetwork->ga_World.EntityFromID(ulEntityID);

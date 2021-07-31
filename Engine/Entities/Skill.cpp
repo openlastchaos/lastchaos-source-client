@@ -1,5 +1,7 @@
 #include "stdh.h"
 
+#include <vector>
+
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Entities/Skill.h>
 #include <Engine/Ska/StringTable.h>
@@ -9,10 +11,18 @@
 #include <Engine/Interface/UISummon.h>
 #include <Engine/Interface/UIQuickSlot.h>
 #include <Engine/Interface/UIPetInfo.h>
+#include <Engine/Secure/FileSecure.h>	// [2012/07/18 : Sora]  ∆ƒ¿œ ∫∏æ»ƒ⁄µÂ √ﬂ∞°
+#include <Engine/Contents/Base/UICharacterInfoNew.h>
+#include <Engine/Contents/function/WildPetInfoUI.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Info/MyInfo.h>
+#include <Engine/Contents/Base/UISkillNew.h>
+
 
 CSkill::CSkill(void) 
 {	
-	memset(&Skill_Data, 0, sizeof(_SkillData));
+	memset(&Skill_Data.index, 0, sizeof(_SkillData) - (sizeof(std::string) * 3));
+
 	bCanCancel	= FALSE;
 	bNeedTarget	= FALSE;
 }
@@ -23,32 +33,89 @@ CSkill::~CSkill(void)
 		m_vectorSkillLevels.clear();
 }
 
-CSkill::Init(void) 
+void CSkill::Init(void)
 {
-	bCanCancel = FALSE;	
+	bCanCancel = FALSE;
 }
 
 // yjpark |<--
-void CSkill::SetStartTime()
+void CSkill::SetStartTime( int nRemainTime /*= 0*/)
 {
-	Skill_Data.Skill_StartTime =_pTimer->GetHighPrecisionTimer().GetSeconds();
-	_pUIMgr->GetCharacterInfo()->StartSkillDelay( Skill_Data.index );
-	_pUIMgr->GetQuickSlot()->StartSkillDelay( Skill_Data.index );
-	_pUIMgr->GetPetInfo()->StartSkillDelay( Skill_Data.index );
-	_pUIMgr->GetWildPetInfo()->StartSkillDelay(Skill_Data.index);
+	Skill_Data.Skill_StartTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	
+	if (nRemainTime > 0)
+		Skill_Data.Skill_StartTime -= ( (double)nRemainTime );
+
+	SetStartSkillDelay( Skill_Data.index );
+}
+
+void CSkill::SetStartSkillDelay( int nSkillIndex )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	MY_INFO()->SetSkillDelay(nSkillIndex, true);
+	pUIManager->GetQuickSlot()->StartSkillDelay( nSkillIndex );
+	pUIManager->GetSkillNew()->SetSkillCoolTime(nSkillIndex);
+	pUIManager->GetCharacterInfo()->StartSkillDelay(nSkillIndex);	
+	pUIManager->GetPetInfo()->StartSkillDelay( nSkillIndex );
+	pUIManager->GetGuild()->StartGuildSkillDelay( nSkillIndex );
+	MY_INFO()->SetPetSkillDelay(0, nSkillIndex, true);
 
 	for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 	{
-		CUISummon* pUISummon = (CUISummon*)_pUIMgr->GetUI(i);
-		pUISummon->StartSkillDelay( Skill_Data.index );
+		CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+		pUISummon->StartSkillDelay( nSkillIndex );
 	}	
 }
-// yjpark     -->|
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Open beta)(2004-11-29)
+void  CSkill::ResetStartTime()
+{
+	Skill_Data.Skill_StartTime = 0.0f;
+}
+// yjpark     -->|
+//[sora] πÃπ¯ø™ Ω∫∆Æ∏µ index «•Ω√
+void CSkill::SetNoTranslate()
+{
+	char buff[MAX_PATH];
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, Skill_Data.transFlag ) )
+	{
+		memset(buff, 0, MAX_PATH);
+		sprintf( buff, "[%d] : skill name", Skill_Data.index );
+		Skill_Data.name = buff;
+	}
+	if( pUIManager->IsNotTranslated( TRANS_DESC, Skill_Data.transFlag ) )
+	{
+		memset(buff, 0, MAX_PATH);
+		sprintf( buff, "[%d] : skill desc", Skill_Data.index );
+		Skill_Data.client_description = buff;
+	}
+	if( pUIManager->IsNotTranslated( TRANS_DESC2, Skill_Data.transFlag ) )
+	{
+		memset(buff, 0, MAX_PATH);
+		sprintf( buff, "[%d] : skill tooltip", Skill_Data.index );
+		Skill_Data.client_tooltip = buff;
+	}
+}
+
+void CSkill::ClearNoTranslate()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, Skill_Data.transFlag ) )
+		Skill_Data.name = "";
+	if( pUIManager->IsNotTranslated( TRANS_DESC, Skill_Data.transFlag ) )
+		Skill_Data.client_description = "";
+	if( pUIManager->IsNotTranslated( TRANS_DESC2, Skill_Data.transFlag ) )
+		Skill_Data.client_tooltip = "";
+}
+
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Open beta)(2004-11-29)
 #include <vector>
 #include <algorithm>
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Open beta)(2004-11-29)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Open beta)(2004-11-29)
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &apSkillData - 
@@ -64,13 +131,23 @@ int CSkill::LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char*
 		return -1;
 	}
 
-	int iLastSkillIndex	= 0; //Ïä§ÌÇ¨ Í∞ØÏàò.
+	// [2012/07/18 : Sora]  ∆ƒ¿œ ∫∏æ»ƒ⁄µÂ √ﬂ∞°
+ 	CFileSecure fs;
+ 	if( !fs.DecodeFile( fp ) )
+ 	{
+ 		return -1;
+ 	}
+
+	fflush(fp);
+
+	int	i, j, k, iWeapon;
+	int iLastSkillIndex	= 0; //Ω∫≈≥ ∞πºˆ.
 	int iLength		= -1;
 	int iReadBytes	= 0;
 
 	iReadBytes = fread(&iLastSkillIndex, sizeof(int), 1, fp);			
 	apSkillData.New(iLastSkillIndex);
-	ASSERT(apSkillData.Count() >= iLastSkillIndex && "Invalid Array Count");//Ïó¨Í∏∞ÏÑú Í±∏Î¶¨Î©¥ Í≥†Ï†ïÎêú Í∞úÏàòÏùò Ïä§ÌÇ¨Ïàò Ï¥àÍ≥ºÌïúÍ≤ÉÏûÑ. Îçî ÎäòÎ¶¥Í≤É.(Ïä§ÌÇ¨ÏùÄ Í≥†Ï†ïÎ∞∞Ïó¥ ÏÇ¨Ïö©)
+	ASSERT(apSkillData.Count() >= iLastSkillIndex && "Invalid Array Count");//ø©±‚º≠ ∞…∏Æ∏È ∞Ì¡§µ» ∞≥ºˆ¿« Ω∫≈≥ºˆ √ ∞˙«—∞Õ¿”. ¥ı ¥√∏±∞Õ.(Ω∫≈≥¿∫ ∞Ì¡§πËø≠ ªÁøÎ)
 	ASSERT(iLastSkillIndex > 0 && "Invalid Skill Data");
 
 	//////////////////////////////////////////////////////////////////////////	
@@ -83,10 +160,15 @@ int CSkill::LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char*
 #define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fp); }
 	//////////////////////////////////////////////////////////////////////////	
 
-	for(int i = 0; i < iLastSkillIndex; i++) //Ïä§ÌÇ¨ Í∞ØÏàòÎßåÌÅº.
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	
+	for( i = 0; i < iLastSkillIndex; i++) //Ω∫≈≥ ∞πºˆ∏∏≈≠.
 	{
-		int iIndex = 1; //Ïä§ÌÇ¨Î≤àÌò∏.	
+		int iIndex = 1; //Ω∫≈≥π¯»£.	
 		LOADINT(iIndex);
+		
+		if( fs.IsEndCode( iIndex ) )	// [2012/07/18 : Sora]  ∆ƒ¿œ end
+			break;
 
 		if(iReadBytes <= 0)		break;										// EOF
 		ASSERT(iIndex != -1	&& "Invalid Skill Index");
@@ -95,36 +177,35 @@ int CSkill::LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char*
 		_SkillData& SD				= SkillData.Skill_Data;		
 		SD.index					= iIndex;
 
-		// ÏùºÎ∞ò
+		// ¿œπ›
 		LOADINT(SD.job);
 		LOADINT(SD.job2);
 		LOADINT(SD.petindex);
-		LOADSTR(SD.name);
 		LOADCHAR(SD.type);
 		LOADINT(SD.flag);
 		LOADINT(SD.sorcerer); 
 		LOADCHAR(SD.maxLevel);
-
-		// Í±∞Î¶¨
+		// ∞≈∏Æ
 		LOADFLOAT(SD.appRange);
 		LOADFLOAT(SD.fireRange);
 		LOADFLOAT(SD.fireRange2);
 
-		// ÌÉÄÍ≤ü
+		// ≈∏∞Ÿ
 		LOADCHAR(SD.targetType);
 
 		if( SD.targetType == STT_TARGET_ONE || 
 			SD.targetType == STT_TARGET_RANGE || 
 			SD.targetType == STT_PARTY_ONE ||
 			SD.targetType == STT_TARGET_D120 ||
-			SD.targetType == STT_TARGET_RECT )
+			SD.targetType == STT_TARGET_RECT ||
+			SD.targetType == STT_GUILD_ONE)
 		{
 			SkillData.bNeedTarget = TRUE;
 		}
 
-		LOADCHAR(SD.targetNum);
+//		LOADCHAR(SD.targetNum);
 
-		// ÏÇ¨Ïö©Ï°∞Í±¥
+		// ªÁøÎ¡∂∞«
 		LOADINT(SD.useState);
 		LOADINT(SD.useWeaponType0);
 		LOADINT(SD.useWeaponType1);
@@ -134,37 +215,33 @@ int CSkill::LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char*
 		LOADCHAR(SD.useMagicLevel2);
 		LOADINT(SD.useMagicIndex3);
 		LOADCHAR(SD.useMagicLevel3);
+		LOADINT(SD.useSoulCount);
 
-		// Ï†ÅÏö©Ï°∞Í±¥
+		// ¿˚øÎ¡∂∞«
 		LOADINT(SD.appState);
 
-		// ÏãúÍ∞Ñ
+		// Ω√∞£
 		LOADINT(SD.readyTime);
 		LOADINT(SD.waitTime);
 		LOADINT(SD.fireTime);
 		LOADINT(SD.reuseTime);
 
-		if( SD.reuseTime == 0 )
-		{// Í∏∞Î≥∏ 3Ï¥à
-			SD.reuseTime = 30; 
-		}
-
-		for(INDEX iWeapon=0; iWeapon<WEAPON_COUNT; ++iWeapon)
+		for( iWeapon = 0; iWeapon < WEAPON_COUNT; ++iWeapon )
 		{
-			// ÏãúÏ†Ñ
+			// Ω√¿¸
 			LOADSTR(SD.client[iWeapon].readyAni);
 			LOADSTR(SD.client[iWeapon].readyEffect1);
 
-			// Ï†ïÏßÄ
+			// ¡§¡ˆ
 			LOADSTR(SD.client[iWeapon].stillAni);
 
-			// Î∞úÏÇ¨
+			// πﬂªÁ
 			LOADSTR(SD.client[iWeapon].fireAni);
 			LOADSTR(SD.client[iWeapon].fireEffect1);
 			LOADSTR(SD.client[iWeapon].fireEffect2);
 			LOADSTR(SD.client[iWeapon].fireEffect3);
 
-			// Î∞úÏÇ¨Ï≤¥
+			// πﬂªÁ√º
 			LOADCHAR(SD.client[iWeapon].fireobjType);
 			LOADFLOAT(SD.client[iWeapon].fireobjSpeed);
 			LOADFLOAT(SD.client[iWeapon].fireobjX);
@@ -176,34 +253,24 @@ int CSkill::LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char*
 			LOADFLOAT(SD.client[iWeapon].fireobjDelay[1]);
 			LOADFLOAT(SD.client[iWeapon].fireobjDelay[2]);
 			LOADFLOAT(SD.client[iWeapon].fireobjDelay[3]);
-			//ÏãúÍ∞Ñ ÏàúÏúºÎ°ú ÏÜåÌåÖ
-			std::vector<float> tempvec;
-			for(int a=0; a<SD.client[iWeapon].fireobjDelayCount; ++a)
-			{
-				tempvec.push_back(SD.client[iWeapon].fireobjDelay[a]);
-			}
-			std::sort(tempvec.begin(), tempvec.end());
-			for(a=0; a<SD.client[iWeapon].fireobjDelayCount; ++a)
-			{
-				SD.client[iWeapon].fireobjDelay[a] = tempvec[a];
-			}
+			// vector «“¥Á æ¯¿Ã ¡§∑ƒ ∞°¥…. [2/17/2011 rumist]
+			std::sort( (SD.client[iWeapon]).fireobjDelay, (SD.client[iWeapon]).fireobjDelay + SD.client[iWeapon].fireobjDelayCount );
 			LOADFLOAT(SD.client[iWeapon].fireobjDestDelay);
 		}
-
-		// ÏÑ§Î™Ö
-		LOADSTR(SD.client_description);
-		LOADSTR(SD.client_tooltip);
-
-		// ÏïÑÏù¥ÏΩò
+		// After Effect
+		ZeroMemory(SD.After_AttachEffect, 256);
+		LOADSTR(SD.After_AttachEffect);
+		// æ∆¿Ãƒ‹
 		LOADINT(SD.client_icon_texid);
 		LOADINT(SD.client_icon_row);
 		LOADINT(SD.client_icon_col);
 
-		for(int j = 0; j < SD.maxLevel;++j)
+		for( j = 0; j < SD.maxLevel;++j)
 		{		
 			_SkillLevel SL;
 			LOADINT(SL.needHP);
 			LOADINT(SL.needMP);
+			LOADINT(SL.needGP);
 			LOADINT(SL.durtime);
 			LOADINT(SL.dummyPower);
 			LOADINT(SL.needItemIndex1);
@@ -212,12 +279,12 @@ int CSkill::LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char*
 			LOADINT(SL.needItemCount2);
 			LOADINT(SL.learnLevel);
 			LOADINT(SL.learnSP);
-			for( int k = 0; k < 3; k++ )
+			for(  k = 0; k < 3; k++ )
 			{
 				LOADINT(SL.learnSkillIndex[k]);
 				LOADCHAR(SL.learnSkillLevel[k]);
 			}
-			for( k = 0; k < 3; k++ )
+			for(  k = 0; k < 3; k++ )
 			{
 				LOADINT(SL.learnItemIndex[k]);
 				LOADINT(SL.learnItemCount[k]);
@@ -241,9 +308,15 @@ int CSkill::LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char*
 			LOADINT(SL.magicIndex3);
 			LOADCHAR(SL.magicLevel3);			
 // WSS_NEW_GUILD_SYSTEM 070716 --------------------->>	
-#ifdef NEW_GUILD_SYSTEM 
 			LOADINT(SL.learnGP);				
-#endif
+// -------------------------------------------------<<
+
+// º”º∫ Ω√Ω∫≈€ Ω∫≈≥ º”º∫ ¡§∫∏ LODø° √ﬂ∞°[1/21/2013 Ranma]>>	
+			LOADCHAR(SL.attratt);
+			LOADCHAR(SL.attrattLv);
+			LOADCHAR(SL.attrdef);
+			LOADCHAR(SL.attrdefLv);
+			LOADINT(SL.targetmax);
 // -------------------------------------------------<<
 			SkillData.m_vectorSkillLevels.push_back(SL);
 		}
@@ -252,12 +325,20 @@ int CSkill::LoadSkillDataFromFile(CStaticArray<CSkill> &apSkillData, const char*
 			( (SkillData.GetJob() == HEALER) || 
 			(SkillData.GetJob() == MAGE) || 
 			(SkillData.GetJob() == ROGUE) || 
-			(SkillData.GetJob() == SORCERER) ))
+			(SkillData.GetJob() == SORCERER) ||
+			(SkillData.GetJob() == NIGHTSHADOW) ||
+#ifdef CHAR_EX_ROGUE
+			(SkillData.GetJob() == EX_ROGUE) || // [2012/08/27 : Sora] EX∑Œ±◊ √ﬂ∞°
+#endif
+#ifdef CHAR_EX_MAGE
+			(SkillData.GetJob() == EX_MAGE) || //2013/01/08 jeil EX ∏ﬁ¿Ã¡ˆ √ﬂ∞° 
+#endif
+			(SkillData.GetFlag() & SF_GUILD )))
 		{
 			SkillData.bCanCancel = TRUE;
 		}
 		
-		for(iWeapon=0; iWeapon<WEAPON_COUNT; ++iWeapon)
+		for( iWeapon = 0; iWeapon < WEAPON_COUNT; ++iWeapon )
 		{
 			SkillData.idPlayer_Anim_Skill[iWeapon][0] = ska_GetIDFromStringTable(SD.client[iWeapon].readyAni);
 			SkillData.idPlayer_Anim_Skill[iWeapon][1] = ska_GetIDFromStringTable(SD.client[iWeapon].stillAni);

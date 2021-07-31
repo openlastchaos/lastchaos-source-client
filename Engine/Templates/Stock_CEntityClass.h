@@ -21,6 +21,7 @@
 
 ENGINE_API extern CStock_CEntityClass *_pEntityClassStock;
 
+#define ENTITY_STOCK_RELEASE(p) { if(p){ _pEntityClassStock->Release(p); p = NULL; } }
 
 #endif  /* include-once check. */
 

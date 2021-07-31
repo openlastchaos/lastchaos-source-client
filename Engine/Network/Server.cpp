@@ -183,13 +183,7 @@ CNetworkMessage &operator>>(CNetworkMessage &nm, CSessionSocketParams &ssp)
 /*
  * Constructor.
  */
-CServer::CServer(void) : 
-srv_iMaxMobNum(500), 
-srv_iMaxChaNum(500), 
-srv_iMaxPetNum(500), 
-srv_iMaxSlaveNum(500), 
-srv_iMaxItemNum(500),
-srv_iMaxWildPetNum(500)
+CServer::CServer(void) 
 {
   TRACKMEM(Mem,"Network");
 
@@ -202,21 +196,6 @@ srv_iMaxWildPetNum(500)
   srv_assoSessions.New(NET_MAXGAMECOMPUTERS);
   srv_apltPlayers.New(NET_MAXGAMEPLAYERS);
 
-//0325
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
-  srv_amtMob.New(srv_iMaxMobNum);
-  srv_amtMob.SetAllocationStep(100);
-  srv_actCha.New(srv_iMaxChaNum);
-  srv_actCha.SetAllocationStep(100);
-  srv_actPet.New(srv_iMaxPetNum);
-  srv_actPet.SetAllocationStep(100);
-  srv_actSlave.New(srv_iMaxSlaveNum);
-  srv_actSlave.SetAllocationStep(100);
-  srv_aitItem.New(srv_iMaxItemNum);
-  srv_aitItem.SetAllocationStep(100);
-  srv_actWildPet.New(srv_iMaxWildPetNum);
-  srv_actWildPet.SetAllocationStep(100);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
   // initialize player indices
   INDEX iPlayer = 0;
   FOREACHINSTATICARRAY(srv_apltPlayers, CPlayerTarget, itplt) {
@@ -295,8 +274,6 @@ void CServer::Stop(void)
     srv_apltPlayers.Clear();
     srv_apltPlayers.New(NET_MAXGAMEPLAYERS);
 
-	ReAllocEntities();
-
   }
 
   // initialize player indices
@@ -311,22 +288,6 @@ void CServer::Stop(void)
 
   srv_bActive = FALSE;
 };
-
-void CServer::ReAllocEntities()
-{
-	srv_amtMob.Clear();
-    srv_amtMob.New(srv_iMaxMobNum);
-	srv_actCha.Clear();
-    srv_actCha.New(srv_iMaxChaNum);
-	srv_actPet.Clear();
-    srv_actPet.New(srv_iMaxPetNum);
-	srv_actSlave.Clear();
-    srv_actSlave.New(srv_iMaxSlaveNum);
-	srv_aitItem.Clear();
-    srv_aitItem.New(srv_iMaxItemNum);
-	srv_actWildPet.Clear();
-	srv_actWildPet.New(srv_iMaxWildPetNum);
-}
 
 /*
  * Initialize server and start message handlers.
@@ -350,7 +311,6 @@ void CServer::Start_t(void)
   srv_apltPlayers.Clear();
   srv_apltPlayers.New(NET_MAXGAMEPLAYERS);
 
-  ReAllocEntities();	  
   // initialize player indices
   INDEX iPlayer = 0;
   {FOREACHINSTATICARRAY(srv_apltPlayers, CPlayerTarget, itplt) {
@@ -372,7 +332,7 @@ void CServer::Start_t(void)
  */
 void CServer::SendDisconnectMessage(INDEX iClient, const char *strExplanation, BOOL bStream)
 {
-/* //0522 kwon ì‚­ì œ.
+/* //0522 kwon »èÁ¦.
   CSessionSocket &sso = srv_assoSessions[iClient];
 
   if (!bStream) {
@@ -438,10 +398,10 @@ void CServer::SendGameStreamBlocks(INDEX iClient)
 //  CPrintF("last=%d -- ", iLastSent);
 
   // initialize the message that is to be sent
-  CNetworkMessage nmGameStreamBlocks(MSG_GAMESTREAMBLOCKS);
+  CNetworkMessage nmGameStreamBlocks((UBYTE)MSG_GAMESTREAMBLOCKS);
   // get one message for last compressed message of valid size
-  CNetworkMessage nmPackedBlocks(MSG_GAMESTREAMBLOCKS);
-  CNetworkMessage nmPackedBlocksNew(MSG_GAMESTREAMBLOCKS);
+  CNetworkMessage nmPackedBlocks((UBYTE)MSG_GAMESTREAMBLOCKS);
+  CNetworkMessage nmPackedBlocksNew((UBYTE)MSG_GAMESTREAMBLOCKS);
 
   // repeat for max 100 sequences
   INDEX iBlocksOk = 0;
@@ -515,7 +475,7 @@ void CServer::SendGameStreamBlocks(INDEX iClient)
     // if not sent anything for some time
     CTimerValue tvNow = _pTimer->GetHighPrecisionTimer();
     extern FLOAT ser_tmKeepAlive;
- //0522 kwon ì‚­ì œ.
+ //0522 kwon »èÁ¦.
     if ((tvNow-sso.sso_tvLastMessageSent).GetSeconds()>ser_tmKeepAlive) {
       // send keepalive
       CNetworkMessage nmKeepalive(MSG_KEEPALIVE);
@@ -537,7 +497,7 @@ void CServer::SendGameStreamBlocks(INDEX iClient)
   extern INDEX ser_iRememberBehind;
   sso.sso_nsBuffer.RemoveOlderBlocksBySequence(srv_iLastProcessedSequence-ser_iRememberBehind);
 
-/* //0522 kwon ì‚­ì œ.
+/* //0522 kwon »èÁ¦.
   // if haven't sent pings for some time
   CTimerValue tvNow = _pTimer->GetHighPrecisionTimer();
   extern FLOAT ser_tmPingUpdate;
@@ -574,11 +534,12 @@ void CServer::ResendGameStreamBlocks(INDEX iClient, INDEX iSequence0, INDEX ctSe
   CSessionSocket &sso = srv_assoSessions[iClient];
 
   // create a package message
-  CNetworkMessage nmGameStreamBlocks(MSG_GAMESTREAMBLOCKS);
-  CNetworkMessage nmPackedBlocks(MSG_GAMESTREAMBLOCKS);
+  CNetworkMessage nmGameStreamBlocks((UBYTE)MSG_GAMESTREAMBLOCKS);
+  CNetworkMessage nmPackedBlocks((UBYTE)MSG_GAMESTREAMBLOCKS);
 
   // for each sequence
-  for(INDEX iSequence = iSequence0; iSequence<iSequence0+ctSequences; iSequence++) {
+  INDEX iSequence;
+  for(iSequence = iSequence0; iSequence < iSequence0 + ctSequences; iSequence++) {
     // get the stream block with that sequence
     CNetworkStreamBlock *pnsbBlock;
     CNetworkStream::Result res = sso.sso_nsBuffer.GetBlockBySequence(iSequence, pnsbBlock);
@@ -589,7 +550,7 @@ void CServer::ResendGameStreamBlocks(INDEX iClient, INDEX iSequence0, INDEX ctSe
       return;
     }
 
-    CNetworkMessage nmPackedBlocksNew(MSG_GAMESTREAMBLOCKS);
+    CNetworkMessage nmPackedBlocksNew((UBYTE)MSG_GAMESTREAMBLOCKS);
     // pack it in the batch
     pnsbBlock->WriteToMessage(nmGameStreamBlocks);
     nmGameStreamBlocks.PackDefault(nmPackedBlocksNew);
@@ -744,7 +705,7 @@ ULONG CServer::MaskOfPlayersOnClient(INDEX iClient)
   return ulClientPlayers;
 }
 
-//! ì„œë²„ì˜ ë©”ì¸loop. ë©”ì‹œì§€ ì²˜ë¦¬í›„ ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ë¡œ ë„˜ê¹€.(ë§ë‚˜?ã…¡ã…¡;)
+//! ¼­¹öÀÇ ¸ŞÀÎloop. ¸Ş½ÃÁö Ã³¸®ÈÄ ·ÎÄÃ Å¬¶óÀÌ¾ğÆ®·Î ³Ñ±è.(¸Â³ª?¤Ñ¤Ñ;)
 /*
  * Handle network messages.
  */
@@ -761,49 +722,49 @@ void CServer::ServerLoop(void)
 
   _pfNetworkProfile.StartTimer(CNetworkProfile::PTI_SERVER_LOOP);
 
-  //! ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì˜ ë©”ì‹œì§€ í•¸ë“¤ë§.
+  //! ¸ğµç Å¬¶óÀÌ¾ğÆ®ÀÇ ¸Ş½ÃÁö ÇÚµé¸µ.
   // handle all incoming messages
   HandleAll();
   
   if(_pNetwork->IsReadyStart()){//0311 kwon 
 	  INDEX iSpeed = 1;
 	  extern INDEX ser_bWaitFirstPlayer;
-	  //! srv_bPauseëŠ” ì„œë²„ê°€ ëœ¬í›„ì— ì ‘ì†ìê°€ ì—†ì„ë•Œ ë©ˆì¶°ë†“ëŠ”ë‹¤."Pause game by local machine"
+	  //! srv_bPause´Â ¼­¹ö°¡ ¶áÈÄ¿¡ Á¢¼ÓÀÚ°¡ ¾øÀ»¶§ ¸ØÃç³õ´Â´Ù."Pause game by local machine"
 	  // if the local session is keeping up with time and not paused
 	  BOOL bPaused = srv_bPause || _pNetwork->ga_bLocalPause || _pNetwork->IsWaitingForPlayers() || srv_bGameFinished;
 	  if (_pNetwork->ga_sesSessionState.ses_bKeepingUpWithTime && !bPaused ) {
 		  
-		  //! ì‹œê°„ ê²½ê³¼. ga_sesSessionStateëŠ” ë¡œì»¬ ì„¸ì…˜ì´ë‹¤.ì´ˆê¸°ê°’ì€ srv_fServerStep=1.0f
+		  //! ½Ã°£ °æ°ú. ga_sesSessionState´Â ·ÎÄÃ ¼¼¼ÇÀÌ´Ù.ÃÊ±â°ªÀº srv_fServerStep=1.0f
 		  // advance time
 		  srv_fServerStep += _pNetwork->ga_fGameRealTimeFactor*_pNetwork->ga_sesSessionState.ses_fRealTimeFactor;
-		  //! ë‹¤ìŒ tickì— ì´ë¥´ë©´,
+		  //! ´ÙÀ½ tick¿¡ ÀÌ¸£¸é,
 		  // if stepped to next tick
 		  if (srv_fServerStep>=1.0f) {
 			  // find how many ticks were stepped
 			  INDEX iSpeed = ClampDn(INDEX(srv_fServerStep), 1L);
 			  srv_fServerStep -= iSpeed;
-			  //! ê°ê°ì˜ tickì— ëŒ€í•˜ì—¬,	
+			  //! °¢°¢ÀÇ tick¿¡ ´ëÇÏ¿©,	
 			  // for each tick
 			  for( INDEX i=0; i<iSpeed; i++) {
 				  // increment tick counter and processed sequence
 				  if (!ser_bWaitFirstPlayer) {
-					  //í”Œë ˆì´ì–´ê°€ ë“¤ì–´ì™”ì„ë•Œ ì‹¤í–‰ëœë‹¤.ê·¸ì „ì—ëŠ” 0.
-					  srv_tmLastProcessedTick += _pTimer->TickQuantum; //ë§ˆì§€ë§‰ìœ¼ë¡œ ëª¨ë“  ì•¡ì…˜ì„ ì¬ì „ì†¡í•œ ì‹œê°„.
+					  //ÇÃ·¹ÀÌ¾î°¡ µé¾î¿ÔÀ»¶§ ½ÇÇàµÈ´Ù.±×Àü¿¡´Â 0.
+					  srv_tmLastProcessedTick += _pTimer->TickQuantum; //¸¶Áö¸·À¸·Î ¸ğµç ¾×¼ÇÀ» ÀçÀü¼ÛÇÑ ½Ã°£.
 				  }
-				  srv_iLastProcessedSequence++; //! ë§ˆì§€ë§‰ìœ¼ë¡œ ë³´ë‚¸ ê²Œì„ ìŠ¤íŠ¸ë¦¼ ë¸”ë¡ì˜ ì‹œí€€ìŠ¤.
+				  srv_iLastProcessedSequence++; //! ¸¶Áö¸·À¸·Î º¸³½ °ÔÀÓ ½ºÆ®¸² ºí·ÏÀÇ ½ÃÄö½º.
 				  // make allaction messages for one tick - this in effect advances the session timer
-				  //! ëª¨ë“  ì•¡ì…˜ ë©”ì‹œì§€ë¥¼ ìƒì„±í•˜ê³ , ì„œë²„ì‹œê°„ì„ ì“´ë‹¤.
+				  //! ¸ğµç ¾×¼Ç ¸Ş½ÃÁö¸¦ »ı¼ºÇÏ°í, ¼­¹ö½Ã°£À» ¾´´Ù.
 				  // create all-actions message and write server time into it
 				  CNetworkStreamBlock nsbAllActions(MSG_SEQ_ALLACTIONS, srv_iLastProcessedSequence);
 				  nsbAllActions<<srv_tmLastProcessedTick;
-				  //! ë¡œì»¬ ì„¸ì…˜ì— ë¸”ë¡ì„ ì¶”ê°€í•œë‹¤.
+				  //! ·ÎÄÃ ¼¼¼Ç¿¡ ºí·ÏÀ» Ãß°¡ÇÑ´Ù.
 				  // add the block to the buffer
 				  srv_assoSessions[0].sso_nsBuffer.AddBlock(nsbAllActions);
 				  
 			  } 
 		  }
 	  }
-	  //! ê²Œì„ ìŠ¤íŠ¸ë¦¼ ë¸”ë¡ì„ ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ë¡œ ë³´ë‚¸ë‹¤.
+	  //! °ÔÀÓ ½ºÆ®¸² ºí·ÏÀ» ·ÎÄÃ Å¬¶óÀÌ¾ğÆ®·Î º¸³½´Ù.
 	  // send one regular batch of sequences to the client
 	  SendGameStreamBlocks(0);
 	  
@@ -811,7 +772,7 @@ void CServer::ServerLoop(void)
   }
 }
 
-//! ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ì˜ ì—°ê²°ìš”ì²­ ì²˜ë¦¬.
+//! ·ÎÄÃ Å¬¶óÀÌ¾ğÆ®ÀÇ ¿¬°á¿äÃ» Ã³¸®.
 /* Send initialization info to local client. */
 void CServer::ConnectLocalSessionState(INDEX iClient, CNetworkMessage &nm)
 {
@@ -820,7 +781,7 @@ void CServer::ConnectLocalSessionState(INDEX iClient, CNetworkMessage &nm)
   // activate it
   sso.Activate();
   // prepare his initialization message
-  CNetworkMessage nmInitMainServer(MSG_REP_CONNECTLOCALSESSIONSTATE);
+  CNetworkMessage nmInitMainServer((UBYTE)MSG_REP_CONNECTLOCALSESSIONSTATE);
   nmInitMainServer<<srv_tmLastProcessedTick;
   nmInitMainServer<<srv_iLastProcessedSequence;
   sso.sso_ctLocalPlayers = -1;
@@ -829,14 +790,14 @@ void CServer::ConnectLocalSessionState(INDEX iClient, CNetworkMessage &nm)
   // send him server session state initialization message
   _pNetwork->SendToClientReliable(iClient, nmInitMainServer);
 }
-//! ë¦¬ëª¨íŠ¸ í´ë¼ì´ì–¸íŠ¸ì˜ ì ‘ì†ìš”ì²­ ì²˜ë¦¬
+//! ¸®¸ğÆ® Å¬¶óÀÌ¾ğÆ®ÀÇ Á¢¼Ó¿äÃ» Ã³¸®
 /* Send initialization info to remote client. */
 void CServer::ConnectRemoteSessionState(INDEX iClient, CNetworkMessage &nm)
 {
   ASSERT(iClient>0);
   // find session of this client
   CSessionSocket &sso = srv_assoSessions[iClient];
-  //! í—ˆìš©ë˜ì§€ ì•ŠëŠ” ì•„ì´í”¼ë¼ë©´ ì ‘ì† ëŠëŠ”ë‹¤.
+  //! Çã¿ëµÇÁö ¾Ê´Â ¾ÆÀÌÇÇ¶ó¸é Á¢¼Ó ²÷´Â´Ù.
   // if the IP is banned
   if (!MatchesBanMask(_cmiComm.Server_GetClientName(iClient), ser_strIPMask) != !ser_bInverseBanning) {
     // disconnect the client
@@ -846,7 +807,7 @@ void CServer::ConnectRemoteSessionState(INDEX iClient, CNetworkMessage &nm)
 
   // read version info
   INDEX iTag, iMajor, iMinor;
-  //! ë²„ì „ì„ ì½ê³ ,
+  //! ¹öÀüÀ» ÀĞ°í,
   nm>>iTag;
   if (iTag=='VTAG') {
     nm>>iMajor>>iMinor;
@@ -884,7 +845,7 @@ void CServer::ConnectRemoteSessionState(INDEX iClient, CNetworkMessage &nm)
     SendDisconnectMessage(iClient, strMod, /*bStream=*/TRUE);
     return;
   }
-  //! í—ˆìš©ëœ í”Œë ˆì´ì–´,í´ë¼ì´ì–¸íŠ¸ë¥¼ ì–»ëŠ”ë‹¤.
+  //! Çã¿ëµÈ ÇÃ·¹ÀÌ¾î,Å¬¶óÀÌ¾ğÆ®¸¦ ¾ò´Â´Ù.
   // get counts of allowed players, clients, vips and  check for connection allowance
   INDEX ctMaxAllowedPlayers = _pNetwork->ga_sesSessionState.ses_ctMaxPlayers;
   INDEX ctMaxAllowedClients = ctMaxAllowedPlayers;
@@ -898,7 +859,7 @@ void CServer::ConnectRemoteSessionState(INDEX iClient, CNetworkMessage &nm)
     ctMaxAllowedVIPClients = ClampDn(net_iVIPReserve-GetVIPClientsCount(), 0L);
   }
   INDEX ctMaxAllowedObservers = net_iMaxObservers;
-  //! í˜„ì¬ í”Œë ˆì´í•˜ê³  ìˆëŠ” ì‚¬ëŒìˆ˜. í˜„ì¬ í™œì„±í™”ëœ í´ë¼ì´ì–¸íŠ¸ ìˆ˜.
+  //! ÇöÀç ÇÃ·¹ÀÌÇÏ°í ÀÖ´Â »ç¶÷¼ö. ÇöÀç È°¼ºÈ­µÈ Å¬¶óÀÌ¾ğÆ® ¼ö.
   // get current counts
   INDEX ctCurrentPlayers = GetPlayersCount();
   INDEX ctCurrentClients = GetClientsCount();
@@ -927,7 +888,7 @@ void CServer::ConnectRemoteSessionState(INDEX iClient, CNetworkMessage &nm)
     ctMaxAllowedClients = ClampDn(ctMaxAllowedClients-ctMaxAllowedVIPClients, 0L);
   }
 
-  //! ì ‘ì†ì¸ì›ì´ ì´ˆê³¼ ë˜ì—ˆë‹¤ë©´,
+  //! Á¢¼ÓÀÎ¿øÀÌ ÃÊ°ú µÇ¾ú´Ù¸é,
   // if too many clients or players
   if (ctCurrentPlayers+ctWantedLocalPlayers>ctMaxAllowedPlayers
     ||ctCurrentClients+1>ctMaxAllowedClients) {
@@ -935,7 +896,7 @@ void CServer::ConnectRemoteSessionState(INDEX iClient, CNetworkMessage &nm)
     SendDisconnectMessage(iClient, TRANS("Server full!"), /*bStream=*/TRUE);
     return;
   }
-  //! ì˜µì €ë²„ë¡œì„œ ì—°ê²°ìš”ì²­ì´ë¼ë©´,
+  //! ¿ÉÀú¹ö·Î¼­ ¿¬°á¿äÃ»ÀÌ¶ó¸é,
   // if the user is trying to connect as observer
   if (ctWantedLocalPlayers==0) {
     // if too many observers already
@@ -974,7 +935,7 @@ void CServer::ConnectRemoteSessionState(INDEX iClient, CNetworkMessage &nm)
   sso.sso_bVIP = bAutorizedAsVIP;
   sso.sso_ubNumLevelChanges = _pNetwork->ga_ubNumLevelChanges;
   nm>>sso.sso_sspParams;
-/* //0522 kwon ì‚­ì œ.
+/* //0522 kwon »èÁ¦.
   // try to
   try {
     // create base info to be sent
@@ -1007,10 +968,10 @@ void CServer::ConnectRemoteSessionState(INDEX iClient, CNetworkMessage &nm)
 
 
 
-//! ê²Œì„ ìŠ¤í…Œì´íŠ¸ ë°ì´íƒ€ ë§Œë“¤ê¸°.
+//! °ÔÀÓ ½ºÅ×ÀÌÆ® µ¥ÀÌÅ¸ ¸¸µé±â.
 void CServer::PrepareGameStateData_t(CTMemoryStream &strmStream,SLONG &slFullSize,SLONG &slSize)
 {
-/* //0522 kwon ì‚­ì œ.
+/* //0522 kwon »èÁ¦.
   // prepare files or memory streams for connection info
   CTFileStream strmGameStateFile; CTMemoryStream strmGameStateMem;
   CTStream *pstrmGameState; 
@@ -1026,7 +987,7 @@ void CServer::PrepareGameStateData_t(CTMemoryStream &strmStream,SLONG &slFullSiz
   // write main session state, for sending over network
   _pNetwork->ga_sesSessionState.Write_t(pstrmGameState,TRUE);
 
-  //! crc ì²´í¬ 
+  //! crc Ã¼Å© 
   // append CRC check data to the stream
   pstrmGameState->Write_t(_pNetwork->ga_pubCRCList, _pNetwork->ga_slCRCList);
   pstrmGameState->SetPos_t(0);
@@ -1034,7 +995,7 @@ void CServer::PrepareGameStateData_t(CTMemoryStream &strmStream,SLONG &slFullSiz
 
   // pack it up
   strmStream<<INDEX(MSG_REP_GAMESTATE);  
-  //! ìŠ¤íŠ¸ë¦¼ ì••ì¶•í•˜ê¸°.
+  //! ½ºÆ®¸² ¾ĞÃàÇÏ±â.
   CzlibCompressor comp;
   comp.PackStream_t(*pstrmGameState, strmStream);
   slSize = strmStream.GetStreamSize();
@@ -1043,7 +1004,7 @@ void CServer::PrepareGameStateData_t(CTMemoryStream &strmStream,SLONG &slFullSiz
 };
 
 
-//! ê²Œì„ë°ì´íƒ€ ìš”ì²­
+//! °ÔÀÓµ¥ÀÌÅ¸ ¿äÃ»
 /* Send the state of the game to a remote client */
 void CServer::SendGameStateData(INDEX iClient)
 {
@@ -1052,14 +1013,14 @@ void CServer::SendGameStateData(INDEX iClient)
   CSessionSocket &sso = srv_assoSessions[iClient];
   ASSERT(sso.IsActive());
 
-  //! ì„œë²„ì˜ ë ˆë²¨ì´ ë°”ë€Œì—ˆë‹¤ë©´ ì ‘ì† ëŠëŠ”ë‹¤.
+  //! ¼­¹öÀÇ ·¹º§ÀÌ ¹Ù²î¾ú´Ù¸é Á¢¼Ó ²÷´Â´Ù.
   if (iClient!=0 && sso.sso_ubNumLevelChanges != _pNetwork->ga_ubNumLevelChanges) {
     CTString strMessage;
     strMessage.PrintF(TRANS("Server changed levels"));
     SendDisconnectMessage(iClient, strMessage);
     return;
   }
-  //! ë¡œì»¬ ì„¸ì…˜ì—ì„œ ë³µì‚¬í•´ì˜¨ë‹¤.
+  //! ·ÎÄÃ ¼¼¼Ç¿¡¼­ º¹»çÇØ¿Â´Ù.
   // copy its buffer from local session state
   sso.sso_nsBuffer.Copy(srv_assoSessions[0].sso_nsBuffer);
 
@@ -1068,10 +1029,10 @@ void CServer::SendGameStateData(INDEX iClient)
     
     SLONG slFullSize,slSize;
     CTMemoryStream strmInfo;
-	//! ê²Œì„ ë°ì´íƒ€ ë§Œë“¤ê¸°.
+	//! °ÔÀÓ µ¥ÀÌÅ¸ ¸¸µé±â.
     PrepareGameStateData_t(strmInfo,slFullSize,slSize);
 
-	//! í´ë¼ì´ì–¸íŠ¸ë¡œ ë³´ë‚¸ë‹¤.
+	//! Å¬¶óÀÌ¾ğÆ®·Î º¸³½´Ù.
     // send the stream to the remote session state
     _pNetwork->SendToClientReliable(iClient, strmInfo);
     
@@ -1099,12 +1060,12 @@ void CServer::SendGameStateData(INDEX iClient)
   if (srv_bRunning) {
     srv_embSendBuffer.RequestTickAcknowledge(_pNetwork->ga_sesSessionState.ses_tmLastProcessedTick,1);  
   }
-  //! ì´ ì„œë²„ì— ì²˜ìŒ ì ‘ì†í•˜ëŠ” ì²« ë¦¬ëª¨íŠ¸ ì„¸ì…˜ë§Œ í•œë‹¤.
+  //! ÀÌ ¼­¹ö¿¡ Ã³À½ Á¢¼ÓÇÏ´Â Ã¹ ¸®¸ğÆ® ¼¼¼Ç¸¸ ÇÑ´Ù.
   // do this only if this is the first remote session on this server
   InitServerNetProcess();
 }
 
-//! ì•ˆì“´ë‹¤.
+//! ¾È¾´´Ù.
 /* Send session state data to remote client. */
 void CServer::SendSessionStateData(INDEX iClient)
 {
@@ -1171,7 +1132,7 @@ void CServer::SendSessionStateData(INDEX iClient)
     CPrintF(TRANS("Server: Cannot prepare connection data: %s\n"), strError);
   }
 }
-//! ëª¨ë“  ë©”ì‹œì§€ í•¸ë“¤ë§.
+//! ¸ğµç ¸Ş½ÃÁö ÇÚµé¸µ.
 /* Handle incoming network messages. */
 void CServer::HandleAll()
 {
@@ -1182,7 +1143,7 @@ void CServer::HandleAll()
       _cmiComm.Server_GetClientName(iClient));
   }
 	*/
-  //! ë– ìˆëŠ” ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì— ëŒ€í•´ì„œ ë©”ì‹œì§€ í•¸ë“¤ì„ í•œë‹¤.
+  //! ¶°ÀÖ´Â ¸ğµç Å¬¶óÀÌ¾ğÆ®¿¡ ´ëÇØ¼­ ¸Ş½ÃÁö ÇÚµéÀ» ÇÑ´Ù.
   // for each active client
   {for( INDEX iClient=0; iClient<NET_MAXGAMECOMPUTERS; iClient++) {
     // if the client is  connected, handle all of its messages
@@ -1247,10 +1208,10 @@ void CServer::HandleAllForAClient(INDEX iClient)
 
   // repeat
   FOREVER {
-	  //! ì–¸ë¦´ë¼ì´ì–´ë¸” ë©”ì‹œì§€ë¥¼ ë°›ì€ê²Œ ìˆë‹¤ë©´,
+	  //! ¾ğ¸±¶óÀÌ¾îºí ¸Ş½ÃÁö¸¦ ¹ŞÀº°Ô ÀÖ´Ù¸é,
     // if there is some unreliable message
     if (_pNetwork->ReceiveFromClient(iClient, nmReceived)) {
-	  //! ì²˜ë¦¬.
+	  //! Ã³¸®.
       // process it
       Handle(iClient, nmReceived);
     // if there are no more messages
@@ -1269,7 +1230,7 @@ void CServer::HandleClientDisconected(INDEX iClient)
   CloseClient(iClient);
   // deactivate it
   sso.Deactivate();            
-/* //0522 kwon ì‚­ì œ.
+/* //0522 kwon »èÁ¦.
   BOOL bIsTrackingData = FALSE;
   for (INDEX iSession=1;iSession < srv_assoSessions.Count();iSession++) {
     if (srv_assoSessions[iSession].sso_bTrackData) {
@@ -1307,7 +1268,7 @@ void CServer::HandleClientDisconected(INDEX iClient)
 // split the rcon response string into lines and send one by one to the client
 static void SendAdminResponse(INDEX iClient, const CTString &strResponse)
 {
-/* //0522 kwon ì‚­ì œ
+/* //0522 kwon »èÁ¦
   CTString str = strResponse;
 
   while (str!="") {
@@ -1323,17 +1284,17 @@ static void SendAdminResponse(INDEX iClient, const CTString &strResponse)
   }
 */
 }
-//! ì„œë²„ì˜ ë©”ì‹œì§€ íƒ€ì…ì— ë”°ë¥¸ ë©”ì‹œì§€ ì²˜ë¦¬.
+//! ¼­¹öÀÇ ¸Ş½ÃÁö Å¸ÀÔ¿¡ µû¸¥ ¸Ş½ÃÁö Ã³¸®.
 void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 {
 	CSessionSocket &sso = srv_assoSessions[iClient];
 	sso.sso_tvMessageReceived = _pTimer->GetHighPrecisionTimer();
 	
 	/*
-	// ì• ì™„ë™ë¬¼ì´ í™œì„±í™” ë˜ì–´ìˆëŠ” ìƒíƒœ.
-	if( _pNetwork->_PetTargetInfo.bIsActive && _pNetwork->_PetTargetInfo.pen_pEntity )
+	// ¾Ö¿Ïµ¿¹°ÀÌ È°¼ºÈ­ µÇ¾îÀÖ´Â »óÅÂ.
+	if( INFO()->_PetTargetInfo.bIsActive && INFO()->_PetTargetInfo.pen_pEntity )
 	{
-		CEntity *pEntity = _pNetwork->_PetTargetInfo.pen_pEntity;
+		CEntity *pEntity = INFO()->_PetTargetInfo.pen_pEntity;
 		if( pEntity->IsFirstExtraFlagOn  (ENF_EX1_CURRENT_PET ))
 		{
 			static unsigned int tmStartTime = timeGetTime();
@@ -1357,7 +1318,7 @@ void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 	*/
 	
 	switch (nmMessage.GetType()) {
-	/* //0522 kwon ì‚­ì œ.
+	/* //0522 kwon »èÁ¦.
 	// if if it is just keepalive, ignore it
 	case MSG_KEEPALIVE: break;
 	case MSG_REP_DISCONNECTED: {
@@ -1365,26 +1326,26 @@ void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 	sso.sso_iDisconnectedState=2;
 	} break;
 		*/
-		//! ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ì˜ ì—°ê²°ìš”ì²­
+		//! ·ÎÄÃ Å¬¶óÀÌ¾ğÆ®ÀÇ ¿¬°á¿äÃ»
 		// if local session state asks for registration
 	case MSG_REQ_CONNECTLOCALSESSIONSTATE: {
 		ConnectLocalSessionState(iClient, nmMessage);
 										   } break;
 		
-										   /* //0311 kwon ì‚­ì œ
-										   //! ë¦¬ëª¨íŠ¸ í´ë¼ì´ì–¸íŠ¸ì˜ ì—°ê²°ìš”ì²­.
+										   /* //0311 kwon »èÁ¦
+										   //! ¸®¸ğÆ® Å¬¶óÀÌ¾ğÆ®ÀÇ ¿¬°á¿äÃ».
 										   // if remote server asks for registration
 										   case MSG_REQ_CONNECTREMOTESESSIONSTATE: {
 										   ConnectRemoteSessionState(iClient, nmMessage);
 										   } break;
-										   //! ê²Œì„ ë°ì´íƒ€ ìš”ì²­.
+										   //! °ÔÀÓ µ¥ÀÌÅ¸ ¿äÃ».
 										   // if remote server asks for data
 										   case MSG_REQ_GAMESTATE: {
 										   CPrintF(TRANS("Sending game state response\n"));
 										   SendGameStateData(iClient);
 										   sso.sso_ubNumLevelChanges = _pNetwork->ga_ubNumLevelChanges;
 										   } break;
-										   //0130 ì„œë²„ ë³¸ê²© ì‹œì‘.
+										   //0130 ¼­¹ö º»°İ ½ÃÀÛ.
 										   case MSG_PLAYER_MOVE: {	
 										   
 											 ULONG x,y,z,anglex,angley,anglez;
@@ -1446,7 +1407,7 @@ void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 		// if player asks for registration
 	case MSG_REQ_CONNECTPLAYER: {
 		
-		//0130 ì´ë†ˆì˜ ë³€ìˆ˜ë•œì— ë‚´ê°€ ê³ ìƒì„...ã…¡ã…¡+
+		//0130 ÀÌ³ğÀÇ º¯¼ö¶«¿¡ ³»°¡ °í»ıÀ»...¤Ñ¤Ñ+
 		CSessionSocket &sso = srv_assoSessions[iClient];
 		sso.sso_bSendStream = TRUE;
 		
@@ -1511,7 +1472,7 @@ void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 			ser_bWaitFirstPlayer = 0; // player is here don't wait any more
 			
 			// send client initialization message
-			CNetworkMessage nmPlayerRegistered(MSG_REP_CONNECTPLAYER);
+			CNetworkMessage nmPlayerRegistered((UBYTE)MSG_REP_CONNECTPLAYER);
 			nmPlayerRegistered<<_pNetwork->ga_ubNumLevelChanges;
 			nmPlayerRegistered<<iNewPlayer;   // player index
 			_pNetwork->SendToClientReliable(iClient, nmPlayerRegistered);
@@ -1554,7 +1515,7 @@ void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 		
 								  } break;
 		
-		//! ì´ê±´ ë¡œì»¬í´ë¼ì´ì–¸íŠ¸ ë§Œ ì“´ë‹¤.
+		//! ÀÌ°Ç ·ÎÄÃÅ¬¶óÀÌ¾ğÆ® ¸¸ ¾´´Ù.
 		// if client source sends action packet
 	case MSG_ACTIONS: 
 	{
@@ -1591,7 +1552,7 @@ void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 			}
 		}
 					  } break;
-					  /* //0311 ì‚­ì œ
+					  /* //0311 »èÁ¦
 					  // if client sent a synchronization check
 					  case MSG_SYNCCHECK: {
 					  
@@ -1608,7 +1569,7 @@ void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 						} break;
 		*/
 		// if a client wants to toggle pause
-		/* //0522 kwon ì‚­ì œ.
+		/* //0522 kwon »èÁ¦.
 		case MSG_REQ_PAUSE: {
 		// read the pause state from the message
 		BOOL bWantPause;
@@ -1693,7 +1654,7 @@ void CServer::Handle(INDEX iClient, CNetworkMessage &nmMessage)
 					} break;
 					// if a crc response is received
   case MSG_REP_CRCCHECK: {*/
-//0130 ì§€ìš°ê¸°
+//0130 Áö¿ì±â
 /*
 CSessionSocket &sso = srv_assoSessions[iClient];
 if (iClient!=0 && sso.sso_ubNumLevelChanges != _pNetwork->ga_ubNumLevelChanges) {
@@ -1719,8 +1680,8 @@ break;
   sso.sso_bSendStream = TRUE;
   }
 */
-/* //0522 kwon ì‚­ì œ.
-//0130 2lineì¶”ê°€. í˜„ì¬ ì´ìª½ìœ¼ë¡œ ì•ˆë“¤ì–´ì˜´.
+/* //0522 kwon »èÁ¦.
+//0130 2lineÃß°¡. ÇöÀç ÀÌÂÊÀ¸·Î ¾Èµé¾î¿È.
 CSessionSocket &sso = srv_assoSessions[iClient];
 sso.sso_bSendStream = TRUE;
 
@@ -1758,7 +1719,7 @@ sso.sso_bSendStream = TRUE;
 		}
 		} break;
 */
-/* //0311 ì‚­ì œ
+/* //0311 »èÁ¦
 // otherwise
 case MSG_TICK_ACKNOWLEDGE: {
 float tmTickTime;
@@ -1901,7 +1862,7 @@ void CServer::ReceiveAcknowledge(INDEX iClient,TIME tmTickTime)
 };
 
 /*
-//! í™œë™í•˜ê³  ìˆëŠ” ëª¨ë“  í”Œë ˆì´ì–´ì˜ ì •ë³´ë¥¼ outgoingë²„í¼ì— ì“´ë‹¤.
+//! È°µ¿ÇÏ°í ÀÖ´Â ¸ğµç ÇÃ·¹ÀÌ¾îÀÇ Á¤º¸¸¦ outgoing¹öÆÛ¿¡ ¾´´Ù.
 // write info on all active players to the outgoing buffer
 BOOL CServer::AddPlayerUpdate(INDEX iClient,FLOAT3D &vBasePosition,BOOL bForDemoRec) 
 {
@@ -1924,7 +1885,7 @@ BOOL CServer::AddPlayerUpdate(INDEX iClient,FLOAT3D &vBasePosition,BOOL bForDemo
       stPlayerStream.Reinit();
       if (penPlayerEntity != NULL) 
 	  {
-		  //ìì‹ ì˜ ìºë¦­í„°ëŠ” í’€ì •ë³´ë¥¼, ë‹¤ë¥¸ ìºë¦­í„°ì— ëŒ€í•œ ê²ƒì€ ê°„ëµì •ë³´ë¥¼ ë³´ë‚¸ë‹¤.
+		  //ÀÚ½ÅÀÇ Ä³¸¯ÅÍ´Â Ç®Á¤º¸¸¦, ´Ù¸¥ Ä³¸¯ÅÍ¿¡ ´ëÇÑ °ÍÀº °£·«Á¤º¸¸¦ º¸³½´Ù.
         // write full update only for the client we are sending this to, or for demo recording
 		  if (iClient == iSession || bForDemoRec) 
 		  {
@@ -1933,17 +1894,17 @@ BOOL CServer::AddPlayerUpdate(INDEX iClient,FLOAT3D &vBasePosition,BOOL bForDemo
 				  bBasePositionSet = TRUE;
 				  vBasePosition = penPlayerEntity->en_plPlacement.pl_PositionVector;
 			  }
-			  //! í”Œë ˆì´ì–´ì˜ ì •ë³´ë¥¼ ì“´ë‹¤.
+			  //! ÇÃ·¹ÀÌ¾îÀÇ Á¤º¸¸¦ ¾´´Ù.
 			  penPlayerEntity->Write_net(&stPlayerStream);
 		  } 
 		  else 
 		  {
 			  penPlayerEntity->Write_net_brief(&stPlayerStream);
 		  }
-		//! EntityMessageë¡œ ì •ë³´ë¥¼ ì˜®ê¸´ë‹¤.
+		//! EntityMessage·Î Á¤º¸¸¦ ¿Å±ä´Ù.
         srv_emEntityMessage.WritePlayerUpdate(penPlayerEntity->en_ulID,stPlayerStream);
         srv_emEntityMessage.em_tmMessageTime = _pNetwork->ga_sesSessionState.ses_tmLastProcessedTick - _pTimer->TickQuantum;
-        //! Outgoingë²„í¼ì— ë©”ì‹œì§€ë¥¼ ì“´ë‹¤.
+        //! Outgoing¹öÆÛ¿¡ ¸Ş½ÃÁö¸¦ ¾´´Ù.
         // if there is not enough free space, cancel this job
         if (!srv_embOutgoingBuffer.WriteMessage(srv_emEntityMessage,FALSE)) {
           return FALSE;
@@ -1959,10 +1920,10 @@ BOOL CServer::AddPlayerUpdate(INDEX iClient,FLOAT3D &vBasePosition,BOOL bForDemo
   }
 
   // write base placement message
-  //! ê¸°ë³¸ìœ„ì¹˜ë¥¼ EntityMessageì— ì“´ë‹¤.
+  //! ±âº»À§Ä¡¸¦ EntityMessage¿¡ ¾´´Ù.
   srv_emEntityMessage.WriteBasePosition(vBasePosition);
   srv_emEntityMessage.em_tmMessageTime = _pNetwork->ga_sesSessionState.ses_tmLastProcessedTick - _pTimer->TickQuantum;
-  //! ë˜ Outgoingì— ì˜®ê²¨ ì“´ë‹¤.
+  //! ¶Ç Outgoing¿¡ ¿Å°Ü ¾´´Ù.
   // if there is not enough free space, cancel this job
   if (!srv_embOutgoingBuffer.WriteMessage(srv_emEntityMessage,FALSE)) {
     return FALSE;
@@ -1971,14 +1932,14 @@ BOOL CServer::AddPlayerUpdate(INDEX iClient,FLOAT3D &vBasePosition,BOOL bForDemo
   return TRUE;
 };
 
-//! í´ë¼ì´ì–¸íŠ¸ë¡œ ë³´ë‚¼ tickë°ì´íƒ€ë¥¼ ì¤€ë¹„í•œë‹¤.
+//! Å¬¶óÀÌ¾ğÆ®·Î º¸³¾ tickµ¥ÀÌÅ¸¸¦ ÁØºñÇÑ´Ù.
 // prepare tick data to be sent to the client
 BOOL CServer::PrepareClientData(INDEX iClient)
 {
   TIME tmStartTime; // time of the earliest tick to be sent
   INDEX iStartIndex; // index of tick marker for this time
 
-  //! ì´ í´ë¼ì´ì–¸íŠ¸ì— ë§ˆì§€ë§‰ TICKì„ ë³´ë‚¸ ì‹œê°„.
+  //! ÀÌ Å¬¶óÀÌ¾ğÆ®¿¡ ¸¶Áö¸· TICKÀ» º¸³½ ½Ã°£.
   TIME tmLastTickTime = srv_assoSessions[iClient].sso_tmLastTickAcknowledge; // time of the last tick sent to this client
   INDEX ctTick,iLastTick;       // number of ticks to process 
   INDEX ctPlaced,ctDestroyed;   // number of placement and destroy messages
@@ -1994,7 +1955,7 @@ BOOL CServer::PrepareClientData(INDEX iClient)
   srv_embOutgoingBuffer.StartNewTick(0.0f);
   FLOAT3D vBasePosition;
 
-  //! ëª¨ë“  í”Œë ˆì´ì–´ ì •ë³´ë¥¼ outgoingë²„í¼ì— ë„£ëŠ”ë‹¤.
+  //! ¸ğµç ÇÃ·¹ÀÌ¾î Á¤º¸¸¦ outgoing¹öÆÛ¿¡ ³Ö´Â´Ù.
   if (!AddPlayerUpdate(iClient,vBasePosition)) {
     return FALSE;
   }
@@ -2049,9 +2010,9 @@ BOOL CServer::PrepareClientData(INDEX iClient)
   saMessageOffsets.Expand(iTotalMsgs);  
   saDestroyedEntities.Expand(iTotalMsgs);
 
-  //! ì´ì œ tickë²„í¼ë¡œë¶€í„° ëª¨ë“  ë©”ì‹œì§€ë¥¼ ì–»ëŠ”ë‹¤. ê·¸ë¦¬ê³  outgoingë²„í¼ë¡œ ë³µì‚¬í•œë‹¤.
-  //! SendPlacementNotify ë©”ì‹œì§€ëŠ” ìŠ¤í‚µí•œë‹¤. ëª¨ë“  íŒŒê´´ëœ ì—”í‹°í‹°ë¥¼ ì—´ê±°í•˜ê³ , 
-  //! ëª¨ë“  ìœ„ì¹˜ ë©”ì‹œì§€ì— ëŒ€í•˜ì—¬ ì˜¤í”„ì…‹ì„ í‘œì‹œí•œë‹¤.
+  //! ÀÌÁ¦ tick¹öÆÛ·ÎºÎÅÍ ¸ğµç ¸Ş½ÃÁö¸¦ ¾ò´Â´Ù. ±×¸®°í outgoing¹öÆÛ·Î º¹»çÇÑ´Ù.
+  //! SendPlacementNotify ¸Ş½ÃÁö´Â ½ºÅµÇÑ´Ù. ¸ğµç ÆÄ±«µÈ ¿£Æ¼Æ¼¸¦ ¿­°ÅÇÏ°í, 
+  //! ¸ğµç À§Ä¡ ¸Ş½ÃÁö¿¡ ´ëÇÏ¿© ¿ÀÇÁ¼ÂÀ» Ç¥½ÃÇÑ´Ù.
   // now get all messages from the tick buffer and copy them to the outgoing buffer,
   // skip the SendPlacementNotify messages
   // in the process, enumerate all destroyed entities and mark offsets for all placement messages
@@ -2060,23 +2021,23 @@ BOOL CServer::PrepareClientData(INDEX iClient)
   slCurrOffset = slStartOffset;
   while (slCurrOffset != slEndOffset) {    
     SLONG slOldOffset = slCurrOffset;
-	//! srv_embSendBufferì—ì„œ srv_emEntityMessageë¡œ ê°€ì ¸ì˜¨ë‹¤.
+	//! srv_embSendBuffer¿¡¼­ srv_emEntityMessage·Î °¡Á®¿Â´Ù.
     srv_embSendBuffer.PeekMessageAtOffset(srv_emEntityMessage,slCurrOffset);
-	//! ì´ ë©”ì‹œì§€ê°€ ìœ„ì¹˜ ë©”ì‹œì§€ê°€ ì•„ë‹ˆë¼ë©´, output ë²„í¼ì— ë„£ëŠ”ë‹¤.
+	//! ÀÌ ¸Ş½ÃÁö°¡ À§Ä¡ ¸Ş½ÃÁö°¡ ¾Æ´Ï¶ó¸é, output ¹öÆÛ¿¡ ³Ö´Â´Ù.
     // if it's not a placement message send, put it in the output buffer
     if (srv_emEntityMessage.em_ulType != EMT_SETPLACEMENT_NOTIFY) {        
       // if there is not enough free space, cancel this job
       if (!srv_embOutgoingBuffer.WriteMessage(srv_emEntityMessage,FALSE)) {
         return FALSE;
       };      
-	  //! ë§Œì•½ íŒŒê´´ ë©”ì‹œì§€ë¼ë©´, ê·¸ ì—”í‹°í‹°ì— ëŒ€í•œ ìœ„ì¹˜ ë©”ì‹œì§€ëŠ” ë³´ë‚´ì§€ ì•ŠëŠ”ë‹¤.
+	  //! ¸¸¾à ÆÄ±« ¸Ş½ÃÁö¶ó¸é, ±× ¿£Æ¼Æ¼¿¡ ´ëÇÑ À§Ä¡ ¸Ş½ÃÁö´Â º¸³»Áö ¾Ê´Â´Ù.
       // if it's a destroy message, mark that entity as destroyed - we won't send placements for it
       if (srv_emEntityMessage.em_ulType == EMT_DESTROY) {
         saDestroyedEntities[ctDestroyed] = srv_emEntityMessage.em_ulEntityID;
         ctDestroyed++;  
       }
     } else {
-	  // ìœ„ì¹˜ ë©”ì‹œì§€ë¼ë©´ ê·¸ ì˜¤í”„ì…‹ì„ í‘œì‹œí•œë‹¤.
+	  // À§Ä¡ ¸Ş½ÃÁö¶ó¸é ±× ¿ÀÇÁ¼ÂÀ» Ç¥½ÃÇÑ´Ù.
       // for placement notification messages, just mark it's offset in the message buffer
       saMessageOffsets[iMsgs] = slOldOffset;
       iMsgs++;
@@ -2088,11 +2049,11 @@ BOOL CServer::PrepareClientData(INDEX iClient)
   if (iMsgs > 0) {
     saPlacedEntities.Expand(iMsgs);
     for (INDEX iPlacements=iMsgs-1;iPlacements>=0;iPlacements--) {
-	  //! ìœ„ì¹˜ë©”ì‹œì§€.
+	  //! À§Ä¡¸Ş½ÃÁö.
       srv_embSendBuffer.PeekMessageAtOffset(srv_emEntityMessage,saMessageOffsets[iPlacements]);
       ASSERT (srv_emEntityMessage.em_ulType == EMT_SETPLACEMENT_NOTIFY);
       BOOL bFound = FALSE;
-	  //ë§Œì•½ì— ì´ ì—”í‹°í‹°ì— ëŒ€í•œ íŒŒê´´ ë©”ì‹œì§€ê°€ ìˆë‹¤ë©´, skip.
+	  //¸¸¾à¿¡ ÀÌ ¿£Æ¼Æ¼¿¡ ´ëÇÑ ÆÄ±« ¸Ş½ÃÁö°¡ ÀÖ´Ù¸é, skip.
       // if there was a destroy message for this entity, skip it
       for (int iEnt=0;iEnt<ctDestroyed;iEnt++) {
         if (saDestroyedEntities[iEnt] == srv_emEntityMessage.em_ulEntityID) {
@@ -2101,7 +2062,7 @@ BOOL CServer::PrepareClientData(INDEX iClient)
         }
       }
       if (!bFound) {
-		//ë§Œì•½ ì´ ì—”í‹°í‹°ì— ëŒ€í•˜ì—¬ ë” ìµœê·¼ì˜ ìœ„ì¹˜ë©”ì‹œì§€ê°€ ìˆë‹¤ë©´, skip
+		//¸¸¾à ÀÌ ¿£Æ¼Æ¼¿¡ ´ëÇÏ¿© ´õ ÃÖ±ÙÀÇ À§Ä¡¸Ş½ÃÁö°¡ ÀÖ´Ù¸é, skip
         // if there was a more recent setplacement for this entity (we are going through the buffer
         // from end to begining), skip this message
         for (int iEnt=0;iEnt<ctPlaced;iEnt++) {
@@ -2149,13 +2110,13 @@ BOOL CServer::PrepareClientData(INDEX iClient)
 */
 
 
-//! ìƒˆë¡œìš´ tickë°ì´íƒ€ë¥¼ í´ë¼ì´ì–¸íŠ¸ì— ë³´ë‚¸ë‹¤.
+//! »õ·Î¿î tickµ¥ÀÌÅ¸¸¦ Å¬¶óÀÌ¾ğÆ®¿¡ º¸³½´Ù.
 // send new tick data to the client
 void CServer::SendClientData(INDEX iClient)
 {
   ASSERT (iClient >= 0 && iClient < SERVER_CLIENTS);
   ASSERT (srv_assoSessions[iClient].IsActive());
-/* //0522 kwon ì‚­ì œ.
+/* //0522 kwon »èÁ¦.
   // if there are no ticks in the buffer, return
   if (srv_embSendBuffer.emb_uwNumTickMarkers <= 1) { 
     CNetworkMessage nmKeepalive(MSG_KEEPALIVE);
@@ -2163,7 +2124,7 @@ void CServer::SendClientData(INDEX iClient)
     return;
   }
 */
-/* //0522 kwon ì‚­ì œ.
+/* //0522 kwon »èÁ¦.
   CNetworkMessage nmMessage(MSG_TICK_DATA);
   SLONG slSize;
 
@@ -2171,12 +2132,12 @@ void CServer::SendClientData(INDEX iClient)
   int iLastTick = srv_embSendBuffer.emb_iCurrentTickMarker - 2;
   if (iLastTick < 0) iLastTick += MAX_TICKS_KEPT;
 
-  //! outgoingë²„í¼ì— í´ë¼ì´ì–¸íŠ¸ë¡œ ë³´ë‚¼ ë°ì´íƒ€ë¥¼ ë„£ëŠ”ë‹¤.
+  //! outgoing¹öÆÛ¿¡ Å¬¶óÀÌ¾ğÆ®·Î º¸³¾ µ¥ÀÌÅ¸¸¦ ³Ö´Â´Ù.
   // prepare the outgoing buffer for the client
   if (!PrepareClientData(iClient)) {
     return;
   }
-  //! ë°ì´íƒ€ê°€ ë„ˆë¬´ í¬ë©´ ë³´ë‚´ì§€ ë§ì•„ì•¼í•œë‹¤.
+  //! µ¥ÀÌÅ¸°¡ ³Ê¹« Å©¸é º¸³»Áö ¸»¾Æ¾ßÇÑ´Ù.
   // if the size of prepared data is too large, don't send it
   if (srv_embOutgoingBuffer.GetUsedSize() > SERVER_MAX_MESSAGE_SIZE) {
     return;
@@ -2188,7 +2149,7 @@ void CServer::SendClientData(INDEX iClient)
    
   extern INDEX net_bReportServerTraffic;
   // report to console
-//0108 //! 0.05ì´ˆ ì¦‰, 1 Tickì— í•œë²ˆì”© ìºë¦­í„° ì •ë³´ë¥¼ ë³´ë‚¸ë‹¤.1 Tickì— 2ë²ˆ, 2Tickì— 1ë²ˆ ë³´ë‚¼ë•Œë„ ìˆêµ°....
+//0108 //! 0.05ÃÊ Áï, 1 Tick¿¡ ÇÑ¹ø¾¿ Ä³¸¯ÅÍ Á¤º¸¸¦ º¸³½´Ù.1 Tick¿¡ 2¹ø, 2Tick¿¡ 1¹ø º¸³¾¶§µµ ÀÖ±º....
   if (net_bReportServerTraffic) {
     CPrintF(TRANS("SEND Client: %d, Time: %5.2f, Size: %ld\n"),iClient,srv_embSendBuffer.emb_atmTickMarkers[iLastTick].tm_tmTickTime,slSize);
 	CPrintF(TRANS("iLastTick: %d, srv_embSendBuffer.emb_iCurrentTickMarker: %d\n"),iLastTick,srv_embSendBuffer.emb_iCurrentTickMarker);
@@ -2200,7 +2161,7 @@ void CServer::SendClientData(INDEX iClient)
   nmMessage << srv_embSendBuffer.emb_atmTickMarkers[iLastTick].tm_tmTickTime; 
   nmMessage << tmNow;
 
-  //! Tick ë°ì´íƒ€ ì••ì¶•í›„ì— í´ë¼ì´ì–¸íŠ¸ë¡œ ë³´ë‚¸ë‹¤.
+  //! Tick µ¥ÀÌÅ¸ ¾ĞÃàÈÄ¿¡ Å¬¶óÀÌ¾ğÆ®·Î º¸³½´Ù.
   // compress tick data
   CzlibCompressor comp;
   SLONG slCompressedSize = comp.NeededDestinationSize(slSize);  
@@ -2397,7 +2358,7 @@ BOOL CServer::PrepareDemoData(TIME tmTickTime)
 
 void CServer::WriteDemoData(TIME tmTickTime) 
 {
- //0522 kwon ì‚­ì œ.
+ //0522 kwon »èÁ¦.
   if (srv_tmNextAvailableDemoTimeSlot > _pTimer->GetHighPrecisionTimer().GetSeconds()) {
     return;
   }
@@ -2558,7 +2519,10 @@ void CServer::DropLaggingClients()
   for (iSession=1;iSession<SERVER_CLIENTS;iSession++) {
     if (srv_assoSessions[iSession].IsActive() && 
         (srv_assoSessions[iSession].sso_tmLastTickAcknowledge < tmNextTime) && 
-        (fabs(srv_assoSessions[iSession].sso_tmLastTickAcknowledge < tmNextTime) > _pTimer->TickQuantum)) {
+#pragma message(">> >> >> ??? fabs(srv_assoSessions[iSession].sso_tmLastTickAcknowledge < tmNextTime)")
+		/* ocarina */
+		//(fabs(srv_assoSessions[iSession].sso_tmLastTickAcknowledge < tmNextTime) > _pTimer->TickQuantum)) {
+        (fabs(srv_assoSessions[iSession].sso_tmLastTickAcknowledge) > _pTimer->TickQuantum)) {
       // perform local disconnect
       HandleClientDisconected(iSession);
       // report to console
@@ -2631,7 +2595,7 @@ void CServer::StopNetProcess()
   srv_bRunning = FALSE;
 };
 
-//! ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì— ëŒ€í•˜ì—¬ ì—…ë°ì´íŠ¸ë¥¼ í•œë‹¤.
+//! ¸ğµç Å¬¶óÀÌ¾ğÆ®¿¡ ´ëÇÏ¿© ¾÷µ¥ÀÌÆ®¸¦ ÇÑ´Ù.
 // run updates for all clients
 void CServer::ServerNetProcess()
 {
@@ -2668,7 +2632,7 @@ void CServer::ServerNetProcess()
     if (srv_assoSessions[iSession].IsActive() && srv_assoSessions[iSession].sso_bSendStream) {
       // if this client is ready and is available for send in this tick
       if (srv_assoSessions[iSession].sso_tmLastTickAcknowledge > -1.5 && srv_assoSessions[iSession].sso_tmNextAvailableTimeSlot <= _pTimer->GetHighPrecisionTimer().GetSeconds()) {
-		//! ìƒˆë¡œìš´ tickë°ì´íƒ€ë¥¼ í´ë¼ì´ì–¸íŠ¸ì— ë³´ë‚¸ë‹¤.
+		//! »õ·Î¿î tickµ¥ÀÌÅ¸¸¦ Å¬¶óÀÌ¾ğÆ®¿¡ º¸³½´Ù.
         SendClientData(iSession);
       }
     }

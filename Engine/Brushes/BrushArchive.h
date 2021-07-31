@@ -32,18 +32,18 @@ public:
 
   #ifndef	FINALVERSION			// yjpark |<--
   // Make the attribute map of brushes
-  void MakeAttributeMap( INDEX iType, UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField = FALSE );
+  void MakeAttributeMap( INDEX iType, UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField = FALSE );
   // Make the height map of brushes
   void MakeSvrHeightMap( UWORD *pHeightBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, BOOL bField = FALSE );
 
-  void MakeWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
-  void MakePeaceAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
-  void MakeProductPublicAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
-  void MakeProductPrivateAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
-  void MakeWarAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
-  void MakeFreePKAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
-  void MakeStairAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
-  void MakeUnWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeWalkableAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakePeaceAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeProductPublicAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeProductPrivateAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeWarAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeFreePKAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeStairAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeUnWalkableAttributeMap( UWORD *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
   #endif // FINALVERSION			// yjpark     -->|
 
   /* Calculate bounding boxes in all brushes. */

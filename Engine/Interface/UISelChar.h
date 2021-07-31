@@ -9,16 +9,12 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Ska/ModelInstance.h>
 #include <Engine/GameState.h>
 
-
 // Define position
-#define	SELCHAR_LEVEL_CX			26
+#define	SELCHAR_LEVEL_CX			36
 #define	SELCHAR_LEVEL_SY			4
-#define	SELCHAR_NAME_SX				42
+#define	SELCHAR_NAME_SX				62
 #define	SELCHAR_NAME_SY				4
 
 #define	SELCHAR_HP_SX				40
@@ -78,25 +74,36 @@ public:
 protected:
 	// Internal functions
 	void	UpdateStatus();
-	// Ï∫êÎ¶≠ÌÑ∞ ÏÉùÏÑ±, ÏÇ≠Ï†ú, ÏÑ†ÌÉù.	
+	// ƒ≥∏Ø≈Õ ª˝º∫, ªË¡¶, º±≈√.	
 	BOOL	DeleteCharacter();
 	BOOL	DeleteCharacter(CTString secuNum);
 	void	SelectCharacter(int nX, int nY);
-
+	BOOL	PopUpMsgBoxExist();
+	
+	
 public:
 	BOOL	ShowCharacter();
 	void	SetExSlotTime(int slotNum,int rTime);
-	int		GetExSlotTime(int slotNum=0,int* tSlot1=NULL,int* tSlot2=NULL);	// 0 : All 
-																		// 1 : slot1
-																		// 2 : slot2
+	int		GetExSlotTime(int slotNum=0,int* tSlot1=NULL,int* tSlot2=NULL);	// 0 : All  1 : slot1  2 : slot2
+	void	ShowCharMoveRollbackMsgBox(bool bShow); // Server move fail messageBox [7/26/2012 Ranma]
+	
+	// [2012/07/05 : Sora]  ƒ≥∏Ø≈Õ ΩΩ∑‘ »Æ¿Â
+	void	SetCharSlotTime( ULONG ulTime );
+	CTString GetRemainTime();
+	void	UpdateCharSlotTime();
 
 private:
+	// texture container.
+	CTextureData*		m_ptdMsgTexture;
 	// Controls
 	CUIButton			m_btnCreateChar;		// Button for Create Character
 	CUIButton			m_btnDeleteChar;		// Button for Delete Character
 	CUIButton			m_btnOptions;			// Button for Options
 	CUIButton			m_btnExit;				// Button for Exit Game
 	CUIButton			m_btnOK;				// OK button(Game Start)
+	CUIButton			m_btnBack;				// [2012/10/18 : Sora] ¿ÁΩ√¿€Ω√ ¿⁄µø ∑Œ±◊¿Œ
+	CUIButton			m_btnTurnR;				// Button for Turn Right
+	CUIButton			m_btnTurnL;				// Button for Turn Left
 	CEffectGroup*		m_aEGslotPosID[MAX_SLOT];		// Position Entity ID
 	int					m_iDestPosID;			//
 	int					m_exSlot1,m_exSlot2;	// wooss 050820 extend slot remain time 	
@@ -106,6 +113,7 @@ private:
 	CTString			m_strHP;				// HP
 	CTString			m_strMP;				// MP
 	CTString			m_strEXP;				// Exp
+	CTString			m_strCharServerMove;	// ƒ≥∏Ø≈Õ º≠πˆ ¿Ã¿¸ [7/25/2012 Ranma]
 
 	// Region of each part
 	UIRect				m_rcCharInfo;			// Region of character information
@@ -118,6 +126,11 @@ private:
 	UIRect				m_rcExSlotLineMidV;		// line middle //wooss 050819
 	UIRect				m_rcExSlotLineBtm;		// line bottom //wooss 050819
 	UIRect				m_rcDelTime;
+	// night shadow cards. [11/6/2009 rumist]
+	UIRect				m_rcMessageInfo;
+	CUIMultiLineText	m_msgNCText;
+	UIRect				m_rcCharMoveMsgInfo;
+	CUIMultiLineText	m_msgCMText;
 
 
 	// UV of each part
@@ -129,6 +142,27 @@ private:
 	UIRectUV			m_rtExSlotLine;			// line top //wooss 050819
 	UIRectUV			m_rtExSlotLineMidV;		// line vertical //wooss 050819
 	UIRectUV			m_rtDelTime;		// UV of remain time to del char
+
+	// UV of message part. [11/6/2009 rumist]
+	CUIDrawBox			m_bxNoticeMsg;
+	BOOL				m_bIsLeftView;
+	
+	// ƒ≥∏Ø≈Õ º≠πˆ ¿Ã¿¸ [7/26/2012 Ranma]
+	CUIDrawBox			m_bxCharMoveNoticeMsg;
+	BOOL				m_bIsShowCharMoveMsgInfo;
+	BOOL				m_bIsShowMessageInfo;
+
+	CTString			m_strServerMoveFailCharName;
+	
+	// [2012/07/05 : Sora]  ƒ≥∏Ø≈Õ ΩΩ∑‘ »Æ¿Â
+	ULONG				m_ulCharSlotTime;
+	__int64				m_CharSlotTimeOld;
+	UIRect				m_rcCharSlotHelp;
+	CUIDrawBox			m_bxCharSlotHelp;
+	CUIMultiLineText	m_msgCharSlotHelp;
+
+	UIRect				m_rcCharSlotRemain;
+	CUIDrawBox			m_bxCharSlotRemain;
 
 	// Slot Ani
 	typedef struct ANIINFO {

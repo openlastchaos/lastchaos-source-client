@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #include "stdH.h"
 
@@ -52,14 +52,14 @@ void CEffectControl::Process(COLOR *pColor, FLOAT3D *pStretch, FLOAT3D *pPos, AN
 
 	if(pColor != NULL)
 	{
-		//color ì²˜ë¦¬, ìžˆë‹¤ë©´ ê¸°ì¡´ ì»¬ëŸ¬ ë¬´ì‹œ
+		//color Ã³¸®, ÀÖ´Ù¸é ±âÁ¸ ÄÃ·¯ ¹«½Ã
 		if(m_bDynamicColor)
 		{
 			colColor = m_ssColor.Value(fAge);
 			colColor &= C_WHITE;
 		}
 		else colColor = (*pColor) & C_WHITE;
-		//ì•ŒíŒŒ ì²˜ë¦¬, ìžˆë‹¤ë©´ ê¸°ì¡´ ì•ŒíŒŒ ë¬´ì‹œ
+		//¾ËÆÄ Ã³¸®, ÀÖ´Ù¸é ±âÁ¸ ¾ËÆÄ ¹«½Ã
 		BOOL alphaProcess = FALSE;
 		if(m_bDynamicAlpha)
 		{
@@ -74,7 +74,7 @@ void CEffectControl::Process(COLOR *pColor, FLOAT3D *pStretch, FLOAT3D *pPos, AN
 			if(m_ssAlpha.GetSampleCount() <= 1) cnt = 0;
 			colAlpha = m_ssAlpha.Value(fAge - life * cnt);
 		}
-		//twinkle ì²˜ë¦¬
+		//twinkle Ã³¸®
 		FLOAT fTwinkleValue = 1.0f;
 		if(m_fTwinklePeriod > 0.0001f)
 		{
@@ -83,7 +83,7 @@ void CEffectControl::Process(COLOR *pColor, FLOAT3D *pStretch, FLOAT3D *pPos, AN
 			if(value & 0x00000001) fTwinkleValue = ( fAge - m_fTwinklePeriod * value ) / m_fTwinklePeriod;
 			else fTwinkleValue = ( m_fTwinklePeriod * (value + 1) - fAge ) / m_fTwinklePeriod;
 		}
-		//fade ì²˜ë¦¬
+		//fade Ã³¸®
 		FLOAT fFadeValue = 1.0f;
 		if(fAge <= m_fFadeInTime && m_fFadeInTime != 0)
 		{
@@ -96,7 +96,7 @@ void CEffectControl::Process(COLOR *pColor, FLOAT3D *pStretch, FLOAT3D *pPos, AN
 			fFadeValue = (fLifeTime - fAge) / m_fFadeOutTime;
 		}
 		else fFadeValue = 1.0f;
-		//alpha ì„¸íŒ…
+		//alpha ¼¼ÆÃ
 		if(alphaProcess)
 		{
 			colAlpha = UBYTE(colAlpha * (fTwinkleValue * fFadeValue));
@@ -104,7 +104,7 @@ void CEffectControl::Process(COLOR *pColor, FLOAT3D *pStretch, FLOAT3D *pPos, AN
 		else colAlpha = *pColor & CT_OPAQUE;
 		*pColor = colColor | colAlpha;
 	}
-	//Stretch ì²˜ë¦¬
+	//Stretch Ã³¸®
 	if(m_bDynamicStretch && pStretch != NULL)
 	{
 		FLOAT life = m_ssStretch.GetKey(m_ssStretch.GetSampleCount()-1) - m_ssStretch.GetKey(0);
@@ -112,15 +112,15 @@ void CEffectControl::Process(COLOR *pColor, FLOAT3D *pStretch, FLOAT3D *pPos, AN
 		if(m_ssStretch.GetSampleCount() <= 1) cnt = 0;
 		*pStretch = m_ssStretch.Value(fAge - cnt * life);
 	}
-	//Pos ì²˜ë¦¬
+	//Pos Ã³¸®
 	if(m_bDynamicPos && pPos != NULL)
 	{
 		m_ssPos.Prepare();
 		*pPos = m_ssPos.Value(fAge);
 	}
-	//Angle ì²˜ë¦¬
+	//Angle Ã³¸®
 	if(m_bDynamicAngle && pAngle != NULL)
-	{
+	{// ska¸ðµ¨ÀÇ ¹æÇâÀÌ ºÏÂÊ¸¸ ÇâÇØ¼­ ÀÓ½Ã Ã³¸®
 		*pAngle = m_ssAngle.Value(fAge);
 	}
 }
@@ -201,4 +201,4 @@ void CEffectControl::Write(CTStream *pOS)
 	WriteToStream(os, Angle);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

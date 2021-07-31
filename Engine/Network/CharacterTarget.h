@@ -3,57 +3,70 @@
 
 
 //#include <Engine/Network/NetworkMessage.h>
+#include <Engine/Object/ObjectBase.h>
 #include <Engine/Base/CTString.h>
 #include <Engine/Interface/UIBuff.h>
 #include <Engine/Entities/StatusEffect.h>
 #include <Engine/Entities/ItemEffect.h>
 #include <Engine/Network/ChatMsgBuffer.h>
+#include <Engine/Interface/UIGuildMark.h>
+#include <Engine/Contents/function/TitleData.h>
 
+#define WEAR_COSTUME	8
 
-// FIXME : ë§Žì€ ì •ë¦¬ í•„ìš”...ã…¡.ã…¡
-class ENGINE_API CCharacterTarget
+class CUIGuildMarkIcon;
+
+// FIXME : ¸¹Àº Á¤¸® ÇÊ¿ä...¤Ñ.¤Ñ
+class ENGINE_API CCharacterTarget : public ObjectBase
 {
 public:
-	INDEX			cha_Index;
-	INDEX			cha_iType;   	
 	INDEX			cha_iJob2;
-	INDEX			cha_iClientIndex;
-	CEntity			*cha_pEntity;
-	CTString		cha_strName;
 	SLONG			cha_pkstate;
-	UWORD			cha_state;//0:í‰í™”ëª¨ë“œ 1:PKëª¨ë“œ 2: í•´ì œë”œë ˆì´.//1210
+	UWORD			cha_state;//0:ÆòÈ­¸ðµå 1:PK¸ðµå 2: ÇØÁ¦µô·¹ÀÌ.//1210
 	SBYTE			cha_sbShopType;	
 	SBYTE			cha_yLayer;
 	SBYTE			cha_BuffCount;
-	LONG			cha_lGuildIndex;		// ìž„ì‹œ	ê¸¸ë“œì˜ ì¸ë±ìŠ¤
-	LONG			cha_lGuildLevel;		// ìž„ì‹œ ê¸¸ë“œì˜ ë ˆë²¨
-	LONG			cha_lGuildPosition;		// ìž„ì‹œ ê¸¸ë“œì—ì„œì˜ ìºë¦­í„°ì˜ ë ˆë²¨
-	CTString		cha_strGuildName;		// ê¸¸ë“œ ëª….
-	UBYTE			cha_ubGuildNameColor;	// ê¸¸ë“œ ëª… ìƒ‰ê¹”		[071123: Su-won] DRATAN_SIEGE_DUNGEON
-	SBYTE			cha_sbGuildRank;		// ê¸¸ë“œ ëž­í¬ WSS_GUILDMASTER 070517
-											//  - ì–´ë²„ì´ë‚  ì´ë²¤íŠ¸ë¡œ ì¶”ê°€ë¨(ì´í›„ ë‹¤ë¥¸ ìš©ë„ë„ ì´ìš© ê°€ëŠ¥) 
-	BOOL			cha_bExtension;			// ì „ì§ í›„ ë¬´ê¸° ì¶”ê°€ëœê±° ì“°ê³  ìžˆëƒ???
+	LONG			cha_lGuildIndex;		// ÀÓ½Ã	±æµåÀÇ ÀÎµ¦½º
+	LONG			cha_lGuildLevel;		// ÀÓ½Ã ±æµåÀÇ ·¹º§
+	LONG			cha_lGuildPosition;		// ÀÓ½Ã ±æµå¿¡¼­ÀÇ Ä³¸¯ÅÍÀÇ ·¹º§
+	CTString		cha_strGuildName;		// ±æµå ¸í.
+	UBYTE			cha_ubGuildNameColor;	// ±æµå ¸í »ö±ò		[071123: Su-won] DRATAN_SIEGE_DUNGEON
+	SBYTE			cha_sbGuildRank;		// ±æµå ·©Å© WSS_GUILDMASTER 070517
+											//  - ¾î¹öÀÌ³¯ ÀÌº¥Æ®·Î Ãß°¡µÊ(ÀÌÈÄ ´Ù¸¥ ¿ëµµµµ ÀÌ¿ë °¡´É) 
+	BOOL			cha_bExtension;			// ÀüÁ÷ ÈÄ ¹«±â Ãß°¡µÈ°Å ¾²°í ÀÖ³Ä???
 	BuffInfo		cha_Buff[BUFF_MAX_COUNT];
 	ChatMsgBuffer	ChatMsg;		// yjpark
 	ChatMsgBuffer	ShopMsg;		// yjpark
-	BOOL			cha_bLegit; //ì •ë‹¹ë°©ìœ„
+	BOOL			cha_bLegit; //Á¤´ç¹æÀ§
 	CStatusEffect	cha_statusEffect;
 	SLONG			cha_nChangeMobId;
-	SLONG			cha_nTransformID;		// ë³€ì‹ ì²´ ID?
+	SLONG			cha_nTransformIndex;		// º¯½ÅÃ¼ ID?
 	CItemEffect		cha_itemEffect;
 	SBYTE			cha_sbItemEffectOption;
 	SLONG			cha_nFame;
 	SBYTE			cha_sbJoinFlagMerac;
 	SBYTE			cha_sbJoinFlagDratan;	// WSS_DRATAN_SIEGEWARFARE 070720	
-	UBYTE			cha_sbAttributePos;
-	INDEX			cha_iPetType;			// ì• ì™„ë™ë¬¼ ì¢…ë¥˜
-	INDEX			cha_iPetAge;			// ì• ì™„ë™ë¬¼ ë‚˜ì´?
-	BOOL			cha_bPetRide;			// ì• ì™„ë™ë¬¼ì„ íƒ€ê³  ìžˆëŠ”ê°€?
+	UWORD			cha_sbAttributePos;
+	INDEX			cha_iPetType;			// ¾Ö¿Ïµ¿¹° Á¾·ù
+	INDEX			cha_iPetAge;			// ¾Ö¿Ïµ¿¹° ³ªÀÌ?
+	BOOL			cha_bPetRide;			// ¾Ö¿Ïµ¿¹°À» Å¸°í ÀÖ´Â°¡?
 //	CEntity			*cha_pPet;
 	//CEntity			*cha_pFirstSummon;
 	//CEntity			*cha_pSecondSummon;
 
 	SBYTE			cha_sbPresscorps;
+	SLONG			cha_Label;				// [sora] Å¸°Ù ¶óº§
+	
+	INDEX			cha_NickType;			// È£Äª
+	INDEX			cha_CosWear[WEAR_COSTUME_TOTAL];	// ÄÚ½ºÆ¬2 Item Index ( -1 : ¾øÀ½)
+	INDEX			cha_itemPlus[WEAR_COSTUME_TOTAL];	// ÀÏ¹Ý Àåºñ Plus ¼öÄ¡
+	INDEX			cha_itemAccessory[WEAR_ACCESSORY_MAX]; // ¾Ç¼¼¼­¸® ÀåÂø
+	INDEX			cha_iSyndicateType;		// °á»ç´ë(RVR) ½Ã½ºÅÛ : 0 ¹«¼Ò¼Ó, 1 Ä«ÀÌ·è½º, 2 µô¶ó¹®, 3 ÇÃ·Î·Î
+	INDEX			cha_iSyndicateGrade;	// °á»ç´ë Á÷À§.
+	INDEX			cha_iHitType;			// 
+	
+	CUIGuildMarkIcon* pGuildmark;
+	stCustomTitleStatForPc cha_CustomTitle;
 public:
 	
 	/* Default constructor. */
@@ -66,6 +79,7 @@ public:
 	
 	void	Init(void);
 	void	SetData( INDEX index, INDEX type, CTString &name, CEntity *pEntity, SBYTE sbyLayer,UWORD state,  SLONG pkstate);
+	void	SetSyndicate(INDEX iType, INDEX iGrade);
 	void	SetShopType( SBYTE sbType);
 	void	SetClientChaId( INDEX index );
 	void	SetyLayer( SBYTE sbyLayer ) { cha_yLayer = sbyLayer; }
@@ -81,7 +95,7 @@ public:
 	BOOL	IsLegitimate(){ return cha_bLegit;}
 	void    SetLegitimate(BOOL legit){ cha_bLegit = legit;}
 
-	void	ChangeStatus(CTagManager* pTM, SLONG status, CStatusEffect::eRelation rel)
+	void	ChangeStatus(CTagManager* pTM, SQUAD status, CStatusEffect::eRelation rel)
 	{
 		if(cha_statusEffect.IsStatusChanged(status))
 			cha_statusEffect.ChangeStatus(pTM, status, rel);
@@ -91,6 +105,11 @@ public:
 		cha_statusEffect.Reset();
 	}
 	void	SetItemEffectOption( SBYTE sbOption ) { cha_sbItemEffectOption = sbOption; }
+
+	int		GetSyndiType() { return cha_iSyndicateType; }
+	int		GetSyndiGrade() { return cha_iSyndicateGrade; }
+
+	int		GetShowAnotherRelicEffect();
 
 	// wooss 070310 --------------------------------------------------------------->><<
 	// kw : WSS_WHITEDAY_2007

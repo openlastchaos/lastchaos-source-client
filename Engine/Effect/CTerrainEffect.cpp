@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "stdH.h"
 
 #include <Engine/Math/Functions.h>
@@ -51,7 +51,7 @@ BOOL CTerrainEffect::SetTexture(const CTFileName &filename)
 	if(filename == m_strTextureFileName) return FALSE;
 	m_strTextureFileName = filename;
 
-	//í…ìŠ¤ì³ë¥¼ ìƒì„±í•˜ê³  ë¡œë“œí•œë‹¤.
+	//ÅØ½ºÃÄ¸¦ »ı¼ºÇÏ°í ·ÎµåÇÑ´Ù.
 	try
 	{
 		m_ptdTexture = _pTextureStock->Obtain_t(m_strTextureFileName);
@@ -67,9 +67,9 @@ CEffect *CTerrainEffect::Copy()
 {
 	CTerrainEffect *pRet = new CTerrainEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CTerrainEffectì˜ content
+	//CTerrainEffectÀÇ content
 	pRet->SetTexture(m_strTextureFileName);
 	pRet->m_rcArea = m_rcArea;
 	pRet->m_colEffect = m_colEffect;
@@ -99,7 +99,7 @@ BOOL CTerrainEffect::Process(FLOAT time)
 		if(!bRender) SetNotRenderAtThisFrame();
 		return bRet;
 	}
-	//Alphaì˜ ë³€í™”ë¥¼ ì²˜ë¦¬
+	//AlphaÀÇ º¯È­¸¦ Ã³¸®
 	UBYTE ubColElement = NormFloatToByte( GetFadeValue(fProcessedTime) );
 	COLOR col;
 	if( m_eBlendType == PBT_BLEND || m_eBlendType == PBT_ADDALPHA )
@@ -110,7 +110,7 @@ BOOL CTerrainEffect::Process(FLOAT time)
 	{
 		col = (ubColElement << 24) | (ubColElement << 16) | (ubColElement << 8) | 0x000000FF; //fade by color
 	}
-	else col = 0xFFFFFFFF;	//fade ì˜ë¯¸ ì—†ìŒ.
+	else col = 0xFFFFFFFF;	//fade ÀÇ¹Ì ¾øÀ½.
 	m_colCurrent = MulColors(col, m_colEffect);
 	
 	m_vPos = m_ptrAttachTag->CurrentTagInfo().m_vPos;
@@ -129,9 +129,9 @@ void CTerrainEffect::Render()
 	if(m_pTerrain == NULL) return;
 	
 	if (GetOwner() != NULL)
-	{ // HIDDEN ì†ì„±ì˜ NPCì˜ ì´í™íŠ¸ë¥¼ ë³´ê¸° ìœ„í•´ì„œëŠ” ìºë¦­í„°ê°€ ENF_SHOWHIDDENì„ ê°€ì§€ê³  ìˆì–´ì•¼ í•œë‹¤.
+	{ // HIDDEN ¼Ó¼ºÀÇ NPCÀÇ ÀÌÆåÆ®¸¦ º¸±â À§ÇØ¼­´Â Ä³¸¯ÅÍ°¡ ENF_SHOWHIDDENÀ» °¡Áö°í ÀÖ¾î¾ß ÇÑ´Ù.
 		if (GetOwner()->IsFlagOn(ENF_HIDDEN) && (CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npc effectëŠ” ë³¼ ìˆ˜ ìˆë‹¤.
+			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc effect´Â º¼ ¼ö ÀÖ´Ù.
 			return;
 	}
 
@@ -166,7 +166,7 @@ void CTerrainEffect::Render()
 	ANGLE head = -RadAngle( GetEulerAngleFromQuaternion(m_qRot)(1) );
 	FLOATquat3D qRot;
 	qRot.FromAxisAngle(FLOAT3D(0,1,0), head);
-	FLOAT3D pos[4];	//ì¢Œìƒ, ìš°ìƒ, ì¢Œí•˜, ìš°í•˜
+	FLOAT3D pos[4];	//ÁÂ»ó, ¿ì»ó, ÁÂÇÏ, ¿ìÇÏ
 	pos[0] = FLOAT3D(m_rcArea.m_fLeft, 0, m_rcArea.m_fTop);
 	pos[1] = FLOAT3D(m_rcArea.m_fRight, 0, m_rcArea.m_fTop);
 	pos[2] = FLOAT3D(m_rcArea.m_fLeft, 0, m_rcArea.m_fBottom);
@@ -201,7 +201,7 @@ void CTerrainEffect::Render()
 	vectorTexCoord.reserve(ctvx);
 	vectorColor.reserve(ctvx);
 
-	//texture ì¢Œí‘œ ìƒì„±.
+	//texture ÁÂÇ¥ »ı¼º.
 	FLOAT aa = cos(head) / m_rcArea.GetWidth();
 	FLOAT bb = sin(head) / m_rcArea.GetWidth();
 	FLOAT cc = sin(head) / m_rcArea.GetHeight();
@@ -244,7 +244,7 @@ void CTerrainEffect::Render()
 	// Render terrain effect
 	gfxSetVertexArray( (GFXVertex *)&pavVertices[0], ctVertices );
 	gfxSetColorArray( &vectorColor[0] );
-	gfxSetTexCoordArray( &vectorTexCoord[0] );
+	gfxSetTexCoordArray( &vectorTexCoord[0], FALSE );
 	gfxDrawElements( ctIndices, puwIndices );
 
 	PostRender();
@@ -254,7 +254,7 @@ BOOL CTerrainEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 {
 	TR_BeginRenderingView(apr, pdp);
 	
-	//í”„ë¡œì ì…˜ ì„¤ì •
+	//ÇÁ·ÎÁ§¼Ç ¼³Á¤
 	apr->ObjectPlacementL() = CPlacement3D(FLOAT3D(0,0,0), ANGLE3D(0,0,0));
 	apr->Prepare();
 	// in case of mirror projection, move mirror clip plane a bit father from the mirrored models,
@@ -283,7 +283,7 @@ BOOL CTerrainEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 	}
 	MatrixMultiply(mObjToView, mAbsToViewer, mObjToAbs);
 	
-	//ë Œë”ë§ ìƒíƒœ ì„¤ì •
+	//·»´õ¸µ »óÅÂ ¼³Á¤
 	Matrix12 &mView12 = mObjToView;
 	FLOAT mView16[16];
 	mView16[ 0] = mView12[ 0];  mView16[ 1] = mView12[ 4];  mView16[ 2] = mView12[ 8];  mView16[ 3] = 0;
@@ -301,7 +301,7 @@ BOOL CTerrainEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 	gfxDisableDepthWrite();
 	gfxEnableDepthTest();
 	gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP );
-	gfxSetTextureMatrix();
+	gfxSetTextureMatrix(NULL);
 	gfxEnableDepthBias();
 	gfxEnableColorArray();
 	return TRUE;
@@ -383,4 +383,4 @@ void CTerrainEffect::Write(CTStream *pOS)
 	os << (DWORD)m_ePosition;
 	os << (DWORD)m_eRotation;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

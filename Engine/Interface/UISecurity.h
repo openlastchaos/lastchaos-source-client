@@ -9,9 +9,9 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIButton.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <Engine/Interface/UIListBox.h>
 
 // Define text position
 #define	SECURITY_TITLE_TEXT_OFFSETX		25
@@ -31,8 +31,8 @@ class CUISecurity : public CUIWindow
 public:
 	enum eSelection
 	{
-		SET_PASSWORD,	// ÏïîÌò∏ÏÑ§Ï†ï
-		UNSET_PASSWORD,	// ÏïîÌò∏Î∂ÑÏã§
+		SET_PASSWORD,	// æœ»£º≥¡§
+		UNSET_PASSWORD,	// æœ»£∫–Ω«
 	};
 
 protected:
@@ -42,8 +42,8 @@ protected:
 	CUIButton				m_btnOK;						// Learn button
 	CUIButton				m_btnCancel;					// Cancel button
 	
-	CUIEditBox				m_ebPersonalNumber;				// ÏïîÌò∏ ÌôïÏù∏
-	CUIEditBox				m_ebConfirmNumber;				// ÏïîÌò∏ ÌôïÏù∏			
+	CUIEditBox				m_ebPersonalNumber;				// æœ»£ »Æ¿Œ
+	CUIEditBox				m_ebConfirmNumber;				// æœ»£ »Æ¿Œ			
 
 	// Region of each part
 	UIRect					m_rcTitle;						// Region of title bar
@@ -77,6 +77,8 @@ protected:
 	void	GetSecurityDesc( BOOL bShow = TRUE );
 	void	AddSecurityDescString( CTString &strDesc, COLOR colDesc = 0xF2F2F2FF );
 
+	void	MsgBoxInputNewPW();
+
 public:
 	CUISecurity();
 	~CUISecurity();
@@ -94,8 +96,8 @@ public:
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Open security
-	void	OpenSecurity( BOOL bHasPassWord );				// Î≥¥Ïïà Ï†ëÍ∑º
-	void	OpenChangePassWord( BOOL bHasPassWord );		// ÏïîÌò∏ Î≥ÄÍ≤Ω
+	void	OpenSecurity( BOOL bHasPassWord );				// ∫∏æ» ¡¢±Ÿ
+	void	OpenChangePassWord( BOOL bHasPassWord );		// æœ»£ ∫Ø∞Ê
 	void	ResetSecurity();
 
 	// Messages
@@ -105,12 +107,13 @@ public:
 	WMSG_RESULT	CharMessage( MSG *pMsg );
 
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
-	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput , CTString &strConfirm);		
 
 	void	MsgBoxLCommand( int nCommandCode, int nResult );
 
 	BOOL	IsEditBoxFocused() { return m_ebPersonalNumber.IsFocused(); }
 	void	KillFocusEditBox() { m_ebPersonalNumber.SetFocus( FALSE ); }
+
+	void	ShowMsgBoxDelPW(UINT8 result);
 };
 
 

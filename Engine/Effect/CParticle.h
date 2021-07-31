@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLE_H__
 #define __CPARTICLE_H__
 
@@ -120,13 +120,13 @@ enum PARTICLE_RENDER_TYPE
 	PRT_FORCE_DWORD = 0xFFFFFFFF,
 };
 
-//ì§€ì† ìƒíƒœ Flag	//Not use yet
+//Áö¼Ó »óÅÂ Flag	//Not use yet
 #define PTF_STATIC_MASK			(0x0000FFFF)
 #define PTF_QUAD				(1UL<<0)
 #define PTF_LINE				(1UL<<1)
 #define PTF_TRAIL				(1UL<<2)
 #define PTF_TRAIL_VELOCITY		(1UL<<3)
-//ì„ì‹œ ìƒíƒœ Flag	//Not use yet
+//ÀÓ½Ã »óÅÂ Flag	//Not use yet
 #define PTF_DYNAMIC_MASK		(0xFFFF0000)
 #define PTF_CHANGE_POSITION		(1UL<<16)
 #define PTF_CHANGE_VELOCITY		(1UL<<17)
@@ -135,10 +135,11 @@ enum PARTICLE_RENDER_TYPE
 class ENGINE_API CParticle
 {
 public:
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	//void Read(CTStream *istrFile);
 	//void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
+	CParticle() { ResetZero(); }
 
 	//access functions
 	void SetFlag(DWORD flag)					{ m_dwFlag = flag;			}
@@ -176,22 +177,22 @@ public:
 
 	void ResetZero();
 
-	//ì›€ì§ì„ í•¨ìˆ˜(deltaTimeë‚´ì—ì„œ ê°’ì˜ ë³€í™”ëŠ” ë¬´ì‹œí•˜ê³  í˜„ì¬ê°’ìœ¼ë¡œ ì¼ì •í•˜ë‹¤ê³  ë´„)
-	//ì†ë„ë³€í™”ê°€ í¬ë‹¤ë©´ ì˜¤ì°¨ë„ ì»¤ì§„ë‹¤. (ì†ë„ë³€í™” * deltaTime * 0.5fë§Œí¼ì˜ ì˜¤ì°¨)
+	//¿òÁ÷ÀÓ ÇÔ¼ö(deltaTime³»¿¡¼­ °ªÀÇ º¯È­´Â ¹«½ÃÇÏ°í ÇöÀç°ªÀ¸·Î ÀÏÁ¤ÇÏ´Ù°í º½)
+	//¼Óµµº¯È­°¡ Å©´Ù¸é ¿ÀÂ÷µµ Ä¿Áø´Ù. (¼Óµµº¯È­ * deltaTime * 0.5f¸¸Å­ÀÇ ¿ÀÂ÷)
 	inline void MoveVelocity(FLOAT deltaTime);
 	inline void MoveAcceleration(FLOAT deltaTime);
-	//íšŒì „í•¨ìˆ˜
+	//È¸ÀüÇÔ¼ö
 	inline void Rotate(FLOAT angle);
-	inline void Rotate(FLOAT angle, const FLOAT3D &axis);	//ì ¤ ë¹ ë¦„.
+	inline void Rotate(FLOAT angle, const FLOAT3D &axis);	//Á© ºü¸§.
 	inline void Rotate(const FLOATquat3D &quat);
-	//ìƒëª… ê°ì†Œ í•¨ìˆ˜
+	//»ı¸í °¨¼Ò ÇÔ¼ö
 	inline BOOL Live(FLOAT deltaTime)
 	{
 		m_fAge += deltaTime;
 		if(m_fLifeTime <= m_fAge) return FALSE;
 		else return TRUE;
 	}
-	//ì‚´ì•„ìˆëŠ”ì§€ ê²€ì‚¬
+	//»ì¾ÆÀÖ´ÂÁö °Ë»ç
 	inline BOOL Live() const
 	{
 		if(m_fLifeTime < m_fAge) return FALSE;
@@ -199,7 +200,7 @@ public:
 	}
 	inline void RenderQuad()
 	{
-		//quatnionì˜ angleë§Œì„ ì‚¬ìš©í•œë‹¤.
+		//quatnionÀÇ angle¸¸À» »ç¿ëÇÑ´Ù.
 		FLOAT angle = 0.0f;
 		if( !FloatSame(m_quatDirection.q_w, 1.0f) && !FloatSame(m_quatDirection.q_w, -1.0f) )
 			angle = AngleRad(2.0f * acos( m_quatDirection.q_w ));
@@ -244,7 +245,7 @@ public:
 	FLOAT3D		m_vFinalPos;
 /*
 public:
-	union	//ê³µìš©ìœ¼ë¡œ ì‚¬ìš©í•˜ê¸° ìœ„í•œ ë©¤ë²„ë³€ìˆ˜
+	union	//°ø¿ëÀ¸·Î »ç¿ëÇÏ±â À§ÇÑ ¸â¹öº¯¼ö
 	{
 		struct { BOOL			m_bValue[4];	};
 		struct { SLONG			m_slValue[4];	};
@@ -254,8 +255,8 @@ public:
 		struct { FLOAT3D		m_vValue;		};
 		struct { FLOATquat3D	m_quatValue;	};
 	};
-*/	//ì—¬ëŸ¬ Processì— ê±¸ì³ ì‚¬ìš©ë  ìˆ˜ ì—†ìœ¼ë¯€ë¡œ ì˜ë¯¸ì—†ë‹¤ê³  íŒë‹¨í•¨.
-	//Flagì—ì„œ í˜„ì¬ ì‚¬ìš©ì¤‘ì¸ Fieldë¥¼ í‘œì‹œí•  ìˆ˜ ìˆì§€ ì•Šì„ê¹Œ?
+*/	//¿©·¯ Process¿¡ °ÉÃÄ »ç¿ëµÉ ¼ö ¾øÀ¸¹Ç·Î ÀÇ¹Ì¾ø´Ù°í ÆÇ´ÜÇÔ.
+	//Flag¿¡¼­ ÇöÀç »ç¿ëÁßÀÎ Field¸¦ Ç¥½ÃÇÒ ¼ö ÀÖÁö ¾ÊÀ»±î?
 };
 
 inline void CParticle::ResetZero()
@@ -313,10 +314,10 @@ inline void CParticle::Rotate(const FLOATquat3D &quat)
 class ENGINE_API CParticlePrototype
 {
 public:
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	void Read(CTStream *istrFile);
 	void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 	inline void SetLower(const CParticle &particle) { m_particleLower = particle; }
 	inline void SetUpper(const CParticle &particle) { m_particleUpper = particle; }
@@ -356,7 +357,7 @@ public:
 		m_particleUpper.m_quatDirection.FromEuler(anglehigh);
 	}
 protected:
-	//íŒŒí‹°í´ê°’ì˜ ë³€í™” ê°€ëŠ¥ ì •ë„. [lower, upper] ë²”ìœ„ì„.
+	//ÆÄÆ¼Å¬°ªÀÇ º¯È­ °¡´É Á¤µµ. [lower, upper] ¹üÀ§ÀÓ.
 	CParticle	m_particleUpper;
 	CParticle	m_particleLower;
 };
@@ -383,4 +384,4 @@ inline void CParticlePrototype::CreateTo(CParticle &particle)
 }
 
 #endif //__CPARTICLE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

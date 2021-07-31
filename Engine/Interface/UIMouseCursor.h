@@ -9,26 +9,6 @@
 	#pragma once
 #endif
 
-
-// UI mouse cursor type
-enum UIMCType
-{
-	UMCT_NORMAL			= 0,
-	UMCT_ATT_NORMAL		= 1,
-	UMCT_ATT_SKILL		= 2,
-	UMCT_ATT_MAGIC		= 3,
-	UMCT_ATT_BOW		= 4,
-	UMCT_PICK			= 5,
-	UMCT_TALK			= 6,
-	UMCT_PRODUCE		= 7,
-	UMCT_SIZE			= 8,
-	UMCT_ZOOMIN			= 9,
-	UMCT_SIGNAL			= 10,
-	UMCT_TOTAL			= 11,
-	UMCT_CURRENT		= -1,
-};
-
-
 // ----------------------------------------------------------------------------
 // Name : CUIMouseCursor
 // Desc :
@@ -55,6 +35,7 @@ public:
 
 	// Handles
 	void	SetCursorHandle( UIMCType umctType, HCURSOR hCursor ) { m_hCursors[umctType] = hCursor; }
+	void	SetCursorNULL(void) { SetCursor(LoadCursor(NULL, IDC_ARROW)); }
 };
 
 

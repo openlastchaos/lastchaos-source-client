@@ -7,22 +7,19 @@
 #include <Engine/Ska/StringTable.h>
 #include <Engine/World/World.h>
 #include <Engine/Network/CNetwork.h> // WSS_DRATAN_SEIGEWARFARE 2007/08/08
-
-#define DEL_AUCTION
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Secure/FileSecure.h>	// [2012/07/18 : Sora]  ÆÄÀÏ º¸¾ÈÄÚµå Ãß°¡
 /*
  *  Constructor.
  */
 CMobData::CMobData(void)
-:mob_ulZoneFlag(0), mob_ulExtraFlag(0)
+	: mob_ulZoneFlag(0)
+	, mob_ulExtraFlag(0)
 {
-	//mob_iArrayIndex	= -1;
-	//mob_iAttackType	= -1;
-	memset(&mob_Data, 0, sizeof(_npcStat));
-	mob_Data.index	= -1;
 	mob_bBoss		= FALSE;
 	Owner_Index	= -1;
-//	Owner_name		= "";
-//	Owner_Shop_name	= "";
+
+	channel_flag = (short)0xFFFF;
 }
 
 /*
@@ -38,200 +35,163 @@ CTString CMobData::GetAnimAttackNameByID(int iAttackID)
 {
 	ASSERT(iAttackID > 0 && "Invalid Attack Animation Number");
 
-	// === Attack Animation ê·œì¹™ ===
-	// Attack##		--> ##ëŠ” ìˆ«ì.
-	// ì˜ˆ) Attack01, Attack02...
+	// === Attack Animation ±ÔÄ¢ ===
+	// Attack##		--> ##´Â ¼ıÀÚ.
+	// ¿¹) Attack01, Attack02...
 	CTString strAttackName;
 	strAttackName.PrintF(TRANS("%s%02d"), GetAnimAttackName(), iAttackID);
 	return strAttackName;
 }
 
-int CMobData::LoadNPCDataFromFile(CStaticArray<CMobData> &apMobData, const char* FileName, const char* ZNFileName)
+bool CMobData::LoadZoneData( const char* ZNFileName )
 {
-	//apMobData.Clear();
-	
-	FILE *fp		= NULL;
-	if ((fp = fopen(FileName, "rb")) == NULL) 
-	{
-		MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
-		return -1;
-	}
-
-	int iNumOfNPC	= 0;
-	int iLength		= -1;
-	int iReadBytes	= 0;
-	int iLastIndex	= 0;
-
-	iReadBytes = fread(&iLastIndex, sizeof(int), 1, fp);		// SHOPì˜ ë§ˆì§€ë§‰ ì¸ë±ìŠ¤.
-	apMobData.New(iLastIndex);									// define ìœ¼ë¡œ í•œì •ëœ ë¶€ë¶„ì„ ë™ì í• ë‹¹
-	ASSERT(apMobData.Count() > 0 && "Invalid SHOP Data");		
-	ASSERT(iLastIndex > 0 && "Invalid SHOP Data");
-
-	//////////////////////////////////////////////////////////////////////////	
-	// MACRO DEFINITION
-	//////////////////////////////////////////////////////////////////////////	
+	int iReadBytes = 0;
 #define LOADINT(d)			iReadBytes = fread(&d, sizeof(int), 1, fp);
 #define LOADSHORT(d)		iReadBytes = fread(&d, sizeof(short), 1, fp);
 #define LOADCHAR(d)			iReadBytes = fread(&d, sizeof(char), 1, fp);
 #define LOADFLOAT(d)		iReadBytes = fread(&d, sizeof(float), 1, fp);
 #define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fp); }
-	//////////////////////////////////////////////////////////////////////////	
-
-	
-
-	for(int i = 0; i < iLastIndex; ++i)
-	{
-		int iIndex = -1;
-		LOADINT(iIndex);
-		if(iReadBytes <= 0)		break;										// EOF
-
-		CMobData& MD		= apMobData[iIndex];				
-		_npcStat& NpcData	= MD.mob_Data;
-		NpcData.index		= iIndex;
-
-		LOADSTR(NpcData.name);
-		LOADINT(NpcData.level);
-		LOADINT(NpcData.walkspeed);
-		LOADINT(NpcData.runspeed);
-
-		for(int j = 0; j < 5; ++j)
-		{
-			LOADINT(NpcData.effect[j]);
-		}
-
-		LOADINT(NpcData.hp);
-		LOADINT(NpcData.mp);
-		LOADINT(NpcData.attackSpeed);
-		LOADFLOAT(NpcData.AttackDistance);
-		LOADCHAR(NpcData.skill);
-		LOADCHAR(NpcData.sskillmaster);
-		LOADINT(NpcData.type);
-		//êµ¬ë§¤ëŒ€í–‰ ìºë¦­í„° ì²´í¬ë¥¼ ìœ„í•œ í”Œë˜ê·¸ ì¶”ê°€ 
-#ifdef DEL_AUCTION
-		LOADINT(NpcData.typeSE);
-#endif
-
-		LOADFLOAT(NpcData.scale);
-		LOADFLOAT(NpcData.size);
-
-		LOADINT(NpcData.skill0_index);
-		LOADCHAR(NpcData.skill0_level);
-		LOADINT(NpcData.skill1_index);
-		LOADCHAR(NpcData.skill1_level);
-
-		LOADSTR(NpcData.motion_Idle);
-		LOADSTR(NpcData.motion_Walk);
-		LOADSTR(NpcData.motion_Wound);
-		LOADSTR(NpcData.motion_Attack);
-		LOADSTR(NpcData.motion_Die);
-		LOADSTR(NpcData.motion_Run);
-		LOADSTR(NpcData.motion_Idle2);
-		LOADSTR(NpcData.motion_Attack2);
-		LOADSTR(NpcData.fileSMC);
-		LOADCHAR(NpcData.attackType);
-		LOADCHAR(NpcData.fireDelayCount);
-		LOADFLOAT(NpcData.client_fireobjDelay[0]);
-		LOADFLOAT(NpcData.client_fireobjDelay[1]);
-		LOADFLOAT(NpcData.client_fireobjDelay[2]);
-		LOADFLOAT(NpcData.client_fireobjDelay[3]);
-
-		CTString strAttackAnim;
-		// FIXME : ì£„ë‹¤ í•˜ë“œ ì½”ë”©~~~~
-		// FIXME : êµ¬ìš¸ë§Œ ê³µê²© ì• ë‹ˆë©”ì´ì…˜ì´ 4ê°œì—¬ì„œ...
-		// FIXME : ë§¤ì§ë„˜ë²„ ì œê±°!!!
-		// êµ¬ìš¸ì˜ ê²½ìš°.
-		if( iIndex == 193 )
-		{			
-			strAttackAnim.PrintF( "%s_att%02d", "ghoulworker", 3 );
-			strcpy( MD.motion_Attack3, strAttackAnim );
-			strAttackAnim.PrintF( "%s_att%02d", "ghoulworker", 4 );
-			strcpy( MD.motion_Attack4, strAttackAnim );
-		}
-		else if( iIndex == 194 )
-		{
-			strAttackAnim.PrintF( "%s_att_%02d", "ghoulsucker", 3 );
-			strcpy( MD.motion_Attack3, strAttackAnim );
-			strAttackAnim.PrintF( "%s_att_%02d", "ghoulsucker", 4 );
-			strcpy( MD.motion_Attack4, strAttackAnim );
-		}
-		else if( iIndex == 195 )
-		{
-			strAttackAnim.PrintF( "%s_att%02d", "ghoulanker", 3 );
-			strcpy( MD.motion_Attack3, strAttackAnim );
-			strAttackAnim.PrintF( "%s_att%02d", "ghoulanker", 4 );
-			strcpy( MD.motion_Attack4, strAttackAnim );
-		}
-		else
-		{
-			// FIXME : ì‹±ê¸€ë˜ì ¼ì„ ìœ„í•´ì„œë§Œ í•„ìš”í•œ ë¶€ë¶„....ã…¡.ã…¡
-			strcpy( MD.motion_Attack3, NpcData.motion_Attack );
-			strcpy( MD.motion_Attack4, NpcData.motion_Attack2 );
-		}
-		
-		// FIXME : ë³´ìŠ¤ ëª¹ì¸ì§€ ì¸ë±ìŠ¤ë¡œ í™•ì¸ í›„ì— í”Œë˜ê·¸ë¥¼ ì¼œì¤Œ...ã…¡.ã…¡		
-		// NOTE : 201 -> ì‹±ê¸€ë˜ì ¼ì— ë³´ìŠ¤ ëª¹ ì¹´ë¯¸ë¼.
-		if( iIndex == 201 )
-		{
-			MD.mob_bBoss	= TRUE;
-		}
-
-		std::vector<float> tempvec;
-		for(int a=0; a<NpcData.fireDelayCount; ++a)
-		{
-			tempvec.push_back(NpcData.client_fireobjDelay[a]);
-		}
-		std::sort(tempvec.begin(), tempvec.end());
-		for(a=0; a<NpcData.fireDelayCount; ++a)
-		{
-			NpcData.client_fireobjDelay[a] = tempvec[a];
-		}
-		
-		LOADSTR(NpcData.fireEffect0);
-		LOADSTR(NpcData.fireEffect1);
-		LOADSTR(NpcData.fireEffect2);
-		LOADCHAR(NpcData.fireObject);
-		LOADFLOAT(NpcData.fireSpeed);
-
-		if(iReadBytes <= 0)
-		{
-			MessageBox(NULL, "NPC í™”ì¼ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.", "Error!", MB_OK);
-			fclose(fp);
-			return -1;
-		}
-	}
-	fclose(fp);
-
-	// ì¡´ ì´ë™ í”Œë˜ê·¸ ì •ë³´ë¥¼ í™”ì¼ë¡œë¶€í„° ì½ì–´ë“¤ì„.
+	// Á¸ ÀÌµ¿ ÇÃ·¡±× Á¤º¸¸¦ È­ÀÏ·ÎºÎÅÍ ÀĞ¾îµéÀÓ.
 	if(ZNFileName)
 	{
 		FILE *fp		= NULL;
 		if ((fp = fopen(ZNFileName, "rb")) == NULL) 
 		{
 			MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
-			return -1;
+			return false;
 		}
-		int iIndex = 0;
-		LOADINT(iIndex);
-		ASSERT(apMobData.Count() > 0 && "Invalid MOB Data");		
-		ASSERT(iIndex > 0 && "Invalid MOB Data");
+		int nCount = 0;
+		int nIndex;
+		LOADINT(nCount);
+		ASSERT(nCount > 0 && "Invalid Zone Move Npc Data");
 
-		//for(int i = 0; i <= iIndex; ++i)
-		// NPC ë°ì´í„° í™”ì¼ì˜ ë§ˆì§€ë§‰ ì¸ë±ìŠ¤ë§Œí¼ ë°ì´í„°ë¥¼ ì½ì–´ë“¤ì„.
-		for(int i = 0; i <= iLastIndex; ++i)
+		for (int i = 0; i < nCount; ++i)
 		{
-			CMobData& MD		= apMobData[i];
-			iReadBytes = fread(&MD.mob_ulZoneFlag,	sizeof(ULONG), 1, fp);	// Zone Flag
-			iReadBytes = fread(&MD.mob_ulExtraFlag,	sizeof(ULONG), 1, fp);	// Extra Flag
+			iReadBytes = fread(&nIndex,	sizeof(int), 1, fp);
+			
+			CMobData* pData = CMobData::getData(nIndex);
+			
+			if (pData == NULL)
+				return false;
+
+			iReadBytes = fread(&pData->mob_ulZoneFlag,	sizeof(ZONEFLAGS), 1, fp);	// Zone Flag
+			iReadBytes = fread(&pData->mob_ulExtraFlag,	sizeof(ZONEFLAGS), 1, fp);	// Extra Flag			
 		}
 
 		fclose(fp);
 	}
-//////////////////////////////////////////////////////////////////////////	
+	//////////////////////////////////////////////////////////////////////////	
 #undef LOADINT
 #undef LOADCHAR
 #undef LOADFLOAT
 #undef LOADSTR
-	return iLastIndex;
+
+	return true;
+}
+
+
+bool CMobData::loadEx(const char* FileName)
+{
+	FILE*	fp = NULL;
+
+	fp = fopen(FileName, "rb");
+
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	stNpc* pdata = new stNpc[_nSize];
+	fread(pdata, sizeof(stNpc) * _nSize, 1, fp);
+	fclose(fp);
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CMobData* ptmp = new CMobData;
+		memcpy(ptmp, &pdata[i], sizeof(stNpc));
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+
+		_vecdata.push_back(ptmp);
+	}
+
+	m_dummy = new CMobData; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	
+	memset(m_dummy, 0, sizeof(stNpc));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	SetSDNpc();
+
+	return true;
+}
+
+bool CMobData::LoadChannelData( const char* FileName )
+{
+	FILE *fp		= NULL;
+
+	fp = fopen(FileName, "rb");
+
+	if (fp == NULL)
+		return false;
+
+	int nSize = 0;
+
+	fread(&nSize, sizeof(int), 1, fp);
+
+	if (nSize > 0)
+	{
+		struct stChannel
+		{
+			int npcIndex;
+			int channel[16];
+		};
+
+		stChannel* pChannel = new stChannel[nSize];
+		fread(pChannel, sizeof(stChannel) * nSize, 1, fp);
+		fclose(fp);
+
+		for (int i = 0; i < nSize; ++i)
+		{
+			CMobData* pMD = CMobData::getData(pChannel[i].npcIndex);
+
+			if (pMD == NULL)
+				continue;
+
+			short channel = 0;
+
+			for (int j = 0; j < 16; ++j)
+			{
+				if (pChannel[i].channel[j] > 0)
+					channel |= (pChannel[i].channel[j] << j);
+			}
+
+			pMD->SetChannelFlag(channel);
+		}
+
+		SAFE_ARRAY_DELETE(pChannel);
+	}
+	else
+	{
+		fclose(fp);
+
+		return false;
+	}
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -240,24 +200,27 @@ int CMobData::LoadNPCDataFromFile(CStaticArray<CMobData> &apMobData, const char*
 //			MD - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CMobData::SetMobDataToNPC(CEntity* penEntity, CMobData& MD, const char* szMobName)
+int CMobData::SetMobDataToNPC(CEntity* penEntity, CMobData* MD, const char* szMobName)
 {
-	ASSERT(penEntity != NULL && "Invalid Entity Pointer!");
-	ASSERT(MD.GetMobIndex() != -1 && "Invalid Mob Index!");
+	if (MD == NULL)
+		return -1;
 
-	if(MD.IsPeaceful())
+	ASSERT(penEntity != NULL && "Invalid Entity Pointer!");
+	ASSERT(MD->GetMobIndex() != -1 && "Invalid Mob Index!");
+	
+	if(MD->IsPeaceful())
 	{
 		penEntity->SetFirstExtraFlagOn(ENF_EX1_NPC);
 		penEntity->SetFirstExtraFlagOn(ENF_EX1_PEACEFUL);
 	}
 
-	if(MD.IsZoneMoving())	
+	if(MD->IsZoneMoving())	
 	{
 		// WSS_DRATAN_SIEGEWARFARE 2007/10/14 -------------------------------->>
 		BOOL bSkip = FALSE;
-		if( MD.IsCastleTower() )
+		if( MD->IsCastleTower() )
 		{
-			// ì›Œí”„ íƒ€ì›Œì˜ ê²½ìš° ê³µì„±ì¸¡ì˜ ê²½ìš° ì¼ë°˜ ëª¹ìœ¼ë¡œ ì²˜ë¦¬í•¨
+			// ¿öÇÁ Å¸¿öÀÇ °æ¿ì °ø¼ºÃøÀÇ °æ¿ì ÀÏ¹İ ¸÷À¸·Î Ã³¸®ÇÔ
 			if(!(_pNetwork->MyCharacterInfo.sbJoinFlagDratan == WCJF_OWNER ||
 				 _pNetwork->MyCharacterInfo.sbJoinFlagDratan == WCJF_DEFENSE_GUILD) )
 			{
@@ -268,23 +231,24 @@ int CMobData::SetMobDataToNPC(CEntity* penEntity, CMobData& MD, const char* szMo
 
 		if( !bSkip )
 		{
-			// ì¡´ ì´ë™ ì¥ì¹˜ í”Œë˜ê·¸ê°€ ì¼œì ¸ìˆëŠ” ê²½ìš°, ì¡´ ì´ë™ í”Œë˜ê·¸ë¥¼ ë„£ì–´ì¤Œ.
+			// Á¸ ÀÌµ¿ ÀåÄ¡ ÇÃ·¡±×°¡ ÄÑÁ®ÀÖ´Â °æ¿ì, Á¸ ÀÌµ¿ ÇÃ·¡±×¸¦ ³Ö¾îÁÜ.
 			penEntity->SetFlagOn(ENF_ZONEMOVING);
 			penEntity->SetFirstExtraFlagOn(ENF_EX1_NPC);
-			CEntityProperty &epPropertyZoneFlag	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_FLAGS, 237));		// Zone Flag
-			ENTITYPROPERTY( &*penEntity, epPropertyZoneFlag.ep_slOffset, ULONG)		= MD.GetZoneMovingFlag();
 
-			CEntityProperty &epPropertyExtraFlag	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_FLAGS, 238));	// Extra Flag
-			ENTITYPROPERTY( &*penEntity, epPropertyExtraFlag.ep_slOffset, ULONG)	= MD.GetExtraFlag();
+			CEntityProperty &epPropertyZoneFlag	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_ZONEFLAGS_EX, 237));		// Zone Flag
+			ENTITYPROPERTY( &*penEntity, epPropertyZoneFlag.ep_slOffset, ZONEFLAGS)		= MD->GetZoneMovingFlag();
+
+			CEntityProperty &epPropertyExtraFlag	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_ZONEFLAGS_EX, 238));	// Extra Flag
+			ENTITYPROPERTY( &*penEntity, epPropertyExtraFlag.ep_slOffset, ZONEFLAGS)	= MD->GetExtraFlag();
 		}
 	}
-	else if(MD.IsResource())							// ìƒì‚°ë¬¼í’ˆ
+	else if(MD->IsResource())							// »ı»ê¹°Ç°
 	{
-		// ê´‘ë¬¼ì€ ë°˜ë“œì‹œ NPCê°€ ì•„ë‹ˆì–´ì•¼í•¨.
+		// ±¤¹°Àº ¹İµå½Ã NPC°¡ ¾Æ´Ï¾î¾ßÇÔ.
 		penEntity->SetFirstExtraFlagOn(ENF_EX1_PRODUCTION);
 		penEntity->SetFirstExtraFlagOff(ENF_EX1_NPC);
 	}
-	else if( MD.IsSkillMaster() || MD.IsSSkillMaster() || MD.IsNPC() )		// NPC
+	else if( MD->IsSkillMaster() || MD->IsSSkillMaster() || MD->IsNPC() )		// NPC
 	{
 		penEntity->SetFirstExtraFlagOn(ENF_EX1_NPC);
 	}
@@ -294,85 +258,111 @@ int CMobData::SetMobDataToNPC(CEntity* penEntity, CMobData& MD, const char* szMo
 	}
 
 	CEntityProperty &epPropertyNpcIndex	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 91));	// Enemy Index
-	ENTITYPROPERTY( &*penEntity, epPropertyNpcIndex.ep_slOffset, INDEX)		= MD.GetMobIndex();
+	ENTITYPROPERTY( &*penEntity, epPropertyNpcIndex.ep_slOffset, INDEX)		= MD->GetMobIndex();
 
-	// NOTE : ë¦¬ì   íƒ€ì„ë„ ë³µì‚¬í•´ì¤˜ì•¼ í•¨(ì›”ë“œ ì—ë””í„°ì—ì„œë§Œ í•„ìš”í•¨)
+	// NOTE : ¸®Á¨ Å¸ÀÓµµ º¹»çÇØÁà¾ß ÇÔ(¿ùµå ¿¡µğÅÍ¿¡¼­¸¸ ÇÊ¿äÇÔ)
 	//CEntityProperty &epPropertyNpcIndex	= pdecDLLClass->dec_aepProperties[3];		// Regen Time
-	//ENTITYPROPERTY( &*penEntity, epPropertyNpcIndex.ep_slOffset, INDEX)		= MD.GetIndex();
+	//ENTITYPROPERTY( &*penEntity, epPropertyNpcIndex.ep_slOffset, INDEX)		= MD->GetIndex();
 
 	CEntityProperty &epPropertyAlready	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_BOOL, 250));	// Initialized?
 	ENTITYPROPERTY( &*penEntity, epPropertyAlready.ep_slOffset, BOOL)	= TRUE;
 	
 	//-----------------------------------------------------------------------------
-	// ì• ë‹ˆë©”ì´ì…˜ ì •ë³´ë¥¼ ì„¤ì •í•¨.
+	// ¾Ö´Ï¸ŞÀÌ¼Ç Á¤º¸¸¦ ¼³Á¤ÇÔ.
 	//-----------------------------------------------------------------------------
 	CEntityProperty &epPropertyWalk		= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 100));	// Walk Animation
-	ENTITYPROPERTY( &*penEntity, epPropertyWalk.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD.GetAnimWalkName());
+	ENTITYPROPERTY( &*penEntity, epPropertyWalk.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD->GetAnimWalkName());
 	
 	CEntityProperty &epPropertyAttack	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 101));	// Attack Animation
-	ENTITYPROPERTY( &*penEntity, epPropertyAttack.ep_slOffset, INDEX)	= ska_GetIDFromStringTable(MD.GetAnimAttackName());
+	ENTITYPROPERTY( &*penEntity, epPropertyAttack.ep_slOffset, INDEX)	= ska_GetIDFromStringTable(MD->GetAnimAttackName());
 	
 	CEntityProperty &epPropertyIdle		= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 102));	// Idle Animation
-	ENTITYPROPERTY( &*penEntity, epPropertyIdle.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD.GetAnimDefaultName());
+	ENTITYPROPERTY( &*penEntity, epPropertyIdle.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD->GetAnimDefaultName());
 	
 	CEntityProperty &epPropertyDeath	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 103));	// Death Animation
-	ENTITYPROPERTY( &*penEntity, epPropertyDeath.ep_slOffset, INDEX)	= ska_GetIDFromStringTable(MD.GetAnimDeathName());
+	ENTITYPROPERTY( &*penEntity, epPropertyDeath.ep_slOffset, INDEX)	= ska_GetIDFromStringTable(MD->GetAnimDeathName());
 	
 	CEntityProperty &epPropertyWound	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 104));	// Wound Animation
-	ENTITYPROPERTY( &*penEntity, epPropertyWound.ep_slOffset, INDEX)	= ska_GetIDFromStringTable(MD.GetAnimWoundName());
+	ENTITYPROPERTY( &*penEntity, epPropertyWound.ep_slOffset, INDEX)	= ska_GetIDFromStringTable(MD->GetAnimWoundName());
 	
 	CEntityProperty &epPropertyBox		= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 105));	// Normal Box
-	ENTITYPROPERTY( &*penEntity, epPropertyBox.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD.GetNormalBoxName());
+	ENTITYPROPERTY( &*penEntity, epPropertyBox.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD->GetNormalBoxName());
 
 	CEntityProperty &epPropertyRun		= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 107));	// Run Animation
-	ENTITYPROPERTY( &*penEntity, epPropertyRun.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD.GetAnimRunName());
+	ENTITYPROPERTY( &*penEntity, epPropertyRun.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD->GetAnimRunName());
 
-	CEntityProperty &epPropertyStretch	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 5));	// Model Stretch Scale
-	ENTITYPROPERTY( &*penEntity, epPropertyStretch.ep_slOffset, FLOAT)	= MD.GetScale();
-
+	CEntityProperty &epPropertyStretch	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 5));	// Model stretch Scale
+	ENTITYPROPERTY( &*penEntity, epPropertyStretch.ep_slOffset, FLOAT)	= MD->GetScale();
+	
 	CEntityProperty &epPropertyAttack2	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 106));	// Attack Animation 2
-	ENTITYPROPERTY( &*penEntity, epPropertyAttack2.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD.GetAnimAttack2Name());
+	ENTITYPROPERTY( &*penEntity, epPropertyAttack2.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD->GetAnimAttack2Name());
 
 	CEntityProperty &epPropertyIdle2		= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 108));	// Idle Animation
-	ENTITYPROPERTY( &*penEntity, epPropertyIdle2.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD.GetAnimDefault2Name());
+	ENTITYPROPERTY( &*penEntity, epPropertyIdle2.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD->GetAnimDefault2Name());
 
 	CEntityProperty &epPropertyAttack3	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 109));	// Attack Animation 2
-	ENTITYPROPERTY( &*penEntity, epPropertyAttack3.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD.GetAnimAttack3Name());
+	ENTITYPROPERTY( &*penEntity, epPropertyAttack3.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD->GetAnimAttack3Name());
 
 	CEntityProperty &epPropertyAttack4	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 110));	// Attack Animation 2
-	ENTITYPROPERTY( &*penEntity, epPropertyAttack4.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD.GetAnimAttack4Name());
+	ENTITYPROPERTY( &*penEntity, epPropertyAttack4.ep_slOffset, INDEX)		= ska_GetIDFromStringTable(MD->GetAnimAttack4Name());
 
 	CEntityProperty &epPropertyName		= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_STRING, 200));	// Mob Name
 	ENTITYPROPERTY( &*penEntity, epPropertyName.ep_slOffset, CTString)	= szMobName;
 
-	// FIXME : ì‹±ê¸€ë˜ì ¼ì—ì„œë§Œ ì“°ì„...ã…¡.ã…¡
-	if( MD.IsBoss() )
+	// FIXME : ½Ì±Û´øÁ¯¿¡¼­¸¸ ¾²ÀÓ...¤Ñ.¤Ñ
+	if( MD->IsBoss() )
 	{
 		CEntityProperty &epPropertyBoss	= *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_BOOL, 160));	// Is Boss Mob?
-		ENTITYPROPERTY( &*penEntity, epPropertyBoss.ep_slOffset, BOOL)	= MD.IsBoss();
+		ENTITYPROPERTY( &*penEntity, epPropertyBoss.ep_slOffset, BOOL)	= MD->IsBoss();
 	}
 	
 	CDLLEntityClass *pdecDLLBaseClass	= penEntity->GetClass()->ec_pdecDLLClass->dec_pdecBase;
 	CDLLEntityClass *pdecDLLBaseBaseClass	= pdecDLLBaseClass->dec_pdecBase;
 
 	CEntityProperty &epPropertyWalkSpeed		= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 10);	// NPC Walk Speed
-	ENTITYPROPERTY( &*penEntity, epPropertyWalkSpeed.ep_slOffset, FLOAT)			= MD.GetWalkSpeed();	
+	ENTITYPROPERTY( &*penEntity, epPropertyWalkSpeed.ep_slOffset, FLOAT)			= MD->GetWalkSpeed();	
 
 	CEntityProperty &epPropertyAttackRunSpeed	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 12);	// NPC Attack Run Speed
-	ENTITYPROPERTY( &*penEntity, epPropertyAttackRunSpeed.ep_slOffset, FLOAT)		= MD.GetRunSpeed();
+	ENTITYPROPERTY( &*penEntity, epPropertyAttackRunSpeed.ep_slOffset, FLOAT)		= MD->GetRunSpeed();
 
 	CEntityProperty &epPropertyCloseRunSpeed	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 14);	// NPC Close Run Speed
-	ENTITYPROPERTY( &*penEntity, epPropertyCloseRunSpeed.ep_slOffset, FLOAT)		= MD.GetRunSpeed();	
+	ENTITYPROPERTY( &*penEntity, epPropertyCloseRunSpeed.ep_slOffset, FLOAT)		= MD->GetRunSpeed();	
 
 	CEntityProperty &epPropertyAttackDistance	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 20);	// Attack Distance
-	ENTITYPROPERTY( &*penEntity, epPropertyAttackDistance.ep_slOffset, FLOAT)		= MD.GetAttackDistance() * 1.5f;
+	ENTITYPROPERTY( &*penEntity, epPropertyAttackDistance.ep_slOffset, FLOAT)		= MD->GetAttackDistance() * 1.5f;
 
 	CEntityProperty &epPropertyHealth	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 143);	// NPC Health
-	ENTITYPROPERTY( &*penEntity, epPropertyHealth.ep_slOffset, FLOAT)		= MD.GetHealth();
-	((CLiveEntity*)penEntity)->SetHealth(MD.GetHealth());	
+	ENTITYPROPERTY( &*penEntity, epPropertyHealth.ep_slOffset, FLOAT)		= MD->GetHealth();
+	
+	// SetMobDataToNPC Àü¿¡ SetMobData()¿¡¼­ EntityÀÇ ÇöÀç HP°¡ °»½ÅÀÌ µÇ¾î ÀÖ½À´Ï´Ù.
+	//((CLiveEntity*)penEntity)->SetHealth(MD->GetHealth());
+	// --> MD°¡ ¾Æ´Ñ, EntityÀÇ HP¸¦ °»½ÅÇÕ½Ã´Ù.
+	CEntityProperty &epPropertyCurHealth	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 202);	// NPC Health
+	INDEX MobHp = ENTITYPROPERTY( &*penEntity, epPropertyCurHealth.ep_slOffset, INDEX);
 
-	float fStopDistance		= MD.GetAttackDistance() - 0.1f;
-	float fCloseDistance	= MD.GetAttackDistance();
+	((CLiveEntity*)penEntity)->SetHealth(MobHp);
+
+	if (MD->GetMobIndex() == LORD_SYMBOL_INDEX) // ±ÇÁÂ´Â hpµû¶ó ¸ğµ¨ÀÌ ´Ù¸£´Ù. ÇöÀç ¸ğµ¨ÀÌ ¾î¶² Å¸ÀÔÀÎÁö¸¸ ¼³Á¤ÇÑ´Ù. ÀÌ ½ÃÁ¡¿¡¼­ ¸ğµ¨Àº ÀÌ¹Ì Á¤ÇØÁ® ÀÖ´Ù.
+	{ // type -1 (»ç¿ëÇÏÁö ¾Ê´Â m_nPlayActionNum º¯¼ö¸¦ typeÀ¸·Î »ç¿ëÇÑ´Ù.)
+
+		CEntityProperty &epPropertyPlayActionNum = *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 224);	// NPC PlayerActionNum
+
+		if (MobHp <= MD->GetHealth() * 0.25f) // type 0
+		{
+			ENTITYPROPERTY( &*penEntity, epPropertyPlayActionNum.ep_slOffset, INDEX) = 0;
+		}
+		else if (MobHp <= MD->GetHealth() * 0.50f) // type 1
+		{
+			ENTITYPROPERTY( &*penEntity, epPropertyPlayActionNum.ep_slOffset, INDEX) = 1;
+		}
+		else if (MobHp <= MD->GetHealth() * 0.75f) // type 2
+		{
+			ENTITYPROPERTY( &*penEntity, epPropertyPlayActionNum.ep_slOffset, INDEX) = 2;
+		}
+	}
+
+	float fStopDistance		= MD->GetAttackDistance() - 0.1f;
+	float fCloseDistance	= MD->GetAttackDistance();
 	if(fStopDistance < 0.0f)	fStopDistance	= 0.0f;
 	if(fCloseDistance < 0.0f)	fCloseDistance	= 0.0f;
 
@@ -389,92 +379,50 @@ int CMobData::SetMobDataToNPC(CEntity* penEntity, CMobData& MD, const char* szMo
 /*
  *  Constructor.
  */
-CMobName::CMobName(void)
-{
-	memset(&mob_Name, 0, sizeof(_npcStat));
-	mob_Name.index	= -1;
-}
 
-/*
- *  Destructor.
- */
-CMobName::~CMobName(void) 
+void CMobData::SetNoTranslate()
 {
-}
+	char buff[MAX_PATH];
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-int CMobName::LoadMobNameFromFile(CStaticArray<CMobName> &apMobData, const char* FileName)
-{
-	//apMobData.Clear();
-	
-	FILE *fp		= NULL;
-	if ((fp = fopen(FileName, "rb")) == NULL) 
+	if( pUIManager->IsNotTranslated( TRANS_NAME, transFlag ) )
 	{
-		MessageBox(NULL, "File is not Exist.", "error!", MB_OK);
-		return -1;
+		sprintf( buff, "[%d] : npc name", index );
+		SetName(buff);
 	}
 
-	int iNumOfNPC	= 0;
-	int iLength		= -1;
-	int iReadBytes	= 0;
-	int iLastIndex	= 0;
-
-	iReadBytes = fread(&iLastIndex, sizeof(int), 1, fp);		// SHOPì˜ ë§ˆì§€ë§‰ ì¸ë±ìŠ¤.
-	apMobData.New(iLastIndex);
-	ASSERT(apMobData.Count() > 0 && "Invalid SHOP Data");		
-	ASSERT(iLastIndex > 0 && "Invalid SHOP Data");
-
-	//////////////////////////////////////////////////////////////////////////	
-	// MACRO DEFINITION
-	//////////////////////////////////////////////////////////////////////////	
-#define LOADINT(d)			iReadBytes = fread(&d, sizeof(int), 1, fp);
-#define LOADSHORT(d)		iReadBytes = fread(&d, sizeof(short), 1, fp);
-#define LOADCHAR(d)			iReadBytes = fread(&d, sizeof(char), 1, fp);
-#define LOADFLOAT(d)		iReadBytes = fread(&d, sizeof(float), 1, fp);
-#define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fp); }
-	//////////////////////////////////////////////////////////////////////////	
-
-	//apMobData.New(iNumOfNPC);
-
-	for(int i = 0; i < iLastIndex; ++i)
+	if( pUIManager->IsNotTranslated( TRANS_DESC, transFlag ) )
 	{
-		int iIndex = -1;
-		LOADINT(iIndex);
-		if(iReadBytes <= 0)		break;										// EOF
-
-		CMobName& MD		= apMobData[iIndex];				
-		_npcStat& NpcName	= MD.mob_Name;
-		NpcName.index		= iIndex;
-
-		LOADSTR(NpcName.name);
-
-	/* // Date : 2005-01-15,   By Lee Ki-hwan ëŒ€ë§Œ ë¡œì»¬ë¼ì´ì§•
-		if(iReadBytes <= 0)
-		{
-			MessageBox(NULL, "NPC í™”ì¼ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.", "Error!", MB_OK);
-			fclose(fp);
-			return -1;
-		}
-	*/
+		sprintf( buff, "[%d] : npc desc", index );
+		SetDesc(buff);
 	}
-	fclose(fp);
-//////////////////////////////////////////////////////////////////////////	
-#undef LOADINT
-#undef LOADCHAR
-#undef LOADFLOAT
-#undef LOADSTR
-	return iLastIndex;
+}
+
+void CMobData::ClearNoTranslate()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->IsNotTranslated( TRANS_NAME, transFlag ) )
+		name = "";
+	if( pUIManager->IsNotTranslated( TRANS_DESC, transFlag ) )
+		desc = "";
+}
+
+void CMobData::SetTranslateFlag( int flag )
+{
+	transFlag |= flag;
 }
 
 // WSS_DRATAN_SEIGEWARFARE 2007/08/08 ---------------------------------------->>
-// ë“œë¼íƒ„ ë§ˆìŠ¤í„° íƒ€ì›Œ ê´€ë ¤ ìˆ˜ì •...
-// NPCë¡œ ë˜ë©´ ë§í‘œì‹œê°€ ë˜ê³  ê´€ë ¨ ì°½ì„ ìƒì„±í•  ìˆ˜ ìˆê³ , NPCê°€ ì•„ë‹ˆë©´ 
-// CheckTargetì„ í†µí•´ ê³µê²©ì—¬ë¶€ë¥¼ íŒë‹¨í•  ìˆ˜ ìˆë‹¤ 
+// µå¶óÅº ¸¶½ºÅÍ Å¸¿ö °ü·Á ¼öÁ¤...
+// NPC·Î µÇ¸é ¸»Ç¥½Ã°¡ µÇ°í °ü·Ã Ã¢À» »ı¼ºÇÒ ¼ö ÀÖ°í, NPC°¡ ¾Æ´Ï¸é 
+// CheckTargetÀ» ÅëÇØ °ø°İ¿©ºÎ¸¦ ÆÇ´ÜÇÒ ¼ö ÀÖ´Ù 
 BOOL CMobData::IsNPC() const
 {
-	// ì œì™¸ ì‚¬í•­ ì„¤ì •
-	// NPC_CASTLE_TOWERê°€ ì„¤ì •ë˜ì–´ ìˆìœ¼ë©´ ê¸°ë³¸ì ìœ¼ë¡œ NPCë¡œ ì„¤ì •í•˜ì§€ ì•ŠìŒ
-	// ê³µì„±ì˜ ê²½ìš° ìˆ˜ì„±ê³¼ ê³µì„±ì— ë”°ë¼ ì„¤ì •ê°’ì´ ë‹¤ë¥´ê¸° ë•Œë¬¸ì—...
-	if( (mob_Data.type&NPC_CASTLE_TOWER) )
+	// Á¦¿Ü »çÇ× ¼³Á¤
+	// NPC_CASTLE_TOWER°¡ ¼³Á¤µÇ¾î ÀÖÀ¸¸é ±âº»ÀûÀ¸·Î NPC·Î ¼³Á¤ÇÏÁö ¾ÊÀ½
+	// °ø¼ºÀÇ °æ¿ì ¼ö¼º°ú °ø¼º¿¡ µû¶ó ¼³Á¤°ªÀÌ ´Ù¸£±â ¶§¹®¿¡...
+	if( (flag&NPC_CASTLE_TOWER) )
 	{
 		int tRes = IsMyQuarter();
 		if (tRes != QUARTER_NONE )
@@ -487,25 +435,82 @@ BOOL CMobData::IsNPC() const
 		else return TRUE;	
 	}		
 	else 
-		return (mob_Data.type & NPC_MASK);	
+		return (flag & NPC_MASK);	
 }
 // ---------------------------------------------------------------------------<<
 
 // WSS_DRATAN_SEIGEWARFARE 2007/08/13------------------------>>
 int CMobData::IsMyQuarter() const
 {
-	std::map<int,int>::iterator tFound,tEnd;
-	tFound	= _pNetwork->MyCharacterInfo.mQuarter.find(mob_Data.index);
-	tEnd	= _pNetwork->MyCharacterInfo.mQuarter.end();
+	std::map<int,int>::const_iterator tFound	= _pNetwork->MyCharacterInfo.mQuarter.find(index);
 	
-	if( tFound == tEnd ) return QUARTER_NONE; // ë¶€í™œì§„ì§€ê°€ ì•„ë‹˜
-	
-	int  tIdx = _pNetwork->MyCharacterInfo.mQuarter[mob_Data.index];
-	if (tIdx==-1) 
-		return QUARTER_INSTALL;	// ì„¤ì¹˜	
+	if( tFound == _pNetwork->MyCharacterInfo.mQuarter.end() ) return QUARTER_NONE; // ºÎÈ°ÁøÁö°¡ ¾Æ´Ô
+	// µÎ¹ø Á¶È¸ ÇÊ¿ä¾øÀ½.  [2/24/2011 rumist]
+	int  tIdx = tFound->second;
+	if (tIdx==-1)
+		return QUARTER_INSTALL;	// ¼³Ä¡	
 	else if ( tIdx == _pNetwork->MyCharacterInfo.lGuildIndex)
-		return QUARTER_MINE;	// ë‚˜ì˜ ì§„ì§€
+		return QUARTER_MINE;	// ³ªÀÇ ÁøÁö
 
-	return QUARTER_ATTACK;		// ê³µê²©
+	return QUARTER_ATTACK;		// °ø°İ
 }
+
+void CMobData::SetSDNpc()
+{
+	CMobData::_map::iterator	iter = CMobData::_mapdata.begin();
+	CMobData::_map::iterator	eiter = CMobData::_mapdata.end();
+
+	for (;iter != eiter; ++iter)
+	{
+		CMobData* pNpc = (*iter).second;
+
+		if (pNpc == NULL)
+			continue;
+
+		CTString strAttackAnim;
+		// FIXME : ÁË´Ù ÇÏµå ÄÚµù~~~~
+		// FIXME : ±¸¿ï¸¸ °ø°İ ¾Ö´Ï¸ŞÀÌ¼ÇÀÌ 4°³¿©¼­...
+		// FIXME : ¸ÅÁ÷³Ñ¹ö Á¦°Å!!!
+		// ±¸¿ïÀÇ °æ¿ì.
+		if( pNpc->getindex() == 193 )
+		{			
+			strAttackAnim.PrintF( "%s_att%02d", "ghoulworker", 3 );
+			strcpy( pNpc->motion_Attack3, strAttackAnim );
+			strAttackAnim.PrintF( "%s_att%02d", "ghoulworker", 4 );
+			strcpy( pNpc->motion_Attack4, strAttackAnim );
+		}
+		else if( pNpc->getindex() == 194 )
+		{
+			strAttackAnim.PrintF( "%s_att_%02d", "ghoulsucker", 3 );
+			strcpy( pNpc->motion_Attack3, strAttackAnim );
+			strAttackAnim.PrintF( "%s_att_%02d", "ghoulsucker", 4 );
+			strcpy( pNpc->motion_Attack4, strAttackAnim );
+		}
+		else if( pNpc->getindex() == 195 )
+		{
+			strAttackAnim.PrintF( "%s_att%02d", "ghoulanker", 3 );
+			strcpy( pNpc->motion_Attack3, strAttackAnim );
+			strAttackAnim.PrintF( "%s_att%02d", "ghoulanker", 4 );
+			strcpy( pNpc->motion_Attack4, strAttackAnim );
+		}
+		else
+		{
+			// FIXME : ½Ì±Û´øÁ¯À» À§ÇØ¼­¸¸ ÇÊ¿äÇÑ ºÎºĞ....¤Ñ.¤Ñ
+			strcpy( pNpc->motion_Attack3, pNpc->motion_Attack );
+			strcpy( pNpc->motion_Attack4, pNpc->motion_Attack2 );
+		}
+
+		// FIXME : º¸½º ¸÷ÀÎÁö ÀÎµ¦½º·Î È®ÀÎ ÈÄ¿¡ ÇÃ·¡±×¸¦ ÄÑÁÜ...¤Ñ.¤Ñ		
+		// NOTE : 201 -> ½Ì±Û´øÁ¯¿¡ º¸½º ¸÷ Ä«¹Ì¶ó.
+		if( pNpc->getindex() == 201 )
+		{
+			pNpc->mob_bBoss	= TRUE;
+		}
+
+		// stl Àº ¹è¿­µµ Á¤·ÄÇÒ ¼ö ÀÖ´Ù. ¾Æ·¡¿Í °°ÀÌ ÄÚµå ¼öÁ¤. [2/17/2011 rumist]
+		std::sort( pNpc->fireDelay, pNpc->fireDelay+pNpc->fireDelayCount);
+	}
+}
+
+
 // ----------------------------------------------------------<<

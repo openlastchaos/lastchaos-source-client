@@ -1,8 +1,12 @@
-
 #include "stdh.h"
-#include <Engine/Interface/UITalk.h>
+
+// Çì´õ Á¤¸®. [12/3/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UITalk.h>
+#include <Engine/Interface/UIMessenger.h>
+
 // Definition
+
 
 // Position
 #define TALK_X					0
@@ -18,15 +22,15 @@
 #define COLOR_TALK_LIST			0xe18600ff
 #define COLOR_TALK_NAME			0xe2e2e2ff
 
-// ì¢Œìš° í¬ê¸° ëŠ˜ë¦´ ë•Œ ì‚¬ìš©í•œ í•œê°œì˜ ë„ˆë¹„
+// ÁÂ¿ì Å©±â ´Ã¸± ¶§ »ç¿ëÇÑ ÇÑ°³ÀÇ ³Êºñ
 #define UNIT_SIZE_DEFAULT					40
 #define UNIT_SIZE_GUIDLINE					40
 #define UNIT_SIZE_RESIZE_BOTTOM				28
 
-#define	TOP_HEIGHT							25		// íƒ€ì´í‹€ ë°”ì˜ ë†’ì´
-#define TALKER_LIST							19		// ìì‹ ì˜ ì •ë³´ê°€ í‘œì‹œ ë˜ëŠ” ì°½ì˜ ë†’ì´ 
-#define BACK_MIDDLE_SCROLL_BOTTOM_HEIGHT	5		// ìŠ¤í¬ë¡¤ë°”ê°€ í¬í•¨ë˜ì–´ ìˆëŠ” ì¤‘ê°„ ì°½ì˜ ë†’ì´ 
-#define BACK_BOTTOM_HEIGHT					13		// ì•„ë«ìª½ ì°½ì˜ ë†’ì´
+#define	TOP_HEIGHT							25		// Å¸ÀÌÆ² ¹ÙÀÇ ³ôÀÌ
+#define TALKER_LIST							19		// ÀÚ½ÅÀÇ Á¤º¸°¡ Ç¥½Ã µÇ´Â Ã¢ÀÇ ³ôÀÌ 
+#define BACK_MIDDLE_SCROLL_BOTTOM_HEIGHT	5		// ½ºÅ©·Ñ¹Ù°¡ Æ÷ÇÔµÇ¾î ÀÖ´Â Áß°£ Ã¢ÀÇ ³ôÀÌ 
+#define BACK_BOTTOM_HEIGHT					13		// ¾Æ·§ÂÊ Ã¢ÀÇ ³ôÀÌ
 #define RESIZE_RANGE						10
 
 #define TALK_INPUT_WIDTH					200
@@ -35,7 +39,6 @@
 #define TALK_SYSTEM_COLOR					0xE18600FF
 
 static int _iMaxMsgStringChar = 0;
-extern INDEX g_iCountry;
 
 #define COLOR_BUTTON_WIDTH					15
 #define COLOR_BUTTON_HEIGHT					COLOR_BUTTON_WIDTH
@@ -72,7 +75,7 @@ void CUITalk::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ 
 	int nOffset = -50;
 	for( int iUI = UI_MESSENGER_TALK_START; iUI < UI_MESSENGER_TALK_END; iUI++ )
 	{
-		if( _pUIMgr->GetTalk(iUI)->IsEnabled() )
+		if( CUIManager::getSingleton()->GetTalk(iUI)->IsEnabled() )
 		{
 			nOffset += 10;
 		}
@@ -102,13 +105,7 @@ void CUITalk::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ
 void CUITalk::SetFocus( BOOL bVisible )
 {
 	CUIWindow::SetFocus( bVisible );
-
-	m_ebInput.SetFocus( TRUE );
-	if( !bVisible )
-	{
-		m_ebInput.SetFocus( FALSE );
-	}
-
+	m_ebInput.SetFocus( bVisible );
 }
 
 
@@ -138,6 +135,8 @@ void CUITalk::Clear()
 	m_nTargetCharIndex	= -1;
 
 	m_nColIndex			=0;
+
+	m_ebInput.SetFocus(FALSE);
 }
 
 
@@ -150,12 +149,14 @@ void CUITalk::Create( CUIWindow *pParentWnd, int nWhichUI )
 {
 
 	_iMaxMsgStringChar = TALK_DESC_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#if defined G_RUSSIA
+	_iMaxMsgStringChar = 34;
+#endif
 
 	m_nWhichUI = nWhichUI;
-	m_strTitle = _S( 1640, "ë©”ì‹ ì € ëŒ€í™”" ); 
-	m_pParentWnd = pParentWnd;
-	SetPos( TALK_X, TALK_Y );
-	SetSize( TALK_WIDTH, TALK_HEIGHT );
+	m_strTitle = _S( 1640, "¸Ş½ÅÀú ´ëÈ­" ); 
+	
+	CUIWindow::Create(pParentWnd, TALK_X, TALK_Y, TALK_WIDTH, TALK_HEIGHT);
 
 	// Set Rect
 	m_rcTitle.SetRect( 0, 0, 512, 22 );
@@ -203,6 +204,7 @@ void CUITalk::Create( CUIWindow *pParentWnd, int nWhichUI )
 	//m_btnColor.SetUV( UBS_CLICK, 328+(m_nColIndex%3)*10, 177+(m_nColIndex/3)*10, 328+(m_nColIndex%3)*10 +9, 177+(m_nColIndex/3)*10 +9, fTexWidth, fTexHeight );
 	m_btnColor.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnColor.CopyUV( UBS_IDLE, UBS_DISABLE );
+
 
 	// Input box
 	m_ebInput.Create( this, 10, m_nHeight - 25, m_nWidth - ( 10 + 12 +15), 13, 256 );
@@ -261,7 +263,9 @@ void CUITalk::Create( CUIWindow *pParentWnd, int nWhichUI )
 //------------------------------------------------------------------------------
 void CUITalk::Open( CTString strName)
 {
-	_pUIMgr->GetMessenger()->CloseAllMessageBox();
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->GetMessenger()->CloseAllMessageBox();
 
 	Clear();
 	m_ebInput.ResetString();
@@ -269,29 +273,19 @@ void CUITalk::Open( CTString strName)
 	
 	AddTalkTarget(strName);
 	
-	const CDrawPort	*pdp = _pUIMgr->GetDrawPort();
-	ResetPosition( pdp->dp_MinI, pdp->dp_MinJ, pdp->dp_MaxI, pdp->dp_MaxJ );
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	ResetPosition( pDrawPort->dp_MinI, pDrawPort->dp_MinJ, pDrawPort->dp_MaxI, pDrawPort->dp_MaxJ );
 
-	//_pUIMgr->RearrangeOrder( m_nWhichUI, TRUE );
-	//m_ebInput.SetFocus( TRUE );
 	SetVisible(TRUE);
 	SetEnable(TRUE);
 	m_ebInput.SetFocus(TRUE);
-	//_pUIMgr->RearrangeOrder( m_nWhichUI );
-	_pUIMgr->ChangeOrder( m_nWhichUI, 1);
+	pUIManager->ChangeOrder( m_nWhichUI, 1);
 
-	/***
-	if( miTalkMemberInfo.m_eCondition == LEFT_POSITION )
-	{
-		AddTalkListString( "", _S( 1641, "ëŒ€í™”ìƒëŒ€ê°€ [ìë¦¬ë¹„ì›€] ìƒíƒœì´ë¯€ë¡œ ì‘ë‹µí•˜ì§€ ì•Šì„ ìˆ˜ë„ ìˆìŠµë‹ˆë‹¤."), true, TALK_SYSTEM_COLOR ); 
-	}
-	else
-	{
-		AddTalkListString( "", _S( 1642, "ëŒ€í™”ë‚´ìš©ì„ ì…ë ¥í•˜ì—¬ì£¼ì‹­ì‹œì˜¤."), true, TALK_SYSTEM_COLOR ); 
-	}
-	***/
-	AddTalkListString( "", _S( 1642, "ëŒ€í™”ë‚´ìš©ì„ ì…ë ¥í•˜ì—¬ì£¼ì‹­ì‹œì˜¤."), true, TALK_SYSTEM_COLOR ); 
+	AddTalkListString( "", _S( 1642, "´ëÈ­³»¿ëÀ» ÀÔ·ÂÇÏ¿©ÁÖ½Ê½Ã¿À."), true, TALK_SYSTEM_COLOR ); 
 }
+
+
+
 
 //------------------------------------------------------------------------------
 // CUITalk::Open
@@ -300,7 +294,9 @@ void CUITalk::Open( CTString strName)
 //------------------------------------------------------------------------------
 void CUITalk::Open(int clientIndex, const CMemberInfo targetInfo )
 {
-	_pUIMgr->GetMessenger()->CloseAllMessageBox();
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->GetMessenger()->CloseAllMessageBox();
 
 	Clear();
 	m_ebInput.ResetString();
@@ -308,27 +304,27 @@ void CUITalk::Open(int clientIndex, const CMemberInfo targetInfo )
 	
 	// SetMyInfo [12/8/2006 KwonYongDae]
 	m_nClientIndex = clientIndex;
-	m_vecTarget.push_back(_pUIMgr->GetMessenger()->GetMyInfo().m_strName);
-	m_tpTargetList.AddMenuList(_pUIMgr->GetMessenger()->GetMyInfo().m_strName);
+	m_vecTarget.push_back(pUIManager->GetMessenger()->GetMyInfo().m_strName);
+	m_tpTargetList.AddMenuList(pUIManager->GetMessenger()->GetMyInfo().m_strName);
 
 	m_nTargetCharIndex = targetInfo.m_nCharIndex;
 	AddTalkTarget(targetInfo.m_strName);
 	
-	const CDrawPort	*pdp = _pUIMgr->GetDrawPort();
+	const CDrawPort	*pdp = pUIManager->GetDrawPort();
 	ResetPosition( pdp->dp_MinI, pdp->dp_MinJ, pdp->dp_MaxI, pdp->dp_MaxJ );
 	
 	SetVisible(TRUE);
 	SetEnable(TRUE);
 	m_ebInput.SetFocus(TRUE);
-	_pUIMgr->RearrangeOrder( m_nWhichUI, 1);		//  [12/19/2006 KwonYongDae]
-	//_pUIMgr->ChangeOrder( m_nWhichUI, 1);
+	pUIManager->RearrangeOrder( m_nWhichUI, 1);		//  [12/19/2006 KwonYongDae]
+	//pUIManager->ChangeOrder( m_nWhichUI, 1);
 
-	AddTalkListString( "", _S( 1642, "ëŒ€í™”ë‚´ìš©ì„ ì…ë ¥í•˜ì—¬ì£¼ì‹­ì‹œì˜¤."), true, TALK_SYSTEM_COLOR ); 
+	AddTalkListString( "", _S( 1642, "´ëÈ­³»¿ëÀ» ÀÔ·ÂÇÏ¿©ÁÖ½Ê½Ã¿À."), true, TALK_SYSTEM_COLOR ); 
 }
 
 //------------------------------------------------------------------------------
 // CUITalk::Close
-// Explain: ëŒ€í™”ì°½ ë‹«ê¸° ëª¨ë“  ë°ì´í„° ì´ˆê¸°í™” 
+// Explain: ´ëÈ­Ã¢ ´İ±â ¸ğµç µ¥ÀÌÅÍ ÃÊ±âÈ­ 
 // Date : 2005-05-24,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUITalk::Close()
@@ -336,9 +332,11 @@ void CUITalk::Close()
 	_pNetwork->MgrFriendOut( m_nMakeCharIndex, m_nChatIndex);
 
 	Clear();
-	_pUIMgr->RearrangeOrder( m_nWhichUI, FALSE );
 
-	_pUIMgr->GetMessenger()->CloseTalk( m_nWhichUI );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->RearrangeOrder( m_nWhichUI, FALSE );
+	pUIManager->GetMessenger()->CloseTalk( m_nWhichUI );
 }
 
 
@@ -351,33 +349,33 @@ void CUITalk::Render()
 {
 	int	nX, nY;
 	GetAbsPos( nX, nY );
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-	
-	// ë°°ê²½ 
+	// ¹è°æ 
 	RenderBackground( nX, nY );
 
-	// ëŒ€í™” ëª©ë¡ 
+	// ´ëÈ­ ¸ñ·Ï 
 	m_lbTalkList.Render();
 
-	// ë‹«ê¸° ë²„íŠ¼ 
+	// ´İ±â ¹öÆ° 
 	m_btnClose.Render();
 
-	// Edit Box 
-	m_ebInput.Render();
 	// !!Edit box
 	RenderRectUV3( 4, nX + 7, nY + m_nHeight - 28, TALK_WIDTH-(10+3), 18, m_rt3InputBox );
 
-	//ë©¤ë²„ ë¦¬ìŠ¤íŠ¸ íˆ´íŒ ë²„íŠ¼
+	//¸â¹ö ¸®½ºÆ® ÅøÆÁ ¹öÆ°
 	m_btnMember.Render();
 
-	//ì¹¼ë¼ ë²„íŠ¼
+	//Ä®¶ó ¹öÆ°
 	m_btnColor.Render();
 
-	//ë©¤ë²„ ë¦¬ìŠ¤íŠ¸
+	//¸â¹ö ¸®½ºÆ®
 	m_tpTargetList.Render();
 
-	//ì¹¼ë¼ ë¦¬ìŠ¤íŠ¸
+	//Ä®¶ó ¸®½ºÆ®
 	m_tpColor.Render();
 	if( m_tpColor.IsVisible() )
 	{
@@ -388,52 +386,52 @@ void CUITalk::Render()
 		//m_tpImoticon.Show();
 		//m_tpImoticon.Render();
 	}
+	// bug fix : change texture priority [7/19/2010 rumist]
+	// Edit Box 
+	m_ebInput.Render();
 	//else
 	//	m_tpImoticon.Hide();
 
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	// íƒ€ì´í‹€ ë°” ( ìƒëŒ€ë°©ì˜ ëŒ€í™”ëª… ì¶”ê°€  ~ ) : ë‹¤ì¤‘ ëŒ€í™”ì‹œì—ëŠ” 0ë²ˆ ëŒ€í™”ìƒëŒ€ë§Œ
+	// Å¸ÀÌÆ² ¹Ù ( »ó´ë¹æÀÇ ´ëÈ­¸í Ãß°¡  ~ ) : ´ÙÁß ´ëÈ­½Ã¿¡´Â 0¹ø ´ëÈ­»ó´ë¸¸
 	CTString strTitle;
 	//strTitle.PrintF( "%s - %s", m_miTarget.m_strName, m_strTitle );	===>
-	strTitle.PrintF( "%s", m_strTitle );		//íƒ€ì´í‹€ë§Œ...
+	strTitle.PrintF( "%s", m_strTitle );		//Å¸ÀÌÆ²¸¸...
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( strTitle, nX + TALK_TITLE_SX, nY + TALK_TITLE_SY );
+	pDrawPort->PutTextEx( strTitle, nX + TALK_TITLE_SX, nY + TALK_TITLE_SY );
 
-	// ëŒ€í™” ì¸ì› ìˆ˜ 
-	strTitle.PrintF( _S(3035, "ëŒ€í™” ì°¸ê°€ ì¸ì› (%d)"), m_vecTarget.size());
+	// ´ëÈ­ ÀÎ¿ø ¼ö 
+	strTitle.PrintF( _S(3035, "´ëÈ­ Âü°¡ ÀÎ¿ø (%d)"), m_vecTarget.size());
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( strTitle, nX + TALK_TITLE_SX, nY +TOP_HEIGHT +3 );
+	pDrawPort->PutTextEx( strTitle, nX + TALK_TITLE_SX, nY +TOP_HEIGHT +3 );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 	
 	// Reading window
 	if( m_ebInput.DoesShowReadingWindow() )
 	{
 		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 		// Reading window
 		m_ebInput.RenderReadingWindow();
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
-
-
-
 }
 
 
 //------------------------------------------------------------------------------
 // CUIMessenger::RenderBack
-// Explain: ì°½ì˜ ë°°ê²½  
+// Explain: Ã¢ÀÇ ¹è°æ  
 // Date : 2005-05-18,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUITalk::RenderBackground( int nX, int nY ) 
@@ -473,13 +471,15 @@ void CUITalk::RenderRectUV3( int nUnitSize, int nX, int nY, int nWidth, int nHei
 	int nX2 = nX + nWidth;
 	int nY2 = nY + nHeight;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + nUnitSize, nY2,
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->AddTexture( nX, nY, nX + nUnitSize, nY2,
 										rtRectUV3.rtL.U0, rtRectUV3.rtL.V0, rtRectUV3.rtL.U1, rtRectUV3.rtL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX + nUnitSize, nY, nX2 - nUnitSize, nY2,
+	pDrawPort->AddTexture( nX + nUnitSize, nY, nX2 - nUnitSize, nY2,
 										rtRectUV3.rtM.U0, rtRectUV3.rtM.V0, rtRectUV3.rtM.U1, rtRectUV3.rtM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - nUnitSize, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - nUnitSize, nY, nX2, nY2,
 										rtRectUV3.rtR.U0, rtRectUV3.rtR.V0, rtRectUV3.rtR.U1, rtRectUV3.rtR.V1,
 										0xFFFFFFFF );
 }
@@ -523,6 +523,11 @@ WMSG_RESULT	CUITalk::MouseMessage( MSG *pMsg )
 					}
 				}
 
+				for(int i=0; i<9; ++i)
+				{
+					m_btnColorList[i].MouseMessage( pMsg );
+				}
+
 				if( m_tpColor.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
 					return WMSG_SUCCESS;
@@ -538,7 +543,7 @@ WMSG_RESULT	CUITalk::MouseMessage( MSG *pMsg )
 
 				if( IsInside( nX, nY ) )
 				{
-					_pUIMgr->SetMouseCursorInsideUIs();
+					CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 				}
 
 				int	ndX = nX - nOldX;
@@ -554,6 +559,10 @@ WMSG_RESULT	CUITalk::MouseMessage( MSG *pMsg )
 
 				if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
+				if( m_btnMember.MouseMessage( pMsg ) != WMSG_FAIL )
+					return WMSG_SUCCESS;
+				if( m_btnColor.MouseMessage( pMsg ) != WMSG_FAIL )
+					return WMSG_SUCCESS;
 				if( m_ebInput.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
 				if( m_lbTalkList.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -564,13 +573,19 @@ WMSG_RESULT	CUITalk::MouseMessage( MSG *pMsg )
 			{
 				if( m_tpTargetList.MouseMessage( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
+				
+				for(int i=0; i<9; ++i)
+				{
+					m_btnColorList[i].MouseMessage( pMsg );			
+				}
+
 				if( m_tpColor.MouseMessage( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
 
 				if( IsInside( nX, nY ) )
 				{
 					SetFocus( TRUE );
-					_pUIMgr->RearrangeOrder( m_nWhichUI, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( m_nWhichUI, TRUE );
 
 					nOldX = nX;		nOldY = nY;
 				
@@ -609,74 +624,49 @@ WMSG_RESULT	CUITalk::MouseMessage( MSG *pMsg )
 					m_tpTargetList.SetFocus(false);
 				}
 
-				if( m_tpColor.MouseMessage( pMsg ) != WMSG_FAIL )
+				for(int i=0; i<9; ++i)
 				{
-					for(int i=0; i<9; ++i)
+					if( m_btnColorList[i].MouseMessage( pMsg ) != WMSG_FAIL )
 					{
-						if( m_btnColorList[i].MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							m_nColIndex =i;
-							/*****
-							m_btnColor.SetUV( UBS_IDLE, 328+(m_nColIndex%3)*10, 177+(m_nColIndex/3)*10, 328+(m_nColIndex%3)*10 +9, 177+(m_nColIndex/3)*10 +9, 
-											  m_ptdBaseTexture->GetPixWidth(), m_ptdBaseTexture->GetPixHeight() );
-							m_btnColor.SetUV( UBS_CLICK, 328+(m_nColIndex%3)*10, 177+(m_nColIndex/3)*10, 328+(m_nColIndex%3)*10 +9, 177+(m_nColIndex/3)*10 +9, 
-											  m_ptdBaseTexture->GetPixWidth(), m_ptdBaseTexture->GetPixHeight() );
-							m_btnColor.CopyUV( UBS_IDLE, UBS_ON );
-							m_btnColor.CopyUV( UBS_IDLE, UBS_DISABLE );
-							*****/
+						m_nColIndex =i;
 
-							_pNetwork->MgrSetChatColor(m_nColIndex);
+						_pNetwork->MgrSetChatColor(m_nColIndex);
 
-							m_tpColor.SetFocus(false);
-							m_tpColor.Hide();
-
-							return WMSG_SUCCESS;
-						}
-					}
-
-					/*****
-					if(m_tpImoticon.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						int nSelect =m_tpImoticon.GetCurSel();
-						CTString strImo =m_tpImoticon.GetString(0, nSelect);
-
-						SendChatMessage( strImo );
-						
 						m_tpColor.SetFocus(false);
 						m_tpColor.Hide();
 
 						return WMSG_SUCCESS;
 					}
-					*****/
 				}
-				else
+
+				if( m_tpColor.MouseMessage( pMsg ) == WMSG_FAIL )
 				{
 					m_tpColor.Hide();
 					m_tpColor.SetFocus(false);
 				}
-				
 
+				CUIManager* pUIManager = CUIManager::getSingleton();
 
 				if( IsInside( nX, nY ) )
 				{
 					SetFocus( TRUE );
 					bTitleBarClick = FALSE;
 
-					//ë©”ì‹ ì €ì—ì„œ ìºë¦­ì„ ë“œë˜ê·¸í•´ì„œ ì±„íŒ…ì°½ì— ë–¨ê¶œì„ ë•Œ
-					bool bDrop =_pUIMgr->GetMessenger()->IsDrop();
+					//¸Ş½ÅÀú¿¡¼­ Ä³¸¯À» µå·¡±×ÇØ¼­ Ã¤ÆÃÃ¢¿¡ ¶³±ÉÀ» ¶§
+					bool bDrop =pUIManager->GetMessenger()->IsDrop();
 					if( bDrop )
 					{
-						_pUIMgr->RearrangeOrder( m_nWhichUI, TRUE );
-						CMemberInfo miTemp = _pUIMgr->GetMessenger()->GetSelectMember();
-						//ëŒ€í™”ì¤‘ì¸ ìƒëŒ€ê°€ ì•„ë‹ˆë©´...
+						pUIManager->RearrangeOrder( m_nWhichUI, TRUE );
+						CMemberInfo miTemp = pUIManager->GetMessenger()->GetSelectMember();
+						//´ëÈ­ÁßÀÎ »ó´ë°¡ ¾Æ´Ï¸é...
 						if( !IsExistTarget(miTemp.m_strName) )
 						{
 							if( miTemp.m_eCondition == OFFLINE)
-								AddErrorTalk( _S(3037, "ëŒ€í™”ìƒëŒ€ê°€ [ì˜¤í”„ë¼ì¸] ìƒíƒœì´ë¯€ë¡œ ì´ˆëŒ€í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) ); 
+								AddErrorTalk( _S(3037, "´ëÈ­»ó´ë°¡ [¿ÀÇÁ¶óÀÎ] »óÅÂÀÌ¹Ç·Î ÃÊ´ëÇÒ ¼ö ¾ø½À´Ï´Ù." ) ); 
 							else
 							{
-								//ëŒ€í™” ìƒëŒ€ì¶”ê°€
-								if( m_nChatIndex < 0 ) // 1:1ëŒ€í™”ìƒíƒœì´ë©´  ìì‹ ì˜ ëŒ€í™”ìƒëŒ€ë„ ì´ˆëŒ€[12/12/2006 KwonYongDae]
+								//´ëÈ­ »ó´ëÃß°¡
+								if( m_nChatIndex < 0 ) // 1:1´ëÈ­»óÅÂÀÌ¸é  ÀÚ½ÅÀÇ ´ëÈ­»ó´ëµµ ÃÊ´ë[12/12/2006 KwonYongDae]
 								{
 									_pNetwork->MgrFriendInvite(m_nMakeCharIndex, m_nChatIndex<0? -1:m_nChatIndex, m_nTargetCharIndex );
 									m_nTargetCharIndex = miTemp.m_nCharIndex;
@@ -689,9 +679,9 @@ WMSG_RESULT	CUITalk::MouseMessage( MSG *pMsg )
 							}
 						}
 						else
-							AddErrorTalk( _S(3038, "ì´ë¯¸ ëŒ€í™”ì¤‘ì¸ ìƒëŒ€ì…ë‹ˆë‹¤." ) ); 
+							AddErrorTalk( _S(3038, "ÀÌ¹Ì ´ëÈ­ÁßÀÎ »ó´ëÀÔ´Ï´Ù." ) ); 
 
-						_pUIMgr->GetMessenger()->SetDrop(false);
+						pUIManager->GetMessenger()->SetDrop(false);
 
 						return WMSG_SUCCESS;
 					}
@@ -724,7 +714,9 @@ WMSG_RESULT	CUITalk::MouseMessage( MSG *pMsg )
 					return WMSG_SUCCESS;
 				}
 				else
-					_pUIMgr->GetMessenger()->SetDrop(false);
+				{
+					pUIManager->GetMessenger()->SetDrop(false);
+				}
 
 			}
 			break;
@@ -762,7 +754,8 @@ WMSG_RESULT	CUITalk::KeyMessage( MSG *pMsg )
 			// AddTalkListString( m_miTarget.m_strName, m_ebInput.GetString() );
 
 			// Message~
-			SendChatMessage( m_ebInput.GetString() );
+			// SendChatMessageÇÔ¼ö¿¡ ±İÁö¾î ÇÊÅÍ¸µÀ» Ãß°¡ÇÑ ÇÔ¼ö;
+			SendChatMessageFiltering( m_ebInput.GetString() );
 			m_ebInput.ResetString();
 		}
 		return WMSG_SUCCESS; 
@@ -805,7 +798,7 @@ WMSG_RESULT	CUITalk::CharMessage( MSG *pMsg )
 
 //------------------------------------------------------------------------------
 // CUITalk::SetTargetCondition
-// Explain:  í˜„ì¬ ëŒ€í™”ì¤‘ì¸ ìƒëŒ€ì˜ ìƒíƒœë¥¼ ë³€ê²½í•œë‹¤.
+// Explain:  ÇöÀç ´ëÈ­ÁßÀÎ »ó´ëÀÇ »óÅÂ¸¦ º¯°æÇÑ´Ù.
 // Date : 2005-05-30,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUITalk::SetTargetCondition( int nCharIndex, eCondition eState )
@@ -822,12 +815,52 @@ void CUITalk::SetTargetCondition( int nCharIndex, eCondition eState )
 	***/
 	if( eState == OFFLINE )
 	{
-		AddErrorTalk( _S( 1643, "ëŒ€í™”ìƒëŒ€ê°€ [ì˜¤í”„ë¼ì¸] ìƒíƒœì´ë¯€ë¡œ ì‘ë‹µí•˜ì§€ ì•Šì„ ìˆ˜ë„ ìˆìŠµë‹ˆë‹¤." ) ); 
+		AddErrorTalk( _S( 1643, "´ëÈ­»ó´ë°¡ [¿ÀÇÁ¶óÀÎ] »óÅÂÀÌ¹Ç·Î ÀÀ´äÇÏÁö ¾ÊÀ» ¼öµµ ÀÖ½À´Ï´Ù." ) ); 
 	}
 	else if( eState == LEFT_POSITION )
 	{
-		AddTalkListString( "", _S( 1644, "ëŒ€í™”ìƒëŒ€ê°€ [ìë¦¬ë¹„ì›€] ìƒíƒœì´ë¯€ë¡œ ì‘ë‹µí•˜ì§€ ì•Šì„ ìˆ˜ë„ ìˆìŠµë‹ˆë‹¤."), true, TALK_SYSTEM_COLOR ); 
+		AddTalkListString( "", _S( 1644, "´ëÈ­»ó´ë°¡ [ÀÚ¸®ºñ¿ò] »óÅÂÀÌ¹Ç·Î ÀÀ´äÇÏÁö ¾ÊÀ» ¼öµµ ÀÖ½À´Ï´Ù."), true, TALK_SYSTEM_COLOR ); 
 	}
+}
+
+
+//------------------------------------------------------------------------------
+// CUITalk::SendChatMessageFiltering
+// Explain: SendChatMessageÇÔ¼ö¸¦ °ÅÄ¡±â Àü¿¡ ±İÁö¾î ÇÊÅÍ¸µÀ» ÇÏ´Â ÇÔ¼ö
+// Date : 2013-04-02, Author: ¹Ú Ã¶Èñ
+//------------------------------------------------------------------------------
+void CUITalk::SendChatMessageFiltering( CTString strMessage )
+{
+	// ¿î¿µÀÚ ÀÎ °æ¿ì¿¡ ÇÊÅÍ¸µ ¾ÈÇÔ
+	if( _pNetwork->m_ubGMLevel > 1 ) {
+		SendChatMessage(strMessage);
+		return;
+	}
+	
+	// ¿î¿µÀÚ ÀÌ¿ÜÀÇ °æ¿ì ºÒ·® ´Ü¾î ÇÊÅÍ¸µ 
+	char szBuffer[256];
+	int nIndexBuffer[32];
+	strcpy ( szBuffer, strMessage.str_String );
+	
+	// Filtering
+	if ( _UIFiltering.Filtering ( szBuffer, nIndexBuffer ) == TRUE )
+	{
+		AddTalkListString( "", _S( 437, "¹®Àå¿¡ ±İÁöµÈ ´Ü¾î°¡ Æ÷ÇÔµÇ¾î ÀÖ½À´Ï´Ù."), true, TALK_SYSTEM_COLOR ); 
+		strMessage.Clear();
+		
+#ifndef FILTERING_WORD_VISIBLE_NA_20081013
+		for ( int i = 1; i <= nIndexBuffer[0]; i++ ) {	
+			strMessage += "[";
+			strMessage += _UIFiltering.GetString( nIndexBuffer[i] );
+			strMessage += "] ";
+		}
+		AddTalkListString( "", strMessage, true, TALK_SYSTEM_COLOR ); 
+#endif
+		
+		return;
+	}
+	
+	SendChatMessage(strMessage);
 }
 
 
@@ -838,41 +871,15 @@ void CUITalk::SetTargetCondition( int nCharIndex, eCondition eState )
 //------------------------------------------------------------------------------
 void CUITalk::SendChatMessage( CTString strMessage )
 {
-	/*****
-	if( _pUIMgr->GetMessenger()->GetMyInfo().m_eCondition == OFFLINE )
+	if (UIMGR()->GetMessenger()->GetMemberCondition(m_nTargetCharIndex) == OFFLINE)
 	{
-		AddErrorTalk( _S( 1646, "[ì˜¤í”„ë¼ì¸] ìƒíƒœì—ì„œëŠ” ëŒ€í™”ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) ); 
+		UIMGR()->GetMessenger()->ErrorMessage(_S(1638, "[¿ÀÇÁ¶óÀÎ] »óÅÂÀÎ ´ë»ó°ú´Â ´ëÈ­¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù."));
 		return;
 	}
 
-	for(int i=0; i<m_vecTarget.size(); ++i)
-	{
-		if( m_vecTarget[i].m_eCondition == OFFLINE )
-		{
-			//AddErrorTalk( _S( 1645, "[ì˜¤í”„ë¼ì¸] ìƒíƒœì¸ ëŒ€ìƒê³¼ëŠ” ëŒ€í™”ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ) ); 
-			continue;
-	}
-		else
-	_pNetwork->SendFriendCatting(	_pUIMgr->GetMessenger()->GetMyInfo().m_nCharIndex, 
-									_pUIMgr->GetMessenger()->GetMyInfo().m_strName,
-											m_vecTarget[i].m_strName,
-									strMessage );
-	}
-	*****/
-	if( m_nChatIndex < 0 )		// ì„œë²„ì™€ ì—°ê²°ì´ ë˜ì–´ìˆì§€ ì•Šì€ ìƒíƒœ
-	{
-		// 1:1ëŒ€í™”
-		//AddTalkListString( _pUIMgr->GetMessenger()->GetMyInfo().m_strName, strMessage, true, /*0xffffffff*/TalkColor[m_nColIndex] );	
-		//_pUIMgr->GetMessenger()->RevOneVsOneTalk( _pUIMgr->GetMessenger()->GetMyInfo().m_nCharIndex,
-		//										_pUIMgr->GetMessenger()->GetMyInfo().m_nCharIndex,
-		//										_pUIMgr->GetMessenger()->GetMyInfo().m_strName,
-		//										strMessage, m_nColIndex );
-		_pNetwork->MgrOneVsOneConnect( _pUIMgr->GetMessenger()->GetMyInfo().m_nCharIndex, m_nTargetCharIndex , strMessage );
-	}
-	else
-	{
-		_pNetwork->MgrFriendChat(m_nMakeCharIndex, m_nChatIndex, strMessage);
-	}
+	if( m_nChatIndex < 0 )	/*¼­¹ö¿Í ¿¬°áÀÌ µÇ¾îÀÖÁö ¾ÊÀº »óÅÂ*/
+		_pNetwork->MgrOneVsOneConnect( CUIManager::getSingleton()->GetMessenger()->GetMyInfo().m_nCharIndex, m_nTargetCharIndex , strMessage );
+	_pNetwork->MgrFriendChat(m_nMakeCharIndex, m_nChatIndex, strMessage);
 }
 
 //------------------------------------------------------------------------------
@@ -903,7 +910,7 @@ void CUITalk::AddTalkListString( CTString strName, CTString strMessage, bool bFo
 
 //------------------------------------------------------------------------------
 // CUITalk::ReloadTalkList
-// Explain: í¬ê¸° ë³€ê²½ì‹œ í¬ê¸°ì— ë§ê²Œ ìŠ¤íŠ¸ë§ ë‹¤ì‹œ ì¡°ì ˆ  
+// Explain: Å©±â º¯°æ½Ã Å©±â¿¡ ¸Â°Ô ½ºÆ®¸µ ´Ù½Ã Á¶Àı  
 // Date : 2005-05-25,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUITalk::ReloadTalkList()
@@ -912,10 +919,10 @@ void CUITalk::ReloadTalkList()
 	std::vector<CTString>::iterator iterEnd = m_vecTalkList.end();
 	std::vector<CTString>::iterator iter;
 	
-	// ì¼ë‹¨ ë‹¤ ì§€ì›Œ
+	// ÀÏ´Ü ´Ù Áö¿ö
 	m_lbTalkList.ResetAllStrings();
 
-	// ë‹¤ì‹œ ë„£ê¸° 
+	// ´Ù½Ã ³Ö±â 
 	for( iter = iterBegin; iter != iterEnd; ++iter) 
 	{
 		AddTalkListString( *iter );	
@@ -947,19 +954,111 @@ void CUITalk::AddTalkListString( CTString &strDesc, COLOR colDesc )
 	if( nLength == 0 )
 		return;
 
+	int		iPos;
 	// wooss 051002
-	if(g_iCountry == THAILAND)
+#if defined G_THAI
+	// Get length of string
+	INDEX	nThaiLen = FindThaiLen(strDesc);
+	INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
+	if( nLength == 0 )
+		return;
+	// If length of string is less than max char
+	if( nThaiLen <= nChatMax )
 	{
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strDesc);
-		INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
+		// Check line character
+	for( iPos = 0; iPos < nLength; iPos++ )
+	{
+		if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+			break;
+	}
+
+	// Not exist
+	if( iPos == nLength )
+	{
+		m_lbTalkList.AddString( 0, strDesc, colDesc );
+	}
+	else
+	{
+		// Split string
+		CTString	strTemp, strTemp2;
+		strDesc.Split( iPos, strTemp2, strTemp );
+		m_lbTalkList.AddString( 0, strTemp2, colDesc );
+
+		// Trim line character
+		if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+			strTemp.TrimLeft( strTemp.Length() - 2 );
+		else
+			strTemp.TrimLeft( strTemp.Length() - 1 );
+
+		AddTalkListString( strTemp, colDesc );
+	}
+	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = _iMaxMsgStringChar;
+		BOOL	b2ByteChar = FALSE;
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
-			// Check line character
-		for( int iPos = 0; iPos < nLength; iPos++ )
+			if(nChatMax < FindThaiLen(strDesc,0,iPos))
+				break;
+		}
+		nSplitPos = iPos;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( nSplitPos, strTemp2, strTemp );
+			m_lbTalkList.AddString( 0, strTemp2, colDesc );
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+
+			AddTalkListString( strTemp, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbTalkList.AddString( 0, strTemp2, colDesc );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddTalkListString( strTemp, colDesc );
+		}
+
+	}
+#else	
+	// If length of string is less than max char
+	if( nLength <= _iMaxMsgStringChar )
+	{
+		// Check line character
+		for( iPos = 0; iPos < nLength; iPos++ )
 		{
 			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
 				break;
@@ -985,174 +1084,81 @@ void CUITalk::AddTalkListString( CTString &strDesc, COLOR colDesc )
 
 			AddTalkListString( strTemp, colDesc );
 		}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strDesc,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbTalkList.AddString( 0, strTemp2, colDesc );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddTalkListString( strTemp, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbTalkList.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddTalkListString( strTemp, colDesc );
-			}
-
-		}
-		
-	} else 
+	}
+	// Need multi-line
+	else
 	{
-		// If length of string is less than max char
-		if( nLength <= _iMaxMsgStringChar )
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = _iMaxMsgStringChar;
+		BOOL	b2ByteChar = FALSE;
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
 		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbTalkList.AddString( 0, strDesc, colDesc );
-			}
+			if( strDesc[iPos] & 0x80 )
+				b2ByteChar = !b2ByteChar;
 			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbTalkList.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddTalkListString( strTemp, colDesc );
-			}
+				b2ByteChar = FALSE;
 		}
-		// Need multi-line
+
+		if( b2ByteChar )
+			nSplitPos--;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( nSplitPos, strTemp2, strTemp );
+			m_lbTalkList.AddString( 0, strTemp2, colDesc );
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+#ifdef MODIFY_MESSENGER_CHAT_BLANK_NA_20081028
+			strTemp = CTString("  ") + strTemp;
+#endif
+			AddTalkListString( strTemp, colDesc );
+		}
 		else
 		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbTalkList.AddString( 0, strTemp2, colDesc );
 
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbTalkList.AddString( 0, strTemp2, colDesc );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-#ifdef MODIFY_MESSENGER_CHAT_BLANK_NA_20081028
-				strTemp = CTString("  ") + strTemp;
-#endif
-				AddTalkListString( strTemp, colDesc );
-			}
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
 			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbTalkList.AddString( 0, strTemp2, colDesc );
+				strTemp.TrimLeft( strTemp.Length() - 1 );
 
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
 #ifdef MODIFY_MESSENGER_CHAT_BLANK_NA_20081028
-				strTemp = CTString("  ") + strTemp;
+			strTemp = CTString("  ") + strTemp;
 #endif
-				AddTalkListString( strTemp, colDesc );
-			}
+			AddTalkListString( strTemp, colDesc );
 		}
 	}
+#endif
 }
 
 void CUITalk::CreateTrackPopup( float fTexWidth, float fTexHeight)
 {
-	// ì±„íŒ…ì— ì°¸ê°€í•œ ë©¤ë²„ ë¦¬ìŠ¤íŠ¸
+	// Ã¤ÆÃ¿¡ Âü°¡ÇÑ ¸â¹ö ¸®½ºÆ®
 	m_tpTargetList.m_rtBackUL.SetUV( 164, 45, 171, 63, fTexWidth, fTexHeight );
 	m_tpTargetList.m_rtBackUM.SetUV( 174, 45, 176, 63, fTexWidth, fTexHeight );
 	m_tpTargetList.m_rtBackUR.SetUV( 179, 45, 186, 63, fTexWidth, fTexHeight );
@@ -1169,7 +1175,7 @@ void CUITalk::CreateTrackPopup( float fTexWidth, float fTexHeight)
 	m_tpTargetList.SetOverColor( 0xF8E1B5FF );
 	m_tpTargetList.SetSelectColor( 0xF8E1B5FF );
 	
-	// ì±„íŒ… í°íŠ¸ ìƒ‰
+	// Ã¤ÆÃ ÆùÆ® »ö
 	m_tpColor.m_rtBackUL.SetUV( 164, 45, 171, 63, fTexWidth, fTexHeight );
 	m_tpColor.m_rtBackUM.SetUV( 174, 45, 176, 63, fTexWidth, fTexHeight );
 	m_tpColor.m_rtBackUR.SetUV( 179, 45, 186, 63, fTexWidth, fTexHeight );
@@ -1200,10 +1206,10 @@ void CUITalk::AddTalkTarget( CTString strName)
 		m_vecTarget.push_back(strName);
 		m_tpTargetList.AddMenuList(strName);
 
-		if( strName != _pUIMgr->GetMessenger()->GetMyInfo().m_strName)
+		if( strName != CUIManager::getSingleton()->GetMessenger()->GetMyInfo().m_strName)
 		{
 			CTString strMessage;
-			strMessage.PrintF(_S( 3036,"%së‹˜ì´ ëŒ€í™”ë°©ì— ë“¤ì–´ì˜¤ì…¨ìŠµë‹ˆë‹¤."), strName );
+			strMessage.PrintF(_S( 3036,"%s´ÔÀÌ ´ëÈ­¹æ¿¡ µé¾î¿À¼Ì½À´Ï´Ù."), strName );
 			AddErrorTalk( strMessage ); 
 		}
 	}
@@ -1226,17 +1232,17 @@ void CUITalk::DeleteTalkTarget(CTString strName)
 
 	iter =find(m_vecTarget.begin(), m_vecTarget.end(), strName);
 
-	//í•´ë‹¹ ìºë¦­ì´ ì¡´ì¬í•˜ì§€ ì•ŠìŒ
+	//ÇØ´ç Ä³¸¯ÀÌ Á¸ÀçÇÏÁö ¾ÊÀ½
 	if( iter == m_vecTarget.end() )
 		return;
 
 	CTString strMessage;
-	strMessage.PrintF(_S(3039,"%s ë‹˜ì´ ëŒ€í™”ë°©ì—ì„œ ë‚˜ê°€ì…¨ìŠµë‹ˆë‹¤."), (*iter) );
+	strMessage.PrintF(_S(3039,"%s ´ÔÀÌ ´ëÈ­¹æ¿¡¼­ ³ª°¡¼Ì½À´Ï´Ù."), (*iter) );
 	AddErrorTalk( strMessage ); 
 
 	m_vecTarget.erase(iter);
 
-	//ì±„íŒ… ë©¤ë²„ ë¦¬ìŠ¤íŠ¸ì—ì„œ ì§€ì›€.
+	//Ã¤ÆÃ ¸â¹ö ¸®½ºÆ®¿¡¼­ Áö¿ò.
 	m_tpTargetList.DeleteMenuList(0, iter -m_vecTarget.begin());
 
 	/***

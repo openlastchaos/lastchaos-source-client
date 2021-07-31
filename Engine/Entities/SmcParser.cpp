@@ -1,12 +1,16 @@
 #include "stdh.h"
 #include <fstream>
 #include <tchar.h>
+#include <Engine/Base/FileName.h>
 #include <Engine/Entities/SmcParser.h>
+#include <Engine/Templates/StaticArray.cpp>
 
 using namespace std;
 
 #define MAX_LINE_LENGTH 1024
-//#define WRITING_LOGINFO // íŒŒì‹± ë¡œê·¸ ì •ë³´ 
+//#define WRITING_LOGINFO // ÆÄ½Ì ·Î±× Á¤º¸ 
+
+extern CTFileName _fnmApplicationPath;
 
 const char* g_pszOffSet = "OFFSET";
 const char* g_pszName = "NAME";
@@ -14,6 +18,157 @@ const char* g_pszMesh = "MESH";
 const char* g_pszTextures = "TEXTURES";
 const char* g_pszAllFramesBBox = "ALLFRAMESBBOX";
 const char* g_pszColision = "COLISION";
+
+//////////////////////////////////////////////////////////////////////
+// Construction/Destruction
+//////////////////////////////////////////////////////////////////////
+ByteQueueData::ByteQueueData()
+{
+
+}
+
+ByteQueueData::~ByteQueueData()
+{
+
+}
+//////////////////////////////////////////////////////////////////////
+// Data Read / Write Function
+//////////////////////////////////////////////////////////////////////
+void ByteQueueData::WriteString(std::string sData)
+{
+	int i;
+	size_t size = sData.length();
+	WriteWord(sData.length());
+
+	for (i=0; i<sData.length(); ++i)
+		push(sData[i]);
+}
+
+void ByteQueueData::WriteDouble(double dData)
+{
+	BYTE *pByte = (BYTE*)&dData;
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+}
+
+void ByteQueueData::WriteFloat(float floatData)
+{
+	BYTE *pByte = (BYTE*)&floatData;
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+}
+
+void ByteQueueData::WriteDword(DWORD dwData)
+{
+	BYTE *pByte = (BYTE*)&dwData;
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+	push(*pByte++);
+}
+
+void ByteQueueData::WriteWord(WORD wData)
+{
+	BYTE *pByte = (BYTE*)&wData;
+	push(*pByte++);
+	push(*pByte++);
+}
+
+void ByteQueueData::WriteByte(BYTE byteData)
+{
+	push(byteData);
+}
+
+void ByteQueueData::WriteDocString(std::string sData)
+{
+	for (int i=0; i<sData.length(); ++i)
+		push(sData[i]);
+}
+
+std::string ByteQueueData::ReadString()
+{
+	int i;
+	char *pszData;
+	WORD wSize = ReadWord();
+	pszData = new char[(int)wSize+1];
+
+	for (i=0; i<(int)wSize; ++i)
+	{
+		pszData[i] = front();	pop();
+	}
+
+	pszData[(int)wSize] = NULL;
+	std::string sData(pszData);
+	delete [] pszData;
+	return sData;
+}
+
+double ByteQueueData::ReadDouble()
+{
+	double dData;
+	PBYTE p = (PBYTE)&dData;
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	return dData;
+}
+
+float ByteQueueData::ReadFloat()
+{
+	float floatData;
+	PBYTE p = (PBYTE)&floatData;
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	return floatData;
+}
+
+DWORD ByteQueueData::ReadDword()
+{
+	DWORD dwData;
+	PBYTE p = (PBYTE)&dwData;
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	return dwData;
+}
+
+WORD ByteQueueData::ReadWord()
+{
+	WORD wData;
+	PBYTE p = (PBYTE)&wData;
+	*p++ = front(); pop();
+	*p++ = front(); pop();
+	return wData;
+}
+
+BYTE ByteQueueData::ReadByte()
+{
+	BYTE byteData = front(); pop();
+	return byteData;
+}
+
+void ByteQueueData::ClearQueue()
+{
+	while (!empty()) {	pop();	}
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 bool CSmcParser::LoadSmcParse(std::string sFilename)
 {
@@ -47,7 +202,7 @@ bool CSmcParser::ProcessParse(std::istream& Input)
 		if (m_ParserType == NAME_END)
 		{
 			m_ParserType = PARSER_END;	
-			return true; // SmcíŒŒì¼ ì •ë³´ë¥¼ ëª¨ë‘ ê°€ì ¸ì™”ë‹¤.
+			return true; // SmcÆÄÀÏ Á¤º¸¸¦ ¸ðµÎ °¡Á®¿Ô´Ù.
 		}
 	}
 
@@ -69,7 +224,7 @@ bool CSmcParser::ParseLine(const std::string& sLine)
 		iStartPos = sLine.find(strOffset);
 
 		if (iStartPos == std::string::npos)
-		{ // "OFFSET"ì„ ëª»ì°¾ì•˜ë‹¤. // ì´ê²ƒì€ OFFSET ì •ë³´ê°€ ì—†ë‹¤.
+		{ // "OFFSET"À» ¸øÃ£¾Ò´Ù. // ÀÌ°ÍÀº OFFSET Á¤º¸°¡ ¾ø´Ù.
 			m_ParserType = PARSER_NAME;
 		}
 	}
@@ -82,7 +237,7 @@ bool CSmcParser::ParseLine(const std::string& sLine)
 			iStartPos = sLine.find(strOffset);
 
 			if (iStartPos != string::npos)
-			{ // "OFFSET"ì„ ì°¾ì•˜ë‹¤. // OFFSET ì •ë³´ëŠ” ì €ìž¥ í•˜ì§€ ì•ŠëŠ”ë‹¤.
+			{ // "OFFSET"À» Ã£¾Ò´Ù. // OFFSET Á¤º¸´Â ÀúÀå ÇÏÁö ¾Ê´Â´Ù.
 				m_ParserType = PARSER_NAME;
 			}
 			else
@@ -92,13 +247,13 @@ bool CSmcParser::ParseLine(const std::string& sLine)
 		}
 		break;
 	case PARSER_NAME:
-		{ // SMC íŒŒì¼ ì´ë¦„
+		{ // SMC ÆÄÀÏ ÀÌ¸§
 			iStartPos = sLine.find('\"')+1;
 			iEndPos = sLine.find('\"', iStartPos);
 			iNumToCopy = iEndPos - iStartPos;
 			sLine.copy(cTempBuffer1, iNumToCopy, iStartPos);
-			cTempBuffer1[iNumToCopy] = NULL; // SMC íŒŒì¼ ì´ë¦„ = cTempBuffer
-			SetSmcFileName(cTempBuffer1); // SMCíŒŒì¼ ì´ë¦„ ì €ìž¥
+			cTempBuffer1[iNumToCopy] = NULL; // SMC ÆÄÀÏ ÀÌ¸§ = cTempBuffer
+			SetSmcFileName(cTempBuffer1); // SMCÆÄÀÏ ÀÌ¸§ ÀúÀå
 			m_ParserType = NAME_START;
 		}
 		break;
@@ -106,10 +261,10 @@ bool CSmcParser::ParseLine(const std::string& sLine)
 			m_ParserType = MESH;
 		break;
 	case MESH:
-		{ // ë©”ì‰¬ ì •ë³´ (bm íŒŒì¼ ê²½ë¡œ)
+		{ // ¸Þ½¬ Á¤º¸ (bm ÆÄÀÏ °æ·Î)
 			string strAllFramesBBox = g_pszAllFramesBBox;
 			iStartPos = sLine.find(strAllFramesBBox);
-			if (iStartPos != string::npos) // ALLFRAMESBBOXì •ë³´ëŠ” í•„ìš”ì—†ë‹¤.
+			if (iStartPos != string::npos) // ALLFRAMESBBOXÁ¤º¸´Â ÇÊ¿ä¾ø´Ù.
 			{
 				m_ParserType = COLISION;
 				return true;
@@ -117,18 +272,18 @@ bool CSmcParser::ParseLine(const std::string& sLine)
 
 			std::string strMesh = g_pszMesh;
 			iStartPos = sLine.find(g_pszMesh);
-			if (iStartPos == std::string::npos) // MESHì •ë³´ê°€ ì•„ë‹ˆë‹¤. ê·¸ì™¸ì˜ ì‚¬í•­ ì˜ˆ) SKELETON, ANIMSET ìž¥ë¹„ì •ë³´ì—ì„œëŠ” í•„ìš” ì—†ëŠ” ë¶€ë¶„ì´ë‹¤. ë‚˜ì¤‘ì— í•„ìš”í•˜ê²Œë˜ë©´ ì½ìž
+			if (iStartPos == std::string::npos) // MESHÁ¤º¸°¡ ¾Æ´Ï´Ù. ±×¿ÜÀÇ »çÇ× ¿¹) SKELETON, ANIMSET ÀåºñÁ¤º¸¿¡¼­´Â ÇÊ¿ä ¾ø´Â ºÎºÐÀÌ´Ù. ³ªÁß¿¡ ÇÊ¿äÇÏ°ÔµÇ¸é ÀÐÀÚ
 				return true;
 
-			// ë©”ì‰¬ì •ë³´ ì‹œìž‘
+			// ¸Þ½¬Á¤º¸ ½ÃÀÛ
 			iStartPos = sLine.find('\"')+1;
 			iEndPos = sLine.find('\"', iStartPos);
 			iNumToCopy = iEndPos - iStartPos;
 			sLine.copy(cTempBuffer1, iNumToCopy, iStartPos);
-			cTempBuffer1[iNumToCopy] = NULL; // ë©”ì‰¬ íŒŒì¼ ê²½ë¡œ = cTempBuffer
-			m_TempMeshInfo.CreateMeshTFNM(cTempBuffer1);	// ë©”ì‰¬ íŒŒì¼ ê²½ë¡œ ì €ìž¥
-			m_TempMeshInfo.SetMeshNumber(++m_iMeshCount); // ë©”ì‰¬ ë²ˆí˜¸
-			// ë‹¤ìŒì€ í…ìŠ¤ì²˜ ì •ë³´
+			cTempBuffer1[iNumToCopy] = NULL; // ¸Þ½¬ ÆÄÀÏ °æ·Î = cTempBuffer
+			m_TempMeshInfo.CreateMeshTFNM(cTempBuffer1);	// ¸Þ½¬ ÆÄÀÏ °æ·Î ÀúÀå
+			m_TempMeshInfo.SetMeshNumber(++m_iMeshCount); // ¸Þ½¬ ¹øÈ£
+			// ´ÙÀ½Àº ÅØ½ºÃ³ Á¤º¸
 			m_ParserType = TEXTURES;
 		}
 		break;
@@ -137,7 +292,7 @@ bool CSmcParser::ParseLine(const std::string& sLine)
 			string strTextures = g_pszTextures;
 			iStartPos = sLine.find(strTextures);
 			if (iStartPos == string::npos)
-			{ // í…ìŠ¤ì²˜ ì •ë³´ë¥¼ ëª»ì°¾ì•˜ë‹¤.
+			{ // ÅØ½ºÃ³ Á¤º¸¸¦ ¸øÃ£¾Ò´Ù.
 				m_ParserType = MESH;
 				return HandleError("ERROR: Not Find Texture Info!");
 			}
@@ -162,10 +317,10 @@ bool CSmcParser::ParseLine(const std::string& sLine)
 		{
 			iStartPos = sLine.find('}');
 			if (iStartPos != string::npos)
-			{ // ë©”ì‰¬ ì •ë³´ í•˜ë‚˜ë¥¼ ì €ìž¥
+			{ // ¸Þ½¬ Á¤º¸ ÇÏ³ª¸¦ ÀúÀå
 				AddMeshInfo(m_TempMeshInfo);
 				m_TempMeshInfo.Destroy();
-				m_ParserType = MESH; // ë©”ì‰¬ì •ë³´ê°€ ë” ìžˆëŠ”ì§€ í™•ì¸ í›„ ì¶”ê°€
+				m_ParserType = MESH; // ¸Þ½¬Á¤º¸°¡ ´õ ÀÖ´ÂÁö È®ÀÎ ÈÄ Ãß°¡
 				return true;
 			}
 
@@ -173,13 +328,13 @@ bool CSmcParser::ParseLine(const std::string& sLine)
 			iEndPos = sLine.find('\"', iStartPos);
 			iNumToCopy = iEndPos - iStartPos;
 			sLine.copy(cTempBuffer1, iNumToCopy, iStartPos);
-			cTempBuffer1[iNumToCopy] = NULL;	// í…ìŠ¤ì²˜ ì´ë¦„
+			cTempBuffer1[iNumToCopy] = NULL;	// ÅØ½ºÃ³ ÀÌ¸§
 
 			iStartPos = sLine.find('\"', iEndPos+1)+1;
 			iEndPos = sLine.find('\"', iStartPos);
 			iNumToCopy = iEndPos - iStartPos;
 			sLine.copy(cTempBuffer2, iNumToCopy, iStartPos);
-			cTempBuffer2[iNumToCopy] = NULL;	// í…ìŠ¤ì²˜ íŒŒì¼ ê²½ë¡œ
+			cTempBuffer2[iNumToCopy] = NULL;	// ÅØ½ºÃ³ ÆÄÀÏ °æ·Î
 
 			m_TempMeshInfo.AddTextureInfo(cTempBuffer1, cTempBuffer2);
 		}
@@ -227,133 +382,12 @@ bool CSmcParser::HandleError(const char* lpszFormat, ...)
 	return false;	
 }
 
-void CSmcParserList::AddString(std::string sData)
-{
-	for (int i=0; i<sData.length(); i++)
-		m_queBuffer.push(sData[i]);
-}
-
-void CSmcParserList::WriteString(std::string sData)
-{
-	size_t size = sData.length();
-	WriteWord(sData.length());
-	for(int i = 0; i < sData.length(); i++)
-		m_queBuffer.push(sData[i]);	
-}
-
-void CSmcParserList::WriteDword(DWORD dwData)
-{
-	BYTE* pByte = (BYTE*)&dwData;
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);	
-}
-
-void CSmcParserList::WriteWord(WORD wData)
-{
-	BYTE* pByte = (BYTE*)&wData;
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-}
-
-void CSmcParserList::WriteByte(BYTE byteData)
-{
-	m_queBuffer.push(byteData);
-}
-
-void CSmcParserList::WriteDouble(double dData)
-{
-	BYTE* pByte = (BYTE*)&dData;
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-	m_queBuffer.push(*pByte++);
-}
-
-std::string CSmcParserList::ReadString()
-{
-	char* pszData;
-	WORD wSize = ReadWord();
-	pszData = new char[(int)wSize + 1];
-	for(int i = 0; i < (int)wSize; i++)
-	{
-		pszData[i] = m_queBuffer.front();
-		m_queBuffer.pop();
-	}
-	pszData[(int)wSize] = NULL;
-	string sData(pszData);
-	delete[] pszData;
-	return sData;
-}
-
-DWORD CSmcParserList::ReadDword()
-{
-	DWORD dwData;
-	PBYTE p = (PBYTE)&dwData;
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	return dwData;
-}
-
-WORD CSmcParserList::ReadWord()
-{
-	WORD wData;
-	PBYTE p = (PBYTE)&wData;
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	return wData;
-}
-
-BYTE CSmcParserList::ReadByte()
-{
-	BYTE byteData = m_queBuffer.front();
-	m_queBuffer.pop();
-	return byteData;
-}
-
-double CSmcParserList::ReadDouble()
-{
-	double dData;
-	PBYTE p = (PBYTE)&dData;
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	*p++ = m_queBuffer.front();
-	m_queBuffer.pop();
-	return dData;
-}
-
 bool CSmcParserList::SmcInfoWriteBin(std::ostream& Output)
 {
 	// clear the queue
-	while(!m_queBuffer.empty())
-		m_queBuffer.pop();
+	m_queBuffer.ClearQueue();
 
-	// ì—¬ê¸°ì„œ ì €ìž¥í•  ë°ì´í„°ë¥¼ Queueì— ë‹´ëŠ”ë‹¤.
+	// ¿©±â¼­ ÀúÀåÇÒ µ¥ÀÌÅÍ¸¦ Queue¿¡ ´ã´Â´Ù.
 	WriteSmcInfo();
 	
 	while(!m_queBuffer.empty())
@@ -362,7 +396,7 @@ bool CSmcParserList::SmcInfoWriteBin(std::ostream& Output)
 		m_queBuffer.pop();
 	}
 
-	Output.flush(); // íŒŒì¼ì— ë°ì´í„° ê¸°ë¡
+	Output.flush(); // ÆÄÀÏ¿¡ µ¥ÀÌÅÍ ±â·Ï
 	return true;
 }
 
@@ -373,7 +407,7 @@ bool CSmcParserList::SmcInfoWriteBin(std::string sFilename)
 	File.open(sFilename.c_str(), ios::out | ios::binary | ios::trunc);
 
 	if(!File.good())
-		return false; // ì—ëŸ¬
+		return false; // ¿¡·¯
 
 	return SmcInfoWriteBin(File);
 }
@@ -395,7 +429,7 @@ bool CSmcParserList::SmcParsingLogWritetxt(std::string sFilename)
 		fout << StrTemp;
 	}
 
-	fout << '\n'; // ë
+	fout << '\n'; // ³¡
 
 	fout.close();
 
@@ -408,17 +442,16 @@ bool CSmcParserList::SmcInfoReadBin(std::istream& Input)
 		return false; //ERROR: file can't be opened for parsing.
 
 	// clear the queue
-	while(!m_queBuffer.empty())
-		m_queBuffer.pop();
+	m_queBuffer.ClearQueue();
 
 	int iData = Input.get();
 	while(Input.good())
-	{	//ì „ì²´ íŒŒì¼ì˜ ë‚´ìš©ì„ íì— ë‹´ëŠ”ë‹¤.
+	{	//ÀüÃ¼ ÆÄÀÏÀÇ ³»¿ëÀ» Å¥¿¡ ´ã´Â´Ù.
 		m_queBuffer.push(BYTE(iData));
 		iData = Input.get();
 	}
 
-	// Queueì— ë‹´ê¸´ ë°ì´í„°ë¥¼ ì½ëŠ”ë‹¤.
+	// Queue¿¡ ´ã±ä µ¥ÀÌÅÍ¸¦ ÀÐ´Â´Ù.
 	ReadSmcInfo();
 
 	return true;
@@ -431,7 +464,7 @@ bool CSmcParserList::SmcInfoReadBin(std::string sFilename)
 	File.open(sFilename.c_str(), ios::binary);
 
 	if( !File.good() )
-		return false; // ì—ëŸ¬
+		return false; // ¿¡·¯
 
 	return SmcInfoReadBin(File);
 }
@@ -443,7 +476,7 @@ void CSmcParserList::WriteBin(std::string sFilename)
 	File.open(sFilename.c_str(), ios::out | ios::trunc);
 
 	if(!File.good())
-		return; // ì—ëŸ¬
+		return; // ¿¡·¯
 
 	while(!m_queBuffer.empty())
 	{
@@ -451,14 +484,14 @@ void CSmcParserList::WriteBin(std::string sFilename)
 		m_queBuffer.pop();
 	}
 
-	File.flush(); // íŒŒì¼ì— ë°ì´í„° ê¸°ë¡
+	File.flush(); // ÆÄÀÏ¿¡ µ¥ÀÌÅÍ ±â·Ï
 }
 
 void CSmcParserList::WriteSmcInfo()
 {
 	vec_SmcParserItor SmcItor;
 
-	WriteDword((DWORD)(*this).size()); // Smcì •ë³´ ê°¯ìˆ˜
+	m_queBuffer.WriteDword((DWORD)(*this).size()); // SmcÁ¤º¸ °¹¼ö
 	int iCount = 0;
 
 	for (SmcItor=(*this).begin(); SmcItor!=(*this).end(); SmcItor++)
@@ -467,33 +500,33 @@ void CSmcParserList::WriteSmcInfo()
 		CSmcParser SmcParser = (*SmcItor);
 		if (SmcParser.GetSmcFileName() == NULL)
 		{
-			WriteDword(0);
+			m_queBuffer.WriteDword(0);
 			continue;
 		}
 		else
 		{
-			WriteDword(iCount);
+			m_queBuffer.WriteDword(iCount);
 		}
 
-		WriteString(SmcParser.GetSmcFileName()); // Smc íŒŒì¼ ì´ë¦„
-		// ë©”ì‰¬ ì •ë³´ ë£¨í”„
+		m_queBuffer.WriteString(SmcParser.GetSmcFileName()); // Smc ÆÄÀÏ ÀÌ¸§
+		// ¸Þ½¬ Á¤º¸ ·çÇÁ
 		int i,j;
 		int iSize = SmcParser.GetMeshInfoListSize();
-		WriteDword((DWORD)iSize); // ë©”ì‰¬ ê°¯ìˆ˜
+		m_queBuffer.WriteDword((DWORD)iSize); // ¸Þ½¬ °¹¼ö
 
 		for (i=0; i<iSize; i++)
 		{
 			CMeshInfo Mesh = SmcParser.GetMeshInfo(i);
-			WriteDword((DWORD)Mesh.GetMeshNumber()); // ë©”ì‰¬ ë²ˆí˜¸
-			WriteString(Mesh.GetMeshTFNM()); // ë©”ì‰¬ íŒŒì¼ ê²½ë¡œ(bmíŒŒì¼)
+			m_queBuffer.WriteDword((DWORD)Mesh.GetMeshNumber()); // ¸Þ½¬ ¹øÈ£
+			m_queBuffer.WriteString(Mesh.GetMeshTFNM()); // ¸Þ½¬ ÆÄÀÏ °æ·Î(bmÆÄÀÏ)
 			
 			int iTexSize = Mesh.GetTexInfoSize();
-			WriteDword((DWORD)iTexSize); // í…ŒìŠ¤ì²˜ ê°¯ìˆ˜
+			m_queBuffer.WriteDword((DWORD)iTexSize); // Å×½ºÃ³ °¹¼ö
 
 			for (j=0; j<iTexSize; j++)
 			{
-				WriteString(Mesh.GetTexInfoName(j)); // í…ìŠ¤ì²˜ ì´ë¦„
-				WriteString(Mesh.GetTexInfoTFNM(j)); // í…ìŠ¤ì²˜ íŒŒì¼ ê²½ë¡œ
+				m_queBuffer.WriteString(Mesh.GetTexInfoName(j)); // ÅØ½ºÃ³ ÀÌ¸§
+				m_queBuffer.WriteString(Mesh.GetTexInfoTFNM(j)); // ÅØ½ºÃ³ ÆÄÀÏ °æ·Î
 			}
 		}
 	}
@@ -501,10 +534,10 @@ void CSmcParserList::WriteSmcInfo()
 
 void CSmcParserList::ReadSmcInfo()
 {
-	(*this).clear(); // ë¦¬ìŠ¤íŠ¸ë¥¼ ë¹„ìš´ë‹¤.
+	(*this).clear(); // ¸®½ºÆ®¸¦ ºñ¿î´Ù.
 
 #ifdef WRITING_LOGINFO
-	ClearLogList(); // ë¡œê·¸ ì •ë³´ ì´ˆê¸°í™”
+	ClearLogList(); // ·Î±× Á¤º¸ ÃÊ±âÈ­
 #endif
 
 	std::string strTemp, strTemp2;
@@ -512,44 +545,128 @@ void CSmcParserList::ReadSmcInfo()
 	int i,j,k;
 	int iCount;
 
-	iSmcSize = (int)ReadDword(); // Smcì •ë³´ ê°¯ìˆ˜
+	iSmcSize = (int)m_queBuffer.ReadDword(); // SmcÁ¤º¸ °¹¼ö
 
 	for (i=0; i<iSmcSize; i++)
 	{
 		CSmcParser SmcParser;
-		iCount = (int)ReadDword();
+		iCount = (int)m_queBuffer.ReadDword();
 
 		if (iCount!=0)
 		{
-			strTemp = ReadString(); // SmcíŒŒì¼ ì´ë¦„
+			strTemp = m_queBuffer.ReadString(); // SmcÆÄÀÏ ÀÌ¸§
 			SmcParser.SetSmcFileName(strTemp.c_str());
 
-			int iMeshSize = (int)ReadDword(); // ë©”ì‰¬ ì´ ê°¯ìˆ˜
+			int iMeshSize = (int)m_queBuffer.ReadDword(); // ¸Þ½¬ ÃÑ °¹¼ö
 			
 			for (j=0; j<iMeshSize; j++)
 			{
 				CMeshInfo Mesh;
-				int iMeshNum = (int)ReadDword(); //ë©”ì‰¬ ë²ˆí˜¸
-				strTemp = ReadString(); // ë©”ì‰¬ íŒŒì¼ ê²½ë¡œ(bmíŒŒì¼)
+				int iMeshNum = (int)m_queBuffer.ReadDword(); //¸Þ½¬ ¹øÈ£
+				strTemp = m_queBuffer.ReadString(); // ¸Þ½¬ ÆÄÀÏ °æ·Î(bmÆÄÀÏ)
 				Mesh.SetMeshNumber(iMeshNum);
 				Mesh.CreateMeshTFNM(strTemp.c_str());
 				
-				int iTexSize = (int)ReadDword(); // í…ìŠ¤ì²˜ ê°¯ìˆ˜
+				int iTexSize = (int)m_queBuffer.ReadDword(); // ÅØ½ºÃ³ °¹¼ö
 				
 				for (k=0; k<iTexSize; k++)
 				{
-					strTemp = ReadString(); // í…ìŠ¤ì²˜ ì´ë¦„
-					strTemp2 = ReadString(); // í…ìŠ¤ì²˜ íŒŒì¼ ê²½ë¡œ
+					strTemp = m_queBuffer.ReadString(); // ÅØ½ºÃ³ ÀÌ¸§
+					strTemp2 = m_queBuffer.ReadString(); // ÅØ½ºÃ³ ÆÄÀÏ °æ·Î
 
 					Mesh.AddTextureInfo(strTemp.c_str(), strTemp2.c_str());
 				}
 
-				SmcParser.AddMeshInfo(Mesh); // ë©”ì‰¬ ë¦¬ìŠ¤íŠ¸ ì¶”ê°€
+				SmcParser.AddMeshInfo(Mesh); // ¸Þ½¬ ¸®½ºÆ® Ãß°¡
 			}
 
 			SmcParser.SetParserType(CSmcParser::PARSER_END);
 		}
 
-		(*this).push_back(SmcParser); // Smc ì •ë³´ ì¶”ê°€
+		(*this).push_back(SmcParser); // Smc Á¤º¸ Ãß°¡
 	}
+}
+
+
+bool CSmcParserList::CheckItemExist(const CStaticArray<CItemData>& arrItemList, const char* saveFilePath)
+{
+	int nIndexCount = 0;
+	int nTotalCount = 0;
+	int nMissingCount = 0;
+	
+	CSmcParserList& smcList = *this;
+	const CStaticArray<CItemData>& itemList = arrItemList;
+	std::list<CTString> missingList;
+	
+	CTString strFullPath = _fnmApplicationPath.FileDir();
+
+	for (int i = 0; i < itemList.Count(); ++i)
+	{
+		/// Àåºñ¸¸
+		if (itemList[i].GetType() != CItemData::ITEM_WEAPON &&
+			itemList[i].GetType() != CItemData::ITEM_SHIELD)
+			continue;
+		
+		int index = itemList[i].GetItemIndex();
+		
+		/// ItemData[i] == NULL
+		if (index == -1)
+			continue;
+		
+		++nIndexCount;
+		
+		int nMeshInfo = smcList[index].GetMeshInfoListSize();
+		nTotalCount += nMeshInfo;
+		
+		for (int j = 0; j < nMeshInfo; ++j)
+		{
+			CMeshInfo& pInfo = smcList[index].GetMeshInfo(j);
+			const char* strMeshPath = pInfo.GetMeshTFNM();
+			
+			CTString path = strFullPath + strMeshPath;
+			
+			WIN32_FIND_DATA wfd;
+			if (FindFirstFile(path, &wfd) == INVALID_HANDLE_VALUE)
+			{
+				CTString log;
+				log.PrintF("[%d] Missing Mesh\t : %s", index, strMeshPath);
+				missingList.push_back(log);
+				++nMissingCount;
+			}
+			
+			int nTexture = pInfo.GetTexInfoSize();
+			nTotalCount += nTexture;
+			
+			for (int k = 0; k < nTexture; ++k)
+			{
+				const char* strTexturePath = pInfo.GetTexInfoTFNM(k);
+				CTString path2 = strFullPath + strTexturePath;
+				
+				if (FindFirstFile(path2, &wfd) == INVALID_HANDLE_VALUE)
+				{
+					CTString log;
+					log.PrintF("[%d] Missing Texture\t : %s", index, strTexturePath);
+					missingList.push_back(log);
+					++nMissingCount;
+				}
+			}
+		}
+	}
+
+ 	std::ofstream file(saveFilePath, std::ios::trunc);
+	file << "<< Item Resource : START Check ! >>" << endl << endl;
+	file << "Total : " << nTotalCount << endl;
+	file << "Missing : " << nMissingCount << endl << endl;
+	
+	std::list<CTString>::iterator iter = missingList.begin();
+	while (iter != missingList.end())
+	{
+		file << iter->str_String << std::endl;
+		++iter;
+	}
+	
+	file << endl << "<< END >>" << endl;
+	file.close();
+
+	return true;
 }

@@ -1,4 +1,9 @@
 // ----------------------------------------------------------------------------
+// 새로운 방식에서는 사용 안함!!!!!!!!!!!!
+// UIList 로 대체함.
+
+
+// ----------------------------------------------------------------------------
 //  File : UIListBox.h
 //  Desc : Created by yjpark
 // ----------------------------------------------------------------------------
@@ -19,7 +24,7 @@
 // Name : CUIListBox
 // Desc :
 // ----------------------------------------------------------------------------
-class CUIListBox : public CUIWindow
+class ENGINE_API CUIListBox : public CUIWindow
 {
 protected:
 	typedef struct _sVecString
@@ -31,6 +36,11 @@ protected:
 	{
 		std::vector<COLOR>		vecColor;
 	} sVecColor;
+
+	typedef struct _sVecBold
+	{
+		std::vector<BOOL>		vecBold;
+	} sVecBold;
 
 	// Controls
 	BOOL					m_bScrollBar;			// If scroll bar is shown or not
@@ -47,9 +57,12 @@ protected:
 	// Strings
 	std::vector<sVecString>	m_vecString;			// Strings of list box
 	std::vector<sVecColor>	m_vecColor;				// Colors of list box
+	std::vector<sVecBold>	m_vecBold;				// Bolds of list box
 	std::vector<int>		m_vecColumnSX;			// Position x of column
+	std::vector<ULONG>		m_vecColumnWidth;		// Width of column
 	std::vector<TEXT_ALIGN>	m_vecAlign;				// Aligns of list box
 	std::vector<BOOL>		m_vecSelectable;		// Can be selected?
+	std::vector<void*>		m_vecDataptr;			
 	COLOR					m_colSelectList;		// Color of selected list
 	COLOR					m_colOverList;			// Color of list on cursor
 	int						m_nLineHeight;			// Line height
@@ -72,6 +85,7 @@ public:
 	void	CreateScroll( BOOL bRight, int nOffsetX, int nOffsetY, int nWidth, int nHeight,
 							int nBtnWidth, int nBtnHeight, int nBarWidthGap, int nBarHeightGap,
 							int nBarVertEdgeSize );
+	void SetListValue();
 
 	// Render
 	void	Render();
@@ -82,13 +96,15 @@ public:
 
 	// Set string
 	void	SetColumnPosX( int nCol, int nPosX, TEXT_ALIGN eAlign = TEXT_LEFT );
-	void	AddString( int nCol, CTString &strText, COLOR colText = 0xF2F2F2FF, BOOL bSelectable = TRUE );
-	void	InsertString( int nIndex, int nCol, CTString &strText, COLOR colText = 0xF2F2F2FF, BOOL bSelectable = TRUE );
+	void	SetColumnWidth( int nCol, ULONG ulWidth );
+	void	AddString( int nCol, CTString &strText, COLOR colText = 0xF2F2F2FF, BOOL bSelectable = TRUE, void* ptr = NULL, BOOL bBold = FALSE );
+	void	InsertString( int nIndex, int nCol, CTString &strText, COLOR colText = 0xF2F2F2FF, BOOL bSelectable = TRUE, BOOL bBold = FALSE );
 	void	RemoveString( int nIndex, int nCol );
 	void	MoveString( int nFromIndex, int nToIndex, int nCol );
 	void	ResetAllStrings();
 	void	SetString( int nCol, int nIndex, CTString &strText );
 	void	SetColor( int nCol, int nIndex, COLOR colText );
+	void	SetBold( int nCol, int nIndex, BOOL bBold );
 	void	SetSelectable( int nIndex, BOOL bSelectable );
 	void	SetAllNotSelectable();
 	void	SetSelectColor( COLOR colSelection ) { m_colSelectList = colSelection; }
@@ -136,7 +152,7 @@ public:
 
 	// UV of scroll abr
 	void	SetScrollUpUV( UIBtnState bsState,
-							FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT fTy1, FLOAT fTexWidth, FLOAT fTexHeight )
+		FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT fTy1, FLOAT fTexWidth, FLOAT fTexHeight )
 	{
 		m_sbScrollBar.SetUpUV( bsState, fTx0, fTy0, fTx1, fTy1, fTexWidth, fTexHeight );
 	}
@@ -177,6 +193,23 @@ public:
 	{
 		m_bScrollBar = bScrollBar;
 	}
+
+	BOOL GetScrollBar()
+	{
+		return m_bScrollBar;
+	}
+
+	void* GetSelData(int nCol) const
+	{
+		return m_vecDataptr[nCol];
+	}
+	
+	// 현재 over하고 있는 라인을 넘겨준다.
+	int GetCurOverList () const
+	{
+		return m_nOverList;
+	}
+
 };
 
 

@@ -3,6 +3,18 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
+Project: "Common"=.\Common\Common.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "DecodeReport"=.\DecodeReport\DecodeReport.dsp - Package Owner=<4>
 
 Package=<5>
@@ -49,10 +61,6 @@ Project: "Ecc"=.\Ecc\Ecc.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/Ecc", MCOBAAAA
-    .\ecc
-    end source code control
 }}}
 
 Package=<4>
@@ -65,17 +73,10 @@ Project: "Engine"=.\Engine\Engine.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/Engine", PDMBAAAA
-    .\engine
-    end source code control
 }}}
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name Ecc
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -84,10 +85,6 @@ Project: "EngineGUI"=.\EngineGUI\EngineGUI.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/EngineGUI", JQNBAAAA
-    .\enginegui
-    end source code control
 }}}
 
 Package=<4>
@@ -103,10 +100,6 @@ Project: "EntitiesMP"=.\EntitiesMP\EntitiesMP.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/EntitiesMP", VCOBAAAA
-    .\EntitiesMP
-    end source code control
 }}}
 
 Package=<4>
@@ -143,10 +136,6 @@ Project: "GameGUIMP"=.\GameGUIMP\GameGUIMP.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/GameGUIMP", RONBAAAA
-    .\gameguimp
-    end source code control
 }}}
 
 Package=<4>
@@ -168,10 +157,6 @@ Project: "GameMP"=.\GameMP\GameMP.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/GameMP", NTLBAAAA
-    .\gamemp
-    end source code control
 }}}
 
 Package=<4>
@@ -235,10 +220,6 @@ Project: "Nksp"=.\Nksp\Nksp.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/Nksp", EULBAAAA
-    .\nksp
-    end source code control
 }}}
 
 Package=<4>
@@ -265,6 +246,36 @@ Package=<4>
 
 ###############################################################################
 
+Project: "Nksp_Kalydo"=.\Nksp\Nksp_Kalydo.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name Shaders
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name Engine
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name EntitiesMP
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name GameMP
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name EngineGUI
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name GameGUIMP
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "PersistentSymbolTool"=.\PersistentSymbolTool\PersistentSymbolTool.dsp - Package Owner=<4>
 
 Package=<5>
@@ -281,10 +292,6 @@ Project: "SeriousSkaStudio"=.\SeriousSkaStudio\SeriousSkaStudio.dsp - Package Ow
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/SeriousSkaStudio", PWLBAAAA
-    .\seriousskastudio
-    end source code control
 }}}
 
 Package=<4>
@@ -306,10 +313,6 @@ Project: "Shaders"=.\Shaders\Shaders.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/Shaders", PVLBAAAA
-    .\shaders
-    end source code control
 }}}
 
 Package=<4>
@@ -325,10 +328,6 @@ Project: "WorldEditor"=.\WorldEditor\WorldEditor.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All/WorldEditor", LRNBAAAA
-    .\WorldEditor
-    end source code control
 }}}
 
 Package=<4>
@@ -368,10 +367,6 @@ Global:
 
 Package=<5>
 {{{
-    begin source code control
-    "$/aboard_WildPet_UI_USA/All", LTLBAAAA
-    .
-    end source code control
 }}}
 
 Package=<3>

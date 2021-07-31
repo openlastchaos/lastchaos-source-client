@@ -25,10 +25,10 @@ public:
 	ENGINE_API void Release(TYPE *ptObject);
 	// free all unused elements of the stock
 	ENGINE_API void FreeUnused(void);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(DevPartner Bug Fix)(2005-01-10)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(DevPartner Bug Fix)(2005-01-10)
 	// free all elements of the stock
 	void RemoveAll(void);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(DevPartner Bug Fix)(2005-01-10)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(DevPartner Bug Fix)(2005-01-10)
 	// calculate amount of memory used by all objects in the stock
 	SLONG CalculateUsedMemory(void);
 	// dump memory usage report to a file

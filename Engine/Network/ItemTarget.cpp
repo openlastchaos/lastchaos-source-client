@@ -6,17 +6,20 @@
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Ska/ModelInstance.h>
 #include <Engine/Effect/CEffectGroupManager.h>
+#include <Engine/Info/MyInfo.h>
 
 /*
 *  Constructor.
 */
 CItemTarget::CItemTarget(void) 
 {
-	item_Index = -1;
-	item_iType = -1;                
-	item_iClientIndex = -1;
-	item_yLayer = 0;
-	item_pEntity = NULL;
+	m_eType = eOBJ_ITEM;
+
+	m_nIdxServer = -1;
+	m_nType = -1;                
+	m_nIdxClient = -1;
+	m_yLayer = 0;
+	m_pEntity = NULL;
 	item_llCount = 0;
 	item_place = FLOAT3D(0.0f,0.0f,0.0f);
 	item_pDropItemEffect = NULL;
@@ -32,61 +35,49 @@ CItemTarget::~CItemTarget(void)
 		DestroyEffectGroupIfValid(item_pDropItemEffect);
 		item_pDropItemEffect = NULL;
 	}
-}
 
-void CItemTarget::Init(void)
-{
-	CEntity	*penEntity;
-	if( _pNetwork->ga_World.EntityExists( item_iClientIndex, penEntity ) )
+	if (m_pEntity != NULL)
 	{
-		if( penEntity == _pNetwork->_TargetInfoReal.pen_pEntity )
+		ObjInfo* pInfo = ObjInfo::getSingleton();
+
+		if (m_pEntity == pInfo->GetTargetEntity(eTARGET_REAL))
 		{
-			_pNetwork->_TargetInfoReal.Init();
+			pInfo->TargetClear(eTARGET_REAL);
 		}
 
-		if( penEntity == _pNetwork->_TargetInfo.pen_pEntity )
+		if (m_pEntity == pInfo->GetTargetEntity(eTARGET))
 		{
-			_pNetwork->_TargetInfo.Init();
+			pInfo->TargetClear(eTARGET);
 		}
 
-		if(penEntity->GetRenderType() == CEntity::RT_SKAMODEL)
-			penEntity->GetModelInstance()->m_tmSkaTagManager.Unregister("__ROOT");
-		penEntity->Destroy( FALSE );
-	}
-
-	item_Index = -1;
-	item_iType = -1;                
-	item_iClientIndex = -1;
-	item_yLayer = 0;
-	item_pEntity = NULL;
-	item_llCount = 0;
-	item_place = FLOAT3D(0.0f,0.0f,0.0f);
-	if(item_pDropItemEffect)
-	{
-		DestroyEffectGroupIfValid(item_pDropItemEffect);
-		item_pDropItemEffect = NULL;
+		if (m_pEntity->GetRenderType() == CEntity::RT_SKAMODEL)
+			m_pEntity->GetModelInstance()->m_tmSkaTagManager.Unregister("__ROOT");
+		
+		m_pEntity->Destroy( FALSE );
+		m_pEntity = NULL;
 	}
 }
 
 void CItemTarget::SetData( INDEX index, INDEX type, CEntity* pEntity, SBYTE sbyLayer )
 {	
-	item_Index = index;
-	item_iType = type;
-	item_yLayer = sbyLayer;
-	item_pEntity = pEntity;
+	m_nIdxServer = index;
+	m_nType = type;
+	m_yLayer = sbyLayer;
+	m_pEntity = pEntity;
 }
 
-void CItemTarget::SetData( INDEX index, const char *name, CEntity* pEntity, SBYTE sbyLayer, SQUAD count,FLOAT3D place )
+void CItemTarget::SetData( INDEX index, const char *name, CEntity* pEntity, SBYTE sbyLayer, SQUAD count,FLOAT3D place, int type )
 {	
-	item_Index = index;	
-	strcpy(item_Name, name);
-	item_yLayer = sbyLayer;
-	item_pEntity = pEntity;
+	m_nIdxServer = index;	
+	m_strName = name;
+	m_yLayer = sbyLayer;
+	m_pEntity = pEntity;
 	item_llCount = count;
 	item_place = place;
+	m_nType = type;
 }
 
 void CItemTarget::SetClientItemId(INDEX index)
 {	
-	item_iClientIndex = index;	
+	m_nIdxClient = index;	
 }

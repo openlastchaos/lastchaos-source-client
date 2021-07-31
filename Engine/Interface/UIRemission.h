@@ -10,8 +10,8 @@
 #endif
 
 
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIButtonEx.h>
+// #include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIButtonEx.h>
 
 #define	REMISSION_TAB_WIDTH					96
 
@@ -53,9 +53,9 @@ protected:
 	enum eRemissionType
 	{
 		REMISSION_NONE	= 0,
-		REMISSION_HP	= 1,	// HP ¬∏√©√Å√ã
-		REMISSION_MP	= 2,	// MP ¬∏√©√Å√ã
-		REMISSION_ITEM	= 3,	// ƒæƒÜ≈îƒöƒπ≈∞ ¬∏√©√Å√ã
+		REMISSION_HP	= 1,	// HP ∏È¡À
+		REMISSION_MP	= 2,	// MP ∏È¡À
+		REMISSION_ITEM	= 3,	// æ∆¿Ã≈€ ∏È¡À
 	};
 
 	// Controls
@@ -87,9 +87,9 @@ protected:
 protected:
 	// Internal functions
 	void	RenderRemissionBtns();
-	void	GetRemissionDesc( int iRemissionType, int nIndex = -1, SBYTE sbRow = -1, SBYTE sbCol = -1);
+	void	GetRemissionDesc( int iRemissionType, int nIndex = -1, SWORD nIdx = -1);
 	void	AddRemissionDescString( CTString &strDesc, const COLOR colDesc );
-	SQUAD	CalculatePrice(int iRemissionType, SBYTE sbRow, SBYTE sbCol);
+	SQUAD	CalculatePrice(int iRemissionType, SWORD nIdx);
 	void	PressOK( );
 
 	// Network message functions ( send )

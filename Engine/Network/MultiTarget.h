@@ -38,5 +38,5 @@ public:
 	ENTITIES_VECTOR		vectorSelectedEntities;	
 };
 
-static CEntityPointer		g_EntSelectedCompareEntity = NULL;	// şń±ł Áß˝É
+static CEntityPointer		g_EntSelectedCompareEntity = NULL;	// �� �߽�
 #endif //__MULTITARGET_H__

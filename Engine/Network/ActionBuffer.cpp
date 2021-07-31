@@ -1,5 +1,7 @@
 #include "stdh.h"
 
+// 헤더 정리. [12/4/2009 rumist]
+#include <Engine/Base/Lists.h>
 #include <Engine/Base/Console.h>
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Network/PlayerTarget.h>

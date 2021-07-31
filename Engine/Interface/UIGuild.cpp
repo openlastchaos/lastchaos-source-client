@@ -2,35 +2,65 @@
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UIGuild.h>
 #include <algorithm>
+#include <Engine/Contents/Base/UIQuestNew.h>
+#include <Engine/Contents/Base/UIQuestBookNew.h>
+#include <Engine/Contents/Base/UICharacterInfoNew.h>
+#include <Engine/Interface/UIRadar.h>
+#include <Engine/Interface/UIGuildNotice.h>
+#include <Engine/Interface/UISiegeWarfare.h>
+#include <Engine/Object/ActorMgr.h>
+#include <Engine/Info/MyInfo.h>
+#include <Engine/Interface/UISimplePop.h>
+#include <Engine/Contents/Base/Party.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Help/Util_Help.h>
+#include <Engine/Math/Float.h>
 
 // WSS_NEW_GUILD_SYSTEM 070704
-#ifdef NEW_GUILD_SYSTEM
 #define MAX_GUILD_LEVEL		(50)
-#else
-#define MAX_GUILD_LEVEL		(5)
-#endif
-
-extern INDEX g_iCountry;
+#define DEF_GUILD_RECALL_SKILL_IDX 1234
 // Date : 2005-03-07,   By Lee Ki-hwan
 static int	_iMaxMsgStringChar = 0;
 #define GUILD_NPC			89
 #define pWEB					m_pWebBoard
 
 // WSS_NEW_GUILD_SYSTEM 070705 ---------------------------->><<
-// Í∏∏Îìú ÏãúÏä§ÌÖú Ï∂îÍ∞ÄÎ°ú GPÎ∞è Î†àÎ≤® ÏÉÅÌñ• Ï°∞Ï†ï
+// ±ÊµÂ Ω√Ω∫≈€ √ﬂ∞°∑Œ GPπ◊ ∑π∫ß ªÛ«‚ ¡∂¡§
 
-// Í∏∏Îìú Ï†úÌïú Ï°∞Í±¥
+class CmdGuildMemberListArrange : public Command
+{
+public:
+	CmdGuildMemberListArrange()	: m_pWnd(NULL), m_eType(eGML_NAME)	{}
+	void setData(CUIGuild* pWnd, eGUILD_MEMBER_LIST eType)
+	{
+		m_pWnd = pWnd;
+		m_eType = eType;
+	}
+
+	void execute()
+	{
+		if (m_pWnd != NULL)
+		{
+			m_pWnd->ArrangeMemList(m_eType);
+		}
+	}
+
+private:
+	CUIGuild* m_pWnd;
+	eGUILD_MEMBER_LIST m_eType;
+};
+// ±ÊµÂ ¡¶«— ¡∂∞«
 struct sGuildConditionTable
 {
-	int		iLevel;				// Í∏∏Îìú Î†àÎ≤®
-	int		iCaptionNeedLevel;	// Îã®Ïû•Ïùò ÏµúÏÜå Ï°∞Í±¥ Î†àÎ≤®
-	int		iNeedSP;			// ÌïÑÏöî SP
-	SQUAD	llNeedMoney;		// ÌïÑÏöî ÎÇòÏä§
-	int		iMaxMember;			// Í∏∏Îìú Ïù∏Ïõê.
-	int		iNeedGP;			// ÌïÑÏöî GP 
+	int		iLevel;				// ±ÊµÂ ∑π∫ß
+	int		iCaptionNeedLevel;	// ¥‹¿Â¿« √÷º“ ¡∂∞« ∑π∫ß
+	int		iNeedSP;			// « ø‰ SP
+	SQUAD	llNeedMoney;		// « ø‰ ≥™Ω∫
+	int		iMaxMember;			// ±ÊµÂ ¿Œø¯.
+	int		iNeedGP;			// « ø‰ GP 
 };
 
-// Í∏∏Îìú Ï†úÌïú Ï°∞Í±¥ ÌÖåÏù¥Î∏î
+// ±ÊµÂ ¡¶«— ¡∂∞« ≈◊¿Ã∫Ì
 sGuildConditionTable _GuildConditionTable[MAX_GUILD_LEVEL] = 
 {
 	{ 1, 10, 10, 10000, 10 ,0},				// 1 LV
@@ -38,10 +68,8 @@ sGuildConditionTable _GuildConditionTable[MAX_GUILD_LEVEL] =
 	{ 3, 20, 60, 250000, 20 ,0},			// 3 LV
 	{ 4, 25, 120, 500000, 25 ,0},			// 4 LV
 	{ 5, 30, 240, 1000000, 30 ,0},			// 5 LV
-#ifdef NEW_GUILD_SYSTEM
 	{ 6, 30 , 500 , 2000000, 30 ,0},		// 6 LV
-	{ 7, 30 , 550 , 2500000, 30 ,18000},	// 7 LV // Í∏∞Ï§Ä Î†àÎ≤® (Nas/GP/SPÍ≥ÑÏÇ∞Ïãú)
-#endif
+	{ 7, 30 , 550 , 2500000, 30 ,18000},	// 7 LV // ±‚¡ÿ ∑π∫ß (Nas/GP/SP∞ËªÍΩ√)
 };
 
 enum eSelection
@@ -51,9 +79,24 @@ enum eSelection
 	SEL_GUILD_DESTROY,
 	SEL_GUILD_ROOM,
 	SEL_GUILD_TALK,
+	SEL_GUILD_BUFF,		// [2010/06/30 : Sora] º∫¡÷ ±ÊµÂ πˆ«¡∫Œø©
+// ==> 1107 ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì [trylord 11/12/28]
+	SEL_GUILDMASTER_KICK_REQUEST,			// ±ÊµÂ¿Â «ÿ¿” Ω…ªÁ Ω≈√ª
+	SEL_GUILDMASTER_KICK_CANCEL_REQUEST,	// ±ÊµÂ¿Â «ÿ¿” ¿Ã¿«¡¶±‚ Ω≈√ª (¿⁄Ω≈¿Ã ±ÊµÂ¿Â¿œ ∂ß)
+// <== 1107 ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì [trylord 11/12/28]	
 };
 
-// FIXME : ÏïÑÎûò Ïù¥Î¶ÑÏù¥ Í∞úÌåê.
+enum eCorpsComboSelection
+{
+	CMB_NOMEMBER			= 0,	// ∫Œ¥Îæ¯¿Ω
+	CMB_RUSH_CAPTAIN		= 1,	// µπ∞›¥Î¿Â
+	CMB_SUPPORT_CAPTAIN		= 2,	// ¡ˆø¯¥Î¿Â
+	CMB_RECON_CAPTAIN		= 3,	// ¡§¬˚¥Î¿Â
+	CMB_RUSH_MEMBER			= 4,	// µπ∞›¥Îø¯
+	CMB_SUPPORT_MEMBER		= 5,	// ¡ˆø¯¥Îø¯
+	CMB_RECON_MEMBER		= 6,	// ¡§¬˚¥Îø¯
+};
+// FIXME : æ∆∑° ¿Ã∏ß¿Ã ∞≥∆«.
 #define	GUILD_TAB_WIDTH					(100)
 #define START_BUTTON_Y					(GUILD_HEIGHT - 123)	// 284 - 123 = 161
 #define DESC_LIST_BOX_HEIGHT			(190)
@@ -74,6 +117,17 @@ enum eSelection
 #define NEW_GUILD_SYSTEM_HEIGHT		(346)
 #define GUILD_SKILL_SLOT_ROW		(5)
 #define GUILD_SKILL_SLOT_OFFSETY	(40)
+
+#define GUILD_ACTIVE_SKILL_START	-1
+#define GUILD_PASSIVE_SKILL_START	-2
+#define GUILD_ETC_SKILL_START		-3
+
+#define GUILD_SKILL_ACTIVE	0
+#define GUILD_SKILL_PASSIVE 1
+#define GUILD_SKILL_ETC		2
+
+const static int nMaxCorpsMember = 29;
+const static int nMaxCorpsBoss	 = 3;
 /*
 #ifdef LIMIT_GUILD_LEVEL
 #undef LIMIT_GUILD_LEVEL
@@ -84,6 +138,7 @@ enum eSelection
 // Desc : 
 // ----------------------------------------------------------------------------
 CUIGuild::CUIGuild()
+	: m_pIconGuildMark(NULL)
 {
 	m_eGuildState			= GUILD_REQ;
 	m_nCurrentTab			= GUILD_TAB_MEMBER;
@@ -97,20 +152,34 @@ CUIGuild::CUIGuild()
 	m_iUserRanking			= GUILD_MEMBER_MEMBER;
 	m_bChackNpc				= FALSE;
 // WSS_NEW_GUILD_SYSTEM 070716 -------------------------------------->>
-	m_iSelTab				= 0;				// ÎîîÌè¥Ìä∏ ÌÖù
-	m_iGuildAverageLevel	= 0;				// Í∏∏Îìú ÌèâÍ∑† Î†àÎ≤®
-	m_iGuildOwnLand			= 0;				// Í∏∏Îìú ÏÜåÏú† ÏòÅÏßÄ
-	m_iGuildTotalPoint		= 0;				// Í∏∏Îìú Ï¥ù Ìè¨Ïù∏Ìä∏
-	m_iGuildMyPoint			= 0;				// ÎÇòÏùò Í∏∞Ïó¨ Ìè¨Ïù∏Ìä∏
+	m_iSelTab				= 0;				// µ∆˙∆Æ ≈‹
+	m_iGuildAverageLevel	= 0;				// ±ÊµÂ ∆Ú±’ ∑π∫ß
+	m_iGuildOwnLand			= 0;				// ±ÊµÂ º“¿Ø øµ¡ˆ
+	m_iGuildTotalPoint		= 0;				// ±ÊµÂ √— ∆˜¿Œ∆Æ
+	m_iGuildMyPoint			= 0;				// ≥™¿« ±‚ø© ∆˜¿Œ∆Æ
 	m_bApplySettingOn		= FALSE;
 	m_iNumOfMaxMember		= 0;
 	m_iGuildSkillPos		= 0;
 	m_bIsSelList			= FALSE;
-	m_btnGuildSkill			= NULL;
 	m_pWebBoard				= NULL;
 	m_bEnableCorrect		= FALSE;
 // ------------------------------------------------------------------<<
-	
+	m_nSelSkillTab		= GUILD_SKILL_PASSIVE;	// ±ÊµÂ Ω∫≈≥ ≈«
+// ------------------------------------------------------------------<<
+	// [1/3/2011 kiny8216] NEW_CORPS
+	m_iCorpsMember		= 0;
+	m_iCorpsBoss		= 0;
+
+	m_guildMarkTime = -1;		// [sora] GUILD_MARK
+
+	int	i;
+	for (i = 0; i < GUILD_SKILL_VIEW_MAX; ++i)
+	{
+		m_pIconsGuildSkillEx[i] = NULL;
+	}
+
+	for (i = 0; i < eGML_MAX; ++i)
+		m_pCbMemberArrange[i] = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -119,15 +188,29 @@ CUIGuild::CUIGuild()
 // ----------------------------------------------------------------------------
 CUIGuild::~CUIGuild()
 {
+	Destroy();
+
 	if(!m_vectorMemberList.empty())
 	{
 		m_vectorMemberList.clear();
 	}
-	if (m_btnGuildSkill) 
-		delete[] m_btnGuildSkill;
-	m_arGuildSkillList.Clear();
+	ClearGuildSkill();
 
-	Destroy();
+	STOCK_RELEASE(m_ptdSelBoxTexture);
+
+	int		i;
+
+	for (i = 0; i < GUILD_SKILL_VIEW_MAX; ++i)
+	{
+		SAFE_DELETE(m_pIconsGuildSkillEx[i]);
+	}
+
+	SAFE_DELETE(m_pIconGuildMark);
+
+	for (i = 0; i < eGML_MAX; ++i)
+		SAFE_DELETE(m_pCbMemberArrange[i]);
+
+	m_ContGuild.clear();
 }
 
 // ----------------------------------------------------------------------------
@@ -136,9 +219,11 @@ CUIGuild::~CUIGuild()
 // ----------------------------------------------------------------------------
 void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	int		i;
+
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+
+	InitString();
 
 	_iMaxMsgStringChar = GUILD_DESC_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
@@ -176,21 +261,21 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Learn button
-	m_btnOK.Create( this, _S( 191, "ÌôïÏù∏" ), 78, START_BOTTOM_BUTTON_Y, 63, 21 );
+	m_btnOK.Create( this, _S( 191, "»Æ¿Œ" ), 78, START_BOTTOM_BUTTON_Y, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Cancel button
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 145, START_BOTTOM_BUTTON_Y, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 145, START_BOTTOM_BUTTON_Y, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Exit button
-	m_btnExit.Create( this, _S( 870, "Îã´Í∏∞" ), 145, START_BOTTOM_BUTTON_Y, 63, 21 );			
+	m_btnExit.Create( this, _S( 870, "¥›±‚" ), 145, START_BOTTOM_BUTTON_Y, 63, 21 );			
 	m_btnExit.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnExit.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnExit.CopyUV( UBS_IDLE, UBS_ON );
@@ -199,7 +284,7 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	int nButtonY = START_BUTTON_Y;
 
 	// Change Boss button
-	m_btnChangeBoss.Create( this, _S( 871, "Í∏∏ÎìúÏû• Ïù¥ÏûÑ" ), 92, START_BUTTON_Y, 115, 21 );
+	m_btnChangeBoss.Create( this, _S( 871, "±ÊµÂ¿Â ¿Ã¿”" ), 92, START_BUTTON_Y, 115, 21 );
 	m_btnChangeBoss.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnChangeBoss.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnChangeBoss.CopyUV( UBS_IDLE, UBS_ON );
@@ -207,7 +292,7 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 
 	nButtonY += 23;
 	// Accept button
-	m_btnAccept.Create( this, _S( 872, "Í∏∏ÎìúÎ∂ÄÏû• ÏûÑÎ™Ö" ), 92, nButtonY, 115, 21 );		
+	m_btnAccept.Create( this, _S( 872, "±ÊµÂ∫Œ¿Â ¿”∏Ì" ), 92, nButtonY, 115, 21 );		
 	m_btnAccept.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnAccept.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnAccept.CopyUV( UBS_IDLE, UBS_ON );
@@ -215,7 +300,7 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 
 	nButtonY += 23;
 	// Reject button
-	m_btnReject.Create( this, _S( 873, "Í∏∏ÎìúÎ∂ÄÏû• Ìï¥ÏûÑ" ), 92, nButtonY, 115, 21 );		
+	m_btnReject.Create( this, _S( 873, "±ÊµÂ∫Œ¿Â «ÿ¿”" ), 92, nButtonY, 115, 21 );		
 	m_btnReject.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnReject.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnReject.CopyUV( UBS_IDLE, UBS_ON );
@@ -223,7 +308,7 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 
 	nButtonY += 23;
 	// MemberQuit button
-	m_btnMemberFire.Create( this, _S( 874, "Í∏∏ÎìúÏõê Ìá¥Ï∂ú" ), 92, nButtonY, 115, 21 );	
+	m_btnMemberFire.Create( this, _S( 874, "±ÊµÂø¯ ≈√‚" ), 92, nButtonY, 115, 21 );	
 	m_btnMemberFire.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnMemberFire.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnMemberFire.CopyUV( UBS_IDLE, UBS_ON );
@@ -233,6 +318,9 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	m_ebGuildName.Create( this, 100, EDIT_BOX_Y - 2, 90, 16, 16 );
 	m_ebGuildName.SetReadingWindowUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
 	m_ebGuildName.SetCandidateUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
+
+	// [2011/11/02 : Sora] ƒøº≠ ¿Ãµø ∫“∞°«√∑°±◊
+	m_ebGuildName.SetCursorMove( FALSE );
 
 	// List box of guild description
 	m_lbGuildDesc.Create( this, 8, 28, 190, 190, _pUIFontTexMgr->GetLineHeight(), 13, 3, 1, FALSE );
@@ -297,9 +385,10 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	m_lbApplicantList.SetScrollBarMiddleUV( 219, 27, 228, 29, fTexWidth, fTexHeight );
 	m_lbApplicantList.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );	
 
+	CSetFPUPrecision _set_Precision(FPT_64BIT);
+
 // WSS_NEW_GUILD_SYSTEM 070704	
-#ifdef NEW_GUILD_SYSTEM
-	for(int i= 7;i<MAX_GUILD_LEVEL;i++)
+	for(i= 7;i<MAX_GUILD_LEVEL;i++)
 	{
 		if(i+1>=5 && i+1<=10) 
 			_GuildConditionTable[i].iCaptionNeedLevel	=	30;	
@@ -309,7 +398,7 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 			_GuildConditionTable[i].iCaptionNeedLevel	=	30 + 10*((i+1)/10);	
 		
 		_GuildConditionTable[i].iLevel				=	i+1;		
-		// ÌïÑÏöîÎÇòÏä§/sp/gp = 7Î†àÎ≤®ÏóÖÏãú ÌïÑÏöîÎüâ * (1.09^(Í∏∏ÎìúLV - 7))
+		// « ø‰≥™Ω∫/sp/gp = 7∑π∫ßæ˜Ω√ « ø‰∑Æ * (1.09^(±ÊµÂLV - 7))
 		_GuildConditionTable[i].iMaxMember			=	_GuildConditionTable[6].iMaxMember; 
 		_GuildConditionTable[i].iNeedGP				=	_GuildConditionTable[6].iNeedGP	* pow(1.09,i-6);
 		_GuildConditionTable[i].iNeedSP				=	_GuildConditionTable[6].iNeedSP	* pow(1.09,i-6);
@@ -317,7 +406,170 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	}
 	CreateNew(pParentWnd,nX,nY);
 
+	// List Box of Guild Skill Use Info	: ±ÊµÂ Ω∫≈≥ ªÁøÎ ¡§∫∏
+	m_lbUseInfo.Create( this, 270, 178, 140, 70, _pUIFontTexMgr->GetLineHeight(), 13, 3, 1, FALSE );
+	m_lbUseInfo.CreateScroll( TRUE, 0, 0, 9, 70, 9, 7, 0, 0, 10 );
+	// Up button
+	m_lbUseInfo.SetScrollUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
+	m_lbUseInfo.SetScrollUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
+	m_lbUseInfo.CopyScrollUpUV( UBS_IDLE, UBS_ON );
+	m_lbUseInfo.CopyScrollUpUV( UBS_IDLE, UBS_DISABLE );
+	// Down button
+	m_lbUseInfo.SetScrollDownUV( UBS_IDLE, 230, 24, 239, 31, fTexWidth, fTexHeight );
+	m_lbUseInfo.SetScrollDownUV( UBS_CLICK, 240, 24, 249, 31, fTexWidth, fTexHeight );
+	m_lbUseInfo.CopyScrollDownUV( UBS_IDLE, UBS_ON );
+	m_lbUseInfo.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
+	// Bar button
+	m_lbUseInfo.SetScrollBarTopUV( 219, 16, 228, 26, fTexWidth, fTexHeight );
+	m_lbUseInfo.SetScrollBarMiddleUV( 219, 27, 228, 29, fTexWidth, fTexHeight );
+	m_lbUseInfo.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );
+
+	// List Box of Guild Skill Learn Info : Ω∫≈≥ Ω¿µÊ ¡§∫∏
+	m_lbLearnInfo.Create( this, 427, 178, 140, 70, _pUIFontTexMgr->GetLineHeight(), 13, 3, 1, FALSE );
+	m_lbLearnInfo.CreateScroll( TRUE, 0, 0, 9, 70, 9, 7, 0, 0, 10 );
+	// Up button
+	m_lbLearnInfo.SetScrollUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
+	m_lbLearnInfo.SetScrollUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
+	m_lbLearnInfo.CopyScrollUpUV( UBS_IDLE, UBS_ON );
+	m_lbLearnInfo.CopyScrollUpUV( UBS_IDLE, UBS_DISABLE );
+	// Down button
+	m_lbLearnInfo.SetScrollDownUV( UBS_IDLE, 230, 24, 239, 31, fTexWidth, fTexHeight );
+	m_lbLearnInfo.SetScrollDownUV( UBS_CLICK, 240, 24, 249, 31, fTexWidth, fTexHeight );
+	m_lbLearnInfo.CopyScrollDownUV( UBS_IDLE, UBS_ON );
+	m_lbLearnInfo.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
+	// Bar button
+	m_lbLearnInfo.SetScrollBarTopUV( 219, 16, 228, 26, fTexWidth, fTexHeight );
+	m_lbLearnInfo.SetScrollBarMiddleUV( 219, 27, 228, 29, fTexWidth, fTexHeight );
+	m_lbLearnInfo.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );
+
+	// Use Skill
+	m_btnUseSkill.Create( this, _S(5013, "ªÁøÎ«œ±‚" ), 295, 256, 100, 21 );
+	m_btnUseSkill.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
+	m_btnUseSkill.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
+	m_btnUseSkill.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnUseSkill.CopyUV( UBS_IDLE, UBS_DISABLE );
+
+	// Tab Rect : Active / Passive
+	m_rcSkillTab[GUILD_SKILL_PASSIVE].SetRect(15, 79, 37, 167);
+	m_rcSkillTab[GUILD_SKILL_ACTIVE].SetRect(15, 169, 37, 257);
+
+	m_rcSkillTabPopupInfo.SetRect( 0, 0, 100, 30 );
+	// ±ÊµÂ Ω∫≈≥ πˆ∆∞ rect
+	int nPosY1 = 70, nPosY2 = 103;
+	for (int iCnt=0; iCnt<5; ++iCnt)
+	{
+		m_rcSkillBtn[iCnt].SetRect(46, nPosY1, 240, nPosY2);
+		nPosY1 += 40;
+		nPosY2 += 40;
+	}
+	// ITS#6919 : [FIXED] UI cracked in guild setting window [2/20/2012 rumist]
+	// Combo Box Setting
+	m_cmbCorps.Create( this, 218, 98, 143, 22, 123, 6, 13, 7, 7, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
+	m_cmbCorps.SetBackUV( 54, 162, 72, 177, fTexWidth, fTexHeight );
+	m_cmbCorps.SetDownBtnUV( 230, 162, 242, 172, fTexWidth, fTexHeight );
+	m_cmbCorps.SetUpBtnUV( 242, 172, 230, 162, fTexWidth, fTexHeight );	
+	m_cmbCorps.SetDropListUV( 54, 162, 70, 176, fTexWidth, fTexHeight );
+
+	m_ptdSelBoxTexture = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ));
+	fTexWidth	= m_ptdSelBoxTexture->GetPixWidth();
+	fTexHeight	= m_ptdSelBoxTexture->GetPixHeight();
+	// Ω∫≈≥ º±≈√ Ω√, ≈ÿΩ∫√ƒ	
+	m_rtSelBoxUV.SetUV( 145, 138, 240, 172, fTexWidth, fTexHeight );
+
+	// ±ÊµÂ Ω∫≈≥ ¡¬√¯ ºº∑Œ ≈«
+	m_rtSelSideTabUV.SetUV(59, 0, 80, 101, fTexWidth, fTexHeight);
+	m_rtUnSelSideTabUV.SetUV(86, 0, 107, 101, fTexWidth, fTexHeight);
+
+	// ±ÊµÂ Ω∫≈≥ ≈« ∆Àæ˜ ¡§∫∏
+	m_rtPopupUL.SetUV( 0, 229, 8, 237, fTexWidth, fTexHeight );
+	m_rtPopupUM.SetUV( 8, 229, 76, 237, fTexWidth, fTexHeight );
+	m_rtPopupUR.SetUV( 76, 229, 84, 237, fTexWidth, fTexHeight );
+	m_rtPopupML.SetUV( 0, 237, 8, 243, fTexWidth, fTexHeight );
+	m_rtPopupMM.SetUV( 8, 237, 76, 243, fTexWidth, fTexHeight );
+	m_rtPopupMR.SetUV( 76, 237, 84, 243, fTexWidth, fTexHeight );
+	m_rtPopupLL.SetUV( 0, 243, 8, 251, fTexWidth, fTexHeight );
+	m_rtPopupLM.SetUV( 8, 243, 76, 251, fTexWidth, fTexHeight );
+	m_rtPopupLR.SetUV( 76, 243, 84, 251, fTexWidth, fTexHeight );
+	
+	// ±ÊµÂ Ω∫≈≥ ≈« ¿ßø° ±◊∑¡¡ˆ¥¬ ≈ÿΩ∫√ƒ
+	m_rtPassiveTabIconUV[0].SetUV(183, 222, 196, 236, fTexWidth, fTexHeight );
+	m_rtPassiveTabIconUV[1].SetUV(200, 222, 213, 236, fTexWidth, fTexHeight );
+	m_rtActiveTabIconUV[0].SetUV(183, 205, 196, 219, fTexWidth, fTexHeight );
+	m_rtActiveTabIconUV[1].SetUV(200, 205, 213, 219, fTexWidth, fTexHeight );
+
+	// [1/11/2011 kiny8216] Guild_Skill_Fix
+	int nBtnY = 71;
+
+	for ( int nCnt=0; nCnt < GUILD_SKILL_VIEW_MAX; ++nCnt )
+	{
+		m_pIconsGuildSkillEx[nCnt] = new CUIIcon();
+		m_pIconsGuildSkillEx[nCnt]->Create(this, 48, nBtnY, 32, 31, UI_GUILD, UBET_SKILL);
+		m_pIconsGuildSkillEx[nCnt]->SetWhichUI(UI_GUILD);
+
+		nBtnY += 40;
+	}
+
+	// ±∫¥‹ ∞¸∑√ Ω∫∆Æ∏µ √ ±‚»≠
+
+	// Guild Member List Box Setting
+	m_lbGuildMemberList.SetPopBtnSpace(1, 1);
+	m_lbGuildMemberList.SetPopBtnSize(19, m_lbGuildMemberList.GetLineHeight()-2);
+
+	// Manage Button, Edit Box Position
+	m_ebChangePositionName.SetPos( 220, 145 );
+	m_ebChangePayExp.SetPos( 220, 187 );
+	m_ebChangePayFame.SetPos( 220, 229 );
+	m_ckGuildStashPermission.SetPos( 230, 271 );
+
+#ifdef ENABLE_GUILD_STASH
+	m_btnApplySetting.SetPos( 220, 308 );
+	m_btnApplySettingClose.SetPos( 295, 308 );
+#else
+	m_btnApplySetting.SetPos( 220, 263 );
+	m_btnApplySettingClose.SetPos( 295, 263 );
 #endif
+	
+	int nBtnHeight = 17, nGap = 1;
+	int nBtnWidth[eGML_MAX] = {98, 74, 39, 81, 85, 46, 105};
+	int nStrIdx[eGML_MAX] = {3105, 3856, 3851, 72, 3857, 3858, 3859};
+	int nPosX, nPosY = 60;
+	//3105, "ƒ≥∏Ø≈Õ∏Ì"
+	//3856, "¡˜¿ß∏Ì"  
+	//3851, "Lv." 
+	//72, "≈¨∑°Ω∫"
+	//3857, "¡¢º”¿ßƒ°"
+	//3858, "±‚ø©µµ" 
+	//3859, "¥©¿˚ ∆˜¿Œ∆Æ
+
+	for (i = 0; i < eGML_MAX; ++i)
+	{
+		UIRectUV uvNone, uvCheck;
+		uvNone.SetUV(466, 40, 478, 52);
+		uvCheck.SetUV(466, 54, 478, 66);
+
+		m_pCbMemberArrange[i] = new CUICheckButton;
+		m_pCbMemberArrange[i]->setParent(this);
+		m_pCbMemberArrange[i]->SetSize(12, 12);
+		m_pCbMemberArrange[i]->SetText(_S(nStrIdx[i], ""));
+
+		if (i <= 0)
+			nPosX = 48 + nBtnWidth[i] - 12;
+		else
+			nPosX = m_pCbMemberArrange[i - 1]->GetPosX() + nBtnWidth[i] + nGap;
+
+		m_pCbMemberArrange[i]->setTextArea(nBtnWidth[i]);
+		m_pCbMemberArrange[i]->SetPos(nPosX, nPosY);
+		m_pCbMemberArrange[i]->setTexString("CommonBtn.tex");
+		m_pCbMemberArrange[i]->SetUVTex(UCBS_NONE, uvNone);
+		m_pCbMemberArrange[i]->SetUVTex(UCBS_CHECK, uvCheck);
+		m_pCbMemberArrange[i]->SetCheckRegion(TRUE, nBtnWidth[i] - 12, nBtnWidth[i]);
+		m_pCbMemberArrange[i]->SetTextColor(UCBS_NONE, 0xF2F2F2FF);
+		m_pCbMemberArrange[i]->SetTextColor(UCBS_CHECK, 0xF2F2F2FF);
+
+		CmdGuildMemberListArrange* pCmd = new CmdGuildMemberListArrange;
+		pCmd->setData(this, eGUILD_MEMBER_LIST(i));
+		m_pCbMemberArrange[i]->SetCommand(pCmd);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -341,11 +593,11 @@ void CUIGuild::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMax
 }
 
 // WSS_NEW_GUILD_SYSTEM 070702
-// Î∂àÌïÑÏöîÌï¥ÏÑú Ï£ºÏÑùÏ≤òÎ¶¨
+// ∫“« ø‰«ÿº≠ ¡÷ºÆ√≥∏Æ
 //------------------------------------------------------------------------------
 // CUIGuild::SetFocus
 // Explain:  
-// Date : 2005-03-10(Ïò§ÌõÑ 1:02:39) Lee Ki-hwan
+// Date : 2005-03-10(ø¿»ƒ 1:02:39) Lee Ki-hwan
 //------------------------------------------------------------------------------
 //void CUIGuild::SetFocus( BOOL bVisible )
 //{
@@ -365,7 +617,9 @@ void CUIGuild::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMax
 // ----------------------------------------------------------------------------
 void CUIGuild::OpenGuild( int iMobIndex, BOOL bHasQuest, int iUserRanking, int iGuildLevel )
 {
-	if(_pUIMgr->DoesMessageBoxLExist( MSGLCMD_GUILD_REQ ) || IsVisible())
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if(pUIManager->DoesMessageBoxLExist( MSGLCMD_GUILD_REQ ) || IsVisible())
 		return;	
 
 	ResetGuild();
@@ -373,56 +627,71 @@ void CUIGuild::OpenGuild( int iMobIndex, BOOL bHasQuest, int iUserRanking, int i
 	m_iUserRanking = iUserRanking;
 	m_iGuildLevel	= iGuildLevel;
 	
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ERROR);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_DESTROY);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ROOM);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_ERROR);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_DESTROY);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 
 	// Create guild message box
 	
 	// Reset Window Size // WSS_NEW_GUILD_SYSTEM 070725
 	SetSize( GUILD_WIDTH, GUILD_HEIGHT );
 
-	_pUIMgr->CreateMessageBoxL( _S( 865, "Í∏∏Îìú" ) , UI_GUILD, MSGLCMD_GUILD_REQ );					
+	pUIManager->CreateMessageBoxL( _S( 865, "±ÊµÂ" ) , UI_GUILD, MSGLCMD_GUILD_REQ );					
 
-	CTString	strNpcName = _pNetwork->GetMobName(iMobIndex);
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, TRUE, strNpcName, -1, 0xE18600FF );
+	CTString	strNpcName = CMobData::getData(iMobIndex)->GetName();
+	pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, TRUE, strNpcName, -1, 0xE18600FF );
 
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, TRUE, _S( 875, "ÏÇ¨ÏïÖÌïú Î¨¥Î¶¨Î•º Í∞êÏãúÌïòÎäêÎùº ÌïúÏãúÎèÑ ÏãúÍ∞ÑÏùÑ ÎÇº Ïàò ÏóÜÎÑ§." ), -1, 0xA3A1A3FF );	
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, TRUE, _S( 876, "Ïö©Í±¥Ïù¥ ÏóÜÎã§Î©¥ Í∑∏ÎÉ• ÎèåÏïÑ Í∞ÄÏãúÍ≤å." ), -1, 0xA3A1A3FF );		
+	pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, TRUE, _S( 875, "ªÁæ««— π´∏Æ∏¶ ∞®Ω√«œ¥¿∂Û «—Ω√µµ Ω√∞£¿ª ≥æ ºˆ æ¯≥◊." ), -1, 0xA3A1A3FF );	
+	pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, TRUE, _S( 876, "øÎ∞«¿Ã æ¯¥Ÿ∏È ±◊≥… µπæ∆ ∞°Ω√∞‘." ), -1, 0xA3A1A3FF );		
 
 	if( m_iUserRanking == GUILD_MEMBER_MEMBER || m_iUserRanking == GUILD_MEMBER_VICE_BOSS || m_iUserRanking == GUILD_MEMBER_NOMEMBER )
 	{
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE,  _S( 877, "Í∏∏Îìú Í≤∞ÏÑ±." ), SEL_GUILD_CREATE );	
+		pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE,  _S( 877, "±ÊµÂ ∞·º∫." ), SEL_GUILD_CREATE );	
 	}
-
+	// [2010/06/30 : Sora] º∫¡÷ ±ÊµÂ πˆ«¡∫Œø©
+#if defined(G_KOR)
+	pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE,  _S( 5014, "º∫¿«√‡∫π πﬁ±‚" ), SEL_GUILD_BUFF );
+#endif
 	if( m_iUserRanking == GUILD_MEMBER_BOSS )
 	{
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 878, "Í∏∏Îìú ÏäπÍ∏â." ), SEL_GUILD_UPGRADE );
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 879, "Í∏∏Îìú Ìï¥ÏÇ∞." ), SEL_GUILD_DESTROY );
+		pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 878, "±ÊµÂ Ω¬±ﬁ." ), SEL_GUILD_UPGRADE );
+		pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 879, "±ÊµÂ «ÿªÍ." ), SEL_GUILD_DESTROY );
 	}
 
 	if( m_iUserRanking != GUILD_MEMBER_NOMEMBER )
 	{
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 1011, "Í∏∏Îìú ÎåÄÌôîÎ∞©ÏúºÎ°ú Ïù¥Îèô." ), SEL_GUILD_ROOM );
+		pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 1011, "±ÊµÂ ¥Î»≠πÊ¿∏∑Œ ¿Ãµø." ), SEL_GUILD_ROOM );
 	}
+
+#ifdef	UPDATE1107_GUILDSYSTEM
+	// 1107 ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì [trylord 11/12/28]
+	if(_pNetwork->MyCharacterInfo.lGuildIndex != -1)
+	{	// ±ÊµÂø° º“º”µ«æÓ¿÷¿ª ∂ßø°∏∏ ∏ﬁ¥∫∏¶ ∫∏ø©¡ÿ¥Ÿ
+		if(_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_VICE_BOSS)
+		{	// ∫Œ¥‹¿Â¿œ ∞ÊøÏ ±ÊµÂ¿Â «ÿ¿” Ω…ªÁ∏¶ Ω≈√ª«“ ºˆ ¿÷¥Ÿ.
+			pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 5613, "±ÊµÂ¿Â «ÿ¿” Ω…ªÁ Ω≈√ª" ), SEL_GUILDMASTER_KICK_REQUEST );
+		}
+		else if(_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS
+			&& _pNetwork->MyCharacterInfo.iGuildMasterKickStatus == 1)
+		{	// ¿⁄Ω≈¿Ã ¥‹¿Â¿Ã∞Ì, «ˆ¿Á ¿⁄Ω≈¿∫ «ÿ¿” Ω…ªÁ∏¶ ¥Á«— ªÛ≈¬ -- ¿Ã¿«∏¶ Ω≈√ª«“ ºˆ ¿÷¥Ÿ.
+			pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 5614, "±ÊµÂ¿Â «ÿ¿” ¿Ã¿«¡¶±‚" ), SEL_GUILDMASTER_KICK_CANCEL_REQUEST );
+		}
+	}
+#endif	// #ifdef	UPDATE1107_GUILDSYSTEM
 
 	if( bHasQuest )
-	{		
-#ifdef	NEW_QUESTBOOK
-		// 2009. 05. 27 ÍπÄÏ†ïÎûò
-		// Ïù¥ÏïºÍ∏∞ÌïúÎã§ Î≥ÄÍ≤Ω Ï≤òÎ¶¨
+	{	
+		// 2009. 05. 27 ±Ë¡§∑°
+		// ¿Ãæﬂ±‚«—¥Ÿ ∫Ø∞Ê √≥∏Æ
 		CUIQuestBook::AddQuestListToMessageBoxL(MSGLCMD_GUILD_REQ);				
-#else
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 1053, "Ïù¥ÏïºÍ∏∞ÌïúÎã§." ), SEL_GUILD_TALK );		
-#endif
 	}
 
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 1220, "Ï∑®ÏÜåÌïòÍ∏∞." ) );				
+	pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 1220, "√Îº“«œ±‚." ) );				
 }
 
 // ----------------------------------------------------------------------------
@@ -445,8 +714,8 @@ void CUIGuild::OpenGuildManager( int iUserRanking )
 	// Reset Window Size // WSS_NEW_GUILD_SYSTEM 070725
 	SetSize( GUILD_WIDTH, GUILD_HEIGHT );
 
-	// FIXME : Í∏∏Îìú Î©îÎãàÏ†ÄÏóêÏÑúÎäî Ìò∏Ï∂úÌïòÎ©¥ ÏïàÎê®.
-	// FIXME : Ïï†Îì§ Î™©Î°ùÏùÑ Î∞õÏùÄ Í≤ÉÏùÑ Îã§ Í∞ñÍ≥† ÏûàÏñ¥Ïïº ÌïòÎäîÎç∞, ResetGuild()Î•º Ìò∏Ï∂úÌïòÎ©¥ Îã§ ÎÇ†ÎùºÍ∞ê.
+	// FIXME : ±ÊµÂ ∏ﬁ¥œ¿˙ø°º≠¥¬ »£√‚«œ∏È æ»µ .
+	// FIXME : æ÷µÈ ∏Ò∑œ¿ª πﬁ¿∫ ∞Õ¿ª ¥Ÿ ∞Æ∞Ì ¿÷æÓæﬂ «œ¥¬µ•, ResetGuild()∏¶ »£√‚«œ∏È ¥Ÿ ≥Ø∂Û∞®.
 	//ResetGuild();
 
 	m_iUserRanking	= iUserRanking;
@@ -466,7 +735,7 @@ void CUIGuild::OpenGuildManager( int iUserRanking )
 		RefreshApplicantList( TRUE );
 	}
 
-	_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_GUILD, TRUE );
 
 }
 
@@ -480,7 +749,7 @@ void CUIGuild::ResetGuild()
 	m_lbGuildDesc.ResetAllStrings();
 	m_lbMemberList.ResetAllStrings();
 	m_lbApplicantList.ResetAllStrings();
-
+	
 	//m_strBossName			= "";
 	m_strViceBoss[0]		= "";
 	m_strViceBoss[1]		= "";
@@ -494,19 +763,36 @@ void CUIGuild::ResetGuild()
 	m_nCurrentTab			= GUILD_TAB_MEMBER;
 	m_iUserRanking			= GUILD_MEMBER_MEMBER;
 
-	// NOTE : Í∏∏ÎìúÎ•º ÌÉàÌá¥ÌïòÍ±∞ÎÇò Ìï¥Ï≤¥ ÌïòÏßÄ ÏïäÎäî Ïù¥ÏÉÅ, ÌÅ¥Î¶¨Ïñ¥ ÌïòÎ©¥ ÏïàÎê†Í±∞ Í∞ôÏùå.
+	// NOTE : ±ÊµÂ∏¶ ≈ª≈«œ∞≈≥™ «ÿ√º «œ¡ˆ æ ¥¬ ¿ÃªÛ, ≈¨∏ÆæÓ «œ∏È æ»µ…∞≈ ∞∞¿Ω.
 	//ClearMemberList();
 
-	_pUIMgr->RearrangeOrder( UI_GUILD, FALSE );
+	m_ebGuildName.SetFocus(FALSE);
+	m_ebSearch.SetFocus(FALSE);
+	m_ebWriteSubject.SetFocus(FALSE);
+	m_ebNoticeTitle.SetFocus(FALSE);
+	m_ebChangePositionName.SetFocus(FALSE);
+	m_ebChangePayExp.SetFocus(FALSE);
+	m_ebChangePayFame.SetFocus(FALSE);
+	m_ContGuild.clear();
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->RearrangeOrder( UI_GUILD, FALSE );
+	
+	if(pUIManager->GetSimplePop()->IsEnabled())
+	{
+		// SIMPLE POP¿Ã ø≠∑¡ ¿÷æ˙¥Ÿ∏È ¥›æ∆ ¡ÿ¥Ÿ..
+		pUIManager->GetSimplePop()->ClosePop();
+	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : ClearMemberList()
-// Desc : Î©§Î≤Ñ Î™©Î°ùÏùÑ ÌÅ¥Î¶¨Ïñ¥Ìï©ÎãàÎã§.
+// Desc : ∏‚πˆ ∏Ò∑œ¿ª ≈¨∏ÆæÓ«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 void CUIGuild::ClearMemberList()
 {
-	// NOTE : Í∏∏ÎìúÎ•º ÌÉàÌá¥ÌïòÍ±∞ÎÇò Ìï¥Ï≤¥ ÌïòÏßÄ ÏïäÎäî Ïù¥ÏÉÅ, ÌÅ¥Î¶¨Ïñ¥ ÌïòÎ©¥ ÏïàÎê†Í±∞ Í∞ôÏùå.
+	// NOTE : ±ÊµÂ∏¶ ≈ª≈«œ∞≈≥™ «ÿ√º «œ¡ˆ æ ¥¬ ¿ÃªÛ, ≈¨∏ÆæÓ «œ∏È æ»µ…∞≈ ∞∞¿Ω.
 	if(!m_vectorMemberList.empty())
 	{
 		m_strBossName			= "";
@@ -516,36 +802,38 @@ void CUIGuild::ClearMemberList()
 
 // ----------------------------------------------------------------------------
 // Name : PressOKBtn()
-// Desc : ÌôïÏù∏ Î≤ÑÌäºÏùÑ ÎàåÎ†ÄÏùÑ ÎïåÏùò Ï≤òÎ¶¨.
+// Desc : »Æ¿Œ πˆ∆∞¿ª ¥≠∑∂¿ª ∂ß¿« √≥∏Æ.
 // ----------------------------------------------------------------------------
 void CUIGuild::PressOKBtn()
 {
 	switch( m_eGuildState )
 	{
-	case GUILD_CREATE:		// Í∏∏Îìú ÏÉùÏÑ±
+	case GUILD_CREATE:		// ±ÊµÂ ª˝º∫
 		CreateGuild();
 		break;
-	case GUILD_UPGRADE:		// Í∏∏Îìú ÏäπÍ∏â
+	case GUILD_UPGRADE:		// ±ÊµÂ Ω¬±ﬁ
 		UpgradeGuild();
 		break;
-	case GUILD_DESTROY:		// Í∏∏Îìú Ìï¥Ï≤¥
+	case GUILD_DESTROY:		// ±ÊµÂ «ÿ√º
 		{
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ERROR);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_DESTROY);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ROOM);
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_ERROR);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_DESTROY);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 			
 			// Create message box of guild destroy
 			CTString	strMessage;
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_DESTROY );	
-			strMessage.PrintF( _S( 881, "Ï†ïÎßêÎ°ú [%s] Í∏∏ÎìúÎ•º Ìï¥ÏÇ∞ ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), _pNetwork->MyCharacterInfo.strGuildName );		
+			MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_DESTROY );	
+			strMessage.PrintF( _S( 881, "¡§∏ª∑Œ [%s] ±ÊµÂ∏¶ «ÿªÍ «œΩ√∞⁄Ω¿¥œ±Ó?" ), _pNetwork->MyCharacterInfo.strGuildName );		
 			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 		}
 		break;
 	}
@@ -553,39 +841,40 @@ void CUIGuild::PressOKBtn()
 
 // ----------------------------------------------------------------------------
 // Name : CreateGuild()
-// Desc : Í∏∏Îìú ÏÉùÏÑ±
+// Desc : ±ÊµÂ ª˝º∫
 // ----------------------------------------------------------------------------
 void CUIGuild::CreateGuild()
 {
-	// Í∏∏Îìú ÏÉùÏÑ±.
+	// ±ÊµÂ ª˝º∫.
 	if( m_ebGuildName.GetString() )
 	{
+		CUIManager* pUIManager = CUIManager::getSingleton();
 		m_strGuildName = m_ebGuildName.GetString();
 
-		if(!_pUIMgr->checkName(m_strGuildName,1))
+		if(!pUIManager->checkName(m_strGuildName,1))
 		{
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ERROR);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_DESTROY);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);
-			_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ROOM);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_ERROR);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_DESTROY);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);
+			pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 			
 			m_ebGuildName.ResetString();
 			m_ebGuildName.SetFocus( TRUE );
 			return;
 		}
-				
-		// Í∏∏Îìú ÏÉùÏÑ± Î©îÏãúÏßÄ Î≥¥ÎÇ¥Í∏∞.
+		
+		// ±ÊµÂ ª˝º∫ ∏ﬁΩ√¡ˆ ∫∏≥ª±‚.
 		_pNetwork->GuildCreate( m_strGuildName );
 	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : GoGuildZone()
-// Desc : Í∏∏Îìú Ï†ÑÏö© Í≥µÍ∞ÑÏúºÎ°ú Ïù¥Îèô...
+// Desc : ±ÊµÂ ¿¸øÎ ∞¯∞£¿∏∑Œ ¿Ãµø...
 // ----------------------------------------------------------------------------
 void CUIGuild::GoGuildZone()
 {
@@ -598,7 +887,7 @@ void CUIGuild::GoGuildZone()
 
 // ----------------------------------------------------------------------------
 // Name : UpgradeGuild()
-// Desc : Í∏∏Îìú ÏäπÍ∏â
+// Desc : ±ÊµÂ Ω¬±ﬁ
 // ----------------------------------------------------------------------------
 void CUIGuild::UpgradeGuild()
 {
@@ -607,124 +896,126 @@ void CUIGuild::UpgradeGuild()
 
 // ----------------------------------------------------------------------------
 // Name : DestroyGuild()
-// Desc : Í∏∏Îìú Ìï¥Ï≤¥
+// Desc : ±ÊµÂ «ÿ√º
 // ----------------------------------------------------------------------------
 void CUIGuild::DestroyGuild()
 {
 	_pNetwork->GuildDestroy();
 }
 
-static LONG g_lChaIndex		= -1;		// Í∞ÄÏûÖ Ïã†Ï≤≠Í≥º Í¥ÄÎ†®Îêú Î∂ÄÎ∂ÑÏóêÎßå Ïì∞ÏûÑ.
+static LONG g_lChaIndex		= -1;		// ∞°¿‘ Ω≈√ª∞˙ ∞¸∑√µ» ∫Œ∫–ø°∏∏ æ≤¿”.
 static LONG g_lGuildIndex	= -1;
-static LONG g_lMemberIndex	= -1;		// Î©§Î≤ÑÏóê Í¥ÄÎ†®Îêú Î∂ÄÎ∂ÑÏóêÎßå Ïì∞ÏûÑ.
+static LONG g_lMemberIndex	= -1;		// ∏‚πˆø° ∞¸∑√µ» ∫Œ∫–ø°∏∏ æ≤¿”.
 
 // ----------------------------------------------------------------------------
 // Name : JoinGuild()
-// Desc : Í∏∏Îìú Í∞ÄÏûÖ
+// Desc : ±ÊµÂ ∞°¿‘
 // ----------------------------------------------------------------------------
-void CUIGuild::JoinGuild( LONG lGuildIndex, LONG lChaIndex, const CTString& strName )
+void CUIGuild::JoinGuild( LONG lGuildIndex, LONG lChaIndex, const CTString& strName, INDEX iSyndiType )
 {
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ERROR);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_DESTROY);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ROOM);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_ERROR);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_DESTROY);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 	
 	g_lChaIndex		= lChaIndex;
 	g_lGuildIndex	= lGuildIndex;
+	m_iSyndiType	= iSyndiType;
 	
 	// Create message box of guild destroy
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_JOIN );	
-	strMessage.PrintF( _S( 884, "[%s] Í∏∏ÎìúÏóê Í∞ÄÏûÖ Ïã†Ï≤≠ÏùÑ ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), strName );		
+	MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_JOIN );	
+	strMessage.PrintF( _S( 884, "[%s] ±ÊµÂø° ∞°¿‘ Ω≈√ª¿ª «œΩ√∞⁄Ω¿¥œ±Ó?" ), strName );		
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
 // Name : QuitGuild()
-// Desc : Í∏∏Îìú ÌÉàÌá¥
+// Desc : ±ÊµÂ ≈ª≈
 // ----------------------------------------------------------------------------
 void CUIGuild::QuitGuild( )
 {
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ERROR);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_DESTROY);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
-	_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ROOM);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_ERROR);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_DESTROY);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
+	pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 	
 	// Create message box of guild destroy
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_QUIT );	
-	strMessage.PrintF( _S( 885, "[%s] Í∏∏ÎìúÎ•º ÌÉàÌá¥ ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), _pNetwork->MyCharacterInfo.strGuildName );		
+	MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_QUIT );	
+	strMessage.PrintF( _S( 885, "[%s] ±ÊµÂ∏¶ ≈ª≈ «œΩ√∞⁄Ω¿¥œ±Ó?" ), _pNetwork->MyCharacterInfo.strGuildName );		
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
 // Name : ChangeBoss()
-// Desc : Îã®Ïû• Ïù¥ÏûÑ
+// Desc : ¥‹¿Â ¿Ã¿”
 // ----------------------------------------------------------------------------
 void CUIGuild::ChangeBoss()
 {
 	// WSS_NEW_GUILD_SYSTEM 070719
 	int	iSelMember;
-#ifdef NEW_GUILD_SYSTEM
+
 	if(m_iGuildLevel < LIMIT_GUILD_LEVEL)
-#endif
+
 		iSelMember = m_lbMemberList.GetCurSel();
-#ifdef NEW_GUILD_SYSTEM
 	else 
 		iSelMember = m_lbManageMemberList.GetCurSel();
-#endif
 
-	if( iSelMember != -1 )
-	{
-		sGuildMember &TempMember = m_vectorMemberList[iSelMember];
-		if( _pNetwork->MyCharacterInfo.index == TempMember.lIndex )
-			return;
+	if( iSelMember == -1 )
+		return;
 
-		g_lMemberIndex = TempMember.lIndex;
+	sGuildMember &TempMember = m_vectorMemberList[iSelMember];
+	if( _pNetwork->MyCharacterInfo.index == TempMember.lIndex )
+		return;
+	
+	g_lMemberIndex = TempMember.lIndex;
 
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_KICK );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_CHANGE_BOSS );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_ADD_VICE_BOSS );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_DEL_VICE_BOSS );
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-		// Create message box of guild destroy
-		CTString	strMessage;
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_CHANGE_BOSS );	
-		strMessage.PrintF( _S( 886, "[%s] ÏóêÍ≤å Í∏∏ÎìúÏû•ÏùÑ Ïù¥ÏûÑ ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), TempMember.strMemberName );		
-		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-	}
+	pUIManager->CloseMessageBox( MSGCMD_GUILD_KICK );
+	pUIManager->CloseMessageBox( MSGCMD_GUILD_CHANGE_BOSS );
+	pUIManager->CloseMessageBox( MSGCMD_GUILD_ADD_VICE_BOSS );
+	pUIManager->CloseMessageBox( MSGCMD_GUILD_DEL_VICE_BOSS );
+	
+	// Create message box of guild destroy
+	CTString	strMessage;
+	CUIMsgBox_Info	MsgBoxInfo;
+	MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_CHANGE_BOSS );	
+	strMessage.PrintF( _S( 886, "[%s] ø°∞‘ ±ÊµÂ¿Â¿ª ¿Ã¿” «œΩ√∞⁄Ω¿¥œ±Ó?" ), TempMember.strMemberName );		
+	MsgBoxInfo.AddString( strMessage );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
 // Name : AddViceBoss()
-// Desc : Î∂ÄÎã®Ïû• ÏûÑÎ™Ö
+// Desc : ∫Œ¥‹¿Â ¿”∏Ì
 // ----------------------------------------------------------------------------
 void CUIGuild::AddViceBoss()
 {
 	// WSS_NEW_GUILD_SYSTEM 070719
 	int	iSelMember;
-#ifdef NEW_GUILD_SYSTEM
+
 	if(m_iGuildLevel < LIMIT_GUILD_LEVEL)
-#endif
 		iSelMember = m_lbMemberList.GetCurSel();
-#ifdef NEW_GUILD_SYSTEM
 	else 
 		iSelMember = m_lbManageMemberList.GetCurSel();
-#endif
 
 	if( iSelMember != -1 )
 	{
@@ -736,108 +1027,107 @@ void CUIGuild::AddViceBoss()
 			return;
 		}
 
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_KICK );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_CHANGE_BOSS );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_ADD_VICE_BOSS );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_DEL_VICE_BOSS );
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_KICK );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_CHANGE_BOSS );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_ADD_VICE_BOSS );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_DEL_VICE_BOSS );
 
 		// Create message box of guild destroy
 		CTString	strMessage;
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_ADD_VICE_BOSS );	
-		strMessage.PrintF( _S( 887, "[%s]Î•º Í∏∏ÎìúÎ∂ÄÏû•ÏúºÎ°ú ÏûÑÎ™Ö ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), TempMember.strMemberName );		
+		MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_ADD_VICE_BOSS );	
+		strMessage.PrintF( _S( 887, "[%s]∏¶ ±ÊµÂ∫Œ¿Â¿∏∑Œ ¿”∏Ì «œΩ√∞⁄Ω¿¥œ±Ó?" ), TempMember.strMemberName );		
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+		pUIManager->CreateMessageBox( MsgBoxInfo );		
 	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : DelViceBoss()
-// Desc : Î∂ÄÎã®Ïû• Ìï¥ÏûÑ
+// Desc : ∫Œ¥‹¿Â «ÿ¿”
 // ----------------------------------------------------------------------------
 void CUIGuild::DelViceBoss()
 {
 	// WSS_NEW_GUILD_SYSTEM 070719
 	int	iSelMember;
-	#ifdef NEW_GUILD_SYSTEM
-		if(m_iGuildLevel < LIMIT_GUILD_LEVEL)
-	#endif
-			iSelMember = m_lbMemberList.GetCurSel();
-	#ifdef NEW_GUILD_SYSTEM
-		else 
-			iSelMember = m_lbManageMemberList.GetCurSel();
-	#endif	
-	 
+	if(m_iGuildLevel < LIMIT_GUILD_LEVEL)
+		iSelMember = m_lbMemberList.GetCurSel();
+	else 
+		iSelMember = m_lbManageMemberList.GetCurSel();
+	
 	if( iSelMember != -1 )
 	{
 		sGuildMember &TempMember = m_vectorMemberList[iSelMember];
 
-		// Î∂ÄÎã®Ïû•Îßå Í∞ÄÎä•Ìï®.
+		// ∫Œ¥‹¿Â∏∏ ∞°¥…«‘.
 		if(TempMember.eRanking != GUILD_MEMBER_VICE_BOSS)
 			return;
 
 		g_lMemberIndex = TempMember.lIndex;
 
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_KICK );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_CHANGE_BOSS );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_ADD_VICE_BOSS );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_DEL_VICE_BOSS );
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_KICK );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_CHANGE_BOSS );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_ADD_VICE_BOSS );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_DEL_VICE_BOSS );
 
 		// Create message box of guild destroy
 		CTString	strMessage;
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_DEL_VICE_BOSS );	
-		strMessage.PrintF( _S( 888, "[%s]Î•º Í∏∏ÎìúÎ∂ÄÏû•ÏóêÏÑú Ìï¥ÏûÑ ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), TempMember.strMemberName );		
+		MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_DEL_VICE_BOSS );	
+		strMessage.PrintF( _S( 888, "[%s]∏¶ ±ÊµÂ∫Œ¿Âø°º≠ «ÿ¿” «œΩ√∞⁄Ω¿¥œ±Ó?" ), TempMember.strMemberName );		
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : MemberFire()
-// Desc : Îã®Ïõê Ìá¥Ï∂ú
+// Desc : ¥‹ø¯ ≈√‚
 // ----------------------------------------------------------------------------
 void CUIGuild::MemberFire()
 {
 	// WSS_NEW_GUILD_SYSTEM 070719
 	int	iSelMember;
-	#ifdef NEW_GUILD_SYSTEM
-		if(m_iGuildLevel < LIMIT_GUILD_LEVEL)
-	#endif
-			iSelMember = m_lbMemberList.GetCurSel();
-	#ifdef NEW_GUILD_SYSTEM
-		else 
-			iSelMember = m_lbManageMemberList.GetCurSel();
-	#endif
-		
+
+	if(m_iGuildLevel < LIMIT_GUILD_LEVEL)
+		iSelMember = m_lbMemberList.GetCurSel();
+	else 
+		iSelMember = m_lbManageMemberList.GetCurSel();
+	
 	if( iSelMember != -1 )
 	{
 		sGuildMember &TempMember = m_vectorMemberList[iSelMember];
 
-		// Î©§Î≤ÑÏùò Î†àÎ≤®Ïù¥ ÏûêÍ∏∞ Î†àÎ≤®Î≥¥Îã§ ÎÜíÏúºÎ©¥ Ìá¥Ï∂ú Î™ªÏãúÌÇ¥.
+		// ∏‚πˆ¿« ∑π∫ß¿Ã ¿⁄±‚ ∑π∫ß∫∏¥Ÿ ≥Ù¿∏∏È ≈√‚ ∏¯Ω√≈¥.
 		if( TempMember.eRanking < _pNetwork->MyCharacterInfo.lGuildPosition )
 			return;
 
 		g_lMemberIndex = TempMember.lIndex;
 
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_KICK );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_CHANGE_BOSS );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_ADD_VICE_BOSS );
-		_pUIMgr->CloseMessageBox( MSGCMD_GUILD_DEL_VICE_BOSS );
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_KICK );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_CHANGE_BOSS );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_ADD_VICE_BOSS );
+		pUIManager->CloseMessageBox( MSGCMD_GUILD_DEL_VICE_BOSS );
 		
 		// Create message box of guild destroy
 		CTString	strMessage;
 		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_KICK );	
-		strMessage.PrintF( _S( 889, "[%s]Î•º Ìá¥Ï∂ú ÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ), TempMember.strMemberName );		
+		MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_KICK );	
+		strMessage.PrintF( _S( 889, "[%s]∏¶ ≈√‚ «œΩ√∞⁄Ω¿¥œ±Ó?" ), TempMember.strMemberName );		
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+		pUIManager->CreateMessageBox( MsgBoxInfo );		
 	}
 }
 
 // ----------------------------------------------------------------------------
 // Name : ApplicantAccept()
-// Desc : Í∞ÄÏûÖ ÏäπÏù∏
+// Desc : ∞°¿‘ Ω¬¿Œ
 // ----------------------------------------------------------------------------
 void CUIGuild::ApplicantAccept( LONG lIndex )
 {
@@ -845,36 +1135,32 @@ void CUIGuild::ApplicantAccept( LONG lIndex )
 
 	g_lChaIndex = lIndex;
 
-	// Îã§Î•∏ Ï∫êÎ¶≠ÌÑ∞Îì§Ïùò Í∏∏Îìú Î†àÎ≤®ÏùÑ Î≥ÄÍ≤ΩÏãúÌÇ¥.
-	for( INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actCha.Count(); ++ipl )
+	ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_CHARACTER, lIndex);
+
+	if (pObject != NULL)
 	{
-		CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[ipl];
-		if( ct.cha_Index == g_lChaIndex )
-		{
-			strMemberName = ct.cha_strName;
-			break;
-		}
+		strMemberName = pObject->m_strName.c_str();
 	}
 
 	// Create message box of guild destroy
 	CTString	strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_APPLICANT_JOIN );	
-	strMessage.PrintF( _S( 890, "[%s] ÎãòÍªòÏÑú Í∞ÄÏûÖ Ïã†Ï≤≠ÏùÑ ÌïòÏÖ®ÏäµÎãàÎã§. ÏàòÎùΩÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ),  strMemberName );		
+	MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_APPLICANT_JOIN );	
+	strMessage.PrintF( _S( 890, "[%s] ¥‘≤≤º≠ ∞°¿‘ Ω≈√ª¿ª «œºÃΩ¿¥œ¥Ÿ. ºˆ∂Ù«œΩ√∞⁄Ω¿¥œ±Ó?" ),  strMemberName );		
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 }
 
 // ----------------------------------------------------------------------------
 // Name : AddToMemberList()
-// Desc : Î©§Î≤Ñ Î™©Î°ùÏóê Ï∂îÍ∞Ä
+// Desc : ∏‚πˆ ∏Ò∑œø° √ﬂ∞°
 // ----------------------------------------------------------------------------
 void CUIGuild::AddToMemberList( LONG lIndex, const CTString& strName, int eLevel, BOOL bOnline )
 {
-	// Îã®ÏõêÏù¥ Î™©Î°ùÏùÑ Î≥¥Î†§Í≥† ÌïòÎäî Í≤ΩÏö∞...
+	// ¥‹ø¯¿Ã ∏Ò∑œ¿ª ∫∏∑¡∞Ì «œ¥¬ ∞ÊøÏ...
 	/*
 	if( m_iUserRanking != GUILD_MEMBER_MEMBER && 
-		eLevel == GUILD_MEMBER_BOSS )		// Îã®Ïû•
+	eLevel == GUILD_MEMBER_BOSS )		// ¥‹¿Â
 	{
 		m_strBossName = strName;
 	}
@@ -892,7 +1178,7 @@ void CUIGuild::AddToMemberList( LONG lIndex, const CTString& strName, int eLevel
 
 // ----------------------------------------------------------------------------
 // Name : DelFromMemberList()
-// Desc : Î©§Î≤Ñ Î™©Î°ùÏóêÏÑú Ï†úÍ±∞
+// Desc : ∏‚πˆ ∏Ò∑œø°º≠ ¡¶∞≈
 // ----------------------------------------------------------------------------
 void CUIGuild::DelFromMemberList( LONG lIndex )
 {
@@ -909,7 +1195,7 @@ void CUIGuild::DelFromMemberList( LONG lIndex )
 
 // ----------------------------------------------------------------------------
 // Name : ChangeMemberLevel()
-// Desc : Î©§Î≤ÑÏùò Î†àÎ≤®ÏùÑ Î≥ÄÍ≤ΩÌï®.
+// Desc : ∏‚πˆ¿« ∑π∫ß¿ª ∫Ø∞Ê«‘.
 // ----------------------------------------------------------------------------
 void CUIGuild::ChangeMemberLevel( LONG lIndex, int eLevel )
 {
@@ -926,7 +1212,7 @@ void CUIGuild::ChangeMemberLevel( LONG lIndex, int eLevel )
 
 // ----------------------------------------------------------------------------
 // Name : ChangeMemberOnline()
-// Desc : Î©§Î≤ÑÏùò Ïò®ÎùºÏù∏ ÏÉÅÌÉúÎ•º Î≥ÄÍ≤ΩÌï®.
+// Desc : ∏‚πˆ¿« ø¬∂Û¿Œ ªÛ≈¬∏¶ ∫Ø∞Ê«‘.
 // ----------------------------------------------------------------------------
 void CUIGuild::ChangeMemberOnline( LONG lIndex, BOOL bOnline )
 {
@@ -943,7 +1229,7 @@ void CUIGuild::ChangeMemberOnline( LONG lIndex, BOOL bOnline )
 
 // ----------------------------------------------------------------------------
 // Name : RefreshMemberList()
-// Desc : Î™©Î°ùÏùÑ Í∞±Ïã†Ìï©ÎãàÎã§.
+// Desc : ∏Ò∑œ¿ª ∞ªΩ≈«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 void CUIGuild::RefreshMemberList( BOOL bInit )
 {
@@ -966,38 +1252,38 @@ void CUIGuild::RefreshMemberList( BOOL bInit )
 	{
 		switch( (*it).eRanking )
 		{
-		case GUILD_MEMBER_BOSS:			// Í∏∏ÎìúÏû•
+		case GUILD_MEMBER_BOSS:			// ±ÊµÂ¿Â
 			{
-				strLevel	= _S( 891, "Í∏∏ÎìúÏû•" );	
+				strLevel	= _S( 891, "±ÊµÂ¿Â" );	
 				crLevel		= 0xFF9533FF;
 				ASSERT(iBossCount <= 1 && "Invalid Boss Count");
 				m_strBossName = (*it).strMemberName;
 				iBossCount++;
 
-				// Îã®Ïû•ÏùÄ Ïù¥Î¶ÑÏù¥ ÌëúÏãúÎêòÎ©¥ ÏïàÎêòÎØÄÎ°ú...
+				// ¥‹¿Â¿∫ ¿Ã∏ß¿Ã «•Ω√µ«∏È æ»µ«π«∑Œ...
 				//continue;
 			}
 			break;
-		case GUILD_MEMBER_VICE_BOSS:	// Í∏∏ÎìúÎ∂ÄÏû•
+		case GUILD_MEMBER_VICE_BOSS:	// ±ÊµÂ∫Œ¿Â
 			{
-				strLevel	= _S( 892, "Í∏∏ÎìúÎ∂ÄÏû•" );	
+				strLevel	= _S( 892, "±ÊµÂ∫Œ¿Â" );	
 				crLevel		= 0xFFC672FF;
 				ASSERT(iViceBossCount <= 2 && "Invalid Vice-Boss Count");
 				m_strViceBoss[iViceBossCount] = (*it).strMemberName;
 				iViceBossCount++;
 			}
 			break;
-		case GUILD_MEMBER_MEMBER:		// Í∏∏ÎìúÏõê
+		case GUILD_MEMBER_MEMBER:		// ±ÊµÂø¯
 			{
-				strLevel	= _S( 893, "Í∏∏ÎìúÏõê" );	
+				strLevel	= _S( 893, "±ÊµÂø¯" );	
 				crLevel		= 0xCCCCCCFF;
 			}
 			break;
 			/*
-		case GUILD_MEMBER_APPLICANT:	// ÏßÄÏõêÏûê
+		case GUILD_MEMBER_APPLICANT:	// ¡ˆø¯¿⁄
 			{
-				ASSERTALWAYS("Ìò∏Ï∂úÎêòÏñ¥ÏÑúÎäî ÏïàÎêòÎäî Î∂ÄÎ∂Ñ\n");
-				strLevel	= _S( 894, "ÏßÄÏõêÏûê" );	
+				ASSERTALWAYS("»£√‚µ«æÓº≠¥¬ æ»µ«¥¬ ∫Œ∫–\n");
+				strLevel	= _S( 894, "¡ˆø¯¿⁄" );	
 				crLevel		= 0x9400D6FF;
 			}
 			break;
@@ -1012,7 +1298,7 @@ void CUIGuild::RefreshMemberList( BOOL bInit )
 
 // ----------------------------------------------------------------------------
 // Name : RefreshApplicantList()
-// Desc : Î™©Î°ùÏùÑ Í∞±Ïã†Ìï©ÎãàÎã§.
+// Desc : ∏Ò∑œ¿ª ∞ªΩ≈«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 void CUIGuild::RefreshApplicantList( BOOL bInit )
 {
@@ -1025,7 +1311,7 @@ void CUIGuild::RefreshApplicantList( BOOL bInit )
 	CTString	strLevel;
 	COLOR		crLevel;
 
-	m_lbApplicantList.AddString( 0, _S( 895, "Ïò®ÎùºÏù∏" ), 0xBCBCBCFF );		
+	m_lbApplicantList.AddString( 0, _S( 895, "ø¬∂Û¿Œ" ), 0xBCBCBCFF );		
 	m_lbApplicantList.AddString( 1, CTString(""), 0xFFFFFFFF);
 
 	int			iBossCount		= 0;
@@ -1040,35 +1326,35 @@ void CUIGuild::RefreshApplicantList( BOOL bInit )
 		{
 			switch( (*it).eRanking )
 			{
-			case GUILD_MEMBER_BOSS:			// Í∏∏ÎìúÏû•
+			case GUILD_MEMBER_BOSS:			// ±ÊµÂ¿Â
 				{
-					strLevel	= _S( 891, "Í∏∏ÎìúÏû•" );	
+					strLevel	= _S( 891, "±ÊµÂ¿Â" );	
 					crLevel		= 0xFF9533FF;
 					ASSERT(iBossCount <= 1 && "Invalid Boss Count");
 					m_strBossName = (*it).strMemberName;
 					iBossCount++;
 				}
 				break;
-			case GUILD_MEMBER_VICE_BOSS:	// Í∏∏ÎìúÎ∂ÄÏû•
+			case GUILD_MEMBER_VICE_BOSS:	// ±ÊµÂ∫Œ¿Â
 				{
-					strLevel	= _S( 892, "Í∏∏ÎìúÎ∂ÄÏû•" );	
+					strLevel	= _S( 892, "±ÊµÂ∫Œ¿Â" );	
 					crLevel		= 0xFFC672FF;
 					ASSERT(iViceBossCount <= 2 && "Invalid Vice-Boss Count");
 					m_strViceBoss[iViceBossCount] = (*it).strMemberName;
 					iViceBossCount++;
 				}
 				break;
-			case GUILD_MEMBER_MEMBER:		// Í∏∏ÎìúÏõê
+			case GUILD_MEMBER_MEMBER:		// ±ÊµÂø¯
 				{
-					strLevel	= _S( 893, "Í∏∏ÎìúÏõê" );	
+					strLevel	= _S( 893, "±ÊµÂø¯" );	
 					crLevel		= 0xCCCCCCFF;
 				}
 				break;
 				/*
-			case GUILD_MEMBER_APPLICANT:	// ÏßÄÏõêÏûê
+			case GUILD_MEMBER_APPLICANT:	// ¡ˆø¯¿⁄
 				{
-					ASSERTALWAYS("Ìò∏Ï∂úÎêòÏñ¥ÏÑúÎäî ÏïàÎêòÎäî Î∂ÄÎ∂Ñ\n");
-					strLevel	= _S( 894, "ÏßÄÏõêÏûê" );	
+					ASSERTALWAYS("»£√‚µ«æÓº≠¥¬ æ»µ«¥¬ ∫Œ∫–\n");
+					strLevel	= _S( 894, "¡ˆø¯¿⁄" );	
 					crLevel		= 0x9400D6FF;
 				}
 				break;
@@ -1082,7 +1368,7 @@ void CUIGuild::RefreshApplicantList( BOOL bInit )
 	m_lbApplicantList.AddString( 0, CTString("  "), 0xFFFFFFFF );		
 	m_lbApplicantList.AddString( 1, CTString(""), 0xFFFFFFFF);
 
-	m_lbApplicantList.AddString( 0, _S( 896, "Ïò§ÌîÑÎùºÏù∏" ), 0xCCCCCCFF );		
+	m_lbApplicantList.AddString( 0, _S( 896, "ø¿«¡∂Û¿Œ" ), 0xCCCCCCFF );		
 	m_lbApplicantList.AddString( 1, CTString(""), 0xFFFFFFFF);
 
 	// Off-Line
@@ -1092,35 +1378,35 @@ void CUIGuild::RefreshApplicantList( BOOL bInit )
 		{
 			switch( (*it).eRanking )
 			{
-			case GUILD_MEMBER_BOSS:			// Í∏∏ÎìúÏû•
+			case GUILD_MEMBER_BOSS:			// ±ÊµÂ¿Â
 				{
-					strLevel	= _S( 891, "Í∏∏ÎìúÏû•" );	
+					strLevel	= _S( 891, "±ÊµÂ¿Â" );	
 					crLevel		= 0xFF9533FF;
 					ASSERT(iBossCount <= 1 && "Invalid Boss Count");
 					m_strBossName = (*it).strMemberName;
 					iBossCount++;
 				}
 				break;
-			case GUILD_MEMBER_VICE_BOSS:	// Í∏∏ÎìúÎ∂ÄÏû•
+			case GUILD_MEMBER_VICE_BOSS:	// ±ÊµÂ∫Œ¿Â
 				{
-					strLevel	= _S( 892, "Í∏∏ÎìúÎ∂ÄÏû•" );	
+					strLevel	= _S( 892, "±ÊµÂ∫Œ¿Â" );	
 					crLevel		= 0xFFC672FF;
 					ASSERT(iViceBossCount <= 2 && "Invalid Vice-Boss Count");
 					m_strViceBoss[iViceBossCount] = (*it).strMemberName;
 					iViceBossCount++;
 				}
 				break;
-			case GUILD_MEMBER_MEMBER:		// Í∏∏ÎìúÏõê
+			case GUILD_MEMBER_MEMBER:		// ±ÊµÂø¯
 				{
-					strLevel	= _S( 893, "Í∏∏ÎìúÏõê" );	
+					strLevel	= _S( 893, "±ÊµÂø¯" );	
 					crLevel		= 0xCCCCCCFF;
 				}
 				break;
 				/*
-			case GUILD_MEMBER_APPLICANT:	// ÏßÄÏõêÏûê
+			case GUILD_MEMBER_APPLICANT:	// ¡ˆø¯¿⁄
 				{
-					ASSERTALWAYS("Ìò∏Ï∂úÎêòÏñ¥ÏÑúÎäî ÏïàÎêòÎäî Î∂ÄÎ∂Ñ\n");
-					strLevel	= _S( 894, "ÏßÄÏõêÏûê" );	
+					ASSERTALWAYS("»£√‚µ«æÓº≠¥¬ æ»µ«¥¬ ∫Œ∫–\n");
+					strLevel	= _S( 894, "¡ˆø¯¿⁄" );	
 					crLevel		= 0x9400D6FF;
 				}
 				break;
@@ -1139,6 +1425,7 @@ void CUIGuild::RefreshApplicantList( BOOL bInit )
 void CUIGuild::GetGuildDesc( BOOL bShow )
 {
 	m_lbGuildDesc.ResetAllStrings();
+	SetSize( GUILD_WIDTH, GUILD_HEIGHT );
 
 	if( bShow == FALSE )
 		return;
@@ -1150,13 +1437,13 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 
 	switch( m_eGuildState )
 	{
-	case GUILD_CREATE:		// Í∏∏Îìú ÏÉùÏÑ±
+	case GUILD_CREATE:		// ±ÊµÂ ª˝º∫
 		{
-			AddGuildDescString( _S( 897, "Í∏∏ÎìúÎ•º Í≤∞ÏÑ± ÌïòÎ†§ÎäîÍ∞Ä?" ) );	
-			AddGuildDescString( _S( 898, "Ïö©Í∏∞ ÏûàÎäî ÏûêÎ°úÍµ∞." ) );			
-			AddGuildDescString( _S( 899, "ÌïòÏßÄÎßå, Í∑∏Ïóê ÏÉÅÏùëÌïòÎäî ÎπÑÏö©Í≥º ÏùºÏ†ï ÏàòÏ§ÄÏùò Ìù¨ÏÉùÏùÄ Í∞êÏàò Ìï¥Ïïº ÌïòÎÑ§." ) );		
-			AddGuildDescString( _S( 900, "Í∑∏ÎûòÎèÑ Ï¢ãÎã§Î©¥ ÏäπÎÇôÌïòÏßÄ." ) );		
-			AddGuildDescString( _S( 901, "Ïù¥ ÏÑ∏ÏÉÅÏùÄ ÌòºÎèàÏùÑ ÎÅùÎÇº Ïù∏Ïû¨Í∞Ä ÌïÑÏöîÌïòÎãàÍπå" ) );		
+			AddGuildDescString( _S( 897, "±ÊµÂ∏¶ ∞·º∫ «œ∑¡¥¬∞°?" ) );	
+			AddGuildDescString( _S( 898, "øÎ±‚ ¿÷¥¬ ¿⁄∑Œ±∫." ) );			
+			AddGuildDescString( _S( 899, "«œ¡ˆ∏∏, ±◊ø° ªÛ¿¿«œ¥¬ ∫ÒøÎ∞˙ ¿œ¡§ ºˆ¡ÿ¿« »Òª˝¿∫ ∞®ºˆ «ÿæﬂ «œ≥◊." ) );		
+			AddGuildDescString( _S( 900, "±◊∑°µµ ¡¡¥Ÿ∏È Ω¬≥´«œ¡ˆ." ) );		
+			AddGuildDescString( _S( 901, "¿Ã ººªÛ¿∫ »•µ∑¿ª ≥°≥æ ¿Œ¿Á∞° « ø‰«œ¥œ±Ó" ) );		
 			AddGuildDescString( CTString( " " ) );
 
 			ASSERT( m_iGuildLevel <= MAX_GUILD_LEVEL && "Invalid Guild Level" );
@@ -1164,11 +1451,11 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 			const int	iMyLevel	= _pNetwork->MyCharacterInfo.level;
 			const SQUAD llMyMoney	= _pNetwork->MyCharacterInfo.money;
 			const SLONG	lMySP		= _pNetwork->MyCharacterInfo.sp / 10000;			
-			const int	iNeedLevel	= _GuildConditionTable[m_iGuildLevel + 1].iCaptionNeedLevel;
-			const SQUAD llNeedMoney = _GuildConditionTable[m_iGuildLevel + 1].llNeedMoney;
-			const int	iNeedSP		= _GuildConditionTable[m_iGuildLevel + 1].iNeedSP;
+			const int	iNeedLevel	= _GuildConditionTable[0].iCaptionNeedLevel;
+			const SQUAD llNeedMoney = _GuildConditionTable[0].llNeedMoney;
+			const int	iNeedSP		= _GuildConditionTable[0].iNeedSP;
 
-			strTemp.PrintF( _S( 902, "ÏµúÎåÄ Í∏∏Îìú Ïù∏Ïõê : %d Î™Ö" ), _GuildConditionTable[m_iGuildLevel + 1].iMaxMember);		
+			strTemp.PrintF( _S( 902, "√÷¥Î ±ÊµÂ ¿Œø¯ : %d ∏Ì" ), _GuildConditionTable[0].iMaxMember);		
 			AddGuildDescString( strTemp, 0xFFFFFFFF );
 
 			if( iMyLevel < iNeedLevel )
@@ -1176,7 +1463,7 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 903, "ÌïÑÏöî Î†àÎ≤® : %d Lv" ), _GuildConditionTable[m_iGuildLevel + 1].iCaptionNeedLevel);		
+			strTemp.PrintF( _S( 903, "« ø‰ ∑π∫ß : %d Lv" ), _GuildConditionTable[0].iCaptionNeedLevel);		
 			AddGuildDescString( strTemp, iMyLevel >= iNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
 
 			if( llMyMoney < llNeedMoney )
@@ -1184,7 +1471,7 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 904, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), _GuildConditionTable[m_iGuildLevel + 1].llNeedMoney);		
+			strTemp.PrintF( _S( 904, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), _GuildConditionTable[0].llNeedMoney);		
 			AddGuildDescString( strTemp, llMyMoney >= llNeedMoney ? 0xFFC672FF : 0xBCBCBCFF );
 
 			if( lMySP < iNeedSP )
@@ -1192,15 +1479,15 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 905, "ÌïÑÏöî S P  : %d SP" ), _GuildConditionTable[m_iGuildLevel + 1].iNeedSP);		
+			strTemp.PrintF( _S( 905, "« ø‰ S P  : %d SP" ), _GuildConditionTable[0].iNeedSP);		
 			AddGuildDescString( strTemp, lMySP >= iNeedSP ? 0xFFC672FF : 0xBCBCBCFF );
 		}
 		break;
-	case GUILD_UPGRADE:		// Í∏∏Îìú ÏäπÍ∏â
+	case GUILD_UPGRADE:		// ±ÊµÂ Ω¬±ﬁ
 		{
-			AddGuildDescString( _S( 906, "ÏùºÏùÄ Ïûò ÎêòÏñ¥ Í∞ÄÎÇò? ÎßéÏùÄ Ïù¥Îì§Ïù¥ ÏûêÎÑ§Î•º Îî∞Î•¥ÎÇò Î≥¥Íµ∞." ) );	
-			AddGuildDescString( _S( 907, "ÏûêÍ≤©Ïù¥ ÎêúÎã§Î©¥Ïïº Îçî ÎßéÏùÄ ÏÇ¨ÎûåÎì§ÏùÑ Î™®ÏúºÎäî Í±¥ ÏûêÎÑ§Ïùò Îä•Î†•Ïù¥ÎÑ§Îßå," ) );			
-			AddGuildDescString( _S( 908, "ÎßåÏùº ÏûêÎÑ§Í∞Ä Í∑∏ ÎßéÏùÄ ÏÇ¨ÎûåÏùÑ Í∞êÎãπÌï† Ïàò ÏóÜÏùÑ ÏàòÎèÑ ÏûàÏúºÎãà Ïûò ÌåêÎã®ÌïòÍ≤å." ) );		
+			AddGuildDescString( _S( 906, "¿œ¿∫ ¿ﬂ µ«æÓ ∞°≥™? ∏π¿∫ ¿ÃµÈ¿Ã ¿⁄≥◊∏¶ µ˚∏£≥™ ∫∏±∫." ) );	
+			AddGuildDescString( _S( 907, "¿⁄∞›¿Ã µ»¥Ÿ∏Èæﬂ ¥ı ∏π¿∫ ªÁ∂˜µÈ¿ª ∏¿∏¥¬ ∞« ¿⁄≥◊¿« ¥…∑¬¿Ã≥◊∏∏," ) );			
+			AddGuildDescString( _S( 908, "∏∏¿œ ¿⁄≥◊∞° ±◊ ∏π¿∫ ªÁ∂˜¿ª ∞®¥Á«“ ºˆ æ¯¿ª ºˆµµ ¿÷¿∏¥œ ¿ﬂ ∆«¥‹«œ∞‘." ) );		
 			AddGuildDescString( CTString( " " ) );
 
 			ASSERT( m_iGuildLevel <= MAX_GUILD_LEVEL && "Invalid Guild Level" );
@@ -1212,10 +1499,10 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 			const SQUAD llNeedMoney = _GuildConditionTable[m_iGuildLevel].llNeedMoney;
 			const int	iNeedSP		= _GuildConditionTable[m_iGuildLevel].iNeedSP;			
 
-			strTemp.PrintF( _S( 909, "ÌòÑÏû¨ Í∏∏Îìú Î†àÎ≤® : %d Lv" ), m_iGuildLevel);		
+			strTemp.PrintF( _S( 909, "«ˆ¿Á ±ÊµÂ ∑π∫ß : %d Lv" ), m_iGuildLevel);		
 			AddGuildDescString( strTemp, 0xFFC672FF );
 
-			strTemp.PrintF( _S( 902, "ÏµúÎåÄ Í∏∏Îìú Ïù∏Ïõê : %d Î™Ö" ), _GuildConditionTable[m_iGuildLevel].iMaxMember);		
+			strTemp.PrintF( _S( 902, "√÷¥Î ±ÊµÂ ¿Œø¯ : %d ∏Ì" ), _GuildConditionTable[m_iGuildLevel].iMaxMember);		
 			AddGuildDescString( strTemp, 0xFFFFFFFF );
 
 			if( iMyLevel < iNeedLevel )
@@ -1223,7 +1510,7 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 903, "ÌïÑÏöî Î†àÎ≤® : %d Lv" ), _GuildConditionTable[m_iGuildLevel].iCaptionNeedLevel);		
+			strTemp.PrintF( _S( 903, "« ø‰ ∑π∫ß : %d Lv" ), _GuildConditionTable[m_iGuildLevel].iCaptionNeedLevel);		
 			AddGuildDescString( strTemp, iMyLevel >= iNeedLevel ? 0xFFC672FF : 0xBCBCBCFF );
 
 			if( llMyMoney < llNeedMoney )
@@ -1231,7 +1518,7 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 904, "ÌïÑÏöî ÎÇòÏä§ : %I64d ÎÇòÏä§" ), _GuildConditionTable[m_iGuildLevel].llNeedMoney);		
+			strTemp.PrintF( _S( 904, "« ø‰ ≥™Ω∫ : %I64d ≥™Ω∫" ), _GuildConditionTable[m_iGuildLevel].llNeedMoney);		
 			AddGuildDescString( strTemp, llMyMoney >= llNeedMoney ? 0xFFC672FF : 0xBCBCBCFF );
 
 			if( lMySP < iNeedSP )
@@ -1239,22 +1526,20 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 905, "ÌïÑÏöî S P  : %d SP" ), _GuildConditionTable[m_iGuildLevel].iNeedSP);		
+			strTemp.PrintF( _S( 905, "« ø‰ S P  : %d SP" ), _GuildConditionTable[m_iGuildLevel].iNeedSP);		
 			AddGuildDescString( strTemp, lMySP >= iNeedSP ? 0xFFC672FF : 0xBCBCBCFF );
-
-#ifdef NEW_GUILD_SYSTEM
-			strTemp.PrintF( _S(3839, "ÌïÑÏöî G P  : %d GP" ), _GuildConditionTable[m_iGuildLevel].iNeedGP);		
+			
+			strTemp.PrintF( _S(3839, "« ø‰ G P  : %d GP" ), _GuildConditionTable[m_iGuildLevel].iNeedGP);		
 			AddGuildDescString( strTemp, 0x70BEFFFF);
-#endif
 		}
 		break;
-	case GUILD_DESTROY:		// Í∏∏Îìú Ìï¥ÏÇ∞
+	case GUILD_DESTROY:		// ±ÊµÂ «ÿªÍ
 		{
-			AddGuildDescString( _S( 910, "ÏûêÎÑ§ÎèÑ ÌîºÍ≥§ÌïúÍ∞Ä Î≥¥Íµ∞." ) );	
-			AddGuildDescString( _S( 911, "ÌïòÏßÄÎßå, ÏßÄÍ∏à Í∑∏Îßå ÎëîÎã§Î©¥ ÏßÄÍ∏àÍπåÏßÄ ÏûêÎÑ§Î•º Îî∞ÎûêÎçò Ïù¥Îì§Ïùò Ïã§ÎßùÎèÑ ÌÅ¨Í≤†ÏßÄÎßå, " ) );			
-			AddGuildDescString( _S( 912, "ÏûêÎÑ§ Í∞úÏù∏Ï†ÅÏúºÎ°úÎèÑ Í∏∏ÎìúÏóê Îì§ÏòÄÎçò ÎÖ∏Î†•Ïù¥ Î™®Îëê ÌóàÏÇ¨Í∞Ä ÎêòÎÑ§." ) );		
-			AddGuildDescString( _S( 913, "Í∑∏ÎûòÎèÑ ÏÉÅÍ¥Ä ÏóÜÎã§Î©¥ ÏûêÎÑ§Ïùò ÎúªÎåÄÎ°ú ÌïòÍ≤å." ) );		
-			AddGuildDescString( _S( 914, "ÏßÄÍ∏àÍπåÏßÄ ÎèÑÏôÄÏ§Ä Í≤ÉÎßåÏúºÎ°úÎèÑ ÏûêÎÑ§ÏóêÍ≤å Í≥†ÎßàÏö∏ Îî∞Î¶ÑÏù¥ÎãàÍπå." ) );		
+			AddGuildDescString( _S( 910, "¿⁄≥◊µµ ««∞Ô«—∞° ∫∏±∫." ) );	
+			AddGuildDescString( _S( 911, "«œ¡ˆ∏∏, ¡ˆ±› ±◊∏∏ µ–¥Ÿ∏È ¡ˆ±›±Ó¡ˆ ¿⁄≥◊∏¶ µ˚∂˙¥¯ ¿ÃµÈ¿« Ω«∏¡µµ ≈©∞⁄¡ˆ∏∏, " ) );			
+			AddGuildDescString( _S( 912, "¿⁄≥◊ ∞≥¿Œ¿˚¿∏∑Œµµ ±ÊµÂø° µÈø¥¥¯ ≥Î∑¬¿Ã ∏µŒ «„ªÁ∞° µ«≥◊." ) );		
+			AddGuildDescString( _S( 913, "±◊∑°µµ ªÛ∞¸ æ¯¥Ÿ∏È ¿⁄≥◊¿« ∂Ê¥Î∑Œ «œ∞‘." ) );		
+			AddGuildDescString( _S( 914, "¡ˆ±›±Ó¡ˆ µµøÕ¡ÿ ∞Õ∏∏¿∏∑Œµµ ¿⁄≥◊ø°∞‘ ∞Ì∏∂øÔ µ˚∏ß¿Ã¥œ±Ó." ) );		
 		}
 		break;
 	}
@@ -1274,200 +1559,201 @@ void CUIGuild::AddGuildDescString( CTString &strDesc, COLOR colDesc )
 		return;
 
 	// wooss 051002
-	if(g_iCountry == THAILAND){
-		// Get length of string
-		INDEX	nThaiLen = FindThaiLen(strDesc);
-		INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-		if( nLength == 0 )
-			return;
-		// If length of string is less than max char
-		if( nThaiLen <= nChatMax )
+#if defined (THAI)
+	// Get length of string
+	INDEX	nThaiLen = FindThaiLen(strDesc);
+	INDEX	nChatMax= (_iMaxMsgStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
+	if( nLength == 0 )
+		return;
+	// If length of string is less than max char
+	if( nThaiLen <= nChatMax )
+	{
+		// Check line character
+		for( int iPos = 0; iPos < nLength; iPos++ )
 		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbGuildDesc.AddString( 0, strDesc, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddGuildDescString( strTemp, colDesc );
-			}
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
 		}
-		// Need multi-line
+
+		// Not exist
+		if( iPos == nLength )
+		{
+			m_lbGuildDesc.AddString( 0, strDesc, colDesc );
+		}
 		else
 		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if(nChatMax < FindThaiLen(strDesc,0,iPos))
-					break;
-			}
-			nSplitPos = iPos;
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
 
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddGuildDescString( strTemp, colDesc );
-			}
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
 			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
+				strTemp.TrimLeft( strTemp.Length() - 1 );
 
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddGuildDescString( strTemp, colDesc );
-			}
-
-		}
-		
-	} else {
-		// If length of string is less than max char
-		if( nLength <= _iMaxMsgStringChar )
-		{
-			// Check line character
-			for( int iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nLength )
-			{
-				m_lbGuildDesc.AddString( 0, strDesc, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddGuildDescString( strTemp, colDesc );
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = _iMaxMsgStringChar;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-
-			// Check line character
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if( iPos == nSplitPos )
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( nSplitPos, strTemp2, strTemp );
-				m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
-					{
-						if( strTemp[iPos] != ' ' )
-							break;
-					}
-
-					strTemp.TrimLeft( strTemp.Length() - iPos );
-				}
-
-				AddGuildDescString( strTemp, colDesc );
-			}
-			else
-			{
-				// Split string
-				CTString	strTemp, strTemp2;
-				strDesc.Split( iPos, strTemp2, strTemp );
-				m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
-
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
-
-				AddGuildDescString( strTemp, colDesc );
-			}
+			AddGuildDescString( strTemp, colDesc );
 		}
 	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = _iMaxMsgStringChar;
+		BOOL	b2ByteChar = FALSE;
+		for( int iPos = 0; iPos < nLength; iPos++ )
+		{
+			if(nChatMax < FindThaiLen(strDesc,0,iPos))
+				break;
+		}
+		nSplitPos = iPos;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( nSplitPos, strTemp2, strTemp );
+			m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+
+			AddGuildDescString( strTemp, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddGuildDescString( strTemp, colDesc );
+		}
+
+	}
+#else	
+	// If length of string is less than max char
+	if( nLength <= _iMaxMsgStringChar )
+	{
+		// Check line character
+		int iPos;
+		for( iPos = 0; iPos < nLength; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nLength )
+		{
+			m_lbGuildDesc.AddString( 0, strDesc, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddGuildDescString( strTemp, colDesc );
+		}
+	}
+	// Need multi-line
+	else
+	{
+		// Check splitting position for 2 byte characters
+		int		nSplitPos = _iMaxMsgStringChar;
+		BOOL	b2ByteChar = FALSE;
+		int		iPos;
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] & 0x80 )
+				b2ByteChar = !b2ByteChar;
+			else
+				b2ByteChar = FALSE;
+		}
+
+		if( b2ByteChar )
+			nSplitPos--;
+
+		// Check line character
+		for( iPos = 0; iPos < nSplitPos; iPos++ )
+		{
+			if( strDesc[iPos] == '\n' || strDesc[iPos] == '\r' )
+				break;
+		}
+
+		// Not exist
+		if( iPos == nSplitPos )
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( nSplitPos, strTemp2, strTemp );
+			m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+
+			AddGuildDescString( strTemp, colDesc );
+		}
+		else
+		{
+			// Split string
+			CTString	strTemp, strTemp2;
+			strDesc.Split( iPos, strTemp2, strTemp );
+			m_lbGuildDesc.AddString( 0, strTemp2, colDesc );
+
+			// Trim line character
+			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+				strTemp.TrimLeft( strTemp.Length() - 2 );
+			else
+				strTemp.TrimLeft( strTemp.Length() - 1 );
+
+			AddGuildDescString( strTemp, colDesc );
+		}
+	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -1485,16 +1771,10 @@ void CUIGuild::Render()
 	}
 	// --------------------------------------------------<<
 
-#ifdef CHECK_DISTANCE
-	// Check distance
-	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcX;
-	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcZ;
-	if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST && m_eGuildState != GUILD_MANAGER )
-		ResetGuild();
-#endif
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY, nX2, nY2;
@@ -1503,7 +1783,7 @@ void CUIGuild::Render()
 	// Top
 	nX = m_nPosX + m_nWidth;
 	nY = m_nPosY + 26;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, nX, nY,
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, nX, nY,
 										m_rtBackTop.U0, m_rtBackTop.V0,
 										m_rtBackTop.U1, m_rtBackTop.V1,
 										0xFFFFFFFF );
@@ -1511,7 +1791,7 @@ void CUIGuild::Render()
 	if( m_eGuildState != GUILD_MANAGER )
 	{	
 		// Not Manager
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + DESC_LIST_BOX_HEIGHT + 2,
+		pDrawPort->AddTexture( m_nPosX, nY, nX, nY + DESC_LIST_BOX_HEIGHT + 2,
 											m_rtBackMiddle1.U0, m_rtBackMiddle1.V0,
 											m_rtBackMiddle1.U1, m_rtBackMiddle1.V1,
 											0xFFFFFFFF );
@@ -1521,7 +1801,7 @@ void CUIGuild::Render()
 	else
 	{
 		// Manager
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 37,
+		pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 37,
 											m_rtBackManagerTop.U0, m_rtBackManagerTop.V0,
 											m_rtBackManagerTop.U1, m_rtBackManagerTop.V1,
 											0xFFFFFFFF );
@@ -1530,7 +1810,7 @@ void CUIGuild::Render()
 
 		if( m_iUserRanking < GUILD_MEMBER_MEMBER )
 		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + MEMBER_LIST_BOX_HEIGHT + 2,
+			pDrawPort->AddTexture( m_nPosX, nY, nX, nY + MEMBER_LIST_BOX_HEIGHT + 2,
 				m_rtBackManagerMiddle.U0, m_rtBackManagerMiddle.V0,
 				m_rtBackManagerMiddle.U1, m_rtBackManagerMiddle.V1,
 				0xFFFFFFFF );
@@ -1539,7 +1819,7 @@ void CUIGuild::Render()
 		}
 		else
 		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + MEMBER_LIST_BOX_HEIGHT * 2 + 2,
+			pDrawPort->AddTexture( m_nPosX, nY, nX, nY + MEMBER_LIST_BOX_HEIGHT * 2 + 2,
 				m_rtBackManagerMiddle.U0, m_rtBackManagerMiddle.V0,
 				m_rtBackManagerMiddle.U1, m_rtBackManagerMiddle.V1,
 				0xFFFFFFFF );
@@ -1547,7 +1827,7 @@ void CUIGuild::Render()
 			nY += MEMBER_LIST_BOX_HEIGHT * 2 + 2;
 		}
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, nY + 4,
+		pDrawPort->AddTexture( m_nPosX, nY, nX, nY + 4,
 											m_rtBackManagerBottom.U0, m_rtBackManagerBottom.V0,
 											m_rtBackManagerBottom.U1, m_rtBackManagerBottom.V1,
 											0xFFFFFFFF );
@@ -1556,14 +1836,14 @@ void CUIGuild::Render()
 	}
 
 	// Middle 2
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight - 7,
 										m_rtBackMiddle2.U0, m_rtBackMiddle2.V0,
 										m_rtBackMiddle2.U1, m_rtBackMiddle2.V1,
 										0xFFFFFFFF );
 
 	// Bottom
 	nY = m_nPosY + m_nHeight - 7;
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
+	pDrawPort->AddTexture( m_nPosX, nY, nX, m_nPosY + m_nHeight,
 										m_rtBackBottom.U0, m_rtBackBottom.V0,
 										m_rtBackBottom.U1, m_rtBackBottom.V1,
 										0xFFFFFFFF );
@@ -1578,7 +1858,7 @@ void CUIGuild::Render()
 		nY = m_nPosY + m_rcTab.Top;
 		nX2 = nX + 1;
 		nY2 = nY + 16;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX, nY, nX2, nY2,
 												m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 												0xFFFFFFFF );	
 	}
@@ -1595,15 +1875,15 @@ void CUIGuild::Render()
 		nX2 = m_nPosX + m_nWidth - 10;
 		nY	= m_nPosY + (EDIT_BOX_Y - 3);
 		nY2 = nY + 16;
-		_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + 4, nY2,
+		pDrawPort->AddTexture( nX, nY, nX + 4, nY2,
 			m_rtInputBoxL.U0, m_rtInputBoxL.V0, m_rtInputBoxL.U1, m_rtInputBoxL.V1,
 			0xFFFFFFFF );
 		// Lower middle
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 4, nY, nX2 - 4, nY2,
+		pDrawPort->AddTexture( nX + 4, nY, nX2 - 4, nY2,
 			m_rtInputBoxM.U0, m_rtInputBoxM.V0, m_rtInputBoxM.U1, m_rtInputBoxM.V1,
 			0xFFFFFFFF );
 		// Lower right
-		_pUIMgr->GetDrawPort()->AddTexture( nX2 - 4, nY, nX2, nY2,
+		pDrawPort->AddTexture( nX2 - 4, nY, nX2, nY2,
 			m_rtInputBoxR.U0, m_rtInputBoxR.V0, m_rtInputBoxR.U1, m_rtInputBoxR.V1,
 			0xFFFFFFFF );
 
@@ -1628,10 +1908,10 @@ void CUIGuild::Render()
 			if( m_iUserRanking < GUILD_MEMBER_MEMBER )
 			{
 				m_lbMemberList.Render();
-				m_btnChangeBoss.Render();		// Îã®Ïû• Ïù¥ÏûÑ
-				m_btnAccept.Render();			// Î∂ÄÎã®Ïû• ÏûÑÎ™Ö
-				m_btnReject.Render();			// Î∂ÄÎã®Ïû• Ìï¥ÏûÑ
-				m_btnMemberFire.Render();		// Î©§Î≤Ñ Ìá¥Ï∂ú
+				m_btnChangeBoss.Render();		// ¥‹¿Â ¿Ã¿”
+				m_btnAccept.Render();			// ∫Œ¥‹¿Â ¿”∏Ì
+				m_btnReject.Render();			// ∫Œ¥‹¿Â «ÿ¿”
+				m_btnMemberFire.Render();		// ∏‚πˆ ≈√‚
 			}
 			else
 			{
@@ -1643,35 +1923,35 @@ void CUIGuild::Render()
 	}
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	CTString strTitle = "";
 	switch( m_eGuildState )
 	{
 	case GUILD_CREATE :
-		strTitle = _S( 915, "Í∏∏Îìú Í≤∞ÏÑ±" );		
+		strTitle = _S( 915, "±ÊµÂ ∞·º∫" );		
 		break;
 	case GUILD_UPGRADE:
-		strTitle = _S( 916, "Í∏∏Îìú ÏäπÍ∏â" );		
+		strTitle = _S( 916, "±ÊµÂ Ω¬±ﬁ" );		
 		break;
 	case GUILD_DESTROY:
-		strTitle = _S( 917, "Í∏∏Îìú Ìï¥Ï≤¥" );		
+		strTitle = _S( 917, "±ÊµÂ «ÿ√º" );		
 		break;
 	case GUILD_MANAGER:
-		//strTitle = _S( 918, "Í∏∏Îìú Í¥ÄÎ¶¨" );		
-		strTitle.PrintF( _S( 919, "%s Í∏∏Îìú Lv.%d" ), _pNetwork->MyCharacterInfo.strGuildName, _pNetwork->MyCharacterInfo.lGuildLevel ); 
+		//strTitle = _S( 918, "±ÊµÂ ∞¸∏Æ" );		
+		strTitle.PrintF( _S( 919, "%s ±ÊµÂ Lv.%d" ), _pNetwork->MyCharacterInfo.strGuildName, _pNetwork->MyCharacterInfo.lGuildLevel ); 
 		break;
 	}
 
 	if( m_eGuildState == GUILD_CREATE)
 	{
 		// Text in guild
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 920, "Í∏∏Îìú Ïù¥Î¶Ñ" ), m_nPosX + GUILD_TITLE_TEXT_OFFSETX - 4,		
+		pDrawPort->PutTextEx( _S( 920, "±ÊµÂ ¿Ã∏ß" ), m_nPosX + GUILD_TITLE_TEXT_OFFSETX - 4,		
 										m_nPosY + (EDIT_BOX_Y - 2), 0xFFFFFFFF );
 	}
 
 	// Text in guild
-	_pUIMgr->GetDrawPort()->PutTextEx( strTitle, m_nPosX + GUILD_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( strTitle, m_nPosX + GUILD_TITLE_TEXT_OFFSETX,
 										m_nPosY + GUILD_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
 	if( m_eGuildState == GUILD_MANAGER)
@@ -1679,11 +1959,11 @@ void CUIGuild::Render()
 		// Tab
 		nY = m_nPosY + 29;
 		nX = m_nPosX + m_rcTab.Left + GUILD_TAB_WIDTH / 2;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 921, "Í∏∏ÎìúÏõê Í¥ÄÎ¶¨" ), nX, nY,			
+		pDrawPort->PutTextExCX( _S( 921, "±ÊµÂø¯ ∞¸∏Æ" ), nX, nY,			
 											m_nCurrentTab == GUILD_TAB_MEMBER ? 0xE1B300FF : 0x6B6B6BFF );
 	
 		nX += GUILD_TAB_WIDTH;
-		_pUIMgr->GetDrawPort()->PutTextExCX( _S( 922, "Íµ∞ Îã®" ), nX, nY,				
+		pDrawPort->PutTextExCX( _S( 922, "±∫ ¥‹" ), nX, nY,				
 											m_nCurrentTab == GUILD_TAB_TREE ? 0xE1B300FF : 0x6B6B6BFF );
 
 		if( m_nCurrentTab == GUILD_TAB_MEMBER )
@@ -1693,25 +1973,25 @@ void CUIGuild::Render()
 			CTString strLevel;
 			switch(m_iUserRanking)
 			{
-			case GUILD_MEMBER_BOSS:			// Í∏∏ÎìúÏû•
+			case GUILD_MEMBER_BOSS:			// ±ÊµÂ¿Â
 				{
-					strLevel	= _S( 891, "Í∏∏ÎìúÏû•" );	
+					strLevel	= _S( 891, "±ÊµÂ¿Â" );	
 				}
 				break;
-			case GUILD_MEMBER_VICE_BOSS:	// Í∏∏ÎìúÎ∂ÄÏû•
+			case GUILD_MEMBER_VICE_BOSS:	// ±ÊµÂ∫Œ¿Â
 				{
-					strLevel	= _S( 892, "Í∏∏ÎìúÎ∂ÄÏû•" );	
+					strLevel	= _S( 892, "±ÊµÂ∫Œ¿Â" );	
 				}
 				break;
-			case GUILD_MEMBER_MEMBER:		// Í∏∏ÎìúÏõê
+			case GUILD_MEMBER_MEMBER:		// ±ÊµÂø¯
 				{
-					strLevel	= _S( 893, "Í∏∏ÎìúÏõê" );	
+					strLevel	= _S( 893, "±ÊµÂø¯" );	
 				}
 				break;
 			}
 
 			strText.PrintF( "%s %s", _pNetwork->MyCharacterInfo.name, strLevel );
-			_pUIMgr->GetDrawPort()->PutTextExCX( strText, m_nPosX + (GUILD_WIDTH / 2),
+			pDrawPort->PutTextExCX( strText, m_nPosX + (GUILD_WIDTH / 2),
 											m_nPosY + 46, 0xFFFFFFFF );
 		}
 	
@@ -1720,30 +2000,30 @@ void CUIGuild::Render()
 			int nTextY = START_BUTTON_Y + 5;
 			
 			// Text in guild
-			_pUIMgr->GetDrawPort()->PutTextEx( _S( 891, "Í∏∏ÎìúÏû•" ), m_nPosX + 10,		
+			pDrawPort->PutTextEx( _S( 891, "±ÊµÂ¿Â" ), m_nPosX + 10,		
 				m_nPosY + nTextY, 0xBCBCBCFF );
 			
 			nTextY += SPAN_TEXT_Y;
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strBossName, m_nPosX + 10,
+			pDrawPort->PutTextEx( m_strBossName, m_nPosX + 10,
 				m_nPosY + nTextY, 0xFFFFFFFF );
 			
 			nTextY += SPAN_TEXT_Y + 4;
-			_pUIMgr->GetDrawPort()->PutTextEx( _S( 892, "Í∏∏ÎìúÎ∂ÄÏû•" ), m_nPosX + 10,		
+			pDrawPort->PutTextEx( _S( 892, "±ÊµÂ∫Œ¿Â" ), m_nPosX + 10,		
 				m_nPosY + nTextY, 0xBCBCBCFF );
 			
 			nTextY += SPAN_TEXT_Y;
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strViceBoss[0], m_nPosX + 10,
+			pDrawPort->PutTextEx( m_strViceBoss[0], m_nPosX + 10,
 				m_nPosY + nTextY, 0xFFFFFFFF );
 			
 			nTextY += SPAN_TEXT_Y;
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strViceBoss[1], m_nPosX + 10,
+			pDrawPort->PutTextEx( m_strViceBoss[1], m_nPosX + 10,
 				m_nPosY + nTextY, 0xFFFFFFFF );
 		}
 		
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 	
 	if(m_eGuildState == GUILD_CREATE)
 	{
@@ -1751,16 +2031,16 @@ void CUIGuild::Render()
 		if( m_ebGuildName.DoesShowReadingWindow() )
 		{
 			// Set texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+			pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 			// Reading window
 			m_ebGuildName.RenderReadingWindow();
 
 			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+			pDrawPort->FlushRenderingQueue();
 
 			// Flush all render text queue
-			_pUIMgr->GetDrawPort()->EndTextEx();
+			pDrawPort->EndTextEx();
 		}
 	}
 
@@ -1773,10 +2053,10 @@ void CUIGuild::Render()
 WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 {
 
-	// TODO : Í∏∏Îìú Ï†ïÎ≥¥ ÏÑ†ÌÉù
-	// Í∏∏ÎìúÎ†àÎ≤® 6Ïù¥ÏÉÅ...
+	// TODO : ±ÊµÂ ¡§∫∏ º±≈√
+	// ±ÊµÂ∑π∫ß 6¿ÃªÛ...
 	if( m_eGuildState == GUILD_MANAGER_NEW )
-			return MouseMessageNew (pMsg);
+		return MouseMessageNew (pMsg);
 	
 	
 	WMSG_RESULT	wmsgResult;
@@ -1798,7 +2078,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -1882,6 +2162,8 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
 				nOldX = nX;		nOldY = nY;
 
 				// Close button
@@ -1919,7 +2201,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 						// WSS_NEW_GUILD_SYSTEM 070702
 						m_ebGuildName.SetFocus(TRUE);
 						// Date : 2005-03-10,   By Lee Ki-hwan
-						_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+						pUIManager->RearrangeOrder( UI_GUILD, TRUE );
 						return WMSG_SUCCESS;
 					}
 					// List boxi
@@ -1969,7 +2251,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 					}
 				}
 
-				_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+				pUIManager->RearrangeOrder( UI_GUILD, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -2019,7 +2301,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 				{	
 					if( m_iUserRanking < GUILD_MEMBER_MEMBER)
 					{
-						// Change Boss(Îã®Ïû• Ïù¥ÏûÑ)
+						// Change Boss(¥‹¿Â ¿Ã¿”)
 						if( (wmsgResult = m_btnChangeBoss.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
 							if(wmsgResult == WMSG_COMMAND)
@@ -2028,7 +2310,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 							}
 							return WMSG_SUCCESS;
 						}
-						// Accept(Î∂ÄÎã®Ïû• ÏûÑÎ™Ö)
+						// Accept(∫Œ¥‹¿Â ¿”∏Ì)
 						else if( (wmsgResult = m_btnAccept.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
 							if(wmsgResult == WMSG_COMMAND)
@@ -2037,7 +2319,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 							}
 							return WMSG_SUCCESS;
 						}
-						// Reject(Î∂ÄÎã®Ïû• Ìï¥ÏûÑ)
+						// Reject(∫Œ¥‹¿Â «ÿ¿”)
 						else if( (wmsgResult = m_btnReject.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
 							if(wmsgResult == WMSG_COMMAND)
@@ -2046,7 +2328,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 							}
 							return WMSG_SUCCESS;
 						}
-						// Member fire(Îã®Ïõê Ìá¥Ï∂ú)
+						// Member fire(¥‹ø¯ ≈√‚)
 						else if( (wmsgResult = m_btnMemberFire.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
 							if(wmsgResult == WMSG_COMMAND)
@@ -2104,6 +2386,40 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 		}
 		break;
 
+	case WM_RBUTTONDOWN:
+		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
+			if( m_lbGuildMemberList.IsInside( nX, nY) )
+			{
+				if (pUIManager->GetGuild()->IsEnabled() && !pUIManager->GetGuild()->IsVisible())
+				{
+					pUIManager->RearrangeOrder( UI_GUILD, TRUE );
+				}
+
+				CTString strTargetName;
+				switch(m_iSelTab)
+				{
+				case NEW_GUILD_MEMBER_INFO:
+					{
+						int nAddPos = m_lbGuildMemberList.GetScrollBarPos();
+
+						if (nAddPos < 0)
+							nAddPos = 0;
+
+						return OpenGuildPop(m_lbGuildMemberList.GetCurOverList() + nAddPos, nX, nY);
+					}
+					break;
+				}
+				pUIManager->RearrangeOrder( UI_GUILD, TRUE );
+				return WMSG_SUCCESS;
+			}
+			else
+			{
+				pUIManager->GetSimplePop()->ClosePop();
+			}
+		}
+		break;
 	case WM_MOUSEWHEEL:
 		{
 			if( IsInside( nX, nY ) )
@@ -2135,6 +2451,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 			}
 		}
 		break;
+
 	}
 	return WMSG_FAIL;
 }
@@ -2160,7 +2477,7 @@ WMSG_RESULT	CUIGuild::KeyMessage( MSG *pMsg )
 
 		switch(m_iSelTab)
 		{
-			case NEW_GUILD_NOTICE:
+		case NEW_GUILD_NOTICE:
 			{
 				if( m_ebNoticeTitle.KeyMessage( pMsg ) != WMSG_FAIL )
 				{
@@ -2186,7 +2503,7 @@ WMSG_RESULT	CUIGuild::KeyMessage( MSG *pMsg )
 				}
 			}
 			break;
-			case NEW_GUILD_MANAGE:
+		case NEW_GUILD_MANAGE:
 			{
 				if(m_bApplySettingOn)
 				{
@@ -2229,8 +2546,8 @@ WMSG_RESULT	CUIGuild::KeyMessage( MSG *pMsg )
 				}
 			}			
 			break;	
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
-			case NEW_GUILD_BOARD:
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
+		case NEW_GUILD_BOARD:
 			{
 				// List
 				if( pWEB->m_nCurBoardType == UWT_LIST )
@@ -2250,7 +2567,7 @@ WMSG_RESULT	CUIGuild::KeyMessage( MSG *pMsg )
 				}
 				else if( pWEB->m_nCurBoardType >= UWT_WRITE && pWEB->m_nCurBoardType <= UWT_MODIFY )
 				{
-					// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë(05.01.01) : Ï†úÎ™©Í≥º ÎÇ¥Ïö© ÏÇ¨Ïù¥Ïóê TABÌÇ§Î°ú Ìè¨Ïª§Ïä§ Ïù¥Îèô
+					// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€(05.01.01) : ¡¶∏Ò∞˙ ≥ªøÎ ªÁ¿Ãø° TAB≈∞∑Œ ∆˜ƒøΩ∫ ¿Ãµø
 					if( pMsg->wParam == VK_TAB )
 					{
 						if( m_ebWriteSubject.IsFocused() )
@@ -2266,10 +2583,10 @@ WMSG_RESULT	CUIGuild::KeyMessage( MSG *pMsg )
 						}
 						return WMSG_SUCCESS;
 					}
-					// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù : 
+					// ¿Ã±‚»Ø ºˆ¡§ ≥° : 
 						
 					
-					// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë(05.01.01) : Î©ÄÌã∞ ÏóêÎîîÌä∏ Î∞ïÏä§ Î£®Ìã¥ Ï∂îÍ∞Ä 
+					// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€(05.01.01) : ∏÷∆º ø°µ∆Æ π⁄Ω∫ ∑Á∆æ √ﬂ∞° 
 					// Subject edit box
 					if ( m_ebWriteSubject.KeyMessage ( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
@@ -2278,7 +2595,7 @@ WMSG_RESULT	CUIGuild::KeyMessage( MSG *pMsg )
 					{
 						return WMSG_SUCCESS;
 					}
-					// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÎÅù
+					// ¿Ã±‚»Ø ºˆ¡§ ≥°
 				}
 			}
 			break;
@@ -2297,12 +2614,12 @@ WMSG_RESULT	CUIGuild::IMEMessage( MSG *pMsg )
 	if( m_iGuildLevel < LIMIT_GUILD_LEVEL )
 	{
 		if(m_ebGuildName.IsFocused())
-		return m_ebGuildName.IMEMessage( pMsg );
+			return m_ebGuildName.IMEMessage( pMsg );
 	}
 	else {
 		switch(m_iSelTab)
 		{
-			case NEW_GUILD_NOTICE:
+		case NEW_GUILD_NOTICE:
 			{
 				if(m_ebNoticeTitle.IsFocused())
 					return m_ebNoticeTitle.IMEMessage( pMsg );
@@ -2310,7 +2627,7 @@ WMSG_RESULT	CUIGuild::IMEMessage( MSG *pMsg )
 					return m_mebNoticeContent.IMEMessage( pMsg );
 			}
 			break;
-			case NEW_GUILD_MANAGE:
+		case NEW_GUILD_MANAGE:
 			{
 				if(m_bApplySettingOn)
 				{
@@ -2323,8 +2640,8 @@ WMSG_RESULT	CUIGuild::IMEMessage( MSG *pMsg )
 				}
 			}			
 			break;
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
-			case NEW_GUILD_BOARD:
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
+		case NEW_GUILD_BOARD:
 			{
 				// List
 				if( pWEB->m_nCurBoardType == UWT_LIST )
@@ -2340,6 +2657,12 @@ WMSG_RESULT	CUIGuild::IMEMessage( MSG *pMsg )
 					{
 						return wmsgResult;
 					}
+					
+					if (m_mebContent.GetAllStringLength() >= 1024)
+					{
+						return WMSG_FAIL;
+					}
+
 					// Content multi-edit box
 					return m_mebContent.IMEMessage ( pMsg );			
 				}
@@ -2369,7 +2692,7 @@ WMSG_RESULT	CUIGuild::CharMessage( MSG *pMsg )
 	{
 		switch(m_iSelTab)
 		{
-			case NEW_GUILD_NOTICE:
+		case NEW_GUILD_NOTICE:
 			{
 				if( m_ebNoticeTitle.CharMessage( pMsg ) != WMSG_FAIL )
 				{
@@ -2381,7 +2704,7 @@ WMSG_RESULT	CUIGuild::CharMessage( MSG *pMsg )
 				}
 			}
 			break;
-			case NEW_GUILD_MANAGE:
+		case NEW_GUILD_MANAGE:
 			{
 				if(m_bApplySettingOn)
 				{
@@ -2401,8 +2724,8 @@ WMSG_RESULT	CUIGuild::CharMessage( MSG *pMsg )
 				}
 			}			
 			break;
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
-			case NEW_GUILD_BOARD:
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
+		case NEW_GUILD_BOARD:
 			{
 				// List
 				if( pWEB->m_nCurBoardType == UWT_LIST )
@@ -2416,9 +2739,15 @@ WMSG_RESULT	CUIGuild::CharMessage( MSG *pMsg )
 					// Subject edit box
 					if( m_ebWriteSubject.CharMessage( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
-					// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë(05.01.01) : Î©ÄÌã∞ ÏóêÎîîÌä∏ Î∞ïÏä§ Î£®Ìã¥ Ï∂îÍ∞Ä 
+					// ¿Ã±‚»Ø ºˆ¡§ Ω√¿€(05.01.01) : ∏÷∆º ø°µ∆Æ π⁄Ω∫ ∑Á∆æ √ﬂ∞° 
+
+					if (m_mebContent.GetAllStringLength() >= 1024)
+					{
+						return WMSG_FAIL;
+					}
+
 					// Content multi-edit box
-					else if ( m_mebContent.CharMessage ( pMsg ) != WMSG_FAIL )
+					if ( m_mebContent.CharMessage ( pMsg ) != WMSG_FAIL )
 					{
 						return WMSG_SUCCESS;
 					}								
@@ -2426,7 +2755,7 @@ WMSG_RESULT	CUIGuild::CharMessage( MSG *pMsg )
 			}
 			break;
 #endif
-		
+			
 		}	
 
 	}
@@ -2439,105 +2768,175 @@ WMSG_RESULT	CUIGuild::CharMessage( MSG *pMsg )
 // ----------------------------------------------------------------------------
 void CUIGuild::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 {	
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch( nCommandCode )
 	{
-	case MSGCMD_GUILD_ERROR:	// ÏóêÎü¨ Î∞úÏÉù
+	case MSGCMD_GUILD_ERROR:	// ø°∑Ø πﬂª˝
 		{
 			if( !bOK )
 				return;
 		}
 		break;
-	case MSGCMD_GUILD_JOIN:		// Í∏∏Îìú Í∞ÄÏûÖ
+	case MSGCMD_GUILD_JOIN:		// ±ÊµÂ ∞°¿‘
 		{
 			if( !bOK )
 				return;
 
+// 			if (_pNetwork->IsRvrZone() && _pNetwork->MyCharacterInfo.iSyndicateType != m_iSyndiType)
+// 			{
+// 				pUIManager->GetChattingUI()->AddSysMessage( _S( 6090, "∫–¿Ô ¡ˆø™ø°º≠ ¿˚¥Î ∞¸∞Ë¿Œ ∞ÊøÏ ªÁøÎ«“ ºˆ æ¯¥¬ ±‚¥…¿‘¥œ¥Ÿ."  ), SYSMSG_ERROR );	
+// 				return;
+// 			}
+
 			CTString	strMessage;
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo(  _S( 865, "Í∏∏Îìú" ) , UMBS_CANCEL, UI_GUILD, MSGCMD_GUILD_JOIN_REQ );	
-			strMessage.PrintF(  _S( 923, "Í∏∏Îìú Í∞ÄÏûÖ Ïã†Ï≤≠Ï§ëÏûÖÎãàÎã§." )  );		
+			MsgBoxInfo.SetMsgBoxInfo(  _S( 865, "±ÊµÂ" ) , UMBS_CANCEL, UI_GUILD, MSGCMD_GUILD_JOIN_REQ );	
+			strMessage.PrintF(  _S( 923, "±ÊµÂ ∞°¿‘ Ω≈√ª¡ﬂ¿‘¥œ¥Ÿ." )  );		
 			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 
 			_pNetwork->GuildJoin( g_lGuildIndex, g_lChaIndex, _pNetwork->MyCharacterInfo.index );
 		}
 		break;
 	case MSGCMD_GUILD_JOIN_REQ:
 		{
-			// Îã®Ïû•Ïù¥ Ï∑®ÏÜåÌïòÎ©¥ 1 ÏïÑÎãàÎ©¥ 0
+			// ¥‹¿Â¿Ã √Îº“«œ∏È 1 æ∆¥œ∏È 0
 			_pNetwork->GuildApplicantReject( FALSE );
 		}
 		break;
-	case MSGCMD_GUILD_QUIT:		// Í∏∏Îìú ÌÉàÌá¥
+	case MSGCMD_GUILD_QUIT:		// ±ÊµÂ ≈ª≈
 		{
 			if( !bOK )
 				return;
 			// Create message box of guild destroy
 			CTString	strMessage;
 			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_QUIT_CONFIRM );	
-			strMessage.PrintF( _S( 924, "Ï†ïÎßêÎ°ú Í∏∏ÎìúÏóêÏÑú ÌÉàÌá¥ÌïòÏãúÍ≤†ÏäµÎãàÍπå? ÌÉàÌá¥ÌïòÏãúÎ©¥ 7Ïùº ÎèôÏïà Í∏∏ÎìúÏóê Í∞ÄÏûÖÌïòÏã§ Ïàò ÏóÜÏäµÎãàÎã§." ) );		
+			MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_QUIT_CONFIRM );	
+			strMessage.PrintF( _S( 924, "¡§∏ª∑Œ ±ÊµÂø°º≠ ≈ª≈«œΩ√∞⁄Ω¿¥œ±Ó? ≈ª≈«œΩ√∏È 7¿œ µøæ» ±ÊµÂø° ∞°¿‘«œΩ« ºˆ æ¯Ω¿¥œ¥Ÿ." ) );		
 			MsgBoxInfo.AddString( strMessage );
-			_pUIMgr->CreateMessageBox( MsgBoxInfo );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 		}
 		break;
-	case MSGCMD_GUILD_QUIT_CONFIRM:		// ÌÉàÌá¥ ÌôïÏù∏
+	case MSGCMD_GUILD_QUIT_CONFIRM:		// ≈ª≈ »Æ¿Œ
 		{
 			if( !bOK )
 				return;
 			_pNetwork->GuildQuit();
 		}
 		break;
-	case MSGCMD_GUILD_DESTROY:			// Í∏∏Îìú Ìï¥ÏÇ∞
+	case MSGCMD_GUILD_DESTROY:			// ±ÊµÂ «ÿªÍ
 		{
 			if( !bOK )
 				return;
 			DestroyGuild();
 		}
 		break;
-	case MSGCMD_GUILD_APPLICANT_JOIN:	// Ïã†Ï≤≠Ïûê Ï∞∏Ïó¨.
+	case MSGCMD_GUILD_APPLICANT_JOIN:	// Ω≈√ª¿⁄ ¬¸ø©.
 		{
 			if( !bOK )
-				// Îã®Ïû•Ïù¥ Ï∑®ÏÜåÌïòÎ©¥ 1 ÏïÑÎãàÎ©¥ 0
-				_pNetwork->GuildApplicantReject( TRUE );			// Í∞ÄÏûÖ Í±∞Î∂Ä
+				// ¥‹¿Â¿Ã √Îº“«œ∏È 1 æ∆¥œ∏È 0
+				_pNetwork->GuildApplicantReject( TRUE );			// ∞°¿‘ ∞≈∫Œ
 			else
-				_pNetwork->GuildApplicantAccept( g_lChaIndex );		// Í∞ÄÏûÖ ÌóàÏö©
+				_pNetwork->GuildApplicantAccept( g_lChaIndex );		// ∞°¿‘ «„øÎ
 		}
 		break;
 
-	case MSGCMD_GUILD_ADD_VICE_BOSS:	// Î∂ÄÍ¥Ä ÏûÑÎ™Ö
+	case MSGCMD_GUILD_ADD_VICE_BOSS:	// ∫Œ∞¸ ¿”∏Ì
 		{
 			if( !bOK )
 				return;
 			_pNetwork->GuildAddViceBoss( g_lMemberIndex );
 		}
 		break;
-	case MSGCMD_GUILD_DEL_VICE_BOSS:	// Î∂ÄÍ¥Ä Ìï¥ÏûÑ
+	case MSGCMD_GUILD_DEL_VICE_BOSS:	// ∫Œ∞¸ «ÿ¿”
 		{
 			if( !bOK )
 				return;
 			_pNetwork->GuildDelViceBoss( g_lMemberIndex );
 		}
 		break;
-	case MSGCMD_GUILD_CHANGE_BOSS:		// Îã®Ïû• Ïù¥ÏûÑ
+	case MSGCMD_GUILD_CHANGE_BOSS:		// ¥‹¿Â ¿Ã¿”
 		{
 			if( !bOK )
 				return;
 			_pNetwork->GuildChangeBoss( g_lMemberIndex );
 		}
 		break;
-	case MSGCMD_GUILD_KICK:				// Î©§Î≤Ñ ÏßúÎ•¥Í∏∞
+	case MSGCMD_GUILD_KICK:				// ∏‚πˆ ¬•∏£±‚
 		{
 			if( !bOK )
 				return;
 			_pNetwork->GuildMemberFire( g_lMemberIndex );
 		}
 		break;
-	case MSGCMD_GUILD_ROOM:				// Í∏∏Îìú Ï†ÑÏö© Í≥µÍ∞ÑÏúºÎ°ú...
+	case MSGCMD_GUILD_ROOM:				// ±ÊµÂ ¿¸øÎ ∞¯∞£¿∏∑Œ...
 		{
 			if( !bOK )
 				return;
 			GoGuildZone();
+		}
+		break;
+	// 1107 ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì [trylord 11/12/28]
+	case MSGCMD_GUILDMASTER_KICK_REQUEST:
+		{
+			if( !bOK )
+				break;
+
+			_pNetwork->SendGuildMasterKickReq(_pNetwork->MyCharacterInfo.lGuildIndex);
+		}
+		break;
+
+	case MSGCMD_GUILDMASTER_KICK_CANCEL_REQUEST:
+		{
+			if( !bOK )
+				break;
+
+			_pNetwork->SendGuildMasterKickCancelReq(_pNetwork->MyCharacterInfo.lGuildIndex);
+		}
+		break;
+
+	case MSGCMD_GUILDREMOTE_JOIN_TOUSER:
+		{
+			if( !bOK )
+			{
+				_pNetwork->SendGuildRemoteJoinNOReq();
+			}
+			else
+			{
+				_pNetwork->SendGuildRemoteJoinOKReq(GetRemoteGuildJoinTaget(), 1);
+			}
+		}
+		break;
+
+	case MSGCMD_GUILDREMOTE_JOIN_TOMASTER:
+		{
+			if( !bOK )
+			{
+				_pNetwork->SendGuildRemoteJoinNOReq();
+			}
+			else
+			{
+				_pNetwork->SendGuildRemoteJoinOKReq(GetRemoteGuildJoinTaget(), 0);
+			}
+		}
+		break;
+
+	case MSGCMD_GUILD_RECALL:
+		{
+			if (bOK)
+			{
+				_pNetwork->SendGuildRecallReq();
+			}
+		}
+		break;
+
+	case MSGCMD_GUILD_RECALL_USE_REQ:
+		{
+			if (bOK)
+			{
+				pUIManager->GetCharacterInfo()->UseSkill( DEF_GUILD_RECALL_SKILL_IDX );
+			}
 		}
 		break;
 	}
@@ -2553,7 +2952,7 @@ void CUIGuild::MsgBoxLCommand( int nCommandCode, int nResult )
 	{
 	case MSGLCMD_GUILD_REQ:
 		{
-			// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ Ïù¥ÏïºÍ∏∞ ÌïúÎã§ Ï≤òÎ¶¨ ÏàòÏ†ïÏùÑ ÏúÑÌïú Î£®Ìã¥
+			// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ¿Ãæﬂ±‚ «—¥Ÿ √≥∏Æ ºˆ¡§¿ª ¿ß«— ∑Á∆æ
 			int iQuestIndex = -1;
 			if( ciQuestClassifier < nResult )	
 			{
@@ -2565,17 +2964,17 @@ void CUIGuild::MsgBoxLCommand( int nCommandCode, int nResult )
 			{
 			case SEL_GUILD_CREATE:
 				{
-					// Í∏∏Îìú Î©§Î≤ÑÍ∞Ä ÏïÑÎãêÎïåÎßå Í∏∏Îìú ÏÉùÏÑ±Ìï®.
+					// ±ÊµÂ ∏‚πˆ∞° æ∆¥“∂ß∏∏ ±ÊµÂ ª˝º∫«‘.
 					if( m_iUserRanking == GUILD_MEMBER_NOMEMBER )
 					{
 						m_eGuildState = GUILD_CREATE; 
 						GetGuildDesc( TRUE );
-						_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+						CUIManager::getSingleton()->RearrangeOrder( UI_GUILD, TRUE );
 					}
 					else
 					{
 						m_eGuildState = GUILD_REQ;
-						_pUIMgr->RearrangeOrder( UI_GUILD, FALSE );
+						CUIManager::getSingleton()->RearrangeOrder( UI_GUILD, FALSE );
 					}
 				}
 				break;
@@ -2584,58 +2983,101 @@ void CUIGuild::MsgBoxLCommand( int nCommandCode, int nResult )
 				{
 					m_eGuildState = GUILD_DESTROY;
 					GetGuildDesc( TRUE );
-					_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_GUILD, TRUE );
 				}
 				break;
 
-			case SEL_GUILD_UPGRADE:			// Í∏∏Îìú ÏäπÍ∏â
+			case SEL_GUILD_UPGRADE:			// ±ÊµÂ Ω¬±ﬁ
 				{
 					if( m_iGuildLevel < MAX_GUILD_LEVEL )
 					{
 						m_eGuildState = GUILD_UPGRADE;
 						GetGuildDesc( TRUE );
-						_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+						CUIManager::getSingleton()->RearrangeOrder( UI_GUILD, TRUE );
 					}
 					else
 					{
 						m_eGuildState = GUILD_REQ;
-						_pUIMgr->RearrangeOrder( UI_GUILD, FALSE );
+						CUIManager::getSingleton()->RearrangeOrder( UI_GUILD, FALSE );
 					}
 				}
 				break;
 
 			case SEL_GUILD_ROOM:
 				{
-					_pUIMgr->CloseMessageBox( MSGCMD_GUILD_ROOM );
+					CUIManager::getSingleton()->CloseMessageBox( MSGCMD_GUILD_ROOM );
 					CTString	strMessage;
 					CUIMsgBox_Info	MsgBoxInfo;
-					MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_ROOM );	
-					strMessage.PrintF( _S( 1012, "Í∏∏Îìú ÎåÄÌôîÎ∞©ÏúºÎ°ú Ïù¥ÎèôÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ) );
+					MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_ROOM );	
+					strMessage.PrintF( _S( 1012, "±ÊµÂ ¥Î»≠πÊ¿∏∑Œ ¿Ãµø«œΩ√∞⁄Ω¿¥œ±Ó?" ) );
 					MsgBoxInfo.AddString( strMessage );
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );				
+					CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );				
 				}
 				break;
 
 			case SEL_GUILD_TALK:
 				{
-					// ÌÄòÏä§Ìä∏ Ï∞Ω ÎùÑÏö∞Í∏∞
-					//_pUIMgr->GetQuest()->OpenQuest( _pUIMgr->GetCharacterInfo()->GetMobIndex(), m_fNpcX, m_fNpcZ );
+					// ƒ˘Ω∫∆Æ √¢ ∂ÁøÏ±‚
+					//CUIManager::getSingleton()->GetQuest()->OpenQuest( CUIManager::getSingleton()->GetCharacterInfo()->GetMobIndex(), m_fNpcX, m_fNpcZ );
 					CUIQuestBook::TalkWithNPC();
 				}
 				break;
 
-				// [090527: selo] ÌôïÏû•Ìå© ÌÄòÏä§Ìä∏ ÏàòÏ†ï
+			// [2010/06/30 : Sora] º∫¡÷ ±ÊµÂ πˆ«¡∫Œø©
+			case SEL_GUILD_BUFF:
+				{
+					_pNetwork->SendOwnerGuildBuffReq();
+				}
+				break;
+				
+				// [090527: selo] »Æ¿Â∆— ƒ˘Ω∫∆Æ ºˆ¡§
 			case ciQuestClassifier:
 				{
-					// ÏÑ†ÌÉùÌïú ÌÄòÏä§Ìä∏Ïóê ÎåÄÌï¥ ÏàòÎùΩ ÎòêÎäî Î≥¥ÏÉÅ Ï∞ΩÏùÑ Ïó∞Îã§.
+					// º±≈√«— ƒ˘Ω∫∆Æø° ¥Î«ÿ ºˆ∂Ù ∂«¥¬ ∫∏ªÛ √¢¿ª ø¨¥Ÿ.
 					CUIQuestBook::SelectQuestFromMessageBox( iQuestIndex );					
 				}
 				break;
+// ==> 1107 ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì [trylord 11/12/28]
+			case SEL_GUILDMASTER_KICK_REQUEST:
+				{	// ±ÊµÂ¿Â «ÿ¿” Ω≈√ª
+					CUIManager::getSingleton()->CloseMessageBox( SEL_GUILDMASTER_KICK_REQUEST );
+					CTString	strMessage;
+					CUIMsgBox_Info	MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILDMASTER_KICK_REQUEST );	
+					strMessage.PrintF( _S(5615, "[%s] ±ÊµÂ¿« ±ÊµÂ¿Â «ÿ¿” Ω…ªÁ∏¶ Ω≈√ª «œΩ√∞⁄Ω¿¥œ±Ó?"), _pNetwork->MyCharacterInfo.strGuildName );
+					MsgBoxInfo.AddString( strMessage );
+					CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+				}
+				break;
 
-			default:		// Ï∑®ÏÜå
+			case SEL_GUILDMASTER_KICK_CANCEL_REQUEST:
+				{	// ±ÊµÂ¿Â «ÿ¿” ¿Ã¿« Ω≈√ª
+					if(_pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_BOSS)
+					{	// ±ÊµÂ¿Â¿Ã æ∆¥“ ∂ß
+						CUIManager::getSingleton()->CloseMessageBox( MSGCMD_GUILD_ERROR );
+						CUIMsgBox_Info	MsgBoxInfo;
+						MsgBoxInfo.SetMsgBoxInfo(  _S( 865, "±ÊµÂ" ) , UMBS_OK, UI_GUILD, MSGCMD_GUILD_ERROR );		// »Æ¿Œ∏∏ «œ∏È µ«π«∑Œ MSGCMD_GUILD_ERROR §°§°§µ
+						MsgBoxInfo.AddString( _S(5616, "±ÊµÂ¿Â∏∏ ¿Ã¿«¡¶±‚∞° ∞°¥…«’¥œ¥Ÿ." ));
+						CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );	
+
+						return;
+					}
+
+					CUIManager::getSingleton()->CloseMessageBox( SEL_GUILDMASTER_KICK_CANCEL_REQUEST );
+					CTString	strMessage;
+					CUIMsgBox_Info	MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILDMASTER_KICK_CANCEL_REQUEST );	
+					strMessage.PrintF( _S(5617, "±ÊµÂ¿Â «ÿ¿”ø° ¿Ã¿«¡¶±‚∏¶ «œΩ√∞⁄Ω¿¥œ±Ó?") );
+					MsgBoxInfo.AddString( strMessage );
+					CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+				}
+				break;
+// <== 1107 ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì [trylord 11/12/28]	
+
+			default:		// √Îº“
 				{
 					m_eGuildState = GUILD_REQ;
-					_pUIMgr->RearrangeOrder( UI_GUILD, FALSE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_GUILD, FALSE );
 				}
 				break;
 			}
@@ -2661,7 +3103,7 @@ void CUIGuild::SetMemberName(int charIndex,CTString strName)
 	
 }
 
-// Í∏∏Îìú ÏãúÏä§ÌÖú Ï∂îÍ∞Ä ÏûëÏóÖ ------------------------------------------------------------------------------------------->>
+// ±ÊµÂ Ω√Ω∫≈€ √ﬂ∞° ¿€æ˜ ------------------------------------------------------------------------------------------->>
 // WSS_NEW_GUILD_SYSTEM 070703
 
 // ----------------------------------------------------------------------------
@@ -2670,19 +3112,20 @@ void CUIGuild::SetMemberName(int charIndex,CTString strName)
 // ----------------------------------------------------------------------------
 void CUIGuild::InitNewGuildSystem()
 {
-	m_iSelTab				= 0;				// ÎîîÌè¥Ìä∏ ÌÖù
-	m_iGuildAverageLevel	= 0;				// Í∏∏Îìú ÌèâÍ∑† Î†àÎ≤®
-	m_iGuildOwnLand			= 0;				// Í∏∏Îìú ÏÜåÏú† ÏòÅÏßÄ
-	m_iGuildTotalPoint		= 0;				// Í∏∏Îìú Ï¥ù Ìè¨Ïù∏Ìä∏
-	m_iGuildMyPoint			= 0;				// ÎÇòÏùò Í∏∞Ïó¨ Ìè¨Ïù∏Ìä∏
-	m_bApplySettingOn		= FALSE;			// ÏÑ§Ï†ï Î≥ÄÍ≤ΩÏ∞Ω ÏÉÅÌÉú
-	m_iOnlineMembers		= 0;				// Ï†ëÏÜçÌïú Í∏∏ÎìúÏõê	
+	m_iSelTab				= 0;				// µ∆˙∆Æ ≈‹
+	m_iGuildAverageLevel	= 0;				// ±ÊµÂ ∆Ú±’ ∑π∫ß
+	m_iGuildOwnLand			= 0;				// ±ÊµÂ º“¿Ø øµ¡ˆ
+	m_iGuildTotalPoint		= 0;				// ±ÊµÂ √— ∆˜¿Œ∆Æ
+	m_iGuildMyPoint			= 0;				// ≥™¿« ±‚ø© ∆˜¿Œ∆Æ
+	m_bApplySettingOn		= FALSE;			// º≥¡§ ∫Ø∞Ê√¢ ªÛ≈¬
+	m_iOnlineMembers		= 0;				// ¡¢º”«— ±ÊµÂø¯	
 	m_iGuildSkillPos		= 0;
 	m_bIsSelList			= FALSE;	
-	m_bEnableCorrect		= FALSE;			// Í≥µÏßÄÏÇ¨Ìï≠ ÏàòÏ†ïÏó¨Î∂Ä
+	m_bEnableCorrect		= FALSE;			// ∞¯¡ˆªÁ«◊ ºˆ¡§ø©∫Œ
 	m_lbMemberAllianceList.ResetAllStrings();
 	m_lbMemberHostilityList.ResetAllStrings();
 	m_lbGuildMemberList.ResetAllStrings();
+	m_lbGuildMemberList.Reset();
 	m_sbGuildSkillBar.SetScrollPos(0);
 	m_ebNoticeTitle.ResetString();
 	m_mebNoticeContent.ResetString();	
@@ -2700,6 +3143,12 @@ void CUIGuild::InitNewGuildSystem()
 	pWEB->m_nWantModifyMode = UWM_WRITE;
 	pWEB->m_nCurrentPage = 0;
 	
+	m_nSelSkillTab = GUILD_SKILL_PASSIVE;
+	m_sbGuildSkillBar.SetCurItemCount(m_vecGuildPassiveSkill.size());
+
+	// [1/3/2011 kiny8216] NEW_CORPS
+	m_iCorpsMember		= 0;
+	m_iCorpsBoss		= 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -2708,10 +3157,11 @@ void CUIGuild::InitNewGuildSystem()
 // ----------------------------------------------------------------------------
 void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 {	
+	int		i;
 	// Region of each part
 	m_rcTitleNew.SetRect( 0, 0, NEW_GUILD_SYSTEM_WIDTH-35, 22 );
 	m_rcWindowNew.SetRect( 0, 0, NEW_GUILD_SYSTEM_WIDTH, NEW_GUILD_SYSTEM_HEIGHT );
-	for(int i=0; i<MAX_GUILDINFO_TAB; i++)
+	for( i = 0; i < MAX_GUILDINFO_TAB; i++ )
 	{
 		m_rcTabNew[i].SetRect( 98*i+7, 27, 98*(i+1)+6, 47 );
 	}
@@ -2726,7 +3176,7 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
 	
-	// Í∏∏Îìú Ï†ïÎ≥¥ --------------------------------------------->>
+	// ±ÊµÂ ¡§∫∏ --------------------------------------------->>
 	// UV Coordinate of each part
 
 	// Set Box
@@ -2796,13 +3246,13 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_btnCloseNew.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnCloseNew.CopyUV( UBS_IDLE, UBS_DISABLE );
 	// Exit button
-	m_btnExitNew.Create( this, _S( 870, "Îã´Í∏∞" ), 523,308, 63, 21 );			
+	m_btnExitNew.Create( this, _S( 870, "¥›±‚" ), 523,308, 63, 21 );			
 	m_btnExitNew.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnExitNew.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnExitNew.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnExitNew.CopyUV( UBS_IDLE, UBS_DISABLE );
 	// Edit button
-	m_btnEdit.Create( this, _S(3840, "Ìé∏Ïßë" ), 215, 255, 63, 21 );			
+	m_btnEdit.Create( this, _S(3840, "∆Ì¡˝" ), 215, 255, 63, 21 );			
 	m_btnEdit.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnEdit.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnEdit.CopyUV( UBS_IDLE, UBS_ON );
@@ -2815,7 +3265,7 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_btnGuildMarkBack.CopyUV( UBS_IDLE, UBS_DISABLE );
 	// ---------------------------------------------------------<<
 
-	// Í∏∏ÎìúÏõê Ï†ïÎ≥¥ --------------------------------------------->>
+	// ±ÊµÂø¯ ¡§∫∏ --------------------------------------------->>
 	// Member List
 	m_lbGuildMemberList.Create( this, 20, 78, 553, 161, _pUIFontTexMgr->GetLineHeight(), 13, 3, 8, TRUE );
 	m_lbGuildMemberList.CreateScroll( TRUE, 0, 0, 9, 161, 9, 7, 0, 0, 10 );
@@ -2848,16 +3298,16 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	
 	// -----------------------------------------------------------<<
 
-	// Í∏∏Îìú Ïä§ÌÇ¨ ------------------------------------------------->>
+	// ±ÊµÂ Ω∫≈≥ ------------------------------------------------->>
 	// Get Skill
-	m_btnGetSkill.Create( this, _S(3841, "ÏäµÎìùÌïòÍ∏∞" ), 409, 246, 100, 21 );
+	m_btnGetSkill.Create( this, _S(3841, "Ω¿µÊ«œ±‚" ), 450, 256, 100, 21 );
 	m_btnGetSkill.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnGetSkill.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnGetSkill.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnGetSkill.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Left Skill Info scroll bar
-	m_sbGuildSkillBar.Create( this, 318, 59, 9, 219 );
+	m_sbGuildSkillBar.Create( this, 251, 59, 9, 219 );
 	m_sbGuildSkillBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
 	m_sbGuildSkillBar.SetScrollPos( 0 );
 	m_sbGuildSkillBar.SetCurItemCount( 0 );
@@ -2877,12 +3327,11 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_sbGuildSkillBar.SetBarMiddleUV( 217, 26, 226, 30, fTexWidth, fTexHeight );
 	m_sbGuildSkillBar.SetBarBottomUV( 217, 31, 226, 41, fTexWidth, fTexHeight );
 	// Wheel region
-	m_sbGuildSkillBar.SetWheelRect( 21, 59, 326, 278 );	
+	m_sbGuildSkillBar.SetWheelRect( -203, 0, 213, 218 );
 	
 	// Member List	
-	m_lbGuildSkillDesc.Create( this, 341, 78, 226, 75, _pUIFontTexMgr->GetLineHeight(), 5, 3, 1, FALSE );
+	m_lbGuildSkillDesc.Create( this, 274, 78, 293, 75, _pUIFontTexMgr->GetLineHeight(), 5, 3, 1, FALSE );
 	m_lbGuildSkillDesc.CreateScroll( TRUE, 0, 0, 9, 75, 9, 7, 0, 0, 10 );	
-	
 	// Up button
 	m_lbGuildSkillDesc.SetScrollUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
 	m_lbGuildSkillDesc.SetScrollUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
@@ -2897,11 +3346,10 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_lbGuildSkillDesc.SetScrollBarTopUV( 219, 16, 228, 26, fTexWidth, fTexHeight );
 	m_lbGuildSkillDesc.SetScrollBarMiddleUV( 219, 27, 228, 29, fTexWidth, fTexHeight );
 	m_lbGuildSkillDesc.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );
-
-	m_rcGuildSkillList.SetRect( 33, 69, 307, 269 );
+	m_rcGuildSkillList.SetRect( 48, 69, 241, 269 );
 	// -----------------------------------------------------------<<
 
-	// Í∏∏Îìú Í≤åÏãúÌåê ----------------------------------------------->>
+	// ±ÊµÂ ∞‘Ω√∆« ----------------------------------------------->>
 	m_bxBox3.SetBoxUV(m_ptdBaseTexture,3,WRect(147,47,159,59));
 	m_bxBox4.SetBoxUV(m_ptdBaseTexture,3,WRect(55,162,71,177));
 	
@@ -2920,41 +3368,41 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_btnNext.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Search button
-	m_btnSearch.Create( this, _S( 386, "Í≤ÄÏÉâ" ), 392, 270, 63, 21 );
+	m_btnSearch.Create( this, _S( 386, "∞Àªˆ" ), 392, 270, 63, 21 );
 	m_btnSearch.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnSearch.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnSearch.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnSearch.CopyUV( UBS_IDLE, UBS_DISABLE );
-																// List button
-	m_btnList.Create( this, _S( 313, "Î™©Î°ù" ), 23, 270, 63, 21 );
+	// List button
+	m_btnList.Create( this, _S( 313, "∏Ò∑œ" ), 23, 270, 63, 21 );
 	m_btnList.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnList.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnList.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnList.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Write button
-	m_btnWrite.Create( this, _S( 314, "Ïì∞Í∏∞" ), 503, 270, 63, 21 );
+	m_btnWrite.Create( this, _S( 314, "æ≤±‚" ), 503, 270, 63, 21 );
 	m_btnWrite.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnWrite.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnWrite.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnWrite.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Reply button
-	m_btnReply.Create( this, _S( 321, "ÎãµÍ∏Ä" ), 377, 270, 63, 21 );
+	m_btnReply.Create( this, _S( 321, "¥‰±€" ), 377, 270, 63, 21 );
 	m_btnReply.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnReply.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnReply.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnReply.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Delete button
-	m_btnDelete.Create( this, _S( 338, "ÏÇ≠Ï†ú" ), 446, 270, 63, 21 );
+	m_btnDelete.Create( this, _S( 338, "ªË¡¶" ), 446, 270, 63, 21 );
 	m_btnDelete.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnDelete.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnDelete.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnDelete.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Modify button
-	m_btnModify.Create( this, _S( 339, "ÏàòÏ†ï" ), 515, 270, 63, 21 );
+	m_btnModify.Create( this, _S( 339, "ºˆ¡§" ), 515, 270, 63, 21 );
 	m_btnModify.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnModify.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnModify.CopyUV( UBS_IDLE, UBS_ON );
@@ -3005,8 +3453,8 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_cmbSearch.SetDownBtnUV( 230, 162, 242, 172, fTexWidth, fTexHeight );
 	m_cmbSearch.SetUpBtnUV( 242, 172, 230, 162, fTexWidth, fTexHeight );	
 	m_cmbSearch.SetDropListUV( 54, 162, 70, 176, fTexWidth, fTexHeight );
-	m_cmbSearch.AddString( _S( 341, "Ï†úÎ™©" ) );
-	m_cmbSearch.AddString( _S( 244, "ÏûëÏÑ±Ïûê" ) );
+	m_cmbSearch.AddString( _S( 341, "¡¶∏Ò" ) );
+	m_cmbSearch.AddString( _S( 244, "¿€º∫¿⁄" ) );
 	m_cmbSearch.SetCurSel( 0 );
 
 	// Search edit box
@@ -3019,29 +3467,29 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_ebWriteSubject.SetReadingWindowUV( 153, 98, 170, 114, fTexWidth, fTexHeight );
 	m_ebWriteSubject.SetCandidateUV( 153, 98, 170, 114, fTexWidth, fTexHeight );
 
-	m_mebContent.Create ( this, 111, 117, 444, 128 , 9 );
+	m_mebContent.Create ( this, 111, 117, 444, 128 , 20 );
 	
 	// -----------------------------------------------------------<<
 
-	// Í∏∏Îìú Í≥µÏßÄ ÏûÖÎ†•--------------------------------------------->>
-	m_ebNoticeTitle.Create( this, 84, 75, 470, 16, MAX_NOTICE_TITLE );	// Ï†úÎ™© 
+	// ±ÊµÂ ∞¯¡ˆ ¿‘∑¬--------------------------------------------->>
+	m_ebNoticeTitle.Create( this, 84, 75, 470, 16, MAX_NOTICE_TITLE );	// ¡¶∏Ò 
 	m_ebNoticeTitle.SetReadingWindowUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
 	m_ebNoticeTitle.SetCandidateUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
-	m_mebNoticeContent.Create ( this, 82, 115, 465, 135, 10 );	
-	// Í≥µÏßÄ Î≤ÑÌäº
-	m_btnNotice.Create( this, _S(3842, "Í≥µÏßÄÌïòÍ∏∞" ), 80, 261, 100, 21 );
+	m_mebNoticeContent.Create ( this, 82, 115, 465, 135, 20 );	
+	// ∞¯¡ˆ πˆ∆∞
+	m_btnNotice.Create( this, _S(3842, "∞¯¡ˆ«œ±‚" ), 80, 261, 100, 21 );
 	m_btnNotice.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnNotice.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnNotice.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnNotice.CopyUV( UBS_IDLE, UBS_DISABLE );
-	// ÏàòÏ†ï Î≤ÑÌäº
-	m_btnNoticeCorrect.Create( this, _S(3843,  "ÏàòÏ†ïÌïòÍ∏∞" ) , 340, 261 , 100, 21 );	
+	// ºˆ¡§ πˆ∆∞
+	m_btnNoticeCorrect.Create( this, _S(3843, "ºˆ¡§«œ±‚" ) , 340, 261 , 100, 21 );	
 	m_btnNoticeCorrect.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnNoticeCorrect.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnNoticeCorrect.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnNoticeCorrect.CopyUV( UBS_IDLE, UBS_DISABLE );
-	// ÏûëÏÑ±ÏôÑÎ£å Î≤ÑÌäº
-	m_btnUpdateNotice.Create( this, _S(3844, "ÏûëÏÑ±ÏôÑÎ£å" ) , 454, 261 , 100, 21 );	
+	// ¿€º∫øœ∑· πˆ∆∞
+	m_btnUpdateNotice.Create( this, _S(3844, "¿€º∫øœ∑·" ) , 454, 261 , 100, 21 );	
 	m_btnUpdateNotice.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnUpdateNotice.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnUpdateNotice.CopyUV( UBS_IDLE, UBS_ON );
@@ -3049,55 +3497,69 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	
 	// -----------------------------------------------------------<<
 
-	// Í∏∏Îìú Í¥ÄÎ¶¨ ------------------------------------------------->>
+	// ±ÊµÂ ∞¸∏Æ ------------------------------------------------->>
 	// Buttons
 	// Change Boss button
-	m_btnChangeBossNew.Create( this, _S( 871, "Í∏∏ÎìúÏû• Ïù¥ÏûÑ" ), 20, 265, 100, 21 );
+	m_btnChangeBossNew.Create( this, _S( 871, "±ÊµÂ¿Â ¿Ã¿”" ), 20, 265, 100, 21 );
 	m_btnChangeBossNew.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnChangeBossNew.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnChangeBossNew.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnChangeBossNew.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Accept button
-	m_btnAcceptNew.Create( this, _S( 872, "Í∏∏ÎìúÎ∂ÄÏû• ÏûÑÎ™Ö" ), 138, 265, 100, 21 );		
+	m_btnAcceptNew.Create( this, _S( 872, "±ÊµÂ∫Œ¿Â ¿”∏Ì" ), 138, 265, 100, 21 );		
 	m_btnAcceptNew.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnAcceptNew.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnAcceptNew.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnAcceptNew.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Reject button
-	m_btnRejectNew.Create( this, _S( 873, "Í∏∏ÎìúÎ∂ÄÏû• Ìï¥ÏûÑ" ), 254, 265, 100, 21 );		
+	m_btnRejectNew.Create( this, _S( 873, "±ÊµÂ∫Œ¿Â «ÿ¿”" ), 254, 265, 100, 21 );		
 	m_btnRejectNew.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnRejectNew.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnRejectNew.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnRejectNew.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// MemberQuit button
-	m_btnMemberFireNew.Create( this, _S( 874, "Í∏∏ÎìúÏõê Ìá¥Ï∂ú" ), 372, 265, 100, 21 );	
+	m_btnMemberFireNew.Create( this, _S( 874, "±ÊµÂø¯ ≈√‚" ), 372, 265, 100, 21 );	
 	m_btnMemberFireNew.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnMemberFireNew.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnMemberFireNew.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnMemberFireNew.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// MemberQuit button
-	m_btnChangeSetting.Create( this, _S(3845, "ÏÑ§Ï†ï Î≥ÄÍ≤Ω" ), 488, 265, 100, 21 );	
+	m_btnChangeSetting.Create( this, _S(3845, "º≥¡§ ∫Ø∞Ê" ), 488, 265, 100, 21 );	
 	m_btnChangeSetting.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnChangeSetting.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnChangeSetting.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnChangeSetting.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Member List
+#ifdef ENABLE_GUILD_STASH
+	m_lbManageMemberList.Create( this, 20, 78, 553, 161, _pUIFontTexMgr->GetLineHeight(), 13, 3, 7, TRUE );
+#else
 	m_lbManageMemberList.Create( this, 20, 78, 553, 161, _pUIFontTexMgr->GetLineHeight(), 13, 3, 6, TRUE );
+#endif
 	m_lbManageMemberList.CreateScroll( TRUE, 0, 0, 9, 161, 9, 7, 0, 0, 10 );
 	m_lbManageMemberList.SetSelBar( 553 , _pUIFontTexMgr->GetLineHeight(), 187, 46, 204, 61, fTexWidth, fTexHeight );
 	m_lbManageMemberList.SetOverColor( 0xF8E1B5FF );
 	m_lbManageMemberList.SetSelectColor( 0xF8E1B5FF );
+#ifdef ENABLE_GUILD_STASH
+	m_lbManageMemberList.SetColumnPosX( 0, 27 ,TEXT_CENTER);
+	m_lbManageMemberList.SetColumnPosX( 1, 112 ,TEXT_CENTER);
+	m_lbManageMemberList.SetColumnPosX( 2, 177 ,TEXT_CENTER);
+	m_lbManageMemberList.SetColumnPosX( 3, 256 ,TEXT_CENTER);
+	m_lbManageMemberList.SetColumnPosX( 4, 387 ,TEXT_RIGHT);
+	m_lbManageMemberList.SetColumnPosX( 5, 468 ,TEXT_RIGHT);
+	m_lbManageMemberList.SetColumnPosX( 6, 515 ,TEXT_RIGHT);
+#else
 	m_lbManageMemberList.SetColumnPosX( 0, 27 ,TEXT_CENTER);
 	m_lbManageMemberList.SetColumnPosX( 1, 112 ,TEXT_CENTER);
 	m_lbManageMemberList.SetColumnPosX( 2, 177 ,TEXT_CENTER);
 	m_lbManageMemberList.SetColumnPosX( 3, 256 ,TEXT_CENTER);
 	m_lbManageMemberList.SetColumnPosX( 4, 402 ,TEXT_RIGHT);
 	m_lbManageMemberList.SetColumnPosX( 5, 515 ,TEXT_RIGHT);
+#endif
 	// Up button
 	m_lbManageMemberList.SetScrollUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
 	m_lbManageMemberList.SetScrollUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
@@ -3114,13 +3576,13 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_lbManageMemberList.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );	
 
 	// Setting Popup Window	
-	m_btnApplySetting.Create( this, _S(3846, "Ï†ÅÏö©" ), 220, 218, 63, 21 );
+	m_btnApplySetting.Create( this, _S(3846, "¿˚øÎ" ), 220, 218, 63, 21 );
 	m_btnApplySetting.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnApplySetting.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnApplySetting.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnApplySetting.CopyUV( UBS_IDLE, UBS_DISABLE );
 	
-	m_btnApplySettingClose.Create( this, _S(870, "Îã´Í∏∞" ), 295, 218, 63, 21 );
+	m_btnApplySettingClose.Create( this, _S(870, "¥›±‚" ), 295, 218, 63, 21 );
 	m_btnApplySettingClose.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
 	m_btnApplySettingClose.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnApplySettingClose.CopyUV( UBS_IDLE, UBS_ON );
@@ -3138,40 +3600,78 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_ebChangePayFame.SetReadingWindowUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
 	m_ebChangePayFame.SetCandidateUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
 
+	int	nStrWidth = ( strlen( _S(5562, "ªÁøÎ ∞°¥…" ) ) + 1 ) * 
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+	m_ckGuildStashPermission.Create( this, 230, 226, 11, 11, _S(5562, "ªÁøÎ ∞°¥…"), FALSE, nStrWidth, nStrWidth );
+	m_ckGuildStashPermission.SetUV( UCBS_NONE, UIRectUV( 12, 161, 23, 172, fTexWidth, fTexHeight ) );
+	m_ckGuildStashPermission.SetUV( UCBS_CHECK, UIRectUV( 0, 161, 11, 172, fTexWidth, fTexHeight ) );
+	m_ckGuildStashPermission.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
+	m_ckGuildStashPermission.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
+	m_ckGuildStashPermission.SetTextColor( TRUE, 0xFFFFFFFF );
+	m_ckGuildStashPermission.SetTextColor( FALSE, 0xFFFFFFFF );
+	m_ckGuildStashPermission.SetCheck( FALSE );
+
+	m_pIconGuildMark = new CUIGuildMarkIcon();
+	m_pIconGuildMark->Create(this, 27, 250, BTN_SIZE, BTN_SIZE);
 	// -----------------------------------------------------------<<
 }
 
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070703
 // Name : RenderNewGuildManagePopup()
-// Desc : Í∏∏Îìú ÏÑ§Ï†ï ÏàòÏ†ï
+// Desc : ±ÊµÂ º≥¡§ ºˆ¡§
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildManagePopup()
 {
 	int nX = m_nPosX;
 	int nY = m_nPosY;
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	m_bxBox1.SetBoxPos(WRect(0,0,NEW_GUILD_SYSTEM_WIDTH,NEW_GUILD_SYSTEM_HEIGHT));
 	m_bxBox1.Render(nX,nY);
 
+#ifdef ENABLE_GUILD_STASH
 	m_bxBackGroundBox.SetBoxPos(WRect(203,55,377,77));
 	m_bxBackGroundBox.Render(nX,nY);
-	m_bxBackGroundBox2.SetBoxPos(WRect(203,77,377,250));
+	m_bxBackGroundBox2.SetBoxPos(WRect(203,77,377,340));
 	m_bxBackGroundBox2.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,98,361,120));
+	m_bxBox1.SetBoxPos(WRect(218,143,361,165));
 	m_bxBox1.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,140,361,162));
+	m_bxBox1.SetBoxPos(WRect(218,185,361,207));
 	m_bxBox1.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,182,361,204));
+	m_bxBox1.SetBoxPos(WRect(218,227,361,249));
 	m_bxBox1.Render(nX,nY);
+#else	//	ENABLE_GUILD_STASH
+	m_bxBackGroundBox.SetBoxPos(WRect(203,55,377,77));
+	m_bxBackGroundBox.Render(nX,nY);
+	m_bxBackGroundBox2.SetBoxPos(WRect(203,77,377,295));
+	m_bxBackGroundBox2.Render(nX,nY);
+	m_bxBox1.SetBoxPos(WRect(218,143,361,165));
+	m_bxBox1.Render(nX,nY);
+	m_bxBox1.SetBoxPos(WRect(218,185,361,207));
+	m_bxBox1.Render(nX,nY);
+	m_bxBox1.SetBoxPos(WRect(218,227,361,249));
+	m_bxBox1.Render(nX,nY);
+#endif	//	ENABLE_GUILD_STASH
+	pDrawPort->PutTextEx( _S(3845, "º≥¡§ ∫Ø∞Ê" ), nX + 220 , nY + 60);
+	pDrawPort->PutTextEx( _S(5365, "∫Œ¥Î º≥¡§" ), nX + 220 , nY + 81);
+	pDrawPort->PutTextEx( _S(3847, "¡˜¿ß∏Ì º≥¡§" ), nX + 220 , nY + 126);
+	pDrawPort->PutTextEx( _S(3848, "∞Ê«Ëƒ° ªÛ≥≥º≥¡§" ), nX + 220 , nY + 168);
+	pDrawPort->PutTextEx( _S(3849, "∏Ìº∫ƒ° ªÛ≥≥º≥¡§" ), nX + 220 , nY + 210);
+#ifdef ENABLE_GUILD_STASH
+	pDrawPort->PutTextEx( _S(5558, "±ÊµÂ √¢∞Ì ªÁøÎ ±««—" ), nX + 220 , nY + 252);
+#endif	//	ENABLE_GUILD_STASH
+	pDrawPort->PutTextEx( CTString( "%" ), nX + 345 , nY + 188);
+	pDrawPort->PutTextEx( CTString( "%" ), nX + 345 , nY + 230);
 
 	m_btnApplySetting.Render();
 	m_btnApplySettingClose.Render();
@@ -3180,20 +3680,24 @@ void CUIGuild::RenderNewGuildManagePopup()
 	m_ebChangePayExp.Render();
 	m_ebChangePayFame.Render();
 
-	// Text
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3845, "ÏÑ§Ï†ï Î≥ÄÍ≤Ω" ), nX + 220 , nY + 60);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3847, "ÏßÅÏúÑÎ™Ö ÏÑ§Ï†ï" ), nX + 220 , nY + 81);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3848, "Í≤ΩÌóòÏπò ÏÉÅÎÇ©ÏÑ§Ï†ï" ), nX + 220 , nY + 123);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3849, "Î™ÖÏÑ±Ïπò ÏÉÅÎÇ©ÏÑ§Ï†ï" ), nX + 220 , nY + 165);
-	_pUIMgr->GetDrawPort()->PutTextEx( CTString( "%" ), nX + 345 , nY + 143);
-	_pUIMgr->GetDrawPort()->PutTextEx( CTString( "%" ), nX + 345 , nY + 185);
+#ifdef ENABLE_GUILD_STASH
+	m_ckGuildStashPermission.Render();
+#endif	//	ENABLE_GUILD_STASH
+	
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
+	// ITS#6919 : [FIXED] ui cracked in guild setting window [2/20/2012 rumist]
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
+	m_cmbCorps.Render();
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070703
 // Name : RenderNewGuildManage()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildManage(int nX,int nY)
 {
@@ -3201,42 +3705,42 @@ void CUIGuild::RenderNewGuildManage(int nX,int nY)
 	{
 		if(!m_btnChangeBossNew.IsEnabled())
 		{
-			m_btnChangeBossNew.SetEnable(TRUE);	// Îã®Ïû• Ïù¥ÏûÑ
-			m_btnAcceptNew.SetEnable(TRUE);		// Î∂ÄÎã®Ïû• ÏûÑÎ™Ö
-			m_btnRejectNew.SetEnable(TRUE);		// Î∂ÄÎã®Ïû• Ìï¥ÏûÑ
-			m_btnMemberFireNew.SetEnable(TRUE);	// Î©§Î≤Ñ Ìá¥Ï∂ú
-			m_btnChangeSetting.SetEnable(TRUE);	// ÏÑ§Ï†ï Î≥ÄÍ≤Ω		
+			m_btnChangeBossNew.SetEnable(TRUE);	// ¥‹¿Â ¿Ã¿”
+			m_btnAcceptNew.SetEnable(TRUE);		// ∫Œ¥‹¿Â ¿”∏Ì
+			m_btnRejectNew.SetEnable(TRUE);		// ∫Œ¥‹¿Â «ÿ¿”
+			m_btnMemberFireNew.SetEnable(TRUE);	// ∏‚πˆ ≈√‚
+			m_btnChangeSetting.SetEnable(TRUE);	// º≥¡§ ∫Ø∞Ê		
 		}
 	}
 	else if (_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_VICE_BOSS)
 	{
 		if (m_btnChangeBossNew.IsEnabled())
 		{
-			m_btnChangeBossNew.SetEnable(FALSE);		// Îã®Ïû• Ïù¥ÏûÑ
-			m_btnAcceptNew.SetEnable(FALSE);			// Î∂ÄÎã®Ïû• ÏûÑÎ™Ö
-			m_btnRejectNew.SetEnable(FALSE);			// Î∂ÄÎã®Ïû• Ìï¥ÏûÑ
-			m_btnMemberFireNew.SetEnable(TRUE);			// Î©§Î≤Ñ Ìá¥Ï∂ú
-			m_btnChangeSetting.SetEnable(FALSE);		// ÏÑ§Ï†ï Î≥ÄÍ≤Ω
+			m_btnChangeBossNew.SetEnable(FALSE);		// ¥‹¿Â ¿Ã¿”
+			m_btnAcceptNew.SetEnable(FALSE);			// ∫Œ¥‹¿Â ¿”∏Ì
+			m_btnRejectNew.SetEnable(FALSE);			// ∫Œ¥‹¿Â «ÿ¿”
+			m_btnMemberFireNew.SetEnable(TRUE);			// ∏‚πˆ ≈√‚
+			m_btnChangeSetting.SetEnable(FALSE);		// º≥¡§ ∫Ø∞Ê
 		}
 	}
 	else 
 	{
 		if(m_btnChangeBossNew.IsEnabled())
 		{
-			m_btnChangeBossNew.SetEnable(FALSE);		// Îã®Ïû• Ïù¥ÏûÑ
-			m_btnAcceptNew.SetEnable(FALSE);			// Î∂ÄÎã®Ïû• ÏûÑÎ™Ö
-			m_btnRejectNew.SetEnable(FALSE);			// Î∂ÄÎã®Ïû• Ìï¥ÏûÑ
-			m_btnMemberFireNew.SetEnable(FALSE);		// Î©§Î≤Ñ Ìá¥Ï∂ú
-			m_btnChangeSetting.SetEnable(FALSE);		// ÏÑ§Ï†ï Î≥ÄÍ≤Ω
+			m_btnChangeBossNew.SetEnable(FALSE);		// ¥‹¿Â ¿Ã¿”
+			m_btnAcceptNew.SetEnable(FALSE);			// ∫Œ¥‹¿Â ¿”∏Ì
+			m_btnRejectNew.SetEnable(FALSE);			// ∫Œ¥‹¿Â «ÿ¿”
+			m_btnMemberFireNew.SetEnable(FALSE);		// ∏‚πˆ ≈√‚
+			m_btnChangeSetting.SetEnable(FALSE);		// º≥¡§ ∫Ø∞Ê
 		}
 	}
 
 	// Button
-	m_btnChangeBossNew.Render();		// Îã®Ïû• Ïù¥ÏûÑ
-	m_btnAcceptNew.Render();			// Î∂ÄÎã®Ïû• ÏûÑÎ™Ö
-	m_btnRejectNew.Render();			// Î∂ÄÎã®Ïû• Ìï¥ÏûÑ
-	m_btnMemberFireNew.Render();		// Î©§Î≤Ñ Ìá¥Ï∂ú
-	m_btnChangeSetting.Render();		// ÏÑ§Ï†ï Î≥ÄÍ≤Ω	
+	m_btnChangeBossNew.Render();		// ¥‹¿Â ¿Ã¿”
+	m_btnAcceptNew.Render();			// ∫Œ¥‹¿Â ¿”∏Ì
+	m_btnRejectNew.Render();			// ∫Œ¥‹¿Â «ÿ¿”
+	m_btnMemberFireNew.Render();		// ∏‚πˆ ≈√‚
+	m_btnChangeSetting.Render();		// º≥¡§ ∫Ø∞Ê	
 
 	// Box
 	m_bxBox2.SetBoxPos(WRect(nX+20,nY+56,nX+583,nY+239));
@@ -3245,28 +3749,45 @@ void CUIGuild::RenderNewGuildManage(int nX,int nY)
 	// List
 	m_lbManageMemberList.Render();		// Guild Member List
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Line
-	_pUIMgr->GetDrawPort()->AddTexture(nX+21,nY+74,nX+582,nY+75,
+	pDrawPort->AddTexture(nX+21,nY+74,nX+582,nY+75,
 	m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);	
 
-	_pUIMgr->GetDrawPort()->AddTexture(nX+98,nY+74,nX+99,nY+239,
+	pDrawPort->AddTexture(nX+98,nY+74,nX+99,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+186,nY+74,nX+187,nY+239,
+	pDrawPort->AddTexture(nX+186,nY+74,nX+187,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
-	_pUIMgr->GetDrawPort()->AddTexture(nX+231,nY+74,nX+232,nY+239,
+	pDrawPort->AddTexture(nX+231,nY+74,nX+232,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+341,nY+74,nX+342,nY+239,
+#ifdef ENABLE_GUILD_STASH
+	pDrawPort->AddTexture(nX+346,nY+74,nX+347,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
-	_pUIMgr->GetDrawPort()->AddTexture(nX+457,nY+74,nX+458,nY+239,
+	pDrawPort->AddTexture(nX+425,nY+74,nX+426,nY+239,
+	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
+	pDrawPort->AddTexture(nX+507,nY+74,nX+508,nY+239,
+	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
+#else
+	pDrawPort->AddTexture(nX+341,nY+74,nX+342,nY+239,
+	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
+	pDrawPort->AddTexture(nX+457,nY+74,nX+458,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);		
+#endif
 
 	// Text
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3850, "ÏÑúÏó¥" ), nX + 58 , nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3847, "ÏßÅÏúÑÎ™Ö ÏÑ§Ï†ï" ), nX +143, nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3851, "Lv." ), nX +210, nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3105, "Ï∫êÎ¶≠ÌÑ∞Î™Ö" ), nX +286 , nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3848, "Í≤ΩÌóòÏπò ÏÉÅÎÇ©ÏÑ§Ï†ï" ), nX +400, nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3849, "Î™ÖÏÑ±Ïπò ÏÉÅÎÇ©ÏÑ§Ï†ï" ), nX +519, nY +60);		
+	pDrawPort->PutTextExCX( _S(3850, "º≠ø≠" ), nX + 58 , nY +60);
+	pDrawPort->PutTextExCX( _S(3847, "¡˜¿ß∏Ì º≥¡§" ), nX +143, nY +60);
+	pDrawPort->PutTextExCX( _S(3851, "Lv." ), nX +210, nY +60);
+	pDrawPort->PutTextExCX( _S(3105, "ƒ≥∏Ø≈Õ∏Ì" ), nX +286 , nY +60);
+#ifdef ENABLE_GUILD_STASH
+	pDrawPort->PutTextExCX( _S(3848, "∞Ê«Ëƒ° ªÛ≥≥" ), nX +385, nY +60);
+	pDrawPort->PutTextExCX( _S(3849, "∏Ìº∫ƒ° ªÛ≥≥" ), nX +467, nY +60);		
+	pDrawPort->PutTextExCX( _S(5559, "√¢∞Ì ªÁøÎ" ), nX +542, nY +60);		
+#else
+	pDrawPort->PutTextExCX( _S(3848, "∞Ê«Ëƒ° ªÛ≥≥" ), nX +400, nY +60);
+	pDrawPort->PutTextExCX( _S(3849, "∏Ìº∫ƒ° ªÛ≥≥" ), nX +519, nY +60);
+#endif
 
 	if(m_bApplySettingOn)
 		RenderNewGuildManagePopup();
@@ -3275,7 +3796,7 @@ void CUIGuild::RenderNewGuildManage(int nX,int nY)
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070702
 // Name : RenderNewGuildNoticeInput()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildNoticeInput()
 {
@@ -3321,188 +3842,34 @@ void CUIGuild::RenderNewGuildNoticeInput()
 			m_mebNoticeContent.SetEnable(FALSE);
 		}
 	}
-	m_btnNotice.Render();						// Í≥µÏßÄ Î≤ÑÌäº
-	m_btnNoticeCorrect.Render();				// ÏàòÏ†ï Î≤ÑÌäº
-	m_btnUpdateNotice.Render();					// ÏûëÏÑ±ÏôÑÎ£å Î≤ÑÌäº	
+	m_btnNotice.Render();						// ∞¯¡ˆ πˆ∆∞
+	m_btnNoticeCorrect.Render();				// ºˆ¡§ πˆ∆∞
+	m_btnUpdateNotice.Render();					// ¿€º∫øœ∑· πˆ∆∞	
 
 	m_bxBox2.SetBoxPos(WRect(80,72,553,100));
 	m_bxBox2.Render(nX,nY);
 	m_bxBox2.SetBoxPos(WRect(80,111,553,249));
 	m_bxBox2.Render(nX,nY);	
 
-		// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-
-
-	m_ebNoticeTitle.Render();					// Ï†úÎ™©	
-	m_mebNoticeContent.Render();				// ÎÇ¥Ïö©
-	
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(341, "Ï†úÎ™©" ), nX + 43 , nY + 78);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3852, "ÎÇ¥Ïö©" ), nX + 43 , nY + 171);	
-}
-
-
-// ----------------------------------------------------------------------------
-// WSS_NEW_GUILD_SYSTEM 070608
-// Name : RenderNewGuildSkill()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
-// ----------------------------------------------------------------------------
-void CUIGuild::RenderNewGuildSkill(int nX,int nY)
-{
-	// Box 2 (Black)
-	// Box Left
-	m_bxBox2.SetBoxPos(WRect(nX+21,nY+59,nX+317,nY+277));
-	m_bxBox2.Render();	
-	// Box Right
-	m_bxBox2.SetBoxPos(WRect(nX+337,nY+59,nX+577,nY+223));
-	m_bxBox2.Render();	
-	// Box 1 (Grey)
-	int tInc = 33;
-	int tCab = 7;
-	int nY2 = nY + 70;
-	m_bxBox1.SetBoxPos(WRect(nX+31,nY2 ,nX+307,(nY2+tInc)));
-	m_bxBox1.Render();
-	m_bxBox1.SetBoxPos(WRect(nX+32,nY2 ,nX+66,(nY2+tInc)));
-	m_bxBox1.Render();
-	nY2+=tInc+tCab;
-	m_bxBox1.SetBoxPos(WRect(nX+31,nY2,nX+307,(nY2+tInc)));
-	m_bxBox1.Render();	
-	m_bxBox1.SetBoxPos(WRect(nX+32,nY2,nX+66,(nY2+tInc)));
-	m_bxBox1.Render();	
-	nY2+=tInc+tCab;
-	m_bxBox1.SetBoxPos(WRect(nX+31,nY2,nX+307,(nY2+tInc)));
-	m_bxBox1.Render();	
-	m_bxBox1.SetBoxPos(WRect(nX+32,nY2,nX+66,(nY2+tInc)));
-	m_bxBox1.Render();	
-	nY2+=tInc+tCab;
-	m_bxBox1.SetBoxPos(WRect(nX+31,nY2,nX+307,(nY2+tInc)));
-	m_bxBox1.Render();	
-	m_bxBox1.SetBoxPos(WRect(nX+32,nY2,nX+66,(nY2+tInc)));
-	m_bxBox1.Render();	
-	nY2+=tInc+tCab;
-	m_bxBox1.SetBoxPos(WRect(nX+31,nY2,nX+307,(nY2+tInc)));
-	m_bxBox1.Render();	
-	m_bxBox1.SetBoxPos(WRect(nX+32,nY2,nX+66,(nY2+tInc)));
-	m_bxBox1.Render();	
-	m_bxBox1.SetBoxPos(WRect(nX+338,nY+77,nX+577,nY+153));
-	m_bxBox1.Render();	
-
-	// Line
-	_pUIMgr->GetDrawPort()->AddTexture(nX+339,nY+76,nX+577,nY+77,
-	m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);		
-
-	// Guild Skill List ----------------------------------------------------->>
-	int iListCnt = m_arGuildSkillList.Count();
-	// Left Guild Skill List		
-	int iRowS = m_sbGuildSkillBar.GetScrollPos();
-	int iRowE = iRowS + GUILD_SKILL_SLOT_ROW;
-	int tLv,tList,iIdx,iNeed;
-	BOOL isLevelMax;
-	CTString tStr;
-	iRowE = (iRowE>iListCnt)? iListCnt:iRowE;
-	nY2 = 0;
-	for(int  iRow = iRowS; iRow < iRowE; iRow++, nY2 += GUILD_SKILL_SLOT_OFFSETY )
-	{
-		// Render Buttons
-		ASSERT( !m_btnGuildSkill[iRow].IsEmpty() );
-		m_btnGuildSkill[iRow].SetPos( 33, nY2+70 );
-		m_btnGuildSkill[iRow].Render();
-		// Render Text		
-		// Left Skill Desc
-		int tLv = m_arGuildSkillList[iRow].GetCurLevel();
-		tStr.PrintF("%s Lv%d/Lv%d",
-			CTString(m_arGuildSkillList[iRow].GetName()),
-			tLv,m_arGuildSkillList[iRow].GetMaxLevel()
-			);
-		_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX + 75 , nY +nY2+80,C_lYELLOW|CT_AMASK);
-		isLevelMax = (m_arGuildSkillList[iRow].GetCurLevel()<m_arGuildSkillList[iRow].GetMaxLevel())?FALSE:TRUE;
-		if(!isLevelMax)
-		{			
-			tStr.PrintF("GP %d",m_arGuildSkillList[iRow].GetLearnGP(tLv));
-			_pUIMgr->GetDrawPort()->PutTextExRX( tStr, nX + 303 , nY +nY2+80);
-		}
-		
-	}
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3853, "ÌïÑÏöî Î†àÎ≤®"), nX+358 , nY+155);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3854, "ÌïÑÏöî Í∏∏ÎìúÌè¨Ïù∏Ìä∏"), nX+358 , nY+170);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(1181, "ÌïÑÏöî ÎÇòÏä§"), nX+358 , nY+185);
-	nY2 = 15;
-	tList = m_sbGuildSkillBar.GetScrollPos()+m_iGuildSkillPos;
-	isLevelMax = (m_arGuildSkillList[tList].GetCurLevel()<m_arGuildSkillList[tList].GetMaxLevel())?FALSE:TRUE;
-	if(m_bIsSelList&&!isLevelMax)
-	{	
-		nY2 =0;
-		// Right Next Level Info		
-		tLv = m_arGuildSkillList[tList].GetCurLevel();
-		tStr.PrintF("%s Lv %d",m_arGuildSkillList[tList].GetName(),tLv);
-		_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX + 348 , nY +61,C_lYELLOW|CT_AMASK);					
-		// Render skill description
-		m_lbGuildSkillDesc.Render();	
-		tStr.PrintF("%d Lv",m_arGuildSkillList[tList].GetLearnLevel(tLv));
-		_pUIMgr->GetDrawPort()->PutTextExRX( tStr, nX + 560 , nY + 155);
-		tStr.PrintF("%d",m_arGuildSkillList[tList].GetLearnGP(tLv),tLv);
-		_pUIMgr->GetDrawPort()->PutTextExRX( tStr, nX + 560 , nY + 170);
-				
-		for( iNeed = 0 ;iNeed<3 ;iNeed++)
-		{
-			iIdx = m_arGuildSkillList[tList].GetLearnItemIndex(tLv,iNeed);
-			if(iIdx == 19) // ÎÇòÏä§ ÏïÑÏù¥ÌÖú Ïù∏Îç±Ïä§
-			{
-				nY2+=15;
-				tStr.PrintF("%d",m_arGuildSkillList[tList].GetLearnItemCount(tLv,iNeed));				
-				_pUIMgr->GetDrawPort()->PutTextExRX( tStr , nX + 560 , nY +nY2+ 170);
-				
-			}			
-		}
-	}
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3855, "ÌïÑÏöî Í∏∏ÎìúÏä§ÌÇ¨"), nX + 358 , nY+ nY2+185);
-	if(m_bIsSelList&&!isLevelMax)
-	{
-		for( iNeed = 0 ;iNeed<3 ;iNeed++)
-		{
-			iIdx = m_arGuildSkillList[tList].GetLearnSkillIndex(tLv,iNeed);
-			if(iIdx>0)
-			{	
-				CSkill tSkill = _pNetwork->GetSkillData(iIdx);				
-				tStr.PrintF("%s %d",tSkill.GetName(),m_arGuildSkillList[tList].GetLearnSkillLevel(tLv,iNeed));			
-				_pUIMgr->GetDrawPort()->PutTextExRX( tStr , nX + 560 , nY +nY2+ 200);
-				nY+=15;
-			}
-		}
-	}
-	// ------------------------------------------------------------------------<<
-	
-	// Button
-	if( _pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS)
-	{
-		if(!m_btnGetSkill.IsEnabled())
-			m_btnGetSkill.SetEnable(TRUE);		
-	}
-	else 
-	{
-		if(m_btnGetSkill.IsEnabled())
-			m_btnGetSkill.SetEnable(FALSE);
-	}
-	m_btnGetSkill.Render();
-
-	// ScrollBar
-	m_sbGuildSkillBar.Render();
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-	// Flush Skill Button Rendering Queue
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_SKILL );
+	pDrawPort->EndTextEx();
+
+
+	m_ebNoticeTitle.Render();					// ¡¶∏Ò	
+	m_mebNoticeContent.Render();				// ≥ªøÎ
 	
+	pDrawPort->PutTextExCX( _S(341, "¡¶∏Ò" ), nX + 43 , nY + 78);
+	pDrawPort->PutTextExCX( _S(3852, "≥ªøÎ" ), nX + 43 , nY + 171);	
 }
 
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070719
 // Name : RenderNewGuildBoardWrite()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildBoardWrite()
 {
@@ -3521,24 +3888,26 @@ void CUIGuild::RenderNewGuildBoardWrite()
 	m_bxBox1.SetBoxPos(WRect(109,115,557,245));
 	m_bxBox1.Render(m_nPosX,m_nPosY);
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Text in write type
-	_pUIMgr->GetDrawPort()->PutTextEx ( _pNetwork->MyCharacterInfo.name, m_nPosX + 112,
+	pDrawPort->PutTextEx ( _pNetwork->MyCharacterInfo.name, m_nPosX + 112,
 										m_nPosY + 55, 0xFFFFCAFF ); 
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 244, "ÏûëÏÑ±Ïûê" ), m_nPosX+43,
+	pDrawPort->PutTextEx( _S( 244, "¿€º∫¿⁄" ), m_nPosX+43,
 										m_nPosY + 57, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 195, "Ï†ú  Î™©" ), m_nPosX+43,
+	pDrawPort->PutTextEx( _S( 195, "¡¶  ∏Ò" ), m_nPosX+43,
 										m_nPosY + 81, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 418, "ÎÇ¥  Ïö©" ), m_nPosX+43,
+	pDrawPort->PutTextEx( _S( 418, "≥ª  øÎ" ), m_nPosX+43,
 										m_nPosY + 120, 0xFFFFCAFF );
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	m_mebContent.Render ();
 
 	// Set web board texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// List button
 	m_btnList.Render();
@@ -3560,23 +3929,23 @@ void CUIGuild::RenderNewGuildBoardWrite()
 	if ( m_ebWriteSubject.DoesShowReadingWindow () )
 	{
 		// Set web board texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 		// Reading window
 		m_ebWriteSubject.RenderReadingWindow();
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 }
 
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070719
 // Name : RenderNewGuildBoardRead()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildBoardRead()
 {
@@ -3597,26 +3966,27 @@ void CUIGuild::RenderNewGuildBoardRead()
 	GetBoardReadContent();
 	m_lbReadContent.Render();
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Text in read type
-	_pUIMgr->GetDrawPort()->PutTextEx( pWEB->m_strReadNo, m_nPosX + 35,
+	pDrawPort->PutTextEx( pWEB->m_strReadNo, m_nPosX + 35,
 											m_nPosY + 55, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( pWEB->m_strReadSubject, m_nPosX + 102,
+	pDrawPort->PutTextEx( pWEB->m_strReadSubject, m_nPosX + 102,
 											m_nPosY + 55, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( pWEB->m_strReadName, m_nPosX + 546,
+	pDrawPort->PutTextExRX( pWEB->m_strReadName, m_nPosX + 546,
 											m_nPosY + 55, 0xFFFFCAFF );
 
-	_pUIMgr->GetDrawPort()->PutTextEx( pWEB->m_strReadDate, m_nPosX + 401,
+	pDrawPort->PutTextEx( pWEB->m_strReadDate, m_nPosX + 401,
 											m_nPosY + 93, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( pWEB->m_strReadHit, m_nPosX + 548,
+	pDrawPort->PutTextExRX( pWEB->m_strReadHit, m_nPosX + 548,
 											m_nPosY + 93, 0xFFFFCAFF );
-
 }
 
 
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070719
 // Name : RenderNewGuildBoardList()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildBoardList()
 {
@@ -3645,12 +4015,14 @@ void CUIGuild::RenderNewGuildBoardList()
 		m_btnNext.Render();
 	}
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Text in list type
-	_pUIMgr->GetDrawPort()->PutTextEx( CTString( "No" ), m_nPosX + 38,m_nPosY + 57, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 341, "Ï†úÎ™©" ), m_nPosX + 184,m_nPosY + 57, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 244, "ÏûëÏÑ±Ïûê" ), m_nPosX + 341,m_nPosY + 57, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 398, "ÏûëÏÑ±Ïùº" ), m_nPosX + 420,m_nPosY + 57, 0xFFFFCAFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 399, "Ï°∞Ìöå" ), m_nPosX + 504,m_nPosY + 57, 0xFFFFCAFF );
+	pDrawPort->PutTextEx( CTString( "No" ), m_nPosX + 38,m_nPosY + 57, 0xFFFFCAFF );
+	pDrawPort->PutTextEx( _S( 341, "¡¶∏Ò" ), m_nPosX + 184,m_nPosY + 57, 0xFFFFCAFF );
+	pDrawPort->PutTextEx( _S( 244, "¿€º∫¿⁄" ), m_nPosX + 341,m_nPosY + 57, 0xFFFFCAFF );
+	pDrawPort->PutTextEx( _S( 398, "¿€º∫¿œ" ), m_nPosX + 420,m_nPosY + 57, 0xFFFFCAFF );
+	pDrawPort->PutTextEx( _S( 399, "¡∂»∏" ), m_nPosX + 504,m_nPosY + 57, 0xFFFFCAFF );
 
 	// List box	
 	GetBoardListContent();
@@ -3674,7 +4046,7 @@ void CUIGuild::RenderNewGuildBoardList()
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070719
 // Name : RenderNewGuildBoard()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildBoard(int nx,int ny)
 {
@@ -3682,18 +4054,18 @@ void CUIGuild::RenderNewGuildBoard(int nx,int ny)
 	switch (pWEB->m_nCurBoardType)
 	{
 		
-		case UWT_LIST:
-			RenderNewGuildBoardList();
-			break;
-		case UWT_READ:
-			RenderNewGuildBoardRead();
-			break;
-		case UWT_WRITE:
-		case UWT_MODIFY:
-		case UWT_REPLY:
-			RenderNewGuildBoardWrite();
-			break;
-
+	case UWT_LIST:
+		RenderNewGuildBoardList();
+		break;
+	case UWT_READ:
+		RenderNewGuildBoardRead();
+		break;
+	case UWT_WRITE:
+	case UWT_MODIFY:
+	case UWT_REPLY:
+		RenderNewGuildBoardWrite();
+		break;
+		
 	}
 
 }
@@ -3701,7 +4073,7 @@ void CUIGuild::RenderNewGuildBoard(int nx,int ny)
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070608
 // Name : RenderNewGuildMemberInfo()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildMemberInfo(int nX,int nY)
 {
@@ -3709,50 +4081,62 @@ void CUIGuild::RenderNewGuildMemberInfo(int nX,int nY)
 	m_bxBox2.SetBoxPos(WRect(nX+20,nY+56,nX+583,nY+239));
 	m_bxBox2.Render();	
 
-	// List
-	m_lbGuildMemberList.Render();		// Guild Member List
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// Line
-	_pUIMgr->GetDrawPort()->AddTexture(nX+21,nY+74,nX+582,nY+75,
+	pDrawPort->AddTexture(nX+21,nY+74,nX+582,nY+75,
 	m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);	
 
-	_pUIMgr->GetDrawPort()->AddTexture(nX+47,nY+74,nX+48,nY+239,
+	pDrawPort->AddTexture(nX+47,nY+74,nX+48,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+146,nY+74,nX+147,nY+239,
+	pDrawPort->AddTexture(nX+146,nY+74,nX+147,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
-	_pUIMgr->GetDrawPort()->AddTexture(nX+221,nY+74,nX+222,nY+239,
+	pDrawPort->AddTexture(nX+221,nY+74,nX+222,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+261,nY+74,nX+262,nY+239,
+	pDrawPort->AddTexture(nX+261,nY+74,nX+262,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
-	_pUIMgr->GetDrawPort()->AddTexture(nX+343,nY+74,nX+344,nY+239,
+	pDrawPort->AddTexture(nX+343,nY+74,nX+344,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
-	_pUIMgr->GetDrawPort()->AddTexture(nX+429,nY+74,nX+430,nY+239,
+	pDrawPort->AddTexture(nX+429,nY+74,nX+430,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
-	_pUIMgr->GetDrawPort()->AddTexture(nX+476,nY+74,nX+477,nY+239,
+	pDrawPort->AddTexture(nX+476,nY+74,nX+477,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);		
 
 	// Text
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3105, "Ï∫êÎ¶≠ÌÑ∞ Î™Ö" ), nX + 92 , nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3856, "ÏßÅÏúÑ Î™Ö" ), nX +184, nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3851, "Lv" ), nX +240, nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(72, "ÌÅ¥ÎûòÏä§" ), nX +300 , nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3857, "Ï†ëÏÜçÏúÑÏπò" ), nX +386, nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3858, "Í∏∞Ïó¨ÎèÑ" ), nX +453, nY +60);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3859, "ÎàÑÏ†Å Ìè¨Ïù∏Ìä∏" ), nX +529, nY+60);
- 
-//	_pUIMgr->GetDrawPort()->PutTextEx( _s( "Í∏∏ÎìúÏõê Í¥ÄÎ¶¨" ), nX +21, nY+245);
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S(3860, "Ï†ëÏÜçÌïú Í∏∏ÎìúÏõê" ), nX +581, nY+245);
+// 	pDrawPort->PutTextExCX( _S(3105, "ƒ≥∏Ø≈Õ∏Ì" ), nX + 92 , nY +60);
+// 	pDrawPort->PutTextExCX( _S(3856, "¡˜¿ß∏Ì" ), nX +184, nY +60);
+// 	pDrawPort->PutTextExCX( _S(3851, "Lv." ), nX +240, nY +60);
+// 	pDrawPort->PutTextExCX( _S(72, "≈¨∑°Ω∫" ), nX +300 , nY +60);
+// 	pDrawPort->PutTextExCX( _S(3857, "¡¢º”¿ßƒ°" ), nX +386, nY +60);
+// 	pDrawPort->PutTextExCX( _S(3858, "±‚ø©µµ" ), nX +453, nY +60);
+// 	pDrawPort->PutTextExCX( _S(3859, "¥©¿˚ ∆˜¿Œ∆Æ" ), nX +529, nY+60);
+
+//	pDrawPort->PutTextEx( _S(921, "±ÊµÂø¯ ∞¸∏Æ" ), nX +21, nY+245);
+	pDrawPort->PutTextExRX( _S(3860, "¡¢º”«— ±ÊµÂø¯" ), nX +581, nY+245);
 	CTString tStr;
 	tStr.PrintF("%d/%d",m_iOnlineMembers,m_iNumOfMember);
-	_pUIMgr->GetDrawPort()->PutTextExRX( tStr.str_String,nX+581,nY+259);
+	pDrawPort->PutTextExRX( tStr.str_String,nX+581,nY+259);
+	// ¿œπ›¡˜¿ß ¿Œø¯ºˆ
+	pDrawPort->PutTextExRX( _S( 5329, "¿œπ›¡˜¿ß ¿Œø¯ºˆ" ), nX +430, nY+245);
+	tStr.PrintF("%d/%d",m_iCorpsMember, nMaxCorpsMember);
+	pDrawPort->PutTextExRX( tStr.str_String,nX+430,nY+259);
+	// ¥Î¿Â¡˜¿ß ¿Œø¯ºˆ
+	pDrawPort->PutTextExRX( _S( 5330, "¥Î¿Â¡˜¿ß ¿Œø¯ºˆ" ), nX +262, nY+245);
+	tStr.PrintF("%d/%d",m_iCorpsBoss, nMaxCorpsBoss);
+	pDrawPort->PutTextExRX( tStr.str_String,nX+262,nY+259);
+	// List
+	m_lbGuildMemberList.Render();		// Guild Member List
 
-
-		
+	int i;
+	for (i = 0; i < eGML_MAX; ++i)
+	{
+		m_pCbMemberArrange[i]->OnRender(pDrawPort);
+	}
 }
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070608
 // Name : RenderNew()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNewGuildInfo(int nX,int nY)
 {
@@ -3776,14 +4160,16 @@ void CUIGuild::RenderNewGuildInfo(int nX,int nY)
 	m_bxBox2.SetBoxPos(WRect(nX+437,nY+128,nX+582,nY+285));
 	m_bxBox2.Render();
 
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Horizon Line
-	_pUIMgr->GetDrawPort()->AddTexture(nX+22,nY+244,nX+281,nY+245,
+	pDrawPort->AddTexture(nX+22,nY+244,nX+281,nY+245,
 		m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+288,nY+75,nX+581,nY+76,
+	pDrawPort->AddTexture(nX+288,nY+75,nX+581,nY+76,
 		m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+288,nY+149,nX+431,nY+150,
+	pDrawPort->AddTexture(nX+288,nY+149,nX+431,nY+150,
 		m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+438,nY+149,nX+581,nY+150,
+	pDrawPort->AddTexture(nX+438,nY+149,nX+581,nY+150,
 		m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
 
 	// Render List
@@ -3798,7 +4184,14 @@ void CUIGuild::RenderNewGuildInfo(int nX,int nY)
 	m_bxBox1.Render();
 
 //	m_btnGuildMarkBack.Render();
-	
+
+	if (m_guildMarkTime >= 0)
+ 		pDrawPort->FlushRenderingQueue();
+
+#ifdef	GUILD_MARK
+ 	m_pIconGuildMark->Render(pDrawPort);
+#endif	// GUILD_MARK	
+
 	// Text 
 	int nX2 = m_nPosX + 30;
 	int nY2 = m_nPosY + 50;
@@ -3806,57 +4199,63 @@ void CUIGuild::RenderNewGuildInfo(int nX,int nY)
 	int nInc   = nSpace;
 	CTString tStr;
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3451, "Í∏∏ÎìúÎ™Ö" ), nX2 , nY2 + nSpace);
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strGuildName, nX2 + 135 , nY2 + nSpace);
+	pDrawPort->PutTextEx( _S(3451, "±ÊµÂ∏Ì" ), nX2 , nY2 + nSpace);
+	pDrawPort->PutTextEx( m_strGuildName, nX2 + 135 , nY2 + nSpace);
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3861, "Í∏∏Îìú Î†àÎ≤®" ), nX2 , nY2 + (nSpace+=nInc));
+	pDrawPort->PutTextEx( _S(3861, "±ÊµÂ ∑π∫ß" ), nX2 , nY2 + (nSpace+=nInc));
 	tStr.PrintF("%d",m_iGuildLevel);
-	_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2 + 135 , nY2 + nSpace);
+	pDrawPort->PutTextEx( tStr, nX2 + 135 , nY2 + nSpace);
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(891, "Í∏∏ÎìúÏû•" ), nX2 , nY2 + (nSpace+=nInc));
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strBossName, nX2 + 135 , nY2 + nSpace);
+	pDrawPort->PutTextEx( _S(891, "±ÊµÂ¿Â" ), nX2 , nY2 + (nSpace+=nInc));
+	pDrawPort->PutTextEx( m_strBossName, nX2 + 135 , nY2 + nSpace);
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3862, "Í∏∏ÎìúÏõê Ïù∏Ïõê" ),nX2 , nY2 + (nSpace+=nInc));
+	pDrawPort->PutTextEx( _S(3862, "±ÊµÂø¯ ¿Œø¯" ),nX2 , nY2 + (nSpace+=nInc));
 	tStr.PrintF("%d/%d",m_iNumOfMember,m_iNumOfMaxMember);
-	_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2 + 135 , nY2 + nSpace);
+	pDrawPort->PutTextEx( tStr, nX2 + 135 , nY2 + nSpace);
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3863, "Í∏∏Îìú ÌèâÍ∑†Î†àÎ≤®" ),nX2 , nY2 + (nSpace+=nInc));
+	pDrawPort->PutTextEx( _S(3863, "±ÊµÂ ∆Ú±’ ∑π∫ß" ),nX2 , nY2 + (nSpace+=nInc));
 	tStr.PrintF("%d",m_iGuildAverageLevel);
-	_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2 + 135 , nY2 + nSpace);
+	pDrawPort->PutTextEx( tStr, nX2 + 135 , nY2 + nSpace);
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3864, "ÏÜåÏú† ÏòÅÏßÄ" ),nX2 , nY2 + (nSpace+=nInc));
+	pDrawPort->PutTextEx( _S(3864, "º“¿Ø øµ¡ˆ" ),nX2 , nY2 + (nSpace+=nInc));
 	if(m_iGuildOwnLand>0)
 		tStr.PrintF("%d",m_iGuildOwnLand);
 	else 
-		tStr=_S(3865, "ÏóÜÏùå");
-	_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2 + 135 , nY2 + nSpace);
+		tStr=_S(3865, "æ¯¿Ω");
+	pDrawPort->PutTextEx( tStr, nX2 + 135 , nY2 + nSpace);
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3866, "Í∏∏Îìú ÎßàÌÅ¨" ),nX +28 , nY + 228);	
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(3867,"[ÏÇ¨Ïö©Í∏∞Í∞Ñ : 1ÎÖÑ]" ),nX + 137 , nY + 259);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3447, "Í∏∏Îìú Ìè¨Ïù∏Ìä∏(GP)" ),nX +294 , nY + 58);
+	pDrawPort->PutTextEx( _S(3866, "±ÊµÂ ∏∂≈©" ),nX +28 , nY + 228);	
+// [sora] GUILD_MARK
+#ifdef GUILD_MARK
+	tStr = m_strGuildMarkTime;
+#else
+	tStr = _S(3867, "[ªÁøÎ±‚∞£ : 1≥‚]" );
+#endif
+	pDrawPort->PutTextExCX( tStr, nX + 137 , nY + 259);
+	pDrawPort->PutTextEx( _S(3977, "±ÊµÂ ∆˜¿Œ∆Æ(GP)" ),nX +294 , nY + 58);
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3868, "Ï¥ù Ìè¨Ïù∏Ìä∏" ),nX +304 , nY + 81);
+	pDrawPort->PutTextEx( _S(3868, "√— ∆˜¿Œ∆Æ" ),nX +304 , nY + 81);
 	tStr.PrintF("%d",m_iGuildTotalPoint);
-	_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX + 500 , nY + 81);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3869, "Í∏∞Ïó¨ Ìè¨Ïù∏Ìä∏" ),nX +304 , nY + 100);	
+	pDrawPort->PutTextEx( tStr, nX + 500 , nY + 81);
+	pDrawPort->PutTextEx( _S(3869, "±‚ø© ∆˜¿Œ∆Æ" ),nX +304 , nY + 100);	
 	tStr.PrintF("%d",m_iGuildMyPoint);
-	_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX + 500 , nY + 100);
+	pDrawPort->PutTextEx( tStr, nX + 500 , nY + 100);
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3870, "ÎèôÎßπ Íµ∞Îã®" ),nX +294 , nY + 132, COLOR(0x064729FF));	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(3871, "Ï†ÅÎåÄ Íµ∞Îã®" ),nX +446 , nY + 132, COLOR(0x531D2AFF));		
-
-
+	pDrawPort->PutTextEx( _S(3870, "µø∏Õ ±∫¥‹" ),nX +294 , nY + 132, COLOR(0x064729FF));	
+	pDrawPort->PutTextEx( _S(3871, "¿˚¥Î ±∫¥‹" ),nX +446 , nY + 132, COLOR(0x531D2AFF));		
 }
 
 // ----------------------------------------------------------------------------
 // WSS_NEW_GUILD_SYSTEM 070608
 // Name : RenderNew()
-// Desc : Í∏∏Îìú ÏãúÏä§ÌÖú Í∞úÌé∏ ÏàòÏ†ï Ïù∏ÌÑ∞ÌéòÏù¥Ïä§
+// Desc : ±ÊµÂ Ω√Ω∫≈€ ∞≥∆Ì ºˆ¡§ ¿Œ≈Õ∆‰¿ÃΩ∫
 // ----------------------------------------------------------------------------
 void CUIGuild::RenderNew()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	// Set skill learn texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Add render regions
 	int	nX, nY;
@@ -3904,12 +4303,12 @@ void CUIGuild::RenderNew()
 			RenderNewGuildMemberInfo(nX,nY);
 			break;
 		case NEW_GUILD_SKILL:
-			RenderNewGuildSkill(nX,nY);
+			RenderNewGuildSkillExtend(nX, nY);
 			break;
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
 		case NEW_GUILD_BOARD:
 			RenderNewGuildBoard(nX,nY);
-			break;
+		break;
 #endif
 		case NEW_GUILD_NOTICE:
 			RenderNewGuildNoticeInput();
@@ -3920,27 +4319,26 @@ void CUIGuild::RenderNew()
 	}
 
 	// Text	
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strGuildName, m_nPosX + 19, m_nPosY + 6);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3872, "Í∏∏Îìú Ï†ïÎ≥¥" ), 
+	pDrawPort->PutTextEx( m_strGuildName, m_nPosX + 19, m_nPosY + 6);
+	pDrawPort->PutTextExCX( _S(3872, "±ÊµÂ ¡§∫∏" ), 
 		m_nPosX + m_rcTabNew[NEW_GUILD_INFO].Left + m_rcTabNew[0].GetWidth()/2, m_nPosY + m_rcTabNew[NEW_GUILD_INFO].Top+3);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3873, "Í∏∏ÎìúÏõê Ï†ïÎ≥¥" ), 
+	pDrawPort->PutTextExCX( _S(3873, "±ÊµÂø¯ ¡§∫∏" ), 
 		m_nPosX + m_rcTabNew[NEW_GUILD_MEMBER_INFO].Left + m_rcTabNew[0].GetWidth()/2, m_nPosY + m_rcTabNew[NEW_GUILD_MEMBER_INFO].Top+3);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3874, "Í∏∏Îìú Ïä§ÌÇ¨" ), 
+	pDrawPort->PutTextExCX( _S(3874, "±ÊµÂ Ω∫≈≥" ), 
 		m_nPosX + m_rcTabNew[NEW_GUILD_SKILL].Left + m_rcTabNew[0].GetWidth()/2, m_nPosY + m_rcTabNew[NEW_GUILD_SKILL].Top+3);
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3875, "Í∏∏Îìú Í≤åÏãúÌåê" ), 
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
+	pDrawPort->PutTextExCX( _S( 3875, "±ÊµÂ ∞‘Ω√∆«" ), 
 		m_nPosX + m_rcTabNew[NEW_GUILD_BOARD].Left + m_rcTabNew[0].GetWidth()/2, m_nPosY + m_rcTabNew[NEW_GUILD_BOARD].Top+3);
 #endif
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3876, "Í∏∏Îìú Í≥µÏßÄÏÇ¨Ìï≠" ), 
+	pDrawPort->PutTextExCX( _S(3876, "±ÊµÂ ∞¯¡ˆªÁ«◊" ), 
 		m_nPosX + m_rcTabNew[NEW_GUILD_NOTICE].Left + m_rcTabNew[0].GetWidth()/2, m_nPosY + m_rcTabNew[NEW_GUILD_NOTICE].Top+3);
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 918, "Í∏∏Îìú Í¥ÄÎ¶¨" ), 
+	pDrawPort->PutTextExCX( _S(918, "±ÊµÂ ∞¸∏Æ" ), 
 		m_nPosX + m_rcTabNew[NEW_GUILD_MANAGE].Left + m_rcTabNew[0].GetWidth()/2, m_nPosY + m_rcTabNew[NEW_GUILD_MANAGE].Top+3);
 	
-	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 
@@ -4061,44 +4459,26 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 				if( pWEB->m_nCurBoardType == UWT_LIST )
 				{
 					// Search combobox
-					if( m_cmbSearch.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
+					m_cmbSearch.MouseMessage( pMsg );
 					// Search edit box
-					else if( m_ebSearch.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
+					m_ebSearch.MouseMessage( pMsg );
 					// Search button
-					else if( m_btnSearch.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
+					m_btnSearch.MouseMessage( pMsg );
 					// Write button
-					else if( m_btnWrite.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
+					m_btnWrite.MouseMessage( pMsg );
+					// Prev button
+					m_btnPrev.MouseMessage( pMsg );
+					// Next button
+					m_btnNext.MouseMessage( pMsg );
 					// List box
-					else if( ( wmsgResult = m_lbListContent.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					if( ( wmsgResult = m_lbListContent.MouseMessage( pMsg ) ) != WMSG_FAIL )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// Í≥µÏßÄ ÎÇ¥Ïö© ÏöîÏ≤≠..
+							// ∞¯¡ˆ ≥ªøÎ ø‰√ª..
 							pWEB->m_nWantWrite = m_lbListContent.GetCurSel();
 							pWEB->DelayCommandPrepare(new CCommandView);							
 						}
-					}
-					// Prev button
-					else if( m_btnPrev.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-					// Next button
-					else if( m_btnNext.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
 					}
 					// Page buttons
 					else
@@ -4114,105 +4494,51 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 				else if( pWEB->m_nCurBoardType == UWT_READ )
 				{
 					// List button
-					if( m_btnList.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
+					m_btnList.MouseMessage( pMsg );
 					// Reply button
-					else if( m_btnReply.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nohthing
-					}
+					m_btnReply.MouseMessage( pMsg );
 					// Modify button
-					else if( m_btnModify.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nohthing
-					}
+					m_btnModify.MouseMessage( pMsg );
 					// Delete button
-					else if( m_btnDelete.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nohthing
-					}
+					m_btnDelete.MouseMessage( pMsg );
 					// List box of read type
-					else if( m_lbReadContent.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
+					m_lbReadContent.MouseMessage( pMsg );
 				}
 				// Write
 				else if( pWEB->m_nCurBoardType == UWT_WRITE )
 				{
 					// List button
-					if( m_btnList.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nohthing
-					}
+					m_btnList.MouseMessage( pMsg );
 					// Write button
-					else if( m_btnWrite.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						
-					}
-					else if ( m_ebWriteSubject.MouseMessage ( pMsg ) != WMSG_FAIL )
-					{
+					m_btnWrite.MouseMessage( pMsg );
+					if ( m_ebWriteSubject.MouseMessage ( pMsg ) != WMSG_FAIL )
 						m_mebContent.SetFocus ( FALSE );
-					//	return WMSG_SUCCESS;
-					}
-					// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (05.01.01) : Î©ÄÌã∞ ÏóêÎîîÌä∏ Î∞ïÏä§ Î£®Ìã¥ Ï∂îÍ∞Ä
 					else if ( m_mebContent.MouseMessage ( pMsg ) != WMSG_FAIL )
-					{
 						m_ebWriteSubject.SetFocus( FALSE );
-					//	return WMSG_SUCCESS;
-					}
 				}
 				// Reply
 				else if( pWEB->m_nCurBoardType == UWT_REPLY )
 				{
 					// List button
-					if( m_btnList.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nohthing
-					}
+					m_btnList.MouseMessage( pMsg );
 					// Write button
-					else if( m_btnWrite.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nohthing
-					}
-					else if ( m_ebWriteSubject.MouseMessage ( pMsg ) != WMSG_FAIL )
-					{
+					m_btnWrite.MouseMessage( pMsg );
+					if ( m_ebWriteSubject.MouseMessage ( pMsg ) != WMSG_FAIL )
 						m_mebContent.SetFocus ( FALSE );
-					//	return WMSG_SUCCESS;
-					}
-					// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (05.01.01) : Î©ÄÌã∞ ÏóêÎîîÌä∏ Î∞ïÏä§ Î£®Ìã¥ Ï∂îÍ∞Ä
 					else if ( m_mebContent.MouseMessage ( pMsg ) != WMSG_FAIL )
-					{
 						m_ebWriteSubject.SetFocus( FALSE );
-					//	return WMSG_SUCCESS;
-					}
 				}
 				// Modify
 				else if( pWEB->m_nCurBoardType == UWT_MODIFY )
 				{
 					// List button
-					if( m_btnList.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nohthing
-					}
+					m_btnList.MouseMessage( pMsg );
 					// Modify button
-					else if( m_btnModify.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nohthing
-					}
-					else if ( m_ebWriteSubject.MouseMessage ( pMsg ) != WMSG_FAIL )
-					{
+					m_btnModify.MouseMessage( pMsg );
+					if ( m_ebWriteSubject.MouseMessage ( pMsg ) != WMSG_FAIL )
 						m_mebContent.SetFocus ( FALSE );
-					//	return WMSG_SUCCESS;
-					}
-					// Ïù¥Í∏∞Ìôò ÏàòÏ†ï ÏãúÏûë (05.01.01) : Î©ÄÌã∞ ÏóêÎîîÌä∏ Î∞ïÏä§ Î£®Ìã¥ Ï∂îÍ∞Ä
-					else if ( m_mebContent.MouseMessage ( pMsg ) != WMSG_FAIL )
-					{
+					if ( m_mebContent.MouseMessage ( pMsg ) != WMSG_FAIL )
 						m_ebWriteSubject.SetFocus( FALSE );
-					//	return WMSG_SUCCESS;
-					}
 				}
 			}		
 			break;
@@ -4245,10 +4571,10 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 						if( wmsgResult == WMSG_COMMAND )
 						{
 							// user name input ...
-							// Í∏ÄÏì∞Í∏∞ ÏöîÏ≤≠
+							// ±€æ≤±‚ ø‰√ª
 							pWEB->m_nCurBoardType = UWT_WRITE;
 							pWEB->m_ebWriteSubject.ResetString();
-							//!!TODO:ÎÇ¥Ïö©ÎèÑ Î¶¨ÏÖã.
+							//!!TODO:≥ªøÎµµ ∏Æº¬.
 							m_ebWriteSubject.SetFocus ( TRUE );
 							m_mebContent.ResetString ();
 							m_mebContent.SetFocus ( FALSE );
@@ -4261,7 +4587,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// ÌéòÏù¥ÏßÄ Ïû¨ÏÑ§Ï†ï
+							// ∆‰¿Ã¡ˆ ¿Áº≥¡§
 							pWEB->m_nWantPage = pWEB->m_nCurrentPage - 10;
 							if(pWEB->m_nWantPage < 1) pWEB->m_nWantPage = 1;
 							pWEB->DelayCommandPrepare(new CCommandList);
@@ -4273,7 +4599,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// ÌéòÏù¥ÏßÄ Ïû¨ÏÑ§Ï†ï
+							// ∆‰¿Ã¡ˆ ¿Áº≥¡§
 							pWEB->m_nWantPage = pWEB->m_nCurrentPage + 10;
 							if(pWEB->m_nWantPage > pWEB->m_nTotalPage) pWEB->m_nWantPage = pWEB->m_nTotalPage;
 							pWEB->DelayCommandPrepare(new CCommandList);
@@ -4289,7 +4615,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 							{
 								if( wmsgResult == WMSG_COMMAND )
 								{
-									// ÌéòÏù¥ÏßÄ Î≥ÄÍ≤Ω Ï≤òÎ¶¨
+									// ∆‰¿Ã¡ˆ ∫Ø∞Ê √≥∏Æ
 									pWEB->m_nWantPage = pWEB->m_nCurrentFirstPage + iPage;
 									pWEB->DelayCommandPrepare(new CCommandList);									
 								}
@@ -4306,7 +4632,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// Î™©Î°ù ÏöîÏ≤≠							
+							// ∏Ò∑œ ø‰√ª							
 							pWEB->DelayCommandPrepare(new CCommandList);							
 							pWEB->m_nCurBoardType = UWT_LIST;
 							pWEB->m_nWantPage = pWEB->m_nCurrentPage;							
@@ -4318,16 +4644,16 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// ÎãµÍ∏Ä ÌéòÏù¥ÏßÄÎ°ú
+							// ¥‰±€ ∆‰¿Ã¡ˆ∑Œ
 							pWEB->m_nCurBoardType = UWT_REPLY;
 							CTString strTemp;
 							strTemp.PrintF("Re: %s", pWEB->m_strReadSubject);
 							m_ebWriteSubject.ResetString();
 							m_ebWriteSubject.InsertChars(0, strTemp.str_String);
-							//Î©ÄÌã∞ÏóêÎîîÌÑ∞Ïóê ÎÇ¥Ïö© ÏÇΩÏûÖ. ÎÇ¥Ïö©Ïù¥ ÏïÑÎûòÏôÄ Í∞ôÏù¥ ÏàòÏ†ïÎê®.
-							//Í≥µÎ∞±ÎùºÏù∏
-							//----<ÌîºÎãµÍ∏ÄÏùò ÏûëÏÑ±Ïûê>Ïù¥ Ïì∞Ïã† Í∏ÄÏûÖÎãàÎã§ -----
-							//Î™®Îì† Ï§Ñ ÏïûÏóê '>' ÏÇΩÏûÖ.
+							//∏÷∆ºø°µ≈Õø° ≥ªøÎ ª¿‘. ≥ªøÎ¿Ã æ∆∑°øÕ ∞∞¿Ã ºˆ¡§µ .
+							//∞¯πÈ∂Û¿Œ
+							//----<««¥‰±€¿« ¿€º∫¿⁄>¿Ã æ≤Ω≈ ±€¿‘¥œ¥Ÿ -----
+							//∏µÁ ¡Ÿ æ’ø° '>' ª¿‘.
 								
 							CTString strContent;
 							
@@ -4348,12 +4674,12 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// ÏàòÏ†ï ÌéòÏù¥ÏßÄÎ°ú
+							// ºˆ¡§ ∆‰¿Ã¡ˆ∑Œ
 							pWEB->m_nCurBoardType = UWT_MODIFY;
 							m_ebWriteSubject.ResetString();
 							m_ebWriteSubject.InsertChars(0, pWEB->m_strReadSubject.str_String);
 
-							//Î©ÄÌã∞ÏóêÎîîÌÑ∞Ïóê ÎÇ¥Ïö© ÏÇΩÏûÖ.
+							//∏÷∆ºø°µ≈Õø° ≥ªøÎ ª¿‘.
 							m_mebContent.ResetString();
 							
 							CTString strContent;
@@ -4374,8 +4700,8 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// ÏÇ≠Ï†ú ÏöîÏ≤≠
-							//TODO : ÏòàÏùòÏÉÅ ÌïúÎ≤à Î¨ºÏñ¥Î≥¥Ïûê.
+							// ªË¡¶ ø‰√ª
+							//TODO : øπ¿«ªÛ «—π¯ π∞æÓ∫∏¿⁄.
 							pWEB->m_nWantModifyMode = UWM_DELETE;
 							pWEB->DelayCommandPrepare(new CCommandModify);
 						}
@@ -4395,7 +4721,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// Î™©Î°ù ÏöîÏ≤≠							
+							// ∏Ò∑œ ø‰√ª							
 							pWEB->m_nWantPage = pWEB->m_nCurrentPage;
 							pWEB->DelayCommandPrepare(new CCommandList);
 						}
@@ -4406,7 +4732,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// Ïì∞Í∏∞ ÏöîÏ≤≠
+							// æ≤±‚ ø‰√ª
 							pWEB->m_nWantModifyMode = UWM_WRITE;
 							pWEB->m_ebWriteSubject.SetString( m_ebWriteSubject.GetString());
 							pWEB->m_mebContent.SetString(m_mebContent.GetString().str_String);
@@ -4424,7 +4750,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// Î™©Î°ù ÏöîÏ≤≠
+							// ∏Ò∑œ ø‰√ª
 							pWEB->m_nCurBoardType = UWT_LIST;
 							pWEB->m_nWantPage = pWEB->m_nCurrentPage;
 							pWEB->DelayCommandPrepare(new CCommandList);
@@ -4436,7 +4762,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// Ïì∞Í∏∞ ÏöîÏ≤≠
+							// æ≤±‚ ø‰√ª
 							pWEB->m_nWantModifyMode = UWM_REPLY;
 							pWEB->m_ebWriteSubject.SetString( m_ebWriteSubject.GetString());
 							pWEB->m_mebContent.SetString(m_mebContent.GetString().str_String);
@@ -4454,7 +4780,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// Î™©Î°ù ÏöîÏ≤≠
+							// ∏Ò∑œ ø‰√ª
 							pWEB->m_nCurBoardType = UWT_LIST;
 							pWEB->m_nWantPage = pWEB->m_nCurrentPage;
 							pWEB->DelayCommandPrepare(new CCommandList);
@@ -4466,7 +4792,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// ÏàòÏ†ï ÏöîÏ≤≠
+							// ºˆ¡§ ø‰√ª
 							pWEB->m_ebWriteSubject.SetString( m_ebWriteSubject.GetString() );	
 							pWEB->m_mebContent.SetString( m_mebContent.GetString().str_String );	
 							pWEB->m_nWantModifyMode = UWM_MODIFY;
@@ -4507,19 +4833,19 @@ WMSG_RESULT	CUIGuild::MouseMessageNewBoard( MSG *pMsg )
 			break;
 
 		case WM_LBUTTONDBLCLK:
-		{			
-			// Read
-			if( pWEB->m_nCurBoardType == UWT_READ )
-			{
-				// List box of read type
-				if( m_lbReadContent.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-			}					
-		}
-	break;
+			{			
+				// Read
+				if( pWEB->m_nCurBoardType == UWT_READ )
+				{
+					// List box of read type
+					if( m_lbReadContent.MouseMessage( pMsg ) != WMSG_FAIL )
+						return WMSG_SUCCESS;
+				}					
+			}
+			break;
 	}
-
-		return WMSG_FAIL;
+	
+	return WMSG_FAIL;
 }
 
 // ----------------------------------------------------------------------------
@@ -4532,12 +4858,14 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 
 	// Title bar
 	static BOOL	bTitleBarClick = FALSE;
-
+	// Extended button clicked
+	static BOOL	bLButtonDownInBtn = FALSE;
 	// Mouse point
 	static int	nOldX, nOldY;
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
-	
+	int i = 0;
+
 	// Mouse message
 	switch( pMsg->message )
 	{
@@ -4558,12 +4886,23 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 
 			if( IsInsideRect( nX, nY ,m_rcWindowNew) )
 			{
-				_pUIMgr->SetMouseCursorInsideUIs();
+				// Close button
+				m_btnCloseNew.MouseMessage( pMsg );
+				// ¥›±‚ πˆ∆∞
+				m_btnExitNew.MouseMessage(pMsg);
+
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
+				pUIManager->SetMouseCursorInsideUIs();
 				
+				CUIIcon* pBtnSkill = NULL;
+				int nScrollBarPos, nGuildSkillCount, i;
+				m_strSkillTabPopupInfo.Clear();
 				switch(m_iSelTab)
 				{
 					case NEW_GUILD_INFO: 
 						// List
+						m_btnEdit.MouseMessage( pMsg );
 						m_lbMemberAllianceList.MouseMessage( pMsg );
 						m_lbMemberHostilityList.MouseMessage( pMsg );							
 						break;
@@ -4571,20 +4910,76 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 						m_lbGuildMemberList.MouseMessage( pMsg );
 						break;
 					case NEW_GUILD_SKILL:
-						m_sbGuildSkillBar.MouseMessage( pMsg );
+						m_btnGetSkill.MouseMessage(pMsg);
+
+						if ( m_sbGuildSkillBar.MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							SetSkillBtnInfo();
+						}
 						m_lbGuildSkillDesc.MouseMessage( pMsg );
+						nScrollBarPos	 = m_sbGuildSkillBar.GetScrollPos();
+						nGuildSkillCount = GetGuildSkillCount();
+						for ( i=0; i<5; ++i )
+						{
+							if ( nScrollBarPos+i < nGuildSkillCount )
+							{
+								pBtnSkill = GetSkillButton(nScrollBarPos+i);
+
+								pBtnSkill->MouseMessage( pMsg );
+							}
+						}
+						if (pUIManager->GetDragIcon() == NULL && bLButtonDownInBtn && 
+							(pMsg->wParam& MK_LBUTTON) && (ndX != 0 || ndY != 0))
+						{
+							CSkill* pSkill = GetGuildSkill(m_iGuildSkillPos);
+							if ( m_nSelSkillTab == GUILD_SKILL_ACTIVE && pSkill->GetCurLevel() > 0)
+							{
+								if (pSkill->GetTargetType() == CSkill::STT_GUILD_MEMBER_SELF ||
+									_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS)
+								{
+									pBtnSkill = GetSkillButton(m_iGuildSkillPos);
+									pUIManager->SetHoldBtn(pBtnSkill);
+									bLButtonDownInBtn = FALSE;
+								}
+							}
+						}
+						if (m_lbUseInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
+							m_lbLearnInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
+							m_btnUseSkill.MouseMessage( pMsg ) != WMSG_FAIL )
+							return WMSG_SUCCESS;
+
+						for ( i=0; i<2; ++i )
+						{
+							if ( IsInsideRect( nX, nY, m_rcSkillTab[i] ) )
+							{
+								SetSkillPopupInfo(i);
+							}
+						}
 						break;
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
 					case NEW_GUILD_BOARD:
 						MouseMessageNewBoard(pMsg);
 						break;
 #endif
-					case NEW_GUILD_NOTICE:	
+					case NEW_GUILD_NOTICE:
+						m_btnNotice.MouseMessage(pMsg);
+						m_btnNoticeCorrect.MouseMessage(pMsg);
+						m_btnUpdateNotice.MouseMessage(pMsg);
 						m_ebNoticeTitle.MouseMessage( pMsg );
 						m_mebNoticeContent.MouseMessage( pMsg );
 						break;
 					case NEW_GUILD_MANAGE:
 						m_lbManageMemberList.MouseMessage( pMsg );
+						m_cmbCorps.MouseMessage( pMsg );
+
+						m_btnChangeBossNew.MouseMessage( pMsg );							
+						m_btnAcceptNew.MouseMessage( pMsg );							
+						m_btnRejectNew.MouseMessage( pMsg );							
+						m_btnMemberFireNew.MouseMessage( pMsg );							
+						m_btnChangeSetting.MouseMessage( pMsg );
+
+						m_btnApplySetting.MouseMessage( pMsg );
+						m_btnApplySettingClose.MouseMessage( pMsg );
 						break; 						
 				}	
 				return WMSG_SUCCESS;
@@ -4595,16 +4990,24 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 		{
 			if( IsInsideRect( nX, nY ,m_rcWindowNew) )
 			{
-				nOldX = nX;		nOldY = nY;
-				
-				if (_pUIMgr->GetGuild()->IsEnabled() && !_pUIMgr->GetGuild()->IsVisible())
+				for (i = 0; i < eGML_MAX; ++i)
 				{
-					_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+					if (m_pCbMemberArrange[i]->OnLButtonDown(nX, nY) != WMSG_FAIL)
+						return WMSG_SUCCESS;
+				}
+
+				CUIManager* pUIManager = CUIManager::getSingleton();
+				nOldX = nX;
+				nOldY = nY;
+
+				if (pUIManager->GetGuild()->IsEnabled() && !pUIManager->GetGuild()->IsVisible())
+				{
+					pUIManager->RearrangeOrder( UI_GUILD, TRUE );
 				}
 			
 				// Close button
 				m_btnCloseNew.MouseMessage( pMsg );
-				// Îã´Í∏∞ Î≤ÑÌäº
+				// ¥›±‚ πˆ∆∞
 				m_btnExitNew.MouseMessage(pMsg);
 				// Title bar
 				if( IsInsideRect( nX, nY, m_rcTitleNew ) )
@@ -4625,11 +5028,62 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 						m_lbGuildMemberList.MouseMessage( pMsg );
 						break;
 					case NEW_GUILD_SKILL:						
-						if(m_btnGetSkill.MouseMessage( pMsg )) {}
-						else if(m_sbGuildSkillBar.MouseMessage( pMsg )){}
-						else if(m_lbGuildSkillDesc.MouseMessage( pMsg )){}
+						m_btnGetSkill.MouseMessage( pMsg );
+						m_lbGuildSkillDesc.MouseMessage( pMsg );
+						if(m_sbGuildSkillBar.MouseMessage( pMsg ) != WMSG_FAIL )
+						{	
+							SetSkillBtnInfo();	
+						}
+						else if ( IsInsideRect( nX, nY, m_rcGuildSkillList) )
+						{
+							int nScrollBarPos	 = m_sbGuildSkillBar.GetScrollPos();
+							int nGuildSkillCount = GetGuildSkillCount();
+							CUIIcon* pBtnSkill = NULL;
+							for ( int i=0; i<5; ++i )
+							{
+								if ( nScrollBarPos+i < nGuildSkillCount )
+								{
+									pBtnSkill = GetSkillButton(nScrollBarPos+i);
+									if (pBtnSkill->MouseMessage( pMsg ) != WMSG_FAIL )
+									{
+										m_iGuildSkillPos = nScrollBarPos + i;
+										bLButtonDownInBtn = TRUE;
+										break;
+									}
+								}
+							}
+						}
+						else if ( IsInsideRect( nX, nY, m_rcSkillTab[GUILD_SKILL_PASSIVE]) )
+						{
+							m_nSelSkillTab	= GUILD_SKILL_PASSIVE;
+							m_iGuildSkillPos = 0;
+							m_bIsSelList = FALSE;
+							m_sbGuildSkillBar.SetScrollPos( 0 );
+							m_lbGuildSkillDesc.ResetAllStrings();
+							m_lbUseInfo.ResetAllStrings();
+							m_lbLearnInfo.ResetAllStrings();
+							m_sbGuildSkillBar.SetCurItemCount(m_vecGuildPassiveSkill.size());
+							SetSkillBtnInfo();
+						}
+						else if ( IsInsideRect( nX, nY, m_rcSkillTab[GUILD_SKILL_ACTIVE]) )
+						{
+							m_nSelSkillTab	= GUILD_SKILL_ACTIVE;
+							m_iGuildSkillPos = 0;
+							m_bIsSelList = FALSE;
+							m_sbGuildSkillBar.SetScrollPos( 0 );
+							m_lbGuildSkillDesc.ResetAllStrings();
+							m_lbUseInfo.ResetAllStrings();
+							m_lbLearnInfo.ResetAllStrings();
+							m_sbGuildSkillBar.SetCurItemCount(m_vecGuildActiveSkill.size());
+							SetSkillBtnInfo();
+						}
+						if (m_lbUseInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
+							m_lbLearnInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
+							m_btnUseSkill.MouseMessage( pMsg ) != WMSG_FAIL )
+							return WMSG_SUCCESS;
+
 						break;
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
 					case NEW_GUILD_BOARD:
 						MouseMessageNewBoard(pMsg);
 						break;
@@ -4661,36 +5115,50 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 					case NEW_GUILD_MANAGE:
 						if(m_bApplySettingOn)
 						{
+							if ( (wmsgResult = m_cmbCorps.MouseMessage( pMsg )) != WMSG_FAIL )
+							{
+								m_ebChangePositionName.SetFocus(FALSE);
+								m_ebChangePayExp.SetFocus(FALSE);
+								m_ebChangePayFame.SetFocus(FALSE);
+								m_cmbCorps.SetFocus(TRUE);
+								break;
+							}
 							m_btnApplySetting.MouseMessage( pMsg );
 							m_btnApplySettingClose.MouseMessage( pMsg );
-							
+#ifdef ENABLE_GUILD_STASH
+							m_ckGuildStashPermission.MouseMessage( pMsg );
+#endif
 							if( (wmsgResult = m_ebChangePositionName.MouseMessage( pMsg )) != WMSG_FAIL )
 							{
 								m_ebChangePositionName.SetFocus(TRUE);
 								m_ebChangePayFame.SetFocus(FALSE);
 								m_ebChangePayExp.SetFocus(FALSE);
+								m_cmbCorps.SetFocus(FALSE);
 							}
 							else if( (wmsgResult = m_ebChangePayExp.MouseMessage( pMsg )) != WMSG_FAIL )
 							{
 								m_ebChangePositionName.SetFocus(FALSE);
 								m_ebChangePayFame.SetFocus(FALSE);
 								m_ebChangePayExp.SetFocus(TRUE);
+								m_cmbCorps.SetFocus(FALSE);
 							} 
 							else if( (wmsgResult = m_ebChangePayFame.MouseMessage( pMsg )) != WMSG_FAIL )
 							{
 								m_ebChangePositionName.SetFocus(FALSE);
 								m_ebChangePayExp.SetFocus(FALSE);
 								m_ebChangePayFame.SetFocus(TRUE);
+								m_cmbCorps.SetFocus(FALSE);
 							} 
 							else 
 							{
 								m_ebChangePositionName.SetFocus(FALSE);
 								m_ebChangePayExp.SetFocus(FALSE);
 								m_ebChangePayFame.SetFocus(FALSE);
+								m_cmbCorps.SetFocus(FALSE);
 								wmsgResult = WMSG_SUCCESS;				
 							}
 
-							_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+							pUIManager->RearrangeOrder( UI_GUILD, TRUE );
 							return wmsgResult;
 						}
 						else 
@@ -4706,92 +5174,103 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 				}
 				
 				
-				_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+				pUIManager->RearrangeOrder( UI_GUILD, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
 		break;
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 			bTitleBarClick = FALSE;
-			// tab
-			if(!m_bApplySettingOn)
-			{
-				for(int i=0; i<MAX_GUILDINFO_TAB;i++)
-				{
-					if( IsInsideRect( nX, nY, m_rcTabNew[i] ) )
-					{
-						if( m_iSelTab != i)
-						{
-							int tOldTab = m_iSelTab;
-							m_iSelTab = i;							
-							
-							switch(m_iSelTab)
-							{
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
-								case NEW_GUILD_BOARD:
-								{
-									// TODO :: ÏûÑÏãúÎ°ú Í≤åÏãúÌåê ÎßâÏùå... Ïù¥ÌõÑ ÏõπÌåÄ ÏûëÏóÖÎêòÎ©¥ Ï∂îÍ∞Ä
-								//	m_iSelTab = tOldTab;
-								//	_pUIMgr->GetChatting()->AddSysMessage( _s( "ÌòÑÏû¨ Î≤ÑÏ†ÑÏùÄ ÏßÄÏõêÌïòÏßÄ ÏïäÏäµÎãàÎã§." ) );
-								//	return WMSG_SUCCESS;
+			bLButtonDownInBtn = FALSE;
+			int nGuildSkillCount = GetGuildSkillCount();
 
-									pWEB->m_nWantPage = 1;
-									pWEB->DelayCommandPrepare(new CCommandList);
-									return WMSG_SUCCESS;
-								}
-								break;
-#endif
-								case NEW_GUILD_NOTICE:
+			if (pUIManager->GetDragIcon() == NULL)
+			{
+				// tab
+				if(!m_bApplySettingOn)
+				{
+					for(int i=0; i<MAX_GUILDINFO_TAB;i++)
+					{
+						if( IsInsideRect( nX, nY, m_rcTabNew[i] ) )
+						{
+							if( m_iSelTab != i)
+							{
+								int tOldTab = m_iSelTab;
+								m_iSelTab = i;							
+								
+								switch(m_iSelTab)
 								{
-									m_iSelTab = tOldTab;
-									m_bEnableCorrect		= FALSE;			// Í≥µÏßÄÏÇ¨Ìï≠ ÏàòÏ†ïÏó¨Î∂Ä
-									SendRequestGuildTab(NEW_GUILD_NOTICE);
-									return WMSG_SUCCESS;
-								}
-								break;							
-								case NEW_GUILD_MANAGE:
-								{
-									if( _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_BOSS &&
-										_pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_VICE_BOSS)
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
+								case NEW_GUILD_BOARD:
 									{
-										m_iSelTab = tOldTab;
+										// TODO :: ¿”Ω√∑Œ ∞‘Ω√∆« ∏∑¿Ω... ¿Ã»ƒ ¿•∆¿ ¿€æ˜µ«∏È √ﬂ∞°
+										//	m_iSelTab = tOldTab;
+										//	pUIManager->GetChattingUI()->AddSysMessage( _s( "«ˆ¿Á πˆ¿¸¿∫ ¡ˆø¯«œ¡ˆ æ Ω¿¥œ¥Ÿ." ) );
+										//	return WMSG_SUCCESS;
+										
+										pWEB->m_nWantPage = 1;
+										pWEB->DelayCommandPrepare(new CCommandList);
 										return WMSG_SUCCESS;
 									}
+									break;
+#endif
+								case NEW_GUILD_NOTICE:
+									{
+										m_iSelTab = tOldTab;
+										m_bEnableCorrect		= FALSE;			// ∞¯¡ˆªÁ«◊ ºˆ¡§ø©∫Œ
+										SendRequestGuildTab(NEW_GUILD_NOTICE);
+										return WMSG_SUCCESS;
+									}
+									break;							
+								case NEW_GUILD_MANAGE:
+									{
+										if( _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_BOSS &&
+											_pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_VICE_BOSS)
+										{
+											m_iSelTab = tOldTab;
+											return WMSG_SUCCESS;
+										}
+									}
+									break;
+								case NEW_GUILD_SKILL:
+									{
+										SetSkillBtnInfo();
+									}
+									break;
 								}
+								
+								// ±ÊµÂ ¡§∫∏ ø‰√ª
+								SendRequestGuildTab(m_iSelTab);
 								break;
-							}
-							
-							// Í∏∏Îìú Ï†ïÎ≥¥ ÏöîÏ≤≠
-							SendRequestGuildTab(m_iSelTab);
-							break;
-						}						
+							}						
+						}
+					}		
+				}
+				
+				// Close button
+				if( (wmsgResult = m_btnCloseNew.MouseMessage( pMsg ) ) != WMSG_FAIL )
+				{
+					if(wmsgResult == WMSG_COMMAND)
+					{
+						ResetGuild();
+						InitNewGuildSystem();
 					}
-				}		
-			}
-
-			// Close button
-			if( (wmsgResult = m_btnCloseNew.MouseMessage( pMsg ) ) != WMSG_FAIL )
-			{
-				if(wmsgResult == WMSG_COMMAND)
-				{
-					ResetGuild();
-					InitNewGuildSystem();
+					return WMSG_SUCCESS;
 				}
-				return WMSG_SUCCESS;
-			}
-			if( (wmsgResult = m_btnExitNew.MouseMessage( pMsg ) ) != WMSG_FAIL )
-			{
-				if(wmsgResult == WMSG_COMMAND)
+				if( (wmsgResult = m_btnExitNew.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
-					ResetGuild();
-					InitNewGuildSystem();
-				}
-				return WMSG_SUCCESS;
-			}			
-
-			switch(m_iSelTab)
-			{
+					if(wmsgResult == WMSG_COMMAND)
+					{
+						ResetGuild();
+						InitNewGuildSystem();
+					}
+					return WMSG_SUCCESS;
+				}			
+				
+				switch(m_iSelTab)
+				{
 				case NEW_GUILD_INFO: 
 					{
 						// Edit button
@@ -4799,7 +5278,11 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 						{						
 							if(wmsgResult == WMSG_COMMAND)
 							{
-								// TODO : Í∏∏ÎìúÎßàÌÅ¨ ÏóêÎîîÌä∏ Í∏∞ÌöçÏôÑÎ£åÌõÑ ÏûëÏóÖ								
+								// TODO : ±ÊµÂ∏∂≈© ø°µ∆Æ ±‚»πøœ∑·»ƒ ¿€æ˜
+// [sora] GUILD_MARK
+#ifdef GUILD_MARK
+								_pNetwork->SendGuildMarkWndOpenReq();
+#endif
 							}
 							return WMSG_SUCCESS;
 						}
@@ -4815,17 +5298,20 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 					break;
 				case NEW_GUILD_SKILL:
 					{
-						if(m_arGuildSkillList.Count() == 0) break;
-						
 						if(IsInsideRect(nX,nY,m_rcGuildSkillList) )
 						{
 							m_lbGuildSkillDesc.ResetAllStrings();
-							
-							m_iGuildSkillPos = (nY-(m_nPosY+m_rcGuildSkillList.Top))/40;
+							m_lbUseInfo.ResetAllStrings();
+							m_lbLearnInfo.ResetAllStrings();
+							INDEX iMaxChar = 35;
 
-							if(m_arGuildSkillList.Count()>m_iGuildSkillPos)
+							m_iGuildSkillPos = (nY-(m_nPosY+m_rcGuildSkillList.Top))/40 + m_sbGuildSkillBar.GetScrollPos();
+							
+							if (nGuildSkillCount>m_iGuildSkillPos)
 							{
-								m_bIsSelList = TRUE;								
+								m_bIsSelList = TRUE;
+								SetGuildSkillInfo();
+								iMaxChar = 45;
 							}
 							else 
 							{
@@ -4833,38 +5319,85 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 								m_iGuildSkillPos = 0;
 							}
 
-							_pUIMgr->AddStringToList(
-								&m_lbGuildSkillDesc,
-								CTString(m_arGuildSkillList[m_sbGuildSkillBar.GetScrollPos()+m_iGuildSkillPos].GetDescription()),
-								35);
-							
+							CSkill* pSkill = GetGuildSkill(m_iGuildSkillPos);
+							if( pSkill != NULL )
+							{
+								pUIManager->AddStringToList(
+									&m_lbGuildSkillDesc,
+									CTString(pSkill->GetDescription()),
+									iMaxChar);
+							}
+							CUIIcon* pBtnSkill = NULL;
+							int nScrollBarPos = m_sbGuildSkillBar.GetScrollPos();
+							for (int i=0; i<5; ++i)
+							{
+								if ( m_nSelSkillTab == GUILD_SKILL_ACTIVE )
+								{
+									nGuildSkillCount = m_vecGuildActiveSkill.size();
+								}
+								if ( nScrollBarPos+i < nGuildSkillCount )
+								{
+									pBtnSkill = GetSkillButton(nScrollBarPos+i);
+									if ( pBtnSkill->MouseMessage( pMsg ) == WMSG_SUCCESS )
+										break;
+								}
+							}
 						}
 						else if ( (wmsgResult=m_btnGetSkill.MouseMessage( pMsg )) != WMSG_FAIL)
 						{
 							if(wmsgResult == WMSG_COMMAND)
 							{
-								// TODO : Í∏∞Ïà† ÏäµÎìù ÏöîÏ≤≠																
-								SendLearnGuildSkill(m_arGuildSkillList[m_sbGuildSkillBar.GetScrollPos()+m_iGuildSkillPos].GetIndex());
+								// TODO : ±‚º˙ Ω¿µÊ ø‰√ª
+								CSkill* pSkill = GetGuildSkill(m_iGuildSkillPos);
+								if( pSkill != NULL )
+									SendLearnGuildSkill(pSkill->GetIndex());
 							}
 							return WMSG_SUCCESS;
 						}
 						else if( (wmsgResult=m_sbGuildSkillBar.MouseMessage( pMsg )) != WMSG_FAIL)
 						{
+							SetGuildSkillInfo();
 							return WMSG_SUCCESS;
 						}
 						else if( (wmsgResult=m_lbGuildSkillDesc.MouseMessage( pMsg )) != WMSG_FAIL)
 						{
 							return WMSG_SUCCESS;
 						}					
+						else if (m_lbUseInfo.MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							return WMSG_SUCCESS;
+						}
+						else if (m_lbLearnInfo.MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							return WMSG_SUCCESS;
+						}
+						else if ( m_btnUseSkill.MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							if ( m_nSelSkillTab == GUILD_SKILL_ACTIVE && m_iGuildSkillPos >= 0 && m_bIsSelList)
+							{	// æ◊∆º∫Í Ω∫≈≥¿œ ∞ÊøÏ, º±≈√«— Ω∫≈≥¿Ã ¿÷¥¬ ∞ÊøÏ,
+								CSkill* pSkill  = GetGuildSkill(m_iGuildSkillPos);
+								int nSkillIndex = pSkill->GetIndex();
+								if ( CheckUseGuildSkill(nSkillIndex) )
+								{
+									pUIManager->GetCharacterInfo()->UseSkill(nSkillIndex);
+								}
+							}
+						}
 					}
 					break;
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
 				case NEW_GUILD_BOARD:
 					MouseMessageNewBoard(pMsg);
 					break;
 #endif
 				case NEW_GUILD_NOTICE:
 					{
+						if( m_bEnableCorrect )
+						{
+							m_ebNoticeTitle.MouseMessage( pMsg );		
+							m_mebNoticeContent.MouseMessage( pMsg );
+						}
+
 						if ( m_btnNotice.MouseMessage( pMsg ) == WMSG_COMMAND)
 						{
 							SendRequestGuildNotice();
@@ -4872,7 +5405,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 						}
 						else if ( m_btnNoticeCorrect.MouseMessage( pMsg ) == WMSG_COMMAND)
 						{
-							// TODO :: ÏàòÏ†ïÏ∞Ω ÌôúÏÑ±Ìôî
+							// TODO :: ºˆ¡§√¢ »∞º∫»≠
 							m_bEnableCorrect = TRUE;
 							m_ebNoticeTitle.SetFocus(FALSE);
 							m_mebNoticeContent.SetFocus(TRUE);
@@ -4888,7 +5421,11 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 				case NEW_GUILD_MANAGE:
 					{
 						if(m_bApplySettingOn)
-						{							
+						{					
+							if ( (wmsgResult = m_cmbCorps.MouseMessage( pMsg ) ) != WMSG_FAIL )
+							{
+								return WMSG_SUCCESS;
+							}
 							if( (wmsgResult = m_btnApplySetting.MouseMessage( pMsg ) ) != WMSG_FAIL )
 							{
 								if(wmsgResult == WMSG_COMMAND)
@@ -4900,9 +5437,14 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 											m_vManageMemberIndex[m_lbManageMemberList.GetCurSel()],
 											m_ebChangePositionName.GetString(),
 											atoi(m_ebChangePayExp.GetString()),
-											atoi(m_ebChangePayFame.GetString()));
+											atoi(m_ebChangePayFame.GetString())
+											, GetSelectedPositon()
+#ifdef ENABLE_GUILD_STASH
+											,(UBYTE)m_ckGuildStashPermission.IsChecked()
+#endif // ENABLE_GUILD_STASH
+											);
 									}	
-									// ÎπÑÌôúÏÑ±Ìôî
+									// ∫Ò»∞º∫»≠
 									SetManagePopup(FALSE);
 								}
 								return WMSG_SUCCESS;
@@ -4911,11 +5453,17 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 							{
 								if(wmsgResult == WMSG_COMMAND)
 								{
-									// ÎπÑÌôúÏÑ±Ìôî
+									// ∫Ò»∞º∫»≠
 									SetManagePopup(FALSE);
 								}
 								return WMSG_SUCCESS;
-							}						
+							}
+#ifdef ENABLE_GUILD_STASH
+							if( (wmsgResult = m_ckGuildStashPermission.MouseMessage( pMsg ) ) != WMSG_FAIL )
+							{
+								return WMSG_SUCCESS;
+							}
+#endif						
 							if( (wmsgResult = m_ebChangePositionName.MouseMessage( pMsg )) != WMSG_FAIL )
 							{
 								return WMSG_SUCCESS;							
@@ -4928,11 +5476,10 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 							{
 								return WMSG_SUCCESS;							
 							}
-
 						}
 						else
 						{
-							// Change Boss(Îã®Ïû• Ïù¥ÏûÑ)
+							// Change Boss(¥‹¿Â ¿Ã¿”)
 							if( (wmsgResult = m_btnChangeBossNew.MouseMessage( pMsg ) ) != WMSG_FAIL )
 							{
 								if(wmsgResult == WMSG_COMMAND)
@@ -4941,7 +5488,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 								}
 								return WMSG_SUCCESS;
 							}
-							// Accept(Î∂ÄÎã®Ïû• ÏûÑÎ™Ö)
+							// Accept(∫Œ¥‹¿Â ¿”∏Ì)
 							else if( (wmsgResult = m_btnAcceptNew.MouseMessage( pMsg ) ) != WMSG_FAIL )
 							{
 								if(wmsgResult == WMSG_COMMAND)
@@ -4950,7 +5497,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 								}
 								return WMSG_SUCCESS;
 							}
-							// Reject(Î∂ÄÎã®Ïû• Ìï¥ÏûÑ)
+							// Reject(∫Œ¥‹¿Â «ÿ¿”)
 							else if( (wmsgResult = m_btnRejectNew.MouseMessage( pMsg ) ) != WMSG_FAIL )
 							{
 								if(wmsgResult == WMSG_COMMAND)
@@ -4959,7 +5506,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 								}
 								return WMSG_SUCCESS;
 							}
-							// Member fire(Îã®Ïõê Ìá¥Ï∂ú)
+							// Member fire(¥‹ø¯ ≈√‚)
 							else if( (wmsgResult = m_btnMemberFireNew.MouseMessage( pMsg ) ) != WMSG_FAIL )
 							{
 								if(wmsgResult == WMSG_COMMAND)
@@ -4968,22 +5515,34 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 								}
 								return WMSG_SUCCESS;
 							}
-							// ÏÑ§Ï†ï Î≥ÄÍ≤Ω
+							// º≥¡§ ∫Ø∞Ê
 							else if( (wmsgResult = m_btnChangeSetting.MouseMessage( pMsg ) ) != WMSG_FAIL )
 							{
-								// ÌôúÏÑ±Ìôî
+								// »∞º∫»≠
 								if(m_lbManageMemberList.GetCurSel()>=0)
 								{
-									SetManagePopup(TRUE);
 									ResetManagePopupString();
+									SetManagePopup(TRUE);
 								}
 								return WMSG_SUCCESS;						
 							}
 						}					
 					}
 					break;
+				}
+					
 			}			
-		
+			else
+			{
+				if( IsInside( nX, nY ) )
+				{
+					// Reset holding button
+					pUIManager->ResetHoldBtn();
+					
+					return WMSG_SUCCESS;
+				}
+			}
+			
 		}
 		break;
 
@@ -5002,9 +5561,25 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 						m_lbGuildMemberList.MouseMessage( pMsg );
 						break;
 					case NEW_GUILD_SKILL:
-						m_sbGuildSkillBar.MouseMessage( pMsg );						
+						if ( m_sbGuildSkillBar.MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							SetSkillBtnInfo();
+							return WMSG_SUCCESS;
+						}
+						else if ( m_lbUseInfo.MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							return WMSG_SUCCESS;
+						}
+						else if ( m_lbLearnInfo.MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							return WMSG_SUCCESS;
+						}
+						else if ( m_lbGuildSkillDesc.MouseMessage( pMsg ) != WMSG_FAIL )
+						{
+							return WMSG_SUCCESS;
+						}
 						break;
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
 					case NEW_GUILD_BOARD:
 						MouseMessageNewBoard(pMsg);
 						break;
@@ -5019,6 +5594,40 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 				}
 				
 				return WMSG_SUCCESS;
+			}
+		}
+		break;
+	case WM_RBUTTONDOWN:
+		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+
+			if( m_lbGuildMemberList.IsInside( nX, nY) )
+			{
+				if (pUIManager->GetGuild()->IsEnabled() && !pUIManager->GetGuild()->IsVisible())
+				{
+					pUIManager->RearrangeOrder( UI_GUILD, TRUE );
+				}
+
+				CTString strTargetName;
+				switch(m_iSelTab)
+				{
+				case NEW_GUILD_MEMBER_INFO:
+					{
+						int nAddPos = m_lbGuildMemberList.GetScrollBarPos();
+
+						if (nAddPos < 0)
+							nAddPos = 0;
+
+						return OpenGuildPop(m_lbGuildMemberList.GetCurOverList() + nAddPos, nX, nY);
+					}
+					break;
+				}
+				pUIManager->RearrangeOrder( UI_GUILD, TRUE );
+				return WMSG_SUCCESS;
+			}
+			else
+			{
+				pUIManager->GetSimplePop()->ClosePop();
 			}
 		}
 		break;
@@ -5039,6 +5648,29 @@ void CUIGuild::SetManagePopup(BOOL bEnable)
 	m_ebChangePayFame.SetEnable(bEnable);	
 	m_btnExitNew.SetEnable(!bEnable);
 	m_btnCloseNew.SetEnable(!bEnable);
+	// data setting. [6/24/2011 rumist]
+	if( bEnable )
+	{
+		CTString strTemp = m_lbManageMemberList.GetString( 1, m_lbManageMemberList.GetCurSel() );
+		m_ebChangePositionName.SetString( strTemp.str_String );
+		strTemp = m_lbManageMemberList.GetString( 4, m_lbManageMemberList.GetCurSel() );
+		strTemp.DeleteChar( strTemp.Length()-1 );
+		m_ebChangePayExp.SetString( strTemp.str_String );
+		strTemp = m_lbManageMemberList.GetString( 5, m_lbManageMemberList.GetCurSel() );
+		strTemp.DeleteChar( strTemp.Length()-1 );
+		m_ebChangePayFame.SetString( strTemp.str_String );
+	}
+#ifdef ENABLE_GUILD_STASH
+	m_ckGuildStashPermission.SetEnable( bEnable );
+	if( bEnable )
+	{
+		CTString strTemp = m_lbManageMemberList.GetString( 6, m_lbManageMemberList.GetCurSel() );
+		m_ckGuildStashPermission.SetCheck( strTemp == _S(5560, "∞°¥…") ? TRUE : FALSE );
+	}
+#endif
+	m_cmbCorps.SetEnable(bEnable);
+	if ( bEnable )
+		SetCorpsComboBox();
 }
 
 void CUIGuild::ResetManagePopupString()
@@ -5046,91 +5678,111 @@ void CUIGuild::ResetManagePopupString()
 	m_ebChangePositionName.ResetString();
 	m_ebChangePayExp.ResetString();
 	m_ebChangePayFame.ResetString();
+#ifdef ENABLE_GUILD_STASH
+	m_ckGuildStashPermission.SetCheck( FALSE );
+#endif
 }
 
 BOOL CUIGuild::CheckDataValidation()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
 	CUIMsgBox_Info	MsgBoxInfo;
 	int tInt;
 	CTString tStr;
-	_pUIMgr->CloseMessageBox(MSGCMD_NULL);
-	MsgBoxInfo.SetMsgBoxInfo( _S(3877, "ÏûÖÎ†• Ïò§Î•ò" ), UMBS_OK,
+
+	pUIManager->CloseMessageBox(MSGCMD_NULL);
+	MsgBoxInfo.SetMsgBoxInfo( _S(3877, "¿‘∑¬ ø¿∑˘" ), UMBS_OK,
 									UI_NONE,MSGCMD_NULL );
 
-	// ÏßÅÏúÑÎ™Ö ÏÑ§Ï†ï Î¨∏Ïûê Í≤ÄÏÇ¨
+	// ¡˜¿ß∏Ì º≥¡§ πÆ¿⁄ ∞ÀªÁ
 	tStr = m_ebChangePositionName.GetString();
 	if( tStr.Length() == 0 )
 	{
-		MsgBoxInfo.AddString( _S(3878, "ÏûÖÎ†•Îêú Î¨∏ÏûêÍ∞Ä ÏóÜÏäµÎãàÎã§.") );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+		MsgBoxInfo.AddString( _S(3878, "¿‘∑¬µ» πÆ¿⁄∞° æ¯Ω¿¥œ¥Ÿ.") );
+		pUIManager->CreateMessageBox( MsgBoxInfo );		
 		return FALSE;
 		
 	}
-	else if( _UIFiltering.Filtering ( tStr.str_String ) == TRUE )
+	else if (UTIL_HELP()->IsSpecialChar(tStr.str_String) == true)
+	{
+		MsgBoxInfo.AddString(_S( 437, "πÆ¿Âø° ±›¡ˆµ» ¥‹æÓ∞° ∆˜«‘µ«æÓ ¿÷Ω¿¥œ¥Ÿ.")); 
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+		return FALSE;
+	}
+	else if( _UIFiltering.Filtering ( tStr.str_String ) == TRUE)
 	{		
-		CTString	strMessage = _S( 435, "ÏûòÎ™ªÎêú Î¨∏Ïûê[" );	
+		CTString	strMessage = _S( 435, "¿ﬂ∏¯µ» πÆ¿⁄[" );	
 		strMessage += tStr.str_String;
-		strMessage += _S( 436, "]Í∞Ä Ìè¨Ìï®ÎêòÏñ¥ ÏûàÏäµÎãàÎã§." );
+		strMessage += _S( 436, "]∞° ∆˜«‘µ«æÓ ¿÷Ω¿¥œ¥Ÿ." );
 		
 		MsgBoxInfo.AddString( strMessage );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 		m_ebChangePositionName.ResetString();
 		return FALSE;
 	}
 
-	// ÏÉÅÎÇ© ÏÑ§Ï†ï Í≤ÄÏÇ¨
+	// ªÛ≥≥ º≥¡§ ∞ÀªÁ
 	tStr = m_ebChangePayExp.GetString();
 	if( !tStr.IsInteger() )
 	{
-		MsgBoxInfo.AddString( _S(3879, "Í≤ΩÌóòÏπò ÏûÖÎ†•Ïù¥ ÏûòÎ™ª ÎêòÏóàÏäµÎãàÎã§.") );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		MsgBoxInfo.AddString( _S(3879, "∞Ê«Ëƒ° ¿‘∑¬¿Ã ¿ﬂ∏¯ µ«æ˙Ω¿¥œ¥Ÿ.") );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 		
 		return FALSE;
+		
 	}
-
 	tInt = atoi(tStr.str_String);
-	if( ((tInt > 100 || tInt < 0) && g_iCountry != USA) || 
-		((tInt >50 || tInt < 0 ) && g_iCountry == USA))
+#if defined (G_KOR)
+	if( tInt > 100 || tInt < 0 )
 	{
-		if (g_iCountry == USA)
-		{
-			MsgBoxInfo.AddString( _S(2274, "[0~50]ÏÇ¨Ïù¥ Ïà´ÏûêÎ•º ÏûÖÎ†•Ìï¥ Ï£ºÏÑ∏Ïöî.") );
-		}
-		else
-		{
-			MsgBoxInfo.AddString( _S(3880, "[0~100]ÏÇ¨Ïù¥ Ïà´ÏûêÎ•º ÏûÖÎ†•Ìï¥ Ï£ºÏÑ∏Ïöî.") );
-		}
+		MsgBoxInfo.AddString( _S(3880, "[0~100]ªÁ¿Ã º˝¿⁄∏¶ ¿‘∑¬«ÿ ¡÷ººø‰.") );
 
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
-		
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+
 		return FALSE;
 	}
+#else
+	if ( tInt > 50 || tInt < 0 )
+	{
+		MsgBoxInfo.AddString( _S(2274, "[0~50]ªÁ¿Ã º˝¿⁄∏¶ ¿‘∑¬«ÿ ¡÷ººø‰.") );
+
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+
+		return FALSE;
+	}
+#endif
 
 	tStr = m_ebChangePayFame.GetString();
 	if( !tStr.IsInteger() )
 	{
-		MsgBoxInfo.AddString( _S(3881, "Î™ÖÏÑ±Ïπò ÏûÖÎ†•Ïù¥ ÏûòÎ™ª ÎêòÏóàÏäµÎãàÎã§.") );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+		MsgBoxInfo.AddString( _S(3881, "∏Ìº∫ƒ° ¿‘∑¬¿Ã ¿ﬂ∏¯ µ«æ˙Ω¿¥œ¥Ÿ.") );
+		pUIManager->CreateMessageBox( MsgBoxInfo );		
 		return FALSE;
-	}
 
+	}
 	tInt = atoi(tStr.str_String);
-	if(tInt > 100 || tInt < 0)
+	if( tInt > 100 )
 	{
-		MsgBoxInfo.AddString( _S(3880, "[0~100]ÏÇ¨Ïù¥ Ïà´ÏûêÎ•º ÏûÖÎ†•Ìï¥ Ï£ºÏÑ∏Ïöî.") );
-		_pUIMgr->CreateMessageBox( MsgBoxInfo );
+		MsgBoxInfo.AddString( _S(3880, "[0~100]ªÁ¿Ã º˝¿⁄∏¶ ¿‘∑¬«ÿ ¡÷ººø‰.") );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 		
 		return FALSE;
 	}
 
+	if ( m_cmbCorps.GetCurSel() < 0 )
+	{
+		MsgBoxInfo.AddString( _S( 5331, "∫Œ º±≈√¿Ã ¿ﬂ∏¯ µ«æ˙Ω¿¥œ¥Ÿ.") );
+		pUIManager->CreateMessageBox( MsgBoxInfo );
+		return FALSE;
+	}
 	return TRUE;
 }
 
 // Message Send -------------------->><<
-// Í∏∏Îìú Ï†ïÎ≥¥ ÏöîÏ≤≠ 
+// ±ÊµÂ ¡§∫∏ ø‰√ª 
 void CUIGuild::SendRequestGuildTab(int iTabNum)
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 
 	switch(iTabNum)
 	{
@@ -5140,6 +5792,9 @@ void CUIGuild::SendRequestGuildTab(int iTabNum)
 	case NEW_GUILD_MEMBER_INFO :
 		{
 			m_lbGuildMemberList.ResetAllStrings();
+			m_lbGuildMemberList.Reset();
+			m_ContGuild.clear();
+			ResetArrangeState();
 			m_iOnlineMembers =0;
 
 			nmGuild << (UBYTE)MSG_NEW_GUILD_MEMBERLIST;			
@@ -5148,9 +5803,9 @@ void CUIGuild::SendRequestGuildTab(int iTabNum)
 	case NEW_GUILD_SKILL :
 		nmGuild << (UBYTE)MSG_NEW_GUILD_SKILL;	
 		break;
-#ifndef LOCAL_NEW_GUILD // Ìï¥Ïô∏ Î°úÏª¨ ÏõπÎ≥¥ÎìúÏÇ¨Ïö© ÏïàÌï®
+#ifndef LOCAL_NEW_GUILD // «ÿø‹ ∑Œƒ√ ¿•∫∏µÂªÁøÎ æ»«‘
 	case NEW_GUILD_BOARD :
-		// TODO :: Í∏∏Îìú Í≤åÏãúÌåê
+		// TODO :: ±ÊµÂ ∞‘Ω√∆«
 		break;
 #endif
 	case NEW_GUILD_NOTICE :
@@ -5171,30 +5826,34 @@ void CUIGuild::SendRequestGuildTab(int iTabNum)
 
 }
 
-// Í∏∏Îìú ÏÑ±Ìñ• Î≥ÄÍ≤Ω
+// ±ÊµÂ º∫«‚ ∫Ø∞Ê
 void CUIGuild::SendChangeGuildInclination(UBYTE ubIncline)
 {	
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_NEW_GUILD_INCLINE_ESTABLISH << ubIncline;
 	_pNetwork->SendToServerNew(nmGuild);
 }
 
-// Í∏∏Îìú Ï†ïÎ≥¥ ÏàòÏ†ï
-void CUIGuild::SendAdjustGuildMemberInfo( int charIdx, CTString posName ,int expPer, int famePer)
+// ±ÊµÂ ¡§∫∏ ºˆ¡§
+void CUIGuild::SendAdjustGuildMemberInfo(int charIdx, CTString posName ,int expPer, int famePer, int corps /* = -1 */, UBYTE ubStashAuth /* = 0  */)
 {	
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_NEW_GUILD_MEMBER_ADJUST
 			<< (ULONG)charIdx
 			<< posName
 			<< (ULONG)expPer
 			<< (ULONG)famePer;
+	nmGuild	<< (INDEX)corps;
+#ifdef ENABLE_GUILD_STASH
+	nmGuild << (UBYTE)ubStashAuth;
+#endif
 	_pNetwork->SendToServerNew(nmGuild);	
 }
 
-// Í∏∏Îìú Í≥µÏßÄ ÏóÖÎç∞Ïù¥Ìä∏(Í∏∏ÎìúÏû•)
+// ±ÊµÂ ∞¯¡ˆ æ˜µ•¿Ã∆Æ(±ÊµÂ¿Â)
 void CUIGuild::SendUpdateGuildNotice( CTString strTitle, CTString strContents)
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	EncodeNoticeString(strContents);
 	nmGuild << (UBYTE)MSG_NEW_GUILD_NOTICE_UPDATE
 			<< strTitle
@@ -5203,19 +5862,19 @@ void CUIGuild::SendUpdateGuildNotice( CTString strTitle, CTString strContents)
 	_pNetwork->SendToServerNew(nmGuild);
 }
 
-//  Í∏∏ÎìúÏû• Í≥µÏßÄ ÏöîÏ≤≠
+//  ±ÊµÂ¿Â ∞¯¡ˆ ø‰√ª
 void CUIGuild::SendRequestGuildNotice()
 {
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_NEW_GUILD_NOTICE_REQUEST;
 	_pNetwork->SendToServerNew(nmGuild);
 
 }
 
-// Í∏∏Îìú Ïä§ÌÇ¨ ÏäµÎìùÌïòÍ∏∞
+// ±ÊµÂ Ω∫≈≥ Ω¿µÊ«œ±‚
 void CUIGuild::SendLearnGuildSkill(int skillIdx) 
 {	
-	CNetworkMessage nmGuild(MSG_GUILD);
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_NEW_GUILD_SKILL_LEARN;
 	nmGuild << (ULONG)skillIdx;
 	_pNetwork->SendToServerNew(nmGuild);
@@ -5224,10 +5883,12 @@ void CUIGuild::SendLearnGuildSkill(int skillIdx)
 // Message Receive----------------->><<
 void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	
 	switch(ubType)
 	{		
 		case MSG_NEW_GUILD_INCLINE_ESTABLISH:			
-			// TODO : Í∏∏Îìú ÏÑ±Ìñ• Ï≤òÎ¶¨
+			// TODO : ±ÊµÂ º∫«‚ √≥∏Æ
 			break;		
 		case MSG_NEW_GUILD_INFO:
 			{
@@ -5252,12 +5913,48 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				m_iGuildAverageLevel    = (int)GuildAverageLevel;
 				m_iGuildTotalPoint  	= (int)GuildTotalPoint;
 				m_iGuildMyPoint			= (int)GuildMyPoint;	
+				_pNetwork->MyCharacterInfo.iGP = GuildTotalPoint;
+
+// [sora] GUILD_MARK
+#ifdef GUILD_MARK
+				SBYTE gm_row, gm_col, bg_row, bg_col;
+				LONG guildMarkTime;
+
+				(*istr) >> gm_row;
+				(*istr) >> gm_col;
+				(*istr) >> bg_row;
+				(*istr) >> bg_col;
+				(*istr) >> guildMarkTime;
+
+
+				// todo ±ÊµÂ ∏∂≈© º≥¡§ √ﬂ∞°
+				MY_INFO()->_guildmark.setData(gm_row, gm_col, bg_row, bg_col);
+				UIMGR()->SetGuildMark();
+				m_pIconGuildMark->CalcUV(gm_row, gm_col, true);
+				m_pIconGuildMark->CalcUV(bg_row, bg_col, false);
+				m_guildMarkTime = guildMarkTime;
+				
+				if( m_guildMarkTime >= 0 )
+				{
+					time_t tv_used = m_guildMarkTime;
+
+					tm* g_tv_t = localtime((time_t*)&tv_used);
+
+					m_strGuildMarkTime.PrintF(  _S( 6070,"∏∏∑· : %d≥‚%dø˘%d¿œ%dΩ√%d∫–"),g_tv_t->tm_year + 1900
+						,g_tv_t->tm_mon + 1,g_tv_t->tm_mday,g_tv_t->tm_hour, g_tv_t->tm_min);
+				}
+				else
+				{
+					m_strGuildMarkTime = _s("");
+				}
+#endif
 			}
 			break;
 		case MSG_NEW_GUILD_MEMBERLIST:
 			{
-				clsGuildMemberNew tGuildMemberNew;
+				int i;
 				CTString tPosName;
+				CTString strMemName;
 				ULONG ulListCnt;
 				ULONG charLevel;
 				LONG  zoneIndex;
@@ -5265,16 +5962,17 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				UBYTE iJob;
 				UBYTE iJob2;	
 				UBYTE bPlaying;
-				ULONG ulPosition;	// Ï∫êÎ¶≠ÌÑ∞ ÏßÅÏúÑ(BOSS,VICEBOSS.MEMBER)
+				ULONG ulPosition;	// ƒ≥∏Ø≈Õ ¡˜¿ß(BOSS,VICEBOSS.MEMBER)
 
 				//m_lbGuildMemberList.ResetAllStrings();
 				//m_iOnlineMembers =0;
-								
+
 				(*istr) >> ulListCnt;
-				for(int i=0; i<ulListCnt; i++)
+				for(i=0; i<ulListCnt; i++)
 				{
-					(*istr)	>> tGuildMemberNew.strMemberName
-							>> tPosName
+					clsGuildMemberNew* tGuildMemberNew = new clsGuildMemberNew;
+					(*istr)	>> strMemName
+						>> tPosName
 							>> charLevel
 							>> bPlaying
 							>> zoneIndex
@@ -5282,60 +5980,47 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 							>> iJob
 							>> iJob2
 							>> ulPosition;
+
 					if(bPlaying)
 						m_iOnlineMembers++;
-					tGuildMemberNew.sPosName	= ResetPosName(tPosName,(INT)ulPosition);
-					tGuildMemberNew.iLevel		= (INT)charLevel;
-					tGuildMemberNew.bOnline		= (BOOL)bPlaying;
-					tGuildMemberNew.iLocation	= (INT)zoneIndex;
-					tGuildMemberNew.iCumulPoint	= (INT)cumulPoint;
-					tGuildMemberNew.iJob		= (INT)iJob;
-					tGuildMemberNew.iJob2		= (INT)iJob2;
-			
-					// TODO :: Ï†úÎåÄÎ°ú Î∞õÎäî ÌôïÏù∏... iJobÏù¥ ÎπÑÌä∏Î°ú ÏÑ§Ï†ïÌï†ÎïåÎèÑ ÏûàÏñ¥ÏÑú...
-					tGuildMemberNew.sJobName	= JobInfo().GetName(iJob,iJob2);					
-					if((int)zoneIndex == -1 )
-						tGuildMemberNew.sLocName = _S(3882, "ÎØ∏Ï†ëÏÜç");
-					else 
-						tGuildMemberNew.sLocName = ZoneInfo().GetZoneName( zoneIndex );
+
+					tGuildMemberNew->strMemberName  = strMemName.str_String;
+					tGuildMemberNew->sPosName		= ResetPosName(tPosName,(INT)ulPosition).str_String;
+					tGuildMemberNew->iLevel			= (INT)charLevel;
+					tGuildMemberNew->bOnline		= (BOOL)bPlaying;
+					tGuildMemberNew->iLocation		= (INT)zoneIndex;
+					tGuildMemberNew->iCumulPoint	= (INT)cumulPoint;
+					tGuildMemberNew->iJob			= (INT)iJob;
+					tGuildMemberNew->iJob2			= (INT)iJob2;
+					tGuildMemberNew->eRanking		= (INT)ulPosition;
+
+					if (ulPosition == GUILD_MEMBER_MEMBER)
+						tGuildMemberNew->nArrangeRank = MSG_GUILD_POSITION_UNKNOWN - 1;
+					else
+						tGuildMemberNew->nArrangeRank = (int)ulPosition;
+
+					// TODO :: ¡¶¥Î∑Œ πﬁ¥¬ »Æ¿Œ... iJob¿Ã ∫Ò∆Æ∑Œ º≥¡§«“∂ßµµ ¿÷æÓº≠...
+					tGuildMemberNew->sJobName	= CJobInfo::getSingleton()->GetName(iJob,iJob2);					
+					//if((int)zoneIndex == -1 )
+					//	tGuildMemberNew->sLocName = _S(3978, "∫Ò¡¢º”");
+					if ((int)zoneIndex >= 0) 
+						tGuildMemberNew->sLocName = CZoneInfo::getSingleton()->GetZoneName( zoneIndex );
 					
-					AddGuildMemberInfo(tGuildMemberNew);
-				}				
+					m_ContGuild.insert(clsGuildMemberNew::SP(tGuildMemberNew));
+
+					AddGuildMemberInfo(*tGuildMemberNew);
+				}
+				INDEX iCorpsMember, iCorpsBoss;
+				(*istr)  >> iCorpsMember
+						 >> iCorpsBoss;
+				SetCorpsInfo( iCorpsMember, iCorpsBoss );
 			}
 			break;
 		case MSG_NEW_GUILD_SKILL:
-			// TODO :: Ïù¥ÌõÑ Ïä§ÌÇ¨Ìà¥Ïóê Ï∂îÍ∞Ä ÌõÑ ÏûëÏóÖ
+			// TODO :: ¿Ã»ƒ Ω∫≈≥≈¯ø° √ﬂ∞° »ƒ ¿€æ˜
 			// skillcount(n) skillindex(n) skillLeanLevel(n) skillMaxLevel(n)
 			{
-				ULONG tLevel;
-				ULONG tIndex;
-				ULONG tCount;
-				(*istr) >> tCount;
-				
-				if( tCount == 0 )
-				{
-					for(int i=0; i<m_arGuildSkillList.Count(); ++i)
-					{
-						m_arGuildSkillList[i].SetCurLevel(0);
-					}
-				}
-				else
-				{
-					for(int i=0;i<tCount ;i++)
-					{
-						(*istr) >> tIndex
-								>> tLevel;
-
-						for(int j=0; j<m_arGuildSkillList.Count(); ++j)
-						{
-							if( m_arGuildSkillList[j].GetIndex() == tIndex )
-							{
-								m_arGuildSkillList[j].SetCurLevel(tLevel);
-								break;
-							}
-						}
-					}
-				}
+				ReceiveGuildSkillExtend(istr);
 			}
 			break;
 		case MSG_NEW_GUILD_NOTICE:
@@ -5356,8 +6041,8 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				(*istr) >> tStr;				
 				(*istr) >> tStr2;			
 				DecodeNoticeString(tStr2);
-				_pUIMgr->GetGuildNotice()->SetGuildNotice(m_strGuildName,tStr,tStr2);
-				_pUIMgr->RearrangeOrder( UI_GUILD_NOTICE, TRUE );
+				pUIManager->GetGuildNotice()->SetGuildNotice(m_strGuildName,tStr,tStr2);
+				pUIManager->RearrangeOrder( UI_GUILD_NOTICE, TRUE );
 			}
 			break;
 		case MSG_NEW_GUILD_MANAGE:
@@ -5370,7 +6055,9 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				ULONG iExpServ;
 				ULONG iFameServ;
 				ULONG icharIdx;
-				
+				BYTE bStashPermission = 0;
+				CTString strMemName;
+				CTString strPosName;
 				(*istr) >> bFirstListMember;
 				(*istr) >> tLoop;
 				
@@ -5381,52 +6068,44 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 					m_vManageMemberIndex.clear();
 					ClearMemberList();					
 				}
-				
+
 				for(int i=0;i<tLoop;i++)
 				{
 					(*istr) >> eRanking
-							>> tMemberInfo.strMemberName
-							>> tMemberInfo.sPosName
+							>> strMemName
+							>> strPosName
 							>> iLevel
 							>> iExpServ
 							>> iFameServ
-							>> icharIdx;
+							>> icharIdx
+#ifdef ENABLE_GUILD_STASH
+							>> bStashPermission
+#endif
+							;
+					tMemberInfo.strMemberName = strMemName.str_String;
+					tMemberInfo.sPosName    = strPosName.str_String;
 					tMemberInfo.eRanking	= eRanking;
 					tMemberInfo.iLevel		= iLevel;
 					tMemberInfo.iExpServ	= iExpServ;
 					tMemberInfo.iFameServ	= iFameServ;
+#ifdef ENABLE_GUILD_STASH
+					tMemberInfo.bStashPermission = bStashPermission;
+#endif
 					tMemberInfo.sRanking	= ResetPosName( CTString(""), eRanking );
-					tMemberInfo.sPosName	= ResetPosName( tMemberInfo.sPosName, eRanking );
+					tMemberInfo.sPosName	= ResetPosName( CTString(tMemberInfo.sPosName.c_str()), eRanking );
 
 					m_vManageMemberIndex.push_back(icharIdx);
 					AddGuildManageInfo(tMemberInfo);
-					// Í∏∏ÎìúÏû• Ïù¥ÏûÑ,ÏûÑÎ™Ö,Ìï¥ÏûÑ,Ìá¥Ï∂úÎì± Í∏∞Ï°¥ Î£®Ìã¥ÏùÑ ÏÇ¨Ïö©ÌïòÍ∏∞ ÏúÑÌï¥					
-					AddToMemberList(icharIdx,tMemberInfo.strMemberName,eRanking,FALSE);
+					// ±ÊµÂ¿Â ¿Ã¿”,¿”∏Ì,«ÿ¿”,≈√‚µÓ ±‚¡∏ ∑Á∆æ¿ª ªÁøÎ«œ±‚ ¿ß«ÿ					
+					AddToMemberList(icharIdx,CTString(tMemberInfo.strMemberName.c_str()),eRanking,FALSE);
 				}
+				INDEX iCorpsMember, iCorpsBoss;
+				(*istr)  >> iCorpsMember
+						 >> iCorpsBoss;
+				SetCorpsInfo( iCorpsMember, iCorpsBoss );
 			}			
 			break;
-		case MSG_NEW_GUILD_SKILL_LEARN:
-			{
-				ULONG skillIdx;
-				UBYTE isNew;
-				BYTE  skillLv;
-				(*istr) >> skillIdx
-						>> isNew
-						>> skillLv;	
-
-				CTString tStr;				
-				INDEX tCnt = m_arGuildSkillList.Count();
-				tStr.PrintF("%d",tCnt);
-				for(int i=0;i<tCnt; i++)
-				{
-					if( m_arGuildSkillList[i].GetIndex() == skillIdx)
-					{
-						m_arGuildSkillList[i].SetCurLevel((int)skillLv);
-						break;
-					}
-				}				
-			}
-			break;
+	
 		case MSG_NEW_GUILD_POINT_RANKING:
 			{
 				ULONG charindex;
@@ -5435,12 +6114,9 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				(*istr) >> charindex
 						>> guildindex
 						>> rankingv;
-				if(g_iCountry == MALAYSIA) //[ttos_2009_5_14]: ÎßêÎ†àÏù¥ÏãúÏïÑÎäî Ìè¨Ïù∏Ìä∏ Îû≠ÌÇπÏùÑ Ï†ÅÏö© ÏïàÌï®
-				{
-					break;
-				}
-
-
+#if defined (G_MAL)
+			break;
+#endif
 				if( charindex == _pNetwork->MyCharacterInfo.index)
 				{				
 					if( _pNetwork->MyCharacterInfo.lGuildIndex == guildindex )
@@ -5448,44 +6124,226 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				}
 				else
 				{
-					for( INDEX ipl = 0; ipl < _pNetwork->ga_srvServer.srv_actCha.Count(); ++ipl )
+					ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_CHARACTER, charindex);
+
+					if (pObject != NULL)
 					{
-						CCharacterTarget	&ct = _pNetwork->ga_srvServer.srv_actCha[ipl];
-						if( ct.cha_Index == charindex && ct.cha_lGuildIndex == guildindex )
-						{						
-							ct.cha_sbGuildRank = rankingv;		
-							break;
+						CCharacterTarget* pTarget = static_cast< CCharacterTarget* >(pObject);
+
+						if (pTarget->cha_lGuildIndex == guildindex)
+						{
+							pTarget->cha_sbGuildRank = rankingv;
 						}
 					}
 				}
 			}
 			break;
+		case MSG_GUILD_GP_INFO:
+			{
+				INDEX iGP;
+				(*istr) >> iGP;
+
+				_pNetwork->MyCharacterInfo.iGP = iGP;
+				m_iGuildTotalPoint = iGP;
+			}
+			break;
+		// [2010/11/01 : Sora] ∞¯º∫ ∞≥∆Ì
+		case MSG_GUILD_WAR_SET_TIME_MENU:
+			{
+				UBYTE count, zone, wday, hour;
+				CUISiegeWarfare::stSiegeWarfareTimeInfo swInfo;
+				
+				pUIManager->GetSiegeWarfare()->InitSiegeWarfareTimeInfo();
+
+				(*istr) >> count;
+				for( int i=0; i<count; ++i )
+				{
+					(*istr) >> zone;
+					(*istr) >> wday;
+					(*istr) >> hour;
+
+					swInfo.zone = zone;
+					swInfo.wday = wday;
+					swInfo.hour = hour;
+
+					pUIManager->GetSiegeWarfare()->SetSiegeWarfareTimeInfo( swInfo );
+				}
+
+				pUIManager->GetSiegeWarfare()->OpenSetSWTime();
+			}
+			break;
+		case MSG_GUILD_WAR_GET_TIME_UNI_REP:
+			{
+				SBYTE count, zone, month, day, hour, joinFlag, info;
+				CTString guildName, guildBossName;
+
+				pUIManager->GetSiegeWarfareInfo()->InitSiegeWarfareInfo();
+
+				(*istr) >> count;
+
+				CUISiegeWarfareInfo::stSiegeWarfareDefGuildInfo defGuildInfo;
+				for( int i=0; i<count; ++i )
+				{
+					defGuildInfo.Init();
+
+					(*istr) >> zone;
+					(*istr) >> guildName;
+					(*istr) >> month;
+					(*istr) >> day;
+					(*istr) >> hour;
+
+					defGuildInfo.zone = zone;
+					defGuildInfo.guildName = guildName;
+					defGuildInfo.month = month;
+					defGuildInfo.day = day;
+					defGuildInfo.hour = hour;
+
+					pUIManager->GetSiegeWarfareInfo()->SetSiegeWarfareDefGuildInfo( defGuildInfo );
+				}
+
+				(*istr) >> info;
+
+				if( info > 0 )
+				{
+					(*istr) >> guildName;
+					(*istr) >> guildBossName;
+
+					pUIManager->GetSiegeWarfareInfo()->SetMySiegeWarfareGuildInfo( guildName, guildBossName );
+
+					(*istr) >> count;
+
+					for( int i = 0; i < count; ++i )
+					{
+						(*istr) >> joinFlag;
+						(*istr) >> zone;
+						
+						if( zone >= 0 )
+						{
+							pUIManager->GetSiegeWarfareInfo()->SetMySiegeWarfareJoinInfo( zone, joinFlag );
+						}
+					}
+				}
+
+				pUIManager->GetSiegeWarfareInfo()->ToggleSiegeWarfareInfo(TRUE);
+			}
+			break;
+		case MSG_NEW_GUILD_MARK_EDIT_FIN:
+			{
+				pUIManager->GetChattingUI()->AddSysMessage( _S( 5511, "±ÊµÂ ∏∂≈©∏¶ µÓ∑œ«œø¥Ω¿¥œ¥Ÿ.") );
+
+				SBYTE gm_row, gm_col, bg_row, bg_col;
+				LONG guildMarkTime;
+
+				(*istr) >> gm_row;
+				(*istr) >> gm_col;
+				(*istr) >> bg_row;
+				(*istr) >> bg_col;
+				(*istr) >> guildMarkTime;
+
+				MY_INFO()->_guildmark.setData(gm_row, gm_col, bg_row, bg_col);
+				UIMGR()->SetGuildMark();
+				m_pIconGuildMark->CalcUV(gm_row, gm_col, true);
+				m_pIconGuildMark->CalcUV(bg_row, bg_col, false);
+				m_guildMarkTime = guildMarkTime;
+				
+				if( m_guildMarkTime >= 0 )
+				{
+					time_t tv_used = m_guildMarkTime;
+
+					tm* g_tv_t = localtime((time_t*)&tv_used);
+
+					m_strGuildMarkTime.PrintF(  _S( 6070,"∏∏∑· : %d≥‚%dø˘%d¿œ%dΩ√%d∫–"),g_tv_t->tm_year + 1900
+						,g_tv_t->tm_mon + 1,g_tv_t->tm_mday,g_tv_t->tm_hour, g_tv_t->tm_min);
+				}
+				else
+				{
+					m_strGuildMarkTime = _s("");
+				}
+			}
+			break;
+		case MSG_NEW_GUILD_MARK_EXPIRE:
+			{
+				pUIManager->GetChattingUI()->AddSysMessage( _S( 5512, "±ÊµÂ ∏∂≈©¿« µÓ∑œ ±‚∞£¿Ã ∏∏∑·µ«æ˙Ω¿¥œ¥Ÿ.") );
+
+				MY_INFO()->_guildmark.remove();
+				pUIManager->GetGuildMark()->InitGuidMark();
+			}
+			break;
 	}	
 }
 
-// Í∏∏Îìú Î©§Î≤Ñ Ï†ïÎ≥¥ Î¶¨Ïä§Ìä∏ Ï∂îÍ∞Ä
+
+void CUIGuild::UpdateGuildSkillLearnMessage(UpdateClient::doNewGuildSkillLearnToMemberMsg& SkillInfo)
+{
+	CTString tStr;
+
+	MY_INFO()->SetSkill(SkillInfo.skill_index, SkillInfo.skill_level);
+
+	if ( SkillInfo.skill_type == GUILD_SKILL_ACTIVE)
+	{
+		INDEX tCnt = m_vecGuildActiveSkill.size();
+		tStr.PrintF("%d",tCnt);
+
+		for(int i = 0; i < tCnt; i++)
+		{
+			if( m_vecGuildActiveSkill[i].GetIndex() == SkillInfo.skill_index)
+			{
+				m_vecGuildActiveSkill[i].SetCurLevel((int)SkillInfo.skill_level);
+				break;
+			}
+		}
+	}
+	else if ( SkillInfo.skill_type == GUILD_SKILL_PASSIVE )
+	{
+		INDEX tCnt = m_vecGuildPassiveSkill.size();
+		tStr.PrintF("%d",tCnt);
+
+		for(int i = 0; i < tCnt; i++)
+		{
+			if( m_vecGuildPassiveSkill[i].GetIndex() == SkillInfo.skill_index)
+			{
+				m_vecGuildPassiveSkill[i].SetCurLevel((int)SkillInfo.skill_level);
+				break;
+			}
+		}
+	}
+	else
+	{
+		return;
+	}
+
+	SetSkillBtnInfo();
+	SetGuildSkillInfo();
+}
+
+// ±ÊµÂ ∏‚πˆ ¡§∫∏ ∏ÆΩ∫∆Æ √ﬂ∞°
 void CUIGuild::AddGuildMemberInfo(clsGuildMemberNew tMemberInfo)
 {
 	CTString tPer;
-	if(tMemberInfo.bOnline)
-		m_lbGuildMemberList.AddString(0,CTString("!"));
-	else
-		m_lbGuildMemberList.AddString(0,CTString(" "));
+	CTString strTemp;
+	m_lbGuildMemberList.ChangeCurrentState(CUIListBoxEx::PS_NONE);
+	m_lbGuildMemberList.AddString(0,CTString(" "));
+	m_lbGuildMemberList.SetImageBox(m_lbGuildMemberList.GetCurItemCount(0)-1, CUIImageBox::IT_CORPS, tMemberInfo.eRanking, TRUE, ResetPosName(CTString(""), tMemberInfo.eRanking) );
+	m_lbGuildMemberList.AddString(1,CTString(tMemberInfo.strMemberName.c_str()));
+	m_lbGuildMemberList.AddString(2,CTString(tMemberInfo.sPosName.c_str()));
 
-	m_lbGuildMemberList.AddString(1,tMemberInfo.strMemberName);
-	m_lbGuildMemberList.AddString(2,tMemberInfo.sPosName);
-
-	//ÏûêÍ∏∞ Ï†ïÎ≥¥Î©¥ ÏßÅÏúÑÎ™ÖÏ∂îÍ∞Ä
-	if(tMemberInfo.strMemberName.Matches(_pNetwork->MyCharacterInfo.name))
+	//¿⁄±‚ ¡§∫∏∏È ¡˜¿ß∏Ì√ﬂ∞°
+	strTemp = tMemberInfo.strMemberName.c_str();
+	if(strTemp.Matches(_pNetwork->MyCharacterInfo.name))
 	{
-		_pNetwork->MyCharacterInfo.guildPosName = tMemberInfo.sPosName;
+		_pNetwork->MyCharacterInfo.guildPosName = tMemberInfo.sPosName.c_str();
 	}
 
 	tPer.PrintF("%d",tMemberInfo.iLevel);
 	m_lbGuildMemberList.AddString(3,tPer);
-	tPer.PrintF("%s",tMemberInfo.sJobName);
+	tPer.PrintF("%s",tMemberInfo.sJobName.c_str());
 	m_lbGuildMemberList.AddString(4,tPer);
-	tPer.PrintF("%s",tMemberInfo.sLocName);
+
+	if (tMemberInfo.iLocation >= 0)
+		tPer.PrintF("%s",tMemberInfo.sLocName.c_str());
+	else
+		tPer = _S(3978, "∫Ò¡¢º”");
+
 	m_lbGuildMemberList.AddString(5,tPer);		
 	if(m_iGuildTotalPoint>0)
 		tPer.PrintF("%d%",(tMemberInfo.iCumulPoint*100)/m_iGuildTotalPoint);
@@ -5496,25 +6354,29 @@ void CUIGuild::AddGuildMemberInfo(clsGuildMemberNew tMemberInfo)
 	m_lbGuildMemberList.AddString(7,tPer);				
 }
 
-// Í∏∏Îìú Î©§Î≤Ñ Ï†ïÎ≥¥ Î¶¨Ïä§Ìä∏ Ï∂îÍ∞Ä
+// ±ÊµÂ ∏‚πˆ ¡§∫∏ ∏ÆΩ∫∆Æ √ﬂ∞°
 void CUIGuild::AddGuildManageInfo(clsGuildMemberNew tMemberInfo)
 {
-	//ÏûêÍ∏∞ Ï†ïÎ≥¥Î©¥ ÏßÅÏúÑÎ™ÖÏ∂îÍ∞Ä
-	if(tMemberInfo.strMemberName.Matches(_pNetwork->MyCharacterInfo.name))
+	//¿⁄±‚ ¡§∫∏∏È ¡˜¿ß∏Ì√ﬂ∞°
+	CTString strTemp = tMemberInfo.strMemberName.c_str();
+	if(strTemp.Matches(_pNetwork->MyCharacterInfo.name))
 	{
-		_pNetwork->MyCharacterInfo.guildPosName = tMemberInfo.sPosName;
+		_pNetwork->MyCharacterInfo.guildPosName = tMemberInfo.sPosName.c_str();
 	}
 	CTString tPer;
-	tPer.PrintF("%s",tMemberInfo.sRanking);
+	tPer.PrintF("%s",tMemberInfo.sRanking.c_str());
 	m_lbManageMemberList.AddString(0,tPer);	
-	m_lbManageMemberList.AddString(1,SetPosName(tMemberInfo.sPosName));
+	m_lbManageMemberList.AddString(1,SetPosName(tMemberInfo.sPosName.c_str()));
 	tPer.PrintF("%d",tMemberInfo.iLevel);
 	m_lbManageMemberList.AddString(2,tPer);
-	m_lbManageMemberList.AddString(3,tMemberInfo.strMemberName);
-	tPer.PrintF("%d %",tMemberInfo.iExpServ);
+	m_lbManageMemberList.AddString(3,CTString(tMemberInfo.strMemberName.c_str()));
+	tPer.PrintF("%d%%",tMemberInfo.iExpServ);
 	m_lbManageMemberList.AddString(4,tPer);
-	tPer.PrintF("%d %",tMemberInfo.iFameServ);
-	m_lbManageMemberList.AddString(5,tPer);			
+	tPer.PrintF("%d%%",tMemberInfo.iFameServ);
+	m_lbManageMemberList.AddString(5,tPer);	
+#ifdef ENABLE_GUILD_STASH
+	m_lbManageMemberList.AddString(6,tMemberInfo.bStashPermission>0?_S(5560, "∞°¥…") : _S(5561, "∫“∞°") );	
+#endif	
 }
 
 // ----------------------------------------------------------------------------
@@ -5527,31 +6389,35 @@ void CUIGuild::OpenGuildManagerNew()
 
 	m_iGuildLevel = _pNetwork->MyCharacterInfo.lGuildLevel;
 
-	// Î†àÎ≤®Ïù¥ 6Ïù¥ÌïòÎ©¥ Ï∂úÎ†•ÌïòÏßÄ ÏïäÎäîÎã§...	
+	// ∑π∫ß¿Ã 6¿Ã«œ∏È √‚∑¬«œ¡ˆ æ ¥¬¥Ÿ...	
 	if( m_iGuildLevel < LIMIT_GUILD_LEVEL )
 	{
 		return;
 	}
-	// ÏõπÍ≤åÏãúÌåê Ïó∞Í≤∞
-	m_pWebBoard = _pUIMgr->GetWebBoard();
 
-	// Ï¥àÍ∏∞Ìôî 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	// ¿•∞‘Ω√∆« ø¨∞·
+	m_pWebBoard = pUIManager->GetWebBoard();
+
+	// √ ±‚»≠ 
 	InitNewGuildSystem();	
 
-	// Í∏∏Îìú Ïä§ÌÇ¨ Î¶¨Ïä§Ìä∏.
+	// ±ÊµÂ Ω∫≈≥ ∏ÆΩ∫∆Æ.
 	SetGuildSkillList();
+	m_sbGuildSkillBar.SetCurItemCount(m_vecGuildPassiveSkill.size());
 
-	// Í∏∏Îìú Ï†ïÎ≥¥ ÏöîÏ≤≠
+	// ±ÊµÂ ¡§∫∏ ø‰√ª
 	SendRequestGuildTab(0);
 
-	// ÏÇ¨Ïù¥Ï¶àÎ∞è ÏúÑÏπò ÏÑ§Ï†ï 
+	// ªÁ¿Ã¡Óπ◊ ¿ßƒ° º≥¡§ 
 	SetSize( NEW_GUILD_SYSTEM_WIDTH, NEW_GUILD_SYSTEM_HEIGHT );
 	extern ENGINE_API CDrawPort	*_pdpMain;
 	ResetPosition(_pdpMain->dp_MinI,_pdpMain->dp_MinJ,_pdpMain->dp_MaxI,_pdpMain->dp_MaxJ);
 	
 	m_eGuildState	= GUILD_MANAGER_NEW;
 
-	_pUIMgr->RearrangeOrder( UI_GUILD, TRUE );
+	pUIManager->RearrangeOrder( UI_GUILD, TRUE );
 
 }
 
@@ -5568,55 +6434,46 @@ void CUIGuild::DecodeNoticeString(CTString& tStr)
 void CUIGuild::AdjustGuildMemberInfo()
 {	
 	INDEX tRow = m_lbManageMemberList.GetCurSel();
+	CTString strCorps = ResetPosName( CTString(""), GetSelectedPositon() );
+	m_lbManageMemberList.SetString(0,tRow, strCorps);
+	m_vectorMemberList[tRow].eRanking = GetSelectedPositon();
 	m_lbManageMemberList.SetString(1,tRow,CTString(m_ebChangePositionName.GetString()));
-	m_lbManageMemberList.SetString(4,tRow,CTString(m_ebChangePayExp.GetString()));
-	m_lbManageMemberList.SetString(5,tRow,CTString(m_ebChangePayFame.GetString()));
+	CTString strTmp;
+	strTmp.PrintF("%s%%",CTString(m_ebChangePayExp.GetString()));
+	m_lbManageMemberList.SetString(4,tRow,strTmp);
+	strTmp.PrintF("%s%%",CTString(m_ebChangePayFame.GetString()));
+	m_lbManageMemberList.SetString(5,tRow,strTmp);
+#ifdef ENABLE_GUILD_STASH
+	m_lbManageMemberList.SetString(6,tRow, m_ckGuildStashPermission.IsChecked() ? _S(5560, "∞°¥…") : _S(5561, "∫“∞°") );
+#endif
 }
 
 void CUIGuild::SetGuildSkillList()
 {
 	// Set Skill List
-	if( m_arGuildSkillList.Count() > 0 )
+	if( m_vecGuildPassiveSkill.size() > 0 )
 		return;	
 
 	INDEX tCnt = _pNetwork->ga_World.wo_aSkillData.Count();							
 	INDEX tCnt2 = 0;
+	INDEX tCnt3 = 0;
 	INDEX tLoop = 0;
 
 	// Check Guild Skill Count
-	for( tLoop=0;tLoop<tCnt;tLoop++)
+	for( tLoop=0;tLoop<=tCnt;tLoop++)
 	{
-		if( _pNetwork->GetSkillData(tLoop).GetType() == CSkill::ST_GUILD_SKILL_PASSIVE)
-			{										
-				tCnt2++;
-			}
-	}
-	
-	// Set Data Size
-	m_btnGuildSkill = new(CUIButtonEx[tCnt2]);
-	// Guild skill buttons
-	for( tLoop = 0; tLoop < tCnt2 ; tLoop++ )
-	{
-		m_btnGuildSkill[tLoop].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_GUILD,
-											UBET_SKILL, 0, tLoop );		
-	}	
-
-	m_arGuildSkillList.New(tCnt2);
-	m_sbGuildSkillBar.SetCurItemCount(tCnt2);
-
-	// Set Guild Skill Info
-	tCnt2 = 0;
-	for( tLoop=0;tLoop<tCnt;tLoop++)
-	{
-		CSkill	tSkill = _pNetwork->GetSkillData(tLoop);
-		if( tSkill.GetType() == CSkill::ST_GUILD_SKILL_PASSIVE)
-		{								
-			ASSERT(m_arGuildSkillList.Count()>=tCnt2);
-			m_btnGuildSkill[tCnt2].SetSkillInfo(tLoop,0);
-			m_arGuildSkillList[tCnt2] = tSkill;
+		CSkill &rSkillData = _pNetwork->GetSkillData(tLoop);
+		if( rSkillData.GetType() == CSkill::ST_GUILD_SKILL_PASSIVE || ( rSkillData.GetFlag()&SF_GUILD && rSkillData.GetType() == CSkill::ST_PASSIVE ) )
+		{										
+			m_vecGuildPassiveSkill.push_back(rSkillData);
 			tCnt2++;
 		}
-	}	
+		else if ( rSkillData.GetFlag()&SF_GUILD && ( rSkillData.GetType() != CSkill::ST_GUILD_SKILL_PASSIVE || rSkillData.GetType() != CSkill::ST_PASSIVE ) )
+		{
+			m_vecGuildActiveSkill.push_back(rSkillData);
+			tCnt3++;
+		}
+	}
 }
 
 void CUIGuild::GetBoardListContent()
@@ -5654,12 +6511,25 @@ void CUIGuild::GetBoardReadContent()
 
 int CUIGuild::GetGuildSkillLevel(int skillIdx)
 {
-	int tLoop = m_arGuildSkillList.Count();
-	for(int i=0;i<tLoop;i++)
+	CSkill& SkillData = _pNetwork->GetSkillData( skillIdx );
+	if( SkillData.GetType() == CSkill::ST_GUILD_SKILL_PASSIVE || ( SkillData.GetFlag()&SF_GUILD && SkillData.GetType() == CSkill::ST_PASSIVE ) )
 	{
-		if(m_arGuildSkillList[i].GetIndex() == skillIdx)	
+		for(int i=0;i<m_vecGuildPassiveSkill.size();i++)
 		{
-			return m_arGuildSkillList[i].GetCurLevel();
+			if(m_vecGuildPassiveSkill[i].GetIndex() == skillIdx)	
+			{
+				return m_vecGuildPassiveSkill[i].GetCurLevel();
+			}
+		}
+	}
+	else if ( SkillData.GetFlag()&SF_GUILD && ( SkillData.GetType() != CSkill::ST_GUILD_SKILL_PASSIVE || SkillData.GetType() != CSkill::ST_PASSIVE ) )
+	{
+		for (int i=0 ; i<m_vecGuildActiveSkill.size(); ++i)
+		{
+			if ( m_vecGuildActiveSkill[i].GetIndex() == skillIdx )
+			{
+				return m_vecGuildActiveSkill[i].GetCurLevel();
+			}
 		}
 	}
 	return 0;
@@ -5673,7 +6543,7 @@ CTString CUIGuild::SetPosName(CTString tName)
 	}
 	else 
 	{
-		// TODO : ÏßÄÏ†ïÎêú Ïù¥Î¶ÑÏù¥ ÏóÜÏúºÎ©¥ ÎîîÌè¥Ìä∏ ÏßÅÏúÑÎ™ÖÏùÑ Î∂ôÏó¨ Ï§ÄÎã§. 
+		// TODO : ¡ˆ¡§µ» ¿Ã∏ß¿Ã æ¯¿∏∏È µ∆˙∆Æ ¡˜¿ß∏Ì¿ª ∫Ÿø© ¡ÿ¥Ÿ. 
 		return tName;		
 	}
 
@@ -5684,13 +6554,13 @@ void CUIGuild::ResetGuildMaxMember(int guildSkillLevel)
 	// WSS_NEW_GUILD_SYSTEM 070704	
 	for(int i= 7;i<MAX_GUILD_LEVEL;i++)
 	{
-		// ÌïÑÏöîÎÇòÏä§/sp/gp = 7Î†àÎ≤®ÏóÖÏãú ÌïÑÏöîÎüâ * (1.09^(Í∏∏ÎìúLV - 7))
+		// « ø‰≥™Ω∫/sp/gp = 7∑π∫ßæ˜Ω√ « ø‰∑Æ * (1.09^(±ÊµÂLV - 7))
 		if (guildSkillLevel < 6)
-		{// Í∏∏Îìú Ïä§ÌÇ¨ Î†àÎ≤®Ïù¥ 6Î†àÎ≤® ÎØ∏ÎßåÏù¥Î©¥ +5Ïî© ÏµúÎåÄ Î©§Î≤Ñ Ï¶ùÍ∞Ä
+		{// ±ÊµÂ Ω∫≈≥ ∑π∫ß¿Ã 6∑π∫ß πÃ∏∏¿Ã∏È +5æø √÷¥Î ∏‚πˆ ¡ı∞°
 			_GuildConditionTable[i].iMaxMember = _GuildConditionTable[6].iMaxMember + 5*guildSkillLevel;
 		}
 		else
-		{// Í∏∏Îìú Ïä§ÌÇ¨ Î†àÎ≤®Ïù¥ 6Î†àÎ≤® Ïù¥ÏÉÅÏù¥Î©¥ +9Ïî© ÏµúÎåÄ Î©§Î≤Ñ Ï¶ùÍ∞Ä
+		{// ±ÊµÂ Ω∫≈≥ ∑π∫ß¿Ã 6∑π∫ß ¿ÃªÛ¿Ã∏È +9æø √÷¥Î ∏‚πˆ ¡ı∞°
 			const int tmpGuildMember = 55;
 			_GuildConditionTable[i].iMaxMember = tmpGuildMember + (9*(guildSkillLevel-5));
 		}
@@ -5701,12 +6571,7 @@ CTString CUIGuild::ResetPosName(CTString tPosName,int ulPosition)
 {
 	if( tPosName.Length() == 0 )
 	{
-		if( ulPosition == GUILD_MEMBER_BOSS)
-			return _S(891, "Í∏∏ÎìúÏû•");
-		else if( ulPosition == GUILD_MEMBER_VICE_BOSS)
-			return _S(892, "Í∏∏ÎìúÎ∂ÄÏû•");
-		else if( ulPosition == GUILD_MEMBER_MEMBER)
-			return _S(893, "Í∏∏ÎìúÏõê");		
+		return m_strCorps[ulPosition];
 	}
 	return tPosName;
 }
@@ -5722,7 +6587,8 @@ BOOL CUIGuild::IsEditBoxFocused()
 	m_mebNoticeContent.IsFocused() ||
 	m_ebChangePositionName.IsFocused() ||
 	m_ebChangePayExp.IsFocused() ||
-	m_ebChangePayFame.IsFocused());	
+	m_ebChangePayFame.IsFocused() ||
+	m_cmbCorps.IsFocused() );	
 }
 
 void CUIGuild::KillFocusEditBox() 
@@ -5737,6 +6603,1176 @@ void CUIGuild::KillFocusEditBox()
 	m_ebChangePositionName.SetFocus( FALSE );
 	m_ebChangePayExp.SetFocus( FALSE );
 	m_ebChangePayFame.SetFocus( FALSE );
+	m_cmbCorps.SetFocus( FALSE );
+}
+
+// ----------------------------------------------------------------------------
+// Name : RenderNewGuildSkillExtend()
+// Desc : ±ÊµÂ Ω∫≈≥ »Æ¿Â√¢ ±◊∏Æ±‚
+// ----------------------------------------------------------------------------
+void CUIGuild::RenderNewGuildSkillExtend(int nX,int nY)
+{
+	int tInc = 33;
+	int tCab = 7;
+	int nY2 = nY + 70;
+	
+	// Box 2 (Black)
+	m_bxBox2.SetBoxPos(WRect(nX+36,nY+59,nX+250,nY+277));
+	m_bxBox2.Render();	
+	m_bxBox2.SetBoxPos(WRect(nX+270,nY+59,nX+577,nY+153));
+	m_bxBox2.Render();	
+	m_bxBox2.SetBoxPos(WRect(nX+270,nY+160,nX+419,nY+250));
+	m_bxBox2.Render();	
+	m_bxBox2.SetBoxPos(WRect(nX+427,nY+160,nX+577,nY+250));
+	m_bxBox2.Render();	
+
+	// Box 1 (Grey)
+	m_bxBox1.SetBoxPos(WRect(nX+46,nY2 ,nX+240,(nY2+tInc)));
+	m_bxBox1.Render();
+	m_bxBox1.SetBoxPos(WRect(nX+47,nY2 ,nX+81,(nY2+tInc)));
+	m_bxBox1.Render();
+	nY2+=tInc+tCab;
+	m_bxBox1.SetBoxPos(WRect(nX+46,nY2,nX+240,(nY2+tInc)));
+	m_bxBox1.Render();	
+	m_bxBox1.SetBoxPos(WRect(nX+47,nY2,nX+81,(nY2+tInc)));
+	m_bxBox1.Render();	
+	nY2+=tInc+tCab;
+	m_bxBox1.SetBoxPos(WRect(nX+46,nY2,nX+240,(nY2+tInc)));
+	m_bxBox1.Render();	
+	m_bxBox1.SetBoxPos(WRect(nX+47,nY2,nX+81,(nY2+tInc)));
+	m_bxBox1.Render();	
+	nY2+=tInc+tCab;
+	m_bxBox1.SetBoxPos(WRect(nX+46,nY2,nX+240,(nY2+tInc)));
+	m_bxBox1.Render();	
+	m_bxBox1.SetBoxPos(WRect(nX+47,nY2,nX+81,(nY2+tInc)));
+	m_bxBox1.Render();	
+	nY2+=tInc+tCab;
+	m_bxBox1.SetBoxPos(WRect(nX+46,nY2,nX+240,(nY2+tInc)));
+	m_bxBox1.Render();	
+	m_bxBox1.SetBoxPos(WRect(nX+47,nY2,nX+81,(nY2+tInc)));
+	m_bxBox1.Render();	
+	m_bxBox1.SetBoxPos(WRect(nX+270,nY+77,nX+577,nY+153));
+	m_bxBox1.Render();	
+
+	m_bxBox1.SetBoxPos(WRect(nX+270,nY+178,nX+419,nY+250));
+	m_bxBox1.Render();
+	m_bxBox1.SetBoxPos(WRect(nX+427,nY+178,nX+577,nY+250));
+	m_bxBox1.Render();
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->FlushRenderingQueue();
+
+	// Guild Skill List ----------------------------------------------------->>
+	int iListCnt = GetGuildSkillCount();
+
+	// Left Guild Skill List		
+	int iRowS = m_sbGuildSkillBar.GetScrollPos();
+	int iRowE = iRowS + GUILD_SKILL_SLOT_ROW;
+	CTString tStr;
+	iRowE = (iRowE>iListCnt)? iListCnt:iRowE;
+	nY2 = 0;
+
+	int nSkillCnt = GetGuildSkillCount();
+	int nLoopCnt  = (nSkillCnt > GUILD_SKILL_VIEW_MAX)? GUILD_SKILL_VIEW_MAX : nSkillCnt;
+	//SetSkillBtnInfo();
+	for ( int i=0; i<nLoopCnt; ++i )
+	{
+		// Skill Button Render
+		m_pIconsGuildSkillEx[i]->Render(pDrawPort);
+
+		// Skill Info Render
+		int nNum, tLv, nMaxLevel;
+		CTString strSkillName;
+		CSkill SkillData;
+
+		nNum = m_sbGuildSkillBar.GetScrollPos() + i;
+		if ( m_nSelSkillTab == GUILD_SKILL_PASSIVE )
+		{
+			SkillData = m_vecGuildPassiveSkill[nNum];
+		}
+		else
+		{
+			SkillData = m_vecGuildActiveSkill[nNum];
+		}
+
+		tLv = SkillData.GetCurLevel();
+		nMaxLevel = SkillData.GetMaxLevel();
+		strSkillName = SkillData.GetName();
+		tStr.PrintF( "%s Lv%d/Lv%d", strSkillName, tLv, nMaxLevel );
+		pDrawPort->PutTextEx( tStr, nX + 91 , nY +nY2+80,C_lYELLOW|CT_AMASK);
+		nY2 += GUILD_SKILL_SLOT_OFFSETY;
+	}
+	if ( m_bIsSelList )
+	{
+		CTString strName = GetGuildSkill(m_iGuildSkillPos)->GetName();
+		pDrawPort->PutTextEx( strName, nX + 277, nY + 63, C_lYELLOW|CT_AMASK);
+	}
+	pDrawPort->PutTextEx( _S(5026, "ªÁøÎ¡§∫∏"), nX + 277, nY + 163, C_lYELLOW|CT_AMASK);
+	pDrawPort->PutTextEx( _S(5027, "Ω¿µÊ¡§∫∏"), nX + 434, nY + 163, C_lYELLOW|CT_AMASK);
+	// Flush Skill Button Rendering Queue
+	pDrawPort->FlushBtnRenderingQueue( UBET_SKILL );
+	
+	pDrawPort->InitTextureData(m_ptdBaseTexture);
+
+	if(m_bIsSelList)
+	{	
+		m_lbGuildSkillDesc.Render();	
+		m_lbLearnInfo.Render();
+		if ( m_nSelSkillTab	== GUILD_SKILL_ACTIVE)
+		{	// æ◊∆º∫Í ≈« ¿œ∂ß∏∏ ªÁøÎ ¡§∫∏ «•Ω√
+			m_lbUseInfo.Render();
+		}
+	}	
+	// Button
+	if (_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS)
+	{
+		m_btnGetSkill.SetEnable(TRUE);
+	}
+	else
+	{
+		m_btnGetSkill.SetEnable(FALSE);
+	}
+
+	if ( m_nSelSkillTab	== GUILD_SKILL_ACTIVE)
+	{
+		CSkill& rSkill = m_vecGuildActiveSkill[m_iGuildSkillPos];
+		if( rSkill.GetCurLevel() > 0 &&
+			(rSkill.GetTargetType() == CSkill::STT_GUILD_MEMBER_SELF ||
+			_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS))
+		{	
+			m_btnUseSkill.SetEnable(TRUE);	
+		}
+		else
+		{
+			m_btnUseSkill.SetEnable(FALSE);	
+		}
+	}
+	else 
+	{
+		m_btnUseSkill.SetEnable(FALSE);
+	}
+	m_btnGetSkill.Render();
+	m_btnUseSkill.Render();
+	// ScrollBar
+	m_sbGuildSkillBar.Render();
+	// Render all elements
+	pDrawPort->FlushRenderingQueue();
+	
+	// Render Selected Guild Skill
+	pDrawPort->InitTextureData(m_ptdSelBoxTexture);
+	UIRectUV rcPassiveTab	= m_rtSelSideTabUV;
+	UIRectUV rcActiveTab	= m_rtUnSelSideTabUV;
+	UIRectUV rcPassiveImage = m_rtPassiveTabIconUV[0];
+	UIRectUV rcActiveImage	= m_rtActiveTabIconUV[1];
+	
+	if ( m_nSelSkillTab == GUILD_SKILL_ACTIVE )
+	{
+		rcPassiveTab	= m_rtUnSelSideTabUV;
+		rcActiveTab		= m_rtSelSideTabUV;
+		rcPassiveImage	= m_rtPassiveTabIconUV[1];
+		rcActiveImage	= m_rtActiveTabIconUV[0];
+	}
+	pDrawPort->AddTexture( nX + m_rcSkillTab[GUILD_SKILL_PASSIVE].Left, nY + m_rcSkillTab[GUILD_SKILL_PASSIVE].Top, 
+		nX + m_rcSkillTab[GUILD_SKILL_PASSIVE].Right, nY + m_rcSkillTab[GUILD_SKILL_PASSIVE].Bottom, 
+		rcPassiveTab.U0, rcPassiveTab.V0, rcPassiveTab.U1, rcPassiveTab.V1, 0xFFFFFFFF);
+	pDrawPort->AddTexture( nX + m_rcSkillTab[GUILD_SKILL_ACTIVE].Left, nY + m_rcSkillTab[GUILD_SKILL_ACTIVE].Top, 
+		nX + m_rcSkillTab[GUILD_SKILL_ACTIVE].Right, nY + m_rcSkillTab[GUILD_SKILL_ACTIVE].Bottom, 
+		rcActiveTab.U0, rcActiveTab.V0, rcActiveTab.U1, rcActiveTab.V1, 0xFFFFFFFF);
+	pDrawPort->AddTexture( nX + m_rcSkillTab[GUILD_SKILL_PASSIVE].Left+6 , nY + m_rcSkillTab[GUILD_SKILL_PASSIVE].Top+34, 
+		nX + m_rcSkillTab[GUILD_SKILL_PASSIVE].Left+20, nY + m_rcSkillTab[GUILD_SKILL_PASSIVE].Top+48, 
+		rcPassiveImage.U0, rcPassiveImage.V0, rcPassiveImage.U1, rcPassiveImage.V1, 0xFFFFFFFF);
+	pDrawPort->AddTexture( nX + m_rcSkillTab[GUILD_SKILL_ACTIVE].Left+6, nY + m_rcSkillTab[GUILD_SKILL_ACTIVE].Top+34, 
+		nX + m_rcSkillTab[GUILD_SKILL_ACTIVE].Left+20, nY + m_rcSkillTab[GUILD_SKILL_ACTIVE].Top+48,
+		rcActiveImage.U0, rcActiveImage.V0, rcActiveImage.U1, rcActiveImage.V1, 0xFFFFFFFF);
+
+	if ( m_strSkillTabPopupInfo != CTString("") )
+	{
+		pDrawPort->AddTexture( nX + m_rcSkillTabPopupInfo.Left, nY + m_rcSkillTabPopupInfo.Top,
+			nX + m_rcSkillTabPopupInfo.Left + 8, nY + m_rcSkillTabPopupInfo.Top + 8,
+			m_rtPopupUL.U0, m_rtPopupUL.V0, m_rtPopupUL.U1, m_rtPopupUL.V1,
+			0xFFFFFFBB );
+		pDrawPort->AddTexture( nX + m_rcSkillTabPopupInfo.Left + 8, nY + m_rcSkillTabPopupInfo.Top,
+			nX + m_rcSkillTabPopupInfo.Right - 8, nY + m_rcSkillTabPopupInfo.Top + 8,
+			m_rtPopupUM.U0, m_rtPopupUM.V0, m_rtPopupUM.U1, m_rtPopupUM.V1,
+			0xFFFFFFBB );
+		pDrawPort->AddTexture( nX + m_rcSkillTabPopupInfo.Right - 8, nY + m_rcSkillTabPopupInfo.Top,
+			nX + m_rcSkillTabPopupInfo.Right, nY + m_rcSkillTabPopupInfo.Top + 8,
+			m_rtPopupUR.U0, m_rtPopupUR.V0, m_rtPopupUR.U1, m_rtPopupUR.V1,
+			0xFFFFFFBB );
+		pDrawPort->AddTexture( nX +m_rcSkillTabPopupInfo.Left, nY + m_rcSkillTabPopupInfo.Top + 8,
+			nX + m_rcSkillTabPopupInfo.Left + 8, nY + m_rcSkillTabPopupInfo.Bottom - 8,
+			m_rtPopupML.U0, m_rtPopupML.V0, m_rtPopupML.U1, m_rtPopupML.V1,
+			0xFFFFFFBB );
+		pDrawPort->AddTexture( nX + m_rcSkillTabPopupInfo.Left + 8, nY + m_rcSkillTabPopupInfo.Top + 8,
+			nX + m_rcSkillTabPopupInfo.Right - 8, nY + m_rcSkillTabPopupInfo.Bottom - 8,
+			m_rtPopupMM.U0, m_rtPopupMM.V0, m_rtPopupMM.U1, m_rtPopupMM.V1,
+			0xFFFFFFBB );
+		pDrawPort->AddTexture( nX + m_rcSkillTabPopupInfo.Right - 8, nY + m_rcSkillTabPopupInfo.Top + 8,
+			nX + m_rcSkillTabPopupInfo.Right, nY + m_rcSkillTabPopupInfo.Bottom - 8,
+			m_rtPopupMR.U0, m_rtPopupMR.V0, m_rtPopupMR.U1, m_rtPopupMR.V1,
+			0xFFFFFFBB );
+		pDrawPort->AddTexture( nX + m_rcSkillTabPopupInfo.Left, nY + m_rcSkillTabPopupInfo.Bottom - 8,
+			nX + m_rcSkillTabPopupInfo.Left + 8, nY + m_rcSkillTabPopupInfo.Bottom,
+			m_rtPopupLL.U0, m_rtPopupLL.V0, m_rtPopupLL.U1, m_rtPopupLL.V1,
+			0xFFFFFFBB );
+		pDrawPort->AddTexture( nX + m_rcSkillTabPopupInfo.Left + 8, nY + m_rcSkillTabPopupInfo.Bottom - 8,
+			nX + m_rcSkillTabPopupInfo.Right - 8, nY + m_rcSkillTabPopupInfo.Bottom,
+			m_rtPopupLM.U0, m_rtPopupLM.V0, m_rtPopupLM.U1, m_rtPopupLM.V1,
+			0xFFFFFFBB );
+		pDrawPort->AddTexture( nX + m_rcSkillTabPopupInfo.Right - 8, nY + m_rcSkillTabPopupInfo.Bottom - 8,
+			nX + m_rcSkillTabPopupInfo.Right, nY + m_rcSkillTabPopupInfo.Bottom,
+			m_rtPopupLR.U0, m_rtPopupLR.V0, m_rtPopupLR.U1, m_rtPopupLR.V1,
+			0xFFFFFFBB );		
+
+		int nPosX, nPosY;
+		
+		nPosX = m_rcSkillTabPopupInfo.Left + 10;
+		nPosY = (m_rcSkillTabPopupInfo.GetHeight() - _pUIFontTexMgr->GetFontHeight()) /2 + m_rcSkillTabPopupInfo.Top;
+		pDrawPort->PutTextEx( m_strSkillTabPopupInfo, nX + nPosX, nY + nPosY, 0xF2F2F2FF );
+	}
+	if( m_bIsSelList )
+	{	// º±≈√µ»∞‘ ¿÷¿∏∏È ±◊∏∞¥Ÿ.
+		int nSelPos = m_iGuildSkillPos - m_sbGuildSkillBar.GetScrollPos();
+		if ( nSelPos >=0 && nSelPos < 5)
+		{
+			pDrawPort->AddTexture( nX + m_rcSkillBtn[nSelPos].Left, nY + m_rcSkillBtn[nSelPos].Top, nX + m_rcSkillBtn[nSelPos].Right, 
+				nY + m_rcSkillBtn[nSelPos].Bottom, m_rtSelBoxUV.U0, m_rtSelBoxUV.V0, m_rtSelBoxUV.U1, m_rtSelBoxUV.V1, 0xFFFFFFFF);		
+		}
+	}	
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetGuildSkill()
+// Desc : 
+// ----------------------------------------------------------------------------
+CSkill* CUIGuild::GetGuildSkill(int nPos)
+{
+	if ( m_nSelSkillTab == GUILD_SKILL_PASSIVE )
+	{
+		return &m_vecGuildPassiveSkill[nPos];
+	}
+	else
+	{
+		return &m_vecGuildActiveSkill[nPos];
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : SetGuildSkillInfo()
+// Desc : ±ÊµÂ Ω∫≈≥ ¡§∫∏ º≥¡§ : ªÁøÎ ¡§∫∏/Ω¿µÊ ¡§∫∏
+// ----------------------------------------------------------------------------
+void CUIGuild::SetGuildSkillInfo()
+{
+	int		i;
+	m_lbUseInfo.ResetAllStrings();
+	m_lbLearnInfo.ResetAllStrings();
+	CSkill* pSkill = GetGuildSkill(m_iGuildSkillPos);
+	CTString strMessage;
+	CTString strSkillName;
+
+	// ------------------------------------------------------------------
+	// ªÁøÎ ¡§∫∏ 
+	int nCurSkillLevel = pSkill->GetCurLevel();
+	int nMaxSkillLevel	= pSkill->GetMaxLevel();
+
+	COLOR colUseSkillInfo;
+	COLOR colLearnSkillInfo;
+	colUseSkillInfo	  = 0x00ffffff;
+	colLearnSkillInfo = 0x99ff33ff;
+
+	if ( nCurSkillLevel > 0)
+	{	// πËøÓ Ω∫≈≥¿Ã ¿÷¿ª ∂ß∏∏ ªÁøÎ ¡§∫∏ «•Ω√
+		int nSkillLevel = nCurSkillLevel-1; // ¡¢±Ÿ¿⁄
+
+		int nNeedGP		= pSkill->GetNeedGP(nSkillLevel);				// º“∏ GP
+		int nNeedItemIndex1 = pSkill->GetNeedItemIndex1(nSkillLevel);	// º“∏ æ∆¿Ã≈€1
+		int nNeedItemIndex2 = pSkill->GetNeedItemIndex2(nSkillLevel);	// º“∏ æ∆¿Ã≈€2
+		int nNeedItemCount1	= pSkill->GetNeedItemCount1(nSkillLevel);	// º“∏ æ∆¿Ã≈€1¿« ∞πºˆ
+		int nNeedItemCount2	= pSkill->GetNeedItemCount2(nSkillLevel);	// º“∏ æ∆¿Ã≈€2¿« ∞πºˆ
+		int nPower		= pSkill->GetPower(nSkillLevel);					// ¿ß∑¬
+		float nRange	= pSkill->GetAppRange();								// ¿Ø»ø ∞≈∏Æ
+		int nDurTime	= pSkill->GetDurTime(nSkillLevel)/10;			// ¡ˆº” Ω√∞£
+		int nReuseTime	= pSkill->GetReUseTime()/10;							// ¿ÁªÁøÎ Ω√∞£
+
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		// Current Skill Level
+		strMessage.PrintF( _S ( 5120, "«ˆ¿Á Ω∫≈≥ ∑π∫ß : %d" ), nCurSkillLevel);
+		pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+
+		if ( nNeedGP > 0 )
+		{	// Need GP
+			strMessage.PrintF( _S( 5032, "º“∏ GP : %d" ), nNeedGP);
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+		}
+		if ( nNeedItemIndex1 > 0 || nNeedItemIndex2 > 0 )
+		{
+			strMessage.PrintF( _S( 259, "« ø‰ æ∆¿Ã≈€" ));
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+			if ( nNeedItemIndex1 > 0)
+			{	// Need Item1
+				strMessage.PrintF( _S( 260, "  %s %d∞≥" ), _pNetwork->GetItemName(nNeedItemIndex1), nNeedItemCount1 );
+				pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+			}
+			if ( nNeedItemIndex2 > 0)
+			{	// Need Item2
+				strMessage.PrintF( _S( 260, "  %s %d∞≥" ), _pNetwork->GetItemName(nNeedItemIndex1), nNeedItemCount2 );
+				pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+			}
+		}
+		if ( nPower > 0 )
+		{	// Skill Power
+			strMessage.PrintF( _S( 65, "¿ß∑¬ : %d" ), nPower );
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+		}
+		if ( nRange > 0 )
+		{	// Skill Range
+			strMessage.PrintF( _S( 66, "¿Ø»ø ∞≈∏Æ : %.1f" ), nRange );
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+		}
+		if ( nDurTime > 0 )
+		{	// Skill Time
+			strMessage.PrintF( _S( 4172, "¡ˆº”Ω√∞£ : %d√ " ), nDurTime );
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+		}
+		if ( nReuseTime > 0 )
+		{	// Skill ReUsed Time
+			strMessage.PrintF( _S( 4173, "¿ÁªÁøÎ Ω√∞£ : %d√ " ), nReuseTime);
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+		}
+		// Skill Target Type
+		char nTargetType = pSkill->GetTargetType();
+		if ( nTargetType == CSkill::STT_GUILD_ALL )
+		{	// Skill Target Type : GUILD ALL
+			strMessage.PrintF( _S( 5121, "≈∏∞Ÿ¥ÎªÛ : ±ÊµÂø¯ ¿¸√º" ));
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+		}	
+		else if ( nTargetType == CSkill::STT_GUILD_ONE )
+		{	// Skill Target Type : GUILD ONE
+			strMessage.PrintF( _S( 5122, "≈∏∞Ÿ¥ÎªÛ : ±ÊµÂø¯ «—∏Ì" ));
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+		}
+		else if ( nTargetType == CSkill::STT_GUILD_SELF_RANGE )
+		{	// Skill Target Type : GUILD SELF RANGE
+			strMessage.PrintF( _S ( 5123, "≈∏∞Ÿ¥ÎªÛ : ¡÷∫Ø ¿˚" ));
+			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
+		}
+	}
+
+	// ------------------------------------------------------------------
+	// Ω¿µÊ ¡§∫∏
+	if ( nCurSkillLevel < nMaxSkillLevel )
+	{	// ¥Ÿ¿Ω ∑π∫ß Ω¿µÊ ¡§∫∏
+		int nNextSkilllevel = nCurSkillLevel;	// ¥Ÿ¿Ω ∑π∫ß ¡¢±Ÿ¿⁄
+		
+		int nLearnLevel = pSkill->GetLearnLevel(nNextSkilllevel);	// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ ∑π∫ß
+		int nLearnGP	= pSkill->GetLearnGP(nNextSkilllevel);		// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ GP
+		int nLearnStr	= pSkill->GetLearnStr(nNextSkilllevel);		// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ »˚
+		int nLearnDex	= pSkill->GetLearnDex(nNextSkilllevel);		// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ πŒ√∏
+		int nLearnInt	= pSkill->GetLearnInt(nNextSkilllevel);		// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ ¡ˆ«˝
+		int nLearnCon	= pSkill->GetLearnCon(nNextSkilllevel);		// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ √º¡˙
+		int nNeedGP		= pSkill->GetNeedGP(nNextSkilllevel);		// Ω∫≈≥ ªÁøÎ Ω√, « ø‰ GP
+		int nPower		= pSkill->GetPower(nNextSkilllevel);		// Ω∫≈≥ ¿ß∑¬
+		float nRange	= pSkill->GetAppRange();						// Ω∫≈≥ ¿Ø»ø ∞≈∏Æ
+		int nDurTime	= pSkill->GetDurTime(nNextSkilllevel)/10;	// Ω∫≈≥ ¡ˆº” Ω√∞£
+		int nReuseTime	= pSkill->GetReUseTime()/10;					// Ω∫≈≥ ¿ÁªÁøÎ Ω√∞£
+		int nLearnItemIndex[3], nLearnItemCount[3], nLearnSkillIndex[3], nLearnSkillLevel[3];
+		for ( i = 0; i < 3; ++i )
+		{
+			nLearnItemIndex[i]	= pSkill->GetLearnItemIndex(nNextSkilllevel, i);	// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ æ∆¿Ã≈€
+			nLearnItemCount[i]	= pSkill->GetLearnItemCount(nNextSkilllevel, i);	// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ æ∆¿Ã≈€ ∞πºˆ
+			nLearnSkillIndex[i]	= pSkill->GetLearnSkillIndex(nNextSkilllevel, i);	// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ Ω∫≈≥
+			nLearnSkillLevel[i]	= pSkill->GetLearnSkillLevel(nNextSkilllevel, i);	// Ω∫≈≥ Ω¿µÊ Ω√, « ø‰ Ω∫≈≥ ∑π∫ß
+		}
+
+		CUIManager* pUIManager = CUIManager::getSingleton();
+
+		// Next Skill Level
+		strMessage.PrintF( _S( 5118, "¥Ÿ¿Ω Ω∫≈≥ ∑π∫ß : %d" ), nNextSkilllevel+1 );
+		pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+
+		if ( nLearnLevel > 0 )
+		{	// Learn Level
+			strMessage.PrintF( _S( 256, "« ø‰ ∑π∫ß : %d" ), nLearnLevel);
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		if ( nLearnGP > 0 )
+		{	// Learn GP
+			strMessage.PrintF( _S( 5119, "« ø‰ GP : %d" ), nLearnGP);
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+
+		for ( i = 0; i < 3; ++i )
+		{	// Learn Item
+			if ( nLearnItemIndex[i] > 0 )
+			{
+				strMessage.PrintF( _S( 260, "  %s %d∞≥" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
+				strMessage = _S( 259, "« ø‰ æ∆¿Ã≈€" ) + strMessage;
+				pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+			}
+		}
+		if ( nLearnStr > 0 )
+		{	// Learn STR
+			strMessage.PrintF( _S( 1391, "« ø‰ »˚ : %d" ), nLearnStr);
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		if ( nLearnDex > 0 )
+		{	// Learn DEX
+			strMessage.PrintF( _S( 1392, "« ø‰ πŒ√∏ : %d" ), nLearnDex);
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		if ( nLearnInt > 0 )
+		{	// Learn INT
+			strMessage.PrintF( _S( 1393, "« ø‰ ¡ˆ«˝ : %d" ), nLearnInt);
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		if ( nLearnCon > 0 )
+		{	// Learn CON
+			strMessage.PrintF( _S( 1394, "« ø‰ √º¡˙ : %d" ), nLearnCon);
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		for ( i = 0; i < 3; ++i )
+		{	// Learn Skill
+			if ( nLearnSkillIndex[i] > 0 )
+			{
+				strMessage.PrintF( " : %s Lv.%d", _pNetwork->GetSkillData(nLearnSkillIndex[i]).GetName(), nLearnSkillLevel[i] );
+				strMessage = _S( 258, "« ø‰ Ω∫≈≥" ) + strMessage;
+				pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+			}
+		}
+		if ( nNeedGP > 0 )
+		{	// Need GP
+			strMessage.PrintF( _S( 5032, "º“∏ GP : %d" ), nNeedGP);
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		if ( nPower > 0 )
+		{	// Skill Power
+			strMessage.PrintF( _S( 65, "¿ß∑¬ : %d" ), nPower );
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		if ( nRange > 0 )
+		{	// Skill Range
+			strMessage.PrintF( _S( 66, "¿Ø»ø ∞≈∏Æ : %.1f" ), nRange );
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		if ( nDurTime > 0 )
+		{	// Skill Time
+			strMessage.PrintF( _S( 4172, "¡ˆº”Ω√∞£ : %d√ " ), nDurTime);
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		if ( nReuseTime > 0 )
+		{	// ReUse Time
+			strMessage.PrintF( _S( 4173, "¿ÁªÁøÎ Ω√∞£ : %d√ " ), nReuseTime );
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		// Skill Target Type
+		char nTargetType = pSkill->GetTargetType();
+		if ( nTargetType == CSkill::STT_GUILD_ALL )
+		{
+			strMessage.PrintF( _S( 5121, "≈∏∞Ÿ¥ÎªÛ : ±ÊµÂø¯ ¿¸√º" ));
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		else if ( nTargetType == CSkill::STT_GUILD_ONE )
+		{
+			strMessage.PrintF( _S( 5122, "≈∏∞Ÿ¥ÎªÛ : ±ÊµÂø¯ «—∏Ì" ));
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+		else if ( nTargetType == CSkill::STT_GUILD_SELF_RANGE )
+		{
+			strMessage.PrintF( _S ( 5123, "≈∏∞Ÿ¥ÎªÛ : ¡÷∫Ø ¿˚" ));
+			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : ReceiveGuildSkillExtend()
+// Desc : ±ÊµÂ Ω∫≈≥ ¡§∫∏ πﬁ±‚
+// ----------------------------------------------------------------------------
+void CUIGuild::ReceiveGuildSkillExtend(CNetworkMessage* istr)
+{
+	SetGuildSkillList();
+
+	INDEX iSkillType, iCount, iSkillIndex, iSkillLevel, iLoopCnt, iCoolTime;
+	// Active Guild Skill
+	(*istr) >> iSkillType;
+	if ( iSkillType == GUILD_ACTIVE_SKILL_START )
+	{	// Active Guild Skill
+		(*istr) >> iCount;
+		if ( iCount == 0)
+		{
+			for(int i=0; i<m_vecGuildActiveSkill.size(); ++i)
+			{
+				m_vecGuildActiveSkill[i].SetCurLevel(0);
+			}
+		}
+		else
+		{
+			for (iLoopCnt=0; iLoopCnt<iCount; ++iLoopCnt)
+			{
+				(*istr) >> iSkillIndex
+						>> iSkillLevel
+						>> iCoolTime;
+
+				MY_INFO()->SetSkill(iSkillIndex, iSkillLevel);
+
+				for(int j=0; j<m_vecGuildActiveSkill.size(); ++j)
+				{
+					if( m_vecGuildActiveSkill[j].GetIndex() == iSkillIndex )
+					{
+						m_vecGuildActiveSkill[j].SetCurLevel(iSkillLevel);
+						
+						if (iCoolTime > 0)
+						{
+							SLONG slRemainTime = ((SLONG)time(NULL) - _pNetwork->slServerTimeGap) - iCoolTime;
+							CSkill &SkillData = _pNetwork->GetSkillData( iSkillIndex );
+							SkillData.SetStartTime(slRemainTime);
+							m_vecGuildActiveSkill[j].SetStartTime(slRemainTime);
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+	// Passive Guild Skill
+	(*istr) >> iSkillType;
+	if ( iSkillType == GUILD_PASSIVE_SKILL_START )
+	{	// Passive Guild Skill
+		(*istr) >> iCount;
+		if ( iCount == 0)
+		{
+			for(int i=0; i<m_vecGuildPassiveSkill.size(); ++i)
+			{
+				m_vecGuildPassiveSkill[i].SetCurLevel(0);
+			}
+		}
+		else
+		{
+			for (iLoopCnt=0; iLoopCnt<iCount; ++iLoopCnt)
+			{
+				(*istr) >> iSkillIndex
+						>> iSkillLevel;
+
+				MY_INFO()->SetSkill(iSkillIndex, iSkillLevel);
+
+				for(int j=0; j<m_vecGuildPassiveSkill.size(); ++j)
+				{
+					if( m_vecGuildPassiveSkill[j].GetIndex() == iSkillIndex )
+					{
+						m_vecGuildPassiveSkill[j].SetCurLevel(iSkillLevel);
+						break;
+					}
+				}
+			}
+		}
+	}
+	// Etc Guild Skill : Nothing (±ÊµÂ Active/Passive∏∏ √≥∏Æ)
+	(*istr) >> iSkillType;
+	if ( iSkillType == GUILD_ETC_SKILL_START )
+	{	// Passive Guild Skill
+		(*istr) >> iCount;
+		for (iLoopCnt=0; iLoopCnt<iCount; ++iLoopCnt)
+		{
+			(*istr) >> iSkillIndex
+					>> iSkillLevel;
+			// Nothing : ±ÊµÂ Active/Passive∏∏ √≥∏Æ
+			MY_INFO()->SetSkill(iSkillIndex, iSkillLevel);
+		}
+	}
+
+	SetSkillBtnInfo();
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetSkillButton()
+// Desc : ±ÊµÂ Ω∫≈≥ πˆ∆∞ æÚ±‚
+// ----------------------------------------------------------------------------
+CUIIcon* CUIGuild::GetSkillButton(int nPos)
+{
+	return m_pIconsGuildSkillEx[nPos - m_sbGuildSkillBar.GetScrollPos()];
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetGuildSkillCount(eGUILDSKILL SkillType)
+// Desc : ±ÊµÂ Ω∫≈≥ √— ∞πºˆ æÚ±‚
+// ----------------------------------------------------------------------------
+int CUIGuild::GetGuildSkillCount()
+{
+	if ( m_nSelSkillTab == GUILD_SKILL_PASSIVE )
+	{
+		return m_vecGuildPassiveSkill.size();
+	}
+	else
+	{
+		return m_vecGuildActiveSkill.size();
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : CheckUseGuildSkill()
+// Desc : ±ÊµÂ Ω∫≈≥ ªÁøÎ ¡∂∞« √º≈©
+// ----------------------------------------------------------------------------
+BOOL CUIGuild::CheckUseGuildSkill(int nSkillIndex)
+{
+	SBYTE sbSkillLevel = GetGuildSkillLevel(nSkillIndex);
+
+	CSkill skill = _pNetwork->GetSkillData(nSkillIndex);
+	int nNeedGP = skill.GetNeedGP(sbSkillLevel-1);	
+	char nTargetType = skill.GetTargetType();
+
+	CUIManager* pUIMgr = UIMGR();
+	CChattingUI* pChat = pUIMgr->GetChattingUI();
+
+	if ( nTargetType != CSkill::STT_GUILD_MEMBER_SELF)
+	{
+		// ±ÊµÂø¯ ¿¸∫Œ∞° ªÁøÎ∞°¥…«— ≈∏¿‘¿Ã æ∆¥“∞ÊøÏ¥¬ ±Ê∏∂¿œ ∞ÊøÏ∏∏ Ω∫≈≥ ªÁøÎ 
+		if ( _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_BOSS )
+		{
+			if (pChat)
+				pChat->AddSysMessage( _S(5029, "±ÊµÂ ∏∂Ω∫≈Õ∏∏ Ω∫≈≥ ªÁøÎ¿Ã ∞°¥…«’¥œ¥Ÿ."));
+
+			return FALSE;
+		}
+	}
+
+	if ( _pNetwork->MyCharacterInfo.iGP < nNeedGP )
+	{	// «ˆ¿Á GP∞° º“∏ GP∫∏¥Ÿ ≈©∏È Ω∫≈≥ ªÁøÎ
+		if (pChat)
+			pChat->AddSysMessage( _S(5028, "GP∞° ∫Œ¡∑«œø© Ω∫≈≥¿ª ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ."));
+
+		return FALSE;
+	}
+
+	if (nSkillIndex == DEF_GUILD_RECALL_SKILL_IDX)
+	{
+		pUIMgr->CloseMessageBox( MSGCMD_GUILD_RECALL_USE_REQ );
+
+		CTString	strMessage;
+		CUIMsgBox_Info	MsgBoxInfo;
+		MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_RECALL_USE_REQ );	
+		strMessage.PrintF( _S( 6435, "±ÊµÂø¯µÈ¿ª ±ÊµÂπÊ¿∏∑Œ º“»Ø«œΩ√∞⁄Ω¿¥œ±Ó?" ) );
+		MsgBoxInfo.AddString( strMessage );
+
+		pUIMgr->CreateMessageBox( MsgBoxInfo );
+		return FALSE;
+	}
+	
+	return TRUE;
+}
+
+// ----------------------------------------------------------------------------
+// Name : StartGuildSkillDelay()
+// Desc : ±ÊµÂ Ω∫≈≥ µÙ∑π¿Ã º≥¡§
+// ----------------------------------------------------------------------------
+BOOL CUIGuild::StartGuildSkillDelay( int nSkillIndex )
+{
+	int		i;
+	BOOL bResult = FALSE;
+	for( i = 0; i < GUILD_SKILL_VIEW_MAX; ++i )
+	{
+		if (m_pIconsGuildSkillEx[i]->getIndex() == nSkillIndex)
+		{
+			if (MY_INFO()->GetSkillDelay(nSkillIndex) == true)
+			{
+				m_pIconsGuildSkillEx[i]->setCooltime(true);
+				bResult = TRUE;
+			}
+			else
+			{
+				continue;
+			}
+		}
+	}
+	for( i = 0; i < m_vecGuildActiveSkill.size(); ++i )
+	{
+		if ( m_vecGuildActiveSkill[i].GetIndex() == nSkillIndex )
+		{
+			m_vecGuildActiveSkill[i].Skill_Data.Skill_StartTime = _pNetwork->GetSkillData( nSkillIndex ).Skill_Data.Skill_StartTime;
+		}
+	}
+	return bResult;
+}
+
+// ----------------------------------------------------------------------------
+// Name : SetSkillPopupInfo()
+// Desc : ±ÊµÂ Ω∫≈≥ ∆Àæ˜ ¡§∫∏ º≥¡§
+// ----------------------------------------------------------------------------
+void CUIGuild::SetSkillPopupInfo(int nTab)
+{
+	if ( nTab == GUILD_SKILL_PASSIVE )
+	{
+		m_strSkillTabPopupInfo = _S(67, "∆–Ω√∫Í Ω∫≈≥");
+	}
+	else
+	{
+		m_strSkillTabPopupInfo = _S(63, "æ◊∆º∫Í Ω∫≈≥");
+	}
+	
+	int nWidth = m_strSkillTabPopupInfo.Length() * _pUIFontTexMgr->GetFontWidth();
+	m_rcSkillTabPopupInfo.SetRect( m_rcSkillTab[nTab].Left - nWidth - 20, m_rcSkillTab[nTab].Top, m_rcSkillTab[nTab].Left, m_rcSkillTab[nTab].Top + 30 );
+	if ( m_nPosX < nWidth )
+	{
+		m_rcSkillTabPopupInfo.SetRect( m_rcSkillTab[nTab].Right, m_rcSkillTab[nTab].Top, m_rcSkillTab[nTab].Right+100, m_rcSkillTab[nTab].Top + 30 );
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetSelectedPositon()
+// Desc : ∫Œ¥Î º±≈√ ƒﬁ∫∏ π⁄Ω∫ø°º≠ ¡˜¿ß æÚ±‚
+// ----------------------------------------------------------------------------
+INDEX CUIGuild::GetSelectedPositon()
+{
+	int iPosition = GUILD_MEMBER_NOMEMBER;
+	int iSelMember = m_lbManageMemberList.GetCurSel();
+	if( iSelMember != -1 )
+	{
+		sGuildMember &TmpMember = m_vectorMemberList[iSelMember];
+		iPosition = TmpMember.eRanking;
+		if ( iPosition != GUILD_MEMBER_BOSS && iPosition != GUILD_MEMBER_VICE_BOSS )
+		{
+			int nSelCombo = m_cmbCorps.GetCurSel();
+			switch( nSelCombo )
+			{
+			case CMB_RUSH_CAPTAIN:
+				iPosition = GUILD_MEMBER_RUSH_CAPTAIN;
+				break;
+			case CMB_SUPPORT_CAPTAIN:
+				iPosition = GUILD_MEMBER_SUPPORT_CAPTAIN;
+				break;
+			case CMB_RECON_CAPTAIN:
+				iPosition = GUILD_MEMBER_RECON_CAPTAIN;
+				break;
+			case CMB_RUSH_MEMBER:
+				iPosition = GUILD_MEMBER_RUSH;
+				break;
+			case CMB_SUPPORT_MEMBER:
+				iPosition = GUILD_MEMBER_SUPPORT;
+				break;
+			case CMB_RECON_MEMBER:
+				iPosition = GUILD_MEMBER_RECON;
+				break;
+			case CMB_NOMEMBER:
+				iPosition = GUILD_MEMBER_MEMBER;
+				break;
+			}
+		}
+	}
+	return iPosition;
+}
+
+// ----------------------------------------------------------------------------
+// Name : SetSkillBtnInfo()
+// Desc : ±ÊµÂ Ω∫≈≥ πˆ∆∞ ¡§∫∏ º≥¡§
+// ----------------------------------------------------------------------------
+void CUIGuild::SetSkillBtnInfo()
+{
+	int nScrollPos = m_sbGuildSkillBar.GetScrollPos();
+	int nSkillCount = GetGuildSkillCount();
+	int nLoopCnt = ( nSkillCount>5 ) ? 5 : nSkillCount;
+	
+	for ( int nIndex=0; nIndex<nLoopCnt; ++nIndex )
+	{
+		CSkill SkillData;
+		if ( m_nSelSkillTab == GUILD_SKILL_PASSIVE )
+		{
+			SkillData = m_vecGuildPassiveSkill[nIndex+nScrollPos];
+		}
+		else
+		{
+			SkillData = m_vecGuildActiveSkill[nIndex+nScrollPos];
+		}
+
+		if (MY_INFO()->GetReuseSkill(SkillData.GetIndex()) > 0)
+		{
+			MY_INFO()->SetSkillDelay(SkillData.GetIndex(), true);
+			m_pIconsGuildSkillEx[nIndex]->setCooltime(true);
+		}
+
+		m_pIconsGuildSkillEx[nIndex]->setData(UBET_SKILL, SkillData.GetIndex());
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetReuseTime()
+// Desc : ¿ÁªÁøÎΩ√∞£ æÚ±‚
+// ----------------------------------------------------------------------------
+DOUBLE CUIGuild::GetReuseTime( INDEX SkillIndex )
+{
+	CSkill SkillData = _pNetwork->GetSkillData( SkillIndex );
+	DOUBLE ReuseTime = SkillData.GetReUseTime();
+
+	return DOUBLE( ReuseTime + _pNetwork->MyCharacterInfo.magicspeed ) / 10.0;
+
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetCoolTime()
+// Desc : ƒ≈∏¿” æÚ±‚
+// ----------------------------------------------------------------------------
+DOUBLE CUIGuild::GetCoolTime( DOUBLE ReuseTime, DOUBLE StartTime )
+{
+	DOUBLE coolTime = ReuseTime - (_pTimer->GetHighPrecisionTimer().GetSeconds() - StartTime);
+	
+	return ( coolTime >= 0 ? coolTime : 0 );
+}
+
+// ----------------------------------------------------------------------------
+// Name : GetSkillDelay()
+// Desc : Ω∫≈≥ µÙ∑π¿Ã æÚ±‚
+// ----------------------------------------------------------------------------
+BOOL CUIGuild::GetSkillDelay( INDEX index )
+{
+	for ( int i=0; i<m_vecGuildActiveSkill.size(); ++i )
+	{
+		CSkill& SkillData = m_vecGuildActiveSkill[i];
+		if ( m_vecGuildActiveSkill[i].GetIndex() == index )
+		{
+			DOUBLE ReuseTime = GetReuseTime( SkillData.GetIndex() );
+			DOUBLE StartTime = SkillData.Skill_Data.Skill_StartTime;
+			DOUBLE CoolTime  = GetCoolTime( ReuseTime, StartTime );
+			if ( CoolTime > 0 )
+			{
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
+// ----------------------------------------------------------------------------
+// Name : SetCorpsInfo()
+// Desc : ±ÊµÂ¿« ∫Œ¥Î ¡§∫∏ º≥¡§
+// ----------------------------------------------------------------------------
+void CUIGuild::SetCorpsInfo( INDEX memberCount, INDEX bossCount )
+{
+	m_iCorpsMember	= memberCount;
+	m_iCorpsBoss	= bossCount;
+}
+
+// ----------------------------------------------------------------------------
+// Name : SetCorpsComboBox()
+// Desc : ∫Œ¥Î º≥¡§ ƒﬁ∫∏ π⁄Ω∫ º≥¡§
+// ----------------------------------------------------------------------------
+void CUIGuild::SetCorpsComboBox()
+{
+	m_cmbCorps.ResetStrings();
+
+	int iSelMember = m_lbManageMemberList.GetCurSel();
+	if( iSelMember != -1 )
+	{
+		sGuildMember &TmpMember = m_vectorMemberList[iSelMember];
+		int nPosition = TmpMember.eRanking;
+		int nSelCombo = CMB_NOMEMBER;
+
+		switch( nPosition )
+		{
+		case GUILD_MEMBER_BOSS:
+			{
+				m_cmbCorps.AddString( m_strCorps[GUILD_MEMBER_BOSS] );
+				nSelCombo = 0;
+			}
+			break;
+		case GUILD_MEMBER_VICE_BOSS:
+			{
+				m_cmbCorps.AddString( m_strCorps[GUILD_MEMBER_VICE_BOSS] );
+				nSelCombo = 0;
+			}
+			break;
+		case GUILD_MEMBER_RUSH_CAPTAIN:
+			nSelCombo = CMB_RUSH_CAPTAIN;
+			break;
+		case GUILD_MEMBER_SUPPORT_CAPTAIN:
+			nSelCombo = CMB_SUPPORT_CAPTAIN;
+			break;
+		case GUILD_MEMBER_RECON_CAPTAIN:
+			nSelCombo = CMB_RECON_CAPTAIN;
+			break;
+		case GUILD_MEMBER_RUSH:
+			nSelCombo = CMB_RUSH_MEMBER;
+			break;
+		case GUILD_MEMBER_SUPPORT:
+			nSelCombo = CMB_SUPPORT_MEMBER;
+			break;
+		case GUILD_MEMBER_RECON:
+			nSelCombo = CMB_RECON_MEMBER;
+			break;
+		case GUILD_MEMBER_MEMBER:
+			nSelCombo = CMB_NOMEMBER;
+			break;
+		}
+
+		if ( nPosition != GUILD_MEMBER_BOSS && nPosition != GUILD_MEMBER_VICE_BOSS )
+		{
+			for ( int iPos=GUILD_MEMBER_MEMBER; iPos<GUILD_MEMBER_TOTAL; ++iPos )
+			{
+				m_cmbCorps.AddString( m_strCorps[iPos] );
+			}
+		}
+
+		m_cmbCorps.SetCurSel( nSelCombo );
+	}	
+}
+
+// ----------------------------------------------------------------------------
+// Name : InitString()
+// Desc : ∫Œ¥Î ∞¸∑√ Ω∫∆Æ∏µ º≥¡§
+// ----------------------------------------------------------------------------
+void CUIGuild::InitString()
+{
+	m_strCorps[GUILD_MEMBER_BOSS]			 = _S( 891,  "±ÊµÂ¿Â" );
+	m_strCorps[GUILD_MEMBER_VICE_BOSS]		 = _S( 892,  "±ÊµÂ∫Œ¿Â" );
+	m_strCorps[GUILD_MEMBER_MEMBER]			 = _S( 893,  "±ÊµÂø¯" );
+	m_strCorps[GUILD_MEMBER_RUSH_CAPTAIN]	 = _S( 5323, "µπ∞›¥Î¿Â" );
+	m_strCorps[GUILD_MEMBER_SUPPORT_CAPTAIN] = _S( 5324, "¡ˆø¯¥Î¿Â" );
+	m_strCorps[GUILD_MEMBER_RECON_CAPTAIN]	 = _S( 5325, "¡§¬˚¥Î¿Â" );
+	m_strCorps[GUILD_MEMBER_RUSH]			 = _S( 5326, "µπ∞›¥Îø¯" );
+	m_strCorps[GUILD_MEMBER_SUPPORT]		 = _S( 5327, "¡ˆø¯¥Îø¯" );
+	m_strCorps[GUILD_MEMBER_RECON]			 = _S( 5328, "¡§¬˚¥Îø¯" );
+}
+
+// ----------------------------------------------------------------------------
+// Name : ReceiveCorpsInfo()
+// Desc : ±ÊµÂ ∫Œ¥Î ¡§∫∏ πﬁ±‚
+// ----------------------------------------------------------------------------
+void CUIGuild::ReceiveCorpsInfo( CNetworkMessage* istr )
+{
+	INDEX iCorpsMember, iCorpsBoss;
+	
+	(*istr) >> iCorpsMember
+			>> iCorpsBoss;
+
+	SetCorpsInfo( iCorpsMember, iCorpsBoss );
+}
+
+WMSG_RESULT CUIGuild::OpenGuildPop( int nMemberIdx, int nX, int nY )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CTString strTargetName = m_lbGuildMemberList.GetString(1, nMemberIdx);
+
+	if ( IsOnline(strTargetName) == FALSE )
+	{
+		pUIManager->GetChattingUI()->AddSysMessage(_S(4523, "¥ÎªÛ¿ª √£¿ª ºˆ æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR);
+		return WMSG_FAIL;
+	}
+
+	int nCharIndex = GetMemberNetIdx(strTargetName);
+	pUIManager->GetSimplePop()->OpenPopNoTarget(strTargetName, nCharIndex,
+		(GAMEDATAMGR()->GetPartyInfo()->GetMemberCount() > 0 && GAMEDATAMGR()->GetPartyInfo()->AmILeader()) ? true : false, nX, nY);
+
+ 	return WMSG_SUCCESS;
+}
+
+BOOL CUIGuild::IsOnline( CTString strName )
+{
+	std::vector<sGuildMember>::iterator iter = m_vectorMemberList.begin();
+	std::vector<sGuildMember>::iterator iter_end = m_vectorMemberList.end();
+
+	for (; iter != iter_end; ++iter)
+	{
+		if ((*iter).strMemberName == strName)
+			return (*iter).bOnline;
+	}
+
+	return false;
+}
+
+int CUIGuild::GetMemberNetIdx( CTString strName )
+{
+	std::vector<sGuildMember>::iterator iter = m_vectorMemberList.begin();
+	std::vector<sGuildMember>::iterator iter_end = m_vectorMemberList.end();
+
+	for (; iter != iter_end; ++iter)
+	{
+		if ((*iter).strMemberName == strName)
+			return (*iter).lIndex;
+	}
+
+	return -1;
+}
+
+
+void CUIGuild::ArrangeMemList(const int eType)
+{
+#if		!defined(WORLD_EDITOR)
+	int i;
+	for (i = 0; i < eGML_MAX; ++i)
+	{
+		if (i == eType)
+			continue;
+
+		m_pCbMemberArrange[i]->SetCheck(FALSE);
+	}
+
+	BOOL bAscending = !(m_pCbMemberArrange[eType]->IsChecked());
+
+	m_lbGuildMemberList.Reset();
+	m_lbGuildMemberList.ResetAllStrings();
+
+	switch(eType)
+	{
+	case eGML_NAME:
+		{
+			const ContGuild::nth_index<eGML_NAME>::type& use_index = m_ContGuild.get<eGML_NAME>();
+
+			if (bAscending == TRUE)
+			{
+				for (auto iter = use_index.begin(); iter != use_index.end(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+			else
+			{
+				for (auto iter = use_index.rbegin(); iter != use_index.rend(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+		}
+		break;
+	case eGML_TITLE:
+		{
+			const ContGuild::nth_index<eGML_TITLE>::type& use_index = m_ContGuild.get<eGML_TITLE>();
+
+			if (bAscending == FALSE)
+			{
+				for (auto iter = use_index.begin(); iter != use_index.end(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+			else
+			{
+				for (auto iter = use_index.rbegin(); iter != use_index.rend(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+		}
+		break;
+	case eGML_LV:
+		{
+			const ContGuild::nth_index<eGML_LV>::type& use_index = m_ContGuild.get<eGML_LV>();
+
+			if (bAscending == TRUE)
+			{
+				for (auto iter = use_index.begin(); iter != use_index.end(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+			else
+			{
+				for (auto iter = use_index.rbegin(); iter != use_index.rend(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+		}
+		break;
+	case eGML_CLASS:
+		{
+			const ContGuild::nth_index<eGML_CLASS>::type& use_index = m_ContGuild.get<eGML_CLASS>();
+
+			if (bAscending == TRUE)
+			{
+				for (auto iter = use_index.begin(); iter != use_index.end(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+			else
+			{
+				for (auto iter = use_index.rbegin(); iter != use_index.rend(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+		}
+		break;
+	case eGML_LOCAL:
+		{
+			const ContGuild::nth_index<eGML_LOCAL>::type& use_index = m_ContGuild.get<eGML_LOCAL>();
+
+			if (bAscending == TRUE)
+			{
+				for (auto iter = use_index.begin(); iter != use_index.end(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+			else
+			{
+				for (auto iter = use_index.rbegin(); iter != use_index.rend(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+		}
+		break;
+	case eGML_CONTRIBUTION:
+	case eGML_POINT:
+		{
+			// ±‚ø©µµ¥¬ ¥©¿˚ ∆˜¿Œ∆Æ∏¶ ≥™¥©±‚«— ºˆƒ°¿Ãπ«∑Œ ¡§∑ƒΩ√ø°¥¬ ¥©¿˚∆˜¿Œ∆Æ∑Œ ¡§∑ƒ µ«µµ∑œ ºˆ¡§.
+			const ContGuild::nth_index<eGML_CONTRIBUTION>::type& use_index = m_ContGuild.get<eGML_CONTRIBUTION>();
+
+			if (bAscending == TRUE)
+			{
+				for (auto iter = use_index.begin(); iter != use_index.end(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+			else
+			{
+				for (auto iter = use_index.rbegin(); iter != use_index.rend(); ++iter)
+				{
+					AddGuildMemberInfo(*(*iter).get());
+				}
+			}
+		}
+		break;
+	}
+#endif	// WORLD_EDITOR
+}
+
+void CUIGuild::ResetArrangeState()
+{
+	int i;
+	for (i = 0; i < eGML_MAX; ++i)
+	{
+		m_pCbMemberArrange[i]->SetCheck(FALSE);
+	}
+}
+
+void CUIGuild::ClearGuildSkill()
+{
+	ClearGuildSkillCooltime();
+
+	m_vecGuildPassiveSkill.clear();
+	m_vecGuildActiveSkill.clear();
+}
+
+void CUIGuild::ClearGuildSkillCooltime()
+{
+	int size = m_vecGuildActiveSkill.size();
+
+	if ( size <= 0)
+		return;
+
+	for( int i = 0; i < size; ++i )
+	{
+		int nIndex = m_vecGuildActiveSkill[i].GetIndex();
+
+		CSkill& rSkill = _pNetwork->GetSkillData(nIndex);
+
+		if ( rSkill.GetFlag() & SF_GUILD && ( rSkill.GetType() != CSkill::ST_GUILD_SKILL_PASSIVE || rSkill.GetType() != CSkill::ST_PASSIVE ) )
+		{
+			rSkill.Skill_Data.Skill_StartTime = 0;	
+		}		
+	}
 }
 
 // -------------------------------------------------------------------------------------------------------->>

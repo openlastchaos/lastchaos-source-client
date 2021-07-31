@@ -175,10 +175,10 @@ void CDlgSelectMode::ApplySettings( CDisplayMode *pdm, enum GfxAPIType *m_pGfxAP
   // determine color mode
   DisplayDepth ddDepth;
   switch( m_iColor) {
-  case 0: ddDepth = DD_DEFAULT;  break;
-  case 1: ddDepth = DD_16BIT;    break;
-  case 2: ddDepth = DD_32BIT;    break;
-  default: ASSERT(FALSE); ddDepth = DD_DEFAULT;  break;
+  case 0: ddDepth = DISPD_DEFAULT;  break;
+  case 1: ddDepth = DISPD_16BIT;    break;
+  case 2: ddDepth = DISPD_32BIT;    break;
+  default: ASSERT(FALSE); ddDepth = DISPD_DEFAULT;  break;
   }
   // get resolution
   const ULONG ulRes = (ULONG)m_ctrlResCombo.GetItemData( m_ctrlResCombo.GetCurSel());
@@ -208,9 +208,9 @@ void CDlgSelectMode::DoDataExchange(CDataExchange* pDX)
   {
     // set current color radios
     switch (m_pdm->dm_ddDepth) {
-    case DD_DEFAULT: m_iColor = 0; break;
-    case DD_16BIT  : m_iColor = 1; break;
-    case DD_32BIT  : m_iColor = 2; break;
+    case DISPD_DEFAULT: m_iColor = 0; break;
+    case DISPD_16BIT  : m_iColor = 1; break;
+    case DISPD_32BIT  : m_iColor = 2; break;
     default: ASSERT(FALSE); m_iColor=0;  break;
     }
   }
@@ -301,9 +301,9 @@ void CDlgSelectMode::OnTestButton()
   PIX pixSizeI    = dm.dm_pixSizeI;
   PIX pixSizeJ    = dm.dm_pixSizeJ;
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Default API to D3D)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Default API to D3D)(0.1)
   BOOL bDisplayModeSet = _pGfx->SetDisplayMode( GAT_D3D, 0, pixSizeI, pixSizeJ, dm.dm_ddDepth);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Default API to D3D)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Default API to D3D)(0.1)
   if( !bDisplayModeSet) {
     AfxMessageBox( "Unable to setup full screen display. Test mode failed.");
     return;

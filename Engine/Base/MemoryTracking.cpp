@@ -33,9 +33,13 @@ struct ReallocParams
 #endif
 };
 
-static _declspec(thread) ULONG _ulCurrentFlags = 0;
-static _declspec(thread) ReallocParams _rpReallocTemp;
-static _declspec(thread) BOOL _bDoingRealloc = FALSE;
+//static _declspec(thread) ULONG _ulCurrentFlags = 0;
+//static _declspec(thread) ReallocParams _rpReallocTemp;
+//static _declspec(thread) BOOL _bDoingRealloc = FALSE;
+TLVar<ULONG> _ulCurrentFlags = 0;
+TLVar<ReallocParams> _rpReallocTemp;
+TLVar<BOOL> _bDoingRealloc = FALSE;
+
 
 CMemFlags::CMemFlags(ULONG ulAddFlags) {
 	// if not changing any flags
@@ -101,7 +105,9 @@ INDEX _ctTrackingBytes = 0;
 
 // tables used to track memory blocks
 CTCriticalSection *_pcsMemTracking = NULL;
-_declspec(thread) INDEX _imdCurrentDescriptor = -1;
+//_declspec(thread) INDEX _imdCurrentDescriptor = -1;
+TLVar<INDEX> _imdCurrentDescriptor = -1;
+
 CStaticStackArray<CMemDescriptor> *_pamdDescriptors = NULL;
 CAllocationArray<CMemBlock> *_pambBlocks = NULL;
 CHashTable_CMemBlock *_phbmBlocks = NULL;

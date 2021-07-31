@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #ifndef __CWORLDTAG_H__
 #define __CWORLDTAG_H__
@@ -19,11 +19,11 @@ public:
 
 	virtual CTag *Copy();
 	
-	//tag info control functions, CTagì˜ í•¨ìˆ˜ë¡œ ì „ë‹¬
+	//tag info control functions, CTagÀÇ ÇÔ¼ö·Î Àü´Ş
 	void AddNewTagInfo(TagInfo &info) { CTag::AddNewTagInfo(info); }
 	void AddNewTagInfo(FLOAT time, Matrix12 &mInfo, Matrix12 &mStrInfo) { CTag::AddNewTagInfo(time, mInfo, mStrInfo); }
 	void AddNewTagInfo(FLOAT time, FLOATquat3D &rot, FLOAT3D &pos, FLOAT3D &stretch) { CTag::AddNewTagInfo(time, rot, pos, stretch); }
 };
 
 #endif /* __CWORLDTAG_H__ */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

@@ -399,7 +399,7 @@ functions:
 				static COLOR col1st = 0xA5A5A5FF;
 				COLOR color = g_iUseBloom == 0
 					? g_colNewGameShadeColor
-					: MulColors(g_colNewGameShadeColor, g_iUseBloom == 2 ? col2nd : col1st );
+					: MulColors(g_colNewGameShadeColor, g_iUseBloom > 2 ? col2nd : col1st );
 				GetSkyHorizon()->GetModelInstance()->SetModelColor(
 					MulColors(GetSkyHorizon()->m_colModelColor, color)
 					);
@@ -442,6 +442,77 @@ functions:
 
 
 procedures:
+	Main()
+	{
+		// Init entity
+		InitModelHolder();
+
+		g_colWeather = C_WHITE_OPAQUE;
+		FLOAT fRWDaySecond = (FLOAT)GAMETIME_ONEDAY_SECOND * GWTOneSec2RWTSec;
+
+		try
+		{
+			m_aoSkyColAni.SetData_t(m_fnmColAniFile);
+		}
+		catch (char *strError)
+		{
+			WarningMessage(TRANS("Cannot load '%s': %s"), (CTString&)m_fnmColAniFile, strError);
+			m_fnmColAniFile = "";
+		}
+		if(m_aoSkyColAni.GetData() != NULL)
+		{
+			m_aoSkyColAni.PlayAnim(m_iSkyColAni, AOF_LOOPING);
+			m_aoSkyColAni.ao_tmAnimStart = 0;
+			m_aoSkyColAni.GetData()->SetSpeed(
+				m_iSkyColAni
+				, fRWDaySecond/(FLOAT)m_aoSkyColAni.GetFramesInCurrentAnim()
+				);
+		}
+
+		m_fFadeTime = 0.0f;
+		m_fAllFadeTime = 1.0f;
+		m_dPrevGWTime = g_fGWTime;
+		m_bNoon = TRUE;
+		m_bNight = TRUE;
+
+		CLight *pLight = GetLight();
+		if(pLight != NULL)
+		{
+			pLight->SetParent(this);
+			m_plftDefault = pLight->m_lsLightSource.ls_plftLensFlare;
+			if(pLight->m_aoLightAnimation.GetData() != NULL)
+			{
+				pLight->m_aoLightAnimation.GetData()->SetSpeed(
+					pLight->m_iLightAnimation
+					, fRWDaySecond/(FLOAT)pLight->m_aoLightAnimation.GetFramesInCurrentAnim()
+					);
+			}
+			if(pLight->m_aoAmbientLightAnimation.GetData() != NULL)
+			{
+				pLight->m_aoAmbientLightAnimation.GetData()->SetSpeed(
+					pLight->m_iAmbientLightAnimation
+					, fRWDaySecond/(FLOAT)pLight->m_aoAmbientLightAnimation.GetFramesInCurrentAnim()
+					);
+			}
+		}
+		m_strName.RemovePrefix("SunMoon ");
+		m_strName = CTString("SunMoon ") + m_strName;
+		if(pLight != NULL)
+		{
+			pLight->m_strName.RemovePrefix("SunMoon ");
+			pLight->m_strName = CTString("SunMoon ") + pLight->m_strName;
+		}
+
+		if(GetSky())
+		{
+			GetSky()->GetModelInstance()->SetModelColor(
+				GetCurrentSkyAniColor( GetSky()->m_colModelColor )
+				);
+		}
+
+		jump MainLoop();
+	}
+
 	FadeInRain()
 	{
 		m_bNoon = TRUE;
@@ -569,76 +640,5 @@ procedures:
 		}
 		int a = 0;
 	};
-	
-	Main()
-	{
-		// Init entity
-		InitModelHolder();
-
-		g_colWeather = C_WHITE_OPAQUE;
-		FLOAT fRWDaySecond = (FLOAT)GAMETIME_ONEDAY_SECOND * GWTOneSec2RWTSec;
-
-		try
-		{
-			m_aoSkyColAni.SetData_t(m_fnmColAniFile);
-		}
-		catch (char *strError)
-		{
-			WarningMessage(TRANS("Cannot load '%s': %s"), (CTString&)m_fnmColAniFile, strError);
-			m_fnmColAniFile = "";
-		}
-		if(m_aoSkyColAni.GetData() != NULL)
-		{
-			m_aoSkyColAni.PlayAnim(m_iSkyColAni, AOF_LOOPING);
-			m_aoSkyColAni.ao_tmAnimStart = 0;
-			m_aoSkyColAni.GetData()->SetSpeed(
-				m_iSkyColAni
-				, fRWDaySecond/(FLOAT)m_aoSkyColAni.GetFramesInCurrentAnim()
-				);
-		}
-
-		m_fFadeTime = 0.0f;
-		m_fAllFadeTime = 1.0f;
-		m_dPrevGWTime = g_fGWTime;
-		m_bNoon = TRUE;
-		m_bNight = TRUE;
-
-		CLight *pLight = GetLight();
-		if(pLight != NULL)
-		{
-			pLight->SetParent(this);
-			m_plftDefault = pLight->m_lsLightSource.ls_plftLensFlare;
-			if(pLight->m_aoLightAnimation.GetData() != NULL)
-			{
-				pLight->m_aoLightAnimation.GetData()->SetSpeed(
-					pLight->m_iLightAnimation
-					, fRWDaySecond/(FLOAT)pLight->m_aoLightAnimation.GetFramesInCurrentAnim()
-					);
-			}
-			if(pLight->m_aoAmbientLightAnimation.GetData() != NULL)
-			{
-				pLight->m_aoAmbientLightAnimation.GetData()->SetSpeed(
-					pLight->m_iAmbientLightAnimation
-					, fRWDaySecond/(FLOAT)pLight->m_aoAmbientLightAnimation.GetFramesInCurrentAnim()
-					);
-			}
-		}
-		m_strName.RemovePrefix("SunMoon ");
-		m_strName = CTString("SunMoon ") + m_strName;
-		if(pLight != NULL)
-		{
-			pLight->m_strName.RemovePrefix("SunMoon ");
-			pLight->m_strName = CTString("SunMoon ") + pLight->m_strName;
-		}
-
-		if(GetSky())
-		{
-			GetSky()->GetModelInstance()->SetModelColor(
-				GetCurrentSkyAniColor( GetSky()->m_colModelColor )
-				);
-		}
-
-		jump MainLoop();
-	}
 };
 //안태훈 수정 끝	//(Add Sun Moon Entity and etc)(0.2)

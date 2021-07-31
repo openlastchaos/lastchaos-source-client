@@ -5,8 +5,8 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UIListBox.h>
+// #include <Engine/Interface/UIEditBox.h>
+// #include <Engine/Interface/UIListBox.h>
 #include <Engine/GlobalDefinition.h>
 #include <Engine/Interface/UIGroup.h>
 #include <Engine/Interface/UITrackPopup.h>
@@ -23,15 +23,15 @@ public:
 	
 	// Control
 	CUIButton				m_btnClose;
-	CUIButton				m_btnMember;		//채팅중인 멤버의 리스트를 나타내내게 하는 버튼
-	CUIButton				m_btnColor;			//채팅 글자색의 리시트를 나타내게 하는 버튼
+	CUIButton					m_btnMember;
+	CUIButton					m_btnColor;
 	CUIEditBox				m_ebInput;
 	CUIListBox				m_lbTalkList;
 	
 	// Data	
 	CMemberInfo				m_miMyInfo;
-	std::vector<CTString>		m_vecTarget;			// 대화상대 정보 
-	std::vector<CTString> 		m_vecTalkList;		// 대화 내용
+	std::vector<CTString>		m_vecTarget;			// ��ȭ��� ���� 
+	std::vector<CTString> 		m_vecTalkList;		// ��ȭ ����
 
 
 	// Region of each part
@@ -73,7 +73,7 @@ public:
 	//CUITrackPopup			m_tpImoticon;
 	// Messenger [12/8/2006 KwonYongDae]
 
-	int						m_nClientIndex;		// 클라이언트에서 사용하는 채팅 창에 대한 Index
+	int						m_nClientIndex;		// Ŭ���̾�Ʈ���� ����ϴ� ä�� â�� ���� Index
 	int						m_nTargetCharIndex;
 public :
 	CUITalk();
@@ -107,6 +107,7 @@ public :
 	void SetTargetCondition( int nCharIndex, eCondition eState );
 	void SetIndex(int nMakeCharIndex, int nChatIndex) { m_nMakeCharIndex =nMakeCharIndex; m_nChatIndex =nChatIndex;};
 	// Network
+	void SendChatMessageFiltering( CTString stMessage );
 	void SendChatMessage( CTString stMessage );
 	
 	// Messages

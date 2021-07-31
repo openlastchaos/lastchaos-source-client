@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #ifndef _PARTICLEGROUP_H_
 #define _PARTICLEGROUP_H_
@@ -31,10 +31,10 @@ public:
 
 	//NEW_DELETE_DEFINITION(CParticleGroup);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	void Read(CTStream *istrFile);
 	void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 	// Main functions
 	CParticleGroup *Copy();
@@ -74,7 +74,7 @@ public:
 	void SetTexture(const CTFileName &filename);
 	const CTFileName GetTexFileName()	{ return CTFileName(m_fnTexture.c_str()); }
 
-	//processê´€ë ¨
+	//process°ü·Ã
 	inline void SetPosition(const FLOAT3D &vPos)
 	{
 		if(m_pParticlesEmitter) m_pParticlesEmitter->SetPosition(vPos);
@@ -141,10 +141,10 @@ protected:
 	CParticlesAbsorption	*m_pParticlesAbsorption;
 
 	// Instance variable
-	CParticles		m_particles;		//íŒŒí‹°í´ë“¤
-	CTextureObject	m_toTexture;		//íŒŒí‹°í´ì˜ í…ìŠ¤ì³
+	CParticles		m_particles;		//ÆÄÆ¼Å¬µé
+	CTextureObject	m_toTexture;		//ÆÄÆ¼Å¬ÀÇ ÅØ½ºÃÄ
 };
 
 #endif // _PARTICLEGROUP_H_
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

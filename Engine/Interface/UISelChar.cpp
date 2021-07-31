@@ -1,43 +1,53 @@
 #include "stdh.h"
-#include <Engine/Interface/UiSelChar.h>
-#include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Rendering/Render.h>
-#include <Engine/GlobalDefinition.h>
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <Engine/GameState.h>
-
+#include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UiSelChar.h>
+#include <Engine/Ska/Render.h>
+#include <Engine/GlobalDefinition.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Interface/UICreateChar.h>
 #include <Engine/Sound/SoundLibrary.h>
-
-// ì„ì‹œ Define
-#include <Engine/Entities/Entity.h>
-#include <Engine/Entities/EntityClass.h>
-#include <Engine/Entities/EntityProperties.h>
 #include <Engine/World/WorldRayCasting.h>
-
-#include <Engine/Ska/Mesh.h>
-
-#include <Engine/JobInfo.h>
 //wooss 051017
 #include <Engine/Base/Input.h>
-#include <Engine/LocalDefine.h>
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/Contents/Login/ServerSelect.h>
+#include <Engine/Interface/UIOption.h>
 
-extern INDEX g_iCountry;
 extern BOOL g_bAutoLogin;
+extern BOOL g_bAutoRestart;
 #define CHECK_NUM 7
-
+#define MIN_NAME_LEN	(4)
+#define MAX_NAME_LEN	(16)
 #define MODEL_TREASURE	("Data\\Item\\Common\\ITEM_treasure02.smc")
-//#define EXSLOT // ìŠ¬ë¡¯ í™•ì¥
+#define CAMERA_TURN_RIGHT	(43819)
+#define CAMERA_TURN_LEFT	(43818)
+//#define EXSLOT // ½½·Ô È®Àå
+
+typedef enum __tag_char_move_stat
+{
+	CMS_NORMAL = 1,
+	CMS_MOVE_WAIT,
+	CMS_MOVE_ROLLBACK,
+} CMSTAT;
+
 // ----------------------------------------------------------------------------
 // Name : CUISelChar()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUISelChar::CUISelChar() : 
 m_iDestPosID(-1),
-m_pWorld(NULL)
+m_pWorld(NULL),
+m_bIsShowMessageInfo(FALSE),
+m_bIsShowCharMoveMsgInfo(FALSE),
+m_bIsLeftView(TRUE),
+m_ulCharSlotTime(0),
+m_CharSlotTimeOld(0)
 {	
 	memset(&m_aEGslotPosID[0], NULL, sizeof(m_aEGslotPosID));
-
+	m_strServerMoveFailCharName = CTString("");
+	m_ptdMsgTexture = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -45,9 +55,10 @@ m_pWorld(NULL)
 // Desc : Destructor
 // ----------------------------------------------------------------------------
 CUISelChar::~CUISelChar()
-{	
+{
 	Destroy();
-	
+
+	STOCK_RELEASE(m_ptdMsgTexture);
 }
 
 // ----------------------------------------------------------------------------
@@ -56,9 +67,7 @@ CUISelChar::~CUISelChar()
 // ----------------------------------------------------------------------------
 void CUISelChar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	// Region of each part
 	m_rcHP.SetRect( 0, 25, 0, 33 );
@@ -83,39 +92,56 @@ void CUISelChar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 
 
 	// OK Button(Connect)
-	m_btnOK.Create( this, _S( 239, "ê²Œì„ ì‹œì‘" ), 0, 0, 100, 21 );
+	m_btnOK.Create( this, _S( 239, "°ÔÀÓ ½ÃÀÛ" ), 0, 0, 100, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 107, 100, 128, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 102, 107, 202, 128, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );	
 
 	// Create Character Button
-	m_btnCreateChar.Create( this, _S( 140, "ìºë¦­í„° ìƒì„±" ), 120, 0, 100, 21 );
+	m_btnCreateChar.Create( this, _S( 140, "Ä³¸¯ÅÍ »ı¼º" ), 120, 0, 100, 21 );
 	m_btnCreateChar.SetUV( UBS_IDLE, 0, 107, 100, 128, fTexWidth, fTexHeight );
 	m_btnCreateChar.SetUV( UBS_CLICK, 102, 107, 202, 128, fTexWidth, fTexHeight );
 	m_btnCreateChar.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnCreateChar.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Delete Character Button
-	m_btnDeleteChar.Create( this, _S( 2902, "ì‚­ì œ/ì·¨ì†Œ" ), 240, 0, 100, 21 );
+	m_btnDeleteChar.Create( this, _S( 2902, "»èÁ¦/Ãë¼Ò" ), 240, 0, 100, 21 );
 	m_btnDeleteChar.SetUV( UBS_IDLE, 0, 107, 100, 128, fTexWidth, fTexHeight );
 	m_btnDeleteChar.SetUV( UBS_CLICK, 102, 107, 202, 128, fTexWidth, fTexHeight );
 	m_btnDeleteChar.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnDeleteChar.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Options Button
-	m_btnOptions.Create( this, _S( 196, "ì˜µì…˜" ), 360, 0, 63, 21 );
+	m_btnOptions.Create( this, _S( 196, "¿É¼Ç" ), 360, 0, 63, 21 );
 	m_btnOptions.SetUV( UBS_IDLE, 0, 0, 63, 21, fTexWidth, fTexHeight );
 	m_btnOptions.SetUV( UBS_CLICK, 0, 23, 63, 44, fTexWidth, fTexHeight );
 	m_btnOptions.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOptions.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Exit Button
-	m_btnExit.Create( this, _S( 181, "ë‚˜ê°€ê¸°" ),  440, 0, 63, 21 );
+	m_btnExit.Create( this, _S( 181, "³ª°¡±â" ),  440, 0, 63, 21 );
 	m_btnExit.SetUV( UBS_IDLE, 0, 0, 63, 21, fTexWidth, fTexHeight );
 	m_btnExit.SetUV( UBS_CLICK, 0, 23, 63, 44, fTexWidth, fTexHeight );
 	m_btnExit.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnExit.CopyUV( UBS_IDLE, UBS_DISABLE );
+	// hongkong used auto login. [8/26/2010 rumist]
+	// [2012/10/10 : Sora] ºô¶ó ÀÚµ¿·Î±×ÀÎ Ãß°¡·Î ¹öÆ° ºñÈ°¼ºÈ­
+#if defined G_HONGKONG //|| defined (G_KOR)
+	m_btnExit.SetEnable(FALSE);
+#endif
+
+	m_btnTurnR.Create( NULL, CTString( "" ), 0, 0, 100, 32 );
+	m_btnTurnR.SetUV( UBS_IDLE, 4, 191, 110, 254, fTexWidth, fTexHeight );
+	m_btnTurnR.SetUV( UBS_CLICK, 120, 191, 226, 254, fTexWidth, fTexHeight );
+	m_btnTurnR.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnTurnR.CopyUV( UBS_IDLE, UBS_DISABLE );
+
+	m_btnTurnL.Create( NULL, CTString( "" ), 0, 0, 100, 32 );
+	m_btnTurnL.SetUV( UBS_IDLE, 4, 129, 110, 192, fTexWidth, fTexHeight );
+	m_btnTurnL.SetUV( UBS_CLICK, 120, 129, 226, 192, fTexWidth, fTexHeight );
+	m_btnTurnL.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnTurnL.CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// Delete Time
 	//RECT
@@ -132,6 +158,38 @@ void CUISelChar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int 
 		m_aSlotAni[i].m_idAni = ANIM_IDLE;
 		m_aSlotAni[i].m_startTime = -1;
 	}
+	
+ 	m_ptdMsgTexture = CreateTexture( CTString( "Data\\Interface\\TopUI.tex" ) );
+	m_rcMessageInfo.SetRect( 20, 40, 215, 122 );
+ 	m_bxNoticeMsg.SetBoxUV(m_ptdMsgTexture,7,WRect(239,253,335,269));
+
+	m_msgNCText.SetRenderRect( 20, 45, 187, 62 );
+	m_msgNCText.AddString( _S(4794, "³ªÀÌÆ®½¦µµ¿ì Ä³¸¯ÅÍ¸¦ »ı¼ºÇÒ ¼ö ÀÖ´Â Á¶°ÇÀ» ¸¸Á·ÇÏ¿´½À´Ï´Ù. ³ªÀÌÆ®½¦µµ¿ì Ä³¸¯ÅÍ¸¦ »ı¼ºÇÏ¿© À°¼ºÇÏ½Ê½Ã¿À." ) );
+	
+	// alert notice that enabled character move to other servers. [7/19/2012 rumist]
+	m_rcCharMoveMsgInfo.SetRect(20, 40, 215, 122);
+	m_bxCharMoveNoticeMsg.SetBoxUV(m_ptdMsgTexture, 7, WRect(239, 253, 335, 269));
+	m_msgCMText.SetRenderRect(20, 45, 187, 62);
+	m_msgCMText.AddString( _s("your some character waiting time that move to another server." ) );
+
+ 	m_bxCharSlotHelp.SetBoxUV(m_ptdMsgTexture,7,WRect(239,253,335,269));
+
+	m_msgCharSlotHelp.SetRenderRect( 20, 135, 187, 72 );
+	m_msgCharSlotHelp.AddString( _S( 5702, "ÃÑ 8°³±îÁöÀÇ Ä³¸¯ÅÍ »ı¼ºÀÌ °¡´É ÇÕ´Ï´Ù. ±â°£ÀÌ ¸¸·á µÈ ÀÌÈÄ¿¡´Â ÀÌ¹Ì »ı¼ºµÈ Ä³¸¯ÅÍÀÇ ÇÃ·¹ÀÌ´Â °¡´É ÇÏÁö¸¸ Ä³¸¯ÅÍÀÇ »ı¼ºÀº 4°³±îÁö·Î Á¦ÇÑ µË´Ï´Ù." ) );
+
+	// [2012/07/27 : Sora] Ä³¸¯ÅÍ ½½·Ô È®Àå ÅØ½ºÆ® ±æÀÌ¿¡ ¸ÂÃß¿¡¼­ ¹Ú½º Å©±â¸¦ ´Ã¸®µµ·Ï ¼öÁ¤
+	m_rcCharSlotHelp.SetRect( 20, 130, 215, 130 + m_msgCharSlotHelp.GetRenderHeight() + 7 );
+
+	m_rcCharSlotRemain.SetRect( 0, 0, 300, 36 );
+ 	m_bxCharSlotRemain.SetBoxUV(m_ptdMsgTexture,7,WRect(239,253,335,269));
+	m_strCharServerMove = _S(5715, "¼­¹ö ÀÌÀü ´ë±âÁß");
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+	m_btnBack.Create( NULL, _S( 2681, "ÀÌÀü" ),  440, 0, 63, 21 );
+	m_btnBack.SetUV( UBS_IDLE, 0, 0, 63, 21, fTexWidth, fTexHeight );
+	m_btnBack.SetUV( UBS_CLICK, 0, 23, 63, 44, fTexWidth, fTexHeight );
+	m_btnBack.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnBack.CopyUV( UBS_IDLE, UBS_DISABLE );
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -152,8 +210,18 @@ void CUISelChar::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMa
 
 //	m_rcDelTime.SetRect(pixMaxI - 182,68,pixMaxI,115);		
 
+	m_btnTurnL.SetPos(pixMaxI / 2 - 100, pixMaxJ - 80);
+	m_btnTurnR.SetPos(pixMaxI / 2, pixMaxJ - 80);
+
 	m_rcHP.Left = m_rcMP.Left = m_rcEXP.Left = pixMaxI - 171;
 	UpdateStatus();
+
+	m_rcCharSlotRemain.SetRect( pixMaxI / 2 - (m_rcCharSlotRemain.GetWidth()/2), 30,
+								pixMaxI / 2 + (m_rcCharSlotRemain.GetWidth()/2), 30 + m_rcCharSlotRemain.GetHeight() );
+
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+	m_btnBack.SetPos(pixMinI + 20, pixMaxJ - 38);
+#endif								
 }
 
 // ----------------------------------------------------------------------------
@@ -170,6 +238,7 @@ void CUISelChar::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixM
 //-----------------------------------------------------------------------------
 void CUISelChar::Reset()
 {
+	m_bIsLeftView = TRUE;
 }
 
 // ----------------------------------------------------------------------------
@@ -207,130 +276,149 @@ void CUISelChar::UpdateStatus()
 // Name : Render()
 // Desc :
 // ----------------------------------------------------------------------------
+#define TEXCOLOR_W  (0xFFFFFFFF)
+#define TEXCOLOR_B	(0x484848FF)
 void CUISelChar::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
 	if(m_pWorld)
-	{		
-		CDrawPort	*pdp = _pUIMgr->GetDrawPort();
-
+	{
 		// Set select character texture
-		pdp->InitTextureData( m_ptdBaseTexture );
-
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
+		
 		// Character information
 		// Background
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfo.Left, m_rcCharInfo.Top, m_rcCharInfo.Right, m_rcCharInfo.Bottom,
-											m_rtCharInfo.U0, m_rtCharInfo.V0, m_rtCharInfo.U1, m_rtCharInfo.V1,
-											0xFFFFFFFF );
+		pDrawPort->AddTexture( m_rcCharInfo.Left, m_rcCharInfo.Top, m_rcCharInfo.Right, m_rcCharInfo.Bottom,
+			m_rtCharInfo.U0, m_rtCharInfo.V0, m_rtCharInfo.U1, m_rtCharInfo.V1,
+			0xFFFFFFFF );
 #ifdef EXSLOT
 		//wooss 050819
 		// Extend Slot
-		// -------------í™•ì¥ ìŠ¬ë¡¯ (ìœ ë£Œì•„ì´í…œ)------------------------------->>
+		// -------------È®Àå ½½·Ô (À¯·á¾ÆÀÌÅÛ)------------------------------->>
 		// ------------------------------------------------------------------>>
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcExSlot.Left, m_rcExSlot.Top, m_rcExSlot.Right, m_rcExSlot.Bottom,
-											m_rtExSlot.U0, m_rtExSlot.V0, m_rtExSlot.U1, m_rtExSlot.V1,
-											0xFFFFFFFF );
+		pDrawPort->AddTexture( m_rcExSlot.Left, m_rcExSlot.Top, m_rcExSlot.Right, m_rcExSlot.Bottom,
+			m_rtExSlot.U0, m_rtExSlot.V0, m_rtExSlot.U1, m_rtExSlot.V1,
+			0xFFFFFFFF );
 		// Slot mid Vertical line
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcExSlotLineMidV.Left, m_rcExSlotLineMidV.Top, m_rcExSlotLineMidV.Right, m_rcExSlotLineMidV.Bottom,
-											m_rtExSlotLineMidV.U0, m_rtExSlotLineMidV.V0, m_rtExSlotLineMidV.U1, m_rtExSlotLineMidV.V1,
-											0xFFFFFFFF );
+		pDrawPort->AddTexture( m_rcExSlotLineMidV.Left, m_rcExSlotLineMidV.Top, m_rcExSlotLineMidV.Right, m_rcExSlotLineMidV.Bottom,
+			m_rtExSlotLineMidV.U0, m_rtExSlotLineMidV.V0, m_rtExSlotLineMidV.U1, m_rtExSlotLineMidV.V1,
+			0xFFFFFFFF );
 		// Slot top line
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcExSlotLineTop.Left, m_rcExSlotLineTop.Top, m_rcExSlotLineTop.Right, m_rcExSlotLineTop.Bottom,
-											m_rtExSlotLine.U0, m_rtExSlotLine.V0, m_rtExSlotLine.U1, m_rtExSlotLine.V1,
-											0xFFFFFFFF );
+		pDrawPort->AddTexture( m_rcExSlotLineTop.Left, m_rcExSlotLineTop.Top, m_rcExSlotLineTop.Right, m_rcExSlotLineTop.Bottom,
+			m_rtExSlotLine.U0, m_rtExSlotLine.V0, m_rtExSlotLine.U1, m_rtExSlotLine.V1,
+			0xFFFFFFFF );
 		// slot middle line
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcExSlotLineMidH.Left, m_rcExSlotLineMidH.Top, m_rcExSlotLineMidH.Right, m_rcExSlotLineMidH.Bottom,
-											m_rtExSlotLine.U0, m_rtExSlotLine.V0, m_rtExSlotLine.U1, m_rtExSlotLine.V1,
-											0xFFFFFFFF );
+		pDrawPort->AddTexture( m_rcExSlotLineMidH.Left, m_rcExSlotLineMidH.Top, m_rcExSlotLineMidH.Right, m_rcExSlotLineMidH.Bottom,
+			m_rtExSlotLine.U0, m_rtExSlotLine.V0, m_rtExSlotLine.U1, m_rtExSlotLine.V1,
+			0xFFFFFFFF );
 		// slot bottom line
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcExSlotLineBtm.Left, m_rcExSlotLineBtm.Top, m_rcExSlotLineBtm.Right, m_rcExSlotLineBtm.Bottom,
-											m_rtExSlotLine.U0, m_rtExSlotLine.V0, m_rtExSlotLine.U1, m_rtExSlotLine.V1,
-											0xFFFFFFFF );
+		pDrawPort->AddTexture( m_rcExSlotLineBtm.Left, m_rcExSlotLineBtm.Top, m_rcExSlotLineBtm.Right, m_rcExSlotLineBtm.Bottom,
+			m_rtExSlotLine.U0, m_rtExSlotLine.V0, m_rtExSlotLine.U1, m_rtExSlotLine.V1,
+			0xFFFFFFFF );
 		// ------------------------------------------------------------------<<
 #endif
 		
-		// ì´ë™ wooss 050819
+		// ÀÌµ¿ wooss 050819
 		// Text in Character information
 		int	nSX = m_rcCharInfo.Left;
 		int	nSY = m_rcCharInfo.Top;
-
+		
 #ifdef EXSLOT		
-		// -------------í™•ì¥ ìŠ¬ë¡¯ (ìœ ë£Œì•„ì´í…œ)------------------------------->>
+		// -------------È®Àå ½½·Ô (À¯·á¾ÆÀÌÅÛ)------------------------------->>
 		// ------------------------------------------------------------------>>
 		CTString slotStr1,slotStr2;
-		slotStr1.PrintF(_S( 2114, "í™•ì¥ìŠ¬ë¡¯ 1 : %5d" ),m_exSlot1);   
-		slotStr2.PrintF(_S( 2115, "í™•ì¥ìŠ¬ë¡¯ 2 : %5d" ),m_exSlot2);
-
-		_pUIMgr->GetDrawPort()->PutTextExCX( CTString("í™•ì¥ìŠ¬ë¡¯ ë‚¨ì€ ê¸°ê°„"), nSX + SELCHAR_EX_SLOT_X1,nSY + SELCHAR_EX_SLOT_Y1 );
-		_pUIMgr->GetDrawPort()->PutTextExCX( slotStr1, nSX + SELCHAR_EX_SLOT_X2, nSY + SELCHAR_EX_SLOT_Y2 );
-		_pUIMgr->GetDrawPort()->PutTextExCX( slotStr2, nSX + SELCHAR_EX_SLOT_X2, nSY + SELCHAR_EX_SLOT_Y3 );
+		slotStr1.PrintF(_S( 2114, "È®Àå½½·Ô 1 : %5d" ),m_exSlot1);   
+		slotStr2.PrintF(_S( 2115, "È®Àå½½·Ô 2 : %5d" ),m_exSlot2);
+		
+		pDrawPort->PutTextExCX( CTString("È®Àå½½·Ô ³²Àº ±â°£"), nSX + SELCHAR_EX_SLOT_X1,nSY + SELCHAR_EX_SLOT_Y1 );
+		pDrawPort->PutTextExCX( slotStr1, nSX + SELCHAR_EX_SLOT_X2, nSY + SELCHAR_EX_SLOT_Y2 );
+		pDrawPort->PutTextExCX( slotStr2, nSX + SELCHAR_EX_SLOT_X2, nSY + SELCHAR_EX_SLOT_Y3 );
 		// ------------------------------------------------------------------<<
 #endif
 		if( _pGameState->SelectedSlot() > 0 )
 		{
 			// HP
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcHP.Left, m_rcHP.Top, m_rcHP.Right, m_rcHP.Bottom,
-												m_rtHP.U0, m_rtHP.V0, m_rtHP.U1, m_rtHP.V1,
-												0xFFFFFFFF );
+			pDrawPort->AddTexture( m_rcHP.Left, m_rcHP.Top, m_rcHP.Right, m_rcHP.Bottom,
+				m_rtHP.U0, m_rtHP.V0, m_rtHP.U1, m_rtHP.V1,
+				0xFFFFFFFF );
 			// MP
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcMP.Left, m_rcMP.Top, m_rcMP.Right, m_rcMP.Bottom,
-												m_rtMP.U0, m_rtMP.V0, m_rtMP.U1, m_rtMP.V1,
-												0xFFFFFFFF );
+			pDrawPort->AddTexture( m_rcMP.Left, m_rcMP.Top, m_rcMP.Right, m_rcMP.Bottom,
+				m_rtMP.U0, m_rtMP.V0, m_rtMP.U1, m_rtMP.V1,
+				0xFFFFFFFF );
 			// EXP
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcEXP.Left, m_rcEXP.Top, m_rcEXP.Right, m_rcEXP.Bottom,
-												m_rtEXP.U0, m_rtEXP.V0, m_rtEXP.U1, m_rtEXP.V1,
-												0xFFFFFFFF );
-
+			pDrawPort->AddTexture( m_rcEXP.Left, m_rcEXP.Top, m_rcEXP.Right, m_rcEXP.Bottom,
+				m_rtEXP.U0, m_rtEXP.V0, m_rtEXP.U1, m_rtEXP.V1,
+				0xFFFFFFFF );
+			
 			// Text in Character information
 			
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strLevel, nSX + SELCHAR_LEVEL_CX,
-													nSY + SELCHAR_NAME_SY, 0xFFD3A7FF );
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strName, nSX + SELCHAR_NAME_SX, nSY + SELCHAR_NAME_SY );
-			_pUIMgr->GetDrawPort()->PutTextEx( CTString( "HP" ), nSX + SELCHAR_HP_SX,
-													nSY + SELCHAR_HP_SY );
-			_pUIMgr->GetDrawPort()->PutTextEx( CTString( "MP" ), nSX + SELCHAR_HP_SX,
-													nSY + SELCHAR_MP_SY );
-			_pUIMgr->GetDrawPort()->PutTextEx( CTString( "EXP" ), nSX + SELCHAR_HP_SX,
-													nSY + SELCHAR_EXP_SY );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strHP, nSX + SELCHAR_HP_CX,
-													nSY + SELCHAR_HP_SY );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strMP, nSX + SELCHAR_HP_CX,
-													nSY + SELCHAR_MP_SY );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strEXP, nSX + SELCHAR_HP_CX,
-													nSY + SELCHAR_EXP_SY );
-#ifdef	NEW_DELETE_CHAR										
+			pDrawPort->PutTextExCX( m_strLevel, nSX + SELCHAR_LEVEL_CX,
+				nSY + SELCHAR_NAME_SY, 0xFFD3A7FF );
+			pDrawPort->PutTextEx( m_strName, nSX + SELCHAR_NAME_SX, nSY + SELCHAR_NAME_SY );
+#if defined G_RUSSIA
+			pDrawPort->PutTextEx( _S( 4411, "HP" ), nSX + SELCHAR_HP_SX,
+				nSY + SELCHAR_HP_SY );
+			pDrawPort->PutTextEx( _S( 4412, "MP" ), nSX + SELCHAR_HP_SX,
+				nSY + SELCHAR_MP_SY );
+			pDrawPort->PutTextEx( _S( 4413, "EXP" ), nSX + SELCHAR_HP_SX,
+				nSY + SELCHAR_EXP_SY );
+#else
+			pDrawPort->PutTextEx( CTString( "HP" ), nSX + SELCHAR_HP_SX,
+				nSY + SELCHAR_HP_SY );
+			pDrawPort->PutTextEx( CTString( "MP" ), nSX + SELCHAR_HP_SX,
+				nSY + SELCHAR_MP_SY );
+			pDrawPort->PutTextEx( CTString( "EXP" ), nSX + SELCHAR_HP_SX,
+				nSY + SELCHAR_EXP_SY );
+#endif
+			pDrawPort->PutTextExCX( m_strHP, nSX + SELCHAR_HP_CX,
+				nSY + SELCHAR_HP_SY );
+			pDrawPort->PutTextExCX( m_strMP, nSX + SELCHAR_HP_CX,
+				nSY + SELCHAR_MP_SY );
+			pDrawPort->PutTextExCX( m_strEXP, nSX + SELCHAR_HP_CX,
+				nSY + SELCHAR_EXP_SY );
+
+
+			
 			SLONG tv_time = _pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time;
 			if( tv_time  > 0 ) {
 				CTString str_time,str_time2;
-			//	time_t tv_time2;
+				//	time_t tv_time2;
 				int tv_hour,tv_min;
-			//	time(&tv_time2); 
-			//	tv_time -= tv_time2;
+				//	time(&tv_time2); 
+				//	tv_time -= tv_time2;
 				tv_hour = tv_time / (60*60);
 				tv_min = (tv_time %(60*60)) /60;
-					
-				str_time.PrintF(_S( 2903, "ì‚­ì œëŒ€ê¸° ë‚¨ì€ì‹œê°„"));
-				_pUIMgr->GetDrawPort()->PutTextEx(str_time, 37,	3 );
-			
+		
+				str_time.PrintF(_S( 2903, "»èÁ¦´ë±â ³²Àº½Ã°£"));
+				pDrawPort->PutTextEx(str_time, 37,	3 );
+				
 				str_time.Clear();
-				if(tv_hour >0 )	str_time.PrintF(_S( 2512, "%dì‹œê°„"),tv_hour);
+				if(tv_hour >0 )	str_time.PrintF(_S( 2512, "%d½Ã°£"),tv_hour);
 				if(tv_min > 0 ) {
-					str_time2.PrintF(_S( 2513, "%dë¶„"),tv_min);
+					str_time2.PrintF(_S( 2513, "%dºĞ"),tv_min);
 					str_time += str_time2;
 				}
 				int tv_posX = (m_rcDelTime.Right - m_rcDelTime.Left)/2;
-				_pUIMgr->GetDrawPort()->PutTextExCX(str_time, tv_posX , 21 ,0xFFAA44FF);
-
-				_pUIMgr->GetDrawPort()->AddTexture( m_rcDelTime.Left, m_rcDelTime.Top, m_rcDelTime.Right, m_rcDelTime.Bottom,
-												m_rtDelTime.U0, m_rtDelTime.V0, m_rtDelTime.U1, m_rtDelTime.V1,
-												0xFFFFFFFF );
+				pDrawPort->PutTextExCX(str_time, tv_posX , 21 ,0xFFAA44FF);
+									
+				pDrawPort->AddTexture( m_rcDelTime.Left, m_rcDelTime.Top, m_rcDelTime.Right, m_rcDelTime.Bottom,
+					m_rtDelTime.U0, m_rtDelTime.V0, m_rtDelTime.U1, m_rtDelTime.V1,
+					0xFFFFFFFF );
 				
+			}
+			// Ä³¸¯ÅÍ ÀÌÀüÁß Ç¥½Ã [7/25/2012 Ranma]
+#ifdef ENABLE_CHARACTER_MOVE_TO_OTHER_SERVER_ITEM			
+			if ( _pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].sbMoveState == CMS_MOVE_WAIT )	
+			{
+				int tv_posX = (m_rcDelTime.Right - m_rcDelTime.Left)/2;
+				pDrawPort->PutTextExCX(m_strCharServerMove, tv_posX , 21 ,0xFFAA44FF);
+				pDrawPort->AddTexture( m_rcDelTime.Left, m_rcDelTime.Top, m_rcDelTime.Right, m_rcDelTime.Bottom,
+					m_rtDelTime.U0, m_rtDelTime.V0, m_rtDelTime.U1, m_rtDelTime.V1,	0xFFFFFFFF );
 			}
 #endif
 		}
-
-
-
-		
+			
 		// OK Button(Connect)
 		m_btnOK.Render();
 		
@@ -346,79 +434,154 @@ void CUISelChar::Render()
 		// Exit Button
 		m_btnExit.Render();
 
-		// Render all elements
-		pdp->FlushRenderingQueue();
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+		m_btnBack.Render();
+#endif
 
-		// Flush all render text queue
-		pdp->EndTextEx();
-	}
+
+		if (_pGameState->GetExistCharNum() <= 4)
+		{
+			m_btnTurnR.SetEnable(FALSE);
+			m_btnTurnL.SetEnable(FALSE);
+		}else
+		{
+			m_btnTurnR.SetEnable(TRUE);
+			m_btnTurnL.SetEnable(TRUE);
+
+			 if (m_bIsLeftView)
+			{
+				m_btnTurnR.Render(TEXCOLOR_W);
+				m_btnTurnL.Render(TEXCOLOR_B);
+			}else
+			{
+				m_btnTurnR.Render(TEXCOLOR_B);
+				m_btnTurnL.Render(TEXCOLOR_W);
+			}
+		}		
 
 		
-#ifdef NEW_DELETE_CHAR
-		// Check ANI
-		// ì„ íƒëœ ìºë¦­í„°ì— idle Animationì„ ì œê±°í•¨.
-		for(int j = 0; j < MAX_SLOT; j++)
+		// Render all elements
+		pDrawPort->FlushRenderingQueue();
+		
+		// Flush all render text queue
+		pDrawPort->EndTextEx();
+	}
+	
+	
+	// Check ANI
+	// ¼±ÅÃµÈ Ä³¸¯ÅÍ¿¡ idle AnimationÀ» Á¦°ÅÇÔ.
+	for(int j = 0; j < MAX_SLOT; j++)
+	{
+		CEntity *pEntity = _pGameState->m_pEntModels[j];
+		if(pEntity)
 		{
-			CEntity *pEntity = _pGameState->m_pEntModels[j];
-			if(pEntity)
+			int iJob		= _pGameState->m_SlotInfo[j].job;
+			INDEX idAni		= ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, m_aSlotAni[j].m_idAni ) );
+			CModelInstance* pMI =  pEntity->GetModelInstance();
+			
+			if(pMI)
 			{
-				int iJob		= _pGameState->m_SlotInfo[j].job;
-				INDEX idAni		= ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, m_aSlotAni[j].m_idAni ) );
-				CModelInstance* pMI =  pEntity->GetModelInstance();
-
-				if(pMI)
-				{
-					if(	pMI->IsAnimationPlaying(idAni)	&& m_aSlotAni[j].m_idAni != ANIM_IDLE)
-					{			
-						if(_pTimer->CurrentTick() - m_aSlotAni[j].m_startTime	
-							>= (pMI->GetAnimLength(idAni) + 0.3f ) )
+				if(	pMI->IsAnimationPlaying(idAni)	&& m_aSlotAni[j].m_idAni != ANIM_IDLE && m_aSlotAni[j].m_idAni != ANIM_ATTACK_IDLE
+					&& m_aSlotAni[j].m_idAni != ANIM_EXT_ATTACK_IDLE)
+				{			
+					if(_pTimer->CurrentTick() - m_aSlotAni[j].m_startTime	
+						>= (pMI->GetAnimLength(idAni) + 0.3f ) )
+					{
+						pMI->NewClearState(CLEAR_STATE_LENGTH);
+						INDEX idWalk = ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, ANIM_IDLE ) );
+						m_aSlotAni[j].m_idAni = ANIM_IDLE;
+						// put on - weapon ----------------------------------------------------<<
+						int nItemSubType;
+						int nItemIndex = -1;
+						
+						// ¹«±â Âø¿ë È®ÀÎ 
+						SLONG iWear		=	_pGameState->m_SlotInfo[j].wear[WEAR_WEAPON]; // ¹«±â 
+						SLONG iWear3	=	_pGameState->m_SlotInfo[j].wear[WEAR_SHIELD];	// ¹æÆĞ 
+						
+						if (iWear > 0)
 						{
-							pMI->NewClearState(CLEAR_STATE_LENGTH);
-							INDEX idWalk		= ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, ANIM_IDLE ) );
-							m_aSlotAni[j].m_idAni		= ANIM_IDLE;	
-							pMI->AddAnimation(idWalk,AN_LOOPING|AN_NORESTART,1,0);
-
-							// put on - weapon ----------------------------------------------------<<
-							int nItemSubType;
-							int nItemIndex = -1;
-#ifdef HEAD_CHANGE
-							// ë¬´ê¸° ì°©ìš© í™•ì¸ 
-							SLONG iWear		=	_pGameState->m_SlotInfo[j].wear[2]; // ë¬´ê¸° 
-							SLONG iWear3	=	_pGameState->m_SlotInfo[j].wear[4];	// ë°©íŒ¨ 
-#else
-							// ë¬´ê¸° ì°©ìš© í™•ì¸ 
-							SLONG iWear		=	_pGameState->m_SlotInfo[j].wear[1]; // ë¬´ê¸° 
-							SLONG iWear3	=	_pGameState->m_SlotInfo[j].wear[3];	// ë°©íŒ¨ 
-#endif
-							if(iWear > 0)
-							{				
-								CItemData &ID = _pNetwork->GetItemData(iWear);
-								nItemIndex = ID.GetItemIndex();
-								nItemSubType = ID.GetSubType();
-								_pGameState->WearingArmor(pMI, ID);
-								_pGameState->m_SlotInfo[j].itemEffect.Change(
+							if (_pGameState->m_SlotInfo[j].bExtension)
+							{
+								idWalk = ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, ANIM_EXT_ATTACK_IDLE ) );
+								m_aSlotAni[j].m_idAni = ANIM_EXT_ATTACK_IDLE;
+							}
+							else
+							{
+								idWalk = ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, ANIM_ATTACK_IDLE ) );
+								m_aSlotAni[j].m_idAni = ANIM_ATTACK_IDLE;
+							}
+						}
+						
+						pMI->AddAnimation(idWalk,AN_LOOPING|AN_NORESTART,1,0);
+						
+						if(iWear > 0)
+						{				
+							CItemData* pID = _pNetwork->GetItemData(iWear);
+							nItemIndex = pID->GetItemIndex();
+							nItemSubType = pID->GetSubType();
+							_pGameState->WearingArmor(pMI, *pID);
+							_pGameState->m_SlotInfo[j].itemEffect.Change(
 								_pGameState->m_SlotInfo[j].job
-								, &ID
-								, wearTypeTable[1]
-								, _pGameState->m_SlotInfo[j].itemPlus[1]
+								, pID
+								, pID->GetWearingPosition()
+								, _pGameState->m_SlotInfo[j].itemPlus[WEAR_WEAPON]
 								, &pMI->m_tmSkaTagManager
 								, 1, nItemSubType );
-								
-							}
-							if(iWear3 > 0)	
-							{
-								CItemData &ID = _pNetwork->GetItemData(iWear3);
-								_pGameState->WearingArmor(pMI, ID);
-							}
-							// ---------------------------------------------------------------------------->>
 						}
+						if(iWear3 > 0)	
+						{
+							CItemData* pID = _pNetwork->GetItemData(iWear3);
+							_pGameState->WearingArmor(pMI, *pID);
+						}
+						
+						// ---------------------------------------------------------------------------->>
 					}
-
 				}
+				
 			}
 		}
+	}
+	// show night shadow message [11/6/2009 rumist]
+	if( m_bIsShowMessageInfo )
+	{
+		pDrawPort->InitTextureData( m_ptdMsgTexture );
+		m_bxNoticeMsg.SetBoxPos(m_rcMessageInfo);
+		m_bxNoticeMsg.Render();
+		
+		// Render all elements
+		pDrawPort->FlushRenderingQueue();
+		
+		m_msgNCText.SetRenderPos( m_rcMessageInfo.Left, m_rcMessageInfo.Top );
+		m_msgNCText.Render();
+		const int GAP = 10;
+	
+	}
+	
+	// [2012/07/05 : Sora]  Ä³¸¯ÅÍ ½½·Ô È®Àå
+	UpdateCharSlotTime();
 
-#endif 
+	if( m_ulCharSlotTime > 0 )
+	{
+		// Ä³¸¯ÅÍ ½½·Ô È®Àå µµ¿ò¸»
+		pDrawPort->InitTextureData( m_ptdMsgTexture );
+		m_bxCharSlotHelp.SetBoxPos(m_rcCharSlotHelp);
+		m_bxCharSlotHelp.Render();
+		pDrawPort->FlushRenderingQueue();
+		
+		m_msgCharSlotHelp.SetRenderPos( m_rcCharSlotHelp.Left, m_rcCharSlotHelp.Top );
+		m_msgCharSlotHelp.Render();
+
+		// Ä³¸¯ÅÍ ½½·Ô ³²Àº ½Ã°£ Ãâ·Â
+		pDrawPort->InitTextureData( m_ptdMsgTexture );
+		m_bxCharSlotRemain.SetBoxPos(m_rcCharSlotRemain);
+		m_bxCharSlotRemain.Render();
+		pDrawPort->FlushRenderingQueue();
+
+		pDrawPort->PutTextExCX( _S( 5707, "Ãß°¡ ½½·Ô »ç¿ë ±â°£ : " ) + GetRemainTime(),
+								m_rcCharSlotRemain.Left + (m_rcCharSlotRemain.GetWidth()/2),
+								m_rcCharSlotRemain.Top + 12);
+		pDrawPort->EndTextEx();
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -449,6 +612,14 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 				return WMSG_SUCCESS;
 			else if( m_btnExit.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+			else if( m_btnBack.MouseMessage( pMsg ) != WMSG_FAIL )
+				return WMSG_SUCCESS;
+#endif
+			if (!m_bIsLeftView)
+				m_btnTurnL.MouseMessage( pMsg );
+			else
+				m_btnTurnR.MouseMessage( pMsg );
 		}
 		break;
 
@@ -456,78 +627,74 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
-				//-- Down ë™ì‘ì„ í‘œí˜„í•˜ê¸°ìœ„í•´
-				if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				else if( m_btnCreateChar.MouseMessage( pMsg ) != WMSG_FAIL ) 
-				{
-					// Nothing
-				}
-				else if( m_btnDeleteChar.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				else if( m_btnOptions.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				else if( m_btnExit.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
+				//-- Down µ¿ÀÛÀ» Ç¥ÇöÇÏ±âÀ§ÇØ
+				m_btnOK.MouseMessage( pMsg );
+				m_btnCreateChar.MouseMessage( pMsg );
+				m_btnDeleteChar.MouseMessage( pMsg );
+				m_btnOptions.MouseMessage( pMsg );
+				m_btnExit.MouseMessage( pMsg );
 
-				_pUIMgr->RearrangeOrder( UI_SEL_CHAR, TRUE );		
+				CUIManager::getSingleton()->RearrangeOrder( UI_SEL_CHAR, TRUE );		
 				return WMSG_SUCCESS;
 			}
+			if (!m_bIsLeftView)
+				m_btnTurnL.MouseMessage( pMsg );
 			else
-				SelectCharacter(nX, nY);
+				m_btnTurnR.MouseMessage( pMsg );
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+			m_btnBack.MouseMessage( pMsg );
+#endif
+			SelectCharacter(nX, nY);
 		}
 		break;
 		
 	case WM_LBUTTONDBLCLK:
 		{
-			SelectCharacter(nX, nY);
-		
 			if( _pGameState->GetGameMode() != CGameState::GM_NETWORK )
 			{
+				SelectCharacter(nX, nY);
+
 				if(_pGameState->SelectedSlot() > 0)
 				{
 
-#ifdef NEW_DELETE_CHAR
 					if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0) break;
-#endif
+					if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].sbMoveState == CMS_MOVE_WAIT ) break;
+#ifdef EXSLOT
 					// wooss 050822 
-					// í™•ì¥ëœ ìŠ¬ë¡¯ì„ ì„ íƒ í–ˆë‹¤ë©´ ë‚¨ì€ ê¸°ê°„ì„ ì²´í¬í•œë‹¤
+					// È®ÀåµÈ ½½·ÔÀ» ¼±ÅÃ Çß´Ù¸é ³²Àº ±â°£À» Ã¼Å©ÇÑ´Ù
 					int tv_t1,tv_t2;
 					GetExSlotTime(0,&tv_t1,&tv_t2);
 					if(_pGameState->SelectedSlot()==5)
 					{
 						if(tv_t1<=0)
 						{
-							_pUIMgr->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
+							CUIManager* pUIManager = CUIManager::getSingleton();
+
+							pUIManager->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
 							CUIMsgBox_Info	MsgBoxInfo;
-							MsgBoxInfo.SetMsgBoxInfo( CTString("ìºë¦­í„° ì„ íƒ ì˜¤ë¥˜" ), UMBS_OK,UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
-							MsgBoxInfo.AddString( CTString( "í™•ì¥ìŠ¬ë¡¯ 1 ì˜ ì´ìš© ê¸°ê°„ì´ ì§€ë‚¬ìŠµë‹ˆë‹¤"));
-							_pUIMgr->CreateMessageBox( MsgBoxInfo );
+							MsgBoxInfo.SetMsgBoxInfo( CTString("Ä³¸¯ÅÍ ¼±ÅÃ ¿À·ù" ), UMBS_OK,UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
+							MsgBoxInfo.AddString( CTString( "È®Àå½½·Ô 1 ÀÇ ÀÌ¿ë ±â°£ÀÌ Áö³µ½À´Ï´Ù"));
+							pUIManager->CreateMessageBox( MsgBoxInfo );
 							return WMSG_FAIL;
 						}
 
 					}
 					else if(_pGameState->SelectedSlot()==6)
 					{
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
 						if(tv_t2<=0)
 						{
-							_pUIMgr->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
+							pUIManager->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
 							CUIMsgBox_Info	MsgBoxInfo;
-							MsgBoxInfo.SetMsgBoxInfo( CTString("ìºë¦­í„° ì„ íƒ ì˜¤ë¥˜" ), UMBS_OK,UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
-							MsgBoxInfo.AddString( CTString( "í™•ì¥ìŠ¬ë¡¯ 2 ì˜ ì´ìš© ê¸°ê°„ì´ ì§€ë‚¬ìŠµë‹ˆë‹¤"));
-							_pUIMgr->CreateMessageBox( MsgBoxInfo );
+							MsgBoxInfo.SetMsgBoxInfo( CTString("Ä³¸¯ÅÍ ¼±ÅÃ ¿À·ù" ), UMBS_OK,UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
+							MsgBoxInfo.AddString( CTString( "È®Àå½½·Ô 2 ÀÇ ÀÌ¿ë ±â°£ÀÌ Áö³µ½À´Ï´Ù"));
+							pUIManager->CreateMessageBox( MsgBoxInfo );
 							return WMSG_FAIL;
 
 						}
 					}
+#endif
 					StartGame();					
 				}
 			}
@@ -544,19 +711,22 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 					{
 						if(_pGameState->SelectedSlot() > 0)
 						{
+#ifdef EXSLOT
 							// wooss 050822 
-							// í™•ì¥ëœ ìŠ¬ë¡¯ì„ ì„ íƒ í–ˆë‹¤ë©´ ë‚¨ì€ ê¸°ê°„ì„ ì²´í¬í•œë‹¤
+							// È®ÀåµÈ ½½·ÔÀ» ¼±ÅÃ Çß´Ù¸é ³²Àº ±â°£À» Ã¼Å©ÇÑ´Ù
 							int tv_t1,tv_t2;
 							GetExSlotTime(0,&tv_t1,&tv_t2);
 							if(_pGameState->SelectedSlot()==5)
 							{
 								if(tv_t1<=0)
 								{
-									_pUIMgr->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
+									CUIManager* pUIManager = CUIManager::getSingleton();
+
+									pUIManager->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
 									CUIMsgBox_Info	MsgBoxInfo;
-									MsgBoxInfo.SetMsgBoxInfo( CTString("ìºë¦­í„° ì„ íƒ ì˜¤ë¥˜" ), UMBS_OK,UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
-									MsgBoxInfo.AddString( CTString( "í™•ì¥ìŠ¬ë¡¯ 1 ì˜ ì´ìš© ê¸°ê°„ì´ ì§€ë‚¬ìŠµë‹ˆë‹¤"));
-									_pUIMgr->CreateMessageBox( MsgBoxInfo );
+									MsgBoxInfo.SetMsgBoxInfo( CTString("Ä³¸¯ÅÍ ¼±ÅÃ ¿À·ù" ), UMBS_OK,UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
+									MsgBoxInfo.AddString( CTString( "È®Àå½½·Ô 1 ÀÇ ÀÌ¿ë ±â°£ÀÌ Áö³µ½À´Ï´Ù"));
+									pUIManager->CreateMessageBox( MsgBoxInfo );
 									return WMSG_FAIL;
 								}
 
@@ -565,30 +735,35 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 							{
 								if(tv_t2<=0)
 								{
-									_pUIMgr->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
+									CUIManager* pUIManager = CUIManager::getSingleton();
+
+									pUIManager->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
 									CUIMsgBox_Info	MsgBoxInfo;
-									MsgBoxInfo.SetMsgBoxInfo( CTString("ìºë¦­í„° ì„ íƒ ì˜¤ë¥˜" ), UMBS_OK,UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
-									MsgBoxInfo.AddString( CTString( "í™•ì¥ìŠ¬ë¡¯ 2 ì˜ ì´ìš© ê¸°ê°„ì´ ì§€ë‚¬ìŠµë‹ˆë‹¤"));
-									_pUIMgr->CreateMessageBox( MsgBoxInfo );
+									MsgBoxInfo.SetMsgBoxInfo( CTString("Ä³¸¯ÅÍ ¼±ÅÃ ¿À·ù" ), UMBS_OK,UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
+									MsgBoxInfo.AddString( CTString( "È®Àå½½·Ô 2 ÀÇ ÀÌ¿ë ±â°£ÀÌ Áö³µ½À´Ï´Ù"));
+									pUIManager->CreateMessageBox( MsgBoxInfo );
 									return WMSG_FAIL;
 
 								}
 
 							}
-							// ê²Œì„ì„ ì‹œì‘í•¨.
+#endif
+							// °ÔÀÓÀ» ½ÃÀÛÇÔ.
 							//_pSound->Mute();
 							StartGame();
 							//_pSound->UpdateSounds();
 						}
 						else
 						{
-							_pUIMgr->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
+							CUIManager* pUIManager = CUIManager::getSingleton();
+
+							pUIManager->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
 							
 							CUIMsgBox_Info	MsgBoxInfo;
-							MsgBoxInfo.SetMsgBoxInfo( _S( 241, "ìºë¦­í„° ì„ íƒ ì˜¤ë¥˜" ), UMBS_OK,
+							MsgBoxInfo.SetMsgBoxInfo( _S( 241, "Ä³¸¯ÅÍ ¼±ÅÃ ¿À·ù" ), UMBS_OK,
 														UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
-							MsgBoxInfo.AddString( _S( 242, "ìºë¦­í„°ë¥¼ ì„ íƒí•˜ì§€ ì•Šìœ¼ì…¨ìŠµë‹ˆë‹¤." ) );
-							_pUIMgr->CreateMessageBox( MsgBoxInfo );
+							MsgBoxInfo.AddString( _S( 242, "Ä³¸¯ÅÍ¸¦ ¼±ÅÃÇÏÁö ¾ÊÀ¸¼Ì½À´Ï´Ù." ) );
+							pUIManager->CreateMessageBox( MsgBoxInfo );
 						}
 					}
 				}
@@ -596,24 +771,26 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND)
 					{
-						if(_pGameState->GetExistCharNum() >= MAX_SLOT)
+						int slotMax = m_ulCharSlotTime > 0 ? MAX_SLOT : 4;
+						if(_pGameState->GetExistCharNum() >= slotMax)
 						{
+//#ifndef G_RUSSIA//¸±¸®Áî ¹ö±× ·¯½Ã¾ÆÀÇ °æ¿ì¸¸ ÀÌ °æ¿ì¿¡ ¸Ş¸ğ¸® Ä§¹üÀ¸·Î Å¬¶ó°¡ Á×´Â´Ù.
 							_pGameState->DisplayErrorMessage( MSG_FAIL_DB_FULL_CHAR, UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR);
+//#endif
 						}
 						else
 						{
-							_pGameState->SetCameraByJob();
+							// connie LoginWorld 2 
+							_pGameState->SetCameraByJob(0);
 
-							// ìŠ¬ë¡¯ì— ëª‡ê°œì˜ ê³µê°„ì´ ìˆëŠ”ì§€ í™•ì¸í•´ì„œ,
-							// ê½‰ ì°¨ ìˆìœ¼ë©´ ë”ì´ìƒ ìƒì„±í• ìˆ˜ ì—†ìŒì„ ë‚˜íƒ€ë‚´ì¤Œ.
-							_pUIMgr->SetUIGameState(UGS_CREATECHAR);
-					
-#ifdef NEW_DELETE_CHAR
+							// ½½·Ô¿¡ ¸î°³ÀÇ °ø°£ÀÌ ÀÖ´ÂÁö È®ÀÎÇØ¼­,
+							// ²Ë Â÷ ÀÖÀ¸¸é ´õÀÌ»ó »ı¼ºÇÒ¼ö ¾øÀ½À» ³ªÅ¸³»ÁÜ.
+							CUIManager::getSingleton()->SetUIGameState(UGS_CREATECHAR);
+
 							// init slot effect 
-							for(int i=0;i<MAX_SLOT;i++)
-								DestroyEffectGroupIfValid(m_aEGslotPosID[i]);
+							//for(int i=0;i<MAX_SLOT;i++)
+							//	DestroyEffectGroupIfValid(m_aEGslotPosID[i]);
 
-#endif
 						}
 					}
 				}
@@ -621,121 +798,137 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 				{
 					if( wmsgResult == WMSG_COMMAND)
 					{
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
 						if(_pGameState->SelectedSlot() > 0)
 						{
 							BOOL tv_chk = FALSE;
-							int tv_line;
 
-							// FIXME : ìºë¦­í„° ì‚­ì œ ë©”ì„¸ì§€ ì •ì˜í• ê²ƒ.
-							_pUIMgr->CloseMessageBox( MSGCMD_DELETE_CHARACTER );
+							// FIXME : Ä³¸¯ÅÍ »èÁ¦ ¸Ş¼¼Áö Á¤ÀÇÇÒ°Í.
+							pUIManager->CloseMessageBox( MSGCMD_DELETE_CHARACTER );
 							
 							CUIMsgBox_Info	MsgBoxInfo;
-							if(g_iCountry == TAIWAN2 || g_iCountry == THAILAND ){
-								if( atoi(m_strLevel) >= 15 )
-								{					
-									_pUIMgr->CloseMessageBox( MSGCMD_NULL );
+#if defined G_KOR || defined G_THAI
+							int tv_line;
+							// ÁÖ¹Î¹øÈ£ -> ÁÖ¹Î¹øÈ£ µÚ 7ÀÚ¸® [10/29/2009 rumist]
+							MsgBoxInfo.SetMsgBoxInfo( _S( 240, "Ä³¸¯ÅÍ »èÁ¦" ), UMBS_OK | UMBS_INPUTPASSWORD,
+													UI_SEL_CHAR, MSGCMD_DELETE_CHARACTER_SECURITY, 260 );
+								
+							if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0) tv_chk = TRUE;
+							if( !tv_chk )
+							{
+								// [2012/07/05 : Sora]  Ä³¸¯ÅÍ ½½·Ô È®Àå
+								if( _pGameState->SelectedSlot()-1 >= 4 &&  m_ulCharSlotTime == 0 )
+								{
+									pUIManager->CloseMessageBox( MSGCMD_NULL );
 									
 									CUIMsgBox_Info	MsgBoxInfo;
-									MsgBoxInfo.SetMsgBoxInfo( _S( 240, "ìºë¦­í„° ì‚­ì œ" ), UMBS_OK,
-																UI_NONE, MSGCMD_NULL);
-									MsgBoxInfo.AddString( _S( 1856, "ë ˆë²¨ 15ì´ìƒì˜ ìºë¦­í„°ëŠ” ì‚­ì œí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤"  ) );
-									_pUIMgr->CreateMessageBox( MsgBoxInfo );
-									break;	
+									MsgBoxInfo.SetMsgBoxInfo( _S( 42, "¿À·ù ¹ß»ı" ), UMBS_OK, UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
+									MsgBoxInfo.AddString( _S( 5703, "ÇØ´ç ±â´ÉÀº Ä³¸¯ÅÍ È®Àå ½½·Ô ¾ÆÀÌÅÛ »ç¿ë ½Ã °¡´É ÇÕ´Ï´Ù." ) );
+									pUIManager->CreateMessageBox( MsgBoxInfo );
+									return WMSG_SUCCESS;
 								}
-							}
-							if(g_iCountry == KOREA && !g_bAutoLogin) {
-								MsgBoxInfo.SetMsgBoxInfo( _S( 240, "ìºë¦­í„° ì‚­ì œ" ), UMBS_OK | UMBS_INPUTPASSWORD,
-														UI_SEL_CHAR, MSGCMD_DELETE_CHARACTER_SECURITY );
-								
-								
-#ifdef NEW_DELETE_CHAR
-								if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0) tv_chk = TRUE;
-								if( !tv_chk ){
-									MsgBoxInfo.AddString( _S( 2904, "ìºë¦­í„° ì‚­ì œëŠ” ì‚­ì œìš”ì²­ í›„ 24ì‹œê°„ì´ ì§€ë‚˜ì•¼ ì‚­ì œê°€ ë©ë‹ˆë‹¤. ë‹¨, ì‹œê°„ì•ˆì— ì·¨ì†Œ ê°€ëŠ¥" ) );
-									MsgBoxInfo.AddString( CTString( " " ) );
-									tv_line = 4;
-								}
-								else {
-									MsgBoxInfo.AddString( _S( 2905, "ìºë¦­ ì‚­ì œë¥¼ ì·¨ì†Œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ) );
-									tv_line = 2;
-									
-								}
-#else
-								{
-									MsgBoxInfo.AddString( _S( 1724, "ê³„ì •ì— ë“±ë¡ëœ ì£¼ë¯¼ë“±ë¡ ë²ˆí˜¸ ë’·ìë¦¬ 7ìë¦¬ë¥¼ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤." ) );
-									MsgBoxInfo.AddString( CTString( " " ) );
-									MsgBoxInfo.AddString( CTString( " " ) );
-									tv_line = 4;
 
-								}
-#endif
+								MsgBoxInfo.AddString( _S( 2904, "¾ÆÀÌµğ¸¦ ÀÔ·ÂÇÏ¼¼¿ä.\n(»èÁ¦¿äÃ» ÈÄ 24½Ã°£ÀÌ Áö³ª¸é ÀÚµ¿»èÁ¦)" ) );
 								MsgBoxInfo.AddString( CTString( " " ) );
+								tv_line = 3;
+							}
+							else 
+							{
+								MsgBoxInfo.AddString( _S( 2905, "Ä³¸¯ »èÁ¦¸¦ Ãë¼ÒÇÏ½Ã°Ú½À´Ï±î?" ) );
+								tv_line = 2;
+								
+							}
 
-								MsgBoxInfo.AddStringEx( _S( 2906, "ì£¼ë¯¼ë²ˆí˜¸"),tv_line,1,0xFF9156FF);
-								MsgBoxInfo.SetInputBox(tv_line,10,7);
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
-								_pUIMgr->Lock(TRUE);
-							}
-							else{
-								MsgBoxInfo.SetMsgBoxInfo( _S( 240, "ìºë¦­í„° ì‚­ì œ" ), UMBS_YESNO,
-														UI_SEL_CHAR, MSGCMD_DELETE_CHARACTER );
-#ifdef NEW_DELETE_CHAR
-								BOOL tv_chk = FALSE;
-								if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0) tv_chk = TRUE;
-								if( !tv_chk ){
-									MsgBoxInfo.AddString( _S( 2904, "ìºë¦­í„° ì‚­ì œëŠ” ì‚­ì œìš”ì²­ í›„ 24ì‹œê°„ì´ ì§€ë‚˜ì•¼ ì‚­ì œê°€ ë©ë‹ˆë‹¤. ë‹¨, ì‹œê°„ì•ˆì— ì·¨ì†Œ ê°€ëŠ¥" ) );
-									MsgBoxInfo.AddString( CTString( " " ) );
-									tv_line = 4;
-								}
-								else {
-									MsgBoxInfo.AddString( _S( 2905, "ìºë¦­ ì‚­ì œë¥¼ ì·¨ì†Œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ) );
-									tv_line = 2;
+							MsgBoxInfo.AddString( CTString( " " ) );
+
+							// ÁÖ¹Î¹øÈ£ -> ÁÖ¹Î¹øÈ£ µÚ 7ÀÚ¸® [10/29/2009 rumist]
+							//MsgBoxInfo.AddStringEx( _S( 2906, "¾ÆÀÌµğ ÀÔ·Â"),tv_line,0,0xFF9156FF);
+							MsgBoxInfo.SetInputBox(tv_line,10,MAX_NAME_LEN+1);
+							pUIManager->CreateMessageBox( MsgBoxInfo );
+							pUIManager->Lock(TRUE);
+#else // G_KOR
+							
+							MsgBoxInfo.SetMsgBoxInfo( _S( 240, "Ä³¸¯ÅÍ »èÁ¦" ), UMBS_YESNO,
+								UI_SEL_CHAR, MSGCMD_DELETE_CHARACTER );
+							
+							tv_chk = FALSE;
+							if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0) tv_chk = TRUE;
+							if( !tv_chk )
+							{
+								// [2012/07/05 : Sora]  Ä³¸¯ÅÍ ½½·Ô È®Àå
+								if( _pGameState->SelectedSlot()-1 >= 4 &&  m_ulCharSlotTime == 0 )
+								{
+									pUIManager->CloseMessageBox( MSGCMD_NULL );
 									
+									CUIMsgBox_Info	MsgBoxInfo;
+									MsgBoxInfo.SetMsgBoxInfo( _S( 42, "¿À·ù ¹ß»ı" ), UMBS_OK, UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
+									MsgBoxInfo.AddString( _S( 5703, "ÇØ´ç ±â´ÉÀº Ä³¸¯ÅÍ È®Àå ½½·Ô ¾ÆÀÌÅÛ »ç¿ë ½Ã °¡´É ÇÕ´Ï´Ù." ) );
+									pUIManager->CreateMessageBox( MsgBoxInfo );
+									return WMSG_SUCCESS;
 								}
-#else								
-								MsgBoxInfo.AddString( _S( 243, "ìºë¦­í„°ë¥¼ ì‚­ì œ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ) );
-#endif
-								_pUIMgr->CreateMessageBox( MsgBoxInfo );
+
+								MsgBoxInfo.AddString( _S( 2904, "Ä³¸¯ÅÍ »èÁ¦´Â »èÁ¦¿äÃ» ÈÄ 24½Ã°£ÀÌ Áö³ª¾ß »èÁ¦°¡ µË´Ï´Ù. ´Ü, ½Ã°£¾È¿¡ Ãë¼Ò °¡´É" ) );
+								MsgBoxInfo.AddString( CTString( " " ) );
 							}
+							else 
+							{
+								MsgBoxInfo.AddString( _S( 2905, "Ä³¸¯ »èÁ¦¸¦ Ãë¼ÒÇÏ½Ã°Ú½À´Ï±î?" ) );
+								
+							}
+							
+							pUIManager->CreateMessageBox( MsgBoxInfo );
+#endif // G_KOR
 						}
 						else
 						{
-							_pUIMgr->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
+							pUIManager->CloseMessageBox( MSGCMD_SELCHAR_ERROR );
 							
 							CUIMsgBox_Info	MsgBoxInfo;
-							MsgBoxInfo.SetMsgBoxInfo( _S( 241, "ìºë¦­í„° ì„ íƒ ì˜¤ë¥˜" ), UMBS_OK,
+							MsgBoxInfo.SetMsgBoxInfo( _S( 241, "Ä³¸¯ÅÍ ¼±ÅÃ ¿À·ù" ), UMBS_OK,
 														UI_SEL_CHAR, MSGCMD_SELCHAR_ERROR );
-							MsgBoxInfo.AddString( _S( 242, "ìºë¦­í„°ë¥¼ ì„ íƒí•˜ì§€ ì•Šìœ¼ì…¨ìŠµë‹ˆë‹¤." ) );
-							_pUIMgr->CreateMessageBox( MsgBoxInfo );
+							MsgBoxInfo.AddString( _S( 242, "Ä³¸¯ÅÍ¸¦ ¼±ÅÃÇÏÁö ¾ÊÀ¸¼Ì½À´Ï´Ù." ) );
+							pUIManager->CreateMessageBox( MsgBoxInfo );
 						}
 					}
 				}
 				else if( ( wmsgResult = m_btnOptions.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
 					if( wmsgResult == WMSG_COMMAND )
-						_pUIMgr->GetOption()->OpenOption();
+						CUIManager::getSingleton()->GetOption()->OpenOption();
 				}
 				else if( ( wmsgResult = m_btnExit.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
 					if( wmsgResult == WMSG_COMMAND )
 					{
-						
+						CUIManager* pUIManager = CUIManager::getSingleton();
 
-// wooss 060209 TEST JAPAN 
-//#define AUTO_LOGIN
-//#ifdef AUTO_LOGIN
-						extern BOOL g_bAutoLogin;
 						if(g_bAutoLogin)
 						{
-						
+							extern BOOL	_bLoginProcess;
+							_bLoginProcess = TRUE;
+							_pGameState->GetGameMode() = CGameState::GM_NONE;
+							pUIManager->GetGame()->StopGame();							
+
 							extern CTString g_nmID;
 							extern CTString g_nmPW;
+							extern CTString g_nmCID;
 
 							_pNetwork->m_strUserID = g_nmID;
 							_pNetwork->m_strUserPW = g_nmPW;
-							_pUIMgr->GetSelServer()->ConnectToServer(_cmiComm.cci_szAddr, _cmiComm.cci_iPort);
+							_pNetwork->m_strUserCID = g_nmCID;
+
+							if (GameDataManager* pGameData = GameDataManager::getSingleton())
+							{
+								if (CServerSelect* pServerSelect = pGameData->GetServerData())
+									pServerSelect->ConnectToServer(_cmiComm.cci_szAddr, _cmiComm.cci_iPort);
+							}
+
+							//pUIManager->GetSelServer()->ConnectToServer(_cmiComm.cci_szAddr, _cmiComm.cci_iPort);
 						
-							const int	iCameraEntityID	= 1628;
+							// connie [2009/7/21] - login2 
+							const int	iCameraEntityID	= 43565;
+
 							CEntity		*pCameraEntity = NULL;
 							CEntity		*pEntity = NULL;
 							BOOL bExist = _pNetwork->ga_World.EntityExists( iCameraEntityID, pCameraEntity );
@@ -744,20 +937,19 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 								((CPlayerEntity*)CEntity::GetPlayerEntity(0))->StartCamera(pCameraEntity, FALSE);
 							}
 
-							_pUIMgr->SetUIGameState( UGS_SELSERVER );	
-												
+							pUIManager->SetUIGameState( UGS_SELSERVER );						
 						}
-//#else
 						else
 						{
+							g_bAutoRestart = FALSE;
 							
 							_pSound->Mute();
-							// NOTE : ë¡œê·¸ì¸ ì‹¤íŒ¨ì‹œ ì†Œì¼“ì„ ë‹«ê³  ë‹¤ì‹œ ìƒì„±í•´ì•¼í•˜ëŠ” ë¶€ë¶„.				
+							// NOTE : ·Î±×ÀÎ ½ÇÆĞ½Ã ¼ÒÄÏÀ» ´İ°í ´Ù½Ã »ı¼ºÇØ¾ßÇÏ´Â ºÎºĞ.				
 							//_cmiComm.Reconnect(_cmiComm.cci_szAddr, _cmiComm.cci_iPort);
 							_cmiComm.Disconnect();
 
-							_pUIMgr->SetUIGameState(UGS_LOGIN);
-							// ê¸°ì¡´ì— ì›”ë“œì— ìˆë˜ ì—”í‹°í‹°ë¥¼ ì œê±°í•¨.
+							pUIManager->SetUIGameState(UGS_LOGIN);
+							// ±âÁ¸¿¡ ¿ùµå¿¡ ÀÖ´ø ¿£Æ¼Æ¼¸¦ Á¦°ÅÇÔ.
 							for(int i = 0; i < MAX_SLOT; ++i)
 							{
 								CEntity *pEntity = _pGameState->m_pEntModels[i];
@@ -766,11 +958,13 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 									pEntity->en_RenderType = CEntity::RT_SKAEDITORMODEL;
 								}
 							}
-							_pGameState->SelectedSlot() = 0; //ìŠ¬ë¡¯ ì„ íƒ ì»¤ì„œ ì´ˆê¸°í™”.
+							_pGameState->SelectedSlot() = 0; //½½·Ô ¼±ÅÃ Ä¿¼­ ÃÊ±âÈ­.
 							
 							_pGameState->BackToLogin();
 						}
-//#endif
+						
+						// initialize NC card flag. [12/2/2009 rumist]
+						_pGameState->SetCreatableNightShadow( FALSE );
 						
 //#define RESTRICT_SOUND 	
 #ifdef RESTRICT_SOUND
@@ -780,17 +974,71 @@ WMSG_RESULT CUISelChar::MouseMessage( MSG *pMsg )
 							_pSound->UpdateSounds();
 						#endif
 
-#ifdef NEW_DELETE_CHAR
 						// init slot effect 
-						for(int i=0;i<MAX_SLOT;i++)
-							DestroyEffectGroupIfValid(m_aEGslotPosID[i]);
+						//for(int i=0;i<MAX_SLOT;i++)
+						//	DestroyEffectGroupIfValid(m_aEGslotPosID[i]);
 
-#endif
 					}
 				}
 
 				return WMSG_SUCCESS;
 			}
+			else if ( !m_bIsLeftView && ( wmsgResult = m_btnTurnL.MouseMessage( pMsg ) ) != WMSG_FAIL )
+			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+				pUIManager->CloseMessageBox( MSGCMD_DELETE_CHARACTER_SECURITY );
+				pUIManager->CloseMessageBox( MSGCMD_DELETE_CHARACTER );
+				pUIManager->Lock(FALSE);
+
+				_pGameState->SelectedSlot() = 0;
+				_pGameState->SelCharToMove(CAMERA_TURN_LEFT);
+				m_bIsLeftView = TRUE;
+				return WMSG_SUCCESS;
+			}
+			else if ( m_bIsLeftView && ( wmsgResult = m_btnTurnR.MouseMessage( pMsg ) ) != WMSG_FAIL )
+			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+				pUIManager->CloseMessageBox( MSGCMD_DELETE_CHARACTER_SECURITY );
+				pUIManager->CloseMessageBox( MSGCMD_DELETE_CHARACTER );
+				pUIManager->Lock(FALSE);
+
+				_pGameState->SelectedSlot() = 0;
+				_pGameState->SelCharToMove(CAMERA_TURN_RIGHT);
+				m_bIsLeftView = FALSE;
+				return WMSG_SUCCESS;
+			}
+#ifdef AUTO_RESTART	// [2012/10/18 : Sora] Àç½ÃÀÛ½Ã ÀÚµ¿ ·Î±×ÀÎ
+			else if( ( wmsgResult = m_btnBack.MouseMessage( pMsg ) ) != WMSG_FAIL )
+			{
+				if( wmsgResult == WMSG_COMMAND )
+				{
+					CUIManager* pUIManager = CUIManager::getSingleton();
+					
+					_pSound->Mute();
+					// NOTE : ·Î±×ÀÎ ½ÇÆĞ½Ã ¼ÒÄÏÀ» ´İ°í ´Ù½Ã »ı¼ºÇØ¾ßÇÏ´Â ºÎºĞ.				
+					//_cmiComm.Reconnect(_cmiComm.cci_szAddr, _cmiComm.cci_iPort);
+					_cmiComm.Disconnect();
+
+					// ±âÁ¸¿¡ ¿ùµå¿¡ ÀÖ´ø ¿£Æ¼Æ¼¸¦ Á¦°ÅÇÔ.
+					for(int i = 0; i < MAX_SLOT; ++i)
+					{
+						CEntity *pEntity = _pGameState->m_pEntModels[i];
+						if(pEntity)
+						{
+							pEntity->en_RenderType = CEntity::RT_SKAEDITORMODEL;
+						}
+					}
+					_pGameState->SelectedSlot() = 0; //½½·Ô ¼±ÅÃ Ä¿¼­ ÃÊ±âÈ­.
+					
+					g_bAutoRestart = TRUE;
+					_pGameState->BackToLogin();											
+
+					pUIManager->SetUIGameState(UGS_LOGIN);
+					Sleep(1000);
+				}
+			}
+#endif
+			
 		}
 		break;
 	}
@@ -831,10 +1079,17 @@ void CUISelChar::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 				_pSound->UpdateSounds();
 			#endif
 				
-				break;
-			
+				break;			
 		}
-
+	}
+	else
+	{
+		switch( nCommandCode )	
+		{
+		case MSGCMD_DELETE_CHARACTER_SECURITY: // ¿¹¿ÜÃ³¸®: Ä³¸¯ÅÍ »èÁ¦ ÆË¾÷Ã¢¿¡¼­ x¹öÆ° Å¬¸¯ ¹®Á¦ ¼öÁ¤
+			Lock(FALSE);
+			break;
+		}
 	}
 }
 
@@ -845,23 +1100,17 @@ void CUISelChar::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 BOOL CUISelChar::ShowCharacter()
 {
 	if(!m_pWorld) return FALSE;
+	
+	// ¹Ş¾ÆµéÀÎ Á¤º¸¸¦ ¹ÙÅÁÀ¸·Î...
+	// ¿£Æ¼Æ¼¸¦ »ı¼ºÇÏ°í , ModelInstance¸¦ »ı¼ºÇÏ°í...
 
-	// ë°›ì•„ë“¤ì¸ ì •ë³´ë¥¼ ë°”íƒ•ìœ¼ë¡œ...
-	// ì—”í‹°í‹°ë¥¼ ìƒì„±í•˜ê³ , ModelInstanceë¥¼ ìƒì„±í•˜ê³ ...
-#ifdef EXSLOT
-#undef	MAX_SLOT
-#define 	MAX_SLOT	6 	
-#endif
 	int aiMarker[MAX_SLOT] =
 	{
-#ifdef EXSLOT
-		3377, 3378, 3379, 3380, 3953, 3954		//wooss 050819 add new slot maker index 3953,3954
-#else 
-		3377, 3378, 3379, 3380, // 3953, 3954
-#endif
+		43585, 43571, 43406, 43570,
+		43826, 43827, 43828, 43829,
 	};	
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í´ë¡œì¦ˆ 2ì°¨ ì‘ì—…	08.18
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å¬·ÎÁî 2Â÷ ÀÛ¾÷	08.18
 	for(int i = 0; i < MAX_SLOT; ++i)
 	{
 		CEntity *pEntity		= m_pWorld->EntityFromID(aiMarker[i]);
@@ -871,14 +1120,12 @@ BOOL CUISelChar::ShowCharacter()
 			pEntity->en_RenderType = CEntity::RT_SKAEDITORMODEL;
 		}
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í´ë¡œì¦ˆ 2ì°¨ ì‘ì—…		08.18
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å¬·ÎÁî 2Â÷ ÀÛ¾÷		08.18
 
 	int iSlot = 0;
-	while( iSlot <MAX_SLOT && _pGameState->m_SlotInfo[iSlot].bActive == TRUE )
+	while(_pGameState->m_SlotInfo[iSlot].bActive == TRUE)
 	{	
 		CEntity *penMarker					= m_pWorld->EntityFromID(aiMarker[iSlot]);
-		if( penMarker == NULL )
-			return TRUE;
 		//CPlacement3D plMarker	= penMarker->GetLerpedPlacement();		
 		_pGameState->m_pEntModels[iSlot]	= penMarker;
 		penMarker->en_RenderType			= CEntity::RT_SKAMODEL;
@@ -901,43 +1148,41 @@ BOOL CUISelChar::ShowCharacter()
 
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetCharacterAppearance(pMI, iSlotJob, _pGameState->m_SlotInfo[iSlot].hairstyle, _pGameState->m_SlotInfo[iSlot].facestyle);
 		CPrintF("Slot : %d, Hair : %d, Face : %d\n", iSlot, _pGameState->m_SlotInfo[iSlot].hairstyle, _pGameState->m_SlotInfo[iSlot].facestyle);
-
+		BOOL bIsWeapon = FALSE;
 		
 		if( _pNetwork->wo_iNumOfItem > 0 )
 		{
-			// ìŠ¬ë¡¯ì˜ ìºë¦­í„°ì— ì¥ë¹„ë¥¼ ì¥ì°©í•œ ëª¨ìŠµì„ ë³´ì—¬ì¤˜ì•¼ í•˜ëŠ” ë¶€ë¶„...
-			// ìƒì˜ í•˜ì˜ ë¬´ê¸° ë°©íŒ¨ ì¥ê°‘ ì‹ ë°œ íŠ¹ìˆ˜
+			// ½½·ÔÀÇ Ä³¸¯ÅÍ¿¡ Àåºñ¸¦ ÀåÂøÇÑ ¸ğ½ÀÀ» º¸¿©Áà¾ß ÇÏ´Â ºÎºĞ...
+			// »óÀÇ ÇÏÀÇ ¹«±â ¹æÆĞ Àå°© ½Å¹ß Æ¯¼ö
 			for(int i = 0; i < WEAR_COUNT ; ++i)
 			{
-//				if( i == 1) continue;	// ë¬´ê¸°
-//				if( i == 3) continue;	// ë°©ì–´êµ¬
+//				if( i == 1) continue;	// ¹«±â
+//				if( i == 3) continue;	// ¹æ¾î±¸
 				
 				int nItemSubType;
 				int nItemIndex = -1;
 
 				const SLONG iWear = _pGameState->m_SlotInfo[iSlot].wear[i];
-				CItemData &ID = _pNetwork->GetItemData(iWear);
+				CItemData* pID = _pNetwork->GetItemData(iWear);
 				
 				if(iWear > 0)
 				{
-#ifdef HEAD_CHANGE
-					if(ID.GetWearingPosition() != WEAR_HELMET || (CTString)ID.GetItemSmcFileName() != MODEL_TREASURE)
+					if(pID->GetWearingPosition() != WEAR_HELMET || (CTString)pID->GetItemSmcFileName() != MODEL_TREASURE)
 					{
-						nItemIndex = ID.GetItemIndex();
-						nItemSubType = ID.GetSubType();
-						_pGameState->DeleteDefaultArmor(pMI, ID.GetWearingPosition(), iSlotJob);
-						_pGameState->WearingArmor(pMI, ID);
+						nItemIndex = pID->GetItemIndex();
+						nItemSubType = pID->GetSubType();
+						_pGameState->DeleteDefaultArmor(pMI, pID->GetWearingPosition(), iSlotJob);
+						_pGameState->WearingArmor(pMI, *pID);
+
+						if (pID->GetWearingPosition() == WEAR_WEAPON)
+						{
+							bIsWeapon = TRUE;
+						}
 					}
-#else
-					nItemIndex = ID.GetItemIndex();
-					nItemSubType = ID.GetSubType();
-					_pGameState->DeleteDefaultArmor(pMI, ID.GetWearingPosition(), iSlotJob);
-					_pGameState->WearingArmor(pMI, ID);
-#endif
 				}
 				_pGameState->m_SlotInfo[iSlot].itemEffect.Change(
 					_pGameState->m_SlotInfo[iSlot].job
-					, &ID
+					, pID
 					, wearTypeTable[i]
 					, _pGameState->m_SlotInfo[iSlot].itemPlus[i]
 					, &pMI->m_tmSkaTagManager
@@ -947,82 +1192,135 @@ BOOL CUISelChar::ShowCharacter()
 		
 		if(pMI)
 		{
-			const int iJob		= _pGameState->m_SlotInfo[iSlot].job;
-			INDEX idIdle		= ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, ANIM_IDLE ) );
-			pMI->AddAnimation(idIdle,AN_LOOPING|AN_NORESTART|AN_CLEAR,1,0);
+			const int iJob = _pGameState->m_SlotInfo[iSlot].job;
+			INDEX idIdle;
 
-#ifdef NEW_DELETE_CHAR		
-			// 060608
-			if(_pGameState->m_SlotInfo[iSlot].m_time >0){
-				pMI->m_tmSkaTagManager.SetOwner(_pGameState->m_pEntModels[iSlot]);
-				if(!CEffectGroupManager::Instance().IsValidCreated(m_aEGslotPosID[iSlot]))
-					m_aEGslotPosID[iSlot] = StartEffectGroup("STATE_DELETE",&pMI->m_tmSkaTagManager,_pTimer->GetLerpedCurrentTick());
+			if (bIsWeapon)
+			{
+				if (_pGameState->m_SlotInfo[iSlot].bExtension)
+				{
+					idIdle = ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, ANIM_EXT_ATTACK_IDLE ) );
+				}
+				else
+				{
+					idIdle = ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, ANIM_ATTACK_IDLE ) );
+				}
 			}
-			else StopEffectGroupIfValid(m_aEGslotPosID[iSlot],0.1f);
+			else
+			{
+				idIdle = ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, ANIM_IDLE ) );
+			}
+
+			pMI->AddAnimation(idIdle,AN_LOOPING|AN_NORESTART|AN_CLEAR,1,0);
+	
+			// 060608
+			if( _pGameState->m_SlotInfo[iSlot].m_time >0 )
+			{
+				pMI->SetModelColor( 0x000000FF );
+				//pMI->m_tmSkaTagManager.SetOwner(_pGameState->m_pEntModels[iSlot]);
+				//if(!CEffectGroupManager::Instance().IsValidCreated(m_aEGslotPosID[iSlot]))
+				//	m_aEGslotPosID[iSlot] = StartEffectGroup("STATE_DELETE",&pMI->m_tmSkaTagManager,_pTimer->GetLerpedCurrentTick());
+			}
+			else
+			{
+				pMI->SetModelColor( 0xFFFFFFFF );
+				//StopEffectGroupIfValid(m_aEGslotPosID[iSlot],0.1f);
+			}
+#ifdef ENABLE_CHARACTER_MOVE_TO_OTHER_SERVER_ITEM
+			// Ä³¸¯ÅÍ ÀÌµ¿ °ü·Ã Á¶°Ç »ğÀÔ [7/19/2012 rumist]
+			if( _pGameState->m_SlotInfo[iSlot].sbMoveState == CMS_MOVE_WAIT )
+			{
+				// Æ¯Á¤ Ä³¸¯ÅÍ °ËÁ¤»öÀ¸·Î µµ¹è. ³ªÁß¿¡ »ö±òÀ» ¹Ù²ã´Ş¶ó¸é ¹Ù²ãÁÙ ¼ö ÀÖÀ½.
+				pMI->SetModelColor( 0x000000FF );
+			
+				m_bIsShowCharMoveMsgInfo = TRUE;
+			}
+			if ( _pGameState->m_SlotInfo[iSlot].sbMoveState == CMS_MOVE_ROLLBACK )
+			{
+				CTString strTemp = _pGameState->m_SlotInfo[iSlot].name;
+				if (m_strServerMoveFailCharName == _s(""))
+				{
+					m_strServerMoveFailCharName += strTemp;
+				}
+				else
+				{
+					m_strServerMoveFailCharName += _s(" , ") + strTemp;
+				}
+			}
 #endif
-		}
+		}	
 
 		iSlot++;
 	}
+	// night shadow card. [11/6/2009 rumist]
+	m_bIsShowMessageInfo = _pGameState->IsCreatableNightShadow();
+	// show message box for roll back.
 	return TRUE;
 }
 
+void CUISelChar::ShowCharMoveRollbackMsgBox(bool bShow)
+{
+ 	if (m_strServerMoveFailCharName.Length() <= 0)
+		return;
+
+	if (bShow)
+	{
+		CUIMsgBox_Info	MsgBoxInfo;
+		MsgBoxInfo.SetMsgBoxInfo( _S(5722,"¿¡·¯ ¸Ş½ÃÁö"), UMBS_OK, UI_NONE, MSGCMD_NULL, 316 );
+		CTString strTemp;
+		CTString strTemp2;
+		strTemp = _S(5716, "½ÅÃ» ÇÏ½Å ¼­¹ö ÀÌÀüÀÌ ´ÙÀ½°ú °°Àº ÀÌÀ¯·Î Ãë¼Ò µÇ¾ú½À´Ï´Ù.");
+		MsgBoxInfo.AddString( strTemp, 0xF2F2F2FF, TEXT_CENTER );
+		strTemp2.PrintF(_S(5717, " [ %s ] Ä³¸¯ÅÍÀÇ ¼­¹ö ÀÌÀüÀÌ ½ÇÆĞ ÇÏ¿´½À´Ï´Ù. ÀÚ¼¼ÇÑ ¹®ÀÇ´Â °í°´ ¼¾ÅÍ¿¡¼­ È®ÀÎ ÇÏ½Ç ¼ö ÀÖ½À´Ï´Ù."), m_strServerMoveFailCharName);
+		MsgBoxInfo.AddString( strTemp2, 0xF2F2F2FF, TEXT_CENTER );
+		CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+		
+		m_strServerMoveFailCharName = "";
+	}		
+}
+
 //-----------------------------------------------------------------------------
-// Purpose: ì„ íƒëœ ìºë¦­í„°ë¥¼ ì‚­ì œí•©ë‹ˆë‹¤.
+// Purpose: ¼±ÅÃµÈ Ä³¸¯ÅÍ¸¦ »èÁ¦ÇÕ´Ï´Ù.
 //-----------------------------------------------------------------------------
 BOOL CUISelChar::DeleteCharacter()
 {	
-	CTString strMessage;
-	if(_pGameState->SelectedSlot() > 0)
-	{
-		ULONG	ulDelIndex;
-		ulDelIndex	= _pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].index;
-		
-		if(_pNetwork->m_bSendMessage)
-			return FALSE;
-		
-		BOOL tv_chk = FALSE;
-#ifdef NEW_DELETE_CHAR
-		if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0 ) tv_chk = TRUE;
-#endif
-		_pNetwork->SendDeleteCharacter(ulDelIndex,tv_chk);
-		_pUIMgr->Lock(TRUE);
-	}
+	if(_pGameState->SelectedSlot() <= 0)
+		return FALSE;
+
+	if( _pNetwork->m_bSendMessage == TRUE )
+		return FALSE;
+
+	ULONG ulDelIndex = _pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].index;
+	BOOL tv_chk = FALSE;
+	
+	if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0 ) tv_chk = TRUE;
+	
+	_pNetwork->SendDeleteCharacter(ulDelIndex,tv_chk);
+	CUIManager::getSingleton()->Lock(TRUE);
+
 	return FALSE;
 }
 
 
 //-----------------------------------------------------------------------------
-// Purpose: ì„ íƒëœ ìºë¦­í„°ë¥¼ ì‚­ì œí•©ë‹ˆë‹¤. 2
+// Purpose: ¼±ÅÃµÈ Ä³¸¯ÅÍ¸¦ »èÁ¦ÇÕ´Ï´Ù. 2
 //-----------------------------------------------------------------------------
 BOOL CUISelChar::DeleteCharacter(CTString  secuNum)
 {	
 	CTString strMessage;
-	if(secuNum.Length()!=CHECK_NUM) {
-		_pUIMgr->CloseMessageBox(MSGCMD_NULL);
-		CUIMsgBox_Info	MsgBoxInfo;
-		MsgBoxInfo.SetMsgBoxInfo( _S( 240, "ìºë¦­í„° ì‚­ì œ" ), UMBS_OK,
-									UI_SEL_CHAR, MSGCMD_NULL );
-		MsgBoxInfo.AddString(_S(2340, "7ìë¦¬ ìˆ«ìë¥¼ ì…ë ¥í•˜ì—¬ ì£¼ì‹­ì‹œì˜¤" ) );
-									_pUIMgr->CreateMessageBox( MsgBoxInfo );
-		_pUIMgr->Lock(FALSE);
+	if(_pGameState->SelectedSlot() <= 0)
 		return FALSE;
-	}
-	if(_pGameState->SelectedSlot() > 0)
-	{
-		ULONG	ulDelIndex;
-		ulDelIndex	= _pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].index;
-		
-		if(_pNetwork->m_bSendMessage)
-			return FALSE;
-		BOOL tv_chk = FALSE;
-		if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0 ) tv_chk = TRUE;
 
-		_pNetwork->SendDeleteCharacter(ulDelIndex, secuNum, tv_chk );
-		_pUIMgr->Lock(TRUE);
+	if( _pNetwork->m_bSendMessage == TRUE )
+		return FALSE;
 
-	
-	}
+	ULONG ulDelIndex = _pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].index;
+	BOOL tv_chk = FALSE;
+	if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time > 0 ) tv_chk = TRUE;
+
+	_pNetwork->SendDeleteCharacter(ulDelIndex, secuNum, tv_chk );
+	CUIManager::getSingleton()->Lock(TRUE);
+
 	return FALSE;
 }
 
@@ -1031,6 +1329,9 @@ BOOL CUISelChar::DeleteCharacter(CTString  secuNum)
 //-----------------------------------------------------------------------------
 void CUISelChar::StartGame()
 {
+	if( PopUpMsgBoxExist() )
+		return;
+
 	const int iSelectedSlot		= _pGameState->SelectedSlot()-1;
 	ASSERT( iSelectedSlot >= 0 && iSelectedSlot <= (MAX_SLOT - 1) && "Invalid Selected Slot!!!" );
 	if( iSelectedSlot < 0 || iSelectedSlot > (MAX_SLOT - 1) )
@@ -1039,28 +1340,34 @@ void CUISelChar::StartGame()
 	}
 
 	ULONG	StartIndex;
-	StartIndex	= _pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].index;
+	StartIndex	= _pGameState->m_SlotInfo[iSelectedSlot].index;
 
 	if(_pNetwork->m_bSendMessage)
 		return;
 
 	_pNetwork->SendGameStart(StartIndex);
-	
-	CGame* _pGame			= _pUIMgr->GetGame();
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	_pGameState->ClearCharacterSlot();
+/*
+	CGame* _pGame			= pUIManager->GetGame();
 	CPlayerCharacter &pc	= _pGame->gm_apcPlayers[0];
 	pc.pc_iPlayerType		= _pGameState->m_SlotInfo[iSelectedSlot].job;
 	
 	CPlayerEntity *penPlayerEntity	= NULL;
 	CEntity* penPlEntity			= NULL;
-	penPlEntity						= CEntity::GetPlayerEntity(0); //ìºë¦­í„° ìê¸° ìì‹ 
+	penPlEntity						= CEntity::GetPlayerEntity(0); //Ä³¸¯ÅÍ ÀÚ±â ÀÚ½Å
 	penPlayerEntity					= (CPlayerEntity*) penPlEntity;	
-	penPlayerEntity->CharacterChanged(pc);		
-	_pUIMgr->Lock(TRUE);
+	penPlayerEntity->CharacterChanged(pc);
+	*/
+	pUIManager->Lock(TRUE);
 	// wooss 051017 
-	// ìºë¦­í„° ì„ íƒì‹œ Input.cpp ReadKeyboardDevice::_abKeysDressed[KIP_MOUSE1] ì—ì„œ í† ê¸€ì‹ìœ¼ë¡œ ì²˜ë¦¬í•˜ì—¬
-	// ìºë¦­í„°ë¥¼ ì„ íƒí•˜ê³  ê²Œì„ì‹œì‘ì„ ëˆ„ë¥´ë©´ ë§ˆìš°ìŠ¤ ë²„íŠ¼ì´ ëˆ„ë¥¸ ìƒíƒœë¡œ í‘œì‹œë˜ì–´ ê²Œì„ì„ ì‹œì‘í•˜ë©´ ìºë¦­í„°ê°€ ë§ˆìš°ìŠ¤ í¬ì¸í„°ìª½ìœ¼ë¡œ ë›°ì–´ê°€ê²Œ ëœë‹¤.
+	// Ä³¸¯ÅÍ ¼±ÅÃ½Ã Input.cpp ReadKeyboardDevice::_abKeysDressed[KIP_MOUSE1] ¿¡¼­ Åä±Û½ÄÀ¸·Î Ã³¸®ÇÏ¿©
+	// Ä³¸¯ÅÍ¸¦ ¼±ÅÃÇÏ°í °ÔÀÓ½ÃÀÛÀ» ´©¸£¸é ¸¶¿ì½º ¹öÆ°ÀÌ ´©¸¥ »óÅÂ·Î Ç¥½ÃµÇ¾î °ÔÀÓÀ» ½ÃÀÛÇÏ¸é Ä³¸¯ÅÍ°¡ ¸¶¿ì½º Æ÷ÀÎÅÍÂÊÀ¸·Î ¶Ù¾î°¡°Ô µÈ´Ù.
 	_pInput->SetLMousePressed(FALSE);
 
+	m_bIsShowMessageInfo = _pGameState->IsCreatableNightShadow();
 }
 
 //-----------------------------------------------------------------------------
@@ -1071,9 +1378,12 @@ void CUISelChar::StartGame()
 //-----------------------------------------------------------------------------
 void CUISelChar::SelectCharacter(int nX, int nY)
 {
+	if( PopUpMsgBoxExist() )
+		return;
+
 	CEntity*		penPlEntity		= NULL;
 	CPlayerEntity*	penPlayerEntity = NULL;
-	penPlEntity						= CEntity::GetPlayerEntity(0); //ìºë¦­í„° ìê¸° ìì‹ 
+	penPlEntity						= CEntity::GetPlayerEntity(0); //Ä³¸¯ÅÍ ÀÚ±â ÀÚ½Å
 	penPlayerEntity					= (CPlayerEntity*) penPlEntity;
 	CPlacement3D plCamera			= penPlayerEntity->en_plLastViewpoint;
 	CAnyProjection3D apr;
@@ -1082,11 +1392,13 @@ void CUISelChar::SelectCharacter(int nX, int nY)
 	if( apr == NULL )
 		return;
 	apr->Prepare();
-	
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// make the ray from viewer point through the mouse point, in current projection
 	CPlacement3D plRay;
 	apr->RayThroughPoint(
-		FLOAT3D((float)nX, ( _pUIMgr->GetMaxJ() - _pUIMgr->GetMinJ() ) - (float)nY, 0.0f), 
+		FLOAT3D((float)nX, ( pUIManager->GetMaxJ() - pUIManager->GetMinJ() ) - (float)nY, 0.0f), 
 		plRay);
 	
 	// construct cast ray for base world
@@ -1103,17 +1415,17 @@ void CUISelChar::SelectCharacter(int nX, int nY)
 		if(pEntity)
 		{
 		
-			// ìŠ¬ë¡¯ê³¼ ì¶©ëŒí–ˆìŒ.
+			// ½½·Ô°ú Ãæµ¹ÇßÀ½.
 			crRay.TestModelCollisionBox(pEntity);
 			if(crRay.cr_penHit != NULL && (crRay.cr_penHit->en_RenderType == CEntity::RT_SKAMODEL))
 			{
 				int iSelectedSlot = _pGameState->SelectedSlot();
 
-				// í˜„ì¬ ì„ íƒëœ ìºë¦­í„°ê°€ ë³€í•¨ì´ ì—†ì„ë•Œ...
+				// ÇöÀç ¼±ÅÃµÈ Ä³¸¯ÅÍ°¡ º¯ÇÔÀÌ ¾øÀ»¶§...
 				if( iSelectedSlot != i + 1 )
 				{
 
-			/*		// ì„ íƒëœ ìºë¦­í„°ì— idle Animationì„ ì œê±°í•¨.
+			/*		// ¼±ÅÃµÈ Ä³¸¯ÅÍ¿¡ idle AnimationÀ» Á¦°ÅÇÔ.
 					if(iSelectedSlot > 0)
 					{
 						CModelInstance* pMI		= _pGameState->m_pEntModels[iSelectedSlot - 1]->GetModelInstance();
@@ -1128,7 +1440,7 @@ void CUISelChar::SelectCharacter(int nX, int nY)
 
 					iSelectedSlot = i + 1;
 
-					// ì„ íƒëœ ìºë¦­í„°ì— idle Animationì„ ì¤ë‹ˆë‹¤.
+					// ¼±ÅÃµÈ Ä³¸¯ÅÍ¿¡ idle AnimationÀ» Áİ´Ï´Ù.
 					_pGameState->SelectedSlot() = iSelectedSlot;
 					{
 						CModelInstance* pMI		= _pGameState->m_pEntModels[iSelectedSlot - 1]->GetModelInstance();
@@ -1139,7 +1451,7 @@ void CUISelChar::SelectCharacter(int nX, int nY)
 
 							INDEX idAttack;
 							int tv_flag =0;
-#ifdef	NEW_DELETE_CHAR	
+
 					//		if( pMI->IsNotAnimationPlaying()) return;
 							if(_pGameState->m_SlotInfo[_pGameState->SelectedSlot()-1].m_time <=0 )
 							{
@@ -1158,71 +1470,79 @@ void CUISelChar::SelectCharacter(int nX, int nY)
 								m_aSlotAni[iSelectedSlot - 1].m_idAni = ANIM_SOCIAL_5;
 								tv_flag = NULL;
 							}
-#else 
-							{
-								m_aSlotAni[iSelectedSlot - 1].m_idAni = ANIM_ATTACK_IDLE;
-								tv_flag = AN_NORESTART|AN_CLEAR;
 
-							}
-#endif
 							idAttack		= ska_GetIDFromStringTable( JobInfo().GetAnimationName( iJob, m_aSlotAni[iSelectedSlot - 1].m_idAni ) );
 
 							pMI->AddAnimation(idAttack,tv_flag,1,0);
-#ifdef	NEW_DELETE_CHAR	
+
 							// Check animation time
 							m_aSlotAni[iSelectedSlot - 1].m_startTime = _pTimer->CurrentTick();
 							
 							// put off - weapon ----------------------------------------------------<<
-	#ifdef HEAD_CHANGE
-							// ë¬´ê¸° ì°©ìš© í™•ì¸ 
-							SLONG iWear		=	_pGameState->m_SlotInfo[i].wear[2]; // ë¬´ê¸° 
-							SLONG iWear3	=	_pGameState->m_SlotInfo[i].wear[4];	// ë°©íŒ¨ 
-	#else
-							// ë¬´ê¸° ì°©ìš© í™•ì¸ 
-							SLONG iWear		=	_pGameState->m_SlotInfo[i].wear[1]; // ë¬´ê¸° 
-							SLONG iWear3	=	_pGameState->m_SlotInfo[i].wear[3];	// ë°©íŒ¨ 
-	#endif
+							// ¹«±â Âø¿ë È®ÀÎ 
+							SLONG iWear		=	_pGameState->m_SlotInfo[i].wear[WEAR_WEAPON]; // ¹«±â 
+							SLONG iWear3	=	_pGameState->m_SlotInfo[i].wear[WEAR_SHIELD];	// ¹æÆĞ 
+
 							BOOL bTakeOffArmor = FALSE;
 							
 							if(iWear > 0 ){
-								CItemData &ID = _pNetwork->GetItemData(iWear);
-								_pGameState->TakeOffArmor(pMI, ID);
-								_pGameState->m_SlotInfo[i].itemEffect.DeleteEffect(ID.GetWearingPosition());
+								CItemData* pID = _pNetwork->GetItemData(iWear);
+
+								if (_pGameState->m_SlotInfo[i].job != NIGHTSHADOW)
+								{
+									_pGameState->TakeOffArmor(pMI, *pID);
+								}
+								_pGameState->m_SlotInfo[i].itemEffect.DeleteEffect(pID->GetWearingPosition());
 								bTakeOffArmor = TRUE;
-								
+								_pGameState->m_SlotInfo[i].itemEffect.Change(
+									_pGameState->m_SlotInfo[i].job,
+									pID,
+									pID->GetWearingPosition(),
+									-1,
+									&pMI->m_tmSkaTagManager,
+									1, pID->GetSubType() );
 							}
 							if(iWear3 > 3)	
 							{
-								CItemData &ID = _pNetwork->GetItemData(iWear3);
-								_pGameState->TakeOffArmor(pMI, ID);
+								CItemData* pID = _pNetwork->GetItemData(iWear3);
+								_pGameState->TakeOffArmor(pMI, *pID);
 								bTakeOffArmor = TRUE;
+								_pGameState->m_SlotInfo[i].itemEffect.Change(
+									_pGameState->m_SlotInfo[i].job,
+									pID,
+									pID->GetWearingPosition(),
+									-1,
+									&pMI->m_tmSkaTagManager,
+									1, pID->GetSubType() );
 							}
 
-							if (bTakeOffArmor)
-								_pGameState->m_SlotInfo[i].itemEffect.Refresh(&pMI->m_tmSkaTagManager, 1);
-							// ---------------------------------------------------------------------------->>
-#endif																							
+							//if (bTakeOffArmor)
+								//_pGameState->m_SlotInfo[i].itemEffect.Refresh(&pMI->m_tmSkaTagManager, 1);
+							// ---------------------------------------------------------------------------->>																					
 						}
 					}
 
 					// Update character status
 					UpdateStatus();
+					
+					// reset button status.	
+					m_btnOK.SetEnable(TRUE);
+					m_btnDeleteChar.SetEnable(TRUE);
 
-#ifdef	NEW_DELETE_CHAR		
-				
-					if(_pGameState->m_SlotInfo[iSelectedSlot - 1].m_time>0)
+					if((_pGameState->m_SlotInfo[iSelectedSlot - 1].m_time) > 0)
 					{	
 						m_btnOK.SetEnable(FALSE);	
 					}
-					else{
-						m_btnOK.SetEnable(TRUE);
+					// ITS#10074 : BUGFIX : Á¶°Ç½ÄÀÇ Á¶°Ç»óÀÇ ¹®Á¦ ¹ß»ı. [8/3/2012 rumist]
+					else if(_pGameState->m_SlotInfo[iSelectedSlot-1].sbMoveState == CMS_MOVE_WAIT)			// Ä³¸¯ÅÍ ÀÌµ¿ [7/19/2012 rumist]					
+					{	
+						m_btnOK.SetEnable(FALSE);
+						m_btnDeleteChar.SetEnable(FALSE);	
 					}
-			
-#endif
 				}
 
 				return;
-			} // ì¶©ëŒ
+			} // Ãæµ¹
 		}
 	}
 
@@ -1235,7 +1555,9 @@ void CUISelChar::SelectCharacter(int nX, int nY)
 //-----------------------------------------------------------------------------
 void CUISelChar::Lock(BOOL bLock)
 {
+#if !defined(G_KOR)
 	m_btnCreateChar.SetEnable(!bLock);
+#endif
 	m_btnDeleteChar.SetEnable(!bLock);
 	//m_btnOptions.SetEnable(!bLock);	
 	m_btnOK.SetEnable(!bLock);
@@ -1260,4 +1582,81 @@ int	CUISelChar::GetExSlotTime(int slotNum,int* tSlot1,int* tSlot2)
 		*tSlot2=m_exSlot2;
 	}
 	return 0;
+}
+
+//-----------------------------------------------------------------------------
+// SetCharSlotTime ³²Àº½Ã°£À» °è»êÇÏ¿© ½ºÆ®¸µÀ¸·Î ¹İÈ¯
+// [2012/07/05 : Sora]  Ä³¸¯ÅÍ ½½·Ô È®Àå
+//-----------------------------------------------------------------------------
+void CUISelChar::SetCharSlotTime( ULONG ulTime )
+{
+	m_ulCharSlotTime = ulTime;
+	m_CharSlotTimeOld = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+}
+
+//-----------------------------------------------------------------------------
+// GetRemainTime ³²Àº½Ã°£À» °è»êÇÏ¿© ½ºÆ®¸µÀ¸·Î ¹İÈ¯
+// [2012/07/05 : Sora]  Ä³¸¯ÅÍ ½½·Ô È®Àå
+//-----------------------------------------------------------------------------
+CTString CUISelChar::GetRemainTime()
+{
+	CTString strtemp = "";
+	
+	if( m_ulCharSlotTime >=  86400 ) // 60 * 60 * 24 (ÇÏ·ç)
+	{
+		strtemp.PrintF( _S( 2511, "%dÀÏ" ),  m_ulCharSlotTime / 86400 );
+	}
+	else if( m_ulCharSlotTime >= 3600 )
+	{
+		strtemp.PrintF( _S( 2512, "%d½Ã°£" ),  m_ulCharSlotTime / 3600 );
+	}
+	else
+	{
+		// 60ÃÊ ¹Ì¸¸µµ 1ºĞÀ¸·Î Ç¥½Ã
+		strtemp.PrintF( _S( 2513, "%dºĞ" ),  m_ulCharSlotTime >= 60  ? m_ulCharSlotTime/60 : 1 );
+	}
+
+	return strtemp;
+}
+
+//-----------------------------------------------------------------------------
+// UpdateCharSlotTime ³²Àº½Ã°£À» °»½Å
+// [2012/07/05 : Sora]  Ä³¸¯ÅÍ ½½·Ô È®Àå
+//-----------------------------------------------------------------------------
+void CUISelChar::UpdateCharSlotTime()
+{
+	if( m_ulCharSlotTime == 0 )
+		return;
+
+	__int64 tmpTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	
+	if( tmpTime - m_CharSlotTimeOld < 1000 )
+		return;
+
+	__int64 passedTime = ( ( tmpTime - m_CharSlotTimeOld ) / 1000 );
+
+	if( m_ulCharSlotTime > passedTime )
+	{
+		m_ulCharSlotTime -= passedTime;
+	}
+	else
+	{
+		m_ulCharSlotTime = 0;
+	}
+
+	m_CharSlotTimeOld = tmpTime;
+}
+
+BOOL CUISelChar::PopUpMsgBoxExist()
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_DELETE_CHARACTER_SECURITY ) ||
+		pUIManager->DoesMessageBoxExist( MSGCMD_DELETE_CHARACTER ) ||
+		pUIManager->DoesMessageBoxExist( MSGCMD_SELCHAR_ERROR ) )
+	{
+		return TRUE;
+	}
+
+	return FALSE;
 }

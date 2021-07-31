@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "stdH.h"
 #include "EffectCommon.h"
 
@@ -35,19 +35,19 @@ CTextureObject g_toLightMap;
 CTerrain *g_pTerrain = NULL;
 CWorld *g_pWorld = NULL;
 
-static const char *szEffectDataFileList[] = {
+/*static const char *szEffectDataFileList[] = {
 		"Data\\Effect\\Effect.dat"
 		, "Data\\Effect\\Effect_SND.dat"
 		, "Data\\Effect\\ItemEffect.dat"
 		, "Data\\Effect\\Rogue.dat"
 		, "Data\\Effect\\BGEffect.dat"
-	};
+	};*/
 
 BOOL g_bFirstInit = TRUE;
 
 #define LIGHT_FILENAME "Data\\Effect\\TEXTURE\\tr_light.tex"
 
-//effect ìœ íš¨ ì²˜ë¦¬ ê±°ë¦¬
+//effect À¯È¿ Ã³¸® °Å¸®
 FLOAT g_fEffectDistance = 100.0f;
 
 struct ReservedEG
@@ -61,16 +61,30 @@ ReservedEGVector g_vectorReservedEG;
 
 extern BOOL RM_AreHardwareShadersAvailable(void);
 
-//í•˜ë“œì½”ë”©ëœ ì´í™íŠ¸ ê·¸ë£¹ ìƒì„±ì„ í•œë‹¤.
-extern BOOL Initialize_EffectSystem()
+extern void FinalizeShaders(void)
+{
+	CSplineBillboardEffect::FinalizeShaders();
+	CTraceEffect::FinalizeShaders();
+	CShockWaveEffect::FinalizeShaders();
+}
+
+extern void InitializeShaders(void)
+{
+	CTraceEffect::InitializeShaders();
+	CSplineBillboardEffect::InitializeShaders();
+	CShockWaveEffect::InitializeShaders();
+}
+
+//ÇÏµåÄÚµùµÈ ÀÌÆåÆ® ±×·ì »ı¼ºÀ» ÇÑ´Ù.
+extern BOOL Initialize_EffectSystem(const CTFileName *fnm)
 {
 	if(g_bFirstInit)
 	{
-		//í•„ìš”í•œ Symbol Declare
+		//ÇÊ¿äÇÑ Symbol Declare
 		_pShell->DeclareSymbol("user FLOAT g_fEffectDistance;", &g_fEffectDistance);
 	}
 
-	//Light Effectìš© Texturedata ë¡œë“œ
+	//Light Effect¿ë Texturedata ·Îµå
 	g_toLightMap.SetData_t(CTFILENAME(LIGHT_FILENAME));
 	((CTextureData*)g_toLightMap.GetData())->Force(TEX_STATIC|TEX_CONSTANT);
 
@@ -86,11 +100,14 @@ extern BOOL Initialize_EffectSystem()
 		Reset_EffectSystem();
 		try
 		{
-			INDEX cntEffectData = sizeof(szEffectDataFileList) / sizeof(char*);
-			for(INDEX i=0; i<cntEffectData; ++i)
-			{
-				Open_EffectSystem(szEffectDataFileList[i]);
-			}
+			//INDEX cntEffectData = sizeof(szEffectDataFileList) / sizeof(char*);
+			//for(INDEX i=0; i<cntEffectData; ++i)
+			//{
+			if (fnm == NULL)
+				Open_EffectSystem("Data\\Effect\\Effect.dat");
+			else
+				Open_EffectSystem((*fnm));
+			//}
 		}
 		catch(const char *szError)
 		{
@@ -101,16 +118,6 @@ extern BOOL Initialize_EffectSystem()
 		CEffectGroupManager::Instance().ClearCreated();
 	}
 
-	//ê¸°ì¡´ effect ë³µì›, displayëª¨ë“œê°€ ë°”ë€”ë•Œë¥¼ ëŒ€ë¹„í•˜ëŠ” ê²ƒì„.
-/*
-	for(UINT i=0; i<g_vectorReservedEG.size(); ++i)
-	{
-		StartEffectGroup( g_vectorReservedEG[i].m_strName.c_str()
-						, g_vectorReservedEG[i].m_pTagManager
-						, g_vectorReservedEG[i].m_fStartTime
-						);
-	}
-*/
 	g_vectorReservedEG.clear();
 
 	return TRUE;
@@ -118,26 +125,11 @@ extern BOOL Initialize_EffectSystem()
 
 extern BOOL Finalize_EffectSystem()
 {
-	//ê¸°ì¡´ effect ë³´ì „, displayëª¨ë“œê°€ ë°”ë€”ë•Œë¥¼ ëŒ€ë¹„í•˜ëŠ” ê²ƒì„.
-	g_vectorReservedEG.resize( CEffectGroupManager::Instance().GetCreatedList().size() );
-	CEffectGroupManager::my_list::iterator iterBegin = CEffectGroupManager::Instance().GetCreatedList().begin();
-	CEffectGroupManager::my_list::iterator iterEnd = CEffectGroupManager::Instance().GetCreatedList().end();
-	CEffectGroupManager::my_list::iterator iter;
-	UINT i=0;
-	for(i=0, iter = iterBegin; iter != iterEnd; ++i, ++iter)
-	{
-		g_vectorReservedEG[i].m_strName = (*iter)->GetName();
-		g_vectorReservedEG[i].m_pTagManager = (*iter)->GetTagManager();
-		g_vectorReservedEG[i].m_fStartTime = (*iter)->GetStartTime();
-	}
-
 	CSplineBillboardEffect::FinalizeShaders();
 	CTraceEffect::FinalizeShaders();
 	CShockWaveEffect::FinalizeShaders();
 
-	CEffectGroupManager::Instance().Clear();
-	CEffectManager::Instance().Clear();
-	CParticleGroupManager::Instance().Clear();
+	Reset_EffectSystem();
 
 	g_toLightMap.SetData(NULL);
 
@@ -148,7 +140,7 @@ extern CCameraEffect::CCameraValue g_cvCameraShake;
 extern BOOL PrepareRender_EffectSystem(CTerrain *pTerrain, CWorld *pWorld)
 {
 	//ASSERT(pTerrain != NULL && pWorld != NULL);
-	ASSERT(g_toLightMap.GetData() != NULL);
+	//ASSERT(g_toLightMap.GetData() != NULL);
 	g_pTerrain = pTerrain;
 	g_pWorld = pWorld;
 	CLightEffect::SetLightTexture((CTextureData*)g_toLightMap.GetData());
@@ -159,7 +151,7 @@ extern BOOL PrepareRender_EffectSystem(CTerrain *pTerrain, CWorld *pWorld)
 	return TRUE;
 }
 
-//ì´í™íŠ¸ ë¦¬ì…‹
+//ÀÌÆåÆ® ¸®¼Â
 extern void Reset_EffectSystem()
 {
 	CEffectGroupManager::Instance().Clear();
@@ -169,7 +161,7 @@ extern void Reset_EffectSystem()
 
 #include <Engine/Base/Stream.h>
 
-//ì´í™íŠ¸ íŒŒì¼ ë¡œë”©
+//ÀÌÆåÆ® ÆÄÀÏ ·Îµù
 extern BOOL Open_EffectSystem(const CTFileName &fnm)
 {
 	CTFileName fullPathName;
@@ -200,7 +192,7 @@ extern BOOL Open_EffectSystem(const CTFileName &fnm)
 	return TRUE;
 }
 
-//ì´í™íŠ¸ íŒŒì¼ ì €ì¥
+//ÀÌÆåÆ® ÆÄÀÏ ÀúÀå
 extern BOOL Save_EffectSystem(const CTFileName &fnm)
 {
 	CTFileStream fs;
@@ -230,7 +222,7 @@ extern BOOL Save_EffectSystem(const CTFileName &fnm)
 	return TRUE;
 }
 
-//effectì¶”ê°€ì‹œ
+//effectÃß°¡½Ã
 extern CEffect *CreateFromType(EFFECT_TYPE et)
 {
 	switch(et)
@@ -249,8 +241,8 @@ extern CEffect *CreateFromType(EFFECT_TYPE et)
 	case ET_SPLINEPATH:	return new CSplinePathEffect;
 	case ET_CAMERA:		return new CCameraEffect;
 	case ET_ENTITY:		return new CEntityEffect;
-	default: ASSERTALWAYS("ì—†ëŠ” ì´í™íŠ¸ íƒ€ì…ì´ê±°ë‚˜ ë Œë”ë§ì´ í—ˆìš©ë˜ì§€ ì•ŠëŠ” ì´í™íŠ¸ íƒ€ì…ì…ë‹ˆë‹¤.");
+	default: ASSERTALWAYS("¾ø´Â ÀÌÆåÆ® Å¸ÀÔÀÌ°Å³ª ·»´õ¸µÀÌ Çã¿ëµÇÁö ¾Ê´Â ÀÌÆåÆ® Å¸ÀÔÀÔ´Ï´Ù.");
 	}
 	return NULL;
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

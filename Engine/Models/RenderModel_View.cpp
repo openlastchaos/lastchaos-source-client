@@ -1919,10 +1919,10 @@ srfVtxLoop:
     }
   }}
   // prepare (and lock) vertex array
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(5th Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(5th Closed beta)(0.2)
   if(rm.rm_ulFlags & RMF_OVERDRAW) gfxDisableDepthTest();
   else gfxEnableDepthTest();
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(5th Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(5th Closed beta)(0.2)
   gfxSetVertexArray( &_avtxSrfBase[0], _ctAllSrfVx);
   if(GFX_bTruform) gfxSetNormalArray( &_anorSrfBase[0]);
   if(CVA_bModels) gfxLockArrays();
@@ -2111,7 +2111,7 @@ diffColLoop:
     INDEX iFrame=0;
     if( ptdDiff!=NULL) iFrame = mo_toTexture.GetFrame();;
     SetCurrentTexture( ptdDiff, iFrame);
-    gfxSetTexCoordArray( &_atexSrfBase[0]);
+    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
     gfxSetColorArray(    &_acolSrfBase[0]);
     // do rendering
     RenderOneSide( rm, TRUE,  SRF_DIFFUSE);
@@ -2190,7 +2190,7 @@ diffColLoop:
 
     // setup texture/color arrays and rendering mode
     SetCurrentTexture( ptdBump, mo_toBump.GetFrame());
-    gfxSetTexCoordArray( &_atexSrfBase[0]);
+    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxDisableAlphaTest();
     gfxBlendFunc( GFX_DST_COLOR, GFX_SRC_COLOR);
@@ -2370,7 +2370,7 @@ reflMipLoop:
 
     // setup texture/color arrays and rendering mode
     SetCurrentTexture( ptdReflection, mo_toReflection.GetFrame());
-    gfxSetTexCoordArray( &_atexSrfBase[0]);
+    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
     // do rendering
@@ -2549,7 +2549,7 @@ specMipLoop:
 
     // setup texture/color arrays and rendering mode
     SetCurrentTexture( ptdSpecular, mo_toSpecular.GetFrame());
-    gfxSetTexCoordArray( &_atexSrfBase[0]);
+    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxBlendFunc( GFX_INV_SRC_ALPHA, GFX_ONE);
     // do rendering
@@ -2595,7 +2595,7 @@ specMipLoop:
     // setup texture/color arrays and rendering mode
     gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
     gfxSetTexture( _haze_ulTexture, _haze_tpLocal);
-    gfxSetTexCoordArray( &_atexSrfBase[0]);
+    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
     // do rendering
@@ -2640,7 +2640,7 @@ specMipLoop:
     // setup texture/color arrays and rendering mode
     gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
     gfxSetTexture( _fog_ulTexture, _fog_tpLocal);
-    gfxSetTexCoordArray( &_atexSrfBase[0]);
+    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
     gfxDisableAlphaTest();
@@ -2717,7 +2717,7 @@ void CModelObject::RenderPatches_View( CRenderModel &rm)
       pglLoadIdentity();
       pglScalef( fmexMainSizeU/fmexSizeU*fSizeDivider, fmexMainSizeV/fmexSizeV*fSizeDivider, 0);
       pglTranslatef( -mexPatchOffset(1)*f1oMainSizeU, -mexPatchOffset(2)*f1oMainSizeV, 0);
-      gfxSetTexCoordArray( &_atexSrfBase[0]);
+      gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
       //AddElements( &ppp.ppp_auwElements[0], ppp.ppp_auwElements.Count());
       //FlushElements();
     }
@@ -3061,7 +3061,7 @@ void RenderBatchedSimpleShadows_View(void)
 
   // setup texture and projection
   _bFlatFill = FALSE;
-  gfxSetViewMatrix();
+  gfxSetViewMatrix(NULL);
   gfxCullFace(GFX_BACK);
   gfxSetTextureWrapping( GFX_REPEAT, GFX_REPEAT);
   CTextureData *ptd = (CTextureData*)_toSimpleModelShadow.GetData();

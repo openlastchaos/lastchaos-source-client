@@ -2,75 +2,103 @@
 
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Entities/NpcHelp.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.09
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.09
 #include <Engine/Entities/EntityClass.h>
 #include <Engine/Entities/EntityProperties.h>
 #include <Engine/Ska/StringTable.h>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.09
-
-/*
- *  Constructor.
- */
-CNpcHelp::CNpcHelp(void)
-{
-	memset(&m_NpcList, 0, sizeof(TNpcList));
-
-}
-
-/*
- *  Destructor.
- */
-CNpcHelp::~CNpcHelp(void) 
-{
-
-}
+#include <Engine/World/World.h>
+#include <Engine/Interface/UIManager.h>
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.09
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &apShopData - 
 //			FileName - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CNpcHelp::LoadNpcListFromFile(CStaticArray<CNpcHelp> &apNpcList, const char* FileName)
+bool CNpcHelp::loadEx(const char* FileName)
 {	
-	FILE* fNpclist = NULL;
-	if ((fNpclist = fopen(FileName, "rb")) == NULL) 
-	{
-		MessageBox(NULL, "NpcHelp File is not Exist.", "error!", MB_OK);
-		return -1;
-	}
-	int		nNpc_total=0;
-	int		iReadBytes	= 0;
-		
-	// ì´ë²¤íŠ¸ ê°œìˆ˜ ì²´í¬
-	fread(&nNpc_total,sizeof(int),1,fNpclist);
-	apNpcList.New(nNpc_total);
-	ASSERT(apNpcList.Count() > 0 && "Invalid HelpNpc Data");		
-	ASSERT(nNpc_total > 0 && "Invalid HelpNpc Data");
-	//////////////////////////////////////////////////////////////////////////	
-	// MACRO DEFINITION
-	//////////////////////////////////////////////////////////////////////////	
-#define LOADINT(d)			iReadBytes = fread(&d, sizeof(int), 1, fNpclist);
-#define LOADSHORT(d)		iReadBytes = fread(&d, sizeof(short), 1, fNpclist);
-#define LOADCHAR(d)			iReadBytes = fread(&d, sizeof(char), 1, fNpclist);
-#define LOADFLOAT(d)		iReadBytes = fread(&d, sizeof(float), 1, fNpclist);
-#define LOADSTR(d)			{ int iLen; LOADINT(iLen); iReadBytes = fread(&d, iLen, 1, fNpclist); }
-	//////////////////////////////////////////////////////////////////////////	
+	FILE*	fp = NULL;
 
-	for(int i = 0; i < nNpc_total; ++i)
-	{
-		CNpcHelp& NH	= apNpcList[i];
-		TNpcList& NpcList	= NH.m_NpcList;		
-		LOADINT(NpcList.zone_index);
-		LOADINT(NpcList.npc_index);
-		LOADSTR(NpcList.npc_name);
-		LOADSTR(NpcList.npc_explan);
-	}
-	fclose(fNpclist);
-		
-	#undef LOADINT
-	#undef LOADCHAR
-	#undef LOADFLOAT
-	#undef LOADSTR				
+	fp = fopen(FileName, "rb");
 
-	return nNpc_total;
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	stNpcHelp* pdata = new stNpcHelp[_nSize];
+	fread(pdata, sizeof(stNpcHelp) * _nSize, 1, fp);
+	fclose(fp);
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CNpcHelp* ptmp = new CNpcHelp;
+		memcpy(ptmp, &pdata[i], sizeof(stNpcHelp));
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+	}
+
+	m_dummy = new CNpcHelp; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	memset(m_dummy, 0, sizeof(stNpcHelp));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
+}
+
+bool CMobHelp::loadEx( const char* FileName )
+{
+	FILE*	fp = NULL;
+
+	fp = fopen(FileName, "rb");
+
+	if (fp == NULL)
+		return false;
+
+	fread(&_nSize, sizeof(int), 1, fp);
+
+	if (_nSize <= 0)
+	{
+		fclose(fp);
+		return false;
+	}
+
+	stNpcHelp* pdata = new stNpcHelp[_nSize];
+	fread(pdata, sizeof(stNpcHelp) * _nSize, 1, fp);
+	fclose(fp);
+
+	for (int i = 0; i < _nSize; i++)
+	{
+		CMobHelp* ptmp = new CMobHelp;
+		memcpy(ptmp, &pdata[i], sizeof(stNpcHelp));
+		if (_mapdata.insert(std::make_pair(ptmp->getindex(), ptmp)).second == false)
+		{
+			delete ptmp;
+			ptmp = NULL;
+		}
+	}
+
+	m_dummy = new CMobHelp; // ´õ¹Ìµ¥ÀÌÅ¸ »ı¼º
+	memset(m_dummy, 0, sizeof(stNpcHelp));
+
+	if (pdata != NULL)
+	{
+		delete[] pdata;
+		pdata = NULL;
+	}
+
+	return true;
 }

@@ -11,11 +11,11 @@
 
 
 #include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIButtonEx.h>
+#include <Engine/Interface/UIRectString.h>
 
 //////////////////////////////////////////////////////////////////////////
 // NEW_USER_INTERFACE
-#include <Engine/Interface/UIRectString.h>
+
 
 // Define skill slot
 #define	SLEARN_SLOT_SX					18
@@ -29,7 +29,7 @@
 #define	SLEARN_NAME_CX					122
 #define	SLEARN_NAME_SY					58
 #define	SLEARN_NEED_RX					184
-#define	SLEARN_CURSP_SX					75 //ì´ê¸°í™˜ ìˆ˜ì • (05.01.03) : SP->ìˆ™ë ¨ë„ ë¼ëŠ” ë‹¨ì–´ ë³€ê²½ í•˜ë©´ì„œ ìˆ˜ì¹˜ ìˆ˜ì •(97->75)
+#define	SLEARN_CURSP_SX					75 //ÀÌ±âÈ¯ ¼öÁ¤ (05.01.03) : SP->¼÷·Ãµµ ¶ó´Â ´Ü¾î º¯°æ ÇÏ¸é¼­ ¼öÄ¡ ¼öÁ¤(97->75)
 #define	SLEARN_CURSP_RX					199
 #define	SLEARN_CURSP_SY					343
 #define	SLEARN_DESC_CHAR_WIDTH			170
@@ -43,7 +43,6 @@
 // Define size of skill learn
 #define	SKILLLEARN_WIDTH				216
 #define	SKILLLEARN_HEIGHT				400
-//#define ADJUST_MEMORIZE_SKILL 
 
 //////////////////////////////////////////////////////////////////////////
 // NEW_USER_INTERFACE
@@ -62,22 +61,25 @@
 #define  SKILLINFO_MAX_WIDTH  300
 #define	 SKILLINFO_MIN_WIDTH  150
 
-enum eSkillSatisfiedList	//ìŠ¤í‚¬ì„ ë°°ìš¸ë•Œ ê° ìƒí™©ì˜ ë§Œì¡±ì„ ì²´í¬í•˜ëŠ” í”Œëž˜ê·¸
+enum eSkillSatisfiedList	//½ºÅ³À» ¹è¿ï¶§ °¢ »óÈ²ÀÇ ºÒ¸¸Á·À» Ã¼Å©ÇÏ´Â ÇÃ·¡±×
 {
 	ALL_SATISFIED =				0X00000000,
 	NOT_SATISFIED_LEVEL =		0x00000001, 
-	NOT_SATISFIED_SP =			0X00000010,
-	NOT_SATISFIED_STR =			0X00000100,
-	NOT_SATISFIED_DEX =			0X00001000,
-	NOT_SATISFIED_INT =			0X00010000,
-	NOT_SATISFIED_CON =			0X00100000,
-	NOT_SATISFIED_SKILL =		0X01000000,
-	NOT_SATISFIED_ITEM =		0X10000000,
-	NOT_SATISFIED_SKILL_LEVEL = NOT_SATISFIED_ITEM, //íŠ¹ìˆ˜ìŠ¤í‚¬ ì „ìš©(ìŠ¤í‚¬ì€ ë°°ì› ëŠ”ë° ìŠ¤í‚¬ ë ˆë²¨ì´ ë¶€ì¡±í•¨?)
+	NOT_SATISFIED_SP =			0X00000002,
+	NOT_SATISFIED_STR =			0X00000004,
+	NOT_SATISFIED_DEX =			0X00000008,
+	NOT_SATISFIED_INT =			0X00000010,
+	NOT_SATISFIED_CON =			0X00000020,
+	NOT_SATISFIED_SKILL_0 =		0X00000040,	// ÇÊ¿äÇÑ ½ºÅ³Àº ÃÖ´ë 3°³·Î Á¦ÇÑ µÇ¾î ÀÖ´Ù.
+	NOT_SATISFIED_SKILL_1 =		0X00000080,
+	NOT_SATISFIED_SKILL_2 =		0X00000100,
+	NOT_SATISFIED_ITEM_0 =		0X00000200, // ÇÊ¿äÇÑ ¾ÆÀÌÅÛÀº ÃÖ´ë 3°³·Î Á¦ÇÑµÇ¾î ÀÖ´Ù.
+	NOT_SATISFIED_ITEM_1 =		0X00000400,
+	NOT_SATISFIED_ITEM_2 =		0X00000800,
 };
 
 
-// ìŠ¤í‚¬ ì •ë³´ í‘œì‹œì°½
+// ½ºÅ³ Á¤º¸ Ç¥½ÃÃ¢
 
 enum eSkillInfoList
 {
@@ -87,9 +89,11 @@ enum eSkillInfoList
 
 enum eBtnType
 {
-	BTN_SKILL_ACTIVE	= 0,
+	BTN_SKILL_ITEM = 0,
+	BTN_SKILL_ACTIVE,
 	BTN_SKILL_PASSIVE,
 	BTN_SKILL_SPECIAL,
+	BTN_SKILL_VOUCHER,
 	BTN_ACTION_NORMAL,
 	BTN_ACTION_SOCIAL,
 	BTN_ACTION_PARTY,
@@ -109,9 +113,6 @@ protected:
 	{
 		SLEARN_TAB_ACTIVE	= 0,
 		SLEARN_TAB_PASSIVE,
-#ifdef ADJUST_MEMORIZE_SKILL
-		SLERAN_TAB_MEMORIZE,
-#endif
 		SLEARN_TAB_SPECIAL,
 		SLEARN_TAB_TOTAL,
 	};
@@ -121,17 +122,10 @@ protected:
 	CUIButton				m_btnClose;								// Close button
 	CUIButton				m_btnLearn;								// Learn button
 	CUIButton				m_btnCancel;							// Cancel button
-	CUIScrollBar			m_sbActiveSkillIcon;					// Scrollbar of active skill icon
-	CUIScrollBar			m_sbPassiveSkillIcon;					// Scrollbar of passive skill icon
-	CUIScrollBar			m_sbMemorizeSkillIcon;					// Scrollbar of memorize skill icon
 	CUIScrollBar			m_sbSpecialSkillIcon;					// Scrollbar of special skill icon
-	CUIListBox				m_lbSkillDesc;							// List box of skill description
 
 	// Skill buttons
-	CUIButtonEx				m_btnActiveSkills[SKILLLEARN_NEW_SLOT_TOTAL];	// Buttons of active skill
-	CUIButtonEx				m_btnPassiveSkills[SKILLLEARN_NEW_SLOT_TOTAL];	// Buttons of passive skill
-	CUIButtonEx				m_btnMemorizeSkills[SKILLLEARN_NEW_SLOT_TOTAL];	// Buttons of passive skill
-	CUIButtonEx				m_btnSpecialSkills[SKILLLEARN_NEW_SLOT_TOTAL];	// Buttons of special skill
+	CUIIcon*				m_pIconsSpecialSkill[SKILLLEARN_NEW_SLOT_TOTAL];	// Buttons of special skill
 
 	// Skill information
 	int						m_nSelActiveSkillID;					// Selected active skill ID
@@ -155,36 +149,18 @@ protected:
 
 	int						m_nSSkillType;
 
-	BOOL					m_bSpecial;								// íŠ¹ìˆ˜ ìŠ¤í‚¬ NPC?
-	BOOL					m_bUseCard;							// ì¹´ë“œ ì‚¬ìš© ìœ ë¬´
-	int						m_iSelChangeJob;						// ì›í•˜ëŠ” ì „ì§.
+	BOOL					m_bSpecial;								// Æ¯¼ö ½ºÅ³ NPC?
+	BOOL					m_bUseCard;							// Ä«µå »ç¿ë À¯¹«
+	int						m_iSelChangeJob;						// ¿øÇÏ´Â ÀüÁ÷.
 
 	BOOL m_bSkillInfoVisible;
 
-	UIRectUV				m_rtInfoUL;								// UV of upper left region of information
-	UIRectUV				m_rtInfoUM;								// UV of upper middle region of information
-	UIRectUV				m_rtInfoUR;								// UV of upper right region of information
-	UIRectUV				m_rtInfoML;								// UV of middle left region of information
-	UIRectUV				m_rtInfoMM;								// UV of middle middle region of information
-	UIRectUV				m_rtInfoMR;								// UV of middle right region of information
-	UIRectUV				m_rtInfoLL;								// UV of lower left region of information
-	UIRectUV				m_rtInfoLM;								// UV of lower middle region of information
-	UIRectUV				m_rtInfoLR;								// UV of lower right region of information
-
-	CUIRectString			m_rsSkillName;
-	CUIRectString			m_rsSkillDesc;
-
-	CUIRectString			m_rsCurrentSkillInfo;
-	CUIRectString			m_rsNextSkillInfo;
-
-	UIRect					m_rcSkillInfo;
+	CTextureData*			m_ptdButtonTexture;
 
 protected:
 	// Internal functions
 	void	InitSkillLearn( BOOL  bSpecial );
 	void	RenderSkillBtns();
-	void	GetSkillDesc( int nIndex, int nLevel = 0, BOOL bSpecial = FALSE );
-	void	AddSkillDescString( CTString &strDesc, COLOR colDesc = 0xF2F2F2FF );
 	void	CloseSkillLearn();
 
 	// Network message functions ( send )
@@ -226,7 +202,7 @@ protected:
 //////////////////////////////////////////////////////////////////////////
 // NEW_USER_INTERFACE
 
-	UIRectUV				m_rtSelOutlineTopL;	//ì„ íƒëœ ìŠ¤í‚¬ í‘œì‹œ ë¼ì¸
+	UIRectUV				m_rtSelOutlineTopL;	//¼±ÅÃµÈ ½ºÅ³ Ç¥½Ã ¶óÀÎ
 	UIRectUV				m_rtSelOutlineTopM;
 	UIRectUV				m_rtSelOutlineTopR;
 	UIRectUV				m_rtSelOutlineMiddleL;
@@ -239,9 +215,9 @@ protected:
 	UIRectUV				m_rtSelectedTab;
 	UIRectUV				m_rtUnSelectedTab;
 
-	CUIButtonEx*			m_btnSelectedSkill;	//í˜„ìž¬ ìŠ¤í‚¬
+	CUIIcon**				m_ppIconsSelectedSkill;	//ÇöÀç ½ºÅ³
 
-	UIRect					m_rcButtonArea;	//ë²„íŠ¼ì˜ì—­ì„ ë” ë„“ê²Œ ì²´í¬
+	UIRect					m_rcButtonArea;	//¹öÆ°¿µ¿ªÀ» ´õ ³Ð°Ô Ã¼Å©
 
 	CUIScrollBar			m_sbScrollBar;
 
@@ -267,12 +243,6 @@ protected:
 
 	void	RenderNewSkillLearnBtns();
 	void 	RenderNewSkillLearn();
-	void	RenderSkillInfoDesc();
-	void	AddSkillInfoString(int nSkillInfoList, CTString strSkillInfo, COLOR strColor = 0xF2F2F2FF);
-	void	ResetSkillInfoString();
-	void	SetSkillInfoPos(int nPosX, int nPosY);
-	int	    GetSkillInfoWidth();
-	int 	GetSkillInfoHeight();
 
 	enum SkillType
 {
@@ -286,7 +256,13 @@ protected:
 
 	WMSG_RESULT	SKillLearnNewMouseMessage( MSG *pMsg );
 //////////////////////////////////////////////////////////////////////////
-	
+
+//------------------------½ºÅ³ ¸®´º¾ó------------------------------------>>
+	int m_iMobIdx;
+	BOOL m_bQuest;
+//-----------------------------------------------------------------------<<
+	int m_iMobVirIdx;
+
 public:
 	CUISkillLearn();
 	~CUISkillLearn();
@@ -302,8 +278,9 @@ public:
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Open skill learn
-	ENGINE_API void	OpenSkillLearn( int iMobIndex, BOOL bHasQuest, FLOAT fX, FLOAT fZ );
-	void	PriorityOpen(int iIndex, BOOL bUseCard=FALSE);
+	ENGINE_API void	OpenSkillLearn( int iMobIndex, int iMobVirIdx, BOOL bHasQuest, FLOAT fX, FLOAT fZ );
+	// calling function modified. [10/13/2011 rumist]
+	void	PriorityOpen(int iIndex, BOOL bHasQuest, BOOL bUseCard=FALSE);
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );

@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include <Engine/Interface/UIManager.h>
 #include <Engine/GameState.h>
+#include <Engine/LoginJobInfo.h>
 
 extern CGame *_pGame;
 
@@ -10,7 +11,7 @@ extern INDEX gam_iStartDifficulty;
 extern INDEX gam_iStartMode;
 
 // initialize game and load settings
-void CGame::Initialize(const CTFileName &fnGameSettings)
+void CGame::Initialize(const CTFileName &fnGameSettings, BOOL bDummy )
 {
 	gm_fnSaveFileName = fnGameSettings;
 	InitInternal();
@@ -68,7 +69,6 @@ void UpdatePauseState(void)
 void CGame::QuickTest(const CTFileName &fnMapName, CDrawPort *pdp, CViewPort *pvp)
 {
 	UINT uiMessengerMsg = RegisterWindowMessage("Croteam Messenger: Incoming Message");
-	EnableLoadingHook(pdp);
 
 	// quick start game with the world
 	gm_strNetworkProvider = "Local";
@@ -80,16 +80,17 @@ void CGame::QuickTest(const CTFileName &fnMapName, CDrawPort *pdp, CViewPort *pv
 	SetQuickStartSession(sp);
 	
 	//0625 kwon
-	// ì›”ë“œ ì—ë””í„° ìƒì—ì„œëŠ” íƒ€ì´íƒ„ìœ¼ë¡œ í”Œë ˆì´ í•˜ë‹¤ë¡ í•¨.
+	// ¿ùµå ¿¡µðÅÍ »ó¿¡¼­´Â Å¸ÀÌÅºÀ¸·Î ÇÃ·¹ÀÌ ÇÏµµ·Ï ÇÔ.
 	CPlayerCharacter &pc = gm_apcPlayers[0];
 	pc.pc_iPlayerType = 0; //TITAN
 
 	// start the game
 	if(!_pGame->PreNewGame() || !NewGame( fnMapName, fnMapName, sp)) 
-	{
-		DisableLoadingHook();
 		return;
-	}
+
+	CEntity* penPlEntity			= CEntity::GetPlayerEntity(0); //Ä³¸¯ÅÍ ÀÚ±â ÀÚ½Å
+	CPlayerEntity *penPlayerEntity	= (CPlayerEntity*) penPlEntity;	
+	penPlayerEntity->CharacterChanged(pc);
 
 	// enable input
 	_pInput->EnableInput(pvp);
@@ -123,7 +124,7 @@ void CGame::QuickTest(const CTFileName &fnMapName, CDrawPort *pdp, CViewPort *pv
 				||(msg.message==WM_KEYDOWN && msg.wParam==VK_ESCAPE)
 				||(msg.message==WM_ACTIVATE)
 				||(msg.message==WM_CANCELMODE)
-				||(msg.message==WM_KILLFOCUS)
+				//||(msg.message==WM_KILLFOCUS)
 				||(msg.message==WM_ACTIVATEAPP)) {
 				// stop running
 				bRunning = FALSE;
@@ -150,6 +151,7 @@ void CGame::QuickTest(const CTFileName &fnMapName, CDrawPort *pdp, CViewPort *pv
 							CPrintF("%s",pachrMessage);
 						}
 					}
+					fclose(pfileMessage);
 				}
 			}
 
@@ -233,9 +235,9 @@ void CGame::QuickTest(const CTFileName &fnMapName, CDrawPort *pdp, CViewPort *pv
 		cmp_ppenPlayer = NULL;
 	}
 
+	_pInput->m_bTcpIp = FALSE;
 	_pInput->DisableInput();
 	StopGame();
-	DisableLoadingHook();
 }
 
 //-----------------------------------------------------------------------------
@@ -251,38 +253,38 @@ void CGame::LoginGame(const CTFileName &fnMapName)
 
 	SetSinglePlayerSession(sp);
 	//SetMultiPlayerSession(sp);
-	
-	// ì›”ë“œ ì—ë””í„° ìƒì—ì„œëŠ” íƒ€ì´íƒ„ìœ¼ë¡œ í”Œë ˆì´ í•˜ë‹¤ë¡ í•¨.
+
+	if (_pNetwork->bMoveCharacterSelectUI == FALSE)
+		CLoginJobInfo::getSingleton()->LoginModelCreate();
+
+	// ¿ùµå ¿¡µðÅÍ »ó¿¡¼­´Â Å¸ÀÌÅºÀ¸·Î ÇÃ·¹ÀÌ ÇÏ´Ù·Ï ÇÔ.
 	CPlayerCharacter &pc = gm_apcPlayers[0];
 	gm_CurrentSplitScreenCfg = CGame::SSC_PLAY1;
 	pc.pc_iPlayerType = TITAN; //TITAN
 
 	// start the game
-	if(//!_pGame->PreNewGame() ||			// ì†Œì¼“ ìƒì„± ë° ì—°ê²° ì‹œë„í•¨.
+	if(//!_pGame->PreNewGame() ||			// ¼ÒÄÏ »ý¼º ¹× ¿¬°á ½ÃµµÇÔ.
 		!NewGame( fnMapName, fnMapName, sp)) 
 	{
-		DisableLoadingHook();
 		return;
 	}
-	_pUIMgr->SetBackgroundWorld(&_pNetwork->ga_World);
 
-//wooss 060209 TEST JAPAN
-//#define AUTO_LOGIN
-//#ifdef AUTO_LOGIN
 	extern BOOL g_bAutoLogin;
+	extern BOOL g_bAutoRestart;
+
 	if(g_bAutoLogin)	
 	{
 		if(PreNewGame())
 		{
 			extern CTString g_nmID;
 			extern CTString g_nmPW;
+			extern CTString g_nmCID;
 			_pNetwork->m_strUserID = g_nmID;
 			_pNetwork->m_strUserPW = g_nmPW;
-			_pUIMgr->GetSelServer()->ConnectToServer(_cmiComm.cci_szAddr, _cmiComm.cci_iPort);
+			_pNetwork->m_strUserCID = g_nmCID;
 		}
 	}
-//#endif
 
-	// NOTE : ë©”ì¸ ë£¨í”„ë¥¼ íƒ€ë„ë¡ í•˜ê¸° ìœ„í•´ì„œ ê²Œìž„ ëª¨ë“œë¥¼ ë³€ê²½í•¨.
+	// NOTE : ¸ÞÀÎ ·çÇÁ¸¦ Å¸µµ·Ï ÇÏ±â À§ÇØ¼­ °ÔÀÓ ¸ðµå¸¦ º¯°æÇÔ.
 	_pGameState->GetGameMode() = CGameState::GM_INTRO;
 }

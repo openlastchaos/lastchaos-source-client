@@ -1,6 +1,6 @@
 //===================================================================================================
 // File : UIBingoBox.h
-// Date : 2007-01-31(≈º≈î≈î√º 11:26:03), By eons
+// Date : 2007-01-31(ø¿¿¸ 11:26:03), By eons
 //===================================================================================================
 
 #ifndef UIBINGOBOX_H_
@@ -8,13 +8,6 @@
 #ifdef PRAGMA_ONCE
 	#pragma once
 #endif
-
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEX.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UIListBox.h>
-#include <vector>
 
 #define UI_BINGOBOX_WIDTH	144
 #define UI_BINGOBOX_HEIGHT	160
@@ -43,8 +36,8 @@ class CUIBingoBox : public CUIWindow
 {
 protected: // Var
 	CUIButton m_btnClose;
-	CUIButtonEx m_abtnInsectItem[9]; // slot
-	CUIButtonEx m_abtnTemp;
+	CUIIcon* m_pIconInsectItem[9]; // slot
+	CUIIcon* m_pIconTemp;
 
 	UIRect m_rcTitle;
 	UIRect m_rcbtnItems;
@@ -84,19 +77,18 @@ protected: // Var
 
 	int	m_nSelectItem;
 	int m_nTab;
-	int m_nRow;
-	int m_nCol;
+	int m_nInvenIdx;
 	int m_nTempItemArray;
-	int m_nTempUniIndex;
+	int m_nTempItemIndex;
 	int m_nBingo;
 
 	BOOL m_bSelectLock;
 
 	CTString m_strTitle;
-	CTString m_strNum; // ≈ü≈Ø¬∞√≠ ¬∞ƒÖƒΩ√∂ √áƒÑÀùƒÇ
+	CTString m_strNum; // ∫˘∞Ì ∞πºˆ «•Ω√
 
 	sBingoInfo m_BingoBtnInfo[8];
-	sBingoOfCase m_BingoOfCase[9];
+	sBingoOfCase m_BingoOfCase[9];	
 	
 protected: // Func
 	void	SetBtnItem(int num, int nIndex);	
@@ -107,7 +99,7 @@ public:
 	void	Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight);
 
 	void	Init(void);
-	void	OpenBingoBox(int nTab, int nRow, int nCol);
+	void	OpenBingoBox(int nTab, int inven_idx);
 	void	Render();
 	void	RenderInfo();
 
@@ -123,5 +115,6 @@ public:
 	void	UpDateItem(void);
 	void	FindBingo(int num, BOOL bAllSearch=FALSE);
 	void	ErrorMessage(CNetworkMessage *istr);
+
 };
 #endif

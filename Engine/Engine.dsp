@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
-CFG=Engine - Win32 FinalDebug
+CFG=Engine - Win32 DebugKalydo
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,64 +13,35 @@ CFG=Engine - Win32 FinalDebug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "Engine.mak" CFG="Engine - Win32 FinalDebug"
+!MESSAGE NMAKE /f "Engine.mak" CFG="Engine - Win32 DebugKalydo"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "Engine - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "Engine - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "Engine - Win32 FinalRelease" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "Engine - Win32 FinalDebug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 USALIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 GERLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 RUSLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 BRZLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 MAXLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 KORTEST" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 THAILIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 WORLDEDITOR" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 DebugKalydo" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 ReleaseKalydo" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 GERLIVEKalydo" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 CHNLIVE" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Engine - Win32 MAKEDEF" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""$/aboard_WildPet_UI_USA/All/Engine", PDMBAAAA"
-# PROP Scc_LocalPath "."
+# PROP Scc_ProjName ""
+# PROP Scc_LocalPath ""
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "Release"
-# PROP BASE Intermediate_Dir "Release"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release"
-# PROP Intermediate_Dir "Release"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /Yu"StdH.h" /FD /c
-# SUBTRACT CPP /Fr
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /d "NDEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib winmm.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"LIBCMT" /nodefaultlib:"libc"
-# Begin Custom Build - Copying $(InputName) binaries to $(a60911_dir)\Bin
-InputPath=.\Release\Engine.dll
-InputName=Engine
-SOURCE="$(InputPath)"
-
-"$(a60911_dir)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy Release\$(InputName).dll $(a60911_dir)\Bin >nul 
-	copy Release\$(InputName).map $(a60911_dir)\Bin >nul 
-	copy Release\$(InputName).lib $(a60911_dir)\Bin >nul 
-	copy Release\$(InputName).pdb $(a60911_dir)\Bin >nul 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -79,12 +50,12 @@ SOURCE="$(InputPath)"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "Debug"
-# PROP Intermediate_Dir "Debug"
+# PROP Output_Dir "_Debug"
+# PROP Intermediate_Dir "_Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /G6 /MDd /W3 /Gm /GX /Zi /Od /I "..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "ENGINE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fr /Yu"StdH.h" /FD /GZ /c
+# ADD CPP /nologo /G6 /MDd /W3 /Gm /GR /GX /Zi /Od /I "..\\" /I ".\\" /I "..\3rdparty\zlib-1.2.8" /D "ENGINE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "G_KOR" /D "VER_TEST" /Fr /Yu"StdH.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -94,38 +65,43 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib NPGameLib.lib winmm.lib /nologo /dll /incremental:no /map /debug /machine:I386 /nodefaultlib:"LIBCMT" /out:"Debug/EngineD.dll" /pdbtype:sept
-# SUBTRACT LINK32 /profile /pdb:none /nodefaultlib
-# Begin Custom Build - Copying $(InputName) binaries to $(a60911_dir)\Bin\Debug
-InputPath=.\Debug\EngineD.dll
+# ADD LINK32 tinyxmld.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /map /debug /machine:I386 /nodefaultlib:"libc.lib" /nodefaultlib:"LIBCD.lib" /def:".\EngineD.def" /out:"_Debug/EngineD.dll" /pdbtype:sept /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# SUBTRACT LINK32 /pdb:none
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin\Debug
+InputPath=.\_Debug\EngineD.dll
 InputName=EngineD
 SOURCE="$(InputPath)"
 
-"$(a60911_dir)\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy Debug\$(InputName).dll $(a60911_dir)\Bin\Debug >nul 
-	copy Debug\$(InputName).map $(a60911_dir)\Bin\Debug >nul 
-	copy Debug\$(InputName).lib $(a60911_dir)\Bin\Debug >nul 
-	copy Debug\$(InputName).pdb $(a60911_dir)\Bin\Debug >nul 
+"$(ENGINE_DIR)\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _Debug\$(InputName).dll $(ENGINE_DIR)\Bin\Debug >nul 
+	copy _Debug\$(InputName).map $(ENGINE_DIR)\Bin\Debug >nul 
+	copy _Debug\$(InputName).lib $(ENGINE_DIR)\Bin\Debug >nul 
+	copy _Debug\$(InputName).pdb $(ENGINE_DIR)\Bin\Debug >nul 
 	
 # End Custom Build
+# Begin Special Build Tool
+OutDir=.\_Debug
+SOURCE="$(InputPath)"
+PostBuild_Cmds=mkdir          $(OutDir)\..\..\DebugFilesForCopy          copy          $(OutDir)\EngineD.dll          $(OutDir)\..\..\DebugFilesForCopy\          copy          $(OutDir)\EngineD.lib          $(OutDir)\..\..\DebugFilesForCopy\          copy          $(OutDir)\EngineD.map          $(OutDir)\..\..\DebugFilesForCopy\          copy          $(OutDir)\EngineD.pdb          $(OutDir)\..\..\DebugFilesForCopy\ 
+# End Special Build Tool
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "Engine___Win32_FinalRelease"
-# PROP BASE Intermediate_Dir "Engine___Win32_FinalRelease"
+# PROP BASE Output_Dir "Engine___Win32_USALIVE"
+# PROP BASE Intermediate_Dir "Engine___Win32_USALIVE"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "FinalRelease"
-# PROP Intermediate_Dir "FinalRelease"
+# PROP Output_Dir "_USALIVE"
+# PROP Intermediate_Dir "_USALIVE"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /Yu"StdH.h" /FD /c
 # SUBTRACT BASE CPP /Fr
-# ADD CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "FINALVERSION" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /Yu"StdH.h" /FD /c
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_USA" /Yu"StdH.h" /FD /c
 # SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -135,39 +111,324 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /map /debug /machine:I386 /pdbtype:sept
-# SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /map /debug /machine:I386 /pdbtype:sept
-# SUBTRACT LINK32 /pdb:none
-# Begin Custom Build - Copying $(InputName) binaries to $(a60911_dir)\Bin
-InputPath=.\FinalRelease\Engine.dll
+# ADD BASE LINK32 wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(USA_LIVE)\Bin
+InputPath=.\_USALIVE\Engine.dll
 InputName=Engine
 SOURCE="$(InputPath)"
 
-"$(a60911_dir)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy FinalRelease\$(InputName).dll $(a60911_dir)\Bin >nul 
-	copy FinalRelease\$(InputName).map $(a60911_dir)\Bin >nul 
-	copy FinalRelease\$(InputName).lib $(a60911_dir)\Bin >nul 
-	copy FinalRelease\$(InputName).pdb $(a60911_dir)\Bin >nul 
+"$(USA_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _USALIVE\$(InputName).dll $(USA_LIVE)\Bin >nul 
+	copy _USALIVE\$(InputName).map $(USA_LIVE)\Bin >nul 
+	copy _USALIVE\$(InputName).lib $(USA_LIVE)\Bin >nul 
+	copy _USALIVE\$(InputName).pdb $(USA_LIVE)\Bin >nul 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_GERLIVE"
+# PROP BASE Intermediate_Dir "Engine___Win32_GERLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_GERLIVE"
+# PROP Intermediate_Dir "_GERLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_USA" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_GERMAN" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib"
+# ADD LINK32 wininet.lib tinyxml.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /def:".\Engine_XTrap.def" /libpath:"XTrap/lib tinyxml" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(GER_LIVE)\Bin
+InputPath=.\_GERLIVE\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(GER_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _GERLIVE\$(InputName).dll $(GER_LIVE)\Bin >nul 
+	copy _GERLIVE\$(InputName).map $(GER_LIVE)\Bin >nul 
+	copy _GERLIVE\$(InputName).lib $(GER_LIVE)\Bin >nul 
+	copy _GERLIVE\$(InputName).pdb $(GER_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_RUSLIVE"
+# PROP BASE Intermediate_Dir "Engine___Win32_RUSLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_RUSLIVE"
+# PROP Intermediate_Dir "_RUSLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_GERMAN" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_RUSSIA" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(RUS_LIVE)\Bin
+InputPath=.\_RUSLIVE\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(RUS_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _RUSLIVE\$(InputName).dll $(RUS_LIVE)\Bin >nul 
+	copy _RUSLIVE\$(InputName).map $(RUS_LIVE)\Bin >nul 
+	copy _RUSLIVE\$(InputName).lib $(RUS_LIVE)\Bin >nul 
+	copy _RUSLIVE\$(InputName).pdb $(RUS_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_BRZLIVE"
+# PROP BASE Intermediate_Dir "Engine___Win32_BRZLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_BRZLIVE"
+# PROP Intermediate_Dir "_BRZLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_GERMAN" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_BRAZIL" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(BRZ_LIVE)\Bin
+InputPath=.\_BRZLIVE\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(BRZ_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _BRZLIVE\$(InputName).dll $(BRZ_LIVE)\Bin >nul 
+	copy _BRZLIVE\$(InputName).map $(BRZ_LIVE)\Bin >nul 
+	copy _BRZLIVE\$(InputName).lib $(BRZ_LIVE)\Bin >nul 
+	copy _BRZLIVE\$(InputName).pdb $(BRZ_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_MAXLIVE"
+# PROP BASE Intermediate_Dir "Engine___Win32_MAXLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_MAXLIVE"
+# PROP Intermediate_Dir "_MAXLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_GERMAN" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_MAXICO" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(MAX_LIVE)\Bin
+InputPath=.\_MAXLIVE\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(MAX_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _MAXLIVE\$(InputName).dll $(MAX_LIVE)\Bin >nul 
+	copy _MAXLIVE\$(InputName).map $(MAX_LIVE)\Bin >nul 
+	copy _MAXLIVE\$(InputName).lib $(MAX_LIVE)\Bin >nul 
+	copy _MAXLIVE\$(InputName).pdb $(MAX_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_KORTEST"
+# PROP BASE Intermediate_Dir "Engine___Win32_KORTEST"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_KORTEST"
+# PROP Intermediate_Dir "_KORTEST"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /I ".\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_KOR" /D "VER_TEST" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib"
+# Begin Custom Build - Copying $(InputName) binaries to $(KOR_TEST)\Bin
+InputPath=.\_KORTEST\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(KOR_TEST)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _KORTEST\$(InputName).dll $(KOR_TEST)\Bin >nul 
+	copy _KORTEST\$(InputName).map $(KOR_TEST)\Bin >nul 
+	copy _KORTEST\$(InputName).lib $(KOR_TEST)\Bin >nul 
+	copy _KORTEST\$(InputName).pdb $(KOR_TEST)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_THAILIVE"
+# PROP BASE Intermediate_Dir "Engine___Win32_THAILIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_THAILIVE"
+# PROP Intermediate_Dir "_THAILIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_KOR" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_THAI" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(THAI_LIVE)\Bin
+InputPath=.\_THAILIVE\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(THAI_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _THAILIVE\$(InputName).dll $(THAI_LIVE)\Bin >nul 
+	copy _THAILIVE\$(InputName).map $(THAI_LIVE)\Bin >nul 
+	copy _THAILIVE\$(InputName).lib $(THAI_LIVE)\Bin >nul 
+	copy _THAILIVE\$(InputName).pdb $(THAI_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_WORLDEDITOR"
+# PROP BASE Intermediate_Dir "Engine___Win32_WORLDEDITOR"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "WORLDEDITOR"
+# PROP Intermediate_Dir "WORLDEDITOR"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_KOR" /D "VER_TEST" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /I "..\\" /I ".\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_KOR" /D "VER_TEST" /D "WORLD_EDITOR" /D "_CLIENT_" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib F_SocketR.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin
+InputPath=.\WORLDEDITOR\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(ENGINE_DIR)\Bin\WorldEditor\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy WORLDEDITOR\$(InputName).dll $(ENGINE_DIR)\Bin\WorldEditor >nul 
+	copy WORLDEDITOR\$(InputName).map $(ENGINE_DIR)\Bin\WorldEditor >nul 
+	copy WORLDEDITOR\$(InputName).lib $(ENGINE_DIR)\Bin\WorldEditor >nul 
+	copy WORLDEDITOR\$(InputName).pdb $(ENGINE_DIR)\Bin\WorldEditor >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "Engine___Win32_FinalDebug"
-# PROP BASE Intermediate_Dir "Engine___Win32_FinalDebug"
+# PROP BASE Output_Dir "Engine___Win32_DebugKalydo"
+# PROP BASE Intermediate_Dir "Engine___Win32_DebugKalydo"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "FinalDebug"
-# PROP Intermediate_Dir "FinalDebug"
+# PROP Output_Dir "DebugKalydo"
+# PROP Intermediate_Dir "DebugKalydo"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /G6 /MDd /W3 /Gm /GX /Zi /Od /I "..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "ENGINE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fr /Yu"StdH.h" /FD /GZ /c
-# ADD CPP /nologo /G6 /MDd /W3 /Gm /GX /Zi /Od /I "..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "ENGINE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fr /Yu"StdH.h" /FD /GZ /c
+# ADD BASE CPP /nologo /G6 /MDd /W3 /Gm /GX /Zi /Od /I "..\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "ENGINE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /D "G_KOR" /D "VER_TEST" /Fr /Yu"StdH.h" /FD /GZ /c
+# ADD CPP /nologo /G6 /MDd /W3 /Gm /GR /GX /Zi /Od /I "..\\" /D "ENGINE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "G_KOR" /D "KALYDO" /Fr /Yu"StdH.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -176,20 +437,185 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /map /debug /machine:I386 /out:"Debug/EngineD.dll" /pdbtype:sept
+# ADD BASE LINK32 tinyxmld.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /map /debug /machine:I386 /nodefaultlib:"libc.lib" /out:"Debug/EngineD.dll" /pdbtype:sept /libpath:"tinyxml"
 # SUBTRACT BASE LINK32 /pdb:none /nodefaultlib
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib Wininet.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /map /debug /machine:I386 /out:"FinalDebug/EngineD.dll" /pdbtype:sept
+# ADD LINK32 tinyxmld.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib KRFReadLibDebug.lib F_SocketD.lib /nologo /dll /incremental:no /map /debug /machine:I386 /nodefaultlib:"libc.lib" /def:".\Engine_Kalydo.def" /out:"DebugKalydo/EngineD.dll" /pdbtype:sept /libpath:"tinyxml" /libpath:"..\Nksp\Compact" /libpath:"..\lib" /ignore:4197
 # SUBTRACT LINK32 /pdb:none
-# Begin Custom Build - Copying $(InputName) binaries to $(a60911_dir)\Bin\Debug
-InputPath=.\FinalDebug\EngineD.dll
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin\Debug
+InputPath=.\DebugKalydo\EngineD.dll
 InputName=EngineD
 SOURCE="$(InputPath)"
 
-"$(a60911_dir)\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy FinalDebug\$(InputName).dll $(a60911_dir)\Bin\Debug >nul 
-	copy FinalDebug\$(InputName).map $(a60911_dir)\Bin\Debug >nul 
-	copy FinalDebug\$(InputName).lib $(a60911_dir)\Bin\Debug >nul 
-	copy FinalDebug\$(InputName).pdb $(a60911_dir)\Bin\Debug >nul 
+"$(ENGINE_DIR)\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy DebugKalydo\$(InputName).dll $(ENGINE_DIR)\Bin\Debug >nul 
+	copy DebugKalydo\$(InputName).dll $(ENGINE_DIR)\Bin >nul 
+	copy DebugKalydo\$(InputName).map $(ENGINE_DIR)\Bin\Debug >nul 
+	copy DebugKalydo\$(InputName).lib $(ENGINE_DIR)\Bin\Debug >nul 
+	copy DebugKalydo\$(InputName).pdb $(ENGINE_DIR)\Bin\Debug >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_ReleaseKalydo"
+# PROP BASE Intermediate_Dir "Engine___Win32_ReleaseKalydo"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "ReleaseKalydo"
+# PROP Intermediate_Dir "ReleaseKalydo"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_GERMAN" /D "KALYDO" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib KRFReadLib.lib F_SocketR.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /def:".\Engine_Kalydo.def" /libpath:"tinyxml" /libpath:"..\Nksp\Compact" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin
+InputPath=.\ReleaseKalydo\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(ENGINE_DIR)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy ReleaseKalydo\$(InputName).dll $(ENGINE_DIR)\Bin >nul 
+	copy ReleaseKalydo\$(InputName).map $(ENGINE_DIR)\Bin >nul 
+	copy ReleaseKalydo\$(InputName).lib $(ENGINE_DIR)\Bin >nul 
+	copy ReleaseKalydo\$(InputName).pdb $(ENGINE_DIR)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_GERLIVEKalydo"
+# PROP BASE Intermediate_Dir "Engine___Win32_GERLIVEKalydo"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_GERLIVEKalydo"
+# PROP Intermediate_Dir "_GERLIVEKalydo"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ENGINE_EXPORTS" /D "G_GERMAN" /D "KALYDO" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "_WIN32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_GERMAN" /D "KALYDO" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib KRFReadLib.lib F_SocketR.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\Nksp\Compact" /libpath:"..\lib"
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib KRFReadLib.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /def:".\Engine_Kalydo.def" /libpath:"tinyxml" /libpath:"..\Kalydo\KRFReadLib\Bin" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Bin
+InputPath=.\_GERLIVEKalydo\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(ENGINE_DIR)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _GERLIVEKalydo\$(InputName).dll $(ENGINE_DIR)\Bin >nul 
+	copy _GERLIVEKalydo\$(InputName).map $(ENGINE_DIR)\Bin >nul 
+	copy _GERLIVEKalydo\$(InputName).lib $(ENGINE_DIR)\Bin >nul 
+	copy _GERLIVEKalydo\$(InputName).pdb $(ENGINE_DIR)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_CHNLIVE"
+# PROP BASE Intermediate_Dir "Engine___Win32_CHNLIVE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_CHNLIVE"
+# PROP Intermediate_Dir "_CHNLIVE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_USA" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_USA" /D "G_CHINA" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# ADD LINK32 tinyxml.lib wininet.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(CHN_LIVE)\Bin
+InputPath=.\_CHNLIVE\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(CHN_LIVE)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _CHNLIVE\$(InputName).dll $(CHN_LIVE)\Bin >nul 
+	copy _CHNLIVE\$(InputName).map $(CHN_LIVE)\Bin >nul 
+	copy _CHNLIVE\$(InputName).lib $(CHN_LIVE)\Bin >nul 
+	copy _CHNLIVE\$(InputName).pdb $(CHN_LIVE)\Bin >nul 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Engine___Win32_MAKEDEF"
+# PROP BASE Intermediate_Dir "Engine___Win32_MAKEDEF"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "_MAKEDEF"
+# PROP Intermediate_Dir "_MAKEDEF"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "ENGINE_EXPORTS" /D "_CLIENT_" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_GERMAN" /Yu"StdH.h" /FD /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /G6 /MD /W3 /GR /GX /Zi /Ox /Ot /Og /Oi /Oy- /I ".\\" /I "..\\" /D "_CLIENT_" /D "ENGINE_EXPORTS" /D "_USE_32BIT_TIME_T" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "G_GERMAN" /Yu"StdH.h" /FD /c
+# SUBTRACT CPP /Fr
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 wininet.lib tinyxml.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /def:".\Engine_XTrap.def" /libpath:"XTrap/lib tinyxml" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# ADD LINK32 wininet.lib tinyxml.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /profile /map /debug /machine:I386 /nodefaultlib:"libc.lib" /def:".\Engine_XTrap.def" /libpath:"XTrap/lib tinyxml" /libpath:"tinyxml" /libpath:"..\lib" /ignore:4197
+# Begin Custom Build - Copying $(InputName) binaries to $(MAKE_DEF)\Bin
+InputPath=.\_MAKEDEF\Engine.dll
+InputName=Engine
+SOURCE="$(InputPath)"
+
+"$(MAKE_DEF)\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy _MAKEDEF\$(InputName).dll $(MAKE_DEF)\Bin >nul 
+	copy _MAKEDEF\$(InputName).map $(MAKE_DEF)\Bin >nul 
+	copy _MAKEDEF\$(InputName).lib $(MAKE_DEF)\Bin >nul 
+	copy _MAKEDEF\$(InputName).pdb $(MAKE_DEF)\Bin >nul 
 	
 # End Custom Build
 
@@ -197,10 +623,20 @@ SOURCE="$(InputPath)"
 
 # Begin Target
 
-# Name "Engine - Win32 Release"
 # Name "Engine - Win32 Debug"
-# Name "Engine - Win32 FinalRelease"
-# Name "Engine - Win32 FinalDebug"
+# Name "Engine - Win32 USALIVE"
+# Name "Engine - Win32 GERLIVE"
+# Name "Engine - Win32 RUSLIVE"
+# Name "Engine - Win32 BRZLIVE"
+# Name "Engine - Win32 MAXLIVE"
+# Name "Engine - Win32 KORTEST"
+# Name "Engine - Win32 THAILIVE"
+# Name "Engine - Win32 WORLDEDITOR"
+# Name "Engine - Win32 DebugKalydo"
+# Name "Engine - Win32 ReleaseKalydo"
+# Name "Engine - Win32 GERLIVEKalydo"
+# Name "Engine - Win32 CHNLIVE"
+# Name "Engine - Win32 MAKEDEF"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
@@ -211,18 +647,38 @@ SOURCE="$(InputPath)"
 
 SOURCE=.\Math\Float.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -231,18 +687,38 @@ SOURCE=.\Math\Float.cpp
 
 SOURCE=.\Math\Functions.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -251,23 +727,74 @@ SOURCE=.\Math\Functions.cpp
 
 SOURCE=.\Math\Geometry.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -276,23 +803,74 @@ SOURCE=.\Math\Geometry.cpp
 
 SOURCE=.\Math\Geometry_DOUBLE.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -301,18 +879,38 @@ SOURCE=.\Math\Geometry_DOUBLE.cpp
 
 SOURCE=.\Math\Object3D.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -321,18 +919,38 @@ SOURCE=.\Math\Object3D.cpp
 
 SOURCE=.\Math\Object3D_CSG.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -341,18 +959,38 @@ SOURCE=.\Math\Object3D_CSG.cpp
 
 SOURCE=.\Math\Object3D_IO.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -361,18 +999,38 @@ SOURCE=.\Math\Object3D_IO.cpp
 
 SOURCE=.\Math\ObjectSector.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -381,18 +1039,38 @@ SOURCE=.\Math\ObjectSector.cpp
 
 SOURCE=.\Math\Placement.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -401,23 +1079,74 @@ SOURCE=.\Math\Placement.cpp
 
 SOURCE=.\Math\Projection.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -426,23 +1155,74 @@ SOURCE=.\Math\Projection.cpp
 
 SOURCE=.\Math\Projection_Isometric.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -451,23 +1231,74 @@ SOURCE=.\Math\Projection_Isometric.cpp
 
 SOURCE=.\Math\Projection_Parallel.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -476,23 +1307,74 @@ SOURCE=.\Math\Projection_Parallel.cpp
 
 SOURCE=.\Math\Projection_Perspective.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -501,23 +1383,74 @@ SOURCE=.\Math\Projection_Perspective.cpp
 
 SOURCE=.\Math\Projection_Simple.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -526,18 +1459,38 @@ SOURCE=.\Math\Projection_Simple.cpp
 
 SOURCE=.\Math\Projection_Simple_DOUBLE.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -546,23 +1499,74 @@ SOURCE=.\Math\Projection_Simple_DOUBLE.cpp
 
 SOURCE=.\Math\TextureMapping.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -575,18 +1579,38 @@ SOURCE=.\Math\TextureMapping.cpp
 
 SOURCE=.\Graphics\Adapter.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -595,18 +1619,38 @@ SOURCE=.\Graphics\Adapter.cpp
 
 SOURCE=.\Graphics\Benchmark.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -615,18 +1659,38 @@ SOURCE=.\Graphics\Benchmark.cpp
 
 SOURCE=.\Graphics\Color.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -635,18 +1699,38 @@ SOURCE=.\Graphics\Color.cpp
 
 SOURCE=.\Graphics\DepthCheck.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -655,23 +1739,74 @@ SOURCE=.\Graphics\DepthCheck.cpp
 
 SOURCE=.\Graphics\DisplayMode.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -680,23 +1815,74 @@ SOURCE=.\Graphics\DisplayMode.cpp
 
 SOURCE=.\Graphics\DrawPort.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -705,23 +1891,74 @@ SOURCE=.\Graphics\DrawPort.cpp
 
 SOURCE=.\Graphics\DrawPort_Particles.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -730,23 +1967,74 @@ SOURCE=.\Graphics\DrawPort_Particles.cpp
 
 SOURCE=.\Graphics\DrawPort_RenderScene.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -759,18 +2047,38 @@ SOURCE=.\Graphics\DXTC.cpp
 
 SOURCE=.\Graphics\Fog.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -779,23 +2087,74 @@ SOURCE=.\Graphics\Fog.cpp
 
 SOURCE=.\Graphics\Font.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -804,18 +2163,38 @@ SOURCE=.\Graphics\Font.cpp
 
 SOURCE=.\Graphics\Gfx_Direct3D.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -824,18 +2203,38 @@ SOURCE=.\Graphics\Gfx_Direct3D.cpp
 
 SOURCE=.\Graphics\Gfx_Direct3D_Colors.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -844,18 +2243,38 @@ SOURCE=.\Graphics\Gfx_Direct3D_Colors.cpp
 
 SOURCE=.\Graphics\Gfx_Direct3D_Textures.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -864,20 +2283,71 @@ SOURCE=.\Graphics\Gfx_Direct3D_Textures.cpp
 
 SOURCE=.\Graphics\Gfx_Direct3D_XBox.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -889,23 +2359,74 @@ SOURCE=.\Graphics\Gfx_Direct3D_XBox.cpp
 
 SOURCE=.\Graphics\Gfx_OpenGL.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -914,23 +2435,74 @@ SOURCE=.\Graphics\Gfx_OpenGL.cpp
 
 SOURCE=.\Graphics\Gfx_OpenGL_Textures.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -939,18 +2511,38 @@ SOURCE=.\Graphics\Gfx_OpenGL_Textures.cpp
 
 SOURCE=.\Graphics\Gfx_wrapper.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -959,20 +2551,71 @@ SOURCE=.\Graphics\Gfx_wrapper.cpp
 
 SOURCE=.\Graphics\Gfx_wrapper_Direct3D.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -984,20 +2627,71 @@ SOURCE=.\Graphics\Gfx_wrapper_Direct3D.cpp
 
 SOURCE=.\Graphics\Gfx_wrapper_OpenGL.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1009,18 +2703,38 @@ SOURCE=.\Graphics\Gfx_wrapper_OpenGL.cpp
 
 SOURCE=.\Graphics\GfxLibrary.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1029,23 +2743,74 @@ SOURCE=.\Graphics\GfxLibrary.cpp
 
 SOURCE=.\Graphics\Graphics.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -1054,18 +2819,38 @@ SOURCE=.\Graphics\Graphics.cpp
 
 SOURCE=.\Graphics\ImageInfo.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1074,18 +2859,38 @@ SOURCE=.\Graphics\ImageInfo.cpp
 
 SOURCE=.\Graphics\MultiMonitor.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1094,23 +2899,74 @@ SOURCE=.\Graphics\MultiMonitor.cpp
 
 SOURCE=.\Graphics\Raster.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -1119,18 +2975,38 @@ SOURCE=.\Graphics\Raster.cpp
 
 SOURCE=.\Graphics\Shader.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1139,23 +3015,74 @@ SOURCE=.\Graphics\Shader.cpp
 
 SOURCE=.\Graphics\ShadowMap.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -1168,23 +3095,74 @@ SOURCE=.\Graphics\Stereo.cpp
 
 SOURCE=.\Graphics\Texture.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -1193,23 +3171,74 @@ SOURCE=.\Graphics\Texture.cpp
 
 SOURCE=.\Graphics\TextureEffects.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -1222,23 +3251,74 @@ SOURCE=.\Graphics\TextureRender.cpp
 
 SOURCE=.\Graphics\ViewPort.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -1251,18 +3331,38 @@ SOURCE=.\Graphics\ViewPort.cpp
 
 SOURCE=.\Sound\SoundData.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1271,18 +3371,38 @@ SOURCE=.\Sound\SoundData.cpp
 
 SOURCE=.\Sound\SoundDecoder.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1291,18 +3411,38 @@ SOURCE=.\Sound\SoundDecoder.cpp
 
 SOURCE=.\Sound\SoundLibrary.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1311,18 +3451,38 @@ SOURCE=.\Sound\SoundLibrary.cpp
 
 SOURCE=.\Sound\SoundMixer.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1331,18 +3491,38 @@ SOURCE=.\Sound\SoundMixer.cpp
 
 SOURCE=.\Sound\SoundObject.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1355,18 +3535,38 @@ SOURCE=.\Sound\SoundObject.cpp
 
 SOURCE=.\Models\EditModel.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1375,18 +3575,38 @@ SOURCE=.\Models\EditModel.cpp
 
 SOURCE=.\Models\MipMaker.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1395,18 +3615,38 @@ SOURCE=.\Models\MipMaker.cpp
 
 SOURCE=.\Models\Model.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1415,18 +3655,38 @@ SOURCE=.\Models\Model.cpp
 
 SOURCE=.\Models\Normals.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1435,18 +3695,38 @@ SOURCE=.\Models\Normals.cpp
 
 SOURCE=.\Models\RenderModel.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1455,18 +3735,38 @@ SOURCE=.\Models\RenderModel.cpp
 
 SOURCE=.\Models\RenderModel_Mask.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1475,18 +3775,38 @@ SOURCE=.\Models\RenderModel_Mask.cpp
 
 SOURCE=.\Models\RenderModel_View.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1495,18 +3815,38 @@ SOURCE=.\Models\RenderModel_View.cpp
 
 SOURCE=.\Models\VertexGetting.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1519,18 +3859,38 @@ SOURCE=.\Models\VertexGetting.cpp
 
 SOURCE=.\World\World.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1539,18 +3899,38 @@ SOURCE=.\World\World.cpp
 
 SOURCE=.\World\WorldCollision.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1559,18 +3939,38 @@ SOURCE=.\World\WorldCollision.cpp
 
 SOURCE=.\World\WorldCollisionGrid.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1579,18 +3979,38 @@ SOURCE=.\World\WorldCollisionGrid.cpp
 
 SOURCE=.\World\WorldCSG.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1599,18 +4019,38 @@ SOURCE=.\World\WorldCSG.cpp
 
 SOURCE=.\World\WorldEditingProfile.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1623,18 +4063,38 @@ SOURCE=.\World\WorldEntityHashing.cpp
 
 SOURCE=.\World\WorldIO.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1643,18 +4103,38 @@ SOURCE=.\World\WorldIO.cpp
 
 SOURCE=.\World\WorldRayCasting.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1667,20 +4147,71 @@ SOURCE=.\World\WorldRayCasting.cpp
 
 SOURCE=.\Templates\AllocationArray.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1692,18 +4223,38 @@ SOURCE=.\Templates\AllocationArray.cpp
 
 SOURCE=.\Templates\BSP.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1712,20 +4263,71 @@ SOURCE=.\Templates\BSP.cpp
 
 SOURCE=.\Templates\DynamicArray.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1737,20 +4339,71 @@ SOURCE=.\Templates\DynamicArray.cpp
 
 SOURCE=.\Templates\DynamicContainer.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1762,20 +4415,71 @@ SOURCE=.\Templates\DynamicContainer.cpp
 
 SOURCE=.\Templates\DynamicStackArray.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1787,20 +4491,71 @@ SOURCE=.\Templates\DynamicStackArray.cpp
 
 SOURCE=.\Templates\HashTableTemplate.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1812,20 +4567,71 @@ SOURCE=.\Templates\HashTableTemplate.cpp
 
 SOURCE=.\Templates\LinearAllocator.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1837,20 +4643,71 @@ SOURCE=.\Templates\LinearAllocator.cpp
 
 SOURCE=.\Templates\NameTable.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1862,18 +4719,38 @@ SOURCE=.\Templates\NameTable.cpp
 
 SOURCE=.\Templates\NameTable_CTFileName.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1882,18 +4759,38 @@ SOURCE=.\Templates\NameTable_CTFileName.cpp
 
 SOURCE=.\Templates\NameTable_CTranslationPair.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -1902,20 +4799,71 @@ SOURCE=.\Templates\NameTable_CTranslationPair.cpp
 
 SOURCE=.\Templates\ReusableContainer.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1927,20 +4875,71 @@ SOURCE=.\Templates\ReusableContainer.cpp
 
 SOURCE=.\Templates\Selection.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1952,20 +4951,71 @@ SOURCE=.\Templates\Selection.cpp
 
 SOURCE=.\Templates\StaticArray.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -1977,20 +5027,71 @@ SOURCE=.\Templates\StaticArray.cpp
 
 SOURCE=.\Templates\StaticStackArray.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2002,20 +5103,71 @@ SOURCE=.\Templates\StaticStackArray.cpp
 
 SOURCE=.\Templates\Stock.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2027,18 +5179,38 @@ SOURCE=.\Templates\Stock.cpp
 
 SOURCE=.\Templates\Stock_CAnimData.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2047,18 +5219,38 @@ SOURCE=.\Templates\Stock_CAnimData.cpp
 
 SOURCE=.\Templates\Stock_CAnimSet.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2067,18 +5259,38 @@ SOURCE=.\Templates\Stock_CAnimSet.cpp
 
 SOURCE=.\Templates\Stock_CEntityClass.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2091,18 +5303,38 @@ SOURCE=.\Templates\Stock_CFontData.cpp
 
 SOURCE=.\Templates\Stock_CMesh.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2111,18 +5343,38 @@ SOURCE=.\Templates\Stock_CMesh.cpp
 
 SOURCE=.\Templates\Stock_CModelData.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2135,18 +5387,38 @@ SOURCE=.\Templates\Stock_CModelInstance.cpp
 
 SOURCE=.\Templates\Stock_CShader.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2155,18 +5427,38 @@ SOURCE=.\Templates\Stock_CShader.cpp
 
 SOURCE=.\Templates\Stock_CSkeleton.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2175,18 +5467,38 @@ SOURCE=.\Templates\Stock_CSkeleton.cpp
 
 SOURCE=.\Templates\Stock_CSoundData.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2195,18 +5507,38 @@ SOURCE=.\Templates\Stock_CSoundData.cpp
 
 SOURCE=.\Templates\Stock_CTextureData.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2219,18 +5551,38 @@ SOURCE=.\Templates\Stock_CTextureData.cpp
 
 SOURCE=.\Network\ActionBuffer.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2251,18 +5603,38 @@ SOURCE=.\Network\ChatMsgBuffer.cpp
 
 SOURCE=.\Network\ClientInterface.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2279,18 +5651,38 @@ SOURCE=.\Network\CNetwork.cpp
 
 SOURCE=.\Network\CommunicationInterface.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2299,18 +5691,38 @@ SOURCE=.\Network\CommunicationInterface.cpp
 
 SOURCE=.\Network\Compression.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2323,18 +5735,38 @@ SOURCE=.\Network\CPacket.cpp
 
 SOURCE=.\Network\Diff.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2359,18 +5791,38 @@ SOURCE=.\Network\ItemTarget.cpp
 
 SOURCE=.\Network\MessageDispatcher.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2387,18 +5839,38 @@ SOURCE=.\Network\MultiTarget.cpp
 
 SOURCE=.\Network\NetworkMessage.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2407,18 +5879,38 @@ SOURCE=.\Network\NetworkMessage.cpp
 
 SOURCE=.\Network\NetworkProfile.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2431,18 +5923,38 @@ SOURCE=.\Network\PetTarget.cpp
 
 SOURCE=.\Network\PlayerSource.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2451,18 +5963,38 @@ SOURCE=.\Network\PlayerSource.cpp
 
 SOURCE=.\Network\PlayerTarget.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2471,18 +6003,38 @@ SOURCE=.\Network\PlayerTarget.cpp
 
 SOURCE=.\Network\Server.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2491,25 +6043,69 @@ SOURCE=.\Network\Server.cpp
 
 SOURCE=.\Network\SessionState.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
 # End Source File
 # Begin Source File
 
+SOURCE=.\Network\SessionStateComm.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Network\SessionStateDebug.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Network\SessionStateEvent.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Network\SessionStateExten.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Network\SessionStateExtendNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Network\SessionStateInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Network\SessionStateItem.cpp
 # End Source File
 # Begin Source File
 
@@ -2531,6 +6127,10 @@ SOURCE=.\Network\TxtQueue.cpp
 
 SOURCE=.\Network\Web.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=.\Network\WebAddress.cpp
+# End Source File
 # End Group
 # Begin Group "Rendering"
 
@@ -2539,20 +6139,71 @@ SOURCE=.\Network\Web.cpp
 
 SOURCE=.\Rendering\RenCache.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2564,20 +6215,71 @@ SOURCE=.\Rendering\RenCache.cpp
 
 SOURCE=.\Rendering\RendASER.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2589,20 +6291,71 @@ SOURCE=.\Rendering\RendASER.cpp
 
 SOURCE=.\Rendering\RendClip.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2614,18 +6367,38 @@ SOURCE=.\Rendering\RendClip.cpp
 
 SOURCE=.\Rendering\Render.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2634,20 +6407,71 @@ SOURCE=.\Rendering\Render.cpp
 
 SOURCE=.\Rendering\RenderAdding.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2663,20 +6487,71 @@ SOURCE=.\Rendering\RenderBloom.cpp
 
 SOURCE=.\Rendering\RenderBrushes.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2688,20 +6563,71 @@ SOURCE=.\Rendering\RenderBrushes.cpp
 
 SOURCE=.\Rendering\RenderModels.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2713,20 +6639,71 @@ SOURCE=.\Rendering\RenderModels.cpp
 
 SOURCE=.\Rendering\RendMisc.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -2738,18 +6715,38 @@ SOURCE=.\Rendering\RendMisc.cpp
 
 SOURCE=.\Rendering\SelectOnRender.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2764,24 +6761,52 @@ SOURCE=.\Entities\Action.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\Entities\AffinityData.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\ArmorPreview.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Entities\CashShopData.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Entities\Entity.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2790,18 +6815,38 @@ SOURCE=.\Entities\Entity.cpp
 
 SOURCE=.\Entities\EntityClass.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2810,18 +6855,38 @@ SOURCE=.\Entities\EntityClass.cpp
 
 SOURCE=.\Entities\EntityCollision.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2830,18 +6895,38 @@ SOURCE=.\Entities\EntityCollision.cpp
 
 SOURCE=.\Entities\EntityCopying.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2850,18 +6935,38 @@ SOURCE=.\Entities\EntityCopying.cpp
 
 SOURCE=.\Entities\EntityProperties.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2870,18 +6975,38 @@ SOURCE=.\Entities\EntityProperties.cpp
 
 SOURCE=.\Entities\FieldBSPTesting.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2900,23 +7025,51 @@ SOURCE=.\Entities\Items.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\Entities\Lacarette.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Entities\LastPositions.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
 
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\LevelupGuide.cpp
 # End Source File
 # Begin Source File
 
@@ -2930,21 +7083,45 @@ SOURCE=.\Entities\MobData.cpp
 
 SOURCE=.\Entities\NearestPolygon.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
 
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\NoticeData.cpp
 # End Source File
 # Begin Source File
 
@@ -2958,18 +7135,38 @@ SOURCE=.\Entities\OptionData.cpp
 
 SOURCE=.\Entities\PlayerCharacter.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -2985,6 +7182,10 @@ SOURCE=.\Entities\ShopData.cpp
 # Begin Source File
 
 SOURCE=.\Entities\Skill.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\SkillTree.cpp
 # End Source File
 # Begin Source File
 
@@ -3008,7 +7209,19 @@ SOURCE=.\Entities\TargetInfo.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\Entities\TEventString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\TradeItem.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Entities\WildPetData.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\ZoneData.cpp
 # End Source File
 # End Group
 # Begin Group "Light"
@@ -3018,18 +7231,38 @@ SOURCE=.\Entities\WildPetData.cpp
 
 SOURCE=.\Light\LayerMaker.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -3038,18 +7271,38 @@ SOURCE=.\Light\LayerMaker.cpp
 
 SOURCE=.\Light\LayerMixer.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -3058,358 +7311,38 @@ SOURCE=.\Light\LayerMixer.cpp
 
 SOURCE=.\Light\LightSource.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
 
-!ENDIF 
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
 
-# End Source File
-# End Group
-# Begin Group "zlib"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
 
-# PROP Default_Filter ""
-# Begin Source File
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
 
-SOURCE=.\zlib\adler32.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\compress.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\deflate.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\infblock.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\infcodes.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\inffast.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\inflate.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\inftrees.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\infutil.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\trees.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\uncompr.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\zutil.c
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi
-# SUBTRACT CPP /YX /Yc /Yu
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -3418,155 +7351,6 @@ SOURCE=.\zlib\zutil.c
 # Begin Group "Ska"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\Ska\AnimSet.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# ADD CPP /Zi
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\Mesh.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# ADD CPP /Zi
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\ModelInstance.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# ADD CPP /Zi
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\NmFileIO.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\RMMisc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\RMRender.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# ADD CPP /Zi
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\RMRenderMask.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# ADD CPP /Zi
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\Skeleton.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# ADD CPP /Zi
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\StringTable.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# ADD BASE CPP /Zi
-# ADD CPP /Zi
-
-!ENDIF 
-
-# End Source File
-# End Group
 # Begin Group "Terrain"
 
 # PROP Default_Filter ""
@@ -3639,6 +7423,295 @@ SOURCE=.\Terrain\TRShader_Shadow.cpp
 SOURCE=.\Terrain\TRShadows.cpp
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\Ska\AnimSet.cpp
+
+!IF  "$(CFG)" == "Engine - Win32 Debug"
+
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# ADD BASE CPP /Zi
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Ska\Mesh.cpp
+
+!IF  "$(CFG)" == "Engine - Win32 Debug"
+
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# ADD BASE CPP /Zi
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Ska\ModelInstance.cpp
+
+!IF  "$(CFG)" == "Engine - Win32 Debug"
+
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# ADD BASE CPP /Zi
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Ska\NmFileIO.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Ska\RMMisc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Ska\RMRender.cpp
+
+!IF  "$(CFG)" == "Engine - Win32 Debug"
+
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# ADD BASE CPP /Zi
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Ska\RMRenderMask.cpp
+
+!IF  "$(CFG)" == "Engine - Win32 Debug"
+
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# ADD BASE CPP /Zi
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Ska\Skeleton.cpp
+
+!IF  "$(CFG)" == "Engine - Win32 Debug"
+
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# ADD BASE CPP /Zi
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Ska\StringTable.cpp
+
+!IF  "$(CFG)" == "Engine - Win32 Debug"
+
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# ADD BASE CPP /Zi
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+!ENDIF 
+
+# End Source File
+# End Group
 # Begin Group "XBox"
 
 # PROP Default_Filter ""
@@ -3646,20 +7719,71 @@ SOURCE=.\Terrain\TRShadows.cpp
 
 SOURCE=.\XBox\IFeel_X.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -3671,20 +7795,71 @@ SOURCE=.\XBox\IFeel_X.cpp
 
 SOURCE=.\XBox\Input_X.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -3696,20 +7871,71 @@ SOURCE=.\XBox\Input_X.cpp
 
 SOURCE=.\XBox\SoundDecoder_X.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -3721,20 +7947,71 @@ SOURCE=.\XBox\SoundDecoder_X.cpp
 
 SOURCE=.\XBox\SymbolLocator_X.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -3746,20 +8023,71 @@ SOURCE=.\XBox\SymbolLocator_X.cpp
 
 SOURCE=.\XBox\VideoDecoder_X.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -3951,23 +8279,83 @@ SOURCE=.\Effect\CTagManager.cpp
 SOURCE=.\Effect\CWorldTag.cpp
 # End Source File
 # End Group
+# Begin Group "Item"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Effect\TimerItem.cpp
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\Effect\CManager.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
+# PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
+# PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
@@ -3989,19 +8377,23 @@ SOURCE=.\Effect\EffectCommon.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Interface\UIAuction.cpp
+SOURCE=.\Contents\Base\ChattingUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIAD.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIAffinity.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIAffinityInfo.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Interface\UIAutoHelp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIBilling.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIBillItem.cpp
 # End Source File
 # Begin Source File
 
@@ -4013,27 +8405,11 @@ SOURCE=.\Interface\UIBuff.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIButton.cpp
+SOURCE=.\Interface\UICashShopEX.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIButtonEx.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UICashShop.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIChangeWeapon.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UICharacterInfo.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIChatting.cpp
+SOURCE=.\Interface\UIChatting_GMCmd.cpp
 # End Source File
 # Begin Source File
 
@@ -4041,11 +8417,15 @@ SOURCE=.\Interface\UICheckButton.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UICollectBox.cpp
+SOURCE=.\Interface\UIChildInvenSlot.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIComboBox.cpp
+SOURCE=.\Interface\UIChildQuickSlot.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UICollectBox.cpp
 # End Source File
 # Begin Source File
 
@@ -4053,15 +8433,11 @@ SOURCE=.\Interface\UICompound.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UICreateChar.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIDrawFigure.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIEditBox.cpp
+SOURCE=.\Interface\UIEventPopup.cpp
 # End Source File
 # Begin Source File
 
@@ -4074,6 +8450,10 @@ SOURCE=.\Interface\UIFiltering.cpp
 # Begin Source File
 
 SOURCE=.\Interface\UIFlowerTree.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIFortune.cpp
 # End Source File
 # Begin Source File
 
@@ -4090,6 +8470,10 @@ SOURCE=.\Interface\UIGuild.cpp
 # Begin Source File
 
 SOURCE=.\Interface\UIGuildBattle.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIGuildMark.cpp
 # End Source File
 # Begin Source File
 
@@ -4121,15 +8505,7 @@ SOURCE=.\Interface\UIHelpIcon.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIHelpOld.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIImageBox.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIIME.cpp
+SOURCE=.\Interface\UIImageArray.cpp
 # End Source File
 # Begin Source File
 
@@ -4137,23 +8513,23 @@ SOURCE=.\Interface\UIInitJob.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\Interface\UIInvenCashBag.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIInvenCashBagBox.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Interface\UIInventory.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIListBox.cpp
+SOURCE=.\Interface\UIItemProduct.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIListBoxEx.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UILogin.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIManager.cpp
+SOURCE=.\Interface\UILacarette.cpp
 # End Source File
 # Begin Source File
 
@@ -4189,19 +8565,19 @@ SOURCE=.\Interface\UIMonsterCombo.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIMultiEditBox.cpp
+SOURCE=.\Interface\UIMonsterMercenary.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIMultList.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UINotice.cpp
+SOURCE=.\Interface\UINickName.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Interface\UINpcHelp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UINpcScroll.cpp
 # End Source File
 # Begin Source File
 
@@ -4210,10 +8586,6 @@ SOURCE=.\Interface\UIOption.cpp
 # Begin Source File
 
 SOURCE=.\Interface\UIOXQuizEvent.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIParty.cpp
 # End Source File
 # Begin Source File
 
@@ -4249,10 +8621,6 @@ SOURCE=.\Interface\UIPlayerInfo.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIPortal.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIProcess.cpp
 # End Source File
 # Begin Source File
@@ -4265,19 +8633,11 @@ SOURCE=.\Interface\UIProduct.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIQuest.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIQuestBook.cpp
+SOURCE=.\Interface\UIProgressBar.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Interface\UIQuickSlot.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIQuiz.cpp
 # End Source File
 # Begin Source File
 
@@ -4297,19 +8657,15 @@ SOURCE=.\Interface\UIRefine.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIRemission.cpp
+SOURCE=.\Interface\UIReformSystem.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIScrollBar.cpp
+SOURCE=.\Interface\UIResurrection.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Interface\UISecurity.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UISelChar.cpp
 # End Source File
 # Begin Source File
 
@@ -4318,10 +8674,6 @@ SOURCE=.\Interface\UISelectList.cpp
 # Begin Source File
 
 SOURCE=.\Interface\UISelectResource.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UISelectServer.cpp
 # End Source File
 # Begin Source File
 
@@ -4361,11 +8713,11 @@ SOURCE=.\Interface\UISkillLearn.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UISlideBar.cpp
+SOURCE=.\Interface\UISkillToolTip.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UISpinButton.cpp
+SOURCE=.\Interface\UISocketSystem.cpp
 # End Source File
 # Begin Source File
 
@@ -4381,10 +8733,6 @@ SOURCE=.\Interface\UITalk.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UITargetInfo.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UITatoo.cpp
 # End Source File
 # Begin Source File
@@ -4393,7 +8741,7 @@ SOURCE=.\Interface\UITeleport.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UITextureManager.cpp
+SOURCE=.\Interface\UITextBox.cpp
 # End Source File
 # Begin Source File
 
@@ -4419,26 +8767,75 @@ SOURCE=.\Interface\UIWildPetInfo.cpp
 
 SOURCE=.\Base\Anim.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -4447,19 +8844,38 @@ SOURCE=.\Base\Anim.cpp
 
 SOURCE=.\Base\Changeable.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4468,26 +8884,75 @@ SOURCE=.\Base\Changeable.cpp
 
 SOURCE=.\Base\Console.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -4496,19 +8961,38 @@ SOURCE=.\Base\Console.cpp
 
 SOURCE=.\Base\CRC.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4517,19 +9001,38 @@ SOURCE=.\Base\CRC.cpp
 
 SOURCE=.\Base\CRCTable.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4538,19 +9041,38 @@ SOURCE=.\Base\CRCTable.cpp
 
 SOURCE=.\Base\CTString.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4558,38 +9080,47 @@ SOURCE=.\Base\CTString.cpp
 # Begin Source File
 
 SOURCE=.\Base\CTWString.cpp
+# End Source File
+# Begin Source File
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# PROP Intermediate_Dir "FinalDebug"
-# ADD CPP /Fr
-
-!ENDIF 
-
+SOURCE=.\Base\DamageLogInfo.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Base\Directory.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4598,26 +9129,75 @@ SOURCE=.\Base\Directory.cpp
 
 SOURCE=.\Base\ErrorReporting.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -4626,19 +9206,38 @@ SOURCE=.\Base\ErrorReporting.cpp
 
 SOURCE=.\Base\FileName.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4647,19 +9246,38 @@ SOURCE=.\Base\FileName.cpp
 
 SOURCE=.\Base\IFeel.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4668,82 +9286,237 @@ SOURCE=.\Base\IFeel.cpp
 
 SOURCE=.\Base\Input.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=.\Base\InterfaceSymbol.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Base\Lists.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
 # End Source File
 # Begin Source File
 
+SOURCE=.\Base\md5.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Base\Memory.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -4751,45 +9524,80 @@ SOURCE=.\Base\Memory.cpp
 # Begin Source File
 
 SOURCE=.\Base\MemoryTracking.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# PROP Intermediate_Dir "FinalDebug"
-# ADD CPP /Fr"FinalFinalDebug/"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\Base\Profiling.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -4798,19 +9606,38 @@ SOURCE=.\Base\Profiling.cpp
 
 SOURCE=.\Base\ProgressHook.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4819,26 +9646,76 @@ SOURCE=.\Base\ProgressHook.cpp
 
 SOURCE=.\Base\Protection.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 # SUBTRACT CPP /YX /Yc /Yu
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # SUBTRACT BASE CPP /YX /Yc /Yu
 # SUBTRACT CPP /YX /Yc /Yu
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# SUBTRACT BASE CPP /YX /Yc /Yu
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -4848,19 +9725,38 @@ SOURCE=.\Base\Protection.cpp
 
 SOURCE=.\Base\Registry.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4869,26 +9765,75 @@ SOURCE=.\Base\Registry.cpp
 
 SOURCE=.\Base\Relations.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -4897,19 +9842,38 @@ SOURCE=.\Base\Relations.cpp
 
 SOURCE=.\Base\ReplaceFile.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4918,26 +9882,75 @@ SOURCE=.\Base\ReplaceFile.cpp
 
 SOURCE=.\Base\Serial.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -4946,26 +9959,75 @@ SOURCE=.\Base\Serial.cpp
 
 SOURCE=.\Base\Shell.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -4974,19 +10036,38 @@ SOURCE=.\Base\Shell.cpp
 
 SOURCE=.\Base\ShellTypes.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -4994,45 +10075,80 @@ SOURCE=.\Base\ShellTypes.cpp
 # Begin Source File
 
 SOURCE=.\Base\SimpleHashTable.cpp
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# PROP Intermediate_Dir "FinalDebug"
-# ADD CPP /Fr
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\Base\StackDump.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -5041,26 +10157,75 @@ SOURCE=.\Base\StackDump.cpp
 
 SOURCE=.\Base\Statistics.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -5069,26 +10234,75 @@ SOURCE=.\Base\Statistics.cpp
 
 SOURCE=.\Base\Stream.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
@@ -5097,19 +10311,38 @@ SOURCE=.\Base\Stream.cpp
 
 SOURCE=.\Base\Synchronization.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5118,47 +10351,119 @@ SOURCE=.\Base\Synchronization.cpp
 
 SOURCE=.\Base\Timer.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug"
-# ADD CPP /Zi /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-# PROP BASE Intermediate_Dir "Debug"
-# PROP Intermediate_Dir "FinalDebug"
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi /Yu"StdH.h"
-# ADD CPP /Zi /Fr /Yu"StdH.h"
+# ADD CPP /Zi /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
 
 !ENDIF 
 
 # End Source File
 # Begin Source File
 
+SOURCE=.\Base\TLVar.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Base\Translation.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5167,19 +10472,38 @@ SOURCE=.\Base\Translation.cpp
 
 SOURCE=.\Base\Unzip.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5188,19 +10512,38 @@ SOURCE=.\Base\Unzip.cpp
 
 SOURCE=.\Base\Updateable.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
-# PROP Intermediate_Dir "FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
 # ADD BASE CPP /Zi
-# ADD CPP /Zi /Fr
+# ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5213,18 +10556,38 @@ SOURCE=.\Base\Updateable.cpp
 
 SOURCE=.\Brushes\Brush.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5233,18 +10596,38 @@ SOURCE=.\Brushes\Brush.cpp
 
 SOURCE=.\Brushes\BrushArchive.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5253,18 +10636,38 @@ SOURCE=.\Brushes\BrushArchive.cpp
 
 SOURCE=.\Brushes\BrushExport.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5273,18 +10676,38 @@ SOURCE=.\Brushes\BrushExport.cpp
 
 SOURCE=.\Brushes\BrushImport.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5293,18 +10716,38 @@ SOURCE=.\Brushes\BrushImport.cpp
 
 SOURCE=.\Brushes\BrushIO.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5313,18 +10756,38 @@ SOURCE=.\Brushes\BrushIO.cpp
 
 SOURCE=.\Brushes\BrushMip.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5333,18 +10796,38 @@ SOURCE=.\Brushes\BrushMip.cpp
 
 SOURCE=.\Brushes\BrushPolygon.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5353,18 +10836,38 @@ SOURCE=.\Brushes\BrushPolygon.cpp
 
 SOURCE=.\Brushes\BrushSector.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5373,18 +10876,38 @@ SOURCE=.\Brushes\BrushSector.cpp
 
 SOURCE=.\Brushes\BrushShadows.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
 
 !ENDIF 
 
@@ -5394,27 +10917,136 @@ SOURCE=.\Brushes\BrushShadows.cpp
 SOURCE=.\Brushes\BrushTriangularize.cpp
 # End Source File
 # End Group
+# Begin Group "XTrapInterface"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\XTrapInterface\XTrapInterface.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\Engine.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yu"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yu"StdH.h"
 # ADD CPP /Yu"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi
 # ADD CPP /Zi
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yu"StdH.h"
+# ADD CPP /Yu"StdH.h"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\Engine.def
+
+!IF  "$(CFG)" == "Engine - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
 
 !ENDIF 
 
@@ -5425,7 +11057,7 @@ SOURCE=.\GameState.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\JobInfo.cpp
+SOURCE=.\Loading.cpp
 # End Source File
 # Begin Source File
 
@@ -5437,40 +11069,103 @@ SOURCE=.\PetInfo.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\SlaveInfo.cpp
+SOURCE=.\Network\SharedWebData.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\StdH.cpp
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# ADD CPP /Yc"StdH.h"
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # ADD CPP /Zi /Yc"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # ADD BASE CPP /Yc"StdH.h"
 # ADD CPP /Yc"StdH.h"
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
 
 # ADD BASE CPP /Zi /Yc"StdH.h"
 # ADD CPP /Zi /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# ADD BASE CPP /Yc"StdH.h"
+# ADD CPP /Yc"StdH.h"
 
 !ENDIF 
 
 # End Source File
 # Begin Source File
 
-SOURCE=.\TransformInfo.cpp
+SOURCE=.\Help\UISupport.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Util.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Version.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\World\WorldData.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\World\WorldString.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -5529,6 +11224,10 @@ SOURCE=.\Base\CTWString.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Base\DamageLogInfo.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Base\ErrorReporting.h
 # End Source File
 # Begin Source File
@@ -5553,6 +11252,10 @@ SOURCE=.\Base\Input.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Base\InterfaceSymbol.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Base\KeyNames.h
 # End Source File
 # Begin Source File
@@ -5566,6 +11269,14 @@ SOURCE=.\Base\Lists.h
 # Begin Source File
 
 SOURCE=.\Base\Lists.inl
+# End Source File
+# Begin Source File
+
+SOURCE=.\Base\md5.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Base\md5_loc.h
 # End Source File
 # Begin Source File
 
@@ -5666,6 +11377,10 @@ SOURCE=.\Base\Timer.h
 # Begin Source File
 
 SOURCE=.\Base\Timer.inl
+# End Source File
+# Begin Source File
+
+SOURCE=.\Base\TLVar.h
 # End Source File
 # Begin Source File
 
@@ -6089,6 +11804,14 @@ SOURCE=.\Entities\Action.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Entities\AffinityData.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\ArmorPreview.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Entities\CashShopData.h
 # End Source File
 # Begin Source File
@@ -6141,7 +11864,15 @@ SOURCE=.\Entities\Items.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Entities\Lacarette.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Entities\LastPositions.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\LevelupGuide.h
 # End Source File
 # Begin Source File
 
@@ -6150,6 +11881,10 @@ SOURCE=.\Entities\MissionCase.h
 # Begin Source File
 
 SOURCE=.\Entities\MobData.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\NoticeData.h
 # End Source File
 # Begin Source File
 
@@ -6185,6 +11920,10 @@ SOURCE=.\Entities\Skill.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Entities\SkillTree.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Entities\SmcInfo.h
 # End Source File
 # Begin Source File
@@ -6205,7 +11944,19 @@ SOURCE=.\Entities\TargetInfo.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Entities\TEventString.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\TradeItem.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Entities\WildPetData.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Entities\ZoneData.h
 # End Source File
 # End Group
 # Begin Group "Brushes Headers"
@@ -6361,6 +12112,10 @@ SOURCE=.\Light\Shadows_internal.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Network\SharedWebData.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Network\SlaveTarget.h
 # End Source File
 # Begin Source File
@@ -6379,6 +12134,10 @@ SOURCE=.\Network\TxtQueue.h
 
 SOURCE=.\Network\Web.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\Network\WebAddress.h
+# End Source File
 # End Group
 # Begin Group "Light Headers"
 
@@ -6394,54 +12153,6 @@ SOURCE=.\Light\LensFlares.h
 # Begin Source File
 
 SOURCE=.\Light\LightSource.h
-# End Source File
-# End Group
-# Begin Group "zlib Headers"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\zlib\deflate.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\infblock.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\infcodes.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\inffast.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\inffixed.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\inftrees.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\infutil.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\trees.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\zconf.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\zlib.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\zlib\zutil.h
 # End Source File
 # End Group
 # Begin Group "exploration3d"
@@ -6686,6 +12397,10 @@ SOURCE=.\Effect\CTerrainEffect.h
 
 SOURCE=.\Effect\CTraceEffect.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\Effect\TimerItem.h
+# End Source File
 # End Group
 # Begin Group "Particle Headers"
 
@@ -6841,19 +12556,27 @@ SOURCE=.\Effect\FreeMemStack.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Interface\UIAuction.h
+SOURCE=.\Contents\Base\ChattingCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\ChattingUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIAD.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIAffinity.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIAffinityInfo.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\Interface\UIAutoHelp.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIBilling.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIBillItem.h
 # End Source File
 # Begin Source File
 
@@ -6865,27 +12588,7 @@ SOURCE=.\Interface\UIBuff.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIButton.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIButtonEx.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UICashShop.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIChangeWeapon.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UICharacterInfo.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIChatting.h
+SOURCE=.\Interface\UICashShopEX.h
 # End Source File
 # Begin Source File
 
@@ -6893,11 +12596,15 @@ SOURCE=.\Interface\UICheckButton.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UICollectBox.h
+SOURCE=.\Interface\UIChildInvenSlot.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIComboBox.h
+SOURCE=.\Interface\UIChildQuickSlot.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UICollectBox.h
 # End Source File
 # Begin Source File
 
@@ -6905,15 +12612,11 @@ SOURCE=.\Interface\UICompound.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UICreateChar.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIDrawFigure.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIEditBox.h
+SOURCE=.\Interface\UIEventPopup.h
 # End Source File
 # Begin Source File
 
@@ -6926,6 +12629,10 @@ SOURCE=.\Interface\UIFiltering.h
 # Begin Source File
 
 SOURCE=.\Interface\UIFlowerTree.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIFortune.h
 # End Source File
 # Begin Source File
 
@@ -6942,6 +12649,10 @@ SOURCE=.\Interface\UIGuild.h
 # Begin Source File
 
 SOURCE=.\Interface\UIGuildBattle.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIGuildMark.h
 # End Source File
 # Begin Source File
 
@@ -6973,15 +12684,7 @@ SOURCE=.\Interface\UIHelpIcon.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIHelpOld.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIImageBox.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIIME.h
+SOURCE=.\Interface\UIImageArray.h
 # End Source File
 # Begin Source File
 
@@ -6993,23 +12696,23 @@ SOURCE=.\Interface\UIInternalClasses.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Interface\UIInvenCashBag.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIInvenCashBagBox.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Interface\UIInventory.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIListBox.h
+SOURCE=.\Interface\UIItemProduct.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIListBoxEx.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UILogin.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIManager.h
+SOURCE=.\Interface\UILacarette.h
 # End Source File
 # Begin Source File
 
@@ -7045,23 +12748,23 @@ SOURCE=.\Interface\UIMonsterCombo.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Interface\UIMonsterMercenary.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Interface\UIMouseCursor.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIMultiEditBox.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIMultList.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UINotice.h
+SOURCE=.\Interface\UINickName.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\Interface\UINpcHelp.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UINpcScroll.h
 # End Source File
 # Begin Source File
 
@@ -7070,10 +12773,6 @@ SOURCE=.\Interface\UIOption.h
 # Begin Source File
 
 SOURCE=.\Interface\UIOXQuizEvent.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIParty.h
 # End Source File
 # Begin Source File
 
@@ -7109,10 +12808,6 @@ SOURCE=.\Interface\UIPlayerInfo.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIPortal.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIProcess.h
 # End Source File
 # Begin Source File
@@ -7125,19 +12820,7 @@ SOURCE=.\Interface\UIProduct.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIQuest.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIQuestBook.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIQuickSlot.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIQuiz.h
 # End Source File
 # Begin Source File
 
@@ -7157,19 +12840,15 @@ SOURCE=.\Interface\UIRefine.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIRemission.h
+SOURCE=.\Interface\UIReformSystem.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIScrollBar.h
+SOURCE=.\Interface\UIResurrection.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\Interface\UISecurity.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UISelChar.h
 # End Source File
 # Begin Source File
 
@@ -7178,10 +12857,6 @@ SOURCE=.\Interface\UISelectList.h
 # Begin Source File
 
 SOURCE=.\Interface\UISelectResource.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UISelectServer.h
 # End Source File
 # Begin Source File
 
@@ -7221,11 +12896,11 @@ SOURCE=.\Interface\UISkillLearn.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UISlideBar.h
+SOURCE=.\Interface\UISkillToolTip.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UISpinButton.h
+SOURCE=.\Interface\UISocketSystem.h
 # End Source File
 # Begin Source File
 
@@ -7241,10 +12916,6 @@ SOURCE=.\Interface\UITalk.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UITargetInfo.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UITatoo.h
 # End Source File
 # Begin Source File
@@ -7253,7 +12924,7 @@ SOURCE=.\Interface\UITeleport.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UITextureManager.h
+SOURCE=.\Interface\UITextBox.h
 # End Source File
 # Begin Source File
 
@@ -7271,9 +12942,13 @@ SOURCE=.\Interface\UIWebBoard.h
 
 SOURCE=.\Interface\UIWildPetInfo.h
 # End Source File
+# End Group
+# Begin Group "Design Classes Headers"
+
+# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Interface\UIWindow.h
+SOURCE=.\DesignClasses\Singleton\SingletonBase.h
 # End Source File
 # End Group
 # Begin Source File
@@ -7290,6 +12965,10 @@ SOURCE=.\Engine.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\GameGuardInterface.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\GameShell.h
 # End Source File
 # Begin Source File
@@ -7302,7 +12981,7 @@ SOURCE=.\GlobalDefinition.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\JobInfo.h
+SOURCE=.\Loading.h
 # End Source File
 # Begin Source File
 
@@ -7322,300 +13001,20 @@ SOURCE=.\PetInfo.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\SlaveInfo.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\StdH.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\TransformInfo.h
+SOURCE=.\Help\UISupport.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Util.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-# End Group
-# Begin Group "Grammar Files"
-
-# PROP Default_Filter "y;l;skl"
-# Begin Source File
-
-SOURCE=.\Base\FLEX.SKL
-# End Source File
-# Begin Source File
-
-SOURCE=.\Base\Parser.y
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# Begin Custom Build - Generating shell parser source
-InputDir=.\Base
-InputPath=.\Base\Parser.y
-
-BuildCmds= \
-	bison -o$(InputDir)/Parser.c $(InputDir)/Parser.y -d \
-	copy $(InputDir)\Parser.c $(InputDir)\Parser.cpp \
-	del $(InputDir)\Parser.c /q \
-	
-
-"$(InputDir)/Parser.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)/Parser.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# Begin Custom Build - Generating shell parser source
-InputDir=.\Base
-InputPath=.\Base\Parser.y
-
-BuildCmds= \
-	bison -o$(InputDir)/Parser.c $(InputDir)/Parser.y -d \
-	copy $(InputDir)\Parser.c $(InputDir)\Parser.cpp \
-	del $(InputDir)\Parser.c /q \
-	
-
-"$(InputDir)/Parser.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)/Parser.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# Begin Custom Build - Generating shell parser source
-InputDir=.\Base
-InputPath=.\Base\Parser.y
-
-BuildCmds= \
-	bison -o$(InputDir)/Parser.c $(InputDir)/Parser.y -d \
-	copy $(InputDir)\Parser.c $(InputDir)\Parser.cpp \
-	del $(InputDir)\Parser.c /q \
-	
-
-"$(InputDir)/Parser.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)/Parser.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# Begin Custom Build - Generating shell parser source
-InputDir=.\Base
-InputPath=.\Base\Parser.y
-
-BuildCmds= \
-	bison -o$(InputDir)/Parser.c $(InputDir)/Parser.y -d \
-	copy $(InputDir)\Parser.c $(InputDir)\Parser.cpp \
-	del $(InputDir)\Parser.c /q \
-	
-
-"$(InputDir)/Parser.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)/Parser.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Base\Scanner.l
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# Begin Custom Build - Generating shell scanner source
-InputDir=.\Base
-InputPath=.\Base\Scanner.l
-
-"$(InputDir)/Scanner.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	flex -o$(InputDir)\Scanner.cpp -S$(InputDir)\Flex.skl $(InputDir)\Scanner.l
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# Begin Custom Build - Generating shell scanner source
-InputDir=.\Base
-InputPath=.\Base\Scanner.l
-
-"$(InputDir)/Scanner.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	flex -o$(InputDir)\Scanner.cpp -S$(InputDir)\Flex.skl $(InputDir)\Scanner.l
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# Begin Custom Build - Generating shell scanner source
-InputDir=.\Base
-InputPath=.\Base\Scanner.l
-
-"$(InputDir)/Scanner.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	flex -o$(InputDir)\Scanner.cpp -S$(InputDir)\Flex.skl $(InputDir)\Scanner.l
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# Begin Custom Build - Generating shell scanner source
-InputDir=.\Base
-InputPath=.\Base\Scanner.l
-
-"$(InputDir)/Scanner.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	flex -o$(InputDir)\Scanner.cpp -S$(InputDir)\Flex.skl $(InputDir)\Scanner.l
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\smcFlex.skl
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\smcPars.y
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# Begin Custom Build
-InputDir=.\Ska
-InputPath=.\Ska\smcPars.y
-
-BuildCmds= \
-	bison -o$(InputDir)/smcPars.c ./Ska/smcPars.y -d  -p syy \
-	copy $(InputDir)\smcPars.c $(InputDir)\smcPars.cpp \
-	del $(InputDir)\smcPars.c /q \
-	
-
-"$(InputDir)/smcPars.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)/smcPars.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# Begin Custom Build
-InputDir=.\Ska
-InputPath=.\Ska\smcPars.y
-
-BuildCmds= \
-	bison -o$(InputDir)/smcPars.c ./Ska/smcPars.y -d  -p syy \
-	copy $(InputDir)\smcPars.c $(InputDir)\smcPars.cpp \
-	del $(InputDir)\smcPars.c /q \
-	
-
-"$(InputDir)/smcPars.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)/smcPars.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# Begin Custom Build
-InputDir=.\Ska
-InputPath=.\Ska\smcPars.y
-
-BuildCmds= \
-	bison -o$(InputDir)/smcPars.c ./Ska/smcPars.y -d  -p syy \
-	copy $(InputDir)\smcPars.c $(InputDir)\smcPars.cpp \
-	del $(InputDir)\smcPars.c /q \
-	
-
-"$(InputDir)/smcPars.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)/smcPars.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# Begin Custom Build
-InputDir=.\Ska
-InputPath=.\Ska\smcPars.y
-
-BuildCmds= \
-	bison -o$(InputDir)/smcPars.c ./Ska/smcPars.y -d  -p syy \
-	copy $(InputDir)\smcPars.c $(InputDir)\smcPars.cpp \
-	del $(InputDir)\smcPars.c /q \
-	
-
-"$(InputDir)/smcPars.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)/smcPars.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\Ska\smcScan.l
-
-!IF  "$(CFG)" == "Engine - Win32 Release"
-
-# Begin Custom Build
-InputDir=.\Ska
-InputPath=.\Ska\smcScan.l
-
-"$(InputDir)/smcScan.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	flex -o$(InputDir)\smcScan.cpp -S$(InputDir)\smcFlex.skl $(InputDir)\smcScan.l
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
-
-# Begin Custom Build
-InputDir=.\Ska
-InputPath=.\Ska\smcScan.l
-
-"$(InputDir)/smcScan.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	flex -o$(InputDir)\smcScan.cpp -S$(InputDir)\smcFlex.skl $(InputDir)\smcScan.l
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
-
-# Begin Custom Build
-InputDir=.\Ska
-InputPath=.\Ska\smcScan.l
-
-"$(InputDir)/smcScan.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	flex -o$(InputDir)\smcScan.cpp -S$(InputDir)\smcFlex.skl $(InputDir)\smcScan.l
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
-
-# Begin Custom Build
-InputDir=.\Ska
-InputPath=.\Ska\smcScan.l
-
-"$(InputDir)/smcScan.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	flex -o$(InputDir)\smcScan.cpp -S$(InputDir)\smcFlex.skl $(InputDir)\smcScan.l
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
 # End Group
 # Begin Group "Generated Sources"
 
@@ -7667,50 +13066,170 @@ SOURCE=.\Ska\SMCSCAN.CPP
 
 SOURCE=.\Classes\BaseEvents.es
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\BaseEvents.es
 InputName=BaseEvents
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\BaseEvents.es
 InputName=BaseEvents
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\BaseEvents.es
 InputName=BaseEvents
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\BaseEvents.es
 InputName=BaseEvents
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\BaseEvents.es
+InputName=BaseEvents
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
@@ -7722,50 +13241,170 @@ InputName=BaseEvents
 
 SOURCE=.\Classes\MovableBrushEntity.es
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableBrushEntity.es
 InputName=MovableBrushEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableBrushEntity.es
 InputName=MovableBrushEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableBrushEntity.es
 InputName=MovableBrushEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableBrushEntity.es
 InputName=MovableBrushEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableBrushEntity.es
+InputName=MovableBrushEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
@@ -7777,50 +13416,170 @@ InputName=MovableBrushEntity
 
 SOURCE=.\Classes\MovableEntity.es
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableEntity.es
 InputName=MovableEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableEntity.es
 InputName=MovableEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableEntity.es
 InputName=MovableEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableEntity.es
 InputName=MovableEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableEntity.es
+InputName=MovableEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
@@ -7832,50 +13591,170 @@ InputName=MovableEntity
 
 SOURCE=.\Classes\MovableModelEntity.es
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableModelEntity.es
 InputName=MovableModelEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableModelEntity.es
 InputName=MovableModelEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableModelEntity.es
 InputName=MovableModelEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\MovableModelEntity.es
 InputName=MovableModelEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\MovableModelEntity.es
+InputName=MovableModelEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
@@ -7887,56 +13766,1452 @@ InputName=MovableModelEntity
 
 SOURCE=.\Classes\PlayerEntity.es
 
-!IF  "$(CFG)" == "Engine - Win32 Release"
+!IF  "$(CFG)" == "Engine - Win32 Debug"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\PlayerEntity.es
 InputName=PlayerEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\PlayerEntity.es
 InputName=PlayerEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalRelease"
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\PlayerEntity.es
 InputName=PlayerEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "Engine - Win32 FinalDebug"
+!ELSEIF  "$(CFG)" == "Engine - Win32 RUSLIVE"
 
 # Begin Custom Build - Engine/Classes/$(InputName).es
 InputPath=.\Classes\PlayerEntity.es
 InputName=PlayerEntity
 
 "Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                                                                                                                                                                                                                                          ..\  
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 BRZLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAXLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 KORTEST"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 THAILIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 WORLDEDITOR"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 DebugKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 ReleaseKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 GERLIVEKalydo"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 CHNLIVE"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
+	ecc Engine/Classes/$(InputName).es 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Engine - Win32 MAKEDEF"
+
+# Begin Custom Build - Engine/Classes/$(InputName).es
+InputPath=.\Classes\PlayerEntity.es
+InputName=PlayerEntity
+
+"Classes/$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd .. 
 	ecc Engine/Classes/$(InputName).es 
 	
 # End Custom Build
 
 !ENDIF 
 
+# End Source File
+# End Group
+# Begin Group "Lua"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\lua\lauxlib.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\lua\lua.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\lua\LuaInterface.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\lua\LuaInterface.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\lua\lualib.h
+# End Source File
+# End Group
+# Begin Group "Kalydo"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Kalydo\PackageManager.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Kalydo\PackageManager.h
+# End Source File
+# End Group
+# Begin Group "Secure"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Secure\FileSecure.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Secure\FileSecure.h
+# End Source File
+# End Group
+# Begin Group "Help"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Help\DefineHelp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\DefineHelp.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\ItemHelp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\ItemHelp.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\Loader.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\Loader.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\LoadLod.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\LoadString.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\LoadString.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\Util_Help.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Help\Util_Help.h
+# End Source File
+# End Group
+# Begin Group "SEED_256_KISA"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\SEED_256_KISA\SEED_256_KISA.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\SEED_256_KISA\SEED_256_KISA.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\SEED_256_KISA\SEED_256_KISA.tab
+# End Source File
+# End Group
+# Begin Group "Contents"
+
+# PROP Default_Filter ""
+# Begin Group "Base No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Contents\Base\Auction.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Auction.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\AuctionCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Calendar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Calendar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\ChangeWeapon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\ChangeWeapon.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\CharacterInfoCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Durability.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Durability.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\ExpressSystem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\ExpressSystem.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\InvenData.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\InvenData.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Notice.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Notice.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Party.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Party.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PetStash.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PetStash.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PetStashCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PetStashSelectEffectCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\RankingList.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\RankingList.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\RankingSystemCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Syndicate.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Syndicate.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIAuctionNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIAuctionNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIAuctionNew_favorite.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIAuctionNew_regist.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIAuctionNew_search.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UICalendar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UICalendar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UICalendarEventInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UICalendarEventInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIChangeEquipment.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIChangeEquipment.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIChangeWeaponNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIChangeWeaponNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UICharacterInfoNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UICharacterInfoNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIDurability.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIDurability.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIExpedition.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIExpedition.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIExpressItemList.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIExpressItemList.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIExpressSystem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIExpressSystem.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMapOption.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMapOption.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMysteriousBead.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMysteriousBead.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMySyndicateInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMySyndicateInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UINoticeNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UINoticeNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIPartyNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIPartyNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIPetStash.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIPetStash.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIPetStashSelectEffect.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIPetStashSelectEffect.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIRankingSystem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIRankingSystem.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UISkillNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UISkillNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UITrade.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UITrade.h
+# End Source File
+# End Group
+# Begin Group "Quest"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Contents\Base\Quest.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\Quest.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestAccept.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestAccept.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestBookNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestBookNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestComplete.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestComplete.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestDesign.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestDesign.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestRestore.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestRestore.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestView.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIQuestView.h
+# End Source File
+# End Group
+# Begin Group "Login"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Contents\Login\BackImageManager.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\BackImageManager.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\CharacterCreateNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\CharacterCreateNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\CharacterCreateNewCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\CharacterSelect.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\CharacterSelect.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\LoginJobInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\LoginJobInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\LoginNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\LoginNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\LoginNewCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\ServerSelect.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\ServerSelect.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UICharacterCreateNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UICharacterCreateNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UICharacterSelect.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UICharacterSelect.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UIHardCoreWarning.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UIHardCoreWarning.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UILoginNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UILoginNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UIServerSelect.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Login\UIServerSelect.h
+# End Source File
+# End Group
+# Begin Group "Function"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Contents\function\attendance.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\attendance.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\CustomTitleCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\CustomTitleUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\CustomTitleUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\gps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\gps.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\HelpWebUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\HelpWebUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCollection.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCollection.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCollectionCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCollectionData.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCollectionData.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCollectionUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCollectionUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCompose.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemCompose.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemComposeUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\ItemComposeUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\News.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\News.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\News_Web_UI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\News_Web_UI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\NewsUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\NewsUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PremiumChar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PremiumChar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PremiumCharDesign.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PremiumCharDesign.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PremiumCharUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PremiumCharUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\SimplePlayerInfoUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\SimplePlayerInfoUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\SimplePlayerMenuUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\SimplePlayerMenuUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\TargetInfoNewUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\TargetInfoNewUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\TitleData.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\TitleData.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\UIGps.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\UIGps.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\UIPortalNew.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\UIPortalNew.h
+# End Source File
+# End Group
+# End Group
+# Begin Group "GameDataManager"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\GameDataManager\GameDataManager.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameDataManager\GameDataManager.h
+# End Source File
+# End Group
+# Begin Group "UILib"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Interface\UIArray.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIArray.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIArrayItem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIArrayItem.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIBase.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIBase.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIButton.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIButton.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIComboBox.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIComboBox.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UICommand.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UICommon.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIDefine.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIEditBox.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIEditBox.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIFactory.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIFactory.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIFocus.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIFocus.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIIcon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIIcon.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImage.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImage.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImageBox.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImageBox.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImageFont.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImageFont.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImageSplit.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImageSplit.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImageText.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIImageText.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIIME.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIIME.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIList.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIList.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIListBox.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIListBox.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIListBoxEx.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIListBoxEx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIListBoxMultiList.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIListBoxMultiList.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIListItem.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIListItem.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIManager.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIManager.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIMultiEditBox.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIMultiEditBox.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIMultiText.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIMultiText.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIMultList.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIMultList.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIScrollBar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIScrollBar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UISlideBar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UISlideBar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UISpinButton.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UISpinButton.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UISpinControl.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UISpinControl.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UISpriteAni.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UISpriteAni.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITab.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITab.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIText.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIText.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITextBoxEx.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITextBoxEx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITextEx.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITextEx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITextureManager.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITextureManager.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITooltip.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITooltip.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITree.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITree.h
+# End Source File
+# End Group
+# Begin Group "UIHelper"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBox.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBoxIcon.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBoxInput.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBoxMgr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBoxMgr.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBoxNumeric_only.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBoxNumeric_only.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBoxTimer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\UIMsgBoxYesNo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITooltipMgr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITooltipMgr.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITooltipResource.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UITooltipResource.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIWindowDeclare.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Interface\UIWindowDeclare.h
+# End Source File
+# End Group
+# Begin Group "Object"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Object\ActorMgr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Object\ActorMgr.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Object\DefineObject.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\JobInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\JobInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Object\ObjectBase.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\SlaveInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\SlaveInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\TransformInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\TransformInfo.h
+# End Source File
+# End Group
+# Begin Group "Info"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Info\MyInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Info\MyInfo.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Info\MyInfoSkill.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Info\MyInfoSkill.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Info\ServerInfo.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Info\ServerInfo.h
+# End Source File
+# End Group
+# Begin Group "StageMgr"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageCreateChar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageCreateChar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageGameEnd.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageGameEnd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageGamePlay.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageGamePlay.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageIntro.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageIntro.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageLoading.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageLoading.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageLogin.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageLogin.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageMgr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageMgr.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageSelChar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageSelChar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageSelServer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStageManager\StageSelServer.h
 # End Source File
 # End Group
 # Begin Source File

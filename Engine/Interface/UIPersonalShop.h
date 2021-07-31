@@ -9,26 +9,23 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UICheckButton.h>
 #include <Engine/Interface/UIEditBox.h>
-#include <vector>
+
 class CItems;
 class CItemData;
+class CUIEditBox;
 
 // SHOP CONF
-#define PS_MAX_SHOPNAME		100				// ÏÉÅÏ†ê Ïù¥Î¶Ñ ÏµúÎåÄ Í∏∏Ïù¥ 100 Î∞îÏù¥Ìä∏
-#define PS_MAX_NORMAL_ITEM	10				// ÏùºÎ∞ò ÏïÑÏù¥ÌÖú Í±∞Îûò ÏµúÎåÄ Ïàò
-#define PS_MAX_PACKAGE_ITEM	5				// Ìå®ÌÇ§ÏßÄ ÌåêÎß§ Í±∞Îûò ÏµúÎåÄ Ïàò
+#define PS_MAX_SHOPNAME		100				// ªÛ¡° ¿Ã∏ß √÷¥Î ±Ê¿Ã 100 πŸ¿Ã∆Æ
+#define PS_MAX_NORMAL_ITEM	10				// ¿œπ› æ∆¿Ã≈€ ∞≈∑° √÷¥Î ºˆ
+#define PS_MAX_PACKAGE_ITEM	5				// ∆–≈∞¡ˆ ∆«∏≈ ∞≈∑° √÷¥Î ºˆ
 
 // PERSONAL SHOP TYPE
 #define PST_NOSHOP			0
-#define PST_SELL			(1 << 0)		// ÌåêÎß§
-#define PST_BUY				(1 << 1)		// Íµ¨Îß§
-#define PST_PREMIUM			(1 << 2)		// ÌîÑÎ¶¨ÎØ∏ÏóÑ
-#define PST_PACKAGE			(1 << 3)		// Ìå®ÌÇ§ÏßÄ
+#define PST_SELL			(1 << 0)		// ∆«∏≈
+#define PST_BUY				(1 << 1)		// ±∏∏≈
+#define PST_PREMIUM			(1 << 2)		// «¡∏ÆπÃæˆ
+#define PST_PACKAGE			(1 << 3)		// ∆–≈∞¡ˆ
 
 // Define item slot
 #define PERSONAL_SHOP_WIDTH					216
@@ -39,6 +36,7 @@ class CItemData;
 #define PERSONAL_SHOP_SLOT_COL				5
 #define PERSONAL_SHOP_SLOT_ROW				4
 #define PERSONAL_SHOP_SLOT_ROW_TOTAL		20
+#define	PERSONAL_SHOP_SLOT_MAX				(ITEM_COUNT_IN_INVENTORY_NORMAL + ITEM_COUNT_IN_INVENTORY_CASH_1 + ITEM_COUNT_IN_INVENTORY_CASH_2)
 #define PERSONAL_TRADE_SLOT_COL				5
 #define	PERSONAL_TRADE_SLOT_TOTAL			10
 #define PERSONAL_PACKAGE_SLOT_COL			5
@@ -64,6 +62,10 @@ class CItemData;
 // ----------------------------------------------------------------------------
 class CUIPersonalShop : public CUIWindow
 {
+private:
+	typedef		std::vector< CItems* >		vec_Items;
+	typedef		vec_Items::iterator			vec_Items_iter;
+
 protected:
 	enum eSlotType
 	{
@@ -72,15 +74,16 @@ protected:
 		SLOT_SHOP		= 2,
 	};
 
-	BOOL				m_bBuyShop;				// ÌåêÎß§ ÏÉÅÏ†êÏù∏Í∞Ä? Íµ¨Îß§ Ï∞ΩÏù∏Í∞Ä?
-	BOOL				m_bShopStart;			// ÌåêÎß§ Í∞úÏãúÌñàÎäîÍ∞Ä?
-	BOOL				m_bPremium;				// ÌîÑÎ¶¨ÎØ∏ÏóÑ ÏÑúÎπÑÏä§ ÏÇ¨Ïö©.
+	BOOL				m_bBuyShop;				// ∆«∏≈ ªÛ¡°¿Œ∞°? ±∏∏≈ √¢¿Œ∞°?
+	BOOL				m_bShopStart;			// ∆«∏≈ ∞≥Ω√«ﬂ¥¬∞°?
+	BOOL				m_bPremium;				// «¡∏ÆπÃæˆ º≠∫ÒΩ∫ ªÁøÎ.
 	SQUAD				m_llPackagePrice;
 	BOOL				m_bPackageBuy;
 
 	//int					m_nBackSplitHeight;
 	int					m_nCurRow;
 
+	int					m_nSelITab;
 	int					m_nSelShopItemID;
 	int					m_nSelTradeItemID;
 	int					m_nSelPackageItemID;
@@ -107,9 +110,9 @@ protected:
 	UIRectUV			m_rtBackMiddle;
 	UIRectUV			m_rtBackBottom;
 	//UIRectUV			m_rtBackTitle;
-	UIRectUV			m_rtBackSellShop;		// ÌåêÎß§ ÏÉÅÏ†ê
-	//UIRectUV			m_rtBackBuyShop;		// Íµ¨Îß§ ÏÉÅÏ†ê
-	UIRectUV			m_rtleaseMark;			// ÎåÄÏó¨ ÌëúÏãú
+	UIRectUV			m_rtBackSellShop;		// ∆«∏≈ ªÛ¡°
+	//UIRectUV			m_rtBackBuyShop;		// ±∏∏≈ ªÛ¡°
+	UIRectUV			m_rtleaseMark;			// ¥Îø© «•Ω√
 
 	// Position of target npc
 	FLOAT				m_fNpcX, m_fNpcZ;
@@ -125,26 +128,8 @@ protected:
 	UIRectUV			m_rtBlankBar;
 	UIRectUV			m_rtPriceBar;
 
-	// Item Info
-	UIRectUV			m_rtInfoUL;								// UV of upper left region of information
-	UIRectUV			m_rtInfoUM;								// UV of upper middle region of information
-	UIRectUV			m_rtInfoUR;								// UV of upper right region of information
-	UIRectUV			m_rtInfoML;								// UV of middle left region of information
-	UIRectUV			m_rtInfoMM;								// UV of middle middle region of information
-	UIRectUV			m_rtInfoMR;								// UV of middle right region of information
-	UIRectUV			m_rtInfoLL;								// UV of lower left region of information
-	UIRectUV			m_rtInfoLM;								// UV of lower middle region of information
-	UIRectUV			m_rtInfoLR;								// UV of lower right region of information
 	UIRectUV			m_rtUnmovableOutline;					// UV of outline of unmovable items
 	UIRectUV			m_rtSelectOutline;						// UV of outline of selected items
-
-	BOOL				m_bShowItemInfo;						// If item tool tip is shown or not
-	BOOL				m_bDetailItemInfo;						// If item informaion is shown in detail or not
-	int					m_nCurInfoLines;						// Count of current item information lines
-	CTString			m_strItemInfo[MAX_ITEMINFO_LINE];		// Item information string
-	COLOR				m_colItemInfo[MAX_ITEMINFO_LINE];		// Color of item information string
-	UIRect				m_rcItemInfo;							// Item information region	
-
 	// Buttons
 	CUIButton			m_btnClose;								// Close button of Shop
 	CUIButton			m_btnShopBuy;							// Buy button of Shop
@@ -162,19 +147,21 @@ protected:
 	CUIEditBox			m_ebShopName;							// Input Box for Shop Name
 	CTString			m_strShopName;
 
-	std::vector<CItems>	m_vectorSellItemList;					// ÌåêÎß§ Î¨ºÌíàÏóê Îì±Î°ù.(ÎÑ§Ìä∏ÏõåÌÅ¨ÏóêÏÑú Î∞õÏïÑÏôÄÏÑú...)
-	std::vector<CItems>	m_vectorSellPackageList;				// ÌåêÎß§ Ìå®ÌÇ§ÏßÄ Î¨ºÌíàÏóê Îì±Î°ù.(ÎÑ§Ìä∏ÏõåÌÅ¨ÏóêÏÑú Î∞õÏïÑÏôÄÏÑú...)
+	vec_Items			m_vectorSellItemList;					// ∆«∏≈ π∞«∞ø° µÓ∑œ.(≥◊∆Æøˆ≈©ø°º≠ πﬁæ∆øÕº≠...)
+	vec_Items			m_vectorSellPackageList;				// ∆«∏≈ ∆–≈∞¡ˆ π∞«∞ø° µÓ∑œ.(≥◊∆Æøˆ≈©ø°º≠ πﬁæ∆øÕº≠...)
 	
-	BOOL				m_bCashPersonShop;						// ÌåêÎß§ÎåÄÌñâ ÏÉÅÏù∏
-	BOOL				m_bCashPersonShop_open;					// ÌåêÎß§ ÎåÄÌñâ ÏÉÅÏù∏ Í±∞ÎûòÏ§ë
+	BOOL				m_bCashPersonShop;						// ∆«∏≈¥Î«‡ ªÛ¿Œ
+	BOOL				m_bCashPersonShop_open;					// ∆«∏≈ ¥Î«‡ ªÛ¿Œ ∞≈∑°¡ﬂ
 
-private:
+private:	
 	// Items	
-	CUIButtonEx			m_abtnTradeItems[PERSONAL_TRADE_SLOT_TOTAL];								// Player Slot items
-	CUIButtonEx			m_abtnShopItems[PERSONAL_SHOP_SLOT_ROW_TOTAL][PERSONAL_SHOP_SLOT_COL];	// Shop Slot items
-	CUIButtonEx			m_abtnPackageItems[PERSONAL_PACKAGE_SLOT_COL];							// Package Slot items
+	CUIIcon*			m_pIconsTradeItem[PERSONAL_TRADE_SLOT_TOTAL];			// Player Slot items
+	CUIIcon*			m_pIconsShopItem[PERSONAL_SHOP_SLOT_MAX];				// Shop Slot items
+	CUIIcon*			m_pIconsPackageItem[PERSONAL_PACKAGE_SLOT_COL];			// Package Slot items
 
-	SQUAD				m_aiTradeItemCount[PERSONAL_TRADE_SLOT_TOTAL];								// Player Slot items
+	SQUAD				m_aiTradeItemCount[PERSONAL_TRADE_SLOT_TOTAL];			// Player Slot items
+
+	CItems*				m_pTempItems;
 
 public:
 	CUIPersonalShop();
@@ -182,8 +169,8 @@ public:
 
 	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
-	ENGINE_API void	OpenPersonalShop( BOOL bSellShop );			// Í∞úÏù∏ ÏÉÅÏ†ê Í∞úÏÑ§ ( TRUE -> ÌåêÎß§, FALSE -> Íµ¨Îß§ )
-	ENGINE_API void	TradePersonalShop( INDEX iChaIndex, FLOAT fX, FLOAT fZ, BOOL bBuy );				// Í∞úÏù∏ ÏÉÅÏ†êÏóêÏÑú ÏïÑÏù¥ÌÖú ÏÇ¨Í∏∞&ÌåîÍ∏∞
+	ENGINE_API void	OpenPersonalShop( BOOL bSellShop );			// ∞≥¿Œ ªÛ¡° ∞≥º≥ ( TRUE -> ∆«∏≈, FALSE -> ±∏∏≈ )
+	ENGINE_API void	TradePersonalShop( INDEX iChaIndex, FLOAT fX, FLOAT fZ, BOOL bBuy );				// ∞≥¿Œ ªÛ¡°ø°º≠ æ∆¿Ã≈€ ªÁ±‚&∆»±‚
 
 	// Render
 	void	Render();
@@ -231,26 +218,25 @@ public:
 	void	ReceivePersonalShopItemList(int iChaIndex, CNetworkMessage *istr);
 	void	ReceivePersonalShopItemUpdate(CNetworkMessage *istr);
 
-	// ÌåêÎß§ÎåÄÌñâ ÏÉÅÏù∏
+	// ∆«∏≈¥Î«‡ ªÛ¿Œ
 	BOOL	GetCashPersonShop() {return m_bCashPersonShop;}
 	void	SetCashPersonShop(BOOL bPersonShop) { m_bCashPersonShop = bPersonShop;}
 	void	SendCashPersonOpenShop(int iChaIndex);
 	void	SendCashPersonShopBuy();
-		
+
+	void	AddItemCallback();
+	void	DelItemCallback();
 protected:
 	// Internal functions
-	void	AddItemInfoString( CTString &strItemInfo, COLOR colItemInfo = 0xF2F2F2FF );
-	BOOL	GetItemInfo( int nWhichSlot, int &nInfoWidth, int &nInfoHeight,
-							int nTradeItem = -1, int nPackageItem = -1, int nRow = -1, int nCol = -1 );
-	void	ShowItemInfo( BOOL bShowInfo, BOOL bRenew = FALSE, int nTradeItem = -1, int nPackageItem = -1, int nRow = -1, int nCol = -1 );
 	void	RenderShopItems();
 
 	void	TradeToShop( SQUAD llCount, int iSlot );				// Trade -> Shop
-	void	ShopToTrade( SQUAD llCount, SQUAD llPrice, ULONG ulPlus, ULONG ulFlag, LONG lUsed, int iSlot, LONG lRareIndex);	// Shop -> Trade
+	void	ShopToTrade( SQUAD llCount, SQUAD llPrice, int iSlot);	// Shop -> Trade
 	void	PackageToShop( BOOL bAdd );
 
-	void	FindShopSlot( int& iRow, int& iCol, int iIndex, ULONG ulFlag);
-	void	FindEmptySlot( int& iRow, int& iCol );
+	void	FindShopSlot( int& nIdx, int iIndex, ULONG ulFlag);
+	void	FindShopSlot( int& nIdx, int iVirtualIdx );
+	void	FindEmptySlot( int& nIdx );
 
 	__int64	CalculateTotalPrice(int& iCount);
 	__int64	CalculateItemPrice(int iShopID, const CItemData &ID, int iNumOfItem, BOOL bSell);		
@@ -258,13 +244,16 @@ protected:
 	void	PrepareSellShop();	
 
 	// Command functions
-	void	AddShopItem( int nRow, int nCol, int nUniIndex, SQUAD llCount, int nWhichSlot );
+	void	AddShopItem( int nIdx, int nUniIndex, SQUAD llCount, int nWhichSlot );
 	void	AskQuantity();
-	void	DelShopItem( int nRow, int nCol, int nUniIndex, SQUAD llCount, int nTradeItemID, int nPackageItemID, int nWhichSlot );
+	void	DelShopItem( int nTab, int nIdx, int nUniIndex, SQUAD llCount, int nTradeItemID, int nPackageItemID, int nWhichSlot );
 	void	BuyItems();	
 	
 	void	ClearPackageSlot();
-	
+
+private:
+	void	clearContainer();
+	bool	IsAvailable4Sale(CItems* pItem);
 };
 
 #endif // UIPERSONALSHOP_H_

@@ -1,9 +1,9 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #ifndef __CREFCOUNTPTR_H__
 #define __CREFCOUNTPTR_H__
 
-//class TëŠ” ULONG AddRef()ì™€ ULONG Release()ë¥¼ ê°–ê³  ìˆì–´ì•¼ í•œë‹¤.
+//class T´Â ULONG AddRef()¿Í ULONG Release()¸¦ °®°í ÀÖ¾î¾ß ÇÑ´Ù.
 #include "CTag.h"
 #include <engine/Base/Memory.h>
 
@@ -93,4 +93,4 @@ typedef CRefCountPtr<CTag> ptr_tag;
 
 #endif //__CREFCOUNTPTR_H__
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

@@ -13,8 +13,8 @@
 /* NOTE: The iterator defined by this macro must be destroyed before adding/removing
  * elements in the array. To do so, embed the for loop in additional curly braces.
  */
-#define FOREACHINDYNAMICARRAY(array, type, iter) \
-  for(CDynamicArrayIterator<type> iter(array); !iter.IsPastEnd(); iter.MoveToNext() )
+#define FOREACHINDYNAMICARRAY(array, flag, iter) \
+  for(CDynamicArrayIterator<flag> iter(array); !iter.IsPastEnd(); iter.MoveToNext() )
 
 class CDABlockInfo {
 public:

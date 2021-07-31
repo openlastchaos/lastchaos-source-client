@@ -12,6 +12,7 @@
 
 #include <Engine/Interface/UIButton.h>
 #include <Engine/GlobalDefinition.h>
+#include <Engine/Interface/UITrackPopup.h>
 
 // Define position
 /****************************************
@@ -52,6 +53,21 @@
 #define	PLAYERINFO_HEIGHT			90
 #define	PLAYERINFO_BAR_WIDTH		120
 // UI_REFORM :Su-won
+
+// [7/15/2010 kiny8216] Monster Energy Level Point
+#define ENERGY_POINT_LEVEL1			50000		// 1·¹º§ EP·®
+#define ENERGY_POINT_LEVEL2			60000		// 2·¹º§ EP·®
+#define ENERGY_POINT_LEVEL3			70000		// 3·¹º§ EP·®
+#define ENERGY_POINT_LEVEL4			70000		// 4·¹º§ EP·®
+#define ENERGY_POINT_LEVEL5			100000		// 5·¹º§ EP·®
+
+#define ENERGY_POINT_MAX1			50000		// 1·¹º§ ´©Àû EP·®
+#define ENERGY_POINT_MAX2			110000		// 2·¹º§ ´©Àû EP·®
+#define ENERGY_POINT_MAX3			180000		// 3·¹º§ ´©Àû EP·®
+#define ENERGY_POINT_MAX4			250000		// 4·¹º§ ´©Àû EP·®
+#define ENERGY_POINT_MAX5			350000		// 5·¹º§ ´©Àû EP·®
+
+#define ENERGY_GAGEBAR_WIDTH		166			// EP °ÔÀÌÁö¹Ù ³Êºñ
 ///////////////////////////////////////////////////////
 
 
@@ -63,6 +79,22 @@
 class CUIPlayerInfo : public CUIWindow
 {
 protected:
+	enum eQuickBtnCount
+	{
+		QUICKMENU_BTN_CHAR_INFO = 0,
+		QUICKMENU_BTN_INVEN,
+		QUICKMENU_BTN_SKILL,
+		QUICKMENU_BTN_QUEST,
+		QUICKMENU_BTN_PET_INFO,
+		QUICKMENU_BTN_MESSENGER,
+		QUICKMENU_BTN_WEB_BOARD,
+		QUICKMENU_BTN_SYSTEM_MENU,
+		QUICKMENU_BTN_RANKING,
+		QUICKMENU_BTN_CASH_SHOP,
+		QUICKMENU_BTN_LAKA_BALL,
+
+		QUICKMENU_BTN_MAX
+	};
 	// Controls
 	CUIButton			m_btnBoard;					// Button of web board
 	CUIButton			m_btnMessanger;				// Button of messanger
@@ -71,46 +103,48 @@ protected:
 	CUIButton			m_btnCharInfo;				// Button of character info
 
 	// UI_REFORM :Su-won
-	CUIButton			m_btnQuickMenu[9];			//í€µë©”ë‰´ ë²„íŠ¼
+	CUIButton			m_btnQuickMenu[QUICKMENU_BTN_MAX];			//Äü¸Ş´º ¹öÆ°
 
 
 	BOOL				m_bShowToolTip;				// If tool tip is shown or not
 	CTString			m_strToolTip;				// String of tool tip
 
-	// Information
-	CTString			m_strLevel;					// Level
-	CTString			m_strHP;					// HP
-	CTString			m_strMP;					// MP
-	CTString			m_strEXP;					// Exp
-	FLOAT				m_fHPRatio;					// Ratio of HP gauge
-	FLOAT				m_fMPRatio;					// Ratio of MP gauge
-	FLOAT				m_fEXPRatio;				// Ratio of EXP gauge
-
 	// Region of each part
-	UIRect				m_rcHP;						// Region of HP
-	UIRect				m_rcMP;						// Region of MP
-	UIRect				m_rcEXP;					// Region of Exp
 	UIRect				m_rcToolTip;				// Region of tool tip
 
 	// UI_REFORM :Su-won
-	UIRect				m_rcQuickMenu;				//í€µë©”ë‰´ ì˜ì—­
-	UIRect				m_rcFace;					//ìºë¦­ë³„ ì¼ëŸ¬ìŠ¤íŠ¸ í‘œì‹œ ì˜ì—­
+	UIRect				m_rcQuickMenu;				//Äü¸Ş´º ¿µ¿ª
 
-	// UV of each part
-	UIRectUV			m_rtBackground;				// UV of background
-	UIRectUV			m_rtHP;						// UV of HP
-	UIRectUV			m_rtMP;						// UV of MP
-	UIRectUV			m_rtEXP;					// UV of Exp
-	UIRectUV			m_rtToolTipL;				// UV of left region of tool tip
-	UIRectUV			m_rtToolTipM;				// UV of middle region of tool tip
-	UIRectUV			m_rtToolTipR;				// UV of right region of tool tip
+ 	UIRectUV			m_rtToolTipL;				// UV of left region of tool tip
+ 	UIRectUV			m_rtToolTipM;				// UV of middle region of tool tip
+ 	UIRectUV			m_rtToolTipR;				// UV of right region of tool tip
 
 	// UI_REFORM :Su-won
-	UIRectUV			m_rtQuickMenu;				//í€µë©”ë‰´ ì˜ì—­ í…ìŠ¤ì³ ì¢Œí‘œ
-	UIRectUV			m_rtFace[TOTAL_JOB+1];					//ìºë¦­ë³„ ì¼ëŸ¬ìŠ¤íŠ¸ í‘œì‹œ ì˜ì—­
+	UIRectUV			m_rtQuickMenu;				//Äü¸Ş´º ¿µ¿ª ÅØ½ºÃÄ ÁÂÇ¥
 
-	// UI_REFORM :Su-won
+	CTextureData		*m_ptdCommonBtnTexture;
+	CTextureData		*m_ptdGuildBattleTexture;
+	CTextureData		*m_ptdMessageBoxTexture;
+	CTextureData		*m_ptdExpeditionTexture;
+	CTextureData		*m_ptdQuestBookTexture;
 
+	// [090727: selo] ¼±ÅÃµÇ¾î ÀÖ´Â Äù½ºÆ®¸¦ Ç¥½ÃÇÏ±â À§ÇÑ ¸®½ºÆ® ¹Ú½º
+	CUIListBox			m_lbSelectedQuest;
+	int					m_iSelectedQuestLineCnt;
+
+	// [090817: selo] Äù½ºÆ® °øÁö¸¦ À§ÇÑ ¸®½ºÆ® ¹Ú½º
+	CUIListBox			m_lbQuestNotice;
+	int					m_iQuestNoticeLineCnt;
+	int					m_iQuestNoticeMaxStringCnt;
+	CUIButton			m_btnQuestNoticeClose;			// [090821: selo] Äù½ºÆ® °øÁö ´İ±â ¹öÆ°
+
+	// [090907: selo] ½Ã°£ Ç¥½Ã¿ë ¼ıÀÚ
+	UIRectUV			m_rtSmallNumber[10];			// ½Ã°£ Ç¥½Ã ¿ë ¼ıÀÚ
+	UIRectUV			m_rtLargeNumber[10];			// ¼ıÀÚ Å«°Å
+	UIRectUV			m_rtColon;						// ½Ã°£ Ç¥½Ã ¿ë :(Äİ·Ğ)
+
+	SQUAD				m_llShortCutTime;
+	
 protected:
 	// Internal functinos
 	void	ToggleUIWebBoard();
@@ -118,54 +152,47 @@ protected:
 	void	ToggleUISysMenu();
 	void	ToggleUIInventory();
 	void	ToggleUICharacterInfo();
+	void	ToggleUIHelp();
 	void	ShowToolTip( BOOL bShow, int nToolTipID = -1 );
 
 public:
 	CUIPlayerInfo();
 	~CUIPlayerInfo();
 
-	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
-
-	// Render
 	void	Render();
-
-	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
-	// Get information
-	void	GetRatioOfGauges( FLOAT &fHP, FLOAT &fMP )
-	{
-		fHP = m_fHPRatio;	fMP = m_fMPRatio;
-	}
-	CTString	&GetStringOfLevel() { return m_strLevel; }
-	CTString	&GetStringOfHP() { return m_strHP; }
-	CTString	&GetStringOfMP() { return m_strMP; }
+	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
 
-	// Update player information
-	ENGINE_API void	UpdateAllInfos();
-	ENGINE_API void	UpdateHPInfo();
-	ENGINE_API void UpdateEXPInfo();
-
-	// Process short cut of UIs
 	BOOL	ProcessShortCut( MSG *pMsg );
 
-	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
-	// UI_REFORM :Su-won
 	void ResetQuickMenuPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void ShowQuickMenuToolTip(BOOL bShow, int nToolTipID = -1);
 	void OpenQuickMenu(int nMenu);
 	
-	// 2009. 06. 02 ê¹€ì •ë˜
-	// ì „ì²´í™”ë©´ì— í‘œì‹œí•  í€˜ìŠ¤íŠ¸ ë‚´ìš© ëœë”
-	void RenderSelectedQuest();
-
-	// 2009. 06. 08 ê¹€ì •ë˜
-	// ì „ì œí™”ë©´ì— í‘œì‹œí•  íƒ€ì„ì–´íƒ ë‚¨ì€ì‹œê°„ ëœë”
+	// ÀüÁ¦È­¸é¿¡ Ç¥½ÃÇÒ Å¸ÀÓ¾îÅÃ ³²Àº½Ã°£ ·£´õ
 	void RenderTimeAttackRemainTime();
+
+	// [090803 : sora] ¼±ÅÃµÈ Äù½ºÆ® ¸®½ºÆ®¸¦ Áö¿öÁØ´Ù
+	void ClearSelectedQuest();
+	
+	// [090817: selo] Äù½ºÆ® °øÁö °ü·Ã
+	void UpdateQuestNotice(INDEX iQuestIndex);
+	void AddQuestNoticeString(CTString& strMessage, const COLOR col);
+	void RenderQuestNotice();
+	
+	// [090907: selo] ½Ã°£ ±×¸®±â
+	void RenderElapsedTime(int nPosX, int nPosY, DOUBLE dStartTime, COLOR col = 0xFFFFFFFF);	// ½ÃÀÛ½Ã°£À» ±âÁ¡À¸·Î Èå¸¥ ½Ã°£ ±×¸®±â(´ÜÀ§ ÃÊ)
+	void RenderRemainTime(int nPosX, int nPosY, DOUBLE dTargetTime, COLOR col = 0xFFFFFFFF);	// ½ÃÀÛ½Ã°£À» ±âÁ¡À¸·Î ³²Àº ½Ã°£ ±×¸®±â(´ÜÀ§ ÃÊ)
+
+	void RenderTime(int nPosX, int nPosY, DOUBLE dTime, COLOR col);
+	void RenderTime(int nPosX, int nPosY, int nHour, int nMinute, int nSecond, COLOR col);
+	void DrawNumber(int nPosX, int nPosY, int nNumber, COLOR col, bool bLarge = false);
+	void DrawColon(int nPosX, int nPosY, COLOR col);
 };
 
 

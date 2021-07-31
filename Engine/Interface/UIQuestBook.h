@@ -9,11 +9,6 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIListBoxEx.h>
-#include <vector>
-
 // Define text position
 #define	QUESTBOOK_TITLE_TEXT_OFFSETX		25 
 #define	QUESTBOOK_TITLE_TEXT_OFFSETY		5
@@ -33,7 +28,7 @@ class CItems;
 // ----------------------------------------------------------------------------
 class CUIQuestBook : public CUIWindow
 {
-protected:
+public:
 	struct sQuestInfo
 	{
 		sQuestInfo()
@@ -46,12 +41,12 @@ protected:
 			dRemainTime		= -1;
 		}
 
-		// [090708: selo] ë¹„êµ ì—°ì‚°ì ì˜¤ë²„ë¡œë”©
+		// [090708: selo] ºñ±³ ¿¬»êÀÚ ¿À¹ö·Îµù
 		inline const bool operator== (const sQuestInfo& rhs)
 		{
 			return iQuestIndex == rhs.iQuestIndex;
 		}		
-		// [090709: selo] ì •ë ¬ìœ„í•œ ì—°ì‚°ì ì˜¤ë²„ë¡œë”©
+		// [090709: selo] Á¤·ÄÀ§ÇÑ ¿¬»êÀÚ ¿À¹ö·Îµù
 		inline const bool operator< (const sQuestInfo& rhs)
 		{
 			return iQuestIndex < rhs.iQuestIndex;
@@ -59,10 +54,10 @@ protected:
 
 		CTString	strQuestTitle;
 		int			iQuestIndex;
-		int			iQuestType;			// [090601: selo] í€˜ìŠ¤íŠ¸ ì •ë ¬ íƒ€ì…(ì¼ë°˜, ì‹œë‚˜ë¦¬ì˜¤, ì™¸ì „, ë‚˜ì´íŠ¸ ì‰ë„ìš°)
-		int			iQuestScale;		// [090603: selo] í€˜ìŠ¤íŠ¸ ê·œëª¨(ì¼ë°˜, íŒŒí‹°, ì›ì •ëŒ€)
-		DOUBLE		dOldTime;			// [090609: selo] ì‹œê°„ì œí•œ í€˜ìŠ¤íŠ¸ í•œ í”„ë ˆì„ ì „ì˜ ì‹œê°„		
-		DOUBLE		dRemainTime;		// [090609: selo] ì‹œê°„ì œí•œ í€˜ìŠ¤íŠ¸ ë‚¨ì€ ì‹œê°„(ì´ˆ)
+		int			iQuestType;			// [090601: selo] Äù½ºÆ® Á¤·Ä Å¸ÀÔ(ÀÏ¹İ, ½Ã³ª¸®¿À, ¿ÜÀü, ³ªÀÌÆ® ½¦µµ¿ì)
+		int			iQuestScale;		// [090603: selo] Äù½ºÆ® ±Ô¸ğ(ÀÏ¹İ, ÆÄÆ¼, ¿øÁ¤´ë)
+		DOUBLE		dOldTime;			// [090609: selo] ½Ã°£Á¦ÇÑ Äù½ºÆ® ÇÑ ÇÁ·¹ÀÓ ÀüÀÇ ½Ã°£		
+		DOUBLE		dRemainTime;		// [090609: selo] ½Ã°£Á¦ÇÑ Äù½ºÆ® ³²Àº ½Ã°£(ÃÊ)
 	};
 
 	struct FindQuest
@@ -82,18 +77,18 @@ protected:
 
 	const int				m_nUIIndex;
 
-	int						m_nSelectedQuestIndex;					// ì„ íƒëœ í€˜ìŠ¤íŠ¸ ì¸ë±ìŠ¤.
+	int						m_nSelectedQuestIndex;					// ¼±ÅÃµÈ Äù½ºÆ® ÀÎµ¦½º.
 	CUIButton				m_btnClose;								// Close button
-	CUIButton				m_btnOK;								// í™•ì¸
-	CUIButton				m_btnCancel;							// ë‹«ê¸°
-	CUIButton				m_btnGiveUp;							// í€˜ìŠ¤íŠ¸ í¬ê¸°
-	CUIButton				m_btnAccept;							// ìˆ˜ë½
-	CUIButton				m_btnReserve;							// ë³´ë¥˜	
-	CUIButton				m_btnDeny;								// ê±°ì ˆ
-	CUIButton				m_btnProceedPop;						// íŒŒí•‘ë²„íŠ¼
-	CUIButton				m_btnCompletePop;						// íŒŒí•‘ë²„íŠ¼
-	CUIButton				m_btnPrev;								// [090526: selo] í™•ì¥íŒ© ê¸°íšì— ë”°ë¥¸ NPC ë©”ë‰´ ë¦¬ìŠ¤íŠ¸ë¡œ ëŒì•„ê°€ëŠ” ë²„íŠ¼
-	CUIComboBox				m_cmbSort;								// [090601: selo] í€˜ìŠ¤íŠ¸ ë¦¬ìŠ¤íŠ¸ ì •ë ¬ì„ ìœ„í•œ ì½¤ë³´ ë²„íŠ¼
+	CUIButton				m_btnOK;								// È®ÀÎ
+	CUIButton				m_btnCancel;							// ´İ±â
+	CUIButton				m_btnGiveUp;							// Äù½ºÆ® Æ÷±â
+	CUIButton				m_btnAccept;							// ¼ö¶ô
+	CUIButton				m_btnReserve;							// º¸·ù	
+	CUIButton				m_btnDeny;								// °ÅÀı
+	CUIButton				m_btnProceedPop;						// ÆÄÇÎ¹öÆ°
+	CUIButton				m_btnCompletePop;						// ÆÄÇÎ¹öÆ°
+	CUIButton				m_btnPrev;								// [090526: selo] È®ÀåÆÑ ±âÈ¹¿¡ µû¸¥ NPC ¸Ş´º ¸®½ºÆ®·Î µ¹¾Æ°¡´Â ¹öÆ°
+	CUIComboBox				m_cmbSort;								// [090601: selo] Äù½ºÆ® ¸®½ºÆ® Á¤·ÄÀ» À§ÇÑ ÄŞº¸ ¹öÆ°
 	CUIListBoxEx			m_lbDescription;						// List box of description	
 	CUIListBoxEx			m_lbQuestList;							// List box of Quest
 	CTString				m_strTitle;								// Title of message box	
@@ -118,50 +113,66 @@ protected:
 	UIRectUV				m_rtPopingExtended;
 	UIRectUV				m_rtPopingClosed;
 
-	std::vector<CUIButton>	m_vectorBtnDynamicPrize;				// ì„ íƒ ë³´ìƒ	
+	std::vector<CUIButton>	m_vectorBtnDynamicPrize;				// ¼±ÅÃ º¸»ó	
 	std::vector<sQuestInfo>	m_vectorProceedQuestList;
 	std::vector<sQuestInfo>	m_vectorCompleteQuestList;
-	std::vector<sQuestInfo>	m_vectorCategoryQuestList[4];			// [090603: selo] ì¹´í…Œê³ ë¦¬ ë³„ë¡œ í€˜ìŠ¤íŠ¸ë¥¼ ë‚˜ëˆˆ ë¦¬ìŠ¤íŠ¸
-	std::vector<sQuestInfo> m_vectorRaidMessageList;				// [090708: selo] ë ˆì´ë“œ í€˜ìŠ¤íŠ¸ ë¦¬ìŠ¤íŠ¸
+	std::vector<sQuestInfo>	m_vectorCategoryQuestList[4];			// [090603: selo] Ä«Å×°í¸® º°·Î Äù½ºÆ®¸¦ ³ª´« ¸®½ºÆ®
+	std::vector<sQuestInfo> m_vectorRaidMessageList;				// [090708: selo] ·¹ÀÌµå Äù½ºÆ® ¸®½ºÆ®
 
-	std::list<int>			m_listSelectedQuestIndex;				// [090602: selo] ì„ íƒë˜ì–´ ìˆëŠ” í€˜ìŠ¤íŠ¸ë“¤ì˜ ì¸ë±ìŠ¤ ëª¨ìŒ
+	std::list<int>			m_listSelectedQuestIndex;				// [090602: selo] ¼±ÅÃµÇ¾î ÀÖ´Â Äù½ºÆ®µéÀÇ ÀÎµ¦½º ¸ğÀ½
 	
 	CItems*					m_pQuestItem;
 	INDEX					m_nTargetIndex;
+	INDEX					m_nTargetVirIndex;
 	SBYTE					m_nTargetUIType;
 	FLOAT					m_fNpcX, m_fNpcZ;
 	int						m_nSelectPrizeFirstIndex;
 	int						m_nSelectPrizeCount;
 	BOOL					m_bProceedListExtended;
 	BOOL					m_bCompleteListExtended;
-	BOOL					m_bCategoryListExtended[QCATEGORY_NIGHTSHADOW];	// [090603: selo] ì¹´í…Œê³ ë¦¬ë³„ ë¦¬ìŠ¤íŠ¸ë“¤ì´ í¼ì³ì ¸ ìˆëŠ”ì§€ í™•ì¸
-	BOOL					m_bRaidMessageListExtended;				// [090708: selo] ë ˆì´ë“œ í€˜ìŠ¤íŠ¸ ë¦¬ìŠ¤íŠ¸ê°€ í¼ì³ì ¸ ìˆëŠ”ì§€ í™•ì¸
+	BOOL					m_bCategoryListExtended[QCATEGORY_SUPPLEMENT];	// [090603: selo] Ä«Å×°í¸®º° ¸®½ºÆ®µéÀÌ ÆîÃÄÁ® ÀÖ´ÂÁö È®ÀÎ
+	BOOL					m_bRaidMessageListExtended;				// [090708: selo] ·¹ÀÌµå Äù½ºÆ® ¸®½ºÆ®°¡ ÆîÃÄÁ® ÀÖ´ÂÁö È®ÀÎ
 	int						m_iNextQuestIndex;
-	static BOOL				m_bLockRequestQuest;
-	static float			m_fLastRequestTime;
-
-	// 2009. 05. 27 ê¹€ì •ë˜
-	// í™•ì¥íŒ© ê´€ë ¨ NPC ë©”ë‰´ë¡œ ëŒì•„ê°€ê¸° ìœ„í•œ NPC Index ì €ì¥
+		
+	// 2009. 05. 27 ±èÁ¤·¡
+	// È®ÀåÆÑ °ü·Ã NPC ¸Ş´º·Î µ¹¾Æ°¡±â À§ÇÑ NPC Index ÀúÀå
 	INDEX					m_nPrevNPCIndex;
 	SBYTE				    m_nPrevNPCUIType;
 
-	// 2009. 06. 01 ê¹€ì •ë˜
-	// í€˜ìŠ¤íŠ¸ ë¶ ì •ë ¬ íƒ€ì… (í€˜ìŠ¤íŠ¸ ë¦¬ìŠ¤íŠ¸ ì—ì„œë§Œ ì‚¬ìš©í•œë‹¤.)
+	// 2009. 06. 01 ±èÁ¤·¡
+	// Äù½ºÆ® ºÏ Á¤·Ä Å¸ÀÔ (Äù½ºÆ® ¸®½ºÆ® ¿¡¼­¸¸ »ç¿ëÇÑ´Ù.)
 	SBYTE					m_nSortType;
 
-	// 2009. 06. 01 ê¹€ì •ë˜
-	// í€˜ìŠ¤íŠ¸ë¥¼ í¬ê¸°í•˜ëŠ” ë™ì•ˆ ë©”ì‹œì§€ ì²˜ë¦¬ë¥¼ ëª» í•˜ê²Œ í•˜ëŠ” í”Œë˜ê·¸
+	// 2009. 06. 01 ±èÁ¤·¡
+	// Äù½ºÆ®¸¦ Æ÷±âÇÏ´Â µ¿¾È ¸Ş½ÃÁö Ã³¸®¸¦ ¸ø ÇÏ°Ô ÇÏ´Â ÇÃ·¡±×
 	BOOL					m_bLockQuestList;
+	
+	// [090818: selo]
+	// Äù½ºÆ® °øÁö ½ÃÀÛ ½Ã°£
+	DOUBLE					m_dQuestNoticeStartTime;
+	
+	// [090820: selo]
+	// Äù½ºÆ® °øÁö µÎ¹ø ¾È³ª¿À°Ô ÇÏ±â À§ÇØ 
+	// ÀÌ¹Ì ¹ß»ıµÈ Äù½ºÆ® °øÁö¸¦ ÀúÀåÇØ µĞ´Ù	
+	CStaticArray<int>		m_aAlreadyShowQuestNotice;
+	
+	// [090907: selo]
+	// ·¹ÀÌµå ½ÃÀÛ, ³¡ °ü·Ã
+	DOUBLE					m_dRaidRemainTime;	// ·¹ÀÌµå ³²Àº ½Ã°£
+	BOOL					m_bIsRaidNow;		// ·¹ÀÌµå Áß ÀÎÁö ÆÇ´Ü ÇÃ·¡±×
+	DOUBLE					m_dRaidRemainTimeRecvTime;	// ·¹ÀÌµå ³²Àº ½Ã°£À» ¹ŞÀº ½Ã°£
+	
+	CTextureData	*m_ptdCommonBtnTexture;
 
 protected:
-	void	AcceptQuest();				// í€˜ìŠ¤íŠ¸ ìˆ˜ë½
-	void	ReserveQuest();				// í€˜ìŠ¤íŠ¸ ë³´ë¥˜
-	void	DenyQuest();				// í€˜ìŠ¤íŠ¸ ê±°ì ˆ
-	void	GiveUpQuest();				// í€˜ìŠ¤íŠ¸ í¬ê¸°
-	void	PrizeQuest();				// í€˜ìŠ¤íŠ¸ ë³´ìƒ
-	// 2009. 05. 26 ê¹€ì •ë˜
-	// í™•ì¥íŒ© ê´€ë ¨ NPC ë©”ë‰´ ë¦¬ìŠ¤íŠ¸ë¡œ ëŒì•„ì˜¤ê¸°
-	void	ReturnToNPCMenu();			// NPC ë©”ë‰´ë¡œ ê°„ë‹¤
+	void	AcceptQuest();				// Äù½ºÆ® ¼ö¶ô
+	void	ReserveQuest();				// Äù½ºÆ® º¸·ù
+	void	DenyQuest();				// Äù½ºÆ® °ÅÀı
+	void	GiveUpQuest();				// Äù½ºÆ® Æ÷±â
+	void	PrizeQuest();				// Äù½ºÆ® º¸»ó
+	// 2009. 05. 26 ±èÁ¤·¡
+	// È®ÀåÆÑ °ü·Ã NPC ¸Ş´º ¸®½ºÆ®·Î µ¹¾Æ¿À±â
+	
 
 public:
 	CUIQuestBook( int nUIIndex );
@@ -169,51 +180,49 @@ public:
 
 	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );	
-	void	AddDescString( CTString &strMessage, const COLOR colDesc, BOOL bSelectable = FALSE );
+	bool	AddDescString( CTString &strMessage, const COLOR colDesc, BOOL bSelectable = FALSE, BOOL bPrizeDesc = FALSE );	// [090812: selo] º¸»ó ¼³¸í Ã³¸® Ãß°¡
 	void	InitQuestBook();
 	void	CloseQuestBook();
 	void	OpenQuestBook( int iQuestIndex = -1, CItems* pQuestItem = NULL );	
 	void	ToggleVisible();
 
-	// í€˜ìŠ¤íŠ¸ ëª©ë¡ì— ì¶”ê°€
+	// Äù½ºÆ® ¸ñ·Ï¿¡ Ãß°¡
 	BOOL	AddToQuestList( int iQuestIndex, BOOL bComplete );
 
-	// í€˜ìŠ¤íŠ¸ ëª©ë¡ì—ì„œ ì œê±°
+	// Äù½ºÆ® ¸ñ·Ï¿¡¼­ Á¦°Å
 	BOOL	DelFromQuestList( int iQuestIndex, BOOL bComplete );
 
-	// í€˜ìŠ¤íŠ¸ ëª©ë¡ì„ ê°±ì‹ í•©ë‹ˆë‹¤.
+	// Äù½ºÆ® ¸ñ·ÏÀ» °»½ÅÇÕ´Ï´Ù.
 	void	RefreshQuestList();
 
-	// í€˜ìŠ¤íŠ¸ ëª©ë¡ì„ ëª¨ë‘ ì§€ì›ë‹ˆë‹¤.
+	// Äù½ºÆ® ¸ñ·ÏÀ» ¸ğµÎ Áö¿ó´Ï´Ù.
 	void	ClearQuestList();
 
-	// í€˜ìŠ¤íŠ¸ ë‚´ìš©ì„ ê°±ì‹ í•©ë‹ˆë‹¤.
+	// Äù½ºÆ® ³»¿ëÀ» °»½ÅÇÕ´Ï´Ù.
 	void	RefreshQuestContent(INDEX questIndex);
-	void	RefreshQuestNew(INDEX questIndex);
-	void	RefreshQuestPrize(INDEX questIndex);
-
+	
 	INDEX	GetProceedQuestCount()		{ return m_vectorProceedQuestList.size();	}
 	INDEX	GetCompleteQuestCount()		{ return m_vectorCompleteQuestList.size();	}
 	INDEX	GetCurrentQuest()			{ return m_nSelectedQuestIndex;				}
 
-	// 2009. 05. 27 ê¹€ì •ë˜
-	// í€˜ìŠ¤íŠ¸ Index ì •ë³´ ê°€ì ¸ì˜¤ê¸°
+	// 2009. 05. 27 ±èÁ¤·¡
+	// Äù½ºÆ® Index Á¤º¸ °¡Á®¿À±â
 	INDEX	GetProceedQuestIndex(INDEX index);
 	INDEX	GetCompleteQuestIndex(INDEX index);	
 
-	// 2009. 05. 28 ê¹€ì •ë˜
-	// NPC ë©”ë‰´ë¡œ ëŒì•„ê°€ê¸° ìœ„í•œ ë³€ìˆ˜ ê´€ë ¨
+	// 2009. 05. 28 ±èÁ¤·¡
+	// NPC ¸Ş´º·Î µ¹¾Æ°¡±â À§ÇÑ º¯¼ö °ü·Ã
 	void	SetPrevNPCIndex(INDEX index){ m_nPrevNPCIndex = index;					}
 	INDEX	GetPrevNPCIndex()			{ return m_nPrevNPCIndex;					}
 	void	SetPrevNPCUIType(SBYTE type){ m_nPrevNPCUIType = type;					}
 	SBYTE	GetPrevNPCUIType()			{ return m_nPrevNPCUIType;					}
 
 
-	//npc index ê´€ë ¨
+	//npc index °ü·Ã
 	void	SetTargetIndex(INDEX index)	{ m_nTargetIndex = index;					}
 	INDEX	GetTargetIndex()			{ return m_nTargetIndex;					}
 
-	//quest ë³´ë¥˜ ê´€ë ¨
+	//quest º¸·ù °ü·Ã
 	void	SetNextQuestIndex(int index)	{ m_iNextQuestIndex = index;			}
 	int		GetNextQuestIndex()				{ return m_iNextQuestIndex;				}
 
@@ -222,79 +231,100 @@ public:
 
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
-
-	//ë„¤íŠ¸ì› ë©”ì„¸ì§€ ê´€ë ¨
-	static void	UnlockQuest() { m_bLockRequestQuest = FALSE; }
+	// add large message box. [8/2/2010 rumist]
+	void	MsgBoxLCommand(int nCommandCode, int nResult );
+	// add open tutorial window [8/2/2010 rumist]
+	void	OpenTutorialWindow();
+		
 	void	OpenWindow( BOOL bHasQuestList );
 
-	//notice ì •ë³´
+
+	//notice Á¤º¸
 	void	RenderNotice();
 	void	CreateNotice();
 	void	SetNoticeInfo(const char *szString);
 	
-	ENGINE_API void	RequestQuest( int nNpcIndex, SBYTE sbUIType, FLOAT fX, FLOAT fZ );
+	ENGINE_API void	RequestQuest( int nNpcIndex, int nNpcVirIndex, SBYTE sbUIType, FLOAT fX, FLOAT fZ );
 	void	SendQuestReq( int nNpcIndex );
 	void	SendQuestCancel( int nQuestIndex );
 	void	SendQuestStart( int nQuestIndex );
 	void	SendQuestPrize( int nQuestIndex, INDEX iNpcIndex, INDEX iOptionItemIndex, INDEX iOptionItemPlus );
 
+	// [090810: selo] 
+	// Á¦¸ñÀÌ ±æ¾îÁö¸é ... À¸·Î º¯°æÇÏ¿© ÁØ´Ù
+	static CTString MakeTitleString(CTString strTitle, int iSplitPos);
 
 	// [090708: selo] 
-	// ë ˆì´ë“œ í€˜ìŠ¤íŠ¸ ê´€ë ¨ í•¨ìˆ˜ë“¤
+	// ·¹ÀÌµå Äù½ºÆ® °ü·Ã ÇÔ¼öµé
 	void	AddRaidMessage(const int& iQuestIndex);
 	void	RemoveRaidMessage(const int& iQuestIndex);
 	void	RemoveRaidMessageAll(void);
 	void	RefreshQuestContentByRaid(const int& iQuestIndex);
 	bool	isRaidMessage(const int& iQuestIndex);
 
-
-	// 2009. 05. 29 ê¹€ì •ë˜
-	// í™•ì¥íŒ© í€˜ìŠ¤íŠ¸ í™•ì¥ ê´€ë ¨ í•¨ìˆ˜ë“¤ ì¶”ê°€		
+	// 2009. 05. 29 ±èÁ¤·¡
+	// È®ÀåÆÑ Äù½ºÆ® È®Àå °ü·Ã ÇÔ¼öµé Ãß°¡		
 	void	CreateQuestListNew( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
 	void	RefreshQuestListNew();
 	void	RenderQuestListNew();
 	WMSG_RESULT	MsgProcQuestListNew( MSG *pMsg );
 
-	// 2009. 06. 02 ê¹€ì •ë˜
-	// ì „ì²´í™”ë©´ì— í‘œì‹œí•˜ê¸° ìœ„í•´ ì²´í¬í•´ë‘” í€˜ìŠ¤íŠ¸ ê´€ë ¨ í•¨ìˆ˜
+	// 2009. 06. 02 ±èÁ¤·¡
+	// ÀüÃ¼È­¸é¿¡ Ç¥½ÃÇÏ±â À§ÇØ Ã¼Å©ÇØµĞ Äù½ºÆ® °ü·Ã ÇÔ¼ö
 	void	AddSelectedQuest(const int& iQuestIndex);
 	void	RemoveSelectedQuest(const int& iQuestIndex);
 	bool	IsSelectedQuest(const int& iQuestIndex);
+	void	ClearSelectedQuestList();			// [090803 sora] ¼±ÅÃµÈ Äù½ºÆ® ¸®½ºÆ® clear
 	const std::list<int>& GetSelectedQuestList() { return m_listSelectedQuestIndex; }
 
-	// 2009. 06. 03 ê¹€ì •ë˜
-	// í€˜ìŠ¤íŠ¸ ë¦¬ìŠ¤íŠ¸ ì†ŒíŠ¸
+	// 2009. 06. 03 ±èÁ¤·¡
+	// Äù½ºÆ® ¸®½ºÆ® ¼ÒÆ®
 	void	SortQuestListByCondition();
 	void	SortQuestListByType();
 	
-	// 2009. 06. 03 ê¹€ì •ë˜
-	// í€˜ìŠ¤íŠ¸ê°€ ì™„ë£Œ ìƒí™©ì¸ì§€ íŒë‹¨
+	// 2009. 06. 03 ±èÁ¤·¡
+	// Äù½ºÆ®°¡ ¿Ï·á »óÈ²ÀÎÁö ÆÇ´Ü
 	bool	IsCompleteQuest(int nQuestIndex);
 	
-	// 2009 .06. 08 ê¹€ì •ë˜
-	// íƒ€ì„ì–´íƒ í€˜ìŠ¤íŠ¸ ì¤‘ ì œì¼ ë¨¼ì € ìˆ˜ë½ ë°›ì€ í€˜ìŠ¤íŠ¸ì˜ ì´ˆì‹œê°„ì„ ë°˜í™˜í•œë‹¤
+	// 2009 .06. 08 ±èÁ¤·¡
+	// Å¸ÀÓ¾îÅÃ Äù½ºÆ® Áß Á¦ÀÏ ¸ÕÀú ¼ö¶ô ¹ŞÀº Äù½ºÆ®ÀÇ ÃÊ½Ã°£À» ¹İÈ¯ÇÑ´Ù
 	DOUBLE	GetTimeAttackRemainTime();
 
-	// 2009. 06. 09 ê¹€ì •ë˜
-	// íƒ€ì„ì–´íƒ í€˜ìŠ¤íŠ¸ì˜ ë‚¨ì€ ì‹œê°„ì„ ì„¤ì •í•œë‹¤.
+	// 2009. 06. 09 ±èÁ¤·¡
+	// Å¸ÀÓ¾îÅÃ Äù½ºÆ®ÀÇ ³²Àº ½Ã°£À» ¼³Á¤ÇÑ´Ù.
 	void	SetQuestRemainTime(int iQuestIndex, int iRemainTime);
+
+	// [090818: selo]
+	// Äù½ºÆ® °øÁö¸¦ ¶ç¿î ÈÄ Èå¸¥ ½Ã°£À» ¾Ë·ÁÁØ´Ù.
+	DOUBLE	GetQuestNoticeElapsedTime();
+
+	// [090907: selo]
+	// ·¹ÀÌµå ½ÃÀÛ°ú ³¡ Ã³¸®	
+	void	RaidEnd(void);
+	void	SetRaidRemainTime(INDEX iRemainTime);
+	DOUBLE	GetRaidReminTime(void);
+	BOOL	IsRaidNow(void);
 
 	static void TalkWithNPC();
 
-	// 2009. 05. 27 ê¹€ì •ë˜
-	// ë©”ì‹œì§€ ë°•ìŠ¤ì— í€˜ìŠ¤íŠ¸ ë¦¬ìŠ¤íŠ¸ë¥¼ ì¶”ê°€í•˜ê¸°
+	// 2009. 05. 27 ±èÁ¤·¡
+	// ¸Ş½ÃÁö ¹Ú½º¿¡ Äù½ºÆ® ¸®½ºÆ®¸¦ Ãß°¡ÇÏ±â
 	static void	AddQuestListToMessageBoxL(const int& iMessageBoxType);
 
-	// 2009. 05. 27 ê¹€ì •ë˜
-	// í€˜ìŠ¤íŠ¸ë¥¼ ì„ íƒí•˜ì—¬ ì„ íƒ ê²°ê³¼ì— ë§ëŠ” í€˜ìŠ¤íŠ¸ ë¶ì„ ì—´ê²Œ í•œë‹¤.
+	// 2009. 05. 27 ±èÁ¤·¡
+	// Äù½ºÆ®¸¦ ¼±ÅÃÇÏ¿© ¼±ÅÃ °á°ú¿¡ ¸Â´Â Äù½ºÆ® ºÏÀ» ¿­°Ô ÇÑ´Ù.
 	static void SelectQuestFromMessageBox(const int& iClassifierIndex);
-	// í€˜ìŠ¤íŠ¸ type ì •ë³´ ê°€ì ¸ì˜¤ê¸°
+	// Äù½ºÆ® type Á¤º¸ °¡Á®¿À±â
 	static SBYTE GetQuestType(const INDEX& iQuestIndex);
+
+	// esc closing support [5/30/2011 rumist]
+	BOOL	CloseWindowByEsc()						{ CloseQuestBook();	return TRUE;		}
 };
 
 #endif	// UIQUESTBOOK_H_

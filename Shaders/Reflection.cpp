@@ -63,9 +63,9 @@ SHADER_MAIN(Reflection)
 		shaSetPixelProgramConst(1,   &srReflColor, 1);
 		// prepare fog and haze
 		shaPrepareFogAndHaze(bOpaque);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Add Tagent-space Normal Map)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Add Tagent-space Normal Map)(0.1)
 		shaSetDefaultConstantRegisters();
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Add Tagent-space Normal Map)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Add Tagent-space Normal Map)(0.1)
 	}
 	else 
 	{
@@ -147,7 +147,7 @@ SHADER_MAIN(Reflection)
 	}
 }
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(For Performance)(0.1)
 SHADER_DESC(Reflection,ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -176,7 +176,7 @@ SHADER_DESC(Reflection,ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = GFX_POSITION_STREAM|GFX_TEXCOORD0|GFX_NORMAL_STREAM;
 	}
 	pshDesc = &shDescMe;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(Reflection, CTString &strVPCode, INDEX iVertexProgram)
@@ -196,7 +196,7 @@ SHADER_PCODE(Reflection, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogT
 	ASSERT(iPixelProgram==iBasePP);
 	if(eFogType==FT_NONE) 
 	{
-		strPPCode = "tex    t0                      \n" // load base texture
+/*		strPPCode = "tex    t0                      \n" // load base texture
 					"tex    t1                      \n" // load reflection texture
 					"mul    t0,      t0,   c0       \n" // mul base texture with base color
 					"mul    t1,      t1,   c1       \n" // mul reflection texture with reflection color
@@ -204,11 +204,20 @@ SHADER_PCODE(Reflection, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogT
 					"lrp    r0.rgb,  1-t1.a, r0, t1 \n" // Fc = Bc*Ba*(1-Ra) + Rc*Ra
 					"+mul   r0.a,    1-t0, 1-t1     \n" // Fa = (1-Ba)*(1-Ra)
 					"mul_x2 r0.rgb,  r0,   v0       \n" // Shade pixel
+					;*/
+		strPPCode = "texld	r0,    t0               \n" // load base texture
+					"texld	r1,    t1               \n" // load reflection texture
+					"mul    r2,      r0,   c0       \n" // mul base texture with base color
+					"mul    r1,      r1,   c1       \n" // mul reflection texture with reflection color
+					"mul    r0.rgb,  r2,   r2.a     \n" // Bc*Ba
+					"lrp    r0.rgb,  1-r1.a, r0, r1 \n" // Fc = Bc*Ba*(1-Ra) + Rc*Ra
+					"+mul   r0.a,    1-r2, 1-r1     \n" // Fa = (1-Ba)*(1-Ra)
+					"mul_x2 r0.rgb,  r0,   v0       \n" // Shade pixel
 					;
 	}
 	else if(eFogType==FT_OPAQUE) 
 	{
-		strPPCode = "tex    t0                      \n" // load base texture
+/*		strPPCode = "tex    t0                      \n" // load base texture
 					"tex    t1                      \n" // load reflection texture
 					"tex    t2                      \n" // load fog texture
 					"mul    t0,      t0,   c0       \n" // mul base texture with base color
@@ -219,11 +228,23 @@ SHADER_PCODE(Reflection, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogT
 					"+mul   r0.a,    1-t0, 1-t1     \n" // Fa = (1-Ba)*(1-Ra)
 					"mul_x2 r0.rgb,  r0,   v0       \n" // Shade pixel
 					"lrp    r0.rgb,  t2.a, t2,  r0  \n" // Add fog
+					;*/
+		strPPCode = "texld	r0,    t0               \n" // load base texture
+					"texld	r1,    t1               \n" // load reflection texture
+					"texld	r2,    t2               \n" // load fog texture
+					"mul    r3,      r0,   c0       \n" // mul base texture with base color
+					"mul    r1,      r1,   c1       \n" // mul reflection texture with reflection color
+					"mul    r2,      r2,   c7       \n" // mul fog texture with fog color
+					"mul    r0.rgb,  r3,   r3.a     \n" // Bc*Ba
+					"lrp    r0.rgb,  1-r1.a,r0, r1  \n" // Fc = Bc*Ba*(1-Ra) + Rc*Ra
+					"+mul   r0.a,    1-r3, 1-r1     \n" // Fa = (1-Ba)*(1-Ra)
+					"mul_x2 r0.rgb,  r0,   v0       \n" // Shade pixel
+					"lrp    r0.rgb,  r2.a, r2,  r0  \n" // Add fog
 					;
 	}
 	else if(eFogType==FT_NON_OPAQUE) 
 	{
-		strPPCode = "tex    t0                      \n" // load base texture
+/*		strPPCode = "tex    t0                      \n" // load base texture
 					"tex    t1                      \n" // load reflection texture
 					"tex    t2                      \n" // load fog texture
 					"mul    t0,      t0,   c0       \n" // mul base texture with base color
@@ -234,6 +255,19 @@ SHADER_PCODE(Reflection, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFogT
 					"+mul   t1.a,    t1.a, 1-t2.a   \n" // attenuate reflection tex alpha with fog alpha
 					"lrp    r0.rgb,  1-t1.a, r0, t1 \n" // Fc = Bc*Ba*(1-Ra) + Rc*Ra
 					"+mul   r0.a,    1-t0, 1-t1     \n" // Fa = (1-Ba)*(1-Ra)
+					"mul_x2 r0.rgb,  r0,   v0       \n" // Shade pixel
+					;*/
+		strPPCode = "texld	r0,    t0               \n" // load base texture
+					"texld	r1,	   t1               \n" // load reflection texture
+					"texld	r2,    t2               \n" // load fog texture
+					"mul    r3,      r0,   c0       \n" // mul base texture with base color
+					"mul    r1,      r1,   c1       \n" // mul reflection texture with reflection color
+					"mul    r2,      r2,   c7       \n" // mul fog texture with fog color
+					"mul    r3.a,    r3.a, 1-r2.a   \n" // attenuate base tex alpha with fog alpha
+					"mul    r0.rgb,  r3,   r3.a     \n" // Bc*Ba
+					"+mul   r1.a,    r1.a, 1-r2.a   \n" // attenuate reflection tex alpha with fog alpha
+					"lrp    r0.rgb,  1-r1.a, r0, r1 \n" // Fc = Bc*Ba*(1-Ra) + Rc*Ra
+					"+mul   r0.a,    1-r3, 1-r1     \n" // Fa = (1-Ba)*(1-Ra)
 					"mul_x2 r0.rgb,  r0,   v0       \n" // Shade pixel
 					;
 	}

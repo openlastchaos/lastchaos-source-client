@@ -1,6 +1,6 @@
 //============================================================================================================
 // File : UICollectBox.h
-// Date : 2006-06-27(Å¼Å”ÄŒÃ„ 4:05:29), By eons
+// Date : 2006-06-27(¿ÀÈÄ 4:05:29), By eons
 //============================================================================================================
 
 #ifndef UICOLLECTBOX_H_
@@ -9,11 +9,6 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIWindow.h>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIListBox.h>
-
 #define UICOLLECTBOX_WIDTH		184
 #define UICOLLECTBOX_HEIGHT		194
 
@@ -21,7 +16,7 @@ class CUICollectBox : public CUIWindow
 {
 protected:
 	CUIButton m_btnClose;
-	CUIButtonEx m_abtnInsectItem[16]; // bugs event slot item 
+	CUIIcon* m_pIconInsectItem[16]; // bugs event slot item 
 
 	//Su-won |------------------------->
 	CUIListBox		m_lbItemInfo;		//Su-won
@@ -63,8 +58,7 @@ protected:
 	int		 m_nSelectItem;
 	int		 m_nDropPosition;
 	int		 m_nTab;
-	int		 m_nRow;
-	int		 m_nCol;
+	int		 m_nInvenIdx;
 
 	CTString m_strTitle;
 	CTString m_strPoint;
@@ -79,9 +73,9 @@ public:
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
 
 	void	Init( void );
-	void	OpenCollectBox( int nTab, int nRow, int nCol );
+	void	OpenCollectBox( int nTab, int inven_idx );
 	void	Render();
-	void	RenderInfo();			//Su-won
+	//void	RenderInfo();			//Su-won
 
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
@@ -94,6 +88,11 @@ public:
 
 	void	UpDateItem( void );
 	CTString GetInsectName( int n );
+
+public :
+
+protected :
+
 };
 
 #endif

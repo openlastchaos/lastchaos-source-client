@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "stdH.h"
 
 #pragma warning(disable : 4786)
@@ -62,8 +62,8 @@ BOOL CEffectManager::Register(CEffect *prototype)
 	if(prototype == NULL) return FALSE;
 	if( prototype->GetName() == "" || IsRegistered(prototype->GetName()) ) return FALSE;
 
-	my_map::value_type registerTri( prototype->GetName(), prototype->Copy() );
-	//ë“±ë¡ ì„±ê³µ or ì‹¤íŒ¨ ì •ë³´ë¥¼ ë¦¬í„´
+	my_map::value_type registerTri( prototype->GetName(), prototype );
+	//µî·Ï ¼º°ø or ½ÇÆĞ Á¤º¸¸¦ ¸®ÅÏ
 	return m_mapRegistered.insert( registerTri ).second;
 }
 
@@ -111,20 +111,18 @@ void CEffectManager::Destroy(CEffect *&obj)
 	if(obj == NULL) return;
 	ASSERT(obj->GetType() >= 0 && obj->GetType() < ET_COUNT);
 	if(obj->GetType() < 0 || obj->GetType() >= ET_COUNT) return;
-	for(my_list::iterator iter = m_listCreated[obj->GetType()].begin(); iter != m_listCreated[obj->GetType()].end(); )
+	
+	my_list::iterator tmpItr;
+
+	tmpItr = std::find(m_listCreated[obj->GetType()].begin(), m_listCreated[obj->GetType()].end(), obj);
+
+	if (tmpItr != m_listCreated[obj->GetType()].end())
 	{
-		if ( (*iter) == obj)
-		{
-			m_listCreated[obj->GetType()].erase(iter);
-			delete obj;
-			obj = NULL;
-			return;
-		}
-		else ++iter;
+		m_listCreated[obj->GetType()].remove(obj);
+		delete obj;
 	}
-	//m_listCreated[obj->GetType()].remove(obj);
-	//delete obj;
-	//obj = NULL;
+
+	obj = NULL;
 }
 #include <Engine/Effect/EffectCommon.h>
 #include <Engine/Base/Stream.h>
@@ -150,8 +148,10 @@ void CEffectManager::Read(CTStream *pIS)
 			CEffect *pEffect = CreateFromType((EFFECT_TYPE)dwType);
 			ASSERT(pEffect);
 			pEffect->Read(&is);
-			Register(pEffect);
-			delete pEffect;
+			if (!Register(pEffect))
+			{
+				if (pEffect) delete pEffect;
+			}
 		}
 	}
 	//old version
@@ -176,4 +176,4 @@ void CEffectManager::Write(CTStream *pOS)
 		(*iter).second->Write(&os);
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

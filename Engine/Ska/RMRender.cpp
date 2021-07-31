@@ -20,19 +20,19 @@
 #include <Engine/Base/MemoryTracking.h>
 #include <Engine/Base/ObjectRestore.h>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 #include <Engine/Math/AdditionalFunction.h>
 #include <Engine/Effect/CEffectGroupManager.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 #include <Engine/Entities/Entity.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
-// NOTE : ë‚˜ì¤‘ì— ì œê±°í•´ì•¼ í• ë“¯(CreateShadowMatrix() ë•Œë¬¸ì— í•„ìš”í•¨.)
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+// NOTE : ³ªÁß¿¡ Á¦°ÅÇØ¾ß ÇÒµí(CreateShadowMatrix() ¶§¹®¿¡ ÇÊ¿äÇÔ.)
 #include <d3dx8.h>
 #define SHADOWTEXTURESIZE (256)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 
 // asm shortcuts
@@ -77,24 +77,24 @@ extern INDEX ska_bAnimateMesh;
 
 // mask shader (for rendering models' shadows to shadowmaps)
 static CShader _shMaskShader;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 static CShader	*_pshShadowShader;
 static CShader	*_pshNoShadowShader;
 static CShader  *_pshNiceWaterShader;
 static BOOL		_bLoadedShadowShader = FALSE;
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.17
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.17
 //static COLOR	_crShadowColor = 0x05050580;			// Shadow Color
 static COLOR	_crShadowColor = 0x050505A0;			// Shadow Color
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.17
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.17
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.20
 //static CNiceWater* _pWaterInformation = NULL;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 
 // temporary rendering structures
-// Tangent ê´€ë ¨ ì½”ë“œ ì¶”ê°€ë¥¼ í•˜ë©´ì„œ Morphìª½ì€ ì²˜ë¦¬í•˜ì§€ ì•Šì•˜ìŒ.
-// MorphëŠ” í˜„ì¬ ì“°ì´ì§€ ì•ŠìŒ. ã…¡_ã…¡;
+// Tangent °ü·Ã ÄÚµå Ãß°¡¸¦ ÇÏ¸é¼­ MorphÂÊÀº Ã³¸®ÇÏÁö ¾Ê¾ÒÀ½.
+// Morph´Â ÇöÀç ¾²ÀÌÁö ¾ÊÀ½. ¤Ñ_¤Ñ;
 CStaticStackArray<struct RenModel> _aRenModels;
 CStaticStackArray<struct RenMesh> _aRenMeshes;
 CStaticStackArray<struct RenBone> _aRenBones;
@@ -104,9 +104,9 @@ CStaticStackArray<struct MeshVertex> _aMorphedVertices;
 CStaticStackArray<struct MeshNormal> _aMorphedNormals;
 CStaticStackArray<struct MeshVertex> _aFinalVertices;
 CStaticStackArray<struct MeshNormal> _aFinalNormals;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 CStaticStackArray<struct MeshTangent> _aFinalTangents;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 CStaticStackArray<struct RenMatrix> _aWeightMatrices;
 CStaticStackArray<struct SurfaceMatrices> _aSurfacesMatrices;
 
@@ -116,9 +116,9 @@ static CStaticStackArray<SLONG> _aslRenBoneSearchTable;
 // mesh source buffer pointers (valid only in prepare mesh for rendering and render mesh)
 static MeshVertex *_pavMeshVertices = NULL; // mesh lod vertices (from vertex buffer)
 static MeshNormal *_panMeshNormals  = NULL; // mesh lod normals  (from normal buffer)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 static MeshTangent *_panMeshTangents  = NULL; // mesh lod normals  (from normal buffer)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 static MeshVertexWeightInfo *_pawMeshWeights  = NULL; // mesh lod weights  (from weight buffer)
 static CStaticStackArray<MeshTexCoord *> _patcMeshTexCoords;
 extern INDEX _ctMeshVertices = 0;           // mesh lod vertex count
@@ -126,9 +126,9 @@ static BOOL _bMeshBuffersLocked = FALSE;    // Are buffers locked
 
 extern MeshVertex *_pavWeightedVertices = NULL;  // final vertex arrays (in software this are morphed and weighted vertices, in hardware default model vertices)
 extern MeshNormal *_panWeightedNormals  = NULL;  // final normal array  (in software this are morphed and weighted normals , in hardware default model normals)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 extern MeshTangent *_panWeightedTangents  = NULL;  // final tangent array  (in software this are morphed and weighted normals , in hardware default model normals)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 extern MeshVertex *_pavMorphedVertices  = NULL;  // morphed vertices (contains vertices only for surfaces that have morph maps - if no active morphmaps points to default model vertices)
 extern MeshNormal *_panMorphedNormals   = NULL;  // morphed normals  (contains normals  only for surfaces that have morph maps - if no active morphmaps points to default model normals)
 static INDEX _iMorphedBufferBindID      = -1;
@@ -150,9 +150,9 @@ inline extern void LockMeshReadBuffers(const MeshLOD &mlod);
 inline extern void UnlockMeshReadBuffers(const MeshLOD &mlod);
 inline static void SetSurfaceMatrices(const RenMesh &rmsh, const MeshSurface &msrf, const MeshLOD &mlod);
 extern void PrepareMeshForRendering(RenMesh &rmsh, INDEX iSkeletonlod);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 extern void CalculateRenderingData(CModelInstance &mi, BOOL bRenderToScreen);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 extern void ClearRenArrays();
 
 
@@ -288,10 +288,10 @@ __forceinline static void TransformVector_add( FLOAT3 &vDst, FLOAT3 &vSrc, const
 }
 
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
-//__forceinline static void TransformVertex( GFXVertex &v, const Matrix12 &m)		// ì›ë³¸
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
+//__forceinline static void TransformVertex( GFXVertex &v, const Matrix12 &m)		// ¿øº»
 __forceinline void TransformVertex( GFXVertex &v, const Matrix12 &m)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 {
 	const FLOAT x = v.x;
 	const FLOAT y = v.y;
@@ -501,7 +501,7 @@ extern void RM_GetModelVertices( CModelInstance &mi, CStaticStackArray<FLOAT3D> 
 
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-01)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-01)
 #include <Engine/Effect/CSkaTag.h>
 #include <algorithm>
 class binfo
@@ -519,7 +519,7 @@ public:
 };
 FLOAT RM_TestRayCastHit( CModelInstance &mi, FLOATmatrix3D &mRotation, FLOAT3D &vPosition,const FLOAT3D &vOrigin,
 						const FLOAT3D &vTarget,FLOAT fOldDistance,INDEX *piBoneID, void *pSkatag)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-01)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-01)
 {
 	FLOAT fDistance = 1E6f;
 	extern INDEX ska_iMaxWeightsPerVertex;
@@ -545,9 +545,9 @@ FLOAT RM_TestRayCastHit( CModelInstance &mi, FLOATmatrix3D &mRotation, FLOAT3D &
 			// prepare mesh for rendering
 			RenMesh &rmsh = _aRenMeshes[imsh];
 			// Get mesh lod
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-01)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-01)
 			MeshLOD &mlod = rmsh.rmsh_pMeshInst->mi_pMesh->msh_aMeshLODs[rmsh.rmsh_iMeshLODIndex];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-01)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-01)
 			// don't do raycast check if mesh wasn't reloaded
 			if( mlod.mlod_iBufferBindID==(-1)) continue;
 			
@@ -625,7 +625,7 @@ FLOAT RM_TestRayCastHit( CModelInstance &mi, FLOATmatrix3D &mRotation, FLOAT3D &
 								FLOAT fDist0 = (vHitPoint - vVertex0).Length();
 								FLOAT fDist1 = (vHitPoint - vVertex1).Length();
 								FLOAT fDist2 = (vHitPoint - vVertex2).Length();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Open beta)(2004-12-02)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Open beta)(2004-12-02)
 								FLOAT3D vVertex;
 								if (fDist0 < fDist1) 
 								{
@@ -727,7 +727,7 @@ FLOAT RM_TestRayCastHit( CModelInstance &mi, FLOATmatrix3D &mRotation, FLOAT3D &
 									}
 */
 								}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Open beta)(2004-12-01)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Open beta)(2004-12-01)
 							}
 						}
 					}
@@ -938,7 +938,7 @@ void RM_SetShaderParamsAdjustCallback(void (*pAdjustShaderParams)(void *pData, I
 	_pAdjustShaderData = pData;
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 // show gound for ska studio
 void RM_RenderGround(CTextureObject &to, COLOR color)
 {
@@ -983,15 +983,15 @@ void RM_RenderGround(CTextureData &td, COLOR color)
 	for( INDEX ivx=0; ivx<4; ivx++) TransformVertex( vBoxVtxs[ivx], _mAbsToViewer);
 	
 	gfxSetVertexArray( vBoxVtxs, 4);
-	gfxSetTexCoordArray( tcBoxTex);
+	gfxSetTexCoordArray( tcBoxTex, FALSE);
 	gfxSetColorArray(&colArray[0]);
 	gfxDrawElements( 6, auwIndices);
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 // Function name	: RM_RenderQuad
-// Description	    : ì‚¬ê°í˜•ì„ ê·¸ë¦½ë‹ˆë‹¤.
+// Description	    : »ç°¢ÇüÀ» ±×¸³´Ï´Ù.
 // Return type		: void 
 void RM_RenderQuad(CPlacement3D& plPosition, FLOAT fWidth)
 {
@@ -1002,7 +1002,7 @@ void RM_RenderQuad(CPlacement3D& plPosition, FLOAT fWidth)
 	MatrixVectorToMatrix12(matObjToAbs, m, plPosition.pl_PositionVector);
 	Matrix12 matObjToView;
 	MatrixMultiply(matObjToView, _mAbsToViewer, matObjToAbs);
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 
 	FLOAT3D vVtx = FLOAT3D(fWidth, 0, fWidth);
 	GFXVertex   vQuadVtxs[4];
@@ -1029,12 +1029,12 @@ void RM_RenderQuad(CPlacement3D& plPosition, FLOAT fWidth)
 	for( INDEX ivx=0; ivx<4; ivx++) TransformVertex( vQuadVtxs[ivx], matObjToView);
 	
 	gfxSetVertexArray( vQuadVtxs, 4);
-	gfxSetTexCoordArray( tcQuadTex);
+	gfxSetTexCoordArray( tcQuadTex, FALSE);
 	gfxSetColorArray(&colArray[0]);
 	
 	gfxDrawElements( 6, auwIndices);
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 
 // render wirerame bounding box
@@ -1125,7 +1125,7 @@ static void RenderBox(FLOAT3D vMinVtx, FLOAT3D vMaxVtx, COLOR col)
 // render bounding box on screen
 void RM_RenderColisionBox(CModelInstance &mi,ColisionBox &cb, COLOR col)
 {
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 	gfxDisableBlend();
 	gfxDisableAlphaTest();
 	gfxEnableDepthTest();
@@ -1146,7 +1146,7 @@ void RM_RenderColisionBox(CModelInstance &mi,ColisionBox &cb, COLOR col)
 
 void RM_RenderCross(FLOAT3D &vPosition, COLOR col)
 {
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 	gfxDisableBlend();
 	gfxDisableAlphaTest();
 	gfxDisableDepthTest();
@@ -1169,13 +1169,13 @@ void RM_RenderCross(FLOAT3D &vPosition, COLOR col)
 	_pdp->DrawLine3D(vPoint[4],vPoint[5],col);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 void RM_RenderSpline(SINT uiCount, FLOAT3D *pvPosition, SINT selIndex, COLOR col)
 {
 	if(uiCount < 2) return;
 	if(pvPosition == NULL) return;
 
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 	gfxDisableBlend();
 	gfxDisableAlphaTest();
 	gfxDisableDepthTest();
@@ -1211,7 +1211,7 @@ void RM_RenderSpline(SINT uiCount, FLOAT3D *pvPosition, SINT selIndex, COLOR col
 	_pdp->DrawLine3D(vPoint[2],vPoint[3],col);
 	_pdp->DrawLine3D(vPoint[4],vPoint[5],col);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 
 // render one renbone
 static void RenderBone(RenBone &rb, COLOR col)
@@ -1220,6 +1220,7 @@ static void RenderBone(RenBone &rb, COLOR col)
 	FLOAT3D vBoneStart = FLOAT3D(rb.rb_mBonePlacement[3],rb.rb_mBonePlacement[7],rb.rb_mBonePlacement[11]);
 	FLOAT3D vBoneEnd = FLOAT3D(0,0,-rb.rb_psbBone->sb_fBoneLength);
 	FLOAT3D vRingPt[4];
+	INDEX	il;
 	
 	vRingPt[0] = FLOAT3D(-fSize,-fSize,-fSize*2);
 	vRingPt[1] = FLOAT3D( fSize,-fSize,-fSize*2);
@@ -1232,14 +1233,14 @@ static void RenderBone(RenBone &rb, COLOR col)
 	TransformVector(vRingPt[3].vector,rb.rb_mBonePlacement);
 	
 	// connect start point of bone with end point
-	for(INDEX il=0;il<4;il++) 
+	for( il=0;il<4;il++) 
 	{
 		_pdp->DrawLine3D(vBoneStart,vRingPt[il],col);
 		_pdp->DrawLine3D(vBoneEnd,vRingPt[il],col);
 	}
 	
 	// draw ring
-	for(il=0;il<3;il++) 
+	for( il = 0; il < 3; il++)
 	{
 		_pdp->DrawLine3D(vRingPt[il],vRingPt[il+1],col);
 	}
@@ -1272,7 +1273,8 @@ static void RenderActiveBones(RenModel &rm)
 	// find newes animlist that has fully faded in
 	INDEX iFirstAnimList = 0;
 	// loop from newer to older
-	for(INDEX ial=ctal-1;ial>=0;ial--) 
+	INDEX ial;
+	for( ial=ctal-1;ial>=0;ial--) 
 	{
 		AnimList &al = pmi->mi_aqAnims.aq_Lists[ial];
 		// calculate fade factor
@@ -1284,7 +1286,7 @@ static void RenderActiveBones(RenModel &rm)
 		}
 	}
 	// for each anim list after iFirstAnimList
-	for(ial=iFirstAnimList;ial<ctal;ial++) 
+	for( ial = iFirstAnimList; ial < ctal; ial++) 
 	{
 		AnimList &al = pmi->mi_aqAnims.aq_Lists[ial];
 		INDEX ctpa = al.al_PlayedAnims.Count();
@@ -1478,18 +1480,15 @@ static inline INDEX FindFrameAll(UBYTE *pFirstMember, INDEX iFind, INDEX ctfn, U
 inline static INDEX FindRenBoneIndex(const RenModel &rm, INDEX iBoneID)
 {
 #if 1
-//	ASSERT(rm.rm_pmiModel!=NULL);
-//	ASSERT(rm.rm_pmiModel->mi_psklSkeleton!=NULL);
+// 	ASSERT(rm.rm_pmiModel!=NULL);
+// 	ASSERT(rm.rm_pmiModel->mi_psklSkeleton!=NULL);
 	
 	const INDEX iSkeletonLOD = rm.rm_iSkeletonLODIndex;
 	const CSkeleton *pskl = rm.rm_pmiModel->mi_psklSkeleton;
-
-	if (pskl == NULL) return -1;
-
 	const INDEX iBoneIndex = pskl->FindBoneInLOD(iBoneID,iSkeletonLOD);
 	if(iBoneIndex!=(-1)) 
 	{
-		const iRenBoneIndex = rm.rm_iFirstBone + iBoneIndex;
+		const INDEX iRenBoneIndex = rm.rm_iFirstBone + iBoneIndex;
 		return iRenBoneIndex;
 	}
 	else 
@@ -1608,15 +1607,15 @@ static void DecompressAxis(FLOAT3D &vNormal, UWORD ubH, UWORD ubP)
 
 ENGINE_API extern BOOL RM_AreHardwareShadersAvailable(void)
 {
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
-	extern INDEX ska_bUseHardwareShaders;			// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
+	extern INDEX ska_bUseHardwareShaders;			// ¿øº».
 	return ska_bUseHardwareShaders && 
 		(_pGfx->gl_ulFlags&GLF_VERTEXPROGRAM) && 
 		(_pGfx->gl_ulFlags&GLF_PIXELPROGRAM) && 
 		(_pGfx->gl_ctTextureUnits>=4);
-	// ê°•ì œë¡œ HardwareShader ì‚¬ìš©í•˜ì§€ ì•Šê¸°.
+	// °­Á¦·Î HardwareShader »ç¿ëÇÏÁö ¾Ê±â.
 	//return FALSE;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 }
 
 // initialize batch model rendering
@@ -1641,10 +1640,10 @@ extern void RM_BeginRenderingView( CAnyProjection3D &apr, CDrawPort *pdp)
 	// so we have less clipping (for instance, player feet)
 	if( apr->pr_bMirror) apr->pr_plMirrorView.pl_distance -= 0.06f; // -0.06 is because entire projection is offseted by +0.05
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.13
 	else if(apr->pr_bNiceWater)
 		apr->pr_plNiceWaterView.pl_distance -= 0.06f;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.13
 
 	_aprProjection = apr;
 	_pdp->SetProjection( _aprProjection);
@@ -1710,9 +1709,9 @@ extern void RM_BeginModelRenderingMask( CAnyProjection3D &prProjection, UBYTE *p
 	
 	// set mask shader
 	extern void InternalShader_Mask(void);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 	extern void InternalShaderDesc_Mask(ShaderDesc *&pshDesc);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 	_shMaskShader.ShaderFunc    = InternalShader_Mask;
 	_shMaskShader.GetShaderDesc = InternalShaderDesc_Mask;
 }
@@ -1762,35 +1761,35 @@ extern void RM_SetObjectMatrices(CModelInstance &mi)
 	
 	if((CProjection3D *)_aprProjection != NULL) 
 	{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
-		//if( gap_iOptimizeClipping>0 && (_aprProjection->pr_bMirror || _aprProjection->pr_bWarp))		// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
+		//if( gap_iOptimizeClipping>0 && (_aprProjection->pr_bMirror || _aprProjection->pr_bWarp))		// ¿øº».
 		if( gap_iOptimizeClipping>0 && (_aprProjection->pr_bMirror || _aprProjection->pr_bWarp || _aprProjection->pr_bNiceWater))
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 		{
 			if( ulFlags & SRMF_INMIRROR) 
 			{
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.22
-				//gfxDisableClipPlane();	// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.22
+				//gfxDisableClipPlane();	// ¿øº».
 				gfxEnableClipPlane();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	05.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	05.22
 				gfxFrontFace( GFX_CCW);
 			}
 			else 
 			{				
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
-				gfxEnableClipPlane();		// ì›ë³¸.
-				// NOTE :  Mirrorì— ëŒ€í•´ì„œ ClipPlane()ì„ Enableí•  ê²½ìš°,
-				// NOTE : ë¬¸ì œê°€ ë°œìƒí•¨.
-				// NOTE : Disableí•´ë„ Mirrorëœ ì´ë¯¸ì§€ê°€ ì œëŒ€ë¡œ ë‚˜ì˜¤ì§€ ì•ŠëŠ” ë¬¸ì œê°€ ìˆìŒ.
-				// NOTE : ê³ ë¡œ, ClipPlaneì„ ì„¤ì •í•˜ëŠ” ë¶€ë¶„ì´ ë¬¸ì œê°€ ë˜ë¯€ë¡œ, 
-				// NOTE : ClipPlaneì„ ê³„ì‚°í•˜ëŠ” ë¶€ë¶„ì„ ìˆ˜ì •í•˜ë„ë¡ í• ê²ƒ.
-				// NOTE : ë˜, ë‹¤ë¥¸ í•œê°€ì§€ ë¬¸ì œì ì€ í´ë¦¬í•‘ì‹œì— ì˜¤ë¸Œì íŠ¸ì˜ ë°”ìš´ë”© ë°•ìŠ¤ë¥¼ ê°€ì§€ê³  í•˜ëŠ”ë°,
-				// NOTE : ë°˜ì‚¬ í‰ë©´ì´ ë°”ìš´ë”© ë°•ìŠ¤ì˜ ì¤‘ê°„ì— ìˆì„ ê²½ìš°ê°€ ë¬¸ì œê°€ ëœë‹¤.
-				// NOTE : ì´ ê²½ìš°ì—ë„ ë”°ë¡œ ì²˜ë¦¬ë¥¼ í•´ì¤˜ì•¼ í• ë“¯.
-				// NOTE : ê¶ê¸ˆí•œì , ì™œ BSP ê¸°ë°˜ì˜ ë¬¼ì²´ë“¤ì— ëŒ€í•´ì„œëŠ” ì˜ ë‚˜ì˜¤ê³  ìˆëŠ” ê²ƒì¼ê¹Œ?
-				// NOTE : ìœ„ì˜ ë¬¸ì œë¥¼ í•´ê²°í•˜ê¸° ì „ê¹Œì§€ëŠ” Disable Clipí•¨.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
+				gfxEnableClipPlane();		// ¿øº».
+				// NOTE :  Mirror¿¡ ´ëÇØ¼­ ClipPlane()À» EnableÇÒ °æ¿ì,
+				// NOTE : ¹®Á¦°¡ ¹ß»ıÇÔ.
+				// NOTE : DisableÇØµµ MirrorµÈ ÀÌ¹ÌÁö°¡ Á¦´ë·Î ³ª¿ÀÁö ¾Ê´Â ¹®Á¦°¡ ÀÖÀ½.
+				// NOTE : °í·Î, ClipPlaneÀ» ¼³Á¤ÇÏ´Â ºÎºĞÀÌ ¹®Á¦°¡ µÇ¹Ç·Î, 
+				// NOTE : ClipPlaneÀ» °è»êÇÏ´Â ºÎºĞÀ» ¼öÁ¤ÇÏµµ·Ï ÇÒ°Í.
+				// NOTE : ¶Ç, ´Ù¸¥ ÇÑ°¡Áö ¹®Á¦Á¡Àº Å¬¸®ÇÎ½Ã¿¡ ¿ÀºêÁ§Æ®ÀÇ ¹Ù¿îµù ¹Ú½º¸¦ °¡Áö°í ÇÏ´Âµ¥,
+				// NOTE : ¹İ»ç Æò¸éÀÌ ¹Ù¿îµù ¹Ú½ºÀÇ Áß°£¿¡ ÀÖÀ» °æ¿ì°¡ ¹®Á¦°¡ µÈ´Ù.
+				// NOTE : ÀÌ °æ¿ì¿¡µµ µû·Î Ã³¸®¸¦ ÇØÁà¾ß ÇÒµí.
+				// NOTE : ±Ã±İÇÑÁ¡, ¿Ö BSP ±â¹İÀÇ ¹°Ã¼µé¿¡ ´ëÇØ¼­´Â Àß ³ª¿À°í ÀÖ´Â °ÍÀÏ±î?
+				// NOTE : À§ÀÇ ¹®Á¦¸¦ ÇØ°áÇÏ±â Àü±îÁö´Â Disable ClipÇÔ.
 				//gfxDisableClipPlane();
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 				gfxFrontFace( GFX_CW);
 			}
 		}
@@ -1817,36 +1816,36 @@ extern void RM_SetObjectPlacement(const FLOATmatrix3D &m, const FLOAT3D &v)
 	MatrixVectorToMatrix12(_mObjToAbs,m, v);
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 extern void RM_SetAbsToView(const Matrix12 &matAbsToView)
 {
 	memcpy(&_mAbsToViewer, &matAbsToView, sizeof(Matrix12));
 }
 
-// NOTE : _iRenderingTypeê°€ ì—¬ëŸ¬ê³³ì—ì„œ ì„ ì–¸ë˜ì–´ìˆìŒ.  ë‚˜ì¤‘ì— ìˆ˜ì •í•´ì•¼í•  ë¶€ë¶„.
+// NOTE : _iRenderingType°¡ ¿©·¯°÷¿¡¼­ ¼±¾ğµÇ¾îÀÖÀ½.  ³ªÁß¿¡ ¼öÁ¤ÇØ¾ßÇÒ ºÎºĞ.
 extern void RM_SetRenderingType(INDEX iRenderingType)
 {
 	_iRenderingType = iRenderingType;
 }
 
 /*
-// NOTE : RenderModelShadow ë° CreateShadowMatrix, RenderOneSkaModelToTextureë“±ì—ì„œ ì¤‘ë³µë˜ëŠ” ì½”ë“œê°€ ë§ìŒ.
-// NOTE : ë§¤ í”„ë ˆì„ë§ˆë‹¤ ê³„ì‚°í•´ì•¼ í•˜ëŠ” ë¶€ë¶„.  ê´‘ì›ì˜ ìœ„ì¹˜ë‚˜ ëª¨ë¸ì˜ ìœ„ì¹˜, ë·°ì–´ì˜ ìœ„ì¹˜ë“±ì´ ë³€ê²½ë  ìˆ˜ ìˆë‹¤.
+// NOTE : RenderModelShadow ¹× CreateShadowMatrix, RenderOneSkaModelToTextureµî¿¡¼­ Áßº¹µÇ´Â ÄÚµå°¡ ¸¹À½.
+// NOTE : ¸Å ÇÁ·¹ÀÓ¸¶´Ù °è»êÇØ¾ß ÇÏ´Â ºÎºĞ.  ±¤¿øÀÇ À§Ä¡³ª ¸ğµ¨ÀÇ À§Ä¡, ºä¾îÀÇ À§Ä¡µîÀÌ º¯°æµÉ ¼ö ÀÖ´Ù.
 extern void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D& plModel, Matrix16& matShadowUV, FLOAT fTextureSize, const CPlacement3D& plViewer)
 {
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 	
 	//////////////////////////////////////////////////////////////////////////	
-	// matView ê³„ì‚°.
-	// ì¹´ë©”ë¼(ë·°ì–´)ì—ì„œ ì›ì ì„ ë°”ë¼ë³´ëŠ” íˆ¬ì˜&ë·° í–‰ë ¬...(íˆ¬ì˜í–‰ë ¬ì€ í•„ìš”ì—†ìŒ... ë‹¨ì§€, ë·° í–‰ë ¬ì„ ì–»ê¸° ìœ„í•œ ë¶€ë¶„.)
+	// matView °è»ê.
+	// Ä«¸Ş¶ó(ºä¾î)¿¡¼­ ¿øÁ¡À» ¹Ù¶óº¸´Â Åõ¿µ&ºä Çà·Ä...(Åõ¿µÇà·ÄÀº ÇÊ¿ä¾øÀ½... ´ÜÁö, ºä Çà·ÄÀ» ¾ò±â À§ÇÑ ºÎºĞ.)
 	Matrix12 matViewToAbs;						// Viewer -> Abs
 	MakeIdentityMatrix(matViewToAbs);
 	
-	// ì¹´ë©”ë¼ì—ì„œ ë°”ë¼ë³´ëŠ” ë·°í–‰ë ¬...
+	// Ä«¸Ş¶ó¿¡¼­ ¹Ù¶óº¸´Â ºäÇà·Ä...
 	// World -> View(AbsToView)
 	GetViewMatrix(plViewer, matViewToAbs);
 	//////////////////////////////////////////////////////////////////////////
-	// ì„ì‹œì½”ë“œ
+	// ÀÓ½ÃÄÚµå
 	FLOATaabbox3D FrameBBox;
 	pMI->GetAllFramesBBox(FrameBBox);
 	FLOAT3D vMin = FrameBBox.minvect;
@@ -1854,32 +1853,32 @@ extern void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D& plModel,
 	FLOAT fHeight = fabs((vMax(2) - vMin(2))/2.0f);	
 
 	//////////////////////////////////////////////////////////////////////////
-	// ì›”ë“œ í–‰ë ¬...
+	// ¿ùµå Çà·Ä...
 	Matrix12 matLocalToWorld;
 	GetWorldMatrix(plModel, matLocalToWorld);
 	
 	//////////////////////////////////////////////////////////////////////////
-	// matViewì˜ ì—­í–‰ë ¬ êµ¬í•˜ê¸°...
-	// Camera -> World(ì¹´ë©”ë¼ì—ì„œ ë°”ë¼ë³´ëŠ” ë·°í–‰ë ¬ì˜ ì—­í–‰ë ¬.)
+	// matViewÀÇ ¿ªÇà·Ä ±¸ÇÏ±â...
+	// Camera -> World(Ä«¸Ş¶ó¿¡¼­ ¹Ù¶óº¸´Â ºäÇà·ÄÀÇ ¿ªÇà·Ä.)
 	Matrix12 matCameraToAbs;
 	MatrixTranspose(matCameraToAbs, matViewToAbs);
 
 	//////////////////////////////////////////////////////////////////////////
-	// í…ìŠ¤ì³íˆ¬ì˜ í–‰ë ¬ ê³µì‹.
+	// ÅØ½ºÃÄÅõ¿µ Çà·Ä °ø½Ä.
 	// matShadowUV = matCameraToWorld * matWorldToLight * matShadowProj * (scale * offset)
 	//////////////////////////////////////////////////////////////////////////	
 
-	// NOTE : ì•„ë˜ í…ìŠ¤ì³íˆ¬ì˜ í–‰ë ¬ ê³„ì‚°í•˜ëŠ” ë¶€ë¶„ì—ì„œ D3D í•¨ìˆ˜ë“¤ì„ ì‚¬ìš©í•˜ê³  ìˆë‹¤.  ìˆ˜ì •í• ê²ƒ.
+	// NOTE : ¾Æ·¡ ÅØ½ºÃÄÅõ¿µ Çà·Ä °è»êÇÏ´Â ºÎºĞ¿¡¼­ D3D ÇÔ¼öµéÀ» »ç¿ëÇÏ°í ÀÖ´Ù.  ¼öÁ¤ÇÒ°Í.
 	// matWorldToLight^T
 	D3DXMATRIX matWorldToLight16;
 	D3DXMatrixIdentity(&matWorldToLight16);
 	memcpy(&matWorldToLight16, pMI->mi_matWorldToLight, sizeof(float)*12);
 	D3DXMatrixTranspose(&matWorldToLight16, &matWorldToLight16);
 
-	// ì°íŒ ê·¸ë¦¼ìë¥¼ ëª¨ë¸ì˜ ìœ„ì¹˜ë¡œ ì´ë™ì‹œí‚´...(World)
+	// ÂïÈù ±×¸²ÀÚ¸¦ ¸ğµ¨ÀÇ À§Ä¡·Î ÀÌµ¿½ÃÅ´...(World)
 	D3DXMATRIX matTranslation;
 	D3DXMatrixIdentity(&matTranslation);
-	// NOTE : ì™œ ë¶€í˜¸ê°€ -ì¼ë•Œë§Œ ë˜ëŠ”ê²ƒì¸ê°€?
+	// NOTE : ¿Ö ºÎÈ£°¡ -ÀÏ¶§¸¸ µÇ´Â°ÍÀÎ°¡?
 	D3DXMatrixTranslation(&matTranslation, -plModel.pl_PositionVector(1), -plModel.pl_PositionVector(2), -plModel.pl_PositionVector(3));
 	
 	D3DXMATRIX matModelTrans;
@@ -1900,18 +1899,18 @@ extern void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D& plModel,
 	D3DXMatrixMultiply(&matCameraToLight, &matCameraToLight, &matTranslation);
 	D3DXMatrixMultiply(&matCameraToLight, &matCameraToLight, &matWorldToLight16);	
 
-	// NOTE : ì „ì¹˜í–‰ë ¬ì˜ ì‚¬ìš©ì— ëŒ€í•´ì„œ...
+	// NOTE : ÀüÄ¡Çà·ÄÀÇ »ç¿ë¿¡ ´ëÇØ¼­...
 	// matTemp12 = (matWorldToLight * matCameraToAbs)^(T);
 	//			 = matCameraToAbs^T * matWorldToLight^T;
 
-	// ìµœì¢…ì ì¸ í…ìŠ¤ì³ íˆ¬ì˜ í–‰ë ¬.
+	// ÃÖÁ¾ÀûÀÎ ÅØ½ºÃÄ Åõ¿µ Çà·Ä.
 	// matCameraToWorld * matWorldToLight * matShadowProj
 	Matrix16 matTemp16;
 	memcpy(&matTemp16, &matCameraToLight, sizeof(float)*16);
 	MatrixMultiply(matShadowUV, matTemp16, pMI->mi_matShadowProj);
 
-	// í…ìŠ¤ì³ ì¢Œí‘œë¡œ ë³€í™˜í•¨.
-	// -1~1 ì‚¬ì´ì˜ ê°’ì„ [0, 1]ì˜ ê°’ìœ¼ë¡œ ë³€ê²½í•©ë‹ˆë‹¤.
+	// ÅØ½ºÃÄ ÁÂÇ¥·Î º¯È¯ÇÔ.
+	// -1~1 »çÀÌÀÇ °ªÀ» [0, 1]ÀÇ °ªÀ¸·Î º¯°æÇÕ´Ï´Ù.
 	Matrix16 matScaleOffset;
 	memset(&matScaleOffset, 0, sizeof(float)*16);
 	matScaleOffset[0] = 0.5f;
@@ -1925,71 +1924,71 @@ extern void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D& plModel,
 	
 	MatrixMultiply(matShadowUV, matShadowUV, matScaleOffset);
 }*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.05
-// NOTE : RenderModelShadow ë° CreateShadowMatrix, RenderOneSkaModelToTextureë“±ì—ì„œ ì¤‘ë³µë˜ëŠ” ì½”ë“œê°€ ë§ìŒ.
-// NOTE : ë§¤ í”„ë ˆì„ë§ˆë‹¤ ê³„ì‚°í•´ì•¼ í•˜ëŠ” ë¶€ë¶„.  ê´‘ì›ì˜ ìœ„ì¹˜ë‚˜ ëª¨ë¸ì˜ ìœ„ì¹˜, ë·°ì–´ì˜ ìœ„ì¹˜ë“±ì´ ë³€ê²½ë  ìˆ˜ ìˆë‹¤.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		04.13
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.05
+// NOTE : RenderModelShadow ¹× CreateShadowMatrix, RenderOneSkaModelToTextureµî¿¡¼­ Áßº¹µÇ´Â ÄÚµå°¡ ¸¹À½.
+// NOTE : ¸Å ÇÁ·¹ÀÓ¸¶´Ù °è»êÇØ¾ß ÇÏ´Â ºÎºĞ.  ±¤¿øÀÇ À§Ä¡³ª ¸ğµ¨ÀÇ À§Ä¡, ºä¾îÀÇ À§Ä¡µîÀÌ º¯°æµÉ ¼ö ÀÖ´Ù.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		04.13
 extern void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D& plModel, Matrix16& matShadowUV, 
-							   const Matrix12& matWorldToLight,		// ê´‘ì›ì—ì„œ ì›ì ì„ ë°”ë¼ë´„...
-							   const Matrix16& matShadowProj,		// ê´‘ì›ì—ì„œ íˆ¬ì˜í•œ í–‰ë ¬.
+							   const Matrix12& matWorldToLight,		// ±¤¿ø¿¡¼­ ¿øÁ¡À» ¹Ù¶óº½...
+							   const Matrix16& matShadowProj,		// ±¤¿ø¿¡¼­ Åõ¿µÇÑ Çà·Ä.
 							   const FLOAT fTextureSize, 
-							   const CPlacement3D& plViewer)		// ì¹´ë©”ë¼ì˜ ìœ„ì¹˜.
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		04.13
+							   const CPlacement3D& plViewer)		// Ä«¸Ş¶óÀÇ À§Ä¡.
+//°­µ¿¹Î ¼öÁ¤ ³¡		04.13
 {
-	gfxSetViewMatrix();
+	gfxSetViewMatrix(NULL);
 	
 	//////////////////////////////////////////////////////////////////////////	
-	// matView ê³„ì‚°.
-	// ì¹´ë©”ë¼(ë·°ì–´)ì—ì„œ ì›ì ì„ ë°”ë¼ë³´ëŠ” íˆ¬ì˜&ë·° í–‰ë ¬...(íˆ¬ì˜í–‰ë ¬ì€ í•„ìš”ì—†ìŒ... ë‹¨ì§€, ë·° í–‰ë ¬ì„ ì–»ê¸° ìœ„í•œ ë¶€ë¶„.)
+	// matView °è»ê.
+	// Ä«¸Ş¶ó(ºä¾î)¿¡¼­ ¿øÁ¡À» ¹Ù¶óº¸´Â Åõ¿µ&ºä Çà·Ä...(Åõ¿µÇà·ÄÀº ÇÊ¿ä¾øÀ½... ´ÜÁö, ºä Çà·ÄÀ» ¾ò±â À§ÇÑ ºÎºĞ.)
 	Matrix12 matViewToAbs;						// Viewer -> Abs
 	MakeIdentityMatrix(matViewToAbs);
 	
-	// ì¹´ë©”ë¼ì—ì„œ ë°”ë¼ë³´ëŠ” ë·°í–‰ë ¬...
+	// Ä«¸Ş¶ó¿¡¼­ ¹Ù¶óº¸´Â ºäÇà·Ä...
 	// World -> View(AbsToView)
 	GetViewMatrix(plViewer, matViewToAbs);
 	//////////////////////////////////////////////////////////////////////////
-	// ì„ì‹œì½”ë“œ
+	// ÀÓ½ÃÄÚµå
 	FLOATaabbox3D FrameBBox;
 	pMI->GetAllFramesBBox(FrameBBox);
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.20
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.27
-	// NOTE : ì§êµ íˆ¬ì˜ìœ¼ë¡œ ë³€í™˜ í›„, Stretchì— ë¬¸ì œê°€ ìƒê²¨ì„œ ì¶”ê°€í•¨.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.20
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.27
+	// NOTE : Á÷±³ Åõ¿µÀ¸·Î º¯È¯ ÈÄ, Stretch¿¡ ¹®Á¦°¡ »ı°Ü¼­ Ãß°¡ÇÔ.
 	FrameBBox.StretchByVector(pMI->mi_vStretch);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.27
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.27
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.20
 	FLOAT3D vMin = FrameBBox.minvect;
 	FLOAT3D vMax = FrameBBox.maxvect;
 	FLOAT fHeight = fabs((vMax(2) - vMin(2))/2.0f);	
 
 	//////////////////////////////////////////////////////////////////////////
-	// ì›”ë“œ í–‰ë ¬...
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		04.13
+	// ¿ùµå Çà·Ä...
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		04.13
 	//Matrix12 matLocalToWorld;
 	//GetWorldMatrix(plModel, matLocalToWorld);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		04.13
+//°­µ¿¹Î ¼öÁ¤ ³¡		04.13
 	
 	//////////////////////////////////////////////////////////////////////////
-	// matViewì˜ ì—­í–‰ë ¬ êµ¬í•˜ê¸°...
-	// Camera -> World(ì¹´ë©”ë¼ì—ì„œ ë°”ë¼ë³´ëŠ” ë·°í–‰ë ¬ì˜ ì—­í–‰ë ¬.)
+	// matViewÀÇ ¿ªÇà·Ä ±¸ÇÏ±â...
+	// Camera -> World(Ä«¸Ş¶ó¿¡¼­ ¹Ù¶óº¸´Â ºäÇà·ÄÀÇ ¿ªÇà·Ä.)
 	Matrix12 matCameraToAbs;
 	MatrixTranspose(matCameraToAbs, matViewToAbs);
 
 	//////////////////////////////////////////////////////////////////////////
-	// í…ìŠ¤ì³íˆ¬ì˜ í–‰ë ¬ ê³µì‹.
+	// ÅØ½ºÃÄÅõ¿µ Çà·Ä °ø½Ä.
 	// matShadowUV = matCameraToWorld * matWorldToLight * matShadowProj * (scale * offset)
 	//////////////////////////////////////////////////////////////////////////	
 
-	// NOTE : ì•„ë˜ í…ìŠ¤ì³íˆ¬ì˜ í–‰ë ¬ ê³„ì‚°í•˜ëŠ” ë¶€ë¶„ì—ì„œ D3D í•¨ìˆ˜ë“¤ì„ ì‚¬ìš©í•˜ê³  ìˆë‹¤.  ìˆ˜ì •í• ê²ƒ.
+	// NOTE : ¾Æ·¡ ÅØ½ºÃÄÅõ¿µ Çà·Ä °è»êÇÏ´Â ºÎºĞ¿¡¼­ D3D ÇÔ¼öµéÀ» »ç¿ëÇÏ°í ÀÖ´Ù.  ¼öÁ¤ÇÒ°Í.
 	// matWorldToLight^T
 	D3DXMATRIX matWorldToLight16;
 	D3DXMatrixIdentity(&matWorldToLight16);
 	memcpy(&matWorldToLight16, matWorldToLight, sizeof(float)*12);
 	D3DXMatrixTranspose(&matWorldToLight16, &matWorldToLight16);
 
-	// ì°íŒ ê·¸ë¦¼ìë¥¼ ëª¨ë¸ì˜ ìœ„ì¹˜ë¡œ ì´ë™ì‹œí‚´...(World)
+	// ÂïÈù ±×¸²ÀÚ¸¦ ¸ğµ¨ÀÇ À§Ä¡·Î ÀÌµ¿½ÃÅ´...(World)
 	D3DXMATRIX matTranslation;
 	D3DXMatrixIdentity(&matTranslation);
-	// NOTE : ì™œ ë¶€í˜¸ê°€ -ì¼ë•Œë§Œ ë˜ëŠ”ê²ƒì¸ê°€?
+	// NOTE : ¿Ö ºÎÈ£°¡ -ÀÏ¶§¸¸ µÇ´Â°ÍÀÎ°¡?
 	D3DXMatrixTranslation(&matTranslation, -plModel.pl_PositionVector(1), -plModel.pl_PositionVector(2), -plModel.pl_PositionVector(3));
 	
 	D3DXMATRIX matModelTrans;
@@ -2010,18 +2009,18 @@ extern void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D& plModel,
 	D3DXMatrixMultiply(&matCameraToLight, &matCameraToLight, &matTranslation);
 	D3DXMatrixMultiply(&matCameraToLight, &matCameraToLight, &matWorldToLight16);	
 
-	// NOTE : ì „ì¹˜í–‰ë ¬ì˜ ì‚¬ìš©ì— ëŒ€í•´ì„œ...
+	// NOTE : ÀüÄ¡Çà·ÄÀÇ »ç¿ë¿¡ ´ëÇØ¼­...
 	// matTemp12 = (matWorldToLight * matCameraToAbs)^(T);
 	//			 = matCameraToAbs^T * matWorldToLight^T;
 
-	// ìµœì¢…ì ì¸ í…ìŠ¤ì³ íˆ¬ì˜ í–‰ë ¬.
+	// ÃÖÁ¾ÀûÀÎ ÅØ½ºÃÄ Åõ¿µ Çà·Ä.
 	// matCameraToWorld * matWorldToLight * matShadowProj
 	Matrix16 matTemp16;
 	memcpy(&matTemp16, &matCameraToLight, sizeof(float)*16);
 	MatrixMultiply(matShadowUV, matTemp16, matShadowProj);
 
-	// í…ìŠ¤ì³ ì¢Œí‘œë¡œ ë³€í™˜í•¨.
-	// -1~1 ì‚¬ì´ì˜ ê°’ì„ [0, 1]ì˜ ê°’ìœ¼ë¡œ ë³€ê²½í•©ë‹ˆë‹¤.
+	// ÅØ½ºÃÄ ÁÂÇ¥·Î º¯È¯ÇÔ.
+	// -1~1 »çÀÌÀÇ °ªÀ» [0, 1]ÀÇ °ªÀ¸·Î º¯°æÇÕ´Ï´Ù.
 	Matrix16 matScaleOffset;
 	memset(&matScaleOffset, 0, sizeof(float)*16);
 	matScaleOffset[0] = 0.5f;
@@ -2035,7 +2034,7 @@ extern void CreateShadowMatrix(CModelInstance *pMI, const CPlacement3D& plModel,
 	
 	MatrixMultiply(matShadowUV, matShadowUV, matScaleOffset);
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.05
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.05
 
 extern void GetWorldMatrix(const CPlacement3D &plPosition, Matrix12& matObjToAbs)
 {
@@ -2044,15 +2043,15 @@ extern void GetWorldMatrix(const CPlacement3D &plPosition, Matrix12& matObjToAbs
 	MatrixVectorToMatrix12(matObjToAbs, m, plPosition.pl_PositionVector);
 }
 
-// ì•„ë˜ í•¨ìˆ˜ëŠ” Shadow Matrixë¥¼ êµ¬í•˜ê¸° ìœ„í•´ì„œë§Œ ì‚¬ìš©í•´ì•¼ í•©ë‹ˆë‹¤.
-// NOTE : ë‚˜ì¤‘ì— CPerspectiveProjection3Dì—ì„œ ì§ì ‘ íˆ¬ì˜í–‰ë ¬ê°’ì„ ì–»ì–´ì˜¤ë„ë¡ ì²˜ë¦¬í• ê²ƒ.
+// ¾Æ·¡ ÇÔ¼ö´Â Shadow Matrix¸¦ ±¸ÇÏ±â À§ÇØ¼­¸¸ »ç¿ëÇØ¾ß ÇÕ´Ï´Ù.
+// NOTE : ³ªÁß¿¡ CPerspectiveProjection3D¿¡¼­ Á÷Á¢ Åõ¿µÇà·Ä°ªÀ» ¾ò¾î¿Àµµ·Ï Ã³¸®ÇÒ°Í.
 extern void GetViewMatrix(const CPlacement3D &plEye, Matrix12& matAbsToEye)
 {
-	// Eyeì—ì„œ Absë¥¼ ë°”ë¼ë³´ë„ë¡ ì„¤ì •.
+	// Eye¿¡¼­ Abs¸¦ ¹Ù¶óº¸µµ·Ï ¼³Á¤.
 	CPerspectiveProjection3D prEyeToAbs;	// Eye -> World	
 
-	// ì•„ë«ë¶€ë¶„ì€ ë‹¨ì§€ View Matrixë¥¼ ì–»ê¸° ìœ„í•œ ë¶€ë¶„ì…ë‹ˆë‹¤
-	// NOTE : ì•„ë«ë¶€ë¶„ì—ì„œ ViewerPlacementë¥¼ ì œì™¸í•˜ê³ ëŠ” ê±°ì˜ ë””í´íŠ¸ ê°’ì´ë¯€ë¡œ ì„¤ì •í•´ì¤„ í•„ìš”ê°€ ì—†ì„ê±° ê°™ê¸°ë„ í•˜êµ¬...
+	// ¾Æ·§ºÎºĞÀº ´ÜÁö View Matrix¸¦ ¾ò±â À§ÇÑ ºÎºĞÀÔ´Ï´Ù
+	// NOTE : ¾Æ·§ºÎºĞ¿¡¼­ ViewerPlacement¸¦ Á¦¿ÜÇÏ°í´Â °ÅÀÇ µğÆúÆ® °ªÀÌ¹Ç·Î ¼³Á¤ÇØÁÙ ÇÊ¿ä°¡ ¾øÀ»°Å °°±âµµ ÇÏ±¸...
 	prEyeToAbs.FOVL() = AngleDeg(45);
 	prEyeToAbs.ScreenBBoxL() = FLOATaabbox2D( FLOAT2D(0.0f, 0.0f), FLOAT2D(SHADOWTEXTURESIZE, SHADOWTEXTURESIZE));
 	prEyeToAbs.AspectRatioL() = 1.0f;
@@ -2069,12 +2068,12 @@ extern void GetViewMatrix(const CPlacement3D &plEye, Matrix12& matAbsToEye)
 extern void FindBestFOV(const FLOATaabbox3D& aabbBox, const Matrix12& matLocalToLight, FLOAT& fX, FLOAT& fY)
 {
 	//-----------------------------------------------------------------------------
-	// FOVë¥¼ ìë™ìœ¼ë¡œ ê³„ì‚°í•˜ê¸° ìœ„í•œ ë£¨í‹´.
-	// NOTE : ì–´ëŠ ì •ë„ ê³„ì‚°ì„ ë˜ê³  ìˆìœ¼ë‚˜, ëª¨ë¸ ì¤‘ì‹¬ì´ 0, 0, 0 ì¸ë° ëª¨ë¸ì˜ í¬ê¸°ì˜ ì ˆë°˜ë§Œí¼ ì•„ë˜ë¡œ ì´ë™ì‹œì¼œì¤˜ì•¼ í• ë“¯.
+	// FOV¸¦ ÀÚµ¿À¸·Î °è»êÇÏ±â À§ÇÑ ·çÆ¾.
+	// NOTE : ¾î´À Á¤µµ °è»êÀ» µÇ°í ÀÖÀ¸³ª, ¸ğµ¨ Áß½ÉÀÌ 0, 0, 0 ÀÎµ¥ ¸ğµ¨ÀÇ Å©±âÀÇ Àı¹İ¸¸Å­ ¾Æ·¡·Î ÀÌµ¿½ÃÄÑÁà¾ß ÇÒµí.
 	FLOAT3D vMin = aabbBox.minvect;
 	FLOAT3D vMax = aabbBox.maxvect;
 
-	// FrameBBoxì˜ 8ì ì„ êµ¬í•˜ê³ , ê·¸ ì ì„ ë³€í™˜í•˜ì—¬ FOVë¥¼ êµ¬í•©ë‹ˆë‹¤.
+	// FrameBBoxÀÇ 8Á¡À» ±¸ÇÏ°í, ±× Á¡À» º¯È¯ÇÏ¿© FOV¸¦ ±¸ÇÕ´Ï´Ù.
 	FLOAT3D v[8];
 	v[0] = vMin;v[1] = vMin;v[2] = vMin;v[3] = vMin;
 	v[1](1) = vMax(1);
@@ -2086,7 +2085,7 @@ extern void FindBestFOV(const FLOATaabbox3D& aabbBox, const Matrix12& matLocalTo
 	v[6](2) = vMin(2);
 	v[7](3) = vMin(3);
 
-	float fXMax = 0.0f;		//ìµœëŒ€ê°’ì„ êµ¬í• ê²ƒì´ë¯€ë¡œ 0ìœ¼ë¡œ ì‹œì‘í•˜ë©´ ëœë‹¤.
+	float fXMax = 0.0f;		//ÃÖ´ë°ªÀ» ±¸ÇÒ°ÍÀÌ¹Ç·Î 0À¸·Î ½ÃÀÛÇÏ¸é µÈ´Ù.
 	float fYMax = 0.0f;
 	FLOAT3D vOut;
 	
@@ -2118,7 +2117,7 @@ extern HRESULT SetAdjustedProjectionMatrix( Matrix16& mat, FLOAT fFOV, FLOAT fAs
 	
     float h =   1.0f  * ( cosf(fFOV/2)/sinf(fFOV/2) );
 	
-	// íˆ¬ì˜í–‰ë ¬ì˜ Factorë¥¼ ì„¤ì •í•©ë‹ˆë‹¤.
+	// Åõ¿µÇà·ÄÀÇ Factor¸¦ ¼³Á¤ÇÕ´Ï´Ù.
     float fTop = fNearPlane/h;
     float fBottom = -fTop;
     float fRight = fTop * fAspect;
@@ -2130,14 +2129,14 @@ extern HRESULT SetAdjustedProjectionMatrix( Matrix16& mat, FLOAT fFOV, FLOAT fAs
     float fDx = -( fPixDx*fXWSize/fVPWidth );
     float fDy = -( fPixDy*fYWSize/fVPHeight );
     
-	// ì›ê·¼ íˆ¬ì˜í–‰ë ¬ ìƒì„±.
+	// ¿ø±Ù Åõ¿µÇà·Ä »ı¼º.
 	if(bPerspective)
 	{
 		SetFrustumMatrix( mat, fLeft+fDx, fRight+fDx, fTop+fDy, fBottom+fDy, 
 			fNearPlane,
 			fFarPlane );
 	}
-	// ì§êµ íˆ¬ì˜í–‰ë ¬ ìƒì„±.
+	// Á÷±³ Åõ¿µÇà·Ä »ı¼º.
 	else
 	{
 		SetOrthoMatrix( mat, fLeft+fDx, fRight+fDx, fTop+fDy, fBottom+fDy, 
@@ -2148,12 +2147,12 @@ extern HRESULT SetAdjustedProjectionMatrix( Matrix16& mat, FLOAT fFOV, FLOAT fAs
     return S_OK;
 }
 
-// ì›ê·¼ íˆ¬ì˜ í–‰ë ¬ì„ êµ¬í•©ë‹ˆë‹¤.
+// ¿ø±Ù Åõ¿µ Çà·ÄÀ» ±¸ÇÕ´Ï´Ù.
 extern void SetFrustumMatrix( Matrix16& mat, 
 							 FLOAT fLeft, FLOAT fRight, FLOAT fTop,
 							 FLOAT fBottom, FLOAT fNearPlane, FLOAT fFarPlane )
 {
-	// ì§ì ‘ íˆ¬ì˜í–‰ë ¬ì„ ê³„ì‚°í•˜ëŠ” ë¶€ë¶„...
+	// Á÷Á¢ Åõ¿µÇà·ÄÀ» °è»êÇÏ´Â ºÎºĞ...
     float fT = fFarPlane / ( fFarPlane - fNearPlane );
 	
     ZeroMemory( &mat, sizeof(Matrix16) );
@@ -2173,12 +2172,12 @@ extern void SetFrustumMatrix( Matrix16& mat,
     mat[14] = -fT*fNearPlane;
 }
 
-// ì§êµ íˆ¬ì˜ í–‰ë ¬ì„ êµ¬í•©ë‹ˆë‹¤.
+// Á÷±³ Åõ¿µ Çà·ÄÀ» ±¸ÇÕ´Ï´Ù.
 extern void SetOrthoMatrix( Matrix16& mat, 
 						   FLOAT fLeft, FLOAT fRight, FLOAT fTop, 
 						   FLOAT fBottom, FLOAT fNearPlane, FLOAT fFarPlane )
 {
-	// ì§ì ‘ íˆ¬ì˜í–‰ë ¬ì„ ê³„ì‚°í•˜ëŠ” ë¶€ë¶„...
+	// Á÷Á¢ Åõ¿µÇà·ÄÀ» °è»êÇÏ´Â ºÎºĞ...
     ZeroMemory( &mat, sizeof(Matrix16) );
 
 	/*
@@ -2195,7 +2194,7 @@ extern void SetOrthoMatrix( Matrix16& mat,
     mat[14] = fNearPlane/(fNearPlane - fFarPlane);
 	mat[15] = 1.0f;
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 
 // Sets max weights that can effect one vertex
 extern void RM_SetMaxWeightsPerVertex(const INDEX ctWeightsPerVertex)
@@ -2551,13 +2550,13 @@ static void DummyCalculateBoneTransforms()
 }
 
 // calculate transformations for all bones on already built hierarchy
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 void SetSkaTagInfo(CSkaTag *ptrTag, INDEX ctrb, RenModel &rm, MeshLOD &mlod)
 {
 	Matrix12 matrix1, matrix2, matrix3, matrix4;
 	Matrix12 matrixStr1, matrixStr2, matrixStr3, matrixStr4;
 	const Matrix12 &mObjToAbs = _mObjToAbs;
-	//ì›¨ì´íŠ¸ ì •ë³´ê°€ ì—†ê±°ë‚˜ í˜„ì¬ ë³¸ì´ ì—†ì„ë•Œ
+	//¿şÀÌÆ® Á¤º¸°¡ ¾ø°Å³ª ÇöÀç º»ÀÌ ¾øÀ»¶§
 	if(ptrTag->GetBoneCount() == 0 || ctrb == 1)
 	{
 		MatrixMultiply(matrix1, mObjToAbs, rm.rm_mTransform);
@@ -2630,13 +2629,13 @@ void SetSkaTagInfo(CSkaTag *ptrTag, INDEX ctrb, RenModel &rm, MeshLOD &mlod)
 				ptrTag->AddNewTagInfo(_pTimer->GetLerpedCurrentTick(), matrix1, matrixStr1, matrix2, matrixStr2
 														, matrix3, matrixStr3, matrix4, matrixStr4);
 			} break;
-		default: ASSERTALWAYS("ì—¬ê¸°ë¡œ ë“¤ì–´ì˜¤ë©´ ì•ˆë¨. ë³¸ì˜ ê°œìˆ˜ ì´ìƒ"); break;
+		default: ASSERTALWAYS("¿©±â·Î µé¾î¿À¸é ¾ÈµÊ. º»ÀÇ °³¼ö ÀÌ»ó"); break;
 		}
 	}
 }
 
 static void CalculateBoneTransforms(BOOL bRenderToScreen)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 {
 	// put basic transformation in first dummy bone
 	if(_bTransAllToAbsolute) 
@@ -2662,7 +2661,8 @@ static void CalculateBoneTransforms(BOOL bRenderToScreen)
 	_sfStats.IncrementCounter( CStatForm::SCI_BONES, ctRenBones-1);
 
 	// for each renbone after first dummy one
-	for( INDEX irb=1; irb<ctRenBones; irb++) 
+	INDEX	irb;
+	for( irb = 1; irb < ctRenBones; irb++ )
 	{
 		Matrix12 mRelPlacement;
 		Matrix12 mOffset;
@@ -2732,7 +2732,7 @@ static void CalculateBoneTransforms(BOOL bRenderToScreen)
 	Matrix12 mInvert;
 	// for each renbone
 	const INDEX ctrb = _aRenBones.Count();
-	for(irb=1; irb<ctrb; irb++) 
+	for( irb = 1; irb < ctrb; irb++) 
 	{
 		RenBone &rb = _aRenBones[irb];
 		// multiply every transform with invert matrix of bone abs placement
@@ -2741,10 +2741,10 @@ static void CalculateBoneTransforms(BOOL bRenderToScreen)
 		MatrixMultiplyCP(rb.rb_mTransform,rb.rb_mTransform,mInvert);
 		MatrixMultiplyCP(rb.rb_mStrTransform,rb.rb_mStrTransform,mInvert);
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	if(!bRenderToScreen) return;
 
-	//ska tagë“¤ì„ boneê³¼ ì—°ê²°í•œë‹¤.
+	//ska tagµéÀ» bone°ú ¿¬°áÇÑ´Ù.
 	Matrix12 mObjToAbsStr;
 	for(INDEX iRm=0; iRm < _aRenMeshes.Count(); ++iRm)
 	{
@@ -2756,7 +2756,7 @@ static void CalculateBoneTransforms(BOOL bRenderToScreen)
 
 		const Matrix12 &mObjToAbs = _mObjToAbs;
 
-		//rootë¥¼ ê°±ì‹ í•œë‹¤.
+		//root¸¦ °»½ÅÇÑ´Ù.
 		if(iRm == 0)
 		{
 			CSkaTag *pRootTag = (CSkaTag *)mi.m_tmSkaTagManager.Find("__ROOT");
@@ -2776,7 +2776,7 @@ static void CalculateBoneTransforms(BOOL bRenderToScreen)
 			{
 				pTopTag->AddNewTagInfo(_pTimer->GetLerpedCurrentTick(), mObjToAbs, mObjToAbsStr);
 			}
-			//HITPOINTë¥¼ ê°±ì‹ í•œë‹¤.
+			//HITPOINT¸¦ °»½ÅÇÑ´Ù.
 			for(INDEX i=0; i<31; ++i)
 			{
 				if( !(mi.m_tmSkaTagManager.GetTempValue() & (0x00000001 << i)) ) continue;
@@ -2792,7 +2792,7 @@ static void CalculateBoneTransforms(BOOL bRenderToScreen)
 
 		for(int iTag=0; iTag<mlod.mlod_aSkaTags.Count(); ++iTag)
 		{
-			//ì£¼ì˜(ì•ˆíƒœí›ˆ) ì—­í–‰ ìºìŠ¤íŒ…ì´ ìˆìŒ. Typeì„ ì´ëŸ´ë•Œ ì“°ë ¤ê³  ë§Œë“ ê±°ì§€ë§Œ ì°¸ -_-í•œ ì½”ë“œì„.
+			//ÁÖÀÇ(¾ÈÅÂÈÆ) ¿ªÇà Ä³½ºÆÃÀÌ ÀÖÀ½. TypeÀ» ÀÌ·²¶§ ¾²·Á°í ¸¸µç°ÅÁö¸¸ Âü -_-ÇÑ ÄÚµåÀÓ.
 			CTag *pNativeTag = mi.m_tmSkaTagManager.Find( mlod.mlod_aSkaTags[iTag]->GetName() );
 			if(pNativeTag == NULL) continue;
 			ASSERT(pNativeTag->GetType() == TT_SKA);
@@ -2802,7 +2802,7 @@ static void CalculateBoneTransforms(BOOL bRenderToScreen)
 			SetSkaTagInfo(ptrTag.GetNative(), ctrb, rm, mlod);
 		}
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 }
 
 
@@ -2819,7 +2819,8 @@ static void MatchAnims(RenModel &rm, BOOL bRenderToScreen)
 	// find newes animlist that has fully faded in
 	INDEX iFirstAnimList = 0;
 	// loop from newer to older
-	for(INDEX ial=ctal-1;ial>=0;ial--) 
+	INDEX	ial;
+	for( ial = ctal-1; ial >= 0; ial-- )
 	{
 		AnimList &al = rm.rm_pmiModel->mi_aqAnims.aq_Lists[ial];
 		// calculate fade factor
@@ -2832,11 +2833,11 @@ static void MatchAnims(RenModel &rm, BOOL bRenderToScreen)
 	}
 
 	// for each anim list after iFirstAnimList
-	for(ial=iFirstAnimList;ial<ctal;ial++) 
+	for( ial = iFirstAnimList; ial < ctal; ial++)
 	{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 		AnimList &al = rm.rm_pmiModel->mi_aqAnims.aq_Lists[ial];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 		AnimList const *palListNext=NULL;
 		if(ial+1<ctal) 
 		{
@@ -2850,9 +2851,9 @@ static void MatchAnims(RenModel &rm, BOOL bRenderToScreen)
 		const INDEX ctpa = al.al_PlayedAnims.Count();
 		for(INDEX ipa=0;ipa<ctpa;ipa++) 
 		{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 			PlayedAnim &pa = al.al_PlayedAnims[ipa];
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 			const BOOL bAnimLooping = pa.pa_ulFlags&AN_LOOPING;
 			FLOAT fTime = fLerpedTick;
 			
@@ -2886,7 +2887,7 @@ static void MatchAnims(RenModel &rm, BOOL bRenderToScreen)
 					fTimeOffset += fFadeInEndTime - fLerpedTick;
 				}
 				
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 				FLOAT fAnimLength = an.an_iFrames * an.an_fSecPerFrame * pa.pa_fSpeedMul;
 				INDEX iAnimLoopCount = INDEX(fTimeOffset / fAnimLength);
 				FLOAT fOffsetFromAnimLoop = fTimeOffset - iAnimLoopCount * fAnimLength;
@@ -2908,7 +2909,7 @@ static void MatchAnims(RenModel &rm, BOOL bRenderToScreen)
 						//, ska_IDToString(pa.pa_iAnimID)
 						//, iAnimLoopCount, bLoopAnimEffect
 						//, pa.pa_fStartTime, fTime, _pTimer->CurrentTick());
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 				
 				// if fade out flag is set 
 				if(pa.pa_ulFlags&AN_FADEOUT) 
@@ -2929,7 +2930,7 @@ static void MatchAnims(RenModel &rm, BOOL bRenderToScreen)
 					const INDEX iCurentFrame = INDEX(f);
 					const INDEX ctAnimFrames = an.an_iFrames;
 					
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 					if(bLoopAnimEffect)
 					{
 						rm.rm_pmiModel->LoopAnimEffect(pa.pa_iAnimID, al.al_fFadeTime, fOffsetFromAnimLoop, pa.pa_fSpeedMul);
@@ -2944,11 +2945,11 @@ static void MatchAnims(RenModel &rm, BOOL bRenderToScreen)
 					
 					// iNextAnimFrame = (iCurentFrame+1) % an.an_iFrames;
 					iNextAnimFrame = (iCurentFrame+1);
-					if(iNextAnimFrame>=ctAnimFrames)	//í˜„ì¬ aniìœ„ì¹˜ëŠ” í•œë²ˆ wrapëœ ìƒíƒœì„.
+					if(iNextAnimFrame>=ctAnimFrames)	//ÇöÀç aniÀ§Ä¡´Â ÇÑ¹ø wrapµÈ »óÅÂÀÓ.
 					{
 						iNextAnimFrame -= ctAnimFrames;
 					}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 					
 					ASSERT(iAnimFrame == (iCurentFrame%an.an_iFrames));
 					ASSERT(iNextAnimFrame == ((iCurentFrame+1)%an.an_iFrames));
@@ -3295,17 +3296,17 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 			pShader = &_shMaskShader; // force mask shader for rendering to shadowmaps
 		}
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘.
-		// FIXME : ì–´ëŠ ìˆœê°„ë¶€í„° í•˜ë“œì›¨ì–´ ì‰ì´ë”ê°€ ì§€ì›ì´ ì•ˆë˜ëŠ” ê³³ì—ì„œ ê·¸ë¦¼ìê°€ ì•ˆë‚˜ì˜¤ê¸° ì‹œì‘í•¨.
-		// FIXME : ì›ì¸ì´ íŒŒì•…ë ë•Œê¹Œì§€ëŠ” í•˜ë“œì›¨ì–´ ì‰ì´ë”ê°€ ì•„ë‹Œ ê²½ìš°ì—ëŠ” ìë™ ì¡°ì ˆë˜ë„ë¡ ì²˜ë¦¬í•¨.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ.
+		// FIXME : ¾î´À ¼ø°£ºÎÅÍ ÇÏµå¿ş¾î ½¦ÀÌ´õ°¡ Áö¿øÀÌ ¾ÈµÇ´Â °÷¿¡¼­ ±×¸²ÀÚ°¡ ¾È³ª¿À±â ½ÃÀÛÇÔ.
+		// FIXME : ¿øÀÎÀÌ ÆÄ¾ÇµÉ¶§±îÁö´Â ÇÏµå¿ş¾î ½¦ÀÌ´õ°¡ ¾Æ´Ñ °æ¿ì¿¡´Â ÀÚµ¿ Á¶ÀıµÇµµ·Ï Ã³¸®ÇÔ.
 		else if(RM_GetFlags() & RMF_SHOWSHADOW)
 		{
 			if(_bUseHardwareShaders)
 			{
 				pShader = _pshShadowShader;
 				
-				// í…ìŠ¤ì³ê°€ ì—†ëŠ” ëª¨ë¸ì˜ Shader...
-				// NOTE : ì•„ë«ë¶€ë¶„ì´ ì¤‘ë³µë˜ëŠ” ê³³ì´ ìˆìœ¼ë‹ˆ, ì•Œì•„ì„œ ì²˜ë¦¬í• ê²ƒ...ã…¡.ã…¡
+				// ÅØ½ºÃÄ°¡ ¾ø´Â ¸ğµ¨ÀÇ Shader...
+				// NOTE : ¾Æ·§ºÎºĞÀÌ Áßº¹µÇ´Â °÷ÀÌ ÀÖÀ¸´Ï, ¾Ë¾Æ¼­ Ã³¸®ÇÒ°Í...¤Ñ.¤Ñ
 				ShaderParams *pShaderParams = &msrf.msrf_ShadingParams;
 				INDEX cttx = pShaderParams->sp_aiTextureIDs.Count();
 				if(cttx <= 0)
@@ -3313,7 +3314,7 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 					pShader = _pshNoShadowShader;
 				}
 			}
-			// í•˜ë“œì›¨ì–´ ì‰ì´ë” ì§€ì› ì•ˆë˜ëŠ” ê²½ìš°.
+			// ÇÏµå¿ş¾î ½¦ÀÌ´õ Áö¿ø ¾ÈµÇ´Â °æ¿ì.
 			else
 			{
 				extern INDEX g_iShadowDetail;
@@ -3325,25 +3326,25 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 		}
 		else if((RM_GetFlags() & RMF_SHOWNICEWATER) && _bUseHardwareShaders)
 		{
-			// NOTE : Reflection í…ìŠ¤ì³ì™€ ë¬¼ë¡œ ì‚¬ìš©í•  í…ìŠ¤ì³ ë‘ê°œë¥¼ ì„¤ì •í•´ì¤˜ì•¼í•¨.
-			// NOTE : ì¶”í›„ì— Refraction í…ìŠ¤ì³ë„ ì¶”ê°€ë  ì˜ˆì •.
+			// NOTE : Reflection ÅØ½ºÃÄ¿Í ¹°·Î »ç¿ëÇÒ ÅØ½ºÃÄ µÎ°³¸¦ ¼³Á¤ÇØÁà¾ßÇÔ.
+			// NOTE : ÃßÈÄ¿¡ Refraction ÅØ½ºÃÄµµ Ãß°¡µÉ ¿¹Á¤.
 			pShader = _pshNiceWaterShader;
 		}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡
 		
 		const BOOL bDynamicSurface = msrf.msrf_ulFlags&MS_DYNAMIC_SURFACE;
 		MeshVertex *pavFinalVertices;
 		MeshNormal *panFinalNormals;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.2)
 		MeshTangent *panFinalTangents;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.2)
 		INDEX iFinalVertexBufferID;
 		INDEX iFinalNormalBufferID;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 		INDEX iFinalTangentBufferID;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		
-		//ì´ìª½ì€ morphê´€ë ¨ ì½”ë“œì¸ë“¯
+		//ÀÌÂÊÀº morph°ü·Ã ÄÚµåÀÎµí
 		// if this is dynamic surface and hardware shaders are used
 		if(bDynamicSurface && _bMeshUsesMorphs) 
 		{
@@ -3375,14 +3376,14 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 			}
 			pavFinalVertices = _pavWeightedVertices;
 			panFinalNormals = _panWeightedNormals;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.2)
 			panFinalTangents = _panWeightedTangents;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.2)
 			iFinalVertexBufferID = mlod.mlod_iVertexBufferID;
 			iFinalNormalBufferID = mlod.mlod_iNormalBufferID;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 			iFinalTangentBufferID = mlod.mlod_iTangentBufferID;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 		}
 		
 		// if this surface has valid shader and show texure flag is set
@@ -3409,10 +3410,10 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 			// cttx = ClampUp(cttx,cttxMax);
 			
 			_patoTextures.PopAll();
-			extern CRenderTexture*	re_prtReflection;		// Reflectionìœ¼ë¡œ ì‚¬ìš©í•  í…ìŠ¤ì³.
+			extern CRenderTexture*	re_prtReflection;		// ReflectionÀ¸·Î »ç¿ëÇÒ ÅØ½ºÃÄ.
 			if((RM_GetFlags() & RMF_SHOWNICEWATER) && re_prtReflection && _bUseHardwareShaders)
 			{
-				_patoTextures.Push(3);			// í…ìŠ¤ì³ 3ê°œ.
+				_patoTextures.Push(3);			// ÅØ½ºÃÄ 3°³.
 				CTextureObject		toReflect;
 				toReflect.SetData(&re_prtReflection->rt_tdTexture);				
 
@@ -3420,20 +3421,20 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 				{
 					_patoTextures[0] = &_WaterInformation.m_toBump;		// Bump	Texture
 				}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.21
-				//_patoTextures[1] = &_pWaterInformation->m_texBump2;		// Bump	Texture(ë¯¸ì‚¬ìš©)
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.21
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.21
+				//_patoTextures[1] = &_pWaterInformation->m_texBump2;		// Bump	Texture(¹Ì»ç¿ë)
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.21
 				_patoTextures[1] = &toReflect;								// Reflection Texture
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.23
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.23
 				if(_WaterInformation.m_toWater.ao_AnimData)
 				{
 					_patoTextures[2] = &_WaterInformation.m_toWater;		// Water Texture
 				}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.23
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.23
 			}
 			else
 			{
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.20
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.20
 				if( cttx>0) _patoTextures.Push(cttx);
 				// for each texture ID
 				for( INDEX itx=0;itx<cttx;itx++) 
@@ -3441,9 +3442,9 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 					// find texture in mesh and get pointer to texture by texture ID
 					FindTextureData( &_patoTextures[itx], pShaderParams->sp_aiTextureIDs[itx], *rmsh.rmsh_pMeshInst);
 				}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.16
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.16
 			}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.16			
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.16			
 			
 			// if using hardware shaders
 			if(_bUseHardwareShaders) 
@@ -3499,12 +3500,12 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 			const INDEX ctColors = pShaderParams->sp_acolColors.Count();
 			const INDEX ctFloats = pShaderParams->sp_afFloats.Count();
 			
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 			ShaderDesc *pshDesc;
 			pShader->GetShaderDesc(pshDesc);
 			ShaderDesc &shDesc = *pshDesc;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 			BOOL bHasNormal = FALSE;
 			BOOL bHasTangent = FALSE;
 			if(shDesc.sd_ulStreamFlags.Count() > 0)
@@ -3512,7 +3513,7 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 				if(shDesc.sd_ulStreamFlags[0] & GFX_NORMAL_STREAM) bHasNormal = TRUE;
 				if(shDesc.sd_ulStreamFlags[0] & GFX_TANGENT_STREAM) bHasTangent = TRUE;
 			}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 			
 			// begin model rendering
 			shaBegin( _aprProjection, pShader);
@@ -3544,10 +3545,10 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 				// Set vertex buffer ID
 				shaSetVertexBufferID(iFinalVertexBufferID, iFirstVertex, ctVertices);
 				// Set normal buffer ID
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 				if(bHasNormal) shaSetNormalBufferID(iFinalNormalBufferID);
 				if(bHasTangent) shaSetTangentBufferID(iFinalTangentBufferID);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 				// Set array of texcoord buffer ID
 				const INDEX ctTexCoords = _paiTexCoordBufferIDs.Count();
 				if(ctTexCoords>0) shaSetSurfaceUVMapsIDs(&_paiTexCoordBufferIDs[0],ctTexCoords);
@@ -3557,11 +3558,11 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 			{
 				// Set vertex array 
 				shaSetVertexArray((GFXVertex*)&pavFinalVertices[iFirstVertex], 0, ctVertices);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 				// set normal array
 				if(bHasNormal) shaSetNormalArray((GFXNormal*)&panFinalNormals[iFirstVertex]);
 				//if(bHasTangent) shaSetTangentArray((GFXTangent*)&panFinalNormals[iFirstVertex]);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 				// set array of uvmaps
 				const INDEX ctTexCoords = _paTexCoords.Count();
 				if(ctTexCoords>0) shaSetSurfaceUVMaps(&_paTexCoords[0],ctTexCoords);
@@ -3598,15 +3599,15 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 			// set light parametars and model color
 			shaSetLightColor( _colAmbient,_colLight);
 			shaSetLightDirection( _vLightDirInObj);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.1)
-			//ë²„ê·¸ ìˆ˜ì •, RenderMeshì˜ colCurrentê³„ì‚° ë¶€ë¶„ì—ì„œ mi_colModelColorê°€ ë‘ë²ˆ ê³±í•´ì§.
-			//COLOR colCurrent = MulColors( _colModel, rm.rm_pmiModel->mi_colModelColor);//ì›ë³¸
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.1)
+			//¹ö±× ¼öÁ¤, RenderMeshÀÇ colCurrent°è»ê ºÎºĞ¿¡¼­ mi_colModelColor°¡ µÎ¹ø °öÇØÁü.
+			//COLOR colCurrent = MulColors( _colModel, rm.rm_pmiModel->mi_colModelColor);//¿øº»
 			COLOR colCurrent = rm.rm_pmiModel->mi_colModelColor;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.1)
 			shaSetModelColor( colCurrent);
 
-			// NOTE : Surfaceì˜ ìƒ‰ìƒê³¼ ê´‘ì›ì˜ ì •ë³´ëŠ” ê·¸ë¦¼ìë¥¼ ë Œë”ë§í•  ë•Œ í•„ìš”ì—†ìŒ.
-			// NOTE : ë‚˜ì¤‘ì— ì œê±°í• ê²ƒ.
+			// NOTE : SurfaceÀÇ »ö»ó°ú ±¤¿øÀÇ Á¤º¸´Â ±×¸²ÀÚ¸¦ ·»´õ¸µÇÒ ¶§ ÇÊ¿ä¾øÀ½.
+			// NOTE : ³ªÁß¿¡ Á¦°ÅÇÒ°Í.
 			
 			// set arrays
 			if(RM_GetFlags() & RMF_SHOWSHADOW)
@@ -3618,10 +3619,10 @@ static void RenderMesh( RenMesh &rmsh, RenModel &rm, ULONG ulShaderRenFlags)
 				if(ctColors>0)
 					shaSetSurfaceColors(&pShaderParams->sp_acolColors[0],ctColors);
 			}
-			extern CRenderTexture*	re_prtReflection;		// Reflectionìœ¼ë¡œ ì‚¬ìš©í•  í…ìŠ¤ì³.
+			extern CRenderTexture*	re_prtReflection;		// ReflectionÀ¸·Î »ç¿ëÇÒ ÅØ½ºÃÄ.
 			if((RM_GetFlags() & RMF_SHOWNICEWATER) && re_prtReflection && _bUseHardwareShaders)
 			{					
-				shaSetSurfaceTextures(&_patoTextures[0], 3);		// ì›ë³¸.
+				shaSetSurfaceTextures(&_patoTextures[0], 3);		// ¿øº».
 			}
 			else
 			{			
@@ -3742,12 +3743,12 @@ inline extern void UnlockMeshReadBuffers(const MeshLOD &mlod)
 	// Unlock buffer arrays
 	ASSERT(mlod.mlod_iVertexBufferID!=(-1));
 	ASSERT(mlod.mlod_iNormalBufferID!=(-1));
-	gfxUnlockVertexSubBuffer(mlod.mlod_iVertexBufferID);
-	gfxUnlockNormalSubBuffer(mlod.mlod_iNormalBufferID);
+	gfxUnlockVertexSubBuffer(mlod.mlod_iVertexBufferID, 0);
+	gfxUnlockNormalSubBuffer(mlod.mlod_iNormalBufferID, 0);
 	if(mlod.mlod_iWeightBufferID!=(-1)) 
 	{
 		ASSERT(mlod.mlod_iWeightBufferID!=(-1));
-		gfxUnlockWeightSubBuffer(mlod.mlod_iWeightBufferID);
+		gfxUnlockWeightSubBuffer(mlod.mlod_iWeightBufferID, 0);
 	}
 	
 	// for each uvmap
@@ -3757,7 +3758,7 @@ inline extern void UnlockMeshReadBuffers(const MeshLOD &mlod)
 		// Unlock uvmap texcoords
 		const MeshUVMap &muvm = mlod.mlod_aUVMaps[imuvm];
 		ASSERT(muvm.muvm_iTexCoordBufferID!=(-1));
-		gfxUnlockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID);
+		gfxUnlockTexCoordSubBuffer(muvm.muvm_iTexCoordBufferID, 0);
 	}
 	_patcMeshTexCoords.PopAll();
 	
@@ -3940,16 +3941,16 @@ extern void PrepareMeshForRendering(RenMesh &rmsh, INDEX iSkeletonLOD)
 	_aMorphedNormals.PopAll();
 	_aFinalVertices.PopAll();
 	_aFinalNormals.PopAll();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	_aFinalTangents.PopAll();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	_aWeightMatrices.PopAll();
 	_aSurfacesMatrices.PopAll();
 	_pavWeightedVertices = NULL;
 	_panWeightedNormals  = NULL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.2)
 	_panWeightedTangents  = NULL;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.2)
 	_pavMorphedVertices  = NULL;
 	_panMorphedNormals   = NULL;
 	_bMeshUsesMorphs     = FALSE;
@@ -3957,9 +3958,9 @@ extern void PrepareMeshForRendering(RenMesh &rmsh, INDEX iSkeletonLOD)
 	
 	// get current mesh lod
 	const MeshLOD &mlod = rmsh.rmsh_pMeshInst->mi_pMesh->msh_aMeshLODs[rmsh.rmsh_iMeshLODIndex];
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	const BOOL bHasTangent = mlod.mlod_aTangents.Count()>0 ? TRUE : FALSE;
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	
 	// if using hardware shaders 
 	if(_bUseHardwareShaders) 
@@ -4097,12 +4098,12 @@ extern void PrepareMeshForRendering(RenMesh &rmsh, INDEX iSkeletonLOD)
 			// Copy morphed vertices to dynamic buffer
 			GFXVertex *pavMorphedVertices = (GFXVertex*)gfxLockVertexSubBuffer(_iMorphedVertexBufferID,0,_ctMorphVertices,GFX_WRITE);
 			memcpy(pavMorphedVertices,_pavMorphedVertices,sizeof(GFXVertex)*_ctMorphVertices);
-			gfxUnlockVertexSubBuffer(_iMorphedVertexBufferID);
+			gfxUnlockVertexSubBuffer(_iMorphedVertexBufferID, 0);
 			
 			// Copy morphed normals to dynamic buffer
 			GFXNormal *panMorphedNormals  = (GFXNormal*)gfxLockNormalSubBuffer(_iMorphedNormalBufferID,0,_ctMorphVertices,GFX_WRITE);
 			memcpy(panMorphedNormals,_panMorphedNormals,sizeof(GFXNormal)*_ctMorphVertices);
-			gfxUnlockNormalSubBuffer(_iMorphedNormalBufferID);
+			gfxUnlockNormalSubBuffer(_iMorphedNormalBufferID, 0);
 		}
 	}
 	
@@ -4572,9 +4573,9 @@ static FLOAT GetModelDistance(CModelInstance &mi)
 }
 
 // Calculate complete rendering data for model instance
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 extern void CalculateRenderingData(CModelInstance &mi, BOOL bRenderToScreen)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 {
 	RM_SetObjectMatrices(mi);
 	// remeber all frames bbox 
@@ -4600,9 +4601,9 @@ extern void CalculateRenderingData(CModelInstance &mi, BOOL bRenderToScreen)
 	// build entire hierarchy with children
 	BuildHierarchy(&mi, 0);
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 	
 	INDEX ctrm = _aRenModels.Count();
 	// for each renmodel 
@@ -4616,16 +4617,16 @@ extern void CalculateRenderingData(CModelInstance &mi, BOOL bRenderToScreen)
 	if(ska_bCalcBoneTransf) 
 	{
 		// Calculate transformations for all bones on already built hierarchy
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 		CalculateBoneTransforms(bRenderToScreen);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 	}
 	else 
 	{
 		// fill transformations for all bones with identity matrices
 		DummyCalculateBoneTransforms();
 	}
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.14
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.14
 	/*
 	if(mi.GetWater())
 	{
@@ -4633,7 +4634,7 @@ extern void CalculateRenderingData(CModelInstance &mi, BOOL bRenderToScreen)
 		_pWaterInformation = mi.GetWater();
 	}
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.14
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.14
 }
 
 
@@ -4660,7 +4661,7 @@ void RM_RenderSKA( CModelInstance &mi, BOOL bRenderToScreen )
 	}
 	
 	// no cluster shadows - render to view
-	ASSERT( _iRenderingType==1);
+	//ASSERT( _iRenderingType==1);
 	
 	// determine whether model was occluded in previous frame
 	extern INDEX gap_bUseOcclusionCulling;
@@ -4774,10 +4775,10 @@ void RM_RenderSKA( CModelInstance &mi, BOOL bRenderToScreen )
 		RM_RenderColisionBox(mi,cbAllFrames,C_ORANGE);
 	}
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	extern INDEX ska_bShowSkaTag;
 	//static value = FALSE;
-	//ska_bShowSkaTag = value;		//ì„ì‹œë¡œ ë§Œë“  ë¶€ë¶„, ì‹¤ì œë¡œëŠ” SkaStudioì—ì„œë§Œ TRUEë¡œ ì§ì ‘ ì„¸íŒ…í•¨.
+	//ska_bShowSkaTag = value;		//ÀÓ½Ã·Î ¸¸µç ºÎºĞ, ½ÇÁ¦·Î´Â SkaStudio¿¡¼­¸¸ TRUE·Î Á÷Á¢ ¼¼ÆÃÇÔ.
 	CStaticArray<MeshLOD*> aMeshLOD;
 	if(ska_bShowSkaTag)
 	{
@@ -4787,12 +4788,12 @@ void RM_RenderSKA( CModelInstance &mi, BOOL bRenderToScreen )
 			aMeshLOD[irm] = &(_aRenMeshes[irm].rmsh_pMeshInst->mi_pMesh->msh_aMeshLODs[_aRenMeshes[irm].rmsh_iMeshLODIndex]);
 		}
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 	// reset arrays
 	ClearRenArrays();
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	Matrix12 matOld;
 	if(ska_bShowSkaTag)
 	{
@@ -4810,7 +4811,7 @@ void RM_RenderSKA( CModelInstance &mi, BOOL bRenderToScreen )
 		MatrixCopy(_mObjToAbs, matOld);
 		//value = TRUE;
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 }
 
 
@@ -4836,7 +4837,7 @@ extern void ClearRenArrays()
 	ulRenFlags = NONE;
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ
 extern void RM_ClearShaders(void)
 {
 	delete _pshShadowShader;
@@ -4847,4 +4848,4 @@ extern void RM_ClearShaders(void)
 	_pshNiceWaterShader = NULL;
 	_bLoadedShadowShader = FALSE;
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë
+//°­µ¿¹Î ¼öÁ¤ ³¡

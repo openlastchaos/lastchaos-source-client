@@ -8,7 +8,7 @@
 #include <vector>
 #include <map>
 
-///ListBoxë‚´ ê·¸ë˜í”½ ì¶œë ¥(í˜¹ì€ ë²„íŠ¼ ì¶œë ¥)ê³¼ Popup-downì„ ì²˜ë¦¬í•˜ê¸° ìœ„í•œ class
+///ListBox³» ±×·¡ÇÈ Ãâ·Â(È¤Àº ¹öÆ° Ãâ·Â)°ú Popup-downÀ» Ã³¸®ÇÏ±â À§ÇÑ class
 class CUIListBoxEx : public CUIListBox
 {
 public:
@@ -64,11 +64,11 @@ public:
 		m_iPopBtnWidth = width;
 		m_iPopBtnHeight = height;
 	}
-	void	SetImageBox(int row, CUIImageBox::eImageType type, int index);
+	void	SetImageBox(int row, CUIImageBox::eImageType type, int index, BOOL bShowPopup = FALSE, CTString popupInfo = CTString(""), int nSyndiType = 0);
 
-	// 2009. 06. 02 ê¹€ì •ë˜	
-	// CheckButton ì„ ê°€ì§€ëŠ” Child í•­ëª©ì„ ìœ„í•´ 
-	// ê´€ë ¨ UI í•¨ìˆ˜ ì¶”ê°€
+	// 2009. 06. 02 ±èÁ¤·¡	
+	// CheckButton À» °¡Áö´Â Child Ç×¸ñÀ» À§ÇØ 
+	// °ü·Ã UI ÇÔ¼ö Ãß°¡
 	void	SetCheckBtnUV( UICheckBtnState bsState,
 					FLOAT fTx0, FLOAT fTy0, FLOAT fTx1, FLOAT fTy1, FLOAT fTexWidth, FLOAT fTexHeight )
 	{
@@ -88,12 +88,12 @@ public:
 		m_iCheckBtnWidth = width;
 		m_iCheckBtnHeight = height;
 	}
-	int		GetCheckCount();		// ì²´í¬ëœ child í•­ëª©ë“¤ì˜ ìˆ˜ ë°˜í™˜
-	int		GetLastCheckedIndex()	// ë§ˆì§€ë§‰ì— ì²´í¬ëœ í•­ëª©ì˜ ì¸ë±ìŠ¤ë¥¼ ë°˜í™˜
+	int		GetCheckCount();		// Ã¼Å©µÈ child Ç×¸ñµéÀÇ ¼ö ¹İÈ¯
+	int		GetLastCheckedIndex()	// ¸¶Áö¸·¿¡ Ã¼Å©µÈ Ç×¸ñÀÇ ÀÎµ¦½º¸¦ ¹İÈ¯
 	{ 
 		return m_iLastCheckedIndex;
 	}
-	void	SetCheckState(int index, BOOL bChecked);	// í•´ë‹¹ ì¸ë±ìŠ¤ì˜ check ìƒíƒœë¥¼ ë³€ê²½
+	void	SetCheckState(int index, BOOL bChecked);	// ÇØ´ç ÀÎµ¦½ºÀÇ check »óÅÂ¸¦ º¯°æ
 	BOOL	GetCheckState(int index);
 	int		GetLastChangedLine()
 	{
@@ -120,18 +120,18 @@ protected:
 	int								m_iPopBtnSpaceY;
 	UIRectUV						m_rtPopBtnUV[UCBS_TOTAL];
 
-	// 2009. 06. 02 ê¹€ì •ë˜
-	// CheckButton ì„ ê°€ì§€ëŠ” Child í•­ëª©ì„ ìœ„í•´ 
-	// CheckButton ì˜ UI ë³€ìˆ˜ë“¤ì„ ì¶”ê°€
+	// 2009. 06. 02 ±èÁ¤·¡
+	// CheckButton À» °¡Áö´Â Child Ç×¸ñÀ» À§ÇØ 
+	// CheckButton ÀÇ UI º¯¼öµéÀ» Ãß°¡
 	int								m_iCheckBtnWidth;
 	int								m_iCheckBtnHeight;
 	int								m_iCheckBtnSpaceX;
 	int								m_iCheckBtnSpaceY;
 	UIRectUV						m_rtCheckBtnUV[UCBS_TOTAL];
-	// 2009. 06. 02 ê¹€ì •ë˜
-	// ì²´í¬ëœ í•­ëª©ì˜ ê°œìˆ˜ì— ì œí•œì„ ë‘ë ¤ í•  ë•Œ ì‚¬ìš©í•˜ê¸° ìœ„í•´
-	// ì œì¼ ë§ˆì§€ë§‰ì— ì²´í¬í•œ ì¸ë±ìŠ¤ë¥¼ ì €ì¥í•œë‹¤.
-	int								m_iLastCheckedIndex;
+	// 2009. 06. 02 ±èÁ¤·¡
+	// Ã¼Å©µÈ Ç×¸ñÀÇ °³¼ö¿¡ Á¦ÇÑÀ» µÎ·Á ÇÒ ¶§ »ç¿ëÇÏ±â À§ÇØ
+	// Á¦ÀÏ ¸¶Áö¸·¿¡ Ã¼Å©ÇÑ ÀÎµ¦½º¸¦ ÀúÀåÇÑ´Ù.
+	int								m_iLastCheckedIndex;		
 };
 
 #endif //__UILISTBOX_H__

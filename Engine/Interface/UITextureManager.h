@@ -9,20 +9,19 @@
 	#pragma once
 #endif
 
+#include <Engine/Interface/UIWindow.h>
 #include <Engine/Interface/UIManager.h>
-#include <Engine/Interface/UIButtonEx.h>
-
 
 // Count of texture
 enum TextureCount
 {
 	TEXCT_ITEM				= MAX_BTN,
-	TEXCT_SKILL				= 2,
+	TEXCT_SKILL				= 3,
 	TEXCT_ACTION			= 1,
 	TEXCT_QUEST				= 1,
 	TEXCT_EVENT				= 1,
 	TEXCT_REMISSION			= 1,
-	TEXCT_COMBO				= 3,	// ttos: ëª¬ìŠ¤í„° ì½¤ë³´
+	TEXCT_COMBO				= 3,	// ttos: ¸ó½ºÅÍ ÄÞº¸
 	TEXCT_AUCTION			= 1,
 	TEXCT_FONT_KOREAN		= 8,
 	TEXCT_FONT_CHINESE_T	= 8,
@@ -35,10 +34,17 @@ enum TextureCount
 	TEXCT_FONT_SPAIN        = 1,//FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	TEXCT_FONT_FRANCE		= 1,
 	TEXCT_FONT_POLAND		= 1,
+	TEXCT_FONT_RUSSIAN		= 1,
 	TEXCT_FONT_TURKEY		= 1,
+	TEXCT_FONT_MEXICO		= 1,
+	TEXCT_FONT_ITALY		= 1,
+	TEXCT_FONT_USA_FRANCE   = 1,
+	TEXCT_FONT_USA_SPAIN	= 1,
+	TEXCT_FONT_NETHERLANDS	= 1,
+
 }; 
-// ìµœëŒ€ í°íŠ¸ ì²µìŠ¤ì³ ìˆ˜ê°€ ë³€ê²½ë  ê²½ìš° 
-// í°íŠ¸ ê°¯ìˆ˜ ìˆ˜ì •ì‹œ GfxLibraryì— ìžˆëŠ” FONT_MAX ë„ í•¨ê»˜ ìˆ˜ì •í•´ ì£¼ì—¬ì•¼ í•¨
+// ÃÖ´ë ÆùÆ® Ã½½ºÃÄ ¼ö°¡ º¯°æµÉ °æ¿ì 
+// ÆùÆ® °¹¼ö ¼öÁ¤½Ã GfxLibrary¿¡ ÀÖ´Â FONT_MAX µµ ÇÔ²² ¼öÁ¤ÇØ ÁÖ¿©¾ß ÇÔ
 
 
 
@@ -56,16 +62,22 @@ enum FontLanguage
 	FONT_SPAIN,//FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	FONT_FRANCE,
 	FONT_POLAND,
+	FONT_RUSSIAN,
 	FONT_TURKEY,
+	FONT_MEXICO,
+	FONT_ITALY,
+	FONT_USA_FRANCE,
+	FONT_USA_SPAIN,
+	FONT_NETHERLANDS,
 };
 
 
 // ----------------------------------------------------------------------------
 // Name : CUIFontTextureManager
-// Desc : í°íŠ¸ í…ìŠ¤ì³ëŠ” ì–¸ì–´ë³„ë¡œ ì‚¬ì´ì¦ˆê°€ í‹€ë¦´ ìˆ˜ ìžˆìœ¼ë‚˜,
-//        ê°™ì€ ì–¸ì–´ì˜ ê²½ìš°ì—ëŠ” ì‚¬ì´ì¦ˆê°€ ë™ì¼í•´ì•¼í•¨
-//        FontKorean0.tex ì˜ ì‚¬ì´ì¦ˆê°€ 512x512 ì´ë©´
-//        FontKortan1~7.tex ë„ 512x512 ì´ì–´ì•¼ í•¨
+// Desc : ÆùÆ® ÅØ½ºÃÄ´Â ¾ð¾îº°·Î »çÀÌÁî°¡ Æ²¸± ¼ö ÀÖÀ¸³ª,
+//        °°Àº ¾ð¾îÀÇ °æ¿ì¿¡´Â »çÀÌÁî°¡ µ¿ÀÏÇØ¾ßÇÔ
+//        FontKorean0.tex ÀÇ »çÀÌÁî°¡ 512x512 ÀÌ¸é
+//        FontKortan1~7.tex µµ 512x512 ÀÌ¾î¾ß ÇÔ
 // ----------------------------------------------------------------------------
 class CUIFontTextureManager
 {
@@ -134,7 +146,7 @@ public:
 	// Set texture
 	void	InitTexture( int nTextureID, BOOL bDepthTest )
 	{
-		_pUIMgr->GetDrawPort()->InitTextureData( m_aptdFont[nTextureID], FALSE, 202, bDepthTest );
+		CUIManager::getSingleton()->GetDrawPort()->InitTextureData( m_aptdFont[nTextureID], FALSE, 202, bDepthTest );
 	}
 };
 
@@ -146,7 +158,11 @@ public:
 class CUIButtonTextureManager
 {
 protected:
-	CTextureData	**m_aptdButton[UBET_TYPE_TOTAL];	// Textures of button
+	//CTextureData	**m_aptdButton[UBET_TYPE_TOTAL];	// Textures of button
+	typedef		std::vector<CTextureData*>		vecTexData;
+	typedef		std::vector<vecTexData>			vecButtonTex;
+
+	vecButtonTex	m_aptdButton;
 
 public:
 	CUIButtonTextureManager();
@@ -175,7 +191,7 @@ public:
 	// Set texture
 	void	InitTexture( int nBtnType, int nTextureID, const ULONG ulPBT = 203 )
 	{
-		_pUIMgr->GetDrawPort()->InitTextureData( m_aptdButton[nBtnType][nTextureID], FALSE, ulPBT, FALSE );
+		CUIManager::getSingleton()->GetDrawPort()->InitTextureData( m_aptdButton[nBtnType][nTextureID], FALSE, ulPBT, FALSE );
 	}
 };
 

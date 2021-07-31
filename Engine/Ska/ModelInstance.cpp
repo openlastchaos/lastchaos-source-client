@@ -23,16 +23,16 @@
 #include <Engine/Templates/Stock_CShader.h>
 #include <Engine/Templates/Stock_CModelInstance.h>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Zone Change System)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Zone Change System)(0.1)
 #include <map>
 #include <string>
 #include <Engine/Effect/CGroupTag.h>
 #include <Engine/Effect/CRefCountPtr.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Zone Change System)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Zone Change System)(0.1)
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 #include <Engine/Entities/Entity.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 //..
 // does parser remember smc source files?
 extern BOOL _bRememberSourceFN = FALSE;
@@ -49,13 +49,16 @@ CModelInstance::CModelInstance()
 	mi_pmisSerial = NULL;
 	mi_psklSkeleton = NULL;
 	mi_iParentBoneID = -1;
+	mi_iRideParentBoneID = -1;
 	mi_colModelColor = 0;
 	mi_vStretch = FLOAT3D(1,1,1);
 	mi_colModelColor = 0xFFFFFFFF;
 	mi_aqAnims.aq_Lists.SetAllocationStep(1);
 	mi_cmiChildren.SetAllocationStep(1);
 	memset(&mi_qvOffset,0,sizeof(QVect));
+	memset(&mi_qvRideOffset,0,sizeof(QVect)); // Ride offset
 	mi_qvOffset.qRot.q_w = 1;
+	mi_qvRideOffset.qRot.q_w = 1; // Ride offset
 	mi_iCurentBBox = -1;
 	mi_bSkipOcclusionTest = FALSE;
 
@@ -72,11 +75,13 @@ CModelInstance::CModelInstance()
 	mi_iFaceMesh		= -1;	
 	mi_iHairMesh		= -1;	
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+	mi_bDummyModel = FALSE;
+	mi_ERType	   = ERS_NORMAL;
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	//CSkaTag tag;
 	//tag.SetName("__ROOT");
 	//m_tmSkaTagManager.Register(&tag);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 }
 
 
@@ -148,7 +153,7 @@ INDEX CModelInstance::GetColisionBoxIndex(INDEX iBoxID)
 		}
 	}
 	// colision box was not found, return default (0)
-//0105 1line ì ì‹œ ì§€ìš°ê¸°
+//0105 1line Àá½Ã Áö¿ì±â
 //  SKAASSERT(FALSE);
 //..
 	return 0;
@@ -258,9 +263,9 @@ void CModelInstance::AddChild(CModelInstance *pmi, INDEX iParentBoneID /* = -1 *
 	if (iParentBoneID>0) {
 		pmi->SetParentBone(iParentBoneID);
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	m_tmSkaTagManager.AddChild(&pmi->m_tmSkaTagManager);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 }
 
 // Remove model instance child (does not delete model instance)
@@ -274,9 +279,9 @@ void CModelInstance::RemoveChild(CModelInstance *pmi)
 
 	// Remove child from model instance
 	mi_cmiChildren.Remove(pmi);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	m_tmSkaTagManager.RemoveChild(&pmi->m_tmSkaTagManager);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 }
 
 // Remove all child model instances (does not delete them)
@@ -340,9 +345,21 @@ void CModelInstance::SetOffset(FLOAT fOffset[6])
 	mi_qvOffset.vPos = FLOAT3D(fOffset[0],fOffset[1],fOffset[2]);
 }
 
+void CModelInstance::SetRideOffset(FLOAT fOffset[6])
+{
+	FLOAT3D fRot(fOffset[3],fOffset[4],fOffset[5]);
+	mi_qvRideOffset.qRot.FromEuler(fRot);
+	mi_qvRideOffset.vPos = FLOAT3D(fOffset[0],fOffset[1],fOffset[2]);
+}
+
 void CModelInstance::SetOffsetPos(FLOAT3D vPos)
 {
 	mi_qvOffset.vPos = vPos;
+}
+
+void CModelInstance::SetRideOffsetPos(FLOAT3D vPos)
+{
+	mi_qvRideOffset.vPos = vPos;
 }
 
 void CModelInstance::SetOffsetRot(ANGLE3D aRot)
@@ -350,9 +367,19 @@ void CModelInstance::SetOffsetRot(ANGLE3D aRot)
 	mi_qvOffset.qRot.FromEuler(aRot);
 }
 
+void CModelInstance::SetRideOffsetRot(ANGLE3D aRot)
+{
+	mi_qvRideOffset.qRot.FromEuler(aRot);
+}
+
 FLOAT3D CModelInstance::GetOffsetPos()
 {
 	return mi_qvOffset.vPos;
+}
+
+FLOAT3D CModelInstance::GetRideOffsetPos()
+{
+	return mi_qvRideOffset.vPos;
 }
 
 ANGLE3D CModelInstance::GetOffsetRot()
@@ -360,6 +387,15 @@ ANGLE3D CModelInstance::GetOffsetRot()
 	ANGLE3D aRot;
 	FLOATmatrix3D mat;
 	mi_qvOffset.qRot.ToMatrix(mat);
+	DecomposeRotationMatrix(aRot,mat);
+	return aRot;
+}
+
+ANGLE3D CModelInstance::GetRideOffsetRot()
+{
+	ANGLE3D aRot;
+	FLOATmatrix3D mat;
+	mi_qvRideOffset.qRot.ToMatrix(mat);
 	DecomposeRotationMatrix(aRot,mat);
 	return aRot;
 }
@@ -394,9 +430,9 @@ void CModelInstance::AddMesh_t(const CTFileName &fnMesh)
 	mi_aMeshInst.Expand(ctMeshInst+1);
 	memset(&mi_aMeshInst[ctMeshInst],0,sizeof(mi_aMeshInst[ctMeshInst]));
 	mi_aMeshInst[ctMeshInst].mi_pMesh = _pMeshStock->Obtain_t(fnMesh);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 	this->RefreshTagManager();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 }
 
 // Add skeleton to ModelInstance
@@ -598,9 +634,9 @@ CModelInstance *CModelInstance::GetFirstNonReferencedParent(CModelInstance *pmiR
 // add animation to ModelInstance
 void CModelInstance::AddAnimation(INDEX iAnimID, ULONG ulFlags, FLOAT fStrength, INDEX iGroupID, FLOAT fSpeedMul/*=1.0f*/)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 	if(iAnimID == -1) return;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 #ifdef SKADEBUG
 	INDEX iDummy1, iDummy2;
 	// if animation does not exits in model instance
@@ -610,7 +646,6 @@ void CModelInstance::AddAnimation(INDEX iAnimID, ULONG ulFlags, FLOAT fStrength,
 	}
 #endif
 
-	fSpeedMul = 1/fSpeedMul;
 	// if no restart flag was set
 	if(ulFlags&AN_NORESTART) {
 		// if given animtion is already playing
@@ -653,11 +688,11 @@ void CModelInstance::AddAnimation(INDEX iAnimID, ULONG ulFlags, FLOAT fStrength,
 		plAnim.pa_fStrength = fStrength;
 		plAnim.pa_ulFlags = ulFlags;
 		plAnim.pa_GroupID = iGroupID;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 		if(!m_vectorAnimEffect.empty())
 			StartAnimEffect(plAnim.pa_iAnimID, plAnim.pa_fSpeedMul);
 		//CPrintF("---%6.2f---StartAnimEffect : ani( %s )\n", _pTimer->GetLerpedCurrentTick(), ska_IDToString(plAnim.pa_iAnimID));
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	// no flag set, sort animation by groupID
 	} else {
 		// add one animation to anim list
@@ -685,11 +720,11 @@ void CModelInstance::AddAnimation(INDEX iAnimID, ULONG ulFlags, FLOAT fStrength,
 		plAnim.pa_fStrength = fStrength;
 		plAnim.pa_ulFlags = ulFlags;
 		plAnim.pa_GroupID = iGroupID;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 		if(!m_vectorAnimEffect.empty())
 			StartAnimEffect(plAnim.pa_iAnimID, plAnim.pa_fSpeedMul);
 		//CPrintF("---%6.2f---StartAnimEffect : ani( %s )\n", _pTimer->GetLerpedCurrentTick(), ska_IDToString(plAnim.pa_iAnimID));
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	}
 
 	INDEX ctmi = mi_cmiChildren.Count();
@@ -791,12 +826,13 @@ void CModelInstance::RemAnimsWithID(INDEX iGroupID)
 // remove unused anims from queue
 void CModelInstance::RemovePassedAnimsFromQueue()
 {
+	INDEX	ial;
 	// count AnimLists
 	INDEX ctal = mi_aqAnims.aq_Lists.Count();
 	// find newes animlist that has fully faded in
 	INDEX iFirstAnimList = -1;
 	// for each anim list from last to first
-	for(INDEX ial=ctal-1;ial>=0;ial--) {
+	for( ial=ctal-1;ial>=0;ial--) {
 		AnimList &alList = mi_aqAnims.aq_Lists[ial];
 		// calculate fade factor for this animlist
 		FLOAT fFadeFactor = CalculateFadeFactor(alList);
@@ -809,7 +845,7 @@ void CModelInstance::RemovePassedAnimsFromQueue()
 	if(iFirstAnimList <= 0) return;
 
 	// move later anim lists to first pos
-	for(ial=iFirstAnimList;ial<ctal;ial++) {
+	for( ial = iFirstAnimList; ial < ctal; ial++) {
 		mi_aqAnims.aq_Lists[ial-iFirstAnimList] = mi_aqAnims.aq_Lists[ial];
 		mi_aqAnims.aq_Lists[ial].al_PlayedAnims.PopAll();
 	}
@@ -818,7 +854,7 @@ void CModelInstance::RemovePassedAnimsFromQueue()
 
 	// for each anim list left
 	ctal = mi_aqAnims.aq_Lists.Count();
-	for(ial=0;ial<ctal;ial++) {
+	for( ial = 0; ial < ctal; ial++) {
 		AnimList &al = mi_aqAnims.aq_Lists[ial];
 		// for each played anim in anim list
 		INDEX ctpa = al.al_PlayedAnims.Count();
@@ -879,7 +915,7 @@ void CModelInstance::NewClonedState(FLOAT fFadeTime)
 // create new cleared state and give it a fade time
 void CModelInstance::NewClearState(FLOAT fFadeTime)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(5th Closed beta)(0.2)
 	if(!m_vectorAnimEffect.empty())
 	{
 		INDEX iAnimSetIndex, iAnimIndex;
@@ -905,7 +941,7 @@ void CModelInstance::NewClearState(FLOAT fFadeTime)
 			}
 		}
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(5th Closed beta)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(5th Closed beta)(0.2)
 	RemovePassedAnimsFromQueue();
 	// add new empty list
 	AnimList &alNewList = mi_aqAnims.aq_Lists.Push();
@@ -986,9 +1022,9 @@ INDEX CModelInstance::FindFirstAnimationID()
 			return an.an_iID;      
 		}
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 	//SKAASSERT(FALSE);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 	// never should get here
 	return -1;
 }
@@ -1204,7 +1240,9 @@ void CModelInstance::Copy(CModelInstance &miOther)
 	mi_iCurentBBox  = miOther.mi_iCurentBBox;
 	mi_colModelColor = miOther.mi_colModelColor;
 	mi_iParentBoneID = miOther.mi_iParentBoneID;
+	mi_iRideParentBoneID = miOther.mi_iRideParentBoneID;
 	mi_qvOffset = miOther.mi_qvOffset;
+	mi_qvRideOffset = miOther.mi_qvRideOffset;
 	mi_strName = miOther.mi_strName;
 	mi_iModelID = miOther.mi_iModelID;
 	mi_cbAABox = miOther.mi_cbAABox;
@@ -1215,7 +1253,9 @@ void CModelInstance::Copy(CModelInstance &miOther)
 	mi_bRenderShadow	= miOther.mi_bRenderShadow;	// 03.02
 	mi_iFaceMesh		= miOther.mi_iFaceMesh;
 	mi_iHairMesh		= miOther.mi_iHairMesh;
-
+	
+	mi_bDummyModel		= miOther.mi_bDummyModel;
+	mi_ERType			= miOther.mi_ERType;
 	// if model instance was obtained from stock
 	if(miOther.mi_pmisSerial!=NULL) {
 		// Copy pointer to model instance serial
@@ -1252,10 +1292,10 @@ void CModelInstance::Copy(CModelInstance &miOther)
 		AddChild(pchmi);
 	}
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 	m_vectorAnimEffect = miOther.m_vectorAnimEffect;
 	m_fnmAnimEffectFile = miOther.m_fnmAnimEffectFile;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 
 	this->RefreshTagManager();
 	m_tmSkaTagManager.SetOwner(miOther.m_tmSkaTagManager.GetOwner());
@@ -1268,7 +1308,9 @@ void CModelInstance::Synchronize(CModelInstance &miOther)
 	mi_aqAnims.aq_Lists = miOther.mi_aqAnims.aq_Lists;
 	// Sync misc params
 	mi_qvOffset      = miOther.mi_qvOffset;
+	mi_qvRideOffset  = miOther.mi_qvRideOffset;
 	mi_iParentBoneID = miOther.mi_iParentBoneID;
+	mi_iRideParentBoneID = miOther.mi_iRideParentBoneID;
 	mi_colModelColor = miOther.mi_colModelColor;
 	mi_vStretch      = miOther.mi_vStretch;
 
@@ -1386,9 +1428,9 @@ void CModelInstance::DeleteMesh(CTString strName)
 			break;
 		}
 	}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 	this->RefreshTagManager();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)
 }
 
 //0528 kwon
@@ -1535,7 +1577,7 @@ extern void DeleteModelInstance(CModelInstance *pmi)
 	}
 }
 
-//0601 kwon í•¨ìˆ˜ ì¶”ê°€.
+//0601 kwon ÇÔ¼ö Ãß°¡.
 extern  CModelInstance* ObtainModelInstanceItem_t(CModelInstance &mi, const CTString &fnSmcFile)
 {
 	ASSERT(&mi!=NULL);
@@ -1549,11 +1591,11 @@ extern  CModelInstance* ObtainModelInstanceItem_t(CModelInstance &mi, const CTSt
 	// Remove one reference from stock
 	_pModelInstanceStock->Release(mi.mi_pmisSerial);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	mi.RefreshTagManager();
 	return 	&mi;
-//	return 	pmis->mis_pmiModelInstance;	//ì›ë³¸.
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//	return 	pmis->mis_pmiModelInstance;	//¿øº».
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 }
 
 
@@ -1568,9 +1610,9 @@ extern void ObtainModelInstance_t(CModelInstance &mi, const CTString &fnSmcFile)
 	mi.Copy(*pmis->mis_pmiModelInstance);
 	// Remove one reference from stock
 	_pModelInstanceStock->Release(mi.mi_pmisSerial);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	mi.RefreshTagManager();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 }
 
 // Obtain model instance from stock in existing model instance
@@ -1621,7 +1663,7 @@ extern void ParseSmcFile_t(CModelInstance &mi, const CTString &fnSmcFile)
 }
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 void CModelInstance::RefreshTagManager()
 {
 	//CPrintF("Call RefreshTagManager() \n");
@@ -1651,18 +1693,18 @@ void CModelInstance::RefreshTagManager()
 				std::string strNewName = ptrTag->GetName();
 				if(!m_tmSkaTagManager.Register(ptrTag))
 				{
-				//	ASSERTALWAYS("íƒœê·¸ ë“±ë¡ì´ ì‹¤íŒ¨í•˜ì˜€ë‹¤. ì´ë¦„ ì¢€ ì˜ì§“ì.");
+				//	ASSERTALWAYS("ÅÂ±× µî·ÏÀÌ ½ÇÆĞÇÏ¿´´Ù. ÀÌ¸§ Á» ÀßÁşÀÚ.");
 				}
-				else	//ë“±ë¡ì„±ê³µ, GroupTagì²˜ë¦¬, __0_, __1_, __2_ì ‘ë‘ë¥¼ ê°€ì§„ ë…€ì„ì´ GroupTagê°€ ëœë‹¤.
+				else	//µî·Ï¼º°ø, GroupTagÃ³¸®, __0_, __1_, __2_Á¢µÎ¸¦ °¡Áø ³à¼®ÀÌ GroupTag°¡ µÈ´Ù.
 				{
 					ptr_tag pRegisteredTag( m_tmSkaTagManager.Find(strNewName) );
 					ASSERT(pRegisteredTag.NotNull());
 					if( strNewName.at(0) == '_' && strNewName.at(1) == '_' && strNewName.at(3) == '_'
-					&& (strNewName.at(2) == '0' || strNewName.at(2) == '1' || strNewName.at(2) == '2') )	//ì ‘ë‘ì–´ í™•ì¸.
+					&& (strNewName.at(2) == '0' || strNewName.at(2) == '1' || strNewName.at(2) == '2') )	//Á¢µÎ¾î È®ÀÎ.
 					{
 						CTag *pTag = m_tmSkaTagManager.Find(strNewName.substr(4, strNewName.length() - 4));
 						CGroupTag *pGTag = NULL;
-						if(pTag == NULL)	//ì•„ì§ groupTagê°€ ë“±ë¡ë˜ì§€ ì•Šì•˜ìœ¼ë¯€ë¡œ ë“±ë¡ì´ í•„ìš”.
+						if(pTag == NULL)	//¾ÆÁ÷ groupTag°¡ µî·ÏµÇÁö ¾Ê¾ÒÀ¸¹Ç·Î µî·ÏÀÌ ÇÊ¿ä.
 						{
 							CGroupTag gt;
 							gt.Activate();
@@ -1685,7 +1727,7 @@ void CModelInstance::RefreshTagManager()
 	}
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Effect Add & Modify for Close Beta)(0.1)
 #include <string>
 void CModelInstance::ReadAnimEffectFile(const CTFileName &fnm)
 {
@@ -1701,34 +1743,47 @@ void CModelInstance::ReadAnimEffectFile(const CTFileName &fnm)
 	is.ExpectID_t("AEFF");
 	INDEX count;
 	is >> count;
-	m_vectorAnimEffect.clear();
-	m_vectorAnimEffect.reserve(count);
+
+	if (count > 0)
+	{
+		m_vectorAnimEffect.reserve(count);
+	}
+
+	extern BOOL _bSkaStudioApp;
+
 	CAnimEffect temp;
 	std::vector<std::string> vectorLostAni;
 	for(INDEX i=0; i<count; ++i)
 	{
 		temp.Read(&is);
-		if(FindAnimationByID(temp.GetAnimID(), &iAnimSetIndex, &iAnimIndex))
-			m_vectorAnimEffect.push_back(temp);
+
+		if (_bSkaStudioApp)
+		{
+			if(FindAnimationByID(temp.GetAnimID(), &iAnimSetIndex, &iAnimIndex))
+				m_vectorAnimEffect.push_back(temp);
+			else
+			{
+				bSuccess = FALSE;
+				vectorLostAni.push_back(std::string(ska_IDToString(temp.GetAnimID()).str_String));
+			}
+		}
 		else
 		{
-			bSuccess = FALSE;
-			vectorLostAni.push_back(std::string(ska_IDToString(temp.GetAnimID()).str_String));
+			m_vectorAnimEffect.push_back(temp);
 		}
 	}
 
-	extern BOOL _bSkaStudioApp;
 	if(!bSuccess && _bSkaStudioApp)
 	{
-		std::string strMsg = "AnimEffectì— ì €ì¥ëœ Aniì¤‘ ì—†ëŠ” ì• ë‹ˆê°€ ìˆìŠµë‹ˆë‹¤. "\
-							"ê·¸ ì• ë‹ˆë¥¼ ë¹¼ê³  ì €ì¥í•˜ì‹œë ¤ë©´ ê·¸ëƒ¥ ì €ì¥í•˜ì‹œê³  "\
-							"ì•„ë‹ˆë¼ë©´ ì €ì¥í•˜ì§€ ë§ˆì„¸ìš”. ì—†ëŠ” ì• ë‹ˆ : ";
+		std::string strMsg = "AnimEffect¿¡ ÀúÀåµÈ AniÁß ¾ø´Â ¾Ö´Ï°¡ ÀÖ½À´Ï´Ù. "\
+							"±× ¾Ö´Ï¸¦ »©°í ÀúÀåÇÏ½Ã·Á¸é ±×³É ÀúÀåÇÏ½Ã°í "\
+							"¾Æ´Ï¶ó¸é ÀúÀåÇÏÁö ¸¶¼¼¿ä. ¾ø´Â ¾Ö´Ï : ";
 		for(int i=0; i<vectorLostAni.size(); ++i)
 		{
 			strMsg += std::string(vectorLostAni[i]);
 			if(i != vectorLostAni.size()-1) strMsg += std::string(", ");
 		}
-		MessageBox(NULL, strMsg.c_str(), "ê²½ê³ !", MB_OK | MB_ICONWARNING);
+		MessageBox(NULL, strMsg.c_str(), "°æ°í!", MB_OK | MB_ICONWARNING);
 	}
 }
 
@@ -1787,16 +1842,26 @@ BOOL CModelInstance::StartAnimEffect(INDEX iAnimID, FLOAT fSpeedMul)
 
 	const INDEX cntREG = animEffect.GetReservedEGCount();
 	BOOL bRet = FALSE;
+
+	EFF_RENDER_TYPE tmpERType = ER_NORMAL;
+
+	if (mi_bDummyModel)
+	{
+		tmpERType = ER_IN_UI;
+	}
+
 	for(INDEX i=0; i<cntREG; ++i)
 	{
 		CAnimEffect::CReservedEffectGroup *pREG = animEffect.GetReservedEG(i);
 		pREG->SetStartedTime(_pTimer->GetLerpedCurrentTick() + pREG->GetStartTime());
 		pREG->SetPlayedEG( StartEffectGroup(pREG->GetEffectGroupName().str_String
 											, &m_tmSkaTagManager
-											, _pTimer->GetLerpedCurrentTick() + pREG->GetStartTime()) );
+											, _pTimer->GetLerpedCurrentTick() + pREG->GetStartTime(), tmpERType, mi_ERType) );
+		//CPrintF("StartAnimEffect : %s \n", pREG->GetEffectGroupName().str_String);
 		if(pREG->GetPlayedEG() == NULL) bRet = FALSE;
 		else
 		{
+			//CPrintF("GetPlayedEG_Start : %s \n", pREG->GetPlayedEG()->GetName().c_str());
 			pREG->GetPlayedEG()->SetSpeedMul(fSpeedMul);
 			//if(CEntity::GetPlayerEntity(0)->GetModelInstance() == this)
 				//CPrintF("---%6.2f---Start Effect : %s\n", _pTimer->GetLerpedCurrentTick(), pREG->GetEffectGroupName().str_String);
@@ -1815,6 +1880,13 @@ void CModelInstance::LoopAnimEffect(INDEX iAnimID, FLOAT fLeftAnimTime
 
 	if(animEffect.GetLoopCount() == 0) return;
 
+	EFF_RENDER_TYPE tmpERType = ER_NORMAL;
+
+	if (mi_bDummyModel)
+	{
+		tmpERType = ER_IN_UI;
+	}
+
 	const INDEX cntREG = animEffect.GetReservedEGCount();
 	for(INDEX i=0; i<cntREG; ++i)
 	{
@@ -1827,11 +1899,11 @@ void CModelInstance::LoopAnimEffect(INDEX iAnimID, FLOAT fLeftAnimTime
 			if(pREG->GetFlags() & REF_SYNCANIMLENGTH) pREG->GetPlayedEG()->Stop(fLeftAnimTime * 0.5f);
 			pREG->SetPlayedEG(NULL);
 		}
-		//ì•ˆíƒœí›ˆ : TEST
+		//¾ÈÅÂÈÆ : TEST
 		//if(fOffsetTimeFromAnimLoop > 0.19f) continue;
 		pREG->SetPlayedEG( StartEffectGroup(pREG->GetEffectGroupName().str_String
 											, &m_tmSkaTagManager
-											, _pTimer->GetLerpedCurrentTick() - fOffsetTimeFromAnimLoop + pREG->GetStartTime()) );
+											, _pTimer->GetLerpedCurrentTick() - fOffsetTimeFromAnimLoop + pREG->GetStartTime(), tmpERType, mi_ERType) );
 		pREG->SetStartedTime(_pTimer->GetLerpedCurrentTick() - fOffsetTimeFromAnimLoop + pREG->GetStartTime());
 		if(pREG->GetPlayedEG() != NULL)
 		{
@@ -1853,10 +1925,18 @@ void CModelInstance::StopAnimEffect(INDEX iAnimID, FLOAT fLeftAnimTime)
 	for(INDEX i=0; i<cntREG; ++i)
 	{
 		CAnimEffect::CReservedEffectGroup *pREG = animEffect.GetReservedEG(i);
+		//CPrintF("StopAnimEffect : %s \n", pREG->GetEffectGroupName());
+
 		if( pREG->GetPlayedEG() != NULL && CEffectGroupManager::Instance().IsValidCreated(pREG->GetPlayedEG()) )
 		{
-			if(pREG->GetFlags() & REF_SYNCANIMLENGTH) pREG->GetPlayedEG()->Stop(fLeftAnimTime * 0.5f);
-			else pREG->GetPlayedEG()->Stop();
+			CTString strPlayedEG = pREG->GetPlayedEG()->GetName().c_str();
+
+			if (strPlayedEG == pREG->GetEffectGroupName())
+			{
+				if(pREG->GetFlags() & REF_SYNCANIMLENGTH) pREG->GetPlayedEG()->Stop(fLeftAnimTime * 0.5f);
+				else pREG->GetPlayedEG()->Stop();
+			}
+
 			pREG->SetPlayedEG(NULL);
 			//CPrintF("---%6.2f---Stop Effect : %s\n", _pTimer->GetLerpedCurrentTick(), pREG->GetEffectGroupName().str_String);
 		}
@@ -1875,7 +1955,7 @@ void CModelInstance::StopAllAnimEffect(FLOAT fLeftAnimTime)
 		for(int j=0; j<cntREG; ++j)
 		{
 			animEffect.SetLoopCount(0);
-			CAnimEffect::CReservedEffectGroup *pREG = animEffect.GetReservedEG(i);
+			CAnimEffect::CReservedEffectGroup *pREG = animEffect.GetReservedEG(j);
 			if( pREG != NULL && pREG->GetPlayedEG() != NULL && CEffectGroupManager::Instance().IsValidCreated(pREG->GetPlayedEG()) )
 			{
 				if(pREG->GetFlags() & REF_SYNCANIMLENGTH) pREG->GetPlayedEG()->Stop(fLeftAnimTime * 0.5f);
@@ -1890,6 +1970,8 @@ void CModelInstance::StopAllAnimEffect(FLOAT fLeftAnimTime)
 
 CAnimEffect *CModelInstance::GetAnimEffectByAnimIndex(INDEX iAnimID)
 {
+	if (m_vectorAnimEffect.empty()) return NULL;
+
 	const INDEX cntAnimEffect = m_vectorAnimEffect.size();
 	INDEX i=0;
 	for(i=0; i<cntAnimEffect; ++i)
@@ -1967,4 +2049,4 @@ void CAnimEffect::Write(CTStream *pOS)
 	}
 }
 #undef ANIMEFFECT_VERSION
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Effect Add & Modify for Close Beta)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Effect Add & Modify for Close Beta)(0.1)

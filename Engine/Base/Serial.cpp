@@ -6,6 +6,10 @@
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/CRCTable.h>
 
+#ifdef KALYDO
+deqSLS g_deqLoadData;
+#endif
+
 /*
  * Default constructor.
  */
@@ -43,9 +47,9 @@ CTString CSerial::GetDescription(void)
 /*
  * Load from file.
  */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Bug FIx)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Bug FIx)(0.1)
 void CSerial::Load_t(const CTFileName &fnFileName)  // throw char *
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Bug FIx)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Bug FIx)(0.1)
 {
   ASSERT(!IsUsed());
   // mark that you have changed
@@ -96,9 +100,9 @@ void CSerial::Reload(void)
 /*
  * Save to file.
  */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Bug FIx)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Bug FIx)(0.1)
 void CSerial::Save_t(const CTFileName &fnFileName)  // throw char *
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Bug FIx)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Bug FIx)(0.1)
 {
   // open a stream
   CTFileStream ostrFile;

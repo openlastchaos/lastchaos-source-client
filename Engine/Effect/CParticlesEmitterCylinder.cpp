@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 
 #include "stdH.h"
 
@@ -43,12 +43,12 @@ void CParticlesEmitterCylinder::Process(CParticles &particles, const FLOAT fDelt
 	for(UINT i=cntOld; i<cntOld+cntAdd; ++i)
 	{
 		CParticle &particle = particles[i];
-		//íŒŒí‹°í´ ìƒì„±.
+		//ÆÄÆ¼Å¬ »ı¼º.
 		m_particlePrototype.CreateTo( particle );
 		particle.SetAge((i-cntOld) * fDeltaTime / (FLOAT)cntAdd);
 		particle.SetPosition( m_vCenter );
 //		particle.SetDirection( FLOATquat3D(1,0,0,0) );
-		//íŒŒ í‹°í´ ìœ„ì¹˜ ê²°ì •
+		//ÆÄ Æ¼Å¬ À§Ä¡ °áÁ¤
 		FLOAT3D posNoRot(0,0,0);
 		if(m_bUseShapePosition)
 		{
@@ -63,7 +63,7 @@ void CParticlesEmitterCylinder::Process(CParticles &particles, const FLOAT fDelt
 				particle.SetPosition(posNoRot);
 			}
 		}
-		//íŒŒí‹°í´ ì†ë„, ê°€ì†ë„ ê²°ì •
+		//ÆÄÆ¼Å¬ ¼Óµµ, °¡¼Óµµ °áÁ¤
 		if(m_bUseShapeSpeed)
 		{
 			if(!m_bEmitAllDir)
@@ -152,4 +152,4 @@ void CParticlesEmitterCylinder::Write(CTStream *pOS)
 	os << m_bEmitAllDir;
 	m_cdsShape.Write(&os);
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

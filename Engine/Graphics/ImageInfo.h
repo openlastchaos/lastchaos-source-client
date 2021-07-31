@@ -11,9 +11,9 @@
 #define UNSUPPORTED_FILE 0L
 #define PCX_FILE         1L
 #define TGA_FILE         2L
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	09.06
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ´ÙÁß °ø°İ ÀÛ¾÷	09.06
 #define JPG_FILE		 3L
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		09.06
+//°­µ¿¹Î ¼öÁ¤ ³¡ ´ÙÁß °ø°İ ÀÛ¾÷		09.06
 
 class ENGINE_API CImageInfo 
 {
@@ -53,9 +53,8 @@ public:
 
   // converts image info structure and content to PCX or TGA format and saves it to file
   void SaveTGA_t( const CTFileName &strFileName) const; // throw char *
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ë‹¤ì¤‘ ê³µê²© ì‘ì—…	09.06
-	void SaveJPG_t( const CTFileName &strFileName) const; // throw char *
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ë‹¤ì¤‘ ê³µê²© ì‘ì—…		09.06
+
+  void SaveJPG_t( const CTFileName &strFileName) const; // throw char *
 };
 
 

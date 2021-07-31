@@ -9,16 +9,10 @@
 	#pragma once
 #endif
 
-#include <Engine/Interface/UIListBox.h>
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIButtonEx.h>
-#include <Engine/Interface/UIComboBox.h>
-#include <Engine/Interface/UIEditBox.h>
-#include <Engine/Interface/UIMultiEditBox.h>
-#include <Engine/Interface/UIQuickSlot.h>
 #include <Engine/Interface/UIMessageBox.h>
+#include <Engine/Interface/UIQuickSlot.h>
 
-
+class CUIQuickSlot;
 #define CASHSHOP_WIDTH						598		
 #define	CASHSHOP_HEIGHT						449
 #define SETINFO_WIDTH						300
@@ -30,11 +24,10 @@
 #define	SET_ITEM_INFO						5
 #define MAX_KIT_SIZE						10
 
-#define MAX_GIFT_MESSAGE					100		//ì„ ë¬¼ë©”ì‹œì§€ì˜ ìµœëŒ€ ê¸¸ì´	:Su-won
+#define MAX_GIFT_MESSAGE					100		//¼±¹°¸Ş½ÃÁöÀÇ ÃÖ´ë ±æÀÌ	:Su-won
 
 // max line of item informaion 
 #define	MAX_CASH_ITEMINFO_LINE				20
-
 
 
 // type of Main TAB
@@ -64,9 +57,9 @@ enum SHOP_SECTION
 	//INFO_SECTION
 	UCSS_BUY_INFO ,
 	UCSS_BUY_HISTORY,
-	UCSS_BUY_SENDHISTORY,		//'ì„ ë¬¼ ë‚´ì—­(ë³´ë‚¸ ì„ ë¬¼ë‚´ì—­ í™•ì¸)' í˜ì´ì§€ :Su-won
-	UCSS_BUY_RECEIVEHISTORY,	//'ì„ ë¬¼ ë‚´ì—­(ë°›ì€ ì„ ë¬¼ë‚´ì—­ í™•ì¸)' í˜ì´ì§€ :Su-won
-	UCSS_BUY_RECEIVE,			//'ë°›ì€ ì„ ë¬¼' í˜ì´ì§€  :Su-won
+	UCSS_BUY_SENDHISTORY,		//'¼±¹° ³»¿ª(º¸³½ ¼±¹°³»¿ª È®ÀÎ)' ÆäÀÌÁö :Su-won
+	UCSS_BUY_RECEIVEHISTORY,	//'¼±¹° ³»¿ª(¹ŞÀº ¼±¹°³»¿ª È®ÀÎ)' ÆäÀÌÁö :Su-won
+	UCSS_BUY_RECEIVE,			//'¹ŞÀº ¼±¹°' ÆäÀÌÁö  :Su-won
 	
 	UCSS_SUB_END
 };
@@ -248,6 +241,7 @@ protected:
 	CUIButton			m_btnCancel;						// same function with close button
 	CUIButton			m_btnSearch;						// Search puchase history button
 	CUIButton			m_btnPlatinum;	
+	CUIButton			m_btnBillingLink;					// Billing Homepage Link
 
 	// Set detail
 	CUIButton			m_aBtnSetItem[LEFT_SLOT_SIZE_BUY];	// set item array
@@ -257,13 +251,13 @@ protected:
 	CUIButton			m_btnInfoBuyItem;					// bought item list
 	CUIButton			m_btnInfoBuyHistory;				// buy history
 	CUIButton			m_btnInfoMove;						// move into user inventory button
-	CUIButton			m_btnInfoGiftHistory;				// "ì„ ë¬¼ë‚´ì—­" ë²„íŠ¼				:Su-won
-	CUIButton			m_btnInfoSendHistory;				// "ë³´ë‚¸ ì„ ë¬¼ë‚´ì—­ í™•ì¸"	ë²„íŠ¼	:Su-won
-	CUIButton			m_btnInfoReceiveHistory;			// "ë°›ì€ ì„ ë¬¼ë‚´ì—­ í™•ì¸"	ë²„íŠ¼	:Su-won
-	CUIButton			m_btnGiftSearch;					// "ê²€ìƒ‰" ë²„íŠ¼					:Su-won
-	CUIButton			m_btnInfoReceive;					// "ë°›ì€ì„ ë¬¼" ë²„íŠ¼				:Su-won
-	CUIButton			m_btnGift;							// "ì„ ë¬¼í•˜ê¸°" ë²„íŠ¼				:Su-won
-	CUIButton			m_btnSend;							// "ë³´ë‚´ê¸°"	ë²„íŠ¼				:Su-won
+	CUIButton			m_btnInfoGiftHistory;				// "¼±¹°³»¿ª" ¹öÆ°				:Su-won
+	CUIButton			m_btnInfoSendHistory;				// "º¸³½ ¼±¹°³»¿ª È®ÀÎ"	¹öÆ°	:Su-won
+	CUIButton			m_btnInfoReceiveHistory;			// "¹ŞÀº ¼±¹°³»¿ª È®ÀÎ"	¹öÆ°	:Su-won
+	CUIButton			m_btnGiftSearch;					// "°Ë»ö" ¹öÆ°					:Su-won
+	CUIButton			m_btnInfoReceive;					// "¹ŞÀº¼±¹°" ¹öÆ°				:Su-won
+	CUIButton			m_btnGift;							// "¼±¹°ÇÏ±â" ¹öÆ°				:Su-won
+	CUIButton			m_btnSend;							// "º¸³»±â"	¹öÆ°				:Su-won
 
 	// Scroll Bar
 	CUIScrollBar		m_sbLeft;							// left Scroll Bar
@@ -271,25 +265,25 @@ protected:
 
 public :
 	CUIScrollBar		m_sbHistory;						// History Scroll Bar
-	CUIScrollBar		m_sbGift;							// ì„ ë¬¼ ë‚´ì—­ ìŠ¤í¬ë¡¤ë°” :Su-won
-	CUIScrollBar		m_sbReceive;						// ë°›ì€ ì„ ë¬¼ ìŠ¤í¬ë¡¤ë°”: Su-won
-	int					m_nSendScrollPos, m_nRecvScrollPos; // ì„ ë¬¼ ë‚´ì—­(ë³´ë‚¸ ì„ ë¬¼, ë°›ì€ ì„ ë¬¼) ìŠ¤í¬ë¡¤ë°” ìœ„ì¹˜:Su-won
+	CUIScrollBar		m_sbGift;							// ¼±¹° ³»¿ª ½ºÅ©·Ñ¹Ù :Su-won
+	CUIScrollBar		m_sbReceive;						// ¹ŞÀº ¼±¹° ½ºÅ©·Ñ¹Ù: Su-won
+	int					m_nSendScrollPos, m_nRecvScrollPos; // ¼±¹° ³»¿ª(º¸³½ ¼±¹°, ¹ŞÀº ¼±¹°) ½ºÅ©·Ñ¹Ù À§Ä¡:Su-won
 	// List Box		
 	CUIComboBox			m_cbYear;							// search year list
 	CUIComboBox			m_cbMonth;							// search month list
 	CUIComboBox			m_cbDay;							// search day list
 
-	CUIComboBox			m_cbGiftYear;							// ì„ ë¬¼ ë‚´ì—­ 'ë…„' ë¦¬ìŠ¤íŠ¸ :Su-won
-	CUIComboBox			m_cbGiftMonth;							// ì„ ë¬¼ ë‚´ì—­ 'ë‹¬' ë¦¬ìŠ¤íŠ¸ :Su-won
-	CUIComboBox			m_cbGiftDay;							// ì„ ë¬¼ ë‚´ì—­ 'ì¼' ë¦¬ìŠ¤íŠ¸ :Su-won
-	int					m_nSendYear, m_nSendMonth, m_nSendDay;	// ë³´ë‚¸ ì„ ë¬¼ ë‚´ì—­ ë‚ ì§œ :Su-won
-	int					m_nRecvYear, m_nRecvMonth, m_nRecvDay;	// ë°›ì€ ì„ ë¬¼ ë‚´ì—­ ë‚ ì§œ : Su-won
+	CUIComboBox			m_cbGiftYear;							// ¼±¹° ³»¿ª '³â' ¸®½ºÆ® :Su-won
+	CUIComboBox			m_cbGiftMonth;							// ¼±¹° ³»¿ª '´Ş' ¸®½ºÆ® :Su-won
+	CUIComboBox			m_cbGiftDay;							// ¼±¹° ³»¿ª 'ÀÏ' ¸®½ºÆ® :Su-won
+	int					m_nSendYear, m_nSendMonth, m_nSendDay;	// º¸³½ ¼±¹° ³»¿ª ³¯Â¥ :Su-won
+	int					m_nRecvYear, m_nRecvMonth, m_nRecvDay;	// ¹ŞÀº ¼±¹° ³»¿ª ³¯Â¥ : Su-won
 
-	BOOL				m_bShowSendGift;					// ì„ ë¬¼ ë³´ë‚´ê¸°ì°½ ìƒì„± ì—¬ë¶€ :Su-won
-	CUIEditBox			m_ebChar;							// ì„ ë¬¼ ë³´ë‚´ê¸°ì°½ì—ì„œ ìºë¦­ ì´ë¦„ì„ ìœ„í•œ ì—ë””íŠ¸ë°•ìŠ¤  :Su-won
-	CUIMultiEditBox		m_ebGiftMessage;					// ì„ ë¬¼ ë³´ë‚´ê¸°ì°½ì—ì„œ ì„ ë¬¼ ë©”ì‹œì§€ë¥¼ ìœ„í•œ ì—ë””íŠ¸ë°•ìŠ¤ :Su-won
+	BOOL				m_bShowSendGift;					// ¼±¹° º¸³»±âÃ¢ »ı¼º ¿©ºÎ :Su-won
+	CUIEditBox			m_ebChar;							// ¼±¹° º¸³»±âÃ¢¿¡¼­ Ä³¸¯ ÀÌ¸§À» À§ÇÑ ¿¡µğÆ®¹Ú½º  :Su-won
+	CUIMultiEditBox		m_ebGiftMessage;					// ¼±¹° º¸³»±âÃ¢¿¡¼­ ¼±¹° ¸Ş½ÃÁö¸¦ À§ÇÑ ¿¡µğÆ®¹Ú½º :Su-won
 	
-	BOOL				m_bBringItem;						// ìºì‰¬ ì•„ì´í…œì„ ê°€ì ¸ì˜¤ëŠ” ì¤‘
+	BOOL				m_bBringItem;						// Ä³½¬ ¾ÆÀÌÅÛÀ» °¡Á®¿À´Â Áß
 
 protected :	
 
@@ -300,9 +294,10 @@ protected :
 	UIRect				m_rcTradeItems;						// Region of KitItems
 	UIRect				m_rcKitItems;
 	UIRect				m_rcInvenItems;
-	UIRect				m_rcRecvItems;						// ë°›ì€ ì„ ë¬¼ì„ ë Œë”ë§í•  ì˜ì—­ :Su-won
+	UIRect				m_rcRecvItems;						// ¹ŞÀº ¼±¹°À» ·»´õ¸µÇÒ ¿µ¿ª :Su-won
 	UIRect				m_rcHelp;							// Region of Help
-	
+	// connie [2009/10/23] - test
+	UIRect				m_rcKitItemsJP;
 	// UV of each part
 	UIRectUV			m_rtBackUL;							// UV of upper left background
 	UIRectUV			m_rtBackUM;							// UV of upper middle background
@@ -359,7 +354,7 @@ public:
 
 	void	OpenCashShop();
 
-	void	OpenRecvGiftPage();		// ì„ ë¬¼ ë„ì°© ë²„íŠ¼ì„ í´ë¦­í–ˆì„ ë•Œ ë°”ë¡œ ë°›ì€ ì„ ë¬¼ í˜ì´ì§€ë¥¼ ì˜¤í”ˆ :Su-won
+	void	OpenRecvGiftPage();		// ¼±¹° µµÂø ¹öÆ°À» Å¬¸¯ÇßÀ» ¶§ ¹Ù·Î ¹ŞÀº ¼±¹° ÆäÀÌÁö¸¦ ¿ÀÇÂ :Su-won
 	
 	
 	void	PrepareShopItems();
@@ -386,9 +381,9 @@ public:
 	void	RenderInvenItems();
 
 	void	RenderHistoryItems();
-	void	RenderSendHistoryItems();		// ë°›ì€ ì„ ë¬¼ ë‚´ì—­ ë Œë”ë§ :Su-won
-	void	RenderReceiveHistoryItems();	// ë³´ë‚¸ ì„ ë¬¼ ë‚´ì—­ ë Œë”ë§ :Su-won
-	void	RenderRecvGift();				// ë°›ì€ ì„ ë¬¼ ë Œë”ë§ :Su-won
+	void	RenderSendHistoryItems();		// ¹ŞÀº ¼±¹° ³»¿ª ·»´õ¸µ :Su-won
+	void	RenderReceiveHistoryItems();	// º¸³½ ¼±¹° ³»¿ª ·»´õ¸µ :Su-won
+	void	RenderRecvGift();				// ¹ŞÀº ¼±¹° ·»´õ¸µ :Su-won
 
 	void	RenderItemInfo( CUIButtonEx& btnInfo );
 
@@ -398,17 +393,28 @@ public:
 
 	void	RenderHelp();
 
-	void	RenderSendGiftUI();				// ì„ ë¬¼ ë³´ë‚´ê¸°ì°½ ë Œë”ë§ :Su-won
+	void	RenderSendGiftUI();				// ¼±¹° º¸³»±âÃ¢ ·»´õ¸µ :Su-won
 	// Other Func
 	void	InsideNumXY(UIRect rc,int btnSize,int btnGap, int* n_x, int* n_y );
 	int		CalculateKitPrice();
 	BOOL	SetCashIndexToBtn(int nCashIndex,int nUniIndex,CUIButtonEx& btn );
-	inline void	SetMyCash( int nCash) { m_nMyCash=nCash; }
+	inline void	SetMyCash( int nCash) 
+	{	m_nMyCash=nCash; 
+#if defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2)
+		if(m_nMyCash <= 0)
+		{
+			m_btnPay.SetEnable(FALSE);
+		}else
+		{
+			m_btnPay.SetEnable(TRUE);	
+		}
+#endif
+	}
 	inline int GetMyCash() { return m_nMyCash; }
 	inline int GetCurShopSection(){ return m_nCurShopSection; }
 
 
-	// ë°›ì€ ì„ ë¬¼í•¨ì´ ë¹„ì—ˆëŠ”ì§€ í™•ì¸
+	// ¹ŞÀº ¼±¹°ÇÔÀÌ ºñ¾ú´ÂÁö È®ÀÎ
 	BOOL	IsEmptyRecvGift();
 	
 	//Su-won   --->
@@ -430,12 +436,13 @@ public:
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 	void	ButtonMoveMsg( MSG *pMsg );
 
-	// ì„ ë¬¼ ë³´ë‚¼ ë•Œ ìºë¦­ ì´ë¦„ê³¼ ì„ ë¬¼ ë©”ì‹œì§€ë¥¼ ì…ë ¥ë°›ê¸° ìœ„í•´ ì¶”ê°€ :Su-won	|--->
+	// ¼±¹° º¸³¾ ¶§ Ä³¸¯ ÀÌ¸§°ú ¼±¹° ¸Ş½ÃÁö¸¦ ÀÔ·Â¹Ş±â À§ÇØ Ãß°¡ :Su-won	|--->
 	WMSG_RESULT	KeyMessage( MSG *pMsg );
 	WMSG_RESULT	CharMessage( MSG *pMsg );
 	WMSG_RESULT	IMEMessage( MSG *pMsg );
 	//	<---|
 
+	void OpenBillingHomePage();
 	// Item Buttons	
 	CUIButtonEx			m_abtnTradeItems[MAX_KIT_SIZE];						// Trade Slot items
 	
@@ -449,22 +456,22 @@ public:
 	CStaticArray<CUIButtonEx>	m_abtnHistoryItems;							// items of Histrory Slot 
 	
 	// Su-won	|--->
-	CStaticArray<CUIButtonEx>	m_abtnSendHistoryItems;			// ë³´ë‚¸ ì„ ë¬¼ ë‚´ì—­ì˜ ì•„ì´í…œ ìŠ¬ë¡¯	:Su-won
-	CStaticArray<CTString>		m_astrSendChar;					// ë³´ë‚¸ ì„ ë¬¼ ë‚´ì—­ì˜ ì„ ë¬¼ ë³´ë‚¸ ìºë¦­ëª… :Su-won
-	CStaticArray<CUIButtonEx>	m_abtnRecvHistoryItems;			// ë°›ì€ ì„ ë¬¼ ë‚´ì—­ì˜ ì•„ì´í…œ ìŠ¬ë¡¯ :Su-won
-	CStaticArray<CTString>		m_astrReceiveChar;				// ë°›ì€ ì„ ë¬¼ ë‚´ì—­ì˜ ì„ ë¬¼ ë°›ì€ ìºë¦­ëª… :Su-won
+	CStaticArray<CUIButtonEx>	m_abtnSendHistoryItems;			// º¸³½ ¼±¹° ³»¿ªÀÇ ¾ÆÀÌÅÛ ½½·Ô	:Su-won
+	CStaticArray<CTString>		m_astrSendChar;					// º¸³½ ¼±¹° ³»¿ªÀÇ ¼±¹° º¸³½ Ä³¸¯¸í :Su-won
+	CStaticArray<CUIButtonEx>	m_abtnRecvHistoryItems;			// ¹ŞÀº ¼±¹° ³»¿ªÀÇ ¾ÆÀÌÅÛ ½½·Ô :Su-won
+	CStaticArray<CTString>		m_astrReceiveChar;				// ¹ŞÀº ¼±¹° ³»¿ªÀÇ ¼±¹° ¹ŞÀº Ä³¸¯¸í :Su-won
 	
-	CStaticArray<CUIButtonEx>	m_abtnRecvGift;					// ë°›ì€ ì„ ë¬¼ ìŠ¬ë¡¯ :Su-won
-	CStaticArray<CTString>		m_astrSend;						// ë°›ì€ ì„ ë¬¼ì˜ ì„ ë¬¼ ë³´ë‚¸ ìºë¦­ëª… :Suw0on
-	CStaticArray<CTString>		m_astrGiftMessage;				// ë°›ì€ ì„ ë¬¼ì˜ ì„ ë¬¼ ë©”ì‹œì§€ :Su-won
-	CStaticArray<UINT>			m_anDate;						// ë°›ì€ ì„ ë¬¼ì˜ ì„ ë¬¼ ë³´ë‚¸ ë‚ ì§œ :Su-won
+	CStaticArray<CUIButtonEx>	m_abtnRecvGift;					// ¹ŞÀº ¼±¹° ½½·Ô :Su-won
+	CStaticArray<CTString>		m_astrSend;						// ¹ŞÀº ¼±¹°ÀÇ ¼±¹° º¸³½ Ä³¸¯¸í :Suw0on
+	CStaticArray<CTString>		m_astrGiftMessage;				// ¹ŞÀº ¼±¹°ÀÇ ¼±¹° ¸Ş½ÃÁö :Su-won
+	CStaticArray<UINT>			m_anDate;						// ¹ŞÀº ¼±¹°ÀÇ ¼±¹° º¸³½ ³¯Â¥ :Su-won
 
-	// ë°›ì€ ì„ ë¬¼ì´ ì„ ë¬¼ ìŠ¬ë¡¯ê³¼ ì¸ë²¤ ìŠ¬ë¡¯ì„ ì™”ë‹¤ê°”ë‹¤í•˜ë©´ì„œ ìˆœì„œê°€ ë°”ë€Œê¸° ë•Œë¬¸ì— ìˆœì„œë¥¼ ì €ì¥.
-	// ì„ ë¬¼ ë²„íŠ¼ê³¼ ë³´ë‚¸ (ìºë¦­ëª…, ë‚ ì§œ, ì„ ë¬¼ ë©”ì‹œì§€)ë¥¼ ë”°ë¡œ ì²˜ë¦¬í•˜ê¸°ë•Œë¬¸ì— í•„ìš”...
-	CStaticArray<UINT>			m_anRecvOrder;					// ë°›ì€ ì„ ë¬¼ ìŠ¬ë¡¯ì— ì €ì¥ëœ ë°›ì€ ì„ ë¬¼ ìˆœì„œ :Su-won
-	CStaticArray<UINT>			m_anInvenOrder;					// ì¸ë²¤ ìŠ¬ë¡¯ì— ì €ì¥ëœ ë°›ì€ ì„ ë¬¼ ìˆœì„œ :Su-won
+	// ¹ŞÀº ¼±¹°ÀÌ ¼±¹° ½½·Ô°ú ÀÎº¥ ½½·ÔÀ» ¿Ô´Ù°¬´ÙÇÏ¸é¼­ ¼ø¼­°¡ ¹Ù²î±â ¶§¹®¿¡ ¼ø¼­¸¦ ÀúÀå.
+	// ¼±¹° ¹öÆ°°ú º¸³½ (Ä³¸¯¸í, ³¯Â¥, ¼±¹° ¸Ş½ÃÁö)¸¦ µû·Î Ã³¸®ÇÏ±â¶§¹®¿¡ ÇÊ¿ä...
+	CStaticArray<UINT>			m_anRecvOrder;					// ¹ŞÀº ¼±¹° ½½·Ô¿¡ ÀúÀåµÈ ¹ŞÀº ¼±¹° ¼ø¼­ :Su-won
+	CStaticArray<UINT>			m_anInvenOrder;					// ÀÎº¥ ½½·Ô¿¡ ÀúÀåµÈ ¹ŞÀº ¼±¹° ¼ø¼­ :Su-won
 	
-	CUIMultiEditBox				m_ebRecvGiftMsg[2];				// ë°›ì€ ì„ ë¬¼ì˜ ë©”ì‹œì§€ë¥¼ ë‚˜íƒ€ë‚¼ ì—ë””íŠ¸ ë°•ìŠ¤
+	CUIMultiEditBox				m_ebRecvGiftMsg[2];				// ¹ŞÀº ¼±¹°ÀÇ ¸Ş½ÃÁö¸¦ ³ªÅ¸³¾ ¿¡µğÆ® ¹Ú½º
 	// Su-won	<---|
 };
 

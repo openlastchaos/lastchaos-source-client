@@ -311,6 +311,24 @@ functions:
 
 
 procedures:
+
+  Main() {
+    // initialize
+    Initialize();
+
+    // wait until game starts
+    autowait(FRnd()*2.0f+1.0f);
+
+    // initialize watcher
+    if (m_bUseWatcher) {
+      InitializeWatcher(m_fWatcherFrequency);
+    }
+
+    m_strDescription = "Environment base";
+
+    jump MainLoop();
+  };
+
 /************************************************************
  *                    SUPPORT PROCEDURES                    *
  ************************************************************/
@@ -395,22 +413,5 @@ procedures:
     Destroy();
 
     return;
-  };
-
-  Main() {
-    // initialize
-    Initialize();
-
-    // wait until game starts
-    autowait(FRnd()*2.0f+1.0f);
-
-    // initialize watcher
-    if (m_bUseWatcher) {
-      InitializeWatcher(m_fWatcherFrequency);
-    }
-
-    m_strDescription = "Environment base";
-
-    jump MainLoop();
   };
 };

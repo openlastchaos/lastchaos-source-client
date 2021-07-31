@@ -143,8 +143,8 @@ BOOL GetStringFromLine(CTString strLine, CTString &strResult, const CTString &st
 
 void CControls::Load_t( CTFileName fnFile)
 {
-  char achrLine[ 1024];
-  char achrID[ 1024];
+	char achrLine[1024] = {0,};
+	char achrID[1024] = {0,};
   // open script file for reading
   CTFileStream strmFile;
   strmFile.Open_t( fnFile);				

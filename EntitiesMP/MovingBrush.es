@@ -625,6 +625,216 @@ functions:
 
 
 procedures:
+	Main() {
+		// declare yourself as a brush
+		InitAsBrush();
+		SetPhysicsFlags(EPF_BRUSH_MOVING);
+		SetCollisionFlags(ECF_BRUSH);
+		SetHealth(m_fHealth);
+
+		if (fabs(m_tmBankingRotation) < 0.01f && ((CEntity*)m_penTarget)==NULL) {
+			SetPhysicsFlags(GetPhysicsFlags()&(~EPF_MOVABLE));
+		}
+
+		// set zoning flag
+		if (m_bZoning) {
+			SetFlags(GetFlags()|ENF_ZONING);
+		} else {
+			SetFlags(GetFlags()&~ENF_ZONING);
+		}
+
+
+		// set dynamic shadows as needed
+		if (m_bDynamicShadows) {
+			SetFlags(GetFlags()|ENF_DYNAMICSHADOWS);
+		} else {
+			SetFlags(GetFlags()&~ENF_DYNAMICSHADOWS);
+		}
+
+		// stop moving brush
+		ForceFullStop();
+
+		SetFlagOn(ENF_CLIENTHANDLING);
+		autowait(0.1f);
+		SetFlagOff(ENF_CLIENTHANDLING);
+
+		// load marker parameters
+		m_bValidMarker = LoadMarkerParameters();
+
+		/*if (m_tmBankingRotation!=0) {
+			jump Rotating();
+		}*/
+
+		// start moving
+		wait() {
+			on (EBegin) : {
+				if (m_bAutoStart) {
+					// if not already moving and have target
+					MaybeActivateRotation();
+					if(!m_bMoving && m_bValidMarker) {
+						call MoveBrush();
+					}
+				}
+				resume;
+			}
+			on (EHit eHit) : {
+				if (!m_bMoving) {
+					MaybeActivateRotation();
+					call MoveBrush();
+				}
+				resume;
+			}
+			// move on touch
+			on (ETouch eTouch) : {
+				// inflict damage if required
+				if( m_fTouchDamage != 0.0f)
+				{
+					InflictDirectDamage( eTouch.penOther, this, DMT_SPIKESTAB, m_fTouchDamage,
+										 eTouch.penOther->GetPlacement().pl_PositionVector, eTouch.plCollision);
+				}
+				// send event on touch
+				if(m_tdeSendEventOnDamage!=TDE_DAMAGEONLY && CanReactOnEntity(eTouch.penOther)) {
+					SendToTarget(m_penTouchEvent, m_eetTouchEvent);
+				}
+				// if not already moving
+				if(!m_bMoving) {
+					// move brush
+					if (m_bMoveOnTouch && CanReactOnEntity(eTouch.penOther) && m_bValidMarker) {
+						MaybeActivateRotation();
+						call MoveBrush();
+					}
+				}
+				// if special feature for bull crushing doors
+				if (m_bBlowupByBull) 
+				{
+					/*
+					// if hit by bull
+					if( IsOfClass( eTouch.penOther, &CWerebull_DLLClass)) 
+					{
+						// calculate speed along impact normal
+						FLOAT fImpactSpeed = 
+							((CMovableEntity&)*eTouch.penOther).en_vCurrentTranslationAbsolute%
+							-(FLOAT3D&)eTouch.plCollision;
+
+						// if strong collision
+						if (fImpactSpeed>m_fHealth) {
+							// receive artificial impact damage
+							ReceiveDamage(eTouch.penOther, DMT_IMPACT, m_fHealth*2, 
+								FLOAT3D(0,0,0), FLOAT3D(0,0,0));
+						}
+					}
+					*/
+				}
+				resume;
+			}
+			on (EBlock eBlock) : {
+				// inflict damage to entity that block brush
+				InflictDirectDamage(eBlock.penOther, this, DMT_BRUSH, m_fBlockDamage,
+					FLOAT3D(0.0f,0.0f,0.0f), (FLOAT3D &)eBlock.plCollision);
+				if (m_ebaAction == BA_BOUNCE) {
+					// change direction for two ticks
+					SetDesiredTranslation(-m_vDesiredTranslation);
+					if (m_bRotating) {
+							SetDesiredRotation(-ANGLE3D(0.0f, 0.0f, 360.0f/m_tmBankingRotation));
+						} else if (!m_tmBankingRotation) {
+							SetDesiredRotation(-m_aDesiredRotation);
+					}
+
+					// wait for two ticks and reset direction
+					call BounceObstructed();
+				}
+				resume;
+			}
+			// move on start (usually trigger)
+			on (EStart) : {
+				// if not already moving and have target
+				if(!m_bMoving && m_bValidMarker) {
+					call MoveBrush();
+				}
+				resume;
+			}
+			on (EStop) : {
+				//SetCollisionFlags(ECF_IMMATERIAL);
+				resume;
+			}
+			on (ETeleportMovingBrush) : {
+				call TeleportToStopMarker();
+				resume;
+			}
+			on (ETrigger) : {
+				// if not already moving and have target
+				if(!m_bMoving && m_bValidMarker) {
+					call MoveBrush();
+				}
+				resume;
+			}
+			on (EActivate) : {
+				if (!m_bRotating) {
+					MaybeActivateRotation();
+				}
+				resume;
+			}
+			on (EDeactivate) : {
+				DeactivateRotation();
+				resume;
+			}
+			on (EDeath eDeath) : {
+				if (_pNetwork->IsServer()) {
+					EBrushDeath ebd;
+					ebd.eidInflictor = eDeath.eLastDamage.penInflictor;
+					SendEvent(ebd,TRUE);
+				}
+				resume;
+			}
+			on (EBrushDeath ebd) : {
+					// get your size
+				FLOATaabbox3D box;
+				GetSize(box);
+				if( m_ctDebrises>0)
+				{
+					FLOAT fEntitySize = pow(box.Size()(1)*box.Size()(2)*box.Size()(3)/m_ctDebrises, 1.0f/3.0f)*m_fCubeFactor;
+					
+					Debris_Begin(EIBT_ROCK, DPT_NONE, BET_NONE, fEntitySize, FLOAT3D(1.0f,2.0f,3.0f),
+						FLOAT3D(0,0,0), 1.0f+m_fCandyEffect/2.0f, m_fCandyEffect, m_colDebrises, m_bCollision, m_bFade);
+					for(INDEX iDebris = 0; iDebris<m_ctDebrises; iDebris++) {
+						Debris_Spawn(this, this, MODEL_STONE, TEXTURE_STONE, 0, 0, 0, IRnd()%4, 1.0f,
+							FLOAT3D(FRnd()*0.8f+0.1f, FRnd()*0.8f+0.1f, FRnd()*0.8f+0.1f));
+					}
+				}
+
+				// notify children
+				FOREACHINLIST( CEntity, en_lnInParent, en_lhChildren, iten) {
+					iten->SendEvent( EBrushDestroyed());
+				}
+				// send event to blowup target
+				 SendToTarget(m_penBlowupEvent, m_eetBlowupEvent, ebd.eidInflictor);
+
+				// make sure it doesn't loop with destroying itself
+				m_tdeSendEventOnDamage = TDE_TOUCHONLY;
+				m_fHealth = -1;
+				m_bMoveOnDamage = FALSE;
+				ForceFullStop();
+				SetDefaultProperties();
+
+				// notify engine to kickstart entities that are cached in stationary position,
+				// before we turn off, so they can fall
+				NotifyCollisionChanged();
+
+				SetFlags( GetFlags()|ENF_HIDDEN);
+				SetCollisionFlags(ECF_IMMATERIAL);
+
+				// for each child of this entity
+				{FOREACHINLIST(CEntity, en_lnInParent, en_lhChildren, itenChild) {
+					// send it destruction event
+					itenChild->SendEvent(ERangeModelDestruction(),TRUE);
+				}}
+
+				stop;
+			}
+		}
+		return;
+	}
+
 
 
 	MoveToMarker() {
@@ -874,215 +1084,5 @@ procedures:
 		m_bMoveToMarker = FALSE;
 		MovingOff();
 		return EReturn();
-	}
-
-	Main() {
-		// declare yourself as a brush
-		InitAsBrush();
-		SetPhysicsFlags(EPF_BRUSH_MOVING);
-		SetCollisionFlags(ECF_BRUSH);
-		SetHealth(m_fHealth);
-
-		if (fabs(m_tmBankingRotation) < 0.01f && ((CEntity*)m_penTarget)==NULL) {
-			SetPhysicsFlags(GetPhysicsFlags()&(~EPF_MOVABLE));
-		}
-
-		// set zoning flag
-		if (m_bZoning) {
-			SetFlags(GetFlags()|ENF_ZONING);
-		} else {
-			SetFlags(GetFlags()&~ENF_ZONING);
-		}
-
-
-		// set dynamic shadows as needed
-		if (m_bDynamicShadows) {
-			SetFlags(GetFlags()|ENF_DYNAMICSHADOWS);
-		} else {
-			SetFlags(GetFlags()&~ENF_DYNAMICSHADOWS);
-		}
-
-		// stop moving brush
-		ForceFullStop();
-
-		SetFlagOn(ENF_CLIENTHANDLING);
-		autowait(0.1f);
-		SetFlagOff(ENF_CLIENTHANDLING);
-
-		// load marker parameters
-		m_bValidMarker = LoadMarkerParameters();
-
-		/*if (m_tmBankingRotation!=0) {
-			jump Rotating();
-		}*/
-
-		// start moving
-		wait() {
-			on (EBegin) : {
-				if (m_bAutoStart) {
-					// if not already moving and have target
-					MaybeActivateRotation();
-					if(!m_bMoving && m_bValidMarker) {
-						call MoveBrush();
-					}
-				}
-				resume;
-			}
-			on (EHit eHit) : {
-				if (!m_bMoving) {
-					MaybeActivateRotation();
-					call MoveBrush();
-				}
-				resume;
-			}
-			// move on touch
-			on (ETouch eTouch) : {
-				// inflict damage if required
-				if( m_fTouchDamage != 0.0f)
-				{
-					InflictDirectDamage( eTouch.penOther, this, DMT_SPIKESTAB, m_fTouchDamage,
-										 eTouch.penOther->GetPlacement().pl_PositionVector, eTouch.plCollision);
-				}
-				// send event on touch
-				if(m_tdeSendEventOnDamage!=TDE_DAMAGEONLY && CanReactOnEntity(eTouch.penOther)) {
-					SendToTarget(m_penTouchEvent, m_eetTouchEvent);
-				}
-				// if not already moving
-				if(!m_bMoving) {
-					// move brush
-					if (m_bMoveOnTouch && CanReactOnEntity(eTouch.penOther) && m_bValidMarker) {
-						MaybeActivateRotation();
-						call MoveBrush();
-					}
-				}
-				// if special feature for bull crushing doors
-				if (m_bBlowupByBull) 
-				{
-					/*
-					// if hit by bull
-					if( IsOfClass( eTouch.penOther, &CWerebull_DLLClass)) 
-					{
-						// calculate speed along impact normal
-						FLOAT fImpactSpeed = 
-							((CMovableEntity&)*eTouch.penOther).en_vCurrentTranslationAbsolute%
-							-(FLOAT3D&)eTouch.plCollision;
-
-						// if strong collision
-						if (fImpactSpeed>m_fHealth) {
-							// receive artificial impact damage
-							ReceiveDamage(eTouch.penOther, DMT_IMPACT, m_fHealth*2, 
-								FLOAT3D(0,0,0), FLOAT3D(0,0,0));
-						}
-					}
-					*/
-				}
-				resume;
-			}
-			on (EBlock eBlock) : {
-				// inflict damage to entity that block brush
-				InflictDirectDamage(eBlock.penOther, this, DMT_BRUSH, m_fBlockDamage,
-					FLOAT3D(0.0f,0.0f,0.0f), (FLOAT3D &)eBlock.plCollision);
-				if (m_ebaAction == BA_BOUNCE) {
-					// change direction for two ticks
-					SetDesiredTranslation(-m_vDesiredTranslation);
-					if (m_bRotating) {
-							SetDesiredRotation(-ANGLE3D(0.0f, 0.0f, 360.0f/m_tmBankingRotation));
-						} else if (!m_tmBankingRotation) {
-							SetDesiredRotation(-m_aDesiredRotation);
-					}
-
-					// wait for two ticks and reset direction
-					call BounceObstructed();
-				}
-				resume;
-			}
-			// move on start (usually trigger)
-			on (EStart) : {
-				// if not already moving and have target
-				if(!m_bMoving && m_bValidMarker) {
-					call MoveBrush();
-				}
-				resume;
-			}
-			on (EStop) : {
-				//SetCollisionFlags(ECF_IMMATERIAL);
-				resume;
-			}
-			on (ETeleportMovingBrush) : {
-				call TeleportToStopMarker();
-				resume;
-			}
-			on (ETrigger) : {
-				// if not already moving and have target
-				if(!m_bMoving && m_bValidMarker) {
-					call MoveBrush();
-				}
-				resume;
-			}
-			on (EActivate) : {
-				if (!m_bRotating) {
-					MaybeActivateRotation();
-				}
-				resume;
-			}
-			on (EDeactivate) : {
-				DeactivateRotation();
-				resume;
-			}
-			on (EDeath eDeath) : {
-				if (_pNetwork->IsServer()) {
-					EBrushDeath ebd;
-					ebd.eidInflictor = eDeath.eLastDamage.penInflictor;
-					SendEvent(ebd,TRUE);
-				}
-				resume;
-			}
-			on (EBrushDeath ebd) : {
-					// get your size
-				FLOATaabbox3D box;
-				GetSize(box);
-				if( m_ctDebrises>0)
-				{
-					FLOAT fEntitySize = pow(box.Size()(1)*box.Size()(2)*box.Size()(3)/m_ctDebrises, 1.0f/3.0f)*m_fCubeFactor;
-					
-					Debris_Begin(EIBT_ROCK, DPT_NONE, BET_NONE, fEntitySize, FLOAT3D(1.0f,2.0f,3.0f),
-						FLOAT3D(0,0,0), 1.0f+m_fCandyEffect/2.0f, m_fCandyEffect, m_colDebrises, m_bCollision, m_bFade);
-					for(INDEX iDebris = 0; iDebris<m_ctDebrises; iDebris++) {
-						Debris_Spawn(this, this, MODEL_STONE, TEXTURE_STONE, 0, 0, 0, IRnd()%4, 1.0f,
-							FLOAT3D(FRnd()*0.8f+0.1f, FRnd()*0.8f+0.1f, FRnd()*0.8f+0.1f));
-					}
-				}
-
-				// notify children
-				FOREACHINLIST( CEntity, en_lnInParent, en_lhChildren, iten) {
-					iten->SendEvent( EBrushDestroyed());
-				}
-				// send event to blowup target
-				 SendToTarget(m_penBlowupEvent, m_eetBlowupEvent, ebd.eidInflictor);
-
-				// make sure it doesn't loop with destroying itself
-				m_tdeSendEventOnDamage = TDE_TOUCHONLY;
-				m_fHealth = -1;
-				m_bMoveOnDamage = FALSE;
-				ForceFullStop();
-				SetDefaultProperties();
-
-				// notify engine to kickstart entities that are cached in stationary position,
-				// before we turn off, so they can fall
-				NotifyCollisionChanged();
-
-				SetFlags( GetFlags()|ENF_HIDDEN);
-				SetCollisionFlags(ECF_IMMATERIAL);
-
-				// for each child of this entity
-				{FOREACHINLIST(CEntity, en_lnInParent, en_lhChildren, itenChild) {
-					// send it destruction event
-					itenChild->SendEvent(ERangeModelDestruction(),TRUE);
-				}}
-
-				stop;
-			}
-		}
-		return;
 	}
 };

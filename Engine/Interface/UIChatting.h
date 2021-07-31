@@ -9,17 +9,11 @@
 	#pragma once
 #endif
 
-
-#include <Engine/Interface/UIScrollBar.h>
-#include <Engine/Interface/UIEditBox.h>
+#include <functional>
+#include <list>
 #include <Engine/Interface/UICheckButton.h>
-#include <vector>
+#include <Engine/Interface/UIListBox.h>
 
-
-// Define notice delay time
-#define	CHATMSG_NOTICE_DELAY		8000			// milliseconds
-#define	CHATMSG_NOTICE_FADEOUT		7000
-#define	CHATMSG_NOTICE_FADETIME		( CHATMSG_NOTICE_DELAY - CHATMSG_NOTICE_FADEOUT )
 
 // Date : 2005-02-16,   By Lee Ki-hwan
 #define CHAT_MEMORY_COUNT			5
@@ -38,6 +32,8 @@ enum ChattingTypeTab
 
 
 // Chatting message type
+// channel chat levelÀ» common optionÀ¸·Î ÇÏ¸é ÁÁÀ» ÅÙµ¥~
+// ÇöÀç´Â fixed typeÀ¸·Î ¼³Á¤
 enum ChattingMsgType
 {
 	CHATMSG_NORMAL					= 0,
@@ -48,13 +44,19 @@ enum ChattingMsgType
 	CHATMSG_SHOUT					= 5,
 	CHATMSG_NOTICE					= 6,
 	CHATMSG_GM						= 7,
-	CHATMSG_DUMMY					= 8,		// ë©”ì‹ ì € ì‹œìŠ¤í…œê³¼ ê°™ì´ ë§žì¶° ì£¼ê¸° ìœ„í•¨(ì´ê¸°í™˜)
-	CHATMSG_LORD					= 9,		// ì„±ì£¼
-	CHATMSG_RANKER					= 10,		// ëž­ì»¤
-	CHATMSG_RANKER_CONN				= 11,		// ëž­ì»¤
-	CHATMSG_NOTICE_SERVERDOWN		= 12,		// ì„œë²„ ì¢…ë£Œ ë©”ì‹œì§€ 060420
-	CHATMSG_GMTOOL					= 15,		// GM TOOLì„ ì´ìš©í•œ ë©”ì‹œì§€ ì²˜ë¦¬ WSS_GMTOOL 070517 (13,14 ì„œë²„ìš©)
-	CHATMSG_PRESSCORPS,
+	CHATMSG_DUMMY					= 8,		// ¸Þ½ÅÀú ½Ã½ºÅÛ°ú °°ÀÌ ¸ÂÃç ÁÖ±â À§ÇÔ(ÀÌ±âÈ¯)
+	CHATMSG_LORD					= 9,		// ¼ºÁÖ
+	CHATMSG_RANKER					= 10,		// ·©Ä¿
+	CHATMSG_RANKER_CONN				= 11,		// ·©Ä¿
+	CHATMSG_NOTICE_SERVERDOWN		= 12,		// ¼­¹ö Á¾·á ¸Þ½ÃÁö 060420
+	CHATMSG_DUMMY2					= 13,		// ÀÎµ¦½º ¸ÂÃçÁÖ±â À§ÇØ.
+	CHATMSG_DUMMY3					= 14,		// ÀÎµ¦½º ¸ÂÃçÁÖ±â À§ÇØ.
+	CHATMSG_GMTOOL					= 15,		// GM TOOLÀ» ÀÌ¿ëÇÑ ¸Þ½ÃÁö Ã³¸® WSS_GMTOOL 070517 (13,14 ¼­¹ö¿ë)
+	CHATMSG_PRESSCORPS				= 16,
+	CHATMSG_EXPEDITION				= 17,		// [sora] ¿øÁ¤´ë
+	CHATMSG_NPCNOTICE				= 18,
+	CHATMSG_CHANNEL_LEVEL			= 19,		// ÀÏ¹Ý ÀüÃ¼ Ã¤ÆÃ(°°Àº¼­¹ö¿¡¼­ Ã¤³Î°£ Ã¤ÆÃ)
+	CHATMSG_CHANNEL_TRADE			= 20,		// ¸Å¸Å Ã¤ÆÃ(°°Àº¼­¹ö¿¡¼­ Ã¤³Î°£ Ã¤ÆÃ)
 	CHATMSG_TOTAL					,		
 	CHATMSG_COMMAND					,			// [/command]
 };
@@ -84,7 +86,6 @@ enum SystemMsgType
 	SYSMSG_TOTAL					= 6,
 };
 
-#ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
 struct sCeilWriting
 {
 	sCeilWriting()
@@ -98,12 +99,15 @@ struct sCeilWriting
 	int				iCnt;
 	__int64			llStartTime;
 };
-#endif
 
 // Define chatting line
 #define	MIN_SHOW_CHATLINE			6
 #define	MAX_CHAT_LINE				150
-#define	MAX_SYSTEM_LINE				100
+#ifdef	VER_TEST
+#	define	MAX_SYSTEM_LINE				1000
+#else	// VER_TEST
+#	define	MAX_SYSTEM_LINE				100
+#endif	// VER_TEST
 #define	SYSTEM_SHOW_LINE			5
 #define	CHAT_LINESPACING			1
 
@@ -128,20 +132,79 @@ struct sCeilWriting
 #define	CHATTING_HEIGHT				137
 
 
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
 struct sChat
 {
 	CTString	strName;
 	CTString	strMsg;
-	CTString	strSendName[CHATTAB_TOTAL][MAX_CHAT_LINE];	
-//	CTString	strNameMsg[CHATTAB_TOTAL][MAX_CHAT_LINE];
-	
-	COLOR		colSendName[CHATMSG_TOTAL][MAX_CHAT_LINE];
+	// normal mode
+	CTString	strSendName[CHATTAB_TOTAL][MAX_CHAT_LINE];
+	COLOR		colSendName[CHATTAB_TOTAL][MAX_CHAT_LINE]; // CHATMSG_TOTAL --> CHATTAB_TOTAL
+	// channel mode
+	CTString	strChannelSendName[CHATTAB_TOTAL][MAX_CHAT_LINE];
+	COLOR		colChannelSendName[CHATTAB_TOTAL][MAX_CHAT_LINE];
 	COLOR		colSendNameType[CHATMSG_TOTAL];
 	COLOR		colName;
 };
-#endif
 
+struct sChatSpamCheck
+{
+	sChatSpamCheck()
+	{		
+		nCount						= 0;
+		nIndex						= 0;
+		llStartTime					= 0;
+//		llAccumTime					= 0;
+//		llElapsedTime				= 0;
+		llLongSentenceCheckTime		= 0;
+		llCurTime					= 0;
+		nStrLength					= 0;
+		bBlocked					= false;		
+
+	}
+	__int64  llStartTime;
+	__int64	 llCurTime;
+	// Ã³À½ ÀÔ·Â ÈÄ Èå¸¥ ½Ã°£À» ±âÁØÀ¸·Î ´©ÀûÄÑ¼­ 1ºÐÀ» È®ÀÎ ÇÒ °æ¿ì »ç¿ë.
+	//ex) 30ÃÊµ¿¾È 29¹ø ÀÔ·ÂÇÏ°í 1ºÐ ÈÄ ´Ù½Ã 29¹ø ÀÔ·ÂÇÑ´Ù¸é 1ºÐ¸¶´Ù 29¹øÀº ÀÔ·Â°¡´É ±×°É ¸·À¸·Á¸é ´©Àû½Ã°£À» µûÁ®¼­ ÇØ¾ß ÇÒ µí ) 
+	//__int64  llAccumTime; //´©Àû½Ã°£ 
+	//__int64  llElapsedTime; // Áö³­¹ø È®ÀÎ¿¡¼­ Èå¸¥ ½Ã°£ 
+	__int64	   llLongSentenceCheckTime; //¹Ì±¹Àº 5ÃÊµ¿¾È ÀÏÁ¤·®ÀÇ ¹®ÀÚ¸¦ ÀÔ·ÂÇÏ¸é ºí·°ÇÑ´Ù. 5ÃÊ¸¦ ÃàÀûÇÑ´Ù. 5ÃÊÈÄ¿¡ ´Ù½Ã 5ÃÊ·Î ¸®¼Â 
+
+	int		 nCount;
+	int		 nIndex;
+	int		 nStrLength;
+	bool	bBlocked;	
+};
+
+typedef struct _SScheduleSystemMessage
+{
+	void*		pOwner;
+	INDEX		idxEventID;
+	DWORD		dwTimerID;
+	CTString	strMessage;
+	DWORD		dwRepeatDelay;
+	time_t		timeDateStart;
+	time_t		timeDateEnd;
+	COLOR		colMessage;
+	CTString	strLink;
+
+	void operator = (const _SScheduleSystemMessage& oData)
+	{
+		pOwner			= oData.pOwner;
+		idxEventID		= oData.idxEventID;
+		dwTimerID		= oData.dwTimerID;
+		strMessage		= oData.strMessage;
+		dwRepeatDelay	= oData.dwRepeatDelay;
+		timeDateStart	= oData.timeDateStart;
+		timeDateEnd		= oData.timeDateEnd;
+		colMessage		= oData.colMessage;
+		strLink			= oData.strLink;
+	}
+}SScheduleSystemMessage;
+
+typedef std::map<std::string, sChatSpamCheck> MAP_CHAT_RECV_COUNT; //index, count
+typedef MAP_CHAT_RECV_COUNT::iterator MAP_CHAT_RECV_COUNT_IT;
+
+const int UV_TOTAL = 9;
 // ----------------------------------------------------------------------------
 // Name : CUIChatting
 // Desc :
@@ -157,14 +220,27 @@ protected:
 	CUIScrollBar	m_sbSysScrollBar;									// Scroll bar of system message
 	int				m_nCurSelTab;										// Current selected chatting tab
 	int				m_nOldSelTab;										// Old selected chatting tab
+	CUIButton		m_ChannelModeTab_btn[2];							// represent channel mode tab
 
+	COLOR			m_ChannelcolChatString[CHATTAB_TOTAL][MAX_CHAT_LINE]; // Channel mode color of each chatting strings
+	CTString		m_ChannelstrChatString[CHATTAB_TOTAL][MAX_CHAT_LINE];		// Channel mode strings of each chatting type
+	int				m_nChannelCurChatCount[CHATTAB_TOTAL];						// Channel mode current count of chatting strings
+	int				m_nChannelCurChatInsert[CHATTAB_TOTAL];					// Channel mode index of current inserted chatting string
+	int				m_nChannelFirstChatRow[CHATTAB_TOTAL];						// Channel mode first row of chatting strings in list box
+
+	UIRectUV		m_UVbtnInfo[UV_TOTAL];
+	BOOL			m_bChannelMode;										// Is channel mode on now?
+	BOOL			m_bRevChannelMsg;									// Is receive channel message alert?
+	BOOL			m_bRecvMessage[2][CHATMSG_TOTAL];					// Is received message for alert? [0] == Channelmode, [1] == Normalmode
 	// Chatting
 	COLOR			m_colChatTypeColor[CHATMSG_TOTAL];					// Color of each chatting type
+
 	COLOR			m_colChatString[CHATTAB_TOTAL][MAX_CHAT_LINE];		// Color of each chatting strings
 	CTString		m_strChatString[CHATTAB_TOTAL][MAX_CHAT_LINE];		// Strings of each chatting type
 	int				m_nCurChatCount[CHATTAB_TOTAL];						// Current count of chatting strings
 	int				m_nCurChatInsert[CHATTAB_TOTAL];					// Index of current inserted chatting string
 	int				m_nFirstChatRow[CHATTAB_TOTAL];						// First row of chatting strings in list box
+
 	int				m_nCurChatShowLine;									// Count of current shown chatting line
 	int				m_nMaxChatShowLine;									// Maximum count of shown chatting line
 	int				m_nChatLineHeight;									// Height of one chatting line
@@ -176,6 +252,7 @@ protected:
 	COLOR			m_colSysString[MAX_SYSTEM_LINE];					// Color of system message
 	int				m_nCurSysCount;										// Current count of system message
 	int				m_nCurSysInsert;									// Index of current inserted system message
+	int				m_nCurSysShowLine;									// Count of current shown system msg line
 	int				m_nFirstSysRow;										// First row of system strings in list box
 
 	// Whisper
@@ -190,7 +267,8 @@ protected:
 	BOOL			m_bChatOption[CHATTAB_TOTAL][CHATOPT_TOTAL];		// If current chatting type is shown or not
 
 	// Region of each part
-	UIRect			m_rcResizeFrame;									// Region of top frame for resizing
+	UIRect			m_rcResizeFrame;									// Region of top frame for resizing(Chat)
+	UIRect			m_rcSysResizeFrame;									// Region of top frame for resizing(System)
 	UIRect			m_rcSystem;											// Region of system message
 	UIRect			m_rcChatting;										// Region of chatting message
 	UIRect			m_rcAllTab;											// Region of all tabs
@@ -235,46 +313,55 @@ protected:
 	int							m_iCurrentMsgBuffer;
 	
 	CTextureData	*m_ptdButtonTexture;			// Texture of Button
-#ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
+		// [090826: selo] ½Ã½ºÅÛ ¸Þ½ÃÁö ÀúÀå¿ë º¯¼ö
+	CTString		m_strSaveSysMsgFileName;
+	bool			m_bSaveSysMsg;
+	FILE*			m_fpSaveSysMsg;
 	const int		m_iCeilWritingMaxCnt;
 	BOOL			m_bIsCeilWritingCheck;
-public:
 	std::list<sCeilWriting>		m_sCeilWriting;
-#endif
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
 	sChat			m_sChatInfo;
-#endif
+
+	MAP_CHAT_RECV_COUNT	m_mapChatCount; //ºÐ´ç 30È¸ È®ÀÎ added by sam 11/02/22
+
+	// ===>> IMPROV1107_NOTICESYSTEM °øÁö ½Ã½ºÅÛ °­È­ [trylord 11/12/26]
+	std::vector<SScheduleSystemMessage*>	m_vScheduleSystemMessage;
+	CTString		m_strUserNoticeOwner;
+	CUIListBox		m_lbUserNoticeMessage;		// ±×¸®Áö ¾ÊÀ¸¸ç ½ºÆ®¸µ¸¸ °¡Áö°í ÀÖÀ½
+	time_t			m_timeUserNoticeDelay;
+	UIRect			m_rcUserNoticeActiveArea;
+	UIRect			m_rcUserNotice;
+	UIRectUV		m_rtUserNoticeUV;
+	BOOL			m_bShowUserNotice;
+	BOOL			m_bActiveUserNotice;
+	BOOL			m_bClickUserNotice;
+	// <<=== IMPROV1107_NOTICESYSTEM
+
 
 protected:
 	// Internal finctions
 	void	ChangeChattingBoxHeight( int ndHeight );
-	void	AddChatString( CTString &strChatString, COLOR colChatString, int nCurTab, BOOL bNotice );
+	void	ChangeSystemBoxHeight(int nHorLine, BOOL bUpdate=FALSE);
+	void	AddChatString( CTString &strChatString, COLOR colChatString, int nCurTab, BOOL bNotice, BYTE Channel = 0);
 	void	AddSysString( CTString &strSysString, COLOR colSysString );
 	void	RenderChatStringList();
 	void	RenderSysStringList();
-#ifdef IME_CHAR_COLOR_CHANGE_NA_20080910
 	void	RenderChatNameMsgString(const int iPosX, const int iPosY, const int iChatLine);
-#endif
 	void	ProcessParty( char *pcPartyString );
 	void	InsertChatPrefix( ChattingMsgType cmtType );
 	void	AddWhisperTarget( CTString &strWhisper );
 	void	PetTransform( char *pet_changeString );
 	void	WearingArmortest(char *item_string);
 	void	TakeOffArmortest(char *item_string);
+	void	RenderConditionsysMsg(ChattingMsgType cmtType);
 
 	// Network message functions ( send )
-	
 	void	SendChatCommand( char *pcChatString, int nLength );
+	int		CheckExpeditionChatGroup( char* pcChatString);					// [sora] ¿øÁ¤´ëÃ¤ÆÃ½Ã ±×·ì Ã¤ÆÃÀÎÁö Ã¼Å©
 
-#ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
 	BOOL	CeilWritingCut_CompareStr(const CTString& strChat);
 	void	AddListCeilWriting(const CTString& str);
 	void	EraseListCeilWriting();
-
-public:
-	void	SetIsCeilWritingCheck(BOOL bCeil)			{ m_bIsCeilWritingCheck = bCeil; }
-	BOOL	GetIsCeilWirtingCheck()						{ return m_bIsCeilWritingCheck; }
-#endif
 
 public:
 	void	SendChatMessage( char *pcChatString, BOOL bLord = FALSE );
@@ -291,6 +378,9 @@ public:
 	// Adjust position
 	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
 	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	AdjustChatPosition(int nMaxChatShowLine);
+	void	AdjustSysPosition(void);
+	void	TopFrameMoving(int &nHeightStretch, int nCurrentShowLine, BOOL bSysMsg=FALSE);
 
 	// Get input box
 	CUIEditBox	&GetInputBox() { return m_ebChatInput; }
@@ -303,7 +393,7 @@ public:
 			m_ebChatInput.SetFocus( FALSE );
 	}
 	
-// [KH_070423] ì¶”ê°€
+// [KH_070423] Ãß°¡
 	void OpenAndSetString(CTString strIn);
 
 	// Edit box focus
@@ -318,11 +408,71 @@ public:
 	WMSG_RESULT CharMessage( MSG *pMsg );
 	WMSG_RESULT	IMEMessage( MSG *pMsg );
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
+	
+	void	SetIsCeilWritingCheck(BOOL bCeil)			{ m_bIsCeilWritingCheck = bCeil; }
+	BOOL	GetIsCeilWirtingCheck()						{ return m_bIsCeilWritingCheck; }
+	// [sora] RAID_SYSTEM 
+	void	GetChatWindowEndPos(int &nPosX, int &nPosY);		//Ã¤ÆÃÃ¢ ¿·¿¡ ¿øÁ¤´ë Ã¢À» À§Ä¡½ÃÅ°±â À§ÇØ Ã¤ÆÃÃ¢ À§Ä¡¸¦ ±¸ÇÏ´Â ÇÔ¼ö
+
+
+	// [090826: selo] ½Ã½ºÅÛ ¸Þ½ÃÁö ÀúÀå¿ë º¯¼ö
+	void	Begin_SaveSysMessage(void);
+	void	Write_SaveSysMessage(const CTString& strSysMessage);
+	void	End_SaveSysMessage(int iType = 0);
 
 	// Network message functions ( receive )
-	void ENGINE_API	AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString &strSendName, CTString &strChatMessage );
+	void ENGINE_API	AddChatMessage( UBYTE ubChatType, SLONG slSendIndex, CTString &strSendName, CTString &strChatMessage, BYTE channelNumber = 0, SLONG slGroup = -1 ); // [sora] ¿øÁ¤´ë Ã¤ÆÃÀ¸·Î slGroupÃß°¡
 	void ENGINE_API	AddSysMessage( CTString &strSysMessage, int nSysType = SYSMSG_NORMAL ,COLOR colMsg = 0xFFFFFFFF); // wooss 070307 kw : WSS_WHITEDAY_2007
+
+	//added by sam 11/02/22 ½ºÆÐ¸Ó ºí·°
+	BOOL CheckSpamCount ( CTString& strName , CTString& strChat );	
+	void SpamerBlock ( CTString& strName );
+	void SpamerLift ( CTString& strName );	//ÇØÁ¦
+	//void RemoveSpamerFromMap ( CTString& strName );
+	void RemoveSpamerFromMap ( std::string& strTemp );
+	
+	// Ä³¸¯ÅÍ ÀÌ¸§ÀÌ ¾Æ´Ñ ÀÎµ¦½º·Î ÇÒ °æ¿ì ÀÌ ÇÔ¼ö¸¦ ¾²°í mapÀÇ firstÀÎÀÚ¸¦ º¯°æÇØ¾ß ÇÑ´Ù. 
+	//void CheckSpamCount ( int  nIndex, CTString& strName, CTString& strChat );
+	// Ä³¸¯ÅÍ°¡ ³ª°¥ °æ¿ì ¸®½ºÆ®¿¡¼­ Áö¿öÁÖ°í ½Í´Ù¸é »ç¿ë °¡´É ÇÒ °Í °°À½ 
+	//void RemoveSpamerFromMap ( int nIndex );
+	void ClearSpamMap ();
+	BOOL CheckInputChannelChat(ChattingMsgType cmtType, CTString strMessage); // Ã¤³Î Ã¤ÆÃ ÀÔ·ÂÀÌ °¡´ÉÇÑÁö È®ÀÎ
+	ENGINE_API void ShowNPCTalk( INDEX iMobIdx, INDEX iStrIndex );
+
+	void	ResetChattingAlert();
+	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
+
+#ifdef	IMPROV1107_NOTICESYSTEM
+	void					LoadScheduleSystemMessage();
+	void					AddScheduleSystemMessage(time_t timeStart, time_t timeEnd, DWORD dwRepeatDelday, CTString strMessage, COLOR colMessage);
+	static void CALLBACK	ScheduleSystemMessageCallback(UINT uTimerID, UINT uMsg, DWORD_PTR pdwUser, DWORD dw1, DWORD dw2);
+	void					StopScheduleSystemMessage(INDEX idxEventID);
+
+	void					RenderUserNotice();
+	void					PopupUserNotice();
+	void					AddUserNotice(CTString strOwner, CTString strMessage);
+#endif
+
+	void	SystemMessageColorInI();
+private:
+	void	CmdGMExeCmdLine(const char* filename);
+	void	CmdTranslate(const char* args);
+
+#ifdef VER_TEST
+#endif // VER_TEST
+	
+	void	reg_gm_cmd();
+
+#if		!defined(WORLD_EDITOR)
+	typedef		std::function<bool(const char* args)>		_func_gm;
+	typedef		std::map< std::string, _func_gm >			_map_gmCmd;
+	typedef		std::map< std::string, _func_gm >::iterator _map_gmCmd_iter;
+
+	_map_gmCmd	m_CmdGM;
+#endif	// WORLD_EDITOR
 };
+
+#define		UICHAT()	CUIManager::getSingleton()->GetChatting()
 
 
 #endif	// UICHATTING_H_

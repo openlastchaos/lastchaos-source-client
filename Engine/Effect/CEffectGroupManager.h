@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #ifndef __CEFFECTGROUPMANAGER_H__
 #define __CEFFECTGROUPMANAGER_H__
 
@@ -23,10 +23,10 @@ public:
 public:
 	~CEffectGroupManager();
 	
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 	void Read(CTStream *istrFile);
 	void Write(CTStream *ostrFile);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 	static inline CEffectGroupManager &Instance() { return m_instance; }
 	BOOL Register(CEffectGroup *protoCEffectGroup);
@@ -63,15 +63,22 @@ protected:
 	my_map		m_mapRegistered;
 };
 
+inline CEffectGroupManager* GetEffectGroupManager(void)
+{
+	return &CEffectGroupManager::Instance();
+}
+
 inline CEffectGroup *CreateEffectGroup(const char *szName)
 {
 	return CEffectGroupManager::Instance().Create(szName);
 }
 
-inline CEffectGroup *StartEffectGroup(const char *szName, CTagManager *pTM, float time)
+inline CEffectGroup *StartEffectGroup(const char *szName, CTagManager *pTM, float time, EFF_RENDER_TYPE erType = ER_NORMAL, EFF_RENDER_SUB_TYPE erSubType = ERS_NORMAL)
 {
 	CEffectGroup *pEG = CreateEffectGroup(szName);
 	if(pEG == NULL) return pEG;
+	pEG->SetgERType(erType);
+	pEG->SetgERSubType(erSubType);
 	pEG->SetTagManager(pTM);
 	pEG->Start(time);
 	return pEG;
@@ -129,4 +136,4 @@ inline void StopEffectGroupIfValid(CEffectGroup *&pEG, FLOAT time)
 	pEG = NULL;
 }
 #endif	//__CEFFECTGROUPMANAGER_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

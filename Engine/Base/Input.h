@@ -231,14 +231,19 @@ public:
   BOOL IsLMouseButtonPressed();
   BOOL IsHomePressed(){return m_bHome;}
 
+	BOOL SendIMEKeyInput(MSG* pMsg);
 
 public:
 // Attributes
   CTCriticalSection inp_csInput;
+  HWND m_vphWnd;				// canvas (child) window
+  RECT m_rectClient;
   BOOL inp_bLastPrescan;
   BOOL inp_bInputEnabled;
   BOOL inp_bPollJoysticks;
+  BOOL inp_bFreeMode;
 
+  FLOAT inp_fSpeedMultiplier;
   SLONG inp_slScreenCenterX;                        // screen center X in pixels
   SLONG inp_slScreenCenterY;                        // screen center Y in pixels
   RECT inp_rectOldClip;                             // old cursor clip rectangle in pixels

@@ -18,13 +18,116 @@ enum CASH_SHOP_KIND
 	SET_ITEM,
 	PLATINUM_ITEM,
 	CASH_SHOP_TOTAL,
-
 };
+// 2010.11 new defined Cash Category
+// ÀÌ°ÍÀº Àü ·ÎÄÃ Ç¥ÁØÀ¸·Î »ï´Â´Ù.(±âÈ¹ÀûÀ¸·Î Á¤ÀÇ ÇÔ)
+// 2010.11¿ù ±âÈ¹ÀûÀ¸·Î Á¤ÀÇÇÑ CategoryµéÀº ¸ðµç »óÇ°À» Æ÷ÇÔÇÔÀ¸·Î ·ÎÄÃº°·Î ´Ù¸£°Ô °¡´Â ÀÏÀº °ÅÀÇ ¾øÀ» °ÍÀÓ.(ÀÖÀ¸¸é ±âÈ¹ ÀÇµµ¿¡ ¾î±ß³²)
+// Cash type Á¤º¸´Â 10000 ´ÜÀ§·Î Á¤ÀÇ µÈ´Ù.
+// CASH_CATEGORY * 10000 = CC
+// ÀÌÈÄ subtypeµéµµ ´ÜÀ§ º°·Î AddµÇ¾î »ç¿ëµÈ´Ù.
+// first subtype = 100 ´ÜÀ§
+// second subtype = 1´ÜÀ§
+// »óÇ° ÇÏ³ªÀÇ Á¤º¸´Â 
+// (CASH_CATEGORY * 10000) + (first subtype * 100) + (second subtype) = goods type flag
 
+enum CASH_CATEGORY
+{
+	CC_HOTandNew,	// Hot & New »óÇ°
+	CC_Platinum,	// ÇÃ·¡Æ¼´½ »óÇ°
+	CC_SpendGoods,	// ¼Òºñ »óÇ°
+	CC_EquipGoods,	// Àåºñ »óÇ°
+	CC_AVATA,		// ¾Æ¹ÙÅ¸
+	CC_ServiceGoods,// ¼­ºñ½º »óÇ°
+	CC_PackageGoods,// ÆÐÅ°Áö »óÇ°
+	CC_Total,
+};
+// ¼­¹ö¿¡¼­ »ç¿ëÇÏ°í ÀÖ´Â Flag ¼±¾ð.. Å¬¶ó¿¡¼­µµ µ¿ÀÏÇÏ°Ô °¡Á®´Ù ¾´´Ù.
+#define		CATALOG_FLAG_NEW						(1 << 0)			// ½Å»óÇ°
+#define		CATALOG_FLAG_POPULAR					(1 << 1)			// ÀÎ±â»óÇ°
+#define		CATALOG_FLAG_DISCOUNT					(1 << 2)			// Æ¯°¡»óÇ°
+#define		CATALOG_FLAG_RECOMM_1					(1 << 3)			// ÃßÃµ¾ÆÀÌÅÛ
+#define		CATALOG_FLAG_RECOMM_2					(1 << 4)			// ÃßÃµ¾ÆÀÌÅÛ
+#define		CATALOG_FLAG_RECOMM_3					(1 << 5)			// ÃßÃµ¾ÆÀÌÅÛ
+#define		CATALOG_FLAG_RECOMM_4					(1 << 6)			// ÃßÃµ¾ÆÀÌÅÛ
+#define		CATALOG_FLAG_RECOMM_5					(1 << 7)			// ÃßÃµ¾ÆÀÌÅÛ
+#define		CATALOG_FLAG_RESV1						(1 << 8)			// ¿¹¾àÇÃ·¡±×
+#define		CATALOG_FLAG_RESV2						(1 << 9)			// ¿¹¾àÇÃ·¡±×
+#define		CATALOG_FALG_TO_LIMIT(a, b)				(b = 0 | (a >> 10))	// Ä«Å»·Î±×FLAG Ãâ·Â
+#define		CATALOG_FALG_FROM_LIMIT(a, b)			(a = a | (b << 10))	// Ä«Å»·Î±×FLAG ÀÔ·Â
+#define		CATALOG_FLAG_MAX_LIMIT					(2000000)			// Ä«Å»·Î±×ÇÃ·¡±×LIMIT MAX
+
+// subtypeÀº Á¶±Ý ÀÚÀ¯·Ó´Ù. subtypeÁ¤º¸´Â Ä³½Ã¼¥ ¿ÀÇÂ½Ã ¼­¹ö·Î ºÎÅÍ ¹Þ°Ô ²û Ã³¸® µÈ´Ù.
+// ±âº»ÀûÀ¸·Î typeÀÌ¶ó ÇÔÀº ¿ì¸® °ÔÀÓ ¾ÈÀÇ »óÇ°¿¡ ´ëÇØ Á¤ÀÇÇÔÀ¸·Î °ÅÀÇ º¯È­°¡ ¾øÀ» °ÍÀÌ¸ç(»õ·Î¿î »óÇ°ÀÌ Ãß°¡µÉ °æ¿ì º¯ÇÒ ¼ö ÀÖ°ÚÁÒ),
+// subtypeµµ ±âº»ÀûÀ¸·Î ¿ì¸® ¾ÆÀÌÅÛµé¿¡ ¸Â°Ô ¸ðµÎ Á¤ÀÇµÇ¾î ÀÖÀ½.
+
+// ¼­¹ö¿¡¼­ÀÇ Ä³½Ã µ¥ÀÌÅÍ typeÁ¤ÀÇ¸¦ ±×´ë·Î »ç¿ëÇÑ´Ù.
+// 2010.11.17
+// ´Ù½Ã type ÀÚÀ¯µµ°¡ ¾ø¾îÁü. ¼­¹ö¿¡¼­´Â ¸ðµç Å¸ÀÔÀ» Á¤ÀÇÇÏ°í, ±×Áß »ç¿ëÇÏ´Â Å¸ÀÔÀ» º¸³»°Ô µÇ¾î ÀÖ´Ù.
+// ¸ðµç typeÀ» Å¬¶óÀÌ¾ðÆ®°¡ ¾Ë°í ÀÖ¾î¾ß ÇÑ´Ù.
+
+// ÀÌÇÏ ¼­¹ö¿¡¼­ ¼±¾ðµÈ Type values
+// 1) Category
+#define CATEGORY_HOTNNEW				10000	// HOT & NEW
+#define CATEGORY_PLATINUM				20000	// ÇÃ·¡Æ¼´½
+#define CATEGORY_DISPOSABLE				30000	// ¼Òºñ»óÇ°
+#define CATEGORY_COSTUME				40000	// Àåºñ»óÇ°
+#define CATEGORY_PET					50000	// ¾Æ¹ÙÅ¸
+#define CATEGORY_SERVICE				60000	// ¼­ºñ½º »óÇ°
+#define CATEGORY_PACKAGE				70000	// ÆÐÅ°Áö »óÇ°
+
+// 2) Type Á¤ÀÇ(First subtype)
+// none typeÀ¸·Î ÀÎÇØ first subtype¿¡¼­´Â ±×·ì °Ë»öÀÌ ¾ÈµÈ´Ù.
+#define TYPE_HOTNNEW_NONE				10100	// HOT & NEW None(noneÀÌ¶ó´Â °íÀ¯ÀÇ »óÇ° Å¸ÀÔÀÌ ÀÖ´Ù. »óÀ§ ÀüÃ¼¸¦ ÀÇ¹ÌÇÏÁö ¾Ê´Â´Ù.)
+#define TYPE_HOTNNEW_NEW				10200	// HOT & NEW ½Å»óÇ°
+#define TYPE_HOTNNEW_DISCOUNT			10300	// HOT & NEW Æ¯°¡
+#define TYPE_PLATINUM_NONE				20100	// ÇÃ·¡Æ¼´½ NONE
+#define TYPE_DISPOSABLE_NONE			30100	// ¼Òºñ »óÇ° NONE
+#define TYPE_DISPOSABLE_CHARACTER_GROW	30200	// ¼Òºñ »óÇ° Ä³¸¯ÅÍ ¼ºÀå
+#define TYPE_DISPOSABLE_ABILITY_BUILDUP	30300	// ¼Òºñ »óÇ° ´É·ÂÄ¡ °­È­
+#define TYPE_DISPOSABLE_POTION			30400	// ¼Òºñ »óÇ° ¹°¾à
+#define TYPE_EQUIP_NONE					40100	// Àåºñ »óÇ° NONE
+#define TYPE_EQUIP_EQUIPMENT			40200	// Àåºñ »óÇ° Àåºñ
+#define TYPE_EQUIP_BUILDUP				40300	// Àåºñ »óÇ° Àåºñ °­È­
+#define TYPE_AVATAR_NONE				50100	// ¾Æ¹ÙÅ¸ NONE
+#define TYPE_AVATAR_PET					50200	// ¾Æ¹ÙÅ¸ Æê »óÇ°
+#define TYPE_AVATAR_MERCENARY			50300	// ¾Æ¹ÙÅ¸ ¿ëº´
+#define TYPE_SERVICE_NONE				60100	// ¼­ºñ½º »óÇ° NONE
+#define TYPE_SERVICE_CONENIENCE			60200	// ¼­ºñ½º »óÇ° ÆíÀÇ »óÇ°
+#define TYPE_SERVICE_ETC				60300	// ¼­ºñ½º »óÇ° ±âÅ¸
+#define TYPE_PACKAGE_NONE				70100	// ÆÐÅ°Áö »óÇ° NONE
+
+// 3) SubType Á¤ÀÇ(second subtype)
+#define SUBTYPE_HOTNNEW_NONE_NONE					10101	// HOT & NEW NONE, NONE
+#define SUBTYPE_HOTNNEW_NEW_NONE					10201	// HOT & NEW ½Å»óÇ° NONE
+#define SUBTYPE_HOTNNEW_DISCOUNT_NONE				10301	// HOT & NEW Æ¯°¡ NONE
+#define SUBTYPE_PLATINUM_NONE_NONE					20101	// ÇÃ·¡Æ¼´½ NONE NONE
+#define SUBTYPE_DISPOSABLE_NONE_NONE				30101	// ¼Òºñ »óÇ° NONE NONE
+#define SUBTYPE_DISPOSABLE_CHARACTER_GROW_NONE		30201 //¼Òºñ»óÇ°_Ä³¸¯ÅÍ¼ºÀå_NONE
+#define SUBTYPE_DISPOSABLE_CHARACTER_GROW_EXP		30202 // ¼Òºñ»óÇ°_Ä³¸¯ÅÍ¼ºÀå_°æÇèÄ¡
+#define SUBTYPE_DISPOSABLE_CHARACTER_GROW_SP		30203 // ¼Òºñ»óÇ°_Ä³¸¯ÅÍ¼ºÀå_¼÷·Ãµµ
+#define SUBTYPE_DISPOSABLE_CHARACTER_GROW_DROP		30204 // ¼Òºñ»óÇ°_Ä³¸¯ÅÍ¼ºÀå_µå·ÓÀ²
+#define SUBTYPE_DISPOSABLE_CHARACTER_GROW_MIX		30205 // ¼Òºñ»óÇ°_Ä³¸¯ÅÍ¼ºÀå_È¥ÇÕ
+#define SUBTYPE_DISPOSABLE_ABILITY_BUILDUP_NONE		30301 // ¼Òºñ»óÇ°_´É·ÂÄ¡°­È­_NONE
+#define SUBTYPE_DISPOSABLE_ABILITY_BUILDUP_HPEXT	30302 // ¼Òºñ»óÇ°_´É·ÂÄ¡°­È­_HPÈ®Àå
+#define SUBTYPE_DISPOSABLE_ABILITY_BUILDUP_MPEXT	30303 // ¼Òºñ»óÇ°_´É·ÂÄ¡°­È­_MPÈ®Àå 
+#define SUBTYPE_DISPOSABLE_ABILITY_BUILDUP_VOL		30304	// VOL = Velocity of Light ¼Òºñ»óÇ°_´É·ÂÄ¡°­È­_±¤¼Ó
+#define SUBTYPE_DISPOSABLE_POTION_NONE				30401 // ¼Òºñ»óÇ°_¹°¾à_NONE
+#define SUBTYPE_DISPOSABLE_POTION_HPRECOVER			30402 // ¼Òºñ»óÇ°_¹°¾à_HPÈ¸º¹
+#define SUBTYPE_DISPOSABLE_POTION_MPRECOVER			30403 // ¼Òºñ»óÇ°_¹°¾à_MPÈ¸º¹
+#define SUBTYPE_DISPOSABLE_POTION_DUALRECOVER		30404 // ¼Òºñ»óÇ°_¹°¾à_µà¾óÈ¸º¹ 
+#define SUBTYPE_EQUIP_NONE_NONE						40101 // Àåºñ»óÇ°_NONE_NONE
+#define SUBTYPE_EQUIP_EQUIPMENT_NONE				40201 // Àåºñ»óÇ°_Àåºñ_NONE
+#define SUBTYPE_EQUIP_EQUIPMENT_WEAPON				40202 // Àåºñ»óÇ°_Àåºñ_¹«±â
+#define SUBTYPE_EQUIP_EQUIPMENT_ARMOR				40203 // Àåºñ»óÇ°_Àåºñ_°©¿Ê
+#define SUBTYPE_EQUIP_EQUIPMENT_COSTUME				40204 // Àåºñ»óÇ°_Àåºñ_ÄÚ½ºÆ¬
+#define SUBTYPE_EQUIP_BUILDUP_NONE					40301 // Àåºñ»óÇ°_Àåºñ°­È­_NONE
+#define SUBTYPE_EQUIP_BUILDUP_MELDING				40302 // Àåºñ»óÇ°_Àåºñ°­È­_°áÇÕÁÖ¹®¼­
+
+// max line of item informaion 
+#define	MAX_CASH_ITEMINFO_LINE				20
 
 class ENGINE_API CCashShopData
 {
-	
 public :
 
 	typedef struct _ItemData
@@ -42,7 +145,7 @@ public :
 	{
 	public :
 		INDEX		m_shopItemIndex;
-		INDEX		m_type;
+		INDEX		m_type;	// old type
 		INDEX		m_cash;
 		INDEX		m_mileage;
 
@@ -55,9 +158,9 @@ public :
 		CTString	m_itemName;
 		CTString	m_itemDesc;
 		INDEX		m_itemListCnt;
-		INDEX		m_typeIndex;		// ê° ìƒí’ˆ ë°°ì—´ì—ì„œì˜ ì¸ë±ìŠ¤ 
+		INDEX		m_typeIndex;		// °¢ »óÇ° ¹è¿­¿¡¼­ÀÇ ÀÎµ¦½º 
 
-		INDEX		m_limitCnt;			// í”Œëž˜í‹°ëŠ„ ì•„ì´í…œ ë‚¨ì€ ìˆ˜ëŸ‰
+		INDEX		m_limitCnt;			// ÇÃ·¡Æ¼´½ ¾ÆÀÌÅÛ ³²Àº ¼ö·®
 
 		std::vector<ITEM_DATA> m_vItemDataArray;
 		
@@ -66,16 +169,33 @@ public :
 							m_cash(0),
 							m_mileage(0),
 							m_itemListCnt(0) ,
-							m_limitCnt(0) {};
+							m_limitCnt(0),
+							m_texID(0), m_texRow(0), m_texCol(0) {};
 		~CASH_SHOP_DATA() { m_vItemDataArray.clear(); }
-		
+
+		BOOL IsNew() { return static_cast<BOOL>(m_flag & CATALOG_FLAG_NEW); }
+		BOOL IsPopular() { return static_cast<BOOL>(m_flag & CATALOG_FLAG_POPULAR); }
+		BOOL IsDiscount() { return static_cast<BOOL>(m_flag & CATALOG_FLAG_DISCOUNT); }
+		BOOL IsPackage() { return (m_type > CATEGORY_PACKAGE && m_type < (CATEGORY_PACKAGE+10000)); }
+		BOOL IsPackageEx() { return (m_itemListCnt > 1); }
+
+		CASH_SHOP_DATA(const CASH_SHOP_DATA& csData)
+		{
+			(*this) = csData;
+		}
+
+		void operator = (const CASH_SHOP_DATA& csData);
+		bool operator () ( const CASH_SHOP_DATA& _other )	{ return ((this->m_shopItemIndex == _other.m_shopItemIndex)?true:false); }
 	};
 
 	~CCashShopData();
-	
+
 	std::vector<CASH_SHOP_DATA> m_vShopItemArray;
 
+	CASH_SHOP_DATA* GetCashShopData(INDEX shopItemIndex);
+
 	static int	LoadShopDataFromFile(CStaticArray<CCashShopData> &apShopData, const char* FileName);
+	static int	LoadShopDataFromFile(CCashShopData &apShopData, const char* FileName);
 };
 
 #endif

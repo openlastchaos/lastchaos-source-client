@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #include "stdh.h"
 #include "CGroupTag.h"
@@ -42,7 +42,8 @@ void CGroupTag::AddTag(const ptr_tag &tag)
 	my_vector vectorTag;
 	SINT size = m_vectorTag.size();
 	vectorTag.resize(size);
-	for(SINT i=0; i<size; ++i)
+	SINT i;
+	for(i = 0; i < size; ++i)
 	{
 		SINT newIdx = atoi(m_vectorTag[i]->GetName().substr(2, 1).c_str());
 		if(size - newIdx >= size) break;
@@ -65,4 +66,4 @@ void CGroupTag::DeleteTag(const ptr_tag &tag)
 		}
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

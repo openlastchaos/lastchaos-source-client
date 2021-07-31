@@ -183,6 +183,7 @@ public:
   inline CTStream &operator>>(SWORD &sw) { Read_t(&sw, sizeof(sw)); return *this; } // throw char *
   inline CTStream &operator>>(SBYTE &sb) { Read_t(&sb, sizeof(sb)); return *this; } // throw char *
   inline CTStream &operator>>(BOOL   &b) { Read_t( &b, sizeof( b)); return *this; } // throw char *
+  inline CTStream &operator>>(__int64 &i64) { Read_t( &i64, sizeof(i64)); return *this; } // throw char *
   /* Write an object into stream. */
   inline CTStream &operator<<(const float  &f) { Write_t( &f, sizeof( f)); return *this; } // throw char *
   inline CTStream &operator<<(const double &d) { Write_t( &d, sizeof( d)); return *this; } // throw char *
@@ -193,6 +194,7 @@ public:
   inline CTStream &operator<<(const SWORD &sw) { Write_t(&sw, sizeof(sw)); return *this; } // throw char *
   inline CTStream &operator<<(const SBYTE &sb) { Write_t(&sb, sizeof(sb)); return *this; } // throw char *
   inline CTStream &operator<<(const BOOL   &b) { Write_t( &b, sizeof( b)); return *this; } // throw char *
+  inline CTStream &operator<<(const __int64 &i64) { Write_t( &i64, sizeof(i64)); return *this; } // throw char *
 
   // CTFileName reading/writing
   ENGINE_API friend CTStream &operator>>(CTStream &strmStream, CTFileName &fnmFileName);
@@ -236,6 +238,10 @@ public:
   void DictionaryReadEnd_t(void);
   // preload all files mentioned in the dictionary
   void DictionaryPreload_t(void);
+
+  bool is_png()		{ return strm_bPNG; }
+protected:
+	bool	strm_bPNG;
 };
 
 /*
@@ -330,7 +336,7 @@ inline void CTStream::Read_t(void *pvBuffer, SLONG slSize)  // throws char *
   // increase file read ptr
   strm_pubCurrentPos += slSize;
 }
-//! ìŠ¤íŠ¸ë¦¼ì— ë°ì´íƒ€ ë¸”ë¡ì„ ì“´ë‹¤.
+//! ½ºÆ®¸²¿¡ µ¥ÀÌÅ¸ ºí·ÏÀ» ¾´´Ù.
 /*
  * Write a block of data to stream.
  */

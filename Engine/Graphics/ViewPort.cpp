@@ -6,7 +6,8 @@
 #include <Engine/Base/Statistics_internal.h>
 #include <Engine/Interface/UIIME.h>
 extern INDEX ogl_bExclusive;
-
+//	±è¿µÈ¯ Àü¿ª ¼³Á¤ °ª °¡Á®¿À±â
+extern BOOL _bClientApp;
 
 // helper for D3D surface
 static HRESULT CreateSwapChain_D3D( CViewPort *pvp, PIX pixSizeI, PIX pixSizeJ)
@@ -34,7 +35,7 @@ static HRESULT CreateSwapChain_D3D( CViewPort *pvp, PIX pixSizeI, PIX pixSizeJ)
 	d3dPresentParams.hDeviceWindow = pvp->vp_hWnd;
 
 	// WSS_VIDEOMEMORYFAIL 070615 ------------------------------->><<
-	// ë¹„ë””ì˜¤ ë©”ëª¨ë¦¬ ì—ëŸ¬ì‹œ ë©”ì„¸ì§€ ì¶œë ¥ì„ ìœ„í•´
+	// ºñµğ¿À ¸Ş¸ğ¸® ¿¡·¯½Ã ¸Ş¼¼Áö Ãâ·ÂÀ» À§ÇØ
 	// create!
 	hr = _pGfx->gl_pd3dDevice->CreateAdditionalSwapChain( &d3dPresentParams, &pvp->vp_pSwapChain);
 	if(hr) return hr;
@@ -129,9 +130,9 @@ LRESULT CALLBACK CViewPortCLASS_WindowProc(
 		return CallWindowProc( (WNDPROC)GetWindowLong(hWndParent, GWL_WNDPROC),
 													 hWndParent, Msg, wParam, lParam);
 	}
-	// ì´ê¸°í™˜ ìˆ˜ì • ì‹œì‘ (11. 15) : FullScreenì—ì„œ IMEì°½ ìˆ¨ê¸°ê¸°
+	// ÀÌ±âÈ¯ ¼öÁ¤ ½ÃÀÛ (11. 15) : FullScreen¿¡¼­ IMEÃ¢ ¼û±â±â
 	return _bIMEProc?0:DefWindowProc(hWnd, Msg, wParam, lParam);
-	// ì´ê¸°í™˜ ìˆ˜ì • ë (11. 15)
+	// ÀÌ±âÈ¯ ¼öÁ¤ ³¡ (11. 15)
 }
 
 
@@ -139,80 +140,119 @@ LRESULT CALLBACK CViewPortCLASS_WindowProc(
 // open overlaid window for rendering context
 void CViewPort::OpenCanvas(void)
 {
-	// do nothing if not feasable
-	if( vp_hWnd!=NULL || vp_hWndParent==NULL) return;
-
-	// register class
-	if( !_bClassRegistered) {
-		WNDCLASS wc;
-		wc.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-		wc.lpfnWndProc = CViewPortCLASS_WindowProc;
-		wc.cbClsExtra = 0;
-		wc.cbWndExtra = 0;
-		wc.hInstance = NULL;
-		wc.hIcon = NULL;
-		wc.hCursor = LoadCursor( NULL, IDC_ARROW);
-		wc.hbrBackground = NULL;
-		wc.lpszMenuName = NULL;
-		wc.lpszClassName = CViewPortCLASS;
-		RegisterClass(&wc);
-		_bClassRegistered = TRUE;
-	}
-	
-	// determine window and desktopsize
-	RECT rectWindow;
-	GetClientRect( vp_hWndParent, &rectWindow);
-	const PIX pixWinSizeI = rectWindow.right  - rectWindow.left;
-	const PIX pixWinSizeJ = rectWindow.bottom - rectWindow.top;
-	CDisplayMode dm;
-	_pGfx->GetCurrentDisplayMode(dm);
-	ASSERT( (dm.dm_pixSizeI==0 && dm.dm_pixSizeJ==0) || (dm.dm_pixSizeI!=0 && dm.dm_pixSizeJ!=0));
-	const BOOL bFullScreen = (dm.dm_pixSizeI==pixWinSizeI && dm.dm_pixSizeJ==pixWinSizeJ);
-
-	// set fullscreen attribs if window size is equal to screen size
-	DWORD dwExStyle = NONE;
-	DWORD dwStyle   = WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS;
-	if( bFullScreen && ogl_bExclusive) {
-		dwExStyle = WS_EX_TOPMOST;
-		dwStyle   = WS_POPUP;     
-	} 
-
-	// set child window
-	vp_hWnd = ::CreateWindowEx(
-	  dwExStyle,
-	  CViewPortCLASS,
-	  "",   // title
-		dwStyle,
-	  0,0,
-	  0,0,  // window size
-	  vp_hWndParent,
-	  NULL,
-	  (HINSTANCE)GetWindowLong(vp_hWndParent, GWL_HINSTANCE),
-	  NULL);
-	ASSERT( vp_hWnd!=NULL);
-
-	// prepare new swap chain for D3D
-	if( _pGfx->gl_eCurrentAPI==GAT_D3D && !bFullScreen)
+	// ±è¿µÈ¯ : vp_hWndParent À» vp_hWnd·Î »ç¿ë	
+	if(_bClientApp)
 	{
-		// WSS_VIDEOMEMORYFAIL 070615 ------------------------------->>
-		HRESULT hr;
-		if( (hr=CreateSwapChain_D3D( this, pixWinSizeI, pixWinSizeJ)))
+		vp_hWnd = vp_hWndParent;	// ¸ŞÀÎ ÇÚµé »ç¿ë.
+		// À©µµ¿ì ¿µ¿ª ¹× ÇÃ ½ºÅ©¸° Á¤º¸ ¾ò´Â´Ù.
+		// determine window and desktopsize
+		RECT rectWindow;
+		GetClientRect( vp_hWndParent, &rectWindow);
+		const PIX pixWinSizeI = rectWindow.right  - rectWindow.left;
+		const PIX pixWinSizeJ = rectWindow.bottom - rectWindow.top;
+		CDisplayMode dm;
+		_pGfx->GetCurrentDisplayMode(dm);
+		ASSERT( (dm.dm_pixSizeI==0 && dm.dm_pixSizeJ==0) || (dm.dm_pixSizeI!=0 && dm.dm_pixSizeJ!=0));
+		const BOOL bFullScreen = (dm.dm_pixSizeI==pixWinSizeI && dm.dm_pixSizeJ==pixWinSizeJ);
+
+		// prepare new swap chain for D3D
+		if( _pGfx->gl_eCurrentAPI==GAT_D3D && !bFullScreen)
 		{
-			CTString tStr;
-			tStr.PrintF("CreateSwapChain_D3D Failed!! - OpenCanvas %x",hr);
-			MessageBox(vp_hWndParent,tStr.str_String,"ERROR",MB_OK);
-			::DestroyWindow(vp_hWnd);
-			return;
+			// WSS_VIDEOMEMORYFAIL 070615 ------------------------------->>
+			HRESULT hr;
+			if( (hr=CreateSwapChain_D3D( this, pixWinSizeI, pixWinSizeJ)))
+			{
+			}
+			// ----------------------------------------------------------->>
 		}
-		// ----------------------------------------------------------->>
+
+		// resize raster
+		Resize();
+		ShowWindow( vp_hWnd, SW_SHOW);
+
+		// set as rendering target
+		if( _pGfx->gl_eCurrentAPI==GAT_D3D && vp_pSwapChain!=NULL) 
+			SetAsRenderTarget_D3D(this);
 	}
+	else
+	{
+		// do nothing if not feasable
+		if( vp_hWnd!=NULL || vp_hWndParent==NULL) return;
 
-	// resize raster
-	Resize();
-	ShowWindow( vp_hWnd, SW_SHOW);
+		// register class
+		if( !_bClassRegistered) {
+			WNDCLASS wc;
+			wc.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+			wc.lpfnWndProc = CViewPortCLASS_WindowProc;
+			wc.cbClsExtra = 0;
+			wc.cbWndExtra = 0;
+			wc.hInstance = NULL;
+			wc.hIcon = NULL;
+			wc.hCursor = LoadCursor( NULL, IDC_ARROW);
+			wc.hbrBackground = NULL;
+			wc.lpszMenuName = NULL;
+			wc.lpszClassName = CViewPortCLASS;
+			RegisterClass(&wc);
+			_bClassRegistered = TRUE;
+		}
+		
+		// determine window and desktopsize
+		RECT rectWindow;
+		GetClientRect( vp_hWndParent, &rectWindow);
+		const PIX pixWinSizeI = rectWindow.right  - rectWindow.left;
+		const PIX pixWinSizeJ = rectWindow.bottom - rectWindow.top;
+		CDisplayMode dm;
+		_pGfx->GetCurrentDisplayMode(dm);
+		ASSERT( (dm.dm_pixSizeI==0 && dm.dm_pixSizeJ==0) || (dm.dm_pixSizeI!=0 && dm.dm_pixSizeJ!=0));
+		const BOOL bFullScreen = (dm.dm_pixSizeI==pixWinSizeI && dm.dm_pixSizeJ==pixWinSizeJ);
 
-	// set as rendering target
-	if( _pGfx->gl_eCurrentAPI==GAT_D3D && vp_pSwapChain!=NULL) SetAsRenderTarget_D3D(this);
+		// set fullscreen attribs if window size is equal to screen size
+		DWORD dwExStyle = NONE;
+		DWORD dwStyle   = WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS;
+		if( bFullScreen && ogl_bExclusive) {
+			dwExStyle = WS_EX_TOPMOST;
+			dwStyle   = WS_POPUP;     
+		} 
+
+		// set child window
+		vp_hWnd = ::CreateWindowEx(
+		  dwExStyle,
+		  CViewPortCLASS,
+		  "",   // title
+			dwStyle,
+		  0,0,
+		  0,0,  // window size
+		  vp_hWndParent,
+		  NULL,
+		  (HINSTANCE)GetWindowLong(vp_hWndParent, GWL_HINSTANCE),
+		  NULL);
+		ASSERT( vp_hWnd!=NULL);
+		
+		// prepare new swap chain for D3D
+		if( _pGfx->gl_eCurrentAPI==GAT_D3D && !bFullScreen)
+		{
+			// WSS_VIDEOMEMORYFAIL 070615 ------------------------------->>
+			HRESULT hr;
+			if( (hr=CreateSwapChain_D3D( this, pixWinSizeI, pixWinSizeJ)))
+			{
+				/*****
+				CTString tStr;
+				tStr.PrintF("CreateSwapChain_D3D Failed!! - OpenCanvas %x",hr);
+				MessageBox(vp_hWndParent,tStr.str_String,"ERROR",MB_OK);
+				::DestroyWindow(vp_hWnd);
+				return;
+				*****/
+			}
+			// ----------------------------------------------------------->>
+		}
+
+		// resize raster
+		Resize();
+		ShowWindow( vp_hWnd, SW_SHOW);
+
+		// set as rendering target
+		if( _pGfx->gl_eCurrentAPI==GAT_D3D && vp_pSwapChain!=NULL) SetAsRenderTarget_D3D(this);
+	}
 }
 
 
@@ -234,9 +274,14 @@ void CViewPort::CloseCanvas(void)
 		vp_pSurfDepth = NULL;
 	}
 	// destroy window
-	if( vp_hWnd!=NULL && IsWindow(vp_hWnd)) { 
-		BOOL bRes = DestroyWindow(vp_hWnd);
-		ASSERT(bRes);
+	//	±è¿µÈ¯ : Å¬¶óÀÌ¾ğÆ®¿ëÀÌ ¾Æ´Ñ °æ¿ì¸¸.(Åø¿¡¼­ »ç¿ëÇÏ´Â °æ¿ì)
+	if(_bClientApp == FALSE)
+	{
+		if( vp_hWnd!=NULL && IsWindow(vp_hWnd)) 
+		{ 
+			BOOL bRes = DestroyWindow(vp_hWnd);
+			ASSERT(bRes);
+		}
 	}
 	// mark
 	vp_hWnd = NULL;
@@ -249,32 +294,37 @@ void CViewPort::Resize(void)
 	PIX pixNewWidth, pixNewHeight;
 	RECT rectWindow;
 
-	//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…	09.09
+	//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷	09.09
 	extern BOOL _bFirst;
 	if(!_bFirst)				_bFirst = TRUE;
 
 	extern INDEX d3d_bDeviceChanged;
 	if(!d3d_bDeviceChanged)		d3d_bDeviceChanged = TRUE;
-	//ê°•ë™ë¯¼ ìˆ˜ì • ë ì‹œìŠ¤í…œ ë§ˆìš°ìŠ¤ ì‘ì—…		09.09
+	//°­µ¿¹Î ¼öÁ¤ ³¡ ½Ã½ºÅÛ ¸¶¿ì½º ÀÛ¾÷		09.09
 	
 	// get the size of the window
 	GetClientRect( vp_hWndParent, &rectWindow);
 	pixNewWidth  = rectWindow.right  - rectWindow.left;
 	pixNewHeight = rectWindow.bottom - rectWindow.top;
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
 	if(pixNewWidth < 1) pixNewWidth = 1;
 	if(pixNewHeight < 1) pixNewHeight = 1;
-	//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
 
 	// resize child window
-	ASSERT( vp_hWnd!=NULL);
-	SetWindowPos( vp_hWnd, NULL, 0,0, pixNewWidth, pixNewHeight, SWP_NOZORDER|SWP_NOMOVE);
+	//	±è¿µÈ¯ : Å©±âÁ¶Àı ¾ÈÇÔ.
+	if(_bClientApp == FALSE)
+	{
+		ASSERT( vp_hWnd!=NULL);
+		SetWindowPos( vp_hWnd, NULL, 0,0, pixNewWidth, pixNewHeight, SWP_NOZORDER|SWP_NOMOVE);
+	}
 
 	// resize the raster
 	vp_Raster.Resize( pixNewWidth, pixNewHeight);
 
 	// "resize" D3D surface (if any)
-	if( _pGfx->gl_eCurrentAPI==GAT_D3D && vp_pSwapChain!=NULL && vp_pSurfDepth!=NULL) {
+	if( _pGfx->gl_eCurrentAPI==GAT_D3D && vp_pSwapChain!=NULL)// && vp_pSurfDepth!=NULL) 
+	{
 		// release old surface
 		D3DRELEASE( vp_pSwapChain, TRUE);
 		D3DRELEASE( vp_pSurfDepth, TRUE);
@@ -283,10 +333,12 @@ void CViewPort::Resize(void)
 		HRESULT hr;
 		if( (hr=CreateSwapChain_D3D( this, pixNewWidth, pixNewHeight)) )
 		{
+			/*****
 			CTString tStr;
 			tStr.PrintF("CreateSwapChain_D3D Failed!! - Resize %x",hr);
 			MessageBox(vp_hWndParent,tStr.str_String,"ERROR",MB_OK);			
 			return;
+			*****/
 		}				
 		// ----------------------------------------------------------->>
 		SetAsRenderTarget_D3D(this);

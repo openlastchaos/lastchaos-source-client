@@ -4,9 +4,9 @@
 #include <Engine/Brushes/Brush.h>
 
 #include <Engine/Templates/DynamicArray.cpp>
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.10
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.10
 #include <Engine/Templates/DynamicContainer.cpp>
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.10
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.10
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Templates/StaticStackArray.cpp>
 #include <Engine/Math/Geometry.inl>
@@ -55,11 +55,11 @@ static void AddAllSectorsOfBrush(CBrush3D *pbr)
 	}
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 void SearchThroughSectors(float fRadius, CDynamicContainer<CBrushPolygon> &dcBrushPolygon)
 {
 	// for each active sector (sectors are added during iteration!)
-	// í™œì„±í™”ëœ ì„¹í„°ì— ëŒ€í•´ì„œ...
+	// È°¼ºÈ­µÈ ¼½ÅÍ¿¡ ´ëÇØ¼­...
 	for(INDEX ias=0; ias<_aas.Count(); ias++) 
 	{
 		CBrushSector *pbsc = _aas[ias].as_pbsc;
@@ -70,7 +70,7 @@ void SearchThroughSectors(float fRadius, CDynamicContainer<CBrushPolygon> &dcBru
 		INDEX iCount = pbsc->bsc_abpoPolygons.Count();
 
 		// for each polygon in the sector
-		// ì„¹í„°ë‚´ì˜ ëª¨ë“  í´ë¦¬ê³¤ì— ëŒ€í•´ì„œ...
+		// ¼½ÅÍ³»ÀÇ ¸ğµç Æú¸®°ï¿¡ ´ëÇØ¼­...
 		{FOREACHINSTATICARRAY(pbsc->bsc_abpoPolygons, CBrushPolygon, itbpo) 
 		{
 			CBrushPolygon &bpo = *itbpo;
@@ -101,14 +101,14 @@ void SearchThroughSectors(float fRadius, CDynamicContainer<CBrushPolygon> &dcBru
 			if(!bpo.bpo_pbplPlane)
 				continue;
 
-			// ì ˆëŒ€ ê³µê°„ìƒì˜ í‰ë©´ì˜ ë°©ì •ì‹ì„ ì–»ìŒ.
+			// Àı´ë °ø°£»óÀÇ Æò¸éÀÇ ¹æÁ¤½ÄÀ» ¾òÀ½.
 			const FLOATplane3D &plPolygon = bpo.bpo_pbplPlane->bpl_plAbsolute;
 
 			// find distance of the polygon plane from the handle
-			// ì—”í‹°í‹°ë¡œë¶€í„° í‰ë©´ê¹Œì§€ì˜ ê±°ë¦¬ ê³„ì‚°.
+			// ¿£Æ¼Æ¼·ÎºÎÅÍ Æò¸é±îÁöÀÇ °Å¸® °è»ê.
 			FLOAT fDistance = plPolygon.PointDistance(_vHandle);
 			
-			// êµ¬ì˜ ë²”ìœ„ë¥¼ ë²—ì–´ë‚œë‹¤ë©´, ì œì™¸.
+			// ±¸ÀÇ ¹üÀ§¸¦ ¹ş¾î³­´Ù¸é, Á¦¿Ü.
 			//if (fDistance<0.0f || fDistance>_fNearDistance) 
 			if (fDistance<0.0f || fDistance>fRadius) 
 			//if (fDistance>fRadius)
@@ -118,11 +118,11 @@ void SearchThroughSectors(float fRadius, CDynamicContainer<CBrushPolygon> &dcBru
 			}
 
 			// find projection of handle to the polygon plane
-			// ì—”í‹°í‹°ì˜ ìœ„ì¹˜ë¥¼ í´ë¦¬ê³¤ í‰ë©´ìœ¼ë¡œ íˆ¬ì˜í•¨.
+			// ¿£Æ¼Æ¼ÀÇ À§Ä¡¸¦ Æú¸®°ï Æò¸éÀ¸·Î Åõ¿µÇÔ.
 			FLOAT3D vOnPlane = plPolygon.ProjectPoint(_vHandle);
 
 			// if it is not in the bounding box of polygon
-			// ì°¾ì€ ì ì´ í´ë¦¬ê³¤ì˜ ë°”ìš´ë”© ë°•ìŠ¤ë‚´ì— ì—†ë‹¤ë©´...
+			// Ã£Àº Á¡ÀÌ Æú¸®°ïÀÇ ¹Ù¿îµù ¹Ú½º³»¿¡ ¾ø´Ù¸é...
 			const FLOATaabbox3D &boxPolygon = bpo.bpo_boxBoundingBox;			
 			const FLOAT EPSILON = 0.01f;
 			if (
@@ -152,7 +152,7 @@ void SearchThroughSectors(float fRadius, CDynamicContainer<CBrushPolygon> &dcBru
 		ENDFOR}
 	}
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 
 void SearchThroughSectors(void)
 {
@@ -283,7 +283,7 @@ CBrushPolygon *CEntity::GetNearestPolygon(
 	}
 }
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01
 void CEntity::GetNearPolygonsInSphere(FLOAT fRadius, CDynamicContainer<CBrushPolygon> &dcBrushPolygon)
 {
 	_pen = this;
@@ -294,7 +294,7 @@ void CEntity::GetNearPolygonsInSphere(FLOAT fRadius, CDynamicContainer<CBrushPol
 	//_pen->en_rdSectors;
 	
 	// for each zoning sector that this entity is in
-	// ì—”í‹°í‹°ê°€ ì†í•œ ì„¹í„° ì°¾ê¸°.
+	// ¿£Æ¼Æ¼°¡ ¼ÓÇÑ ¼½ÅÍ Ã£±â.
 	{FOREACHSRCOFDST(en_rdSectors, CBrushSector, bsc_rsEntities, pbsc)
 		if(pbsc != NULL)
 			// add the sector
@@ -306,9 +306,9 @@ void CEntity::GetNearPolygonsInSphere(FLOAT fRadius, CDynamicContainer<CBrushPol
 	for(int ias=0; ias<_aas.Count(); ias++) 
 	{
 		// mark it as inactive
-		// ë¹„í™œì„±í™”ìƒíƒœì¸ê²ƒì²˜ëŸ¼ í”Œë˜ê·¸ ì„¤ì •.
+		// ºñÈ°¼ºÈ­»óÅÂÀÎ°ÍÃ³·³ ÇÃ·¡±× ¼³Á¤.
 		_aas[ias].as_pbsc->bsc_ulFlags&=~BSCF_NEARTESTED;
 	}
 	_aas.PopAll();	
 }
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.01
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.01

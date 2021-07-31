@@ -71,9 +71,9 @@ public:
 	ENGINE_API void SetName( INDEX iAnimation, CTString strNewName);
 	// replaces requested animation's speed with given one
 	ENGINE_API void SetSpeed( INDEX iAnimation, TIME tmSpeed);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Sun Moon Entity and etc)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Sun Moon Entity and etc)(0.1)
 	ENGINE_API TIME GetSpeed( INDEX iAnimation);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Sun Moon Entity and etc)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Sun Moon Entity and etc)(0.1)
 	// obtains frame index for given place in array representing given animation
 	ENGINE_API INDEX GetFrame( INDEX iAnimation, INDEX iFramePlace);
 	// sets frame index for given place in array representing given animation

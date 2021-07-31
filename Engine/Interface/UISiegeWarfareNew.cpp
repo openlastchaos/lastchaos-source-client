@@ -1,17 +1,20 @@
 // WSS_DRATAN_SIEGEWARFARE 070726 -------------------------------------------//
-// ë“œë¼íƒ„ ì‹ ê³µì„± ì‹œìŠ¤í…œ 
-// ê¸°ì¡´ ê³µì„±ì—ì„œ ì¶”ê°€ëœ ë¶€ë¶„ë§Œ êµ¬í˜„í•œë‹¤.
+// µå¶óÅº ½Å°ø¼º ½Ã½ºÅÛ 
+// ±âÁ¸ °ø¼º¿¡¼­ Ãß°¡µÈ ºÎºĞ¸¸ ±¸ÇöÇÑ´Ù.
 // --------------------------------------------------------------------------//
 #include "stdh.h"
+
+// Çì´õ Á¤¸®. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UISiegeWarfareNew.h>
 #include <Engine/Interface/UISiegeWarfareDoc.h>
 #include <Engine/Entities/InternalClasses.h>
+#include <Engine/Object/ActorMgr.h>
 
 #define TOWER_COMBOBOX_SIZE (18)
 #define CONSENSUSBAR_SIZE	(261)
-#define CONSENSUS_TIMEUP	(180)		// êµê° ì‹œê°„(sec)
-#define TOWER_USE_NAS		(1000000)	// 1ë°±ë§Œ ë‚˜ìŠ¤(default)
+#define CONSENSUS_TIMEUP	(180)		// ±³°¨ ½Ã°£(sec)
+#define TOWER_USE_NAS		(1000000)	// 1¹é¸¸ ³ª½º(default)
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareNew::CUISiegeWarfareNew
@@ -99,19 +102,19 @@ void CUISiegeWarfareNew::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, 
 //------------------------------------------------------------------------------
 void CUISiegeWarfareNew::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	_pUISWDoc = new CUISiegeWarfareDoc();
-	_pUISWDoc->SetUIState( SWS_NONE );	
+	// CUISiegeWarfare::Create ¿¡¼­ »ı¼ºµÇ¼­ µé¾î¿Â´Ù.
+	// Áßº¹ »ı¼º (¸Ş¸ğ¸® ´©¼ö)
+// 	_pUISWDoc = new CUISiegeWarfareDoc();
+// 	_pUISWDoc->SetUIState( SWS_NONE );	
 
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );		
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 	
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\MessageBox.tex" ) );
 
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
-	// ê³µí†µ
+	// °øÅë
 	// Set Box
 	m_bxBackGroundBox.SetBoxUV(m_ptdBaseTexture,30,22,WRect(0,0,216,22));
 	m_bxBackGroundBox2.SetBoxUV(m_ptdBaseTexture,20,11,WRect(0,22,216,45));	
@@ -122,26 +125,27 @@ void CUISiegeWarfareNew::Create( CUIWindow *pParentWnd, int nX, int nY, int nWid
 	m_uvLineH.SetUV(237,1,244,1,fTexWidth,fTexHeight);
 	m_uvLineV.SetUV(246,3,246,9,fTexWidth,fTexHeight);
 		
-	// íƒ€ì›Œ ê°€ë™í•˜ê¸° -------------------------------------------------------->>
-	// ë²„íŠ¼
+	// Å¸¿ö °¡µ¿ÇÏ±â -------------------------------------------------------->>
+	// ¹öÆ°
 	// Buttons
-	m_btnApply.Create( this, _S( 3688,"ê°€ë™í•˜ê¸°" ), 383, 307, 63, 21 );
+	m_btnApply.Create( this, _S( 3688,"°¡µ¿ÇÏ±â" ), 383, 307, 63, 21 );
 	m_btnApply.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnApply.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnApply.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnApply.CopyUV( UBS_IDLE, UBS_DISABLE );
 		
-	m_btnReturn.Create( this, _S(  3689,"ëŒì•„ê°€ê¸°" ), 470, 307, 63, 21 );
+	m_btnReturn.Create( this, _S(  3689,"µ¹¾Æ°¡±â" ), 470, 307, 63, 21 );
 	m_btnReturn.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnReturn.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnReturn.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnReturn.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	m_cbtnTowerOn[7][DRATAN_TOWER_MAX];		// ê°€ë™ ì—¬ë¶€ ë²„íŠ¼
+	m_cbtnTowerOn[7][DRATAN_TOWER_MAX];		// °¡µ¿ ¿©ºÎ ¹öÆ°
 
-	for(int i=0;i<DRATAN_TOWER_KIND_MAX;i++)
+	int		i, j;
+	for( i = 0; i < DRATAN_TOWER_KIND_MAX; i++ )
 	{
-		for( int j=0;j<DRATAN_TOWER_MAX;j++)
+		for( j = 0; j < DRATAN_TOWER_MAX; j++ )
 		{
 			m_cbtnTowerOn[i][j].Create( this, 442 + TOWER_COMBOBOX_SIZE * j, 132 +TOWER_COMBOBOX_SIZE * i
 										, TOWER_COMBOBOX_SIZE, TOWER_COMBOBOX_SIZE,	CTString("") );	
@@ -156,13 +160,13 @@ void CUISiegeWarfareNew::Create( CUIWindow *pParentWnd, int nX, int nY, int nWid
 	}
 	// ----------------------------------------------------------------------<<
 	
-	// íƒ€ì›Œ ê°•í™”í•˜ê¸° -------------------------------------------------------->>	
+	// Å¸¿ö °­È­ÇÏ±â -------------------------------------------------------->>	
 
-	int black = 74; // black ë¥¼ 0ìœ¼ë¡œ ë†“ìœ¼ë©´ íšŒìƒ‰ ë°”íƒ•ì˜ Edit ë°•ìŠ¤ ìƒì„±
+	int black = 74; // black ¸¦ 0À¸·Î ³õÀ¸¸é È¸»ö ¹ÙÅÁÀÇ Edit ¹Ú½º »ı¼º
 	CTString tStr;
-	// ê°•í™” ìŠ¤í•€ ë²„íŠ¼	
-//	m_sbtnUpgrade.Create( this, 80, 159, 100, 14, _S( 3690,"ê°•í™” ë‹¨ê³„"), 37 );
-	m_sbtnUpgrade.Create( this, 80, 159, 110, 15, _S( 3690,"ê°•í™” ë‹¨ê³„"), 37 );
+	// °­È­ ½ºÇÉ ¹öÆ°	
+//	m_sbtnUpgrade.Create( this, 80, 159, 100, 14, _S( 3690,"°­È­ ´Ü°è"), 37 );
+	m_sbtnUpgrade.Create( this, 80, 159, 150, 15, _S( 3690,"°­È­ ´Ü°è"), 37 );
 	m_sbtnUpgrade.SetDataBackUV3( 131+black, 46, 135+black, 59, 136+black, 46, 140+black, 59, 
 							141 + black, 46, 145 + black, 59, fTexWidth, fTexHeight );
 	
@@ -179,39 +183,38 @@ void CUISiegeWarfareNew::Create( CUIWindow *pParentWnd, int nX, int nY, int nWid
 	m_sbtnUpgrade.SetWheelRect( -19, -75, 271, 165 );
 
 	m_sbtnUpgrade.ResetAllDatas();
-	for(i=0;i<=TOWER_UPGRADE_MAX;i++)
+	for( i = 0; i <= TOWER_UPGRADE_MAX; i++)
 	{
-
 		tStr.PrintF("%d",i);
 		m_sbtnUpgrade.AddData(tStr);
 	}
 
 	// Button Create
-	m_btnOK.Create( this, _S( 191, "í™•ì¸" ), 146, 249, 63, 21 );
+	m_btnOK.Create( this, _S( 191, "È®ÀÎ" ), 146, 249, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	m_btnCancel.Create( this, _S( 139, "ì·¨ì†Œ" ), 237, 249, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "Ãë¼Ò" ), 237, 249, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_DISABLE );
 	// ----------------------------------------------------------------------<<
 
-	// êµê° í•˜ê¸° ------------------------------------------------------------>>
+	// ±³°¨ ÇÏ±â ------------------------------------------------------------>>
 	m_rcPuple.SetRect(26,47,26+m_iConsensusBarSize,66);
-	m_bxPurple.SetBoxUV(m_ptdBaseTexture,2,WRect(328,189,336,195));								// êµê° ë³´ë¼ ë°•ìŠ¤
+	m_bxPurple.SetBoxUV(m_ptdBaseTexture,2,WRect(328,189,336,195));								// ±³°¨ º¸¶ó ¹Ú½º
 	// ----------------------------------------------------------------------<<	
 
-	// ë¶€í™œ ëŒ€ê¸° ì‹œê°„
+	// ºÎÈ° ´ë±â ½Ã°£
 	m_rcWaitTime.SetRect(26,47,56,87);
 	
 }
 
 // Open UI ------------------------------------------------------>>
-// íƒ€ì›Œ ê°€ë™í•˜ê¸° ì—´ê¸°
+// Å¸¿ö °¡µ¿ÇÏ±â ¿­±â
 void CUISiegeWarfareNew::OpenCheckTower()
 {
 	extern ENGINE_API CDrawPort	*_pdpMain;
@@ -221,9 +224,9 @@ void CUISiegeWarfareNew::OpenCheckTower()
 	
 	ResetPosition(_pdpMain->dp_MinI,_pdpMain->dp_MinJ,_pdpMain->dp_MaxI,_pdpMain->dp_MaxJ);
 	_pUISWDoc->SetUIState(SWS_APPLY_TOWER);
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, TRUE );
 }
-// íƒ€ì›Œ ê°•í™”í•˜ê¸° ì—´ê¸°
+// Å¸¿ö °­È­ÇÏ±â ¿­±â
 void CUISiegeWarfareNew::OpenUpgradeTower()
 {
 	extern ENGINE_API CDrawPort	*_pdpMain;
@@ -237,9 +240,9 @@ void CUISiegeWarfareNew::OpenUpgradeTower()
 
 	ResetPosition(_pdpMain->dp_MinI,_pdpMain->dp_MinJ,_pdpMain->dp_MaxI,_pdpMain->dp_MaxJ);
 	_pUISWDoc->SetUIState(SWS_UPGRADE_TOWER);
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, TRUE );
 }
-// íƒ€ì›Œ ìˆ˜ë¦¬ í•˜ê¸°
+// Å¸¿ö ¼ö¸® ÇÏ±â
 void CUISiegeWarfareNew::OpenRepairTower()
 {
 	extern ENGINE_API CDrawPort	*_pdpMain;
@@ -253,9 +256,9 @@ void CUISiegeWarfareNew::OpenRepairTower()
 
 	ResetPosition(_pdpMain->dp_MinI,_pdpMain->dp_MinJ,_pdpMain->dp_MaxI,_pdpMain->dp_MaxJ);
 	_pUISWDoc->SetUIState(SWS_REPAIR_TOWER);
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, TRUE );
 }
-// í¬ë¦¬ìŠ¤íƒˆ êµê° ì—´ê¸°
+// Å©¸®½ºÅ» ±³°¨ ¿­±â
 void CUISiegeWarfareNew::OpenConsensus()
 {
 	// Set window Size
@@ -267,19 +270,36 @@ void CUISiegeWarfareNew::OpenConsensus()
 
 	ResetPosition(_pdpMain->dp_MinI,_pdpMain->dp_MinJ,_pdpMain->dp_MaxI,_pdpMain->dp_MaxJ);
 	_pUISWDoc->SetUIState(SWS_CONSENSUS_CRYSTAL);
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, TRUE );
 
 }
+
+void CUISiegeWarfareNew::OpenWaitTime()
+{
+	extern ENGINE_API CDrawPort	*_pdpMain;
+
+	SetSize(185,121);
+	m_rcTitle.SetRect(0,0,185,22);	
+
+	ResetPosition(_pdpMain->dp_MinI,_pdpMain->dp_MinJ,_pdpMain->dp_MaxI,_pdpMain->dp_MaxJ);
+	m_bReceivedTime = FALSE;
+	_pUISWDoc->SetUIState(SWS_WAIT_REBIRTH);
+	CUIManager::getSingleton()->RearrangeOrder(UI_SIEGE_WARFARE_NEW,TRUE);			
+}
+
 //----------------------------------------------------------------<<
 
-// ë¶€í™œ ëŒ€ê¸° ì‹œê°„
+// ºÎÈ° ´ë±â ½Ã°£
 void CUISiegeWarfareNew::RenderWaitTime()
 {	
 	int	nX, nY;
 	CTString tStr;
 	GetAbsPos( nX, nY );
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Background
 	m_bxBackGroundBox.SetBoxPos(WRect(nX,nY,nX+185,nY+22));
@@ -292,29 +312,29 @@ void CUISiegeWarfareNew::RenderWaitTime()
 
 	// Render Vertical Lines
 	// Render Text		
-	_pUIMgr->GetDrawPort()->PutTextEx(_S( 3691,"ê³µì„± ì¤‘ ë¶€í™œ ëŒ€ê¸°ì‹œê°„"),nX+19,nY+6);
+	pDrawPort->PutTextEx(_S( 3691,"°ø¼º Áß ºÎÈ° ´ë±â½Ã°£"),nX+19,nY+6);
 	if( m_iWaitTime > 0 )
 	{
 		if ( m_iWaitTime >= 60 )
-			tStr.PrintF(_S(2513,"%dë¶„"),(m_iWaitTime/60));
+			tStr.PrintF(_S(2513,"%dºĞ"),(m_iWaitTime/60));
 		else 
-			tStr.PrintF(_S(2514,"%dì´ˆ"),(m_iWaitTime));
+			tStr.PrintF(_S(2514,"%dÃÊ"),(m_iWaitTime));
 		
-		_pUIMgr->GetDrawPort()->PutTextExCX(tStr,nX+93,nY+49);
+		pDrawPort->PutTextExCX(tStr,nX+93,nY+49);
 
-		m_iWaitTime = m_iWaitTime_const - ((timeGetTime() - m_tmStartTime))/1000;
+		m_iWaitTime = m_iWaitTime_const - (((unsigned int(_pTimer->GetLerpedCurrentTick()*1000))/*timeGetTime()*/ - m_tmStartTime))/1000;
 	}
 	else 
 	{	
-		_pUIMgr->GetDrawPort()->PutTextExCX(_S( 3692,"ë¶€í™œ ëŒ€ê¸°ì¤‘...."),nX+93,nY+86);
+		pDrawPort->PutTextExCX(_S( 3692,"ºÎÈ° ´ë±âÁß...."),nX+93,nY+86);
 		if(m_tmStartTime && m_bReceivedTime)
 		{
-			if( _pUIMgr->DoesMessageBoxExist(MSGCMD_SIEGEWARFARE_REBIRTH) ) return;
+			if( pUIManager->DoesMessageBoxExist(MSGCMD_SIEGEWARFARE_REBIRTH) ) return;
 
-			// ìŠ¤íƒ€íŠ¸ íƒ€ì„ ë¦¬ì…‹
+			// ½ºÅ¸Æ® Å¸ÀÓ ¸®¼Â
 			m_tmStartTime = 0;
 
-			// ë¶€í™œ ì§„ì§€ ì²´í¬
+			// ºÎÈ° ÁøÁö Ã¼Å©
 			BOOL bComp = FALSE;
 			std::map<int,int>::iterator tBegin,tEnd;					
 			
@@ -326,31 +346,31 @@ void CUISiegeWarfareNew::RenderWaitTime()
 				if( bComp ) break;				
 			}
 			
-			// ê³µì„± ë¶€í™œ ë©”ì‹œì§€
+			// °ø¼º ºÎÈ° ¸Ş½ÃÁö
 			CUIMsgBox_Info msgInfo;			
-			tStr= _S( 3693,"ê³µì„± ë¶€í™œ" );
+			tStr= _S( 3693,"°ø¼º ºÎÈ°" );
 			if( bComp )
 			{				
 				msgInfo.SetMsgBoxInfo(tStr,UMBS_SELECTBOX,UI_NONE,MSGCMD_SIEGEWARFARE_REBIRTH );
 				msgInfo.m_nHeight =200;
-				_pUIMgr->CreateMessageBox(msgInfo);
-				_pUIMgr->GetMessageBox(MSGCMD_SIEGEWARFARE_REBIRTH)->addSelectContext(_S( 3694,"ë¶€í™œ ì§„ì§€ë¡œ ì´ë™"));
-				_pUIMgr->GetMessageBox(MSGCMD_SIEGEWARFARE_REBIRTH)->addSelectContext(_S( 3695,"ê°€ê¹Œìš´ ë§ˆì„ë¡œ ì´ë™"));
+				pUIManager->CreateMessageBox(msgInfo);
+				pUIManager->GetMessageBox(MSGCMD_SIEGEWARFARE_REBIRTH)->addSelectContext(_S( 3694,"ºÎÈ° ÁøÁö·Î ÀÌµ¿"));
+				pUIManager->GetMessageBox(MSGCMD_SIEGEWARFARE_REBIRTH)->addSelectContext(_S( 3695,"°¡±î¿î ¸¶À»·Î ÀÌµ¿"));
 			}			
 			else
 			{
 				msgInfo.SetMsgBoxInfo(tStr,UMBS_OK,UI_SIEGE_WARFARE_NEW ,MSGCMD_SIEGEWARFARE_REBIRTH );				
-				msgInfo.AddString(_S( 403, "ì£½ì—ˆìŠµë‹ˆë‹¤. ì‹œì‘ì§€ì ìœ¼ë¡œ ì´ë™í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ));
-				_pUIMgr->CreateMessageBox(msgInfo);				
+				msgInfo.AddString(_S( 403, "Á×¾ú½À´Ï´Ù. ½ÃÀÛÁöÁ¡À¸·Î ÀÌµ¿ÇÏ½Ã°Ú½À´Ï±î?" ));
+				pUIManager->CreateMessageBox(msgInfo);				
 			}
 
-			_pUIMgr->RearrangeOrder(UI_SIEGE_WARFARE_NEW,FALSE);
+			pUIManager->RearrangeOrder(UI_SIEGE_WARFARE_NEW,FALSE);
 		}
 	}
 
 }
 
-// êµê° ì§„í–‰ ì‹œê°„
+// ±³°¨ ÁøÇà ½Ã°£
 void CUISiegeWarfareNew::RenderConsensus()
 {
 	int	nX, nY;
@@ -361,7 +381,10 @@ void CUISiegeWarfareNew::RenderConsensus()
 		StopConsensus(_pNetwork->MyCharacterInfo.index);
 		SendConsensus(MSG_CASTLE_CRISTAL_RESPOND_END);
 	}
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Background
 	m_bxBackGroundBox.SetBoxPos(WRect(nX,nY,nX+316,nY+22));
@@ -374,12 +397,12 @@ void CUISiegeWarfareNew::RenderConsensus()
 
 	// Render Vertical Lines
 	// Render Text
-	_pUIMgr->GetDrawPort()->PutTextEx(_S( 3696, "êµê° ì§„í–‰ ì‹œê°„"),nX+19,nY+6);
+	pDrawPort->PutTextEx(_S( 3696, "±³°¨ ÁøÇà ½Ã°£"),nX+19,nY+6);
 	for(int i=0;i<4;i++)
 	{
-		_pUIMgr->GetDrawPort()->AddTexture(nX+24+i*88,nY+69,nX+25+i*88,nY+72,m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
-		tStr.PrintF(_S(2513,"%dë¶„"),i);
-		_pUIMgr->GetDrawPort()->PutTextEx(tStr,nX+23+i*83,nY+80);
+		pDrawPort->AddTexture(nX+24+i*88,nY+69,nX+25+i*88,nY+72,m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
+		tStr.PrintF(_S(2513,"%dºĞ"),i);
+		pDrawPort->PutTextEx(tStr,nX+23+i*83,nY+80);
 	}
 	m_rcPuple.SetRect(26,47,26+m_iConsensusBarSize,66);
 	m_bxPurple.SetBoxPos(m_rcPuple);
@@ -387,13 +410,15 @@ void CUISiegeWarfareNew::RenderConsensus()
 
 }
 
-// ê°•í™”
+// °­È­
 void CUISiegeWarfareNew::RenderUpgradeTower()
 {
 	int	nX, nY;
 	GetAbsPos( nX, nY );
-	
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Background
 	m_bxBackGroundBox.SetBoxPos(WRect(nX,nY,nX+421,nY+22));
@@ -415,70 +440,70 @@ void CUISiegeWarfareNew::RenderUpgradeTower()
 	nX2 = nX + 23;
 	nY2 = nY + 36;
 	nCab = _pUIFontTexMgr->GetFontHeight()+5;
-	tStr3=_S(3697,"ë‚´êµ¬ë ¥");
+	tStr3=_S(3697,"³»±¸·Â");
 	switch(m_iUpgradeType)
 	{
 		case SWUT_ATTACK:
-			tStr1=_S( 3698, "ê³µê²©í˜• íƒ€ì›Œ ê°•í™”");
-			tStr2=_S(85,"ê³µê²©ë ¥");			
+			tStr1=_S( 3698, "°ø°İÇü Å¸¿ö °­È­");
+			tStr2=_S(85,"°ø°İ·Â");			
 		case SWUT_GUARD:
 			{			
 				if(m_iUpgradeType == SWUT_GUARD)
 				{
-					tStr1=_S( 3699,"ê°€ë“œí˜• íƒ€ì›Œ ê°•í™”");
-					tStr2=_S( 3700,"íš¨ê³¼"); // WSS_DRATAN_SIEGEWARFARE 071002 ìŠ¤íŠ¸ë§ ë²ˆí˜¸ ìˆ˜ì •
+					tStr1=_S( 3699,"°¡µåÇü Å¸¿ö °­È­");
+					tStr2=_S( 3700,"È¿°ú"); // WSS_DRATAN_SIEGEWARFARE 071002 ½ºÆ®¸µ ¹øÈ£ ¼öÁ¤
 				}
-				_pUIMgr->GetDrawPort()->PutTextEx( tStr1, nX+23, nY+6 );
-				_pUIMgr->GetDrawPort()->PutTextEx( _S( 3701, "ì–¼ë§ˆë‚˜ ê°•í™” í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), nX2, nY2+=nCab ,COLOR(0xD3BFFFFF));
-				tStr.PrintF(_S( 3702, "%dë‹¨ê³„" ),1);
-				tStr1.PrintF(_S( 3703, "%s %d% ì¦ê°€" ),tStr2,30);
+				pDrawPort->PutTextEx( tStr1, nX+23, nY+6 );
+				pDrawPort->PutTextEx( _S( 3701, "¾ó¸¶³ª °­È­ ÇÏ½Ã°Ú½À´Ï±î?" ), nX2, nY2+=nCab ,COLOR(0xD3BFFFFF));
+				tStr.PrintF(_S( 3702, "%d´Ü°è" ),1);
+				tStr1.PrintF(_S( 3703, "%s %d% Áõ°¡" ),tStr2,30);
 				tStr = tStr + CTString(" ") + tStr1;
-				_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2, nY2+=nCab);
-				tStr.PrintF(_S( 3702, "%dë‹¨ê³„" ),2);
-				tStr1.PrintF(_S( 3703, "%s %d% ì¦ê°€" ),tStr2,50);
+				pDrawPort->PutTextEx( tStr, nX2, nY2+=nCab);
+				tStr.PrintF(_S( 3702, "%d´Ü°è" ),2);
+				tStr1.PrintF(_S( 3703, "%s %d% Áõ°¡" ),tStr2,50);
 				tStr = tStr + CTString(" ") + tStr1;
-				tStr1.PrintF(_S( 3703, "%s %d% ì¦ê°€" ),tStr3,50);
+				tStr1.PrintF(_S( 3703, "%s %d% Áõ°¡" ),tStr3,50);
 				tStr = tStr +CTString("/") + tStr1; 				
-				_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2, nY2+=nCab);
-				tStr.PrintF(_S( 3702, "%dë‹¨ê³„" ),3);
-				tStr1.PrintF(_S( 3703, "%s %d% ì¦ê°€" ),tStr2,100);
+				pDrawPort->PutTextEx( tStr, nX2, nY2+=nCab);
+				tStr.PrintF(_S( 3702, "%d´Ü°è" ),3);
+				tStr1.PrintF(_S( 3703, "%s %d% Áõ°¡" ),tStr2,100);
 				tStr = tStr + CTString(" ") + tStr1;
-				tStr1.PrintF(_S( 3703, "%s %d% ì¦ê°€" ),tStr3,100);
+				tStr1.PrintF(_S( 3703, "%s %d% Áõ°¡" ),tStr3,100);
 				tStr = tStr +CTString("/") + tStr1; 
-				_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2, nY2+=nCab);				
+				pDrawPort->PutTextEx( tStr, nX2, nY2+=nCab);				
 			}
 			break;
 		case SWUT_GATE:
 			{
-				tStr1=_S( 3704,"ì„±ë¬¸ ê°•í™”");
+				tStr1=_S( 3704,"¼º¹® °­È­");
 				
-				_pUIMgr->GetDrawPort()->PutTextEx( tStr1, nX+23, nY+6 );
-				_pUIMgr->GetDrawPort()->PutTextEx( _S( 3701,  "ì–¼ë§ˆë‚˜ ê°•í™” í•˜ì‹œê² ìŠµë‹ˆê¹Œ?" ), nX2, nY2+=nCab ,COLOR(0xD3BFFFFF));
-				tStr.PrintF(_S( 3702, "%dë‹¨ê³„" ),1);
-				tStr1.PrintF(_S( 3703, "%s %d% ì¦ê°€" ),tStr3,50);				
+				pDrawPort->PutTextEx( tStr1, nX+23, nY+6 );
+				pDrawPort->PutTextEx( _S( 3701,  "¾ó¸¶³ª °­È­ ÇÏ½Ã°Ú½À´Ï±î?" ), nX2, nY2+=nCab ,COLOR(0xD3BFFFFF));
+				tStr.PrintF(_S( 3702, "%d´Ü°è" ),1);
+				tStr1.PrintF(_S( 3703, "%s %d% Áõ°¡" ),tStr3,50);				
 				tStr = tStr+CTString(" ")+ tStr1;
-				_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2, nY2+=nCab);
-				tStr.PrintF(_S( 3702, "%dë‹¨ê³„" ),2);
-				tStr1.PrintF(_S( 3703, "%s %d% ì¦ê°€" ),tStr3,100);
+				pDrawPort->PutTextEx( tStr, nX2, nY2+=nCab);
+				tStr.PrintF(_S( 3702, "%d´Ü°è" ),2);
+				tStr1.PrintF(_S( 3703, "%s %d% Áõ°¡" ),tStr3,100);
 				tStr = tStr+CTString(" ")+ tStr1;
-				_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2, nY2+=nCab);
-				tStr.PrintF(_S( 3702, "%dë‹¨ê³„" ),3);
-				tStr1.PrintF(_S( 3703, "%s %d% ì¦ê°€" ),tStr3,200);
+				pDrawPort->PutTextEx( tStr, nX2, nY2+=nCab);
+				tStr.PrintF(_S( 3702, "%d´Ü°è" ),3);
+				tStr1.PrintF(_S( 3703, "%s %d% Áõ°¡" ),tStr3,200);
 				tStr = tStr+CTString(" ")+ tStr1;
-				_pUIMgr->GetDrawPort()->PutTextEx( tStr, nX2, nY2+=nCab);
+				pDrawPort->PutTextEx( tStr, nX2, nY2+=nCab);
 			}
 			
 			break;
 	}	
 	
 	
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S(1181, "í•„ìš” ë‚˜ìŠ¤" ), nX+301, nY+164 );
-	tStr.PrintF(_S(836,"%I64d ë‚˜ìŠ¤"),GetTowerUpgradePay(m_iUpgradeType,m_iUpgradeLevel));	// TODO :: íƒ€ì›Œ ê°€ê²© ì„¤ì •
-	_pUIMgr->GetDrawPort()->PutTextExRX( tStr, nX+392, nY+164 );
+	pDrawPort->PutTextExRX( _S(1181, "ÇÊ¿ä ³ª½º" ), nX+301, nY+164 );
+	tStr.PrintF(_S(836,"%I64d ³ª½º"),GetTowerUpgradePay(m_iUpgradeType,m_iUpgradeLevel));	// TODO :: Å¸¿ö °¡°İ ¼³Á¤
+	pDrawPort->PutTextExRX( tStr, nX+392, nY+164 );
 
 }
 
-// íƒ€ì›Œ ê°€ë™í•˜ê¸° 
+// Å¸¿ö °¡µ¿ÇÏ±â 
 void CUISiegeWarfareNew::RenderCheckTower()
 {
 	int	nX, nY,i,j,iGab;
@@ -486,8 +511,10 @@ void CUISiegeWarfareNew::RenderCheckTower()
 
 	// Move -> OpenCheckTower
 	// Set window Size
-		
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Background
 	m_bxBackGroundBox.SetBoxPos(WRect(nX,nY,nX+550,nY+22));
@@ -502,32 +529,32 @@ void CUISiegeWarfareNew::RenderCheckTower()
 	iGab = 18;
 	for(i=0;i<9;i++)
 	{
-		_pUIMgr->GetDrawPort()->AddTexture(nX+80,nY+113+iGab*i,nX+532,nY+114+iGab*i,
+		pDrawPort->AddTexture(nX+80,nY+113+iGab*i,nX+532,nY+114+iGab*i,
 		m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
 	}
 
-	_pUIMgr->GetDrawPort()->AddTexture(nX+16,nY+113,nX+80,nY+114,
+	pDrawPort->AddTexture(nX+16,nY+113,nX+80,nY+114,
 	m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+16,nY+131,nX+80,nY+132,
+	pDrawPort->AddTexture(nX+16,nY+131,nX+80,nY+132,
 	m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+16,nY+185,nX+80,nY+186,
+	pDrawPort->AddTexture(nX+16,nY+185,nX+80,nY+186,
 	m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+16,nY+239,nX+80,nY+240,
+	pDrawPort->AddTexture(nX+16,nY+239,nX+80,nY+240,
 	m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+16,nY+257,nX+80,nY+258,
+	pDrawPort->AddTexture(nX+16,nY+257,nX+80,nY+258,
 	m_uvLineH.U0,m_uvLineH.V0,m_uvLineH.U1,m_uvLineH.V1,0xFFFFFFFF);
 
 	// Vertical Lines
-	_pUIMgr->GetDrawPort()->AddTexture(nX+16,nY+113,nX+17,nY+257,
+	pDrawPort->AddTexture(nX+16,nY+113,nX+17,nY+257,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+80,nY+113,nX+81,nY+257,
+	pDrawPort->AddTexture(nX+80,nY+113,nX+81,nY+257,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
-	_pUIMgr->GetDrawPort()->AddTexture(nX+198,nY+113,nX+199,nY+257,
+	pDrawPort->AddTexture(nX+198,nY+113,nX+199,nY+257,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
 
 	for(i=0;i<6;i++)
 	{
-		_pUIMgr->GetDrawPort()->AddTexture(nX+441+iGab*i,nY+113,nX+442+iGab*i,nY+257,
+		pDrawPort->AddTexture(nX+441+iGab*i,nY+113,nX+442+iGab*i,nY+257,
 		m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
 	}	
 
@@ -542,44 +569,44 @@ void CUISiegeWarfareNew::RenderCheckTower()
 	nY2 = nY + 30;
 	nCab = _pUIFontTexMgr->GetFontHeight()+5;
 	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3675, "íƒ€ì›Œ ê°€ë™í•˜ê¸°" ), nX+23, nY+6 );	
+	pDrawPort->PutTextEx( _S( 3675, "Å¸¿ö °¡µ¿ÇÏ±â" ), nX+23, nY+6 );	
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3706, "ìˆ˜í˜¸íƒ€ì›Œ ì¤‘ ì‚¬ìš©í•˜ê³ ì í•˜ëŠ” íƒ€ì›Œë¥¼ ì„ íƒí•´ ì£¼ì‹œê¸° ë°”ëë‹ˆë‹¤." ), nX2, nY2+=nCab ,COLOR(0xD3BFFFFF));	
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3707, "ê°™ì€ ì¢…ë¥˜ì˜ íƒ€ì›ŒëŠ” 5ê°œê¹Œì§€ ê°€ëŠ¥í•˜ë©°, í•œë²ˆ ê°€ë™í•œ íƒ€ì›ŒëŠ” ê°€ë™ì„ ì·¨ì†Œí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤." ), nX2, nY2+=nCab,COLOR(0xD3BFFFFF));
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3708, "ë‹¨, ë¹„ìš©ì€ íƒ€ì›Œì˜ ì¢…ë¥˜ë‚˜ ìœ„ì¹˜ì— ìƒê´€ì—†ì´ ì„¤ì¹˜í•œ íƒ€ì›Œì˜ ê°œìˆ˜ì— ë”°ë¼ ì±…ì •ë©ë‹ˆë‹¤." ), nX2, nY2+=nCab,COLOR(0xD3BFFFFF));
+	pDrawPort->PutTextEx( _S( 3706, "¼öÈ£Å¸¿ö Áß »ç¿ëÇÏ°íÀÚ ÇÏ´Â Å¸¿ö¸¦ ¼±ÅÃÇØ ÁÖ½Ã±â ¹Ù¶ø´Ï´Ù." ), nX2, nY2+=nCab ,COLOR(0xD3BFFFFF));	
+	pDrawPort->PutTextEx( _S( 3707, "°°Àº Á¾·ùÀÇ Å¸¿ö´Â 5°³±îÁö °¡´ÉÇÏ¸ç, ÇÑ¹ø °¡µ¿ÇÑ Å¸¿ö´Â °¡µ¿À» Ãë¼ÒÇÒ ¼ö ¾ø½À´Ï´Ù." ), nX2, nY2+=nCab,COLOR(0xD3BFFFFF));
+	pDrawPort->PutTextEx( _S( 3708, "´Ü, ºñ¿ëÀº Å¸¿öÀÇ Á¾·ù³ª À§Ä¡¿¡ »ó°ü¾øÀÌ ¼³Ä¡ÇÑ Å¸¿öÀÇ °³¼ö¿¡ µû¶ó Ã¥Á¤µË´Ï´Ù." ), nX2, nY2+=nCab,COLOR(0xD3BFFFFF));
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3709, "íƒ€ì…" ), nX+48, nY+117 );	
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3710, "ê³µê²©í˜•" ), nX+48, nY+153 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3711, "ê°€ë“œí˜•" ), nX+48, nY+206 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3712, "ì›Œí”„ìš©" ), nX+48, nY+242 );
+	pDrawPort->PutTextExCX( _S( 3709, "Å¸ÀÔ" ), nX+48, nY+117 );	
+	pDrawPort->PutTextExCX( _S( 3710, "°ø°İÇü" ), nX+48, nY+153 );
+	pDrawPort->PutTextExCX( _S( 3711, "°¡µåÇü" ), nX+48, nY+206 );
+	pDrawPort->PutTextExCX( _S( 3712, "¿öÇÁ¿ë" ), nX+48, nY+242 );
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3713, "í˜•íƒœ" ), nX+138, nY+117 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3714, "ê·¼ê±°ë¦¬" ), nX+138, nY+135 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3715, "ì›ê±°ë¦¬" ), nX+138, nY+152 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3716, "ë§ˆë²•" ), nX+138, nY+171 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3717, "ì†ë„í•˜ë½" ), nX+138, nY+188 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3718, "ëŠ¥ë ¥ì¹˜í•˜ë½" ), nX+138, nY+206 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3719, "ë… ì¤‘ë…" ), nX+138, nY+225 );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3720, "ì›Œí”„ì—°ê²°" ), nX+138, nY+242 );
+	pDrawPort->PutTextExCX( _S( 3713, "ÇüÅÂ" ), nX+138, nY+117 );
+	pDrawPort->PutTextExCX( _S( 3714, "±Ù°Å¸®" ), nX+138, nY+135 );
+	pDrawPort->PutTextExCX( _S( 3715, "¿ø°Å¸®" ), nX+138, nY+152 );
+	pDrawPort->PutTextExCX( _S( 3716, "¸¶¹ı" ), nX+138, nY+171 );
+	pDrawPort->PutTextExCX( _S( 3717, "¼ÓµµÇÏ¶ô" ), nX+138, nY+188 );
+	pDrawPort->PutTextExCX( _S( 3718, "´É·ÂÄ¡ÇÏ¶ô" ), nX+138, nY+206 );
+	pDrawPort->PutTextExCX( _S( 3719, "µ¶ Áßµ¶" ), nX+138, nY+225 );
+	pDrawPort->PutTextExCX( _S( 3720, "¿öÇÁ¿¬°á" ), nX+138, nY+242 );
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 3721, "ì—­í• " ), nX+321, nY+117 );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3722, "ì£¼ë³€ì˜ ì ì„ ê³µê²©í•œë‹¤." ), nX+206, nY+135 );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3723, "ì¼ì • ê±°ë¦¬ ë°–ì˜ ì ì„ ê³µê²©í•œë‹¤." ), nX+206, nY+152 );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3724, "ì£¼ë³€ì˜ ì ì—ê²Œ ë§ˆë²• ê³µê²©ì„ í•œë‹¤." ), nX+206, nY+171 );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3725, "ì£¼ë³€ ì ì˜ ê³µê²© ì†ë„ì™€ ì´ë™ì†ë„ í•˜ë½" ), nX+206, nY+188 );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3726, "ì£¼ë³€ ì ì˜ ëŠ¥ë ¥ì¹˜ í•˜ë½" ), nX+206, nY+206 );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3727, "ì£¼ë³€ì˜ ì ì—ê²Œ ê°•ë ¥í•œ ë… ì¤‘ë…" ), nX+206, nY+225 );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3728, "ì›Œí”„ ì—°ê²°, ë¶€í™œ ëŒ€ê¸°ì‹œê°„ ê°ì†Œ" ), nX+206, nY+242 );
+	pDrawPort->PutTextExCX( _S( 3721, "¿ªÇÒ" ), nX+321, nY+117 );
+	pDrawPort->PutTextEx( _S( 3722, "ÁÖº¯ÀÇ ÀûÀ» °ø°İÇÑ´Ù." ), nX+206, nY+135 );
+	pDrawPort->PutTextEx( _S( 3723, "ÀÏÁ¤ °Å¸® ¹ÛÀÇ ÀûÀ» °ø°İÇÑ´Ù." ), nX+206, nY+152 );
+	pDrawPort->PutTextEx( _S( 3724, "ÁÖº¯ÀÇ Àû¿¡°Ô ¸¶¹ı °ø°İÀ» ÇÑ´Ù." ), nX+206, nY+171 );
+	pDrawPort->PutTextEx( _S( 3725, "ÁÖº¯ ÀûÀÇ °ø°İ ¼Óµµ¿Í ÀÌµ¿¼Óµµ ÇÏ¶ô" ), nX+206, nY+188 );
+	pDrawPort->PutTextEx( _S( 3726, "ÁÖº¯ ÀûÀÇ ´É·ÂÄ¡ ÇÏ¶ô" ), nX+206, nY+206 );
+	pDrawPort->PutTextEx( _S( 3727, "ÁÖº¯ÀÇ Àû¿¡°Ô °­·ÂÇÑ µ¶ Áßµ¶" ), nX+206, nY+225 );
+	pDrawPort->PutTextEx( _S( 3728, "¿öÇÁ ¿¬°á, ºÎÈ° ´ë±â½Ã°£ °¨¼Ò" ), nX+206, nY+242 );
 
 
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S( 3729, "ì´ í•„ìš”ë‚˜ìŠ¤:" ), nX+425, nY+267 );
-	tStr.PrintF(_S( 3730,"%I64d ë‚˜ìŠ¤"),(GetTowerPay()));	// TODO :: íƒ€ì›Œ ê°€ê²© ì„¤ì •
-	_pUIMgr->GetDrawPort()->PutTextExRX( tStr, nX+527, nY+267 );	
+	pDrawPort->PutTextExRX( _S( 3729, "ÃÑ ÇÊ¿ä³ª½º:" ), nX+425, nY+267 );
+	tStr.PrintF(_S( 3730,"%I64d ³ª½º"),GetTowerPay());	// TODO :: Å¸¿ö °¡°İ ¼³Á¤
+	pDrawPort->PutTextExRX( tStr, nX+527, nY+267 );	
 	
 	for(i=0;i<5;i++)
 	{
 		tStr.PrintF("%d",i+1);
-		_pUIMgr->GetDrawPort()->PutTextExCX( tStr, nX+450+iGab*i, nY+117 );
+		pDrawPort->PutTextExCX( tStr, nX+450+iGab*i, nY+117 );
 	}
 
 	for( i=0;i<DRATAN_TOWER_KIND_MAX;i++)
@@ -592,13 +619,15 @@ void CUISiegeWarfareNew::RenderCheckTower()
 	
 }
 
-// íƒ€ì›Œ ìˆ˜ë¦¬í•˜ê¸°
+// Å¸¿ö ¼ö¸®ÇÏ±â
 void CUISiegeWarfareNew::RenderRepairTower()
 {
 	int	nX, nY;
 	GetAbsPos( nX, nY );
-	
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	// Background
 	m_bxBackGroundBox.SetBoxPos(WRect(nX,nY,nX+421,nY+22));
@@ -617,11 +646,11 @@ void CUISiegeWarfareNew::RenderRepairTower()
 	nY2 = nY + 25;
 	nCab = _pUIFontTexMgr->GetFontHeight()+5;	
 				
-	tStr.PrintF("ìˆ˜ë¦¬ë¹„ìš©:%I64d",GetRepairMoney());
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3731,"íƒ€ì›Œ ìˆ˜ë¦¬í•˜ê¸°"), nX+23, nY+6 );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3732,"íŒŒê´´ë˜ì§€ ì•Šê³  ë¶€ì„œì§„ íƒ€ì›ŒëŠ” ë°”ë¡œ ìˆ˜ë¦¬ê°€ ê°€ëŠ¥í•©ë‹ˆë‹¤."), nX2, nY2+=nCab);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 3733,"ìˆ˜ë¦¬ë¹„ìš©ì€ ë¶€ì„œì§„ ì •ë„ì— ë”°ë¼ ì±…ì •ë˜ë©° ë‹¤ìŒê³¼ ê°™ìŠµë‹ˆë‹¤."), nX2, nY2+=nCab);
-	_pUIMgr->GetDrawPort()->PutTextExCX( tStr, nX+GetWidth()/2, nY2+=nCab+10,COLOR(0xD3BFFFFF));
+	tStr.PrintF(_S(3899,"¼ö¸®ºñ¿ë:%I64d"),GetRepairMoney());
+	pDrawPort->PutTextEx( _S( 3731,"Å¸¿ö ¼ö¸®ÇÏ±â"), nX+23, nY+6 );
+	pDrawPort->PutTextEx( _S( 3732,"ÆÄ±«µÇÁö ¾Ê°í ºÎ¼­Áø Å¸¿ö´Â ¹Ù·Î ¼ö¸®°¡ °¡´ÉÇÕ´Ï´Ù."), nX2, nY2+=nCab);
+	pDrawPort->PutTextEx( _S( 3733,"¼ö¸®ºñ¿ëÀº ºÎ¼­Áø Á¤µµ¿¡ µû¶ó Ã¥Á¤µÇ¸ç ´ÙÀ½°ú °°½À´Ï´Ù."), nX2, nY2+=nCab);
+	pDrawPort->PutTextExCX( tStr, nX+GetWidth()/2, nY2+=nCab+10,COLOR(0xD3BFFFFF));
 
 }
 //------------------------------------------------------------------------------
@@ -651,8 +680,10 @@ void CUISiegeWarfareNew::Render()
 			break;
 	}	
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->FlushRenderingQueue();
+	pDrawPort->EndTextEx();
 }
  
 //------------------------------------------------------------------------------
@@ -679,7 +710,7 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 	case WM_MOUSEMOVE:
 		{
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
@@ -691,7 +722,12 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 				Move( ndX, ndY );			
 				return WMSG_SUCCESS;
 			}
-		
+
+			m_btnOK.MouseMessage( pMsg );		// È®ÀÎ
+			m_btnCancel.MouseMessage( pMsg );	// Ãë¼Ò
+			m_btnApply.MouseMessage( pMsg );	// °¡µ¿ÇÏ±â
+			m_btnReturn.MouseMessage( pMsg );	// µ¹¾Æ°¡±â
+			m_sbtnUpgrade.MouseMessage(pMsg);
 		}
 		break;
 	case WM_LBUTTONDOWN:
@@ -753,7 +789,7 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 							break;
 						
 					}					
-					_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 					return WMSG_SUCCESS;
 				}
 			
@@ -772,10 +808,10 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							// TODO : í•´ë‹¹ ì²´í¬ëœ ê°œìˆ˜ë¥¼ ê³„ì‚° ìƒíƒœë¥¼ ì „ë‹¬í•œë‹¤.
+							// TODO : ÇØ´ç Ã¼Å©µÈ °³¼ö¸¦ °è»ê »óÅÂ¸¦ Àü´ŞÇÑ´Ù.
 							SetTowerSetFromCB();
 							SendApplyTowerSet();	
-							_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
+							CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
 						}								
 					}
 					else if( ( wmsgResult = m_btnReturn.MouseMessage( pMsg ) ) != WMSG_FAIL )
@@ -783,7 +819,7 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 						if( wmsgResult == WMSG_COMMAND )
 						{	
 							//Clear();
-							_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
+							CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
 						}				
 					}
 					break;
@@ -793,7 +829,7 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 						if( wmsgResult == WMSG_COMMAND )
 						{
 							SendTowerReinforce(m_iUpgradeType,m_iUpgradeLevel);						
-							_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
+							CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
 						}
 						return wmsgResult;
 					}
@@ -802,15 +838,18 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 						if( wmsgResult == WMSG_COMMAND )
 						{	
 						//	Clear();
-							_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
+							CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
 						}			
 						return wmsgResult;
 					}	
 					else if( m_sbtnUpgrade.MouseMessage(pMsg) != WMSG_FAIL )
 					{
 						m_iUpgradeLevel = m_sbtnUpgrade.GetSelectPos();
-						if( m_iUpgradeLevelOld >= m_iUpgradeLevel) 
-								m_sbtnUpgrade.SetSelectPos(m_iUpgradeLevelOld);	
+						if( m_iUpgradeLevelOld >= m_iUpgradeLevel)
+						{
+								m_sbtnUpgrade.SetSelectPos(m_iUpgradeLevelOld);
+								m_iUpgradeLevel = m_iUpgradeLevelOld;
+						}
 						return WMSG_SUCCESS;
 					}
 					break;
@@ -820,7 +859,7 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 						if( wmsgResult == WMSG_COMMAND )
 						{
 							SendTowerRepair(m_iRepairTowerIndex );
-							_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
+							CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
 						}
 						return wmsgResult;
 					}
@@ -829,7 +868,7 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 						if( wmsgResult == WMSG_COMMAND )
 						{	
 						//	Clear();
-							_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
+							CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
 						}			
 						return wmsgResult;
 					}
@@ -848,8 +887,19 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 		{
 			if( IsInside( nX, nY ) )
 			{
-				if( m_sbtnUpgrade.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;		
+				if( _pUISWDoc->GetUIState() == SWS_UPGRADE_TOWER )
+				{
+					if( m_sbtnUpgrade.MouseMessage( pMsg ) != WMSG_FAIL )
+					{
+						m_iUpgradeLevel = m_sbtnUpgrade.GetSelectPos();
+						if( m_iUpgradeLevelOld >= m_iUpgradeLevel)
+						{
+							m_sbtnUpgrade.SetSelectPos(m_iUpgradeLevelOld);	
+							m_iUpgradeLevel = m_iUpgradeLevelOld;
+						}
+						return WMSG_SUCCESS;	
+					}
+				}	
 			}
 		}
 		break;
@@ -864,15 +914,15 @@ WMSG_RESULT CUISiegeWarfareNew::MouseMessage( MSG *pMsg )
 //------------------------------------------------------------------------------
 void CUISiegeWarfareNew::StartConsensus(ULONG charIdx)
 {		
-	// í”Œë ˆì´ì–´ì˜ ê²½ìš°...
+	// ÇÃ·¹ÀÌ¾îÀÇ °æ¿ì...
 	if( _pNetwork->MyCharacterInfo.index == charIdx )
 	{
-		m_tmStartTime = timeGetTime();		
+		m_tmStartTime = (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();		
 		m_iConsensusBarSize = 0;
 		OpenConsensus();		
 		StartConsensusAni(charIdx);
 	}
-	// ë‹¤ë¥¸ ìºë¦­í„°ì˜ ê²½ìš°
+	// ´Ù¸¥ Ä³¸¯ÅÍÀÇ °æ¿ì
 	else
 	{
 		StartConsensusAni(charIdx);
@@ -885,28 +935,28 @@ void CUISiegeWarfareNew::StartConsensus(ULONG charIdx)
 //------------------------------------------------------------------------------
 void CUISiegeWarfareNew::CompleteConsensus(ULONG charIdx)
 {	
-	// í”Œë ˆì´ì–´ì˜ ê²½ìš°...
+	// ÇÃ·¹ÀÌ¾îÀÇ °æ¿ì...
 	if( //_pNetwork->MyCharacterInfo.index == charIdx ||
 		_pNetwork->MyCharacterInfo.bConsensus ) // WSS_DRATAN_SIEGEWARFARE 071008
 	{
-		//  ë‚´ ìºë¦­ êµê° ì¤‘ì§€
+		//  ³» Ä³¸¯ ±³°¨ ÁßÁö
 		m_tmStartTime = 0;
 		m_iConsensusBarSize = 0;	
 		
 		if( _pUISWDoc->GetUIState() == SWS_CONSENSUS_CRYSTAL )
 		{
 			_pUISWDoc->SetUIState( SWS_NONE );
-			_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
+			CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
 		}
 		_pNetwork->MyCharacterInfo.bConsensus =FALSE;
 		
 		// WSS_DRATAN_SIEGEWARFARE 2007/10/18
-		// ìƒíƒœ ì´ˆê¸°í™”
-		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->DeathInit();
+		// »óÅÂ ÃÊ±âÈ­
+		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->PlayerInit(true);
 
 	}
 
-	// êµê° ì´í™íŠ¸ ì¤‘ì§€
+	// ±³°¨ ÀÌÆåÆ® ÁßÁö
 	_pUISWDoc->StopConsensusEffect(charIdx,TRUE); // WSS_DRATAN_SIEGEWARFARE 2007/10/14
 
 }
@@ -917,7 +967,7 @@ void CUISiegeWarfareNew::CompleteConsensus(ULONG charIdx)
 //------------------------------------------------------------------------------
 void CUISiegeWarfareNew::StopConsensus(ULONG charIdx)
 {	
-	// í”Œë ˆì´ì–´ì˜ ê²½ìš°...
+	// ÇÃ·¹ÀÌ¾îÀÇ °æ¿ì...
 	if( _pNetwork->MyCharacterInfo.index == charIdx )
 	{
 		m_tmStartTime = 0;
@@ -926,27 +976,25 @@ void CUISiegeWarfareNew::StopConsensus(ULONG charIdx)
 		if( _pUISWDoc->GetUIState() == SWS_CONSENSUS_CRYSTAL )
 		{
 			_pUISWDoc->SetUIState( SWS_NONE );
-			_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
+			CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_NEW, FALSE );
 		}
 		_pNetwork->MyCharacterInfo.bConsensus =FALSE;
 		_pUISWDoc->StopConsensusEffect(charIdx); // WSS_DRATAN_SIEGEWARFARE 2007/10/14		
 	}
-	// ë‹¤ë¥¸ ìºë¦­í„°ì˜ ê²½ìš°
+	// ´Ù¸¥ Ä³¸¯ÅÍÀÇ °æ¿ì
 	else 
 	{
 		_pUISWDoc->StopConsensusEffect(charIdx); // WSS_DRATAN_SIEGEWARFARE 2007/10/14
 	}
-
-
 }
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfareNew::CheckConsensus()
-// Explain: êµê° ì‹œê°„ ì²´í¬( <= : ì§„í–‰ì¤‘,  > íƒ€ì„ì—…
+// Explain: ±³°¨ ½Ã°£ Ã¼Å©( <= : ÁøÇàÁß,  > Å¸ÀÓ¾÷
 //------------------------------------------------------------------------------
 int CUISiegeWarfareNew::CheckConsensus()
 {	
-	DWORD tmNow = timeGetTime();
+	DWORD tmNow = (unsigned int(_pTimer->GetLerpedCurrentTick()*1000)); //timeGetTime();
 	int tSec = (tmNow - m_tmStartTime)/1000;
 	if( (tSec-CONSENSUS_TIMEUP) <= 0 ) m_iConsensusBarSize = tSec*260/CONSENSUS_TIMEUP ;
 	return tSec-CONSENSUS_TIMEUP;
@@ -958,25 +1006,22 @@ int CUISiegeWarfareNew::CheckConsensus()
 //------------------------------------------------------------------------------
 void CUISiegeWarfareNew::StartConsensusAni(int charIdx)
 {	
-	// í”Œë ˆì´ì–´ì˜ ê²½ìš°...
+	// ÇÃ·¹ÀÌ¾îÀÇ °æ¿ì...
 	if( _pNetwork->MyCharacterInfo.index == charIdx )
 	{	
 		_pNetwork->MyCharacterInfo.bConsensus = TRUE;
 		_pUISWDoc->StartConsensusEffect(charIdx,CEntity::GetPlayerEntity(0)); // WSS_DRATAN_SIEGEWARFARE 2007/10/14
 	}
-	// ë‹¤ë¥¸ ìºë¦­í„°ì˜ ê²½ìš°
+	// ´Ù¸¥ Ä³¸¯ÅÍÀÇ °æ¿ì
 	else 
 	{
-		for(INDEX i=0; i<_pNetwork->ga_srvServer.srv_actCha.Count(); ++i)
+		ObjectBase* pObject = ACTORMGR()->GetObject(eOBJ_CHARACTER, charIdx);
+
+		if (pObject != NULL)
 		{
-			CCharacterTarget &ct = _pNetwork->ga_srvServer.srv_actCha[i];
-			if(ct.cha_Index == charIdx)
-			{					
-				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetConsensus(charIdx);
-				_pUISWDoc->StartConsensusEffect(charIdx,ct.cha_pEntity); // WSS_DRATAN_SIEGEWARFARE 2007/10/14
-			}
-		}
-		
+			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetConsensus(charIdx);
+			_pUISWDoc->StartConsensusEffect(charIdx, pObject->GetEntity());
+		}		
 	}
 }
 
@@ -1228,25 +1273,31 @@ void CUISiegeWarfareNew::SetRepairMoney(int tIdx ,SQUAD tMoney)
 // Rebirth Quarters
 void CUISiegeWarfareNew::CreateWaitQuarterBox()
 {
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_SIEGE_WARFARE_BUY_QUARTER )) return;			
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_SIEGE_WARFARE_BUY_QUARTER )) return;			
 	
 	CUIMsgBox_Info	MsgBoxInfo;	
 	CTString		strMessage;
 
-	// TODO :: ëŒ€ê¸° ì‹œê°„ì„ í‘œì‹œí•´ì•¼ í•˜ë¯€ë¡œ ë”°ë¡œ UI ë§Œë“¤ì–´ì•¼ í• ë“¯....
-	MsgBoxInfo.SetMsgBoxInfo(  _S( 3734, "ê³µì„± ì¤‘ ë¶€í™œ ëŒ€ê¸° ì‹œê°„" ), NULL , UI_SIEGE_WARFARE_NEW, MSGCMD_SIEGE_WARFARE_BUY_QUARTER );	
-	strMessage = _S( 3735, "ë¶€í™œ ëŒ€ê¸° ì¤‘..." );
+	// TODO :: ´ë±â ½Ã°£À» Ç¥½ÃÇØ¾ß ÇÏ¹Ç·Î µû·Î UI ¸¸µé¾î¾ß ÇÒµí....
+	MsgBoxInfo.SetMsgBoxInfo(  _S( 3734, "°ø¼º Áß ºÎÈ° ´ë±â ½Ã°£" ), NULL , UI_SIEGE_WARFARE_NEW, MSGCMD_SIEGE_WARFARE_BUY_QUARTER );	
+	strMessage = _S( 3735, "ºÎÈ° ´ë±â Áß..." );
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );	
+	pUIManager->CreateMessageBox( MsgBoxInfo );	
 	
 }
 
 void CUISiegeWarfareNew::CreateBuyQuarterBox(int iNpcIdx)
-{	
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	m_iNpcIdx = 0;
 
-	if( iNpcIdx < 390 && iNpcIdx > 399 ) return;
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_SIEGE_WARFARE_WAIT_QUARTER )) return;
+	if( iNpcIdx < 390 || iNpcIdx > 399 )
+		return;
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_SIEGE_WARFARE_WAIT_QUARTER )) return;
 
 	m_iNpcIdx = iNpcIdx;
 		
@@ -1258,15 +1309,15 @@ void CUISiegeWarfareNew::CreateBuyQuarterBox(int iNpcIdx)
 	if ( iNpcIdx >= 391 && iNpcIdx <= 394 ) tNas = TOWER_USE_NAS*2;
 	if ( iNpcIdx >= 395 && iNpcIdx <= 399 ) tNas = TOWER_USE_NAS;
 
-	MsgBoxInfo.SetMsgBoxInfo(  _S( 3736, "ë¶€í™œì§„ì§€ êµ¬ì…" ), UMBS_YESNO , UI_SIEGE_WARFARE_NEW, MSGCMD_SIEGE_WARFARE_WAIT_QUARTER );	
-	strMessage.PrintF( _S( 3737, "ë¶€í™œ ì§„ì§€ %d"), iNpcIdx - 389 );
+	MsgBoxInfo.SetMsgBoxInfo(  _S( 3736, "ºÎÈ°ÁøÁö ±¸ÀÔ" ), UMBS_YESNO , UI_SIEGE_WARFARE_NEW, MSGCMD_SIEGE_WARFARE_WAIT_QUARTER );	
+	strMessage.PrintF( _S( 3737, "ºÎÈ° ÁøÁö %d"), iNpcIdx - 389 );
 	MsgBoxInfo.AddString( strMessage );
 	strMessage.PrintF("%d",tNas);
-	strMessage.PrintF(_S( 255, "ê°€ê²© : %s"), strMessage);
+	strMessage.PrintF(_S( 255, "°¡°İ : %s"), strMessage);
 	MsgBoxInfo.AddString( strMessage );
-	strMessage=_S( 3738, "ì„ íƒí•œ ë¶€í™œì§„ì§€ë¥¼ êµ¬ì…í•˜ì‹œê² ìŠµë‹ˆê¹Œ?");
+	strMessage=_S( 3738, "¼±ÅÃÇÑ ºÎÈ°ÁøÁö¸¦ ±¸ÀÔÇÏ½Ã°Ú½À´Ï±î?");
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 }
 
@@ -1286,7 +1337,7 @@ void CUISiegeWarfareNew::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &st
 				break;
 
 			case MSGCMD_SIEGEWARFARE_REBIRTH:
-				// ê°€ê¹Œìš´ ì‹œì‘ ì§€ì ìœ¼ë¡œ ë¶€í™œ
+				// °¡±î¿î ½ÃÀÛ ÁöÁ¡À¸·Î ºÎÈ°
 				// WSS_DRATAN_SIEGEWARFARE 2007/10/11
 				if( _pNetwork->MyCharacterInfo.sbJoinFlagDratan == WCJF_OWNER ||
 					_pNetwork->MyCharacterInfo.sbJoinFlagDratan == WCJF_DEFENSE_GUILD )

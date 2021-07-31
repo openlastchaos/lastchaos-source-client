@@ -12,10 +12,10 @@
 #include <Engine/Templates/StaticArray.h>
 #include <Engine/Graphics/Texture.h>
 #include <Engine/Graphics/Shader.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include <Engine/Effect/CSkaTag.h>
 #include <Engine/Effect/CRefCountPtr.h>
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 #define MAX_BPV 4 // max bones per vertex
 #define MAX_WEIGHTS_PER_SURFACE 25
@@ -41,24 +41,24 @@ struct ENGINE_API MeshLOD
 
 	CStaticArray<struct MeshVertex>           mlod_aVertices;      // array of mesh vertices
 	CStaticArray<struct MeshNormal>           mlod_aNormals;	     // array of mesh normals
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	CStaticArray<struct MeshTangent>          mlod_aTangents;	     // array of mesh tangent
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	CStaticArray<struct MeshUVMap>            mlod_aUVMaps;        // array of mesh UV maps
 	CStaticArray<struct MeshSurface>          mlod_aSurfaces;      // array of mesh surfaces
 	CStaticArray<struct MeshWeightMap>        mlod_aWeightMaps;    // array of mesh weight maps
 	CStaticArray<struct MeshMorphMap>         mlod_aMorphMaps;     // array of mesh morph maps
 	CStaticArray<struct MeshVertexWeightInfo> mlod_aVertexWeights; // array of weight indices and factors per vertex
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	CStaticArray< ptr_tag >     mlod_aSkaTags;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 	INDEX mlod_iBufferBindID;   // Bind   buffer ID
 	INDEX mlod_iVertexBufferID; // Vertex buffer ID 
 	INDEX mlod_iNormalBufferID; // Normal buffer ID
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	INDEX mlod_iTangentBufferID; // tangent buffer ID
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	INDEX mlod_iWeightBufferID; // Weight buffer ID
 
 	ULONG mlod_ulFlags;         // mesh lod flags
@@ -66,7 +66,7 @@ struct ENGINE_API MeshLOD
 	CTString mlod_fnSourceFile; // file name of ascii am file, used in Ska studio
 };
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 #define EPSILONFORTANGENT 1.0e-7
 #define DcVec2Add(r, a, b)           ((r)[0] = (a)[0] + (b)[0], (r)[1] = (a)[1] + (b)[1])
 #define DcVec2AddTo(a, b)            ((a)[0] += (b)[0], (a)[1] += (b)[1])
@@ -152,7 +152,7 @@ struct ENGINE_API MeshTangent
 	FLOAT tx, ty, tz;	//tangent vector
 	FLOAT bdir;			//determinent for binormal
 };
-*/// tangent ì‚¬ìš©ì‹œ
+*/// tangent »ç¿ë½Ã
 struct ENGINE_API MeshTangent
 {
 	MeshTangent() : bx( 0 ), by( 0 ), bz( 0 ), tdir( 0 ) {}
@@ -162,7 +162,7 @@ struct ENGINE_API MeshTangent
 	FLOAT bx, by, bz;	//tangent vector
 	FLOAT tdir;			//determinent for binormal
 };
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 
 struct ENGINE_API MeshVertex
 {
@@ -256,6 +256,9 @@ struct ENGINE_API MeshVertexMorph
 
 class ENGINE_API CMesh : public CSerial
 {
+#ifdef KALYDO
+  static CTString strDefaultMeshPath;
+#endif
 public:
 	CMesh();
 	~CMesh();
@@ -270,7 +273,7 @@ public:
 	void AddMeshLod(MeshLOD &mlod);
 	// Remove mesh lod
 	void RemoveMeshLod(MeshLOD *pmlodRemove);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Encode Data)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Encode Data)(0.1)
 	// Read mesh from stream
 	void Read_t( CTStream *istrFile);  // throw char *
 	void Read_t_old( CTStream *istrFile, BOOL bHasContext);  // throw char *
@@ -278,11 +281,15 @@ public:
 	// Write mesh in stream
 	void Write_t( CTStream *ostrFile); // throw char *
 	void Write_t_old( CTStream *ostrFile); // throw char *
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Encode Data)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Encode Data)(0.1)
 	// Unbind
 	void Unbind(void);
 	// Clear mesh
 	void Clear(void);
+#ifdef KALYDO
+  void Load_t(const CTFileName &fnFileName);
+  void Load_Delay_t(const CTFileName &fnFileName);
+#endif
 	// Count memory used by mesh
 	SLONG GetUsedMemory(void);
 	/* Get the description of this object. */

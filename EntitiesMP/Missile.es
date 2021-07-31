@@ -21,6 +21,9 @@
 #include <Engine/Entities/Skill.h>
 #include <Engine/World/WorldRayCasting.h>
 #include <Engine/Network/MessageDefine.h>
+#include <Engine/Object/ActorMgr.h>
+#include <EntitiesMP/Common/CharacterDefinition.h>
+#include <Engine/Info/MyInfo.h>
 
 typedef CSampleSpline< FLOAT3D, CCubicSplineInterpolate<FLOAT3D> > cubic_spline;
 #define GetSpline() (*((cubic_spline*)m_pssPath))
@@ -49,12 +52,15 @@ enum MissileType{
 #include <Engine/Effect/CTag.h>
 #include <Engine/Effect/CTagManager.h>
 #include <Engine/Ska/ModelInstance.h>
+
+void DamagedTargetsInRange(CEntity* pEntity, CSelectedEntities& dcEntities, enum DamageType dmtType, FLOAT fDamageAmmount, FLOAT3D vCenter, BOOL bSkill);
+
 void ShotMissile(CEntity *penShoter, const char *szShotPosTagName
 				 , CEntity *penTarget, FLOAT fMoveSpeed
 				 , const char *szHitEffectName, const char *szArrowEffectName
 				 , bool bCritical
 				 , FLOAT fHorizonalOffset = 0.0f, FLOAT fVerticalOffset = 0.0f	//-1.0f ~ 1.0f
-				 , INDEX iArrowType = 0, const char *szMissileModel = NULL)		// iArrowType=0 : normal arrow, iArrowType=1 : magic arrow, iArrowType=etc : ??
+				 , INDEX iArrowType = 0, const char *szMissileModel = NULL, CSelectedEntities* dcEntities = NULL)		// iArrowType=0 : normal arrow, iArrowType=1 : magic arrow, iArrowType=etc : ??
 {
 	//입력 조건 검사.
 	ASSERT(penShoter != NULL && penShoter->en_pmiModelInstance != NULL);
@@ -94,12 +100,27 @@ void ShotMissile(CEntity *penShoter, const char *szShotPosTagName
 		penMissile->m_fAfterDelay = 0.0f;
 		penMissile->m_fnModel = CTFileName("data\\effect\\ska\\magic_arr.smc");	//Hardcoding
 	}
+	else if (iArrowType == 2)
+	{
+		penMissile->m_eMissileType = MLT_SOMETHING;
+		penMissile->m_fAfterDelay = 0.0f;
+		penMissile->m_fnModel = CTFileName("data\\effect\\ska\\invisible.smc");	//Hardcoding
+	}
 	else
 	{
 		penMissile->m_eMissileType = MLT_SOMETHING;
 		penMissile->m_fAfterDelay = 0.0f;
 		penMissile->m_fnModel = szMissileModel;
 	}
+
+	if (dcEntities != NULL)
+	{
+		for (int i=0 ; i<dcEntities->Count(); ++i)
+		{
+			penMissile->m_dcEnemies.Add(dcEntities->vectorSelectedEntities[i]);
+		}
+	}
+
 	penMissile->m_bNoPeak = FALSE;
 	penMissile->Initialize();
 	
@@ -420,6 +441,7 @@ properties:
 		ULONG			m_ulTargetID;
 		FLOAT3D			m_vTargetCenterPos;
 		BOOL			m_bMoveFail;
+		CSelectedEntities	m_dcEnemies;
 	}
 components:
 	1 sound SOUND_BOW_BLOW                "Data\\Sounds\\Character\\public\\C_blow_bow01.wav",
@@ -453,6 +475,20 @@ functions:
 	void InflictDirectDamage(CEntity *penToDamage, CEntity *penInflictor, enum DamageType dmtType,
 		FLOAT fDamageAmmount, const FLOAT3D &vHitPoint, const FLOAT3D &vDirection)
 	{
+		int nHitType = 0;
+
+		if (m_epSource->GetNetworkID() == _pNetwork->MyCharacterInfo.index)
+		{
+			nHitType = _pNetwork->MyCharacterInfo.iHitEffectType;
+		}
+
+		if (nHitType > 0)
+		{
+			//PlaySound(m_soSound, DEF_SOUND_HOLYWATER_HIT, SOF_3D|SOF_VOLUMETRIC);
+			StartEffectGroup(DEF_CAM_SHAKE, _pTimer->CurrentTick(), this->en_plPlacement.pl_PositionVector, FLOAT3D(0, 0, 0));
+			m_bCritical = FALSE;
+		}
+
 		if(m_bCritical)
 		{
 			PlaySound(m_soSound, SOUND_BOW_CRITICAL, SOF_3D|SOF_VOLUMETRIC);	
@@ -467,7 +503,7 @@ functions:
 		if( penToDamage )
 		{
 			if( !(penToDamage->GetFlags()&ENF_ALIVE ) )	{ return; }
-			_pUIMgr->ShowDamage( penToDamage->en_ulID );
+			SE_Get_UIManagerPtr()->ShowDamage( penToDamage->en_ulID );
 			INDEX preHealth, curHealth;
 			preHealth = ((CUnit*)penToDamage)->m_nPreHealth;
 			curHealth = ((CUnit*)penToDamage)->m_nCurrentHealth;
@@ -475,11 +511,14 @@ functions:
 			if(preHealth!= -1 && curHealth > preHealth)
 			{
 				fDamageAmmount = 1;
-				((CUnit*)penToDamage)->m_nCurrentHealth = ((CUnit*)penToDamage)->m_nPreHealth;
-				
+				((CUnit*)penToDamage)->m_nCurrentHealth = ((CUnit*)penToDamage)->m_nPreHealth;				
 			}
-			else fDamageAmmount = 0;
-			if(penToDamage ==_pNetwork->_TargetInfo.pen_pEntity)
+			else 
+			{
+				fDamageAmmount = 0;
+			}
+
+			if(penToDamage ==INFO()->GetTargetEntity(eTARGET))
 			{
 				if( penToDamage->IsCharacter() )
 				{
@@ -491,13 +530,47 @@ functions:
 				}
 			}
 
-			if(((CUnit*)penToDamage)->m_nCurrentHealth ==0)//0827
+			if (penToDamage->IsEnemy() && preHealth >= 0) // ?? Pet이 Enemy(권좌)를 공격할 일이 있는가?
 			{
-				if(penToDamage == _pNetwork->_TargetInfo.pen_pEntity)
+				const INDEX iMobIndex = ((CEnemy*)penToDamage)->m_nMobDBIndex;
+
+				if (iMobIndex == LORD_SYMBOL_INDEX) // 메라크 공성 권좌 NPC(사이즈는 바뀌지 않고, 모델을 바꾼다)
 				{
-					_pNetwork->_TargetInfo.Init();
+					CMobData* MD = CMobData::getData(iMobIndex);
+					FLOAT fMaxHealth = ((CUnit*)penToDamage)->m_nMaxiHealth;
+
+					if ((curHealth <= fMaxHealth * 0.25f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 0)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword04.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 0;
+						}
+					}
+					else if ((curHealth <= fMaxHealth * 0.50f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 1)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword03.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 1;
+						}
+					}
+					else if ((curHealth <= fMaxHealth * 0.75f))
+					{
+						if (((CUnit*)penToDamage)->m_nPlayActionNum != 2)
+						{
+							penToDamage->SetSkaModel("data\\npc\\Gguard\\sword02.smc");
+							penToDamage->GetModelInstance()->RefreshTagManager();
+							penToDamage->GetModelInstance()->StretchModel(FLOAT3D(MD->GetScale(), MD->GetScale(), MD->GetScale()));
+							((CUnit*)penToDamage)->m_nPlayActionNum = 2;
+						}
+					}
 				}
-			}	
+			}
 		}	
 
 		// FIXME : 싱글 모드이구... 특정 월드 일때... HardCoding
@@ -521,62 +594,12 @@ functions:
 			CEntity::InflictDirectDamage(penToDamage, penInflictor, dmtType, fDamageAmmount,vHitPoint, vDirection);
 		}
 
-		if(penToDamage && penToDamage->IsEnemy())
-		{
-			const INDEX iMobIndex = ((CEnemy*)penToDamage)->m_nMobDBIndex;
-			// 성주의 권좌일때....
-			if( iMobIndex == LORD_SYMBOL_INDEX)
-			{
-				CMobData& MD = _pNetwork->GetMobData(iMobIndex);
-				INDEX iCurHealth = ((CUnit*)((CEntity*)penToDamage))->m_nCurrentHealth;
-				static INDEX iType = 0;
-				float fMaxHealth = MD.GetHealth();
-				if( iCurHealth <= fMaxHealth * 0.25f)
-				{
-					if(iType != 1 )
-					{
-						iType = 1;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword04.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else if( iCurHealth <= fMaxHealth * 0.50f)
-				{
-					if( iType != 2 )
-					{
-						iType = 2;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword03.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else if( iCurHealth <= fMaxHealth * 0.75f)
-				{
-					if( iType != 3 )
-					{
-						iType = 3;
-						penToDamage->SetSkaModel("data\\npc\\Gguard\\sword02.smc");
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-				else
-				{
-					if( iType != 0 )
-					{
-						iType = 0;
-						penToDamage->SetSkaModel(MD.GetMobSmcFileName());
-						penToDamage->GetModelInstance()->RefreshTagManager();
-					}
-				}
-
-			}
-		}	
-
 		if(penToDamage->IsEnemy())
 		{
 			if(((CUnit*)((CEntity*)penToDamage))->m_nCurrentHealth <= 0)
 			{
-				CMobData& MD = _pNetwork->GetMobData(((CEnemy*)(CEntity*)penToDamage)->m_nMobDBIndex);
-				if(!MD.IsCastleTower())
+				CMobData* MD = CMobData::getData(((CEnemy*)(CEntity*)penToDamage)->m_nMobDBIndex);
+				if(!MD->IsCastleTower())
 				{
 					((CUnit*)((CEntity*)penToDamage))->DeathNow();
 				}
@@ -584,7 +607,7 @@ functions:
 				{
 					// WSS_DRATAN_SEIGEWARFARE 2007/08/31
 					// 공격 수호상중 드라탄 타워 예외처리 ( 마스터 타워 제외 )
-					if(MD.GetMobIndex()>=352 && MD.GetMobIndex()<=399)
+					if(MD->GetMobIndex()>=352 && MD->GetMobIndex()<=399)
 					{
 						((CUnit*)((CEntity*)penToDamage))->DeathNow();
 					}
@@ -616,6 +639,7 @@ functions:
 				m_epSource->SetPlacement(plSource);
 				// 서버에 발사 메세지 전송
 				_pNetwork->SendSkillMessage(401, m_epTarget, m_epTarget->GetNetworkID(), TRUE, 1 );
+				
 			}
 
 			if (m_bMoveFail)
@@ -641,7 +665,15 @@ functions:
 			MakeRotationMatrixFast(matrix, this->en_plPlacement.pl_OrientationAngle);
 			FLOAT3D vDir(0,1,0);
 			RotateVector(vDir, matrix);
-			this->InflictDirectDamage(m_epTarget, this, DMT_NONE, 1, this->en_plPlacement.pl_PositionVector, vDir);					
+			if (m_dcEnemies.Count() > 0)
+			{
+				DamagedTargetsInRange(this, m_dcEnemies, DMT_EXPLOSION, 1, FLOAT3D(0,0,0), TRUE);
+			}
+			else
+			{
+				this->InflictDirectDamage(m_epTarget, this, DMT_NONE, 1, this->en_plPlacement.pl_PositionVector, vDir);					
+			}
+
 			FLOAT3D vAxisY(0,1,0);
 			FLOAT angle = acos(vDir % vAxisY);
 			FLOAT3D axis = vAxisY * vDir;
@@ -657,6 +689,12 @@ functions:
 			FLOAT angle = acos(vDir % vAxisY);
 			FLOAT3D axis = vAxisY * vDir;
 			FLOATquat3D quat;
+
+			if (m_dcEnemies.Count() > 0)
+			{
+				DamagedTargetsInRange(this, m_dcEnemies, DMT_EXPLOSION, 1, FLOAT3D(0,0,0), TRUE);
+			}
+
 			quat.FromAxisAngle(axis, angle);
 			StartEffectGroup(m_strHitEffect, _pTimer->GetLerpedCurrentTick(), this->en_plPlacement.pl_PositionVector, quat);
 		}
@@ -777,6 +815,166 @@ functions:
 		else					{ return FALSE; }
 	}
 procedures:
+	Main()
+	{
+		if(m_bEntityTarget && m_epTarget.ep_pen == NULL)
+		{
+			InitAsVoid();
+			SetFlagOff(ENF_ALIVE);
+			SetFlagOn(ENF_CLIENTHANDLING);
+			Destroy(FALSE);
+			return;
+		}
+		InitAsSkaModel();
+		m_soSound.Set3DParameters(30.0f, 5.0f, 1.0f, 1.0f);
+		
+		// try to load the model
+		try {
+			if(m_fnModel.GetName() != "") { SetSkaModel_t(m_fnModel);			}
+			else
+			{
+				m_fnModel = CTFileName("data\\effect\\ska\\invisible.smc");
+				SetSkaModel_t(m_fnModel);
+			}	//Hardcoding
+			if(m_eMissileType == MLT_NORMALARROW)
+			{
+				en_pmiModelInstance->mi_qvOffset.vPos = FLOAT3D(0,0,0);
+				en_pmiModelInstance->mi_qvOffset.qRot = FLOATquat3D(1,0,0,0);
+			}
+			// if failed
+		}
+		catch(char *)
+		{
+			ASSERTALWAYS("Loading Fail.");
+		}
+		
+		// set model stretch
+		ModelChangeNotify();
+		SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+		SetCollisionFlags(ECF_IMMATERIAL);
+
+		SetFlags(GetFlags()&~ENF_CLUSTERSHADOWS);
+		if(en_pmiModelInstance) {en_pmiModelInstance->SetCurrentColisionBoxIndex(0);}
+
+		if(m_eMissileType == MLT_CONNECT)
+		{
+			//초기화
+			if(m_epSource.ep_pen == NULL)
+			{
+				SetFlagOff(ENF_ALIVE);
+				SetFlagOn(ENF_CLIENTHANDLING);
+				Destroy(FALSE);
+				return;
+			}
+			m_fTimeFromStart = 0.0f;
+
+			if(GetModelInstance())
+			{
+				CSkaTag tag;
+				tag.SetName("__ROOT");
+				GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+			}
+
+			jump Connect();
+		}
+		else
+		{
+			//초기화
+
+			if ( m_iFireObjectType == CSkill::MT_DASH )
+			{ // 나이트의 대쉬 스킬에선 캐릭터가 Invisible 된다.
+				if ( m_epSource->IsFlagOff(ENF_INVISIBLE) )
+				{
+					m_epSource->SetFlagOn(ENF_INVISIBLE);
+				}
+			}
+
+			m_bReached = FALSE;
+			m_bReached2 = FALSE;
+			m_fRatio = 0.0f;
+			m_fTimeFromStart = 0.0f;
+			m_fLeftDistance = 0.0f;
+			m_bMoveFail = FALSE;
+
+			if(GetModelInstance())
+			{
+				CSkaTag tag;
+				tag.SetName("__ROOT");
+				GetModelInstance()->m_tmSkaTagManager.Register(&tag);
+			}
+
+			//초기 상태 처리.
+			m_fHorizonalOffset = Clamp(m_fHorizonalOffset, -1.0f, 1.0f);
+			m_fVerticalOffset = Clamp(m_fVerticalOffset, -1.0f, 1.0f);
+			m_vInitPos = en_plPlacement.pl_PositionVector;
+			if(m_bEntityTarget)
+			{
+				CTag *pTag = m_epTarget->GetModelInstance()->m_tmSkaTagManager.Find("CENTER");
+				if(pTag)
+				{
+					m_vTargetCenterPos = pTag->GetOffsetPos();
+					RotateVector(m_vTargetCenterPos, pTag->GetOffsetRot());
+				}
+				else
+				{
+					m_vTargetCenterPos = m_epTarget->en_plPlacement.pl_PositionVector;
+				}
+			}
+			
+			//초기 궤도 처리.
+			FLOAT3D vDist;
+			if(m_bEntityTarget)
+			{
+				vDist = m_epTarget->en_plPlacement.pl_PositionVector - this->en_plPlacement.pl_PositionVector;
+			}
+			else
+			{
+				vDist = m_vTargetPos - this->en_plPlacement.pl_PositionVector;
+			}
+			FLOAT fDist = vDist.Length();
+			m_fTimeRatio = m_fMoveSpeed / fDist;//1.0f / (fDist / m_fMoveSpeed);
+			static FLOAT fNoPeakLimit = 3.0f;
+			if(!m_bNoPeak) { m_bNoPeak = fDist < fNoPeakLimit; }
+			m_pssPath = new cubic_spline;
+			GetSpline().AddSample(0.0f, m_vInitPos);
+			if(!m_bNoPeak)
+			{
+				vDist *= 0.3f;
+				static FLOAT fDistRatio = 0.10f;
+				vDist(2) += fDist * fDistRatio * (m_fVerticalOffset * 0.5f + 0.5f);
+				if(m_fHorizonalOffset != 0.0f)
+				{
+					FLOATquat3D qRot;
+					static FLOAT fAngle = 15.0f;
+					qRot.FromEuler(ANGLE3D(fAngle * m_fHorizonalOffset,0,0));
+					vDist = VectorRotate(vDist, qRot);
+				}
+				GetSpline().AddSample(0.4f, vDist + this->en_plPlacement.pl_PositionVector);
+			}
+			if(m_bEntityTarget)
+			{
+				RemakeSplinePath();
+			}
+			else
+			{
+				GetSpline().AddSample(1.0f, m_vTargetPos);
+				GetSpline().Prepare();
+			}
+
+			CPlacement3D plNew;
+			m_fRatio += m_fTimeRatio * 0.001f;
+			CalcPalacementOnPath(m_fRatio, 0, 0.001f, plNew);
+			SetPlacement(plNew);
+			
+			jump PreBehavior();
+		}
+		
+		delete m_pssPath;
+		m_pssPath = NULL;
+		Destroy(FALSE);
+		return;
+	}
+
 	PreBehavior()
 	{
 		autowait(0.01f);
@@ -1016,166 +1214,6 @@ procedures:
 		{
 			StopEffectGroupIfValid(m_pMyEffectGroup, 0.1f);
 		}
-		Destroy(FALSE);
-		return;
-	}
-
-	Main()
-	{
-		if(m_bEntityTarget && m_epTarget.ep_pen == NULL)
-		{
-			InitAsVoid();
-			SetFlagOff(ENF_ALIVE);
-			SetFlagOn(ENF_CLIENTHANDLING);
-			Destroy(FALSE);
-			return;
-		}
-		InitAsSkaModel();
-		m_soSound.Set3DParameters(30.0f, 5.0f, 1.0f, 1.0f);
-		
-		// try to load the model
-		try {
-			if(m_fnModel.GetName() != "") { SetSkaModel_t(m_fnModel);			}
-			else
-			{
-				m_fnModel = CTFileName("data\\effect\\ska\\invisible.smc");
-				SetSkaModel_t(m_fnModel);
-			}	//Hardcoding
-			if(m_eMissileType == MLT_NORMALARROW)
-			{
-				en_pmiModelInstance->mi_qvOffset.vPos = FLOAT3D(0,0,0);
-				en_pmiModelInstance->mi_qvOffset.qRot = FLOATquat3D(1,0,0,0);
-			}
-			// if failed
-		}
-		catch(char *)
-		{
-			ASSERTALWAYS("Loading Fail.");
-		}
-		
-		// set model stretch
-		ModelChangeNotify();
-		SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
-		SetCollisionFlags(ECF_IMMATERIAL);
-
-		SetFlags(GetFlags()&~ENF_CLUSTERSHADOWS);
-		if(en_pmiModelInstance) {en_pmiModelInstance->SetCurrentColisionBoxIndex(0);}
-
-		if(m_eMissileType == MLT_CONNECT)
-		{
-			//초기화
-			if(m_epSource.ep_pen == NULL)
-			{
-				SetFlagOff(ENF_ALIVE);
-				SetFlagOn(ENF_CLIENTHANDLING);
-				Destroy(FALSE);
-				return;
-			}
-			m_fTimeFromStart = 0.0f;
-
-			if(GetModelInstance())
-			{
-				CSkaTag tag;
-				tag.SetName("__ROOT");
-				GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-			}
-
-			jump Connect();
-		}
-		else
-		{
-			//초기화
-
-			if ( m_iFireObjectType == CSkill::MT_DASH )
-			{ // 나이트의 대쉬 스킬에선 캐릭터가 Invisible 된다.
-				if ( m_epSource->IsFlagOff(ENF_INVISIBLE) )
-				{
-					m_epSource->SetFlagOn(ENF_INVISIBLE);
-				}
-			}
-
-			m_bReached = FALSE;
-			m_bReached2 = FALSE;
-			m_fRatio = 0.0f;
-			m_fTimeFromStart = 0.0f;
-			m_fLeftDistance = 0.0f;
-			m_bMoveFail = FALSE;
-
-			if(GetModelInstance())
-			{
-				CSkaTag tag;
-				tag.SetName("__ROOT");
-				GetModelInstance()->m_tmSkaTagManager.Register(&tag);
-			}
-
-			//초기 상태 처리.
-			m_fHorizonalOffset = Clamp(m_fHorizonalOffset, -1.0f, 1.0f);
-			m_fVerticalOffset = Clamp(m_fVerticalOffset, -1.0f, 1.0f);
-			m_vInitPos = en_plPlacement.pl_PositionVector;
-			if(m_bEntityTarget)
-			{
-				CTag *pTag = m_epTarget->GetModelInstance()->m_tmSkaTagManager.Find("CENTER");
-				if(pTag)
-				{
-					m_vTargetCenterPos = pTag->GetOffsetPos();
-					RotateVector(m_vTargetCenterPos, pTag->GetOffsetRot());
-				}
-				else
-				{
-					m_vTargetCenterPos = m_epTarget->en_plPlacement.pl_PositionVector;
-				}
-			}
-			
-			//초기 궤도 처리.
-			FLOAT3D vDist;
-			if(m_bEntityTarget)
-			{
-				vDist = m_epTarget->en_plPlacement.pl_PositionVector - this->en_plPlacement.pl_PositionVector;
-			}
-			else
-			{
-				vDist = m_vTargetPos - this->en_plPlacement.pl_PositionVector;
-			}
-			FLOAT fDist = vDist.Length();
-			m_fTimeRatio = m_fMoveSpeed / fDist;//1.0f / (fDist / m_fMoveSpeed);
-			static FLOAT fNoPeakLimit = 3.0f;
-			if(!m_bNoPeak) { m_bNoPeak = fDist < fNoPeakLimit; }
-			m_pssPath = new cubic_spline;
-			GetSpline().AddSample(0.0f, m_vInitPos);
-			if(!m_bNoPeak)
-			{
-				vDist *= 0.3f;
-				static FLOAT fDistRatio = 0.10f;
-				vDist(2) += fDist * fDistRatio * (m_fVerticalOffset * 0.5f + 0.5f);
-				if(m_fHorizonalOffset != 0.0f)
-				{
-					FLOATquat3D qRot;
-					static FLOAT fAngle = 15.0f;
-					qRot.FromEuler(ANGLE3D(fAngle * m_fHorizonalOffset,0,0));
-					vDist = VectorRotate(vDist, qRot);
-				}
-				GetSpline().AddSample(0.4f, vDist + this->en_plPlacement.pl_PositionVector);
-			}
-			if(m_bEntityTarget)
-			{
-				RemakeSplinePath();
-			}
-			else
-			{
-				GetSpline().AddSample(1.0f, m_vTargetPos);
-				GetSpline().Prepare();
-			}
-
-			CPlacement3D plNew;
-			m_fRatio += m_fTimeRatio * 0.001f;
-			CalcPalacementOnPath(m_fRatio, 0, 0.001f, plNew);
-			SetPlacement(plNew);
-			
-			jump PreBehavior();
-		}
-		
-		delete m_pssPath;
-		m_pssPath = NULL;
 		Destroy(FALSE);
 		return;
 	}

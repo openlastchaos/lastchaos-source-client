@@ -96,9 +96,9 @@ CEntity *CEntity::TouchingEntity(BOOL (*ConsiderEntity)(CEntity *), CEntity *pen
   // no entities active initially
   _apenActive.PopAll();
   // for each zoning sector that this entity is in
-  {FOREACHSRCOFDST(en_rdSectors, CBrushSector, bsc_rsEntities, pbsc)
+  FOREACHSRCOFDST(en_rdSectors, CBrushSector, bsc_rsEntities, pbsc)
     // for all movable model entities that should be considered in the sector
-    {FOREACHDSTOFSRC(pbsc->bsc_rsEntities, CEntity, en_rdSectors, pen)
+    FOREACHDSTOFSRC(pbsc->bsc_rsEntities, CEntity, en_rdSectors, pen)
       if (!(pen->en_ulPhysicsFlags&EPF_MOVABLE)
         || (pen->en_RenderType!=RT_MODEL&&pen->en_RenderType!=RT_EDITORMODEL)
         || (!ConsiderEntity(pen))) {
@@ -118,8 +118,8 @@ CEntity *CEntity::TouchingEntity(BOOL (*ConsiderEntity)(CEntity *), CEntity *pen
       // add it to active
       _apenActive.Push() = pen;
       pen->en_ulFlags |= ENF_FOUNDINGRIDSEARCH;
-    }}
-  ENDFOR}
+    ENDFOR
+  ENDFOR
 
   // mark all as inactive
   {for (INDEX ien=0; ien<_apenActive.Count(); ien++) {

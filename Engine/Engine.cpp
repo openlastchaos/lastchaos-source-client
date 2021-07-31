@@ -11,11 +11,12 @@
 #include <Engine/Base/CRC.h>
 #include <Engine/Base/CRCTable.h>
 #include <Engine/Base/MemoryTracking.h>
-#include <Engine/Base/ProgressHook.h>
 #include <Engine/Sound/SoundLibrary.h>
 #include <Engine/Graphics/GfxLibrary.h>
 #include <Engine/Graphics/Font.h>
 #include <Engine/Network/CNetwork.h>
+#include <Engine/Network/WebAddress.h>
+#include <Engine/Network/NetworkProfile.h>
 #include <Engine/templates/DynamicContainer.cpp>
 #include <Engine/Templates/Stock_CAnimData.h>
 #include <Engine/Templates/Stock_CTextureData.h>
@@ -31,25 +32,56 @@
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Base/IFeel.h>
 #include <Engine/Base/StackDump.h>
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Add & Modify SSSE Effect)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Add & Modify SSSE Effect)(0.1)
 #include <Engine/Effect/EffectCommon.h>
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Add & Modify SSSE Effect)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Add & Modify SSSE Effect)(0.1)
 #include <Engine/Interface/UIManager.h>
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(5th Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(5th Closed beta)(0.2)
+
+#include <Engine/GameDataManager/GameDataManager.h>
+#include <Engine/GameStageManager/StageMgr.h>
+#include <Engine/Contents/Base/UIMsgBoxMgr.h>
+
 #include <Engine/GameState.h>
 #include <Engine/MiniDump.h>
 #include <Engine/Network/Web.h>
 #include <Engine/JobInfo.h>
-
-// WSS_NPROTECT 070402 ------------------------------->>
+#include <Engine/Entities/SkillTree.h>
+#include <Engine/LoginJobInfo.h>
+#include <Engine/Entities/ArmorPreview.h>
 #include <Engine/LocalDefine.h>
+#include <Engine/Object/ActorMgr.h>
+#include <Engine/Loading.h>
+#include <Engine/Entities/TEventString.h>
+#include <Engine/Entities/TradeItem.h>
+#include <Engine/Info/MyInfo.h>
+#include <Engine/Entities/LevelupGuide.h>
+#include <Engine/Contents/function/ItemCollectionData.h>
+#include <Engine/Info/ServerInfo.h>
+#include <Engine/Contents/function/TitleData.h>
+#include <Engine/Base/InterfaceSymbol.h>
 
 #ifndef NO_GAMEGUARD
-	#include <NPGameLib.h>
+//	#include <NPGameLib.h>
 	#include <Engine\GameState.h>
 #endif
-// ---------------------------------------------------<<
 
+#include <Engine/Help/LoadString.h>
+#include <Engine/Help/Util_Help.h>
+
+#ifdef XTRAP_SECURE_CKBANG_2010_07_20
+#include <Engine/XTrapInterface/XTrapInterface.h>
+XTrap_CS_Step2_Interface g_pXTrap_CS_Step2Func = NULL;
+XTrap_C_SetUserInfoEx_Interface g_pXTrap_C_SetUserInfoEx_Interface = NULL;
+pHexaDump4XTrap_V1 g_pHexaDump4XTrap_V1 = NULL;
+
+#endif
+
+#ifndef NO_GAMEGUARD
+#include <Engine/GameGuardInterface.h>
+GAME_GUARD_RECV_AUTH g_pGameGuardRecvAuth = NULL;
+GAME_GUARD_SEND_USERID g_pGameGuardSendUserID = NULL;
+#endif 
 
 ENGINE_API cWeb g_web;
 
@@ -57,17 +89,21 @@ ENGINE_API cWeb g_web;
 #ifdef USE_MINIDUMP
 MiniDumper	g_MiniDumper(TRUE);
 #endif
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(5th Closed beta)(0.2)
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(5th Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(5th Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(5th Closed beta)(0.2)
+#ifdef KALYDO
+CTFileName fnmPersistentSymbols = CTString("ps.dat");
+#else
 CTFileName fnmPersistentSymbols = CTString("Data\\etc\\ps.dat");
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(5th Closed beta)(0.2)
+#endif
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(5th Closed beta)(0.2)
 
 // this version string can be referenced from outside the engine
 ENGINE_API CTString _strEngineBuild  = "";
 ENGINE_API ULONG _ulEngineBuildMajor = _SE_BUILD_MAJOR;
 ENGINE_API ULONG _ulEngineBuildMinor = _SE_BUILD_MINOR;
 
-// <-- ErrorLog.txtÏóê ÎîîÏä§ÌîåÎ†àÏù¥ Ï†ïÎ≥¥Î•º Í∏∞Î°ùÌïòÍ∏∞ ÏúÑÌïú Î∂ÄÎ∂Ñ
+// <-- ErrorLog.txtø° µΩ∫«√∑π¿Ã ¡§∫∏∏¶ ±‚∑œ«œ±‚ ¿ß«— ∫Œ∫–
 ENGINE_API CTString _strDisplayDriver = "";
 ENGINE_API CTString _strDisplayDriverVersion = "";
 ENGINE_API CTString _strSoundDriver = "";
@@ -75,11 +111,20 @@ ENGINE_API CTString _strTotalMemory = "";
 // -->
 
 ENGINE_API BOOL _bDedicatedServer = FALSE;
+#if defined WORLD_EDITOR
+ENGINE_API BOOL _bWorldEditorApp  = TRUE;
+#else
 ENGINE_API BOOL _bWorldEditorApp  = FALSE;
+#endif
+
+//	±Ëøµ»Ø
+ENGINE_API BOOL _bClientApp = FALSE;			// TRUE º≥¡§µ«∏È ∞‘¿” ≈¨∂Û¿Ãæ∆Æ ¿Ã¥Ÿ.
 
 ENGINE_API BOOL _bUseBloomInWorldEditor = TRUE;
 ENGINE_API BOOL _bTranslucentModel = FALSE;
 ENGINE_API BOOL _bInvisibleOff =FALSE;
+ENGINE_API BOOL _bShowPortalPolygon =FALSE;
+ENGINE_API BOOL _bAttributemap_DepthTest =FALSE;
 
 ENGINE_API BOOL _bLoginProcess	= TRUE;
 //ENGINE_API BOOL _bUseSocket		  = FALSE;
@@ -87,7 +132,7 @@ ENGINE_API BOOL _bSkaStudioApp = FALSE;
 ENGINE_API BOOL _bInTestGame  = FALSE;					// yjpark
 ENGINE_API BOOL _bShowPolygonAttribute = FALSE;			// yjpark
 ENGINE_API CTString _strLogFile = "";
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€
 ENGINE_API BOOL g_bBadWeather = FALSE;
 ENGINE_API COLOR g_colWeather = C_WHITE|CT_OPAQUE;
 ENGINE_API INDEX g_bRenderDecoration = TRUE;
@@ -96,39 +141,90 @@ FLOAT g_fFarClipPlus = 0.0f;
 ENGINE_API INDEX g_bTestClient = FALSE;
 extern UINT g_uiEngineVersion;
 ENGINE_API char *g_szExitError = NULL;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù
+//æ»≈¬»∆ ºˆ¡§ ≥°
 
 ENGINE_API int g_iLocalVersion = 700;
 
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë ÌÅ¥Î°úÏ¶à 2Ï∞® ÏûëÏóÖ	08.18
+//∞≠µøπŒ ºˆ¡§ Ω√¿€ ≈¨∑Œ¡Ó 2¬˜ ¿€æ˜	08.18
 ENGINE_API extern INDEX g_iShadowDetail			= 4;
 ENGINE_API extern INDEX g_iReflectionDetail		= 0;
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù ÌÅ¥Î°úÏ¶à 2Ï∞® ÏûëÏóÖ		08.18
+//∞≠µøπŒ ºˆ¡§ ≥° ≈¨∑Œ¡Ó 2¬˜ ¿€æ˜		08.18
 
 ENGINE_API INDEX idPlayerWhole_Animation[ANIM_TOTAL];
 
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(5th Closed beta)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(5th Closed beta)(0.1)
 ENGINE_API FLOAT g_fFramePerSecond = FLT_MAX;
 ENGINE_API BOOL g_bNoPlaySnd = FALSE;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(5th Closed beta)(0.1)
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Taiwan Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(5th Closed beta)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Taiwan Closed beta)(0.2)
 ENGINE_API INDEX g_iCountry = 0;	//0 : Korea
-INDEX g_iEnterChat = 0;
+INDEX g_iEnterChat = 1;
 INDEX g_iShowName = 0;
 INDEX g_iShowNameItem = 1;
-
-// [090715: selo] - ÏïÑÏù¥Îîî Ï†ÄÏû• Ïó¨Î∂Ä 
-INDEX g_iSaveID = 0;
-extern CTString g_strSaveID = "";
-
 // wooss 070401 ----------->><<
 // kw : WSS_HELP_SYSTEM_1
 INDEX g_iShowHelp1Icon = 1;
 
+// [090715: selo] - æ∆¿Ãµ ¿˙¿Â ø©∫Œ 
+INDEX g_iSaveID = 0;
+extern CTString g_strSaveID = "";
+
+#ifdef EUROUPEAN_SERVER_LOGIN
+// ¿Ø∑Œ««æ» º≠πˆ ¡¢º” ø©∫Œ [10/18/2012 Ranma]
+INDEX g_iConnectEuroupean = 0;
+#endif
+
 // [7/9/2009 rumist] rejection.
 INDEX g_iRejectExchange = 0;
 INDEX g_iRejectParty = 0; 
+
+// Map Info. [9/15/2009 rumist]
+INDEX g_iZoomInMap = 12;
+INDEX g_iOpacityInMap = 75;
+
+// 1106 UI ∞≥∆Ì [09/05/11 trylord]
+INDEX g_iQuestBookOpen = 1;
+
+// UI ∞≥∆Ì. [9/16/2009 rumist]
+INDEX g_iXPosInMap = 100;
+INDEX g_iYPosInMap = 100;
+INDEX g_iXPosInInventory=100;
+INDEX g_iYPosInInventory=100;
+INDEX g_iXPosInInvenSlot1=0;
+INDEX g_iYPosInInvenSlot1=0;
+INDEX g_iXPosInInvenSlot2=0;
+INDEX g_iYPosInInvenSlot2=0;
+INDEX g_iXPosInInvenSlot3=0;
+INDEX g_iYPosInInvenSlot3=0;
+// UI ƒ¸ΩΩ∑‘ »Æ¿Â ∞≥∆Ì ¿€æ˜ »Æ¿Â ΩΩ∑‘ ¿ßƒ° [12/18/2012 Ranma]
+INDEX g_iXPosQuickSlotEX1=0;
+INDEX g_iYPosQuickSlotEX1=0;
+INDEX g_iXPosQuickSlotEX2=0;
+INDEX g_iYPosQuickSlotEX2=0;
+INDEX g_bQuickSlotEX1=0;
+INDEX g_bQuickSlotEX2=0;
+INDEX g_bQuickSlot1HorOrVer=1;
+INDEX g_bQuickSlot1Lock=0;
+INDEX g_bQuickSlot2HorOrVer=1;
+INDEX g_bQuickSlot2Lock=0;
+
+INDEX g_iXPosInCharInfo=100;
+INDEX g_iYPosInCharInfo=100;
+INDEX g_iXPosInQuest=100;
+INDEX g_iYPosInQuest=100;
+INDEX g_iXPosInPetInfo=100;
+INDEX g_iYPosInPetInfo=100;
+INDEX g_iXPosInWPetInfo=100;
+INDEX g_iYPosInWPetInfo=100;
+INDEX g_iXPosInMessanger=100;
+INDEX g_iYPosInMessanger=100;
+INDEX g_iXPosInSystemMenu = 600;
+INDEX g_iYPosInSystemMenu = 500;
+INDEX g_iXPosInNPCScroll = 20;
+INDEX g_iYPosInNPCScroll = 100;
+
+
 
 // UI_REFORM :Su-won
 ENGINE_API INDEX g_bSlaveNoTarget =FALSE;
@@ -136,20 +232,21 @@ ENGINE_API INDEX g_bSlaveNoTarget =FALSE;
 ENGINE_API BOOL g_bIsMalEng = FALSE;	//Add for malaysia 060330
 
 ENGINE_API INDEX g_iAutoAttack = 1;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Taiwan Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Taiwan Closed beta)(0.2)
 
 // global handle for application window
 extern ENGINE_API HWND  _hwndMain = NULL;
+extern ENGINE_API HWND	_hDlgWeb = NULL;
 extern BOOL  _bFullScreen = FALSE;
 extern INDEX _iGfxAPI = -1; // -1=NONE, 0=OGL, 1=D3D
 
 // WSS_NPROTECT 070402 ------------------------------->>
 #ifndef NO_GAMEGUARD
-	ENGINE_API CNPGameLib npgl("LastChaosHK");
+//	ENGINE_API CNPGameLib npgl("LastChaosHK");
 #endif
 // ---------------------------------------------------<<
 
-// ÌÉúÍµ≠Î≤ÑÏ†Ñ Ìå®Ïπò flag 051109
+// ≈¬±ππˆ¿¸ ∆–ƒ° flag 051109
 INDEX g_iTempFlag;
 
 // critical section for access to zlib functions
@@ -228,10 +325,10 @@ extern ENGINE_API const UBYTE *_pubClipByte = &aubClipByte[256*2];
 extern UBYTE _aubSqrt[SQRTTABLESIZE]   = {0};
 extern UWORD _auw1oSqrt[SQRTTABLESIZE] = {0};
 
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Option)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Option)(0.1)
 extern ENGINE_API FLOAT ter_fLODMul = 1.0f;
 extern ENGINE_API FLOAT g_fChaLODMul = 1.0f;
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Option)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Option)(0.1)
 
 // main window canvas											// yjpark |<--
 extern ENGINE_API BOOL		_bWindowChanging = FALSE;
@@ -241,21 +338,95 @@ extern ENGINE_API CDrawPort	*_pdpWideScreenMain = NULL;
 extern ENGINE_API CViewPort	*_pvpViewPortMain = NULL;
 extern ENGINE_API HINSTANCE	_hInstanceMain = NULL;
 extern ENGINE_API INDEX		sam_bFullScreenActive = TRUE;
-extern ENGINE_API INDEX		sam_iScreenSizeI = 800;
-extern ENGINE_API INDEX		sam_iScreenSizeJ = 600;
+extern ENGINE_API INDEX		sam_iScreenSizeI = 1024;
+extern ENGINE_API INDEX		sam_iScreenSizeJ = 768;
 extern ENGINE_API INDEX		sam_iDisplayDepth  = 0;
 extern ENGINE_API INDEX		sam_iDisplayAdapter = 0;
 extern ENGINE_API INDEX		sam_iGfxAPI = 1;	// 0==OpenGL
 extern ENGINE_API INDEX		sam_bWideScreen = FALSE;
 extern ENGINE_API INDEX		cmd_iWindowLeft = -1;
 extern ENGINE_API INDEX		cmd_iWindowTop = -1;	 			// yjpark     -->|
+/*
+typedef struct _SERVICE_TABLE_ENTRY
+{
+	unsigned int *ServiceTableBase; // SSDT(KiServiceTable)¿« ¡÷º“, ∞¢ º≠∫ÒΩ∫ ∫∞ ∏≈«Œ «‘ºˆ ∆˜¿Œ≈ÕµÈ¿« ∏Ò∑œ¿Ã ¿˙¿Âµ» ≈◊¿Ã∫Ì¿« ∆˜¿Œ≈Õ
+	unsigned int *ServiceCounterTableBase; // π´Ω√
+	unsigned int NumberOfServices; // Native API¿« √— ∞≥ºˆ, (Service = Native API)
+	unsigned char *ParamTableBase; // KiArgumentTable¿« ¡÷º“ ∞™, ∞¢ º≠∫ÒΩ∫ ∫∞ ∆ƒ∂ÛπÃ≈Õ¿« ≈©±‚∏¶ ≥™≈∏≥ª¥¬ ∞™¿ª ∞°¡¯ ≈◊¿Ã∫Ì¿« ∆˜¿Œ≈Õ
+} SERVICE_DESCRIPTOR_ENTRY, *PSERVICE_DESCRIPTOR_ENTRY;
+// direct import KeServiceDescriptorTable
+__declspec(dllimport)  SERVICE_DESCRIPTOR_ENTRY KeServiceDescriptorTable;
 
+// native api function address get macro
+#define SYSCALL_INDEX(_Function) *(PULONG)((PUCHAR)_Function+1)
+#define ORG_SYSCALL_PTR(_orgFunc) \
+	&(((PLONG)KeServiceDescriptorTable.ServiceTableBase)[SYSCALL_INDEX(_orgFunc)])
+
+// ƒø≥Œ∏µÂ¿« ∏ﬁ∏∏Æ æ≤±‚ ±««—¿ª ¿ß«ÿ Write Protection «ÿ¡¶
+// -- SSDT[System Service Discription Table] = (KiServiceTable) ∫Ø∞Ê¿ª ¿ß«ÿ ƒø≥Œ ∏ﬁ∏∏Æ æ≤±‚∞° ∞°¥…«ÿæﬂ «‘
+// -- CR0(Control Register 0)¿« WP(Write Protection)∫Ò∆Æ∏¶ 0¿∏∑Œ ∏∏µÁ¥Ÿ.
+// -- ¥Ÿ∏• πÊπ˝ : MDL (Memory Descriptor List)∏¶ ¿ÃøÎ
+
+#define CR0_WP_MASK		0x0FFFEFFFF
+
+VOID ClearWriteProtect(VOID)
+{
+	__asm
+	{
+		push eax;
+		mov eax, cr0;
+		and eax, CR0_WP_MASK; // WP ≈¨∏ÆæÓ
+		mov cr0, eax;
+		pop eax;
+	}
+}
+
+VOID SetWriteProtect(VOID)
+{
+	__asm
+	{
+		push eax;
+		mov eax, cr0;
+		or eax, not CR0_WP_MASK; // WP ∫Ò∆Æ ºº∆√
+		mov cr0, eax;
+		pop eax;
+	}
+}
+
+// zwopenprocess export
+NTKERNELAPI NTSTATUS ZwOpenProcess(
+								   PHANDLE ProcessHandle,
+								   ACCESS_MASK DesiredAccess,
+								   POBJECT_ATTRIBUTES ObjectAttributes,
+								   PCLIENT_ID ClientId );
+typedef NTSTATUS (*pfnZwOpenProcess) (
+									  OUT PHANDLE			ProcessHandle,
+									  IN ACCESS_MASK		AccessMark,
+									  IN POBJECT_ATTRIBUTES	ObjectAttributes,
+									  IN PCLIENT_ID			ClientId
+									  );
+
+pfnZwOpenProcess OldZwOpenProcess = NULL;
+
+NTSTATUS NewZwOpenProcess(
+						  OUT PHANDLE ProcessHandle,
+						  IN ACCESS_MASK DesiredAccess,
+						  IN POBJECT_ATTRIBUTES ObjectAttributes,
+						  IN PCLIENT_ID ClientId OPTIONAL)
+{
+	NTSTATUS status;
+
+	status = OldZwOpenProcess(ProcessHandle, DesiredAccess, ObjectAttributes, ClientId);
+	return status;
+}
+*/
 // WSS_NPROTECT 070402 ------------------------------->>
 #ifndef NO_GAMEGUARD
 ENGINE_API CTString g_szHackMsg;
 // ---------------------------------------------------<<
-// Î©îÏãúÏßÄ Ï≤òÎ¶¨ CallBack Ìï®Ïàò
-// Í≤åÏûÑ Ï¢ÖÎ£åÏãúÏóêÎäî falseÎ•º returnÌï¥ Ï£ºÍ≥† Ï¢ÖÎ£åÌïòÏßÄ ÏïäÏùÄ Í≤ΩÏö∞Îäî trueÎ•º returnÌï©ÎãàÎã§.
+// ∏ﬁΩ√¡ˆ √≥∏Æ CallBack «‘ºˆ
+// ∞‘¿” ¡æ∑·Ω√ø°¥¬ false∏¶ return«ÿ ¡÷∞Ì ¡æ∑·«œ¡ˆ æ ¿∫ ∞ÊøÏ¥¬ true∏¶ return«’¥œ¥Ÿ.
+/*
 int CALLBACK NPGameMonCallback(DWORD dwMsg,DWORD dwArg)
 {	
 	// Debug...
@@ -267,27 +438,87 @@ int CALLBACK NPGameMonCallback(DWORD dwMsg,DWORD dwArg)
 	
 	if(tAppExit)
 	{
-		// Í≤åÏûÑ Ï¢ÖÎ£å
+		// ∞‘¿” ¡æ∑·
 		_pGameState->Running()		= FALSE;
 		_pGameState->QuitScreen()	= FALSE;
 		return FALSE;
 	}
 	return TRUE;
 }
+/**/
 #endif
 // ---------------------------------------------------<<
 
 
 // root of evil :)
+// ¡ﬂ∫π ≈¨∂Û¿Ãæ∆Æ πÊ¡ˆøÎ shared ∏ﬁ∏∏Æ ªÁøÎ. [2/4/2010 rumist]
+// ø¯∑°¥¬ ≈©∏Æ∆ºƒ√ ºΩº«¿ª Ω·µµ µ»¥Ÿ. æÓ¥¿∞‘ »ø¿≤¿Ã ¡¡¿ª¡ˆ¥¬.. ∞ÌπŒ.
+// π¬≈ÿΩ∫ ∞Ëø≠¿« ¥‹¡°¿∫ Ω««‡Ω√ »£»Øº∫¿Ã ∫Ø∞Êµ«∏È π¬≈ÿΩ∫ ø™Ω√ ¥Ÿ∏• ƒ⁄µÂøµø™ø°º≠
+// Ω««‡µ»¥Ÿ. ∂««— ∏∂¬˘∞°¡ˆ∑Œ ∞≠¡¶ ¡æ∑·Ω√ ¡§ªÛ √≥∏Æ∞° µ«¡ˆ æ ¿∏∏È ≈¨∂Û¿Ãæ∆Æ∏¶
+// ¥ŸΩ√ Ω««‡«“ ºˆ æ¯¥Ÿ.
+//- detect multi client.
+#pragma data_seg( ".SHAREDATA" )
+int g_nEngineDllRefCnt = 0;
+#pragma data_seg()
+#pragma comment( linker, "/SECTION:.SHAREDATA,RWS" )
+
+void	IncRef()	{ ++g_nEngineDllRefCnt;	}
+void	DecRef()	{ g_nEngineDllRefCnt > 0 ? --g_nEngineDllRefCnt : g_nEngineDllRefCnt=0; }
+ENGINE_API const int	SE_GetEngineDllRefCnt() { return g_nEngineDllRefCnt;	}
+
+#ifdef KALYDO
+ENGINE_API HWND	g_KalydoWindowHandle = NULL;
+ENGINE_API void SE_UpdateStreamingData()
+{
+	if( g_deqLoadData.empty() )
+		return;
+	
+	DWORD start = GetTickCount();
+	while(!g_deqLoadData.empty())
+	{
+		SLS* pSLS = reinterpret_cast<SLS*>(g_deqLoadData.front());
+		// if still alive, step in.
+		if( pSLS->pTarget->IsUsed() )
+		{
+			pSLS->pTarget->Clear();
+			pSLS->pTarget->Load_Delay_t( pSLS->pTargetFilePath );
+			//pSLS->pTarget->Reload();
+		}
+
+		delete pSLS;
+
+		g_deqLoadData.pop_front();
+
+		if (GetTickCount() - start > 10)
+			// take 10ms max to prevent frame drops
+			break;
+	}
+}
+#endif
+
+//- end.
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
 	switch (ul_reason_for_call)
 	{
 		case DLL_PROCESS_ATTACH:
+			IncRef();
 			break;
 		case DLL_THREAD_ATTACH:
+			break;
 		case DLL_THREAD_DETACH:
+			{
+				std::vector<TLVarBase*>::iterator i = TLVarBase::m_Vars.begin();
+				for (; i != TLVarBase::m_Vars.end(); ++i)
+				{
+					TLVarBase* var = *i;
+					var->cleanUp();
+				}
+			}
+			
+			break;
 		case DLL_PROCESS_DETACH:
+			DecRef();
 			break;
 		default:
 			ASSERT(FALSE);
@@ -368,7 +599,7 @@ static void PrepareTables(void)
 	// prepare array for fast clamping to 0..255
 	for( i=-256*2; i<256*4; i++) aubClipByte[i+256*2] = (UBYTE)Clamp( i, 0L, 255L);
 	// prepare fast sqrt tables
-	for( i=0; i<SQRTTABLESIZE; i++) _aubSqrt[i]   = (UBYTE)(sqrt(i*65536/SQRTTABLESIZE));
+	for( i=0; i<SQRTTABLESIZE; i++) _aubSqrt[i]   = (UBYTE)(sqrt((float)i*65536/SQRTTABLESIZE));
 	for( i=1; i<SQRTTABLESIZE; i++) _auw1oSqrt[i] = (UWORD)(sqrt((FLOAT)(SQRTTABLESIZE-1)/i)*255.0f);
 	_auw1oSqrt[0] = MAX_UWORD;
 	// prepare fast sin/cos table
@@ -382,24 +613,8 @@ static void PrepareTables(void)
 	for( i=-ANGTABSIZE; i<ANGTABSIZE; i++) aiACosTable[i+ANGTABSIZE] = acos((FLOAT)i/ANGTABSIZE) *ANGTABSIZE*ANGLE_180/PI/360.0f;
 }
 
-
-// reverses string
-void StrRev( char *str) {
-	char ctmp;
-	char *pch0 = str;
-	char *pch1 = str+strlen(str)-1;
-	while( pch1>pch0) {
-		ctmp  = *pch0;
-		*pch0 = *pch1;
-		*pch1 = ctmp;
-		pch0++;
-		pch1--;
-	}
-}
-
-
-static char strExePath[MAX_PATH] = "";
-static char strDirPath[MAX_PATH] = "";
+char strExePath[MAX_PATH] = "";
+char strDirPath[MAX_PATH] = "";
 
 static void AnalyzeApplicationPath(void)
 {
@@ -411,29 +626,167 @@ static void AnalyzeApplicationPath(void)
 	// copy that to the path
 	strncpy(strTmpPath, strExePath, sizeof(strTmpPath)-1);
 	strDirPath[sizeof(strTmpPath)-1] = 0;
-	// remove name from application path
-	StrRev(strTmpPath);  
-	// find last backslash
-	char *pstr = strchr( strTmpPath, '\\');
-	if( pstr==NULL) {
-		// not found - path is just "\"
-		strcpy( strTmpPath, "\\");
-		pstr = strTmpPath;
-	} 
-	// remove 'debug' from app path if needed
-	if( strnicmp( pstr, "\\gubed", 6)==0) pstr += 6;
-	if( pstr[0] = '\\') pstr++;
-	char *pstrFin = strchr( pstr, '\\');
-	if( pstrFin==NULL) {
-		strcpy( pstr, "\\");
-		pstrFin = pstr;
-	}
-	// copy that to the path
-	StrRev(pstrFin);
+
+	std::string strPath = strTmpPath;
+	int nBackSlash = strPath.rfind('\\');
+#if		_DEBUG || UI_TOOL || WORLD_EDITOR
+	// Debug ¡¶∞≈ - Debug ∆ƒ¿œ¿∫ «—∆˙¥ı æ»¬ ø° ¡∏¿Á : «—∞„ ¥ı π˛±‰¥Ÿ.
+	nBackSlash = strPath.rfind('\\', --nBackSlash);	
+#endif	// _DEBUG
+	// Bin ¡¶∞≈
+	nBackSlash = strPath.rfind('\\', --nBackSlash);
+	strPath = strPath.substr(0, nBackSlash+1);
+
+	char* pstrFin = (char*)strPath.c_str();
+
 	strncpy( strDirPath, pstrFin, sizeof(strDirPath)-1);
 	strDirPath[sizeof(strDirPath)-1] = 0;
 }
 
+// [2013/01/16] sykim70
+inline UINT GetFileLastWriteTime(HANDLE hFile)
+{
+	FILETIME fileTime;
+	GetFileTime(hFile, NULL, NULL, &fileTime);
+
+	SYSTEMTIME sysTime;
+	FileTimeToSystemTime(&fileTime, &sysTime);
+	
+	tm stTm = {
+		(int)sysTime.wSecond,
+		(int)sysTime.wMinute,
+		(int)sysTime.wHour,
+		(int)sysTime.wDay,
+		(int)sysTime.wMonth - 1,
+		(int)sysTime.wYear - 1900,
+		0, 0, 0
+	};
+	return (UINT)mktime(&stTm);
+}
+
+// [2013/01/16] sykim70
+inline bool GetFileInfo(const char* filename, UINT& len, UINT& time)
+{
+	DWORD dwFlags = FILE_ATTRIBUTE_NORMAL|FILE_FLAG_NO_BUFFERING;
+	HANDLE hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, dwFlags, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return false;
+	len  = GetFileSize(hFile, NULL);
+	time = GetFileLastWriteTime(hFile);
+	CloseHandle(hFile);
+	return true;
+}
+
+// [2013/01/16] sykim70
+inline CTString OpenPersistentSymbolFile2(const CTFileName &fnmPS)
+{
+	FILE* fp = fopen(fnmPS.str_String, "rb");
+	if (fp == INVALID_HANDLE_VALUE)
+		return "";
+	int len = -1;
+	fread(&len, sizeof(len), 1, fp);
+	UBYTE *bufferSrc = new UBYTE[len];
+	char *bufferDecoded = new char[len + 1];
+	memset(bufferDecoded, 0, len+1);
+	fread(bufferSrc, len, 1, fp);
+	
+	extern void DecodePersistentSymbols(unsigned char *buf, int dummyLen, const unsigned char *bufSrc, int len);
+	DecodePersistentSymbols((UBYTE*)bufferDecoded, 0, bufferSrc, len);
+	
+	CTString strContents = bufferDecoded;
+	delete[] bufferSrc;
+	delete[] bufferDecoded;
+	fclose(fp);
+	return strContents;
+}
+
+// [2013/01/16] sykim70
+inline bool GetOneLine(CTString& str, CTString& line)
+{
+	INDEX iLen = str.Length();
+	if (iLen <= 0)
+		return false;
+
+	INDEX iPos = 0;
+	while (iPos < iLen)
+	{
+		if (str[iPos] != '\n' && str[iPos] != '\r')
+		{
+			if (iPos > 0)
+			{
+				str.TrimLeft(iLen - iPos);
+				iLen = str.Length();
+				iPos = 0;
+			}
+			break;
+		}
+		iPos++;
+	}
+	while (iPos < iLen)
+	{
+		if (str[iPos] == '\n' || str[iPos] == '\r')
+			break;
+		iPos++;
+	}
+	if (iPos == iLen)
+	{
+		line = str;
+		str = "";
+		return true;
+	}
+	CTString temp;
+	str.Split(iPos, line, temp);
+	str = temp;
+	return true;
+}
+
+// [2013/01/16] sykim70
+ENGINE_API bool SE_CheckEngine()
+{
+#if !defined(_DEBUG) && !defined(KALYDO) && !defined(G_KOR) && !defined(VER_TEST) && !defined(G_CHINA)
+	AnalyzeApplicationPath();
+
+	// check binary.lod
+	CTString strFullPath = strDirPath;
+	CTString fnTemp = strFullPath + "data\\etc\\binary.lod";
+	CTString data = OpenPersistentSymbolFile2(fnTemp);
+
+	CTString oneline;
+	if (!GetOneLine(data, oneline))
+		return false;
+	int nCount = atoi(oneline.str_String);
+
+	if (!GetOneLine(data, oneline))	// stamp
+		return false;
+
+	UINT srcLen, targetLen, targetTime;
+	UINT minTime = -1;
+	UINT maxTime = 0;
+	for (int i = 0; i < nCount; i++)
+	{
+		if (!GetOneLine(data, oneline))
+			return false;
+		fnTemp = strFullPath + oneline;
+
+		if (!GetOneLine(data, oneline))
+			return false;
+		srcLen = (UINT)atoi(oneline.str_String);
+
+		if (!GetFileInfo(fnTemp.str_String, targetLen, targetTime))
+			return false;
+
+		if (srcLen != targetLen)
+			return false;
+
+		minTime = min(minTime, targetTime);
+		maxTime = max(maxTime, targetTime);
+	}
+	if (maxTime-minTime > 60*3)	// 3 min
+		return false;
+
+#endif
+	return true;
+}
 
 // startup engine 
 //ENGINE_API void SE_InitEngine(CTString strGameID, BOOL bTcp)		// by seo 40225
@@ -457,12 +810,22 @@ ENGINE_API void SE_InitEngine(CTString strGameID)
 	// create some internal tables
 	PrepareTables();
 
+#if		defined(VER_TEST)
 	_pConsole = new CConsole;
+#else
+	_pConsole = NULL;
+#endif
+
 	if (_strLogFile=="") {
 		_strLogFile = CTFileName(CTString(strExePath)).FileName();
 	}
 	CTFileName fnmLog = _fnmApplicationPath+_strLogFile+".log";
-	_pConsole->Initialize(fnmLog, 80, 512);
+	
+	if (_pConsole != NULL)
+	{
+		_pConsole->Initialize(fnmLog, 80, 512);
+	}
+	
 
 	CTFileName fnmExt	= CTFileName("ErrorLog.txt");
 	CTFileName fnmError = _fnmApplicationPath+fnmExt;
@@ -481,11 +844,16 @@ ENGINE_API void SE_InitEngine(CTString strGameID)
 	_pShaderStock      = new CStock_CShader;
 	_pModelInstanceStock = new CStock_CModelInstance;
 
+#ifdef KALYDO
+	g_deqLoadData.clear();
+#endif
+
 	_pTimer = new CTimer;
 	_pGfx   = new CGfxLibrary;
 	_pSound = new CSoundLibrary;	
-	_pInput = new CInput;
-	_pNetwork = new CNetworkLibrary;
+	_pInput = new CInput;	
+
+	_pGameState = new CGameState;
 
 	// init main shell
 	_pShell = new CShell;
@@ -616,43 +984,95 @@ ENGINE_API void SE_InitEngine(CTString strGameID)
 	// Timer tick quantum
 	_pShell->DeclareSymbol("user const FLOAT fTickQuantum;", (FLOAT*)&_pTimer->TickQuantum);
 	_pShell->DeclareSymbol("persistent user INDEX gam_iMaxSaveGameSize;",&gam_iMaxSaveGameSize);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Add & Modify SSSE Effect)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Add & Modify SSSE Effect)(0.1)
 	_pShell->DeclareSymbol("user FLOAT g_fGWTime;",&g_fGWTime);
 	_pShell->DeclareSymbol("user FLOAT g_fGWTimeMul;",&g_fGWTimeMul);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Add & Modify SSSE Effect)(0.1)
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Add & Modify SSSE Effect)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(For Performance)(0.1)
 	_pShell->DeclareSymbol("persistent user INDEX g_bRenderDecoration;", &g_bRenderDecoration);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(For Performance)(0.1)
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Option)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(For Performance)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Option)(0.1)
 	_pShell->DeclareSymbol("persistent user FLOAT ter_fLODMul;", &ter_fLODMul);
 	_pShell->DeclareSymbol("persistent user FLOAT g_fChaLODMul;", &g_fChaLODMul);
 	_pShell->DeclareSymbol("persistent user INDEX g_iUseBloom;", &g_iUseBloom);
 	_pShell->DeclareSymbol("           user FLOAT g_fFarClipPlus;", &g_fFarClipPlus);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Option)(0.1)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Option)(0.1)
 
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÏãúÏûë ÌÅ¥Î°úÏ¶à 2Ï∞® ÏûëÏóÖ	08.18
+//∞≠µøπŒ ºˆ¡§ Ω√¿€ ≈¨∑Œ¡Ó 2¬˜ ¿€æ˜	08.18
 	_pShell->DeclareSymbol("persistent user INDEX g_iShadowDetail;",&g_iShadowDetail);
 	_pShell->DeclareSymbol("persistent user INDEX g_iReflectionDetail;",&g_iReflectionDetail);
-//Í∞ïÎèôÎØº ÏàòÏ†ï ÎÅù ÌÅ¥Î°úÏ¶à 2Ï∞® ÏûëÏóÖ		08.18
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Taiwan Closed beta)(0.2)
+//∞≠µøπŒ ºˆ¡§ ≥° ≈¨∑Œ¡Ó 2¬˜ ¿€æ˜		08.18
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Taiwan Closed beta)(0.2)
 	_pShell->DeclareSymbol("persistent      INDEX g_iCountry;", &g_iCountry);
 	_pShell->DeclareSymbol("persistent      INDEX g_iEnterChat;", &g_iEnterChat);
 	_pShell->DeclareSymbol("persistent      INDEX g_iShowName;", &g_iShowName);
 	_pShell->DeclareSymbol("persistent      INDEX g_iShowNameItem;", &g_iShowNameItem);
 	_pShell->DeclareSymbol("persistent      INDEX g_iAutoAttack;", &g_iAutoAttack);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Taiwan Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Taiwan Closed beta)(0.2)
+	// wooss 070401 ---------------------------------------------------------------->><<
+	// kw : WSS_HELP_SYSTEM_1
+	_pShell->DeclareSymbol("persistent      INDEX g_iShowHelp1Icon;", &g_iShowHelp1Icon);
 
 	// [090715: selo]
 	_pShell->DeclareSymbol("persistent      INDEX g_iSaveID;", &g_iSaveID);	
 	_pShell->DeclareSymbol("persistent user CTString g_strSaveID;", &g_strSaveID);
 
-	// wooss 070401 ---------------------------------------------------------------->><<
-	// kw : WSS_HELP_SYSTEM_1
-	_pShell->DeclareSymbol("persistent      INDEX g_iShowHelp1Icon;", &g_iShowHelp1Icon);
+#ifdef EUROUPEAN_SERVER_LOGIN
+	// ¿Ø∑Œ««æ» º≠πˆ ¡¢º” ø©∫Œ [10/18/2012 Ranma]
+	_pShell->DeclareSymbol("persistent      INDEX g_iConnectEuroupean;", &g_iConnectEuroupean);
+#endif
 
 	// [7/9/2009 rumist] rejection
 	_pShell->DeclareSymbol("persistent		INDEX g_iRejectExchange;", &g_iRejectExchange);
 	_pShell->DeclareSymbol("persistent		INDEX g_iRejectParty;", &g_iRejectParty);
+
+	// 1106 UI ∞≥∆Ì - ƒ˘Ω∫∆Æ ∫œ ø≠±‚ [09/05/11 trylord]
+	_pShell->DeclareSymbol("persistent		INDEX g_iQuestBookOpen;", &g_iQuestBookOpen);
+
+	// Map Info. [9/15/2009 rumist]
+	_pShell->DeclareSymbol("persistent		INDEX g_iZoomInMap;", &g_iZoomInMap);
+	_pShell->DeclareSymbol("persistent		INDEX g_iOpacityInMap;", &g_iOpacityInMap);
+
+	// UI ∞≥∆Ì ¿€æ˜. [9/16/2009 rumist]
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInMap;", &g_iXPosInMap);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInMap;", &g_iYPosInMap);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInInventory;", &g_iXPosInInventory);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInInventory;", &g_iYPosInInventory);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInInvenSlot1;", &g_iXPosInInvenSlot1);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInInvenSlot1;", &g_iYPosInInvenSlot1);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInInvenSlot2;", &g_iXPosInInvenSlot2);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInInvenSlot2;", &g_iYPosInInvenSlot2);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInInvenSlot3;", &g_iXPosInInvenSlot3);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInInvenSlot3;", &g_iYPosInInvenSlot3);
+	
+	// UI ƒ¸ΩΩ∑‘ »Æ¿Â ∞≥∆Ì ¿€æ˜ »Æ¿Â ΩΩ∑‘ ¿ßƒ° [12/18/2012 Ranma]
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosQuickSlotEX1;", &g_iXPosQuickSlotEX1);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosQuickSlotEX1;", &g_iYPosQuickSlotEX1);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosQuickSlotEX2;", &g_iXPosQuickSlotEX2);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosQuickSlotEX2;", &g_iYPosQuickSlotEX2);
+	_pShell->DeclareSymbol("persistent		INDEX g_bQuickSlotEX1;", &g_bQuickSlotEX1);
+	_pShell->DeclareSymbol("persistent		INDEX g_bQuickSlotEX2;", &g_bQuickSlotEX2);
+	_pShell->DeclareSymbol("persistent		INDEX g_bQuickSlot1HorOrVer;", &g_bQuickSlot1HorOrVer);
+	_pShell->DeclareSymbol("persistent		INDEX g_bQuickSlot1Lock;", &g_bQuickSlot1Lock);
+	_pShell->DeclareSymbol("persistent		INDEX g_bQuickSlot2HorOrVer;", &g_bQuickSlot2HorOrVer);
+	_pShell->DeclareSymbol("persistent		INDEX g_bQuickSlot2Lock;", &g_bQuickSlot2Lock);
+	
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInCharInfo;", &g_iXPosInCharInfo);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInCharInfo;", &g_iYPosInCharInfo);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInQuest;", &g_iXPosInQuest);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInQuest;", &g_iYPosInQuest);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInPetInfo;", &g_iXPosInPetInfo);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInPetInfo;", &g_iYPosInPetInfo);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInWPetInfo;", &g_iXPosInWPetInfo);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInWPetInfo;", &g_iYPosInWPetInfo);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInMessanger;", &g_iXPosInMessanger);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInMessanger;", &g_iYPosInMessanger);
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInSystemMenu;", &g_iXPosInSystemMenu);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInSystemMenu;", &g_iYPosInSystemMenu);
+
+	// NPC Scroll UI Position [9/21/2009 rumist]
+	_pShell->DeclareSymbol("persistent		INDEX g_iXPosInNPCScroll;", &g_iXPosInNPCScroll);
+	_pShell->DeclareSymbol("persistent		INDEX g_iYPosInNPCScroll;", &g_iYPosInNPCScroll);
 
 	// UI_REFORM :Su-won
 	_pShell->DeclareSymbol("persistent      INDEX g_bSlaveNoTarget;", &g_bSlaveNoTarget);
@@ -670,15 +1090,15 @@ ENGINE_API void SE_InitEngine(CTString strGameID)
 
 	// load persistent symbols
 	if (!_bDedicatedServer) {
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Taiwan Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Taiwan Closed beta)(0.2)
 		_pShell->Execute(CTString("decode \"")+fnmPersistentSymbols+"\";");
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÎÅù	//(Taiwan Closed beta)(0.2)
+//æ»≈¬»∆ ºˆ¡§ ≥°	//(Taiwan Closed beta)(0.2)
 	}
 
 	// Create log file for console if not allready created
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Block Log)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Block Log)(0.1)
     //_pConsole->CreateLogFile(fnmLog);
-//ÏïàÌÉúÌõà ÏàòÏ†ï ÏãúÏûë	//(Block Log)(0.1)
+//æ»≈¬»∆ ºˆ¡§ Ω√¿€	//(Block Log)(0.1)
 
 	// keep mod name in sys cvar
 	sys_strModName = _strModName;
@@ -691,8 +1111,13 @@ ENGINE_API void SE_InitEngine(CTString strGameID)
 	try {
 		// get the checksum of engine
 		#ifndef NDEBUG
-			#define SELFFILE "Bin\\Debug\\EngineD.dll"
+			//#define SELFFILE "Bin\\Debug\\EngineD.dll"
 			#define SELFCRCFILE "Bin\\Debug\\EngineD.crc"
+		#	if		defined(_MSC_VER) && (_MSC_VER >= 1600)
+		#		define SELFFILE "Bin\\Debug2010\\EngineD.dll"
+		#	else
+		#		define SELFFILE "Bin\\Debug\\EngineD.dll"
+		#	endif
 		#else
 			#define SELFFILE "Bin\\Engine.dll"
 			#define SELFCRCFILE "Bin\\Engine.crc"
@@ -710,6 +1135,8 @@ ENGINE_API void SE_InitEngine(CTString strGameID)
 		//FatalError(TRANS("Engine CRC is invalid.\nExpected %08x, but found %08x.\n"), ulCRCExpected, ulCRCActual);
 	}
 #endif
+
+	_pNetwork = new CNetworkLibrary;
 
 	_pInput->Initialize();
 
@@ -734,6 +1161,9 @@ ENGINE_API void SE_InitEngine(CTString strGameID)
 	// mark that default fonts aren't loaded (yet)
 	_pfdDisplayFont = NULL;
 	_pfdConsoleFont = NULL;
+	//////////////////////////////////////////////////////////////////////////
+	_pfdGameFont = NULL; 
+	//////////////////////////////////////////////////////////////////////////
 
 	// init IFeel
 	HWND hwnd = NULL;//GetDesktopWindow();
@@ -756,16 +1186,37 @@ ENGINE_API void SE_InitEngine(CTString strGameID)
 	}
 }
 
+
 ENGINE_API void CheckEngineVersion()
 {
 	if( !((g_bTestClient && g_uiEngineVersion >= 10000) || (!g_bTestClient && g_uiEngineVersion < 10000)) )
 	{
 		if(g_szExitError) delete[] g_szExitError;
 		g_szExitError = new char[4096];
-		strcpy(g_szExitError, _S( 864, "Î≤ÑÏ†Ñ Ï†ïÎ≥¥Í∞Ä ÎßûÏßÄ ÏïäÏäµÎãàÎã§." ));
+		strcpy(g_szExitError, _S( 864, "πˆ¿¸ ¡§∫∏∞° ∏¬¡ˆ æ Ω¿¥œ¥Ÿ." ));
 		_pGameState->Running() = FALSE;
 		_pGameState->QuitScreen() = FALSE;
 	}
+}
+
+ENGINE_API void EndLodData()
+{
+	CSpecialSkill::release();
+	CItemData::release();
+	COptionData::release();
+	CFortuneData::release();
+	CItemRareOption::release();
+	CSetItemData::release();
+	CAction::release();
+	CMissionCase::release();
+	TitleStaticData::release();
+	CQuestStaticData::release();
+	CMobData::release();
+	CNpcHelp::release();
+	CMobHelp::release();
+	CWildPetData::release();
+	CLevelUpGuide::release();
+	CItemCollectionData::Release();
 }
 
 
@@ -774,16 +1225,55 @@ ENGINE_API void SE_EndEngine(void)
 {
 	Finalize_EffectSystem();
 	// save persistent symbols
+#ifndef UI_TOOL
 	if (!_bDedicatedServer) {
 		_pShell->StoreEncodePersistentSymbols(fnmPersistentSymbols);
 	}
+#endif // UI_TOOL
 
-	if( _pUIMgr )
-	{
-		_pUIMgr->Destroy();
-		delete _pUIMgr;
-		_pUIMgr = NULL;
-	}
+	StringLoader::destroy();
+	if(_pGameState)
+		_pGameState->DeleteSelectModel(); // Free Stocks ∫∏¥Ÿ ∏’¿˙ ªË¡¶«œø©æﬂ «—¥Ÿ.
+
+	CLoginJobInfo::destroy(); // ∞‘¿” Ω∫≈◊¿Ã∆Æ¿« ∏µ®∫∏¥Ÿ ≥™¡ﬂø° ¡ˆøˆ¡Ææﬂ «—¥Ÿ.
+	CJobInfo::destroy();
+
+	CUIManager::destroy();
+
+	GameDataManager::getSingleton()->DestroyAll();
+	GameDataManager::destroy();
+
+	StageMgr::getSingleton()->DestroyAll();
+	StageMgr::destroy();
+
+	CSkillTree::Destroy();
+	CArmorPreview::Destroy();
+	CTEventString::Destroy();
+	CTradeItem::Destroy();
+	CustomTitleData::clearCustomItemInfo();
+
+	EndLodData();
+
+	CZoneInfo::destroy();
+
+	CLoadingImage::destroy();
+
+	ActorMgr::destroy();
+	MyInfo::destroy();
+	ServerInfo::destroy();
+	ObjInfo::destroy();
+	CInterfaceSymbol::destroy();
+
+	_pfdDisplayFont->Clear();
+	FONT_STOCK_RELEASE(_pfdDisplayFont);
+	_pfdConsoleFont->Clear();
+	FONT_STOCK_RELEASE(_pfdConsoleFont);
+
+#ifdef G_RUSSIA
+	_pfdDefaultFont->Clear();
+	FONT_STOCK_RELEASE(_pfdDefaultFont);
+#endif // G_RUSSIA
+
 	// free stocks
 	delete _pEntityClassStock;   _pEntityClassStock   = NULL;
 	delete _pModelInstanceStock; _pModelInstanceStock = NULL;
@@ -802,7 +1292,10 @@ ENGINE_API void SE_EndEngine(void)
 	CRCT_Clear();
 
 	// shutdown
-	if( _pNetwork != NULL) { delete _pNetwork;  _pNetwork=NULL; }
+	if( _pNetwork != NULL) { 
+		delete _pNetwork;  
+		_pNetwork = NULL; 
+	}
 	delete _pInput;    _pInput   = NULL;  
 	delete _pSound;    _pSound   = NULL;  
 	delete _pGfx;      _pGfx     = NULL;    
@@ -840,6 +1333,11 @@ ENGINE_API void SE_LoadDefaultFonts(void)
 	try {
 		_pfdDisplayFont = _pFontStock->Obtain_t( CTFILENAME( "Fonts\\Standard.fnt"));
 		_pfdConsoleFont = _pFontStock->Obtain_t( CTFILENAME( "Fonts\\Console1.fnt"));
+
+		//_pfdGameFont = _pFontStock->Obtain_t( CTFILENAME( "Fonts\\Korean.fnt") );
+#if defined (G_RUSSIA)
+		_pfdDefaultFont = _pFontStock->Obtain_t( CTFILENAME( "Fonts\\Russia.fnt"));
+#endif
 	}
 	catch (char *strError) {
 		FatalError( TRANS("Error loading font: %s."), strError);
@@ -854,10 +1352,11 @@ ENGINE_API void SE_LoadDefaultFonts(void)
 
 
 // updates main windows' handles for windowed mode and fullscreen
-ENGINE_API void SE_UpdateWindowHandle( HWND hwndMain)
+ENGINE_API void SE_UpdateWindowHandle( HWND hwndMain, HWND hdlgWebInterface)
 {
 	ASSERT( hwndMain!=NULL);
 	_hwndMain = hwndMain;
+	_hDlgWeb = hdlgWebInterface;
 	_bFullScreen = _pGfx!=NULL && (_pGfx->gl_ulFlags&GLF_FULLSCREEN);
 }
 
@@ -903,8 +1402,6 @@ ENGINE_API extern void SE_PretouchIfNeeded(void)
 	if( !_bNeedPretouch || !gam_bPretouch) return;
 	_bNeedPretouch = FALSE;
 
-	// set progress bar
-	SetProgressDescription( TRANS("pretouching"));
 	CallProgressHook_t(0.0f);
 
 	// need to do this two times - 1st for numerations, and 2nd for real (progress bar and that shit)
@@ -972,7 +1469,43 @@ nextRegion:
 }
 
 
+ENGINE_API CWebAddress* SE_Get_WebAddressPtr()
+{
+	return CWebAddress::getSingleton();
+}
 
+
+ENGINE_API CUIManager* SE_Get_UIManagerPtr()
+{
+	return CUIManager::getSingleton();
+}
+
+ENGINE_API GameDataManager* SE_Get_GameDataManagerPtr()
+{
+	return GameDataManager::getSingleton();
+}
+
+ENGINE_API void SE_Destroy_WebAddressPtr()
+{
+	CWebAddress::destroy();
+}
+
+
+ENGINE_API void SE_Destroy_UIManagerPtr()
+{
+	CUIManager::destroy();
+}
+
+ENGINE_API void SE_Destroy_GameDataManagerPtr()
+{
+	GameDataManager::getSingleton()->destroy();
+}
+
+
+ENGINE_API UtilHelp* SE_Get_UtilHelpPtr()
+{
+	return UtilHelp::getSingleton();
+}
 
 #if 0
 
@@ -1013,6 +1546,7 @@ nextRegion:
 			case MEM_MAPPED:  strTmp2 = "MEM_MAPPED";  break;
 			case MEM_PRIVATE: strTmp2 = "MEM_PRIVATE"; break;
 			}
+
 			CPrintF("State/Type: %s / %s\n", strTmp1, strTmp2);
 
 #endif

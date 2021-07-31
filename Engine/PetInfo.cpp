@@ -9,7 +9,7 @@ CPetInfo CPetInfo::m_instance;
 
 #define PET_HORSE_CHILD		("Data\\NPC\\Pet\\Pet_Horse01.smc")
 #define PET_HORSE_BOY		("Data\\NPC\\Pet\\Pet_Horse02.smc")
-#define PET_HORSE_ADULT		("Data\\NPC\\Pet\\Pet_Horse03.smc")
+#define PET_HORSE_ADULT		("Data\\NPC\\Pet\\Horse\\Pet_Horse03.smc")
 
 #define PET_DRAGON_CHILD	("Data\\NPC\\Pet\\Pet_Dragon01.smc")
 #define PET_DRAGON_BOY		("Data\\NPC\\Pet\\Pet_Dragon02.smc")
@@ -25,9 +25,9 @@ CPetInfo CPetInfo::m_instance;
 #define PET_HORSE_ADULT_BLUE	("Data\\NPC\\Pet\\Pet_Horse_Blue03.smc")
 
 // [070824: Su-won] PET_COLOR_CHANGE
-CTString strColoredTexFile[6][26] =
+CTString strColoredTexFile[6][62] =
 {
-	//ÏûëÏùÄ Îßê
+	//¿€¿∫ ∏ª
 	{	"Data\\NPC\\Pet\\pet_horse01.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse01_1.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse01_2.tex",
@@ -42,6 +42,26 @@ CTString strColoredTexFile[6][26] =
 		"Data\\NPC\\Pet\\textures\\pet_horse01_8_heart.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse01_9_heart.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse01_3_heart.tex",
+		"",	
+		"",
+		"",
+		"",
+		"",		
+		"",
+		"",
+		"",
+		"",
+		"",		 
+		"",
+		"",
+		"",
+		"",
+		"", 
+		"",
+		"",
+		"",
+		"",
+		"", 
 		"",
 		"",
 		"",
@@ -53,9 +73,26 @@ CTString strColoredTexFile[6][26] =
 		"",
 		"",
 		"",
-		"" },
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		""
+	},
 
-	//Î≥¥ÌÜµ Îßê
+	//∫∏≈Î ∏ª
 	{	"Data\\NPC\\Pet\\pet_horse02.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse02_1.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse02_2.tex",
@@ -70,6 +107,26 @@ CTString strColoredTexFile[6][26] =
 		"Data\\NPC\\Pet\\textures\\pet_horse02_8_heart.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse02_9_heart.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse02_3_heart.tex",
+		"",	
+		"",
+		"",
+		"",
+		"",		
+		"",
+		"",
+		"",
+		"",
+		"",		 
+		"",
+		"",
+		"",
+		"",
+		"", 
+		"",
+		"",
+		"",
+		"",
+		"", 
 		"",
 		"",
 		"",
@@ -81,9 +138,26 @@ CTString strColoredTexFile[6][26] =
 		"",
 		"",
 		"",
-		"" },
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		""
+	},
 
-	//ÌÉÄÎäî Îßê
+	//≈∏¥¬ ∏ª
 	{	"Data\\NPC\\Pet\\pet_horse03.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_1.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_2.tex",
@@ -95,23 +169,71 @@ CTString strColoredTexFile[6][26] =
 		"Data\\NPC\\Pet\\textures\\pet_horse03_8.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_9.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_10.tex",
+		
 		"Data\\NPC\\Pet\\textures\\pet_horse03_8_heart.tex",
-		"Data\\NPC\\Pet\\textures\\pet_horse03_9_heart.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_9_heart.tex",		
 		"Data\\NPC\\Pet\\textures\\pet_horse03_3_heart.tex",
+
 		"Data\\NPC\\Pet\\textures\\pet_horse03_8_c.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_8_d.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_8_s.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_8_sk.tex",
+
 		"Data\\NPC\\Pet\\textures\\pet_horse03_9_c.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_9_d.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_9_s.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_9_sk.tex",
+
 		"Data\\NPC\\Pet\\textures\\pet_horse03_3_c.tex",
 		"Data\\NPC\\Pet\\textures\\pet_horse03_3_d.tex",
-		"Data\\NPC\\Pet\\textures\\pet_horse03_3_s.tex",
-		"Data\\NPC\\Pet\\textures\\pet_horse03_3_sk.tex" },	
+		"Data\\NPC\\Pet\\textures\\pet_horse03_3_s.tex",		
+		"Data\\NPC\\Pet\\textures\\pet_horse03_3_sk.tex",
+		
+		"Data\\NPC\\Pet\\textures\\pet_horse03_1_h.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_1_c.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_1_d.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_1_s.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_1_sk.tex",
 
-	//ÏûëÏùÄ Ïö©
+		"Data\\NPC\\Pet\\textures\\pet_horse03_2_h.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_2_c.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_2_d.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_2_s.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_2_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\pet_horse03_4_h.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_4_c.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_4_d.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_4_s.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_4_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\pet_horse03_5_h.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_5_c.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_5_d.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_5_s.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_5_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\pet_horse03_6_h.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_6_c.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_6_d.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_6_s.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_6_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\pet_horse03_7_h.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_7_c.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_7_d.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_7_s.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse03_7_sk.tex",	
+		
+		"Data\\NPC\\Pet\\textures\\pet_horse_v01.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse_v02.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse_v03.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse_v04.tex",
+		"Data\\NPC\\Pet\\textures\\pet_horse_v05.tex",	
+		"Data\\NPC\\Pet\\textures\\pet_horse_v06.tex"
+	},	
+
+	//¿€¿∫ øÎ
 	{	"Data\\NPC\\Pet\\pupu.tex",
 		"Data\\NPC\\Pet\\textures\\pupu_1.tex",
 		"Data\\NPC\\Pet\\textures\\pupu_2.tex",
@@ -126,6 +248,26 @@ CTString strColoredTexFile[6][26] =
 		"",
 		"",
 		"",
+		"",	
+		"",
+		"",
+		"",
+		"",		
+		"",
+		"",
+		"",
+		"",
+		"",		 
+		"",
+		"",
+		"",
+		"",
+		"", 
+		"",
+		"",
+		"",
+		"",
+		"", 
 		"",
 		"",
 		"",
@@ -134,9 +276,29 @@ CTString strColoredTexFile[6][26] =
 		"",
 		"",
 		"",
-		"" },
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		""
+	},
 
-	//Î≥¥ÌÜµ Ïö©
+	//∫∏≈Î øÎ
 	{	"Data\\NPC\\Pet\\pet_d_02.tex",
 		"Data\\NPC\\Pet\\textures\\pet_d_01.tex",
 		"Data\\NPC\\Pet\\textures\\pet_d_02.tex",
@@ -149,6 +311,27 @@ CTString strColoredTexFile[6][26] =
 		"Data\\NPC\\Pet\\textures\\pet_d_09.tex",
 		"Data\\NPC\\Pet\\textures\\pet_d_10.tex",
 		"",
+		"",	
+		"",
+		"",
+		"",
+		"",
+		"",		
+		"",
+		"",
+		"",
+		"",
+		"",		 
+		"",
+		"",
+		"",
+		"",
+		"", 
+		"",
+		"",
+		"",
+		"",
+		"", 
 		"",
 		"",
 		"",
@@ -159,9 +342,28 @@ CTString strColoredTexFile[6][26] =
 		"",
 		"",
 		"",
-		"" },
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		""
+	},
 
-	//ÌÉÄÎäî Ïö©
+	//≈∏¥¬ øÎ
 	{	"Data\\NPC\\Pet\\baroroques.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_1.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_2.tex",
@@ -173,21 +375,68 @@ CTString strColoredTexFile[6][26] =
 		"Data\\NPC\\Pet\\textures\\baroroques_8.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_9.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_10.tex",
+
 		"Data\\NPC\\Pet\\textures\\baroroques_8_heart.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_9_heart.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_3_heart.tex",
+
 		"Data\\NPC\\Pet\\textures\\baroroques_8_c.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_8_d.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_8_s.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_8_sk.tex",
+
 		"Data\\NPC\\Pet\\textures\\baroroques_9_c.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_9_d.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_9_s.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_9_sk.tex",
+
 		"Data\\NPC\\Pet\\textures\\baroroques_3_c.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_3_d.tex",
 		"Data\\NPC\\Pet\\textures\\baroroques_3_s.tex",
-		"Data\\NPC\\Pet\\textures\\baroroques_3_sk.tex" },	
+		"Data\\NPC\\Pet\\textures\\baroroques_3_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\baroroques_1_h.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_1_c.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_1_d.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_1_s.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_1_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\baroroques_2_h.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_2_c.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_2_d.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_2_s.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_2_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\baroroques_4_h.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_4_c.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_4_d.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_4_s.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_4_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\baroroques_5_h.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_5_c.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_5_d.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_5_s.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_5_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\baroroques_6_h.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_6_c.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_6_d.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_6_s.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_6_sk.tex",
+
+		"Data\\NPC\\Pet\\textures\\baroroques_7_h.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_7_c.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_7_d.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_7_s.tex",
+		"Data\\NPC\\Pet\\textures\\baroroques_7_sk.tex",
+		"",
+		"",
+		"",
+		"",
+		"",
+		""
+	},	
 };
 
 // ----------------------------------------------------------------------------
@@ -210,13 +459,13 @@ m_pPetInfo( NULL )
 	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_DAMAGE]		= "Pet_Horse01_dam";
 	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_DIE]			= "Pet_Horse01_die";
 	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_LEVELUP]		= "Pet_Horse01_lvup";
-	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_0]		= "Pet_Horse01_skill01";	// Í≥†Í∞ú ÌùîÎì§Í∏∞
-	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_1]		= "Pet_Horse01_skill02";	// Îí∑Î∞úÍ∏∏
-	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_2]		= "Pet_Horse01_skill03";	// Îßê Ïö∏Ïùå.
+	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_0]		= "Pet_Horse01_skill01";	// ∞Ì∞≥ »ÁµÈ±‚
+	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_1]		= "Pet_Horse01_skill02";	// µﬁπﬂ±Ê
+	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_2]		= "Pet_Horse01_skill03";	// ∏ª øÔ¿Ω.
 	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_3]		= "Pet_Horse01_skill04";	// 
 	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_4]		= "Pet_Horse01_skill05";	// 
-	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_0_01]		= "Pet_Horse01_skill01_01";	// Í≥†Í∞ú ÌùîÎì§Í∏∞
-	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_0_02]		= "Pet_Horse01_skill01_02";	// Í≥†Í∞ú ÌùîÎì§Í∏∞
+	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_0_01]		= "Pet_Horse01_skill01_01";	// ∞Ì∞≥ »ÁµÈ±‚
+	m_pPetInfo[HORSE_CHILD].aStrAnimationName[PET_ANIM_SKILL_0_02]		= "Pet_Horse01_skill01_02";	// ∞Ì∞≥ »ÁµÈ±‚
 	m_pPetInfo[HORSE_CHILD].bRide									= FALSE;
 	m_pPetInfo[HORSE_CHILD].fWalkSpeed								= 5.0f;
 	m_pPetInfo[HORSE_CHILD].fRunSpeed								= 7.0f;
@@ -233,13 +482,13 @@ m_pPetInfo( NULL )
 	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_DAMAGE]		= "Pet_Horse02_dam";
 	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_DIE]			= "Pet_Horse02_die";
 	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_LEVELUP]		= "Pet_Horse02_lvup";
-	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_0]		= "Pet_Horse02_skill01";	// Í≥†Í∞ú ÌùîÎì§Í∏∞
-	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_1]		= "Pet_Horse02_skill02";	// Îí∑Î∞úÍ∏∏
-	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_2]		= "Pet_Horse02_skill03";	// Îßê Ïö∏Ïùå.
+	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_0]		= "Pet_Horse02_skill01";	// ∞Ì∞≥ »ÁµÈ±‚
+	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_1]		= "Pet_Horse02_skill02";	// µﬁπﬂ±Ê
+	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_2]		= "Pet_Horse02_skill03";	// ∏ª øÔ¿Ω.
 	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_3]		= "Pet_Horse02_skill04";	// 
 	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_4]		= "Pet_Horse02_skill05";	// 
-	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_0_01]		= "Pet_Horse02_skill01_01";	// Í≥†Í∞ú ÌùîÎì§Í∏∞
-	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_0_02]		= "Pet_Horse02_skill01_02";	// Í≥†Í∞ú ÌùîÎì§Í∏∞
+	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_0_01]		= "Pet_Horse02_skill01_01";	// ∞Ì∞≥ »ÁµÈ±‚
+	m_pPetInfo[HORSE_BOY].aStrAnimationName[PET_ANIM_SKILL_0_02]		= "Pet_Horse02_skill01_02";	// ∞Ì∞≥ »ÁµÈ±‚
 	m_pPetInfo[HORSE_BOY].bRide										= FALSE;
 	m_pPetInfo[HORSE_BOY].fWalkSpeed								= 5.0f;
 	m_pPetInfo[HORSE_BOY].fRunSpeed									= 8.0f;
@@ -256,7 +505,7 @@ m_pPetInfo( NULL )
 	m_pPetInfo[HORSE_ADULT].aStrAnimationName[PET_ANIM_DAMAGE]		= "Pet_Horse3_dam";
 	m_pPetInfo[HORSE_ADULT].aStrAnimationName[PET_ANIM_DIE]			= "Pet_Horse3_die";
 	m_pPetInfo[HORSE_ADULT].aStrAnimationName[PET_ANIM_LEVELUP]		= "Pet_Horse3_lvup";
-	m_pPetInfo[HORSE_ADULT].aStrAnimationName[PET_ANIM_SKILL_0]		= "Pet_Horse3_skill01";	// ÏïâÍ∏∞
+	m_pPetInfo[HORSE_ADULT].aStrAnimationName[PET_ANIM_SKILL_0]		= "Pet_Horse3_skill01";	// æ…±‚
 	m_pPetInfo[HORSE_ADULT].aStrAnimationName[PET_ANIM_SKILL_1]		= "Pet_Horse3_skill02";	// 
 	m_pPetInfo[HORSE_ADULT].aStrAnimationName[PET_ANIM_SKILL_2]		= "Pet_Horse3_skill03";	// 
 	m_pPetInfo[HORSE_ADULT].aStrAnimationName[PET_ANIM_SKILL_3]		= "Pet_Horse3_skill04";	// 
@@ -279,13 +528,13 @@ m_pPetInfo( NULL )
 	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_DAMAGE]		= "Pet_Dragon01_dam";
 	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_DIE]		= "Pet_Dragon01_die";
 	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_LEVELUP]	= "Pet_Dragon01_lvup";
-	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_0]	= "Pet_Dragon01_skill01";	// Î°úÏñ¥
-	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_1]	= "Pet_Dragon01_skill02";	// ÎÇ†Í∞úÏßì
-	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_2]	= "Pet_Dragon01_skill03";	// Ïï†Íµê
-	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_3]	= "Pet_Dragon01_skill04";	// Íµ¨Ïï†
-	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_4]	= "Pet_Dragon01_skill05";	// Î∂àÎøúÍ∏∞
-	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_0_01]	= "Pet_Dragon01_skill01_01";	// Î°úÏñ¥
-	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_0_02]	= "Pet_Dragon01_skill01_02";	// Î°úÏñ¥
+	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_0]	= "Pet_Dragon01_skill01";	// ∑ŒæÓ
+	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_1]	= "Pet_Dragon01_skill02";	// ≥Ø∞≥¡˛
+	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_2]	= "Pet_Dragon01_skill03";	// æ÷±≥
+	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_3]	= "Pet_Dragon01_skill04";	// ±∏æ÷
+	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_4]	= "Pet_Dragon01_skill05";	// ∫“ª’±‚
+	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_0_01]	= "Pet_Dragon01_skill01_01";	// ∑ŒæÓ
+	m_pPetInfo[DRAGON_CHILD].aStrAnimationName[PET_ANIM_SKILL_0_02]	= "Pet_Dragon01_skill01_02";	// ∑ŒæÓ
 	m_pPetInfo[DRAGON_CHILD].bRide									= FALSE;
 	m_pPetInfo[DRAGON_CHILD].fWalkSpeed								= 5.5f;
 	m_pPetInfo[DRAGON_CHILD].fRunSpeed								= 7.0f;
@@ -302,13 +551,13 @@ m_pPetInfo( NULL )
 	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_DAMAGE]		= "Pet_Dragon02_dam";
 	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_DIE]			= "Pet_Dragon02_die";
 	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_LEVELUP]		= "Pet_Dragon02_lvup";
-	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_0]		= "Pet_Dragon02_skill01";	// Î°úÏñ¥
-	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_1]		= "Pet_Dragon02_skill02";	// ÎÇ†Í∞úÏßì
-	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_2]		= "Pet_Dragon02_skill03";	// Ïï†Íµê
-	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_3]		= "Pet_Dragon02_skill04";	// Íµ¨Ïï†
-	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_4]		= "Pet_Dragon02_skill05";	// Î∂àÎøúÍ∏∞
-	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_0_01]		= "Pet_Dragon02_skill01_01";	// Î°úÏñ¥
-	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_0_02]		= "Pet_Dragon02_skill01_02";	// Î°úÏñ¥
+	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_0]		= "Pet_Dragon02_skill01";	// ∑ŒæÓ
+	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_1]		= "Pet_Dragon02_skill02";	// ≥Ø∞≥¡˛
+	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_2]		= "Pet_Dragon02_skill03";	// æ÷±≥
+	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_3]		= "Pet_Dragon02_skill04";	// ±∏æ÷
+	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_4]		= "Pet_Dragon02_skill05";	// ∫“ª’±‚
+	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_0_01]		= "Pet_Dragon02_skill01_01";	// ∑ŒæÓ
+	m_pPetInfo[DRAGON_BOY].aStrAnimationName[PET_ANIM_SKILL_0_02]		= "Pet_Dragon02_skill01_02";	// ∑ŒæÓ
 	m_pPetInfo[DRAGON_BOY].bRide										= FALSE;
 	m_pPetInfo[DRAGON_BOY].fWalkSpeed								= 5.0f;
 	m_pPetInfo[DRAGON_BOY].fRunSpeed								= 8.0f;
@@ -325,7 +574,7 @@ m_pPetInfo( NULL )
 	m_pPetInfo[DRAGON_ADULT].aStrAnimationName[PET_ANIM_DAMAGE]		= "Pet_Dragon03_dam";
 	m_pPetInfo[DRAGON_ADULT].aStrAnimationName[PET_ANIM_DIE]		= "Pet_Dragon03_die";
 	m_pPetInfo[DRAGON_ADULT].aStrAnimationName[PET_ANIM_LEVELUP]	= "Pet_Dragon03_lvup";
-	m_pPetInfo[DRAGON_ADULT].aStrAnimationName[PET_ANIM_SKILL_0]	= "Pet_Dragon03_skill01";	// ÏïâÍ∏∞
+	m_pPetInfo[DRAGON_ADULT].aStrAnimationName[PET_ANIM_SKILL_0]	= "Pet_Dragon03_skill01";	// æ…±‚
 	m_pPetInfo[DRAGON_ADULT].aStrAnimationName[PET_ANIM_SKILL_1]	= "Pet_Dragon03_skill02";	//
 	m_pPetInfo[DRAGON_ADULT].aStrAnimationName[PET_ANIM_SKILL_2]	= "Pet_Dragon03_skill03";	//
 	m_pPetInfo[DRAGON_ADULT].aStrAnimationName[PET_ANIM_SKILL_3]	= "Pet_Dragon03_skill04";	//
@@ -337,14 +586,14 @@ m_pPetInfo( NULL )
 	m_pPetInfo[DRAGON_ADULT].fRunSpeed								= 8.0f;
 	
 	// Add rare horse & dragon
-	// Î†àÏñ¥ Îßê
+	// ∑πæÓ ∏ª
 	m_pPetInfo[BLUE_HORSE_CHILD] = m_pPetInfo[MISTERY_HORSE_CHILD] = m_pPetInfo[HORSE_CHILD];
 	m_pPetInfo[BLUE_HORSE_CHILD].strFileName =  PET_HORSE_CHILD_BLUE;
 	m_pPetInfo[BLUE_HORSE_BOY] = m_pPetInfo[MISTERY_HORSE_BOY] = m_pPetInfo[HORSE_BOY];
 	m_pPetInfo[BLUE_HORSE_BOY].strFileName =  PET_HORSE_BOY_BLUE;
 	m_pPetInfo[BLUE_HORSE_ADULT] = m_pPetInfo[MISTERY_HORSE_ADULT] = m_pPetInfo[HORSE_ADULT];
 	m_pPetInfo[BLUE_HORSE_ADULT].strFileName =  PET_HORSE_ADULT_BLUE;
-	// Î†àÏñ¥ Ïö©
+	// ∑πæÓ øÎ
 	m_pPetInfo[PINK_DRAGON_CHILD] = m_pPetInfo[MISTERY_DRAGON_CHILD] = m_pPetInfo[DRAGON_CHILD];
 	m_pPetInfo[PINK_DRAGON_CHILD].strFileName = PET_DRAGON_CHILD_PINK;
 	m_pPetInfo[PINK_DRAGON_BOY] = m_pPetInfo[MISTERY_DRAGON_BOY] = m_pPetInfo[DRAGON_BOY];
@@ -394,7 +643,7 @@ const CTString &CPetInfo::GetFileName( int iPet, int iAge ) const
 }
 
 // [070824: Su-won] PET_COLOR_CHANGE
-// Ìé´ Î™®Îç∏Ïùò ÌÖçÏä§Ï≥êÎ°ú ÏÇ¨Ïö©Îê† ÌååÏùºÏù¥Î¶Ñ Î∞òÌôò
+// ∆Í ∏µ®¿« ≈ÿΩ∫√ƒ∑Œ ªÁøÎµ… ∆ƒ¿œ¿Ã∏ß π›»Ø
 const CTString &CPetInfo::GetColoredTexFileName( int iPet, int iAge, int iColor ) const
 {
 	const int iPetType = iPet * MAX_PET_AGE + iAge;
@@ -418,6 +667,9 @@ const CTString &CPetInfo::GetAnimationName( int iPet, int iAnimType ) const
 // ----------------------------------------------------------------------------
 BOOL CPetInfo::IsRide( int iPet, int iAge )
 {
+	if (iPet < 0 || iAge < 0)
+		return FALSE;
+
 	const int iPetType = iPet * MAX_PET_AGE + iAge;
 	return m_pPetInfo[iPetType].bRide;
 }
@@ -513,7 +765,7 @@ void CPetInfo::SetPetDataToEntity( int iPet, int iAge, CEntity *pEntity, BOOL bU
 	ENTITYPROPERTY( &*pEntity, epPropertyType.ep_slOffset, INDEX)		= iPet;
 
 	CDLLEntityClass *pdecDLLBaseBaseClass	= pdecDLLBaseClass->dec_pdecBase;
-	// Ïù¥Îèô ÏÜçÎèÑ...
+	// ¿Ãµø º”µµ...
 	CEntityProperty &epPropertyWalkSpeed		= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 10);	// NPC Walk Speed
 	ENTITYPROPERTY( &*pEntity, epPropertyWalkSpeed.ep_slOffset, FLOAT)			= GetWalkSpeed( iPet, iAge );	
 
@@ -523,10 +775,10 @@ void CPetInfo::SetPetDataToEntity( int iPet, int iAge, CEntity *pEntity, BOOL bU
 	CEntityProperty &epPropertyCloseRunSpeed	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 14);	// NPC Close Run Speed
 	ENTITYPROPERTY( &*pEntity, epPropertyCloseRunSpeed.ep_slOffset, FLOAT)		= GetRunSpeed( iPet, iAge );
 
-	CEntityProperty &epPropertyUseAI	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_BOOL, 193);	// AI ÏÇ¨Ïö© Ïú†Î¨¥.
+	CEntityProperty &epPropertyUseAI	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_BOOL, 193);	// AI ªÁøÎ ¿Øπ´.
 	ENTITYPROPERTY( &*pEntity, epPropertyUseAI.ep_slOffset, INDEX)		= bUseAI;
 
-	// Í≥µÍ≤© Í±∞Î¶¨...
+	// ∞¯∞› ∞≈∏Æ...
 	CEntityProperty &epPropertyAttackDistance	= *pdecDLLBaseBaseClass->PropertyForTypeAndID(CEntityProperty::EPT_FLOAT, 20);	// Attack Distance
 	ENTITYPROPERTY( &*pEntity, epPropertyAttackDistance.ep_slOffset, FLOAT)		= 4.0f;
 	

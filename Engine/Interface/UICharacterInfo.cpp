@@ -1,13 +1,35 @@
 #include "stdh.h"
-#include <Engine/Interface/UICharacterInfo.h>
+
+// «Ï¥ı ¡§∏Æ. [12/1/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UICharacterInfo.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Interface/UIAutoHelp.h>
+#include <Engine/Interface/UIPetTraining.h>
+#include <Engine/Contents/Base/UICalendar.h>
+#include <Engine/Contents/Base/UISkillNew.h>
+#include <Engine/Interface/UIPlayerInfo.h>
+#include <Engine/Interface/UIBilling.h>
+#include <Engine/Interface/UIMap.h>
+#include <Engine/Interface/UIExchange.h>
+#include <Engine/Interface/UIPersonalShop.h>
+#include <Engine/Interface/UIHelper.h>
+#include <Engine/Interface/UIMonsterCombo.h>
+#include <Engine/Interface/UIItemProduct.h>
+#include <Engine/Interface/UIAffinityInfo.h>
+#include <Engine/Interface/UINickName.h>
+#include <Engine/Contents/Base/UIRankingSystem.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Interface/UIParty.h>
+#include <Engine/Interface/UIPartyAuto.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Interface/UIGuildBattle.h>
+#include <Engine/Interface/UIQuest.h>
+#include <Engine/Contents/Login/ServerSelect.h>
 
 //static INDEX	g_iQuestIndex;
 //static INDEX	g_iSelBtn;
 
-#define PARTY_AUTO_ENABLE	// ÌååÌã∞ Ïò§ÌÜ† ÏãúÏä§ÌÖú Ïó¥Î¶º
+#define PARTY_AUTO_ENABLE	// ∆ƒ∆º ø¿≈‰ Ω√Ω∫≈€ ø≠∏≤
 
 #define ACTION_NUM_SELL		(28)
 
@@ -26,11 +48,16 @@ static int	_iMaxSkillStringChar = 0;
 #else
 #define	SKILL_ACTIVE_TAB_TEXT_CX		61
 #define	SKILL_PASSIVE_TAB_TEXT_CX		125
-#define	SKILL_SPECIAL_TAB_TEXT_CX		189
+#define	SKILL_SPECIAL_TAB_TEXT_CX		61
+#define	SKILL_VOUCHER_TAB_TEXT_CX		125
 #endif
 
 extern INDEX g_iCountry;
 extern UINT	g_uiEngineVersion;
+
+extern INDEX g_iXPosInCharInfo;
+extern INDEX g_iYPosInCharInfo;
+
 
 CTString _ClassName[11];
 
@@ -62,7 +89,7 @@ extern int _aSummonSkill[5] = { 293, 294, 300, 301, 307 };
 #define	SKILLINFO_NEW_CURSP_SY					290
 
 
-COLOR	m_ClassNameColor[11];				//ÏÑ±Ìñ• Îì±Í∏âÏóê Îî∞Î•∏ ÏÉâÏÉÅ
+COLOR	m_ClassNameColor[11];				//º∫«‚ µÓ±ﬁø° µ˚∏• ªˆªÛ
 CTextureData* m_ptdButtonTexture;
 //////////////////////////////////////////////////////////////////////////
 
@@ -94,15 +121,15 @@ CUICharacterInfo::CUICharacterInfo()
 	m_strFame			= CTString( "" );
 	
 //NEW_USER_INTERFACE
-	m_strHitRate = CTString( "" );	//Î¨ºÎ¶¨ Î™ÖÏ§ëÎèÑ
-	m_strDodgeRate = CTString( "" );	//Î¨ºÎ¶¨ ÌöåÌîºÎèÑ
-	m_strCritical = CTString( "" );	//ÌÅ¨Î¶¨Ìã∞Ïª¨
-	m_strSpeed = CTString( "" );		//Ïù¥ÎèôÏÜçÎèÑ
+	m_strHitRate = CTString( "" );	//π∞∏Æ ∏Ì¡ﬂµµ
+	m_strDodgeRate = CTString( "" );	//π∞∏Æ »∏««µµ
+	m_strCritical = CTString( "" );	//≈©∏Æ∆ºƒ√
+	m_strSpeed = CTString( "" );		//¿Ãµøº”µµ
 
-	m_strMagicHitRate	= CTString( "" );	//ÎßàÎ≤ï Î™ÖÏ§ëÎèÑ
-	m_strMagicDodgeRate = CTString( "" );		//ÎßàÎ≤ï ÌöåÌîºÎèÑ
-	m_strDeadly = CTString( "" );;		//Îç∞Îì§Î¶¨
-	m_strAttackSpeed = CTString( "" );			//Í≥µÍ≤©ÏÜçÎèÑ
+	m_strMagicHitRate	= CTString( "" );	//∏∂π˝ ∏Ì¡ﬂµµ
+	m_strMagicDodgeRate = CTString( "" );		//∏∂π˝ »∏««µµ
+	m_strDeadly = CTString( "" );;		//µ•µÈ∏Æ
+	m_strAttackSpeed = CTString( "" );			//∞¯∞›º”µµ
 
 
 	m_strAttributeFire		= CTString( "" );
@@ -112,17 +139,16 @@ CUICharacterInfo::CUICharacterInfo()
 	m_strAttributeLight		= CTString( "" );
 	m_strAttributeDark		= CTString( "" );
 
-	_ClassName[0] = _S(4050, "Ïπ¥Ïò§Ïä§ ÌÇπ"); _ClassName[1] = _S(4051, "Îã§ÌÅ¨ ÎÇòÏù¥Ìä∏"); _ClassName[2] = _S(1196, "Ïñ¥ÏåîÏã†");
-	_ClassName[3] = _S(4052, "Î®∏Îçî"); _ClassName[4] = _S(4053, "Î¨¥Î≤ïÏûê"); _ClassName[5] = _S(92, "ÏùºÎ∞ò");
-	_ClassName[6] = _S(4054, "ÌóåÌÑ∞"); _ClassName[7] = _S(4055, "ÌóåÌÑ∞ ÎßàÏä§ÌÑ∞"); _ClassName[8] = _S(4056, "ÎÇòÏù¥Ìä∏");
-	_ClassName[9] = _S(4057, "ÏÑ∏Ïù∏Ìä∏ ÎÇòÏù¥Ìä∏"); _ClassName[10] =_S(4058, "Í∞ÄÎîîÏñ∏");
+	_ClassName[0] = _S(4050, "ƒ´ø¿Ω∫ ≈∑"); _ClassName[1] = _S(4051, "¥Ÿ≈© ≥™¿Ã∆Æ"); _ClassName[2] = _S(1196, "æÓΩÿΩ≈");
+	_ClassName[3] = _S(4052, "∏”¥ı"); _ClassName[4] = _S(4053, "π´π˝¿⁄"); _ClassName[5] = _S(92, "¿œπ›");
+	_ClassName[6] = _S(4054, "«Â≈Õ"); _ClassName[7] = _S(4055, "«Â≈Õ ∏∂Ω∫≈Õ"); _ClassName[8] = _S(4056, "≥™¿Ã∆Æ");
+	_ClassName[9] = _S(4057, "ºº¿Œ∆Æ ≥™¿Ã∆Æ"); _ClassName[10] =_S(4058, "∞°µæ");
 
-	m_strTitleName = _S(69, "Ï∫êÎ¶≠ÌÑ∞ Ï†ïÎ≥¥");
+	m_strTitleName = _S(69, "ƒ≥∏Ø≈Õ ¡§∫∏");
 
 	m_bCharDescVisible = FALSE;
-	m_bSkillDescVisible = FALSE;
 
-	//ÏÑ±Ìñ•Îì±Í∏âÏóê Îî∞Î•∏ ÏÉâÏÉÅ (ÏàúÏÑúÎäî ÏúÑÏùòÏÑ±Ìñ•Îì±Í∏âÎ™ÖÏ∞∏Ï°∞)
+	//º∫«‚µÓ±ﬁø° µ˚∏• ªˆªÛ (º¯º≠¥¬ ¿ß¿«º∫«‚µÓ±ﬁ∏Ì¬¸¡∂)
 	m_ClassNameColor[0] = 0xFF0000FF;
 	m_ClassNameColor[1] = 0xFF0000FF;
 	m_ClassNameColor[2] = 0xFF0000FF;
@@ -137,7 +163,7 @@ CUICharacterInfo::CUICharacterInfo()
 
 	m_ptdButtonTexture = NULL;
 //////////////////////////////////////////////////////////////////////////
-	m_nCurrentSkillTab		= SKILL_ACTIVE;
+	m_nCurrentSkillTab		= SKILL_ITEM;
 	m_nSelActiveSkillID		= -1;
 	m_nSelPassiveSkillID	= -1;
 	m_nSelMemorizeSkillID	= -1;
@@ -161,6 +187,8 @@ CUICharacterInfo::CUICharacterInfo()
 	m_nTargetUIType			= -1;
 	//m_bLockCharacterInfo = FALSE;
 	m_ptdButtonTexture = NULL;
+
+	m_nSkillDescRow = -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -169,19 +197,14 @@ CUICharacterInfo::CUICharacterInfo()
 // ----------------------------------------------------------------------------
 CUICharacterInfo::~CUICharacterInfo()
 {
-	if (m_ptdButtonTexture)
-	{
-		_pTextureStock->Release(m_ptdButtonTexture);
-	}
-
 	Destroy();
+
+	STOCK_RELEASE(m_ptdButtonTexture);
 }
-// Ïã†Ìòï Ï∫êÎ¶≠ÌÑ∞ Ï†ïÎ≥¥ Ï¥àÍ∏∞Ìôî
+// Ω≈«¸ ƒ≥∏Ø≈Õ ¡§∫∏ √ ±‚»≠
 void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
 
 	m_bStatusTabOpen[STATUS_TAB_PKINFO_N_ATTRIBUTE] = 0;
 	m_bStatusTabOpen[STATUS_TAB_PHYSICAL_N_MAGICAL] = 0;
@@ -196,10 +219,32 @@ void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
-	// Î∞∞Í≤Ω
+	// πË∞Ê
 	m_rtBackground.SetUV(0, 0, 512, 341, fTexWidth, fTexHeight );
 	m_rtSkillInfo.SetUV(0, 348, 478, 641, fTexWidth, fTexHeight);
 	m_rtAttributeInfo.SetUV(266, 653, 495, 713, fTexWidth, fTexHeight );
+// º”º∫ Ω√Ω∫≈€ æ∆¿Ãƒ‹ UV [1/17/2013 Ranma]
+	// π´
+	m_rtAttributeIconAtt[ATTRIBUTE_NONE_ATT].SetUV(266, 717, 304, 755, fTexWidth, fTexHeight );
+	m_rtAttributeIconDef[ATTRIBUTE_NONE_DEF].SetUV(307, 717, 345, 755, fTexWidth, fTexHeight );
+	// ∫“
+	m_rtAttributeIconAtt[ATTRIBUTE_FIRE_ATT].SetUV(266, 757, 304, 795, fTexWidth, fTexHeight );
+	m_rtAttributeIconDef[ATTRIBUTE_FIRE_DEF].SetUV(307, 757, 345, 795, fTexWidth, fTexHeight );
+	// π∞
+	m_rtAttributeIconAtt[ATTRIBUTE_WATER_ATT].SetUV(266, 798, 304, 836, fTexWidth, fTexHeight );
+	m_rtAttributeIconDef[ATTRIBUTE_WATER_DEF].SetUV(307, 798, 345, 836, fTexWidth, fTexHeight );
+	// ¥Î¡ˆ
+	m_rtAttributeIconAtt[ATTRIBUTE_EARTH_ATT].SetUV(266, 880, 304, 918, fTexWidth, fTexHeight );
+	m_rtAttributeIconDef[ATTRIBUTE_EARTH_DEF].SetUV(307, 880, 345, 918, fTexWidth, fTexHeight );
+	// πŸ∂˜
+	m_rtAttributeIconAtt[ATTRIBUTE_WIND_ATT].SetUV(266, 839, 304, 877, fTexWidth, fTexHeight );
+	m_rtAttributeIconDef[ATTRIBUTE_WIND_DEF].SetUV(307, 839, 345, 877, fTexWidth, fTexHeight );
+	// æœ
+	m_rtAttributeIconAtt[ATTRIBUTE_DARK_ATT].SetUV(266, 962, 304, 1000, fTexWidth, fTexHeight );
+	m_rtAttributeIconDef[ATTRIBUTE_DARK_DEF].SetUV(307, 962, 345, 1000, fTexWidth, fTexHeight );
+	// ∫˚
+	m_rtAttributeIconAtt[ATTRIBUTE_LIGHT_ATT].SetUV(266, 921, 304, 959, fTexWidth, fTexHeight );
+	m_rtAttributeIconDef[ATTRIBUTE_LIGHT_DEF].SetUV(307, 921, 345, 959, fTexWidth, fTexHeight );
 
 	m_ptdButtonTexture = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
 
@@ -207,7 +252,7 @@ void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int
 	fTexHeight = m_ptdButtonTexture->GetPixHeight();
 
 
-	// Í∞Å ÏïÑÏù¥ÏΩò ÌëúÏãú
+	// ∞¢ æ∆¿Ãƒ‹ «•Ω√
 	m_rtTabIcon[0].SetUV(149, 205, 162, 219, fTexWidth, fTexHeight );
 	m_rtTabIcon[1].SetUV(166, 205, 179, 219,fTexWidth, fTexHeight );
 	m_rtTabIcon[2].SetUV(183, 205, 196, 219, fTexWidth, fTexHeight );
@@ -217,7 +262,7 @@ void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int
 	m_rtTabIcon[6].SetUV(183, 222, 196, 236, fTexWidth, fTexHeight );
 	m_rtTabIcon[7].SetUV(200, 222, 213, 236, fTexWidth, fTexHeight );
 
-	//ÏÑ†ÌÉùÎêúÌÖåÎëêÎ¶¨
+	//º±≈√µ»≈◊µŒ∏Æ
 	m_rtSelOutlineTopL.SetUV( 145, 138, 157, 150, fTexWidth, fTexHeight );
 	m_rtSelOutlineTopM.SetUV( 157, 138, 226, 150, fTexWidth, fTexHeight );
 	m_rtSelOutlineTopR.SetUV( 226, 138, 239, 150, fTexWidth, fTexHeight );
@@ -228,7 +273,7 @@ void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int
 	m_rtSelOutlineBottomM.SetUV( 157, 158, 226, 171, fTexWidth, fTexHeight );
 	m_rtSelOutlineBottomR.SetUV( 226, 158, 239, 171, fTexWidth, fTexHeight );
 
-	//Ïä§ÌÇ¨ ÏÑ§Î™ÖÏ∞Ω
+	//Ω∫≈≥ º≥∏Ì√¢
 	m_rtSkillDescUL.SetUV( 0, 137, 20, 157, fTexWidth, fTexHeight );
 	m_rtSkillDescUM.SetUV( 20, 137, 120, 157, fTexWidth, fTexHeight );
 	m_rtSkillDescUR.SetUV( 120, 137, 140, 157, fTexWidth, fTexHeight );
@@ -239,13 +284,13 @@ void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int
 	m_rtSkillDescLM.SetUV( 20, 206, 120, 226, fTexWidth, fTexHeight );
 	m_rtSkillDescLR.SetUV( 120, 206, 140, 226, fTexWidth, fTexHeight );
 
-	//ÏÇ¨Ïù¥Îìú ÌÉ≠ ÌÖçÏä§Ï≥ê
+	//ªÁ¿ÃµÂ ≈« ≈ÿΩ∫√ƒ
 	m_rtSelectedTab.SetUV(59, 0, 80, 15, fTexWidth, fTexHeight);
 	m_rtSelectedTabMiddle.SetUV(59, 16, 80, 36, fTexWidth, fTexHeight);
 	m_rtSelectedTabLow.SetUV(59, 85, 80, 101, fTexWidth, fTexHeight);
 
 
-	//ÏÇ¨Ïù¥Îìú ÎπÑÏÑ†ÌÉù ÌÉ≠
+	//ªÁ¿ÃµÂ ∫Òº±≈√ ≈«
 	m_rtUnSelectedTab.SetUV(86, 0, 107, 15, fTexWidth, fTexHeight);
 	m_rtUnSelectedTabMiddle.SetUV(86, 16, 107, 36, fTexWidth, fTexHeight);
 	m_rtUnSelectedTabLow.SetUV(86, 85, 107, 101, fTexWidth, fTexHeight);
@@ -337,16 +382,17 @@ void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int
 
 	m_rcIcons.SetRect( 0, 0, SKILLINFO_NEW_WIDTH, SKILLINFO_NEW_HEIGHT);
 	m_rcTitle.SetRect( 0, 0, CHARINFO_NEW_WIDTH, 36 );
-	//ÏÇ¨Ïù¥Îìú ÌÉ≠ ÏòÅÏó≠
+	//ªÁ¿ÃµÂ ≈« øµø™
 	m_rcCharInfoTab.SetRect(7, 37, 28, 246);
 
-	//ÌÉ≠ Í∑∏Î¶¨Îäî ÌÅ¨Í∏∞
+	//≈« ±◊∏Æ¥¬ ≈©±‚
 	m_rcTabLayer.SetRect(7, 37, 28, 87);
 	m_rcInfoRegion.SetRect(28, 37, 506, 330);
 	m_rcStatusTab[STATUS_TAB_PKINFO_N_ATTRIBUTE].SetRect(33, 240, 263, 261);
 	m_rcStatusTab[STATUS_TAB_PHYSICAL_N_MAGICAL].SetRect(270, 150, 500, 171);
 
-	m_rcSkillActionTab.SetRect(34, 44, 233, 64);
+	//m_rcSkillActionTab.SetRect(34, 44, 233, 64);
+	m_rcSkillActionTab.SetRect(34, 44, 298, 64);
 	m_rcCharInfoDesc.SetRect(0, 0, 100, 30);
 
 	m_rsSkillName.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 50);
@@ -361,23 +407,24 @@ void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int
 
 		// Skill buttons
 	// Active skill
-	for( int iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		m_btnActiveSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_SKILL, 0, iRow );
+	int		iRow;
 
-	}
-	// Passive skill
-	for( iRow = 0; iRow < SKILL_PASSIVE_SLOT_ROW_TOTAL ; iRow++ )
+	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL ; iRow++ )
 	{
-		m_btnPassiveSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_SKILL, 0, iRow );
+		m_btnItemSpecialSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
+			UBET_SKILL, 0, iRow );
 
 	}
 	// Special skill
 	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL ; iRow++ )
 	{
 		m_btnSpecialSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
+										UBET_SKILL, 0, iRow );
+	}
+	// Voucher skill
+	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL ; iRow++ )
+	{
+		m_btnVoucherSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
 										UBET_SKILL, 0, iRow );
 	}
 	
@@ -419,7 +466,7 @@ void CUICharacterInfo::CreateNewCharacterInfo(CUIWindow *pParentWnd, int nX, int
 
 
 //////////////////////////////////////////////////////////////////////////
-// ÏàòÏπò Î≥ÄÎèôÏóê Îî∞Î•∏ Ïª¨Îü¨Í∞í Í≥ÑÏÇ∞
+// ºˆƒ° ∫Øµøø° µ˚∏• ƒ√∑Ø∞™ ∞ËªÍ
 //////////////////////////////////////////////////////////////////////////
 COLOR CUICharacterInfo::GetStrColor(int nAdded)
 {
@@ -441,56 +488,59 @@ COLOR CUICharacterInfo::GetStrColor(int nAdded)
 
 void CUICharacterInfo::RenderCharInfoDesc()
 {
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Left, m_rcCharInfoDesc.Top,
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
+
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Left, m_rcCharInfoDesc.Top,
 										m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Top + 8,
 										m_rtCharInfoDescUL.U0, m_rtCharInfoDescUL.V0, m_rtCharInfoDescUL.U1, m_rtCharInfoDescUL.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Top,
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Top,
 										m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Top + 8,
 										m_rtCharInfoDescUM.U0, m_rtCharInfoDescUM.V0, m_rtCharInfoDescUM.U1, m_rtCharInfoDescUM.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Top,
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Top,
 										m_rcCharInfoDesc.Right, m_rcCharInfoDesc.Top + 8,
 										m_rtCharInfoDescUR.U0, m_rtCharInfoDescUR.V0, m_rtCharInfoDescUR.U1, m_rtCharInfoDescUR.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Left, m_rcCharInfoDesc.Top + 8,
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Left, m_rcCharInfoDesc.Top + 8,
 										m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Bottom - 8,
 										m_rtCharInfoDescML.U0, m_rtCharInfoDescML.V0, m_rtCharInfoDescML.U1, m_rtCharInfoDescML.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Top + 8,
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Top + 8,
 										m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Bottom - 8,
 										m_rtCharInfoDescMM.U0, m_rtCharInfoDescMM.V0, m_rtCharInfoDescMM.U1, m_rtCharInfoDescMM.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Top + 8,
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Top + 8,
 										m_rcCharInfoDesc.Right, m_rcCharInfoDesc.Bottom - 8,
 										m_rtCharInfoDescMR.U0, m_rtCharInfoDescMR.V0, m_rtCharInfoDescMR.U1, m_rtCharInfoDescMR.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Left, m_rcCharInfoDesc.Bottom - 8,
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Left, m_rcCharInfoDesc.Bottom - 8,
 										m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Bottom,
 										m_rtCharInfoDescLL.U0, m_rtCharInfoDescLL.V0, m_rtCharInfoDescLL.U1, m_rtCharInfoDescLL.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Bottom - 8,
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Left + 8, m_rcCharInfoDesc.Bottom - 8,
 										m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Bottom,
 										m_rtCharInfoDescLM.U0, m_rtCharInfoDescLM.V0, m_rtCharInfoDescLM.U1, m_rtCharInfoDescLM.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Bottom - 8,
+	pDrawPort->AddTexture( m_rcCharInfoDesc.Right - 8, m_rcCharInfoDesc.Bottom - 8,
 										m_rcCharInfoDesc.Right, m_rcCharInfoDesc.Bottom,
 										m_rtCharInfoDescLR.U0, m_rtCharInfoDescLR.V0, m_rtCharInfoDescLR.U1, m_rtCharInfoDescLR.V1,
 										0xFFFFFFBB );
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	int nPosX, nPosY;
 	
 	nPosX = m_rcCharInfoDesc.Left + (m_rcCharInfoDesc.GetWidth() / 2);
 	nPosY = m_rcCharInfoDesc.Top+ ((m_rcCharInfoDesc.GetHeight() - _pUIFontTexMgr->GetFontHeight()) / 2);
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( m_strCharInfoDesc, nPosX, nPosY, 0xF2F2F2FF );
+	pDrawPort->PutTextExCX( m_strCharInfoDesc, nPosX, nPosY, 0xF2F2F2FF );
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 void CUICharacterInfo::ShowCharInfoDesc(int nTabID)
@@ -502,25 +552,40 @@ void CUICharacterInfo::ShowCharInfoDesc(int nTabID)
 	
 	if(nTabID == PAGE_CHARINFO_NEW_SKILL)
 	{
-		strTemp.PrintF("%s", _S(91, "Ïä§ÌÇ¨") );
+		strTemp.PrintF("%s", _S(6077, "∆Øºˆ Ω∫≈≥") );
 	}
 	else if(nTabID == PAGE_CHARINFO_NEW_ACTION_SOCIAL)
 	{
-		strTemp.PrintF( "%s,%s",_S(94, "Ïï°ÏÖò") ,_S(96, "ÏÜåÏÖú") );	
+		strTemp.PrintF( "%s,%s",_S(94, "æ◊º«") ,_S(96, "º“º»") );	
 	}
 	else if(nTabID == PAGE_CHARINFO_NEW_GUILD_PARTY)
 	{
-		strTemp.PrintF("%s,%s",_S(97, "ÌååÌã∞") ,_S(98, "Í∏∏Îìú") );
+		strTemp.PrintF("%s,%s",_S(97, "∆ƒ∆º") ,_S(98, "±ÊµÂ") );
 	}
 	else
 	{
-		strTemp.PrintF("%s", _S(69, "Ï∫êÎ¶≠ÌÑ∞ Ï†ïÎ≥¥") );
+		strTemp.PrintF("%s", _S(69, "ƒ≥∏Ø≈Õ ¡§∫∏") );
 	}
 
 	m_strCharInfoDesc = strTemp;
 
 	int nNewPosX = m_nPosX + m_rcTabLayer.Left - 100;
 	int nNewPosY = m_nPosY + m_rcTabLayer.Top + (m_rcTabLayer.GetHeight() * nTabID) + (nTabID * 2);
+
+#if defined(JAPAN)
+	{
+		if(nTabID == PAGE_CHARINFO_NEW_ACTION_SOCIAL)
+		{
+			m_rcCharInfoDesc.SetRect(0, 0, 140, 30);
+		}
+		else
+		{
+			m_rcCharInfoDesc.SetRect(0, 0, 100, 30);
+		}
+
+		nNewPosX = m_nPosX + m_rcTabLayer.Left - m_rcCharInfoDesc.GetWidth();
+	}
+#endif
 
 	if(nNewPosX < 0)
 	{
@@ -538,7 +603,7 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 	COLOR	strColor;
 
 	int nIndex = 0;
-	if(m_nCurrentSkillType > BTN_SKILL_SPECIAL)
+	if(m_nCurrentSkillType > BTN_SKILL_VOUCHER)
 	{
 		nIndex = m_btnSelectedSkill[nRow].GetActionIndex();
 	}
@@ -547,15 +612,25 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 		nIndex = m_btnSelectedSkill[nRow].GetSkillIndex(); 
 	}
 
-	if(m_nCurrentSkillType == BTN_SKILL_ACTIVE || m_nCurrentSkillType == BTN_SKILL_PASSIVE)
+	if(m_nCurrentSkillType == BTN_SKILL_ACTIVE || m_nCurrentSkillType == BTN_SKILL_PASSIVE || m_nCurrentSkillType == BTN_SKILL_VOUCHER)
 	{
 		CSkill		&rSkill = _pNetwork->GetSkillData( nIndex );
-		int nLevel = _pUIMgr->GetCharacterInfo()->GetSkillLevel(nIndex, FALSE);
-		if(nLevel == 0)
+		int nLevel = CUIManager::getSingleton()->GetCharacterInfo()->GetSkillLevel(nIndex, FALSE);
+		if(nLevel == 0 && (rSkill.GetType() != CSkill::ST_SEAL))
 			return;
 		
 		strColor =  0xFFFF00FF;
-		strTemp.PrintF("%s lv.%d",rSkill.GetName(), nLevel);
+		if (rSkill.GetType() == CSkill::ST_SEAL)
+		{
+			strTemp.PrintF("%s",rSkill.GetName());
+		}else
+		{
+#if defined(G_RUSSIA)
+				strTemp.PrintF("%s %s.%d",rSkill.GetName(), _S( 4414, "LV" ), nLevel);
+#else
+				strTemp.PrintF("%s lv.%d",rSkill.GetName(), nLevel);			
+#endif
+		}
 		m_rsSkillName.AddString(strTemp, strColor);
 		
 		nLevel--;
@@ -566,11 +641,12 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 		case CSkill::ST_MELEE:					// Active
 		case CSkill::ST_RANGE:					// Active
 		case CSkill::ST_MAGIC:					// Active
+		case CSkill::ST_SUMMON_TOTEM_SKILL:
 			{
 				if( rSkill.GetFlag() & SF_SINGLEMODE )
-					strTemp.PrintF(_S(499, "ÌçºÏä§ÎÑêÎçòÏ†Ñ Ï†ÑÏö© Ïä§ÌÇ¨"));
+					strTemp.PrintF(_S(499, "∆€Ω∫≥Œ¥¯¿¸ ¿¸øÎ Ω∫≈≥"));
 				else
-					strTemp.PrintF(_S(63, "Ïï°Ìã∞Î∏å Ïä§ÌÇ¨"));
+					strTemp.PrintF(_S(63, "æ◊∆º∫Í Ω∫≈≥"));
 				
 				m_rsSkillDesc.AddString(strTemp, strColor);
 				
@@ -578,7 +654,7 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 				m_rsSkillDesc.AddString(strTemp, strColor);
 
 				int NeedItem[2], NeedItemCount[2];
-				CItemData NeedItemData[2];
+				CItemData* pNeedItemData[2];
 				CTString strNeedItem[2];
 				int i;
 
@@ -589,15 +665,15 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 
 				for (i=0; i<2; ++i)
 				{
-					NeedItemData[i] = _pNetwork->GetItemData(NeedItem[i]);
+					pNeedItemData[i] = _pNetwork->GetItemData(NeedItem[i]);
 
 					if (NeedItem[i] > 0)
 					{
-						strNeedItem[i].PrintF(" %s(%d)", NeedItemData[i].GetName(), NeedItemCount[i]);
+						strNeedItem[i].PrintF(" %s(%d)", pNeedItemData[i]->GetName(), NeedItemCount[i]);
 					}
 				}
 
-				const char* pNeedWords = _S(4405, "ÏÜåÎ™® ÏïÑÏù¥ÌÖú");
+				const char* pNeedWords = _S(4405, "º“∏ æ∆¿Ã≈€");
 				
 				if (NeedItem[0] > 0 || NeedItem[1] > 0)
 				{
@@ -611,44 +687,43 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 				{
 					if( nNeedMP != 0 )
 					{
-						strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
-
-							AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
+						strTemp.PrintF( _S( 64, "º“∏ MP : %d" ), nNeedMP );
+						AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
 					}
 				}
 				else
 				{
 					if( nNeedMP == 0 )
 					{
-						strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );	
+						strTemp.PrintF( _S( 500, "º“∏ HP : %d" ), nNeedHP );	
 						AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
 					}
 					else
 					{
-						strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
+						strTemp.PrintF( _S( 64, "º“∏ MP : %d" ), nNeedMP );
 						AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
-						strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );
+						strTemp.PrintF( _S( 500, "º“∏ HP : %d" ), nNeedHP );
 						AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
 					}
 				}
 
 				if( rSkill.GetPower( nLevel ) > 0 )
 				{
-					strTemp.PrintF( _S( 65, "ÏúÑÎ†• : %d" ), rSkill.GetPower( nLevel ) );
+					strTemp.PrintF( _S( 65, "¿ß∑¬ : %d" ), rSkill.GetPower( nLevel ) );
 					AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
 				}
 
-				strTemp.PrintF( _S( 66, "Ïú†Ìö® Í±∞Î¶¨ : %.1f" ), rSkill.GetFireRange() );
+				strTemp.PrintF( _S( 66, "¿Ø»ø ∞≈∏Æ : %.1f" ), rSkill.GetFireRange() );
 				AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
 				if(rSkill.GetDurTime(nLevel) > 0)
 				{
-					strTemp.PrintF( _S( 4172, "ÏßÄÏÜçÏãúÍ∞Ñ : %dÏ¥à " ), rSkill.GetDurTime(nLevel) / 10);
+					strTemp.PrintF( _S( 4172, "¡ˆº”Ω√∞£ : %d√  " ), rSkill.GetDurTime(nLevel) / 10);
 					AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
 				}
 				
 				if(rSkill.GetReUseTime() > 0)
 				{
-					strTemp.PrintF( _S( 4173, "Ïû¨ÏÇ¨Ïö© ÏãúÍ∞Ñ : %dÏ¥à " ), rSkill.GetReUseTime() );
+					strTemp.PrintF( _S( 4173, "¿ÁªÁøÎ Ω√∞£ : %d√  " ), rSkill.GetReUseTime() / 10);
 					AddSkillDescString(SKILLINFO_CURRENT, strTemp, strColor);
 				}
 
@@ -657,13 +732,21 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 
 		case CSkill::ST_PASSIVE:				// Passive
 		{
-			strTemp.PrintF(_S(67, "Ìå®ÏãúÎ∏å Ïä§ÌÇ¨"));
+			strTemp.PrintF(_S(67, "∆–Ω√∫Í Ω∫≈≥"));
 			m_rsSkillDesc.AddString(strTemp, strColor);
 			
 			strTemp = rSkill.GetDescription();
 			m_rsSkillDesc.AddString(strTemp, strColor);
 		}
 		break;
+		case CSkill::ST_SEAL:
+		{
+			strTemp.PrintF(_S(4490, "¡ı«•"));
+			m_rsSkillDesc.AddString(strTemp, strColor);
+
+			strTemp = rSkill.GetDescription();
+			m_rsSkillDesc.AddString(strTemp, strColor);
+		}break;
 		}
 
 	}
@@ -672,17 +755,21 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 
 		CSpecialSkill &rSkill = _pNetwork->GetSSkillData( nIndex );
 
-		int nLevel = _pUIMgr->GetCharacterInfo()->GetSkillLevel(nIndex, TRUE);
+		int nLevel = CUIManager::getSingleton()->GetCharacterInfo()->GetSkillLevel(nIndex, TRUE);
 		
 		strColor =  0xFFFF00FF;
-		strTemp.PrintF("%s lv.%d",rSkill.GetName(), nLevel);
+#if defined(G_RUSSIA)
+			strTemp.PrintF("%s %s.%d",rSkill.GetName(), _S( 4414, "LV" ), nLevel);
+#else
+			strTemp.PrintF("%s lv.%d",rSkill.GetName(), nLevel);
+#endif
 		m_rsSkillName.AddString(strTemp, strColor);
 		
 
 		nLevel--;
 		strColor = 0xF2F2F2FF;
 
-		strTemp.PrintF(_S(656, "ÏÉùÏÇ∞Ïä§ÌÇ¨"));
+		strTemp.PrintF(_S(656, "ª˝ªÍΩ∫≈≥"));
 		m_rsSkillDesc.AddString(strTemp, strColor);
 		
 		strTemp = rSkill.GetDescription();
@@ -707,11 +794,11 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 
 	m_btnSelectedSkill[nRow].GetAbsPos(nNewPosX, nNewPosY);
 
-	if(nNewPosX + GetSkillDescWidth() > _pUIMgr->GetDrawPort()->GetWidth())
+	if(nNewPosX + GetSkillDescWidth() > CUIManager::getSingleton()->GetDrawPort()->GetWidth())
 	{
 		nNewPosX -= GetSkillDescWidth();
 	}
-	if(nNewPosY + GetSkillDescHeight() + 34 > _pUIMgr->GetDrawPort()->GetHeight())
+	if(nNewPosY + GetSkillDescHeight() + 34 > CUIManager::getSingleton()->GetDrawPort()->GetHeight())
 	{
 		nNewPosY -= GetSkillDescHeight();
 	}
@@ -726,41 +813,46 @@ void  CUICharacterInfo::ShowSkillDesc(int nRow /* = -1 */)
 
 void CUICharacterInfo::RenderSkillDesc()
 {
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top,
+	ShowSkillDesc(m_nSkillDescRow);
+
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
+
+	pDrawPort->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top,
 										m_rcSkillInfo.Left + 20, m_rcSkillInfo.Top + 20,
 										m_rtSkillDescUL.U0, m_rtSkillDescUL.V0, m_rtSkillDescUL.U1, m_rtSkillDescUL.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Top,
+	pDrawPort->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Top,
 										m_rcSkillInfo.Right - 20, m_rcSkillInfo.Top + 20,
 										m_rtSkillDescUM.U0, m_rtSkillDescUM.V0, m_rtSkillDescUM.U1, m_rtSkillDescUM.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Top,
+	pDrawPort->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Top,
 										m_rcSkillInfo.Right, m_rcSkillInfo.Top + 20,
 										m_rtSkillDescUR.U0, m_rtSkillDescUR.V0, m_rtSkillDescUR.U1, m_rtSkillDescUR.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top + 20,
+	pDrawPort->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top + 20,
 										m_rcSkillInfo.Left + 20, m_rcSkillInfo.Bottom - 20,
 										m_rtSkillDescML.U0, m_rtSkillDescML.V0, m_rtSkillDescML.U1, m_rtSkillDescML.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Top + 20,
+	pDrawPort->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Top + 20,
 										m_rcSkillInfo.Right - 20, m_rcSkillInfo.Bottom - 20,
 										m_rtSkillDescMM.U0, m_rtSkillDescMM.V0, m_rtSkillDescMM.U1, m_rtSkillDescMM.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Top + 20,
+	pDrawPort->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Top + 20,
 										m_rcSkillInfo.Right, m_rcSkillInfo.Bottom - 20,
 										m_rtSkillDescMR.U0, m_rtSkillDescMR.V0, m_rtSkillDescMR.U1, m_rtSkillDescMR.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Bottom - 20,
+	pDrawPort->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Bottom - 20,
 										m_rcSkillInfo.Left + 20, m_rcSkillInfo.Bottom,
 										m_rtSkillDescLL.U0, m_rtSkillDescLL.V0, m_rtSkillDescLL.U1, m_rtSkillDescLL.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Bottom - 20,
+	pDrawPort->AddTexture( m_rcSkillInfo.Left + 20, m_rcSkillInfo.Bottom - 20,
 										m_rcSkillInfo.Right - 20, m_rcSkillInfo.Bottom,
 										m_rtSkillDescLM.U0, m_rtSkillDescLM.V0, m_rtSkillDescLM.U1, m_rtSkillDescLM.V1,
 										0xFFFFFFBB );
-	_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Bottom - 20,
+	pDrawPort->AddTexture( m_rcSkillInfo.Right - 20, m_rcSkillInfo.Bottom - 20,
 										m_rcSkillInfo.Right, m_rcSkillInfo.Bottom,
 										m_rtSkillDescLR.U0, m_rtSkillDescLR.V0, m_rtSkillDescLR.U1, m_rtSkillDescLR.V1,
 										0xFFFFFFBB );
@@ -773,7 +865,7 @@ void CUICharacterInfo::RenderSkillDesc()
 	m_rsNextSkillInfo.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 }
 
 
@@ -875,7 +967,7 @@ int CUICharacterInfo::GetSkillDescHeight()
 
 void CUICharacterInfo::RenderNewCharacterInfoSkill()
 {
-	//Ïä§ÌÇ¨, Ïï°ÏÖòÎì± Î†åÎçîÎßÅ
+	//Ω∫≈≥, æ◊º«µÓ ∑ª¥ı∏µ
 
 	int nX, nY;
 	int nWidth, nHeight;
@@ -887,31 +979,34 @@ void CUICharacterInfo::RenderNewCharacterInfoSkill()
 
 	nX = m_rcSkillActionTab.Left + m_nPosX;
 	nY = m_rcSkillActionTab.Top + m_nPosY;
-	nWidth = m_rcSkillActionTab.GetWidth() / 3;
+
+	nWidth = m_rcSkillActionTab.GetWidth() / 4;
 	nHeight = m_rcSkillActionTab.GetHeight();
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 	nX = nPosX + m_rcInfoRegion.Left;
 	nY = nPosY + m_rcInfoRegion.Top;
 	nWidth = m_rcInfoRegion.GetWidth();
 	nHeight = m_rcInfoRegion.GetHeight();
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + nWidth, nY + nHeight,
+	pDrawPort->AddTexture( nX, nY, nX + nWidth, nY + nHeight,
 										m_rtSkillInfo.U0, m_rtSkillInfo.V0, m_rtSkillInfo.U1, m_rtSkillInfo.V1,
 										0xFFFFFFFF );
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 
 
 	m_sbScrollBar.Render();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	//Ïä§ÌÇ¨ Ïù¥Î¶Ñ Ï∂úÎ†•
+	//Ω∫≈≥ ¿Ã∏ß √‚∑¬
 	int nX2 = 0;
 	nY = SKILLINFO_NEW_NAME_SY;
 	int	nCharLevel	= _pNetwork->MyCharacterInfo.level;
@@ -937,7 +1032,7 @@ void CUICharacterInfo::RenderNewCharacterInfoSkill()
 			break;
 
 
-		if(m_nCurrentSkillType == BTN_SKILL_ACTIVE || m_nCurrentSkillType == BTN_SKILL_PASSIVE)
+		if(m_nCurrentSkillType == BTN_SKILL_ITEM)
 		{
 			CSkill	&rSkill= _pNetwork->GetSkillData( m_btnSelectedSkill[iRow].GetSkillIndex() );
 
@@ -946,11 +1041,20 @@ void CUICharacterInfo::RenderNewCharacterInfoSkill()
 
 
 			m_strDesc.PrintF( "%s", rSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strDesc, nPosX + nX, nPosY + nY,
+			pDrawPort->PutTextExCX( m_strDesc, nPosX + nX, nPosY + nY,
 													0xFFC672FF);
 
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+			m_strDesc.PrintF( "Lv %2d   %s %2d", sbLevel, _S( 90, "º˜∑√µµ" ), rSkill.GetLearnSP( sbLevel - 1 ) );
+#else	// else about japan, german, europe3, europe2, netherlands.
+			// [2/28/2013 Ranma] support russia string
+#if defined (G_RUSSIA)
+			m_strDesc.PrintF( "%s %2d   %s %2d",_S( 4414, "LV" ), sbLevel, _S( 4415, "SP" ), rSkill.GetLearnSP( sbLevel - 1 ) );
+#else	// else about russia
 			m_strDesc.PrintF( "Lv %2d   SP %2d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strDesc, nPosX + nX2,
+#endif	// end russia
+#endif	//end japan, german, europe3, europe2, netherlands.
+			pDrawPort->PutTextExRX( m_strDesc, nPosX + nX2,
 													nPosY + nY + 17, 0xBDA99FFF );
 		}
 		else if(m_nCurrentSkillType == BTN_SKILL_SPECIAL)
@@ -962,12 +1066,39 @@ void CUICharacterInfo::RenderNewCharacterInfoSkill()
 
 
 			m_strDesc.PrintF( "%s", rSSkill.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strDesc, nPosX + nX, nPosY + nY,
+			pDrawPort->PutTextExCX( m_strDesc, nPosX + nX, nPosY + nY,
 													0xFFC672FF);
 
+#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
+			m_strDesc.PrintF( "Lv %2d   %s %2d", sbLevel, _S( 90, "º˜∑√µµ" ), rSSkill.GetLearnSP( sbLevel - 1 ) );
+#else	// else about japan, german, europe3, europe2, netherlands.
+			// [2/28/2013 Ranma] support russia string
+#if defined (G_RUSSIA)
+			m_strDesc.PrintF( "%s %2d   %s %2d",_S( 4414, "LV" ), sbLevel, _S( 4415, "SP" ), rSSkill.GetLearnSP( sbLevel - 1 ) );
+#else	// else about russia
 			m_strDesc.PrintF( "Lv %2d   SP %2d", sbLevel, rSSkill.GetLearnSP( sbLevel - 1 ) );
-			_pUIMgr->GetDrawPort()->PutTextExRX( m_strDesc, nPosX + nX2,
+#endif	// end russia
+#endif	//end japan, german, europe3, europe2, netherlands.
+			pDrawPort->PutTextExRX( m_strDesc, nPosX + nX2,
 													nPosY + nY + 17, 0xBDA99FFF );
+		}
+		else if(m_nCurrentSkillType == BTN_SKILL_VOUCHER)
+		{
+			CSkill	&rSelSeal = _pNetwork->GetSkillData(m_btnSelectedSkill[iRow].GetActionIndex());
+
+			m_strDesc.PrintF( "%s", rSelSeal.GetName() );
+			pDrawPort->PutTextExCX( m_strDesc, nPosX + nX, nPosY + nY,
+													0xFFC672FF);
+			m_strDesc.PrintF( _S(4491, "º˜∑√µµ : %I64d"), m_btnSelectedSkill[iRow].GetSkillSealExp() );
+#if defined(G_USA)
+			{
+				pDrawPort->PutTextExCX( m_strDesc, nPosX + nX2 - 26, nPosY + nY + 17, 0xBDA99FFF );
+			}
+#else
+			{			
+				pDrawPort->PutTextExRX( m_strDesc, nPosX + nX2, nPosY + nY + 17, 0xBDA99FFF );
+			}
+#endif
 		}
 		else
 		{
@@ -976,17 +1107,17 @@ void CUICharacterInfo::RenderNewCharacterInfoSkill()
 			m_strDesc.PrintF( "%s", rSelAction.GetName() );
 
 			m_strDesc.PrintF( "%s", rSelAction.GetName() );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strDesc, nPosX + nX, nPosY + nY + 6,
+			pDrawPort->PutTextExCX( m_strDesc, nPosX + nX, nPosY + nY + 6,
 													0xFFC672FF );
 		}
 	}
 	
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	// Î≤ÑÌäº Î†åÎçîÎßÅ
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	// πˆ∆∞ ∑ª¥ı∏µ
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 
 	nX = SKILLINFO_NEW_SLOT_SX; 
 	nY = SKILLINFO_NEW_SLOT_SY;
@@ -1019,109 +1150,109 @@ void CUICharacterInfo::RenderNewCharacterInfoSkill()
 
 	}
 
-	if(m_nCurrentSkillType < BTN_ACTION_NORMAL) // Ïä§ÌÇ¨ Î≤ÑÌäºÏùºÍ≤ΩÏö∞
+	if(m_nCurrentSkillType < BTN_ACTION_NORMAL) // Ω∫≈≥ πˆ∆∞¿œ∞ÊøÏ
 	{
-		_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_SKILL );
+		pDrawPort->FlushBtnRenderingQueue( UBET_SKILL );
 	}
 	else
 	{
-		_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ACTION );
+		pDrawPort->FlushBtnRenderingQueue( UBET_ACTION );
 	}
 
 	iRowS = m_sbScrollBar.GetScrollPos() * 2;
 	iRowE = iRowS + SKILLINFO_NEW_SLOT_ROW;
 	if( m_nSelectedSkillID >= 0 && iRowS <= m_nSelectedSkillID && m_nSelectedSkillID < iRowE )
 	{
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+		pDrawPort->InitTextureData( m_ptdButtonTexture );
 
 		nX = m_btnSelectedSkill[m_nSelectedSkillID].GetAbsPosX();
 		nY = m_btnSelectedSkill[m_nSelectedSkillID].GetAbsPosY();
 
-		_pUIMgr->GetDrawPort()->AddTexture( nX - 1, nY - 1, nX + 12, nY + 12,
+		pDrawPort->AddTexture( nX - 1, nY - 1, nX + 12, nY + 12,
 											m_rtSelOutlineTopL.U0, m_rtSelOutlineTopL.V0, m_rtSelOutlineTopL.U1, m_rtSelOutlineTopL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 12, nY - 1, nX + 195, nY + 12,
+		pDrawPort->AddTexture( nX + 12, nY - 1, nX + 195, nY + 12,
 											m_rtSelOutlineTopM.U0, m_rtSelOutlineTopM.V0, m_rtSelOutlineTopM.U1, m_rtSelOutlineTopM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 195, nY - 1, nX + 208, nY + 12,
+		pDrawPort->AddTexture( nX + 195, nY - 1, nX + 208, nY + 12,
 											m_rtSelOutlineTopR.U0, m_rtSelOutlineTopR.V0, m_rtSelOutlineTopR.U1, m_rtSelOutlineTopR.V1,
 											0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( nX - 1, nY + 12, nX + 12, nY + 20,
+		pDrawPort->AddTexture( nX - 1, nY + 12, nX + 12, nY + 20,
 											m_rtSelOutlineMiddleL.U0, m_rtSelOutlineMiddleL.V0, m_rtSelOutlineMiddleL.U1, m_rtSelOutlineMiddleL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 12, nY + 12, nX + 195, nY + 20,
+		pDrawPort->AddTexture( nX + 12, nY + 12, nX + 195, nY + 20,
 											m_rtSelOutlineMiddleM.U0, m_rtSelOutlineMiddleM.V0, m_rtSelOutlineMiddleM.U1, m_rtSelOutlineMiddleM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 195, nY + 12, nX + 208, nY + 20,
+		pDrawPort->AddTexture( nX + 195, nY + 12, nX + 208, nY + 20,
 											m_rtSelOutlineMiddleR.U0, m_rtSelOutlineMiddleR.V0, m_rtSelOutlineMiddleR.U1, m_rtSelOutlineMiddleR.V1,
 											0xFFFFFFFF );
 
-		_pUIMgr->GetDrawPort()->AddTexture( nX - 1, nY + 20, nX + 11, nY + 33,
+		pDrawPort->AddTexture( nX - 1, nY + 20, nX + 11, nY + 33,
 											m_rtSelOutlineBottomL.U0, m_rtSelOutlineBottomL.V0, m_rtSelOutlineBottomL.U1, m_rtSelOutlineBottomL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 12, nY + 20, nX + 195, nY + 33,
+		pDrawPort->AddTexture( nX + 12, nY + 20, nX + 195, nY + 33,
 											m_rtSelOutlineBottomM.U0, m_rtSelOutlineBottomM.V0, m_rtSelOutlineBottomM.U1, m_rtSelOutlineBottomM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( nX + 195, nY + 20, nX + 208, nY + 33,
+		pDrawPort->AddTexture( nX + 195, nY + 20, nX + 208, nY + 33,
 											m_rtSelOutlineBottomR.U0, m_rtSelOutlineBottomR.V0, m_rtSelOutlineBottomR.U1, m_rtSelOutlineBottomR.V1,
 											0xFFFFFFFF );
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
 	
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
-
-	// ÏÉÅÎã®ÌÉ≠ ÌëúÏãú
-	int nCount = 3;
-	if(m_ucipCurrentPage != PAGE_CHARINFO_NEW_SKILL)
+	int nCount= 2;
+	if(m_ucipCurrentPage == PAGE_CHARINFO_NEW_SKILL)
 	{
-		nCount = 2; //Ïä§ÌÇ¨ Ïù¥Ïô∏ÏóêÎäî ÌÉ≠Ïù¥2Í∞ú;;;
+		nCount = 3;//3;
 	}
 
 	nX = m_rcSkillActionTab.Left + m_nPosX;
 	nY = m_rcSkillActionTab.Top + m_nPosY;
-	nWidth = m_rcSkillActionTab.GetWidth() / 3;
+
+	nWidth = m_rcSkillActionTab.GetWidth() / 4;
 	nHeight = m_rcSkillActionTab.GetHeight();
 	
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 
-	for(int i = 0; i<nCount; i++)
+	int		i;
+	for( i = 0; i<nCount; i++)
 	{
-		if(i == m_nSkillActionUpperTab[m_ucipCurrentPage-1]) // ÏßÄÍ∏à ÌëúÏãúÎêòÎäîÌÉ≠
+		if(i == m_nSkillActionUpperTab[m_ucipCurrentPage-1]) // ¡ˆ±› «•Ω√µ«¥¬≈«
 		{
-			_pUIMgr->GetDrawPort()->AddTexture(nX, nY, nX + 15, nY + nHeight, 
+			pDrawPort->AddTexture(nX, nY, nX + 15, nY + nHeight, 
 												m_rtSelectedStatusTab.U0, m_rtSelectedStatusTab.V0, 
 												m_rtSelectedStatusTab.U1, m_rtSelectedStatusTab.V1, 
 												0xFFFFFFFF);	
-			_pUIMgr->GetDrawPort()->AddTexture(nX + 15, nY, nX + nWidth - 15, nY + nHeight, 
+			pDrawPort->AddTexture(nX + 15, nY, nX + nWidth - 15, nY + nHeight, 
 												m_rtSelectedStatusTabMiddle.U0, m_rtSelectedStatusTabMiddle.V0, 
 												m_rtSelectedStatusTabMiddle.U1, m_rtSelectedStatusTabMiddle.V1, 
 												0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nX + nWidth - 15, nY, nX + nWidth, nY + nHeight, 
+			pDrawPort->AddTexture(nX + nWidth - 15, nY, nX + nWidth, nY + nHeight, 
 												m_rtSelectedStatusTabRight.U0, m_rtSelectedStatusTabRight.V0, 
 												m_rtSelectedStatusTabRight.U1, m_rtSelectedStatusTabRight.V1, 
 												0xFFFFFFFF);
 		}
 		else
 		{
-			_pUIMgr->GetDrawPort()->AddTexture(nX, nY, nX + 15, nY + nHeight, 
+			pDrawPort->AddTexture(nX, nY, nX + 15, nY + nHeight, 
 												m_rtUnSelectedStatusTab.U0, m_rtUnSelectedStatusTab.V0, 
 												m_rtUnSelectedStatusTab.U1, m_rtUnSelectedStatusTab.V1, 
 												0xFFFFFFFF);	
-			_pUIMgr->GetDrawPort()->AddTexture(nX + 15, nY, nX + nWidth - 15, nY + nHeight, 
+			pDrawPort->AddTexture(nX + 15, nY, nX + nWidth - 15, nY + nHeight, 
 												m_rtUnSelectedStatusTabMiddle.U0, m_rtUnSelectedStatusTabMiddle.V0, 
 												m_rtUnSelectedStatusTabMiddle.U1, m_rtUnSelectedStatusTabMiddle.V1, 
 												0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nX + nWidth - 15, nY, nX + nWidth, nY + nHeight, 
+			pDrawPort->AddTexture(nX + nWidth - 15, nY, nX + nWidth, nY + nHeight, 
 												m_rtUnSelectedStatusTabRight.U0, m_rtUnSelectedStatusTabRight.V0, 
 												m_rtUnSelectedStatusTabRight.U1, m_rtUnSelectedStatusTabRight.V1, 
 												0xFFFFFFFF);
@@ -1129,36 +1260,34 @@ void CUICharacterInfo::RenderNewCharacterInfoSkill()
 		nX += nWidth + 2;
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	nX = m_rcSkillActionTab.Left + m_nPosX + (m_rcSkillActionTab.GetWidth() / 6);
-	nWidth = m_rcSkillActionTab.GetWidth() / 3;
+	nX = m_rcSkillActionTab.Left + m_nPosX + (m_rcSkillActionTab.GetWidth() / 8);
+	nWidth = m_rcSkillActionTab.GetWidth() / 4;
 	nY = m_rcSkillActionTab.Top + m_nPosY + 5;
 
-	// ÏàòÏ†ï ÌïÑÏöî
-	CTString strTabDesc[3][3] = {{_S(92, "ÏùºÎ∞ò"),_S(276, "Í∞ïÌôî"),_S(93, "ÌäπÏàò")},{_S(94, "Ïï°ÏÖò"),_S(96, "ÏÜåÏÖú"),CTString("")},{_S(97, "ÌååÌã∞"),_S(98, "Í∏∏Îìú"),CTString("")}};
+	// ºˆ¡§ « ø‰
+	CTString strTabDesc[3][4] = { {_S(4288, "æ∆¿Ã≈€"),_S(93, "∆Øºˆ"),_S(4490, "¡ı«•")},
+								  {_S(94, "æ◊º«"),_S(96, "º“º»"),CTString(""),CTString("")},
+								  {_S(97, "∆ƒ∆º"),_S(98, "±ÊµÂ"),CTString(""),CTString("")} };
 
-	for(i=0; i<3; i++)
+	for( i = 0; i < 4; i++)
 	{
-		_pUIMgr->GetDrawPort()->PutTextExCX( strTabDesc[m_ucipCurrentPage-1][i], nX, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExCX( strTabDesc[m_ucipCurrentPage-1][i], nX, nY, 0xDED9A0FF );
 		nX += nWidth;
 	}
-	
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
-
-	if(m_bSkillDescVisible)
-	{
-		RenderSkillDesc();
-	}
-
+	pDrawPort->EndTextEx();
 }
 
 void CUICharacterInfo::RenderNewCharacterInfoStatus()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	int nNewPosX, nNewPosY;
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 
 	m_btnGPStrength.Render();
 	m_btnGPDexterity.Render();
@@ -1172,80 +1301,80 @@ void CUICharacterInfo::RenderNewCharacterInfoStatus()
 
 		if(m_bStatusTabOpen[i] == 0)
 		{
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX, nNewPosY, nNewPosX + 15, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX, nNewPosY, nNewPosX + 15, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtSelectedStatusTab.U0, m_rtSelectedStatusTab.V0, m_rtSelectedStatusTab.U1, m_rtSelectedStatusTab.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + 15, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 14, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + 15, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 14, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtSelectedStatusTabMiddle.U0, m_rtSelectedStatusTabMiddle.V0, m_rtSelectedStatusTabMiddle.U1, m_rtSelectedStatusTabMiddle.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 14, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 1, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 14, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 1, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtSelectedStatusTabRight.U0, m_rtSelectedStatusTabRight.V0, m_rtSelectedStatusTabRight.U1, m_rtSelectedStatusTabRight.V1, 0xFFFFFFFF);
 			
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + 11, nNewPosY + 8, nNewPosX + 21, nNewPosY + 19,
+			pDrawPort->AddTexture(nNewPosX + 11, nNewPosY + 8, nNewPosX + 21, nNewPosY + 19,
 										   m_rtSelectedStatusTabDeco.U0, m_rtSelectedStatusTabDeco.V0, m_rtSelectedStatusTabDeco.U1, m_rtSelectedStatusTabDeco.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 22, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 11, nNewPosY + 19,
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 22, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 11, nNewPosY + 19,
 										   m_rtSelectedStatusTabDeco.U0, m_rtSelectedStatusTabDeco.V0, m_rtSelectedStatusTabDeco.U1, m_rtSelectedStatusTabDeco.V1, 0xFFFFFFFF);
 
 
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 1, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 16, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 1, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 16, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtUnSelectedStatusTab.U0, m_rtUnSelectedStatusTab.V0, m_rtUnSelectedStatusTab.U1, m_rtUnSelectedStatusTab.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 16, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth() - 15, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 16, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth() - 15, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtUnSelectedStatusTabMiddle.U0, m_rtUnSelectedStatusTabMiddle.V0, m_rtUnSelectedStatusTabMiddle.U1, m_rtUnSelectedStatusTabMiddle.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth() - 15, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth(), nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth() - 15, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth(), nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtUnSelectedStatusTabRight.U0, m_rtUnSelectedStatusTabRight.V0, m_rtUnSelectedStatusTabRight.U1, m_rtUnSelectedStatusTabRight.V1, 0xFFFFFFFF);			
 			
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 12, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 22, nNewPosY + 19,
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 12, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 22, nNewPosY + 19,
 										   m_rtUnSelectedStatusTabDeco.U0, m_rtUnSelectedStatusTabDeco.V0, m_rtUnSelectedStatusTabDeco.U1, m_rtUnSelectedStatusTabDeco.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth() - 23, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth() - 11, nNewPosY + 19,
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth() - 23, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth() - 11, nNewPosY + 19,
 										   m_rtUnSelectedStatusTabDeco.U0, m_rtUnSelectedStatusTabDeco.V0, m_rtUnSelectedStatusTabDeco.U1, m_rtUnSelectedStatusTabDeco.V1, 0xFFFFFFFF);
 		}
 		else
 		{
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX, nNewPosY, nNewPosX + 15, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX, nNewPosY, nNewPosX + 15, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtUnSelectedStatusTab.U0, m_rtUnSelectedStatusTab.V0, m_rtUnSelectedStatusTab.U1, m_rtUnSelectedStatusTab.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + 15, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 14, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + 15, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 14, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtUnSelectedStatusTabMiddle.U0, m_rtUnSelectedStatusTabMiddle.V0, m_rtUnSelectedStatusTabMiddle.U1, m_rtUnSelectedStatusTabMiddle.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 14, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 1, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 14, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 1, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtUnSelectedStatusTabRight.U0, m_rtUnSelectedStatusTabRight.V0, m_rtUnSelectedStatusTabRight.U1, m_rtUnSelectedStatusTabRight.V1, 0xFFFFFFFF);
 			
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + 11, nNewPosY + 8, nNewPosX + 21, nNewPosY + 19,
+			pDrawPort->AddTexture(nNewPosX + 11, nNewPosY + 8, nNewPosX + 21, nNewPosY + 19,
 										   m_rtUnSelectedStatusTabDeco.U0, m_rtUnSelectedStatusTabDeco.V0, m_rtUnSelectedStatusTabDeco.U1, m_rtUnSelectedStatusTabDeco.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 22, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 11, nNewPosY + 19,
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 22, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth()/2 - 11, nNewPosY + 19,
 										   m_rtUnSelectedStatusTabDeco.U0, m_rtUnSelectedStatusTabDeco.V0, m_rtUnSelectedStatusTabDeco.U1, m_rtUnSelectedStatusTabDeco.V1, 0xFFFFFFFF);
 
 
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 1, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 16, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 1, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 16, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtSelectedStatusTab.U0, m_rtSelectedStatusTab.V0, m_rtSelectedStatusTab.U1, m_rtSelectedStatusTab.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 16, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth() - 15, nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 16, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth() - 15, nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtSelectedStatusTabMiddle.U0, m_rtSelectedStatusTabMiddle.V0, m_rtSelectedStatusTabMiddle.U1, m_rtSelectedStatusTabMiddle.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth() - 15, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth(), nNewPosY + m_rcStatusTab[i].GetHeight(),
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth() - 15, nNewPosY, nNewPosX + m_rcStatusTab[i].GetWidth(), nNewPosY + m_rcStatusTab[i].GetHeight(),
 										   m_rtSelectedStatusTabRight.U0, m_rtSelectedStatusTabRight.V0, m_rtSelectedStatusTabRight.U1, m_rtSelectedStatusTabRight.V1, 0xFFFFFFFF);			
 			
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 12, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 22, nNewPosY + 19,
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 12, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth()/2 + 22, nNewPosY + 19,
 										   m_rtSelectedStatusTabDeco.U0, m_rtSelectedStatusTabDeco.V0, m_rtSelectedStatusTabDeco.U1, m_rtSelectedStatusTabDeco.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth() - 23, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth() - 11, nNewPosY + 19,
+			pDrawPort->AddTexture(nNewPosX + m_rcStatusTab[i].GetWidth() - 23, nNewPosY + 8, nNewPosX + m_rcStatusTab[i].GetWidth() - 11, nNewPosY + 19,
 										   m_rtSelectedStatusTabDeco.U0, m_rtSelectedStatusTabDeco.V0, m_rtSelectedStatusTabDeco.U1, m_rtSelectedStatusTabDeco.V1, 0xFFFFFFFF);
 		}
 
 	}
 
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	int	nX1 = m_nPosX + m_rcStatusTab[STATUS_TAB_PKINFO_N_ATTRIBUTE].Left + (m_rcStatusTab[STATUS_TAB_PKINFO_N_ATTRIBUTE].GetWidth() / 4);
 	int	nX2;
 	int	nY = m_nPosY + m_rcStatusTab[STATUS_TAB_PKINFO_N_ATTRIBUTE].Top + 5;
 	int nStringHGap;
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(4174, "PK Ï†ïÎ≥¥"), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExCX( _S(4174, "PK ¡§∫∏"), nX1, nY, 0xDED9A0FF );
 	nX1 += m_rcStatusTab[STATUS_TAB_PKINFO_N_ATTRIBUTE].GetWidth() / 2;
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S(4175, "ÏÜçÏÑ±ÏπúÌôîÎèÑ"), nX1, nY, 0xDED9A0FF );
-
+	// º”º∫ Ω√Ω∫≈€ √ﬂ∞°∑Œ ¿Œ«— ºˆ¡§ [1/14/2013 Ranma] º”º∫ƒ£»≠µµ -> º”º∫ ¡§∫∏
+	pDrawPort->PutTextExCX( _S(5844, "º”º∫ ¡§∫∏"), nX1, nY, 0xDED9A0FF );
 
 	nX1 = m_nPosX + m_rcStatusTab[STATUS_TAB_PHYSICAL_N_MAGICAL].Left + (m_rcStatusTab[STATUS_TAB_PHYSICAL_N_MAGICAL].GetWidth() / 4);
 	nY = m_nPosY + m_rcStatusTab[STATUS_TAB_PHYSICAL_N_MAGICAL].Top + 5;
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( CTString("01"), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExCX( CTString("01"), nX1, nY, 0xDED9A0FF );
 	nX1 += m_rcStatusTab[STATUS_TAB_PHYSICAL_N_MAGICAL].GetWidth() / 2;
-	_pUIMgr->GetDrawPort()->PutTextExCX( CTString("02"), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExCX( CTString("02"), nX1, nY, 0xDED9A0FF );
 
 
 
@@ -1253,52 +1382,67 @@ void CUICharacterInfo::RenderNewCharacterInfoStatus()
 	nX2 = m_nPosX + 223;
 	nY = m_nPosY + 48;
 	nStringHGap = 20;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 71, "Ïù¥Î¶Ñ" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( _pNetwork->MyCharacterInfo.name, nX2, nY, 0xFFFFFFFF );
+	pDrawPort->PutTextEx( _S( 71, "¿Ã∏ß" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( _pNetwork->MyCharacterInfo.name, nX2, nY, 0xFFFFFFFF );
 	nY += nStringHGap;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 72, "ÌÅ¥ÎûòÏä§" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( JobInfo().GetName(_pNetwork->MyCharacterInfo.job, _pNetwork->MyCharacterInfo.job2),
+	pDrawPort->PutTextEx( _S( 72, "≈¨∑°Ω∫" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( CJobInfo::getSingleton()->GetName(_pNetwork->MyCharacterInfo.job, _pNetwork->MyCharacterInfo.job2),
 										nX2, nY, 0xFFFFFFFF );
 	nY += nStringHGap;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 73, "Î†àÎ≤®" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( _pUIMgr->GetPlayerInfo()->GetStringOfLevel(),
+	pDrawPort->PutTextEx( _S( 73, "∑π∫ß" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( pUIManager->GetPlayerInfo()->GetStringOfLevel(),
 										nX2, nY, 0xFF0000FF );
 	nY = m_nPosY + 111;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 75, "Í∏∏Îìú" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextEx( _S( 75, "±ÊµÂ" ), nX1, nY, 0xDED9A0FF );
 	if(_pNetwork->MyCharacterInfo.lGuildIndex == -1)
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S( 76, "Í∏∏Îìú ÏóÜÏùå" ), nX2, nY, 0xD6A6D6FF );
+	pDrawPort->PutTextExRX( _S( 76, "±ÊµÂ æ¯¿Ω" ), nX2, nY, 0xD6A6D6FF );
 	else
 	{
 		CTString strGuildName = _pNetwork->MyCharacterInfo.strGuildName;
-		_pUIMgr->GetDrawPort()->PutTextExRX( strGuildName, nX2, nY, 0xD6A6D6FF );
+		pDrawPort->PutTextExRX( strGuildName, nX2, nY, 0xD6A6D6FF );
 	}
 	nY += nStringHGap;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 4176, "ÏßÅÏúÑ"), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextEx( _S( 4176, "¡˜¿ß"), nX1, nY, 0xDED9A0FF );
 	if( _pNetwork->MyCharacterInfo.guildPosName.Length()  == 0)
 	{
-		_pUIMgr->GetDrawPort()->PutTextExRX( _S( 4177, "ÏßÅÏúÑ ÏóÜÏùå"), nX2, nY, 0xABC98AFF );
+		pDrawPort->PutTextExRX( _S( 4177, "¡˜¿ß æ¯¿Ω"), nX2, nY, 0xABC98AFF );
 	}
 	else
 	{
-		_pUIMgr->GetDrawPort()->PutTextExRX( _pNetwork->MyCharacterInfo.guildPosName, nX2, nY, 0xABC98AFF );
+		pDrawPort->PutTextExRX( _pNetwork->MyCharacterInfo.guildPosName, nX2, nY, 0xABC98AFF );
 	}
 	
 	nY += nStringHGap;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 77, "ÎèôÎßπ" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( _S( 78, "ÎèôÎßπ ÏóÜÏùå" ), nX2, nY, 0xABC98AFF );
+#ifdef ADD_SUBJOB
+	pDrawPort->PutTextEx( _S( 5049, "¿¸πÆ¡˜æ˜" ), nX1, nY, 0xDED9A0FF );
+	CTString strSubJobName;
+	if( _pNetwork->MyCharacterInfo.slSubJob > 0 )
+	{
+		strSubJobName = pUIManager->GetSubJobName(_pNetwork->MyCharacterInfo.slSubJob);
+	}
+	else
+	{
+		strSubJobName = _S(3865, "æ¯¿Ω");
+	}
+
+	pDrawPort->PutTextExRX( strSubJobName, nX2, nY, 0x3fb9f2FF );
+#else
+	pDrawPort->PutTextEx( _S( 77, "µø∏Õ" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( _S( 78, "µø∏Õ æ¯¿Ω" ), nX2, nY, 0xABC98AFF );
+#endif
 
 	nY += nStringHGap + 3;
 //	nX2 = m_nPosX + 205;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 90, "ÏàôÎ†®ÎèÑ" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strSP, nX2, nY, 0xFFFFFFFF );
+	pDrawPort->PutTextEx( _S( 90, "º˜∑√µµ" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( m_strSP, nX2, nY, 0xFFFFFFFF );
 
 	nY += nStringHGap;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1083, "Î™ÖÏÑ±Ïπò" ), nX1, nY, 0xDED9A0FF );		
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strFame, nX2, nY, 0xFFC000FF );
+	pDrawPort->PutTextEx( _S( 1083, "∏Ìº∫ƒ°" ), nX1, nY, 0xDED9A0FF );		
+	pDrawPort->PutTextExRX( m_strFame, nX2, nY, 0xFFC000FF );
 
 	nY += nStringHGap + 5;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 89, "Í≤ΩÌóòÏπò" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strExp, nX2 + 34, nY, 0xFFFFFFFF );
+	pDrawPort->PutTextEx( _S( 89, "∞Ê«Ëƒ°" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( m_strExp, nX2 + 34, nY, 0xFFFFFFFF );
 
 
 	COLOR strColor;
@@ -1309,30 +1453,30 @@ void CUICharacterInfo::RenderNewCharacterInfoStatus()
 	nY = m_nPosY + 46;
 	
 	strColor = GetStrColor(_pNetwork->MyCharacterInfo.opt_str);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 80, "Ìûò" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strStrength, nX2, nY, strColor );
+	pDrawPort->PutTextEx( _S( 80, "»˚" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( m_strStrength, nX2, nY, strColor );
 	
 	nY += nStringHGap + 1;
 	strColor = GetStrColor(_pNetwork->MyCharacterInfo.opt_dex);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 81, "ÎØºÏ≤©" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strDexterity, nX2, nY, strColor );
+	pDrawPort->PutTextEx( _S( 81, "πŒ√∏" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( m_strDexterity, nX2, nY, strColor );
 	
 	nY += nStringHGap + 1;
 	strColor = GetStrColor(_pNetwork->MyCharacterInfo.opt_intel);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 82, "ÏßÄÌòú" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strIntelligence, nX2, nY, strColor );
+	pDrawPort->PutTextEx( _S( 82, "¡ˆ«˝" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( m_strIntelligence, nX2, nY, strColor );
 	
 	nY += nStringHGap + 1;
 	strColor = GetStrColor(_pNetwork->MyCharacterInfo.opt_con);
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 83, "Ï≤¥Ïßà" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strConstitution, nX2, nY, strColor );
+	pDrawPort->PutTextEx( _S( 83, "√º¡˙" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( m_strConstitution, nX2, nY, strColor );
 
 	nY += nStringHGap + 5;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 84, "ÏÑ±Ïû• Ìè¨Ïù∏Ìä∏" ), nX1, nY, 0xDED9A0FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strStatPoint, nX2 + 29, nY, 0xFF5426FF );
+	pDrawPort->PutTextEx( _S( 84, "º∫¿Â ∆˜¿Œ∆Æ" ), nX1, nY, 0xDED9A0FF );
+	pDrawPort->PutTextExRX( m_strStatPoint, nX2 + 29, nY, 0xFF5426FF );
 
 
-///ÌÖùÏúºÎ°ú Í∞àÎ¶¨Îäî Î∂ÄÎ∂Ñ/////////////////////////////////////////////////////
+///≈‹¿∏∑Œ ∞•∏Æ¥¬ ∫Œ∫–/////////////////////////////////////////////////////
 	nX1 = m_nPosX + 280;
 	nY = m_nPosY + 176;
 	nX2 = m_nPosX + 490;
@@ -1342,180 +1486,242 @@ void CUICharacterInfo::RenderNewCharacterInfoStatus()
 	{
 
 		strColor = GetStrColor(_pNetwork->MyCharacterInfo.addedAttack);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4178, "Î¨ºÎ¶¨Í≥µÍ≤©Î†•" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strAttack, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4178, "π∞∏Æ∞¯∞›∑¬" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strAttack, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		strColor = GetStrColor(_pNetwork->MyCharacterInfo.addedDefense);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4179, "Î¨ºÎ¶¨Î∞©Ïñ¥Î†•" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strDefense, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4179, "π∞∏ÆπÊæÓ∑¬" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strDefense, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		added = _pNetwork->MyCharacterInfo.hitRate - _pNetwork->MyCharacterInfo.baseHitRate;
 		strColor = GetStrColor(added);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4180, "Î¨ºÎ¶¨Î™ÖÏ§ëÎèÑ" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strHitRate, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4180, "π∞∏Æ∏Ì¡ﬂµµ" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strHitRate, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		added = _pNetwork->MyCharacterInfo.dodgeRate - _pNetwork->MyCharacterInfo.baseDodgeRate;
 		strColor = GetStrColor(added);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4181, "Î¨ºÎ¶¨ÌöåÌîºÎèÑ" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strDodgeRate, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4181, "π∞∏Æ»∏««µµ" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strDodgeRate, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		added = _pNetwork->MyCharacterInfo.critical - _pNetwork->MyCharacterInfo.baseCritical;
 		strColor = GetStrColor(added);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4182, "ÌÅ¨Î¶¨Ìã∞Ïª¨" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strCritical, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4182, "≈©∏Æ∆ºƒ√" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strCritical, nX2, nY, strColor );
 		
 		nY += nStringHGap;
-		added = _pNetwork->MyCharacterInfo.runspeed - _pNetwork->MyCharacterInfo.baseRunSpeed;
+		added = ( _pNetwork->MyCharacterInfo.runspeed * 10 ) - ( _pNetwork->MyCharacterInfo.baseRunSpeed * 10 );
 		strColor = GetStrColor(added);
 //		strColor = GetStrColor(0);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4183, "Ïù¥ÎèôÏÜçÎèÑ" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strSpeed, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4183, "¿Ãµøº”µµ" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strSpeed, nX2, nY, strColor );
 	}
 	else
 	{
 		strColor = GetStrColor(_pNetwork->MyCharacterInfo.addedMagic);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 86, "ÎßàÎ≤ïÍ≥µÍ≤©Î†•" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strMagicAttack, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 86, "∏∂π˝∞¯∞›∑¬" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strMagicAttack, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		strColor = GetStrColor(_pNetwork->MyCharacterInfo.addedResist);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 88, "ÎßàÎ≤ïÎ∞©Ïñ¥Î†•" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strMagicDefense, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 88, "∏∂π˝πÊæÓ∑¬" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strMagicDefense, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		added = _pNetwork->MyCharacterInfo.magicHitRate - _pNetwork->MyCharacterInfo.baseMagicHitRate;
 		strColor = GetStrColor(added);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4184, "ÎßàÎ≤ïÎ™ÖÏ§ëÎèÑ" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strMagicHitRate, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4184, "∏∂π˝∏Ì¡ﬂµµ" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strMagicHitRate, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		added = _pNetwork->MyCharacterInfo.magicDodgeRate - _pNetwork->MyCharacterInfo.baseMagicDodgeRate;
 		strColor = GetStrColor(added);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4185, "ÎßàÎ≤ïÌöåÌîºÎèÑ" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strMagicDodgeRate, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4185, "∏∂π˝»∏««µµ" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strMagicDodgeRate, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		added = _pNetwork->MyCharacterInfo.deadly - _pNetwork->MyCharacterInfo.baseDeadly;
 		strColor = GetStrColor(added);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4186, "Îç∞Îì§Î¶¨" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strDeadly, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4186, "µ•µÈ∏Æ" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strDeadly, nX2, nY, strColor );
 		
 		nY += nStringHGap;
 		added = _pNetwork->MyCharacterInfo.attackspeed - _pNetwork->MyCharacterInfo.baseAttackSpeed;
 		strColor = GetStrColor(added);
 //		strColor = GetStrColor(0);
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4187, "Í≥µÍ≤©ÏÜçÎèÑ" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strAttackSpeed, nX2, nY, strColor );
+		pDrawPort->PutTextEx( _S( 4187, "∞¯∞›º”µµ" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strAttackSpeed, nX2, nY, strColor );
 	}
 
 	nX1 = m_nPosX + 280;
 	nX2 = m_nPosX + 489;
 	nY += nStringHGap + 3;
 
-	_pUIMgr->GetDrawPort()->PutTextEx( "HP", nX1, nY, 0xDED9A0FF );
+#if defined(G_RUSSIA)
+	{
+		pDrawPort->PutTextEx( _S( 4411, "HP" ), nX1, nY, 0xDED9A0FF );
+	}
+#else
+	{
+		pDrawPort->PutTextEx( "HP", nX1, nY, 0xDED9A0FF );
+	}
+#endif
+
 	CTString strTemp;
 
 	added = _pNetwork->MyCharacterInfo.maxHP - _pNetwork->MyCharacterInfo.baseHP;
 //	strColor = GetStrColor(added);
 	strColor = GetStrColor(0);
 	strTemp.PrintF("%d/%d", _pNetwork->MyCharacterInfo.hp, _pNetwork->MyCharacterInfo.maxHP);
-	_pUIMgr->GetDrawPort()->PutTextExRX( strTemp, nX2, nY, strColor );
+	pDrawPort->PutTextExRX( strTemp, nX2, nY, strColor );
 
 	nY += nStringHGap + 2;
 	added = _pNetwork->MyCharacterInfo.maxMP - _pNetwork->MyCharacterInfo.baseMP;
 //	strColor = GetStrColor(added);
 	strColor = GetStrColor(0);
-	_pUIMgr->GetDrawPort()->PutTextEx( "MP", nX1, nY, 0xDED9A0FF );
-	strTemp.PrintF("%d/%d", _pNetwork->MyCharacterInfo.mp, _pNetwork->MyCharacterInfo.maxMP);
-	_pUIMgr->GetDrawPort()->PutTextExRX( strTemp, nX2, nY, strColor );
 
-///ÌÖùÏúºÎ°ú Í∞àÎ¶¨Îäî Î∂ÄÎ∂Ñ/////////////////////////////////////////////////////
+#if defined(G_RUSSIA)
+	{
+		pDrawPort->PutTextEx( _S( 4412, "MP" ), nX1, nY, 0xDED9A0FF );
+	}
+#else
+	{
+		pDrawPort->PutTextEx( "MP", nX1, nY, 0xDED9A0FF );
+	}
+#endif
+
+	strTemp.PrintF("%d/%d", _pNetwork->MyCharacterInfo.mp, _pNetwork->MyCharacterInfo.maxMP);
+	pDrawPort->PutTextExRX( strTemp, nX2, nY, strColor );
+
+///≈‹¿∏∑Œ ∞•∏Æ¥¬ ∫Œ∫–/////////////////////////////////////////////////////
 
 	if(m_bStatusTabOpen[STATUS_TAB_PKINFO_N_ATTRIBUTE] == 0)
 	{
 		nX1 = m_nPosX + 41;
 		nX2 = m_nPosX + 245;
 		nY = m_nPosY + 266;
+#ifdef NEW_CHAO_SYS
+		CTString pkname;
+		int		 pkcolor = 0;
 		
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4188, "ÏÑ±Ìñ•Îì±Í∏â" ), nX1, nY, 0xDED9A0FF );
-// ÏïÑÌîÑÎ°†Îßå ÏÑ±Ìñ•Îì±Í∏âÏù¥ ÏûàÎã§.
-//		_pUIMgr->GetDrawPort()->PutTextExRX( _ClassName[_pNetwork->MyCharacterInfo.pktitle + 5], nX2, nY, m_ClassNameColor[_pNetwork->MyCharacterInfo.pktitle + 5] );
-		_pUIMgr->GetDrawPort()->PutTextExRX( _ClassName[_pNetwork->MyCharacterInfo.pktitle + 5], nX2, nY, 0xFFFFFFFF );
+		if(_pNetwork->MyCharacterInfo.pkpenalty > 0)
+		{
+			pkname = _S(4054,"«Â≈Õ");
+			pkcolor = 0x0070C0FF;
+
+		}
+		else if(_pNetwork->MyCharacterInfo.pkpenalty < 0)
+		{
+			pkname = _S(5582,"ƒ´ø¿");
+			pkcolor = 0xFF0000FF;
+		}
+		else
+		{
+			pkname = _S(92,"¿œπ›");
+			pkcolor = 0xFFFFFFFF;
+		}
+		pDrawPort->PutTextEx( _S( 4188, "º∫«‚µÓ±ﬁ" ), nX1, nY, 0xDED9A0FF );
+// æ∆«¡∑–∏∏ º∫«‚µÓ±ﬁ¿Ã ¿÷¥Ÿ.
+//		pDrawPort->PutTextExRX( _ClassName[_pNetwork->MyCharacterInfo.pktitle + 5], nX2, nY, m_ClassNameColor[_pNetwork->MyCharacterInfo.pktitle + 5] );
+		pDrawPort->PutTextExRX( pkname, nX2, nY, pkcolor );
 
 		nY += nStringHGap + 2;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 502, "ÏÑ±Ìñ• ÏàòÏπò" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextEx( _S( 502, "º∫«‚ ºˆƒ°" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strPenalty, nX2, nY, strColor );
+
+		nY += nStringHGap + 2;
+		pDrawPort->PutTextEx( _S( 503, "¥©¿˚ ºˆƒ°" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strPenaltyAcc, nX2, nY, 0xFFC000FF );
+#else
+		pDrawPort->PutTextEx( _S( 4188, "º∫«‚µÓ±ﬁ" ), nX1, nY, 0xDED9A0FF );
+// æ∆«¡∑–∏∏ º∫«‚µÓ±ﬁ¿Ã ¿÷¥Ÿ.
+//		pDrawPort->PutTextExRX( _ClassName[_pNetwork->MyCharacterInfo.pktitle + 5], nX2, nY, m_ClassNameColor[_pNetwork->MyCharacterInfo.pktitle + 5] );
+		pDrawPort->PutTextExRX( _ClassName[_pNetwork->MyCharacterInfo.pktitle + 5], nX2, nY, 0xFFFFFFFF );
+
+		nY += nStringHGap + 2;
+		pDrawPort->PutTextEx( _S( 502, "º∫«‚ ºˆƒ°" ), nX1, nY, 0xDED9A0FF );
 		strColor = GetStrColor(_pNetwork->MyCharacterInfo.pkpenalty);
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strPenalty, nX2, nY, strColor );
+		pDrawPort->PutTextExRX( m_strPenalty, nX2, nY, strColor );
 
 		nY += nStringHGap + 2;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 503, "ÎàÑÏ†Å ÏàòÏπò" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextExRX( m_strPenaltyAcc, nX2, nY, 0xFFC000FF );
+		pDrawPort->PutTextEx( _S( 503, "¥©¿˚ ºˆƒ°" ), nX1, nY, 0xDED9A0FF );
+		pDrawPort->PutTextExRX( m_strPenaltyAcc, nX2, nY, 0xFFC000FF );
+#endif
 	}
 	else
 	{
-
+		// º”º∫ Ω√Ω∫≈€ [1/14/2013 Ranma]
 		strColor = GetStrColor(0);
 
-		nX1 = m_nPosX + 41;
-		nX2 = m_nPosX + 127;
-		nY = m_nPosY + 266;
-
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4189, "Î∂à" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strAttributeFire, nX2, nY, strColor );
-		nY += nStringHGap + 2;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4190, "ÎïÖ" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strAttributeEarth, nX2, nY, strColor );
-		nY += nStringHGap + 2;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4191, "Îπõ" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strAttributeLight, nX2, nY, strColor );
-
-		nX1 = m_nPosX + 155;
-		nX2 = m_nPosX + 241;
-		nY = m_nPosY + 266;
-		
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4192, "Î¨º" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strAttributeWater, nX2, nY, strColor );
-		nY += nStringHGap + 2;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4193, "Î∞îÎûå" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strAttributeWind, nX2, nY, strColor );
-		nY += nStringHGap + 2;
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 4194, "Ïñ¥Îë†" ), nX1, nY, 0xDED9A0FF );
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strAttributeDark, nX2, nY, strColor );
+		int nTextX1 = m_nPosX + 33 + 105;
+		int nTextX2 = m_nPosX + 33 + 219;
+		int nTextY1 = m_nPosY + 263 + 32;
+		CTString strAttLv, strDefLv;
+		// ∞¯∞› º”º∫ æ∆¿Ãƒ‹ ∑π∫ß 
+		strAttLv.PrintF("%d", _pNetwork->MyCharacterInfo.attrattLv);
+		// º”º∫ Ω√Ω∫≈€ ∑π∫ß Ω∫∆Æ∏µ≥÷¥¬∞˜ [1/18/2013 Ranma]
+		//pDrawPort->PutTextExRX("Lv", nTextX1 - 20, nTextY1, 0xDED9A0FF);
+		pDrawPort->PutTextExRX( strAttLv, nTextX1, nTextY1, 0xDED9A0FF );
+		// πÊæÓ º”º∫ æ∆¿Ãƒ‹ ∑π∫ß 
+		strDefLv.PrintF("%d", _pNetwork->MyCharacterInfo.attrdefLv);
+		//pDrawPort->PutTextExRX( "Lv", nTextX2 - 20, nTextY1 - 1/*¿ÃπÃ¡ˆ∞° 1«»ºø π–∑»¿Ω ∆Ø¥‹¿« ¡∂ƒ°*/ , 0xDED9A0FF );
+		pDrawPort->PutTextExRX( strDefLv, nTextX2, nTextY1 - 1/*¿ÃπÃ¡ˆ∞° 1«»ºø π–∑»¿Ω ∆Ø¥‹¿« ¡∂ƒ°*/ , 0xDED9A0FF );
 	}
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
+
 }
 
 void CUICharacterInfo::RenderNewCharacterInfo()
 {
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
 
-	// Î∞∞Í≤Ω ÏúàÎèÑÏö∞
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + CHARINFO_NEW_WIDTH - 1, m_nPosY + CHARINFO_NEW_HEIGHT - 1,
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	// πË∞Ê ¿©µµøÏ
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + CHARINFO_NEW_WIDTH - 1, m_nPosY + CHARINFO_NEW_HEIGHT - 1,
 										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
 										0xFFFFFFFF );
 
+	// º”º∫ Ω√Ω∫≈€ º”º∫ ¡§∫∏ ≈«ø° ±◊∑¡¡˙ πË∞Ê ¿©µµøÏ √‚∑¬ ∫Œ∫– [1/14/2013 Ranma]
 	if(m_bStatusTabOpen[STATUS_TAB_PKINFO_N_ATTRIBUTE] != 0)
 	{
-		_pUIMgr->GetDrawPort()->AddTexture(m_nPosX + 33, m_nPosY + 263, m_nPosX + 262, m_nPosY + 323,
+		pDrawPort->AddTexture(m_nPosX + 33, m_nPosY + 263, m_nPosX + 262, m_nPosY + 323,
 							   m_rtAttributeInfo.U0, m_rtAttributeInfo.V0, m_rtAttributeInfo.U1, m_rtAttributeInfo.V1, 0xFFFFFFFF);
+
+		int nX1 = m_nPosX + 33/*ƒ≥∏Ø≈Õ¿Œ∆˜√¢ø°º≠ º”º∫√¢ ±◊∏± ∫Œ∫–*/ + 9/*æ∆¿Ãƒ‹ ±◊∏± ¿ßƒ°*/;
+		int nX2 = m_nPosX + 33/*ƒ≥∏Ø≈Õ¿Œ∆˜√¢ø°º≠ º”º∫√¢ ±◊∏± ∫Œ∫–*/ + 123/*2π¯¬∞ æ∆¿Ãƒ‹ ±◊∏± Ω√¿€ ¿ßƒ°*/;
+		int nY = m_nPosY + 263 + 10;
+
+		int nAttIndex = _pNetwork->MyCharacterInfo.attratt;
+		int nDefIndex = _pNetwork->MyCharacterInfo.attrdef;
+
+		// ∞¯∞› º”º∫ æ∆¿Ãƒ‹
+		pDrawPort->AddTexture(nX1, nY, nX1 + 41, nY + 40,
+							m_rtAttributeIconAtt[nAttIndex].U0, m_rtAttributeIconAtt[nAttIndex].V0,
+							m_rtAttributeIconAtt[nAttIndex].U1, m_rtAttributeIconAtt[nAttIndex].V1, 0xFFFFFFFF);
+
+		// πÊæÓ º”º∫ æ∆¿Ãƒ‹
+		pDrawPort->AddTexture(nX2, nY, nX2 + 41, nY + 40,
+							m_rtAttributeIconDef[nDefIndex].U0, m_rtAttributeIconDef[nDefIndex].V0,
+							m_rtAttributeIconDef[nDefIndex].U1, m_rtAttributeIconDef[nDefIndex].V1, 0xFFFFFFFF);
 	}
 	
 	
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 
 	m_btnClose.Render();
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 	
 	if(m_ucipCurrentPage == PAGE_CHARINFO_NEW_STATUS)
 	{
@@ -1526,7 +1732,7 @@ void CUICharacterInfo::RenderNewCharacterInfo()
 		RenderNewCharacterInfoSkill();
 	}
 
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdButtonTexture );
+	pDrawPort->InitTextureData( m_ptdButtonTexture );
 
 	int nNewPosX, nNewPosY;
 	int cnt = 1;
@@ -1537,67 +1743,72 @@ void CUICharacterInfo::RenderNewCharacterInfo()
 
 		if(i == m_ucipCurrentPage)
 		{
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX, nNewPosY, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + 15,
+			pDrawPort->AddTexture(nNewPosX, nNewPosY, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + 15,
 											   m_rtSelectedTab.U0, m_rtSelectedTab.V0, m_rtSelectedTab.U1, m_rtSelectedTab.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX, nNewPosY + 15, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + m_rcTabLayer.GetHeight() - 15,
+			pDrawPort->AddTexture(nNewPosX, nNewPosY + 15, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + m_rcTabLayer.GetHeight() - 15,
 											   m_rtSelectedTabMiddle.U0, m_rtSelectedTabMiddle.V0, m_rtSelectedTabMiddle.U1, m_rtSelectedTabMiddle.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX,  nNewPosY + m_rcTabLayer.GetHeight() - 15, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + m_rcTabLayer.GetHeight(),
+			pDrawPort->AddTexture(nNewPosX,  nNewPosY + m_rcTabLayer.GetHeight() - 15, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + m_rcTabLayer.GetHeight(),
 											   m_rtSelectedTabLow.U0, m_rtSelectedTabLow.V0, m_rtSelectedTabLow.U1, m_rtSelectedTabLow.V1, 0xFFFFFFFF);
 
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + 6, nNewPosY+ (m_rcTabLayer.GetHeight()/2) - 6, nNewPosX + 19, nNewPosY+ (m_rcTabLayer.GetHeight()/2) + 7,
+			pDrawPort->AddTexture(nNewPosX + 6, nNewPosY+ (m_rcTabLayer.GetHeight()/2) - 6, nNewPosX + 19, nNewPosY+ (m_rcTabLayer.GetHeight()/2) + 7,
 											   m_rtTabIcon[cnt - 1].U0, m_rtTabIcon[cnt - 1].V0, m_rtTabIcon[cnt - 1].U1, m_rtTabIcon[cnt - 1].V1, 0xFFFFFFFF);
 		}
 		else
 		{
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX, nNewPosY, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + 15,
+			pDrawPort->AddTexture(nNewPosX, nNewPosY, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + 15,
 											   m_rtUnSelectedTab.U0, m_rtUnSelectedTab.V0, m_rtUnSelectedTab.U1, m_rtUnSelectedTab.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX, nNewPosY + 15, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + m_rcTabLayer.GetHeight() - 15,
+			pDrawPort->AddTexture(nNewPosX, nNewPosY + 15, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + m_rcTabLayer.GetHeight() - 15,
 											   m_rtUnSelectedTabMiddle.U0, m_rtUnSelectedTabMiddle.V0, m_rtUnSelectedTabMiddle.U1, m_rtUnSelectedTabMiddle.V1, 0xFFFFFFFF);
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX, nNewPosY+ m_rcTabLayer.GetHeight() - 15, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + m_rcTabLayer.GetHeight(),
+			pDrawPort->AddTexture(nNewPosX, nNewPosY+ m_rcTabLayer.GetHeight() - 15, nNewPosX + m_rcTabLayer.GetWidth(), nNewPosY + m_rcTabLayer.GetHeight(),
 											   m_rtUnSelectedTabLow.U0, m_rtUnSelectedTabLow.V0, m_rtUnSelectedTabLow.U1, m_rtUnSelectedTabLow.V1, 0xFFFFFFFF);
 
-			_pUIMgr->GetDrawPort()->AddTexture(nNewPosX + 6, nNewPosY+ (m_rcTabLayer.GetHeight()/2) - 6, nNewPosX + 19, nNewPosY+ (m_rcTabLayer.GetHeight()/2) + 7,
+			pDrawPort->AddTexture(nNewPosX + 6, nNewPosY+ (m_rcTabLayer.GetHeight()/2) - 6, nNewPosX + 19, nNewPosY+ (m_rcTabLayer.GetHeight()/2) + 7,
 											   m_rtTabIcon[cnt].U0, m_rtTabIcon[cnt].V0, m_rtTabIcon[cnt].U1, m_rtTabIcon[cnt].V1, 0xFFFFFFFF);
 		}
 
 		cnt += 2;
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	if(m_bCharDescVisible)
 	{
 		RenderCharInfoDesc();
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
-	_pUIMgr->GetDrawPort()->PutTextExCX( m_strTitleName, m_nPosX + (CHARINFO_NEW_WIDTH/2), m_nPosY + 15, 0xDED9A0FF );
+	pDrawPort->PutTextExCX( m_strTitleName, m_nPosX + (CHARINFO_NEW_WIDTH/2), m_nPosY + 15, 0xDED9A0FF );
 
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
+
+	if(m_nSkillDescRow >= 0)
+	{
+		m_btnSelectedSkill[m_nSkillDescRow].RenderInfoPopup();
+	}
 }
 
-// ÌÉ≠Ïóê Îî∞Î•∏ Î≤ÑÌäº Î≥ÄÍ≤Ω
+// ≈«ø° µ˚∏• πˆ∆∞ ∫Ø∞Ê
 void CUICharacterInfo::SetCurrentSkillInfo(int nSideTab, int nUpperTab)
 {
 	if(nSideTab == PAGE_CHARINFO_NEW_SKILL)
 	{
 		switch(nUpperTab)
 		{
-			case 0:
-				m_nCurrentSkillType = BTN_SKILL_ACTIVE;
-				m_nBtnTotal = SKILL_ACTIVE_SLOT_ROW_TOTAL;
-				m_btnSelectedSkill = m_btnActiveSkill;
+			case SKILL_ITEM:
+				m_nCurrentSkillType = BTN_SKILL_ITEM;
+				m_nBtnTotal = SKILL_SPECIAL_SLOT_ROW_TOTAL;
+				m_btnSelectedSkill = m_btnItemSpecialSkill;
 				break;
-			case 1:
-				m_nCurrentSkillType = BTN_SKILL_PASSIVE;
-				m_nBtnTotal = SKILL_PASSIVE_SLOT_ROW_TOTAL;
-				m_btnSelectedSkill = m_btnPassiveSkill;
-				break;
-			case 2:
+			case SKILL_SPECIAL:
 				m_nCurrentSkillType = BTN_SKILL_SPECIAL;
 				m_nBtnTotal = SKILL_SPECIAL_SLOT_ROW_TOTAL;
 				m_btnSelectedSkill = m_btnSpecialSkill;
+				break;
+			case SKILL_VOUCHER:
+				m_nCurrentSkillType = BTN_SKILL_VOUCHER;
+				m_nBtnTotal = SKILL_SPECIAL_SLOT_ROW_TOTAL;
+				m_btnSelectedSkill = m_btnVoucherSkill;
 				break;
 		}
 		
@@ -1648,8 +1859,7 @@ void CUICharacterInfo::SetCurrentSkillInfo(int nSideTab, int nUpperTab)
 		}
 		for(int i=0; i<m_nBtnTotal; i++)
 		{
-
-			m_pSelectedSkillSatisfied[i] = _pUIMgr->GetSkillLearn()->IsSatisfiedSkill( m_btnSelectedSkill[i].GetSkillIndex(), m_btnSelectedSkill[i].GetSkillLevel(), bSpecial);
+			m_pSelectedSkillSatisfied[i] = CUIManager::getSingleton()->GetSkillLearn()->IsSatisfiedSkill( m_btnSelectedSkill[i].GetSkillIndex(), m_btnSelectedSkill[i].GetSkillLevel(), bSpecial);
 		}
 	}
 
@@ -1681,22 +1891,22 @@ void CUICharacterInfo::SetCurrentPageNewCharacterInfo(int nTabNum)
 
 	if(m_ucipCurrentPage == PAGE_CHARINFO_NEW_SKILL)
 	{
-		m_strTitleName.PrintF("%s", _S(91, "Ïä§ÌÇ¨") );
+		m_strTitleName.PrintF("%s", _S(6077, "∆Øºˆ Ω∫≈≥") );
 		SetCurrentSkillInfo(m_ucipCurrentPage, m_nSkillActionUpperTab[0]);	
 	}
 	else if(m_ucipCurrentPage == PAGE_CHARINFO_NEW_ACTION_SOCIAL)
 	{
-		m_strTitleName.PrintF( "%s,%s",_S(94, "Ïï°ÏÖò") ,_S(96, "ÏÜåÏÖú") );
+		m_strTitleName.PrintF( "%s,%s",_S(94, "æ◊º«") ,_S(96, "º“º»") );
 		SetCurrentSkillInfo(m_ucipCurrentPage, m_nSkillActionUpperTab[1]);	
 	}
 	else if(m_ucipCurrentPage == PAGE_CHARINFO_NEW_GUILD_PARTY)
 	{
-		m_strTitleName.PrintF("%s,%s",_S(97, "ÌååÌã∞") ,_S(98, "Í∏∏Îìú") );
+		m_strTitleName.PrintF("%s,%s",_S(97, "∆ƒ∆º") ,_S(98, "±ÊµÂ") );
 		SetCurrentSkillInfo(m_ucipCurrentPage, m_nSkillActionUpperTab[2]);	
 	}
 	else
 	{
-		m_strTitleName.PrintF("%s", _S(69, "Ï∫êÎ¶≠ÌÑ∞ Ï†ïÎ≥¥") );
+		m_strTitleName.PrintF("%s", _S(69, "ƒ≥∏Ø≈Õ ¡§∫∏") );
 	}
 
 
@@ -1721,11 +1931,17 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 	{
 		case WM_MOUSEMOVE:
 		{
-			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
+			if( !(IsInside( nX, nY )) )
+				return WMSG_FAIL;
+				
+			CUIManager::getSingleton()->SetMouseCursorInsideUIs();
+
+			m_btnClose.MouseMessage( pMsg );
 
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
+
+			m_bCharDescVisible = FALSE;
 
 			if( IsInsideRect( nX, nY, m_rcCharInfoTab ) )
 			{
@@ -1735,10 +1951,6 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 					m_bCharDescVisible = TRUE;
 					ShowCharInfoDesc(nTabID);
 				}
-			}
-			else
-			{
-				m_bCharDescVisible = FALSE;
 			}
 
 			// Move inventory
@@ -1755,20 +1967,23 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 			{
 				if(IsInsideRect(nX, nY, m_rcInfoRegion))
 				{
-					m_bCharDescVisible = FALSE;
-					if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInBtn && ( pMsg->wParam & MK_LBUTTON ) &&
+					CUIManager* pUIManager = CUIManager::getSingleton();
+
+					if( pUIManager->GetHoldBtn().IsEmpty() && bLButtonDownInBtn && ( pMsg->wParam & MK_LBUTTON ) &&
 						( ndX != 0 || ndY != 0 ) )
 					{
 						// Active skill
-						if(m_nCurrentSkillType != BTN_SKILL_PASSIVE && m_nCurrentSkillType != BTN_SKILL_SPECIAL)
+						if(m_nCurrentSkillType != BTN_SKILL_PASSIVE && 
+							m_nCurrentSkillType != BTN_SKILL_SPECIAL &&
+							m_nCurrentSkillType != BTN_SKILL_VOUCHER)
 						{
 							if( m_nSelectedSkillID >= 0 )
 							{
 								int	nSelRow = m_nSelectedSkillID;						
 
-								_pUIMgr->SetHoldBtn( m_btnSelectedSkill[nSelRow]);
+								pUIManager->SetHoldBtn( m_btnSelectedSkill[nSelRow]);
 								int	nOffset = BTN_SIZE / 2;
-								_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
+								pUIManager->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
 
 								m_btnSelectedSkill[nSelRow].SetBtnState( UBES_IDLE );
 							}
@@ -1784,31 +1999,21 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 					int	iRowS = m_sbScrollBar.GetScrollPos() * 2;
 					int	iRowE;
 					iRowE = iRowS + SKILLINFO_NEW_SLOT_ROW;
-					int	nWhichRow = -1;
+					m_nSkillDescRow = -1;
 				
 					for( iRow = iRowS; iRow < iRowE; iRow++ )
 					{
 						if( m_btnSelectedSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							nWhichRow = iRow;
+						{
+							m_nSkillDescRow = iRow;
+							break;
+						}
 					}
-
-					// Show tool tip
-					if( nWhichRow != -1 )
-					{
-						m_bSkillDescVisible = TRUE;
-						ShowSkillDesc(nWhichRow);
-					}
-					else
-						m_bSkillDescVisible = FALSE;
 
 					return WMSG_SUCCESS;
 				}
-				else
-				{
-					m_bSkillDescVisible = FALSE;
-				}
 			}	
-			else //if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_STATUS )
+			else if( bLButtonDownInBtn == FALSE ) //if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_STATUS )
 			{
 				// Strength growth point button
 				if( m_btnGPStrength.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -1900,6 +2105,7 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 						int nWidth = m_rcButtonArea.GetWidth();
 						int nHeight = m_rcButtonArea.GetHeight();
 
+						CUIManager* pUIManager = CUIManager::getSingleton();
 
 						for( iRow = iRowS; iRow < iRowE; iRow++ )
 						{
@@ -1909,7 +2115,7 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 								m_nSelectedSkillID = iRow;
 
 								bLButtonDownInBtn = TRUE;
-								_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+								pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 								return WMSG_SUCCESS;
 							}
 
@@ -1926,45 +2132,47 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 										{
 											m_nSelectedSkillID = iRow;
 										}
-										_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+										pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 										return WMSG_SUCCESS;
 									}
 								}
 							}
 						}
-						_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+
+						pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 						return WMSG_SUCCESS;
 //						return m_spSkillInfo.MouseMessage(pMsg);
 					}
 				}			
 				else //if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_STATUS )
 				{
-					if( !m_bLockStatPoint )
+					if( !m_bLockStatPoint && bLButtonDownInBtn == FALSE)
 					{
+						bLButtonDownInBtn = TRUE;
 						// Strength growth point button
 						if( m_btnGPStrength.MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							// Nothing
+							SendUseStatPoint( MSG_STATPOINT_USE_STR );
 						}
 						// Dexterity growth point button
 						else if( m_btnGPDexterity.MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							// Nothing
+							SendUseStatPoint( MSG_STATPOINT_USE_DEX );
 						}
 						// Intelligence growth point button
 						else if( m_btnGPIntelligence.MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							// Nothing
+							SendUseStatPoint( MSG_STATPOINT_USE_INT );
 						}
 						// Contitution growth point button
 						else if( m_btnGPConstitution.MouseMessage( pMsg ) != WMSG_FAIL )
 						{
-							// Nothing
+							SendUseStatPoint( MSG_STATPOINT_USE_CON );
 						}
 					}
 				}
 				
-				_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+				CUIManager::getSingleton()->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 				return WMSG_SUCCESS;
 			}
 		}
@@ -1976,7 +2184,9 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 
 			if( IsInside( nX, nY ) )
 			{
-				if( _pUIMgr->GetHoldBtn().IsEmpty() )
+				CUIManager* pUIManager = CUIManager::getSingleton();
+
+				if( pUIManager->GetHoldBtn().IsEmpty() )
 				{
 					// Title bar
 					bTitleBarClick = FALSE;
@@ -1989,7 +2199,7 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 					{
 						if( wmsgResult == WMSG_COMMAND )
 						{
-							_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, FALSE );
+							ToggleVisible();
 						}
 
 						return WMSG_SUCCESS;
@@ -2015,21 +2225,29 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 								{
 									if( wmsgResult == WMSG_COMMAND )
 									{
-										if( m_nCurrentSkillType == BTN_SKILL_ACTIVE )
+										if( m_nCurrentSkillType == BTN_SKILL_ITEM )
 										{
-											if( !m_btnSelectedSkill[iRow].GetSkillDelay() )
-												_pUIMgr->GetCharacterInfo()->UseSkill( m_btnSelectedSkill[iRow].GetSkillIndex() );
+											int nSkillIndex = m_btnSelectedSkill[iRow].GetSkillIndex();
+											CSkill &skill = _pNetwork->GetSkillData( nSkillIndex );
+
+											if ( skill.GetType() == CSkill::ST_MELEE ||
+											skill.GetType() == CSkill::ST_RANGE ||
+											skill.GetType() == CSkill::ST_MAGIC ||
+											skill.GetType() == CSkill::ST_SUMMON_TOTEM_SKILL )
+											{
+												if( !m_btnSelectedSkill[iRow].GetSkillDelay() )
+													pUIManager->GetCharacterInfo()->UseSkill( nSkillIndex );
+											}											
 										}
 										else if (m_nCurrentSkillType > BTN_SKILL_SPECIAL)
 										{
-											_pUIMgr->GetCharacterInfo()->UseAction( m_btnSelectedSkill[iRow].GetActionIndex() );
+											pUIManager->GetCharacterInfo()->UseAction( m_btnSelectedSkill[iRow].GetActionIndex() );
 										}
-
 									}
 								}
 							}
 						}
-//						_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+//						pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 						return WMSG_SUCCESS;
 					}
 					else// if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_STATUS )
@@ -2037,31 +2255,21 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 						// Strength growth point button
 						if( ( wmsgResult = m_btnGPStrength.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
-							if( wmsgResult == WMSG_COMMAND )
-								SendUseStatPoint( MSG_STATPOINT_USE_STR );
 							return WMSG_SUCCESS;
 						}
 						// Dexterity growth point button
 						else if( ( wmsgResult = m_btnGPDexterity.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
-							if( wmsgResult == WMSG_COMMAND )
-								SendUseStatPoint( MSG_STATPOINT_USE_DEX );
-
 							return WMSG_SUCCESS;
 						}
 						// Intelligence growth point button
 						else if( ( wmsgResult = m_btnGPIntelligence.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
-							if( wmsgResult == WMSG_COMMAND )
-								SendUseStatPoint( MSG_STATPOINT_USE_INT );
 							return WMSG_SUCCESS;
 						}
 						// Constitution growth point button
 						else if( ( wmsgResult = m_btnGPConstitution.MouseMessage( pMsg ) ) != WMSG_FAIL )
 						{
-							if( wmsgResult == WMSG_COMMAND )
-								SendUseStatPoint( MSG_STATPOINT_USE_CON ); 
-
 							return WMSG_SUCCESS;
 						}
 					}
@@ -2071,7 +2279,7 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 					if( IsInside( nX, nY ) )
 					{
 						// Reset holding button
-						_pUIMgr->ResetHoldBtn();
+						pUIManager->ResetHoldBtn();
 
 						return WMSG_SUCCESS;
 					}
@@ -2089,6 +2297,30 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 				{
 					if( m_sbScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
 							return WMSG_SUCCESS;
+				}
+				else if( !m_bLockStatPoint )
+				{
+					// Strength growth point button
+					if( m_btnGPStrength.MouseMessage( pMsg ) != WMSG_FAIL )
+					{
+						SendUseStatPoint( MSG_STATPOINT_USE_STR );
+						return WMSG_SUCCESS;
+					}
+					else if( m_btnGPDexterity.MouseMessage( pMsg ) != WMSG_FAIL )
+					{
+						SendUseStatPoint( MSG_STATPOINT_USE_DEX );
+						return WMSG_SUCCESS;
+					}
+					else if( m_btnGPIntelligence.MouseMessage( pMsg ) != WMSG_FAIL )
+					{
+						SendUseStatPoint( MSG_STATPOINT_USE_INT );
+						return WMSG_SUCCESS;
+					}
+					else if( m_btnGPConstitution.MouseMessage( pMsg ) != WMSG_FAIL )
+					{
+						SendUseStatPoint( MSG_STATPOINT_USE_CON );
+						return WMSG_SUCCESS;
+					}
 				}
 				return WMSG_SUCCESS;
 			}
@@ -2120,490 +2352,7 @@ WMSG_RESULT CUICharacterInfo::MouseMessageNewCharacterInfo(MSG *pMsg )
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-
-#ifdef NEW_USER_INTERFACE
 	CreateNewCharacterInfo(pParentWnd, nX, nY, CHARINFO_NEW_WIDTH, CHARINFO_NEW_HEIGHT);
-	return;
-#endif
-
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
-	
-	_iMaxSkillStringChar = SKILLINFO_CHAR_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-	_iMaxActionStringChar = ACTIONINFO_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-	//_iMaxQuestDescStringChar = QUESTDESC_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-
-	// Region of each part
-	m_rcTitle.SetRect( 0, 0, 216, 22 );
-	m_rcCharInfoTab.SetRect( 4, 24, 25, 357 - (CHARINFO_TAB_HEIGHT +  CHARINFO_TAB_GAP) );
-	m_rcTab.SetRect( 124, 31, 125, 48 );
-	m_rcSubTab.SetRect( 29, 30 , 220, 49 );
-	m_rcType2Splitter.SetRect( 30, 255, 219, 256 );
-	m_rcType2Bottom.SetRect( 40, 252, 199, 364 );
-
-	// Status
-	//m_rcHP.SetRect( 46, 319, 46, 327 );
-	//m_rcMP.SetRect( 46, 335 , 46, 343 );
-
-	// Common icons rect
-	m_rcIcons.SetRect( 41, 57, 72, 364 );
-	//m_rcQuestIcons.SetRect( 41, 57, 72, 247 );
-	//m_rcQuestCancelIcons.SetRect( CHARINFO_SLOT_SX + 150, 57, CHARINFO_SLOT_SX + 150 + 14, 247);
-	
-	// Create character information texture
-	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\CharacterInfo.tex" ) );
-	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
-	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
-
-	// UV Coordinate of each part
-	m_rtType1.SetUV(0, 0, 230, 385, fTexWidth, fTexHeight );
-	m_rtType2.SetUV( 231, 0, 461, 385, fTexWidth, fTexHeight );
-	m_rtType2Splitter.SetUV( 261, 48, 450, 49, fTexWidth, fTexHeight );
-	m_rtType2Bottom.SetUV( 271, 390, 430, 502, fTexWidth, fTexHeight );
-	m_rtTab.SetUV( 12, 450, 13, 467, fTexWidth, fTexHeight );
-	m_rtInfoUL.SetUV( 147, 471, 154, 478, fTexWidth, fTexHeight );
-	m_rtInfoUM.SetUV( 157, 471, 159, 478, fTexWidth, fTexHeight );
-	m_rtInfoUR.SetUV( 162, 471, 169, 478, fTexWidth, fTexHeight );
-	m_rtInfoML.SetUV( 147, 481, 154, 483, fTexWidth, fTexHeight );
-	m_rtInfoMM.SetUV( 157, 481, 159, 483, fTexWidth, fTexHeight );
-	m_rtInfoMR.SetUV( 162, 481, 169, 483, fTexWidth, fTexHeight );
-	m_rtInfoLL.SetUV( 147, 486, 154, 493, fTexWidth, fTexHeight );
-	m_rtInfoLM.SetUV( 157, 486, 159, 493, fTexWidth, fTexHeight );
-	m_rtInfoLR.SetUV( 162, 486, 169, 493, fTexWidth, fTexHeight );
-	m_rtToolTipL.SetUV( 147, 471, 154, 493, fTexWidth, fTexHeight );
-	m_rtToolTipM.SetUV( 157, 471, 159, 493, fTexWidth, fTexHeight );
-	m_rtToolTipR.SetUV( 162, 471, 169, 493, fTexWidth, fTexHeight );
-	m_rtSelOutline.SetUV( 27, 471, 59, 503, fTexWidth, fTexHeight );
-
-	// Close button
-	m_btnClose.Create( this, CTString( "" ), 198, 4, 14, 14 );
-	m_btnClose.SetUV( UBS_IDLE, 15, 449, 29, 463, fTexWidth, fTexHeight );
-	m_btnClose.SetUV( UBS_CLICK, 30, 449, 44, 463, fTexWidth, fTexHeight );
-	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	// Tab button
-	for( int iTab=0 ; iTab< CHARINFO_TAB_TOTAL ; iTab++ )
-	{
-		int tx = CHARINFO_TAB_WIDTH * iTab * 2;
-		m_rtSelItemTypeTab[iTab].SetUV( tx, 390, tx + CHARINFO_TAB_WIDTH, 443, fTexWidth, fTexHeight );    
-		m_rtItemTypeTab[iTab].SetUV( tx + CHARINFO_TAB_WIDTH, 390, tx + CHARINFO_TAB_WIDTH + CHARINFO_TAB_WIDTH,
-										443, fTexWidth, fTexHeight );
-	}
-
-	// Status
-	// Gauge bar
-	//m_rtHP.SetUV( 1, 449, 3, 457, fTexWidth, fTexHeight );
-	//m_rtMP.SetUV( 7, 449, 9, 457, fTexWidth, fTexHeight );
-
-	// Strength growth button
-	m_btnGPStrength.Create( this, CTString( "" ), 203, 160, 14, 14 );
-	m_btnGPStrength.SetUV( UBS_IDLE, 96, 471, 110, 485, fTexWidth, fTexHeight );
-	m_btnGPStrength.SetUV( UBS_CLICK, 113, 471, 127, 485, fTexWidth, fTexHeight );
-	m_btnGPStrength.SetUV( UBS_DISABLE, 130, 471, 144, 485, fTexWidth, fTexHeight );
-	m_btnGPStrength.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnGPStrength.SetEnable( FALSE );
-
-	// Dexterity growth button
-	m_btnGPDexterity.Create( this, CTString( "" ), 203, 175, 14, 14 );
-	m_btnGPDexterity.SetUV( UBS_IDLE, 96, 471, 110, 485, fTexWidth, fTexHeight );
-	m_btnGPDexterity.SetUV( UBS_CLICK, 113, 471, 127, 485, fTexWidth, fTexHeight );
-	m_btnGPDexterity.SetUV( UBS_DISABLE, 130, 471, 144, 485, fTexWidth, fTexHeight );
-	m_btnGPDexterity.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnGPDexterity.SetEnable( FALSE );
-
-	// Intelligence growth button
-	m_btnGPIntelligence.Create( this, CTString( "" ), 203, 190, 14, 14 );
-	m_btnGPIntelligence.SetUV( UBS_IDLE, 96, 471, 110, 485, fTexWidth, fTexHeight );
-	m_btnGPIntelligence.SetUV( UBS_CLICK, 113, 471, 127, 485, fTexWidth, fTexHeight );
-	m_btnGPIntelligence.SetUV( UBS_DISABLE, 130, 471, 144, 485, fTexWidth, fTexHeight );
-	m_btnGPIntelligence.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnGPIntelligence.SetEnable( FALSE );
-
-	// Constitution growth button
-	m_btnGPConstitution.Create( this, CTString( "" ), 203, 205, 14, 14 );
-	m_btnGPConstitution.SetUV( UBS_IDLE, 96, 471, 110, 485, fTexWidth, fTexHeight );
-	m_btnGPConstitution.SetUV( UBS_CLICK, 113, 471, 127, 485, fTexWidth, fTexHeight );
-	m_btnGPConstitution.SetUV( UBS_DISABLE, 130, 471, 144, 485, fTexWidth, fTexHeight );
-	m_btnGPConstitution.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnGPConstitution.SetEnable( FALSE );
-
-
-	// Skill
-	// Scroll bar of active skill
-	m_sbActiveSkillScrollBar.Create( this, 209, 50, 9, 323 );
-	m_sbActiveSkillScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbActiveSkillScrollBar.SetScrollPos( 0 );
-	m_sbActiveSkillScrollBar.SetScrollRange( SKILL_ACTIVE_SLOT_ROW_TOTAL );
-	m_sbActiveSkillScrollBar.SetCurItemCount( 0 );
-	m_sbActiveSkillScrollBar.SetItemsPerPage( SKILL_SLOT_ROW );
-	// Up button
-	m_sbActiveSkillScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbActiveSkillScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbActiveSkillScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbActiveSkillScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbActiveSkillScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbActiveSkillScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbActiveSkillScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbActiveSkillScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbActiveSkillScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbActiveSkillScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbActiveSkillScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbActiveSkillScrollBar.SetWheelRect( -180, 0, 179, 322 );
-
-	// Scroll bar of passive skill
-	m_sbPassiveSkillScrollBar.Create( this, 209, 50, 9, 323 );
-	m_sbPassiveSkillScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbPassiveSkillScrollBar.SetScrollPos( 0 );
-	m_sbPassiveSkillScrollBar.SetScrollRange( SKILL_ACTIVE_SLOT_ROW_TOTAL );
-	m_sbPassiveSkillScrollBar.SetCurItemCount( 0 );
-	m_sbPassiveSkillScrollBar.SetItemsPerPage( SKILL_SLOT_ROW );
-	// Up button
-	m_sbPassiveSkillScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbPassiveSkillScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbPassiveSkillScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbPassiveSkillScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbPassiveSkillScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbPassiveSkillScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbPassiveSkillScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbPassiveSkillScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbPassiveSkillScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbPassiveSkillScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbPassiveSkillScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbPassiveSkillScrollBar.SetWheelRect( -180, 0, 179, 322 );
-
-#ifdef ADJUST_MEMORIZE_SKILL
-	// Scroll bar of memorize skill
-	m_sbMemorizeSkillScrollBar.Create( this, 209, 50, 9, 323 );
-	m_sbMemorizeSkillScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbMemorizeSkillScrollBar.SetScrollPos( 0 );
-	m_sbMemorizeSkillScrollBar.SetScrollRange( SKILL_ACTIVE_SLOT_ROW_TOTAL );
-	m_sbMemorizeSkillScrollBar.SetCurItemCount( 0 );
-	m_sbMemorizeSkillScrollBar.SetItemsPerPage( SKILL_SLOT_ROW );
-	// Up button
-	m_sbMemorizeSkillScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbMemorizeSkillScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbMemorizeSkillScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbMemorizeSkillScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbMemorizeSkillScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbMemorizeSkillScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbMemorizeSkillScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbMemorizeSkillScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbMemorizeSkillScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbMemorizeSkillScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbMemorizeSkillScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbMemorizeSkillScrollBar.SetWheelRect( -180, 0, 179, 322 );
-#endif
-	// Scroll bar of special skill
-	m_sbSpecialSkillScrollBar.Create( this, 209, 50, 9, 323 );
-	m_sbSpecialSkillScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbSpecialSkillScrollBar.SetScrollPos( 0 );
-	m_sbSpecialSkillScrollBar.SetScrollRange( SKILL_SPECIAL_SLOT_ROW_TOTAL );
-	m_sbSpecialSkillScrollBar.SetCurItemCount( 0 );
-	m_sbSpecialSkillScrollBar.SetItemsPerPage( SKILL_SLOT_ROW );
-	// Up button
-	m_sbSpecialSkillScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbSpecialSkillScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbSpecialSkillScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbSpecialSkillScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbSpecialSkillScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbSpecialSkillScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbSpecialSkillScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbSpecialSkillScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbSpecialSkillScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbSpecialSkillScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbSpecialSkillScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbSpecialSkillScrollBar.SetWheelRect( -180, 0, 179, 322 );
-
-  
-	// Action
-	// Scroll bar of normal action
-	m_sbNormalActionScrollBar.Create( this, 209, 50, 9, 323 );
-	m_sbNormalActionScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbNormalActionScrollBar.SetScrollPos( 0 );
-	m_sbNormalActionScrollBar.SetScrollRange( ACTION_NORAML_SLOT_ROW_TOTAL );
-	m_sbNormalActionScrollBar.SetCurItemCount( 0 );
-	m_sbNormalActionScrollBar.SetItemsPerPage( ACTION_SLOT_ROW );
-	// Up button
-	m_sbNormalActionScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbNormalActionScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbNormalActionScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbNormalActionScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbNormalActionScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbNormalActionScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbNormalActionScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbNormalActionScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbNormalActionScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbNormalActionScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbNormalActionScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbNormalActionScrollBar.SetWheelRect( -180, 0, 179, 322 );
-
-	// Scroll bar of social action
-	m_sbSocialActionScrollBar.Create( this, 209, 50, 9, 323 );
-	m_sbSocialActionScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbSocialActionScrollBar.SetScrollPos( 0 );
-	m_sbSocialActionScrollBar.SetScrollRange( ACTION_SOCIAL_SLOT_ROW_TOTAL );
-	m_sbSocialActionScrollBar.SetCurItemCount( 0 );
-	m_sbSocialActionScrollBar.SetItemsPerPage( ACTION_SLOT_ROW );
-	// Up button
-	m_sbSocialActionScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbSocialActionScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbSocialActionScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbSocialActionScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbSocialActionScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbSocialActionScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbSocialActionScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbSocialActionScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbSocialActionScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbSocialActionScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbSocialActionScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbSocialActionScrollBar.SetWheelRect( -180, 0, 179, 322 );
-
-	// Scroll bar of normal action
-	m_sbPartyActionScrollBar.Create( this, 209, 50, 9, 323 );
-	m_sbPartyActionScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbPartyActionScrollBar.SetScrollPos( 0 );
-	m_sbPartyActionScrollBar.SetScrollRange( ACTION_PARTY_SLOT_ROW_TOTAL );
-	m_sbPartyActionScrollBar.SetCurItemCount( 0 );
-	m_sbPartyActionScrollBar.SetItemsPerPage( ACTION_SLOT_ROW );
-	// Up button
-	m_sbPartyActionScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbPartyActionScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbPartyActionScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbPartyActionScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbPartyActionScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbPartyActionScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbPartyActionScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbPartyActionScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbPartyActionScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbPartyActionScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbPartyActionScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbPartyActionScrollBar.SetWheelRect( -180, 0, 179, 322 );
-
-	// Scroll bar of normal action
-	m_sbGuildActionScrollBar.Create( this, 209, 50, 9, 323 );
-	m_sbGuildActionScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbGuildActionScrollBar.SetScrollPos( 0 );
-	m_sbGuildActionScrollBar.SetScrollRange( ACTION_GUILD_SLOT_ROW_TOTAL );
-	m_sbGuildActionScrollBar.SetCurItemCount( 0 );
-	m_sbGuildActionScrollBar.SetItemsPerPage( ACTION_SLOT_ROW );
-	// Up button
-	m_sbGuildActionScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbGuildActionScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbGuildActionScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbGuildActionScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbGuildActionScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbGuildActionScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbGuildActionScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbGuildActionScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbGuildActionScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbGuildActionScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbGuildActionScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbGuildActionScrollBar.SetWheelRect( -180, 0, 179, 322 );
-
-
-	// Quest
-/*
-	// Scroll bar of quest icons
-	m_sbQuestIconScrollBar.Create( this, 209, 50, 9, 204 );
-	m_sbQuestIconScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbQuestIconScrollBar.SetScrollPos( 0 );
-	m_sbQuestIconScrollBar.SetScrollRange( QUEST_SLOT_ROW_TOTAL );
-	m_sbQuestIconScrollBar.SetCurItemCount( 0 );
-	m_sbQuestIconScrollBar.SetItemsPerPage( QUEST_SLOT_ROW );
-	// Up button
-	m_sbQuestIconScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbQuestIconScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbQuestIconScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbQuestIconScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbQuestIconScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbQuestIconScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbQuestIconScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbQuestIconScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbQuestIconScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbQuestIconScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbQuestIconScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbQuestIconScrollBar.SetWheelRect( -180, 0, 179, 204 );
-
-	// List box of quest description
-	m_lbQuestDesc.Create( this, 30, 257, 179, 116, _pUIFontTexMgr->GetLineHeight(), 6, 5, 1, FALSE );
-	m_lbQuestDesc.CreateScroll( TRUE, 0, 0, 9, 116, 9, 7, 0, 0, 10 );
-	// Up button
-	m_lbQuestDesc.SetScrollUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_lbQuestDesc.SetScrollUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_lbQuestDesc.CopyScrollUpUV( UBS_IDLE, UBS_ON );
-	m_lbQuestDesc.CopyScrollUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_lbQuestDesc.SetScrollBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_lbQuestDesc.SetScrollBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_lbQuestDesc.SetScrollBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_lbQuestDesc.SetScrollDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_lbQuestDesc.SetScrollDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_lbQuestDesc.CopyScrollDownUV( UBS_IDLE, UBS_ON );
-	m_lbQuestDesc.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
-
-	// Scroll bar of event icons
-	m_sbEventIconScrollBar.Create( this, 209, 50, 9, 204 );
-	m_sbEventIconScrollBar.CreateButtons( TRUE, 9, 7, 0, 0, 10 );
-	m_sbEventIconScrollBar.SetScrollPos( 0 );
-	m_sbEventIconScrollBar.SetScrollRange( QUEST_SLOT_ROW_TOTAL );
-	m_sbEventIconScrollBar.SetCurItemCount( 0 );
-	m_sbEventIconScrollBar.SetItemsPerPage( QUEST_SLOT_ROW );
-	// Up button
-	m_sbEventIconScrollBar.SetUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_sbEventIconScrollBar.SetUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_sbEventIconScrollBar.CopyUpUV( UBS_IDLE, UBS_ON );
-	m_sbEventIconScrollBar.CopyUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_sbEventIconScrollBar.SetBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_sbEventIconScrollBar.SetBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_sbEventIconScrollBar.SetBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_sbEventIconScrollBar.SetDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_sbEventIconScrollBar.SetDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_sbEventIconScrollBar.CopyDownUV( UBS_IDLE, UBS_ON );
-	m_sbEventIconScrollBar.CopyDownUV( UBS_IDLE, UBS_DISABLE );
-	// Wheel region
-	m_sbEventIconScrollBar.SetWheelRect( -180, 0, 179, 204 );
-
-	// List box of event description
-	m_lbEventDesc.Create( this, 30, 257, 179, 116, _pUIFontTexMgr->GetLineHeight(), 6, 5, 1, FALSE );
-	m_lbEventDesc.CreateScroll( TRUE, 0, 0, 9, 116, 9, 7, 0, 0, 10 );
-	// Up button
-	m_lbEventDesc.SetScrollUpUV( UBS_IDLE, 45, 450, 54, 457, fTexWidth, fTexHeight );
-	m_lbEventDesc.SetScrollUpUV( UBS_CLICK, 55, 450, 64, 457, fTexWidth, fTexHeight );
-	m_lbEventDesc.CopyScrollUpUV( UBS_IDLE, UBS_ON );
-	m_lbEventDesc.CopyScrollUpUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_lbEventDesc.SetScrollBarTopUV( 15, 464, 24, 474, fTexWidth, fTexHeight );
-	m_lbEventDesc.SetScrollBarMiddleUV( 15, 475, 24, 477, fTexWidth, fTexHeight );
-	m_lbEventDesc.SetScrollBarBottomUV( 15, 478, 24, 488, fTexWidth, fTexHeight );
-	// Down button
-	m_lbQuestDesc.SetScrollDownUV( UBS_IDLE, 45, 458, 54, 465, fTexWidth, fTexHeight );
-	m_lbQuestDesc.SetScrollDownUV( UBS_CLICK, 55, 458, 64, 465, fTexWidth, fTexHeight );
-	m_lbQuestDesc.CopyScrollDownUV( UBS_IDLE, UBS_ON );
-	m_lbQuestDesc.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
-*/
-
-
-	// Skill buttons
-	// Active skill
-	for( int iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		m_btnActiveSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_SKILL, 0, iRow );
-
-	}
-	// Passive skill
-	for( iRow = 0; iRow < SKILL_PASSIVE_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		m_btnPassiveSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_SKILL, 0, iRow );
-
-	}
-	// Special skill
-	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		m_btnSpecialSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_SKILL, 0, iRow );
-	}
-#ifdef ADJUST_MEMORIZE_SKILL
-	// Memorize skill
-	for( iRow = 0; iRow < SKILL_MEMORIZE_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		m_btnMemorizeSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_SKILL, 0, iRow );
-
-	}
-#endif
-
-	
-	// Action buttons
-	// Normal action button
-	for( iRow = 0; iRow < ACTION_NORAML_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		
-		m_btnNormalAction[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_ACTION, 0, iRow);
-		
-	}
-	// Social action button
-	for( iRow = 0; iRow < ACTION_SOCIAL_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		
-		m_btnSocialAction[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_ACTION, 0, iRow);
-		
-	}
-	// Party action button
-	for( iRow = 0; iRow < ACTION_PARTY_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		
-		m_btnPartyAction[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_ACTION, 0, iRow);
-		
-	}
-	// Guild action button
-	for( iRow = 0; iRow < ACTION_GUILD_SLOT_ROW_TOTAL ; iRow++ )
-	{
-		
-		m_btnGuildAction[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-										UBET_ACTION, 0, iRow);
-		
-	}
-
-
-	// Quest buttons
-	// Quest
-/*
-	for( iRow = 0; iRow < QUEST_SLOT_ROW_TOTAL; iRow++ )
-	{
-		m_btnQuest[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-									UBET_QUEST, 0, iRow );
-
-		m_btnQuestCancel[iRow].Create( this, CTString( "" ), 203, 160, 14, 14 );
-		m_btnQuestCancel[iRow].SetUV( UBS_IDLE, 96, 487, 110, 501, fTexWidth, fTexHeight );
-		m_btnQuestCancel[iRow].SetUV( UBS_CLICK, 113, 487, 127, 501, fTexWidth, fTexHeight );
-		m_btnQuestCancel[iRow].SetUV( UBS_DISABLE, 130, 487, 144, 501, fTexWidth, fTexHeight );
-		m_btnQuestCancel[iRow].CopyUV( UBS_IDLE, UBS_ON );
-		m_btnQuestCancel[iRow].SetEnable( FALSE );
-	}
-	// Event
-	for( iRow = 0; iRow < QUEST_SLOT_ROW_TOTAL; iRow++ )
-	{
-		m_btnEvent[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
-									UBET_EVENT, 0, iRow );
-	}
-*/
 }
 
 // ----------------------------------------------------------------------------
@@ -2613,7 +2362,8 @@ void CUICharacterInfo::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth
 void CUICharacterInfo::RegisterActions()
 {
 	// Clear action buttons
-	for( int iAct = 0; iAct < ACTION_NORAML_SLOT_ROW_TOTAL; iAct++ )
+	int		iAct;
+	for( iAct = 0; iAct < ACTION_NORAML_SLOT_ROW_TOTAL; iAct++ )
 		m_btnNormalAction[iAct].InitBtn();
 	for( iAct = 0; iAct < ACTION_SOCIAL_SLOT_ROW_TOTAL; iAct++ )
 		m_btnSocialAction[iAct].InitBtn();
@@ -2634,6 +2384,11 @@ void CUICharacterInfo::RegisterActions()
 
 		// If job is different
 		if( !( rActionData.GetJob() & ( 1 << _pNetwork->MyCharacterInfo.job ) ) )
+			continue;
+
+		if ( _pNetwork->m_iServerType == SERVER_TYPE_HARDCORE &&
+			rActionData.GetType() == ACTION_NORMAL &&
+			rActionData.GetIndex() == 30 /*»ƒ∞ﬂ¿Œ Ω√Ω∫≈€*/)
 			continue;
 
 		switch( rActionData.GetType() )
@@ -2680,10 +2435,13 @@ void CUICharacterInfo::UpdateSkillInfo(int nType, int nTotal)
 		{
 			bSpecial = TRUE;
 		}
+
+		CUIManager* pUIManager = CUIManager::getSingleton();
+		CUISkillLearn* pUISkillLearn = pUIManager->GetSkillLearn();
+
 		for(int i=0; i<nTotal; i++)
 		{
-
-			m_pSelectedSkillSatisfied[i] = _pUIMgr->GetSkillLearn()->IsSatisfiedSkill( m_btnSelectedSkill[i].GetSkillIndex(), m_btnSelectedSkill[i].GetSkillLevel(), bSpecial);
+			m_pSelectedSkillSatisfied[i] = pUISkillLearn->IsSatisfiedSkill( m_btnSelectedSkill[i].GetSkillIndex(), m_btnSelectedSkill[i].GetSkillLevel(), bSpecial);
 		}
 	}
 
@@ -2708,11 +2466,6 @@ void CUICharacterInfo::UpdateSkillInfo(int nType, int nTotal)
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::UpdateStatus( int iAttack, int iMagic, int iDefense, int iResist )
 {
-	//FLOAT	fHP, fMP;
-	//_pUIMgr->GetPlayerInfo()->GetRatioOfGauges( fHP, fMP );
-	//m_rcHP.Right = m_rcHP.Left + STATUS_BAR_WIDTH * fHP;
-	//m_rcMP.Right = m_rcMP.Left + STATUS_BAR_WIDTH * fMP;
-
 	m_strStrength.PrintF( "%3d (%2d)", _pNetwork->MyCharacterInfo.str,
 										_pNetwork->MyCharacterInfo.opt_str );
 	m_strDexterity.PrintF( "%3d (%2d)", _pNetwork->MyCharacterInfo.dex,
@@ -2733,16 +2486,15 @@ void CUICharacterInfo::UpdateStatus( int iAttack, int iMagic, int iDefense, int 
 	m_strPenaltyAcc.PrintF( "%d", _pNetwork->MyCharacterInfo.pkcount );
 	m_strFame.PrintF( "%d", _pNetwork->MyCharacterInfo.fame );
 
-#ifdef NEW_USER_INTERFACE
-	m_strHitRate.PrintF( "%d", 0 );	//Î¨ºÎ¶¨ Î™ÖÏ§ëÎèÑ
-	m_strDodgeRate.PrintF( "%d", 0 );	//Î¨ºÎ¶¨ ÌöåÌîºÎèÑ
-	m_strCritical.PrintF( "%d", 0 );	//ÌÅ¨Î¶¨Ìã∞Ïª¨
-	m_strSpeed.PrintF( "%64.1f", _pNetwork->MyCharacterInfo.runspeed );		//Ïù¥ÎèôÏÜçÎèÑ
+	m_strHitRate.PrintF( "%d", 0 );	//π∞∏Æ ∏Ì¡ﬂµµ
+	m_strDodgeRate.PrintF( "%d", 0 );	//π∞∏Æ »∏««µµ
+	m_strCritical.PrintF( "%d", 0 );	//≈©∏Æ∆ºƒ√
+	m_strSpeed.PrintF( "%64.1f", _pNetwork->MyCharacterInfo.runspeed );		//¿Ãµøº”µµ
 
-	m_strMagicHitRate.PrintF( "%d", 0 );	//ÎßàÎ≤ï Î™ÖÏ§ëÎèÑ
-	m_strMagicDodgeRate.PrintF( "%d", 0 );		//ÎßàÎ≤ï ÌöåÌîºÎèÑ
-	m_strDeadly.PrintF( "%d", 0 );		//Îç∞Îì§Î¶¨
-	m_strAttackSpeed.PrintF( "%d", _pNetwork->MyCharacterInfo.attackspeed );			//Í≥µÍ≤©ÏÜçÎèÑ
+	m_strMagicHitRate.PrintF( "%d", 0 );	//∏∂π˝ ∏Ì¡ﬂµµ
+	m_strMagicDodgeRate.PrintF( "%d", 0 );		//∏∂π˝ »∏««µµ
+	m_strDeadly.PrintF( "%d", 0 );		//µ•µÈ∏Æ
+	m_strAttackSpeed.PrintF( "%d", _pNetwork->MyCharacterInfo.attackspeed );			//∞¯∞›º”µµ
 
 
 	m_strAttributeFire.PrintF( "%d", 0 );
@@ -2752,27 +2504,25 @@ void CUICharacterInfo::UpdateStatus( int iAttack, int iMagic, int iDefense, int 
 
 	m_strAttributeLight.PrintF( "%d", 0 );	
 	m_strAttributeDark.PrintF( "%d", 0 );
-	#ifdef NEW_USER_INTERFACE_MESSAGE
-		m_strHitRate.PrintF( "%d", _pNetwork->MyCharacterInfo.hitRate );	//Î¨ºÎ¶¨ Î™ÖÏ§ëÎèÑ
-		m_strDodgeRate.PrintF( "%d", _pNetwork->MyCharacterInfo.dodgeRate );	//Î¨ºÎ¶¨ ÌöåÌîºÎèÑ
-		m_strCritical.PrintF( "%d", _pNetwork->MyCharacterInfo.critical );	//ÌÅ¨Î¶¨Ìã∞Ïª¨
-		m_strSpeed.PrintF( "%64.1f", _pNetwork->MyCharacterInfo.runspeed );			//Ïù¥ÎèôÏÜçÎèÑ
 
-		m_strMagicHitRate.PrintF( "%d", _pNetwork->MyCharacterInfo.magicHitRate );	//ÎßàÎ≤ï Î™ÖÏ§ëÎèÑ
-		m_strMagicDodgeRate.PrintF( "%d", _pNetwork->MyCharacterInfo.magicDodgeRate );		//ÎßàÎ≤ï ÌöåÌîºÎèÑ
-		m_strDeadly.PrintF( "%d", _pNetwork->MyCharacterInfo.deadly );		//Îç∞Îì§Î¶¨
-		m_strAttackSpeed.PrintF( "%d", _pNetwork->MyCharacterInfo.attackspeed );			//Í≥µÍ≤©ÏÜçÎèÑ
+	m_strHitRate.PrintF( "%d", _pNetwork->MyCharacterInfo.hitRate );	//π∞∏Æ ∏Ì¡ﬂµµ
+	m_strDodgeRate.PrintF( "%d", _pNetwork->MyCharacterInfo.dodgeRate );	//π∞∏Æ »∏««µµ
+	m_strCritical.PrintF( "%d", _pNetwork->MyCharacterInfo.critical );	//≈©∏Æ∆ºƒ√
+	m_strSpeed.PrintF( "%64.1f", _pNetwork->MyCharacterInfo.runspeed );			//¿Ãµøº”µµ
+
+	m_strMagicHitRate.PrintF( "%d", _pNetwork->MyCharacterInfo.magicHitRate );	//∏∂π˝ ∏Ì¡ﬂµµ
+	m_strMagicDodgeRate.PrintF( "%d", _pNetwork->MyCharacterInfo.magicDodgeRate );		//∏∂π˝ »∏««µµ
+	m_strDeadly.PrintF( "%d", _pNetwork->MyCharacterInfo.deadly );		//µ•µÈ∏Æ
+	m_strAttackSpeed.PrintF( "%d", _pNetwork->MyCharacterInfo.attackspeed );			//∞¯∞›º”µµ
 
 
-		m_strAttributeFire.PrintF( "%d", 0 );
-		m_strAttributeWater.PrintF( "%d", 0 );
-		m_strAttributeEarth.PrintF( "%d", 0 );
-		m_strAttributeWind.PrintF( "%d", 0 );
+	m_strAttributeFire.PrintF( "%d", 0 );
+	m_strAttributeWater.PrintF( "%d", 0 );
+	m_strAttributeEarth.PrintF( "%d", 0 );
+	m_strAttributeWind.PrintF( "%d", 0 );
 
-		m_strAttributeLight.PrintF( "%d", 0 );	
-		m_strAttributeDark.PrintF( "%d", 0 );	
-	#endif
-
+	m_strAttributeLight.PrintF( "%d", 0 );	
+	m_strAttributeDark.PrintF( "%d", 0 );	
 
 	int nBtnType = 0;
 	int nSlotTotal = 0;
@@ -2781,16 +2531,16 @@ void CUICharacterInfo::UpdateStatus( int iAttack, int iMagic, int iDefense, int 
 	{
 		switch(m_nSkillActionUpperTab[0])
 		{
-			case 0:
-				nBtnType = BTN_SKILL_ACTIVE;
-				nSlotTotal = SKILL_ACTIVE_SLOT_ROW_TOTAL;
+			case SKILL_ITEM:
+				nBtnType = BTN_SKILL_ITEM;
+				nSlotTotal = SKILL_SPECIAL_SLOT_ROW_TOTAL;
 				break;
-			case 1:
-				nBtnType = BTN_SKILL_PASSIVE;
-				nSlotTotal = SKILL_PASSIVE_SLOT_ROW_TOTAL;
-				break;
-			case 2:
+			case SKILL_SPECIAL:
 				nBtnType = BTN_SKILL_SPECIAL;
+				nSlotTotal = SKILL_SPECIAL_SLOT_ROW_TOTAL;
+				break;
+			case SKILL_VOUCHER:
+				nBtnType = BTN_SKILL_VOUCHER;
 				nSlotTotal = SKILL_SPECIAL_SLOT_ROW_TOTAL;
 				break;
 			default:
@@ -2800,12 +2550,10 @@ void CUICharacterInfo::UpdateStatus( int iAttack, int iMagic, int iDefense, int 
 
 	UpdateSkillInfo(nBtnType, nSlotTotal);
 	}
-	if(_pUIMgr->DoesUIExist(UI_SKILLLEARN))
+	if(CUIManager::getSingleton()->DoesUIExist(UI_SKILLLEARN))
 	{
-		_pUIMgr->GetSkillLearn()->UpdateSkillLearn();
+		CUIManager::getSingleton()->GetSkillLearn()->UpdateSkillLearn();
 	}
-#endif
-
 }
 
 // ----------------------------------------------------------------------------
@@ -2814,12 +2562,14 @@ void CUICharacterInfo::UpdateStatus( int iAttack, int iMagic, int iDefense, int 
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
-#ifdef NEW_USER_INTERFACE
 	SetPos( ( pixMaxI + pixMinI - GetWidth() ) / 2, ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
-#endif
-#ifndef NEW_USER_INTERFACE
-	SetPos( ( pixMaxI + pixMinI ) / 2 - GetWidth(), ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
-#endif
+}
+
+void CUICharacterInfo::ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
+	g_iXPosInCharInfo = GetPosX();
+	g_iYPosInCharInfo = GetPosY();
 }
 
 // ----------------------------------------------------------------------------
@@ -2848,7 +2598,9 @@ void CUICharacterInfo::AddSkillInfoString( CTString &strSkillInfo, COLOR colSkil
 		return;
 
 	// wooss 051002
-	if(g_iCountry == THAILAND){
+#if defined(G_THAI)
+	{
+		int		iPos;
 		// Get length of string
 		INDEX	nThaiLen = FindThaiLen(strSkillInfo);
 		INDEX	nChatMax= (_iMaxSkillStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
@@ -2866,7 +2618,7 @@ void CUICharacterInfo::AddSkillInfoString( CTString &strSkillInfo, COLOR colSkil
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = _iMaxSkillStringChar;
 			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if(nChatMax < FindThaiLen(strSkillInfo,0,iPos))
 					break;
@@ -2895,7 +2647,9 @@ void CUICharacterInfo::AddSkillInfoString( CTString &strSkillInfo, COLOR colSkil
 
 		}
 		
-	} else {
+	}
+#else
+	{
 		// If length of string is less than max char
 		if( nLength <= _iMaxSkillStringChar )
 		{
@@ -2928,6 +2682,7 @@ void CUICharacterInfo::AddSkillInfoString( CTString &strSkillInfo, COLOR colSkil
 			if( strTemp[0] == ' ' )
 			{
 				int	nTempLength = strTemp.Length();
+				int iPos;
 				for( iPos = 1; iPos < nTempLength; iPos++ )
 				{
 					if( strTemp[iPos] != ' ' )
@@ -2940,6 +2695,7 @@ void CUICharacterInfo::AddSkillInfoString( CTString &strSkillInfo, COLOR colSkil
 			AddSkillInfoString( strTemp, colSkillInfo );
 		}
 	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -2957,6 +2713,7 @@ void CUICharacterInfo::GetSkillDesc( int nSkillIndex, int nSkillLevel, BOOL bSpe
 		case CSkill::ST_MELEE:
 		case CSkill::ST_RANGE:
 		case CSkill::ST_MAGIC:
+		case CSkill::ST_SUMMON_TOTEM_SKILL:
 			{
 				m_strShortDesc.PrintF( "%s ", rSelSkill.GetName() );
 				int	nNeedMP = rSelSkill.GetNeedMP( nSkillLevel - 1 );
@@ -2964,31 +2721,68 @@ void CUICharacterInfo::GetSkillDesc( int nSkillIndex, int nSkillLevel, BOOL bSpe
 				if( nNeedHP == 0 )
 				{
 					if( nNeedMP == 0 )
-						m_strShortDesc2.PrintF( "Lv %d", nSkillLevel );
+					{
+#if defined(G_RUSSIA)
+							m_strShortDesc2.PrintF( "%s %d", _S( 4414, "LV" ), nSkillLevel );
+#else
+							m_strShortDesc2.PrintF( "Lv %d", nSkillLevel );
+#endif
+					}
 					else
 					{
-						if( _pUIMgr->GetNeedMPReductionRate() >0)
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
+						if( pUIManager->GetNeedMPReductionRate() >0)
 						{
-							int nNeedMPReduction = (nNeedMP*_pUIMgr->GetNeedMPReductionRate())/100;
-							m_strShortDesc2.PrintF( "Lv %d MP %d (-%d)", nSkillLevel, nNeedMP, nNeedMPReduction );
+							int nNeedMPReduction = (nNeedMP*pUIManager->GetNeedMPReductionRate())/100;
+#if defined(G_RUSSIA)
+								m_strShortDesc2.PrintF( "%s %d %s %d (-%d)", _S( 4414, "LV" ), nSkillLevel, _S( 4412, "MP" ) ,nNeedMP, nNeedMPReduction );
+#else
+								m_strShortDesc2.PrintF( "Lv %d MP %d (-%d)", nSkillLevel, nNeedMP, nNeedMPReduction );
+#endif
 						}
 						else
-							m_strShortDesc2.PrintF( "Lv %d MP %d", nSkillLevel, nNeedMP );
+						{
+#if defined(G_RUSSIA)
+								m_strShortDesc2.PrintF( "%s %d %s %d", _S( 4414, "LV" ), nSkillLevel, _S( 4412, "MP" ) ,nNeedMP);
+#else
+								m_strShortDesc2.PrintF( "Lv %d MP %d", nSkillLevel, nNeedMP );
+#endif
+						}
 					}
 				}
 				else
 				{
 					if( nNeedMP == 0 )
-						m_strShortDesc2.PrintF( "Lv %d HP %d", nSkillLevel, nNeedHP );
+					{
+#if defined(G_RUSSIA)
+							m_strShortDesc2.PrintF( "%s %d %s %d", _S( 4414, "LV" ), nSkillLevel, _S( 4411, "HP" ) ,nNeedHP);
+#else
+							m_strShortDesc2.PrintF( "Lv %d HP %d", nSkillLevel, nNeedHP );
+#endif
+					}
 					else
 					{
-						if( _pUIMgr->GetNeedMPReductionRate() >0)
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
+						if( pUIManager->GetNeedMPReductionRate() >0)
 						{
-							int nNeedMPReduction = (nNeedMP*_pUIMgr->GetNeedMPReductionRate())/100;
-							m_strShortDesc2.PrintF( "Lv %d MP %d (-%d) HP %d", nSkillLevel, nNeedMP, nNeedMPReduction, nNeedHP );
+							int nNeedMPReduction = (nNeedMP*pUIManager->GetNeedMPReductionRate())/100;
+#if defined(G_RUSSIA)
+								m_strShortDesc2.PrintF( "%s %d %s %d (-%d) %s %d", _S( 4414, "LV" ), nSkillLevel,_S( 4412, "MP" ), nNeedMP, nNeedMPReduction,_S( 4411, "HP" ), nNeedHP );
+#else
+								m_strShortDesc2.PrintF( "Lv %d MP %d (-%d) HP %d", nSkillLevel, nNeedMP, nNeedMPReduction, nNeedHP );
+#endif
+							/// ø©±‚∫Œ≈Õ-
 						}
 						else
-							m_strShortDesc2.PrintF( "Lv %d MP %d HP %d", nSkillLevel, nNeedMP, nNeedHP );
+						{
+#if defined(G_RUSSIA)
+								m_strShortDesc2.PrintF( "%s %d %s %d %s %d",_S( 4414, "LV" ), nSkillLevel,_S( 4412, "MP" ), nNeedMP,_S( 4411, "HP" ), nNeedHP );
+#else
+								m_strShortDesc2.PrintF( "Lv %d MP %d HP %d", nSkillLevel, nNeedMP, nNeedHP );
+#endif
+						}
 					}
 				}
 			}
@@ -2997,7 +2791,11 @@ void CUICharacterInfo::GetSkillDesc( int nSkillIndex, int nSkillLevel, BOOL bSpe
 		case CSkill::ST_PASSIVE:
 			{
 				m_strShortDesc.PrintF( "%s ", rSelSkill.GetName() );
-				m_strShortDesc2.PrintF( "Lv %d", nSkillLevel );
+#if defined(G_RUSSIA)
+					m_strShortDesc2.PrintF( "%s %d",_S( 4414, "LV" ), nSkillLevel );
+#else
+					m_strShortDesc2.PrintF( "Lv %d", nSkillLevel );
+#endif
 			}
 			break;
 
@@ -3015,7 +2813,11 @@ void CUICharacterInfo::GetSkillDesc( int nSkillIndex, int nSkillLevel, BOOL bSpe
 	{
 		CSpecialSkill	&rSelSkill = _pNetwork->GetSSkillData( nSkillIndex );
 		m_strShortDesc.PrintF( "%s ", rSelSkill.GetName() );
-		m_strShortDesc2.PrintF( "Lv %d", nSkillLevel );
+#if defined(G_RUSSIA)
+			m_strShortDesc2.PrintF( "%s %d",_S( 4414, "LV" ), nSkillLevel );
+#else
+			m_strShortDesc2.PrintF( "Lv %d", nSkillLevel );
+#endif
 	}
 }
 
@@ -3032,7 +2834,11 @@ void CUICharacterInfo::GetSkillInfo( int nSkillIndex, int nSkillLevel, BOOL bSpe
 	{		
 		CSkill	&rSelSkill = _pNetwork->GetSkillData( nSkillIndex );
 		// Get skill name
-		strTemp.PrintF( "%s Lv %d", rSelSkill.GetName(), nSkillLevel );
+#if defined(G_RUSSIA)
+			strTemp.PrintF( "%s %s %d", rSelSkill.GetName(),_S( 4414, "LV" ), nSkillLevel );
+#else
+			strTemp.PrintF( "%s Lv %d", rSelSkill.GetName(), nSkillLevel );
+#endif
 		AddSkillInfoString( strTemp );
 
 		// Get skill type etc...
@@ -3042,11 +2848,12 @@ void CUICharacterInfo::GetSkillInfo( int nSkillIndex, int nSkillLevel, BOOL bSpe
 		case CSkill::ST_MELEE:
 		case CSkill::ST_RANGE:
 		case CSkill::ST_MAGIC:
+		case CSkill::ST_SUMMON_TOTEM_SKILL:
 			{
 				if( rSelSkill.GetFlag() & SF_SINGLEMODE )
-					AddSkillInfoString( _S( 499, "ÌçºÏä§ÎÑêÎçòÏ†Ñ Ï†ÑÏö© Ïä§ÌÇ¨" ), 0xCACACAFF );		
+					AddSkillInfoString( _S( 499, "∆€Ω∫≥Œ¥¯¿¸ ¿¸øÎ Ω∫≈≥" ), 0xCACACAFF );		
 				else
-					AddSkillInfoString( _S( 63, "Ïï°Ìã∞Î∏å Ïä§ÌÇ¨" ), 0xCACACAFF );
+					AddSkillInfoString( _S( 63, "æ◊∆º∫Í Ω∫≈≥" ), 0xCACACAFF );
 
 				int	nNeedMP = rSelSkill.GetNeedMP( nSkillLevel );
 				int	nNeedHP = rSelSkill.GetNeedHP( nSkillLevel );
@@ -3054,13 +2861,15 @@ void CUICharacterInfo::GetSkillInfo( int nSkillIndex, int nSkillLevel, BOOL bSpe
 				{
 					if( nNeedMP != 0 )
 					{
-						if( _pUIMgr->GetNeedMPReductionRate() >0)
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
+						if( pUIManager->GetNeedMPReductionRate() >0)
 						{
-							int nNeedMPReduction = (nNeedMP*_pUIMgr->GetNeedMPReductionRate())/100;
-							strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" )+" (-%d)", nNeedMP, nNeedMPReduction );
+							int nNeedMPReduction = (nNeedMP*pUIManager->GetNeedMPReductionRate())/100;
+							strTemp.PrintF( _S( 64, "º“∏ MP : %d" )+" (-%d)", nNeedMP, nNeedMPReduction );
 						}
 						else
-							strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
+							strTemp.PrintF( _S( 64, "º“∏ MP : %d" ), nNeedMP );
 						AddSkillInfoString( strTemp, 0x94B7C6FF );
 					}
 				}
@@ -3068,36 +2877,38 @@ void CUICharacterInfo::GetSkillInfo( int nSkillIndex, int nSkillLevel, BOOL bSpe
 				{
 					if( nNeedMP == 0 )
 					{
-						strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );		
+						strTemp.PrintF( _S( 500, "º“∏ HP : %d" ), nNeedHP );		
 						AddSkillInfoString( strTemp, 0x94B7C6FF );
 					}
 					else
 					{
-						if( _pUIMgr->GetNeedMPReductionRate() >0)
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
+						if( pUIManager->GetNeedMPReductionRate() >0)
 						{
-							int nNeedMPReduction = (nNeedMP*_pUIMgr->GetNeedMPReductionRate())/100;
-							strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" )+" (-%d)", nNeedMP, nNeedMPReduction );
+							int nNeedMPReduction = (nNeedMP*pUIManager->GetNeedMPReductionRate())/100;
+							strTemp.PrintF( _S( 64, "º“∏ MP : %d" )+" (-%d)", nNeedMP, nNeedMPReduction );
 						}
 						else
-							strTemp.PrintF( _S( 64, "ÏÜåÎ™® MP : %d" ), nNeedMP );
+							strTemp.PrintF( _S( 64, "º“∏ MP : %d" ), nNeedMP );
 						AddSkillInfoString( strTemp, 0x94B7C6FF );
-						strTemp.PrintF( _S( 500, "ÏÜåÎ™® HP : %d" ), nNeedHP );		
+						strTemp.PrintF( _S( 500, "º“∏ HP : %d" ), nNeedHP );		
 						AddSkillInfoString( strTemp, 0x94B7C6FF );
 					}
 				}
 
 				if( rSelSkill.GetPower( nSkillLevel ) > 0 )
 				{
-					strTemp.PrintF( _S( 65, "ÏúÑÎ†• : %d" ), rSelSkill.GetPower( nSkillLevel ) );
+					strTemp.PrintF( _S( 65, "¿ß∑¬ : %d" ), rSelSkill.GetPower( nSkillLevel ) );
 					AddSkillInfoString( strTemp, 0x94B7C6FF );
 				}
-				strTemp.PrintF( _S( 66, "Ïú†Ìö® Í±∞Î¶¨ : %.1f" ), rSelSkill.GetFireRange() );
+				strTemp.PrintF( _S( 66, "¿Ø»ø ∞≈∏Æ : %.1f" ), rSelSkill.GetFireRange() );
 				AddSkillInfoString( strTemp, 0x94B7C6FF );
 			}
 			break;
 
 		case CSkill::ST_PASSIVE:
-			AddSkillInfoString( _S( 67, "Ìå®ÏãúÎ∏å Ïä§ÌÇ¨" ), 0xCACACAFF );
+			AddSkillInfoString( _S( 67, "∆–Ω√∫Í Ω∫≈≥" ), 0xCACACAFF );
 			break;
 		}
 
@@ -3113,12 +2924,16 @@ void CUICharacterInfo::GetSkillInfo( int nSkillIndex, int nSkillLevel, BOOL bSpe
 	{
 		CSpecialSkill	&rSelSkill = _pNetwork->GetSSkillData( nSkillIndex );		
 		// Get skill name
-		strTemp.PrintF( "%s Lv %d", rSelSkill.GetName(), nSkillLevel );
+#if defined(G_RUSSIA)
+			strTemp.PrintF( "%s %s %d", rSelSkill.GetName(),_S( 4414, "LV" ), nSkillLevel );
+#else
+			strTemp.PrintF( "%s Lv %d", rSelSkill.GetName(), nSkillLevel );
+#endif
 		AddSkillInfoString( strTemp );
 
 		// Get skill type etc...
 		nSkillLevel--;		
-		AddSkillInfoString( _S( 67, "Ìå®ÏãúÎ∏å Ïä§ÌÇ¨" ), 0xCACACAFF );
+		AddSkillInfoString( _S( 67, "∆–Ω√∫Í Ω∫≈≥" ), 0xCACACAFF );
 		const char	*pDesc = rSelSkill.GetDescription();
 		if( pDesc != NULL )
 		{
@@ -3152,7 +2967,7 @@ void CUICharacterInfo::ShowSkillInfo( BOOL bShowInfo, CUIButtonEx *pSkillBtn, BO
 	int		nSkillIndex = pSkillBtn->GetSkillIndex();
 	BOOL	bUpdateInfo = FALSE;
 	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
+	int		nInfoPosX = 0, nInfoPosY = 0;
 
 	m_bShowSkillInfo = TRUE;
 
@@ -3172,12 +2987,14 @@ void CUICharacterInfo::ShowSkillInfo( BOOL bShowInfo, CUIButtonEx *pSkillBtn, BO
 	{
 		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
 
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
+		CUIManager* pUIManager = CUIManager::getSingleton();
 
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
+		if( nInfoPosX < pUIManager->GetMinI() )
+			nInfoPosX = pUIManager->GetMinI();
+		else if( nInfoPosX + nInfoWidth > pUIManager->GetMaxI() )
+			nInfoPosX = pUIManager->GetMaxI() - nInfoWidth;
+
+		if( nInfoPosY - nInfoHeight < pUIManager->GetMinJ() )
 		{
 			nInfoPosY += BTN_SIZE;
 			m_rcSkillInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
@@ -3210,7 +3027,9 @@ void CUICharacterInfo::AddActionInfoString( CTString &strActionInfo, COLOR colAc
 		return;
 
 	// wooss 051002
-	if(g_iCountry == THAILAND){
+#if defined(G_THAI)
+	{
+		int		iPos;
 		// Get length of string
 		INDEX	nThaiLen = FindThaiLen(strActionInfo);
 		INDEX	nChatMax= (_iMaxSkillStringChar-1)*(_pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
@@ -3228,7 +3047,7 @@ void CUICharacterInfo::AddActionInfoString( CTString &strActionInfo, COLOR colAc
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = _iMaxActionStringChar;
 			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nLength; iPos++ )
+			for( iPos = 0; iPos < nLength; iPos++ )
 			{
 				if(nChatMax < FindThaiLen(strActionInfo,0,iPos))
 					break;
@@ -3257,7 +3076,9 @@ void CUICharacterInfo::AddActionInfoString( CTString &strActionInfo, COLOR colAc
 
 		}
 		
-	} else {
+	}
+#else
+	{
 		// If length of string is less than max char
 		if( nLength <= _iMaxActionStringChar )
 		{
@@ -3290,6 +3111,7 @@ void CUICharacterInfo::AddActionInfoString( CTString &strActionInfo, COLOR colAc
 			if( strTemp[0] == ' ' )
 			{
 				int	nTempLength = strTemp.Length();
+				int iPos;
 				for( iPos = 1; iPos < nTempLength; iPos++ )
 				{
 					if( strTemp[iPos] != ' ' )
@@ -3302,6 +3124,7 @@ void CUICharacterInfo::AddActionInfoString( CTString &strActionInfo, COLOR colAc
 			AddActionInfoString( strTemp, colActionInfo );
 		}
 	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -3362,7 +3185,7 @@ void CUICharacterInfo::ShowActionInfo( BOOL bShowInfo, CUIButtonEx *pActionBtn )
 	int		nActionIndex = pActionBtn->GetActionIndex();
 	BOOL	bUpdateInfo = FALSE;
 	int		nInfoWidth, nInfoHeight;
-	int		nInfoPosX, nInfoPosY;
+	int		nInfoPosX = 0, nInfoPosY = 0;
 
 	m_bShowActionInfo = TRUE;
 
@@ -3382,12 +3205,14 @@ void CUICharacterInfo::ShowActionInfo( BOOL bShowInfo, CUIButtonEx *pActionBtn )
 	{
 		nInfoPosX += BTN_SIZE / 2 - nInfoWidth / 2;
 
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX = _pUIMgr->GetMaxI() - nInfoWidth;
+		CUIManager* pUIManager = CUIManager::getSingleton();
 
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
+		if( nInfoPosX < pUIManager->GetMinI() )
+			nInfoPosX = pUIManager->GetMinI();
+		else if( nInfoPosX + nInfoWidth > pUIManager->GetMaxI() )
+			nInfoPosX = pUIManager->GetMaxI() - nInfoWidth;
+
+		if( nInfoPosY - nInfoHeight < pUIManager->GetMinJ() )
 		{
 			nInfoPosY += BTN_SIZE;
 			m_rcActionInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
@@ -3414,39 +3239,10 @@ void CUICharacterInfo::RenderSkillBtns()
 {
 	int	nX = CHARINFO_SLOT_SX, nY = CHARINFO_SLOT_SY;
 	int	iRow, iRowS, iRowE;
-	// Active skill tab
-	if( m_nCurrentSkillTab == SKILL_ACTIVE )
-	{
-		// Active skill button
-		iRowS = m_sbActiveSkillScrollBar.GetScrollPos();		
-		iRowE = iRowS + SKILL_SLOT_ROW;
-	    for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
-		{      
-			m_btnActiveSkill[iRow].SetPos( nX, nY );
-			if( m_btnActiveSkill[iRow].IsEmpty() )		
-				continue;
-			
-			m_btnActiveSkill[iRow].Render();      
-		}
-	}
-	// Passive skill tab
-	else if( m_nCurrentSkillTab == SKILL_PASSIVE )
-	{
-		// Passive skill button
-		iRowS = m_sbPassiveSkillScrollBar.GetScrollPos();		
-		iRowE = iRowS + SKILL_SLOT_ROW;
-	    for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
-		{      
-			m_btnPassiveSkill[iRow].SetPos( nX, nY );
-			if( m_btnPassiveSkill[iRow].IsEmpty() )		
-				continue;
-			
-			m_btnPassiveSkill[iRow].Render();      
-		}
-	}
+
 #ifdef ADJUST_MEMORIZE_SKILL
 	// Memorize skill tab
-	else if( m_nCurrentSkillTab == SKILL_MEMORIZE )
+	if( m_nCurrentSkillTab == SKILL_MEMORIZE )
 	{
 		// Memorize skill button
 		iRowS = m_sbMemorizeSkillScrollBar.GetScrollPos();		
@@ -3461,8 +3257,22 @@ void CUICharacterInfo::RenderSkillBtns()
 		}
 	}
 #endif
+	if( m_nCurrentSkillTab == SKILL_ITEM)
+	{
+		// Item Special Skill
+		iRowS = m_sbItemSkillSpecialScrollBar.GetScrollPos();		
+		iRowE = iRowS + SKILL_SLOT_ROW;
+		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
+		{      
+			m_btnItemSpecialSkill[iRow].SetPos( nX, nY );
+			if( m_btnItemSpecialSkill[iRow].IsEmpty() )		
+				continue;
+
+			m_btnItemSpecialSkill[iRow].Render();      
+		}
+	}
 	// Special skill tab
-	else
+	if( m_nCurrentSkillTab == SKILL_SPECIAL)
 	{
 		// Special skill button
 		iRowS = m_sbSpecialSkillScrollBar.GetScrollPos();		
@@ -3476,50 +3286,29 @@ void CUICharacterInfo::RenderSkillBtns()
 			m_btnSpecialSkill[iRow].Render();      
 		}
 	}
+	else if ( m_nCurrentSkillTab == SKILL_VOUCHER)
+	{
+		iRowS = m_sbVoucherSkillScrollBar.GetScrollPos();
+		iRowE = iRowS + SKILL_SLOT_ROW;
+		for (iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
+		{
+			m_btnVoucherSkill[iRow].SetPos(nX, nY);
+			if (m_btnVoucherSkill[iRow].IsEmpty() )
+			{
+				continue;
+			}
+
+			m_btnVoucherSkill[iRow].Render();
+		}
+	}
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
 
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_SKILL );
+	pDrawPort->FlushBtnRenderingQueue( UBET_SKILL );
 	
-	// Active skill tab
-	if( m_nCurrentSkillTab == SKILL_ACTIVE )
-	{
-		nX = CHARINFO_SLOT_INFO_CX;
-		nY = CHARINFO_SLOT_SY + 3;
 
-		iRowS = m_sbActiveSkillScrollBar.GetScrollPos();
-		iRowE = iRowS + SKILL_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
-		{     
-			if( m_btnActiveSkill[iRow].IsEmpty() )
-				continue;            		
-  
-			GetSkillDesc( m_btnActiveSkill[iRow].GetSkillIndex(),
-							m_btnActiveSkill[iRow].GetSkillLevel() );
-
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc2, m_nPosX + nX, m_nPosY + nY + 15, 0xC5C5C5FF );
-		}
-	}
-	// Passive skill tab
-	else if( m_nCurrentSkillTab == SKILL_PASSIVE )
-	{
-		nX = CHARINFO_SLOT_INFO_CX;
-		nY = CHARINFO_SLOT_SY + 3;
-
-		iRowS = m_sbPassiveSkillScrollBar.GetScrollPos();
-		iRowE = iRowS + SKILL_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
-		{     
-			if( m_btnPassiveSkill[iRow].IsEmpty() )
-				continue;            		
-  
-			GetSkillDesc( m_btnPassiveSkill[iRow].GetSkillIndex(),
-							m_btnPassiveSkill[iRow].GetSkillLevel() );
-
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc2, m_nPosX + nX, m_nPosY + nY + 15, 0xC5C5C5FF );
-		}
-	}
 #ifdef ADJUST_MEMORIZE_SKILL
 	// Memorize skill tab
 	else if( m_nCurrentSkillTab == SKILL_MEMORIZE )
@@ -3537,13 +3326,13 @@ void CUICharacterInfo::RenderSkillBtns()
 			GetSkillDesc( m_btnMemorizeSkill[iRow].GetSkillIndex(),
 							m_btnMemorizeSkill[iRow].GetSkillLevel() );
 
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc2, m_nPosX + nX, m_nPosY + nY + 15, 0xC5C5C5FF );
+			pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
+			pDrawPort->PutTextExCX( m_strShortDesc2, m_nPosX + nX, m_nPosY + nY + 15, 0xC5C5C5FF );
 		}
 	}
 #endif
 	// Special skill tab
-	else
+	if( m_nCurrentSkillTab == SKILL_SPECIAL)
 	{
 		nX = CHARINFO_SLOT_INFO_CX;
 		nY = CHARINFO_SLOT_SY + 3; // Date : 2005-01-21,   By Lee Ki-hwan
@@ -3558,13 +3347,32 @@ void CUICharacterInfo::RenderSkillBtns()
 			GetSkillDesc( m_btnSpecialSkill[iRow].GetSkillIndex(),
 							m_btnSpecialSkill[iRow].GetSkillLevel(), TRUE );
 
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc2, m_nPosX + nX, m_nPosY + nY + 15, 0xC5C5C5FF );
+			pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
+			pDrawPort->PutTextExCX( m_strShortDesc2, m_nPosX + nX, m_nPosY + nY + 15, 0xC5C5C5FF );
+		}
+	}
+	else if( m_nCurrentSkillTab == SKILL_VOUCHER)
+	{
+		nX = CHARINFO_SLOT_INFO_CX;
+		nY = CHARINFO_SLOT_SY + 3; // Date : 2005-01-21,   By Lee Ki-hwan
+
+		iRowS = m_sbVoucherSkillScrollBar.GetScrollPos();
+		iRowE = iRowS + SKILL_SLOT_ROW;
+		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
+		{     
+			if( m_btnVoucherSkill[iRow].IsEmpty() )
+				continue;            		
+  
+			GetSkillDesc( m_btnVoucherSkill[iRow].GetSkillIndex(),
+							m_btnVoucherSkill[iRow].GetSkillLevel(), TRUE );
+
+			pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
+			pDrawPort->PutTextExCX( m_strShortDesc2, m_nPosX + nX, m_nPosY + nY + 15, 0xC5C5C5FF );
 		}
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -3636,8 +3444,11 @@ void CUICharacterInfo::RenderActionBtns()
 		}
 	}
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ACTION );
+	pDrawPort->FlushBtnRenderingQueue( UBET_ACTION );
 
 	// Prepare Text
 	nX = CHARINFO_SLOT_INFO_CX;
@@ -3655,7 +3466,7 @@ void CUICharacterInfo::RenderActionBtns()
 
 			GetActionDesc( m_btnNormalAction[iRow].GetActionIndex() );
 
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
+			pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
 		}
 	}
 	// Social action button
@@ -3670,7 +3481,7 @@ void CUICharacterInfo::RenderActionBtns()
 
 			GetActionDesc( m_btnSocialAction[iRow].GetActionIndex() );
 
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
+			pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
 		}
 	}
 	// Group action button
@@ -3688,7 +3499,7 @@ void CUICharacterInfo::RenderActionBtns()
 
 				GetActionDesc( m_btnPartyAction[iRow].GetActionIndex() );
 
-				_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
+				pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
 			}
 		}
 		// Guild action tab
@@ -3703,224 +3514,14 @@ void CUICharacterInfo::RenderActionBtns()
 
 				GetActionDesc( m_btnGuildAction[iRow].GetActionIndex() );
 
-				_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
+				pDrawPort->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
 			}
 		}
 	}
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
-
-// ----------------------------------------------------------------------------
-// Name : RenderQuestBtns()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::RenderQuestBtns()
-{
-	int	iRow, iRowS, iRowE;
-	int	nX = CHARINFO_SLOT_SX, nY = CHARINFO_SLOT_SY;
-	// Quest button
-	if( m_bQuestTab )
-	{
-		iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-		iRowE = iRowS + QUEST_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39)
-		{
-			m_btnQuest[iRow].SetPos( nX, nY );		
-			if( m_btnQuest[iRow].IsEmpty() )
-				continue;
-			
-			m_btnQuest[iRow].Render();
-		}
-	}
-	// Event button
-	else
-	{
-		iRowS = m_sbEventIconScrollBar.GetScrollPos();
-		iRowE = iRowS + QUEST_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39)
-		{
-			m_btnEvent[iRow].SetPos( nX, nY );		
-			if( m_btnEvent[iRow].IsEmpty() )
-				continue;
-			
-			m_btnEvent[iRow].Render();
-		}
-	}
-
-	
-	// Render all button elements
-	if( m_bQuestTab )
-		_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_QUEST );
-	else
-		_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_EVENT );
-
-	// Set quest texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-	// Render Quest Cancel Button
-	nX = CHARINFO_SLOT_SX + 168 - 24;
-	nY = CHARINFO_SLOT_SY + BTN_SIZE - 14;
-	if( m_bQuestTab )
-	{
-		iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-		iRowE = iRowS + QUEST_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39)
-		{
-			m_btnQuestCancel[iRow].SetPos( nX, nY );
-			if( m_btnQuest[iRow].IsEmpty() )
-				continue;
-			
-			m_btnQuestCancel[iRow].Render();
-		}
-	}
-
-	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-	// Timer for highlight buttons
-	static BOOL		bHighlight = FALSE;
-	static DOUBLE	dElapsedTime = 0.0;
-	static DOUBLE	dOldTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
-	DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
-	dElapsedTime += dCurTime - dOldTime;
-	dOldTime = dCurTime;
-	if( dElapsedTime > 0.5 )
-	{
-		bHighlight = !bHighlight;
-		do
-		{
-			dElapsedTime -= 0.5;
-		}
-		while( dElapsedTime > 0.5 );
-	}
-
-	// Quest button
-	if( m_bQuestTab )
-	{
-		// Completed quest
-		if( bHighlight )
-		{
-			iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-			iRowE = iRowS + QUEST_SLOT_ROW;
-			for( iRow = iRowS; iRow < iRowE; iRow++)
-			{
-				if( m_btnQuest[iRow].IsEmpty() )
-					continue;
-
-				if( m_btnQuest[iRow].GetQuestFlag() == QUEST_FLAG_COMPLETE )
-					m_btnQuest[iRow].RenderHighlight( 0xA08080FF );
-			}
-		}
-
-		// Selected quest
-		if( m_nSelQuestID >= 0 )
-		{
-			// Set quest texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-			m_btnQuest[m_nSelQuestID].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtSelOutline.U0, m_rtSelOutline.V0,
-												m_rtSelOutline.U1, m_rtSelOutline.V1,
-												0xFFFFFFFF );
-
-			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-		}
-	}
-	// Event button
-	else
-	{
-		// Completed quest
-		//if( bHighlight )
-		//{
-			//iRowS = m_sbEventIconScrollBar.GetScrollPos();
-			//iRowE = iRowS + QUEST_SLOT_ROW;
-			//for( iRow = iRowS; iRow < iRowE; iRow++)
-			//{
-				//if( m_btnEvent[iRow].IsEmpty() )
-					//continue;
-//
-				//if( m_btnEvent[iRow].GetEventComplete() )
-					//m_btnEvent[iRow].RenderHighlight( 0xA08080FF );
-			//}
-		//}
-
-		// Selected event
-		if( m_nSelEventID >= 0 )
-		{
-			// Set quest texture
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-			m_btnEvent[m_nSelEventID].GetAbsPos( nX, nY );
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + BTN_SIZE, nY + BTN_SIZE,
-												m_rtSelOutline.U0, m_rtSelOutline.V0,
-												m_rtSelOutline.U1, m_rtSelOutline.V1,
-												0xFFFFFFFF );
-
-			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-		}
-	}
-
-	// Quest button
-	if( m_bQuestTab )
-	{
-		_UIAutoHelp->SetInfo ( AU_LEVEL_UP_QUEST2 );
-
-		nX = CHARINFO_SLOT_INFO_CX;
-		nY = CHARINFO_SLOT_SY + 4;
-
-		iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-		iRowE = iRowS + QUEST_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
-		{     
-			if( m_btnQuest[iRow].IsEmpty() )
-				continue;
-
-			GetQuestDesc( FALSE, m_btnQuest[iRow].GetQuestIndex() );
-
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
-
-			const SBYTE sbFlag = m_btnQuest[iRow].GetQuestFlag();
-			if( sbFlag == QUEST_FLAG_COMPLETE )
-			{
-				_pUIMgr->GetDrawPort()->PutTextExRX( _S( 429, "ÏôÑÎ£å" ),
-														m_nPosX + 180, m_nPosY + nY + 17, 0xFF9170FF );
-			}
-			else
-			{
-				_pUIMgr->GetDrawPort()->PutTextExRX( _S( 430, "ÏßÑÌñâÏ§ë" ),
-														m_nPosX + 180, m_nPosY + nY + 17, 0xBDA99FFF );
-			}
-		}
-	}
-	// Event button
-	else
-	{
-		nX = CHARINFO_SLOT_INFO_CX;
-		nY = CHARINFO_SLOT_SY + 10;
-
-		iRowS = m_sbEventIconScrollBar.GetScrollPos();
-		iRowE = iRowS + QUEST_SLOT_ROW;
-		for( iRow = iRowS; iRow < iRowE; iRow++, nY += 39 )
-		{     
-			if( m_btnEvent[iRow].IsEmpty() )
-				continue;
-
-			GetQuestDesc( FALSE, m_btnQuest[iRow].GetEventIndex() );
-
-			_pUIMgr->GetDrawPort()->PutTextExCX( m_strShortDesc, m_nPosX + nX, m_nPosY + nY, 0xC5C5C5FF );
-		}
-	}
-
-	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-}
-*/
 
 // ----------------------------------------------------------------------------
 // Name : RenderStatusContent()
@@ -3934,126 +3535,110 @@ void CUICharacterInfo::RenderStatusContent()
 	m_btnGPIntelligence.Render();
 	m_btnGPConstitution.Render();
 
-	// gauge
-	/*_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcHP.Left, m_nPosY + m_rcHP.Top,
-										m_nPosX + m_rcHP.Right, m_nPosY + m_rcHP.Bottom,
-										m_rtHP.U0, m_rtHP.V0, m_rtHP.U1, m_rtHP.V1,
-										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcMP.Left, m_nPosY + m_rcMP.Top,
-										m_nPosX + m_rcMP.Right, m_nPosY + m_rcMP.Bottom,
-										m_rtMP.U0, m_rtMP.V0, m_rtMP.U1, m_rtMP.V1,
-										0xFFFFFFFF );*/
-
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in character information
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 69, "Ï∫êÎ¶≠ÌÑ∞ Ï†ïÎ≥¥" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( _S( 69, "ƒ≥∏Ø≈Õ ¡§∫∏" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
 										m_nPosY + CHARINFO_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
 
 	// Profile
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 70, "ÌîÑÎ°úÌïÑ" ), m_nPosX + STATUS_SEMI_TITLE_SX,
+	pDrawPort->PutTextEx( _S( 70, "«¡∑Œ« " ), m_nPosX + STATUS_SEMI_TITLE_SX,
 										m_nPosY + STATUS_SEMI_TITLE_PROFILE_SY, 0xE1B300FF );
 
   	int	nX1 = m_nPosX + STATUS_NAME_SX;
 	int	nX2 = m_nPosX + STATUS_NAME_MAIN_SX;
 	int	nY = m_nPosY + STATUS_NAME_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 71, "Ïù¥Î¶Ñ" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _pNetwork->MyCharacterInfo.name, nX2, nY, 0xFFFFFFFF );
+	pDrawPort->PutTextEx( _S( 71, "¿Ã∏ß" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.name, nX2, nY, 0xFFFFFFFF );
 	nY += STATUS_PROFILE_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 72, "ÌÅ¥ÎûòÏä§" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( JobInfo().GetName(_pNetwork->MyCharacterInfo.job, _pNetwork->MyCharacterInfo.job2),
+	pDrawPort->PutTextEx( _S( 72, "≈¨∑°Ω∫" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextEx( CJobInfo::getSingleton()->GetName(_pNetwork->MyCharacterInfo.job, _pNetwork->MyCharacterInfo.job2),
 										nX2, nY, 0x8B8B8BFF );
 	nY += STATUS_PROFILE_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 73, "Î†àÎ≤®" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _pUIMgr->GetPlayerInfo()->GetStringOfLevel(),
+	pDrawPort->PutTextEx( _S( 73, "∑π∫ß" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextEx( pUIManager->GetPlayerInfo()->GetStringOfLevel(),
 										nX2, nY, 0xD91900FF );
 	nY = m_nPosY + STATUS_DEGREE_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 74, "Ïπ≠Ìò∏" ), nX1, nY, 0xABABABFF  );
-	//_pUIMgr->GetDrawPort()->PutTextEx( _S( 74, "Ïπ≠Ìò∏" ), nX1, nY, 0xFF9674FF  );
+	pDrawPort->PutTextEx( _S( 74, "ƒ™»£" ), nX1, nY, 0xABABABFF  );
+	//pDrawPort->PutTextEx( _S( 74, "ƒ™»£" ), nX1, nY, 0xFF9674FF  );
 	nY += STATUS_PROFILE_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 75, "Í∏∏Îìú" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextEx( _S( 75, "±ÊµÂ" ), nX1, nY, 0xABABABFF );
 	if(_pNetwork->MyCharacterInfo.lGuildIndex == -1)
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 76, "Í∏∏Îìú ÏóÜÏùå" ), nX2, nY, 0xD6A6D6FF );
+	pDrawPort->PutTextEx( _S( 76, "±ÊµÂ æ¯¿Ω" ), nX2, nY, 0xD6A6D6FF );
 	else
 	{
 		CTString strGuildName = _pNetwork->MyCharacterInfo.strGuildName;
-		_pUIMgr->GetDrawPort()->PutTextEx( strGuildName, nX2, nY, 0xD6A6D6FF );
+		pDrawPort->PutTextEx( strGuildName, nX2, nY, 0xD6A6D6FF );
 	}
 	nY += STATUS_PROFILE_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 77, "ÎèôÎßπ" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 78, "ÎèôÎßπ ÏóÜÏùå" ), nX2, nY, 0xABC98AFF );
+	pDrawPort->PutTextEx( _S( 77, "µø∏Õ" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextEx( _S( 78, "µø∏Õ æ¯¿Ω" ), nX2, nY, 0xABC98AFF );
   
 	// State
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 79, "Ï∫êÎ¶≠ÌÑ∞ ÏÉÅÌÉú" ), m_nPosX + STATUS_SEMI_TITLE_SX,
+	pDrawPort->PutTextEx( _S( 79, "ƒ≥∏Ø≈Õ ªÛ≈¬" ), m_nPosX + STATUS_SEMI_TITLE_SX,
 										m_nPosY + STATUS_SEMI_TITLE_STATE_SY , 0xE1B300FF );
 	nX1 = m_nPosX + STATUS_STR_SX;
 	nX2 = m_nPosX + STATUS_STR_MAIN_RX;
 	nY = m_nPosY + STATUS_STR_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 80, "Ìûò" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strStrength, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 80, "»˚" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strStrength, nX2, nY, 0xE18600FF );
 	nY += STATUS_STR_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 81, "ÎØºÏ≤©" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strDexterity, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 81, "πŒ√∏" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strDexterity, nX2, nY, 0xE18600FF );
 	nY += STATUS_STR_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 82, "ÏßÄÌòú" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strIntelligence, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 82, "¡ˆ«˝" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strIntelligence, nX2, nY, 0xE18600FF );
 	nY += STATUS_STR_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 83, "Ï≤¥Ïßà" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strConstitution, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 83, "√º¡˙" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strConstitution, nX2, nY, 0xE18600FF );
 
 	nY = m_nPosY + STATUS_STATPOINT_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 84, "ÏÑ±Ïû• Ìè¨Ïù∏Ìä∏" ), nX1, nY, 0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strStatPoint, nX2, nY, 0xFF5426FF );
+	pDrawPort->PutTextEx( _S( 84, "º∫¿Â ∆˜¿Œ∆Æ" ), nX1, nY, 0xFFFFFFFF );
+	pDrawPort->PutTextExRX( m_strStatPoint, nX2, nY, 0xFF5426FF );
 
 	nY = m_nPosY + STATUS_ATTACK_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 85, "Í≥µÍ≤©Î†•" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strAttack, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 85, "∞¯∞›∑¬" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strAttack, nX2, nY, 0xE18600FF );
 	nY += STATUS_ATTACK_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 86, "ÎßàÎ≤ïÍ≥µÍ≤©Î†•" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strMagicAttack, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 86, "∏∂π˝∞¯∞›∑¬" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strMagicAttack, nX2, nY, 0xE18600FF );
 	nY += STATUS_ATTACK_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 87, "Î∞©Ïñ¥Î†•" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strDefense, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 87, "πÊæÓ∑¬" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strDefense, nX2, nY, 0xE18600FF );
 	nY += STATUS_ATTACK_OFFSETY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 88, "ÎßàÎ≤ïÎ∞©Ïñ¥Î†•" ), nX1, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strMagicDefense, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 88, "∏∂π˝πÊæÓ∑¬" ), nX1, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strMagicDefense, nX2, nY, 0xE18600FF );
 
 	nX2 = m_nPosX + STATUS_EXP_MAIN_RX;
 	nY = m_nPosY + STATUS_EXP_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 89, "Í≤ΩÌóòÏπò" ), nX1, nY, 0x949494FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strExp, nX2, nY, 0xB3B6BCFF );
+	pDrawPort->PutTextEx( _S( 89, "∞Ê«Ëƒ°" ), nX1, nY, 0x949494FF );
+	pDrawPort->PutTextExRX( m_strExp, nX2, nY, 0xB3B6BCFF );
 	nY = m_nPosY + STATUS_SP_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 90, "ÏàôÎ†®ÎèÑ" ), nX1, nY, 0x949494FF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strSP, nX2, nY, 0xABA7A4FF );
-
-	/*nX1 = m_nPosX + STATUS_HP_SX;
-	nX2 = m_nPosX + STATUS_HP_CX;
-	nY = m_nPosY + STATUS_HP_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( CTString( "HP" ), nX1, nY );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _pUIMgr->GetPlayerInfo()->GetStringOfHP(), nX2, nY );
-	nY = m_nPosY + STATUS_MP_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( CTString( "MP" ), nX1, nY );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _pUIMgr->GetPlayerInfo()->GetStringOfMP(), nX2, nY );*/
+	pDrawPort->PutTextEx( _S( 90, "º˜∑√µµ" ), nX1, nY, 0x949494FF );
+	pDrawPort->PutTextExRX( m_strSP, nX2, nY, 0xABA7A4FF );
 
 	// Penalty
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 501, "Ï∫êÎ¶≠ÌÑ∞ ÏÑ±Ìñ•" ), m_nPosX + STATUS_SEMI_TITLE_SX,		
+	pDrawPort->PutTextEx( _S( 501, "ƒ≥∏Ø≈Õ º∫«‚" ), m_nPosX + STATUS_SEMI_TITLE_SX,		
 										m_nPosY + STATUS_SEMI_TITLE_PENALTY_SY , 0xE1B300FF );
 
 	nX2 = m_nPosX + STATUS_STR_MAIN_RX;
 	nY = m_nPosY + STATUS_PENALTY_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 502, "ÏÑ±Ìñ•ÏàòÏπò" ), nX1, nY, 0xABABABFF );					
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strPenalty, m_nPosX + 110, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 502, "º∫«‚ºˆƒ°" ), nX1, nY, 0xABABABFF );					
+	pDrawPort->PutTextExRX( m_strPenalty, m_nPosX + 110, nY, 0xE18600FF );
 
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 503, "ÎàÑÏ†ÅÏàòÏπò" ), nX1 + 85, nY, 0xABABABFF );
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strPenaltyAcc, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 503, "¥©¿˚ºˆƒ°" ), nX1 + 85, nY, 0xABABABFF );
+	pDrawPort->PutTextExRX( m_strPenaltyAcc, nX2, nY, 0xE18600FF );
 
 	nY = m_nPosY + STATUS_PENALTY_ACC_SY;
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 1083, "Î™ÖÏÑ±Ïπò" ), nX1, nY, 0xABABABFF );		
-	_pUIMgr->GetDrawPort()->PutTextExRX( m_strFame, nX2, nY, 0xE18600FF );
+	pDrawPort->PutTextEx( _S( 1083, "∏Ìº∫ƒ°" ), nX1, nY, 0xABABABFF );		
+	pDrawPort->PutTextExRX( m_strFame, nX2, nY, 0xE18600FF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 // ----------------------------------------------------------------------------
@@ -4062,19 +3647,22 @@ void CUICharacterInfo::RenderStatusContent()
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::RenderSkillContent()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Render tab
 #ifdef ADJUST_MEMORIZE_SKILL
 	int	nX = m_nPosX + m_rcSubTab.Left + CHARINFO_4SUBTAB_WIDTH;
 #else
 	int	nX = m_nPosX + m_rcSubTab.Left + CHARINFO_3SUBTAB_WIDTH;
 #endif
-	_pUIMgr->GetDrawPort()->AddTexture( nX, m_nPosY + m_rcTab.Top,
+	pDrawPort->AddTexture( nX, m_nPosY + m_rcTab.Top,
 										nX + 1, m_nPosY + m_rcTab.Bottom,
 										m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 										0xFFFFFFFF );
 #ifdef ADJUST_MEMORIZE_SKILL
 	nX += CHARINFO_4SUBTAB_WIDTH;
-	_pUIMgr->GetDrawPort()->AddTexture( nX, m_nPosY + m_rcTab.Top,
+	pDrawPort->AddTexture( nX, m_nPosY + m_rcTab.Top,
 										nX + 1, m_nPosY + m_rcTab.Bottom,
 										m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 										0xFFFFFFFF );
@@ -4083,46 +3671,55 @@ void CUICharacterInfo::RenderSkillContent()
 #else
 	nX += CHARINFO_3SUBTAB_WIDTH;
 #endif	
-	_pUIMgr->GetDrawPort()->AddTexture( nX, m_nPosY + m_rcTab.Top,
+	pDrawPort->AddTexture( nX, m_nPosY + m_rcTab.Top,
 										nX + 1, m_nPosY + m_rcTab.Bottom,
 										m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 										0xFFFFFFFF );
   	
 	// Scroll bars
-	if( m_nCurrentSkillTab == SKILL_ACTIVE )
-		m_sbActiveSkillScrollBar.Render();
-	else if( m_nCurrentSkillTab == SKILL_PASSIVE )
-		m_sbPassiveSkillScrollBar.Render();
+// 	if( m_nCurrentSkillTab == SKILL_ACTIVE )
+// 		m_sbActiveSkillScrollBar.Render();
+// 	else if( m_nCurrentSkillTab == SKILL_PASSIVE )
+// 		m_sbPassiveSkillScrollBar.Render();
+	if (m_nCurrentSkillTab == SKILL_ITEM)
+		m_sbItemSkillSpecialScrollBar.Render();
 #ifdef ADJUST_MEMORIZE_SKILL
 	else if( m_nCurrentSkillTab == SKILL_MEMORIZE )
 		m_sbMemorizeSkillScrollBar.Render();
 #endif
-	else
+	else if( m_nCurrentSkillTab == SKILL_SPECIAL)
 		m_sbSpecialSkillScrollBar.Render();
+	else if (m_nCurrentSkillTab == SKILL_VOUCHER)
+		m_sbVoucherSkillScrollBar.Render();
+	
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Text in skill
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 91, "Ïä§ÌÇ¨" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
-										m_nPosY + CHARINFO_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 92, "ÏùºÎ∞ò" ), m_nPosX + SKILL_ACTIVE_TAB_TEXT_CX,
+ 	pDrawPort->PutTextEx( _S( 6077, "∆Øºˆ Ω∫≈≥" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
+ 										m_nPosY + CHARINFO_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
+	pDrawPort->PutTextExCX( _S( 4288, "æ∆¿Ã≈€" ), m_nPosX + SKILL_ACTIVE_TAB_TEXT_CX,
 											m_nPosY + SKILL_TAB_TEXT_SY,
-											m_nCurrentSkillTab == SKILL_ACTIVE ? 0xE1B300FF : 0x6B6B6BFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 276, "Í∞ïÌôî" ), m_nPosX + SKILL_PASSIVE_TAB_TEXT_CX,
-											m_nPosY + SKILL_TAB_TEXT_SY,
-											m_nCurrentSkillTab == SKILL_PASSIVE ? 0xE1B300FF : 0x6B6B6BFF );
+											m_nCurrentSkillTab == SKILL_ITEM ? 0xE1B300FF : 0x6B6B6BFF );
+// 	pDrawPort->PutTextExCX( _S( 276, "∞≠»≠" ), m_nPosX + SKILL_PASSIVE_TAB_TEXT_CX,
+// 											m_nPosY + SKILL_TAB_TEXT_SY,
+// 											m_nCurrentSkillTab == SKILL_PASSIVE ? 0xE1B300FF : 0x6B6B6BFF );
 #ifdef ADJUST_MEMORIZE_SKILL
-_pUIMgr->GetDrawPort()->PutTextExCX( _S( 1084, "Í∏∞Ïñµ" ), m_nPosX + SKILL_MEMORIZE_TAB_TEXT_CX,			
+pDrawPort->PutTextExCX( _S( 1084, "±‚æÔ" ), m_nPosX + SKILL_MEMORIZE_TAB_TEXT_CX,			
 											m_nPosY + SKILL_TAB_TEXT_SY,
 											m_nCurrentSkillTab == SKILL_MEMORIZE ? 0xE1B300FF : 0x6B6B6BFF );
 #endif
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 93, "ÌäπÏàò" ), m_nPosX + SKILL_SPECIAL_TAB_TEXT_CX,
+	pDrawPort->PutTextExCX( _S( 93, "∆Øºˆ" ), m_nPosX + SKILL_SPECIAL_TAB_TEXT_CX,
 											m_nPosY + SKILL_TAB_TEXT_SY,
 											m_nCurrentSkillTab == SKILL_SPECIAL ? 0xE1B300FF : 0x6B6B6BFF );
 
+	pDrawPort->PutTextExCX( _S( 4490, "¡ı«•" ), m_nPosX + SKILL_VOUCHER_TAB_TEXT_CX,
+											m_nPosY + SKILL_TAB_TEXT_SY,
+											m_nCurrentSkillTab == SKILL_VOUCHER ? 0xE1B300FF : 0x6B6B6BFF );
+
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Render skill buttons
 	RenderSkillBtns();
@@ -4131,59 +3728,59 @@ _pUIMgr->GetDrawPort()->PutTextExCX( _S( 1084, "Í∏∞Ïñµ" ), m_nPosX + SKILL_MEMOR
 	if( m_bShowSkillInfo )
 	{
 		// Set skill texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top,
+		pDrawPort->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top,
 											m_rcSkillInfo.Left + 7, m_rcSkillInfo.Top + 7,
 											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 7, m_rcSkillInfo.Top,
+		pDrawPort->AddTexture( m_rcSkillInfo.Left + 7, m_rcSkillInfo.Top,
 											m_rcSkillInfo.Right - 7, m_rcSkillInfo.Top + 7,
 											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 7, m_rcSkillInfo.Top,
+		pDrawPort->AddTexture( m_rcSkillInfo.Right - 7, m_rcSkillInfo.Top,
 											m_rcSkillInfo.Right, m_rcSkillInfo.Top + 7,
 											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Top + 7,
 											m_rcSkillInfo.Left + 7, m_rcSkillInfo.Bottom - 7,
 											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 7, m_rcSkillInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcSkillInfo.Left + 7, m_rcSkillInfo.Top + 7,
 											m_rcSkillInfo.Right - 7, m_rcSkillInfo.Bottom - 7,
 											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 7, m_rcSkillInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcSkillInfo.Right - 7, m_rcSkillInfo.Top + 7,
 											m_rcSkillInfo.Right, m_rcSkillInfo.Bottom - 7,
 											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcSkillInfo.Left, m_rcSkillInfo.Bottom - 7,
 											m_rcSkillInfo.Left + 7, m_rcSkillInfo.Bottom,
 											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Left + 7, m_rcSkillInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcSkillInfo.Left + 7, m_rcSkillInfo.Bottom - 7,
 											m_rcSkillInfo.Right - 7, m_rcSkillInfo.Bottom,
 											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSkillInfo.Right - 7, m_rcSkillInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcSkillInfo.Right - 7, m_rcSkillInfo.Bottom - 7,
 											m_rcSkillInfo.Right, m_rcSkillInfo.Bottom,
 											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
 											0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Render skill information
 		int	nInfoX = m_rcSkillInfo.Left + 12;
 		int	nInfoY = m_rcSkillInfo.Top + 8;
 		for( int iInfo = 0; iInfo < m_nCurSkillInfoLines; iInfo++ )
 		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strSkillInfo[iInfo], nInfoX, nInfoY, m_colSkillInfo[iInfo] );
+			pDrawPort->PutTextEx( m_strSkillInfo[iInfo], nInfoX, nInfoY, m_colSkillInfo[iInfo] );
 			nInfoY += _pUIFontTexMgr->GetLineHeight();
 		}
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 }
 
@@ -4193,81 +3790,84 @@ _pUIMgr->GetDrawPort()->PutTextExCX( _S( 1084, "Í∏∞Ïñµ" ), m_nPosX + SKILL_MEMOR
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::RenderActionContent()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Scroll bar of normal action
 	m_sbNormalActionScrollBar.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render action buttons
 	RenderActionBtns();
 
 	// Text in action
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 94, "Ïï°ÏÖò" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( _S( 94, "æ◊º«" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
 									m_nPosY + CHARINFO_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 95, "ÏùºÎ∞ò" ), m_nPosX + ACTION_NORMAL_TAB_TEXT_CX,
+	pDrawPort->PutTextExCX( _S( 95, "¿œπ›" ), m_nPosX + ACTION_NORMAL_TAB_TEXT_CX,
 											m_nPosY + ACTION_TAB_TEXT_SY, 0xE1B300FF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Action information
 	if( m_bShowActionInfo )
 	{
 		// Set action texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
 											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
 											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top,
 											m_rcActionInfo.Right, m_rcActionInfo.Top + 7,
 											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
 											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
 											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Right, m_rcActionInfo.Bottom - 7,
 											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom,
 											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom,
 											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Right, m_rcActionInfo.Bottom,
 											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
 											0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Render action information
 		int	nInfoX = m_rcActionInfo.Left + 12;
 		int	nInfoY = m_rcActionInfo.Top + 8;
 		for( int iInfo = 0; iInfo < m_nCurActionInfoLines; iInfo++ )
 		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strActionInfo[iInfo], nInfoX, nInfoY, m_colActionInfo[iInfo] );
+			pDrawPort->PutTextEx( m_strActionInfo[iInfo], nInfoX, nInfoY, m_colActionInfo[iInfo] );
 			nInfoY += _pUIFontTexMgr->GetLineHeight();
 		}
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 }
 
@@ -4280,78 +3880,81 @@ void CUICharacterInfo::RenderSocialContent()
 	// Scroll bar of social action
 	m_sbSocialActionScrollBar.Render();
 
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render action buttons
 	RenderActionBtns();
 
 	// Text in action
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 94, "Ïï°ÏÖò" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( _S( 94, "æ◊º«" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
 									m_nPosY + CHARINFO_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 96, "ÏÜåÏÖú" ), m_nPosX + ACTION_SOCIAL_TAB_TEXT_CX,
+	pDrawPort->PutTextExCX( _S( 96, "º“º»" ), m_nPosX + ACTION_SOCIAL_TAB_TEXT_CX,
 											m_nPosY + ACTION_TAB_TEXT_SY, 0xE1B300FF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Action information
 	if( m_bShowActionInfo )
 	{
 		// Set action texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
 											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
 											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top,
 											m_rcActionInfo.Right, m_rcActionInfo.Top + 7,
 											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
 											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
 											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Right, m_rcActionInfo.Bottom - 7,
 											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom,
 											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom,
 											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Right, m_rcActionInfo.Bottom,
 											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
 											0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Render action information
 		int	nInfoX = m_rcActionInfo.Left + 12;
 		int	nInfoY = m_rcActionInfo.Top + 8;
 		for( int iInfo = 0; iInfo < m_nCurActionInfoLines; iInfo++ )
 		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strActionInfo[iInfo], nInfoX, nInfoY, m_colActionInfo[iInfo] );
+			pDrawPort->PutTextEx( m_strActionInfo[iInfo], nInfoX, nInfoY, m_colActionInfo[iInfo] );
 			nInfoY += _pUIFontTexMgr->GetLineHeight();
 		}
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 }
 
@@ -4361,8 +3964,11 @@ void CUICharacterInfo::RenderSocialContent()
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::RenderGroupContent()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+
 	// Render tab 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab.Left, m_nPosY + m_rcTab.Top,
+	pDrawPort->AddTexture( m_nPosX + m_rcTab.Left, m_nPosY + m_rcTab.Top,
 										m_nPosX + m_rcTab.Right, m_nPosY + m_rcTab.Bottom,
 										m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
 										0xFFFFFFFF );
@@ -4374,131 +3980,83 @@ void CUICharacterInfo::RenderGroupContent()
 		m_sbGuildActionScrollBar.Render();
 
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Render action buttons
 	RenderActionBtns();
 
 	// Text in action
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 94, "Ïï°ÏÖò" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
+	pDrawPort->PutTextEx( _S( 94, "æ◊º«" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
 									m_nPosY + CHARINFO_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 97, "ÌååÌã∞" ), m_nPosX + ACTION_PARTY_TAB_TEXT_CX,
+	pDrawPort->PutTextExCX( _S( 97, "∆ƒ∆º" ), m_nPosX + ACTION_PARTY_TAB_TEXT_CX,
 											m_nPosY + ACTION_TAB_TEXT_SY,
 											m_bPartyActionTab ? 0xE1B300FF : 0x6B6B6BFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 98, "Í∏∏Îìú" ), m_nPosX + ACTION_GUILD_TAB_TEXT_CX,
+	pDrawPort->PutTextExCX( _S( 98, "±ÊµÂ" ), m_nPosX + ACTION_GUILD_TAB_TEXT_CX,
 											m_nPosY + ACTION_TAB_TEXT_SY,
 											m_bPartyActionTab ? 0x6B6B6BFF : 0xE1B300FF );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 
 	// Action information
 	if( m_bShowActionInfo )
 	{
 		// Set action texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
 											m_rtInfoUL.U0, m_rtInfoUL.V0, m_rtInfoUL.U1, m_rtInfoUL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
 											m_rtInfoUM.U0, m_rtInfoUM.V0, m_rtInfoUM.U1, m_rtInfoUM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top,
 											m_rcActionInfo.Right, m_rcActionInfo.Top + 7,
 											m_rtInfoUR.U0, m_rtInfoUR.V0, m_rtInfoUR.U1, m_rtInfoUR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
 											m_rtInfoML.U0, m_rtInfoML.V0, m_rtInfoML.U1, m_rtInfoML.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
 											m_rtInfoMM.U0, m_rtInfoMM.V0, m_rtInfoMM.U1, m_rtInfoMM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Top + 7,
 											m_rcActionInfo.Right, m_rcActionInfo.Bottom - 7,
 											m_rtInfoMR.U0, m_rtInfoMR.V0, m_rtInfoMR.U1, m_rtInfoMR.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom,
 											m_rtInfoLL.U0, m_rtInfoLL.V0, m_rtInfoLL.U1, m_rtInfoLL.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Left + 7, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom,
 											m_rtInfoLM.U0, m_rtInfoLM.V0, m_rtInfoLM.U1, m_rtInfoLM.V1,
 											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
+		pDrawPort->AddTexture( m_rcActionInfo.Right - 7, m_rcActionInfo.Bottom - 7,
 											m_rcActionInfo.Right, m_rcActionInfo.Bottom,
 											m_rtInfoLR.U0, m_rtInfoLR.V0, m_rtInfoLR.U1, m_rtInfoLR.V1,
 											0xFFFFFFFF );
 
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 
 		// Render action information
 		int	nInfoX = m_rcActionInfo.Left + 12;
 		int	nInfoY = m_rcActionInfo.Top + 8;
 		for( int iInfo = 0; iInfo < m_nCurActionInfoLines; iInfo++ )
 		{
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strActionInfo[iInfo], nInfoX, nInfoY, m_colActionInfo[iInfo] );
+			pDrawPort->PutTextEx( m_strActionInfo[iInfo], nInfoX, nInfoY, m_colActionInfo[iInfo] );
 			nInfoY += _pUIFontTexMgr->GetLineHeight();
 		}
 
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 }
-
-// ----------------------------------------------------------------------------
-// Name : RenderQuestContent()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::RenderQuestContent()
-{
-	// Render tab 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcTab.Left, m_nPosY + m_rcTab.Top,
-										m_nPosX + m_rcTab.Right, m_nPosY + m_rcTab.Bottom,
-										m_rtTab.U0, m_rtTab.V0, m_rtTab.U1, m_rtTab.V1,
-										0xFFFFFFFF );
-  	
-	// Scroll bar of quest icon
-	m_sbQuestIconScrollBar.Render();
-
-	if( m_bQuestTab )
-	{
-		// List box of quest description
-		m_lbQuestDesc.Render();
-	}
-	else
-	{
-		// List box of event description
-		m_lbEventDesc.Render();
-	}
-
-	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-	// Text in skill
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 99, "ÌÄòÏä§Ìä∏" ), m_nPosX + CHARINFO_TITLE_TEXT_OFFSETX,
-										m_nPosY + CHARINFO_TITLE_TEXT_OFFSETY, 0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 99, "ÌÄòÏä§Ìä∏" ), m_nPosX + QUEST_TAB_TEXT_CX,
-											m_nPosY + QUEST_TAB_TEXT_SY,
-											m_bQuestTab ? 0xE1B300FF : 0x6B6B6BFF );
-	_pUIMgr->GetDrawPort()->PutTextExCX( _S( 100, "Ïù¥Î≤§Ìä∏" ), m_nPosX + EVENT_TAB_TEXT_CX,
-											m_nPosY + QUEST_TAB_TEXT_SY,
-											m_bQuestTab ? 0x6B6B6BFF : 0xE1B300FF );
-
-	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-
-	// Render quest buttons
-	RenderQuestBtns();
-}
-*/
 
 // ----------------------------------------------------------------------------
 // Name : Render()
@@ -4507,124 +4065,9 @@ void CUICharacterInfo::RenderQuestContent()
 void CUICharacterInfo::Render()
 {
 	// Set character information texture ( top )
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	CUIManager::getSingleton()->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
 
-#ifdef NEW_USER_INTERFACE
 	RenderNewCharacterInfo();
-	return;
-#endif
-  
-	// Add render regions
-	// Background
-	// Render layout type 1
-	if( m_ucipCurrentPage == UCIP_STATUS )
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
-											m_rtType1.U0, m_rtType1.V0, m_rtType1.U1, m_rtType1.V1,
-											0xFFFFFFFF );
-	} 
-	// Render layout type 2
-	else
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
-												m_rtType2.U0, m_rtType2.V0, m_rtType2.U1, m_rtType2.V1,
-												0xFFFFFFFF );
-
-/*
-		if( m_ucipCurrentPage == UCIP_QUEST )
-		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcType2Splitter.Left,
-												m_nPosY + m_rcType2Splitter.Top,
-												m_nPosX + m_rcType2Splitter.Right,
-												m_nPosY + m_rcType2Splitter.Bottom,
-												m_rtType2Splitter.U0, m_rtType2Splitter.V0,
-												m_rtType2Splitter.U1, m_rtType2Splitter.V1,
-												0xFFFFFFFF );
-		}
-		else
-*/
-		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcType2Bottom.Left,
-												m_nPosY + m_rcType2Bottom.Top,
-												m_nPosX + m_rcType2Bottom.Right,
-												m_nPosY + m_rcType2Bottom.Bottom,
-												m_rtType2Bottom.U0, m_rtType2Bottom.V0,
-												m_rtType2Bottom.U1, m_rtType2Bottom.V1,
-												0xFFFFFFFF );
-		}
-	}
-
-	// Render character information tabs
-	for( int iTab = 0; iTab < CHARINFO_TAB_TOTAL; iTab++ )
-	{
-		int	ty = (CHARINFO_TAB_HEIGHT + CHARINFO_TAB_GAP) * iTab + m_rcCharInfoTab.Top;
-
-		// Selected
-		if( m_ucipCurrentPage == iTab )
-		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcCharInfoTab.Left, m_nPosY + ty, 
-												m_nPosX + m_rcCharInfoTab.Right, m_nPosY + ty + CHARINFO_TAB_HEIGHT,
-												m_rtSelItemTypeTab[iTab].U0, m_rtSelItemTypeTab[iTab].V0,
-												m_rtSelItemTypeTab[iTab].U1, m_rtSelItemTypeTab[iTab].V1,
-												0xFFFFFFFF );
-		}
-		// Idle
-		else
-		{
-			_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcCharInfoTab.Left, m_nPosY + ty, 
-												m_nPosX + m_rcCharInfoTab.Right, m_nPosY + ty + CHARINFO_TAB_HEIGHT,
-												m_rtItemTypeTab[iTab].U0, m_rtItemTypeTab[iTab].V0,
-												m_rtItemTypeTab[iTab].U1, m_rtItemTypeTab[iTab].V1,
-												0xFFFFFFFF );
-		}
-	}
-  
-	// Close button
-	m_btnClose.Render();
-  
-	// Contents
-	if( m_ucipCurrentPage == UCIP_STATUS )
-		RenderStatusContent();
-	else if( m_ucipCurrentPage == UCIP_SKILL )
-		RenderSkillContent();
-	else if( m_ucipCurrentPage == UCIP_ACTION )    
-		RenderActionContent();
-	else if( m_ucipCurrentPage == UCIP_SOCIAL )
-		RenderSocialContent();
-	else if( m_ucipCurrentPage == UCIP_GROUP )
-		RenderGroupContent();
-/*
-	else if( m_ucipCurrentPage == UCIP_QUEST )
-		RenderQuestContent();
-*/
-
-	if( m_bShowToolTip )
-	{
-		// Set texture
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
-											m_rcToolTip.Left + 7, m_rcToolTip.Bottom,
-											m_rtToolTipL.U0, m_rtToolTipL.V0, m_rtToolTipL.U1, m_rtToolTipL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
-											m_rcToolTip.Right - 7, m_rcToolTip.Bottom,
-											m_rtToolTipM.U0, m_rtToolTipM.V0, m_rtToolTipM.U1, m_rtToolTipM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
-											m_rcToolTip.Right, m_rcToolTip.Bottom,
-											m_rtToolTipR.U0, m_rtToolTipR.V0, m_rtToolTipR.U1, m_rtToolTipR.V1,
-											0xFFFFFFFF );
-
-		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-		// Text in tool tip
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 3 );
-
-		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
-	}
 }
 
 // ----------------------------------------------------------------------------
@@ -4655,45 +4098,45 @@ void CUICharacterInfo::ShowToolTip( BOOL bShow, int nToolTipID )
 		case UCIP_STATUS:
 			{
 				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s%s", _S( 101, "Ïä§ÌÖåÏù¥ÌÑ∞Ïä§" ), "(T,Alt+T)" );
+					m_strToolTip.PrintF( "%s%s", _S( 101, "Ω∫≈◊¿Ã≈ÕΩ∫" ), "(T,Alt+T)" );
 				else
-					m_strToolTip.PrintF( "%s%s", _S( 101, "Ïä§ÌÖåÏù¥ÌÑ∞Ïä§" ), "(Alt+T)" );
+					m_strToolTip.PrintF( "%s%s", _S( 101, "Ω∫≈◊¿Ã≈ÕΩ∫" ), "(Alt+T)" );
 			}
 			break;
 
 		case UCIP_SKILL:
 			{
 				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s%s", _S( 102, "Ïä§ÌÇ¨" ), "(S,Alt+S)" );
+					m_strToolTip.PrintF( "%s%s", _S( 6077, "∆Øºˆ Ω∫≈≥" ) );
 				else
-					m_strToolTip.PrintF( "%s%s", _S( 102, "Ïä§ÌÇ¨" ), "(Alt+S)" );
+					m_strToolTip.PrintF( "%s%s", _S( 6077, "∆Øºˆ Ω∫≈≥" ) );
 			}
 			break;
 
 		case UCIP_ACTION:
 			{
 				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s%s", _S( 103, "Ïï°ÏÖò" ), "(A,Alt+A)" );
+					m_strToolTip.PrintF( "%s%s", _S( 103, "æ◊º«" ), "(J,Alt+J)" );
 				else
-					m_strToolTip.PrintF( "%s%s", _S( 103, "Ïï°ÏÖò" ), "(Alt+A)" );
+					m_strToolTip.PrintF( "%s%s", _S( 103, "æ◊º«" ), "(Alt+J)" );
 			}
 			break;
 
 		case UCIP_SOCIAL:
 			{
 				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s%s", _S( 104, "ÏÜåÏÖú" ), "(C,Alt+C)" );
+					m_strToolTip.PrintF( "%s%s", _S( 104, "º“º»" ), "(C,Alt+C)" );
 				else
-					m_strToolTip.PrintF( "%s%s", _S( 104, "ÏÜåÏÖú" ), "(Alt+C)" );
+					m_strToolTip.PrintF( "%s%s", _S( 104, "º“º»" ), "(Alt+C)" );
 			}
 			break;
 
 		case UCIP_GROUP:
 			{
 				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s%s", _S( 105, "Í∑∏Î£π" ), "(G,Alt+G)" );
+					m_strToolTip.PrintF( "%s%s", _S( 105, "±◊∑Ï" ), "(G,Alt+G)" );
 				else
-					m_strToolTip.PrintF( "%s%s", _S( 105, "Í∑∏Î£π" ), "(Alt+G)" );
+					m_strToolTip.PrintF( "%s%s", _S( 105, "±◊∑Ï" ), "(Alt+G)" );
 			}
 			break;
 
@@ -4701,27 +4144,30 @@ void CUICharacterInfo::ShowToolTip( BOOL bShow, int nToolTipID )
 		case UCIP_QUEST:
 			{
 				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s%s", _S( 106, "ÌÄòÏä§Ìä∏" ), "(Q,Alt+Q)" );
+					m_strToolTip.PrintF( "%s%s", _S( 106, "ƒ˘Ω∫∆Æ" ), "(Q,Alt+Q)" );
 				else
-					m_strToolTip.PrintF( "%s%s", _S( 106, "ÌÄòÏä§Ìä∏" ), "(Alt+Q)" );
+					m_strToolTip.PrintF( "%s%s", _S( 106, "ƒ˘Ω∫∆Æ" ), "(Alt+Q)" );
 			}
 			break;
 */
 		}
 		int	nInfoWidth;
-		if(g_iCountry == THAILAND) {
+#if defined(G_THAI)
+		{
 			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);				
-		} else
+		} 
+#else
 		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strToolTip.Length() *
 						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 		int	nInfoHeight = 22;
 
 		nInfoX = m_nPosX + m_rcCharInfoTab.Right + 2;
 		nInfoY = m_nPosY + m_rcCharInfoTab.Top +
 					( CHARINFO_TAB_HEIGHT - _pUIFontTexMgr->GetLineHeight() ) / 2;
 
-		if( nInfoX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoX = _pUIMgr->GetMaxI() - nInfoWidth;
+		if( nInfoX + nInfoWidth > CUIManager::getSingleton()->GetMaxI() )
+			nInfoX = CUIManager::getSingleton()->GetMaxI() - nInfoWidth;
 
 		m_rcToolTip.Left = nInfoX;
 		m_rcToolTip.Top = nInfoY + ( CHARINFO_TAB_HEIGHT + CHARINFO_TAB_GAP ) * nToolTipID;
@@ -4736,24 +4182,33 @@ void CUICharacterInfo::ShowToolTip( BOOL bShow, int nToolTipID )
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::ToggleVisible()
 {
-	if( _pUIMgr->GetBilling()->IsLock() ) return;
-#ifdef NEW_USER_INTERFACE
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->GetBilling()->IsLock() ) return;
+
+	if( IsVisible() )
+	{
+		g_iXPosInCharInfo = GetPosX();
+		g_iYPosInCharInfo = GetPosY();
+	}
+	else
+	{
+		SetPos( g_iXPosInCharInfo, g_iYPosInCharInfo );
+	}
+
 	if( IsVisible() )
 	{
 		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		// [091223 sora] √¢¿ª ¥›¿ª∂ß ≈« º≥∏Ì«•Ω√ √ ±‚»≠
+		if(!bVisible)
+			m_bCharDescVisible = FALSE;
 	}
 	else
 	{
 		SetCurrentPageNewCharacterInfo(PAGE_CHARINFO_NEW_STATUS);
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 	}
-#else
-	BOOL	bVisible = !IsVisible();
-	_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
-	//m_bLockRequestQuest = FALSE;
-#endif
-
 }
 
 // ----------------------------------------------------------------------------
@@ -4762,68 +4217,79 @@ void CUICharacterInfo::ToggleVisible()
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::ToggleVisibleStatus()
 {
- 	if( _pUIMgr->GetBilling()->IsLock() ) return;
-#ifdef NEW_USER_INTERFACE
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+ 	if( pUIManager->GetBilling()->IsLock() ) return;
+
+	if( IsVisible() )
+	{
+		g_iXPosInCharInfo = GetPosX();
+		g_iYPosInCharInfo = GetPosY();
+	}
+	else
+	{
+		SetPos( g_iXPosInCharInfo, g_iYPosInCharInfo );
+	}
+
 	if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_STATUS )
 	{
 		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		
+		// [091223 sora] √¢¿ª ¥›¿ª∂ß ≈« º≥∏Ì«•Ω√ √ ±‚»≠
+		if(!bVisible)
+			m_bCharDescVisible = FALSE;
 	}
 	else
 	{
+		// bug Fix. [12/23/2009 rumist]
+		m_nSkillDescRow = -1;
 		SetCurrentPageNewCharacterInfo(PAGE_CHARINFO_NEW_STATUS);
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 	}
-#else
-	if( m_ucipCurrentPage == UCIP_STATUS )
-	{
-		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
-	}
-	else
-	{
-		m_ucipCurrentPage = UCIP_STATUS;
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-	}
-#endif
-
+	
+	// [091223 sora] √¢¥›±‚øÕ ¿¸»ØΩ√ «•Ω√µ«∞Ì ¿’¥¬ πˆ∆∞¿ßƒ°∞™ √ ±‚»≠
+	m_nSkillDescRow = -1;
 }
 
 // ----------------------------------------------------------------------------
 // Name : ToggleVisibleSkill()
 // Desc :
 // ----------------------------------------------------------------------------
+// Ω∫≈≥ ¡§∫∏ ∫∏±‚¡ﬂ ¥‹√‡≈∞∑Œ ¿Œ«— »≠∏È ¿¸»ØΩ√ ¿Ã¿¸ Ω∫≈≥ ¡§∫∏√¢¿Ã ∞Ëº” ∫∏¿”. FIX  [12/23/2009 rumist]
 void CUICharacterInfo::ToggleVisibleSkill()
 {
-	if( _pUIMgr->GetBilling()->IsLock() ) return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-#ifdef NEW_USER_INTERFACE
+	if( pUIManager->GetBilling()->IsLock() ) return;
+
+	if( IsVisible() )
+	{
+		g_iXPosInCharInfo = GetPosX();
+		g_iYPosInCharInfo = GetPosY();
+	}
+	else
+	{
+		SetPos( g_iXPosInCharInfo, g_iYPosInCharInfo );
+	}
+
 	if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_SKILL )
 	{
 		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		// [091223 sora] √¢¿ª ¥›¿ª∂ß ≈« º≥∏Ì«•Ω√ √ ±‚»≠
+		if(!bVisible)
+			m_bCharDescVisible = FALSE;
 	}
 	else
 	{
+		m_nSkillDescRow = -1;
 		m_ucipCurrentPage = PAGE_CHARINFO_NEW_SKILL;
-		m_strTitleName.PrintF("%s", _S(91, "Ïä§ÌÇ¨") );
+		m_strTitleName.PrintF("%s", _S(4228, "∆Øºˆ Ω∫≈≥") );
 		m_nSkillActionUpperTab[0] = 0;
 		SetCurrentSkillInfo(m_ucipCurrentPage, m_nSkillActionUpperTab[0]);	
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 	}
-#else
-	if( m_ucipCurrentPage == UCIP_SKILL )
-	{
-		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
-	}
-	else
-	{
-		m_ucipCurrentPage = UCIP_SKILL;
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-	}
-#endif
-
 }
 
 // ----------------------------------------------------------------------------
@@ -4832,34 +4298,37 @@ void CUICharacterInfo::ToggleVisibleSkill()
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::ToggleVisibleAction()
 {
-	if( _pUIMgr->GetBilling()->IsLock() ) return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-#ifdef NEW_USER_INTERFACE
+	if( pUIManager->GetBilling()->IsLock() ) return;
+
+	if( IsVisible() )
+	{
+		g_iXPosInCharInfo = GetPosX();
+		g_iYPosInCharInfo = GetPosY();
+	}
+	else
+	{
+		SetPos( g_iXPosInCharInfo, g_iYPosInCharInfo );
+	}
+
 	if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_ACTION_SOCIAL && m_nSkillActionUpperTab[1] == 0)
 	{
 		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		// [091223 sora] √¢¿ª ¥›¿ª∂ß ≈« º≥∏Ì«•Ω√ √ ±‚»≠
+		if(!bVisible)
+			m_bCharDescVisible = FALSE;
 	}
 	else
 	{
+		m_nSkillDescRow = -1;
 		m_ucipCurrentPage = PAGE_CHARINFO_NEW_ACTION_SOCIAL;
-		m_strTitleName.PrintF( "%s,%s",_S(94, "Ïï°ÏÖò") ,_S(96, "ÏÜåÏÖú") );
+		m_strTitleName.PrintF( "%s,%s",_S(94, "æ◊º«") ,_S(96, "º“º»") );
 		m_nSkillActionUpperTab[1] = 0;
 		SetCurrentSkillInfo(m_ucipCurrentPage, m_nSkillActionUpperTab[1]);
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-	}	
-#else
-	if( m_ucipCurrentPage == UCIP_ACTION )
-	{
-		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 	}
-	else
-	{
-		m_ucipCurrentPage = UCIP_ACTION;
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-	}
-#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -4868,35 +4337,37 @@ void CUICharacterInfo::ToggleVisibleAction()
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::ToggleVisibleSocial()
 {
-	if( _pUIMgr->GetBilling()->IsLock() ) return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-#ifdef NEW_USER_INTERFACE
+	if( pUIManager->GetBilling()->IsLock() ) return;
+
+	if( IsVisible() )
+	{
+		g_iXPosInCharInfo = GetPosX();
+		g_iYPosInCharInfo = GetPosY();
+	}
+	else
+	{
+		SetPos( g_iXPosInCharInfo, g_iYPosInCharInfo );
+	}
+
 	if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_ACTION_SOCIAL && m_nSkillActionUpperTab[1] == 1)
 	{
 		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		// [091223 sora] √¢¿ª ¥›¿ª∂ß ≈« º≥∏Ì«•Ω√ √ ±‚»≠
+		if(!bVisible)
+			m_bCharDescVisible = FALSE;
 	}
 	else
 	{
+		m_nSkillDescRow = -1;
 		m_ucipCurrentPage = PAGE_CHARINFO_NEW_ACTION_SOCIAL;
-		m_strTitleName.PrintF( "%s,%s",_S(94, "Ïï°ÏÖò") ,_S(96, "ÏÜåÏÖú") );
+		m_strTitleName.PrintF( "%s,%s",_S(94, "æ◊º«") ,_S(96, "º“º»") );
 		m_nSkillActionUpperTab[1] = 1;
 		SetCurrentSkillInfo(m_ucipCurrentPage, m_nSkillActionUpperTab[1]);	
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 	}
-#else
-	if( m_ucipCurrentPage == UCIP_SOCIAL )
-	{
-		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
-	}
-	else
-	{
-		m_ucipCurrentPage = UCIP_SOCIAL;
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-	}
-#endif
-
 }
 
 // ----------------------------------------------------------------------------
@@ -4905,55 +4376,39 @@ void CUICharacterInfo::ToggleVisibleSocial()
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::ToggleVisibleGroup()
 {
-	if( _pUIMgr->GetBilling()->IsLock() ) return;
-#ifdef NEW_USER_INTERFACE
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->GetBilling()->IsLock() ) return;
+
+	if( IsVisible() )
+	{
+		g_iXPosInCharInfo = GetPosX();
+		g_iYPosInCharInfo = GetPosY();
+	}
+	else
+	{
+		SetPos( g_iXPosInCharInfo, g_iYPosInCharInfo );
+	}
+
 	if( m_ucipCurrentPage == PAGE_CHARINFO_NEW_GUILD_PARTY && m_nSkillActionUpperTab[2] == 0)
 	{
 		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, bVisible );
+		// [091223 sora] √¢¿ª ¥›¿ª∂ß ≈« º≥∏Ì«•Ω√ √ ±‚»≠
+		if(!bVisible)
+			m_bCharDescVisible = FALSE;
 	}
 	else
 	{
+		m_nSkillDescRow = -1;
 		m_ucipCurrentPage = PAGE_CHARINFO_NEW_GUILD_PARTY;
-		m_strTitleName.PrintF("%s,%s",_S(97, "ÌååÌã∞") ,_S(98, "Í∏∏Îìú") );
+
+		m_strTitleName.PrintF("%s,%s",_S(97, "∆ƒ∆º") ,_S(98, "±ÊµÂ") );
 		m_nSkillActionUpperTab[2] = 0;
 		SetCurrentSkillInfo(m_ucipCurrentPage, m_nSkillActionUpperTab[2]);
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-	}	
-#else
-	if( m_ucipCurrentPage == UCIP_GROUP )
-	{
-		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
-	}
-	else
-	{
-		m_ucipCurrentPage = UCIP_GROUP;
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-	}
-#endif
-}
-
-// ----------------------------------------------------------------------------
-// Name : ToggleVisibleQuest()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::ToggleVisibleQuest()
-{	
-	if( _pUIMgr->GetBilling()->IsLock() ) return;
-	if( m_ucipCurrentPage == UCIP_QUEST )
-	{
-		BOOL	bVisible = !IsVisible();
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, bVisible );
-	}
-	else
-	{
-		m_ucipCurrentPage = UCIP_QUEST;
-		_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
+		pUIManager->RearrangeOrder( UI_CHARACTERINFO, TRUE );
 	}
 }
-*/
 
 // ----------------------------------------------------------------------------
 // Name : GetSkillLevel()
@@ -4961,13 +4416,15 @@ void CUICharacterInfo::ToggleVisibleQuest()
 // ----------------------------------------------------------------------------
 SBYTE CUICharacterInfo::GetSkillLevel( int nIndex, BOOL bSpecial )
 {
+	int		nSkill;
+
 	if( !bSpecial )
 	{
-		//Î¨ºÎøåÎ¶¨Í∏∞ Ïä§ÌÇ¨Ïùº Í≤ΩÏö∞...
+		//π∞ª—∏Æ±‚ Ω∫≈≥¿œ ∞ÊøÏ...
 		if( nIndex ==436 )
 			return 1;
-
-		for( int nSkill = 0; nSkill < SKILL_ACTIVE_SLOT_ROW_TOTAL; nSkill++ )
+		
+		for( nSkill = 0; nSkill < SKILL_ACTIVE_SLOT_ROW_TOTAL; nSkill++ )
 		{
 			if( m_btnActiveSkill[nSkill].GetSkillIndex() == nIndex )
 				return m_btnActiveSkill[nSkill].GetSkillLevel();
@@ -4978,18 +4435,24 @@ SBYTE CUICharacterInfo::GetSkillLevel( int nIndex, BOOL bSpecial )
 			if( m_btnPassiveSkill[nSkill].GetSkillIndex() == nIndex )
 				return m_btnPassiveSkill[nSkill].GetSkillLevel();
 		}
+
+		for( nSkill = 0; nSkill < SKILL_SPECIAL_SLOT_ROW_TOTAL; nSkill++ )
+		{
+			if( m_btnItemSpecialSkill[nSkill].GetSkillIndex() == nIndex )
+				return m_btnItemSpecialSkill[nSkill].GetSkillLevel();
+		}
+
 #ifdef ADJUST_MEMORIZE_SKILL
 		for( nSkill = 0; nSkill < SKILL_MEMORIZE_SLOT_ROW_TOTAL; nSkill++ )
 		{
 			if( m_btnMemorizeSkill[nSkill].GetSkillIndex() == nIndex )
 				return m_btnMemorizeSkill[nSkill].GetSkillLevel();
 		}
-
 #endif
 	}
 	else
 	{
-		for( int nSkill = 0; nSkill < SKILL_SPECIAL_SLOT_ROW_TOTAL; nSkill++ )
+		for( nSkill = 0; nSkill < SKILL_SPECIAL_SLOT_ROW_TOTAL; nSkill++ )
 		{
 			if( m_btnSpecialSkill[nSkill].GetSkillIndex() == nIndex )
 				return m_btnSpecialSkill[nSkill].GetSkillLevel();
@@ -5005,1553 +4468,7 @@ SBYTE CUICharacterInfo::GetSkillLevel( int nIndex, BOOL bSpecial )
 // ----------------------------------------------------------------------------
 WMSG_RESULT CUICharacterInfo::MouseMessage( MSG *pMsg )
 {
-#ifdef NEW_USER_INTERFACE
 	return MouseMessageNewCharacterInfo(pMsg);
-#endif
-
-	WMSG_RESULT	wmsgResult;
-
-	// Title bar
-	static BOOL bTitleBarClick = FALSE;
-
-	// Extended button clicked
-	static BOOL	bLButtonDownInBtn = FALSE;
-
-	// Mouse point
-	static int	nOldX, nOldY;
-	int	nX = LOWORD( pMsg->lParam );
-	int	nY = HIWORD( pMsg->lParam );
-
-	// Mouse message
-	switch( pMsg->message )
-	{
-	case WM_MOUSEMOVE:
-		{
-			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
-
-			int	ndX = nX - nOldX;
-			int	ndY = nY - nOldY;
-
-			// Move inventory
-			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
-			{
-				nOldX = nX;	nOldY = nY;
-
-				Move( ndX, ndY );
-
-				return WMSG_SUCCESS;
-			}
-			// Close button
-			else if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
-				return WMSG_SUCCESS;
-			// Tab region
-			else if( IsInsideRect( nX, nY, m_rcCharInfoTab ) )
-			{
-				int	nToolTipID = ( nY - m_nPosY - m_rcCharInfoTab.Top ) /
-									( CHARINFO_TAB_HEIGHT +  CHARINFO_TAB_GAP );
-				ShowToolTip( TRUE, nToolTipID );
-				ShowSkillInfo( FALSE );
-				ShowActionInfo( FALSE );
-
-				return WMSG_SUCCESS;
-			}
-			// Status
-			else if( m_ucipCurrentPage == UCIP_STATUS )
-			{
-				// Strength growth point button
-				if( m_btnGPStrength.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-				// Dexterity growth point button
-				else if( m_btnGPDexterity.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-				// Intelligence growth point button
-				else if( m_btnGPIntelligence.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-				// Constitution growth point button
-				else if( m_btnGPConstitution.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-			}
-			// Skill
-			else if( m_ucipCurrentPage == UCIP_SKILL )
-			{
-				// Active skill tab
-				if( m_nCurrentSkillTab == SKILL_ACTIVE )
-				{
-					// Hold skill button
-					if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInBtn && ( pMsg->wParam & MK_LBUTTON ) &&
-						( ndX != 0 || ndY != 0 ) )
-					{
-						// Active skill
-						if( m_nSelActiveSkillID >= 0 )
-						{
-							int	nSelRow = m_nSelActiveSkillID;						
-
-							_pUIMgr->SetHoldBtn( m_btnActiveSkill[nSelRow]);
-							int	nOffset = BTN_SIZE / 2;
-							_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-							m_btnActiveSkill[nSelRow].SetBtnState( UBES_IDLE );
-						}
-
-						bLButtonDownInBtn = FALSE;
-					}
-
-					// Scroll bar of active skill
-					if( m_sbActiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Active skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRow;
-						int	iRowS = m_sbActiveSkillScrollBar.GetScrollPos();
-						int	iRowE = iRowS + SKILL_SLOT_ROW;
-						int	nWhichRow = -1;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnActiveSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								nWhichRow = iRow;
-							}
-						}
-
-						// Show tool tip
-						if( nWhichRow != -1 )
-							ShowSkillInfo( TRUE, &(m_btnActiveSkill[nWhichRow]) );
-						else
-							ShowSkillInfo( FALSE );
-
-						ShowToolTip( FALSE );
-
-						return WMSG_SUCCESS;
-					}
-
-					// Hide tool tip
-					ShowToolTip( FALSE );
-					ShowSkillInfo( FALSE );
-				}
-				// Passive skill tab
-				else if( m_nCurrentSkillTab == SKILL_PASSIVE )
-				{
-					// Scroll bar of passive skill
-					if( m_sbPassiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Passive skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRow;
-						int	iRowS = m_sbPassiveSkillScrollBar.GetScrollPos();
-						int	iRowE = iRowS + SKILL_SLOT_ROW;
-						int	nWhichRow = -1;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnPassiveSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								nWhichRow = iRow;
-							}
-						}
-
-						// Show tool tip
-						if( nWhichRow != -1 )
-							ShowSkillInfo( TRUE, &(m_btnPassiveSkill[nWhichRow]) );
-						else
-							ShowSkillInfo( FALSE );
-
-						ShowToolTip( FALSE );
-
-						return WMSG_SUCCESS;
-					}
-
-					// Hide tool tip
-					ShowToolTip( FALSE );
-					ShowSkillInfo( FALSE );
-				}
-#ifdef	ADJUST_MEMORIZE_SKILL
-				// Memorize skill tab
-				else if( m_nCurrentSkillTab == SKILL_MEMORIZE )
-				{
-					// Scroll bar of passive skill
-					if( m_sbMemorizeSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Memorize skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRow;
-						int	iRowS = m_sbMemorizeSkillScrollBar.GetScrollPos();
-						int	iRowE = iRowS + SKILL_SLOT_ROW;
-						int	nWhichRow = -1;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnMemorizeSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								nWhichRow = iRow;
-							}
-						}
-
-						// Show tool tip
-						if( nWhichRow != -1 )
-							ShowSkillInfo( TRUE, &(m_btnMemorizeSkill[nWhichRow]) );
-						else
-							ShowSkillInfo( FALSE );
-
-						ShowToolTip( FALSE );
-
-						return WMSG_SUCCESS;
-					}
-
-					// Hide tool tip
-					ShowToolTip( FALSE );
-					ShowSkillInfo( FALSE );
-				}
-#endif
-				// Special skill tab
-				else
-				{
-					// Scroll bar of special skill
-					if( m_sbSpecialSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Special skill slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRow;
-						int	iRowS = m_sbSpecialSkillScrollBar.GetScrollPos();
-						int	iRowE = iRowS + SKILL_SLOT_ROW;
-						int	nWhichRow = -1;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnSpecialSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								nWhichRow = iRow;
-							}
-						}
-
-						// Show tool tip
-						if( nWhichRow != -1 )
-							ShowSkillInfo( TRUE, &(m_btnSpecialSkill[nWhichRow]), TRUE );
-						else
-							ShowSkillInfo( FALSE );
-
-						ShowToolTip( FALSE );
-
-						return WMSG_SUCCESS;
-					}
-
-					// Hide tool tip
-					ShowToolTip( FALSE );
-					ShowSkillInfo( FALSE );
-				}
-			}
-			// Normal action
-			else if( m_ucipCurrentPage == UCIP_ACTION )
-			{
-				// Hold action button
-				if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInBtn && ( pMsg->wParam & MK_LBUTTON ) &&
-					( ndX != 0 || ndY != 0 ) )
-				{
-					// Normal action
-					if( m_nSelNormalActionID >= 0 )
-					{
-						int	nSelRow = m_nSelNormalActionID;						
-
-						_pUIMgr->SetHoldBtn( m_btnNormalAction[nSelRow]);
-						int	nOffset = BTN_SIZE / 2;
-						_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-						m_btnNormalAction[nSelRow].SetBtnState( UBES_IDLE );
-					}
-
-					bLButtonDownInBtn = FALSE;
-				}
-
-				// Scroll bar of normal action
-				if( m_sbNormalActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-				// Action slot
-				else if( IsInsideRect( nX, nY, m_rcIcons ) )
-				{
-					int	iRow;
-					int	iRowS = m_sbNormalActionScrollBar.GetScrollPos();
-					int	iRowE = iRowS + ACTION_SLOT_ROW;
-					int	nWhichRow = -1;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
-					{
-						if( m_btnNormalAction[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							nWhichRow = iRow;
-						}
-						
-					}
-					
-					// Show tool tip
-					if( nWhichRow != -1 )
-						ShowActionInfo( TRUE, &(m_btnNormalAction[nWhichRow]) );
-					else
-						ShowActionInfo( FALSE );
-
-					ShowToolTip( FALSE );
-
-					return WMSG_SUCCESS;
-				}
-
-				// Hide tool tip
-				ShowToolTip( FALSE );
-				ShowActionInfo( FALSE );
-			}
-			// Social action
-			else if( m_ucipCurrentPage == UCIP_SOCIAL )
-			{
-				// Hold action button
-				if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInBtn && ( pMsg->wParam & MK_LBUTTON ) &&
-					( ndX != 0 || ndY != 0 ) )
-				{
-					// Social action
-					if( m_nSelSocialActionID >= 0 )
-					{
-						int	nSelRow = m_nSelSocialActionID;						
-
-						_pUIMgr->SetHoldBtn( m_btnSocialAction[nSelRow]);
-						int	nOffset = BTN_SIZE / 2;
-						_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-						m_btnSocialAction[nSelRow].SetBtnState( UBES_IDLE );
-					}
-
-					bLButtonDownInBtn = FALSE;
-				}
-
-				// Scroll bar of social action
-				if( ( wmsgResult = m_sbSocialActionScrollBar.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					return WMSG_SUCCESS;
-				// Action slot
-				else if( IsInsideRect( nX, nY, m_rcIcons ) )
-				{
-					int	iRow;
-					int	iRowS = m_sbSocialActionScrollBar.GetScrollPos();
-					int	iRowE = iRowS + ACTION_SLOT_ROW;
-					int	nWhichRow = -1;
-					for( iRow = iRowS; iRow < iRowE; iRow++ )
-					{
-						
-						if( m_btnSocialAction[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							nWhichRow = iRow;
-						}
-						
-					}
-					
-					// Show tool tip
-					if( nWhichRow != -1 )
-						ShowActionInfo( TRUE, &(m_btnSocialAction[nWhichRow]) );
-					else
-						ShowActionInfo( FALSE );
-
-					ShowToolTip( FALSE );
-
-					return WMSG_SUCCESS;
-				}
-
-				// Hide tool tip
-				ShowToolTip( FALSE );
-				ShowActionInfo( FALSE );
-			}
-			// Group action
-			else if( m_ucipCurrentPage == UCIP_GROUP )
-			{
-				// Party action
-				if( m_bPartyActionTab )
-				{
-					// Hold action button
-					if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInBtn && ( pMsg->wParam & MK_LBUTTON ) &&
-						( ndX != 0 || ndY != 0 ) )
-					{
-						// Party action
-						if( m_nSelPartyActionID >= 0 )
-						{
-							int	nSelRow = m_nSelPartyActionID;						
-
-							_pUIMgr->SetHoldBtn( m_btnPartyAction[nSelRow]);
-							int	nOffset = BTN_SIZE / 2;
-							_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-							m_btnPartyAction[nSelRow].SetBtnState( UBES_IDLE );
-						}
-
-						bLButtonDownInBtn = FALSE;
-					}
-
-					// Scroll bar of party action
-					if( m_sbPartyActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Action slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRow;
-						int	iRowS = m_sbPartyActionScrollBar.GetScrollPos();
-						int	iRowE = iRowS + ACTION_SLOT_ROW;
-						int	nWhichRow = -1;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							
-							if( m_btnPartyAction[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								nWhichRow = iRow;
-							}
-							
-						}
-						
-						// Show tool tip
-						if( nWhichRow != -1 )
-							ShowActionInfo( TRUE, &(m_btnPartyAction[nWhichRow]) );
-						else
-							ShowActionInfo( FALSE );
-
-						ShowToolTip( FALSE );
-
-						return WMSG_SUCCESS;
-					}
-
-					// Hide tool tip
-					ShowToolTip( FALSE );
-					ShowActionInfo( FALSE );
-				}
-				// Guild action
-				else
-				{
-					// Hold action button
-					if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInBtn && ( pMsg->wParam & MK_LBUTTON ) &&
-						( ndX != 0 || ndY != 0 ) )
-					{
-						// Guild action
-						if( m_nSelGuildActionID >= 0 )
-						{
-							int	nSelRow = m_nSelGuildActionID;						
-
-							_pUIMgr->SetHoldBtn( m_btnGuildAction[nSelRow]);
-							int	nOffset = BTN_SIZE / 2;
-							_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-							m_btnGuildAction[nSelRow].SetBtnState( UBES_IDLE );
-						}
-
-						bLButtonDownInBtn = FALSE;
-					}
-
-					// Scroll bar of guild action
-					if( m_sbGuildActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Action slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRow;
-						int	iRowS = m_sbGuildActionScrollBar.GetScrollPos();
-						int	iRowE = iRowS + ACTION_SLOT_ROW;
-						int	nWhichRow = -1;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( m_btnGuildAction[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								nWhichRow = iRow;
-							}
-						}
-						
-						// Show tool tip
-						if( nWhichRow != -1 )
-							ShowActionInfo( TRUE, &(m_btnGuildAction[nWhichRow]) );
-						else
-							ShowActionInfo( FALSE );
-
-						ShowToolTip( FALSE );
-
-						return WMSG_SUCCESS;
-					}
-
-					// Hide tool tip
-					ShowToolTip( FALSE );
-					ShowActionInfo( FALSE );
-				}
-			}
-			// Quest
-/*
-			else if( m_ucipCurrentPage == UCIP_QUEST )
-			{
-				// Quest tab
-				if( m_bQuestTab )
-				{
-					// Reset state of selected button
-					if( bLButtonDownInBtn && m_nSelQuestID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
-					{
-						m_btnQuest[m_nSelQuestID].SetBtnState( UBES_IDLE );
-						bLButtonDownInBtn = FALSE;
-					}
-					// Scroll bar of quest icon
-					else if( m_sbQuestIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// List box of quest desc
-					else if( m_lbQuestDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Cancel button of selected quest
-					else
-					{
-						int	iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-						int	iRowE = iRowS + QUEST_SLOT_ROW;
-						for( int iRow = iRowS; iRow < iRowE; iRow++ )
-						{	
-							if( m_btnQuestCancel[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								return WMSG_SUCCESS;
-						}
-					}
-				}
-				// Event tab
-				else
-				{
-					// Reset state of selected button
-					if( bLButtonDownInBtn && m_nSelEventID >= 0 && ( pMsg->wParam & MK_LBUTTON ) )
-					{
-						m_btnEvent[m_nSelEventID].SetBtnState( UBES_IDLE );
-						bLButtonDownInBtn = FALSE;
-					}
-					// Scroll bar of event icon
-					else if( m_sbEventIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// List box of event desc
-					else if( m_lbEventDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-				}
-			}
-*/
-
-			// Hide tool tip
-			ShowToolTip( FALSE );
-		}
-		break;
-
-	case WM_LBUTTONDOWN:
-		{
-			if( IsInside( nX, nY )/* && !m_bLockCharacterInfo*/)
-			{
-				nOldX = nX;		nOldY = nY;
-
-				// Close button
-				if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Title bar
-				else if( IsInsideRect( nX, nY, m_rcTitle ) )
-				{
-					bTitleBarClick = TRUE;
-				}
-				// Tab region
-				else if( IsInsideRect( nX, nY, m_rcCharInfoTab ) )
-				{
-					m_ucipCurrentPage = ( nY - m_nPosY - m_rcCharInfoTab.Top ) / (CHARINFO_TAB_HEIGHT +  CHARINFO_TAB_GAP);
-				}
-				// Status
-				else if( m_ucipCurrentPage == UCIP_STATUS )
-				{
-					if( !m_bLockStatPoint )
-					{
-						// Strength growth point button
-						if( m_btnGPStrength.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Dexterity growth point button
-						else if( m_btnGPDexterity.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Intelligence growth point button
-						else if( m_btnGPIntelligence.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Contitution growth point button
-						else if( m_btnGPConstitution.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-				}
-				// Skill
-				else if( m_ucipCurrentPage == UCIP_SKILL )
-				{
-					// Skill tab
-					if( IsInsideRect( nX, nY, m_rcSubTab ) )
-					{
-						int	nOldSkillTab = m_nCurrentSkillTab;
-#ifdef ADJUST_MEMORIZE_SKILL
-						m_nCurrentSkillTab = ( nX - m_nPosX - m_rcSubTab.Left ) / CHARINFO_4SUBTAB_WIDTH;
-#else
-						m_nCurrentSkillTab = ( nX - m_nPosX - m_rcSubTab.Left ) / CHARINFO_3SUBTAB_WIDTH;
-#endif
-						if( m_nCurrentSkillTab < 0 || m_nCurrentSkillTab >= SKILL_TOTAL )
-							m_nCurrentSkillTab = nOldSkillTab;
-
-						_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-						return WMSG_SUCCESS;
-					}
-					// Active skill tab
-					else if( m_nCurrentSkillTab == SKILL_ACTIVE )
-					{
-						// Scroll bar of active skill
-						if( m_sbActiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Skill slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							m_nSelActiveSkillID = -1;
-            
-							int	iRow;
-							int	iRowS = m_sbActiveSkillScrollBar.GetScrollPos();
-							int	iRowE = iRowS + SKILL_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnActiveSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								{
-									// Update selected skill
-									m_nSelActiveSkillID = iRow ;
-                
-									bLButtonDownInBtn = TRUE;
-                
-									_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-					// Passive skill tab
-					else if( m_nCurrentSkillTab == SKILL_PASSIVE )
-					{
-						// Scroll bar of passive skill
-						if( m_sbPassiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Skill slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							m_nSelPassiveSkillID = -1;
-            
-							int	iRow;
-							int	iRowS = m_sbPassiveSkillScrollBar.GetScrollPos();
-							int	iRowE = iRowS + SKILL_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnPassiveSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								{
-									// Update selected skill
-									m_nSelPassiveSkillID = iRow ;
-                
-									bLButtonDownInBtn = TRUE;
-                
-									_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-#ifdef ADJUST_MEMORIZE_SKILL
-					// Memorize skill tab
-					else if( m_nCurrentSkillTab == SKILL_MEMORIZE )
-					{
-						// Scroll bar of passive skill
-						if( m_sbMemorizeSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Skill slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							m_nSelMemorizeSkillID = -1;
-            
-							int	iRow;
-							int	iRowS = m_sbMemorizeSkillScrollBar.GetScrollPos();
-							int	iRowE = iRowS + SKILL_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnMemorizeSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								{
-									// Update selected skill
-									m_nSelMemorizeSkillID = iRow ;
-                
-									bLButtonDownInBtn = TRUE;
-                
-									_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-#endif
-					// Special skill tab
-					else
-					{
-						// Scroll bar of special skill
-						if( m_sbSpecialSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Skill slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							m_nSelSpecialSkillID = -1;
-            
-							int	iRow;
-							int	iRowS = m_sbSpecialSkillScrollBar.GetScrollPos();
-							int	iRowE = iRowS + SKILL_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnSpecialSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								{
-									// Update selected skill
-									m_nSelSpecialSkillID = iRow ;
-                
-									bLButtonDownInBtn = TRUE;
-                
-									_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-				}
-				// Action
-				else if( m_ucipCurrentPage == UCIP_ACTION )
-				{
-					// Scroll bar of normal action
-					if( m_sbNormalActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-					// Action slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						m_nSelNormalActionID = -1;
-
-						int	iRow;
-						int	iRowS = m_sbNormalActionScrollBar.GetScrollPos();
-						int	iRowE = iRowS + ACTION_SLOT_ROW;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{	
-							if( m_btnNormalAction[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected action
-								m_nSelNormalActionID = iRow ;
-								
-								bLButtonDownInBtn = TRUE;
-								
-								_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-								return WMSG_SUCCESS;
-							}
-						}
-					}
-				}
-				// Social action
-				else if( m_ucipCurrentPage == UCIP_SOCIAL )
-				{
-					// Scroll bar of social action
-					if( m_sbSocialActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-					// Action slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						m_nSelSocialActionID = -1;
-
-						int	iRow;
-						int	iRowS = m_sbSocialActionScrollBar.GetScrollPos();
-						int	iRowE = iRowS + ACTION_SLOT_ROW;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{	
-							if( m_btnSocialAction[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-							{
-								// Update selected action
-								m_nSelSocialActionID = iRow ;
-								
-								bLButtonDownInBtn = TRUE;
-								
-								_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-								return WMSG_SUCCESS;
-							}
-						}
-					}
-				}
-				// Group action
-				else if( m_ucipCurrentPage == UCIP_GROUP )
-				{
-					// Action tab
-					if( IsInsideRect( nX, nY, m_rcSubTab ) )
-					{
-						m_bPartyActionTab = ( ( nX - m_nPosX - m_rcSubTab.Left ) / CHARINFO_SUBTAB_WIDTH == 0 ) ? TRUE : FALSE;
-						_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-						return WMSG_SUCCESS;
-					}
-
-					// Party action
-					if( m_bPartyActionTab )
-					{
-						// Scroll bar of party action
-						if( m_sbPartyActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Action slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							m_nSelPartyActionID = -1;
-
-							int	iRow;
-							int	iRowS = m_sbPartyActionScrollBar.GetScrollPos();
-							int	iRowE = iRowS + ACTION_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{	
-								if( m_btnPartyAction[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								{
-									// Update selected action
-									m_nSelPartyActionID = iRow ;
-									
-									bLButtonDownInBtn = TRUE;
-									
-									_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-					// Guild action
-					else
-					{
-						// Scroll bar of guild action
-						if( m_sbGuildActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Action slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							m_nSelGuildActionID = -1;
-
-							int	iRow;
-							int	iRowS = m_sbGuildActionScrollBar.GetScrollPos();
-							int	iRowE = iRowS + ACTION_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{	
-								if( m_btnGuildAction[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								{
-									// Update selected action
-									m_nSelGuildActionID = iRow ;
-									
-									bLButtonDownInBtn = TRUE;
-									
-									_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-				}
-				// Quest
-/*
-				else if( m_ucipCurrentPage == UCIP_QUEST )
-				{
-					// Quest tab
-					if( IsInsideRect( nX, nY, m_rcSubTab ) )
-					{
-						m_bQuestTab = ( ( nX - m_nPosX - m_rcSubTab.Left ) / CHARINFO_SUBTAB_WIDTH == 0 ) ? TRUE : FALSE;
-						_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-						return WMSG_SUCCESS;
-					}
-					// Quest tab
-					else if( m_bQuestTab )
-					{
-						// Scroll bar of quest icon
-						if( m_sbQuestIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// List box of quest desc
-						else if( m_lbQuestDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Quest slot
-						else if( IsInsideRect( nX, nY, m_rcQuestIcons ) )
-						{
-							int	nOldSelQuestID = m_nSelQuestID;
-							m_nSelQuestID = -1;
-            
-							if(nOldSelQuestID != -1)
-							{
-								m_btnQuestCancel[nOldSelQuestID].SetEnable(FALSE);
-							}
-            
-							int	iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-							int	iRowE = iRowS + QUEST_SLOT_ROW;
-							for( int iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnQuest[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								{
-									// Update selected quest
-									m_nSelQuestID = iRow;
-									if( nOldSelQuestID != m_nSelQuestID )
-									{
-										GetQuestDesc( TRUE, m_btnQuest[iRow].GetQuestIndex() );
-									}
-									m_btnQuestCancel[iRow].SetEnable(TRUE);
-
-									bLButtonDownInBtn = TRUE;
-
-									_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-									return WMSG_SUCCESS;
-								}
-							}
-
-							GetQuestDesc( TRUE, -1 );
-						}
-						else if( IsInsideRect( nX, nY, m_rcQuestCancelIcons) )
-						{
-							if(m_nSelQuestID != -1)
-							{
-								int	iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-								int	iRowE = iRowS + QUEST_SLOT_ROW;
-								for( int iRow = iRowS; iRow < iRowE; iRow++ )
-								{
-									if( m_btnQuestCancel[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-									{									
-										return WMSG_SUCCESS;
-									}
-								}
-							}
-						}
-					}
-					// Event tab
-					else
-					{
-						// Scroll bar of event icon
-						if( m_sbEventIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// List box of event desc
-						else if( m_lbEventDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// Event slot
-						else if( IsInsideRect( nX, nY, m_rcQuestIcons ) )
-						{
-							int	nOldSelEventID = m_nSelEventID;
-							m_nSelEventID = -1;
-            
-							int	iRowS = m_sbEventIconScrollBar.GetScrollPos();
-							int	iRowE = iRowS + QUEST_SLOT_ROW;
-							for( int iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnEvent[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-								{
-									// Update selected event
-									m_nSelEventID = iRow;
-									if( nOldSelEventID != m_nSelEventID )
-										GetQuestDesc( TRUE, m_btnEvent[iRow].GetQuestIndex() );
-
-									bLButtonDownInBtn = TRUE;
-
-									_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-									return WMSG_SUCCESS;
-								}
-							}
-
-							GetQuestDesc( TRUE, -1 );
-						}
-					}
-				}
-*/
-
-				_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, TRUE );
-				return WMSG_SUCCESS;
-			}
-		}
-		break;
-
-	case WM_LBUTTONUP:
-		{
-			bLButtonDownInBtn = FALSE;
-
-			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
-			{
-				// Title bar
-				bTitleBarClick = FALSE;
-
-				// If character information isn't focused
-				if( !IsFocused() )
-					return WMSG_FAIL;
-
-				// Close button
-				if( ( wmsgResult = m_btnClose.MouseMessage( pMsg ) ) != WMSG_FAIL )
-				{
-					if( wmsgResult == WMSG_COMMAND )
-					{
-						_pUIMgr->RearrangeOrder( UI_CHARACTERINFO, FALSE );
-					}
-
-					return WMSG_SUCCESS;
-				}
-				// Status
-				else if( m_ucipCurrentPage == UCIP_STATUS )
-				{
-					// Strength growth point button
-					if( ( wmsgResult = m_btnGPStrength.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						if( wmsgResult == WMSG_COMMAND )
-							SendUseStatPoint( MSG_STATPOINT_USE_STR );
-						return WMSG_SUCCESS;
-					}
-					// Dexterity growth point button
-					else if( ( wmsgResult = m_btnGPDexterity.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						if( wmsgResult == WMSG_COMMAND )
-							SendUseStatPoint( MSG_STATPOINT_USE_DEX );
-
-						return WMSG_SUCCESS;
-					}
-					// Intelligence growth point button
-					else if( ( wmsgResult = m_btnGPIntelligence.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						if( wmsgResult == WMSG_COMMAND )
-							SendUseStatPoint( MSG_STATPOINT_USE_INT );
-						return WMSG_SUCCESS;
-					}
-					// Constitution growth point button
-					else if( ( wmsgResult = m_btnGPConstitution.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						if( wmsgResult == WMSG_COMMAND )
-							SendUseStatPoint( MSG_STATPOINT_USE_CON ); 
-
-						return WMSG_SUCCESS;
-					}
-				}
-				// Skill
-				else if( m_ucipCurrentPage == UCIP_SKILL )
-				{
-					// Active skill tab
-					if( m_nCurrentSkillTab == SKILL_ACTIVE )
-					{
-						// Scroll bar of active skill
-						if( m_sbActiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// Skill slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							int	iRow;
-							int	iRowS = m_sbActiveSkillScrollBar.GetScrollPos();
-							int	iRowE = iRowS + SKILL_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( ( wmsgResult = m_btnActiveSkill[iRow].MouseMessage( pMsg ) ) != WMSG_FAIL )
-								{
-									if( wmsgResult == WMSG_COMMAND )
-									{
-										if( !m_btnActiveSkill[iRow].GetSkillDelay() )
-											UseSkill( m_btnActiveSkill[iRow].GetSkillIndex() );
-									}
-                
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-					// Passive skill tab
-					else if( m_nCurrentSkillTab == SKILL_PASSIVE )
-					{
-						// Scroll bar of passive skill
-						if( m_sbPassiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// Skill slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							int	iRow;
-							int	iRowS = m_sbPassiveSkillScrollBar.GetScrollPos();
-							int	iRowE = iRowS + SKILL_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnPassiveSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-									return WMSG_SUCCESS;
-							}
-						}
-					}
-#ifdef ADJUST_MEMORIZE_SKILL
-					// Memorize skill tab
-					else if( m_nCurrentSkillTab == SKILL_MEMORIZE )
-					{
-						// Scroll bar of passive skill
-						if( m_sbMemorizeSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// Skill slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							int	iRow;
-							int	iRowS = m_sbMemorizeSkillScrollBar.GetScrollPos();
-							int	iRowE = iRowS + SKILL_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnMemorizeSkill[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-									return WMSG_SUCCESS;
-							}
-						}
-					}
-#endif
-					// Special skill slot
-					else
-					{
-						// Scroll bar of special skill
-						if( m_sbSpecialSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// Skill slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							int	iRow;
-							int	iRowS = m_sbSpecialSkillScrollBar.GetScrollPos();
-							int	iRowE = iRowS + SKILL_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( ( wmsgResult = m_btnSpecialSkill[iRow].MouseMessage( pMsg ) ) != WMSG_FAIL )
-									return WMSG_SUCCESS;
-							}
-						}
-					}
-				}
-				// Action
-				else if( m_ucipCurrentPage == UCIP_ACTION )
-				{
-					// Scroll bar of normal action
-					if( m_sbNormalActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Action slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRow;
-						int	iRowS = m_sbNormalActionScrollBar.GetScrollPos();
-						int	iRowE = iRowS + ACTION_SLOT_ROW;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( ( wmsgResult = m_btnNormalAction[iRow].MouseMessage( pMsg ) ) != WMSG_FAIL )
-							{
-								if( wmsgResult == WMSG_COMMAND )
-									UseAction( m_btnNormalAction[iRow].GetActionIndex() );
-								
-								return WMSG_SUCCESS;
-							}
-						}
-					}
-				}
-				// Social action
-				else if( m_ucipCurrentPage == UCIP_SOCIAL )
-				{
-					// Scroll bar of social action
-					if( m_sbSocialActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-					// Action slot
-					else if( IsInsideRect( nX, nY, m_rcIcons ) )
-					{
-						int	iRow;
-						int	iRowS = m_sbSocialActionScrollBar.GetScrollPos();
-						int	iRowE = iRowS + ACTION_SLOT_ROW;
-						for( iRow = iRowS; iRow < iRowE; iRow++ )
-						{
-							if( ( wmsgResult = m_btnSocialAction[iRow].MouseMessage( pMsg ) ) != WMSG_FAIL )
-							{
-								if( wmsgResult == WMSG_COMMAND )
-									UseAction( m_btnSocialAction[iRow].GetActionIndex() );
-								
-								return WMSG_SUCCESS;
-							}
-						}
-					}
-				}
-				// Group action
-				else if( m_ucipCurrentPage == UCIP_GROUP )
-				{
-					// Party action
-					if( m_bPartyActionTab )
-					{
-						// Scroll bar of party action
-						if( m_sbPartyActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// Action slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							int	iRow;
-							int	iRowS = m_sbPartyActionScrollBar.GetScrollPos();
-							int	iRowE = iRowS + ACTION_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( ( wmsgResult = m_btnPartyAction[iRow].MouseMessage( pMsg ) ) != WMSG_FAIL )
-								{
-									if( wmsgResult == WMSG_COMMAND )
-										UseAction( m_btnPartyAction[iRow].GetActionIndex() );
-									
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-					// Guild action
-					else
-					{
-						// Scroll bar of guild action
-						if( m_sbGuildActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// Action slot
-						else if( IsInsideRect( nX, nY, m_rcIcons ) )
-						{
-							int	iRow;
-							int	iRowS = m_sbGuildActionScrollBar.GetScrollPos();
-							int	iRowE = iRowS + ACTION_SLOT_ROW;
-							for( iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( ( wmsgResult = m_btnGuildAction[iRow].MouseMessage( pMsg ) ) != WMSG_FAIL )
-								{
-									if( wmsgResult == WMSG_COMMAND )
-										UseAction( m_btnGuildAction[iRow].GetActionIndex() );
-									
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-				}
-				// Quest
-/*
-				else if( m_ucipCurrentPage == UCIP_QUEST )
-				{
-					// Quest tab
-					if( m_bQuestTab )
-					{
-						// Scroll bar of quest icon
-						if( m_sbQuestIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// List box of quest desc
-						else if( m_lbQuestDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// Quest slot
-						else if( IsInsideRect( nX, nY, m_rcQuestIcons ) )
-						{
-							int	iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-							int	iRowE = iRowS + QUEST_SLOT_ROW;
-							for( int iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnQuest[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-									return WMSG_SUCCESS;
-							}
-						}
-						else if( IsInsideRect( nX, nY, m_rcQuestCancelIcons ) )
-						{
-							int	iRowS = m_sbQuestIconScrollBar.GetScrollPos();
-							int	iRowE = iRowS + QUEST_SLOT_ROW;
-							for( int iRow = iRowS; iRow < iRowE; iRow++ )
-							{	
-								if( ( wmsgResult = m_btnQuestCancel[iRow].MouseMessage( pMsg ) ) != WMSG_FAIL )
-								{
-									if( wmsgResult == WMSG_COMMAND )
-									{
-										const int iQuestIndex = m_btnQuest[m_nSelQuestID].GetQuestIndex();
-
-										_pUIMgr->CloseMessageBox(MSGCMD_QUEST_GIVEUP);
-										CTString	strMessage;
-										CUIMsgBox_Info	MsgBoxInfo;	
-										MsgBoxInfo.SetMsgBoxInfo( _S( 99, "ÌÄòÏä§Ìä∏" ), UMBS_OKCANCEL, UI_CHARACTERINFO, MSGCMD_QUEST_GIVEUP);	
-										strMessage.PrintF( _S( 504, "Ï†ïÎßê Ïù¥ ÌÄòÏä§Ìä∏Î•º Ï∑®ÏÜåÌïòÏãúÍ≤†ÏäµÎãàÍπå?" ));	
-										MsgBoxInfo.AddString( strMessage );
-										_pUIMgr->CreateMessageBox( MsgBoxInfo );
-										g_iQuestIndex	= iQuestIndex;
-										//g_iSelBtn		= m_nSelQuestID;
-										//m_bLockCharacterInfo = TRUE;
-										//SendQuestCancel(iQuestIndex);
-									}
-
-									return WMSG_SUCCESS;
-								}
-							}
-						}
-					}
-					// Event tab
-					else
-					{
-						// Scroll bar of event icon
-						if( m_sbEventIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// List box of event desc
-						else if( m_lbEventDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// Event slot
-						else if( IsInsideRect( nX, nY, m_rcQuestIcons ) )
-						{
-							int	iRowS = m_sbEventIconScrollBar.GetScrollPos();
-							int	iRowE = iRowS + QUEST_SLOT_ROW;
-							for( int iRow = iRowS; iRow < iRowE; iRow++ )
-							{
-								if( m_btnEvent[iRow].MouseMessage( pMsg ) != WMSG_FAIL )
-									return WMSG_SUCCESS;
-							}
-						}
-					}
-				}
-*/
-			}
-			// If holding button exists
-			else
-			{
-				if( IsInside( nX, nY ) )
-				{
-					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
-
-					return WMSG_SUCCESS;
-				}
-			}
-		}
-		break;
-
-	case WM_LBUTTONDBLCLK:
-		{
-			if( IsInside( nX, nY ) )
-			{
-				// Status
-				if( m_ucipCurrentPage == UCIP_STATUS )
-				{
-				}
-				// Skill
-				else if( m_ucipCurrentPage == UCIP_SKILL )
-				{
-					// Active skill tab
-					if( m_nCurrentSkillTab == SKILL_ACTIVE )
-					{
-						// Scroll bar of active skill
-						if( m_sbActiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-					// Passive skill tab
-					else if( m_nCurrentSkillTab == SKILL_PASSIVE )
-					{
-						// Scroll bar of passive skill
-						if( m_sbPassiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-#ifdef ADJUST_MEMORIZE_SKILL
-					// Memorize skill tab
-					else if( m_nCurrentSkillTab == SKILL_MEMORIZE )
-					{
-						// Scroll bar of passive skill
-						if( m_sbMemorizeSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-#endif
-					// Special skill tab
-					else
-					{
-						// Scroll bar of special skill
-						if( m_sbSpecialSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-				}
-				// Action
-				else if( m_ucipCurrentPage == UCIP_ACTION )
-				{
-					// Scroll bar of normal action
-					if( m_sbNormalActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-				}
-				// Social action
-				else if( m_ucipCurrentPage == UCIP_SOCIAL )
-				{
-					// Scroll bar of social action
-					if( m_sbSocialActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						// Nothing
-					}
-				}
-				// Group action
-				else if( m_ucipCurrentPage == UCIP_GROUP )
-				{
-					// Party action
-					if( m_bPartyActionTab )
-					{
-						// Scroll bar of party action
-						if( m_sbPartyActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-					// Guild action
-					else
-					{
-						// Scroll bar of guild action
-						if( m_sbGuildActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-				}
-				// Quest
-/*
-				else if( m_ucipCurrentPage == UCIP_QUEST )
-				{
-					// Quest tab
-					if( m_bQuestTab )
-					{
-						// Scroll bar of quest icon
-						if( m_sbQuestIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// List box of quest desc
-						else if( m_lbQuestDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-					// Event tab
-					else
-					{
-						// Scroll bar of event icon
-						if( m_sbEventIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-						// List box of event desc
-						else if( m_lbEventDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							// Nothing
-						}
-					}
-				}
-*/
-				return WMSG_SUCCESS;
-			}
-		}
-		break;
-
-	case WM_MOUSEWHEEL:
-		{
-			if( IsInside( nX, nY ) )
-			{
-				// Status
-				if( m_ucipCurrentPage == UCIP_STATUS )
-				{
-				}
-				// Skill
-				else if( m_ucipCurrentPage == UCIP_SKILL )
-				{
-					// Active skill tab
-					if( m_nCurrentSkillTab == SKILL_ACTIVE )
-					{
-						// Scroll bar of active skill
-						if( m_sbActiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-					}
-					// Passive skill tab
-					else if( m_nCurrentSkillTab == SKILL_PASSIVE )
-					{
-						// Scroll bar of passive skill
-						if( m_sbPassiveSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-					}
-#ifdef	ADJUST_MEMORIZE_SKILL
-					// Memorize skill tab
-					else if( m_nCurrentSkillTab == SKILL_MEMORIZE )
-					{
-						// Scroll bar of passive skill
-						if( m_sbMemorizeSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-					}
-#endif
-					// Special skill tab
-					else
-					{
-						// Scroll bar of special skill
-						if( m_sbSpecialSkillScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-					}
-				}
-				// Action
-				else if( m_ucipCurrentPage == UCIP_ACTION )
-				{
-					// Scroll bar of normal action
-					if( m_sbNormalActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-				}
-				// Social action
-				else if( m_ucipCurrentPage == UCIP_SOCIAL )
-				{
-					// Scroll bar of social action
-					if( m_sbSocialActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;
-				}
-				// Group action
-				else if( m_ucipCurrentPage == UCIP_GROUP )
-				{
-					// Party action
-					if( m_bPartyActionTab )
-					{
-						// Scroll bar of party action
-						if( m_sbPartyActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-					}
-					// Guild action
-					else
-					{
-						// Scroll bar of guild action
-						if( m_sbGuildActionScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-					}
-				}
-				// Quest
-/*
-				else if( m_ucipCurrentPage == UCIP_QUEST )
-				{
-					// Quest tab
-					if( m_bQuestTab )
-					{
-						// Scroll bar of quest icon
-						if( m_sbQuestIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// List box of quest desc
-						else if( m_lbQuestDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-					}
-					// Event tab
-					else
-					{
-						// Scroll bar of event icon
-						if( m_sbEventIconScrollBar.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-						// List box of event desc
-						else if( m_lbEventDesc.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-					}
-				}
-*/
-			}
-		}
-		break;
-	}
-
-	return WMSG_FAIL;
 }
 
 
@@ -6571,9 +4488,28 @@ void CUICharacterInfo::UseAction( int nIndex )
 		return;
 	}
 
-	if( _pUIMgr->IsCSFlagOn( CSF_WAREHOUSE ) )
+	if( CUIManager::getSingleton()->IsCSFlagOn( CSF_WAREHOUSE ) )
 	{
 		return;
+	}
+	
+	if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+	{ // ∫Ò«‡∏µÂø°º≠¥¬ æ◊º« æ»µ 
+		return;
+	}
+
+	if ( CUIManager::getSingleton()->IsCSFlagOn( CSF_ITEMWEARING ) )
+	{
+		return; // ¿Â∫Ò ¬¯øÎ¡ﬂø°¥¬ ªÁøÎ ∫“∞°
+	}
+	
+	// [100311: selo] OX ¡∏, ∏ÛΩ∫≈Õ ƒﬁ∫∏ ¡∏ ø°º≠ æ…±‚ ∏¯«œ∞‘ «‘
+	// [100510: selo] ≈•∫Í ¡∏µµ æ»¡ˆ ∏¯«œ∞‘ «‘ ∑π¿ÃµÂ ¥¯¿¸µµ ∆˜«‘
+	if( nIndex == 3 )
+	{
+		ULONG zoneNo = _pNetwork->MyCharacterInfo.zoneNo;
+		if( zoneNo == 14 || zoneNo == 22 || zoneNo == 25 || zoneNo == 33 || zoneNo == 35 || zoneNo == 36)
+			return;
 	}
 
 	CAction	&rActionData = _pNetwork->GetActionData(nIndex);
@@ -6590,90 +4526,125 @@ void CUICharacterInfo::UseAction( int nIndex )
 
 			switch( lIndex )
 			{
-			case 2:		// Í±∑Í∏∞, Îõ∞Í∏∞
-			case 3:		// ÏïâÍ∏∞, ÏÑúÍ∏∞
-			case 23:	// Ï†ÑÌà¨, ÎπÑÏ†ÑÌà¨
+			case 2:		// ∞»±‚, ∂Ÿ±‚
+			case 3:		// æ…±‚, º≠±‚
+			case 23:	// ¿¸≈ı, ∫Ò¿¸≈ı
 				{
 					penPlayerEntity->UseAction( nIndex );
 				}
 				break;
 
-			case 1:		// Í≥µÍ≤©
+			case 1:		// ∞¯∞›
 				{
+#if !(defined G_MAXICO) && !(defined G_BRAZIL)
 					penPlayerEntity->CommandAttack();
+#endif
 				}
 				break;
 
-			case 4:		// Ï§çÍ∏∞	//0826
+			case 4:		// ¡›±‚	//0826
 				{
 					penPlayerEntity->SearchNearItem();
 				}
 				break;
 
-			case 5:		// ÍµêÌôò
+			case 5:		// ±≥»Ø
 				{
 					if( _pNetwork->_TargetInfo.bIsActive && _pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
 						CTString	strTarget = _pNetwork->_TargetInfo.TargetName;
-						_pUIMgr->GetExchange()->SendExchangeReq_Req( strTarget );
+						CUIManager::getSingleton()->GetExchange()->SendExchangeReq_Req( strTarget );
 					}
 				}
 				break;
 
-			case 27:	// ÏßÄÎèÑ
+			case 27:	// ¡ˆµµ
 				{
-					_pUIMgr->GetMap()->ToggleVisible();
+					CUIManager::getSingleton()->GetMap()->ToggleVisible();
 				}
 				break;
 
-			case 28:	// ÌåêÎß§ÌïòÍ∏∞
+			case 28:	// ∆«∏≈«œ±‚
 				{
-					// Ïù∏Î≤§ÌÜ†Î¶¨ ÎùΩÏùÑ Í±∏ÏóàÎã§Í∞Ä Ìï¥Ï†úÌñàÎã§Í∞Ä Ìï¥ÏïºÌïòÍ∏∞ ÎïåÎ¨∏Ïóê,
-					// ToggleVisible()Î°ú ÌïòÎ©¥ ÏïàÎê†Í±∞ Í∞ôÏùå...
-					// wooss 050826  0509292Ï∞® ÏàòÏ†ï 
-					if(g_iCountry == TAIWAN2){
-						if( _pNetwork->MyCharacterInfo.level <5)
-						{					
-							CUIMsgBox_Info	MsgBoxInfo;
-							MsgBoxInfo.SetMsgBoxInfo( _S( 757, "Í∞úÏù∏ÏÉÅÏ†ê" ), UMBS_OK, UI_NONE, MSGCMD_NULL);
-							MsgBoxInfo.AddString( _S(1857,"Î†àÎ≤® 5ÎØ∏ÎßåÏùò Ï∫êÎ¶≠ÌÑ∞Îäî Í∞úÏù∏ÏÉÅÏ†êÏùÑ Ïó¥ Ïàò ÏóÜÏäµÎãàÎã§"));	
-							_pUIMgr->CreateMessageBox( MsgBoxInfo );
-							break;	
-						}
+					// ¿Œ∫•≈‰∏Æ ∂Ù¿ª ∞…æ˙¥Ÿ∞° «ÿ¡¶«ﬂ¥Ÿ∞° «ÿæﬂ«œ±‚ ∂ßπÆø°,
+					// ToggleVisible()∑Œ «œ∏È æ»µ…∞≈ ∞∞¿Ω...
+					if ( _pNetwork->MyCharacterInfo.bWildPetRide )
+					{
+						CUIMsgBox_Info	MsgBoxInfo;
+						MsgBoxInfo.SetMsgBoxInfo( _S( 757, "∞≥¿ŒªÛ¡°" ), UMBS_OK, UI_NONE, MSGCMD_NULL);
+						MsgBoxInfo.AddString( _S(5314,"∞≥¿Œ ªÛ¡°¿ª ∞≥º≥«“ ºˆ æ¯¥¬ ªÛ≈¬¿‘¥œ¥Ÿ."));	
+						CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
+						break;	
 					}
-					
-					_pUIMgr->GetPersonalShop()->OpenPersonalShop( TRUE );
+					CUIManager::getSingleton()->GetPersonalShop()->OpenPersonalShop( TRUE );
 					
 				}
 				break;				
 				
-			case 30:	// ÌõÑÍ≤¨Ïù∏ Ïã†Ï≤≠.
+			case 30:	// »ƒ∞ﬂ¿Œ Ω≈√ª.
 				{
-					_pUIMgr->GetHelper()->OpenHelper( );					
+					CUIManager::getSingleton()->GetHelper()->OpenHelper( );					
 				}
 				break;
-			case 43:	//ttos Î™¨Ïä§ÌÑ∞ ÏΩ§Î≥¥
+			case 43:	//ttos ∏ÛΩ∫≈Õ ƒﬁ∫∏
 				{
-					_pUIMgr->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_EDIT_CONTEXT_REQ);
+					CUIManager::getSingleton()->GetCombo()->SendComboMessage(MSG_EX_MONSTERCOMBO_EDIT_CONTEXT_REQ);
 				}
 				break;
-			//[ttos_2009_7_17]: CHARATER_CHAT_FILTER Ï∫êÎ¶≠ÌÑ∞ Ï±ÑÌåÖ ÌïÑÌÑ∞
-#ifdef CHARATER_CHAT_FILTER
+			case 46:	//æ∆¿Ã≈€ ¡¶¿€
+				{
+					CUIManager* pUIManager = CUIManager::getSingleton();
+
+					for (int i = 0; i < SKILL_SPECIAL_SLOT_ROW_TOTAL; i++)
+					{
+						if (!m_btnVoucherSkill[i].IsEmpty() && m_btnVoucherSkill[i].GetSkillIndex() != 655)
+						{
+							pUIManager->GetItemProduct()->SetExpertData(&m_btnVoucherSkill[i]);
+						}
+						
+					}
+					
+					pUIManager->GetItemProduct()->OpenItemProduct();
+					pUIManager->RearrangeOrder( UI_CHARACTERINFO, FALSE );
+					
+				}break;
+			case 47:
+				{
+					//CUIManager::getSingleton()->GetAffinityInfo()->SetAffinityData();
+					CUIManager::getSingleton()->GetAffinityInfo()->OpenAffinityInfo();
+				}
+				break;
 			case 48:
 				{
-					_pUIMgr->GetChatFilter()->OpenChatFilter();
+					CUIManager::getSingleton()->GetChatFilter()->OpenChatFilter();
+				}break;
+			case 49:
+				{
+					if (!CUIManager::getSingleton()->GetNickName()->IsVisible())
+					{
+						_pNetwork->SendNickNameMessage(MSG_EX_TITLE_SYSTEM_LIST_REQ, 0);
+					}
 				}
 				break;
-#endif
+			case 51:
+				{
+					CUIManager::getSingleton()->GetRankingViewEx()->ToggleVisible();
+					break;
+				}
+			case 52:
+				{
+					CUIManager::getSingleton()->GetCalendar()->OpenCalendar();
+				}
+				break;
 			}
 		}
 		break;
 
-	case ACTION_PET:		// Ïï†ÏôÑÎèôÎ¨º...
+	case ACTION_PET:		// æ÷øœµøπ∞...
 		{
 			switch( lIndex )
 			{
-			case 35:		// Ìé´ ÏÜåÌôò
+			case 35:		// ∆Í º“»Ø
 				{
 					if( _pNetwork->MyCharacterInfo.bPetRide )
 					{
@@ -6682,7 +4653,7 @@ void CUICharacterInfo::UseAction( int nIndex )
 					_pNetwork->CallPet(_pNetwork->_PetTargetInfo.lIndex);
 				}
 				break;
-			case 36:		// Ìé´ ÎßàÏùÑ Í∑ÄÌôò
+			case 36:		// ∆Í ∏∂¿ª ±Õ»Ø
 				{
 					if( !_pNetwork->MyCharacterInfo.bPetRide )
 					{
@@ -6691,7 +4662,7 @@ void CUICharacterInfo::UseAction( int nIndex )
 					_pNetwork->SendPetWarpTown();
 				}
 				break;
-			case 37:		// Ìé´ Ïï†ÏôÑÎèôÎ¨º Ìú¥Ïãù
+			case 37:		// ∆Í æ÷øœµøπ∞ »ﬁΩƒ
 				{
 					if( !_pNetwork->MyCharacterInfo.bPetRide )
 					{
@@ -6700,7 +4671,7 @@ void CUICharacterInfo::UseAction( int nIndex )
 					((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseAction( 3 );
 				}
 				break;
-			case 38:		// Ìé´ Í≥†ÏÜç Ïù¥Îèô.
+			case 38:		// ∆Í ∞Ìº” ¿Ãµø.
 				{
 					if( !_pNetwork->MyCharacterInfo.bPetRide )
 					{
@@ -6710,7 +4681,7 @@ void CUICharacterInfo::UseAction( int nIndex )
 				}
 				break;
 				
-			case 40:		// Ìé´ ÏïÑÏù¥ÌÖú Ï§çÍ∏∞.
+			case 40:		// ∆Í æ∆¿Ã≈€ ¡›±‚.
 				{
 					if( _pNetwork->MyCharacterInfo.bPetRide )
 					{
@@ -6722,13 +4693,33 @@ void CUICharacterInfo::UseAction( int nIndex )
 			}
 		}
 		break;
+	case ACTION_WILDPET:
+		{
+			switch( lIndex )
+			{
+			case 50:
+				{
+					if( CUIManager::getSingleton()->GetInventory()->IsWearing( WEAR_PET ) )
+					{
+						CUIManager::getSingleton()->GetChatting()->AddSysMessage( _S(2189,"æ÷øœµøπ∞¿ª ΩΩ∑‘ø° ¿Â¬¯«œø©æﬂ∏∏ «’¥œ¥Ÿ."), SYSMSG_ERROR );
+						return;
+					}
+					if( (CUIManager::getSingleton()->GetInventory()->GetWearingBtn(WEAR_PET).GetItemFlag()&( FLAG_ITEM_SEALED )) )
+ 					{
+						CUIManager::getSingleton()->GetChatting()->AddSysMessage( _S(5348,"∫¿¿Œµ» ªÛ≈¬ø°º≠¥¬ ≈æΩ¬«“ ºˆ æ¯Ω¿¥œ¥Ÿ."), SYSMSG_ERROR );
+						return;
+					}
+					((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseAction( lIndex );					
+				}break;
+			}
+		}break;
 
 	case ACTION_SOCIAL:
 		{
-			// Ïï†ÏôÑÎèôÎ¨ºÏùÑ ÌÉÄÍ≥† ÏûàÏùÑÎïåÎäî ÏÜåÏÖú Ïï°ÏÖòÏù¥ Î∂àÍ∞ÄÎä•.
+			// æ÷øœµøπ∞¿ª ≈∏∞Ì ¿÷¿ª∂ß¥¬ º“º» æ◊º«¿Ã ∫“∞°¥….
 			if( !_pNetwork->MyCharacterInfo.bPetRide )
 			{
-				//Î¨ºÎøåÎ¶¨Í∏∞ Ïï°ÏÖòÏùº Îïå...
+				//π∞ª—∏Æ±‚ æ◊º«¿œ ∂ß...
 				if( nIndex ==42 )
 				{
 					CPlayerEntity	*penPlayerEntity = ((CPlayerEntity*)CEntity::GetPlayerEntity(0));
@@ -6748,9 +4739,9 @@ void CUICharacterInfo::UseAction( int nIndex )
 							&& _pNetwork->MyCharacterInfo.index != _pNetwork->_TargetInfo.pen_pEntity->GetNetworkID()
 							)
 						{
-							_pNetwork->ClientSystemMessage( _S(3964, "ÏÉàÌï¥Î≥µ ÎßéÏù¥ Î∞õÏúºÏÑ∏Ïöî!"), SYSMSG_ERROR );
+							_pNetwork->ClientSystemMessage( _S(3964, "ªı«ÿ∫π ∏π¿Ã πﬁ¿∏ººø‰!"), SYSMSG_ERROR );
 
-							CNetworkMessage nmSkill(MSG_SKILL);
+							CNetworkMessage nmSkill((UBYTE)MSG_SKILL);
 							nmSkill<< (UBYTE)MSG_SKILL_NEWYEAR_2008;
 							nmSkill<< _pNetwork->MyCharacterInfo.index;
 							nmSkill<< _pNetwork->_TargetInfo.pen_pEntity->GetNetworkID();
@@ -6767,64 +4758,66 @@ void CUICharacterInfo::UseAction( int nIndex )
 		{
 			switch( lIndex )
 			{
-			case 6:		// ÌååÌã∞ Ïã†Ï≤≠(Í∑†Îì± Î∂ÑÎ∞∞)
+			case 6:		// ∆ƒ∆º Ω≈√ª(±’µÓ ∫–πË)
 				{
 					if( _pNetwork->_TargetInfo.bIsActive && _pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
 						CTString	strTarget = _pNetwork->_TargetInfo.TargetName;
-						_pUIMgr->GetParty()->SendPartyInvite( PT_PEACEEVER, strTarget );
+						CUIManager::getSingleton()->GetParty()->SendPartyInvite( PT_PEACEEVER, strTarget );
 					}
 				}
 				break;
-			case 7:		// ÌååÌã∞ Ïã†Ï≤≠(ÏûÖÏàò Ïö∞ÏÑ†)
+			case 7:		// ∆ƒ∆º Ω≈√ª(¿‘ºˆ øÏº±)
 				{
 					if( _pNetwork->_TargetInfo.bIsActive && _pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
 						CTString	strTarget = _pNetwork->_TargetInfo.TargetName;
-						_pUIMgr->GetParty()->SendPartyInvite( PT_SURVIVAL, strTarget );
+						CUIManager::getSingleton()->GetParty()->SendPartyInvite( PT_SURVIVAL, strTarget );
 					}
 				}
 				break;
-			case 8:		// ÌååÌã∞ Ïã†Ï≤≠(Í≥µÍ≤©Ìòï)
+			case 8:		// ∆ƒ∆º Ω≈√ª(∞¯∞›«¸)
 				{
 					if( _pNetwork->_TargetInfo.bIsActive && _pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
 						CTString	strTarget = _pNetwork->_TargetInfo.TargetName;
-						_pUIMgr->GetParty()->SendPartyInvite( PT_ATTACK, strTarget );
+						CUIManager::getSingleton()->GetParty()->SendPartyInvite( PT_ATTACK, strTarget );
 					}
 				}
 				break;
 
-			case 9:		// ÌååÌã∞ ÌÉàÌá¥
+			case 9:		// ∆ƒ∆º ≈ª≈
 				{
-					_pUIMgr->GetParty()->SendPartyQuit();
+					CUIManager::getSingleton()->GetParty()->SendPartyQuit();
 				}
 				break;
 
 
-			case 39:	// ÌååÌã∞Ïû• ÏúÑÏûÑ 
+			case 39:	// ∆ƒ∆º¿Â ¿ß¿” 
 				{
 					if( _pNetwork->_TargetInfo.bIsActive && _pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
-						if( _pUIMgr->GetParty()->GetMemberCount() <= 0 ) // ÌååÌã∞Ï§ëÏù¥ ÏïÑÎãàÎùºÎ©¥
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
+						if( pUIManager->GetParty()->GetMemberCount() <= 0 ) // ∆ƒ∆º¡ﬂ¿Ã æ∆¥œ∂Û∏È
 						{
 							break;
 						}
-						if( !_pUIMgr->GetParty()->AmILeader() ) // ÎÇ¥Í∞Ä ÌååÌã∞Ïû•Ïù¥ ÏïÑÎãàÎùºÎ©¥
+						if( !pUIManager->GetParty()->AmILeader() ) // ≥ª∞° ∆ƒ∆º¿Â¿Ã æ∆¥œ∂Û∏È
 						{
-							_pUIMgr->GetParty()->PartyError( MSG_PARTY_ERROR_NOT_BOSS );
+							pUIManager->GetParty()->PartyError( MSG_PARTY_ERROR_NOT_BOSS );
 							break;
 						}
 							
 						CTString	strTarget = _pNetwork->_TargetInfo.TargetName;
 						
-						if( _pUIMgr->GetParty()->IsOurParty( strTarget ) ) // Ïö∞Î¶¨ ÌååÌã∞ÏõêÏùº ÎïåÎßå ÏúÑÏûÑ Ï≤òÎ¶¨ 
+						if( pUIManager->GetParty()->IsOurParty( strTarget ) ) // øÏ∏Æ ∆ƒ∆ºø¯¿œ ∂ß∏∏ ¿ß¿” √≥∏Æ 
 						{		
-							_pUIMgr->GetParty()->MandateBossReq( strTarget );
+							pUIManager->GetParty()->MandateBossReq( strTarget );
 						}
-						else  // Ïö∞Î¶¨ ÌååÌã∞ÏõêÏïÑÎãàÎùºÎ©¥...
+						else  // øÏ∏Æ ∆ƒ∆ºø¯æ∆¥œ∂Û∏È...
 						{
-							_pUIMgr->GetParty()->PartyError( MSG_PARTY_ERROR_NOT_PARTY_MEMBER );
+							pUIManager->GetParty()->PartyError( MSG_PARTY_ERROR_NOT_PARTY_MEMBER );
 						}
 						
 						
@@ -6832,26 +4825,26 @@ void CUICharacterInfo::UseAction( int nIndex )
 				}
 				break;
 
-			case 12:		// ÌååÌã∞ Í∞ïÌá¥
+			case 12:		// ∆ƒ∆º ∞≠≈
 				{
 					if( _pNetwork->_TargetInfo.bIsActive && _pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
 						CTString	strTarget = _pNetwork->_TargetInfo.TargetName;
-						_pUIMgr->GetParty()->SendPartyKick( strTarget );
+						CUIManager::getSingleton()->GetParty()->SendPartyKick( strTarget );
 					}
 				}
 				break;
 
-			case 33:	// ÌååÌã∞ Î©§Î≤ÑÏ∞Ω ÌÜ†Í∏Ä
+			case 33:	// ∆ƒ∆º ∏‚πˆ√¢ ≈‰±€
 				{
-					_pUIMgr->GetParty()->ToggleVisible();
+					CUIManager::getSingleton()->GetParty()->ToggleVisible();
 				}
 				break;
 #ifdef PARTY_AUTO_ENABLE
-			case 41:	// ÌååÌã∞ Ïò§ÌÜ† Îß§Ïπ≠ ÏãúÏä§ÌÖú
+			case 41:	// ∆ƒ∆º ø¿≈‰ ∏≈ƒ™ Ω√Ω∫≈€
 				{
 					if( IsVisible() ) { ToggleVisible(); }
-					_pUIMgr->GetPartyAuto()->OpenPartyMatching();
+					CUIManager::getSingleton()->GetPartyAuto()->OpenPartyMatching();
 				}
 				break;
 #endif
@@ -6863,29 +4856,31 @@ void CUICharacterInfo::UseAction( int nIndex )
 		{
 			switch( lIndex )
 			{
-				case 24:	// Í∞ÄÏûÖÌïòÍ∏∞
+				case 24:	// ∞°¿‘«œ±‚
 				{
-					// Îã§Î•∏ Í∏∏ÎìúÏóê Í∞ÄÏûÖÎêòÏñ¥ ÏûàÏúºÎ©¥ ÌÉàÌá¥Î•º Î¨ºÏñ¥Î≥∏Îã§.
+					// ¥Ÿ∏• ±ÊµÂø° ∞°¿‘µ«æÓ ¿÷¿∏∏È ≈ª≈∏¶ π∞æÓ∫ª¥Ÿ.
 					if( _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_NOMEMBER )
 					{
-						_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ERROR);
-						_pUIMgr->CloseMessageBox(MSGCMD_GUILD_DESTROY);
-						_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN);
-						_pUIMgr->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
-						_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT);
-						_pUIMgr->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
-						_pUIMgr->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
+						CUIManager* pUIManager = CUIManager::getSingleton();
+
+						pUIManager->CloseMessageBox(MSGCMD_GUILD_ERROR);
+						pUIManager->CloseMessageBox(MSGCMD_GUILD_DESTROY);
+						pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
+						pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
+						pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
+						pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
+						pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
 						
 						CTString		strMessage;
 						CUIMsgBox_Info	MsgBoxInfo;
-						MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OK,		
+						MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OK,		
 							UI_GUILD, MSGCMD_GUILD_ERROR );
 						if( _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_NOMEMBER)
 						{
-							strMessage.PrintF( _S( 866, "Ïù¥ÎØ∏ Í∏∏ÎìúÏóê Í∞ÄÏûÖÎêòÏñ¥ ÏûàÏäµÎãàÎã§.\nÎ®ºÏ†Ä Í∞ÄÏûÖÎêòÏñ¥ ÏûàÎäî Í∏∏ÎìúÏóêÏÑú ÌÉàÌá¥ÌïòÏó¨ Ï£ºÏã≠ÏãúÏò§." ) );	
+							strMessage.PrintF( _S( 866, "¿ÃπÃ ±ÊµÂø° ∞°¿‘µ«æÓ ¿÷Ω¿¥œ¥Ÿ.\n∏’¿˙ ∞°¿‘µ«æÓ ¿÷¥¬ ±ÊµÂø°º≠ ≈ª≈«œø© ¡÷Ω Ω√ø¿." ) );	
 						}
 						MsgBoxInfo.AddString( strMessage );
-						_pUIMgr->CreateMessageBox( MsgBoxInfo );
+						pUIManager->CreateMessageBox( MsgBoxInfo );
 					}
 					else if( _pNetwork->_TargetInfo.bIsActive && _pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
@@ -6900,20 +4895,22 @@ void CUICharacterInfo::UseAction( int nIndex )
 							{
 								if( ct.cha_iClientIndex == pEntity->en_ulID )
 								{
-									// FIXME : ÏöîÏ≤≠Ïóê ÏùòÌï¥ÏÑú ÏûÑÏãúÏ†ÅÏúºÎ°ú ÎßâÏùÄ Î∂ÄÎ∂ÑÏûÖÎãàÎã§.
+									CUIManager* pUIManager = CUIManager::getSingleton();
+
+									// FIXME : ø‰√ªø° ¿««ÿº≠ ¿”Ω√¿˚¿∏∑Œ ∏∑¿∫ ∫Œ∫–¿‘¥œ¥Ÿ.
 									if( ct.cha_lGuildPosition == GUILD_MEMBER_BOSS || 
 										ct.cha_lGuildPosition == GUILD_MEMBER_VICE_BOSS )
 									{
-										slIndex = ct.cha_Index;		
-										_pUIMgr->GetGuild()->JoinGuild( ct.cha_lGuildIndex, ct.cha_Index, ct.cha_strGuildName );
+										slIndex = ct.cha_Index;
+										pUIManager->GetGuild()->JoinGuild( ct.cha_lGuildIndex, ct.cha_Index, ct.cha_strGuildName, ct.cha_iSyndicateType );
 									}
 									else
 									{
-										_pUIMgr->CloseMessageBox(MSGCMD_GUILD_ERROR);
+										pUIManager->CloseMessageBox(MSGCMD_GUILD_ERROR);
 										CUIMsgBox_Info	MsgBoxInfo;
-										MsgBoxInfo.SetMsgBoxInfo( _S( 865, "Í∏∏Îìú" ), UMBS_OK, UI_GUILD, MSGCMD_GUILD_ERROR );		
-										MsgBoxInfo.AddString( _S( 867, "Í∏∏ÎìúÏû•ÏóêÍ≤åÎßå Í∞ÄÏûÖ Ïã†Ï≤≠Ïù¥ Í∞ÄÎä•Ìï©ÎãàÎã§." ) );	
-										_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+										MsgBoxInfo.SetMsgBoxInfo( _S( 865, "±ÊµÂ" ), UMBS_OK, UI_GUILD, MSGCMD_GUILD_ERROR );		
+										MsgBoxInfo.AddString( _S( 867, "±ÊµÂ¿Âø°∞‘∏∏ ∞°¿‘ Ω≈√ª¿Ã ∞°¥…«’¥œ¥Ÿ." ) );	
+										pUIManager->CreateMessageBox( MsgBoxInfo );		
 									}									
 									break;
 								}
@@ -6923,30 +4920,30 @@ void CUICharacterInfo::UseAction( int nIndex )
 				}
 				break;
 
-			case 25:	// ÌÉàÌá¥ÌïòÍ∏∞
+			case 25:	// ≈ª≈«œ±‚
 				{
-					// Ï∫êÎ¶≠ÌÑ∞Í∞Ä Îã®Ïû•Ïù¥ÎùºÎ©¥ ÌÉàÌá¥Î•º Ìï† Ïàò ÏóÜÏùå.
+					// ƒ≥∏Ø≈Õ∞° ¥‹¿Â¿Ã∂Û∏È ≈ª≈∏¶ «“ ºˆ æ¯¿Ω.
 					if( _pNetwork->MyCharacterInfo.lGuildPosition > 0 && _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_BOSS)
 					{	
-						_pUIMgr->GetGuild()->QuitGuild();
+						CUIManager::getSingleton()->GetGuild()->QuitGuild();
 					}
 				}
 				break;
 			
-			case 26:	// Í∏∏Îìú Í¥ÄÎ¶¨
+			case 26:	// ±ÊµÂ ∞¸∏Æ
 				{
-					// ÏÑúÎ≤ÑÎ°ú Î©îÏÑ∏ÏßÄÎ•º Î≥¥ÎÇ∏ ÌõÑÏóê, ReceiveÌïú Í≥≥ÏóêÏÑú Ìò∏Ï∂úÌï¥Ïïº Ìï®.
+					// º≠πˆ∑Œ ∏ﬁºº¡ˆ∏¶ ∫∏≥Ω »ƒø°, Receive«— ∞˜ø°º≠ »£√‚«ÿæﬂ «‘.
 					// WSS_NEW_GUILD_SYSTEM 070704
 					// WSS_TEST 
-					// TODO : ÏûÑÏãú Í∏∏Îìú Ï∞Ω
+					// TODO : ¿”Ω√ ±ÊµÂ √¢
 					if( _pNetwork->MyCharacterInfo.lGuildLevel < LIMIT_GUILD_LEVEL )
-						_pUIMgr->GetGuild()->OpenGuildManager( _pNetwork->MyCharacterInfo.lGuildPosition );						
+						CUIManager::getSingleton()->GetGuild()->OpenGuildManager( _pNetwork->MyCharacterInfo.lGuildPosition );						
 					else 
-						_pUIMgr->GetGuild()->OpenGuildManagerNew();
+						CUIManager::getSingleton()->GetGuild()->OpenGuildManagerNew();
 				}
 				break;
 			
-			case 34:// ÏûÑÏãú ÏΩîÎìú Í∏∏Îìú Í≥µÏßÄ ÌÖåÏä§Ìä∏ 
+			case 34:// ¿”Ω√ ƒ⁄µÂ ±ÊµÂ ∞¯¡ˆ ≈◊Ω∫∆Æ 
 				{
 					if( !_pNetwork->IsLord() ) 
 					{
@@ -6957,56 +4954,56 @@ void CUICharacterInfo::UseAction( int nIndex )
 					CTString strSysMessage;
 					CUIMsgBox_Info	MsgBoxInfo;
 
-					MsgBoxInfo.SetMsgBoxInfo( _S( 1886, "ÏÑ±Ï£ºÍ≥µÏßÄ" ), UMBS_USER_12 | UMBS_INPUT_MASK | UMBS_ALIGN_RIGHT, UI_NONE, MSGCMD_GUILD_LORD_NOTICE, 300 ); 
-					MsgBoxInfo.SetUserBtnName( _S( 1887, "Í≥µÏßÄ" ), _S( 870, "Îã´Í∏∞" ) ); 
+					MsgBoxInfo.SetMsgBoxInfo( _S( 1886, "º∫¡÷∞¯¡ˆ" ), UMBS_USER_12 | UMBS_INPUT_MASK | UMBS_ALIGN_RIGHT, UI_NONE, MSGCMD_GUILD_LORD_NOTICE, 300 ); 
+					MsgBoxInfo.SetUserBtnName( _S( 1887, "∞¯¡ˆ" ), _S( 870, "¥›±‚" ) ); 
 					MsgBoxInfo.SetInputBox( 2, 2, 80, 235 );	
 				
-					strSysMessage.PrintF( _S( 1889, "Í≥µÏßÄÌï† ÎÇ¥Ïö©ÏùÑ ÏûÖÎ†•ÌïòÏã≠ÏãúÏò§." ) ); 
+					strSysMessage.PrintF( _S( 1889, "∞¯¡ˆ«“ ≥ªøÎ¿ª ¿‘∑¬«œΩ Ω√ø¿." ) ); 
 					MsgBoxInfo.AddString( strSysMessage, 0xF3F3F3FF, TEXT_CENTER );
 					
-					_pUIMgr->CreateMessageBox( MsgBoxInfo );
+					CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );
 					
 				}
 				break;
 
-			case 31 : // Í∏∏Îìú Ï†ÑÌà¨ Ïã†Ï≤≠ 
+			case 31 : // ±ÊµÂ ¿¸≈ı Ω≈√ª 
 				{
-					// ÌÉÄÍ≤üÏù¥ ÏóÜÍ±∞ÎÇò Ïò¨Î∞îÎ•¥ÏßÄ ÏïäÎã§Î©¥
+					// ≈∏∞Ÿ¿Ã æ¯∞≈≥™ ø√πŸ∏£¡ˆ æ ¥Ÿ∏È
 					if( !_pNetwork->_TargetInfo.bIsActive || !_pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
 						return;
 					}
 					
 					/*****
-					// Ï°¥ Ï†ïÎ≥¥ Ï≤¥ÌÅ¨ 
+					// ¡∏ ¡§∫∏ √º≈© 
 					if ( ZoneInfo().GetZoneType( g_slZone ) != ZONE_FIELD )
 					{
-						_pUIMgr->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
-										_S( 1085, "Í∏∏ÎëêÏ†ÑÌà¨Î•º Ïã†Ï≤≠Ìï† Ïàò ÏûàÎäî ÏßÄÏó≠Ïù¥ ÏïÑÎãôÎãàÎã§." ) );	
+						CUIManager::getSingleton()->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
+										_S( 1085, "±ÊµŒ¿¸≈ı∏¶ Ω≈√ª«“ ºˆ ¿÷¥¬ ¡ˆø™¿Ã æ∆¥’¥œ¥Ÿ." ) );	
 						return;
 					}
 					*****/
 					
-					// ÎÇ¥ Í∏∏Îìú Ï†ïÎ≥¥ Ï≤¥ÌÅ¨ 
+					// ≥ª ±ÊµÂ ¡§∫∏ √º≈© 
 					if( _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_BOSS )
 					{
-						_pUIMgr->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
-								_S( 1086, "Í∏∏ÎìúÏû•Îßå Í∏∏ÎìúÏ†ÑÌà¨Î•º Ïã†Ï≤≠Ìï† Ïàò ÏûàÏäµÎãàÎã§." ) );	
+						CUIManager::getSingleton()->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
+								_S( 1086, "±ÊµÂ¿Â∏∏ ±ÊµÂ¿¸≈ı∏¶ Ω≈√ª«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );	
 						return;
 					}
 					
-/*					if ( _pUIMgr->GetGuild()->GetGuildMemberCount() < GB_MIN_MEMBER )
+/*					if ( CUIManager::getSingleton()->GetGuild()->GetGuildMemberCount() < GB_MIN_MEMBER )
 					{
 						CTString strMessage;
-						//strMessage.PrintF ( _S( 1087, "Í∏∏Îìú Ïù∏ÏõêÏù¥ Î∂ÄÏ°±ÌïòÏó¨ Ï†ÑÌà¨Î•º Ïã†Ï≤≠Ìï† Ïàò ÏóÜÏäµÎãàÎã§.\n(ÏµúÏÜåÏù∏Ïõê : %dÎ™Ö)" ), GB_MIN_MEMBER ); 
-						strMessage.PrintF ( _s( "Í∏∏Îìú Ïù∏ÏõêÏù¥ Î∂ÄÏ°±ÌïòÏó¨ Ï†ÑÌà¨Î•º Ïã†Ï≤≠Ìï† Ïàò ÏóÜÏäµÎãàÎã§.\n(ÏµúÏÜåÏù∏Ïõê : %dÎ™Ö)\n(ÌòÑÏû¨Ïù∏Ïõê: %dÎ™Ö" ),
-							GB_MIN_MEMBER,  _pUIMgr->GetGuild()->GetGuildMemberCount());
+						//strMessage.PrintF ( _S( 1087, "±ÊµÂ ¿Œø¯¿Ã ∫Œ¡∑«œø© ¿¸≈ı∏¶ Ω≈√ª«“ ºˆ æ¯Ω¿¥œ¥Ÿ.\n(√÷º“¿Œø¯ : %d∏Ì)" ), GB_MIN_MEMBER ); 
+						strMessage.PrintF ( _s( "±ÊµÂ ¿Œø¯¿Ã ∫Œ¡∑«œø© ¿¸≈ı∏¶ Ω≈√ª«“ ºˆ æ¯Ω¿¥œ¥Ÿ.\n(√÷º“¿Œø¯ : %d∏Ì)\n(«ˆ¿Á¿Œø¯: %d∏Ì" ),
+							GB_MIN_MEMBER,  CUIManager::getSingleton()->GetGuild()->GetGuildMemberCount());
 						
-						_pUIMgr->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, strMessage );
+						CUIManager::getSingleton()->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, strMessage );
 						return;
 					}*/
 									
-					//!! Í∏∏Îìú Ï†ÑÌà¨ Ïã†Ï≤≠ 
+					//!! ±ÊµÂ ¿¸≈ı Ω≈√ª 
 					INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
 				
 					for( INDEX iCharacter = 0; iCharacter < ctCha; iCharacter++ ) 
@@ -7018,15 +5015,17 @@ void CUICharacterInfo::UseAction( int nIndex )
 						{
 							if( ct.cha_iClientIndex == pEntity->en_ulID ) // Find
 							{
+								CUIManager* pUIManager = CUIManager::getSingleton();
+
 								if( ct.cha_lGuildPosition != GUILD_MEMBER_BOSS )
 								{
-									_pUIMgr->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
-										_S( 1088, "Í∏∏ÎìúÏû•ÏóêÍ≤åÎßå Í∏∏ÎìúÏ†ÑÌà¨Î•º Ïã†Ï≤≠Ìï† Ïàò ÏûàÏäµÎãàÎã§." ) );	
+									pUIManager->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
+										_S( 1088, "±ÊµÂ¿Âø°∞‘∏∏ ±ÊµÂ¿¸≈ı∏¶ Ω≈√ª«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );	
 									return;
 								}
 								else 
 								{
-									_pUIMgr->GetGuildBattle()->OpenGBReq( ct.cha_Index, ct.cha_strGuildName );
+									pUIManager->GetGuildBattle()->OpenGBReq( ct.cha_Index, ct.cha_strGuildName );
 								}
 								break;
 							}
@@ -7035,30 +5034,32 @@ void CUICharacterInfo::UseAction( int nIndex )
 				}
 				break;
 
-			case 32 : // Í∏∏Îìú Ï†ÑÌà¨ Ï§ëÎã® Ïã†Ï≤≠ 
+			case 32 : // ±ÊµÂ ¿¸≈ı ¡ﬂ¥‹ Ω≈√ª 
 				{
-					// ÌÉÄÍ≤üÏù¥ ÏóÜÍ±∞ÎÇò Ïò¨Î∞îÎ•¥ÏßÄ ÏïäÎã§Î©¥
+					// ≈∏∞Ÿ¿Ã æ¯∞≈≥™ ø√πŸ∏£¡ˆ æ ¥Ÿ∏È
 					if( !_pNetwork->_TargetInfo.bIsActive || !_pNetwork->_TargetInfo.TargetType == CHARACTER )
 					{
 						return;
 					}
 
-					// Í∏∏Îìú Ï§ëÎã® Ïã†Ï≤≠ 
-					// ÎÇ¥ Í∏∏Îìú Ï†ïÎ≥¥ Ï≤¥ÌÅ¨ 
+					CUIManager* pUIManager = CUIManager::getSingleton();
+
+					// ±ÊµÂ ¡ﬂ¥‹ Ω≈√ª 
+					// ≥ª ±ÊµÂ ¡§∫∏ √º≈© 
 					if( _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_BOSS )
 					{
-						_pUIMgr->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
-								_S( 1089, "Í∏∏ÎìúÏû•Îßå Í∏∏Îìú Ï†ÑÌà¨ Ï§ëÎã®ÏùÑ Ïã†Ï≤≠Ìï† Ïàò ÏûàÏäµÎãàÎã§." ) );	
+						pUIManager->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
+								_S( 1089, "±ÊµÂ¿Â∏∏ ±ÊµÂ ¿¸≈ı ¡ﬂ¥‹¿ª Ω≈√ª«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );	
 						return;
 					}
 					
-					if( _pUIMgr->GetGuildBattle()->IsInBattle() == FALSE )
+					if( pUIManager->GetGuildBattle()->IsInBattle() == FALSE )
 					{
-						_pUIMgr->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, _S( 1090, "Í∏∏Îìú Ï†ÑÌà¨ Ï§ëÏù¥ ÏïÑÎãôÎãàÎã§." ) ); 
+						pUIManager->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, _S( 1090, "±ÊµÂ ¿¸≈ı ¡ﬂ¿Ã æ∆¥’¥œ¥Ÿ." ) ); 
 						return;
 					}
 
-					// Í∏∏Îìú Ï∑®ÏÜå Ïã†Ï≤≠
+					// ±ÊµÂ √Îº“ Ω≈√ª
 					INDEX	ctCha = _pNetwork->ga_srvServer.srv_actCha.Count();
 				
 					for( INDEX iCharacter = 0; iCharacter < ctCha; iCharacter++ ) 
@@ -7072,13 +5073,13 @@ void CUICharacterInfo::UseAction( int nIndex )
 							{
 								if( ct.cha_lGuildPosition != GUILD_MEMBER_BOSS )
 								{
-									_pUIMgr->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
-										_S( 1091, "Í∏∏ÎìúÏû•ÏóêÍ≤åÎßå Í∏∏Îìú Ï†ÑÌà¨Ï§ëÎã®ÏùÑ Ïã†Ï≤≠Ìï† Ïàò ÏûàÏäµÎãàÎã§." ) );	
+									pUIManager->GetGuildBattle()->GBErrorMessage ( MSGCMD_GUILD_BATTLE_ERROR, 
+										_S( 1091, "±ÊµÂ¿Âø°∞‘∏∏ ±ÊµÂ ¿¸≈ı¡ﬂ¥‹¿ª Ω≈√ª«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." ) );	
 									return;
 								}
 								else 
 								{
-									_pUIMgr->GetGuildBattle()->GBStopReq( ct.cha_Index, ct.cha_strGuildName );
+									pUIManager->GetGuildBattle()->GBStopReq( ct.cha_Index, ct.cha_strGuildName );
 								}
 								break;
 							}
@@ -7099,11 +5100,24 @@ void CUICharacterInfo::UseAction( int nIndex )
 void CUICharacterInfo::UseSkill( int nIndex )
 {
 	if( _pNetwork->MyCharacterInfo.sbShopType != PST_NOSHOP || 
-		_pUIMgr->IsCSFlagOn( CSF_TELEPORT ) )
+		CUIManager::getSingleton()->IsCSFlagOn( CSF_TELEPORT ) )
 		return;
 
-	// ÌÖåÏä§Ìä∏Ïö©.
-	((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseSkill( nIndex );	
+	// ∞≠Ω≈Ω∫≈≥¿∫ ƒ≥∏Ø≈Õ ∫Ø»Øµ» ªÛ≈¬ø°º≠¥¬ ªÁøÎ«“ ºˆ æ¯¥Ÿ
+	if(nIndex == 309 || nIndex == 313)
+	{
+		if(_pNetwork->MyCharacterInfo.eMorphStatus != CNetworkLibrary::MyChaInfo::eMORPH_END)
+		{
+			return;
+		}
+	}
+
+	// ∞≥¿ŒªÛ¡° Ω√µµ¡ﬂ¿œ Ω√ Ω∫≈≥Ω√¿¸«œ¡ˆ æ ¿Ω
+	if(_pNetwork->m_iNetworkResponse[MSG_PERSONALSHOP] != 0)
+		return;
+
+	// ≈◊Ω∫∆ÆøÎ.
+	((CPlayerEntity*)CEntity::GetPlayerEntity(0))->UseSkill( nIndex );
 	//_pNetwork->CreateSlave( 0, CEntity::GetPlayerEntity(0), 1 );
 }
 
@@ -7113,7 +5127,8 @@ void CUICharacterInfo::UseSkill( int nIndex )
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::ClearSkills()
 {
-	for( int iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL; iRow++ )
+	int		iRow;
+	for( iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL; iRow++ )
 		m_btnActiveSkill[iRow].InitBtn();
 
 	for( iRow = 0; iRow < SKILL_PASSIVE_SLOT_ROW_TOTAL; iRow++ )
@@ -7122,6 +5137,15 @@ void CUICharacterInfo::ClearSkills()
 	for( iRow = 0; iRow < SKILL_MEMORIZE_SLOT_ROW_TOTAL; iRow++ )
 		m_btnMemorizeSkill[iRow].InitBtn();
 #endif
+	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
+	{
+		m_btnVoucherSkill[iRow].InitBtn();
+	}
+
+	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
+	{
+		m_btnItemSpecialSkill[iRow].InitBtn();
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -7140,9 +5164,10 @@ void CUICharacterInfo::ClearSSkills()
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::UpdateSkillLevel( int nIndex, SBYTE sbLevel, BOOL bSpecial )
 {
+	int		iRow;
 	if( !bSpecial )
 	{
-		for( int iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL; iRow++ )
+		for( iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL; iRow++ )
 		{
 			if( m_btnActiveSkill[iRow].GetSkillIndex() == nIndex )
 			{
@@ -7159,6 +5184,16 @@ void CUICharacterInfo::UpdateSkillLevel( int nIndex, SBYTE sbLevel, BOOL bSpecia
 				return;
 			}
 		}
+
+		for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
+		{
+			if( m_btnItemSpecialSkill[iRow].GetSkillIndex() == nIndex )
+			{
+				m_btnItemSpecialSkill[iRow].SetSkillLevel( sbLevel );
+				return;
+			}
+		}
+
 #ifdef ADJUST_MEMORIZE_SKILL
 		for( iRow = 0; iRow < SKILL_MEMORIZE_SLOT_ROW_TOTAL; iRow++ )
 		{
@@ -7172,7 +5207,7 @@ void CUICharacterInfo::UpdateSkillLevel( int nIndex, SBYTE sbLevel, BOOL bSpecia
 	}
 	else
 	{
-		for( int iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
+		for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
 		{
 			if( m_btnSpecialSkill[iRow].GetSkillIndex() == nIndex )
 			{
@@ -7194,94 +5229,16 @@ void CUICharacterInfo::StartSkillDelay( int nIndex )
 		if( m_btnActiveSkill[iRow].GetSkillIndex() == nIndex )
 		{
 			m_btnActiveSkill[iRow].SetSkillDelay( TRUE );
-			return;
+			CUIManager::getSingleton()->GetSkillNew()->SetSkillCoolTime(nIndex);
+			break;
+		}
+ 		else if( iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL && m_btnItemSpecialSkill[iRow].GetSkillIndex() == nIndex )
+		{
+ 			m_btnItemSpecialSkill[iRow].SetSkillDelay( TRUE );
+			break;
 		}
 	}
 }
-
-// ----------------------------------------------------------------------------
-// Name : ClearQuests()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::ClearQuests()
-{
-	for( int iRow = 0; iRow < QUEST_SLOT_ROW_TOTAL; iRow++ )
-	{
-		m_btnQuest[iRow].InitBtn();
-		m_btnQuestCancel[iRow].SetEnable(FALSE);
-	}
-
-	m_nSelQuestID = -1;
-
-	m_sbQuestIconScrollBar.SetScrollPos( 0 );
-	m_sbQuestIconScrollBar.SetCurItemCount( 0 );
-}
-*/
-
-// ----------------------------------------------------------------------------
-// Name : RequestQuest()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::RequestQuest( int nNpcIndex, SBYTE sbUIType, FLOAT fX, FLOAT fZ )
-{
-	// If quest is aleardy requested
-	if( m_bLockRequestQuest )
-		return;
-
-	// Close quest message box
-	_pUIMgr->CloseMessageBox( MSGCMD_QUEST_NOTIFY );
-	_pUIMgr->CloseMessageBox( MSGCMD_QUEST_NEWQUEST );
-
-	// If prize of quest is going on
-	if( _pUIMgr->DoesMessageBoxLExist( MSGLCMD_QUEST_PRIZE) )
-		return;
-
-	// If giving up quest is going on
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_QUEST_GIVEUP ) )
-		return;
-
-	// If requesting quest is exist
-	if( CQuestSystem::Instance().GetCurrentRequest() )
-		return;
-
-	INDEX	iPrizeQuestIndex = CQuestSystem::Instance().GetVectorIndexByPrizeNPCIndex( nNpcIndex );
-	CMobData& MD = _pNetwork->GetMobData(nNpcIndex);
-	m_nTargetIndex	= nNpcIndex;
-	m_nTargetUIType = sbUIType;	
-
-	// Set position of target npc
-	m_fNpcX = fX;
-	m_fNpcZ = fZ;
-
-	// ÌÄòÏä§Ìä∏ NPCÍ∞Ä ÏïÑÎãêÎïå...
-	if(!MD.IsQuest())
-	{
-	// If this quest is exist
-	//if( iPrizeQuestIndex != -1 )
-	//{
-		//CQuestDynamicData	*pQuestDD = CQuestSystem::Instance().GetDynamicDataByVectorIndex( iPrizeQuestIndex );
-		//ASSERT( pQuestDD != NULL );
-//
-		//// If this quest is completed - prize...
-			//if( !pQuestDD->IsQuestComplete() )
-		//{
-			//iQuestIndex = pQuestDD->GetQuestIndex();
-			//iNpcIndex	= pQuestDD->GetPrizeNPCIndex();
-				//OpenWindow( FALSE );
-			//return;
-		//}
-	//}
-		OpenWindow( FALSE );
-		return;
-	}
-
-	SendQuestReq( nNpcIndex );
-	
-	_pUIMgr->GetQuest()->ClearQuestList();
-}
-*/
 
 // ----------------------------------------------------------------------------
 // Name : MsgBoxCommand()
@@ -7314,16 +5271,10 @@ void CUICharacterInfo::MsgBoxLCommand( int nCommandCode, int nResult )
 {
 	switch( nCommandCode )
 	{	
-	case MSGLCMD_QUEST_TUTORIAL:
-		if( nResult == 0 )
+	case MSGLCMD_QUEST_TUTORIAL: // MSG_QUEST_PRIZE ø°º≠∏∏ √≥∏Æ
 		{
-			_pUIMgr->GetQuest()->LockQuest(FALSE);
-			_pNetwork->GoZone(0, 0);
-		}
-		else
-		{
-			_pUIMgr->GetQuest()->LockQuest(FALSE);
-			_pNetwork->GoZone(0, 0);
+			CUIManager::getSingleton()->GetQuest()->LockQuest(FALSE);
+			_pNetwork->GoZone(0, 0); // ªı∑ŒøÓ ∆©≈‰∏ÆæÛ ∏µÂø°º≠ Ω≈±‘ ƒ≥∏Ø≈Õ¥¬ ¿Ãµø ¿ßƒ°∞° ªı∑ŒøÓ ¿ßƒ°¿Ã¥Ÿ.(º≠πˆø°º≠ πÆæ’¿∏∑Œ ∫∏≥ª¡ÿ¥Ÿ.)
 		}
 		break;
 	}
@@ -7339,6 +5290,9 @@ void CUICharacterInfo::MsgBoxLCommand( int nCommandCode, int nResult )
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::SendUseStatPoint( UBYTE ubStatType )
 {
+	if( m_bLockStatPoint == TRUE )
+		return;
+
 	_pNetwork->SendUseStatPoint( ubStatType );
 	m_bLockStatPoint = TRUE;
 }
@@ -7430,22 +5384,34 @@ void CUICharacterInfo::UseStatPoint( UBYTE ubStatType, SLONG slStatChange )
 	switch( ubStatType )
 	{
 	case MSG_STATPOINT_USE_STR:
-		strMessage.PrintF( _S( 438, "ÌûòÏù¥ %d ÏÉÅÏäπÌïòÏòÄÏäµÎãàÎã§." ), slStatChange );
+		{
+			strMessage.PrintF( _S( 438, "»˚¿Ã %d ªÛΩ¬«œø¥Ω¿¥œ¥Ÿ." ), slStatChange );
+			updateStatusPt(MSG_STATPOINT_USE_STR, slStatChange);
+		}
 		break;
 	case MSG_STATPOINT_USE_DEX:
-		strMessage.PrintF( _S( 439, "ÎØºÏ≤©Ïù¥ %d ÏÉÅÏäπÌïòÏòÄÏäµÎãàÎã§." ), slStatChange );
+		{
+			strMessage.PrintF( _S( 439, "πŒ√∏¿Ã %d ªÛΩ¬«œø¥Ω¿¥œ¥Ÿ." ), slStatChange );
+			updateStatusPt(MSG_STATPOINT_USE_DEX, slStatChange);
+		}
 		break;
 	case MSG_STATPOINT_USE_INT:
-		strMessage.PrintF( _S( 440, "ÏßÄÌòúÍ∞Ä %d ÏÉÅÏäπÌïòÏòÄÏäµÎãàÎã§." ), slStatChange );
+		{
+			strMessage.PrintF( _S( 440, "¡ˆ«˝∞° %d ªÛΩ¬«œø¥Ω¿¥œ¥Ÿ." ), slStatChange );
+			updateStatusPt(MSG_STATPOINT_USE_INT, slStatChange);
+		}
 		break;
 	case MSG_STATPOINT_USE_CON:
-		strMessage.PrintF( _S( 441, "Ï≤¥ÏßàÏù¥ %d ÏÉÅÏäπÌïòÏòÄÏäµÎãàÎã§." ), slStatChange );
+		{
+			strMessage.PrintF( _S( 441, "√º¡˙¿Ã %d ªÛΩ¬«œø¥Ω¿¥œ¥Ÿ." ), slStatChange );
+			updateStatusPt(MSG_STATPOINT_USE_CON, slStatChange);
+		}
 		break;
 	}
 
-	_pUIMgr->GetChatting()->AddSysMessage( strMessage );
+	CUIManager::getSingleton()->GetChatting()->AddSysMessage( strMessage );
 
-	m_bLockStatPoint = FALSE;
+	UnlockStatPoint();
 }
 
 // ----------------------------------------------------------------------------
@@ -7460,25 +5426,25 @@ void CUICharacterInfo::StatPointError( SBYTE sbError )
 	switch( sbError )
 	{
 	case MSG_STATPOINT_ERROR_NOTENOUGH:
-		strMessage = _S( 1092, "Ïä§ÌÉØ Ìè¨Ïù∏Ìä∏Í∞Ä Î∂ÄÏ°±Ìï©ÎãàÎã§." );		
+		strMessage = _S( 1092, "Ω∫≈» ∆˜¿Œ∆Æ∞° ∫Œ¡∑«’¥œ¥Ÿ." );		
 		break;
 	case MSG_STATPOINT_ERROR_CANTUSE:
-		strMessage = _S( 1093, "Ïä§ÌÉØ Ìè¨Ïù∏Ìä∏Î•º ÏÇ¨Ïö©Ìï† Ïàò ÏóÜÏäµÎãàÎã§." );		
+		strMessage = _S( 1093, "Ω∫≈» ∆˜¿Œ∆Æ∏¶ ªÁøÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." );		
 		break;
 	case MSG_STATPOINT_ERROR_WRONGPACKET:
-		strMessage = _S( 1094, "Ïïå Ïàò ÏóÜÎäî Ïò§Î•òÍ∞Ä Î∞úÏÉùÌñàÏäµÎãàÎã§." );		
+		strMessage = _S( 5608, "¿¸¡˜ ¿Ã»ƒ ªÁøÎ«“ ºˆ ¿÷Ω¿¥œ¥Ÿ." );		
 		break;
 	case MSG_STATPOINT_ERROR_NOMONEY:
-		strMessage = _S( 1095, "ÎèàÏù¥ Î∂ÄÏ°±Ìï©ÎãàÎã§." );		
+		strMessage = _S( 1095, "µ∑¿Ã ∫Œ¡∑«’¥œ¥Ÿ." );		
 		break;
 	default:
 		ASSERTALWAYS("Invalid Stat Point Message!!!");
 		break;
 	}
 
-	_pUIMgr->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+	CUIManager::getSingleton()->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
 
-	m_bLockStatPoint = FALSE;
+	UnlockStatPoint();
 }
 
 // ----------------------------------------------------------------------------
@@ -7495,8 +5461,8 @@ void CUICharacterInfo::AddSkill( int nSkillIndex, SBYTE sbSkillLevel, BOOL bSpec
 		const int iJob = _pNetwork->MyCharacterInfo.job;
 		const int iJob2 = _pNetwork->MyCharacterInfo.job2;
 
-		// ÏÜåÌôòÏä§ÌÇ¨ Ïù∏Îç±Ïä§ Ï∞æÍµ¨,
-		// ÏÜåÌôòÏàò ÏÇ¨Ïö© Ïä§ÌÇ¨.
+		// º“»ØΩ∫≈≥ ¿Œµ¶Ω∫ √£±∏,
+		// º“»Øºˆ ªÁøÎ Ω∫≈≥.
 		if( iJob == SORCERER && 
 			iJob2 == 2 && rSelSkill.GetType() != CSkill::ST_PASSIVE )
 		{
@@ -7519,34 +5485,76 @@ void CUICharacterInfo::AddSkill( int nSkillIndex, SBYTE sbSkillLevel, BOOL bSpec
 		case CSkill::ST_MELEE:			// Active skill
 		case CSkill::ST_RANGE:			// Active skill
 		case CSkill::ST_MAGIC:			// Active skill
+		case CSkill::ST_SUMMON_TOTEM_SKILL:
 			{
 				int	iRow;
 				for( iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL; iRow++ )
 				{
-					if( m_btnActiveSkill[iRow].IsEmpty() )
+					if( !(rSelSkill.GetFlag() & SF_ITEM_SPECIAL_SKILL) )
 					{
-						m_btnActiveSkill[iRow].SetSkillInfo( nSkillIndex, sbSkillLevel );
-						m_sbActiveSkillScrollBar.SetCurItemCount( iRow + 1 );
-						break;
+						if( m_btnActiveSkill[iRow].IsEmpty() )
+						{
+							m_btnActiveSkill[iRow].SetSkillInfo( nSkillIndex, sbSkillLevel );
+							//m_sbActiveSkillScrollBar.SetCurItemCount( iRow + 1 );
+							break;
+						}
+					}
+					else
+					{
+						if (iRow >= SKILL_SPECIAL_SLOT_ROW_TOTAL)
+							continue;
+
+						if (m_btnItemSpecialSkill[iRow].IsEmpty())
+						{
+							m_btnItemSpecialSkill[iRow].SetSkillInfo( nSkillIndex, sbSkillLevel );
+							break;
+						}
 					}
 				}
 			}
 			break;
-
 		case CSkill::ST_PASSIVE:		// Passive skill
 			{
 				int	iRow;
 				for( iRow = 0; iRow < SKILL_PASSIVE_SLOT_ROW_TOTAL; iRow++ )
 				{
-					if( m_btnPassiveSkill[iRow].IsEmpty() )
+					if( !(rSelSkill.GetFlag() & SF_ITEM_SPECIAL_SKILL) )
 					{
-						m_btnPassiveSkill[iRow].SetSkillInfo( nSkillIndex, sbSkillLevel );
-						m_sbPassiveSkillScrollBar.SetCurItemCount( iRow + 1 );
-						break;
+						if( m_btnPassiveSkill[iRow].IsEmpty() )
+						{
+							m_btnPassiveSkill[iRow].SetSkillInfo( nSkillIndex, sbSkillLevel );
+							//m_sbPassiveSkillScrollBar.SetCurItemCount( iRow + 1 );
+							break;
+						}
+					}
+					else
+					{
+						if (iRow >= SKILL_SPECIAL_SLOT_ROW_TOTAL)
+							continue;
+
+						if( m_btnItemSpecialSkill[iRow].IsEmpty() )
+						{
+							m_btnItemSpecialSkill[iRow].SetSkillInfo( nSkillIndex, sbSkillLevel );
+							break;
+						}
 					}
 				}
 			}
 			break;
+		case CSkill::ST_SEAL:
+			{
+				int	iRow;
+				for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
+				{
+					if( m_btnVoucherSkill[iRow].IsEmpty() )
+					{
+						m_btnVoucherSkill[iRow].SetSkillInfo( nSkillIndex, sbSkillLevel );
+						m_sbVoucherSkillScrollBar.SetCurItemCount( iRow + 1 );
+						break;
+					}
+				}
+
+			}break;
 		}
 	}	
 	else
@@ -7564,9 +5572,36 @@ void CUICharacterInfo::AddSkill( int nSkillIndex, SBYTE sbSkillLevel, BOOL bSpec
 	}
 }
 
+void CUICharacterInfo::AddSeal( int nSkillIndex, SQUAD nSealExp )
+{
+	int	iRow;
+	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
+	{
+		if( m_btnVoucherSkill[iRow].IsEmpty() )
+		{
+			m_btnVoucherSkill[iRow].SetSkillInfo( nSkillIndex, 0 );
+			m_btnVoucherSkill[iRow].SetSkillSealExp(nSealExp);
+			m_sbVoucherSkillScrollBar.SetCurItemCount( iRow + 1 );
+			break;
+		}
+	}
+}
+
+void CUICharacterInfo::UpdateSealExp(int nSealIndex, SQUAD lSealExp )
+{
+	for(int iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
+	{
+		if( m_btnVoucherSkill[iRow].GetSkillIndex() == nSealIndex )
+		{
+			m_btnVoucherSkill[iRow].SetSkillInfo( nSealIndex, 0 );
+			m_btnVoucherSkill[iRow].SetSkillSealExp(lSealExp);			
+			break;
+		}
+	}
+}
 // ----------------------------------------------------------------------------
 // Name : CheckSSkill()
-// Desc : ÌäπÏàò Ïä§ÌÇ¨ÏùÑ Í∞ñÍ≥† ÏûàÎäîÏßÄ ÌôïÏù∏Ìï©ÎãàÎã§.
+// Desc : ∆Øºˆ Ω∫≈≥¿ª ∞Æ∞Ì ¿÷¥¬¡ˆ »Æ¿Œ«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 int CUICharacterInfo::CheckSSkill( int nSSkillType )
 {
@@ -7586,7 +5621,7 @@ int CUICharacterInfo::CheckSSkill( int nSSkillType )
 
 // ----------------------------------------------------------------------------
 // Name : CheckSSkill()
-// Desc : ÌäπÏàò Ïä§ÌÇ¨ÏùÑ Í∞ñÍ≥† ÏûàÎäîÏßÄ Ïù∏Îç±Ïä§Î•º ÌÜµÌï¥ÏÑú ÌôïÏù∏Ìï©ÎãàÎã§.
+// Desc : ∆Øºˆ Ω∫≈≥¿ª ∞Æ∞Ì ¿÷¥¬¡ˆ ¿Œµ¶Ω∫∏¶ ≈Î«ÿº≠ »Æ¿Œ«’¥œ¥Ÿ.
 // ----------------------------------------------------------------------------
 BOOL CUICharacterInfo::CheckSSkillByIndex( int iIndex, int nNeedLevel, BOOL* bNeedLevel )
 {
@@ -7601,10 +5636,10 @@ BOOL CUICharacterInfo::CheckSSkillByIndex( int iIndex, int nNeedLevel, BOOL* bNe
 		{
 			CSpecialSkill  CharSSkill = _pNetwork->GetSSkillData ( m_btnSpecialSkill[iRow].GetSkillIndex() );
 
-			// ÌÉÄÏûÖ Ï≤¥ÌÅ¨ 
+			// ≈∏¿‘ √º≈© 
 			if ( NeedSSkill.GetType() == CharSSkill.GetType() )
 			{
-				// Preference Ï≤¥ÌÅ¨ 
+				// Preference √º≈© 
 				if ( NeedSSkill.GetPreference() != -1 ) 
 				{
 					if ( NeedSSkill.GetPreference() < CharSSkill.GetPreference() ) 
@@ -7614,7 +5649,7 @@ BOOL CUICharacterInfo::CheckSSkillByIndex( int iIndex, int nNeedLevel, BOOL* bNe
 					}
 					else if ( NeedSSkill.GetPreference() == CharSSkill.GetPreference() )
 					{
-						// Î†àÎ≤® Ï≤¥ÌÅ¨ 
+						// ∑π∫ß √º≈© 
 						if ( GetSkillLevel ( CharSSkill.GetIndex(), TRUE ) >= nNeedLevel )
 						{
 							*bNeedLevel = TRUE;
@@ -7622,11 +5657,11 @@ BOOL CUICharacterInfo::CheckSSkillByIndex( int iIndex, int nNeedLevel, BOOL* bNe
 						}
 					}
 				}
-				else // ÏïÑÎãàÎ©¥ Ïù∏Îç±Ïä§ Ï≤¥ÌÅ¨ 
+				else // æ∆¥œ∏È ¿Œµ¶Ω∫ √º≈© 
 				{
 					if ( CharSSkill.GetIndex() == iIndex)
 					{
-						// Î†àÎ≤® Ï≤¥ÌÅ¨ 
+						// ∑π∫ß √º≈© 
 						if ( GetSkillLevel ( CharSSkill.GetIndex(), TRUE ) >= nNeedLevel )
 						{
 							*bNeedLevel = TRUE;
@@ -7677,7 +5712,7 @@ void CUICharacterInfo::RemoveSkill( int nSkillIndex, BOOL bSpecial )
 // ----------------------------------------------------------------------------
 void CUICharacterInfo::RemoveSummonSkill()
 {	
-	// ÏÜåÌôò Ïä§ÌÇ¨ Î™©Î°ù.	
+	// º“»Ø Ω∫≈≥ ∏Ò∑œ.	
 	const int iSummonSkillCount = sizeof( _aSummonSkill ) / sizeof(int);
 	int	iRow;
 	for( iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL; iRow++ )
@@ -7686,8 +5721,8 @@ void CUICharacterInfo::RemoveSummonSkill()
 		if( iSkillIndex == -1 ) continue;
 		CSkill	&rSelSkill = _pNetwork->GetSkillData( iSkillIndex );
 
-		// ÏÜåÌôòÏä§ÌÇ¨ Ïù∏Îç±Ïä§ Ï∞æÍµ¨,
-		// ÏÜåÌôòÏàò ÏÇ¨Ïö© Ïä§ÌÇ¨.
+		// º“»ØΩ∫≈≥ ¿Œµ¶Ω∫ √£±∏,
+		// º“»Øºˆ ªÁøÎ Ω∫≈≥.
 		if( rSelSkill.GetSorcererFlag() & ( SSF_USE_FIRE | SSF_USE_WIND | SSF_USE_EARTH | SSF_USE_WATER ) )
 		{
 			m_btnActiveSkill[iRow].InitBtn();
@@ -7704,297 +5739,6 @@ void CUICharacterInfo::RemoveSummonSkill()
 			}
 		}
 	}
-	
-	/*
-	for( iRow = 0; iRow < SKILL_PASSIVE_SLOT_ROW_TOTAL; iRow++ )
-	{
-		const int iSkillIndex = m_btnPassiveSkill[iRow].GetSkillIndex();
-		if( iSkillIndex == -1 ) continue;
-		CSkill	&rSelSkill = _pNetwork->GetSkillData( iSkillIndex );
-
-		// ÏÜåÌôòÏä§ÌÇ¨ Ïù∏Îç±Ïä§ Ï∞æÍµ¨,
-		// ÏÜåÌôòÏàò ÏÇ¨Ïö© Ïä§ÌÇ¨.
-		if( rSelSkill.GetSorcererFlag() & ( SSF_USE_FIRE | SSF_USE_WIND | SSF_USE_EARTH | SSF_USE_WATER ) )
-		{
-			m_btnPassiveSkill[iRow].InitBtn();
-		}
-	}
-	*/
-}
-
-// ----------------------------------------------------------------------------
-// Name : OpenQuestIntro()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::OpenQuestIntro( CQuestDynamicData *pQuestDD )
-{
-	// Close message box
-	_pUIMgr->CloseMessageBoxL( MSGLCMD_QUEST_INTRO );
-
-	// Create quest introduction message box
-	_pUIMgr->CreateMessageBoxL( _S( 99, "ÌÄòÏä§Ìä∏" ), UI_CHARACTERINFO, MSGLCMD_QUEST_INTRO );
-
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_QUEST_INTRO, TRUE,
-									pQuestDD->GetIntroDesc(), -1, pQuestDD->GetColorIntroDesc() );
-
-	for( INDEX i = 0; i < pQuestDD->GetCountTitleDesc(); i++ )
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_QUEST_INTRO, TRUE,
-										pQuestDD->GetTitleDesc( i ), -1, pQuestDD->GetColorTitleDesc( i ) );
-
-	for( i = 0; i < pQuestDD->GetCountPrizeDesc(); i++ )
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_QUEST_INTRO, TRUE,
-										pQuestDD->GetPrizeDesc( i ), -1, pQuestDD->GetColorPrizeDesc( i ) );
-
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_QUEST_INTRO, FALSE, _S( 109, "1. Î∂ÄÌÉÅÏùÑ ÏàòÎùΩÌïúÎã§." ), 0 );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_QUEST_INTRO, FALSE, _S( 110, "2. Î∂ÄÌÉÅÏùÑ Í±∞Ï†àÌïúÎã§." ) );
-
-	m_bLockRequestQuest = FALSE;
-	_pUIMgr->GetQuest()->LockQuest(TRUE);
-}
-*/
-
-// ----------------------------------------------------------------------------
-// Name : CancelQuestRequest()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::CancelQuestRequest()
-{
-	// Close quest notify message box
-	_pUIMgr->CloseMessageBox( MSGCMD_QUEST_NOTIFY );
-
-	_pUIMgr->CloseMessageBox( MSGCMD_QUEST_NEWQUEST );
-
-	// Close message box
-	_pUIMgr->CloseMessageBoxL( MSGLCMD_QUEST_INTRO );
-}
-*/
-
-// ----------------------------------------------------------------------------
-// Name : AddQuest()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::AddQuest( int nQuestIndex, BOOL bNewQuest )
-{
-	// Close message box
-	_pUIMgr->CloseMessageBoxL( MSGLCMD_QUEST_INTRO );
-	_pUIMgr->CloseMessageBox( MSGCMD_QUEST_NEWQUEST );
-
-	// Add quest
-	for( int iBtn = 0; iBtn < QUEST_SLOT_ROW_TOTAL; ++iBtn )
-	{
-		if( m_btnQuest[iBtn].IsEmpty() )
-		{
-			CQuestDynamicData	*pQuestDD = CQuestSystem::Instance().GetDynamicDataByQuestIndex( nQuestIndex );
-			ASSERT( pQuestDD != NULL );
-
-			int	nQuestType = pQuestDD->GetQuestType1();
-			m_btnQuest[iBtn].SetQuestInfo( nQuestIndex, nQuestType, FALSE );
-
-			m_sbQuestIconScrollBar.SetCurItemCount( iBtn + 1 );
-
-			if( bNewQuest )
-			{
-				_pUIMgr->GetQuest()->SetCurQuest(nQuestIndex);
-				CTString		strMessage;
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 99, "ÌÄòÏä§Ìä∏" ), UMBS_OK,
-											UI_QUEST, MSGCMD_QUEST_NEWQUEST );
-				strMessage.PrintF( _S( 111, "%s\nÌÄòÏä§Ìä∏Í∞Ä Í∞úÏãúÎêòÏóàÏäµÎãàÎã§." ), pQuestDD->GetName() );
-				MsgBoxInfo.AddString( strMessage );
-				_pUIMgr->CreateMessageBox( MsgBoxInfo );
-			}
-
-			break;
-		}
-	}
-}
-*/
-
-// ----------------------------------------------------------------------------
-// Name : RemoveQuest()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::RemoveQuest( int nQuestIndex )
-{
-	// Remove quest
-	for( int iBtn = 0; iBtn < QUEST_SLOT_ROW_TOTAL; iBtn++ )
-	{
-		if( m_btnQuest[iBtn].GetQuestIndex() == nQuestIndex )
-		{
-			m_btnQuest[iBtn].InitBtn();
-			m_btnQuestCancel[iBtn].SetEnable(FALSE);
-			break;
-		}
-	}
-
-	// Not removed
-	if( iBtn == QUEST_SLOT_ROW_TOTAL )
-		return;
-
-	// Rearrange quest & update quest description
-	int	nNewQuestCount = m_sbQuestIconScrollBar.GetCurItemCount() - 1;
-	if( iBtn != nNewQuestCount )
-	{
-		if( m_nSelQuestID >= 0 && m_nSelQuestID <= iBtn )
-		{
-			m_nSelQuestID = -1;
-			GetQuestDesc( TRUE, -1 );
-		}
-
-		int		nIndex;
-		SBYTE	sbType;
-		SBYTE	sbFlag;
-		for( int iArrBtn = iBtn + 1; iArrBtn < QUEST_SLOT_ROW_TOTAL; iArrBtn++ )
-		{
-			if( m_btnQuest[iArrBtn].IsEmpty() )
-			{
-				m_btnQuest[iArrBtn - 1].InitBtn();
-				m_btnQuestCancel[iArrBtn - 1].SetEnable(FALSE);
-				break;
-			}
-
-			nIndex = m_btnQuest[iArrBtn].GetQuestIndex();
-			sbType = m_btnQuest[iArrBtn].GetQuestType();
-			sbFlag = m_btnQuest[iArrBtn].GetQuestFlag();
-			m_btnQuest[iArrBtn - 1].SetQuestInfo( nIndex, sbType, sbFlag );
-		}
-	}
-	else
-	{
-		if( m_nSelQuestID == iBtn )
-		{
-			m_nSelQuestID = -1;
-			GetQuestDesc( TRUE, -1 );
-		}
-	}
-
-	ASSERT( nNewQuestCount >= 0 );
-	m_sbQuestIconScrollBar.SetCurItemCount( nNewQuestCount );
-}
-*/
-
-// ----------------------------------------------------------------------------
-// Name : UpdateQuestData()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::UpdateQuestData( int nQuestIndex )
-{
-	// If quest is not exist
-	if( nQuestIndex == -1 )
-		return;
-
-	// If this quest is not selected or
-	// this quest is not equal to selected quest
-	if( m_nSelQuestID < 0 ||
-		( m_nSelQuestID >= 0 && m_btnQuest[m_nSelQuestID].GetQuestIndex() != nQuestIndex ) )
-		return;
-
-	// Update data of quest
-	GetQuestDesc( TRUE, nQuestIndex );
-}
-*/
-
-// ----------------------------------------------------------------------------
-// Name : CompleteQuest()
-// Desc :
-// ----------------------------------------------------------------------------
-/*
-void CUICharacterInfo::CompleteQuest( int nQuestIndex )
-{
-	for( int iBtn = 0; iBtn < QUEST_SLOT_ROW_TOTAL; iBtn++ )
-	{
-		if( m_btnQuest[iBtn].GetQuestIndex() == nQuestIndex )
-		{
-			if( !(m_btnQuest[iBtn].GetQuestFlag() == QUEST_FLAG_COMPLETE))
-			{
-				m_btnQuest[iBtn].SetQuestFlag( QUEST_FLAG_COMPLETE );
-
-				CQuestDynamicData	*pQuestDD = CQuestSystem::Instance().GetDynamicDataByQuestIndex( nQuestIndex );
-				ASSERT( pQuestDD != NULL );
-
-				CTString		strSysMessage;
-				strSysMessage.PrintF( _S( 354, "[%s] ÌÄòÏä§Ìä∏Í∞Ä ÏôÑÎ£åÎêòÏóàÏäµÎãàÎã§." ), pQuestDD->GetName() );
-
-				_pUIMgr->GetChatting()->AddSysMessage( strSysMessage );
-			}
-
-			break;
-		}
-	}
-}
-*/
-
-// ----------------------------------------------------------------------------
-// Name : OpenWindow()
-// Desc :
-// ----------------------------------------------------------------------------
-// FIXME : ÏóêÎü¨ Î©îÏãúÏßÄ Ï∂úÎ†•ÌïòÎäî Î∞©ÏãùÏù¥ ÎßòÏóê ÏïàÎì†Îã§.
-// FIXME : UITypeÎ•º ÏñªÏñ¥ÏÑú Ìò∏Ï∂úÌïòÍ≥† ÏûàÎäîÎç∞, OpenWindow()Îßå Ìò∏Ï∂úÌï¥ÏÑú Ïò§ÌîàÌñàÏúºÎ©¥ ÌïòÎäîÎç∞...
-void CUICharacterInfo::OpenWindow( BOOL bHasQuestList )
-{
-	/*
-	const int iMobIndex = m_nTargetIndex;
-	ASSERT( 0 && "This function call?" );
-
-	switch( m_nTargetUIType )
-	{
-	case UI_SHOP:
-		{
-			_pUIMgr->GetShop()->OpenShop( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
-		}
-		break;		
-	case UI_REFINE:
-		{
-			_pUIMgr->GetRefine()->OpenRefine( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
-		}
-		break;
-	case UI_SKILLLEARN:
-		{
-			_pUIMgr->GetSkillLearn()->OpenSkillLearn( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
-		}
-		break;
-	case UI_REMISSION:
-		{			
-			_pUIMgr->GetRemission()->OpenRemission( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
-		}
-		break;
-	case UI_WAREHOUSE:
-		{			
-			_pUIMgr->GetWareHouse()->CheckHasPassWord( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
-		}
-		break;
-	case UI_GUILD:
-		{
-			_pUIMgr->GetGuild()->OpenGuild( iMobIndex, bHasQuestList, _pNetwork->MyCharacterInfo.lGuildPosition, _pNetwork->MyCharacterInfo.lGuildLevel );
-		}
-		break;
-	case UI_CHANGEWEAPON:
-		{
-			_pUIMgr->GetChangeWeapon()->OpenChangeWeapon( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
-		}
-		break;
-	case UI_INITJOB:
-		{
-			_pUIMgr->GetInitJob()->OpenInitJob( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
-		}
-		break;
-	case UI_SIEGE_WARFARE:
-		{
-			_pUIMgr->GetSiegeWarfare()->OpenSiegeWarfare();
-		}
-		break;
-	case UI_GAMBLE:		// ÎèÑÎ∞ï NPC
-		{			
-			_pUIMgr->GetGamble()->OpenGamble( m_fNpcX, m_fNpcZ );
-		}
-		break;
-	}
-	*/
 }
 
 BOOL CUICharacterInfo::GetSkillDelay( int nIndex )
@@ -8008,6 +5752,13 @@ BOOL CUICharacterInfo::GetSkillDelay( int nIndex )
 			else 
 				return FALSE;
 		}
+		else if( iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL && m_btnItemSpecialSkill[iRow].GetSkillIndex() == nIndex )
+		{
+			if ( m_btnItemSpecialSkill[iRow].GetSkillDelay() )
+				return TRUE;
+			else 
+				return FALSE;
+		}
 	}
 	return FALSE;
 }
@@ -8016,4 +5767,159 @@ void CUICharacterInfo::UpdateExpAndSp(void)
 {
 	m_strExp.PrintF( "%I64d/%I64d", _pNetwork->MyCharacterInfo.curExp, _pNetwork->MyCharacterInfo.needExp );
 	m_strSP.PrintF( "%d", _pNetwork->MyCharacterInfo.sp / 10000 );	
+}
+
+UQUAD CUICharacterInfo::GetSealExp(int nIndex)
+{
+	for( int iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL; iRow++ )
+	{
+		if( m_btnVoucherSkill[iRow].GetSkillIndex() == nIndex )
+		{
+			return m_btnVoucherSkill[iRow].GetSkillSealExp();
+		}
+	}
+	return 0;
+}
+
+
+CUIButtonEx* CUICharacterInfo::GetSkillBtn( int idx )
+{
+	for( int iRow = 0; iRow < SKILL_ACTIVE_SLOT_ROW_TOTAL; iRow++ )
+	{
+		if( m_btnActiveSkill[iRow].GetSkillIndex() == idx )
+		{
+			return &m_btnActiveSkill[iRow];
+		}
+	}
+	return NULL;
+}
+
+void CUICharacterInfo::initialize()
+{
+	m_bStatusTabOpen[STATUS_TAB_PKINFO_N_ATTRIBUTE] = 0;
+	m_bStatusTabOpen[STATUS_TAB_PHYSICAL_N_MAGICAL] = 0;
+
+	for(int i=0; i<3; i++)
+	{
+		m_nSkillActionUpperTab[i] = 0;
+	}
+
+	m_rcIcons.SetRect( 0, 0, SKILLINFO_NEW_WIDTH, SKILLINFO_NEW_HEIGHT);
+	m_rcTitle.SetRect( 0, 0, CHARINFO_NEW_WIDTH, 36 );
+	//ªÁ¿ÃµÂ ≈« øµø™
+	m_rcCharInfoTab.SetRect(7, 37, 28, 246);
+
+	//≈« ±◊∏Æ¥¬ ≈©±‚
+	m_rcTabLayer.SetRect(7, 37, 28, 87);
+	m_rcInfoRegion.SetRect(28, 37, 506, 330);
+	m_rcStatusTab[STATUS_TAB_PKINFO_N_ATTRIBUTE].SetRect(33, 240, 263, 261);
+	m_rcStatusTab[STATUS_TAB_PHYSICAL_N_MAGICAL].SetRect(270, 150, 500, 171);
+
+	//m_rcSkillActionTab.SetRect(34, 44, 233, 64);
+	m_rcSkillActionTab.SetRect(34, 44, 298, 64);
+	m_rcCharInfoDesc.SetRect(0, 0, 100, 30);
+
+	m_rsSkillName.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 50);
+	m_rsSkillDesc.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 50);
+
+	m_rsCurrentSkillInfo.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 200);
+	m_rsNextSkillInfo.Create(NULL, 0, 0, SKILLINFO_MIN_WIDTH, 200);
+
+	m_rcSkillInfo.SetRect(0, 0, SKILLINFO_MIN_WIDTH, 50);
+
+	m_rcButtonArea.SetRect(0, 0, 212, 34);
+
+	// Skill buttons
+	// Active skill
+	int		iRow;
+
+	// Special skill
+	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL ; iRow++ )
+	{
+		m_btnSpecialSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
+			UBET_SKILL, 0, iRow );
+	}
+	// Voucher skill
+	for( iRow = 0; iRow < SKILL_SPECIAL_SLOT_ROW_TOTAL ; iRow++ )
+	{
+		m_btnVoucherSkill[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
+			UBET_SKILL, 0, iRow );
+	}
+
+	// Action buttons
+	// Normal action button
+	for( iRow = 0; iRow < ACTION_NORAML_SLOT_ROW_TOTAL ; iRow++ )
+	{
+
+		m_btnNormalAction[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
+			UBET_ACTION, 0, iRow);
+	}
+	// Social action button
+	for( iRow = 0; iRow < ACTION_SOCIAL_SLOT_ROW_TOTAL ; iRow++ )
+	{
+
+		m_btnSocialAction[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
+			UBET_ACTION, 0, iRow);
+	}
+	// Party action button
+	for( iRow = 0; iRow < ACTION_PARTY_SLOT_ROW_TOTAL ; iRow++ )
+	{
+
+		m_btnPartyAction[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
+			UBET_ACTION, 0, iRow);
+	}
+	// Guild action button
+	for( iRow = 0; iRow < ACTION_GUILD_SLOT_ROW_TOTAL ; iRow++ )
+	{
+
+		m_btnGuildAction[iRow].Create( this, 0, 0, BTN_SIZE, BTN_SIZE, UI_CHARACTERINFO,
+			UBET_ACTION, 0, iRow);
+	}
+}
+
+void CUICharacterInfo::OnUpdate( float fElapsedTime )
+{
+
+}
+
+void CUICharacterInfo::OnRender( CDrawPort* pDraw )
+{
+
+}
+
+void CUICharacterInfo::updateStatusPt(int type, int value)
+{
+	switch( type )
+	{
+	case MSG_STATPOINT_USE_STR:
+		{
+			_pNetwork->MyCharacterInfo.str += value;
+			m_strStrength.PrintF( "%3d (%2d)", _pNetwork->MyCharacterInfo.str,
+				_pNetwork->MyCharacterInfo.opt_str );
+		}
+		break;
+	case MSG_STATPOINT_USE_DEX:
+		{
+			_pNetwork->MyCharacterInfo.dex += value;
+			m_strDexterity.PrintF( "%3d (%2d)", _pNetwork->MyCharacterInfo.dex,
+				_pNetwork->MyCharacterInfo.opt_dex );
+		}
+		break;
+	case MSG_STATPOINT_USE_INT:
+		{
+			_pNetwork->MyCharacterInfo.intel += value;
+			m_strIntelligence.PrintF( "%3d (%2d)", _pNetwork->MyCharacterInfo.intel,
+				_pNetwork->MyCharacterInfo.opt_intel );
+		}
+		break;
+	case MSG_STATPOINT_USE_CON:
+		{
+			_pNetwork->MyCharacterInfo.con += value;
+			m_strConstitution.PrintF( "%3d (%2d)", _pNetwork->MyCharacterInfo.con,
+				_pNetwork->MyCharacterInfo.opt_con );
+		}
+		break;
+	}
+	
+	m_strStatPoint.PrintF( "%d", _pNetwork->MyCharacterInfo.StatPoint );
 }

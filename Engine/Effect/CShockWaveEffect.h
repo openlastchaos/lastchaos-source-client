@@ -75,21 +75,21 @@ protected:
 	void ClearInstance();
 protected:
 	//contents
-	CTFileName				m_strTextureFileName;	//textureì˜ íŒŒì¼ ì´ë¦„
+	CTFileName				m_strTextureFileName;	//textureÀÇ ÆÄÀÏ ÀÌ¸§
 	BOOL					m_bInnerBasis;
 	INDEX					m_iSplitCount;
 	CSampleSpline<FLOAT>	m_ssRadius;
 	CSampleSpline<FLOAT>	m_ssWidth;
 	CSampleSpline<FLOAT>	m_ssHeight;
-	EFFECT_OF_TAG_TYPE		m_eRotation;			//tagì˜ íšŒì „ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
-	EFFECT_OF_TAG_TYPE		m_ePosition;			//tagì˜ ì´ë™ì— ì–¼ë§Œí¼ ì˜í–¥ì„ ë°›ì„ ê²ƒì¸ê°€?
+	EFFECT_OF_TAG_TYPE		m_eRotation;			//tagÀÇ È¸Àü¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
+	EFFECT_OF_TAG_TYPE		m_ePosition;			//tagÀÇ ÀÌµ¿¿¡ ¾ó¸¸Å­ ¿µÇâÀ» ¹ŞÀ» °ÍÀÎ°¡?
 	PredefinedBlendType		m_eBlendType;
 	//instance
 	static ULONG				m_ulVertexProgramNoTex;
 	static ULONG				m_ulPixelProgramNoTex;
 	static ULONG				m_ulVertexProgramTex;
 	static ULONG				m_ulPixelProgramTex;
-	CTextureData				*m_ptdTexture;			//ì‹¤ì œ ë¡œë”©ëœ texture
+	CTextureData				*m_ptdTexture;			//½ÇÁ¦ ·ÎµùµÈ texture
 	std::vector<FLOAT3D>		m_vectorMoveVector;
 	std::vector<GFXTexCoord>	m_vectorTexCoord;
 	std::vector<WORD>			m_vectorIndex;

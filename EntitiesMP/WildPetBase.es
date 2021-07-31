@@ -6,6 +6,7 @@
 #include "EntitiesMP/TacticsHolder.h"
 #include "EntitiesMP/PlayerWeapons.h"
 #include <Engine/Interface/UIManager.h>
+#include <Engine/Contents/function/WildPetInfoUI.h>
 %}
 
 uses "EntitiesMP/Player";
@@ -171,21 +172,25 @@ functions:
 			if (m_penEnemy != NULL && m_bAttack)	{ // 적 타겟이 있고, 공격을 할때
 				AttackAnim();
 			} else { // 그냥 정지해 있는다.
-				if (_pNetwork->_WildPetInfo.m_nStm <= 0)
-				{ // 배고픔 동작
-					HungryAnim();
-				}
-				else
-				{ // 그냥 정지 동작
-					StandingAnim();
-				}
+				StandingAnim();
 			}
 		}
 	}
 
 	BOOL SetTargetEntity(CEntity *pen) // CUnit에서 Override
 	{
-		m_penEnemy = pen;
+		// 탈것 여부 체크.
+//		if( !_pNetwork->MyCharacterInfo.bWildPetRide )
+		CWildPetData *m_Petdata;
+		m_Petdata = CWildPetData::getData(en_pWildPetTarget->m_nIndex);
+		
+		if (m_Petdata->nFlag & WILDPET_FLAG_ATTACK)
+		{
+//			return FALSE;
+//		}
+//		{
+			m_penEnemy = pen;
+		}
 		return TRUE;
 	}
 
@@ -236,6 +241,10 @@ functions:
 		m_bStop = FALSE;
 		m_bAttack = FALSE;
 		m_bMoving = FALSE;
+		if (en_pWildPetTarget)
+		{
+			en_pWildPetTarget->bDeath = TRUE;
+		}		
 		
 		if (GetFlags() & ENF_ALIVE)
 		{
@@ -307,6 +316,14 @@ functions:
 		SendEvent(EWildPetBaseReconsiderBehavior());
 	}
 
+	void SendActEvent()
+	{
+		if (!m_bUseAI)
+		{
+			ActEventAnim();
+		}
+	}
+
 	void StopandTeleport()
 	{ // 강제 이동
 		FLOAT3D vDeltaPlane = m_vDesiredPosition - GetPlacement().pl_PositionVector;
@@ -322,12 +339,13 @@ functions:
 		}
 
 		m_vDesiredPosition = GetPlacement().pl_PositionVector;
+
 		StopNow();
 		StandingAnim();
 	}
 
-	// 테스트 결과 사용하지 않아도 무관하다.
-/*	void ReceiveDamage(CEntity *penInflictor, enum DamageType dmtType, FLOAT fDamageAmount,
+	// 테스트 결과 물리 적인 적용을 위해서 사용해야 한다.(데미지에 의해 상태 이상을 준다거나 할때)
+	void ReceiveDamage(CEntity *penInflictor, enum DamageType dmtType, FLOAT fDamageAmount,
 		const FLOAT3D &vHitPoint, const FLOAT3D &vDirection)  //CMovableModelEntity 에서  Override
 	{
 		// adjust damage
@@ -346,13 +364,8 @@ functions:
 		// 아마도 Trap같은 Entity로 인한 부분으로 판단 되며, 테스트 결과 일반 CEnemy 와는 관계가 없음.
 		// 싱글던전에서 캐릭터 및 몬스터 등에서는 Death이벤트를 발생하지 않도록, 데미지를 받을때 CLiveEntity::en_fHealth를 아주 크게 설정
 		SetHealth(1000.0f);
-
-
-
-
-
 		CMovableModelEntity::ReceiveDamage(penInflictor, dmtType, fNewDamage, vHitPoint, vDirection);
-	}*/
+	}
 
 
 
@@ -379,6 +392,14 @@ functions:
 
 	BOOL SetTargetSoft(CEntity *penPlayer)
 	{
+		CWildPetData *m_Petdata;
+		m_Petdata = CWildPetData::getData(en_pWildPetTarget->m_nIndex);
+		
+		if (!(m_Petdata->nFlag & WILDPET_FLAG_ATTACK))
+		{
+			return FALSE;
+		}
+
 		// if invalid target
 		//if (!IsValidForEnemy(penPlayer) && !((CPlayer*)CEntity::GetPlayerEntity(0))->CheckAttackTarget(-1, penPlayer, 0.0f))
 		if (!((CPlayer*)CEntity::GetPlayerEntity(0))->CheckAttackTarget(-1, penPlayer, 0.0f))
@@ -434,11 +455,19 @@ functions:
 
 	virtual FLOAT3D MyOwnerDestinationPos(void) // 자신의 주인을 따르기 위해 주인의 위치를 준다. 사용전 NULL 검사 필수
 	{
+		if (m_penOwner == NULL)
+		{
+			return GetPlacement().pl_PositionVector;
+		}
 		return m_penOwner->GetPlacement().pl_PositionVector;
 	}
 
 	virtual FLOAT3D EnemyDestinationPos(void) // 적의 위치를 돌려준다. 사용전 NULL검사 필수
 	{
+		if (m_penEnemy == NULL)
+		{
+			return GetPlacement().pl_PositionVector;
+		}
 		return m_penEnemy->GetPlacement().pl_PositionVector;
 	}
 
@@ -584,11 +613,11 @@ functions:
 				{
 					if (m_penEnemy->GetFlags() & ENF_ITEM && m_penEnemy->GetModelInstance())
 					{
-						SLONG ItemIndex = _pNetwork->SearchItemIndex(m_penEnemy->en_ulID);
-						_pNetwork->SendPickMessage( this, (ULONG)ItemIndex, TRUE );
+						_pNetwork->SendPickMessage( this, (ULONG)m_penEnemy->GetNetworkID(), TRUE );
 					}
 
 					m_wPetState = WPET_AI_FOLLOW;
+					m_bAIStart = TRUE;
 				}
 				else if (m_bUseAI && m_wPetState == WPET_AI_FOLLOW)
 				{
@@ -749,7 +778,7 @@ functions:
 	virtual void AttackAnim(void) {}
 	virtual void IdleLoop(void) {}
 	virtual void StandUpAnim(void) {}
-	virtual void AISerch() {}
+	virtual void AISearch() {}
 
 	// render particles
 	void RenderParticles(void)
@@ -953,6 +982,11 @@ functions:
 		m_fSprayDamage += fNewDamage;
 	}*/
 procedures:
+	// dummy main
+	Main(EVoid)
+	{
+		return;
+	}
 //////////////////////////////////////////////////////////////////////////
 // 필요 없을 것 같은 procedures 
 // NewEnemySpotted() 새로운 적을 찾을 때 (pet AI시 사용할 수 있을지 두고 보자)
@@ -1034,6 +1068,7 @@ procedures:
 					// cease it (그만둠)
 					SetTargetNone();
 					m_wPetState = WPET_AI_FOLLOW;
+					m_bAIStart = TRUE;
 					return EReturn();
 				}
 			}
@@ -1046,7 +1081,7 @@ procedures:
 				}
 
 				// AI 적용되어 있지 않을때
-				if (!_pUIMgr->GetWildPetInfo()->GetAIActive())
+				if (!SE_Get_UIManagerPtr()->GetWildPetInfoUI()->GetAIActive())
 				{
 					CEntity* pTmpEnt = ((CPlayer*)CEntity::GetPlayerEntity(0))->GetPlayerWeapons()->m_penRayHitTmp;
 					//CEntity* pTmpEnt = ((CPlayer*)CEntity::GetPlayerEntity(0))->GetPlayerWeapons()->m_penRayHitNow;
@@ -1069,11 +1104,12 @@ procedures:
 					}
 				}
 			}
-			else if (m_wPetState == WPET_AI_USESKILL)
+			else if (m_wPetState == WPET_AI_NORMALATTACK)
 			{
-				if (GetTargetEntity(m_wPetState) == NULL || GetTargetEntity(m_wPetState)->IsFlagOff(ENF_ALIVE))
+				if (GetTargetEntity(m_wPetState) == NULL || GetTargetEntity(m_wPetState)->IsFlagOff(ENF_ALIVE) || m_penOwner == m_penEnemy )
 				{
 					m_wPetState = WPET_AI_FOLLOW;
+					m_bAIStart = TRUE;
 					return EReturn();
 				}
 			}
@@ -1175,16 +1211,22 @@ procedures:
 						//m_vDesiredPosition = EnemyDestinationPos();
 						m_vDesiredPosition = TargetDestinationPos(m_wPetState);
 					}
-					else if (m_dtDestination == DT_PLAYERSPOTTED)
-					{	// use that as destination position
-						m_vDesiredPosition = m_vPlayerSpotted;
-					}
 
 					if (IsMovable()) // 하위 클래스에서 구현
 					{
 						// set speeds for movement towards desired position (목적지와 현재의 위치상의 거리 계산)
 						FLOAT3D vPosDelta = m_vDesiredPosition - GetPlacement().pl_PositionVector;
 						FLOAT fPosDistance = vPosDelta.Length();
+
+						if (vPosDelta(2) > 10.f)
+						{
+							en_plPlacement.pl_PositionVector = m_vPlayerSpotted;
+							en_plPlacement.pl_PositionVector(2) += 1.f;
+							StopMove();
+
+							//LOG_DEBUG("Stop Move -P2 %.2f %.2f %.2f", en_plPlacement.pl_PositionVector(1), en_plPlacement.pl_PositionVector(3), en_plPlacement.pl_PositionVector(2));
+							resume;
+						}
 
 						SetSpeedsToDesiredPosition(vPosDelta, fPosDistance, TRUE);
 
@@ -1206,8 +1248,19 @@ procedures:
 				// if came to an edge
 				on (EWouldFall eWouldFall) : { pass; }
 				// pass all death events
-				on (EDeath) : { pass; }
-				on (EWildPetBaseDeath) : { pass; }
+				on (EDeath eDeath) : 
+				{
+					EWildPetBaseDeath eEBDeath;
+					eEBDeath.eidInflictor = (CEntity*)eDeath.eLastDamage.penInflictor;
+					SendEvent(eEBDeath,TRUE);
+					resume;		// 계속 wait
+				}
+				on (EWildPetBaseDeath eEBDeath) :
+				{
+					m_bWasKilled = TRUE; 
+					// die
+					jump Die(eEBDeath);		// 죽었으면 프로시저를 멈추고 Die프로시저로 넘어가서 끝냄.
+				}
 
 				on (ESound) : { resume; } // ignore all sounds
 				// on (EWatch) : { resume; } // ignore watch
@@ -1233,6 +1286,8 @@ procedures:
 			} else {
 				m_fShootTime = _pTimer->CurrentTick() + GetProp(m_fAttackFireTime) * (1.0f + FRnd()/3.0f);
 			}
+
+			m_bAIStart = TRUE;
 			// fire
 			autocall Hit() EReturn;
 		}
@@ -1245,7 +1300,6 @@ procedures:
 		// return to caller
 		return EReturn();
 	}
-
 //**********************************************************
 //                 COMBAT IMPLEMENTATION
 //**********************************************************
@@ -1325,7 +1379,8 @@ procedures:
 		}
 		
 		// stop making fuss
-		//RemoveFromFuss();  
+		//RemoveFromFuss();
+		_pNetwork->DelWildPetTarget(en_lNetworkID);
 
 		return;
 	}
@@ -1453,12 +1508,11 @@ procedures:
 			// if new behavior is requested
 			on (EWildPetBaseReconsiderBehavior) :
 			{
-
-				if (m_bUseAI && m_wPetState == WPET_AI_FOLLOW) // AI 작동
+				if (m_bUseAI) // AI 작동
 				{
 					if (m_bAIStart)
 					{ // 여기서 행동 판단
-						AISerch();
+						AISearch();
 						m_bAIStart = FALSE;
 					}
 				}
@@ -1494,7 +1548,7 @@ procedures:
 							else if(m_bMoving)
 							{
 								call MovetoPoint();
-							}								
+							}
 						}
 					}
 				}
@@ -1503,6 +1557,7 @@ procedures:
 					if (m_bUseAI && m_wPetState != WPET_AI_FOLLOW)
 					{
 						m_wPetState = WPET_AI_FOLLOW;
+						m_bAIStart = TRUE;
 					}
 
 					if (m_bStop) // 리젠 되었을때 또는 이동을 멈출때
@@ -1512,7 +1567,7 @@ procedures:
 					else if(m_bMoving)
 					{
 						call MovetoPoint();
-					}					
+					}
 				}
 
 				resume;
@@ -1572,6 +1627,21 @@ procedures:
 
 				resume;
 			}
+
+			on (EDeath eDeath) :
+			{
+				EWildPetBaseDeath eEBDeath;
+				eEBDeath.eidInflictor = static_cast<CEntity*>(eDeath.eLastDamage.penInflictor);
+				SendEvent(eEBDeath, TRUE);
+				resume;
+			}
+
+			on (EWildPetBaseDeath eEBDeath) :
+			{
+				m_bWasKilled = TRUE;
+				jump Die(eEBDeath);	// 죽었으면 프로시저를 멈추고 Die 프로시저로 넘어가서 끝냄.
+			}
+
 			// on touch
 			on (ETouch eTouch) : 
 			{
@@ -1648,7 +1718,7 @@ procedures:
 
 			on (EDeath eDeath) :
 			{
-				EWildPetBaseDamage eEBDeath;
+				EWildPetBaseDeath eEBDeath;
 				eEBDeath.eidInflictor = static_cast<CEntity*>(eDeath.eLastDamage.penInflictor);
 				SendEvent(eEBDeath, TRUE);
 				resume;
@@ -1667,12 +1737,6 @@ procedures:
 				resume;
 			}
 		}
-	}
-
-	// dummy main
-	Main(EVoid)
-	{
-		return;
 	}
 
 	AttackTarget() // 이 프로시저를 call 하기전에 SetTargetEntity()가 선행 되어야 한다.
@@ -1698,8 +1762,8 @@ procedures:
 
 		SetNoTargetEntity();
 		StopMoving();
-		StandingAnim();
 
+		StandingAnim();
 		return EReturn();
 	}
 
@@ -1747,7 +1811,6 @@ procedures:
 		// m_vDesiredPosition = GetPlacement().pl_PositionVector;
 		// StopMoving();
 		StandingAnim();
-
 		return EReturn();
 	}
 

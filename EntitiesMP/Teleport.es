@@ -5,6 +5,7 @@
 #include <Engine/Interface/UIManager.h>
 #include <Engine/Interface/UISummon.h>
 #include <Engine/SlaveInfo.h>
+#include <Engine/Info/MyInfo.h>
 %}
 
 uses "EntitiesMP/BasicEffects";
@@ -40,7 +41,8 @@ properties:
   9 enum eTeleportType	m_eTeleportType	"Teleport Type" = TELEPORT_DEFAULT,
   10 INDEX m_iTeleportIndex		"Teleport/Zone Index"	= -1,
   11 INDEX m_iTeleportExtIndex	"Teleport/Zone Extension Index"	= 0,
-
+  12 FLOAT m_tmGoZoneSendedTime = 0.0f,	//[091120: selo] 존 이동 정보를 보낸 시간
+  13 CEntityPointer m_penParticle "Particle Target" 'T' COLOR(C_BROWN|0xFF),
 
 components:
 
@@ -79,7 +81,7 @@ functions:
 	// 소환수도 이동시킵니다.
 	for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 	{
-		CUISummon* pUISummon = (CUISummon*)_pUIMgr->GetUI(i);
+		CUISummon* pUISummon = (CUISummon*)SE_Get_UIManagerPtr()->GetUI(i);
 		if( pUISummon->GetSummonEntity() )
 		{
 			pUISummon->SetCommand(CSlaveInfo::COMMAND_HOLD);
@@ -88,11 +90,14 @@ functions:
 		}
 	}
 
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+	CPetTargetInfom* pPetInfo = pInfo->GetMyPetInfo();
+
 	// 애완동물도 이동 시킵니다.
-	if( _pNetwork->_PetTargetInfo.bIsActive && _pNetwork->_PetTargetInfo.pen_pEntity )
+	if( pPetInfo->bIsActive && pPetInfo->pen_pEntity )
 	{
-		_pNetwork->_PetTargetInfo.pen_pEntity->SetPlacement(m_penTarget->GetPlacement());
-		_pNetwork->_PetTargetInfo.pen_pEntity->FallDownToFloor();
+		pPetInfo->pen_pEntity->SetPlacement(m_penTarget->GetPlacement());
+		pPetInfo->pen_pEntity->FallDownToFloor();
 	}
 }
 
@@ -178,7 +183,12 @@ procedures:
 						pPlayer->StopMove();
 					}
 					// EDIT : BS : END : 텔레포트 보내고 Lock
-					_pNetwork->SendWarpTeleport( m_iTeleportIndex );
+					FLOAT tmCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+					if (tmCurTime - m_tmGoZoneSendedTime > 1000)
+					{
+						m_tmGoZoneSendedTime = tmCurTime;
+						_pNetwork->SendWarpTeleport( m_iTeleportIndex );
+					}
 					stop;					
 				}
 				resume;
@@ -194,7 +204,14 @@ procedures:
 					ASSERT( m_iTeleportIndex != -1 && "Invalid Teleport Index!" );
 					const int iWorldNum = m_iTeleportIndex;						// 월드 번호.
 					const int iExtraNum = m_iTeleportExtIndex;					// Extra 번호.
-					_pNetwork->GoZone(iWorldNum, iExtraNum);
+
+					// [091120: selo] 보낸 시간 후 1초 이전에는 서버에 보내지 않는다
+					FLOAT tmCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+					if( tmCurTime - m_tmGoZoneSendedTime > 1000 )
+					{
+						m_tmGoZoneSendedTime = tmCurTime;
+						_pNetwork->GoZone(iWorldNum, iExtraNum);
+					}					
 					stop;
 				}
 				resume;
@@ -209,6 +226,11 @@ procedures:
         }
         on (ETeleportActivate) : {
           m_bActive = TRUE;
+
+		  if (m_penParticle != NULL)
+		  {
+			  m_penParticle->SendEvent(EActivate());
+		  }
           resume;
         }
         on (EDeactivate) : {
@@ -220,6 +242,11 @@ procedures:
         }
         on (ETeleportDeactivate) : {
           m_bActive = FALSE;
+		  
+		  if (m_penParticle != NULL)
+		  {
+			  m_penParticle->SendEvent(EDeactivate());
+		  }
           resume;
         }
         otherwise() : {

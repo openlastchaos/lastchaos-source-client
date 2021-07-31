@@ -42,13 +42,13 @@ public:
   SLONG GetHeight(void) const {
     return rc_slBottom - rc_slTop;
   }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
   FLOAT GetRadius(void) const
   {
 	  if(GetWidth() > GetHeight())	return GetWidth() * 1.414f * 0.5f;
 	  else							return GetHeight() * 1.414f * 0.5f;
   }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 public:
   SLONG rc_slLeft;
   SLONG rc_slTop;
@@ -77,7 +77,7 @@ extern inline BOOL RectTouchesRect(const CTRect &rc1, const CTRect &rc2)
   return TRUE;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 class CRectFlt
 {
 public:
@@ -126,7 +126,7 @@ public:
   FLOAT m_fRight;
   FLOAT m_fBottom;
 };
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 
 #endif

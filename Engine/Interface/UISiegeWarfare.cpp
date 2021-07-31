@@ -2,81 +2,90 @@
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UISiegeWarfare.h>
 #include <Engine/Interface/UISiegeWarfareDoc.h>
+#include <Engine/Interface/UIAutoHelp.h>
+#include <Engine/Interface/UISiegeWarfareNew.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Contents/Base/UIQuestComplete.h>
 
 // Position and Size
-#define SIGEWARFARE_WIDTH			311		// ÏõêÎèÑÏö∞ ÌÅ¨Í∏∞
+#define DEF_SIGEWARFARE_START_Y		238
+
+#define SIGEWARFARE_WIDTH			311		// ø¯µµøÏ ≈©±‚
 #define SIGEWARFARE_HEIGHT			275
 
-// BattleÏãú Ï†ïÎ≥¥ ÌëúÏãú 
+// BattleΩ√ ¡§∫∏ «•Ω√ 
 #define BATTLE_WIDTH				118		
 #define BATTLE_HEIGHT				155
-#define UNIT_TEXT_OFFSETX			8		// Í∏∏Îìú Ïù¥Î¶Ñ
+#define UNIT_TEXT_OFFSETX			8		// ±ÊµÂ ¿Ã∏ß
 #define UNIT_TEXT_OFFSETY			6
-#define UNIT_POINT_OFFSETX			114		// Í∏∏Îìú Ìè¨Ïù∏Ìä∏
+#define UNIT_POINT_OFFSETX			114		// ±ÊµÂ ∆˜¿Œ∆Æ
 #define UNIT_POINT_OFFSETY			22
-#define UNIT_HEIGHT					44		// Í∞ùÏ≤¥ ÌïòÎÇò ÌïòÎÇò		
+#define UNIT_HEIGHT					44		// ∞¥√º «œ≥™ «œ≥™		
 #define UNIT_TIME_HEIGHT			21
 
-#define INFO_OFFSETY				160		// Selection BattleÏãú Î∂ÄÍ∞Ä Ï†ïÎ≥¥Ï∞Ω 
+#define INFO_OFFSETY				160		// Selection BattleΩ√ ∫Œ∞° ¡§∫∏√¢ 
 #define INFO_WIDTH					118
 #define INFO_HEIGHT					93
 
-#define LEFT_TIME_X					29		// ÎÇ®ÏùÄÏãúÍ∞Ñ
+#define LEFT_TIME_X					29		// ≥≤¿∫Ω√∞£
 #define LEFT_TIME_Y					2
 
-#define TIME_NUMBER_WIDTH			12		// ÏãúÍ∞Ñ ÌëúÏãúÌïòÎäî Î≤ÑÌò∏
+#define TIME_NUMBER_WIDTH			12		// Ω√∞£ «•Ω√«œ¥¬ πˆ»£
 #define TIME_NUMBER_HEIGHT			17
 
 #define COLON_WIDTH					4		// :
 #define COLON_INDEX					10	
 
-#define NUMBER_WIDTH				16		// Point ÌëúÏãúÌïòÎäî Î≤àÌò∏
+#define NUMBER_WIDTH				16		// Point «•Ω√«œ¥¬ π¯»£
 #define NUMBER_HEIGHT				19
 
-// ÏãúÍ∞Ñ ÏÑ§Ï†ï
-#define TITLE_SX					25		// ÌÉÄÏù¥ÌãÄ Î∞î
+// Ω√∞£ º≥¡§
+#define TITLE_SX					25		// ≈∏¿Ã∆≤ πŸ
 #define TITLE_SY					5
 #define TITLE_HEIGHT				25
-											// Î∞∞Í≤Ω
-#define BACK_MIDDLE_DESC			150		// Ï§ëÍ∞Ñ ÏÑ§Î™Ö Ï∞Ω
-#define BACK_MIDDLE_SELECT			57		// ÏïÑÎûò ÏÑ†ÌÉù Ï∞Ω
-#define BACK_BOTTOM_HEIGHT			7		// ÏïÑÎû´Ï™Ω Ï∞ΩÏùò ÎÜíÏù¥
+											// πË∞Ê
+#define BACK_MIDDLE_DESC			150		// ¡ﬂ∞£ º≥∏Ì √¢
+#define BACK_MIDDLE_SELECT			57		// æ∆∑° º±≈√ √¢
+#define BACK_BOTTOM_HEIGHT			7		// æ∆∑ß¬  √¢¿« ≥Ù¿Ã
 
-#define CHECKBOX_SIZE				11		// Ï≤¥ÌÅ¨ Î∞ïÏä§
+#define CHECKBOX_SIZE				11		// √º≈© π⁄Ω∫
 #define OPTION_TEXT_X1				23		
 #define OPTION_TEXT_X2				143
 #define OPTION_TEXT_Y				52
 
-#define START_BOTTOM_BUTTON_Y		242		// ÏïÑÎûò ÌôïÏù∏ Î≤ÑÌäº
+#define START_BOTTOM_BUTTON_Y		242		// æ∆∑° »Æ¿Œ πˆ∆∞
 
 // Color
-// ÏãúÍ∞Ñ ÏÑ§Ï†ï Ïãú ÏÇ¨Ïö© 
-#define SW_COLOR_TITLE				0xE18600FF	// ÌÉÄÏù¥ÌãÄ
-#define SW_COLOR_DESC				0xA3A1A3FF	// ÏÑ§Î™Ö
-#define SW_COLOR_TEXT				0xF2F2F2FF	// Ï¢Ä Ï§ëÏöîÌïú Í∏Ä
+// Ω√∞£ º≥¡§ Ω√ ªÁøÎ 
+#define SW_COLOR_TITLE				0xE18600FF	// ≈∏¿Ã∆≤
+#define SW_COLOR_DESC				0xA3A1A3FF	// º≥∏Ì
+#define SW_COLOR_TEXT				0xF2F2F2FF	// ¡ª ¡ﬂø‰«— ±€
 
-#define SW_COLOR_GUILD_NAME			0xE18600FF	// Í∏∏Îìú Ïù¥Î¶Ñ 
-#define SW_COLOR_GUILD_POINT		0xd7d0a8ff	// Í∏∏ÎìúÌè¨Ïù∏Ìä∏
-#define SW_COLOR_DEFENSE_POINT		0xa9a6d9ff  // ÏàòÏÑ±Ï∏°Ìè¨Ïù∏Ìä∏
+#define SW_COLOR_GUILD_NAME			0xE18600FF	// ±ÊµÂ ¿Ã∏ß 
+#define SW_COLOR_GUILD_POINT		0xd7d0a8ff	// ±ÊµÂ∆˜¿Œ∆Æ
+#define SW_COLOR_DEFENSE_POINT		0xa9a6d9ff  // ºˆº∫√¯∆˜¿Œ∆Æ
 
 // Selection
-#define SEL_SW_REQ					0		// Í≥µÏÑ±Ïã†Ï≤≠  
-#define	SEL_MERCEAR_REQ				1		// Ïö©Î≥ëÏã†Ï≤≠
-#define SEL_SET_SW_TIME				2		// Í≥µÏÑ±ÏãúÍ∞Ñ ÏÑ§Ï†ï
-#define SEL_SW_INFO					3		// Í≥µÏÑ± Ï†ïÎ≥¥ ÌôïÏù∏
-#define SEL_SW_CANCEL				4		// Ï∑®ÏÜåÌïòÍ∏∞
+#define SEL_SW_REQ					0		// ∞¯º∫Ω≈√ª  
+#define	SEL_MERCEAR_REQ				1		// øÎ∫¥Ω≈√ª
+#define SEL_SET_SW_TIME				2		// ∞¯º∫Ω√∞£ º≥¡§
+#define SEL_SW_INFO					3		// ∞¯º∫ ¡§∫∏ »Æ¿Œ
+#define SEL_SW_CANCEL				4		// √Îº“«œ±‚
+#define SEL_COSTUME_REQ				5		// º∫¡÷ ƒ⁄Ω∫∆¨ ø‰√ª
+#define SEL_GUILD_COSTUME_REQ		6		// º∫¡÷ ±ÊµÂ ƒ⁄Ω∫∆¨ ø‰√ª
+#define SEL_GUILD_TITLE_REQ			7		// º∫¡÷ ±ÊµÂ »£ƒ™ ø‰√ª
 
-#define SEL_DEF_MERCEAR_GUILD_REQ	0		// Ïö©Î≥ë Í∏∏Îìú Ïã†Ï≤≠
-#define	SEL_DEF_MERCEAR_REQ			1		// ÏàòÏÑ±Ï∏° Ïö©Î≥ë Ïã†Ï≤≠
-#define SEL_ATT_MERCEAR_REQ			2		// Í≥µÏÑ±Ï∏° Ïö©Î≥ë Ïã†Ï≤≠
-#define SEL_MERCEAR_CANCEL			3		// Ï∑®ÏÜåÌïòÍ∏∞
+#define SEL_DEF_MERCEAR_GUILD_REQ	0		// øÎ∫¥ ±ÊµÂ Ω≈√ª
+#define	SEL_DEF_MERCEAR_REQ			1		// ºˆº∫√¯ øÎ∫¥ Ω≈√ª
+#define SEL_ATT_MERCEAR_REQ			2		// ∞¯º∫√¯ øÎ∫¥ Ω≈√ª
+#define SEL_MERCEAR_CANCEL			3		// √Îº“«œ±‚
 
 // Notice
 #define	NOTICE_DELAY				8000			
 #define	NOTICE_FADEOUT				7000
 #define	NOTICE_FADETIME				( NOTICE_DELAY - NOTICE_FADEOUT )
 
-extern INDEX g_iCountry;
+#define SIEGEWARFAREINFO_PER_PAGE	5
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfare::CUISiegeWarfare
@@ -104,33 +113,46 @@ CUISiegeWarfare::~CUISiegeWarfare()
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfare::ResetPosition
-// Explain:  Í∞ÄÏö¥Îç∞ Ï†ïÎ†¨
+// Explain:  ∞°øÓµ• ¡§∑ƒ
 // Date : 2005-06-20,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
 {
-	SetPos( ( pixMaxI + pixMinI - GetWidth() ) / 2, ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
+	int nTempState = _pUISWDoc->GetUIState();
+
+	// OpenSetSWTime - ∞°øÓµ• ¡§∑ƒ
+	// OpenBattle - ¿¸≈ı Ω√ø°¥¬ ø¿∏•¬  ¡§∑ƒ 
+
+	if (nTempState == SWS_BATTLE || nTempState == SWS_SELECT_BATTLE)
+	{
+		CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+		SetPos(	pDrawPort->dp_MaxI - GetWidth() - 10, DEF_SIGEWARFARE_START_Y );
+	}else
+	{
+		SetPos( ( pixMaxI + pixMinI - GetWidth() ) / 2, ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
+	}
+	
 }
 
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfare::ResetPos
-// Explain: Í∞ïÏ†úÏ†ÅÏúºÎ°ú ÏúàÎèÑÏö∞Ïùò ÏúÑÏπò Ï°∞Ï†ï 
-// OpenSetSWTime - Í∞ÄÏö¥Îç∞ Ï†ïÎ†¨
-// OpenBattle - Ï†ÑÌà¨ ÏãúÏóêÎäî Ïò§Î•∏Ï™Ω Ï†ïÎ†¨ 
+// Explain: ∞≠¡¶¿˚¿∏∑Œ ¿©µµøÏ¿« ¿ßƒ° ¡∂¡§ 
+// OpenSetSWTime - ∞°øÓµ• ¡§∑ƒ
+// OpenBattle - ¿¸≈ı Ω√ø°¥¬ ø¿∏•¬  ¡§∑ƒ 
 // Date : 2005-07-01,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::ResetPos( BOOL bCenter )
 {
-	const CDrawPort	*pdp = _pUIMgr->GetDrawPort();
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
-	if( bCenter ) // Í∞ÄÏö¥Îç∞ Ï†ïÎ†¨ 
+	if( bCenter ) // ∞°øÓµ• ¡§∑ƒ 
 	{
-		ResetPosition( pdp->dp_MinI, pdp->dp_MinJ, pdp->dp_MaxI, pdp->dp_MaxJ );	
+		ResetPosition( pDrawPort->dp_MinI, pDrawPort->dp_MinJ, pDrawPort->dp_MaxI, pDrawPort->dp_MaxJ );	
 	}
-	else // Ïò§Î•∏Ï™Ω Ï†ïÎ†¨ 
+	else // ø¿∏•¬  ¡§∑ƒ 
 	{
-		SetPos(	pdp->dp_MaxI - GetWidth() - 10, 177 );
+		SetPos(	pDrawPort->dp_MaxI - GetWidth() - 10, DEF_SIGEWARFARE_START_Y );
 	}
 }
 	
@@ -172,11 +194,9 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	_pUISWDoc = new CUISiegeWarfareDoc();
 	_pUISWDoc->SetUIState( SWS_NONE );
 
-	m_strTitle = _S(2417,"Í≥µÏÑ±");	// Í≥µÏÑ±
+	m_strTitle = _S(2417,"∞¯º∫");	// ∞¯º∫
 
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( SIGEWARFARE_WIDTH, SIGEWARFARE_HEIGHT );
+	CUIWindow::Create(pParentWnd, nX, nY, SIGEWARFARE_WIDTH, SIGEWARFARE_HEIGHT);
 
 	// Set Rect
 	m_rcTitle.SetRect( 0, 0, 512, 22 );
@@ -193,13 +213,13 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_rt3BackL.SetUV3( 0, 38, 40, 45, 40, 38, 176, 45, 176, 38, 216, 45, fTexWidth, fTexHeight );
 
 	// Button Create
-	m_btnOK.Create( this, _S( 191, "ÌôïÏù∏" ), 90, START_BOTTOM_BUTTON_Y, 63, 21 );
+	m_btnOK.Create( this, _S( 191, "»Æ¿Œ" ), 90, START_BOTTOM_BUTTON_Y, 63, 21 );
 	m_btnOK.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnOK.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnOK.CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	m_btnCancel.Create( this, _S( 139, "Ï∑®ÏÜå" ), 162, START_BOTTOM_BUTTON_Y, 63, 21 );
+	m_btnCancel.Create( this, _S( 139, "√Îº“" ), 162, START_BOTTOM_BUTTON_Y, 63, 21 );
 	m_btnCancel.SetUV( UBS_IDLE, 0, 46, 63, 67, fTexWidth, fTexHeight );
 	m_btnCancel.SetUV( UBS_CLICK, 66, 46, 129, 67, fTexWidth, fTexHeight );
 	m_btnCancel.CopyUV( UBS_IDLE, UBS_ON );
@@ -213,10 +233,10 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 
 	// CheckButton Create
 	int nStrWidth;
-	nStrWidth = ( _S( 1980, "ÌÜ†ÏöîÏùº" ).Length() + 3 ) * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
+	nStrWidth = ( _S( 1980, "≈‰ø‰¿œ" ).Length() + 3 ) * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
 	
 	m_cbtnSaturday.Create( this, OPTION_TEXT_X1 + nStrWidth, OPTION_TEXT_Y, 11, 11,
-							_S( 1980, "ÌÜ†ÏöîÏùº" ), TRUE, nStrWidth, nStrWidth );		
+							_S( 1980, "≈‰ø‰¿œ" ), TRUE, nStrWidth, nStrWidth );		
 	
 	m_cbtnSaturday.SetUV( UCBS_NONE, 12, 161, 23, 172, fTexWidth, fTexHeight );
 	m_cbtnSaturday.SetUV( UCBS_CHECK, 0, 161, 11, 172, fTexWidth, fTexHeight );
@@ -226,10 +246,10 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_cbtnSaturday.SetTextColor( FALSE, 0xF2F2F2FF );
 	m_cbtnSaturday.SetCheck( FALSE );
 
-	nStrWidth = ( _S( 1981, "ÏùºÏöîÏùº" ).Length() + 3 ) * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
+	nStrWidth = ( _S( 1981, "¿œø‰¿œ" ).Length() + 3 ) * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
 
 	m_cbtnSunday.Create( this, OPTION_TEXT_X2 + nStrWidth, OPTION_TEXT_Y, 11, 11,
-							_S( 1981, "ÏùºÏöîÏùº" ), TRUE, nStrWidth, nStrWidth );		
+							_S( 1981, "¿œø‰¿œ" ), TRUE, nStrWidth, nStrWidth );		
 	
 	m_cbtnSunday.SetUV( UCBS_NONE, 12, 161, 23, 172, fTexWidth, fTexHeight );
 	m_cbtnSunday.SetUV( UCBS_CHECK, 0, 161, 11, 172, fTexWidth, fTexHeight );
@@ -240,22 +260,18 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_cbtnSunday.SetCheck( FALSE );
 
 	// List box of guild description
-	m_lbDesc.Create( this, 8, 182, 290, BACK_MIDDLE_SELECT, _pUIFontTexMgr->GetLineHeight(), 13, 3, 1, FALSE );
+	m_lbDesc.Create( this, 8, 142, 290, BACK_MIDDLE_SELECT + 40, _pUIFontTexMgr->GetLineHeight(), 13, 3, 1, FALSE );
 
-	int black = 74; // black Î•º 0ÏúºÎ°ú ÎÜìÏúºÎ©¥ ÌöåÏÉâ Î∞îÌÉïÏùò Edit Î∞ïÏä§ ÏÉùÏÑ±
+	int black = 74; // black ∏¶ 0¿∏∑Œ ≥ı¿∏∏È »∏ªˆ πŸ≈¡¿« Edit π⁄Ω∫ ª˝º∫
 	CTString strSiegeTime;
 	int btnSize = 60;
 
-	if (g_iCountry == USA)
-	{
-		strSiegeTime = CTString("Set Time");
-		btnSize = 94;
-	}
-	else
-	{
-		strSiegeTime = CTString("PM");
-	}
-
+#if defined G_USA
+	strSiegeTime = CTString("Set Time");
+	btnSize = 94;
+#else
+	strSiegeTime = CTString("PM");
+#endif
 	m_sbtnSWTime.Create( this, 24, 96, btnSize, 14, strSiegeTime, 37 );
 	m_sbtnSWTime.SetDataBackUV3( 131+black, 46, 135+black, 59, 136+black, 46, 140+black, 59, 
 							141 + black, 46, 145 + black, 59, fTexWidth, fTexHeight );
@@ -270,14 +286,31 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_sbtnSWTime.CopyDownUV( UBS_IDLE, UBS_ON );
 	m_sbtnSWTime.CopyDownUV( UBS_IDLE, UBS_DISABLE );
 	m_sbtnSWTime.CreateButtons( 9, 7 );
-	m_sbtnSWTime.SetWheelRect( -19, -75, 271, 165 );
+	m_sbtnSWTime.SetWheelRect( -19, -75, 19, 165 );
 
+	// [2010/11/01 : Sora] ∞¯º∫ ∞≥∆Ì
+	m_sbtnSWZone.Create( this, 134, 96, 105, 14, CTString(""), 95 );
+	m_sbtnSWZone.SetDataBackUV3( 131+black, 46, 135+black, 59, 136+black, 46, 140+black, 59, 
+							141 + black, 46, 145 + black, 59, fTexWidth, fTexHeight );
+	
+	m_sbtnSWZone.SetUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
+	m_sbtnSWZone.SetUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
+	m_sbtnSWZone.CopyUpUV( UBS_IDLE, UBS_ON );
+	m_sbtnSWZone.CopyUpUV( UBS_IDLE, UBS_DISABLE );
+	
+	m_sbtnSWZone.SetDownUV( UBS_IDLE, 230, 24, 239, 31, fTexWidth, fTexHeight );
+	m_sbtnSWZone.SetDownUV( UBS_CLICK, 240, 24, 249, 31, fTexWidth, fTexHeight );
+	m_sbtnSWZone.CopyDownUV( UBS_IDLE, UBS_ON );
+	m_sbtnSWZone.CopyDownUV( UBS_IDLE, UBS_DISABLE );
+	m_sbtnSWZone.CreateButtons( 9, 7 );
+	m_sbtnSWTime.SetWheelRect( -19, -75, 19, 165 );
 
 	// Number
 	int nOffsetX = 256;
 	int nOffsetY = 157;
 
-	for( int i = 0 ; i < 10; i++ )
+	int i;
+	for( i = 0 ; i < 10; i++ )
 	{
 		m_rtNumber[i].SetUV( nOffsetX + i * NUMBER_WIDTH, nOffsetY, 
 							nOffsetX + i * NUMBER_WIDTH + NUMBER_WIDTH, nOffsetY + NUMBER_HEIGHT, 
@@ -293,8 +326,10 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_rtSelectBattleBack.SetUV( 375, 0, 493, 93, fTexWidth, fTexHeight );
 
 	// Notice
-	m_rcNotice1.SetRect( 0, 100, 0, 119 );
-	m_rcNotice2.SetRect ( 0, 120, 0, 139 );
+	//m_rcNotice1.SetRect( 0, 100, 0, 119 );
+	//m_rcNotice2.SetRect ( 0, 120, 0, 139 );
+	m_rcNotice1.SetRect( 0, 75, 0, 94 );
+	m_rcNotice2.SetRect ( 0, 95, 0, 114 );
 
 	m_rtNoticeL.SetUV( 375, 95, 407, 114, fTexWidth, fTexHeight );
 	m_rtNoticeC.SetUV( 426, 117, 440, 136, fTexWidth, fTexHeight );
@@ -315,20 +350,34 @@ void CUISiegeWarfare::MsgBoxLCommand( int nCommandCode, int nResult )
 		{
 			switch( nResult ) 
 			{
-			case SEL_SW_REQ:		// Í≥µÏÑ± Ïã†Ï≤≠
+			case SEL_SW_REQ:		// ∞¯º∫ Ω≈√ª
 				OpenSWReq();
 				break;
-			case SEL_MERCEAR_REQ:	// Ïö©Î≥ë Ïã†Ï≤≠ 
+			case SEL_MERCEAR_REQ:	// øÎ∫¥ Ω≈√ª 
 				OpenMercearReq();
 				break;
-			case SEL_SET_SW_TIME:	// Í≥µÏÑ±ÏãúÍ∞Ñ ÏÑ§Ï†ï 
-				OpenSetSWTime();
+			case SEL_SET_SW_TIME:	// ∞¯º∫Ω√∞£ º≥¡§ 
+				_pNetwork->SendGuildWarTimeMenu();
 				break;
-			case SEL_SW_INFO:		// Í≥µÏÑ±Ï†ïÎ≥¥ ÌôïÏù∏
-				_pNetwork->GetTimeReq();
+			case SEL_SW_INFO:		// ∞¯º∫¡§∫∏ »Æ¿Œ
+				_pNetwork->SendGuildWarTimeReq();
 				break;
-			case SEL_SW_CANCEL:		// Ï∑®ÏÜåÌïòÍ∏∞
+			case SEL_SW_CANCEL:		// √Îº“«œ±‚
 				CloseSiegeWarfare();
+				break;
+			case SEL_COSTUME_REQ:
+				OpenCostumeReq();
+				break;
+			// º∫¡÷ ±ÊµÂ ƒ⁄Ω∫∆¨ [1/21/2011 ldy1978220]
+			case SEL_GUILD_COSTUME_REQ:
+				{
+					_pNetwork->LordGuildCostumeReq();
+				}				
+				break;
+			case SEL_GUILD_TITLE_REQ:
+				{
+					_pNetwork->LordGuildTitleReq();
+				}				
 				break;
 			}
 		}
@@ -337,28 +386,37 @@ void CUISiegeWarfare::MsgBoxLCommand( int nCommandCode, int nResult )
 		{
 			switch( nResult )
 			{
-			case SEL_DEF_MERCEAR_GUILD_REQ:	// ÏàòÏÑ±Ï∏° Ïö©Î≥ë Í∏∏Îìú Ïã†Ï≤≠ 
+			case SEL_DEF_MERCEAR_GUILD_REQ:	// ºˆº∫√¯ øÎ∫¥ ±ÊµÂ Ω≈√ª 
 				{
 					_pNetwork->DefenseGuildReq();
 				}
 				break;
-			case SEL_DEF_MERCEAR_REQ:		// ÏàòÏÑ±Ï∏° Ïö©Î≥ëÏ∞∏Ïó¨
+			case SEL_DEF_MERCEAR_REQ:		// ºˆº∫√¯ øÎ∫¥¬¸ø©
 				{
 					//_pNetwork->AttackCharReq();
 					_pNetwork->AttackGuildReq();
 				}
 				break;
-			case SEL_ATT_MERCEAR_REQ:		// Í≥µÏÑ±Ï∏° Ïö©Î≥ë Ï∞∏Ïó¨ 
+			case SEL_ATT_MERCEAR_REQ:		// ∞¯º∫√¯ øÎ∫¥ ¬¸ø© 
 				{
 					//_pNetwork->AttackGuildReq();
 					_pNetwork->AttackCharReq();
 				}
 				break;
-			case SEL_MERCEAR_CANCEL:		// Ï∑®ÏÜåÌïòÍ∏∞
+			case SEL_MERCEAR_CANCEL:		// √Îº“«œ±‚
 				{
 					OpenSiegeWarfare();
 				}
 				break;
+			}
+		}
+		break;
+	case MSGLCMD_LORD_COSTUME_REQ:
+		{
+			if ( nResult == 0 )
+			{
+				// º≠πˆ∑Œ º∫¡÷ ƒ⁄Ω∫∆¨ æ∆¿Ã≈€ ø‰√ª
+				_pNetwork->LordCostumeReq();
 			}
 		}
 		break;
@@ -390,7 +448,7 @@ void CUISiegeWarfare::CloseSiegeWarfare()
 {
 	Clear();
 	_pUISWDoc->Clear();
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE, FALSE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE, FALSE );
 }
 
 //------------------------------------------------------------------------------
@@ -400,7 +458,7 @@ void CUISiegeWarfare::CloseSiegeWarfare()
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::RenderLeftTime()
 {
-	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds(); // ÌòÑÏû¨ ÏãúÍ∞Ñ ÏñªÍ∏∞
+	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds(); // «ˆ¿Á Ω√∞£ æÚ±‚
 	__int64	llCurDelay = llCurTime - _pUISWDoc->m_tmLeftTime;
 
 	int lLeftTime = _pUISWDoc->m_lLeftTime - (llCurDelay/1000);
@@ -417,7 +475,7 @@ void CUISiegeWarfare::RenderLeftTime()
 	int nY = m_nPosY + LEFT_TIME_Y;
 
 	int t10;
-	// ÏãúÍ∞Ñ Ï∂úÎ†•
+	// Ω√∞£ √‚∑¬
 	
 	t10 = iTime / 10;
 	iTime %= 10;
@@ -427,7 +485,7 @@ void CUISiegeWarfare::RenderLeftTime()
 
 	DrawNumber( nX, nY, COLON_INDEX, COLON_WIDTH, TIME_NUMBER_HEIGHT );			nX += COLON_WIDTH;
 
-	// Î∂Ñ Ï∂úÎ†• 
+	// ∫– √‚∑¬ 
 	t10 = iMin / 10;
 	iMin %= 10;
 
@@ -436,7 +494,7 @@ void CUISiegeWarfare::RenderLeftTime()
 
 	DrawNumber( nX, nY, COLON_INDEX, COLON_WIDTH, TIME_NUMBER_HEIGHT );			nX += COLON_WIDTH;
 
-	// Ï¥à Ï∂úÎ†• 
+	// √  √‚∑¬ 
 	t10 = iSec / 10;
 	iSec %= 10;
 
@@ -446,90 +504,89 @@ void CUISiegeWarfare::RenderLeftTime()
 
 void CUISiegeWarfare::RenderNotice()
 {
-	if ( m_bShowNotice )
+	if ( m_bShowNotice == FALSE )
+		return;
+
+	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	__int64	llCurDelay = llCurTime - m_tmNoticeTime;
+	if( llCurDelay < CHATMSG_NOTICE_DELAY )
 	{
-		__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-		__int64	llCurDelay = llCurTime - m_tmNoticeTime;
-		if( llCurDelay < CHATMSG_NOTICE_DELAY )
+		COLOR	colBackground = 0xFFFFFFFF;
+		COLOR	colText = 0x00fffbff;
+		if( llCurDelay > NOTICE_FADEOUT )
 		{
-			COLOR	colBackground = 0xFFFFFFFF;
-			COLOR	colText = 0x00fffbff;
-			if( llCurDelay > NOTICE_FADEOUT )
-			{
-				FLOAT	fFadeRatio = (FLOAT)( NOTICE_DELAY - llCurDelay ) / (FLOAT)NOTICE_FADETIME;
-				COLOR	colBlend = 0xFF * fFadeRatio;
+			FLOAT	fFadeRatio = (FLOAT)( NOTICE_DELAY - llCurDelay ) / (FLOAT)NOTICE_FADETIME;
+			COLOR	colBlend = 0xFF * fFadeRatio;
+			
+			colBackground &= 0xFFFFFF00;
+			colBackground |= colBlend;
+			colText &= 0xFFFFFF00;
+			colText |= colBlend;
+		}
 
-				colBackground &= 0xFFFFFF00;
-				colBackground |= colBlend;
-				colText &= 0xFFFFFF00;
-				colText |= colBlend;
-			}
+		CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
-
-			_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
-			// Add render regions
-			// Background
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice1.Left - 32, m_rcNotice1.Top,
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
+		
+		// Add render regions
+		// Background
+		pDrawPort->AddTexture( m_rcNotice1.Left - 32, m_rcNotice1.Top,
 												m_rcNotice1.Left, m_rcNotice1.Bottom,
 												m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
 												colBackground );
-
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice1.Left, m_rcNotice1.Top,
+		
+		pDrawPort->AddTexture( m_rcNotice1.Left, m_rcNotice1.Top,
 												m_rcNotice1.Right, m_rcNotice1.Bottom,
 												m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
 												colBackground );
-
-			_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice1.Right, m_rcNotice1.Top,
+		
+		pDrawPort->AddTexture( m_rcNotice1.Right, m_rcNotice1.Top,
 												m_rcNotice1.Right + 32, m_rcNotice1.Bottom,
 												m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
 												colBackground );
-
-			if( m_bBottomNotice )
-			{
-			
-				// bottom
-				_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice2.Left - 32, m_rcNotice2.Top,
-													m_rcNotice2.Left, m_rcNotice2.Bottom,
-													m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
-													colBackground );
-
-				_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice2.Left, m_rcNotice2.Top,
-													m_rcNotice2.Right, m_rcNotice2.Bottom,
-													m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
-													colBackground );
-
-				_pUIMgr->GetDrawPort()->AddTexture( m_rcNotice2.Right, m_rcNotice2.Top,
-													m_rcNotice2.Right + 32, m_rcNotice2.Bottom,
-													m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
-													colBackground );
-			}
-			
-			// Render all elements
-			_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-
-			_pUIMgr->GetDrawPort()->PutTextEx( m_strNoticeMessage, m_rcNotice1.Left, m_rcNotice1.Top + 4, colText );
-			if( m_bBottomNotice )
-				_pUIMgr->GetDrawPort()->PutTextEx( m_strNoticeMessage2, m_rcNotice2.Left, m_rcNotice2.Top + 4, colText );
-
-			// Flush all render text queue
-			_pUIMgr->GetDrawPort()->EndTextEx();
-		}
-		else
+		
+		if( m_bBottomNotice )
 		{
-			m_bShowNotice = FALSE;
-			if( _pUISWDoc->IsUIState( SWS_END ) ) 
-			{
-				_pUISWDoc->StopEffect( -1, TRUE );
-				_pUISWDoc->StopGuildMasterEffect( -1, TRUE );
-
-				CloseSiegeWarfare();
-			}
+			
+			// bottom
+			pDrawPort->AddTexture( m_rcNotice2.Left - 32, m_rcNotice2.Top,
+				m_rcNotice2.Left, m_rcNotice2.Bottom,
+				m_rtNoticeL.U0, m_rtNoticeL.V0, m_rtNoticeL.U1, m_rtNoticeL.V1,
+				colBackground );
+			
+			pDrawPort->AddTexture( m_rcNotice2.Left, m_rcNotice2.Top,
+				m_rcNotice2.Right, m_rcNotice2.Bottom,
+				m_rtNoticeC.U0, m_rtNoticeC.V0, m_rtNoticeC.U1, m_rtNoticeC.V1,
+				colBackground );
+			
+			pDrawPort->AddTexture( m_rcNotice2.Right, m_rcNotice2.Top,
+				m_rcNotice2.Right + 32, m_rcNotice2.Bottom,
+				m_rtNoticeR.U0, m_rtNoticeR.V0, m_rtNoticeR.U1, m_rtNoticeR.V1,
+				colBackground );
 		}
-
+		
+		// Render all elements
+		pDrawPort->FlushRenderingQueue();
+		
+		
+		pDrawPort->PutTextEx( m_strNoticeMessage, m_rcNotice1.Left, m_rcNotice1.Top + 4, colText );
+		if( m_bBottomNotice )
+			pDrawPort->PutTextEx( m_strNoticeMessage2, m_rcNotice2.Left, m_rcNotice2.Top + 4, colText );
+		
+		// Flush all render text queue
+		pDrawPort->EndTextEx();
 	}
-
+	else
+	{
+		m_bShowNotice = FALSE;
+		if( _pUISWDoc->IsUIState( SWS_END ) ) 
+		{
+			_pUISWDoc->StopEffect( -1, TRUE );
+			_pUISWDoc->StopGuildMasterEffect( -1, TRUE );
+			
+			CloseSiegeWarfare();
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -541,7 +598,7 @@ void CUISiegeWarfare::Render()
 {
 	_pUISWDoc->RunDalyTime();
 	
-	if( _pUISWDoc->IsUIState( SWS_SET_SW_TIME ) ) // ÏãúÍ∞Ñ ÏÑ§Ï†ï ÏúàÎèÑÏö∞ 
+	if( _pUISWDoc->IsUIState( SWS_SET_SW_TIME ) ) // Ω√∞£ º≥¡§ ¿©µµøÏ 
 	{
 		RenderSetSWTime();
 	}
@@ -568,7 +625,7 @@ void CUISiegeWarfare::OpenSelectBattle()
 	SetSize( BATTLE_WIDTH, BATTLE_HEIGHT + INFO_HEIGHT + 4 );
 	ResetPos( FALSE );
 	_pUISWDoc->SetUIState( SWS_SELECT_BATTLE );
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE, TRUE );
 	
 	_pUISWDoc->m_tmLeftTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds ();
 
@@ -585,10 +642,7 @@ void CUISiegeWarfare::OpenBattle()
 	ResetPos( FALSE );
 
 	_pUISWDoc->SetUIState( SWS_BATTLE );
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE, TRUE );
-	//_pUISWDoc->m_lLeftTime = 60 * 60;//!
-	//_pUISWDoc->m_tmLeftTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds ();
-
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE, TRUE );
 }
 
 //------------------------------------------------------------------------------
@@ -598,70 +652,107 @@ void CUISiegeWarfare::OpenBattle()
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::OpenSiegeWarfare()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	if(_pUIMgr->DoesMessageBoxLExist( MSGLCMD_SIEGE_WARFARE ) )
+	if(pUIManager->DoesMessageBoxLExist( MSGLCMD_SIEGE_WARFARE ) )
 		return;	
 	
-	CTString strMessage;		// ÏÑ§Î™Ö Í∏Ä...
-	CTString strNecessity[4];	// ÌïÑÏöî Ï°∞Í±¥
-	CTString strSelection[5];	// ÏÑ†ÌÉù Ïä§Ìä∏ÎßÅ 
+	CTString strMessage;		// º≥∏Ì ±€...
+	CTString strNecessity[4];	// « ø‰ ¡∂∞«
+	CTString strSelection[5];	// º±≈√ Ω∫∆Æ∏µ 
+	CTString strName;
 	int i;
+	INDEX npcIndex = pUIManager->GetQuestBookComplete()->GetTargetIndex();
 
 	// Create guild message box
-	_pUIMgr->CreateMessageBoxL( m_strTitle, UI_SIEGE_WARFARE, MSGLCMD_SIEGE_WARFARE );					
-
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, TRUE, _S( 1982, "Í≥µÏÑ±NPC" ), -1, SW_COLOR_TITLE );	
-	strMessage = _S( 1983, "Ïù¥Í≥≥Ïóî Î¨¥Ïä® ÏùºÏù¥Ïã†Í∞ÄÏöî?\nÏÑ§Îßà ÏÑ±Ï£ºÏôÄ Ï†ÑÌà¨Î•º Ïã†Ï≤≠ÌïòÍ∏∞ ÏúÑÌï¥ÏÑú Ïò§Ïã† Í±¥ ÏïÑÎãàÍ≤†Ï£†?\nÏÑ±Ï£ºÎùºÎäî Í≤ÉÏù¥ Í∑∏Î†áÍ≤å ÏâΩÍ≤åÎêòÎäî Í≤ÉÏù¥ ÏïÑÎãôÎãàÎã§. Î™©Ïà®Ïù¥ ÏïÑÍπùÎã§Î©¥ Í∑∏Îßå ÎèåÏïÑ Í∞ÄÏãúÏ£†." );	
+	pUIManager->CreateMessageBoxL( m_strTitle, UI_SIEGE_WARFARE, MSGLCMD_SIEGE_WARFARE );					
 	
-	strNecessity[0] = _S( 1984, "ÌïÑÏöî Í∏∏ÎìúÎ†àÎ≤® : 5Lv" );	
-	strNecessity[1] = _S( 1985, "ÌïÑÏöî ÏïÑÏù¥ÌÖú : ÏòÅÏõÖÏùò Ï¶ùÌëú" );	
-	strNecessity[2] = _S( 1986, "ÌïÑÏöî Í∏∏ÎìúÏõê : 20Î™Ö" );	
-	strNecessity[3] = _S( 1987, "ÌïÑÏöî ÎÇòÏä§ : 10Îßå ÎÇòÏä§" );	
-
-	// Description
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, TRUE, strMessage, -1, SW_COLOR_DESC );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, TRUE, CTString(" "), -1, SW_COLOR_TEXT );
-	
-	// WSS_DRATAN_SEIGEWARFARE 2007/09/11	
-	// Î©îÎùºÌÅ¨Îßå ÌïÑÏöî Ï†ïÎ≥¥Í∞Ä ÎÇòÏò§Í≤å ÌïúÎã§.
-	if( _pUIMgr->GetQuestBookComplete()->GetTargetIndex() == 219 ) // ÏÑ±Í¥ÄÎ¶¨Ïù∏
+	// [2010/11/01 : Sora] ∞¯º∫ ∞≥∆Ì
+	strName = _S( 1982, "∞¯º∫NPC" );
+	if( npcIndex == 1155 )
 	{
-		for( i = 0; i < 4; i++ )
-		{
-			_pUIMgr->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, TRUE, strNecessity[i], -1, SW_COLOR_TEXT );
-		}
-	}	
+		strName = CMobData::getData( npcIndex )->GetName();
 
-	strSelection[0] = _S( 1988, "Í≥µÏÑ± Ïã†Ï≤≠." );	
-	// WSS_DRATAN_SEIGEWARFARE 2007/09/11
-	// ÎìúÎùºÌÉÑÏùò Í≤ΩÏö∞ Ïö©Î≥ë->ÏàòÏÑ±
-	if( _pUIMgr->GetQuestBookComplete()->GetTargetIndex() == 387 )
-	{
-		strSelection[1] = _S( 1998, "ÏàòÏÑ±Ï∏° Ïö©Î≥ëÍ∏∏Îìú Ï∞∏Ïó¨." );	
+		strMessage = _S( 5163, "±Ÿπ´¡ﬂ ¿ÃªÛ π´!!\n∞¢ ¡ˆø™ø° ¿÷¥¬ ∏µÁ ∞¯º∫¡§∫∏ π◊ Ω√∞£ º≥¡§¿∫ ¿˙ø°∞‘ ∏ªæ∏«ÿ ¡÷Ω Ω√ø¿.\nπŸ∑Œ Ω√¡§µµ∑œ «œ∞⁄Ω¿¥œ¥Ÿ." );	
 	}
 	else
 	{
-		strSelection[1] = _S( 1989, "Ïö©Î≥ë Ïã†Ï≤≠." );	
+		strMessage = _S( 1983, "¿Ã∞˜ø£ π´Ωº ¿œ¿ÃΩ≈∞°ø‰?\nº≥∏∂ º∫¡÷øÕ ¿¸≈ı∏¶ Ω≈√ª«œ±‚ ¿ß«ÿº≠ ø¿Ω≈ ∞« æ∆¥œ∞⁄¡“?\nº∫¡÷∂Û¥¬ ∞Õ¿Ã ±◊∑∏∞‘ Ω±∞‘µ«¥¬ ∞Õ¿Ã æ∆¥’¥œ¥Ÿ. ∏Òº˚¿Ã æ∆±ı¥Ÿ∏È ±◊∏∏ µπæ∆ ∞°Ω√¡“." );	
+		
+		strNecessity[0] = _S( 1984, "« ø‰ ±ÊµÂ∑π∫ß : 5Lv" );	
+		strNecessity[1] = _S( 1985, "« ø‰ æ∆¿Ã≈€ : øµøı¿« ¡ı«•" );	
+		strNecessity[2] = _S( 1986, "« ø‰ ±ÊµÂø¯ : 20∏Ì" );	
+		strNecessity[3] = _S( 1987, "« ø‰ ≥™Ω∫ : 10∏∏ ≥™Ω∫" );	
+	}
+
+	pUIManager->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, TRUE, strName, -1, SW_COLOR_TITLE );	
+
+	// Description
+	pUIManager->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, TRUE, strMessage, -1, SW_COLOR_DESC );
+	pUIManager->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, TRUE, CTString(" "), -1, SW_COLOR_TEXT );
+	
+	// WSS_DRATAN_SEIGEWARFARE 2007/09/11	
+	// ∏ﬁ∂Û≈©∏∏ « ø‰ ¡§∫∏∞° ≥™ø¿∞‘ «—¥Ÿ.
+	if( npcIndex == 219 ) // º∫∞¸∏Æ¿Œ
+	{
+		for( i = 0; i < 4; i++ )
+		{
+			pUIManager->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, TRUE, strNecessity[i], -1, SW_COLOR_TEXT );
+		}
+	}	
+
+	strSelection[0] = _S( 1988, "∞¯º∫ Ω≈√ª." );	
+	// WSS_DRATAN_SEIGEWARFARE 2007/09/11
+	// µÂ∂Û≈∫¿« ∞ÊøÏ øÎ∫¥->ºˆº∫
+	if( npcIndex == 387 )
+	{
+		strSelection[1] = _S( 1998, "ºˆº∫√¯ øÎ∫¥±ÊµÂ ¬¸ø©." );	
+	}
+	else
+	{
+		strSelection[1] = _S( 1989, "øÎ∫¥ Ω≈√ª." );	
 	}
 	
-	strSelection[2] = _S( 1990, "Í≥µÏÑ±ÏãúÍ∞Ñ ÏÑ§Ï†ï." );	
-	strSelection[3] = _S( 1991, "Í≥µÏÑ±Ï†ïÎ≥¥ ÌôïÏù∏." );	
-	strSelection[4] = _S( 880, "Ï∑®ÏÜåÌïòÍ∏∞." );	
+	strSelection[2] = _S( 1990, "∞¯º∫Ω√∞£ º≥¡§." );	
+	strSelection[3] = _S( 1991, "∞¯º∫¡§∫∏ »Æ¿Œ." );	
+	strSelection[4] = _S( 880, "√Îº“«œ±‚." );	
+
+	CTString strLordCostume = _S( 5115, "º∫¡÷ ƒ⁄Ω∫∆¨" );
+
+	if ( !pUIManager->GetSiegeWarfareNew()->GetWarState() && !_pUISWDoc->IsWar() )
+	{
+		if ( (npcIndex == 219 || npcIndex == 387) && _pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS && _pNetwork->MyCharacterInfo.ubGuildNameColor != 0 )
+		{	// µÂ∂Û≈∫ º∫¡÷ ±ÊµÂ¿Ã∞Ì ±Ê∏∂¿Ã∏È,
+			pUIManager->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, FALSE, strLordCostume, SEL_COSTUME_REQ );
+		}
+
+		// º∫¡÷ ±ÊµÂ∏∏ ≈¨∂Û¿Ãæ∆Æø°º≠ √º≈©«‘ [1/21/2011 ldy1978220]
+		if ( npcIndex == 1155 && _pNetwork->MyCharacterInfo.lGuildPosition != GUILD_MEMBER_BOSS && _pNetwork->MyCharacterInfo.ubGuildNameColor != 0 )
+		{	// µÂ∂Û≈∫ º∫¡÷ ±ÊµÂ¿Ã∞Ì ±Ê∏∂¿Ã∏È,
+			pUIManager->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, FALSE, _S(2169,"º∫¡÷ ±ÊµÂ ¿«ªÛπﬁ±‚"), SEL_GUILD_COSTUME_REQ );
+			pUIManager->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, FALSE, _S(2175,"º∫¡÷ ±ÊµÂ »£ƒ™πﬁ±‚"), SEL_GUILD_TITLE_REQ );
+		}
+	}
 
 	for( i = 0; i< 5; i++ )
 	{
-		//ÎßêÎ†àÏù¥ÏãúÏïÑÎäî Í≥µÏÑ±ÏãúÍ∞Ñ ÏÑ§Ï†ï Î©îÎâ¥ Î∫å. Î©îÎùºÌÅ¨ Í≥µÏÑ±Îßå...		Su-won
-		if( g_iCountry==MALAYSIA && i==2 && 
-			_pUIMgr->GetQuestBookComplete()->GetTargetIndex() == 219 )
+		//∏ª∑π¿ÃΩ√æ∆¥¬ ∞¯º∫Ω√∞£ º≥¡§ ∏ﬁ¥∫ ª≠. ∏ﬁ∂Û≈© ∞¯º∫∏∏...		Su-won
+#if defined G_MAL
+		if(i==2 && pUIManager->GetQuestBookComplete()->GetTargetIndex() == 219 )
 			continue;
-
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, FALSE, strSelection[i], i );
+#endif
+		if( npcIndex == 1155 )
+		{
+			if( i < 2 )
+				continue;
+		}
+		pUIManager->AddMessageBoxLString( MSGLCMD_SIEGE_WARFARE, FALSE, strSelection[i], i );
 	}
 }
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfare::OpenSWReq
-// Explain:  Í≥µÏÑ± Ïã†Ï≤≠
+// Explain:  ∞¯º∫ Ω≈√ª
 // Date : 2005-06-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::OpenSWReq() 
@@ -672,14 +763,16 @@ void CUISiegeWarfare::OpenSWReq()
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfare::OpenMercearReq
-// Explain:  Ïö©Î≥ëÏã†Ï≤≠
+// Explain:  øÎ∫¥Ω≈√ª
 // Date : 2005-06-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::OpenMercearReq()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	// WSS_DRATAN_SEIGEWARFARE 2007/09/11 ----------------------------->>
-	// ÎìúÎùºÌÉÑÏùò Í≤ΩÏö∞ ÏàòÏÑ± Í∏∏Îìú ÏöîÏ≤≠
-	if( _pUIMgr->GetQuestBookComplete()->GetTargetIndex() == 387 )
+	// µÂ∂Û≈∫¿« ∞ÊøÏ ºˆº∫ ±ÊµÂ ø‰√ª
+	if( pUIManager->GetQuestBookComplete()->GetTargetIndex() == 387 )
 	{
 		_pNetwork->DefenseGuildReq();
 		return;
@@ -689,93 +782,95 @@ void CUISiegeWarfare::OpenMercearReq()
 	static int nTotalSelection = 4;
 	_pUISWDoc->SetUIState( SWS_MERCEAR_REQ );
 
-	if(_pUIMgr->DoesMessageBoxLExist( MSGLCMD_MERCEAR_REQ ) )
+	if(pUIManager->DoesMessageBoxLExist( MSGLCMD_MERCEAR_REQ ) )
 		return;	
 	
-	CTString strMessage;		// ÏÑ§Î™Ö Í∏Ä...
-	CTString strNecessity[4];	// ÌïÑÏöî Ï°∞Í±¥
-	CTString strSelection[4];	// ÏÑ†ÌÉù Ïä§Ìä∏ÎßÅ 
+	CTString strMessage;		// º≥∏Ì ±€...
+	CTString strNecessity[4];	// « ø‰ ¡∂∞«
+	CTString strSelection[4];	// º±≈√ Ω∫∆Æ∏µ 
 	int i;
 
 	// Create guild message box
-	_pUIMgr->CreateMessageBoxL( m_strTitle, UI_SIEGE_WARFARE, MSGLCMD_MERCEAR_REQ );					
+	pUIManager->CreateMessageBoxL( m_strTitle, UI_SIEGE_WARFARE, MSGLCMD_MERCEAR_REQ );					
 
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, TRUE, _S( 1992, "Ïö©Î≥ëÏã†Ï≤≠ NPC" ), -1, SW_COLOR_TITLE );		
+	pUIManager->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, TRUE, _S( 1992, "øÎ∫¥Ω≈√ª NPC" ), -1, SW_COLOR_TITLE );		
 
-	strMessage =_S( 1993,  "Ïö©Î≥ëÏúºÎ°ú Ïù¥Î≤à Ï†ÑÌà¨Ïóê Ï∞∏Í∞ÄÌïòÍ≥† Ïã∂ÏúºÏã†Í∞ÄÏöî?\nÏ†ÑÏû•ÏùÄ ÏúÑÌóòÌïú Í≥≥ÏûÖÎãàÎã§. Íµ≥Ïù¥ Ï∞∏Í∞ÄÎ•º ÌïòÍ≥† Ïã∂ÏúºÏãúÎã§Î©¥ ÎßêÎ¶¨ÏßÄÎäî ÏïäÍ≤†ÏßÄÎßå ..." );	
+	strMessage =_S( 1993,  "øÎ∫¥¿∏∑Œ ¿Ãπ¯ ¿¸≈ıø° ¬¸∞°«œ∞Ì ΩÕ¿∏Ω≈∞°ø‰?\n¿¸¿Â¿∫ ¿ß«Ë«— ∞˜¿‘¥œ¥Ÿ. ±ª¿Ã ¬¸∞°∏¶ «œ∞Ì ΩÕ¿∏Ω√¥Ÿ∏È ∏ª∏Æ¡ˆ¥¬ æ ∞⁄¡ˆ∏∏ ..." );	
 	
-	strNecessity[0] = _S( 1994, "Ïö©Î≥ë Ï∞∏Ïó¨" );	
-	strNecessity[1] = _S( 1995, "ÌïÑÏöî Î†àÎ≤® : 15Lv Ïù¥ÏÉÅ" );	
-	strNecessity[2] = _S( 1996, "Ïö©Î≥ë Í∏∏Îìú Ï∞∏Ïó¨" );	
-	strNecessity[3] = _S( 1997, "ÌïÑÏöî Î†àÎ≤® : 4Lv Ïù¥ÏÉÅ" );	
+	strNecessity[0] = _S( 1994, "øÎ∫¥ ¬¸ø©" );	
+	strNecessity[1] = _S( 1995, "« ø‰ ∑π∫ß : 15Lv ¿ÃªÛ" );	
+	strNecessity[2] = _S( 1996, "øÎ∫¥ ±ÊµÂ ¬¸ø©" );	
+	strNecessity[3] = _S( 1997, "« ø‰ ∑π∫ß : 4Lv ¿ÃªÛ" );	
 	//0xE18600FF
 	// Description
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, TRUE, strMessage, -1, SW_COLOR_DESC );
-	_pUIMgr->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, TRUE, CTString(" "), -1, SW_COLOR_DESC );
+	pUIManager->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, TRUE, strMessage, -1, SW_COLOR_DESC );
+	pUIManager->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, TRUE, CTString(" "), -1, SW_COLOR_DESC );
 
 	for( i = 0; i < 4; i++ )
 	{
 		COLOR Color = SW_COLOR_TITLE;
-		if( i & 1 ) Color = SW_COLOR_TEXT; //ÏûÑÏãú
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, TRUE, strNecessity[i], -1, Color );
+		if( i & 1 ) Color = SW_COLOR_TEXT; //¿”Ω√
+		pUIManager->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, TRUE, strNecessity[i], -1, Color );
 	}
 
-	strSelection[0] = _S( 1998, "ÏàòÏÑ±Ï∏° Ïö©Î≥ëÍ∏∏Îìú Ï∞∏Ïó¨." );	
-	strSelection[1] = _S( 1999, "ÏàòÏÑ±Ï∏° Ïö©Î≥ë Ï∞∏Ïó¨." );	
-	strSelection[2] = _S( 2000, "Í≥µÏÑ±Ï∏° Ïö©Î≥ë Ï∞∏Ïó¨." );	
-	strSelection[3] =_S( 880,  "Ï∑®ÏÜåÌïòÍ∏∞." );	
+	strSelection[0] = _S( 1998, "ºˆº∫√¯ øÎ∫¥±ÊµÂ ¬¸ø©." );	
+	strSelection[1] = _S( 1999, "ºˆº∫√¯ øÎ∫¥ ¬¸ø©." );	
+	strSelection[2] = _S( 2000, "∞¯º∫√¯ øÎ∫¥ ¬¸ø©." );	
+	strSelection[3] =_S( 880,  "√Îº“«œ±‚." );	
 
 	for( i = 0; i< 4; i++ )
 	{
-		_pUIMgr->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, FALSE, strSelection[i], i );
+		pUIManager->AddMessageBoxLString( MSGLCMD_MERCEAR_REQ, FALSE, strSelection[i], i );
 	}
 }
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfare::
-// Explain:  Ï†ïÎ≥¥ ÌôïÏù∏
+// Explain:  ¡§∫∏ »Æ¿Œ
 // Date : 2005-06-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::OpenSWInfo()
 {
 	_pUISWDoc->SetUIState( SWS_SW_INFO  );
-	
-	if( _pUIMgr->DoesMessageBoxExist( MSGCMD_SIEGE_WARFARE_INFO ) )
-	return;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_SIEGE_WARFARE_INFO ) )
+		return;
 
 	CTString strMessage;
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( m_strTitle, UMBS_OK, UI_SIEGE_WARFARE, MSGCMD_SIEGE_WARFARE_INFO );
 	
 
-	MsgBoxInfo.AddString( _S( 2001, "ÏàòÏÑ±Í∏∏Îìú" ), SW_COLOR_TITLE, TEXT_CENTER );	// ÏàòÏÑ± Í∏∏Îìú	
+	MsgBoxInfo.AddString( _S( 2001, "ºˆº∫±ÊµÂ" ), SW_COLOR_TITLE, TEXT_CENTER );	// ºˆº∫ ±ÊµÂ	
 
 	if( _pUISWDoc->m_gdDefGuild.m_nGuildIndex <= 0 )
 	{
-		strMessage.PrintF(_S( 2002,  "ÏàòÏÑ± Í∏∏ÎìúÍ∞Ä Ï°¥Ïû¨ÌïòÏßÄ ÏïäÏäµÎãàÎã§." ) );	
+		strMessage.PrintF(_S( 2002,  "ºˆº∫ ±ÊµÂ∞° ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ." ) );	
 	}
 	else
 	{
-		strMessage.PrintF(_S( 2146,  "%s Í∏∏Îìú" ), _pUISWDoc->m_gdDefGuild.m_strGuildName ); 
+		strMessage.PrintF(_S( 2146,  "%s ±ÊµÂ" ), _pUISWDoc->m_gdDefGuild.m_strGuildName ); 
 	}
 	
-	MsgBoxInfo.AddString( strMessage, SW_COLOR_TEXT, TEXT_CENTER ); // XXXXXXXXXÍ∏∏ÎìúÏù¥Î¶Ñ
+	MsgBoxInfo.AddString( strMessage, SW_COLOR_TEXT, TEXT_CENTER ); // XXXXXXXXX±ÊµÂ¿Ã∏ß
 	
-	MsgBoxInfo.AddString( CTString(" ") ); // XXXXXXXXXÍ∏∏ÎìúÏù¥Î¶Ñ
+	MsgBoxInfo.AddString( CTString(" ") ); // XXXXXXXXX±ÊµÂ¿Ã∏ß
 	
-	MsgBoxInfo.AddString( _S( 2003, "Í≥µÏÑ± ÏãúÍ∞Ñ" ), SW_COLOR_TITLE, TEXT_CENTER ); // Í≥µÏÑ± ÏãúÍ∞Ñ	
+	MsgBoxInfo.AddString( _S( 2003, "∞¯º∫ Ω√∞£" ), SW_COLOR_TITLE, TEXT_CENTER ); // ∞¯º∫ Ω√∞£	
 	
-	strMessage.PrintF(_S( 2004,  "%dÏõî %dÏùº %d" ), _pUISWDoc->m_nMonth, _pUISWDoc->m_nDay, _pUISWDoc->m_nHour );	
-	MsgBoxInfo.AddString( strMessage, SW_COLOR_TEXT, TEXT_CENTER ); // XXXXXXXXXÎÇ†Ïßú 
+	strMessage.PrintF(_S( 2004,  "%dø˘ %d¿œ %d" ), _pUISWDoc->m_nMonth, _pUISWDoc->m_nDay, _pUISWDoc->m_nHour );	
+	MsgBoxInfo.AddString( strMessage, SW_COLOR_TEXT, TEXT_CENTER ); // XXXXXXXXX≥Ø¬• 
 	MsgBoxInfo.AddString( CTString( " " ) );
 
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 
 }
 
 //------------------------------------------------------------------------------
 // CUISiegeWarfare::
-// Explain:  ÏãúÍ∞Ñ ÏÑ§Ï†ï 
+// Explain:  Ω√∞£ º≥¡§ 
 // Date : 2005-06-21,Author: Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::OpenSetSWTime()
@@ -787,29 +882,66 @@ void CUISiegeWarfare::OpenSetSWTime()
 	SetDayOfWeek( SATURDAY );
 
 	m_lbDesc.ResetAllStrings();
-	m_lbDesc.AddString( 0, _S( 2005, "Í≥µÏÑ±Í∞ÄÎä• ÏãúÍ∞Ñ" ), SW_COLOR_TITLE );	
-	m_lbDesc.AddString( 0, _S( 2006, "ÌÜ†ÏöîÏùº : PM 06:00 ~ PM 11:00" ), SW_COLOR_TEXT );	
-	m_lbDesc.AddString( 0, _S( 2007 , "ÏùºÏöîÏùº : PM 01:00 ~ PM 11:00" ), SW_COLOR_TEXT );	
+
+	CTString strTemp, strAmPm;
+	int hour;
+	m_lbDesc.AddString( 0, _S( 5164, "øπæ‡µ» ∞¯º∫ Ω√∞£" ), SW_COLOR_TITLE );	
 	
-	m_sbtnSWTime.ResetAllDatas();
+	m_sbtnSWZone.ResetAllDatas();
 
-	int nTimePrev = 6;
-	int nTimeNext = 11;
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	if (g_iCountry == USA) // ÎØ∏Íµ≠ÏùÄ Ïò§Ï†ÑÎ∂ÄÌÑ∞ Í∞ÄÎä•ÌïòÍ∏∞ ÎïåÎ¨∏Ïóê 24ÏãúÍ∞ÑÏ†úÎ°ú ÌëúÍ∏∞
+	for( int i=0; i<m_vecSWInfo.size(); ++i )
 	{
-		nTimePrev = 11;
-		nTimeNext = 23;
+		strTemp.PrintF(_s("%s(%s)"), CZoneInfo::getSingleton()->GetZoneName( m_vecSWInfo[i].zone ), _pUISWDoc->GetCastleName( m_vecSWInfo[i].zone ) );
+		m_sbtnSWZone.AddData( strTemp );
+
+		hour = m_vecSWInfo[i].zone == 4 ? m_vecSWInfo[i].hour - 12 + 2 : m_vecSWInfo[i].hour - 12 + 1;
+		if( hour >= 12 )
+		{
+			if( hour > 12 )
+			{
+				hour -= 12;
+			}
+			strAmPm = "AM";
+		}
+		else
+		{
+			strAmPm = "PM";
+		}
+
+		//added by sam 10/12/20 ∞¯º∫ ≥Ø¬• ±€ææ∞° æ»≥™ø¿∞≈≥™ ±˙¡¸
+		//-------------------------------------------------------->		
+		int iStringIndex = pUIManager->GetWeekToStringIndex( m_vecSWInfo[i].wday  );
+		CTString ctDay;
+		if ( -1 != iStringIndex)
+		{
+			ctDay = _S(iStringIndex,"ø‰¿œ");
+			strTemp.PrintF( _s("[%s] %s : PM%d:00 ~ %s%d:00"), CZoneInfo::getSingleton()->GetZoneName( m_vecSWInfo[i].zone ), 							
+						ctDay, m_vecSWInfo[i].hour - 12, 
+						 strAmPm, hour);	// µÂ∂Û≈∫ 2Ω√∞£ ∏ﬁ∂Û≈© 1Ω√∞£
+		}
+		else
+		{
+			strTemp.PrintF( _s("[%s] %s : PM%d:00 ~ %s%d:00"), CZoneInfo::getSingleton()->GetZoneName( m_vecSWInfo[i].zone ), 
+						pUIManager->GetWeekToString( m_vecSWInfo[i].wday ), m_vecSWInfo[i].hour - 12, 							
+						 strAmPm, hour);	// µÂ∂Û≈∫ 2Ω√∞£ ∏ﬁ∂Û≈© 1Ω√∞£
+		}
+		/*
+		strTemp.PrintF( _s("[%s] %s : PM%d:00 ~ %s%d:00"), ZoneInfo().GetZoneName( m_vecSWInfo[i].zone ), 
+					pUIManager->GetWeekToString( m_vecSWInfo[i].wday ), m_vecSWInfo[i].hour - 12, 							
+					 strAmPm, hour);	// µÂ∂Û≈∫ 2Ω√∞£ ∏ﬁ∂Û≈© 1Ω√∞£
+		/**/
+		
+		//<------------------------------------------------------------------
+		m_lbDesc.AddString( 0, strTemp, SW_COLOR_TEXT );
 	}
 
-	for( int i = nTimePrev; i <= nTimeNext; i++ )
-	{
-		CTString strTime;
-		strTime.PrintF( "%d", i );
-		m_sbtnSWTime.AddData( strTime );
-	}
+	m_lbDesc.AddString( 0, _S( 2005, "∞¯º∫∞°¥… Ω√∞£" ), SW_COLOR_TITLE );	
+	m_lbDesc.AddString( 0, _S( 2006, "≈‰ø‰¿œ : PM 06:00 ~ PM 11:00" ), SW_COLOR_TEXT );	
+	m_lbDesc.AddString( 0, _S( 2007 , "¿œø‰¿œ : PM 01:00 ~ PM 11:00" ), SW_COLOR_TEXT );	
 
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE, TRUE );
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE, TRUE );
 }
 
 //------------------------------------------------------------------------------
@@ -821,8 +953,10 @@ void CUISiegeWarfare::RenderSetSWTime()
 {
 	int	nX, nY;
 	GetAbsPos( nX, nY );
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 	
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
 #define UNIT_SIZE_DEFAULT					40
 
@@ -841,15 +975,17 @@ void CUISiegeWarfare::RenderSetSWTime()
 	nY += 37 - BACK_BOTTOM_HEIGHT;
 	RenderRectUV3( UNIT_SIZE_DEFAULT, nX, nY, m_nWidth, BACK_BOTTOM_HEIGHT, m_rt3BackL ); 
 
-	// Í≥µÏÑ±Ïùº ÏÑ§Ï†ï 
+	// ∞¯º∫¿œ º≥¡§ 
 	m_cbtnSaturday.Render();
 	m_cbtnSunday.Render();
 
-	// Í≥µÏÑ± ÏãúÍ∞Ñ ÏÑ§Ï†ï 
+	// ∞¯º∫ Ω√∞£ º≥¡§ 
 	// SpinButton render
 	m_sbtnSWTime.Render();
 
-	// Description ListBox : Í≥µÏÑ± Í∞ÄÎä• ÏãúÍ∞Ñ
+	m_sbtnSWZone.Render();
+
+	// Description ListBox : ∞¯º∫ ∞°¥… Ω√∞£
 	m_lbDesc.Render();
 	
 	// Button
@@ -858,20 +994,27 @@ void CUISiegeWarfare::RenderSetSWTime()
 	m_btnClose.Render();
 
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 
 	// Title
-	_pUIMgr->GetDrawPort()->PutTextEx( m_strTitle, m_nPosX + TITLE_SX,
+	pDrawPort->PutTextEx( m_strTitle, m_nPosX + TITLE_SX,
 										m_nPosY + TITLE_SY );
 	
-	// Í≥µÏÑ±Ïùº
-	_pUIMgr->GetDrawPort()->PutTextEx( _S(2008 , "Í≥µÏÑ±Ïùº" ), m_nPosX + 18, m_nPosY + 35, SW_COLOR_TITLE );	
+	// ∞¯º∫¿œ
+	pDrawPort->PutTextEx( _S(2008 , "∞¯º∫¿œ" ), m_nPosX + 18, m_nPosY + 35, SW_COLOR_TITLE );	
 
-	// Í≥µÏÑ±ÏãúÍ∞Ñ
-	_pUIMgr->GetDrawPort()->PutTextEx( _S( 2009, "Í≥µÏÑ±ÏãúÍ∞Ñ" ), m_nPosX + 18, m_nPosY + 81, SW_COLOR_TITLE );	
+	// ∞¯º∫Ω√∞£
+	pDrawPort->PutTextEx( _S( 2009, "∞¯º∫Ω√∞£" ), m_nPosX + 18, m_nPosY + 81, SW_COLOR_TITLE );
+	
+	CTString cstrTiem = _S( 2009, "∞¯º∫Ω√∞£");
+	int nGap = _pUIFontTexMgr->GetFontWidth() * cstrTiem.Length();
+	if ( nGap > 80 )
+		pDrawPort->PutTextEx( _S( 5165, "¡ˆø™" ), m_nPosX + nGap + 18 + 5, m_nPosY + 81, SW_COLOR_TITLE );
+	else 
+		pDrawPort->PutTextEx( _S( 5165, "¡ˆø™" ), m_nPosX + 98, m_nPosY + 81, SW_COLOR_TITLE );
 
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 //------------------------------------------------------------------------------
@@ -881,7 +1024,7 @@ void CUISiegeWarfare::RenderSetSWTime()
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::RenderPoint( int nX, int nY, int nPoint )
 {
-	// Ï∂úÎ†•Îê† ÏúÑÏπò Í∏∞Ï§ÄÏúºÎ°ú Ïò§Î•∏Ï™Ω Ï†ïÎ†¨
+	// √‚∑¬µ… ¿ßƒ° ±‚¡ÿ¿∏∑Œ ø¿∏•¬  ¡§∑ƒ
 	int i = 1;
 	int nRenderNumber;
 
@@ -922,10 +1065,12 @@ void CUISiegeWarfare::RenderBattle()
 {
 	int	nX, nY;
 	GetAbsPos( nX, nY );
-	
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
 
-	_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + BATTLE_WIDTH, m_nPosY + BATTLE_HEIGHT,
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + BATTLE_WIDTH, m_nPosY + BATTLE_HEIGHT,
 										m_rtBattleBack.U0, m_rtBattleBack.V0, m_rtBattleBack.U1, m_rtBattleBack.V1,
 										0xFFFFFFFF );
 
@@ -935,11 +1080,11 @@ void CUISiegeWarfare::RenderBattle()
 		nOffsetX = m_nPosX;
 		nOffsetY = m_nPosY + INFO_OFFSETY;
 	
-		_pUIMgr->GetDrawPort()->AddTexture( nOffsetX, nOffsetY, nOffsetX + INFO_WIDTH, nOffsetY + INFO_HEIGHT,
+		pDrawPort->AddTexture( nOffsetX, nOffsetY, nOffsetX + INFO_WIDTH, nOffsetY + INFO_HEIGHT,
 										m_rtSelectBattleBack.U0, m_rtSelectBattleBack.V0, m_rtSelectBattleBack.U1, m_rtSelectBattleBack.V1,
 										0xFFFFFFFF );
 	
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 2010, "Í∏∏ÎìúÌè¨Ïù∏Ìä∏" ), nOffsetX + UNIT_TEXT_OFFSETX,	
+		pDrawPort->PutTextEx( _S( 2010, "±ÊµÂ∆˜¿Œ∆Æ" ), nOffsetX + UNIT_TEXT_OFFSETX,	
 											nOffsetY + ( UNIT_HEIGHT * 0 ) 
 													+ UNIT_TEXT_OFFSETY, SW_COLOR_DEFENSE_POINT );	
 		// Render Number
@@ -947,7 +1092,7 @@ void CUISiegeWarfare::RenderBattle()
 						nOffsetY + ( UNIT_HEIGHT * 0 + UNIT_POINT_OFFSETY ),
 						_pUISWDoc->m_nGuildPoint );
 
-		_pUIMgr->GetDrawPort()->PutTextEx( _S( 2011, "ÏàòÏÑ±Ï∏°Ìè¨Ïù∏Ìä∏" ), nOffsetX + UNIT_TEXT_OFFSETX,	
+		pDrawPort->PutTextEx( _S( 2011, "ºˆº∫√¯∆˜¿Œ∆Æ" ), nOffsetX + UNIT_TEXT_OFFSETX,	
 											nOffsetY + ( UNIT_HEIGHT * 1 ) 
 													+ UNIT_TEXT_OFFSETY, SW_COLOR_DEFENSE_POINT );	
 		// Render Number
@@ -956,7 +1101,7 @@ void CUISiegeWarfare::RenderBattle()
 						_pUISWDoc->m_gdDefGuild.m_nPoint );
 
 		
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 	}
 	
 	RenderLeftTime();
@@ -964,7 +1109,7 @@ void CUISiegeWarfare::RenderBattle()
 	for( int i = 0; i < 3; i++)
 	{
 		
-		_pUIMgr->GetDrawPort()->PutTextEx( _pUISWDoc->m_gdGuild[i].m_strGuildName, m_nPosX + UNIT_TEXT_OFFSETX,
+		pDrawPort->PutTextEx( _pUISWDoc->m_gdGuild[i].m_strGuildName, m_nPosX + UNIT_TEXT_OFFSETX,
 											m_nPosY + UNIT_TIME_HEIGHT + ( UNIT_HEIGHT * i ) 
 													+ UNIT_TEXT_OFFSETY, SW_COLOR_GUILD_NAME );	
 		// Render Number
@@ -973,10 +1118,10 @@ void CUISiegeWarfare::RenderBattle()
 						_pUISWDoc->m_gdGuild[i].m_nPoint );
 	}
 
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+	pDrawPort->FlushRenderingQueue();
 	
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
+	pDrawPort->EndTextEx();
 }
 
 
@@ -988,8 +1133,10 @@ void CUISiegeWarfare::RenderBattle()
 void CUISiegeWarfare::DrawNumber( int nX, int nY, int nNumber, int nWidth, int nHeight )
 {
 	UIRectUV rtNumber = m_rtNumber[nNumber];
-		
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + nWidth, nY + nHeight,
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->AddTexture( nX, nY, nX + nWidth, nY + nHeight,
 							rtNumber.U0, rtNumber.V0, rtNumber.U1, rtNumber.V1,
 							0xFFFFFFFF );
 
@@ -1005,13 +1152,15 @@ void CUISiegeWarfare::RenderRectUV3( int nUnitSize, int nX, int nY, int nWidth, 
 	int nX2 = nX + nWidth;
 	int nY2 = nY + nHeight;
 
-	_pUIMgr->GetDrawPort()->AddTexture( nX, nY, nX + nUnitSize, nY2,
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->AddTexture( nX, nY, nX + nUnitSize, nY2,
 										rtRectUV3.rtL.U0, rtRectUV3.rtL.V0, rtRectUV3.rtL.U1, rtRectUV3.rtL.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX + nUnitSize, nY, nX2 - nUnitSize, nY2,
+	pDrawPort->AddTexture( nX + nUnitSize, nY, nX2 - nUnitSize, nY2,
 										rtRectUV3.rtM.U0, rtRectUV3.rtM.V0, rtRectUV3.rtM.U1, rtRectUV3.rtM.V1,
 										0xFFFFFFFF );
-	_pUIMgr->GetDrawPort()->AddTexture( nX2 - nUnitSize, nY, nX2, nY2,
+	pDrawPort->AddTexture( nX2 - nUnitSize, nY, nX2, nY2,
 										rtRectUV3.rtR.U0, rtRectUV3.rtR.V0, rtRectUV3.rtR.U1, rtRectUV3.rtR.V1,
 										0xFFFFFFFF );
 }
@@ -1024,41 +1173,47 @@ void CUISiegeWarfare::RenderRectUV3( int nUnitSize, int nX, int nY, int nWidth, 
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::CloseAllMsgBox()
 {
-	_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_WARFARE_ERROR);
-	_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_WARFARE_INFO);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox(MSGCMD_SIEGE_WARFARE_ERROR);
+	pUIManager->CloseMessageBox(MSGCMD_SIEGE_WARFARE_INFO);
 }
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBErrorMessage
 // Explain:  
-// Date : 2005-03-19(Ïò§ÌõÑ 12:28:10) Lee Ki-hwan
+// Date : 2005-03-19(ø¿»ƒ 12:28:10) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::ErrorMessage( CTString strErrorMessage )
 {
-	_pUIMgr->CloseMessageBox(MSGCMD_SIEGE_WARFARE_ERROR);
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CloseMessageBox(MSGCMD_SIEGE_WARFARE_ERROR);
 
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( m_strTitle, UMBS_OK, UI_SIEGE_WARFARE, MSGCMD_SIEGE_WARFARE_ERROR );
 	MsgBoxInfo.AddString( strErrorMessage );	
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );		
+	pUIManager->CreateMessageBox( MsgBoxInfo );		
 }
 
 
 //------------------------------------------------------------------------------
 // CUIGuildBattle::GBMessage
 // Explain:  
-// Date : 2005-03-21(Ïò§ÌõÑ 4:46:32) Lee Ki-hwan
+// Date : 2005-03-21(ø¿»ƒ 4:46:32) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::Message( int nCommandCode, CTString strMessage, DWORD dwStyle )
 {
-	if( _pUIMgr->DoesMessageBoxExist( nCommandCode ) )
-	return;
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( nCommandCode ) )
+		return;
 
 	CUIMsgBox_Info	MsgBoxInfo;
 	MsgBoxInfo.SetMsgBoxInfo( m_strTitle, dwStyle, UI_SIEGE_WARFARE, nCommandCode );
 	
 	MsgBoxInfo.AddString( strMessage );
-	_pUIMgr->CreateMessageBox( MsgBoxInfo );
+	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 
 //------------------------------------------------------------------------------
@@ -1078,14 +1233,14 @@ void CUISiegeWarfare::SetDayOfWeek( int nDayOfWeek )
 		m_sbtnSWTime.ResetAllDatas();
 
 		nTimePrev = 6; nTimeNext = 11;
+		nTimePrev = 5;
 
-		if (g_iCountry == USA)
-		{
-			nTimePrev = 11;
-			nTimeNext = 23;
-		}
+#if defined G_USA
+		nTimePrev = 10;
+		nTimeNext = 23;
+#endif // G_USA
 
-		for( int i = nTimePrev; i <= nTimeNext; i++ ) //!ÏãúÍ∞Ñ Ï°∞Ï†ï
+		for( int i = nTimePrev; i <= nTimeNext; i++ ) //!Ω√∞£ ¡∂¡§
 		{
 			CTString strTime;
 			strTime.PrintF( "%d", i );
@@ -1102,13 +1257,12 @@ void CUISiegeWarfare::SetDayOfWeek( int nDayOfWeek )
 
 		nTimePrev = 1; nTimeNext = 11;
 
-		if (g_iCountry == USA)
-		{
-			nTimePrev = 11;
-			nTimeNext = 20;
-		}
+#if defined G_USA
+		nTimePrev = 11;
+		nTimeNext = 20;
+#endif
 
-		for( int i = nTimePrev; i <= nTimeNext; i++ )//!ÏãúÍ∞Ñ
+		for( int i = nTimePrev; i <= nTimeNext; i++ )//!Ω√∞£
 		{
 			CTString strTime;
 			strTime.PrintF( "%d", i );
@@ -1152,16 +1306,16 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 				nOldX = nX;	nOldY = nY;
 				Move( ndX, ndY );
 				if( IsInside( nX, nY ) )
-					_pUIMgr->SetMouseCursorInsideUIs();
+					CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 			
 				return WMSG_SUCCESS;
 			}
 
-			// Í∏∏Îìú Ïã†Ï≤≠ ÏõêÎèÑÏö∞ 
-			if( _pUISWDoc->IsSetSWTime() ) // ÏãúÍ∞Ñ ÏÑ§Ï†ï ÏúàÎèÑÏö∞ 
+			// ±ÊµÂ Ω≈√ª ø¯µµøÏ 
+			if( _pUISWDoc->IsSetSWTime() ) // Ω√∞£ º≥¡§ ¿©µµøÏ 
 			{
 				if( IsInside( nX, nY ) )
-					_pUIMgr->SetMouseCursorInsideUIs();
+					CUIManager::getSingleton()->SetMouseCursorInsideUIs();
 				if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
 				else if( m_btnCancel.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -1170,12 +1324,14 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 					return WMSG_SUCCESS;
 				else if( m_sbtnSWTime.MouseMessage( pMsg ) != WMSG_FAIL )
 					return WMSG_SUCCESS;
+				else if( m_sbtnSWZone.MouseMessage( pMsg ) != WMSG_FAIL )
+					return WMSG_SUCCESS;
 			}
 		}
 		break;
 	case WM_LBUTTONDOWN:
 		{
-			if( _pUISWDoc->IsSetSWTime() ) // ÏãúÍ∞Ñ ÏÑ§Ï†ï ÏúàÎèÑÏö∞ 
+			if( _pUISWDoc->IsSetSWTime() ) // Ω√∞£ º≥¡§ ¿©µµøÏ 
 			{
 				if( IsInside( nX, nY ) )
 				{
@@ -1212,8 +1368,10 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 					}
 					else if( m_sbtnSWTime.MouseMessage( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
+					else if( m_sbtnSWZone.MouseMessage( pMsg ) != WMSG_FAIL )
+						return WMSG_SUCCESS;
 					
-					_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+					CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 					return WMSG_SUCCESS;
 				}
 			}
@@ -1224,7 +1382,7 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 		{
 			bTitleBarClick = FALSE;
 		
-			if( _pUISWDoc->IsSetSWTime() ) // ÏãúÍ∞Ñ ÏÑ§Ï†ï ÏúàÎèÑÏö∞ 
+			if( _pUISWDoc->IsSetSWTime() ) // Ω√∞£ º≥¡§ ¿©µµøÏ 
 			{				
 				if( IsInside( nX, nY ) )
 				{
@@ -1236,21 +1394,20 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 							int nDay = -1;
 							int nHour = 0;
 
-							// ÎÇ†ÏßúÏñªÍ∏∞
+							// ≥Ø¬•æÚ±‚
 							if( m_cbtnSaturday.IsChecked() )		nDay = SATURDAY;
 							else if ( m_cbtnSunday.IsChecked() )	nDay = SUNDAY;
-							// ÏãúÍ∞Ñ ÏñªÍ∏∞
-
-							if (g_iCountry == USA)
-							{
-								nHour = m_sbtnSWTime.GetDataToNumber();
-							}
-							else
-							{
-								nHour = m_sbtnSWTime.GetDataToNumber() + 12;
-							}
+							// Ω√∞£ æÚ±‚
+							
+#if defined G_USA
+							nHour = m_sbtnSWTime.GetDataToNumber();
+#else
+							nHour = m_sbtnSWTime.GetDataToNumber() + 12;
+#endif
 			
-							_pNetwork->SetTimeReq( nDay, nHour );
+							int zone = m_vecSWInfo[m_sbtnSWZone.GetSelectPos()].zone;
+							_pNetwork->SetTimeReq( nDay, nHour, zone);
+
 						}
 						return WMSG_SUCCESS;
 					}
@@ -1274,8 +1431,9 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 					}
 					else if( m_sbtnSWTime.MouseMessage( pMsg ) != WMSG_FAIL )
 						return WMSG_SUCCESS;
+					else if( m_sbtnSWZone.MouseMessage( pMsg ) != WMSG_FAIL )
+						return WMSG_SUCCESS;
 
-					//_pUIMgr->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
 					return WMSG_SUCCESS;
 				}
 			}
@@ -1283,10 +1441,10 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 		break;
 	case WM_LBUTTONDBLCLK:
 		{
-			if( _pUISWDoc->IsSetSWTime() ) // ÏãúÍ∞Ñ ÏÑ§Ï†ï ÏúàÎèÑÏö∞ 
+			if( _pUISWDoc->IsSetSWTime() ) // Ω√∞£ º≥¡§ ¿©µµøÏ 
 			{
 				if( IsInside( nX, nY ) )
-				{ // Î≤ÑÌäº ÌÅ¥Î¶≠Ïù¥ ÏûòÎêòÏßÄ ÏïäÎäî Î¨∏Ï†úÎ°ú ÎçîÎ∏î ÌÅ¥Î¶≠ÏùÄ Ï≤òÎ¶¨ÌïòÏßÄ ÏïäÎäîÎã§.
+				{ // πˆ∆∞ ≈¨∏Ø¿Ã ¿ﬂµ«¡ˆ æ ¥¬ πÆ¡¶∑Œ ¥ı∫Ì ≈¨∏Ø¿∫ √≥∏Æ«œ¡ˆ æ ¥¬¥Ÿ.
 //					if( m_sbtnSWTime.MouseMessage( pMsg ) != WMSG_FAIL )
 //							return WMSG_SUCCESS;
 
@@ -1298,12 +1456,14 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 
 	case WM_MOUSEWHEEL:
 		{
-			if( _pUISWDoc->IsSetSWTime() ) // ÏãúÍ∞Ñ ÏÑ§Ï†ï ÏúàÎèÑÏö∞ 
+			if( _pUISWDoc->IsSetSWTime() ) // Ω√∞£ º≥¡§ ¿©µµøÏ 
 			{
 				if( IsInside( nX, nY ) )
 				{
 					if( m_sbtnSWTime.MouseMessage( pMsg ) != WMSG_FAIL )
-						return WMSG_SUCCESS;	
+						return WMSG_SUCCESS;
+					if( m_sbtnSWZone.MouseMessage( pMsg ) != WMSG_FAIL )
+						return WMSG_SUCCESS;
 					
 					return WMSG_SUCCESS;		
 				}
@@ -1319,22 +1479,30 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 //------------------------------------------------------------------------------
 // CUIGuildBattle::SetNotice
 // Explain:  
-// Date : 2005-03-21(Ïò§ÌõÑ 9:53:57) Lee Ki-hwan
+// Date : 2005-03-21(ø¿»ƒ 9:53:57) Lee Ki-hwan
 //------------------------------------------------------------------------------
 void CUISiegeWarfare::SetNotice( CTString strNoticeMessage, CTString strNoticeMessage2 )
 {
-	int nWidth;
-	
-	CDrawPort	*pdp	= _pUIMgr->GetDrawPort();
-	int			nCX		= pdp->dp_MinI + ( pdp->dp_MaxI - pdp->dp_MinI ) / 2;
-
 	CloseAllMsgBox();
 
-	_pUIMgr->RearrangeOrder( UI_SIEGE_WARFARE, TRUE );
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->RearrangeOrder( UI_SIEGE_WARFARE, TRUE );
+
+	// [2012/06/04 : Sora] ITS 8986 ∞¯º∫Ω√¿€¿¸ ∞¯º∫Ω√¿€ ¡ˆ¡°¿∏∑Œ ¿Ãµø Ω√ ƒ≥∏Ø≈Õ ¿Ãµø∫“∞° ªÛ≈¬ πﬂª˝ ºˆ¡§
+	// ∞¯º∫ ∏ﬁΩ√¡ˆ √‚∑¬«œ∏Èº≠ «ÿ¥Á UI∏¶ »∞º∫»≠ Ω√ƒ—¡÷æÓ«· «—¥Ÿ. ∞¯º∫ ∏ﬁΩ√¡ˆ √‚∑¬ πÊΩƒ ∫Ø∞Ê
+#ifdef	IMPROV1107_NOTICESYSTEM
+	_UIAutoHelp->SetGMNotice( strNoticeMessage );
+	
+	if( strNoticeMessage2.Length() > 0 )
+	{
+		_UIAutoHelp->SetGMNotice( strNoticeMessage2 );
+	}
+#else
 	m_bShowNotice = TRUE;
 	m_bBottomNotice = TRUE;
 
-	_pUIMgr->GetChatting()->AddSysMessage( strNoticeMessage, SYSMSG_NORMAL );	
+	pUIManager->GetChattingUI()->AddSysMessage( strNoticeMessage, SYSMSG_NORMAL );	
 
 	if( strNoticeMessage2.Length() <= 1 )
 	{
@@ -1342,13 +1510,17 @@ void CUISiegeWarfare::SetNotice( CTString strNoticeMessage, CTString strNoticeMe
 	}
 	else
 	{
-		_pUIMgr->GetChatting()->AddSysMessage( strNoticeMessage2, SYSMSG_NORMAL );	
+		pUIManager->GetChattingUI()->AddSysMessage( strNoticeMessage2, SYSMSG_NORMAL );	
 	}
+
+	int nWidth = 0;
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+	int nCX = pDrawPort->dp_MinI + ( pDrawPort->dp_MaxI - pDrawPort->dp_MinI ) / 2;
 
 	m_strNoticeMessage = strNoticeMessage;
 	m_strNoticeMessage2 = strNoticeMessage2;
 
-	// ÏúÑÏ™ΩÏóê Ï∂úÎ†• Îê† Í≥µÏßÄ
+	// ¿ß¬ ø° √‚∑¬ µ… ∞¯¡ˆ
 	nWidth = ( m_strNoticeMessage.Length() ) * 
 			 ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) - 1;
 		
@@ -1356,15 +1528,387 @@ void CUISiegeWarfare::SetNotice( CTString strNoticeMessage, CTString strNoticeMe
 	m_rcNotice1.Right = m_rcNotice1.Left + nWidth;
 
 
-	// ÏïÑÎûòÏ™ΩÏóê Ï∂úÎ†•Îê† Í≥µÏßÄ
+	// æ∆∑°¬ ø° √‚∑¬µ… ∞¯¡ˆ
 	nWidth = ( strNoticeMessage2.Length() ) *
 			 ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() ) - 1;
 		
 	m_rcNotice2.Left = nCX - nWidth / 2;
 	m_rcNotice2.Right = m_rcNotice2.Left + nWidth;
 
-	// ÏãúÍ∞Ñ ÏÖãÌåÖ
+	// Ω√∞£ º¬∆√
 	m_tmNoticeTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds ();
+#endif
 }
 
+//------------------------------------------------------------------------------
+// CUISiegeWarfare::OpenCostumeReq
+// Explain: º∫¡÷ ƒ⁄Ω∫∆¨ ¡ˆ±ﬁ ø‰√ª
+// Date : 2010-09-15
+//------------------------------------------------------------------------------
+void CUISiegeWarfare::OpenCostumeReq()
+{
+	CTString strTitle = _S( 5115, "º∫¡÷ ƒ⁄Ω∫∆¨" );
+	CTString strMessage;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	pUIManager->CreateMessageBoxL( strTitle, UI_SIEGE_WARFARE, MSGLCMD_LORD_COSTUME_REQ );
 	
+	pUIManager->AddMessageBoxLString( MSGLCMD_LORD_COSTUME_REQ, TRUE, _S( 1748, "æ»≥ª" ) );		
+	
+	strMessage =_S( 5116, "æ»≥Á«œººø‰. º∫¡÷¥‘. ºˆ∏π¿∫ Ω√∑√∞˙ ∞Ì≥≠ º”ø° ∞Ê¿Ô ±ÊµÂøÕ¿« ∞·≈ıø°º≠ Ω¬∏Æ«œø© º∫¡÷∞° µ«Ω≈ ∞Õ¿ª √‡«œ µÂ∏≥¥œ¥Ÿ. ¿Ã¡® ¿Ã ∫π¿Â¿ª ¿‘∞Ì º∫¿« ¡÷¿Œ¿”¿ª ººªÛø° æÀ∏ÆΩ√±Ê πŸ∂¯¥œ¥Ÿ." );	
+	pUIManager->AddMessageBoxLString( MSGLCMD_LORD_COSTUME_REQ, TRUE, strMessage, -1, SW_COLOR_DESC );
+	pUIManager->AddMessageBoxLString( MSGLCMD_LORD_COSTUME_REQ, TRUE, CTString(" "), -1, SW_COLOR_DESC );
+	
+	strMessage = _S( 1839, "æ∆¿Ã≈€ ¡ˆ±ﬁ" );
+	pUIManager->AddMessageBoxLString( MSGLCMD_LORD_COSTUME_REQ, FALSE, strMessage, 0 );
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfare::SetSiegeWarfareTimeInfo
+// Explain: ∞¯º∫ Ω√∞£ ¡§∫∏ ¿˙¿Â
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfare::SetSiegeWarfareTimeInfo( stSiegeWarfareTimeInfo swInfo )
+{
+	m_vecSWInfo.push_back( swInfo );
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::CUISiegeWarfareInfo
+// Explain: 
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+CUISiegeWarfareInfo::CUISiegeWarfareInfo()
+{
+
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::~CUISiegeWarfareInfo
+// Explain: 
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+CUISiegeWarfareInfo::~CUISiegeWarfareInfo()
+{
+
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::Create
+// Explain: 
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
+{
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+
+	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\new_Interface.tex" ) );
+	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
+	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
+
+	m_bxBackground[0].SetBoxUV(m_ptdBaseTexture, 120, 36, WRect(0,98,272,253));
+	m_bxBackground[0].SetBoxPos(WRect(0,0,nWidth,nHeight));
+
+	m_bxBackground[1].SetBoxUV(m_ptdBaseTexture, 20, WRect(0,304,221,346));
+	m_bxBackground[1].SetBoxPos(WRect(20, 80, 380, 175));
+
+	m_bxBackground[2].SetBoxUV(m_ptdBaseTexture, 20, WRect(0,304,221,346));
+	m_bxBackground[2].SetBoxPos(WRect(20, 200, 380, 295));
+
+	m_bxBackground[3].SetBoxUV(m_ptdBaseTexture, 3, WRect(339,464,368,466));
+	m_bxBackground[3].SetBoxPos(WRect(20, 50, 380, 53));
+
+	m_btnOK.Create(this, CTString(_S(191, "»Æ¿Œ")), 150, 310, 100, 20);
+	m_btnOK.SetUV(UBS_IDLE,282,244,351,265, fTexWidth, fTexHeight );
+	m_btnOK.SetUV(UBS_CLICK, 364,244,433,265, fTexWidth, fTexHeight);
+	m_btnOK.CopyUV(UBS_IDLE, UBS_ON);
+	m_btnOK.CopyUV(UBS_IDLE, UBS_DISABLE);
+
+	m_rsMyGuildName.Create(this, 28, 248, 85, 25 );
+	m_rsMyGuildName.SetAlign( ALIGN_CENTER );
+
+	m_rsMyGuildBossName.Create(this, 113, 248, 85, 25 );
+	m_rsMyGuildBossName.SetAlign( ALIGN_CENTER );
+
+	m_rcTitle.SetRect(0, 0, nWidth, 30);
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::Render
+// Explain: 
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::Render()
+{
+	CTString strTemp;
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+	for(int i =0; i < 4; i++)
+	{
+		m_bxBackground[i].Render(m_nPosX,m_nPosY);
+	}
+
+	m_btnOK.Render();
+
+	pDrawPort->FlushRenderingQueue();
+
+	pDrawPort->PutTextExCX(_S( 5166, "±›¡÷ ∞¯º∫ ¿œ¡§"), m_nPosX+200, m_nPosY+18);
+
+	pDrawPort->PutTextEx(_S( 5167, "ºˆº∫ ¡§∫∏"), m_nPosX + 25, m_nPosY + 60);
+	pDrawPort->PutTextEx(_S( 5168, "≥™¿« ¡§∫∏"), m_nPosX + 25, m_nPosY + 180);
+	
+
+	pDrawPort->PutTextExCX( _S( 2001, "ºˆº∫±ÊµÂ"), m_nPosX + 100, m_nPosY + 85 );
+	pDrawPort->PutTextExCX( _S( 5165, "¡ˆø™"), m_nPosX + 230, m_nPosY + 85 );
+	pDrawPort->PutTextExCX( _S( 1718, "Ω√∞£"), m_nPosX + 330, m_nPosY + 85 );
+
+	if( m_vecDefGuildInfo.size() == 0 )
+	{
+		pDrawPort->PutTextExCX( _S( 2002,  "ºˆº∫ ±ÊµÂ∞° ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ." ), m_nPosX + 200, m_nPosY + 124);
+	}
+	else
+	{
+		for( int i=0; i<m_vecDefGuildInfo.size(); ++i )
+		{
+			pDrawPort->PutTextExCX( m_vecDefGuildInfo[i].guildName, m_nPosX + 100, m_nPosY + 110+(i*28));
+			pDrawPort->PutTextExCX( CZoneInfo::getSingleton()->GetZoneName( m_vecDefGuildInfo[i].zone ), m_nPosX + 230, m_nPosY + 110+(i*28));
+
+			strTemp.PrintF(_S( 2004,  "%dø˘ %d¿œ %d" ), m_vecDefGuildInfo[i].month, m_vecDefGuildInfo[i].day, m_vecDefGuildInfo[i].hour );
+			pDrawPort->PutTextExCX( strTemp, m_nPosX + 330, m_nPosY + 110+(i*28));
+		}
+	}
+
+	pDrawPort->PutTextExCX( _S( 3451, "±ÊµÂ ∏Ì"), m_nPosX + 70, m_nPosY + 205 );
+	pDrawPort->PutTextExCX( _S( 4344, "±ÊµÂ ∏∂Ω∫≈Õ"), m_nPosX + 155, m_nPosY + 205 );
+	pDrawPort->PutTextExCX( _S( 5169, "∞¯º∫ ∞¸∞Ë"), m_nPosX + 255, m_nPosY + 205 );
+	pDrawPort->PutTextExCX( _S( 5165, "¡ˆø™"), m_nPosX + 335, m_nPosY + 205 );
+
+	if( m_MySiegeWarfareInfo.vecZone.size() > 0 )
+	{
+		m_rsMyGuildName.Render();
+		m_rsMyGuildBossName.Render();
+
+		for( int j=0; j<m_MySiegeWarfareInfo.vecZone.size(); ++j )
+		{	
+			pDrawPort->PutTextExCX( GetJoinStatusString( m_MySiegeWarfareInfo.vecJoinFlag[j] ), m_nPosX + 255, m_nPosY + 248 + (j*14) );
+			pDrawPort->PutTextExCX( CZoneInfo::getSingleton()->GetZoneName( m_MySiegeWarfareInfo.vecZone[j] ), m_nPosX + 335, m_nPosY + 248 + (j*14) );	
+		} 
+	}
+	else
+	{
+		pDrawPort->PutTextExCX( _S( 5170, "∞¯º∫ ¬¸ø© ¡§∫∏∞° ¡∏¿Á«œ¡ˆ æ Ω¿¥œ¥Ÿ." ), m_nPosX + 200, m_nPosY + 248);
+	}
+
+	pDrawPort->EndTextEx();
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::ResetPosition
+// Explain: 
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	SetPos( ( pixMaxI + pixMinI - GetWidth() ) / 2, ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::AdjustPosition
+// Explain: 
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
+{
+	if( m_nPosX < pixMinI || m_nPosX + GetWidth() > pixMaxI ||
+		m_nPosY < pixMinJ || m_nPosY + GetHeight() > pixMaxJ )
+		ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::MouseMessage
+// Explain: 
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+WMSG_RESULT CUISiegeWarfareInfo::MouseMessage( MSG *pMsg )
+{
+	WMSG_RESULT	wmsgResult;
+	
+	// Title bar
+	static BOOL	bTitleBarClick = FALSE;
+
+	// Mouse point
+	static int	nOldX, nOldY;
+	int	nX = LOWORD( pMsg->lParam );
+	int	nY = HIWORD( pMsg->lParam );
+
+	switch( pMsg->message )
+	{
+		case WM_MOUSEMOVE:
+			{
+				if( IsInside( nX, nY ) )
+					CUIManager::getSingleton()->SetMouseCursorInsideUIs();
+				
+				int	ndX = nX - nOldX;
+				int	ndY = nY - nOldY;
+
+				if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
+				{
+					nOldX = nX;	nOldY = nY;
+					
+					Move( ndX, ndY );
+					
+					return WMSG_SUCCESS;
+				}
+
+				m_btnOK.MouseMessage( pMsg );
+			}
+			break;
+
+		case WM_LBUTTONDOWN:
+			{
+				if( IsInside( nX, nY ) )
+				{
+					nOldX = nX;		nOldY = nY;
+					if( IsInsideRect( nX, nY, m_rcTitle ) )
+					{
+						bTitleBarClick = TRUE;
+					}
+
+					if( m_btnOK.MouseMessage( pMsg ) != WMSG_FAIL )
+					{
+					}
+
+					CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_INFO, TRUE );
+					return WMSG_SUCCESS;
+				}
+
+			}
+			break;
+
+		case WM_LBUTTONUP:
+			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+				bTitleBarClick = FALSE;
+
+				if (pUIManager->GetDragIcon() == NULL)
+				{
+					if( !IsFocused() )
+						return WMSG_FAIL;
+
+					if( ( wmsgResult = m_btnOK.MouseMessage( pMsg ) ) != WMSG_FAIL )
+					{
+						if( wmsgResult == WMSG_COMMAND )
+						{
+							ToggleSiegeWarfareInfo( FALSE );
+						}
+
+						return WMSG_SUCCESS;
+					}
+				}
+				else
+				{
+					pUIManager->ResetHoldBtn();
+				}
+
+			}
+			break;
+	}
+
+	return WMSG_FAIL;
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::InitSiegeWarfareInfo
+// Explain: 
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::InitSiegeWarfareInfo()
+{
+	m_MySiegeWarfareInfo.Init();
+	m_vecDefGuildInfo.clear();
+
+	m_rsMyGuildName.ClearString();
+	m_rsMyGuildBossName.ClearString();
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::SetSiegeWarfareDefGuildInfo
+// Explain: ºˆº∫±ÊµÂ ¡§∫∏ ¿˙¿Â
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::SetSiegeWarfareDefGuildInfo( stSiegeWarfareDefGuildInfo defGuildInfo )
+{
+	m_vecDefGuildInfo.push_back(defGuildInfo);
+} 
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::SetMySiegeWarfareGuildInfo
+// Explain: ≥ª ±ÊµÂ¡§∫∏ ¿˙¿Â
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::SetMySiegeWarfareGuildInfo( CTString guildName, CTString guildBossName )
+{
+
+	m_MySiegeWarfareInfo.guildName = guildName;
+	m_MySiegeWarfareInfo.guildBossName = guildBossName;
+
+	m_rsMyGuildName.AddString( guildName );
+	m_rsMyGuildBossName.AddString( guildBossName );
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::SetMySiegeWarfareJoinInfo
+// Explain: ≥ª ∞¯º∫¡§∫∏ ¿˙¿Â
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::SetMySiegeWarfareJoinInfo( char zone, char joinFlag )
+{
+	m_MySiegeWarfareInfo.vecZone.push_back( zone );
+	m_MySiegeWarfareInfo.vecJoinFlag.push_back( joinFlag );
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::ToggleSiegeWarfareInfo
+// Explain: ∞¯º∫¡§∫∏√¢ ø≠∞Ì¥›±‚
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+void CUISiegeWarfareInfo::ToggleSiegeWarfareInfo( BOOL bShown )
+{
+	if( !bShown )
+	{
+		InitSiegeWarfareInfo();
+	}
+
+	CUIManager::getSingleton()->RearrangeOrder( UI_SIEGE_WARFARE_INFO, bShown );
+}
+
+//------------------------------------------------------------------------------
+// CUISiegeWarfareInfo::GetJoinStatusString
+// Explain: ∞¯º∫¬¸ø© ¡§∫∏ Ω∫∆Æ∏µ
+// Date : 2010-11-01
+//------------------------------------------------------------------------------
+CTString CUISiegeWarfareInfo::GetJoinStatusString( char joinFlag )
+{
+	switch( joinFlag )
+	{
+		case WCJF_NONE:
+			return "";
+		case WCJF_OWNER:
+			return _S( 5171, "º∫¡÷±ÊµÂ");
+		case WCJF_DEFENSE_GUILD:
+			return _S( 2001, "ºˆº∫±ÊµÂ" );
+		case WCJF_DEFENSE_CHAR:
+			return _S( 5172, "ºˆº∫√¯øÎ∫¥");
+		case WCJF_ATTACK_GUILD:
+			return _S( 5173, "∞¯º∫±ÊµÂ");
+		case WCJF_ATTACK_CHAR:
+			return _S( 5174, "∞¯º∫√¯øÎ∫¥");
+	}
+	
+	return "";
+}
+

@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #include "stdH.h"
 #include "CParticleGroupManager.h"
@@ -16,7 +16,7 @@ CParticleGroupManager CParticleGroupManager::m_instance;
 CParticleGroupManager::CParticleGroupManager()
 {
 	m_vectorCreated.reserve(1024);
-	memset(&m_vectorCreated[0], 0, 1024*sizeof(CParticleGroup*));
+	//memset(&m_vectorCreated[0], 0, 1024*sizeof(CParticleGroup*));
 }
 
 CParticleGroupManager::~CParticleGroupManager()
@@ -58,8 +58,8 @@ BOOL CParticleGroupManager::Register(CParticleGroup *prototype)
 	if(prototype == NULL) return FALSE;
 	if( prototype->GetName() == "" || IsRegistered(prototype->GetName()) ) return FALSE;
 
-	my_map::value_type registerTri( prototype->GetName(), prototype->Copy() );
-	//ë“±ë¡ ì„±ê³µ or ì‹¤íŒ¨ ì •ë³´ë¥¼ ë¦¬í„´
+	my_map::value_type registerTri( prototype->GetName(), prototype );
+	//µî·Ï ¼º°ø or ½ÇÆĞ Á¤º¸¸¦ ¸®ÅÏ
 	return m_mapRegistered.insert( registerTri ).second;
 }
 
@@ -90,25 +90,21 @@ CParticleGroup *CParticleGroupManager::Create(const std::string name)
 void CParticleGroupManager::Destroy(CParticleGroup *&obj)
 {
 	if(obj == NULL) return;
-	INDEX cnt = m_vectorCreated.size();
-	for(INDEX i=cnt-1; i>=0; --i)
+
+	my_vector::iterator tmpItr;
+
+	tmpItr = std::find(m_vectorCreated.begin(), m_vectorCreated.end(), obj);
+
+	if (tmpItr != m_vectorCreated.end())
 	{
-		if(m_vectorCreated[i] == obj)
-		{
-			m_vectorCreated[i] = m_vectorCreated[cnt-1];
-			m_vectorCreated.pop_back();
-			delete obj;
-			obj = NULL;
-		}
+		m_vectorCreated.erase(std::remove(m_vectorCreated.begin(), m_vectorCreated.end(), obj));
+		delete obj;
 	}
-	if(i < 0)//not found
-	{
-		obj = NULL;
-		return;
-	}
+
+	obj = NULL;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #include <Engine/Base/Stream.h>
 #define CURRENT_VERSION 1
 
@@ -127,9 +123,12 @@ void CParticleGroupManager::Read(CTStream *pIS)
 		is >> dwSize;
 		for(DWORD i=0; i<dwSize; ++i)
 		{
-			CParticleGroup pg;
-			pg.Read(&is);
-			Register(&pg);
+			CParticleGroup* pg = new CParticleGroup;
+			pg->Read(&is);
+			if (!Register(pg))
+			{
+				if (pg) delete pg;
+			}
 		}
 	}
 	//old version
@@ -153,6 +152,6 @@ void CParticleGroupManager::Write(CTStream *pOS)
 		(*iter).second->Write(&os);
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

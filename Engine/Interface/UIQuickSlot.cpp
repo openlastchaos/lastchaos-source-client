@@ -1,15 +1,25 @@
 #include "stdh.h"
-#include <Engine/Interface/UIQuickSlot.h>
+
+// «Ï¥ı ¡§∏Æ. [12/2/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
+#include <Engine/Interface/UIQuickSlot.h>
 #include <Engine/Interface/UIPetInfo.h>
+#include <Engine/Interface/UIChildQuickSlot.h>
+#include <Engine/Interface/UIInventory.h>
+#include <Engine/Interface/UICashShopEX.h>
+#include <Engine/Interface/UIGuild.h>
+#include <Engine/Contents/function/WildPetInfoUI.h>
+#include <Engine/Interface/UIMessenger.h>
+#include <Engine/Contents/Base/UICharacterInfoNew.h>
+#include <Engine/Info/MyInfo.h>
+#include <Engine/Contents/Base/UIQuestBookNew.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/LocalDefine.h>
 
 static BOOL m_bLock = false;
 
 extern int _aSummonSkill[5];
 
-extern INDEX g_iCountry;
+
 // ----------------------------------------------------------------------------
 // Name : CUIQuickSlot()
 // Desc : Constructor
@@ -19,12 +29,23 @@ CUIQuickSlot::CUIQuickSlot()
 	m_bHorizontal = TRUE;
 	m_nCurrentPage = 0;
 	m_strCurrentPage = CTString( "1" );
+	m_strPageNumber = CTString( "" );
 	m_nSelSlotBtnID = -1;
 	m_bShowSlotInfo = FALSE;
 	m_bShowExSlotInfo = FALSE;
-
+	
 	m_bGiftRecv =FALSE;
 	m_eGiftPos =GIFTPOS_TOP;
+	m_ptdGiftTexture = NULL;
+	// [12/12/2012 π⁄»∆]
+	m_nCurChildSlot = 0;
+	for(int i = 0; i < QS_END; i++)
+	{
+		m_pChildQuickSlot[i] = NULL;
+	}
+	
+	m_bIsInside = FALSE;
+	m_bWearing = FALSE;
 }
 
 // ----------------------------------------------------------------------------
@@ -34,6 +55,13 @@ CUIQuickSlot::CUIQuickSlot()
 CUIQuickSlot::~CUIQuickSlot()
 {
 	Destroy();
+	STOCK_RELEASE(m_ptdGiftTexture);
+	
+	for (int i = 0; i < QSLOT_PAGE_COUNT; ++i)
+	{
+		for (int j = 0; j < QSLOT_BTN_COUNT; ++j)
+			SAFE_DELETE(m_abtnItems[i][j]);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -42,85 +70,68 @@ CUIQuickSlot::~CUIQuickSlot()
 // ----------------------------------------------------------------------------
 void CUIQuickSlot::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
 {
-	m_pParentWnd = pParentWnd;
-	SetPos( nX, nY );
-	SetSize( nWidth, nHeight );
-
+	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+	
 	// Region of each part
 #define SHIFT_VAL 38
-	//m_rcTitle1.SetRect( 0, 0, 14, 44 );
-	m_rcTitle1.SetRect( 0, 17, 21, 70 );
-//	m_rcTitle2.SetRect( 402+SHIFT_VAL, 0, 416+SHIFT_VAL, 44 );
 	m_rcTitle2.SetRect( 416+SHIFT_VAL, 0, 430+SHIFT_VAL, 44 );
+	m_rcSlot.SetRect( 18, 0, QSLOT_RCSLOT_AREA , 43 );
 	
-	//m_rcSlot.SetRect( 33, 3, 384 +70, 41 );
-	m_rcSlot.SetRect( 39, 34, 455, 65 );
-
-	//m_rcHorzSlotText.SetRect( 35, 6, 362, 13 );
-	m_rcHorzSlotText.SetRect( 41, 36, 438, 42);
-	m_rcVertSlotText.SetRect( 6, 35, 18, 357 );
-
 	// Create quick slot texture
-	//m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\QuickSlot.tex" ) );
 	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\TopUI.tex" ) );
 	m_ptdGiftTexture = CreateTexture( CTString( "Data\\Interface\\Gift.tex" ) );
+		
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
-
+	
+	m_rtShop.SetUV(101, 585, 272, 675, fTexWidth, fTexHeight);
+	//  [12/10/2012 π⁄»∆] UI∞≥∆Ì SlotNumber
+	m_rtSlotNumberText.SetUV(120, 566, 512, 573, fTexWidth, fTexHeight);
+	m_rtSlotNumberText1.SetUV(120, 574, 517, 581, fTexWidth, fTexHeight);
+	m_rtSlotNumberText2.SetUV(120, 557, 526, 564, fTexWidth, fTexHeight);
 	// UV Coordinate of each part
 	// Background
-	//m_rtBackground.SetUV( 0, 0+64, 440+SHIFT_VAL, 44+64, fTexWidth, fTexHeight );
-	m_rtBackground.SetUV( 27, 127, 506, 198, fTexWidth, fTexHeight );
-
+	m_rtBackground.SetUV( 272, 631, 729, 675, fTexWidth, fTexHeight );
+	m_strPageNumber.PrintF("%d", m_nCurrentPage + 1);
+	
 	// Slot information region
-	//m_rtSlotInfoL.SetUV( 418, 2, 425, 25, fTexWidth, fTexHeight );
-	//m_rtSlotInfoM.SetUV( 428, 2, 430, 25, fTexWidth, fTexHeight );
-	//m_rtSlotInfoR.SetUV( 433, 2, 440, 25, fTexWidth, fTexHeight );
 	m_rtSlotInfoL.SetUV( 239, 253, 246, 269, fTexWidth, fTexHeight );
 	m_rtSlotInfoM.SetUV( 246, 253, 328, 269, fTexWidth, fTexHeight );
 	m_rtSlotInfoR.SetUV( 328, 253, 335, 269, fTexWidth, fTexHeight );
-
-	// Preview & next buttons
-	//m_rtPrevHorzIdle.SetUV( 452, 3, 461, 16, fTexWidth, fTexHeight );
-	//m_rtPrevHorzClick.SetUV( 467, 3, 476, 16, fTexWidth, fTexHeight );
-	m_rtPrevHorzIdle.SetUV( 507, 278, 520, 291, fTexWidth, fTexHeight );
-	m_rtPrevHorzClick.SetUV( 525, 278, 538, 291, fTexWidth, fTexHeight );
-	m_rtPrevVertIdle.SetUV( 482, 5, 495, 14, fTexWidth, fTexHeight );
-	m_rtPrevVertClick.SetUV( 482, 20, 495, 29, fTexWidth, fTexHeight );
-
-	//m_rtNextHorzIdle.SetUV( 452, 20, 461, 33, fTexWidth, fTexHeight );
-	//m_rtNextHorzClick.SetUV( 467, 20, 476, 33, fTexWidth, fTexHeight );
-	m_rtNextHorzIdle.SetUV( 507, 298, 520, 311, fTexWidth, fTexHeight );
-	m_rtNextHorzClick.SetUV( 525, 298, 538, 311, fTexWidth, fTexHeight );
-	m_rtNextVertIdle.SetUV( 499, 5, 512, 14, fTexWidth, fTexHeight );
-	m_rtNextVertClick.SetUV( 499, 20, 512, 29, fTexWidth, fTexHeight );
-
-	m_rtRotHorzIdle.SetUV( 444, 37, 457, 50, fTexWidth, fTexHeight );
-	m_rtRotHorzClick.SetUV( 458, 37, 471, 50, fTexWidth, fTexHeight );
-	m_rtRotVertIdle.SetUV( 444, 51, 457, 64, fTexWidth, fTexHeight );
-	m_rtRotVertClick.SetUV( 458, 51, 471, 64, fTexWidth, fTexHeight );
-
+	
+	// [12/10/2012 π⁄»∆] ∞≥∆Ì UI πˆ∆∞
+	m_rtPrevOver.SetUV( 630, 516, 643, 526, fTexWidth, fTexHeight );
+	m_rtPrevClick.SetUV( 647, 516, 660, 526, fTexWidth, fTexHeight );
+	
+	m_rtNextOver.SetUV( 630, 527, 643, 537, fTexWidth, fTexHeight );
+	m_rtNextClick.SetUV( 647, 527, 660, 537, fTexWidth, fTexHeight );
+	
+	m_rtAddSlotOver.SetUV( 596, 516, 609, 529, fTexWidth, fTexHeight );
+	m_rtAddSlotClick.SetUV( 613, 516, 626, 529, fTexWidth, fTexHeight );
+	
+	m_rtDeleteSlotOver.SetUV( 596, 530, 609, 543, fTexWidth, fTexHeight );
+	m_rtDeleteSlotClick.SetUV( 613, 530, 626, 543, fTexWidth, fTexHeight );
+	
 	// Outline of buttons
 	m_rtBtnOutline.SetUV( 478,  30, 512, 64, fTexWidth, fTexHeight );
-
-	// Slot text
-	//m_rtHorzSlotText.SetUV( 5, 45, 332, 52, fTexWidth, fTexHeight );
-	m_rtHorzSlotText.SetUV( 342, 319, 740, 326, fTexWidth, fTexHeight );
-	m_rtVertSlotText.SetUV( 5, 52, 327, 64, fTexWidth, fTexHeight );
-
+	
 	// Quest Book Button
 	m_rtQuestBook.SetUV( 387, 70, 420, 103, fTexWidth, fTexHeight );
 	m_rtQuestBookDown.SetUV( 0, 0, 34, 34, fTexWidth, fTexHeight );
-	// wooss 
-	// Cash Shop open button
-	//m_rtCashShop.SetUV( 422,70,455,103, fTexWidth, fTexHeight );
-	//m_rtCashShopDown.SetUV( 35, 0, 69, 34, fTexWidth, fTexHeight );
-	m_rtCashShop.SetUV( 364,127,473,155, fTexWidth, fTexHeight );
-	m_rtCashShopDown.SetUV( 517, 170, 626, 198, fTexWidth, fTexHeight );
 
-
-	//ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº UV	:Su-won
-#ifdef CASH_GIFT
+#if defined (G_RUSSIA)
+	m_rtChashShopIdle.SetUV( 469, 679, 525, 735, fTexWidth, fTexHeight );
+	m_rtCashShopOver.SetUV( 530, 679, 586, 735, fTexWidth, fTexHeight );
+	m_rtCashShopDown.SetUV( 591, 679, 647, 735, fTexWidth, fTexHeight );
+#else
+	// [12/10/2012 π⁄»∆] UI∞≥∆Ì¿∏∑Œ ¿Œ«— ƒ≥Ω¨º• ºˆ¡§
+	m_rtChashShopIdle.SetUV( 102, 679, 158, 735, fTexWidth, fTexHeight );
+	m_rtCashShopOver.SetUV( 163, 679, 219, 735, fTexWidth, fTexHeight );
+	m_rtCashShopDown.SetUV( 224, 679, 280, 735, fTexWidth, fTexHeight );
+#endif
+	
+	
+	//º±π∞ µµ¬¯ æÀ∏≤ πˆ∆∞ UV	:Su-won
 	fTexWidth = m_ptdGiftTexture->GetPixWidth();
 	fTexHeight = m_ptdGiftTexture->GetPixHeight();
 	m_rtGift[GIFTPOS_TOP][0].SetUV( 138,11,176,49, fTexWidth, fTexHeight );
@@ -131,57 +142,53 @@ void CUIQuickSlot::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_rtGift[GIFTPOS_BOTTOM][1].SetUV( 98,42,136,80, fTexWidth, fTexHeight );
 	m_rtGift[GIFTPOS_RIGHT][0].SetUV( 2,10,48,40, fTexWidth, fTexHeight );
 	m_rtGift[GIFTPOS_RIGHT][1].SetUV( 2,50,48,80, fTexWidth, fTexHeight );
-#endif
-
+	
 	// Prev slot button
-	//m_btnPrevSlot.Create( this, CTString( "" ), QSLOT_PREV_BTN_SX, QSLOT_PREV_BTN_SY, 9, 13 );
-	m_btnPrevSlot.Create( this, CTString( "" ), 22, 33, 13, 13 );
-	m_btnPrevSlot.CopyUV( UBS_IDLE, m_rtPrevHorzIdle );
-	m_btnPrevSlot.CopyUV( UBS_CLICK, m_rtPrevHorzClick );
-	m_btnPrevSlot.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnPrevSlot.Create( this, CTString( "" ), QSLOT_PREV_BTN_SX, QSLOT_PREV_BTN_SY, 13, 10 );
+	m_btnPrevSlot.CopyUV( UBS_ON, m_rtPrevOver );
+	m_btnPrevSlot.CopyUV( UBS_CLICK, m_rtPrevClick );
 	m_btnPrevSlot.CopyUV( UBS_IDLE, UBS_DISABLE );
-
+	
 	// Next slot button
-	//m_btnNextSlot.Create( this, CTString( "" ), QSLOT_NEXT_BTN_SX, QSLOT_NEXT_BTN_SY, 9, 13 );
-	m_btnNextSlot.Create( this, CTString( "" ), 22, 53, 13, 13 );
-	m_btnNextSlot.CopyUV( UBS_IDLE, m_rtNextHorzIdle );
-	m_btnNextSlot.CopyUV( UBS_CLICK, m_rtNextHorzClick );
-	m_btnNextSlot.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnNextSlot.Create( this, CTString( "" ), QSLOT_NEXT_BTN_SX, QSLOT_NEXT_BTN_SY, 13, 10 );
+	m_btnNextSlot.CopyUV( UBS_ON, m_rtNextOver );
+	m_btnNextSlot.CopyUV( UBS_CLICK, m_rtNextClick );
 	m_btnNextSlot.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	// Rotate button
-	m_btnRotate.Create( this, CTString( "" ), QSLOT_ROT_BTN_SX, QSLOT_ROT_BTN_SY, 13, 13 );
-	m_btnRotate.CopyUV( UBS_IDLE, m_rtRotHorzIdle );
-	m_btnRotate.CopyUV( UBS_CLICK, m_rtRotHorzClick );
-	m_btnRotate.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnRotate.CopyUV( UBS_IDLE, UBS_DISABLE );
-
+	
+	// [12/10/2012 π⁄»∆] ∞≥∆ÌUI Add, Delete πˆ∆∞ 
+	// Add slot button
+	m_btnAddSlot.Create( this, CTString( "" ), QSLOT_ADD_BTN_SX, QSLOT_ADD_BTN_SY, 13, 13 );
+	m_btnAddSlot.CopyUV( UBS_ON, m_rtAddSlotOver );
+	m_btnAddSlot.CopyUV( UBS_CLICK, m_rtAddSlotClick );      
+	m_btnAddSlot.CopyUV( UBS_IDLE, UBS_DISABLE );
+	
+	// Delete slot button
+	m_btnDeleteSlot.Create( this, CTString( "" ), QSLOT_DELETE_BTN_SX, QSLOT_DELETE_BTN_SY, 13, 13 );
+	m_btnDeleteSlot.CopyUV( UBS_ON, m_rtDeleteSlotOver );
+	m_btnDeleteSlot.CopyUV( UBS_CLICK, m_rtDeleteSlotClick );
+	m_btnDeleteSlot.CopyUV( UBS_IDLE, UBS_DISABLE );
+	
 	// Quest Book
 	m_btnQuestBook.Create( this, CTString(""), 387, 6, 32, 32 );
 	m_btnQuestBook.CopyUV( UBS_IDLE, m_rtQuestBook );
 	m_btnQuestBook.CopyUV( UBS_CLICK, m_rtQuestBookDown );
 	m_btnQuestBook.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnQuestBook.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	// wooss 050815
-	// Cash Shop button
-	//m_btnCashShop.Create( this, CTString(""), 422, 6, 32, 32 );
-	m_btnCashShop.Create( this, CTString(""), 337, 0, 108, 27 );
-	m_btnCashShop.CopyUV( UBS_IDLE, m_rtCashShop );
+	
+	// [12/12/2012 π⁄»∆] shop πˆ∆∞¿ª ƒ¸ΩΩ∑‘∞˙ ∞∞¿Ã ±◊∏Æ¡ˆ æ æ“¿Ω( quickslot∞˙ shop µ˚∑Œ ±◊∏≤ )
+	m_btnCashShop.Create( this, CTString(""), -87, m_nHeight - 54, 54, 54 );
+	m_btnCashShop.CopyUV( UBS_IDLE, m_rtChashShopIdle );
+	m_btnCashShop.CopyUV( UBS_ON, m_rtCashShopOver );
 	m_btnCashShop.CopyUV( UBS_CLICK, m_rtCashShopDown );
-	m_btnCashShop.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnCashShop.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	//ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº	:Su-won
-	//m_btnGiftNotice.Create( this, CTString( "" ), 422-15, 6-(QSLOT_GIFT_BTN_Y+QSLOT_GIFT_BTN_ARROW), 
-	//												QSLOT_GIFT_BTN_X, QSLOT_GIFT_BTN_Y+QSLOT_GIFT_BTN_ARROW);
-	m_btnGiftNotice.Create( this, CTString( "" ), m_btnCashShop.GetPosX(), m_btnCashShop.GetPosY()-32, 
-													QSLOT_GIFT_BTN_X, QSLOT_GIFT_BTN_Y+QSLOT_GIFT_BTN_ARROW);
+	
+	//º±π∞ µµ¬¯ æÀ∏≤ πˆ∆∞	:Su-won
+	m_btnGiftNotice.Create( this, CTString( "" ), m_btnCashShop.GetPosX(), m_btnCashShop.GetPosY()-64, 
+		QSLOT_GIFT_BTN_X, QSLOT_GIFT_BTN_Y+QSLOT_GIFT_BTN_ARROW);
 	m_btnGiftNotice.CopyUV( UBS_IDLE, m_rtGift[GIFTPOS_TOP][0] );
 	m_btnGiftNotice.CopyUV( UBS_CLICK, m_rtGift[GIFTPOS_TOP][1] );
 	m_btnGiftNotice.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnGiftNotice.CopyUV( UBS_IDLE, UBS_DISABLE );
-
+	
 	// Buttons of quick slot
 	int	iPage, iBtn;
 	int	nPosX;
@@ -190,13 +197,22 @@ void CUIQuickSlot::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 		nPosX = QSLOT_BTN_SX;
 		for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++, nPosX += 35 )
 		{
-			m_abtnItems[iPage][iBtn].Create( this, nPosX, QSLOT_BTN_SY, BTN_SIZE, BTN_SIZE,
-												UI_QUICKSLOT, UBET_SKILL );
+			m_abtnItems[iPage][iBtn] = new CUIIcon;
+			m_abtnItems[iPage][iBtn]->Create(NULL, m_nPosX + nPosX, m_nPosY + QSLOT_BTN_SY, BTN_SIZE, BTN_SIZE,
+                                 UI_QUICKSLOT, UBET_SKILL, (iPage * QSLOT_BTN_COUNT) + iBtn);
 		}
 	}
-
+	
+	// [12/12/2012 π⁄»∆] UI ∞≥∆Ì
+	m_pChildQuickSlot[QS_1] = CUIManager::getSingleton()->GetUI(UI_QUICKSLOT2);
+	m_pChildQuickSlot[QS_2] = CUIManager::getSingleton()->GetUI(UI_QUICKSLOT3);
+	((CUIChildQuickSlot*)m_pChildQuickSlot[QS_1])->SetItem(&m_abtnItems);
+	((CUIChildQuickSlot*)m_pChildQuickSlot[QS_2])->SetItem(&m_abtnItems);
+	
 	m_btnRotate.SetEnable(FALSE);					// Button for rotating this UI
 	m_btnQuestBook.SetEnable(FALSE);				// Button for Quest Book
+
+	SetDisableCheckSlotEX();
 }
 
 // ----------------------------------------------------------------------------
@@ -221,161 +237,6 @@ void CUIQuickSlot::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pi
 // Name : ShowSlotInfo()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIQuickSlot::ShowSlotInfo( BOOL bShowInfo, int nSlotIndex )
-{
-	static int	nOldSlotID = -1;
-
-	// Hide slot information
-	if( !bShowInfo || nSlotIndex < 0 )
-	{
-		m_bShowSlotInfo = FALSE;
-		nOldSlotID = -1;
-		return;
-	}
-
-	int		nSlotID = nSlotIndex + m_nCurrentPage * QSLOT_BTN_COUNT;
-	BOOL	bUpdateInfo = FALSE;
-	int		nInfoPosX, nInfoPosY;
-
-	// Update slot information
-	if( nOldSlotID != nSlotID )
-	{
-		CUIButtonEx	& rbtnSelect = m_abtnItems[m_nCurrentPage][nSlotIndex];
-
-		if( rbtnSelect.IsEmpty() )
-		{
-			m_bShowSlotInfo = FALSE;
-		}
-		else
-		{			
-			m_bShowSlotInfo = TRUE;
-			bUpdateInfo = TRUE;
-			nOldSlotID = nSlotID;
-
-			rbtnSelect.GetAbsPos( nInfoPosX, nInfoPosY );
-
-			// Get slot information
-			switch( rbtnSelect.GetBtnType() )
-			{
-			// Skill
-			case UBET_SKILL:
-				{
-					int		nSkillIndex = rbtnSelect.GetSkillIndex();
-					CSkill	&rSkill = _pNetwork->GetSkillData( nSkillIndex );
-					int		nSkillLevel = rbtnSelect.GetSkillLevel() - 1;
-					int		nNeedMP = rSkill.GetNeedMP( nSkillLevel );
-					int		nNeedHP = rSkill.GetNeedHP( nSkillLevel );
-					if( nNeedHP == 0 )
-					{
-						if( nNeedMP == 0 )
-							m_strSlotInfo.PrintF( "%s", rSkill.GetName() );
-						else
-						{
-							//MPÏÜåÎ™®Îüâ Í∞êÏÜå ÏòµÏÖòÏù¥ Î∂ôÏùÄ Ïû•ÎπÑÎ•º ÏûÖÍ≥† ÏûàÏúºÎ©¥ Í∞êÏÜåÎêòÎäî MPÎüâ 
-							if( _pUIMgr->GetNeedMPReductionRate() >0)
-							{
-								int nNeedMPReduction = (nNeedMP*_pUIMgr->GetNeedMPReductionRate())/100;
-								m_strSlotInfo.PrintF( "%s (MP:%d -%d)", rSkill.GetName(), nNeedMP, nNeedMPReduction);
-							}
-							else
-								m_strSlotInfo.PrintF( "%s (MP:%d)", rSkill.GetName(), nNeedMP );
-						}
-					}
-					else
-					{
-						if( nNeedMP == 0 )
-							m_strSlotInfo.PrintF( "%s (HP:%d)", rSkill.GetName(), nNeedHP );
-						else
-						{
-							if( _pUIMgr->GetNeedMPReductionRate() >0)
-							{
-								int nNeedMPReduction = (nNeedMP*_pUIMgr->GetNeedMPReductionRate())/100;
-								m_strSlotInfo.PrintF( "%s (MP:%d -%d,HP:%d)", rSkill.GetName(), nNeedMP, nNeedMPReduction, nNeedHP );
-							}
-							else
-								m_strSlotInfo.PrintF( "%s (MP:%d,HP:%d)", rSkill.GetName(), nNeedMP, nNeedHP );
-						}
-					}
-				}
-				break;
-
-			// Action
-			case UBET_ACTION:
-				{
-					int	nActionIndex = rbtnSelect.GetActionIndex();
-					m_strSlotInfo = _pNetwork->GetActionData(nActionIndex).GetName();
-				}
-				break;
-
-			// Item
-			case UBET_ITEM:
-				{
-					int	nTab = rbtnSelect.GetItemTab();
-					int	nRow = rbtnSelect.GetItemRow();
-					int	nCol = rbtnSelect.GetItemCol();
-					CItems		&rItems = _pNetwork->MySlotItem[nTab][nRow][nCol];
-					CItemData	&rItemData = rItems.ItemData;
-					const char* szItemName = _pNetwork->GetItemName( rItemData.GetItemIndex() );
-
-					if( rItemData.GetFlag() & ITEM_FLAG_COUNT )
-					{
-						CTString	strCount;
-						strCount.PrintF( "%I64d", rItems.Item_Sum );
-						_pUIMgr->InsertCommaToString( strCount );
-						m_strSlotInfo.PrintF( "%s (%s)", szItemName, strCount );
-					}
-					else
-						m_strSlotInfo = szItemName;
-				}
-				break;
-			}
-
-			// NOTE : Ìà¥ÌåÅ ÌëúÏãúÌï†ÎïåÎäî QUICKSLOTÏùÑ Ï†úÏùº ÏúÑÎ°ú Ïò¨ÎùºÏò§Í≤å Ìï®.
-			_pUIMgr->RearrangeOrder( UI_QUICKSLOT, TRUE );
-		}
-	}
-
-	// Update slot information box
-	if( bUpdateInfo )
-	{
-		int nInfoWidth;
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strSlotInfo);				
-		} else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strSlotInfo.Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		int	nInfoHeight = 22;
-
-		nInfoPosX += ( BTN_SIZE - nInfoWidth ) / 2;
-
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX += _pUIMgr->GetMaxI() - ( nInfoPosX + nInfoWidth );
-
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
-		{
-			nInfoPosY += BTN_SIZE + 2;
-			m_rcSlotInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
-		}
-		else
-		{
-			m_rcSlotInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
-		}
-	}
-
-	if( !m_bShowSlotInfo )
-	{
-		nOldSlotID = -1;
-		m_bShowSlotInfo = FALSE;
-	}
-}
-
-
-// ----------------------------------------------------------------------------
-// Name : ShowSlotInfo()
-// Desc :
-// ----------------------------------------------------------------------------
 void CUIQuickSlot::ShowExSlotInfo( BOOL bShowInfo, int nSlotIndex )
 {
 	// Hide slot information
@@ -384,90 +245,92 @@ void CUIQuickSlot::ShowExSlotInfo( BOOL bShowInfo, int nSlotIndex )
 		m_bShowExSlotInfo = FALSE;
 		return;
 	}
-
+	
 	BOOL	bUpdateInfo = FALSE;
 	int		nInfoPosX, nInfoPosY;
-
+	
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	
 	// Update slot information
 	{
-			m_bShowExSlotInfo = TRUE;
-			bUpdateInfo = TRUE;
+		m_bShowExSlotInfo = TRUE;
+		bUpdateInfo = TRUE;
 		
-			// Get slot information
-			switch( nSlotIndex )
+		// Get slot information
+		switch( nSlotIndex )
+		{
+		case 0:
 			{
-				case 0:
-					{
-						m_btnCashShop.GetAbsPos( nInfoPosX, nInfoPosY );
-						m_strSlotInfo = _S(99,"ÌÄòÏä§Ìä∏");					
-					}
-					break;
-
-				case 1:
-					{
-						m_btnCashShop.GetAbsPos( nInfoPosX, nInfoPosY );
-						m_strSlotInfo = _S(2572,"ÏïÑÏù¥Î¶¨Ïä§ ÏÉÅÏ†ê");
-					}
-					break;
-	
-				//ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º :Su-won
-				case 2:
-					{
-						m_btnGiftNotice.GetAbsPos( nInfoPosX, nInfoPosY );
-						m_strSlotInfo = _S(3112, "ÏÑ†Î¨º ÎèÑÏ∞©");
-					}
-					break;
-				////////////////////////////////////////////////////////////////////////////
-				// [070604: Su-won] 1Ï∞® Ìé´ Í∏∞Îä• Í∞úÏÑ†	|----->
-				//Ïù¥Ï†Ñ ÌéòÏù¥ÏßÄ Î≤ÑÌäº
-				case 3:
-					{
-						m_btnPrevSlot.GetAbsPos( nInfoPosX, nInfoPosY );
-						int PrevPage = m_nCurrentPage>0 ? m_nCurrentPage : 3 ;
-						CTString str;
-						str.PrintF("%d %s(Alt+%d)", PrevPage, _S(3076, "ÌéòÏù¥ÏßÄ"), PrevPage);
-						m_strSlotInfo =str;
-
-					}
-					break;
-				//Îã§Ïùå ÌéòÏù¥ÏßÄ Î≤ÑÌäº
-				case 4:
-					{
-						m_btnNextSlot.GetAbsPos( nInfoPosX, nInfoPosY );
-						int NextPage = (m_nCurrentPage+2)<=3 ? m_nCurrentPage+2 : 1;
-						CTString str;
-						str.PrintF("%d %s(Alt+%d)", NextPage, _S(3076, "ÌéòÏù¥ÏßÄ"), NextPage);
-						m_strSlotInfo =str;
-
-					}
-					break;
-				// [070604: Su-won] 1Ï∞® Ìé´ Í∏∞Îä• Í∞úÏÑ†	<-----|
-				////////////////////////////////////////////////////////////////////////////
+				m_btnCashShop.GetAbsPos( nInfoPosX, nInfoPosY );
+				m_strSlotInfo = _S(99,"ƒ˘Ω∫∆Æ");					
 			}
-
-			// NOTE : Ìà¥ÌåÅ ÌëúÏãúÌï†ÎïåÎäî QUICKSLOTÏùÑ Ï†úÏùº ÏúÑÎ°ú Ïò¨ÎùºÏò§Í≤å Ìï®.
-			_pUIMgr->RearrangeOrder( UI_QUICKSLOT, TRUE );
+			break;
+			
+		case 1:
+			{
+				m_btnCashShop.GetAbsPos( nInfoPosX, nInfoPosY );
+				m_strSlotInfo = _S(2572,"æ∆¿Ã∏ÆΩ∫ ªÛ¡°");
+			}
+			break;
+			
+			//º±π∞ µµ¬¯ æÀ∏≤ :Su-won
+		case 2:
+			{
+				m_btnGiftNotice.GetAbsPos( nInfoPosX, nInfoPosY );
+				m_strSlotInfo = _S(3112, "º±π∞ µµ¬¯");
+			}
+			break;
+			//¿Ã¿¸ ∆‰¿Ã¡ˆ πˆ∆∞
+		case 3:
+			{
+				m_btnPrevSlot.GetAbsPos( nInfoPosX, nInfoPosY );
+				int PrevPage = m_nCurrentPage>0 ? m_nCurrentPage : 3 ;
+				CTString str;
+				str.PrintF("%d %s(Alt+%d)", PrevPage, _S(3076, "∆‰¿Ã¡ˆ"), PrevPage);
+				m_strSlotInfo =str;
+				
+			}
+			break;
+			//¥Ÿ¿Ω ∆‰¿Ã¡ˆ πˆ∆∞
+		case 4:
+			{
+				m_btnNextSlot.GetAbsPos( nInfoPosX, nInfoPosY );
+				int NextPage = (m_nCurrentPage+2)<=3 ? m_nCurrentPage+2 : 1;
+				CTString str;
+				str.PrintF("%d %s(Alt+%d)", NextPage, _S(3076, "∆‰¿Ã¡ˆ"), NextPage);
+				m_strSlotInfo =str;
+				
+			}
+			break;	
+		}
+		
+		// NOTE : ≈¯∆¡ «•Ω√«“∂ß¥¬ QUICKSLOT¿ª ¡¶¿œ ¿ß∑Œ ø√∂Ûø¿∞‘ «‘.
+		pUIManager->RearrangeOrder( UI_QUICKSLOT, TRUE );
 	}
-
+	
 	// Update slot information box
 	if( bUpdateInfo )
 	{
 		int nInfoWidth;
-		if(g_iCountry == THAILAND) {
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strSlotInfo);				
-		} else
+#if defined(G_THAI)
+		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strSlotInfo);	
+#elif defined (G_RUSSIA)
+		extern CFontData *_pfdDefaultFont;
+		nInfoWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, m_strSlotInfo.str_String) + 19;
+#else
 		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strSlotInfo.Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+#endif
 		int	nInfoHeight = 22;
-
+		
 		nInfoPosX += ( BTN_SIZE - nInfoWidth ) / 2;
-
-		if( nInfoPosX < _pUIMgr->GetMinI() )
-			nInfoPosX = _pUIMgr->GetMinI();
-		else if( nInfoPosX + nInfoWidth > _pUIMgr->GetMaxI() )
-			nInfoPosX += _pUIMgr->GetMaxI() - ( nInfoPosX + nInfoWidth );
-
-		if( nInfoPosY - nInfoHeight < _pUIMgr->GetMinJ() )
+		
+		if( nInfoPosX < pUIManager->GetMinI() )
+			nInfoPosX = pUIManager->GetMinI();
+		else if( nInfoPosX + nInfoWidth > pUIManager->GetMaxI() )
+			nInfoPosX += pUIManager->GetMaxI() - ( nInfoPosX + nInfoWidth );
+		
+		if( nInfoPosY - nInfoHeight < pUIManager->GetMinJ() )
 		{
 			nInfoPosY += BTN_SIZE + 2;
 			m_rcSlotInfo.SetRect( nInfoPosX, nInfoPosY, nInfoPosX + nInfoWidth, nInfoPosY + nInfoHeight );
@@ -477,7 +340,7 @@ void CUIQuickSlot::ShowExSlotInfo( BOOL bShowInfo, int nSlotIndex )
 			m_rcSlotInfo.SetRect( nInfoPosX, nInfoPosY - nInfoHeight, nInfoPosX + nInfoWidth, nInfoPosY );
 		}
 	}
-
+	
 	if( !m_bShowExSlotInfo )
 	{
 		m_bShowExSlotInfo = FALSE;
@@ -490,137 +353,106 @@ void CUIQuickSlot::ShowExSlotInfo( BOOL bShowInfo, int nSlotIndex )
 // ----------------------------------------------------------------------------
 void CUIQuickSlot::RenderBtns()
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
+	
 	// Outline of buttons
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-	if( m_bHorizontal )
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+	
+	int	iPage, iBtn;
+	int	nPosX;
+	for( iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
 	{
-		int	nX = m_nPosX + QSLOT_BTN_OUTLINE_SX;
-		int	nY = m_nPosY + QSLOT_BTN_OUTLINE_SY;
-		for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++, nX += 35 )
+		nPosX = QSLOT_BTN_SX;
+		for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++, nPosX += 35 )
 		{
-			if( m_abtnItems[m_nCurrentPage][iBtn].IsEmpty() )
-				continue;
-
-			/***
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
-												nX + QSLOT_BTN_OUTLINE_SIZE, nY + QSLOT_BTN_OUTLINE_SIZE,
-												m_rtBtnOutline.U0, m_rtBtnOutline.V0,
-												m_rtBtnOutline.U1, m_rtBtnOutline.V1,
-												0xFFFFFFFF );
-			***/
+			m_abtnItems[iPage][iBtn]->SetPos( m_nPosX + nPosX, m_nPosY + QSLOT_BTN_SY);
 		}
 	}
-	else
-	{
-		int	nX = m_nPosX + QSLOT_BTN_OUTLINE_SY;
-		int	nY = m_nPosY + QSLOT_BTN_OUTLINE_SX;
-		for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++, nY += 35 )
-		{
-			if( m_abtnItems[m_nCurrentPage][iBtn].IsEmpty() )
-				continue;
-
-			_pUIMgr->GetDrawPort()->AddTexture( nX, nY,
-												nX + QSLOT_BTN_OUTLINE_SIZE, nY + QSLOT_BTN_OUTLINE_SIZE,
-												m_rtBtnOutline.U0, m_rtBtnOutline.V0,
-												m_rtBtnOutline.U1, m_rtBtnOutline.V1,
-												0xFFFFFFFF );
-		}
-	}
-
+	
 	m_btnQuestBook.Render();
-	m_btnCashShop.Render();
 	
 	RenderGiftButton();
 	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-	// Skill buttons
-	for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
-	{
-		if( m_abtnItems[m_nCurrentPage][iBtn].IsEmpty() ||
-			m_abtnItems[m_nCurrentPage][iBtn].GetBtnType() != UBET_SKILL )
-			continue;
-
-		m_abtnItems[m_nCurrentPage][iBtn].Render();
-	}
-
-	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_SKILL );
-
-	// Action buttons
+	pDrawPort->FlushRenderingQueue();
+	
 	for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 	{
-		if( m_abtnItems[m_nCurrentPage][iBtn].IsEmpty() ||
-			m_abtnItems[m_nCurrentPage][iBtn].GetBtnType() != UBET_ACTION )
+		if (m_abtnItems[m_nCurrentPage][iBtn]->IsEmpty())
 			continue;
-
-		m_abtnItems[m_nCurrentPage][iBtn].Render();
+		
+		m_abtnItems[m_nCurrentPage][iBtn]->Render(pDrawPort);
 	}
-
-	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ACTION );
-
-	// Item buttons
-	for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
+		
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+	
+	//  [12/10/2012 π⁄»∆] ∞≥∆Ì UI
+	int posX = m_nPosX + 20;
+	int posY = m_nPosY + 8;
+	switch(m_nCurrentPage)
 	{
-		if( m_abtnItems[m_nCurrentPage][iBtn].IsEmpty() ||
-			m_abtnItems[m_nCurrentPage][iBtn].GetBtnType() != UBET_ITEM )
-			continue;
-
-		m_abtnItems[m_nCurrentPage][iBtn].Render();
+	case 0:
+		{
+			pDrawPort->AddTexture( posX, posY, posX + 392, posY + 7,
+				m_rtSlotNumberText.U0, m_rtSlotNumberText.V0, m_rtSlotNumberText.U1, m_rtSlotNumberText.V1,
+				0xFFFFFFFF );
+		}
+		break;
+		
+	case 1:
+		{
+			pDrawPort->AddTexture( posX, posY, posX + 398, posY + 7,
+				m_rtSlotNumberText1.U0, m_rtSlotNumberText1.V0, m_rtSlotNumberText1.U1, m_rtSlotNumberText1.V1,
+				0xFFFFFFFF );
+		}
+		break;
+		
+	case 2:
+		{
+			pDrawPort->AddTexture( posX, posY, posX + 406, posY + 7,
+				m_rtSlotNumberText2.U0, m_rtSlotNumberText2.V0, m_rtSlotNumberText2.U1, m_rtSlotNumberText2.V1,
+				0xFFFFFFFF );
+		}
+		break;
 	}
-
-	// Render all button elements
-	_pUIMgr->GetDrawPort()->FlushBtnRenderingQueue( UBET_ITEM );
-
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-	// Slot text ( F1, F2, ..., F10 )
-	if( m_bHorizontal )
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcHorzSlotText.Left, m_nPosY + m_rcHorzSlotText.Top,
-											m_nPosX + m_rcHorzSlotText.Right, m_nPosY + m_rcHorzSlotText.Bottom,
-											m_rtHorzSlotText.U0, m_rtHorzSlotText.V0, m_rtHorzSlotText.U1, m_rtHorzSlotText.V1,
-											0xFFFFFFFF );
-	}
-	else
-	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX + m_rcVertSlotText.Left, m_nPosY + m_rcVertSlotText.Top,
-											m_nPosX + m_rcVertSlotText.Right, m_nPosY + m_rcVertSlotText.Bottom,
-											m_rtVertSlotText.U0, m_rtVertSlotText.V1, m_rtVertSlotText.U1, m_rtVertSlotText.V1,
-											m_rtVertSlotText.U1, m_rtVertSlotText.V0, m_rtVertSlotText.U0, m_rtVertSlotText.V0,
-											0xFFFFFFFF );
-	}
-
+	
+	posX = m_nPosX - 171;
+	posY = (m_nPosY + m_nHeight) - 90;
+	pDrawPort->AddTexture(posX, posY, posX + 171, posY + 90
+		, m_rtShop.U0, m_rtShop.V0
+		, m_rtShop.U1, m_rtShop.V1, 0xFFFFFFFF );
+	m_btnCashShop.Render();
+	
 	// Slot information
-	if( m_bShowSlotInfo || m_bShowExSlotInfo)
+	if( /*m_bShowSlotInfo ||*/ m_bShowExSlotInfo)
 	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Left, m_rcSlotInfo.Top,
-											m_rcSlotInfo.Left + 7, m_rcSlotInfo.Bottom,
-											m_rtSlotInfoL.U0, m_rtSlotInfoL.V0, m_rtSlotInfoL.U1, m_rtSlotInfoL.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Left + 7, m_rcSlotInfo.Top,
-											m_rcSlotInfo.Right - 7, m_rcSlotInfo.Bottom,
-											m_rtSlotInfoM.U0, m_rtSlotInfoM.V0, m_rtSlotInfoM.U1, m_rtSlotInfoM.V1,
-											0xFFFFFFFF );
-		_pUIMgr->GetDrawPort()->AddTexture( m_rcSlotInfo.Right - 7, m_rcSlotInfo.Top,
-											m_rcSlotInfo.Right, m_rcSlotInfo.Bottom,
-											m_rtSlotInfoR.U0, m_rtSlotInfoR.V0, m_rtSlotInfoR.U1, m_rtSlotInfoR.V1,
-											0xFFFFFFFF );
-
+		pDrawPort->AddTexture( m_rcSlotInfo.Left, m_rcSlotInfo.Top,
+			m_rcSlotInfo.Left + 7, m_rcSlotInfo.Bottom,
+			m_rtSlotInfoL.U0, m_rtSlotInfoL.V0, m_rtSlotInfoL.U1, m_rtSlotInfoL.V1,
+			0xFFFFFFFF );
+		pDrawPort->AddTexture( m_rcSlotInfo.Left + 7, m_rcSlotInfo.Top,
+			m_rcSlotInfo.Right - 7, m_rcSlotInfo.Bottom,
+			m_rtSlotInfoM.U0, m_rtSlotInfoM.V0, m_rtSlotInfoM.U1, m_rtSlotInfoM.V1,
+			0xFFFFFFFF );
+		pDrawPort->AddTexture( m_rcSlotInfo.Right - 7, m_rcSlotInfo.Top,
+			m_rcSlotInfo.Right, m_rcSlotInfo.Bottom,
+			m_rtSlotInfoR.U0, m_rtSlotInfoR.V0, m_rtSlotInfoR.U1, m_rtSlotInfoR.V1,
+			0xFFFFFFFF );
+		
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
+		pDrawPort->FlushRenderingQueue();
+		
 		// Render item information
-		_pUIMgr->GetDrawPort()->PutTextEx( m_strSlotInfo, m_rcSlotInfo.Left + 8, m_rcSlotInfo.Top + 3 );
-
+		pDrawPort->PutTextEx( m_strSlotInfo, m_rcSlotInfo.Left + 8, m_rcSlotInfo.Top + 3 );
+		
 		// Flush all render text queue
-		_pUIMgr->GetDrawPort()->EndTextEx();
+		pDrawPort->EndTextEx();
 	}
 	else
 	{
 		// Render all elements
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
+		pDrawPort->FlushRenderingQueue();
 	}
 }
 
@@ -630,54 +462,51 @@ void CUIQuickSlot::RenderBtns()
 // ----------------------------------------------------------------------------
 void CUIQuickSlot::Render()
 {
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	
 	// Set quick slot texture
-	_pUIMgr->GetDrawPort()->InitTextureData( m_ptdBaseTexture );
-
+	pDrawPort->InitTextureData( m_ptdBaseTexture );
+	
 	// Add render regions
 	// Background
 	if( m_bHorizontal )
 	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
-											m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
-											0xFFFFFFFF );
+		pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+			m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
+			0xFFFFFFFF );
 	}
 	else
 	{
-		_pUIMgr->GetDrawPort()->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
-											m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V0,
-											m_rtBackground.U1, m_rtBackground.V1, m_rtBackground.U0, m_rtBackground.V1,
-											0xFFFFFFFF );
+		pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
+			m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V0,
+			m_rtBackground.U1, m_rtBackground.V1, m_rtBackground.U0, m_rtBackground.V1,
+			0xFFFFFFFF );
 	}
-
+	
+	m_strPageNumber.PrintF("%d", m_nCurrentPage + 1);
+	
+	// ƒ¸ΩΩ∑‘ ∆‰¿Ã¡ˆ √‚∑¬ ¿ßƒ°∏¶ ºˆµø¿∏∑Œ ∞ËªÍ [12/20/2012 Ranma]
+	pDrawPort->PutTextExCX(m_strPageNumber, m_nPosX + m_nWidth - 10, m_nPosY + m_nHeight - 27 );
+	
 	// Prev button
 	m_btnPrevSlot.Render();
-
+	
 	// Next button
 	m_btnNextSlot.Render();
-
+	
+	// [12/10/2012 π⁄»∆] Add, Delete Button 
+	m_btnAddSlot.Render();
+	m_btnDeleteSlot.Render();
+	
 	// Rotate button
 	//m_btnRotate.Render();
-
+	
 	// Render all elements
-	_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-
-	// Text of current quick slot tab
-	/***
-	if( m_bHorizontal )
-	{
-		_pUIMgr->GetDrawPort()->PutTextExCX( m_strCurrentPage, m_nPosX + QSLOT_TAB_TEXT_CX,
-												m_nPosY + QSLOT_TAB_TEXT_SY );
-	}
-	else
-	{
-		_pUIMgr->GetDrawPort()->PutTextExCX( m_strCurrentPage, m_nPosX + QSLOT_TAB_TEXT_CX,
-												m_nPosY + QSLOT_TAB_TEXT_SY );
-	}
-	***/
-
+	pDrawPort->FlushRenderingQueue();
+	
 	// Flush all render text queue
-	_pUIMgr->GetDrawPort()->EndTextEx();
-
+	pDrawPort->EndTextEx();
+	
 	// Buttons
 	RenderBtns();
 }
@@ -686,23 +515,53 @@ void CUIQuickSlot::Render()
 // Name : RemoveSummonSkill()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIQuickSlot::RemoveSummonSkill()
-{
-	const int iSummonSkillCount = sizeof( _aSummonSkill ) / sizeof(int);
 
+void CUIQuickSlot::ResetQuickSLotSKill()
+{
 	// Find button
 	int	iPage, iBtn;
 	for( iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
 	{
 		for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 		{
-			if( m_abtnItems[iPage][iBtn].GetBtnType() == UBET_SKILL )
-			{				
-				const int iSkillIndex = m_abtnItems[iPage][iBtn].GetSkillIndex();
-				CSkill	&rSelSkill = _pNetwork->GetSkillData( iSkillIndex );
+			// Ω∫≈≥¿Ã æ∆¥œ∏È 
+			if (m_abtnItems[iPage][iBtn]->getBtnType() != UBET_SKILL)
+				continue;
 
-				// ÏÜåÌôòÏä§ÌÇ¨ Ïù∏Îç±Ïä§ Ï∞æÍµ¨,
-				// ÏÜåÌôòÏàò ÏÇ¨Ïö© Ïä§ÌÇ¨.
+// 			int iSkillIndex = m_abtnItems[iPage][iBtn].GetSkillIndex();
+// 			CSkill	&rSelSkill = _pNetwork->GetSkillData( iSkillIndex );
+// 
+// 			// øÕ¿ÃµÂ ∆Í Ω∫≈≥¿Ã∏È ¡¶ø‹
+// 			if(rSelSkill.GetJob() == WILDPET_JOB)
+// 				continue;
+// 			
+// 			// ∆Í Ω∫≈≥¿œ ∞ÊøÏ ¡¶ø‹
+// 			if( rSelSkill.GetType() == CSkill::ST_PET_SKILL_ACTIVE || 
+// 				rSelSkill.GetType() == CSkill::ST_PET_COMMAND )
+// 				continue;
+
+			m_abtnItems[iPage][iBtn]->clearIconData();
+		}
+	}
+}
+
+void CUIQuickSlot::RemoveSummonSkill()
+{
+	const int iSummonSkillCount = sizeof( _aSummonSkill ) / sizeof(int);
+	
+	// Find button
+	int	iPage, iBtn;
+	for( iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
+	{
+		for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
+		{
+			if (m_abtnItems[iPage][iBtn]->getBtnType() == UBET_SKILL)
+			{				
+				const int iSkillIndex = m_abtnItems[iPage][iBtn]->getIndex();
+				CSkill	&rSelSkill = _pNetwork->GetSkillData( iSkillIndex );
+				
+				// º“»ØΩ∫≈≥ ¿Œµ¶Ω∫ √£±∏,
+				// º“»Øºˆ ªÁøÎ Ω∫≈≥.
 				if( rSelSkill.GetSorcererFlag() & ( SSF_USE_FIRE | SSF_USE_WIND | SSF_USE_EARTH | SSF_USE_WATER ) )
 				{			
 					// Remove button
@@ -736,13 +595,13 @@ void CUIQuickSlot::RemoveElementalSkill()
 	{
 		for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 		{
-			if( m_abtnItems[iPage][iBtn].GetBtnType() == UBET_SKILL )
+			if (m_abtnItems[iPage][iBtn]->getBtnType() == UBET_SKILL)
 			{				
-				const int iSkillIndex = m_abtnItems[iPage][iBtn].GetSkillIndex();
+				const int iSkillIndex = m_abtnItems[iPage][iBtn]->getIndex();
 				CSkill	&rSelSkill = _pNetwork->GetSkillData( iSkillIndex );
-
-				// ÏÜåÌôòÏä§ÌÇ¨ Ïù∏Îç±Ïä§ Ï∞æÍµ¨,
-				// ÏÜåÌôòÏàò ÏÇ¨Ïö© Ïä§ÌÇ¨.
+				
+				// º“»ØΩ∫≈≥ ¿Œµ¶Ω∫ √£±∏,
+				// º“»Øºˆ ªÁøÎ Ω∫≈≥.
 				if( rSelSkill.GetSorcererFlag() & ( SSF_USE_HELLOUND | SSF_USE_ELENEN ) )
 				{
 					// Remove button
@@ -765,12 +624,12 @@ void CUIQuickSlot::RemovePetSkill()
 	{
 		for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 		{
-			if( m_abtnItems[iPage][iBtn].GetBtnType() == UBET_SKILL )
+			if (m_abtnItems[iPage][iBtn]->getBtnType() == UBET_SKILL)
 			{				
-				const int iSkillIndex = m_abtnItems[iPage][iBtn].GetSkillIndex();
+				const int iSkillIndex = m_abtnItems[iPage][iBtn]->getIndex();
 				CSkill	&rSelSkill = _pNetwork->GetSkillData( iSkillIndex );
 				
-				// Ïï†ÏôÑÎèôÎ¨º Ïä§ÌÇ¨ÏùÑ Ï∞æÏïÑÏÑú Ï†úÍ±∞.
+				// æ÷øœµøπ∞ Ω∫≈≥¿ª √£æ∆º≠ ¡¶∞≈.
 				if( rSelSkill.GetType() == CSkill::ST_PET_SKILL_ACTIVE || 
 					rSelSkill.GetType() == CSkill::ST_PET_COMMAND )
 				{
@@ -790,12 +649,12 @@ void CUIQuickSlot::RemoveWildPetSkill()
 	{
 		for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 		{
-			if( m_abtnItems[iPage][iBtn].GetBtnType() == UBET_SKILL )
+			if (m_abtnItems[iPage][iBtn]->getBtnType() == UBET_SKILL)
 			{				
-				const int iSkillIndex = m_abtnItems[iPage][iBtn].GetSkillIndex();
+				const int iSkillIndex = m_abtnItems[iPage][iBtn]->getIndex();
 				CSkill	&rSelSkill = _pNetwork->GetSkillData( iSkillIndex );
 				
-				// Ïï†ÏôÑÎèôÎ¨º Ïä§ÌÇ¨ÏùÑ Ï∞æÏïÑÏÑú Ï†úÍ±∞.
+				// æ÷øœµøπ∞ Ω∫≈≥¿ª √£æ∆º≠ ¡¶∞≈.
 				if(rSelSkill.GetJob() == WILDPET_JOB)
 				{
 					// Remove button
@@ -806,130 +665,7 @@ void CUIQuickSlot::RemoveWildPetSkill()
 	}
 }
 
-// ----------------------------------------------------------------------------
-// Name : RotateQuickSlot()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIQuickSlot::RotateQuickSlot()
-{
-	m_bHorizontal = !m_bHorizontal;
 
-	// Get pivot point
-	int	nPivotX = m_nPosX + m_nWidth;
-	int	nPivotY = m_nPosY + m_nHeight;
-
-	// Rotate background
-	int	nHeight = m_nHeight;
-	m_nHeight = m_nWidth;
-	m_nWidth = nHeight;
-	SetPos( nPivotX - m_nWidth, nPivotY - m_nHeight );
-
-	// Rotate title1
-	int	nRight = m_rcTitle1.Right;
-	m_rcTitle1.Right = m_rcTitle1.Bottom;
-	m_rcTitle1.Bottom = nRight;
-
-	// Rotate title2
-	int	nTemp = m_rcTitle2.Left;
-	m_rcTitle2.Left = m_rcTitle2.Top;
-	m_rcTitle2.Top = nTemp;
-	nTemp = m_rcTitle2.Right;
-	m_rcTitle2.Right = m_rcTitle2.Bottom;
-	m_rcTitle2.Bottom = nTemp;
-
-	// Rotate region of slot
-	nTemp = m_rcSlot.Left;
-	m_rcSlot.Left = m_rcSlot.Top;
-	m_rcSlot.Top = nTemp;
-	nTemp = m_rcSlot.Right;
-	m_rcSlot.Right = m_rcSlot.Bottom;
-	m_rcSlot.Bottom = nTemp;
-
-	// Rotate buttons
-	int	nWidth = m_btnPrevSlot.GetHeight();
-	nHeight = m_btnPrevSlot.GetWidth();
-	m_btnPrevSlot.SetSize( nWidth, nHeight );
-
-	nWidth = m_btnNextSlot.GetHeight();
-	nHeight = m_btnNextSlot.GetWidth();
-	m_btnNextSlot.SetSize( nWidth, nHeight );
-
-	nWidth = m_btnRotate.GetHeight();
-	nHeight = m_btnRotate.GetWidth();
-	m_btnRotate.SetSize( nWidth, nHeight );
-
-	int	iPage, iBtn, nX, nY;
-	if( m_bHorizontal )
-	{
-		m_btnPrevSlot.SetPos( QSLOT_PREV_BTN_SX, QSLOT_PREV_BTN_SY );
-		m_btnPrevSlot.CopyUV( UBS_IDLE, m_rtPrevHorzIdle );
-		m_btnPrevSlot.CopyUV( UBS_CLICK, m_rtPrevHorzClick );
-
-		m_btnNextSlot.SetPos( QSLOT_NEXT_BTN_SX, QSLOT_NEXT_BTN_SY );
-		m_btnNextSlot.CopyUV( UBS_IDLE, m_rtNextHorzIdle );
-		m_btnNextSlot.CopyUV( UBS_CLICK, m_rtNextHorzClick );
-
-		m_btnRotate.SetPos( QSLOT_ROT_BTN_SX, QSLOT_ROT_BTN_SY );
-		m_btnRotate.CopyUV( UBS_IDLE, m_rtRotHorzIdle );
-		m_btnRotate.CopyUV( UBS_CLICK, m_rtRotHorzClick );
-
-		m_btnQuestBook.SetPos( 387, 6 );	//wooss 050815
-		m_btnCashShop.SetPos( 422, 6 );
-
-		// ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº ÏÑ§Ï†ï	:Su-won
-		m_btnGiftNotice.SetPos( 422-15, 6-(QSLOT_GIFT_BTN_Y+QSLOT_GIFT_BTN_ARROW) );
-		m_btnGiftNotice.SetSize(QSLOT_GIFT_BTN_X, QSLOT_GIFT_BTN_Y+QSLOT_GIFT_BTN_ARROW);
-		m_eGiftPos =GIFTPOS_TOP;
-
-		for( iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
-		{
-			nX = QSLOT_BTN_SX;
-			for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++, nX += 35 )
-			{
-				m_abtnItems[iPage][iBtn].SetPos( nX, QSLOT_BTN_SY );
-			}
-		}
-	}
-	else
-	{
-		m_btnPrevSlot.SetPos( QSLOT_PREV_BTN_SY, QSLOT_PREV_BTN_SX );
-		m_btnPrevSlot.CopyUV( UBS_IDLE, m_rtPrevVertIdle );
-		m_btnPrevSlot.CopyUV( UBS_CLICK, m_rtPrevVertClick );
-
-		m_btnNextSlot.SetPos( QSLOT_NEXT_BTN_SY, QSLOT_NEXT_BTN_SX );
-		m_btnNextSlot.CopyUV( UBS_IDLE, m_rtNextVertIdle );
-		m_btnNextSlot.CopyUV( UBS_CLICK, m_rtNextVertClick );
-
-		m_btnRotate.SetPos( QSLOT_ROT_BTN_SY, QSLOT_ROT_BTN_SX );
-		m_btnRotate.CopyUV( UBS_IDLE, m_rtRotVertIdle );
-		m_btnRotate.CopyUV( UBS_CLICK, m_rtRotVertClick );
-
-		m_btnQuestBook.SetPos( 6, 387 );	//wooss
-		m_btnCashShop.SetPos( 6, 422 );
-
-		// ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº ÏÑ§Ï†ï	:Su-won
-		m_btnGiftNotice.SetPos(6-(QSLOT_GIFT_BTN_X+QSLOT_GIFT_BTN_ARROW), 422-10);
-		m_btnGiftNotice.SetSize(QSLOT_GIFT_BTN_X+QSLOT_GIFT_BTN_ARROW, QSLOT_GIFT_BTN_Y);
-		m_eGiftPos =GIFTPOS_LEFT;
-
-		for( iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
-		{
-			nY = QSLOT_BTN_SX;
-			for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++, nY += 35 )
-			{
-				m_abtnItems[iPage][iBtn].SetPos( QSLOT_BTN_SY, nY );
-			}
-		}
-	}
-	m_btnPrevSlot.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnPrevSlot.CopyUV( UBS_IDLE, UBS_DISABLE );
-	m_btnNextSlot.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnNextSlot.CopyUV( UBS_IDLE, UBS_DISABLE );
-	m_btnRotate.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnRotate.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	SetGiftNoticePos();
-}
 
 // ----------------------------------------------------------------------------
 // Name : MouseMessage()
@@ -938,116 +674,132 @@ void CUIQuickSlot::RotateQuickSlot()
 WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 {
 	WMSG_RESULT	wmsgResult;
-
+	
 	// Title bar
 	static BOOL bTitleBarClick = FALSE;
-
+	
 	// Extended button clicked
 	static BOOL	bLButtonDownInBtn = FALSE;
-
+	
 	// Mouse point
 	static int	nOldX, nOldY;
 	int	nX = LOWORD( pMsg->lParam );
 	int	nY = HIWORD( pMsg->lParam );
-
+	
 	m_bShowExSlotInfo = FALSE;
-
+	
 	// Mouse message
 	switch( pMsg->message )
 	{
 	case WM_MOUSEMOVE:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+			
+			m_bIsInside = IsInside( nX, nY );
+			if (m_bIsInside)
+			{
+				for( int iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
+				{
+					int nPosX = QSLOT_BTN_SX;
+					for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++, nPosX += 35 )
+					{
+						m_abtnItems[iPage][iBtn]->SetPos( m_nPosX + nPosX, m_nPosY + QSLOT_BTN_SY);
+					}
+				}
+			}
+			
 			if( IsInside( nX, nY ) )
-				_pUIMgr->SetMouseCursorInsideUIs();
-
+				pUIManager->SetMouseCursorInsideUIs();
+			
 			int	ndX = nX - nOldX;
 			int	ndY = nY - nOldY;
-
+			
 			// Hold button
-			if( _pUIMgr->GetHoldBtn().IsEmpty() && bLButtonDownInBtn && ( pMsg->wParam & MK_LBUTTON ) &&
-				( ndX != 0 || ndY != 0 ) )
+			if (pUIManager->GetDragIcon() == NULL && bLButtonDownInBtn && 
+				(pMsg->wParam& MK_LBUTTON) && (ndX != 0 || ndY != 0))
 			{
 				if( m_nSelSlotBtnID >= 0 )
 				{
-			/*
-					UseQuickSlot( m_nSelSlotBtnID );
-					// Reset holding button
-					bLButtonDownInBtn = FALSE;
-					return WMSG_FAIL;
-			*/		
 					ndX = abs( ndX );
 					ndY = abs( ndY );
 					
 					static int nD = 7;
-				
+					
 					CPrintF( "%d, %d", ndX, ndY );
 					if( ndX > nD || ndY > nD )
 					{
 						int	nSelTab = m_nSelSlotBtnID / QSLOT_BTN_COUNT;
 						int	nSelBtn = m_nSelSlotBtnID % QSLOT_BTN_COUNT;
 						
-						_pUIMgr->SetHoldBtn( m_abtnItems[nSelTab][nSelBtn] );
-						int	nOffset = BTN_SIZE / 2;
-						_pUIMgr->GetHoldBtn().SetPos( nX - nOffset, nY - nOffset );
-
-						m_abtnItems[nSelTab][nSelBtn].SetBtnState( UBES_IDLE );
+						pUIManager->SetHoldBtn( m_abtnItems[nSelTab][nSelBtn] );
 						bLButtonDownInBtn = FALSE;
 					}
 				}
 				
 			}
-
+			
 			// Move quick slot
-			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
-			{
-				nOldX = nX;	nOldY = nY;
-
-				Move( ndX, ndY );
-
-				SetGiftNoticePos();
-				
-				return WMSG_SUCCESS;
-			}
+			// [12/11/2012 π⁄»∆] UI∞≥∆Ì¿∏∑Œ ¿Œ«ÿ 1π¯¬∞ Quickslot¿∫ ¿Ãµø¿Ã ∫“∞°
+			//if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
+			//{
+			//nOldX = nX;	nOldY = nY;
+			
+			//	Move( ndX, ndY );
+			
+			//	SetGiftNoticePos();
+			
+			//	return WMSG_SUCCESS;
+			//}
 			// Prev button
 			else if( m_btnPrevSlot.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-#ifdef Pet_IMPROVEMENT_1ST
-				// [070604: Su-won] 1Ï∞® Ìé´ Í∏∞Îä• Í∞úÏÑ†
-				// ÌÄµÏä¨Î°Ø Ïù¥Ï†Ñ ÌéòÏù¥ÏßÄ Î≤ÑÌäº Îã®Ï∂ïÌÇ§ ÌëúÏãú
+				// [070604: Su-won] 1¬˜ ∆Í ±‚¥… ∞≥º±
+				// ƒ¸ΩΩ∑‘ ¿Ã¿¸ ∆‰¿Ã¡ˆ πˆ∆∞ ¥‹√‡≈∞ «•Ω√
 				ShowExSlotInfo(TRUE, 3);
-#endif
 				return WMSG_SUCCESS;
 			}
 			// Next button
 			else if( m_btnNextSlot.MouseMessage( pMsg ) != WMSG_FAIL )
 			{
-#ifdef Pet_IMPROVEMENT_1ST
-				// [070604: Su-won] 1Ï∞® Ìé´ Í∏∞Îä• Í∞úÏÑ†
-				// ÌÄµÏä¨Î°Ø Îã§Ïùå ÌéòÏù¥ÏßÄ Î≤ÑÌäº Îã®Ï∂ïÌÇ§ ÌëúÏãú
+				// [070604: Su-won] 1¬˜ ∆Í ±‚¥… ∞≥º±
+				// ƒ¸ΩΩ∑‘ ¥Ÿ¿Ω ∆‰¿Ã¡ˆ πˆ∆∞ ¥‹√‡≈∞ «•Ω√
 				ShowExSlotInfo(TRUE, 4);
-#endif
 				return WMSG_SUCCESS;
 			}
+			// [12/10/2012 π⁄»∆] Add, Delete Button
+			else if( m_btnAddSlot.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				return WMSG_SUCCESS;
+			}
+			else if( m_btnDeleteSlot.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
+				return WMSG_SUCCESS;
+			}
+			
 			// Rotate button
 			else if( m_btnRotate.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
 			// Slot
-			else if( IsInsideRect( nX, nY, m_rcSlot ) )
+			/*	else if( IsInsideRect( nX, nY, m_rcSlot ) )
 			{
-				int	nSlotIndex = -1;
-				for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
-				{
-					if( m_abtnItems[m_nCurrentPage][iBtn].MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						nSlotIndex = iBtn;
-					}
-				}
-
-				// Show tool tip
-				ShowSlotInfo( TRUE, nSlotIndex );
-
-				return WMSG_SUCCESS;
+			int	nSlotIndex = -1;
+			for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
+			{
+			if( m_abtnItems[m_nCurrentPage][iBtn].MouseMessage( pMsg ) == WMSG_FAIL )
+			{
+			if(m_abtnItems[m_nCurrentPage][iBtn].GetShowInfo())
+			{
+			m_abtnItems[m_nCurrentPage][iBtn].SetShowInfo(FALSE);
 			}
+			//nSlotIndex = iBtn;
+			}
+			}
+			
+			  // Show tool tip
+			  //ShowSlotInfo( TRUE, nSlotIndex );
+			  
+				return WMSG_SUCCESS;
+			}*/
 			// Show cash shop info
 			else if( m_btnQuestBook.MouseMessage(pMsg) !=WMSG_FAIL ){
 				// Show tool tip
@@ -1059,7 +811,7 @@ WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 				ShowExSlotInfo( TRUE, 1 );
 				return WMSG_SUCCESS;
 			}
-
+			
 			//Show Gift Recv info		:Su-won
 			else if( m_btnGiftNotice.MouseMessage(pMsg) !=WMSG_FAIL )
 			{
@@ -1068,45 +820,39 @@ WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 					ShowExSlotInfo( TRUE, 2);
 				return WMSG_SUCCESS;
 			}
-
 			
-			// Hide tool tip
-			ShowSlotInfo( FALSE );
+			for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
+			{
+				if (m_abtnItems[m_nCurrentPage][iBtn]->MouseMessage( pMsg ) != WMSG_FAIL)
+					return WMSG_SUCCESS;
+			}
 		}
 		break;
-
+		
 	case WM_LBUTTONDOWN:
 		{
-			//ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº	:Su-won
+			//º±π∞ µµ¬¯ æÀ∏≤ πˆ∆∞	:Su-won
 			if( m_btnGiftNotice.MouseMessage( pMsg ) != WMSG_FAIL )
 				return WMSG_SUCCESS;
+			
+			m_bIsInside = IsInside( nX, nY );
+
+			m_nSelSlotBtnID = -1;
 
 			if( IsInside( nX, nY ) )
 			{
+				CUIManager* pUIManager = CUIManager::getSingleton();
+				
 				nOldX = nX;		nOldY = nY;
-
+				
 				// Title bar 1
-				if( IsInsideRect( nX, nY, m_rcTitle1 ) )
-				{
-					bTitleBarClick = TRUE;
-				}
-				/***
-				// Title bar 2
-				else if( IsInsideRect( nX, nY, m_rcTitle2 ) )
-				{
-					// Rotate button
-					if( m_btnRotate.MouseMessage( pMsg ) != WMSG_FAIL )
-					{
-						
-					}
-					else
-					{
-						bTitleBarClick = TRUE;
-					}
-				}
-				***/
+				// [12/10/2012 π⁄»∆] UI∞≥∆Ì¿∏∑Œ ¿Œ«ÿ DragArea¥¬ « ø‰ æ¯æÓ¡¸
+				//if( IsInsideRect( nX, nY, m_rcTitle1 ) )
+				//{
+				//	bTitleBarClick = TRUE;
+				//}
 				// Prev button
-				else if( m_btnPrevSlot.MouseMessage( pMsg ) != WMSG_FAIL )
+				if( m_btnPrevSlot.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
 					// Nothing
 				}
@@ -1120,50 +866,72 @@ WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 					//Nothing
 				}
 				// wooss 050815
-				else if( m_btnCashShop.MouseMessage( pMsg ) != WMSG_FAIL )
+				
+				// [12/10/2012 π⁄»∆] Add, Delete Button
+				else if( m_btnAddSlot.MouseMessage( pMsg ) != WMSG_FAIL )
+				{
+					//Nothing
+				}
+				else if( m_btnDeleteSlot.MouseMessage( pMsg ) != WMSG_FAIL )
 				{
 					//Nothing
 				}
 				// Slot
 				else if( IsInsideRect( nX, nY, m_rcSlot ) )
 				{
-					m_nSelSlotBtnID = -1;
-
 					for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 					{
-						if( m_abtnItems[m_nCurrentPage][iBtn].MouseMessage( pMsg ) != WMSG_FAIL )
+						if (m_abtnItems[m_nCurrentPage][iBtn]->MouseMessage(pMsg) != WMSG_FAIL)
 						{
 							// Update selected button
 							m_nSelSlotBtnID = iBtn + m_nCurrentPage * QSLOT_BTN_COUNT;
-
+							
 							bLButtonDownInBtn = TRUE;
-
-							_pUIMgr->RearrangeOrder( UI_QUICKSLOT, TRUE );
+							
+							pUIManager->RearrangeOrder( UI_QUICKSLOT, TRUE );
 							return WMSG_SUCCESS;
 						}
 					}
 				}
-
-				_pUIMgr->RearrangeOrder( UI_QUICKSLOT, TRUE );
+				
+				pUIManager->RearrangeOrder( UI_QUICKSLOT, TRUE );
+				return WMSG_SUCCESS;
+			}
+			if( m_btnCashShop.MouseMessage( pMsg ) != WMSG_FAIL )
+			{
 				return WMSG_SUCCESS;
 			}
 		}
 		break;
-
+		
 	case WM_LBUTTONUP:
 		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
+			
 			bLButtonDownInBtn = FALSE;
-
+			
+			m_bIsInside = IsInside( nX, nY );
+			if (m_bIsInside)
+			{
+				for( int iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
+				{
+					int nPosX = QSLOT_BTN_SX;
+					for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++, nPosX += 35 )
+					{
+						m_abtnItems[iPage][iBtn]->SetPos( m_nPosX + nPosX, m_nPosY + QSLOT_BTN_SY);
+					}
+				}
+			}
 			// If holding button doesn't exist
-			if( _pUIMgr->GetHoldBtn().IsEmpty() )
+			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// Title bar
 				bTitleBarClick = FALSE;
-
+				
 				// If quick slot isn't focused
 				if( !IsFocused() )
 					return WMSG_FAIL;
-
+				
 				// Prev button
 				if( ( wmsgResult = m_btnPrevSlot.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
@@ -1174,7 +942,7 @@ WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 							m_nCurrentPage = QSLOT_PAGE_COUNT - 1;
 						m_strCurrentPage.PrintF( "%d", m_nCurrentPage + 1 );
 					}
-
+					
 					return WMSG_SUCCESS;
 				}
 				// Next button
@@ -1187,17 +955,23 @@ WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 							m_nCurrentPage = 0;
 						m_strCurrentPage.PrintF( "%d", m_nCurrentPage + 1 );
 					}
-
+					
 					return WMSG_SUCCESS;
 				}
-				// Rotate button
-				else if( ( wmsgResult = m_btnRotate.MouseMessage( pMsg ) ) != WMSG_FAIL )
+				
+				// [12/10/2012 π⁄»∆] Add, Delete Button Event Handling
+				else if( ( wmsgResult = m_btnAddSlot.MouseMessage( pMsg ) ) != WMSG_FAIL )
 				{
-					if( wmsgResult == WMSG_COMMAND )
-					{
-						RotateQuickSlot();
-					}
-
+					// ¿Ã∫•∆Æ √≥∏Æ
+					CheckSlotEXBtn(QSLOT_ADD);
+					SetDisableCheckSlotEX();
+					return WMSG_SUCCESS;
+				}
+				else if ( ( wmsgResult = m_btnDeleteSlot.MouseMessage( pMsg ) ) != WMSG_FAIL )
+				{
+					// ¿Ã∫•∆Æ √≥∏Æ
+					CheckSlotEXBtn(QSLOT_DEL);
+					SetDisableCheckSlotEX();
 					return WMSG_SUCCESS;
 				}
 				else if( (wmsgResult = m_btnQuestBook.MouseMessage( pMsg )) != WMSG_FAIL )
@@ -1205,71 +979,73 @@ WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 					if( wmsgResult == WMSG_COMMAND )
 					{
 						//TODO : NewQuestSystem
-						//ÏÑúÎ≤ÑÏóêÏÑú Î™©Î°ùÏùÑ Î∞õÏïÑÏïº ÌïòÎÇò?
-						_pUIMgr->GetQuestBookList()->ToggleVisible();
+						//º≠πˆø°º≠ ∏Ò∑œ¿ª πﬁæ∆æﬂ «œ≥™?
+						pUIManager->GetQuestBookList()->ToggleVisible();
 					}
-
+					
 					return WMSG_SUCCESS;
 				}
 				// wooss 050815
 				// Cash Shop Button 
 				else if( (wmsgResult = m_btnCashShop.MouseMessage( pMsg )) != WMSG_FAIL)
 				{
-					// ÌÖåÏä§Ìä∏ÏÑúÎ≤ÑÏóêÎäî ÏÉÅÏ†êÏùÑ Ïó¥ÏßÄ ÏïäÎäîÎã§
-					// MALAYSIA CASH SHOP
+					// ≈◊Ω∫∆Æº≠πˆø°¥¬ ªÛ¡°¿ª ø≠¡ˆ æ ¥¬¥Ÿ
 					extern UINT g_uiEngineVersion;
-//					if( wmsgResult == WMSG_COMMAND && g_uiEngineVersion < 10000 && g_iCountry != MALAYSIA )
-					if( wmsgResult == WMSG_COMMAND && g_uiEngineVersion < 10000 )//&& g_iCountry != GERMANY ) 
-//						/*g_iCountry != BRAZIL && *//*g_iCountry != HONGKONG*/ )
-					{//_pNetwork->BillInfoUserInfoReq();
-						if( g_iCountry == TAIWAN )
+					if( wmsgResult == WMSG_COMMAND ) //&& g_uiEngineVersion < 10000)
+					{
+						if (!pUIManager->GetCashShopEX()->IsVisible())
 						{
-							if( !_pUIMgr->GetBilling()->IsVisible() )
-								_pNetwork->BillInfoUserInfoReq();
-						}
-						else if( g_iCountry == TAIWAN2 )
-						{
-							if( !_pUIMgr->GetBillItem()->IsVisible() )							
-								_pNetwork->BillInfoUserInfoReq();
-						}
-						else
-						{
-							if(_pUIMgr->GetCashShop()->IsEnabled()&&_pUIMgr->GetCashShop()->IsVisible()) _pUIMgr->GetCashShop()->CloseCashShop();
-							else{
-								_pUIMgr->GetCashShop()->OpenCashShop();
-								_pNetwork->SendCashItemMessage(MSG_EX_CASHITEM_BALANCE_REQ);														
+							if (pUIManager->GetCashShopEX()->GetCashShopLock())
+							{
+								pUIManager->GetCashShopEX()->Message(MSGCMD_GIFT_ERROR, _S(372, "¡°∞À"), _S(5296, "æ∆¿Ã∏ÆΩ∫ ªÛ¡°¿Ã ¿œΩ√ ¡°∞À ¡ﬂ¿‘¥œ¥Ÿ. ¿·Ω√ »ƒø° ¿ÃøÎ«ÿ ¡÷Ω Ω√ø¿."), UMBS_OK);
 							}
-						}			
-					}
+							else
+							{
+								if( ((CPlayerEntity*)CEntity::GetPlayerEntity(0))->IsHudModel_Used() == TRUE )
+									return WMSG_SUCCESS;
 
+								_pNetwork->SendCashItemMessage(MSG_EX_CASHITEM_SHOP_OPEN_REQ);
+							}
+						}
+					}
+					
 					return WMSG_SUCCESS;
 				}
-
-				// ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº ÌÅ¥Î¶≠	:Su-won
+				
+				// º±π∞ µµ¬¯ æÀ∏≤ πˆ∆∞ ≈¨∏Ø	:Su-won
 				else if( (wmsgResult = m_btnGiftNotice.MouseMessage( pMsg )) != WMSG_FAIL )
 				{
-					//ÏÉÅÏ†êÏ∞Ω Ïó¥Í∏∞
+					//ªÛ¡°√¢ ø≠±‚
 					if( m_bGiftRecv )
 					{
-						_pUIMgr->GetCashShop()->OpenRecvGiftPage();
-						_pNetwork->SendCashItemMessage(MSG_EX_CASHITEM_BALANCE_REQ);
-						
+						if (!pUIManager->GetCashShopEX()->IsVisible())
+						{
+							if (pUIManager->GetCashShopEX()->GetCashShopLock())
+							{
+								pUIManager->GetCashShopEX()->Message(MSGCMD_GIFT_ERROR, _S(372, "¡°∞À"), _S(5296, "æ∆¿Ã∏ÆΩ∫ ªÛ¡°¿Ã ¿œΩ√ ¡°∞À ¡ﬂ¿‘¥œ¥Ÿ. ¿·Ω√ »ƒø° ¿ÃøÎ«ÿ ¡÷Ω Ω√ø¿."), UMBS_OK);
+							}
+							else
+							{
+								_pNetwork->SendCashItemMessage(MSG_EX_CASHITEM_SHOP_OPEN_REQ);
+							}
+						}
+
 						return WMSG_SUCCESS;
 					}
 				}
-
+				
 				// Slot
 				else if( IsInsideRect( nX, nY, m_rcSlot ) )
 				{
 					m_nSelSlotBtnID = -1;
-
+					
 					for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 					{
-						if( ( wmsgResult = m_abtnItems[m_nCurrentPage][iBtn].MouseMessage( pMsg ) ) != WMSG_FAIL )
+						if ((wmsgResult = m_abtnItems[m_nCurrentPage][iBtn]->MouseMessage(pMsg)) != WMSG_FAIL)
 						{
-							if( wmsgResult == WMSG_COMMAND )
-								UseQuickSlot( iBtn );
-
+							if (wmsgResult == WMSG_SUCCESS)
+								UseQuickSlot( iBtn, m_nCurrentPage );
+							
 							return WMSG_SUCCESS;
 						}
 					}
@@ -1280,99 +1056,105 @@ WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 			{
 				if( IsInside( nX, nY ) )
 				{
-					_pUIMgr->GetMessenger()->SetDragging(false);
+					pUIManager->GetMessenger()->SetDragging(false);
 
+					CUIIcon* pDrag = pUIManager->GetDragIcon();					
+					
 					// If holding button comes from quick slot
-					if( _pUIMgr->GetHoldBtn().GetWhichUI() == UI_QUICKSLOT )
+					if (pDrag->GetWhichUI() == UI_QUICKSLOT)
 					{
 						if( IsInsideRect( nX, nY, m_rcSlot ) )
 						{
 							for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 							{
-								if( m_abtnItems[m_nCurrentPage][iBtn].IsInside( nX, nY ) &&
-									m_abtnItems[m_nCurrentPage][iBtn].GetBtnID() != _pUIMgr->GetHoldBtn().GetBtnID() )
+								if (m_abtnItems[m_nCurrentPage][iBtn]->IsInside( nX, nY ) &&
+									m_abtnItems[m_nCurrentPage][iBtn]->GetQuickSlotID() != pDrag->GetQuickSlotID())
 								{
-									int	nPageIndex = m_nSelSlotBtnID / QSLOT_BTN_COUNT;
-									int	nSlotIndex = m_nSelSlotBtnID % QSLOT_BTN_COUNT;
+									int nBtnID = pDrag->GetQuickSlotID();
 
-									if( nPageIndex == m_nCurrentPage )
-										SwapBtnsInQuickSlot( nSlotIndex, iBtn );
+									int	nPageIndex = nBtnID / QSLOT_BTN_COUNT;
+									int	nSlotIndex = nBtnID % QSLOT_BTN_COUNT;
 									
+									SwapBtnsInQuickSlot( nPageIndex, nSlotIndex,  m_nCurrentPage, iBtn );
 									break;
 								}
-							}
+							}							
 						}
 					}
 					// If holding button is skill and comes from skill window
 					// If holding button is action and comes from action window
 					// If holding button is item and comes from inventory
-					else if( ( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_SKILL &&
-								_pUIMgr->GetHoldBtn().GetWhichUI() == UI_CHARACTERINFO ) ||
-							( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_SKILL &&
-								_pUIMgr->GetHoldBtn().GetWhichUI() == UI_PETINFO ) ||
-							 ( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ACTION &&
-								_pUIMgr->GetHoldBtn().GetWhichUI() == UI_CHARACTERINFO ) ||							
-							 ( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM &&
-								_pUIMgr->GetHoldBtn().GetWhichUI() == UI_INVENTORY ) ||
-							( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_SKILL &&
-								_pUIMgr->GetHoldBtn().GetWhichUI() == UI_WILDPET_INFO ))
+					else if ((pDrag->getBtnType() == UBET_SKILL &&
+							 (pDrag->GetWhichUI() == UI_SKILL_NEW || pDrag->GetWhichUI() == UI_CHARACTERINFO)) ||
+							 (pDrag->getBtnType() == UBET_SKILL &&
+							  pDrag->GetWhichUI() == UI_PETINFO) ||
+							 (pDrag->getBtnType() == UBET_ACTION &&
+							  pDrag->GetWhichUI() == UI_CHARACTERINFO) ||
+							 (pDrag->getBtnType() == UBET_ITEM &&
+							  pDrag->GetWhichUI() == UI_INVENTORY) ||
+							 (pDrag->getBtnType() == UBET_SKILL &&
+							  pDrag->GetWhichUI() == UI_WILDPET_INFO) ||
+							 (pDrag->getBtnType() == UBET_SKILL &&
+							  pDrag->GetWhichUI() == UI_GUILD))
 					{
 						if( IsInsideRect( nX, nY, m_rcSlot ) )
 						{
-							if( _pUIMgr->GetHoldBtn().GetBtnType() == UBET_ITEM )
+							if (pDrag->getBtnType() == UBET_ITEM)
 							{
-								int			nIndex = _pUIMgr->GetHoldBtn().GetItemIndex();
-								CItemData	&ItemData = _pNetwork->GetItemData( nIndex );
+								CItems* pItems = pDrag->getItems();
 
-								if( (ItemData.GetType() == CItemData::ITEM_ETC 					//Etc(x)
-#ifdef Pet_IMPROVEMENT_1ST
-										// [070604: Su-won] 1Ï∞® Ìé´ Í∏∞Îä• Í∞úÏÑ†
-										// ÏÉùÏÇ∞ÌíàÏùÑ ÌÄµÏä¨Î°ØÏóê ÎÑ£ÏùÑ Ïàò ÏûàÍ≤å...
-										&&ItemData.GetSubType() !=CItemData::ITEM_ETC_PRODUCT
-#endif
+								if (pItems == NULL)
+									return WMSG_FAIL;
+
+								CItemData* pItemData = pItems->ItemData;
+								
+								if( (pItemData->GetType() == CItemData::ITEM_ETC 					//Etc(x)
+									// [070604: Su-won] 1¬˜ ∆Í ±‚¥… ∞≥º±
+									// ª˝ªÍ«∞¿ª ƒ¸ΩΩ∑‘ø° ≥÷¿ª ºˆ ¿÷∞‘...
+									&&pItemData->GetSubType() !=CItemData::ITEM_ETC_PRODUCT
 									) ||
-									(ItemData.GetType() == CItemData::ITEM_ACCESSORY				// Accessory(x)
-#ifdef Pet_IMPROVEMENT_1ST
-										// [070604: Su-won] 1Ï∞® Ìé´ Í∏∞Îä• Í∞úÏÑ†
-										// Ìé´ÏùÑ ÌÄµÏä¨Î°ØÏóê ÎÑ£ÏùÑ Ïàò ÏûàÍ≤å...
-										&& ItemData.GetSubType() !=CItemData::ACCESSORY_PET
-#endif
+									(pItemData->GetType() == CItemData::ITEM_ACCESSORY				// Accessory(x)
+									// [070604: Su-won] 1¬˜ ∆Í ±‚¥… ∞≥º±
+									// ∆Í¿ª ƒ¸ΩΩ∑‘ø° ≥÷¿ª ºˆ ¿÷∞‘...
+									&& pItemData->GetSubType() !=CItemData::ACCESSORY_PET
+									&& pItemData->GetSubType() !=CItemData::ACCESSORY_WILDPET
+									&& pItemData->GetSubType() != CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD
 									) ||
-									( ItemData.GetType() == CItemData::ITEM_BULLET &&				// Bullet - arrow(x)
-									  ItemData.GetSubType() == CItemData::ITEM_BULLET_ARROW )
+									( pItemData->GetType() == CItemData::ITEM_BULLET &&				// Bullet - arrow(x)
+									pItemData->GetSubType() == CItemData::ITEM_BULLET_ARROW )
 									)
 									
 								{
 									// Reset holding button
-									_pUIMgr->ResetHoldBtn();
-
+									pUIManager->ResetHoldBtn();
+									
 									return WMSG_SUCCESS;
 								}
 							}
-
+							
 							for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 							{
-								if( m_abtnItems[m_nCurrentPage][iBtn].IsInside( nX, nY ) )
+								if (m_abtnItems[m_nCurrentPage][iBtn]->IsInside(nX, nY))
 								{
-									AddBtnToQuickSlot( iBtn );
-
+									AddBtnToQuickSlot( iBtn, m_nCurrentPage );
+									
 									break;
 								}
 							}
 						}
 					}
-
+					
 					// Reset holding button
-					_pUIMgr->ResetHoldBtn();
-
+					pUIManager->ResetHoldBtn();
 					return WMSG_SUCCESS;
 				}
 			}
 		}
 		break;
-
+			
 	case WM_LBUTTONDBLCLK:
 		{
+			m_bIsInside = IsInside( nX, nY );
 			if( IsInside( nX, nY ) )
 			{
 				return WMSG_SUCCESS;
@@ -1392,78 +1174,160 @@ WMSG_RESULT CUIQuickSlot::MouseMessage( MSG *pMsg )
 // Name : UseQuickSlot()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIQuickSlot::UseQuickSlot( int nSlotIndex )
+void CUIQuickSlot::UseQuickSlot( int nSlotIndex, int nCurrentPage)
 {
-	if( _pUIMgr->GetBilling()->IsLock() ) return;
-
-	// If slot is empty
-	if( m_abtnItems[m_nCurrentPage][nSlotIndex].IsEmpty() )
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	
+	// if activate laca ball, disable quick slot.
+	if( pUIManager->GetLacaBall()->IsVisible() )
 		return;
-
+	
+	// If slot is empty
+	if (m_abtnItems[nCurrentPage][nSlotIndex]->IsEmpty())
+		return;
+	
 	// Use quick slot
-	switch( m_abtnItems[m_nCurrentPage][nSlotIndex].GetBtnType() )
+	switch (m_abtnItems[nCurrentPage][nSlotIndex]->getBtnType())
 	{
 	case UBET_SKILL:
 		{
-			// EDIT : bs : 060322
-			BOOL	bDelay = m_abtnItems[m_nCurrentPage][nSlotIndex].GetSkillDelay();
-				int		nSkillIndex = m_abtnItems[m_nCurrentPage][nSlotIndex].GetSkillIndex();
+			if (pUIManager->IsCSFlagOn(CSF_SKILLREADY))
+			{
+				return;
+			}
 
-			if( !bDelay && _pNetwork->GetSkillData( nSkillIndex ).GetType() == CSkill::ST_PET_SKILL_ACTIVE )
-				{
-					_pUIMgr->GetPetInfo()->UseSkill( nSkillIndex );					
+			int		nSkillIndex = m_abtnItems[nCurrentPage][nSlotIndex]->getIndex();
+			BOOL	bDelay = MY_INFO()->GetSkillDelay(nSkillIndex, m_abtnItems[nCurrentPage][nSlotIndex]->IsSpecial());
+			
+			if (bDelay == TRUE)
+				return;
+			
+			if (_pNetwork->GetSkillData( nSkillIndex ).GetType() == CSkill::ST_PET_SKILL_ACTIVE )
+			{
+				pUIManager->GetPetInfo()->UseSkill( nSkillIndex );					
+			}
+			else if (_pNetwork->GetSkillData( nSkillIndex ).GetType() == CSkill::ST_PET_COMMAND )
+			{
+				pUIManager->GetPetInfo()->UseCommand( nSkillIndex );
+			}
+			else if (_pNetwork->GetSkillData(nSkillIndex).GetJob() == WILDPET_JOB)
+			{
+				pUIManager->GetWildPetInfoUI()->UseSkill(nSkillIndex);
+			}
+			else
+			{
+				if (_pNetwork->GetSkillData( nSkillIndex ).GetFlag() & SF_GUILD)
+				{	// ±ÊµÂ Ω∫≈≥¿œ ∞ÊøÏ, ªÁøÎ ¡∂∞« √º≈©
+					if ( !pUIManager->GetGuild()->CheckUseGuildSkill( nSkillIndex ))
+					{	// ¡∂∞« √Ê¡∑¿ª ∏¯«“ ∞ÊøÏ ∏Æ≈œ
+						return;
+					}
 				}
-			else if( !bDelay &&_pNetwork->GetSkillData( nSkillIndex ).GetType() == CSkill::ST_PET_COMMAND )
-				{
-					_pUIMgr->GetPetInfo()->UseCommand( nSkillIndex );
-				}
-			else if(!bDelay && _pNetwork->GetSkillData(nSkillIndex).GetJob() == WILDPET_JOB)
-				{
-					_pUIMgr->GetWildPetInfo()->UseSkill(nSkillIndex);
-				}
-				else
-				{
-					_pUIMgr->GetCharacterInfo()->UseSkill( nSkillIndex );
-				}
-//			if( !m_abtnItems[m_nCurrentPage][nSlotIndex].GetSkillDelay() )
-//			{
-//				int		nSkillIndex = m_abtnItems[m_nCurrentPage][nSlotIndex].GetSkillIndex();
-//
-//				if( _pNetwork->GetSkillData( nSkillIndex ).GetType() == CSkill::ST_PET_SKILL_ACTIVE )
-//				{
-//					_pUIMgr->GetPetInfo()->UseSkill( nSkillIndex );					
-//				}
-//				else if( _pNetwork->GetSkillData( nSkillIndex ).GetType() == CSkill::ST_PET_COMMAND )
-//				{
-//					_pUIMgr->GetPetInfo()->UseCommand( nSkillIndex );
-//				}
-//				else
-//				{
-//					_pUIMgr->GetCharacterInfo()->UseSkill( nSkillIndex );
-//				}
-//			}			
-			// EDIT : bs : 060322
+
+				pUIManager->GetCharacterInfo()->UseSkill( nSkillIndex );
+			}
 		}
 		break;
-
+		
 	case UBET_ACTION:
 		{
-			int	nActionIndex = m_abtnItems[m_nCurrentPage][nSlotIndex].GetActionIndex();
-			_pUIMgr->GetCharacterInfo()->UseAction( nActionIndex );
+			SQUAD llTerm = _pTimer->GetHighPrecisionTimer().GetMilliseconds() - m_abtnItems[nCurrentPage][nSlotIndex]->GetUseItemStartTime();
+			
+			if( llTerm > 500 )
+			{
+				m_abtnItems[nCurrentPage][nSlotIndex]->SetUseItemStartTime( _pTimer->GetHighPrecisionTimer().GetMilliseconds() );
+			}
+			else 
+			{ return; }// 0.5√  ªÁ¿Ãø° ∞∞¿∫ πˆ∆∞¿ª ¥©∏•¥Ÿ∏È return;
+			
+			int	nActionIndex = m_abtnItems[nCurrentPage][nSlotIndex]->getIndex();
+			pUIManager->GetCharacterInfo()->UseAction( nActionIndex );
 		}
 		break;
-
+		
 	case UBET_ITEM:
 		{
-			if( _pUIMgr->IsCSFlagOn( CSF_WAREHOUSE ) )
+			if( pUIManager->IsCSFlagOn( CSF_WAREHOUSE ) )
+				return;		
+
+			int nItemIdx = m_abtnItems[nCurrentPage][nSlotIndex]->getIndex();
+
+			CItems* pItems = m_abtnItems[nCurrentPage][nSlotIndex]->getItems();
+
+			if (pItems == NULL)
 				return;
 
-			int	nTab = m_abtnItems[m_nCurrentPage][nSlotIndex].GetItemTab();
-			int	nRow = m_abtnItems[m_nCurrentPage][nSlotIndex].GetItemRow();
-			int	nCol = m_abtnItems[m_nCurrentPage][nSlotIndex].GetItemCol();
+			CItemData*	pItemData = pItems->ItemData;
 
-			_pUIMgr->GetInventory()->SetUseItemSlotInfo(nTab, nRow, nCol);
-			_pUIMgr->GetInventory()->SendUseSlotItem( nTab, nRow, nCol );
+			if(pItemData == NULL)
+				return;
+
+			if ( m_bWearing == TRUE )
+			{	
+				if (pItemData->GetType() == CItemData::ITEM_WEAPON ||
+					pItemData->GetType() == CItemData::ITEM_SHIELD ||
+					pItemData->GetType() == CItemData::ITEM_ACCESSORY )
+				{
+					_pNetwork->ClientSystemMessage( _S( 305, "¿Â∫Ò∏¶ ¬¯øÎ«“ ºˆ æ¯Ω¿¥œ¥Ÿ." ), SYSMSG_ERROR );
+					return;
+				}				
+			}
+			
+			SQUAD llTerm = _pTimer->GetHighPrecisionTimer().GetMilliseconds() - MY_INFO()->GetUseItem(nItemIdx);
+			
+			if( llTerm > 500 )
+			{
+				MY_INFO()->SetUseItem(nItemIdx, _pTimer->GetHighPrecisionTimer().GetMilliseconds());
+			}
+			else 
+			{ return; }// 0.5√  ªÁ¿Ãø° ∞∞¿∫ πˆ∆∞¿ª ¥©∏•¥Ÿ∏È return;
+
+			// ƒ˘Ω∫∆Æ æ∆¿Ã≈€ ªÁøÎ¡¶«— √º≈©
+			if (m_abtnItems[nCurrentPage][nSlotIndex]->IsRestritionItem() == true)
+			{
+				CTString strTitle;
+				CTString strMessage1;
+				CUIMsgBox_Info	MsgBoxInfo;
+
+				strTitle	=	_S(191,"»Æ¿Œ");
+				strMessage1	=	_S( 4428, "ø©±‚º≠¥¬ ªÁøÎ «“ ºˆ æ¯Ω¿¥œ¥Ÿ" ); 
+				MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_OK,UI_NONE,MSGCMD_NULL);
+				MsgBoxInfo.AddString(strMessage1);
+				pUIManager->CreateMessageBox(MsgBoxInfo);
+				return;
+			}
+						
+			if (m_abtnItems[nCurrentPage][nSlotIndex]->IsWearTab() == false)
+			{
+				int	nTab = pItems->Item_Tab;
+				int	nIdx = pItems->InvenIndex;
+
+				pUIManager->GetInventory()->SetUseItemSlotInfo(nTab, nIdx);
+				pUIManager->GetInventory()->SendUseSlotItem(nTab, nIdx);
+			}
+			else
+			{
+				int	nType = m_abtnItems[nCurrentPage][nSlotIndex]->GetQuickSlotWearType();
+				int nWear = pItems->Item_Wearing;
+				int	nIdx = pItems->InvenIndex;
+				int vIdx = pItems->Item_UniIndex;
+
+				switch (nType)
+				{
+				case 0:
+					_pNetwork->SendItemWearingMSG(MSG_ITEM_WEAR_TAKE_OFF, 
+						nWear, -1, -1, 0);
+					break;
+				case 1:
+					_pNetwork->SendItemWearingMSG(MSG_ITEM_WEAR_COSTUME_TAKEOFF,
+						nWear, -1, -1, 0, vIdx);	
+					break;
+				case 2:
+					_pNetwork->SendItemWearingMSG(MSG_ITEM_WEAR_COSTUME_SUIT_TAKEOFF,
+						nWear, -1, -1, 0, vIdx);
+					break;
+				}				
+			}
 		}
 		break;
 	}
@@ -1473,44 +1337,64 @@ void CUIQuickSlot::UseQuickSlot( int nSlotIndex )
 // Name : AddBtnToQuickSlot()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIQuickSlot::AddBtnToQuickSlot( int nSlotIndex )
+void CUIQuickSlot::AddBtnToQuickSlot( int nSlotIndex, int nCurrentPage )
 {
-	if( m_bLock ) return; // ÌòÑÏû¨ ÏÇ¨Ïö©ÌïòÏßÄ ÏïäÏùå 
+	if( m_bLock == TRUE )
+		return; // «ˆ¿Á ªÁøÎ«œ¡ˆ æ ¿Ω
+	
+	CUIManager* pUIManager = CUIManager::getSingleton();
 
+	CUIIcon* pDrag = pUIManager->GetDragIcon();
+
+	if (pDrag == NULL)
+		return;
+	
 	// Add button
-	switch( _pUIMgr->GetHoldBtn().GetBtnType() )
+	switch (pDrag->getBtnType())
 	{
 	case UBET_SKILL:
 		{
-			int	nSkillIndex = _pUIMgr->GetHoldBtn().GetSkillIndex();
+			int	nSkillIndex = pDrag->getIndex();
 			CSkill	&rSelSkill = _pNetwork->GetSkillData( nSkillIndex );
 			if( !(rSelSkill.GetSorcererFlag() & ( SSF_USE_FIRE | SSF_USE_WIND | SSF_USE_EARTH | SSF_USE_WATER ) ) )
 			{
-				SendAddBtn( m_nCurrentPage, nSlotIndex, 0, nSkillIndex );
+				SendAddBtn( nCurrentPage, nSlotIndex, 0, nSkillIndex );
 			}
 			else
 			{
-				CTString strMessage = _S(2339,"ÏÜåÌôòÏàòÎßå ÏÇ¨Ïö©Ìï† Ïàò ÏûàÎäî Ïä§ÌÇ¨ÏûÖÎãàÎã§.");
-				_pUIMgr->GetChatting()->AddSysMessage( strMessage, SYSMSG_ERROR );
+				CTString strMessage = _S(2339,"º“»Øºˆ∏∏ ªÁøÎ«“ ºˆ ¿÷¥¬ Ω∫≈≥¿‘¥œ¥Ÿ.");
+				pUIManager->GetChattingUI()->AddSysMessage( strMessage, SYSMSG_ERROR );
 			}
 		}
 		break;
-
+		
 	case UBET_ACTION:
 		{
-			int	nActionIndex = _pUIMgr->GetHoldBtn().GetActionIndex();
-			SendAddBtn( m_nCurrentPage, nSlotIndex, 1, nActionIndex );
+			int	nActionIndex = pDrag->getIndex();
+#if defined (G_RUSSIA)
+			// [2011/05/18 : Sora] ∑ØΩ√æ∆√¯ ø‰√ª¿∏∑Œ P2¡›±‚,∞¯∞› æ◊º«¿∫ ƒ¸ΩΩ∑‘ø° µÓ∑œµ«¡ˆ æ ∞‘ √≥∏Æ
+			if( nActionIndex == 44 /*P2 ∞¯∞›*/ || nActionIndex == 45 /*P2 ¡›±‚*/ )
+			{
+				return;
+			}
+#endif
+			SendAddBtn( nCurrentPage, nSlotIndex, 1, nActionIndex );
 		}
 		break;
-
+		
 	case UBET_ITEM:
 		{
-			int	nRow, nCol;
-			int	nUniIndex = _pUIMgr->GetHoldBtn().GetItemUniIndex();
-			_pUIMgr->GetInventory()->GetLocationOfNormalItem( nUniIndex, nRow, nCol );
+			CItems* pItems = pDrag->getItems();
 
-			if( nRow != -1 )
-				SendAddBtn( m_nCurrentPage, nSlotIndex, 2, nRow, nCol );
+			if (pItems == NULL)
+				return;
+
+			SWORD nTab, nIdx;
+			int	nUniIndex = pItems->Item_UniIndex;
+			pUIManager->GetInventory()->GetLocationOfNormalItem( nUniIndex, nTab, nIdx );
+			
+			if( nIdx != -1 )
+				SendAddBtn( nCurrentPage, nSlotIndex, 2, nTab, nIdx );
 		}
 		break;
 	}
@@ -1520,16 +1404,17 @@ void CUIQuickSlot::AddBtnToQuickSlot( int nSlotIndex )
 // Name : SwapBtnsInQuickSlot()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIQuickSlot::SwapBtnsInQuickSlot( int nSlot1, int nSlot2 )
+void CUIQuickSlot::SwapBtnsInQuickSlot(int nPage1, int nSlot1, int nPage2, int nSlot2)
 {
-	SendSwapBtns( m_nCurrentPage, nSlot1, nSlot2 );
+
+	SendSwapBtns(  nPage1, nSlot1, nPage2, nSlot2  );
 }
 
 // ----------------------------------------------------------------------------
 // Name : RemoveBtn()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIQuickSlot::RemoveBtn( int nBtnID )
+void CUIQuickSlot::RemoveBtn( CUIIcon* pIcon )
 {
 	// Find button
 	int	iPage, iBtn;
@@ -1537,10 +1422,10 @@ void CUIQuickSlot::RemoveBtn( int nBtnID )
 	{
 		for( iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
 		{
-			if( m_abtnItems[iPage][iBtn].GetBtnID() == nBtnID )
+			if (m_abtnItems[iPage][iBtn] == pIcon)
 			{
 				// Remove button
-				SendAddBtn( iPage, iBtn, -1 );
+				SendAddBtn(iPage, iBtn, -1);
 				return;
 			}
 		}
@@ -1558,25 +1443,6 @@ void CUIQuickSlot::ChangePage( int nPage )
 }
 
 // ----------------------------------------------------------------------------
-// Name : ClearSkills()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIQuickSlot::UpdateSkillLevel( int nIndex, SBYTE sbLevel )
-{
-	for( int iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
-	{
-		for( int iCol = 0; iCol < QSLOT_BTN_COUNT; iCol++ )
-		{
-			if( m_abtnItems[iPage][iCol].GetBtnType() == UBET_SKILL &&
-				m_abtnItems[iPage][iCol].GetSkillIndex() == nIndex )
-			{
-				m_abtnItems[iPage][iCol].SetSkillLevel( sbLevel );
-			}
-		}
-	}
-}
-
-// ----------------------------------------------------------------------------
 // Name : StartSkillDelay()
 // Desc :
 // ----------------------------------------------------------------------------
@@ -1587,45 +1453,30 @@ BOOL CUIQuickSlot::StartSkillDelay( int nIndex )
 	{
 		for( int iCol = 0; iCol < QSLOT_BTN_COUNT; iCol++ )
 		{
-			if( m_abtnItems[iPage][iCol].GetBtnType() == UBET_SKILL &&
-				m_abtnItems[iPage][iCol].GetSkillIndex() == nIndex )
+			if (m_abtnItems[iPage][iCol]->getBtnType() == UBET_SKILL &&
+				m_abtnItems[iPage][iCol]->getIndex() == nIndex)
+			{				
+				m_abtnItems[iPage][iCol]->setCooltime(true);
+				bResult = TRUE;
+			}
+			else if (m_abtnItems[iPage][iCol]->getBtnType() == UBET_ITEM)
 			{
-				if( m_abtnItems[iPage][iCol].GetSkillDelay() )
+				// [2010/10/20 : Sora] ªÁøÎ ¡∂∞«¿ª «‘ºˆ∑Œ ¥Î√º
+				int nItemIndex = m_abtnItems[iPage][iCol]->getIndex();
+				if( nItemIndex == -1 ) continue;
+				
+				CItemData* pItemData = _pNetwork->GetItemData( nItemIndex );
+				
+				if (pItemData->GetNum0() == nIndex)
 				{
-					continue;
-				}
-				else
-				{
-					m_abtnItems[iPage][iCol].SetSkillDelay( TRUE );
+					m_abtnItems[iPage][iCol]->setCooltime(true);
 					bResult = TRUE;
 				}
 			}
-			else if( m_abtnItems[iPage][iCol].GetBtnType() == UBET_ITEM )
-			{
-				int nItemIndex = m_abtnItems[iPage][iCol].GetItemIndex();
-				if( nItemIndex == -1 ) continue;
-
-				CItemData ItemData = _pNetwork->GetItemData( nItemIndex );
-				if( (ItemData.GetType() == CItemData::ITEM_POTION && ItemData.GetNum0() == nIndex)
-					|| (nItemIndex==2407 || nItemIndex==2408 || nItemIndex==2609) || 
-					(ItemData.GetType() == CItemData::ITEM_ONCEUSE &&
-					ItemData.GetSubType() == CItemData::ITEM_SUB_TARGET) ) //ÌÉÄÍ≤ü ÏùºÌöåÏö© ÏïÑÏù¥ÌÖú, Í¥ëÏÜç ÏïÑÏù¥ÌÖúÏùº Îïå Ïø®ÌÉÄÏûÑ ÌëúÏãú...
-				{
-					if( m_abtnItems[iPage][iCol].GetSkillDelay() )
-					{
-						continue;
-					}
-					else
-					{
-						m_abtnItems[iPage][iCol].SetSkillDelay( TRUE );
-						bResult = TRUE;
-					}
-				}
-			}
-
+			
 		}
 	}
-
+	
 	return bResult;
 }
 
@@ -1646,9 +1497,9 @@ void CUIQuickSlot::SendAddBtn( int nPage, int nSlotNum, int nSlotType, int nData
 // Name : SendSwapBtns()
 // Desc :
 // ----------------------------------------------------------------------------
-void CUIQuickSlot::SendSwapBtns( int nPage, int nSlotNum1, int nSlotNum2 )
+void CUIQuickSlot::SendSwapBtns( int nPage1, int nSlot1, int nPage2, int nSlot2 )
 {
-	_pNetwork->SwapQuickSlot( nPage, nSlotNum1, nSlotNum2 );
+	_pNetwork->SwapQuickSlot( nPage1, nSlot1, nPage2, nSlot2 );
 }
 
 // ========================================================================= //
@@ -1661,57 +1512,119 @@ void CUIQuickSlot::SendSwapBtns( int nPage, int nSlotNum1, int nSlotNum2 )
 // ----------------------------------------------------------------------------
 void CUIQuickSlot::AddBtn( int nPage, int nSlotNum, int nSlotType, int nData0, int nData1 )
 {
-	// Empty slot
-	if( nSlotType == -1 )
+	// ΩΩ∑‘ √ ±‚»≠.
+	if (nPage >= 0 && nPage < QSLOT_PAGE_COUNT &&
+		nSlotNum >= 0 && nSlotNum < QSLOT_BTN_COUNT)
 	{
-		m_abtnItems[nPage][nSlotNum].InitBtn();
+		m_abtnItems[nPage][nSlotNum]->clearIconData();
 	}
-	else
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	switch( nSlotType )
 	{
-		switch( nSlotType )
+	case QUICKSLOT_TYPE_SKILL:
 		{
-		case UBET_SKILL:
+			if (nPage < 0 || nPage >= QSLOT_PAGE_COUNT ||
+				nSlotNum < 0 || nSlotNum >= QSLOT_BTN_COUNT)
+				return;
+
+			// ∆Í æ◊∆º∫Í Ω∫≈≥¿« ∞ÊøÏ.
+			if( _pNetwork->GetSkillData( nData0 ).GetType() == CSkill::ST_PET_SKILL_ACTIVE)
 			{
-				// Ìé´ Ïï°Ìã∞Î∏å Ïä§ÌÇ¨Ïùò Í≤ΩÏö∞.
-				if( _pNetwork->GetSkillData( nData0 ).GetType() == CSkill::ST_PET_SKILL_ACTIVE)
+				m_abtnItems[nPage][nSlotNum]->setSkill(nData0);
+
+				if (MY_INFO()->GetPetSkillDelay(MY_PET_INFO()->lIndex, nData0) == true)
+					m_abtnItems[nPage][nSlotNum]->setCooltime(true);
+			}
+			else if(_pNetwork->GetSkillData( nData0 ).GetJob() == WILDPET_JOB)
+			{
+				if(pUIManager->GetWildPetInfoUI()->IsLearnSkill(nData0))
 				{
-					SBYTE	sbSkillLevel = _pUIMgr->GetPetInfo()->GetSkillLevel( _pNetwork->_PetTargetInfo.lIndex, nData0 );
-					m_abtnItems[nPage][nSlotNum].SetSkillInfo( nData0, sbSkillLevel, FALSE );
-				}
-				else if(_pNetwork->GetSkillData( nData0 ).GetJob() == WILDPET_JOB)
-				{
-					if(_pUIMgr->GetWildPetInfo()->IsLearnSkill(nData0))
-					{
-						SBYTE	sbSkillLevel = _pUIMgr->GetWildPetInfo()->GetSkillLevel(nData0);
-						m_abtnItems[nPage][nSlotNum].SetSkillInfo( nData0, sbSkillLevel, FALSE );
-					}else
-					{
-						SendAddBtn( nPage, nSlotNum, -1 );	
-					}
+					m_abtnItems[nPage][nSlotNum]->setSkill(nData0);
+
+					if (MY_INFO()->GetPetSkillDelay(0, nData0) == true)
+						m_abtnItems[nPage][nSlotNum]->setCooltime(true);
 				}
 				else
 				{
-					SBYTE	sbSkillLevel = _pUIMgr->GetCharacterInfo()->GetSkillLevel( nData0, FALSE );
-					m_abtnItems[nPage][nSlotNum].SetSkillInfo( nData0, sbSkillLevel, FALSE );
+					SendAddBtn( nPage, nSlotNum, -1 );	
 				}
 			}
-			break;
-			
-		case UBET_ACTION:
+			else
 			{
-				m_abtnItems[nPage][nSlotNum].SetActionInfo( nData0 );
+				SBYTE	sbSkillLevel;
+				CSkill skillData = _pNetwork->GetSkillData( nData0 );
+				if ( skillData.GetFlag() & SF_GUILD )
+				{
+					sbSkillLevel = pUIManager->GetGuild()->GetGuildSkillLevel(nData0);
+				}
+				else
+				{
+					sbSkillLevel = MY_INFO()->GetSkillLevel(nData0);
+				}
+
+				if (skillData.Skill_Data.index > 0)
+					m_abtnItems[nPage][nSlotNum]->setSkill(nData0);
+
+				if (MY_INFO()->GetSkillDelay(nData0) == true)
+					m_abtnItems[nPage][nSlotNum]->setCooltime(true);
 			}
-			break;
-			
-		case UBET_ITEM:
-			{
-				int	nIndex = _pNetwork->MySlotItem[0][nData0][nData1].Item_Index;
-				int	nUniIndex = _pNetwork->MySlotItem[0][nData0][nData1].Item_UniIndex;
-				int	nWearingType = _pNetwork->MySlotItem[0][nData0][nData1].Item_Wearing;
-				m_abtnItems[nPage][nSlotNum].SetItemInfo( 0, nData0, nData1, nIndex, nUniIndex, nWearingType );
-			}
-			break;
+
+			SetToggle(1, nData0, _pNetwork->GetSkillData( nData0 ).GetToggle());
 		}
+		break;
+		
+	case QUICKSLOT_TYPE_ACTION:
+		{
+			if (nPage >= 0 && nPage < QSLOT_PAGE_COUNT &&
+				nSlotNum >= 0 && nSlotNum < QSLOT_BTN_COUNT)
+			{
+				m_abtnItems[nPage][nSlotNum]->setData(UBET_ACTION, nData0);
+			}
+		}
+		break;
+		
+	case QUICKSLOT_TYPE_ITEM:
+		{
+			// ¿Ø»ø∞™ ∞ÀªÁ
+			if (nData0 < 0 || nData0 >= INVEN_SLOT_TAB || 
+				nData1 < 0 || nData1 >= ITEM_COUNT_IN_INVENTORY_NORMAL )
+				return;
+
+			//[100126 sora] ƒ¸ΩΩ∑‘ø° æ∆¿Ã≈€ ø…º«¡§∫∏ «•Ω√
+			CItems& rItems = _pNetwork->MySlotItem[nData0][nData1];
+
+			if (rItems.Item_Index == -1)
+				return;
+
+			setQuickSlotItemData(nPage, nSlotNum, nData0, nData1, &rItems, false);
+			SetToggle(1, rItems.Item_UniIndex, rItems.GetToggle());
+		}
+		break;
+	case QUICKSLOT_TYPE_ITEM_WEAR:
+		{
+			CItems* pItem = NULL;
+
+			if (nData0 == 0)
+				pItem = &_pNetwork->MyWearItem[nData1];
+			else if (nData0 == 1)
+				pItem = &_pNetwork->MyWearCostItem[nData1];
+			else if (nData0 == 2)
+			{
+				// «—π˙¿«ªÛ
+				//CItems Items(nData1);
+				pItem = new CItems(nData1);
+
+				pItem->Item_Index = nData1;
+
+				setQuickSlotItemData(nPage, nSlotNum, nData0, 0, pItem, true, false);
+				return;
+			}
+			
+			setQuickSlotItemData(nPage, nSlotNum, nData0, nData1, pItem, true);
+		}
+		break;
 	}
 }
 
@@ -1721,49 +1634,11 @@ void CUIQuickSlot::AddBtn( int nPage, int nSlotNum, int nSlotType, int nData0, i
 // ----------------------------------------------------------------------------
 void CUIQuickSlot::SwapBtns( int nPage, int nSlotNum1, int nSlotNum2 )
 {
-	static CUIButtonEx	btnTemp;
-	btnTemp.Copy( m_abtnItems[nPage][nSlotNum1] );
-	m_abtnItems[nPage][nSlotNum1].Copy( m_abtnItems[nPage][nSlotNum2] );
-	m_abtnItems[nPage][nSlotNum2].Copy( btnTemp );
-}
-
-// ----------------------------------------------------------------------------
-// Name : RefreshBtn()
-// Desc : in case of item, nIndex is nUniIndex...
-// ----------------------------------------------------------------------------
-void CUIQuickSlot::RefreshBtn( int nType, int nIndex )
-{
-	switch( nType )
-	{
-	case UBET_SKILL:
-		{
-		}
-		break;
-		
-	case UBET_ACTION:
-		{
-		}
-		break;
-		
-	case UBET_ITEM:
-		{
-			int	nRow, nCol;
-			_pUIMgr->GetInventory()->GetLocationOfNormalItem( nIndex, nRow, nCol );
-			
-			for( int iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
-			{
-				for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
-				{
-					if( m_abtnItems[iPage][iBtn].GetItemUniIndex() == nIndex )
-					{
-						m_abtnItems[iPage][iBtn].SetItemRow( nRow );
-						m_abtnItems[iPage][iBtn].SetItemCol( nCol );
-					}
-				}
-			}
-		}
-		break;
-	}
+	CUIIcon*	pIcon = new CUIIcon;
+	pIcon->cloneItem( m_abtnItems[nPage][nSlotNum1] );
+	m_abtnItems[nPage][nSlotNum1]->cloneItem(m_abtnItems[nPage][nSlotNum2]);
+	m_abtnItems[nPage][nSlotNum2]->cloneItem(pIcon);
+	SAFE_DELETE(pIcon);
 }
 
 // ----------------------------------------------------------------------------
@@ -1773,42 +1648,32 @@ void CUIQuickSlot::RefreshBtn( int nType, int nIndex )
 void CUIQuickSlot::ClearAllBtns( int nPage)
 {
 	for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
-		m_abtnItems[nPage][iBtn].InitBtn();
+		m_abtnItems[nPage][iBtn]->clearIconData();
 }
 
-//ÏÑ†Î¨º Î≤ÑÌäº ÏúÑÏπò ÏÑ§Ï†ï	:Su-won
+//º±π∞ πˆ∆∞ ¿ßƒ° º≥¡§	:Su-won
 void CUIQuickSlot::SetGiftNoticePos()
 {
-	int Width =_pUIMgr->GetDrawPort()->GetWidth();
-	int Height=_pUIMgr->GetDrawPort()->GetHeight();
-
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	
+	int Width = pDrawPort->GetWidth();
+	int Height= pDrawPort->GetHeight();
+	
 	int nPosX, nPosY;
 	int nAbsPosX, nAbsPosY;
 				
 	m_btnGiftNotice.GetPos(nPosX, nPosY);
 	m_btnGiftNotice.GetAbsPos(nAbsPosX, nAbsPosY);
-			
+	
 	if( m_bHorizontal )
 	{
-		/***
-		if( nAbsPosY<0)
-		{
-			m_btnGiftNotice.SetPos(nPosX, m_btnCashShop.GetPosY()+32);
-			m_eGiftPos =GIFTPOS_BOTTOM;
-		}
-		if( nAbsPosY+QSLOT_GIFT_BTN_Y+QSLOT_GIFT_BTN_ARROW>Height)
-		{
-			m_btnGiftNotice.SetPos(nPosX, m_btnCashShop.GetPosY()-(QSLOT_GIFT_BTN_Y+QSLOT_GIFT_BTN_ARROW) );
-			m_eGiftPos =GIFTPOS_TOP;
-		}
-		***/
-		m_btnGiftNotice.SetPos(nPosX, m_btnCashShop.GetPosY()-32);
+		m_btnGiftNotice.SetPos(nPosX, m_btnCashShop.GetPosY()-64);
 	}
 	else
 	{
 		if( nAbsPosX<0)
 		{
-			m_btnGiftNotice.SetPos(m_btnCashShop.GetPosX()+32, nPosY);
+			m_btnGiftNotice.SetPos(m_btnCashShop.GetPosX()+64, nPosY);
 			m_eGiftPos =GIFTPOS_RIGHT;
 		}
 		if( nAbsPosX+QSLOT_GIFT_BTN_X+QSLOT_GIFT_BTN_ARROW>Width)
@@ -1824,36 +1689,267 @@ void CUIQuickSlot::SetGiftNoticePos()
 	m_btnGiftNotice.CopyUV( UBS_IDLE, UBS_DISABLE );
 }
 
-//ÏÑ†Î¨º ÎèÑÏ∞© ÏïåÎ¶º Î≤ÑÌäº Î†åÎçîÎßÅ		:Su-won
+//º±π∞ µµ¬¯ æÀ∏≤ πˆ∆∞ ∑ª¥ı∏µ		:Su-won
 void CUIQuickSlot::RenderGiftButton()
 {
-	if( m_bGiftRecv )
+	if( m_bGiftRecv == FALSE )
+		return;
+	
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	
+	pDrawPort->InitTextureData( m_ptdGiftTexture );
+	
+	// Timer for highlight buttons
+	static BOOL		bHighlight = FALSE;
+	static DOUBLE	dElapsedTime = 0.0;
+	static DOUBLE	dOldTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	dElapsedTime += dCurTime - dOldTime;
+	dOldTime = dCurTime;
+	if( dElapsedTime > 0.5 )
 	{
-		_pUIMgr->GetDrawPort()->InitTextureData( m_ptdGiftTexture );
-
-		// Timer for highlight buttons
-		static BOOL		bHighlight = FALSE;
-		static DOUBLE	dElapsedTime = 0.0;
-		static DOUBLE	dOldTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
-		DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
-		dElapsedTime += dCurTime - dOldTime;
-		dOldTime = dCurTime;
-		if( dElapsedTime > 0.5 )
+		bHighlight = !bHighlight;
+		m_btnGiftNotice.CopyUV( UBS_IDLE, m_rtGift[m_eGiftPos][bHighlight] );
+		m_btnGiftNotice.CopyUV( UBS_CLICK, m_rtGift[m_eGiftPos][bHighlight] );
+		m_btnGiftNotice.CopyUV( UBS_IDLE, UBS_ON );
+		m_btnGiftNotice.CopyUV( UBS_IDLE, UBS_DISABLE );
+		do
 		{
-			bHighlight = !bHighlight;
-			m_btnGiftNotice.CopyUV( UBS_IDLE, m_rtGift[m_eGiftPos][bHighlight] );
-			m_btnGiftNotice.CopyUV( UBS_CLICK, m_rtGift[m_eGiftPos][bHighlight] );
-			m_btnGiftNotice.CopyUV( UBS_IDLE, UBS_ON );
-			m_btnGiftNotice.CopyUV( UBS_IDLE, UBS_DISABLE );
-			do
-			{
-				dElapsedTime -= 0.5;
-			}
-			while( dElapsedTime > 0.5 );
+			dElapsedTime -= 0.5;
 		}
+		while( dElapsedTime > 0.5 );
+	}
+	
+	m_btnGiftNotice.Render();
+	
+	pDrawPort->FlushRenderingQueue();
+}
 
-		m_btnGiftNotice.Render();
+// ----------------------------------------------------------------------------
+// Name : UpdateItemCount(int nUinIndex, SQUAD llCount)
+// Desc : ƒ¸ΩΩ∑‘¿« æ∆¿Ã≈€ count update
+// ----------------------------------------------------------------------------
+void CUIQuickSlot::UpdateItemCount(int nUinIndex, SQUAD llCount)
+{
+	for( int iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
+	{
+		for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
+		{
+			CItems* pItems = m_abtnItems[iPage][iBtn]->getItems();
 
-		_pUIMgr->GetDrawPort()->FlushRenderingQueue();
-	}	
+			if (pItems != NULL && pItems->Item_UniIndex == nUinIndex)
+			{
+				m_abtnItems[iPage][iBtn]->setCount(llCount);
+			}
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Name : IsInQuickSolt(UIBtnExType BtnType, int nIndex)
+// Desc : ƒ¸ΩΩ∑‘ø° µÓ∑œ¿Ã µ«æÓ ¿÷¥¬¡ˆ »Æ¿Œ«—¥Ÿ.
+// ----------------------------------------------------------------------------
+BOOL CUIQuickSlot::IsInQuickSolt(UIBtnExType BtnType, int nIndex)
+{
+	int iPage, iBtn;
+	
+	for (iPage = 0; iPage<QSLOT_PAGE_COUNT; ++iPage)
+	{
+		for (iBtn = 0; iBtn<QSLOT_BTN_COUNT; ++iBtn)
+		{
+			if (m_abtnItems[iPage][iBtn]->getBtnType() == BtnType &&
+				m_abtnItems[iPage][iBtn]->getIndex() == nIndex)
+			{
+				return TRUE;
+			}
+		}
+	}
+	
+	return FALSE;
+}
+
+// ----------------------------------------------------------------------------
+// Name : ToggleVisibleEXQuickSlot()
+// Desc : »Æ¿Â ƒ¸ ΩΩ∑‘ πˆ∆∞¿« ≈‰±€∏µ «‘ºˆ
+// ----------------------------------------------------------------------------
+void CUIQuickSlot::ToggleVisibleEXQuickSlot(BOOL bResultView)
+{
+	int nCurOpenUI = -1;
+	
+	if (bResultView)
+	{
+		nCurOpenUI = g_bQuickSlotEX1 >= 1 ? (g_bQuickSlotEX2 >= 1 ? -1 : 1) : 0;
+	}
+	else
+	{
+		nCurOpenUI = g_bQuickSlotEX1 >= 1 ? (g_bQuickSlotEX2 >= 1 ? 1 : 0) : -1;
+	}
+	
+	
+	if (nCurOpenUI <= -1)
+		return;
+	
+	((CUIChildQuickSlot*)m_pChildQuickSlot[nCurOpenUI])->ToggleVisible(bResultView);
+	
+}
+
+// ----------------------------------------------------------------------------
+// Name : CheakSlotEXBtn
+// Desc : «ˆ¿Á ƒ¸ΩΩ∑‘ ¥Ÿ¿Ω¿ª √º≈© «œø© ªÛ≈¬∏¶ ∫Ø∞Ê«ÿ¡ÿ¥Ÿ. »Æ¿Âπˆ∆∞¿« ªÛ≈¬∏¶ ∏Æ≈œ «—¥Ÿ ∏∆Ω∫ ¿Œ¡ˆ æ∆¥—¡ˆ
+// ----------------------------------------------------------------------------
+BOOL CUIQuickSlot::CheckSlotEXBtn(eQSlotEXBtn eBtn) // ¥ı«œ±‚ πˆ∆∞¿Œ¡ˆ ª©±‚ πˆ∆∞¿Œ¡ˆ
+{
+	switch(eBtn)
+	{
+	case QSLOT_ADD:
+		{
+			if (g_bQuickSlotEX1 && g_bQuickSlotEX2)
+				return TRUE;
+			
+			ToggleVisibleEXQuickSlot(TRUE);
+			break;
+		}
+		
+	case QSLOT_DEL:
+		{
+			if (!g_bQuickSlotEX1 && !g_bQuickSlotEX2)
+				return TRUE;
+			
+			ToggleVisibleEXQuickSlot(FALSE);
+			break;
+		}		
+	}
+	return FALSE;
+}
+
+// ----------------------------------------------------------------------------
+// Name : SetDisableCheckSlotEX
+// Desc : «ˆ¿Á ƒ¸ΩΩ∑‘ ¥Ÿ¿Ω¿ª √º≈© «œø© ªÛ≈¬∏¶ ∫Ø∞Ê«ÿ¡ÿ¥Ÿ.
+// ----------------------------------------------------------------------------
+void CUIQuickSlot::SetDisableCheckSlotEX()
+{
+	if (g_bQuickSlotEX1 && g_bQuickSlotEX2)
+	{
+		m_btnAddSlot.SetBtnState(UBS_DISABLE);
+		m_btnAddSlot.SetEnable(FALSE);
+		m_btnDeleteSlot.SetBtnState(UBS_IDLE);
+		m_btnDeleteSlot.SetEnable(TRUE);
+	}
+	else if (!g_bQuickSlotEX1 && !g_bQuickSlotEX2)
+	{
+		m_btnAddSlot.SetBtnState(UBS_IDLE);
+		m_btnAddSlot.SetEnable(TRUE);
+		m_btnDeleteSlot.SetBtnState(UBS_DISABLE);
+		m_btnDeleteSlot.SetEnable(FALSE);
+	}
+	else
+	{
+		m_btnAddSlot.SetBtnState(UBS_IDLE);
+		m_btnAddSlot.SetEnable(TRUE);
+		m_btnDeleteSlot.SetBtnState(UBS_IDLE);
+		m_btnDeleteSlot.SetEnable(TRUE);
+	}
+}
+
+void CUIQuickSlot::setQuickSlotItemData( int nPage, int nSlot, int type, int idx, CItems* pItem, bool bWearTab, bool bItemRef /*= true*/ )
+{
+	if (pItem->Item_Index < 0)
+		return;
+
+	m_abtnItems[nPage][nSlot]->setData(pItem, bItemRef);
+	m_abtnItems[nPage][nSlot]->SetQuickSlotWearType(type);
+
+	if (bWearTab)
+		m_abtnItems[nPage][nSlot]->setWearTab(true);
+	else
+		m_abtnItems[nPage][nSlot]->setWearTab(false);
+}
+
+void CUIQuickSlot::UpdateItemDurability(int nUinIdx,  UWORD now, UWORD max )
+{
+// 	for( int iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
+// 	{
+// 		for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
+// 		{
+// 			CItems* pItems = m_abtnItems[iPage][iBtn]->getItems();
+// 
+// 			if (pItems != NULL && pItems->Item_UniIndex == nUinIdx)
+// 			{
+// 				m_abtnItems[iPage][iBtn]->SetItemDurNow(now);
+// 				
+// 				if (max > 0)
+// 					m_abtnItems[iPage][iBtn].SetItemDurMax(max);
+// 			}
+// 		}
+// 	}
+}
+
+BOOL CUIQuickSlot::IsInQuickSlot( int nUinIndex )
+{
+	for( int iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
+	{
+		for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
+		{
+			CItems* pItems = m_abtnItems[iPage][iBtn]->getItems();
+
+			if (pItems != NULL && pItems->Item_UniIndex == nUinIndex)
+			{
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
+void CUIQuickSlot::SetToggle( int nType, int nIndex, bool bToggle )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	CSkill* pSkill = NULL;
+	CItems* pItem = NULL;
+
+	if (nType == 0)
+	{
+		pSkill = &_pNetwork->GetSkillData(nIndex);
+
+		if (pSkill != NULL && !(pSkill->GetFlag() & SF_TOGGLE))
+			return;
+	}
+	else
+	{
+		pItem = pUIManager->GetInventory()->GetItems(nIndex);
+	
+		if (pItem == NULL || !(pItem->ItemData->GetFlag() & ITEM_FLAG_TOGGLE))
+			return;
+	}
+
+	for( int iPage = 0; iPage < QSLOT_PAGE_COUNT; iPage++ )
+	{
+		for( int iBtn = 0; iBtn < QSLOT_BTN_COUNT; iBtn++ )
+		{
+			// Ω∫≈≥
+			if (nType == 0)
+			{
+				if (m_abtnItems[iPage][iBtn]->getIndex() == nIndex)
+					m_abtnItems[iPage][iBtn]->SetToggle(bToggle);
+			}
+			// æ∆¿Ã≈€
+			else //if (nType == 1)
+			{
+				CItems* pItems = m_abtnItems[iPage][iBtn]->getItems();
+
+				if (pItems != NULL && pItems->Item_UniIndex == nIndex)
+					m_abtnItems[iPage][iBtn]->SetToggle(bToggle);
+			}
+		}
+	}
+}
+
+void CUIQuickSlot::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
+{
+	for (int i = 0; i < QSLOT_PAGE_COUNT; ++i)
+	{
+		for (int j = 0; j < QSLOT_BTN_COUNT; ++j)
+			m_abtnItems[i][j]->Update(fDeltaTime, ElapsedTime);
+	}
 }

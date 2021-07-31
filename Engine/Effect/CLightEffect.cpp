@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œìž‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "stdH.h"
 
 #include <Engine/Math/Functions.h>
@@ -44,9 +44,9 @@ CEffect *CLightEffect::Copy()
 {
 	CLightEffect *pRet = new CLightEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CLightEffectì˜ content
+	//CLightEffectÀÇ content
 	pRet->m_fMaxFallOff = m_fMaxFallOff;
 	pRet->m_colLight = m_colLight;
 	pRet->m_bAmbientMode = m_bAmbientMode;
@@ -91,7 +91,7 @@ BOOL CLightEffect::Process(FLOAT time)
 		return bRet;
 	}
 
-	//Colorì˜ ë³€í™”ë¥¼ ì²˜ë¦¬
+	//ColorÀÇ º¯È­¸¦ Ã³¸®
 	FLOAT fFadeValue = GetFadeValue(fProcessedTime);
 	ULONG byteValue = NormFloatToByte(fFadeValue);
 	COLOR colLight = (byteValue << CT_RSHIFT) | (byteValue << CT_GSHIFT) | (byteValue << CT_BSHIFT);
@@ -133,17 +133,17 @@ void CLightEffect::Render()
 	}
 	
 	if (GetOwner() != NULL)
-	{ // HIDDEN ì†ì„±ì˜ NPCì˜ ì´íŽ™íŠ¸ë¥¼ ë³´ê¸° ìœ„í•´ì„œëŠ” ìºë¦­í„°ê°€ ENF_SHOWHIDDENì„ ê°€ì§€ê³  ìžˆì–´ì•¼ í•œë‹¤.
+	{ // HIDDEN ¼Ó¼ºÀÇ NPCÀÇ ÀÌÆåÆ®¸¦ º¸±â À§ÇØ¼­´Â Ä³¸¯ÅÍ°¡ ENF_SHOWHIDDENÀ» °¡Áö°í ÀÖ¾î¾ß ÇÑ´Ù.
 		if (GetOwner()->IsFlagOn(ENF_HIDDEN) && (CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENì´ë©´ npc effectëŠ” ë³¼ ìˆ˜ ìžˆë‹¤.
+			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENÀÌ¸é npc effect´Â º¼ ¼ö ÀÖ´Ù.
 			return;
 	}
 
-	//CLightEffect::End()ì—ì„œ ì‹¤ì œë¡œ ê·¸ë¦¬ëŠ” ë£¨í‹´ì´ í˜¸ì¶œë¨.
-	//êµ³ì´ ì´ë ‡ê²Œ í•œ ì´ìœ ëŠ” CLightEffectì™¸ì—ë„ lightê°€ ìžˆì„ ìˆ˜ ìžˆëŠ”ë° ì´ëŸ° ë¼ì´íŠ¸ë“¤ë„ ê°™ì´ ì²˜ë¦¬í•˜ê¸° ìœ„í•´ì„œì´ë‹¤.
-	//ë‹¤ë¥¸ ë¼ì´íŠ¸ì˜ ì²˜ë¦¬ ë£¨í‹´ê³¼ ë”°ë¡œ ìžˆì„ ê²½ìš° ì¤‘ë³µ ì²˜ë¦¬ê°€ ë  ê°€ëŠ¥ì„±ì´ í¬ë‹¤. ì¤‘ë³µì²˜ë¦¬ ë°©ì§€ ì½”ë“œë„ ìžˆì–´ì•¼ í•˜ê³ ...
+	//CLightEffect::End()¿¡¼­ ½ÇÁ¦·Î ±×¸®´Â ·çÆ¾ÀÌ È£ÃâµÊ.
+	//±»ÀÌ ÀÌ·¸°Ô ÇÑ ÀÌÀ¯´Â CLightEffect¿Ü¿¡µµ light°¡ ÀÖÀ» ¼ö ÀÖ´Âµ¥ ÀÌ·± ¶óÀÌÆ®µéµµ °°ÀÌ Ã³¸®ÇÏ±â À§ÇØ¼­ÀÌ´Ù.
+	//´Ù¸¥ ¶óÀÌÆ®ÀÇ Ã³¸® ·çÆ¾°ú µû·Î ÀÖÀ» °æ¿ì Áßº¹ Ã³¸®°¡ µÉ °¡´É¼ºÀÌ Å©´Ù. Áßº¹Ã³¸® ¹æÁö ÄÚµåµµ ÀÖ¾î¾ß ÇÏ°í...
 
-	//ë¹„ì–´ìžˆëŠ” í•¨ìˆ˜ì¸ Render()ê°€ ê³„ì† ë¶ˆë ¤ì§€ëŠ”ë° ì´ê±´ ì¢€ ë¬¸ì œê°€ ë  ìˆ˜ ìžˆë‹¤.
+	//ºñ¾îÀÖ´Â ÇÔ¼öÀÎ Render()°¡ °è¼Ó ºÒ·ÁÁö´Âµ¥ ÀÌ°Ç Á» ¹®Á¦°¡ µÉ ¼ö ÀÖ´Ù.
 
 	PostRender();
 }
@@ -207,4 +207,4 @@ void CLightEffect::Write(CTStream *pOS)
 	os << m_bAmbientMode;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

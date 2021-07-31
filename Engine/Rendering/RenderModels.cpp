@@ -6,10 +6,10 @@ extern INDEX mdl_iShadowQuality;
 // 2 = one complex shadow
 // 3 = all shadows
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.30
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.30
 static const float _fWTPlayerDistance = 45.0f;
 static const float _fWTCameraDistance = 45.0f;
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.30
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.30
 
 /*
  * Compare two models for sorting.
@@ -24,12 +24,33 @@ static int qsort_CompareDelayedModels( const void *ppdm0, const void *ppdm1)
 	ASSERT( DMF_HASALPHA==1); // we need this flag to be 1 for optimization
 
 	// do some arithmetic mumbo-jumbos to avoid compares
-	const SLONG slAlphaSgn  =   bHasAlpha0 - bHasAlpha1;
+/*	const SLONG slAlphaSgn  =   bHasAlpha0 - bHasAlpha1;
 	const SLONG slAlphaDiff = -(bHasAlpha0 ^ bHasAlpha1);   // all 0s if same, all 1s if different
 	const FLOAT fDistDiff = dm0.dm_fDistance - dm1.dm_fDistance;
 	const SLONG slDistSgn = (SLONG&)fDistDiff;
 	// done
-	return slAlphaSgn | (~slAlphaDiff & slDistSgn); 
+	return slAlphaSgn | (~slAlphaDiff & slDistSgn); */
+
+	// ¸ÕÀú °Å¸®¸¦ °¡Áö°í Å©±â¸¦ Àç°í, °Å¸®°¡ °°´Ù¸é ¾ËÆÄÅ×½ºÆ®·Î ¾ÕµÚ¸¦ °¡·Á¾ß ÇÑ´Ù°í »ı°¢µÈ´Ù.
+	const FLOAT fDistDiff = dm0.dm_fDistance - dm1.dm_fDistance;
+
+	if (fDistDiff > 0)
+	{
+		if (dm0.dm_penModel->GetAlBackground() && !dm1.dm_penModel->GetAlBackground())
+			return -1;
+
+		return 1;
+	}
+	else if (fDistDiff < 0)
+	{
+		if (!dm0.dm_penModel->GetAlBackground() && dm1.dm_penModel->GetAlBackground())
+			return 1;
+
+		return -1;
+	}
+
+	const SLONG slAlphaSgn = bHasAlpha0 - bHasAlpha1;
+	return slAlphaSgn;
 
 	/* if both models are opaque or translucent
 	if( !bHasAlpha0 == !bHasAlpha1) 
@@ -60,7 +81,7 @@ static inline FLOAT IntensityAtDistance( FLOAT fFallOff, FLOAT fHotSpot, FLOAT f
 }
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 void CRenderer::PrepareTerrainLights()
 {
 	m_vectorLights.clear();
@@ -73,14 +94,14 @@ void CRenderer::PrepareTerrainLights()
 		}
 	}
 }
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 
 /* Find lights for one model. */
 BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 								COLOR &colLight, COLOR &colAmbient, FLOAT &fTotalShadowIntensity,
 								FLOAT3D &vTotalLightDirection, FLOATplane3D &plFloorPlane)
 {
-	// NOTE : ê·¸ë¦¼ìë¥¼ ë Œë”ë§í•  ë•Œ, ê´‘ì›ì˜ ë°©í–¥ë§Œ ìˆìœ¼ë©´ ëœë‹¤.  ë‚˜ë¨¸ì§€ ê³„ì‚°ì„ í•„ìš”ì—†ìœ¼ë¯€ë¡œ, ì œì™¸ì‹œí‚¬ê²ƒ.
+	// NOTE : ±×¸²ÀÚ¸¦ ·»´õ¸µÇÒ ¶§, ±¤¿øÀÇ ¹æÇâ¸¸ ÀÖÀ¸¸é µÈ´Ù.  ³ª¸ÓÁö °è»êÀ» ÇÊ¿ä¾øÀ¸¹Ç·Î, Á¦¿Ü½ÃÅ³°Í.
 	extern BOOL _bRenderProjectionShadow;
 
 	// find shading info if not already cached
@@ -111,12 +132,12 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 	{ // no shadow
 		return FALSE;
 	}
-	// if there is valid shading info
 	else
-	{ 
-		// Polygon ìœ„ì— ìˆì„ë•Œ...
+	{
+		// if there is valid shading info
 		if(en.en_psiShadingInfo->si_pbpoPolygon!=NULL) 
-		{
+		{ 
+			// Polygon À§¿¡ ÀÖÀ»¶§...
 			// if full bright rendering
 			if( _wrpWorldRenderPrefs.wrp_shtShadows==CWorldRenderPrefs::SHT_NONE) 
 			{
@@ -136,13 +157,13 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 			{
 				// take light from polygon shadow
 				COLOR col  = en.en_psiShadingInfo->si_pbpoPolygon->bpo_colShadow;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Worldbase Overbright to NonOver)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Worldbase Overbright to NonOver)(0.1)
 				//col |= 0xFFFFFF00;
 				colLight   = LerpColor( C_BLACK, col, 0.5f);
 				colAmbient = LerpColor( C_BLACK, col, 0.5f);
 				fTotalShadowIntensity = NormByteToFloat((en.en_psiShadingInfo->si_pbpoPolygon->bpo_colShadow&CT_AMASK)>>CT_ASHIFT);
 				vTotalLightDirection  = FLOAT3D(0.0f, -1.0f, 0.0f);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Worldbase Overbright to NonOver)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Worldbase Overbright to NonOver)(0.1)
 				return TRUE;
 			}
 			
@@ -153,181 +174,158 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 			ColorToRGB( bsm.GetBrushPolygon()->bpo_pbscSector->bsc_colAmbient, ubAR, ubAG, ubAB);
 			SLONG slSAR=ubAR, slSAG=ubAG, slSAB=ubAB;
 			
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Light Ambient)(0.1)
 			FLOAT fAmbientR=0, fAmbientG=0, fAmbientB=0;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Ambient)(0.1)
 			fTotalShadowIntensity = 0.0f;
 			// for each shadow layer
+			{FOREACHINLIST(CBrushShadowLayer, bsl_lnInShadowMap, bsm.bsm_lhLayers, itbsl)
 			{
-				FOREACHINLIST(CBrushShadowLayer, bsl_lnInShadowMap, bsm.bsm_lhLayers, itbsl)
+				// get the light source
+				CLightSource *plsLight = itbsl->bsl_plsLightSource;
+				
+				// remember the light parameters
+				UBYTE ubR, ubG, ubB;
+				UBYTE ubDAR, ubDAG, ubDAB;
+				plsLight->GetLightColorAndAmbient( ubR, ubG, ubB, ubDAR, ubDAG, ubDAB);
+				
+				// add directional ambient if needed
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Light Ambient)(0.1)
+				if( en.en_psiShadingInfo->si_pbpoPolygon->bpo_ulFlags & BPOF_HASDIRECTIONALAMBIENT && plsLight->ls_ulFlags & LSF_DIRECTIONAL ) 
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Ambient)(0.1)
 				{
-					// get the light source
-					CLightSource *plsLight = itbsl->bsl_plsLightSource;
-					
-					// remember the light parameters
-					UBYTE ubR, ubG, ubB;
-					UBYTE ubDAR, ubDAG, ubDAB;
-					plsLight->GetLightColorAndAmbient( ubR, ubG, ubB, ubDAR, ubDAG, ubDAB);
-					
-					// add directional ambient if needed
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Light Ambient)(0.1)
-					if( en.en_psiShadingInfo->si_pbpoPolygon->bpo_ulFlags & BPOF_HASDIRECTIONALAMBIENT 
-						&& plsLight->ls_ulFlags & LSF_DIRECTIONAL ) 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Ambient)(0.1)
-					{
-						slSAR += ubDAR;
-						slSAG += ubDAG;
-						slSAB += ubDAB;
-					}
-					
-					// get the layer intensity at the point
-					FLOAT fShadowFactor;
-					if (en.en_ulFlags&ENF_CLUSTERSHADOWS) 
-					{
-						fShadowFactor = 1.0f;
-					}
-					else 
-					{
-						fShadowFactor = itbsl->GetLightStrength( en.en_psiShadingInfo->si_pixShadowU, en.en_psiShadingInfo->si_pixShadowV,
-							en.en_psiShadingInfo->si_fUDRatio,   en.en_psiShadingInfo->si_fLRRatio);
-					}
-					// skip this light if no intensity
-					if( fShadowFactor<0.01f) continue;
-					
-					const CPlacement3D &plLight = plsLight->ls_penEntity->GetPlacement();
-					const FLOAT3D &vLight = plLight.pl_PositionVector;
-					// get its parameters at the model position
-					FLOAT3D vDirection;
-					FLOAT fDistance;
-					FLOAT fFallOffFactor;
-					
-					if (plsLight->ls_ulFlags&LSF_DIRECTIONAL) 
-					{
-						fFallOffFactor = 1.0f;
-						AnglesToDirectionVector(plLight.pl_OrientationAngle, vDirection);
-						plModel.pl_PositionVector-vLight;
-						if (!(en.en_psiShadingInfo->si_pbpoPolygon->bpo_ulFlags&BPOF_HASDIRECTIONALLIGHT)) 
-						{
-							ubR = ubG = ubB = 0;
-						}
-						fDistance = 1.0f;
-					}
-					else 
-					{
-						vDirection = plModel.pl_PositionVector-vLight;
-						fDistance = vDirection.Length();
-						
-						if (fDistance>plsLight->ls_rFallOff) 
-						{
-							continue;
-						}
-						else if (fDistance<plsLight->ls_rHotSpot) 
-						{
-							fFallOffFactor = 1.0f;
-						}
-						else 
-						{
-							fFallOffFactor = (plsLight->ls_rFallOff-fDistance)/
-								(plsLight->ls_rFallOff-plsLight->ls_rHotSpot);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Light Ambient)(0.1)
-							if(fFallOffFactor < -100 || fFallOffFactor > 100)
-							{
-								static char buf[256];
-								sprintf(buf, "-----------: %f\n", fFallOffFactor);
-								OutputDebugString(buf);
-							}
-						}
-						fFallOffFactor = Clamp(fFallOffFactor, 0.0f, 1.0f);
-						fAmbientR += fFallOffFactor*ubDAR;
-						fAmbientG += fFallOffFactor*ubDAG;
-						fAmbientB += fFallOffFactor*ubDAB;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Ambient)(0.1)
-					}
-					// add the light to active lights
-					struct ModelLight &ml = _amlLights.Push();
-					ml.ml_plsLight = plsLight;
-					// normalize direction vector
-					if (fDistance>0.001f) 
-					{
-						ml.ml_vDirection = vDirection/fDistance;
-					}
-					else 
-					{
-						ml.ml_vDirection = FLOAT3D(0.0f,0.0f,0.0f);
-					}
-					// special case for substract sector ambient light
-					if (plsLight->ls_ulFlags&LSF_SUBSTRACTSECTORAMBIENT) 
-					{
-						ubR = (UBYTE)Clamp( (SLONG)ubR-slSAR, 0L, 255L);
-						ubG = (UBYTE)Clamp( (SLONG)ubG-slSAG, 0L, 255L);
-						ubB = (UBYTE)Clamp( (SLONG)ubB-slSAB, 0L, 255L);
-					}
-					// calculate light intensity
-					FLOAT fShade = (ubR+ubG+ubB)*(2.0f/(3.0f*255.0f));
-					ml.ml_fShadowIntensity = fShade*fShadowFactor;
-					fTotalShadowIntensity += ml.ml_fShadowIntensity;
-					// special case for dark light
-					if (plsLight->ls_ulFlags&LSF_DARKLIGHT) 
-					{
-						ml.ml_fR = -ubR*fFallOffFactor; 
-						ml.ml_fG = -ubG*fFallOffFactor; 
-						ml.ml_fB = -ubB*fFallOffFactor;
-					}
-					else 
-					{
-						ml.ml_fR = +ubR*fFallOffFactor; 
-						ml.ml_fG = +ubG*fFallOffFactor; 
-						ml.ml_fB = +ubB*fFallOffFactor;
-					}
+					slSAR += ubDAR;
+					slSAG += ubDAG;
+					slSAB += ubDAB;
 				}
-			}
+				
+				// get the layer intensity at the point
+				FLOAT fShadowFactor;
+				if (en.en_ulFlags&ENF_CLUSTERSHADOWS) {
+					fShadowFactor = 1.0f;
+				}
+				else {
+					fShadowFactor = itbsl->GetLightStrength( en.en_psiShadingInfo->si_pixShadowU, en.en_psiShadingInfo->si_pixShadowV,
+															 en.en_psiShadingInfo->si_fUDRatio,   en.en_psiShadingInfo->si_fLRRatio);
+				}
+				// skip this light if no intensity
+				if( fShadowFactor<0.01f) continue;
+				
+				const CPlacement3D &plLight = plsLight->ls_penEntity->GetPlacement();
+				const FLOAT3D &vLight = plLight.pl_PositionVector;
+				// get its parameters at the model position
+				FLOAT3D vDirection;
+				FLOAT fDistance;
+				FLOAT fFallOffFactor;
+				
+				if (plsLight->ls_ulFlags&LSF_DIRECTIONAL) 
+				{
+					fFallOffFactor = 1.0f;
+					AnglesToDirectionVector(plLight.pl_OrientationAngle, vDirection);
+					plModel.pl_PositionVector-vLight;
+					if (!(en.en_psiShadingInfo->si_pbpoPolygon->bpo_ulFlags&BPOF_HASDIRECTIONALLIGHT)) 
+					{
+						ubR = ubG = ubB = 0;
+					}
+					fDistance = 1.0f;
+				}
+				else 
+				{
+					vDirection = plModel.pl_PositionVector-vLight;
+					fDistance = vDirection.Length();
+					
+					if (fDistance>plsLight->ls_rFallOff) {
+						continue;
+					} else if (fDistance<plsLight->ls_rHotSpot) {
+						fFallOffFactor = 1.0f;
+					} else {
+						fFallOffFactor = (plsLight->ls_rFallOff-fDistance)/
+							(plsLight->ls_rFallOff-plsLight->ls_rHotSpot);
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Light Ambient)(0.1)
+						if(fFallOffFactor < -100 || fFallOffFactor > 100)
+						{
+							static char buf[256];
+							sprintf(buf, "-----------: %f\n", fFallOffFactor);
+							OutputDebugString(buf);
+						}
+					}
+					/*fFallOffFactor = Clamp(fFallOffFactor, 0.0f, 1.0f);
+					fAmbientR += fFallOffFactor*ubDAR;
+					fAmbientG += fFallOffFactor*ubDAG;
+					fAmbientB += fFallOffFactor*ubDAB;*/
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Ambient)(0.1)
+				}
+				// add the light to active lights
+				struct ModelLight &ml = _amlLights.Push();
+				ml.ml_plsLight = plsLight;
+				// normalize direction vector
+				if (fDistance>0.001f) {
+					ml.ml_vDirection = vDirection/fDistance;
+				} else {
+					ml.ml_vDirection = FLOAT3D(0.0f,0.0f,0.0f);
+				}
+				// special case for substract sector ambient light
+				if (plsLight->ls_ulFlags&LSF_SUBSTRACTSECTORAMBIENT) 
+				{
+					ubR = (UBYTE)Clamp( (SLONG)ubR-slSAR, 0L, 255L);
+					ubG = (UBYTE)Clamp( (SLONG)ubG-slSAG, 0L, 255L);
+					ubB = (UBYTE)Clamp( (SLONG)ubB-slSAB, 0L, 255L);
+				}
+				// calculate light intensity
+				FLOAT fShade = (ubR+ubG+ubB)*(2.0f/(3.0f*255.0f));
+				ml.ml_fShadowIntensity = fShade*fShadowFactor;
+				fTotalShadowIntensity += ml.ml_fShadowIntensity;
+				// special case for dark light
+				if (plsLight->ls_ulFlags&LSF_DARKLIGHT) {
+					ml.ml_fR = -ubR*fFallOffFactor; 
+					ml.ml_fG = -ubG*fFallOffFactor; 
+					ml.ml_fB = -ubB*fFallOffFactor;
+				} else {
+					ml.ml_fR = +ubR*fFallOffFactor; 
+					ml.ml_fG = +ubG*fFallOffFactor; 
+					ml.ml_fB = +ubB*fFallOffFactor;
+				}
+			}}
 			
 			FLOAT fTR=0.0f; FLOAT fTG=0.0f; FLOAT fTB=0.0f;
 			FLOAT3D vDirection(0.0f,0.0f,0.0f);
 			// for each active light
+			{for(INDEX iLight=0; iLight<_amlLights.Count(); iLight++) 
 			{
-				for(INDEX iLight=0; iLight<_amlLights.Count(); iLight++) 
-				{
-					struct ModelLight &ml = _amlLights[iLight];
-					// add it to total intensity
-					fTR += ml.ml_fR;
-					fTG += ml.ml_fG;
-					fTB += ml.ml_fB;
-					// add it to direction vector
-					FLOAT fWeight = Abs(ml.ml_fR+ml.ml_fG+ml.ml_fB) * (1.0f/(3.0f*255.0f));
-					vDirection+=ml.ml_vDirection*fWeight;
-				}
-			}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Light Ambient)(0.1)
-			fTR += Clamp(fAmbientR, 0.0f, 255.0f);
+				struct ModelLight &ml = _amlLights[iLight];
+				// add it to total intensity
+				fTR += ml.ml_fR;
+				fTG += ml.ml_fG;
+				fTB += ml.ml_fB;
+				// add it to direction vector
+				FLOAT fWeight = Abs(ml.ml_fR+ml.ml_fG+ml.ml_fB) * (1.0f/(3.0f*255.0f));
+				vDirection+=ml.ml_vDirection*fWeight;
+			}}
+
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Light Ambient)(0.1)
+	/*			fTR += Clamp(fAmbientR, 0.0f, 255.0f);
 			fTG += Clamp(fAmbientG, 0.0f, 255.0f);
-			fTB += Clamp(fAmbientB, 0.0f, 255.0f);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Ambient)(0.1)
+			fTB += Clamp(fAmbientB, 0.0f, 255.0f);*/
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Ambient)(0.1)
 			// normalize average direction vector
 			FLOAT fDirection = vDirection.Length();
-			if (fDirection>0.001f) 
-			{
+			if (fDirection>0.001f) {
 				vDirection /= fDirection;
-			}
-			else 
-			{
+			} else {
 				vDirection = FLOAT3D(0.0f,0.0f,0.0f);
 			}
 			
 			// for each active light
 			FLOAT fDR=0.0f; FLOAT fDG=0.0f; FLOAT fDB=0.0f;
-			{
-				for(INDEX iLight=0; iLight<_amlLights.Count(); iLight++) 
-				{
-					struct ModelLight &ml = _amlLights[iLight];
-					// find its contribution to direction vector
-					const FLOAT fFactor = ClampDn( vDirection%ml.ml_vDirection, 0.0f);
-					// add it to directional intensity
-					fDR += ml.ml_fR*fFactor;
-					fDG += ml.ml_fG*fFactor;
-					fDB += ml.ml_fB*fFactor;
-				}
-			}
+			{for(INDEX iLight=0; iLight<_amlLights.Count(); iLight++) {
+				struct ModelLight &ml = _amlLights[iLight];
+				// find its contribution to direction vector
+				const FLOAT fFactor = ClampDn( vDirection%ml.ml_vDirection, 0.0f);
+				// add it to directional intensity
+				fDR += ml.ml_fR*fFactor;
+				fDG += ml.ml_fG*fFactor;
+				fDB += ml.ml_fB*fFactor;
+			}}
 			
 			// adjust ambient light with gradient if needed
 			ULONG ulGradientType = en.en_psiShadingInfo->si_pbpoPolygon->bpo_bppProperties.bpp_ubGradientType;
@@ -336,8 +334,7 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 				CGradientParameters gp;
 				COLOR colGradientPoint;
 				CEntity *pen = en.en_psiShadingInfo->si_pbpoPolygon->bpo_pbscSector->bsc_pbmBrushMip->bm_pbrBrush->br_penEntity;
-				if( pen!=NULL && pen->GetGradient( ulGradientType, gp)) 
-				{
+				if( pen!=NULL && pen->GetGradient( ulGradientType, gp)) {
 					FLOAT fGrPt = (en.en_psiShadingInfo->si_vNearPoint % gp.gp_vGradientDir - gp.gp_fH0) / (gp.gp_fH1-gp.gp_fH0);
 					fGrPt = Clamp( fGrPt, 0.0f, 1.0f);
 					colGradientPoint = LerpColor( gp.gp_col0, gp.gp_col1, fGrPt);
@@ -371,7 +368,7 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 			colLight   = MulColors( colLight,   colShadowMapAdjusted);
 			colAmbient = MulColors( colAmbient, colShadowMapAdjusted);
 			vTotalLightDirection = vDirection;
-			return TRUE;
+			// else no valid shading info
 		}
 		else
 		{
@@ -389,17 +386,17 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 			CBrushShadowMap &bsm = en.en_psiShadingInfo->si_pbpoPolygon->bpo_smShadowMap;
 			// get ambient light
 			SLONG slSAR=0, slSAG=0, slSAB=0;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Light Ambient)(0.1)
 			FLOAT fAmbientR=0, fAmbientG=0, fAmbientB=0;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Ambient)(0.1)
 			fTotalShadowIntensity = 0.0f;
 			{
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 				for(INDEX i=0; i<pwld->m_vectorLights.size(); ++i)
 				{
 					// get the light source
 					CLightSource *plsLight = pwld->m_vectorLights[i]->GetLightSource();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 					if(plsLight == NULL) continue;
 					if(plsLight->ls_ulFlags & LSF_LENSFLAREONLY) continue;
 					
@@ -408,7 +405,7 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 					UBYTE ubDAR, ubDAG, ubDAB;
 					plsLight->GetLightColorAndAmbient( ubR, ubG, ubB, ubDAR, ubDAG, ubDAB);
 					
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Light Ambient)(0.1)
 					// add directional ambient
 					if( plsLight->ls_ulFlags & LSF_DIRECTIONAL ) 
 					{
@@ -416,7 +413,7 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 						slSAG += ubDAG;
 						slSAB += ubDAB;
 					}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Ambient)(0.1)
 					
 					// get the layer intensity at the point
 					FLOAT fShadowFactor;
@@ -462,7 +459,7 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 						{
 							fFallOffFactor = (plsLight->ls_rFallOff-fDistance)/
 								(plsLight->ls_rFallOff-plsLight->ls_rHotSpot);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Light Ambient)(0.1)
 							if(fFallOffFactor < -100 || fFallOffFactor > 100)
 							{
 								static char buf[256];
@@ -474,7 +471,7 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 						fAmbientR += fFallOffFactor*ubDAR;
 						fAmbientG += fFallOffFactor*ubDAG;
 						fAmbientB += fFallOffFactor*ubDAB;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Ambient)(0.1)
 					}
 					// add the light to active lights
 					struct ModelLight &ml = _amlLights.Push();
@@ -530,11 +527,11 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 					vDirection+=ml.ml_vDirection*fWeight;
 				}
 			}
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Modify Light Ambient)(0.1)
 			fTR += Clamp(fAmbientR, 0.0f, 255.0f);
 			fTG += Clamp(fAmbientG, 0.0f, 255.0f);
 			fTB += Clamp(fAmbientB, 0.0f, 255.0f);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Ambient)(0.1)
+	//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Ambient)(0.1)
 			// normalize average direction vector
 			FLOAT fDirection = vDirection.Length();
 			if (fDirection>0.001f) 
@@ -576,17 +573,17 @@ BOOL CRenderer::FindModelLights( CEntity &en, const CPlacement3D &plModel,
 			colLight   = RGBToColor( slLR,slLG,slLB);
 			colAmbient = RGBToColor( slAR,slAG,slAB);
 			vTotalLightDirection = vDirection;
-			//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Modify Light Process On Terrain)(0.1)
-		}
+			//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Modify Light Process On Terrain)(0.1)
 
-		// Terrainì˜ ì •ë³´ë¥¼ ê°–ê³  ìˆì„ ê²½ìš°...
-		if(en.en_psiShadingInfo->si_ptrTerrain != NULL)
-		{
-			CTerrain *ptrTerrain = en.en_psiShadingInfo->si_ptrTerrain;
-			Matrix12 mTerrain;
-			TR_GetMatrixFromEntity(mTerrain,ptrTerrain);
-			plFloorPlane = TR_GetPlaneFromPoint(ptrTerrain, mTerrain, en.en_psiShadingInfo->si_vNearPoint);
-		}		
+			if (en.en_psiShadingInfo->si_ptrTerrain != NULL)
+			{
+				// TerrainÀÇ Á¤º¸¸¦ °®°í ÀÖÀ» °æ¿ì...
+				CTerrain *ptrTerrain = en.en_psiShadingInfo->si_ptrTerrain;
+				Matrix12 mTerrain;
+				TR_GetMatrixFromEntity(mTerrain,ptrTerrain);
+				plFloorPlane = TR_GetPlaneFromPoint(ptrTerrain, mTerrain, en.en_psiShadingInfo->si_vNearPoint);
+			}
+		}
 	}
 	// has shadow
 	return TRUE;
@@ -751,14 +748,14 @@ void CRenderer::RenderOneSkaModel( CEntity &en, const CPlacement3D &plModel,
 	FLOAT3D vTotalLightDirection( 1.0f, -1.0f, 1.0f);
 	FLOATplane3D plFloorPlane(FLOAT3D( 0.0f, 1.0f, 0.0f), 0.0f);
 
-	FLOAT fTotalShadowIntensity = 0.0f;	// ì›ë³¸
-	BOOL bRenderModelShadow = FALSE;		// ì›ë³¸
+	FLOAT fTotalShadowIntensity = 0.0f;	// ¿øº»
+	BOOL bRenderModelShadow = FALSE;		// ¿øº»
 	//mi.mi_bHasShadow = FALSE;
 	//mi.mi_fShadowIntensity = 0.0f;
 
-	// NOTE : ê·¸ë¦¼ìê°€ ì‹¤ì œë¡œ ê·¸ë ¤ì§€ëŠ” ë¶€ë¶„ì€ Terrainì´ë¯€ë¡œ, 
-	// NOTE : ì•„ë˜ì—ì„œ ê·¸ë¦¼ìì˜ ë Œë”ë§ ìœ ë¬´ ë° Intensityë¥¼ ê²°ì •í•˜ê³ ,
-	// NOTE : ê·¸ ê°’ì„ ë°”íƒ•ìœ¼ë¡œ Terrainì—ì„œ ê·¸ë¦¼ìë¥¼ ê·¸ë¦½ë‹ˆë‹¤.
+	// NOTE : ±×¸²ÀÚ°¡ ½ÇÁ¦·Î ±×·ÁÁö´Â ºÎºĞÀº TerrainÀÌ¹Ç·Î, 
+	// NOTE : ¾Æ·¡¿¡¼­ ±×¸²ÀÚÀÇ ·»´õ¸µ À¯¹« ¹× Intensity¸¦ °áÁ¤ÇÏ°í,
+	// NOTE : ±× °ªÀ» ¹ÙÅÁÀ¸·Î Terrain¿¡¼­ ±×¸²ÀÚ¸¦ ±×¸³´Ï´Ù.
 	// if not rendering cluster shadows
 	if( !re_bRenderingShadows)
 	{
@@ -792,7 +789,7 @@ void CRenderer::RenderOneSkaModel( CEntity &en, const CPlacement3D &plModel,
 	if( re_penViewer==&en) 
 	{
 		ulRenFlags |= SRMF_SPECTATOR;
-		bRenderModelShadow = FALSE;		// ì›ë³¸
+		bRenderModelShadow = FALSE;		// ¿øº»
 		//mi.mi_bHasShadow = FALSE;
 	}
 
@@ -801,8 +798,8 @@ void CRenderer::RenderOneSkaModel( CEntity &en, const CPlacement3D &plModel,
 	RM_SetLightDirection(vTotalLightDirection);
 
 	// determine shadow intensity
-	fTotalShadowIntensity *= NormByteToFloat(slModelAlpha);				// ì›ë³¸
-	fTotalShadowIntensity  = Clamp( fTotalShadowIntensity, 0.0f, 1.0f);	// ì›ë³¸
+	fTotalShadowIntensity *= NormByteToFloat(slModelAlpha);				// ¿øº»
+	fTotalShadowIntensity  = Clamp( fTotalShadowIntensity, 0.0f, 1.0f);	// ¿øº»
 	//mi.mi_fShadowIntensity *= NormByteToFloat(slModelAlpha);
 	//mi.mi_fShadowIntensity = Clamp( mi.mi_fShadowIntensity, 0.0f, 1.0f);
 
@@ -825,15 +822,15 @@ void CRenderer::RenderOneSkaModel( CEntity &en, const CPlacement3D &plModel,
 			/*
 			if(en.en_psiShadingInfo->si_ptrTerrain!=NULL) 
 			{				
-				// ì‹œí˜„ì—ì„œëŠ” ë‹¤ìŒ ì¤„ì„ ì£¼ì„ ì²˜ë¦¬.
+				// ½ÃÇö¿¡¼­´Â ´ÙÀ½ ÁÙÀ» ÁÖ¼® Ã³¸®.
 				en.GetModelInstance()->AddSimpleShadow(fTotalShadowIntensity, plFloorPlane);
 			}
-			// ì¶”ê°€í•œ ë¶€ë¶„.
-			// Terrainìœ„ì— ìˆì§€ ì•Šë‹¤ë©´ ë‘¥ê·¼ ê·¸ë¦¼ìë¡œ ì²˜ë¦¬í•©ë‹ˆë‹¤.
+			// Ãß°¡ÇÑ ºÎºĞ.
+			// TerrainÀ§¿¡ ÀÖÁö ¾Ê´Ù¸é µÕ±Ù ±×¸²ÀÚ·Î Ã³¸®ÇÕ´Ï´Ù.
 			else
 			{				
 			*/			
-				// í”Œë ˆì´ì–´ ê·¸ë¦¼ìë§Œ ê¶ê·¼ê±¸ë¡œ...
+				// ÇÃ·¹ÀÌ¾î ±×¸²ÀÚ¸¸ ±Ã±Ù°É·Î...
 				if(g_iShadowDetail == SHADOW_SIMPLE_ONLY)
 				{
 					if(en.IsPlayer())
@@ -870,10 +867,10 @@ void CRenderer::RenderOneSkaModel( CEntity &en, const CPlacement3D &plModel,
 		}
 		else
 		RM_RenderSKA(mi, TRUE);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Easy Use World Editor)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Easy Use World Editor)(0.1)
 		extern INDEX ska_bShowTriangles;
 		if(ska_bShowTriangles) RM_PreviewSKA(mi, re_pdpDrawPort, SPF_WIREFRAME);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Easy Use World Editor)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Easy Use World Editor)(0.1)
 	// if the entity is viewer
 	}
 	else 
@@ -891,29 +888,29 @@ void CRenderer::RenderOneSkaModelToTexture(CEntity &en, const CPlacement3D &plMo
 	//if( re_bRenderingShadows && !(en.en_ulFlags&ENF_PROJECTIONSHADOWS)) 
 	//	return;
 
- 	float fTextureSize = SHADOWTEXTURESIZE;		// ì„ì‹œ ë³€ìˆ˜.
+ 	float fTextureSize = SHADOWTEXTURESIZE;		// ÀÓ½Ã º¯¼ö.
 
 	// skip invisible models
-	// ì•ˆë³´ì´ëŠ” ëª¨ë¸ì€ ìŠ¤í‚µ.
+	// ¾Èº¸ÀÌ´Â ¸ğµ¨Àº ½ºÅµ.
 	CModelInstance &mi = *en.GetModelInstance();
 	//if( mi.mi_vStretch==FLOAT3D(0,0,0)) return;
 	
 	// skip if fully transparent (MUST BE TESTED AFTER AdjustShadingParameters()!)
-	// ì™„ì „ íˆ¬ëª…ì´ë©´ ìŠ¤í‚µ.
+	// ¿ÏÀü Åõ¸íÀÌ¸é ½ºÅµ.
 	//const SLONG slModelAlpha = (mi.mi_colModelColor & CT_AMASK) >>CT_ASHIFT;
 	//if( slModelAlpha<4) return;
 
 	//-----------------------------------------------------------------------------
-	// ê´‘ì›ì—ì„œ ì›ì ì„ ë°”ë¼ë³´ë„ë¡ ì²˜ë¦¬...
-	// Projection ì •ë³´ë¥¼ ì„¤ì •í•©ë‹ˆë‹¤.
-	// NOTE : Projection.Prepare()ì€ ë³µì¡í•œ ê³„ì‚°ì„ ìˆ˜í–‰í•˜ê³  ìˆë‹¤.
-	// NOTE : ì“¸ëª¨ì—†ëŠ” ë¶€ë¶„ì€ ë¹¼ë„¤ê³  ë‚˜ì¤‘ì— í•¨ìˆ˜ë¡œ ë§Œë“¤ë˜ì§€ í•´ì•¼í• ë“¯...
+	// ±¤¿ø¿¡¼­ ¿øÁ¡À» ¹Ù¶óº¸µµ·Ï Ã³¸®...
+	// Projection Á¤º¸¸¦ ¼³Á¤ÇÕ´Ï´Ù.
+	// NOTE : Projection.Prepare()Àº º¹ÀâÇÑ °è»êÀ» ¼öÇàÇÏ°í ÀÖ´Ù.
+	// NOTE : ¾µ¸ğ¾ø´Â ºÎºĞÀº »©³×°í ³ªÁß¿¡ ÇÔ¼ö·Î ¸¸µé´øÁö ÇØ¾ßÇÒµí...
 	GetViewMatrix(plLight, _matWorldToLight);
 
 	//-----------------------------------------------------------------------------
-	// NOTE : ì ë‹¹í•œ FOVê°’ì„ ê³„ì‚°í•˜ê¸° ìœ„í•´ì„œ, ëª¨ë¸ì˜ ë†’ì´ì˜ ì ˆë°˜ë§Œí¼ ì´ë™ì‹œí‚¤ëŠ” ë¶€ë¶„.
-	// NOTE : ëª¨ë¸ì˜ ë†’ì´ë¥¼ êµ¬í•˜ëŠ” ë¶€ë¶„ì€ ê´‘ì›ì˜ ìœ„ì¹˜ ì„¤ì •ë“±ì— ìì£¼ ì“°ì¼ ê°€ëŠ¥ì„±ì´ ìˆê¸° ë•Œë¬¸ì—,
-	// NOTE : ë¯¸ë¦¬ ê³„ì‚°í•´ë†“ëŠ” ë°©í–¥ìœ¼ë¡œ ì²˜ë¦¬í•´ì•¼ í• ë“¯.
+	// NOTE : Àû´çÇÑ FOV°ªÀ» °è»êÇÏ±â À§ÇØ¼­, ¸ğµ¨ÀÇ ³ôÀÌÀÇ Àı¹İ¸¸Å­ ÀÌµ¿½ÃÅ°´Â ºÎºĞ.
+	// NOTE : ¸ğµ¨ÀÇ ³ôÀÌ¸¦ ±¸ÇÏ´Â ºÎºĞÀº ±¤¿øÀÇ À§Ä¡ ¼³Á¤µî¿¡ ÀÚÁÖ ¾²ÀÏ °¡´É¼ºÀÌ ÀÖ±â ¶§¹®¿¡,
+	// NOTE : ¹Ì¸® °è»êÇØ³õ´Â ¹æÇâÀ¸·Î Ã³¸®ÇØ¾ß ÇÒµí.
 	FLOATaabbox3D FrameBBox;
 	mi.GetAllFramesBBox(FrameBBox);
 	FrameBBox.StretchByVector(mi.mi_vStretch);
@@ -928,26 +925,26 @@ void CRenderer::RenderOneSkaModelToTexture(CEntity &en, const CPlacement3D &plMo
 	matTrans[11] = 0.0f;
 	
 	//-----------------------------------------------------------------------------
-	// ê´‘ì›ì—ì„œ...
-	// íˆ¬ì˜í–‰ë ¬ì„ ë§Œë“¤ê¸° ìœ„í•œ ê³„ì‚°ì„ ìˆ˜í–‰í•¨.
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.07
+	// ±¤¿ø¿¡¼­...
+	// Åõ¿µÇà·ÄÀ» ¸¸µé±â À§ÇÑ °è»êÀ» ¼öÇàÇÔ.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.07
 	/*
 	SetAdjustedProjectionMatrix(_matShadowProj, D3DX_PI/4.0f, 1.0f, 0.05f, 500.0f,
 		0.0f, 0.0f, fTextureSize, fTextureSize);
 		*/
 	/*
-	// ì§êµíˆ¬ì˜ìœ¼ë¡œ ì ìš©í•´ë³´ê¸°.
+	// Á÷±³Åõ¿µÀ¸·Î Àû¿ëÇØº¸±â.
 	//D3DXMatrixOrthoRH((D3DXMATRIX*)matShadowProj, 0.98f/fXMax, 0.98f/fYMax, 1.0f, 500.0f);
 	D3DXMatrixOrthoOffCenterRH((D3DXMATRIX*)matShadowProj, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 500.0f);
 	matShadowProj[0] = 0.12f/fXMax;
 	matShadowProj[5] = 0.12f/fYMax;
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.07
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.07
 	
 	Matrix12 matTemp;
 	MatrixMultiply(matTemp, _matWorldToLight, matTrans);
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.07
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.07
 	/*
 	FLOAT fXMax, fYMax;
 	FindBestFOV(FrameBBox, matTemp, fXMax, fYMax);		
@@ -958,30 +955,30 @@ void CRenderer::RenderOneSkaModelToTexture(CEntity &en, const CPlacement3D &plMo
 	_matShadowProj[0] = 0.98f/fXMax;
 	_matShadowProj[5] = 0.98f/fYMax;
 	*/
-//ê°•ë™ë¯¼ ìˆ˜ì • ë ì ‘ì† ì‹œí€€ìŠ¤ ì‘ì—…	06.07
+//°­µ¿¹Î ¼öÁ¤ ³¡ Á¢¼Ó ½ÃÄö½º ÀÛ¾÷	06.07
 
 	FLOAT fBBoxXSize		= vMax(1) - vMin(1);
 	FLOAT fBBoxYSize		= vMax(2) - vMin(2);
 	FLOAT fBBoxZSize		= vMax(3) - vMin(3);
-	FLOAT fMaxValue			= Max(Max(fBBoxXSize, fBBoxYSize), fBBoxZSize);
+	FLOAT fMaxValue			= Max(Max(fBBoxXSize, fBBoxYSize), fBBoxZSize) * 1.5f;
 
-	// ì§êµ íˆ¬ì˜.
+	// Á÷±³ Åõ¿µ.
 	D3DXMatrixOrthoRH(
 		(D3DXMATRIX*)_matShadowProj, 
-		fMaxValue, fMaxValue,			// FrameBBoxì˜ Width
-		0.1f, 300.0f);					// FrameBBoxì˜ Height
+		fMaxValue, fMaxValue,			// FrameBBoxÀÇ Width
+		0.1f, 300.0f);					// FrameBBoxÀÇ Height
 
-	// NOTE : ì§ì ‘ì ìœ¼ë¡œ íˆ¬ì˜í–‰ë ¬ì„ ì„¤ì •í•˜ëŠ” ë¶€ë¶„.  Serious ì—”ì§„ì—ì„œ ì œê³µí•˜ëŠ” í•¨ìˆ˜ë¥¼ ì´ìš©í•˜ëŠ” ë°©í–¥ìœ¼ë¡œ ë³€í™˜í• ê²ƒ.
+	// NOTE : Á÷Á¢ÀûÀ¸·Î Åõ¿µÇà·ÄÀ» ¼³Á¤ÇÏ´Â ºÎºĞ.  Serious ¿£Áø¿¡¼­ Á¦°øÇÏ´Â ÇÔ¼ö¸¦ ÀÌ¿ëÇÏ´Â ¹æÇâÀ¸·Î º¯È¯ÇÒ°Í.
 	HRESULT hr = _pGfx->gl_pd3dDevice->SetTransform( D3DTS_PROJECTION, (const _D3DMATRIX*)&_matShadowProj);
 	D3D_CHECKERROR(hr);
 	
 	//-----------------------------------------------------------------------------
-	// ëª¨ë¸ì„ ë Œë”ë§í•  ë•Œ ì‚¬ìš©í•  VIEW í–‰ë ¬ë¡œ ì§€ì •í•©ë‹ˆë‹¤.
+	// ¸ğµ¨À» ·»´õ¸µÇÒ ¶§ »ç¿ëÇÒ VIEW Çà·Ä·Î ÁöÁ¤ÇÕ´Ï´Ù.
 	// World -> View
 	RM_SetAbsToView(_matWorldToLight);
 
 	//-----------------------------------------------------------------------------
-	// ì˜¤ë¸Œì íŠ¸ì˜ ì›”ë“œ í–‰ë ¬ ì„¤ì •.
+	// ¿ÀºêÁ§Æ®ÀÇ ¿ùµå Çà·Ä ¼³Á¤.
 	RM_SetObjectPlacement(CPlacement3D(FLOAT3D(0.0f,-fHeight,0.0f), plModel.pl_OrientationAngle));
 
 	// Call callback func for adjusting skaleton bones
@@ -991,8 +988,8 @@ void CRenderer::RenderOneSkaModelToTexture(CEntity &en, const CPlacement3D &plMo
 	// Set current distance
 	RM_SetCurrentDistance(fDMDistance);
 
-	// NOTE : ì¶”í›„ì— RM_PreviewSKA()ë¡œ ë³€ê²½í• ê²ƒ.
-	// NOTE : RM_PreviewSKA()ëŠ” ì¸ìê°€ ë„ˆë¬´ ë§ì´ í•„ìš”í•¨.  ê³ ë¡œ, ë³´ë¥˜...
+	// NOTE : ÃßÈÄ¿¡ RM_PreviewSKA()·Î º¯°æÇÒ°Í.
+	// NOTE : RM_PreviewSKA()´Â ÀÎÀÚ°¡ ³Ê¹« ¸¹ÀÌ ÇÊ¿äÇÔ.  °í·Î, º¸·ù...
 	RM_RenderSKA(mi);
 }
 
@@ -1056,8 +1053,10 @@ void CRenderer::RenderModels( BOOL bBackground)
 		RM_BeginModelRenderingMask( *papr, re_pubShadow, re_slShadowWidth, re_slShadowHeight);
 	}
 
+	re_admDelayedModels_AddWater.Clear();
+
 	// for each of models that were kept for delayed rendering
-	for( INDEX iModel=0; iModel<re_admDelayedModels.Count(); iModel++) 
+	for( INDEX iModel=0; iModel<re_admDelayedModels.Count(); ++iModel) 
 	{
 		CDelayedModel &dm = re_admDelayedModels[iModel];
 		CEntity &en = *dm.dm_penModel;
@@ -1069,19 +1068,12 @@ void CRenderer::RenderModels( BOOL bBackground)
 		 || !(dm.dm_ulFlags & DMF_VISIBLE)
 		 || (en.en_ulFlags & ENF_INVISIBLE) ) continue; // eons "skip if Invisible flag on "
 
-		// NICEWATERì— í•´ë‹¹í•˜ëŠ” ëª¨ë¸ì€ ë Œë”ë§í•˜ì§€ ì•ŠìŒ.
-		if(en.en_ulFlags & ENF_NICEWATER) continue;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
-		extern INDEX g_bRenderDecoration;
-		if(!g_bRenderDecoration && en.IsFirstExtraFlagOn(ENF_EX1_DECORATION)) continue;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
-
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.29
 		extern INDEX gfx_bRenderReflection;
 		if(gfx_bRenderReflection)
 		{
-			// FIXME : ì„ì‹œì ìœ¼ë¡œ Enemyì™€ Playerë“±ì€ ë°˜ì‚¬ë˜ì§€ ì•Šë„ë¡ ì²˜ë¦¬í•¨.
-			// FIXME : Enemyê°€ ë¬¼ê°€ê¹Œì§€ ë”°ë¼ì˜¨ë‹¤ëŠ”ê±° ìì²´ê°€ ë¬¸ì œ ìˆìŒ...ã…¡.ã…¡
+			// FIXME : ÀÓ½ÃÀûÀ¸·Î Enemy¿Í PlayerµîÀº ¹İ»çµÇÁö ¾Êµµ·Ï Ã³¸®ÇÔ.
+			// FIXME : Enemy°¡ ¹°°¡±îÁö µû¶ó¿Â´Ù´Â°Å ÀÚÃ¼°¡ ¹®Á¦ ÀÖÀ½...¤Ñ.¤Ñ
 			if(en.IsEnemy() || en.IsCharacter() /*|| en.IsPet()*/ )		continue;
 
 			if(!bBackground)
@@ -1089,12 +1081,23 @@ void CRenderer::RenderModels( BOOL bBackground)
 				if(!(en.en_ulFlags & ENF_RENDERREFLECTION))	continue;
 			}
 		}
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.29
+
+		// NICEWATER¿¡ ÇØ´çÇÏ´Â ¸ğµ¨Àº ·»´õ¸µÇÏÁö ¾ÊÀ½.
+		if(en.en_ulFlags & ENF_NICEWATER)
+		{
+			re_admDelayedModels_AddWater.Add(dm);
+			continue;
+		}
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
+		extern INDEX g_bRenderDecoration;
+		if(!g_bRenderDecoration && en.IsFirstExtraFlagOn(ENF_EX1_DECORATION)) continue;
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 
 		// SKA model?
 		if( en.en_RenderType == CEntity::RT_SKAMODEL || en.en_RenderType == CEntity::RT_SKAEDITORMODEL)
 		{
-			//Editor ìƒì—ì„œ Activeê°€ ë¹„í™œì„±í™”ëœ ëª¨ë¸ì„ ë Œë”ë§í•  ë•Œ ê²€ì€ìƒ‰ ë°˜íˆ¬ëª…ìœ¼ë¡œ ë Œë”ë§	:Su-won		|--->
+			//Editor »ó¿¡¼­ Active°¡ ºñÈ°¼ºÈ­µÈ ¸ğµ¨À» ·»´õ¸µÇÒ ¶§ °ËÀº»ö ¹İÅõ¸íÀ¸·Î ·»´õ¸µ	:Su-won		|--->
 			if( en.en_RenderType == CEntity::RT_SKAEDITORMODEL )
 			{
 				CModelInstance &mi = *en.GetModelInstance();
@@ -1105,7 +1108,7 @@ void CRenderer::RenderModels( BOOL bBackground)
 					mi.mi_colModelColor =mi.mi_colModelColor | 0x40;
 				}
 			}
-			//Editor ìƒì—ì„œ Activeê°€ ë¹„í™œì„±í™”ëœ ëª¨ë¸ì„ ë Œë”ë§í•  ë•Œ ê²€ì€ìƒ‰ ë°˜íˆ¬ëª…ìœ¼ë¡œ ë Œë”ë§	:Su-won		<---|
+			//Editor »ó¿¡¼­ Active°¡ ºñÈ°¼ºÈ­µÈ ¸ğµ¨À» ·»´õ¸µÇÒ ¶§ °ËÀº»ö ¹İÅõ¸íÀ¸·Î ·»´õ¸µ	:Su-won		<---|
 
 			RenderOneSkaModel(en, en.GetLerpedPlacement(), TRUE, dm.dm_fMipFactor, dm.dm_ulFlags);
 
@@ -1170,7 +1173,6 @@ void CRenderer::RenderModels( BOOL bBackground)
 				RenderOneModel( en, *_wrpWorldRenderPrefs.wrp_pmoSelectedEntity, plSelection, dm.dm_fMipFactor, FALSE, DMF_VERYNEAR);
 			}
 		}
-
 	}
 	// end model rendering
 	if( !re_bRenderingShadows) 
@@ -1186,8 +1188,8 @@ void CRenderer::RenderModels( BOOL bBackground)
 
 	if( wAlpha !=NULL)
 	{
-		for( iModel=0; iModel<re_admDelayedModels.Count(); ++iModel)
-		{	
+		for(INDEX iModel = 0; iModel < re_admDelayedModels.Count(); ++iModel)
+		{
 			CModelInstance &mi =*(re_admDelayedModels[iModel].dm_penModel->GetModelInstance());
 
 			mi.mi_colModelColor =mi.mi_colModelColor & 0xFFFFFF00;
@@ -1202,7 +1204,7 @@ void GetWaterInformation(CEntity* pEntity, CNiceWater* pWaterInformation)
 {
 	ASSERT(pEntity != NULL && "Invalid Entity Pointer!!!");
 	ASSERT(pWaterInformation != NULL && "Invalid WaterInformation Pointer!!!");
-	// í”„ë¡œí¼í‹° ì •ë³´ë¥¼ ì½ì–´ë“¤ì„.
+	// ÇÁ·ÎÆÛÆ¼ Á¤º¸¸¦ ÀĞ¾îµéÀÓ.
 	CDLLEntityClass *pdecDLLClass		=	pEntity->GetClass()->ec_pdecDLLClass;
 
 	CEntityProperty &epPropertyWaterTex	= *pdecDLLClass->PropertyForTypeAndID(CEntityProperty::EPT_FILENAME, 2);	// Water Texture
@@ -1242,7 +1244,7 @@ void GetWaterInformation(CEntity* pEntity, CNiceWater* pWaterInformation)
 	pWaterInformation->m_toWater.SetData_t(pWaterInformation->m_fnWaterName);
 }
 
-// NICEWATER í”Œë˜ê·¸ë¥¼ ê°€ì§„ ëª¨ë¸ë“¤ë§Œ ë Œë”ë§í•¨.
+// NICEWATER ÇÃ·¡±×¸¦ °¡Áø ¸ğµ¨µé¸¸ ·»´õ¸µÇÔ.
 void CRenderer::RenderNiceWaterModels()
 {	
 	extern INDEX gfx_bRenderReflection;	
@@ -1254,9 +1256,9 @@ void CRenderer::RenderNiceWaterModels()
 		if( !gfx_bRenderModels && !re_bRenderingShadows) return;
 		
 		// sort all the delayed models by distance
-		// NOTE : ì´ì „ì— RenderModels()ì—ì„œ ì •ë ¬ë˜ì—ˆëŠ”ë° ë¨¸í•˜ëŸ¬ í•œë²ˆ ë” ì •ë ¬í•˜ì§€?ã…¡.ã…¡
-		qsort( re_admDelayedModels.GetArrayOfPointers(), re_admDelayedModels.Count(),
-			sizeof(CDelayedModel*), qsort_CompareDelayedModels);
+		// NOTE : ÀÌÀü¿¡ RenderModels()¿¡¼­ Á¤·ÄµÇ¾ú´Âµ¥ ¸ÓÇÏ·¯ ÇÑ¹ø ´õ Á¤·ÄÇÏÁö?¤Ñ.¤Ñ
+		//qsort( re_admDelayedModels.GetArrayOfPointers(), re_admDelayedModels.Count(),
+		//	sizeof(CDelayedModel*), qsort_CompareDelayedModels);
 		
 		CAnyProjection3D *papr = NULL;	
 		papr = &re_prProjection;
@@ -1264,19 +1266,19 @@ void CRenderer::RenderNiceWaterModels()
 		// begin model rendering
 		if( !re_bRenderingShadows) 
 		{
-			// NOTE : ì•„ë˜ ë‘ í•¨ìˆ˜ëŠ” ë‚´ë¶€ì ìœ¼ë¡œ ë¹„ìŠ·í•œ ë¶€ë¶„ì´ ë§ë‹¤.
-			// NOTE : ì™œ ì €ë ‡ê²Œ í–ˆì„ê¹Œ???
+			// NOTE : ¾Æ·¡ µÎ ÇÔ¼ö´Â ³»ºÎÀûÀ¸·Î ºñ½ÁÇÑ ºÎºĞÀÌ ¸¹´Ù.
+			// NOTE : ¿Ö Àú·¸°Ô ÇßÀ»±î???
 			BeginModelRenderingView( *papr, re_pdpDrawPort);
 			RM_BeginRenderingView(   *papr, re_pdpDrawPort);		
 		}	
 		BOOL bBackground = FALSE;
 		
 		// for each of models that were kept for delayed rendering
-		for( INDEX iModel=0; iModel<re_admDelayedModels.Count(); iModel++) 
+		for( INDEX iModel=0; iModel<re_admDelayedModels_AddWater.Count(); ++iModel) 
 		{
-			CDelayedModel &dm = re_admDelayedModels[iModel];
-			CEntity &en = *dm.dm_penModel;		
-			if(!(en.en_ulFlags & ENF_NICEWATER)) continue;
+			CDelayedModel &dm = re_admDelayedModels_AddWater[iModel];
+			CEntity &en = *dm.dm_penModel;
+			//if(!(en.en_ulFlags & ENF_NICEWATER)) continue;
 			
 			BOOL bIsBackground = re_bBackgroundEnabled && (en.en_ulFlags&ENF_BACKGROUND);
 			
@@ -1317,8 +1319,8 @@ void CRenderer::RenderNiceWaterModels()
 		if( _bMultiPlayer) gfx_bRenderModels = 1; // must render in multiplayer mode!
 		if( !gfx_bRenderModels && !re_bRenderingShadows) return;
 		
-		qsort( re_admDelayedModels.GetArrayOfPointers(), re_admDelayedModels.Count(),
-			sizeof(CDelayedModel*), qsort_CompareDelayedModels);
+		//qsort( re_admDelayedModels.GetArrayOfPointers(), re_admDelayedModels.Count(),
+		//	sizeof(CDelayedModel*), qsort_CompareDelayedModels);
 		
 		CAnyProjection3D *papr = NULL;	
 		papr = &re_prProjection;
@@ -1332,11 +1334,11 @@ void CRenderer::RenderNiceWaterModels()
 		BOOL bBackground = FALSE;
 		
 		// for each of models that were kept for delayed rendering
-		for( INDEX iModel=0; iModel<re_admDelayedModels.Count(); iModel++) 
+		for( INDEX iModel=0; iModel<re_admDelayedModels_AddWater.Count(); iModel++) 
 		{
-			CDelayedModel &dm = re_admDelayedModels[iModel];
+			CDelayedModel &dm = re_admDelayedModels_AddWater[iModel];
 			CEntity &en = *dm.dm_penModel;		
-			if(!(en.en_ulFlags & ENF_NICEWATER)) continue;
+			//if(!(en.en_ulFlags & ENF_NICEWATER)) continue;
 			
 			BOOL bIsBackground = re_bBackgroundEnabled && (en.en_ulFlags&ENF_BACKGROUND);
 			
@@ -1469,10 +1471,10 @@ void CRenderer::RenderLensFlares(void)
 		// skip if not in this drawport
 		if( lfi.lfi_ulDrawPortID!=ulDrawPortID && lfi.lfi_iMirrorLevel==0) continue;
 		// test if it is still visible
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
-		//if( re_pdpDrawPort->IsPointVisible(lfi.lfi_fI, lfi.lfi_fJ, lfi.lfi_fOoK, lfi.lfi_iID, lfi.lfi_iMirrorLevel))	// ì›ë³¸.
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
+		//if( re_pdpDrawPort->IsPointVisible(lfi.lfi_fI, lfi.lfi_fJ, lfi.lfi_fOoK, lfi.lfi_iID, lfi.lfi_iMirrorLevel))	// ¿øº».
 		if( re_pdpDrawPort->IsPointVisible(re_prProjection, lfi.lfi_fI, lfi.lfi_fJ, lfi.lfi_fOoK, lfi.lfi_iID, lfi.lfi_iMirrorLevel))
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22
 		{
 			lfi.lfi_ulFlags |= LFF_VISIBLE;
 		}

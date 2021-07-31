@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 #include "StdH.h"
 
 #include "CTag.h"
@@ -43,9 +43,9 @@ CEffect *CSoundEffect::Copy()
 {
 	CSoundEffect *pRet = new CSoundEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectì˜ content
+	//CEffectÀÇ content
 	pRet->SetContent(this);
-	//CSoundEffectì˜ content
+	//CSoundEffectÀÇ content
 	pRet->m_ulSoundFlag = m_ulSoundFlag;
 	pRet->m_fFallOff = m_fFallOff;
 	pRet->m_fHotSpot = m_fHotSpot;
@@ -100,7 +100,7 @@ BOOL CSoundEffect::Process(FLOAT time)
 		FLOAT fadeValue = fProcessedTime / m_fFadeInTime;
 		m_soEffect.Fade(m_fVolume, m_fFadeInTime);
 	}
-*/	//Fade inì€ ì§€ì›í•˜ì§€ ì•ŠìŒ.
+*/	//Fade inÀº Áö¿øÇÏÁö ¾ÊÀ½.
 	//no fade, [life time - fade-out time, life time)
 	else if(fProcessedTime <= m_fLifeTime)
 	{
@@ -172,4 +172,4 @@ void CSoundEffect::Write(CTStream *pOS)
 	os << m_fPitch;
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

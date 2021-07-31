@@ -50,6 +50,7 @@ void CShockWaveEffect::ClearInstance()
 
 void CShockWaveEffect::Start(FLOAT time, BOOL restart)
 {
+	INDEX	i;
 	if(!PreStart(time, restart)) return;
 	if(m_eState != ES_NOT_STARTED) return;
 
@@ -59,7 +60,7 @@ void CShockWaveEffect::Start(FLOAT time, BOOL restart)
 
 	//vertex index, once
 	m_vectorIndex.reserve(m_iSplitCount * 2 * 3);
-	for(INDEX i=0; i<m_iSplitCount-1; ++i)
+	for( i=0; i<m_iSplitCount-1; ++i)
 	{
 		m_vectorIndex.push_back(2 * i + 0);
 		m_vectorIndex.push_back(2 * i + 2);
@@ -79,7 +80,7 @@ void CShockWaveEffect::Start(FLOAT time, BOOL restart)
 	m_vectorMoveVector.reserve(m_iSplitCount * 2);
 	const FLOAT angleUnit = 2 * PI / m_iSplitCount;
 	FLOAT angle = 0;
-	for(i=0; i<m_iSplitCount; ++i)
+	for( i = 0; i < m_iSplitCount; ++i)
 	{
 		m_vectorMoveVector.push_back( FLOAT3D( sinf(angle), 0, cosf(angle) ) );
 		m_vectorMoveVector.push_back( FLOAT3D( sinf(angle), 0, cosf(angle) ) );
@@ -97,7 +98,7 @@ void CShockWaveEffect::Start(FLOAT time, BOOL restart)
 	texcrd3.t = 0.05f;
 	texcrd4.s = 0.95f;
 	texcrd4.t = 0.95f;
-	for(i=0; i<m_iSplitCount; ++i)
+	for( i = 0; i < m_iSplitCount; ++i)
 	{
 		if(i % 2 == 0)
 		{
@@ -132,7 +133,7 @@ void CShockWaveEffect::Start(FLOAT time, BOOL restart)
 	m_vectorGFXVertex.clear();
 	m_vectorGFXVertex.reserve(m_iSplitCount * 2);
 
-	//tagÏùò Ï†ïÎ≥¥
+	//tag¿« ¡§∫∏
 	m_vTagPos = m_ptrAttachTag->CurrentTagInfo().m_vPos;
 	if(m_eRotation != EOTT_NONE) m_qTagRot = m_ptrAttachTag->CurrentTagInfo().m_qRot;
 
@@ -181,7 +182,7 @@ BOOL CShockWaveEffect::Process(FLOAT time)
 		return bRet;
 	}
 
-	//color Ï†ïÎ≥¥
+	//color ¡§∫∏
 	FLOAT fadeVal = this->GetFadeValue(fProcessedTime);
 	if(fadeVal == 1.0f && m_bColorWhite)
 	{
@@ -201,7 +202,7 @@ BOOL CShockWaveEffect::Process(FLOAT time)
 		{
 			col = (ubColElement << 24) | (ubColElement << 16) | (ubColElement << 8) | 0x000000FF; //fade by color
 		}
-		else col = 0xFFFFFFFF;	//fade ÏùòÎØ∏ ÏóÜÏùå.
+		else col = 0xFFFFFFFF;	//fade ¿«πÃ æ¯¿Ω.
 		for(INDEX i=0; i<m_iSplitCount; ++i)
 		{
 			m_vectorGFXColor.push_back(col);
@@ -209,7 +210,7 @@ BOOL CShockWaveEffect::Process(FLOAT time)
 		}
 	}
 
-	//wave Ï†ïÎ≥¥
+	//wave ¡§∫∏
 	m_ssHeight.Prepare();
 	FLOAT3D height(0, m_ssHeight.Value(fProcessedTime), 0);
 	FLOAT radiusInner = 0, radiusOuter = 0;
@@ -226,7 +227,7 @@ BOOL CShockWaveEffect::Process(FLOAT time)
 		radiusInner = radiusOuter - m_ssWidth.Value(fProcessedTime);
 	}
 
-	//tagÏùò Ï†ïÎ≥¥
+	//tag¿« ¡§∫∏
 	if(m_ePosition == EOTT_ALWAYS) m_vTagPos = m_ptrAttachTag->CurrentTagInfo().m_vPos;
 	if(m_eRotation == EOTT_ALWAYS) m_qTagRot = m_ptrAttachTag->CurrentTagInfo().m_qRot;
 
@@ -266,7 +267,7 @@ BOOL CShockWaveEffect::SetTexture(const CTFileName &filename)
 	if(filename == m_strTextureFileName) return FALSE;
 	m_strTextureFileName = filename;
 
-	//ÌÖçÏä§Ï≥êÎ•º ÏÉùÏÑ±ÌïòÍ≥† Î°úÎìúÌïúÎã§.
+	//≈ÿΩ∫√ƒ∏¶ ª˝º∫«œ∞Ì ∑ŒµÂ«—¥Ÿ.
 	try
 	{
 		m_ptdTexture = _pTextureStock->Obtain_t(m_strTextureFileName);
@@ -282,9 +283,9 @@ CEffect *CShockWaveEffect::Copy()
 {
 	CShockWaveEffect *pRet = new CShockWaveEffect;
 	if(pRet == NULL) return NULL;
-	//CEffectÏùò content
+	//CEffect¿« content
 	pRet->SetContent(this);
-	//CShockWaveEffectÏùò content
+	//CShockWaveEffect¿« content
 	pRet->m_bInnerBasis = m_bInnerBasis;
 	pRet->m_iSplitCount = m_iSplitCount;
 	pRet->m_ssRadius = m_ssRadius;
@@ -305,9 +306,9 @@ void CShockWaveEffect::Render()
 	}
 	
 	if (GetOwner() != NULL)
-	{ // HIDDEN ÏÜçÏÑ±Ïùò NPCÏùò Ïù¥ÌéôÌä∏Î•º Î≥¥Í∏∞ ÏúÑÌï¥ÏÑúÎäî Ï∫êÎ¶≠ÌÑ∞Í∞Ä ENF_SHOWHIDDENÏùÑ Í∞ÄÏßÄÍ≥† ÏûàÏñ¥Ïïº ÌïúÎã§.
+	{ // HIDDEN º”º∫¿« NPC¿« ¿Ã∆Â∆Æ∏¶ ∫∏±‚ ¿ß«ÿº≠¥¬ ƒ≥∏Ø≈Õ∞° ENF_SHOWHIDDEN¿ª ∞°¡ˆ∞Ì ¿÷æÓæﬂ «—¥Ÿ.
 		if (GetOwner()->IsFlagOn(ENF_HIDDEN) && (CEntity::GetPlayerEntity(0)->IsFlagOff(ENF_SHOWHIDDEN) ||
-			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDENÏù¥Î©¥ npc effectÎäî Î≥º Ïàò ÏûàÎã§.
+			(CEntity::GetPlayerEntity(0)->IsFlagOn(ENF_SHOWHIDDEN)&&!GetOwner()->IsEnemy())))//ENF_SHOWHIDDEN¿Ã∏È npc effect¥¬ ∫º ºˆ ¿÷¥Ÿ.
 			return;
 	}
 
@@ -341,7 +342,7 @@ void CShockWaveEffect::Render()
 
 	gfxSetVertexArray( &m_vectorGFXVertex[0], m_vectorGFXVertex.size() );
 	gfxSetColorArray( &m_vectorGFXColor[0] );
-	if(m_ptdTexture != NULL) gfxSetTexCoordArray( &m_vectorTexCoord[0] );
+	if(m_ptdTexture != NULL) gfxSetTexCoordArray( &m_vectorTexCoord[0], FALSE );
 	gfxDrawElements( m_iSplitCount * 2 * 3, &m_vectorIndex[0]);
 
 	if(!RM_AreHardwareShadersAvailable())
@@ -367,26 +368,26 @@ void CShockWaveEffect::Read(CTStream *pIS)
 
 	if(ubVer == CURRENT_VERSION)
 	{
-		is >> m_strTextureFileName;	//textureÏùò ÌååÏùº Ïù¥Î¶Ñ
+		is >> m_strTextureFileName;	//texture¿« ∆ƒ¿œ ¿Ã∏ß
 		is >> m_bInnerBasis;
 		is >> m_iSplitCount;
 		ssReadFromStream(is, m_ssRadius, FLOAT);
 		ssReadFromStream(is, m_ssWidth, FLOAT);
 		ssReadFromStream(is, m_ssHeight, FLOAT);
-		is >> (INDEX&)m_eRotation;			//tagÏùò ÌöåÏ†ÑÏóê ÏñºÎßåÌÅº ÏòÅÌñ•ÏùÑ Î∞õÏùÑ Í≤ÉÏù∏Í∞Ä?
-		is >> (INDEX&)m_ePosition;			//tagÏùò Ïù¥ÎèôÏóê ÏñºÎßåÌÅº ÏòÅÌñ•ÏùÑ Î∞õÏùÑ Í≤ÉÏù∏Í∞Ä?
+		is >> (INDEX&)m_eRotation;			//tag¿« »∏¿¸ø° æÛ∏∏≈≠ øµ«‚¿ª πﬁ¿ª ∞Õ¿Œ∞°?
+		is >> (INDEX&)m_ePosition;			//tag¿« ¿Ãµøø° æÛ∏∏≈≠ øµ«‚¿ª πﬁ¿ª ∞Õ¿Œ∞°?
 		is >> (INDEX&)m_eBlendType;
 	}
 	else if(ubVer == 1)
 	{
-		is >> m_strTextureFileName;	//textureÏùò ÌååÏùº Ïù¥Î¶Ñ
+		is >> m_strTextureFileName;	//texture¿« ∆ƒ¿œ ¿Ã∏ß
 		is >> m_bInnerBasis;
 		is >> m_iSplitCount;
 		ssReadFromStream(is, m_ssRadius, FLOAT);
 		ssReadFromStream(is, m_ssWidth, FLOAT);
 		ssReadFromStream(is, m_ssHeight, FLOAT);
-		is >> (INDEX&)m_eRotation;			//tagÏùò ÌöåÏ†ÑÏóê ÏñºÎßåÌÅº ÏòÅÌñ•ÏùÑ Î∞õÏùÑ Í≤ÉÏù∏Í∞Ä?
-		is >> (INDEX&)m_ePosition;			//tagÏùò Ïù¥ÎèôÏóê ÏñºÎßåÌÅº ÏòÅÌñ•ÏùÑ Î∞õÏùÑ Í≤ÉÏù∏Í∞Ä?
+		is >> (INDEX&)m_eRotation;			//tag¿« »∏¿¸ø° æÛ∏∏≈≠ øµ«‚¿ª πﬁ¿ª ∞Õ¿Œ∞°?
+		is >> (INDEX&)m_ePosition;			//tag¿« ¿Ãµøø° æÛ∏∏≈≠ øµ«‚¿ª πﬁ¿ª ∞Õ¿Œ∞°?
 		m_eBlendType = PBT_ADDALPHA;
 	}
 	else
@@ -404,20 +405,20 @@ void CShockWaveEffect::Write(CTStream *pOS)
 	os.WriteID_t("SWVE");
 	os << (UBYTE)CURRENT_VERSION;
 
-	os << m_strTextureFileName;	//textureÏùò ÌååÏùº Ïù¥Î¶Ñ
+	os << m_strTextureFileName;	//texture¿« ∆ƒ¿œ ¿Ã∏ß
 	os << m_bInnerBasis;
 	os << m_iSplitCount;
 	ssWriteToStream(os, m_ssRadius);
 	ssWriteToStream(os, m_ssWidth);
 	ssWriteToStream(os, m_ssHeight);
-	os << (INDEX)m_eRotation;			//tagÏùò ÌöåÏ†ÑÏóê ÏñºÎßåÌÅº ÏòÅÌñ•ÏùÑ Î∞õÏùÑ Í≤ÉÏù∏Í∞Ä?
-	os << (INDEX)m_ePosition;			//tagÏùò Ïù¥ÎèôÏóê ÏñºÎßåÌÅº ÏòÅÌñ•ÏùÑ Î∞õÏùÑ Í≤ÉÏù∏Í∞Ä?
+	os << (INDEX)m_eRotation;			//tag¿« »∏¿¸ø° æÛ∏∏≈≠ øµ«‚¿ª πﬁ¿ª ∞Õ¿Œ∞°?
+	os << (INDEX)m_ePosition;			//tag¿« ¿Ãµøø° æÛ∏∏≈≠ øµ«‚¿ª πﬁ¿ª ∞Õ¿Œ∞°?
 	os << (INDEX)m_eBlendType;
 }
 
 BOOL CShockWaveEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 {
-	//ÌîÑÎ°úÏ†ùÏÖò ÏÑ§Ï†ï
+	//«¡∑Œ¡ßº« º≥¡§
 	s_pApr = &apr;
 	apr->ObjectPlacementL() = CPlacement3D(FLOAT3D(0,0,0), ANGLE3D(0,0,0));
 	apr->Prepare();
@@ -432,7 +433,7 @@ BOOL CShockWaveEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 		apr->pr_ViewerRotationMatrix, 
 		-apr->pr_vViewerPosition*apr->pr_ViewerRotationMatrix);
 
-	//Î†åÎçîÎßÅ ÏÉÅÌÉú ÏÑ§Ï†ï
+	//∑ª¥ı∏µ ªÛ≈¬ º≥¡§
 	Matrix12 &mView12 = mAbsToViewer;
 	FLOAT mView16[16];
 	mView16[ 0] = mView12[ 0];  mView16[ 1] = mView12[ 4];  mView16[ 2] = mView12[ 8];  mView16[ 3] = 0;
@@ -462,7 +463,7 @@ BOOL CShockWaveEffect::BeginRender(CAnyProjection3D &apr, CDrawPort *pdp)
 }
 void CShockWaveEffect::EndRender(BOOL bRestoreOrtho)
 {
-	//Î†åÎçîÎßÅ ÏÉÅÌÉú ÏÑ§Ï†ï
+	//∑ª¥ı∏µ ªÛ≈¬ º≥¡§
 	gfxDisableVertexProgram();
 	gfxDisablePixelProgram();
 	gfxDisableBlend();
@@ -478,12 +479,12 @@ void CShockWaveEffect::EndRender(BOOL bRestoreOrtho)
 
 void CShockWaveEffect::InitializeShaders()
 {
-	//RedneringÏóê ÏÇ¨Ïö©Ìï† ShaderÎ•º ÏÉùÏÑ±ÌïúÎã§.
+	//Redneringø° ªÁøÎ«“ Shader∏¶ ª˝º∫«—¥Ÿ.
 	static char *strVPNoTex =	"vs.1.1"				"\n"
 								"m4x4 oPos, v0, c0"		"\n"
 								"mov oD0, v4"			"\n";
 	m_ulVertexProgramNoTex = gfxCreateVertexProgram(strVPNoTex, GFX_POSITION_STREAM | GFX_COLOR_STREAM);
-	static char *strPPNoTex =	"ps.1.1"				"\n"
+	static char *strPPNoTex =	"ps.1.4"				"\n"
 								"mov r0, v0"			"\n";
 	m_ulPixelProgramNoTex = gfxCreatePixelProgram(strPPNoTex);
 	static char *strVPTex =		"vs.1.1"				"\n"
@@ -491,15 +492,17 @@ void CShockWaveEffect::InitializeShaders()
 								"mov oT0, v5"			"\n"
 								"mov oD0, v4"			"\n";
 	m_ulVertexProgramTex = gfxCreateVertexProgram(strVPTex, GFX_POSITION_STREAM | GFX_COLOR_STREAM | GFX_TEXCOORD0);
-	static char *strPPTex =		"ps.1.1"				"\n"
-								"tex t0"				"\n"
-								"mul r0, v0, t0"		"\n";
+	static char *strPPTex =		"ps.1.4"				"\n"
+								//"tex t0"				"\n"
+								"texld r0, t0"			"\n"
+								//"mul r0, v0, t0"		"\n";
+								"mul r0, r0, v0"		"\n";
 	m_ulPixelProgramTex = gfxCreatePixelProgram(strPPTex);
 }
 
 void CShockWaveEffect::FinalizeShaders()
 {
-	//RedneringÏóê ÏÇ¨Ïö©Ìïú ShaderÎ•º ÏßÄÏö¥Îã§.
+	//Redneringø° ªÁøÎ«— Shader∏¶ ¡ˆøÓ¥Ÿ.
 	if(m_ulVertexProgramNoTex) gfxDeleteVertexProgram(m_ulVertexProgramNoTex);
 	m_ulVertexProgramNoTex = 0;
 	if(m_ulPixelProgramNoTex) gfxDeletePixelProgram(m_ulPixelProgramNoTex);

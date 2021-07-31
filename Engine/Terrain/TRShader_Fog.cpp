@@ -9,13 +9,13 @@ static const INDEX iBasePP = 0;
 
 SHADER_MAIN(TRShader_Fog)
 {
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add Tagent-space Normal Map)(0.1)
 	shaSetDefaultConstantRegisters();
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add Tagent-space Normal Map)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add Tagent-space Normal Map)(0.1)
 	shaRender();
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.1)
 SHADER_DESC(TRShader_Fog,ShaderDesc *&pshDesc)
 {
 	static bool bInit = false;
@@ -30,7 +30,7 @@ SHADER_DESC(TRShader_Fog,ShaderDesc *&pshDesc)
 		shDescMe.sd_ulStreamFlags[0] = SHA_POSITION_STREAM|SHA_NAKED_CODE;
 	}
 	pshDesc = &shDescMe;
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.1)
 }
 
 SHADER_VCODE(TRShader_Fog, CTString &strVPCode, INDEX iVertexProgram)
@@ -54,8 +54,11 @@ SHADER_PCODE(TRShader_Fog, CTString &strPPCode, INDEX iPixelProgram, FOGTYPE eFo
 	ASSERT(eFogType==FT_NONE);
 	ASSERT(iPixelProgram==iBasePP);
 
-	strPPCode = "tex    t0                     \n"
+/*	strPPCode = "tex    t0                     \n"
 				"mul    t0,     t0,    c7      \n" // mul fog texture with fog color
 				"mov    r0,     t0             \n"
+				;*/
+	strPPCode = "texld	r0,    t0              \n"
+				"mul    r0,     r0,    c7      \n" // mul fog texture with fog color
 				;
 }

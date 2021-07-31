@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 // CTag.h
 //
 
@@ -16,7 +16,7 @@
 #include <deque>
 #include <string>
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #define TAG_INDICATOR_STRING	"_TAG_"
 #define TAG_V_INDICATOR_STRING	"_TAG_V_"
 #define TAG_T_INDICATOR_STRING	"_TAG_T_"
@@ -28,7 +28,7 @@ enum VERTEX_TAG_CONVERT_TYPE
 	VTCT_TRIANGLE	= 2,
 	VTCT_GROUP		= 3,
 };
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
 
 extern CModelInstance *g_pmiAxis;
 
@@ -50,9 +50,9 @@ public:
 	TagInfo(const FLOAT time, const FLOAT3D &pos, const FLOATquat3D &rot)
 		: m_fTime(time), m_vPos(pos), m_qRot(rot) {}
 
-	FLOAT			m_fTime;	//ì´ ì •ë³´ê°€ ë‚˜íƒ€ë‚¬ë˜ ì‹œê°„
-	FLOAT3D			m_vPos;		//íŠ¹ì •ì‹œê°„ì¼ë•Œì˜ ìœ„ì¹˜
-	FLOATquat3D		m_qRot;		//íŠ¹ì •ì‹œê°„ì¼ë•Œì˜ ë°©í–¥
+	FLOAT			m_fTime;	//ÀÌ Á¤º¸°¡ ³ªÅ¸³µ´ø ½Ã°£
+	FLOAT3D			m_vPos;		//Æ¯Á¤½Ã°£ÀÏ¶§ÀÇ À§Ä¡
+	FLOATquat3D		m_qRot;		//Æ¯Á¤½Ã°£ÀÏ¶§ÀÇ ¹æÇâ
 };
 
 class ENGINE_API CTag
@@ -81,16 +81,16 @@ public:
 	inline void SetOffsetRot(const ANGLE3D &rot)		{ m_qOffsetRot.FromEuler(rot); }
 	inline void SetOffsetRot(const FLOATquat3D &rot)	{ m_qOffsetRot = rot; }
 
-	//Tag infoë¥¼ ì €ì¥í•  ì‹œê°„.
+	//Tag info¸¦ ÀúÀåÇÒ ½Ã°£.
 	inline FLOAT GetMaxTimeLength()				{ return m_fMaxTimeLength; }
 	inline void SetMaxTimeLength(FLOAT len)		{ m_fMaxTimeLength = len; }
 
-	//active ê´€ë ¨ í•¨ìˆ˜ë“¤, ì¤‘ìš”í•¨.
+	//active °ü·Ã ÇÔ¼öµé, Áß¿äÇÔ.
 	inline void Activate()						{ ++m_iActive; }
 	inline void Deactivate()					{ if((--m_iActive) < 0) m_iActive=0; }
 	inline BOOL Active()						{ return m_iActive; }
 
-	//CRefCountPtrê³¼ ê°™ì´ ì“°ê¸° ìœ„í•´ì„œ ë°˜ë“œì‹œ í•„ìš”í•œ í•¨ìˆ˜ë“¤.
+	//CRefCountPtr°ú °°ÀÌ ¾²±â À§ÇØ¼­ ¹İµå½Ã ÇÊ¿äÇÑ ÇÔ¼öµé.
 	inline ULONG AddRef()						{ return ++m_ulRefCount; }
 	inline ULONG Release()						{ return --m_ulRefCount; }
 protected:
@@ -103,17 +103,17 @@ protected:
 	void SetContent(CTag *pTag);
 	
 protected:
-	static INDEX	m_iAxisRefCount;	//axis ska modelì„ ìƒì„±ì‚­ì œí• ë•Œ ì‚¬ìš©ë˜ëŠ” ê³³ì„ í‘œì‹œí•œë‹¤.
-	std::string		m_strName;			//ì´ë¦„
-	TAG_TYPE		m_eType;			//íƒœê·¸ì˜ íƒ€ì…
-	INDEX			m_iActive;			//ì´ tagì˜ í™œì„±ì •ë„ë¥¼ ë‚˜íƒ€ë‚´ëŠ” count
-	TagInfo			m_tiTagInfo;		//í˜„ì¬ tag info
-	FLOAT3D			m_vOffsetPos;		//ì¤‘ì‹¬ì—ì„œë¶€í„°ì˜ ì˜¤í”„ì…‹
-	FLOATquat3D		m_qOffsetRot;		//ì¤‘ì‹¬ì˜ íšŒì „ì—ì„œë¶€í„°ì˜ ì˜¤í”„ì…‹
-	FLOAT			m_fOldestTime;		//ê°€ì¥ ì˜¤ë˜ëœ TagInfoì˜ ì‹œê°„
-	FLOAT			m_fMaxTimeLength;	//TagInfoë¥¼ ìŒ“ëŠ” ì‹œê°„
-	ULONG			m_ulRefCount;		//CRefCountPtrì—ì„œ ì‚¬ìš©ë˜ëŠ” Reference count
+	static INDEX	m_iAxisRefCount;	//axis ska modelÀ» »ı¼º»èÁ¦ÇÒ¶§ »ç¿ëµÇ´Â °÷À» Ç¥½ÃÇÑ´Ù.
+	std::string		m_strName;			//ÀÌ¸§
+	TAG_TYPE		m_eType;			//ÅÂ±×ÀÇ Å¸ÀÔ
+	INDEX			m_iActive;			//ÀÌ tagÀÇ È°¼ºÁ¤µµ¸¦ ³ªÅ¸³»´Â count
+	TagInfo			m_tiTagInfo;		//ÇöÀç tag info
+	FLOAT3D			m_vOffsetPos;		//Áß½É¿¡¼­ºÎÅÍÀÇ ¿ÀÇÁ¼Â
+	FLOATquat3D		m_qOffsetRot;		//Áß½ÉÀÇ È¸Àü¿¡¼­ºÎÅÍÀÇ ¿ÀÇÁ¼Â
+	FLOAT			m_fOldestTime;		//°¡Àå ¿À·¡µÈ TagInfoÀÇ ½Ã°£
+	FLOAT			m_fMaxTimeLength;	//TagInfo¸¦ ½×´Â ½Ã°£
+	ULONG			m_ulRefCount;		//CRefCountPtr¿¡¼­ »ç¿ëµÇ´Â Reference count
 };
 
 #endif /* __CTAG_H__ */
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

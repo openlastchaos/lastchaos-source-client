@@ -111,7 +111,7 @@ static void MeasurePerformance(const CTString &strDescription)
 static CTimerValue _tvLastNetUpdate;
 static BOOL  _bNetTimeInitialized = FALSE;
 extern FLOAT net_fSendRetryWait;
-//! ë¡œë”©í•˜ëŠ” ë™ì•ˆ ë„¤íŠ¸ì›Œí¬ë¥¼ ì—…ë°ì´íŠ¸ í•œë‹¤.
+//! ·ÎµùÇÏ´Â µ¿¾È ³×Æ®¿öÅ©¸¦ ¾÷µ¥ÀÌÆ® ÇÑ´Ù.
 static void DoNetworkUpdates(void)
 {
   // for network updating during loading
@@ -229,7 +229,7 @@ void CallProgressHook_t(FLOAT fCompleted)
   _phiLoadingInfo.phi_fCompleted = fCompleted;}
 
   DoCall(PHS_WORKING);
-//0524 kwon ì„ì‹œ ì‚­ì œ.
+//0524 kwon ÀÓ½Ã »èÁ¦.
 //  DoNetworkUpdates();
 }
 

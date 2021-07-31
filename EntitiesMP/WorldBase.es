@@ -1118,7 +1118,7 @@ void CWorldBase_OnWorldRender(CWorld *pwo)
 	// get current tick
 	TIME tmNow = _pTimer->GetLerpedCurrentTick();
 	// wrap time to prevent texture coordinates to get unprecise
-	tmNow = fmod(tmNow, 600.0); // (wrap every 10 minutes)
+	tmNow = fmod(tmNow, 600.0f); // (wrap every 10 minutes)
 
 // transformations
 //안태훈 수정 시작	//(Add & Modify SSSE Effect)(0.1)
@@ -1355,13 +1355,15 @@ name      "WorldBase";
 thumbnail "Thumbnails\\WorldBase.tbn";
 features  "HasName", "HasDescription", 
 	"ImplementsOnWorldRender", "ImplementsOnWorldInit",
-	"ImplementsOnInitClass", "ImplementsOnEndClass";
-
+	"ImplementsOnInitClass", "ImplementsOnEndClass", "HasRaidObject", "RaidEvent";
 
 properties:
 
-
+/*** Export Data***/
 	1 CTString m_strName "Name" 'N' ="World Base",
+	200 BOOL	m_bRaidObject	"This entity is RaidObject" = FALSE,		// 레이드 오브젝트 설정
+	201 INDEX m_RaidEventType		"Raid Event Type" = 0,			// 레이드 이벤트 타입
+/******************/
 	3 CTString m_strDescription = "",
 	2 BOOL m_bZoning     "Zoning"     'Z' =FALSE,
 	4 BOOL m_bBackground "Background" 'B' =FALSE,
@@ -1429,7 +1431,7 @@ properties:
 	99 FLOAT m_fOpacity "Opacity" = 1.0f,
 //강동민 수정 시작 테스트 클라이언트 작업	06.30
 	116 BOOL	m_bRenderReflection	"Render reflection?"	= FALSE,
-//강동민 수정 끝 테스트 클라이언트 작업		06.30
+//강동민 수정 끝 테스트 클라이언트 작업		06.30	
 
 components:
 

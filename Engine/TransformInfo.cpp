@@ -21,10 +21,10 @@ m_pTransformInfo( NULL )
 {
 	m_pTransformInfo					= new sTransformInfo[TOTAL_TRANSFORM];
 	//-------------------------------------------------------
-	m_pTransformInfo[TYPE_2].strName					= "Î≥ÄÏã†Ï≤¥1";
+	m_pTransformInfo[TYPE_2].strName					= "∫ØΩ≈√º1";
 	m_pTransformInfo[TYPE_2].strFileName				= SUMMON_TYPE1;
 
-	// FIXME : Ïï†ÎãàÎ©îÏù¥ÏÖò Ïù¥Î¶ÑÏùÄ Í≥µÏãùÏù¥ ÏóÜÎÇò???
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_WALK_1]		= "sot1_walk";
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_WALK_2]		= "sot1_walk";
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_IDLE]		= "sot1_idle01";	
@@ -35,9 +35,9 @@ m_pTransformInfo( NULL )
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_ATTACK_2]	= "sot1_att02";
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_ATTACK_3]	= "sot1_att03";
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_ATTACK_4]	= "sot1_att01";
-	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_SIT]		= "sot1_sit_01";	// ÏïâÍ∏∞.
-	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_SIT_CONTINUE]= "sot1_sit_02";	// ÏïâÏïÑ ÏûàÎäî ÏÉÅÌÉú.
-	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_STANDUP]	= "sot1_sit_03";	// ÏùºÏñ¥ÏÑúÍ∏∞.	
+	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_SIT]		= "sot1_sit_01";	// æ…±‚.
+	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_SIT_CONTINUE]= "sot1_sit_02";	// æ…æ∆ ¿÷¥¬ ªÛ≈¬.
+	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_STANDUP]	= "sot1_sit_03";	// ¿œæÓº≠±‚.	
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_PICK]		= "sot1_pu";
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_DAMAGE]		= "sot1_dam";
 	m_pTransformInfo[TYPE_2].aStrAnimationName[ANIM_DIE]		= "sot1_dam";
@@ -57,12 +57,12 @@ m_pTransformInfo( NULL )
 	m_pTransformInfo[TYPE_2].afImpactTimeTable[ATTACK2] = 0.79f;
 	m_pTransformInfo[TYPE_2].afImpactTimeTable[ATTACK3] = 0.68f;
 	m_pTransformInfo[TYPE_2].afImpactTimeTable[ATTACK4] = 0.66f;
-
+	SetInfo(TYPE_2, 309);
 	//-------------------------------------------------------
-	m_pTransformInfo[TYPE_1].strName					= "Î≥ÄÏã†Ï≤¥2";
+	m_pTransformInfo[TYPE_1].strName					= "∫ØΩ≈√º2";
 	m_pTransformInfo[TYPE_1].strFileName				= SUMMON_TYPE2;
 
-	// FIXME : Ïï†ÎãàÎ©îÏù¥ÏÖò Ïù¥Î¶ÑÏùÄ Í≥µÏãùÏù¥ ÏóÜÎÇò???
+	// FIXME : æ÷¥œ∏ﬁ¿Ãº« ¿Ã∏ß¿∫ ∞¯Ωƒ¿Ã æ¯≥™???
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_WALK_1]		= "sot2_walk";
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_WALK_2]		= "sot2_walk";
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_IDLE]		= "sot2_idle_01";	
@@ -73,9 +73,9 @@ m_pTransformInfo( NULL )
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_ATTACK_2]	= "sot2_att_02";
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_ATTACK_3]	= "sot2_att_01";
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_ATTACK_4]	= "sot2_att_02";
-	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_SIT]		= "sot2_sit_01";	// ÏïâÍ∏∞.
-	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_SIT_CONTINUE]= "sot2_sit_02";	// ÏïâÏïÑ ÏûàÎäî ÏÉÅÌÉú.
-	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_STANDUP]	= "sot2_sit_03";	// ÏùºÏñ¥ÏÑúÍ∏∞.	
+	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_SIT]		= "sot2_sit_01";	// æ…±‚.
+	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_SIT_CONTINUE]= "sot2_sit_02";	// æ…æ∆ ¿÷¥¬ ªÛ≈¬.
+	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_STANDUP]	= "sot2_sit_03";	// ¿œæÓº≠±‚.	
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_PICK]		= "sot2_pu";
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_DAMAGE]		= "sot2_dam";
 	m_pTransformInfo[TYPE_1].aStrAnimationName[ANIM_DIE]		= "sot2_dam";
@@ -95,6 +95,7 @@ m_pTransformInfo( NULL )
 	m_pTransformInfo[TYPE_1].afImpactTimeTable[ATTACK2] = 0.96f;
 	m_pTransformInfo[TYPE_1].afImpactTimeTable[ATTACK3] = 0.92f;
 	m_pTransformInfo[TYPE_1].afImpactTimeTable[ATTACK4] = 0.96f;
+	SetInfo(TYPE_1, 313);
 }
 
 // ----------------------------------------------------------------------------
@@ -150,4 +151,24 @@ float CTransformInfo::GetImpactTime( int iTransform, int iAttackType )	const
 CTString CTransformInfo::GetAnimationName( int iTransform, int iAnimType )
 {
 	return m_pTransformInfo[iTransform].aStrAnimationName[iAnimType];
+}
+
+void CTransformInfo::SetInfo( int iTransform, int nIndex )
+{
+	m_pTransformInfo[iTransform].nSkillIndex = nIndex;
+}
+
+int CTransformInfo::GetSkillIndex( int iTransform )
+{
+	return m_pTransformInfo[iTransform].nSkillIndex;
+}
+
+int CTransformInfo::GetType(int nSkillIndex)
+{
+	for (int i = 0; i < TOTAL_TRANSFORM; ++i)
+	{
+		if (m_pTransformInfo[i].nSkillIndex == nSkillIndex)
+			return i;
+	}
+	return -1;
 }

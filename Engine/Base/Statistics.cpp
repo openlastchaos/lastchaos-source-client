@@ -57,15 +57,15 @@ CStatForm::CStatForm()
 	InitCounter( SCI_SKATRIANGLES_FIRSTMIP, 101, "/%.0f", 1);
 	InitCounter( SCI_GFXVERTICES,           101, "^cFFFFFF\ngfxtri=%.0f", 0.3333f);
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(For Performance)(0.2)
 	InitCounter( SCI_DPCOUNT,				101, "\nDPCount=%.0f", 1);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(For Performance)(0.2)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(For Performance)(0.2)
 
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…	06.29
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷	06.29
 	InitCounter( SCI_REFLECTION_TRI,		101, "\nReflectionTRI=%.0f", 1);
 	InitCounter( SCI_REFLECTION_VERTICE,    101, "^cFFFFFF\nReflectionVertice=%.0f", 0.3333f);
 	InitCounter( SCI_REFLECTION_SKATRI,    101, "\nReflectionSkatri=%.0f", 1);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë í…ŒìŠ¤íŠ¸ í´ë¼ì´ì–¸íŠ¸ ì‘ì—…		06.29
+//°­µ¿¹Î ¼öÁ¤ ³¡ Å×½ºÆ® Å¬¶óÀÌ¾ğÆ® ÀÛ¾÷		06.29
 							 
 	InitTimer( STI_WORLDTRANSFORM,     101, "^C\n\nwldtra=%2.0f ms", 1000.0f);
 	InitTimer( STI_WORLDVISIBILITY,    101, "\nwldvis=%2.0f ms", 1000.0f);
@@ -74,15 +74,15 @@ CStatForm::CStatForm()
 	InitTimer( STI_MODELRENDERING,     101, "\nmdlren=%2.0f ms", 1000.0f);
 	InitTimer( STI_PARTICLERENDERING,  101, "\npartic=%2.0f ms", 1000.0f);
 	InitTimer( STI_FLARESRENDERING,    101, "\nflares=%2.0f ms", 1000.0f);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 	InitTimer( STI_EFFECT,             101, "\neffect=%2.0f ms", 1000.0f);
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘		03.04
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ		03.04
 	InitTimer( STI_SHADOWRENDERING,    101, "\nshadow=%2.0f ms", 1000.0f);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë		03.04
-//ê°•ë™ë¯¼ ìˆ˜ì • ì‹œì‘ Water êµ¬í˜„		04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡		03.04
+//°­µ¿¹Î ¼öÁ¤ ½ÃÀÛ Water ±¸Çö		04.22
 	InitTimer( STI_WATERRENDERING,    101, "\nWater=%2.0f ms", 1000.0f);
-//ê°•ë™ë¯¼ ìˆ˜ì • ë Water êµ¬í˜„			04.22
+//°­µ¿¹Î ¼öÁ¤ ³¡ Water ±¸Çö			04.22
 	
 	InitTimer( STI_SOUNDUPDATE, 101, "^cFFFFCF\nsndupd=%2.0f ms", 1000.0f);
 	InitTimer( STI_SOUNDMIXING, 101, "\nsndmix=%2.0f ms", 1000.0f);
@@ -172,7 +172,7 @@ void CStatForm::Reset(void)
 	for (INDEX iTimer = 0; iTimer<sf_astTimers.Count(); iTimer++) {
 		// double-check that timer has been stopped (only for timers in main thread!)
 		if( iTimer!=STI_TIMER && iTimer!=STI_SOUNDMIXING) {
-//1125 ì„ì‹œ			ASSERT( sf_astTimers[iTimer].st_tvStarted.tv_llValue == -1);
+//1125 ÀÓ½Ã			ASSERT( sf_astTimers[iTimer].st_tvStarted.tv_llValue == -1);
 		} // reset it
 		sf_astTimers[iTimer].st_tvElapsed.Clear();
 	}

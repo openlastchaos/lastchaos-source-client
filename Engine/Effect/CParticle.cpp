@@ -1,11 +1,11 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 
 #include "stdH.h"
 
 #include "CParticle.h"
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)
 
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Memory.h>
@@ -104,7 +104,7 @@ void CParticlePrototype::Read(CTStream *pIS)
 		is >> m_particleUpper.m_fMass;
 		is >> m_particleLower.m_colColor;
 		is >> m_particleUpper.m_colColor;
-		//pos ìƒëµ
+		//pos »ı·«
 		is >> m_particleLower.m_quatDirection.q_w;
 		is >> m_particleUpper.m_quatDirection.q_w;
 		is >> m_particleLower.m_quatDirection.q_x;
@@ -113,7 +113,7 @@ void CParticlePrototype::Read(CTStream *pIS)
 		is >> m_particleUpper.m_quatDirection.q_y;
 		is >> m_particleLower.m_quatDirection.q_z;
 		is >> m_particleUpper.m_quatDirection.q_z;
-		//velocity, acceleration ìƒëµ
+		//velocity, acceleration »ı·«
 	}
 	//old version
 	else
@@ -142,7 +142,7 @@ void CParticlePrototype::Write(CTStream *pOS)
 	os << m_particleUpper.m_fMass;
 	os << m_particleLower.m_colColor;
 	os << m_particleUpper.m_colColor;
-	//pos ìƒëµ
+	//pos »ı·«
 	os << m_particleLower.m_quatDirection.q_w;
 	os << m_particleUpper.m_quatDirection.q_w;
 	os << m_particleLower.m_quatDirection.q_x;
@@ -151,7 +151,7 @@ void CParticlePrototype::Write(CTStream *pOS)
 	os << m_particleUpper.m_quatDirection.q_y;
 	os << m_particleLower.m_quatDirection.q_z;
 	os << m_particleUpper.m_quatDirection.q_z;
-	//velocity, acceleration ìƒëµ
+	//velocity, acceleration »ı·«
 }
 
 
@@ -497,4 +497,4 @@ void CSphereDoubleSpace::Write(CTStream *pOS)
 //#define CURRENT_VERSION 1
 
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)

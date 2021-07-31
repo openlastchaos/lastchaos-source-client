@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Add & Modify SSSE Effect)(0.1)
 // CEntityTag.cpp
 //
 
@@ -41,7 +41,7 @@ void CEntityTag::AddNewTagInfo(FLOAT time, FLOATquat3D &rot, FLOAT3D &pos, FLOAT
 {
 	if(!Active()) return;
 
-	//ì—”í‹°í‹°ì˜ ì •ë³´
+	//¿£Æ¼Æ¼ÀÇ Á¤º¸
 	FLOAT3D vEntityPos(0,0,0);
 	FLOATquat3D qEntityRot(1,0,0,0);
 	if( ((CEntity*)m_epEntity) != NULL )
@@ -49,7 +49,7 @@ void CEntityTag::AddNewTagInfo(FLOAT time, FLOATquat3D &rot, FLOAT3D &pos, FLOAT
 		vEntityPos = m_epEntity->en_plPlacement.pl_PositionVector;
 		qEntityRot.FromEuler(m_epEntity->en_plPlacement.pl_OrientationAngle);
 	}
-	//ìƒˆë¡œìš´ íƒœê·¸ì •ë³´ ì¶”ê°€
+	//»õ·Î¿î ÅÂ±×Á¤º¸ Ãß°¡
 	CTag::AddNewTagInfo(time, rot*qEntityRot, pos+vEntityPos, stretch);
 }
 
@@ -57,7 +57,7 @@ void CEntityTag::AddNewTagInfo(FLOAT time, Matrix12 &mInfo, Matrix12 &mStrInfo)
 {
 	if(!Active()) return;
 
-	//ì—”í‹°í‹°ì˜ ì •ë³´
+	//¿£Æ¼Æ¼ÀÇ Á¤º¸
 	FLOAT3D vEntityPos(0,0,0);
 	FLOATquat3D qEntityRot(1,0,0,0);
 	if( ((CEntity*)m_epEntity) != NULL )
@@ -66,7 +66,7 @@ void CEntityTag::AddNewTagInfo(FLOAT time, Matrix12 &mInfo, Matrix12 &mStrInfo)
 		qEntityRot.FromEuler(m_epEntity->en_plPlacement.pl_OrientationAngle);
 	}
 
-	//ìƒˆë¡œìš´ íƒœê·¸ì •ë³´
+	//»õ·Î¿î ÅÂ±×Á¤º¸
 	TagInfo info;
 	info.m_fTime = time;
 	FLOATquat3D	&infoQRot = info.m_qRot;
@@ -74,14 +74,14 @@ void CEntityTag::AddNewTagInfo(FLOAT time, Matrix12 &mInfo, Matrix12 &mStrInfo)
 	FLOATmatrix3D	rot;
 	FLOAT3D			pos;
 
-	//íšŒì „ì²˜ë¦¬
+	//È¸ÀüÃ³¸®
 	rot(1,1) = mInfo[ 0]; rot(1,2) = mInfo[ 1]; rot(1,3) = mInfo[ 2];
 	rot(2,1) = mInfo[ 4]; rot(2,2) = mInfo[ 5]; rot(2,3) = mInfo[ 6];
 	rot(3,1) = mInfo[ 8]; rot(3,2) = mInfo[ 9]; rot(3,3) = mInfo[10];
 	infoQRot.FromMatrix(rot);
 	infoQRot *= m_qOffsetRot * qEntityRot;
 
-	//ìœ„ì¹˜ì²˜ë¦¬
+	//À§Ä¡Ã³¸®
 	rot(1,1) = mStrInfo[ 0]; rot(1,2) = mStrInfo[ 1]; rot(1,3) = mStrInfo[ 2];
 	rot(2,1) = mStrInfo[ 4]; rot(2,2) = mStrInfo[ 5]; rot(2,3) = mStrInfo[ 6];
 	rot(3,1) = mStrInfo[ 8]; rot(3,2) = mStrInfo[ 9]; rot(3,3) = mStrInfo[10];
@@ -90,7 +90,7 @@ void CEntityTag::AddNewTagInfo(FLOAT time, Matrix12 &mInfo, Matrix12 &mStrInfo)
 	infoVPos(3) = mStrInfo[11];
 	infoVPos += m_vOffsetPos * rot + vEntityPos;
 
-	//ìƒˆë¡œìš´ íƒœê·¸ì •ë³´ ì¶”ê°€
+	//»õ·Î¿î ÅÂ±×Á¤º¸ Ãß°¡
 	CTag::AddNewTagInfo(info);
 }
 
@@ -98,7 +98,7 @@ void CEntityTag::AddNewTagInfo(TagInfo &info)
 {
 	if(!Active()) return;
 
-	//ì—”í‹°í‹°ì˜ ì •ë³´
+	//¿£Æ¼Æ¼ÀÇ Á¤º¸
 	FLOAT3D vEntityPos(0,0,0);
 	FLOATquat3D qEntityRot(1,0,0,0);
 	if( ((CEntity*)m_epEntity) != NULL )
@@ -112,8 +112,8 @@ void CEntityTag::AddNewTagInfo(TagInfo &info)
 	infoNew.m_qRot *= qEntityRot;
 	infoNew.m_vPos += vEntityPos;
 
-	//ìƒˆë¡œìš´ íƒœê·¸ì •ë³´ ì¶”ê°€
+	//»õ·Î¿î ÅÂ±×Á¤º¸ Ãß°¡
 	CTag::AddNewTagInfo(info);
 }
 
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Add & Modify SSSE Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Add & Modify SSSE Effect)(0.1)

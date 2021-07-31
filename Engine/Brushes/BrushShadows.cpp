@@ -96,7 +96,7 @@ void CBrushPolygon::InitializeShadowMap(void)
 
 	// mip level is initially minimum mip level that generates needed precision for the polygon
 	// (size=(2^ub)*0.5m) (-1 is for *0.5m)
-	INDEX iMipLevel = (MAX_MEX_LOG2+bpo_bppProperties.bpp_sbShadowClusterSize-1);
+	INDEX iMipLevel = ((MAX_MEX_LOG2-2)+bpo_bppProperties.bpp_sbShadowClusterSize-1);
 
 	// expand shadow map for the sake of dark corners
 	if( bpo_ulFlags&BPOF_DARKCORNERS) {

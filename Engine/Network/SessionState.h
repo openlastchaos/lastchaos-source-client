@@ -4,11 +4,7 @@
   #pragma once
 #endif
 
-#include <Engine/Base/Synchronization.h>
 #include <Engine/Templates/StaticStackArray.h>
-#include <Engine/Network/EMsgBuffer.h>
-#include <Engine/Network/Common.h>
-//#include <Engine/Network/NetworkMessage.h>
 #include <Engine/Network/PlayerTarget.h>
 #include <Engine/Network/CharacterTarget.h>
 #include <Engine/Network/MobTarget.h>
@@ -16,14 +12,46 @@
 #include <Engine/Network/SlaveTarget.h>
 #include <Engine/Network/ItemTarget.h>
 #include <Engine/Network/SessionSocket.h>
-#include <Engine/Base/Timer.h>
-//0105
 #include <Engine/Network/Cmd.h>
 #include <Engine/GlobalDefinition.h>
+#include <Engine/LocalDefine.h>
+#include <Engine/Base/Command.h>
+#include <Common/Packet/ptype_inventory.h>
+#include <Engine/Network/MessageDefine.h>
 
 /*
  * Session state, manipulates local copy of the world
- */
+*/
+
+#if		!defined(WORLD_EDITOR)
+//using namespace boost::mpl::placeholders;
+#endif	// WORLD_EDITOR
+
+#define		DECLARE_PACKET(x)		void Recv##x(CNetworkMessage *istr)
+#define		IMPLEMENT_PACKET(x)		void Recv##x(CNetworkMessage *istr)
+
+#define		DECLARE_MSG_UPDATE(x)	void update##x(CNetworkMessage* istr)
+#define		IMPLEMENT_MSG_UPDATE(x)	void update##x(CNetworkMessage* istr)
+
+#if		!defined(WORLD_EDITOR)
+#	define		REG_PACKET(msg, n, x)			m_packet[msg].insert( std::make_pair(n, &Recv##x) );
+#	define		REG_PACKET_UPDATE(msg, n, x)	m_packet[msg].insert( std::make_pair(n, &update##x) );
+#	define		REG_PACKET_R(msg, n, real)		{\
+													_recv_func f; \
+													f = boost::bind(&CSessionState::real, this, _1); \
+													m_packet[msg].insert( std::make_pair(n, f) ); \
+												}
+#else 
+#	define		REG_PACKET(msg, n, x)
+#	define		REG_PACKET_UPDATE(msg, n, x)
+#	define		REG_PACKET_R(msg, n, real)
+#endif	// WORLD_EDITOR
+
+// boost map_list_
+
+#define MODEL_TREASURE	("Data\\Item\\Common\\ITEM_treasure02.smc")
+#define ITEM_TREASURE_HELMET 6083
+
 class ENGINE_API CSessionState {
 public:
 //  CStaticArray<CPlayerTarget> ses_apltPlayers; // client targets for all players in game
@@ -81,7 +109,6 @@ public:
 public:
   // network message waiters
   void Start_AtServer_t(void);     // throw char *
-  void Start_AtClient_t(INDEX ctLocalPlayers);     // throw char *
   // Set lerping factor for current frame.
   void SetLerpFactor(CTimerValue tvNow);
   // notify entities of level change
@@ -129,7 +156,7 @@ public:
   INDEX GetPlayersCount(void);
   // attach a player entity to this session 
   void AddPlayer(INDEX iPlayerIndex,CPlayerCharacter &pcCharacter,ULONG &ulEntityID,ULONG &ulWeaponsID,ULONG &ulAnimatorID,INDEX iClient);
-
+  void DeleteObject(SBYTE type, ULONG index );
 
   /* Read session state information from a stream. */
   void Read_t(CTStream *pstr,BOOL bNetwork = FALSE);   // throw char *
@@ -172,8 +199,6 @@ public:
   void StartGame();
   char		m_commIn[2048], m_commInTmp[1024], m_commOut[512], m_oneSentence[512];
   CCmd		*m_pCmd;
-
-  void SwapItem( int tab, int row, int col, int tab2, int row2, int col2 );
   
   //0714 kwon
   void ReceiveUIMessage(CNetworkMessage *istr);
@@ -182,28 +207,20 @@ public:
   void ReceiveSSkillMessage(CNetworkMessage *istr);
   void ReceiveQuickSlotMessage(CNetworkMessage *istr);
   void ReceiveExchangeMessage(CNetworkMessage *istr);
-  void ReceiveDamageMessage(CNetworkMessage *istr);
+#ifdef HP_PERCENTAGE
+  void ReceiveDamageRealStatMessage(CNetworkMessage *istr);
+#endif // HP_PERCENTAGE
   void ReceiveAttackMessage(CNetworkMessage *istr);
   void ReceiveItemMessage(CNetworkMessage *istr);
   void ReceiveGoZoneMessage(CNetworkMessage *istr);
   void ReceivePartyMessage(CNetworkMessage *istr);
   void ReceiveInventoryMessage(CNetworkMessage *istr);
   void ReceiveGmMessage(CNetworkMessage *istr);
-// [KH_070316] ë³€ê²½ í”„ë¦¬ë¯¸ì—„ ë©”ëª¨ë¦¬ ê´€ë ¨
-  void ReceiveMemPosMessage(UBYTE recvMSG, CNetworkMessage *istr);
+// [KH_070316] º¯°æ ÇÁ¸®¹Ì¾ö ¸Þ¸ð¸® °ü·Ã
+  void ReceiveMemPosMessage(CNetworkMessage *istr);
   void ReceiveGoToMessage(CNetworkMessage *istr);
   void ReceiveMoveMessage(CNetworkMessage *istr);
-  void ReceiveStatusMessage(CNetworkMessage *istr);
-  void ReceiveAtMessage(CNetworkMessage *istr);
-  void ReceiveDisappearMessage(CNetworkMessage *istr);
-  void ReceiveAppearMessage(CNetworkMessage *istr);
-  
-  void ReceiveMobAppearMessage(CNetworkMessage *istr);			// Mob Appear
-  void ReceiveCharacterAppearMessage(CNetworkMessage *istr);	// Character Appear
-  void ReceivePetAppearMessage(CNetworkMessage *istr,BOOL isNew);
-  void ReceiveSummonAppearMessage(CNetworkMessage *istr);		// Summon Appear
-  void ReceiveWildPetAppearMessage(CNetworkMessage *istr);		// Wild Pet Appear
-  // ë¡œê·¸ì¸ ê´€ë ¨ ë©”ì‹œì§€...
+  // ·Î±×ÀÎ °ü·Ã ¸Þ½ÃÁö...
   void ReceiveLoginMessage(CNetworkMessage *istr);
   void ReceiveServerListMessage(CNetworkMessage *istr);
   void ReceiveChatMessage(CNetworkMessage *istr);
@@ -217,7 +234,6 @@ public:
   void ReceiveQuestMessage(CNetworkMessage *istr);
   
   void ReceiveEnvMessage( CNetworkMessage *istr );//1013
-  void ReceiveMobStatusMessage( CNetworkMessage *istr );//1013
   void ReceiveAssistMessage( CNetworkMessage *istr );
   void ReceiveWarpMessage(CNetworkMessage *istr);
   void ReceivePkMessage(CNetworkMessage *istr);
@@ -229,21 +245,26 @@ public:
   void ReceiveGuildMessage(CNetworkMessage *istr);
   void ReceiveTeachMessage(CNetworkMessage *istr);
   void ReceiveChangeJobMessage(CNetworkMessage *istr);  
-  void ReceiveBillingMessage( CNetworkMessage *istr ); // Date : 2005-05-06(ì˜¤í›„ 9:20:21), By Lee Ki-hwan
   void ReceiveMessengerMessage( CNetworkMessage *istr ); 
   void ReceiveMessengerExMessage( CNetworkMessage *istr ); 
-  void ReceiveTradeAgentMessage( CNetworkMessage *istr ); //ê²½ë§¤ ì‹œìŠ¤í…œ
+
+  void ReceiveExpeditionMessage( CNetworkMessage *istr ); // [sora] ¿øÁ¤´ë ½Ã½ºÅÛ
+  void ReceiveFactoryMessage( CNetworkMessage *istr );		// ¾ÆÀÌÅÛ Á¦ÀÛ
+
+  void ReceiveAffinityMessage( CNetworkMessage *istr );	// [6/5/2009 rumist] affinity message handler. 
+
   //wooss 050818
-  void ReceiveExtendMessage(CNetworkMessage *istr);	//í™•ìž¥ ë©”ì‹œì§€
-  void ReceiveFailMessage(CNetworkMessage *istr); // ì‹¤íŒ¨ ë©”ì‹œì§€ ì¶œë ¥
+  void ReceiveExtendMessage(CNetworkMessage *istr);	//È®Àå ¸Þ½ÃÁö
+  void ReceiveFailMessage(CNetworkMessage *istr); // ½ÇÆÐ ¸Þ½ÃÁö Ãâ·Â
  
   // eons 061206
-  void ReceiveExHairChange(CNetworkMessage *istr); // ì‚°íƒ€ëª¨ìž ê´€ë ¨( í—¤ì–´ ë³€ê²½ )
-  void ReceiveExPlayerStateChange(CNetworkMessage *istr); // ê²Œìž„ì„œí¬í„° ê´€ë ¨( íŠ¹ì •ì•„ì´í…œ ì°©ìš©ì‹œ ì´íŽ™íŠ¸ ì ìš© )
-// [KH_070413] ìŠ¤ìŠ¹ì˜ë‚  ì´ë²¤íŠ¸ ê´€ë ¨ ì¶”ê°€
+  void ReceiveExHairChange(CNetworkMessage *istr); // »êÅ¸¸ðÀÚ °ü·Ã( Çì¾î º¯°æ )
+  void ReceiveExPlayerStateChange(CNetworkMessage *istr); // °ÔÀÓ¼­Æ÷ÅÍ °ü·Ã( Æ¯Á¤¾ÆÀÌÅÛ Âø¿ë½Ã ÀÌÆåÆ® Àû¿ë )
+// [KH_070413] ½º½ÂÀÇ³¯ ÀÌº¥Æ® °ü·Ã Ãß°¡
   void ReceiveEventMaster(CNetworkMessage *istr);
   ///////////////////////////////////////////////////////////////////////////////////
-
+	//2013/04/03 jeil ³ª½º ¾ÆÀÌÅÛ »èÁ¦
+  void ReceiveMoneyMessage(CNetworkMessage *istr);
   // WSS_NPROTECT 070402 ------------------------------->>
  #ifndef NO_GAMEGUARD
   void ReceiveExnProtect(CNetworkMessage *istr);
@@ -264,11 +285,10 @@ public:
   
   void ReceivePartyRecall( CNetworkMessage *istr );  // wooss 060306
   
-  void ReceiveElementalStatusMessage( CNetworkMessage *istr );
   void ReceiveElementalDeleteMessage( CNetworkMessage *istr );
   void ReceiveEvocationStart( CNetworkMessage *istr );
   void ReceiveEvocationStop( CNetworkMessage *istr );
-  // [070613: Su-won] íŽ« ëª…ì°° ì•„ì´í…œ ë©”ì‹œì§€ ì²˜ë¦¬
+  // [070613: Su-won] Æê ¸íÂû ¾ÆÀÌÅÛ ¸Þ½ÃÁö Ã³¸®
   void ReceiveExPetNameChange(CNetworkMessage *istr);
 
   // [070824: Su-won] PET_COLOR_CHANGE
@@ -281,18 +301,200 @@ public:
   // EDIT : BS
   void MoveOtherServer(ULONG zone, CTString ip, ULONG port);
   // --- EDIT : BS
-  // íŒë§¤ëŒ€í–‰ ìƒì¸
+  // ÆÇ¸Å´ëÇà »óÀÎ
   void ReceiveCashPersonShopMessage(CNetworkMessage *istr);
 
   void ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr);
+  // connie [2009/9/8] - NPC Ã£±â
+  void ReceiveNPCPortalMessage(CNetworkMessage* istr);
+  
+  // message end check. [9/22/2009 rumist]
+  void ReceiveExLoadingEndMessage(CNetworkMessage* istr);
+  
+  void ReceiveNickNameMessage(CNetworkMessage* istr);	// È£Äª
+
+  // [100208: selo] Äù½ºÆ® ¾ÆÀÌÅÛ ´Ù½Ã ¹Þ±â
+  void ReceiveTakeAgainQuestItem(CNetworkMessage* istr);
+
+  void RecieveCostume2Message(CNetworkMessage* istr);
+
+  void RecieveSocketSystemMessage( CNetworkMessage* istr );
+
+  void RecieveLordCostumeMessage( CNetworkMessage* istr );
+  
+  // [2010/08/25 : Sora] ADD_SUBJOB º¸Á¶Á÷¾÷ °ü·Ã ¸Þ½ÃÁöÃ³¸®
+  void RecieveSubJobMessage(CNetworkMessage* istr);
+  
+  void RecievePromotionEventMessage(CNetworkMessage* istr);
+
+  //added by sam 10/11/11
+  void RecieveRankingView(CNetworkMessage* istr);  
+  void ReceiveExpressMessage(CNetworkMessage* istr);
+  void ReceivePetStashMessage(CNetworkMessage* istr);
+  void ReceiveCalendarMessage(CNetworkMessage* istr);
+void ReceiveRVRMessage(CNetworkMessage* istr);
+
+  void ReceiveTimerItemMessage(CNetworkMessage* istr);
+  
+  void RecieveMonsterMercenaryCardMessage( CNetworkMessage* istr );		// [2010/10/20 : Sora] ¸ó½ºÅÍ ¿ëº´ Ä«µå
+
+  void RecieveFaceOffMessage( CNetworkMessage* istr );
+  
+  void RecieveLuckyDrawBoxMessage( CNetworkMessage* istr );
+
+  void RecieveMsgBoxShow ( CNetworkMessage* istr );		//added by sam 11/01/04 ¸Þ½ÃÁö ¹Ú½º¸¦ º¸¿© ÁÙ ¸Þ½ÃÁö¸¦ ¼­¹ö¿¡¼­ º¸³»ÁØ´Ù. 
+  void RecieveUsedPartyItemMessage( CNetworkMessage* istr );		// used item for party only. [4/21/2011 rumist]
+  void RecieveRoyalrumbleMessage( CNetworkMessage* istr );			// royal rumble [4/19/2011 rumist]
+  void RecieveMasterStoneMessage( CNetworkMessage* istr );			// ¸¶½ºÅÍ ½ºÅæ »ç¿ë °á°ú ¹Þ±â
+  void RecieveRankingListExMessage( CNetworkMessage* istr );		// ·©Å· ½Ã½ºÅÛ °³Æí [trylord : 110825]
+  void ReceiveDurabilityMessage(CNetworkMessage* istr); // ³»±¸µµ
+  void ReceiveAttendanceMessage(CNetworkMessage* istr); // Ãâ¼® Ã¼Å©
+
+  void ReceiveToggleMessage(CNetworkMessage* istr);	// Åä±Û ½ºÅ³ ¸Þ½ÃÁö.
+  void ReceiveItemCollectionMessage(CNetworkMessage* istr);	// ¾ÆÀÌÅÛ ¼öÁý ¸Þ½ÃÁö.
+
+  void ReceivePremiumCharMessage(CNetworkMessage* istr); // ÇÁ¸®¹Ì¾ö Ä³¸¯ÅÍ ¸Þ½ÃÁö.
+  void ReceiveNewsMessage(CNetworkMessage* istr);	// GM °øÁö
+
+  void ReceiveItemComposMessage(CNetworkMessage* istr); // 1407 À¯¹° »ç³É²Û ( ÇÕ¼º ½Ã½ºÅÛ )
+
+#ifdef KALYDO
+  enum eKALYDO_SEND_TYPE
+  {
+	  eKST_LOGIN,
+	  eKST_SEL_SERVER,
+	  eKST_CREATE_CHAR,
+	  eKST_ENTER_GAME,
+	  
+	  eKST_MAX
+  };
+
+  void DelayLoadingFromKalydo();
+
+  void SetSendCommand(eKALYDO_SEND_TYPE eType, Command* pCmd) {
+	  if (eType >= 0 && eType < eKST_MAX)
+		  m_pCmdKalydo[eType] = pCmd;
+  }
+#endif
 
 protected:
 	int		m_iRecentGroup;
 	int		m_iRecentServer;
+#ifdef	KALYDO
+	Command*	m_pCmdKalydo[eKST_MAX];
+#endif	// KALYDO
+
+private:
+	void updateMoney(CNetworkMessage* istr);
+	void setItemInfo(int tabId, UpdateClient::itemInfo* pInfo);
+	void setWearItemInfo( UpdateClient::itemInfo* pInfo );
+	void setWearCostItemInfo( UpdateClient::itemInfo* pInfo );
+	void setNewItemEffect(int tabId, int InvenIdx, BOOL bOnOff);
+	void updateInvenList(CNetworkMessage* istr);
+	void updateItemAdd(CNetworkMessage* istr);
+	void updateItemDelete(CNetworkMessage* istr);
+	void updateItemCount(CNetworkMessage* istr);
+	void updateItemCountSwap(CNetworkMessage* istr);
+
+	void updateItemPlus(CNetworkMessage* istr);
+	void updateItemPlus2(CNetworkMessage* istr);
+	void updateItemFlag(CNetworkMessage* istr);
+	void updateItemUsed(CNetworkMessage* istr);
+	void updateItemUsed2(CNetworkMessage* istr);
+	void updateItemWearPos(CNetworkMessage* istr);
+	void updateItemOption(CNetworkMessage* istr);
+	void updateItemSocket(CNetworkMessage* istr);
+	void updateItemOriginVar(CNetworkMessage* istr);
+	void updateItemComposite(CNetworkMessage* istr);
+		
+	void updateItemUse(CNetworkMessage* istr);
+	void updateItemUseError(CNetworkMessage* istr);
+
+	// ÀÏ¹Ý Àåºñ
+	void updateWearItemUsed(CNetworkMessage* istr);
+	void updateWearItemPlus(CNetworkMessage* istr);
+	void updateWearItemFlag(CNetworkMessage* istr);
+
+	void ReceiveItemWearError(CNetworkMessage* istr);
+
+	void updateItemWear(CNetworkMessage* istr);
+	void updateItemTakeOff(CNetworkMessage* istr);
+	void updateWearItemList(CNetworkMessage* istr);
+	void updateWearItemInfo(CNetworkMessage* istr);
+
+	// ÄÚ½ºÆ¬ Àåºñ
+	void updateCostWear(CNetworkMessage* istr);
+	void updateCostTakeOff(CNetworkMessage* istr);
+	void updateWearCostList(CNetworkMessage* istr);
+
+	// ÇÑ¹ú ÀÇ»ó
+	void updateCostSuitWear(CNetworkMessage* istr);
+	void ReceiveCostSuitTakeOff();
+	
+	void updateMoneyReason(CNetworkMessage* istr);
+
+	void updateOldTimerItem(CNetworkMessage* istr);
+	void updateEraseAllItem(CNetworkMessage* istr);
+
+	void updateStashPasswordFlag(CNetworkMessage* istr);
+
+	void updateDurabilityForInventory(CNetworkMessage* istr);
+	void updateDurabilityForWear(CNetworkMessage* istr);
+
+	void ReceiveItemExchange(CNetworkMessage* istr);
+
+	//-------------------------------------------------------------
+	void updateStatus(CNetworkMessage* istr); // Ä³¸¯ÅÍ Á¤º¸
+	void updateAt(CNetworkMessage* istr); // Ä³¸¯ÅÍ À§Ä¡ Á¤º¸
+
+	void updateElementalStatus(CNetworkMessage* istr); // ¼ÒÈ¯¼ö Á¤º¸
+	void updatePartyMemberInfo(CNetworkMessage* istr); // ÆÄÆ¼¿ø Á¤º¸
+	void updateExpedMemberInfo(CNetworkMessage* istr); // ¿øÁ¤´ë¿ø Á¤º¸
+	
+	// Appear
+	void updateNpcAppear(CNetworkMessage *istr);			
+	void updatePcAppear(CNetworkMessage *istr);	
+	void updatePetAppear(CNetworkMessage *istr);
+	void updateElementalAppear(CNetworkMessage *istr);
+	void updateAPetAppear(CNetworkMessage *istr);
+	void updateDisappear(CNetworkMessage *istr);
+
+	void updateStatusPC(CNetworkMessage *istr);
+	void updateStatusNPC(CNetworkMessage *istr);
+	void updateStatusPet(CNetworkMessage *istr);
+	void updateStatusElemental(CNetworkMessage *istr);
+	void updateStatusAPet(CNetworkMessage* istr); // APet Á¤º¸
+
+	void updateDamage(CNetworkMessage* istr);
+	//-------------------------------------------------------------
+	// Extend
+	bool RecvExtend(CNetworkMessage* istr);
+	void recvExRestart(CNetworkMessage* istr);
+	void recvExMonsterCombo(CNetworkMessage* istr);
+
+#if		!defined(WORLD_EDITOR)
+	typedef boost::function< void(CNetworkMessage*) >	_recv_func;
+	typedef std::map< int, _recv_func>					_map_packet;
+	typedef std::map< int, _recv_func>::iterator		_map_packet_iter;
+#endif	// WORLD_EDITOR
+	
+	void reg_packet();
+	void reg_packet_info();
+	void reg_packet_comm();
+
+#if		!defined(WORLD_EDITOR)
+	_map_packet		m_packet[MSG_MAX];
+#endif	// WORLD_EDITOR
 };
 
 BOOL PCStartEffectGroup(const char *szEffectGroupName, SLONG slPCIndex, CEntity *penPC = NULL, float fDelayTime=0.0f);
 BOOL ENGINE_API WildPetStartEffectGroup(const char *szEffectGroupName, SLONG slPetIndex, CEntity *penPet = NULL );
+
+#ifdef	VER_TEST
+const char* strMSG_MAIN[];
+const char* strMSG_EXTEND[];
+const char* strMSG_UPDATE[];
+#endif	// VER_TEST
 
 #endif  /* include-once check. */
 

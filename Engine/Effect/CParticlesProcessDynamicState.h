@@ -1,4 +1,4 @@
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ì‹œì‘	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ½ÃÀÛ	//(Remake Effect)(0.1)
 #ifndef __CPARTICLESPROCESSDYNAMICSTATE_H__
 #define __CPARTICLESPROCESSDYNAMICSTATE_H__
 
@@ -24,7 +24,7 @@ public:
 	virtual void Read(CTStream *pIS);
 	virtual void Write(CTStream *pOS);
 
-	//ë‹¤ì´ë‚˜ë¯¹ ê´€ë ¨
+	//´ÙÀÌ³ª¹Í °ü·Ã
 	inline void SetTwinklePeriod(FLOAT twiklePeriod)	{ m_fTwinklePeriod = twiklePeriod;	}
 	inline FLOAT GetTwinklePeriod()						{ return m_fTwinklePeriod;			}
 	inline void SetFadeTime(FLOAT fadeIn, FLOAT fadeOut)		{ m_fFadeInTime = fadeIn; m_fFadeOutTime = fadeOut;	}
@@ -105,26 +105,26 @@ public:
 	virtual void Process(CParticles &particles, const FLOAT fDeltaTime);
 protected:
 	//content
-	//ì•ŒíŒŒì˜ íŠ¹ë³„í•œ ê²½ìš°ì¸ fade, twinkle ì²˜ë¦¬.
+	//¾ËÆÄÀÇ Æ¯º°ÇÑ °æ¿ìÀÎ fade, twinkle Ã³¸®.
 	FLOAT	m_fTwinklePeriod;
 	FLOAT	m_fFadeInTime;
 	FLOAT	m_fFadeOutTime;
-	//ë Œë”ë§ ê´€ë ¨(ìƒ‰, ì•ŒíŒŒ, í…ìŠ¤ì³), ì ˆëŒ€ê°’.
+	//·»´õ¸µ °ü·Ã(»ö, ¾ËÆÄ, ÅØ½ºÃÄ), Àı´ë°ª.
 	BOOL	m_bDynamicColor;
 	CSampleSpline<COLOR>	m_ssColor;
 	BOOL	m_bDynamicAlpha;
 	CSampleSpline<UBYTE>	m_ssAlpha;
 	BOOL	m_bDynamicTexPos;
 	CSampleSpline<CParticleTexPos, CParticleTexPosLerp>	m_ssTexPos;
-	//ë¬¼ë¦¬ì  ì„±ì§ˆ ê´€ë ¨(í¬ê¸°, ë¬´ê²Œ), ì ˆëŒ€ê°’.
+	//¹°¸®Àû ¼ºÁú °ü·Ã(Å©±â, ¹«°Ô), Àı´ë°ª.
 	BOOL	m_bDynamicSize;
 	CSampleSpline<CParticleSize, CParticleSizeLerp>	m_ssSize;
 	BOOL	m_bDynamicMass;
 	CSampleSpline<FLOAT>	m_ssMass;
-	//ìœ„ì¹˜ì— ëŒ€í•œ Delta
+	//À§Ä¡¿¡ ´ëÇÑ Delta
 	BOOL	m_bDynamicDeltaPos;
 	CSampleSpline< FLOAT3D >	m_ssDeltaPos;
-	//ê°ë„, ì ˆëŒ€ê°’.
+	//°¢µµ, Àı´ë°ª.
 	BOOL	m_bDynamicAngle;
 	CSampleSpline< ANGLE3D >	m_ssAngle;
 
@@ -132,4 +132,4 @@ protected:
 };
 
 #endif //__CPARTICLESPROCESSDYNAMICSTATE_H__
-//ì•ˆíƒœí›ˆ ìˆ˜ì • ë	//(Remake Effect)(0.1)
+//¾ÈÅÂÈÆ ¼öÁ¤ ³¡	//(Remake Effect)(0.1)
