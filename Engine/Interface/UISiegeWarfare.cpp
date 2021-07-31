@@ -7,6 +7,8 @@
 #include <Engine/Interface/UIGuild.h>
 #include <Engine/Contents/Base/UIQuestComplete.h>
 
+extern INDEX g_iCountry;
+
 // Position and Size
 #define DEF_SIGEWARFARE_START_Y		238
 
@@ -242,8 +244,8 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_cbtnSaturday.SetUV( UCBS_CHECK, 0, 161, 11, 172, fTexWidth, fTexHeight );
 	m_cbtnSaturday.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
 	m_cbtnSaturday.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
-	m_cbtnSaturday.SetTextColor( TRUE, 0xF2F2F2FF );
-	m_cbtnSaturday.SetTextColor( FALSE, 0xF2F2F2FF );
+	m_cbtnSaturday.SetTextColor( UCBS_CHECK, 0xF2F2F2FF );
+	m_cbtnSaturday.SetTextColor( UCBS_NONE, 0xF2F2F2FF );
 	m_cbtnSaturday.SetCheck( FALSE );
 
 	nStrWidth = ( _S( 1981, "일요일" ).Length() + 3 ) * ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );	
@@ -255,8 +257,8 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_cbtnSunday.SetUV( UCBS_CHECK, 0, 161, 11, 172, fTexWidth, fTexHeight );
 	m_cbtnSunday.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
 	m_cbtnSunday.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
-	m_cbtnSunday.SetTextColor( TRUE, 0xF2F2F2FF );
-	m_cbtnSunday.SetTextColor( FALSE, 0xF2F2F2FF );
+	m_cbtnSunday.SetTextColor( UCBS_CHECK, 0xF2F2F2FF );
+	m_cbtnSunday.SetTextColor( UCBS_NONE, 0xF2F2F2FF );
 	m_cbtnSunday.SetCheck( FALSE );
 
 	// List box of guild description
@@ -266,12 +268,16 @@ void CUISiegeWarfare::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	CTString strSiegeTime;
 	int btnSize = 60;
 
-#if defined G_USA
-	strSiegeTime = CTString("Set Time");
-	btnSize = 94;
-#else
-	strSiegeTime = CTString("PM");
-#endif
+	if (g_iCountry == USA)
+	{
+		strSiegeTime = CTString("Set Time");
+		btnSize = 94;
+	}
+	else
+	{
+		strSiegeTime = CTString("PM");
+	}
+
 	m_sbtnSWTime.Create( this, 24, 96, btnSize, 14, strSiegeTime, 37 );
 	m_sbtnSWTime.SetDataBackUV3( 131+black, 46, 135+black, 59, 136+black, 46, 140+black, 59, 
 							141 + black, 46, 145 + black, 59, fTexWidth, fTexHeight );
@@ -736,11 +742,6 @@ void CUISiegeWarfare::OpenSiegeWarfare()
 
 	for( i = 0; i< 5; i++ )
 	{
-		//말레이시아는 공성시간 설정 메뉴 뺌. 메라크 공성만...		Su-won
-#if defined G_MAL
-		if(i==2 && pUIManager->GetQuestBookComplete()->GetTargetIndex() == 219 )
-			continue;
-#endif
 		if( npcIndex == 1155 )
 		{
 			if( i < 2 )
@@ -1235,10 +1236,12 @@ void CUISiegeWarfare::SetDayOfWeek( int nDayOfWeek )
 		nTimePrev = 6; nTimeNext = 11;
 		nTimePrev = 5;
 
-#if defined G_USA
-		nTimePrev = 10;
-		nTimeNext = 23;
-#endif // G_USA
+	
+		if (g_iCountry == USA)
+		{
+			nTimePrev = 10;
+			nTimeNext = 23;
+		}
 
 		for( int i = nTimePrev; i <= nTimeNext; i++ ) //!시간 조정
 		{
@@ -1257,10 +1260,11 @@ void CUISiegeWarfare::SetDayOfWeek( int nDayOfWeek )
 
 		nTimePrev = 1; nTimeNext = 11;
 
-#if defined G_USA
-		nTimePrev = 11;
-		nTimeNext = 20;
-#endif
+		if (g_iCountry == USA)
+		{
+			nTimePrev = 11;
+			nTimeNext = 20;
+		}
 
 		for( int i = nTimePrev; i <= nTimeNext; i++ )//!시간
 		{
@@ -1399,11 +1403,10 @@ WMSG_RESULT CUISiegeWarfare::MouseMessage( MSG *pMsg )
 							else if ( m_cbtnSunday.IsChecked() )	nDay = SUNDAY;
 							// 시간 얻기
 							
-#if defined G_USA
-							nHour = m_sbtnSWTime.GetDataToNumber();
-#else
-							nHour = m_sbtnSWTime.GetDataToNumber() + 12;
-#endif
+							if (g_iCountry == USA)
+								nHour = m_sbtnSWTime.GetDataToNumber();
+							else
+								nHour = m_sbtnSWTime.GetDataToNumber() + 12;
 			
 							int zone = m_vecSWInfo[m_sbtnSWZone.GetSelectPos()].zone;
 							_pNetwork->SetTimeReq( nDay, nHour, zone);

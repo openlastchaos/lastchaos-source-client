@@ -3,7 +3,7 @@
 #include "StageLoading.h"
 #include <Engine/Interface/UIManager.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Interface/UISingleBattle.h>
+#include <Engine/Contents/function/SingleBattleUI.h>
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Network/SessionState.h>
 #include <Engine/Network/LevelChange.h>
@@ -13,6 +13,7 @@
 
 #include <Engine/GameState.h>
 #include <Engine/Loading.h>
+#include <Engine/Entities/ZoneData.h>
 
 void CStageLoading::Init()
 {
@@ -33,7 +34,7 @@ void CStageLoading::Init()
 	{
 		CPrintF("===End Single Mode===\n");
 		_pNetwork->m_bSingleMode = FALSE;
-		pUIManager->GetSingleBattle()->Close();
+		pUIManager->GetSingleBattle()->closeUI();
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->FieldModeOn();
 	}
 
@@ -61,7 +62,7 @@ void CStageLoading::Init()
 	}
 	_pNetwork->ga_World.m_vectorPreCreateNPC.clear();
 
-	if (g_slZone == 42)	// 임시 설정.
+	if (g_slZone == DEF_ZONE_ALBER)	// 임시 설정.
 	{
 		_pNetwork->SetRvrZone(TRUE);
 		ACTORMGR()->initSyndiMark();

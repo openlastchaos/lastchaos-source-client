@@ -139,6 +139,8 @@ public:
 	void SetRectSurfaceButton(CUIRectSurface* pRS)	{ m_prsButton = pRS;	}
 	CUIRectSurface* GetRectSurfaceButton()			{ return m_prsButton;	}
 
+	void updateDropRect(bool bUpdateComboArea = true);
+
 	WMSG_RESULT OnLButtonDown(UINT16 x, UINT16 y);
 	WMSG_RESULT OnLButtonUp(UINT16 x, UINT16 y);
 	WMSG_RESULT OnMouseMove(UINT16 x, UINT16 y, MSG* pMsg);

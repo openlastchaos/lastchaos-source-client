@@ -153,7 +153,7 @@ extern ENGINE_API std::map<int,int> g_mapEvent;
 // ---------------------------------------------------<<
 
 // 디스어셈블러를 속이기 위한 간단한 코드 난독화 매크로
-#if !defined(_DEBUG) && !defined(KALYDO) && !defined(G_KOR) && !defined(VER_TEST)
+#if !defined(_DEBUG) && !defined(KALYDO) && !defined(VER_TEST)
 #define paste(a, b) a##b
 #define pastesymbols(a, b) paste(a, b)
 #define OBFUSCATE() \

@@ -722,8 +722,12 @@ void CUIRefine::SetRefineItem()
 
 	// If refining money is short
 	SLONG	slWearLevel = pItemData->GetLevel();
+	CTString strRefineMoney;
 	m_llRefineMoney = ( ( slWearLevel + 1 ) * ( slWearLevel + 3 ) * ( slWearLevel -1 ) + 100 ) / 4;
-	m_strRefineMoney.PrintF( _S( 419, "제련 비용 : %I64d" ), m_llRefineMoney );
+	strRefineMoney.PrintF("%I64d", m_llRefineMoney);
+	pUIManager->InsertCommaToString(m_strRefineMoney);
+	
+	m_strRefineMoney.PrintF( _S( 419, "제련 비용 : %s" ), strRefineMoney );
 
 	// Insert upgrade slot
 	m_pIconSlotItem->copyItem(pDrag);

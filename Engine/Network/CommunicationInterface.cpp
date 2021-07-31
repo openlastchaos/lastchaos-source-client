@@ -46,9 +46,9 @@ extern FLOAT net_fDropPackets;
 extern FLOAT net_tmConnectionTimeout;
 extern INDEX net_bReportPackets;
 
-#ifdef EUROUPEAN_SERVER_LOGIN
+//#ifdef EUROUPEAN_SERVER_LOGIN
 extern INDEX g_iConnectEuroupean;
-#endif
+//#endif
 
 extern SOCKET g_hSocket;
 extern INDEX	g_iCountry;
@@ -782,10 +782,10 @@ void CCommunicationInterface::SetIPFilter()
 	}
 
 	{
-		TempIP.SetIP( 46, 253, 149, 252, USA);
+		TempIP.SetIP( 68, 170, 111, 243, USA);  //pwesty 68.170.111.243
 		m_vecIPFilter.push_back( TempIP );
 
-		TempIP.SetIP( 209, 239, 121, 42, USA);
+		TempIP.SetIP( 68, 170, 111, 243, USA);
 		m_vecIPFilter.push_back( TempIP );
 	}
 
@@ -888,12 +888,9 @@ void CCommunicationInterface::OpenSocket_t(ULONG ulLocalHost, ULONG ulLocalPort)
 
 		if(cci_iBusyUsers <= 0)
 		{
-#if defined (G_HONGKONG)
-			cci_iBusyUsers = USER_NUM_BUSY;
-#else
 			cci_iBusyUsers = USER_NUM_BUSY+100;
-#endif
 		}
+
 		if(cci_iFullUsers <= 0)
 		{
 			cci_iFullUsers = USER_NUM_FULL;
@@ -2177,12 +2174,17 @@ int CCommunicationInterface::ReadInfo( LoginServer* stLogin )
 
 	CTFileName fnmServer = CTString("sl.dta");
 
-#ifdef EUROUPEAN_SERVER_LOGIN
-	if (g_iConnectEuroupean)
+//#ifdef EUROUPEAN_SERVER_LOGIN
+	
+	if (IsGamigo(g_iCountry) == TRUE)
 	{
-		fnmServer = CTString("sl_Euro.dta");
+		if (g_iConnectEuroupean)
+		{
+			fnmServer = CTString("sl_Euro.dta");
+		}
 	}
-#endif	
+
+//#endif	
 		
 	CTFileName fnmServer2 = CTString("sl2.dta");				// 중국쪽 두번째 유저디비군.
 	CTFileName fnmSLD = CTString("sl_d.dta");

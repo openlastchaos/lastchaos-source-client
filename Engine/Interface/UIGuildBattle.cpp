@@ -36,8 +36,8 @@ static int	_iMaxMsgStringChar = 0;
 
 
 // 최대 최소 사용 나스
-#define GB_MAX_NAS					100			// 단위	: 만 나스
-#define GB_MIN_NAS					10
+#define GB_MAX_NAS					1000000		
+#define GB_MIN_NAS					100000
 #define GB_COMMISSION				5			// 단위 : %
 
 //브라질 나스 표시 수정
@@ -169,8 +169,6 @@ CUIGuildBattle::~CUIGuildBattle()
 		_pTextureStock->Release( m_ptdStateTexture );
 		m_ptdStateTexture = NULL;
 	}
-	
-	Clear ();
 }
 
 
@@ -363,7 +361,7 @@ void CUIGuildBattle::Render()
 	{
 		RenderGBReq();
 	}
-	else if ( m_eGBState == GBS_IN_BATTLE )
+	else if ( m_eGBState == GBS_IN_BATTLE || m_eGBState == GBS_WATCHER)
 	{
 		RenderGBStatus();
 	}
@@ -1025,7 +1023,7 @@ void CUIGuildBattle::AddGBReqdDescString( CTString &strDesc, COLOR colDesc )
 //------------------------------------------------------------------------------
 void CUIGuildBattle::OpenGBReq( int nTargetCharIndex, CTString strGuildName )
 {
-	if( IsVisible() == TRUE )
+	if( IsVisible() == TRUE && m_eGBState != GBS_WATCHER)
 		return;
 
 	CUIManager* pUIManager = CUIManager::getSingleton();
@@ -1046,7 +1044,11 @@ void CUIGuildBattle::OpenGBReq( int nTargetCharIndex, CTString strGuildName )
 		return;
 	}
 	
-	Clear ();
+	if (m_eGBState == GBS_WATCHER)
+		Close();
+	else
+		Clear();
+
 	m_ebGuildReqNas.ResetString();
 	m_ebGuildReqTime.ResetString();
 
@@ -1067,16 +1069,14 @@ void CUIGuildBattle::OpenGBReq( int nTargetCharIndex, CTString strGuildName )
 	strMessage = " ";
 	AddGBReqdDescString( strMessage );
 
-	if(g_bNasTrans)// 브라질 나스 표시 수정
-	{
-		strMessage.PrintF( _S( 1388, "전투 신청금 : %s 나스 ~ %s 나스" ),GB_MIN_NAS_EX, GB_MAX_NAS_EX); //테스트 번역 요청
-	}else
-	{
-		strMessage.PrintF( _S( 1388, "전투 신청금 : %d만나스 ~ %d만나스" ), GB_MIN_NAS, GB_MAX_NAS ); 	
-	}	
+	CTString strMinNas, strMaxNas;
+	strMinNas = pUIManager->IntegerToCommaString(GB_MIN_NAS);
+	strMaxNas = pUIManager->IntegerToCommaString(GB_MAX_NAS);
+
+	strMessage.PrintF( "%s %s ~ %s", _S( 1388, "전투 신청금 :"), strMinNas, strMaxNas);
 	AddGBReqdDescString( strMessage );
 
-	strMessage.PrintF( _S( 1389, "전투 시간 : %d분 ~ %d분" ), GB_MIN_TIME, GB_MAX_TIME ); 	
+	strMessage.PrintF( "%s %d ~ %d", _S( 1389, "전투 시간 :" ), GB_MIN_TIME, GB_MAX_TIME );
 	AddGBReqdDescString( strMessage );
 
 	m_ebGuildReqNas.SetFocus( TRUE );
@@ -1443,17 +1443,15 @@ void CUIGuildBattle::GBReq()
 	// 에러 체크 
 	// 1. 나스가 범위 내에 있는가 
 	int nGuildReqNas = atoi( m_ebGuildReqNas.GetString() );
-	if( nGuildReqNas > GB_MAX_NAS || nGuildReqNas < GB_MIN_NAS )
+	if ((nGuildReqNas * 10000) > GB_MAX_NAS || (nGuildReqNas * 10000) < GB_MIN_NAS)
 	{
-		if(g_bNasTrans)//브라질 나스 표시 수정
-		{
-			strMessage.PrintF( _S( 1106, "%s에서 %s 나스의 금액을 입력하여 주십시오." ), GB_MIN_NAS_EX, GB_MAX_NAS_EX );	
-		}else
-		{
-			strMessage.PrintF( _S( 1106, "%d만에서 %d만 나스의 금액을 입력하여 주십시오." ), GB_MIN_NAS, GB_MAX_NAS );	
-		}
-		
+		CUIManager* pUIMgr = UIMGR();
 
+		CTString strMinNas, strMaxNas;
+		strMinNas = pUIMgr->IntegerToCommaString(GB_MIN_NAS);
+		strMaxNas = pUIMgr->IntegerToCommaString(GB_MAX_NAS);
+
+		strMessage.PrintF( _S( 1106, "%s에서 %s 나스의 금액을 입력하여 주십시오." ), strMinNas, strMaxNas );	
 		GBErrorMessage( MSGCMD_GUILD_BATTLE_ERROR, strMessage );
 		m_ebGuildReqNas.ResetString();
 		return;
@@ -1651,7 +1649,7 @@ void CUIGuildBattle::GBStatus( int nGuildIndex1, CTString strGuildName1, int nCo
 		m_strTargetGuildName	= strGuildName2;
 		m_nTargetKillPoint		= nCount2;
 	}
-	else
+	else if ( _pNetwork->MyCharacterInfo.lGuildIndex == nGuildIndex2 )
 	{
 		m_nGuildIndex			= nGuildIndex2;
 		m_strGuildName			= strGuildName2; 
@@ -1660,25 +1658,66 @@ void CUIGuildBattle::GBStatus( int nGuildIndex1, CTString strGuildName1, int nCo
 		m_strTargetGuildName	= strGuildName1;
 		m_nTargetKillPoint		= nCount1;
 	}
+	else
+	{
+		GBWatchStatus(nGuildIndex1, strGuildName1, nCount1, nGuildIndex2, strGuildName2, nCount2, Time, nZone);
+		return;
+	}
 	
 	m_nBattleZone			= nZone;
 	m_lLeftTime				= Time;
 
 	// 종료후 다시 접속했을 때 처리
-	if ( m_eGBState != GBS_IN_BATTLE && g_slZone == m_nBattleZone )
+	if (g_slZone == m_nBattleZone )
 	{
-		m_eGBState = GBS_IN_BATTLE; 	
-		SetEnable( TRUE );
-		SetVisible ( TRUE );
-		StartEffect();
-		CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+		if (m_eGBState != GBS_IN_BATTLE)
+		{
+			m_eGBState = GBS_IN_BATTLE; 	
+			StartEffect();
+		}		
+
+		if( IsVisible() == FALSE )
+		{
+			SetEnable( TRUE );
+			SetVisible ( TRUE );
+			CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+		}
 	}
-	else if (m_eGBState == GBS_IN_BATTLE && g_slZone != m_nBattleZone)
+	else
 	{ // 존 이동 시 처리
 		m_eGBState = GBS_BATTILE_NOT_ZONE;
 		StopGuildEffect(_pNetwork->MyCharacterInfo.index);
 	}
 	
+	m_tmLeftTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+}
+
+void CUIGuildBattle::GBWatchStatus( int nGuildIndex1, CTString strGuildName1, int nCount1, int nGuildIndex2, CTString strGuildName2, int nCount2, int Time, int nZone )
+{
+	if (m_eGBState == GBS_IN_BATTLE || m_eGBState == GBS_REQ || m_eGBState == GBS_IN_REQ_ACCEPT || m_eGBState == GBS_IN_REQ)
+		return;
+
+	if (g_slZone != nZone)
+		return;
+
+	m_nGuildIndex			= nGuildIndex1;
+	m_strGuildName			= strGuildName1; 
+	m_nKillPoint			= nCount1;
+	m_nTargetGuildIndex		= nGuildIndex2;
+	m_strTargetGuildName	= strGuildName2;
+	m_nTargetKillPoint		= nCount2;
+
+	m_nBattleZone			= nZone;
+	m_lLeftTime				= Time;
+	m_eGBState				= GBS_WATCHER;
+
+	if( IsVisible() == FALSE )
+	{
+		SetEnable( TRUE );
+		SetVisible ( TRUE );
+		CUIManager::getSingleton()->RearrangeOrder( UI_GUILD_BATTLE, TRUE );
+	}
+
 	m_tmLeftTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
 }
 
@@ -1727,7 +1766,7 @@ void CUIGuildBattle::GBStopReqReject( int nRejectCharIndex )
 {
 	CloseAllMsgBox();
 	
-	if( nRejectCharIndex == _pNetwork->MyCharacterInfo.index ) // 걸절자가 자기 자신
+	if( nRejectCharIndex == _pNetwork->MyCharacterInfo.index ) // 거절자가 자기 자신
 	{
 		SYSERROR_MSG( _S( 1120, "길드 전투 중단 요청이 취소되었습니다." ) ); 	
 	}
@@ -1768,30 +1807,21 @@ void CUIGuildBattle::GBEnd( int nWinnerGuildIndex, int nGuildIndex1, CTString st
 	if ( nWinnerGuildIndex == -1 )
 	{
 		strMessage.PrintF( _S( 1122, "[%s]길드와 [%s]길드간의 길드전투가 무승부가 되었습니다." ), strGuildName1, strGuildName2 );
-		if(g_bNasTrans)//브라질 나스 표시 수정 
-		{
-			CTString strTempNas;
-			strTempNas.PrintF("%d",nPrize);
-			CUIManager::getSingleton()->InsertCommaToString( strTempNas );
-			strMessage2.PrintF( _S( 1123, "세금 %d%%를 제외한 길드 전투 신청금 %s나스는 각 길드장에게 되돌아 갑니다." ), GB_COMMISSION, strTempNas ); 	
-		}else{
-			strMessage2.PrintF( _S( 1123, "세금 %d%%를 제외한 길드 전투 신청금 %d나스는 각 길드장에게 되돌아 갑니다." ), GB_COMMISSION, nPrize ); 	
-		}
 
+		CTString strTempNas;
+		strTempNas.PrintF("%d",nPrize);
+		CUIManager::getSingleton()->InsertCommaToString( strTempNas );
+		strMessage2.PrintF( _S( 1123, "세금 %d%%를 제외한 길드 전투 신청금 %s나스는 각 길드장에게 되돌아 갑니다." ), GB_COMMISSION, strTempNas ); 	
 	}
 	else
 	{
 		strWinnerGuildName = (nGuildIndex1 == nWinnerGuildIndex)?strGuildName1:strGuildName2;
 		strMessage.PrintF( _S( 1124, "[%s]길드와 [%s]길드간의 길드전투에서 [%s]길드가 승리하였습니다." ), strGuildName1, strGuildName2, strWinnerGuildName ); 	
-		if(g_bNasTrans)//브라질 나스 표시 수정 
-		{
-			CTString strTempNas;
-			strTempNas.PrintF("%d",nPrize);
-			CUIManager::getSingleton()->InsertCommaToString( strTempNas );
-			strMessage2.PrintF( _S( 1125, "[%s]길드에게 세금 %d%%를 제외한 전투 신청금 %s나스를 지급합니다." ), strWinnerGuildName, GB_COMMISSION, strTempNas ); 	
-		}else{
-			strMessage2.PrintF( _S( 1125, "[%s]길드에게 세금 %d%%를 제외한 전투 신청금 %d나스를 지급합니다." ), strWinnerGuildName, GB_COMMISSION, nPrize ); 	
-		}
+
+		CTString strTempNas;
+		strTempNas.PrintF("%d",nPrize);
+		CUIManager::getSingleton()->InsertCommaToString( strTempNas );
+		strMessage2.PrintF( _S( 1125, "[%s]길드에게 세금 %d%%를 제외한 전투 신청금 %s나스를 지급합니다." ), strWinnerGuildName, GB_COMMISSION, strTempNas ); 	
 	}
 
 	SetNotice ( strMessage, strMessage2 );

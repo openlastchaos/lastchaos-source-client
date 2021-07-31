@@ -194,7 +194,6 @@ public :
 
 	CASH_SHOP_DATA* GetCashShopData(INDEX shopItemIndex);
 
-	static int	LoadShopDataFromFile(CStaticArray<CCashShopData> &apShopData, const char* FileName);
 	static int	LoadShopDataFromFile(CCashShopData &apShopData, const char* FileName);
 };
 

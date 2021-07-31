@@ -144,7 +144,14 @@ void CUIComboBox::AddString( CTString &strString )
 	int	nLines = m_vecString.size();
 
 	if( m_sbScrollBar.GetCurItemCount() < nLines )
+	{
 		m_sbScrollBar.SetCurItemCount( nLines );
+
+		if (m_pScroll != NULL)
+		{
+			m_pScroll->SetCurItemCount(nLines);
+		}
+	}
 
 	if( m_bScrollBarExist && nLines > m_nMaxLine )
 	{
@@ -155,7 +162,7 @@ void CUIComboBox::AddString( CTString &strString )
 	int	nSpaceY = ( m_nTextSY - m_rcDropList.Top - 1 ) * 2 - ( m_nLineHeight - _pUIFontTexMgr->GetFontHeight() ) + 2;
 	m_rcDropList.Bottom = m_rcDropList.Top + nSpaceY + m_nLineHeight * nLines;
 
-	m_rcDropArea.Bottom = m_rcDropArea.Top + ((m_nLineHeight + m_nSelectOffsetY) * nLines);
+	m_rcDropArea.Bottom = m_rcDropArea.Top + (m_nLineHeight * nLines) + m_nSelectOffsetY;
 }
 
 // ----------------------------------------------------------------------------
@@ -394,8 +401,6 @@ void CUIComboBox::initialize()
 	if( nOffset < 0 )
 		nOffset = 0;
 	m_nSelectOffsetY = nOffset / 2;
-
-	m_bScrollBarExist = TRUE;	// 스트링 추가가 안되기 때문에 임시로 설정.
 }
 
 void CUIComboBox::OnUpdate( float fElapsedTime )
@@ -629,6 +634,9 @@ WMSG_RESULT CUIComboBox::OnLButtonDown( UINT16 x, UINT16 y )
 			if (m_pCmdUp)
 				m_pCmdUp->execute();
 
+			if (m_funcUp)
+				m_funcUp(this);
+
 			return WMSG_SUCCESS;
 		}
 	}
@@ -711,9 +719,10 @@ void CUIComboBox::setDropBG( UIRect rect, UIRectUV uv, int unit )
 		m_pDropListSurface = new CUIRectSurface;
 
 	m_rcDropArea	= rect;
-#ifdef UI_TOOL	
-	m_uvDropArea	= uv;
 	m_nDropAreaUnit = unit;
+
+#ifdef UI_TOOL	
+	m_uvDropArea	= uv;	
 #endif // UI_TOOL
 	UISUPPORT()->Split3PlaneVertical((*m_pDropListSurface), m_pTexData, rect, uv, unit);
 }
@@ -778,4 +787,24 @@ CUIBase* CUIComboBox::Clone()
 	CUIBase::CloneChild(pCombo);
 
 	return pCombo;
+}
+
+void CUIComboBox::updateDropRect( bool bUpdateComboArea /*= true*/ )
+{
+	int start_pos = 0;
+
+	if (m_pDropListSurface != NULL)
+	{
+		start_pos = m_pDropListSurface->m_RectSurfaceArray[0].m_RT.Top;
+
+		UIRect& rc_mid = m_pDropListSurface->m_RectSurfaceArray[1].m_RT;
+		rc_mid.Bottom = rc_mid.Top + m_rcDropArea.GetHeight() - (m_nDropAreaUnit * 2);
+
+		UIRect& rc_bot = m_pDropListSurface->m_RectSurfaceArray[2].m_RT;
+		rc_bot.Top = rc_mid.Bottom;
+		rc_bot.Bottom = rc_bot.Top + m_nDropAreaUnit;
+	}
+
+	if (bUpdateComboArea == true)
+		SetHeight(start_pos + m_rcDropArea.GetHeight());
 }

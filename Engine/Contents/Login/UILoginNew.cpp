@@ -34,9 +34,10 @@ enum eXMAS_EFFECT_STEP
 	eEFFECT_STEP_FINISH,	// 모든 스탭을 마침
 };
 
-#ifdef EUROUPEAN_SERVER_LOGIN
+//#ifdef EUROUPEAN_SERVER_LOGIN
+extern INDEX g_iCountry;
 extern INDEX g_iConnectEuroupean;
-#endif	//	EUROUPEAN_SERVER_LOGIN
+//#endif	//	EUROUPEAN_SERVER_LOGIN
 #define	DEF_BASIC_SERVER 0
 #define	DEF_EUROUPEAN_SERVER 1
 
@@ -90,13 +91,16 @@ void CUILoginNew::PressLoginBtn()
 
 	BOOL bLogin = FALSE;
 
-#ifdef EUROUPEAN_SERVER_LOGIN
-	if (m_pCbSelServer != NULL)
+//#ifdef EUROUPEAN_SERVER_LOGIN
+	if (IsGamigo(g_iCountry) == TRUE)
 	{
-		g_iConnectEuroupean = m_pCbSelServer->GetCurSel();
-		CUIFocus::getSingleton()->setUI(NULL);
+		if (m_pCbSelServer != NULL)
+		{
+			g_iConnectEuroupean = m_pCbSelServer->GetCurSel();
+			CUIFocus::getSingleton()->killFocus(m_pCbSelServer);
+		}
 	}
-#endif	//	EUROUPEAN_SERVER_LOGIN
+//#endif	//	EUROUPEAN_SERVER_LOGIN
 
 	bLogin = TryToLogin();
 
@@ -124,6 +128,9 @@ void CUILoginNew::PressCloseBtn()
 
 	_pGameState->Running()		= FALSE;
 	_pGameState->QuitScreen()	= FALSE;
+
+	if (m_pCbSelServer != NULL)
+		CUIFocus::getSingleton()->killFocus(m_pCbSelServer);
 }
 
 void CUILoginNew::PressCheckSave()
@@ -269,13 +276,16 @@ void CUILoginNew::SetLogin()
 	{
 		m_pCbSelServer->SetCurSel(DEF_BASIC_SERVER);
 		m_pCbSelServer->SetEnable(FALSE);
-#ifdef EUROUPEAN_SERVER_LOGIN
-		m_pCbSelServer->SetEnable(TRUE);
-		if (g_iConnectEuroupean)
+//#ifdef EUROUPEAN_SERVER_LOGIN
+		if (IsGamigo(g_iCountry) == TRUE)
 		{
-			m_pCbSelServer->SetCurSel(DEF_EUROUPEAN_SERVER);
+			if (g_iCountry != ENGLAND)
+				m_pCbSelServer->SetEnable(TRUE);
+
+			if (g_iConnectEuroupean || g_iCountry == ENGLAND)
+				m_pCbSelServer->SetCurSel(DEF_EUROUPEAN_SERVER);
 		}
-#endif	//	EUROUPEAN_SERVER_LOGIN		
+//#endif	//	EUROUPEAN_SERVER_LOGIN		
 	}
 
 
@@ -442,14 +452,21 @@ void CUILoginNew::initialize()
 		m_pCbSelServer->AddString( _S(6084, "가미고 서버로 접속"));
 		m_pCbSelServer->SetCurSel(DEF_BASIC_SERVER);
 		m_pCbSelServer->SetEnable(FALSE);
-#ifdef EUROUPEAN_SERVER_LOGIN
-		m_pCbSelServer->AddString( _S(5777, "유러피안 서버로 접속"));
-		m_pCbSelServer->SetEnable(TRUE);
-		if (g_iConnectEuroupean)
+
+//#ifdef EUROUPEAN_SERVER_LOGIN
+
+		if (IsGamigo(g_iCountry) == TRUE)
 		{
-			m_pCbSelServer->SetCurSel(DEF_EUROUPEAN_SERVER);
+			m_pCbSelServer->AddString( _S(5777, "유러피안 서버로 접속"));
+
+			if (g_iCountry != ENGLAND)
+				m_pCbSelServer->SetEnable(TRUE);
+
+			if (g_iConnectEuroupean || g_iCountry == ENGLAND)
+				m_pCbSelServer->SetCurSel(DEF_EUROUPEAN_SERVER);
 		}
-#endif	//	EUROUPEAN_SERVER_LOGIN		
+
+//#endif	//	EUROUPEAN_SERVER_LOGIN		
 	}
 
 	m_pEbId = (CUIEditBox*)findUI("eb_id");

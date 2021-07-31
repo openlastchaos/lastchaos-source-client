@@ -18,6 +18,8 @@
 #include <Engine/JobInfo.h>
 #include <Engine/GameStageManager/StageMgr.h>
 
+extern INDEX g_iCountry;
+
 #define MIN_NAME_LEN	(4)
 #define MAX_NAME_LEN	(16)
 
@@ -918,43 +920,45 @@ void CUICharacterCreateNew::PressOk()
 				ResetName();
 				return;
 			}
-#if defined(G_RUSSIA)
-			if( !((*chr) >= 48 && (*chr) <= 57 )
-				&& !((*chr) >= -64 && (*chr) <= -1)
-				&& !((*chr) == -88)
-				&& !((*chr) == -72)	)
+
+			if (g_iCountry == RUSSIA)
 			{
-				pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 145, "캐릭터 생성 오류" ), UMBS_OK,
-					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S(2980, "아이디는 영문과 숫자만 허용됩니다." );
-				MsgBoxInfo.AddString( strMessage );
-				pUIManager->CreateMessageBox( MsgBoxInfo );
+				if( !((*chr) >= 48 && (*chr) <= 57 )
+					&& !((*chr) >= -64 && (*chr) <= -1)
+					&& !((*chr) == -88)
+					&& !((*chr) == -72)	)
+				{
+					pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
+					CUIMsgBox_Info	MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo( _S( 145, "캐릭터 생성 오류" ), UMBS_OK,
+						UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+					CTString	strMessage = _S(2980, "아이디는 영문과 숫자만 허용됩니다." );
+					MsgBoxInfo.AddString( strMessage );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 
-				ResetName();
-				return;
+					ResetName();
+					return;
+				}
 			}
-
-#elif !defined(G_KOR) && !defined(G_THAI)
-			if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
-				&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
-				&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
-				)
+			else if (g_iCountry != KOREA && g_iCountry != THAILAND)
 			{
-				pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 145, "캐릭터 생성 오류" ), UMBS_OK,
-					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S(2980, "아이디는 영문과 숫자만 허용됩니다." );
-				MsgBoxInfo.AddString( strMessage );
-				pUIManager->CreateMessageBox( MsgBoxInfo );
+				if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
+					&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
+					&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
+					)
+				{
+					pUIManager->CloseMessageBox(MSGCMD_CREATE_ERROR);
+					CUIMsgBox_Info	MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo( _S( 145, "캐릭터 생성 오류" ), UMBS_OK,
+						UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+					CTString	strMessage = _S(2980, "아이디는 영문과 숫자만 허용됩니다." );
+					MsgBoxInfo.AddString( strMessage );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 
-				ResetName();
-				return;
+					ResetName();
+					return;
+				}
 			}
-#endif
-
 		}
 	}
 	//#define RESTRICT_SOUND 	
@@ -983,7 +987,7 @@ void CUICharacterCreateNew::CreateCharacter()
 	if (pCharCreate == NULL)
 		return;
 
-#if defined(G_BRAZIL) || defined(G_KOR)
+	if (IsBila(g_iCountry) == TRUE || g_iCountry == KOREA)
 	{
 		// 이기환 수정 시작 ( 11.29 ) : 캐랙터명 오류  메세지 처리
 
@@ -1055,10 +1059,13 @@ void CUICharacterCreateNew::CreateCharacter()
 
 		// 이기환 수정 끝	
 	}
-#else
-	strMessage = pCharCreate->GetName();
-	if(!pUIManager->checkName(strMessage,0)) return;
-#endif
+	else
+	{
+		strMessage = pCharCreate->GetName();
+		
+		if (!pUIManager->checkName(strMessage, 0)) 
+			return;
+	}
 
 	if(_pNetwork->m_bSendMessage)
 		return;

@@ -277,6 +277,7 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 		{
 			// Title desc
 			INDEX	ctCond = 0;
+			CTString strCount;
 			for( INDEX iCond = 0; iCond < QUEST_MAX_CONDITION; iCond++ )
 			{
 				if( GetConditionType( iCond ) == -1 )
@@ -286,16 +287,15 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 					||  GetConditionType( iCond ) == QCONDITION_ITEM_NORMAL );
 				
 				const char	*szItemName = _pNetwork->GetItemName( GetConditionIndex( iCond ) );
+				strCount = UIMGR()->IntegerToCommaString(GetConditionNum( iCond ));
 				if( ctCond == 0 )
 				{
-					m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 460, "%s %d개 " ),	
-						szItemName, GetConditionNum( iCond ) );
+					m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 460, "%s %s개 " ), szItemName, strCount );
 					ctCond++;
 				}
 				else
 				{
-					strTemp.PrintF( _S( 461 , ", %s %d개 " ),
-						szItemName, GetConditionNum( iCond ) );
+					strTemp.PrintF( _S( 461 , ", %s %s개 " ), szItemName, strCount );
 					m_strTitleDesc[m_ctTitleDesc] += strTemp;
 					ctCond++;
 				}
@@ -373,24 +373,23 @@ void CQuestDynamicData::MakeQuestTitleDesc()
 		m_colTitleDesc[m_ctTitleDesc++] = 0xF2F2F2FF;
 		
 		INDEX	ctNeed = 0;
+		CTString strCount;
 		for( INDEX iNeed = 0; iNeed < MAX_MAX_NEED_ITEM; iNeed++ )
 		{
 			if( GetNeedItemIndex( iNeed ) == -1 )
 				continue;
 			
 			const char* szItemName = _pNetwork->GetItemName( GetNeedItemIndex( iNeed ) );
+			strCount = UIMGR()->IntegerToCommaString(GetNeedItemCount( iNeed ));
 			if( ctNeed == 0 )
 			{
-				m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 352, "%s %d개\n" ),
-					szItemName,
-					GetNeedItemCount( iNeed ) );
+				
+				m_strTitleDesc[m_ctTitleDesc].PrintF( _S( 352, "%s %s개\n" ), szItemName, strCount );
 				ctNeed++;
 			}
 			else
 			{
-				strTemp.PrintF( _S( 352, "%s %d개\n" ),
-					szItemName,
-					GetNeedItemCount( iNeed ) );
+				strTemp.PrintF( _S( 352, "%s %s개\n" ),	szItemName,	strCount );
 				m_strTitleDesc[m_ctTitleDesc] += strTemp;
 				ctNeed++;
 			}
@@ -485,15 +484,19 @@ void CQuestDynamicData::MakeQuestPrizeDesc()
 		case QPRIZE_ITEM:
 			{
 				INDEX		iPrizeIndex = GetPrizeIndex( iPrize );
-				m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 61, "%s %d개" ),
-					_pNetwork->GetItemName( iPrizeIndex ), GetPrizeData( iPrize ) );
+				CTString strCount = UIMGR()->IntegerToCommaString(GetPrizeData( iPrize ));
+				m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 61, "%s %s개" ),
+					_pNetwork->GetItemName( iPrizeIndex ), strCount );
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			}
 			break;
 		case QPRIZE_MONEY:
 			{
 				{
-					m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 836, "%d 나스" ), GetPrizeData( iPrize ) );
+					CTString strNas;
+					strNas.PrintF("%I64d", GetPrizeData( iPrize ) );
+					UIMGR()->InsertCommaToString(strNas);
+					m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S( 836, "%s 나스" ), strNas );
 				}
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			}
@@ -501,24 +504,22 @@ void CQuestDynamicData::MakeQuestPrizeDesc()
 			
 		case QPRIZE_EXP:
 			{
-				CTString strTemp;
-				strTemp.PrintF( "%s %I64u", _S( 89, "경험치"), GetPrizeData( iPrize ) );
+				CTString strTemp, strExp;
+				strExp.PrintF("%I64u", GetPrizeData( iPrize ));
+				UIMGR()->InsertCommaToString(strExp);
+
+				strTemp.PrintF( "%s %s", _S( 89, "경험치"), strExp );
 				m_strPrizeDesc[m_ctPrizeDesc] = strTemp;
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			} break;
 			
 		case QPRIZE_SP:
 			{
-#if defined (G_GERMAN)
-				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "%s %d", _S( 90, "숙련도" ), GetPrizeData( iPrize ) );
-#else	// else about japan, german, europe3, europe2, netherlands.
-				// support russia string [9/7/2010 rumist]
-#if defined (G_RUSSIA)
-				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "%s %d", _S( 4415, "SP" ), GetPrizeData( iPrize ) );
-#else	// else about russia
-				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "SP %d", GetPrizeData( iPrize ) );
-#endif	// end russia
-#endif	//end japan, german, europe3, europe2, netherlands.
+				CTString strSp;
+				strSp.PrintF("%d", GetPrizeData( iPrize ) );
+				UIMGR()->InsertCommaToString(strSp);
+
+				m_strPrizeDesc[m_ctPrizeDesc].PrintF( "%s %s", _S( 4415, "SP" ), strSp );
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			} break;
 		case QPRIZE_SKILL:
@@ -542,7 +543,11 @@ void CQuestDynamicData::MakeQuestPrizeDesc()
 			break;
 		case QPRIZE_RVR_POINT:
 			{
-				m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S(6263, "결사대 포인트 %d"), GetPrizeData( iPrize ) );
+				CTString strRp;
+				strRp.PrintF("%I64d", GetPrizeData( iPrize ) );
+				UIMGR()->InsertCommaToString(strRp);
+
+				m_strPrizeDesc[m_ctPrizeDesc].PrintF( _S(6263, "결사대 포인트 %s"), strRp );
 				m_colPrizeDesc[m_ctPrizeDesc++] = 0xFFB54DFF;
 			}
 		default:
@@ -564,6 +569,7 @@ void CQuestDynamicData::MakeQuestOptionPrizeDesc()
 	// [090728: selo] 옵션 보상 개수 만큼 돌게 변경
 	m_iOptionPrizeCount = QUEST_MAX_OPTPRIZE;
 
+	CTString strCount;
 	for( INDEX iPrize = 0; iPrize < m_iOptionPrizeCount; iPrize++ )
 	{
 		switch( GetOptionPrizeType( iPrize ) )
@@ -571,22 +577,21 @@ void CQuestDynamicData::MakeQuestOptionPrizeDesc()
 		case QPRIZE_ITEM:
 			{
 				INDEX		iPrizeItemIndex = GetOptionPrizeIndex( iPrize );
+				strCount = UIMGR()->IntegerToCommaString(GetOptionPrizeData( iPrize ));
+
 				if(GetOptionPrizePlus(iPrize) > 0)
 				{
-					m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 1655, "%s +%d  %d개" ),
-						_pNetwork->GetItemName( iPrizeItemIndex ), GetOptionPrizePlus(iPrize), GetOptionPrizeData( iPrize ) );
+					m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 1655, "%s +%d  %s개" ),
+						_pNetwork->GetItemName( iPrizeItemIndex ), GetOptionPrizePlus(iPrize), strCount );
 				}
 				else
 				{
 					if(iPrizeItemIndex == 19)//나스인 경우(플러스된 나스는 존재하지 않는다)
-					{
-						m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 836, "%d 나스" ),
-							GetOptionPrizeData( iPrize ) );
-					}
+						m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 836, "%s 나스" ), strCount );
 					else
-					{
-						m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 61, "%s %d개" ),
-							_pNetwork->GetItemName( iPrizeItemIndex ), GetOptionPrizeData( iPrize ) );
+					{						
+						m_strOptionPrizeDesc[m_ctOptionPrizeDesc].PrintF( _S( 61, "%s %s개" ),
+							_pNetwork->GetItemName( iPrizeItemIndex ), strCount);
 					}
 				}
 				m_colOptionPrizeDesc[m_ctOptionPrizeDesc++] = 0xFFB54DFF;
@@ -631,19 +636,16 @@ void CQuestDynamicData::MakeQuestNeedDesc()
 			continue;
 		
 		const char* szItemName = _pNetwork->GetItemName( GetNeedItemIndex( iNeed ) );
+		CTString strCount = UIMGR()->IntegerToCommaString(GetNeedItemCount( iNeed ));
 		if( ctNeed == 0 )
 		{
-			m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 352, "%s %d개\n" ),
-				szItemName,
-				GetNeedItemCount( iNeed ) );
+			m_strNeedDesc[m_ctNeedDesc].PrintF( _S( 352, "%s %s개\n" ),	szItemName,	strCount );
 			ctNeed++;
 		}
 		else
 		{
 			CTString strTemp;
-			strTemp.PrintF( _S( 352, "%s %d개\n" ),
-				szItemName,
-				GetNeedItemCount( iNeed ) );
+			strTemp.PrintF( _S( 352, "%s %s개\n" ), szItemName,	strCount );
 			m_strNeedDesc[m_ctNeedDesc] += strTemp;
 			ctNeed++;
 		}
@@ -935,30 +937,33 @@ BOOL CQuestSystem::CanIDoQuest(INDEX iQuestIndex)
 
 CTString CQuestSystem::MakeInfoForCondition(int iQuestIndex, int iConditionType, int iConditionIndex, int iCurrentCnt, int iConditionCnt)
 {
-	CTString strRet;
+	CTString strRet, strCurrent, strCondion;
+	strCurrent = UIMGR()->IntegerToCommaString(iCurrentCnt);
+	strCondion = UIMGR()->IntegerToCommaString(iConditionCnt);
+
 	if(iConditionType == QCONDITION_NPC)
 	{
 		CMobData* mob = CMobData::getData(iConditionIndex);
-		strRet.PrintF( _S( 1656, "%s 마리 %d/%d" ), mob->GetName(), iCurrentCnt, iConditionCnt);
+		strRet.PrintF( _S( 1656, "%s 마리 %s/%s" ), mob->GetName(), strCurrent, strCondion);
 	}
 	else if (iConditionType == QCONDITION_PC)
 	{// PK 퀘스트
-		strRet.PrintF( _S(3976, "PK 승리 %d/%d"), iCurrentCnt, iConditionCnt);
+		strRet.PrintF( _S(3976, "PK 승리 %s/%s"), strCurrent, strCondion);
 	}
 	else if(iConditionType == QCONDITION_ITEM || iConditionType == QCONDITION_ITEM_NORMAL)
 	{
 		CItemData* pItem = _pNetwork->GetItemData(iConditionIndex);
-		strRet.PrintF( _S( 1657, "%s 개수 %d/%d" ), pItem->GetName(), iCurrentCnt, iConditionCnt);
+		strRet.PrintF( _S( 1657, "%s 개수 %s/%s" ), pItem->GetName(), strCurrent, strCondion);
 	}
 	// [090616: selo] 확장팩 퀘스트 신규 조건
 	else if(iConditionType == QCONDITION_AREA)
 	{
-		strRet.PrintF( CTString("%d/%d"), iCurrentCnt, iConditionCnt);
+		strRet.PrintF( CTString("%s/%s"), strCurrent, strCondion);
 	}
 	else if(iConditionType == QCONDITION_ITEMUSE)
 	{
 		CItemData* pItem = _pNetwork->GetItemData(iConditionIndex);
-		strRet.PrintF( _S( 1657, "%s 개수 %d/%d" ), pItem->GetName(), iCurrentCnt, iConditionCnt);
+		strRet.PrintF( _S( 1657, "%s 개수 %s/%s" ), pItem->GetName(), strCurrent, strCondion);
 	}
 
 	return strRet;

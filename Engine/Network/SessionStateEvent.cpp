@@ -11,7 +11,7 @@
 #include <Engine/Contents/Base/UIChangeWeaponNew.h>
 #include <Engine/Contents/Base/UIQuestNew.h>
 #include <Engine/Interface/UISelectList.h>
-#include <Engine/Interface/UICollectBox.h>
+#include <Engine/Contents/function/InsectCollectUI.h>
 #include <Engine/Interface/UIOXQuizEvent.h>
 #include <Engine/Interface/UIAutoHelp.h>
 #include <Engine/Contents/function/BingoBoxUI.h>
@@ -811,9 +811,11 @@ void CSessionState::ReceiveEventMessage(CNetworkMessage *istr)
 					pUIManager->AddMessageBoxLString( MSGLCMD_TREASUREBOX_EVENT, TRUE, CTString("  "), -1, 0xA3A1A3FF );
 					pUIManager->AddMessageBoxLString( MSGLCMD_TREASUREBOX_EVENT, TRUE, _S( 1768, "아이템 지급 품목" ), -1, 0xE18600FF );			
 
+					CTString strCount;
 					for( i = 0; i < nTreasureBoxCount; ++i )
 					{
-						strMessage.PrintF( _S( 61, "%s %d개" ), strItemName[i], lItemCount[i] );
+						strCount = pUIManager->IntegerToCommaString(lItemCount[i]);
+						strMessage.PrintF( _S( 61, "%s %s개" ), strItemName[i], strCount );
 						pUIManager->AddMessageBoxLString( MSGLCMD_TREASUREBOX_EVENT, TRUE, strMessage, -1, 0xA3A1A3FF );
 					}
 
@@ -1556,8 +1558,8 @@ void CSessionState::ReceiveEventMessage(CNetworkMessage *istr)
 					(*istr) >> ulTemp;
 
 					strMessage = _S( 2975, "곤충 채집 이벤트 보상이 완료 되었습니다." );
-					if ( pUIManager->GetCollectBox()->IsVisible() )
-						pUIManager->RearrangeOrder(UI_COLLECTBOX, FALSE);
+					if ( pUIManager->GetInsectCollect()->IsVisible() )
+						pUIManager->RearrangeOrder(UI_INSECTCOLLECT, FALSE);
 				}
 				break;
 			case MSG_EVENT_COLLECT_BUG_GIFT_REP_ERROR_FULLINVEN:
@@ -1582,7 +1584,7 @@ void CSessionState::ReceiveEventMessage(CNetworkMessage *istr)
 				{
 					(*istr) >> ulTemp;
 
-					strMessage = pUIManager->GetCollectBox()->GetInsectName( ulTemp );
+					strMessage = pUIManager->GetInsectCollect()->GetInsectName( ulTemp );
 					_pNetwork->ClientSystemMessage( strMessage, SYSMSG_NOTIFY );					
 					return;
 				}
@@ -1600,7 +1602,8 @@ void CSessionState::ReceiveEventMessage(CNetworkMessage *istr)
 				}
 				break;
 			case MSG_EVENT_COLLECT_BUG_DROP:
-				{// 메세지 처리 안함 (eons)
+				{
+					pUIManager->GetInsectCollect()->DeleteItem();
 					return;
 				}
 			}
@@ -2034,11 +2037,12 @@ void CSessionState::ReceiveEventMessage(CNetworkMessage *istr)
 
 					strMessage=_S(3482, "♣완성된 곰돌이 웬디의 전체 누적 수에 따라 실제 곰 인형과 학용품 셋트를 어린이날 천사의 집 어린이들에게 선물하게 됩니다." );
 					msgInfo.AddString(strMessage);
-
+					CTString strCount;
 					for(int i=0;i<serverCnt;i++)
 					{
 						(*istr)>>itemCnt;
-						strMessage.PrintF( _S(576, "%s : %d개" ),pUIManager->GetServerSelect()->GetServerName(i+1),itemCnt);
+						strCount = UIMGR()->IntegerToCommaString(itemCnt);
+						strMessage.PrintF( _S(576, "%s : %s개" ),pUIManager->GetServerSelect()->GetServerName(i+1), strCount);
 						msgInfo.AddString(strMessage);
 
 						itemAll+=itemCnt;
@@ -2238,10 +2242,13 @@ void CSessionState::ReceiveEventMessage(CNetworkMessage *istr)
 						strMessage.PrintF( _S(3583, "색종이로 %s 드래곤을 접으셨네요! 축하합니다!"), strColor);
 					MsgBoxInfo.AddString(strMessage);
 
+					CTString strCount = UIMGR()->IntegerToCommaString(nCount);
+
 					if( nReward == 19 )
-						strMessage.PrintF( _S(3584, "보상으로 %d 나스를 드리겠습니다."), nCount );
+						strMessage.PrintF( _S(3584, "보상으로 %s 나스를 드리겠습니다."), strCount );
 					else
-						strMessage.PrintF( _S(3585, "보상으로 %s %d개를 드리겠습니다."), _pNetwork->GetItemName(nReward), nCount );
+						strMessage.PrintF( _S(3585, "보상으로 %s %s개를 드리겠습니다."), _pNetwork->GetItemName(nReward), strCount );
+
 					MsgBoxInfo.AddString(strMessage);
 
 					pUIManager->CreateMessageBox(MsgBoxInfo);

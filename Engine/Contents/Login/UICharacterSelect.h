@@ -32,6 +32,8 @@ public:
 	WMSG_RESULT OnKeyMessage(MSG* pMsg);
 	//-----------------------------------------------------------------------------<<
 
+	void	SetPostCommand(Command* pCmd)	{ m_pCmd = pCmd; }
+
 private:
 	void	SetTextData(CUIListItem* pItem, int idx);
 	void	SetImageData(CUIListItem* pItem, int idx);
@@ -86,6 +88,27 @@ private:
 	int			m_nPlayAnimId;
 
 	bool		m_IsWear;
+
+	// 
+	Command*	m_pCmd;
+};
+
+class CmdPostUpdateCharacter : public Command
+{
+public:
+	CmdPostUpdateCharacter() : _pUI(NULL) {}
+	void setData(CUICharacterSelect* pUI)	{ _pUI = pUI; }
+	void execute()
+	{
+		if (_pUI == NULL)
+			return;
+
+		_pUI->UpdateCharacterList();
+		_pUI->Lock(FALSE);
+	}
+
+private:
+	CUICharacterSelect* _pUI;
 };
 
 #endif // _UI_CHARACTER_SELECT_H_

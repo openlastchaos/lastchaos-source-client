@@ -44,6 +44,7 @@ extern BOOL _bFileReplacingApplied;
 extern BOOL _bReadEntitiesByID = FALSE;
 
 extern BOOL g_bIsMalEng ;
+extern INDEX g_iCountry;
 
 static BOOL _bLoadingEffectData = FALSE;
 
@@ -79,13 +80,11 @@ static void DictionaryPreload_t(CTStream *istr, const CTString &strPreloadExt)
 		qsort(cfnmFiles.sa_Array, ctFileNames, sizeof(CTFileName*), qsortCompareCTFileName);
 	}
 
-	//if(g_iCountry == RUSSIA)
-	#if defined G_RUSSIA
+	if (g_iCountry == RUSSIA)	
 		SetProgressDescription("Загрузка:" + strPreloadExt);
-	//else
-	#else
+	else
 		SetProgressDescription("Loading:" + strPreloadExt);
-	#endif
+
 	// for each filename
 	{for(INDEX iFileName=0; iFileName<ctFileNames; iFileName++) {
 		// preload it

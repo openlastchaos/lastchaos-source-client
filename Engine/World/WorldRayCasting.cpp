@@ -19,6 +19,7 @@
 
 #include <Engine/Base/Statistics_internal.h>
 #include <Engine/Templates/StaticStackArray.cpp>
+#include <Engine/Network/CharacterTarget.h>
 
 #define EPSILON (0.1f)
 
@@ -198,7 +199,18 @@ void CCastRay::TestModelCollisionBox(CEntity *penModel)
 		FLOAT fOneSphereHitDistance;
 		if (RayHitsSphere(cr_vOrigin, cr_vTarget,
 			vCenter, itms->ms_fR+cr_fTestR, fOneSphereHitDistance) &&
-			fOneSphereHitDistance<cr_fHitDistance && fOneSphereHitDistance>-cr_fTestR) {
+			fOneSphereHitDistance<cr_fHitDistance && fOneSphereHitDistance>-cr_fTestR) 
+		{
+			// 모델 BBox 조정으로 수정
+// 			if ((cr_fHitDistance - fOneSphereHitDistance) < 0.15f)
+// 			{
+// 				if (cr_penHit->en_sbNetworkType == MSG_CHAR_PC)
+// 				{
+// 					if (cr_penHit->en_pCharacterTarget->cha_state & PLAYER_STATE_PKMODE)
+// 						continue;
+// 				}
+// 			}
+
 			// set the current entity as new hit target
 			cr_fHitDistance=fOneSphereHitDistance;
 			cr_penHit = penModel;

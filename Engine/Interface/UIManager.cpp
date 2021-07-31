@@ -46,11 +46,11 @@
 #include <Engine/Interface/UIAutoHelp.h>
 #include <Engine/Interface/UICashShopEX.h>
 #include <Engine/Interface/UIChildInvenSlot.h>
-#include <Engine/Interface/UIExchange.h>
+#include <Engine/Contents/function/ExChangeUI.h>
 #include <Engine/Interface/UIFactory.h>
 #include <Engine/Interface/UIGamble.h>
 #include <Engine/Interface/UIGuildBattle.h>
-#include <Engine/Interface/UIGuildStash.h>
+#include <Engine/Contents/function/GuildStashUI.h>
 #include <Engine/Interface/UIHelp.h>
 #include <Engine/Interface/UIInvenCashBag.h>
 #include <Engine/Interface/UIMessenger.h>
@@ -62,22 +62,23 @@
 #include <Engine/Interface/UIOption.h>
 #include <Engine/Contents/Base/UIPartyNew.h>
 #include <Engine/Contents/Base/Party.h>
-#include <Engine/Interface/UIPetTraining.h>
+#include <Engine/Contents/function/PetTrainingUI.h>
 #include <Engine/Interface/UIPlayerInfo.h>
 #include <Engine/Contents/function/UIPortalNew.h>
 #include <Engine/Interface/UIQuickSlot.h>
 #include <Engine/Interface/UIRefine.h>
 #include <Engine/Interface/UIResurrection.h>
 #include <Engine/Interface/UIShop.h>
+#include <Engine/Contents/function/ShopUI.h>
 #include <Engine/Interface/UISiegeWarfareDoc.h>
 #include <Engine/Interface/UISiegeWarfareNew.h>
 #include <Engine/Interface/UISignBoard.h>
 #include <Engine/Interface/UISkillToolTip.h>
 #include <Engine/Interface/UISocketSystem.h>
-#include <Engine/Interface/UISystemMenu.h>
+#include <Engine/Contents/function/SystemMenuUI.h>
 #include <Engine/Contents/function/TargetInfoNewUI.h>
-#include <Engine/Interface/UITatoo.h>
-#include <Engine/Interface/UIWareHouse.h>
+#include <Engine/Contents/function/TatooUI.h>
+#include <Engine/Contents/function/WareHouseUI.h>
 #include <Engine/Contents/function/WildPetInfoUI.h>
 #include <Engine/Contents/function/ItemCollectionData.h>
 #include <Engine/Contents/function/SimplePlayerMenuUI.h>
@@ -85,10 +86,15 @@
 #include <Engine/Contents/function/News_Web_UI.h>
 #include <Engine/Contents/function/HelpWebUI.h>
 #include <Engine/Interface/UIImageSplit.h>
+#include <Engine/Contents/function/InsectCollectUI.h>
+#include <Engine/Contents/function/CompoundUI.h>
+#include <Engine/Contents/function/GuildWarMixUI.h>
 
 #include <Engine/Info/MyInfo.h>
 #include <Engine/Help/Util_Help.h>
 #include <Engine/Contents/Base/PersonalshopUI.h>
+#include <Engine/Contents/function/GuildBattleMatch.h>
+#include <Engine/Contents/function/GuildBattleMatchUI.h>
 
 extern CDrawPort	*_pdpMain;
 CUIButtonTextureManager	*_pUIBtnTexMgr = NULL;
@@ -289,6 +295,18 @@ CUIManager::~CUIManager()
 	CUISupport::destroy();
 	SAFE_DELETE(m_pIconGuildMark);
 	SAFE_DELETE(m_pIsMakeTitleGuideLine);
+
+	std::map<SLONG, CEffectGroup *>::iterator iter = m_mapEG.begin();
+	std::map<SLONG, CEffectGroup *>::iterator eiter = m_mapEG.end();
+
+	for ( ; iter != eiter; ++iter)
+	{
+		DestroyEffectGroup((*iter).second);
+	}
+
+	m_mapEG.clear();
+
+	m_vecAdditionalPath.clear();
 }
 
 // ----------------------------------------------------------------------------
@@ -546,10 +564,10 @@ void CUIManager::InitUIString()
 
 	BOOL tFilter = TRUE;
 	// 이기환 추가 ( 04.11.29 )
-	tFilter &= _UIFiltering.Create( strImmoralWordList.str_String );
+	tFilter &= _UIFiltering.Read( strImmoralWordList.str_String );
 	// Date : 2005-02-16,   By Lee Ki-hwan
-	tFilter &= _UIFilteringCharacter.Create ( strImmoralCharacter.str_String );
-	tFilter &= _UICharacterChatFilter.Create( strChatFilter.str_String, true );
+	tFilter &= _UIFilteringCharacter.Read( strImmoralCharacter.str_String );
+	tFilter &= _UICharacterChatFilter.Read( strChatFilter.str_String, true );
 
 	//---------------------------------------------------------------------->>
 	// Name :
@@ -610,6 +628,7 @@ void CUIManager::DestroyAll()
 	// Buff
 	SAFE_DELETE( _pUIBuff );
 
+	TOOLTIPMGR()->setData(NULL);
 	// UIs
 	for( INDEX iUI = UI_TYPE_START; iUI < UI_TYPE_END; iUI++ )
 	{
@@ -638,6 +657,8 @@ void CUIManager::DestroyAll()
 
 	MsgBoxMgr::getSingleton()->DestroyAll();
 	MsgBoxMgr::destroy();
+
+	Destroy();
 }
 
 void CUIManager::SetGameHandle(CGame *pGame)
@@ -873,6 +894,56 @@ void CUIManager::AdjustUIPos( CDrawPort *pdp )
 	m_bMouseInsideUIs = FALSE;
 }
 
+CTString CUIManager::IntegerToCommaString( __int64 llCount )
+{
+	CTString strTemp;
+	strTemp.PrintF("%I64d", llCount);
+	InsertCommaToString(strTemp);
+	return strTemp;
+}
+
+CTString CUIManager::RealNumberToCommaString( double fCount, int nDecimalplaces /*= 1*/ )
+{
+	CTString strTemp = CTString("");
+
+	if (nDecimalplaces <= 0)
+		return strTemp;
+
+	strTemp.PrintF("%f", fCount);
+	FitOrderDecimalString(strTemp, nDecimalplaces);
+	return strTemp;
+}
+
+void CUIManager::FitOrderDecimalString(CTString &strCount, int nDecimalplaces )
+{
+	std::string strTemp = strCount;
+	std::string strResult;
+
+	int nFindPos = strTemp.find(".");
+
+	if (nFindPos == std::string::npos)
+		nFindPos = strTemp.length();
+
+	strResult = strTemp.substr(0, nFindPos);
+
+	if (IsDotSeparator(g_iCountry) == TRUE)
+		strResult += ",";
+	else
+		strResult += ".";
+
+	nFindPos++;
+
+	for (int i = 0; i < nDecimalplaces; ++i)
+	{
+		if (strTemp.length() <= nFindPos + i)
+			strResult += "0";
+		else
+			strResult += strTemp.substr(nFindPos + i, 1);
+	}
+	strCount = strResult.c_str();
+	InsertCommaToStringEx(strCount);
+}
+
 // ----------------------------------------------------------------------------
 // Name : InsertCommaToString()
 // Desc :
@@ -880,6 +951,7 @@ void CUIManager::AdjustUIPos( CDrawPort *pdp )
 void CUIManager::InsertCommaToString( CTString &strCount )
 {
 	char	szCount[256];
+	
 	int		iChar = 0, iCharTemp = 0, ctComma = 0;
 	int		nLength = strCount.Length();
 
@@ -890,13 +962,42 @@ void CUIManager::InsertCommaToString( CTString &strCount )
 		{
 			if (szCount[iChar - 1] != '-')
 			{
-				szCount[iChar++] = ',';
+				if (IsDotSeparator(g_iCountry) == TRUE) 
+					szCount[iChar++] = '.';
+				else
+					szCount[iChar++] = ',';
 				ctComma++;
 			}
 		}
 	}
 	szCount[nLength + ctComma] = NULL;
 	strCount = szCount;
+}
+
+void CUIManager::InsertCommaToStringEx( CTString &strRealNumber)
+{
+	std::string strTemp = strRealNumber;
+
+	int nFindPos = strTemp.find(".");
+
+	if (nFindPos == std::string::npos)
+	{
+		InsertCommaToString(strRealNumber);
+		return;
+	}
+	else
+	{
+		if (IsDotSeparator(g_iCountry) == TRUE)
+			strTemp.replace(nFindPos, 1, ",");
+
+		int nLeftCnt = strTemp.length() - nFindPos;
+
+		CTString strFront = strTemp.substr(0, nFindPos).c_str();
+		CTString strTail = strTemp.substr(nFindPos, nLeftCnt).c_str();
+
+		InsertCommaToString(strFront);
+		strRealNumber.PrintF("%s%s", strFront, strTail);
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -970,10 +1071,8 @@ CTString CUIManager::NasNumToWord(SQUAD llNas)
 	CTString strNasString = "";
 	CTString strTemp;
 
-	//switch(g_iCountry)
-	#if defined G_KOR
-	//{
-	//	case KOREA:
+#if defined(VER_TEST)
+	{
 		//{
 		int nQuotient = llNas / 100000000;
 		int nRemain = llNas % 100000000;
@@ -1008,18 +1107,13 @@ CTString CUIManager::NasNumToWord(SQUAD llNas)
 			strNasString += strTemp;
 
 		}
-	//}
-	//	break;
-
-	//	default: //국내만 단위를 나누어서 출력, 다른국가는 콤마로 구분
-	#else
-		{
-			strNasString.PrintF("%I64d", llNas);
-			InsertCommaToString( strNasString );
-		}
-	#endif
-		//break;
-	//}
+	}
+#else
+	{
+		strNasString.PrintF("%I64d", llNas);
+		InsertCommaToString( strNasString );
+	}
+#endif
 
 	return strNasString;
 }
@@ -1034,13 +1128,11 @@ void CUIManager::Render( CDrawPort *pdp, CProjection3D* pprProjection )
 
 	CBackImageManager::getSingleton()->Render(pdp);
 
-	//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
+	if (g_iCountry == RUSSIA)
 	{			
 		m_pUIDrawPort->SetFont(_pfdDefaultFont);
 		m_pUIDrawPort->SetTextMode(-1);
 	}
-#endif
 
 	// If UIs are not shown
 	if( !m_bShowUIs )
@@ -1118,10 +1210,10 @@ void CUIManager::Render( CDrawPort *pdp, CProjection3D* pprProjection )
 
 				if(DoesMessageBoxLExist(MSGLCMD_WAREHOUSE_REQ))
 				{
-					if (GetWareHouse()->GetUseCashRemote() == false)
+					if (GetWareHouseUI()->GetUseCashRemote() == false)
 					{
-						FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - GetWareHouse()->GetNpcPosX();
-						FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - GetWareHouse()->GetNpcPosZ();
+						FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - GetWareHouseUI()->GetNpcPosX();
+						FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - GetWareHouseUI()->GetNpcPosZ();
 						if( fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST )
 						{
 							CloseMessageBoxL(MSGLCMD_WAREHOUSE_REQ);
@@ -1201,12 +1293,6 @@ void CUIManager::Render( CDrawPort *pdp, CProjection3D* pprProjection )
 	_UIAutoHelp->RenderGMNotice();
 	GetCombo()->SysStateRender();
 	
-
-//	if(g_iCountry == KOREA) 
-#if defined G_KOR
-		_UIAutoHelp->ClassificationShowRender();
-#endif
-
 	if (m_pIconDrag != NULL)
 	{
 		int		ox, oy;
@@ -1319,504 +1405,490 @@ void CUIManager::RenderObjectNamePopup( CProjection3D* pprProjection )
 
 	// My character
 	nChatMsgLines = _pNetwork->MyCharacterInfo.ChatMsg.GetCount();
-#ifdef GM_INVISIBLE_MODE
+
 	if(_pNetwork->MyCharacterInfo.m_ModelColor ==NULL)
 	{	
-#endif
-	if( g_iShowName > 0 || nChatMsgLines > 0 || _pNetwork->MyCharacterInfo.sbShopType != PST_NOSHOP ||
-		_pNetwork->MyCharacterInfo.pk_mode != 0 )
-	{
-		penObject = CEntity::GetPlayerEntity( 0 );
-		vObjectPos = penObject->GetLerpedPlacement().pl_PositionVector;
-
-		// Get frame box
-		pmi = penObject->GetModelInstance();
-		ASSERT( pmi != NULL );
-		if(pmi == NULL)						
-			return;
-		ASSERT( pmi->GetName() != "" );
-		if( pmi->GetName() == "" )
-			return;
-		pmi->GetAllFramesBBox( boxModel );
-		boxModel.StretchByVector( pmi->mi_vStretch );
-		fHeight = boxModel.maxvect(2) - boxModel.minvect(2);
-
-		fRadius = fHeight * 0.5f;
-
-		// Object point to screen point
-
-		if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
+		if( g_iShowName > 0 || nChatMsgLines > 0 || _pNetwork->MyCharacterInfo.sbShopType != PST_NOSHOP ||
+			_pNetwork->MyCharacterInfo.pk_mode != 0 )
 		{
-			vObjectPos(2) += (fHeight * 1.5f);
-		}
-		else
-		{
-			vObjectPos(2) += fHeight;
-		}
-		
-		pprProjection->PreClip( vObjectPos, vViewPos );
-		pprProjection->PostClip( vViewPos, vPopupPos );
-		fPopupZ = ( 1 - pprProjection->pr_fDepthBufferFactor / vViewPos(3) )
-					* pprProjection->pr_fDepthBufferMul + pprProjection->pr_fDepthBufferAdd;
+			penObject = CEntity::GetPlayerEntity( 0 );
+			vObjectPos = penObject->GetLerpedPlacement().pl_PositionVector;
 
-		// Get box region
-		//if(g_iCountry == THAILAND) 
-#if defined G_THAI
-		{
-			nBoxWidth = FindThaiLen(_pNetwork->MyCharacterInfo.name); //wooss 051017
-			if(_pNetwork->MyCharacterInfo.pk_mode == 0 ) 
-				nBoxWidth+=13;
-			else 
-				nBoxWidth+=27;
-		} 
-		//else 
-#else
-		if( _pNetwork->MyCharacterInfo.pk_mode == 0 )
-		{
-			//if(g_iCountry == RUSSIA)
-			#if defined G_RUSSIA
-				nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.name) + 13;
-			//else
-			#else
-				nBoxWidth = _pNetwork->MyCharacterInfo.name.Length() * nFontWidth + 13;
-			#endif
-		}
-		else
-		{
-			//if(g_iCountry == RUSSIA)
-			#if defined G_RUSSIA
-				nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.name) + 27;
-			//else
-			#else
-				nBoxWidth = _pNetwork->MyCharacterInfo.name.Length() * nFontWidth + 27;
-			#endif
-		}
-#endif
-		m_rcName.Left = vPopupPos(1) - nBoxWidth / 2;
-		m_rcName.Right = m_rcName.Left + nBoxWidth;
-		m_rcName.Bottom = vPopupPos(2) - 7;
-		m_rcName.Top = m_rcName.Bottom - 15;
-		nPopupY = m_rcName.Top;
+			// Get frame box
+			pmi = penObject->GetModelInstance();
+			ASSERT( pmi != NULL );
+			if(pmi == NULL)						
+				return;
+			ASSERT( pmi->GetName() != "" );
+			if( pmi->GetName() == "" )
+				return;
+			pmi->GetAllFramesBBox( boxModel );
+			boxModel.StretchByVector( pmi->mi_vStretch );
+			fHeight = boxModel.maxvect(2) - boxModel.minvect(2);
 
-		// Set popup texture
-		m_pUIDrawPort->InitTextureData( m_ptdPopupTexture, FALSE, PBT_BLEND, TRUE );
+			fRadius = fHeight * 0.5f;
 
-#ifdef PREMIUM_CHAR
-		if (GAMEDATAMGR()->GetPremiumChar()->getType() == PREMIUM_CHAR_TYPE_FIRST)
-		{
-			UIRect			rcPcName;
-			rcPcName.Left = m_rcName.Left - 2;
-			rcPcName.Top = m_rcName.Top - 11;
-			rcPcName.Right = m_rcName.Right + 30;
-			rcPcName.Bottom = m_rcName.Bottom + 24;
+			// Object point to screen point
 
-			m_pUIDrawPort->AddTexture( rcPcName.Left, rcPcName.Top, rcPcName.Left + 2, rcPcName.Bottom,
-				m_rtPremiumNameL.U0, m_rtPremiumNameL.V0, m_rtPremiumNameL.U1, m_rtPremiumNameL.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( rcPcName.Left + 2, rcPcName.Top, rcPcName.Right - 63, rcPcName.Bottom,
-				m_rtPremiumNameC.U0, m_rtPremiumNameC.V0, m_rtPremiumNameC.U1, m_rtPremiumNameC.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( rcPcName.Right - 63, rcPcName.Top, rcPcName.Right, rcPcName.Bottom,
-				m_rtPremiumNameR.U0, m_rtPremiumNameR.V0, m_rtPremiumNameR.U1, m_rtPremiumNameR.V1, 0xFFFFFFFF, fPopupZ );
-
-			nPopupY = m_rcName.Top - 5;
-		}
-#endif	//	PREMIUM_CHAR
-
-		// Add render regions
-		if( _pNetwork->MyCharacterInfo.pk_mode == 0 )
-		{
-			m_pUIDrawPort->AddTexture( m_rcName.Left, m_rcName.Top, m_rcName.Left + 2, m_rcName.Bottom,
-										m_rtNameL.U0, m_rtNameL.V0, m_rtNameL.U1, m_rtNameL.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcName.Left + 2, m_rcName.Top, m_rcName.Right - 2, m_rcName.Bottom,
-										m_rtNameC.U0, m_rtNameC.V0, m_rtNameC.U1, m_rtNameC.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcName.Right - 2, m_rcName.Top, m_rcName.Right, m_rcName.Bottom,
-										m_rtNameR.U0, m_rtNameR.V0, m_rtNameR.U1, m_rtNameR.V1, 0xFFFFFFFF, fPopupZ );
-		}
-		else
-		{
-			COLOR	colBlend = 0xFFFFFFFF;
-			if( _pNetwork->MyCharacterInfo.pk_mode == 2 )
-				colBlend = colNameBlend;
-
-			m_pUIDrawPort->AddTexture( m_rcName.Left, m_rcName.Top, m_rcName.Left + 2, m_rcName.Bottom,
-										m_rtNameL.U0, m_rtNameL.V0, m_rtNameL.U1, m_rtNameL.V1, colBlend, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcName.Left + 2, m_rcName.Top, m_rcName.Right - 16, m_rcName.Bottom,
-										m_rtNameC.U0, m_rtNameC.V0, m_rtNameC.U1, m_rtNameC.V1, colBlend, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcName.Right - 16, m_rcName.Top, m_rcName.Right, m_rcName.Bottom,
-										m_rtNameRPK.U0, m_rtNameRPK.V0, m_rtNameRPK.U1, m_rtNameRPK.V1, colBlend, fPopupZ );
-		}
-
-		// 호칭
-		COLOR myNickColor;
-		INDEX iMyNickItemIndex;
-		if (_pNetwork->MyCharacterInfo.iNickType > 0)	// 호칭이 있을 때
-		{
-			if (_pNetwork->MyCharacterInfo.iNickType == DEF_DUMMY_TITLE_INDEX)
+			if (_pNetwork->MyCharacterInfo.ulPlayerState & PLAYER_STATE_FLYING)
 			{
-				myNick		= _pNetwork->MyCharacterInfo.stCustomTitle.name;
-				myNickColor = CustomTitleData::m_vecBackColor[_pNetwork->MyCharacterInfo.stCustomTitle.nBackColor];
+				vObjectPos(2) += (fHeight * 1.5f);
 			}
 			else
 			{
-				//  [3/25/2010 kiny8216] 호칭 이름을 아이템 lod에서 불러오도록 변경
-				iMyNickItemIndex	=TitleStaticData::getData(_pNetwork->MyCharacterInfo.iNickType)->GetItemIndex();
-				myNick		= GetNickName()->GetName(iMyNickItemIndex);
-				COLOR tmpColor = TitleStaticData::getData(_pNetwork->MyCharacterInfo.iNickType)->GetBGColor();
-				myNickColor = (tmpColor|255);
+				vObjectPos(2) += fHeight;
 			}
+		
+			pprProjection->PreClip( vObjectPos, vViewPos );
+			pprProjection->PostClip( vViewPos, vPopupPos );
+			fPopupZ = ( 1 - pprProjection->pr_fDepthBufferFactor / vViewPos(3) )
+						* pprProjection->pr_fDepthBufferMul + pprProjection->pr_fDepthBufferAdd;
 
-#if defined G_RUSSIA
-			nBoxWidth = m_pUIDrawPort->GetTextWidth(myNick) + 13; 
-#else
-			nBoxWidth = myNick.Length() * nFontWidth + 13;
-#endif
-			m_rcNickName.Left = vPopupPos(1) - nBoxWidth / 2;
-			m_rcNickName.Right = m_rcNickName.Left + nBoxWidth;
-			m_rcNickName.Bottom = nPopupY - 5;
-			m_rcNickName.Top = (m_rcNickName.Bottom - 1 * nFontHeight) - 4;
-			nPopupY = m_rcNickName.Top;
-
-			m_pUIDrawPort->AddTexture( m_rcNickName.Left, m_rcNickName.Top, m_rcNickName.Left + 2, m_rcNickName.Bottom,
-										m_rtNickNameL.U0, m_rtNickNameL.V0, m_rtNickNameL.U1, m_rtNickNameL.V1, myNickColor, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcNickName.Left + 2, m_rcNickName.Top, m_rcNickName.Right - 2, m_rcNickName.Bottom,
-										m_rtNickNameC.U0, m_rtNickNameC.V0, m_rtNickNameC.U1, m_rtNickNameC.V1, myNickColor, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcNickName.Right - 2, m_rcNickName.Top, m_rcNickName.Right, m_rcNickName.Bottom,
-										m_rtNickNameR.U0, m_rtNickNameR.V0, m_rtNickNameR.U1, m_rtNickNameR.V1, myNickColor, fPopupZ );
-		}
-		// Guild Name
-		if( _pNetwork->MyCharacterInfo.lGuildIndex > 0)
-		{
 			// Get box region
 			//if(g_iCountry == THAILAND) 
-			#if defined G_THAI
-				nBoxWidth = FindThaiLen(_pNetwork->MyCharacterInfo.strGuildName)+13; //wooss 051017
-			//else
-			#else
+	#if defined G_THAI
 			{
-				//if(g_iCountry == RUSSIA)
-				#if defined G_RUSSIA
-					nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.strGuildName) + 13;
-				//else
-				#else
-					nBoxWidth = _pNetwork->MyCharacterInfo.strGuildName.Length() * nFontWidth + 13;
-				#endif
-			}
-			#endif
-			m_rcGuildName.Left = vPopupPos(1) - nBoxWidth / 2;
-			m_rcGuildName.Right = m_rcGuildName.Left + nBoxWidth;
-			m_rcGuildName.Bottom = nPopupY - 5;
-			m_rcGuildName.Top = (m_rcGuildName.Bottom - 1 * nFontHeight) - 4;
-			nPopupY = m_rcGuildName.Top;
-			
-			m_pUIDrawPort->AddTexture( m_rcGuildName.Left, m_rcGuildName.Top, m_rcGuildName.Left + 2, m_rcGuildName.Bottom,
-										m_rtNameL.U0, m_rtNameL.V0, m_rtNameL.U1, m_rtNameL.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcGuildName.Left + 2, m_rcGuildName.Top, m_rcGuildName.Right - 2, m_rcGuildName.Bottom,
-										m_rtNameC.U0, m_rtNameC.V0, m_rtNameC.U1, m_rtNameC.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcGuildName.Right - 2, m_rcGuildName.Top, m_rcGuildName.Right, m_rcGuildName.Bottom,
-										m_rtNameR.U0, m_rtNameR.V0, m_rtNameR.U1, m_rtNameR.V1, 0xFFFFFFFF, fPopupZ );
-			// WSS_GUILDMASTER 070517 -------------------------->>
-			DrawGuildRankBox(m_rcGuildName,_pNetwork->MyCharacterInfo.sbGuildRank,fPopupZ);
-			// -------------------------------------------------<<
-
-		}
-
-		nShopMsgLines = 0;
-		if( _pNetwork->MyCharacterInfo.sbShopType != PST_NOSHOP )
-		{
-			nShopMsgLines = _pNetwork->MyCharacterInfo.ShopMsg.GetCount();
-			//if(g_iCountry == THAILAND) 
-			#if defined G_THAI
-				nBoxWidth = FindThaiLen(_pNetwork->MyCharacterInfo.ShopMsg.GetString(0)); //wooss 051017
-			//else
-			#else
+				nBoxWidth = FindThaiLen(_pNetwork->MyCharacterInfo.name); //wooss 051017
+				if(_pNetwork->MyCharacterInfo.pk_mode == 0 ) 
+					nBoxWidth+=13;
+				else 
+					nBoxWidth+=27;
+			} 
+			//else 
+	#else
+			if( _pNetwork->MyCharacterInfo.pk_mode == 0 )
 			{
-				//if(g_iCountry == RUSSIA)
-				#if defined G_RUSSIA
-					nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.ShopMsg.GetString(0));
-				//else
-				#else
-					nBoxWidth = _pNetwork->MyCharacterInfo.ShopMsg.GetWidth();
-				#endif
-			}
-			#endif
-			m_rcShop.Left = vPopupPos(1) - nBoxWidth / 2;
-			m_rcShop.Right = m_rcShop.Left + nBoxWidth;
-
-			if( _pNetwork->MyCharacterInfo.sbShopType & PST_PREMIUM )
-			{
-				m_rcShop.Bottom = nPopupY - 18;
-				m_rcShop.Top = m_rcShop.Bottom - nShopMsgLines * nFontHeight;
-
-				m_pUIDrawPort->AddTexture( m_rcShop.Left - 13, m_rcShop.Top - 13, m_rcShop.Left, m_rcShop.Top,
-											m_rtShopPremLU.U0, m_rtShopPremLU.V0, m_rtShopPremLU.U1, m_rtShopPremLU.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Top - 13, m_rcShop.Right, m_rcShop.Top,
-											m_rtShopPremUp.U0, m_rtShopPremUp.V0, m_rtShopPremUp.U1, m_rtShopPremUp.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Top - 13, m_rcShop.Right + 13, m_rcShop.Top,
-											m_rtShopPremRU.U0, m_rtShopPremRU.V0, m_rtShopPremRU.U1, m_rtShopPremRU.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left - 13, m_rcShop.Top, m_rcShop.Left, m_rcShop.Bottom,
-											m_rtShopPremL.U0, m_rtShopPremL.V0, m_rtShopPremL.U1, m_rtShopPremL.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Top, m_rcShop.Right, m_rcShop.Bottom,
-											m_rtShopPremC.U0, m_rtShopPremC.V0, m_rtShopPremC.U1, m_rtShopPremC.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Top, m_rcShop.Right + 13, m_rcShop.Bottom,
-											m_rtShopPremR.U0, m_rtShopPremR.V0, m_rtShopPremR.U1, m_rtShopPremR.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left - 13, m_rcShop.Bottom, m_rcShop.Left, m_rcShop.Bottom + 13,
-											m_rtShopPremLL.U0, m_rtShopPremLL.V0, m_rtShopPremLL.U1, m_rtShopPremLL.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Bottom, m_rcShop.Right, m_rcShop.Bottom + 13,
-											m_rtShopPremLo.U0, m_rtShopPremLo.V0, m_rtShopPremLo.U1, m_rtShopPremLo.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Bottom, m_rcShop.Right + 13, m_rcShop.Bottom + 13,
-											m_rtShopPremRL.U0, m_rtShopPremRL.V0, m_rtShopPremRL.U1, m_rtShopPremRL.V1, 0xFFFFFFFF, fPopupZ );
-
-				nPopupY = m_rcShop.Top - 8;
+				if (g_iCountry == RUSSIA)
+					nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.name) + 13;
+				else
+					nBoxWidth = _pNetwork->MyCharacterInfo.name.Length() * nFontWidth + 13;
 			}
 			else
 			{
-				m_rcShop.Bottom = nPopupY - 10;
-				m_rcShop.Top = m_rcShop.Bottom - nShopMsgLines * nFontHeight;
-
-				m_pUIDrawPort->AddTexture( m_rcShop.Left - 5, m_rcShop.Top - 5, m_rcShop.Left, m_rcShop.Top,
-											m_rtShopLU.U0, m_rtShopLU.V0, m_rtShopLU.U1, m_rtShopLU.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Top - 5, m_rcShop.Right, m_rcShop.Top,
-											m_rtShopUp.U0, m_rtShopUp.V0, m_rtShopUp.U1, m_rtShopUp.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Top - 5, m_rcShop.Right + 5, m_rcShop.Top,
-											m_rtShopRU.U0, m_rtShopRU.V0, m_rtShopRU.U1, m_rtShopRU.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left - 5, m_rcShop.Top, m_rcShop.Left, m_rcShop.Bottom,
-											m_rtShopL.U0, m_rtShopL.V0, m_rtShopL.U1, m_rtShopL.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Top, m_rcShop.Right, m_rcShop.Bottom,
-											m_rtShopC.U0, m_rtShopC.V0, m_rtShopC.U1, m_rtShopC.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Top, m_rcShop.Right + 5, m_rcShop.Bottom,
-											m_rtShopR.U0, m_rtShopR.V0, m_rtShopR.U1, m_rtShopR.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left - 5, m_rcShop.Bottom, m_rcShop.Left, m_rcShop.Bottom + 5,
-											m_rtShopLL.U0, m_rtShopLL.V0, m_rtShopLL.U1, m_rtShopLL.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Bottom, m_rcShop.Right, m_rcShop.Bottom + 5,
-											m_rtShopLo.U0, m_rtShopLo.V0, m_rtShopLo.U1, m_rtShopLo.V1, 0xFFFFFFFF, fPopupZ );
-				m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Bottom, m_rcShop.Right + 5, m_rcShop.Bottom + 5,
-											m_rtShopRL.U0, m_rtShopRL.V0, m_rtShopRL.U1, m_rtShopRL.V1, 0xFFFFFFFF, fPopupZ );
-
-				nPopupY = m_rcShop.Top;
+				if (g_iCountry == RUSSIA)
+					nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.name) + 27;
+				else
+					nBoxWidth = _pNetwork->MyCharacterInfo.name.Length() * nFontWidth + 27;
 			}
-		}
+	#endif
+			m_rcName.Left = vPopupPos(1) - nBoxWidth / 2;
+			m_rcName.Right = m_rcName.Left + nBoxWidth;
+			m_rcName.Bottom = vPopupPos(2) - 7;
+			m_rcName.Top = m_rcName.Bottom - 15;
+			nPopupY = m_rcName.Top;
 
-		if( nChatMsgLines > 0 )
-		{
-			//if(g_iCountry == THAILAND) 
-			#if defined G_THAI
-				nBoxWidth = FindThaiLen(_pNetwork->MyCharacterInfo.ChatMsg.GetString(0)); //wooss 051017
-			//else
-			#else
+			// Set popup texture
+			m_pUIDrawPort->InitTextureData( m_ptdPopupTexture, FALSE, PBT_BLEND, TRUE );
+
+	#ifdef PREMIUM_CHAR
+			if (GAMEDATAMGR()->GetPremiumChar()->getType() == PREMIUM_CHAR_TYPE_FIRST)
 			{
-				//if(g_iCountry == RUSSIA)
-				#if defined G_RUSSIA
-					int nCurWidth = 0;
-					int nMaxWidth = 0;
-					for( int i=0; i<_pNetwork->MyCharacterInfo.ChatMsg.GetCount(); ++i )
+				UIRect			rcPcName;
+				rcPcName.Left = m_rcName.Left - 2;
+				rcPcName.Top = m_rcName.Top - 11;
+				rcPcName.Right = m_rcName.Right + 30;
+				rcPcName.Bottom = m_rcName.Bottom + 24;
+
+				m_pUIDrawPort->AddTexture( rcPcName.Left, rcPcName.Top, rcPcName.Left + 2, rcPcName.Bottom,
+					m_rtPremiumNameL.U0, m_rtPremiumNameL.V0, m_rtPremiumNameL.U1, m_rtPremiumNameL.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( rcPcName.Left + 2, rcPcName.Top, rcPcName.Right - 63, rcPcName.Bottom,
+					m_rtPremiumNameC.U0, m_rtPremiumNameC.V0, m_rtPremiumNameC.U1, m_rtPremiumNameC.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( rcPcName.Right - 63, rcPcName.Top, rcPcName.Right, rcPcName.Bottom,
+					m_rtPremiumNameR.U0, m_rtPremiumNameR.V0, m_rtPremiumNameR.U1, m_rtPremiumNameR.V1, 0xFFFFFFFF, fPopupZ );
+
+				nPopupY = m_rcName.Top - 5;
+			}
+	#endif	//	PREMIUM_CHAR
+
+			// Add render regions
+			if( _pNetwork->MyCharacterInfo.pk_mode == 0 )
+			{
+				m_pUIDrawPort->AddTexture( m_rcName.Left, m_rcName.Top, m_rcName.Left + 2, m_rcName.Bottom,
+											m_rtNameL.U0, m_rtNameL.V0, m_rtNameL.U1, m_rtNameL.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcName.Left + 2, m_rcName.Top, m_rcName.Right - 2, m_rcName.Bottom,
+											m_rtNameC.U0, m_rtNameC.V0, m_rtNameC.U1, m_rtNameC.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcName.Right - 2, m_rcName.Top, m_rcName.Right, m_rcName.Bottom,
+											m_rtNameR.U0, m_rtNameR.V0, m_rtNameR.U1, m_rtNameR.V1, 0xFFFFFFFF, fPopupZ );
+			}
+			else
+			{
+				COLOR	colBlend = 0xFFFFFFFF;
+				if( _pNetwork->MyCharacterInfo.pk_mode == 2 )
+					colBlend = colNameBlend;
+
+				m_pUIDrawPort->AddTexture( m_rcName.Left, m_rcName.Top, m_rcName.Left + 2, m_rcName.Bottom,
+											m_rtNameL.U0, m_rtNameL.V0, m_rtNameL.U1, m_rtNameL.V1, colBlend, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcName.Left + 2, m_rcName.Top, m_rcName.Right - 16, m_rcName.Bottom,
+											m_rtNameC.U0, m_rtNameC.V0, m_rtNameC.U1, m_rtNameC.V1, colBlend, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcName.Right - 16, m_rcName.Top, m_rcName.Right, m_rcName.Bottom,
+											m_rtNameRPK.U0, m_rtNameRPK.V0, m_rtNameRPK.U1, m_rtNameRPK.V1, colBlend, fPopupZ );
+			}
+
+			// 호칭
+			COLOR myNickColor;
+			INDEX iMyNickItemIndex;
+			if (_pNetwork->MyCharacterInfo.iNickType > 0)	// 호칭이 있을 때
+			{
+				if (_pNetwork->MyCharacterInfo.iNickType == DEF_DUMMY_TITLE_INDEX)
+				{
+					myNick		= _pNetwork->MyCharacterInfo.stCustomTitle.name;
+					myNickColor = CustomTitleData::m_vecBackColor[_pNetwork->MyCharacterInfo.stCustomTitle.nBackColor];
+				}
+				else
+				{
+					//  [3/25/2010 kiny8216] 호칭 이름을 아이템 lod에서 불러오도록 변경
+					iMyNickItemIndex	=TitleStaticData::getData(_pNetwork->MyCharacterInfo.iNickType)->GetItemIndex();
+					myNick		= GetNickName()->GetName(iMyNickItemIndex);
+					COLOR tmpColor = TitleStaticData::getData(_pNetwork->MyCharacterInfo.iNickType)->GetBGColor();
+					myNickColor = (tmpColor|255);
+				}
+
+				if (g_iCountry == RUSSIA)
+					nBoxWidth = m_pUIDrawPort->GetTextWidth(myNick) + 13; 
+				else
+					nBoxWidth = myNick.Length() * nFontWidth + 13;
+
+				m_rcNickName.Left = vPopupPos(1) - nBoxWidth / 2;
+				m_rcNickName.Right = m_rcNickName.Left + nBoxWidth;
+				m_rcNickName.Bottom = nPopupY - 5;
+				m_rcNickName.Top = (m_rcNickName.Bottom - 1 * nFontHeight) - 4;
+				nPopupY = m_rcNickName.Top;
+
+				m_pUIDrawPort->AddTexture( m_rcNickName.Left, m_rcNickName.Top, m_rcNickName.Left + 2, m_rcNickName.Bottom,
+											m_rtNickNameL.U0, m_rtNickNameL.V0, m_rtNickNameL.U1, m_rtNickNameL.V1, myNickColor, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcNickName.Left + 2, m_rcNickName.Top, m_rcNickName.Right - 2, m_rcNickName.Bottom,
+											m_rtNickNameC.U0, m_rtNickNameC.V0, m_rtNickNameC.U1, m_rtNickNameC.V1, myNickColor, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcNickName.Right - 2, m_rcNickName.Top, m_rcNickName.Right, m_rcNickName.Bottom,
+											m_rtNickNameR.U0, m_rtNickNameR.V0, m_rtNickNameR.U1, m_rtNickNameR.V1, myNickColor, fPopupZ );
+			}
+			// Guild Name
+			if( _pNetwork->MyCharacterInfo.lGuildIndex > 0)
+			{
+				// Get box region
+				//if(g_iCountry == THAILAND) 
+				#if defined G_THAI
+					nBoxWidth = FindThaiLen(_pNetwork->MyCharacterInfo.strGuildName)+13; //wooss 051017
+				//else
+				#else
+				{
+					if (g_iCountry == RUSSIA)
+						nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.strGuildName) + 13;
+					else
+						nBoxWidth = _pNetwork->MyCharacterInfo.strGuildName.Length() * nFontWidth + 13;
+				}
+				#endif
+				m_rcGuildName.Left = vPopupPos(1) - nBoxWidth / 2;
+				m_rcGuildName.Right = m_rcGuildName.Left + nBoxWidth;
+				m_rcGuildName.Bottom = nPopupY - 5;
+				m_rcGuildName.Top = (m_rcGuildName.Bottom - 1 * nFontHeight) - 4;
+				nPopupY = m_rcGuildName.Top;
+			
+				m_pUIDrawPort->AddTexture( m_rcGuildName.Left, m_rcGuildName.Top, m_rcGuildName.Left + 2, m_rcGuildName.Bottom,
+											m_rtNameL.U0, m_rtNameL.V0, m_rtNameL.U1, m_rtNameL.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcGuildName.Left + 2, m_rcGuildName.Top, m_rcGuildName.Right - 2, m_rcGuildName.Bottom,
+											m_rtNameC.U0, m_rtNameC.V0, m_rtNameC.U1, m_rtNameC.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcGuildName.Right - 2, m_rcGuildName.Top, m_rcGuildName.Right, m_rcGuildName.Bottom,
+											m_rtNameR.U0, m_rtNameR.V0, m_rtNameR.U1, m_rtNameR.V1, 0xFFFFFFFF, fPopupZ );
+				// WSS_GUILDMASTER 070517 -------------------------->>
+				DrawGuildRankBox(m_rcGuildName,_pNetwork->MyCharacterInfo.sbGuildRank,fPopupZ);
+				// -------------------------------------------------<<
+
+			}
+
+			nShopMsgLines = 0;
+			if( _pNetwork->MyCharacterInfo.sbShopType != PST_NOSHOP )
+			{
+				nShopMsgLines = _pNetwork->MyCharacterInfo.ShopMsg.GetCount();
+				//if(g_iCountry == THAILAND) 
+				#if defined G_THAI
+					nBoxWidth = FindThaiLen(_pNetwork->MyCharacterInfo.ShopMsg.GetString(0)); //wooss 051017
+				//else
+				#else
+				{
+					if(g_iCountry == RUSSIA)
+						nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.ShopMsg.GetString(0));
+					else
+						nBoxWidth = _pNetwork->MyCharacterInfo.ShopMsg.GetWidth();
+				}
+				#endif
+				m_rcShop.Left = vPopupPos(1) - nBoxWidth / 2;
+				m_rcShop.Right = m_rcShop.Left + nBoxWidth;
+
+				if( _pNetwork->MyCharacterInfo.sbShopType & PST_PREMIUM )
+				{
+					m_rcShop.Bottom = nPopupY - 18;
+					m_rcShop.Top = m_rcShop.Bottom - nShopMsgLines * nFontHeight;
+
+					m_pUIDrawPort->AddTexture( m_rcShop.Left - 13, m_rcShop.Top - 13, m_rcShop.Left, m_rcShop.Top,
+												m_rtShopPremLU.U0, m_rtShopPremLU.V0, m_rtShopPremLU.U1, m_rtShopPremLU.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Top - 13, m_rcShop.Right, m_rcShop.Top,
+												m_rtShopPremUp.U0, m_rtShopPremUp.V0, m_rtShopPremUp.U1, m_rtShopPremUp.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Top - 13, m_rcShop.Right + 13, m_rcShop.Top,
+												m_rtShopPremRU.U0, m_rtShopPremRU.V0, m_rtShopPremRU.U1, m_rtShopPremRU.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left - 13, m_rcShop.Top, m_rcShop.Left, m_rcShop.Bottom,
+												m_rtShopPremL.U0, m_rtShopPremL.V0, m_rtShopPremL.U1, m_rtShopPremL.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Top, m_rcShop.Right, m_rcShop.Bottom,
+												m_rtShopPremC.U0, m_rtShopPremC.V0, m_rtShopPremC.U1, m_rtShopPremC.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Top, m_rcShop.Right + 13, m_rcShop.Bottom,
+												m_rtShopPremR.U0, m_rtShopPremR.V0, m_rtShopPremR.U1, m_rtShopPremR.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left - 13, m_rcShop.Bottom, m_rcShop.Left, m_rcShop.Bottom + 13,
+												m_rtShopPremLL.U0, m_rtShopPremLL.V0, m_rtShopPremLL.U1, m_rtShopPremLL.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Bottom, m_rcShop.Right, m_rcShop.Bottom + 13,
+												m_rtShopPremLo.U0, m_rtShopPremLo.V0, m_rtShopPremLo.U1, m_rtShopPremLo.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Bottom, m_rcShop.Right + 13, m_rcShop.Bottom + 13,
+												m_rtShopPremRL.U0, m_rtShopPremRL.V0, m_rtShopPremRL.U1, m_rtShopPremRL.V1, 0xFFFFFFFF, fPopupZ );
+
+					nPopupY = m_rcShop.Top - 8;
+				}
+				else
+				{
+					m_rcShop.Bottom = nPopupY - 10;
+					m_rcShop.Top = m_rcShop.Bottom - nShopMsgLines * nFontHeight;
+
+					m_pUIDrawPort->AddTexture( m_rcShop.Left - 5, m_rcShop.Top - 5, m_rcShop.Left, m_rcShop.Top,
+												m_rtShopLU.U0, m_rtShopLU.V0, m_rtShopLU.U1, m_rtShopLU.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Top - 5, m_rcShop.Right, m_rcShop.Top,
+												m_rtShopUp.U0, m_rtShopUp.V0, m_rtShopUp.U1, m_rtShopUp.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Top - 5, m_rcShop.Right + 5, m_rcShop.Top,
+												m_rtShopRU.U0, m_rtShopRU.V0, m_rtShopRU.U1, m_rtShopRU.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left - 5, m_rcShop.Top, m_rcShop.Left, m_rcShop.Bottom,
+												m_rtShopL.U0, m_rtShopL.V0, m_rtShopL.U1, m_rtShopL.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Top, m_rcShop.Right, m_rcShop.Bottom,
+												m_rtShopC.U0, m_rtShopC.V0, m_rtShopC.U1, m_rtShopC.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Top, m_rcShop.Right + 5, m_rcShop.Bottom,
+												m_rtShopR.U0, m_rtShopR.V0, m_rtShopR.U1, m_rtShopR.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left - 5, m_rcShop.Bottom, m_rcShop.Left, m_rcShop.Bottom + 5,
+												m_rtShopLL.U0, m_rtShopLL.V0, m_rtShopLL.U1, m_rtShopLL.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Left, m_rcShop.Bottom, m_rcShop.Right, m_rcShop.Bottom + 5,
+												m_rtShopLo.U0, m_rtShopLo.V0, m_rtShopLo.U1, m_rtShopLo.V1, 0xFFFFFFFF, fPopupZ );
+					m_pUIDrawPort->AddTexture( m_rcShop.Right, m_rcShop.Bottom, m_rcShop.Right + 5, m_rcShop.Bottom + 5,
+												m_rtShopRL.U0, m_rtShopRL.V0, m_rtShopRL.U1, m_rtShopRL.V1, 0xFFFFFFFF, fPopupZ );
+
+					nPopupY = m_rcShop.Top;
+				}
+			}
+
+			if( nChatMsgLines > 0 )
+			{
+				//if(g_iCountry == THAILAND) 
+	#if defined G_THAI
+					nBoxWidth = FindThaiLen(_pNetwork->MyCharacterInfo.ChatMsg.GetString(0)); //wooss 051017
+				//else
+	#else
+				{
+					if (g_iCountry == RUSSIA)
 					{
-						nCurWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.ChatMsg.GetString(i));
-						if( nMaxWidth < nCurWidth )
+						int nCurWidth = 0;
+						int nMaxWidth = 0;
+						for( int i=0; i<_pNetwork->MyCharacterInfo.ChatMsg.GetCount(); ++i )
 						{
-							nMaxWidth = nCurWidth;
+							nCurWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.ChatMsg.GetString(i));
+							if( nMaxWidth < nCurWidth )
+							{
+								nMaxWidth = nCurWidth;
+							}
 						}
+						nBoxWidth = nMaxWidth;
 					}
-					nBoxWidth = nMaxWidth;
-				//else
-				#else
-					nBoxWidth = _pNetwork->MyCharacterInfo.ChatMsg.GetWidth();
-				#endif
-			}
-			#endif
-			m_rcChat.Left = vPopupPos(1) - nBoxWidth / 2;
-			m_rcChat.Right = m_rcChat.Left + nBoxWidth;
-			m_rcChat.Bottom = nPopupY - 10;
-			m_rcChat.Top = m_rcChat.Bottom - nChatMsgLines * nFontHeight;
-			nPopupY = m_rcChat.Top;
+					else
+					{
+						nBoxWidth = _pNetwork->MyCharacterInfo.ChatMsg.GetWidth();
+					}
+				}
+	#endif
 
-			m_pUIDrawPort->AddTexture( m_rcChat.Left - 5, m_rcChat.Top - 5, m_rcChat.Left, m_rcChat.Top,
-										m_rtChatLU.U0, m_rtChatLU.V0, m_rtChatLU.U1, m_rtChatLU.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcChat.Left, m_rcChat.Top - 5, m_rcChat.Right, m_rcChat.Top,
-										m_rtChatUp.U0, m_rtChatUp.V0, m_rtChatUp.U1, m_rtChatUp.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcChat.Right, m_rcChat.Top - 5, m_rcChat.Right + 5, m_rcChat.Top,
-										m_rtChatRU.U0, m_rtChatRU.V0, m_rtChatRU.U1, m_rtChatRU.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcChat.Left - 5, m_rcChat.Top, m_rcChat.Left, m_rcChat.Bottom,
-										m_rtChatL.U0, m_rtChatL.V0, m_rtChatL.U1, m_rtChatL.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcChat.Left, m_rcChat.Top, m_rcChat.Right, m_rcChat.Bottom,
-										m_rtChatC.U0, m_rtChatC.V0, m_rtChatC.U1, m_rtChatC.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcChat.Right, m_rcChat.Top, m_rcChat.Right + 5, m_rcChat.Bottom,
-										m_rtChatR.U0, m_rtChatR.V0, m_rtChatR.U1, m_rtChatR.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcChat.Left - 5, m_rcChat.Bottom, m_rcChat.Left, m_rcChat.Bottom + 5,
-										m_rtChatLL.U0, m_rtChatLL.V0, m_rtChatLL.U1, m_rtChatLL.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcChat.Left, m_rcChat.Bottom, m_rcChat.Right, m_rcChat.Bottom + 5,
-										m_rtChatLo.U0, m_rtChatLo.V0, m_rtChatLo.U1, m_rtChatLo.V1, 0xFFFFFFFF, fPopupZ );
-			m_pUIDrawPort->AddTexture( m_rcChat.Right, m_rcChat.Bottom, m_rcChat.Right + 5, m_rcChat.Bottom + 5,
-										m_rtChatRL.U0, m_rtChatRL.V0, m_rtChatRL.U1, m_rtChatRL.V1, 0xFFFFFFFF, fPopupZ );
-		}
+				m_rcChat.Left = vPopupPos(1) - nBoxWidth / 2;
+				m_rcChat.Right = m_rcChat.Left + nBoxWidth;
+				m_rcChat.Bottom = nPopupY - 10;
+				m_rcChat.Top = m_rcChat.Bottom - nChatMsgLines * nFontHeight;
+				nPopupY = m_rcChat.Top;
 
-		ShowDamageList( vPopupPos, fPopupZ, CEntity::GetPlayerEntity( 0 )->en_ulID );
-
-		// Render all elements
-		m_pUIDrawPort->FlushRenderingQueue();
-
-
-		// [sora] RAID_SYSTEM
-		if(_pNetwork->MyCharacterInfo.slLabel >= MSG_EXPED_SETLABEL_INDEX_1 && _pNetwork->MyCharacterInfo.slLabel <= MSG_EXPED_SETLABEL_INDEX_7) // 타겟 표식 render
-		{
-			m_pUIDrawPort->InitTextureData(m_ptdExpeditionTexture);
-			
-			int nPosX = ((m_rcName.Left + m_rcName.Right) / 2 ) - 21;
-			
-			int nPosY = 0;
-
-			if(nChatMsgLines > 0)
-			{
-				nPosY = m_rcChat.Top - 3;
-			}
-			else if(_pNetwork->MyCharacterInfo.lGuildIndex > 0)	// 소속 길드가 있을경우 길드명 위에 표시
-			{
-				nPosY = m_rcGuildName.Top;
-			}
-			else if (_pNetwork->MyCharacterInfo.iNickType > 0)	// 호칭이 있는 경우 호칭 위에 표시
-			{
-				nPosY = m_rcNickName.Top;
-			}
-			else
-			{
-				nPosY = m_rcName.Top;
+				m_pUIDrawPort->AddTexture( m_rcChat.Left - 5, m_rcChat.Top - 5, m_rcChat.Left, m_rcChat.Top,
+											m_rtChatLU.U0, m_rtChatLU.V0, m_rtChatLU.U1, m_rtChatLU.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcChat.Left, m_rcChat.Top - 5, m_rcChat.Right, m_rcChat.Top,
+											m_rtChatUp.U0, m_rtChatUp.V0, m_rtChatUp.U1, m_rtChatUp.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcChat.Right, m_rcChat.Top - 5, m_rcChat.Right + 5, m_rcChat.Top,
+											m_rtChatRU.U0, m_rtChatRU.V0, m_rtChatRU.U1, m_rtChatRU.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcChat.Left - 5, m_rcChat.Top, m_rcChat.Left, m_rcChat.Bottom,
+											m_rtChatL.U0, m_rtChatL.V0, m_rtChatL.U1, m_rtChatL.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcChat.Left, m_rcChat.Top, m_rcChat.Right, m_rcChat.Bottom,
+											m_rtChatC.U0, m_rtChatC.V0, m_rtChatC.U1, m_rtChatC.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcChat.Right, m_rcChat.Top, m_rcChat.Right + 5, m_rcChat.Bottom,
+											m_rtChatR.U0, m_rtChatR.V0, m_rtChatR.U1, m_rtChatR.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcChat.Left - 5, m_rcChat.Bottom, m_rcChat.Left, m_rcChat.Bottom + 5,
+											m_rtChatLL.U0, m_rtChatLL.V0, m_rtChatLL.U1, m_rtChatLL.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcChat.Left, m_rcChat.Bottom, m_rcChat.Right, m_rcChat.Bottom + 5,
+											m_rtChatLo.U0, m_rtChatLo.V0, m_rtChatLo.U1, m_rtChatLo.V1, 0xFFFFFFFF, fPopupZ );
+				m_pUIDrawPort->AddTexture( m_rcChat.Right, m_rcChat.Bottom, m_rcChat.Right + 5, m_rcChat.Bottom + 5,
+											m_rtChatRL.U0, m_rtChatRL.V0, m_rtChatRL.U1, m_rtChatRL.V1, 0xFFFFFFFF, fPopupZ );
 			}
 
-			m_pUIDrawPort->AddTexture(nPosX, nPosY - 42, nPosX + 42, nPosY,
-									  m_rtTargetLabel[_pNetwork->MyCharacterInfo.slLabel].U0, m_rtTargetLabel[_pNetwork->MyCharacterInfo.slLabel].V0,
-									  m_rtTargetLabel[_pNetwork->MyCharacterInfo.slLabel].U1, m_rtTargetLabel[_pNetwork->MyCharacterInfo.slLabel].V1,
-									  0xFFFFFFFF, fPopupZ);
+			ShowDamageList( vPopupPos, fPopupZ, CEntity::GetPlayerEntity( 0 )->en_ulID );
 
+			// Render all elements
 			m_pUIDrawPort->FlushRenderingQueue();
-		}
-// [sora] GUILD_MARK
-#ifdef GUILD_MARK
-		if (m_pIconGuildMark != NULL)
-		{
-			m_pIconGuildMark->SetPos(m_rcGuildName.Left - 17, m_rcGuildName.Top);
-			m_pIconGuildMark->setZ(fPopupZ);
-			m_pIconGuildMark->Render(m_pUIDrawPort);
-		}
-#endif
-		if ( _pNetwork->IsRvrZone() && nMySyndiType > 0 )
-		{
-			// 나의 결사대 마크
-			ActorMgr* pAcMgr = ActorMgr::getSingleton();
-			int nGrade = _pNetwork->MyCharacterInfo.iSyndicateGrade;
-			int nIdx = pAcMgr->CheckSyndiMark(nMySyndiType, nGrade);
-			pAcMgr->DrawSyndiMark(nIdx, m_pUIDrawPort, m_rcName.Left, m_rcName.Top, fPopupZ);
-		}
-		// Text
-		nTextSX = m_rcName.Left + 7;
-		nTextSY = m_rcName.Top + 1;
-		// Title
-#ifdef NEW_CHAO_SYS
-//		BOOL buseblindchao = TRUE;
-//		if(_pUIBuff->IsBuffBySkill(1395))
-//			buseblindchao = FALSE;
-		//자기 자신
-		if (_pNetwork->MyCharacterInfo.pkpenalty  > 19000 && _pNetwork->MyCharacterInfo.pkpenalty  <= 32000)
-			nColIndex = 14;
-		else if(_pNetwork->MyCharacterInfo.pkpenalty  > 6000 && _pNetwork->MyCharacterInfo.pkpenalty  <= 19000)
-			nColIndex = 15;
-		else if(_pNetwork->MyCharacterInfo.pkpenalty  > 0 && _pNetwork->MyCharacterInfo.pkpenalty  <= 6000)
-			nColIndex = 16;
-		else if(_pNetwork->MyCharacterInfo.pkpenalty  >= -6000 && _pNetwork->MyCharacterInfo.pkpenalty  < 0)
-			nColIndex = 17;
-		else if(_pNetwork->MyCharacterInfo.pkpenalty  >= -19000 && _pNetwork->MyCharacterInfo.pkpenalty  < -6000)
-			nColIndex = 18;
-		else if(_pNetwork->MyCharacterInfo.pkpenalty  >= -32000 && _pNetwork->MyCharacterInfo.pkpenalty  < -19000)
-			nColIndex = 19;
-		else nColIndex = 9;
-#else
-		if( _pNetwork->MyCharacterInfo.pkpenalty < -9 ) nColIndex = 11;
-		else if( _pNetwork->MyCharacterInfo.pkpenalty > 9 ) nColIndex = 7;
-		else nColIndex = 9;
-		// PK
-		if( _pNetwork->MyCharacterInfo.pk_mode != 0 )
-			nColIndex--;
-#endif
-		if( _pNetwork->MyCharacterInfo.sbPresscorps > 0)
-		{
-			m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.name, nTextSX, nTextSY,
-										0x00C80FFF, fPopupZ );
-		}
-		else
-		{
-			m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.name, nTextSX, nTextSY,
-										pHelp->GetTargetNameColor( nColIndex ), fPopupZ );
-		}
 
-		// 호칭
-		nTextSX = m_rcNickName.Left + 7;
-		nTextSY = m_rcNickName.Top + 2;
 
-		if( _pNetwork->MyCharacterInfo.iNickType > 0)
-		{
-			COLOR tmpColor2;
+			// [sora] RAID_SYSTEM
+			if(_pNetwork->MyCharacterInfo.slLabel >= MSG_EXPED_SETLABEL_INDEX_1 && _pNetwork->MyCharacterInfo.slLabel <= MSG_EXPED_SETLABEL_INDEX_7) // 타겟 표식 render
+			{
+				m_pUIDrawPort->InitTextureData(m_ptdExpeditionTexture);
+			
+				int nPosX = ((m_rcName.Left + m_rcName.Right) / 2 ) - 21;
+			
+				int nPosY = 0;
 
-			if (_pNetwork->MyCharacterInfo.iNickType == DEF_DUMMY_TITLE_INDEX)
-				tmpColor2 = CustomTitleData::m_vecFrontColor[_pNetwork->MyCharacterInfo.stCustomTitle.nFrontColor];
+				if(nChatMsgLines > 0)
+				{
+					nPosY = m_rcChat.Top - 3;
+				}
+				else if(_pNetwork->MyCharacterInfo.lGuildIndex > 0)	// 소속 길드가 있을경우 길드명 위에 표시
+				{
+					nPosY = m_rcGuildName.Top;
+				}
+				else if (_pNetwork->MyCharacterInfo.iNickType > 0)	// 호칭이 있는 경우 호칭 위에 표시
+				{
+					nPosY = m_rcNickName.Top;
+				}
+				else
+				{
+					nPosY = m_rcName.Top;
+				}
+
+				m_pUIDrawPort->AddTexture(nPosX, nPosY - 42, nPosX + 42, nPosY,
+										  m_rtTargetLabel[_pNetwork->MyCharacterInfo.slLabel].U0, m_rtTargetLabel[_pNetwork->MyCharacterInfo.slLabel].V0,
+										  m_rtTargetLabel[_pNetwork->MyCharacterInfo.slLabel].U1, m_rtTargetLabel[_pNetwork->MyCharacterInfo.slLabel].V1,
+										  0xFFFFFFFF, fPopupZ);
+
+				m_pUIDrawPort->FlushRenderingQueue();
+			}
+	// [sora] GUILD_MARK
+	#ifdef GUILD_MARK
+			if (m_pIconGuildMark != NULL)
+			{
+				m_pIconGuildMark->SetPos(m_rcGuildName.Left - 17, m_rcGuildName.Top);
+				m_pIconGuildMark->setZ(fPopupZ);
+				m_pIconGuildMark->Render(m_pUIDrawPort);
+			}
+	#endif
+			if ( _pNetwork->IsRvrZone() && nMySyndiType > 0 )
+			{
+				// 나의 결사대 마크
+				ActorMgr* pAcMgr = ActorMgr::getSingleton();
+				int nGrade = _pNetwork->MyCharacterInfo.iSyndicateGrade;
+				int nIdx = pAcMgr->CheckSyndiMark(nMySyndiType, nGrade);
+				pAcMgr->DrawSyndiMark(nIdx, m_pUIDrawPort, m_rcName.Left, m_rcName.Top, fPopupZ);
+			}
+			// Text
+			nTextSX = m_rcName.Left + 7;
+			nTextSY = m_rcName.Top + 1;
+			// Title
+	#ifdef NEW_CHAO_SYS
+	//		BOOL buseblindchao = TRUE;
+	//		if(_pUIBuff->IsBuffBySkill(1395))
+	//			buseblindchao = FALSE;
+			//자기 자신
+			if (_pNetwork->MyCharacterInfo.pkpenalty  > 19000 && _pNetwork->MyCharacterInfo.pkpenalty  <= 32000)
+				nColIndex = 14;
+			else if(_pNetwork->MyCharacterInfo.pkpenalty  > 6000 && _pNetwork->MyCharacterInfo.pkpenalty  <= 19000)
+				nColIndex = 15;
+			else if(_pNetwork->MyCharacterInfo.pkpenalty  > 0 && _pNetwork->MyCharacterInfo.pkpenalty  <= 6000)
+				nColIndex = 16;
+			else if(_pNetwork->MyCharacterInfo.pkpenalty  >= -6000 && _pNetwork->MyCharacterInfo.pkpenalty  < 0)
+				nColIndex = 17;
+			else if(_pNetwork->MyCharacterInfo.pkpenalty  >= -19000 && _pNetwork->MyCharacterInfo.pkpenalty  < -6000)
+				nColIndex = 18;
+			else if(_pNetwork->MyCharacterInfo.pkpenalty  >= -32000 && _pNetwork->MyCharacterInfo.pkpenalty  < -19000)
+				nColIndex = 19;
+			else nColIndex = 9;
+	#else
+			if( _pNetwork->MyCharacterInfo.pkpenalty < -9 ) nColIndex = 11;
+			else if( _pNetwork->MyCharacterInfo.pkpenalty > 9 ) nColIndex = 7;
+			else nColIndex = 9;
+			// PK
+			if( _pNetwork->MyCharacterInfo.pk_mode != 0 )
+				nColIndex--;
+	#endif
+			if( _pNetwork->MyCharacterInfo.sbPresscorps > 0)
+			{
+				m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.name, nTextSX, nTextSY,
+											0x00C80FFF, fPopupZ );
+			}
 			else
-				tmpColor2 = TitleStaticData::getData(_pNetwork->MyCharacterInfo.iNickType)->GetColor();
-
-			m_pUIDrawPort->PutTextEx(myNick, nTextSX, nTextSY, tmpColor2, fPopupZ );
-		}
-		// Text
-		nTextSX = m_rcGuildName.Left + 7;
-		nTextSY = m_rcGuildName.Top + 2;
-
-		// Guild Name
-		if( _pNetwork->MyCharacterInfo.lGuildIndex > 0)
-		{		
-			// WSS_GUILDMASTER 070517 --------------------------->>
-			// ----------------------------------------------------<<
-
-			//[071123: Su-won] DRATAN_SIEGE_DUNGEON
-			COLOR colGuildName = 0xD6A4D6FF;
-
-			if( _pNetwork->MyCharacterInfo.ubGuildNameColor == 1 )			//메라크 성주 길드 
-				colGuildName = 0xFF4500FF;
-			else if( _pNetwork->MyCharacterInfo.ubGuildNameColor == 2 )		//드라탄 성주 길드
-				colGuildName = 0xFFD700FF;
-
-			m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.strGuildName, nTextSX, nTextSY,
-									colGuildName, fPopupZ );
-		}
-
-		if( nShopMsgLines > 0 )
-		{
-			nTextSX = m_rcShop.Left + 1;
-			nTextSY = m_rcShop.Top + 1;
-			for( int i = 0; i < nShopMsgLines; i++ )
 			{
-				m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.ShopMsg.GetString( i ), nTextSX, nTextSY,
-											_pNetwork->MyCharacterInfo.ShopMsg.GetColor(), fPopupZ );
-				nTextSY += nFontHeight;
-			}
-		}
-
-		if( nChatMsgLines > 0 )
-		{
-			nTextSX = m_rcChat.Left + 1;
-			nTextSY = m_rcChat.Top + 1;
-			for( int i = 0; i < nChatMsgLines; i++ )
-			{
-				m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.ChatMsg.GetString( i ), nTextSX, nTextSY,
-											_pNetwork->MyCharacterInfo.ChatMsg.GetColor(), fPopupZ );
-				nTextSY += nFontHeight;
+				m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.name, nTextSX, nTextSY,
+											pHelp->GetTargetNameColor( nColIndex ), fPopupZ );
 			}
 
-			__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-			if( llCurTime - _pNetwork->MyCharacterInfo.ChatMsg.GetTime() > CHATMSG_TIME_DELAY )
-				_pNetwork->MyCharacterInfo.ChatMsg.Reset();
+			// 호칭
+			nTextSX = m_rcNickName.Left + 7;
+			nTextSY = m_rcNickName.Top + 2;
+
+			if( _pNetwork->MyCharacterInfo.iNickType > 0)
+			{
+				COLOR tmpColor2;
+
+				if (_pNetwork->MyCharacterInfo.iNickType == DEF_DUMMY_TITLE_INDEX)
+					tmpColor2 = CustomTitleData::m_vecFrontColor[_pNetwork->MyCharacterInfo.stCustomTitle.nFrontColor];
+				else
+					tmpColor2 = TitleStaticData::getData(_pNetwork->MyCharacterInfo.iNickType)->GetColor();
+
+				m_pUIDrawPort->PutTextEx(myNick, nTextSX, nTextSY, tmpColor2, fPopupZ );
+			}
+			// Text
+			nTextSX = m_rcGuildName.Left + 7;
+			nTextSY = m_rcGuildName.Top + 2;
+
+			// Guild Name
+			if( _pNetwork->MyCharacterInfo.lGuildIndex > 0)
+			{		
+				// WSS_GUILDMASTER 070517 --------------------------->>
+				// ----------------------------------------------------<<
+
+				//[071123: Su-won] DRATAN_SIEGE_DUNGEON
+				COLOR colGuildName = 0xD6A4D6FF;
+
+				if( _pNetwork->MyCharacterInfo.ubGuildNameColor == 1 )			//메라크 성주 길드 
+					colGuildName = 0xFF4500FF;
+				else if( _pNetwork->MyCharacterInfo.ubGuildNameColor == 2 )		//드라탄 성주 길드
+					colGuildName = 0xFFD700FF;
+
+				m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.strGuildName, nTextSX, nTextSY,
+										colGuildName, fPopupZ );
+			}
+
+			if( nShopMsgLines > 0 )
+			{
+				nTextSX = m_rcShop.Left + 1;
+				nTextSY = m_rcShop.Top + 1;
+				for( int i = 0; i < nShopMsgLines; i++ )
+				{
+					m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.ShopMsg.GetString( i ), nTextSX, nTextSY,
+												_pNetwork->MyCharacterInfo.ShopMsg.GetColor(), fPopupZ );
+					nTextSY += nFontHeight;
+				}
+			}
+
+			if( nChatMsgLines > 0 )
+			{
+				nTextSX = m_rcChat.Left + 1;
+				nTextSY = m_rcChat.Top + 1;
+				for( int i = 0; i < nChatMsgLines; i++ )
+				{
+					m_pUIDrawPort->PutTextEx( _pNetwork->MyCharacterInfo.ChatMsg.GetString( i ), nTextSX, nTextSY,
+												_pNetwork->MyCharacterInfo.ChatMsg.GetColor(), fPopupZ );
+					nTextSY += nFontHeight;
+				}
+
+				__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+				if( llCurTime - _pNetwork->MyCharacterInfo.ChatMsg.GetTime() > CHATMSG_TIME_DELAY )
+					_pNetwork->MyCharacterInfo.ChatMsg.Reset();
+			}
+
+			// Flush all render text queue
+			GetDrawPort()->EndTextEx( TRUE );
 		}
-
-		// Flush all render text queue
-		GetDrawPort()->EndTextEx( TRUE );
-	}
-
-#ifdef GM_INVISIBLE_MODE
 	} 
-#endif
 
 	// Get target
 	penObject = pInfo->GetTargetEntity(eTARGET_REAL);
@@ -1918,23 +1990,17 @@ void CUIManager::RenderObjectNamePopup( CProjection3D* pprProjection )
 	#else
 		if( nPkMode == 0 )
 		{
-			//if(g_iCountry == RUSSIA)
-			#if defined G_RUSSIA
+			if (g_iCountry == RUSSIA)
 				nBoxWidth = m_pUIDrawPort->GetTextWidth(strName) + 13;
-			//else
-			#else
+			else
 				nBoxWidth = strName.Length() * nFontWidth + 13;
-			#endif
 		}
 		else
 		{
-			//if(g_iCountry == RUSSIA)
-			#if defined G_RUSSIA
+			if (g_iCountry == RUSSIA)
 				nBoxWidth = m_pUIDrawPort->GetTextWidth(strName) + 27;
-			//else
-			#else
+			else
 				nBoxWidth = strName.Length() * nFontWidth + 27;
-			#endif
 		}
 	#endif
 	}
@@ -1942,15 +2008,18 @@ void CUIManager::RenderObjectNamePopup( CProjection3D* pprProjection )
 	//	nBoxWidth = FindThaiLen(strName)+13; //wooss 051017
 	else
 	{
-		//if(g_iCountry == RUSSIA)
-		#if defined G_RUSSIA
+		if (g_iCountry == RUSSIA)
+		{
 			nBoxWidth = m_pUIDrawPort->GetTextWidth(strName) + 13;
-		#elif defined(G_THAI)
+		}
+		else
+		{
+#if defined(G_THAI)
 			nBoxWidth = FindThaiLen(strName)+13; //wooss 051017
-		//else
-		#else
+#else
 			nBoxWidth = strName.Length() * nFontWidth + 13;
-		#endif
+#endif
+		}
 	}
 
 	m_rcName.Left = vPopupPos(1) - nBoxWidth / 2;
@@ -1979,11 +2048,10 @@ void CUIManager::RenderObjectNamePopup( CProjection3D* pprProjection )
 			INDEX iTargetItemIndex  = TitleStaticData::getData(iNickIdx)->GetItemIndex();
 			CTString tmpTargetNick	= GetNickName()->GetName(iTargetItemIndex);
 
-#if defined G_RUSSIA
-			nBoxWidth = m_pUIDrawPort->GetTextWidth(tmpTargetNick) + 13; 
-#else
-			nBoxWidth = tmpTargetNick.Length() * nFontWidth + 13;
-#endif
+			if (g_iCountry == RUSSIA)
+				nBoxWidth = m_pUIDrawPort->GetTextWidth(tmpTargetNick) + 13; 
+			else
+				nBoxWidth = tmpTargetNick.Length() * nFontWidth + 13;
 
 			m_rcNickName.Left = vPopupPos(1) - nBoxWidth / 2;
 			m_rcNickName.Right = m_rcNickName.Left + nBoxWidth;
@@ -2004,13 +2072,10 @@ void CUIManager::RenderObjectNamePopup( CProjection3D* pprProjection )
 			//else 
 			#else
 			{
-				//if(g_iCountry == RUSSIA)
-				#if defined G_RUSSIA
+				if (g_iCountry == RUSSIA)
 					nBoxWidth = m_pUIDrawPort->GetTextWidth(pInfo->GetTargetGuildName()) + 13;
-				//else
-				#else
+				else
 					nBoxWidth = pInfo->GetTargetGuildName().Length() * nFontWidth + 13;
-				#endif
 			}
 			#endif
 		}
@@ -2577,13 +2642,11 @@ void CUIManager::RenderObjectIndexPopup( CProjection3D* pprProjection )
 		{
 			nShopMsgLines = _pNetwork->MyCharacterInfo.ShopMsg.GetCount();
 
-			//if(g_iCountry == RUSSIA)
-			#if defined G_RUSSIA
+			if (g_iCountry == RUSSIA)
 				nBoxWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.ShopMsg.GetString(0));
-			//else
-			#else
+			else
 				nBoxWidth = _pNetwork->MyCharacterInfo.ShopMsg.GetWidth();
-			#endif
+
 			m_rcShop.Left = vPopupPos(1) - nBoxWidth / 2;
 			m_rcShop.Right = m_rcShop.Left + nBoxWidth;
 
@@ -2643,21 +2706,25 @@ void CUIManager::RenderObjectIndexPopup( CProjection3D* pprProjection )
 
 		if( nChatMsgLines > 0 )
 		{
-#if defined (G_RUSSIA)
-			int nCurWidth = 0;
-			int nMaxWidth = 0;
-			for( int i=0; i<_pNetwork->MyCharacterInfo.ChatMsg.GetCount(); ++i )
+			if (g_iCountry == RUSSIA)
 			{
-				nCurWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.ChatMsg.GetString(i));
-				if( nMaxWidth < nCurWidth )
+				int nCurWidth = 0;
+				int nMaxWidth = 0;
+				for( int i=0; i<_pNetwork->MyCharacterInfo.ChatMsg.GetCount(); ++i )
 				{
-					nMaxWidth = nCurWidth;
+					nCurWidth = m_pUIDrawPort->GetTextWidth(_pNetwork->MyCharacterInfo.ChatMsg.GetString(i));
+					if( nMaxWidth < nCurWidth )
+					{
+						nMaxWidth = nCurWidth;
+					}
 				}
+				nBoxWidth = nMaxWidth;
 			}
-			nBoxWidth = nMaxWidth;			
-#else
-			nBoxWidth = _pNetwork->MyCharacterInfo.ChatMsg.GetWidth();
-#endif
+			else
+			{
+				nBoxWidth = _pNetwork->MyCharacterInfo.ChatMsg.GetWidth();
+			}
+
 			m_rcChat.Left = vPopupPos(1) - nBoxWidth / 2;
 			m_rcChat.Right = m_rcChat.Left + nBoxWidth;
 			m_rcChat.Bottom = nPopupY - 10;
@@ -3010,6 +3077,7 @@ void CUIManager::RearrangeOrder( int nCurrentUI, BOOL bFrontOrder )
 		m_aUIOrder[0] = nCurrentUI;
 		GetUI( nCurrentUI )->SetVisible( TRUE );
 		GetUI( nCurrentUI )->SetEnable( TRUE );
+		GetUI( nCurrentUI )->Hide(FALSE);
 	}
 	else
 	{
@@ -3026,6 +3094,7 @@ void CUIManager::RearrangeOrder( int nCurrentUI, BOOL bFrontOrder )
 
 		GetUI( nCurrentUI )->SetVisible( FALSE );
 		GetUI( nCurrentUI )->SetEnable( FALSE );
+		GetUI( nCurrentUI )->Hide(TRUE);
 		if( iLastUI == 0 ) return;
 
 		for( INDEX iUI = iSelOrder + 1; iUI < iLastUI; iUI++ )
@@ -3301,20 +3370,10 @@ void CUIManager::MsgProc( MSG *pMsg, BOOL *pbIMEProc )
 		if( g_iEnterChat == 0 && GetChattingUI()->IsEnabled() )
 #endif
 		{
-			//if (g_iCountry != JAPAN || pMsg->wParam != VK_F10 )
-			#if !defined G_JAPAN
 			{
 				RearrangeOrder( UI_CHATTING_NEW, TRUE );
 				GetChattingUI()->GetInputBox()->SetFocus( TRUE );
 			}
-			#else
-			if ( pMsg->wParam != VK_F10 )
-			{
-				RearrangeOrder( UI_CHATTING_NEW, TRUE );
-				GetChattingUI()->GetInputBox()->SetFocus( TRUE );
-			}
-			#endif
-
 			
 			if( ( wmsgResult = GetChattingUI()->IMEMessage( pMsg ) ) != WMSG_FAIL )
 			{
@@ -3498,61 +3557,8 @@ void CUIManager::MsgProc( MSG *pMsg, BOOL *pbIMEProc )
 
 			GetSimplePlayerMenuUI()->ClearAll();
 
-// 			if (!m_btnHoldBtn.IsEmpty())
-// 			{
-// 				if (m_btnHoldBtn.IsWearTab() == true)
-// 				{
-// 					GetChattingUI()->AddSysMessage( _S(3048, "버릴 수 없는 아이템입니다" ), SYSMSG_ERROR );
-// 					ResetHoldBtn();
-// 					return;
-// 				}
-// 
-// 				// Drop item
-// 				if( m_btnHoldBtn.GetWhichUI() == UI_INVENTORY && !IsCSFlagOn(CSF_WAREHOUSE) )
-// 					DropItem( m_btnHoldBtn.GetItemTab(), m_btnHoldBtn.GetInvenIndex() );
-// 
-// 				// Remove button in quick slot
-// 				if( m_btnHoldBtn.GetWhichUI() == UI_QUICKSLOT )
-// 					GetQuickSlot()->RemoveBtn( m_btnHoldBtn.GetBtnID() );
-// 				
-// 				if (m_btnHoldBtn.GetWhichUI() == UI_WILDPET_INFO)
-// 				{
-// 					GetWildPetInfoUI()->RemoveSlot(m_btnHoldBtn);
-// 				}
-// 
-// 				ResetHoldBtn();
-// 				return;
-// 			}
-
-			if (m_pIconDrag != NULL)
-			{
-				if (m_pIconDrag->IsWearTab() == true)
-				{
-					GetChattingUI()->AddSysMessage( _S(3048, "버릴 수 없는 아이템입니다" ), SYSMSG_ERROR );
-					ResetHoldBtn();
-					return;
-				}
-
-				CItems* pItems = m_pIconDrag->getItems();
-
-				if (pItems != NULL)
-				{
-					// Drop item
-					if (m_pIconDrag->GetWhichUI() == UI_INVENTORY && !IsCSFlagOn(CSF_WAREHOUSE))
-						DropItem(pItems->Item_Tab, pItems->InvenIndex);					
-
- 					if (m_pIconDrag->GetWhichUI() == UI_WILDPET_INFO)
- 						GetWildPetInfoUI()->RemoveSlot(m_pIconDrag);
-				}
-
-				// Remove button in quick slot
-				if (m_pIconDrag->GetWhichUI() == UI_QUICKSLOT)
-					GetQuickSlot()->RemoveBtn(m_pIconDrag);
-
-				ResetHoldBtn();
-
+			if (DropProc() == true)
 				return;
-			}
 
 			if (m_pBaseDrag != NULL)
 			{
@@ -4274,19 +4280,8 @@ void CUIManager::LoadStringData( const CTFileName &fnString )
 	_pGameState->m_astrErrorMsg[MSG_FAIL_CANNOT_CONNECT_UNDER_FIFTEEN] = _s("만 15세 미만의 계정은 게임을 이용하실 수 없습니다.");
 	_pGameState->m_astrErrorMsg[MSG_TIME_OUT] = GetString( 41 );			// TIME_OUT
 	
-//	if(g_iCountry == HONGKONG)
-#if defined G_HONGKONG
-	{
-		_pGameState->m_astrErrorMsg[MSG_FAIL_LOGINSERV_BLOCK_ACCOUNT] = GetString( 4169 );
-	}
-	//else
-#else
-	{
-		_pGameState->m_astrErrorMsg[MSG_FAIL_LOGINSERV_BLOCK_ACCOUNT] = GetString( 41 );
-	}
-#endif
+	_pGameState->m_astrErrorMsg[MSG_FAIL_LOGINSERV_BLOCK_ACCOUNT] = GetString( 41 );
 	_pGameState->m_astrErrorMsg[MSG_FAIL_LOGINSERV_USE_SECURE_SYSTEM] = GetString(4168);
-
 	_pGameState->m_astrErrorMsg[MSG_FAIL_LOGINSERV_BLOCK_USER] = GetString(4116);	//ttos_080410 : 브라질 비밀번호 3회 제한
 
 	pInfo->SetName( TITAN, GetString( 43 ) );
@@ -4368,12 +4363,9 @@ CTString & CUIManager::GetString( INDEX iIndex, INDEX iSrc )
 {
 	ASSERT( iIndex < m_aStringData.Count() );
 
-	//extern INDEX	g_iCountry;
-	//if( g_iCountry != KOREA )
-	#if !defined G_KOR
-		//return m_aStringData[iIndex];
-		return GetString( iIndex );
-	#endif
+#if !defined VER_TEST
+	return GetString( iIndex );
+#endif
 
 	static const CTString	strReplace[4] = { "<를>", "<가>", "<과>", "<는>" };
 	static const CTString	strReplace1[4] = { "를", "가", "와", "는" };
@@ -4411,11 +4403,9 @@ CTString & CUIManager::GetString( INDEX iIndex, const char *szSrc )
 {
 	ASSERT( iIndex < m_aStringData.Count() );
 
-	
-	//if( g_iCountry != KOREA )
-	#if !defined G_KOR
-		return GetString(iIndex);
-	#endif
+#if !defined(VER_TEST)
+	return GetString(iIndex);
+#endif
 
 	static const CTString	strReplace[4] = { "<를>", "<가>", "<과>", "<는>" };
 	static const CTString	strReplace1[4] = { "를", "가", "와", "는" };
@@ -4458,12 +4448,9 @@ CTString & CUIManager::GetString( INDEX iIndex, const CTString &strSrc )
 {
 	ASSERT( iIndex < m_aStringData.Count() );
 
-	
-//	if( g_iCountry != KOREA )
-	#if !defined G_KOR
-		//return m_aStringData[iIndex];
-		return GetString(iIndex);
-	#endif
+#if !defined(VER_TEST)
+	return GetString(iIndex);
+#endif
 
 	static const CTString	strReplace[4] = { "<를>", "<가>", "<과>", "<는>" };
 	static const CTString	strReplace1[4] = { "를", "가", "와", "는" };
@@ -4506,12 +4493,9 @@ CTString & CUIManager::GetString( INDEX iIndex, const char *szSrc1, const char *
 {
 	ASSERT( iIndex < m_aStringData.Count() );
 
-	
-	//if( g_iCountry != KOREA )
-	#if !defined G_KOR
-		//return m_aStringData[iIndex];
-		return GetString(iIndex);
-	#endif
+#if !defined(VER_TEST)
+	return GetString(iIndex);
+#endif
 
 	static const CTString	strReplace[4] = { "<를>", "<가>", "<과>", "<는>" };
 	static const CTString	strReplace1[4] = { "를", "가", "와", "는" };
@@ -4574,12 +4558,9 @@ CTString & CUIManager::GetString( INDEX iIndex, const CTString &strSrc1, const C
 {
 	ASSERT( iIndex < m_aStringData.Count() );
 
-	
-	//if( g_iCountry != KOREA )
-	#if !defined G_KOR
-		//return m_aStringData[iIndex];
-		return GetString(iIndex);
-	#endif
+#if !defined(VER_TEST)
+	return GetString(iIndex);
+#endif
 
 	static const CTString	strReplace[4] = { "<를>", "<가>", "<과>", "<는>" };
 	static const CTString	strReplace1[4] = { "를", "가", "와", "는" };
@@ -4648,7 +4629,7 @@ void CUIManager::Reset()
 	GetPortal()->Close();
 
 	// Shop
-	GetShop()->ResetShop();
+	GetShopUI()->resetUI();
 
 	// Personal Shop
 	GetPersonalShop()->ResetShop();
@@ -4664,7 +4645,7 @@ void CUIManager::Reset()
 	GetInventory()->SetLockSelect(false);
 
 #ifdef ENABLE_GUILD_STASH
-	GetGuildStash_N()->CloseStash();
+	GetGuildStash()->CloseStash();
 #endif
 
 
@@ -5137,6 +5118,19 @@ void CUIManager::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 				CloseMessageBox(nCommandCode);
 			}
 			break;
+		case MSGCMD_GUILDBATTLE_CHALLENGE:
+			{
+				GAMEDATAMGR()->GetGuildBattleMatch()->SendResChallenge(false);
+				CloseMessageBox(nCommandCode);
+			}
+			break;
+		case MSGCMD_USE_PET_ITEM_UPGRADE:
+			{
+				GetWildPetInfoUI()->clear_upgradeinfo();
+				GetInventory()->Lock(FALSE, FALSE, LOCK_PET_ITEM_UPGRADE);
+				CloseMessageBox(nCommandCode);
+			}
+			break;
 		default : 
 			CloseMessageBox(nCommandCode);
 			break;
@@ -5229,9 +5223,6 @@ void CUIManager::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		{
 			CTString strName = GetMessageBox(MSGCMD_USE_WARP_ITEM)->GetInputBox().GetString();
 
-			if (checkName(strName, 0) == FALSE)
-				return;
-
 			strTitle	=	_S( 191, "확인" );
 			strMsg		=_S( 1912, 	"순간이동 할 위치에 있는 유저에게 순간이동 여부를 묻고 있습니다. 버튼을 누르면 취소 됩니다." ); 
 			MsgBoxInfo.SetMsgBoxInfo(strTitle,UMBS_CANCEL,UI_NONE,MSGCMD_WARP_TO_CANCEL);
@@ -5282,9 +5273,6 @@ void CUIManager::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 	case MSGCMD_USE_PC_SUMMON_ITEM :
 		{
 			CTString strName = GetMessageBox(MSGCMD_USE_PC_SUMMON_ITEM)->GetInputBox().GetString();
-
-			if (checkName(strName, 0) == FALSE)
-				return;
 
 			strTitle	=	_S( 191, "확인" );
 			strMsg		=	_S( 1916, "소환할 유저에게 소환 여부를 묻고 있습니다. 버튼을 누르면 취소 됩니다" ); 
@@ -5668,7 +5656,7 @@ void CUIManager::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		break;
 	case MSGCMD_PET_NAMECARD_USE:
 		{
-			if( !GetPetTraining()->IsNotPetWear())
+			if( !GetPetTrainingUI()->IsNotPetWear())
 			{
 				if(DoesMessageBoxExist(MSGCMD_PET_NAMECARD_INPUT)) 
 					return;
@@ -5683,7 +5671,7 @@ void CUIManager::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		break;
 	case MSGCMD_PET_NAMECARD_INPUT:
 		{
-			if( !GetPetTraining()->IsNotPetWear())
+			if( !GetPetTrainingUI()->IsNotPetWear())
 			{
 				if( _UIFilteringCharacter.Filtering ( strInput.str_String ) == TRUE ) // find ...
 				{
@@ -5937,6 +5925,21 @@ void CUIManager::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 	case MSGCMD_ATTENDANCE_ASSURE_OK_UPD:
 		{
 			_pNetwork->SendAttendanceReq(2);
+		}
+		break;
+
+	case MSGCMD_GUILDBATTLE_CHALLENGE:
+		{
+			GAMEDATAMGR()->GetGuildBattleMatch()->SendResChallenge(true);
+			CloseMessageBox(nCommandCode);
+
+			GetGuildBattleMatch()->close();
+		}
+		break;
+	case MSGCMD_USE_PET_ITEM_UPGRADE:
+		{
+			GetWildPetInfoUI()->SendUpgradeReq();
+			CloseMessageBox(nCommandCode);
 		}
 		break;
 	}
@@ -6468,29 +6471,26 @@ BOOL CUIManager::checkName(CTString strMsg, int chkType)
 				return FALSE;
 			}
 
-			// 말레이시아 개명카드 사용시 영문숫자만 가능하게
-			if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
-				&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
-				&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
-				)
+			if (IsGamigo(g_iCountry) == TRUE || g_iCountry == USA ||
+				IsBila(g_iCountry) == TRUE)
 			{
-			#if defined(G_USA) || defined(G_BRAZIL) || defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2) || defined(G_NETHERLANDS)
-
-				CloseMessageBox(MSGCMD_CREATE_ERROR);
-				MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
-					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S(2980, "아이디는 영문과 숫자만 허용됩니다." );
-				MsgBoxInfo.AddString( strMessage );
-				CreateMessageBox( MsgBoxInfo );
-				return FALSE;
-
-			#endif
-
+				// 말레이시아 개명카드 사용시 영문숫자만 가능하게
+				if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
+					&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
+					&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
+					)
+				{
+					CloseMessageBox(MSGCMD_CREATE_ERROR);
+					MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
+						UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+					CTString	strMessage = _S(2980, "아이디는 영문과 숫자만 허용됩니다." );
+					MsgBoxInfo.AddString( strMessage );
+					CreateMessageBox( MsgBoxInfo );
+					return FALSE;
+				}
 			}
 
-
-			//if(g_iCountry == RUSSIA)
-			#if defined G_RUSSIA
+			if (g_iCountry == RUSSIA)
 			{
 				// [100510: selo] LC-RU-P20100504-006
 				// http://en.wikipedia.org/wiki/Windows-1251 참고하여 변경
@@ -6508,7 +6508,6 @@ BOOL CUIManager::checkName(CTString strMsg, int chkType)
 					return FALSE;
 				}
 			}
-			#endif
 		}
 		
 	} // 캐릭이름 변경시
@@ -6545,23 +6544,6 @@ BOOL CUIManager::checkName(CTString strMsg, int chkType)
 		// 공백 체크.		
 		for(const char *chr = strMsg.str_String; *chr != 0; chr++)
 		{
-			/*
-			if( (*chr) == ' ' || (*chr) == '\t' || (*chr) == '\n' || (*chr) == '\r' || 
-				(*chr) == '%' || (*chr) == '#' || (*chr) == '&' || (*chr) == '?' || (*chr) == '+' || (*chr) == '=' ||
-				(g_iCountry == HONGKONG && !GetCreateChar()->CheckCharacterHK(chr)))
-			{
-				CloseMessageBox(MSGCMD_CREATE_ERROR);
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
-					UI_NONE, MSGCMD_BAN_NAME );
-				CTString	strMsg = _S( 883, "길드 이름에 잘못된 문자가 포함되어 있습니다." );
-				MsgBoxInfo.AddString( strMsg );
-				CreateMessageBox( MsgBoxInfo );
-				
-				return FALSE;
-			}
-			/**/
-
 			if( (*chr) == ' ' || (*chr) == '\t' || (*chr) == '\n' || (*chr) == '\r' || 
 				(*chr) == '%' || (*chr) == '#' || (*chr) == '&' || (*chr) == '?' || (*chr) == '+' || (*chr) == '=' )
 			{
@@ -6576,46 +6558,27 @@ BOOL CUIManager::checkName(CTString strMsg, int chkType)
 				return FALSE;
 			}
 
-			/*
-			// 말레이시아 개명카드 사용시 영문숫자만 가능하게
-			if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
-				&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
-				&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
-				&& ( g_iCountry == MALAYSIA || g_iCountry == USA || g_iCountry == BRAZIL || g_iCountry == GERMANY 
-					|| g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND || g_iCountry == MEXICO 
-					|| g_iCountry == ITALY || g_iCountry == TURKEY || g_iCountry == NETHERLANDS) )//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+			if (IsGamigo(g_iCountry) == TRUE || g_iCountry == USA ||
+				IsBila(g_iCountry) == TRUE)
 			{
-				CloseMessageBox(MSGCMD_CREATE_ERROR);
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
-					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S(3113, "길드 이름은 영문과 숫자만 허용합니다." );
-				MsgBoxInfo.AddString( strMessage );
-				CreateMessageBox( MsgBoxInfo );
-				return FALSE;
-
-			}
-			*/
-			// 말레이시아 개명카드 사용시 영문숫자만 가능하게
-			if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
-				&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
-				&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
-				)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
-			{
-				#if defined(G_USA) || defined(G_BRAZIL) || defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2) || defined(G_NETHERLANDS)
-				CloseMessageBox(MSGCMD_CREATE_ERROR);
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
-					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S(3113, "길드 이름은 영문과 숫자만 허용합니다." );
-				MsgBoxInfo.AddString( strMessage );
-				CreateMessageBox( MsgBoxInfo );
-				return FALSE;
-				#endif
+				// 말레이시아 개명카드 사용시 영문숫자만 가능하게
+				if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
+					&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
+					&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
+					)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+				{
+					CloseMessageBox(MSGCMD_CREATE_ERROR);
+					CUIMsgBox_Info	MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
+						UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+					CTString	strMessage = _S(3113, "길드 이름은 영문과 숫자만 허용합니다." );
+					MsgBoxInfo.AddString( strMessage );
+					CreateMessageBox( MsgBoxInfo );
+					return FALSE;
+				}
 			}
 			
-			//if(g_iCountry == RUSSIA)
-			#if defined G_RUSSIA
+			if (g_iCountry == RUSSIA)
 			{
 				// [100510: selo] LC-RU-P20100504-006
 				// http://en.wikipedia.org/wiki/Windows-1251 참고하여 변경
@@ -6633,7 +6596,6 @@ BOOL CUIManager::checkName(CTString strMsg, int chkType)
 					return FALSE;
 				}
 			}
-			#endif
 		}
 
 	}
@@ -6671,22 +6633,6 @@ BOOL CUIManager::checkName(CTString strMsg, int chkType)
 		// 공백 체크.		
 		for(const char *chr = strMsg.str_String; *chr != 0; chr++)
 		{
-			/*
-			if( (*chr) == ' ' || (*chr) == '\t' || (*chr) == '\n' || (*chr) == '\r' || 
-				(*chr) == '%' || (*chr) == '#' || (*chr) == '&' || (*chr) == '?' || (*chr) == '+' || (*chr) == '=' ||
-				(g_iCountry == HONGKONG && !GetCreateChar()->CheckCharacterHK(chr)))
-			{
-				CloseMessageBox(MSGCMD_CREATE_ERROR);
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
-					UI_NONE, MSGCMD_BAN_NAME );
-				CTString	strMsg = _S( 3257, "요청한 작업이 실패 하였습니다." );
-				MsgBoxInfo.AddString( strMsg );
-				CreateMessageBox( MsgBoxInfo );
-				
-				return FALSE;
-			}
-			*/
 			if( (*chr) == ' ' || (*chr) == '\t' || (*chr) == '\n' || (*chr) == '\r' || 
 				(*chr) == '%' || (*chr) == '#' || (*chr) == '&' || (*chr) == '?' || (*chr) == '+' || (*chr) == '=' )
 			{
@@ -6700,48 +6646,27 @@ BOOL CUIManager::checkName(CTString strMsg, int chkType)
 				
 				return FALSE;
 			}
-
-			// 말레이시아 개명카드 사용시 영문숫자만 가능하게
-			/*
-			if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
-				&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
-				&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
-				&& ( g_iCountry == MALAYSIA || g_iCountry == USA || g_iCountry == BRAZIL || g_iCountry == GERMANY 
-					|| g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND || g_iCountry == MEXICO 
-					|| g_iCountry == ITALY || g_iCountry == TURKEY || g_iCountry == NETHERLANDS) )//FRANCE_SPAIN_CLOSEBETA_NA_20081124
-			{
-				CloseMessageBox(MSGCMD_CREATE_ERROR);
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
-					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S(3, "잘못된 문자가 포함되어 있습니다." );
-				MsgBoxInfo.AddString( strMessage );
-				CreateMessageBox( MsgBoxInfo );
-				return FALSE;
-
-			}
-			/**/
 			
-			if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
-				&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
-				&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
-				)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+			if (IsGamigo(g_iCountry) == TRUE || g_iCountry == USA ||
+				IsBila(g_iCountry) == TRUE)
 			{
-			#if defined(G_USA) || defined(G_BRAZIL) || defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2) || defined(G_NETHERLANDS)
-				CloseMessageBox(MSGCMD_CREATE_ERROR);
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
-					UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
-				CTString	strMessage = _S(3, "잘못된 문자가 포함되어 있습니다." );
-				MsgBoxInfo.AddString( strMessage );
-				CreateMessageBox( MsgBoxInfo );
-				return FALSE;
-
-			#endif
+				if( !((*chr) >= 48 && (*chr) <=57)  //! 0 ~ 9
+					&& !((*chr) >= 65 && (*chr) <=90) // ! A ~ Z 
+					&& !((*chr) >= 97 && (*chr) <=122) // ! a ~ z 
+					)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+				{
+					CloseMessageBox(MSGCMD_CREATE_ERROR);
+					CUIMsgBox_Info	MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK,
+						UI_CREATE_CHAR, MSGCMD_CREATE_ERROR );
+					CTString	strMessage = _S(3, "잘못된 문자가 포함되어 있습니다." );
+					MsgBoxInfo.AddString( strMessage );
+					CreateMessageBox( MsgBoxInfo );
+					return FALSE;
+				}
 			}
 
-			#if defined G_RUSSIA
-			//if(g_iCountry == RUSSIA)
+			if (g_iCountry == RUSSIA)
 			{
 				// [100510: selo] LC-RU-P20100504-006
 				// http://en.wikipedia.org/wiki/Windows-1251 참고하여 변경
@@ -6759,7 +6684,6 @@ BOOL CUIManager::checkName(CTString strMsg, int chkType)
 					return FALSE;
 				}
 			}
-			#endif
 		}
 
 	}
@@ -6929,28 +6853,33 @@ void CUIManager::AddStringToList(CUIListBox* pListBox,CTString& tStr, INDEX iMax
 		{
 			// Check splitting position for 2 byte characters
 			int		nSplitPos = iMaxChar;
-#if defined(G_RUSSIA)
-			for( iPos=nSplitPos; iPos >=0; --iPos )
+			
+			if (g_iCountry == RUSSIA)
 			{
-				if( tStr[iPos] == ' ' )
+				for( iPos=nSplitPos; iPos >=0; --iPos )
 				{
-					nSplitPos = iPos;
-					break;
+					if( tStr[iPos] == ' ' )
+					{
+						nSplitPos = iPos;
+						break;
+					}
 				}
 			}
-#else
-			BOOL	b2ByteChar = FALSE;
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
+			else
 			{
-				if( tStr[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
+				BOOL	b2ByteChar = FALSE;
+				for( iPos = 0; iPos < nSplitPos; iPos++ )
+				{
+					if( tStr[iPos] & 0x80 )
+						b2ByteChar = !b2ByteChar;
+					else
+						b2ByteChar = FALSE;
+				}
+
+				if( b2ByteChar )
+					nSplitPos--;
 			}
 
-			if( b2ByteChar )
-				nSplitPos--;
-#endif
 			// Check line character			
 			for( iPos = 0; iPos < nSplitPos; iPos++ )
 			{
@@ -7249,38 +7178,7 @@ BOOL CUIManager::IsEnemy( void* pTarget, TARGET_TYPE eType, BOOL bSearch )
 		bIsCharacterInsideDratan = CheckDratanWarInside( pTarget );
 	}
 
-#ifdef SIGEWAR_ATTACKRULE
-	//피스존에선 공격은 늘 안된다.
-	if(sbAttributePos & MATT_PEACE || sbCharAttributePos & MATT_PEACE)
-	{
-		return FALSE;
-	}
-	//PK 시...
-	//파티원이거나 같은 길드원이면 적 아님
-	if( (GAMEDATAMGR()->GetPartyInfo()->IsPartyMember(iCha_Index)) && (GAMEDATAMGR()->GetPartyInfo()->IsExpedetionMember(iCha_Index)) && 
-		(iGuild_Index == _pNetwork->MyCharacterInfo.lGuildIndex) && 
-		_pNetwork->MyCharacterInfo.EntranceType != CURRENT_ENTER_PARTYCUBE)
-	{
-		return FALSE;
-	}
-	// 진행중인 공성전에 참가 했는가?
-	if( (bIsDartanWar && sbJoinFlagDratan != WCJF_NONE && sbCharacterJoinFlagDratan != WCJF_NONE) || 
-		 (bIsMeracWar && sbJoinFlagMerac != WCJF_NONE&& sbCharacterJoinFlagMerac != WCJF_NONE) )
-	{
-		return TRUE;
-	}
-	// 내가 공성전에 참여했다면 공성지역에서는 무조건 때릴 수 있다.
-	else if( (bIsDartanWar && sbJoinFlagDratan != WCJF_NONE && sbCharAttributePos & MATT_WAR && bIsCharacterInsideDratan) ||
-		(bIsMeracWar && sbJoinFlagDratan != WCJF_NONE && sbCharAttributePos & MATT_WAR && !bIsCharacterInsideDratan) )
-	{
-		return TRUE;
-	}
-	if( _pNetwork->MyCharacterInfo.pk_mode != CHA_PVP_STATE_PEACE )
-	{
-		return TRUE;
-	}
-#else //SIGEWAR_ATTACKRULE
-		//PK 시...
+
 	if( _pNetwork->MyCharacterInfo.pk_mode != CHA_PVP_STATE_PEACE || 
 		GetSiegeWarfareNew()->GetWarState() ) // WSS_DRATAN_SEIGEWARFARE 2007/08/30
 	{
@@ -7291,9 +7189,8 @@ BOOL CUIManager::IsEnemy( void* pTarget, TARGET_TYPE eType, BOOL bSearch )
 		else
 			return FALSE;
 	}
-#endif //SIGEWAR_ATTACKRULE
-	else 
-		return FALSE;
+
+	return FALSE;
 }
 
 void CUIManager::StartTargetEffect( SLONG slIndex, CEntity* penEntity, BOOL bEnemy )
@@ -7453,7 +7350,7 @@ BOOL CUIManager::CheckSellerItem( UI_TYPE uiType, int flag )
 				if( flag & ITEM_FLAG_NO_STASH )
 					return FALSE;
 				else
-					return ( uiType == UI_WAREHOUSE ? TRUE : FALSE ); // 상인이 아니면 창고를 제외하고는 모두 불가
+					return ( uiType == UI_WARE_HOUSE ? TRUE : FALSE ); // 상인이 아니면 창고를 제외하고는 모두 불가
 			}
 		}
 	}
@@ -7591,213 +7488,228 @@ void CUIManager::AddItemInfoString(CTString &strItemInfo, COLOR colItemInfo ,int
 	}
 	 //else
 #else	// G_THAI
-	 {
-#if defined(G_RUSSIA)
+	{
+		if (g_iCountry == RUSSIA)
+		{
+			INDEX iStrSub = strItemInfo.FindSubstr("\n");
+			
+			if(iStrSub != -1)
 			{
-				INDEX iStrSub = strItemInfo.FindSubstr("\n");
-				if(iStrSub != -1)
+				CTString	strTemp, strTemp2;
+				strTemp = strItemInfo;
+				strTemp.str_String[iStrSub] = ' ';
+
+
+				strTemp.Split( iStrSub+1, strTemp, strTemp2 );
+
+				AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
+				AddItemInfoString(strTemp2, colItemInfo, maxLine, maxChars);
+				return;
+			}
+
+			// If length of string is less than max char
+			int nMaxWidth = _pUIFontTexMgr->GetFontSpacing() + 34/*MAX_CASH_ITEMINFO_CHAR*/ *
+				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+			
+			if( UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strItemInfo.str_String ) <= nMaxWidth )
+			{
+				// Check line character
+				int iPos;
+				for( iPos = 0; iPos < nLength; iPos++ )
 				{
-					CTString	strTemp, strTemp2;
-					strTemp = strItemInfo;
-					strTemp.str_String[iStrSub] = ' ';
+					if( strItemInfo[iPos] == '\n' || strItemInfo[iPos] == '\r' )
+						break;	
+				}
 
+				// Not exist
+				if (iPos == nLength)
+				{
+					m_strItemInfo[m_nCurInfoLines] = strItemInfo;
+					m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+				}
+				else
+				{
+					// Split string
+					CTString	strTemp;
+					strItemInfo.Split( iPos, m_strItemInfo[m_nCurInfoLines], strTemp );
+					m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
 
-					strTemp.Split( iStrSub+1, strTemp, strTemp2 );
+					// Trim line character
+					if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+						strTemp.TrimLeft( strTemp.Length() - 2 );
+					else
+						strTemp.TrimLeft( strTemp.Length() - 1 );
 
 					AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
-					AddItemInfoString(strTemp2, colItemInfo, maxLine, maxChars);
-					return;
 				}
 			}
-#endif//#if defined(RUSSIA)
-
-		// If length of string is less than max char
-#if defined(G_RUSSIA)
-		int nMaxWidth = _pUIFontTexMgr->GetFontSpacing() + 34/*MAX_CASH_ITEMINFO_CHAR*/ *
-					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-		if( UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strItemInfo.str_String ) <= nMaxWidth )
-#else
-		if( nLength <= maxChars )
-#endif
-		{
-			// Check line character
-			int iPos;
-			for( iPos = 0; iPos < nLength; iPos++ )
-			{
-				if( strItemInfo[iPos] == '\n' || strItemInfo[iPos] == '\r' )
-					break;	
-			}
-
-			// Not exist
-			if (iPos == nLength)
-			{
-				m_strItemInfo[m_nCurInfoLines] = strItemInfo;
-				m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-			}
+			// Need multi-line
 			else
 			{
-				// Split string
-				CTString	strTemp;
-				strItemInfo.Split( iPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-				m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+				// Check splitting position for 2 byte characters
+				int		iPos;
 
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
-				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
+				int nSplitPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, strItemInfo.str_String, nMaxWidth);
 
-				AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
-			}
-		}
-		// Need multi-line
-		else
-		{
-			// Check splitting position for 2 byte characters
-			int		iPos;
-
-#if defined(G_RUSSIA)
-			int nSplitPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, strItemInfo.str_String, nMaxWidth);
-
-			for( int iPos=nSplitPos; iPos >=0; --iPos )
-			{
-				if( strItemInfo[iPos] == ' ' )
+				for( int iPos=nSplitPos; iPos >=0; --iPos )
 				{
-					nSplitPos = iPos;
-					break;
-				}
-			}
-#else
-			int		nSplitPos = maxChars;
-			BOOL	b2ByteChar = FALSE;			
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strItemInfo[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-#endif
-
-			// Check line character			
-			for( iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strItemInfo[iPos] == '\n' || strItemInfo[iPos] == '\r' )
-					break;
-			}
-
-			// Not exist
-			if (iPos == nSplitPos)
-			{
-				// Split string
-				CTString	strTemp;
-				strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-				m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
-
-				// Trim space
-				if( strTemp[0] == ' ' )
-				{
-					int	nTempLength = strTemp.Length();
-					for( iPos = 1; iPos < nTempLength; iPos++ )
+					if( strItemInfo[iPos] == ' ' )
 					{
-						if( strTemp[iPos] != ' ' )
-							break;
+						nSplitPos = iPos;
+						break;
+					}
+				}
+
+				// Check line character			
+				for( iPos = 0; iPos < nSplitPos; iPos++ )
+				{
+					if( strItemInfo[iPos] == '\n' || strItemInfo[iPos] == '\r' )
+						break;
+				}
+
+				// Not exist
+				if (iPos == nSplitPos)
+				{
+					// Split string
+					CTString	strTemp;
+					strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
+					m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+
+					// Trim space
+					if( strTemp[0] == ' ' )
+					{
+						int	nTempLength = strTemp.Length();
+						for( iPos = 1; iPos < nTempLength; iPos++ )
+						{
+							if( strTemp[iPos] != ' ' )
+								break;
+						}
+
+						strTemp.TrimLeft( strTemp.Length() - iPos );
 					}
 
-					strTemp.TrimLeft( strTemp.Length() - iPos );
+					AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
+				}
+				else
+				{
+					// Split string
+					CTString	strTemp;
+					strItemInfo.Split( iPos, m_strItemInfo[m_nCurInfoLines], strTemp );
+					m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+
+					// Trim line character
+					if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+						strTemp.TrimLeft( strTemp.Length() - 2 );
+					else
+						strTemp.TrimLeft( strTemp.Length() - 1 );
+
+					AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
+				}
+			}
+		}
+		else
+		{
+			// If length of string is less than max char
+			if( nLength <= maxChars )
+			{
+				// Check line character
+				int iPos;
+				for( iPos = 0; iPos < nLength; iPos++ )
+				{
+					if( strItemInfo[iPos] == '\n' || strItemInfo[iPos] == '\r' )
+						break;	
 				}
 
-				AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
+				// Not exist
+				if (iPos == nLength)
+				{
+					m_strItemInfo[m_nCurInfoLines] = strItemInfo;
+					m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+				}
+				else
+				{
+					// Split string
+					CTString	strTemp;
+					strItemInfo.Split( iPos, m_strItemInfo[m_nCurInfoLines], strTemp );
+					m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+
+					// Trim line character
+					if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+						strTemp.TrimLeft( strTemp.Length() - 2 );
+					else
+						strTemp.TrimLeft( strTemp.Length() - 1 );
+
+					AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
+				}
 			}
+			// Need multi-line
 			else
 			{
-				// Split string
-				CTString	strTemp;
-				strItemInfo.Split( iPos, m_strItemInfo[m_nCurInfoLines], strTemp );
-				m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+				// Check splitting position for 2 byte characters
+				int		iPos;
 
-				// Trim line character
-				if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-					strTemp.TrimLeft( strTemp.Length() - 2 );
+				int		nSplitPos = maxChars;
+				BOOL	b2ByteChar = FALSE;			
+				for( iPos = 0; iPos < nSplitPos; iPos++ )
+				{
+					if( strItemInfo[iPos] & 0x80 )
+						b2ByteChar = !b2ByteChar;
+					else
+						b2ByteChar = FALSE;
+				}
+
+				if( b2ByteChar )
+					nSplitPos--;
+
+				// Check line character			
+				for( iPos = 0; iPos < nSplitPos; iPos++ )
+				{
+					if( strItemInfo[iPos] == '\n' || strItemInfo[iPos] == '\r' )
+						break;
+				}
+
+				// Not exist
+				if (iPos == nSplitPos)
+				{
+					// Split string
+					CTString	strTemp;
+					strItemInfo.Split( nSplitPos, m_strItemInfo[m_nCurInfoLines], strTemp );
+					m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
+
+					// Trim space
+					if( strTemp[0] == ' ' )
+					{
+						int	nTempLength = strTemp.Length();
+						for( iPos = 1; iPos < nTempLength; iPos++ )
+						{
+							if( strTemp[iPos] != ' ' )
+								break;
+						}
+
+						strTemp.TrimLeft( strTemp.Length() - iPos );
+					}
+
+					AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
+				}
 				else
-					strTemp.TrimLeft( strTemp.Length() - 1 );
+				{
+					// Split string
+					CTString	strTemp;
+					strItemInfo.Split( iPos, m_strItemInfo[m_nCurInfoLines], strTemp );
+					m_colItemInfo[m_nCurInfoLines++] = colItemInfo;
 
-				AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
+					// Trim line character
+					if( strTemp[0] == '\r' && strTemp[1] == '\n' )
+						strTemp.TrimLeft( strTemp.Length() - 2 );
+					else
+						strTemp.TrimLeft( strTemp.Length() - 1 );
+
+					AddItemInfoString(strTemp, colItemInfo, maxLine, maxChars);
+				}
 			}
 		}
 	}
-	#endif
-}
-
-void CUIManager::RenderBtnInfo(CTextureData* texData, CUIButton& srcBtn, UIRectUV rtUV[], int nLength/* =34 */)
-{
-	if (texData == NULL)
-	{
-		return;
-	}
-
-	int tv_x =  srcBtn.GetAbsPosX() + BTN_SIZE+5/*SLOT_GAP*/;
-	int tv_y =  srcBtn.GetAbsPosY();
-	int tv_width = 25 - _pUIFontTexMgr->GetFontSpacing() + nLength/*MAX_CASH_ITEMINFO_CHAR*/ *
-					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-	int tv_height = 19 - _pUIFontTexMgr->GetLineSpacing() + m_nCurInfoLines * _pUIFontTexMgr->GetLineHeight();
-	UIRect rtTmpInfo = UIRect(tv_x,tv_y,tv_x+tv_width,tv_y+tv_height);
-	// Initialize texture data
-	GetDrawPort()->InitTextureData(texData);
-
-	// Item information region
-	GetDrawPort()->AddTexture( rtTmpInfo.Left, rtTmpInfo.Top,
-										rtTmpInfo.Left + 7, rtTmpInfo.Top + 7,
-										rtUV[UV_UL].U0, rtUV[UV_UL].V0, rtUV[UV_UL].U1, rtUV[UV_UL].V1,
-										0xFFFFFFFF );
-	GetDrawPort()->AddTexture( rtTmpInfo.Left + 7, rtTmpInfo.Top,
-										rtTmpInfo.Right - 7, rtTmpInfo.Top + 7,
-										rtUV[UV_UM].U0, rtUV[UV_UM].V0, rtUV[UV_UM].U1, rtUV[UV_UM].V1,
-										0xFFFFFFFF );
-	GetDrawPort()->AddTexture( rtTmpInfo.Right - 7, rtTmpInfo.Top,
-										rtTmpInfo.Right, rtTmpInfo.Top + 7,
-										rtUV[UV_UR].U0, rtUV[UV_UR].V0, rtUV[UV_UR].U1, rtUV[UV_UR].V1,
-										0xFFFFFFFF );
-	GetDrawPort()->AddTexture( rtTmpInfo.Left, rtTmpInfo.Top + 7,
-										rtTmpInfo.Left + 7, rtTmpInfo.Bottom - 7,
-										rtUV[UV_ML].U0, rtUV[UV_ML].V0, rtUV[UV_ML].U1, rtUV[UV_ML].V1,
-										0xFFFFFFFF );
-	GetDrawPort()->AddTexture( rtTmpInfo.Left + 7, rtTmpInfo.Top + 7,
-										rtTmpInfo.Right - 7, rtTmpInfo.Bottom - 7,
-										rtUV[UV_MM].U0, rtUV[UV_MM].V0, rtUV[UV_MM].U1, rtUV[UV_MM].V1,
-										0xFFFFFFFF );
-	GetDrawPort()->AddTexture( rtTmpInfo.Right - 7, rtTmpInfo.Top + 7,
-										rtTmpInfo.Right, rtTmpInfo.Bottom - 7,
-										rtUV[UV_MR].U0, rtUV[UV_MR].V0, rtUV[UV_MR].U1, rtUV[UV_MR].V1,
-										0xFFFFFFFF );
-	GetDrawPort()->AddTexture( rtTmpInfo.Left, rtTmpInfo.Bottom - 7,
-										rtTmpInfo.Left + 7, rtTmpInfo.Bottom,
-										rtUV[UV_LL].U0, rtUV[UV_LL].V0, rtUV[UV_LL].U1, rtUV[UV_LL].V1,
-										0xFFFFFFFF );
-	GetDrawPort()->AddTexture( rtTmpInfo.Left + 7, rtTmpInfo.Bottom - 7,
-										rtTmpInfo.Right - 7, rtTmpInfo.Bottom,
-										rtUV[UV_LM].U0, rtUV[UV_LM].V0, rtUV[UV_LM].U1, rtUV[UV_LM].V1,
-										0xFFFFFFFF );
-	GetDrawPort()->AddTexture( rtTmpInfo.Right - 7, rtTmpInfo.Bottom - 7,
-										rtTmpInfo.Right, rtTmpInfo.Bottom,
-										rtUV[UV_LR].U0, rtUV[UV_LR].V0, rtUV[UV_LR].U1, rtUV[UV_LR].V1,
-										0xFFFFFFFF );
-
-	
-	// Render item information
-	int	nInfoX = rtTmpInfo.Left + 12;
-	int	nInfoY = rtTmpInfo.Top + 8;
-	for( int iInfo = 0; iInfo < m_nCurInfoLines; iInfo++ )
-	{
-		GetDrawPort()->PutTextEx( m_strItemInfo[iInfo], nInfoX, nInfoY, m_colItemInfo[iInfo] );
-		nInfoY += _pUIFontTexMgr->GetLineHeight();
-	}
-
-	GetDrawPort()->FlushRenderingQueue();
-	GetDrawPort()->EndTextEx();
+#endif	// G_THAI
 }
 
 // added by sam 11/03/02 번역되지 않은 스트링 넘버 보이기
@@ -8359,23 +8271,17 @@ void CUIManager::RenderHUDObjectNamePopup(CEntity* pHudEntity, CDrawPort* pDraw,
 #else
 	if( _pNetwork->MyCharacterInfo.pk_mode == 0 )
 	{
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(_pNetwork->MyCharacterInfo.name) + 13;
-		//else
-#else
-		nBoxWidth = _pNetwork->MyCharacterInfo.name.Length() * nFontWidth + 13;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(_pNetwork->MyCharacterInfo.name) + 13;
+		else
+			nBoxWidth = _pNetwork->MyCharacterInfo.name.Length() * nFontWidth + 13;
 	}
 	else
 	{
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(_pNetwork->MyCharacterInfo.name) + 27;
-		//else
-#else
-		nBoxWidth = _pNetwork->MyCharacterInfo.name.Length() * nFontWidth + 27;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(_pNetwork->MyCharacterInfo.name) + 27;
+		else
+			nBoxWidth = _pNetwork->MyCharacterInfo.name.Length() * nFontWidth + 27;
 	}
 #endif
 
@@ -8421,11 +8327,11 @@ void CUIManager::RenderHUDObjectNamePopup(CEntity* pHudEntity, CDrawPort* pDraw,
 		myNick		= pTitle->getCustomTitleName();
 		COLOR tmpColor = CustomTitleData::m_vecBackColor[pTitle->getSelectBCIndex()];
 
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(myNick) + 13; 
-#else
-		nBoxWidth = myNick.Length() * nFontWidth + 13;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(myNick) + 13; 
+		else
+			nBoxWidth = myNick.Length() * nFontWidth + 13;
+
 		m_rcNickName.Left = vPopupPos(1) - nBoxWidth / 2;
 		m_rcNickName.Right = m_rcNickName.Left + nBoxWidth;
 		m_rcNickName.Bottom = nPopupY - 5;
@@ -8464,12 +8370,10 @@ void CUIManager::RenderHUDObjectNamePopup(CEntity* pHudEntity, CDrawPort* pDraw,
 		//else
 #else
 		{
-#if defined G_RUSSIA
-			nBoxWidth = pDraw->GetTextWidth(_pNetwork->MyCharacterInfo.strGuildName) + 13;
-			//else
-#else
-			nBoxWidth = _pNetwork->MyCharacterInfo.strGuildName.Length() * nFontWidth + 13;
-#endif
+			if (g_iCountry == RUSSIA)
+				nBoxWidth = pDraw->GetTextWidth(_pNetwork->MyCharacterInfo.strGuildName) + 13;
+			else
+				nBoxWidth = _pNetwork->MyCharacterInfo.strGuildName.Length() * nFontWidth + 13;
 		}
 #endif
 		m_rcGuildName.Left = vPopupPos(1) - nBoxWidth / 2;
@@ -8652,3 +8556,53 @@ void CUIManager::InteractionMsgBoxReject()
 		pUIManager->GetMessageBox(MSGCMD_ROYALRUMBLE_GO_ZONE)->ReturnCommand(FALSE);
 	}
 }
+
+bool CUIManager::DropProc()
+{
+	if (m_pIconDrag == NULL)
+		return false;
+
+	if (m_pIconDrag->IsWearTab() == true)
+	{
+		GetChattingUI()->AddSysMessage( _S(3048, "버릴 수 없는 아이템입니다" ), SYSMSG_ERROR );
+		ResetHoldBtn();
+		return true;
+	}
+
+	CItems* pItems = m_pIconDrag->getItems();
+	UI_TYPE type = (UI_TYPE)m_pIconDrag->GetWhichUI();
+	
+	if (pItems != NULL)
+	{
+		switch(type)
+		{
+		case UI_INVENTORY:
+			if (!IsCSFlagOn(CSF_WAREHOUSE))
+				DropItem(pItems->Item_Tab, pItems->InvenIndex);
+			break;
+		case UI_COMPOUND:
+			GetCompound()->RemoveItem(m_pIconDrag);
+			break;
+		case UI_GW_MIX:
+			GetGWMix()->ResetMixItem(m_pIconDrag);
+			break;
+		case UI_INSECTCOLLECT:
+			GetInsectCollect()->DropInsectItem(m_pIconDrag);
+			break;
+		case UI_WILDPET_INFO:
+			GetWildPetInfoUI()->RemoveSlot(m_pIconDrag);
+			break;
+		case UI_GUILDSTASH:
+			GetGuildStash()->DelItemInBasket(m_pIconDrag);
+			break;
+		}
+	}
+
+	if (type == UI_QUICKSLOT)
+		GetQuickSlot()->RemoveBtn(m_pIconDrag);
+
+	ResetHoldBtn();
+
+	return true;
+}
+

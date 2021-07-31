@@ -3,7 +3,7 @@
 #include "StdH.h"
 #include "EntitiesMP/Player.h"
 #include <Engine/Interface/UIManager.h>
-#include <Engine/Interface/UISummon.h>
+#include <Engine/Contents/function/SummonUI.h>
 #include <Engine/SlaveInfo.h>
 #include <Engine/Info/MyInfo.h>
 %}
@@ -81,7 +81,7 @@ functions:
 	// 소환수도 이동시킵니다.
 	for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 	{
-		CUISummon* pUISummon = (CUISummon*)SE_Get_UIManagerPtr()->GetUI(i);
+		CSummonUI* pUISummon = (CSummonUI*)SE_Get_UIManagerPtr()->GetUI(i);
 		if( pUISummon->GetSummonEntity() )
 		{
 			pUISummon->SetCommand(CSlaveInfo::COMMAND_HOLD);

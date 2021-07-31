@@ -8,7 +8,7 @@
 #include <Engine/Contents/Base/UINoticeNew.h>
 #include <Engine/SlaveInfo.h>
 #include <Engine/Interface/UISummon.h>
-#include <Engine/Interface/UITeleport.h>
+#include <Engine/Contents/function/TeleportUI.h>
 #include <Engine/Interface/UIRadar.h>
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Contents/Base/ExpressSystem.h>
@@ -29,13 +29,13 @@
 #include <Engine/Interface/UIHelp.h>
 #include <Engine/Interface/UIPlayerInfo.h>
 #include <Engine/Interface/UISiegeWarfare.h>
-#include <Engine/Interface/UIHelper.h>
+#include <Engine/Contents/function/HelperUI.h>
 #include <Engine/Contents/function/TargetInfoNewUI.h>
 #include <Engine/Contents/function/WildPetInfoUI.h>
 #include <Engine/Interface/UIInitJob.h>
 #include <Engine/Contents/function/AffinityInfoUI.h>
 #include <Engine/Interface/UIFlowerTree.h>
-#include <Engine/Interface/UIWareHouse.h>
+#include <Engine/Contents/function/WareHouseUI.h>
 #include <Engine/Contents/Login/UICharacterSelect.h>
 #include <Engine/Contents/Base/Syndicate.h>
 #include <Engine/GameStageManager/StageMgr.h>
@@ -44,11 +44,17 @@
 #include <Engine/Contents/function/ItemCollectionData.h>
 #include <Engine/Contents/function/SimplePlayerInfoUI.h>
 #include <Engine/Contents/function/HelpWebUI.h>
+#include <Engine/Contents/function/News_Web_UI.h>
+#include <Engine/Contents/function/News.h>
+#include <Engine/Interface/UIGuildBattle.h>
+
 extern INDEX g_iXPosInSystemMenu;
 extern INDEX g_iYPosInSystemMenu;
 
 extern CDrawPort* _pdpMain;
 extern BOOL g_bAutoRestart;
+
+extern INDEX	g_iCountry;
 
 // 유물 아이템 인덱스
 #define	DEF_RELIC_ITEM1 10951
@@ -59,12 +65,14 @@ extern BOOL g_bAutoRestart;
 // Name : CUISystemMenu()
 // Desc : Constructor
 // ----------------------------------------------------------------------------
-#ifdef RESTART_GAME
-CUISystemMenu::CUISystemMenu() : m_bCharacterMove(FALSE), m_llStartTime(0)
-#else
 CUISystemMenu::CUISystemMenu()
-#endif
 {
+	if (IsGamigo(g_iCountry) == TRUE || g_iCountry == KOREA)
+	{
+		m_bCharacterMove = FALSE;
+		m_llStartTime = 0;
+	}
+
 	m_ptdButtonTexture = NULL;
 }
 
@@ -566,6 +574,7 @@ void CUISystemMenu::Restart_Internal()
 	GAMEDATAMGR()->GetNotice()->clear();
 
 	pUIManager->GetSiegeWarfare()->CloseSiegeWarfare();
+	pUIManager->GetGuildBattle()->Clear();
 
 	// 펫 AI 클리어
 	pUIManager->GetWildPetInfoUI()->AIClear();
@@ -573,8 +582,6 @@ void CUISystemMenu::Restart_Internal()
 	// Reset Memory Scroll
 	pUIManager->GetTeleport()->ClearTeleportList();
 	pUIManager->GetTeleport()->SetUseTime(0);
-	pUIManager->GetTeleportPrimium()->ClearTeleportList();
-
 	
 	pUIManager->GetAffinityInfo()->AffinityReset();
 
@@ -616,10 +623,7 @@ void CUISystemMenu::Restart_Internal()
 	pUIManager->GetSkillNew()->InitArrayData();
 
 	// 개인 창고
-	pUIManager->GetWareHouse()->SetUseTime(0);
-
-	pUIManager->GetHelper()->Clear();
-
+	pUIManager->GetWareHouseUI()->SetUseTime(0);
 	pGameData->GetSyndicate()->ResetSyndiInfo();
 
 	// 캐릭터 선택창 초기화 (간혈적으로 초기화 안되는 문제가 보고됨. 방어코드로 추가)
@@ -647,6 +651,13 @@ void CUISystemMenu::Restart_Internal()
 
 	// 커스텀 타이틀 정보 삭제
 	CustomTitleData::clearCustomItemInfo();
+
+	pUIManager->GetNewsWebUI()->clear_param();
+
+	CNews* pNews = GAMEDATAMGR()->GetNews();
+
+	if (pNews != NULL)
+		pNews->ClearData();
 }
 
 // ----------------------------------------------------------------------------
@@ -669,9 +680,6 @@ void CUISystemMenu::Exit()
 		MsgBoxInfo.AddString( _S( 5592, "출석체크를 하지않은 상태입니다." ) );
 	}
 	MsgBoxInfo.AddString( _S( 288, "게임을 종료하시겠습니까?" ) );
-#if defined G_JAPAN
-	MsgBoxInfo.AddString( _S(3166, "게임 접속 종료 후 서버에는 15초간 대기시간이 있습니다. 안전한 곳에서 접속 종료를 해주세요." ) );
-#endif
 	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
 

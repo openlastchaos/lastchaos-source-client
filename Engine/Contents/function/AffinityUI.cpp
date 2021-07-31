@@ -119,6 +119,8 @@ void CAffinityUI::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 
 void CAffinityUI::MsgBoxLCommand( int nCommandCode, int nResult )
 {
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
 	switch( nCommandCode )
 	{
 	case MSGLCMD_AFFINITY_DONATE_REQ:
@@ -152,10 +154,17 @@ void CAffinityUI::MsgBoxLCommand( int nCommandCode, int nResult )
 					CTString strItemName;
 					INDEX needItemIndex = pData->GetAffinityData( m_slNPCIdx )->needItemIndex;
 
+					CTString strNas;
+					strNas.PrintF("%d", needItemCount);
+					pUIManager->InsertCommaToString(strNas);
+
 					if( needItemIndex == 19 )	// 나스
-						strItemName.PrintF(_S( 836,"%I64d 나스"), needItemCount );
+						strItemName.PrintF(_S( 836,"%s 나스"), strNas );
 					else
-						strItemName.PrintF( _S( 61, "%s %d개" ), _pNetwork->GetItemName(needItemIndex), needItemCount );
+					{
+						CTString strCount = pUIManager->IntegerToCommaString(needItemCount);
+						strItemName.PrintF( _S( 61, "%s %s개" ), _pNetwork->GetItemName(needItemIndex), strCount );
+					}
 
 					strTemp.PrintF( _s("%s : %s"), _S( 351, "필요 아이템" ), strItemName );
 					MsgBoxInfo.AddString( strTemp );
@@ -167,9 +176,13 @@ void CAffinityUI::MsgBoxLCommand( int nCommandCode, int nResult )
 				{
 					int needAffinityIndex = pData->GetAffinityData( m_slNPCIdx )->needAffinityIndex;
 
-					strTemp.PrintF( _S( 5316, "필요 친화도 : %s 세력 %d" ), 
+					CTString strPoint;
+					strPoint.PrintF("%d", needAffinityPoint);
+					pUIManager->InsertCommaToString(strPoint);
+
+					strTemp.PrintF( _S( 5316, "필요 친화도 : %s 세력 %s" ), 
 						_pNetwork->GetAffinityData()->GetAffinityNameByIndex( needAffinityIndex ),
-						needAffinityPoint);
+						strPoint);
 
 					MsgBoxInfo.AddString( strTemp );
 				}
@@ -177,8 +190,6 @@ void CAffinityUI::MsgBoxLCommand( int nCommandCode, int nResult )
 			}
 			else if( nResult == AFFINITY_DONATE )
 			{
-				CUIManager* pUIManager = CUIManager::getSingleton();
-
 				// [2013/02/05] sykim70 친화도 기부 UI 개선
 				CNetworkLibrary::_AffinityInfo* pInfo = _pNetwork->GetAffinityPointer();
 				if (pInfo->count == 0 || (pInfo->mapAffinityList.find(m_nAffinityIndex) == pInfo->mapAffinityList.end()))
@@ -615,8 +626,9 @@ void CAffinityUI::UpdateDonationPoint()
 
 	int nCur = 0;
 	int nMax = 0;
-	CTString strTemp;
-	CTString strPoint;
+	CTString strTemp, strPoint;
+	CTString strCurPoint;
+	CTString strMaxPoint;
 	CNetworkLibrary::_AffinityInfo::mapAffIter iterPoint = _pNetwork->AffinityInfo.mapAffinityList.find(m_nAffinityIndex);
 	if (iterPoint == _pNetwork->AffinityInfo.mapAffinityList.end())
 		return;
@@ -625,7 +637,10 @@ void CAffinityUI::UpdateDonationPoint()
 	nMax = iterPoint->second.max;
 
 	strTemp.PrintF(_S(5861, "친화도 수치"));
-	strPoint.PrintF(" %d/%d", nCur, nMax);
+
+	strCurPoint = UIMGR()->IntegerToCommaString(nCur);
+	strMaxPoint = UIMGR()->IntegerToCommaString(nMax);
+	strPoint.PrintF(" %s/%s", strCurPoint, strMaxPoint);
 	strTemp += strPoint;
 
 	m_pTextDonationPoint->SetText(strTemp);
@@ -656,7 +671,7 @@ WMSG_RESULT CAffinityUI::OnLButtonDown( UINT16 x, UINT16 y )
 	if ( IsInside(x, y) )
 	{
 		CUIManager* pUIManager = CUIManager::getSingleton();
-		pUIManager->RearrangeOrder(UI_BINGOBOX, TRUE);
+		pUIManager->RearrangeOrder(UI_NPC_AFFINITY, TRUE);
 
 		m_nOldX = x;
 		m_nOldY = y;

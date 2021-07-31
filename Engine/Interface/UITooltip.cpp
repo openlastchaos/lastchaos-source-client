@@ -9,6 +9,7 @@
 #include <Engine/Interface/UIInventory.h>
 #include <Engine/Interface/UINickName.h>
 #include <Engine/Interface/UIShop.h>
+#include <Engine/Contents/function/ShopUI.h>
 #include <Engine/Interface/UICashShopEx.h>
 
 #include <Engine/Help/Util_Help.h>
@@ -151,33 +152,72 @@ bool CUITooltip::SetString(CUIBase* pUI)
 	if (pUI == NULL || m_pUI == pUI)
 		return false;
 
+	pUI->procSetTooltipFunc();
+
+	if (pUI->hasTooltip() == false)
+		return false;
+
 	Hide(FALSE);
 
 	m_pUI = pUI;
 
+	CUIBase::vec_tooltip vec = pUI->getTooltipCont();
+	CUIBase::vec_tooltip_iter bIt = vec.begin();
+	CUIBase::vec_tooltip_iter eIt = vec.end();
+
+	CTString strTooltip;
 	CDrawPort* pDraw = CUIManager::getSingleton()->GetDrawPort();
-	CTString strTooltip = pUI->getTooltip();
+	int nTooltipWidth = pUI->getTooltipWidth();
+	int nStrW = nTooltipWidth;
+	int nTemp = 0;
+	bool bTooltip = false;
 
-	int nStrW = pUI->getTooltipWidth();
-
-	if (nStrW <= 0)
+	// 툴팁 width를 설정해주지 않았다면 컨테이너에 있는 툴팁중 가장 큰 문자열의 width로 설정.
+	if (nTooltipWidth <= 0)
 	{
-		if (g_iCountry != RUSSIA)
-		{
-			nStrW = pDraw->GetTextWidth2(strTooltip);
+		for (; bIt != eIt; ++bIt)
+		{	
+			strTooltip = (*bIt).str;
+	
+			if (strTooltip.IsEmpty() == TRUE)
+				continue;
+	
+			if (g_iCountry != RUSSIA)
+			{
+				nTemp = pDraw->GetTextWidth2(strTooltip);
+			}
+			else
+			{
+				extern CFontData *_pfdDefaultFont;
+				nTemp = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strTooltip.str_String);
+			}
+	
+			// 입력된 스트링중에 가장 큰 문자열 길이로 맞춤.
+			if (nStrW < nTemp)
+				nStrW = nTemp;
 		}
-		else
-		{
-			extern CFontData *_pfdDefaultFont;
-			nStrW = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strTooltip.str_String);
-		}
+
+		// begin() 다시 설정, 아래에서 사용 해야 하기 때문.
+		bIt = vec.begin();
 	}
 
 	m_pList[eLIST_FIRST]->SetWidth(nStrW);
-	AddText(strTooltip);
+
+	for (; bIt != eIt; ++bIt)
+	{	
+		strTooltip = (*bIt).str;
+		
+		if (strTooltip.IsEmpty() == TRUE)
+			continue;
+
+		AddText(strTooltip, (*bIt).colText, (*bIt).align_h);
+		bTooltip = true;
+	}
+
+	if (bTooltip == false)
+		return false;
 
 	UpdateTooltip(m_pImgTempBack[1]);
-
 	return true;
 }
 
@@ -534,21 +574,28 @@ void CUITooltip::SetAffinity(eUIBTN_ETC_TYPE eType)
 		return;
 
 	CTString strTemp;
+	CTString strPoint;
 	int nEtc = (int)m_pItemEtc->llEtc;
 
 	switch(eType)
 	{
 	case eETC_TYPE_AFFINITY_ITEM:
 		{
-			strTemp.PrintF(_S(5857, "%s, 친화도를 %d 상승 시켜줍니다."),
-				_pNetwork->GetItemDesc(m_pItemEtc->nIndex), nEtc);
+			strPoint.PrintF("%d", nEtc);
+			UIMGR()->InsertCommaToString(strPoint);
+
+			strTemp.PrintF(_S(5857, "%s, 친화도를 %s 상승 시켜줍니다."),
+				_pNetwork->GetItemDesc(m_pItemEtc->nIndex), strPoint);
 		}
 		break;
 	case eETC_TYPE_AFFINITY_QUEST:
 		{
-			strTemp.PrintF(_S(5858, "%s 세력 퀘스트, 완료시 친화도를 %d 상승 시켜줍니다."),
+			strPoint.PrintF("%d", nEtc);
+			UIMGR()->InsertCommaToString(strPoint);
+
+			strTemp.PrintF(_S(5858, "%s 세력 퀘스트, 완료시 친화도를 %s 상승 시켜줍니다."),
 				_pNetwork->GetAffinityData()->GetAffinityDataByIndex(m_pItemEtc->nIndex)->GetName()
-				, nEtc);
+				, strPoint);
 		}
 		break;
 	case eETC_TYPE_AFFINITY_MONSTER:
@@ -561,16 +608,22 @@ void CUITooltip::SetAffinity(eUIBTN_ETC_TYPE eType)
 			else
 				strZone = CZoneInfo::getSingleton()->GetZoneName( nZoneNum );
 
-			strTemp.PrintF( _S(5864, "[%s] %d Lv %s 처치 시 친화도를 %d 상승 시켜줍니다."),
+			strPoint.PrintF("%d", nEtc);
+			UIMGR()->InsertCommaToString(strPoint);
+
+			strTemp.PrintF( _S(5864, "[%s] %d Lv %s 처치 시 친화도를 %s 상승 시켜줍니다."),
 				strZone, CMobData::getData(m_pItemEtc->nIndex)->GetLevel(),
 				CTString(CMobData::getData(m_pItemEtc->nIndex)->GetName()),
-				nEtc);
+				strPoint);
 		}
 		break;
 	case eETC_TYPE_AFFINITY_REWARD:
 		{
-			strTemp.PrintF( _S(5866, "친화도 %d 달성 시 %s 아이템을 보상으로 받을 수 있습니다."),
-				nEtc, _pNetwork->GetItemName(m_pItemEtc->nIndex));
+			strPoint.PrintF("%d", nEtc);
+			UIMGR()->InsertCommaToString(strPoint);
+
+			strTemp.PrintF( _S(5866, "친화도 %s 달성 시 %s 아이템을 보상으로 받을 수 있습니다."),
+				strPoint, _pNetwork->GetItemName(m_pItemEtc->nIndex));
 		}
 		break;
 	}
@@ -800,13 +853,20 @@ void CUITooltip::SetPriceInfo()
 
 	if (m_nWhichUI == UI_SHOP)
 	{
-		int nShopID = UIMGR()->GetShop()->GetShopID();
-		BOOL bBuy = UIMGR()->GetShop()->IsBuyShop();
+		int nShopID = UIMGR()->GetShopUI()->GetShopID();
+		BOOL bBuy = UIMGR()->GetShopUI()->IsBuyShop();
 		
-		__int64 iPrice = UIMGR()->GetShop()->CalculateItemPrice(nShopID, *m_pItemData, 1, bBuy);
+		__int64 iPrice = UIMGR()->GetShopUI()->CalculateItemPrice(nShopID, *m_pItemData, 1, bBuy);
 		__int64 iAddPrice = pInfo->CalcPriceRate(iPrice, bBuy) + pInfo->CalcPriceAddition(bBuy);
+
+		bool bIgnore = false;
+
+		if (m_pItemData->getindex() == 7340 ||
+			m_pItemData->getindex() == 7341 ||
+			m_pItemData->getindex() == 7342)
+			bIgnore = true;
 		
-		if (iAddPrice != 0)
+		if (iAddPrice != 0 && bIgnore == false)
 		{
 			CTString strRate;
 			CTString strResult;
@@ -817,7 +877,7 @@ void CUITooltip::SetPriceInfo()
 			pUIManager->InsertCommaToString(strMoney);
 			pUIManager->InsertCommaToString(strRate);
 
-			strTmp.PrintF(_S(255, "가격 : %I64d"), strMoney);
+			strTmp.PrintF(_S(255, "가격 : %s"), strMoney);
 
 			if (iAddPrice >= 0)
 				strResult.PrintF("%s(+%s)", strTmp, strRate);
@@ -840,7 +900,7 @@ void CUITooltip::SetPriceInfo()
 	}
 
     pUIManager->InsertCommaToString(strMoney);
-    strTmp.PrintF(_S(255, "가격 : %I64d"), strMoney);
+    strTmp.PrintF(_S(255, "가격 : %s"), strMoney);
 
     AddText(strTmp, pUIManager->GetNasColor(strMoney));
 }
@@ -860,27 +920,37 @@ void CUITooltip::SetRuneInfo()
     }
     else // 업 그레이드 가능 아이템
     {
-        if (m_pItemData->GetLevel() >= RUNE_ITEM_LEVEL)
-        {
-            if (!(m_pItem->Item_Flag & FLAG_ITEM_SUPER_RUNE_USED))
-            {
-                strTmp = (_S(5726, "초 고급 룬 사용 가능"));
-
-                // 초 고급 룬 사용이 가능 할 경우 텍스트 하나 더 추가.
-                AddText(strTmp, col);
-            }
-
-            strTmp.PrintF(_S(4484, "룬으로 업그레이드 가능"));
-        }
-        else if (!(m_pItem->Item_Flag & FLAG_ITEM_SUPER_STONE_USED))
-        {
-            // 초고제 사용할 수 있을 때만 표시
-            strTmp.PrintF(_S(1658, "초 고급 제련석 사용 가능"));
-        }
+		if (m_pItemData->GetJob() & (1<<WILDPET_JOB))
+		{
+			if (!(m_pItem->Item_Flag & FLAG_ITEM_SUPER_STONE_USED))
+				strTmp.PrintF(_S(1658, "초 고급 제련석 사용 가능"));
+			else
+				return;
+		}
 		else
 		{
-			return;
-		}
+			if (m_pItemData->GetLevel() >= RUNE_ITEM_LEVEL)
+			{
+				if (!(m_pItem->Item_Flag & FLAG_ITEM_SUPER_RUNE_USED))
+				{
+					strTmp = (_S(5726, "초 고급 룬 사용 가능"));
+
+					// 초 고급 룬 사용이 가능 할 경우 텍스트 하나 더 추가.
+					AddText(strTmp, col);
+				}
+
+				strTmp.PrintF(_S(4484, "룬으로 업그레이드 가능"));
+			}
+			else if (!(m_pItem->Item_Flag & FLAG_ITEM_SUPER_STONE_USED))
+			{
+				// 초고제 사용할 수 있을 때만 표시
+				strTmp.PrintF(_S(1658, "초 고급 제련석 사용 가능"));
+			}
+			else
+			{
+				return;
+			}
+		}        
     }
 
     AddText(strTmp, col);
@@ -1150,8 +1220,11 @@ void CUITooltip::SetDamageInfo()
 
         if (m_pItem->Item_Plus > 0)
         {
-            nPlusDamage = CItems::ItemUpgradeFuckingFunction(nPhysicalDamage,
+			if ((m_pItemData->GetJob() & (1 << WILDPET_JOB)) == 0)
+				nPlusDamage = CItems::ItemUpgradeFuckingFunction(nPhysicalDamage,
                           m_pItem->Item_Plus, m_pItemData->GetLevel() >= 146 ? TRUE : FALSE);
+			else
+				nPlusDamage = calc_pet_item_plus(nPhysicalDamage, m_pItem->Item_Plus);
         }
 		        
         if (nPlusDamage > 0)
@@ -1161,7 +1234,8 @@ void CUITooltip::SetDamageInfo()
 
         AddText(strTmp);
 
-        if (m_pItem->Item_Plus >= 15 && m_pItemData->GetLevel() < 146)
+        if (((m_pItemData->GetJob() & (1 << WILDPET_JOB)) == 0) &&
+			m_pItem->Item_Plus >= 15 && m_pItemData->GetLevel() < 146)
         {
             strTmp.PrintF(_S(1891, "물리 공격력 + 75"));
             AddText(strTmp);
@@ -1174,8 +1248,11 @@ void CUITooltip::SetDamageInfo()
 
         if (m_pItem->Item_Plus > 0)
         {
-            nPlusDamage = CItems::ItemUpgradeFuckingFunction(nMagicDamage,
+			if ((m_pItemData->GetJob() & (1 << WILDPET_JOB)) == 0)
+				nPlusDamage = CItems::ItemUpgradeFuckingFunction(nMagicDamage,
                           m_pItem->Item_Plus, m_pItemData->GetLevel() >= 146 ? TRUE : FALSE);
+			else
+				nPlusDamage = calc_pet_item_plus(nMagicDamage, m_pItem->Item_Plus);
         }
 
         if (nPlusDamage > 0)
@@ -1185,14 +1262,16 @@ void CUITooltip::SetDamageInfo()
 
         AddText(strTmp);
 
-        if (m_pItem->Item_Plus >= 15 && m_pItemData->GetLevel() < 146)
+        if (((m_pItemData->GetJob() & (1 << WILDPET_JOB)) == 0) &&
+			m_pItem->Item_Plus >= 15 && m_pItemData->GetLevel() < 146)
         {
             strTmp.PrintF(_S(1892, "마법 공격력 + 50"));
             AddText(strTmp);
         }
     }
 
-    if (m_pItemData->GetLevel() >= RUNE_ITEM_LEVEL)
+    if (((m_pItemData->GetJob() & (1 << WILDPET_JOB)) == 0) &&
+		m_pItemData->GetLevel() >= RUNE_ITEM_LEVEL)
     {
         int nRuneBonus = CItems::CalculateRuneItemBonus(m_pItemData->GetType(), m_pItem->Item_Plus);
 
@@ -1239,8 +1318,11 @@ void CUITooltip::SetDefenceInfo()
 
         if (m_pItem->Item_Plus > 0)
         {
-            nPlusDefence = CItems::ItemUpgradeFuckingFunction(nPhysicalDefence,
+			if ((m_pItemData->GetJob() & (1 << WILDPET_JOB)) == 0)
+				nPlusDefence = CItems::ItemUpgradeFuckingFunction(nPhysicalDefence,
                            m_pItem->Item_Plus, m_pItemData->GetLevel() >= 146 ? TRUE : FALSE);
+			else
+				nPlusDefence = calc_pet_item_plus(nPhysicalDefence, m_pItem->Item_Plus);
         }
 
         if (nPlusDefence > 0)
@@ -1257,8 +1339,11 @@ void CUITooltip::SetDefenceInfo()
 
         if (m_pItem->Item_Plus > 0)
         {
-            nPlusDefence = CItems::ItemUpgradeFuckingFunction(nMagicDefence,
+			if ((m_pItemData->GetJob() & (1 << WILDPET_JOB)) == 0)
+				nPlusDefence = CItems::ItemUpgradeFuckingFunction(nMagicDefence,
                            m_pItem->Item_Plus, m_pItemData->GetLevel() >= 146 ? TRUE : FALSE);
+			else
+				nPlusDefence = calc_pet_item_plus(nMagicDefence, m_pItem->Item_Plus);
         }
 
         if (nPlusDefence > 0)
@@ -1269,45 +1354,48 @@ void CUITooltip::SetDefenceInfo()
         AddText(strTmp);
     }
 
-    if (m_pItem->Item_Plus >= 15 && m_pItemData->GetLevel() < 146)
-    {
-        strTmp.PrintF(_S(1893, "마법 방어력 + 100"));
-        AddText(strTmp);
-
-        strTmp.PrintF(_S(1894, "마법 방어력 + 50"));
-        AddText(strTmp);
-    }
-
-    if (m_pItemData->GetLevel() >= RUNE_ITEM_LEVEL)
-    {
-        int nRuneBonus = CItems::CalculateRuneItemBonus(m_pItemData->GetType(), m_pItem->Item_Plus);
-
-        if (nRuneBonus > 0)
-        {
-            strTmp.PrintF(_S(4811, "추가 방어력 %d상승"), nRuneBonus);
-            AddText(strTmp, 0xFF6A00FF);
-        }
-
-        if ((m_pItem->Item_Plus >= 10) && (m_pItemData->GetSubType() != CItemData::ITEM_SHIELD_SHIELD))
-        {
-            strTmp.PrintF(_S(5700, "추가 HP 증가 %d"), (m_pItem->Item_Plus - 9) * 100);
-            AddText(strTmp, 0xFF6A00FF);
-        }
-    }
-
-	int nItemPlusPvpOptionBonus = CItems::CalculatePlusItemPVPOptionBonus(m_pItemData->GetType(), m_pItem->Item_Plus);
-
-	if (nItemPlusPvpOptionBonus > 0)
+	if ((m_pItemData->GetJob() & (1 << WILDPET_JOB)) == 0)
 	{
-		COptionData*	odItem = COptionData::getData(OPTION_PVP_DAMAGE_ABSOLB);
-		
-		if (odItem != NULL)
+		if (m_pItem->Item_Plus >= 15 && m_pItemData->GetLevel() < 146)
 		{
-			float fValue = odItem->GetValue(nItemPlusPvpOptionBonus - 1) / 100.f;
-			strTmp.PrintF(_S(6468, "추가 PVP데미지흡수 %.1f"), fValue);
-			AddText(strTmp, 0xFF6A00FF);
+			strTmp.PrintF(_S(1893, "물리 방어력 + 100"));
+			AddText(strTmp);
+
+			strTmp.PrintF(_S(1894, "마법 방어력 + 50"));
+			AddText(strTmp);
 		}
-	}
+
+		if (m_pItemData->GetLevel() >= RUNE_ITEM_LEVEL)
+		{
+			int nRuneBonus = CItems::CalculateRuneItemBonus(m_pItemData->GetType(), m_pItem->Item_Plus);
+
+			if (nRuneBonus > 0)
+			{
+				strTmp.PrintF(_S(4811, "추가 방어력 %d상승"), nRuneBonus);
+				AddText(strTmp, 0xFF6A00FF);
+			}
+
+			if ((m_pItem->Item_Plus >= 10) && (m_pItemData->GetSubType() != CItemData::ITEM_SHIELD_SHIELD))
+			{
+				strTmp.PrintF(_S(5700, "추가 HP 증가 %d"), (m_pItem->Item_Plus - 9) * 100);
+				AddText(strTmp, 0xFF6A00FF);
+			}
+		}
+
+		int nItemPlusPvpOptionBonus = CItems::CalculatePlusItemPVPOptionBonus(m_pItemData->GetType(), m_pItem->Item_Plus);
+
+		if (nItemPlusPvpOptionBonus > 0)
+		{
+			COptionData*	odItem = COptionData::getData(OPTION_PVP_DAMAGE_ABSOLB);
+
+			if (odItem != NULL)
+			{
+				float fValue = odItem->GetValue(nItemPlusPvpOptionBonus - 1) / 100.f;
+				strTmp.PrintF(_S(6468, "추가 PVP데미지흡수 %.1f"), fValue);
+				AddText(strTmp, 0xFF6A00FF);
+			}
+		}
+	}	
 }
 
 void CUITooltip::SetFlightInfo()
@@ -1573,7 +1661,10 @@ void CUITooltip::SetWildPetInfo()
         }
         else
         {
-            strTmp.PrintF(_S(5639, "축적 경험치: %I64d"), pInfo.pet_accexp);
+			CTString strExp;
+			strExp.PrintF("%I64d", pInfo.pet_accexp);
+			pUIManager->InsertCommaToString(strExp);
+            strTmp.PrintF(_S(5639, "축적 경험치: %s"), strExp);
         }
 
         AddText(strTmp, 0xfd9d28FF);
@@ -2436,11 +2527,7 @@ void CUITooltip::SetSkillName()
         strLv.PrintF("%d", m_nSkillLv + 1);
     }
 
-#if defined(G_RUSSIA)
-    strTmp.PrintF("%s %s %s", m_pSkill->GetName(), _S(4414, "LV"), strLv);
-#else
-    strTmp.PrintF("%s Lv %s", m_pSkill->GetName(), strLv);
-#endif
+	strTmp.PrintF("%s %s %s", m_pSkill->GetName(), _S(4414, "LV"), strLv);
 
     AddText(strTmp, col);
 }
@@ -2523,11 +2610,16 @@ void CUITooltip::SetNeed4Stat()
                 colLearn = DEF_UI_COLOR_RED;
         }
 
-        strTmp.PrintF(_S(nStr[i], "필요 능력치 : %d"), nCondition[i]);
+		if (nStr[i] == 257)
+		{
+			CTString strCount = UIMGR()->IntegerToCommaString(nCondition[i]);
+			strTmp.PrintF(_S(257, "필요 숙련도 : %s"), strCount);
+		}
+		else
+			strTmp.PrintF(_S(nStr[i], "필요 능력치 : %d"), nCondition[i]);
 
         AddText(strTmp, colLearn);
     }
-
 }
 
 void CUITooltip::SetNeed4Skill()
@@ -2551,11 +2643,8 @@ void CUITooltip::SetNeed4Skill()
 
         CSkill* pSkill = &_pNetwork->GetSkillData(need);
 
-#if defined G_RUSSIA
         strTmp.PrintF(" : %s %s.%d", pSkill->GetName(), _S(4414, "LV"), lv);
-#else
-        strTmp.PrintF(" : %s Lv.%d", pSkill->GetName(), lv);
-#endif
+
         strTmp = _S(258, "필요 스킬") + strTmp;
 
         if (m_eType == eTOOLTIP_SECOND || m_nSkillLv <= 0)
@@ -2580,18 +2669,19 @@ void CUITooltip::SetNeed4Item()
     int i, need, count;
 
     CTString strTmp;
+	CTString strCount;
     COLOR	col = DEF_UI_COLOR_YELLOW;
 
     for (i = 0; i < 3; ++i)
     {
         need = m_pSkill->GetLearnItemIndex(m_nSkillLv, i);
-
+		
         if (need < 0)
             continue;
 
         count = m_pSkill->GetLearnItemCount(m_nSkillLv, i);
-
-        strTmp.PrintF(_S(260, "  %s %d개"), _pNetwork->GetItemName(need), count);
+		strCount = UIMGR()->IntegerToCommaString(count);
+        strTmp.PrintF(_S(260, "  %s %s개"), _pNetwork->GetItemName(need), strCount);
         strTmp = _S(259, "필요 아이템") + strTmp;
 
         // eType == eTOOLTIP_FIRST : 현재 스킬 레벨을 가져와서 비교. 0보다 작거나 같은 경우에만 조건 검사.
@@ -2725,15 +2815,17 @@ void CUITooltip::SetNeed4GPInfo()
 
     int nGP = m_pSkill->GetNeedGP(m_nSkillLv);
 
-    CTString strTmp;
+    CTString strTmp, strTmp2;
     COLOR col = DEF_UI_COLOR_YELLOW;
 
 	if (nGP > 0)
 	{
 		if (m_eType == eTOOLTIP_SECOND && _pNetwork->MyCharacterInfo.iGP < nGP)
 			col = DEF_UI_COLOR_RED;
-
-		strTmp.PrintF(_S(5032, "소모 GP : %d"), nGP);
+			
+		strTmp2.PrintF("%d", nGP);
+		UIMGR()->InsertCommaToString(strTmp2);
+		strTmp.PrintF( _S( 5032, "소모 GP : %s" ), strTmp2);
 		AddText(strTmp, col);
 	}
 
@@ -2743,7 +2835,9 @@ void CUITooltip::SetNeed4GPInfo()
 		if (m_eType == eTOOLTIP_SECOND && _pNetwork->MyCharacterInfo.iGP < nGP)
 			col = DEF_UI_COLOR_RED;
 
-		strTmp.PrintF(_S(5119, "필요 GP : %d"), nGP);
+		strTmp2.PrintF("%d", nGP);
+		UIMGR()->InsertCommaToString(strTmp2);
+		strTmp.PrintF(_S(5119, "필요 GP : %s"), strTmp2);
 		AddText(strTmp, col);
 	}
 }
@@ -2967,39 +3061,42 @@ void CUITooltip::SetSSKillNeed4Stat()
 	CTString strTmp;
 	COLOR colLearn = DEF_UI_COLOR_YELLOW;
 
-	// 필요 조건.
-	int nCondition[2] = { m_pSSkill->GetLearnLevel(m_nSkillLv)
-		, m_pSSkill->GetLearnSP(m_nSkillLv)
-	};
+	int nCondition, nStat;
 
-	// 내상태. 옵션으로 적용된 능력치는 제외.
-	int nStat[2]	  = { _pNetwork->MyCharacterInfo.level
-		, (_pNetwork->MyCharacterInfo.sp / 10000)
-	};
+	// 필요 레벨
+	nCondition = m_pSSkill->GetLearnLevel(m_nSkillLv);
+	nStat = _pNetwork->MyCharacterInfo.level;
 
-	// 필요 레벨, SP
-	int nStr[2] = {256, 257};
-
-	int i;
-
-	for (i = 0; i < 2; ++i)
+	if (nCondition > 0)
 	{
-		// sp는 0일때도 표시해줘야함.
-		if (i != 1 && nCondition[i] <= 0)
-			continue;
-
 		if (m_eType == eTOOLTIP_SECOND || m_nSkillLv <= 0)
 		{
-			if (nCondition[i] <= nStat[i])
+			if (nCondition <= nStat)
 				colLearn = DEF_UI_COLOR_YELLOW;
 			else
 				colLearn = DEF_UI_COLOR_RED;
 		}
 
-		strTmp.PrintF(_S(nStr[i], "필요 능력치 : %d"), nCondition[i]);
-
+		strTmp.PrintF(_S(256, "필요 레벨 : %d"), nCondition);
 		AddText(strTmp, colLearn);
 	}
+
+	// 필요 SP
+	nCondition = m_pSSkill->GetLearnSP(m_nSkillLv);
+	nStat = _pNetwork->MyCharacterInfo.sp / 10000;
+	
+	// sp는 0일때도 표시해줘야함.
+	if (m_eType == eTOOLTIP_SECOND || m_nSkillLv <= 0)
+	{
+		if (nCondition <= nStat)
+			colLearn = DEF_UI_COLOR_YELLOW;
+		else
+			colLearn = DEF_UI_COLOR_RED;
+	}
+
+	CTString strSp = UIMGR()->IntegerToCommaString(nCondition);
+	strTmp.PrintF(_S(257, "필요 숙련도 : %s"), strSp);
+	AddText(strTmp, colLearn);
 }
 
 void CUITooltip::SetSSkillNeed4Skill()
@@ -3021,11 +3118,8 @@ void CUITooltip::SetSSkillNeed4Skill()
 
 	CSpecialSkill* pSSkill = CSpecialSkill::getData(need);
 
-#if defined G_RUSSIA
 	strTmp.PrintF(" : %s %s.%d", pSSkill->GetName(), _S(4414, "LV"), lv);
-#else
-	strTmp.PrintF(" : %s Lv.%d", pSSkill->GetName(), lv);
-#endif
+
 	strTmp = _S(258, "필요 스킬") + strTmp;
 
 	if (m_eType == eTOOLTIP_SECOND || m_nSkillLv <= 0)
@@ -3129,6 +3223,7 @@ void CUITooltip::AddText(CTString str, COLOR col /*= 0xFFFFFFFF*/, eALIGN_H alin
 		pText->setAlignTextH(alingn);
         pText->SetText(str);
         pText->setFontColor(col);
+		pText->SetWidth(m_pList[eType]->GetWidth());
 
         m_pList[eType]->AddListItem((CUIBase*)pText);
     }
@@ -3222,4 +3317,13 @@ void CUITooltip::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
 		SetSkillCoolTimeInfo(true);
 	else if (m_pItem != NULL && m_pItemData != NULL)
 		SetItemCoolTimeInfo(true);
+	else
+		TOOLTIPMGR()->updateTooltipText(fDeltaTime);
+}
+
+int CUITooltip::calc_pet_item_plus( int orig_value, ULONG plus )
+{
+	int nRet = orig_value * pow(1.09, (double)plus);
+
+	return (nRet - orig_value);
 }

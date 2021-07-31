@@ -33,6 +33,8 @@ public:
     {
         return m_pTooltipRes;
     }
+
+	void	updateTooltipText(float fDelta);
 private:
     void	clear();
     void	UpdateTooltipPos(UIRect rcPos, bool bString);
@@ -44,6 +46,7 @@ private:
     CUITooltip*		m_pTooltip[eTOOLTIP_END];
 	bool			m_bSecond;
 	int				m_nWearPos;
+	float			m_fDeltaTime;
 };
 
 #define TOOLTIPMGR()	CUITooltipMgr::getSingleton()

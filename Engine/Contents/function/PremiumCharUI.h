@@ -17,6 +17,7 @@ enum ePASSIVE_TYPE
 	ePASSIVE_CASH_INVEN1_USE, // 캐쉬 인벤 1번 가방 사용가능
 	ePASSIVE_EXPRESS_REMOTE_USE, // 익스프레스 시스템 원격 사용가능
 	ePASSIVE_CHANGE_FACE_PREE_USE, // 외형 변경 아이템 없이 사용 가능
+	ePASSIVE_DURABILITY_REMOTE_USE // 내구도 수리 원격 사용 가능
 };
 
 class CPremiumCharUI : public CUIWindow

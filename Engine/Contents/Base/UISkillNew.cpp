@@ -1296,8 +1296,15 @@ int CUISkillNew::CalcLearnSkillPoint()
 
 	int nMax = CSkillTree::m_nSkillCount[job][0];	// 기본 직업 스킬 카운트.
 
-	if (sj > 0)
+	// 나이트쉐도우는 전직 없음.
+	if (job == NIGHTSHADOW)
+	{
+		sj = 0;
+	}
+	else if (sj > 0)
+	{
 		nMax += CSkillTree::m_nSkillCount[job][sj];
+	}
 
 	for (int i = 0; i < nMax; ++i)
 	{

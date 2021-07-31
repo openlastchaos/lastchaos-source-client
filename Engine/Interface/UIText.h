@@ -11,9 +11,12 @@ public:
 
 	virtual CUIBase* Clone();
 	void	OnRender( CDrawPort* pDraw );
-
 	void	SetText( CTString& str, CTString strEllipsis = "");
-	void	setFontColor( COLOR col )	{ m_color = col; }
+	// 하위 호환을 위해 인터페이스 추가.
+	// 단일 폰트컬러 사용시 아래 함수 사용.
+	void	setFontColor( COLOR col );
+	// state별로 컬러 지정시 
+	void	setFontColor( COLOR col, eCHILD_ITEM_STATE state)	{ m_color[state] = col; }
 	void	setFontShadow( COLOR colShadow, BOOL bOn ) {
 		m_colShadow = colShadow;	m_bShadow = bOn; }
 	BOOL	getEdge()					{ return m_bEdge;	}
@@ -33,9 +36,12 @@ public:
 	const char* getEllipsisText()	{ return m_strEllipsis.str_String;	}
 
 	void	SetPointColor(char* str, COLOR col);
+
+	virtual void ChildItemEnter();
+	virtual void ChildItemLeave();
 #ifdef UI_TOOL
 	FLOAT		getDepth() { return m_fZ; }
-	COLOR		getFontColor() { return m_color; }
+	COLOR		getFontColor(eCHILD_ITEM_STATE state) { return m_color[state]; }
 	COLOR		getFontShadow() { return m_colShadow; }
 	bool		getShadow()	{ return m_bShadow ? true : false; }
 
@@ -51,7 +57,7 @@ protected:
 	CTString	m_strOrigin;
 	CTString	m_strView;
 	CTString	m_strEllipsis;
-	COLOR		m_color;
+	COLOR		m_color[eSTATE_MAX];
 	BOOL		m_bShadow;
 	BOOL		m_bEdge;
 	FLOAT		m_fZ;
@@ -61,7 +67,6 @@ protected:
 	UIRectUV	m_uvBackGround;
 	UIRect		m_rcBackGround;
 	BOOL		m_bVerticality;
-
 	struct stCont
 	{
 		std::string str;

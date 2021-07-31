@@ -40,7 +40,8 @@ protected:
 		GBS_IN_REQ_ACCEPT,	// 길드 전투 수락 중( 길드전 성립 후 대기 상태 : 5분 ) 		
 		GBS_IN_BATTLE,		// 길드 전투 중
 		GBS_BATTILE_NOT_ZONE, // 길드 전투 존이 아니다.
-		GBS_END				// 길드 전투 종료 
+		GBS_END,			// 길드 전투 종료
+		GBS_WATCHER			// 길드전 관전자모드
 	};
 	eGBState				m_eGBState;
 
@@ -177,6 +178,7 @@ public:
 	void	GBStopReqAccept();	
 	void	GBStart( int nGuildIndex1, CTString strGuildName1, int nGuildIndex2, CTString strGuildName2, int nPrize, int nZone, int nTime );	
 	void	GBStatus( int nGuildIndex1, CTString strGuildName1, int nCount1, int nGuildIndex2, CTString strGuildName2, int nCount2, int Time, int nZone );
+	void	GBWatchStatus( int nGuildIndex1, CTString strGuildName1, int nCount1, int nGuildIndex2, CTString strGuildName2, int nCount2, int Time, int nZone );
 	void	GBEnd( int nWinnerGuildIndex, int nGuildIndex1, CTString strGuildName1, int nGuildIndex2, CTString strGuildName2, int nPrize );
 	
 	// 에러 처리

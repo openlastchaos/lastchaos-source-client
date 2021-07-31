@@ -10,13 +10,6 @@
 #endif
 
 #define AUTOHELO_SHOW_TIME			8000			// (m sec) 지역이름이 표시 되는 시간 
-
-#if defined(G_BRAZIL)
-	#define INTERVAL_TIME				30000			// 자동 도움말이 무시 되는 시간
-#else
-	#define INTERVAL_TIME				15000			// 자동 도움말이 무시 되는 시간
-#endif
-
 #define RND_HELP_TIME				20000
 
 #define RND_HELP_LEVEL_LOW			1	
@@ -221,6 +214,7 @@ public:
 
 private:
 	int m_nUpStat;
+	int m_nInterval_time;
 };
 
 ENGINE_API extern CUIAutoHelp*	_UIAutoHelp;

@@ -141,6 +141,7 @@
     <ClInclude Include="Packet\ptype_durability.h" />
     <ClInclude Include="Packet\ptype_express_system.h" />
     <ClInclude Include="Packet\ptype_gps.h" />
+    <ClInclude Include="Packet\ptype_guild_battle.h" />
     <ClInclude Include="Packet\ptype_inventory.h" />
     <ClInclude Include="Packet\ptype_item_collection.h" />
     <ClInclude Include="Packet\ptype_notice.h" />
@@ -165,6 +166,7 @@
     <ClInclude Include="Packet\ptype_old_extend.h" />
     <ClInclude Include="Packet\ptype_old_login.h" />
     <ClInclude Include="Packet\ptype_old_mempos.h" />
+    <ClInclude Include="Packet\ptype_old_mempos_rus.h" />
     <ClInclude Include="Packet\ptype_pet_stash.h" />
     <ClInclude Include="Packet\ptype_premium_char.h" />
     <ClInclude Include="Packet\ptype_reserved_gm_command.h" />

@@ -936,13 +936,10 @@ void ActorMgr::DrawMob(CMobTarget* pTarget, CDrawPort* pDraw, CProjection3D* ppr
 	//else
 #else
 	{
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(strName) + 13; 
-		//else
-#else
-		nBoxWidth = strName.Length() * nFontWidth + 13;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(strName) + 13; 
+		else
+			nBoxWidth = strName.Length() * nFontWidth + 13;
 	}
 #endif
 	rcName.Left = vPopupPos(1) - nBoxWidth / 2;
@@ -1224,23 +1221,17 @@ void ActorMgr::DrawCharacter( CCharacterTarget* pTarget, CDrawPort* pDraw, CProj
 #else
 	if( pTarget->GetPkState() == CHA_PVP_STATE_PEACE && !pTarget->IsLegitimate())
 	{
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(strName) + 13; 
-		//else
-#else
-		nBoxWidth = strName.Length() * nFontWidth + 13;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(strName) + 13; 
+		else
+			nBoxWidth = strName.Length() * nFontWidth + 13;
 	}
 	else
 	{
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(strName) + 27;
-		//else
-#else
-		nBoxWidth = strName.Length() * nFontWidth + 27;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(strName) + 27;
+		else
+			nBoxWidth = strName.Length() * nFontWidth + 27;
 	}
 #endif
 	rcName.Left = vPopupPos(1) - nBoxWidth / 2;
@@ -1396,11 +1387,11 @@ void ActorMgr::DrawCharacter( CCharacterTarget* pTarget, CDrawPort* pDraw, CProj
 			otherNickColor = (tempColor|255);
 		}
 
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(otherNick) + 13; 
-#else
-		nBoxWidth = otherNick.Length() * nFontWidth + 13;
-#endif		
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(otherNick) + 13; 
+		else
+			nBoxWidth = otherNick.Length() * nFontWidth + 13;
+
 		rcNickName.Left = vPopupPos(1) - nBoxWidth / 2;
 		rcNickName.Right = rcNickName.Left + nBoxWidth;			
 		rcNickName.Bottom = nPopupY - 5;
@@ -1423,13 +1414,10 @@ void ActorMgr::DrawCharacter( CCharacterTarget* pTarget, CDrawPort* pDraw, CProj
 		//else 
 #else
 		{
-			//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-			nBoxWidth = pDraw->GetTextWidth(pTarget->cha_strGuildName) + 13;
-			//else
-#else
-			nBoxWidth = pTarget->cha_strGuildName.Length() * nFontWidth + 13;	
-#endif
+			if (g_iCountry == RUSSIA)
+				nBoxWidth = pDraw->GetTextWidth(pTarget->cha_strGuildName) + 13;
+			else
+				nBoxWidth = pTarget->cha_strGuildName.Length() * nFontWidth + 13;
 		}
 #endif
 		rcGuildName.Left = vPopupPos(1) - nBoxWidth / 2;
@@ -1484,13 +1472,10 @@ void ActorMgr::DrawCharacter( CCharacterTarget* pTarget, CDrawPort* pDraw, CProj
 		//else 
 #else
 		{
-			//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-			nBoxWidth = pDraw->GetTextWidth(pTarget->ShopMsg.GetString(0));
-			//else
-#else
-			nBoxWidth = pTarget->ShopMsg.GetWidth();
-#endif
+			if (g_iCountry == RUSSIA)
+				nBoxWidth = pDraw->GetTextWidth(pTarget->ShopMsg.GetString(0));
+			else
+				nBoxWidth = pTarget->ShopMsg.GetWidth();
 		}
 #endif
 		rcShop.Left = vPopupPos(1) - nBoxWidth / 2;
@@ -1558,23 +1543,24 @@ void ActorMgr::DrawCharacter( CCharacterTarget* pTarget, CDrawPort* pDraw, CProj
 		//else 
 #else
 		{
-			//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-			int nCurWidth = 0;
-			int nMaxWidth = 0;
-			for( int i=0; i<pTarget->ChatMsg.GetCount(); ++i )
+			if (g_iCountry == RUSSIA)
 			{
-				nCurWidth = pDraw->GetTextWidth(pTarget->ChatMsg.GetString(i));
-				if( nMaxWidth < nCurWidth )
+				int nCurWidth = 0;
+				int nMaxWidth = 0;
+				for( int i=0; i<pTarget->ChatMsg.GetCount(); ++i )
 				{
-					nMaxWidth = nCurWidth;
+					nCurWidth = pDraw->GetTextWidth(pTarget->ChatMsg.GetString(i));
+					if( nMaxWidth < nCurWidth )
+					{
+						nMaxWidth = nCurWidth;
+					}
 				}
+				nBoxWidth = nMaxWidth;
 			}
-			nBoxWidth = nMaxWidth;
-			//else
-#else
-			nBoxWidth = pTarget->ChatMsg.GetWidth();
-#endif
+			else
+			{
+				nBoxWidth = pTarget->ChatMsg.GetWidth();
+			}
 		}
 #endif
 		rcChat.Left = vPopupPos(1) - nBoxWidth / 2;
@@ -1852,8 +1838,8 @@ void ActorMgr::DrawItem( CItemTarget* pTarget, CDrawPort* pDraw, CProjection3D* 
 	if( pTarget->item_llCount > 1 )
 	{
 		strTemp.PrintF( "%I64d", pTarget->item_llCount );
-		strName.PrintF( "%s(%s)", pTarget->m_strName.c_str(), strTemp );
 		pUIMgr->InsertCommaToString( strTemp );
+		strName.PrintF( "%s(%s)", pTarget->m_strName.c_str(), strTemp );
 		colNas = pUIMgr->GetNasColor(  pTarget->item_llCount );
 	}
 	else
@@ -1882,13 +1868,10 @@ void ActorMgr::DrawItem( CItemTarget* pTarget, CDrawPort* pDraw, CProjection3D* 
 	//else 
 #else
 	{
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(strName) + 13;
-		//else
-#else
-		nBoxWidth = strName.Length() * nFontWidth + 13;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(strName) + 13;
+		else
+			nBoxWidth = strName.Length() * nFontWidth + 13;
 	}
 #endif
 	rcName.Left = vPopupPos(1) - nBoxWidth / 2;
@@ -1966,10 +1949,13 @@ void ActorMgr::DrawSlave( CSlaveTarget* pTarget, CDrawPort* pDraw, CProjection3D
 	if( penObject == NULL )
 		return;
 
-#ifdef SORCERER_SUMMON_VILLAGE_VISIBLE_NA_20081008
-	if (penObject->IsFlagOn(ENF_HIDDEN))
-		return;
-#endif
+//#ifdef SORCERER_SUMMON_VILLAGE_VISIBLE_NA_20081008
+	if (IsGamigo(g_iCountry))
+	{
+		if (penObject->IsFlagOn(ENF_HIDDEN))
+			return;
+	}	
+//#endif SORCERER_SUMMON_VILLAGE_VISIBLE_NA_20081008
 	vObjectPos = penObject->GetLerpedPlacement().pl_PositionVector;
 
 	// Test distance
@@ -2018,21 +2004,19 @@ void ActorMgr::DrawSlave( CSlaveTarget* pTarget, CDrawPort* pDraw, CProjection3D
 	}
 
 	// Get box region
-	//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
+	if (g_iCountry == RUSSIA)
 	{
 		nBoxWidth = pDraw->GetTextWidth(strName) + 13; 
 	}
-#elif defined(G_THAI)
+	else if (g_iCountry == THAILAND)
 	{
 		nBoxWidth = FindThaiLen( strName ) + 13;
 	}
-	//else
-#else
+	else
 	{
 		nBoxWidth = strName.Length() * nFontWidth + 13;
 	}
-#endif
+
 	rcName.Left = vPopupPos(1) - nBoxWidth / 2;
 	rcName.Right = rcName.Left + nBoxWidth;
 	rcName.Bottom = vPopupPos(2) - 7;
@@ -2187,13 +2171,10 @@ void ActorMgr::DrawPet( CPetTarget* pTarget, CDrawPort* pDraw, CProjection3D* pp
 		if (_iNameType == 0)
 			strName.PrintF( "%s S%d L%d", pTarget->pet_strNameCard, pTarget->m_nIdxServer, pTarget->m_yLayer );
 
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(strName) + 13;
-		//else
-#else
-		nBoxWidth = strName.Length() * nFontWidth + 13;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(strName) + 13;
+		else
+			nBoxWidth = strName.Length() * nFontWidth + 13;
 	}
 	else
 	{
@@ -2202,13 +2183,10 @@ void ActorMgr::DrawPet( CPetTarget* pTarget, CDrawPort* pDraw, CProjection3D* pp
 		if (_iNameType == 0)
 			strName.PrintF( "%s S%d L%d", pTarget->m_strName.c_str(), pTarget->m_nIdxServer, pTarget->m_yLayer );
 
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		nBoxWidth = pDraw->GetTextWidth(strName) + 13; 
-		//else
-#else
-		nBoxWidth = strName.Length() * nFontWidth + 13;
-#endif
+		if (g_iCountry == RUSSIA)
+			nBoxWidth = pDraw->GetTextWidth(strName) + 13; 
+		else
+			nBoxWidth = strName.Length() * nFontWidth + 13;
 	}
 	rcName.Left = vPopupPos(1) - nBoxWidth / 2;
 	rcName.Right = rcName.Left + nBoxWidth;
@@ -2359,21 +2337,18 @@ void ActorMgr::DrawWildPet( CWildPetTarget* pTarget, CDrawPort* pDraw, CProjecti
 
 	if (strName.Length() > 0)
 	{
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
+		if(g_iCountry == RUSSIA)
 		{
 			nBoxWidth = pDraw->GetTextWidth(strName) + 13; 
 		}
-#elif defined(G_THAI)
+		else if (g_iCountry == THAILAND)
 		{
 			nBoxWidth = FindThaiLen( strName ) + 13;
 		}
-		//				else
-#else
+		else
 		{
 			nBoxWidth = strName.Length() * nFontWidth + 13;
 		}
-#endif
 	}
 
 	rcName.Left = vPopupPos(1) - nBoxWidth / 2;

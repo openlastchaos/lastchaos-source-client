@@ -5,6 +5,8 @@
 #include <Engine/Interface/UITalk.h>
 #include <Engine/Interface/UIMessenger.h>
 
+extern INDEX g_iCountry;
+
 // Definition
 
 
@@ -149,9 +151,9 @@ void CUITalk::Create( CUIWindow *pParentWnd, int nWhichUI )
 {
 
 	_iMaxMsgStringChar = TALK_DESC_CHAR_WIDTH / ( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-#if defined G_RUSSIA
-	_iMaxMsgStringChar = 34;
-#endif
+
+	if (g_iCountry == RUSSIA)
+		_iMaxMsgStringChar = 34;
 
 	m_nWhichUI = nWhichUI;
 	m_strTitle = _S( 1640, "메신저 대화" ); 
@@ -848,14 +850,20 @@ void CUITalk::SendChatMessageFiltering( CTString strMessage )
 		AddTalkListString( "", _S( 437, "문장에 금지된 단어가 포함되어 있습니다."), true, TALK_SYSTEM_COLOR ); 
 		strMessage.Clear();
 		
-#ifndef FILTERING_WORD_VISIBLE_NA_20081013
-		for ( int i = 1; i <= nIndexBuffer[0]; i++ ) {	
-			strMessage += "[";
-			strMessage += _UIFiltering.GetString( nIndexBuffer[i] );
-			strMessage += "] ";
-		}
-		AddTalkListString( "", strMessage, true, TALK_SYSTEM_COLOR ); 
-#endif
+//#ifndef FILTERING_WORD_VISIBLE_NA_20081013
+		extern INDEX		g_iCountry;
+
+		if (IsGamigo(g_iCountry) == TRUE)
+		{
+			for (int i = 1; i <= nIndexBuffer[0]; i++)
+			{	
+				strMessage += "[";
+				strMessage += _UIFiltering.GetString( nIndexBuffer[i] );
+				strMessage += "] ";
+			}
+			AddTalkListString( "", strMessage, true, TALK_SYSTEM_COLOR ); 
+		}		
+//#endif	// FILTERING_WORD_VISIBLE_NA_20081013
 		
 		return;
 	}
@@ -1129,9 +1137,13 @@ void CUITalk::AddTalkListString( CTString &strDesc, COLOR colDesc )
 
 				strTemp.TrimLeft( strTemp.Length() - iPos );
 			}
-#ifdef MODIFY_MESSENGER_CHAT_BLANK_NA_20081028
-			strTemp = CTString("  ") + strTemp;
-#endif
+//#ifdef MODIFY_MESSENGER_CHAT_BLANK_NA_20081028
+			if (IsGamigo(g_iCountry) == TRUE || IsBila(g_iCountry) == TRUE ||
+				g_iCountry == THAILAND)
+			{
+				strTemp = CTString("  ") + strTemp;
+			}
+//#endif
 			AddTalkListString( strTemp, colDesc );
 		}
 		else
@@ -1147,9 +1159,13 @@ void CUITalk::AddTalkListString( CTString &strDesc, COLOR colDesc )
 			else
 				strTemp.TrimLeft( strTemp.Length() - 1 );
 
-#ifdef MODIFY_MESSENGER_CHAT_BLANK_NA_20081028
-			strTemp = CTString("  ") + strTemp;
-#endif
+//#ifdef MODIFY_MESSENGER_CHAT_BLANK_NA_20081028
+			if (IsGamigo(g_iCountry) == TRUE || IsBila(g_iCountry) == TRUE ||
+				g_iCountry == THAILAND)
+			{
+				strTemp = CTString("  ") + strTemp;
+			}			
+//#endif
 			AddTalkListString( strTemp, colDesc );
 		}
 	}
@@ -1199,7 +1215,7 @@ void CUITalk::AddTalkTarget( CTString strName)
 {
 	std::vector<CTString>::iterator iter;
 
-	iter = find(m_vecTarget.begin(), m_vecTarget.end(), strName);
+	iter = std::find(m_vecTarget.begin(), m_vecTarget.end(), strName);
 
 	if( iter ==m_vecTarget.end() )
 	{
@@ -1218,7 +1234,7 @@ void CUITalk::AddTalkTarget( CTString strName)
 bool CUITalk::IsExistTarget(CTString strName)
 {
 	std::vector<CTString>::iterator iter;
-	iter =find(m_vecTarget.begin(), m_vecTarget.end(), strName );
+	iter = std::find(m_vecTarget.begin(), m_vecTarget.end(), strName );
 
 	if( iter != m_vecTarget.end() )
 		return true;
@@ -1230,7 +1246,7 @@ void CUITalk::DeleteTalkTarget(CTString strName)
 {
 	std::vector<CTString>::iterator iter;
 
-	iter =find(m_vecTarget.begin(), m_vecTarget.end(), strName);
+	iter = std::find(m_vecTarget.begin(), m_vecTarget.end(), strName);
 
 	//해당 캐릭이 존재하지 않음
 	if( iter == m_vecTarget.end() )

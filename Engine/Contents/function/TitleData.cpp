@@ -14,6 +14,8 @@
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Contents/function/CustomTitleUI.h>
 
+extern INDEX	g_iCountry;
+
 std::vector<UINT> CustomTitleData::m_vecFrontColor;
 std::vector<UINT> CustomTitleData::m_vecBackColor;
 std::vector<std::string> CustomTitleData::m_vecCustomTitleEffect;
@@ -70,15 +72,19 @@ void TitleNetwork::RecvTitleMessage( CNetworkMessage* istr )
 			pUIManager->GetNickName()->SortNickNameData();
 			
 			int iItemIndex = TitleStaticData::getData(pRecv->title_index)->GetItemIndex();
-#if !(defined (G_GERMAN))
-			if( pUIManager->GetHelp()->IsBeginner() )
+
+			if (IsGamigo(g_iCountry) == FALSE)
 			{
-				TitleNetwork* pTitle = GAMEDATAMGR()->GetTitleNetwork();
-				if (pTitle != NULL)
-					GAMEDATAMGR()->GetTitleNetwork()->SendTitleSelectReq(pRecv->title_index);
+				if( pUIManager->GetHelp()->IsBeginner() )
+				{
+					TitleNetwork* pTitle = GAMEDATAMGR()->GetTitleNetwork();
+					if (pTitle != NULL)
+						GAMEDATAMGR()->GetTitleNetwork()->SendTitleSelectReq(pRecv->title_index);
+
+					return;
+				}
 			}
-			else
-#endif
+			
 			if (CustomTitleData::IsKeepTitleInfo(pRecv->custom_title_index) == true)
 				strSysMessage.PrintF(_S(4828, "%s 호칭을 추가하였습니다."), CustomTitleData::m_mapCustomTitleItemInfo[pRecv->custom_title_index]->name);
 			else

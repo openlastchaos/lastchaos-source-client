@@ -33,10 +33,11 @@ protected:
 	BOOL			m_bChecked;						// If button is checked
 	CTString		m_strText;						// String of button text
 	BOOL			m_bValidText;					// If text is valid or not
-	COLOR			m_colText[2];					// Color of button text
+	COLOR			m_colText[UCBS_TOTAL];			// Color of button text
 	int				m_nTextSX, m_nTextSY;			// Position of text
 	UIRect			m_rcCheckRegion;				// Checking region
 	UIRectUV		m_rtUV[UCBS_TOTAL];				// UV of each button stste
+	UICheckBtnState m_BtnState;
 
 public:
 	CUICheckButton();
@@ -46,6 +47,8 @@ public:
 	// Create
 	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight,
 					CTString &strText, BOOL bCheckRegionLeft = TRUE, int nTextSX = 0, int nCheckRegion = 0 );
+
+	BOOL	IsInside(int nX, int nY);
 
 	// Render
 	void	Render();
@@ -63,19 +66,23 @@ public:
 	}
 
 	// Check state
-	void	SetCheck( BOOL bCheck ) { m_bChecked = bCheck; }
+	void	SetCheck( BOOL bCheck ) 
+	{ 
+		m_bChecked = bCheck; 
+		m_BtnState = m_bChecked ? UCBS_CHECK : UCBS_NONE;
+	}
 	BOOL	IsChecked() const { return m_bChecked; }
 
 	// Text
 	void	SetText( CTString &strText );
-	// Color
-	void	SetTextColor( BOOL bEnableState, COLOR colText )
+	// Color 
+	void	SetTextColor( UICheckBtnState state, COLOR colText )
 	{
-		bEnableState ? m_colText[1] = colText : m_colText[0] = colText;
+		m_colText[state] = colText;
 	}
-	void	GetTextColor( COLOR& colOn, COLOR& colOff ) 
+	COLOR GetTextColor( UICheckBtnState state ) 
 	{
-		colOn = m_colText[1]; colOff = m_colText[0];
+		return m_colText[state];
 	}
 	// UV
 	void	SetUV( UICheckBtnState bsState,
@@ -116,7 +123,7 @@ public:
 	int		getAlignTextH()					{ return m_eAlignText_h;	}
 	void	setEdge(bool bEdge)			{ m_bTextEdge = bEdge;	}
 	bool	getEdge()					{ return m_bTextEdge;	}
-
+	void	setBtnState(UICheckBtnState state)	{ m_BtnState = state;	}
 	virtual WMSG_RESULT OnLButtonDown(UINT16 x, UINT16 y);
 
 public:

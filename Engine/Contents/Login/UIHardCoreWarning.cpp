@@ -117,6 +117,9 @@ void CUIHardCoreWarning::OnUpdatePosition()
 
 WMSG_RESULT CUIHardCoreWarning::OnKeyMessage( MSG* pMsg )
 {
+	if (IsFocused() == FALSE)
+		return WMSG_FAIL;
+
 	if ( pMsg->wParam == VK_RETURN )
 	{
 		CloseUI();
@@ -127,6 +130,5 @@ WMSG_RESULT CUIHardCoreWarning::OnKeyMessage( MSG* pMsg )
 		CloseUI();
 		return WMSG_SUCCESS;
 	}
-
 	return WMSG_FAIL;
 }

@@ -172,6 +172,12 @@
     <ClInclude Include="Packet\ptype_old_do_title.h">
       <Filter>Packet</Filter>
     </ClInclude>
+    <ClInclude Include="Packet\ptype_old_mempos_rus.h">
+      <Filter>Packet</Filter>
+    </ClInclude>
+    <ClInclude Include="Packet\ptype_guild_battle.h">
+      <Filter>Packet</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dummy.cpp" />

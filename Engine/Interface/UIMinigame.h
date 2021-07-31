@@ -152,45 +152,5 @@ public:
 	
 };
 
-#define TREASUREMAP_WIDTH				365
-#define TREASUREMAP_HEIGHT				384
-
-class CUITreasureMap : public CUIWindow
-{
-protected:
-	// Addtional Texture
-	CTextureData		*m_ptdWorldMapTexture;			// Texture of event image
-	CUIDrawBox			m_bxBack;
-	UIRect				m_rtTreasureMark;
-	UIRect				m_rtWorldMap;
-	UIRectUV			m_rvTreasureMark;
-	UIRectUV			m_rvWorldMap;
-	CUIButton			m_btnClose;
-
-	INDEX				m_nZoneIndex;
-	FLOAT				m_fposX;
-	FLOAT				m_fposY;
-public:
-	CUITreasureMap();
-	~CUITreasureMap();
-
-	// close
-	void	Close();
-
-	void	InitData();
-	// Create
-	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
-
-	// Adjust position
-	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-	void	OpenMap(INDEX ZoneIndex, FLOAT fPosX, FLOAT fPosY);
-
-	// Render
-	void	Render();
-	// Messages
-	WMSG_RESULT	MouseMessage( MSG *pMsg );
-};
-
 #endif	// UIMinigame_H_
 

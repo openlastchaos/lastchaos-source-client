@@ -19,6 +19,8 @@
 #include "UICharacterSelect.h"
 #include "UIHardCoreWarning.h"
 
+extern INDEX	g_iCountry;
+
 #define DEF_SLOT_COUNT (4)	// 슬롯 리스트당 4개의 캐릭터를 보여줄수 있다.
 #define DEF_SLOT_MAX   (8)	// 슬롯 맥스는 8개.
 #define DEF_MAX_NAME_LEN	(16)
@@ -122,6 +124,7 @@ CUICharacterSelect::CUICharacterSelect()
 	, m_ulExpansoinTime(0)
 	, m_nPlayAnimId(0)
 	, m_IsWear(false)
+	, m_pCmd(NULL)
 {
 	int i;
 
@@ -354,11 +357,11 @@ void CUICharacterSelect::SetTextData( CUIListItem* pItem, int idx )
 		int	nJob = _pGameState->m_SlotInfo[idx].job;
 		int nJob2 = _pGameState->m_SlotInfo[idx].job2;
 	
-#if		defined(G_GERMAN) || defined(G_USA)
-		strClass = GetJobName(nJob, nJob2);
-#else
-		strClass = pInfo->GetName(nJob, nJob2);
-#endif
+		if (IsGamigo(g_iCountry) == TRUE || g_iCountry == USA)
+			strClass = GetJobName(nJob, nJob2);
+		else
+			strClass = pInfo->GetName(nJob, nJob2);
+
 		strName  = _pGameState->m_SlotInfo[idx].name;
 		strLevel.PrintF("Lv %d", _pGameState->m_SlotInfo[idx].level);
 		strGuild = _pGameState->m_SlotInfo[idx].strGuildName;
@@ -638,80 +641,83 @@ void CUICharacterSelect::DeleteCharacterMsgBox(int nDelIdx)
 		pUIManager->CloseMessageBox( MSGCMD_DELETE_CHARACTER );
 
 		CUIMsgBox_Info	MsgBoxInfo;
-#if defined G_KOR || defined G_THAI
-		int tv_line;
-		// 주민번호 -> 주민번호 뒤 7자리 [10/29/2009 rumist]
-		MsgBoxInfo.SetMsgBoxInfo( _S( 240, "캐릭터 삭제" ), UMBS_OK | UMBS_INPUTPASSWORD,
-			UI_CHARACTER_SELECT, MSGCMD_DELETE_CHARACTER, 260 );
 
-		if(_pGameState->m_SlotInfo[m_nDeleteCharIdx].m_time > 0) 
-			tv_chk = TRUE;
-
-		if( !tv_chk )
+		if (g_iCountry == KOREA || g_iCountry == THAILAND)
 		{
-			// [2012/07/05 : Sora]  캐릭터 슬롯 확장
-			if( m_nDeleteCharIdx >= 4 &&  m_ulExpansoinTime == 0 )
+			int tv_line;
+			// 주민번호 -> 주민번호 뒤 7자리 [10/29/2009 rumist]
+			MsgBoxInfo.SetMsgBoxInfo( _S( 240, "캐릭터 삭제" ), UMBS_OK | UMBS_INPUTPASSWORD,
+				UI_CHARACTER_SELECT, MSGCMD_DELETE_CHARACTER, 260 );
+
+			if(_pGameState->m_SlotInfo[m_nDeleteCharIdx].m_time > 0) 
+				tv_chk = TRUE;
+
+			if( !tv_chk )
 			{
-				MsgBoxInfo.SetMsgBoxInfo( _S( 42, "오류 발생" ), UMBS_OK, UI_CHARACTER_SELECT, MSGCMD_SELCHAR_ERROR );
-				MsgBoxInfo.AddString( _S( 5703, "해당 기능은 캐릭터 확장 슬롯 아이템 사용 시 가능 합니다." ) );
-				pUIManager->CreateMessageBox( MsgBoxInfo );
-				
-				return;
+				// [2012/07/05 : Sora]  캐릭터 슬롯 확장
+				if( m_nDeleteCharIdx >= 4 &&  m_ulExpansoinTime == 0 )
+				{
+					MsgBoxInfo.SetMsgBoxInfo( _S( 42, "오류 발생" ), UMBS_OK, UI_CHARACTER_SELECT, MSGCMD_SELCHAR_ERROR );
+					MsgBoxInfo.AddString( _S( 5703, "해당 기능은 캐릭터 확장 슬롯 아이템 사용 시 가능 합니다." ) );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
+
+					return;
+				}
+
+				MsgBoxInfo.AddString( _S( 2904, "아이디를 입력하세요.\n(삭제요청 후 24시간이 지나면 자동삭제)" ) );
+				MsgBoxInfo.AddString( CTString( " " ) );
+				tv_line = 3;
+			}
+			else 
+			{
+				MsgBoxInfo.AddString( _S( 2905, "캐릭 삭제를 취소하시겠습니까?" ) );
+				tv_line = 2;
+
 			}
 
-			MsgBoxInfo.AddString( _S( 2904, "아이디를 입력하세요.\n(삭제요청 후 24시간이 지나면 자동삭제)" ) );
 			MsgBoxInfo.AddString( CTString( " " ) );
-			tv_line = 3;
+
+			// 주민번호 -> 주민번호 뒤 7자리 [10/29/2009 rumist]
+			//MsgBoxInfo.AddStringEx( _S( 2906, "아이디 입력"),tv_line,0,0xFF9156FF);
+			MsgBoxInfo.SetInputBox(tv_line,10,DEF_MAX_NAME_LEN+1);
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+			Lock(TRUE);
 		}
-		else 
+		else
 		{
-			MsgBoxInfo.AddString( _S( 2905, "캐릭 삭제를 취소하시겠습니까?" ) );
-			tv_line = 2;
+			MsgBoxInfo.SetMsgBoxInfo( _S( 240, "캐릭터 삭제" ), UMBS_YESNO,
+				UI_CHARACTER_SELECT, MSGCMD_DELETE_CHARACTER );
 
-		}
+			tv_chk = FALSE;
 
-		MsgBoxInfo.AddString( CTString( " " ) );
+			if(_pGameState->m_SlotInfo[m_nDeleteCharIdx].m_time > 0) 
+				tv_chk = TRUE;
 
-		// 주민번호 -> 주민번호 뒤 7자리 [10/29/2009 rumist]
-		//MsgBoxInfo.AddStringEx( _S( 2906, "아이디 입력"),tv_line,0,0xFF9156FF);
-		MsgBoxInfo.SetInputBox(tv_line,10,DEF_MAX_NAME_LEN+1);
-		pUIManager->CreateMessageBox( MsgBoxInfo );
-		Lock(TRUE);
-#else // G_KOR
-
-		MsgBoxInfo.SetMsgBoxInfo( _S( 240, "캐릭터 삭제" ), UMBS_YESNO,
-			UI_CHARACTER_SELECT, MSGCMD_DELETE_CHARACTER );
-
-		tv_chk = FALSE;
-
-		if(_pGameState->m_SlotInfo[m_nDeleteCharIdx].m_time > 0) 
-			tv_chk = TRUE;
-
-		if( !tv_chk )
-		{
-			// [2012/07/05 : Sora]  캐릭터 슬롯 확장
-			if( m_nDeleteCharIdx >= 4 &&  m_ulExpansoinTime == 0 )
+			if( !tv_chk )
 			{
-				pUIManager->CloseMessageBox( MSGCMD_NULL );
+				// [2012/07/05 : Sora]  캐릭터 슬롯 확장
+				if( m_nDeleteCharIdx >= 4 &&  m_ulExpansoinTime == 0 )
+				{
+					pUIManager->CloseMessageBox( MSGCMD_NULL );
 
-				CUIMsgBox_Info	MsgBoxInfo;
-				MsgBoxInfo.SetMsgBoxInfo( _S( 42, "오류 발생" ), UMBS_OK, UI_CHARACTER_SELECT, MSGCMD_SELCHAR_ERROR );
-				MsgBoxInfo.AddString( _S( 5703, "해당 기능은 캐릭터 확장 슬롯 아이템 사용 시 가능 합니다." ) );
-				pUIManager->CreateMessageBox( MsgBoxInfo );
+					CUIMsgBox_Info	MsgBoxInfo;
+					MsgBoxInfo.SetMsgBoxInfo( _S( 42, "오류 발생" ), UMBS_OK, UI_CHARACTER_SELECT, MSGCMD_SELCHAR_ERROR );
+					MsgBoxInfo.AddString( _S( 5703, "해당 기능은 캐릭터 확장 슬롯 아이템 사용 시 가능 합니다." ) );
+					pUIManager->CreateMessageBox( MsgBoxInfo );
 
-				return;
+					return;
+				}
+
+				MsgBoxInfo.AddString( _S( 2904, "캐릭터 삭제는 삭제요청 후 24시간이 지나야 삭제가 됩니다. 단, 시간안에 취소 가능" ) );
+				MsgBoxInfo.AddString( CTString( " " ) );
+			}
+			else 
+			{
+				MsgBoxInfo.AddString( _S( 2905, "캐릭 삭제를 취소하시겠습니까?" ) );
 			}
 
-			MsgBoxInfo.AddString( _S( 2904, "캐릭터 삭제는 삭제요청 후 24시간이 지나야 삭제가 됩니다. 단, 시간안에 취소 가능" ) );
-			MsgBoxInfo.AddString( CTString( " " ) );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
 		}
-		else 
-		{
-			MsgBoxInfo.AddString( _S( 2905, "캐릭 삭제를 취소하시겠습니까?" ) );
-		}
-
-		pUIManager->CreateMessageBox( MsgBoxInfo );
-#endif // G_KOR
 	}
 }
 
@@ -1038,6 +1044,12 @@ void CUICharacterSelect::OnUpdatePosition()
 void CUICharacterSelect::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
 {
 	EquipWear();
+
+	if (m_pCmd != NULL)
+	{
+		m_pCmd->execute();
+		SAFE_DELETE(m_pCmd);
+	}
 }
 
 void CUICharacterSelect::EquipWear()

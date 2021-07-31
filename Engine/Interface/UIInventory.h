@@ -96,7 +96,8 @@ enum InvenLockProcess
 	LOCK_ITEM_COMPOSE,
 	LOCK_INVEN_ARRANGE,
 	LOCK_INVEN_ITEM_DEL,
-	LOCK_MAKE_TITLE
+	LOCK_MAKE_TITLE,
+	LOCK_PET_ITEM_UPGRADE,
 };
 
 // Define max char and line of item informaion 

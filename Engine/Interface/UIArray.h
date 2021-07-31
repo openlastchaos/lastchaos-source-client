@@ -32,6 +32,8 @@ public:
 	int	GetArrayChildCount()					{ return m_vecArrayChild.size(); }
 
 	void deleteChildList();
+	void deleteChildItem(int pos);
+	void deleteChildItem(CUIBase* pt);
 
 	// 게임 재시작 등에 사용됨
 	// ArrayItem 만 정리함.

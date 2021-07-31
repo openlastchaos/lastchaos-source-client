@@ -7,18 +7,17 @@
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Contents/Base/UINoticeNew.h>
-#include <Engine/Interface/UISummon.h>
+#include <Engine/Contents/function/SummonUI.h>
 #include <Engine/Interface/UIGuild.h>
 #include <Engine/Contents/Base/UIPartyNew.h>
 #include <Engine/Interface/UIRadar.h>
-#include <Engine/Interface/UIHelper.h>
 #include <Engine/Interface/UIAutoHelp.h>
 #include <Engine/Interface/UIInventory.h>
 #include <Engine/Interface/UIMap.h>
 #include <Engine/Contents/Base/PetStash.h>
 #include <Engine/Contents/Base/Notice.h>
 #include <Engine/Contents/Base/Party.h>
-#include <Engine/Interface/UISystemMenu.h>
+#include <engine/Contents/function/SystemMenuUI.h>
 #include <Engine/Contents/Base/UIExpedition.h>
 #include <Engine/Info/MyInfo.h>
 #include <Engine/Interface/UINpcScroll.h>
@@ -32,6 +31,19 @@
 #include <Engine/Contents/Base/UIMsgBoxMgr.h>
 #include <Engine/Contents/Base/PersonalshopUI.h>
 #include <Engine/Contents/function/PetTargetUI.h>
+#include <Engine/Contents/function/CompoundUI.h>
+#include <Engine/Contents/function/GuildWarMixUI.h>
+#include <Engine/Contents/function/HelperManager.h>
+#include <Engine/Contents/Base/ExpressSystem.h>
+#include <Engine/Contents/function/RoyalrumbleUI.h>
+#include <Engine/Contents/function/TatooUI.h>
+#include <Engine/Contents/function/GuildBattleMatchRegUI.h>
+
+CStageGamePlay::CStageGamePlay()
+	: m_bFirst(true)
+{
+
+}
 
 void CStageGamePlay::Init()
 {
@@ -60,11 +72,20 @@ void CStageGamePlay::Init()
 	}
 	m_bSendRestart = false;
 	UIMGR()->SetCSFlagOff(CSF_TELEPORT);
+
+	if (m_bFirst == true)
+	{
+		// 최초 맵 인 한번만 초기화
+		m_bFirst = false;
+
+		UIMGR()->GetGuildBattleMatchReg()->init_zone();
+	}
 }
 
 void CStageGamePlay::Release()
 {
 	CUIManager* pUIManager = CUIManager::getSingleton();
+	GameDataManager* pGameData = GameDataManager::getSingleton();
 
 	CEntity* penPlEntity;
 	CPlayerEntity* penPlayerEntity;
@@ -84,7 +105,7 @@ void CStageGamePlay::Release()
 		penPlayerEntity->ReturnChange( TRUE );
 		const int iStopChangeItem = 521;
 
-		Notice* pNotice = GAMEDATAMGR()->GetNotice();
+		Notice* pNotice = pGameData->GetNotice();
 
 		if (pNotice != NULL)
 			pNotice->DelFromNoticeList(iStopChangeItem, Notice::NOTICE_POLYMOPH);
@@ -93,7 +114,6 @@ void CStageGamePlay::Release()
 	// 소환수 리셋
 	pUIManager->GetSummonFirst()->ResetSummon();
 	pUIManager->GetSummonSecond()->ResetSummon();
-
 	// 개인상점 초기화
 	pUIManager->GetPersonalShop()->ResetShop();
 	pUIManager->SetCSFlagOff( CSF_PERSONALSHOP );
@@ -115,9 +135,9 @@ void CStageGamePlay::Release()
 	}
 
 	// 파티정보 초기화
-	GAMEDATAMGR()->GetPartyInfo()->Init();
+	pGameData->GetPartyInfo()->Init();
 	// 원정대 초기화
-	GAMEDATAMGR()->GetPartyInfo()->InitExpedition();
+	pGameData->GetPartyInfo()->InitExpedition();
 	pUIManager->GetExpedition()->closeUI();
 
 	ObjInfo* pInfo = ObjInfo::getSingleton();
@@ -126,6 +146,8 @@ void CStageGamePlay::Release()
 	_pNetwork->LeavePet( (CPlayerEntity*)penPlEntity );
 	pInfo->GetMyPetInfo()->Init();
 	pUIManager->GetPetTargetUI()->closeUI();
+
+	pUIManager->GetTatoo()->Close();
 	// FIXED : wild pet mount bug [12/12/2010 rumist]
 	// 초기화 실패로 매시가 깨지는 것 방지.
 	static_cast<CPlayerEntity*>(penPlEntity)->LeavingWildPet( static_cast<CPlayerEntity*>(penPlEntity) );
@@ -139,11 +161,10 @@ void CStageGamePlay::Release()
 	pInfo->GetMySlaveInfo(0)->Init();
 	pInfo->GetMySlaveInfo(1)->Init();
 
-	GAMEDATAMGR()->GetGPS()->RelicPosClear();
+	pGameData->GetGPS()->RelicPosClear();
 
-	// 도움말 리셋
-	pUIManager->GetHelper()->ResetHelper();
-	pUIManager->GetHelper()->ClearHelperList();
+	// guardian reset
+	pGameData->GetHelperManager()->ClearHelperList();
 
 	// NPC 스크롤 리셋
 	pUIManager->GetNpcScroll()->CloseNpcScroll();
@@ -152,8 +173,6 @@ void CStageGamePlay::Release()
 
 	_pNetwork->DeleteAllMob();
 	_pNetwork->MyCharacterInfo.EntranceType = CURRENT_ENTER_NORMAL; // 초기화
-
-	GameDataManager* pGameData = GameDataManager::getSingleton();
 
 	if (pGameData)
 	{
@@ -210,7 +229,7 @@ void CStageGamePlay::Release()
 
 	pUIManager->GetMap()->ClearPlayerEntity();
 
-	CPremiumChar* pChar = GAMEDATAMGR()->GetPremiumChar();
+	CPremiumChar* pChar = pGameData->GetPremiumChar();
 
 	if (pChar != NULL)
 		pChar->Clear();
@@ -221,7 +240,16 @@ void CStageGamePlay::Release()
 	pUIManager->GetNewsUI()->CloseUI();
 	pUIManager->GetNewsWebUI()->CloseUI();
 
+	ExpressSystem* pLce = pGameData->GetExpressData();
+
+	if (pLce != NULL)
+		pLce->UnLock();
+
 	MSGBOXMGR()->DeleteAll();
+
+	pUIManager->GetChatFilter()->CloseChatFilter();
+	pUIManager->GetCompound()->CloseCompound();
+	pUIManager->GetGWMix()->CloseGWMix();
 }
 
 void CStageGamePlay::Run()

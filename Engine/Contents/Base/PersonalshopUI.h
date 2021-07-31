@@ -168,8 +168,6 @@ protected:
 
 private:
 	void	clearContainer();
-	bool	IsAvailable4Sale(CItems* pItem);
-
 	void	CloseMsg();
 
 	typedef		std::vector< CItems* >		vec_Items;
@@ -181,20 +179,10 @@ private:
 	SQUAD				m_llPackagePrice;
 	bool				m_bPackageBuy;
 
-	//int					m_nBackSplitHeight;
-	int					m_nCurRow;
-
-	int					m_nSelITab;
 	int					m_nSelectedChaID;	// Character ID
 
 	__int64				m_nTotalPrice;	
 	int					m_nNumOfItem;
-
-	bool				m_bRareItem;
-	int					m_iRareGrade;
-
-	// Position of target npc
-	FLOAT				m_fNpcX, m_fNpcZ;
 
 	UINT16				ox, oy;
 
@@ -216,8 +204,6 @@ private:
 	CUIIcon*			m_pIconsTradeItem[PERSONAL_TRADE_SLOT_TOTAL];			// Player Slot items
 	CUIIcon*			m_pIconsShopItem[PERSONAL_SHOP_SLOT_MAX];				// Shop Slot items
 	CUIIcon*			m_pIconsPackageItem[PERSONAL_PACKAGE_SLOT_COL];			// Package Slot items
-
-	SQUAD				m_aiTradeItemCount[PERSONAL_TRADE_SLOT_TOTAL];			// Player Slot items
 
 	CItems*				m_pTempItems;
 

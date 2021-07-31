@@ -460,7 +460,7 @@ functions:
 
 		vBase += vFront*m_fDistance;
 		pl.pl_PositionVector = vBase;//0610 kwon Ãß°¡
-		if (_pNetwork->MyCharacterInfo.m_ModelColor > 0 && g_iCountry != JAPAN)
+		if (_pNetwork->MyCharacterInfo.m_ModelColor > 0)
 		{
 			pl.pl_PositionVector(2) += m_fCameraHeight;
 		}

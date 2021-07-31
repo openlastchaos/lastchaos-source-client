@@ -4,8 +4,9 @@
 #include <vector>
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UISecurity.h>
-#include <Engine/Interface/UIWareHouse.h>
+#include <Engine/Contents/function/WareHouseUI.h>
 
+extern INDEX g_iCountry;
 
 #define MIN_PASSWORD				(6)
 #define MAX_PASSWORD				(8)
@@ -565,9 +566,9 @@ void CUISecurity::PressOKBtn()
 		m_strPersonalNumber = m_ebPersonalNumber.GetString();
 
 		int tv_len = 7;
-#ifdef	G_KOR
-		tv_len = 4;		// 현재 개발기준 '1111' 로 설정되어 있음.
-#endif	// G_KOR
+
+		if (g_iCountry == KOREA)
+			tv_len = 4;		// 현재 개발기준 '1111' 로 설정되어 있음.
 		
 		if( m_strPersonalNumber.Length() < tv_len )
 		{
@@ -879,7 +880,7 @@ void CUISecurity::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput 
 				return;
 			}
 			// 암호 확인을 보내고 응답으로 아이템 목록을 받음.			
-			pUIManager->GetWareHouse()->SendListReq(strInput);
+			pUIManager->GetWareHouseUI()->SendListReq(strInput);
 		}
 		break;
 	}
@@ -901,7 +902,7 @@ void CUISecurity::MsgBoxLCommand( int nCommandCode, int nResult )
 	case SET_PASSWORD:
 		{
 			// 암호가 이미 설정되어있는 경우.
-			if(pUIManager->GetWareHouse()->HasPassword())
+			if(pUIManager->GetWareHouseUI()->HasPassword())
 			{
 				pUIManager->CloseMessageBox( MSGCMD_OLD_PASSWORD );
 				CUIMsgBox_Info	MsgBoxInfo;
@@ -927,7 +928,7 @@ void CUISecurity::MsgBoxLCommand( int nCommandCode, int nResult )
 	case UNSET_PASSWORD:
 		{
 			pUIManager->SetCSFlagOff( CSF_WAREHOUSE );
-			pUIManager->GetSecurity()->OpenChangePassWord( pUIManager->GetWareHouse()->HasPassword() );
+			pUIManager->GetSecurity()->OpenChangePassWord( pUIManager->GetWareHouseUI()->HasPassword() );
 		}
 		break;
 	default:

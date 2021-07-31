@@ -56,7 +56,6 @@ CUIPersonalshopNew::CUIPersonalshopNew()
 	m_llPackagePrice	= 0;
 	m_bCashPersonShop	= FALSE;
 	m_bCashPersonShop_open = FALSE;
-	m_nSelITab			= -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -70,6 +69,7 @@ CUIPersonalshopNew::~CUIPersonalshopNew()
 
 void CUIPersonalshopNew::initialize()
 {
+#ifndef		WORLD_EDITOR
 	int		i;
 
 	m_pEditName = (CUIEditBox*)findUI("ed_name");				// xml max length : 80
@@ -184,6 +184,8 @@ void CUIPersonalshopNew::initialize()
 				}
 			}
 		}
+
+		m_pTxtPackagePrice = (CUIText*)findUI("txt_package_price");
 	}
 
 	// 인벤연결
@@ -264,6 +266,7 @@ void CUIPersonalshopNew::initialize()
 			pBtnCancel->SetCommandFUp(boost::bind(&CUIPersonalshopNew::cancel, this));
 		}
 	}
+#endif	// WORLD_EDITOR
 }
 
 // ----------------------------------------------------------------------------
@@ -406,10 +409,6 @@ void CUIPersonalshopNew::TradePersonalShop( INDEX iChaIndex, FLOAT fX, FLOAT fZ,
 
 	ResetShop(TRUE);
 
-	// Set position of target npc
-	m_fNpcX = fX;
-	m_fNpcZ = fZ;
-
 	if(INFO()->GetTargetDBIdx(eTARGET) == 482)
 	{
 		m_bCashPersonShop_open = TRUE;
@@ -434,6 +433,9 @@ void CUIPersonalshopNew::PrepareBuyShop()
 	m_bBuyShop			= TRUE;
 	RefreshUserItem();
 
+	if (m_pEditPackagePrice != NULL)
+		m_pEditPackagePrice->Hide(TRUE);
+
 	// Set money
 	if( _pNetwork->MyCharacterInfo.money > 0 )
 	{
@@ -456,14 +458,14 @@ void CUIPersonalshopNew::PrepareBuyShop()
 		pUIManager->InsertCommaToString(strPackagePrice);
 
 		if (m_pTxtPackagePrice != NULL)
-		{			
+		{
+			m_pTxtPackagePrice->Hide(FALSE);
+
 			m_pTxtPackagePrice->SetText(strPackagePrice);
 			COLOR col = pUIManager->GetNasColor(m_llPackagePrice);
 			m_pTxtPackagePrice->setFontColor(col);
 		}
 	}
-
-	if (m_pIconsShopItem)
 
 	if (m_pGroupSell)
 		m_pGroupSell->Hide(TRUE);
@@ -479,6 +481,7 @@ void CUIPersonalshopNew::PrepareBuyShop()
 		}
 	}
 
+	Hide(FALSE);
 	pUIManager->RearrangeOrder( UI_PERSONALSHOP, TRUE );
 }
 
@@ -495,26 +498,8 @@ void CUIPersonalshopNew::PrepareSellShop()
 	m_bBuyShop			= FALSE;
 	RefreshPlayerItem();
 
-	// Set money
-// 	if( _pNetwork->MyCharacterInfo.money > 0 )
-// 	{
-// 		CTString strPlayerMoney;
-// 		strPlayerMoney.PrintF( "%I64d", _pNetwork->MyCharacterInfo.money );
-// 		pUIManager->InsertCommaToString( strPlayerMoney );
-// 		if (m_pTxtNas != NULL)
-// 			m_pTxtNas->SetText(strPlayerMoney);
-// 	}
-
-	// Set money
-	if( m_llPackagePrice > 0 )
-	{
-		CTString strPackagePrice;
-		strPackagePrice.PrintF("%I64d", m_llPackagePrice);
-		pUIManager->InsertCommaToString(strPackagePrice);
-
-		if (m_pTxtPackagePrice != NULL)
-			m_pTxtPackagePrice->SetText(strPackagePrice);
-	}
+	if (m_pTxtPackagePrice != NULL)
+		m_pTxtPackagePrice->Hide(TRUE);
 
 	if (m_pGroupSell != NULL)
 		m_pGroupSell->Hide(FALSE);
@@ -528,7 +513,7 @@ void CUIPersonalshopNew::PrepareSellShop()
 		m_pBtnPackCancel->SetEnable(FALSE);
 
 	if (m_pEditPackagePrice != NULL)
-		m_pEditPackagePrice->SetEnable(FALSE);
+		m_pEditPackagePrice->Hide(FALSE);
 
 	for (int i = 0; i < PERSONAL_PACKAGE_SLOT_COL; ++i)
 	{
@@ -544,6 +529,7 @@ void CUIPersonalshopNew::PrepareSellShop()
 		}
 	}
 
+	Hide(FALSE);
 	pUIManager->RearrangeOrder( UI_PERSONALSHOP, TRUE );
 }
 
@@ -582,7 +568,7 @@ void CUIPersonalshopNew::RefreshPlayerItem()
 			m_pIconsShopItem[i]->setData(pCopy, false);		// count 변경을 하기 때문에 복제한다.
 
 			// 판매 불가능 아이템 표시
-			if (IsAvailable4Sale(pCopy) == false)
+			if (UTIL_HELP()->IsAvailable4Sale(pCopy, UI_PERSONALSHOP) == false)
 			{
 				CUIBase* pParent = m_pIconsShopItem[i]->getParent();
 
@@ -695,7 +681,8 @@ void CUIPersonalshopNew::ResetShop(bool bOpen)
 	{
 		CUIManager* pUIManager = CUIManager::getSingleton();
 
-		pUIManager->RearrangeOrder( UI_PERSONALSHOP, FALSE );
+		Hide(TRUE);
+		pUIManager->RearrangeOrder( UI_PERSONALSHOP, FALSE );		
 
 		// Unlock inventory
 		pUIManager->GetInventory()->Lock( FALSE, FALSE, LOCK_PERSONAL_SHOP );
@@ -727,6 +714,19 @@ void CUIPersonalshopNew::ClearItems()
 
 	for( i = 0; i < PERSONAL_SHOP_SLOT_MAX; ++i)
 	{
+		CUIBase* pParent = m_pIconsShopItem[i]->getParent();
+
+		if (pParent != NULL)
+		{
+			CUIImage* pImg = (CUIImage*)pParent->findUI("img_lock");
+
+			// 이전에 열었던 데이터에 있던 것이므로 삭제
+			if (pImg != NULL)
+			{
+				pParent->deleteChild(pImg);
+			}
+		}
+
 		m_pIconsShopItem[i]->clearIconData();
 		m_pIconsShopItem[i]->Hide(FALSE);
 	}
@@ -797,7 +797,7 @@ void CUIPersonalshopNew::AddShopItem( int nIdx, int nUniIndex, SQUAD llCount, in
 	if (m_bBuyShop == FALSE)
 	{
 		// 대여 아이템 판매 불가
-		if (IsAvailable4Sale(pItems) == false)
+		if (UTIL_HELP()->IsAvailable4Sale(pItems, UI_PERSONALSHOP) == false)
 		{
 			// [2010/12/09 : Sora] 몬스터용병카드 조건 추가
 			pUIManager->CloseMessageBox(MSGCMD_NULL);
@@ -2588,55 +2588,6 @@ void CUIPersonalshopNew::clearContainer()
 	m_vectorSellPackageList.clear();
 }
 
-bool CUIPersonalshopNew::IsAvailable4Sale( CItems* pItem )
-{
-	if (pItem == NULL)
-		return false;
-
-	CItemData* pItemData = pItem->ItemData;
-
-	if (pItemData == NULL)
-		return false;
-
-	bool bSubJob = false;
-
-#ifdef ADD_SUBJOB
-	bSubJob = true;
-#endif
-
-	if (pItem->IsFlag(FLAG_ITEM_BELONG))
-		return false;
-
-	if (pItemData->GetType() == CItemData::ITEM_ACCESSORY &&
-		pItemData->GetSubType() == CItemData::ACCESSORY_RELIC)
-		return false;
-
-	if (bSubJob == true && pItemData->IsFlag( ITEM_FLAG_SELLER ))
-	{
-		if (!UIMGR()->CheckSellerItem(UI_PERSONALSHOP, pItemData->GetFlag()))
-			return false;
-	}
-	else
-	{
-		bool bMonsterMercenaryItem = false; 
-
-		if (pItemData->GetType() == CItemData::ITEM_ETC &&
-			pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD)
-		{
-			bMonsterMercenaryItem = true;
-		}
-
-		if (!pItemData->IsFlag(ITEM_FLAG_EXCHANGE)||
-			pItem->IsFlag(FLAG_ITEM_LENT) ||
-			pItem->IsFlag(FLAG_ITEM_PLATINUMBOOSTER_ADDED) ||
-			pItem->Item_Wearing > 0 || 
-			( bMonsterMercenaryItem && pItem->Item_Used > 0 ))
-			return false;
-	}
-
-	return true;
-}
-
 WMSG_RESULT CUIPersonalshopNew::LButtonUp( UINT16 x, UINT16 y )
 {
 	WMSG_RESULT ret = CUIBase::LButtonUp(x, y);
@@ -2839,7 +2790,7 @@ void CUIPersonalshopNew::proc_dblclick( eSlotType type )
 				}
 				else
 				{
-					if (IsAvailable4Sale(pItems) == false)
+					if (UTIL_HELP()->IsAvailable4Sale(pItems, UI_PERSONALSHOP) == false)
 						return;
 
 					AddShopItem(idx, pItems->Item_UniIndex, pItems->Item_Sum, SLOT_TRADE);

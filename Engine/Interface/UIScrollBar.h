@@ -208,7 +208,7 @@ protected:
 	void	MoveScrollPos( int ndPos );
 	void	UpdateScrollBarSize();
 	void	UpdateScrollBarPos();
-	void	updateDragPos(float gap = 0.f);
+	bool	updateDragPos(float gap = 0.f);
 	void	updateThumbSize();
 
 	//--------------------------------------------------------------------------

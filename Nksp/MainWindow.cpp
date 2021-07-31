@@ -477,15 +477,6 @@ void OpenMainWindowNormal( PIX pixSizeI, PIX pixSizeJ,bool p_Center)
 
 	SE_UpdateWindowHandle( _hwndMain, _hDlgWeb);
 
-	//	김영환 : 타이틀이름 변경 하지말자 번역이슈만 발생. 
-	/*
-#if defined G_RUSSIA
-	sprintf( achWindowTitle, TRANS("행藎滄魏") );
-#else
-	sprintf( achWindowTitle, TRANS("Loading...") );
-#endif
-	SetWindowText( _hwndMain, achWindowTitle);
-	*/
 	_pixLastSizeI = pixSizeI;
 	_pixLastSizeJ = pixSizeJ;
 	ResetMainWindowNormal(p_Center);
@@ -530,16 +521,6 @@ void OpenMainWindowFullScreen( PIX pixSizeI, PIX pixSizeJ)
 
 	SE_UpdateWindowHandle( _hwndMain, _hDlgWeb);
 	
-	//	김영환 : 타이틀이름 변경 하지말자 번역이슈만 발생. 
-	/*
-#if defined G_RUSSIA
-	sprintf( achWindowTitle, TRANS("행藎滄魏") );
-#else
-	sprintf( achWindowTitle, TRANS("Loading...") );
-#endif
-
-	SetWindowText( _hwndMain, achWindowTitle);
-	*/
 	ShowWindow(    _hwndMain, SW_SHOWNORMAL);
 }
 

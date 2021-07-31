@@ -168,5 +168,15 @@ public:
 
 //------------------------------------------------------------------------
 
+class CmdConvModel : public Command
+{
+public:
+	CmdConvModel() : pModel_(NULL) {}
+	void setData(CModelInstance* pm)	{ pModel_ = pm; }
+	void execute();
+
+private:
+	CModelInstance* pModel_;
+};
 
 #endif		// CMD_SKA_STUDIO_H_

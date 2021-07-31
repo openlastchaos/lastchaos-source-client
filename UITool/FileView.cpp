@@ -515,6 +515,7 @@ BOOL CFileView::PreTranslateMessage(MSG* pMsg)
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
 	CMainFrame *pMain = (CMainFrame *)AfxGetMainWnd();
 	static bool bCtrl = false;
+	CUIBase* pSelUI = pMain->GetSelectControl();
 	
 	switch(pMsg->message)
 	{
@@ -523,12 +524,26 @@ BOOL CFileView::PreTranslateMessage(MSG* pMsg)
 		{
 		case VK_DELETE:
 			{
-				if(	pMain->GetSelectControl() != NULL )
+				if(	pSelUI != NULL )
 				{
-					if( m_pCopyUI == pMain->GetSelectControl() )
+					if( m_pCopyUI == pSelUI )
 						m_pCopyUI = NULL;
 
-					pMain->GetSelectControl()->getParent()->deleteChild(pMain->GetSelectControl());
+					if (pSelUI->getType() == eUI_CONTROL_LIST_ITEM)
+					{
+						CUIList* pList = ((CUIList*)pSelUI->getParent());
+						pList->deleteListItem(pSelUI);
+					}
+					else if (pSelUI->getType() == eUI_CONTROL_ARRAY_ITEM)
+					{
+						CUIArray* pArr = ((CUIArray*)pSelUI->getParent());
+						pArr->deleteChildItem(pSelUI);
+					}
+					else
+					{
+						pSelUI->getParent()->deleteChild(pSelUI);
+					}
+
 					pMain->ResetSelectUI();
 					FillFileView();
 				}
@@ -536,12 +551,12 @@ BOOL CFileView::PreTranslateMessage(MSG* pMsg)
 			break;
 		case VK_OEM_MINUS:
 			{
-				if( pMain->GetSelectControl()->getParent() != NULL )
+				if( pSelUI->getParent() != NULL )
 				{
-					int idx = pMain->GetSelectControl()->getParent()->GetChildIndex(pMain->GetSelectControl());
-					if( idx < pMain->GetSelectControl()->getParent()->getChildCount() )
+					int idx = pSelUI->getParent()->GetChildIndex(pSelUI);
+					if( idx < pSelUI->getParent()->getChildCount() )
 					{
-						if( pMain->GetSelectControl()->getParent()->Swap(idx, idx+1) )
+						if( pSelUI->getParent()->Swap(idx, idx+1) )
 						{
 							// 선택된 아이템을 다시 그리게 되므로 LParam 에 있는 UI 포인터 비교로 선택된 아이템을 찾는다.
 							HTREEITEM hItem = m_wndFileView.GetSelectedItem();
@@ -570,12 +585,12 @@ BOOL CFileView::PreTranslateMessage(MSG* pMsg)
 			break;
 		case VK_OEM_PLUS:
 			{
-				if( pMain->GetSelectControl()->getParent() != NULL )
+				if( pSelUI->getParent() != NULL )
 				{
-					int idx = pMain->GetSelectControl()->getParent()->GetChildIndex(pMain->GetSelectControl());
+					int idx = pSelUI->getParent()->GetChildIndex(pSelUI);
 					if( idx > 0 )
 					{
-						if( pMain->GetSelectControl()->getParent()->Swap(idx, idx-1) )
+						if( pSelUI->getParent()->Swap(idx, idx-1) )
 						{
 							// 선택된 아이템을 다시 그리게 되므로 LParam 에 있는 UI 포인터 비교로 선택된 아이템을 찾는다.
 							HTREEITEM hItem = m_wndFileView.GetSelectedItem();
@@ -604,18 +619,18 @@ BOOL CFileView::PreTranslateMessage(MSG* pMsg)
 			break;
 		case VK_INSERT:
 			{
-				if( pMain->GetSelectControl() == NULL )
+				if( pSelUI == NULL )
 					break;
 
-				int nIdx = pMain->GetSelectControl()->getParent()->GetChildIndex( pMain->GetSelectControl() );
+				int nIdx = pSelUI->getParent()->GetChildIndex( pSelUI );
 				// 현재 선택된 아이템의 바로 위에 인덱스를 가져와서 그 컨트롤의 차일드로 넣어줘야 하기 때문에 -1을 해줘야함.
 				nIdx -= 1;
 				
-				CUIBase* p = pMain->GetSelectControl()->getParent()->getChildAt(nIdx);
+				CUIBase* p = pSelUI->getParent()->getChildAt(nIdx);
 				if( p == NULL )
 					break;
 
-				pMain->GetSelectControl()->getParent()->VecMove( pMain->GetSelectControl(), p );
+				pSelUI->getParent()->VecMove( pSelUI, p );
 				FillFileView();
 			}
 			break;
@@ -629,23 +644,23 @@ BOOL CFileView::PreTranslateMessage(MSG* pMsg)
 			{
 				if (GetKeyState('C') & 0x8000)
 				{
-					if( pMain->GetSelectControl() == NULL )
+					if( pSelUI == NULL )
 						break;
 
 					m_pCopyUI = NULL;
 
-					m_pCopyUI = pMain->GetSelectControl();
+					m_pCopyUI = pSelUI;
 				}
 				else if (GetKeyState('V') & 0x8000)
 				{
-					if( m_pCopyUI != NULL && pMain->GetSelectControl() != NULL )
+					if( m_pCopyUI != NULL && pSelUI != NULL )
 					{
 						CmdClone* pCmd = new CmdClone;
 						
-						if( m_pCopyUI == pMain->GetSelectControl() )
-							pCmd->setData(pMain->GetSelectControl()->getParent(), m_pCopyUI);
+						if( m_pCopyUI == pSelUI )
+							pCmd->setData(pSelUI->getParent(), m_pCopyUI);
 						else
-							pCmd->setData(pMain->GetSelectControl(), m_pCopyUI);
+							pCmd->setData(pSelUI, m_pCopyUI);
 
 						theApp.addQueue(pCmd);
 					}
@@ -654,7 +669,7 @@ BOOL CFileView::PreTranslateMessage(MSG* pMsg)
 
 			if (CMainFrame *pMain = (CMainFrame *)AfxGetMainWnd())
 			{
-				CUIBase* pControl = pMain->GetSelectControl();
+				CUIBase* pControl = pSelUI;
 
 				if (pControl != NULL)
 				{

@@ -621,9 +621,12 @@ void CSimplePlayerMenuUI::CmdExpeditionLeader( int nCmd )
 			int nStrIndex[2] = {4525, 4519};
 			int nStrCount = 2;
 
-#ifndef DISABLE_PARTY_TYPE_BATTLE
-			nStrCount = 1;
-#endif //DISABLE_PARTY_TYPE_BATTLE
+//#ifndef DISABLE_PARTY_TYPE_BATTLE
+			extern INDEX g_iCountry;
+
+			if (IsGamigo(g_iCountry) == FALSE)
+				nStrCount = 1;
+//#endif //DISABLE_PARTY_TYPE_BATTLE
 
 			int nType = GAMEDATAMGR()->GetPartyInfo()->GetDivisionType(MSG_DIVITYPE_EXP) == MSG_EXPED_TYPE_RANDOM ? 0 : 1 ;
 			SetSubMenuList(eCMD_EX_LEADER_TYPE_EXP, nStrCount, nStrIndex, nType);

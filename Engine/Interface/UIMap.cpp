@@ -568,17 +568,16 @@ void CUIMap::ShowToolTip( BOOL bShow, CTString &strName, int nX, int nY )
 	//else
 #else
 	{
-		//if(g_iCountry == RUSSIA)
-#if defined G_RUSSIA
-		extern CFontData *_pfdDefaultFont;
-		nInfoWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, m_strToolTip.str_String) + 16;
-		//else
-#else
+		if (g_iCountry == RUSSIA)
+		{
+			extern CFontData *_pfdDefaultFont;
+			nInfoWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, m_strToolTip.str_String) + 16;
+		}
+		else
 		{
 			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strToolTip.Length() *
 				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 		}
-#endif
 		
 	}
 #endif
@@ -4273,7 +4272,7 @@ void CUIMap::RenderNpc(CDrawPort* pDraw, int nIndex, int nX, int nY, BOOL bHighl
 	}
 	else
 	{
-		CUIMapOption* pOption = UIMGR()->GetRadar()->GetMapOption();
+		CUIMapOption* pOption = UIMGR()->GetMapOption();
 
 		if (pOption == NULL)
 			return;

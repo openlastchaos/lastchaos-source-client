@@ -143,15 +143,10 @@ void CUIMessageBoxL::CreateMessageBox( CTString &strTitle, int nWhichUI, int nCo
 	m_strTitle = strTitle;
 	m_nCurNum = 1;
 
-#if defined G_KOR
-	// [2011/04/11 : Sora] 메시지 박스실행 제한 시간 20초로 변경
-	SetMsgBoxLTimer( 20, -1 );
-#else
 	// [sora] 메시지 박스실행 시간 제한
 	m_nStartTime = 0;
 	m_nTime = 0;
 	m_nTimeOutBtnMessage = -1;
-#endif
 
 	pUIManager->RearrangeOrder( m_nUIIndex, TRUE );
 }

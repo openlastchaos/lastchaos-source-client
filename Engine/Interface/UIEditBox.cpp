@@ -33,9 +33,7 @@ CUIEditBox*	CUIEditBox::s_PrevFocus = NULL;
 
 // cppangel Edit End
 
-#if defined(G_RUSSIA)
-	ENGINE_API extern CFontData *_pfdDefaultFont;
-#endif	//	defined(G_RUSSIA)
+extern CFontData *_pfdDefaultFont;
 
 // ----------------------------------------------------------------------------
 // Name : CUIEditBox()
@@ -158,19 +156,19 @@ void CUIEditBox::initialize()
 		}
 	}
 
-#ifdef VER_TEST
+#if		defined(VER_TEST) && !defined(UI_TOOL)
 	m_bCopyAndPaste = true;
-#endif // VER_TEST
 
 	m_pImgSelText = new CUIImage;
 	addChild((CUIBase*)m_pImgSelText);
-	
+
 	m_pImgSelText->setTexString("CommonBtn.tex");
 	UIRectUV uv;
 	uv.SetUV(158, 59, 165, 66);
 	m_pImgSelText->SetUV(uv);
 	m_pImgSelText->SetColor(0x0000FFCC);
 	m_pImgSelText->Hide(TRUE);
+#endif // VER_TEST && !UI_TOOL
 }
 
 // ----------------------------------------------------------------------------
@@ -292,15 +290,17 @@ void CUIEditBox::Render()
 	}
 	else
 	{
-#ifdef G_RUSSIA
-		int nShowCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
-		std::string strTemp = &m_pInputBuffer[m_nFirstShowChar];
-		strTemp = strTemp.substr(0, nShowCnt);
-		pDrawPort->PutTextCharEx( (char*)strTemp.c_str(), nLength, nX + m_nCursorSX, nY );
-#else // G_RUSSIA
-		pDrawPort->PutTextCharEx( &m_pInputBuffer[m_nFirstShowChar], nLength, nX + m_nCursorSX, nY );
-#endif // G_RUSSIA
-		
+		if (g_iCountry == RUSSIA)
+		{
+			int nShowCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
+			std::string strTemp = &m_pInputBuffer[m_nFirstShowChar];
+			strTemp = strTemp.substr(0, nShowCnt);
+			pDrawPort->PutTextCharEx( (char*)strTemp.c_str(), nLength, nX + m_nCursorSX, nY );
+		}
+		else
+		{
+			pDrawPort->PutTextCharEx( &m_pInputBuffer[m_nFirstShowChar], nLength, nX + m_nCursorSX, nY );
+		}
 	}
 
 	// Render cursor
@@ -323,14 +323,18 @@ void CUIEditBox::Render()
 		}
 
 		int nCursorX = 0;
-#if defined(G_RUSSIA)
-		std::string strTemp = m_pInputBuffer;
-		strTemp = strTemp.substr(m_nFirstShowChar, m_nCursorIndex - m_nFirstShowChar);
-		nCursorX = m_nCursorSX + nX + UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, (char*)strTemp.c_str());
-#else
-		nCursorX = m_nCursorSX + nX + ( m_nCursorIndex - m_nFirstShowChar ) *
-			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-#endif
+
+		if (g_iCountry == RUSSIA)
+		{
+			std::string strTemp = m_pInputBuffer;
+			strTemp = strTemp.substr(m_nFirstShowChar, m_nCursorIndex - m_nFirstShowChar);
+			nCursorX = m_nCursorSX + nX + UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, (char*)strTemp.c_str());
+		}
+		else
+		{
+			nCursorX = m_nCursorSX + nX + ( m_nCursorIndex - m_nFirstShowChar ) *
+						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+		}
 		
 
 		// Date : 2005-03-09,   By Lee Ki-hwan
@@ -352,10 +356,11 @@ void CUIEditBox::Render()
 #if defined(G_THAI)
 		nCursorX = nX + FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
 #else
-#if !defined(G_RUSSIA)
-		int n2ByteChar = Get2ByteCharCount ( m_pInputBuffer, m_nCursorIndex );
-		nCursorX -= n2ByteChar * _pUIFontTexMgr->GetFontSpacing(); 
-#endif
+		if (g_iCountry != RUSSIA)
+		{
+			int n2ByteChar = Get2ByteCharCount ( m_pInputBuffer, m_nCursorIndex );
+			nCursorX -= n2ByteChar * _pUIFontTexMgr->GetFontSpacing(); 
+		}
 #endif
 		int	nCursorY = nY;
 
@@ -386,12 +391,16 @@ void CUIEditBox::Render()
 			}
 			else
 			{
-#if defined(G_RUSSIA)
+
+				if (g_iCountry == RUSSIA)
+				{
 					pDrawPort->PutTextEx( CTString("|"), nCursorX, nCursorY-2, m_nTextColor );
-#else
+				}
+				else
+				{
 					char	cCursor = 30;
 					pDrawPort->PutTextCharEx( &cCursor, 1, nCursorX - 1, nCursorY, m_nTextColor );
-#endif
+				}
 			}
 		}
 	}
@@ -447,14 +456,17 @@ void CUIEditBox::OnRender( CDrawPort* pDraw )
 	{
 		if (m_pInputBuffer != NULL)
 		{
-#ifdef G_RUSSIA
-			int nShowCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
-			std::string strTemp = &m_pInputBuffer[m_nFirstShowChar];
-			strTemp = strTemp.substr(0, nShowCnt);
-			pDraw->PutTextCharEx( (char*)strTemp.c_str(), nLength, nX + m_nCursorSX, nY );
-#else // G_RUSSIA
-			pDraw->PutTextCharEx( &m_pInputBuffer[m_nFirstShowChar], nLength, nX + m_nCursorSX, nY );
-#endif // G_RUSSIA
+			if (g_iCountry == RUSSIA)
+			{
+				int nShowCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
+				std::string strTemp = &m_pInputBuffer[m_nFirstShowChar];
+				strTemp = strTemp.substr(0, nShowCnt);
+				pDraw->PutTextCharEx( (char*)strTemp.c_str(), nLength, nX + m_nCursorSX, nY );
+			}
+			else
+			{
+				pDraw->PutTextCharEx( &m_pInputBuffer[m_nFirstShowChar], nLength, nX + m_nCursorSX, nY );
+			}
 		}
 	}
 
@@ -478,34 +490,39 @@ void CUIEditBox::OnRender( CDrawPort* pDraw )
 		}
 
 		int nCursorX = 0;
-#if defined(G_RUSSIA)
-		std::string strTemp = m_pInputBuffer;
 
-		if (m_bIsPWEditBox)
+		if (g_iCountry == RUSSIA)
 		{
-			int nMax = strTemp.size();
-			strTemp = "";
-			
-			for (int c = 0; c < nMax; ++c)
-			{
-				strTemp += "*";
-			}
-		}
+			std::string strTemp = m_pInputBuffer;
 
-		strTemp = strTemp.substr(m_nFirstShowChar, m_nCursorIndex - m_nFirstShowChar);
-		nCursorX = m_nCursorSX + nX + UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, (char*)strTemp.c_str());
-#else	// G_RUSSIA
-		nCursorX = m_nCursorSX + nX + ( m_nCursorIndex - m_nFirstShowChar ) *
-			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-#endif	// G_RUSSIA
+			if (m_bIsPWEditBox)
+			{
+				int nMax = strTemp.size();
+				strTemp = "";
+
+				for (int c = 0; c < nMax; ++c)
+				{
+					strTemp += "*";
+				}
+			}
+
+			strTemp = strTemp.substr(m_nFirstShowChar, m_nCursorIndex - m_nFirstShowChar);
+			nCursorX = m_nCursorSX + nX + UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, (char*)strTemp.c_str());
+		}
+		else
+		{
+			nCursorX = m_nCursorSX + nX + ( m_nCursorIndex - m_nFirstShowChar ) *
+						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+		}
 
 #if defined(G_THAI)
 		nCursorX = m_nCursorSX + nX + FindThaiLen(m_pInputBuffer,m_nFirstShowChar, m_nCursorIndex);
 #else
-#if !defined(G_RUSSIA)
-		int n2ByteChar = Get2ByteCharCount ( m_pInputBuffer, m_nCursorIndex );
-		nCursorX -= n2ByteChar * _pUIFontTexMgr->GetFontSpacing(); 
-#endif
+		if (g_iCountry != RUSSIA)
+		{
+			int n2ByteChar = Get2ByteCharCount ( m_pInputBuffer, m_nCursorIndex );
+			nCursorX -= n2ByteChar * _pUIFontTexMgr->GetFontSpacing(); 
+		}
 #endif
 		int	nCursorY = nY;
 
@@ -537,13 +554,16 @@ void CUIEditBox::OnRender( CDrawPort* pDraw )
 			}
 			else
 			{
-#if defined(G_RUSSIA)
+				if (g_iCountry == RUSSIA)
+				{
 					pDraw->PutTextEx( CTString("|"), nCursorX, nCursorY-2, m_nTextColor );
-#else
+				}
+				else
+				{
 					char	cCursor = 30;
 					pDraw->PutTextCharEx( &cCursor, 1, nCursorX - 1, nCursorY, m_nTextColor );
 					nLength += 1;
-#endif
+				}
 			}
 		}
 	}
@@ -776,6 +796,10 @@ void CUIEditBox::SetString( char *pcString )
 	m_pInputBuffer[nLength] = NULL;
 	m_nCurCharCount = nLength;
 	m_nCursorIndex = m_nCurCharCount;
+	m_nFirstShowChar = 0;
+	// [091104] 보이는 문자수 다시 체크
+	if (g_iCountry == RUSSIA)
+		m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, pcString, m_nWidth);
 
 	if( m_nFirstShowChar + m_nShowCharCount < m_nCursorIndex )
 	{
@@ -784,11 +808,6 @@ void CUIEditBox::SetString( char *pcString )
 		if( Is2ByteChar( m_nFirstShowChar ) )
 			m_nFirstShowChar++;
 	}
-
-	// [091104] 보이는 문자수 다시 체크
-#if defined(G_RUSSIA)
-	m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, pcString, m_nWidth);
-#endif
 }
 
 void CUIEditBox::ClearInputBuffer()
@@ -818,8 +837,8 @@ BOOL CUIEditBox::Is2ByteChar( int nCharIndex, int nFirstCheck )
 	// SingleByte CodeSet
 	// connie [2009/9/11] - 
 	if( g_iCountry ==THAILAND || g_iCountry == BRAZIL  || g_iCountry == GERMANY || g_iCountry == SPAIN
-		|| g_iCountry == FRANCE || g_iCountry == POLAND || g_iCountry == RUSSIA || g_iCountry == TURKEY || g_iCountry == MEXICO
-		|| g_iCountry == USA_SPAIN || g_iCountry == ITALY || g_iCountry == NETHERLANDS)//FRANCE_SPAIN_CLOSEBETA_NA_20081124
+		|| g_iCountry == FRANCE || g_iCountry == POLAND || g_iCountry == RUSSIA || g_iCountry == MEXICO
+		|| g_iCountry == ITALY )//FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	{
 		return b2ByteChar;
 	}
@@ -922,10 +941,13 @@ void CUIEditBox::InsertChar( int nInsertPos, char cInsert )
 	// If input buffer is not enough
 	if( m_nCurCharCount >= m_nMaxCharCount )
 		return;
-#if defined(G_RUSSIA)
-	if( nInsertPos >= m_nMaxCharCount )
-		return;
-#endif
+
+	if (g_iCountry == RUSSIA)
+	{
+		if( nInsertPos >= m_nMaxCharCount )
+			return;
+	}
+
 	// If cursor locates in last position of input string
 	if( nInsertPos == m_nCurCharCount )
 	{
@@ -951,9 +973,9 @@ void CUIEditBox::InsertChar( int nInsertPos, char cInsert )
 	m_nCursorIndex++;
 	m_nCurCharCount++;
 
-#if defined(G_RUSSIA)
-	m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
-#endif
+	if (g_iCountry == RUSSIA)
+		m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
+
 	// Adjust position of first shown character
 	if( m_nCursorIndex > m_nFirstShowChar + m_nShowCharCount )
 	{
@@ -1011,9 +1033,9 @@ void CUIEditBox::InsertChars( int nInsertPos, char *pcInsert )
 	m_nCursorIndex += nLength;
 	m_nCurCharCount += nLength;
 
-#if defined(G_RUSSIA)
-	m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
-#endif
+	if (g_iCountry == RUSSIA)
+		m_nShowCharCount = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], m_nWidth);
+
 	// Adjust position of first shown character
 	if( m_nCursorIndex > m_nFirstShowChar + m_nShowCharCount )
 	{
@@ -1120,7 +1142,6 @@ void CUIEditBox::InsertIMEChar( char *pcInsert, BOOL bOnComposition )
 	// Complete composition
 	else if( m_bOnComposition && !bOnComposition )
 	{
-#if !defined(G_JAPAN)
 		{
 			// 한자를 필터링 한다.
 			const unsigned char tmpChar = 0xC9;
@@ -1159,16 +1180,6 @@ void CUIEditBox::InsertIMEChar( char *pcInsert, BOOL bOnComposition )
 				m_bOnComposition = FALSE;
 			}
 		}
-#else	// g_iCountry == JAPAN
-		{
-			// Insert characters
-			m_pInputBuffer[m_nCursorIndex] = pcInsert[0];
-			m_pInputBuffer[m_nCursorIndex + 1] = pcInsert[1];
-			// Increase cursor index
-			m_nCursorIndex += 2;
-			m_bOnComposition = FALSE;
-		}
-#endif
 	}
 }
 
@@ -1182,9 +1193,8 @@ void CUIEditBox::DeleteChar( int nDeletePos )
 //	if(Is2ByteChar(nDeletePos))
 	// connie [2009/9/11] - 
 	if( (m_pInputBuffer[nDeletePos] & 0x80)  && (g_iCountry != THAILAND ) && (g_iCountry != BRAZIL ) && (g_iCountry != GERMANY ) 
-		&& (g_iCountry != USA_SPAIN) && (g_iCountry != SPAIN) && (g_iCountry != MEXICO) && (g_iCountry != FRANCE) && (g_iCountry != POLAND)
-		&& (g_iCountry != TURKEY) && (g_iCountry != RUSSIA) && (g_iCountry != ITALY) && (g_iCountry != NETHERLANDS)
-		&& !(g_iCountry == JAPAN && ((UCHAR)m_pInputBuffer[nDeletePos] >= 0xa1 && (UCHAR)m_pInputBuffer[nDeletePos] <= 0xdf)) )
+		&& (g_iCountry != SPAIN) && (g_iCountry != MEXICO) && (g_iCountry != FRANCE) && (g_iCountry != POLAND)
+		&& (g_iCountry != RUSSIA) && (g_iCountry != ITALY) )
 		{
 			if( m_nCurCharCount < 2 || m_nCurCharCount == nDeletePos )
 				return;
@@ -1293,13 +1303,18 @@ WMSG_RESULT CUIEditBox::MouseMessage( MSG *pMsg )
 			if( m_nCurCharCount > 0 && m_bMoveCursor )
 			{
 				int	nPos = 0;
-#ifdef G_RUSSIA
-				nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], nX - GetAbsPosX());
-#else
-				int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
-				int	nAbsX = GetAbsPosX() - nFontWidth / 2;
-				nPos = ( nX - nAbsX ) / nFontWidth;
-#endif // G_RUSSIA
+
+				if (g_iCountry == RUSSIA)
+				{
+					nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], nX - GetAbsPosX());
+				}
+				else
+				{
+					int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
+					int	nAbsX = GetAbsPosX() - nFontWidth / 2;
+					nPos = ( nX - nAbsX ) / nFontWidth;
+				}
+
 				if( nPos >= 0 )
 				{
 					 if( nPos > m_nShowCharCount )
@@ -1390,10 +1405,10 @@ WMSG_RESULT CUIEditBox::KeyMessage( MSG *pMsg )
 	{
 		if( m_bMoveCursor )
 		{
-			if (m_bCopyAndPaste == false || m_nCopyStartPos < 0)
-				DeleteChar( m_nCursorIndex );
-			else
+			if (IsBlock() == true && m_bCopyAndPaste == true)
 				DelChars();
+			else
+				DeleteChar( m_nCursorIndex );
 		}
 
 		ResetSelArea();
@@ -1401,53 +1416,46 @@ WMSG_RESULT CUIEditBox::KeyMessage( MSG *pMsg )
 	}
 	else if( pMsg->wParam == VK_BACK )
 	{
-		if( m_nCursorIndex > 0 )
+		if (IsBlock() == true && m_bCopyAndPaste == true)
+			DelChars();
+		else if(m_nCursorIndex > 0)
 		{
-			if (m_bCopyAndPaste == false || m_nCopyStartPos < 0)
-			{
-				MoveCursor( MD_LEFT );
-				DeleteChar( m_nCursorIndex );
-			}
-			else
-			{
-				DelChars();
-			}		
-		}
-		else
-		{
-			if (m_bCopyAndPaste == true && m_nCopyStartPos >= 0)
-				DelChars();
+			MoveCursor( MD_LEFT );
+			DeleteChar( m_nCursorIndex );
 		}
 
 		SetCopyPos();
 		return WMSG_SUCCESS;
 	}
 
-	if ((GetKeyState(VK_CONTROL) & 0x8000))
+	if (m_bCopyAndPaste == true)
 	{
-		if (pMsg->wParam == 'V' || pMsg->wParam == 'v')
+		if ((GetKeyState(VK_CONTROL) & 0x8000))
 		{
-			if (Paste(pMsg->hwnd) == true)
+			if (pMsg->wParam == 'V' || pMsg->wParam == 'v')
 			{
-				ResetSelArea();
-				return WMSG_SUCCESS;
+				if (Paste(pMsg->hwnd) == true)
+				{
+					ResetSelArea();
+					return WMSG_SUCCESS;
+				}
+			}
+			else if (pMsg->wParam == 'C' || pMsg->wParam == 'c')
+			{
+				if (Copy(pMsg->hwnd) == true)
+					return WMSG_SUCCESS;
+			}
+			else if (pMsg->wParam == 'X' || pMsg->wParam == 'x')
+			{
+				if (Copy(pMsg->hwnd) == true)
+				{
+					DelChars();
+					ResetSelArea();
+					return WMSG_SUCCESS;
+				}
 			}
 		}
-		else if (pMsg->wParam == 'C' || pMsg->wParam == 'c')
-		{
-			if (Copy(pMsg->hwnd) == true)
-				return WMSG_SUCCESS;
-		}
-		else if (pMsg->wParam == 'X' || pMsg->wParam == 'x')
-		{
-			if (Copy(pMsg->hwnd) == true)
-			{
-				DelChars();
-				ResetSelArea();
-				return WMSG_SUCCESS;
-			}
-		}
-	}
+	}	
 
 	// 이기환 수정 시작 (11. 15) : 한글 조합창 보이지 않도록
 	/*else if ( pMsg->wParam == VK_PROCESSKEY )
@@ -1515,8 +1523,8 @@ WMSG_RESULT CUIEditBox::CharMessage( MSG *pMsg )
 	}
 	// connie [2009/9/11] - 
 	else if(g_iCountry == BRAZIL || g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == MEXICO || g_iCountry == FRANCE || g_iCountry == POLAND
-			|| g_iCountry == USA_SPAIN || g_iCountry == TURKEY || g_iCountry == ITALY || g_iCountry == NETHERLANDS)//FRANCE_SPAIN_CLOSEBETA_NA_20081124 
-#ifdef ADD_CHAT_SPECIALCHAR_DISABLE_NA_20090210
+			|| g_iCountry == ITALY)//FRANCE_SPAIN_CLOSEBETA_NA_20081124 
+//#ifdef ADD_CHAT_SPECIALCHAR_DISABLE_NA_20090210
 	{
 		if ( IsGamigo( g_iCountry ) )
 		{
@@ -1566,37 +1574,10 @@ WMSG_RESULT CUIEditBox::CharMessage( MSG *pMsg )
 				InsertChar(m_nCursorIndex, pMsg->wParam);
 		}
 		else
+		{
 			InsertChar(m_nCursorIndex, pMsg->wParam);
+		}
 	}
-#else
-		if(g_iCountry == ITALY)
-		{
-			extern UBYTE	_abKeysPressed[256];
-
-			if(_abKeysPressed[KID_LCONTROL])
-			{
-				INDEX	iScanCode = ( pMsg->lParam >> 16 ) & 0x1FF;
-				if(iScanCode == 38) // iScanCode ==  'l'
-				{
-					InsertChar(m_nCursorIndex, (char)243);
-				}
-				else if(iScanCode == 36 || iScanCode == 37)
-				{
-					InsertChar(m_nCursorIndex, (char)(iScanCode+174));
-				}
-			}
-			else
-			{
-				InsertChar(m_nCursorIndex, pMsg->wParam);
-			}
-		}
-		else
-		{
-			InsertChar(m_nCursorIndex, pMsg->wParam);
-		}
-#endif
-	else if(g_iCountry == JAPAN && ( pMsg->wParam >= 0xa1 && pMsg->wParam <=0xdf ))
-		InsertChar( m_nCursorIndex, pMsg->wParam );
 	else if( g_iCountry == RUSSIA )
 	{
 		if( ( pMsg->wParam >= 32 && pMsg->wParam < 128 ) || ( pMsg->wParam >= 192 && pMsg->wParam <= 255 ) || 
@@ -1636,56 +1617,10 @@ WMSG_RESULT CUIEditBox::IMEMessage( MSG *pMsg )
 	{
 	case KOREA : 
 		return IMEMessageKOR ( pMsg );
-
-	case TAIWAN :
-	case TAIWAN2 :
-	case HONGKONG :
-		// If editbox is not focused
-		// 이기환 주석 처리(05.01.04): 한국어 버젼에서 멀티 에디트 박스에서 중지 시켜 버리는 경우가 있음 
-		//                           중국어 버젼 개발 시 참고....
-		extern INDEX	g_iEnterChat;
-		if( !IsFocused() && g_iEnterChat )
-		{
-			StopComposition ();	
-			m_bOnComposition = FALSE;
-			return WMSG_FAIL;
-		}
-
-		return IMEMessageCHT ( pMsg );
-
-	case CHINA : 
-		return IMEMessageCHS ( pMsg );
 	
 	case THAILAND :
 		return IMEMessageTHAI ( pMsg );
 
-	case JAPAN :
-	/*	extern INDEX	g_iEnterChat;
-		if( !IsFocused() && g_iEnterChat )
-		{
-			
-			StopComposition ();	
-			m_bOnComposition = FALSE;
-			return WMSG_FAIL;
-		}*/
-
-	//	SendMessage ( _hwndMain, WM_IME_NOTIFY, IMN_CLOSESTATUSWINDOW, NULL );
-		return IMEMessageJPN( pMsg );
-
-	case MALAYSIA:
-		// If editbox is not focused
-		// 이기환 주석 처리(05.01.04): 한국푳E버젼에서 멀티 에디트 박스에서 중햨E시켜 버리는 경퓖E?있음 
-		//                           중국푳E버젼 개발 시 혖E갋...
-		extern INDEX	g_iEnterChat;
-		if( !IsFocused() && g_iEnterChat )
-		{
-			
-			StopComposition ();	
-			m_bOnComposition = FALSE;
-			return WMSG_FAIL;
-		}
-
-		return IMEMessageCHT ( pMsg );
 	case USA:
 		return IMEMessageUSA ( pMsg );	
 	case BRAZIL:
@@ -1694,12 +1629,8 @@ WMSG_RESULT CUIEditBox::IMEMessage( MSG *pMsg )
 	case SPAIN://FRANCE_SPAIN_CLOSEBETA_NA_20081124
 	case FRANCE:
 	case POLAND:
-	case TURKEY:
 	case MEXICO:
 	case ITALY:
-	case USA_FRANCE:
-	case USA_SPAIN:
-	case NETHERLANDS:
 		return IMEMessageBRZ ( pMsg );
 	}
 	
@@ -2604,6 +2535,8 @@ CUIBase* CUIEditBox::Clone()
 {
 	CUIEditBox* pEdit = new CUIEditBox(*this);
 
+	erase_pointer();
+
 	pEdit->initialize();
 
 	CUIRectSurface* pRS = NULL;
@@ -2666,13 +2599,18 @@ WMSG_RESULT CUIEditBox::OnLButtonDown( UINT16 x, UINT16 y )
 	if( m_nCurCharCount > 0 && m_bMoveCursor )
 	{
 		int	nPos = 0;
-#ifdef G_RUSSIA
-		nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], x - GetAbsPosX());
-#else
-		int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
-		int	nAbsX = GetAbsPosX() - nFontWidth / 2;
-		nPos = ( x - nAbsX ) / nFontWidth;
-#endif // G_RUSSIA
+
+		if (g_iCountry == RUSSIA)
+		{
+			nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], x - GetAbsPosX());
+		}
+		else
+		{
+			int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
+			int	nAbsX = GetAbsPosX() - nFontWidth / 2;
+			nPos = ( x - nAbsX ) / nFontWidth;
+		}
+
 		if( nPos >= 0 )
 		{
 			if( nPos > m_nShowCharCount )
@@ -2721,13 +2659,17 @@ WMSG_RESULT CUIEditBox::OnMouseMove( UINT16 x, UINT16 y, MSG* pMsg )
 		}
 
 		int	nPos = 0;
-#ifdef G_RUSSIA
-		nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], x - GetAbsPosX());
-#else
-		int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
-		int	nAbsX = GetAbsPosX() - nFontWidth / 2;
-		nPos = ( x - nAbsX ) / nFontWidth;
-#endif // G_RUSSIA
+
+		if (g_iCountry == RUSSIA)
+		{
+			nPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, &m_pInputBuffer[m_nFirstShowChar], x - GetAbsPosX());
+		}
+		else
+		{
+			int	nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
+			int	nAbsX = GetAbsPosX() - nFontWidth / 2;
+			nPos = ( x - nAbsX ) / nFontWidth;
+		}
 
 		if( nPos >= 0 )
 		{
@@ -2768,7 +2710,7 @@ WMSG_RESULT CUIEditBox::OnCloseProc()
 
 bool CUIEditBox::Paste( HWND hWnd )
 {
-	if (m_bCopyAndPaste == false || IsFocused() == FALSE)
+	if (IsFocused() == FALSE)
 		return false;
 
 	if (::OpenClipboard(hWnd))
@@ -2799,10 +2741,7 @@ bool CUIEditBox::Paste( HWND hWnd )
 
 bool CUIEditBox::Copy( HWND hWnd )
 {
-	if (m_bCopyAndPaste == false || IsFocused() == FALSE)
-		return false;
-
-	if (m_nCopyStartPos < 0)
+	if (m_nCopyStartPos < 0 || IsFocused() == FALSE)
 		return false;
 
 	if (::OpenClipboard(hWnd))
@@ -2840,7 +2779,7 @@ bool CUIEditBox::Copy( HWND hWnd )
 
 void CUIEditBox::SetCopyPos()
 {
-	if (m_bCopyAndPaste == false || m_pImgSelText == NULL || IsFocused() == FALSE)
+	if (m_pImgSelText == NULL || IsFocused() == FALSE)
 		return;
 
 	if ((GetKeyState(VK_SHIFT) & 0x8000) || GetKeyState(VK_LBUTTON) & 0x8000)
@@ -2877,7 +2816,7 @@ void CUIEditBox::SetCopyPos()
 
 void CUIEditBox::DelChars()
 {
-	if (m_bCopyAndPaste == false || IsFocused() == FALSE)
+	if (IsFocused() == FALSE)
 		return;
 
 	int nCount = 0;
@@ -2916,4 +2855,27 @@ void CUIEditBox::SetCopyStartPos()
 		else
 			m_nCopyStartPos = m_nCursorIndex;
 	}
+}
+
+void CUIEditBox::erase_pointer()
+{
+	// 클론 전에 호출하여, 원본 포인터를 보호한다.
+	m_pInputBuffer = NULL;
+	m_pTempBuffer = NULL;
+	m_pPWBuffer = NULL;
+
+	m_pInputCallback = NULL;
+
+	m_pImgSelText = NULL;
+}
+
+bool CUIEditBox::IsBlock()
+{
+	if (m_nCopyStartPos < 0)
+		return false;
+
+	if (m_nCopyStartPos == m_nCursorIndex)
+		return false;
+	
+	return true;
 }

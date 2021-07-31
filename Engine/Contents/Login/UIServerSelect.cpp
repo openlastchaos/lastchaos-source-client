@@ -11,10 +11,12 @@
 
 #include "ServerSelect.h"
 #include "BackImageManager.h"
+#include <Engine/Contents/login/UIHardCoreWarning.h>
+#include <Engine/Interface/UIRadar.h>
 
-#ifdef EUROUPEAN_SERVER_LOGIN
+//#ifdef EUROUPEAN_SERVER_LOGIN
 extern INDEX g_iConnectEuroupean;
-#endif
+//#endif
 extern INDEX g_iCountry;
 
 class CmdServerOkCancel : public Command
@@ -380,10 +382,15 @@ CTString CUIServerSelect::GetServerName( int serverNum )
 	if (serverNum < 0 && serverNum >= SERVER_MAX)
 		return CTString("");
 
-#ifdef EUROUPEAN_SERVER_LOGIN
-	if (g_iConnectEuroupean)
-		return m_strServerName[LOCAL_EUROPEAN][serverNum];
-#endif // EUROUPEAN_SERVER_LOGIN
+//#ifdef EUROUPEAN_SERVER_LOGIN
+	
+	if (IsGamigo(g_iCountry) == TRUE)
+	{
+		if (g_iConnectEuroupean)
+			return m_strServerName[LOCAL_EUROPEAN][serverNum];
+	}
+
+//#endif // EUROUPEAN_SERVER_LOGIN
 
 	return m_strServerName[LOCAL_NONE][serverNum];
 }
@@ -465,8 +472,12 @@ void CUIServerSelect::ConnectServer()
 
 	if (_pNetwork->m_iServerType == SERVER_TYPE_HARDCORE)
 		pUIManager->InitHardCoreCreate();
+	else
+		pUIManager->GetHardCoreWarning()->Hide(TRUE);
 	
 	_pGameState->ClearCharacterSlot();
+
+	pUIManager->GetRadar()->updateChannelInfo();
 }
 
 CTString CUIServerSelect::GetChannelSubString( int nServer, int nChannel )
@@ -506,10 +517,15 @@ CTString CUIServerSelect::GetChannelSubString( int nServer, int nChannel )
 
 	nStrIdx = getNomalChannelStrIdx(channelNum);
 
-#ifdef EUROUPEAN_SERVER_LOGIN
-	if(g_iConnectEuroupean)
-		nStrIdx = getEUChannelStrIdx(channelNum);
-#endif
+//#ifdef EUROUPEAN_SERVER_LOGIN
+	
+	if (IsGamigo(g_iCountry) == TRUE)
+	{
+		if(g_iConnectEuroupean)
+			nStrIdx = getEUChannelStrIdx(channelNum);
+	}
+
+//#endif
 
 	if (g_iCountry == THAILAND)
 	{

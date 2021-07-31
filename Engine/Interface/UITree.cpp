@@ -756,6 +756,16 @@ WMSG_RESULT CUITree::IMEMessageProc( MSG* pMsg )
 	return ret;
 }
 
+// UIProductNPC 처럼 퀘스트 형식 메뉴가 나오고 실행시키면, 선택이 되어 버리는 경우가 있기 때문에
+// Enter 상태 체크 추가함.
+WMSG_RESULT CUITree::OnLButtonUp( UINT16 x, UINT16 y )
+{
+	if (m_bEnter == true)
+		CUIBase::OnLButtonUp(x, y);
+
+	return WMSG_FAIL;
+}
+
 void CUITree::SetScrollPos( int nPos )
 {
 	if (m_pScroll == NULL)

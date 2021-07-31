@@ -43,7 +43,7 @@
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Network/Server.h>
 
-#include <Engine/Interface/UIFiltering.h>
+#include <Engine/Contents/Base/ChatBlockListUI.h>
 #include <Engine/Contents/Base/ChattingUI.h>
 
 #include <Engine/Interface/UICommand.h>

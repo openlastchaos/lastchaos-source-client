@@ -818,7 +818,11 @@ void CUIAuctionNew::ShowMsgBuy(__int64 nas)
 	MsgBoxInfo.SetMsgBoxInfo( _S(4302, "아이템 등록"), UMBS_YESNO, UI_AUCTION, MSGCMD_AUCTION_BUYITEM );
 
 	MsgBoxInfo.AddString(_S(5983, "아이템을 구매 하시겠습니까?"));
-	MsgBoxInfo.AddString( CTString(0, _S(5984, "가격: %d"), nas) );
+
+	CTString strTemp;
+	strTemp.PrintF("%I64d", nas);
+	pUIMgr->InsertCommaToString(strTemp);
+	MsgBoxInfo.AddString( CTString(0, _S(5984, "가격: %s"), strTemp) );
 
 	pUIMgr->CreateMessageBox(MsgBoxInfo);
 }

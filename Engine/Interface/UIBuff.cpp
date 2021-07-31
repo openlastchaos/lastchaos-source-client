@@ -10,9 +10,8 @@
 
 
 extern INDEX g_iCountry;
-#if defined(G_RUSSIA)
-	extern CFontData *_pfdDefaultFont;
-#endif
+extern CFontData *_pfdDefaultFont;
+
 // ----------------------------------------------------------------------------
 // Name : Set()
 // Desc :
@@ -65,6 +64,7 @@ bool CBuffIcon::IsUpSkill() const
 	case 248: // 숙련도 증폭
 	case 249: // 드롭률 증폭
 	case 250: // 나스 증폭 
+	case 1385: // 펫 경험치 증폭.
 	case 1389:
 	case 1390:
 	case 1391:
@@ -215,46 +215,25 @@ void CUIBuff::RenderToolTip( int nWhichBuff, __int64 llCurTime )
 		switch( nWhichBuff )
 		{
 		case MY_BUFF:
-
-#if defined(G_JAPAN )
 			{
 				llRemainTime = m_aMyBuff[nSelBuff].GetRemainTime( llCurTime );
+				iItemIndex = m_aMyBuff[nSelBuff].GetItemIndex();
+				bUpSkill = m_aMyBuff[nSelBuff].IsUpSkill();
 			}
-#else
-			{
-				llRemainTime = m_aMyBuff[nSelBuff].GetRemainTime( llCurTime );
-			}
-#endif
-			iItemIndex = m_aMyBuff[nSelBuff].GetItemIndex();
-			bUpSkill = m_aMyBuff[nSelBuff].IsUpSkill();
 			break;
-
 		case PARTY_BUFF:
-#if defined( G_JAPAN )
 			{
 				llRemainTime = m_aPartyBuff[nSelBuff].GetRemainTime( llCurTime );
+				iItemIndex = m_aPartyBuff[nSelBuff].GetItemIndex();
+				bUpSkill = m_aPartyBuff[nSelBuff].IsUpSkill();
 			}
-#else
-			{
-				llRemainTime = m_aPartyBuff[nSelBuff].GetRemainTime( llCurTime );
-			}
-#endif
-			iItemIndex = m_aPartyBuff[nSelBuff].GetItemIndex();
-			bUpSkill = m_aPartyBuff[nSelBuff].IsUpSkill();
 			break;
-
 		case TARGET_BUFF:
-#if defined( G_JAPAN )
 			{
 				llRemainTime = m_aTargetBuff[nSelBuff].GetRemainTime( llCurTime );
+				iItemIndex = m_aTargetBuff[nSelBuff].GetItemIndex();
+				bUpSkill = m_aTargetBuff[nSelBuff].IsUpSkill();
 			}
-#else
-			{
-				llRemainTime = m_aTargetBuff[nSelBuff].GetRemainTime( llCurTime );
-			}
-#endif
-			iItemIndex = m_aTargetBuff[nSelBuff].GetItemIndex();
-			bUpSkill = m_aTargetBuff[nSelBuff].IsUpSkill();
 			break;
 		}
 
@@ -294,24 +273,13 @@ void CUIBuff::RenderToolTip( int nWhichBuff, __int64 llCurTime )
 					tv_str.PrintF(_S(2513, "%d분 " ), tv_min); 
 					m_strBuffInfo[m_nRemainTimeLine]+=tv_str; 
 				}
-#if defined(G_JAPAN)	// 일본은 초 단위 표시
-				{
-					if( tv_sec >0) 
-					{
-						tv_str.PrintF(_S(2514, "%d초 " ), tv_sec); 
-						m_strBuffInfo[m_nRemainTimeLine]+=tv_str; 
-					}
-				}
-#else
+
 				if( (tv_day <= 0 && tv_hour <= 0 && tv_min <= 0) && tv_sec > 0) 
 				{
 					tv_str.PrintF(_S(2514, "%d초 " ), tv_sec); 
 					m_strBuffInfo[m_nRemainTimeLine]+=tv_str; 
 				}
-#endif
-//				if( llRemainTime > 0 ) m_strBuffInfo[m_nRemainTimeLine].PrintF( _S( 1034, "남은 시간 : %I64d초" ), llRemainTime );
 			}
-			
 		}
 	}
 	int	nInfoX = m_rcBuffInfo.Left + 12;
@@ -1417,10 +1385,6 @@ void CUIBuff::AddTargetBuff( BuffInfo &rBuffInfo )
 	// Good
 	if( rSkillData.GetFlag() & SF_FORHELP )
 	{
-#if defined(G_JAPAN)		
-		//if(g_iCountry != JAPAN || !(ItemData.GetFlag()&ITEM_FLAG_CASH))// 일본 유료 아이템 표시 삭제
-		if(!(ItemData.GetFlag()&ITEM_FLAG_CASH))// 일본 유료 아이템 표시 삭제
-#endif
 		{
 			m_aTargetBuff[m_ubTargetGoodCount].Set( rBuffInfo.m_slItemIndex, rBuffInfo.m_slSkillIndex, rBuffInfo.m_sbLevel,
 													rBuffInfo.m_slRemain, rBuffInfo.m_llStartTime );
@@ -1761,7 +1725,7 @@ void CUIBuff::AddBuffInfoString( CTString &strBuffInfo, COLOR colBuffInfo )
 		
 #else
 
-#if defined(G_RUSSIA)
+	if (g_iCountry == RUSSIA)
 	{
 		INDEX iStrSub = strBuffInfo.FindSubstr("\n");
 		if(iStrSub != -1)
@@ -1777,18 +1741,11 @@ void CUIBuff::AddBuffInfoString( CTString &strBuffInfo, COLOR colBuffInfo )
 			AddBuffInfoString( strTemp2, colBuffInfo );
 			return;
 		}
-	}
-#endif//#if defined(RUSSIA)
 
-		// If length of string is less than max char
-#if defined(G_RUSSIA)
 		int nInfoWidth = _pUIFontTexMgr->GetFontSpacing() + MAX_BUFFINFO_CHAR *
-					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
 		if( UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strBuffInfo.str_String ) <= nInfoWidth )
-#else
-		if( nLength <= MAX_BUFFINFO_CHAR )
-#endif
 		{
 			m_strBuffInfo[m_nCurInfoLines] = strBuffInfo;
 			m_colBuffInfo[m_nCurInfoLines++] = colBuffInfo;
@@ -1796,7 +1753,6 @@ void CUIBuff::AddBuffInfoString( CTString &strBuffInfo, COLOR colBuffInfo )
 		// Need multi-line
 		else
 		{
-#if defined(G_RUSSIA)
 			int		nSplitPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, strBuffInfo.str_String, nInfoWidth);
 
 			for( int iPos=nSplitPos; iPos >=0; --iPos )
@@ -1807,21 +1763,6 @@ void CUIBuff::AddBuffInfoString( CTString &strBuffInfo, COLOR colBuffInfo )
 					break;
 				}
 			}
-#else
-			// Check splitting position for 2 byte characters
-			int		nSplitPos = MAX_BUFFINFO_CHAR;
-			BOOL	b2ByteChar = FALSE;
-			for( int iPos = 0; iPos < nSplitPos; iPos++ )
-			{
-				if( strBuffInfo[iPos] & 0x80 )
-					b2ByteChar = !b2ByteChar;
-				else
-					b2ByteChar = FALSE;
-			}
-
-			if( b2ByteChar )
-				nSplitPos--;
-#endif
 
 			// Split string
 			CTString	strTemp;
@@ -1844,6 +1785,55 @@ void CUIBuff::AddBuffInfoString( CTString &strBuffInfo, COLOR colBuffInfo )
 
 			AddBuffInfoString( strTemp, colBuffInfo );
 		}
+	}
+	else
+	{
+		// If length of string is less than max char
+		if( nLength <= MAX_BUFFINFO_CHAR )
+		{
+			m_strBuffInfo[m_nCurInfoLines] = strBuffInfo;
+			m_colBuffInfo[m_nCurInfoLines++] = colBuffInfo;
+		}
+		// Need multi-line
+		else
+		{
+			// Check splitting position for 2 byte characters
+			int		nSplitPos = MAX_BUFFINFO_CHAR;
+			BOOL	b2ByteChar = FALSE;
+			for( int iPos = 0; iPos < nSplitPos; iPos++ )
+			{
+				if( strBuffInfo[iPos] & 0x80 )
+					b2ByteChar = !b2ByteChar;
+				else
+					b2ByteChar = FALSE;
+			}
+
+			if( b2ByteChar )
+				nSplitPos--;
+
+			// Split string
+			CTString	strTemp;
+			strBuffInfo.Split( nSplitPos, m_strBuffInfo[m_nCurInfoLines], strTemp );
+			m_colBuffInfo[m_nCurInfoLines++] = colBuffInfo;
+
+			// Trim space
+			if( strTemp[0] == ' ' )
+			{
+				int	nTempLength = strTemp.Length();
+				int iPos;
+				for( iPos = 1; iPos < nTempLength; iPos++ )
+				{
+					if( strTemp[iPos] != ' ' )
+						break;
+				}
+
+				strTemp.TrimLeft( strTemp.Length() - iPos );
+			}
+
+			AddBuffInfoString( strTemp, colBuffInfo );
+		}
+	}
+
 #endif
 }
 
@@ -1863,11 +1853,7 @@ void CUIBuff::GetBuffInfo( int nItemIndex, int nSkillIndex, int nSkillLevel, int
 	{
 		if( nSkillLevel > 0 )
 		{
-#if defined(G_RUSSIA)
-				strTemp.PrintF( "%s %s %d", rSelSkill.GetName(), _S( 4414, "LV" ),nSkillLevel );
-#else
-				strTemp.PrintF( "%s Lv %d", rSelSkill.GetName(), nSkillLevel );
-#endif
+			strTemp.PrintF( "%s %s %d", rSelSkill.GetName(), _S( 4414, "LV" ),nSkillLevel );
 		}
 		else
 			strTemp.PrintF( "%s", rSelSkill.GetName() );
@@ -1878,11 +1864,7 @@ void CUIBuff::GetBuffInfo( int nItemIndex, int nSkillIndex, int nSkillLevel, int
 		//CItemData	&rItemData = _pNetwork->GetItemData( nItemIndex );
 		if( nSkillLevel > 0 )
 		{
-#if defined(G_RUSSIA)
-				strTemp.PrintF( "%s %s %d", szItemName, _S( 4414, "LV" ), nSkillLevel );
-#else
-				strTemp.PrintF( "%s Lv %d", szItemName, nSkillLevel );
-#endif
+			strTemp.PrintF( "%s %s %d", szItemName, _S( 4414, "LV" ), nSkillLevel );
 		}
 		else
 			strTemp.PrintF( "%s", szItemName );

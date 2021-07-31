@@ -46,7 +46,7 @@ protected:
 	WMSG_RESULT OnLButtonUp(UINT16 x, UINT16 y);
 
 private:
-	typedef vector< pair<int,bool> >	AffintyList_vec;
+	typedef std::vector< std::pair<int,bool> >	AffintyList_vec;
 	AffintyList_vec	m_AffinityList;
 
 	CUIList* m_pListNpc;

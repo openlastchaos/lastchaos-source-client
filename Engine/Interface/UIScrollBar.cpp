@@ -318,7 +318,27 @@ void CUIScrollBar::UpdateScrollBarPos()
 	else
 		m_nBarPosX = m_rcScrolling.Left + ( m_rcScrolling.GetWidth() - m_nBarWidth ) * fPosRatio;
 
-	m_fMoveOffset = m_fOriginMoveOffset;
+	if (m_nScrollPos >= nScrollLine)
+		m_nScrollPos = nScrollLine;
+
+	if (m_nScrollPos < 0)
+		m_nScrollPos = 0;
+
+	updateThumbSize();
+
+	m_fMoveOffset = ((float)m_nScrollPos * m_fItemSize) + m_fOriginMoveOffset;
+
+	int top = m_rcBtn[0].GetHeight();
+
+	if (m_fMoveOffset < top)
+		m_fMoveOffset = (float)top;
+	else 
+	{
+		int		size_ = m_nHeight - m_rcThumb.GetHeight() - m_rcBtn[1].GetHeight();
+
+		if (m_fMoveOffset > size_)
+			m_fMoveOffset = (float)size_;
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -882,9 +902,10 @@ WMSG_RESULT CUIScrollBar::OnMouseWheel( UINT16 x, UINT16 y, int wheel )
 	else 
 		offset = m_fItemSize;
 
-	updateDragPos( offset );
+	if (updateDragPos( offset ) == true)
+		return WMSG_SUCCESS;
 
-	return WMSG_SUCCESS;
+	return WMSG_FAIL;
 }
 
 void CUIScrollBar::changeDragPos( int nPos )
@@ -894,7 +915,7 @@ void CUIScrollBar::changeDragPos( int nPos )
 }
 
 //-------------------------------------------------------------------
-void CUIScrollBar::updateDragPos(float gap)
+bool CUIScrollBar::updateDragPos(float gap)
 {
 	m_fMoveOffset += gap;
 
@@ -908,8 +929,11 @@ void CUIScrollBar::updateDragPos(float gap)
 	{
 		int		size_ = m_nHeight - m_rcThumb.GetHeight() - m_rcBtn[1].GetHeight();
 
-		if (m_fMoveOffset > size_)
-			m_fMoveOffset = (float)size_;
+		if (m_fMoveOffset > size_	||
+		    (size_ - m_fMoveOffset) < gap)	// float으로 연산시 스크롤 사이즈가 정확하게 나눠 지지 않아서 보정 추가.
+		{									// (size_ - m_fMoveOffset)이 gap보다 적을 경우 스크롤 할수 없음.
+			m_fMoveOffset = (float)size_;	
+		}
 	}
 
 	m_nScrollPos = (int)((float)(m_fMoveOffset - top) / (float)m_fItemSize);
@@ -924,8 +948,13 @@ void CUIScrollBar::updateDragPos(float gap)
 		if (m_pCmd)
 			m_pCmd->execute();
 
-	//	LOG_DEBUG( "callback!! %d", m_nScrollOldPos );
+		if (m_func)
+			m_func(this);
+
+		return true;
 	}
+
+	return false;
 }
 
 void CUIScrollBar::SetScrollCurPos( int nPos )
@@ -940,6 +969,7 @@ void CUIScrollBar::SetScrollCurPos( int nPos )
 		nPos = 0;
 
 	m_nScrollPos = nPos;
+	m_nScrollOldPos = -1;
 	m_fMoveOffset = m_fOriginMoveOffset + (float)((float)m_nScrollPos * m_fItemSize);
 }
 

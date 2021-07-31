@@ -15,6 +15,10 @@
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Help/Util_Help.h>
 #include <Engine/Math/Float.h>
+#include <Engine/Contents/function/GuildChangeSetUI.h>
+#include <Engine/Contents/function/GuildDonateUI.h>
+
+extern INDEX g_iCountry;
 
 // WSS_NEW_GUILD_SYSTEM 070704
 #define MAX_GUILD_LEVEL		(50)
@@ -23,6 +27,10 @@
 static int	_iMaxMsgStringChar = 0;
 #define GUILD_NPC			89
 #define pWEB					m_pWebBoard
+
+#define ONE_HOUR_SECOND		  3600
+#define ONE_DAY_SECOND		 86400
+#define ONE_YEAR_DAY		   365
 
 // WSS_NEW_GUILD_SYSTEM 070705 ---------------------------->><<
 // 길드 시스템 추가로 GP및 레벨 상향 조정
@@ -49,6 +57,30 @@ private:
 	CUIGuild* m_pWnd;
 	eGUILD_MEMBER_LIST m_eType;
 };
+
+//--------------------------------------------------------------
+class CmdGuildMouseEvent : public Command
+{
+public:
+	CmdGuildMouseEvent() : pUI_(NULL), m_pItem(NULL), m_Color(DEF_UI_COLOR_WHITE) {}
+	void setData(CUIGuild* pUI, CUIListItem* pItem, COLOR col)	
+	{
+		pUI_ = pUI;
+		m_pItem = pItem;
+		m_Color = col;
+	}
+	void execute() {
+		if (pUI_)
+		{
+			pUI_->SetMemberListStrColor(m_pItem, m_Color);
+		}
+	}
+private:
+	CUIGuild*	pUI_;
+	CUIListItem*		m_pItem;
+	COLOR				m_Color;
+};
+
 // 길드 제한 조건
 struct sGuildConditionTable
 {
@@ -139,6 +171,9 @@ const static int nMaxCorpsBoss	 = 3;
 // ----------------------------------------------------------------------------
 CUIGuild::CUIGuild()
 	: m_pIconGuildMark(NULL)
+	, m_pGuildMember(NULL)
+	, m_pGuildChangeSetUI(NULL)
+	, m_pGuildDonateUI(NULL)
 {
 	m_eGuildState			= GUILD_REQ;
 	m_nCurrentTab			= GUILD_TAB_MEMBER;
@@ -158,6 +193,7 @@ CUIGuild::CUIGuild()
 	m_iGuildTotalPoint		= 0;				// 길드 총 포인트
 	m_iGuildMyPoint			= 0;				// 나의 기여 포인트
 	m_bApplySettingOn		= FALSE;
+	m_bApplyDonateUI	= FALSE;
 	m_iNumOfMaxMember		= 0;
 	m_iGuildSkillPos		= 0;
 	m_bIsSelList			= FALSE;
@@ -462,13 +498,6 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 		nPosY1 += 40;
 		nPosY2 += 40;
 	}
-	// ITS#6919 : [FIXED] UI cracked in guild setting window [2/20/2012 rumist]
-	// Combo Box Setting
-	m_cmbCorps.Create( this, 218, 98, 143, 22, 123, 6, 13, 7, 7, _pUIFontTexMgr->GetFontHeight() + 4, 8, 4 );
-	m_cmbCorps.SetBackUV( 54, 162, 72, 177, fTexWidth, fTexHeight );
-	m_cmbCorps.SetDownBtnUV( 230, 162, 242, 172, fTexWidth, fTexHeight );
-	m_cmbCorps.SetUpBtnUV( 242, 172, 230, 162, fTexWidth, fTexHeight );	
-	m_cmbCorps.SetDropListUV( 54, 162, 70, 176, fTexWidth, fTexHeight );
 
 	m_ptdSelBoxTexture = CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ));
 	fTexWidth	= m_ptdSelBoxTexture->GetPixWidth();
@@ -512,23 +541,10 @@ void CUIGuild::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	// 군단 관련 스트링 초기화
 
 	// Guild Member List Box Setting
-	m_lbGuildMemberList.SetPopBtnSpace(1, 1);
-	m_lbGuildMemberList.SetPopBtnSize(19, m_lbGuildMemberList.GetLineHeight()-2);
+// 	m_lbGuildMemberList.SetPopBtnSpace(1, 1);
+// 	m_lbGuildMemberList.SetPopBtnSize(19, m_lbGuildMemberList.GetLineHeight()-2);
 
 	// Manage Button, Edit Box Position
-	m_ebChangePositionName.SetPos( 220, 145 );
-	m_ebChangePayExp.SetPos( 220, 187 );
-	m_ebChangePayFame.SetPos( 220, 229 );
-	m_ckGuildStashPermission.SetPos( 230, 271 );
-
-#ifdef ENABLE_GUILD_STASH
-	m_btnApplySetting.SetPos( 220, 308 );
-	m_btnApplySettingClose.SetPos( 295, 308 );
-#else
-	m_btnApplySetting.SetPos( 220, 263 );
-	m_btnApplySettingClose.SetPos( 295, 263 );
-#endif
-	
 	int nBtnHeight = 17, nGap = 1;
 	int nBtnWidth[eGML_MAX] = {98, 74, 39, 81, 85, 46, 105};
 	int nStrIdx[eGML_MAX] = {3105, 3856, 3851, 72, 3857, 3858, 3859};
@@ -632,7 +648,6 @@ void CUIGuild::OpenGuild( int iMobIndex, BOOL bHasQuest, int iUserRanking, int i
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
-	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 
@@ -653,10 +668,7 @@ void CUIGuild::OpenGuild( int iMobIndex, BOOL bHasQuest, int iUserRanking, int i
 	{
 		pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE,  _S( 877, "길드 결성." ), SEL_GUILD_CREATE );	
 	}
-	// [2010/06/30 : Sora] 성주 길드 버프부여
-#if defined(G_KOR)
-	pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE,  _S( 5014, "성의축복 받기" ), SEL_GUILD_BUFF );
-#endif
+
 	if( m_iUserRanking == GUILD_MEMBER_BOSS )
 	{
 		pUIManager->AddMessageBoxLString( MSGLCMD_GUILD_REQ, FALSE, _S( 878, "길드 승급." ), SEL_GUILD_UPGRADE );
@@ -770,9 +782,10 @@ void CUIGuild::ResetGuild()
 	m_ebSearch.SetFocus(FALSE);
 	m_ebWriteSubject.SetFocus(FALSE);
 	m_ebNoticeTitle.SetFocus(FALSE);
-	m_ebChangePositionName.SetFocus(FALSE);
-	m_ebChangePayExp.SetFocus(FALSE);
-	m_ebChangePayFame.SetFocus(FALSE);
+	if (m_pGuildChangeSetUI != NULL)
+		m_pGuildChangeSetUI->KillFocusEditBox();
+	if (m_pGuildDonateUI != NULL)
+		m_pGuildDonateUI->KillFocusEditBox();
 	m_ContGuild.clear();
 
 	CUIManager* pUIManager = CUIManager::getSingleton();
@@ -823,7 +836,6 @@ void CUIGuild::PressOKBtn()
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
-			pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 			
@@ -837,6 +849,56 @@ void CUIGuild::PressOKBtn()
 		}
 		break;
 	}
+}
+
+void CUIGuild::PressChangeSetUIOK()
+{
+	if( CheckDataValidation() )
+	{
+		// TODO :: send apply message
+		SendAdjustGuildMemberInfo(
+			m_vManageMemberIndex[m_lbManageMemberList.GetCurSel()],
+			m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_CHANGE_POSITION),
+			atoi(m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_EXP_MIN)),
+			atoi(m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_EXP_MAX)),
+			atoi(m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_FAME_MIN)),
+			atoi(m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_FAME_MAX)),
+			GetSelectedPositon(),
+			(UBYTE)m_pGuildChangeSetUI->GetStashUsable());
+	}	
+	// 비활성화
+	SetManagePopup(FALSE);
+}
+
+void CUIGuild::PressChangeSetAllUIOK()
+{
+	if (m_pGuildDonateUI == NULL)
+		return;
+
+	if ( CheckDataValidationDonate() )
+	{
+		SendAdjustGuildMemberInfoAll( atoi(m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_EXP_MIN)),
+			atoi(m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_EXP_MAX)),
+			atoi(m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_FAME_MIN)),
+			atoi(m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_FAME_MAX)),
+			atoi(m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_EXP)),
+			atoi(m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_FAME)));
+	}	
+
+	SetManageSetAllPopup(FALSE);
+}
+
+void CUIGuild::PressDonateUIOK()
+{
+	if (m_pGuildDonateUI == NULL)
+		return;
+	if ( CheckDataValidationDonate() )
+	{
+		SendAdjustGuildDonateInfo( atoi(m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_EXP)),
+			atoi(m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_FAME)) );
+	}
+
+	SetManageSetAllPopup(FALSE);
 }
 
 // ----------------------------------------------------------------------------
@@ -858,7 +920,6 @@ void CUIGuild::CreateGuild()
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
-			pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);
 			pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 			
@@ -920,7 +981,6 @@ void CUIGuild::JoinGuild( LONG lGuildIndex, LONG lChaIndex, const CTString& strN
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
-	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 	
@@ -950,7 +1010,6 @@ void CUIGuild::QuitGuild( )
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
-	pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
 	pUIManager->CloseMessageBox(MSGCMD_GUILD_ROOM);
 	
@@ -1434,6 +1493,8 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 
 	// Make description of guild
 	CTString	strTemp	= "";
+	CTString	strTemp2 = "";
+	CUIManager* pUIMgr = UIMGR();
 
 	switch( m_eGuildState )
 	{
@@ -1471,7 +1532,9 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 904, "필요 나스 : %I64d 나스" ), _GuildConditionTable[0].llNeedMoney);		
+			strTemp2.PrintF("%I64d", _GuildConditionTable[0].llNeedMoney);
+			pUIMgr->InsertCommaToString(strTemp2);
+			strTemp.PrintF( _S( 904, "필요 나스 : %s 나스" ), strTemp2);
 			AddGuildDescString( strTemp, llMyMoney >= llNeedMoney ? 0xFFC672FF : 0xBCBCBCFF );
 
 			if( lMySP < iNeedSP )
@@ -1479,7 +1542,9 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 905, "필요 S P  : %d SP" ), _GuildConditionTable[0].iNeedSP);		
+			strTemp2.PrintF("%d", _GuildConditionTable[0].iNeedSP);
+			pUIMgr->InsertCommaToString(strTemp2);
+			strTemp.PrintF( _S( 905, "필요 S P  : %s SP" ), strTemp2);		
 			AddGuildDescString( strTemp, lMySP >= iNeedSP ? 0xFFC672FF : 0xBCBCBCFF );
 		}
 		break;
@@ -1518,7 +1583,9 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 904, "필요 나스 : %I64d 나스" ), _GuildConditionTable[m_iGuildLevel].llNeedMoney);		
+			strTemp2.PrintF("%I64d", _GuildConditionTable[m_iGuildLevel].llNeedMoney);
+			pUIMgr->InsertCommaToString(strTemp2);
+			strTemp.PrintF( _S( 904, "필요 나스 : %s 나스" ), strTemp2);		
 			AddGuildDescString( strTemp, llMyMoney >= llNeedMoney ? 0xFFC672FF : 0xBCBCBCFF );
 
 			if( lMySP < iNeedSP )
@@ -1526,10 +1593,14 @@ void CUIGuild::GetGuildDesc( BOOL bShow )
 				bSatisfied = FALSE;
 			}
 
-			strTemp.PrintF( _S( 905, "필요 S P  : %d SP" ), _GuildConditionTable[m_iGuildLevel].iNeedSP);		
+			strTemp2.PrintF("%d", _GuildConditionTable[m_iGuildLevel].iNeedSP);
+			pUIMgr->InsertCommaToString(strTemp2);
+			strTemp.PrintF( _S( 905, "필요 S P  : %s SP" ), strTemp2);		
 			AddGuildDescString( strTemp, lMySP >= iNeedSP ? 0xFFC672FF : 0xBCBCBCFF );
 			
-			strTemp.PrintF( _S(3839, "필요 G P  : %d GP" ), _GuildConditionTable[m_iGuildLevel].iNeedGP);		
+			strTemp2.PrintF("%d", _GuildConditionTable[m_iGuildLevel].iNeedGP);
+			pUIMgr->InsertCommaToString(strTemp2);
+			strTemp.PrintF( _S(3839, "필요 G P  : %s GP" ), strTemp2);		
 			AddGuildDescString( strTemp, 0x70BEFFFF);
 		}
 		break;
@@ -2390,7 +2461,7 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 		{
 			CUIManager* pUIManager = CUIManager::getSingleton();
 
-			if( m_lbGuildMemberList.IsInside( nX, nY) )
+			if( m_pGuildMember && m_pGuildMember->IsInside( nX, nY) )
 			{
 				if (pUIManager->GetGuild()->IsEnabled() && !pUIManager->GetGuild()->IsVisible())
 				{
@@ -2402,12 +2473,13 @@ WMSG_RESULT	CUIGuild::MouseMessage( MSG *pMsg )
 				{
 				case NEW_GUILD_MEMBER_INFO:
 					{
-						int nAddPos = m_lbGuildMemberList.GetScrollBarPos();
+						if (m_bApplyDonateUI == FALSE)
+						{
+							if (m_pGuildMember->m_pList == NULL)
+								return WMSG_FAIL;
 
-						if (nAddPos < 0)
-							nAddPos = 0;
-
-						return OpenGuildPop(m_lbGuildMemberList.GetCurOverList() + nAddPos, nX, nY);
+							return OpenGuildPop(m_pGuildMember->m_pList->getMouseOverItem(), nX, nY);
+						}						
 					}
 					break;
 				}
@@ -2474,7 +2546,6 @@ WMSG_RESULT	CUIGuild::KeyMessage( MSG *pMsg )
 	}
 	else 
 	{
-
 		switch(m_iSelTab)
 		{
 		case NEW_GUILD_NOTICE:
@@ -2503,46 +2574,35 @@ WMSG_RESULT	CUIGuild::KeyMessage( MSG *pMsg )
 				}
 			}
 			break;
+		case NEW_GUILD_MEMBER_INFO:
+			{
+				if (m_bApplyDonateUI)
+				{
+					if (m_pGuildDonateUI != NULL)
+					{	
+						if (m_pGuildDonateUI->KeyMessage(pMsg) != WMSG_FAIL)
+							return WMSG_SUCCESS;
+					}					
+				}
+			}
+			break;
 		case NEW_GUILD_MANAGE:
 			{
 				if(m_bApplySettingOn)
 				{
-					if( m_ebChangePositionName.KeyMessage( pMsg ) != WMSG_FAIL )
-					{
-						return WMSG_SUCCESS; 
-					}
-					if( m_ebChangePayExp.KeyMessage( pMsg ) != WMSG_FAIL )
-					{
-						return WMSG_SUCCESS; 
-					}
-					if( m_ebChangePayFame.KeyMessage( pMsg ) != WMSG_FAIL )
-					{
-						return WMSG_SUCCESS; 
-					}
-					
-					if( pMsg->wParam == VK_TAB )
-					{
-						if( m_ebChangePositionName.IsFocused() )
-						{
-							m_ebChangePositionName.SetFocus( FALSE );
-							m_ebChangePayExp.SetFocus( TRUE );
-							m_ebChangePayFame.SetFocus( FALSE );
-						}
-						else if( m_ebChangePayExp.IsFocused() )
-						{
-							m_ebChangePositionName.SetFocus( FALSE );
-							m_ebChangePayExp.SetFocus( FALSE );
-							m_ebChangePayFame.SetFocus( TRUE );
-						}
-						else if( m_ebChangePayFame.IsFocused() )
-						{
-							m_ebChangePositionName.SetFocus( TRUE );
-							m_ebChangePayExp.SetFocus( FALSE );
-							m_ebChangePayFame.SetFocus( FALSE );
-						}
-
-						return WMSG_SUCCESS;
-					}
+					if (m_pGuildChangeSetUI != NULL)
+					{	
+						if (m_pGuildChangeSetUI->KeyMessage(pMsg) != WMSG_FAIL)
+							return WMSG_SUCCESS;
+					}					
+				}
+				else if (m_bApplyDonateUI)
+				{
+					if (m_pGuildDonateUI != NULL)
+					{	
+						if (m_pGuildDonateUI->KeyMessage(pMsg) != WMSG_FAIL)
+							return WMSG_SUCCESS;
+					}					
 				}
 			}			
 			break;	
@@ -2627,16 +2687,35 @@ WMSG_RESULT	CUIGuild::IMEMessage( MSG *pMsg )
 					return m_mebNoticeContent.IMEMessage( pMsg );
 			}
 			break;
+		case NEW_GUILD_MEMBER_INFO:
+			{
+				if (m_bApplyDonateUI)
+				{
+					if (m_pGuildDonateUI != NULL)
+					{
+						if ( m_pGuildDonateUI->IsFocused() == true)
+							return m_pGuildDonateUI->IMEMessage( pMsg );
+					}
+				}
+			}
+			break;
 		case NEW_GUILD_MANAGE:
 			{
 				if(m_bApplySettingOn)
 				{
-					if(m_ebChangePositionName.IsFocused())
-						return m_ebChangePositionName.IMEMessage( pMsg );
-					if(m_ebChangePayExp.IsFocused())
-						return m_ebChangePayExp.IMEMessage( pMsg );
-					if(m_ebChangePayFame.IsFocused())
-						return m_ebChangePayFame.IMEMessage( pMsg );
+					if (m_pGuildChangeSetUI != NULL)
+					{
+						if ( m_pGuildChangeSetUI->IsFocused() == true)
+							return m_pGuildChangeSetUI->IMEMessage( pMsg );
+					}
+				}
+				else if (m_bApplyDonateUI)
+				{
+					if (m_pGuildDonateUI != NULL)
+					{
+						if ( m_pGuildDonateUI->IsFocused() == true)
+							return m_pGuildDonateUI->IMEMessage( pMsg );
+					}
 				}
 			}			
 			break;
@@ -2704,23 +2783,34 @@ WMSG_RESULT	CUIGuild::CharMessage( MSG *pMsg )
 				}
 			}
 			break;
+		case NEW_GUILD_MEMBER_INFO:
+			{
+				if (m_bApplyDonateUI)
+				{
+					if (m_pGuildDonateUI != NULL)
+					{
+						if( m_pGuildDonateUI->CharMessage( pMsg ) != WMSG_FAIL )
+							return WMSG_SUCCESS; 
+					}
+				}
+			}
 		case NEW_GUILD_MANAGE:
 			{
 				if(m_bApplySettingOn)
 				{
-					if( m_ebChangePositionName.CharMessage( pMsg ) != WMSG_FAIL )
+					if (m_pGuildChangeSetUI != NULL)
 					{
-						return WMSG_SUCCESS; 
+						if( m_pGuildChangeSetUI->CharMessage( pMsg ) != WMSG_FAIL )
+							return WMSG_SUCCESS; 
 					}
-					if( m_ebChangePayExp.CharMessage( pMsg ) != WMSG_FAIL )
+				}
+				else if (m_bApplyDonateUI)
+				{
+					if (m_pGuildDonateUI != NULL)
 					{
-						return WMSG_SUCCESS; 
+						if( m_pGuildDonateUI->CharMessage( pMsg ) != WMSG_FAIL )
+							return WMSG_SUCCESS; 
 					}
-					if( m_ebChangePayFame.CharMessage( pMsg ) != WMSG_FAIL )
-					{
-						return WMSG_SUCCESS; 
-					}
-
 				}
 			}			
 			break;
@@ -2806,19 +2896,6 @@ void CUIGuild::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput )
 		}
 		break;
 	case MSGCMD_GUILD_QUIT:		// 길드 탈퇴
-		{
-			if( !bOK )
-				return;
-			// Create message box of guild destroy
-			CTString	strMessage;
-			CUIMsgBox_Info	MsgBoxInfo;
-			MsgBoxInfo.SetMsgBoxInfo( _S( 865, "길드" ), UMBS_OKCANCEL, UI_GUILD, MSGCMD_GUILD_QUIT_CONFIRM );	
-			strMessage.PrintF( _S( 924, "정말로 길드에서 탈퇴하시겠습니까? 탈퇴하시면 7일 동안 길드에 가입하실 수 없습니다." ) );		
-			MsgBoxInfo.AddString( strMessage );
-			pUIManager->CreateMessageBox( MsgBoxInfo );
-		}
-		break;
-	case MSGCMD_GUILD_QUIT_CONFIRM:		// 탈퇴 확인
 		{
 			if( !bOK )
 				return;
@@ -3118,18 +3195,20 @@ void CUIGuild::InitNewGuildSystem()
 	m_iGuildTotalPoint		= 0;				// 길드 총 포인트
 	m_iGuildMyPoint			= 0;				// 나의 기여 포인트
 	m_bApplySettingOn		= FALSE;			// 설정 변경창 상태
+	m_bApplyDonateUI	= FALSE;
 	m_iOnlineMembers		= 0;				// 접속한 길드원	
 	m_iGuildSkillPos		= 0;
 	m_bIsSelList			= FALSE;	
 	m_bEnableCorrect		= FALSE;			// 공지사항 수정여부
 	m_lbMemberAllianceList.ResetAllStrings();
 	m_lbMemberHostilityList.ResetAllStrings();
-	m_lbGuildMemberList.ResetAllStrings();
-	m_lbGuildMemberList.Reset();
+	if (m_pGuildMember != NULL)
+		m_pGuildMember->resetList();
 	m_sbGuildSkillBar.SetScrollPos(0);
 	m_ebNoticeTitle.ResetString();
 	m_mebNoticeContent.ResetString();	
 	m_lbManageMemberList.ResetAllStrings();
+	m_lbManageMemberListEx.ResetAllStrings();
 	m_lbGuildSkillDesc.ResetAllStrings();	
 	m_ebSearch.ResetString();
 	m_lbListContent.ResetAllStrings();
@@ -3267,35 +3346,13 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 
 	// 길드원 정보 --------------------------------------------->>
 	// Member List
-	m_lbGuildMemberList.Create( this, 20, 78, 553, 161, _pUIFontTexMgr->GetLineHeight(), 13, 3, 8, TRUE );
-	m_lbGuildMemberList.CreateScroll( TRUE, 0, 0, 9, 161, 9, 7, 0, 0, 10 );
-	m_lbGuildMemberList.SetSelBar( 553 , _pUIFontTexMgr->GetLineHeight(), 187, 46, 204, 61, fTexWidth, fTexHeight );
-	m_lbGuildMemberList.SetOverColor( 0xF8E1B5FF );
-	m_lbGuildMemberList.SetSelectColor( 0xF8E1B5FF );
-	m_lbGuildMemberList.SetColumnPosX( 0, 0 );
-	m_lbGuildMemberList.SetColumnPosX( 1, 63 ,TEXT_CENTER);
-	m_lbGuildMemberList.SetColumnPosX( 2, 150 ,TEXT_CENTER);
-	m_lbGuildMemberList.SetColumnPosX( 3, 208 ,TEXT_CENTER);
-	m_lbGuildMemberList.SetColumnPosX( 4, 270 ,TEXT_CENTER);
-	m_lbGuildMemberList.SetColumnPosX( 5, 356 ,TEXT_CENTER);
-	m_lbGuildMemberList.SetColumnPosX( 6, 421 ,TEXT_CENTER);
-	m_lbGuildMemberList.SetColumnPosX( 7, 534,TEXT_RIGHT);
-
-	// Up button
-	m_lbGuildMemberList.SetScrollUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
-	m_lbGuildMemberList.SetScrollUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
-	m_lbGuildMemberList.CopyScrollUpUV( UBS_IDLE, UBS_ON );
-	m_lbGuildMemberList.CopyScrollUpUV( UBS_IDLE, UBS_DISABLE );
-	// Down button
-	m_lbGuildMemberList.SetScrollDownUV( UBS_IDLE, 230, 24, 239, 31, fTexWidth, fTexHeight );
-	m_lbGuildMemberList.SetScrollDownUV( UBS_CLICK, 240, 24, 249, 31, fTexWidth, fTexHeight );
-	m_lbGuildMemberList.CopyScrollDownUV( UBS_IDLE, UBS_ON );
-	m_lbGuildMemberList.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_lbGuildMemberList.SetScrollBarTopUV( 219, 16, 228, 26, fTexWidth, fTexHeight );
-	m_lbGuildMemberList.SetScrollBarMiddleUV( 219, 27, 228, 29, fTexWidth, fTexHeight );
-	m_lbGuildMemberList.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );	
-	
+	if (m_pGuildMember == NULL)
+	{
+		m_pGuildMember = new CGuildMemberDesign;
+		UIMGR()->LoadXML("guildmemberlist.xml", m_pGuildMember);
+		addChild(m_pGuildMember);
+		m_pGuildMember->SetPos(20, 78);
+	}	
 	// -----------------------------------------------------------<<
 
 	// 길드 스킬 ------------------------------------------------->>
@@ -3533,18 +3590,46 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_btnChangeSetting.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
 	m_btnChangeSetting.CopyUV( UBS_IDLE, UBS_ON );
 	m_btnChangeSetting.CopyUV( UBS_IDLE, UBS_DISABLE );
+	
+	m_btnDonateChange.Create( this, _S(6477, "상납 설정" ), 20, 242, 100, 21 );	
+	m_btnDonateChange.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
+	m_btnDonateChange.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
+	m_btnDonateChange.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnDonateChange.CopyUV( UBS_IDLE, UBS_DISABLE );
 
+	m_btnChangeSettingAll.Create( this, _S(6478, "전체 상납 설정" ), 488, 242, 100, 21 );	
+	m_btnChangeSettingAll.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
+	m_btnChangeSettingAll.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
+	m_btnChangeSettingAll.CopyUV( UBS_IDLE, UBS_ON );
+	m_btnChangeSettingAll.CopyUV( UBS_IDLE, UBS_DISABLE );
+	
+	if (m_pGuildChangeSetUI == NULL)
+	{
+		m_pGuildChangeSetUI = new CGuildChangeSetUI;
+		UIMGR()->LoadXML("guild_changeSet.xml", m_pGuildChangeSetUI);
+		addChild(m_pGuildChangeSetUI);
+		m_pGuildChangeSetUI->initialize();
+		int nPosX = m_nPosX + (NEW_GUILD_SYSTEM_WIDTH / 2) - (m_pGuildChangeSetUI->GetWidth() / 2);
+		int nPosY =	m_nPosY + (NEW_GUILD_SYSTEM_HEIGHT / 2) - (m_pGuildChangeSetUI->GetHeight() / 2);
+		m_pGuildChangeSetUI->SetPos(nPosX, nPosY);
+	}
+
+	if (m_pGuildDonateUI == NULL)
+	{
+		m_pGuildDonateUI = new CGuildDonateUI;
+		UIMGR()->LoadXML("guild_donate.xml", m_pGuildDonateUI);
+		addChild(m_pGuildDonateUI);
+		m_pGuildDonateUI->initialize();
+		int nPosX = m_nPosX + (NEW_GUILD_SYSTEM_WIDTH / 2) - (m_pGuildDonateUI->GetWidth() / 2);
+		int nPosY =	m_nPosY + (NEW_GUILD_SYSTEM_HEIGHT / 2) - (m_pGuildDonateUI->GetHeight() / 2);
+		m_pGuildDonateUI->SetPos(nPosX, nPosY);
+	}	
 	// Member List
-#ifdef ENABLE_GUILD_STASH
 	m_lbManageMemberList.Create( this, 20, 78, 553, 161, _pUIFontTexMgr->GetLineHeight(), 13, 3, 7, TRUE );
-#else
-	m_lbManageMemberList.Create( this, 20, 78, 553, 161, _pUIFontTexMgr->GetLineHeight(), 13, 3, 6, TRUE );
-#endif
 	m_lbManageMemberList.CreateScroll( TRUE, 0, 0, 9, 161, 9, 7, 0, 0, 10 );
 	m_lbManageMemberList.SetSelBar( 553 , _pUIFontTexMgr->GetLineHeight(), 187, 46, 204, 61, fTexWidth, fTexHeight );
 	m_lbManageMemberList.SetOverColor( 0xF8E1B5FF );
 	m_lbManageMemberList.SetSelectColor( 0xF8E1B5FF );
-#ifdef ENABLE_GUILD_STASH
 	m_lbManageMemberList.SetColumnPosX( 0, 27 ,TEXT_CENTER);
 	m_lbManageMemberList.SetColumnPosX( 1, 112 ,TEXT_CENTER);
 	m_lbManageMemberList.SetColumnPosX( 2, 177 ,TEXT_CENTER);
@@ -3552,14 +3637,9 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_lbManageMemberList.SetColumnPosX( 4, 387 ,TEXT_RIGHT);
 	m_lbManageMemberList.SetColumnPosX( 5, 468 ,TEXT_RIGHT);
 	m_lbManageMemberList.SetColumnPosX( 6, 515 ,TEXT_RIGHT);
-#else
-	m_lbManageMemberList.SetColumnPosX( 0, 27 ,TEXT_CENTER);
-	m_lbManageMemberList.SetColumnPosX( 1, 112 ,TEXT_CENTER);
-	m_lbManageMemberList.SetColumnPosX( 2, 177 ,TEXT_CENTER);
-	m_lbManageMemberList.SetColumnPosX( 3, 256 ,TEXT_CENTER);
-	m_lbManageMemberList.SetColumnPosX( 4, 402 ,TEXT_RIGHT);
-	m_lbManageMemberList.SetColumnPosX( 5, 515 ,TEXT_RIGHT);
-#endif
+
+	m_lbManageMemberListEx.Create(this, 20, 78, 553, 161, _pUIFontTexMgr->GetLineHeight(), 13, 3, 4, TRUE);
+	
 	// Up button
 	m_lbManageMemberList.SetScrollUpUV( UBS_IDLE, 230, 16, 239, 23, fTexWidth, fTexHeight );
 	m_lbManageMemberList.SetScrollUpUV( UBS_CLICK, 240, 16, 249, 23, fTexWidth, fTexHeight );
@@ -3574,42 +3654,6 @@ void CUIGuild::CreateNew( CUIWindow *pParentWnd, int nX, int nY)
 	m_lbManageMemberList.SetScrollBarTopUV( 219, 16, 228, 26, fTexWidth, fTexHeight );
 	m_lbManageMemberList.SetScrollBarMiddleUV( 219, 27, 228, 29, fTexWidth, fTexHeight );
 	m_lbManageMemberList.SetScrollBarBottomUV( 219, 30, 228, 40, fTexWidth, fTexHeight );	
-
-	// Setting Popup Window	
-	m_btnApplySetting.Create( this, _S(3846, "적용" ), 220, 218, 63, 21 );
-	m_btnApplySetting.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
-	m_btnApplySetting.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
-	m_btnApplySetting.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnApplySetting.CopyUV( UBS_IDLE, UBS_DISABLE );
-	
-	m_btnApplySettingClose.Create( this, _S(870, "닫기" ), 295, 218, 63, 21 );
-	m_btnApplySettingClose.SetUV( UBS_IDLE, 134, 117, 228, 138, fTexWidth, fTexHeight );
-	m_btnApplySettingClose.SetUV( UBS_CLICK, 134, 139, 228, 160, fTexWidth, fTexHeight );
-	m_btnApplySettingClose.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnApplySettingClose.CopyUV( UBS_IDLE, UBS_DISABLE );
-	
-	m_ebChangePositionName.Create( this, 220, 100, 140, 16, MAX_POSITION_NAME );
-	m_ebChangePositionName.SetReadingWindowUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
-	m_ebChangePositionName.SetCandidateUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
-		
-	m_ebChangePayExp.Create( this, 220, 142, 140, 16, MAX_PERCENT_LENGTH );
-	m_ebChangePayExp.SetReadingWindowUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
-	m_ebChangePayExp.SetCandidateUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
-	
-	m_ebChangePayFame.Create( this, 220, 184, 140, 16, MAX_PERCENT_LENGTH );
-	m_ebChangePayFame.SetReadingWindowUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
-	m_ebChangePayFame.SetCandidateUV( 146, 46, 163, 62, fTexWidth, fTexHeight );
-
-	int	nStrWidth = ( strlen( _S(5562, "사용 가능" ) ) + 1 ) * 
-				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-	m_ckGuildStashPermission.Create( this, 230, 226, 11, 11, _S(5562, "사용 가능"), FALSE, nStrWidth, nStrWidth );
-	m_ckGuildStashPermission.SetUV( UCBS_NONE, UIRectUV( 12, 161, 23, 172, fTexWidth, fTexHeight ) );
-	m_ckGuildStashPermission.SetUV( UCBS_CHECK, UIRectUV( 0, 161, 11, 172, fTexWidth, fTexHeight ) );
-	m_ckGuildStashPermission.CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
-	m_ckGuildStashPermission.CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
-	m_ckGuildStashPermission.SetTextColor( TRUE, 0xFFFFFFFF );
-	m_ckGuildStashPermission.SetTextColor( FALSE, 0xFFFFFFFF );
-	m_ckGuildStashPermission.SetCheck( FALSE );
 
 	m_pIconGuildMark = new CUIGuildMarkIcon();
 	m_pIconGuildMark->Create(this, 27, 250, BTN_SIZE, BTN_SIZE);
@@ -3639,59 +3683,36 @@ void CUIGuild::RenderNewGuildManagePopup()
 	m_bxBox1.SetBoxPos(WRect(0,0,NEW_GUILD_SYSTEM_WIDTH,NEW_GUILD_SYSTEM_HEIGHT));
 	m_bxBox1.Render(nX,nY);
 
-#ifdef ENABLE_GUILD_STASH
-	m_bxBackGroundBox.SetBoxPos(WRect(203,55,377,77));
-	m_bxBackGroundBox.Render(nX,nY);
-	m_bxBackGroundBox2.SetBoxPos(WRect(203,77,377,340));
-	m_bxBackGroundBox2.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,143,361,165));
-	m_bxBox1.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,185,361,207));
-	m_bxBox1.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,227,361,249));
-	m_bxBox1.Render(nX,nY);
-#else	//	ENABLE_GUILD_STASH
-	m_bxBackGroundBox.SetBoxPos(WRect(203,55,377,77));
-	m_bxBackGroundBox.Render(nX,nY);
-	m_bxBackGroundBox2.SetBoxPos(WRect(203,77,377,295));
-	m_bxBackGroundBox2.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,143,361,165));
-	m_bxBox1.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,185,361,207));
-	m_bxBox1.Render(nX,nY);
-	m_bxBox1.SetBoxPos(WRect(218,227,361,249));
-	m_bxBox1.Render(nX,nY);
-#endif	//	ENABLE_GUILD_STASH
-	pDrawPort->PutTextEx( _S(3845, "설정 변경" ), nX + 220 , nY + 60);
-	pDrawPort->PutTextEx( _S(5365, "부대 설정" ), nX + 220 , nY + 81);
-	pDrawPort->PutTextEx( _S(3847, "직위명 설정" ), nX + 220 , nY + 126);
-	pDrawPort->PutTextEx( _S(3848, "경험치 상납설정" ), nX + 220 , nY + 168);
-	pDrawPort->PutTextEx( _S(3849, "명성치 상납설정" ), nX + 220 , nY + 210);
-#ifdef ENABLE_GUILD_STASH
-	pDrawPort->PutTextEx( _S(5558, "길드 창고 사용 권한" ), nX + 220 , nY + 252);
-#endif	//	ENABLE_GUILD_STASH
-	pDrawPort->PutTextEx( CTString( "%" ), nX + 345 , nY + 188);
-	pDrawPort->PutTextEx( CTString( "%" ), nX + 345 , nY + 230);
-
-	m_btnApplySetting.Render();
-	m_btnApplySettingClose.Render();
-
-	m_ebChangePositionName.Render();
-	m_ebChangePayExp.Render();
-	m_ebChangePayFame.Render();
-
-#ifdef ENABLE_GUILD_STASH
-	m_ckGuildStashPermission.Render();
-#endif	//	ENABLE_GUILD_STASH
-	
+	// Render all elements
 	pDrawPort->FlushRenderingQueue();
+	
+	if (m_pGuildChangeSetUI != NULL)
+		m_pGuildChangeSetUI->Render(pDrawPort);
+}
+
+void CUIGuild::RenderNewGuildManageSetAllPopup()
+{
+	int nX = m_nPosX;
+	int nY = m_nPosY;
+
+	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+
+	// Render all elements
+	pDrawPort->FlushRenderingQueue();
+	// Flush all render text queue
 	pDrawPort->EndTextEx();
-	// ITS#6919 : [FIXED] ui cracked in guild setting window [2/20/2012 rumist]
+
+	// Set skill learn texture
 	pDrawPort->InitTextureData( m_ptdBaseTexture );
 
-	m_cmbCorps.Render();
+	m_bxBox1.SetBoxPos(WRect(0,0,NEW_GUILD_SYSTEM_WIDTH,NEW_GUILD_SYSTEM_HEIGHT));
+	m_bxBox1.Render(nX,nY);
+
+	// Render all elements
 	pDrawPort->FlushRenderingQueue();
-	pDrawPort->EndTextEx();
+
+	if (m_pGuildDonateUI != NULL)
+		m_pGuildDonateUI->Render(pDrawPort);
 }
 
 // ----------------------------------------------------------------------------
@@ -3709,7 +3730,8 @@ void CUIGuild::RenderNewGuildManage(int nX,int nY)
 			m_btnAcceptNew.SetEnable(TRUE);		// 부단장 임명
 			m_btnRejectNew.SetEnable(TRUE);		// 부단장 해임
 			m_btnMemberFireNew.SetEnable(TRUE);	// 멤버 퇴출
-			m_btnChangeSetting.SetEnable(TRUE);	// 설정 변경		
+			m_btnChangeSetting.SetEnable(TRUE);	// 설정 변경
+			m_btnChangeSettingAll.SetEnable(TRUE);
 		}
 	}
 	else if (_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_VICE_BOSS)
@@ -3721,6 +3743,7 @@ void CUIGuild::RenderNewGuildManage(int nX,int nY)
 			m_btnRejectNew.SetEnable(FALSE);			// 부단장 해임
 			m_btnMemberFireNew.SetEnable(TRUE);			// 멤버 퇴출
 			m_btnChangeSetting.SetEnable(FALSE);		// 설정 변경
+			m_btnChangeSettingAll.SetEnable(FALSE);
 		}
 	}
 	else 
@@ -3732,6 +3755,7 @@ void CUIGuild::RenderNewGuildManage(int nX,int nY)
 			m_btnRejectNew.SetEnable(FALSE);			// 부단장 해임
 			m_btnMemberFireNew.SetEnable(FALSE);		// 멤버 퇴출
 			m_btnChangeSetting.SetEnable(FALSE);		// 설정 변경
+			m_btnChangeSettingAll.SetEnable(FALSE);
 		}
 	}
 
@@ -3740,7 +3764,8 @@ void CUIGuild::RenderNewGuildManage(int nX,int nY)
 	m_btnAcceptNew.Render();			// 부단장 임명
 	m_btnRejectNew.Render();			// 부단장 해임
 	m_btnMemberFireNew.Render();		// 멤버 퇴출
-	m_btnChangeSetting.Render();		// 설정 변경	
+	m_btnChangeSetting.Render();		// 설정 변경
+	m_btnChangeSettingAll.Render();
 
 	// Box
 	m_bxBox2.SetBoxPos(WRect(nX+20,nY+56,nX+583,nY+239));
@@ -3761,36 +3786,21 @@ void CUIGuild::RenderNewGuildManage(int nX,int nY)
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
 	pDrawPort->AddTexture(nX+231,nY+74,nX+232,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);
-#ifdef ENABLE_GUILD_STASH
 	pDrawPort->AddTexture(nX+346,nY+74,nX+347,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
 	pDrawPort->AddTexture(nX+425,nY+74,nX+426,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
 	pDrawPort->AddTexture(nX+507,nY+74,nX+508,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
-#else
-	pDrawPort->AddTexture(nX+341,nY+74,nX+342,nY+239,
-	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);	
-	pDrawPort->AddTexture(nX+457,nY+74,nX+458,nY+239,
-	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);		
-#endif
 
 	// Text
 	pDrawPort->PutTextExCX( _S(3850, "서열" ), nX + 58 , nY +60);
 	pDrawPort->PutTextExCX( _S(3847, "직위명 설정" ), nX +143, nY +60);
 	pDrawPort->PutTextExCX( _S(3851, "Lv." ), nX +210, nY +60);
 	pDrawPort->PutTextExCX( _S(3105, "캐릭터명" ), nX +286 , nY +60);
-#ifdef ENABLE_GUILD_STASH
 	pDrawPort->PutTextExCX( _S(3848, "경험치 상납" ), nX +385, nY +60);
 	pDrawPort->PutTextExCX( _S(3849, "명성치 상납" ), nX +467, nY +60);		
-	pDrawPort->PutTextExCX( _S(5559, "창고 사용" ), nX +542, nY +60);		
-#else
-	pDrawPort->PutTextExCX( _S(3848, "경험치 상납" ), nX +400, nY +60);
-	pDrawPort->PutTextExCX( _S(3849, "명성치 상납" ), nX +519, nY +60);
-#endif
-
-	if(m_bApplySettingOn)
-		RenderNewGuildManagePopup();
+	pDrawPort->PutTextExCX( _S(5559, "창고 사용" ), nX +542, nY +60);
 }
 
 // ----------------------------------------------------------------------------
@@ -4102,6 +4112,7 @@ void CUIGuild::RenderNewGuildMemberInfo(int nX,int nY)
 	pDrawPort->AddTexture(nX+476,nY+74,nX+477,nY+239,
 	m_uvLineV.U0,m_uvLineV.V0,m_uvLineV.U1,m_uvLineV.V1,0xFFFFFFFF);		
 
+	m_btnDonateChange.Render();
 	// Text
 // 	pDrawPort->PutTextExCX( _S(3105, "캐릭터명" ), nX + 92 , nY +60);
 // 	pDrawPort->PutTextExCX( _S(3856, "직위명" ), nX +184, nY +60);
@@ -4125,7 +4136,18 @@ void CUIGuild::RenderNewGuildMemberInfo(int nX,int nY)
 	tStr.PrintF("%d/%d",m_iCorpsBoss, nMaxCorpsBoss);
 	pDrawPort->PutTextExRX( tStr.str_String,nX+262,nY+259);
 	// List
-	m_lbGuildMemberList.Render();		// Guild Member List
+	if (m_pGuildMember != NULL)
+	{
+		pDrawPort->FlushRenderingQueue();
+		// Flush all render text queue
+		m_pGuildMember->Hide(FALSE);
+		m_pGuildMember->Render(pDrawPort);		// Guild Member List
+		pDrawPort->EndTextEx();
+
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
+	}
+
+	
 
 	int i;
 	for (i = 0; i < eGML_MAX; ++i)
@@ -4236,9 +4258,11 @@ void CUIGuild::RenderNewGuildInfo(int nX,int nY)
 
 	pDrawPort->PutTextEx( _S(3868, "총 포인트" ),nX +304 , nY + 81);
 	tStr.PrintF("%d",m_iGuildTotalPoint);
+	UIMGR()->InsertCommaToString(tStr);
 	pDrawPort->PutTextEx( tStr, nX + 500 , nY + 81);
 	pDrawPort->PutTextEx( _S(3869, "기여 포인트" ),nX +304 , nY + 100);	
 	tStr.PrintF("%d",m_iGuildMyPoint);
+	UIMGR()->InsertCommaToString(tStr);
 	pDrawPort->PutTextEx( tStr, nX + 500 , nY + 100);
 	
 	pDrawPort->PutTextEx( _S(3870, "동맹 군단" ),nX +294 , nY + 132, COLOR(0x064729FF));	
@@ -4292,7 +4316,9 @@ void CUIGuild::RenderNew()
 	// Buttons
 	m_btnExitNew.Render();
 	m_btnCloseNew.Render();
-		
+	
+	if (m_pGuildMember != NULL)
+		m_pGuildMember->Hide(TRUE);
 	// Render Guild Info
 	switch(m_iSelTab)
 	{
@@ -4339,6 +4365,11 @@ void CUIGuild::RenderNew()
 	pDrawPort->FlushRenderingQueue();
 	// Flush all render text queue
 	pDrawPort->EndTextEx();
+
+	if(m_bApplySettingOn)
+		RenderNewGuildManagePopup();
+	else if (m_bApplyDonateUI)
+		RenderNewGuildManageSetAllPopup();
 }
 
 
@@ -4900,86 +4931,110 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 				m_strSkillTabPopupInfo.Clear();
 				switch(m_iSelTab)
 				{
-					case NEW_GUILD_INFO: 
-						// List
-						m_btnEdit.MouseMessage( pMsg );
-						m_lbMemberAllianceList.MouseMessage( pMsg );
-						m_lbMemberHostilityList.MouseMessage( pMsg );							
+					case NEW_GUILD_INFO:
+						{
+							// List
+							m_btnEdit.MouseMessage( pMsg );
+							m_lbMemberAllianceList.MouseMessage( pMsg );
+							m_lbMemberHostilityList.MouseMessage( pMsg );	
+						}						
 						break;
 					case NEW_GUILD_MEMBER_INFO:
-						m_lbGuildMemberList.MouseMessage( pMsg );
+						{
+							if (m_bApplyDonateUI == TRUE)
+							{
+								if (m_pGuildDonateUI)
+									m_pGuildDonateUI->MouseMessage( pMsg );
+							}							
+							else
+							{
+								if (m_pGuildMember != NULL )
+									m_pGuildMember->MouseMessage(pMsg);
+
+								m_btnDonateChange.MouseMessage(pMsg);
+							}
+						}
 						break;
 					case NEW_GUILD_SKILL:
-						m_btnGetSkill.MouseMessage(pMsg);
+						{
+							m_btnGetSkill.MouseMessage(pMsg);
 
-						if ( m_sbGuildSkillBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{
-							SetSkillBtnInfo();
-						}
-						m_lbGuildSkillDesc.MouseMessage( pMsg );
-						nScrollBarPos	 = m_sbGuildSkillBar.GetScrollPos();
-						nGuildSkillCount = GetGuildSkillCount();
-						for ( i=0; i<5; ++i )
-						{
-							if ( nScrollBarPos+i < nGuildSkillCount )
+							if ( m_sbGuildSkillBar.MouseMessage( pMsg ) != WMSG_FAIL )
 							{
-								pBtnSkill = GetSkillButton(nScrollBarPos+i);
-
-								pBtnSkill->MouseMessage( pMsg );
+								SetSkillBtnInfo();
 							}
-						}
-						if (pUIManager->GetDragIcon() == NULL && bLButtonDownInBtn && 
-							(pMsg->wParam& MK_LBUTTON) && (ndX != 0 || ndY != 0))
-						{
-							CSkill* pSkill = GetGuildSkill(m_iGuildSkillPos);
-							if ( m_nSelSkillTab == GUILD_SKILL_ACTIVE && pSkill->GetCurLevel() > 0)
+							m_lbGuildSkillDesc.MouseMessage( pMsg );
+							nScrollBarPos	 = m_sbGuildSkillBar.GetScrollPos();
+							nGuildSkillCount = GetGuildSkillCount();
+							for ( i=0; i<5; ++i )
 							{
-								if (pSkill->GetTargetType() == CSkill::STT_GUILD_MEMBER_SELF ||
-									_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS)
+								if ( nScrollBarPos+i < nGuildSkillCount )
 								{
-									pBtnSkill = GetSkillButton(m_iGuildSkillPos);
-									pUIManager->SetHoldBtn(pBtnSkill);
-									bLButtonDownInBtn = FALSE;
+									pBtnSkill = GetSkillButton(nScrollBarPos+i);
+
+									pBtnSkill->MouseMessage( pMsg );
 								}
 							}
-						}
-						if (m_lbUseInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
-							m_lbLearnInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
-							m_btnUseSkill.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-
-						for ( i=0; i<2; ++i )
-						{
-							if ( IsInsideRect( nX, nY, m_rcSkillTab[i] ) )
+							if (pUIManager->GetDragIcon() == NULL && bLButtonDownInBtn && 
+								(pMsg->wParam& MK_LBUTTON) && (ndX != 0 || ndY != 0))
 							{
-								SetSkillPopupInfo(i);
+								CSkill* pSkill = GetGuildSkill(m_iGuildSkillPos);
+								if ( m_nSelSkillTab == GUILD_SKILL_ACTIVE && pSkill->GetCurLevel() > 0)
+								{
+									if (pSkill->GetTargetType() == CSkill::STT_GUILD_MEMBER_SELF ||
+										_pNetwork->MyCharacterInfo.lGuildPosition == GUILD_MEMBER_BOSS)
+									{
+										pBtnSkill = GetSkillButton(m_iGuildSkillPos);
+										pUIManager->SetHoldBtn(pBtnSkill);
+										bLButtonDownInBtn = FALSE;
+									}
+								}
 							}
-						}
-						break;
+							if (m_lbUseInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
+								m_lbLearnInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
+								m_btnUseSkill.MouseMessage( pMsg ) != WMSG_FAIL )
+								return WMSG_SUCCESS;
+
+							for ( i=0; i<2; ++i )
+							{
+								if ( IsInsideRect( nX, nY, m_rcSkillTab[i] ) )
+								{
+									SetSkillPopupInfo(i);
+								}
+							}
+							break;
+						}						
 #ifndef LOCAL_NEW_GUILD // 해외 로컬 웹보드사용 안함
 					case NEW_GUILD_BOARD:
-						MouseMessageNewBoard(pMsg);
+						{
+							MouseMessageNewBoard(pMsg);
+						}						
 						break;
 #endif
 					case NEW_GUILD_NOTICE:
-						m_btnNotice.MouseMessage(pMsg);
-						m_btnNoticeCorrect.MouseMessage(pMsg);
-						m_btnUpdateNotice.MouseMessage(pMsg);
-						m_ebNoticeTitle.MouseMessage( pMsg );
-						m_mebNoticeContent.MouseMessage( pMsg );
+						{
+							m_btnNotice.MouseMessage(pMsg);
+							m_btnNoticeCorrect.MouseMessage(pMsg);
+							m_btnUpdateNotice.MouseMessage(pMsg);
+							m_ebNoticeTitle.MouseMessage( pMsg );
+							m_mebNoticeContent.MouseMessage( pMsg );
+						}
 						break;
 					case NEW_GUILD_MANAGE:
-						m_lbManageMemberList.MouseMessage( pMsg );
-						m_cmbCorps.MouseMessage( pMsg );
+						{
+							m_lbManageMemberList.MouseMessage( pMsg );
 
-						m_btnChangeBossNew.MouseMessage( pMsg );							
-						m_btnAcceptNew.MouseMessage( pMsg );							
-						m_btnRejectNew.MouseMessage( pMsg );							
-						m_btnMemberFireNew.MouseMessage( pMsg );							
-						m_btnChangeSetting.MouseMessage( pMsg );
-
-						m_btnApplySetting.MouseMessage( pMsg );
-						m_btnApplySettingClose.MouseMessage( pMsg );
+							if (m_pGuildChangeSetUI)
+								m_pGuildChangeSetUI->MouseMessage( pMsg );
+							if (m_pGuildDonateUI)
+								m_pGuildDonateUI->MouseMessage( pMsg );
+							m_btnChangeBossNew.MouseMessage( pMsg );							
+							m_btnAcceptNew.MouseMessage( pMsg );							
+							m_btnRejectNew.MouseMessage( pMsg );							
+							m_btnMemberFireNew.MouseMessage( pMsg );							
+							m_btnChangeSetting.MouseMessage( pMsg );
+							m_btnChangeSettingAll.MouseMessage( pMsg );
+						}
 						break; 						
 				}	
 				return WMSG_SUCCESS;
@@ -4990,11 +5045,14 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 		{
 			if( IsInsideRect( nX, nY ,m_rcWindowNew) )
 			{
-				for (i = 0; i < eGML_MAX; ++i)
+				if (m_bApplyDonateUI == FALSE)
 				{
-					if (m_pCbMemberArrange[i]->OnLButtonDown(nX, nY) != WMSG_FAIL)
-						return WMSG_SUCCESS;
-				}
+					for (i = 0; i < eGML_MAX; ++i)
+					{
+						if (m_pCbMemberArrange[i]->OnLButtonDown(nX, nY) != WMSG_FAIL)
+							return WMSG_SUCCESS;
+					}
+				}				
 
 				CUIManager* pUIManager = CUIManager::getSingleton();
 				nOldX = nX;
@@ -5017,163 +5075,154 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 				
 				switch(m_iSelTab)
 				{
-					case NEW_GUILD_INFO: 
-						// Edit button
-						m_btnEdit.MouseMessage( pMsg );						
-						// List
-						m_lbMemberAllianceList.MouseMessage( pMsg );
-						m_lbMemberHostilityList.MouseMessage( pMsg );							
-						break;
-					case NEW_GUILD_MEMBER_INFO:					
-						m_lbGuildMemberList.MouseMessage( pMsg );
-						break;
-					case NEW_GUILD_SKILL:						
-						m_btnGetSkill.MouseMessage( pMsg );
-						m_lbGuildSkillDesc.MouseMessage( pMsg );
-						if(m_sbGuildSkillBar.MouseMessage( pMsg ) != WMSG_FAIL )
-						{	
-							SetSkillBtnInfo();	
-						}
-						else if ( IsInsideRect( nX, nY, m_rcGuildSkillList) )
+					case NEW_GUILD_INFO:
 						{
-							int nScrollBarPos	 = m_sbGuildSkillBar.GetScrollPos();
-							int nGuildSkillCount = GetGuildSkillCount();
-							CUIIcon* pBtnSkill = NULL;
-							for ( int i=0; i<5; ++i )
+							// Edit button
+							m_btnEdit.MouseMessage( pMsg );						
+							// List
+							m_lbMemberAllianceList.MouseMessage( pMsg );
+							m_lbMemberHostilityList.MouseMessage( pMsg );	
+						}							
+						break;
+					case NEW_GUILD_MEMBER_INFO:
+						{
+							if(m_bApplyDonateUI)
 							{
-								if ( nScrollBarPos+i < nGuildSkillCount )
+								if (m_pGuildDonateUI != NULL)
+									wmsgResult = m_pGuildDonateUI->MouseMessage(pMsg);
+
+								pUIManager->RearrangeOrder( UI_GUILD, TRUE );
+								return wmsgResult;
+							}
+							else
+							{
+								if (m_pGuildMember != NULL)
+									m_pGuildMember->MouseMessage(pMsg);
+								m_btnDonateChange.MouseMessage(pMsg);
+							}
+						}
+						break;
+					case NEW_GUILD_SKILL:
+						{
+							m_btnGetSkill.MouseMessage( pMsg );
+							m_lbGuildSkillDesc.MouseMessage( pMsg );
+							if(m_sbGuildSkillBar.MouseMessage( pMsg ) != WMSG_FAIL )
+							{	
+								SetSkillBtnInfo();	
+							}
+							else if ( IsInsideRect( nX, nY, m_rcGuildSkillList) )
+							{
+								int nScrollBarPos	 = m_sbGuildSkillBar.GetScrollPos();
+								int nGuildSkillCount = GetGuildSkillCount();
+								CUIIcon* pBtnSkill = NULL;
+								for ( int i=0; i<5; ++i )
 								{
-									pBtnSkill = GetSkillButton(nScrollBarPos+i);
-									if (pBtnSkill->MouseMessage( pMsg ) != WMSG_FAIL )
+									if ( nScrollBarPos+i < nGuildSkillCount )
 									{
-										m_iGuildSkillPos = nScrollBarPos + i;
-										bLButtonDownInBtn = TRUE;
-										break;
+										pBtnSkill = GetSkillButton(nScrollBarPos+i);
+										if (pBtnSkill->MouseMessage( pMsg ) != WMSG_FAIL )
+										{
+											m_iGuildSkillPos = nScrollBarPos + i;
+											bLButtonDownInBtn = TRUE;
+											break;
+										}
 									}
 								}
 							}
+							else if ( IsInsideRect( nX, nY, m_rcSkillTab[GUILD_SKILL_PASSIVE]) )
+							{
+								m_nSelSkillTab	= GUILD_SKILL_PASSIVE;
+								m_iGuildSkillPos = 0;
+								m_bIsSelList = FALSE;
+								m_sbGuildSkillBar.SetScrollPos( 0 );
+								m_lbGuildSkillDesc.ResetAllStrings();
+								m_lbUseInfo.ResetAllStrings();
+								m_lbLearnInfo.ResetAllStrings();
+								m_sbGuildSkillBar.SetCurItemCount(m_vecGuildPassiveSkill.size());
+								SetSkillBtnInfo();
+							}
+							else if ( IsInsideRect( nX, nY, m_rcSkillTab[GUILD_SKILL_ACTIVE]) )
+							{
+								m_nSelSkillTab	= GUILD_SKILL_ACTIVE;
+								m_iGuildSkillPos = 0;
+								m_bIsSelList = FALSE;
+								m_sbGuildSkillBar.SetScrollPos( 0 );
+								m_lbGuildSkillDesc.ResetAllStrings();
+								m_lbUseInfo.ResetAllStrings();
+								m_lbLearnInfo.ResetAllStrings();
+								m_sbGuildSkillBar.SetCurItemCount(m_vecGuildActiveSkill.size());
+								SetSkillBtnInfo();
+							}
+							if (m_lbUseInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
+								m_lbLearnInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
+								m_btnUseSkill.MouseMessage( pMsg ) != WMSG_FAIL )
+								return WMSG_SUCCESS;
 						}
-						else if ( IsInsideRect( nX, nY, m_rcSkillTab[GUILD_SKILL_PASSIVE]) )
-						{
-							m_nSelSkillTab	= GUILD_SKILL_PASSIVE;
-							m_iGuildSkillPos = 0;
-							m_bIsSelList = FALSE;
-							m_sbGuildSkillBar.SetScrollPos( 0 );
-							m_lbGuildSkillDesc.ResetAllStrings();
-							m_lbUseInfo.ResetAllStrings();
-							m_lbLearnInfo.ResetAllStrings();
-							m_sbGuildSkillBar.SetCurItemCount(m_vecGuildPassiveSkill.size());
-							SetSkillBtnInfo();
-						}
-						else if ( IsInsideRect( nX, nY, m_rcSkillTab[GUILD_SKILL_ACTIVE]) )
-						{
-							m_nSelSkillTab	= GUILD_SKILL_ACTIVE;
-							m_iGuildSkillPos = 0;
-							m_bIsSelList = FALSE;
-							m_sbGuildSkillBar.SetScrollPos( 0 );
-							m_lbGuildSkillDesc.ResetAllStrings();
-							m_lbUseInfo.ResetAllStrings();
-							m_lbLearnInfo.ResetAllStrings();
-							m_sbGuildSkillBar.SetCurItemCount(m_vecGuildActiveSkill.size());
-							SetSkillBtnInfo();
-						}
-						if (m_lbUseInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
-							m_lbLearnInfo.MouseMessage( pMsg ) != WMSG_FAIL ||
-							m_btnUseSkill.MouseMessage( pMsg ) != WMSG_FAIL )
-							return WMSG_SUCCESS;
-
 						break;
 #ifndef LOCAL_NEW_GUILD // 해외 로컬 웹보드사용 안함
 					case NEW_GUILD_BOARD:
-						MouseMessageNewBoard(pMsg);
+						{
+							MouseMessageNewBoard(pMsg);
+						}						
 						break;
 #endif
 					case NEW_GUILD_NOTICE:
-						if( m_bEnableCorrect )
-						{						
-							if( m_ebNoticeTitle.MouseMessage( pMsg ) != WMSG_FAIL )
-							{					
-								m_ebNoticeTitle.SetFocus(TRUE);
-								m_mebNoticeContent.SetFocus(FALSE);
+						{
+							if( m_bEnableCorrect )
+							{						
+								if( m_ebNoticeTitle.MouseMessage( pMsg ) != WMSG_FAIL )
+								{					
+									m_ebNoticeTitle.SetFocus(TRUE);
+									m_mebNoticeContent.SetFocus(FALSE);
+								}
+								else if( m_mebNoticeContent.MouseMessage( pMsg ) != WMSG_FAIL )
+								{					
+									m_ebNoticeTitle.SetFocus(FALSE);
+									m_mebNoticeContent.SetFocus(TRUE);
+								}
+								else 
+								{
+									m_ebNoticeTitle.SetFocus(FALSE);
+									m_mebNoticeContent.SetFocus(FALSE);
+								}
 							}
-							else if( m_mebNoticeContent.MouseMessage( pMsg ) != WMSG_FAIL )
-							{					
-								m_ebNoticeTitle.SetFocus(FALSE);
-								m_mebNoticeContent.SetFocus(TRUE);
-							}
-							else 
-							{
-								m_ebNoticeTitle.SetFocus(FALSE);
-								m_mebNoticeContent.SetFocus(FALSE);
-							}
+							m_btnNotice.MouseMessage( pMsg );		
+							m_btnNoticeCorrect.MouseMessage( pMsg );	
+							m_btnUpdateNotice.MouseMessage( pMsg );	
 						}
-						m_btnNotice.MouseMessage( pMsg );		
-						m_btnNoticeCorrect.MouseMessage( pMsg );	
-						m_btnUpdateNotice.MouseMessage( pMsg );	
-
 						break;
+
 					case NEW_GUILD_MANAGE:
-						if(m_bApplySettingOn)
 						{
-							if ( (wmsgResult = m_cmbCorps.MouseMessage( pMsg )) != WMSG_FAIL )
+							if(m_bApplySettingOn)
 							{
-								m_ebChangePositionName.SetFocus(FALSE);
-								m_ebChangePayExp.SetFocus(FALSE);
-								m_ebChangePayFame.SetFocus(FALSE);
-								m_cmbCorps.SetFocus(TRUE);
-								break;
+								if (m_pGuildChangeSetUI != NULL)
+									wmsgResult = m_pGuildChangeSetUI->MouseMessage(pMsg);
+
+								pUIManager->RearrangeOrder( UI_GUILD, TRUE );
+								return wmsgResult;
 							}
-							m_btnApplySetting.MouseMessage( pMsg );
-							m_btnApplySettingClose.MouseMessage( pMsg );
-#ifdef ENABLE_GUILD_STASH
-							m_ckGuildStashPermission.MouseMessage( pMsg );
-#endif
-							if( (wmsgResult = m_ebChangePositionName.MouseMessage( pMsg )) != WMSG_FAIL )
+							if(m_bApplyDonateUI)
 							{
-								m_ebChangePositionName.SetFocus(TRUE);
-								m_ebChangePayFame.SetFocus(FALSE);
-								m_ebChangePayExp.SetFocus(FALSE);
-								m_cmbCorps.SetFocus(FALSE);
+								if (m_pGuildDonateUI != NULL)
+									wmsgResult = m_pGuildDonateUI->MouseMessage(pMsg);
+
+								pUIManager->RearrangeOrder( UI_GUILD, TRUE );
+								return wmsgResult;
 							}
-							else if( (wmsgResult = m_ebChangePayExp.MouseMessage( pMsg )) != WMSG_FAIL )
-							{
-								m_ebChangePositionName.SetFocus(FALSE);
-								m_ebChangePayFame.SetFocus(FALSE);
-								m_ebChangePayExp.SetFocus(TRUE);
-								m_cmbCorps.SetFocus(FALSE);
-							} 
-							else if( (wmsgResult = m_ebChangePayFame.MouseMessage( pMsg )) != WMSG_FAIL )
-							{
-								m_ebChangePositionName.SetFocus(FALSE);
-								m_ebChangePayExp.SetFocus(FALSE);
-								m_ebChangePayFame.SetFocus(TRUE);
-								m_cmbCorps.SetFocus(FALSE);
-							} 
 							else 
 							{
-								m_ebChangePositionName.SetFocus(FALSE);
-								m_ebChangePayExp.SetFocus(FALSE);
-								m_ebChangePayFame.SetFocus(FALSE);
-								m_cmbCorps.SetFocus(FALSE);
-								wmsgResult = WMSG_SUCCESS;				
-							}
-
-							pUIManager->RearrangeOrder( UI_GUILD, TRUE );
-							return wmsgResult;
-						}
-						else 
-						{
-							m_btnChangeBossNew.MouseMessage( pMsg );							
-							m_btnAcceptNew.MouseMessage( pMsg );							
-							m_btnRejectNew.MouseMessage( pMsg );							
-							m_btnMemberFireNew.MouseMessage( pMsg );							
-							m_btnChangeSetting.MouseMessage( pMsg );
-							m_lbManageMemberList.MouseMessage( pMsg );
-						}						
+								m_btnChangeBossNew.MouseMessage( pMsg );							
+								m_btnAcceptNew.MouseMessage( pMsg );							
+								m_btnRejectNew.MouseMessage( pMsg );							
+								m_btnMemberFireNew.MouseMessage( pMsg );							
+								m_btnChangeSetting.MouseMessage( pMsg );
+								m_btnChangeSettingAll.MouseMessage( pMsg );
+								m_lbManageMemberList.MouseMessage( pMsg );
+							}		
+						}				
 						break;
-				}
-				
-				
+				}				
 				pUIManager->RearrangeOrder( UI_GUILD, TRUE );
 				return WMSG_SUCCESS;
 			}
@@ -5189,7 +5238,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 			if (pUIManager->GetDragIcon() == NULL)
 			{
 				// tab
-				if(!m_bApplySettingOn)
+				if(!m_bApplySettingOn && !m_bApplyDonateUI)
 				{
 					for(int i=0; i<MAX_GUILDINFO_TAB;i++)
 					{
@@ -5294,7 +5343,23 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 					}
 					break;
 				case NEW_GUILD_MEMBER_INFO:
-										
+					{
+						if (m_bApplyDonateUI)
+						{
+							if (m_pGuildDonateUI != NULL)
+							{
+								if ( (wmsgResult = m_pGuildDonateUI->MouseMessage( pMsg ) ) != WMSG_FAIL )
+									return WMSG_SUCCESS;
+							}
+						}
+
+						if( (wmsgResult = m_btnDonateChange.MouseMessage( pMsg ) ) != WMSG_FAIL )
+						{
+							if (m_bApplyDonateUI == FALSE)
+								SendGuildDonateInfo();
+							return WMSG_SUCCESS;						
+						}
+					}			
 					break;
 				case NEW_GUILD_SKILL:
 					{
@@ -5421,60 +5486,19 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 				case NEW_GUILD_MANAGE:
 					{
 						if(m_bApplySettingOn)
-						{					
-							if ( (wmsgResult = m_cmbCorps.MouseMessage( pMsg ) ) != WMSG_FAIL )
+						{
+							if (m_pGuildChangeSetUI != NULL)
 							{
-								return WMSG_SUCCESS;
-							}
-							if( (wmsgResult = m_btnApplySetting.MouseMessage( pMsg ) ) != WMSG_FAIL )
+								if ( (wmsgResult = m_pGuildChangeSetUI->MouseMessage( pMsg ) ) != WMSG_FAIL )
+									return WMSG_SUCCESS;
+							}							
+						}
+						else if (m_bApplyDonateUI)
+						{
+							if (m_pGuildDonateUI != NULL)
 							{
-								if(wmsgResult == WMSG_COMMAND)
-								{									
-									if( CheckDataValidation() )
-									{
-										// TODO :: send apply message
-										SendAdjustGuildMemberInfo(
-											m_vManageMemberIndex[m_lbManageMemberList.GetCurSel()],
-											m_ebChangePositionName.GetString(),
-											atoi(m_ebChangePayExp.GetString()),
-											atoi(m_ebChangePayFame.GetString())
-											, GetSelectedPositon()
-#ifdef ENABLE_GUILD_STASH
-											,(UBYTE)m_ckGuildStashPermission.IsChecked()
-#endif // ENABLE_GUILD_STASH
-											);
-									}	
-									// 비활성화
-									SetManagePopup(FALSE);
-								}
-								return WMSG_SUCCESS;
-							}
-							if( (wmsgResult = m_btnApplySettingClose.MouseMessage( pMsg ) ) != WMSG_FAIL )
-							{
-								if(wmsgResult == WMSG_COMMAND)
-								{
-									// 비활성화
-									SetManagePopup(FALSE);
-								}
-								return WMSG_SUCCESS;
-							}
-#ifdef ENABLE_GUILD_STASH
-							if( (wmsgResult = m_ckGuildStashPermission.MouseMessage( pMsg ) ) != WMSG_FAIL )
-							{
-								return WMSG_SUCCESS;
-							}
-#endif						
-							if( (wmsgResult = m_ebChangePositionName.MouseMessage( pMsg )) != WMSG_FAIL )
-							{
-								return WMSG_SUCCESS;							
-							}
-							if( (wmsgResult = m_ebChangePayExp.MouseMessage( pMsg )) != WMSG_FAIL )
-							{
-								return WMSG_SUCCESS;							
-							}
-							if( (wmsgResult = m_ebChangePayFame.MouseMessage( pMsg )) != WMSG_FAIL )
-							{
-								return WMSG_SUCCESS;							
+								if ( (wmsgResult = m_pGuildDonateUI->MouseMessage( pMsg ) ) != WMSG_FAIL )
+									return WMSG_SUCCESS;
 							}
 						}
 						else
@@ -5526,6 +5550,12 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 								}
 								return WMSG_SUCCESS;						
 							}
+							else if( (wmsgResult = m_btnChangeSettingAll.MouseMessage( pMsg ) ) != WMSG_FAIL )
+							{
+								ResetManageSetAllPopupString();
+								SetManageSetAllPopup(TRUE, eDONATE_UI_SET_ALL);
+								return WMSG_SUCCESS;						
+							}
 						}					
 					}
 					break;
@@ -5558,7 +5588,11 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 						m_lbMemberHostilityList.MouseMessage( pMsg );							
 						break;
 					case NEW_GUILD_MEMBER_INFO:
-						m_lbGuildMemberList.MouseMessage( pMsg );
+						if (m_bApplyDonateUI == FALSE)
+						{
+							if (m_pGuildMember != NULL)
+								m_pGuildMember->MouseMessage(pMsg);
+						}						
 						break;
 					case NEW_GUILD_SKILL:
 						if ( m_sbGuildSkillBar.MouseMessage( pMsg ) != WMSG_FAIL )
@@ -5601,7 +5635,7 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 		{
 			CUIManager* pUIManager = CUIManager::getSingleton();
 
-			if( m_lbGuildMemberList.IsInside( nX, nY) )
+			if( m_pGuildMember && m_pGuildMember->IsInside( nX, nY) )
 			{
 				if (pUIManager->GetGuild()->IsEnabled() && !pUIManager->GetGuild()->IsVisible())
 				{
@@ -5613,12 +5647,13 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 				{
 				case NEW_GUILD_MEMBER_INFO:
 					{
-						int nAddPos = m_lbGuildMemberList.GetScrollBarPos();
+						if (m_bApplyDonateUI == FALSE)
+						{
+							if (m_pGuildMember->m_pList == NULL)
+								return WMSG_FAIL;
 
-						if (nAddPos < 0)
-							nAddPos = 0;
-
-						return OpenGuildPop(m_lbGuildMemberList.GetCurOverList() + nAddPos, nX, nY);
+							return OpenGuildPop(m_pGuildMember->m_pList->getMouseOverItem(), nX, nY);
+						}						
 					}
 					break;
 				}
@@ -5638,53 +5673,213 @@ WMSG_RESULT	CUIGuild::MouseMessageNew( MSG *pMsg )
 	return WMSG_FAIL;
 }
 
+void CUIGuild::SetManageSetAllPopup( BOOL bEnable, int nOpenType )
+{
+	if (m_pGuildDonateUI == NULL)
+		return;
+
+	BOOL bTemp = bEnable;
+
+	if (nOpenType < 0 || nOpenType >= eDONATE_UI_TYPE_MAX)
+		bTemp = FALSE;
+
+	m_bApplyDonateUI = bTemp;
+	m_pGuildDonateUI->toggleVisible(bTemp, nOpenType);
+	m_btnExitNew.SetEnable(!bTemp);
+	m_btnCloseNew.SetEnable(!bTemp);
+
+	if (m_iSelTab == NEW_GUILD_MEMBER_INFO)
+	{
+		if (m_pGuildMember != NULL)
+		{
+			COLOR color;
+			if (bTemp == TRUE)
+				color = 0x66686Eff;
+			else
+				color = 0xf2f2f2ff;
+
+			m_pGuildMember->SetFontColor(color);
+		}
+	}
+	
+	if( bEnable && nOpenType == eDONATE_UI_CHANGE_INFO)
+ 	{
+		int nSize = m_vectorMemberList.size();
+		int nMyCharPosInMemberList = -1;
+
+		for (int i = 0; i < nSize; ++i)
+		{
+			if (m_vectorMemberList[i].lIndex == _pNetwork->MyCharacterInfo.index )
+			{
+				nMyCharPosInMemberList = i;
+				break;
+			}
+		}
+
+		if (nMyCharPosInMemberList < 0 || nMyCharPosInMemberList >= nSize)
+			return;
+
+		CTString strTemp;
+		if (m_lbManageMemberListEx.GetCurItemCount(0) > nMyCharPosInMemberList)
+		{
+			strTemp = m_lbManageMemberListEx.GetString( 0, nMyCharPosInMemberList );
+			strTemp.DeleteChar( strTemp.Length()-1 );
+			m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_EXP_MIN, strTemp);
+		}
+
+		if (m_lbManageMemberListEx.GetCurItemCount(1) > nMyCharPosInMemberList)
+		{
+			strTemp = m_lbManageMemberListEx.GetString( 1, nMyCharPosInMemberList );
+			strTemp.DeleteChar( strTemp.Length()-1 );
+			m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_EXP_MAX, strTemp);
+		}
+
+		if (m_lbManageMemberListEx.GetCurItemCount(2) > nMyCharPosInMemberList)
+		{
+			strTemp = m_lbManageMemberListEx.GetString( 2, nMyCharPosInMemberList );
+			strTemp.DeleteChar( strTemp.Length()-1 );
+			m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_FAME_MIN, strTemp);
+		}
+
+		if (m_lbManageMemberListEx.GetCurItemCount(3) > nMyCharPosInMemberList)
+		{
+			strTemp = m_lbManageMemberListEx.GetString( 3, nMyCharPosInMemberList );
+			strTemp.DeleteChar( strTemp.Length()-1 );
+			m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_FAME_MAX, strTemp);
+		}
+
+		if (m_lbManageMemberList.GetCurItemCount(4) > nMyCharPosInMemberList)
+		{
+			strTemp = m_lbManageMemberList.GetString( 4, nMyCharPosInMemberList );
+			strTemp.DeleteChar( strTemp.Length()-1 );
+			m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_EXP, strTemp);
+		}
+
+		if (m_lbManageMemberList.GetCurItemCount(5) > nMyCharPosInMemberList)
+		{
+			strTemp = m_lbManageMemberList.GetString( 5, nMyCharPosInMemberList );
+			strTemp.DeleteChar( strTemp.Length()-1 );
+			m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_FAME, strTemp);
+		}
+ 	}
+}
+
 void CUIGuild::SetManagePopup(BOOL bEnable)
 {
+	if (m_pGuildChangeSetUI == NULL)
+		return;
+
 	m_bApplySettingOn = bEnable;
-	m_btnApplySetting.SetEnable(bEnable);		
-	m_btnApplySettingClose.SetEnable(bEnable);		
-	m_ebChangePositionName.SetEnable(bEnable);
-	m_ebChangePayExp.SetEnable(bEnable);		
-	m_ebChangePayFame.SetEnable(bEnable);	
+
+	m_pGuildChangeSetUI->toggleVisible(bEnable);
 	m_btnExitNew.SetEnable(!bEnable);
 	m_btnCloseNew.SetEnable(!bEnable);
 	// data setting. [6/24/2011 rumist]
 	if( bEnable )
 	{
-		CTString strTemp = m_lbManageMemberList.GetString( 1, m_lbManageMemberList.GetCurSel() );
-		m_ebChangePositionName.SetString( strTemp.str_String );
-		strTemp = m_lbManageMemberList.GetString( 4, m_lbManageMemberList.GetCurSel() );
+ 		CTString strTemp = m_lbManageMemberList.GetString( 1, m_lbManageMemberList.GetCurSel() );
+ 		m_pGuildChangeSetUI->SetString(CGuildChangeSetUI::eEDIT_CHANGE_POSITION, strTemp);
+
+ 		strTemp = m_lbManageMemberListEx.GetString( 0, m_lbManageMemberList.GetCurSel() );
+ 		strTemp.DeleteChar( strTemp.Length()-1 );
+		m_pGuildChangeSetUI->SetString(CGuildChangeSetUI::eEDIT_EXP_MIN, strTemp);
+
+		strTemp = m_lbManageMemberListEx.GetString( 1, m_lbManageMemberList.GetCurSel() );
 		strTemp.DeleteChar( strTemp.Length()-1 );
-		m_ebChangePayExp.SetString( strTemp.str_String );
-		strTemp = m_lbManageMemberList.GetString( 5, m_lbManageMemberList.GetCurSel() );
+		m_pGuildChangeSetUI->SetString(CGuildChangeSetUI::eEDIT_EXP_MAX, strTemp);
+
+		strTemp = m_lbManageMemberListEx.GetString( 2, m_lbManageMemberList.GetCurSel() );
 		strTemp.DeleteChar( strTemp.Length()-1 );
-		m_ebChangePayFame.SetString( strTemp.str_String );
+		m_pGuildChangeSetUI->SetString(CGuildChangeSetUI::eEDIT_FAME_MIN, strTemp);
+
+		strTemp = m_lbManageMemberListEx.GetString( 3, m_lbManageMemberList.GetCurSel() );
+		strTemp.DeleteChar( strTemp.Length()-1 );
+		m_pGuildChangeSetUI->SetString(CGuildChangeSetUI::eEDIT_FAME_MAX, strTemp);
 	}
 #ifdef ENABLE_GUILD_STASH
-	m_ckGuildStashPermission.SetEnable( bEnable );
+	
 	if( bEnable )
 	{
 		CTString strTemp = m_lbManageMemberList.GetString( 6, m_lbManageMemberList.GetCurSel() );
-		m_ckGuildStashPermission.SetCheck( strTemp == _S(5560, "가능") ? TRUE : FALSE );
+		m_pGuildChangeSetUI->SetStashUsable( strTemp == _S(5560, "가능") ? TRUE : FALSE );
 	}
 #endif
-	m_cmbCorps.SetEnable(bEnable);
 	if ( bEnable )
 		SetCorpsComboBox();
 }
 
 void CUIGuild::ResetManagePopupString()
 {
-	m_ebChangePositionName.ResetString();
-	m_ebChangePayExp.ResetString();
-	m_ebChangePayFame.ResetString();
+	if (m_pGuildChangeSetUI != NULL)
+		m_pGuildChangeSetUI->ResetEditBox();
+
 #ifdef ENABLE_GUILD_STASH
-	m_ckGuildStashPermission.SetCheck( FALSE );
+	m_pGuildChangeSetUI->SetStashUsable( FALSE );
 #endif
+}
+
+void CUIGuild::ResetManageSetAllPopupString()
+{
+	if (m_pGuildDonateUI != NULL)
+		m_pGuildDonateUI->ResetEditBox();
+}
+
+BOOL CUIGuild::CheckDataValidationDonate()
+{
+	if (m_pGuildDonateUI == NULL)
+		return FALSE;
+
+	CUIManager* pUIManager = CUIManager::getSingleton();
+	CUIMsgBox_Info	MsgBoxInfo;
+	int tInt;
+	CTString tStr;
+
+	pUIManager->CloseMessageBox(MSGCMD_NULL);
+	MsgBoxInfo.SetMsgBoxInfo( _S(3877, "입력 오류" ), UMBS_OK,
+		UI_NONE,MSGCMD_NULL );
+
+	for (int i = 0; i < CGuildDonateUI::eEDIT_MAX; ++i)
+	{
+		tStr = m_pGuildDonateUI->GetString(i);
+
+		if (!tStr.IsInteger())
+		{
+			switch(i)
+			{
+			case CGuildDonateUI::eEDIT_EXP_MIN:
+			case CGuildDonateUI::eEDIT_EXP_MAX:
+			case CGuildDonateUI::eEDIT_EXP:
+				MsgBoxInfo.AddString( _S(3879, "경험치 입력이 잘못 되었습니다.") );
+				break;
+			case CGuildDonateUI::eEDIT_FAME_MIN:
+			case CGuildDonateUI::eEDIT_FAME_MAX:
+			case CGuildDonateUI::eEDIT_FAME:
+				MsgBoxInfo.AddString( _S(3881, "명성치 입력이 잘못 되었습니다.") );
+				break;
+			}
+
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+			return FALSE;
+		}
+
+		tInt = atoi(tStr.str_String);
+
+		if( tInt > 100 || tInt < 0 )
+		{
+			MsgBoxInfo.AddString( _S(3880, "[0~100]사이 숫자를 입력해 주세요.") );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 BOOL CUIGuild::CheckDataValidation()
 {
+	if (m_pGuildChangeSetUI == NULL)
+		return FALSE;
+
 	CUIManager* pUIManager = CUIManager::getSingleton();
 	CUIMsgBox_Info	MsgBoxInfo;
 	int tInt;
@@ -5695,11 +5890,11 @@ BOOL CUIGuild::CheckDataValidation()
 									UI_NONE,MSGCMD_NULL );
 
 	// 직위명 설정 문자 검사
-	tStr = m_ebChangePositionName.GetString();
+	tStr = m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_CHANGE_POSITION);
 	if( tStr.Length() == 0 )
 	{
 		MsgBoxInfo.AddString( _S(3878, "입력된 문자가 없습니다.") );
-		pUIManager->CreateMessageBox( MsgBoxInfo );		
+		pUIManager->CreateMessageBox( MsgBoxInfo );
 		return FALSE;
 		
 	}
@@ -5717,59 +5912,44 @@ BOOL CUIGuild::CheckDataValidation()
 		
 		MsgBoxInfo.AddString( strMessage );
 		pUIManager->CreateMessageBox( MsgBoxInfo );
-		m_ebChangePositionName.ResetString();
+		m_pGuildChangeSetUI->ResetCharPostionString();
 		return FALSE;
 	}
 
 	// 상납 설정 검사
-	tStr = m_ebChangePayExp.GetString();
-	if( !tStr.IsInteger() )
+	for (int i = 1; i < CGuildChangeSetUI::eEDIT_MAX; ++i)
 	{
-		MsgBoxInfo.AddString( _S(3879, "경험치 입력이 잘못 되었습니다.") );
-		pUIManager->CreateMessageBox( MsgBoxInfo );
-		
-		return FALSE;
-		
-	}
-	tInt = atoi(tStr.str_String);
-#if defined (G_KOR)
-	if( tInt > 100 || tInt < 0 )
-	{
-		MsgBoxInfo.AddString( _S(3880, "[0~100]사이 숫자를 입력해 주세요.") );
+		tStr = m_pGuildChangeSetUI->GetString(i);
 
-		pUIManager->CreateMessageBox( MsgBoxInfo );
+		if (!tStr.IsInteger())
+		{
+			switch(i)
+			{
+			case CGuildChangeSetUI::eEDIT_EXP_MIN:
+			case CGuildChangeSetUI::eEDIT_EXP_MAX:
+				MsgBoxInfo.AddString( _S(3879, "경험치 입력이 잘못 되었습니다.") );
+				break;
+			case CGuildChangeSetUI::eEDIT_FAME_MIN:
+			case CGuildChangeSetUI::eEDIT_FAME_MAX:
+				MsgBoxInfo.AddString( _S(3881, "명성치 입력이 잘못 되었습니다.") );
+				break;
+			}
 
-		return FALSE;
-	}
-#else
-	if ( tInt > 50 || tInt < 0 )
-	{
-		MsgBoxInfo.AddString( _S(2274, "[0~50]사이 숫자를 입력해 주세요.") );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+			return FALSE;
+		}
 
-		pUIManager->CreateMessageBox( MsgBoxInfo );
+		tInt = atoi(tStr.str_String);
 
-		return FALSE;
-	}
-#endif
-
-	tStr = m_ebChangePayFame.GetString();
-	if( !tStr.IsInteger() )
-	{
-		MsgBoxInfo.AddString( _S(3881, "명성치 입력이 잘못 되었습니다.") );
-		pUIManager->CreateMessageBox( MsgBoxInfo );		
-		return FALSE;
-
-	}
-	tInt = atoi(tStr.str_String);
-	if( tInt > 100 )
-	{
-		MsgBoxInfo.AddString( _S(3880, "[0~100]사이 숫자를 입력해 주세요.") );
-		pUIManager->CreateMessageBox( MsgBoxInfo );
-		
-		return FALSE;
+		if( tInt > 100 || tInt < 0 )
+		{
+			MsgBoxInfo.AddString( _S(3880, "[0~100]사이 숫자를 입력해 주세요.") );
+			pUIManager->CreateMessageBox( MsgBoxInfo );
+			return FALSE;
+		}
 	}
 
-	if ( m_cmbCorps.GetCurSel() < 0 )
+	if ( m_pGuildChangeSetUI->GetComboCurSelIdx() < 0 )
 	{
 		MsgBoxInfo.AddString( _S( 5331, "부 선택이 잘못 되었습니다.") );
 		pUIManager->CreateMessageBox( MsgBoxInfo );
@@ -5791,8 +5971,9 @@ void CUIGuild::SendRequestGuildTab(int iTabNum)
 		break;
 	case NEW_GUILD_MEMBER_INFO :
 		{
-			m_lbGuildMemberList.ResetAllStrings();
-			m_lbGuildMemberList.Reset();
+			if (m_pGuildMember != NULL)
+				m_pGuildMember->resetList();
+			m_vecGuildMember.clear();
 			m_ContGuild.clear();
 			ResetArrangeState();
 			m_iOnlineMembers =0;
@@ -5835,18 +6016,53 @@ void CUIGuild::SendChangeGuildInclination(UBYTE ubIncline)
 }
 
 // 길드 정보 수정
-void CUIGuild::SendAdjustGuildMemberInfo(int charIdx, CTString posName ,int expPer, int famePer, int corps /* = -1 */, UBYTE ubStashAuth /* = 0  */)
+void CUIGuild::SendAdjustGuildMemberInfo(int charIdx, CTString posName ,int expMin, int expMax, int fameMin, int fameMax, int corps /* = -1 */, UBYTE ubStashAuth /* = 0  */)
 {	
 	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
 	nmGuild << (UBYTE)MSG_NEW_GUILD_MEMBER_ADJUST
 			<< (ULONG)charIdx
 			<< posName
-			<< (ULONG)expPer
-			<< (ULONG)famePer;
+			<< (ULONG)expMin
+			<< (ULONG)expMax
+			<< (ULONG)fameMin
+			<< (ULONG)fameMax;
 	nmGuild	<< (INDEX)corps;
 #ifdef ENABLE_GUILD_STASH
 	nmGuild << (UBYTE)ubStashAuth;
 #endif
+	_pNetwork->SendToServerNew(nmGuild);	
+}
+
+// 길드 전체 상납인포 수정
+void CUIGuild::SendAdjustGuildMemberInfoAll( int expMin, int expMax, int fameMin, int fameMax, int AdjustExp, int AdjustFame )
+{
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
+	nmGuild << (UBYTE)MSG_GUILD_CONTRIBUTE_SETALL
+		<< (ULONG)AdjustExp
+		<< (ULONG)AdjustFame
+		<< (ULONG)expMin
+		<< (ULONG)expMax
+		<< (ULONG)fameMin
+		<< (ULONG)fameMax;
+	_pNetwork->SendToServerNew(nmGuild);	
+}
+
+// 경험치, 명성치 상납 범위 요청
+void CUIGuild::SendGuildDonateInfo()
+{
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
+	nmGuild << (UBYTE)MSG_GUILD_CONTRIBUTE_DATA;
+	_pNetwork->SendToServerNew(nmGuild);	
+}
+
+// 경험치, 명성치 상납도 수정
+void CUIGuild::SendAdjustGuildDonateInfo(int AdjustExp, int AdjustFame )
+{
+	CNetworkMessage nmGuild((UBYTE)MSG_GUILD);
+	nmGuild << (UBYTE)MSG_GUILD_CONTRIBUTE_SET
+		<< (ULONG)AdjustExp
+		<< (ULONG)AdjustFame;
+
 	_pNetwork->SendToServerNew(nmGuild);	
 }
 
@@ -5963,11 +6179,12 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				UBYTE iJob2;	
 				UBYTE bPlaying;
 				ULONG ulPosition;	// 캐릭터 직위(BOSS,VICEBOSS.MEMBER)
+				LONG nlogout_date;
 
 				//m_lbGuildMemberList.ResetAllStrings();
 				//m_iOnlineMembers =0;
+				(*istr) >> ulListCnt;				
 
-				(*istr) >> ulListCnt;
 				for(i=0; i<ulListCnt; i++)
 				{
 					clsGuildMemberNew* tGuildMemberNew = new clsGuildMemberNew;
@@ -5979,7 +6196,8 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 							>> cumulPoint
 							>> iJob
 							>> iJob2
-							>> ulPosition;
+							>> ulPosition
+							>> nlogout_date;
 
 					if(bPlaying)
 						m_iOnlineMembers++;
@@ -5993,6 +6211,7 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 					tGuildMemberNew->iJob			= (INT)iJob;
 					tGuildMemberNew->iJob2			= (INT)iJob2;
 					tGuildMemberNew->eRanking		= (INT)ulPosition;
+					tGuildMemberNew->nLogoutDate	= (INT)nlogout_date;
 
 					if (ulPosition == GUILD_MEMBER_MEMBER)
 						tGuildMemberNew->nArrangeRank = MSG_GUILD_POSITION_UNKNOWN - 1;
@@ -6010,10 +6229,13 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 
 					AddGuildMemberInfo(*tGuildMemberNew);
 				}
+
 				INDEX iCorpsMember, iCorpsBoss;
 				(*istr)  >> iCorpsMember
 						 >> iCorpsBoss;
 				SetCorpsInfo( iCorpsMember, iCorpsBoss );
+
+				updateGuildMemberList();
 			}
 			break;
 		case MSG_NEW_GUILD_SKILL:
@@ -6053,7 +6275,11 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				ULONG eRanking;
 				ULONG iLevel;
 				ULONG iExpServ;
+				ULONG iPayExpMin;
+				ULONG iPayExpMax;
 				ULONG iFameServ;
+				ULONG iPayFameMin;
+				ULONG iPayFameMax;
 				ULONG icharIdx;
 				BYTE bStashPermission = 0;
 				CTString strMemName;
@@ -6072,22 +6298,30 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				for(int i=0;i<tLoop;i++)
 				{
 					(*istr) >> eRanking
-							>> strMemName
-							>> strPosName
-							>> iLevel
-							>> iExpServ
-							>> iFameServ
-							>> icharIdx
+						>> strMemName
+						>> strPosName
+						>> iLevel
+						>> iPayExpMin
+						>> iPayExpMax
+						>> iPayFameMin
+						>> iPayFameMax
+						>> iExpServ
+						>> iFameServ
+						>> icharIdx
 #ifdef ENABLE_GUILD_STASH
-							>> bStashPermission
+						>> bStashPermission
 #endif
-							;
+						;
 					tMemberInfo.strMemberName = strMemName.str_String;
 					tMemberInfo.sPosName    = strPosName.str_String;
 					tMemberInfo.eRanking	= eRanking;
 					tMemberInfo.iLevel		= iLevel;
 					tMemberInfo.iExpServ	= iExpServ;
+					tMemberInfo.iDonateExpMin	= iPayExpMin;
+					tMemberInfo.iDonateExpMax	= iPayExpMax;
 					tMemberInfo.iFameServ	= iFameServ;
+					tMemberInfo.iDonateFameMin	= iPayFameMin;
+					tMemberInfo.iDonateFameMax	= iPayFameMax;
 #ifdef ENABLE_GUILD_STASH
 					tMemberInfo.bStashPermission = bStashPermission;
 #endif
@@ -6114,9 +6348,7 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				(*istr) >> charindex
 						>> guildindex
 						>> rankingv;
-#if defined (G_MAL)
-			break;
-#endif
+
 				if( charindex == _pNetwork->MyCharacterInfo.index)
 				{				
 					if( _pNetwork->MyCharacterInfo.lGuildIndex == guildindex )
@@ -6269,21 +6501,128 @@ void CUIGuild::ReceiveNewGuildMessage(UBYTE ubType,CNetworkMessage* istr)
 				pUIManager->GetGuildMark()->InitGuidMark();
 			}
 			break;
+
+		case MSG_GUILD_CONTRIBUTE_DATA:
+			{
+				ULONG iExpServ;
+				ULONG iPayExpMin;
+				ULONG iPayExpMax;
+				ULONG iFameServ;
+				ULONG iPayFameMin;
+				ULONG iPayFameMax;
+
+				(*istr) >> iExpServ
+					>> iFameServ
+					>> iPayExpMin
+					>> iPayExpMax
+					>> iPayFameMin
+					>> iPayFameMax;
+
+				int nSize = m_vectorMemberList.size();
+				int nMyCharPosInMemberList = -1;
+				bool bFind = false;
+				for (int i = 0; i < nSize; ++i)
+				{
+					if (m_vectorMemberList[i].lIndex == _pNetwork->MyCharacterInfo.index )
+					{
+						nMyCharPosInMemberList = i;
+						bFind = true;
+						break;
+					}
+				}
+
+				if (bFind == true)
+				{
+					CTString StrTemp;
+					StrTemp.PrintF("%d%%", iPayExpMin);	
+					if (m_lbManageMemberListEx.GetCurItemCount(0) > nMyCharPosInMemberList)
+						m_lbManageMemberListEx.SetString( 0, nMyCharPosInMemberList, StrTemp);
+					else
+					{
+						if (m_pGuildDonateUI)
+						{
+							StrTemp.DeleteChar( StrTemp.Length()-1 );
+							m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_EXP_MIN, StrTemp);
+						}
+					}
+
+					StrTemp.PrintF("%d%%", iPayExpMax);
+					if (m_lbManageMemberListEx.GetCurItemCount(1) > nMyCharPosInMemberList)
+						m_lbManageMemberListEx.SetString( 1, nMyCharPosInMemberList, StrTemp);
+					else
+					{
+						if (m_pGuildDonateUI)
+						{
+							StrTemp.DeleteChar( StrTemp.Length()-1 );
+							m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_EXP_MAX, StrTemp);
+						}
+					}
+
+					StrTemp.PrintF("%d%%", iPayFameMin);
+					if (m_lbManageMemberListEx.GetCurItemCount(2) > nMyCharPosInMemberList)
+						m_lbManageMemberListEx.SetString( 2, nMyCharPosInMemberList, StrTemp);
+					else
+					{
+						if (m_pGuildDonateUI)
+						{
+							StrTemp.DeleteChar( StrTemp.Length()-1 );
+							m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_FAME_MIN, StrTemp);
+						}
+					}
+
+					StrTemp.PrintF("%d%%", iPayFameMax);
+					if (m_lbManageMemberListEx.GetCurItemCount(3) > nMyCharPosInMemberList)
+						m_lbManageMemberListEx.SetString( 3, nMyCharPosInMemberList, StrTemp);
+					else
+					{
+						if (m_pGuildDonateUI)
+						{
+							StrTemp.DeleteChar( StrTemp.Length()-1 );
+							m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_FAME_MAX, StrTemp);
+						}
+					}
+
+					StrTemp.PrintF("%d%%", iExpServ);
+					if (m_lbManageMemberList.GetCurItemCount(4) > nMyCharPosInMemberList)
+						m_lbManageMemberList.SetString( 4, nMyCharPosInMemberList, StrTemp);
+					else
+					{
+						if (m_pGuildDonateUI)
+						{
+							StrTemp.DeleteChar( StrTemp.Length()-1 );
+							m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_EXP, StrTemp);
+						}
+					}
+					
+					StrTemp.PrintF("%d%%", iFameServ);
+					if (m_lbManageMemberList.GetCurItemCount(5) > nMyCharPosInMemberList)
+						m_lbManageMemberList.SetString( 5, nMyCharPosInMemberList, StrTemp);
+					else
+					{
+						if (m_pGuildDonateUI)
+						{
+							StrTemp.DeleteChar( StrTemp.Length()-1 );
+							m_pGuildDonateUI->SetString(CGuildDonateUI::eEDIT_FAME, StrTemp);
+						}
+					}
+				}
+
+				// Open 설정창.
+				pUIManager->GetGuild()->SetManageSetAllPopup(TRUE, eDONATE_UI_CHANGE_INFO);
+			}
+			break;
 	}	
 }
 
 
 void CUIGuild::UpdateGuildSkillLearnMessage(UpdateClient::doNewGuildSkillLearnToMemberMsg& SkillInfo)
 {
-	CTString tStr;
-
 	MY_INFO()->SetSkill(SkillInfo.skill_index, SkillInfo.skill_level);
 
 	if ( SkillInfo.skill_type == GUILD_SKILL_ACTIVE)
 	{
 		INDEX tCnt = m_vecGuildActiveSkill.size();
-		tStr.PrintF("%d",tCnt);
-
+	
 		for(int i = 0; i < tCnt; i++)
 		{
 			if( m_vecGuildActiveSkill[i].GetIndex() == SkillInfo.skill_index)
@@ -6296,8 +6635,7 @@ void CUIGuild::UpdateGuildSkillLearnMessage(UpdateClient::doNewGuildSkillLearnTo
 	else if ( SkillInfo.skill_type == GUILD_SKILL_PASSIVE )
 	{
 		INDEX tCnt = m_vecGuildPassiveSkill.size();
-		tStr.PrintF("%d",tCnt);
-
+	
 		for(int i = 0; i < tCnt; i++)
 		{
 			if( m_vecGuildPassiveSkill[i].GetIndex() == SkillInfo.skill_index)
@@ -6312,46 +6650,17 @@ void CUIGuild::UpdateGuildSkillLearnMessage(UpdateClient::doNewGuildSkillLearnTo
 		return;
 	}
 
-	SetSkillBtnInfo();
-	SetGuildSkillInfo();
+	if( IsVisible() == TRUE )
+	{
+		SetSkillBtnInfo();
+		SetGuildSkillInfo();
+	}
 }
 
 // 길드 멤버 정보 리스트 추가
 void CUIGuild::AddGuildMemberInfo(clsGuildMemberNew tMemberInfo)
 {
-	CTString tPer;
-	CTString strTemp;
-	m_lbGuildMemberList.ChangeCurrentState(CUIListBoxEx::PS_NONE);
-	m_lbGuildMemberList.AddString(0,CTString(" "));
-	m_lbGuildMemberList.SetImageBox(m_lbGuildMemberList.GetCurItemCount(0)-1, CUIImageBox::IT_CORPS, tMemberInfo.eRanking, TRUE, ResetPosName(CTString(""), tMemberInfo.eRanking) );
-	m_lbGuildMemberList.AddString(1,CTString(tMemberInfo.strMemberName.c_str()));
-	m_lbGuildMemberList.AddString(2,CTString(tMemberInfo.sPosName.c_str()));
-
-	//자기 정보면 직위명추가
-	strTemp = tMemberInfo.strMemberName.c_str();
-	if(strTemp.Matches(_pNetwork->MyCharacterInfo.name))
-	{
-		_pNetwork->MyCharacterInfo.guildPosName = tMemberInfo.sPosName.c_str();
-	}
-
-	tPer.PrintF("%d",tMemberInfo.iLevel);
-	m_lbGuildMemberList.AddString(3,tPer);
-	tPer.PrintF("%s",tMemberInfo.sJobName.c_str());
-	m_lbGuildMemberList.AddString(4,tPer);
-
-	if (tMemberInfo.iLocation >= 0)
-		tPer.PrintF("%s",tMemberInfo.sLocName.c_str());
-	else
-		tPer = _S(3978, "비접속");
-
-	m_lbGuildMemberList.AddString(5,tPer);		
-	if(m_iGuildTotalPoint>0)
-		tPer.PrintF("%d%",(tMemberInfo.iCumulPoint*100)/m_iGuildTotalPoint);
-	else 
-		tPer.PrintF("0");
-	m_lbGuildMemberList.AddString(6,tPer);				
-	tPer.PrintF("%d",tMemberInfo.iCumulPoint);
-	m_lbGuildMemberList.AddString(7,tPer);				
+	m_vecGuildMember.push_back(tMemberInfo);
 }
 
 // 길드 멤버 정보 리스트 추가
@@ -6376,7 +6685,15 @@ void CUIGuild::AddGuildManageInfo(clsGuildMemberNew tMemberInfo)
 	m_lbManageMemberList.AddString(5,tPer);	
 #ifdef ENABLE_GUILD_STASH
 	m_lbManageMemberList.AddString(6,tMemberInfo.bStashPermission>0?_S(5560, "가능") : _S(5561, "불가") );	
-#endif	
+#endif
+	tPer.PrintF("%d%%",tMemberInfo.iDonateExpMin);
+	m_lbManageMemberListEx.AddString(0,tPer);
+	tPer.PrintF("%d%%",tMemberInfo.iDonateExpMax);
+	m_lbManageMemberListEx.AddString(1,tPer);
+	tPer.PrintF("%d%%",tMemberInfo.iDonateFameMin);
+	m_lbManageMemberListEx.AddString(2,tPer);
+	tPer.PrintF("%d%%",tMemberInfo.iDonateFameMax);
+	m_lbManageMemberListEx.AddString(3,tPer);	
 }
 
 // ----------------------------------------------------------------------------
@@ -6435,17 +6752,129 @@ void CUIGuild::AdjustGuildMemberInfo()
 {	
 	INDEX tRow = m_lbManageMemberList.GetCurSel();
 	CTString strCorps = ResetPosName( CTString(""), GetSelectedPositon() );
+
 	m_lbManageMemberList.SetString(0,tRow, strCorps);
+
 	m_vectorMemberList[tRow].eRanking = GetSelectedPositon();
-	m_lbManageMemberList.SetString(1,tRow,CTString(m_ebChangePositionName.GetString()));
+	m_lbManageMemberList.SetString(1, tRow, m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_CHANGE_POSITION));
+
 	CTString strTmp;
-	strTmp.PrintF("%s%%",CTString(m_ebChangePayExp.GetString()));
-	m_lbManageMemberList.SetString(4,tRow,strTmp);
-	strTmp.PrintF("%s%%",CTString(m_ebChangePayFame.GetString()));
-	m_lbManageMemberList.SetString(5,tRow,strTmp);
+	strTmp.PrintF("%s%%", m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_EXP_MIN));
+	m_lbManageMemberListEx.SetString(0, tRow, strTmp);
+
+	strTmp.PrintF("%s%%", m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_EXP_MAX));
+	m_lbManageMemberListEx.SetString(1, tRow, strTmp);
+
+	strTmp.PrintF("%s%%", m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_FAME_MIN));
+	m_lbManageMemberListEx.SetString(2, tRow, strTmp);
+
+	strTmp.PrintF("%s%%", m_pGuildChangeSetUI->GetString(CGuildChangeSetUI::eEDIT_FAME_MAX));
+	m_lbManageMemberListEx.SetString(3, tRow, strTmp);
+
 #ifdef ENABLE_GUILD_STASH
-	m_lbManageMemberList.SetString(6,tRow, m_ckGuildStashPermission.IsChecked() ? _S(5560, "가능") : _S(5561, "불가") );
+	m_lbManageMemberList.SetString(6,tRow, m_pGuildChangeSetUI->GetStashUsable() ? _S(5560, "가능") : _S(5561, "불가") );
 #endif
+
+	int nOldExp = atoi(m_lbManageMemberList.GetString( 4, tRow));
+	int nExp = nOldExp;
+	int nExpDonateMin = atoi(m_lbManageMemberListEx.GetString( 0, tRow));
+	int nExpDonateMax = atoi(m_lbManageMemberListEx.GetString( 1, tRow));
+
+	int nOldFame = atoi(m_lbManageMemberList.GetString( 5, tRow));
+	int nFame = nOldFame;
+	int nFameDonateMin = atoi(m_lbManageMemberListEx.GetString( 2, tRow));
+	int nFameDonateMax = atoi(m_lbManageMemberListEx.GetString( 3, tRow));
+
+	if (nExp > nExpDonateMax)
+		nExp = nExpDonateMax;
+	else if (nExp < nExpDonateMin)
+		nExp = nExpDonateMin;
+
+	if (nFame > nFameDonateMax)
+		nFame = nFameDonateMax;
+	else if (nFame < nFameDonateMin)
+		nFame = nFameDonateMin;
+
+	if (nOldExp != nExp)
+	{
+		strTmp.PrintF("%d%%", nExp);
+		m_lbManageMemberList.SetString(4, tRow, strTmp);
+	}
+
+	if (nOldFame != nFame)
+	{
+		strTmp.PrintF("%d%%", nFame);
+		m_lbManageMemberList.SetString(5, tRow, strTmp);
+	}
+}
+
+void CUIGuild::AdjustDonateMinMaxInfo()
+{
+	if (m_pGuildDonateUI == NULL)
+		return;
+
+	int nSize = m_vManageMemberIndex.size();
+
+	CTString strExpMin;
+	strExpMin.PrintF("%s%%", m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_EXP_MIN));
+
+	CTString strExpMax;
+	strExpMax.PrintF("%s%%", m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_EXP_MAX));
+
+	CTString strFameMin;
+	strFameMin.PrintF("%s%%", m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_FAME_MIN));
+
+	CTString strFameMax;
+	strFameMax.PrintF("%s%%", m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_FAME_MAX));
+
+	CTString strExp;
+	strExp.PrintF("%s%%", m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_EXP));
+
+	CTString strFame;
+	strFame.PrintF("%s%%", m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_FAME));
+
+	for (int i = 0; i < nSize; ++i)
+	{		
+		m_lbManageMemberListEx.SetString( 0, i, strExpMin);		
+		m_lbManageMemberListEx.SetString( 1, i, strExpMax);		
+		m_lbManageMemberListEx.SetString( 2, i, strFameMin);		
+		m_lbManageMemberListEx.SetString( 3, i, strFameMax);		
+		m_lbManageMemberList.SetString( 4, i, strExp);		
+		m_lbManageMemberList.SetString( 5, i, strFame);
+	}	
+}
+
+void CUIGuild::AdjustMyDonateInfo()
+{
+	if (m_pGuildDonateUI == NULL)
+		return;
+
+	int nSize = m_vectorMemberList.size();
+	int nMyCharPosInMemberList = -1;
+
+	for (int i = 0; i < nSize; ++i)
+	{
+		if (m_vectorMemberList[i].lIndex == _pNetwork->MyCharacterInfo.index )
+		{
+			nMyCharPosInMemberList = i;
+			break;
+		}
+	}
+
+	if (nMyCharPosInMemberList < 0 || nMyCharPosInMemberList >= nSize)
+		return;
+
+	CTString strTemp;
+
+	strTemp.PrintF("%s%%", m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_EXP));
+
+	if (m_lbManageMemberList.GetCurItemCount(4) > nMyCharPosInMemberList)
+		m_lbManageMemberList.SetString( 4, nMyCharPosInMemberList, strTemp);
+
+	strTemp.PrintF("%s%%", m_pGuildDonateUI->GetString(CGuildDonateUI::eEDIT_FAME));
+	
+	if (m_lbManageMemberList.GetCurItemCount(5) > nMyCharPosInMemberList)
+		m_lbManageMemberList.SetString( 5, nMyCharPosInMemberList, strTemp);
 }
 
 void CUIGuild::SetGuildSkillList()
@@ -6585,10 +7014,9 @@ BOOL CUIGuild::IsEditBoxFocused()
 	m_mebContent.IsFocused() ||
 	m_ebNoticeTitle.IsFocused() ||
 	m_mebNoticeContent.IsFocused() ||
-	m_ebChangePositionName.IsFocused() ||
-	m_ebChangePayExp.IsFocused() ||
-	m_ebChangePayFame.IsFocused() ||
-	m_cmbCorps.IsFocused() );	
+	(m_pGuildChangeSetUI && m_pGuildChangeSetUI->IsFocusedComboBox()) ||
+	(m_pGuildChangeSetUI && m_pGuildChangeSetUI->IsFocused()) ||
+	(m_pGuildDonateUI && m_pGuildDonateUI->IsFocused()));	
 }
 
 void CUIGuild::KillFocusEditBox() 
@@ -6600,10 +7028,13 @@ void CUIGuild::KillFocusEditBox()
 	m_mebContent.SetFocus( FALSE );
 	m_ebNoticeTitle.SetFocus( FALSE );
 	m_mebNoticeContent.SetFocus( FALSE );
-	m_ebChangePositionName.SetFocus( FALSE );
-	m_ebChangePayExp.SetFocus( FALSE );
-	m_ebChangePayFame.SetFocus( FALSE );
-	m_cmbCorps.SetFocus( FALSE );
+	m_pGuildChangeSetUI->SetFocusComboBox( FALSE );
+
+	if (m_pGuildChangeSetUI != NULL)
+		m_pGuildChangeSetUI->KillFocusEditBox();
+
+	if (m_pGuildDonateUI != NULL)
+		m_pGuildDonateUI->KillFocusEditBox();
 }
 
 // ----------------------------------------------------------------------------
@@ -6870,7 +7301,11 @@ void CUIGuild::SetGuildSkillInfo()
 	CSkill* pSkill = GetGuildSkill(m_iGuildSkillPos);
 	CTString strMessage;
 	CTString strSkillName;
+	CTString strTemp;
+	CTString strCount;
 
+	if (pSkill == NULL)
+		return;
 	// ------------------------------------------------------------------
 	// 사용 정보 
 	int nCurSkillLevel = pSkill->GetCurLevel();
@@ -6903,7 +7338,9 @@ void CUIGuild::SetGuildSkillInfo()
 
 		if ( nNeedGP > 0 )
 		{	// Need GP
-			strMessage.PrintF( _S( 5032, "소모 GP : %d" ), nNeedGP);
+			strTemp.PrintF("%d", nNeedGP);
+			pUIManager->InsertCommaToString(strTemp);
+			strMessage.PrintF( _S( 5032, "소모 GP : %s" ), strTemp);
 			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
 		}
 		if ( nNeedItemIndex1 > 0 || nNeedItemIndex2 > 0 )
@@ -6912,12 +7349,14 @@ void CUIGuild::SetGuildSkillInfo()
 			pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
 			if ( nNeedItemIndex1 > 0)
 			{	// Need Item1
-				strMessage.PrintF( _S( 260, "  %s %d개" ), _pNetwork->GetItemName(nNeedItemIndex1), nNeedItemCount1 );
+				strCount = pUIManager->IntegerToCommaString(nNeedItemCount1);
+				strMessage.PrintF( _S( 260, "  %s %s개" ), _pNetwork->GetItemName(nNeedItemIndex1), strCount );
 				pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
 			}
 			if ( nNeedItemIndex2 > 0)
 			{	// Need Item2
-				strMessage.PrintF( _S( 260, "  %s %d개" ), _pNetwork->GetItemName(nNeedItemIndex1), nNeedItemCount2 );
+				strCount = pUIManager->IntegerToCommaString(nNeedItemCount2);
+				strMessage.PrintF( _S( 260, "  %s %s개" ), _pNetwork->GetItemName(nNeedItemIndex1), strCount );
 				pUIManager->AddStringToList(&m_lbUseInfo, strMessage, 20, colUseSkillInfo);
 			}
 		}
@@ -6999,7 +7438,9 @@ void CUIGuild::SetGuildSkillInfo()
 		}
 		if ( nLearnGP > 0 )
 		{	// Learn GP
-			strMessage.PrintF( _S( 5119, "필요 GP : %d" ), nLearnGP);
+			strTemp.PrintF("%d", nLearnGP);
+			pUIManager->InsertCommaToString(strTemp);
+			strMessage.PrintF( _S( 5119, "필요 GP : %s" ), strTemp);
 			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
 		}
 
@@ -7007,7 +7448,8 @@ void CUIGuild::SetGuildSkillInfo()
 		{	// Learn Item
 			if ( nLearnItemIndex[i] > 0 )
 			{
-				strMessage.PrintF( _S( 260, "  %s %d개" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), nLearnItemCount[i] );
+				strCount = pUIManager->IntegerToCommaString(nLearnItemCount[i]);
+				strMessage.PrintF( _S( 260, "  %s %s개" ), _pNetwork->GetItemName( nLearnItemIndex[i] ), strCount );
 				strMessage = _S( 259, "필요 아이템" ) + strMessage;
 				pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
 			}
@@ -7043,7 +7485,9 @@ void CUIGuild::SetGuildSkillInfo()
 		}
 		if ( nNeedGP > 0 )
 		{	// Need GP
-			strMessage.PrintF( _S( 5032, "소모 GP : %d" ), nNeedGP);
+			strTemp.PrintF("%d", nNeedGP);
+			pUIManager->InsertCommaToString(strTemp);
+			strMessage.PrintF( _S( 5032, "소모 GP : %s" ), strTemp);
 			pUIManager->AddStringToList(&m_lbLearnInfo, strMessage, 20, colLearnSkillInfo);
 		}
 		if ( nPower > 0 )
@@ -7332,7 +7776,7 @@ INDEX CUIGuild::GetSelectedPositon()
 		iPosition = TmpMember.eRanking;
 		if ( iPosition != GUILD_MEMBER_BOSS && iPosition != GUILD_MEMBER_VICE_BOSS )
 		{
-			int nSelCombo = m_cmbCorps.GetCurSel();
+			int nSelCombo = m_pGuildChangeSetUI->GetComboCurSelIdx();
 			switch( nSelCombo )
 			{
 			case CMB_RUSH_CAPTAIN:
@@ -7457,7 +7901,7 @@ void CUIGuild::SetCorpsInfo( INDEX memberCount, INDEX bossCount )
 // ----------------------------------------------------------------------------
 void CUIGuild::SetCorpsComboBox()
 {
-	m_cmbCorps.ResetStrings();
+	m_pGuildChangeSetUI->ResetComboBox();
 
 	int iSelMember = m_lbManageMemberList.GetCurSel();
 	if( iSelMember != -1 )
@@ -7470,13 +7914,13 @@ void CUIGuild::SetCorpsComboBox()
 		{
 		case GUILD_MEMBER_BOSS:
 			{
-				m_cmbCorps.AddString( m_strCorps[GUILD_MEMBER_BOSS] );
+				m_pGuildChangeSetUI->AddComboString( m_strCorps[GUILD_MEMBER_BOSS] );
 				nSelCombo = 0;
 			}
 			break;
 		case GUILD_MEMBER_VICE_BOSS:
 			{
-				m_cmbCorps.AddString( m_strCorps[GUILD_MEMBER_VICE_BOSS] );
+				m_pGuildChangeSetUI->AddComboString( m_strCorps[GUILD_MEMBER_VICE_BOSS] );
 				nSelCombo = 0;
 			}
 			break;
@@ -7507,11 +7951,11 @@ void CUIGuild::SetCorpsComboBox()
 		{
 			for ( int iPos=GUILD_MEMBER_MEMBER; iPos<GUILD_MEMBER_TOTAL; ++iPos )
 			{
-				m_cmbCorps.AddString( m_strCorps[iPos] );
+				m_pGuildChangeSetUI->AddComboString( m_strCorps[iPos] );
 			}
 		}
 
-		m_cmbCorps.SetCurSel( nSelCombo );
+		m_pGuildChangeSetUI->SetComboCurSelIdx( nSelCombo );
 	}	
 }
 
@@ -7549,7 +7993,24 @@ void CUIGuild::ReceiveCorpsInfo( CNetworkMessage* istr )
 WMSG_RESULT CUIGuild::OpenGuildPop( int nMemberIdx, int nX, int nY )
 {
 	CUIManager* pUIManager = CUIManager::getSingleton();
-	CTString strTargetName = m_lbGuildMemberList.GetString(1, nMemberIdx);
+	
+	if (m_pGuildMember == NULL)
+		return WMSG_FAIL;
+
+	if (m_pGuildMember->m_pList == NULL)
+		return WMSG_FAIL;
+
+	if (m_pGuildMember->m_pList->getListItemCount() <= nMemberIdx || nMemberIdx < 0)
+		return WMSG_FAIL;
+
+	CUIListItem* pItem = (CUIListItem*)m_pGuildMember->m_pList->GetListItem(nMemberIdx);
+
+	CUIText* pText = (CUIText*)pItem->findUI("text_name");
+
+	if (pText == NULL)
+		return WMSG_FAIL;
+
+	CTString strTargetName = pText->getText();
 
 	if ( IsOnline(strTargetName) == FALSE )
 	{
@@ -7607,8 +8068,10 @@ void CUIGuild::ArrangeMemList(const int eType)
 
 	BOOL bAscending = !(m_pCbMemberArrange[eType]->IsChecked());
 
-	m_lbGuildMemberList.Reset();
-	m_lbGuildMemberList.ResetAllStrings();
+	if (m_pGuildMember != NULL)
+		m_pGuildMember->resetList();
+
+	m_vecGuildMember.clear();
 
 	switch(eType)
 	{
@@ -7695,18 +8158,41 @@ void CUIGuild::ArrangeMemList(const int eType)
 	case eGML_LOCAL:
 		{
 			const ContGuild::nth_index<eGML_LOCAL>::type& use_index = m_ContGuild.get<eGML_LOCAL>();
+			const ContGuild::nth_index<eGML_LOGOUT_DATE>::type& use_index2 = m_ContGuild.get<eGML_LOGOUT_DATE>();
 
 			if (bAscending == TRUE)
 			{
 				for (auto iter = use_index.begin(); iter != use_index.end(); ++iter)
 				{
+					if ( (*iter)->bOnline == FALSE )
+						continue;
+
+					AddGuildMemberInfo(*(*iter).get());
+				}
+
+				for (auto iter = use_index2.rbegin(); iter != use_index2.rend(); ++iter)
+				{
+					if ( (*iter)->bOnline == TRUE )
+						continue;
+
 					AddGuildMemberInfo(*(*iter).get());
 				}
 			}
 			else
 			{
+				for (auto iter = use_index2.begin(); iter != use_index2.end(); ++iter)
+				{
+					if ( (*iter)->bOnline == TRUE )
+						continue;
+
+					AddGuildMemberInfo(*(*iter).get());
+				}
+
 				for (auto iter = use_index.rbegin(); iter != use_index.rend(); ++iter)
 				{
+					if ( (*iter)->bOnline == FALSE )
+						continue;
+
 					AddGuildMemberInfo(*(*iter).get());
 				}
 			}
@@ -7735,6 +8221,8 @@ void CUIGuild::ArrangeMemList(const int eType)
 		}
 		break;
 	}
+
+	updateGuildMemberList();
 #endif	// WORLD_EDITOR
 }
 
@@ -7775,4 +8263,291 @@ void CUIGuild::ClearGuildSkillCooltime()
 	}
 }
 
+CTString CUIGuild::GetMemberLogoutInfo( int nLogoutTime )
+{
+	CTString strTemp;
+	if( nLogoutTime > 0 )
+	{
+		int nCurTime = time(NULL);
+		int nTimeGap = nCurTime - nLogoutTime;
+
+		if (nTimeGap <= 0 || nTimeGap <= ONE_HOUR_SECOND)
+		{
+			strTemp.PrintF(_S(7102, "%d시간 전"), 1);
+		}
+		else if (nTimeGap <= ONE_DAY_SECOND)
+		{
+			int nHour = nTimeGap / ONE_HOUR_SECOND;
+			strTemp.PrintF(_S(7102, "%d시간 전"), nHour);
+		}
+		else
+		{
+			int nDay = nTimeGap / ONE_DAY_SECOND;	
+
+			if (nDay <= ONE_YEAR_DAY)
+				strTemp.PrintF(_S(7103, "%d일 전"), nDay);
+			else
+			{
+				int nYear = nDay / ONE_YEAR_DAY;
+				strTemp.PrintF(_S(7104, "%d년 전"), nYear);				
+			}
+		}
+	}
+	else
+		strTemp = _S(3978, "비접속");
+
+	return strTemp;
+}
+
+CTString CUIGuild::GetMemberLogoutTooltip( int nLogoutTime, int& nWidth )
+{
+	CTString strTemp = CTString("");
+
+	if (nLogoutTime > 0)
+	{
+		time_t tv_used = nLogoutTime;
+
+		tm* g_tv_t = localtime((time_t*)&tv_used);
+
+		strTemp.PrintF(  _S( 7105,"%d년%d월%d일%d시%d분"), g_tv_t->tm_year + 1900
+			, g_tv_t->tm_mon + 1, g_tv_t->tm_mday, g_tv_t->tm_hour, g_tv_t->tm_min);
+
+		if (g_iCountry == RUSSIA)
+		{
+			extern  CFontData* _pfdDefaultFont;
+			nWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strTemp.str_String);
+		}
+		else
+		{
+			CDrawPort* pDraw = CUIManager::getSingleton()->GetDrawPort();
+			nWidth = pDraw->GetTextWidth2(strTemp);
+		}
+
+		strTemp += _S(6099, "로그아웃");
+	}
+	
+	return strTemp;
+}
+
+void CUIGuild::updateGuildMemberList()
+{
+	if (m_pGuildMember == NULL)
+		return;
+
+	if (m_pGuildMember->m_pList == NULL)
+		return;
+
+	m_pGuildMember->resetList();
+
+	CTString tPer;
+	CTString strTemp;
+	
+	CUIListItem* pTemp = m_pGuildMember->m_pList->GetListItemTemplate();
+
+	if (pTemp == NULL)
+		return;
+
+	CUIListItem* pItem = NULL;
+	CUIText* pText = NULL;
+	CUIImageArray* pImageArr = NULL;
+
+	std::vector<clsGuildMemberNew>::iterator iter = m_vecGuildMember.begin();
+	std::vector<clsGuildMemberNew>::iterator iter_end = m_vecGuildMember.end();
+
+	int nListIdx = 0;
+	for (; iter != iter_end; ++iter)
+	{
+		m_pGuildMember->m_pList->AddListItem(pTemp->Clone());
+		pItem = (CUIListItem*)m_pGuildMember->m_pList->GetListItem(nListIdx);
+		
+		if (pItem == NULL)
+			continue;
+
+		CmdGuildMouseEvent* pCmdEnter = new CmdGuildMouseEvent;
+		pCmdEnter->setData(this, pItem, 0xF8E1B5FF);
+		pItem->SetCommandEnter(pCmdEnter);
+
+		CmdGuildMouseEvent* pCmdLeave = new CmdGuildMouseEvent;
+		pCmdLeave->setData(this, pItem, 0xF2F2F2FF);
+		pItem->SetCommandLeave(pCmdLeave);
+
+		clsGuildMemberNew tMemberInfo = *iter;
+
+		pImageArr = (CUIImageArray*)pItem->findUI("ia_pos");
+
+		if (pImageArr != NULL)
+			pImageArr->SetRenderIdx(tMemberInfo.eRanking);
+
+		pText = (CUIText*)pItem->findUI("text_name");
+
+		if (pText != NULL)
+			pText->SetText(CTString(tMemberInfo.strMemberName.c_str()));
+
+		pText = (CUIText*)pItem->findUI("text_title");
+
+		if (pText != NULL)
+			pText->SetText(CTString(tMemberInfo.sPosName.c_str()));
+
+		//자기 정보면 직위명추가
+		strTemp = tMemberInfo.strMemberName.c_str();
+
+		if(strTemp.Matches(_pNetwork->MyCharacterInfo.name))
+			_pNetwork->MyCharacterInfo.guildPosName = tMemberInfo.sPosName.c_str();
+
+		tPer.PrintF("%d",tMemberInfo.iLevel);
+		pText = (CUIText*)pItem->findUI("text_level");
+		
+		if (pText != NULL)
+			pText->SetText(tPer);
+
+		tPer.PrintF("%s",tMemberInfo.sJobName.c_str());
+
+		pText = (CUIText*)pItem->findUI("text_class");
+
+		if (pText != NULL)
+			pText->SetText(tPer);
+
+		CTString strToolTip = CTString("");
+		int nTooltipWidth = 0;
+		if (tMemberInfo.iLocation >= 0)
+			tPer.PrintF("%s",tMemberInfo.sLocName.c_str());
+		else
+		{
+			tPer = GetMemberLogoutInfo(tMemberInfo.nLogoutDate);
+			strToolTip = GetMemberLogoutTooltip(tMemberInfo.nLogoutDate, nTooltipWidth);	
+		}
+
+		pText = (CUIText*)pItem->findUI("text_local");
+
+		if (pText != NULL)
+		{
+			pText->SetText(tPer);
+			if (strToolTip.IsEmpty() == FALSE)
+			{
+				pText->setTooltip(strToolTip);
+				pText->setTooltipWidth(nTooltipWidth);
+			}
+		}
+
+		if(m_iGuildTotalPoint > 0)
+			tPer.PrintF("%d%",(tMemberInfo.iCumulPoint * 100) / m_iGuildTotalPoint);
+		else 
+			tPer.PrintF("0");
+
+		UIMGR()->InsertCommaToString(tPer);
+		pText = (CUIText*)pItem->findUI("text_contribution");
+
+		if (pText != NULL)
+			pText->SetText(tPer);
+
+		tPer.PrintF("%d",tMemberInfo.iCumulPoint);
+		UIMGR()->InsertCommaToString(tPer);
+
+		pText = (CUIText*)pItem->findUI("text_point");
+
+		if (pText != NULL)
+			pText->SetText(tPer);
+
+		++nListIdx;
+	}
+
+	int nItemCount = m_pGuildMember->m_pList->getListItemCount();
+	m_pGuildMember->m_pList->setCurSel(-1);
+	CUIScrollBar* pScroll = m_pGuildMember->m_pList->GetScroll();
+	if (pScroll != NULL)
+		pScroll->SetScrollCurPos(0);
+
+	m_pGuildMember->m_pList->UpdateScroll(nItemCount);
+	m_pGuildMember->m_pList->UpdateList();
+}
+
+void CUIGuild::SetMemberListStrColor( CUIListItem* pListItem, COLOR col )
+{
+	if ( pListItem == NULL )
+		return;
+
+	int nMax = pListItem->getChildCount();
+	CUIText* pTex;
+
+	for (int i = 1; i < nMax; i++)
+	{
+		pTex = (CUIText*)pListItem->getChildAt(i);
+
+		if ( pTex != NULL)
+			pTex->setFontColor(col);
+	}
+}
+
 // -------------------------------------------------------------------------------------------------------->>
+
+CGuildMemberDesign::CGuildMemberDesign()
+	: m_pList(NULL)
+{
+
+}
+
+void CGuildMemberDesign::initialize()
+{
+	m_pList = (CUIList*)findUI("list_guildmember");
+}
+
+void CGuildMemberDesign::resetList()
+{
+	if (m_pList != NULL)
+		m_pList->DeleteAllListItem();
+}
+
+void CGuildMemberDesign::SetFontColor( COLOR col )
+{
+	if (m_pList == NULL)
+		return;
+
+	CUIText* pText = NULL;
+	CUIListItem* pItem = NULL;
+	int count = m_pList->getListItemCount();
+
+	for (int i = 0; i < count; ++i)
+	{
+		pItem = (CUIListItem*)m_pList->GetListItem(i);
+
+		if (pItem == NULL)
+			continue;
+
+		pText = (CUIText*)pItem->findUI("text_name");
+
+		if (pText != NULL)
+			pText->setFontColor(col);
+
+		pText = (CUIText*)pItem->findUI("text_title");
+
+		if (pText != NULL)
+			pText->setFontColor(col);
+
+		pText = (CUIText*)pItem->findUI("text_level");
+
+		if (pText != NULL)
+			pText->setFontColor(col);
+
+		pText = (CUIText*)pItem->findUI("text_class");
+
+		if (pText != NULL)
+			pText->setFontColor(col);
+
+		pText = (CUIText*)pItem->findUI("text_local");
+
+		if (pText != NULL)
+			pText->setFontColor(col);
+
+		pText = (CUIText*)pItem->findUI("text_contribution");
+
+		if (pText != NULL)
+			pText->setFontColor(col);
+
+		pText = (CUIText*)pItem->findUI("text_point");
+
+		if (pText != NULL)
+			pText->setFontColor(col);
+	}
+
+	m_pList->UpdateList();
+}

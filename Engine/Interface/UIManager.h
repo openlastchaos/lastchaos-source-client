@@ -44,7 +44,6 @@ enum UI_MSGCMD
 	MSGCMD_GUILD_JOIN,						// 길드 가입
 	MSGCMD_GUILD_JOIN_REQ,					// 가입 신청중
 	MSGCMD_GUILD_QUIT,						// 길드 탈퇴
-	MSGCMD_GUILD_QUIT_CONFIRM,				// 길드 탈퇴 확인
 	MSGCMD_GUILD_DESTROY,					// 길드 해체
 	MSGCMD_GUILD_ERROR,						// 길드에서 에러 발생.
 	MSGCMD_GUILD_ROOM,						// 길드 전용 공간으로 이동.
@@ -501,6 +500,8 @@ enum UI_MSGCMD
 
 	MSGCMD_USE_PET_ACCUMULATE,			// 축적펫 메시지 박스
 	MSGCMD_USE_PET_ACCUMULATE2,
+	MSGCMD_USE_PET_ITEM_UPGRADE,		// 펫 장비 강화
+	MSGCMD_USE_PET_ITEM_UPGRADE_INFO,
 	MSGCMD_SENDMAIL_COUNT_INPUT,		// [2012/01/18] 메일 보내기 아이템 카운트 세팅
 	MSGCMD_SENDMAIL_COUNT_ADD,			// [2012/01/18] 메일 보내기 아이템 카운트 더하기
 	MSGCMD_SENDMAIL_MONEY_INPUT,		// [2012/01/26] 메일 보내기 돈 입력 메시지 박스
@@ -524,6 +525,7 @@ enum UI_MSGCMD
 	MSGCMD_EXPRESS_RECVALL,
 	MSGCMD_EXPRESS_DELETE,
 	MSGCMD_EXPRESS_DELETEALL,
+	MSGCMD_EXPRESS_RECV_ERROR,
 	MSGCMD_EXPRESS_REMOTE_ITEMUSE,
 	MSGCMD_EXPRESS_REMOTE_ERROR,
 	MSGCMD_PET_STASH_INSTASH,
@@ -550,6 +552,7 @@ enum UI_MSGCMD
 	MSGCMD_PREMIUM_CHAR_ITEM_USE,
 #endif	//	PREMIUM_CHAR
 	MSGCMD_LOGOUT_RELIC_WARRING,
+	MSGCMD_GUILDBATTLE_CHALLENGE,
 	MSGCMD_TOTAL
 };
 
@@ -1332,7 +1335,11 @@ public:
 	void	MsgBoxLCommand( int nCommandCode, int nResult ) {}
 
 	// Misc functions
-	void	InsertCommaToString( CTString &strCount );
+	CTString IntegerToCommaString(__int64 llCount);			// 정수형 값을 자릿수 구분된 찍힌 스트링으로 변환
+	CTString RealNumberToCommaString(double fCount, int nDecimalplaces = 1); // 실수형 값을 자릿수 구분된 스트링으로 변환
+	void	FitOrderDecimalString(CTString &strCount, int nDecimalplaces);	// 소수 자릿수에 맞춰 잘라준다.
+	void	InsertCommaToString( CTString &strCount );		// 1000 자리수 마다 구분기호를 넣어주는 함수
+	void	InsertCommaToStringEx( CTString &strRealNumber);// 실수형까지 처리
 	COLOR	GetNasColor( SQUAD llNas );
 	COLOR	GetNasColor( CTString strNas );
 	CTString NasNumToWord( SQUAD llNas);
@@ -1463,7 +1470,6 @@ public:
 
 	void InitCurInfoLines(void) { m_nCurInfoLines = 0; }
 	void AddItemInfoString(CTString &strItemInfo, COLOR colItemInfo ,int maxLine, int maxChars);
-	void RenderBtnInfo(CTextureData* texData, CUIButton& srcBtn, UIRectUV rtUV[], int nLength=34);
 
 	// added by sam 11/03/02 번역되지 않은 스트링 넘버 보이기
 	void ShowNoTranslationString ();
@@ -1532,7 +1538,8 @@ public:
 	COLOR GetItemNameColor(int nType) {	return m_colItemDropName[nType];	}
 	void DropItemCallback();
 	void SetGuildMark();
-
+	
+	bool DropProc();
 #ifdef	VER_TEST
 	void setIPString(const char* strIP) { 
 		extern INDEX sam_bFullScreenActive;

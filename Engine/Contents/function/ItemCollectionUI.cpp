@@ -238,6 +238,9 @@ void CItemCollectionUI::CloseUI()
 	}
 
 	CUIBase::CloseProc();
+
+	if (m_pCombo != NULL)
+		CUIFocus::getSingleton()->killFocus(m_pCombo);
 }
 
 //===========================================>>

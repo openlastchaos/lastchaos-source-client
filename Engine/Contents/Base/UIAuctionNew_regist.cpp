@@ -334,6 +334,7 @@ void CUIAuctionNew::updateFeeDeposit( __int64 deposit, float fee )
 	str.PrintF("%.1f%%", fCommission);
 	m_pTxtFee->SetText(str);
 	str.PrintF("%I64d", deposit);
+	UIMGR()->InsertCommaToString(str);
 	m_pTxtDeposit->SetText(str);
 }
 
@@ -365,16 +366,6 @@ void CUIAuctionNew::checkItemCount()
 			m_pBtnRegist->SetEnable(TRUE);
 		else 
 			m_pBtnRegist->SetEnable(FALSE);
-
-		// 자동 입력은 비활성화
-// 		__int64 nCnt = _pNetwork->MySlotItem[m_btnRegisterItem.GetItemTab()][m_btnRegisterItem.GetInvenIndex()][m_btnRegisterItem.GetItemCol()].Item_Sum;
-// 
-// 		if (nCnt < m_nQty)
-// 		{
-// 			return;
-// 		}
-// 
-// 		m_pEditQuantity->SetString( CTString(0, "%I64d", nCnt).str_String );
 	}
 }
 
@@ -417,10 +408,16 @@ void CUIAuctionNew::showRegOK()
 	MsgBoxInfo.SetMsgBoxInfo( _S(4287, "거래 대행 서비스"), UMBS_OK, UI_NONE, MSGCMD_NULL );
 
 	MsgBoxInfo.AddString(_S(4304, "거래 대행 서비스를 이용해 주셔서 감사합니다"));
-	
-	MsgBoxInfo.AddString( CTString(0, _S(4305, "%s %d개를 %d나스로 등록하셨습니다"), m_strRegname, m_nQty, m_nPrice) );
+
+	CTString strNas;
+	strNas.PrintF("%I64d", m_nPrice);
+	pUIMgr->InsertCommaToString(strNas);
+	MsgBoxInfo.AddString( CTString(0, _S(4305, "%s %ld개를 %s나스로 등록하셨습니다."), m_strRegname, m_nQty, strNas) );
+
 	LOG_DEBUG("deposti %I64d", m_pAuction->getDeposit());
-	MsgBoxInfo.AddString( CTString(0, _S(4306, "보증금으로 %I64d나스를 지불하셨습니다"), m_pAuction->getDeposit()) );
+	strNas.PrintF("%I64d", m_pAuction->getDeposit());
+	pUIMgr->InsertCommaToString(strNas);
+	MsgBoxInfo.AddString( CTString(0, _S(4306, "보증금으로 %s나스를 지불하셨습니다."), strNas) );
 
 	pUIMgr->CreateMessageBox(MsgBoxInfo);
 }

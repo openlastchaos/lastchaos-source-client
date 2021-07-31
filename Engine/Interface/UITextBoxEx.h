@@ -32,13 +32,19 @@ public:
 
 	const char* GetText()	{ return m_strOrigin.c_str();	}
 
-	void ClearUI();
-	void Release();
+	void erase();
+	void deleteCont();
 
 	void AddUI(CUIBase* pBase = NULL);
 	int GetTextExCount()	{ return m_vecUICont.size();	}
 	CUIBase* GetLineText(int nIdx);
 
+	void			SetScroll(CUIScrollBar* pScroll);
+	CUIScrollBar*	GetScroll()	{ return m_pScroll;	}
+	void UpdateBox();	// 스크롤이 연결 되어 있을 경우 사용.
+
+	void SetScrollThumbWidth(int w)	{ m_nScrollThumbWidth = w;		}
+	int  GetScrollThumbWidth()		{ return m_nScrollThumbWidth;	}
 private:
 	typedef std::vector<CUIBase*>		vecUICont;
 	typedef std::vector<std::string>	vecValcont;
@@ -49,8 +55,10 @@ private:
 	void splitSpace(std::string& strAdd, vecValcont& val, std::string& strTagID, int nTextArea);
 	void splitOneLine(std::string& strAdd, vecValcont& val, std::string& strTagID);
 
-	void calcSplit(std::string& str, int& nCurCnt, int& nSplitCnt);
+	// 줄바꿈 문자가 있을 경우에 true 리턴.
+	bool calcSplit(std::string& str, int& nCurCnt, int& nSplitCnt);	
 	bool checkWidth(std::string& strPrev, std::string& strAdd, int nTextArea, int& nSplitPos);
+	bool checkEnterString(std::string& str);
 	bool checkSpace(std::string& strAdd, int nTextArea, int& nSplitCnt);
 	std::string parseSyntax(std::string& src, std::string& tagID);
 	void getTagID(std::string& strSyntax, std::string& strID, int &start, int &end);
@@ -60,6 +68,7 @@ private:
 	
 	void insertText(CUITextEx* pTextEx, vecValcont& val, std::string& str);	
 	void insertBtn(CUITextEx* pTextEx, vecValcont& val, std::string& str);
+
 	int				m_nStartX;
 
 	std::string		m_strOrigin;
@@ -72,7 +81,9 @@ private:
 	Command*		m_pBtnCmd;
 	int				m_nStartY;
 	int				m_nGapY;
-	
+	int				m_nScrollThumbWidth;
+	int				m_nShowCount;
+
 	enum eCONTROL_TYPE
 	{
 		eCT_TEXT = 0,

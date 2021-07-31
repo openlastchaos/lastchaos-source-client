@@ -2,6 +2,8 @@
 #include <Engine/Interface/UITrackPopup.h>
 #include <Engine/Interface/UITextureManager.h>
 
+extern INDEX g_iCountry;
+
 // 리스트 박스 크기에 맞게 박스를 그릴때 위,아래/ 좌,우 여백 
 #define SPACE_UPDONW	14//27		
 #define SPACE_LEFTRIGT	10//19
@@ -39,13 +41,14 @@ void CUITrackPopup::Render()
 
 	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
-#if defined G_RUSSIA
-	// [2011/05/17 : Sora] 팝업창에서 스트링을 쓰지 않을 경우 글자 길이가 0이되어 팝업창 사이즈가 줄어든다
-	if( m_strLongestStringInMenu.Length() > 0 )
+	if (g_iCountry == RUSSIA)
 	{
-		Resize( pDrawPort->GetTextWidth( m_strLongestStringInMenu ) );		
-	}
-#endif
+		// [2011/05/17 : Sora] 팝업창에서 스트링을 쓰지 않을 경우 글자 길이가 0이되어 팝업창 사이즈가 줄어든다
+		if( m_strLongestStringInMenu.Length() > 0 )
+		{
+			Resize( pDrawPort->GetTextWidth( m_strLongestStringInMenu ) );		
+		}
+	}	
 
 	// 배경 렌더
 	int	nX, nY;
@@ -117,15 +120,18 @@ void CUITrackPopup::AddMenuList( CTString strText, COLOR colText, int nCommandNu
 		m_nMaxCharCount = strText.Length();
 	}
 	
-#if defined G_RUSSIA
-	if( strText.Length() > m_strLongestStringInMenu.Length() )	
+	if (g_iCountry == RUSSIA)
 	{
-		m_strLongestStringInMenu = strText;
+		if( strText.Length() > m_strLongestStringInMenu.Length() )	
+		{
+			m_strLongestStringInMenu = strText;
+		}
 	}
-#else
+	else
+	{
 		Resize();
-#endif
-
+	}
+	
 	// 일단은 숨겨 놓구 
 	Hide();
 }
@@ -280,28 +286,33 @@ void CUITrackPopup::Resize(int nStrLength /* = 0  */)
 	int nHeight = 0;
 	// 현재 입력된 스트링에 따른 ListBox의 크기 설정 
 	// Width = 가장 긴 스트링 길이 기준
-#if defined G_RUSSIA
-	m_nWidth = SPACE_UPDONW - 10 + nStrLength + 10;
 
-	// Height = 메뉴 수 
-	//m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * _pUIFontTexMgr->GetLineHeight();
-	m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * m_nLineHeight;
+	if (g_iCountry == RUSSIA)
+	{
+		m_nWidth = SPACE_UPDONW - 10 + nStrLength + 10;
 
-	// Selection Bar에 대한 크기 조절 
-	nWidth = m_nWidth - 5;
-	nHeight = _pUIFontTexMgr->GetLineHeight()+2;
-#else
-	m_nWidth = SPACE_UPDONW - _pUIFontTexMgr->GetFontSpacing() + m_nMaxCharCount *
-					( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+		// Height = 메뉴 수 
+		//m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * _pUIFontTexMgr->GetLineHeight();
+		m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * m_nLineHeight;
 
-	// Height = 메뉴 수 
-	//m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * _pUIFontTexMgr->GetLineHeight();
-	m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * m_nLineHeight;
+		// Selection Bar에 대한 크기 조절 
+		nWidth = m_nWidth - 5;
+		nHeight = _pUIFontTexMgr->GetLineHeight()+2;
+	}
+	else
+	{
+		m_nWidth = SPACE_UPDONW - _pUIFontTexMgr->GetFontSpacing() + m_nMaxCharCount *
+			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
 
-	// Selection Bar에 대한 크기 조절 
-	nWidth = m_nWidth - 5;
-	nHeight = _pUIFontTexMgr->GetLineHeight()+2;
-#endif
+		// Height = 메뉴 수 
+		//m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * _pUIFontTexMgr->GetLineHeight();
+		m_nHeight = SPACE_LEFTRIGT - _pUIFontTexMgr->GetLineSpacing() + m_vecString[0].vecString.size() * m_nLineHeight;
+
+		// Selection Bar에 대한 크기 조절 
+		nWidth = m_nWidth - 5;
+		nHeight = _pUIFontTexMgr->GetLineHeight()+2;
+	}
+
 	// Selection Width 
 	if( nWidth > m_nWidth || nWidth == -1 )
 		nWidth = m_nWidth;
@@ -343,11 +354,10 @@ void CUITrackPopup::DeleteMenuList( int nCol, int nIndex )
 		}
 	}
 
-#if defined G_RUSSIA
-	m_strLongestStringInMenu = m_vecString[nCol].vecString[nMaxLengthIdx];
-#else
-	Resize();
-#endif
+	if (g_iCountry == RUSSIA)
+		m_strLongestStringInMenu = m_vecString[nCol].vecString[nMaxLengthIdx];
+	else
+		Resize();
 }
 
 // [sora] 지정한 메뉴의 commandnum값을 반환

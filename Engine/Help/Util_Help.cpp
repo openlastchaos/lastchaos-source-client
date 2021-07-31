@@ -9,6 +9,7 @@
 #include <Engine/GameState.h>
 #include <Engine/Graphics/Font.h>
 #include <Engine/Interface/UITextureManager.h>
+#include <Engine/Entities/Items.h>
 
 extern INDEX g_iCountry;
 
@@ -701,6 +702,31 @@ int UtilHelp::GetNoFixedWidth( CFontData* pFont, char* strString )
 	return nStringWidth;
 }
 
+int UtilHelp::GetFontWidth( char* strString, CFontData* pFont /*= NULL*/ )
+{
+	int ret = 0;	
+
+	std::string str = strString;
+
+	if (g_iCountry != RUSSIA)
+	{
+		int nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
+
+		ret = str.size() * nFontWidth;
+	}
+	else
+	{
+		CFontData* pData = pFont;
+
+		if (pData == NULL)
+			pData = _pfdDefaultFont;
+		// RUSSIA
+		ret = GetNoFixedWidth(pData, strString);
+	}
+
+	return ret;
+}
+
 COLOR UtilHelp::GetColorContrast(const float fLevel, const COLOR col)
 {
 	float	fAlphaLevel	= fLevel;
@@ -869,4 +895,53 @@ int UtilHelp::GetZoneByMobIndex(int nMobIndex)
 	}
 
 	return -1;
+}
+
+bool UtilHelp::IsAvailable4Sale( CItems* pItem, UI_TYPE eType )
+{
+	if (pItem == NULL)
+		return false;
+
+	CItemData* pItemData = pItem->ItemData;
+
+	if (pItemData == NULL)
+		return false;
+
+	bool bSubJob = false;
+
+#ifdef ADD_SUBJOB
+	bSubJob = true;
+#endif
+
+	if (pItem->IsFlag(FLAG_ITEM_BELONG))
+		return false;
+
+	if (pItemData->GetType() == CItemData::ITEM_ACCESSORY &&
+		pItemData->GetSubType() == CItemData::ACCESSORY_RELIC)
+		return false;
+
+	if (bSubJob == true && pItemData->IsFlag( ITEM_FLAG_SELLER ))
+	{
+		if (!UIMGR()->CheckSellerItem(eType, pItemData->GetFlag()))
+			return false;
+	}
+	else
+	{
+		bool bMonsterMercenaryItem = false; 
+
+		if (pItemData->GetType() == CItemData::ITEM_ETC &&
+			pItemData->GetSubType() == CItemData::ITEM_ETC_MONSTER_MERCENARY_CARD)
+		{
+			bMonsterMercenaryItem = true;
+		}
+
+		if (!pItemData->IsFlag(ITEM_FLAG_EXCHANGE)||
+			pItem->IsFlag(FLAG_ITEM_LENT) ||
+			pItem->IsFlag(FLAG_ITEM_PLATINUMBOOSTER_ADDED) ||
+			pItem->Item_Wearing > 0 || 
+			( bMonsterMercenaryItem && pItem->Item_Used > 0 ))
+			return false;
+	}
+
+	return true;
 }

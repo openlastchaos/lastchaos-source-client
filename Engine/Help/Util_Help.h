@@ -42,6 +42,8 @@ enum eWEAR_TYPE
 };
 
 enum UIMCType;
+enum UI_TYPE;
+class CItems;
 
 class UtilHelp : public CSingletonBase< UtilHelp >
 {
@@ -78,6 +80,8 @@ public:
 	// 가변 폰트 = 스트링 사이즈 얻기
 	int	GetNoFixedWidth(CFontData* pFont, char* strString);
 
+	int GetFontWidth(char* strString, CFontData* pFont = NULL);
+
 	COLOR GetColorContrast(const float fLevel, const COLOR col);		// fLevel : 0.0 ~ 1.0
 	COLOR GetColorAlpha(const float fLevel, const COLOR col);			// fLevel : 0.0 ~ 1.0
 
@@ -91,6 +95,8 @@ public:
 
 	int GetZoneByNpcIndex(int nNPCIndex);
 	int GetZoneByMobIndex(int nMobIndex);
+
+	bool	IsAvailable4Sale(CItems* pItem, UI_TYPE eType);
 };
 
 #define		UTIL_HELP()					UtilHelp::getSingleton()

@@ -39,7 +39,11 @@ public:
 
 	void OnChangeTab(int idx);
 
-	void OnRender(CDrawPort* pDraw);	
+	void OnRender(CDrawPort* pDraw);
+
+	void SetCommandFChange(_ui_func func)	{ m_func_change = func; }
+
+	void CmdErase();
 
 protected:
 	typedef std::vector< CUICheckButton* >	vec_Button;
@@ -53,6 +57,7 @@ protected:
 	vec_Button			m_vecTabBt;
 	vec_Page			m_vecTabPage;
 	Command*			m_pCmdChange; // tab이 변경시 실행될 커맨드
+	_ui_func			m_func_change;
 };
 
 //----------------------------------------------------------------

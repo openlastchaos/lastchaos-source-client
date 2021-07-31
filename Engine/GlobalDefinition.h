@@ -327,6 +327,11 @@ enum eAccessoryWear
 #define IsFullScreen(X)	( (X==FULLSCREEN_MODE)?TRUE:FALSE )
 #define IsGamigo(X) ( (X==GERMANY||X==SPAIN||X==FRANCE||X==POLAND||X==TURKEY||X==ITALY||X==ENGLAND)?TRUE:FALSE )
 #define IsBila(X)	( (X==MEXICO||X==BRAZIL)?TRUE:FALSE )
+
+#define IsDotSeparator(X) ( (X == GERMANY || X == ITALY || X == RUSSIA) ? TRUE:FALSE )
+// 1.234.567,89 형식의 숫자를 쓰는 나라는 독일, 그리스, 덴마크, 이탈리아, 인도네시아, 러시아
+// 1,234,567.89와 같은 숫자를 쓰는 나라는 한국, 미국, 캐나다, 중국, 일본, 영국, 호주, 브라질
+
 // Add LC time 060421 wooss
 #define _LC_DAY_IN_MONTH		(30L)
 #define _LC_DAY_SEC				(24L * 60L * 60L)    /* secs in a day */
@@ -349,6 +354,7 @@ enum eAccessoryWear
 // 	#define ITEM_MEX_LEVEL	16
 // #else
 #define ITEM_MEX_LEVEL	25
+#define DEF_PET_ITEM_UPGRADE_MAX	15
 //#endif
 
 #define DEF_INIT_CAMERA_FOV	(45.0f)

@@ -51,12 +51,11 @@ enum eMemberLevel
 #define	MAX_APPLICANTS			(10)		// 최대 가입 신청자.
 #define GUILD_SKILL_VIEW_MAX	(5)			// 길드 스킬 창에 보이는 최대 스킬 갯수
 // WSS_NEW_GUILD_SYSTEM 070716 ------------------------------->>
-#if defined(G_KOR)
-	#define MAX_GUILDINFO_TAB	(6)
-#else
+// #if defined(G_KOR)
+// 	#define MAX_GUILDINFO_TAB	(6)
+// #else
 	#define MAX_GUILDINFO_TAB	(5)			//해외로컬은 길드 게시판 사용 안함 사용시 (6)으로 수정
 	#define LOCAL_NEW_GUILD					//해외 로컬
-#endif
 #define LIMIT_GUILD_LEVEL	(6)
 // Define Guild Info Tab
 enum eGUILDNEW
@@ -80,10 +79,27 @@ enum eGUILD_MEMBER_LIST
 	eGML_LOCAL,
 	eGML_CONTRIBUTION,
 	eGML_POINT,
-	eGML_MAX
+	eGML_MAX,
+	eGML_LOGOUT_DATE = eGML_CONTRIBUTION + 1 // 정렬 인덱스로 사용하기 위해 추가
 };
 class CUIIcon;
+class CUIList;
+class CUIListItem;
+class CGuildChangeSetUI;
+class CGuildDonateUI;
 // -----------------------------------------------------------<<
+
+class CGuildMemberDesign : public CUIWindow
+{
+public:
+	CGuildMemberDesign();
+
+	void initialize();
+	void resetList();
+	void SetFontColor(COLOR col);
+
+	CUIList* m_pList;
+};
 
 // ----------------------------------------------------------------------------
 // Name : CUIGuild
@@ -268,9 +284,10 @@ protected:
 
 	// 길드원 정보 -------------------------------->>	
 	
-	CUIListBoxEx			m_lbGuildMemberList;			// Guild Member List
+	CGuildMemberDesign*		m_pGuildMember;
+	std::vector<clsGuildMemberNew> m_vecGuildMember;
 	INDEX					m_iOnlineMembers;				// 접속한 길드원
-					
+	CUIButton				m_btnDonateChange;				// 상납 설정 변경
 	// --------------------------------------------<<
 
 	// 길드 스킬 ---------------------------------->>
@@ -328,21 +345,19 @@ protected:
 	// 길드 관리 ---------------------------------->>
 	std::vector<INDEX>		m_vManageMemberIndex;			// 멤버 인덱스(list box의 순서와 같음)
 	CUIListBox				m_lbManageMemberList;			// 설정 리스트
+	CUIListBox				m_lbManageMemberListEx;			// 설정 리스트 (경험치, 명성치 최소 최대 설정)
 	CUIButton				m_btnChangeBossNew;				// 단장 이임
 	CUIButton				m_btnAcceptNew;					// 부단장 임명
 	CUIButton				m_btnRejectNew;					// 부단장 해임
 	CUIButton				m_btnMemberFireNew;				// 멤버 퇴출
 	CUIButton				m_btnChangeSetting;				// 설정 변경
+	CUIButton				m_btnChangeSettingAll;			// 설정 변경 길드원 전체
+	CGuildChangeSetUI*		m_pGuildChangeSetUI;
+	CGuildDonateUI*			m_pGuildDonateUI;
 
 	// 수정 윈도우
 	BOOL					m_bApplySettingOn;				// 설정 변경창 상태
-	CUIButton				m_btnApplySetting;				// 설정 적용
-	CUIButton				m_btnApplySettingClose;			// 설정 적용 닫기
-	CUIEditBox				m_ebChangePositionName;			// 직위명 변경
-	CUIEditBox				m_ebChangePayExp;				// 상납 경힘치 포인트 
-	CUIEditBox				m_ebChangePayFame;				// 상납 명성치 포인트
-	CUICheckButton			m_ckGuildStashPermission;		// 길드 창고 사용여부 [6/24/2011 rumist]
-
+	BOOL					m_bApplyDonateUI;
 	
 	int						m_nSelSkillTab;					// 선택된 길드 스킬 탭 ( 0 : Passive Guild Skill, 1 : Active Guild Skill )
 	CTString				m_strSkillTabPopupInfo;			// 탭 팝업 정보 (액티브, 패시ㅡ)
@@ -369,7 +384,6 @@ protected:
 	CUIListBox				m_lbLearnInfo;					// 스킬 습득 정보 표시 박스
 	// --------------------------------------------<<
 	// [1/3/2011 kiny8216] NEW_CORPS
-	CUIComboBox				m_cmbCorps;							// 군단 선택 콤보 박스
 	INDEX					m_iCorpsMember;						// 일반직위 멤버 수
 	INDEX					m_iCorpsBoss;						// 대장직위 멤버 수
 	CTString				m_strCorps[GUILD_MEMBER_TOTAL];		// 군단 스트링
@@ -394,7 +408,7 @@ protected:
 
 	// Command
 	void	PressOKBtn();
-
+	
 	// Description
 	void	GetGuildDesc( BOOL bShow = TRUE );
 	void	AddGuildDescString( CTString &strDesc, COLOR colDesc = 0xF2F2F2FF );
@@ -451,6 +465,11 @@ public:
 	// 지원자에 대한 처리
 	void	ApplicantAccept( LONG lIndex );		// 가입 승인
 
+	// 길드 관리
+	void	PressChangeSetUIOK();
+	void	PressChangeSetAllUIOK();
+	void	PressDonateUIOK();
+
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 	WMSG_RESULT	KeyMessage( MSG *pMsg );
@@ -499,6 +518,7 @@ public:
 	void	RenderNewGuildNoticeInput();
 	void	RenderNewGuildManage(int nx,int ny);
 	void	RenderNewGuildManagePopup();
+	void	RenderNewGuildManageSetAllPopup();
 	void	RenderNewGuildBoard(int nx,int ny);
 	void	RenderNewGuildBoardList();
 	void	RenderNewGuildBoardRead();
@@ -506,6 +526,7 @@ public:
 		
 	// 길드 멤버 정보 추가
 	void	AddGuildMemberInfo(clsGuildMemberNew tMemberInfo);
+	void	updateGuildMemberList();
 	void	AddGuildManageInfo(clsGuildMemberNew tMemberInfo);
 	CTString SetPosName(CTString tName);
 
@@ -515,14 +536,20 @@ public:
 
 	// 길드 관리 설정 관련 전체 버튼 세팅
 	void	SetManagePopup(BOOL bEnable);
+	void	SetManageSetAllPopup(BOOL bEnable, int nOpenType = -1);
 	void	ResetManagePopupString();
+	void	ResetManageSetAllPopupString();
 	// 설정 수정 항목 체크
 	BOOL	CheckDataValidation();
+	BOOL	CheckDataValidationDonate();
 	
 	// Message Send
 	void	SendRequestGuildTab(int iTabNum);
 	void	SendChangeGuildInclination(UBYTE ubIncline);
-	void	SendAdjustGuildMemberInfo( int charIdx, CTString posName ,int expPer, int famePer, int corps = -1, UBYTE ubStashAuth = 0 );
+	void	SendAdjustGuildMemberInfo( int charIdx, CTString posName ,int expMin, int expMax, int fameMin, int fameMax, int corps = -1, UBYTE ubStashAuth = 0 );
+	void	SendAdjustGuildMemberInfoAll(int expMin, int expMax, int fameMin, int fameMax, int AdjustExp, int AdjustFame);
+	void	SendGuildDonateInfo();
+	void	SendAdjustGuildDonateInfo(int AdjustExp, int AdjustFame);
 	void	SendUpdateGuildNotice( CTString strTitle, CTString strContents);
 	void	SendRequestGuildNotice();	
 	void	SendLearnGuildSkill(int skillIdx); 
@@ -541,6 +568,8 @@ public:
 
 	// Adjust Guild Member Info 
 	void AdjustGuildMemberInfo();
+	void AdjustDonateMinMaxInfo();
+	void AdjustMyDonateInfo();
 	// Guild Skill Setup
 	void SetGuildSkillList();
 	// Guild Skill Check
@@ -571,6 +600,9 @@ public:
 	void InitString();										// 부대 관련 스트링 설정
 	void SetCorpsComboBox();								// 부대 설정 콤보 박스 설정
 	void ReceiveCorpsInfo(CNetworkMessage* istr);			// 길드 부대 정보 받기
+	CTString GetMemberLogoutInfo(int nLogoutTime);			// 로그아웃한 멤버 정보 얻기
+	CTString GetMemberLogoutTooltip(int nLogoutTime, int& nWidth);// 로그아웃한 멤버 툴팁정보얻기
+	void SetMemberListStrColor(CUIListItem* pListItem, COLOR col);// 멤버 리스트 오버시 글자 색 변경 
 	// --------------------------------------------------------------------<<
 
 	void		SetRemoteGuildJoinTaget(CTString &strTargetName)		{ m_strRemoteGuildJoinTaget = strTargetName;	}

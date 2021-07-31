@@ -241,6 +241,9 @@ public:
 	void SetCopyPos();
 	void DelChars();
 	void ResetSelArea();
+
+	void erase_pointer();
+	bool IsBlock();
 };
 
 #endif	// UIEDITBOX_H_

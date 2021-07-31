@@ -4,11 +4,7 @@
 	#pragma once
 #endif
 
-#ifdef G_JAPAN
-	#define MAX_CASHINVEN	1
-#else
-	#define MAX_CASHINVEN	10
-#endif
+#define MAX_CASHINVEN	10
 #define MAX_CASHEQUIP	6
 
 #include <Engine/Entities/CashShopData.h>
@@ -49,7 +45,7 @@ protected:
 class ENGINE_API CUICashShopEX : public CUIWindow
 {
 public:
-	CUICashShopEX(const char* pcXMLPath);
+	CUICashShopEX();
 	~CUICashShopEX();
 	// 캐시샵 내부에서 사용될 팝업 창 클래스
 	class CCashShopPopup : public CUIWindow{

@@ -474,13 +474,6 @@ HRESULT CRenderer::DoCreateFlareTexture_Separable()
 
 	int iFilterNum;
 	iFilterNum = (g_iUseBloom > 3) ? 1 : 0;
-/*	if (g_iCountry == JAPAN) // 일본 신 주노맵 밝기때문에 블롬효과 단계 늘림
-	{
-		iFilterNum = (g_iUseBloom > 3) ? 1 : 0;
-	}else
-	{
-		iFilterNum = (g_iUseBloom > 0) ? (g_iUseBloom - 1) : 0;
-	}*/
 	
 	for( i=0; i < m_vGaussian1D[iFilterNum].size(); i += 4 )
 	{
@@ -721,16 +714,6 @@ HRESULT	CRenderer::SetFlareLook()
 	m_nGaussianSize[1]	= 12;//15;//44;		// size of the Gaussian blur diameter in texels
 	m_fColorAtten[1]	= 0.35f;//0.20f;
 */
-	//Bloom 효과 조절
-/*	if(g_iCountry == JAPAN)
-	{
-		m_nGaussianSize[0]	= g_iUseBloom*2; // 옵션의 블럼 단계를 반영 // 신 주노맵의 Bloom 효과 단계 늘림
-		m_nGaussianSize[1]	= 12;
-	}else
-	{
-		m_nGaussianSize[0]	= 12;
-		m_nGaussianSize[1]	= 15;
-	}*/
 	m_nGaussianSize[0]	= g_iUseBloom*2; // 옵션의 블럼 단계를 반영 // 신 주노맵의 Bloom 효과 단계 늘림
 	m_nGaussianSize[1]	= 12;
 

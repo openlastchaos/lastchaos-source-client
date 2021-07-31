@@ -24,6 +24,8 @@
 #include <Engine/Contents/function/News.h>
 #include <Engine/Contents/function/ItemCompose.h>
 #include <Engine/Contents/function/TitleData.h>
+#include <Engine/Contents/function/HelperManager.h>
+#include <Engine/Contents/function/GuildBattleMatch.h>
 
 GameDataManager::GameDataManager()
 : m_apUIExpressSystem (NULL) 
@@ -48,6 +50,8 @@ GameDataManager::GameDataManager()
 , m_pItemCompose(NULL)
 , m_bCreateData(false)
 , m_pTitle(NULL)
+, m_pHelperMgr(NULL)
+, m_pGuildBattleMatch(NULL)
 {
 	if (m_bCreateData == false)
 		Create();
@@ -81,6 +85,8 @@ void GameDataManager::DestroyAll()
 	SAFE_DELETE(m_pNews);
 	SAFE_DELETE(m_pItemCompose);
 	SAFE_DELETE(m_pTitle);
+	SAFE_DELETE(m_pHelperMgr);
+	SAFE_DELETE(m_pGuildBattleMatch);
 	UtilHelp::destroy();
 }
 
@@ -151,6 +157,12 @@ void GameDataManager::Create()
 
 	if (m_pTitle == NULL)
 		m_pTitle = new TitleNetwork;
+
+	if (m_pHelperMgr == NULL)
+		m_pHelperMgr = new CHelperManager;
+
+	if (m_pGuildBattleMatch == NULL)
+		m_pGuildBattleMatch = new GuildBattleMatch;
 
 	m_bCreateData = true;
 }

@@ -6,10 +6,8 @@
 #include <Engine/Interface/UICashShopEX.h>
 #include <Engine/Interface/UIMessenger.h>
 #include <Engine/JobInfo.h>
-
-#if		defined(G_USA) || defined(G_RUSSIA) || defined(G_BRAZIL)
 #include <Engine/Interface/UIOption.h>
-#endif	
+#include <Common/Packet/ptype_cashshop.h>
 
 #define MODEL_TREASURE	("Data\\Item\\Common\\ITEM_treasure02.smc")
 
@@ -19,6 +17,11 @@ extern ENGINE_API INDEX sam_bFullScreenActive;
 
 #define KIT_SLOT_TOTAL						25
 
+#define DEF_CATEGORY_TYPE_MAX					5
+#define DEF_CATEGORY_SUBTYPE_MAX				10
+#define DEF_CATEGORY_SUBTYPE_GAP				(DEF_CATEGORY_TYPE_MAX * DEF_CATEGORY_SUBTYPE_MAX)
+#define DEF_CATEGORY_TYPE_START_STRING_INDEX	7400
+#define DEF_CATEGORY_SUBTYPE_START_STRING_INDEX 7500
 
 const INDEX _uiCashSizeX = 750, _uiCashSizeY = 550;
 const INDEX InvenbtnSlicegap = 15;
@@ -1076,7 +1079,7 @@ void CUICashShopEX::CCashShopPopup::AddFriendsList(void)
 // Name : CUICashShopEX()
 // Desc : 생성자
 // ----------------------------------------------------------------------------
-CUICashShopEX::CUICashShopEX(const char* pcXMLPath) : CUIWindow(pcXMLPath)
+CUICashShopEX::CUICashShopEX() : CUIWindow()
 {
 	m_Background.Clear();
 	m_RecommandBoxList.New(_RankCount);
@@ -1227,133 +1230,27 @@ TiXmlElement* CUICashShopEX::FromXmltoCashData(CCashTypeNode& CashNode, TiXmlEle
 
 void CUICashShopEX::InitCatalogNameNodes(void)
 {
-	bool bFileLoaded = false;
+	int i, j, k;
+	int nCatalogTitleID[CSC_Total] = { 5229, 5230, 5231, 5232, 5233, 5234, 5235 }; // Category Title
+	int nTempStringIdx;
 
-	if (m_strXMLFileName.Length() > 0) {
-		TiXmlDocument doc;
+	for (i = 0; i < CSC_Total; ++i)
+	{
+		m_CatalogNamesNodes[i].Create(NULL, _S(nCatalogTitleID[i], "Category Title"), CCashTypeNode::CTN_CATALOG);
 
-		if (doc.LoadFile(m_strXMLFileName, TIXML_DEFAULT_ENCODING))
+		for (j = 0; j < DEF_CATEGORY_TYPE_MAX; ++j)
 		{
-			bFileLoaded = true;
-			TiXmlHandle docH(&doc);
-			TiXmlElement* pCashTypeElement = docH.FirstChild("CASHTYPE").ToElement();
+			// Category Type 카태고리 타이틀 하나당 5개씩 할당
+			nTempStringIdx = DEF_CATEGORY_TYPE_START_STRING_INDEX + (i * DEF_CATEGORY_TYPE_MAX) + j;
+			m_CatalogNamesNodes[i].AddNode(_S(nTempStringIdx, "Type"), CCashTypeNode::CTN_FIRST);
 
-			INDEX iRefIndex = 0;
-
-			if (pCashTypeElement)
+			for (k = 0; k < DEF_CATEGORY_SUBTYPE_MAX; ++k)
 			{
-				TiXmlElement* pCatalogElement = pCashTypeElement->FirstChildElement("CATALOG");
-				INDEX iCatalog = 0;
-				while (pCatalogElement != NULL)
-				{
-					const char* strIndex = pCatalogElement->Attribute("INDEX");
-					INDEX iIndex = atoi(strIndex);
-
-					m_CatalogNamesNodes[iCatalog].Create(NULL, _S(iIndex, ""), CCashTypeNode::CTN_CATALOG);
-					TiXmlElement* pChildElement = pCatalogElement->FirstChildElement("FIRST");
-
-					if (pChildElement != NULL)
-					{
-						FromXmltoCashData(m_CatalogNamesNodes[iCatalog], pChildElement, CCashTypeNode::CTN_FIRST);
-					}
-
-					pCatalogElement = (TiXmlElement*)pCatalogElement->NextSibling();
-					iCatalog++;
-				}
+				// Category SubType 카태고리 타입당 10개식 할당
+				nTempStringIdx = DEF_CATEGORY_SUBTYPE_START_STRING_INDEX + (i * DEF_CATEGORY_SUBTYPE_GAP) + (j * DEF_CATEGORY_SUBTYPE_MAX) + k;
+				m_CatalogNamesNodes[i].GetSubNode(j + 1).AddNode(_S(nTempStringIdx, "subType"), CCashTypeNode::CTN_SECOND);
 			}
 		}
-	}
-
-	if (!bFileLoaded)
-	{
-		INDEX iCount = 1;
-		m_CatalogNamesNodes[CSC_HOTandNew].Create(NULL, _S(5229, "HOT&NEW"), CCashTypeNode::CTN_CATALOG);
-		m_CatalogNamesNodes[CSC_HOTandNew].AddNode(_S(5236, "신상품"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_HOTandNew].AddNode(_S(5237, "특가"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_HOTandNew].AddNode(_S(5238, "인기상품"), CCashTypeNode::CTN_FIRST);
-
-		m_CatalogNamesNodes[CSC_Platinum].Create(NULL, _S(5230, "플래티늄"), CCashTypeNode::CTN_CATALOG);
-
-		m_CatalogNamesNodes[CSC_SpendGoods].Create(NULL, _S(5231, "소비상품"), CCashTypeNode::CTN_CATALOG);
-		m_CatalogNamesNodes[CSC_SpendGoods].AddNode(_S(5239, "캐릭터 성장"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5248, "경험치"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5249, "숙련도"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5250, "확률"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5251, "혼합"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_SpendGoods].AddNode(_S(5240, "능력치 강화"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5252, "HP 확장"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5253, "MP 확장"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5254, "공격력"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_SpendGoods].AddNode(_S(5241, "물약"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5255, "HP 회복"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5256, "MP 회복"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_SpendGoods].GetSubNode(iCount).AddNode(_S(5257, "듀얼 회복"), CCashTypeNode::CTN_SECOND); iCount = 1;
-
-		m_CatalogNamesNodes[CSC_EquipGoods].Create(NULL, _S(5232, "장비상품"), CCashTypeNode::CTN_CATALOG);
-		m_CatalogNamesNodes[CSC_EquipGoods].AddNode(_S(5242, "장비"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(5258, "무기"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(5259, "갑옷"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(5274, "액세서리"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_EquipGoods].AddNode(_S(5243, "장비 강화"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(5261, "결합주문서"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(5262, "소켓"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(5263, "블러드"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(5275, "제련"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_EquipGoods].AddNode(_S(5260, "코스튬"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(43, "타이탄"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(44, "기사"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(45, "힐러"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(46, "메이지"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(47, "로그"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(48, "소서러"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_EquipGoods].GetSubNode(iCount).AddNode(_S(4410, "나이트셰도우"), CCashTypeNode::CTN_SECOND); iCount = 1;
-
-		m_CatalogNamesNodes[CSC_Avata].Create(NULL, _S(5233, "아바타"), CCashTypeNode::CTN_CATALOG);
-		m_CatalogNamesNodes[CSC_Avata].AddNode(_S(5244, "펫 상품"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_Avata].GetSubNode(iCount).AddNode(_S(5264, "펫"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_Avata].GetSubNode(iCount).AddNode(_S(5265, "펫 아이템"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_Avata].AddNode(_S(5245, "용병"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_Avata].GetSubNode(iCount).AddNode(_S(5266, "몬스터 용병"), CCashTypeNode::CTN_SECOND); iCount = 1;
-
-		m_CatalogNamesNodes[CSC_ServiceGoods].Create(NULL, _S(5234, "서비스상품"), CCashTypeNode::CTN_CATALOG);
-		m_CatalogNamesNodes[CSC_ServiceGoods].AddNode(_S(5246, "편의 상품"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_ServiceGoods].GetSubNode(iCount).AddNode(_S(5267, "주문서"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_ServiceGoods].GetSubNode(iCount).AddNode(_S(5268, "카드"), CCashTypeNode::CTN_SECOND); iCount = 1;
-		m_CatalogNamesNodes[CSC_ServiceGoods].AddNode(_S(5247, "기타"), CCashTypeNode::CTN_FIRST);
-
-		m_CatalogNamesNodes[CSC_PackageGoods].Create(NULL, _S(5235, "패키지상품"), CCashTypeNode::CTN_CATALOG);
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5239, "캐릭터 성장"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5248, "경험치"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5249, "숙련도"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5250, "확률"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5251, "혼합"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5240, "능력치 강화"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5252, "HP 확장"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5253, "MP 확장"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5241, "물약"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5255, "HP 회복"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5256, "MP 회복"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5257, "듀얼 회복"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5260, "코스튬"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(43, "타이탄"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(44, "기사"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(45, "힐러"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(46, "메이지"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(47, "로그"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(48, "소서러"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(4410, "나이트셰도우"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5243, "장비 강화"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5261, "결합주문서"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5275, "제련"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5262, "소켓"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5244, "펫 상품"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5264, "펫"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5265, "펫 아이템"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5245, "용병"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5246, "편의 상품"), CCashTypeNode::CTN_FIRST);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5267, "주문서"), CCashTypeNode::CTN_SECOND);
-		m_CatalogNamesNodes[CSC_PackageGoods].GetSubNode(iCount).AddNode(_S(5268, "카드"), CCashTypeNode::CTN_SECOND); iCount++;
-		m_CatalogNamesNodes[CSC_PackageGoods].AddNode(_S(5247, "기타"), CCashTypeNode::CTN_FIRST);
 	}
 }
 
@@ -2316,7 +2213,7 @@ WMSG_RESULT CUICashShopEX::MouseMessage(MSG *pMsg)
 								break;
 							case BIT_CashCharge: // 캐쉬 충전
 								{
-#if defined(G_BRAZIL)
+									if (IsBila(g_iCountry) == TRUE || g_iCountry == USA || g_iCountry == RUSSIA)
 									{
 										if ( IsFullScreen( sam_bFullScreenActive))
 										{												 
@@ -2327,60 +2224,30 @@ WMSG_RESULT CUICashShopEX::MouseMessage(MSG *pMsg)
 										
 										if (g_iCountry == BRAZIL)
 											ShellExecute( NULL, "open", "https://pt.gamigo.com/lcsa/pt/cashshop/login", NULL,NULL, SW_SHOWNORMAL );
-										else  //if (g_iCountry == MEXICO)
+										else if (g_iCountry == MEXICO)
 											ShellExecute( NULL, "open", "https://es.gamigo.com/lcsa/es/cashshop/login", NULL,NULL, SW_SHOWNORMAL );
+										else if (g_iCountry == USA)
+											ShellExecute( NULL, "open", "https://en.gamigo.com/lcus/en/cashshop/index/", NULL,NULL, SW_SHOWNORMAL );
+										else if (g_iCountry == RUSSIA)
+											ShellExecute( NULL, "open", "https://ru.gamigo.com/cashshop/", NULL,NULL, SW_SHOWNORMAL );
 									}
-#elif defined(G_USA)
-									{
-										if ( IsFullScreen( sam_bFullScreenActive))
-										{												 
-											 pUIManager->GetOption()->ChangeWindowMode();
-											 pUIManager->DestroyRenderTarget();
-											 pUIManager->InitRenderTarget();
-										}										
-										ShellExecute( NULL, "open", "https://en.gamigo.com/lcus/en/cashshop/index/", NULL,NULL, SW_SHOWNORMAL );
-									}
-#elif defined(G_RUSSIA )
-									{
-										if ( IsFullScreen( sam_bFullScreenActive))
-										{												 
-											 pUIManager->GetOption()->ChangeWindowMode();
-											 pUIManager->DestroyRenderTarget();
-											 pUIManager->InitRenderTarget();
-										}										
-										ShellExecute( NULL, "open", "https://ru.gamigo.com/cashshop/", NULL,NULL, SW_SHOWNORMAL );										
-									}
-									// sam -->|
-#elif defined(G_GERMAN)
+									else if (IsGamigo(g_iCountry) == TRUE)
 									{
 										CNetworkMessage nmMessage(MSG_EXTEND);
 										nmMessage << (INDEX)MSG_EX_CASH_AUTHENTICATION_CODE;
 
 										_pNetwork->SendToServerNew( nmMessage );
 									}
-#else
+									else
 									{
 										g_web.SetWebMoveWindow();
 										g_web.SendWebPageOpenMsg(TRUE);
 
 										CTString strCallUrl;
-#if defined G_KOR // 국내는 웹 결제 페이지를 호출시, 파트너 코드를 파라미터로 보낸다.
-										extern BOOL g_bAutoLogin;
-										if (g_bAutoLogin)
-										{
-											strCallUrl.PrintF(_S(5318, "http://lastchaos.barunsongames.com/cash_shop/cash_login.asp?Partner=%s"), _pNetwork->m_strUserCID);
-										}
-										else
-										{
-											strCallUrl.PrintF(_S(5318, "http://lastchaos.barunsongames.com/cash_shop/cash_login.asp?Partner=%s"), CTString("or"));
-										}
-										g_web.SetWebUrl(std::string(strCallUrl.str_String));
-#else
+
 										strCallUrl = _S(5318, "http://lastchaos.barunsongames.com/cash_shop/cash_login.asp");
 										g_web.SetWebUrl(std::string(strCallUrl.str_String));
-#endif
 									}
-#endif
 								}
 								break;
 							case BIT_Exit: // 종료
@@ -4762,16 +4629,19 @@ void CUICashShopEX::SetComboBox(CashShopCategory categorytype)
 	{
 	case CSC_HOTandNew:
 		{
+			CTString strTemp;
 			for (i=1; i<m_CatalogNamesNodes[categorytype].GetNodeCount(); ++i)
 			{
-				m_cbCategoryType[CST_First].AddString(m_CatalogNamesNodes[categorytype].GetSubNode(i).GetName());
+				strTemp = m_CatalogNamesNodes[categorytype].GetSubNode(i).GetName();
+
+				if (strTemp.IsEmpty() == TRUE)
+					continue;
+
+				m_cbCategoryType[CST_First].AddString(strTemp);
 			}
 		}
 		break;
 	case CSC_Platinum:
-		{
-		}
-		break;
 	case CSC_SpendGoods:
 	case CSC_EquipGoods:
 	case CSC_Avata:
@@ -4813,9 +4683,6 @@ void CUICashShopEX::SetSubComboBox(CashShopCategory categorytype, INDEX iType, I
 		}
 		break;
 	case CSC_Platinum:
-		{
-		}
-		break;
 	case CSC_SpendGoods:
 	case CSC_EquipGoods:
 	case CSC_Avata:
@@ -5126,11 +4993,14 @@ void CUICashShopEX::SendBringReq()
 		return;
 	}
 
-	CNetworkMessage nmItem((UBYTE)MSG_EXTEND);
-	nmItem << (ULONG)MSG_EX_CASHITEM;
-	nmItem << (UBYTE)MSG_EX_CASHITEM_BRING_REQ;
+	CNetworkMessage nmItem;
 
-	nmItem << ulCount;
+	RequestClient::cash_purchase_bring* packet = reinterpret_cast<RequestClient::cash_purchase_bring*>(nmItem.nm_pubMessage);
+
+	packet->type = MSG_EXTEND;
+	packet->subType = MSG_EX_CASHITEM;
+	packet->thirdType = MSG_EX_CASHITEM_BRING_REQ;
+	packet->count_ = ulCount;
 
 	for( i = 0; i < _PurchaseGetCount; ++i )
 	{
@@ -5138,12 +5008,17 @@ void CUICashShopEX::SendBringReq()
 		{
 			CItems* pItems = m_PurchaseGetItemList[i]->getItems();
 
-			nmItem << (ULONG)pItems->Item_UniIndex;
-			nmItem << (ULONG)m_PurchaseGetItemList[i]->GetCashIndex();
+			packet->data_[i].purchase_index_ = pItems->Item_UniIndex;
+			packet->data_[i].ct_item_index_ = m_PurchaseGetItemList[i]->GetCashIndex();
 		}
 	}
-	m_bLoadingData = TRUE;
+
+	nmItem.setSize(sizeof(RequestClient::cash_purchase_bring) + 
+					sizeof(RequestClient::cash_purchase_bring::data_tag) * ulCount);
+	
 	_pNetwork->SendNetworkMessage(nmItem);
+
+	m_bLoadingData = TRUE;
 }
 
 // ----------------------------------------------------------------------------
@@ -5401,16 +5276,24 @@ void CUICashShopEX::RevGiftList(CNetworkMessage* istr)
 // ----------------------------------------------------------------------------
 void CUICashShopEX::SendGetRevGiftItem(INDEX iPos)
 {
-	CNetworkMessage nmItem((UBYTE)MSG_EXTEND);
-	nmItem << (ULONG)MSG_EX_CASHITEM;
-	nmItem << (UBYTE)MSG_EX_CASHITEM_GIFT_RECV_REQ;
+	CNetworkMessage nmItem;
+	
+	RequestClient::cash_gift_bring* packet = reinterpret_cast<RequestClient::cash_gift_bring*>(nmItem.nm_pubMessage);
+	packet->type = MSG_EXTEND;
+	packet->subType = MSG_EX_CASHITEM;
+	packet->thirdType = MSG_EX_CASHITEM_GIFT_RECV_REQ;
 
-	nmItem << (ULONG)1; // 현재 선물 가져오기는 하나씩만 가져온다.
-	nmItem << m_RevGiftList[iPos].ulUniIndex;
-	nmItem << m_RevGiftList[iPos].GoodsData->m_shopItemIndex;
+	packet->count_ = 1;		// 현재 선물 가져오기는 하나씩만 가져온다.
+	
+	packet->data_[0].purchase_index_ = m_RevGiftList[iPos].ulUniIndex;
+	packet->data_[0].ct_item_index_ = m_RevGiftList[iPos].GoodsData->m_shopItemIndex;
+
+	nmItem.setSize(sizeof(RequestClient::cash_gift_bring) + 
+					sizeof(RequestClient::cash_gift_bring::data_tag) * 1);
+
+	_pNetwork->SendNetworkMessage(nmItem);
 
 	m_bLoadingData = TRUE;
-	_pNetwork->SendNetworkMessage(nmItem);
 }
 
 // ----------------------------------------------------------------------------

@@ -60,8 +60,7 @@
 #include <Engine/Interface/UIProcess.h>			// 이기환 추가 ( 12. 6 )
 #include <Engine/Interface/UISiegeWarfareDoc.h>
 #include <Engine/Interface/UIGuild.h>
-#include <Engine/Interface/UISummon.h>
-#include <Engine/Interface/UITeleport.h>
+#include <Engine/Contents/function/TeleportUI.h>
 #include <Engine/Interface/UIQuickSlot.h>
 #include <Engine/Interface/UIShop.h>
 #include <Engine/Contents/Base/ChattingUI.h>		// yjpark
@@ -74,7 +73,7 @@
 #include <Engine/Interface/UIReformSystem.h>
 #include <Engine/Interface/UIGuildWarPortal.h>
 #include <Engine/Contents/Base/UIPartyNew.h>
-#include <Engine/Interface/UICompound.h>
+#include <Engine/Contents/function/CompoundUI.h>
 #include <Engine/Contents/Base/UIChangeWeaponNew.h>
 #include <Engine/Interface/UISocketSystem.h>
 #include <Engine/Contents/Base/UIQuestNew.h>
@@ -92,6 +91,7 @@
 #include <Engine/Info/MyInfo.h>
 #include <Engine/Help/ItemHelp.h>
 #include <Engine/Contents/function/PetTargetUI.h>
+#include <Engine/Contents/function/ShopUI.h>
 // WSS_NPROTECT 070402 --------------------------------->>
 #ifndef NO_GAMEGUARD
 //	#include <NPGameLib.h>
@@ -107,6 +107,7 @@
 #include <Common/Packet/ptype_old_do_reform_system.h>
 #include <Common/Packet/ptype_old_do_stash.h>
 #include <Common/Packet/ptype_old_mempos.h>
+#include <Common/Packet/ptype_old_mempos_rus.h>
 #include <Common/Packet/ptype_old_do_action.h>
 #include <Common/Packet/ptype_old_do_attack.h>
 #include <Common/Packet/ptype_old_do_changejob.h>
@@ -220,6 +221,8 @@ extern INDEX net_ctChatMessages = 0;  // counter for incoming chat messages
 
 extern CPacketBufferStats _pbsSend;
 extern CPacketBufferStats _pbsRecv;
+
+extern INDEX g_iCountry;
 
 class CGatherCRC {
 public:
@@ -1554,158 +1557,17 @@ void CNetworkLibrary::JoinSession_t(const CNetworkSession &nsSesssion, INDEX ctL
   CLoadingImage::getSingleton()->StopLoading();
 }
 
-/* Start playing a demo. */
-/*
-void CNetworkLibrary::StartDemoPlay_t(const CTFileName &fnDemo)  // throw char *
-{
-  // remove all pending sounds
-  _pSound->Flush();
-  StartProgress();
 
-
-  // access to the list of handlers must be locked
-  CTSingleLock slHooks(&_pTimer->tm_csHooks, TRUE);
-  // synchronize access to network
-  CTSingleLock slNetwork(&ga_csNetwork, TRUE);
-  ga_bLocalPause = FALSE;
-
-  // open the file
-  ga_strmDemoPlay.Open_t(fnDemo);
-
-  // remember that playing demo
-  ga_bDemoPlay = TRUE;
-  ga_bDemoPlayFinished = FALSE;
-
-  // create session name from demo name
-  CTString strSessionName = CTString("Demo: ")+fnDemo;
-  ga_strSessionName = strSessionName;
-
-  ga_IsServer = FALSE;
-  // initialize server
-  try {
-    // read initial info from stream
-    ga_strmDemoPlay.ExpectID_t("DEMO");
-
-    // write world filename and spawn flags
-    ga_strmDemoPlay>>ga_fnmWorld;
-    ga_strmDemoPlay>>ga_sesSessionState.ses_ulSpawnFlags;
-    // write sessin properties
-    ga_strmDemoPlay.Read_t(_pNetwork->ga_aubProperties, NET_MAXSESSIONPROPERTIES);
-
-    ga_World.Load_t(ga_fnmWorld);
-    // delete all entities that don't fit given spawn flags
-    ga_World.FilterEntitiesBySpawnFlags(ga_sesSessionState.ses_ulSpawnFlags);
-
-    // set overdue timers in just loaded world to be due in current time
-    ga_World.AdjustLateTimers(ga_sesSessionState.ses_tmLastProcessedTick);
-    
-    _pNetwork->ga_World.wo_ulNextEntityID = 0x10000001;
-
-    ga_sesSessionState.Read_t(&ga_strmDemoPlay,TRUE);
-
-    _pNetwork->ga_strmDemoPlay.ExpectID_t("DTTM");
-    ga_strmDemoPlay>>ga_tmNextDemoTick;
-
-    extern TIME _tmLocalTick;
-    _tmLocalTick = ga_tmNextDemoTick;
-    ga_fDemoTimer = ga_tmNextDemoTick;
-    ga_sesSessionState.ses_bRestartLocalTime = TRUE;
-  } catch(char *) {
-    ga_strmDemoPlay.Close();
-    ga_bDemoPlay = FALSE;
-    StopProgress();
-    throw;
-  }
-
-  // eventually cache all shadowmaps in world (memory eater!)
-  if( shd_bCacheAll) ga_World.wo_baBrushes.CacheAllShadowmaps();
-  // flush stale caches
-  FreeUnusedStock();
-  // mark that pretouching is required
-  _bNeedPretouch = TRUE;
-
-  // remember the world pointer
-  _pShell->SetINDEX("pwoCurrentWorld", (INDEX)&ga_World);
-
-  // demo synchronization starts at the beginning initially
-  ga_tvDemoTimerLastTime = _pTimer->GetHighPrecisionTimer();
-
-  // run main loop to let server process messages from host
-  MainLoop();
-  StopProgress();
-}
-	*/
-
-/*
-BOOL CNetworkLibrary::IsDemoPlayFinished(void)
-{
-  return ga_bDemoPlay && ga_bDemoPlayFinished;
-}
-*/
 BOOL CNetworkLibrary::IsPlayingDemo(void)
 {
   return ga_bDemoPlay;
 }
 
-/*
-void CNetworkLibrary::StartDemoRec_t(const CTFileName &fnDemo) // throw char *
-{
-  // synchronize access to network
-  CTSingleLock slNetwork(&ga_csNetwork, TRUE);
 
-  // if already recording
-  if (ga_bDemoRec) {
-    // error
-    throw TRANS("Already recording a demo!");
-  }
-
-  // create the file
-  ga_strmDemoRec.Create_t(fnDemo);
-
-  // write initial info to stream
-  ga_strmDemoRec.WriteID_t("DEMO");
-
-  // write world filename and spawn flags
-  ga_strmDemoRec<<ga_fnmWorld;
-  ga_strmDemoRec<<ga_sesSessionState.ses_ulSpawnFlags;
-  // write sessin properties
-  ga_strmDemoRec.Write_t(_pNetwork->ga_aubProperties, NET_MAXSESSIONPROPERTIES);
-  // write gamestate
-  ga_sesSessionState.Write_t(&ga_strmDemoRec,TRUE);
-
-  // remember that recording demo
-  ga_bDemoRec = TRUE;
-}
-
-void CNetworkLibrary::StopDemoRec(void)
-{
-  // synchronize access to network
-  CTSingleLock slNetwork(&ga_csNetwork, TRUE);
-
-  // if not recording
-  if (!ga_bDemoRec) {
-    // do nothing
-    return;
-  }
-  // write terminal info to the stream
-  ga_strmDemoRec.WriteID_t("DEND");   // game end
-  // close the file
-  ga_strmDemoRec.Close();
-  // remember that not recording demo
-  ga_bDemoRec = FALSE;
-}
-
-
-BOOL CNetworkLibrary::IsRecordingDemo(void)
-{
-  return ga_bDemoRec;
-}
-*/
 BOOL CNetworkLibrary::IsNetworkEnabled(void)
 { 
   return _cmiComm.IsNetworkEnabled();
 }
-
 
 
 
@@ -1848,19 +1710,6 @@ void CNetworkLibrary::StopGame(void)
 	// synchronize access to network
 	CTSingleLock slNetwork(&ga_csNetwork, bLock);
 	
-	/*
-	// stop demo recording if active
-	StopDemoRec();
-	
-	// if playing demo
-	if (ga_bDemoPlay) {
-		// close the demo file
-		ga_strmDemoPlay.Close();
-		// remember that not playing demo
-		ga_bDemoPlay = FALSE;
-		ga_bDemoPlayFinished = FALSE;
-	}
-	*/
 
 	LeavePet( (CPlayerEntity*)CEntity::GetPlayerEntity(0) );
 	ClearPetList();
@@ -2036,30 +1885,7 @@ void CNetworkLibrary::ChangeLevel_internal(void)
     // start gathering CRCs
     FreeUnusedStock();
     InitCRCGather();
-	//}
-	
-	/* //0522 kwon 삭제.
-	if (bMultiplayer) {
-    // create base info to be sent
-    extern CTString ser_strMOTD;
-    CNetworkMessage nmLevelChange(MSG_CHANGE_LEVEL);
-    nmLevelChange<<ser_strMOTD;
-    nmLevelChange<<ga_fnmNextLevel;
-    nmLevelChange<<_pNetwork->ga_sesSessionState.ses_ulSpawnFlags;
-    nmLevelChange.Write(_pNetwork->ga_aubProperties, NET_MAXSESSIONPROPERTIES);
-	
-	  
-		
-		  // notify active clients of level change
-		  for( INDEX iClient=1; iClient<ga_srvServer.srv_assoSessions.Count(); iClient++) {
-		  if (ga_srvServer.srv_assoSessions[iClient].IsActive()) {
-		  CPrintF("Sent levelchange to client: %d\n",iClient);
-		  _pNetwork->SendToClientReliable(iClient, nmLevelChange);
-		  }
-		  }
-		  _cmiComm.Server_Update();
-		  }
-	*/
+
 	// remember original world filename
 	CTFileName fnmOldWorld = ga_fnmWorld;
 	// try to
@@ -2220,50 +2046,7 @@ void CNetworkLibrary::ChangeLevel_client_internal_t(void)
   _bNeedPretouch = TRUE;
 
   FinishCRCGather();
-/* //0522 kwon 삭제.
-    // send data request
-  CPrintF(TRANS("Sending full game state request\n"));
-  CNetworkMessage nmRequestGameState(MSG_REQ_GAMESTATE);
-  _pNetwork->SendToServerReliable(nmRequestGameState);
-  _cmiComm.Client_Update();
-  _cmiComm.Client_Update();
-  _cmiComm.Client_Update();
-  _cmiComm.Client_Update();
-  _cmiComm.Client_Update();
-  // wait for server's response
-  CTMemoryStream strmMessage;
 
-  _pNetwork->ga_sesSessionState.WaitStream_t(strmMessage, "data", MSG_REP_GAMESTATE);
-
-  CTMemoryStream strmGameState;
-  CzlibCompressor comp;
-  comp.UnpackStream_t(strmMessage, strmGameState);
-
-  // get the number of server level changes, and store it
-  strmGameState>>ga_sesSessionState.ses_ubNumLevelChanges;
-
-  // set proper ID sequence for entities created by this machine - used to separate 
-  // server and client generated IDs
-  if (!_pNetwork->IsServer()) {
-    _pNetwork->ga_World.wo_ulNextEntityID = 0x10000001;
-  }
-  ga_sesSessionState.Read_t(&strmGameState,TRUE);
-
-  _lphCurrent = LCP_CHANGED;
-  EPostLevelChange ePostChange;
-  ePostChange.iUserData = _pNetwork->ga_iNextLevelUserData;
-  ga_sesSessionState.SendLevelChangeNotification(ePostChange);
-  CEntity::HandleSentEvents();
-  _lphCurrent = LCP_NOCHANGE;
-
-  _pNetwork->SetLocalPause(bPaused);
-  StopProgress();
-
-  ga_sesSessionState.ses_tvMessageReceived = _pTimer->GetHighPrecisionTimer(); 
-
-  SendActionsToServer();
-  _cmiComm.Client_Update();
-*/
 }
 
 
@@ -2273,19 +2056,6 @@ static void SendAdminResponse(ULONG ulAdr, UWORD uwPort, ULONG ulCode, const CTS
 {
   CTString str = strResponse;
   INDEX iLineCt = 0;
-/* //0522 kwon 삭제.
-  while (str!="") {
-    CTString strLine = str;
-    strLine.OnlyFirstLine();
-    str.RemovePrefix(strLine);
-    str.DeleteChar(0);
-    if (strLine.Length()>0) { 
-      CNetworkMessage nm(MSG_EXTRA);
-      nm<<CTString(0, "log %u %d %s\n", ulCode, iLineCt++, strLine);
-      _pNetwork->SendBroadcast(nm, ulAdr, uwPort);
-    }
-  }
-*/
 }
 
 
@@ -2296,7 +2066,7 @@ void CNetworkLibrary::MainLoop(void)
 {
   TRACKMEM(Mem,"Network");
 
-#if !defined(_DEBUG) && !defined(KALYDO) && !defined(G_KOR) && !defined(VER_TEST)
+#if !defined(_DEBUG) && !defined(KALYDO) && !defined(VER_TEST)
   BOOL bIsDebuggerPresent = FALSE;
   __asm {
 	  // TIB(Thread Information Block)의 위치 얻기
@@ -2324,45 +2094,14 @@ void CNetworkLibrary::MainLoop(void)
     ga_tvLastMainLoop = _pTimer->GetHighPrecisionTimer();
     ga_bFirstMainLoop = FALSE;
   }
-/* //0311 삭제
-  //! 1명이상 플레이 하고 있다면,
-  // update network state variable (to control usage of some cvars that cannot be altered in mulit-player mode)
-  _bMultiPlayer = (_pNetwork->ga_sesSessionState.GetPlayersCount() > 1);
-*/
-  //! 월드 체인지.
+
   // if should change world
   if (_lphCurrent==LCP_SIGNALLED) {
     // really do the level change here
     ChangeLevel_internal();
     _lphCurrent=LCP_CHANGED;
   }
-/* //0311 삭제
-  if (_bStartDemoRecordingNextTime) {
-    if (!_pNetwork->IsServer()) {
-      CPrintF("Demos can be recorded only on server computer or in single player mode.\n");
-    } else {
-      ga_srvServer.srv_tmNextAvailableDemoTimeSlot = _pTimer->GetHighPrecisionTimer().GetSeconds();
-      _bStartDemoRecordingNextTime = 0.0f;
 
-      if (!ga_bDemoRec) {
-        try {
-          CTString strName;
-          strName.PrintF("Temp\\Recorded%02d.dem", (INDEX)dem_iRecordedNumber);
-          StartDemoRec_t(strName);
-          dem_iRecordedNumber+=1;
-        } catch(char *strError) {
-          CPrintF(TRANS("Demo recording error: %s\n"), strError);
-        }
-      }
-    }
-  }
-  if (_bStopDemoRecordingNextTime) {
-    _bStopDemoRecordingNextTime = 0.0f;
-    if (ga_bDemoRec) {
-      StopDemoRec();
-    }
-  }
-*/
   _sfStats.StartTimer(CStatForm::STI_MAINLOOP);
 
 
@@ -2373,30 +2112,7 @@ void CNetworkLibrary::MainLoop(void)
     tvLastAction = _pTimer->GetHighPrecisionTimer();
   }
 
-  /*
-  {CTimerValue tvNow = _pTimer->GetHighPrecisionTimer();
-  if (ga_bDemoPlay) {
-    ga_sesSessionState.SetLerpFactor(CTimerValue(ga_fDemoTimer));
-  } 
-  */
-  /*else {
-    ga_sesSessionState.SetLerpFactor(tvNow);
-  }}
-  */
-/*
-  if (_pNetwork->IsPlayingDemo() && !_pNetwork->ga_bDemoPlayFinished) {
-    int ctUpdates=0;
-    while (_pNetwork->ga_fDemoTimer > (_pNetwork->ga_tmNextDemoTick) && !_pNetwork->ga_bDemoPlayFinished) {
-      ga_sesSessionState.RunDemoTick();
-      ctUpdates++;
-    }
-    if (ctUpdates) {
-      ga_sesSessionState.HandleTimers(_pNetwork->ga_tmNextDemoTick - _pTimer->TickQuantum);
-      ga_sesSessionState.HandleMovers_client();
-    }
-  }
-*/
-  //0109
+  
   //ga_fGameRealTimeFactor:게임 시간 가속인자 =1
   //ses_fRealTimeFactor : 특수효과에 대하여 시간을 느리게 하거나 빠르게 하는 인자 =1
   //tvLastAction : 마지막 액션을 한 시간
@@ -2563,31 +2279,7 @@ void CNetworkLibrary::MainLoop(void)
     ga_sesSessionState.SetLerpFactor(CTimerValue(ga_fDemoTimer));
   }
   ga_tvDemoTimerLastTime = tvNow;
-/* //0311 삭제
-  // if playing a demo
-  if (ga_bDemoPlay) {
-    // if synchronizing by real time
-    if (ga_fDemoSyncRate==DEMOSYNC_REALTIME) {
-      // if server is keeping up
-      if (ga_sesSessionState.ses_bKeepingUpWithTime) {
-        // add passed time with slow/fast factor
-        ga_fDemoTimer += FLOAT((tvNow-ga_tvDemoTimerLastTime).GetSeconds())
-          *ga_fDemoRealTimeFactor*ga_sesSessionState.ses_fRealTimeFactor;
-      }
-    // if synchronizing is stopped
-    } else if (ga_fDemoSyncRate==DEMOSYNC_STOP) {
-      // don't step
-      NOTHING;
-    // if synchronizing by given steps
-    } else {
-      // just add the step
-      dem_iMotionBlurInterFrames = Clamp( dem_iMotionBlurInterFrames, 0L, 99L);
-      const FLOAT fInterFrames = (dem_iAnimFrame<0) ? 1.0f : (dem_iMotionBlurInterFrames+1);
-      ga_fDemoTimer += ga_fDemoRealTimeFactor / (ga_fDemoSyncRate*fInterFrames);
-    }
-  }
-  // remember the demo timer
-*/
+
 /*#if _GAMESPY
   // do services for gamespy querying
   //GameSpy_ServerHandle();
@@ -2607,82 +2299,7 @@ void CNetworkLibrary::MainLoop(void)
         // finish
         break;
       }
-/*
-//! 서버는 이밑으로 안들어가~
-      // if this message is not valid rcon message or a server enumeration request
-      if (nmReceived.GetType() != MSG_EXTRA && nmReceived.GetType() != MSG_REQ_ENUMSERVERS) {
-        // skip it
-        continue;
-      }
 
-      // if requesting enumeration and this is server, and the server is visible and the game is not finished
-      if (nmReceived.GetType()==MSG_REQ_ENUMSERVERS && IsServer() && ser_bEnumeration && !IsGameFinished()) {
-      
-
-
-        CTString strGameType;
-        // get function that will provide us the info about gametype
-        CShellSymbol *pss = _pShell->GetSymbol("GetCurrentGameTypeName",  TRUE);
-        // if none
-        if (pss==NULL) {
-          // just give dummy info
-          strGameType = "N/A";
-        // if found
-        } else {
-          // get the info
-          CTString (*pFunc)(void) = (CTString (*)(void))pss->ss_pvValue;
-          strGameType = pFunc();
-        }
-
-        // create response
-        CNetworkMessage nmEnum(MSG_SERVERINFO);
-        nmEnum<<ga_strSessionName;
-        nmEnum<<ga_World.wo_strName;
-        nmEnum<<ga_srvServer.GetPlayersCount();
-        nmEnum<<ga_sesSessionState.ses_ctMaxPlayers;
-        nmEnum<<strGameType;
-        nmEnum<<_strModName;
-        nmEnum<<_SE_VER_STRING;
-        nmEnum<<0.0f; // ping
-      
-
-        // send it back
-        SendBroadcast(nmEnum,INADDR_BROADCAST,uwPort);
-      } else {
-        // get the string from the message
-        CTString strMsg;
-        nmReceived>>strMsg;
-
-        // if this is server
-        if (IsServer()) {
-          // accept requests
-          if (!strMsg.RemovePrefix("rcmd ")) {
-            continue;
-          }
-          ULONG ulCode;
-          char strPass[80];
-          char strCmd[256];
-          strMsg.ScanF("%u \"%80[^\"]\"%256[^\n]", &ulCode, strPass, strCmd);
-          CTString strAdr = AddressToString(ulFrom);
-
-          if (net_strAdminPassword=="" || net_strAdminPassword!=strPass) {
-            CPrintF(TRANS("Server: Client '%s', Wrong password for remote administration.\n"), (const char*)strAdr);
-            continue;
-          }
-
-          CPrintF(TRANS("Server: Client '%s', Admin cmd: %s\n"), (const char*)strAdr, strCmd);
-
-          con_bCapture = TRUE;
-          con_strCapture = "";
-          _pShell->Execute(CTString(strCmd)+";");
-
-          CTString strResponse = CTString(">")+strCmd+"\n"+con_strCapture;
-          SendAdminResponse(ulFrom, uwPort, ulCode, strResponse);
-          con_bCapture = FALSE;
-          con_strCapture = "";
-        }
-      }
-*/
     }
   }
   _sfStats.StopTimer(CStatForm::STI_MAINLOOP);
@@ -3301,108 +2918,7 @@ void CNetworkLibrary::EnumSessionsStart(BOOL bInternet)
 /* Continue numeration of existing sessions. */
 void CNetworkLibrary::EnumSessionsContinue()
 {
-/* //0522 kwon 삭제.
-  // we will send enumeration requests two times per second
-  const TIME tmRequestInterval = 0.75f;
-  static TIME tmLastRequest = -1.0f;
-  TIME tmNow = _pTimer->GetHighPrecisionTimer().GetSeconds();
-  // if we have never enumerated before, or a enough time has passed since last request
-  if (tmLastRequest<0 || ((tmNow-tmLastRequest) >= tmRequestInterval)) {
-    // send enumeration request
-    tmLastRequest = tmNow;
-    CNetworkMessage nmEnum(MSG_REQ_ENUMSERVERS);
-    SendBroadcast(nmEnum,INADDR_BROADCAST,net_iPort);
-  }
-  ga_bEnumerationChange = FALSE;
-  // repeat
-  FOREVER {
-    CNetworkMessage nmReceived;
-    // manage input/output buffers
-    _cmiComm.Server_Update();
-    ULONG ulFrom; UWORD uwPort;
-    BOOL bHasMsg = ReceiveBroadcast(nmReceived, ulFrom,uwPort);
-    // if there are no more messages
-    if (!bHasMsg) {
-      // finish
-      break;
-    } 
-    // received a response to an enumeration request
-    if (nmReceived.GetType()==MSG_SERVERINFO) {
-      BOOL bFound = FALSE;
-      
-      //char strPort[8];
-      //itoa(uwPort,strPort,10);
-      //CTString strAddress = AddressToString(ulFrom) + CTString(":") + CTString(strPort);
-      // create a new session
-      CNetworkSession &nsNew = *new CNetworkSession;      
 
-      // read it
-      nmReceived>>nsNew.ns_strSession;
-      nmReceived>>nsNew.ns_strWorld;
-      nmReceived>>nsNew.ns_ctPlayers;
-      nmReceived>>nsNew.ns_ctMaxPlayers;
-      nmReceived>>nsNew.ns_strGameType;
-      nmReceived>>nsNew.ns_strMod;
-      nmReceived>>nsNew.ns_strVer;
-      nmReceived>>nsNew.ns_tmPing;
-
-
-      // try the find the server that responded in the list of existing sessions 
-      FOREACHINLIST(CNetworkSession, ns_lnNode, ga_lhEnumeratedSessions, itns) {
-        CNetworkSession &ns = *itns;
-
-        BOOL bSameAddr = FALSE;
-          if ((ns.ns_ulAddress == ulFrom) && (ns.ns_uwPort == uwPort)) {
-            bSameAddr = TRUE;
-          }
-        
-        // if the server is found
-        if (bSameAddr) {
-          // if there was a change in the number of players, flag it
-          if (ns.ns_ctPlayers != nsNew.ns_ctPlayers) {
-            ga_bEnumerationChange = TRUE;
-          }
-          //update it's data
-          ns.ns_strSession = nsNew.ns_strSession;
-          ns.ns_strWorld = nsNew.ns_strWorld;
-          ns.ns_ctPlayers = nsNew.ns_ctPlayers;
-          ns.ns_ctMaxPlayers = nsNew.ns_ctMaxPlayers;
-          ns.ns_strGameType = nsNew.ns_strGameType;
-          ns.ns_strMod = nsNew.ns_strMod;
-          ns.ns_strVer = nsNew.ns_strVer;
-          ns.ns_tmPing = nsNew.ns_tmPing;
-
-            ns.ns_tmLastSeen = tmNow;
-          bFound = TRUE;
-          delete &nsNew;
-          break;
-        }
-      }
-
-      // if the server was not listed already, add it
-      if (!bFound) {
-        char strPort[8];
-        itoa(uwPort,strPort,10);
-        CTString strAddress = AddressToString(ulFrom) + CTString(":") + CTString(strPort);    
-        nsNew.ns_ulAddress = ulFrom;
-        nsNew.ns_uwPort = uwPort;
-        nsNew.ns_tmLastSeen = tmNow;
-        nsNew.ns_strAddress = strAddress;
-        ga_lhEnumeratedSessions.AddTail(nsNew.ns_lnNode);            
-        ga_bEnumerationChange = TRUE;
-      }
-    }
-  }
-
-  // run through the list and delete stale sessions
-  FORDELETELIST(CNetworkSession, ns_lnNode, ga_lhEnumeratedSessions, itns) {
-    CNetworkSession &ns = *itns;
-    if (ns.ns_tmLastSeen < 0.0f || ((tmNow - ns.ns_tmLastSeen) > 2*tmRequestInterval)) {
-      delete &*itns;
-      ga_bEnumerationChange = TRUE;
-    }
-  }
-  */
 }
 
 
@@ -3829,23 +3345,7 @@ void CNetworkLibrary::SendCashItemMessage(int nType)
 
 		case MSG_EX_CASHITEM_BRING_REQ :
 			{
-				// CashshopEX 리뉴얼
 
-// 				CUIButtonEx tv_btn;
-// 				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
-// 					tv_btn = pUIManager -> GetCashShop()->m_abtnInvenItems[tv_i];
-// 					if(!tv_btn.IsEmpty())  nCnt++;
-// 				}
-// 				nmItem<<(ULONG)nCnt;
-// 
-// 				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
-// 					tv_btn= pUIManager->GetCashShop()->m_abtnInvenItems[tv_i];
-// 					if(tv_btn.IsEmpty()	)
-// 						continue;
-// 					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
-// 					nmItem<<(ULONG)tv_btn.GetCashIndex();
-// 				}
-// 				SendToServerNew(nmItem);
 		
 			}			
 			break;
@@ -3857,92 +3357,26 @@ void CNetworkLibrary::SendCashItemMessage(int nType)
 
 		case MSG_EX_CASHITEM_PURCHASEHISTORY_REQ :
 			{
-// 				std::vector<CTString> tv_vecStr;
-// 				int tv_curSel;
-// 				// YEAR
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbYear.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbYear.GetCurSel();
-// 				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
-// 				// MONTH
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbMonth.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbMonth.GetCurSel();
-// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-// 				// DAY
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbDay.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbDay.GetCurSel();
-// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-// 
-// 				SendToServerNew(nmItem);
+
 			}
 			break;
 
 		//선물 관련 :Su-won		|-------------------------------------------->
 		case MSG_EX_CASHITEM_GIFT_REQ :			// 선물 보내기 요청
 			{
-				// CashshopEX 리뉴얼
-
-				//charName(str) Msg(str) count(n) idx(n) ctid(n)
-
-// 				nmItem<<pUIManager->GetCashShop()->m_ebChar.GetString();
-// 				nmItem<<pUIManager->GetCashShop()->m_ebGiftMessage.GetString();
-// 
-// 				CUIButtonEx tv_btn;
-// 				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
-// 					tv_btn = pUIManager -> GetCashShop()->m_abtnInvenItems[tv_i];
-// 					if(!tv_btn.IsEmpty())  nCnt++;
-// 				}
-// 				nmItem<<(ULONG)nCnt;
-// 
-// 				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
-// 					tv_btn= pUIManager->GetCashShop()->m_abtnInvenItems[tv_i];
-// 					if(tv_btn.IsEmpty()	)
-// 						continue;
-// 					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
-// 					nmItem<<(ULONG)tv_btn.GetCashIndex();
-// 				}
-// 				SendToServerNew(nmItem);
+				
 			}
 			break;
 
 		case MSG_EX_CASHITEM_GIFT_SENDHISTORY_REQ:  // 보낸 선물 내역 리스트 요청 : y(n) m(c) d(c)
 			{
-// 				std::vector<CTString> tv_vecStr;
-// 				int tv_curSel;
-// 				// YEAR
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftYear.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftYear.GetCurSel();
-// 				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
-// 				// MONTH
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftMonth.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftMonth.GetCurSel();
-// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-// 				// DAY
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftDay.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftDay.GetCurSel();
-// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-// 
-// 				SendToServerNew(nmItem);
+
 			}
 			break;
 
 		case MSG_EX_CASHITEM_GIFT_RECVHISTORY_REQ:  // 받은 선물 내역 리스트 요청 : y(n) m(c) d(c)
 			{
-// 				std::vector<CTString> tv_vecStr;
-// 				int tv_curSel;
-// 				// YEAR
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftYear.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftYear.GetCurSel();
-// 				nmItem << (ULONG)atoi(tv_vecStr[tv_curSel].str_String);
-// 				// MONTH
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftMonth.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftMonth.GetCurSel();
-// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-// 				// DAY
-// 				tv_vecStr = pUIManager->GetCashShop()->m_cbGiftDay.GetVecString();
-// 				tv_curSel = pUIManager->GetCashShop()->m_cbGiftDay.GetCurSel();
-// 				nmItem << (UBYTE)atoi(tv_vecStr[tv_curSel].str_String);
-// 
-// 				SendToServerNew(nmItem);
+
 			}
 			break;
 		case MSG_EX_CASHITEM_GIFT_RECVLIST_REQ:  // 받은 선물 리스트 요청
@@ -3952,21 +3386,7 @@ void CNetworkLibrary::SendCashItemMessage(int nType)
 			break;
 		case MSG_EX_CASHITEM_GIFT_RECV_REQ:		// 받은 선물 인벤으로 이동 요청 : count(n) idx(c) ctid(c)
 			{
-// 				CUIButtonEx tv_btn;
-// 				for(tv_i=0 ,nCnt = 0; tv_i< INVEN_SLOT_TOTAL; tv_i++){
-// 					tv_btn = pUIManager -> GetCashShop()->m_abtnInvenItems[tv_i];
-// 					if(!tv_btn.IsEmpty())  nCnt++;
-// 				}
-// 				nmItem<<(ULONG)nCnt;
-// 
-// 				for(tv_i=0 ; tv_i<INVEN_SLOT_TOTAL ; tv_i++){
-// 					tv_btn= pUIManager->GetCashShop()->m_abtnInvenItems[tv_i];
-// 					if(tv_btn.IsEmpty()	)
-// 						continue;
-// 					nmItem<<(ULONG)tv_btn.GetItemUniIndex();
-// 					nmItem<<(ULONG)tv_btn.GetCashIndex();
-// 				}
-// 				SendToServerNew(nmItem);
+
 			}
 			break;
 		//선물 관련 :Su-won		<--------------------------------------------|
@@ -4399,11 +3819,7 @@ void CNetworkLibrary::UseSlotItem( int tabId, int inven_idx, SBYTE sbWearType )
 				}
 				else if( pItems->ItemData->GetWarpType() == 1 )	// 메모리 스크롤
 				{
-					// [KH_070315] 프리미엄 메모리스크롤 관련 추가
-					if(pItems->Item_Index == PRIMIUM_TELEPORT)
-						pUIManager->GetTeleportPrimium()->OpenTeleport();
-					else
-						pUIManager->GetTeleport()->OpenTeleport();
+					pUIManager->GetTeleport()->OpenTeleport();
 					return;
 				}			
 			}
@@ -4517,13 +3933,40 @@ void CNetworkLibrary::UseSlotItem( int tabId, int inven_idx, SBYTE sbWearType )
 				
 				LONG iMobClientIndex = pInfo->GetTargetServerIdx(eTARGET);
 				SBYTE cTargetType = pInfo->GetTargetType(eTARGET);
+				int nSkillIndex = pItems->ItemData->GetNum0();
 
-				if( !pUIManager->GetQuickSlot()->StartSkillDelay( pItems->ItemData->GetNum0() ) )
+				if( !pUIManager->GetQuickSlot()->StartSkillDelay( nSkillIndex ) )
 				{
-					if( !pUIManager->GetInventory()->StartSkillDelay( pItems->ItemData->GetNum0() ) )
+					if( !pUIManager->GetInventory()->StartSkillDelay( nSkillIndex ) )
 						return;
 				}
-				
+
+				ObjectBase* pBase = ACTORMGR()->GetObject((eOBJ_TYPE)cTargetType, iMobClientIndex);
+
+				if (pBase == NULL)
+					return;
+
+				CEntity* pEntity = pBase->GetEntity();
+
+				if ( pEntity == NULL)
+					return;
+
+				CEntity* penPlEntity;
+				penPlEntity = CEntity::GetPlayerEntity(0); //캐릭터 자기 자신
+
+				FLOAT3D vDelta = penPlEntity->GetPlacement().pl_PositionVector - pEntity->GetPlacement().pl_PositionVector;
+				FLOAT	fLength = vDelta.Length();
+												
+				CSkill	&rSkillData = _pNetwork->GetSkillData( nSkillIndex );
+								
+				if (fLength > rSkillData.GetFireRange())
+				{
+					CTString strSysMessage;
+					strSysMessage.PrintF( _S( 322, "거리가 너무 멉니다."  ) );		
+					_pNetwork->ClientSystemMessage( strSysMessage, SYSMSG_ERROR );
+					return;
+				}
+								
 				SendtargetItemUse(pItems->Item_Tab, pItems->InvenIndex, pItems->Item_UniIndex, cTargetType, iMobClientIndex);
 				return;
 			}
@@ -6311,21 +5754,6 @@ void CNetworkLibrary::GoZone(int zone, int extra,int npcIdx )
 	_pNetwork->MyCharacterInfo.LocalNo = extra;
 }
 
-//안태훈 수정 시작	//(Teleport System)(0.1)
-void CNetworkLibrary::WriteCurrentPos(int slot, const char *szComment)
-{
-	CNetworkMessage nmMemPos;
-	RequestClient::memposWrite* packet = reinterpret_cast<RequestClient::memposWrite*>(nmMemPos.nm_pubMessage);
-	packet->type = MSG_MEMPOS;
-	packet->subType = MSG_MEMPOS_WRITE;
-	packet->slot = slot;
-	memcpy(packet->comment, szComment, MEMPOS_COMMENT_LENGTH + 1);
-	nmMemPos.setSize( sizeof(*packet) );
-
-	_pNetwork->SendToServerNew(nmMemPos);
-}
-//안태훈 수정 끝	//(Teleport System)(0.1)
-
 //안태훈 수정 시작	//(GM Command)(0.1)
 void CNetworkLibrary::SendWhoAmI()
 {
@@ -6436,11 +5864,17 @@ void CNetworkLibrary::BuyItem(int iShopID, int iNumOfItem, __int64 iTotalPrice)
 	packet->npcIndex = iShopID;
 	packet->clientPrice = iTotalPrice;
 	packet->buyCount = iNumOfItem;
+	CItems* pItem = NULL;
 
 	for (int i = 0; i < iNumOfItem; ++i)
 	{
-		SLONG	slIndex = pUIManager->GetShop()->GetTradeItem(i)->Item_Index;
-		SQUAD	llItemCount = pUIManager->GetShop()->GetTradeItem(i)->Item_Sum;
+		pItem = pUIManager->GetShopUI()->GetTradeItem(i);
+
+		if (pItem == NULL)
+			continue;
+
+		SLONG	slIndex = pItem->Item_Index;
+		SQUAD	llItemCount = pItem->Item_Sum;
 
 		packet->list[i].dbIndex = slIndex;
 		packet->list[i].count = llItemCount;
@@ -6468,11 +5902,18 @@ void CNetworkLibrary::SellItem(int iShopID, int iNumOfItem, __int64 iTotalPrice)
 	packet->clientPrice = iTotalPrice;
 	packet->sellCount = iNumOfItem;
 
+	CItems* pItem = NULL;
+
 	for (int i = 0; i < iNumOfItem; ++i)
 	{
-		SWORD	nTab = pUIManager->GetShop()->GetTradeItem(i)->Item_Tab;
-		SWORD	nIndex = pUIManager->GetShop()->GetTradeItem(i)->InvenIndex;
-		SQUAD	llCnt = pUIManager->GetShop()->GetTradeItem(i)->Item_Sum;
+		pItem = pUIManager->GetShopUI()->GetTradeItem(i);
+
+		if (pItem == NULL)
+			continue;
+
+		SWORD	nTab = pItem->Item_Tab;
+		SWORD	nIndex = pItem->InvenIndex;
+		SQUAD	llCnt = pItem->Item_Sum;
 
 		if(_pNetwork->m_ubGMLevel > 1)
 			CPrintF("Sell Tab:%d,Idx:%d,Cnt:%d\n", nTab, nIndex, llCnt);
@@ -6502,10 +5943,17 @@ void CNetworkLibrary::FieldShopBuyItem( int iNumOfItem, __int64 iTotalPrice)
 	packet->clientPrice = iTotalPrice;
 	packet->buyCount = iNumOfItem;
 
+	CItems* pItem = NULL;
+
 	for (int i = 0; i < iNumOfItem; ++i)
 	{
-		SLONG	slIndex = pUIManager->GetShop()->GetTradeItem(i)->Item_Index;
-		SQUAD	llItemCount = pUIManager->GetShop()->GetTradeItem(i)->Item_Sum;
+		pItem = pUIManager->GetShopUI()->GetTradeItem(i);
+
+		if (pItem == NULL)
+			continue;
+
+		SLONG	slIndex = pItem->Item_Index;
+		SQUAD	llItemCount = pItem->Item_Sum;
 
 		packet->list[i].itemDBIndex = slIndex;
 		packet->list[i].count = llItemCount;
@@ -6531,11 +5979,18 @@ void CNetworkLibrary::FieldShopSellItem(int iNumOfItem, __int64 iTotalPrice)
 	packet->clientPrice = iTotalPrice;
 	packet->sellCount = iNumOfItem;
 
+	CItems* pItem = NULL;
+
 	for (int i = 0; i < iNumOfItem; ++i)
 	{
-		SWORD	nTab = pUIManager->GetShop()->GetTradeItem(i)->Item_Tab;
-		SWORD	nIndex = pUIManager->GetShop()->GetTradeItem(i)->InvenIndex;
-		int		nCnt = (int)pUIManager->GetShop()->GetTradeItem(i)->Item_Sum;
+		pItem = pUIManager->GetShopUI()->GetTradeItem(i);
+
+		if (pItem == NULL)
+			continue;
+
+		SWORD	nTab = pItem->Item_Tab;
+		SWORD	nIndex = pItem->InvenIndex;
+		int		nCnt = (int)pItem->Item_Sum;
 
 		packet->list[i].tab = nTab;
 		packet->list[i].invenIndex = nIndex;
@@ -7076,9 +6531,9 @@ void CNetworkLibrary::SendSkillMessage(int nSkillIndex, CEntity *pEntity, int nT
 
 		if(bFire)
 		{
-#if defined (G_USA)
-			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
-#endif
+			if (g_iCountry == USA)
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
+
 			Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmPlayerSkill.nm_pubMessage);
 			Firepacket->type = MSG_SKILL;
 			Firepacket->subType = MSG_SKILL_FIRE;
@@ -7106,9 +6561,9 @@ void CNetworkLibrary::SendSkillMessage(int nSkillIndex, CEntity *pEntity, int nT
 			if (CheckSendSkill(nSkillIndex) == false)
 				return;
 
-#if defined (G_USA)
-			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
-#endif
+			if (g_iCountry == USA)
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
+
 			Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmPlayerSkill.nm_pubMessage);
 			Readypacket->type = MSG_SKILL;
 			Readypacket->subType = MSG_SKILL_READY;
@@ -7342,9 +6797,9 @@ void CNetworkLibrary::SendSkillMessageInContainer(int nSkillIndex, CSelectedEnti
 
 		if(bFire)
 		{
-#if defined (G_USA)
-			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
-#endif
+			if (g_iCountry == USA)
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
+
 			Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmPlayerSkill.nm_pubMessage);
 			Firepacket->type = MSG_SKILL;
 			Firepacket->subType = MSG_SKILL_FIRE;
@@ -7384,9 +6839,9 @@ void CNetworkLibrary::SendSkillMessageInContainer(int nSkillIndex, CSelectedEnti
 			if (CheckSendSkill(nSkillIndex) == false)
 				return;
 
-#if defined (G_USA)
-			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
-#endif
+			if (g_iCountry == USA)
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
+
 			Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmPlayerSkill.nm_pubMessage);
 			Readypacket->type = MSG_SKILL;
 			Readypacket->subType = MSG_SKILL_READY;
@@ -7460,9 +6915,9 @@ void CNetworkLibrary::SendSlaveSkillMessageInContainer(int nSkillIndex, CEntity 
 
 		if(bFire)
 		{
-#if defined (G_USA)
-			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
-#endif
+			if (g_iCountry == USA)
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(FALSE);
+
 			Firepacket = reinterpret_cast<RequestClient::skillFire*>(nmPlayerSkill.nm_pubMessage);
 			Firepacket->type = MSG_SKILL;
 			Firepacket->subType = MSG_SKILL_FIRE;
@@ -7502,9 +6957,9 @@ void CNetworkLibrary::SendSlaveSkillMessageInContainer(int nSkillIndex, CEntity 
 			if (CheckSendSkill(nSkillIndex) == false)
 				return;
 
-#if defined (G_USA)
-			((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
-#endif
+			if (g_iCountry == USA)
+				((CPlayerEntity*)CEntity::GetPlayerEntity(0))->SetSkillCancel(TRUE);
+
 			Readypacket = reinterpret_cast<RequestClient::skillReady*>(nmPlayerSkill.nm_pubMessage);
 			Readypacket->type = MSG_SKILL;
 			Readypacket->subType = MSG_SKILL_READY;
@@ -7783,11 +7238,23 @@ void CNetworkLibrary::SendTeleportWrite( UBYTE sendMSG, UBYTE ubSlot, CTString &
 	_pNetwork->SendToServerNew(nmMemPos);
 }
 
-// [KH_070316] 프리미엄 메모리 관련 변경 ( UBYTE ubSlot ) -> ( UBYTE sendMSG, UBYTE ubSlot )
+void CNetworkLibrary::SendTeleportWriteRus( UBYTE sendMSG, UBYTE ubSlot, CTString &strComment )
+{
+	CNetworkMessage nmMemPos;
+	RequestClient::memposWriteRus* packet = reinterpret_cast<RequestClient::memposWriteRus*>(nmMemPos.nm_pubMessage);
+	packet->type = sendMSG;
+	packet->subType = MSG_MEMPOS_WRITE;
+	packet->slot = ubSlot;
+	memcpy(packet->comment, strComment.str_String, MEMPOS_COMMENT_LENGTH_RUS + 1);
+	nmMemPos.setSize( sizeof(*packet) );
+
+	_pNetwork->SendToServerNew(nmMemPos);
+}
+
 void CNetworkLibrary::SendTeleportMove( UBYTE sendMSG, UBYTE ubSlot )
 {
 	CNetworkMessage nmMemPos;
-	RequestClient::memposWrite* packet = reinterpret_cast<RequestClient::memposWrite*>(nmMemPos.nm_pubMessage);
+	RequestClient::memposMove* packet = reinterpret_cast<RequestClient::memposMove*>(nmMemPos.nm_pubMessage);
 	packet->type = sendMSG;
 	packet->subType = MSG_MEMPOS_MOVE;
 	packet->slot = ubSlot;
@@ -8621,6 +8088,14 @@ void CNetworkLibrary::SendGuildStashTakeReq( LONGLONG llMoney )
 	SendToServerNew(nmMessage);
 }
 
+void CNetworkLibrary::SendGuildStashUseRecord( INDEX iLastIdx )
+{
+	CNetworkMessage nmStashLog( (UBYTE)MSG_GUILD );
+	nmStashLog << (UBYTE)MSG_NEW_GUILD_STASH_LOG;
+	nmStashLog << iLastIdx;
+	_pNetwork->SendToServerNew(nmStashLog);
+}
+
 //------------------------------------------------------------------------------
 // CNetworkLibrary::SendChuseokUpgrade
 // Explain:  
@@ -8705,16 +8180,7 @@ void CNetworkLibrary::SendCouponItemReq(CTString strNum)
 {
 	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 	
-	extern INDEX g_iCountry;
-	if( g_iCountry == TURKEY )
-	{
-		nmMessage << (UBYTE)MSG_EVENT_EUR2_PROMOTION;
-	}
-	else
-	{
-		nmMessage << (UBYTE)MSG_EVENT_PACKAGE_ITEM_GIVE;
-	}
-	
+	nmMessage << (UBYTE)MSG_EVENT_PACKAGE_ITEM_GIVE;
 	nmMessage << strNum;
 	
 	SendToServerNew(nmMessage);
@@ -9662,13 +9128,14 @@ void CNetworkLibrary::SendGiftCollectBox( void )
 // Explain : 곤충 아이템 드롭
 // Date : 2006-06-28(오후 4:24:31), By eons
 //============================================================================================================
-void CNetworkLibrary::SendDropInsect( int nInsect )
+void CNetworkLibrary::SendDropInsect( int nInsect, LONG lBoxVIndex )
 {
 	CNetworkMessage nmMessage( (UBYTE)MSG_EVENT );
 
 	nmMessage << (UBYTE)MSG_EVENT_COLLECT_BUG;
 	nmMessage << (ULONG)MSG_EVENT_COLLECT_BUG_DROP;
 	nmMessage << (LONG)nInsect;
+	nmMessage << lBoxVIndex;
 
 	SendToServerNew( nmMessage );
 }
@@ -10279,7 +9746,7 @@ void CNetworkLibrary::SendReceiveRestartGame()
 // CNetworkLibrary::SendUseGoDungeon
 // 던전이동 주문서 사용
 //============================================================================================================
-void CNetworkLibrary::SendUseGoDungeon(INDEX iItemIndex, INDEX iZone, INDEX iExtra)
+void CNetworkLibrary::SendUseGoDungeon(INDEX iItemIndex)
 {
 	UIMGR()->SetCSFlagOn(CSF_TELEPORT);
 
@@ -10288,8 +9755,6 @@ void CNetworkLibrary::SendUseGoDungeon(INDEX iItemIndex, INDEX iZone, INDEX iExt
 	packet->type = MSG_ITEM;
 	packet->subType = MSG_ITEM_USE_WARPDOC;
 	packet->virtualIndex = iItemIndex;
-	packet->zone = iZone;
-	packet->extra = iExtra;
 	nmMessage.setSize( sizeof(*packet) );
 
 	SendToServerNew( nmMessage );

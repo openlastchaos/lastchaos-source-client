@@ -7,6 +7,8 @@
 #include <Engine/Interface/UIManager.h>
 #include <Engine/Interface/UIImageBox.h>
 
+extern INDEX g_iCountry;
+
 #define BTN_SIZE_CORPS_WIDTH	19
 #define BTN_SIZE_CORPS_HEIGHT	12
 
@@ -210,18 +212,22 @@ void CUIImageBox::SetImageByType(eImageType type, int index, int nSyndiType /* =
 	case IT_SP:	// [090617: selo] SP 이미지 추가 하드코딩
 		{
 			// only russia sp icon [9/9/2010 rumist]
-#if defined (G_RUSSIA)
-			nTextureID = 12;
-			nTexRow = 0;
-			nTexCol = 2;
-			m_eUBType = UBET_ITEM;
-#else
-			nTextureID = 9;
-			nTexRow = 12;
-			nTexCol = 11;
-			m_eUBType = UBET_ITEM;
-#endif			
-		} break;
+			if (g_iCountry == RUSSIA)
+			{
+				nTextureID = 12;
+				nTexRow = 0;
+				nTexCol = 2;
+				m_eUBType = UBET_ITEM;
+			}
+			else
+			{
+				nTextureID = 9;
+				nTexRow = 12;
+				nTexCol = 11;
+				m_eUBType = UBET_ITEM;
+			}
+		}
+		break;
 	case IT_MONEY:
 	case IT_ITEM:
 		{

@@ -120,10 +120,13 @@ public:
 	void SetToggle(bool bToggle);
 	
 	void SetCommandDrag(Command* pCmd)		{ SAFE_DELETE(m_pCmdDrag); m_pCmdDrag = pCmd; }
-	
+
 	void SetHighLightMode(bool bOnOff);
 	void SetHighLight(bool bOnOff) { m_bHighlight = bOnOff; }
 	bool GetHighLightMode() { return m_bHighlightMode; }	
+
+	void SetDisable(bool bDisable)	{ m_bDisable = bDisable; }
+	bool GetDisable()				{ return m_bDisable; }
 
 	CUIBase* Clone();
 
@@ -132,6 +135,7 @@ public:
 	WMSG_RESULT OnMouseMove(UINT16 x, UINT16 y, MSG* pMsg);
 	WMSG_RESULT OnLButtonDown(UINT16 x, UINT16 y);
 	WMSG_RESULT OnLButtonDBLClick(UINT16 x, UINT16 y);
+	WMSG_RESULT OnLButtonUp(UINT16 x, UINT16 y);
 	// --------------------------------------------------------------------
 
 	void OnRender(CDrawPort* pDraw);
@@ -184,9 +188,12 @@ private:
 	bool			m_bSuit;
 	int				m_nCashIndex;
 	int				m_nPetKind;
+	// 내 아이콘에서 LBTNDown이 발생할 경우에만 드래그 커맨드 실행.
+	bool			m_bDrag;
 #ifdef DURABILITY
 	bool			m_bDurItem;
 #endif	//	DURABILITY
+	bool			m_bDisable; // 반투명으로 변경, 반투명으로 변경시 툴팁을 뿌려주지 않는다.
 #ifdef UI_TOOL
 	
 	int			m_nRow;

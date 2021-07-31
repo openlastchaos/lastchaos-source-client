@@ -72,6 +72,9 @@ ENGINE_API extern CUISiegeWarfareDoc* _pUISWDoc;
 
 //#define EVENT_REQUITALM //[ttos_2009_4_13]:서버 오류 보상이벤트
 
+#define DEF_REGISTER_MERCHANT_NEED_SP	2000
+#define DEF_REGISTER_MERCHANT_NEED_NAS	100000000
+
 int	iSelCountry =-1;
 int iSelGroup =-1;
 int iGroup[WORLDCUP_MAX_GROUP+1] ={ 0, 5, 14, 23, 32 };
@@ -531,13 +534,14 @@ void CUIQuest::OpenQuest( int iMobIndex, int iMobVirIdx, BOOL bHasQuest, FLOAT f
 		}
 
 		// [100416: selo] 러시아는 로레인이 이벤트 진행한다.
-#if !defined(G_RUSSIA)
-		if(MD->IsEvent())
+		if (g_iCountry != RUSSIA)
 		{
-			g_bHasEvent = TRUE;
-			pUIManager->AddMessageBoxLString( MSGLCMD_QUEST_REQ, FALSE, _S( 100, "이벤트" ), QUEST_EVENT );				
+			if(MD->IsEvent())
+			{
+				g_bHasEvent = TRUE;
+				pUIManager->AddMessageBoxLString( MSGLCMD_QUEST_REQ, FALSE, _S( 100, "이벤트" ), QUEST_EVENT );				
+			}
 		}
-#endif
 
 		if (IS_EVENT_ON(TEVENT_BJMONO_2007))
 		{
@@ -587,9 +591,6 @@ void CUIQuest::OpenQuest( int iMobIndex, int iMobVirIdx, BOOL bHasQuest, FLOAT f
 		{
 			pUIManager->AddMessageBoxLString(MSGLCMD_QUEST_REQ, FALSE, _S(2404, "쿠폰 이벤트"), EVENT_PROMOTION2);
 		}
-#if defined(G_JAPAN)
-		pUIManager->AddMessageBoxLString(MSGLCMD_QUEST_REQ, FALSE, _S(4774, "접속 유저 보상 이벤트"), EVENT_REQUITAL_1); 
-#endif
 
 		// [2011/01/18 : Sora] 출석 이벤트
 		if( pUIManager->GetNotice()->IsAttendanceEventOn() )
@@ -837,14 +838,7 @@ void CUIQuest::OpenQuest( int iMobIndex, int iMobVirIdx, BOOL bHasQuest, FLOAT f
 				pUIManager->AddMessageBoxLString( MSGLCMD_QUEST_REQ, FALSE, _S( 2946, "여름 곤충채집 이벤트" ), EVENT_COLLECTBUGS );
 			}
 		}
-		// 일본( 크리스마스(꿈,희망) 이벤트 )
-#if defined(G_JAPAN)
-		if( g_iTempFlag&0x00080000 && iMobIndex == 139 )
-			pUIManager->AddMessageBoxLString(MSGLCMD_QUEST_REQ,FALSE,_S(2286,"2005 크리스마스 이벤트"),EVENT_NEWYEAR1);
 
-		if( g_iTempFlag&0x00100000 && iMobIndex == 139 )
-			pUIManager->AddMessageBoxLString(MSGLCMD_QUEST_REQ,FALSE,_S(2287,"2006 신년 인내의 열매 이벤트"),EVENT_NEWYEAR2);
-#endif
 		// [100208: selo] 대족장 지킬의 경우
 		if( iMobIndex == 276 )
 		{
@@ -1303,7 +1297,7 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 					return;
 				}
 
-				CTString strMessage;
+				CTString strMessage, strCount;
 
 				pUIManager->CloseMessageBoxL( MSGLCMD_RED_TREASUREBOX_EVENT );
 					
@@ -1316,15 +1310,18 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 				strMessage.PrintF( _S(4019, "%d Lv 붉은색 보물상자 지급 품목"), iTreasureBoxLevel);	
 				pUIManager->AddMessageBoxLString( MSGLCMD_RED_TREASUREBOX_EVENT, TRUE, strMessage, -1, 0xE18600FF );			
 
+				strCount = pUIManager->IntegerToCommaString(5);
+				strMessage.PrintF( _S( 61, "%s %s개" ), _pNetwork->GetItemName(2658), strCount);
+				pUIManager->AddMessageBoxLString( MSGLCMD_RED_TREASUREBOX_EVENT, TRUE, strMessage, -1, 0xA3A1A3FF );
 
-				strMessage.PrintF( _S( 61, "%s %d개" ), _pNetwork->GetItemName(2658), 5);
-				pUIManager->AddMessageBoxLString( MSGLCMD_RED_TREASUREBOX_EVENT, TRUE, strMessage, -1, 0xA3A1A3FF );			
-				strMessage.PrintF( _S( 61, "%s %d개" ), _pNetwork->GetItemName(2659), 5);
+				strCount = pUIManager->IntegerToCommaString(5);
+				strMessage.PrintF( _S( 61, "%s %s개" ), _pNetwork->GetItemName(2659), strCount);
 				pUIManager->AddMessageBoxLString( MSGLCMD_RED_TREASUREBOX_EVENT, TRUE, strMessage, -1, 0xA3A1A3FF );
 				
 				if( iTreasureBoxLevel == 12 )
 				{
-					strMessage.PrintF( _S( 61, "%s %d개" ), _pNetwork->GetItemName(2860), 10);
+					strCount = pUIManager->IntegerToCommaString(10);
+					strMessage.PrintF( _S( 61, "%s %s개" ), _pNetwork->GetItemName(2860), strCount);
 					pUIManager->AddMessageBoxLString( MSGLCMD_RED_TREASUREBOX_EVENT, TRUE, strMessage, -1, 0xA3A1A3FF );
 				}
 				
@@ -1389,12 +1386,13 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 							if(g_iTempFlag&0x00400000)
 								pUIManager->AddMessageBoxLString( MSGLCMD_EVENT, FALSE, _S(2509, "접속 이벤트 상품 받기" ), EVENT_CONNECT );
 
-#if (defined(G_HONGKONG) || defined(G_USA) || defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2))
-							if ( g_iCountry != FRANCE && g_iCountry != ITALY)
+							if (IsGamigo(g_iCountry) == TRUE || g_iCountry == USA)
 							{
-								pUIManager->AddMessageBoxLString( MSGLCMD_EVENT, FALSE, _S(3145, "프로모 패키지상품 이벤트" ), EVENT_PROMOPACK );
+								if ( g_iCountry != FRANCE && g_iCountry != ITALY)
+								{
+									pUIManager->AddMessageBoxLString( MSGLCMD_EVENT, FALSE, _S(3145, "프로모 패키지상품 이벤트" ), EVENT_PROMOPACK );
+								}
 							}
-#endif
 
 							// wooss 070305 
 							// kw : WSS_WHITEDAY_2007 , WSS_EVENT_LOD --------------------------------------------------------------------->>
@@ -1765,16 +1763,6 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, TRUE, CTString(" ") );
 
 						/*************************************/
-						// 2007년
-#if defined(G_JAPAN)
-						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(974)), 0);	
-						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(85)), 1);		
-						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(971)), 2);	
-						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(973)), 3);	
-						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(972)), 4);	
-						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(723)), 5);	
-						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(556)), 6);		
-#else
 						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(974)), 0);	//행운의 고급제련석
 						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(85)), 1);		//고급제련석
 						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(1576)), 2);	//성수병
@@ -1782,8 +1770,6 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(1575)), 4);	//양초
 						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(675)), 5);	//구원의 눈물
 						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, CTString(_pNetwork->GetItemName(676)), 6);	//용서의 눈물
-						/*************************************/
-#endif
 						/*************************************/
 						pUIManager->AddMessageBoxLString( MSGLCMD_BUDDHISM_EVENT, FALSE, _S( 1220, "취소한다." ) );
 					}
@@ -2287,16 +2273,20 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 						if( pUIManager->DoesMessageBoxLExist( MSGLCMD_REGISTER_MERCHANT ) ) 
 							break;
 
+						CTString strSp, strNas, strTemp;
+						strSp = pUIManager->IntegerToCommaString(DEF_REGISTER_MERCHANT_NEED_SP);
+						strNas = pUIManager->IntegerToCommaString(DEF_REGISTER_MERCHANT_NEED_NAS);
+
 						pUIManager->CreateMessageBoxL( _S(5057, "등록 정보"), UI_QUEST, MSGLCMD_REGISTER_MERCHANT );
 						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE, pUIManager->GetSubJobName(SUBJOB_MERCHANT), -1, 0xE18600FF);
 						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE,	_S(5058, "세상의 모든 돈을 얻고자 하는 자여, 상인이 되어 대륙 최고의 부자가 되어 보지 않겠나?") );
 						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE, _S(5059, "(경비가 삼엄해서 불법장사는 안된다네!)" ) );
 						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE, _S(5060, "필요 레벨 : 50Lv~55Lv" ), -1, 0xE18600FF);
-						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE, _S(5061, "필요 SP : 2000" ), -1, 0xE18600FF);
+						strTemp.PrintF(_S(5061, "필요 SP : %s" ), strSp);
+						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE, strTemp, -1, 0xE18600FF);
 						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE, _S(5062, "명성치 : 5" ), -1, 0xE18600FF);
-						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE, _S(5063, "나스 : 100,000,000" ), -1, 0xE18600FF);
-
-						CTString strTemp;
+						strTemp.PrintF(_S(5063, "나스 : %s" ), strNas);
+						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, TRUE, strTemp, -1, 0xE18600FF);
 						strTemp.PrintF( _S( 5056, "상인으로 등록"), pUIManager->GetSubJobName(SUBJOB_MERCHANT) );
 						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, FALSE, strTemp, 1 );
 						pUIManager->AddMessageBoxLString( MSGLCMD_REGISTER_MERCHANT, FALSE, _S(1220, "취소한다." ) );
@@ -2730,22 +2720,21 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 				CUIMsgBox_Info MsgBoxInfo;
 				int tmpInputMaxChar = 12;
 
-				// hongkong input string limit change to 24 [8/23/2010 rumist]
-#if defined(G_HONGKONG)
-				tmpInputMaxChar = 26; // 17; // 홍콩은 key입력이 최대 15자
-#endif
 				MsgBoxInfo.m_nInputMaxChar = tmpInputMaxChar;
 				MsgBoxInfo.m_nInputWidth = 78;
 				MsgBoxInfo.m_nInputPosX = 70;
 				MsgBoxInfo.m_nInputPosY = 48;
-#if (defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2))
-				if ( g_iCountry != FRANCE )
+
+				if (IsGamigo(g_iCountry) == TRUE)
 				{
-					MsgBoxInfo.m_nInputMaxChar = 20;
-					MsgBoxInfo.m_nInputWidth = 130;
-					MsgBoxInfo.m_nInputPosX = 44;
+					if ( g_iCountry != FRANCE )
+					{
+						MsgBoxInfo.m_nInputMaxChar = 20;
+						MsgBoxInfo.m_nInputWidth = 130;
+						MsgBoxInfo.m_nInputPosX = 44;
+					}
 				}
-#endif
+
 				MsgBoxInfo.SetMsgBoxInfo(_S(3150, "Serial Key Enter"),UMBS_OKCANCEL|UMBS_INPUTBOX,UI_QUEST,MSGCMD_EVENT_COUPON_SENDNUM);
 				pUIManager->CreateMessageBox(MsgBoxInfo);
 			}
@@ -2809,13 +2798,6 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 		{
 			switch(nResult)
 			{
-				case EVENT_MAY_CHILDREN:
-					{
-						// TODO : 어린이날 이벤트 
-						
-						pUIManager->GetShop()->EventOpenShop( 254, 0, m_fNpcX,m_fNpcZ);
-					}
-					break;					
 				case EVENT_MAY_PARENTS:
 					{
 						// TODO : 어버이날 이벤트 
@@ -3217,7 +3199,10 @@ void CUIQuest::MsgBoxLCommand( int nCommandCode, int nResult )
 				"결사대에서 탈퇴 시에는 그 동안 누적되었던 기여도가 모두 초기화되며 아래와 같은 위약금을 지불 하셔야 합니다."));
 			MsgBoxInfo.AddString( strMessage );
 
-			strMessage.PrintF(_S( 6125, "위약금:%I64d 나스"), pSyndicateData->GetSecssionNas());
+			CTString strTemp;
+			strTemp.PrintF("%I64d", pSyndicateData->GetSecssionNas());
+			pUIManager->InsertCommaToString(strTemp);
+			strMessage.PrintF(_S( 6125, "위약금:%s 나스"), strTemp);
 			MsgBoxInfo.AddString( strMessage );
 
 			strMessage.PrintF(_S( 6285,
@@ -3975,6 +3960,9 @@ void CUIQuest::QuestError( UBYTE ubError )
 		break;
 	case MSG_QUEST_ERR_DONT_HAVE_NAS:				// [100208: selo] 포기 퀘스트 복구 실패
 		strMessage = _S(4817,"나스가 부족해서 포기 퀘스트를 복구할 수 없습니다.");
+		break;
+	case MSG_QUEST_ERR_DONT_HAVE_SPACE:				// ALEX QUEST SPACE
+		strMessage = _S(10071, "인벤토리가 꽉 차서 보상을 받을 수 없습니다." );
 		break;
 	case MSG_QUEST_ERR_CHECK_DONE_ING:
 		{

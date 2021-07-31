@@ -128,12 +128,14 @@ void CUIMySyndicateInfo::initialize()
 
 WMSG_RESULT CUIMySyndicateInfo::OnKeyMessage( MSG* pMsg )
 {
+	if (IsFocused() == FALSE)
+		return WMSG_FAIL;
+
 	if( pMsg->wParam == VK_ESCAPE )
 	{
 		CloseUI();
 		return WMSG_SUCCESS;
 	}
-
 	return WMSG_FAIL;
 }
 

@@ -4,14 +4,14 @@
 #include <Engine/Interface/UIPlayerInfo.h>
 #include <Engine/Base/KeyNames.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Interface/UISummon.h>
+#include <Engine/Contents/function/SummonUI.h>
 #include <Engine/Interface/UIPetInfo.h>
 #include <Engine/Interface/UILacarette.h>
 #include <Engine/Contents/Base/UISkillNew.h>
 #include <Engine/Contents/Base/UIPartyNew.h>
 #include <Engine/Interface/UIWebBoard.h>
 #include <Engine/Interface/UIMessenger.h>
-#include <Engine/Interface/UISystemMenu.h>
+#include <engine/Contents/function/SystemMenuUI.h>
 #include <Engine/Contents/Base/UICharacterInfoNew.h>
 #include <Engine/Interface/UIInventory.h>
 #include <Engine/Interface/UICashShopEX.h>
@@ -26,6 +26,8 @@
 #include <Engine/Contents/Base/UIQuestBookNew.h>
 #include <Engine/Contents/Base/Party.h>
 #include <Engine/Info/MyInfo.h>
+
+extern INDEX	g_iCountry;
 
 static INT64 g_InputTabTime = 0; // 귀찮다..
 
@@ -156,31 +158,31 @@ void CUIPlayerInfo::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, i
 	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_DISABLE );
 
 	// TopUI 하나로 통일 하면서 러시아 상점, 라카렛 라카볼 텍스쳐 위치 다른거 추가 [12/14/2012 Ranma]
-#if defined (G_RUSSIA)
-	m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].SetUV( UBS_IDLE, 465, 978, 487, 1000, fTexWidth, fTexHeight );
-	m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].SetUV( UBS_CLICK, 465, 1002, 487, 1024, fTexWidth, fTexHeight );
-	m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].CopyUV( UBS_IDLE, UBS_ON );
-	m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].CopyUV( UBS_IDLE, UBS_DISABLE );
+	if (g_iCountry == RUSSIA)
+	{
+		m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].SetUV( UBS_IDLE, 465, 978, 487, 1000, fTexWidth, fTexHeight );
+		m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].SetUV( UBS_CLICK, 465, 1002, 487, 1024, fTexWidth, fTexHeight );
+		m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].CopyUV( UBS_IDLE, UBS_ON );
+		m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].SetPos(m_btnQuickMenu[QUICKMENU_BTN_RANKING].GetPosX() + 24, 0);
+		m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].SetPos(m_btnQuickMenu[QUICKMENU_BTN_RANKING].GetPosX() + 24, 0);
 
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].Create( this, CTString( "" )
-		,m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].GetPosX() + 24, 0, 22, 22);
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].SetUV( UBS_IDLE, 441, 978, 463, 1000, fTexWidth, fTexHeight );
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].SetUV( UBS_CLICK, 441, 1002, 463, 1024, fTexWidth, fTexHeight );
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_ON );
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_DISABLE );
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].Create( this, CTString( "" )
+			,m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].GetPosX() + 24, 0, 22, 22);
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].SetUV( UBS_IDLE, 441, 978, 463, 1000, fTexWidth, fTexHeight );
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].SetUV( UBS_CLICK, 441, 1002, 463, 1024, fTexWidth, fTexHeight );
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_ON );
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_DISABLE );
 
-	m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].SetPos(m_btnQuickMenu[QUICKMENU_BTN_RANKING].GetPosX() + 24, 0);
+		m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].SetPos(m_btnQuickMenu[QUICKMENU_BTN_RANKING].GetPosX() + 24, 0);
 
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].Create( this, CTString( "" )
-		,m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].GetPosX() + 24, 0, 22, 22);
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].SetUV( UBS_IDLE, 489, 978, 511, 1000, fTexWidth, fTexHeight );
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].SetUV( UBS_CLICK, 489, 1002, 511, 1024, fTexWidth, fTexHeight );
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_ON );
-	m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_DISABLE );
-
-#endif // defined (G_RUSSIA)
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].Create( this, CTString( "" )
+			,m_btnQuickMenu[QUICKMENU_BTN_CASH_SHOP].GetPosX() + 24, 0, 22, 22);
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].SetUV( UBS_IDLE, 489, 978, 511, 1000, fTexWidth, fTexHeight );
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].SetUV( UBS_CLICK, 489, 1002, 511, 1024, fTexWidth, fTexHeight );
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_ON );
+		m_btnQuickMenu[QUICKMENU_BTN_LAKA_BALL].CopyUV( UBS_IDLE, UBS_DISABLE );
+	}
 
 	//도움말 대신 랭킹 added by sam 10/11/26
 	m_btnQuickMenu[QUICKMENU_BTN_RANKING].SetUV( UBS_IDLE, 623, 225, 645, 247, fTexWidth, fTexHeight );
@@ -395,17 +397,20 @@ void CUIPlayerInfo::ShowToolTip( BOOL bShow, int nToolTipID )
 
 		case 2:		// System menu
 			{
-#if defined (G_GERMAN)
-				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Y,Alt+Y)" );
+				if (IsGamigo(g_iCountry) == TRUE)
+				{
+					if( g_iEnterChat )
+						m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Y,Alt+Y)" );
+					else
+						m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Alt+Y)" );
+				}
 				else
-					m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Alt+Y)" );
-#else
-				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Z,Alt+Z)" );
-				else
-					m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Alt+Z)" );
-#endif
+				{
+					if( g_iEnterChat )
+						m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Z,Alt+Z)" );
+					else
+						m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Alt+Z)" );
+				}
 
 				m_btnSysMenu.GetAbsPos( nInfoX, nInfoY );
 				nWidth = m_btnSysMenu.GetWidth();
@@ -983,9 +988,6 @@ BOOL CUIPlayerInfo::ProcessShortCut( MSG *pMsg )
 		return FALSE;
 	if( pMsg->wParam == VK_TAB )
 	{
-#if (defined(G_JAPAN) || defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2) || defined(G_NETHERLANDS) )
-		return FALSE;
-#endif
 		if (g_InputTabTime > 0)
 		{
 			INT64 DeltaTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds() - g_InputTabTime;
@@ -1176,11 +1178,12 @@ BOOL CUIPlayerInfo::ProcessShortCut( MSG *pMsg )
 			case 44:		// 'z' - system menu
 				pUIManager->GetSystemMenu()->ToggleVisible();
 				break;
-#if !defined(G_GERMAN) // 독일 로컬 요청으로 "B" 단축키 막음[4/13/2011 ldy1978220]
+
 			case 48:		// 'b' - web board
-				pUIManager->GetWebBoard()->ToggleVisible();
+				if (IsGamigo(g_iCountry) == FALSE)
+					pUIManager->GetWebBoard()->ToggleVisible();
 				break;	
-#endif
+
 			case 33:		// 'f' - messanger
 				pUIManager->GetMessenger()->ToggleVisible();
 				break;
@@ -1334,30 +1337,35 @@ void CUIPlayerInfo::ShowQuickMenuToolTip(BOOL bShow, int nToolTipID)
 			break;
 		case QUICKMENU_BTN_SYSTEM_MENU:		// System menu
 			{
-#if defined(G_GERMAN)
-				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Y,Alt+Y)" );
+				if (IsGamigo(g_iCountry) == TRUE)
+				{
+					if( g_iEnterChat )
+						m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Y,Alt+Y)" );
+					else
+						m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Alt+Y)" );
+				}
 				else
-					m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Alt+Y)" );
-#else
-				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Z,Alt+Z)" );
-				else
-					m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Alt+Z)" );
-#endif
-				
+				{
+					if( g_iEnterChat )
+						m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Z,Alt+Z)" );
+					else
+						m_strToolTip.PrintF( "%s %s", _S( 299, "시스템" ), "(Alt+Z)" );
+				}				
 			}
 			break;
 		case QUICKMENU_BTN_RANKING:		// Help
 			{
-#if defined (G_GERMAN)
-				m_strToolTip.PrintF( "%s", _S(5213, "랭킹"));
-#else
-				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s %s", _S(5213, "랭킹"), "(V,Alt+V)");
+				if (IsGamigo(g_iCountry) == TRUE)
+				{
+					m_strToolTip.PrintF( "%s", _S(5213, "랭킹"));
+				}
 				else
-					m_strToolTip.PrintF( "%s %s", _S(5213, "랭킹"), "(Alt+V)");
-#endif		
+				{
+					if( g_iEnterChat )
+						m_strToolTip.PrintF( "%s %s", _S(5213, "랭킹"), "(V,Alt+V)");
+					else
+						m_strToolTip.PrintF( "%s %s", _S(5213, "랭킹"), "(Alt+V)");
+				}
 			}
 			break;
 		case QUICKMENU_BTN_CASH_SHOP:		// Cash Shop

@@ -3,7 +3,7 @@
 
 // 헤더 정리. [12/1/2009 rumist]
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Interface/UICompound.h>
+#include <Engine/Contents/function/CompoundUI.h>
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Interface/UIInventory.h>
 

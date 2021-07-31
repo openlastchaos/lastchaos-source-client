@@ -56,7 +56,7 @@ public:
 	CUIDurability(void);
 	virtual ~CUIDurability(void);
 
-	void	Open(eOPEN_TYPE eType);
+	void	Open(eOPEN_TYPE eType, int iMobVirIdx, FLOAT fX, FLOAT fZ);
 	void	Close();
 
 	void	initialize();
@@ -74,6 +74,8 @@ public:
 
 	void	ShowMsgBox(eMSG_BOX eType);
 	void	MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput );
+	
+	void	SetPremiumBenefit(bool bUse) { m_bPremiumChar = bUse; }
 
 	WMSG_RESULT OnKeyMessage(MSG* pMsg);
 	WMSG_RESULT OnLButtonDown(UINT16 x, UINT16 y);
@@ -96,6 +98,10 @@ private:
 	bool			m_bDrag;
 	int				m_nOriX, m_nOriY;
 	UIRect			m_rcOriginPos;
+
+	int				m_nMobIndex;
+	FLOAT			m_fNpcPosX, m_fNpcPosZ;
+	bool			m_bPremiumChar;
 
 	BOOL			m_bProgress;
 	__int64			m_uStartTime;

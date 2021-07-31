@@ -24,7 +24,7 @@
 #include <Engine/Interface/UIPetInfo.h>
 #include <Engine/Contents/function/PremiumChar.h>
 #include <Engine/Contents/function/PremiumCharUI.h>
-#include <Engine/Interface/UISummon.h>
+#include <Engine/Contents/function/SummonUI.h>
 #include <Engine/Contents/function/WildPetInfoUI.h>
 #include <Engine/Contents/Base/UISkillNew.h>
 #include <Engine/Contents/Base/UICharacterInfoNew.h>
@@ -50,11 +50,15 @@
 #include <Engine/Contents/function/ItemCompose.h>
 #include <Engine/Contents/function/WildPetTargetUI.h>
 #include <Engine/Contents/function/PetTargetUI.h>
+#include <Engine/Contents/Base/UIMsgBoxMgr.h>
+#include <Engine/Interface/UIRadar.h>
 
 #ifdef XTRAP_SECURE_CKBANG_2010_07_20
 	#include <Engine/XTrapInterface/XTrapInterface.h>
 #endif
 #include <Engine/Info/MyInfo.h>
+
+extern INDEX g_iCountry;
 
 // 속성 시스템 속성 갯수 디파인
 #define ATTRIBUTE_ATT_MAX 7
@@ -88,6 +92,8 @@ DECLARE_MSG_UPDATE(updateNewsWebClear);
 DECLARE_MSG_UPDATE(updateItemCompose);
 DECLARE_MSG_UPDATE(updateRelicGpsSysMsg);
 DECLARE_MSG_UPDATE(updateGuildRecall);
+DECLARE_MSG_UPDATE(updateEPReset);
+DECLARE_MSG_UPDATE(charHPMP);
 
 void CSessionState::reg_packet_info()
 {
@@ -131,6 +137,8 @@ void CSessionState::reg_packet_info()
 	REG_PACKET_UPDATE(MSG_UPDATE_DATA_FOR_CLIENT, MSG_SUB_UPDATE_ARTIFACT_SYSMSG, updateItemCompose);
 	REG_PACKET_UPDATE(MSG_UPDATE_DATA_FOR_CLIENT, MSG_SUB_UPDATE_ARTIFACT_FIND_USER_COUNT_MSG, updateRelicGpsSysMsg);	
 	REG_PACKET_UPDATE(MSG_UPDATE_DATA_FOR_CLIENT, MSG_SUB_REQUEST_GUILD_RECALL, updateGuildRecall);
+	REG_PACKET_UPDATE(MSG_UPDATE_DATA_FOR_CLIENT, MSG_SUB_UPDATE_EP_INIT, updateEPReset);
+	REG_PACKET_UPDATE(MSG_UPDATE_DATA_FOR_CLIENT, MSG_SUB_UPDATE_CHAR_HPMP, charHPMP);
 }
 
 
@@ -267,10 +275,6 @@ void CSessionState::updateStatus( CNetworkMessage* istr )
 	//[ttos_2009_1_15]:쿨타임 감소 및 MP량 감소 옵션을 클라에서 계산하지 않고 서버에서 받음
 	pUIManager->SetCoolTimeReductionRate(pPack->prob);
 	pUIManager->SetNeedMPReductionRate(pPack->opDecreaseSkillMP);
-
-	//CPrintF(TRANS("MSG_STATUS1: (level)%d (curExp)%I64d (needExp)%I64d (HP)%d/%d (MP)%d/%d (str)%d (dex)%d\n"), level, curExp, needExp, hp, maxHP, mp, maxMP, str, dex);
-	//CPrintF(TRANS("MSG_STATUS2: (int)%d (con)%d (opt_str)%d (opt_dex)%d (opt_int)%d (opt_con)%d (attack)%d (magic)%d\n"), _int, con, opt_str, opt_dex, opt_int, opt_con, attack, magic);
-	//CPrintF(TRANS("MSG_STATUS3: (defence)%d (resist)%d (sp)%d (weight)%d (maxweight)%d (walkspd)%f (runspd)%f (attackspd)%d  \n"), defense, resist, sp, weight, maxweight, walkspeed, runspeed, attackspeed);
 
 	// [100107: selo] 트레이너 피하기 위한 중요 값 저장	
 	CPlayerEntity* penPlayerEntity = (CPlayerEntity*)CEntity::GetPlayerEntity(0); //캐릭터 자기 자신
@@ -504,11 +508,10 @@ void CSessionState::updateAt( CNetworkMessage* istr )
 		_pNetwork->MyCharacterInfo.sbAttributePos = pPack->mapAttr;
 	}
 	//[ttos_2009_1_23]:채팅 금지
-#ifdef CHATTING_BAN
 	_pNetwork->MyCharacterInfo.ChatFlag = pPack->chatingFlag;
-#endif
 	//안태훈 수정 시작	//(Zone Change System)(0.1)
 	g_slZone = pPack->zoneIndex;
+	pUIManager->GetRadar()->updateZone();
 	_pNetwork->ga_sesSessionState.ses_bWantPause = FALSE;
 	//안태훈 수정 끝	//(Zone Change System)(0.1)
 
@@ -1007,11 +1010,13 @@ void CSessionState::updatePcAppear( CNetworkMessage *istr )
 	{
 		ASSERTALWAYS("Character must have ska model and tag manager.");
 	}
-#if defined(G_RUSSIA)
-	if(IS_FLAG_ON(pPack->assistInfo.state, EST_ASSIST_INVISIBLE) && _pNetwork->m_ubGMLevel < 7)
-#else
-	if(IS_FLAG_ON(pPack->assistInfo.state, EST_ASSIST_INVISIBLE) && _pNetwork->m_ubGMLevel < 2)
-#endif
+
+	int nGMLevel = 2;
+
+	if (g_iCountry == RUSSIA)
+		nGMLevel = 7;
+
+	if(IS_FLAG_ON(pPack->assistInfo.state, EST_ASSIST_INVISIBLE) && _pNetwork->m_ubGMLevel < nGMLevel)
 	{
 		penEntity->SetFlags(penEntity->GetFlags() | ENF_HIDDEN);
 	}
@@ -1233,13 +1238,8 @@ void CSessionState::updatePetAppear( CNetworkMessage *istr )
 		((CPlayerEntity*)CEntity::GetPlayerEntity(0))->TransfromPet(penEntity, pPack->turnToNpc, pPack->turnToNpcSize);
 	}
 
-#if defined (G_KOR)
-	if( pPack->mapAttr & MATT_WAR)
-		penEntity->SetFlagOn(ENF_HIDDEN);
-#else
 	if( pPack->mapAttr & MATT_WAR || pPack->mapAttr & MATT_PEACE)
 		penEntity->SetFlagOn(ENF_HIDDEN);
-#endif
 
 	if(pPack->bNew){
 		CTString strEffect;
@@ -1291,16 +1291,18 @@ void CSessionState::updateElementalAppear( CNetworkMessage *istr )
 
 		for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 		{
-			CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+			CSummonUI* pUISummon = (CSummonUI*)pUIManager->GetUI(i);
+
 			pSlaveInfo = pInfo->GetMySlaveInfo(i - UI_SUMMON_START);
 			if( !pUISummon->GetSummonEntity() && pSlaveInfo != NULL )
 			{
 				pUISummon->SetSummonIndex(pPack->charIndex);
 				pUISummon->SetSummonEntity( penEntity );
 				pUISummon->SetSummonType( pPack->elementalType );
+				pUISummon->openUI();
 				//pUISummon->SetCommand(CSlaveInfo::COMMAND_PROTECTION);
 				pSlaveInfo->fHealth	= pPack->hp;
-				pSlaveInfo->fMaxHealth = pPack->maxHp;						
+				pSlaveInfo->fMaxHealth = pPack->maxHp;
 				break;
 			}
 		}
@@ -1357,12 +1359,13 @@ void CSessionState::updateElementalAppear( CNetworkMessage *istr )
 		penEntity->en_pmiModelInstance->StretchModel(FLOAT3D( 0.7f,0.7f,0.7f ));
 	}
 
-#ifdef SORCERER_SUMMON_VILLAGE_VISIBLE_NA_20081008//IsFlagOn(ENF_HIDDEN)
-#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2) || defined (G_NETHERLANDS)
-	if (pPack->mapAttr & MATT_PEACE)
-		penEntity->SetFlagOn(ENF_HIDDEN);
-#endif
-#endif
+//#ifdef SORCERER_SUMMON_VILLAGE_VISIBLE_NA_20081008//IsFlagOn(ENF_HIDDEN)
+	if (IsGamigo(g_iCountry) == TRUE)
+	{
+		if (pPack->mapAttr & MATT_PEACE)
+			penEntity->SetFlagOn(ENF_HIDDEN);
+	}
+//#endif	// SORCERER_SUMMON_VILLAGE_VISIBLE_NA_20081008
 }
 
 void CSessionState::updateAPetAppear( CNetworkMessage *istr )
@@ -1591,7 +1594,7 @@ void CSessionState::updateElementalStatus( CNetworkMessage* istr )
 		{
 			for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 			{
-				CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+				CSummonUI* pUISummon = (CSummonUI*)pUIManager->GetUI(i);
 				pSlaveInfo = pInfo->GetMySlaveInfo(i - UI_SUMMON_START);
 
 				if( pUISummon->GetSummonEntity() && pUISummon->GetSummonIndex() == pPack->charIndex && pSlaveInfo != NULL )
@@ -2045,4 +2048,33 @@ IMPLEMENT_MSG_UPDATE(updateGuildRecall)
 	MsgBoxInfo.AddString( strMessage );
 
 	pUIMgr->CreateMessageBox( MsgBoxInfo );		
+}
+
+IMPLEMENT_MSG_UPDATE(updateEPReset)
+{
+	UpdateClient::EPInit* pRecv = reinterpret_cast<UpdateClient::EPInit*>(istr->GetBuffer());
+
+	if (pRecv->isInit == true)
+	{
+		MSGBOX_OK(_S(1417, "확인"), 
+			_S(7099, "이그니션 유지 시간을 초과하여 이그니션 정보가 초기화 되었습니다."));
+	}
+	else
+	{
+		MSGBOX_OK(_S(1417, "확인"), 
+			_S(7100, "이그니션 유지 시간안에 접속 하여 이그니션 정보가 유지 됩니다."));
+	}
+}
+
+IMPLEMENT_MSG_UPDATE(charHPMP)
+{
+	UpdateClient::charStatusHPMP* pRecv = reinterpret_cast<UpdateClient::charStatusHPMP*>(istr->GetBuffer());
+
+	if (pRecv->charIndex == _pNetwork->MyCharacterInfo.index)
+	{
+		_pNetwork->MyCharacterInfo.hp = pRecv->hp;
+		_pNetwork->MyCharacterInfo.maxHP = pRecv->maxHp;
+		_pNetwork->MyCharacterInfo.mp = pRecv->mp;
+		_pNetwork->MyCharacterInfo.maxMP = pRecv->maxMp;
+	}
 }

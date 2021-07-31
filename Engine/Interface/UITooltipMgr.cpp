@@ -7,11 +7,13 @@
 #define		DEF_DEFAULT_GAP		8
 #define		DEF_ORIG_IMAGE_WIDTH	85
 #define		DEF_TB_TEMP_HEIGHT	500
+#define		DEF_TOOLTIP_UPDATE_TIME		1.f
 
 CUITooltipMgr::CUITooltipMgr()
     : m_pUI(NULL)
     , m_pTooltipRes(NULL)
 	, m_nWearPos(-1)
+	, m_fDeltaTime(0.f)
 {
     int i;
 
@@ -92,6 +94,9 @@ void CUITooltipMgr::setData( CUIBase* pUI )
 
 		CUIIcon* pIcon = static_cast< CUIIcon* >(pUI);
 
+		if (pIcon->GetDisable() == true)	// Disable상태일때 툴팁을 출력하지 않는다.
+			return;
+
 		int nWitchUI = pIcon->GetWhichUI();
 
 		m_pTooltip[eTOOLTIP_FIRST]->SetWhichUI(nWitchUI);
@@ -121,7 +126,7 @@ void CUITooltipMgr::setData( CUIBase* pUI )
 					{
 						CSpecialSkill* pSSkill = CSpecialSkill::getData(pIcon->getIndex());
 
-						bSub  = nWitchUI == UI_SKILLLEARN;
+						bSub  = (nWitchUI == UI_SKILLLEARN) || (nWitchUI == UI_SSKILLLEARN);
 
 						bRet = m_pTooltip[eTOOLTIP_FIRST]->SetSSkillData(pSSkill, bSub);
 
@@ -189,7 +194,7 @@ void CUITooltipMgr::setData( CUIBase* pUI )
 
 					bRet = m_pTooltip[eTOOLTIP_FIRST]->SetItemEtcData(pItem, pIcon->getBtnEtcType());
 				}
-				else if (pUI->hasTooltip() == true)
+				else
 				{
 					m_pTooltip[eTOOLTIP_FIRST]->SetString(pUI);
 					UpdateTooltipPos(UIRect(pUI->GetAbsPosX(), pUI->GetAbsPosY(), pUI->GetWidth(), pUI->GetHeight()), true);
@@ -206,11 +211,8 @@ void CUITooltipMgr::setData( CUIBase* pUI )
 	}
 	else
 	{
-		if (pUI->hasTooltip() == true)
-		{
-			m_pTooltip[eTOOLTIP_FIRST]->SetString(pUI);
+		if (m_pTooltip[eTOOLTIP_FIRST]->SetString(pUI) == true)
 			UpdateTooltipPos(UIRect(pUI->GetAbsPosX(), pUI->GetAbsPosY(), pUI->GetWidth(), pUI->GetHeight()), true);
-		}
 	}
 }
 
@@ -368,4 +370,36 @@ int CUITooltipMgr::GetItemCompare( int pos, CItems* pItems )
 		return pos;
 
 	return -1;
+}
+
+void CUITooltipMgr::updateTooltipText( float fDelta )
+{
+	if (m_pUI == NULL)
+		return;
+
+	if (m_pUI->hasUpdateTooltipF() == false)
+		return;
+
+	m_fDeltaTime += fDelta;
+
+	// 현재(150904) 초단위 업데이트만 필요하므로, 1초 기준으로 업데이트 한다.
+	if (m_fDeltaTime < DEF_TOOLTIP_UPDATE_TIME)
+		return;
+
+	while (m_fDeltaTime > DEF_TOOLTIP_UPDATE_TIME)
+		m_fDeltaTime -= DEF_TOOLTIP_UPDATE_TIME;
+
+	m_pUI->updateTooltipTextF();
+
+	// setData를 호출 할 경우, 
+	// 내부에서 clearTooltip() 호출되어, OnLeave 가 불려짐. (m_bEnter 상태 꺼짐)
+	//setData(m_pUI);
+
+	// 일반 툴팁만 세팅함 (150923)
+	// 모든 툴팁에 대응하려면 setData 수정 필요.
+
+	m_pTooltip[eTOOLTIP_FIRST]->ClearData();
+
+	if (m_pTooltip[eTOOLTIP_FIRST]->SetString(m_pUI) == true)
+		UpdateTooltipPos(UIRect(m_pUI->GetAbsPosX(), m_pUI->GetAbsPosY(), m_pUI->GetWidth(), m_pUI->GetHeight()), true);
 }

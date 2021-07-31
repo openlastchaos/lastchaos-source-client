@@ -185,6 +185,8 @@ enum WorldMirrorType {
 	WMT_Z,
 };
 
+#define		ZONEINFO()		CZoneInfo::getSingleton()
+
 class ENGINE_API CWorld 
 {
 public:

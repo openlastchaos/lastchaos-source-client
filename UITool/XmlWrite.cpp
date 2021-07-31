@@ -343,6 +343,17 @@ bool XmlWrite::setBaseValue( CUIBase* pUI, TiXmlElement* pElement )
 	int nTooltip = pUI->GetTooltipIndex();
 	pElement->SetAttribute("tooltip", nTooltip);
 
+	COLOR textCol = DEF_UI_COLOR_WHITE;
+	
+	if (nTooltip > 0)
+	{
+		stTooltipInfo info = pUI->getTooltip();
+		textCol = info.colText;
+	}
+
+	std::string strTemp;
+	pElement->SetAttribute("tooltip_color", ConvertColorToString(textCol, strTemp) );
+
 	int nTooltip_width = pUI->getTooltipWidth();
 	pElement->SetAttribute("tooltip_width", nTooltip_width);
 
@@ -441,6 +452,10 @@ TiXmlElement* XmlWrite::writeImage( CUIBase* pBase )
 	CUIImage* pUI = dynamic_cast<CUIImage*>(pBase);
 	BOOL bRet = setBaseValue(pUI, pElement);
 	AddAttUV(&pUI->GetAbsUV(), pElement);
+
+	std::string strTmp;
+	COLOR textCol = pUI->GetColor();
+	pElement->SetAttribute("color", ConvertColorToString(textCol, strTmp) );
 
 	return pElement;
 }
@@ -623,20 +638,25 @@ TiXmlElement* XmlWrite::writeCheckButton( CUIBase* pBase )
 
 	pElement->SetAttribute("text_area", nTextArea);
 	pElement->SetAttribute("h_align", nAlign);
-
-	COLOR colOn, colOff;
-	pUI->GetTextColor(colOn, colOff);
-	
-	pElement->SetAttribute("color_on", ConvertColorToString(colOn, strTmp));
-	pElement->SetAttribute("color_off", ConvertColorToString(colOff, strTmp));
-
 	pElement->SetAttribute("edge", bEdge);
 
+	COLOR col;
+	TiXmlElement* pChildEle = new TiXmlElement("color");
+	std::string strAtt[UCBS_TOTAL] = {"none", "check", "none_disable", "check_disable"};
+	for (int i = 0; i < UCBS_TOTAL; ++i)
+	{
+		col = pUI->GetTextColor((UICheckBtnState)i);
+		pChildEle->SetAttribute(strAtt[i].c_str(), ConvertColorToString(col, strTmp));
+	}
+	pElement->LinkEndChild(pChildEle);
+
 	std::string strPath = pUI->getTexString();
-	UIRectUV	uv = pUI->GetUV(UCBS_NONE);
-	AddAttUV("none",&uv , pElement);
-	uv = pUI->GetUV(UCBS_CHECK);
-	AddAttUV("check",&uv , pElement);
+	UIRectUV	uv;
+	for (int i = 0; i < UCBS_TOTAL; ++i)
+	{
+		uv = pUI->GetUV((UICheckBtnState)i);
+		AddAttUV(strAtt[i],&uv , pElement);
+	}
 
 	return pElement;
 }
@@ -652,7 +672,10 @@ TiXmlElement* XmlWrite::writeText( CUIBase* pBase )
 	float fDepth  = pUI->getDepth();
 	BOOL bEdge	= pUI->getEdge();
 
-	COLOR col = pUI->getFontColor(), colShadow = pUI->getFontShadow();
+	COLOR colShadow = pUI->getFontShadow();
+	COLOR col[CUIBase::eSTATE_MAX] = {pUI->getFontColor(CUIBase::eSTATE_IDLE), 
+									  pUI->getFontColor(CUIBase::eSTATE_ENTER),
+									  pUI->getFontColor(CUIBase::eSTATE_SELECT)};
 
 	int			iIdx	= (int)pUI->getStringIdx();
 	int			nAlign	= pUI->getAlignTextH();
@@ -672,7 +695,9 @@ TiXmlElement* XmlWrite::writeText( CUIBase* pBase )
 
 	pElement->SetAttribute("str_ellipsis", pUI->getEllipsisText());
 
-	pElement->SetAttribute("color", ConvertColorToString(col, strTmp) );
+	pElement->SetAttribute("color", ConvertColorToString(col[CUIBase::eSTATE_IDLE], strTmp) );
+	pElement->SetAttribute("color_enter", ConvertColorToString(col[CUIBase::eSTATE_ENTER], strTmp) );
+	pElement->SetAttribute("color_select", ConvertColorToString(col[CUIBase::eSTATE_SELECT], strTmp) );
 
 	pElement->SetAttribute("shadow", bShadow );
 
@@ -1092,6 +1117,9 @@ TiXmlElement* XmlWrite::writeImageFont( CUIBase* pBase )
 	StackWideCharToMultiByte(CP_UTF8, wcsResult, -1, szResult);
 	pElement->SetAttribute("str", szResult);
 	}
+
+	int nAlign = pUI->getAlignFontH();
+	pElement->SetAttribute("h_align", nAlign);
 	
 	TiXmlElement* pChild = new TiXmlElement("srcuv");
 	UIRectUV uv = pUI->getSourceImageUV();
@@ -1160,6 +1188,12 @@ TiXmlElement* XmlWrite::writeSpriteAni( CUIBase* pBase )
 	int nCurFrame = pUI->GetRenderIdx();
 
 	pElement->SetAttribute("cur", nCurFrame);
+
+	int nDelay = pUI->GetDelayTime();
+	pElement->SetAttribute("delay_time", nDelay);
+
+	int nPlay = pUI->GetLoopState();
+	pElement->SetAttribute("play", nPlay);
 
 	UIRectUV uv;
 	int i, nMax = pUI->GetAniCount();
@@ -1327,6 +1361,9 @@ TiXmlElement* XmlWrite::writeTextBoxEx( CUIBase* pBase )
 	pElement->SetAttribute("sy", nSY);
 	pElement->SetAttribute("gap_y", nGapY);
 	pElement->SetAttribute("split_mode", nSplit);
+
+	int nScrollThumbWidth = pUI->GetScrollThumbWidth();
+	pElement->SetDoubleAttribute("scroll_thumb_width", nScrollThumbWidth);
 
 	{
 		StackMultiByteToWideChar(CP_ACP, str.c_str(), -1, wcsResult);

@@ -92,11 +92,8 @@ CAffinityInfoUI::CAffinityInfoUI()
 
 CAffinityInfoUI::~CAffinityInfoUI()
 {
-	Destroy();
-
-	STOCK_RELEASE(m_ptdSignalTexture);
-
 	AffinityReset();
+	STOCK_RELEASE(m_ptdSignalTexture);
 }
 
 void CAffinityInfoUI::initialize()
@@ -127,7 +124,7 @@ void CAffinityInfoUI::initialize()
 			m_pListDonation[i] = (CUIList*)m_pTPDonation[i]->findUI(strTmp);
 		}
 	}
-
+#ifndef		WORLD_EDITOR
 	if (CUIBase* pClose = findUI("btn_close"))
 	{
 		pClose->SetCommandFUp(boost::bind(&CAffinityInfoUI::CloseAffinityInfo, this));
@@ -140,6 +137,7 @@ void CAffinityInfoUI::initialize()
 	{
 		m_pTBAdminNpcName->SetCommandFUp(boost::bind(&CAffinityInfoUI::OpenMap, this));
 	}
+#endif	// WORLD_EDITOR
 
 	m_pTextAffinityPt = (CUIText*)findUI("text_affinity_point");
 	m_pArrayReward = (CUIArray*)findUI("array_reward");
@@ -251,7 +249,7 @@ void CAffinityInfoUI::_setAffinityData()
 	for( iter = pInfo->mapAffinityList.begin(); iter != pInfo->mapAffinityList.end(); ++iter )
 	{
  		OnAffinityList.insert( iter->first );
-		m_AffinityList.push_back( make_pair( iter->first, true) );
+		m_AffinityList.push_back( std::make_pair( iter->first, true) );
 	}
 
 	CAffinityData* pTempAffinityData = _pNetwork->GetAffinityData();
@@ -268,7 +266,7 @@ void CAffinityInfoUI::_setAffinityData()
 		if (OnAffinityList.find(pInfoIndex) == OnAffinityList.end())
 		{
 			// 친화도 개편2 친구로 맺지 못한 세력 셋팅 [2/7/2013 Ranma]
-			m_AffinityList.push_back( make_pair( pInfoIndex, false ) );
+			m_AffinityList.push_back( std::make_pair( pInfoIndex, false ) );
 		}
 	}
 
@@ -285,7 +283,9 @@ void CAffinityInfoUI::_setAffinityData()
 		m_pListNpc->AddListItem(pItemTmp->Clone());
 		pItem = m_pListNpc->GetListItem(nCurItem);
 
+#ifndef		WORLD_EDITOR
 		pItem->SetCommandF(boost::bind(&CAffinityInfoUI::_SetAffinityListData, this));
+#endif	// WORLD_EDITOR
 
 		if (pIcon = (CUIIcon*)pItem->findUI("icon_npc"))
 		{
@@ -375,7 +375,10 @@ void CAffinityInfoUI::_SetAffinityListData()
 				nMax = iterPoint->second.max;
 			}
 
-			strTmp.PrintF("%d/%d", nCur, nMax);
+			CTString strCurPoint = UIMGR()->IntegerToCommaString(nCur);
+			CTString strMaxPoint = UIMGR()->IntegerToCommaString(nMax);
+			strTmp.PrintF("%s/%s", strCurPoint, strMaxPoint);
+			
 			if (m_pTextAffinityPt != NULL)
 				m_pTextAffinityPt->SetText(strTmp);
 

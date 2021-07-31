@@ -74,15 +74,17 @@ void CPetTargetUI::UpdateHungryInfo()
 
 void CPetTargetUI::initialize()
 {
+#ifndef		WORLD_EDITOR
+
 	// pet Info
 	m_pBtnPetInfo = (CUIButton*)findUI("btn_petinfo");
 
 	if (m_pBtnPetInfo != NULL)
 		m_pBtnPetInfo->SetCommandFUp(boost::bind(&CPetTargetUI::TogglePetInfo, this));
-		
+
 	int i;
 	// Back [ title, back ]
-	string strBackID[eBACK_MAX] = { "is_title", "is_back" };
+	std::string strBackID[eBACK_MAX] = { "is_title", "is_back" };
 
 	for (i = 0; i < eBACK_MAX; ++ i)
 	{
@@ -93,17 +95,18 @@ void CPetTargetUI::initialize()
 	}
 
 	// Text [ level, name ]
-	string strTextID[eTEXT_MAX] = { "str_level", "str_name" };
+	std::string strTextID[eTEXT_MAX] = { "str_level", "str_name" };
 
 	for (i = 0; i < eTEXT_MAX; ++ i)
 		m_pText[i] = (CUIText*)findUI(strTextID[i].c_str());
 
 	// Img [ HP, Hungry ]
-	string strImgID[eIMG_MAX] = { "img_hp", "img_hungry" };
+	std::string strImgID[eIMG_MAX] = { "img_hp", "img_hungry" };
 
 	for (i = 0; i < eIMG_MAX; ++ i)
 		m_pImg[i] = (CUIImage*)findUI(strImgID[i].c_str());
 
+#endif		// WORLD_EDITOR
 }
 
 void CPetTargetUI::openUI()

@@ -9,10 +9,6 @@
 #include <Engine/Interface/UIInventory.h>
 #include <Engine/Interface/UIProduct.h>
 
-
-// Date : 2005-03-07,   By Lee Ki-hwan
-static int	_iMaxMsgStringChar = 0;
-
 enum eSelProcessNPC
 {
 	SEL_MINERAL = 0,	// 광석 정련
@@ -52,7 +48,12 @@ enum eSelCrop
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUIProcessNPC::CUIProcessNPC()
+	: m_pListItems(NULL)
+	, m_pListDesc(NULL)
+	, m_pBtnOK(NULL)
+	, m_nNeedTextWidth(100)
 {
+	setInherit(false);
 	Clear ();
 }
 
@@ -62,145 +63,8 @@ CUIProcessNPC::CUIProcessNPC()
 // ----------------------------------------------------------------------------
 CUIProcessNPC::~CUIProcessNPC()
 {
-	Destroy();
 	clearVecBtnEX();
-}
-
-// ----------------------------------------------------------------------------
-// Name : Create()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIProcessNPC::Create(CUIWindow* pParentWnd, int nX, int nY, int nWidth, int nHeight)
-{
-    int diff = SKILLLEARN_HEIGHT - PROCESSNPC_HEIGHT;
-
-    SetPos(nX, nY);
-    SetSize(nWidth, nHeight);
-
-    _iMaxMsgStringChar = PROCESSNPC_STRING_CHAR_WIDTH / (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing());
-
-    // Region of each part
-    m_rcTitle.SetRect(0, 0, 216, 22);
-    m_rcIcons.SetRect(17, 55, 51, 200);
-    //m_rcTab.SetRect( 21, 31, 204, 50 );
-
-    m_rcItem.SetRect(13, 33, 218, 203);
-    m_rcDesc.SetRect(13, 203, 218, 331);
-
-    // ProcessNPC Texture 생성 - SkillLearn Texture 사용
-    m_ptdBaseTexture = CreateTexture(CTString("Data\\Interface\\SkillLearn.tex"));
-    FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
-    FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
-
-    // UV Coordinate of each part
-    m_rtBackgroundTop.SetUV(0, 0, 216, PROCESSNPC_TOP_HEIGHT, fTexWidth, fTexHeight);
-    m_rtBackgroundBtm.SetUV(0, PROCESSNPC_TOP_HEIGHT + diff, 216, SKILLLEARN_HEIGHT, fTexWidth, fTexHeight);
-
-    m_rtSelOutline.SetUV(218, 80, 250, 112, fTexWidth, fTexHeight);
-    m_rtInput.SetUV(218, 136, 248, 149, fTexWidth, fTexHeight);
-
-    // Close button
-    m_btnClose.Create(this, CTString(""), 184, 4, 14, 14);
-    m_btnClose.SetUV(UBS_IDLE, 219, 0, 233, 14, fTexWidth, fTexHeight);
-    m_btnClose.SetUV(UBS_CLICK, 219, 15, 233, 29, fTexWidth, fTexHeight);
-    m_btnClose.CopyUV(UBS_IDLE, UBS_ON);
-    m_btnClose.CopyUV(UBS_IDLE, UBS_DISABLE);
-
-    // ProcessNPC button
-    m_btnOK.Create(this, _S(191, "확인"), 70, 372 - diff, 63, 21);
-    m_btnOK.SetUV(UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight);
-    m_btnOK.SetUV(UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight);
-    m_btnOK.CopyUV(UBS_IDLE, UBS_ON);
-    m_btnOK.CopyUV(UBS_IDLE, UBS_DISABLE);
-
-    // Cancel button
-    m_btnCancel.Create(this, _S(139, "취소"), 141, 372 - diff, 63, 21);
-    m_btnCancel.SetUV(UBS_IDLE, 0, 403, 63, 424, fTexWidth, fTexHeight);
-    m_btnCancel.SetUV(UBS_CLICK, 66, 403, 129, 424, fTexWidth, fTexHeight);
-    m_btnCancel.CopyUV(UBS_IDLE, UBS_ON);
-    m_btnCancel.CopyUV(UBS_IDLE, UBS_DISABLE);
-
-    // Up button
-    m_btnUP.Create(this, CTString(""), 141, 372 - diff, 7, 7);
-    m_btnUP.SetUV(UBS_IDLE, 219, 62, 228, 69, fTexWidth, fTexHeight);
-    m_btnUP.SetUV(UBS_CLICK, 230, 62, 239, 69, fTexWidth, fTexHeight);
-    m_btnUP.CopyUV(UBS_IDLE, UBS_ON);
-    m_btnUP.CopyUV(UBS_IDLE, UBS_DISABLE);
-    m_btnUP.SetEnable(FALSE);
-
-    // Down button
-    m_btnDown.Create(this, CTString(""), 141, 372 - diff, 7, 7);
-    m_btnDown.SetUV(UBS_IDLE, 219, 71, 228, 78, fTexWidth, fTexHeight);
-    m_btnDown.SetUV(UBS_CLICK, 230, 71, 239, 78, fTexWidth, fTexHeight);
-    m_btnDown.CopyUV(UBS_IDLE, UBS_ON);
-    m_btnDown.CopyUV(UBS_IDLE, UBS_DISABLE);
-    m_btnDown.SetEnable(FALSE);
-
-    // Scroll bar of ProcessNPC Item
-    m_sbProcessNPCItem.Create(this, 193, 51, 9, 153);
-    m_sbProcessNPCItem.CreateButtons(TRUE, 9, 7, 0, 0, 10);
-    m_sbProcessNPCItem.SetScrollPos(0);
-    m_sbProcessNPCItem.SetScrollRange(PROCESSNPC_SLOT_ROW_TOTAL);
-    m_sbProcessNPCItem.SetCurItemCount(0);
-    m_sbProcessNPCItem.SetItemsPerPage(PROCESSNPC_SLOT_ROW);
-    // Up button
-    m_sbProcessNPCItem.SetUpUV(UBS_IDLE, 219, 62, 228, 69, fTexWidth, fTexHeight);
-    m_sbProcessNPCItem.SetUpUV(UBS_CLICK, 230, 62, 239, 69, fTexWidth, fTexHeight);
-    m_sbProcessNPCItem.CopyUpUV(UBS_IDLE, UBS_ON);
-    m_sbProcessNPCItem.CopyUpUV(UBS_IDLE, UBS_DISABLE);
-    // Bar button
-    m_sbProcessNPCItem.SetBarTopUV(219, 32, 228, 42, fTexWidth, fTexHeight);
-    m_sbProcessNPCItem.SetBarMiddleUV(219, 43, 228, 45, fTexWidth, fTexHeight);
-    m_sbProcessNPCItem.SetBarBottomUV(219, 46, 228, 56, fTexWidth, fTexHeight);
-    // Down button
-    m_sbProcessNPCItem.SetDownUV(UBS_IDLE, 219, 71, 228, 78, fTexWidth, fTexHeight);
-    m_sbProcessNPCItem.SetDownUV(UBS_CLICK, 230, 71, 239, 78, fTexWidth, fTexHeight);
-    m_sbProcessNPCItem.CopyDownUV(UBS_IDLE, UBS_ON);
-    m_sbProcessNPCItem.CopyDownUV(UBS_IDLE, UBS_DISABLE);
-    // Wheel region
-    m_sbProcessNPCItem.SetWheelRect(-181, -1, 180, 154);
-
-
-    // List box of Precondition description
-    m_lbPreconditionDesc.Create(this, 13, 207, 180, 124, _pUIFontTexMgr->GetLineHeight(), 7, 6, 1, FALSE);
-    m_lbPreconditionDesc.CreateScroll(TRUE, 0, 0, 9, 124, 9, 7, 0, 0, 10);
-
-    // Up button
-    m_lbPreconditionDesc.SetScrollUpUV(UBS_IDLE, 219, 62, 228, 69, fTexWidth, fTexHeight);
-    m_lbPreconditionDesc.SetScrollUpUV(UBS_CLICK, 230, 62, 239, 69, fTexWidth, fTexHeight);
-    m_lbPreconditionDesc.CopyScrollUpUV(UBS_IDLE, UBS_ON);
-    m_lbPreconditionDesc.CopyScrollUpUV(UBS_IDLE, UBS_DISABLE);
-    // Bar button
-    m_lbPreconditionDesc.SetScrollBarTopUV(219, 32, 228, 42, fTexWidth, fTexHeight);
-    m_lbPreconditionDesc.SetScrollBarMiddleUV(219, 43, 228, 45, fTexWidth, fTexHeight);
-    m_lbPreconditionDesc.SetScrollBarBottomUV(219, 46, 228, 56, fTexWidth, fTexHeight);
-    // Down button
-    m_lbPreconditionDesc.SetScrollDownUV(UBS_IDLE, 219, 71, 228, 78, fTexWidth, fTexHeight);
-    m_lbPreconditionDesc.SetScrollDownUV(UBS_CLICK, 230, 71, 239, 78, fTexWidth, fTexHeight);
-    m_lbPreconditionDesc.CopyScrollDownUV(UBS_IDLE, UBS_ON);
-    m_lbPreconditionDesc.CopyScrollDownUV(UBS_IDLE, UBS_DISABLE);
-
-    m_bSatisfied = FALSE;
-}
-
-// ----------------------------------------------------------------------------
-// Name : ResetPosition()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIProcessNPC::ResetPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ)
-{
-    SetPos((pixMaxI + pixMinI - GetWidth()) / 2, (pixMaxJ + pixMinJ - GetHeight()) / 2);
-}
-
-// ----------------------------------------------------------------------------
-// Name : AdjustPosition()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIProcessNPC::AdjustPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ)
-{
-    if (m_nPosX < pixMinI || m_nPosX + GetWidth() > pixMaxI ||
-        m_nPosY < pixMinJ || m_nPosY + GetHeight() > pixMaxJ)
-        ResetPosition(pixMinI, pixMinJ, pixMaxI, pixMaxJ);
+	Destroy();	
 }
 
 // ----------------------------------------------------------------------------
@@ -221,10 +85,13 @@ void CUIProcessNPC::Clear()
 
     memset(m_NeedItems, 0, sizeof(CNeedItems) * MAX_MAKE_ITEM_MATERIAL);
 
-    //m_StrProcessNPCType.Clear ();
-
     m_bWaitProcessNPCResult = FALSE;
-    m_lbPreconditionDesc.ResetAllStrings();
+    
+	if (m_pListItems != NULL)
+		m_pListItems->DeleteAllListItem();
+	
+	if (m_pListDesc != NULL)
+		m_pListDesc->DeleteAllListItem();
 
     clearVecBtnEX();
 }
@@ -241,10 +108,13 @@ void CUIProcessNPC::InitProcessNPC()
     int nProcessType = m_iResourceType;
     int nProcessSubType = m_iResourceSubType;
 
-    // 제조  Type 설정
-    //m_StrProcessNPCType = szItemName;
+	CUIListItem* pTemp = m_pListItems->GetListItemTemplate();
+	CUIListItem* pClone = NULL;
+	CUIIcon* pIcon = NULL;
+	CUIText* pText = NULL;
+	CUISpinControl* pSpin = NULL;
 
-    CUIIcon* pIcon;
+    // 제조  Type 설정
     int bit = 0x00000001;
 
     //!! 제조 문서로 제조 할수 있는 아이템 검색
@@ -266,20 +136,45 @@ void CUIProcessNPC::InitProcessNPC()
                 && pItemData->GetProcessSubType() == nProcessSubType
                )
             {
-                pIcon = new CUIIcon;
-                pIcon->Create(this, 0, 0, BTN_SIZE, BTN_SIZE, UI_PROCESSNPC, UBET_ITEM);
-                pIcon->setData(UBET_ITEM, pItemData->GetItemIndex());
-                m_vecIcons.push_back(pIcon);
+				CItems* pItems = new CItems(pItemData->GetItemIndex());
+				m_vecItems.push_back(pItems);
+
+				pClone = (CUIListItem*)pTemp->Clone();
+				m_pListItems->AddListItem(pClone);
+
+				pIcon = (CUIIcon*)pClone->findUI("icon");
+
+				if (pIcon != NULL)
+				{
+					pIcon->setData(pItems);
+				}
+
+				pText = (CUIText*)pClone->findUI("text");
+
+				if (pText != NULL)
+					pText->SetText(CTString(pItemData->GetName()));
+
+				pSpin = (CUISpinControl*)pClone->findUI("spin_cnt");
+
+				if (pSpin != NULL)
+				{
+					pSpin->Hide(TRUE);
+
+#ifndef		WORLD_EDITOR
+					pSpin->SetCommandFMove(boost::bind(&CUIProcessNPC::callback_spin, this));
+					pSpin->SetCommandFReturn(boost::bind(&CUIProcessNPC::callback_spin, this));
+#endif		// WORLD_EDITOR
+				}
             }
         }
     }
 
     AddString(_S(561, "가공품을 선택해 주십시오."), COLOR_TEXT);
 
-    m_sbProcessNPCItem.SetScrollPos(0);
-    m_sbProcessNPCItem.SetCurItemCount(m_vecIcons.size());
+	m_pListItems->UpdateScroll(m_vecItems.size());
+	m_pListItems->UpdateList();
 
-    m_btnOK.SetEnable(m_bSatisfied);
+    m_pBtnOK->SetEnable(m_bSatisfied);
 }
 
 // ----------------------------------------------------------------------------
@@ -331,6 +226,7 @@ void CUIProcessNPC::OpenProcessList(int iType, int iSubType)
     m_iResourceType = iType;
     m_iResourceSubType = iSubType;
 
+	Hide(FALSE);
     pUIManager->RearrangeOrder(UI_PROCESSNPC, TRUE);
 
     InitProcessNPC();
@@ -343,373 +239,10 @@ void CUIProcessNPC::OpenProcessList(int iType, int iSubType)
 void CUIProcessNPC::CloseProcessNPC()
 {
     // Close refine
+	Hide(TRUE);
     CUIManager::getSingleton()->RearrangeOrder(UI_PROCESSNPC, FALSE);
 
     Clear();
-}
-
-// ----------------------------------------------------------------------------
-// Name : Render()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIProcessNPC::Render()
-{
-    CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
-
-    // Set skill learn texture
-    pDrawPort->InitTextureData(m_ptdBaseTexture);
-
-    // Add render regions -----------------------------------------------------------------------------------------------
-    // Background up
-    pDrawPort->AddTexture(m_nPosX, m_nPosY, m_nPosX + m_nWidth, m_nPosY + PROCESSNPC_TOP_HEIGHT,
-                          m_rtBackgroundTop.U0, m_rtBackgroundTop.V0, m_rtBackgroundTop.U1, m_rtBackgroundTop.V1,
-                          0xFFFFFFFF);
-
-    // Background down
-    pDrawPort->AddTexture(m_nPosX, m_nPosY + PROCESSNPC_TOP_HEIGHT, m_nPosX + m_nWidth, m_nPosY + m_nHeight,
-                          m_rtBackgroundBtm.U0, m_rtBackgroundBtm.V0, m_rtBackgroundBtm.U1, m_rtBackgroundBtm.V1,
-                          0xFFFFFFFF);
-
-    // Render Title Text
-    pDrawPort->PutTextEx(_S(560, "가공") , m_nPosX + PROCESSNPC_TITLE_TEXT_OFFSETX,
-                         m_nPosY + PROCESSNPC_TITLE_TEXT_OFFSETY);
-
-    // Render ProcessNPC Type
-    //pDrawPort->PutTextExCX( m_StrProcessNPCType, m_nPosX + 106, m_nPosY + 35, COLOR_TITLE );
-
-
-    // ProcessNPC Item Scroll bar
-    m_sbProcessNPCItem.Render();
-
-    // List box of Need Item Desc
-    m_lbPreconditionDesc.Render();
-
-    // Close button
-    m_btnClose.Render();
-
-    // ProcessNPC button
-    m_btnOK.Render();
-
-    // Cancel button
-    m_btnCancel.Render();
-
-    pDrawPort->FlushRenderingQueue();
-
-
-    // Render ProcessNPC Item
-    CTString m_strShortDesc;
-    int	nX = SLEARN_SLOT_SX;
-    int	nY = SLEARN_SLOT_SY;
-
-    int	iEnd = m_sbProcessNPCItem.GetScrollPos() + PRODUCT_SLOT_ROW;
-
-    if (iEnd > m_vecIcons.size())
-        iEnd = m_vecIcons.size();
-
-    for (int i = m_sbProcessNPCItem.GetScrollPos(); i < iEnd; i++)
-    {
-        if (m_vecIcons[i] != NULL && !m_vecIcons[i]->IsEmpty())
-        {
-            // render Item
-            m_vecIcons[i]->SetPos(nX, nY);
-            m_vecIcons[i]->Render(pDrawPort);
-
-            // render Item desc
-            CItemData* pItemData = _pNetwork->GetItemData(m_vecIcons[i]->getIndex());
-            const char* szItemName = _pNetwork->GetItemName(m_vecIcons[i]->getIndex());
-            CTString strOutput = szItemName;
-
-            if (i == m_nSelectProcessNPCItem) //현재 선택되어 있다면
-            {
-                int index = m_nSelectProcessNPCItem - m_sbProcessNPCItem.GetScrollPos();
-                char buf[32];
-                sprintf(buf, _S(766, "%d 개"), m_nProcessItemCount);
-                strOutput += buf;
-            }
-
-            pDrawPort->PutTextExCX(strOutput, m_nPosX + 114, m_nPosY + nY + 8, 0xC3C3C3ff);
-
-            nY += SLEARN_SLOT_OFFSETY;
-        }
-    }
-
-    // Flush all render text queue
-    pDrawPort->EndTextEx();
-
-    pDrawPort->InitTextureData(m_ptdBaseTexture);
-
-    nX = SLEARN_SLOT_SX;
-    nY = SLEARN_SLOT_SY;
-
-    m_btnDown.SetEnable(FALSE);
-    m_btnUP.SetEnable(FALSE);
-
-    // render sel outline
-    if (m_nSelectProcessNPCItem != -1)
-    {
-        int BoxX, BoxY;
-
-        int nOffset = m_nSelectProcessNPCItem - m_sbProcessNPCItem.GetScrollPos();
-
-        if (nOffset >= 0 && nOffset < PROCESSNPC_SLOT_ROW)
-        {
-            BoxX = m_nPosX + nX - 1 ;
-            BoxY = m_nPosY + nY + (SLEARN_SLOT_OFFSETY *  nOffset) - 1;
-
-            pDrawPort->AddTexture(BoxX, BoxY,	BoxX + 34, BoxY + 34,
-                                  m_rtSelOutline.U0, m_rtSelOutline.V0, m_rtSelOutline.U1, m_rtSelOutline.V1,
-                                  0xffffffff);
-
-            // Input
-            pDrawPort->AddTexture(m_nPosX + 156, BoxY + 19, m_nPosX + 156 + 31, BoxY + 19 + 14,
-                                  m_rtInput.U0, m_rtInput.V0, m_rtInput.U1, m_rtInput.V1, 0xFFFFFFFF);
-
-            m_btnUP.SetPos(180, nY + (SLEARN_SLOT_OFFSETY *  nOffset) + 19 + 13 - 14);
-            m_btnDown.SetPos(180, nY + (SLEARN_SLOT_OFFSETY *  nOffset) + 19 + 13 - 7);
-
-            m_btnUP.SetEnable(TRUE);
-            m_btnDown.SetEnable(TRUE);
-            m_btnUP.Render();
-            m_btnDown.Render();
-        }
-    }
-
-    pDrawPort->FlushRenderingQueue();
-}
-
-// ----------------------------------------------------------------------------
-// Name : MouseMessage()
-// Desc :
-// ----------------------------------------------------------------------------
-WMSG_RESULT CUIProcessNPC::MouseMessage(MSG* pMsg)
-{
-    WMSG_RESULT	wmsgResult;
-
-    // Title bar
-    static BOOL bTitleBarClick = FALSE;
-
-    // Mouse point
-    static int	nOldX, nOldY;
-    int	nX = LOWORD(pMsg->lParam);
-    int	nY = HIWORD(pMsg->lParam);
-
-    // Mouse message
-    switch (pMsg->message)
-    {
-    case WM_MOUSEMOVE:
-        {
-            if (IsInside(nX, nY))
-            {
-                CUIManager::getSingleton()->SetMouseCursorInsideUIs();
-
-                int	iRowS = m_sbProcessNPCItem.GetScrollPos();
-                int	iRowE = iRowS + PROCESSNPC_SLOT_ROW;
-
-                if (m_vecIcons.size() < iRowE)
-                {
-                    iRowE = m_vecIcons.size();
-                }
-
-                if (IsInsideRect(nX, nY, m_rcItem))
-                {
-                    for (int iRow = iRowS; iRow < iRowE; iRow++)
-                    {
-                        m_vecIcons[iRow]->MouseMessage(pMsg);
-                    }
-                }
-            }
-
-
-            // Move refine
-            if (bTitleBarClick && (pMsg->wParam & MK_LBUTTON))
-            {
-                int	ndX = nX - nOldX;
-                int	ndY = nY - nOldY;
-                nOldX = nX;
-                nOldY = nY;
-
-                Move(ndX, ndY);
-
-                return WMSG_SUCCESS;
-            }
-            // Close button
-            else if (m_btnClose.MouseMessage(pMsg) != WMSG_FAIL)
-                return WMSG_SUCCESS;
-            // OK button
-            else if (m_btnOK.MouseMessage(pMsg) != WMSG_FAIL)
-                return WMSG_SUCCESS;
-            // Cancel button
-            else if (m_btnCancel.MouseMessage(pMsg) != WMSG_FAIL)
-                return WMSG_SUCCESS;
-            // List box of skill desc
-            else if (m_sbProcessNPCItem.MouseMessage(pMsg) != WMSG_FAIL)
-                return WMSG_SUCCESS;
-            else if (m_lbPreconditionDesc.MouseMessage(pMsg) != WMSG_FAIL)
-                return WMSG_SUCCESS;
-            else if (m_btnUP.MouseMessage(pMsg) != WMSG_FAIL)
-                return WMSG_SUCCESS;
-            else if (m_btnDown.MouseMessage(pMsg) != WMSG_FAIL)
-                return WMSG_SUCCESS;
-        }
-
-        break;
-
-    case WM_LBUTTONDOWN:
-        {
-            if (IsInside(nX, nY))
-            {
-                nOldX = nX;
-                nOldY = nY;
-
-                // Close button
-                if (m_btnClose.MouseMessage(pMsg) != WMSG_FAIL)
-                {
-                    // Nothing
-                }
-                // Title bar
-                else if (IsInsideRect(nX, nY, m_rcTitle))
-                {
-                    bTitleBarClick = TRUE;
-                }
-                // OK button
-                else if (m_btnOK.MouseMessage(pMsg) != WMSG_FAIL)
-                {
-                    // Nothing
-                }
-                // Cancel button
-                else if (m_btnCancel.MouseMessage(pMsg) != WMSG_FAIL)
-                {
-                    // Nothing
-                }
-                else if (m_sbProcessNPCItem.MouseMessage(pMsg) != WMSG_FAIL)
-                {
-                    return WMSG_SUCCESS;
-                }
-                else if (m_btnUP.MouseMessage(pMsg) != WMSG_FAIL)
-                {
-                    ++m_nProcessItemCount;
-
-                    if (m_nProcessItemCount > 10) m_nProcessItemCount = 10;
-
-                    SelectItem(m_nSelectProcessNPCItem);
-                    return WMSG_SUCCESS;
-                }
-                else if (m_btnDown.MouseMessage(pMsg) != WMSG_FAIL)
-                {
-                    --m_nProcessItemCount;
-
-                    if (m_nProcessItemCount < 1) m_nProcessItemCount = 1;
-
-                    SelectItem(m_nSelectProcessNPCItem);
-                    return WMSG_SUCCESS;
-                }
-
-                CUIManager::getSingleton()->RearrangeOrder(UI_PROCESSNPC, TRUE);
-                return WMSG_SUCCESS;
-            }
-        }
-        break;
-
-    case WM_LBUTTONUP:
-        {
-            // If holding button doesn't exist
-			if (UIMGR()->GetDragIcon() == NULL)
-            {
-                // Title bar
-                bTitleBarClick = FALSE;
-
-                // If refine isn't focused
-                if (!IsFocused())
-                    return WMSG_FAIL;
-
-                // Close button
-                if ((wmsgResult = m_btnClose.MouseMessage(pMsg)) != WMSG_FAIL)
-                {
-                    if (wmsgResult == WMSG_COMMAND)
-                        CloseProcessNPC();
-
-                    return WMSG_SUCCESS;
-                }
-                // OK button
-                else if ((wmsgResult = m_btnOK.MouseMessage(pMsg)) != WMSG_FAIL)
-                {
-                    if (wmsgResult == WMSG_COMMAND)
-                        SendProcessNPCReq();
-
-                    return WMSG_SUCCESS;
-                }
-                // Cancel button
-                else if ((wmsgResult = m_btnCancel.MouseMessage(pMsg)) != WMSG_FAIL)
-                {
-                    if (wmsgResult == WMSG_COMMAND)
-                        CloseProcessNPC();
-
-                    return WMSG_SUCCESS;
-                }
-                else if (m_sbProcessNPCItem.MouseMessage(pMsg) != WMSG_FAIL)
-                {
-                    return WMSG_SUCCESS;
-                }
-                else if (m_btnUP.MouseMessage(pMsg) != WMSG_FAIL)
-                    return WMSG_SUCCESS;
-                else if (m_btnDown.MouseMessage(pMsg) != WMSG_FAIL)
-                    return WMSG_SUCCESS;
-                else if (IsInsideRect(nX, nY, m_rcIcons))
-                {
-                    int	iRowS = m_sbProcessNPCItem.GetScrollPos();
-                    int	iRowE = iRowS + PROCESSNPC_SLOT_ROW;
-
-                    if (m_vecIcons.size() < iRowE)
-                    {
-                        iRowE = m_vecIcons.size();
-                    }
-
-                    for (int iRow = iRowS; iRow < iRowE; iRow++)
-                    {
-                        if (m_vecIcons[iRow]->MouseMessage(pMsg) != WMSG_FAIL)
-                        {
-                            if (m_nSelectProcessNPCItem != iRow) m_nProcessItemCount = 1;
-
-                            m_nSelectProcessNPCItem = iRow;
-
-                            SelectItem(m_nSelectProcessNPCItem);
-                            return WMSG_SUCCESS;
-                        }
-                    }
-                }
-
-            }
-        }
-        break;
-
-    case WM_LBUTTONDBLCLK:
-        {
-            if (IsInside(nX, nY))
-                return WMSG_SUCCESS;
-        }
-
-        break;
-
-    case WM_MOUSEWHEEL:
-        {
-            if (IsInside(nX, nY))
-            {
-                if (IsInsideRect(nX, nY, m_rcItem))
-                {
-                    return m_sbProcessNPCItem.MouseMessage(pMsg);
-                }
-                else if (IsInsideRect(nX, nY, m_rcDesc))
-                {
-                    return m_lbPreconditionDesc.MouseMessage(pMsg);
-                }
-
-                return WMSG_SUCCESS;
-            }
-        }
-        break;
-    }
-
-    return WMSG_FAIL;
 }
 
 // ----------------------------------------------------------------------------
@@ -725,18 +258,22 @@ void CUIProcessNPC::SelectItem(int _nIndex)
         if (_nIndex == -1) return;
     }
 
-    if (_nIndex >= m_vecIcons.size())
+    if (_nIndex >= m_vecItems.size())
         return;
 
     BOOL bNeedItem			= FALSE;
     BOOL bNeedItemCount		= FALSE;
 
-    m_lbPreconditionDesc.ResetAllStrings();
+	if (m_pListDesc != NULL)
+		m_pListDesc->DeleteAllListItem();
+
+	// SpinControl 보이기
+	show_spinctrl(m_nSelectProcessNPCItem, FALSE);
 
     // 생산 하고자 하는 아이템 모록
-    if (m_vecIcons[_nIndex]->getIndex() == -1) return;
+    if (m_vecItems[_nIndex]->Item_Index == -1) return;
 
-    CItemData*		pProcessNPCItemData	= _pNetwork-> GetItemData(m_vecIcons[_nIndex]->getIndex());
+    CItemData*		pProcessNPCItemData	= _pNetwork-> GetItemData(m_vecItems[_nIndex]->Item_Index);
 
     // 필요 아이템
     int nIndexTemp = 0;
@@ -799,8 +336,8 @@ void CUIProcessNPC::SelectItem(int _nIndex)
     if (m_NeedItems[0].ItemData != NULL)
     {
         szItemName = _pNetwork->GetItemName(m_NeedItems[0].ItemData->GetItemIndex());
-        strTitle.PrintF(_S(576, "%s : %d개 "), strSpace + szItemName
-                        , m_nProcessItemCount * m_NeedItems[0].llCount);
+		CTString strCount = UIMGR()->IntegerToCommaString(m_nProcessItemCount * m_NeedItems[0].llCount);
+        strTitle.PrintF(_S(576, "%s : %s개 "), strSpace + szItemName, strCount);
     }
 
     AddString(strTitle, bNeedItem ? COLOR_TEXT : COLOR_NONE);
@@ -816,11 +353,16 @@ void CUIProcessNPC::SelectItem(int _nIndex)
         , {10, 21, 40, 63, 94}
     };
     __int64 needMoney = s_iMoney[m_iResourceType][m_iResourceSubType] * m_nProcessItemCount * m_NeedItems[0].llCount;
-    strMoney.PrintF("%I64d %s", needMoney, _S(1762, "나스"));
+
+	CTString strNeedNas;
+	strNeedNas.PrintF("%I64d", needMoney);
+	UIMGR()->InsertCommaToString(strNeedNas);
+
+    strMoney.PrintF("%s %s", strNeedNas, _S(1762, "나스"));
     AddString(strMoney, needMoney <= myMoney ? COLOR_TEXT : COLOR_NONE);
 
     m_bSatisfied = m_bSatisfied && needMoney <= myMoney;
-    m_btnOK.SetEnable(m_bSatisfied);
+    m_pBtnOK->SetEnable(m_bSatisfied);
 }
 
 
@@ -830,37 +372,33 @@ void CUIProcessNPC::SelectItem(int _nIndex)
 // ----------------------------------------------------------------------------
 void CUIProcessNPC::AddString(CTString& strText, COLOR colText)
 {
-    int nLength =  strText.Length();
+	int nLength = UTIL_HELP()->GetFontWidth(strText.str_String);
 
-    if (nLength >= _iMaxMsgStringChar)
-    {
-        nLength -= nLength - _iMaxMsgStringChar;
+	// 줄이 넘어가는 경우
+	if (nLength >= m_nNeedTextWidth)
+	{
+		CUITextBox	_tb;
+		_tb.SetPos(0, 0);
+		if (m_pListDesc != NULL)
+			_tb.SetSize(m_pListDesc->GetWidth(), m_pListDesc->GetHeight());
 
-        do
-        {
-            if (strText[nLength] == ' ')
-            {
-                break;
-            }
+		_tb.SetSplitMode(SPLIT_SPACE);
+		_tb.SetText(strText);
 
-        }
-        while (nLength--);
+		int max = _tb.GetLineCount();
 
-        CTString strTemp2, strTemp;
+		for (int i = 0; i < max; ++i)
+		{
+			pushback_string(_tb.GetLineString(i), colText);
+		}
+	}
+	else 
+	{
+		pushback_string(strText, colText);
+	}
 
-        strText.Split(nLength, strTemp2, strTemp);
-        m_lbPreconditionDesc.AddString(0, strTemp2, colText);
-
-        strTemp2.PrintF("%s", strTemp);
-
-        m_lbPreconditionDesc.AddString(0, strTemp2, colText);
-
-    }
-    else
-    {
-        m_lbPreconditionDesc.AddString(0, strText, colText);
-    }
-
+	if (m_pListDesc != NULL)
+		m_pListDesc->UpdateList();
 }
 
 // ========================================================================= //
@@ -876,7 +414,7 @@ void CUIProcessNPC::SendProcessNPCReq()
     if (m_bWaitProcessNPCResult == TRUE)
         return;
 
-    if (m_nSelectProcessNPCItem >= m_vecIcons.size())
+    if (m_nSelectProcessNPCItem >= m_vecItems.size())
         return;
 
     CUIManager* pUIManager = CUIManager::getSingleton();
@@ -887,11 +425,11 @@ void CUIProcessNPC::SendProcessNPCReq()
         return;
     }
 
-    _pNetwork->SendNPCProcessMessage(m_vecIcons[m_nSelectProcessNPCItem]->getIndex(), m_nProcessItemCount);
+    _pNetwork->SendNPCProcessMessage(m_vecItems[m_nSelectProcessNPCItem]->Item_Index, m_nProcessItemCount);
 
     m_bWaitProcessNPCResult = TRUE;
 
-    m_btnOK.SetEnable(!m_bWaitProcessNPCResult);
+    m_pBtnOK->SetEnable(!m_bWaitProcessNPCResult);
 }
 
 // ========================================================================= //
@@ -1111,13 +649,175 @@ void CUIProcessNPC::MsgBoxLCommand(int nCommandCode, int nResult)
 
 void CUIProcessNPC::clearVecBtnEX()
 {
-    vecBtnEX_Iter iter = m_vecIcons.begin();
-    vecBtnEX_Iter eiter = m_vecIcons.end();
+    vecItems_Iter iter = m_vecItems.begin();
+    vecItems_Iter eiter = m_vecItems.end();
 
     for (; iter != eiter; ++iter)
     {
         SAFE_DELETE(*iter);
     }
 
-    m_vecIcons.clear();
+    m_vecItems.clear();
+}
+
+void CUIProcessNPC::initialize()
+{
+#ifndef		WORLD_EDITOR
+
+	m_bSatisfied = FALSE;
+
+	CUIText* pTxt = (CUIText*)findUI("txt_title");
+
+	if (pTxt != NULL)
+	{
+		int l, t, r, b;
+		l = pTxt->GetPosX();
+		t = pTxt->GetPosY();
+		r = l + pTxt->GetWidth();
+		b = t + pTxt->GetHeight();
+		setTitleRect(l, t, r, b);
+	}
+
+	m_pListItems = (CUIList*)findUI("list_process");
+
+	if (m_pListItems != NULL)
+	{
+		m_pListItems->SetKeepSelect(true);
+		m_pListItems->SetCommandFSelect(boost::bind(&CUIProcessNPC::callback_select, this));
+	}
+
+	m_pListDesc = (CUIList*)findUI("list_desc");
+
+	if (m_pListDesc != NULL)
+	{
+		CUIListItem* pItem = m_pListDesc->GetListItemTemplate();
+
+		if (pItem != NULL)
+		{
+			CUIBase* pbase = pItem->findUI("txt_line");
+
+			if (pbase != NULL)
+				m_nNeedTextWidth = pbase->GetWidth();
+		}
+	}
+
+	m_pBtnOK = (CUIButton*)findUI("btn_ok");
+
+	if (m_pBtnOK != NULL)
+		m_pBtnOK->SetCommandFUp(boost::bind(&CUIProcessNPC::SendProcessNPCReq, this));
+
+	CUIButton* pBtn;
+
+	pBtn = (CUIButton*)findUI("btn_close");
+
+	if (pBtn != NULL)
+		pBtn->SetCommandFUp(boost::bind(&CUIProcessNPC::CloseProcessNPC, this));
+
+	pBtn = (CUIButton*)findUI("btn_cancel");
+
+	if (pBtn != NULL)
+		pBtn->SetCommandFUp(boost::bind(&CUIProcessNPC::CloseProcessNPC, this));
+
+#endif		// WORLD_EDITOR
+}
+
+void CUIProcessNPC::pushback_string( CTString& strText, COLOR color )
+{
+	if (m_pListDesc == NULL)
+		return;
+
+	CUIListItem* pclone = NULL;
+	CUIListItem* pTemp = m_pListDesc->GetListItemTemplate();
+	CUIText* pText = NULL;
+
+	if (pTemp == NULL)
+		return;
+
+	pclone = (CUIListItem*)pTemp->Clone();
+	m_pListDesc->AddListItem(pclone);
+
+	pText = (CUIText*)pclone->findUI("txt_line");
+
+	if (pText != NULL)
+	{
+		pText->SetText(strText);
+		pText->setFontColor(color);		
+	}			
+}
+
+void CUIProcessNPC::callback_select()
+{
+	if (m_pListItems == NULL)
+		return;
+
+	int sel = m_pListItems->getCurSel();
+
+	show_spinctrl(m_nSelectProcessNPCItem, TRUE);
+
+	// 다른게 선택되었다면
+	if (m_nSelectProcessNPCItem != sel)
+		m_nProcessItemCount = 1;
+
+	m_nSelectProcessNPCItem = sel;
+	SelectItem(sel);
+}
+
+void CUIProcessNPC::show_spinctrl( int idx, BOOL bhide )
+{
+	if (m_pListItems == NULL)
+		return;
+
+	if (idx < 0 || idx >= m_pListItems->getListItemCount())
+		return;
+
+	// 이전에 선택된 것이 있다면 Spin 숨김
+	CUIBase* pItem = m_pListItems->GetListItem(m_nSelectProcessNPCItem);
+
+	if (pItem != NULL)
+	{
+		CUISpinControl* pSpin = (CUISpinControl*)pItem->findUI("spin_cnt");
+
+		if (pSpin != NULL)
+		{
+			pSpin->Hide(bhide);
+
+			if (bhide == FALSE)
+			{
+				// default 숫자
+				CTString str;
+				str.PrintF("%d", m_nProcessItemCount);
+				pSpin->SetString(str.str_String);
+			}
+		}
+	}
+}
+
+void CUIProcessNPC::callback_spin()
+{
+	if (m_pListItems == NULL)
+		return;
+
+	if (m_nSelectProcessNPCItem < 0 || m_nSelectProcessNPCItem >= m_pListItems->getListItemCount())
+		return;
+
+	CUIBase* pItem = m_pListItems->GetListItem(m_nSelectProcessNPCItem);
+
+	if (pItem != NULL)
+	{
+		CUISpinControl* pSpin = (CUISpinControl*)pItem->findUI("spin_cnt");
+
+		if (pSpin != NULL)
+		{			
+			char* str_num = pSpin->GetString();
+
+			int num = atoi(str_num);
+
+			if (num > 0 && num <= 10)
+			{
+				m_nProcessItemCount = num;
+
+				SelectItem(m_nSelectProcessNPCItem);
+			}			
+		}
+	}
 }

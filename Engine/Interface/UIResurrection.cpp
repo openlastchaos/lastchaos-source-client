@@ -368,11 +368,7 @@ void			CUIResurrectionMsgBox::OpenResurrectionMsgBox(INDEX nTime, BOOL bDefault 
 		m_lResurrectionItemIndex = 0;
 		m_msgText.AddString(_S(4693, "캐릭터가 죽었습니다. 즉시 부활 위치로 이동하려면 확인버튼을 누르세요.(제한시간 이후 자동으로 이동합니다.)"));
 	}
-#if defined(G_KOR) 
-	else if ( ItemHelp::HaveItem( 5958 ) && _pNetwork->MyCharacterInfo.level < 51 )	// 부활 주문서2 (초보자용)
-#else
 	else if ( ItemHelp::HaveItem( 5958 ) && _pNetwork->MyCharacterInfo.level < 36 )	// 부활 주문서2 (초보자용)
-#endif
 	{
 		m_btnCancel.SetEnable( TRUE );
 		m_lResurrectionItemIndex = 5958;

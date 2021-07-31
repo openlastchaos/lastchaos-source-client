@@ -630,7 +630,7 @@ WMSG_RESULT CUIChangeWeapon::OnLButtonUp( UINT16 x, UINT16 y )
 		if (pItemData == NULL)
 			return WMSG_FAIL;
 
-		if (pItems->Item_Flag & FLAG_ITEM_SEALED)
+		if (pItems->Item_Flag & FLAG_ITEM_SEALED || pItems->Item_Flag & FLAG_ITEM_COMPOSITION)
 		{
 			ShowSystemMsg(eERROR_SEALED_ITEM);
 			bError = true;

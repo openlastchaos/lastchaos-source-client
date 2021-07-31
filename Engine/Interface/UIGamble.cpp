@@ -7,12 +7,14 @@
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Interface/UIInventory.h>
 
+extern INDEX g_iCountry;
+
 #define GAMBLE_NUMBER_WIDTH					10
 #define GAMBLE_NUMBER_HEIGHT				15
 #define	GAMBLE_TIME_SPAN					0.1 // 0.03 -> 0.1
 
 // [071122 Su-won] NEW_MOONSTONE
-INDEX MOONSTONEINDEX[MOONSTONE_COUNT]  = {2545, 2546, 723, 2547, 2548};
+INDEX MOONSTONEINDEX[MOONSTONE_MAX]  = {2545, 2546, 723, 2547, 2548, 6092};
 
 // ----------------------------------------------------------------------------
 // Name : CUIGamble()
@@ -35,9 +37,10 @@ CUIGamble::CUIGamble()
 	m_rtNewMark = NULL;
 	m_iTexID = NULL;
 
-#ifdef MOONSTONE_COUNT_ADD	// [2010/11/23 : Sora] 문스톤 개수 추가
-	MOONSTONEINDEX[5]  = 6092;
-#endif
+	if (IsGamigo(g_iCountry))
+		m_nMoonstoneMax = 6;
+	else
+		m_nMoonstoneMax = 5;
 }
 
 
@@ -83,11 +86,11 @@ void CUIGamble::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int n
 
 	// Create shop texture
 	// russia texture. [9/7/2010 rumist]
-#if defined (G_RUSSIA)
+	if (g_iCountry == RUSSIA)
 		m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\MoonStone_rus.tex" ) );
-#else
+	else
 		m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\MoonStone.tex" ) );
-#endif
+
 	FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight	= m_ptdBaseTexture->GetPixHeight();
 	
@@ -829,7 +832,7 @@ void CUIGamble::ReadMoonStoneLOD()
 
 	if( fMoonStone = fopen(tPath.str_String ,"rb") )
 	{
-		for( int i=0; i<MOONSTONE_COUNT; ++i)
+		for (int i = 0; i < m_nMoonstoneMax; ++i)
 		{
 			int nCount;
 			fread(&nCount,sizeof(int),1,fMoonStone);
@@ -890,16 +893,20 @@ void CUIGamble::SetSelectedItem( INDEX iRewardItem )
 
 INDEX CUIGamble::GetUsedMoonStoneIndex()
 { 
-#ifdef MOONSTONE_COUNT_ADD	// [2010/11/23 : Sora] 문스톤 개수 추가
-	if( m_iUsedMoonStone == 2 ) //문스톤(723) 버튼에서 사용
+//#ifdef 	MOONSTONE_COUNT_ADD	// [2010/11/23 : Sora] 문스톤 개수 추가
+	if (IsGamigo(g_iCountry))
 	{
-		CUIManager* pUIManager = CUIManager::getSingleton();
+		if( m_iUsedMoonStone == 2 ) //문스톤(723) 버튼에서 사용
+		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 
-		// 문스톤(723)을 우선적으로 사용후 유료 문스톤(6092) 사용
-		if( pUIManager->GetInventory()->GetItemCount( MOONSTONEINDEX[2] ) == 0 && pUIManager->GetInventory()->GetItemCount( MOONSTONEINDEX[5] ) > 0 )
-			m_iUsedMoonStone = 5;
+			// 문스톤(723)을 우선적으로 사용후 유료 문스톤(6092) 사용
+			if (pUIManager->GetInventory()->GetItemCount(MOONSTONEINDEX[2]) == 0 && 
+				pUIManager->GetInventory()->GetItemCount(MOONSTONEINDEX[5]) > 0)
+				m_iUsedMoonStone = 5;
+		}
 	}
-#endif
+//#endif		// MOONSTONE_COUNT_ADD
 
 	return MOONSTONEINDEX[m_iUsedMoonStone]; 
 }

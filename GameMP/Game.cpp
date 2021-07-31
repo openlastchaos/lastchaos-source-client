@@ -57,6 +57,8 @@ static FLOAT ctl_fFrameTime  = 1;
 // one and only Game object
 extern CGame *_pGame = NULL;
 
+extern ENGINE_API INDEX	g_iCountry;
+
 extern "C" __declspec (dllexport) CGame *GAME_Create(void)
 {
 	_pGame = new CGame;
@@ -268,21 +270,26 @@ BOOL InputState(void)
 			{
 				HWND hWnd = GetInputH(pe32.th32ProcessID); // GetWinHandle --> GetInputH
 
-#if !defined (G_RUSSIA)
-				GetClassName((HWND)hWnd, buf, 256);	
-				if( 0 == strncmp(buf, "AutoIt", 6) )
+
+				if (g_iCountry != RUSSIA)
 				{
-					Return = TRUE;	
-					CPrintF("나는 행유져");
-				}	
-#else
-				GetWindowText((HWND)hWnd, buf, 256);
-				if( 0 == strncmp(buf, "LastChaos-Bot -", 15) )
+					GetClassName((HWND)hWnd, buf, 256);	
+					if( 0 == strncmp(buf, "AutoIt", 6) )
+					{
+						Return = TRUE;	
+						CPrintF("나는 행유져");
+					}	
+				}
+				else
 				{
-					Return = TRUE;	
-					CPrintF("나는 행유져");
-				}	
-#endif			
+					GetWindowText((HWND)hWnd, buf, 256);
+					if( 0 == strncmp(buf, "LastChaos-Bot -", 15) )
+					{
+						Return = TRUE;	
+						CPrintF("나는 행유져");
+					}	
+				}
+
 				CloseHandle (hInput);
 			}
 		}

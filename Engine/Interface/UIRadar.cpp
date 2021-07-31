@@ -20,13 +20,14 @@
 #include <Engine/Contents/Base/Party.h>
 #include <Engine/Contents/function/PremiumChar.h>
 #include <Engine/Contents/function/PremiumCharUI.h>
+#include <Engine/Contents/Base/UIDurability.h>
 #include <Engine/Info/MyInfo.h>
 
 #define RADIAN	(ANGLE_180 / PI)
 
 // Define position
-#define	RADAR_CENTER_OFFSETX			71
-#define	RADAR_CENTER_OFFSETY			115
+#define	RADAR_CENTER_OFFSETX			(71 + 6)
+#define	RADAR_CENTER_OFFSETY			(115 + 5)
 #define	RADAR_COORD_TEXT_CX				70
 #define	RADAR_COORD_TEXT_SY				35
 // #else
@@ -69,6 +70,10 @@
 
 #define DEF_LOCALTIME_YGAP	(14)
 
+#define DEF_ROYALRUMBLE_JOIN_FEE_BEGINNER	1000000
+#define DEF_ROYALRUMBLE_JOIN_FEE_SPECIALTY	10000000
+#define DEF_ROYALRUMBLE_JOIN_FEE_ADVANCED	100000000
+
 enum __tagRoyalrumbleMsg
 {
 	ROYALRUMBLE_SCHEDULE,
@@ -83,12 +88,21 @@ enum __tagRoyalrumbleMsg
 // ----------------------------------------------------------------------------
 CUIRadar::CUIRadar()
 	: m_nLocalTimeY(0)
+	, m_pBtnExpress(NULL)
+	, m_pBtnPremium(NULL)
+	, m_pBtnDurability(NULL)
+	, m_pTxtPos(NULL)
+	, m_pRadar(NULL)
+	, m_pInfo(NULL)
+	, m_pTxtServerTime(NULL)
+	, m_pTxtChInfo(NULL)
+	, m_bMapOptionOver(false)
+	, m_pSprAniRR(NULL)
+	, m_pImgArrSandGrass(NULL)
+	, m_fUpdateServerTime(0.f)
 {
 	m_szCoord[0] = NULL;
 	m_bShowOptionPopup = FALSE;
-	m_bShowToolTip = FALSE;
-	m_strToolTip = CTString( "" );
-	m_strTimer = CTString( "" );
 	m_bInsideMouse = FALSE;
 	m_bSignalBtnOn = FALSE;
 	m_year = m_month = m_hour = m_day= 0;
@@ -96,7 +110,6 @@ CUIRadar::CUIRadar()
 	m_ptdRoyalRumbleTexture = NULL;
 	m_ptdMapTexture = NULL;	// [2012/10/11 : Sora] 월드맵 개편
 	m_ptdMapObjTexture = NULL;	// [2012/10/11 : Sora] 월드맵 개편
-	m_bEnableRR = FALSE;
 	// trophy texture init. [5/31/2011 rumist]
 	m_ptdTrophyTexture = NULL;
 	m_bRenderTrophy = FALSE;
@@ -104,6 +117,8 @@ CUIRadar::CUIRadar()
 	m_nLayer = -1;	// [2012/10/11 : Sora] 월드맵 개편
 	m_fZoomRate = 3.0f;	// [2012/10/11 : Sora] 월드맵 개편
 	m_nSelectedIcon = -1; // [2012/10/11 : Sora] 월드맵 개편
+
+	setInherit(false);
 }
 
 // ----------------------------------------------------------------------------
@@ -115,31 +130,140 @@ CUIRadar::~CUIRadar()
 	Destroy();
 
 	_destroyTrophy();
-	STOCK_RELEASE( m_ptdRoyalRumbleTexture );
-	m_bEnableRR = FALSE;
-	
+	STOCK_RELEASE( m_ptdRoyalRumbleTexture );	
 	STOCK_RELEASE(m_ptdButtonTexture);
 	STOCK_RELEASE( m_ptdMapTexture );		// [2012/10/11 : Sora] 월드맵 개편
 	STOCK_RELEASE( m_ptdMapObjTexture );	// [2012/10/11 : Sora] 월드맵 개편
 
-	SAFE_DELETE(m_pMapOption);
+	//SAFE_DELETE(m_pMapOption);
+	m_pMapOption = NULL;
 }
 
-// ----------------------------------------------------------------------------
-// Name : Create()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIRadar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
+void CUIRadar::initialize()
 {
-	nWidth = RADAR_WIDTH;
-	nHeight = 200;
-	
-	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+#ifndef		WORLD_EDITOR
 
-	// Region of each part
-	m_rcTop.SetRect( 0, 0, 141, 57 );
-	m_rcCompassIn.SetRect( -47, -47, 47, 47 );
-	m_rcCompassOut.SetRect( -76, -76, 76, 76 );
+	m_pRadar = findUI("group_bottom");
+	m_pInfo = findUI("group_info");
+
+	CUIButton* pBtn;
+
+	m_pBtnExpress = (CUIButton*)findUI("btn_express");
+	if (m_pBtnExpress != NULL)
+	{
+		m_pBtnExpress->setInherit(true);
+		m_pBtnExpress->SetCommandFUp(boost::bind(&CUIRadar::pressExpress, this));
+
+		m_pBtnExpress->setTooltipF(boost::bind(&CUIRadar::setBtnLCETooltip, this));
+	}
+	
+	pBtn = (CUIButton*)findUI("btn_petstash");
+	if (pBtn != NULL)
+	{
+		pBtn->setInherit(true);
+		pBtn->SetCommandFUp(boost::bind(&CUIRadar::pressPetStash, this));
+	}
+	
+	pBtn = (CUIButton*)findUI("btn_itemcollect");
+	if (pBtn != NULL)
+	{
+		pBtn->setInherit(true);
+		pBtn->SetCommandFUp(boost::bind(&CUIRadar::pressItemCollect, this));
+	}
+	
+	m_pBtnPremium = (CUIButton*)findUI("btn_premium");
+	if (m_pBtnPremium != NULL)
+	{
+		m_pBtnPremium->setInherit(true);
+		m_pBtnPremium->SetCommandFUp(boost::bind(&CUIRadar::pressPremium, this));
+		m_pBtnPremium->SetBtnState(UBS_DISABLE);
+
+		m_pBtnPremium->setTooltipF(boost::bind(&CUIRadar::setBtnPremiumTooltip, this));
+	}
+
+	m_pBtnDurability = (CUIButton*)findUI("btn_durability");
+	if (m_pBtnDurability != NULL)
+	{
+		m_pBtnDurability->setInherit(true);
+		m_pBtnDurability->SetCommandFUp(boost::bind(&CUIRadar::pressDurability, this));
+		m_pBtnDurability->SetBtnState(UBS_DISABLE);
+
+		m_pBtnDurability->setTooltipF(boost::bind(&CUIRadar::setBtnDurabilityTooltip, this));
+	}
+	
+	m_pTxtPos = (CUIText*)findUI("txt_pos");
+	//---------------------------------------------------------------------------
+
+	pBtn = (CUIButton*)findUI("btn_zoom_p");
+	if (pBtn != NULL)
+	{
+		pBtn->SetCommandFUp(boost::bind(&CUIRadar::pressZoomPlus, this));
+	}
+
+	pBtn = (CUIButton*)findUI("btn_zoom_m");
+	if (pBtn != NULL)
+	{
+		pBtn->SetCommandFUp(boost::bind(&CUIRadar::pressZoomMinus, this));
+	}
+
+	pBtn = (CUIButton*)findUI("btn_signal");
+	if (pBtn != NULL)
+	{
+		pBtn->SetCommandFUp(boost::bind(&CUIRadar::pressSignal, this));
+	}
+
+	pBtn = (CUIButton*)findUI("btn_option");
+	if (pBtn != NULL)
+	{
+		pBtn->SetCommandFUp(boost::bind(&CUIRadar::pressOption, this));
+	}
+
+	pBtn = (CUIButton*)findUI("btn_map");
+	if (pBtn != NULL)
+	{
+		pBtn->SetCommandFUp(boost::bind(&CUIRadar::pressMap, this));
+
+		extern INDEX	g_iEnterChat;
+
+		CTString tmpTooltip;
+
+		tmpTooltip = pBtn->getTooltip().str;
+
+		if (g_iEnterChat)
+			tmpTooltip += CTString(" (Alt+M)");
+		else
+			tmpTooltip += CTString(" (M,Alt+M)");
+
+		pBtn->setTooltip(tmpTooltip);
+	}
+
+	m_pTxtServerTime = (CUIText*)findUI("txt_date");
+	m_pTxtChInfo = (CUIText*)findUI("txt_channel");
+
+	m_pSprAniRR = (CUISpriteAni*)findUI("sprani_rr");
+
+	if (m_pSprAniRR != NULL)
+	{
+		m_pSprAniRR->SetCommandFUp(boost::bind(&CUIRadar::RoyalRumbleJoinReqMsgBox, this));
+		m_pSprAniRR->Hide(TRUE);
+	}
+
+	m_pImgArrSandGrass = (CUIImageArray*)findUI("imgarr_rr");
+
+ 	if (m_pImgArrSandGrass != NULL)
+	{
+		m_pImgArrSandGrass->setUpdateTooltipF(boost::bind(&CUIRadar::updateSandGrassTime, this));
+		m_pImgArrSandGrass->Hide(TRUE);
+	}
+
+	UIMGR()->RearrangeOrder(UI_RADAR);
+
+#endif	// WORLD_EDITOR
+
+	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\TopUI.tex" ) );
+	m_ptdButtonTexture =CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );	
+
+	m_rcCompassIn.SetRect(-50, -50, 50, 50);
 
 	m_rcPoint[RADAR_PARTY].SetRect( -5, -5, 6, 6 );
 	m_rcPoint[RADAR_GUILD].SetRect( -5, -5, 6, 6 );
@@ -147,29 +271,21 @@ void CUIRadar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	m_rcPoint[RADER_QUESTSUCCESS].SetRect( -11, -11, 11, 11 );
 	m_rcPoint[RADER_QUESTNPC].SetRect( -11, -11, 11, 11 );
 	m_rcPoint[RADAR_MOB].SetRect( -2, -2, 2, 2 );
-	m_rcMyPoint.SetRect( -6, -11, 7, 8 );
-	m_rcTarget.SetRect( -2, -2, 3, 3 );
-	m_rcSignal.SetRect( -12, -12, 12, 12 );
-	m_rcOutSignal.SetRect( -10, -5, 11, 5 );
+	m_rcPoint[RADAR_EXPEDITION].SetRect( -5, -5, 6, 6 );
 
-	// Create radar texture
-	m_ptdBaseTexture = CreateTexture( CTString( "Data\\Interface\\TopUI.tex" ) );
-	m_ptdButtonTexture =CreateTexture( CTString( "Data\\Interface\\CommonBtn.tex" ) );
 	FLOAT	fTexWidth = m_ptdBaseTexture->GetPixWidth();
 	FLOAT	fTexHeight = m_ptdBaseTexture->GetPixHeight();
 
-	m_rtBackTop.SetUV( 144, 963, 285, 1020, fTexWidth, fTexHeight );
-
-	m_rtCompassIn.SetUV( 517, 376, 623, 481, fTexWidth, fTexHeight );
-	m_rtCompassOut.SetUV( 337, 340, 495, 498, fTexWidth, fTexHeight );
 	m_rtPoint[RADAR_PARTY].SetUV( 663, 408, 674, 419, fTexWidth, fTexHeight );
 	m_rtPoint[RADAR_GUILD].SetUV( 648, 408, 659, 419, fTexWidth, fTexHeight );
 	m_rtPoint[RADAR_NPC].SetUV( 665, 427, 674, 438, fTexWidth, fTexHeight );
 	m_rtPoint[RADER_QUESTNPC].SetUV( 649, 448, 663, 463,fTexWidth, fTexHeight);
 	m_rtPoint[RADER_QUESTSUCCESS].SetUV( 649, 467, 663, 481,fTexWidth, fTexHeight);
 	m_rtPoint[RADAR_MOB].SetUV( 654, 395, 658, 399, fTexWidth, fTexHeight );
-	m_rtMyPoint.SetUV( 687, 383, 698, 400, fTexWidth, fTexHeight );
-	m_rtTarget.SetUV( 661, 395, 666, 400, fTexWidth, fTexHeight );
+
+	m_rtMyPoint.SetUV(687, 383, 698, 400, fTexWidth, fTexHeight);
+	m_rcMyPoint.SetRect( -6, -11, 7, 8 );
+
 	m_rtSignal.SetUV( 682, 447, 706, 471, fTexWidth, fTexHeight );
 	m_rtOutSignal.SetUV( 683, 427, 704, 437, fTexWidth, fTexHeight );
 	m_rtTargetAni.SetUV( 684, 481, 703, 500, fTexWidth, fTexHeight );
@@ -178,412 +294,54 @@ void CUIRadar::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nH
 	m_rtToolTipM.SetUV( 246, 253, 328, 270, fTexWidth, fTexHeight );
 	m_rtToolTipR.SetUV( 328, 253, 335, 270, fTexWidth, fTexHeight );
 
-	// Option popup
-	m_rtOptionL.SetUV( 239, 253, 246, 270, fTexWidth, fTexHeight );
-	m_rtOptionM.SetUV( 246, 253, 328, 270, fTexWidth, fTexHeight );
-	m_rtOptionR.SetUV( 328, 253, 335, 270, fTexWidth, fTexHeight );
+	m_liEndTime = 0;
+	m_bShowLeftTimeTooltip = FALSE;	
 
-	int nPosX = 646;
-	for(int j=0; j<EXPEDITION_GROUP_MAX; j++)
-	{
-		m_rtPointExpedition[j].SetUV( nPosX, 347, nPosX + 11, 358, fTexWidth, fTexHeight );
-		nPosX += 15;
-	}
-	
-	m_rcPoint[RADAR_EXPEDITION].SetRect( -5, -5, 6, 6 );
-
-	// Option button
-	m_btnOption.Create( this, CTString( "" ), 3, 129, 25, 25 );
-	m_btnOption.SetUV( UBS_IDLE, 791, 711, 816, 736, fTexWidth, fTexHeight );
-	m_btnOption.SetUV( UBS_CLICK, 819, 711, 844, 736, fTexWidth, fTexHeight );
-	m_btnOption.SetUV( UBS_ON, 847, 711, 872, 736, fTexWidth, fTexHeight );
-	m_btnOption.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	// Map button
-	m_btnMap.Create( this, CTString( "" ), -2, 100, 25, 25 );
-	m_btnMap.SetUV( UBS_IDLE, 791, 683, 816, 708, fTexWidth, fTexHeight );
-	m_btnMap.SetUV( UBS_CLICK, 819, 683, 844, 708, fTexWidth, fTexHeight );
-	m_btnMap.SetUV( UBS_ON, 847, 683, 872, 708, fTexWidth, fTexHeight );
-	m_btnMap.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	m_btnSignal.Create( this, CTString( "" ), 24, 152, 25, 25 );
-	m_btnSignal.SetUV( UBS_IDLE, 791, 739, 816, 764, fTexWidth, fTexHeight );
-	m_btnSignal.SetUV( UBS_CLICK, 819, 739, 844, 764, fTexWidth, fTexHeight );
-	m_btnSignal.SetUV( UBS_ON, 847, 739, 872, 764, fTexWidth, fTexHeight );
-	m_btnSignal.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	// world time wooss --------------------------------------->> 060415
-	int tv_size = 655;
-	for(int i=0; i<10; i++)
-	{
-		m_rtFigure[i].SetUV(tv_size,367,tv_size+WORLD_TIME_FONT_SIZE,377,fTexWidth,fTexHeight);
-		tv_size += WORLD_TIME_FONT_SIZE+1;
-	}
-
-	// --------------------------------------------------------<<
-	
-	m_ExpressIcon.Create(this, CTString(""), 7, 6, 25, 25);
-	m_ExpressIcon.SetUV( UBS_IDLE, 650, 679, 675, 704, fTexWidth, fTexHeight );
-	m_ExpressIcon.SetUV( UBS_CLICK, 678, 679, 703, 704, fTexWidth, fTexHeight );
-	m_ExpressIcon.SetUV( UBS_ON, 678, 707, 703, 732, fTexWidth, fTexHeight );
-	m_ExpressIcon.CopyUV( UBS_IDLE, UBS_DISABLE );
-	m_ExpressIcon.SetEnable(TRUE);
-
-	m_ExpressNotice.SetUV(678, 707, 703, 732, fTexWidth, fTexHeight );
-
-	m_bNotice = false;
-	m_bRemote = false;
-	m_bNoticeRenderFlag = false;
-	m_nStartTime = 0;
-
-	m_PetStashIcon.Create(this, CTString(""), 32, 6, 25, 25);
-	m_PetStashIcon.SetUV( UBS_IDLE, 734, 683, 759, 708, fTexWidth, fTexHeight );
-	m_PetStashIcon.SetUV( UBS_ON, 762, 711, 787, 736, fTexWidth, fTexHeight );
-	m_PetStashIcon.SetUV( UBS_CLICK, 762, 683, 787, 708, fTexWidth, fTexHeight );
-	m_PetStashIcon.CopyUV(UBS_IDLE, UBS_DISABLE);
-	m_PetStashIcon.SetEnable(TRUE);
-
-	m_ItemCollectionIcon.Create(this, CTString(""), 57, 6, 25, 25);
-	m_ItemCollectionIcon.SetUV( UBS_IDLE, 650, 737, 650 + 25, 737 + 25, fTexWidth, fTexHeight );
-	m_ItemCollectionIcon.SetUV( UBS_ON, 678, 765, 678 + 25, 765 + 25, fTexWidth, fTexHeight );
-	m_ItemCollectionIcon.SetUV( UBS_CLICK, 678, 737, 678 + 25, 737 + 25, fTexWidth, fTexHeight );
-	m_ItemCollectionIcon.SetUV( UBS_DISABLE, 650, 765, 650 + 25, 765 + 25, fTexWidth, fTexHeight );
-	m_ItemCollectionIcon.SetEnable(TRUE);
-
-	int nEmptyPosX, nEmptyPosY;
-#ifdef PREMIUM_CHAR
-	m_PremiumCharIcon.Create(this, CTString(""), 82, 6, 25, 25);
-	m_PremiumCharIcon.SetUV( UBS_IDLE, 734, 739, 734 + 25, 739 + 25, fTexWidth, fTexHeight );
-	m_PremiumCharIcon.SetUV( UBS_ON, 762, 767, 762 + 25, 767 + 25, fTexWidth, fTexHeight );
-	m_PremiumCharIcon.SetUV( UBS_CLICK, 762, 739, 762 + 25, 739 + 25, fTexWidth, fTexHeight );
-	m_PremiumCharIcon.SetUV( UBS_DISABLE, 734, 767, 734 + 25, 767 + 25, fTexWidth, fTexHeight );
-	m_PremiumCharIcon.SetEnable(TRUE);
-
-	m_PremiumCharIcon.SetBtnState(UBS_DISABLE);
-
-	nEmptyPosX = m_PremiumCharIcon.GetPosX() + m_PremiumCharIcon.GetWidth();
-	nEmptyPosY = m_PremiumCharIcon.GetPosY();
-#else	//	PREMIUM_CHAR
-	nEmptyPosX = m_ItemCollectionIcon.GetPosX() + m_ItemCollectionIcon.GetWidth();
-	nEmptyPosY = m_ItemCollectionIcon.GetPosY();
-#endif	//	PREMIUM_CHAR
-
-	m_uvEmptyMenu.SetUV(650, 707, 675, 732, fTexWidth, fTexHeight);
-	m_rcEmptyMenu.SetRect(nEmptyPosX, nEmptyPosY, 25, 25);
-
-	// Option check buttons
-	fTexWidth = m_ptdButtonTexture->GetPixWidth();
-	fTexHeight = m_ptdButtonTexture->GetPixHeight();
-
-	// trophy data 가 없을 경우 crash 문제 해결을 위해서 [5/25/2011 rumist]
-	_royalrumbleCreate();
-	fTexWidth = m_ptdBaseTexture->GetPixWidth();
-	fTexHeight = m_ptdBaseTexture->GetPixHeight();
-
-	m_btnZoomIn.Create( this, CTString( "" ), 92, 54, 25, 25 );
-	m_btnZoomIn.SetUV( UBS_IDLE, 548, 484, 573, 509, fTexWidth, fTexHeight );
-	m_btnZoomIn.SetUV( UBS_CLICK, 490, 484, 515, 509, fTexWidth, fTexHeight );
-	m_btnZoomIn.SetUV( UBS_DISABLE, 606, 484, 631, 509, fTexWidth, fTexHeight );
-	m_btnZoomIn.CopyUV( UBS_IDLE, UBS_ON );
-
-	m_btnZoomOut.Create( this, CTString( "" ), 113, 78, 25, 25 );
-	m_btnZoomOut.SetUV( UBS_IDLE, 577, 484, 602, 509, fTexWidth, fTexHeight );
-	m_btnZoomOut.SetUV( UBS_CLICK, 519, 484, 544, 509, fTexWidth, fTexHeight );
-	m_btnZoomOut.SetUV( UBS_DISABLE, 635, 484, 660, 509, fTexWidth, fTexHeight );
-	m_btnZoomOut.CopyUV( UBS_IDLE, UBS_ON );
-
-	m_iconVec.reserve(50);
+	_createTrophyData();
 
 	m_ptdMapObjTexture = CreateTexture( CTString( "Data\\Interface\\Map.tex" ) );
 	fTexWidth = m_ptdMapObjTexture->GetPixWidth();
 	fTexHeight = m_ptdMapObjTexture->GetPixHeight();
 
-	m_rcSubZone[VILLAGE].SetRect( -17, -18, 17, 18 );
-	m_rcSubZone[DUNGEON].SetRect( -16, -18, 16, 18 );
-	m_rcSubZone[CHARGE_PRIVATE].SetRect( -13, -23, 13, 23 );
-	m_rcSubZone[CHARGE_PUBLIC].SetRect( -13, -23, 13, 23 );
-	m_rcSubZone[MINE_PRIVATE].SetRect( -17, -20, 17, 20 );
-	m_rcSubZone[MINE_PUBLIC].SetRect( -17, -20, 17, 20 );
-	m_rcSubZone[GATHER_PRIVATE].SetRect( -17, -19, 17, 19 );
-	m_rcSubZone[GATHER_PUBLIC].SetRect( -17, -19, 17, 19 );
-	m_rcSubZone[CASTLE_GATE].SetRect( -9, -9, 9, 9 );//!!
-
-	m_rtSubZone[VILLAGE].SetUV( 217, 205, 251, 241, fTexWidth, fTexHeight );
-	m_rtSubZone[DUNGEON].SetUV( 67, 91, 99, 127, fTexWidth, fTexHeight );
-	m_rtSubZone[CHARGE_PRIVATE].SetUV( 108, 82, 134, 128, fTexWidth, fTexHeight );
-	m_rtSubZone[CHARGE_PUBLIC].SetUV( 108, 82, 134, 128, fTexWidth, fTexHeight );
-	m_rtSubZone[MINE_PRIVATE].SetUV( 135, 88, 169, 128, fTexWidth, fTexHeight );
-	m_rtSubZone[MINE_PUBLIC].SetUV( 135, 88, 169, 128, fTexWidth, fTexHeight );
-	m_rtSubZone[GATHER_PRIVATE].SetUV( 131, 6, 165, 44, fTexWidth, fTexHeight );
-	m_rtSubZone[GATHER_PUBLIC].SetUV( 131, 6, 165, 44, fTexWidth, fTexHeight );
-	m_rtSubZone[CASTLE_GATE].SetUV( 170, 10, 188, 28, fTexWidth, fTexHeight );
-
 	m_rcGPS.SetRect(-13, -13, 13, 13);
 	m_uvGPS.SetUV(210, 258, 236, 284, fTexWidth, fTexHeight);
 
-	m_pMapOption = new CUIMapOption;
-	UIMGR()->LoadXML("UIMap_Option.xml", m_pMapOption);
-
-	m_pMapOption->SetPos(m_nPosX - m_pMapOption->GetWidth(),(m_nPosY + m_rcOption.Top));
-}
-
-// ----------------------------------------------------------------------------
-// Name : ResetPosition()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIRadar::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
-{
-	SetPos( pixMaxI - GetWidth(), pixMinJ );
-	_pUIBuff->SetMyBadBuffPos( m_nPosX - 2, 2 );
-
-	PIX pixCenterI = (pixMaxI - pixMinI)/2;
-	PIX pixCenterJ = (pixMaxJ - pixMinJ)/2;
-	UIRect rcTrophy;
-	rcTrophy.SetRect( 0, 0, 332, 312 );
-	m_rcTrophy.SetRect( pixCenterI - rcTrophy.GetCenterX(), pixCenterJ - rcTrophy.GetCenterY()-200, 
-						pixCenterI + rcTrophy.GetCenterX(), pixCenterJ + rcTrophy.GetCenterY()-200 );
-
-	m_pMapOption->SetPos(m_nPosX - m_pMapOption->GetWidth(),(m_nPosY + m_rcOption.Top));
-}
-
-// ----------------------------------------------------------------------------
-// Name : AdjustPosition()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIRadar::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
-{
-	ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
-}
-
-// ----------------------------------------------------------------------------
-// Name : Render()
-// Desc :
-// ----------------------------------------------------------------------------
-static FLOAT	fSin, fCos;
-void CUIRadar::Render()
-{
-	int i;
-	int	nX = m_nPosX + RADAR_CENTER_OFFSETX;
-	int	nY = m_nPosY + RADAR_CENTER_OFFSETY;
-	fSin = Sin( _pNetwork->MyCharacterInfo.camera_angle );
-	fCos = Cos( _pNetwork->MyCharacterInfo.camera_angle );
-
-	CUIManager* pUIManager = CUIManager::getSingleton();
-	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
-
-	// Set radar texture
-	pDrawPort->InitTextureData( m_ptdBaseTexture );
-
-	// Add render regions
-	// Background
-	// Top
-	pDrawPort->AddTexture( m_nPosX, m_nPosY,
-										m_nPosX + m_rcTop.Right, m_nPosY + m_rcTop.Bottom,
-										m_rtBackTop.U0, m_rtBackTop.V0, m_rtBackTop.U1, m_rtBackTop.V1,
-										0xFFFFFFFF );
-
-	if( IsRadarUse() )
-	{
-		pDrawPort->FlushRenderingQueue();
-		
-		RenderCurrentMap();
+	m_pMapOption = UIMGR()->GetMapOption();
 	
+	if (m_pMapOption != NULL)
+	{
+		// option 위치 산출을 위해, 정렬되어 있는 Radar 업데이트 필요.
+		updatePosition();
+
+		m_pMapOption->SetPos(m_nPosX - m_pMapOption->GetWidth(), m_nPosY);
+		m_pMapOption->updatePosition();
+	}
+
+	_pUIBuff->SetMyBadBuffPos( m_nPosX - 2, 2 );
+}
+
+void CUIRadar::OnRender( CDrawPort* pDraw )
+{
+	if (IsRadarUse() == TRUE)
+	{
+		RenderCurrentMap();
+
 		// Render location of objects
 		RenderObjectLocation();
 
-		RenderGPS(pDrawPort);
+		RenderGPS(pDraw);
 
-		pDrawPort->InitTextureData( m_ptdBaseTexture );
-
-		pDrawPort->AddTexture( nX + m_rcCompassOut.Left, nY + m_rcCompassOut.Top, nX + m_rcCompassOut.Right, nY + m_rcCompassOut.Bottom,
-								   m_rtCompassOut.U0, m_rtCompassOut.V0, m_rtCompassOut.U1, m_rtCompassOut.V1, 0xFFFFFFFF);
 		// Render Signal 
 		RenderSignal();
-		RenderMyPosition();
-		
-		// Option button
-		m_btnOption.Render();
-	
-		// Map button
-		m_btnMap.Render();
-	
-		// Signal Button 
-		m_btnSignal.Render();
-
-		m_btnZoomIn.Render();
-		m_btnZoomOut.Render();
-
-		pDrawPort->FlushRenderingQueue();
-
-		m_nLocalTimeY = m_nPosY + this->GetHeight() - DEF_LOCALTIME_YGAP, DEF_UI_COLOR_WHITE;
-	}
-	else
-	{
-		m_nLocalTimeY = m_rcTop.Top + m_rcTop.Bottom + 4, DEF_UI_COLOR_WHITE;
-	}
-	// Option popup
-	if( m_bShowOptionPopup )
-	{
-		if (m_pMapOption != NULL)
-		{
-			m_pMapOption->Hide(FALSE);
-			m_pMapOption->Render(pDrawPort);
-		}
-	}
-	else
-	{
-		if (m_pMapOption != NULL)
-			m_pMapOption->Hide(TRUE);
+		RenderMyPosition();		
 	}
 
-	// Text in radar
-	sprintf( m_szCoord, "%4d,%-4d", int(_pNetwork->MyCharacterInfo.x), int(_pNetwork->MyCharacterInfo.z) );
-	pDrawPort->PutTextCharExCX( m_szCoord, 9, m_nPosX + RADAR_COORD_TEXT_CX,
-												m_nPosY + RADAR_COORD_TEXT_SY, 0x72D02EFF );
-
-	time_t tmt;
-	tmt = (ULONG)time(NULL) - _pNetwork->slServerTimeGap;
-
-	struct tm* pTime = localtime(&tmt);
-
-	if (pTime != NULL)
-	{
-		m_strLocalDay.PrintF("%d.%02d.%02d", pTime->tm_year + 1900, pTime->tm_mon + 1, pTime->tm_mday);
-		m_strLocalTime.PrintF(" %02d:%02d", pTime->tm_hour, pTime->tm_min);
-	
-		pDrawPort->PutTextExCX(m_strLocalDay + m_strLocalTime, m_nPosX +this->GetWidth()/2, m_nLocalTimeY);
-	}
-
-	CTString strServerInfo;
-	strServerInfo.PrintF("%s Ch. %d", pUIManager->GetServerSelect()->GetServerName(_pNetwork->m_iServerGroup), _pNetwork->m_iServerCh );
-	pDrawPort->PutTextExCX( strServerInfo, m_nPosX +this->GetWidth()/2, m_nLocalTimeY + 17, 0xF2F2F2B2 );
-	
-	// Render all elements
-	pDrawPort->FlushRenderingQueue();
-
-	// Flush all render text queue
-	pDrawPort->EndTextEx();
-
-	pDrawPort->InitTextureData( m_ptdBaseTexture );
-
-	m_ExpressIcon.Render();
-	if ( m_bNotice )
-	{
-		DWORD nCurrent = timeGetTime();
-		if ( nCurrent > (m_nStartTime + NOTICE_TICK) )
-		{				
-			m_nStartTime = nCurrent;
-			m_bNoticeRenderFlag = !m_bNoticeRenderFlag;
-		}
-	}		
-
-	if ( m_bNoticeRenderFlag )
-	{
-		pDrawPort->AddTexture(m_nPosX + m_ExpressIcon.GetPosX(), m_nPosY + m_ExpressIcon.GetPosY(),
-			m_nPosX + m_ExpressIcon.GetPosX() + 25, m_nPosY + m_ExpressIcon.GetPosY() + 25,
-			m_ExpressNotice.U0, m_ExpressNotice.V0,
-			m_ExpressNotice.U1, m_ExpressNotice.V1, 0xFFFFFFFF);
-	}
-
-	m_PetStashIcon.Render();
-	m_ItemCollectionIcon.Render();
-
-#ifdef PREMIUM_CHAR
-	m_PremiumCharIcon.Render();
-#endif	//	PREMIUM_CHAR
-
-	int nEmptyPosX;
-	for( i = 0; i < DEF_EMPTY_MENU_MAX; ++i )
-	{
-		nEmptyPosX = m_nPosX + m_rcEmptyMenu.Left + ( i * m_rcEmptyMenu.Right );
-
-		pDrawPort->AddTexture(nEmptyPosX, m_nPosY + m_rcEmptyMenu.Top,
-			nEmptyPosX + m_rcEmptyMenu.Right, m_nPosY + m_rcEmptyMenu.Top + m_rcEmptyMenu.Bottom,
-			m_uvEmptyMenu.U0, m_uvEmptyMenu.V0,	m_uvEmptyMenu.U1, m_uvEmptyMenu.V1, 0xFFFFFFFF);
-	}
-
-	pDrawPort->FlushRenderingQueue();
-
-	// Tool tip
-	if( m_bShowToolTip )
-	{
-		// Set texture
-		pDrawPort->InitTextureData( m_ptdBaseTexture );
-
-		pDrawPort->AddTexture( m_rcToolTip.Left, m_rcToolTip.Top,
-											m_rcToolTip.Left + 7, m_rcToolTip.Bottom,
-											m_rtToolTipL.U0, m_rtToolTipL.V0, m_rtToolTipL.U1, m_rtToolTipL.V1,
-											0xFFFFFFFF );
-		pDrawPort->AddTexture( m_rcToolTip.Left + 7, m_rcToolTip.Top,
-											m_rcToolTip.Right - 7, m_rcToolTip.Bottom,
-											m_rtToolTipM.U0, m_rtToolTipM.V0, m_rtToolTipM.U1, m_rtToolTipM.V1,
-											0xFFFFFFFF );
-		pDrawPort->AddTexture( m_rcToolTip.Right - 7, m_rcToolTip.Top,
-											m_rcToolTip.Right, m_rcToolTip.Bottom,
-											m_rtToolTipR.U0, m_rtToolTipR.V0, m_rtToolTipR.U1, m_rtToolTipR.V1,
-											0xFFFFFFFF );
-
-		// Render all elements
-		pDrawPort->FlushRenderingQueue();
-
-		// Text in tool tip
-		pDrawPort->PutTextEx( m_strToolTip, m_rcToolTip.Left + 8, m_rcToolTip.Top + 4 , m_colTooltip);
-
-		if (m_bRemote)
-		{
-			pDrawPort->PutTextEx( m_strTimer, m_rcToolTip.Left + 8, m_rcToolTip.Top + 22, m_colTooltipTimer);
-		}
-		// Flush all render text queue
-		pDrawPort->EndTextEx();
-	}
-
-	if( (m_nSelectedIcon > 0 && m_nSelectedIcon < m_iconVec.size()) && IsRadarUse() )
-	{
-		pDrawPort->InitTextureData( m_ptdBaseTexture );
-
-		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 6,
-							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
-							   m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 1,
-							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
-							   m_rtToolTipL.U0,
-							   m_rtToolTipL.V0,
-							   m_rtToolTipL.U1,
-							   m_rtToolTipL.V1,
-							   0xFFFFFFFF );
-		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 1,
-							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
-							   m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 1,
-							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
-							   m_rtToolTipM.U0,
-							   m_rtToolTipM.V0,
-							   m_rtToolTipM.U1,
-							   m_rtToolTipM.V1,
-							   0xFFFFFFFF );
-		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 1,
-							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
-							   m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 6,
-							   m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
-							   m_rtToolTipR.U0,
-							   m_rtToolTipR.V0,
-							   m_rtToolTipR.U1,
-							   m_rtToolTipR.V1,
-							   0xFFFFFFFF );
-
-		pDrawPort->FlushRenderingQueue();
-
-		pDrawPort->PutTextEx( m_iconVec[m_nSelectedIcon].name,
-							  m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2),
-							  m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14 );
-		pDrawPort->EndTextEx();
-	}
-
-//	m_bEnableRR = TRUE;
-	if( m_bEnableRR )
-	{
-		_royalrumbleButtonRender();
-	}
-	_royalrumbleTimeRender();
 	_renderTrophy();
+}
+
+void CUIRadar::OnPostRender( CDrawPort* pDraw )
+{
+	RenderIconTooltip(pDraw);
 }
 
 // ----------------------------------------------------------------------------
@@ -937,563 +695,47 @@ void CUIRadar::RenderObjectLocation()
 	} // Target
 }
 
-// ----------------------------------------------------------------------------
-// Name : ShowToolTip()
-// Desc :
-// ----------------------------------------------------------------------------
-void CUIRadar::ShowToolTip( BOOL bShow, int nToolTipID )
+void CUIRadar::RenderIconTooltip( CDrawPort* pDrawPort )
 {
-	static int	nOldToolTipID = -1;
-
-	if( !bShow )
+	if( (m_nSelectedIcon > 0 && m_nSelectedIcon < m_iconVec.size()) && IsRadarUse() )
 	{
-		nOldToolTipID = -1;
-		m_bShowToolTip = FALSE;
-		return;
+		pDrawPort->InitTextureData( m_ptdBaseTexture );
+
+		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 6,
+			m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
+			m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 1,
+			m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
+			m_rtToolTipL.U0,
+			m_rtToolTipL.V0,
+			m_rtToolTipL.U1,
+			m_rtToolTipL.V1,
+			0xFFFFFFFF );
+		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 1,
+			m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
+			m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 1,
+			m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
+			m_rtToolTipM.U0,
+			m_rtToolTipM.V0,
+			m_rtToolTipM.U1,
+			m_rtToolTipM.V1,
+			0xFFFFFFFF );
+		pDrawPort->AddTexture( m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) - 1,
+			m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14,
+			m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left + ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2) + 6,
+			m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top,
+			m_rtToolTipR.U0,
+			m_rtToolTipR.V0,
+			m_rtToolTipR.U1,
+			m_rtToolTipR.V1,
+			0xFFFFFFFF );
+
+		pDrawPort->FlushRenderingQueue();
+
+		pDrawPort->PutTextEx( m_iconVec[m_nSelectedIcon].name,
+			m_nPosX + m_iconVec[m_nSelectedIcon].rc.Left - ((_pUIFontTexMgr->GetFontWidth() * m_iconVec[m_nSelectedIcon].name.Length())/2),
+			m_nPosY + m_iconVec[m_nSelectedIcon].rc.Top - 14 );
+		pDrawPort->EndTextEx();
 	}
-
-	m_bShowToolTip = TRUE;
-
-	if( nOldToolTipID != nToolTipID )
-	{
-		m_bRemote = false;
-		extern INDEX	g_iEnterChat;
-		int	nInfoX, nInfoY, nWidth, nHeight;
-
-		nOldToolTipID = nToolTipID;
-		switch( nToolTipID )
-		{
-		case STT_OPTION:		// Option
-			{
-				m_strToolTip = _S( 442, "정보표시 옵션" );
-				m_colTooltip = 0xF2F2F2FF;
-				m_btnOption.GetAbsPos( nInfoX, nInfoY );
-				nWidth = m_btnOption.GetWidth();
-				nHeight = m_btnOption.GetHeight();
-			}
-			break;
-
-		case STT_MAP:		// Map
-			{
-				if( g_iEnterChat )
-					m_strToolTip.PrintF( "%s %s", _S( 190, "지도" ), CTString( "(Alt+M)" ) );
-				else
-					m_strToolTip.PrintF( "%s %s", _S( 190, "지도" ), CTString( "(M,Alt+M)" ) );
-
-				m_colTooltip = 0xF2F2F2FF;
-				m_btnMap.GetAbsPos( nInfoX, nInfoY );
-				nWidth = m_btnMap.GetWidth();
-				nHeight = m_btnMap.GetHeight();
-			}
-			break;
-
-		case STT_SIGNAL:		// Signal
-			{
-				m_strToolTip = _S(2222, "시그널" );
-				m_colTooltip = 0xF2F2F2FF;
-				m_btnSignal.GetAbsPos( nInfoX, nInfoY );
-				nWidth = m_btnSignal.GetWidth();
-				nHeight = m_btnSignal.GetHeight();
-			}
-			break;
-
-		case STT_EXPRESSREMOTE:
-			{
-				if ( _pUIBuff->GetMyTimerItemBuffExist(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM) == true)
-				{
-					tm*	pTimeEnd = NULL;
-					int	nTime	= _pUIBuff->GetMyTimerItemBuffExpireTime(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM);
-					char expire[25] = {0,};
-
-					pTimeEnd = localtime((time_t*)&nTime);
-					if (pTimeEnd)
-					{
-						strftime(expire, sizeof(expire), "%Y/%m/%d %I:%M:%S", pTimeEnd);
-						m_strToolTip.PrintF( _S( 6023, "원격 사용 가능") );
-						m_strTimer = expire;
-						m_colTooltip = 0x00FA00FF;
-						m_colTooltipTimer = 0x00FA00FF;
-						m_bRemote = true;
-					}
-				}
-				else if ( GAMEDATAMGR()->GetExpressData() != NULL && GAMEDATAMGR()->GetExpressData()->GetPremiumBenefit() == true)
-				{
-					m_strToolTip.PrintF( _S( 6023, "원격 사용 가능") );
-					m_strTimer.PrintF( _S( 6328, "프리미엄 캐릭터 혜택 적용 중") );
-					m_colTooltip = 0x00FA00FF;
-					m_colTooltipTimer = 0xD67FFFFF;
-					m_bRemote = true;
-				}
-				else
-				{
-					m_strToolTip = _S( 6022, "원격 사용 불가능" );
-					m_colTooltip = 0xFA0000FF;
-					m_bRemote = false;
-				}			
-				m_ExpressIcon.GetAbsPos( nInfoX, nInfoY );
-				nWidth = m_ExpressIcon.GetWidth();
-				nHeight = m_ExpressIcon.GetHeight();
-			}			
-			break;
-
-		case STT_PETSTASH:
-			{
-				m_strToolTip = _S(5954, "펫 창고" );
-				m_colTooltip = 0xF2F2F2FF;
-				m_PetStashIcon.GetAbsPos( nInfoX, nInfoY );
-				nWidth = m_PetStashIcon.GetWidth();
-				nHeight = m_PetStashIcon.GetHeight();
-			}
-			break;
-		case STT_ITEMCOLLECTION:
-			{
-				m_strToolTip = _S(7036, "아이리스 아이템 도감" );
-				m_colTooltip = 0xF2F2F2FF;
-				m_ItemCollectionIcon.GetAbsPos( nInfoX, nInfoY );
-				nWidth = m_ItemCollectionIcon.GetWidth();
-				nHeight = m_ItemCollectionIcon.GetHeight();
-			}
-			break;
-		case STT_PREMIUMCHAR:
-			{
-#ifdef PREMIUM_CHAR
-				CPremiumChar* pChar = GAMEDATAMGR()->GetPremiumChar();
-
-				if (pChar == NULL)
-					return;
-
-				if (pChar->getType() != PREMIUM_CHAR_TYPE_NONE)
-				{
-					tm*	pTimeEnd = NULL;
-					int	nTime	= pChar->getExpireTime();
-					char expire[25] = {0,};
-
-					pTimeEnd = localtime((time_t*)&nTime);
-
-					if (pTimeEnd)
-					{
-						m_strToolTip = _S(6328, "프리미엄 캐릭터 혜택 적용 중" );
-						m_strTimer.PrintF( _S( 6070, "만료 : %d년%d월%d일%d시%d분"), pTimeEnd->tm_year + 1900, pTimeEnd->tm_mon + 1, pTimeEnd->tm_mday, pTimeEnd->tm_hour, pTimeEnd->tm_min );
-						m_colTooltip = 0x00FA00FF;
-						m_colTooltipTimer = 0x00FA00FF;
-						m_bRemote = true;
-					}
-				}
-				else
-				{
-					m_strToolTip = _S( 6327, "프리미엄 캐릭터 혜택 없음" );
-					m_colTooltip = 0xFA0000FF;
-					m_bRemote = false;
-				}
-
-				m_PremiumCharIcon.GetAbsPos( nInfoX, nInfoY );
-				nWidth = m_PremiumCharIcon.GetWidth();
-				nHeight = m_PremiumCharIcon.GetHeight();
-#else
-				return;
-#endif	//	PREMIUM_CHAR
-			}
-			break;
-		}
-
-		int nInfoWidth;
-		int nInfoHeight;
-
-		int _MaxString = m_strTimer.Length() + 1;
-
-		if ( _MaxString < m_strToolTip.Length() )
-		{
-			_MaxString = m_strToolTip.Length() + 1;
-		}
-		int _nLine = 2;
-		if (m_bRemote)
-		{
-#if defined G_THAI
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);
-#else	//	if defined G_THAI
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + _MaxString *
-				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-#endif	//	if defined G_THAI
-			nInfoHeight = 20 * _nLine;
-		}
-		else
-		{
-#if defined G_THAI
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strToolTip);
-#else	//	if defined G_THAI
-			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strToolTip.Length() *
-				( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-#endif	//	if defined G_THAI
-			nInfoHeight = 22;
-		}
-
-		nInfoX += ( nWidth - nInfoWidth ) / 2;
-		nInfoY += nHeight + 2;
-
-		CUIManager* pUIManager = CUIManager::getSingleton();
-
-		if( nInfoX + nInfoWidth > pUIManager->GetMaxI() )
-			nInfoX += pUIManager->GetMaxI() - ( nInfoX + nInfoWidth );
-
-		m_rcToolTip.SetRect( nInfoX, nInfoY, nInfoX + nInfoWidth, nInfoY + nInfoHeight );
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Name : MouseMessage()
-// Desc :
-// ----------------------------------------------------------------------------
-WMSG_RESULT CUIRadar::MouseMessage( MSG *pMsg )
-{
-	WMSG_RESULT	wmsgResult;
-
-	static BOOL	bInOptionPopup = FALSE;	// If mouse is in option popup or not
-
-	// Mouse point
-	int	nX = LOWORD( pMsg->lParam );
-	int	nY = HIWORD( pMsg->lParam );
-
-	if (m_pMapOption != NULL && m_pMapOption->IsInside(nX, nY))
-	{
-		if (m_pMapOption->GetHide() == FALSE)
-		{
-			if (m_bShowOptionPopup == TRUE)
-				bInOptionPopup = TRUE;
-	
-			return m_pMapOption->MouseMessage(pMsg);
-		}
-	}
-
-	// Mouse message
-	switch( pMsg->message )
-	{
-	case WM_MOUSEMOVE:
-		{
-			m_bShowLeftTimeTooltip = FALSE;
-			// Popup of option
-			// Close option popup
-			if( bInOptionPopup )
-			{
-				bInOptionPopup = FALSE;
-				m_bShowOptionPopup = FALSE;
-			}
-			// Option button
-			if( m_btnRR.MouseMessage( pMsg ) != WMSG_FAIL ||
-				m_btnZoomIn.MouseMessage( pMsg ) != WMSG_FAIL ||
-				m_btnZoomOut.MouseMessage( pMsg ) != WMSG_FAIL )
-			{
-				return WMSG_SUCCESS;
-			}
-			if( IsInsideRect( nX, nY, m_rcSandglassRR ) )
-			{
-				m_bShowLeftTimeTooltip = TRUE;
-				return WMSG_SUCCESS;
-			}
-			if( m_btnMap.MouseMessage( pMsg ) != WMSG_FAIL )
-			{
-				if (IsRadarUse())
-					ShowToolTip( TRUE, STT_MAP );
-				return WMSG_SUCCESS;
-			}
-			if( m_btnOption.MouseMessage( pMsg ) != WMSG_FAIL )
-			{
-				if (IsRadarUse())
-					ShowToolTip( TRUE, STT_OPTION );
-				return WMSG_SUCCESS;
-			}
-			if( m_btnSignal.MouseMessage( pMsg ) != WMSG_FAIL ) 
-			{
-				if (IsRadarUse())
-					ShowToolTip( TRUE, STT_SIGNAL );
-				return WMSG_SUCCESS;
-			}
-
-			bool bToolTip = false;
-			if ( m_ExpressIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-			{
-				ShowToolTip( TRUE, STT_EXPRESSREMOTE );
-				bToolTip = true;
-			}
-			if ( m_PetStashIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-			{
-				ShowToolTip( TRUE, STT_PETSTASH );
-				bToolTip = true;
-			}
-			if (m_ItemCollectionIcon.MouseMessage( pMsg ) != WMSG_FAIL)
-			{
-				ShowToolTip(TRUE, STT_ITEMCOLLECTION);
-				bToolTip = true;
-			}
-#ifdef PREMIUM_CHAR
-			if ( m_PremiumCharIcon.MouseMessage( pMsg ) != WMSG_FAIL || 
-				(m_PremiumCharIcon.GetBtnState() == UBS_DISABLE && m_PremiumCharIcon.IsInside(nX, nY) ) )
-			{
-				ShowToolTip( TRUE, STT_PREMIUMCHAR );
-				bToolTip = true;
-			}
-#endif	// PREMIUM_CHAR
-
-			if (bToolTip == true)
-				return WMSG_SUCCESS;
-		
-			if( IsInside( nX, nY ) )
-			{
-				m_bInsideMouse = TRUE;
-
-				if( m_bSignalBtnOn ) 
-				{
-					SetSignalOn( true );
-					return WMSG_SUCCESS;
-				}
-				else
-				{
-					CUIManager::getSingleton()->SetMouseCursorInsideUIs();
-				}
-
-				m_nSelectedIcon = -1;
-				for( int i = 0; i < m_iconVec.size(); ++i )
-				{
-					if( IsInsideRect( nX, nY, m_iconVec[i].rc ) )
-					{
-						m_nSelectedIcon = i;
-						break;
-					}
-				}
-			}
-			else // 레이더 영역 밖으로 나가면 취소됨.
-			{
-				SetSignalOn( FALSE );
-				m_bInsideMouse = FALSE;
-			}			
-			// Hide tool tip
-			ShowToolTip( FALSE );
-		}
-		break;
-
-	case WM_LBUTTONDOWN:
-		{
-			if( m_bEnableRR && IsInsideRect( nX, nY, m_rcBtnRR) )
-			{
-				if( m_btnRR.MouseMessage( pMsg ) != WMSG_FAIL )	{}
-				return WMSG_SUCCESS;
-			}
-			else if( IsInside( nX, nY ) )
-			{
-				// Option button
-				m_btnOption.MouseMessage( pMsg );
-				// Map button
-				m_btnMap.MouseMessage( pMsg );	
-				m_btnSignal.MouseMessage( pMsg );
-				m_btnZoomIn.MouseMessage( pMsg );
-				m_btnZoomOut.MouseMessage( pMsg );
-				m_ExpressIcon.MouseMessage( pMsg );
-				m_PetStashIcon.MouseMessage( pMsg );
-				m_ItemCollectionIcon.MouseMessage(pMsg);
-#ifdef PREMIUM_CHAR
-				m_PremiumCharIcon.MouseMessage( pMsg );
-#endif	//	PREMIUM_CHAR
-
-				CUIManager::getSingleton()->RearrangeOrder( UI_RADAR, TRUE );
-				return WMSG_SUCCESS;
-			}	
-		}
-		break;
-
-	case WM_LBUTTONUP:
-		{
-			CUIManager* pUIManager = CUIManager::getSingleton();
-
-			// If holding button doesn't exist
-			if (pUIManager->GetDragIcon() == NULL)
-			{
-				if( m_bEnableRR && ( wmsgResult = m_btnRR.MouseMessage( pMsg ) ) != WMSG_FAIL )
-				{
-					if( wmsgResult == WMSG_COMMAND )
-					{
-						RoyalRumbleJoinReqMsgBox();
-					}
-
-					return WMSG_SUCCESS;
-				}
-				// If radar isn't focused
-				if( !IsFocused() )
-					return WMSG_FAIL;
-
-				if (IsRadarUse())
-				{
-					// Option button
-					if( ( wmsgResult = m_btnOption.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						if( wmsgResult == WMSG_COMMAND )
-						{
-							m_bShowOptionPopup = !m_bShowOptionPopup;
-						}
-	
-						return WMSG_SUCCESS;
-					}
-					
-					// Map button
-					else if( ( wmsgResult = m_btnMap.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						if( wmsgResult == WMSG_COMMAND )
-						{
-							pUIManager->GetMap()->ToggleVisible();
-						}
-	
-						return WMSG_SUCCESS;
-					}
-					else if( ( wmsgResult = m_btnSignal.MouseMessage( pMsg ) ) != WMSG_FAIL ) 
-					{
-						if( wmsgResult == WMSG_COMMAND )
-						{
-							if( !IsPossibleSignal() ) return WMSG_SUCCESS;
-							// 시그널 버튼을 누르면 레이더상에 최종 위치 표시해줌
-							m_Signal.dStartTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
-							m_Signal.bVisible = TRUE;
-	
-							// Signal 셋팅
-							SetSignalOn( TRUE );
-						}
-	
-						return WMSG_SUCCESS;
-					}
-					else if( ( wmsgResult = m_btnZoomIn.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						if( wmsgResult == WMSG_COMMAND )
-						{
-							if( m_fZoomRate < 5.0f )
-							{
-								m_fZoomRate += 1.0f;
-							}
-						}
-	
-						return WMSG_SUCCESS;
-					}
-					else if( ( wmsgResult = m_btnZoomOut.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						if( wmsgResult == WMSG_COMMAND )
-						{
-							if( m_fZoomRate > 1.0f )
-							{
-								m_fZoomRate -= 1.0f;
-							}
-						}
-	
-						return WMSG_SUCCESS;
-					}
-				}
-				if ( m_ExpressIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					ExpressSystem* pData = GAMEDATAMGR()->GetExpressData();
-					
-					if(_pUIBuff->GetMyTimerItemBuffExist(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM) == true ||
-						( pData != NULL && pData->GetPremiumBenefit() == true))
-					{
-						GameDataManager* pGameData = GameDataManager::getSingleton();
-						if (pGameData)
-						{
-							ExpressSystem* pExpress = pGameData->GetExpressData();
-							
-							if (pExpress)
-							{
-								pExpress->RemoteitemUse();
-							}
-						}
-					}
-					else
-					{
-						if ( pUIManager->DoesMessageBoxExist(MSGCMD_EXPRESS_REMOTE_ERROR) )
-						{
-							pUIManager->CloseMessageBox( MSGCMD_EXPRESS_REMOTE_ERROR );
-						}
-						CTString strMessage, strTitle;
-						CUIMsgBox_Info msgBoxInfo;						
-						strTitle.PrintF(_S( 191, "확인" ));
-						msgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK, UI_RADAR ,MSGCMD_EXPRESS_REMOTE_ERROR);
-						strMessage.PrintF( _S( 6025, "신비한 석상을 찾아 가시거나, LCE 원격 이용권을 통해 이용하실 수 있습니다.") );
-						msgBoxInfo.AddString(strMessage);	
-						if ( pUIManager )
-							pUIManager->CreateMessageBox( msgBoxInfo );
-					}
-					return WMSG_SUCCESS;
-				}
-				else if ( m_PetStashIcon.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					if (pUIManager->GetPetStash()->IsVisible() == FALSE)
-						pUIManager->GetPetStash()->OpenPetStash();
-					return WMSG_SUCCESS;
-				}
-				else if (m_ItemCollectionIcon.MouseMessage( pMsg )!= WMSG_FAIL)
-				{
-					if (pUIManager->GetItemCollection()->IsVisible() == FALSE)
-						pUIManager->GetItemCollection()->OpenUI();
-					return WMSG_SUCCESS;
-				}
-#ifdef PREMIUM_CHAR
-				else if (m_PremiumCharIcon.MouseMessage( pMsg )!= WMSG_FAIL)
-				{
-					if (m_PremiumCharIcon.GetBtnState() == UBS_DISABLE)
-						return WMSG_SUCCESS;
-
-					if (pUIManager->GetPremiumChar()->IsVisible() == FALSE)
-						pUIManager->GetPremiumChar()->OpenUI();
-					return WMSG_SUCCESS;
-				}
-#endif	//	PREMIUM_CHAR
-				if( IsInside( nX, nY ) )
-				{
-					if( !m_bSignalBtnOn )
-					{
-						return WMSG_SUCCESS;
-					}
-
-					SetSignalOn( FALSE );
-					
-					FLOAT fX = nX;
-					FLOAT fY = nY;
-
-					if( RadarToWorld( fX, fY ) )
-					{
-						SendSignal( fX, fY );
-						pUIManager->RearrangeOrder( UI_RADAR, TRUE );
-					}
-					return WMSG_SUCCESS;
-				}
-			}
-			// If holding button exists
-			else
-			{
-				if( IsInside( nX, nY ) )
-				{
-					SetSignalOn( FALSE );
-					// Reset holding button
-					pUIManager->ResetHoldBtn();
-
-					return WMSG_SUCCESS;
-				}
-			}
-		}
-		break;
-
-	case WM_LBUTTONDBLCLK:
-		{
-			if( m_btnZoomIn.MouseMessage( pMsg ) != WMSG_FAIL )
-			{
-				// Nothing.
-				return WMSG_SUCCESS;
-			}
-			else if( m_btnZoomOut.MouseMessage( pMsg ) != WMSG_FAIL )
-			{
-				// Nothing.
-				return WMSG_SUCCESS;
-			}
-			else if( IsInsideRect( nX, nY, m_rcTop ) )
-				return WMSG_SUCCESS;
-		}
-		break;
-	}
-
-	return WMSG_FAIL;
 }
 
 #define SIGNAL_TIME				5.0f								// 시그널 표시 시간 
@@ -1982,92 +1224,25 @@ void CUIRadar::DisplayNum( int tv_time,UIRect tv_rect)
 	delete [] tv_str;
 }
 
-
-void CUIRadar::_royalrumbleCreate()
-{
-	m_ptdRoyalRumbleTexture = CreateTexture( CTString("Data\\Interface\\Map.tex") );
-	FLOAT fTexWidth = m_ptdRoyalRumbleTexture->GetPixWidth();
-	FLOAT fTexHeight = m_ptdRoyalRumbleTexture->GetPixHeight();
-
-	UIRectUV rtRRIdle, rtRRClick;
-	rtRRIdle.SetUV( 52, 136, 136, 183, fTexWidth, fTexHeight );
-	rtRRClick.SetUV( 145, 136, 229, 183, fTexWidth, fTexHeight );
-
-	//m_btnRR.Create( this, CTString(""), 33, 193, 84, 47 );
-	m_btnRR.Create( this, CTString(""), 6, 230, 84, 47 );
-	m_btnRR.CopyUV( UBS_IDLE, rtRRIdle );
-	m_btnRR.CopyUV( UBS_CLICK, rtRRClick );
-	m_btnRR.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnRR.CopyUV( UBS_IDLE, UBS_DISABLE );
-
-	//m_rcRR.SetRect( 33, 193, 84, 47 );
-	m_rcBtnRR.SetRect( 6, 230, 92, 277 );
-	m_rcSandglassRR.SetRect( 95, 230, 119, 277 );
-	m_rtSandglassRR[0].SetUV( 184, 198, 208, 245, fTexWidth, fTexHeight );	// green
-	m_rtSandglassRR[1].SetUV( 155, 198, 179, 245, fTexWidth, fTexHeight );	// yellow
-	m_rtSandglassRR[2].SetUV( 126, 198, 150, 245, fTexWidth, fTexHeight );	// red
-
-	m_btSandlassStat = 3;		// default : don't render.
-	m_liEndTime = 0;
-	m_bShowLeftTimeTooltip = FALSE;
-
-	_createTrophyData();
-}
-
-void CUIRadar::_royalrumbleButtonRender()
-{
-	// Timer for highlight buttons
-	static BOOL		bHighlight = FALSE;
-	static DOUBLE	dElapsedTime = 0.0;
-	static DOUBLE	dOldTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
-	DOUBLE	dCurTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
-	dElapsedTime += dCurTime - dOldTime;
-	dOldTime = dCurTime;
-	if( dElapsedTime > 0.5 )
-	{
-		bHighlight = !bHighlight;
-		do
-		{
-			dElapsedTime -= 0.5;
-		}
-		while( dElapsedTime > 0.5 );
-	}	
-
-	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
-
-	pDrawPort->InitTextureData( m_ptdRoyalRumbleTexture );
-	m_btnRR.Render();
-	pDrawPort->FlushRenderingQueue();
-
-	pDrawPort->InitTextureData( m_ptdRoyalRumbleTexture, FALSE, PBT_ADD );
-	if( bHighlight )
-			m_btnRR.RenderHighlight( 0x404040FF );
-	pDrawPort->FlushRenderingQueue();
-}
-
-void CUIRadar::_royalrumbleTimeRender()
-{
-	if( m_btSandlassStat > 2 )
-		return;
-
-	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
-
-	pDrawPort->InitTextureData( m_ptdRoyalRumbleTexture );
-	pDrawPort->AddTexture( m_nPosX + m_rcSandglassRR.Left, m_nPosY + m_rcSandglassRR.Top, m_nPosX + m_rcSandglassRR.Right, m_nPosY + m_rcSandglassRR.Bottom,
-										m_rtSandglassRR[m_btSandlassStat].U0, m_rtSandglassRR[m_btSandlassStat].V0, m_rtSandglassRR[m_btSandlassStat].U1, m_rtSandglassRR[m_btSandlassStat].V1,
-										0xFFFFFFFF );
-	pDrawPort->FlushRenderingQueue();
-	if( m_bShowLeftTimeTooltip )
-		_showRemainTime();
-}
-
 void CUIRadar::RoyalRumbleJoinReqMsgBox()
 {
 	CUIMsgBox_Info	MsgBoxInfo;
+	CTString strFee1, strFee2, strFee3, strTemp;
+
+	CUIManager* pUIMgr = UIMGR();
+
+	strFee1.PrintF("%I64d", DEF_ROYALRUMBLE_JOIN_FEE_BEGINNER);
+	strFee2.PrintF("%I64d", DEF_ROYALRUMBLE_JOIN_FEE_SPECIALTY);
+	strFee3.PrintF("%I64d", DEF_ROYALRUMBLE_JOIN_FEE_ADVANCED);
+	pUIMgr->InsertCommaToString(strFee1);
+	pUIMgr->InsertCommaToString(strFee2);
+	pUIMgr->InsertCommaToString(strFee3);
+
 	MsgBoxInfo.SetMsgBoxInfo( _S(5407, "로얄럼블 참가신청"), UMBS_YESNO, UI_RADAR, MSGCMD_ROYALRUMBLE_JOIN_REQ);
-								
-	MsgBoxInfo.AddString( _S(5408, "안녕하십니까? 로얄럼블 관리회입니다. 로얄럼블에 참가하기 위해서는 10,000,000 나스의 참가비가 필요합니다. 로얄럼블에 참가하시겠습니까?") );
-	CUIManager::getSingleton()->CreateMessageBox(MsgBoxInfo);
+	
+	strTemp.PrintF(_S(5408, "안녕하십니까? 로얄럼블 관리회입니다. 수습 검투사 %s, 전문 검투사 %s, 고급 검투사 %s"), strFee1, strFee2, strFee3);
+	MsgBoxInfo.AddString(strTemp);
+	pUIMgr->CreateMessageBox(MsgBoxInfo);
 }
 
 void CUIRadar::OpenRoyalrumbleMgrMenu( const INDEX iMobIndex )
@@ -2207,52 +1382,6 @@ void CUIRadar::_showWinnerMsgBox()
 	pUIManager->CreateMessageBox(MsgBoxInfo);
 }
 
-void CUIRadar::_showRemainTime()
-{
-	CTString strTitle = _S( 5579, "남은 시간" );
-	CTString strTime;
-	UIRect rcTitle;
-	__int64 curTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-	int LeftTime = (m_liEndTime - curTime) / 1000;
-	strTime.PrintF( _s("%d : %d"), LeftTime/60, LeftTime%60 );
-
-	int nInfoWidth;
-#if defined G_THAI
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(strTitle);
-#else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + strTitle.Length() *
-						( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
-#endif
-	rcTitle.SetRect( m_nPosX + m_rcSandglassRR.Right - nInfoWidth,
-					 m_nPosY + m_rcSandglassRR.Bottom + 3,
-					 m_nPosX + m_rcSandglassRR.Right,
-					 m_nPosY + m_rcSandglassRR.Bottom + 3 + 3 + 12 + 12 + 3 );
-
-	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
-
-	// Set texture
-	pDrawPort->InitTextureData( m_ptdBaseTexture );
-
-	pDrawPort->AddTexture( rcTitle.Left, rcTitle.Top, rcTitle.Left + 7, rcTitle.Bottom,
-										m_rtToolTipL.U0, m_rtToolTipL.V0, m_rtToolTipL.U1, m_rtToolTipL.V1,
-										0xFFFFFFFF );
-	pDrawPort->AddTexture( rcTitle.Left + 7, rcTitle.Top, rcTitle.Right - 7, rcTitle.Bottom,
-										m_rtToolTipM.U0, m_rtToolTipM.V0, m_rtToolTipM.U1, m_rtToolTipM.V1,
-										0xFFFFFFFF );
-	pDrawPort->AddTexture( rcTitle.Right - 7, rcTitle.Top, rcTitle.Right, rcTitle.Bottom,
-										m_rtToolTipR.U0, m_rtToolTipR.V0, m_rtToolTipR.U1, m_rtToolTipR.V1,
-										0xFFFFFFFF );
-	// Render all elements
-	pDrawPort->FlushRenderingQueue();
-
-	// Text in tool tip
-	pDrawPort->PutTextExCX( strTitle, rcTitle.Left + rcTitle.GetWidth()/2, rcTitle.Top + 3, 0xFF8000FF );
-	pDrawPort->PutTextExCX( strTime, rcTitle.Left + rcTitle.GetWidth()/2,rcTitle.Top + 3 + 12, 0xFF8000FF );
-
-	// Flush all render text queue
-	pDrawPort->EndTextEx();
-}
-
 void CUIRadar::ShowRoyalRumbleTrophy()
 {
 	m_bShowTrophy = FALSE;
@@ -2260,148 +1389,6 @@ void CUIRadar::ShowRoyalRumbleTrophy()
 	m_ubTrophyAlpha = 0;
 	m_ubTrophyEffectAlpha = 0;
 	m_tStartTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-}
-
-
-CUIRoyalRumbleIcon::CUIRoyalRumbleIcon() :
-	m_ptdRoyalRumbleNumberTexture(NULL),
-	m_iLeftCount(0),
-	m_bPickTitle(FALSE),
-	m_colShowColor(0xFFFFFFFF)		// white.
-{
-	
-}
-
-CUIRoyalRumbleIcon::~CUIRoyalRumbleIcon()
-{
-	STOCK_RELEASE( m_ptdRoyalRumbleNumberTexture );
-}
-
-void		CUIRoyalRumbleIcon::ShowRoyalRumbleIcon(BOOL bShow )
-{ 
-	CUIManager::getSingleton()->RearrangeOrder( UI_ROYALRUMBLE_ICON, bShow );	
-}
-
-void		CUIRoyalRumbleIcon::_setShowColor()
-{
-	if( m_iLeftCount < 10 )
-	{
-		m_colShowColor = 0xAA0000FF;
-	}
-	else
-	{
-		m_colShowColor = 0xFFFFFFFF;
-	}
-}
-
-void		CUIRoyalRumbleIcon::Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight )
-{
-	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
-	
-	m_ptdBaseTexture = CreateTexture( CTString("Data\\Interface\\Map.tex") );
-	FLOAT fTexWidth = m_ptdBaseTexture->GetPixWidth();
-	FLOAT fTexHeight = m_ptdBaseTexture->GetPixHeight();
-
-
-	m_rtBackground.SetUV( 8, 195, 120, 243, fTexWidth, fTexHeight );
-	m_rcTitle.SetRect( 0, 13, 112, 48 );
-
-	m_ptdRoyalRumbleNumberTexture = CreateTexture( CTString("Data\\Interface\\NamePopup.tex") );
-}
-
-void		CUIRoyalRumbleIcon::Render()
-{
-	CUIManager* pUIManager = CUIManager::getSingleton();
-	CDrawPort* pDrawPort = pUIManager->GetDrawPort();
-
-	pDrawPort->InitTextureData( m_ptdBaseTexture );
-	pDrawPort->AddTexture( m_nPosX, m_nPosY, m_nPosX+RRUI_WIDTH, m_nPosY+RRUI_HEIGHT,
-										m_rtBackground.U0, m_rtBackground.V0, m_rtBackground.U1, m_rtBackground.V1,
-										0xFFFFFFFF );
-	pDrawPort->FlushRenderingQueue();
-	pDrawPort->InitTextureData( m_ptdRoyalRumbleNumberTexture );
-	pUIManager->DrawNumber( m_nPosX+50, m_nPosY+20, m_iLeftCount, m_colShowColor );
-	pDrawPort->FlushRenderingQueue();
-
-}
-
-void		CUIRoyalRumbleIcon::ResetPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
-{
-	SetPos( RRUI_POS_X, RRUI_POS_Y );
-}
-
-void		CUIRoyalRumbleIcon::AdjustPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
-{
-	ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
-}
-
-WMSG_RESULT	CUIRoyalRumbleIcon::MouseMessage(MSG *pMsg )
-{
-	//WMSG_RESULT	wmsgResult;
-
-	// Title bar
-	static BOOL bTitleBarClick = FALSE;
-	// Extended button clicked
-	static BOOL	bLButtonDownInBtn = FALSE;
-
-	// Mouse point
-	static int	nOldX, nOldY;
-	int	nX = LOWORD( pMsg->lParam );
-	int	nY = HIWORD( pMsg->lParam );
-
-	switch( pMsg->message )
-	{
-		case WM_MOUSEMOVE:
-		{
-			if( IsInside( nX, nY ) )
-				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
-
-			int	ndX = nX - nOldX;
-			int	ndY = nY - nOldY;
-
-			// Move UI window.
-			if( m_bPickTitle && ( pMsg->wParam & MK_LBUTTON ) )
-			{
-				nOldX = nX;	nOldY = nY;
-
-				Move( ndX, ndY );
-
-				return WMSG_SUCCESS;
-			}
-		}
-		break;
-		case WM_LBUTTONDOWN:
-		{
-			if( IsInside( nX, nY ) )
-			{
-				nOldX = nX;		nOldY = nY;
-
-				if( IsInsideRect( nX, nY, m_rcTitle ) )
-				{
-					m_bPickTitle = TRUE;
-				}
-				
-				CUIManager::getSingleton()->RearrangeOrder( UI_ROYALRUMBLE_ICON, TRUE );
-				return WMSG_SUCCESS;
-			}
-		}
-		break;
-		case WM_LBUTTONUP:
-		{
-			m_bPickTitle = FALSE;
-			CUIManager::getSingleton()->ResetHoldBtn();
-		}
-		break;
-		case WM_LBUTTONDBLCLK:
-		{
-		}
-		break;
-		case WM_MOUSEWHEEL:
-		{
-		}
-		break;
-	}
-	return WMSG_FAIL;
 }
 
 // [2012/10/11 : Sora] 월드맵 개편
@@ -2608,16 +1595,435 @@ void CUIRadar::OffExpressNotice()
 
 void CUIRadar::FocusLeave()
 {
-	m_PetStashIcon.SetBtnState(UBS_IDLE);
-	ShowToolTip( FALSE );
+//	m_PetStashIcon.SetBtnState(UBS_IDLE);
 }
 
 void CUIRadar::SetPremiumCharBenefit( bool bPremiumChar )
 {
+	if (m_pBtnPremium == NULL || m_pBtnDurability == NULL)
+		return;
+
 	if ( bPremiumChar == true)
-		m_PremiumCharIcon.SetBtnState(UBS_IDLE);
+	{
+		m_pBtnPremium->SetBtnState(UBS_IDLE);
+		m_pBtnDurability->SetBtnState(UBS_IDLE);
+	}
 	else
-		m_PremiumCharIcon.SetBtnState(UBS_DISABLE);
+	{
+		m_pBtnPremium->SetBtnState(UBS_DISABLE);
+		m_pBtnDurability->SetBtnState(UBS_DISABLE);
+	}
+
+}
+
+void CUIRadar::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
+{
+	if (m_pTxtPos != NULL)
+	{
+		m_strPos.PrintF("%4d,%-4d", (int)_pNetwork->MyCharacterInfo.x, (int)_pNetwork->MyCharacterInfo.z);
+		m_pTxtPos->SetText(m_strPos);
+	}
+
+	m_fUpdateServerTime += fDeltaTime;
+	updateServerTime();
+}
+
+void CUIRadar::updateZone()
+{
+	if (m_pRadar == NULL)
+		return;
+
+	BOOL bUse = IsRadarUse();
+
+	m_pRadar->Hide(!bUse);
+
+	if (m_pInfo != NULL)
+	{
+		if (bUse == TRUE)
+			m_pInfo->SetPosY(195);
+		else
+			m_pInfo->SetPosY(60);
+	}
+}
+
+void CUIRadar::updateChannelInfo()
+{
+	if (m_pTxtChInfo == NULL)
+		return;
+
+	CTString strServerInfo;
+	strServerInfo.PrintF("%s Ch. %d", 
+		UIMGR()->GetServerSelect()->GetServerName(_pNetwork->m_iServerGroup), 
+		_pNetwork->m_iServerCh);
+
+	m_pTxtChInfo->SetText(strServerInfo);
+}
+
+WMSG_RESULT CUIRadar::OnMouseMove( UINT16 x, UINT16 y, MSG* pMsg )
+{
+	int	nX = LOWORD( pMsg->lParam );
+	int	nY = HIWORD( pMsg->lParam );
+
+	if( IsInside( nX, nY ) )
+	{
+		m_bInsideMouse = TRUE;
+
+		if( m_bSignalBtnOn ) 
+		{
+			SetSignalOn( true );
+			return WMSG_SUCCESS;
+		}
+		else
+		{
+			CUIManager::getSingleton()->SetMouseCursorInsideUIs();
+		}
+
+		m_nSelectedIcon = -1;
+		for( int i = 0; i < m_iconVec.size(); ++i )
+		{
+			if( IsInsideRect( nX, nY, m_iconVec[i].rc ) )
+			{
+				m_nSelectedIcon = i;
+				break;
+			}
+		}
+	}
+	else // 레이더 영역 밖으로 나가면 취소됨.
+	{
+		SetSignalOn( FALSE );
+		m_bInsideMouse = FALSE;
+	}			
+
+	return WMSG_FAIL;
+}
+
+void CUIRadar::pressExpress()
+{
+	CUIManager* pUIManager = UIMGR();
+	ExpressSystem* pData = GAMEDATAMGR()->GetExpressData();
+
+	if(_pUIBuff->GetMyTimerItemBuffExist(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM) == true ||
+		( pData != NULL && pData->GetPremiumBenefit() == true))
+	{
+		GameDataManager* pGameData = GameDataManager::getSingleton();
+		if (pGameData)
+		{
+			ExpressSystem* pExpress = pGameData->GetExpressData();
+
+			if (pExpress)
+			{
+				pExpress->RemoteitemUse();
+			}
+		}
+	}
+	else
+	{
+		if ( pUIManager->DoesMessageBoxExist(MSGCMD_EXPRESS_REMOTE_ERROR) )
+		{
+			pUIManager->CloseMessageBox( MSGCMD_EXPRESS_REMOTE_ERROR );
+		}
+		CTString strMessage, strTitle;
+		CUIMsgBox_Info msgBoxInfo;						
+		strTitle.PrintF(_S( 191, "확인" ));
+		msgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK, UI_RADAR ,MSGCMD_EXPRESS_REMOTE_ERROR);
+		strMessage.PrintF( _S( 6025, "신비한 석상을 찾아 가시거나, LCE 원격 이용권을 통해 이용하실 수 있습니다.") );
+		msgBoxInfo.AddString(strMessage);	
+		if ( pUIManager )
+			pUIManager->CreateMessageBox( msgBoxInfo );
+	}
+}
+
+void CUIRadar::pressPetStash()
+{
+	CUIManager* pUIManager = UIMGR();
+
+	if (pUIManager->GetPetStash()->IsVisible() == FALSE)
+		pUIManager->GetPetStash()->OpenPetStash();
+}
+
+void CUIRadar::pressItemCollect()
+{
+	CUIManager* pUIManager = UIMGR();
+
+	if (pUIManager->GetItemCollection()->IsVisible() == FALSE)
+		pUIManager->GetItemCollection()->OpenUI();
+}
+
+void CUIRadar::pressPremium()
+{
+	if (m_pBtnPremium == NULL)
+		return;
+
+	CUIManager* pUIManager = UIMGR();
+
+	if (m_pBtnPremium->GetBtnState() == UBS_DISABLE)
+		return;
+
+	if (pUIManager->GetPremiumChar()->IsVisible() == FALSE)
+		pUIManager->GetPremiumChar()->OpenUI();
+}
+
+void CUIRadar::pressDurability()
+{
+	if (m_pBtnDurability == NULL)
+		return;
+
+	CUIManager* pUIManager = UIMGR();
+
+	if (m_pBtnDurability->GetBtnState() == UBS_DISABLE)
+		return;
+
+	if (pUIManager->GetDurability() != NULL)
+		pUIManager->GetDurability()->Open(CUIDurability::eDURABILITY, -1, 0, 0);
+}
+
+void CUIRadar::pressZoomPlus()
+{
+	if (IsRadarUse() == FALSE)
+		return;
+
+	if (m_fZoomRate < 5.0f)
+	{
+	    m_fZoomRate += 1.0f;
+	}
+}
+
+void CUIRadar::pressZoomMinus()
+{
+	if (IsRadarUse() == FALSE)
+		return;
+
+	if (m_fZoomRate > 1.0f)
+	{
+	    m_fZoomRate -= 1.0f;
+	}
+}
+
+void CUIRadar::pressSignal()
+{
+	if (IsRadarUse() == FALSE)
+		return;
+	
+	if (IsPossibleSignal() == false)
+		return;
+
+	// 시그널 버튼을 누르면 레이더상에 최종 위치 표시해줌
+	m_Signal.dStartTime = _pTimer->GetHighPrecisionTimer().GetSeconds();
+	m_Signal.bVisible = TRUE;
+
+	// Signal 셋팅
+	SetSignalOn( TRUE );
+}
+
+void CUIRadar::pressOption()
+{
+	if (IsRadarUse() == FALSE)
+		return;
+
+	BOOL bCur = m_pMapOption->GetHide();
+
+	UIMGR()->RearrangeOrder(UI_MAP_OPTION);
+	m_pMapOption->Hide(!bCur);
+}
+
+void CUIRadar::pressMap()
+{
+	if (IsRadarUse() == FALSE)
+		return;
+
+	UIMGR()->GetMap()->ToggleVisible();
+}
+
+void CUIRadar::SetRoyalRumbleStatus( const BOOL bEnable )
+{
+	if (m_pSprAniRR == NULL)
+		return;
+
+	m_pSprAniRR->Hide(!bEnable);
+
+	if (bEnable == TRUE)
+		m_pSprAniRR->PlayAni();
+	else
+		m_pSprAniRR->StopAni();
+}
+
+void CUIRadar::SetRoyalRumbleSandglass( const UBYTE sandglassStat, const INDEX remainTime /*= 0 */ )
+{
+	m_liEndTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds() + remainTime * 1000;
+
+	if (m_pImgArrSandGrass == NULL)
+		return;
+
+	BOOL bHide = sandglassStat > 2 ? TRUE : FALSE;
+	m_pImgArrSandGrass->Hide(bHide);
+
+	if (bHide == FALSE)
+		m_pImgArrSandGrass->SetRenderIdx(sandglassStat);
+}
+
+void CUIRadar::ResetRoyalRumbleStat()
+{
+	if (m_pSprAniRR != NULL)
+		m_pSprAniRR->Hide(TRUE);
+
+	if (m_pImgArrSandGrass != NULL)
+		m_pImgArrSandGrass->Hide(TRUE);
+}
+
+void CUIRadar::updateServerTime()
+{
+	if (m_pTxtServerTime == NULL)
+		return;
+
+	// Check update time
+	if (m_fUpdateServerTime < 3.f)
+		return;		
+		
+	m_fUpdateServerTime = m_fUpdateServerTime - (int)m_fUpdateServerTime;
+
+	time_t tmt;
+	tmt = (ULONG)time(NULL) - _pNetwork->slServerTimeGap;
+
+	struct tm* pTime = localtime(&tmt);
+
+	if (pTime != NULL)
+	{
+		m_strLocalDay.PrintF("%d.%02d.%02d", pTime->tm_year + 1900, pTime->tm_mon + 1, pTime->tm_mday);
+		m_strLocalTime.PrintF(" %02d:%02d", pTime->tm_hour, pTime->tm_min);
+
+		m_pTxtServerTime->SetText(m_strLocalDay + m_strLocalTime);
+	}
+}
+
+void CUIRadar::setBtnLCETooltip()
+{
+	if (m_pBtnExpress == NULL)
+		return;
+
+	CTString str, str_time;
+	COLOR color, coltimer;
+
+	if ( _pUIBuff->GetMyTimerItemBuffExist(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM) == true)
+	{
+		tm*	pTimeEnd = NULL;
+		int	nTime	= _pUIBuff->GetMyTimerItemBuffExpireTime(TIMETITEM_TYPE_REMOTE_EXPRESS_SYSTEM);
+		char expire[25] = {0,};
+
+		pTimeEnd = localtime((time_t*)&nTime);
+		if (pTimeEnd)
+		{
+			strftime(expire, sizeof(expire), "%Y/%m/%d %I:%M:%S", pTimeEnd);
+			str.PrintF( _S( 6023, "원격 사용 가능") );
+			str_time = expire;
+			color = 0x00FA00FF;
+			coltimer = 0x00FA00FF;
+		}
+	}
+	else if ( GAMEDATAMGR()->GetExpressData() != NULL && GAMEDATAMGR()->GetExpressData()->GetPremiumBenefit() == true)
+	{
+		str.PrintF( _S( 6023, "원격 사용 가능") );
+		str_time.PrintF( _S( 6328, "프리미엄 캐릭터 혜택 적용 중") );
+		color = 0x00FA00FF;
+		coltimer = 0xD67FFFFF;
+	}
+	else
+	{
+		str = _S( 6022, "원격 사용 불가능" );
+		color = 0xFA0000FF;
+	}
+
+	m_pBtnExpress->setTooltip(str, color);
+
+	if (str_time.Length() > 0)
+		m_pBtnExpress->addTooltip(str_time, coltimer);
+}
+
+void CUIRadar::updateSandGrassTime()
+{
+	if (m_pImgArrSandGrass == NULL)
+		return;
+
+	CTString strTitle = _S( 5579, "남은 시간" );
+	CTString strTime;
+	
+	__int64 curTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
+	int LeftTime = (m_liEndTime - curTime) / 1000;
+	strTime.PrintF(_s("%d : %02d"), LeftTime / 60, LeftTime % 60);
+
+	m_pImgArrSandGrass->setTooltip(strTitle, 0xFF8000FF);
+	m_pImgArrSandGrass->addTooltip(strTime, 0xFF8000FF, eALIGN_H_CENTER);
+}
+
+void CUIRadar::setBtnPremiumTooltip()
+{
+	if (m_pBtnPremium == NULL)
+		return;
+
+	CTString str, str_time;
+	COLOR color;
+
+	CPremiumChar* pChar = GAMEDATAMGR()->GetPremiumChar();
+
+	if (pChar != NULL && pChar->getType() != PREMIUM_CHAR_TYPE_NONE)
+	{
+		tm*	pTimeEnd = NULL;
+		int	nTime	= pChar->getExpireTime();
+		char expire[25] = {0,};
+
+		pTimeEnd = localtime((time_t*)&nTime);
+
+		if (pTimeEnd)
+		{
+			str = _S(6328, "프리미엄 캐릭터 혜택 적용 중" );
+			str_time.PrintF( _S( 6070, "만료 : %d년%d월%d일%d시%d분"), pTimeEnd->tm_year + 1900, pTimeEnd->tm_mon + 1, pTimeEnd->tm_mday, pTimeEnd->tm_hour, pTimeEnd->tm_min );
+			color = 0x00FA00FF;
+		}
+	}
+	else
+	{
+		str = _S( 6327, "프리미엄 캐릭터 혜택 없음" );
+		color = 0xFA0000FF;
+	}
+
+	m_pBtnPremium->setTooltip(str, color);
+
+	if (str_time.Length() > 0)
+		m_pBtnPremium->addTooltip(str_time, color);
+}
+
+void CUIRadar::setBtnDurabilityTooltip()
+{
+	if (m_pBtnDurability == NULL)
+		return;
+
+	CTString str, str_time;
+	COLOR color, coltimer;
+
+	CPremiumChar* pChar = GAMEDATAMGR()->GetPremiumChar();
+
+	if (pChar != NULL && pChar->getType() != PREMIUM_CHAR_TYPE_NONE)
+	{
+		str.PrintF( _S( 7106, "내구도 수리 가능") );
+		str_time.PrintF( _S( 6328, "프리미엄 캐릭터 혜택 적용 중") );
+		color = 0x00FA00FF;
+		coltimer = 0xD67FFFFF;
+	}
+	else
+	{
+		str = _S( 7107, "내구도 수리 불가능" );
+		color = 0xFA0000FF;
+	}
+
+	m_pBtnDurability->setTooltip(str, color);
+
+	if (str_time.Length() > 0)
+		m_pBtnDurability->addTooltip(str_time, coltimer);
+}
+
+void CUIRadar::OnUpdatePositionPost()
+{
+	// 윈도우 사이즈 등이 변경 될 경우, 버프 위치 갱신
+	_pUIBuff->SetMyBadBuffPos( m_nPosX - 2, 2 );
 }
 
 

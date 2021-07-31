@@ -781,40 +781,40 @@ void CUIWebBoard::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pix
 // ----------------------------------------------------------------------------
 void CUIWebBoard::ToggleVisible()
 {
-//안태훈 수정 시작	//(5th Closed beta)(0.2)
-#if defined G_GERMAN
-	extern ENGINE_API INDEX sam_bFullScreenActive;	
-	if ( IsFullScreen( sam_bFullScreenActive))
+	if (IsGamigo(g_iCountry) == TRUE)
 	{
-		CUIManager* pUIManager = CUIManager::getSingleton();
+		extern ENGINE_API INDEX sam_bFullScreenActive;	
+		if ( IsFullScreen( sam_bFullScreenActive))
+		{
+			CUIManager* pUIManager = CUIManager::getSingleton();
 
-		 pUIManager->GetOption()->ChangeWindowMode();
-		 pUIManager->DestroyRenderTarget();
-		 pUIManager->InitRenderTarget();
-	}
+			pUIManager->GetOption()->ChangeWindowMode();
+			pUIManager->DestroyRenderTarget();
+			pUIManager->InitRenderTarget();
+		}
 
-	switch (g_iCountry)
-	{
-	case GERMANY:
-		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/de/forum/", NULL, NULL, SW_SHOWNORMAL);
-		break;
-	case SPAIN:
-		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/es/forum/", NULL, NULL, SW_SHOWNORMAL);
-		break;
-	case FRANCE:
-		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/fr/forum/", NULL, NULL, SW_SHOWNORMAL);
-		break;
-	case POLAND:
-		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/pl/forum/", NULL, NULL, SW_SHOWNORMAL);
-		break;
-	case ITALY:
-		ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/it/forum/", NULL, NULL, SW_SHOWNORMAL);
-		break;
+		switch (g_iCountry)
+		{
+		case GERMANY:
+			ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/de/forum/", NULL, NULL, SW_SHOWNORMAL);
+			break;
+		case SPAIN:
+			ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/es/forum/", NULL, NULL, SW_SHOWNORMAL);
+			break;
+		case FRANCE:
+			ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/fr/forum/", NULL, NULL, SW_SHOWNORMAL);
+			break;
+		case POLAND:
+			ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/pl/forum/", NULL, NULL, SW_SHOWNORMAL);
+			break;
+		case ITALY:
+			ShellExecute(NULL, "open", "http://lastchaos.gamigo.com/it/forum/", NULL, NULL, SW_SHOWNORMAL);
+			break;
+		}
 	}
-#endif
-#if !defined G_KOR
+	
 	return;
-#endif
+
 	if( IsVisible() )
 	{
 		CloseWebBoard();

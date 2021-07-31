@@ -74,6 +74,7 @@
     <SccProjectName />
     <SccLocalPath />
     <ProjectName>Shaders</ProjectName>
+    <ProjectGuid>{D42BFFDE-1521-EC17-8741-96F54EEED515}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" Label="Configuration">
@@ -313,6 +314,7 @@
     <OutDir>$(USA_LIVE)\Bin\</OutDir>
     <IntDir>_USALIVE2010\</IntDir>
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\DXinclude;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='WORLDEDITOR|Win32'">
     <ClCompile>
@@ -1182,6 +1184,7 @@ copy GERLIVEKalydo\%(Filename).pdb $(ENGINE_DIR)\Bin &gt;nul </Command>
       <PrecompiledHeaderFile>StdH.h</PrecompiledHeaderFile>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
+      <AdditionalOptions>/MP6 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>

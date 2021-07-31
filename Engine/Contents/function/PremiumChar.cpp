@@ -6,10 +6,11 @@
 #include <Engine/Interface/UIInventory.h>
 #include <Engine/Interface/UIInvenCashBag.h>
 #include <Engine/Contents/Base/ExpressSystem.h>
-#include <Engine/Interface/UIPetFree.h>
+#include <Engine/Contents/function/PetFreeUI.h>
 #include <Engine/Interface/UIMessenger.h>
 #include <Engine/Interface/UIRadar.h>
 #include <Engine/Contents/function/SimplePlayerInfoUI.h>
+#include <Engine/Contents/Base/UIDurability.h>
 
 CPremiumChar::CPremiumChar()
 	: m_sbPmType(0)
@@ -154,6 +155,8 @@ void CPremiumChar::PremiumBenefit( bool bUse )
 	// 친구에게 텔레포트 사용 가능
 	pUImgr->GetMessenger()->SetPremiumBenefit(bUse);
 
+	// 내구도 수리 UI 원격 사용가능
+	pUImgr->GetDurability()->SetPremiumBenefit(bUse);
 	// 장비레벨 3 감소는 CUITooltip::SetLevelInfo() 안에서 처리
 	// 외형변경의 경우 서버 단독
 	// 경험치 및 SP 증가의 경우 서버 단독

@@ -38,6 +38,9 @@
     <Filter Include="Grammar Files">
       <UniqueIdentifier>{f5419600-589c-4bc4-a4d2-037bef5d3e69}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FBX">
+      <UniqueIdentifier>{4aa86ddf-343a-4ac8-b241-af99995e769c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DlgAutosettingFeatherFall.cpp">
@@ -220,6 +223,12 @@
     <ClCompile Include="CmdSkaStudio.cpp">
       <Filter>Source Files\Original Ska</Filter>
     </ClCompile>
+    <ClCompile Include="FBX\Common.cxx">
+      <Filter>FBX</Filter>
+    </ClCompile>
+    <ClCompile Include="FBX\ConvSMC.cpp">
+      <Filter>FBX</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DlgAutosettingFeatherFall.h">
@@ -395,6 +404,12 @@
     </ClInclude>
     <ClInclude Include="CmdSkaStudio.h">
       <Filter>Header Files\Original Ska Header</Filter>
+    </ClInclude>
+    <ClInclude Include="FBX\Common.h">
+      <Filter>FBX</Filter>
+    </ClInclude>
+    <ClInclude Include="FBX\ConvSMC.h">
+      <Filter>FBX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

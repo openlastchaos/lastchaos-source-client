@@ -9,14 +9,8 @@
 	#pragma once
 #endif
 
-
-// #include <Engine/Interface/UIWindow.h>
-// #include <Engine/Interface/UIButton.h>
-
-
 // Define position
 #define	SUMMON_NAME_SY				5
-
 
 // Define size of player information
 #define	SUMMON_WIDTH				178

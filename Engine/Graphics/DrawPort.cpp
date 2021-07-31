@@ -36,6 +36,7 @@ static CDrawPort *_pdpCurrent = NULL;
 // wooss 050915
 // For malaysia  wooss 060330
 extern BOOL g_bIsMalEng;
+extern bool g_bDrawportRus;
 
 // RECT HANDLING ROUTINES
 		
@@ -1524,9 +1525,11 @@ ULONG CDrawPort::GetTextWidth2(const CTString &strText)
 {
 #if defined (G_THAI)
 	return FindThaiLen(strText);
-#elif defined(G_RUSSIA)
-	return GetTextSectionWidth(strText.str_String, strText.Length(), FALSE);
 #else
+	
+	if (g_bDrawportRus == true)
+		return GetTextSectionWidth(strText.str_String, strText.Length(), FALSE);
+
 	return strText.Length() * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing());
 #endif
 }
@@ -4479,27 +4482,6 @@ void CDrawPort::PutTextExRX( const CTString &strText, PIX pixX0, PIX pixY0, cons
 	PutTextEx( strText, pixX0 - pixOffset, pixY0, colBlend, fZ, bShadow, colShadow );
 }
 
-void CDrawPort::PutTextCharExCX( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
-									FLOAT fZ, BOOL bShadow, const COLOR colShadow ) const
-{
-	if (nLength == 0)
-		nLength = strlen(pText);
-#if defined (G_THAI)
-	PIX pixOffset = FindThaiLen(pText) / 2;
-#elif defined (G_RUSSA) 
-	PIX pixOffset = GetTextWidth(pText) / 2;
-#elif defined (G_MAL) || defined (G_HONGKONG) 
-	PIX pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) / 2;
-	if (g_bIsMalEng)
-		pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth()) / 2;
-#elif defined (G_USA) || defined (G_GERMAN)  || defined (G_EUROPE3) || defined (G_EUROPE2)
-	PIX pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth()) / 2;
-#else
-	PIX pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) / 2;
-#endif 
-	PutTextCharEx( pText, nLength, pixX0 - pixOffset, pixY0, colBlend, fZ, bShadow, colShadow );
-}
-
 void CDrawPort::PutTextCharExRX( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend,
 									FLOAT fZ, BOOL bShadow, const COLOR colShadow )
 {
@@ -4507,10 +4489,15 @@ void CDrawPort::PutTextCharExRX( const char *pText, int nLength, PIX pixX0, PIX 
 		nLength = strlen(pText);
 #if defined (G_THAI)
 	PIX pixOffset = FindThaiLen(pText) - 1;
-#elif defined (G_RUSSIA)
-	PIX pixOffset = GetTextWidth(pText) - 1;
+
 #else
-	PIX pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) - 1;
+	PIX pixOffset;
+
+	if (g_bDrawportRus == true)
+		pixOffset = GetTextWidth(pText) - 1;
+	else
+		pixOffset = nLength * (_pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing()) - 1;
+
 #endif
 	PutTextCharEx( pText, nLength, pixX0 - pixOffset, pixY0, colBlend, fZ, bShadow, colShadow );
 }
@@ -4521,10 +4508,11 @@ void CDrawPort::EndTextEx( BOOL bDepthTest )
 	const GfxAPIType eAPI = _pGfx->gl_eCurrentAPI;
 	ASSERT( eAPI==GAT_OGL || eAPI==GAT_D3D || eAPI==GAT_NONE );
 
-#if defined G_RUSSIA
-	CTextureData *ptd = (CTextureData*)dp_FontData->fd_ptdTextureData;
-	InitTextureData( ptd, FALSE, 203, bDepthTest );
-#endif
+	if (g_bDrawportRus == true)
+	{
+		CTextureData *ptd = (CTextureData*)dp_FontData->fd_ptdTextureData;
+		InitTextureData( ptd, FALSE, 203, bDepthTest );
+	}
 
 	// Render all elements
 	for( INDEX iText = 0; iText < FONT_MAX; iText++ )
@@ -4532,10 +4520,11 @@ void CDrawPort::EndTextEx( BOOL bDepthTest )
 		INDEX ctElements = _auwText[iText].Count();
 		if( ctElements > 0 )
 		{
+			if (g_bDrawportRus == false)
+			{
+				_pUIFontTexMgr->InitTexture( iText, bDepthTest );
+			}
 
-#if !defined G_RUSSIA
-			_pUIFontTexMgr->InitTexture( iText, bDepthTest );
-#endif
 			gfxFlushTextElements( ctElements, iText );			
 			_avtxText[iText].PopAll();
 			_atexText[iText].PopAll();
@@ -4750,10 +4739,12 @@ void CDrawPort::InitTextureData( class CTextureData *pTD, const BOOL bClamp, con
 		if( bClamp) eWrap = GFX_CLAMP;
 		gfxSetTextureWrapping( eWrap, eWrap );
 		pTD->SetAsCurrent();
-#if defined (G_RUSSIA)
-		CDrawPort *pD = (CDrawPort *)this;
-		pD->StockCurrentTextureData(pTD);
-#endif	// end g_russia
+
+		if (g_bDrawportRus == true)
+		{
+			CDrawPort *pD = (CDrawPort *)this;
+			pD->StockCurrentTextureData(pTD);
+		}
 	}
 	else
 		gfxDisableTexture();

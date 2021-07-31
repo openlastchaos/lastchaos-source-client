@@ -7,11 +7,11 @@
 #include <Engine/Interface/UIPetInfo.h>
 #include <Engine/Contents/function/WildPetInfoUI.h>
 #include <Engine/Contents/Base/UINoticeNew.h>
-#include <Engine/Interface/UIPetFree.h>
+#include <Engine/Contents/function/PetFreeUI.h>
 #include <Engine/Contents/Base/UIQuestNew.h>
 #include <Engine/Contents/Base/UIQuestBookNew.h>
 #include <Engine/Interface/UIQuickSlot.h>
-#include <Engine/Interface/UIPetItemMix.h>
+#include <Engine/Contents/function/PetItemMixUI.h>
 #include <Engine/Interface/UIInventory.h>
 
 #include <Engine/GameDataManager/GameDataManager.h>
@@ -58,7 +58,7 @@ enum eChangeSelection
 	CHANGE_RIDE,						// 탈것으로...
 	PETITEM_DESTRUCTION,				// 펫 아이템 소멸
 	DRAGON_WEAPON,						// 드래곤 무기
-	KNIGHT_AMOR,						// 나이트 방어
+	KNIGHT_ARMOR,						// 나이트 방어
 };
 
 // Date : 2005-03-07,   By Lee Ki-hwan
@@ -1722,7 +1722,7 @@ void CUIPetTraining::MsgBoxLCommand( int nCommandCode, int nResult )
 			strMessage.PrintF( _S( 2460, "드래곤 웨폰 제작" ) );
 			pUIManager->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage, DRAGON_WEAPON );
 			strMessage.PrintF( _S( 2475, "나이트 방어구 제작" ) );
-			pUIManager->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage, KNIGHT_AMOR );
+			pUIManager->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage, KNIGHT_ARMOR );
 			strMessage.PrintF( _S( 1220, "취소한다." ) );
 			pUIManager->AddMessageBoxLString( MSGLCMD_PETUNIQUEPRODUCT_REQ, FALSE, strMessage );
 		}
@@ -1742,7 +1742,7 @@ void CUIPetTraining::MsgBoxLCommand( int nCommandCode, int nResult )
 				pUIManager->CreateMessageBox( MsgBoxInfo );
 				return;
 			}
-			pUIManager->GetPetFree()->OpenPetFree(m_fNpcX, m_fNpcZ, m_nNpcIndex);
+			pUIManager->GetPetFree()->openUI(m_fNpcX, m_fNpcZ, m_nNpcIndex);
 		}
 		else if( nResult == PET_NPC_HELP)										
 		{
@@ -1803,11 +1803,11 @@ void CUIPetTraining::MsgBoxLCommand( int nCommandCode, int nResult )
 	case MSGLCMD_PETUNIQUEPRODUCT_REQ:
 		if( nResult == DRAGON_WEAPON )
 		{
-			pUIManager->GetPetItemMix()->OpenPetItemMix( DRAGON_WEAPON );
+			pUIManager->GetPetItemMixUI()->openUI(DRAGON_WEAPON);
 		}
-		else if( nResult == KNIGHT_AMOR )
+		else if( nResult == KNIGHT_ARMOR )
 		{
-			pUIManager->GetPetItemMix()->OpenPetItemMix( KNIGHT_AMOR );
+			pUIManager->GetPetItemMixUI()->openUI(KNIGHT_ARMOR);
 		}
 		else
 		{
@@ -2028,7 +2028,7 @@ void CUIPetTraining::PetChangeItemError( SBYTE sbResult )
 	ClosePetTraining();
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 1519, "교환" ), UMBS_OK, UI_PETITEMMIX, MSG_EX_PET_MIX_ITEM );		
+	MsgBoxInfo.SetMsgBoxInfo( _S( 1519, "교환" ), UMBS_OK, UI_PET_ITEM_MIX, MSG_EX_PET_MIX_ITEM );		
 
 	MsgBoxInfo.AddString( strMessageA );
 	CUIManager::getSingleton()->CreateMessageBox( MsgBoxInfo );

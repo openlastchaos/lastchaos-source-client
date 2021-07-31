@@ -61,7 +61,7 @@
 #include <Engine/Interface/UIReformSystem.h>
 #include <Engine/Interface/UISelectResource.h>
 #include <Engine/Interface/UIGuildWarPortal.h>
-#include <Engine/Interface/UIGuildStash.h>
+#include <Engine/Contents/function/GuildStashUI.h>
 #include <Engine/Interface/UIBilling.h>
 #include <Engine/Contents/function/UIPortalNew.h>
 #include <Engine/Interface/UIGuild.h>
@@ -74,10 +74,10 @@
 #include <Engine/Contents/function/WildPetInfoUI.h>
 #include <Engine/Interface/UIGamble.h>
 #include <Engine/Interface/UIMonsterMercenary.h>
-#include <Engine/Interface/UISystemMenu.h>
+#include <engine/Contents/function/SystemMenuUI.h>
 
 #include <Engine/TransformInfo.h>
-#include <Engine/Interface/UISummon.h>
+#include <Engine/Contents/function/SummonUI.h>
 #include <Engine/Interface/UIPetInfo.h>
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Contents/Base/ExpressSystem.h>
@@ -187,11 +187,6 @@
 #define ENF_EX2_WAR_OURFORCE	(1L<<5)
 #define ENF_EX2_WAR_ENEMY		(1L<<6)
 
-#ifdef SIGEWAR_ATTACKRULE
-	const BOOL bSigewar_Attackrule = TRUE;
-#else
-	const BOOL bSigewar_Attackrule = FALSE;
-#endif
 #ifdef CHAR_EX_ROGUE	// [2012/08/27 : Sora] EX로그 추가
 	const BOOL charEXRogue = TRUE;
 #else
@@ -2283,7 +2278,7 @@ functions:
 			
 			for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 			{
-				CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+				CSummonUI* pUISummon = (CSummonUI*)pUIManager->GetUI(i);
 				if( pUISummon->GetSummonEntity() && pUISummon->GetSummonIndex() == iTargetID )
 				{
 					pInfo->GetMySlaveInfo(i - UI_SUMMON_START)->fHealth	= lTargetHP;											
@@ -3404,7 +3399,7 @@ functions:
 
 		// EP2 적용시 각 국가 더할 것.
 		BOOL bMercenaryDataRead = FALSE;
-		if( g_iCountry != TURKEY && g_iCountry != ITALY)
+		if (g_iCountry != ITALY)
 		{
 			// 몬스터 용병 카드
 			bMercenaryDataRead = pUIManager->GetMonsterMercenary()->ReceiveMercenaryMessage(istr, pPack->hp, pPack->maxHp, pPack->mp, pPack->maxMp);
@@ -4397,8 +4392,7 @@ functions:
 							pTarget->slave_sbAttributePos = pPack->mapAttr;
 						}
 						
-						if (g_iCountry == GERMANY || g_iCountry == SPAIN || g_iCountry == FRANCE || g_iCountry == POLAND
-							|| g_iCountry == ITALY || g_iCountry == TURKEY || g_iCountry == NETHERLANDS)
+						if (IsGamigo(g_iCountry) == TRUE)
 						{
 							//if ((g_iCountry == GERMANY) && (sbAttributePos == ATTC_PEACE))
 							if (pPack->mapAttr & MATT_PEACE)
@@ -4970,220 +4964,151 @@ functions:
 			return FALSE;
 		}
 		
-		//SIGEWAR_ATTACKRULE
-		if (bSigewar_Attackrule)
+		////////////////////////////////////////////////////////////////
+		// FIXME : 아래 코드 너무함...ㅠ.ㅠ 수정하자!!!
+		////////////////////////////////////////////////////////////////
+		// 내가 공성 지역에 있고, 타 캐릭터도 공성 지역내에 있다면...
+		
+		if ((sbAttributePos & MATT_WAR && sbCharAttributePos & MATT_WAR) || 
+			 CheckDratanWarInside(pTarget))
 		{
-			// 내가 진행 중인 공성전에 참여한 상태인가?
-			if (bIsDartanWar && sbJoinFlagDratan != WCJF_NONE)
-			{
-				if (sbCharacterJoinFlagDratan != WCJF_NONE)
-				{
-					if (WarTypeAttackGroup(sbJoinFlagDratan) != WarTypeAttackGroup(sbCharacterJoinFlagDratan))
-					{
-						return TRUE;
-					}
-				}
-				else // 타겟 캐릭터가 공성에 참여 안한 친구일 경우, 공성지역에 있으면 무조건 공격 대상
-				{
-					if (bIsCharacterInsideDratan)
-					{
-						return TRUE;
-					}
-				}
-			}
-			else if (bIsMeracWar && sbJoinFlagMerac != WCJF_NONE)
-			{
-				if (sbCharacterJoinFlagMerac != WCJF_NONE)
-				{
-					if (WarTypeAttackGroup(sbJoinFlagMerac) != WarTypeAttackGroup(sbCharacterJoinFlagMerac))
-					{
-						return TRUE;
-					}
-					else if (!_pUISWDoc->IsSelectBattle()) // 내성 전투의 경우
-					{
-						if ((WarTypeAttackGroup(sbJoinFlagMerac) && IsPvp()) || IsLegitTarget(penEnt)) // 공성측 끼리 pvp모드를 키면 공격이 가능
-						{
-							return TRUE;
-						}
-					}
-				}
-				else // 타겟 캐릭터가 공성에 참여 안한 친구일 경우, 공성지역에 있으면 무조건 공격 대상
-				{
-					if (sbAttributePos & MATT_WAR && sbCharAttributePos & MATT_WAR) // 메라크는 메라크 공성지역을 판단할 조건이 현재 없음
-					{
-						return TRUE;
-					}
-				}
-			}
-			// 일반적인 PVP룰 PVP모드 ON 정당방위 성립 혹은 길드전쟁의 적
-			else if( IsPvp() || IsLegitTarget(penEnt) || pUIManager->GetGuildBattle()->IsEnemy( penEnt->en_ulID ) )
-			{
-				return TRUE;
-			}
-		}
-		//else SIGEWAR_ATTACKRULE
-		else
-		{
-			
 			////////////////////////////////////////////////////////////////
-			// FIXME : 아래 코드 너무함...ㅠ.ㅠ 수정하자!!!
-			////////////////////////////////////////////////////////////////
-			// 내가 공성 지역에 있고, 타 캐릭터도 공성 지역내에 있다면...
+			// 공성전 중이라면...
 			
-			if ((sbAttributePos & MATT_WAR && sbCharAttributePos & MATT_WAR) || 
-				 CheckDratanWarInside(pTarget))
+			// WSS_DRATAN_SEIGEWARFARE 2007/08/30 --------------------------------------------<<
+			// 드라탄
+			if ( pUIManager->GetSiegeWarfareNew()->GetWarState() ) // WSS_DRATAN_SEIGEWARFARE 2007/08/30 드라탄 공성중...
 			{
-				////////////////////////////////////////////////////////////////
-				// 공성전 중이라면...
-				
-				// WSS_DRATAN_SEIGEWARFARE 2007/08/30 --------------------------------------------<<
-				// 드라탄
-				if ( pUIManager->GetSiegeWarfareNew()->GetWarState() ) // WSS_DRATAN_SEIGEWARFARE 2007/08/30 드라탄 공성중...
-				{
-					// 공성에 참여하지 않음...
-					if(sbJoinFlagDratan == WCJF_NONE )
-					{	
-						return TRUE;
-					}
-					// 내가 수성측일때.
-					// WSS_DRATAN_SEIGEWARFARE 2007/10/1
-					else if(sbJoinFlagDratan == WCJF_OWNER ||
-						sbJoinFlagDratan == WCJF_DEFENSE_GUILD)				
-					{
-						// 수성 길드 공격 불가.
-						if( sbCharacterJoinFlagDratan == WCJF_OWNER ||
-							sbCharacterJoinFlagDratan == WCJF_DEFENSE_GUILD )
-						{
-							return FALSE;
-						}
-						else
-						{						
-							return TRUE;					
-						}
-					}				
-					// 내가 공성 길드일때...
-					else if( sbJoinFlagDratan == WCJF_ATTACK_GUILD )
-					{
-						// 타겟이 공성 길드일때...
-						if( sbCharacterJoinFlagDratan == WCJF_ATTACK_GUILD )
-						{
-							return TRUE;
-						}
-						else
-						{							
-							return TRUE;					
-						}
-					}
-					
+				// 공성에 참여하지 않음...
+				if(sbJoinFlagDratan == WCJF_NONE )
+				{	
+					return TRUE;
 				}
-				// -------------------------------------------------------------------------------<<
-				
-				// 메라크
-				else if( _pUISWDoc->IsWar() && !_pUISWDoc->IsSelectBattle() ) 				
+				// 내가 수성측일때.
+				// WSS_DRATAN_SEIGEWARFARE 2007/10/1
+				else if(sbJoinFlagDratan == WCJF_OWNER ||
+					sbJoinFlagDratan == WCJF_DEFENSE_GUILD)				
 				{
-					// 공성에 참여하지 않음...
-					if(sbJoinFlagMerac == WCJF_NONE )
-					{					
-						return TRUE;				
+					// 수성 길드 공격 불가.
+					if( sbCharacterJoinFlagDratan == WCJF_OWNER ||
+						sbCharacterJoinFlagDratan == WCJF_DEFENSE_GUILD )
+					{
+						return FALSE;
 					}
-					// 내가 수성측일때.
-					else if( sbJoinFlagMerac == WCJF_DEFENSE_CHAR || sbJoinFlagMerac == WCJF_OWNER || sbJoinFlagMerac == WCJF_DEFENSE_GUILD )				
-					{
-						// 수성 길드나 수성 용병은 공격 불가.
-						if( sbCharacterJoinFlagMerac == WCJF_OWNER || 
-							sbCharacterJoinFlagMerac == WCJF_DEFENSE_CHAR ||
-							sbCharacterJoinFlagMerac == WCJF_DEFENSE_GUILD )
-						{
-							return FALSE;
-						}
-						else
-						{						
-							return TRUE;					
-						}
-					}				
-					// 내가 공성용병이나 공성 길드일때...
-					else if( sbJoinFlagMerac == WCJF_ATTACK_GUILD || 
-						sbJoinFlagMerac == WCJF_ATTACK_CHAR )
-					{
-						// 타겟이 공성용병이나 공성 길드일때...
-						if( sbCharacterJoinFlagMerac == WCJF_ATTACK_GUILD || 
-							sbCharacterJoinFlagMerac == WCJF_ATTACK_CHAR )											
-						{
-							if( IsPvp() || IsLegitTarget(penEnt))
-							{
-								return TRUE;
-							}
-							return FALSE;
-						}
-						else
-						{							
-							return TRUE;					
-						}
-					}
-				}
-				////////////////////////////////////////////////////////////////
-				// 야전전투!!!
-				else if(_pUISWDoc->IsSelectBattle() )
-				{
-					// 공성에 참여하지 않음...
-					if(sbJoinFlagMerac == WCJF_NONE )
-					{
+					else
+					{						
 						return TRUE;					
 					}
-					// 내가 수성용병일때...
-					else if( sbJoinFlagMerac == WCJF_DEFENSE_CHAR || sbJoinFlagMerac == WCJF_OWNER || sbJoinFlagMerac == WCJF_DEFENSE_GUILD )
-					{
-						// 수성 길드나 수성 용병은 공격 불가.
-						if( sbCharacterJoinFlagMerac == WCJF_OWNER || 
-							sbCharacterJoinFlagMerac == WCJF_DEFENSE_CHAR ||
-							sbCharacterJoinFlagMerac == WCJF_DEFENSE_GUILD )
-						{
-							return FALSE;
-						}
-						else
-						{						
-							return TRUE;					
-						}
-					}
-					// 내가 수성길드일때...
-					else if( sbJoinFlagMerac == WCJF_OWNER || 
-						sbJoinFlagMerac == WCJF_DEFENSE_GUILD )											
-					{
-						// 수성 길드나 수성 용병은 공격 불가.
-						if( sbCharacterJoinFlagMerac == WCJF_OWNER || 
-							sbCharacterJoinFlagMerac == WCJF_DEFENSE_CHAR ||
-							sbCharacterJoinFlagMerac == WCJF_DEFENSE_GUILD )
-						{
-							return FALSE;
-						}										
-						else
-						{					
-							return TRUE;					
-						}
-					}
-					// 내가 공성용병이나 공성 길드일때...
-					else if( sbJoinFlagMerac == WCJF_ATTACK_GUILD || 
-						sbJoinFlagMerac == WCJF_ATTACK_CHAR )
-					{					
-						return TRUE;				
-					}
-				}
-				else
+				}				
+				// 내가 공성 길드일때...
+				else if( sbJoinFlagDratan == WCJF_ATTACK_GUILD )
 				{
-					// 같은 파티나 길드 멤버가 아니고...
-					if( IsPvp() || IsLegitTarget(penEnt) || pUIManager->GetGuildBattle()->IsEnemy( penEnt->en_ulID ) )
+					// 타겟이 공성 길드일때...
+					if( sbCharacterJoinFlagDratan == WCJF_ATTACK_GUILD )
 					{
 						return TRUE;
 					}
 					else
+					{							
+						return TRUE;					
+					}
+				}
+				
+			}
+			// -------------------------------------------------------------------------------<<
+			
+			// 메라크
+			else if( _pUISWDoc->IsWar() && !_pUISWDoc->IsSelectBattle() ) 				
+			{
+				// 공성에 참여하지 않음...
+				if(sbJoinFlagMerac == WCJF_NONE )
+				{					
+					return TRUE;				
+				}
+				// 내가 수성측일때.
+				else if( sbJoinFlagMerac == WCJF_DEFENSE_CHAR || sbJoinFlagMerac == WCJF_OWNER || sbJoinFlagMerac == WCJF_DEFENSE_GUILD )				
+				{
+					// 수성 길드나 수성 용병은 공격 불가.
+					if( sbCharacterJoinFlagMerac == WCJF_OWNER || 
+						sbCharacterJoinFlagMerac == WCJF_DEFENSE_CHAR ||
+						sbCharacterJoinFlagMerac == WCJF_DEFENSE_GUILD )
 					{
 						return FALSE;
 					}
+					else
+					{						
+						return TRUE;					
+					}
+				}				
+				// 내가 공성용병이나 공성 길드일때...
+				else if( sbJoinFlagMerac == WCJF_ATTACK_GUILD || 
+					sbJoinFlagMerac == WCJF_ATTACK_CHAR )
+				{
+					// 타겟이 공성용병이나 공성 길드일때...
+					if( sbCharacterJoinFlagMerac == WCJF_ATTACK_GUILD || 
+						sbCharacterJoinFlagMerac == WCJF_ATTACK_CHAR )											
+					{
+						if( IsPvp() || IsLegitTarget(penEnt))
+						{
+							return TRUE;
+						}
+						return FALSE;
+					}
+					else
+					{							
+						return TRUE;					
+					}
+				}
+			}
+			////////////////////////////////////////////////////////////////
+			// 야전전투!!!
+			else if(_pUISWDoc->IsSelectBattle() )
+			{
+				// 공성에 참여하지 않음...
+				if(sbJoinFlagMerac == WCJF_NONE )
+				{
+					return TRUE;					
+				}
+				// 내가 수성용병일때...
+				else if( sbJoinFlagMerac == WCJF_DEFENSE_CHAR || sbJoinFlagMerac == WCJF_OWNER || sbJoinFlagMerac == WCJF_DEFENSE_GUILD )
+				{
+					// 수성 길드나 수성 용병은 공격 불가.
+					if( sbCharacterJoinFlagMerac == WCJF_OWNER || 
+						sbCharacterJoinFlagMerac == WCJF_DEFENSE_CHAR ||
+						sbCharacterJoinFlagMerac == WCJF_DEFENSE_GUILD )
+					{
+						return FALSE;
+					}
+					else
+					{						
+						return TRUE;					
+					}
+				}
+				// 내가 수성길드일때...
+				else if( sbJoinFlagMerac == WCJF_OWNER || 
+					sbJoinFlagMerac == WCJF_DEFENSE_GUILD )											
+				{
+					// 수성 길드나 수성 용병은 공격 불가.
+					if( sbCharacterJoinFlagMerac == WCJF_OWNER || 
+						sbCharacterJoinFlagMerac == WCJF_DEFENSE_CHAR ||
+						sbCharacterJoinFlagMerac == WCJF_DEFENSE_GUILD )
+					{
+						return FALSE;
+					}										
+					else
+					{					
+						return TRUE;					
+					}
+				}
+				// 내가 공성용병이나 공성 길드일때...
+				else if( sbJoinFlagMerac == WCJF_ATTACK_GUILD || 
+					sbJoinFlagMerac == WCJF_ATTACK_CHAR )
+				{					
+					return TRUE;				
 				}
 			}
 			else
 			{
-				
 				// 같은 파티나 길드 멤버가 아니고...
 				if( IsPvp() || IsLegitTarget(penEnt) || pUIManager->GetGuildBattle()->IsEnemy( penEnt->en_ulID ) )
 				{
@@ -5194,7 +5119,21 @@ functions:
 					return FALSE;
 				}
 			}
-		}	//End SIGEWAR_ATTACKRULE
+		}
+		else
+		{
+			
+			// 같은 파티나 길드 멤버가 아니고...
+			if( IsPvp() || IsLegitTarget(penEnt) || pUIManager->GetGuildBattle()->IsEnemy( penEnt->en_ulID ) )
+			{
+				return TRUE;
+			}
+			else
+			{
+				return FALSE;
+			}
+		}
+
 		return FALSE;
 	}
 
@@ -7316,22 +7255,21 @@ functions:
 				(*istr) >> item_index;
 				(*istr) >> slCount;
 
-				CTString strMessage;
+				CTString strMessage, strCount;
 				const char* szItemName = _pNetwork->GetItemName(item_index);
 				// <FIX ME> 
 				// 이 스택 안에서 getSingleton()호출시 singleton 객체가 NULL로 정의되어, 새로 생성하게 된다.
 				// 그로인해, UIManager 객체를 정상적으로 사용할 수 없었다.
 				// _SMgr, _S2Mgr
-
+				strCount = pUIManager->IntegerToCommaString(slCount);
+				
 				if(pUIManager->IsCSFlagOn(CSF_EXPEDITION)) // [sora] 원정대 아이템 획득 추가
 				{
-					//strMessage.PrintF( _S(4682, "[원정대] %s님이 %s를 %ld개 획득하였습니다." ), strName, szItemName, slCount);
-					strMessage.PrintF( _SMgr( pUIManager, 4682, "[원정대] %s님이 %s를 %ld개 획득하였습니다." ), strName, szItemName, slCount);
+					strMessage.PrintF( _SMgr( pUIManager, 4682, "[원정대] %s님이 %s를 %s개 획득하였습니다." ), strName, szItemName, strCount);
 				}
 				else
 				{
-					//strMessage.PrintF( _S2( 707, CTString(szItemName), "[파티원] %s님이 %s<를> %ld개 획득하였습니다." ), strName, szItemName, slCount);
-					strMessage.PrintF( _S2Mgr( pUIManager, 707, szItemName, "[파티원] %s님이 %s<를> %ld개 획득하였습니다." ), strName, szItemName, slCount);
+					strMessage.PrintF( _S2Mgr( pUIManager, 707, szItemName, "[파티원] %s님이 %s<를> %s개 획득하였습니다." ), strName, szItemName, strCount);
 				}
 				_pNetwork->ClientSystemMessage(strMessage);					
 			}
@@ -14935,7 +14873,7 @@ functions:
 						// 내가 뭔가를 공격하는 경우에, 소환수도 협공 하도록...
 						for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 						{
-							CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+							CSummonUI* pUISummon = (CSummonUI*)pUIManager->GetUI(i);
 							CEntity* pSummonEntity = pUISummon->GetSummonEntity();
 							if( pSummonEntity )
 							{									
@@ -15490,7 +15428,7 @@ functions:
 				// 내가 뭔가를 공격하는 경우에, 소환수도 협공 하도록...
 				for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 				{
-					CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+					CSummonUI* pUISummon = (CSummonUI*)pUIManager->GetUI(i);
 					CEntity* pSummonEntity = pUISummon->GetSummonEntity();
 					if( pSummonEntity )
 					{									
@@ -17703,7 +17641,7 @@ functions:
 					if(m_bForward )
 					{
 						StopMove();
-						pUIManager->GetQuestAccept()->RequestQuest( iMobIndex, iVirIdx, UI_WAREHOUSE, vNpcPos(1), vNpcPos(3) );
+						pUIManager->GetQuestAccept()->RequestQuest( iMobIndex, iVirIdx, UI_WARE_HOUSE, vNpcPos(1), vNpcPos(3) );
 						return FALSE;
 					}
 				}
@@ -17903,7 +17841,7 @@ functions:
 					if( m_bForward )
 					{				
 						StopMove();
-						pUIManager->GetQuestAccept()->RequestQuest( iMobIndex, iVirIdx, UI_PETTRAINING, vNpcPos(1), vNpcPos(3) );
+						pUIManager->GetQuestAccept()->RequestQuest( iMobIndex, iVirIdx, UI_PET_TRAINING, vNpcPos(1), vNpcPos(3) );
 						return FALSE;
 					}
 				}
@@ -19454,7 +19392,7 @@ virtual BOOL CheckSkill(void)
 						// 내가 뭔가를 공격하는 경우에, 소환수도 협공 하도록...
 						for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 						{
-							CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+							CSummonUI* pUISummon = (CSummonUI*)pUIManager->GetUI(i);
 							CEntity* pSummonEntity = pUISummon->GetSummonEntity();
 							if( pSummonEntity )
 							{									
@@ -20988,7 +20926,7 @@ virtual void SetElementalData(CEntity* penEntity, SLONG hp, SLONG maxHP )
 
 		for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 		{
-			CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
+			CSummonUI* pUISummon = (CSummonUI*)pUIManager->GetUI(i);
 			pSlaveInfo = pInfo->GetMySlaveInfo(i - UI_SUMMON_START);
 
 			if (pUISummon->GetSummonEntity() && pUISummon->GetSummonIndex() == penEntity->GetNetworkID() && pSlaveInfo != NULL)

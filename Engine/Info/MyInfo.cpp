@@ -19,6 +19,8 @@ void MyInfo::clear()
 	nBuy_rate = 0;
 	nSell_addition = 0;
 	nSell_rate = 0;
+
+	m_vctMakeLearn.clear();
 }
 
 __int64 MyInfo::CalcPriceRate( __int64 iShopPrice, BOOL bBuy )
@@ -53,6 +55,25 @@ __int64 MyInfo::CalcPriceAddition( BOOL bBuy )
 		nAddition = nSell_addition;
 
 	return nAddition;
+}
+
+void MyInfo::add_makeitem( INDEX nmakeitem )
+{
+	m_vctMakeLearn.push_back(nmakeitem);
+}
+
+bool MyInfo::find_makeitem( INDEX nmakeitem )
+{
+	std::vector<INDEX>::iterator	iter = m_vctMakeLearn.begin();
+	std::vector<INDEX>::iterator	eiter = m_vctMakeLearn.end();
+
+	for (; iter != eiter; ++iter)
+	{
+		if ((*iter) == nmakeitem)
+			return true;
+	}
+
+	return false;
 }
 
 ObjInfo::ObjInfo()

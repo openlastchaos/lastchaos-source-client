@@ -28,26 +28,15 @@
 class CUIWindow : public CUIBase
 {
 protected:
-	//CUIWindow		*m_pParentWnd;				// Pointer of parent window
-	DWORD			m_dwWndState;				// State flags of window
-	//int				m_nPosX, m_nPosY;			// Position of window
-	//int				m_nWidth, m_nHeight;		// Size of window
 	CTextureData	*m_ptdBaseTexture;			// Texture of window
-    CTString        m_strXMLFileName;	
 
 public:
 
-    CUIWindow(const char* pcXMLFileName=NULL) 
+    CUIWindow() 
 		: /*m_pParentWnd( NULL ),*/ m_ptdBaseTexture( NULL )
-		, m_dwWndState( UWS_ENABLE | UWS_VISIBLE )
 		, m_rcTitle(_UIRect(0, 0, 0, 0))
 		, m_bTitleClick(false)
     {
-        if (pcXMLFileName)
-            m_strXMLFileName = pcXMLFileName;
-        else
-            m_strXMLFileName.Clear();
-
 		setType(eUI_CONTROL_WINDOW);
 	}
 	virtual ~CUIWindow() { Destroy(); }
@@ -82,18 +71,6 @@ public:
 #endif //UI_TOOL
 	}
 	
-
-	// Window state
-	void	SetWndState( DWORD dwWndState ) { m_dwWndState = dwWndState; }
-	virtual void	SetEnable( BOOL bEnable ) { bEnable ? m_dwWndState |= UWS_ENABLE : m_dwWndState &= ~UWS_ENABLE; }
-	void	SetVisible( BOOL bVisible ) { bVisible ? m_dwWndState |= UWS_VISIBLE : m_dwWndState &= ~UWS_VISIBLE; }
-	virtual void	SetFocus( BOOL bVisible ) { bVisible ? m_dwWndState |= UWS_FOCUS : m_dwWndState &= ~UWS_FOCUS; }
-	void	SetFloat( BOOL bFloat ) { bFloat ? m_dwWndState |= UWS_FLOAT : m_dwWndState &= ~UWS_FLOAT; }
-	DWORD	GetWndState() const { return m_dwWndState; }
-	BOOL	IsEnabled() const { return m_dwWndState & UWS_ENABLE; }
-	BOOL	IsVisible() const { return m_dwWndState & UWS_VISIBLE; }
-	BOOL	IsFocused() const { return m_dwWndState & UWS_FOCUS; }
-	BOOL	IsFloating() const { return m_dwWndState & UWS_FLOAT; }
 	virtual BOOL	IsEditBoxFocused() { return FALSE; }
 	virtual void	KillFocusEditBox() {}
 
@@ -141,10 +118,10 @@ public:
 
 	WMSG_RESULT OnLButtonDown(UINT16 x, UINT16 y) {
 		if (m_bHide)
-			return WMSG_FAIL;
+			return WMSG_OB;
 
 		if (IsInside(x, y) == FALSE)
-			return WMSG_FAIL;
+			return WMSG_OB;
 
 		if (IsInsideRect(x, y, m_rcTitle))
 		{
@@ -154,7 +131,7 @@ public:
 			oy = y;
 		}
 		
-		return CUIBase::OnLButtonDBLClick(x, y);
+		return CUIBase::OnLButtonDown(x, y);
 	}
 
 	WMSG_RESULT OnMouseMove(UINT16 x, UINT16 y, MSG* pMsg)
@@ -187,12 +164,12 @@ public:
 	WMSG_RESULT OnLButtonUp(UINT16 x, UINT16 y)
 	{
 		if (m_bHide)
-			return WMSG_FAIL;
+			return WMSG_OB;
 
 		m_bTitleClick = false;
 
 		if (IsInside(x, y) == FALSE)
-			return WMSG_FAIL;
+			return WMSG_OB;
 
 		return CUIBase::OnLButtonUp(x, y);
 	}

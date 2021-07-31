@@ -362,6 +362,7 @@ void CUISupport::parseIconSupport()
 	m_pIconImage[eIMG_TYPE_NEW] = (CUIImage*)m_pIconSupport->findUI("new");
 	m_pIconImage[eIMG_TYPE_RENT] = (CUIImage*)m_pIconSupport->findUI("rent");
 	m_pIconImage[eIMG_TYPE_RESTRITION] = (CUIImage*)m_pIconSupport->findUI("restrition");
+	m_pIconImage[eIMG_TYPE_HOLD] = (CUIImage*)m_pIconSupport->findUI("Hold");
 }
 
 void CUISupport::init_attribute()

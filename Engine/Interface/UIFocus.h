@@ -13,6 +13,8 @@ public:
 	void setUI( CUIBase* pUI);
 	CUIBase* getUI()			{ return m_pBase; }
 
+	void killFocus(CUIBase* pUI);
+
 private:
 	CUIBase*	m_pBase;
 };

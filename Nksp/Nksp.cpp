@@ -19,7 +19,7 @@
 #include <Engine/Templates/Stock_CFontData.h>
 #include <Engine/Interface/UIManager.h>				// yjpark
 #include <Engine/Interface/UIOption.h>
-#include <Engine/Interface/UISystemMenu.h>
+#include <engine/Contents/function/SystemMenuUI.h>
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Interface/UIMouseCursor.h>
 #include <Engine/GameState.h>
@@ -259,16 +259,7 @@ extern ENGINE_API CDrawPort	*_pdpWideScreenMain;
 extern ENGINE_API CViewPort	*_pvpViewPortMain;
 extern ENGINE_API HINSTANCE	_hInstanceMain;
 
-/*
-static void PlayDemo(const CTString &strDemoFilename)
-{
-	// ¾²ÀÌÁö ¾ÊÀ½.
-	_gmMenuGameMode = GM_DEMO;
-	CTFileName fnDemo = "demos\\" + strDemoFilename + ".dem";
-	extern BOOL LSLoadDemo(const CTFileName &fnm);
-	LSLoadDemo(fnDemo);
-}
-	*/
+
 ENGINE_API extern INDEX g_iCountry;
 
 // WSS_NPROTECT 070402 -------------------------->>
@@ -333,26 +324,12 @@ void GetNM(LPSTR lpCmdLine)
 				if(g_nmCID.Length() > 0)
 					g_bAutoLogin = TRUE;
 				break;
-			case TAIWAN :
-				break;
-			case CHINA :
-				break;
 			case THAILAND :
-				break;
-			case TAIWAN2:
-				break;
-			case JAPAN :
-				g_bAutoLogin = TRUE;
-				break;
-			case MALAYSIA :
 				break;
 			case USA:
 				break;
 			case BRAZIL:	// [2012/07/19 : Sora]  ºô¶ó ÀÚµ¿ ·Î±×ÀÎ Ãß°¡
 				//g_bAutoLogin = TRUE;
-				break;
-			case HONGKONG:
-				g_bAutoLogin = TRUE;
 				break;
 			case MEXICO:	// [2012/07/19 : Sora]  ºô¶ó ÀÚµ¿ ·Î±×ÀÎ Ãß°¡
 				//g_bAutoLogin = TRUE;
@@ -376,11 +353,11 @@ BOOL IsRunning(void)
 
 	if (hSnapShot == INVALID_HANDLE_VALUE )
 	{
-#if defined G_RUSSIA
-		MessageBox(NULL, "Îøèáêà çàïóñê ïðîãðàìì LastChaos!", "LastChaos Run", MB_OK);
-#else
-		MessageBox(NULL, "Fail Execute LastChaos!", "LastChaos Run", MB_OK);
-#endif
+		if (g_iCountry == RUSSIA)
+			MessageBox(NULL, "Îøèáêà çàïóñê ïðîãðàìì LastChaos!", "LastChaos Run", MB_OK);
+		else
+			MessageBox(NULL, "Fail Execute LastChaos!", "LastChaos Run", MB_OK);
+
 		return TRUE;
 	}
 
@@ -422,11 +399,11 @@ BOOL IsRunning(void)
 
 	if (!bCurrentProcess)
 	{
-#if defined G_RUSSIA
-		MessageBox(NULL, "Îøèáêà çàïóñê ïðîãðàìì LastChaos!", "LastChaos Run", MB_OK);	
-#else
-		MessageBox(NULL, "Fail Execute LastChaos!", "LastChaos Run", MB_OK);
-#endif
+		if (g_iCountry == RUSSIA)
+			MessageBox(NULL, "Îøèáêà çàïóñê ïðîãðàìì LastChaos!", "LastChaos Run", MB_OK);	
+		else
+			MessageBox(NULL, "Fail Execute LastChaos!", "LastChaos Run", MB_OK);
+
 		return TRUE;
 	}
 
@@ -505,43 +482,13 @@ static HCURSOR LoadAnimationCursor(HINSTANCE hInstance, UINT nID)
 void End(void);
 
 
-// automaticaly manage input enable/disable toggling
-//static BOOL _bInputEnabled = FALSE;
-/*void UpdateInputEnabledState(void)
-{
-	// do nothing if window is invalid
-	if( _hwndMain==NULL) return;
 
-	// input should be enabled if application is active
-	// and no menu is active and no console is active
-	BOOL bShouldBeEnabled = ( !IsIconic(_hwndMain) && !_pGameState->m_bMenuActive && _pGame->gm_csConsoleState==CS_OFF ) || _bDefiningKey;
-
-	// if should be turned off
-	if( (!bShouldBeEnabled && _bInputEnabled) || _bReconsiderInput) {
-		// disable it and remember new state
-		_pInput->DisableInput();
-		_bInputEnabled = FALSE;
-	}
-	// if should be turned on
-	if( bShouldBeEnabled && !_bInputEnabled) {
-		// enable it and remember new state
-		_pInput->EnableInput(_hwndMain);
-		_bInputEnabled = TRUE;
-	}
-	_bReconsiderInput = FALSE;
-}*/
 
 
 // automaticaly manage pause toggling
 void UpdatePauseState(void)
 {
-	// ¾²ÀÌÁö ¾Ê´Â ºÎºÐ.
-	/*
-	BOOL bShouldPause = ( _gmRunningGameMode == GM_SINGLE_PLAYER ) &&
-						( _pGameState->m_bMenuActive || _pGame->gm_csConsoleState == CS_ON ||
-						 _pGame->gm_csConsoleState == CS_TURNINGON || _pGame->gm_csConsoleState == CS_TURNINGOFF );
-	_pNetwork->SetLocalPause(bShouldPause);
-	*/
+	
 }
 
 
@@ -559,12 +506,7 @@ void LimitFrameRate(void)
 	INDEX iMaxFPS = sam_iMaxFPSActive;
 	if( IsIconic(_hwndMain)) iMaxFPS = sam_iMaxFPSInactive;
 
-	/*
-	if(_pGame->gm_CurrentSplitScreenCfg==CGame::SSC_DEDICATED) 
-	{
-		iMaxFPS = ClampDn(iMaxFPS, 60L); // never go very slow if dedicated server
-	}
-	*/
+	
 	TIME tmWantedDelta = 1.0f / iMaxFPS;
 	if( tmCurrentDelta<tmWantedDelta) Sleep( (tmWantedDelta-tmCurrentDelta)*1000.0f);
 	
@@ -664,9 +606,9 @@ BOOL Init( HINSTANCE hInstance, int nCmdShow, CTString strCmdLine)
 	_pixDesktopWidth  = ::GetSystemMetrics(SM_CXSCREEN);
 	_pixDesktopHeight = ::GetSystemMetrics(SM_CYSCREEN);
 
-#if	!defined(VER_TEST) && !defined(G_CHINA)
+#if	!defined(VER_TEST) && !defined(G_CHINA) //&& !defined(G_USA)
 	if(strCmdLine.IsEqualCaseSensitive(CTString("fkzktlfgod!")))
-#elif	defined(VER_TEST) || defined(G_CHINA)
+#elif	defined(VER_TEST) || defined(G_CHINA) //|| defined(G_USA)
 	if (true)
 #else
 	if(strCmdLine.IsEqualCaseSensitive(CTString("6574")))
@@ -687,11 +629,11 @@ BOOL Init( HINSTANCE hInstance, int nCmdShow, CTString strCmdLine)
 
 		if (IsRunning())
 		{
-#if defined G_RUSSIA
-			MessageBox(NULL, "Êëèåíò LastChaos óæ?çàïóùå?", "LastChaos", MB_OK);
-#else
-			MessageBox(NULL, "LastChaos is already running on your system", "LastChaos Run", MB_OK);
-#endif
+			if (g_iCountry == RUSSIA)
+				MessageBox(NULL, "Êëèåíò LastChaos óæ?çàïóùå?", "LastChaos", MB_OK);
+			else
+				MessageBox(NULL, "LastChaos is already running on your system", "LastChaos Run", MB_OK);
+
 			return FALSE;
 		}		
 #endif // MULTI_CLIENT
@@ -728,9 +670,6 @@ BOOL Init( HINSTANCE hInstance, int nCmdShow, CTString strCmdLine)
 		case BRAZIL:
 			SetClassLong( _hwndMain, GCL_HICON, (LONG)LoadIcon( _hInstanceMain, (LPCTSTR)IDI_GUNSOFT ) );
 			g_bNasTrans = TRUE;
-			break;
-		case HONGKONG:
-			SetClassLong( _hwndMain, GCL_HICON, (LONG)LoadIcon( _hInstanceMain, (LPCTSTR)IDI_FUNMILY ) );
 			break;
 	}
 
@@ -1405,8 +1344,7 @@ int SubMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 				if( !(msg.message==WM_KEYDOWN&& msg.wParam==VK_F10
 					||msg.message==WM_SYSKEYDOWN) ) 
 				{
-					if(( g_iCountry == JAPAN || HONGKONG == g_iCountry )&&  msg.message ==WM_IME_COMPOSITION) ;
-					else {
+					{
 						// dispatch it
 						TranslateMessage(&msg);
 						DispatchMessage(&msg);
@@ -1737,11 +1675,10 @@ int PASCAL WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		else 
 		{
 			// ITS #0005892 : russia ¿äÃ»»çÇ×. [1/13/2012 rumist]
-#if defined (G_RUSSIA)
-			MessageBoxW(NULL, L"¬±¬Ö¬â¬Ö¬Ù¬Ñ¬á¬å¬ã¬ä¬Ú¬ä¬Ö ¬Ú¬Ô¬â¬å.", L"¬°¬Ò¬ß¬à¬Ó¬Ý¬Ö¬ß¬Ú¬Ö ¬Ù¬Ñ¬Ó¬Ö¬â¬ê¬Ö¬ß¬à", MB_OK);
-#else
-			MessageBox(NULL, "Update is completed.\nPlease, restart game.", "Update completed", MB_OK);
-#endif
+			if (g_iCountry == RUSSIA)
+				MessageBoxW(NULL, L"¬±¬Ö¬â¬Ö¬Ù¬Ñ¬á¬å¬ã¬ä¬Ú¬ä¬Ö ¬Ú¬Ô¬â¬å.", L"¬°¬Ò¬ß¬à¬Ó¬Ý¬Ö¬ß¬Ú¬Ö ¬Ù¬Ñ¬Ó¬Ö¬â¬ê¬Ö¬ß¬à", MB_OK);
+			else
+				MessageBox(NULL, "Update is completed.\nPlease, restart game.", "Update completed", MB_OK);
 		}
 		return 1;
 	}

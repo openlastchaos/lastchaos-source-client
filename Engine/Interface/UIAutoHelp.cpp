@@ -56,9 +56,13 @@ bool _SAutoHelpInfo::CheckInfo()
 CUIAutoHelp::CUIAutoHelp()
 {
 	m_ptdBaseTexture = NULL;
-	m_ptdClassification = NULL;
 	m_nUpStat = 0;
 	Clear ();
+
+	if (IsBila(g_iCountry) == FALSE)
+		m_nInterval_time = 15000;
+	else
+		m_nInterval_time = 30000;
 }
 
 // ----------------------------------------------------------------------------
@@ -99,7 +103,6 @@ void CUIAutoHelp::Clear()
 #endif
 
 	STOCK_RELEASE(m_ptdBaseTexture);
-	STOCK_RELEASE(m_ptdClassification);
 }
 
 // ----------------------------------------------------------------------------
@@ -119,15 +122,8 @@ void CUIAutoHelp::Create()
 	// Create refine texture
 	m_ptdBaseTexture = _pTextureStock->Obtain_t ( CTString( "Data\\Interface\\Notice.tex" ) );
 
-#if defined(G_KOR) 
-		m_ptdClassification = _pTextureStock->Obtain_t (CTString ( "Data\\Interface\\Loading\\Classification_15_kor.tex" ) );
-		m_rcClassification.SetRect(0,0,112,131);
-		m_rtClassification.SetUV(7,53,120,184,m_ptdClassification->GetWidth(),m_ptdClassification->GetHeight());
-#endif
-
-
-		FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();
-		FLOAT	fTexHeight	= m_ptdBaseTexture->GetPixHeight();
+	FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();
+	FLOAT	fTexHeight	= m_ptdBaseTexture->GetPixHeight();
 
 	m_rcNotice.SetRect( 0, 119, 0, 138 );
 	m_rcGMNotice.SetRect( 0, 140, 0, 159 );
@@ -229,59 +225,34 @@ void CUIAutoHelp::Create()
 	m_AutoHelpInfo[31].SetInfo ( _S( 498, "지도를 연 상태에서 마을을 클릭하면 마을 상세지도가 나옵니다." ), 
 								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
 
-
-#if defined(G_JAPAN)
-		m_AutoHelpInfo[32].SetInfo ( _S( 3042, "일본 2서버 특징" ), RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[33].SetInfo ( _S( 3043, "일본 3서버 특징" ), RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[34].SetInfo ( _S( 3044, "일본 4서버 특징" ), RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-#endif
-
 	
 // 070820_ttos: 브라질의 경고문구, 레벨 제한 없이 출력 
 
-#if defined(G_BRAZIL)
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S].SetInfo ( _S( 2547,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
-								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+1].SetInfo ( _S( 2548,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
-								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+2].SetInfo ( _S( 2549,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+3].SetInfo ( _S( 2550,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S].SetInfo ( _S( 2551,"방학...의외로 짧답니다...^^;" ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+1].SetInfo ( _S( 2552,"방학...의외로 짧답니다...^^;" ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+2].SetInfo ( _S( 2553,"방학...의외로 짧답니다...^^;" ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+3].SetInfo ( _S( 2554,"방학...의외로 짧답니다...^^;" ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_MAX );
-	
+	int nLocalLevel = RND_HELP_LEVEL_HIGH;
 
-#else
+	if (IsBila(g_iCountry) == TRUE)
+	{
+		nLocalLevel = RND_HELP_LEVEL_MAX;
+	}
 
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S].SetInfo ( _S( 2547,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
-								RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+1].SetInfo ( _S( 2548,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+2].SetInfo ( _S( 2549,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_S+3].SetInfo ( _S( 2550,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
+	m_AutoHelpInfo[AU_NO_TOXICOSIS_S].SetInfo ( _S( 2547,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
+										RND_HELP_LEVEL_LOW, nLocalLevel );
+	m_AutoHelpInfo[AU_NO_TOXICOSIS_S+1].SetInfo ( _S( 2548,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
+										RND_HELP_LEVEL_LOW, nLocalLevel );
+	m_AutoHelpInfo[AU_NO_TOXICOSIS_S+2].SetInfo ( _S( 2549,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
+										RND_HELP_LEVEL_LOW, nLocalLevel );
+	m_AutoHelpInfo[AU_NO_TOXICOSIS_S+3].SetInfo ( _S( 2550,"장시간의 게임은 몸과 마음을 병들게 합니다." ), 
+										RND_HELP_LEVEL_LOW, nLocalLevel );
 		
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S].SetInfo ( _S( 2551,"방학...의외로 짧답니다...^^;" ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+1].SetInfo ( _S( 2552,"방학...의외로 짧답니다...^^;" ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+2].SetInfo ( _S( 2553,"방학...의외로 짧답니다...^^;" ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+3].SetInfo ( _S( 2554,"방학...의외로 짧답니다...^^;" ), 
-									RND_HELP_LEVEL_LOW, RND_HELP_LEVEL_HIGH );
-		
-
-#endif
-	
+	m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S].SetInfo ( _S( 2551,"방학...의외로 짧답니다...^^;" ), 
+										RND_HELP_LEVEL_LOW, nLocalLevel );
+	m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+1].SetInfo ( _S( 2552,"방학...의외로 짧답니다...^^;" ), 
+										RND_HELP_LEVEL_LOW, nLocalLevel );
+	m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+2].SetInfo ( _S( 2553,"방학...의외로 짧답니다...^^;" ), 
+										RND_HELP_LEVEL_LOW, nLocalLevel );
+	m_AutoHelpInfo[AU_NO_TOXICOSIS_VACATION_S+3].SetInfo ( _S( 2554,"방학...의외로 짧답니다...^^;" ), 
+										RND_HELP_LEVEL_LOW, nLocalLevel );
+			
 	
 	m_tmEndTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
 	m_RndHelp			= FALSE;
@@ -301,7 +272,7 @@ void CUIAutoHelp::SetInfo ( DWORD dwAutoHelpInfo )
 
 	TIME NowTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
 
-	if ( NowTime - m_tmEndTime < INTERVAL_TIME ) return;
+	if ( NowTime - m_tmEndTime < m_nInterval_time ) return;
 
 	if( AU_NO_TOXICOSIS_S <= dwAutoHelpInfo && AU_NO_TOXICOSIS_VACATION_E >= dwAutoHelpInfo)
 	{
@@ -444,7 +415,7 @@ void CUIAutoHelp::Render ()
 
 	if ( !m_bVisible )
 	{
-		static int interval = INTERVAL_TIME + RND_HELP_TIME;
+		static int interval = m_nInterval_time + RND_HELP_TIME;
 		static bool bFirst = false;
 		static bool bTemp = false;
 
@@ -472,13 +443,14 @@ void CUIAutoHelp::Render ()
 			}
 		 
 #endif
-#if defined(G_BRAZIL)
+
+		if (IsBila(g_iCountry) == TRUE)
 		{
 			int tv_rnd;
 			tv_rnd = (rand()%(AU_NO_TOXICOSIS_VACATION_E - AU_NO_TOXICOSIS_S + 1) ) + AU_NO_TOXICOSIS_S;
 			SetInfo ( tv_rnd );
 		}
-#endif
+
 		if ( NowTime - m_tmEndTime > interval )
 		{
 			if ( bFirst == false )
@@ -492,15 +464,10 @@ void CUIAutoHelp::Render ()
 			m_RndHelp = TRUE;
 			int rnd;
 			
-#if defined(G_JAPAN)
-			{
-				rnd = ( rand()% (AU_RANDOM_HELP_END - AU_RANDOM_HELP_START ) ) + AU_RANDOM_HELP_START;
-			}
-#else
 			{
 				rnd = ( rand()% (AU_RANDOM_HELP_END - AU_RANDOM_HELP_START - 3 ) ) + AU_RANDOM_HELP_START;
 			}
-#endif
+
 			SetInfo ( rnd ); // 1개 이상 일때 수정해주세요..^^
 			
 			m_tmEndTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
@@ -558,10 +525,6 @@ void CUIAutoHelp::Render ()
 		// 도움말 앞뒤로 표시하는 장식을 국가 별로 다르게 설정 합시다~
 
 		CTString	strDecoration = "";
-
-#if defined(G_KOR)
-			strDecoration = "♣";
-#endif
 		
 		CTString strTemp = strDecoration + " ";
 		strTemp += m_AutoHelpInfo[m_nActiveIndex].m_strMessage + " ";
@@ -851,54 +814,6 @@ void CUIAutoHelp::RenderGMNotice ()
 #endif	// #ifdef	IMPROV1107_NOTICESYSTEM
 
 }
-
-void CUIAutoHelp::ClassificationShowRender()
-{
-	CUIManager* pUIManager = CUIManager::getSingleton();
-	__int64	llCurTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-
-	if( STAGEMGR()->GetCurStage() != eSTAGE_GAMEPLAY ) 
-		return;
-
-	if( (llCurTime - m_tmClassification) > CLASSIFICATION_TIME && !m_bShowClassification )
-	{ // 한 시간에 한번 보여주자.(15세 이용가)
-		m_tmCurTime = llCurTime;
-		m_bShowClassification = TRUE;
-	}
-
-	if( m_bShowClassification == FALSE )
-		return;
-
-	// 보여주자
-	if( llCurTime - m_tmCurTime < 3000 )	// 3초 가량만
-	{
-		CDrawPort* pDrawPort = pUIManager->GetDrawPort();
-
-		pDrawPort->InitTextureData( m_ptdClassification );
-
-		PIX pixdpw = pDrawPort->GetWidth()*0.15;
-		FLOAT fPersent		= 1.0f;
-		fPersent = (FLOAT)pixdpw / m_rcClassification.GetWidth();
-
-		INDEX fWidth = m_rcClassification.GetWidth();//*fPersent;
-		INDEX fHeigth = m_rcClassification.GetHeight();//*fPersent;
-		INDEX fPosX = pDrawPort->GetWidth() - ( fWidth+150 ) ; // 150은 레이더 크기
-		INDEX fPosY = ( fHeigth / 4 );
-
-		pDrawPort->AddTexture( fPosX, fPosY,
-												fPosX + fWidth, fPosY + fHeigth, 
-												m_rtClassification.U0, m_rtClassification.V0, m_rtClassification.U1, m_rtClassification.V1,
-												0xFFFFFFFF );
-
-		pDrawPort->FlushRenderingQueue();
-	}
-	else
-	{ // 3초 이상은 안돼
-		m_tmClassification = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-		m_bShowClassification = FALSE;
-	}
-}
-
 
 void CUIAutoHelp::initialize()
 {

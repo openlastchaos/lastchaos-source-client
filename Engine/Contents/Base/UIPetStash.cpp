@@ -870,7 +870,10 @@ BOOL CUIPetStash::_SetPetStashList(CUIListItem* pListItem, int PetNum)
 		strExp.PrintF( "%d%%", nExp );
 		pProgressBar->OffsetProgressPos( nExp );
 
-		strTooltip.PrintF( _S(62,"경험치 %d"), pPetData->petExp );
+		CTString strTemp;
+		strTemp.PrintF("%I64d", pPetData->petExp);
+		UIMGR()->InsertCommaToString(strTemp);
+		strTooltip.PrintF( _S(62,"경험치 %s"), strTemp );
 		pProgressBar->setTooltip(CTString(strTooltip));
 
 		for( int i = 0; i < PR_STAT_TAG_END; i++ )

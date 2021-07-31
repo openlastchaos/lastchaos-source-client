@@ -13,8 +13,8 @@ public:
 	void RecvDurabilityMsg(CNetworkMessage* istr);
 
 	///=============== SendMessage() =============================================>>
-	void SendRepair(UWORD tab_no, UWORD invenIdx, int virualIdx, LONGLONG fee);
-	void SendRepairSpecial(UWORD tab_item, UWORD invenIdx_item, int virIdx_item, UWORD tab_material, UWORD invenIdx_material, int virIdx_material);
+	void SendRepair(UWORD tab_no, UWORD invenIdx, int virualIdx, LONGLONG fee, int nNpcIndex);
+	void SendRepairSpecial(UWORD tab_item, UWORD invenIdx_item, int virIdx_item, UWORD tab_material, UWORD invenIdx_material, int virIdx_material, int nNpcIndex);
 	void SendRecovery(UWORD tab_item, UWORD invenIdx_item, int virIdx_item, UWORD tab_material, UWORD invenIdx_material, int virIdx_material, UWORD Count_material);
 	///===========================================================================<<
 private:

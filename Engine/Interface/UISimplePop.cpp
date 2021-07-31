@@ -11,6 +11,8 @@
 #include <Engine/Contents/Base/Party.h>
 #include <Engine/Info/MyInfo.h>
 
+extern INDEX g_iCountry;
+
 // 리스트 박스 크기에 맞게 박스를 그릴때 위,아래/ 좌,우 여백 
 #define SPACE_UPDONW	14
 #define SPACE_LEFTRIGT	10
@@ -300,10 +302,11 @@ void CUISimplePop::SetExeListNoTarget( CTString strUserName, bool bParty)
 		AddMenuList(_S(4645, "원정대 강퇴"), 0xc2bac5FF, SPSO_EXPEDITION_KICK);
 	}
 
-#if defined ( G_BRAZIL )
+	if (IsBila(g_iCountry) == TRUE)
+	{
 		// brazil 요청 심플 팝업을 통한 채팅 블럭. [3/9/2011 rumist]
-	AddMenuList( _S(4458, "채팅 차단"), 0xc2bac5FF, SPSO_MUTE_CHARACTER );
-#endif
+		AddMenuList( _S(4458, "채팅 차단"), 0xc2bac5FF, SPSO_MUTE_CHARACTER );
+	}
 	
 	AddMenuList(_S(139,  "취소"), 0xc2bac5FF, SPSO_CANCEL);
 }
@@ -369,10 +372,11 @@ void CUISimplePop::SetExeList(CTString strUserName, BOOL bParty, BOOL bGuild)
 			AddMenuList(tempString, 0xc2bac5FF, SPSO_GUILD_WAR_END);
 		}
 
-#if defined ( G_BRAZIL )
-		// brazil 요청 심플 팝업을 통한 채팅 블럭. [3/9/2011 rumist]
-		AddMenuList( _S(4458, "채팅 차단"), 0xc2bac5FF, SPSO_MUTE_CHARACTER );
-#endif
+		if (IsBila(g_iCountry) == TRUE)
+		{
+			// brazil 요청 심플 팝업을 통한 채팅 블럭. [3/9/2011 rumist]
+			AddMenuList( _S(4458, "채팅 차단"), 0xc2bac5FF, SPSO_MUTE_CHARACTER );
+		}
 	}
 
 	if(pUIManager->IsCSFlagOn(CSF_EXPEDITION))
@@ -414,9 +418,12 @@ void CUISimplePop::SetSubExeList(INDEX iCommandNum )
 		case SPSO_PARTY:
 		{
 			m_tpList.AddMenuList(_S(3354, "일반"), 0xc2bac5FF, SPST_PARTY_JOIN_A);
-#ifndef DISABLE_PARTY_TYPE_BATTLE	// [2010/07/12 : Sora] 전투형 파티 제거
-			m_tpList.AddMenuList(_S(2665, "전투 형"), 0xc2bac5FF, SPST_PARTY_JOIN_C);
-#endif
+//#ifndef DISABLE_PARTY_TYPE_BATTLE	// [2010/07/12 : Sora] 전투형 파티 제거
+			extern INDEX g_iCountry;
+
+			if (IsGamigo(g_iCountry) == FALSE)
+				m_tpList.AddMenuList(_S(2665, "전투 형"), 0xc2bac5FF, SPST_PARTY_JOIN_C);
+//#endif
 		}
 			break;
 

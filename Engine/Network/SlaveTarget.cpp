@@ -6,7 +6,7 @@
 #include <Engine/Network/CNetwork.h>
 #include <Engine/Effect/CEffectGroupManager.h>
 #include <Engine/Interface/UIManager.h>
-#include <Engine/Interface/UISummon.h>
+#include <Engine/Contents/function/SummonUI.h>
 #include <Engine/SlaveInfo.h>
 #include <Engine/Info/MyInfo.h>
 
@@ -62,10 +62,10 @@ CSlaveTarget::~CSlaveTarget(void)
 	{
 		for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 		{
-			CUISummon* pUISummon = (CUISummon*)pUIMgr->GetUI(i);
-			if (pUISummon->GetSummonEntity() && pUISummon->GetSummonIndex() == m_nIdxServer)
+			CSummonUI* pSummonUI = (CSummonUI*)pUIMgr->GetUI(i);
+			if (pSummonUI->GetSummonEntity() && pSummonUI->GetSummonIndex() == m_nIdxServer)
 			{
-				pUISummon->WarpOfResetSummon();							
+				pSummonUI->WarpOfResetSummon();							
 			}
 		}
 	}

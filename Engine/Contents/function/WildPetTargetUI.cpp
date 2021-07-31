@@ -283,6 +283,8 @@ void CWildPetTargetUI::updateExtend()
 
 void CWildPetTargetUI::initialize()
 {
+#ifndef		WORLD_EDITOR
+
 	// title 이동 영역 잡아주기
 	m_pMoveArea = (CUIImage*)findUI("move_area");
 
@@ -306,8 +308,8 @@ void CWildPetTargetUI::initialize()
 	if (m_pIsExtendBack != NULL)
 		m_pIsExtendBack->setInherit(false);
 
-	string strImgArrID[eIMG_ARR_MAX] = { "ia_hungry", "ia_faith" };
-	string strArrTextID[eIMG_ARR_MAX] = { "str_hungry", "str_faith" };
+	std::string strImgArrID[eIMG_ARR_MAX] = { "ia_hungry", "ia_faith" };
+	std::string strArrTextID[eIMG_ARR_MAX] = { "str_hungry", "str_faith" };
 
 	for (i = 0; i < eIMG_ARR_MAX; ++i)
 	{
@@ -323,7 +325,7 @@ void CWildPetTargetUI::initialize()
 	if (m_pIsBaseBack != NULL)
 		m_pIsBaseBack->setInherit(false);
 
-	string strBtnID[eBTN_MAX] = { "btn_extend_up", "btn_extend_down", "btn_openInfo" };
+	std::string strBtnID[eBTN_MAX] = { "btn_extend_up", "btn_extend_down", "btn_openInfo" };
 
 	for (i = 0; i < eBTN_MAX; ++i)
 		m_pBtn[i] = (CUIButton*)findUI(strBtnID[i].c_str());
@@ -337,15 +339,17 @@ void CWildPetTargetUI::initialize()
 	if (m_pBtn[eBTN_OPENINFO] != NULL)
 		m_pBtn[eBTN_OPENINFO]->SetCommandFUp(boost::bind(&CWildPetTargetUI::ToggleWildPetInfo, this));
 
-	string strBaseTextID[eTEXT_MAX] = { "str_level", "str_name", "str_hp", "str_mp", "str_exp" };
+	std::string strBaseTextID[eTEXT_MAX] = { "str_level", "str_name", "str_hp", "str_mp", "str_exp" };
 
 	for (i = 0; i < eTEXT_MAX; ++i)
 		m_pTextBase[i] = (CUIText*)findUI(strBaseTextID[i].c_str());
 
-	string strProgressID[ePROGRESS_MAX] = { "pb_hp", "pb_mp", "pb_exp" };
+	std::string strProgressID[ePROGRESS_MAX] = { "pb_hp", "pb_mp", "pb_exp" };
 
 	for (i = 0; i < ePROGRESS_MAX; ++i)
 		m_pbBarBase[i] = (CUIProgressBar*)findUI(strProgressID[i].c_str());
+
+#endif		// WORLD_EDITOR
 }
 
 void CWildPetTargetUI::_setUI()
@@ -619,9 +623,17 @@ void CWildPetTargetUI::_updateAccExpPetTooltip()
 	else	
 	{
 		FLOAT temresult = (float)pPetdata->accexpData[0].nMaxAccParam1 + (float)(MY_APET_INFO()->m_nLevel * pPetdata->accexpData[0].nMaxAccParam2) / 100.0f;
-		SQUAD lAccuresult = _pNetwork->MyCharacterInfo.needExp * (int)(temresult * 100) / 10000;						
+		SQUAD lAccuresult = _pNetwork->MyCharacterInfo.needExp * (int)(temresult * 100) / 10000;
 
-		strTemp.PrintF("%I64d / %I64d", temPetitem.pet_accexp, lAccuresult);
+		CTString strAccExp, strAccResult;
+		strAccExp.PrintF("%I64d", temPetitem.pet_accexp);
+		strAccResult.PrintF("%I64d", lAccuresult);
+
+		CUIManager* pUIMgr = UIMGR();
+		pUIMgr->InsertCommaToString(strAccExp);
+		pUIMgr->InsertCommaToString(strAccResult);
+
+		strTemp.PrintF("%s / %s", strAccExp, strAccResult);
 	}
 
 	if (m_pTextExpPetUseExp != NULL)

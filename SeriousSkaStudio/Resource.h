@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by SeriousSkaStudio.rc
 //
 #define IDC_TB_COLHEIGHT                2
@@ -594,6 +594,7 @@
 #define ID_CONVERT_THUMBNAIL            32922
 #define ID_CREATEITEMDATA               32923
 #define ID_RIDESETTING                  32924
+#define ID_CONVERT_EXPORTFBX            32926
 #define ID_STATUS_BAR_TEXT              61216
 #define ID_VIEW_DLG_PREFS               61217
 
@@ -603,7 +604,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        206
-#define _APS_NEXT_COMMAND_VALUE         32925
+#define _APS_NEXT_COMMAND_VALUE         32927
 #define _APS_NEXT_CONTROL_VALUE         1345
 #define _APS_NEXT_SYMED_VALUE           104
 #endif

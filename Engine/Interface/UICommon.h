@@ -5,6 +5,7 @@
 #include <Engine/Templates/StaticStackArray.h>
 #include <Engine/Graphics/DrawPort.h>
 #include <Engine/Base/Timer.h>
+#include "UIDefine.h"
 
 // Rectangle region of UI
 typedef struct _UIRect
@@ -364,9 +365,15 @@ enum TEXT_ALIGN
 // Define position of button text
 #define	BTN_TEXT_OFFSETY		5
 
+class CUIBase;
+
 #ifndef		WORLD_EDITOR
 
-typedef boost::function< void() >	_ui_func;
+typedef boost::function< void(CUIBase* pUI) >	_ui_func;
+
+#else 
+
+typedef	void(*_ui_func)(CUIBase* pUI);
 
 #endif		// WORLD_EDITOR
 

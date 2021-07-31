@@ -30,17 +30,16 @@ class CUIMapOption : public CUIWindow
 public:
 
 	CUIMapOption();
-	~CUIMapOption();
 
-	void Hide( BOOL bHide );
+	void initialize();
+
 	bool IsCheck(eNPC_TYPE eType);
 	UIRectUV	GetUV(eNPC_TYPE eType);
 	BOOL		IsFlag(int nType, int npcIndex);
 
-private:
-	void Init();
+	void OnLeave(UINT16 x, UINT16 y);
 
-	bool m_bInit;
+private:
 	CUICheckButton* m_pCheckBtn[eNT_MAX];
 	CUIImage*		m_pImgIcon[eNT_MAX];
 

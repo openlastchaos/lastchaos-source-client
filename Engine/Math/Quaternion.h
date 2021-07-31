@@ -23,6 +23,8 @@ public:
 	// conversion from euler angles
 	void FromEuler(const Vector<Type, 3> &a);
 
+	void ToEuler(Vector<Type, 3> &a);
+
 	// conversion to matrix
 	void ToMatrix(Matrix<Type, 3, 3> &m) const;
 	// conversion from matrix
@@ -287,6 +289,41 @@ void Quaternion<Type>::FromEuler(const Vector<Type, 3> &a)
 	qB.q_z = Sin(a(3)/2);
 
 	(*this) = qH*qP*qB;
+}
+
+template<class Type>
+void Quaternion<Type>::ToEuler(Vector<Type, 3>& v)
+{
+	const static Type PI_OVER_2 = PI * 0.5;
+	const static Type EPSILON = 1e-10;
+	Type sqw, sqx, sqy, sqz;
+	Type twice = 2.0;
+
+	// quick conversion to Euler angles to give tilt to user
+	sqw = q_w * q_w;
+	sqx = q_x * q_x;
+	sqy = q_y * q_y;
+	sqz = q_z * q_z;
+
+	v(2) = asin(2.0 * (q_w * q_y - q_x * q_z));
+	if (PI_OVER_2 - fabs(v(2)) > EPSILON) 
+	{
+		v(3) = atan2(twice * (q_x * q_y + q_w * q_z),
+			sqx - sqy - sqz + sqw);
+		v(1) = atan2(twice * (q_w * q_x + q_y * q_z),
+			sqw - sqx - sqy + sqz);
+	} 
+	else 
+	{
+		// compute heading from local 'down' vector
+		v(3) = atan2(twice * q_y * q_z - 2 * q_x * q_w,
+			twice * q_x * q_z + 2 * q_y * q_w);
+		v(1) = 0.0;
+
+		// If facing down, reverse yaw
+		if (v(2) < 0)
+			v(3) = PI - v(3);
+	}
 }
 
 // conversion to matrix

@@ -11,6 +11,7 @@
 // Desc : Constructor
 // ----------------------------------------------------------------------------
 CUISlideBar::CUISlideBar()
+	: m_func_change(NULL)
 {
 	m_bSlideBarClick = FALSE;
 	m_nCurPos = 0;
@@ -76,7 +77,15 @@ void CUISlideBar::AdjustSlidePos( int nX )
 	int		nSX = nAbsX + ( m_rcBar.GetWidth() - fCellWidth ) / 2;
 	int		nCurPos = ( nX - nSX ) / fCellWidth;
 
-	SetCurPos( nCurPos );
+	int nOldPos = m_nCurPos;
+
+	SetCurPos(nCurPos);
+
+	if (m_nCurPos != nOldPos)
+	{
+		if (m_func_change)
+			m_func_change(this);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -310,4 +319,76 @@ UIRectUV CUISlideBar::getBarUV()
 	}
 
 	return uv; 
+}
+
+WMSG_RESULT CUISlideBar::OnLButtonDown( UINT16 x, UINT16 y )
+{
+	WMSG_RESULT ret = CUIBase::OnLButtonDown(x, y);
+
+	if (ret != WMSG_OB)
+	{
+		if (IsInsideRect(x, y, m_rcBar))
+		{
+			m_bSlideBarClick = TRUE;
+			return WMSG_SUCCESS;
+		}
+		else
+		{
+			AdjustSlidePos(x);
+			return WMSG_COMMAND;
+		}
+	}
+
+	return ret;
+}
+
+WMSG_RESULT CUISlideBar::OnLButtonUp( UINT16 x, UINT16 y )
+{
+	WMSG_RESULT ret = CUIBase::OnLButtonUp(x, y);
+
+	if (ret != WMSG_OB)
+	{
+		if (m_bSlideBarClick == TRUE)
+		{			
+			ret = WMSG_SUCCESS;
+		}
+
+		m_bSlideBarClick = FALSE;
+	}
+
+	return ret;
+}
+
+WMSG_RESULT CUISlideBar::OnMouseMove( UINT16 x, UINT16 y, MSG* pMsg )
+{
+	WMSG_RESULT ret = CUIBase::OnMouseMove(x, y, pMsg);
+
+	if (ret != WMSG_OB)
+	{
+	    if (m_bSlideBarClick && (pMsg->wParam & MK_LBUTTON))
+	    {
+	        AdjustSlidePos(x);
+
+	        return WMSG_COMMAND;
+	    }
+
+	    if (IsInsideRect(x, y, m_rcSlide))
+	        return WMSG_SUCCESS;
+	}
+
+	return ret;
+}
+
+void CUISlideBar::OnLeave( UINT16 x, UINT16 y )
+{
+	CUIBase::OnLeave(x, y);
+
+	m_bSlideBarClick = FALSE;
+}
+
+void CUISlideBar::CmdErase()
+{
+	m_func_change = NULL;
+
+	CUIBase::CmdErase();
 }

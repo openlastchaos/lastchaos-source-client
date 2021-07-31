@@ -43,7 +43,7 @@ extern CStaticStackArray<UWORD>			_auwText[FONT_MAX];
 
 // Button element arrays
 // item button image count. [3/15/2012 rumist]
-#define	MAX_BTN		20
+#define	MAX_BTN		21
 // NOTICE. 18 번 은 보석으로만 하기로 협의, size 1024 x 1024
 extern CStaticStackArray<GFXVertex>		_avtxBtn[MAX_BTN];
 extern CStaticStackArray<GFXColor>		_acolBtn[MAX_BTN];

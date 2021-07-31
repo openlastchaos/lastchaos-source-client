@@ -10,6 +10,8 @@
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Contents/Base/Party.h>
 
+extern INDEX	g_iCountry;
+
 #define MISSION_SLOT_MAX 5
 
 static int	_nMsgBoxLineHeight = 0;
@@ -235,7 +237,8 @@ void CUIMonsterCombo::Render()
 		CloseMonsterCombo();
 	}
 
-	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	CUIManager* pUIMgr = CUIManager::getSingleton();
+	CDrawPort* pDrawPort = pUIMgr->GetDrawPort();
 
 	// Set shop texture
 	 pDrawPort->InitTextureData( m_ptdBaseTexture );
@@ -283,7 +286,7 @@ void CUIMonsterCombo::Render()
 			m_bxContentsBox.SetBoxPos(WRect(315, 32, 575, 292));
 			m_bxContentsBox.Render(nX,nY);
 			// [2010/10/13 : Sora] 좌표값 수정 m_lbComboHelp의 parent가 GetHelp3여서 parent의 좌표를 빼주고 이동시켜야 함
-			m_plbComboHelp->SetPos( 315+nX, -(CUIManager::getSingleton()->GetHelp3()->GetAbsPosY()) + ( nY + 36 ) );
+			m_plbComboHelp->SetPos( 315+nX, -(pUIMgr->GetHelp3()->GetAbsPosY()) + ( nY + 36 ) );
 			m_plbComboHelp->SetScrollBar(FALSE);
 			m_plbComboHelp->Render();
 		}
@@ -336,15 +339,22 @@ void CUIMonsterCombo::Render()
 		// Render all button elements
 	pDrawPort->FlushBtnRenderingQueue( UBET_COMBO );
 
-	CTString strTemp;		
+	CTString strTemp, strPoint, strCount;
 	
 	strTemp.PrintF( _S(4047, "몬스터 콤보") );
 	pDrawPort->PutTextExCX(strTemp, nX+300, nY+5);
-	strTemp.PrintF( _S(4138, "몬스터 콤보 점수: %d Point 미션 개수: %d 개"), m_nComboPoint,m_nComboCount);
+
+	strPoint = pUIMgr->IntegerToCommaString(m_nComboPoint);
+	strCount = pUIMgr->IntegerToCommaString(m_nComboCount);
+	strTemp.PrintF( _S(4138, "몬스터 콤보 점수: %s Point 미션 개수: %s 개"), strPoint,strCount);
 	pDrawPort->PutTextEx(strTemp, nX+15, nY+310);
-	strTemp.PrintF( _S(4139, "보유 금액: %I64d Nas"), _pNetwork->MyCharacterInfo.money);
+
+	strCount = pUIMgr->IntegerToCommaString(_pNetwork->MyCharacterInfo.money);
+	strTemp.PrintF( _S(4139, "보유 금액: %s Nas"), strCount);
 	pDrawPort->PutTextEx(strTemp, nX+320, nY+310);
-	strTemp.PrintF( _S(4140, "입장료: %I64d Nas"), m_nAdmissionPay);
+
+	strCount = pUIMgr->IntegerToCommaString(m_nAdmissionPay);
+	strTemp.PrintF( _S(4140, "입장료: %s Nas"), strCount);
 	pDrawPort->PutTextEx(strTemp, nX+320, nY+345);
 
 	// Flush all render text queue
@@ -354,7 +364,8 @@ void CUIMonsterCombo::Render()
 
 void CUIMonsterCombo::MissionCaseRender(int iX, int iY)
 {
-	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	CUIManager* pUIMgr = UIMGR();
+	CDrawPort* pDrawPort = pUIMgr->GetDrawPort();
 
 	for(int i = 0; i < MISSION_SLOT_MAX; i++)
 	{
@@ -363,14 +374,20 @@ void CUIMonsterCombo::MissionCaseRender(int iX, int iY)
 		if (MC->getindex() < 0)
 			continue;
 
-		CTString strTemp;
+		CTString strTemp, strNas, strPoint;
+
+		strNas.PrintF("%d", MC->nas);
+		strPoint.PrintF("%d", MC->point);
+
+		pUIMgr->InsertCommaToString(strNas);
+		pUIMgr->InsertCommaToString(strPoint);
 		
-#if defined G_RUSSIA
+		if (g_iCountry == RUSSIA)
 		{
 			strTemp.PrintF("%s",MC->GetName()); 								
 			pDrawPort->PutTextEx(strTemp, iX+370, iY+37+(52*i));
 			
-			strTemp.PrintF( _S(4141, "패널티: %s %d Nas %d Point"), MC->bSkill ? _S( 192, "Yes"):_S( 193, "No"), MC->nas, MC->point);
+			strTemp.PrintF( _S(4141, "패널티: %s %s Nas %s Point"), MC->bSkill ? _S( 192, "Yes"):_S( 193, "No"), strNas, strPoint);
 			
 			INDEX nindex = strTemp.FindSubstr("., ");
 			if(nindex != -1)
@@ -380,18 +397,18 @@ void CUIMonsterCombo::MissionCaseRender(int iX, int iY)
 
 			pDrawPort->PutTextEx(strTemp, iX+370, iY+51+(52*i));
 		}
-#else	// G_RUSSIA
+		else
 		{
 			strTemp.PrintF("%s",MC->GetName()); 								
 			pDrawPort->PutTextEx(strTemp, iX+370, iY+40+(52*i));
-#	if defined(G_KOR) || defined(G_THAI) || defined(G_GERMAN) || defined(G_USA)
-			strTemp.PrintF( _S(4141, "%d Nas %d Point"), MC->nas, MC->point);
-#	else
-			strTemp.PrintF( _S(4141, "패널티: %s %d Nas %d Point"), MC->bSkill ? _S( 192, "Yes"):_S( 193, "No"), MC->nas, MC->point);
-#	endif 
+
+			if (IsBila(g_iCountry) == TRUE)
+				strTemp.PrintF( _S(4141, "패널티: %s %s Nas %s Point"), MC->bSkill ? _S( 192, "Yes"):_S( 193, "No"), strNas, strPoint);
+			else
+				strTemp.PrintF( _S(4141, "%s Nas %s Point"), strNas, strPoint);
+
 			pDrawPort->PutTextEx(strTemp, iX+370, iY+60+(52*i));
 		}
-#endif	// G_RUSSIA
 	
 		if (m_pIconsSetCase[i]->IsEmpty() == false)
 			m_pIconsSetCase[i]->Render(pDrawPort);
@@ -403,7 +420,8 @@ void CUIMonsterCombo::MissionCaseRender(int iX, int iY)
 
 void CUIMonsterCombo::RenderComboList(int nCurScrollNum,int nX, int nY)
 {
-	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
+	CUIManager* pUIMgr = UIMGR();
+	CDrawPort* pDrawPort = pUIMgr->GetDrawPort();
 
 	CMissionCase::_map::iterator	iter = CMissionCase::_mapdata.begin();
 	CMissionCase::_map::iterator	eiter = CMissionCase::_mapdata.end();
@@ -417,14 +435,20 @@ void CUIMonsterCombo::RenderComboList(int nCurScrollNum,int nX, int nY)
 
 		if(m_nCombo[nCurScrollNum] == MC->index)
 		{
-			CTString strTemp;
+			CTString strTemp, strNas, strPoint;
 
-#if defined G_RUSSIA
+			strNas.PrintF("%d", MC->nas);
+			strPoint.PrintF("%d", MC->point);
+
+			pUIMgr->InsertCommaToString(strNas);
+			pUIMgr->InsertCommaToString(strPoint);
+
+			if (g_iCountry == RUSSIA)
 			{
 				strTemp.PrintF("%s",MC->GetName()); 								
 				pDrawPort->PutTextEx(strTemp, nX+5, nY+5);
 				
-				strTemp.PrintF( _S(4141, "패널티: %s %d Nas %d Point"), MC->bSkill ? _S( 192, "Yes"):_S( 193, "No"), MC->nas, MC->point);
+				strTemp.PrintF( _S(4141, "패널티: %s %s Nas %s Point"), MC->bSkill ? _S( 192, "Yes"):_S( 193, "No"), strNas, strPoint);
 				
 				INDEX nindex = strTemp.FindSubstr("., ");
 				if(nindex != -1)
@@ -434,19 +458,18 @@ void CUIMonsterCombo::RenderComboList(int nCurScrollNum,int nX, int nY)
 
 				pDrawPort->PutTextEx(strTemp, nX+5, nY+19);
 			}
-#else	// G_RUSSIA
+			else
 			{
 				strTemp.PrintF("%s",MC->GetName()); 								
 				pDrawPort->PutTextEx(strTemp, nX+5, nY+8);
+
+				if (IsBila(g_iCountry) == TRUE)
+					strTemp.PrintF( _S(4141, "패널티: %s %s Nas %s Point"), MC->bSkill ? _S( 192, "Yes"):_S( 193, "No"), strNas, strPoint);
+				else
+					strTemp.PrintF( _S(4141, "%s Nas %s Point"), strNas, strPoint);
 		
-#	if defined(G_KOR) || defined(G_THAI) || defined(G_GERMAN) || defined(G_USA)
-				strTemp.PrintF( _S(4141, "%d Nas %d Point"), MC->nas, MC->point);
-#	else
-				strTemp.PrintF( _S(4141, "패널티: %s %d Nas %d Point"), MC->bSkill ? _S( 192, "Yes"):_S( 193, "No"), MC->nas, MC->point);
-#	endif 
 				pDrawPort->PutTextEx(strTemp, nX+5, nY+28);
 			}
-#endif	// G_RUSSIA
 
 			m_pIconsSetCombo[nCurScrollNum]->SetPos(12, 34+(52*(nCurScrollNum-m_nCurComboNum)));
 			m_pIconsSetCombo[nCurScrollNum]->Render(pDrawPort);

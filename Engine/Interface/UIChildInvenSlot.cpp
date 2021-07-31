@@ -6,11 +6,11 @@
 #include "UIChildInvenSlot.h"
 #include <Engine/Contents/Base/InvenData.h>
 #include <Engine/Interface/UIReformSystem.h>
-#include <Engine/Interface/UICollectBox.h>
-#include <Engine/Interface/UIWareHouse.h>
+#include <Engine/Contents/function/InsectCollectUI.h>
+#include <Engine/Contents/function/WareHouseUI.h>
 #include <Engine/Interface/UIMix.h>
-#include <Engine/Interface/UICompound.h>
-#include <Engine/Interface/UIGWMix.h>
+#include <Engine/Contents/function/CompoundUI.h>
+#include <Engine/Contents/function/GuildWarMixUI.h>
 
 
 //#include <Engine/GameState.h>
@@ -405,9 +405,10 @@ WMSG_RESULT	CUIChildInvenSlot::MouseMessage( MSG *pMsg )
 						{
 							bLButtonDownInItem = TRUE;
 
-							if( pUIManager->GetCollectBox()->IsVisible() )
+							if( pUIManager->GetInsectCollect()->GetHide() == FALSE )
 							{// 곤충 채집 상자는 무조건 닫는다.
-								pUIManager->RearrangeOrder( UI_COLLECTBOX, FALSE );
+								pUIManager->RearrangeOrder( UI_INSECTCOLLECT, FALSE );
+								pUIManager->GetInsectCollect()->Hide(TRUE);
 							}
 
 							pUIManager->RearrangeOrder( m_nRearrangeOrderID, TRUE );
@@ -595,12 +596,12 @@ WMSG_RESULT	CUIChildInvenSlot::MouseMessage( MSG *pMsg )
 						
 					}
 					else if( pDrag->getBtnType() == UBET_ITEM &&
-						pDrag->GetWhichUI() == UI_WAREHOUSE )
+						pDrag->GetWhichUI() == UI_WARE_HOUSE )
 					{
 						// Slot items
 						if (IsInsideRect(nX, nY, m_rcItemSlot))
 						{
-							pUIManager->GetWareHouse()->DelWareHouseItemToInventory();							
+							pUIManager->GetWareHouseUI()->DelWareHouseItemToInventory();							
 						} // If - Slot items
 					}
 					else if( pDrag->getBtnType() == UBET_ITEM &&

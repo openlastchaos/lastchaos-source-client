@@ -9,9 +9,8 @@
 
 #define SCROLL_WIDTH 15
 
-#if		defined(G_RUSSIA)
-	extern CFontData *_pfdDefaultFont;
-#endif
+extern CFontData *_pfdDefaultFont;
+extern INDEX	g_iCountry;
 
 class CmdOnChangeTextBoxScroll : public Command
 {
@@ -330,9 +329,8 @@ void CUITextBox::CheckSplit( int& nCurCnt, int& nSplitCnt,	int& nEnterCnt)
 
 	bool bDBSC = false;
 
-#if defined(G_KOR) || defined(G_THAI)
-	bDBSC = true;
-#endif
+	if (g_iCountry == KOREA || g_iCountry == THAILAND)
+		bDBSC = true;
 	
 	pos = m_Str.find("\\n", nCurCnt);
 
@@ -387,12 +385,13 @@ void CUITextBox::SplitNone(int nTextCnt )
 		int nEnter = 0;
 		tmpCnt = nTextCnt;
 
-#if		defined(G_RUSSIA)
-		std::string strNofixed;
+		if (g_iCountry == RUSSIA)
+		{
+			std::string strNofixed;
 
-		strNofixed = m_Str.substr(nCurText, (len - nCurText));
-		tmpCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, (char*)strNofixed.c_str(), m_nBoxWidth);
-#endif	// G_RUSSIA
+			strNofixed = m_Str.substr(nCurText, (len - nCurText));
+			tmpCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, (char*)strNofixed.c_str(), m_nBoxWidth);
+		}
 		
 		CheckSplit(nCurText, tmpCnt, nEnter);
 
@@ -420,12 +419,13 @@ void CUITextBox::SplitSpace( int nTextCnt )
 		int nEnter = 0;
 		tmpCnt = nTextCnt;
 
-#if		defined(G_RUSSIA)
-		std::string strNofixed;
+		if (g_iCountry == RUSSIA)
+		{
+			std::string strNofixed;
 
-		strNofixed = m_Str.substr(nCurText, (len - nCurText));
-		tmpCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, (char*)strNofixed.c_str(), m_nBoxWidth);
-#endif	// G_RUSSIA
+			strNofixed = m_Str.substr(nCurText, (len - nCurText));
+			tmpCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, (char*)strNofixed.c_str(), m_nBoxWidth);
+		}
 
 		CheckSplit(nCurText, tmpCnt, nEnter);
 
@@ -467,12 +467,13 @@ void CUITextBox::SplitHyphen( int nTextCnt )
 		bool bHyphen = false;
 		tmpCnt = nTextCnt;
 
-#if		defined(G_RUSSIA)
-		std::string strNofixed;
+		if (g_iCountry == RUSSIA)
+		{
+			std::string strNofixed;
 
-		strNofixed = m_Str.substr(nCurText, (len - nCurText));
-		tmpCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, (char*)strNofixed.c_str(), m_nBoxWidth);
-#endif	// G_RUSSIA
+			strNofixed = m_Str.substr(nCurText, (len - nCurText));
+			tmpCnt = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, (char*)strNofixed.c_str(), m_nBoxWidth);
+		}
 
 		CheckSplit(nCurText, tmpCnt, nEnter);
 

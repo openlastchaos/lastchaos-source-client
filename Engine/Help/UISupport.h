@@ -12,6 +12,7 @@ enum eIMG_TYPE
 	eIMG_TYPE_SELECT,
 	eIMG_TYPE_NEW,
 	eIMG_TYPE_RESTRITION, // 사용 제한 체크
+	eIMG_TYPE_HOLD, // 이동 불가한 아이템
 
 	eIMG_TYPE_MAX
 };

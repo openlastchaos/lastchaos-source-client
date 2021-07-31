@@ -6,7 +6,7 @@
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Contents/function/PremiumChar.h>
 #include <Engine/Contents/function/PremiumCharDesign.h>
-#include <Engine/Interface/UIPetFree.h>
+#include <Engine/Contents/function/PetFreeUI.h>
 #include <Engine/Interface/UIMessenger.h>
 #include <Engine/Help/Util_Help.h>
 
@@ -172,6 +172,12 @@ void CPremiumCharUI::updatePassive()
 
 			// 외형 변경 무제한
 			plistItem = getPassiveItem(ePASSIVE_CHANGE_FACE_PREE_USE);
+
+			if (plistItem != NULL)
+				m_pList[eLIST_PASSIVE]->AddListItem(plistItem);
+
+			// 내구도 수리 원격 사용
+			plistItem = getPassiveItem(ePASSIVE_DURABILITY_REMOTE_USE);
 
 			if (plistItem != NULL)
 				m_pList[eLIST_PASSIVE]->AddListItem(plistItem);
@@ -475,13 +481,13 @@ void CPremiumCharUI::PetRemoteRevival()
 
 		CUIMsgBox_Info	MsgBoxInfo;
 		MsgBoxInfo.SetMsgBoxInfo( _S(2188, "애완동물" ), UMBS_OK,
-			UI_PETTRAINING, MSGCMD_PETTRAINING_NOTIFY );
+			UI_PET_TRAINING, MSGCMD_PETTRAINING_NOTIFY );
 		MsgBoxInfo.AddString( _S(4765,"착용을 해제하여야 부활이 가능합니다.") );
 		pUIManager->CreateMessageBox( MsgBoxInfo );
 		return;
 	}
 
-	pUIManager->GetPetFree()->OpenPetFree(0.0f, 0.0f, -1);
+	pUIManager->GetPetFree()->openUI(0.0f, 0.0f, -1);
 }
 
 void CPremiumCharUI::OpenMessenger()
@@ -538,6 +544,9 @@ CTString CPremiumCharUI::getPassiveItemString( ePASSIVE_TYPE eItem )
 		break;
 	case ePASSIVE_CHANGE_FACE_PREE_USE:
 		strTemp.PrintF(_S( 6334, "외형 변경권 없이 외형 변경이 가능합니다." ));
+		break;
+	case ePASSIVE_DURABILITY_REMOTE_USE:
+		strTemp.PrintF(_S( 7108, "내구도가 닳아도 어디에서나 내구도를 수리 할 수 있습니다." ));
 		break;
 	}
 

@@ -21,7 +21,7 @@ enum UI_TYPE
 	UI_SUMMON_START,
 	UI_SUMMON_FIRST	= UI_SUMMON_START,
 	UI_SUMMON_SECOND,
-	UI_SUMMON_END	= UI_SUMMON_SECOND,	
+	UI_SUMMON_END	= UI_SUMMON_SECOND,
 	UI_RADAR,
 	UI_NOTICE,
 	UI_TARGETINFO,	
@@ -45,8 +45,9 @@ enum UI_TYPE
 	UI_EXCHANGE,
 	UI_PORTAL,
 	UI_SHOP,
+	UI_SHOP_UI,
 	UI_PERSONALSHOP,
-	UI_WAREHOUSE,
+	UI_WARE_HOUSE,
 	UI_SECURITY,
 	UI_SYSTEMMENU,
 	UI_PARTY,
@@ -63,6 +64,7 @@ enum UI_TYPE
 //	UI_BILLING,			// 대만 유료화(정액) Date : 2005-04-30(오후 3:55:19), By Lee Ki-hwan
 //	UI_BILL_ITEM,		// 대만 유료화 아이템 지급 시스템
 	UI_MAP,
+	UI_MAP_OPTION,
 	UI_OPTION,
 	UI_REFINE,
 	UI_PROCESS,
@@ -78,16 +80,16 @@ enum UI_TYPE
 	UI_QUEST_RESTORE,
 	UI_QUEST_VIEW,
 	UI_SKILLLEARN,
+	UI_SSKILLLEARN,
 	UI_CHANGEWEAPON,
 	UI_CHANGE_EQUIPMENT,
 	UI_HELPER,
 	UI_INITJOB,
 	UI_TELEPORT,
-	UI_TELEPORT_PRIMIUM,	// [KH_070315] 프리미엄 메모리스크롤 관련 추가
 	UI_MESSENGER,
 	UI_WEBBOARD,
 //	UI_QUIZ,
-	UI_PETTRAINING,
+	UI_PET_TRAINING,
 	UI_PETINFO,
 	UI_RANKING,	
 	UI_GAMBLE,
@@ -96,9 +98,10 @@ enum UI_TYPE
 //	UI_CASH_SHOP,			//wooss 050820 
 	UI_GW_MIX, // 공성 아이템 조합 
 	UI_GUILDSTASH,	// 길드 나스 보관함 
+	UI_GUILDTAXHISTORY,
 	UI_SELECTWORD,
 	UI_SELECTLIST,	// 친구찾기이벤트 060126
-	UI_PETITEMMIX,	// 펫 아이템 조합( 유니크 아이템 제작 )
+	UI_PET_ITEM_MIX,	// 펫 아이템 조합( 유니크 아이템 제작 )
 	UI_PETFREE,			// 펫 봉인 해제
 	UI_QUIZEVENT,		// O.X QUIZ EVENT
 	UI_PARTYAUTO,
@@ -106,7 +109,7 @@ enum UI_TYPE
 	UI_PARTYAUTO_REG_PB,// 파티보스 등록창
 	UI_PARTYAUTO_INVITE_LIST,	// 초대가능 리스트
 	UI_PARTYAUTO_PARTY_LIST,
-	UI_COLLECTBOX,		// 곤충 채집 박스 
+	UI_INSECTCOLLECT,		// 곤충 채집 박스 
 	UI_BINGOBOX,		// 러브러브 이벤트 초코렛 채집 박스
 	UI_NPCHELP,			// NPC 안내 시스템
 	UI_SIMPLE_POP,		// [KH_070419] 심플 팝업 관련 추가
@@ -129,6 +132,11 @@ enum UI_TYPE
 	UI_NICKNAME,		//[12/9/2009 kiny] 호칭 
 	//	UI_TITLESYSTEM,		// Title System UI [11/20/2009 rumist]
 	UI_SOCKETSYSTEM,	// Socket System UI [5/11/2010 rumist]
+	UI_SOCKET_CREATE,
+	UI_SOCKET_REMOVE_ALL, // SocketRemoveAll UI
+	UI_SOCKET_REMOVE_SINGLE,
+	UI_SOCKET_COMBINE,
+	UI_JEWEL_COMPOS,
 	UI_CUBERANK,
 	UI_LACABALL,
 	UI_CASHSHOP_EX,
@@ -136,9 +144,9 @@ enum UI_TYPE
 	UI_MONSTER_MERCENARY,	// [2010/10/20 : Sora] 몬스터 용병 카드
 	UI_SIEGE_WARFARE_INFO,	// [2010/11/01 : Sora] 공성 개편
 
-	UI_TREASUREMAP,
+	UI_TREASURE_MAP,	// 보물지도
 	UI_ROYALRUMBLE_ICON,			// royal rumble UI [5/11/2011 rumist]
-	UI_NEWGUILDSTASH,				// renewal guild stash [6/16/2011 rumist]
+	//UI_NEWGUILDSTASH,				// renewal guild stash [6/16/2011 rumist]
 	UI_GUILD_MARK,					// [sora] GUILD_MARK
 	UI_REFORM_SYSTEM,				// reform system [8/28/2012 박훈]
 	UI_FORTUNE,						// [2013/02/13] sykim70 Fortune System
@@ -167,6 +175,12 @@ enum UI_TYPE
 	UI_ITEM_COMPOSE,
 	UI_HELP_WEB,
 	UI_CUSTOM_TITLE,
+	UI_GS_USE_RECORD,	// 길드 창고 사용 내역 ui
+	UI_HELPER_GUARDIAN_INFO,
+	UI_HELPER_STUDENT,
+	UI_GUILD_BATTLE_MATCH,					// 길드대전 매칭 상태창
+	UI_GUILD_BATTLE_MATCH_REG,				// 등록창
+	UI_GUILD_BATTLE_MATCH_CHALLENGE,		// 신청창
 	UI_SELECTIVE_SHOW_END,									// 선택적으로 보이는 인터페이스     -->|
 
 	UI_LOGIN_SHOW_START		= UI_SELECTIVE_SHOW_END,		// 로그인 인터페이스 |<--
@@ -238,16 +252,15 @@ class CUICharacterCreateNew;
 class CUICharacterInfo;
 class CUICharacterSelect;
 class CUICharServerMove;
-class CUIChatFilter;
+class CChatBlockListUI;
 //class CUIChatting;
 class CUIChildInvenSlot;
 class CUIChildQuickSlot;
-class CUICollectBox;
+class CInsectCollectUI;
 class CUICompass;
-class CUICompound;
-class CUICubeRank;
+class CCompoundUI;
 class CUIDurability;
-class CUIExchange;
+class CExchangeUI;
 class CUIExpressSystem;
 class CUIExpManage;
 class CUIFlowerTree;
@@ -255,24 +268,28 @@ class CUIGamble;
 class CUIGPS;
 class CUIGuild;
 class CUIGuildBattle;
+class GuildBattleMatchChallengeUI;
+class GuildBattleMatchRegUI;
+class GuildBattleMatchUI;
 class CUIGuildMark;
 class CUIGuildNotice;
-class CUIGuildStash;
+class CGuildStashUI;
 class CUIGuildWarPortal;
-class CUIGWMix;
+class CGuildWarMixUI;
 class CUIHardCoreWarning;
 class CUIHelp;
 class CUIHelp3;
-class CUIHelper;
+class CHelperUI;
 class CUIHelpIcon;
 class CUIInitJob;
 class CUIInvenCashBag;
 class CUIInvenCashBagBox;
 class CUIInventory;
-class CUIItemProduct;
+class CItemProductUI;
 class CUILacaball;
 class CUILoginNew;
 class CUIMap;
+class CUIMapOption;
 class CUIMessageBox;
 class CUIMessageBoxL;
 class CUIMessenger;
@@ -284,7 +301,7 @@ class CUIMonsterMercenary;
 class CUIMsgBoxNumericOnly;
 class CUIMysteriousBead;
 class CUIMySyndicateInfo;
-class CUINewGuildStash;
+//class CUINewGuildStash;
 class CUINickName;
 class CUINoticeNew;
 class CUINpcHelp;
@@ -298,13 +315,14 @@ class CUIPartyAutoRegBoss;
 class CUIPartyAutoInviteList;
 class CUIPartyAutoPartyList;
 class CUIPersonalshopNew;
-class CUIPetFree;
+class CPetFreeUI;
 class CUIPetInfo;
 class CUIPetItemMix;
+class CPetItemMixUI;
 class CUIPetStash;
 class CUIPetStashSelectEffect;
 class CPetTargetUI;
-class CUIPetTraining;
+class CPetTrainingUI;
 class CUIPlayerInfo;
 class CUIPortal;
 class CUIProcess;
@@ -332,25 +350,31 @@ class CUISelectResource;
 class CUISelectWord;
 class CUIServerSelect;
 class CUIShop;
+class CShopUI;
 class CUISiegeWarfare;
 class CUISiegeWarfareInfo;
 class CUISiegeWarfareNew;
 class CUISimplePop;
-class CUISingleBattle;
+class CSingleBattleUI;
 class CUISkillLearn;
+class CSSkillLearnUI;
 class CUISkillNew;
 class CUISocketSystem;
-class CUISummon;
-class CUISystemMenu;
-class CUITalk;
+class CSocketRemoveAllUI;
+class CSocketRemoveSingleUI;
+class CSocketCreateUI;
+class CSocketCombineUI;
+class CJewelComposUI;
+class CSummonUI;
+class CSystemMenuUI;
+class CTalkUI;
 class CTargetInfoUI;
-class CUITatoo;
-class CUITeleport;
-class CUITeleportPrimium;
+class CTatooUI;
+class CTeleportUI;
 class CUITrade;
-class CUITreasureMap;
+class CTreasureMapUI;
 class CUIViewDetail;
-class CUIWareHouse;
+class CWareHouseUI;
 class CUIWebBoard;
 class CUIWildPetInfo;
 class CWildPetInfoUI;
@@ -365,6 +389,11 @@ class CNewsWebUI;
 class CItemComposeUI;
 class CHelpWebUI;
 class CCustomTitleUI;
+class CCubeRankingUI;
+class CGuildStashUseRecordUI;
+class CHelper_GuardianInfoUI;
+class CHelper_StudentUI;
+class GuildTaxHistoryUI;
 
 class CUIWindowDeclare : public CUIBase
 {
@@ -385,16 +414,16 @@ public:
     CUICharacterCreateNew*	GetCreateChar() { return (CUICharacterCreateNew*)m_apUIs[UI_CREATE_CHAR]; }
     CUICharacterInfo*		GetCharacterInfo() { return (CUICharacterInfo*)m_apUIs[UI_CHARACTERINFO]; }
     CUICharacterSelect*		GetCharacterSelect()	{ return (CUICharacterSelect*)m_apUIs[UI_CHARACTER_SELECT];	}
-    CUIChatFilter*			GetChatFilter()	{ return (CUIChatFilter*)m_apUIs[UI_CHAT_FILTER]; }
+    CChatBlockListUI*		GetChatFilter()	{ return (CChatBlockListUI*)m_apUIs[UI_CHAT_FILTER]; }
     //CUIChatting*			GetChatting() { return (CUIChatting*)m_apUIs[UI_CHATTING]; }
-    CUICollectBox*			GetCollectBox() { return (CUICollectBox*)m_apUIs[UI_COLLECTBOX]; } // 곤충 채집상자
+    CInsectCollectUI*		GetInsectCollect() { return (CInsectCollectUI*)m_apUIs[UI_INSECTCOLLECT]; } // 곤충 채집상자
 	CUICompass*				GetCompass()	{ return (CUICompass*)m_apUIs[UI_COMPASS]; }
-	CUICompound*			GetCompound() { return (CUICompound*)m_apUIs[UI_COMPOUND]; }
-    CUICubeRank*			GetCubeRank()	{ return (CUICubeRank*) m_apUIs[UI_CUBERANK]; }
+	CCompoundUI*			GetCompound() { return (CCompoundUI*)m_apUIs[UI_COMPOUND]; }
+    CCubeRankingUI*			GetCubeRank()	{ return (CCubeRankingUI*) m_apUIs[UI_CUBERANK]; }
 #ifdef	DURABILITY
     CUIDurability*			GetDurability()		{ return (CUIDurability*)m_apUIs[UI_DURABILITY]; }
 #endif	// DURABILITY
-    CUIExchange*			GetExchange() { return (CUIExchange*)m_apUIs[UI_EXCHANGE]; }
+    CExchangeUI*			GetExchange() { return (CExchangeUI*)m_apUIs[UI_EXCHANGE]; }
     CUIExpressSystem*		GetLCESystem()	{ return (CUIExpressSystem*) m_apUIs[UI_LCE_SYSTEM];		}
 	CUIExpManage*			GetExpedition() {return (CUIExpManage*)m_apUIs[UI_EXPEDITION]; }
     CUIFlowerTree*			GetFlowerTree() {return (CUIFlowerTree*)m_apUIs[UI_FLOWERTREE];} // 꽃놀이 인터페이스
@@ -404,21 +433,23 @@ public:
     CUIGuildBattle*			GetGuildBattle() { return (CUIGuildBattle*)m_apUIs[UI_GUILD_BATTLE]; }
     CUIGuildMark*			GetGuildMark()			{ return (CUIGuildMark*) m_apUIs[UI_GUILD_MARK]; }
     CUIGuildNotice*			GetGuildNotice() {return (CUIGuildNotice*)m_apUIs[UI_GUILD_NOTICE];}// WSS_NEW_GUILD_SYSTEM 070715
-    CUIGuildStash*			GetGuildStash() { return (CUIGuildStash*)m_apUIs[UI_GUILDSTASH]; }
+	CGuildStashUI*			GetGuildStash() { return (CGuildStashUI*)m_apUIs[UI_GUILDSTASH]; }
+	GuildTaxHistoryUI*		GetGuildTaxHistory() { return (GuildTaxHistoryUI*)m_apUIs[UI_GUILDTAXHISTORY]; }
     CUIGuildWarPortal*		GetGuildWarPortal() { return (CUIGuildWarPortal*)m_apUIs[UI_GUILDWARPORTAL]; }
-    CUIGWMix*				GetGWMix() { return (CUIGWMix*)m_apUIs[UI_GW_MIX]; }
+    CGuildWarMixUI*			GetGWMix() { return (CGuildWarMixUI*)m_apUIs[UI_GW_MIX]; }
     CUIHardCoreWarning*		GetHardCoreWarning()		{ return (CUIHardCoreWarning*)m_apUIs[UI_HARDCORE_WARNING]; }
     CUIHelp*				GetHelp() { return (CUIHelp*)m_apUIs[UI_HELP]; }
     CUIHelp3*				GetHelp3() { return (CUIHelp3*)m_apUIs[UI_HELP3]; }
-    CUIHelper*				GetHelper() { return (CUIHelper*)m_apUIs[UI_HELPER]; }
+    CHelperUI*				GetHelper() { return (CHelperUI*)m_apUIs[UI_HELPER]; }
     CUIHelpIcon*			GetHelpIcon() { return (CUIHelpIcon*)m_apUIs[UI_HELP_ICON]; }		// 도움말 시스템 추가
     CUIInitJob*				GetInitJob() { return (CUIInitJob*)m_apUIs[UI_INITJOB]; }
     CUIInvenCashBagBox*		GetInvenCashBagBox()		{ return (CUIInvenCashBagBox*)m_apUIs[UI_INVEN_CASH_BAG_BOX]; }
     CUIInventory*			GetInventory() { return (CUIInventory*)m_apUIs[UI_INVENTORY]; }
-    CUIItemProduct*			GetItemProduct() { return (CUIItemProduct*)m_apUIs[UI_ITEMPRODUCT];	}
+    CItemProductUI*			GetItemProduct() { return (CItemProductUI*)m_apUIs[UI_ITEMPRODUCT];	}
     CUILacaball*			GetLacaBall()	{ return (CUILacaball*)(m_apUIs[UI_LACABALL]);	}
     CUILoginNew*			GetLogin() { return (CUILoginNew*)m_apUIs[UI_LOGIN]; }
     CUIMap*					GetMap() { return (CUIMap*)m_apUIs[UI_MAP]; }
+	CUIMapOption*			GetMapOption() { return (CUIMapOption*)m_apUIs[UI_MAP_OPTION]; }
 	CUIMsgBoxNumericOnly*	GetMsgBoxNumOnly()		{ return (CUIMsgBoxNumericOnly*)m_apUIs[UI_MSGBOX_NUMERIC_ONLY]; }
     CUIMessenger*			GetMessenger() { return (CUIMessenger*)m_apUIs[UI_MESSENGER]; }
     CUIMinigame*			GetMinigame() {return (CUIMinigame*)m_apUIs[UI_MINIGAME];} //WSS_MINIGAME 070418
@@ -428,7 +459,7 @@ public:
     CUIMonsterMercenary*	GetMonsterMercenary()	{ return (CUIMonsterMercenary*) m_apUIs[UI_MONSTER_MERCENARY]; }
     CUIMysteriousBead*		GetMysteryousBead()	{ return (CUIMysteriousBead*)m_apUIs[UI_MYSTERYOUSBEAD]; }
     CUIMySyndicateInfo*		GetMySyndiInfo()		{ return (CUIMySyndicateInfo*)m_apUIs[UI_MYSYNDICATE_INFO]; }
-    CUINewGuildStash*		GetGuildStash_N()		{ return (CUINewGuildStash*) m_apUIs[UI_NEWGUILDSTASH];			}
+    //CUINewGuildStash*		GetGuildStash_N()		{ return (CUINewGuildStash*) m_apUIs[UI_NEWGUILDSTASH];			}
     CUINickName*			GetNickName() { return (CUINickName*) m_apUIs[UI_NICKNAME]; }
     CUINoticeNew*			GetNotice() { return (CUINoticeNew*)m_apUIs[UI_NOTICE]; }
     CUINpcHelp*				GetNpcHelp() {return (CUINpcHelp*)m_apUIs[UI_NPCHELP];} //Npc 안내시스템
@@ -442,13 +473,13 @@ public:
 	CUIPartyAutoInviteList*	GetPartyAutoInvite() { return (CUIPartyAutoInviteList*)m_apUIs[UI_PARTYAUTO_INVITE_LIST]; }
 	CUIPartyAutoPartyList*	GetPartyAutoParty() { return (CUIPartyAutoPartyList*)m_apUIs[UI_PARTYAUTO_PARTY_LIST]; }
     CUIPersonalshopNew*		GetPersonalShop() { return (CUIPersonalshopNew*)m_apUIs[UI_PERSONALSHOP]; }
-    CUIPetFree*				GetPetFree()	{ return (CUIPetFree*)m_apUIs[UI_PETFREE]; } // 펫 봉인 해제
+    CPetFreeUI*				GetPetFree()	{ return (CPetFreeUI*)m_apUIs[UI_PETFREE]; } // 펫 봉인 해제
     CUIPetInfo*				GetPetInfo() { return (CUIPetInfo*)m_apUIs[UI_PETINFO]; }
-    CUIPetItemMix*			GetPetItemMix() { return (CUIPetItemMix*)m_apUIs[UI_PETITEMMIX]; } // 펫아이템 조합( 유니크 )
+	CPetItemMixUI*			GetPetItemMixUI() { return (CPetItemMixUI*)m_apUIs[UI_PET_ITEM_MIX]; } // 펫아이템 조합( 유니크 )
     CUIPetStash*			GetPetStash()				{ return (CUIPetStash*)m_apUIs[UI_PET_STASH]; }
     CUIPetStashSelectEffect*	GetPetStashSelectEffect()	{ return (CUIPetStashSelectEffect*)m_apUIs[UI_PET_STASH_SELECT_EFFECT]; }
 	CPetTargetUI*			GetPetTargetUI() { return (CPetTargetUI*)m_apUIs[UI_PET_TARGETINFO]; }
-    CUIPetTraining*			GetPetTraining() { return (CUIPetTraining*)m_apUIs[UI_PETTRAINING]; }
+	CPetTrainingUI*			GetPetTrainingUI() { return (CPetTrainingUI*)m_apUIs[UI_PET_TRAINING]; }
     CUIPlayerInfo*			GetPlayerInfo() { return (CUIPlayerInfo*)m_apUIs[UI_PLAYERINFO]; }
     CUIPortal*				GetPortal() { return (CUIPortal*)m_apUIs[UI_PORTAL]; }
     CUIProcess*				GetProcess() { return (CUIProcess*)m_apUIs[UI_PROCESS]; }
@@ -476,26 +507,32 @@ public:
     CUISelectWord*			GetSelectWord() { return (CUISelectWord*)m_apUIs[UI_SELECTWORD]; }
     CUIServerSelect*		GetServerSelect()	{ return (CUIServerSelect*)m_apUIs[UI_SERVER_SELECT];	}
     CUIShop*				GetShop() { return (CUIShop*)m_apUIs[UI_SHOP]; }
+	CShopUI*				GetShopUI() { return (CShopUI*)m_apUIs[UI_SHOP_UI]; }
     CUISiegeWarfare*		GetSiegeWarfare() { return (CUISiegeWarfare*)m_apUIs[UI_SIEGE_WARFARE]; }
     CUISiegeWarfareInfo*	GetSiegeWarfareInfo()	{ return (CUISiegeWarfareInfo*) m_apUIs[UI_SIEGE_WARFARE_INFO]; }
     CUISiegeWarfareNew*		GetSiegeWarfareNew() { return (CUISiegeWarfareNew*)m_apUIs[UI_SIEGE_WARFARE_NEW]; }  // WSS_DRATAN_SIEGEWARFARE 070727
     CUISimplePop*			GetSimplePop() { return (CUISimplePop*)m_apUIs[UI_SIMPLE_POP]; }	// [KH_070419] 심플 팝업 관련 추가
-    CUISingleBattle*		GetSingleBattle() { return (CUISingleBattle*)m_apUIs[UI_SINGLE_BATTLE]; }
+	CSingleBattleUI*		GetSingleBattle() { return (CSingleBattleUI*)m_apUIs[UI_SINGLE_BATTLE]; }
     CUISkillLearn*			GetSkillLearn() { return (CUISkillLearn*)m_apUIs[UI_SKILLLEARN]; }
+	CSSkillLearnUI*			GetSSkillLearn() { return (CSSkillLearnUI*)m_apUIs[UI_SSKILLLEARN]; }
     CUISkillNew*			GetSkillNew()				{ return (CUISkillNew*)m_apUIs[UI_SKILL_NEW]; }
     CUISocketSystem*		GetSocketSystem()	{ return (CUISocketSystem*) m_apUIs[UI_SOCKETSYSTEM]; }
-    CUISummon*				GetSummonFirst() { return (CUISummon*)m_apUIs[UI_SUMMON_FIRST]; }
-    CUISummon*				GetSummonSecond() { return (CUISummon*)m_apUIs[UI_SUMMON_SECOND]; }
-    CUISystemMenu*			GetSystemMenu() { return (CUISystemMenu*)m_apUIs[UI_SYSTEMMENU]; }
-    CUITalk*				GetTalk(int iUIIndex) { return (CUITalk*)m_apUIs[iUIIndex]; }
+	CSocketRemoveAllUI*		GetSocketRemoveAll()	{ return (CSocketRemoveAllUI*) m_apUIs[UI_SOCKET_REMOVE_ALL]; }
+	CSocketRemoveSingleUI*	GetSocketRemoveSingle()	{ return (CSocketRemoveSingleUI*) m_apUIs[UI_SOCKET_REMOVE_SINGLE]; }
+	CSocketCreateUI*		GetSocketCreate()	{ return (CSocketCreateUI*) m_apUIs[UI_SOCKET_CREATE]; }
+	CSocketCombineUI*		GetSocketCombine()	{ return (CSocketCombineUI*) m_apUIs[UI_SOCKET_COMBINE]; }
+	CJewelComposUI*			GetSocketJewelCompos()	{ return (CJewelComposUI*) m_apUIs[UI_JEWEL_COMPOS]; }
+	CSummonUI*				GetSummonFirst() { return (CSummonUI*)m_apUIs[UI_SUMMON_FIRST]; }
+	CSummonUI*				GetSummonSecond() { return (CSummonUI*)m_apUIs[UI_SUMMON_SECOND]; }
+    CSystemMenuUI*			GetSystemMenu() { return (CSystemMenuUI*)m_apUIs[UI_SYSTEMMENU]; }
+    CTalkUI*				GetTalk(int iUIIndex) { return (CTalkUI*)m_apUIs[iUIIndex]; }
     CTargetInfoUI*			GetTargetInfoUI() { return (CTargetInfoUI*)m_apUIs[UI_TARGETINFO]; }
-    CUITatoo*				GetTatoo() { return (CUITatoo*)m_apUIs[UI_TATOO]; }	// [090709: selo] 펫 문양 시스템
-    CUITeleport*			GetTeleport() { return (CUITeleport*)m_apUIs[UI_TELEPORT]; }
-    CUITeleportPrimium*		GetTeleportPrimium() { return (CUITeleportPrimium*)m_apUIs[UI_TELEPORT_PRIMIUM]; }	// [KH_070315] 프리미엄 메모리스크롤 관련 추가
+    CTatooUI*				GetTatoo() { return (CTatooUI*)m_apUIs[UI_TATOO]; }	// [090709: selo] 펫 문양 시스템
+    CTeleportUI*			GetTeleport() { return (CTeleportUI*)m_apUIs[UI_TELEPORT]; }
     CUITrade*				GetTrade()				{ return (CUITrade*)m_apUIs[UI_TRADE];	}
-    CUITreasureMap*			GetTreasureMap()		{ return (CUITreasureMap*) m_apUIs[UI_TREASUREMAP]; }
+    CTreasureMapUI*			GetTreasureMapUI()		{ return (CTreasureMapUI*) m_apUIs[UI_TREASURE_MAP]; }
 	CUIViewDetail*			GetExpeditionView() {return (CUIViewDetail*)m_apUIs[UI_EXPEDITION_VIEW]; }
-    CUIWareHouse*			GetWareHouse() { return (CUIWareHouse*)m_apUIs[UI_WAREHOUSE]; }
+	CWareHouseUI*			GetWareHouseUI() { return (CWareHouseUI*)m_apUIs[UI_WARE_HOUSE]; }
     CUIWebBoard*			GetWebBoard() { return (CUIWebBoard*)m_apUIs[UI_WEBBOARD]; }
    	CWildPetInfoUI*			GetWildPetInfoUI() { return (CWildPetInfoUI*)m_apUIs[UI_WILDPET_INFO]; }
     CWildPetTargetUI*		GetWildPetTargetInfo() { return (CWildPetTargetUI*)m_apUIs[UI_WILDPET_TARGETINFO]; }
@@ -509,6 +546,12 @@ public:
 	CItemComposeUI*			GetItemCompose()		{ return (CItemComposeUI*)m_apUIs[UI_ITEM_COMPOSE]; }
 	CHelpWebUI*				GetHelpWebUI()			{ return (CHelpWebUI*)m_apUIs[UI_HELP_WEB];	}
 	CCustomTitleUI*			GetCustomTitle()		{ return (CCustomTitleUI*)m_apUIs[UI_CUSTOM_TITLE]; }
+	CGuildStashUseRecordUI* GetGSUseRecord()		{ return (CGuildStashUseRecordUI*)m_apUIs[UI_GS_USE_RECORD];	}
+	CHelper_GuardianInfoUI* GetHelper_GuardianInfo()	{ return (CHelper_GuardianInfoUI*)m_apUIs[UI_HELPER_GUARDIAN_INFO]; }
+	CHelper_StudentUI*		GetHelper_Student()		{ return (CHelper_StudentUI*)m_apUIs[UI_HELPER_STUDENT];	}
+	GuildBattleMatchChallengeUI*	GetGuildBattleMatchChallenge()	{ return (GuildBattleMatchChallengeUI*)m_apUIs[UI_GUILD_BATTLE_MATCH_CHALLENGE]; }
+	GuildBattleMatchRegUI*			GetGuildBattleMatchReg()		{ return (GuildBattleMatchRegUI*)m_apUIs[UI_GUILD_BATTLE_MATCH_REG]; }
+	GuildBattleMatchUI*				GetGuildBattleMatch()			{ return (GuildBattleMatchUI*)m_apUIs[UI_GUILD_BATTLE_MATCH]; }
 
 	void					InitRankSystem();
 

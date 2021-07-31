@@ -630,7 +630,7 @@ void CPropertiesWnd::ExtractionUV( ePROP_TYPE eType, ePROP_TYPE eStart, UIRectUV
 
 	if( (findPos = val.find('+')) >= 0 )
 	{
-		string::iterator pos = remove(val.begin(), val.end(), '+');
+		std::string::iterator pos = remove(val.begin(), val.end(), '+');
 		val.erase(pos, val.end());
 	}
 
@@ -764,6 +764,19 @@ void CPropertiesWnd::ShowPropBase( CUIBase* pBase )
 	pProp = new CMFCPropertyGridPropertyEx( _T("Tooltip Index"), (_variant_t) pBase->GetTooltipIndex(), _T("툴팁 인덱스 입력"), ePROP_TYPE_TOOLTIP);
 	pGroup->AddSubItem(pProp);
 
+	COLOR colTooltip = DEF_UI_COLOR_WHITE;
+	if (pBase->GetTooltipIndex() > 0)
+	{
+		stTooltipInfo TooltipInfo = pBase->getTooltip(0);
+		colTooltip = TooltipInfo.colText;
+	}
+
+	COLORREF col = ByteSwap(colTooltip);
+	CMFCPropertyGridColorProperty* pColorProp = new CMFCPropertyGridColorProperty(_T("Tooltip Color"), col, NULL, _T("Tooltip Color"), ePROP_TYPE_TOOLTIP_COLOR);
+	pColorProp->EnableOtherButton(_T("기타..."));
+	pColorProp->EnableAutomaticButton(_T("기본값"), ::GetSysColor(COLOR_3DFACE));
+	pGroup->AddSubItem(pColorProp);
+
 	pProp = new CMFCPropertyGridPropertyEx( _T("Tooltip Width"), (_variant_t) pBase->getTooltipWidth(), _T("툴팁 Width 입력 (미입력시 1줄로 출력)"), ePROP_TYPE_TOOLTIP_WIDTH);
 	pGroup->AddSubItem(pProp);
 
@@ -783,6 +796,12 @@ void CPropertiesWnd::ShowPropImage( CUIImage* pUI )
 
 	std::string strImage = pUI->getTexString();
 	SetImage( (int)ePROP_IMG_TYPE_TEX, strImage, pGroup );
+
+	COLORREF col = ByteSwap(pUI->GetColor());
+	CMFCPropertyGridColorProperty* pColorProp = new CMFCPropertyGridColorProperty(_T("Color"), col, NULL, _T("Color"), ePROP_IMG_TYPE_COLOR);
+	pColorProp->EnableOtherButton(_T("기타..."));
+	pColorProp->EnableAutomaticButton(_T("기본값"), ::GetSysColor(COLOR_3DFACE));
+	pGroup->AddSubItem(pColorProp);
 
 	pGroup->Expand(TRUE);
 	m_wndPropListEx.AddProperty(pGroup);
@@ -846,11 +865,27 @@ void CPropertiesWnd::ShowPropText( CUIText* pUI )
 	SetTextString(ePROP_TEXT_STR_ELLIPSIS, pGroup, str, "Ellipsis String");
 	
 	bool bShadow = pUI->getShadow();
-	COLORREF col = ByteSwap(pUI->getFontColor());
-	CMFCPropertyGridColorProperty* pColorProp = new CMFCPropertyGridColorProperty(_T("Color"), col, NULL, _T("Color"), ePROP_TEXT_COLOR);
+	COLORREF col = ByteSwap(pUI->getFontColor(CUIBase::eSTATE_IDLE));
+	CMFCPropertyGridColorProperty* pColorProp = new CMFCPropertyGridColorProperty(_T("Color"), col, NULL, _T("단일 폰트 컬러"), ePROP_TEXT_COLOR);
 	pColorProp->EnableOtherButton(_T("기타..."));
 	pColorProp->EnableAutomaticButton(_T("기본값"), ::GetSysColor(COLOR_3DFACE));
 	pGroup->AddSubItem(pColorProp);
+
+	int nTemp = 0;
+	CMFCPropertyGridPropertyEx* pGroupColor = new CMFCPropertyGridPropertyEx(_T("State Color"));
+	std::string strState[CUIBase::eSTATE_MAX]	= {"IDLE", "ENTER", "SELECT"};
+	for (int i = 0; i < CUIBase::eSTATE_MAX; ++i)
+	{
+		COLORREF col = ByteSwap(pUI->getFontColor((CUIBase::eCHILD_ITEM_STATE)i));
+		CMFCPropertyGridColorProperty* pColor = new CMFCPropertyGridColorProperty(_T(strState[i].c_str()),
+			col, NULL, _T("Idle, Over, Select 상태에 따라 폰트 컬러를 변경 할 경우 사용."), ePROP_TEXT_COLOR_IDLE + i);
+
+		pColor->EnableOtherButton(_T("기타..."));
+		pColor->EnableAutomaticButton(_T("기본값"), ::GetSysColor(COLOR_3DFACE));
+		pGroupColor->AddSubItem(pColor);
+	}
+	pGroupColor->Expand(FALSE);
+	pGroup->AddSubItem(pGroupColor);
 
 	pProp = new CMFCPropertyGridPropertyEx( _T("Shadow"), (_variant_t) bShadow, _T("Shadow"), ePROP_TEXT_SHADOW);
 	pGroup->AddSubItem(pProp);
@@ -979,31 +1014,28 @@ void CPropertiesWnd::ShowPropCheckButton( CUICheckButton* pUI )
 	bool bEdge = pUI->getEdge();
 	pGroup->AddSubItem(new CMFCPropertyGridPropertyEx(_T("Edge"), (_variant_t) bEdge ,0 , ePROP_CHECK_EDGE, _T("외곽선 표시")));
 
-	COLOR colOn, colOff;
-	pUI->GetTextColor(colOn, colOff);
+	std::string strAtt[UCBS_TOTAL] = {"none", "check", "none_disable", "check_disable"};
+	COLOR col;
+	for (int i = 0; i < UCBS_TOTAL; ++i)
+	{
+		col = pUI->GetTextColor((UICheckBtnState)i);
+	
+		CMFCPropertyGridColorProperty* pColorProp = new CMFCPropertyGridColorProperty(_T(strAtt[i].c_str()), ByteSwap(col), NULL, _T(strAtt[i].c_str()), ePROP_CHECK_COLOR_NONE + i);
+		pColorProp->EnableOtherButton(_T("기타..."));
+		pColorProp->EnableAutomaticButton(_T("기본값"), ::GetSysColor(COLOR_3DFACE));
+		pGroup->AddSubItem(pColorProp);
+	}
 
-	CMFCPropertyGridColorProperty* pColorProp = new CMFCPropertyGridColorProperty(_T("Color On"), ByteSwap(colOn), NULL, _T("Color On"), ePROP_CHECK_COLOR_ON);
-	pColorProp->EnableOtherButton(_T("기타..."));
-	pColorProp->EnableAutomaticButton(_T("기본값"), ::GetSysColor(COLOR_3DFACE));
-	pGroup->AddSubItem(pColorProp);
-
-	pColorProp = new CMFCPropertyGridColorProperty(_T("Color Off"), ByteSwap(colOff), NULL, _T("Color Off"), ePROP_CHECK_COLOR_OFF);
-	pColorProp->EnableOtherButton(_T("기타..."));
-	pColorProp->EnableAutomaticButton(_T("기본값"), ::GetSysColor(COLOR_3DFACE));
-	pGroup->AddSubItem(pColorProp);
-
-	UIRectUV uvNone = pUI->GetUV(UCBS_NONE), uvCheck = pUI->GetUV(UCBS_CHECK);
-	pProp = new CMFCPropertyGridPropertyEx( _T("Button None"));
-	SetUV( (int)ePROP_CHECK_NONE_L, (int)ePROP_CHECK_NONE_T
-		, (int)ePROP_CHECK_NONE_R, (int)ePROP_CHECK_NONE_B
-		, uvNone, pProp );
-	pGroup->AddSubItem(pProp);
-
-	pProp = new CMFCPropertyGridPropertyEx( _T("Button Check"));
-	SetUV( (int)ePROP_CHECK_CHECK_L, (int)ePROP_CHECK_CHECK_T
-		, (int)ePROP_CHECK_CHECK_R, (int)ePROP_CHECK_CHECK_B
-		, uvCheck, pProp );
-	pGroup->AddSubItem(pProp);
+	UIRectUV uv;
+	for (int i = 0; i < UCBS_TOTAL; ++i)
+	{
+		uv = pUI->GetUV((UICheckBtnState)i);
+		pProp = new CMFCPropertyGridPropertyEx( _T(strAtt[i].c_str()));
+		SetUV( (int)ePROP_CHECK_NONE_L + (i * 4), (int)ePROP_CHECK_NONE_T + (i * 4)
+			, (int)ePROP_CHECK_NONE_R + (i * 4), (int)ePROP_CHECK_NONE_B + (i * 4)
+			, uv, pProp );
+		pGroup->AddSubItem(pProp);
+	}
 
 	std::string strImg = pUI->getTexString();
 	SetImage( (int)ePROP_CHECK_TEX, strImg.c_str(), pGroup );
@@ -1571,6 +1603,14 @@ void CPropertiesWnd::ShowPropImageFont( CUIImageFont* pUI )
 	pProp = new CMFCPropertyGridPropertyEx(_T("Original String"), (_variant_t) strOString.c_str(), _T(""), ePROP_IMGFONT_OSTR);
 	pGroup->AddSubItem(pProp);
 
+	int nAlignH = (int)pUI->getAlignFontH();
+
+	pProp = new CMFCPropertyGridPropertyEx( _T("Align_H"), (_variant_t) szAlign_H[nAlignH], _T("Left, Center, Right 정렬"), ePROP_IMGFONT_ALIGN_H);
+	for(int i = 0; i < 3; i++)
+		pProp->AddOption(_T(szAlign_H[i]));
+	pProp->AllowEdit(FALSE);
+	pGroup->AddSubItem(pProp);
+
 	CMFCPropertyGridPropertyEx* pImg = new CMFCPropertyGridPropertyEx(_T("Source Image"));
 	SetUV(ePROP_IMGFONT_SRC_UV_L, ePROP_IMGFONT_SRC_UV_T, ePROP_IMGFONT_SRC_UV_R, ePROP_IMGFONT_SRC_UV_B, uv,  pImg);
 	pGroup->AddSubItem(pImg);
@@ -1597,6 +1637,11 @@ void CPropertiesWnd::ShowPropSpriteAni( CUISpriteAni* pUI )
 
 	std::string strImage = pUI->getTexString();
 	SetImage( (int)ePROP_SPRITE_TEX, strImage, pGroup );
+
+	int nDelay = pUI->GetDelayTime();
+	pProp = new CMFCPropertyGridPropertyEx( _T("Delay Time"), (_variant_t) nDelay, _T("Anim Delay Time"), ePROP_SPRITE_DELAY_TIME);
+	pProp->EnableSpinControl(TRUE, 0, 2000000000);
+	pGroup->AddSubItem(pProp);
 
 	int i, max = pUI->GetAniCount();
 
@@ -1708,18 +1753,27 @@ void CPropertiesWnd::ShowPropTextBoxEx( CUITextBoxEx* pUI )
 	pProp->EnableSpinControl(TRUE, -3000, 3000);
 	pGroup->AddSubItem(pProp);
 
-	pProp = new CMFCPropertyGridPropertyEx(_T("SplitMode"), (_variant_t) szSplit[nSplit], _T(""), ePROP_TB_EX_SPLIT_MODE);
+	pProp = new CMFCPropertyGridPropertyEx(_T("SplitMode"), (_variant_t) szSplit[nSplit],
+		_T(""), ePROP_TB_EX_SPLIT_MODE);
 	for(int i = 0; i < 6; i++)
 		pProp->AddOption(_T(szSplit[i]));
 	pProp->AllowEdit(FALSE);
 	pGroup->AddSubItem(pProp);
 
-	CMFCPropertyGridColorProperty* pColorProp = new CMFCPropertyGridColorProperty(_T("Color"),ByteSwap(pUI->GetBaseColor()), NULL, _T("Color"), ePROP_TB_EX_COL);
+	CMFCPropertyGridColorProperty* pColorProp = new CMFCPropertyGridColorProperty(_T("Color"),
+		ByteSwap(pUI->GetBaseColor()), NULL, _T("Color"), ePROP_TB_EX_COL);
+
 	pColorProp->EnableOtherButton(_T("기타..."));
 	pColorProp->EnableAutomaticButton(_T("기본값"), ::GetSysColor(COLOR_3DFACE));
 	pGroup->AddSubItem(pColorProp);
 
 	pProp = new CMFCPropertyGridPropertyEx(_T("Text"), (_variant_t) str.c_str(), _T(""), ePROP_TB_EX_STR);
+	pGroup->AddSubItem(pProp);
+
+	int nThumb = pUI->GetScrollThumbWidth();
+	pProp = new CMFCPropertyGridPropertyEx(_T("Scroll Thumb Width"), (_variant_t)nThumb,
+		_T("스크롤 Width 설정."), ePROP_TB_EX_SCROLL_THUMB_WIDTH);
+	pProp->EnableSpinControl(TRUE, 0, 3000);
 	pGroup->AddSubItem(pProp);
 
 	m_wndPropListEx.AddProperty(pGroup);
@@ -1808,10 +1862,36 @@ LRESULT CPropertiesWnd::OnPropertyChanged( WPARAM wparam, LPARAM lparam )
 	case ePROP_TYPE_TOOLTIP:
 		{
 			int nIdx = pProp->GetValue().intVal;
-			m_pSelectedUI->SetTooltipIndex(nIdx);
+
+			COLOR col = DEF_UI_COLOR_WHITE;
+			if (m_pSelectedUI->GetTooltipIndex() > 0)
+			{
+				stTooltipInfo t_info = m_pSelectedUI->getTooltip(0);
+				col = t_info.colText;
+			}
 
 			if (nIdx > 0)
-				m_pSelectedUI->setTooltip( CUIBase::getText( (INDEX)nIdx) );
+			{
+				const char* pstr = CUIBase::getText( (INDEX)nIdx).str_String;
+				m_pSelectedUI->setTooltip(pstr, ConvertToColor(col));
+			}
+
+			m_pSelectedUI->SetTooltipIndex(nIdx);
+		}
+		break;
+	case ePROP_TYPE_TOOLTIP_COLOR:
+		{
+			int nIdx = m_pSelectedUI->GetTooltipIndex();
+
+			CMFCPropertyGridColorProperty* pColor = (CMFCPropertyGridColorProperty*) lparam;
+			COLORREF col = pColor->GetColor();
+
+			const char* pstr = "";
+
+			if (nIdx > 0)
+				pstr = CUIBase::getText( (INDEX)nIdx).str_String;
+
+			m_pSelectedUI->setTooltip( pstr, ConvertToColor(col));
 		}
 		break;
 	case ePROP_TYPE_TOOLTIP_WIDTH:
@@ -1825,7 +1905,7 @@ LRESULT CPropertiesWnd::OnPropertyChanged( WPARAM wparam, LPARAM lparam )
 	switch( m_pSelectedUI->getType() )
 	{
 	case eUI_CONTROL_IMAGE:
-		ChangeImageControlProp( pProp );
+		ChangeImageControlProp( lparam );
 		break;
 	case eUI_CONTROL_BUTTON:
 		ChangeButtonControlProp( lparam );
@@ -1894,8 +1974,10 @@ LRESULT CPropertiesWnd::OnPropertyChanged( WPARAM wparam, LPARAM lparam )
 	return TRUE;
 }
 
-void CPropertiesWnd::ChangeImageControlProp( CMFCPropertyGridProperty* p )
+void CPropertiesWnd::ChangeImageControlProp( LPARAM lparam )
 {
+	CMFCPropertyGridPropertyEx* p = ( CMFCPropertyGridPropertyEx* ) lparam;
+
 	ePROP_TYPE eType = (ePROP_TYPE)p->GetData();
 	CUIImage* pUI = dynamic_cast<CUIImage*>(m_pSelectedUI);	
 	UIRectUV uv = pUI->GetAbsUV();
@@ -1908,6 +1990,14 @@ void CPropertiesWnd::ChangeImageControlProp( CMFCPropertyGridProperty* p )
 			pUI->SetUV( uv );
 
 			p->SetValue(strVal.c_str());
+		}
+		break;
+	case ePROP_IMG_TYPE_COLOR:
+		{
+			CMFCPropertyGridColorProperty* pColor = (CMFCPropertyGridColorProperty*) lparam;
+			COLORREF col = pColor->GetColor();
+
+			pUI->SetColor(ConvertToColor(col));
 		}
 		break;
 	case ePROP_IMG_TYPE_TEX:
@@ -2041,6 +2131,13 @@ void CPropertiesWnd::ChangeTextControlProp( LPARAM lparam )
 			COLORREF col = pColor->GetColor();
 			pUI->setFontColor(ConvertToColor(col));
 			//pUI->setFontColor(ConvertToColor(col));
+		}
+		break;
+	case ePROP_TEXT_COLOR_IDLE:	case ePROP_TEXT_COLOR_ENTER: case ePROP_TEXT_COLOR_SELECT:
+		{
+			CMFCPropertyGridColorProperty* pColor = (CMFCPropertyGridColorProperty*) lparam;
+			COLORREF col = pColor->GetColor();
+			pUI->setFontColor(ConvertToColor(col), (CUIBase::eCHILD_ITEM_STATE)(eType - ePROP_TEXT_COLOR_IDLE));
 		}
 		break;
 	case ePROP_TEXT_EDGE:
@@ -2269,23 +2366,17 @@ void CPropertiesWnd::ChangeCheckControlProp( LPARAM lparam )
 			pUI->setEdge( pProp->GetValue().boolVal ? true : false );
 		}
 		break;
-	case ePROP_CHECK_COLOR_ON:
+	case ePROP_CHECK_COLOR_NONE: case ePROP_CHECK_COLOR_CHECK: case ePROP_CHECK_COLOR_NONE_DISABLE: case ePROP_CHECK_COLOR_CHECK_DISABLE:
 		{
 			CMFCPropertyGridColorProperty* pColor = (CMFCPropertyGridColorProperty*) lparam;
 			COLORREF col = pColor->GetColor();
-			pUI->SetTextColor(TRUE, ConvertToColor(col));
-		}
-		break;
-	case ePROP_CHECK_COLOR_OFF:
-		{
-			CMFCPropertyGridColorProperty* pColor = (CMFCPropertyGridColorProperty*) lparam;
-			COLORREF col = pColor->GetColor();
-			
-			pUI->SetTextColor(FALSE, ConvertToColor(col));
+			pUI->SetTextColor((UICheckBtnState)(eType - ePROP_CHECK_COLOR_NONE), ConvertToColor(col));
 		}
 		break;
 	case ePROP_CHECK_NONE_L:	case ePROP_CHECK_NONE_T:	case ePROP_CHECK_NONE_R:	case ePROP_CHECK_NONE_B:
 	case ePROP_CHECK_CHECK_L:	case ePROP_CHECK_CHECK_T:	case ePROP_CHECK_CHECK_R:	case ePROP_CHECK_CHECK_B:
+	case ePROP_CHECK_NONE_DISABLE_L:	case ePROP_CHECK_NONE_DISABLE_T:	case ePROP_CHECK_NONE_DISABLE_R:	case ePROP_CHECK_NONE_DISABLE_B:
+	case ePROP_CHECK_CHECK_DISABLE_L:	case ePROP_CHECK_CHECK_DISABLE_T:	case ePROP_CHECK_CHECK_DISABLE_R:	case ePROP_CHECK_CHECK_DISABLE_B:
 		{
 			UICheckBtnState state;
 			ePROP_TYPE		start;
@@ -2299,7 +2390,17 @@ void CPropertiesWnd::ChangeCheckControlProp( LPARAM lparam )
 				state = UCBS_CHECK;
 				start = ePROP_CHECK_CHECK_L;
 			}
-
+			else if( ePROP_CHECK_NONE_DISABLE_L <= eType && eType <= ePROP_CHECK_NONE_DISABLE_B )
+			{
+				state = UCBS_NONE_DISABLE;
+				start = ePROP_CHECK_NONE_DISABLE_L;
+			}
+			else if( ePROP_CHECK_CHECK_DISABLE_L <= eType && eType <= ePROP_CHECK_CHECK_DISABLE_B )
+			{
+				state = UCBS_CHECK_DISABLE;
+				start = ePROP_CHECK_CHECK_DISABLE_L;
+			}
+			
 			UIRectUV uv		= pUI->GetUV(state);
 			std::string strVal = pProp->FormatProperty();
 
@@ -3290,6 +3391,17 @@ void CPropertiesWnd::ChangeImageFontControlProp( CMFCPropertyGridProperty* p )
 			pUI->setOrigString(str.c_str());
 		}
 		break;
+	case ePROP_IMGFONT_ALIGN_H:
+		{
+			int nAlign;
+			std::string strTmp = p->FormatProperty();
+			for( nAlign = 0; nAlign < 3; nAlign++ )
+			{
+				if( strcmpi(szAlign_H[nAlign], strTmp.c_str()) == 0 )
+					pUI->setAlignFontH((eALIGN_H)nAlign);
+			}
+		}
+		break;
 	case ePROP_IMGFONT_SRC_UV_L:	case ePROP_IMGFONT_SRC_UV_T:	case ePROP_IMGFONT_SRC_UV_R:	case ePROP_IMGFONT_SRC_UV_B:
 		{
 			UIRectUV uv = pUI->getSourceImageUV();
@@ -3330,6 +3442,12 @@ void CPropertiesWnd::ChangeSpriteAniControlProp( CMFCPropertyGridProperty* p )
 			int nVal = p->GetValue().intVal;
 
 			pUI->SetRenderIdx(nVal);
+		}
+		break;
+	case ePROP_SPRITE_DELAY_TIME:
+		{
+			int nVal = p->GetValue().intVal;
+			pUI->SetDelayTime(nVal);
 		}
 		break;
 	case ePROP_SPRITE_ADD:
@@ -3837,10 +3955,17 @@ void CPropertiesWnd::ChangeTextBoxExControlProp( LPARAM lparam )
 			}
 		}
 		break;
+	case ePROP_TB_EX_SCROLL_THUMB_WIDTH:
+		{
+			int thumb = pProp->GetValue().intVal;
+			pUI->SetScrollThumbWidth(thumb);
+		}
+		break;
 	}
 
-	pUI->Release();
+	pUI->deleteCont();
 	pUI->AddText( str, col );
+	pUI->UpdateBox();
 }
 
 void CPropertiesWnd::UpdatePos( int x, int y )

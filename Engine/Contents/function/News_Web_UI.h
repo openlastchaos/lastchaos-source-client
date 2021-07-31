@@ -14,10 +14,16 @@ public:
 	bool UpdateUrl();
 	void LoadUrl();
 	BOOL CloseWindowByEsc();
+
+	void clear_param()	{ m_strParam = ""; }
 private:
+
+	void updateParam();
+
 	CUIBase* m_pWebBase;
 	int		m_nCurPage;
 	std::string m_strDefUrl;
+	std::string m_strParam;
 };
 
 #endif // __NEWS_WEB_UI_H__

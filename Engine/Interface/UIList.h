@@ -20,12 +20,15 @@ public:
 
 	CUIBase* Clone();
 
+	void CmdErase();
+
 	void AddListItem(CUIBase* pItem);
 	void RemoveListItem(int idx);
 	bool DeleteAllListItem();
 
 	void deleteChildList();
 	void deleteListItem(int nPos);
+	void deleteListItem(CUIBase* pt);
 
 	// 인덱스로 리스트 아이템 얻기
 	CUIBase* GetListItem(int idx);
@@ -44,7 +47,7 @@ public:
 	void SetGap(int gap)		 { m_nGap = gap; }
 	int GetGap()				 { return m_nGap; }
 
-	void UpdateList();
+	void UpdateList(bool bUpdateScroll = false);
 	void UpdateScroll(int nItemCount);
 	void UpdateHeight(int nHeight);
 
@@ -54,9 +57,13 @@ public:
 	//------------------------------------------------------
 	// 이전에 선택된 아이템이 있을 경우 호출 되는 커맨드
 	void SetCommandUn(Command* pCmd)	{ SAFE_DELETE(m_pCmdUnSelect); m_pCmdUnSelect = pCmd; }
+	void SetCommandFSelect(_ui_func func)	{ m_func_select = func; }
+
+	void SetCommandUpdate(Command* pCmd)	{ SAFE_DELETE(m_pCmdUpdate); m_pCmdUpdate = pCmd; }
 
 	//------------------------------------------------------
 
+	void OnRender(CDrawPort* pDraw);
 	void OnPostRender(CDrawPort* pDraw);
 
 	//------------------------------------------------------
@@ -90,6 +97,10 @@ public:
 	WMSG_RESULT	OnMouseMove(UINT16 x, UINT16 y, MSG* pMsg);
 	WMSG_RESULT OnLButtonDBLClick(UINT16 x, UINT16 y);
 
+	void SetSelectedForeRender(bool bFore)	{ m_bSelectedForeRender = bFore; }
+
+	void SetKeepSelect(bool bKeep)	{ m_bKeepSelect = bKeep; }
+
 #ifdef UI_TOOL
 	void		GetEventImg(UIRect& rc, UIRectUV& uv, int type)	{ rc = m_rcEventImg[type]; uv = m_uvEventImg[type];	}
 
@@ -101,6 +112,7 @@ private:
 private:
 	void UpdateListTop();
 	void UpdateListBottom();
+	void _render(CDrawPort* pDraw);
 
 protected:
 
@@ -110,6 +122,7 @@ protected:
 	bool	m_bUseSelect;
 	bool	m_bPreCreate;
 	bool	m_bAlignTop;
+	bool	m_bKeepSelect;
 
 	int		m_nNumItems;		// 아이템 수
 	int		m_nGap;				// 아이템 간격
@@ -138,6 +151,11 @@ protected:
 	CUIRectSurface*	m_pimgEvent;	
 
 	Command*	m_pCmdUnSelect;
+	Command*	m_pCmdUpdate;				// scroll 등에 의한 update 이 후 호출되는 콜백
+
+	bool	m_bSelectedForeRender;
+
+	_ui_func	m_func_select;
 };
 
 

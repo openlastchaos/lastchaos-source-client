@@ -13,6 +13,7 @@
 #include <Engine/Interface/UIRadar.h>
 #include <Engine/Contents/Base/ChattingUI.h>
 #include <Engine/Object/ActorMgr.h>
+#include <Engine/Interface/UIMessageBox.h>
 
 #define NPC_INDEX 1374
 
@@ -26,6 +27,7 @@ ExpressSystem::ExpressSystem(void)
 	, m_fnpcPosZ(0.0f)
 	, m_nNoticeFlag(0)
 	, m_bPremiumChar(false)
+	, m_bLock(false)
 {
 	
 }
@@ -80,6 +82,7 @@ void ExpressSystem::RecvExpressMessage(CNetworkMessage* istr)
 
 	case MSG_SUB_EXPREES_LIST:
 		{
+			UnLock();
 			ResponseClient::expressList* pRecv = reinterpret_cast<ResponseClient::expressList*>(istr->GetBuffer());
 
 			if (m_nCount != 0)	// 이미 받아놓은 리스트가 있다면 초기화
@@ -128,20 +131,18 @@ void ExpressSystem::RecvExpressMessage(CNetworkMessage* istr)
 			{
 				pUI->SetLinkData(); // TO.DO 에러 출력
 
-				if (pUI->IsVisible() == FALSE)
-				{
-					pUI->OpenExpressSystem();					
-				}
-				else
-				{
+				if (pUI->IsVisible() == TRUE)
 					pUI->UpdateExpressItemList();
-				}
+				else
+					pUI->OpenExpressSystem();
 			}
 		}
 		break;
 
 	case MSG_SUB_EXPRESS_TAKE:
+	case MSG_SUB_EXPRESS_TAKE_ALL:
 		{
+			UnLock();
 			ResponseClient::expressTake* pRecv = reinterpret_cast<ResponseClient::expressTake*>(istr->GetBuffer());
 			if (pRecv->result > 0)
 			{
@@ -169,20 +170,21 @@ void ExpressSystem::RecvExpressMessage(CNetworkMessage* istr)
 					break;
 				}
 				// UI 리스트 업데이트
-				if ( pUI )
+				if ( pUI != NULL )
 					pUI->UpdateExpressItemList();
+				
 				return;
 			}
 			
-			if ( pUI && pUI->IsVisible() )
-			{
+			if ( pUI && pUI->IsVisible())
 				SendListReq();
-			}
 		}
 		break;
 
 	case MSG_SUB_EXPRESS_DELETE:
+	case MSG_SUB_EXPRESS_DELETE_ALL:
 		{
+			UnLock();
 			ResponseClient::expressDelete* pRecv = reinterpret_cast<ResponseClient::expressDelete*>(istr->GetBuffer());
 			if (pRecv->result > 0)
 			{
@@ -196,6 +198,7 @@ void ExpressSystem::RecvExpressMessage(CNetworkMessage* istr)
 				case ERR_CAN_NOT_CREATE_ITEM:	// 아이템을 생성할 수 업음
 				case ERR_INVALID_INFORMATION:	// 아이템(또는 돈)정보가 잘못된 정보
 				case ERR_FULL_INVENTORY:		// 가방이 꽉참
+					break;
 				case ERR_NOT_FOUND_NPC:
 					{
 						strMessage.PrintF( _S( 5913, "수행가능한 NPC가 주위에 존재하지 않습니다.") );
@@ -204,17 +207,17 @@ void ExpressSystem::RecvExpressMessage(CNetworkMessage* istr)
 					break;	
 				}
 				// UI 리스트 업데이트
-				if ( pUI )
+				if ( pUI != NULL )
 					pUI->UpdateExpressItemList();
+
 				return;
 			}
 
-			if ( pUI && pUI->IsVisible() )
-			{
+			if ( pUI && pUI->IsVisible())
 				SendListReq();
-			}
 		}
 		break;
+
 	case MSG_SUB_EXPRESS_SEARCH_NICKNAME:
 		{
 			ResponseClient::express_unsearchable_stonestatus_searchName* pRecv = reinterpret_cast<ResponseClient::express_unsearchable_stonestatus_searchName*>(istr->GetBuffer());
@@ -257,8 +260,14 @@ void ExpressSystem::RecvExpressMessage(CNetworkMessage* istr)
 		break;
 	}
 }
-void ExpressSystem::SendListReq()
+bool ExpressSystem::SendListReq()
 {
+	if (IsLock() == true)
+	{
+		showErrorMsgBox(eEXPRESS_SYSTEM_USED);
+		return false;
+	}
+
 	CNetworkMessage nmList;
 	RequestClient::expressList* packet = reinterpret_cast<RequestClient::expressList*>(nmList.nm_pubMessage);
 	packet->type = MSG_EXPRESS_SYSTEM;
@@ -267,10 +276,19 @@ void ExpressSystem::SendListReq()
 	packet->pageIndex = m_nCurPage;
 	nmList.setSize(sizeof(*packet));
 	_pNetwork->SendToServerNew(nmList);
+
+	Lock();
+	return true;
 }
 
 void ExpressSystem::SendRecvReq( int nUniIndex )
 {
+	if (IsLock() == true)
+	{
+		showErrorMsgBox(eEXPRESS_SYSTEM_USED);
+		return;
+	}
+
 	CNetworkMessage nmList;
 	RequestClient::expressTake* packet = reinterpret_cast<RequestClient::expressTake*>(nmList.nm_pubMessage);
 	packet->type = MSG_EXPRESS_SYSTEM;
@@ -279,10 +297,18 @@ void ExpressSystem::SendRecvReq( int nUniIndex )
 	packet->index = nUniIndex;
 	nmList.setSize(sizeof(*packet));
 	_pNetwork->SendToServerNew(nmList);
+
+	Lock();
 }
 
 void ExpressSystem::SendDeleteReq( int nUniIndex )
 {
+	if (IsLock() == true)
+	{
+		showErrorMsgBox(eEXPRESS_SYSTEM_USED);
+		return;
+	}
+
 	CNetworkMessage nmList;
 	RequestClient::expressDelete* packet = reinterpret_cast<RequestClient::expressDelete*>(nmList.nm_pubMessage);
 	packet->type = MSG_EXPRESS_SYSTEM;
@@ -291,6 +317,48 @@ void ExpressSystem::SendDeleteReq( int nUniIndex )
 	packet->index = nUniIndex;
 	nmList.setSize(sizeof(*packet));
 	_pNetwork->SendToServerNew(nmList);
+
+	Lock();
+}
+
+void ExpressSystem::SendRecvAllReq()
+{
+	if (IsLock() == true)
+	{
+		showErrorMsgBox(eEXPRESS_SYSTEM_USED);
+		return;
+	}
+
+	CNetworkMessage nmList;
+	RequestClient::expressTake_all* packet = reinterpret_cast<RequestClient::expressTake_all*>(nmList.nm_pubMessage);
+	packet->type = MSG_EXPRESS_SYSTEM;
+	packet->subType = MSG_SUB_EXPRESS_TAKE_ALL;
+	packet->npcIndex = m_npcIndex;
+	packet->pageIndex = m_nCurPage;
+	nmList.setSize(sizeof(*packet));
+	_pNetwork->SendToServerNew(nmList);
+
+	Lock();
+}
+
+void ExpressSystem::SendDeleteAllReq()
+{
+	if (IsLock() == true)
+	{
+		showErrorMsgBox(eEXPRESS_SYSTEM_USED);
+		return;
+	}
+
+	CNetworkMessage nmList;
+	RequestClient::expressDelete_all* packet = reinterpret_cast<RequestClient::expressDelete_all*>(nmList.nm_pubMessage);
+	packet->type = MSG_EXPRESS_SYSTEM;
+	packet->subType = MSG_SUB_EXPRESS_DELETE_ALL;
+	packet->npcIndex = m_npcIndex;
+	packet->pageIndex = m_nCurPage;
+	nmList.setSize(sizeof(*packet));
+	_pNetwork->SendToServerNew(nmList);
+
+	Lock();
 }
 
 void ExpressSystem::SendPlayerSearchReq( CTString strName )
@@ -364,12 +432,15 @@ void ExpressSystem::SetNPCInfo( UWORD npcIndex, FLOAT fX, FLOAT fZ )
 {
 	if (m_npcIndex == npcIndex)
 		return;
+
 	m_npcIndex	= npcIndex;
 	m_fnpcPosX	= fX;
 	m_fnpcPosZ	= fZ;
 	m_nCurPage	= 0;
 	ClearList();
-	SendListReq();
+
+	if (SendListReq() == false)
+		ClearNPCInfo();
 }
 
 void ExpressSystem::ClearNPCInfo()
@@ -430,4 +501,43 @@ void ExpressSystem::RemoteitemUse()
 	ClearNPCInfo();
 	ClearList();
 	SendListReq();
+}
+
+void ExpressSystem::Lock()
+{
+	m_bLock = true;
+}
+
+void ExpressSystem::UnLock()
+{
+	m_bLock = false;
+}
+
+void ExpressSystem::showErrorMsgBox( int nType )
+{
+	CUIManager* pUIManager = CUIManager::getSingleton();
+
+	if( pUIManager->DoesMessageBoxExist( MSGCMD_EXPRESS_RECV_ERROR))
+		pUIManager->CloseMessageBox( MSGCMD_EXPRESS_RECV_ERROR );
+
+	CTString strMessage, strTitle;
+	CUIMsgBox_Info msgBoxInfo;
+
+	strTitle.PrintF(_S( 191, "확인" ));
+
+	switch( nType )
+	{
+	case eEXPRESS_SYSTEM_USED:
+		{
+			msgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OK, UI_NONE, MSGCMD_EXPRESS_RECV_ERROR );
+			strMessage.PrintF( _S( 6469, "신비한 석상을 사용 중입니다.") );
+		}
+		break;
+	default:
+		return;
+	}	
+	msgBoxInfo.AddString(strMessage);	
+
+	if ( pUIManager )
+		pUIManager->CreateMessageBox( msgBoxInfo );
 }

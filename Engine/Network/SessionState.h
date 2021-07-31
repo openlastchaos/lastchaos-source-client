@@ -34,7 +34,7 @@
 #define		IMPLEMENT_MSG_UPDATE(x)	void update##x(CNetworkMessage* istr)
 
 #if		!defined(WORLD_EDITOR)
-#	define		REG_PACKET(msg, n, x)			m_packet[msg].insert( std::make_pair(n, &Recv##x) );
+#	define		REG_PACKET(msg, n, x)			m_packet[msg].insert( std::make_pair((int)n, &Recv##x) );
 #	define		REG_PACKET_UPDATE(msg, n, x)	m_packet[msg].insert( std::make_pair(n, &update##x) );
 #	define		REG_PACKET_R(msg, n, real)		{\
 													_recv_func f; \
@@ -218,6 +218,8 @@ public:
   void ReceiveGmMessage(CNetworkMessage *istr);
 // [KH_070316] 변경 프리미엄 메모리 관련
   void ReceiveMemPosMessage(CNetworkMessage *istr);
+  void proc_mempos_list(CNetworkMessage *istr);
+  void proc_mempos_list_rus(CNetworkMessage *istr);
   void ReceiveGoToMessage(CNetworkMessage *istr);
   void ReceiveMoveMessage(CNetworkMessage *istr);
   // 로그인 관련 메시지...

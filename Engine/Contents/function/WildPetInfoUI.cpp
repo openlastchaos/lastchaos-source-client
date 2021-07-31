@@ -6,6 +6,10 @@
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/Interface/UIInventory.h>
+#include <Common/Packet/ptype_old_do_item.h>
+#include <Engine/GameState.h>
+
+extern INDEX g_iCountry;
 
 enum eSTATE_IMAGE_INDEX
 {
@@ -34,6 +38,7 @@ CWildPetInfoUI::CWildPetInfoUI()
 	, m_pBtnExpUse(NULL)
 	, m_pInvenBack(NULL)
 	, m_pMainTab(NULL)
+	, m_Petdata(NULL)
 {
 	int i;
 	for (i = 0; i < eSTRING_MAX; ++i)
@@ -79,6 +84,8 @@ CWildPetInfoUI::CWildPetInfoUI()
 		m_pIconAITarget[i] = NULL;
 		m_pIconAIAction[i] = NULL;
 	}
+
+	clear_upgradeinfo();
 }
 
 CWildPetInfoUI::~CWildPetInfoUI()
@@ -137,7 +144,15 @@ void CWildPetInfoUI::updateBaseTab()
 		m_pText[eSTRING_SPECIES]->SetText(strTemp);
 
 	// 경험치
-	strTemp.PrintF("%I64d / %I64d", pMyWildPet->m_exp, pMyWildPet->m_next_exp);
+	CTString strExp, strNextExp;
+	strExp.PrintF("%I64d", pMyWildPet->m_exp);
+	strNextExp.PrintF("%I64d", pMyWildPet->m_next_exp);
+
+	CUIManager* pUIMgr = UIMGR();
+	pUIMgr->InsertCommaToString(strExp);
+	pUIMgr->InsertCommaToString(strNextExp);
+
+	strTemp.PrintF("%s / %s", strExp, strNextExp);
 
 	if (m_pText[eSTRING_EXP] != NULL)
 		m_pText[eSTRING_EXP]->SetText(strTemp);
@@ -270,11 +285,8 @@ void CWildPetInfoUI::updateSkillTab()
 			pText->setFontColor(color);
 		}
 		// skill Level
-#if defined G_RUSSIA
 		strTemp.PrintF("%s %d", _S(4414, "LV"), sbLevel);
-#else
-		strTemp.PrintF("Lv %d", sbLevel);
-#endif
+
 		pText = (CUIText*)pItem->findUI("str_skillLevel");
 
 		if (pText != NULL)
@@ -442,12 +454,14 @@ void CWildPetInfoUI::updateExpInfo()
 	if (m_pTextExp[eEXP_STRING_PERCENT] != NULL)
 		m_pTextExp[eEXP_STRING_PERCENT]->SetText(strTemp);
 
+	CUIManager* pUIMgr = UIMGR();
 	// 경험치 축적 가능량
 	FLOAT temresult = (float)m_Petdata->accexpData[0].nMaxAccParam1 + (float)(pMyWildPet->m_nLevel * m_Petdata->accexpData[0].nMaxAccParam2) / 100.0f;
 	// 부동소수점 연산으로 인한 계산오차가 발생하므로 연산식 수정 [1/13/2012 ldy1978220]
 	SQUAD lAccuresult = _pNetwork->MyCharacterInfo.needExp * (int)(temresult * 100) / 10000;
 
 	strTemp.PrintF("%I64d",lAccuresult);
+	pUIMgr->InsertCommaToString(strTemp);
 
 	if (m_pTextExp[eEXP_STRING_MAX_EXP] != NULL)
 		m_pTextExp[eEXP_STRING_MAX_EXP]->SetText(strTemp);
@@ -457,6 +471,7 @@ void CWildPetInfoUI::updateExpInfo()
 	GetWildPetInfo(pMyWildPet->m_nIdxServer, temPetitem);
 
 	strTemp.PrintF("%I64d", temPetitem.pet_accexp);
+	pUIMgr->InsertCommaToString(strTemp);
 
 	if (m_pTextExp[eEXP_STRING_CURRENT_EXP] != NULL)
 		m_pTextExp[eEXP_STRING_CURRENT_EXP]->SetText(strTemp);
@@ -512,16 +527,18 @@ void CWildPetInfoUI::initialize()
 {
 	int i;
 	// 닫기. AI셋팅 버튼
-	string strBtnID[eBTN_MAX] = { "btn_close", "btn_AISetting" };
+	std::string strBtnID[eBTN_MAX] = { "btn_close", "btn_AISetting" };
 	
 	for (i = 0; i < eBTN_MAX; ++i)
 		m_pBtn[i] = (CUIButton*)findUI(strBtnID[i].c_str());
 
+#ifndef		WORLD_EDITOR
 	if (m_pBtn[eBTN_CLOSE] != NULL)
 		m_pBtn[eBTN_CLOSE]->SetCommandFUp(boost::bind(&CWildPetInfoUI::closeUI, this));
 
 	if (m_pBtn[eBTN_AI_SET] != NULL)
 		m_pBtn[eBTN_AI_SET]->SetCommandFUp(boost::bind(&CWildPetInfoUI::OpenAISetUI, this));
+#endif	// WORLD_EDITOR
 
 	// Tab 버튼
 	m_pMainTab = (CUITab*)findUI("main_tab");
@@ -533,8 +550,8 @@ void CWildPetInfoUI::initialize()
 		m_pMainTab->SetCommandChange(pCmd);
 	}
 	
-	string strChkBtnID[eTAB_MAX] = { "chk_info", "chk_skill" };
-	string strTabStringID[eTAB_MAX] = { "str_chkInfo", "str_chkSkill" };
+	std::string strChkBtnID[eTAB_MAX] = { "chk_info", "chk_skill" };
+	std::string strTabStringID[eTAB_MAX] = { "str_chkInfo", "str_chkSkill" };
 		
 	for (i = 0; i < eTAB_MAX; ++i)
 	{
@@ -558,10 +575,12 @@ void CWildPetInfoUI::initialize()
 	m_pImgExpBack = (CUIImage*)findUI("img_expPetBack");
 	m_pBtnExpUse = (CUIButton*)findUI("btn_useExp");
 
+#ifndef		WORLD_EDITOR
 	if (m_pBtnExpUse != NULL)
 		m_pBtnExpUse->SetCommandFUp(boost::bind(&CWildPetInfoUI::ExpUse, this));
+#endif	// WORLD_EDITOR
 
-	string strExpID[eEXP_STRING_MAX] = {"str_expPercent", "str_expMax", "str_expcur", "str_petcooltimeTitle", "str_petcooltime"}; 
+	std::string strExpID[eEXP_STRING_MAX] = {"str_expPercent", "str_expMax", "str_expcur", "str_petcooltimeTitle", "str_petcooltime"}; 
 
 	for (i = 0; i < eEXP_STRING_MAX; ++i)
 	{
@@ -582,7 +601,7 @@ void CWildPetInfoUI::_initBaseInfoTab()
 {
 	int i;
 	// 착용 장비
-	string strIconID[WILDPET_WEAR_TOTAL] = {"icon_head", "icon_body", "icon_weapon", "icon_acce"};
+	std::string strIconID[WILDPET_WEAR_TOTAL] = {"icon_head", "icon_body", "icon_weapon", "icon_acce"};
 
 	for (i = 0; i < WILDPET_WEAR_TOTAL; ++i)
 	{
@@ -605,8 +624,8 @@ void CWildPetInfoUI::_initBaseInfoTab()
 	m_pInvenBack = (CUIImageArray*)findUI("ia_inven_back");
 
 	// stat 정보
-	string strStatTextID[eSTAT_MAX] = { "str_str", "str_con", "str_dex", "str_int" };
-	string strStatBtnID[eSTAT_MAX] = { "btn_strUp", "btn_conUp", "btn_dexUp", "btn_intUp" };
+	std::string strStatTextID[eSTAT_MAX] = { "str_str", "str_con", "str_dex", "str_int" };
+	std::string strStatBtnID[eSTAT_MAX] = { "btn_strUp", "btn_conUp", "btn_dexUp", "btn_intUp" };
 
 	for (i = 0; i < eSTAT_MAX; ++i)
 	{
@@ -622,8 +641,8 @@ void CWildPetInfoUI::_initBaseInfoTab()
 	}
 
 	// 배고픔, 충성도 상태
-	string strImgState[eSTATE_MAX] = { "ia_hungry", "ia_faith" };
-	string strTextState[eSTATE_MAX] = { "str_hungry", "str_faith" };
+	std::string strImgState[eSTATE_MAX] = { "ia_hungry", "ia_faith" };
+	std::string strTextState[eSTATE_MAX] = { "str_hungry", "str_faith" };
 
 	for (i = 0; i < eSTATE_MAX; ++i)
 	{
@@ -634,14 +653,16 @@ void CWildPetInfoUI::_initBaseInfoTab()
 	// AI (켜기,끄기) 체크버튼
 	m_pChkAISet = (CUICheckButton*)findUI("chk_AISwitch");
 
+#ifndef		WORLD_EDITOR
 	if (m_pChkAISet != NULL)
 	{
 		m_pChkAISet->SetCommandF(boost::bind(&CWildPetInfoUI::SendAIActive, this));
 		m_bAIActive = m_pChkAISet->IsChecked();
 	}
+#endif	// WORLD_EDITOR
 
 	// 이름, 레벨, 종족, 경험치, 성장포인트, 공격력, 마법공격력, 방어력, 마법방어력, 명중도, 회피도
-	string strTextID[eSTRING_MAX] = { "text_name", "text_level", "text_type", "text_exp", "str_statpoint",
+	std::string strTextID[eSTRING_MAX] = { "text_name", "text_level", "text_type", "text_exp", "str_statpoint",
 	"str_att", "str_Matt", "str_def", "str_Mdef", "str_accuracy", "str_dodge" };
 
 	for (i = 0; i < eSTRING_MAX; ++i)
@@ -692,8 +713,10 @@ void CWildPetInfoUI::_initAISetUI()
 	// 편집완료
 	m_pBtnAISetOK = (CUIButton*)findUI("btn_ok");
 
+#ifndef		WORLD_EDITOR
 	if (m_pBtnAISetOK != NULL)
 		m_pBtnAISetOK->SetCommandFUp(boost::bind(&CWildPetInfoUI::SendAIList, this));
+#endif	// WORLD_EDITOR
 }
 
 void CWildPetInfoUI::_setUI()
@@ -852,7 +875,11 @@ void CWildPetInfoUI::WearItemDBL(int nWearPos)
 	if (nWearPos < 0 || nWearPos >= WILDPET_WEAR_TOTAL)
 		return;
 	
-	if (MY_APET_INFO()->m_nPetWearIndex[nWearPos] <= 0)
+	if (MY_APET_INFO() == NULL || 
+		MY_APET_INFO()->m_nPetWearIndex[nWearPos] <= 0)
+		return;
+
+	if (UIMGR()->GetInventory()->getLocked() == LOCK_PET_ITEM_UPGRADE)
 		return;
 
 	_pNetwork->SendUseWildPetItem(nWearPos, -1, -1, MY_APET_INFO()->m_nPetWearIndex[nWearPos]);
@@ -1230,6 +1257,10 @@ WMSG_RESULT CWildPetInfoUI::OnLButtonDown( UINT16 x, UINT16 y )
 		}
 	}
 
+	// 잠겨있을 경우 child 로 메세지 전달 하지 않음.
+	if (UIMGR()->GetInventory()->getLocked() == LOCK_PET_ITEM_UPGRADE)
+		return WMSG_SUCCESS;
+
 	CUIManager::getSingleton()->RearrangeOrder( UI_WILDPET_INFO, TRUE );
 	return WMSG_FAIL;
 }
@@ -1247,8 +1278,31 @@ WMSG_RESULT CWildPetInfoUI::OnLButtonUp( UINT16 x, UINT16 y )
 
 	if (pDrag != NULL)
 	{
+		// 검사 범위가 좁기 때문에 먼저 검사한다.
+		// check upgrade
+		if (m_pInvenBack != NULL && m_pInvenBack->IsInside(x, y))
+		{
+			for (int i = 0; i < WILDPET_WEAR_TOTAL; ++i)
+			{
+				if (m_pIcon[i] != NULL && m_pIcon[i]->IsInside(x, y) == TRUE)
+				{
+					bool bRet = check_upgrade(i);
+
+					if (bRet == true)
+					{
+						pUIManager->ResetHoldBtn();
+						return WMSG_SUCCESS;
+					}
+
+					break;
+				}
+			}
+		}		
+		
+		// check main windows
 		if (m_pImgBack && m_pImgBack->IsInside(x, y))
 		{
+
 			if (m_pChkTabBtn[eTAB_BASE] && m_pChkTabBtn[eTAB_BASE]->IsChecked() == TRUE)
 			{
 				if (pDrag->getBtnType() == UBET_ITEM &&
@@ -1265,6 +1319,7 @@ WMSG_RESULT CWildPetInfoUI::OnLButtonUp( UINT16 x, UINT16 y )
 				}
 			}
 		}
+		// check ai window
 		else if (m_pImgAISetUIBack && m_pImgAISetUIBack->GetHide() != TRUE && m_pImgAISetUIBack->IsInside(x, y))
 		{
 			int nSlotnum = 0;
@@ -1341,6 +1396,38 @@ WMSG_RESULT CWildPetInfoUI::OnLButtonUp( UINT16 x, UINT16 y )
 	}
 	pUIManager->ResetHoldBtn();
 	return WMSG_FAIL;
+}
+
+void CWildPetInfoUI::clear_upgradeinfo()
+{
+	m_nUpgradeSelidx = -1;
+	m_nUpgradeTab = -1;
+	m_nUpgradeInvenIdx = -1;
+}
+
+void CWildPetInfoUI::DeleteEquip( ULONG idx, INDEX item_idx )
+{
+	ObjInfo* pInfo = ObjInfo::getSingleton();
+
+	if (pInfo->GetMyApetInfo() != NULL)
+	{
+		if (pInfo->GetMyApetInfo()->bIsActive == FALSE)
+		{
+			return;
+		}
+		
+		if (pInfo->GetMyApetInfo()->GetEntity() != NULL && item_idx >= 0)
+			_pGameState->TakeOffArmorTest(pInfo->GetMyApetInfo()->GetEntity()->GetModelInstance(), item_idx);
+
+		pInfo->GetMyApetInfo()->m_nPetWearIndex[idx] = -1;
+
+		// _WildPetInfo는 실제 와일드 펫정보가 아니다.(_pNetwork->ga_srvServer.srv_actWildPet의 펫정보를 직접 바꾸어야 한다.)
+		// _WildPetInfo변수가 포인터 변수가 아니다. &_WildPetInfo != &_pNetwork->ga_srvServer.srv_actWildPet
+		if (pInfo->GetMyApetInfo()->GetEntity() != NULL)
+			pInfo->GetMyApetInfo()->GetEntity()->en_pWildPetTarget->m_nPetWearIndex[idx] = -1;
+	}
+
+	PetWearItemReSet();
 }
 
 void CWildPetInfoUI::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
@@ -1567,6 +1654,34 @@ void CWildPetInfoUI::SendAIActive()
 	_pNetwork->SendToServerNew(nmMessage);
 }
 
+void CWildPetInfoUI::SendUpgradeReq()
+{
+	if (m_nUpgradeSelidx < 0 || m_nUpgradeSelidx >= WILDPET_WEAR_TOTAL)
+		return;
+
+	if (m_pIcon[m_nUpgradeSelidx]->IsEmpty() == true)
+		return;
+
+	CItems* pItems = m_pIcon[m_nUpgradeSelidx]->getItems();
+
+	if (pItems == NULL)
+		return;
+
+	CNetworkMessage nmMessage;
+	RequestClient::doItemUpgradePet* packet = reinterpret_cast<RequestClient::doItemUpgradePet*>(nmMessage.nm_pubMessage);
+	packet->type = MSG_ITEM;
+	packet->subType = MSG_ITEM_UPGRADE_PET;
+	packet->wearPos = m_nUpgradeSelidx;
+	packet->tab = m_nUpgradeTab;
+	packet->inven_index = m_nUpgradeInvenIdx;
+
+	nmMessage.setSize( sizeof(*packet) );
+
+	_pNetwork->SendToServerNew(nmMessage);
+
+	clear_upgradeinfo();
+}
+
 void CWildPetInfoUI::ReceiveWearItemData(CNetworkMessage *istr)
 {
 	SBYTE nWearpos;
@@ -1592,6 +1707,7 @@ void CWildPetInfoUI::ReceiveWearItemData(CNetworkMessage *istr)
 	pItems->Item_Wearing = nWearpos;
 	pItems->Item_Used = nUsed;
 	pItems->Item_Used2 = nUsed2;
+	pItems->Item_Flag = nFlag;
 
 	pItems->ItemData = CItemData::getData(nItemIndex);
 
@@ -1656,6 +1772,24 @@ void CWildPetInfoUI::ReceiveWearItemData(CNetworkMessage *istr)
 		m_pIcon[nWearpos]->setData(pItems, false);
 }
 
+void CWildPetInfoUI::ReceiveDeleteEquip( CNetworkMessage *istr )
+{
+	CTString strPetname,strmassage;
+	INDEX nItem_Index;
+	SBYTE wear_pos;
+	
+	CUIManager* pUIManager = UIMGR();	
+
+	(*istr) >> strPetname;
+	(*istr) >> nItem_Index;
+	(*istr) >> wear_pos;
+
+	strmassage.PrintF(_S(4213, "%s 의 %s 아이템이 기간 만료로 사라집니다." ),strPetname,_pNetwork->GetItemName(nItem_Index));
+	pUIManager->GetChattingUI()->AddSysMessage( strmassage, SYSMSG_NORMAL );
+
+	DeleteEquip(wear_pos, nItem_Index);
+}
+
 void CWildPetInfoUI::ExpUse()
 {
 	CUIManager* pUIManager = CUIManager::getSingleton();
@@ -1699,5 +1833,189 @@ void CWildPetInfoUI::changeMainTab()
 		if (m_pTextChk[i] != NULL)
 			m_pTextChk[i]->setFontColor(colText[nChked]);
 	}
+}
+
+bool CWildPetInfoUI::check_upgrade( int idx )
+{
+	CUIManager* pUIMgr = UIMGR();
+
+	if (idx < 0 || idx >= WILDPET_WEAR_TOTAL)
+		return false;
+
+	if (m_pIcon[idx] == NULL || m_pIcon[idx]->IsEmpty() == true)
+		return false;
+
+	CUIIcon* pDrag = pUIMgr->GetDragIcon();
+
+	if (pDrag == NULL)
+		return false;
+
+	// Drap Item 이 제련석인지 검사
+	CItems* pItems = pDrag->getItems();
+
+	if (pItems == NULL)
+		return false;
+
+	CItemData* pData = pItems->ItemData;
+
+	if (pData == NULL)
+		return false;
+
+	if (pData->GetType() != CItemData::ITEM_ETC || pData->GetSubType() != CItemData::ITEM_ETC_REFINE)
+	{
+		UICHAT()->AddSysMessage(_S(170, "업그레이드 가능 아이템이 아닙니다."));
+		return false;
+	}
+
+	// 펫의 무기와 방어구에 인첸트는 [고급 제련석, 행운의 고급제련석, 초고급제련석, 카오스 제련석] 만 사용 가능합니다.
+	if (pData->GetRefineType() != CItemData::REFINE_SPECIAL &&
+		pData->GetRefineType() != CItemData::REFINE_SUPER_SPECIAL &&
+		pData->GetRefineType() != CItemData::REFINE_LUCKY &&
+		pData->GetRefineType() != CItemData::REFINE_CHAOS)
+	{
+		UICHAT()->AddSysMessage(_S(170, "업그레이드 가능 아이템이 아닙니다."));
+		return false;
+	}
+
+	CItems* pPetItems = m_pIcon[idx]->getItems();
+	CItemData* pPetItemData;
+
+	if (pPetItems == NULL)
+		return false;
+
+	pPetItemData = pPetItems->ItemData;
+
+	if (pPetItemData == NULL)
+		return false;
+
+	if (pUIMgr->DoesMessageBoxExist(MSGCMD_USE_PET_ITEM_UPGRADE))
+		return false;
+
+	if (pUIMgr->DoesMessageBoxExist(MSGCMD_USE_PET_ITEM_UPGRADE_INFO))
+		pUIMgr->CloseMessageBox(MSGCMD_USE_PET_ITEM_UPGRADE_INFO);
+
+	if (pUIMgr->GetInventory()->IsLocked() == TRUE ||
+		pUIMgr->GetInventory()->IsLockedArrange() == TRUE)
+	{
+		pUIMgr->GetInventory()->ShowLockErrorMessage();
+		return false;
+	}
+
+	m_nUpgradeSelidx = idx;
+	m_nUpgradeTab = pItems->Item_Tab;
+	m_nUpgradeInvenIdx = pItems->InvenIndex;	
+
+	CUIMsgBox_Info	MsgBoxInfo;
+	CTString strTitle, strMsg;
+	DWORD style;
+	bool bLock = false;
+	int nCmdCode = MSGCMD_USE_PET_ITEM_UPGRADE;
+	ULONG nPlus = pPetItems->GetItemPlus();
+	const char* szItemName = _pNetwork->GetItemName(pPetItemData->GetItemIndex());
+
+	switch (pData->GetRefineType())
+	{
+	case  CItemData::REFINE_SPECIAL:
+	case  CItemData::REFINE_LUCKY:
+		{
+			if (nPlus >= DEF_PET_ITEM_UPGRADE_MAX)
+			{
+				strMsg.PrintF("%s", _S(2642, "더이상 업그레이드 할 수 없습니다."));
+				pUIMgr->GetChattingUI()->AddSysMessage(strMsg, SYSMSG_ERROR);
+
+				// 장비 장착으로 메세지 전달하지 않음. (true)
+				return true;
+			}
+
+			strTitle = _S(175, "아이템 업그레이드");
+
+			style = UMBS_YESNO;
+
+			// +3 ~
+			if( nPlus > 2 )
+			{
+				strMsg.PrintF( _S(172, "[%s +%d]<를> 업그레이드 하시겠습니까? 실패하면 아이템이 파괴될 수 있습니다."), szItemName, nPlus);
+			}
+			// 0 ~ +2
+			else if( nPlus > 0 )
+			{
+				strMsg.PrintF( _S(173, "[%s +%d]<를> 업그레이드 하시겠습니까? 실패하면 능력치가 상승하지 않습니다."), szItemName, nPlus);
+			}
+			// 0
+			else 
+			{
+				strMsg.PrintF( _S(174, "[%s]<를> 업그레이드 하시겠습니까? 실패하면 능력치가 상승하지 않습니다."), szItemName);
+			}
+
+
+			strMsg.PrintF(_S(6513, "[%s +%d]<를> 업그레이드 하시겠습니까? 실패하면 아이템이 파괴될 수 있습니다."), 
+				_pNetwork->GetItemName(pPetItems->Item_Index), pPetItems->GetItemPlus());
+			style = UMBS_YESNO;
+			bLock = true;
+		}
+		break;
+	case  CItemData::REFINE_SUPER_SPECIAL:
+		{
+			if(nPlus >= 14)
+			{
+				strTitle.PrintF(_S( 1670, "주의!!!" ));
+				strMsg.PrintF(_S( 1671, "초 고급 제련석은 +14이상의 장비에는\n사용할 수 없습니다." ));
+				style = UMBS_OK;
+				nCmdCode = MSGCMD_USE_PET_ITEM_UPGRADE_INFO;
+			}
+			else if (pItems->IsFlag(FLAG_ITEM_SUPER_STONE_USED) == FALSE)
+			{
+				strTitle.PrintF(_S( 1670, "주의!!!" ));
+				strMsg.PrintF(_S( 1672, "초 고급 제련석는 하나의 장비에\n한번만 사용할 수 있습니다.\n정말 사용하시겠습니까?" ));
+				style = UMBS_YESNO;
+				bLock = true;
+			}
+			else
+			{
+				strTitle.PrintF(_S( 1673, "제련 불가!!!" ));
+				strMsg.PrintF(_S( 1674, "초 고급 제련석을 이미\n사용한 장비입니다.\n다른 아이템에 사용해 주십시요." ));
+				style = UMBS_OK;
+				nCmdCode = MSGCMD_USE_PET_ITEM_UPGRADE_INFO;
+			}
+		}
+		break;	
+	case  CItemData::REFINE_CHAOS:
+		{
+			if (nPlus > 11)
+			{
+				strTitle.PrintF(_S( 1670, "주의!!!" ));
+				strMsg.PrintF(_S(4134, "카오스 제련석은 +12이상의 장비에는 사용할 수 없습니다." ) );
+				style = UMBS_OK;
+				nCmdCode = MSGCMD_USE_PET_ITEM_UPGRADE_INFO;
+			}
+			else
+			{
+				CTString strItemname;
+				
+				if (nPlus > 0)
+					strItemname.PrintF("[%s +%d]", _pNetwork->GetItemName(pPetItems->Item_Index), nPlus);
+				else
+					strItemname.PrintF("[%s]", _pNetwork->GetItemName(pPetItems->Item_Index));
+
+				strTitle.PrintF(_S(175, "아이템 업그레이드"));
+				strMsg.PrintF( _S(4135, "%s<를> 카오스 제련석을 사용하여 업그레이드 하시겠습니까?" ), strItemname);
+				style = UMBS_OKCANCEL;
+				bLock = true;
+			}
+		}
+		break;
+	}
+
+
+	MsgBoxInfo.SetMsgBoxInfo(strTitle, style, UI_NONE, nCmdCode);
+	
+	MsgBoxInfo.AddString(strMsg);
+
+	pUIMgr->CreateMessageBox(MsgBoxInfo);
+
+	if (bLock == true)
+		pUIMgr->GetInventory()->Lock(TRUE, TRUE, LOCK_PET_ITEM_UPGRADE);
+
+	return true;
 }
 

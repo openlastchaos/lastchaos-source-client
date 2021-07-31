@@ -14,6 +14,9 @@
 
 #define WEAR_COSTUME	8
 
+#define		PLAYER_STATE_PKMODE			(1 << 3)	// PK 모드
+#define		PLAYER_STATE_PKMODEDELAY	(1 << 4)	// PK 모드 해제 딜레이
+
 class CUIGuildMarkIcon;
 
 // FIXME : 많은 정리 필요...ㅡ.ㅡ

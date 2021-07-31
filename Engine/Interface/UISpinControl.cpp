@@ -51,6 +51,8 @@ CUISpinControl::~CUISpinControl()
 {
 	SAFE_DELETE(m_pBackImage);
 	SAFE_DELETE(m_pCmdReturn);
+
+	CUIEditBox::Destroy();
 }
 
 void CUISpinControl::initialize()
@@ -70,6 +72,42 @@ void CUISpinControl::initialize()
 	}
 
 	CUIEditBox::initialize();
+}
+
+CUIBase* CUISpinControl::Clone()
+{
+	CUISpinControl* pSpinCtrl = new CUISpinControl(*this);	
+
+	erase_pointer();
+
+	CUIRectSurface* pRS = NULL;
+	pRS = GetRectSurface();
+
+	if( pRS != NULL )
+	{
+		{
+			CUIRectSurface* pCopy = new CUIRectSurface;
+			pCopy->CopyRectSurface(pRS);
+
+			pSpinCtrl->SetRectSurface(pCopy);
+		}		
+	}
+
+	// 텍스쳐를 사용하면 복사 시 Ref Count 를 올려준다.
+	if (m_pTexData != NULL)
+		m_pTexData->MarkUsed();
+
+	if (m_pBackImage != NULL)
+		pSpinCtrl->SetBackImage((CUIImageSplit*)m_pBackImage->Clone());
+	else
+		pSpinCtrl->SetBackImage(NULL);
+
+	CUIBase::CloneChild(pSpinCtrl);
+
+	// child 복제 후 초기화 (버튼 초기화해야 됨.)
+	pSpinCtrl->initialize();
+
+	return pSpinCtrl;
 }
 
 void CUISpinControl::MoveData( bool bUp )
@@ -93,8 +131,10 @@ void CUISpinControl::MoveData( bool bUp )
 
 	CTString strTmp;
 	strTmp.PrintF("%I64d", llCurData);
-
 	SetString(strTmp.str_String);
+
+	if (m_funcMove)
+		m_funcMove(this);
 }
 
 WMSG_RESULT CUISpinControl::OnMouseWheel( UINT16 x, UINT16 y, int wheel )
@@ -142,7 +182,7 @@ WMSG_RESULT CUISpinControl::OnCharMessage( MSG* pMsg )
 	{
 		CTString strTmp;
 		strTmp.PrintF("%I64d", m_llMax);
-
+		UIMGR()->InsertCommaToString(strTmp);
 		SetString(strTmp.str_String);
 	}
 
@@ -157,10 +197,10 @@ WMSG_RESULT CUISpinControl::OnKeyMessage( MSG* pMsg )
 	if (pMsg->wParam == VK_RETURN)
 	{
 		if (m_pCmdReturn != NULL)
-		{
 			m_pCmdReturn->execute();
-			return WMSG_SUCCESS;
-		}
+
+		if (m_funcReturn)
+			m_funcReturn(this);
 	}
 
 	return CUIEditBox::OnKeyMessage(pMsg);
@@ -172,7 +212,9 @@ void CUISpinControl::SetBackGround( UIRect rc, UIRectUV uv, int nUnit )
 		m_pBackImage = new CUIImageSplit;
 
 	if (m_pTexData != NULL)
-		m_pBackImage->setTexData(m_pTexData);
+	{
+		m_pBackImage->setTexString(m_strTex.c_str());
+	}
 
 	m_rcBackPos = rc;
 
@@ -195,3 +237,28 @@ void CUISpinControl::GetBackGround( UIRect& rc, UIRectUV& uv, int& nUnit )
 	uv = m_pBackImage->GetAbsUV();
 	nUnit = m_pBackImage->GetUnit();
 }
+
+void CUISpinControl::CmdErase()
+{
+	m_pCmdReturn = NULL;
+	m_funcMove = NULL;
+	m_funcReturn = NULL;
+	
+	CUIBase::CmdErase();
+}
+
+void CUISpinControl::OnEnter( UINT16 x, UINT16 y )
+{
+	CUIFocus::getSingleton()->setUI(this);
+
+	CUIBase::OnEnter(x, y);
+}
+
+void CUISpinControl::OnLeave( UINT16 x, UINT16 y )
+{
+	CUIFocus::getSingleton()->killFocus(this);
+
+	CUIBase::OnLeave(x, y);
+}
+
+

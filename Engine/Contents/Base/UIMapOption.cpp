@@ -15,13 +15,6 @@ CUIMapOption::CUIMapOption()
 	{
 		m_pCheckBtn[i] = NULL;
 	}
-
-	m_bInit = false;
-}
-
-CUIMapOption::~CUIMapOption()
-{
-	
 }
 
 bool CUIMapOption::IsCheck( eNPC_TYPE eType )
@@ -92,13 +85,8 @@ BOOL CUIMapOption::IsFlag( int nType, int npcIndex )
 	return TRUE;
 }
 
-void CUIMapOption::Init()
+void CUIMapOption::initialize()
 {
-	CDrawPort* pDraw = UIMGR()->GetDrawPort();
-
-	if (pDraw == NULL)
-		return;
-
 	const char* strID[eNT_MAX] = {"quest_q", "quest_a", "shop", "stash", "teleport", "guild", "affinity",
 		"auction", "char_manager", "job_master", "war", "pet_manager", "express", "else",
 		"monster", "guild_group", "party", "fellowship"};
@@ -127,19 +115,10 @@ void CUIMapOption::Init()
 
 		strTmp = pTmpText->getText();
 
-		if (g_iCountry != RUSSIA)
-		{
-			if (nWidth < pDraw->GetTextWidth2(strTmp))
-				nWidth = pDraw->GetTextWidth2(strTmp);
-		}
-		else
-		{
-			extern CFontData *_pfdDefaultFont;
+		int nFixedWidth = UTIL_HELP()->GetFontWidth(strTmp.str_String);
 
-			int nNoFixedWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strTmp.str_String);
-			if (nWidth < nNoFixedWidth)
-				nWidth = nNoFixedWidth;
-		}
+		if (nWidth < nFixedWidth)
+			nWidth = nFixedWidth;
 	}
 
 	int nGap = 20;
@@ -151,16 +130,14 @@ void CUIMapOption::Init()
 		pSplit->UpdateSplit();
 	}
 
-	SetPos(UIMGR()->GetRadar()->GetPosX() - m_nWidth, m_nPosY);
-	updatePosition(true);
-
-	m_bInit = true;
+//	SetPos(UIMGR()->GetRadar()->GetPosX() - m_nWidth, m_nPosY);
+//	updatePosition(true);
 }
 
-void CUIMapOption::Hide( BOOL bHide )
+void CUIMapOption::OnLeave( UINT16 x, UINT16 y )
 {
-	if (m_bInit == false)
-		Init();
-
-	m_bHide = bHide;
+	CUIBase::OnLeave(x, y);
+	
+	Hide(TRUE);
+	UIMGR()->RearrangeOrder(UI_MAP_OPTION, FALSE);
 }

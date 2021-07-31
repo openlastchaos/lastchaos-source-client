@@ -2,6 +2,8 @@
 #include <Engine/Network/ChatMsgBuffer.h>
 #include <Engine/Interface/UITextureManager.h>
 
+extern INDEX g_iCountry;
+
 // ----------------------------------------------------------------------------
 // Name : ChatMsgBuffer()
 // Desc : Constructor
@@ -67,28 +69,31 @@ void ChatMsgBuffer::AddString( CTString &strMessage )
 	{
 		// Check splitting position for 2 byte characters
 		int		nSplitPos = CHATMSG_CHAR_MAX;
-#if defined (G_RUSSIA)
-		for( int iPos=nSplitPos; iPos >=0; --iPos )
+		if (g_iCountry == RUSSIA)
 		{
-			if( strMessage[iPos] == ' ' )
+			for( int iPos=nSplitPos; iPos >=0; --iPos )
 			{
-				nSplitPos = iPos;
-				break;
+				if( strMessage[iPos] == ' ' )
+				{
+					nSplitPos = iPos;
+					break;
+				}
 			}
 		}
-#else
-		BOOL	b2ByteChar = FALSE;
-		for( int iPos = 0; iPos < nSplitPos; iPos++ )
+		else
 		{
-			if( strMessage[iPos] & 0x80 )
-				b2ByteChar = !b2ByteChar;
-			else
-				b2ByteChar = FALSE;
-		}
+			BOOL	b2ByteChar = FALSE;
+			for( int iPos = 0; iPos < nSplitPos; iPos++ )
+			{
+				if( strMessage[iPos] & 0x80 )
+					b2ByteChar = !b2ByteChar;
+				else
+					b2ByteChar = FALSE;
+			}
 
-		if( b2ByteChar )
-			nSplitPos--;
-#endif
+			if( b2ByteChar )
+				nSplitPos--;
+		}
 
 		// Split string
 		CTString	strTemp;

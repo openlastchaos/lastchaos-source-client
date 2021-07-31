@@ -58,6 +58,9 @@ CUIDurability::CUIDurability(void)
 	, m_uEndTime(DEF_END_TIME)
 	, m_eEventType(eFIRST)
 	, m_bProgress(FALSE)
+	, m_nMobIndex(-1)
+	, m_fNpcPosX(0.0f)
+	, m_fNpcPosZ(0.0f)
 {
 	int i;
 	for (i = 0; i < eICON_MAX; i++)
@@ -77,7 +80,7 @@ CUIDurability::~CUIDurability(void)
 	Destroy();
 }
 
-void CUIDurability::Open(eOPEN_TYPE eType)
+void CUIDurability::Open(eOPEN_TYPE eType, int iMobVirIdx, FLOAT fX, FLOAT fZ)
 {
 	CUIManager* pUIMgr = CUIManager::getSingleton();
 
@@ -103,6 +106,10 @@ void CUIDurability::Open(eOPEN_TYPE eType)
 	Hide(FALSE);
 
 	SetPos( m_rcOriginPos.Left, m_rcOriginPos.Top );
+
+	m_nMobIndex = iMobVirIdx;
+	m_fNpcPosX = fX;
+	m_fNpcPosZ = fZ;
 	
 #ifdef	DURABILITY
 	pUIMgr->RearrangeOrder(UI_DURABILITY, TRUE);
@@ -119,6 +126,10 @@ void CUIDurability::Close()
 
 	m_bProgress = FALSE;
 	m_uStartTime = 0;
+
+	m_nMobIndex = -1;
+	m_fNpcPosX = 0.0f;
+	m_fNpcPosZ = 0.0f;
 
 #ifdef	DURABILITY
 	CUIManager* pUIMgr = CUIManager::getSingleton();
@@ -188,17 +199,29 @@ void CUIDurability::initialize()
 
 void CUIDurability::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
 {
+	// Check distance
+	FLOAT	fDiffX = _pNetwork->MyCharacterInfo.x - m_fNpcPosX;
+	FLOAT	fDiffZ = _pNetwork->MyCharacterInfo.z - m_fNpcPosZ;
+
+	if( m_bPremiumChar == false && (fDiffX * fDiffX + fDiffZ * fDiffZ > UI_VALID_SQRDIST) )
+	{
+		Close();
+		return;
+	}
+
 	CalcProgressTimer();
 }
 
 WMSG_RESULT CUIDurability::OnKeyMessage( MSG* pMsg )
 {
+	if (IsFocused() == FALSE)
+		return WMSG_FAIL;
+
 	if( pMsg->wParam == VK_ESCAPE )
 	{
 		Close();
 		return WMSG_SUCCESS;
 	}
-
 	return WMSG_FAIL;
 }
 
@@ -770,10 +793,10 @@ void CUIDurability::SendEvent( eBTN_TYPE eType )
 		switch(eType)
 		{
 		case eFIRST: // 일반 수리
-			pData->SendRepair(item_Tab, item_InvenIdx, item_VirIdx, m_llNas);
+			pData->SendRepair(item_Tab, item_InvenIdx, item_VirIdx, m_llNas, m_nMobIndex);
 			break;
 		case eSECOND: // 특수 수리
-			pData->SendRepairSpecial(item_Tab, item_InvenIdx, item_VirIdx, material_Tab, material_InvenIdx, material_VirIdx);
+			pData->SendRepairSpecial(item_Tab, item_InvenIdx, item_VirIdx, material_Tab, material_InvenIdx, material_VirIdx, m_nMobIndex);
 			break;
 		}
 	}

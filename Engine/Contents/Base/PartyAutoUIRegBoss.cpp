@@ -40,8 +40,8 @@ void CUIPartyAutoRegBoss::initialize()
 	if (pTxt != NULL)
 	{
 		int l, t, r, b;
-		l = pTxt->GetOrigX();
-		t = pTxt->GetOrigY();
+		l = pTxt->GetPosX();
+		t = pTxt->GetPosY();
 		r = l + pTxt->GetWidth();
 		b = t + pTxt->GetHeight();
 		setTitleRect(l, t, r, b);
@@ -79,7 +79,7 @@ void CUIPartyAutoRegBoss::initialize()
 	}
 
 	m_pCheckLevel = (CUICheckButton*)findUI("chk_level");
-
+#ifndef		WORLD_EDITOR
 	if (m_pCheckLevel != NULL)
 		m_pCheckLevel->SetCommandF(boost::bind(&CUIPartyAutoRegBoss::check_level, this));
 	
@@ -98,6 +98,7 @@ void CUIPartyAutoRegBoss::initialize()
 
 	if (pBtn != NULL)
 		pBtn->SetCommandFUp(boost::bind(&CUIPartyAutoRegBoss::close, this));
+#endif	// WORLD_EDITOR
 }
 
 void CUIPartyAutoRegBoss::open()

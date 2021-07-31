@@ -3,7 +3,7 @@
 #include "StageGameEnd.h"
 #include <Engine/GameState.h>
 #include <Engine/Interface/UIManager.h>
-#include <Engine/Interface/UISystemMenu.h>
+#include <engine/Contents/function/SystemMenuUI.h>
 #include <Engine/Contents/function/gps.h>
 #include <Engine/GameDataManager/GameDataManager.h>
 

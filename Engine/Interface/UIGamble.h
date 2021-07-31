@@ -28,11 +28,7 @@ class CUIIcon;
 // [071122] New_MoonStone :Su-won
 #define MAX_REWARD_COUNT					24		//최대 보상품 수
 
-#ifdef MOONSTONE_COUNT_ADD	// [2010/11/23 : Sora] 문스톤 개수 추가
-	#define MOONSTONE_COUNT						6		//문스톤의 종류 수
-#else
-	#define MOONSTONE_COUNT						5		//문스톤의 종류 수
-#endif
+#define MOONSTONE_MAX						6
 
 // ----------------------------------------------------------------------------
 // Name : CUIGamble
@@ -93,7 +89,7 @@ protected:
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	// [071122: Su-won] NEW_MOONSTONE
-	CStaticArray<INDEX>	m_saReward[MOONSTONE_COUNT];
+	CStaticArray<INDEX>	m_saReward[MOONSTONE_MAX];
 	INDEX*				m_iTexID;					// 문스톤 아이콘 텍스쳐 ID
 	UIRectUV*			m_rtNewMark;				// 문스톤 아이콘 텍스쳐 좌표
 	
@@ -102,6 +98,8 @@ protected:
 	CUIIcon*			m_pIconsMoonStone[5];								// 룰렛에 사용할 문스톤 버튼
 	// [071108: Su-won] NEW_MOONSTONE
 	//////////////////////////////////////////////////////////////////////////////////////////////
+private:
+	int					m_nMoonstoneMax;
 
 public:
 	CUIGamble();

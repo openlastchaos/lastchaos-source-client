@@ -67,6 +67,7 @@
     <SccLocalPath />
     <Keyword>MFCProj</Keyword>
     <ProjectName>EntitiesMP</ProjectName>
+    <ProjectGuid>{01D03A68-14A6-577D-AE0F-D54B567857C5}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" Label="Configuration">
@@ -238,6 +239,7 @@
     <OutDir>$(USA_LIVE)\Bin\</OutDir>
     <IntDir>_USALIVE2010\</IntDir>
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\DXinclude;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugKalydo|Win32'">
     <OutDir>$(ENGINE_DIR)\Bin\Debug2010\</OutDir>
@@ -646,6 +648,7 @@ copy GERLIVEKalydo\%(Filename).pdb $(ENGINE_DIR)\Bin &gt;nul </Command>
       <PrecompiledHeaderFile>StdH.h</PrecompiledHeaderFile>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
+      <AdditionalOptions>/MP6 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>

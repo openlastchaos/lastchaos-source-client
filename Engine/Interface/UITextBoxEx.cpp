@@ -12,9 +12,8 @@
 #include <Engine/Help/Util_Help.h>
 #include <Engine/Interface/UICommand.h>
 
-#if		defined(G_RUSSIA)
 extern CFontData *_pfdDefaultFont;
-#endif
+extern INDEX g_iCountry;
 
 enum eTAG_VAL_COL
 {
@@ -43,14 +42,21 @@ CUITextBoxEx::CUITextBoxEx()
 	, m_colBase(DEF_UI_COLOR_WHITE)
 	, m_pBtnCmd(NULL)
 	, m_eControlType(eCT_TEXT)
+	, m_nScrollThumbWidth(0)
+	, m_nShowCount(0)
 {
+	m_colBtn[UBS_IDLE]		= DEF_UI_COLOR_WHITE;
+	m_colBtn[UBS_ON]		= DEF_UI_COLOR_BLUE;
+	m_colBtn[UBS_CLICK]		= DEF_UI_COLOR_BLUE;
+	m_colBtn[UBS_DISABLE]	= DEF_UI_COLOR_WHITE;
+
 	setType(eUI_CONTROL_TEXTBOX_EX);
-	Release();
+	deleteCont();
 }
 
 CUITextBoxEx::~CUITextBoxEx()
 {
-	Release();
+	deleteCont();
 
 	Destroy();
 }
@@ -115,11 +121,12 @@ void CUITextBoxEx::split(std::string str)
 	std::string strTagID;
 	std::string strText;
 
-	int nBoxWidth = GetWidth() - (m_nStartX * 2);		
+	int nBoxWidth = GetWidth() - m_nStartX;
 
 	// 스크롤이 연결되어 있다면 스크롤바 width만큼 빼준다.
-	if (m_pScroll != NULL)
-		nBoxWidth -= m_pScroll->getThumbWidth();
+	// UIFactory에서 SetScroll()보다 split이 먼저 호출 되기 때문에 
+	// 변수로 값 설정 하도록 수정.
+	nBoxWidth -= m_nScrollThumbWidth;
 
 	if (nBoxWidth <= 0)
 		return;	
@@ -154,17 +161,24 @@ void CUITextBoxEx::split(std::string str)
 	}
 }
 
-void CUITextBoxEx::calcSplit( std::string& str, int& nCurCnt, int& nSplitCnt)
+bool CUITextBoxEx::calcSplit( std::string& str, int& nCurCnt, int& nSplitCnt)
 {
 	std::string strTmp;
-
 	int len = str.size();
-
+	int pos;
+	bool bEnterChar = false;
 	bool bDBSC = false;
 
-#if defined(G_KOR) || defined(G_THAI)
-	bDBSC = true;
-#endif
+	if (g_iCountry == KOREA || g_iCountry == THAILAND)
+		bDBSC = true;
+
+	pos = str.find("\\n", nCurCnt);
+
+	if (pos != std::string::npos)
+	{
+		nSplitCnt = pos + 2;
+		bEnterChar = true;
+	}
 
 	// 한글인지 검사.
 	if (bDBSC == true)
@@ -198,21 +212,22 @@ void CUITextBoxEx::calcSplit( std::string& str, int& nCurCnt, int& nSplitCnt)
 
 	if ((nCurCnt + nSplitCnt) > len)
 		nSplitCnt = len - nCurCnt;
+
+	return bEnterChar;
 }
 
 void CUITextBoxEx::splitNone( std::string& strAdd, vecValcont& val, std::string& strTagID, int nTextArea )
 {
 	int nCurPos = 0;
-	int nEnter = 0;
 	int nEndPos;
 	int nCurUIPos = 0;
+	bool bEnterChar;
 
 	std::string strTemp = strAdd;
 	CUITextEx* pCurUI = NULL;
 
 	while (1)
 	{
-		nEnter = 0;
 		std::string strCurLine;
 
 		nCurUIPos = m_vecUICont.size() - 1;
@@ -226,11 +241,19 @@ void CUITextBoxEx::splitNone( std::string& strAdd, vecValcont& val, std::string&
 		if (checkWidth(strCurLine, strAdd, nTextArea, nEndPos) == false)
 			AddUI();
 
-		calcSplit(strAdd, nCurPos, nEndPos);
+		bEnterChar = calcSplit(strAdd, nCurPos, nEndPos);
 		strTemp = strAdd.substr(nCurPos, nEndPos);
+
+		// 문자열에 줄바꿈이 있을 경우
+		if (bEnterChar == true)
+			strTemp.replace(strTemp.size() - 2, 0, "");
+
 		strAdd = strAdd.substr(nEndPos, strAdd.length() - nEndPos);
 
 		createControl(strTagID, pCurUI, val, strTemp);
+
+		if (bEnterChar == true)
+			AddUI();
 
 		if (strAdd.size() <= 0)
 			break;
@@ -240,17 +263,16 @@ void CUITextBoxEx::splitNone( std::string& strAdd, vecValcont& val, std::string&
 void CUITextBoxEx::splitSpace( std::string& strAdd, vecValcont& val, std::string& strTagID, int nTextArea )
 {
 	int nCurPos = 0;
-	int nEnter = 0;
 	int nCurUIPos = 0;
 	int nEndPos;
 	int	lastSpace = 0;
+	bool bEnterChar;
 
 	std::string strTemp = strAdd;
 	CUITextEx* pCurUI = NULL;
 
 	while (1)
 	{
-		nEnter = 0;
 		std::string strCurLine;
 
 		nCurUIPos = m_vecUICont.size() - 1;
@@ -269,11 +291,18 @@ void CUITextBoxEx::splitSpace( std::string& strAdd, vecValcont& val, std::string
 				continue;
 		}
 
-		calcSplit(strAdd, nCurPos, nEndPos);
+		bEnterChar = calcSplit(strAdd, nCurPos, nEndPos);
 		strTemp = strAdd.substr(nCurPos, nEndPos);
-		strAdd = strAdd.substr(nEndPos, strAdd.length() - nEndPos);
 
+		// 문자열에 줄바꿈이 있을 경우
+		if (bEnterChar == true)
+			strTemp.replace(nEndPos - 2, 2, "");
+
+		strAdd = strAdd.substr(nEndPos, strAdd.length() - nEndPos);
 		createControl(strTagID, pCurUI, val, strTemp);
+
+		if (bEnterChar == true)
+			AddUI();
 
 		if (strAdd.size() <= 0)
 			break;
@@ -454,19 +483,20 @@ void CUITextBoxEx::insertBtn( CUITextEx* pTextEx, vecValcont& val, std::string& 
 
 bool CUITextBoxEx::checkWidth( std::string& strPrev, std::string& strAdd, int nTextArea, int& nSplitPos )
 {
-#if		defined(G_RUSSIA)
-	std::string strNofixed;
+	if (g_iCountry == RUSSIA)
+	{
+		std::string strNofixed;
 
-	strNofixed = strPrev + strAdd;
-	nSplitPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, (char*)strNofixed.c_str(), nTextArea);
+		strNofixed = strPrev + strAdd;
+		nSplitPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, (char*)strNofixed.c_str(), nTextArea);
 
-	nSplitPos -= strPrev.size();
-	
-	if (strAdd.size() > nSplitPos)
-		return false;
+		nSplitPos -= strPrev.size();
 
-	return true;
-#endif	// G_RUSSIA
+		if (strAdd.size() > nSplitPos)
+			return false;
+
+		return true;
+	}
 
 	int nFontWidth = _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
 
@@ -484,7 +514,7 @@ bool CUITextBoxEx::checkWidth( std::string& strPrev, std::string& strAdd, int nT
 	return true;
 }
 
-void CUITextBoxEx::Release()
+void CUITextBoxEx::deleteCont()
 {
 	vec_UICont_iter		iter = m_vecUICont.begin();
 	vec_UICont_iter		eiter = m_vecUICont.end();
@@ -497,13 +527,24 @@ void CUITextBoxEx::Release()
 	m_vecUICont.clear();
 	m_strOrigin = "";
 	m_colBase = DEF_UI_COLOR_WHITE;
-	m_pCmd = NULL;
-	m_colBtn[UBS_IDLE]		= DEF_UI_COLOR_WHITE;
-	m_colBtn[UBS_ON]		= DEF_UI_COLOR_BLUE;
-	m_colBtn[UBS_CLICK]		= DEF_UI_COLOR_BLUE;
-	m_colBtn[UBS_DISABLE]	= DEF_UI_COLOR_WHITE;
 
 	m_pBtnCmd = NULL;
+	m_pCmd = NULL;
+
+	if (m_pScroll != NULL)
+		m_pScroll->SetScrollCurPos(0);
+}
+
+void CUITextBoxEx::erase()
+{
+	m_vecUICont.clear();
+	m_VecChild.clear();
+
+	m_strOrigin = "";
+	m_colBase = DEF_UI_COLOR_WHITE;
+
+	m_pBtnCmd = NULL;
+	m_pCmd = NULL;
 }
 
 void CUITextBoxEx::AddUI(CUIBase* pBase /*= NULL*/)
@@ -523,13 +564,16 @@ void CUITextBoxEx::AddUI(CUIBase* pBase /*= NULL*/)
 	int nPosY = _pUIFontTexMgr->GetFontHeight();
 
 	pAddUI->SetPos(m_nStartX, ((nCurPos * (nPosY + m_nGapY)) + m_nStartY));
+
+	if (m_pScroll != NULL)
+		m_pScroll->SetCurItemCount(m_vecUICont.size());
 }
 
 CUIBase* CUITextBoxEx::Clone()
 {
 	CUITextBoxEx* pTextBoxEx = new CUITextBoxEx(*this);
 
-	pTextBoxEx->ClearUI();
+	pTextBoxEx->erase();
 
 	vec_uinode_iter		iter = m_VecChild.begin();
 	vec_uinode_iter		eiter = m_VecChild.end();
@@ -538,6 +582,9 @@ CUIBase* CUITextBoxEx::Clone()
 	{
 		if ((*iter)->getType() == eUI_CONTROL_SCROLL)
 		{
+			CUIScrollBar* pScroll = (CUIScrollBar*)(*iter)->Clone();
+			pTextBoxEx->SetScroll(pScroll);
+			pTextBoxEx->addChild((CUIBase*)pScroll);
 		}
 		else
 		{
@@ -546,15 +593,6 @@ CUIBase* CUITextBoxEx::Clone()
 	}
 
 	return pTextBoxEx;
-}
-
-void CUITextBoxEx::ClearUI()
-{
-	m_vecUICont.clear();
-	m_VecChild.clear();
-
-	m_strOrigin = "";
-	m_colBase = DEF_UI_COLOR_WHITE;
 }
 
 CUIBase* CUITextBoxEx::GetLineText( int nIdx )
@@ -626,5 +664,63 @@ void CUITextBoxEx::createControl( std::string& strTagID, CUITextEx* pTextEx, vec
 			break;
 		}
 		
+	}
+}
+
+void CUITextBoxEx::SetScroll( CUIScrollBar* pScroll )
+{
+	if (pScroll == NULL)
+		return;
+
+	m_pScroll = pScroll;
+
+#ifndef		WORLD_EDITOR
+	m_pScroll->SetCommandF(boost::bind(&CUITextBoxEx::UpdateBox, this));
+#endif		// WORLD_EDITOR
+	m_pScroll->SetCurItemCount(GetTextExCount());
+}
+
+void CUITextBoxEx::UpdateBox()
+{
+	if (m_pScroll == NULL)
+		return;
+
+	int nStartIdx = m_pScroll->GetScrollPos();
+	int nMax = m_vecUICont.size();
+	int nPosY = m_nGapY;
+	int nMaxHeight = m_nHeight - m_nGapY - m_nStartY;
+	int nShowCount = 0;
+
+	CUIBase* pItem = NULL;
+
+	for (int i = 0; i < nMax; ++i)
+	{
+		pItem = m_vecUICont[i];
+
+		if (pItem == NULL)
+			continue;
+
+		if (nStartIdx > i)	// 
+		{
+			pItem->Hide(TRUE);
+			continue;
+		}
+		else if (nPosY > nMaxHeight)
+		{
+			pItem->Hide(TRUE);
+			continue;
+		}
+
+		pItem->Hide(FALSE);
+		pItem->SetPosY(nPosY);
+
+		nPosY += pItem->GetHeight() + m_nGapY;
+		++nShowCount;
+	}
+
+	if (m_nShowCount != nShowCount)
+	{
+		m_pScroll->SetItemsPerPage(nShowCount);
+		m_nShowCount = nShowCount;
 	}
 }

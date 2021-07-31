@@ -18,6 +18,7 @@
 static BOOL m_bLock = false;
 
 extern int _aSummonSkill[5];
+extern INDEX g_iCountry;
 
 
 // ----------------------------------------------------------------------------
@@ -119,17 +120,19 @@ void CUIQuickSlot::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, in
 	m_rtQuestBook.SetUV( 387, 70, 420, 103, fTexWidth, fTexHeight );
 	m_rtQuestBookDown.SetUV( 0, 0, 34, 34, fTexWidth, fTexHeight );
 
-#if defined (G_RUSSIA)
-	m_rtChashShopIdle.SetUV( 469, 679, 525, 735, fTexWidth, fTexHeight );
-	m_rtCashShopOver.SetUV( 530, 679, 586, 735, fTexWidth, fTexHeight );
-	m_rtCashShopDown.SetUV( 591, 679, 647, 735, fTexWidth, fTexHeight );
-#else
-	// [12/10/2012 박훈] UI개편으로 인한 캐쉬샵 수정
-	m_rtChashShopIdle.SetUV( 102, 679, 158, 735, fTexWidth, fTexHeight );
-	m_rtCashShopOver.SetUV( 163, 679, 219, 735, fTexWidth, fTexHeight );
-	m_rtCashShopDown.SetUV( 224, 679, 280, 735, fTexWidth, fTexHeight );
-#endif
-	
+	if (g_iCountry == RUSSIA)
+	{
+		m_rtChashShopIdle.SetUV( 469, 679, 525, 735, fTexWidth, fTexHeight );
+		m_rtCashShopOver.SetUV( 530, 679, 586, 735, fTexWidth, fTexHeight );
+		m_rtCashShopDown.SetUV( 591, 679, 647, 735, fTexWidth, fTexHeight );
+	}
+	else
+	{
+		// [12/10/2012 박훈] UI개편으로 인한 캐쉬샵 수정
+		m_rtChashShopIdle.SetUV( 102, 679, 158, 735, fTexWidth, fTexHeight );
+		m_rtCashShopOver.SetUV( 163, 679, 219, 735, fTexWidth, fTexHeight );
+		m_rtCashShopDown.SetUV( 224, 679, 280, 735, fTexWidth, fTexHeight );
+	}	
 	
 	//선물 도착 알림 버튼 UV	:Su-won
 	fTexWidth = m_ptdGiftTexture->GetPixWidth();
@@ -313,13 +316,18 @@ void CUIQuickSlot::ShowExSlotInfo( BOOL bShowInfo, int nSlotIndex )
 	{
 		int nInfoWidth;
 #if defined(G_THAI)
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strSlotInfo);	
-#elif defined (G_RUSSIA)
-		extern CFontData *_pfdDefaultFont;
-		nInfoWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, m_strSlotInfo.str_String) + 19;
+		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + FindThaiLen(m_strSlotInfo);		
 #else
-		nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strSlotInfo.Length() *
-			( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+		if (g_iCountry == RUSSIA)
+		{
+			extern CFontData *_pfdDefaultFont;
+			nInfoWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, m_strSlotInfo.str_String) + 19;
+		}
+		else
+		{
+			nInfoWidth = 19 - _pUIFontTexMgr->GetFontSpacing() + m_strSlotInfo.Length() *
+							( _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing() );
+		}
 #endif
 		int	nInfoHeight = 22;
 		
@@ -1371,13 +1379,16 @@ void CUIQuickSlot::AddBtnToQuickSlot( int nSlotIndex, int nCurrentPage )
 	case UBET_ACTION:
 		{
 			int	nActionIndex = pDrag->getIndex();
-#if defined (G_RUSSIA)
-			// [2011/05/18 : Sora] 러시아측 요청으로 P2줍기,공격 액션은 퀵슬롯에 등록되지 않게 처리
-			if( nActionIndex == 44 /*P2 공격*/ || nActionIndex == 45 /*P2 줍기*/ )
+
+			if (g_iCountry == RUSSIA)
 			{
-				return;
+				// [2011/05/18 : Sora] 러시아측 요청으로 P2줍기,공격 액션은 퀵슬롯에 등록되지 않게 처리
+				if( nActionIndex == 44 /*P2 공격*/ || nActionIndex == 45 /*P2 줍기*/ )
+				{
+					return;
+				}
 			}
-#endif
+			
 			SendAddBtn( nCurrentPage, nSlotIndex, 1, nActionIndex );
 		}
 		break;

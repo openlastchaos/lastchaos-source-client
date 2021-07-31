@@ -885,6 +885,7 @@ public:
 	void SendWarpCancel();
 // [KH_070316] 변경 프리미엄 메모리 관련
 	void SendTeleportWrite( UBYTE sendMSG, UBYTE ubSlot, CTString &strComment );
+	void SendTeleportWriteRus( UBYTE sendMSG, UBYTE ubSlot, CTString &strComment );
 	void SendTeleportMove( UBYTE sendMSG, UBYTE ubSlot );
 	void SendWarpTeleport( int iTeleportIndex );
 	// Learn skill
@@ -1049,11 +1050,6 @@ public:
 //안태훈 수정 시작	//(Zone Change System)(0.1)
 	void GoZone(int zone, int extra, int NpcIdx = -1 );
 //안태훈 수정 끝	//(Zone Change System)(0.1)
-
-//안태훈 수정 시작	//(Teleport System)(0.1)
-	void WriteCurrentPos(int slot, const char *szComment);
-//안태훈 수정 끝	//(Teleport System)(0.1)
-//안태훈 수정 시작	//(GM Command)(0.1)
 
 	void ResetSkillDelayTime(); // 스킬 쿨타임 초기화
 	void ResetItemDelayTime(); // 아이템 쿨타임 초기화
@@ -1346,6 +1342,8 @@ public:
 	void SendGuildStashHistroyReq();
 	void SendGuildStashViewReq();
 	void SendGuildStashTakeReq( LONGLONG llMoney );
+	// 길드창고 이용내역 리스트 요청.
+	void SendGuildStashUseRecord(INDEX iLastIdx = 0);
 	
 	// Date : 2005-09-08(오후 5:59:52), By Lee Ki-hwan
 	void SendChuseokUpgrade();
@@ -1409,7 +1407,7 @@ public:
 	// 곤충 채집 이벤트
 	void SendBuyCollectBox( void );
 	void SendGiftCollectBox( void );
-	void SendDropInsect( int nInsect );
+	void SendDropInsect( int nInsect, LONG lBoxVIndex );
 
 	// 러브 러브 이벤트( 2007 발렌타인 데이 )
 	void SendSaveBingoItem(BYTE nPos, int nGiftItemIndex, int nBoxItemIndex);
@@ -1547,7 +1545,7 @@ public:
 	void SendRestartGame();
 	void SendReceiveRestartGame();
 	
-	void SendUseGoDungeon(INDEX iItemIndex, INDEX iZone, INDEX iExtra);
+	void SendUseGoDungeon(INDEX iItemIndex);
 
 	void SendItemDelete(SWORD iTab, SWORD inven_idx, INDEX UniIndex, SQUAD count);
 	//공격 펫 장비 아이템 사용시

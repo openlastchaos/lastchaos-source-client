@@ -7,8 +7,7 @@
 #include <Engine/Help/Util_Help.h>
 
 CUIText::CUIText()
-	: m_color(DEF_UI_FONT_COLOR)
-	, m_bShadow(FALSE)
+	: m_bShadow(FALSE)
 	, m_fZ(0.f)
 	, m_colShadow(DEF_UI_FONT_SHADOW_COLOR)
 	, m_bEdge(FALSE)
@@ -22,6 +21,9 @@ CUIText::CUIText()
 	, m_bVerticality(FALSE)
 {
 	setType(eUI_CONTROL_TEXT);
+
+	for (int i = 0; i < eSTATE_MAX; ++i)
+		m_color[i] = DEF_UI_FONT_COLOR;
 }
 
 CUIText::~CUIText()
@@ -138,7 +140,7 @@ void CUIText::OnRender( CDrawPort* pDraw )
 					pDraw->PutTextEx( temStr, outX-1, nY + (nFontGapCnt * countryFontGapOffset) + 1, m_colShadow, m_fZ );
 				}
 
-				pDraw->PutTextEx( temStr, outX, nY + (nFontGapCnt * countryFontGapOffset), m_color, m_fZ, m_bShadow, m_colShadow );
+				pDraw->PutTextEx( temStr, outX, nY + (nFontGapCnt * countryFontGapOffset), m_color[m_eChildItemState], m_fZ, m_bShadow, m_colShadow );
 				nFontGapCnt++;
 			}
 		}
@@ -152,7 +154,7 @@ void CUIText::OnRender( CDrawPort* pDraw )
 				pDraw->PutTextEx( m_strView, outX-1, nY+1, m_colShadow, m_fZ );
 			}
 
-			pDraw->PutTextEx( m_strView, outX, nY, m_color, m_fZ, m_bShadow, m_colShadow );
+			pDraw->PutTextEx( m_strView, outX, nY, m_color[m_eChildItemState], m_fZ, m_bShadow, m_colShadow );
 		}		
 	}
 	else
@@ -317,7 +319,7 @@ void CUIText::SetPointColor( char* str, COLOR col )
 			if (strTemp.empty() == false)
 			{
 				_cont[nPos].str = strTemp;
-				_cont[nPos].col = m_color;
+				_cont[nPos].col = m_color[eSTATE_IDLE];
 				m_vecData.push_back(_cont[nPos++]);
 			}
 		}
@@ -334,8 +336,31 @@ void CUIText::SetPointColor( char* str, COLOR col )
 		if (strTemp.empty() == false)
 		{
 			_cont[nPos].str = strTemp;
-			_cont[nPos].col = m_color;
+			_cont[nPos].col = m_color[eSTATE_IDLE];
 			m_vecData.push_back(_cont[nPos]);
 		}
 	}
+}
+
+void CUIText::setFontColor( COLOR col )
+{
+	m_color[eSTATE_IDLE] = col;
+	m_color[eSTATE_ENTER] = col;
+	m_color[eSTATE_SELECT] = col;
+}
+
+void CUIText::ChildItemEnter()
+{
+	if (m_eChildItemState == eSTATE_SELECT)
+		return;
+
+	m_eChildItemState = eSTATE_ENTER;
+}
+
+void CUIText::ChildItemLeave()
+{
+	if (m_eChildItemState == eSTATE_SELECT)
+		return;
+
+	m_eChildItemState = eSTATE_IDLE;
 }

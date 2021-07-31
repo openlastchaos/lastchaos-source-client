@@ -6,16 +6,15 @@
 
 // External variables
 extern HWND	_hwndMain;
-//extern INDEX g_iCountry;
+extern INDEX g_iCountry;
 
 #define WEB_NEXT_LINE	"\r\n"		// Use Web ( New Line Charactor )
 #define MAX_MULTILINE	20
 
 
 int	CUIMultiEditBox::s_nRefCount = 0;
-#if defined(G_RUSSIA)
-	extern CFontData *_pfdDefaultFont;
-#endif
+extern CFontData *_pfdDefaultFont;
+
 //------------------------------------------------------------------------------
 // CUIMultiEditBox::CUIMultiEditBox
 // Explain: Constructor 
@@ -73,13 +72,11 @@ void CUIMultiEditBox::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth,
 	m_nFontHeight	= _pUIFontTexMgr->GetFontHeight() + _pUIFontTexMgr->GetLineSpacing();
 	m_nFontWidth	= _pUIFontTexMgr->GetFontWidth() + _pUIFontTexMgr->GetFontSpacing();
 	// [091104 sora]
-	//if(g_iCountry == RUSSIA)
-	#if defined G_RUSSIA
+	if (g_iCountry == RUSSIA)
 		m_nMaxChar		= 255;	
-	//else
-	#else
+	else
 		m_nMaxChar		= ( nWidth / m_nFontWidth ) - 2;
-	#endif
+
 	m_nLineHeight	= ( nHeight / m_nFontHeight );
 	m_nMaxLine = nLineHeight;
 	
@@ -194,7 +191,7 @@ void CUIMultiEditBox::Render()
 //------------------------------------------------------------------------------
 void CUIMultiEditBox::SetFocus( BOOL bVisible )
 {
-	CUIWindow::SetFocus( bVisible );
+	CUIBase::SetFocus( bVisible );
 	m_ebEditBox.SetFocus( bVisible );
 }
 
@@ -206,7 +203,7 @@ void CUIMultiEditBox::SetFocus( BOOL bVisible )
 //------------------------------------------------------------------------------
 BOOL CUIMultiEditBox::IsFocused()
 {
-	BOOL bFocus = CUIWindow::IsFocused();
+	BOOL bFocus = CUIBase::IsFocused();
 	AutoRef( bFocus );
 	return bFocus;
 }
@@ -464,8 +461,7 @@ WMSG_RESULT CUIMultiEditBox::CharMessage( MSG *pMsg )
 { 
 
 	// [091104 sora]
-	//if(g_iCountry == RUSSIA)
-	#if defined G_RUSSIA
+	if (g_iCountry == RUSSIA)
 	{
 		if ( UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, m_ebEditBox.GetString()) >= (m_nWidth-20) )
 		{
@@ -481,8 +477,7 @@ WMSG_RESULT CUIMultiEditBox::CharMessage( MSG *pMsg )
 			m_ebEditBox.SetString ( m_strTexts[m_nCurrentLine].str_String );
 		}
 	}
-	#else
-	//else
+	else
 	{
 		if ( m_ebEditBox.GetCursorIndex() >= m_nMaxChar && (m_nCurrentLine+1) < m_nMaxLine)
 		{
@@ -498,7 +493,6 @@ WMSG_RESULT CUIMultiEditBox::CharMessage( MSG *pMsg )
 			m_ebEditBox.SetString ( m_strTexts[m_nCurrentLine].str_String );
 		}
 	}
-	#endif
 
 	WMSG_RESULT wmsgResult = m_ebEditBox.CharMessage ( pMsg );
 	m_strTexts[m_nCurrentLine] = m_ebEditBox.GetString();
@@ -699,13 +693,10 @@ void CUIMultiEditBox::SplitLine( int nIndex )
 	if( nIndex == -1 ) // MaxCharactor에서 자른다.
 	{
 		// [091104 sora]
-		//if(g_iCountry == RUSSIA)
-		#if defined G_RUSSIA
-		nSplitPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, strTemp.str_String, m_nWidth-20);
-		//else
-		#else
+		if (g_iCountry == RUSSIA)
+			nSplitPos = UTIL_HELP()->CheckNoFixedLength(_pfdDefaultFont, strTemp.str_String, m_nWidth-20);
+		else
 			nSplitPos = m_nMaxChar;
-		#endif
 	}
 	else
 	{
@@ -759,8 +750,7 @@ void  CUIMultiEditBox::Cutting ()
 		m_strTexts.erase ( m_strTexts.begin() + m_nCurrentLine + 1 );
 	}
 	// [091104 sora]
-	//if(g_iCountry == RUSSIA)
-	#if defined G_RUSSIA
+	if (g_iCountry == RUSSIA)
 	{
 		if ( UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, m_strTexts[m_nCurrentLine].str_String) >= (m_nWidth-20) )
 		{
@@ -775,8 +765,7 @@ void  CUIMultiEditBox::Cutting ()
 		}
 
 	}
-	//else
-	#else
+	else
 	{
 		if ( m_strTexts[m_nCurrentLine].Length() > m_nMaxChar )
 		{
@@ -791,7 +780,6 @@ void  CUIMultiEditBox::Cutting ()
 		}
 
 	}
-	#endif
 	
 	SetScrollBarPos ();
 //	m_ebEditBox.SetPos ( m_ebEditBox.GetPosX(), ( m_nCurrentLine - m_sbScrollBar.GetScrollPos() )* m_nFontHeight );

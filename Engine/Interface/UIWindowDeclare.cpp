@@ -35,6 +35,7 @@
 
 #include <Engine/Contents/function/ItemCollectionUI.h>
 #include <Engine/Contents/function/SimplePlayerInfoUI.h>
+#include <Engine/Contents/function/SSkillLearnUI.h>
 
 #include <Engine/Contents/Login/UICharacterCreateNew.h>
 #include <Engine/Contents/Login/UICharacterSelect.h>
@@ -52,9 +53,9 @@
 #include <Engine/Contents/Base/UIChangeWeaponNew.h>
 #include <Engine/Contents/Base/UIChangeEquipment.h>
 #include <Engine/Interface/UIChildQuickSlot.h>
-#include <Engine/Interface/UICollectBox.h>
-#include <Engine/Interface/UICompound.h>
-#include <Engine/Interface/UIExchange.h>
+#include <Engine/Contents/function/InsectCollectUI.h>
+#include <Engine/Contents/function/CompoundUI.h>
+#include <Engine/Contents/function/ExChangeUI.h>
 #include <Engine/Interface/UIFlowerTree.h>
 #include <Engine/Interface/UIFortune.h>
 #include <Engine/Interface/UIGamble.h>
@@ -62,19 +63,20 @@
 #include <Engine/Interface/UIGuildBattle.h>
 #include <Engine/Interface/UIGuildMark.h>
 #include <Engine/Interface/UIGuildNotice.h>
-#include <Engine/Interface/UIGuildStash.h>
+#include <Engine/Contents/function/GuildStashUI.h>
 #include <Engine/Interface/UIGuildWarPortal.h>
-#include <Engine/Interface/UIGWMix.h>
+#include <Engine/Contents/function/GuildWarMixUI.h>
 #include <Engine/Interface/UIHelp.h>
-#include <Engine/Interface/UIHelper.h>
+#include <Engine/Contents/function/HelperUI.h>
 #include <Engine/Interface/UIHelpIcon.h>
 #include <Engine/Interface/UIInitJob.h>
 #include <Engine/Interface/UIInvenCashBagBox.h>
-#include <Engine/Interface/UIItemProduct.h>
+#include <Engine/Contents/function/ItemProductUI.h>
 #include <Engine/Contents/function/ItemComposeUI.h>
 #include <Engine/Interface/UIMap.h>
 #include <Engine/Interface/UIMessenger.h>
-#include <Engine/Interface/UIMinigame.h>		// CUITreasureMap
+#include <Engine/Interface/UIMinigame.h>
+#include <Engine/Contents/function/TreasureMapUI.h>
 #include <Engine/Interface/UIMix.h>
 #include <Engine/Interface/UIMixNew.h>
 #include <Engine/Interface/UIMonsterCombo.h>
@@ -90,11 +92,11 @@
 #include <Engine/Contents/Base/PartyAutoUIRegBoss.h>
 #include <Engine/Contents/Base/PartyAutoUIInviteList.h>
 #include <Engine/Contents/Base/PartyAutoUIPartyList.h>
-#include <Engine/Interface/UIPetFree.h>
+#include <Engine/Contents/function/PetFreeUI.h>
 #include <Engine/Interface/UIPetInfo.h>
-#include <Engine/Interface/UIPetItemMix.h>
+#include <Engine/Contents/function/PetItemMixUI.h>
 #include <Engine/Contents/function/PetTargetUI.h>
-#include <Engine/Interface/UIPetTraining.h>
+#include <Engine/Contents/function/PetTrainingUI.h>
 #include <Engine/Interface/UIPlayerInfo.h>
 #include <Engine/Contents/function/UIPortalNew.h>
 #include <Engine/Interface/UIProcessNPC.h>
@@ -110,19 +112,25 @@
 #include <Engine/Interface/UISelectResource.h>
 #include <Engine/Interface/UISelectWord.h>
 #include <Engine/Interface/UIShop.h>
+#include <Engine/Contents/function/ShopUI.h>
 #include <Engine/Interface/UISiegeWarfare.h>
 #include <Engine/Interface/UISiegeWarfareNew.h>
 #include <Engine/Interface/UISimplePop.h>
-#include <Engine/Interface/UISingleBattle.h>
+#include <Engine/Contents/function/SingleBattleUI.h>
 #include <Engine/Interface/UISocketSystem.h>
-#include <Engine/Interface/UISummon.h>
-#include <Engine/Interface/UISystemMenu.h>
-#include <Engine/Interface/UITalk.h>
+#include <Engine/Contents/function/SocketRemoveAllUI.h>
+#include <Engine/Contents/function/SocketRemoveSingleUI.h>
+#include <Engine/Contents/function/SocketCreateUI.h>
+#include <Engine/Contents/function/SocketCombineUI.h>
+#include <Engine/Contents/function/JewelComposUI.h>
+#include <Engine/Contents/function/SummonUI.h>
+#include <engine/Contents/function/SystemMenuUI.h>
+#include <Engine/Contents/function/TalkUI.h>
 #include <Engine/Contents/function/TargetInfoNewUI.h>
-#include <Engine/Interface/UITatoo.h>
-#include <Engine/Interface/UITeleport.h>
+#include <Engine/Contents/function/TatooUI.h>
+#include <Engine/Contents/function/TeleportUI.h>
 #include <Engine/Contents/function/TargetInfoNewUI.h>
-#include <Engine/Interface/UIWareHouse.h>
+#include <Engine/Contents/function/WareHouseUI.h>
 #include <Engine/Contents/function/WildPetInfoUI.h>
 #include <Engine/Contents/function/NewsUI.h>
 #include <Engine/Contents/function/News_Web_UI.h>
@@ -130,6 +138,18 @@
 #include <Engine/Contents/function/CustomTitleUI.h>
 #include <Engine/Contents/Base/PersonalshopUI.h>
 #include <Engine/Contents/function/WildPetTargetUI.h>
+#include <Engine/Contents/function/CubeRankingUI.h>
+#include <Engine/Contents/function/ProductNPCUI.h>
+#include <Engine/Contents/function/GuildStashUseRecord.h>
+#include <Engine/Contents/function/Product2UI.h>
+#include <Engine/Contents/function/Helper_GuardianInfoUI.h>
+#include <Engine/Contents/function/Helper_Student.h>
+#include <Engine/Contents/function/RoyalrumbleUI.h>
+#include <Engine/Contents/Base/UIMapOption.h>
+#include <Engine/Contents/function/GuildBattleMatchUI.h>
+#include <Engine/Contents/function/GuildBattleMatchRegUI.h>
+#include <Engine/Contents/function/GuildBattleMatchChallengeUI.h>
+#include <Engine/Contents/function/GuildTaxHistory.h>
 
 void CUIWindowDeclare::initUI()
 {
@@ -152,9 +172,12 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_QUICKSLOT] = new CUIQuickSlot;
 	m_apUIs[UI_QUICKSLOT]->Create( NULL, 619, 724, QUICKSLOT_WIDTH, QUICKSLOT_HEIGHT );
 
+	m_apUIs[UI_MAP_OPTION] = new CUIMapOption;
+	LoadXML("UIMap_Option.xml", m_apUIs[UI_MAP_OPTION]);
+
 	// Radar
 	m_apUIs[UI_RADAR] = new CUIRadar;
-	m_apUIs[UI_RADAR]->Create( NULL, 896, 0, RADAR_WIDTH, RADAR_HEIGHT );
+	LoadXML("Radar.xml", m_apUIs[UI_RADAR]);
 
 	// Target information
 	m_apUIs[UI_TARGETINFO] = new CTargetInfoUI;
@@ -187,8 +210,8 @@ void CUIWindowDeclare::initUI()
 #endif	//	DURABILITY
 
 	// Exchange
-	m_apUIs[UI_EXCHANGE] = new CUIExchange;
-	m_apUIs[UI_EXCHANGE]->Create( NULL, 0, 0, EXCHANGE_WIDTH, EXCHANGE_HEIGHT );
+	m_apUIs[UI_EXCHANGE] = new CExchangeUI;
+	LoadXML("exchange.xml", m_apUIs[UI_EXCHANGE]);
 
 	// Portal
 	m_apUIs[UI_PORTAL] = new CUIPortal;
@@ -198,9 +221,12 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_SHOP] = new CUIShop;
 	m_apUIs[UI_SHOP]->Create( NULL, 0, 0, SHOP_MAIN_WIDTH, SHOP_MAIN_HEIGHT );
 
+	m_apUIs[UI_SHOP_UI] = new CShopUI;
+	LoadXML( "Shop.xml", m_apUIs[UI_SHOP_UI] );
+
 	// Pet Training
-	m_apUIs[UI_PETTRAINING] = new CUIPetTraining;
-	m_apUIs[UI_PETTRAINING]->Create( NULL, 0, 0, PETTRAINING_WIDTH, PETTRAINING_HEIGHT );
+	m_apUIs[UI_PET_TRAINING] = new CPetTrainingUI;
+	LoadXML( "PetTraining.xml", m_apUIs[UI_PET_TRAINING] );
 
 	// Pet Info
 	m_apUIs[UI_PETINFO] = new CUIPetInfo;
@@ -231,20 +257,21 @@ void CUIWindowDeclare::initUI()
 	LoadXML("WildpetTargetInfo.xml", m_apUIs[UI_WILDPET_TARGETINFO]);
 	
 	// Pet Tatoo
-	m_apUIs[UI_TATOO] = new CUITatoo;
-	m_apUIs[UI_TATOO]->Create( NULL, 0, 0, TATOO_WIDTH, TATOO_HEIGHT);
+	m_apUIs[UI_TATOO] = new CTatooUI;
+	LoadXML("Tatoo.xml", m_apUIs[UI_TATOO]);
 
 	// Process NPC
 	m_apUIs[UI_PROCESSNPC] = new CUIProcessNPC;
-	m_apUIs[UI_PROCESSNPC]->Create( NULL, 0, 0, PROCESSNPC_WIDTH, PROCESSNPC_HEIGHT );
+	LoadXML("ProcessNPC.xml", m_apUIs[UI_PROCESSNPC]);
 
 	// Select Resource
 	m_apUIs[UI_SELECTRESOURCE] = new CUISelectResource;
 	m_apUIs[UI_SELECTRESOURCE]->Create( NULL, 200, 200, SELECTRESOURCE_WIDTH, SELECTRESOURCE_HEIGHT );
 
 	// Single Battle
-	m_apUIs[UI_SINGLE_BATTLE] = new CUISingleBattle;
-	m_apUIs[UI_SINGLE_BATTLE]->Create( NULL, 0, 0, SB_WIDTH, SB_HEIGHT );
+	m_apUIs[UI_SINGLE_BATTLE] = new CSingleBattleUI;
+	LoadXML("SingleBattle.xml", m_apUIs[UI_SINGLE_BATTLE]);
+
 	// Help
 	m_apUIs[UI_HELP] = new CUIHelp;
 	m_apUIs[UI_HELP]->Create( NULL, 0, 0, HELP_WIDTH, HELP_HEIGHT );
@@ -258,16 +285,16 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_GUILD_BATTLE]->Create( NULL, 0, 0, GB_WIDTH, GB_HEIGHT );
 
 	// WareHouse
-	m_apUIs[UI_WAREHOUSE] = new CUIWareHouse;
-	m_apUIs[UI_WAREHOUSE]->Create( NULL, 0, 0, WAREHOUSE_WIDTH, WAREHOUSE_HEIGHT );
+	m_apUIs[UI_WARE_HOUSE] = new CWareHouseUI;
+	LoadXML( "WareHouse.xml", m_apUIs[UI_WARE_HOUSE] );
 
 	// SECURITY
 	m_apUIs[UI_SECURITY] = new CUISecurity;
 	m_apUIs[UI_SECURITY]->Create( NULL, 0, 0, SECURITY_CHANGEPW_WIDTH, SECURITY_CHANGEPW_HEIGHT );
 
 	// System menu
-	m_apUIs[UI_SYSTEMMENU] = new CUISystemMenu;
-	m_apUIs[UI_SYSTEMMENU]->Create( NULL, 0, 0, SYSTEMMENU_WIDTH, SYSTEMMENU_HEIGHT );
+	m_apUIs[UI_SYSTEMMENU] = new CSystemMenuUI;
+	LoadXML( "SystemMenu.xml", m_apUIs[UI_SYSTEMMENU] );
 
 	// GuildWar Portal
 	m_apUIs[UI_GUILDWARPORTAL] = new CUIGuildWarPortal;
@@ -305,7 +332,7 @@ void CUIWindowDeclare::initUI()
 
 	// Option
 	m_apUIs[UI_OPTION] = new CUIOption;
-	m_apUIs[UI_OPTION]->Create( NULL, 0, 0, OPTION_WIDTH, OPTION_HEIGHT );
+	LoadXML("Option_Game.xml", m_apUIs[UI_OPTION]);
 
 	// Refine
 	m_apUIs[UI_REFINE] = new CUIRefine;
@@ -313,11 +340,11 @@ void CUIWindowDeclare::initUI()
 
 	// Process
 	m_apUIs[UI_PROCESS] = new CUIProcess;
-	m_apUIs[UI_PROCESS]->Create( NULL, 0, 0, PROCESS_WIDTH, PROCESS_HEIGHT );
+	LoadXML("Process.xml", m_apUIs[UI_PROCESS]);
 
-	// Prodcut 이기환 (12.7)
+	// process 와 디자인 공유
 	m_apUIs[UI_PRODUCT] = new CUIProduct;
-	m_apUIs[UI_PRODUCT]->Create( NULL, 0, 0, PRODUCT_WIDTH, PRODUCT_HEIGHT );
+	LoadXML("Process.xml", m_apUIs[UI_PRODUCT]);
 
 	// Mix :  이기환 (12.7)
 	m_apUIs[UI_MIX] = new CUIMix;
@@ -328,8 +355,8 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_MIXNEW]->Create( NULL, 0, 0, MIXNEW_WIDTH, MIXNEW_HEIGHT );
 
 	// UI_COMPOUND // Date : 2005-01-12,   By Lee Ki-hwan
-	m_apUIs[UI_COMPOUND] = new CUICompound;
-	m_apUIs[UI_COMPOUND]->Create( NULL, 0, 0, COMPOUND_WIDTH, COMPOUND_HEIGHT );
+	m_apUIs[UI_COMPOUND] = new CCompoundUI;
+	LoadXML("Compound.xml", m_apUIs[UI_COMPOUND]);
 
 	m_apUIs[UI_QUEST] = new CUIQuest;
 	m_apUIs[UI_QUEST]->Create( NULL, 0, 0, QUEST_WIDTH, QUEST_HEIGHT );
@@ -342,17 +369,17 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_SELECTLIST]->Create( NULL, 0, 0, SELECTLIST_WIDTH, SELECTLIST_HEIGHT );
 
 	// 펫 아이템 조합( 유니크 아이템 제작 )
-	m_apUIs[UI_PETITEMMIX] = new CUIPetItemMix;
-	m_apUIs[UI_PETITEMMIX]->Create( NULL, 0, 0, PROCESS_WIDTH, PROCESS_HEIGHT );
+	m_apUIs[UI_PET_ITEM_MIX] = new CPetItemMixUI;
+	LoadXML( "PetItemMix.xml", m_apUIs[UI_PET_ITEM_MIX] );
 
-	m_apUIs[UI_PETFREE] = new CUIPetFree;
-	m_apUIs[UI_PETFREE]->Create( NULL, 0, 0, UI_PETFREE_WIDTH, UI_PETFREE_HEIGHT );	
+	m_apUIs[UI_PETFREE] = new CPetFreeUI;
+	LoadXML( "PetFree.xml", m_apUIs[UI_PETFREE] );
 
 	m_apUIs[UI_QUIZEVENT] = new CUIOXQuizEvent;
 	m_apUIs[UI_QUIZEVENT]->Create( NULL, 0, 0, UI_OX_WIDTH, UI_OX_HEIGHT );
 
-	m_apUIs[UI_COLLECTBOX] = new CUICollectBox;
-	m_apUIs[UI_COLLECTBOX]->Create( NULL, 0, 0, UICOLLECTBOX_WIDTH, UICOLLECTBOX_HEIGHT );
+	m_apUIs[UI_INSECTCOLLECT] = new CInsectCollectUI;
+	LoadXML("InsectCollectBox.xml", m_apUIs[UI_INSECTCOLLECT]);
 
 	m_apUIs[UI_BINGOBOX] = new CBingoBoxUI;
 	LoadXML( "bingobox.xml", m_apUIs[UI_BINGOBOX] );
@@ -362,16 +389,29 @@ void CUIWindowDeclare::initUI()
 
 	// connie [2009/9/9] - NPC 찾기
 	m_apUIs[UI_NPC_SCROLL] = new CUINpcScroll;
-	m_apUIs[UI_NPC_SCROLL]->Create( NULL, 0, 0, UI_NPCHELP_WIDTH, UI_NPCHELP_HEIGHT );
+	LoadXML( "NPCScroll.xml", m_apUIs[UI_NPC_SCROLL] );
 
 	//[12/9/2009 kiny] 호칭
 	m_apUIs[UI_NICKNAME] = new CUINickName;
 	m_apUIs[UI_NICKNAME]->Create( NULL, 0, 0, NICKNAME_WIDTH, NICKNAME_HEIGHT );
 
 	m_apUIs[UI_SOCKETSYSTEM] = new CUISocketSystem;
-	m_apUIs[UI_SOCKETSYSTEM]->Create( NULL, 0, 0, 
-		CUISocketSystem::SOCKET_UI_FRAME_WIDTH, 
-		CUISocketSystem::SOCKET_UI_FRAME_HEIGHT );
+	m_apUIs[UI_SOCKETSYSTEM]->Create( NULL, 0, 0, 0, 0);
+
+	m_apUIs[UI_SOCKET_REMOVE_ALL] = new CSocketRemoveAllUI;
+	LoadXML( "Socket system_Batch remove.xml", m_apUIs[UI_SOCKET_REMOVE_ALL] );
+
+	m_apUIs[UI_SOCKET_REMOVE_SINGLE] = new CSocketRemoveSingleUI;
+	LoadXML( "Socket system_Individual removal1.xml", m_apUIs[UI_SOCKET_REMOVE_SINGLE] );
+
+	m_apUIs[UI_SOCKET_CREATE] = new CSocketCreateUI;
+	LoadXML( "Socket system_Create.xml", m_apUIs[UI_SOCKET_CREATE] );
+
+	m_apUIs[UI_SOCKET_COMBINE] = new CSocketCombineUI;
+	LoadXML( "Socket system_Combine.xml", m_apUIs[UI_SOCKET_COMBINE] );
+
+	m_apUIs[UI_JEWEL_COMPOS] = new CJewelComposUI;
+	LoadXML( "Socket system_Compos.xml", m_apUIs[UI_JEWEL_COMPOS] );
 
 	// 퀘스트 목록
 	m_apUIs[UI_QUESTBOOK_LIST] = new CUIQuestBook;
@@ -394,15 +434,19 @@ void CUIWindowDeclare::initUI()
 	LoadXML( "questView.xml", m_apUIs[UI_QUEST_VIEW] );
 
 	// 소환수 컨트롤...
-	m_apUIs[UI_SUMMON_FIRST] = new CUISummon( UI_SUMMON_FIRST );
-	m_apUIs[UI_SUMMON_FIRST]->Create( NULL, 0, 0, SUMMON_WIDTH, SUMMON_HEIGHT );	
+	m_apUIs[UI_SUMMON_FIRST] = new CSummonUI(UI_SUMMON_FIRST);
+	LoadXML( "Summon.xml", m_apUIs[UI_SUMMON_FIRST]);
 
-	m_apUIs[UI_SUMMON_SECOND] = new CUISummon( UI_SUMMON_SECOND );
-	m_apUIs[UI_SUMMON_SECOND]->Create( NULL, 0, 0, SUMMON_WIDTH, SUMMON_HEIGHT );	
+	m_apUIs[UI_SUMMON_SECOND] = new CSummonUI(UI_SUMMON_SECOND);
+	LoadXML( "Summon.xml", m_apUIs[UI_SUMMON_SECOND]);
 
 	// SkillLearn
 	m_apUIs[UI_SKILLLEARN] = new CUISkillLearn;
-	m_apUIs[UI_SKILLLEARN]->Create( NULL, 0, 0, SKILLLEARN_WIDTH, SKILLLEARN_HEIGHT );
+	m_apUIs[UI_SKILLLEARN]->Create( NULL, 0, 0, 0, 0 );
+
+	// SSkillLearn
+	m_apUIs[UI_SSKILLLEARN] = new CSSkillLearnUI;
+	LoadXML( "SSkillLearn.xml", m_apUIs[UI_SSKILLLEARN]);
 
 	// 노멀 아이템 교환 29 ~ 72 Lv
 	m_apUIs[UI_CHANGEWEAPON] = new CUIChangeWeapon;
@@ -416,16 +460,12 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_INITJOB]->Create( NULL, 0, 0, INITJOB_WIDTH, INITJOB_HEIGHT );
 
 	// Init Job
-	m_apUIs[UI_HELPER]	= new CUIHelper;
-	m_apUIs[UI_HELPER]->Create( NULL, 0, 0, HELPER_WIDTH, HELPER_HEIGHT );
+	m_apUIs[UI_HELPER]	= new CHelperUI;
+	LoadXML("helper.xml", m_apUIs[UI_HELPER]);
 
 	// Teleport
-	m_apUIs[UI_TELEPORT] = new CUITeleport;
-	m_apUIs[UI_TELEPORT]->Create( NULL, 0, 0, TELEPORT_WIDTH, TELEPORT_HEIGHT );
-
-	// [KH_070315] Primium Teleport
-	m_apUIs[UI_TELEPORT_PRIMIUM] = new CUITeleportPrimium;
-	m_apUIs[UI_TELEPORT_PRIMIUM]->Create( NULL, 0, 0, TELEPORT_PRIMIUM_WIDTH, TELEPORT_PRIMIUM_HEIGHT );
+	m_apUIs[UI_TELEPORT] = new CTeleportUI;
+	LoadXML( "Teleport.xml", m_apUIs[UI_TELEPORT]);
 
 	// Messenger
 	m_apUIs[UI_MESSENGER] = new CUIMessenger;
@@ -444,20 +484,23 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_SIEGE_WARFARE_NEW] = new CUISiegeWarfareNew;
 	m_apUIs[UI_SIEGE_WARFARE_NEW]->Create( NULL, 0, 0, 0, 0 );
 
-	m_apUIs[UI_GW_MIX] = new CUIGWMix;
-	m_apUIs[UI_GW_MIX]->Create( NULL, 0, 0, 0, 0 );
+	m_apUIs[UI_GW_MIX] = new CGuildWarMixUI;
+	LoadXML("gwmix.xml", m_apUIs[UI_GW_MIX]);
 
 	// Notice
 	m_apUIs[UI_NOTICE] = new CUINoticeNew;
 	LoadXML( "NoticeNew.xml", m_apUIs[UI_NOTICE] );
 	//m_apUIs[UI_NOTICE]->Create( NULL, 0, 0, NOTICE_WIDTH, NOTICE_HEIGHT );
 
-	m_apUIs[UI_GUILDSTASH] = new CUIGuildStash;
-	m_apUIs[UI_GUILDSTASH]->Create( NULL, 0, 0, 0, 0 );
+	m_apUIs[UI_GUILDSTASH] = new CGuildStashUI;
+	LoadXML("guildstash_02.xml", m_apUIs[UI_GUILDSTASH]);
+
+	m_apUIs[UI_GUILDTAXHISTORY] = new GuildTaxHistoryUI;
+	LoadXML("guildtaxhistory.xml", m_apUIs[UI_GUILDTAXHISTORY]);
 
 	// new guild stash system. [6/17/2011 rumist]
-	m_apUIs[UI_NEWGUILDSTASH]	= new CUINewGuildStash;
-	m_apUIs[UI_NEWGUILDSTASH]->Create( NULL, 0, 0, 0, 0 );
+	//m_apUIs[UI_NEWGUILDSTASH]	= new CUINewGuildStash;
+	//m_apUIs[UI_NEWGUILDSTASH]->Create( NULL, 0, 0, 0, 0 );
 
 	m_apUIs[UI_AUCTION] = new CUIAuctionNew;
 	LoadXML( "auction.xml", m_apUIs[UI_AUCTION] );
@@ -465,8 +508,8 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_WILDPET_INFO] = new CWildPetInfoUI;
 	LoadXML( "WildPetInfo.xml", m_apUIs[UI_WILDPET_INFO] );
 
-	m_apUIs[UI_CUBERANK] = new CUICubeRank;
-	m_apUIs[UI_CUBERANK]->Create( NULL, 0, 0, 400, 350);
+	m_apUIs[UI_CUBERANK] = new CCubeRankingUI;
+	LoadXML( "cuberank.xml", m_apUIs[UI_CUBERANK]);
 
 	// [2010/10/20 : Sora] 몬스터 용병 카드
 	m_apUIs[UI_MONSTER_MERCENARY] = new CUIMonsterMercenary;
@@ -476,14 +519,19 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_SIEGE_WARFARE_INFO] = new CUISiegeWarfareInfo;
 	m_apUIs[UI_SIEGE_WARFARE_INFO]->Create( NULL, 0, 0, 400, 350 );
 
-	m_apUIs[UI_TREASUREMAP] = new CUITreasureMap;
-	m_apUIs[UI_TREASUREMAP]->Create(NULL, 0, 0, TREASUREMAP_WIDTH, TREASUREMAP_HEIGHT);
+	// 보물지도
+	m_apUIs[UI_TREASURE_MAP] = new CTreasureMapUI;
+	LoadXML( "TreasureMap.xml", m_apUIs[UI_TREASURE_MAP]);
+
 	// Messenger talk box
 	int		iUI;
 	for( iUI = UI_MESSENGER_TALK_START; iUI < UI_MESSENGER_TALK_END; iUI++ )
 	{
-		m_apUIs[iUI] = new CUITalk;
-		((CUITalk*)m_apUIs[iUI])->Create( NULL, iUI );
+		m_apUIs[iUI] = new CTalkUI;
+		LoadXML( "Talk.xml", m_apUIs[iUI]);
+
+		if (m_apUIs[iUI] != NULL)
+			((CTalkUI*)m_apUIs[iUI])->SetUIIndex(iUI);
 	}
 
 	// Message box
@@ -542,10 +590,10 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_MONSTER_COMBO]->Create(NULL, 0, 0, UI_MONSTERCOMBO_WIDTH, UI_MONSTERCOMBO_HEIGHT);
 	// ------------------------------------------------------------------------<<
 	m_apUIs[UI_PRODUCT2] = new CUIProduct2;
-	m_apUIs[UI_PRODUCT2]->Create(NULL, 0, 0, 457, 303 );
+	LoadXML("Product_02.xml", m_apUIs[UI_PRODUCT2]);
 
 	m_apUIs[UI_PRODUCTNPC] = new CUIProductNPC;
-	m_apUIs[UI_PRODUCTNPC]->Create(NULL, 0, 0, 256, 394);
+	LoadXML("ProductNPC.xml", m_apUIs[UI_PRODUCTNPC]);
 
 	// NPC Affinity System ---------------------------------------------------->>
 	// [6/2/2009 rumist]  친화도.
@@ -554,9 +602,8 @@ void CUIWindowDeclare::initUI()
 
 	// ---------------------------------------------------->>
 	// 친화도 UI에서 제작 UI 분리 [2/25/2013 Ranma]
-	m_apUIs[UI_ITEMPRODUCT] = new CUIItemProduct;
-	m_apUIs[UI_ITEMPRODUCT]->Create( NULL, 0, 0, CUIItemProduct::ITEMPRODUCT_WIDTH, CUIItemProduct::ITEMPRODUCT_HEIGHT );
-
+	m_apUIs[UI_ITEMPRODUCT] = new CItemProductUI;
+	LoadXML("itemproduct.xml", m_apUIs[UI_ITEMPRODUCT]);
 
 	// ------------------------------------------------------------------------<<
 	// NPC Affinity System ---------------------------------------------------->>
@@ -571,16 +618,14 @@ void CUIWindowDeclare::initUI()
 	m_apUIs[UI_RESURRECTION]->Create( NULL, 0, 0, 226, 200 );
 	// ------------------------------------------------------------------------<<
 
-	m_apUIs[UI_CHAT_FILTER] = new CUIChatFilter;
-	m_apUIs[UI_CHAT_FILTER]->Create( NULL, 0, 0, 250, 332);
+	m_apUIs[UI_CHAT_FILTER] = new CChatBlockListUI;
+	LoadXML("ChatblockList.xml", m_apUIs[UI_CHAT_FILTER]);
 
-	CTString strCASHXMLPath = _fnmApplicationPath + "Data\\CashType.bin";	
-	m_apUIs[UI_CASHSHOP_EX] = new CUICashShopEX(strCASHXMLPath);
+	m_apUIs[UI_CASHSHOP_EX] = new CUICashShopEX();
 	m_apUIs[UI_CASHSHOP_EX]->Create(NULL,0,0,0,0);
 
-	m_apUIs[UI_ROYALRUMBLE_ICON]	= new CUIRoyalRumbleIcon;
-	m_apUIs[UI_ROYALRUMBLE_ICON]->Create(NULL,	CUIRoyalRumbleIcon::RRUI_POS_X, CUIRoyalRumbleIcon::RRUI_POS_Y, 
-		CUIRoyalRumbleIcon::RRUI_WIDTH, CUIRoyalRumbleIcon::RRUI_HEIGHT );
+	m_apUIs[UI_ROYALRUMBLE_ICON] = new CUIRoyalRumbleIcon;
+	LoadXML("RoyalRumble.xml", m_apUIs[UI_ROYALRUMBLE_ICON]);
 
 	// [sora] GUILD_MARK
 	m_apUIs[UI_GUILD_MARK] = new CUIGuildMark;
@@ -670,6 +715,24 @@ void CUIWindowDeclare::initUI()
 
 	m_apUIs[UI_CUSTOM_TITLE]	= new CCustomTitleUI;
 	LoadXML("customTitle.xml", m_apUIs[UI_CUSTOM_TITLE]);
+
+	m_apUIs[UI_GS_USE_RECORD]	= new CGuildStashUseRecordUI;
+	LoadXML("GuildStashUseRecord.xml", m_apUIs[UI_GS_USE_RECORD]);
+
+	m_apUIs[UI_HELPER_GUARDIAN_INFO]	= new CHelper_GuardianInfoUI;
+	LoadXML("helper_guardian_info.xml", m_apUIs[UI_HELPER_GUARDIAN_INFO]);
+
+	m_apUIs[UI_HELPER_STUDENT]	= new CHelper_StudentUI;
+	LoadXML("helper_student.xml", m_apUIs[UI_HELPER_STUDENT]);
+
+	m_apUIs[UI_GUILD_BATTLE_MATCH] = new GuildBattleMatchUI;
+	LoadXML("GuildBattle.xml", m_apUIs[UI_GUILD_BATTLE_MATCH]);
+
+	m_apUIs[UI_GUILD_BATTLE_MATCH_REG] = new GuildBattleMatchRegUI;
+	LoadXML("GuildBattleReg.xml", m_apUIs[UI_GUILD_BATTLE_MATCH_REG]);
+
+	m_apUIs[UI_GUILD_BATTLE_MATCH_CHALLENGE] = new GuildBattleMatchChallengeUI;
+	LoadXML("GuildBattleChallenge.xml", m_apUIs[UI_GUILD_BATTLE_MATCH_CHALLENGE]);
 }
 
 void CUIWindowDeclare::InitRankSystem()

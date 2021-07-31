@@ -5,6 +5,8 @@
 #include <Engine/Interface/UITextureManager.h>
 #include <Engine/Entities/InternalClasses.h>
 
+extern INDEX	g_iCountry;
+
 #define DEF_BTNON_TIME 50
 // ----------------------------------------------------------------------------
 // Name : CUIButton()
@@ -120,6 +122,9 @@ void CUIButton::RenderHighlight( const COLOR colHighlight )
 	}
 	else
 	{
+		if( m_pTexData )
+			pDrawPort->InitTextureData( m_pTexData, FALSE, PBT_ADD );
+
 		pDrawPort->AddTexture( nX, nY, nX + m_nWidth, nY + m_nHeight,
 												m_rtUV[m_bsState].U0, m_rtUV[m_bsState].V0,
 												m_rtUV[m_bsState].U1, m_rtUV[m_bsState].V1,
@@ -179,14 +184,13 @@ void CUIButton::Render( COLOR textureColor )
 		int countryYPosOffset = 0;	
 		int countryFontGapOffset = 14;	
 
-		extern INDEX	g_iCountry;
-#if defined(G_RUSSIA )
+		if (g_iCountry == RUSSIA)
 		{
 			countryXPosOffset = 5;			
 			countryYPosOffset = 6;
 			countryFontGapOffset = 12;			
 		}
-#endif
+
 		GetAbsPos( nX, nY );
 		if( m_bOnlyText )
 		{
@@ -223,7 +227,6 @@ void CUIButton::Render( COLOR textureColor )
 				++nX;	++nY;
 			}
 
-			extern INDEX g_iCountry; 
 			extern BOOL g_bIsMalEng;
 
 			if(m_bVerticality)
@@ -412,14 +415,13 @@ void CUIButton::OnRender( CDrawPort* pDraw )
 		int countryYPosOffset = 0;	
 		int countryFontGapOffset = 14;	
 
-		extern INDEX	g_iCountry;
-#if defined(G_RUSSIA )
+		if (g_iCountry == RUSSIA)
 		{
 			countryXPosOffset = 5;			
 			countryYPosOffset = 6;
 			countryFontGapOffset = 12;			
 		}
-#endif
+
 		GetAbsPos( nX, nY );
 		if( m_bOnlyText )
 		{
@@ -466,7 +468,6 @@ void CUIButton::OnRender( CDrawPort* pDraw )
 				++nX;	++nY;
 			}
 
-			extern INDEX g_iCountry; 
 			extern BOOL g_bIsMalEng;
 
 			if(m_bVerticality)
@@ -569,6 +570,9 @@ WMSG_RESULT CUIButton::OnLButtonDown( UINT16 x, UINT16 y )
 	if (m_bHide)
 		return WMSG_FAIL;
 
+	if( m_bsState == UBS_DISABLE )
+		return WMSG_FAIL;
+
 	if (IsInside(x, y) == FALSE)
 		return WMSG_FAIL;
 
@@ -585,6 +589,9 @@ WMSG_RESULT CUIButton::OnLButtonDown( UINT16 x, UINT16 y )
 WMSG_RESULT CUIButton::OnLButtonUp( UINT16 x, UINT16 y )
 {
 	if (m_bHide)
+		return WMSG_FAIL;
+
+	if( m_bsState == UBS_DISABLE )
 		return WMSG_FAIL;
 
 	if (m_bsState == UBS_CLICK)
@@ -605,14 +612,14 @@ WMSG_RESULT CUIButton::OnLButtonUp( UINT16 x, UINT16 y )
 
 void CUIButton::OnLeave( UINT16 x, UINT16 y )
 {
-	m_bEnter = false;
-
 	if (IsInside(x, y) == FALSE)
 	{
 		if (!(m_dwWndState & UWS_ENABLE))
 			return;
 
-		m_bsState = UBS_IDLE;
+		// Disable 상태이면 바꾸지 않는다.
+		if (m_bsState != UBS_DISABLE)
+			m_bsState = UBS_IDLE;
 	}
 
 	CUIBase::OnLeave(x, y);
@@ -620,14 +627,12 @@ void CUIButton::OnLeave( UINT16 x, UINT16 y )
 
 void CUIButton::OnEnter( UINT16 x, UINT16 y )
 {
-	m_bEnter = true;
-
 	if (IsInside(x, y) == TRUE)
 	{
 		if (!(m_dwWndState & UWS_ENABLE))
 			return;
 
-		if (m_bsState == UBS_IDLE)
+		if (m_bsState != UBS_DISABLE && m_bsState == UBS_IDLE)
 			m_bsState = UBS_ON;
 	}
 

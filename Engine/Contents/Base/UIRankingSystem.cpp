@@ -47,9 +47,6 @@ void CUIRankingSystem::SearchName(CTString cstrName)
 
 	if(cstrName.Length() > 0)
 	{
-		if (UIMGR()->checkName(cstrName, 0) == FALSE)
-			return;
-
 		m_cstrSearch			= cstrName;
 		SetBottomListErrorMsgString();
 
@@ -461,7 +458,10 @@ void CUIRankingSystem::CloseUI()
 	m_bRecvRank				= FALSE;
 
 	if ( m_pLankType )
+	{
 		m_pLankType->SetCurSel(0);
+		CUIFocus::getSingleton()->killFocus(m_pLankType);
+	}
 
 	if ( m_pProgressBox )
 		m_pProgressBox->Hide( !m_bRecvRank );
@@ -469,7 +469,7 @@ void CUIRankingSystem::CloseUI()
 	if ( m_pProgressBar )
 		m_pProgressBar->Hide( !m_bRecvRank );
 
-	CUIManager::getSingleton()->RearrangeOrder(UI_RANKINGVIEW_RENEWAL, FALSE);
+	CUIManager::getSingleton()->RearrangeOrder(UI_RANKINGVIEW_RENEWAL, FALSE);	
 }
 
 void CUIRankingSystem::UpdateTopRanking()

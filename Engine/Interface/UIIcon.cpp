@@ -8,6 +8,8 @@
 #include <Engine/Help/ItemHelp.h>
 //#include <Engine/Interface/UIGuildMark.h>
 
+extern INDEX	g_iCountry;
+
 #define DEF_HIGHLIGHT_TIME 500
 #define DEF_DISABLE_SKILL_OFFSET	3
 #define	COMBO_BTN_SIZE	52
@@ -38,6 +40,8 @@ CUIIcon::CUIIcon()
 	, m_nCashIndex(-1)
 	, m_bSuit(false)
 	, m_nPetKind(-1)
+	, m_bDrag(false)
+	, m_bDisable(false)
 {
 #ifdef UI_TOOL
 	m_TexID	   = 0;
@@ -272,15 +276,18 @@ void CUIIcon::setDataEtc( eUIBTN_ETC_TYPE type, int nIndex, SQUAD llCount )
 		break;
 	case eETC_TYPE_SP:
 		{
-#if defined (G_RUSSIA)
-			m_TexID = 12;
-			nTexRow = 0;
-			nTexCol = 2;
-#else
-			m_TexID = 9;
-			nTexRow = 12;
-			nTexCol = 11;
-#endif			
+			if (g_iCountry == RUSSIA)
+			{
+				m_TexID = 12;
+				nTexRow = 0;
+				nTexCol = 2;
+			}			
+			else
+			{
+				m_TexID = 9;
+				nTexRow = 12;
+				nTexCol = 11;
+			}	
 		}
 		break;
 	case eETC_TYPE_THEME:
@@ -518,7 +525,7 @@ void CUIIcon::clearIconData()
 #ifdef DURABILITY
 	m_bDurItem = false;
 #endif	//	DURABILITY
-
+	m_bDisable = false;
 	m_TexID = -1;
 	m_nSkillDisable = 0;
 	
@@ -650,6 +657,9 @@ void CUIIcon::OnRender( CDrawPort* pDraw )
 
 void CUIIcon::renderDefault( int x, int y, CDrawPort* pDraw, COLOR color, float delta, const ULONG ulPBT )
 {
+	if (m_bDisable == true)
+		color = DEF_UI_COLOR_COOL_BG;
+
 	pDraw->AddBtnTexture( m_TexID + m_nSkillDisable, x - delta, y - delta, 
 		x + m_nWidth + delta, y + m_nHeight + delta,
 		m_uv, color );
@@ -672,7 +682,7 @@ void CUIIcon::renderCooltime( int x, int y, CDrawPort* pDraw )
 	}
 	else if (m_BtnType == UBET_ITEM)
 	{
-		if (m_pItems != NULL)
+		if (m_pItems != NULL && m_pItems->ItemData != NULL)
 			dStartTime = m_pItems->ItemData->StartTime;
 
 		dReUseTime = MY_INFO()->GetReuseItem(m_nIndex);
@@ -883,7 +893,11 @@ void CUIIcon::OnEnter( UINT16 x, UINT16 y )
 	if (m_bCustomShowInfo == false)
 		CUITooltipMgr::getSingleton()->setData(this);
 
-	CUIBase::OnEnter(x, y);
+	if (m_pCmdOnEnter != NULL)
+		m_pCmdOnEnter->execute();
+
+	if (m_funcOnEnter)
+		m_funcOnEnter(this);
 }
 
 void CUIIcon::OnLeave( UINT16 x, UINT16 y )
@@ -904,10 +918,14 @@ WMSG_RESULT CUIIcon::OnMouseMove( UINT16 x, UINT16 y, MSG* pMsg )
 	if (IsInside(x, y) == FALSE)
 		return WMSG_FAIL;
 
-	if (pMsg->wParam & MK_LBUTTON && CUIManager::getSingleton()->GetDragIcon() == NULL)
+	if (m_bDrag == true && CUIManager::getSingleton()->GetDragIcon() == NULL)
 	{
+		// 드래그가 시작 되면 m_bDrag = false로 바꿈.
 		if (m_pCmdDrag)
+		{
 			m_pCmdDrag->execute();
+			m_bDrag = false;
+		}
 	}
 
 	return WMSG_FAIL;
@@ -932,7 +950,21 @@ WMSG_RESULT CUIIcon::OnLButtonDown( UINT16 x, UINT16 y )
 		m_pImage[eIMG_TYPE_SELECT]->Hide(FALSE);
 	}
 
+	m_bDrag = true;
 	return CUIBase::OnLButtonDown(x, y);
+}
+
+WMSG_RESULT CUIIcon::OnLButtonUp( UINT16 x, UINT16 y )
+{
+	m_bDrag = false;
+
+	if (m_bHide)
+		return WMSG_FAIL;
+
+	if (IsInside(x, y) == FALSE)
+		return WMSG_FAIL;
+
+	return CUIBase::OnLButtonUp(x, y);
 }
 
 WMSG_RESULT CUIIcon::OnLButtonDBLClick( UINT16 x, UINT16 y )
@@ -1247,7 +1279,6 @@ void CUIIcon::setStack()
 
 				CTString strTmp;
 				strTmp.PrintF("%I64d", m_pItems->Item_Sum);
-
 				m_pStack->setString(strTmp);
 				m_pStack->Hide(FALSE);
 			}

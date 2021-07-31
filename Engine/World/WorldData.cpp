@@ -602,10 +602,7 @@ void CWorld::loadEvent()
 				break;		
 			case RUSSIA:
 				tEventLoc = CTString("rus.lod");
-				break;	
-			case TURKEY:
-				tEventLoc = CTString("tur.lod");
-				break;	
+				break;
 			case MEXICO:
 				tEventLoc = CTString("mex.lod");
 				break;	

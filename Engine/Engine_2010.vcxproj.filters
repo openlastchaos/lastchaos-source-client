@@ -963,19 +963,7 @@
     <ClCompile Include="Interface\UIChildQuickSlot.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
-    <ClCompile Include="Interface\UICollectBox.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UICompound.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
     <ClCompile Include="Interface\UIDrawFigure.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UIExchange.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UIFiltering.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Interface\UIFlowerTree.cpp">
@@ -1002,19 +990,10 @@
     <ClCompile Include="Interface\UIGuildNotice.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
-    <ClCompile Include="Interface\UIGuildStash.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
     <ClCompile Include="Interface\UIGuildWarPortal.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
-    <ClCompile Include="Interface\UIGWMix.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
     <ClCompile Include="Interface\UIHelp.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UIHelper.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Interface\UIHelpIcon.cpp">
@@ -1027,9 +1006,6 @@
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Interface\UIInventory.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UIItemProduct.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Interface\UILacarette.cpp">
@@ -1086,16 +1062,7 @@
     <ClCompile Include="Interface\UIPartyAuto.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
-    <ClCompile Include="Interface\UIPetFree.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
     <ClCompile Include="Interface\UIPetInfo.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UIPetItemMix.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UIPetTraining.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Interface\UIPlayerInfo.cpp">
@@ -1164,9 +1131,6 @@
     <ClCompile Include="Interface\UISimplePop.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
-    <ClCompile Include="Interface\UISingleBattle.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
     <ClCompile Include="Interface\UISkillLearn.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
@@ -1176,28 +1140,10 @@
     <ClCompile Include="Interface\UISpinButton.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
-    <ClCompile Include="Interface\UISummon.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UISystemMenu.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UITalk.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UITatoo.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UITeleport.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
     <ClCompile Include="Interface\UITextureManager.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Interface\UITrackPopup.cpp">
-      <Filter>Source Files\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Interface\UIWareHouse.cpp">
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Interface\UIWebBoard.cpp">
@@ -1960,6 +1906,129 @@
       <Filter>Contents\function</Filter>
     </ClCompile>
     <ClCompile Include="Contents\function\PetTargetUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\Base\ChatBlockListUI.cpp">
+      <Filter>Contents\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\InsectCollectUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\PetFreeUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\PetItemMixUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\CubeRankingUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\CompoundUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildWarMixUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\WareHouseUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\ExChangeUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\TreasureMapUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\TeleportUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\PetTrainingUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\ProductNPCUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\TatooUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\TalkUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildStashUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildStashUseRecord.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\SocketRemoveAllUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\SocketCreateUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\SocketCombineUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\Product2UI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\SocketRemoveSingleUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\HelperUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\HelperManager.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\Helper_GuardianInfoUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\Helper_Student.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\JewelComposUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\SystemMenuUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\ItemProductUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\SummonUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\RoyalrumbleUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\SSkillLearnUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\SingleBattleUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildChangeSetUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildDonateUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\ShopUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildBattleMatchUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildBattleMatchRegUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildBattleMatchChallengeUI.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildBattleMatch.cpp">
+      <Filter>Contents\function</Filter>
+    </ClCompile>
+    <ClCompile Include="Contents\function\GuildTaxHistory.cpp">
       <Filter>Contents\function</Filter>
     </ClCompile>
   </ItemGroup>
@@ -2912,19 +2981,7 @@
     <ClInclude Include="Interface\UIChildQuickSlot.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Interface\UICollectBox.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UICompound.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Interface\UIDrawFigure.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UIExchange.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UIFiltering.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="Interface\UIFlowerTree.h">
@@ -2951,19 +3008,10 @@
     <ClInclude Include="Interface\UIGuildNotice.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Interface\UIGuildStash.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Interface\UIGuildWarPortal.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Interface\UIGWMix.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Interface\UIHelp.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UIHelper.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="Interface\UIHelpIcon.h">
@@ -2979,9 +3027,6 @@
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="Interface\UIInventory.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UIItemProduct.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="Interface\UILacarette.h">
@@ -3041,16 +3086,7 @@
     <ClInclude Include="Interface\UIPartyAuto.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Interface\UIPetFree.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Interface\UIPetInfo.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UIPetItemMix.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UIPetTraining.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="Interface\UIPlayerInfo.h">
@@ -3116,9 +3152,6 @@
     <ClInclude Include="Interface\UISimplePop.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Interface\UISingleBattle.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Interface\UISkillLearn.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
@@ -3128,28 +3161,10 @@
     <ClInclude Include="Interface\UISpinButton.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Interface\UISummon.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UISystemMenu.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UITalk.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UITatoo.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UITeleport.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Interface\UITextureManager.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="Interface\UITrackPopup.h">
-      <Filter>Header Files\Interface Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface\UIWareHouse.h">
       <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="Interface\UIWebBoard.h">
@@ -3795,6 +3810,135 @@
       <Filter>Contents\function</Filter>
     </ClInclude>
     <ClInclude Include="Contents\function\PetTargetUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\Base\ChatBlockListUI.h">
+      <Filter>Contents\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\InsectCollectUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\PetFreeUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\PetItemMixUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\CubeRankingUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\CompoundUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildWarMixUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\WareHouseUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\ExChangeUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\TreasureMapUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\TeleportUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\PetTrainingUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\ProductNPCUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\ProductNPCCmd.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\TatooUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\TalkUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildStashUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildStashCmd.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildStashUseRecord.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\SocketRemoveAllUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\SocketCreateUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\SocketCombineUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\Product2UI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\SocketRemoveSingleUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\HelperUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\HelperManager.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\Helper_GuardianInfoUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\Helper_Student.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\JewelComposUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\SystemMenuUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\ItemProductUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\SummonUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\RoyalrumbleUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\SSkillLearnUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\SingleBattleUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildChangeSetUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildDonateUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\ShopUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildBattleMatchUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildBattleMatchRegUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildBattleMatchChallengeUI.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildBattleMatch.h">
+      <Filter>Contents\function</Filter>
+    </ClInclude>
+    <ClInclude Include="Contents\function\GuildTaxHistory.h">
       <Filter>Contents\function</Filter>
     </ClInclude>
   </ItemGroup>

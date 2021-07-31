@@ -170,6 +170,8 @@ private:
 
 	void AddText(CTString str, COLOR col = 0xFFFFFFFF, eALIGN_H alingn = eALIGN_H_LEFT, eLIST_TYPE eType = eLIST_FIRST, int nMaxChar = 0);
     void UpdateTooltip(CUIImageSplit* pBackGround);
+
+	int calc_pet_item_plus(int orig_value, ULONG plus);
 };
 
 #endif // __UI_TOOLTIP_H__

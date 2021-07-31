@@ -103,6 +103,8 @@ void UIFactory::ReadElement( TiXmlElement* rootelement, CUIBase* pParent )
 
 					if (bPre == true)
 					{
+						pList->UpdateScroll(pList->GetItemCount());
+
 						int		i;
 						for (i = 0; i < pList->GetItemCount(); ++i)
 						{
@@ -168,6 +170,15 @@ void UIFactory::ReadElement( TiXmlElement* rootelement, CUIBase* pParent )
 			{
 				if (pUI->getType() == eUI_CONTROL_SCROLL)
 					static_cast<CUITextBox*>(pParent)->SetScroll( static_cast<CUIScrollBar*>(pUI) );
+			}
+			else if (eType == eUI_CONTROL_TEXTBOX_EX)
+			{
+				if (pUI->getType() == eUI_CONTROL_SCROLL)
+				{
+					CUITextBoxEx* pTextBoxEx = static_cast<CUITextBoxEx*>(pParent);
+					pTextBoxEx->SetScroll( static_cast<CUIScrollBar*>(pUI) );
+					pTextBoxEx->UpdateBox();
+				}
 			}
 			else 
 			{
@@ -305,7 +316,12 @@ bool UIFactory::getBaseValue( CUIBase* pUI, TiXmlElement* pElement )
 #ifdef UI_TOOL
 		pUI->SetTooltipIndex(nTooltip);
 #endif // UI_TOOL
-		pUI->setTooltip( CUIBase::getText( (INDEX)nTooltip ) );
+		char* temp;
+		COLOR col = DEF_UI_COLOR_WHITE;
+		if (temp = (char*)pElement->Attribute("tooltip_color"))
+			col = strtoul(temp, NULL, 16);
+
+		pUI->setTooltip( CUIBase::getText( (INDEX)nTooltip ), col );
 	}
 
 	int nTooltipWidth = 0;
@@ -390,6 +406,13 @@ CUIImage* UIFactory::createImage( TiXmlElement* pElement )
 	UIRectUV uv;
 	getUV( &uv, pElement );
 	pUI->SetUV( uv );
+
+	char* tmp;
+	if (tmp = (char*)pElement->Attribute("color"))
+	{
+		std::string strTmp = tmp;
+		pUI->SetColor(strtoul(strTmp.c_str(), NULL, 16) );
+	}
 
 	return pUI;
 }
@@ -561,7 +584,7 @@ CUICheckButton* UIFactory::createCheck( TiXmlElement* pElement )
 	getBaseValue( pUI, pElement );
 
 	int		iLeft, iTextX, iRegion, nString, textArea = 0, h_align;	
-	int nEdge = 0;
+	int nEdge = 0, i;
 
 	char* tmp;
 	if( pElement->Attribute("str_idx", &nString) && nString >= 0 )
@@ -590,31 +613,58 @@ CUICheckButton* UIFactory::createCheck( TiXmlElement* pElement )
 		pUI->setAlignTextH( (eALIGN_H)h_align );
 
 	std::string strTmp;
-
-	strTmp = pElement->Attribute("color_on");
-	if( strTmp.empty() == false )
-		pUI->SetTextColor( TRUE, strtoul(strTmp.c_str(), NULL, 16) );
-
-	strTmp = pElement->Attribute("color_off");
-	if( strTmp.empty() == false )
-		pUI->SetTextColor( FALSE, strtoul(strTmp.c_str(), NULL, 16) );
-
+	std::string strName;
+	std::string strColor[2] = {"on", "off"};
+	std::string strAtt[UCBS_TOTAL] = {"none", "check", "none_disable", "check_disable"};
+	UIRectUV uv;
+	int nUV = 0;
+	TiXmlElement* element = pElement->FirstChildElement();
+	i = 0;
+	for (; element != NULL; element = element->NextSiblingElement())
+	{
+		strTmp = element->Value();
+		// 체크버튼 스테이트 추가로 인한 값 추출 방식 변경.
+		if (strcmpi(strTmp.c_str(), "color") == 0)
+		{
+			for (i = 0; i < UCBS_TOTAL; ++i)
+			{
+				strTmp = element->Attribute(strAtt[i].c_str());
+				if( strTmp.empty() == false )
+					pUI->SetTextColor( (UICheckBtnState)i, strtoul(strTmp.c_str(), NULL, 16) );
+			}
+		}
+		else if (strcmpi(strTmp.c_str(), strAtt[nUV].c_str()) == 0)
+		{
+			getUV( &uv, element );
+			pUI->SetUVTex( (UICheckBtnState)nUV, uv );
+			++nUV;
+		}
+		else
+		{
+			// 기존에 읽던 방식.
+			for (i = 0; i <= UCBS_CHECK; ++i)
+			{
+				strName = "color_" + strColor[i];
+				strTmp = pElement->Attribute(strName.c_str());
+				if( strTmp.empty() == false )
+					pUI->SetTextColor( (UICheckBtnState)i, strtoul(strTmp.c_str(), NULL, 16) );
+			}
+		}
+	}
+	
 	if (pElement->Attribute("edge", &nEdge))
 		pUI->setEdge(nEdge ? true : false);
 
-	TiXmlElement* element = pElement->FirstChildElement();
-	UIRectUV uv;
-
-	for( ; element != NULL; element = element->NextSiblingElement() )
-	{
-		strTmp = element->Value();
-		getUV( &uv, element );
-
-		if( strcmpi(strTmp.c_str(), "none") == 0 )
-			pUI->SetUVTex( UCBS_NONE, uv );
-		else if( strcmpi(strTmp.c_str(), "check") == 0 )
-			pUI->SetUVTex( UCBS_CHECK, uv );
-	}
+	//i = 0;
+	//for( ; element != NULL; element = element->NextSiblingElement() )
+	//{
+	//	strTmp = element->Value();
+	//	getUV( &uv, element );
+	//
+	//	if( strcmpi(strTmp.c_str(), strUV[i].c_str()) == 0 )
+	//		pUI->SetUVTex( (UICheckBtnState)i, uv );
+	//	++i;
+	//}
 
 	return pUI;
 }
@@ -656,8 +706,16 @@ CUIText* UIFactory::createText( TiXmlElement* pElement )
 	}
 
 	tmp = (char*)pElement->Attribute("color");	
+	if( tmp != NULL )	// 하위 호환을 위해 Idle은 기존 인터페이스 사용.
+		pUI->setFontColor((COLOR)strtoul(tmp, NULL, 16));
+
+	tmp = (char*)pElement->Attribute("color_enter");	
 	if( tmp != NULL )
-		pUI->setFontColor( (COLOR)strtoul(tmp, NULL, 16) );
+		pUI->setFontColor( (COLOR)strtoul(tmp, NULL, 16), CUIBase::eSTATE_ENTER);
+
+	tmp = (char*)pElement->Attribute("color_select");	
+	if( tmp != NULL )
+		pUI->setFontColor( (COLOR)strtoul(tmp, NULL, 16), CUIBase::eSTATE_SELECT);
 
 	pElement->Attribute("shadow", &nShadow);
 
@@ -920,19 +978,19 @@ CUISlideBar* UIFactory::createSlideBar( TiXmlElement* pElement )
 	int nBarW, nBarH, nCurPos, nRange, nMin, nMax;
 	pElement->Attribute("bar_w", &nBarW);
 	pElement->Attribute("bar_h", &nBarH);
-	pUI->setBar(nBarW, nBarH);
-
-	pElement->Attribute("cur_pos", &nCurPos);
-	pUI->SetCurPos(nCurPos);
-
-	pElement->Attribute("range", &nRange);
-	pUI->SetRange(nRange);
+	pUI->setBar(nBarW, nBarH);	
 
 	pElement->Attribute("min", &nMin);
 	pUI->SetMinPos(nMin);
 
 	pElement->Attribute("max", &nMax);
 	pUI->SetMaxPos(nMax);
+
+	pElement->Attribute("range", &nRange);
+	pUI->SetRange(nRange);
+
+	pElement->Attribute("cur_pos", &nCurPos);
+	pUI->SetCurPos(nCurPos);
 
 	FLOAT fTexW = 1.0f;
 	FLOAT fTexH = 1.0f;
@@ -1188,6 +1246,8 @@ CUIImageFont* UIFactory::createImageFont( TiXmlElement* pElement )
 	getBaseValue( pUI, pElement );
 
 	int sx, sy, gap, ogap;
+	int		h_align = 0;
+
 	if (pElement->Attribute("fsizex", &sx) &&
 		pElement->Attribute("fsizey", &sy) &&
 		pElement->Attribute("fgap", &gap) )
@@ -1212,6 +1272,9 @@ CUIImageFont* UIFactory::createImageFont( TiXmlElement* pElement )
 		StackWideCharToMultiByte(CP_ACP, wcsResult, -1, szResult);
 		pUI->setString( szResult );
 	}
+
+	if (pElement->Attribute( "h_align", &h_align ))
+		pUI->setAlignFontH( (eALIGN_H)h_align );
 
 	std::string strTmp;
 	TiXmlElement* element = pElement->FirstChildElement();
@@ -1297,8 +1360,20 @@ CUISpriteAni* UIFactory::createSpriteAni( TiXmlElement* pElement )
 	int nCurFrame;
 
 	pElement->Attribute("cur", &nCurFrame);
-
 	pUI->SetRenderIdx( nCurFrame );
+
+	int nDelay;
+	if (pElement->Attribute("delay_time", &nDelay))
+		pUI->SetDelayTime(nDelay);
+
+	int nPlay;
+	if (pElement->Attribute("play", &nPlay))
+	{
+		if (nPlay > 0)
+			pUI->PlayAni();
+		else
+			pUI->StopAni();
+	}
 
 	TiXmlElement* element = pElement->FirstChildElement();
 
@@ -1476,6 +1551,10 @@ CUITextBoxEx* UIFactory::createTextBoxEx( TiXmlElement* pElement )
 
 	if (pElement->Attribute( "split_mode", &nSplit ))
 		pUI->SetSplitMode((eSPLIT_TYPE)nSplit);
+
+	int nScrollThumb;
+	if (pElement->Attribute("scroll_thumb_width", &nScrollThumb))
+		pUI->SetScrollThumbWidth(nScrollThumb);
 
 	char* tmp;
 	int	nString;

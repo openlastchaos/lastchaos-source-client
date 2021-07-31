@@ -8,124 +8,113 @@
 #include <Engine/Interface/UIMap.h>
 #include <Engine/Interface/UIQuickSlot.h>
 #include <Engine/Interface/UIInventory.h>
-#include <Engine/Interface/UISystemMenu.h>
+#include <engine/Contents/function/SystemMenuUI.h>
+#include <Engine/Entities/MobData.h>
 
-static int	_nMsgBoxLineHeight = 0;
 extern INDEX g_iXPosInNPCScroll;
 extern INDEX g_iYPosInNPCScroll;
 
-enum eNPCScrollMessageSelection
+
+class CmdSelectNPC : public Command
 {
-	NPCSCROLL_MESSAGE_CONFIRM,
+public:
+	CmdSelectNPC() : _npc(true), _idx(-1), _ui(NULL) {}
+	void setData(CUINpcScroll* pui, int idx, bool bnpc)	{
+		_npc = bnpc;
+		_ui = pui; _idx = idx; 
+	}
+	void execute() {
+		if (_idx < 0 || _ui == NULL)
+			return;
+
+		_ui->choose(_idx, _npc);
+	}
+
+private:
+	bool _npc;
+	int _idx;
+	CUINpcScroll* _ui;
+
 };
 
-CUINpcScroll::CUINpcScroll() : m_nCurRow(0), m_nStringCount(0), m_nRenType(NPC_LIST), m_nCurSel(-1), 
-								m_nCurNpcIndex(-1), m_nCurMobIndex(-1), m_bIsOpen(FALSE), m_nCurZone(0)
+CUINpcScroll::CUINpcScroll() 
+	: m_nCurRow(0)
+	, m_nStringCount(0)
+	, m_nCurNpcIndex(-1)
+	, m_nCurMobIndex(-1)
+	, m_bIsOpen(FALSE)
+	, m_nCurZone(0)
+	, m_pTbDesc(NULL)
+	, m_pList(NULL)
+	, m_pTxtJob(NULL)
+	, m_pTbDescMove(NULL)
 {
-	
+	setInherit(false);
+
+	for (int i = 0; i < eSTATUS_MAX; ++i)
+		m_pGroup[i] = NULL;
 }
 
 CUINpcScroll::~CUINpcScroll()
 {
 	cArrItemIdex.Clear();
+
+	Destroy();
 }
 
-void CUINpcScroll::Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight ) 
+void CUINpcScroll::initialize()
 {
-	CUIWindow::Create(pParentWnd, nX, nY, nWidth, nHeight);
+#ifndef		WORLD_EDITOR
 
-	_nMsgBoxLineHeight = _pUIFontTexMgr->GetFontHeight() + 4;
-	// Region of each part
-	m_rcTitle.SetRect( 0, 0, 216, 22 );	
+	CUIText* pTxt = (CUIText*)findUI("txt_title");
 
-	// Create web board texture
-	m_ptdBaseTexture	= CreateTexture( CTString( "Data\\Interface\\WebBoard.tex" ) );
-	FLOAT	fTexWidth	= m_ptdBaseTexture->GetPixWidth();	
-	FLOAT	fTexHeight	= m_ptdBaseTexture->GetPixHeight();
+	if (pTxt != NULL)
+	{
+		int l, t, r, b;
+		l = pTxt->GetPosX();
+		t = pTxt->GetPosY();
+		r = l + pTxt->GetWidth();
+		b = t + pTxt->GetHeight();
+		setTitleRect(l, t, r, b);
+	}
 
-	// UV Coordinate of each part
-	// Background
-	m_bxTitle.SetBoxUV(m_ptdBaseTexture, 32, 22, WRect(0, 0, 88, 22));
-	m_bxTitle.SetBoxPos(WRect(0, 0, UI_NPCSCROLL_WIDTH, 22));
+	CUIButton* pBtn = (CUIButton*)findUI("btn_close");
 
-	m_bxBackup.SetBoxUV(m_ptdBaseTexture, 14, 10, WRect(0, 42, 88, 66));
-	m_bxBackup.SetBoxPos(WRect(0, 22, UI_NPCSCROLL_WIDTH, 112));
+	if (pBtn != NULL)
+		pBtn->SetCommandFUp(boost::bind(&CUINpcScroll::CloseNpcScroll, this));
+	
+	m_pGroup[0] = findUI("gro_base");
+	m_pGroup[1] = findUI("gro_move");
+	m_pGroup[2] = findUI("gro_confirm");
 
-	m_bxBackDown.SetBoxUV(m_ptdBaseTexture, 14, 14, WRect(0, 42, 88, 74));
-	m_bxBackDown.SetBoxPos(WRect(0, 112, UI_NPCSCROLL_WIDTH, UI_NPCSCROLL_HEIGHT));
+	m_pTbDesc = (CUITextBox*)findUI("tb_desc");
+	m_pList = (CUIList*)findUI("list_npc");
 
-	m_bxBackup2.SetBoxUV(m_ptdBaseTexture, 14, 8, WRect(0, 42, 88, 62));
-	m_bxBackup2.SetBoxPos(WRect(0, 22, UI_NPCSCROLL_WIDTH, UI_NPCSCROLL_HEIGHT - 50));
+	m_pTxtJob = (CUIText*)findUI("txt_name");
+	m_pTbDescMove = (CUITextBox*)findUI("tb_desc_move");
+	
+	pBtn = (CUIButton*)findUI("btn_list");
 
-	m_bxBackDown2.SetBoxUV(m_ptdBaseTexture, 14, 4, WRect(0, 62, 88, 74));
-	m_bxBackDown2.SetBoxPos(WRect(0, UI_NPCSCROLL_HEIGHT - 50, UI_NPCSCROLL_WIDTH, UI_NPCSCROLL_HEIGHT));
+	if (pBtn != NULL)
+		pBtn->SetCommandFUp(boost::bind(&CUINpcScroll::press_list, this));
 
-	m_bxBackup3.SetBoxUV(m_ptdBaseTexture, 14, 8, WRect(0, 42, 88, 62));
-	m_bxBackup3.SetBoxPos(WRect(0, 22, UI_NPCSCROLL_WIDTH, UI_NPCSCROLL_HEIGHT - 50));
+	pBtn = (CUIButton*)findUI("btn_move");
 
-	m_bxBackDown3.SetBoxUV(m_ptdBaseTexture, 14, 4, WRect(0, 62, 88, 74));
-	m_bxBackDown3.SetBoxPos(WRect(0, UI_NPCSCROLL_HEIGHT - 50, UI_NPCSCROLL_WIDTH, UI_NPCSCROLL_HEIGHT));
+	if (pBtn != NULL)
+		pBtn->SetCommandFUp(boost::bind(&CUINpcScroll::press_move, this));
 
-	m_rtSplitterS.SetUV( 91, 18, 98, 19, fTexWidth, fTexHeight );
-	m_rtSplitterL.SetUV( 91, 21, 98, 23, fTexWidth, fTexHeight );
+	pBtn = (CUIButton*)findUI("btn_yes");
 
-	// Close Button
-	m_btnClose.Create( this, CTString( "" ), 205, 4, 14, 14 );
-	m_btnClose.SetUV( UBS_IDLE, 108, 0, 122, 14, fTexWidth, fTexHeight );
-	m_btnClose.SetUV( UBS_CLICK, 108, 15, 122, 29, fTexWidth, fTexHeight );
-	m_btnClose.CopyUV( UBS_IDLE, UBS_ON );
-	m_btnClose.CopyUV( UBS_IDLE, UBS_DISABLE );
+	if (pBtn != NULL)
+		pBtn->SetCommandFUp(boost::bind(&CUINpcScroll::press_yes, this));
 
-	// List button
-	m_btnList.Create( this, _S( 313, "목록" ), 37, 316, 63, 21 );	
-	m_btnList.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
-	m_btnList.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
-	m_btnList.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
-	m_btnList.CopyUV( UBS_IDLE, UBS_ON ); 
+	pBtn = (CUIButton*)findUI("btn_no");
 
-	m_btnWarp.Create( this, _S(4738,"포탈 이동"), 139, 316, 63, 21 );
-	m_btnWarp.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
-	m_btnWarp.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
-	m_btnWarp.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight  );
-	m_btnWarp.CopyUV( UBS_IDLE, UBS_ON );
+	if (pBtn != NULL)
+		pBtn->SetCommandFUp(boost::bind(&CUINpcScroll::press_no, this));
 
-	m_btnYes.Create( this, _S(192,"예"), 37, 316, 63, 21 );	
-	m_btnYes.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
-	m_btnYes.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
-	m_btnYes.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight );
-	m_btnYes.CopyUV( UBS_IDLE, UBS_ON ); 
 
-	m_btnNo.Create( this, _S(193,"아니오"), 139, 316, 63, 21 );
-	m_btnNo.SetUV( UBS_IDLE, 0, 94, 63, 115, fTexWidth, fTexHeight );
-	m_btnNo.SetUV( UBS_CLICK, 64, 94, 127, 115, fTexWidth, fTexHeight );
-	m_btnNo.SetUV( UBS_DISABLE, 128, 76, 191, 97, fTexWidth, fTexHeight  );
-	m_btnNo.CopyUV( UBS_IDLE, UBS_ON );
-
-	// List box	
-	m_lbNpcList.Create( this, 10, 112, 202, 240, _nMsgBoxLineHeight, 8, 8, 2, TRUE );
-	m_lbNpcList.CreateScroll( TRUE, 0, 10, 9, 216, 9, 7, 0, 0, 10 );
-	m_lbNpcList.SetOverColor( 0xF0A769FF );
-	m_lbNpcList.SetSelectColor( 0xF0A769FF );
-	m_lbNpcList.SetColumnPosX( 1, 10 );
-	// Up button
-	m_lbNpcList.SetScrollUpUV( UBS_IDLE, 46, 117, 55, 124, fTexWidth, fTexHeight );
-	m_lbNpcList.SetScrollUpUV( UBS_CLICK, 56, 117, 65, 124, fTexWidth, fTexHeight );
-	m_lbNpcList.CopyScrollUpUV( UBS_IDLE, UBS_ON );
-	m_lbNpcList.CopyScrollUpUV( UBS_IDLE, UBS_DISABLE );
-	// Down button
-	m_lbNpcList.SetScrollDownUV( UBS_IDLE, 66, 117, 75, 124, fTexWidth, fTexHeight );
-	m_lbNpcList.SetScrollDownUV(UBS_CLICK, 76, 117, 85, 124, fTexWidth, fTexHeight);
-	m_lbNpcList.CopyScrollDownUV( UBS_IDLE, UBS_ON );
-	m_lbNpcList.CopyScrollDownUV( UBS_IDLE, UBS_DISABLE );
-	// Bar button
-	m_lbNpcList.SetScrollBarTopUV( 90, 43, 98, 50, fTexWidth, fTexHeight );
-	m_lbNpcList.SetScrollBarMiddleUV( 90, 50, 98, 60, fTexWidth, fTexHeight );
-	m_lbNpcList.SetScrollBarBottomUV(  90, 60, 98, 67, fTexWidth, fTexHeight );
-
-	m_lbNpcDescription.Create( this, 10, 34, 214, 285, _nMsgBoxLineHeight, 8, 8, 2, FALSE);
-	m_lbNpcWarpDescription.Create( this, 10, 34, 214, 285, _nMsgBoxLineHeight, 8, 8, 2, FALSE);
-	m_lbNpcDialog.Create( this, 10, 20, 214, 102, _nMsgBoxLineHeight, 8, 8, 2, FALSE);
-
+#endif		// WORLD_EDITOR
 }
 
 void CUINpcScroll::OpenNPCScroll()
@@ -183,7 +172,7 @@ void CUINpcScroll::OpenNPCScroll()
 			if (MD == NULL)
 				continue;
 
-			m_vectorMobList.push_back(*MD);
+			m_vectorMobList.push_back(MD);
 		}		
 	}
 
@@ -193,6 +182,10 @@ void CUINpcScroll::OpenNPCScroll()
 	m_bIsOpen = TRUE;
 	SetPos( g_iXPosInNPCScroll, g_iYPosInNPCScroll );
 	UIMGR()->RearrangeOrder(UI_NPC_SCROLL, TRUE);
+	Hide(FALSE);
+
+	// 상태를 초기화 한다.
+	set_status(eSTATUS_LIST);
 }
 
 void CUINpcScroll::CloseNpcScroll()
@@ -204,116 +197,12 @@ void CUINpcScroll::CloseNpcScroll()
 	g_iXPosInNPCScroll = GetPosX();
 	g_iYPosInNPCScroll = GetPosY();
 	pUIManager->m_nHelpNpc_Index = -1;
-	m_nRenType = NPC_LIST;
 	pUIManager->RearrangeOrder(UI_NPC_SCROLL, FALSE);
 	//vector 지우는거 추가 할 것
 	m_vectorNpclist.clear();
 	m_vectorMobList.clear();
 
-}
-
-
-void CUINpcScroll::ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
-{
-	SetPos( ( pixMaxI + pixMinI ) / 2 - GetWidth(), ( pixMaxJ + pixMinJ - GetHeight() ) / 2 );
-}
-
-void CUINpcScroll::ResetSavePosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
-{
-	ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
-	g_iXPosInNPCScroll = GetPosX();
-	g_iYPosInNPCScroll = GetPosY();
-}
-
-void CUINpcScroll::AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ )
-{
-	if( m_nPosX < pixMinI || m_nPosX + GetWidth() > pixMaxI ||
-		m_nPosY < pixMinJ || m_nPosY + GetHeight() > pixMaxJ )
-		ResetPosition( pixMinI, pixMinJ, pixMaxI, pixMaxJ );
-}
-
-void CUINpcScroll::Render()
-{
-	if(m_vectorNpclist.empty() || m_nCurZone != _pNetwork->MyCharacterInfo.zoneNo)
-	{
-		if(m_nRenType == NPC_LIST)
-		{
-			SetViewList();
-			RefreshNpcList();
-		}
-		
-	}
-
-	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
-
-	pDrawPort->InitTextureData( m_ptdBaseTexture );
-	
-	// Add render regions
-	int	nX, nY, nX2, nY2;
-	// Background
-	// Upper left
-	nX = m_nPosX;
-	nY = m_nPosY;
-	nX2 = m_nPosX + m_nWidth;
-	nY2 = m_nPosY + 28;
-
-	m_bxTitle.Render(m_nPosX, m_nPosY);
-
-	if(m_nRenType == NPC_LIST)	//Npc 목록 찍기
-	{
-		m_bxBackup.Render(m_nPosX,m_nPosY);
-		m_bxBackDown.Render(m_nPosX,m_nPosY);
-
-		m_lbNpcDialog.Render();
-		m_lbNpcList.Render();
-
-		m_btnList.SetEnable(FALSE);
-		m_btnWarp.SetEnable(FALSE);
-		m_btnYes.SetEnable(FALSE);
-		m_btnNo.SetEnable(FALSE);
-	}
-
-	else if (m_nRenType == NPC_DESC)						//Npc 설명 찍기
-	{
-		m_bxBackup2.Render(m_nPosX, m_nPosY);
-		m_bxBackDown2.Render(m_nPosX, m_nPosY);
-
-		m_btnWarp.Render();
-		m_btnList.Render();
-		m_lbNpcDescription.Render();
-
-		m_btnList.SetEnable(TRUE);
-		m_btnWarp.SetEnable(TRUE);
-		m_btnYes.SetEnable(FALSE);
-		m_btnNo.SetEnable(FALSE);
-
-	}
-
-	else if(m_nRenType == WARP_YESNO)
-	{
-		m_bxBackup3.Render(m_nPosX, m_nPosY);
-		m_bxBackDown3.Render(m_nPosX, m_nPosY);
-
-		m_btnYes.Render();
-		m_btnNo.Render();
-		m_lbNpcWarpDescription.Render();
-
-		m_btnList.SetEnable(FALSE);
-		m_btnWarp.SetEnable(FALSE);
-		m_btnYes.SetEnable(TRUE);
-		m_btnNo.SetEnable(TRUE);
-	}
-	// Close button
-	m_btnClose.Render();
-
-	pDrawPort->FlushRenderingQueue();
-
-	// Text in web board
-	// Title
-	pDrawPort->PutTextEx( _S( 1748, "안내" ), m_nPosX + HELP_TITLE_OFFSETX,		
-										m_nPosY + HELP_TITLE_OFFSETY, 0xFFFFFFFF );	
-		// Flush all render text queue
-	pDrawPort->EndTextEx();
+	Hide(TRUE);
 }
 
 BOOL StringInAscendingOrder(const INDEX npc1, const INDEX npc2)
@@ -328,11 +217,11 @@ BOOL StringInAscendingOrder(const INDEX npc1, const INDEX npc2)
 	return TRUE;
 }	
 
-BOOL MobLevInAscendingOrder(const CMobData& mob1, const CMobData& mob2)
+BOOL MobLevInAscendingOrder(const CMobData* mob1, const CMobData* mob2)
 {
 	//int nResult = mob1.GetLevel() - mob2.GetLevel();
 
-	if(mob1.GetLevel() >= mob2.GetLevel())
+	if(mob1->GetLevel() >= mob2->GetLevel())
 	{
 		return FALSE;
 	}
@@ -342,16 +231,15 @@ BOOL MobLevInAscendingOrder(const CMobData& mob1, const CMobData& mob2)
 
 void CUINpcScroll::SetViewList()
 {
-	m_lbNpcDialog.ResetAllStrings();
+	m_nCurZone = _pNetwork->MyCharacterInfo.zoneNo;
 
 	CTString	tempDesc;
+	tempDesc.PrintF(_S(5031,"%s 지역의 NPC들 앞으로 이동할 수 있는 포탈을 생성합니다. \
+							리스트에서 이름을 클릭하면 위치 안내 또는 포탈을 사용 하실 수 있습니다."),
+					CZoneInfo::getSingleton()->GetZoneName(m_nCurZone));
 
-	tempDesc.PrintF(_S(5031,"%s 지역의 NPC들 앞으로 이동할 수 있는 포탈을 생성합니다. 리스트에서 이름을 클릭하면 위치 안내 또는 포탈을 사용 하실 수 있습니다."),
-					CZoneInfo::getSingleton()->GetZoneName( _pNetwork->MyCharacterInfo.zoneNo ) );
-
-	MultiLineString(tempDesc);
-	
-	m_nCurZone = _pNetwork->MyCharacterInfo.zoneNo;
+	if (m_pTbDesc != NULL)
+		m_pTbDesc->SetText(tempDesc);	
 
 	if (!m_vectorNpclist.empty())
 	{
@@ -363,193 +251,17 @@ void CUINpcScroll::SetViewList()
 		std::sort(m_vectorMobList.begin(), m_vectorMobList.end(), MobLevInAscendingOrder); 
 	}
 }
-
-
-void CUINpcScroll::SetViewContent(int iIndex)
-{
-	m_lbNpcDescription.ResetAllStrings();
-	INDEX index = m_vectorNpclist[iIndex];
-	m_lbNpcDescription.AddString(0, (CTString)CMobData::getData(index)->GetName(),0xFFF42BFF);
-	MultiLineString(CTString(CMobData::getData(index)->GetDesc()));
-
-	CUIManager* pUIManager = CUIManager::getSingleton();
-
-	pUIManager->m_nHelpNpc_Index = index;
-}
-
-void CUINpcScroll::SetWarpContent()
-{
-	m_lbNpcWarpDescription.ResetAllStrings();
-	m_lbNpcWarpDescription.AddString(0, (CTString)(_S(4740,"해당 NPC의 앞으로 이동합니다.")));
-}
-
-void CUINpcScroll::MultiLineString(CTString & strExplantion)
-{
-	//If length of string is less than max char
-	int nLength = strExplantion.Length();
-	
-	int		iPos;
-	// If length of string is less than max char
-	if( nLength <= READ_MAX_CHAR )
-	{
-		// Check line character		
-		for( iPos = 0; iPos < nLength; iPos++ )
-		{
-			if( strExplantion[iPos] == '\n' || strExplantion[iPos] == '\r' )
-				break;	
-		}
-		
-		// Not exist
-		if( iPos == nLength )
-		{
-			if(m_nRenType == NPC_LIST)
-			{
-				m_lbNpcDialog.AddString(0, strExplantion, 0xE6E6E6FF);
-			}
-			
-			else if (m_nRenType == NPC_DESC)
-			{
-				m_lbNpcDescription.AddString(0, strExplantion, 0xE6E6E6FF );
-			}
-
-			else if (m_nRenType == WARP_YESNO)
-			{
-				m_lbNpcWarpDescription.AddString(0, strExplantion, 0xE6E6E6FF);
-			}
-		}
-		
-		else
-		{
-			// Split string
-			CTString	strTemp, strTemp2;
-			strExplantion.Split( iPos, strTemp2, strTemp );
-			
-			if(m_nRenType == NPC_LIST)
-			{
-				m_lbNpcDialog.AddString(0, strExplantion, 0xE6E6E6FF);
-			}
-
-			else if(m_nRenType == NPC_DESC)
-			{
-				m_lbNpcDescription.AddString(0, strExplantion, 0xE6E6E6FF );
-			}
-
-			else if(m_nRenType == WARP_YESNO)
-			{
-				m_lbNpcWarpDescription.AddString(0, strExplantion, 0xE6E6E6FF);
-			}
-			
-			// Trim line character
-			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-				strTemp.TrimLeft( strTemp.Length() - 2 );
-			else
-				strTemp.TrimLeft( strTemp.Length() - 1 );
-			
-			MultiLineString( strTemp );
-		}
-	}
-	// Need multi-line
-	else
-	{
-		// Check splitting position for 2 byte characters
-		int		nSplitPos = READ_MAX_CHAR;
-		BOOL	b2ByteChar = FALSE;
-		for( iPos = 0; iPos < nSplitPos; iPos++ )
-		{
-			if( strExplantion[iPos] & 0x80 )
-				b2ByteChar = !b2ByteChar;
-			else
-				b2ByteChar = FALSE;
-		}
-		
-		if( b2ByteChar )
-			nSplitPos--;
-		
-		// Check line character
-		for( iPos = 0; iPos < nSplitPos; iPos++ )
-		{
-			if( strExplantion[iPos] == '\n' || strExplantion[iPos] == '\r' )
-				break;
-		}
-		
-		// Not exist
-		if( iPos == nSplitPos )
-		{
-			// Split string
-			CTString	strTemp, strTemp2;
-			strExplantion.Split( nSplitPos, strTemp2, strTemp );
-			if(m_nRenType == NPC_LIST)
-			{
-				m_lbNpcDialog.AddString(0, strTemp2, 0xE6E6E6FF);
-			}
-
-			else if(m_nRenType == NPC_DESC)
-			{
-				m_lbNpcDescription.AddString( 0, strTemp2, 0xE6E6E6FF );
-			}
-
-			else if( m_nRenType == WARP_YESNO)
-			{
-				m_lbNpcWarpDescription.AddString(0, strTemp2, 0xE6E6E6FF);
-			}
-			
-			// Trim space
-			if( strTemp[0] == ' ' )
-			{
-				int	nTempLength = strTemp.Length();
-
-				for( iPos = 1; iPos < nTempLength; iPos++ )
-				{
-					if( strTemp[iPos] != ' ' )
-						break;
-				}
-				
-				strTemp.TrimLeft( strTemp.Length() - iPos );
-			}
-			
-			MultiLineString( strTemp );
-		}
-
-		else
-		{
-			// Split string
-			CTString	strTemp, strTemp2;
-			strExplantion.Split( iPos, strTemp2, strTemp );
-			
-			if(m_nRenType == NPC_LIST)
-			{
-				m_lbNpcDialog.AddString(0, strTemp2, 0xE6E6E6FF);
-			}
-
-			else if(m_nRenType == NPC_DESC)
-			{
-				m_lbNpcDescription.AddString( 0, strTemp2, 0xE6E6E6FF );
-			}
-
-			else if(m_nRenType == WARP_YESNO)
-			{
-				m_lbNpcWarpDescription.AddString(0, strTemp2, 0xE6E6E6FF);
-			}
-			
-			// Trim line character
-			if( strTemp[0] == '\r' && strTemp[1] == '\n' )
-				strTemp.TrimLeft( strTemp.Length() - 2 );
-			else
-				strTemp.TrimLeft( strTemp.Length() - 1 );
-			
-			MultiLineString( strTemp );
-		}
-	}
-}
-
 void CUINpcScroll::RefreshNpcList()
 {
-	m_lbNpcList.ResetAllStrings();
+	if (m_pList == NULL)
+		return;
+
+	m_pList->DeleteAllListItem();
 
 	CTString strTemp;
 	strTemp.PrintF("[%s]", _S(446, "NPC"));
 
-	m_lbNpcList.AddString(0, strTemp, 0xE36C0AFF);
+	add_list(strTemp, 0xE36C0AFF);
 
 	std::vector<int>::iterator it = m_vectorNpclist.begin();
 	std::vector<int>::iterator itend = m_vectorNpclist.end();
@@ -566,16 +278,16 @@ void CUINpcScroll::RefreshNpcList()
 			strTemp += (CTString)(" [A]");
 		}
 			
-		m_lbNpcList.AddString(0,strTemp , 0xF2F2F2FF);
+		add_list(strTemp, DEF_UI_FONT_COLOR, (*it), true);
 	}
 
 	strTemp.PrintF("[%s]", _S(448, "몬스터"));
 
-	m_lbNpcList.AddString(0, _s(""));
-	m_lbNpcList.AddString(0, strTemp, 0xC20000FF);
+	add_list(_s(""));
+	add_list(strTemp, 0xC20000FF);
 
-	std::vector<CMobData>::iterator it1 = m_vectorMobList.begin();
-	std::vector<CMobData>::iterator iend1 = m_vectorMobList.end();
+	vec_mob_iter it1 = m_vectorMobList.begin();
+	vec_mob_iter iend1 = m_vectorMobList.end();
 
 	int nLevelDiff	= 0;
 	int nColIndex	= 0;
@@ -583,7 +295,7 @@ void CUINpcScroll::RefreshNpcList()
 	
 	for( ; it1 != iend1; ++it1)
 	{
-		int idx = (*it1).GetMobIndex();
+		int idx = (*it1)->GetMobIndex();
 
 		if (idx <= 0)
 			continue;
@@ -604,12 +316,11 @@ void CUINpcScroll::RefreshNpcList()
 		else 
 			nColIndex = 4;
 			
-		char buf[128];
-		sprintf(buf, "(LV%d)", pData->GetLevel());
-		m_lbNpcList.AddString(0, 
-			(CTString)(pData->GetName() + (CTString)buf), 
-			GetNameColor(nColIndex));
+		strTemp.PrintF("%s (Lv%d)", pData->GetName(), pData->GetLevel());		
+ 		add_list(strTemp, GetNameColor(nColIndex), pData->getindex(), false);
 	}
+
+	m_pList->UpdateList(true);
 }
 
 COLOR CUINpcScroll::GetNameColor(int nIndex)
@@ -643,7 +354,6 @@ COLOR CUINpcScroll::GetNameColor(int nIndex)
 	
 }
 
-
 void CUINpcScroll::ReceiveNPCData(CNetworkMessage* istr)
 {
 	
@@ -675,10 +385,10 @@ void CUINpcScroll::ReceiveNPCData(CNetworkMessage* istr)
 		if (tempMob == NULL)
 			continue;
 
-		m_vectorMobList.push_back(*tempMob);
+		m_vectorMobList.push_back(tempMob);
 	}
 
-	if(m_nRenType == NPC_LIST)
+	if (m_eStatus == eSTATUS_LIST)
 	{	
 		SetViewList();
 		RefreshNpcList();
@@ -696,266 +406,6 @@ void CUINpcScroll::ReceiveMobLocation(CNetworkMessage* istr)
 
 	pUIManager->m_fHelpMobX = fX;
 	pUIManager->m_fHelpMobZ = fZ;
-}
-
-// Modified.
-// UI Bug Fix. [12/9/2009  rumist]
-// UI 외부에서 마우스 홀드 후 무빙시 스크롤바가 스크롤 되던 버그 수정.
-
-WMSG_RESULT	CUINpcScroll::MouseMessage( MSG *pMsg )
-{
-	WMSG_RESULT	wmsgResult;
-
-	// Title bar
-	static BOOL bTitleBarClick = FALSE;
-	
-	// Npc Scroll
-	static BOOL bNpcListClick = FALSE;
-
-	// Mouse point
-	static int	nOldX, nOldY;
-	int	nX = LOWORD( pMsg->lParam );
-	int	nY = HIWORD( pMsg->lParam );
-
-	// Mouse message
-	switch( pMsg->message ) 
-	{
-	case WM_MOUSEMOVE:
-		{
-			if (IsInside(nX, nY))
-				CUIManager::getSingleton()->SetMouseCursorInsideUIs();
-
-			// Move web board
-			if( bTitleBarClick && ( pMsg->wParam & MK_LBUTTON ) )
-			{
-				int	ndX = nX - nOldX;
-				int	ndY = nY - nOldY;
-				nOldX = nX;	
-				nOldY = nY;
-				
-				Move( ndX, ndY );
-				
-				return WMSG_SUCCESS;
-			}
-			else if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL ||
-					 m_btnList.MouseMessage(pMsg) != WMSG_FAIL ||
-					 m_btnWarp.MouseMessage(pMsg) != WMSG_FAIL ||
-					 m_btnYes.MouseMessage(pMsg) != WMSG_FAIL ||
-					 m_btnNo.MouseMessage(pMsg) != WMSG_FAIL)
-			{
-				return WMSG_SUCCESS;
-			}
-			// Top Scroll bar
-			else if( ( wmsgResult = m_lbNpcList.MouseMessage( pMsg ) ) != WMSG_FAIL )
-			{
-				if( wmsgResult == WMSG_COMMAND)
-					m_nCurRow = m_lbNpcList.GetScrollBarPos();				
-				
-				return WMSG_SUCCESS;
-			}
-		}
-
-		break;
-
-	case WM_LBUTTONDOWN:
-		{
-			if( IsInside( nX, nY ) )
-			{
-				CUIManager* pUIManager = CUIManager::getSingleton();
-				
-				SetFocus ( TRUE );
-				nOldX = nX;		
-				nOldY = nY;
-
-				// 버튼 메시지 프로시저 호출.
-				m_btnWarp.MouseMessage(pMsg);
-				m_btnYes.MouseMessage(pMsg);
-				m_btnNo.MouseMessage(pMsg);
-				m_btnList.MouseMessage(pMsg);
-
-				// Close button
-				if( m_btnClose.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					// Nothing
-				}
-				// Title bar
-				else if( IsInsideRect( nX, nY, m_rcTitle ) )
-				{
-					bTitleBarClick = TRUE;
-				}
-				// Top Scroll bar
-				else if( ( wmsgResult = m_lbNpcList.MouseMessage( pMsg ) ) != WMSG_SUCCESS )
-				{
-					int curnum = m_lbNpcList.GetCurSel(); 
-					if(IsNPC(curnum))
-					{
-						if(curnum > 0  && m_nRenType == NPC_LIST)
-						{
-							bNpcListClick = TRUE;
-
-							m_nRenType = NPC_DESC;
-							m_nCurSel = curnum - 1;
-							SetViewContent(m_nCurSel);
-							
-							int n = m_vectorNpclist.size();
-
-							m_nCurNpcIndex = m_vectorNpclist[m_nCurSel];
-
-							pUIManager->m_IsHelpMob = FALSE;
-							//현재 마을에 있다면 
-							if(IsOpenDetailedMap(m_nCurZone, m_nCurNpcIndex))
-							{
-								//if(!pUIManager->GetMap()->IsNpcInField(m_nCurZone, m_nCurNpcIndex))
-								pUIManager->m_IsInField = FALSE;
-							}
-							else 
-							{
-								pUIManager->m_IsInField = TRUE;
-								//pUIManager->RearrangeOrder(UI_MAP, TRUE);	
-							}
-							pUIManager->GetMap()->ManipulateNpcScroll(TRUE);	
-													
-						}
-					}
-					else
-					{
-						if(curnum > 0 && m_nRenType == NPC_LIST && curnum != m_vectorNpclist.size() + 1
-							&& curnum != m_vectorNpclist.size() + 2)
-						{	
-							m_nCurSel = curnum - (m_vectorNpclist.size() + 3);
-							m_nCurMobIndex = m_vectorMobList[m_nCurSel].GetMobIndex();
-							_pNetwork->SendNPCPortalLocationReq(m_nCurMobIndex);
-							pUIManager->m_IsHelpMob = TRUE;
-							// BUG FIX : TO-KR-T20100223-010 [2/24/2010 rumist]
-							pUIManager->m_NPCScrollZoneNo = m_nCurZone;
-							pUIManager->m_nHelpNpc_Index = -1;
-							pUIManager->m_IsInField = TRUE;
-							pUIManager->GetMap()->ManipulateNpcScroll(TRUE);
-						}
-					}
-
-					m_lbNpcList.SetCurSel(-1);		//선택한 리스트 초기화
-
-					if( wmsgResult == WMSG_COMMAND)
-						m_nCurRow = m_lbNpcList.GetScrollBarPos(); 
-				}
-
-				// BUGFIX : ITS(#2204) NPC스크롤 UI 위에 다른 UI가 올라올 경우 상위로 올라오지 못하는 현상 수정. [6/9/2011 rumist]
-				pUIManager->RearrangeOrder(UI_NPC_SCROLL, TRUE);
-
-				return WMSG_SUCCESS;
-			}
-		}
-
-		break;
-
-	case WM_LBUTTONUP:
-		{
-			CUIManager* pUIManager = CUIManager::getSingleton();
-
-			// If holding button doesn't exist
-			if (pUIManager->GetDragIcon() == NULL)
-			{
-				// Title bar
-				bTitleBarClick = FALSE;
-
-				// If teleport isn't focused
-				if( !IsFocused() )
-					return WMSG_FAIL;
-
-				// Close button
-				if( ( wmsgResult = m_btnClose.MouseMessage( pMsg ) ) != WMSG_FAIL )
-				{
-					if( wmsgResult == WMSG_COMMAND )
-						CloseNpcScroll();
-
-					return WMSG_SUCCESS;
-				}
-				else if (m_nRenType == NPC_DESC)
-				{
-					if (bNpcListClick)
-					{
-						bNpcListClick = FALSE;
-					}
-					else if( ( wmsgResult = m_btnWarp.MouseMessage( pMsg ) ) != WMSG_FAIL )
-					{
-						//CloseNpcScroll();
-						m_nRenType = WARP_YESNO;
-						SetWarpContent();
-						
-						//위치 요청 
-						//_pNetwork->SendNPCPortalLocationReq(m_nCurNpcIndex);
-			
-						// Nothing
-						return WMSG_SUCCESS;
-					}
-					else if ((wmsgResult = m_btnList.MouseMessage(pMsg)) != WMSG_FAIL)
-					{
-						m_nRenType = NPC_LIST;
-						m_lbNpcList.SetCurSel(-1);		//선택한 리스트 초기화
-
-						pUIManager->GetMap()->ManipulateNpcScroll(FALSE);
-					}
-				}
-				else if (m_nRenType == WARP_YESNO)
-				{
-					if ((wmsgResult = m_btnYes.MouseMessage(pMsg)) != WMSG_FAIL)
-					{
-						CloseNpcScroll();
-						//로그아웃 도중 포탈 이동을 실행할 경우 로그아웃 취소
-						pUIManager->GetSystemMenu()->CancelRestart();
-
-						_pNetwork->SendNPCPortalGoReq(m_nCurNpcIndex);
-						pUIManager->GetMap()->ManipulateNpcScroll(FALSE);
-						
-					}
-					else if ((wmsgResult = m_btnNo.MouseMessage(pMsg)) != WMSG_FAIL)
-					{
-						m_nRenType = NPC_DESC;
-						m_lbNpcList.SetCurSel(-1);		//선택한 리스트 초기화
-
-						pUIManager->GetMap()->ManipulateNpcScroll(FALSE);
-					}			
-				}
-			}
-		}
-
-		break;
-
-	case WM_LBUTTONDBLCLK:
-		{
-			if( IsInside( nX, nY ) )
-			{
-
-				if(( wmsgResult = m_lbNpcList.MouseMessage( pMsg ) ) != WMSG_SUCCESS )
-				{
-					if( wmsgResult == WMSG_COMMAND)
-						m_nCurRow = m_lbNpcList.GetScrollBarPos(); 
-				}
-			}
-		}
-
-		break;
-
-	case WM_MOUSEWHEEL:
-		{
-			if( IsInside( nX, nY ) )
-			{
-
-				// Top Scroll bar
-				if( m_lbNpcList.MouseMessage( pMsg ) != WMSG_FAIL )
-				{
-					m_nCurRow = m_lbNpcList.GetScrollBarPos(); 
-					return WMSG_SUCCESS;
-				}
-				
-			}
-		}
-
-		break;
-	}
-
-	return WMSG_FAIL;
 }
 
 void CUINpcScroll::OpenNPCScrollInfo(SLONG slIndex)
@@ -1076,6 +526,138 @@ BOOL CUINpcScroll::IsOpenDetailedMap(int nZone, int nNpcIndex)
 		return TRUE;
 	
 	return FALSE;
+}
+
+void CUINpcScroll::choose( int idx, bool bnpc )
+{
+	CUIManager* pUIManager = UIMGR();
+	
+	if (bnpc == true)
+	{
+		m_nCurNpcIndex = idx;
+		pUIManager->m_nHelpNpc_Index = idx;
+
+		if (IsOpenDetailedMap(m_nCurZone, m_nCurNpcIndex))
+		{
+			pUIManager->m_IsInField = FALSE;
+		}
+		else
+		{
+			pUIManager->m_IsInField = TRUE;
+		}
+
+		set_status(eSTATUS_DESC);
+
+		CMobData* pMob = CMobData::getData(idx);
+
+		if (pMob != NULL)
+		{
+			if (m_pTxtJob != NULL)
+				m_pTxtJob->SetText((CTString)pMob->GetName());
+
+			if (m_pTbDescMove != NULL)
+				m_pTbDescMove->SetText((CTString)pMob->GetDesc());
+		}
+	}
+	else
+	{
+		m_nCurMobIndex = idx;
+		_pNetwork->SendNPCPortalLocationReq(m_nCurMobIndex);
+		pUIManager->m_IsHelpMob = TRUE;
+
+		pUIManager->m_NPCScrollZoneNo = m_nCurZone;
+		pUIManager->m_nHelpNpc_Index = -1;
+		pUIManager->m_IsInField = TRUE;
+	}
+
+	pUIManager->GetMap()->ManipulateNpcScroll(TRUE);
+
+	pUIManager->RearrangeOrder(UI_NPC_SCROLL, TRUE);
+}
+
+//----------------------------------------------------------------------------
+
+bool CUINpcScroll::add_list( CTString& str, COLOR col, int idx, bool bnpc )
+{
+	if (m_pList == NULL)
+		return false;
+
+	CUIListItem* ptemp = m_pList->GetListItemTemplate();
+
+	if (ptemp == NULL)
+		return false;
+
+	CUIListItem* pClone = (CUIListItem*)ptemp->Clone();
+	CUIText* pTxt;
+
+	pTxt = (CUIText*)pClone->findUI("txt_npc");
+
+	if (pTxt != NULL)
+	{
+		pTxt->SetText(str);
+		
+		if (idx < 0)
+			pTxt->setFontColor(col);
+		else
+			pTxt->setFontColor(col, eSTATE_IDLE);
+			//pTxt->setFontColor(0xF0A769FF, eSTATE_ENTER);
+
+		CmdSelectNPC* pcmd = new CmdSelectNPC;
+		pcmd->setData(this, idx, bnpc);
+		pTxt->SetCommand(pcmd);
+
+		m_pList->AddListItem(pClone);
+
+		return true;
+	}
+
+	return false;
+}
+
+void CUINpcScroll::set_status( eSTATUS status )
+{
+	int		i;
+	BOOL	bHide;
+
+	for (i = 0; i < eSTATUS_MAX; ++i)
+	{
+		if (m_pGroup[i] == NULL)
+			continue;
+
+		bHide = (i == status) ? FALSE : TRUE;
+
+		m_pGroup[i]->Hide(bHide);
+	}
+}
+
+void CUINpcScroll::press_list()
+{
+	set_status(eSTATUS_LIST);
+	UIMGR()->GetMap()->ManipulateNpcScroll(FALSE);
+}
+
+void CUINpcScroll::press_move()
+{
+	set_status(eSTATUS_YESNO);
+}
+
+void CUINpcScroll::press_yes()
+{
+	// Move
+	CUIManager* pUIManager = UIMGR();
+
+	CloseNpcScroll();
+	//로그아웃 도중 포탈 이동을 실행할 경우 로그아웃 취소
+	pUIManager->GetSystemMenu()->CancelRestart();
+
+	_pNetwork->SendNPCPortalGoReq(m_nCurNpcIndex);
+	pUIManager->GetMap()->ManipulateNpcScroll(FALSE);
+}
+
+void CUINpcScroll::press_no()
+{
+	set_status(eSTATUS_DESC);
+	UIMGR()->GetMap()->ManipulateNpcScroll(FALSE);
 }
 
 

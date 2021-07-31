@@ -1,6 +1,8 @@
 #ifndef __ZONE_DATA_H__
 #define __ZONE_DATA_H__
 
+#define DEF_ZONE_ALBER		42		
+
 class CZoneData
 {
 public:

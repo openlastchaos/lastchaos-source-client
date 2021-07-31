@@ -14,13 +14,6 @@ void CStageIntro::Init()
 	CLoadingImage::getSingleton()->InitLoadingData();
 	pUIManager->GetGame()->LoginGame(LOGIN_WORLD);
 
-	extern BOOL bCalcNotChecked;
-	//구매 대행 정산 리스트 체크 플래그
-#if defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2)
-	bCalcNotChecked = FALSE;
-#else
-	bCalcNotChecked = TRUE;
-#endif
 	_pNetwork->m_ubGMLevel			= 0;
 	_pNetwork->m_bSingleMode		= FALSE;
 }

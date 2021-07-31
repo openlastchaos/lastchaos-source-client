@@ -260,6 +260,8 @@ ENGINE_API std::map<int,int> g_mapEvent;
 // -----------------------------------------<<
 	
 //070308_ttos : 브라질 나스 표기 번환
-ENGINE_API BOOL g_bNasTrans;	
+ENGINE_API BOOL g_bNasTrans;
+extern bool g_bDrawportRus;
 
+extern ENGINE_API INDEX g_iCountry;
 #endif		// __ENGINE_H__

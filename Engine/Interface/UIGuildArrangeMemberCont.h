@@ -17,18 +17,23 @@ public:
 		eRanking		= 2;	// GUILD_MEMBER_MEMBER		
 		bOnline			= FALSE;
 		sPosName		= "";	
-		iLevel			=0;				
-		iJob			=-1;		
-		iJob2			=-1;
-		sLocName		="";
-		iLocation		=-1;	
-		iServDegree		=0;		
-		iCumulPoint		=0;
-		iExpServ		=0;	
-		iFameServ		=0;	
+		iLevel			= 0;				
+		iJob			= -1;		
+		iJob2			= -1;
+		sLocName		= "";
+		iLocation		= -1;	
+		iServDegree		= 0;		
+		iCumulPoint		= 0;
+		iExpServ		= 0;	
+		iFameServ		= 0;	
 		bStashPermission = 0;
 		sRanking		= "";
-		sJobName		="";	
+		sJobName		= "";
+		nLogoutDate		= 0;
+		iDonateExpMin		= 0;
+		iDonateExpMax		= 0;
+		iDonateFameMin		= 0;
+		iDonateFameMax		= 0;
 	}	
 
 	SLONG			lIndex;
@@ -49,8 +54,13 @@ public:
 	INT				iServDegree;		// 기여도 
 	INT				iCumulPoint;		// 누적 포인트
 	INT				iExpServ;			// 경험치 상납도
+	INT				iDonateExpMin;
+	INT				iDonateExpMax;
 	INT				iFameServ;			// 명성치 상납도
+	INT				iDonateFameMin;
+	INT				iDonateFameMax;
 	BYTE			bStashPermission;
+	int				nLogoutDate;		// 로그아웃한 시간
 	// -----------------------------------------------------------------------<<
 };
 
@@ -73,7 +83,11 @@ typedef boost::multi_index_container <
 			BOOST_MULTI_INDEX_MEMBER(clsGuildMemberNew, std::string, sLocName) 
 		>,
 		ordered_non_unique <
-			BOOST_MULTI_INDEX_MEMBER(clsGuildMemberNew, INT, iCumulPoint) >
+			BOOST_MULTI_INDEX_MEMBER(clsGuildMemberNew, INT, iCumulPoint) 
+		>,
+		ordered_non_unique <
+			BOOST_MULTI_INDEX_MEMBER(clsGuildMemberNew, int, nLogoutDate) 
+		>
 	>
 > ContGuild;
 
@@ -94,18 +108,23 @@ public:
 		eRanking		= 2;	// GUILD_MEMBER_MEMBER		
 		bOnline			= FALSE;
 		sPosName		= "";	
-		iLevel			=0;				
-		iJob			=-1;		
-		iJob2			=-1;
-		sLocName		="";
-		iLocation		=-1;	
-		iServDegree		=0;		
-		iCumulPoint		=0;
-		iExpServ		=0;	
-		iFameServ		=0;	
+		iLevel			= 0;				
+		iJob			= -1;		
+		iJob2			= -1;
+		sLocName		= "";
+		iLocation		= -1;	
+		iServDegree		= 0;		
+		iCumulPoint		= 0;
+		iExpServ		= 0;	
+		iFameServ		= 0;	
 		bStashPermission = 0;
 		sRanking		= "";
-		sJobName		="";	
+		sJobName		= "";
+		nLogoutDate		= 0;
+		iDonateExpMin		= 0;
+		iDonateExpMax		= 0;
+		iDonateFameMin		= 0;
+		iDonateFameMax		= 0;
 	}	
 	
 	SLONG			lIndex;
@@ -126,8 +145,13 @@ public:
 	INT				iServDegree;		// 기여도 
 	INT				iCumulPoint;		// 누적 포인트
 	INT				iExpServ;			// 경험치 상납도
+	INT				iDonateExpMin;
+	INT				iDonateExpMax;
 	INT				iFameServ;			// 명성치 상납도
+	INT				iDonateFameMin;
+	INT				iDonateFameMax;
 	BYTE			bStashPermission;
+	int				nLogoutDate;		// 로그아웃한 시간
 	// -----------------------------------------------------------------------<<
 };
 

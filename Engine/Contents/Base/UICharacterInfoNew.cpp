@@ -4,15 +4,14 @@
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Contents/Base/UICharacterInfoNew.h>
 #include <Engine/Entities/InternalClasses.h>
-#include <Engine/Interface/UIPetTraining.h>
 #include <Engine/Contents/Base/UICalendar.h>
-#include <Engine/Contents/Base/UISkillNew.h>
+#include <Engine/Contents/function/SSkillLearnUI.h>
 #include <Engine/Interface/UIPlayerInfo.h>
 #include <Engine/Interface/UIMap.h>
-#include <Engine/Interface/UIExchange.h>
-#include <Engine/Interface/UIHelper.h>
+#include <Engine/Contents/function/ExChangeUI.h>
+#include <Engine/Contents/function/HelperManager.h>
 #include <Engine/Interface/UIMonsterCombo.h>
-#include <Engine/Interface/UIItemProduct.h>
+#include <Engine/Contents/function/ItemProductUI.h>
 #include <Engine/Contents/function/AffinityInfoUI.h>
 #include <Engine/Interface/UINickName.h>
 #include <Engine/Contents/Base/UIRankingSystem.h>
@@ -33,6 +32,7 @@
 #include <Engine/Contents/Base/Party.h>
 #include <Engine/Contents/function/TitleData.h>
 #include <Engine/Contents/Base/PersonalshopUI.h>
+#include <Engine/Contents/function/GuildBattleMatchUI.h>
 
 #define PARTY_AUTO_ENABLE	// 파티 오토 시스템 열림
 
@@ -570,9 +570,8 @@ void CUICharacterInfo::UseAction( int nIndex )
 
 			case 1:		// 공격
 				{
-#if !(defined G_BRAZIL)
-					penPlayerEntity->CommandAttack();
-#endif
+					if (IsBila(g_iCountry) == FALSE)
+						penPlayerEntity->CommandAttack();
 				}
 				break;
 
@@ -626,7 +625,8 @@ void CUICharacterInfo::UseAction( int nIndex )
 				
 			case 30:	// 후견인 신청.
 				{
-					CUIManager::getSingleton()->GetHelper()->OpenHelper( );					
+					CHelperManager* pHelperMgr = GameDataManager::getSingleton()->GetHelperManager();
+					pHelperMgr->OpenDialog();
 				}
 				break;
 			case 43:	//ttos 몬스터 콤보
@@ -638,17 +638,21 @@ void CUICharacterInfo::UseAction( int nIndex )
 				{
 					CUIManager* pUIManager = CUIManager::getSingleton();
 
+					if (pUIManager->GetItemProduct()->GetHide() == FALSE ||
+						pUIManager->GetItemProduct()->IsVisible() == TRUE)
+						break;
+
+					pUIManager->GetItemProduct()->OpenUI();
+
 					for (int i = 0; i < SKILL_SPECIAL_SLOT_ROW_TOTAL; i++)
 					{
 						if (m_nIdxVoucherSkill[i] > 0 && 
 							m_nIdxVoucherSkill[i] != 655)
 						{
-							pUIManager->GetItemProduct()->SetExpertData(m_nIdxVoucherSkill[i]);
+							pUIManager->GetItemProduct()->AddData(m_nIdxVoucherSkill[i]);
 						}
 						
 					}
-					
-					pUIManager->GetItemProduct()->OpenItemProduct();
 					CloseUI();
 					
 				}break;
@@ -949,7 +953,6 @@ void CUICharacterInfo::UseAction( int nIndex )
 						pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN);
 						pUIManager->CloseMessageBox(MSGCMD_GUILD_JOIN_REQ);
 						pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT);
-						pUIManager->CloseMessageBox(MSGCMD_GUILD_QUIT_CONFIRM);
 						pUIManager->CloseMessageBox(MSGCMD_GUILD_APPLICANT_JOIN);	
 						
 						CTString		strMessage;
@@ -1157,6 +1160,12 @@ void CUICharacterInfo::UseAction( int nIndex )
 					}
 				}
 				break;
+
+			case 53:	// 길드 전투 챌린지
+				{
+					UIMGR()->GetGuildBattleMatch()->open();
+				}
+				break;
 			}
 		}
 		break;
@@ -1297,14 +1306,23 @@ void CUICharacterInfo::updateStatusPt(int type, int value)
 
 void CUICharacterInfo::UpdateExpAndSp(void)
 {
+	CUIManager* pUIMgr = CUIManager::getSingleton();
 	CTString strString = CTString("");
+	CTString strCur, strNeed;
 
-	strString.PrintF( "%I64d/%I64d", _pNetwork->MyCharacterInfo.curExp, _pNetwork->MyCharacterInfo.needExp );
+	strCur.PrintF("%I64d", _pNetwork->MyCharacterInfo.curExp);
+	strNeed.PrintF("%I64d", _pNetwork->MyCharacterInfo.needExp);
+
+	pUIMgr->InsertCommaToString(strCur);
+	pUIMgr->InsertCommaToString(strNeed);
+
+	strString.PrintF( "%s/%s", strCur, strNeed );
 
 	if (m_ptxtBase[eCHARINFO_BASE_EXP] != NULL)
 		m_ptxtBase[eCHARINFO_BASE_EXP]->SetText(strString);
 
-	strString.PrintF( "%d", _pNetwork->MyCharacterInfo.sp / 10000 );
+	strString.PrintF("%I64d", _pNetwork->MyCharacterInfo.sp / 10000);
+	pUIMgr->InsertCommaToString(strString);
 
 	if (m_ptxtBase[eCHARINFO_BASE_SP] != NULL)
 		m_ptxtBase[eCHARINFO_BASE_SP]->SetText(strString);	
@@ -1530,24 +1548,16 @@ void CUICharacterInfo::UpdateStatus( int iAttack, int iMagic, int iDefense, int 
 		m_ptxtStat[eCHARINFO_STAT_ATTACKSPEED]->SetText(strString);
 		m_ptxtStat[eCHARINFO_STAT_ATTACKSPEED]->setFontColor(strColor);
 	}
-
-	strString.PrintF( "%I64d/%I64d", _pNetwork->MyCharacterInfo.curExp, _pNetwork->MyCharacterInfo.needExp );
-
-	if (m_ptxtBase[eCHARINFO_BASE_EXP] != NULL)
-		m_ptxtBase[eCHARINFO_BASE_EXP]->SetText(strString);
-
-	strString.PrintF( "%d", _pNetwork->MyCharacterInfo.sp / 10000 );
-
-	if (m_ptxtBase[eCHARINFO_BASE_SP] != NULL)
-		m_ptxtBase[eCHARINFO_BASE_SP]->SetText(strString);
-
-
-	strString.PrintF( "%d", _pNetwork->MyCharacterInfo.pkcount );
+	
+	CUIManager* pUIManager = UIMGR();
+	CTString strTemp = pUIManager->IntegerToCommaString(_pNetwork->MyCharacterInfo.pkcount);
+	strString.PrintF( "%s", strTemp );
 
 	if (m_pstrPkPointAcc != NULL)
 		m_pstrPkPointAcc->SetText(strString);
 
-	strString.PrintF( "%d", _pNetwork->MyCharacterInfo.fame );
+	strTemp = pUIManager->IntegerToCommaString(_pNetwork->MyCharacterInfo.fame);
+	strString.PrintF( "%s", strTemp );
 
 	if (m_ptxtBase[eCHARINFO_BASE_FRAME] != NULL)
 		m_ptxtBase[eCHARINFO_BASE_FRAME]->SetText(strString);
@@ -1569,14 +1579,7 @@ void CUICharacterInfo::UpdateStatus( int iAttack, int iMagic, int iDefense, int 
 	if (m_pImgArrDef != NULL)
 		m_pImgArrDef->SetRenderIdx(nDef);
 	
-
-	int nBtnType = 0;
-	int nSlotTotal = 0;
-
-	if(CUIManager::getSingleton()->DoesUIExist(UI_SKILLLEARN))
-	{
-		CUIManager::getSingleton()->GetSkillLearn()->UpdateSkillLearn();
-	}
+	UpdateExpAndSp();
 }
 
 ////////////////////////////////////  UI  /////////////////////////////////////////////////
@@ -2522,13 +2525,20 @@ void CUICharacterInfo::UpdateBaseInfo()
 	}
 
 	// hp
-	strString.PrintF("%d/%d", _pNetwork->MyCharacterInfo.hp, _pNetwork->MyCharacterInfo.maxHP);
+	CTString strCur, strMax;
+	strCur = pUIManager->IntegerToCommaString(_pNetwork->MyCharacterInfo.hp);
+	strMax = pUIManager->IntegerToCommaString(_pNetwork->MyCharacterInfo.maxHP);
+
+	strString.PrintF("%s/%s", strCur, strMax);
 
 	if (m_ptxtStat[eCHARINFO_STAT_HP] != NULL)
 		m_ptxtStat[eCHARINFO_STAT_HP]->SetText(strString);
 	
 	// mp
-	strString.PrintF("%d/%d", _pNetwork->MyCharacterInfo.mp, _pNetwork->MyCharacterInfo.maxMP);
+	strCur = pUIManager->IntegerToCommaString(_pNetwork->MyCharacterInfo.mp);
+	strMax = pUIManager->IntegerToCommaString(_pNetwork->MyCharacterInfo.maxMP);
+
+	strString.PrintF("%s/%s", strCur, strMax);
 	
 	if (m_ptxtStat[eCHARINFO_STAT_MP] != NULL)
 		m_ptxtStat[eCHARINFO_STAT_MP]->SetText(strString);
@@ -2573,7 +2583,8 @@ void CUICharacterInfo::UpdateBaseInfo()
 			m_pstrPk->setTooltip("");
 	}
 
-	strString.PrintF( "%d", _pNetwork->MyCharacterInfo.pkpenalty );
+	strCur = pUIManager->IntegerToCommaString(_pNetwork->MyCharacterInfo.pkpenalty);
+	strString.PrintF( "%s", strCur );
 
 	if (m_pstrPkPoint != NULL)
 	{
@@ -2671,16 +2682,8 @@ void CUICharacterInfo::SetSSkill()
 
 		if( pText != NULL )
 		{
-#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
-			strString.PrintF( "Lv %2d   %s %2d", sbLevel, _S( 90, "숙련도" ), pSSkill->GetLearnSP( sbLevel - 1 ) );
-#else	// else about japan, german, europe3, europe2, netherlands.
-			// [2/28/2013 Ranma] support russia string
-#if defined (G_RUSSIA)
 			strString.PrintF( "%s %2d   %s %2d",_S( 4414, "LV" ), sbLevel, _S( 4415, "SP" ), pSSkill->GetLearnSP( sbLevel - 1 ) );
-#else	// else about russia
-			strString.PrintF( "Lv %2d   SP %2d", sbLevel, pSSkill->GetLearnSP( sbLevel - 1 ) );
-#endif	// end russia
-#endif	//end japan, german, europe3, europe2, netherlands.
+
 			pText->SetText(strString);
 			strColor = 0xBDA99FFF;
 			pText->setFontColor(strColor);
@@ -2804,15 +2807,8 @@ void CUICharacterInfo::SetItemSkill()
 
 		if( pText != NULL )
 		{
-#if defined (G_GERMAN) || defined (G_EUROPE3) || defined (G_EUROPE2)
-			strString.PrintF( "Lv %2d   %s %2d", sbLevel, _S( 90, "숙련도" ), rSkill.GetLearnSP( sbLevel - 1 ) );
-#else	// else about japan, german, europe3, europe2, netherlands.
-#if defined (G_RUSSIA)
 			strString.PrintF( "%s %2d   %s %2d",_S( 4414, "LV" ), sbLevel, _S( 4415, "SP" ), rSkill.GetLearnSP( sbLevel - 1 ) );
-#else	// else about russia
-			strString.PrintF( "Lv %2d   SP %2d", sbLevel, rSkill.GetLearnSP( sbLevel - 1 ) );
-#endif	// end russia
-#endif	//end japan, german, europe3, europe2, netherlands.
+
 			strColor = 0xBDA99FFF;
 			pText->SetText(strString);
 			pText->setFontColor(strColor);	
@@ -2914,7 +2910,12 @@ void CUICharacterInfo::SetSeal()
 
 		if( pText != NULL )
 		{
-			strString.PrintF(_S(4491, "숙련도 : %I64d"), MY_INFO()->GetSkillExp(rSkill.GetIndex()));
+			CTString strExp;
+			strExp.PrintF("%I64d", MY_INFO()->GetSkillExp(rSkill.GetIndex()));
+			UIMGR()->InsertCommaToString(strExp);
+
+			strString.PrintF(_S(4491, "숙련도 : %s"), strExp);
+			
 			strColor = 0xBDA99FFF;
 			pText->SetText(strString);
 			pText->setFontColor(strColor);
@@ -3508,14 +3509,23 @@ void CUICharacterInfo::UpdateMySyndiPos()
 				bPercentage = false;
 		}
 
+		CUIManager* pUIMgr = UIMGR();
+		CTString strCurExp;
+		strCurExp.PrintF("%I64d", llCurExp);
+		pUIMgr->InsertCommaToString(strCurExp);
+
 		if (bPercentage)
 		{
-			strExp.PrintF( "%I64d/%I64d (%.1f%%)", llCurExp, llMaxExp, fPercentage );
+			CTString strMaxExp;
+			strMaxExp.PrintF("%I64d", llMaxExp);
+			pUIMgr->InsertCommaToString(strMaxExp);
+
+			strExp.PrintF( "%s/%s (%.1f%%)", strCurExp, strMaxExp, fPercentage );
 		}
 		else
 		{
 			fPercentage = 100.f;
-			strExp.PrintF( "%I64d (%.1f%%)", llCurExp, fPercentage );
+			strExp.PrintF( "%s (%.1f%%)", strCurExp, fPercentage );
 		}
 	}
 

@@ -216,6 +216,7 @@ CWildPetTarget::~CWildPetTarget()
 		pUIMgr->GetWildPetTargetInfo()->closeUI();
 		pInfo->SetMyApet(NULL);
 		pUIMgr->GetWildPetInfoUI()->AIClear();
+		pUIMgr->GetWildPetInfoUI()->closeUI();
 	}
 
 	pUIMgr->StopTargetEffect(m_nIdxServer);

@@ -4,9 +4,8 @@
 
 #include <Engine/Help/Util_Help.h>
 
-#if defined(G_RUSSIA)
-	extern CFontData *_pfdDefaultFont;
-#endif
+extern CFontData *_pfdDefaultFont;
+extern INDEX	g_iCountry;
 
 // ----------------------------------------------------------------------------
 // Name : CUIListBox()
@@ -164,11 +163,11 @@ void StringSplit(std::vector<CTString>& vecOutput, CTString strInput, ULONG ulCo
 	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	ULONG ulWidth = 0;
-#if defined(G_RUSSIA)
-	ulWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strInput.str_String);
-#else	//	defined(G_RUSSIA)
-	ulWidth = pDrawPort->GetTextWidth2(strInput);
-#endif	//	defined(G_RUSSIA)
+
+	if (g_iCountry == RUSSIA)
+		ulWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strInput.str_String);
+	else
+		ulWidth = pDrawPort->GetTextWidth2(strInput);
 	
 	if (ulWidth <= ulColumnWidth)
 	{
@@ -188,11 +187,12 @@ void StringSplit(std::vector<CTString>& vecOutput, CTString strInput, ULONG ulCo
 		szTemp[j++] = strInput[i++];
 		szTemp[j] = 0;
 		ULONG ulTempWidth = 0;
-#if defined(G_RUSSIA)
-		ulTempWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, szTemp);
-#else	//	defined(G_RUSSIA)
-		ulTempWidth = pDrawPort->GetTextWidth2(szTemp);
-#endif	//	defined(G_RUSSIA)
+
+		if (g_iCountry == RUSSIA)
+			ulTempWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, szTemp);
+		else
+			ulTempWidth = pDrawPort->GetTextWidth2(szTemp);
+
 		if (ulWidth + ulTempWidth > ulColumnWidth &&
 			!(j == 1 && (szTemp[0] == '.' || szTemp[0] == ',' || szTemp[0] == ' ')))
 			break;

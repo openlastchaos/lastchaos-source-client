@@ -180,9 +180,6 @@ public:
 	// Writes text string on drawport ( right-aligned, expansion version )
 	void	PutTextExRX( const CTString &strText, PIX pixX0, PIX pixY0, const COLOR colBlend = 0xF2F2F2FF,
 							FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 );
-	// Writes text string on drawport ( centered arround X, expansion version, expansion version )
-	void	PutTextCharExCX( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend = 0xF2F2F2FF,
-								FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 ) const;
 	// Writes text string on drawport ( right-aligned, expansion version, expansion version )
 	void	PutTextCharExRX( const char *pText, int nLength, PIX pixX0, PIX pixY0, const COLOR colBlend = 0xF2F2F2FF,
 								FLOAT fZ = 0, BOOL bShadow = FALSE, const COLOR colShadow = 0x181818B2 );

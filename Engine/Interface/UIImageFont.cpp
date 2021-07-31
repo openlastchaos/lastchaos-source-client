@@ -12,6 +12,8 @@ CUIImageFont::CUIImageFont()
 	,m_nFontSY(0)
 	,m_nFontGap(0)
 	,m_nOutGap(0)
+	, m_color(DEF_UI_COLOR_WHITE)
+	, m_eAlign_font_h(eALIGN_H_LEFT)
 {		
 	m_eType = eUI_CONTROL_IMAGEFONT;
 }
@@ -112,9 +114,25 @@ void CUIImageFont::OnRender( CDrawPort* pDraw )
 	int nX, nY, dX, nIdx;
 	GetAbsPos(nX, nY);
 
+	int outX = nX;
+
+	// 정렬 처리
+	{
+		if (m_eAlign_font_h == eALIGN_H_CENTER)
+		{
+			int str_width = (m_nFontSX - m_nOutGap) * nSize;
+			outX += (m_nWidth - str_width) / 2;
+		}
+		else if (m_eAlign_font_h == eALIGN_H_RIGHT)
+		{
+			int str_width = (m_nFontSX - m_nOutGap) * nSize;
+			outX += m_nWidth - str_width;
+		}
+	}
+
 	for (i = 0; i < nSize; ++i)
 	{
-		dX = nX + ((m_nFontSX + m_nFontGap) * i);
+		dX = outX + ((m_nFontSX + m_nFontGap) * i);
 
 		if (i > 0)
 			dX += (m_nOutGap * i);
@@ -128,7 +146,7 @@ void CUIImageFont::OnRender( CDrawPort* pDraw )
 			continue;
 
 		m_prsSource->SetPos(dX, nY);
-		m_prsSource->RenderRectSurface(pDraw, DEF_UI_COLOR_WHITE, nIdx);
+		m_prsSource->RenderRectSurface(pDraw, m_color, nIdx);
 	}
 	
 	pDraw->FlushRenderingQueue();

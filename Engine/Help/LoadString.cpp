@@ -26,7 +26,7 @@ bool StringLoader::LoadString(eSTRING eType, int nNation)
 		"strSSkill",
 		"strAction",
 		"strCombo",
-		"strAffinity",
+		"strAffinity",  //pwesty
 		"strLacarette",
 		"strItemCollection"
 	};

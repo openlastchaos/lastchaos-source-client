@@ -56,6 +56,37 @@ void CUIArray::deleteChildList()
 	m_vecArrayChild.clear();
 }
 
+void CUIArray::deleteChildItem( int pos )
+{
+	int iMax = m_VecChild.size();
+	if( pos >= iMax || pos < 0 )
+		return;
+
+	vecArrayIter iter = m_vecArrayChild.begin();
+
+	CUIBase* pDel = (*(iter + pos));
+
+	deleteChild(pDel);
+
+	m_vecArrayChild.erase(iter + pos);
+}
+
+void CUIArray::deleteChildItem( CUIBase* pt )
+{
+	vecArrayIter		iter = m_vecArrayChild.begin();
+	vecArrayIter		eiter = m_vecArrayChild.end();
+
+	for(; iter != eiter; ++iter )
+	{
+		if ((*iter) == pt )
+		{
+			deleteChild(pt);
+			m_vecArrayChild.erase(iter);
+			break;
+		}
+	}
+}
+
 CUIBase* CUIArray::Clone()
 {
 	CUIArray* pArray = NULL;
@@ -131,6 +162,9 @@ void CUIArray::ResetArray()
 	}
 
 	m_vecArrayChild.clear();
+
+	if (m_pScroll != NULL)
+		m_pScroll->SetScrollCurPos(0);
 }
 
 void CUIArray::SetScroll( CUIScrollBar* pScroll )
@@ -209,6 +243,8 @@ void CUIArray::UpdateItem()
 
 		pItem->SetPos(x, y);
 	}
+
+	SetSelectIdx(m_nSelectIdx);
 }
 
 void CUIArray::OnPostRender( CDrawPort* pDraw )
@@ -282,7 +318,8 @@ WMSG_RESULT CUIArray::OnLButtonDown(UINT16 x, UINT16 y)
 	nMax = m_vecArrayChild.size();
 	for (i = 0; i < nMax; ++i)
 	{
-		if (m_vecArrayChild[i]->IsInside(x, y) == TRUE)
+		if (m_vecArrayChild[i]->GetHide() == FALSE && 
+			m_vecArrayChild[i]->IsInside(x, y) == TRUE)
 		{
 			SetSelectIdx(i);
 			break;
@@ -315,7 +352,8 @@ int CUIArray::HitTest( int x, int y )
 	nMax = m_vecArrayChild.size();
 	for (i = 0; i < nMax; ++i)
 	{
-		if (m_vecArrayChild[i]->IsInside(x, y) == TRUE)
+		if (m_vecArrayChild[i]->GetHide() == FALSE && 
+			m_vecArrayChild[i]->IsInside(x, y) == TRUE)
 		{
 			SetMouseOverItem(i);
 

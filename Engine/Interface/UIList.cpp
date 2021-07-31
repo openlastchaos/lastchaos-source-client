@@ -42,6 +42,10 @@ CUIList::CUIList()
 	, m_pCmdUnSelect(NULL)
 	, m_nItemTotalHeight(0)
 	, m_bAlignTop(true)
+	, m_bSelectedForeRender(false)
+	, m_bKeepSelect(false)
+	, m_nMouseOverItem(-1)
+	, m_pCmdUpdate(NULL)
 {
 	setType(eUI_CONTROL_LIST);
 }
@@ -56,6 +60,7 @@ CUIList::~CUIList()
 	m_vecListArray.clear();
 
 	SAFE_DELETE(m_pCmdUnSelect);
+	SAFE_DELETE(m_pCmdUpdate);
 }
 
 void CUIList::deleteChildList()
@@ -77,6 +82,22 @@ void CUIList::deleteListItem( int nPos )
 	deleteChild(pDel);
 
 	m_vecListArray.erase(iter + nPos);
+}
+
+void CUIList::deleteListItem( CUIBase* pt )
+{
+	vec_uinode_iter		iter = m_vecListArray.begin();
+	vec_uinode_iter		eiter = m_vecListArray.end();
+
+	for(; iter != eiter; ++iter )
+	{
+		if ((*iter) == pt )
+		{
+			deleteChild(pt);
+			m_vecListArray.erase(iter);
+			break;
+		}
+	}
 }
 
 CUIBase* CUIList::Clone()
@@ -134,6 +155,15 @@ CUIBase* CUIList::Clone()
 	return (CUIBase*)pList;
 }
 
+void CUIList::CmdErase()
+{
+	CUIBase::CmdErase();
+
+	m_pCmdUnSelect = NULL;
+	m_pCmdUpdate = NULL;
+
+	m_func_select = NULL;
+}
 
 void CUIList::SetItemStart( int x, int y )
 {
@@ -165,12 +195,21 @@ CUIBase* CUIList::GetListItem( int idx )
 	return m_vecListArray[idx];
 }
 
-void CUIList::UpdateList()
+void CUIList::UpdateList( bool bUpdateScroll )
 {
+	if (bUpdateScroll == true)
+		UpdateScroll(getListItemCount());
+
 	if (m_bAlignTop == true)
 		UpdateListTop();
 	else
 		UpdateListBottom();
+
+	if (m_bKeepSelect == true)
+		setCurSel(m_nCurSel);
+
+	if (m_pCmdUpdate != NULL)
+		m_pCmdUpdate->execute();
 }
 
 void CUIList::UpdateListTop()
@@ -200,7 +239,7 @@ void CUIList::UpdateListTop()
 		{
 			pItem->Hide(TRUE);
 
-			if (m_nCurSel < i)	// 선택된 아이템 초기화.
+			if (m_bKeepSelect == false && m_nCurSel < i)	// 선택된 아이템 초기화.
 				setCurSel(-1);
 
 			continue;
@@ -219,7 +258,7 @@ void CUIList::UpdateListTop()
 		{
 			pItem->Hide(TRUE);
 
-			if (m_nCurSel <= i)	// 선택된 아이템 초기화.
+			if (m_bKeepSelect == false && m_nCurSel <= i)	// 선택된 아이템 초기화.
 				setCurSel(-1);
 		}
 
@@ -231,7 +270,7 @@ void CUIList::UpdateListTop()
 
 	if (nMaxHeight > 0)
 	{
-		float fDiv = (float)((float)GetHeight() / (float)(nMaxHeight + m_nGap));
+		float fDiv = (float)((float)(GetHeight() - m_nItemStartY) / (float)nMaxHeight);
 		m_nNumShow = fDiv;
 	}
 }
@@ -282,7 +321,7 @@ void CUIList::UpdateListBottom()
 			{
 				pItem->Hide(TRUE);
 	
-				if (m_nCurSel <= i)	// 선택된 아이템 초기화.
+				if (m_bKeepSelect == false && m_nCurSel <= i)	// 선택된 아이템 초기화.
 					setCurSel(-1);
 			}
 		}
@@ -320,51 +359,16 @@ void CUIList::UpdateScroll( int nItemCount )
 }
 
 //--------------------------------------------------------------
+void CUIList::OnRender( CDrawPort* pDraw )
+{
+	if (m_bSelectedForeRender == true)
+		_render(pDraw);
+}
 
 void CUIList::OnPostRender( CDrawPort* pDraw )
 {
-	if( m_bHide == TRUE )
-		return;
-
-	if( m_pTexData == NULL )
-	{
-#ifdef UI_TOOL
-		RenderBorder(pDraw);
-#endif // UI_TOOL
-		return;
-	}
-
-	pDraw->InitTextureData( m_pTexData );
-
-	if( m_pimgEvent == NULL || m_pimgEvent->m_RectSurfaceArray.Count() <= 0)
-		return;
-
-	int		nX, nY;
-
-	if (m_bSelected == true)
-	{
-		GetAbsPos( nX, nY );
-		nX += m_ptSelOffset.x;
-		nY += m_ptSelOffset.y;
-
-		m_pimgEvent->SetPos(nX, nY);
-		m_pimgEvent->RenderRectSurface( pDraw, DEF_UI_COLOR_WHITE, eTYPE_SELECT );
-	}
-	if( m_pimgEvent->m_RectSurfaceArray.Count() > 1 && m_bMouseOver == true)
-	{
-		GetAbsPos( nX, nY );
-		nX += m_ptMouseOverOffset.x;
-		nY += m_ptMouseOverOffset.y;
-
-		m_pimgEvent->SetPos(nX, nY);
-		m_pimgEvent->RenderRectSurface( pDraw, DEF_UI_COLOR_WHITE, eTYPE_OVER );
-	}
-
-	pDraw->FlushRenderingQueue();
-
-#ifdef UI_TOOL
-	RenderBorder(pDraw);
-#endif // UI_TOOL
+	if (m_bSelectedForeRender == false)
+		_render(pDraw);
 }
 
 void CUIList::setScroll( CUIScrollBar* pScroll )
@@ -403,14 +407,19 @@ void CUIList::addEventImage( UIRect rect, UIRectUV uv, int type )
 
 void CUIList::setCurSel( int idx )
 {
-	if (idx < 0 || idx >= m_vecListArray.size())
+	int nMax = m_vecListArray.size();
+
+	if (m_nCurSel >= 0 && m_nCurSel < nMax)
+		m_vecListArray[m_nCurSel]->ChildItemIdle();
+
+	if (idx < 0 || idx >= nMax)
 	{
 		m_bSelected = false;
-		m_nCurSel = idx;
+		m_nCurSel = idx;	
 		return;
 	}
 
-	if (m_nCurSel >= 0 && m_nCurSel < m_vecListArray.size())
+	if (m_nCurSel >= 0 && m_nCurSel < nMax)
 	{
 		if (m_pCmdUnSelect != NULL)
 			m_pCmdUnSelect->execute();
@@ -419,8 +428,18 @@ void CUIList::setCurSel( int idx )
 	m_bSelected = true;
 	m_nCurSel = idx;
 
+	if (m_bKeepSelect == true && 
+		m_vecListArray[idx]->GetHide() == TRUE)
+	{
+		m_bSelected = false;
+	}
+
+	if (m_func_select)
+		m_func_select(this);
+
 	m_ptSelOffset.x = m_vecListArray[idx]->GetPosX();
 	m_ptSelOffset.y = m_vecListArray[idx]->GetPosY();
+	m_vecListArray[idx]->ChildItemSelect();
 }
 
 WMSG_RESULT CUIList::OnLButtonDown(UINT16 x, UINT16 y)
@@ -462,6 +481,10 @@ bool CUIList::DeleteAllListItem()
 	}
 
 	m_vecListArray.clear();
+	setCurSel(-1);
+
+	if (m_pScroll != NULL)
+		m_pScroll->SetScrollCurPos(0);
 
 	return true;
 }
@@ -501,6 +524,9 @@ WMSG_RESULT CUIList::OnMouseMove( UINT16 x, UINT16 y, MSG* pMsg )
 
 	if (IsInside(x, y) == FALSE)
 	{
+		if (m_nMouseOverItem >= 0 && m_nMouseOverItem < m_vecListArray.size())
+			m_vecListArray[m_nMouseOverItem]->ChildItemLeave();
+
 		m_bMouseOver = false;
 		return WMSG_FAIL;
 	}
@@ -527,9 +553,13 @@ int CUIList::HitTest( UINT16 x, UINT16 y )
 
 void CUIList::setMouseOverItem( int idx )
 {
+	int nMax = m_vecListArray.size();
+	if (m_nMouseOverItem >= 0 && m_nMouseOverItem < nMax)
+		m_vecListArray[m_nMouseOverItem]->ChildItemLeave();
+
 	m_nMouseOverItem = idx;
 
-	if (idx < 0 || idx >= m_vecListArray.size())
+	if (idx < 0 || idx >= nMax)
 	{
 		m_bMouseOver = false;
 		return;
@@ -545,4 +575,49 @@ void CUIList::setMouseOverItem( int idx )
 
 	m_ptMouseOverOffset.x = m_vecListArray[idx]->GetPosX();
 	m_ptMouseOverOffset.y = m_vecListArray[idx]->GetPosY();
+
+	m_vecListArray[idx]->ChildItemEnter();
+}
+
+void CUIList::_render( CDrawPort* pDraw )
+{
+	if( m_pTexData == NULL )
+	{
+#ifdef UI_TOOL
+		RenderBorder(pDraw);
+#endif // UI_TOOL
+		return;
+	}
+
+	pDraw->InitTextureData( m_pTexData );
+
+	if( m_pimgEvent == NULL || m_pimgEvent->m_RectSurfaceArray.Count() <= 0)
+		return;
+
+	int		nX, nY;
+
+	if (m_bSelected == true)
+	{
+		GetAbsPos( nX, nY );
+		nX += m_ptSelOffset.x;
+		nY += m_ptSelOffset.y;
+
+		m_pimgEvent->SetPos(nX, nY);
+		m_pimgEvent->RenderRectSurface( pDraw, DEF_UI_COLOR_WHITE, eTYPE_SELECT );
+	}
+	if( m_pimgEvent->m_RectSurfaceArray.Count() > 1 && m_bMouseOver == true)
+	{
+		GetAbsPos( nX, nY );
+		nX += m_ptMouseOverOffset.x;
+		nY += m_ptMouseOverOffset.y;
+
+		m_pimgEvent->SetPos(nX, nY);
+		m_pimgEvent->RenderRectSurface( pDraw, DEF_UI_COLOR_WHITE, eTYPE_OVER );
+	}
+
+	pDraw->FlushRenderingQueue();
+
+#ifdef UI_TOOL
+	RenderBorder(pDraw);
+#endif // UI_TOOL
 }

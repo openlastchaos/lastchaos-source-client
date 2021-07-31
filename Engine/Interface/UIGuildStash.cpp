@@ -9,7 +9,6 @@
 #include <Engine/Interface/UIGuild.h>
 #include <Engine/Interface/UISocketSystem.h>
 #include <Engine/Interface/UIInventory.h>
-#include <Engine/Interface/UIWareHouse.h>
 #include <Engine/Contents/Base/UIMsgBoxNumeric_only.h>
 
 #define	GUILDSTASH_TITLE_TEXT_OFFSETX		25
@@ -35,6 +34,7 @@
 #define SEL_VIEW	0
 #define SEL_TAKE	1
 
+#define WAREHOUSE_TRADEPRICE_POSX 177
 
 //2013/04/08 jeil 나스 아이탬 제거
 #define  GUILDSTASH_ITEM_NAS 19;

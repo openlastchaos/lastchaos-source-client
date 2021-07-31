@@ -58,14 +58,20 @@ void CUIPartyAutoPartyList::initialize()
 	if (pTxt != NULL)
 	{
 		int l, t, r, b;
-		l = pTxt->GetOrigX();
-		t = pTxt->GetOrigY();
+		l = pTxt->GetPosX();
+		t = pTxt->GetPosY();
 		r = l + pTxt->GetWidth();
 		b = t + pTxt->GetHeight();
 		setTitleRect(l, t, r, b);
 	}
 
 	m_pList = (CUIList*)findUI("list_invite");
+
+	if (m_pList != NULL)
+	{
+		m_pList->SetSelectedForeRender(true);
+		m_pList->DeleteAllListItem();
+	}
 
 	{
 		// class 등록
@@ -121,6 +127,7 @@ void CUIPartyAutoPartyList::initialize()
 	m_pCbType = (CUIComboBox*)findUI("cb_type");
 
 	// ---------------------------------------------------------------------
+#ifndef		WORLD_EDITOR
 	CUIButton* pBtn = (CUIButton*)findUI("btn_close");
 
 	if (pBtn != NULL)
@@ -144,6 +151,7 @@ void CUIPartyAutoPartyList::initialize()
 
 	if (pBtn != NULL)
 		pBtn->SetCommandFUp(boost::bind(&CUIPartyAutoPartyList::_join, this));
+#endif	// WORLD_EDITOR
 
 	init_data();
 }
@@ -165,6 +173,11 @@ void CUIPartyAutoPartyList::close()
 		m_nCurrentPageNum = 0;
 		m_vectorPartyListData.clear();
 	}
+
+	CUIBase* pUI = CUIFocus::getSingleton()->getUI();
+
+	if (pUI == m_pCbClass || pUI == m_pCbType)
+		CUIFocus::getSingleton()->setUI(NULL);
 }
 
 void CUIPartyAutoPartyList::ReceivePartyData( CNetworkMessage* istr )
@@ -177,12 +190,12 @@ void CUIPartyAutoPartyList::ReceivePartyData( CNetworkMessage* istr )
     (*istr) >> slPageNum;
     (*istr) >> slCnt;
 
+    if (slPageNum < 0 || slCnt == 0)	// 잘못된 페이지 or 목록 없음
+        return;
+
 	// 기존 아이템 삭제
 	if (m_pList != NULL)
 		m_pList->DeleteAllListItem();
-
-    if (slPageNum < 0 || slCnt == 0)	// 잘못된 페이지 or 목록 없음
-        return;
 
     m_nCurrentPageNum = slPageNum;
     m_vectorPartyListData.clear();
@@ -348,6 +361,8 @@ void CUIPartyAutoPartyList::ReceivePartyData( CNetworkMessage* istr )
 					m_pImgType[type]->Copy(pImg);
 			}
 		}
+
+		m_pList->UpdateList();
 	}
 }
 
@@ -446,6 +461,10 @@ void CUIPartyAutoPartyList::SendPartyReq(int nNum)
 	{
 		nSendPage = 0;
 		m_vectorPartyListData.clear();
+
+		if (m_pList != NULL)
+			m_pList->DeleteAllListItem();
+
 	}
 
 	// -1 페이지는 존재하지 않는다.

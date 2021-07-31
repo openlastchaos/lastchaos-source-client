@@ -8,7 +8,7 @@
 #include <Engine/Base/CTString.h>
 #include <Engine/Base/Timer.h>				// yjpark
 #include <Engine/Interface/UIManager.h>		// yjpark
-#include <Engine/Interface/UISummon.h>
+#include <Engine/Contents/function/SummonUI.h>
 #include <Engine/Interface/UIQuickSlot.h>
 #include <Engine/Interface/UIPetInfo.h>
 #include <Engine/Secure/FileSecure.h>	// [2012/07/18 : Sora]  파일 보안코드 추가
@@ -63,8 +63,8 @@ void CSkill::SetStartSkillDelay( int nSkillIndex )
 
 	for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 	{
-		CUISummon* pUISummon = (CUISummon*)pUIManager->GetUI(i);
-		pUISummon->StartSkillDelay( nSkillIndex );
+		CSummonUI* pSummonUI = (CSummonUI*)pUIManager->GetUI(i);
+		pSummonUI->StartSkillDelay( nSkillIndex );
 	}	
 }
 

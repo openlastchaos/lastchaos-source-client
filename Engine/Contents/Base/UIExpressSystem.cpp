@@ -186,8 +186,10 @@ void CUIExpressSystem::CloseExpressSystem()
 {
 	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	if (m_pExPressData)
-		m_pExPressData->ClearNPCInfo();
+	ExpressSystem* pData = GAMEDATAMGR()->GetExpressData();
+	
+	if (pData != NULL)
+		pData->ClearNPCInfo();
 
 	ClearExpress();	
 
@@ -384,6 +386,9 @@ bool CUIExpressSystem::_SetItemListString(int nIndex, bool bItem)
 bool CUIExpressSystem::_SetItemList()
 {
 	if ( m_pExPressData == NULL )
+		return false;
+
+	if (m_pExPressData->IsLock() == true)
 		return false;
 
 	int nMax = m_pExPressData->getExpressCount();
@@ -610,9 +615,7 @@ void CUIExpressSystem::_ExpressRender()
 	for ( i = 0; i < m_nItemCount; i++ )
 	{	
 		if ( m_pExpressItemList[i] )
-		{
 			m_pExpressItemList[i]->Render();
-		}
 	}
 
 	if (m_SelectItem_index >= 0 && m_pExpressItemList[m_SelectItem_index])
@@ -667,26 +670,32 @@ void CUIExpressSystem::_CreateMsgBox(eMsgType msgType)
 			if (pInfo == NULL)
 				return;
 
+			CTString strTemp;
+
 			msgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OKCANCEL, UI_LCE_SYSTEM, MSGCMD_EXPRESS_RECV );
 
 			if (pInfo->send_type == EXPRESS_SEND_TYPE_TRADE_AGENT_NPC_BUY)
 			{
 				if (pInfo->tradeagent_nas >= 0)
 				{
+					strTemp.PrintF("%I64d", pInfo->tradeagent_nas);
+					pUIManager->InsertCommaToString(strTemp);
 					CTString strName = _pNetwork->GetItemName(pInfo->item_index);
 	
-					strMessage.PrintF( _S( 7041, "%s %d개를 %I64d 나스로 구입 하였습니다. 보관 중인 아이템..."),
-						strName.str_String, pInfo->item_count, pInfo->tradeagent_nas);
+					strMessage.PrintF( _S( 7041, "%s %d개를 %s 나스로 구입 하였습니다. 보관 중인 아이템..."),
+						strName.str_String, pInfo->item_count, strTemp);
 				}
 			}
 			else if (pInfo->send_type == EXPRESS_SEND_TYPE_TRADE_AGENT_NPC_SELL)
 			{
 				if (pInfo->tradeagent_itemIndex >= 0 && pInfo->tradeagent_itemCount >= 0)
 				{
+					strTemp.PrintF("%I64d", pInfo->nas);
+					pUIManager->InsertCommaToString(strTemp);
 					CTString strName = _pNetwork->GetItemName(pInfo->tradeagent_itemIndex);
 	
-					strMessage.PrintF( _S( 7040, "%s %d개를 판매하여 %I64d 나스를 보관 중입니다. 보관 중인 나스를..."),
-						strName.str_String, pInfo->tradeagent_itemCount, pInfo->nas);
+					strMessage.PrintF( _S( 7040, "%s %d개를 판매하여 %s 나스를 보관 중입니다. 보관 중인 나스를..."),
+						strName.str_String, pInfo->tradeagent_itemCount, strTemp);
 				}
 			}
 			
@@ -699,8 +708,6 @@ void CUIExpressSystem::_CreateMsgBox(eMsgType msgType)
 		{
 			msgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OKCANCEL, UI_LCE_SYSTEM, MSGCMD_EXPRESS_RECVALL );
 			strMessage.PrintF( _S( 6019, "해당 페이지에 존재하는 아이템을 받으시겠습니까?") );
-			m_btnAllRecv.SetBtnState(UBS_DISABLE);
-			m_btnAllDelete.SetBtnState(UBS_DISABLE);
 		}
 		break;
 
@@ -715,8 +722,6 @@ void CUIExpressSystem::_CreateMsgBox(eMsgType msgType)
 		{
 			msgBoxInfo.SetMsgBoxInfo( strTitle, UMBS_OKCANCEL, UI_LCE_SYSTEM, MSGCMD_EXPRESS_DELETEALL );
 			strMessage.PrintF( _S( 6034, "해당 페이지에 존재하는 아이템을 버리시겠습니까?") );
-			m_btnAllRecv.SetBtnState(UBS_DISABLE);
-			m_btnAllDelete.SetBtnState(UBS_DISABLE);
 		}
 		break;
 
@@ -727,6 +732,8 @@ void CUIExpressSystem::_CreateMsgBox(eMsgType msgType)
 	if ( pUIManager )
 		pUIManager->CreateMessageBox( msgBoxInfo );
 
+	m_btnAllRecv.SetBtnState(UBS_DISABLE);
+	m_btnAllDelete.SetBtnState(UBS_DISABLE);
 	m_btnRecv.SetBtnState(UBS_DISABLE);
 	m_btnDelete.SetBtnState(UBS_DISABLE);
 }
@@ -996,8 +1003,7 @@ void CUIExpressSystem::Render()
 
 	pDrawPort->EndTextEx();
 
- 	if(m_bItemList)
- 		_ExpressRender();
+	_ExpressRender();
 
 // 	pDrawPort->FlushRenderingQueue();
 // 	pDrawPort->EndTextEx();
@@ -1223,8 +1229,12 @@ WMSG_RESULT CUIExpressSystem::MouseMessage( MSG* pMsg )
 								{
 									// 선택
 									m_SelectItem_index = i;
-									m_btnRecv.SetBtnState( UBS_IDLE );
-									m_btnDelete.SetBtnState( UBS_IDLE );
+
+									if (m_pExPressData && m_pExPressData->IsLock() == false)
+									{
+										m_btnRecv.SetBtnState( UBS_IDLE );
+										m_btnDelete.SetBtnState( UBS_IDLE );
+									}
 									return WMSG_SUCCESS;
 								}							
 							}
@@ -1291,33 +1301,12 @@ void CUIExpressSystem::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strI
 			break;
 
 		case  MSGCMD_EXPRESS_RECVALL:
-			{
-				for (int i = 0; i < m_nItemCount; i++)
-				{
-					if ( m_pExpressItemList[i] != NULL )
-					{
-						if(m_pExpressItemList[i]->GetBtn()->IsEmpty())
-							continue;
-
-						m_pExPressData->SendRecvReq(m_pExpressItemList[i]->GetBtn()->getItems()->Item_UniIndex);
-					}
-				}
-			}
+			m_pExPressData->SendRecvAllReq();
 			break;
 
 		case  MSGCMD_EXPRESS_DELETEALL:
-			{
-				for (int i = 0; i < m_nItemCount; i++)
-				{
-					if ( m_pExpressItemList[i] != NULL )
-					{
-						if(m_pExpressItemList[i]->GetBtn()->IsEmpty())
-							continue;
-
-						m_pExPressData->SendDeleteReq(m_pExpressItemList[i]->GetBtn()->getItems()->Item_UniIndex);
-					}
-				}
-			}
+			m_pExPressData->SendDeleteAllReq();
+			break;
 		}
 
 		m_bItemList = false;
@@ -1325,16 +1314,19 @@ void CUIExpressSystem::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strI
 	}
 	else // bOK == FALSE
 	{
-		if (m_SelectItem_index >= 0)
+		if (m_pExPressData->IsLock() == false)
 		{
-			m_btnRecv.SetBtnState(UBS_IDLE);
-			m_btnDelete.SetBtnState(UBS_IDLE);
-		}
-		if (m_bItemList)
-		{
-			m_btnAllRecv.SetBtnState(UBS_IDLE);
-			m_btnAllDelete.SetBtnState(UBS_IDLE);
-		}
+			if (m_SelectItem_index >= 0)
+			{
+				m_btnRecv.SetBtnState(UBS_IDLE);
+				m_btnDelete.SetBtnState(UBS_IDLE);
+			}
+			if (m_bItemList)
+			{
+				m_btnAllRecv.SetBtnState(UBS_IDLE);
+				m_btnAllDelete.SetBtnState(UBS_IDLE);
+			}
+		}		
 	}
 }
 

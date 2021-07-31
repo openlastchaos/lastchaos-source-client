@@ -146,6 +146,9 @@ public:
 	inline void SetERSubType(EFF_RENDER_SUB_TYPE ersType )		{ m_ERSubType = ersType; }
 	inline EFF_RENDER_SUB_TYPE GetERSubType(void)				{ return m_ERSubType; }
 
+	// 이펙트가 컬링 되더라도 이펙트 타임은 업데이트 되어야 한다.
+	BOOL UpdateETime(FLOAT tm);
+
 protected:
 	CEffect( CEffect &other ) {}
 	CEffect &operator =(CEffect &other) {return *this;}

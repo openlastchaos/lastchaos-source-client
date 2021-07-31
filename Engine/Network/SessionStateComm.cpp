@@ -8,6 +8,7 @@
 #include <Common/Packet/ptype_old_do_guild.h>
 #include <Common/Packet/ptype_old_do_friend.h>
 #include <Common/Packet/ptype_gps.h>
+#include <Common/Packet/ptype_guild_battle.h>
 #include <Engine/Interface/UIManager.h>
 #include <Engine/Interface/UIMessenger.h>
 #include <Engine/Interface/UIMessageBox.h>
@@ -17,6 +18,8 @@
 #include <Engine/Contents/function/gps.h>
 #include <Engine/Contents/Base/UIMsgBoxMgr.h>
 #include <Engine/Info/MyInfo.h>
+#include <Engine/Contents/function/GuildBattleMatch.h>
+
 
 DECLARE_MSG_UPDATE(GuildSkillLearn);
 DECLARE_MSG_UPDATE(FriendError);
@@ -31,6 +34,11 @@ DECLARE_PACKET(GPSError);
 DECLARE_MSG_UPDATE(GPSTargetMoveInfo);
 DECLARE_MSG_UPDATE(GPSArtifactInfo);
 
+DECLARE_PACKET(GuildBattleList);
+DECLARE_PACKET(GuildBattleErrorcode);
+DECLARE_PACKET(GuildBattleChallenge);
+DECLARE_PACKET(GuildBattleChallengeAgreeUp);
+DECLARE_PACKET(GuildBattleChallengeAgree);
 
 void CSessionState::reg_packet_comm()
 {
@@ -47,7 +55,13 @@ void CSessionState::reg_packet_comm()
 	REG_PACKET_UPDATE(MSG_GPS, MSG_SUB_GPS_TARGET_INFO, GPSAddTarget);
 	REG_PACKET(MSG_GPS, MSG_SUB_GPS_ERROR, GPSError);
 	REG_PACKET_UPDATE(MSG_GPS, MSG_SUB_GPS_TARGET_MOVE_INFO, GPSTargetMoveInfo);
-	REG_PACKET_UPDATE(MSG_GPS, MSG_SUB_ARTIFACT_GPS_DATA, GPSArtifactInfo);
+	REG_PACKET_UPDATE(MSG_GPS, MSG_SUB_ARTIFACT_GPS_DATA, GPSArtifactInfo);	
+
+	REG_PACKET(MSG_GUILD_BATTLE, MSG_SUB_GUILD_BATTLE_LIST, GuildBattleList);
+	REG_PACKET(MSG_GUILD_BATTLE, MSG_SUB_GUILD_BATTLE_ERROR, GuildBattleErrorcode);
+	REG_PACKET(MSG_GUILD_BATTLE, MSG_SUB_GUILD_BATTLE_CHALLENGE, GuildBattleChallenge);
+	REG_PACKET(MSG_GUILD_BATTLE, MSG_SUB_GUILD_BATTLE_CHALLENGE_AGREE_UPDATE, GuildBattleChallengeAgreeUp);
+	REG_PACKET(MSG_GUILD_BATTLE, MSG_SUB_GUILD_BATTLE_CHALLENGE_AGREE, GuildBattleChallengeAgree);
 }
 
 IMPLEMENT_MSG_UPDATE(GuildSkillLearn)
@@ -150,4 +164,29 @@ IMPLEMENT_MSG_UPDATE(GPSArtifactInfo)
 	UpdateClient::ArtifactGPSData* pPack = reinterpret_cast<UpdateClient::ArtifactGPSData*>(istr->GetBuffer());
 
 	GAMEDATAMGR()->GetGPS()->SetFindItemInfo(*pPack);
+}
+
+IMPLEMENT_PACKET(GuildBattleList)
+{
+	GAMEDATAMGR()->GetGuildBattleMatch()->RecvList(istr);
+}
+
+IMPLEMENT_PACKET(GuildBattleErrorcode)
+{
+	GAMEDATAMGR()->GetGuildBattleMatch()->RecvError(istr);
+}
+
+IMPLEMENT_PACKET(GuildBattleChallenge)
+{
+	GAMEDATAMGR()->GetGuildBattleMatch()->RecvChallengeRes(istr);
+}
+
+IMPLEMENT_PACKET(GuildBattleChallengeAgreeUp)
+{
+	GAMEDATAMGR()->GetGuildBattleMatch()->RecvChallenge(istr);
+}
+
+IMPLEMENT_PACKET(GuildBattleChallengeAgree)
+{
+	GAMEDATAMGR()->GetGuildBattleMatch()->RecvGuildBattleChallengeAgree(istr);
 }

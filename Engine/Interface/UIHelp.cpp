@@ -643,11 +643,7 @@ int CUIHelp::SetListArrange(int iStart)
 	{
 		// Add Mark
 		// 해외로컬 확인 요!!
-#if defined (G_KOR)
-			strTemp+=CTString("◆");
-#else
-			strTemp+=CTString("+ ");
-#endif
+		strTemp+=CTString("+ ");
 	}
 
 	for(int j=0;j<tCnt3;j++)

@@ -153,8 +153,8 @@ void CUISiegeWarfareNew::Create( CUIWindow *pParentWnd, int nX, int nY, int nWid
 			m_cbtnTowerOn[i][j].SetUV( UCBS_CHECK, 0, 161, 11, 172, fTexWidth, fTexHeight );
 			m_cbtnTowerOn[i][j].CopyUV( UCBS_NONE, UCBS_CHECK_DISABLE );
 			m_cbtnTowerOn[i][j].CopyUV( UCBS_NONE, UCBS_NONE_DISABLE );
-			m_cbtnTowerOn[i][j].SetTextColor( TRUE, 0xF2F2F2FF );
-			m_cbtnTowerOn[i][j].SetTextColor( FALSE, 0xF2F2F2FF );
+			m_cbtnTowerOn[i][j].SetTextColor( UCBS_CHECK, 0xF2F2F2FF );
+			m_cbtnTowerOn[i][j].SetTextColor( UCBS_NONE, 0xF2F2F2FF );
 			m_cbtnTowerOn[i][j].SetCheck( FALSE );
 		}
 	}
@@ -600,7 +600,11 @@ void CUISiegeWarfareNew::RenderCheckTower()
 
 
 	pDrawPort->PutTextExRX( _S( 3729, "총 필요나스:" ), nX+425, nY+267 );
-	tStr.PrintF(_S( 3730,"%I64d 나스"),GetTowerPay());	// TODO :: 타워 가격 설정
+
+	CTString strNas;
+	strNas.PrintF("%I64d", GetTowerPay());
+	UIMGR()->InsertCommaToString(strNas);
+	tStr.PrintF(_S( 3730, "%s 나스"), strNas);	// TODO :: 타워 가격 설정
 	pDrawPort->PutTextExRX( tStr, nX+527, nY+267 );	
 	
 	for(i=0;i<5;i++)
@@ -645,8 +649,12 @@ void CUISiegeWarfareNew::RenderRepairTower()
 	nX2 = nX + 23;
 	nY2 = nY + 25;
 	nCab = _pUIFontTexMgr->GetFontHeight()+5;	
-				
-	tStr.PrintF(_S(3899,"수리비용:%I64d"),GetRepairMoney());
+	
+	CTString strNas;
+	strNas.PrintF("%I64d", GetRepairMoney());
+	UIMGR()->InsertCommaToString(strNas);
+	tStr.PrintF(_S(3899, "수리비용:%s"), strNas);
+
 	pDrawPort->PutTextEx( _S( 3731,"타워 수리하기"), nX+23, nY+6 );
 	pDrawPort->PutTextEx( _S( 3732,"파괴되지 않고 부서진 타워는 바로 수리가 가능합니다."), nX2, nY2+=nCab);
 	pDrawPort->PutTextEx( _S( 3733,"수리비용은 부서진 정도에 따라 책정되며 다음과 같습니다."), nX2, nY2+=nCab);

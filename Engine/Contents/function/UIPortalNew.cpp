@@ -215,19 +215,25 @@ void CUIPortal::PressOk()
     {
         if (m_bUseItem)
         {
-            _pNetwork->SendUseGoDungeon(m_UniItemIdx, m_vectorListInfo[nSel].zone, m_vectorListInfo[nSel].extra);
+            _pNetwork->SendUseGoDungeon(m_UniItemIdx);
         }
         else
         {
             //말레이시아
             //에게하 던전 이외의 지역에서 에게하로 이동할 때 메세지창 생성		FRANCE_SPAIN_CLOSEBETA_NA_20081124
-#if !defined(G_HONGKONG) && !defined(G_KOR) && !defined(G_THAI)
+#if		!defined(G_THAI)
             if (m_vectorListInfo[nSel].zone == 15 && _pNetwork->MyCharacterInfo.zoneNo != 17
             && _pNetwork->MyCharacterInfo.zoneNo != 31)
             {
                 CUIMsgBox_Info	MsgBoxInfo;
+				const LONGLONG llMoveFee = 500000;
                 CTString strTitle	= _S(221, 	"이동");
-                CTString strMessage	= _S(3223, "에게하 지역으로 이동하기 위해 10,000,000 나스가 소비됩니다. 이동하시겠습니까?");
+				CTString strMessage, strFee;
+
+				strFee.PrintF("%I64d", llMoveFee);
+				UIMGR()->InsertCommaToString(strFee);
+
+                strMessage.PrintF(_S(3223, "에게하 지역으로 이동하기 위해 %s 나스가 소비됩니다. 이동하시겠습니까?"), strFee);
                 MsgBoxInfo.SetMsgBoxInfo(strTitle, UMBS_YESNO, UI_NONE, MSGCMD_GOTO_EGEHA);
                 MsgBoxInfo.AddString(strMessage);
                 UIMGR()->CreateMessageBox(MsgBoxInfo);
@@ -793,9 +799,13 @@ void CUIPortal::Create_SiegeDungeon_EnvCtr_MsgBox(int nCurRate)
 	MsgBoxInfo.AddString( _S(3924, "어느 정도나 쾌적하게 만드시겠습니까?") );
 	MsgBoxInfo.m_nMaxRow +=2;
 
-	int nNeedNas = SERVER_INFO()->GetDG_EnvNas() * 10;
-		
-	strMessage.PrintF( _s("%s: %d %s%s"), _S(1058, "필요나스"), nNeedNas, _S(1762, "나스"), _s("   ") );
+	LONGLONG llNeedNas = SERVER_INFO()->GetDG_EnvNas() * 10;
+	
+	CTString strNas;
+	strNas.PrintF("%I64d", llNeedNas);
+	pUIManager->InsertCommaToString(strNas);
+
+	strMessage.PrintF( _s("%s: %s %s%s"), _S(1058, "필요나스"), strNas, _S(1762, "나스"), _s("   ") );
 	MsgBoxInfo.AddString( strMessage, 0xF2F2F2FF, TEXT_RIGHT );
 
 	
@@ -870,9 +880,12 @@ void CUIPortal::Create_SiegeDungeon_MonCtr_MsgBox(int nCurRate)
 	MsgBoxInfo.AddString( _S(3929, "어느 정도나 온순하게 만드시겠습니까?") );
 	MsgBoxInfo.m_nMaxRow +=2;
 
-	int nNeedNas = SERVER_INFO()->GetDG_MonsterNas() * 10;
+	LONGLONG llNeedNas = SERVER_INFO()->GetDG_MonsterNas() * 10;
+	CTString strNas;
+	strNas.PrintF("%I64d", llNeedNas);
+	pUIManager->InsertCommaToString(strNas);
 		
-	strMessage.PrintF( _s("%s: %d %s%s"), _S(1058, "필요나스"), nNeedNas, _S(1762, "나스"), _s("   ") );
+	strMessage.PrintF( _s("%s: %s %s%s"), _S(1058, "필요나스"), strNas, _S(1762, "나스"), _s("   ") );
 	MsgBoxInfo.AddString( strMessage, 0xF2F2F2FF, TEXT_RIGHT );
 	
 	MsgBoxInfo.m_nColorBoxCount =4;

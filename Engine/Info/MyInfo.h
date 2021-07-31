@@ -47,13 +47,18 @@ public:
 	__int64 CalcPriceRate(__int64 iShopPrice, BOOL bBuy);
 	__int64 CalcPriceAddition(BOOL bBuy);
 
+	void	add_makeitem(INDEX nmakeitem);
+	bool	find_makeitem(INDEX nmakeitem);
+
 	stGuildMark		_guildmark;
 private:
 	// B1408 길드원 스킬 1 에누리권, 2 타고난 장사꾼
 	int				nBuy_addition; // 더해지는 값
 	int				nBuy_rate; // %
 	int				nSell_addition;
-	int				nSell_rate;		
+	int				nSell_rate;
+
+	std::vector<INDEX>		m_vctMakeLearn;
 };
 
 #define		MY_INFO()	MyInfo::getSingleton()

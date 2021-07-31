@@ -45,6 +45,13 @@ const int RESIZING_MIN = 91;
 #define IS_SPACE(c)		(c == 0x20 || (c >= 0x09 && c <= 0x0D))
 #define IS_CHAR(c)		((c >= 0x41 && c <= 0x5A) || (c >= 0x61 && c<= 0x7A) || (c >= 0x80 && c<= 0xA5))
 
+// #ifdef GER_MODIFY_PARTYCAHT_ABRIDGE_KEY_NA_20081224 
+static char cPrefix[7] = { '!', '?', '#', '$', '%', '&', '*' };
+// #else
+// 	static const char cPrefix[7] = { '!', '@', '#', '$', '%', '&', '*' };
+// #endif
+
+
 CChattingUI::CChattingUI()
 	: m_pChatInput(NULL)
 	, m_pTabMainChat(NULL)
@@ -111,6 +118,11 @@ CChattingUI::CChattingUI()
 	}
 	
 	m_timeUserNoticeDelay = 0;
+	
+	if (IsGamigo(g_iCountry) == FALSE)
+	{
+		cPrefix[1] = '@';
+	}
 }
 
 CChattingUI::~CChattingUI()
@@ -346,24 +358,28 @@ void CChattingUI::AddChatMessage(UBYTE ubChatType, SLONG slSendIndex, CTString &
 		break;
 	default:
 		{
-#if defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2) || defined(G_USA)
-			if ((ubChatType != CHATMSG_PARTY && ubChatType != CHATMSG_GUILD && 
-				slSendIndex != _pNetwork->MyCharacterInfo.index) && CeilWritingCut_CompareStr(strChatMessage))
+			if (IsGamigo(g_iCountry) == TRUE || g_iCountry == USA)
 			{
-				UIMGR()->GetChatFilter()->AddCharName(strSendName.str_String);
-				CTString strTemp;
-				strTemp.PrintF(_S(3006, "%s님이 차단되었습니다."), strSendName);
-				AddSysMessage(strTemp);
-				
-				return;
-			}
-#endif // defined(G_GERMAN) || defined(G_EUROPE3) || defined(G_EUROPE2) || defined(G_USA)
+				if ((ubChatType != CHATMSG_PARTY && ubChatType != CHATMSG_GUILD && 
+					slSendIndex != _pNetwork->MyCharacterInfo.index) && CeilWritingCut_CompareStr(strChatMessage))
+				{
+					UIMGR()->GetChatFilter()->AddCharName(strSendName.str_String);
+					CTString strTemp;
+					strTemp.PrintF(_S(3006, "%s님이 차단되었습니다."), strSendName);
+					AddSysMessage(strTemp);
 
-#if defined SPAMER_BLOCK
-			if (ubChatType != CHATMSG_PARTY && ubChatType != CHATMSG_GUILD &&
-				slSendIndex != _pNetwork->MyCharacterInfo.index && CheckSpamCount( strSendName, strChatMessage ))
-				return;
-#endif // SPAMER_BLOCK
+					return;
+				}
+			}
+
+//#if defined SPAMER_BLOCK
+			if (g_iCountry == USA)
+			{
+				if (ubChatType != CHATMSG_PARTY && ubChatType != CHATMSG_GUILD &&
+					slSendIndex != _pNetwork->MyCharacterInfo.index && CheckSpamCount( strSendName, strChatMessage ))
+					return;
+			}
+//#endif
 
 			int nMainTab = m_pTabMainChat->getCurSelTab();
 			int nSubTab = m_pTabSubChat[nMainTab]->getCurSelTab();
@@ -589,7 +605,6 @@ void CChattingUI::SendChatMessage( char *pcChatString, BOOL bLord )
 	else
 	{
 		//[ttos_2009_1_23]:채팅 금지
-#ifdef CHATTING_BAN
 		if (_pNetwork->MyCharacterInfo.ChatFlag != 0 )
 		{
 			if (
@@ -607,7 +622,6 @@ void CChattingUI::SendChatMessage( char *pcChatString, BOOL bLord )
 				return;
 			}
 		}
-#endif
 		// Filtering
 		if ( _UIFiltering.Filtering ( szBuffer, nIndexBuffer ) == TRUE )
 		{
@@ -615,59 +629,70 @@ void CChattingUI::SendChatMessage( char *pcChatString, BOOL bLord )
 			AddSysMessage ( _S( 437, "문장에 금지된 단어가 포함되어 있습니다." ) );
 
 			strChatString.Clear();
-#ifndef FILTERING_WORD_VISIBLE_NA_20081013
-			for ( int i = 1; i <= nIndexBuffer[0]; i++ )
-			{	
-				strChatString += "[";	
-				strChatString += _UIFiltering.GetString( nIndexBuffer[i] );
-				strChatString += "] ";
+
+//#ifndef FILTERING_WORD_VISIBLE_NA_20081013
+			if (IsGamigo(g_iCountry) == FALSE)
+			{
+				for ( int i = 1; i <= nIndexBuffer[0]; i++ )
+				{	
+					strChatString += "[";	
+					strChatString += _UIFiltering.GetString( nIndexBuffer[i] );
+					strChatString += "] ";
+				}
 			}
-#endif			
+//#endif	// FILTERING_WORD_VISIBLE_NA_20081013
+
 			ubType = CHATMSG_NORMAL;			
 			AddSysMessage( strChatString );
 		}
 		// Send message
 		else 
 		{
-#ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
-			if (ubType == CHATMSG_NORMAL || ubType == CHATMSG_CHANNEL_LEVEL)
+//#ifdef ADD_CHAT_CEILWRITING_CUT_NA_20081029
+			if (IsGamigo(g_iCountry) == TRUE || g_iCountry == USA)
 			{
-				if(CeilWritingCut_CompareStr(strChatString))
+				if (ubType == CHATMSG_NORMAL || ubType == CHATMSG_CHANNEL_LEVEL)
 				{
-					strChatString = _S(4221, "1분내 같은 문장, 단어를 2회 이상 입력 할 수 없습니다.");					
-					AddSysMessage(strChatString);
+					if(CeilWritingCut_CompareStr(strChatString))
+					{
+						strChatString = _S(4221, "1분내 같은 문장, 단어를 2회 이상 입력 할 수 없습니다.");					
+						AddSysMessage(strChatString);
+					}
+					else
+					{
+						if (ubType == CHATMSG_CHANNEL_LEVEL)
+						{
+							if (!CheckInputChannelChat(CHATMSG_CHANNEL_LEVEL, CTString(strChatString)))
+							{
+								return;
+							}
+						}
+						_pNetwork->SendChatMessage(ubType, m_strWhisperTarget, strChatString, nChatType );
+					}
 				}
 				else
 				{
-					if (ubType == CHATMSG_CHANNEL_LEVEL)
+					if (ubType == CHATMSG_CHANNEL_TRADE)
 					{
-						if (!CheckInputChannelChat(CHATMSG_CHANNEL_LEVEL, CTString(strChatString)))
+						if (!CheckInputChannelChat(CHATMSG_CHANNEL_TRADE, CTString(strChatString)))
 						{
 							return;
 						}
 					}
-					_pNetwork->SendChatMessage(ubType, m_strWhisperTarget, strChatString, nChatType );
+					_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString, nChatType );
 				}
 			}
+//#else	//	ADD_CHAT_CEILWRITING_CUT_NA_20081029
 			else
 			{
-				if (ubType == CHATMSG_CHANNEL_TRADE)
+				if (!CheckInputChannelChat(ChattingMsgType(ubType), CTString(strChatString)))
 				{
-					if (!CheckInputChannelChat(CHATMSG_CHANNEL_TRADE, CTString(strChatString)))
-					{
-						return;
-					}
+					return;
 				}
+
 				_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString, nChatType );
 			}
-#else	//	ADD_CHAT_CEILWRITING_CUT_NA_20081029
-			if (!CheckInputChannelChat(ChattingMsgType(ubType), CTString(strChatString)))
-			{
-				return;
-			}
-
-			_pNetwork->SendChatMessage( ubType, m_strWhisperTarget, strChatString, nChatType );
-#endif	//	ADD_CHAT_CEILWRITING_CUT_NA_20081029
+//#endif	//	ADD_CHAT_CEILWRITING_CUT_NA_20081029
 		}
 	}
 	// 이기환 수정 끝 
@@ -736,7 +761,7 @@ void CChattingUI::UpdateChatMsg(bool bSys, CUIList* pList, CTString strChat, COL
  	}
 
 	pList->UpdateList();
-	m_pTextBoxDesign->ClearUI();
+	m_pTextBoxDesign->erase();
 }
 
 BOOL CChattingUI::CheckNearMyCharacter( FLOAT3D	vCharPos )
@@ -765,7 +790,12 @@ CTString CChattingUI::ArrangeCharString(const CTString& strChat)
 		return "";		
 	}
 
-	char chComp[256];
+	const int max_filter = 256;
+
+	if (len > max_filter)
+		len = max_filter - 1;
+
+	char chComp[max_filter];
 	memcpy(chComp, strChat, len);
 	chComp[len] = '\0';
 
@@ -981,12 +1011,6 @@ void CChattingUI::ChangeSubTab( int nSubTab )
 
 void CChattingUI::InsertChatPrefix( ChattingMsgType cmtType )
 {
-#ifdef GER_MODIFY_PARTYCAHT_ABRIDGE_KEY_NA_20081224 
-	static const char cPrefix[7] = { '!', '?', '#', '$', '%', '&', '*' };
-#else
-	static const char cPrefix[7] = { '!', '@', '#', '$', '%', '&', '*' };
-#endif
-
 	char				cFirstChar = m_pChatInput->GetString()[0];
 	int					nLength = strlen( m_pChatInput->GetString() );
 
@@ -1374,17 +1398,30 @@ void CChattingUI::ChatColorInI()
 
 int CChattingUI::CheckChatType( char szFirst )
 {
+	// #ifdef GER_MODIFY_PARTYCAHT_ABRIDGE_KEY_NA_20081224
+	if (IsGamigo(g_iCountry))
+	{
+		if (szFirst == '?')
+		{
+			if(CUIManager::getSingleton()->IsCSFlagOn(CSF_EXPEDITION))
+				return CHATMSG_EXPEDITION;
+			else
+				return CHATMSG_PARTY;
+		}
+	}
+	else
+	{
+		if (szFirst == '@')
+		{
+			if(CUIManager::getSingleton()->IsCSFlagOn(CSF_EXPEDITION))
+				return CHATMSG_EXPEDITION;
+			else
+				return CHATMSG_PARTY;
+		}
+	}
+
 	switch( szFirst )
 	{
-#ifdef GER_MODIFY_PARTYCAHT_ABRIDGE_KEY_NA_20081224
-	case '?':
-#else
-	case '@':
-#endif
-		if(CUIManager::getSingleton()->IsCSFlagOn(CSF_EXPEDITION))
-			return CHATMSG_EXPEDITION;
-		else
-			return CHATMSG_PARTY;
 	case '#':
 		return CHATMSG_GUILD;
 	case '$':
@@ -1487,7 +1524,11 @@ BOOL CChattingUI::CheckInputChannelChat( ChattingMsgType cmtType, CTString strMe
 
 			if (nNeedNas > _pNetwork->MyCharacterInfo.money)
 			{
-				strMoney.PrintF(_S(5389, "[%s] 나스가 부족합니다.(%d 나스)"), _S(5391, "매매 채널모드"), nNeedNas);
+				CTString strNas;
+				strNas.PrintF("%d", nNeedNas);
+				UIMGR()->InsertCommaToString(strNas);
+
+				strMoney.PrintF(_S(5389, "[%s] 나스가 부족합니다.(%s 나스)"), _S(5391, "매매 채널모드"), strNas);
 				AddSysMessage(strMoney, SYSMSG_ERROR);
 				bResult = FALSE;
 			}
@@ -1722,11 +1763,6 @@ WMSG_RESULT CChattingUI::OnKeyMessage( MSG* pMsg )
 			if( m_pChatInput->KeyMessage( pMsg ) == WMSG_COMMAND )
 			{
 				SendChatMessage( m_pChatInput->GetString() );
-#if defined(G_JAPAN)
-				{
-					m_pChatInput->SetFocus( FALSE );
-				}
-#endif
 			}
 			return WMSG_SUCCESS;
 		}

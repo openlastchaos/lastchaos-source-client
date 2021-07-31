@@ -843,7 +843,7 @@ functions:
 						{
 							if(!(m_penEnemy->GetFlags() & ENF_ITEM)) // [100428 : sora] 스킬사용시 타겟이 아이템일 경우 제외 
 							{
-								if( !MY_INFO()->GetSkillLevel(nSlot))
+								if( !MY_INFO()->GetSkillDelay(sPetAI[nSlot].m_nActionSlot))
 								{
 									if(UseSkill(sPetAI[nSlot].m_nActionSlot))
 									{

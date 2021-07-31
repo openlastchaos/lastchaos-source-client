@@ -273,16 +273,16 @@ copy Debug\%(Filename).pdb $(ENGINE_DIR)\Bin\Debug &gt;nul </Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SkaStudio|Win32'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <FunctionLevelLinking>false</FunctionLevelLinking>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>./;../;../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>G_KOR;_CLIENT_;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>G_KOR;WORLD_EDITOR;_CLIENT_;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BrowseInformation>true</BrowseInformation>
       <PrecompiledHeaderOutputFile>$(IntDir)SeriousSkaStudio.pch</PrecompiledHeaderOutputFile>
@@ -313,6 +313,7 @@ copy Debug\%(Filename).pdb $(ENGINE_DIR)\Bin\Debug &gt;nul </Command>
       <OutputFile>$(OutDir)$(TargetName).exe</OutputFile>
       <AdditionalLibraryDirectories>$(OutDir);..\lib\VC100;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <AdditionalDependencies>libfbxsdk-md.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -420,6 +421,8 @@ copy Release\%(Filename).pdb $(ENGINE_DIR)\Bin &gt;nul </Command>
     <ClCompile Include="DlgProperties.cpp" />
     <ClCompile Include="DlgTemplate.cpp" />
     <ClCompile Include="DropDown.cpp" />
+    <ClCompile Include="FBX\Common.cxx" />
+    <ClCompile Include="FBX\ConvSMC.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="MDIClientWnd.cpp" />
     <ClCompile Include="ModelTreeCtrl.cpp" />
@@ -574,6 +577,8 @@ copy Release\%(Filename).pdb $(ENGINE_DIR)\Bin &gt;nul </Command>
     <ClInclude Include="DlgProperties.h" />
     <ClInclude Include="DlgTemplate.h" />
     <ClInclude Include="DropDown.h" />
+    <ClInclude Include="FBX\Common.h" />
+    <ClInclude Include="FBX\ConvSMC.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MDIClientWnd.h" />
     <ClInclude Include="ModelTreeCtrl.h" />
@@ -696,4 +701,9 @@ del %(RootDir)%(Directory)Parser.c /q
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="SeriousSkaStudio.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

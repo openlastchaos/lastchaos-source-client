@@ -23,3 +23,9 @@ void CUIFocus::setUI( CUIBase* pUI)
 
 	m_pBase = pUI;
 }
+
+void CUIFocus::killFocus( CUIBase* pUI )
+{
+	if (m_pBase == pUI)
+		setUI(NULL);
+}

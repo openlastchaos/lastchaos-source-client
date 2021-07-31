@@ -216,9 +216,6 @@ void CUIMysteriousBead::SendPlayerSearch()
 	if( strName.IsEmpty() == TRUE )
 		return;
 
-	if (UIMGR()->checkName(strName, 0) == FALSE)
-		return;
-
 	GameDataManager::getSingleton()->GetExpressData()->SendPlayerSearchReq(strName);
 }
 
@@ -411,13 +408,14 @@ void CUIMysteriousBead::SendItemMsgBox()
 	if( strName.IsEmpty() || m_bPlayerSerach == false )
 		return;
 
-	CTString strMessage;
+	CTString strMessage, strCount;
 	const char	*szItemName = _pNetwork->GetItemName(m_pSendItems->Item_Index);
 	int		 nCount			= (int)m_pSendItems->Item_Sum;
 
 	CUIMsgBox_Info	MsgBoxInfo;
-	MsgBoxInfo.SetMsgBoxInfo( _S( 191, "확인" ), UMBS_OKCANCEL, UI_MYSTERYOUSBEAD, MSGCMD_MYSTERIOUS_BEAD_SEND_ITEM );								
-	strMessage.PrintF( _S(6046, "%s %d개를 %s의 신비한 석상으로 전송 하시겠습니까?"), szItemName, nCount, strName);
+	MsgBoxInfo.SetMsgBoxInfo( _S( 191, "확인" ), UMBS_OKCANCEL, UI_MYSTERYOUSBEAD, MSGCMD_MYSTERIOUS_BEAD_SEND_ITEM );
+	strCount = pUIManager->IntegerToCommaString(nCount);
+	strMessage.PrintF( _S(6046, "%s %s개를 %s의 신비한 석상으로 전송 하시겠습니까?"), szItemName, strCount, strName);
 	MsgBoxInfo.AddString( strMessage );
 	pUIManager->CreateMessageBox( MsgBoxInfo );
 }
@@ -425,14 +423,15 @@ void CUIMysteriousBead::SendItemMsgBox()
 void CUIMysteriousBead::Success()
 {
 	CUIManager* pUIManager = CUIManager::getSingleton();
-	CTString strMessage;
+	CTString strMessage, strCount;
 	const char	*szItemName = _pNetwork->GetItemName(m_pSendItems->Item_Index);
 	CTString strName		= m_pSearchPlayer->GetString();
 	int		 nCount			= (int)m_pSendItems->Item_Sum;
 	CUIMsgBox_Info	MsgBoxInfo;
 
 	MsgBoxInfo.SetMsgBoxInfo( _S( 191, "확인" ), UMBS_OK, UI_NONE, MSGCMD_NULL);
-	strMessage.PrintF(_S(6047, "%s %d개를 %s의 신비한 석상으로 전송 하였습니다."), szItemName, nCount, strName);
+	strCount = pUIManager->IntegerToCommaString(nCount);
+	strMessage.PrintF(_S(6047, "%s %s개를 %s의 신비한 석상으로 전송 하였습니다."), szItemName, strCount, strName);
 	MsgBoxInfo.AddString( strMessage );
 	pUIManager->CreateMessageBox( MsgBoxInfo );
 	CloseUI();

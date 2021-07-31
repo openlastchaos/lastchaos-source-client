@@ -7,6 +7,8 @@
 #include <Engine/Interface/UITextureManager.h>
 #include <Engine/Help/Util_Help.h>
 
+extern INDEX g_iCountry;
+
 //////////////////////////////////////////////////////////////////////////
 
 void CRectStringData::CalculateRect()
@@ -221,77 +223,77 @@ void CUIRectString::AddCRectStringData(CTString& strInput, COLOR color)
 	CTString strSplited2;
 	BOOL bNotMultyLine = FALSE;
 
-#if defined G_RUSSIA
-	extern CFontData *_pfdDefaultFont;
-	int	nSplitPos = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, strInput.str_String, m_nWidth);
-	
-	if(nSplitPos < strInput.Length())
+	if (g_iCountry == RUSSIA)
 	{
-		for( int iPos=nSplitPos; iPos >=0; --iPos )
+		extern CFontData *_pfdDefaultFont;
+		int	nSplitPos = UtilHelp::getSingleton()->CheckNoFixedLength(_pfdDefaultFont, strInput.str_String, m_nWidth);
+
+		if(nSplitPos < strInput.Length())
 		{
-			if( strInput[iPos] == ' ' )
+			for( int iPos=nSplitPos; iPos >=0; --iPos )
 			{
-				nSplitPos = iPos;
-				break;
+				if( strInput[iPos] == ' ' )
+				{
+					nSplitPos = iPos;
+					break;
+				}
 			}
-		}
-		strInput.Split(nSplitPos, strSplited1, strSplited2);
-		AddCRectStringData(strSplited1, color);
-		AddCRectStringData(strSplited2, color);
-	}
-	else
-		bNotMultyLine = TRUE;
-#else
-
-#if defined (G_THAI)
-	
-	int		iPos;
-	INDEX	nThaiWidth		= FindThaiLen(strInput);
-	INDEX	nThaiLen		= strInput.Length();
-
-	if(nThaiWidth > m_nWidth)
-	{
-		for(iPos = 0; iPos < nThaiLen; iPos++)
-		{
-			INDEX	nCurrentWidth	= FindThaiLen(strSplited1, 0, iPos);
-			if(nCurrentWidth >= m_nWidth)
-				break;
-		}
-
-		if(iPos < nThaiLen)
-		{
-			strInput.Split(iPos, strSplited1, strSplited2);
+			strInput.Split(nSplitPos, strSplited1, strSplited2);
 			AddCRectStringData(strSplited1, color);
 			AddCRectStringData(strSplited2, color);
+		}
+		else
+			bNotMultyLine = TRUE;
+	}
+	else
+	{
+#if defined (G_THAI)
+
+		int		iPos;
+		INDEX	nThaiWidth		= FindThaiLen(strInput);
+		INDEX	nThaiLen		= strInput.Length();
+
+		if(nThaiWidth > m_nWidth)
+		{
+			for(iPos = 0; iPos < nThaiLen; iPos++)
+			{
+				INDEX	nCurrentWidth	= FindThaiLen(strSplited1, 0, iPos);
+				if(nCurrentWidth >= m_nWidth)
+					break;
+			}
+
+			if(iPos < nThaiLen)
+			{
+				strInput.Split(iPos, strSplited1, strSplited2);
+				AddCRectStringData(strSplited1, color);
+				AddCRectStringData(strSplited2, color);
+			}
+			else
+			{
+				strCheck.SetString(strInput);
+				bNotMultyLine = TRUE;
+			}
 		}
 		else
 		{
 			strCheck.SetString(strInput);
 			bNotMultyLine = TRUE;
 		}
-	}
-	else
-	{
-		strCheck.SetString(strInput);
-		bNotMultyLine = TRUE;
-	}
 
 #else
-	strCheck.SetString(strSplited1);
+		strCheck.SetString(strSplited1);
 
-	if(strCheck.GetWidth() > m_nWidth)
-	{
-		int nSplitPos = CheckSplitPos(strInput, m_nWidth);
-		strInput.Split(nSplitPos, strSplited1, strSplited2);
-		AddCRectStringData(strSplited1, color);
-		AddCRectStringData(strSplited2, color);
+		if(strCheck.GetWidth() > m_nWidth)
+		{
+			int nSplitPos = CheckSplitPos(strInput, m_nWidth);
+			strInput.Split(nSplitPos, strSplited1, strSplited2);
+			AddCRectStringData(strSplited1, color);
+			AddCRectStringData(strSplited2, color);
+		}
+		else
+			bNotMultyLine = TRUE;
+#endif
 	}
-	else
-		bNotMultyLine = TRUE;
-#endif
-
-#endif
-
 
 	if(bNotMultyLine)
 	{

@@ -115,7 +115,7 @@ void CDurability::RecvRecovery( CNetworkMessage* istr )
 #endif	//	DURABILITY
 }
 
-void CDurability::SendRepair( UWORD tab_no, UWORD invenIdx, int virualIdx, LONGLONG fee )
+void CDurability::SendRepair( UWORD tab_no, UWORD invenIdx, int virualIdx, LONGLONG fee, int nNpcIndex )
 {
 #ifdef DURABILITY
 	CNetworkMessage nmList;
@@ -127,13 +127,14 @@ void CDurability::SendRepair( UWORD tab_no, UWORD invenIdx, int virualIdx, LONGL
 	packet->invenIndex = invenIdx;
 	packet->virualIndex = virualIdx;
 	packet->fee = fee;
+	packet->npcIndex = nNpcIndex;
 
 	nmList.setSize(sizeof(*packet));
 	_pNetwork->SendToServerNew(nmList);
 #endif	//	DURABILITY
 }
 
-void CDurability::SendRepairSpecial( UWORD tab_item, UWORD invenIdx_item, int virIdx_item, UWORD tab_material, UWORD invenIdx_material, int virIdx_material )
+void CDurability::SendRepairSpecial( UWORD tab_item, UWORD invenIdx_item, int virIdx_item, UWORD tab_material, UWORD invenIdx_material, int virIdx_material, int nNpcIndex )
 {
 #ifdef DURABILITY
 	CNetworkMessage nmList;
@@ -149,6 +150,7 @@ void CDurability::SendRepairSpecial( UWORD tab_item, UWORD invenIdx_item, int vi
 	packet->material_invenIndex = invenIdx_material;
 	packet->material_virtualIndex = virIdx_material;
 
+	packet->npcIndex = nNpcIndex;
 	nmList.setSize(sizeof(*packet));
 	_pNetwork->SendToServerNew(nmList);
 #endif	//	DURABILITY

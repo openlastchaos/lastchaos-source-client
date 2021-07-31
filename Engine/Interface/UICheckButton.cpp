@@ -12,8 +12,10 @@ CUICheckButton::CUICheckButton()
 	m_bChecked = FALSE;
 	m_strText = CTString( "" );
 	m_bValidText = FALSE;
-	m_colText[0] = 0xAAAAAAFF;
-	m_colText[1] = 0xF2F2F2FF;
+	m_colText[UCBS_NONE] = 0xAAAAAAFF;
+	m_colText[UCBS_CHECK] = 0xF2F2F2FF;
+	m_colText[UCBS_NONE_DISABLE] = m_colText[UCBS_NONE];
+	m_colText[UCBS_CHECK_DISABLE] = m_colText[UCBS_CHECK];
 
 	m_nTextSY = 0;
 	m_nTextArea = 0;
@@ -23,6 +25,8 @@ CUICheckButton::CUICheckButton()
 	m_bHighlightOn = false;
 	m_ulOldTime = 0;
 	m_fHighlightTime = 0;
+	m_BtnState = UCBS_NONE;
+
 #ifdef UI_TOOL
 	m_bLeft			= TRUE;
 	m_nCheckRegion	= 0;
@@ -137,13 +141,6 @@ void CUICheckButton::OnRender( CDrawPort* pDraw )
 		return;
 	}
 
-	// Add render regions
-	int	nUVIndex;
-	if( m_bChecked )
-		nUVIndex = UCBS_CHECK;
-	else
-		nUVIndex = UCBS_NONE;
-
 	// Get position
 	int	nX, nY;
 	GetAbsPos( nX, nY );
@@ -151,8 +148,8 @@ void CUICheckButton::OnRender( CDrawPort* pDraw )
 	pDraw->InitTextureData( m_pTexData );
 
 	pDraw->AddTexture( nX, nY, nX + m_nWidth, nY + m_nHeight,
-		m_rtUV[nUVIndex].U0, m_rtUV[nUVIndex].V0,
-		m_rtUV[nUVIndex].U1, m_rtUV[nUVIndex].V1,
+		m_rtUV[m_BtnState].U0, m_rtUV[m_BtnState].V0,
+		m_rtUV[m_BtnState].U1, m_rtUV[m_BtnState].V1,
 		0xFFFFFFFF );
 
 	pDraw->FlushRenderingQueue();
@@ -162,8 +159,8 @@ void CUICheckButton::OnRender( CDrawPort* pDraw )
 		pDraw->InitTextureData(m_pTexData, FALSE, PBT_ADD);
 		
 		pDraw->AddTexture( nX, nY, nX + m_nWidth, nY + m_nHeight,
-			m_rtUV[nUVIndex].U0, m_rtUV[nUVIndex].V0,
-			m_rtUV[nUVIndex].U1, m_rtUV[nUVIndex].V1,
+			m_rtUV[m_BtnState].U0, m_rtUV[m_BtnState].V0,
+			m_rtUV[m_BtnState].U1, m_rtUV[m_BtnState].V1,
 			m_colHighlight );
 
 		pDraw->FlushRenderingQueue();
@@ -192,8 +189,7 @@ void CUICheckButton::OnRender( CDrawPort* pDraw )
 			pDraw->PutTextEx( m_strText, nX + m_nTextSX + outX-1, nY + m_nTextSY+1, DEF_UI_FONT_SHADOW_COLOR );
 		}
 
-		pDraw->PutTextEx( m_strText, nX + m_nTextSX + outX, nY + m_nTextSY, m_colText[nUVIndex] );
-
+		pDraw->PutTextEx( m_strText, nX + m_nTextSX + outX, nY + m_nTextSY, m_colText[m_BtnState] );
 		pDraw->EndTextEx();
 	}	
 #ifdef UI_TOOL
@@ -201,7 +197,13 @@ void CUICheckButton::OnRender( CDrawPort* pDraw )
 
 	// Text Area
 	if (m_bSelect)
+	{
+		pDraw->DrawBorder(nX + m_rcCheckRegion.Left, nY + m_rcCheckRegion.Top,
+			m_rcCheckRegion.Right - m_rcCheckRegion.Left, m_rcCheckRegion.Bottom - m_rcCheckRegion.Top, 0xCC99FFFF);
+
 		pDraw->DrawBorder( (PIX)(nX + m_nTextSX - 1), (PIX)(nY - 1), (PIX)m_nTextArea+1, (PIX)m_nHeight+1, 0xFFB90FFF );
+	}
+	
 #endif // UI_TOOL
 }
 
@@ -225,6 +227,7 @@ WMSG_RESULT CUICheckButton::MouseMessage( MSG *pMsg )
 		if( IsInsideRect( nX, nY, m_rcCheckRegion ) )
 		{
 			m_bChecked = !m_bChecked;
+			m_BtnState = m_bChecked ? UCBS_CHECK : UCBS_NONE;
 			return WMSG_SUCCESS;
 		}
 	}
@@ -275,15 +278,21 @@ UIRectUV CUICheckButton::GetUV( UICheckBtnState btnState )
 
 WMSG_RESULT CUICheckButton::OnLButtonDown( UINT16 x, UINT16 y )
 {
-	if (m_bHide)
+	if (m_BtnState == UCBS_NONE_DISABLE ||
+		m_BtnState == UCBS_CHECK_DISABLE)
 		return WMSG_FAIL;
 
-	if (IsInside(x, y) == FALSE)
+	if (m_bHide)
+		return WMSG_FAIL;	
+
+	if (IsInsideRect(x, y, m_rcCheckRegion) == FALSE)
 		return WMSG_FAIL;
 
 	m_bChecked = !m_bChecked;
+	m_BtnState = m_bChecked ? UCBS_CHECK : UCBS_NONE;
 
 	CUIBase::OnLButtonDown(x, y);
+
 	return WMSG_SUCCESS;
 }
 
@@ -297,4 +306,15 @@ void CUICheckButton::OnUpdate( float fDeltaTime, ULONG ElapsedTime )
 			m_bHighlightOn = !m_bHighlightOn;
 		}
 	}
+}
+
+BOOL CUICheckButton::IsInside( int nX, int nY )
+{
+	ConvertToWindow( nX, nY );
+
+	if (nX >= m_rcCheckRegion.Left && nY >= m_rcCheckRegion.Top &&
+		nX < m_rcCheckRegion.Right && nY < m_rcCheckRegion.Bottom)
+		return TRUE;
+
+	return FALSE;
 }

@@ -62,11 +62,18 @@ BOOL CEffect::PreProcess(FLOAT time, BOOL &bRetValue, BOOL &bRenderInThisFrame
 {
 	bRenderInThisFrame = FALSE;
 	bRetValue = FALSE;
-	if(m_eState == ES_PLAY_END) return FALSE;
+	
+	if(m_eState == ES_PLAY_END)
+		return FALSE;
+
 	//활성화된 상태가 아니거나 Tag에 붙어있지 않다면
 	//원칙적으로 이 루틴을 타면 안됨, 함수외부에서 처리.
-	if(!Playing() || m_ptrAttachTag.IsNull()) return FALSE;
-	if(!m_ptrAttachTag->Active()) return FALSE;
+	if(!Playing() || m_ptrAttachTag.IsNull())
+		return FALSE;
+
+	if(!m_ptrAttachTag->Active()) 
+		return FALSE;
+
 	bRenderInThisFrame = TRUE;
 
 	//시간 경과 및 그에 따른 애니메이션, 상태의 처리
@@ -97,6 +104,42 @@ BOOL CEffect::PreProcess(FLOAT time, BOOL &bRetValue, BOOL &bRenderInThisFrame
 		bRetValue = TRUE;
 		return FALSE;
 	}
+	return TRUE;
+}
+
+BOOL CEffect::UpdateETime(FLOAT tm)
+{
+	if(m_eState == ES_PLAY_END)
+		return FALSE;
+
+	if(!Playing() || m_ptrAttachTag.IsNull())
+		return FALSE;
+
+	if(!m_ptrAttachTag->Active()) 
+		return FALSE;
+
+	FLOAT fDeltaTime = (tm - m_fLastProcessTime) / m_fSpeedMul;
+	FLOAT fProcessedTime = (tm - m_fStartTime) / m_fSpeedMul;
+	m_fLastProcessTime = tm;
+	m_fLeftTime -= fDeltaTime;
+
+	if(m_fLeftTime <= 0.0f)
+	{
+		if(m_slRepeat != 0)
+		{
+			fProcessedTime = (tm - m_fStartTime) / m_fSpeedMul;
+		}
+		else
+		{
+			m_ptrAttachTag->Deactivate();
+			m_eState = ES_PLAY_END;
+			return FALSE;
+		}
+	}
+
+	if(fProcessedTime < 0)
+		return FALSE;
+
 	return TRUE;
 }
 

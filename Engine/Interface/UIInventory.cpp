@@ -8,9 +8,9 @@
 
 #include <Engine/PetInfo.h>
 #include <Engine/Interface/UIPetInfo.h>
-#include <Engine/Interface/UITeleport.h>
+#include <Engine/Contents/function/TeleportUI.h>
 #include <Engine/Interface/UIQuickSlot.h>
-#include <Engine/Interface/UITatoo.h>
+#include <Engine/Contents/function/TatooUI.h>
 #include <Engine/Interface/UIChildInvenSlot.h>
 #include <Engine/Interface/UIFortune.h>
 #include <Engine/Help/ItemHelp.h>
@@ -26,10 +26,10 @@
 #include <Engine/Interface/UIReformSystem.h>
 #include <Engine/Contents/Base/UIQuestNew.h>
 #include <Engine/Contents/function/UIPortalNew.h>
-#include <Engine/Interface/UICompound.h>
-#include <Engine/Interface/UICollectBox.h>
-#include <Engine/Interface/UIWareHouse.h>
-#include <Engine/Interface/UIGWMix.h>
+#include <Engine/Contents/function/CompoundUI.h>
+#include <Engine/Contents/function/InsectCollectUI.h>
+#include <Engine/Contents/function/WareHouseUI.h>
+#include <Engine/Contents/function/GuildWarMixUI.h>
 #include <Engine/Interface/UINpcScroll.h>
 #include <Engine/Contents/Base/UIChangeWeaponNew.h>
 #include <Engine/Interface/UIMinigame.h>
@@ -45,6 +45,7 @@
 #include <Engine/Contents/function/PremiumChar.h>
 #include <Engine/Contents/Base/ChattingUI.h>
 #include <Engine/Contents/Base/UIMsgBoxMgr.h>
+#include <Engine/Contents/function/TreasureMapUI.h>
 
 extern INDEX g_iXPosInInventory;
 extern INDEX g_iYPosInInventory;
@@ -1461,9 +1462,10 @@ WMSG_RESULT CUIInventory::MouseMessage( MSG *pMsg )
 						{
 							bLButtonDownInItem = TRUE;
 								
-							if( pUIManager->GetCollectBox()->IsVisible() )
+							if( pUIManager->GetInsectCollect()->GetHide() == FALSE )
 							{// 곤충 채집 상자는 무조건 닫는다.
-								pUIManager->RearrangeOrder( UI_COLLECTBOX, FALSE );
+								pUIManager->RearrangeOrder( UI_INSECTCOLLECT, FALSE );
+								pUIManager->GetInsectCollect()->Hide(TRUE);
 							}
 
 							pUIManager->RearrangeOrder( UI_INVENTORY, TRUE );
@@ -1891,12 +1893,12 @@ WMSG_RESULT CUIInventory::MouseMessage( MSG *pMsg )
 						}
 					}
 					else if (pDrag->getBtnType() == UBET_ITEM &&
-						pDrag->GetWhichUI() == UI_WAREHOUSE)
+						pDrag->GetWhichUI() == UI_WARE_HOUSE)
 					{
 						// Slot items
 						if (IsInsideRect(nX, nY, m_rcItemSlot))
 						{
-							pUIManager->GetWareHouse()->DelWareHouseItemToInventory();							
+							pUIManager->GetWareHouseUI()->DelWareHouseItemToInventory();							
 						} // If - Slot items
 					}
 					else if (pDrag->getBtnType() == UBET_ITEM &&
@@ -2621,12 +2623,43 @@ void CUIInventory::OptionAddItem( SBYTE sbWearPos, SLONG slIndex, SWORD nTab, SW
 		return;
 	}
 
-	CItems*		pItems = &_pNetwork->MyWearItem[sbWearPos];
-	CItemData*	pItemData = pItems->ItemData;
-
 	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	if (pItemData->GetFlag()&ITEM_FLAG_COSTUME2)
+	// 무기 방어구에만 사용가능
+	// 악세서리는 제외
+	if (sbWearPos == WEAR_ACCESSORY1 || sbWearPos == WEAR_ACCESSORY2 ||
+		sbWearPos == WEAR_ACCESSORY3 ||	sbWearPos == WEAR_PET)
+	{
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 170, "업그레이드 가능 아이템이 아닙니다." ), SYSMSG_ERROR );
+		return;
+	}
+
+	CItems*		pItems = &_pNetwork->MyWearItem[sbWearPos];
+
+	if (pItems == NULL)
+		return;
+
+	// 결합된 아이템에 사용 불가
+	if(pItems->IsFlag(FLAG_ITEM_COMPOSITION))
+	{
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 170, "업그레이드 가능 아이템이 아닙니다." ), SYSMSG_ERROR );
+		return;
+	}
+
+	CItemData*	pItemData = pItems->ItemData;
+
+	if (pItemData == NULL)
+		return;
+
+	// 레어나 오리진 아이템일 경우 사용불가
+	if ( (pItemData->GetFlag() & ITEM_FLAG_ORIGIN) || (pItemData->GetFlag() & ITEM_FLAG_RARE) )
+	{
+		pUIManager->GetChattingUI()->AddSysMessage( _S( 170, "업그레이드 가능 아이템이 아닙니다." ), SYSMSG_ERROR );
+		return;
+	}
+
+	// 코스튬 아이템에 사용 불가
+	if (pItemData->GetFlag() & ITEM_FLAG_COSTUME2)
 	{
 		pUIManager->GetChattingUI()->AddSysMessage( _S( 170, "업그레이드 가능 아이템이 아닙니다." ), SYSMSG_ERROR );
 		return;
@@ -2656,8 +2689,7 @@ void CUIInventory::OptionAddItem( SBYTE sbWearPos, SLONG slIndex, SWORD nTab, SW
 	m_InLockItemInfo[IN_LOCK_OPTION_ADD].TargetItem_Plus = slWearPlus;
 	m_InLockItemInfo[IN_LOCK_OPTION_ADD].UseInvenTab = nTab;
 	m_InLockItemInfo[IN_LOCK_OPTION_ADD].UseInvenIdx = inven_idx;
-	m_InLockItemInfo[IN_LOCK_OPTION_ADD].UseVirIdx = VirIdx;
-	
+	m_InLockItemInfo[IN_LOCK_OPTION_ADD].UseVirIdx = VirIdx;	
 
 	CTString	strMessage;
 
@@ -3128,9 +3160,9 @@ void CUIInventory::SendArrangeItem()
 
 	CUIManager* pUIManager = CUIManager::getSingleton();
 
-	if( pUIManager->GetCollectBox()->IsVisible() )
+	if( pUIManager->GetInsectCollect()->IsVisible() )
 	{// 곤충 채집 상자는 무조건 닫는다.
-		pUIManager->RearrangeOrder( UI_COLLECTBOX, FALSE );
+		pUIManager->RearrangeOrder( UI_INSECTCOLLECT, FALSE );
 	}
 
 	// Initialize selected items
@@ -3363,7 +3395,7 @@ void CUIInventory::SendUseSlotItem( int nTab, int inven_idx, SBYTE sbWearType )
 	// 이벤트 아이템 사용 체크( 곤충 채집 상자 )
 	if( pItemData->GetItemIndex() == 1577 || pItemData->GetItemIndex() == 1578 )
 	{
-		pUIManager->GetCollectBox()->OpenCollectBox( nTab, inven_idx );
+		pUIManager->GetInsectCollect()->OpenUI( nTab, inven_idx );
 		return;
 	}
 
@@ -3458,8 +3490,8 @@ void CUIInventory::SendUseSlotItem( int nTab, int inven_idx, SBYTE sbWearType )
 		nZone = pItems->Item_Used2;
 		fposX = pItems->Item_Plus;
 		fposY = pItems->GetItemPlus2();
-		
-		pUIManager->GetTreasureMap()->OpenMap(nZone, fposX, fposY);
+
+		pUIManager->GetTreasureMapUI()->OpenMap(nZone, fposX, fposY);
 		return;
 	}
 
@@ -3512,7 +3544,7 @@ void CUIInventory::SendUseSlotItem( int nTab, int inven_idx, SBYTE sbWearType )
 
 		case WAREHOUSE_EX_ITEM:
 		case WAREHOUSE_EX_ITEM_7DAYS:			
-//			if((pUIManager->GetWareHouse()->GetUseTime())<=0)
+//			if((pUIManager->GetWareHouseUI()->GetUseTime())<=0)
 			{
 				//wooss 050816
 				strMessage[0]	=_S( 2088, 	"사용 확인" ); 
@@ -4533,8 +4565,8 @@ void CUIInventory::InitInventory( int nTab, int inven_idx, int nUniIndex, int nI
 	{// 곤충 박스 갱신
 		CUIManager* pUIManager = CUIManager::getSingleton();
 
-		if( pUIManager->GetCollectBox()->IsVisible() )
-			pUIManager->GetCollectBox()->UpDateItem();
+		if( pUIManager->GetInsectCollect()->IsVisible() )
+			pUIManager->GetInsectCollect()->UpDateItem();
 	}	
 
 	if (ItemHelp::HasReuseTimeItem(_pNetwork->MySlotItem[nTab][inven_idx]) == TRUE)

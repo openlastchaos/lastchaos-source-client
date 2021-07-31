@@ -670,7 +670,7 @@ void CUINickName::AddNickNameList( INDEX iNickIndex, LONG lDate, int nCustomInde
 
 void CUINickName::SortNickNameData()
 {
-	sort(m_NickList.begin(), m_NickList.end(), SortCompare);
+	std::sort(m_NickList.begin(), m_NickList.end(), SortCompare);
 }
 
 // ----------------------------------------------------------------------------
@@ -815,6 +815,10 @@ void CUINickName::RenderText()
 // ----------------------------------------------------------------------------
 void CUINickName::RenderSelectedTexture()
 {
+	int nNickCnt = m_NickList.size();
+	if (nNickCnt <= 0)
+		return;
+
 	CDrawPort* pDrawPort = CUIManager::getSingleton()->GetDrawPort();
 
 	// 마우스로 선택한 호칭에 박스 그리기
@@ -829,10 +833,14 @@ void CUINickName::RenderSelectedTexture()
 	// 현재 캐릭터가 착용한 호칭에 박스 그리기
 	INDEX iNickINdex = _pNetwork->MyCharacterInfo.iNickType;
 	int iCurrentIndex;
+
 	if (iNickINdex > 0)
 	{
 		for ( int i = m_nScrollBarPos ; i < m_nScrollBarPos + 5 ; ++i )
 		{
+			if (i >= nNickCnt)
+				break;
+
 			if ( iNickINdex == m_NickList[i].GetNickAccessor() )
 			{
 				iCurrentIndex = i - m_nScrollBarPos;

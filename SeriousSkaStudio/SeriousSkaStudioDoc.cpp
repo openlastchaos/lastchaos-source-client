@@ -5,6 +5,7 @@
 #include "SeriousSkaStudio.h"
 
 #include "SeriousSkaStudioDoc.h"
+#include "FBX/ConvSMC.h"
 
 #ifdef _DEBUG
 #undef new
@@ -22,6 +23,7 @@ BEGIN_MESSAGE_MAP(CSeriousSkaStudioDoc, CDocument)
 	//{{AFX_MSG_MAP(CSeriousSkaStudioDoc)
 	ON_COMMAND(ID_CONVERT_THUMBNAIL, OnConvertThumbnail)
 	//}}AFX_MSG_MAP
+	ON_COMMAND(ID_CONVERT_EXPORTFBX, &CSeriousSkaStudioDoc::OnConvertExportfbx)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -339,4 +341,16 @@ void CSeriousSkaStudioDoc::OnConvertThumbnail()
 	// TODO: Add your command handler code here
 	this->SaveThumbnail(CTString(GetPathName()));
 	
+}
+
+
+void CSeriousSkaStudioDoc::OnConvertExportfbx()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	if (m_ModelInstance == NULL)
+		return;
+
+	ConvSMC _conv;
+
+	_conv.convert(m_ModelInstance);
 }

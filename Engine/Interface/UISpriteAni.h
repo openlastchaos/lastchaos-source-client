@@ -39,7 +39,7 @@ public:
 
 #ifdef UI_TOOL
 	BOOL GetLoopState()	{ return m_bPlay;	}
-
+	int	 GetDelayTime()	{ return m_dwDelayTime;	}
 #endif // UI_TOOL
 protected:
 	std::vector<UIRectUV> m_vecUvList;

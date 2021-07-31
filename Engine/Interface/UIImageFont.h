@@ -26,12 +26,17 @@ public:
 	
 	void	OnRender(CDrawPort* pDraw);
 
+	void	setColor(COLOR col)					{ m_color = col; }
+
+	void	setAlignFontH(eALIGN_H align)		{ m_eAlign_font_h = align; }
+
 #ifdef UI_TOOL
 	void	getFontSizeGap(int& sx, int& sy, int& gap)	{ sx = m_nFontSX; sy = m_nFontSY; gap = m_nFontGap; }
 	int		getOutputGap()								{ return m_nOutGap;				}
 	const char* getOrigString()							{ return m_strSource.c_str();	}
 	const char* getString()								{ return m_strText.c_str();		}
 	UIRectUV	getSourceImageUV()						{ return m_uvSource;			}
+	eALIGN_H	getAlignFontH()							{ return m_eAlign_font_h;	}
 
 #endif // UI_TOOL
 private:
@@ -45,6 +50,8 @@ private:
 	int				m_nFontSY;
 	int				m_nFontGap;
 	int				m_nOutGap;
+	COLOR			m_color;
+	eALIGN_H		m_eAlign_font_h;
 };
 
 #endif		// UI_IMAGE_FONT_H_

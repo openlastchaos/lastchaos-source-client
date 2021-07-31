@@ -79,8 +79,21 @@ public:
 	// Messages
 	WMSG_RESULT	MouseMessage( MSG *pMsg );
 
+	WMSG_RESULT OnLButtonDown(UINT16 x, UINT16 y);
+	WMSG_RESULT OnLButtonUp(UINT16 x, UINT16 y);
+	WMSG_RESULT OnMouseMove(UINT16 x, UINT16 y, MSG* pMsg);
+
+	void SetCommandFChange(_ui_func func)	{ m_func_change = func; }
+
+	void OnLeave(UINT16 x, UINT16 y);
+
+	void CmdErase();
+
 protected:
 	void OnRender(CDrawPort* pDraw);
+
+private:
+	_ui_func	m_func_change;
 };
 
 

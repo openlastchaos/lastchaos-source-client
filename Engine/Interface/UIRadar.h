@@ -30,7 +30,7 @@ enum RadarOption
 #define	RADAR_WIDTH						140
 #define	RADAR_HEIGHT					53
 
-
+class CUIImageArray;
 // ----------------------------------------------------------------------------
 // Name : CUIRadar
 // Desc :
@@ -73,20 +73,14 @@ public:
 	CUIRadar();
 	~CUIRadar();
 
-	// Create & destroy
-	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
+	void	initialize();
 
-	// Render
-	void	Render();
+	void	OnRender(CDrawPort* pDraw);
+	void	OnPostRender(CDrawPort* pDraw);
 
 	void	FocusLeave();
 
-	// Adjust position
-	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-
 	// Messages
-	WMSG_RESULT	MouseMessage( MSG *pMsg );
 	WMSG_RESULT KeyMessage( MSG *pMsg );
 
 	// Message Box event catcher.
@@ -110,10 +104,9 @@ public:
 	void DisplayNum( int tv_time,UIRect tv_rect);
 
 	void	RoyalRumbleJoinReqMsgBox();
-	void	SetRoyalRumbleStatus( const BOOL bEnable )										{ m_bEnableRR = bEnable;												}	
-	void	SetRoyalRumbleSandglass( const UBYTE sandglassStat, const INDEX remainTime = 0 )
-	{ m_btSandlassStat = sandglassStat; m_liEndTime = _pTimer->GetHighPrecisionTimer().GetMilliseconds() + remainTime*1000;									}
-	void	ResetRoyalRumbleStat()															{ m_btSandlassStat = 3;	m_bEnableRR = FALSE;							}
+	void	SetRoyalRumbleStatus( const BOOL bEnable );	
+	void	SetRoyalRumbleSandglass( const UBYTE sandglassStat, const INDEX remainTime = 0 );
+	void	ResetRoyalRumbleStat();
 	void	ShowRoyalRumbleTrophy();
 	ENGINE_API void	OpenRoyalrumbleMgrMenu( const INDEX iMobIndex );
 
@@ -127,15 +120,21 @@ public:
 	void	SetPremiumCharBenefit(bool bPremiumChar);
 		
 	CUIMapOption* GetMapOption() { return m_pMapOption;	}
+
+	void	OnUpdate(float fDeltaTime, ULONG ElapsedTime);
+
+	void	updateZone();
+	void	updateChannelInfo();
+
+	WMSG_RESULT OnMouseMove(UINT16 x, UINT16 y, MSG* pMsg);
+
+	void	OnUpdatePositionPost();
+
 protected:
 
 	// Internal functinos
 	void	RenderObjectLocation();
-	void	ShowToolTip( BOOL bShow, int nToolTipID = -1 );
-
-	void	_royalrumbleCreate();
-	void	_royalrumbleButtonRender();
-	void	_royalrumbleTimeRender();
+	void	RenderIconTooltip(CDrawPort* pDrawPort);
 
 	// royal rumble showing functions [5/18/2011 rumist]
 	void	_initTrophyData();
@@ -143,12 +142,29 @@ protected:
 	void	_renderTrophy();
 	void	_destroyTrophy();
 	void	_showWinnerMsgBox();
-	void	_showRemainTime();
 
 	void	RenderCurrentMap();		// [2012/10/11 : Sora] 월드맵 개편	
 	BOOL	IsRadarUse();			// [2012/10/11 : Sora] 월드맵 개편
 	void	RenderMyPosition();		// [2012/10/11 : Sora] 월드맵 개편
 	void	RenderGPS(CDrawPort* pDraw);
+
+	void	pressExpress();
+	void	pressPetStash();
+	void	pressItemCollect();
+	void	pressPremium();
+	void	pressDurability();
+
+	void	pressZoomPlus();
+	void	pressZoomMinus();
+	void	pressSignal();
+	void	pressOption();
+	void	pressMap();
+
+	void	updateServerTime();
+	void	setBtnLCETooltip();
+	void	updateSandGrassTime();
+	void	setBtnPremiumTooltip();
+	void	setBtnDurabilityTooltip();
 
 	// Time 
 	int m_year;
@@ -171,37 +187,23 @@ protected:
 	SSignal	m_Signal;
 
 	// Controls
-	CUIButton			m_btnOption;						// Option button
-	CUIButton			m_btnMap;							// Map button
-	CUIButton			m_btnSignal;							// Map button
-
-	CUIButton			m_btnZoomIn;						// [2012/10/11 : Sora] 월드맵 개편
-	CUIButton			m_btnZoomOut;							// [2012/10/11 : Sora] 월드맵 개편
-
 	CUICheckButton		m_cbtnOption[RADAR_OPTION_TOTAL];	// Option check buttons
 	BOOL				m_bShowOptionPopup;					// If popup of radar option is shown or not
-	BOOL				m_bShowToolTip;						// If tool tip is shown or not
 	BOOL				m_bSignalBtnOn;						// 시그널 버튼 사용 
 	BOOL				m_bInsideMouse;						// 마우스가 해당 윈도우 안에 있는지 
 	// String
 	char				m_szCoord[9];						// String of coordinate
-	CTString			m_strToolTip;						// String of tool tip
-	CTString			m_strTimer;						// String of tool tip
-	COLOR				m_colTooltip;
-	COLOR				m_colTooltipTimer;
 
 	// Region of each part
 	UIRect				m_rcTop;							// Region of top background
 	UIRect				m_rcCompassIn;						// Region of inner compass
 	UIRect				m_rcCompassOut;						// Region of outer compass
-	UIRect				m_rcOption;							// Region of option
 	UIRect				m_rcPoint[RADAR_OPTION_TOTAL];		// Region of point of objects
 	UIRect				m_rcMyPoint;						// Region of my point
 	UIRect				m_rcTarget;							// Region of target object
 	UIRect				m_rcSignal;							// Region of Signal object
 	UIRect				m_rcOutSignal;						// Region of Out Signal ( Direction ) object
 
-	UIRect				m_rcToolTip;						// Region of tool tip
 	int					m_nOptionIconSX;					// Position x of option icon
 
 	// UV of each part
@@ -236,15 +238,8 @@ protected:
 	CTextureData		*m_ptdMapTexture;				// [2012/10/11 : Sora] 월드맵 개편
 
 	CTextureData		*m_ptdMapObjTexture;			// [2012/10/11 : Sora] 월드맵 개편
-
-	CUIButton			m_btnRR;						// royal rumble button.
-	UIRect				m_rcBtnRR;						// royal rumble message catch rect.
-	UIRectUV			m_rtSandglassRR[3];				// royal rumble sand glass UV rect.
-	UIRect				m_rcSandglassRR;				// royal rumble sand glass rect.
-	UBYTE				m_btSandlassStat;				// render type
 	__int64				m_liEndTime;					// royal rumble left time at join.
 	BOOL				m_bShowLeftTimeTooltip;			// royal rumble left time showing flag;
-	BOOL				m_bEnableRR;					// enable royal rumble flag.
 
 	// royal rumble winner trophy [5/18/2011 rumist]
 	CTextureData*		m_ptdTrophyTexture;			
@@ -262,60 +257,32 @@ private:
 	DWORD				m_nStartTime;
 	bool				m_bNotice;
 	bool				m_bNoticeRenderFlag;
-	bool				m_bRemote;
-
-	CUIButton			m_ExpressIcon;
-	CUIButton			m_PetStashIcon;
-	CUIButton			m_ItemCollectionIcon;
-	CUIButton			m_PremiumCharIcon;
-	UIRectUV			m_uvEmptyMenu;		// 펫창고, LCE버튼 옆에 빈 공간을 채울 이미지.
-	UIRect				m_rcEmptyMenu;
 
 	CTString			m_strLocalTime;
 	CTString			m_strLocalDay;
 	int					m_nLocalTimeY;
+	bool				m_bMapOptionOver;
 	CUIMapOption*		m_pMapOption;
 
 	UIRect				m_rcGPS;
 	UIRectUV			m_uvGPS;
+
+	CTString			m_strPos;
+	float				m_fUpdateServerTime;
+
+	CUIButton*			m_pBtnExpress;
+	CUIButton*			m_pBtnPremium;
+	CUIButton*			m_pBtnDurability;
+	CUIText*			m_pTxtPos;
+
+	CUIBase*			m_pRadar;
+	CUIBase*			m_pInfo;
+	CUIText*			m_pTxtServerTime;
+	CUIText*			m_pTxtChInfo;
+
+	CUISpriteAni*		m_pSprAniRR;
+	CUIImageArray*		m_pImgArrSandGrass;
 };
-
-class CUIRoyalRumbleIcon : public CUIWindow
-{
-public:
-	enum __tagRoyalrumbleUI
-	{
-		RRUI_POS_X	= 10,
-		RRUI_POS_Y	= 200,
-		RRUI_WIDTH	= 112,
-		RRUI_HEIGHT = 48
-	};
-	CUIRoyalRumbleIcon();
-	~CUIRoyalRumbleIcon();
-	
-	void				Create(CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
-	void				Render();
-
-	void				ResetPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-	void				AdjustPosition(PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-	
-	// message pump.
-	WMSG_RESULT			MouseMessage(MSG *pMsg );
-
-	void				SetLeftCount( const INDEX iLeftCount )								{ m_iLeftCount = iLeftCount; ShowRoyalRumbleIcon(TRUE);	}
-	void				ShowRoyalRumbleIcon( BOOL bShow );
-	
-private:
-	void				_setShowColor();
-
-	BOOL				m_bPickTitle;
-	CTextureData		*m_ptdRoyalRumbleNumberTexture;	// royal rumble numbering texture [5/11/2011 rumist]
-	UIRectUV			m_rtBackground;					// background uv.
-	UIRect				m_rcTitle;	
-	INDEX				m_iLeftCount;					// left count					
-	COLOR				m_colShowColor;					// left count color.
-};
-
 
 #endif	// UIRADAR_H_
 

@@ -8,10 +8,6 @@
 	#define ENABLE_SUBJOB
 #endif	//	ADD_SUBJOB
 
-#if defined CHATTING_BAN
-	#define NO_CHATTING
-#endif	// CHATTING_BAN
-
 #if defined GUILD_MARK
 	#define DEV_GUILD_MARK
 #endif	//	GUILD_MARK
@@ -29,11 +25,10 @@
 #define	MAX_CHAR_NAME_LENGTH	50
 #define	MAX_ID_NAME_LENGTH		64
 
-#if defined (G_RUSSIA)
-#define		MEMPOS_COMMENT_LENGTH	25
-#else
-#define		MEMPOS_COMMENT_LENGTH	32
-#endif
+
+#define		MEMPOS_COMMENT_LENGTH_RUS	25
+#define		MEMPOS_COMMENT_LENGTH		32
+
 
 #define		PREMIUM_CHAR // 가미고에서 요청한 프리미엄 캐릭터
 

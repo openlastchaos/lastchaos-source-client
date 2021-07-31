@@ -8,9 +8,8 @@
 
 #include <Engine/Help/Util_Help.h>
 
-#if		defined(G_RUSSIA)
 extern CFontData *_pfdDefaultFont;
-#endif
+extern INDEX g_iCountry;
 
 CUITextEx::CUITextEx()
 	: m_strOrigin("")
@@ -54,11 +53,10 @@ void CUITextEx::AddText(const char* str, DWORD dwCol /*=DEF_UI_COLOR_WHITE*/, in
   
 	int nStrWidth = 0;
 	
-#if		defined(G_RUSSIA)
-	nStrWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, ((CTString)str).str_String);
-#else
- 	nStrWidth = UIMGR()->GetDrawPort()->GetTextWidth2((CTString)str);
-#endif // G_RUSSIA
+	if (g_iCountry == RUSSIA)
+		nStrWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, ((CTString)str).str_String);
+	else
+ 		nStrWidth = UIMGR()->GetDrawPort()->GetTextWidth2((CTString)str);
 
 	int nHeight = _pUIFontTexMgr->GetFontHeight();
 
@@ -93,11 +91,10 @@ void CUITextEx::AddBtn( const char* str, Command* pCmd,
 
 	int nStrWidth = 0;
 
-#if		defined(G_RUSSIA)
-	nStrWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, ((CTString)str).str_String);
-#else
-	nStrWidth = UIMGR()->GetDrawPort()->GetTextWidth2((CTString)str);
-#endif // G_RUSSIA
+	if (g_iCountry == RUSSIA)
+		nStrWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, ((CTString)str).str_String);
+	else
+		nStrWidth = UIMGR()->GetDrawPort()->GetTextWidth2((CTString)str);
 
 	int nHeight = _pUIFontTexMgr->GetFontHeight();
 

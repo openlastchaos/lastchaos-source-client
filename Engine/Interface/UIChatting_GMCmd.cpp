@@ -8,7 +8,7 @@
 #include <Common/Packet/ptype_old_do_item.h>
 #include <Engine/Contents/Base/UISkillNew.h>
 #include <Engine/Contents/Base/InvenData.h>
-#include <Engine/Interface/UIExchange.h>
+#include <Engine/Contents/function/ExChangeUI.h>
 #include <Engine/Contents/Base/UIPartyNew.h>
 #include <Engine/Contents/Base/Party.h>
 

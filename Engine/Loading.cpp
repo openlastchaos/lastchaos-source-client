@@ -63,12 +63,12 @@ void CLoadingImage::initialize()
 		if (strTmp.IsEmpty() == TRUE)
 			continue;
 
-#ifdef G_KOR
+#ifdef	VER_TEST
 		std::string str = strTmp;
 
 		if (str.find("∞‘¿” ∆¡") != std::string::npos)
 			continue;
-#endif // G_KOR
+#endif // VER_TEST
 		m_vecTip.push_back(8000 + i);
 	}
 }

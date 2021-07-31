@@ -16,7 +16,7 @@
 #include <Engine/Base/Timer.h>
 #include <Engine/SlaveInfo.h>
 #include <Engine/Interface/UIManager.h>
-#include <Engine/Interface/UISummon.h>
+#include <Engine/Contents/function/SummonUI.h>
 //안태훈 수정 끝	//(Add & Modify SSSE Effect)(0.1)
 
 //extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
@@ -422,10 +422,11 @@ functions:
 			// 인터페이스에 설정함...
 			for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
 			{
-				CUISummon* pUISummon = (CUISummon*)SE_Get_UIManagerPtr()->GetUI(i);
-				if( pUISummon->GetSummonEntity() == this )
+				CSummonUI* pSummonUI = (CSummonUI*)SE_Get_UIManagerPtr()->GetUI(i);
+
+				if( pSummonUI->GetSummonEntity() == this )
 				{
-					pUISummon->GetCommand() = m_iCurrentCommand;
+					pSummonUI->GetCommand() = m_iCurrentCommand;
 					break;
 				}
 			}	

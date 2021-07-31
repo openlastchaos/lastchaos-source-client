@@ -82,7 +82,7 @@ SOURCE="$(InputPath)"
 # Begin Special Build Tool
 OutDir=.\_Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=mkdir          $(OutDir)\..\..\DebugFilesForCopy          copy          $(OutDir)\EngineD.dll          $(OutDir)\..\..\DebugFilesForCopy\          copy          $(OutDir)\EngineD.lib          $(OutDir)\..\..\DebugFilesForCopy\          copy          $(OutDir)\EngineD.map          $(OutDir)\..\..\DebugFilesForCopy\          copy          $(OutDir)\EngineD.pdb          $(OutDir)\..\..\DebugFilesForCopy\ 
+PostBuild_Cmds=mkdir           $(OutDir)\..\..\DebugFilesForCopy           copy           $(OutDir)\EngineD.dll           $(OutDir)\..\..\DebugFilesForCopy\           copy           $(OutDir)\EngineD.lib           $(OutDir)\..\..\DebugFilesForCopy\           copy           $(OutDir)\EngineD.map           $(OutDir)\..\..\DebugFilesForCopy\           copy           $(OutDir)\EngineD.pdb           $(OutDir)\..\..\DebugFilesForCopy\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "Engine - Win32 USALIVE"
@@ -8385,19 +8385,7 @@ SOURCE=.\Interface\UIAD.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIAffinity.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIAffinityInfo.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIAutoHelp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIBingoBox.cpp
 # End Source File
 # Begin Source File
 
@@ -8425,14 +8413,6 @@ SOURCE=.\Interface\UIChildQuickSlot.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UICollectBox.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UICompound.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIDrawFigure.cpp
 # End Source File
 # Begin Source File
@@ -8442,10 +8422,6 @@ SOURCE=.\Interface\UIEventPopup.cpp
 # Begin Source File
 
 SOURCE=.\Interface\UIExchange.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIFiltering.cpp
 # End Source File
 # Begin Source File
 
@@ -8597,23 +8573,7 @@ SOURCE=.\Interface\UIPersonalShop.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIPetFree.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIPetInfo.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIPetItemMix.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIPetTarget.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIPetTraining.cpp
 # End Source File
 # Begin Source File
 
@@ -12568,19 +12528,7 @@ SOURCE=.\Interface\UIAD.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIAffinity.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIAffinityInfo.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIAutoHelp.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIBingoBox.h
 # End Source File
 # Begin Source File
 
@@ -12601,14 +12549,6 @@ SOURCE=.\Interface\UIChildInvenSlot.h
 # Begin Source File
 
 SOURCE=.\Interface\UIChildQuickSlot.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UICollectBox.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UICompound.h
 # End Source File
 # Begin Source File
 
@@ -12784,23 +12724,7 @@ SOURCE=.\Interface\UIPersonalShop.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Interface\UIPetFree.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\Interface\UIPetInfo.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIPetItemMix.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIPetTarget.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Interface\UIPetTraining.h
 # End Source File
 # Begin Source File
 
@@ -14090,6 +14014,14 @@ SOURCE=.\Contents\Base\CharacterInfoCmd.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Contents\Base\ChatBlockListUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\ChatBlockListUI.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Contents\Base\Durability.cpp
 # End Source File
 # Begin Source File
@@ -14127,6 +14059,50 @@ SOURCE=.\Contents\Base\Party.cpp
 # Begin Source File
 
 SOURCE=.\Contents\Base\Party.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PartyAutoUIInviteList.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PartyAutoUIInviteList.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PartyAutoUIPartyList.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PartyAutoUIPartyList.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PartyAutoUIReg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PartyAutoUIReg.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PartyAutoUIRegBoss.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PartyAutoUIRegBoss.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PersonalshopCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PersonalshopUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\Base\PersonalshopUI.h
 # End Source File
 # Begin Source File
 
@@ -14510,11 +14486,51 @@ SOURCE=.\Contents\Login\UIServerSelect.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\Contents\function\AffinityInfoUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\AffinityInfoUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\AffinityUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\AffinityUI.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Contents\function\attendance.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Contents\function\attendance.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\BingoBoxUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\BingoBoxUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\CompoundUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\CompoundUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\CubeRankingUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\CubeRankingUI.h
 # End Source File
 # Begin Source File
 
@@ -14538,11 +14554,27 @@ SOURCE=.\Contents\function\gps.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Contents\function\GuildWarMixUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\GuildWarMixUI.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Contents\function\HelpWebUI.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Contents\function\HelpWebUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\InsectCollectUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\InsectCollectUI.h
 # End Source File
 # Begin Source File
 
@@ -14611,6 +14643,38 @@ SOURCE=.\Contents\function\NewsUI.cpp
 # Begin Source File
 
 SOURCE=.\Contents\function\NewsUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PetFreeUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PetFreeUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PetItemMixUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PetItemMixUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PetTargetUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PetTargetUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PetTrainingUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\PetTrainingUI.h
 # End Source File
 # Begin Source File
 
@@ -14683,6 +14747,26 @@ SOURCE=.\Contents\function\UIPortalNew.cpp
 # Begin Source File
 
 SOURCE=.\Contents\function\UIPortalNew.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\WildPetInfoCmd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\WildPetInfoUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\WildPetInfoUI.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\WildPetTargetUI.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Contents\function\WildPetTargetUI.h
 # End Source File
 # End Group
 # End Group

@@ -388,6 +388,9 @@ WMSG_RESULT CUIGPS::OnMouseMove( UINT16 x, UINT16 y, MSG* pMsg )
 
 WMSG_RESULT CUIGPS::OnKeyMessage( MSG* pMsg )
 {
+	if (IsFocused() == FALSE)
+		return WMSG_FAIL;
+
 	if ( pMsg->wParam == VK_RETURN )
 	{
 		if (m_pEdit != NULL && 

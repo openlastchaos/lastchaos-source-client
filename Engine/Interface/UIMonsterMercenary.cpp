@@ -1,7 +1,6 @@
 #include "stdh.h"
 
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Interface/UISummon.h>
 #include <Engine/Interface/UIMonsterMercenary.h>
 #include <Engine/Interface/UIQuickSlot.h>
 #include <Common/Packet/ptype_char_status.h>

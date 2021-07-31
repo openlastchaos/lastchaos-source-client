@@ -3,7 +3,7 @@
 #include <Engine/Interface/UIInternalClasses.h>
 #include <Engine/Interface/UIExchange.h>
 #include <Engine/Interface/UIPetInfo.h>
-#include <Engine/Interface/UIWareHouse.h>
+#include <Engine/Contents/function/WareHouseUI.h>
 #include <Engine/Interface/UIInventory.h>
 #include <Engine/Interface/UIRadar.h>
 #include <Engine/Contents/function/WildPetInfoUI.h>
@@ -242,7 +242,7 @@ void CUIExchange::PrepareExchange()
 	if(pUIManager->IsCSFlagOn(CSF_WAREHOUSE))
 	{
 		pUIManager->GetChattingUI()->AddSysMessage( _S(1890 ,"창고 사용중에는 교환을 할수 없습니다." ) );	
-		pUIManager->GetWareHouse()->ResetWareHouse();
+		pUIManager->GetWareHouseUI()->closeUI();
 	}
 
 	// Close message box of inventory

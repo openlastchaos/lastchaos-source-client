@@ -419,6 +419,9 @@ BOOL CEffectGroup::Process(FLOAT time)
 			if(bNoPassTest)
 			{
 				effectKey.m_pCreatedEffect->SetNotRenderAtThisFrame();
+
+				// 랜더링은 안하더라도 타이머는 돌아야 하기 때문에 추가.
+				return effectKey.m_pCreatedEffect->UpdateETime(time);
 			}
 		}
 

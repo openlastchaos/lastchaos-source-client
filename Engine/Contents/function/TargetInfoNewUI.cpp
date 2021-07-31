@@ -13,9 +13,8 @@
 #include <Engine/Help/Util_Help.h>
 #include <Engine/Info/MyInfo.h>
 
-#if defined G_RUSSIA
 extern CFontData *_pfdDefaultFont;
-#endif
+extern INDEX g_iCountry;
 
 #define DEF_ICON_GAP_FAME 37
 #define DEF_ICON_GAP_ATTR 12
@@ -640,11 +639,12 @@ void CTargetInfoUI::UpdateTargetInfo()
 	};
 
 	int nAddWidth = 0;
-#if defined G_RUSSIA
-	nAddWidth = pHelp->GetNoFixedWidth(_pfdDefaultFont, strName.str_String) + 13;
-#else
-	nAddWidth = (strName.Length())*( _pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
-#endif
+
+	if (g_iCountry == RUSSIA)
+		nAddWidth = pHelp->GetNoFixedWidth(_pfdDefaultFont, strName.str_String) + 13;
+	else
+		nAddWidth = (strName.Length())*( _pUIFontTexMgr->GetFontWidth()+_pUIFontTexMgr->GetFontSpacing());
+
 	if (nAddWidth > m_nFrameCenterWidth[m_eBackGround])
 	{
 		// 늘어나는 양을 기억함 (HP바 계산에 필요)
@@ -857,11 +857,10 @@ CTString CTargetInfoUI::_getSyndicateTooltip(int& nWidth)
 
 	CDrawPort* pDraw = CUIManager::getSingleton()->GetDrawPort();
 	
-#if defined(G_RUSSIA)
-	nWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strSyndicateType.str_String);
-#else	//	#if defined(G_RUSSIA)
-	nWidth = pDraw->GetTextWidth2(strSyndicateType);
-#endif	//	#if defined(G_RUSSIA)
+	if (g_iCountry == RUSSIA)
+		nWidth = UTIL_HELP()->GetNoFixedWidth(_pfdDefaultFont, strSyndicateType.str_String);
+	else
+		nWidth = pDraw->GetTextWidth2(strSyndicateType);
 
 	if (strSyndicateGrade.IsEmpty() == FALSE)
 	{

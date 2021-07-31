@@ -11,6 +11,7 @@ CUIPartyAutoReg::CUIPartyAutoReg()
 
 void CUIPartyAutoReg::initialize()
 {
+#ifndef		WORLD_EDITOR
 	CUIButton* pBtn = (CUIButton*)findUI("btn_close");
 
 	if (pBtn != NULL)
@@ -27,10 +28,13 @@ void CUIPartyAutoReg::initialize()
 	{
 		pBtn->SetCommandFUp(boost::bind(&CUIPartyAutoReg::type_battle, this));
 
-#ifdef DISABLE_PARTY_TYPE_BATTLE
-		pBtn->SetEnable(FALSE);
-#endif
+//#ifdef DISABLE_PARTY_TYPE_BATTLE
+		extern INDEX g_iCountry;
+		if (IsGamigo(g_iCountry) == TRUE)
+			pBtn->SetEnable(FALSE);
+//#endif	// DISABLE_PARTY_TYPE_BATTLE
 	}
+#endif	// WORLD_EDITOR
 }
 
 void CUIPartyAutoReg::open()
@@ -48,9 +52,11 @@ void CUIPartyAutoReg::close()
 void CUIPartyAutoReg::type_normal()
 {
 	_pNetwork->SendPartyRegistNormal(PT_PEACEEVER);
+	close();
 }
 
 void CUIPartyAutoReg::type_battle()
 {
 	_pNetwork->SendPartyRegistNormal(PT_ATTACK);
+	close();
 }

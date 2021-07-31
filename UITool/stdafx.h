@@ -38,9 +38,10 @@
 
 
 
+#include <boost/function.hpp>
 
 #include <Engine/Engine.h>
-#include <Engine/Interface/UIDefine.h>
+//#include <Engine/Interface/UIDefine.h>
 
 
 

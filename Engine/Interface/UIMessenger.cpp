@@ -3,7 +3,7 @@
 
 #include <Engine/Interface/UIMessenger.h>
 #include <Engine/Interface/UIInternalClasses.h>
-#include <Engine/Interface/UITalk.h>
+#include <Engine/Contents/function/TalkUI.h>
 #include <Engine/GameDataManager/GameDataManager.h>
 #include <Engine/Contents/function/PremiumChar.h>
 #include <Engine/Help/Util_Help.h>
@@ -55,6 +55,10 @@
 #define MESSENGER_LEVEL						0
 
 #define BLOCK_GROUP_INDEX					-1
+
+#define	MIN_NAME_SIZE			4
+#define MAX_MY_NAME_SIZE_EX		20		// 서버 통합으로 인하여 중복된 아이디 뒤에 [K] 가 붙게 됨으로 인하여 16자가 넘어가는 경우가 발생.
+										// 아이디 추가, 삭제, 해제, 검색 아이디 체크용으로서 20자까지 허용
 
 static CTString s_strReqCharName;
 static bool	g_bUseChat[MAX_TALK];							//채팅창 사용 확인
@@ -1427,9 +1431,6 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 				}
 				else
 				{
-					if (UIMGR()->checkName(strInput, 0) == FALSE)
-						return;
-
 					s_strReqCharName =strInput;
 					// 친구 등록 요청
 					RegistMemberReq( strInput );
@@ -1444,9 +1445,6 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 		{
 			if( bOK )
 			{
-				if (UIMGR()->checkName(strInput, 0) == FALSE)
-					return;
-
 				if ((miDelMember = FindMember(strInput)).m_nCharIndex != -1 ||
 					(miDelMember = FindBlockMember(strInput)).m_nCharIndex != -1)
 				{
@@ -1471,7 +1469,7 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 				else
 				{
 					// (한글 4~8자, 영문 2~16자)
-					if( strInput.Length() < 2 || strInput.Length() > 16 )
+					if( strInput.Length() < MIN_NAME_SIZE || strInput.Length() > MAX_MY_NAME_SIZE_EX )
 						Message( MSGCMD_MESSENGER_ERROR, _S(3003, "친구 삭제 에러"), _S(3002, "삭제하고자 하는 친구 이름이 올바르지 않습니다." ), UMBS_OK );		
 					else
 						Message( MSGCMD_MESSENGER_ERROR, _S(3003, "친구 삭제 에러"), _S(781, "대상 캐릭터가 존재하지 않습니다."), UMBS_OK);
@@ -1524,7 +1522,7 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 			if( bOK )
 			{
 				strBlockMember =strInput;
-				if( strInput.Length() < 2 || strInput.Length() > 16  || strInput==m_MyInfo.m_strName)
+				if( strInput.Length() < MIN_NAME_SIZE || strInput.Length() > MAX_MY_NAME_SIZE_EX  || strInput==m_MyInfo.m_strName)
 				{
 					Message( MSGCMD_MESSENGER_ERROR, _S(3008, "차단 에러"), _S(3009, "차단하고자 하는 이름이 올바르지 않습니다"), UMBS_OK);		
 					return;
@@ -1546,9 +1544,6 @@ void CUIMessenger::MsgBoxCommand( int nCommandCode, BOOL bOK, CTString &strInput
 						return;
 					}
 				}
-	
-				if (UIMGR()->checkName(strInput, 0) == FALSE)
-					return;
 
 				CTString strMessage;
 				strMessage.PrintF(_S(3005, "%s님을 차단하시겠습니까?"), strInput);
@@ -1694,29 +1689,11 @@ void CUIMessenger::SetMyState( eCondition eState )
 void CUIMessenger::RegistMemberReq( CTString strName )
 {
 	// (한글 4~8자, 영문 2~16자)
-	if( strName.Length() < 2 || strName.Length() > 16 )
+	if( strName.Length() < MIN_NAME_SIZE || strName.Length() > MAX_MY_NAME_SIZE_EX )
 	{
 		Message( MSGCMD_MESSENGER_ERROR, _S(2997, "친구 추가 에러"), _S( 1937, "등록하고자 하는 친구 이름이 올바르지 않습니다." ), UMBS_OK );		
 		return;
 	}
-
-	// Edited : CTString의 == 은 대소문자를 가리지 않아서 일본요청으로 수정
-/*	if(g_iCountry == JAPAN)
-	{
-		if( strcmp(strName,  m_MyInfo.m_strName) == 0 )	
-		{
-			Message( MSGCMD_MESSENGER_ERROR, _S(2997, "친구 추가 에러"), _S( 1938, "자신 자신은 등록할 수 없습니다." ), UMBS_OK );	
-			return;
-		}
-	}
-	else
-	{
-		if( strName == m_MyInfo.m_strName )	
-		{
-			Message( MSGCMD_MESSENGER_ERROR, _S(2997, "친구 추가 에러"), _S( 1938, "자신 자신은 등록할 수 없습니다." ), UMBS_OK );	
-			return;
-		}
-	}*/
 
 	if( strcmp(strName,  m_MyInfo.m_strName) == 0 )	
 	{
@@ -1835,7 +1812,7 @@ void CUIMessenger::DeleteMember( int nCharIndex )
 			// 이미 대화중이다.
 			for( i =0; i < MAX_TALK; ++i )
 			{
-				CUITalk* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);			
+				CTalkUI* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);			
 
 				if (g_bUseChat[i] && g_nChatIndex[i] < 0 && 
 					UITalk->IsExistTarget(strFriend.c_str()))
@@ -2221,7 +2198,7 @@ bool CUIMessenger::ReadyOpenTalk( CMemberInfo miMemberInfo, bool bFocus )
 		//if( nUseTalbe[i] != -1 )
 		if( g_bUseChat[i] )
 		{
-			CUITalk* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
+			CTalkUI* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
 			if( UITalk->IsExistTarget(miMemberInfo.m_strName) )
 			{
 				if( miMemberInfo.m_eCondition == OFFLINE )
@@ -2236,7 +2213,7 @@ bool CUIMessenger::ReadyOpenTalk( CMemberInfo miMemberInfo, bool bFocus )
 						pUIManager->RearrangeOrder( i + UI_MESSENGER_TALK_START, TRUE );
 					}
 					// 1:1 대화중이면 새로운 창을 만들지 않음...
-					if( UITalk->m_vecTarget.size() ==2)
+					if( UITalk->GetTargetSize() == 2)
 					{
 						//Message가 떠서 불편하다 (개인적 생각) [12/8/2006 KwonYongDae]
 						//Message( MSGCMD_MESSENGER_ERROR, _S(3033, "대화하기 에러"), _S(3038, "이미 대화중인 상대입니다."), UMBS_OK);
@@ -2325,7 +2302,7 @@ void CUIMessenger::RevOneVsOneTalk( int nSenderIndex, int nResiverIndex, CTStrin
 
 	for( i =0; i < MAX_TALK; ++i )
 	{
-		CUITalk* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
+		CTalkUI* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
 		if( g_bUseChat[i] && 
 			g_nChatIndex[i] < 0 /*UITalk->GetClientIndex()*/
 			&& UITalk->IsExistTarget( Resiver.m_strName )
@@ -2362,7 +2339,7 @@ void CUIMessenger::RevTalk( int nMakeCharIndex, int nChatIndex, CTString strSend
 
 	for( int i =0; i < MAX_TALK; ++i )
 	{
-		CUITalk* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
+		CTalkUI* UITalk = pUIManager->GetTalk(i+UI_MESSENGER_TALK_START);
 		if( g_bUseChat[i] && g_nChatIndex[i]==nChatIndex)// 현재 대화중인 상대가 말을 걸어 왔네여~
 		{
 			
@@ -2445,8 +2422,6 @@ void CUIMessenger::RenderTab(int nX, int nY)
 	// [091110: selo] 텍스트 위치 잡기
 //	extern INDEX g_iCountry;
 	int nBlock_ExtraX = 0;
-//	if( USA_SPAIN == g_iCountry )
-//		nBlock_ExtraX = -20;
 	
 	pDrawPort->PutTextEx( _S(2984, "등록된 친구들"), nX + Tab_MEMBER_X,
 										nY_Friend, m_bFriendTab ? 0xE1B300FF :  0xA2A2A2FF);
@@ -2675,17 +2650,6 @@ CMemberInfo CUIMessenger::FindMember(CTString strName)
 	{
 		for(int j=0; j<m_vecGroup[i]->m_vecMember.size(); ++j)
 		{
-			// Edited : CTString의 == 은 대소문자를 가리지 않아서 일본요청으로 수정
-		/*	if(g_iCountry == JAPAN)
-			{
-				if( strcmp(m_vecGroup[i]->m_vecMember[j].m_strName, strName) == 0 )
-					return m_vecGroup[i]->m_vecMember[j];
-			}
-			else
-			{
-				if( m_vecGroup[i]->m_vecMember[j].m_strName == strName)
-					return m_vecGroup[i]->m_vecMember[j];
-			}*/
 			//[ttos_2010_4_26]: 캐릭명은 대소문자 구분해야한다.
 			if( strcmp(m_vecGroup[i]->m_vecMember[j].m_strName, strName) == 0 )
 					return m_vecGroup[i]->m_vecMember[j];

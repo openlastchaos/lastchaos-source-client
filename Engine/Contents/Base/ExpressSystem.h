@@ -13,6 +13,11 @@ enum eMAIL_NPC_STATE
 	MAIL_NPC_STATE_APPEAR = 2,
 };
 
+enum
+{
+	eEXPRESS_SYSTEM_USED = 0
+};
+
 class ENGINE_API ExpressSystem
 {
 public:
@@ -44,13 +49,20 @@ public:
 	void	ChangeMailNpc(eMAIL_NPC_STATE eNpcState);
 
 	void	ClearList();
-	void	ClearNPCInfo();	
+	void	ClearNPCInfo();
+	
+	void	Lock();
+	void	UnLock();
+	bool	IsLock()		{ return m_bLock; }
+	void	showErrorMsgBox(int nType);
 	//////////////////////////////////////////////////////////////////////////
 
 	void	RecvExpressMessage(CNetworkMessage* istr);
-	void	SendListReq();
+	bool	SendListReq();
 	void	SendRecvReq( int nUniIndex );
 	void	SendDeleteReq( int nUniIndex );
+	void	SendRecvAllReq();
+	void	SendDeleteAllReq();
 	//////////////////////////////////////////////////////////////////////////////
 
 	// 신비한 석상 구슬 패킷
@@ -58,6 +70,7 @@ public:
 	void	SendItemTransReq(int tab, int invenIndex, int virtualIndex, int send_tab
 		, int send_invenIndex, int send_virtualIndex, int send_count, CTString strName);
 private:
+	
 	UBYTE		m_nNoticeFlag;
 	UWORD		m_nCurPage;
 	UWORD		m_npcIndex;
@@ -68,4 +81,5 @@ private:
 	ExpressSystemItemInfo* m_pExpressList;
 
 	bool		m_bPremiumChar;
+	bool		m_bLock;
 };

@@ -59,10 +59,12 @@ public:
 	
 	// network
 	void ReceiveWearItemData(CNetworkMessage *istr);
+	void ReceiveDeleteEquip(CNetworkMessage *istr);
 
 	void SendAIList();
 	void SendAIActive(); // AI 활성화 끄고 켜기
 	void SendWildPetPointUP(UBYTE ubPoint);
+	void SendUpgradeReq();
 
 	// PetInfo data
 	void AddWildPetInfo( sPetItem_Info sPetInfo );
@@ -118,6 +120,10 @@ public:
 	WMSG_RESULT OnLButtonUp(UINT16 x, UINT16 y);
 
 	BOOL CloseWindowByEsc() { closeUI();	return TRUE; }
+
+	void clear_upgradeinfo();
+	void DeleteEquip(ULONG idx, INDEX item_idx = -1);
+
 protected:
 	typedef std::vector<SLONG> vec_skill;
 	typedef std::map<SLONG, sPetItem_Info> WildPetInfo_map;
@@ -138,6 +144,8 @@ private:
 	BOOL CheckAIType(int nAIType, int nActionType);
 	int	 GetActionAIType(CUIIcon* pIcon);
 	BOOL IsWildPetCoolTime();
+
+	bool check_upgrade(int idx);
 
 	// 스트링 정보
 	enum eSTRING_TYPE
@@ -252,6 +260,11 @@ private:
 	BOOL		m_bSlideUI;
 
 	sWildPet_AI_Slot m_sAISlot[WILDPET_AI_MAXSLOT];
+
+	int			m_nUpgradeSelidx;
+	int			m_nUpgradeTab;
+	int			m_nUpgradeInvenIdx;
+
 };
 
 #endif	//	__WILDPET_INFO_UI_H__

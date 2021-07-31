@@ -105,12 +105,15 @@ void CSessionState::recvExMonsterCombo( CNetworkMessage* istr )
 			ResponseClient::MCGotoWaitRoomPrompt* pPack = reinterpret_cast<ResponseClient::MCGotoWaitRoomPrompt*>(istr->GetBuffer());
 
 			CUIMsgBox_Info	MsgBoxInfo;
-			CTString tv_str;
+			CTString tv_str, strNas;
 
 			pUIManager->GetCombo()->SetBossIndex(pPack->boosIndex);
 			if(pUIManager->DoesMessageBoxExist(MSGCMD_EX_MONSTERCOMBO_GOTO_COMBO_PROMPT)) return ;
 			MsgBoxInfo.SetMsgBoxInfo( _S(191, "확인" ), UMBS_YESNO, UI_NONE, MSGCMD_EX_MONSTERCOMBO_GOTO_COMBO_PROMPT );
-			tv_str.PrintF(_S(4049,"몬스터 콤보 %d Nas 입장료를 내고 입장하시겠습니까?"), pPack->nas);
+
+			strNas.PrintF("%I64d", pPack->nas);
+			pUIManager->InsertCommaToString(strNas);
+			tv_str.PrintF(_S(4049,"몬스터 콤보 %s Nas 입장료를 내고 입장하시겠습니까?"), strNas);
 			MsgBoxInfo.AddString(tv_str);
 			pUIManager->CreateMessageBox( MsgBoxInfo );
 		}

@@ -10,11 +10,12 @@
 #endif
 
 
-// #include <vector>
-#include <Engine/Interface/UIButton.h>
-#include <Engine/Interface/UICheckButton.h>
-#include <Engine/Interface/UIComboBox.h>
-#include <Engine/Interface/UISlideBar.h>
+class CUIButton;
+class CUIComboBox;
+class CUICheckButton;
+class CUISlideBar;
+class CUITab;
+class CUIImageArray;
 
 
 // Define tabs
@@ -27,70 +28,8 @@ enum OptionTab
 	OPTIONTAB_TOTAL,
 };
 
-//#define	OPTION_TAB_WIDTH			21
-//#define	OPTION_TAB_HEIGHT			53
-//#define	OPTION_TAB_GAP				3
-
-#define	OPTION_TAB_WIDTH			17
-#define	OPTION_TAB_HEIGHT			68
-#define	OPTION_TAB_GAP				1
-
-
-// Define text position
-#define	OPTION_TITLE_TEXT_OFFSETX	25
-#define	OPTION_TITLE_TEXT_OFFSETY	5
-#define OPTION_TITLE_TEXT_CX		126
-#define OPTION_TITLE_TEXT_CY		17
-#define OPTION_SUB_TITLE_TEXT_CX	126
-#define OPTION_SUB_TITLE_TEXT_CY	43
-#define	OPTION_TITLE2_TEXT_CX		126
-#define	OPTION_TITLE2_TEXT_SY		32
-//#define	OPTION_TITLE2_TEXT_SY		17
-
-#define	OPTION_TEXT_SX				35
-#define	OPTION_TEXT2_SX				120	//wooss 050809 소환허가
-#define	OPTION_CONTROL_SX			40
-// 국내의 define값과 대만 태국과의 define값이 다른다.
-#define	OPTION_SHOWNAME_SY			54
-#define	OPTION_SHOWNAME_ITEM_SY		84
-#define	OPTION_ENTERCHAT_SY			119
-#define	OPTION_AUTOATTACK_SY		144
-#define OPTION_FAMEOPEN_SY			169
-
-#define	OPTION_SUMMON_SY			179  // 태국에만 적용
-
-#define	OPTION_ITEMEFFECT_SY		194
-#define	OPTION_INITINTERFACE_SY		305
-
-#define	OPTION_RESOLUTION_SY		54
-#define	OPTION_FULLSCREEN_SY		97
-#define	OPTION_BRIGHTNESS_SY		122
-#define	OPTION_CONTRAST_SY			152
-
-#define	OPTION_TEXTURE_SY			54
-#define	OPTION_SHADOW_SY			84
-#define	OPTION_CHARACTER_SY			114
-#define	OPTION_VIEWTERAIN_SY		144
-#define	OPTION_REFLECTION_SY		174
-#define	OPTION_FILTERING_SY			204
-#define	OPTION_BACKGROUND_SY		241
-
-#define	OPTION_BGM_SY				54
-#define	OPTION_FXSOUND_SY			84
-
-#define	OPTION_TARGETDEST_SY		239
-
-
 // Define distance of showing name
 #define	OPTION_NAME_DISTANCE		15.0f
-
-
-// Define size of option
-//#define	OPTION_WIDTH				230
-//#define	OPTION_HEIGHT				385
-#define	OPTION_WIDTH				254
-#define	OPTION_HEIGHT				400
-
 
 // ----------------------------------------------------------------------------
 // Name : CUIOption
@@ -99,46 +38,7 @@ enum OptionTab
 class ENGINE_API CUIOption : public CUIWindow
 {
 protected:
-	// Controls
-	CUIButton			m_btnClose;							// Close button
-	CUIButton			m_btnOK;							// OK button
-	CUIButton			m_btnCancel;						// Cancel button
-
-	CUICheckButton		m_cbtnEnterChat;					// Enter chatting check button
-	CUICheckButton		m_cbtnAutoAttack;					// Auto attack check button
-	CUICheckButton		m_cbtnFameOpen;						// Fame open check button
-	CUICheckButton		m_cbtnMovePermit;					// Move or Summon permit button	wooss 050809
-	CUICheckButton		m_cbtnHelp1Icon;					// Help1 Icon 
-	CUICheckButton		m_cbtnRejectExchange;				// Rejection of request message that exchange
-	CUICheckButton		m_cbtnRejectParty;					// and party.
-	CUICheckButton		m_cbtnQuestBookOpen;				// 퀘스트 수락시 퀘스트북 여는 여부 [09/05/11 trylord]
-
-	CUISlideBar			m_slbShowName;						// Show name slide bar
-	CUISlideBar			m_slbShowNameItem;					// Show item name slide bar
-	CUIComboBox			m_cmbItemPlusEffect;				// Show item plus effect
-	CUIButton			m_btnInitInterface;					// Intializing interface button
-
-	CUIComboBox			m_cmbResolution;					// Resolusion combo box
-	CUISlideBar			m_slbBrightness;					// Brightness slide bar
-	CUISlideBar			m_slbContrast;						// Contrast slide bar
-	CUICheckButton		m_cbtnFullscreen;					// Fullscreen check button
-
-	CUISlideBar			m_slbTexture;						// Texture slide bar
-	CUISlideBar			m_slbShadow;						// Shadow slide bar
-	CUISlideBar			m_slbCharQuality;					// Character quality slide bar
-	CUISlideBar			m_slbViewTerrain;					// View-terrain slide bar
-	CUISlideBar			m_slbReflection;					// Reflection slide bar
-	CUISlideBar			m_slbFiltering;						// Filtering slide bar
-	CUICheckButton		m_cbtnBackground;					// Background option check button
-
-	CUISlideBar			m_slbBGM;							// BGM slide bar
-	CUISlideBar			m_slbFXSound;						// FX sound slide bar
-
-	CUIComboBox			m_cmbTargetDest;					// UI_REFORM :Su-won -선택가능 대상 설정 콤보 박스
-
 	int					m_nCurOptionTab;					// Current tab of option ( game, video, audio )
-	BOOL				m_bShowToolTip;						// If tool tip is shown or not
-	CTString			m_strToolTip;						// String of tool tip
 
 	// Selected option information
 	BOOL				m_bPixelShader;
@@ -178,25 +78,6 @@ protected:
 	std::vector<PIX>	m_vecPixHeight;
 	std::vector<PIX>	m_vecPixDepth;
 
-	// Region of each part
-	UIRect				m_rcTitle;							// Region of title
-	UIRect				m_rcOptionTab;						// Region of option tab
-	UIRect				m_rcToolTip;						// Region of tool tip
-	UIRect				m_rcInnerBackground;				// Region of innder background
-
-	// UV of each part
-	UIRectUV			m_rtBackground;						// UV of background
-	UIRectUV			m_rtInnerBackground[OPTIONTAB_TOTAL];		// UV of inner background
-	UIRectUV			m_rtOptionTab[OPTIONTAB_TOTAL];		// UV of option tab
-	UIRectUV			m_rtSelOptionTab[OPTIONTAB_TOTAL];	// UV of selected option tab
-	UIRectUV			m_rtOptionTabBackground;			// UV of option background tab
-	UIRectUV			m_rtSelOptionTabBackground;			// UV of selected option backtground tab
-	UIRectUV			m_rtToolTipL;						// UV of left region of tool tip
-	UIRectUV			m_rtToolTipM;						// UV of left region of tool tip
-	UIRectUV			m_rtToolTipR;						// UV of left region of tool tip
-
-	CTextureData		*m_ptdButtonTexture;		// Texture of Button
-
 protected:
 	// Internal functions
 	void	CreateResolutionList();
@@ -206,15 +87,7 @@ public:
 	CUIOption();
 	~CUIOption();
 
-	// Create
-	void	Create( CUIWindow *pParentWnd, int nX, int nY, int nWidth, int nHeight );
-
-	// Render
-	void	Render();
-
-	// Adjust position
-	void	ResetPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
-	void	AdjustPosition( PIX pixMinI, PIX pixMinJ, PIX pixMaxI, PIX pixMaxJ );
+	void	initialize();
 
 	// Open option
 	void	OpenOption();
@@ -244,9 +117,6 @@ public:
 	// Get texture quality
 	FLOAT	GetTextureQuality( int nStep ) const { return m_afTextureQuality[nStep]; }
 
-	// Messages
-	WMSG_RESULT	MouseMessage( MSG *pMsg );
-
 	//윈도우 모드로 강제 변경 added by sam 11/01/17
 	void ChangeWindowMode ();
 
@@ -255,7 +125,72 @@ public:
 	const BOOL	ToggleFullscreenMode(const BOOL _bEnableFullScreenMode = FALSE );
 	BOOL	m_bFullscreen;
 #endif
+
+private:
+	void _change_tab();
+
+	void _change_show_name();
+	void _change_show_item();
+	void _change_enter_chat();
+	void _change_auto_attack();
+	void _change_help_icon();
+	void _change_pop_qbook();
+	void _change_deny_trade();
+	void _change_deny_party();
+	
+	void _change_fullscreen();
+	void _change_bright();
+	void _change_contrast();
+
+	void _change_texture();
+	void _change_shadow();
+	void _change_character();
+	void _change_terrain();
+	void _change_reflection();
+	void _change_filtering();
+	void _change_eff_bg();
+
+	void _change_bgm();
+	void _change_fxsound();
+
+	CUITab*				m_pTabMain;
+	CUIImageArray*		m_pImgArrayTab[OPTIONTAB_TOTAL];
+
+	// GAME
+	CUISlideBar*		m_pSlideShowName;
+	CUISlideBar*		m_pSlideShowItem;
+	CUICheckButton*		m_pChkEnterChat;
+	CUICheckButton*		m_pChkMovePermit;
+	CUICheckButton*		m_pChkAutoAttack;
+	CUICheckButton*		m_pChkHelp1Icon;
+	CUICheckButton*		m_pChkPopQbook;
+	CUICheckButton*		m_pChkDenyTrade;
+	CUICheckButton*		m_pChkDenyParty;
+	CUIComboBox*		m_pComboItemPlusEffect;
+	CUIComboBox*		m_pComboSelectTarget;
+
+	// DISPLAY
+	CUIComboBox*		m_pComboResolution;
+	CUICheckButton*		m_pChkFullscreen;
+	CUIText*			m_pTxtBright;
+	CUIText*			m_pTxtContrast;
+	CUISlideBar*		m_pSlideBright;
+	CUISlideBar*		m_pSlideContrast;
+
+	// GRAPHIC
+	CUISlideBar*		m_pSlideTexture;
+	CUISlideBar*		m_pSlideShadow;
+	CUISlideBar*		m_pSlideCharacter;
+	CUISlideBar*		m_pSlideTerrain;	
+	CUISlideBar*		m_pSlideReflection;
+	CUISlideBar*		m_pSlideFiltering;
+	CUICheckButton*		m_pChkBackground;
+	
+	// AUDIO
+	CUISlideBar*		m_pSlideBGM;
+	CUISlideBar*		m_pSlideFXSound;
 };
 
 #endif // UISELCHAR_H_
+
 

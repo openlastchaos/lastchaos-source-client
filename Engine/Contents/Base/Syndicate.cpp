@@ -222,11 +222,14 @@ void CSyndicate::RecvUpdateIncreasePoint( CNetworkMessage* istr )
 	
 	CTString strMessage;
 	CTString strType = GetSyndicateName(pRecv->syndicateType);
+	CTString strPoint;
+	strPoint.PrintF("%I64d", pRecv->point);
+	UIMGR()->InsertCommaToString(strPoint);
 
 	if (pRecv->point > 0)
-		strMessage.PrintF(_S(6269, "%s 결사대의 기여도가 %d 상승하였습니다."), strType, pRecv->point);
+		strMessage.PrintF(_S(6269, "%s 결사대의 기여도가 %s 상승하였습니다."), strType, strPoint);
 	else if (pRecv->point < 0)
-		strMessage.PrintF(_S(6270, "%s 결사대의 기여도가 %d 하락하였습니다."), strType, pRecv->point);
+		strMessage.PrintF(_S(6270, "%s 결사대의 기여도가 %s 하락하였습니다."), strType, strPoint);
 	
 	if (strMessage.IsEmpty() == FALSE)
 		CUIManager::getSingleton()->GetChattingUI()->AddSysMessage(strMessage, SYSMSG_NORMAL, DEF_UI_COLOR_WHITE);
@@ -315,7 +318,11 @@ void CSyndicate::ErrMessage( CNetworkMessage* istr )
 
 			if (m_bFirstJoin == true)
 			{	// 최초 가입이라면 기여도 추가 지급.
-				strMessage.PrintF( _S( 6120, "최초 가입 선물로 기여도 [%I64d]포인트가 지급 되었습니다."), _pNetwork->MyCharacterInfo.lSyndicateAccPoint );
+				CTString strPoint;
+				strPoint.PrintF("%I64d", _pNetwork->MyCharacterInfo.lSyndicateAccPoint);
+				pUIManager->InsertCommaToString(strPoint);
+
+				strMessage.PrintF( _S( 6120, "최초 가입 선물로 기여도 %s포인트가 지급 되었습니다."), strPoint );
 				MsgBoxInfo.AddString( strMessage );
 			}
 

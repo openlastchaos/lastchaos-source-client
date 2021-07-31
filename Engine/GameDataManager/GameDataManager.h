@@ -25,6 +25,8 @@ class CPremiumChar;
 class CNews;
 class CItemCompose;
 class TitleNetwork;
+class CHelperManager;
+class GuildBattleMatch;
 
 class ENGINE_API GameDataManager : public CSingletonBase< GameDataManager >
 {
@@ -55,6 +57,9 @@ public:
 	CNews*			GetNews()			{ return m_pNews;				}
 	CItemCompose*	GetItemCompose()	{ return m_pItemCompose;		}
 	TitleNetwork*	GetTitleNetwork()	{ return m_pTitle;				}
+	CHelperManager* GetHelperManager()	{ return m_pHelperMgr;			}
+	GuildBattleMatch* GetGuildBattleMatch()	{ return m_pGuildBattleMatch;	}
+
 protected:
 	bool			m_bCreateData;
 	ExpressSystem*  m_apUIExpressSystem;
@@ -78,6 +83,8 @@ protected:
 	CNews*			m_pNews;
 	CItemCompose*	m_pItemCompose;
 	TitleNetwork*	m_pTitle;
+	CHelperManager* m_pHelperMgr;
+	GuildBattleMatch* m_pGuildBattleMatch;
 };
 
 #define GAMEDATAMGR() GameDataManager::getSingleton()

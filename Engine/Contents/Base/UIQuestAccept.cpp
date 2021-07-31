@@ -7,13 +7,13 @@
 #include <Engine/Entities/InternalClasses.h>
 #include <Engine/GlobalDefinition.h>
 
-#include <Engine/Interface/UIPetTraining.h>
+#include <Engine/Contents/function/PetTrainingUI.h>
 #include <Engine/Interface/UIShop.h>
 #include <Engine/Interface/UIInventory.h>
 #include <Engine/Contents/Base/UIQuestNew.h>
 #include <Engine/Contents/function/UIPortalNew.h>
 #include <Engine/Interface/UISiegeWarfare.h>
-#include <Engine/Interface/UIWareHouse.h>
+#include <Engine/Contents/function/WareHouseUI.h>
 #include <Engine/Interface/UIGuild.h>
 #include <Engine/Interface/UIInitJob.h>
 #include <Engine/Interface/UIRefine.h>
@@ -23,6 +23,7 @@
 #include <Engine/Interface/UISkillLearn.h>
 #include <Engine/Interface/UIProduct.h>
 #include <Engine/Contents/Base/UIQuestComplete.h>
+#include <Engine/Contents/function/ProductNPCUI.h>
 
 //--------------------------------------------------------------
 // 수락창 닫기
@@ -727,10 +728,10 @@ void CUIQuestAccept::OpenWindow( BOOL bHasQuestList )
 			pUIManager->GetShop()->OpenShop( iMobIndex, iMobVirIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
 		}
 		break;		
-	case UI_WAREHOUSE:
+	case UI_WARE_HOUSE:
 		{			
-			pUIManager->GetWareHouse()->SetNPCPos( iMobIndex, m_fNpcX, m_fNpcZ );
-			pUIManager->GetWareHouse()->OpenWareHouse(bHasQuestList);
+			pUIManager->GetWareHouseUI()->OpenWareHouse(bHasQuestList);
+			pUIManager->GetWareHouseUI()->SetNPCPos( iMobIndex, m_fNpcX, m_fNpcZ );
 		}
 		break;
 	case UI_GUILD:
@@ -768,9 +769,9 @@ void CUIQuestAccept::OpenWindow( BOOL bHasQuestList )
 			pUIManager->GetInitJob()->OpenInitJob( iMobIndex, iMobVirIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
 		}
 		break;
-	case UI_PETTRAINING:	// 애완동물 조련사.
+	case UI_PET_TRAINING:	// 애완동물 조련사.
 		{
-			pUIManager->GetPetTraining()->OpenPetTraining( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
+			pUIManager->GetPetTrainingUI()->OpenPetTraining( iMobIndex, bHasQuestList, m_fNpcX, m_fNpcZ );
 		}
 		break;
 	case UI_PROCESSNPC:
@@ -831,7 +832,7 @@ ENGINE_API void CUIQuestAccept::RequestQuest( int nNpcIndex, int nNpcVirIndex, S
 				return;
 		}
 		break;
-	case UI_WAREHOUSE:
+	case UI_WARE_HOUSE:
 		{			
 			if(pUIManager->DoesMessageBoxLExist( MSGLCMD_WAREHOUSE_REQ ))
 				return;
@@ -861,7 +862,7 @@ ENGINE_API void CUIQuestAccept::RequestQuest( int nNpcIndex, int nNpcVirIndex, S
 				return;
 		}
 		break;
-	case UI_PETTRAINING:	// 애완동물 조련사.
+	case UI_PET_TRAINING:	// 애완동물 조련사.
 		{
 			if(pUIManager->DoesMessageBoxLExist( MSGLCMD_PETTRAINING_REQ ))
 				return;
